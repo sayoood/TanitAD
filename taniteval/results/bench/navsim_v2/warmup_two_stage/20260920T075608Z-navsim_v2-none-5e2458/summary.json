@@ -1,0 +1,907 @@
+{
+ "schema": "taniteval.bench.summary/1",
+ "run_id": "20260920T075608Z-navsim_v2-none-5e2458",
+ "benchmark": "navsim_v2",
+ "protocol": "EPDMS_v2_warmup_two_stage",
+ "split": "warmup_two_stage",
+ "claim_bearing": true,
+ "evidence_class": "MEASURED",
+ "stamps": {
+  "tier": "T1-family",
+  "loop": {
+   "stage_one": "OPEN (PI ruling 2026-09-02)",
+   "stage_two": "UNRULED (2026-09-02 vocabulary)",
+   "background_traffic": "IDM-reactive vehicles in BOTH stages; ego non-reactive"
+  },
+  "closed_loop": false
+ },
+ "headline_metric": {
+  "name": "EPDMS",
+  "column": "score",
+  "higher_is_better": true,
+  "statistic": "official two-stage EPDMS (row extended_pdm_score_combined)",
+  "forbidden_column": "pdm_score",
+  "range": [
+   0.0,
+   1.0
+  ]
+ },
+ "floors": [
+  "STOP",
+  "CV"
+ ],
+ "arms": {
+  "CV": {
+   "kind": "floor",
+   "status": "OK",
+   "declared_inputs": [
+    "ego_velocity[t0]"
+   ],
+   "added_by_rule": false,
+   "headline": {
+    "value": 0.1853562745165113,
+    "x100": 18.53562745165113,
+    "column": "score",
+    "row": "extended_pdm_score_combined",
+    "n": 220,
+    "statistic": "official two-stage EPDMS: run_pdm_score.py::compute_final_scores (EC injected, /16) aggregated over mapping keys ((s1*wavg(now) + s1'*wavg(prev))/2)"
+   },
+   "per_stage": {
+    "stage_one": {
+     "score": 0.46028921296917297,
+     "column": "score",
+     "row": "extended_pdm_score_stage_one",
+     "n": 16,
+     "submetrics": {
+      "NC": 0.71875,
+      "DAC": 0.625,
+      "DDC": 0.90625,
+      "TLC": 1.0,
+      "EP": 0.8445232685540034,
+      "TTC": 0.6875,
+      "LK": 1.0,
+      "HC": 1.0,
+      "EC": 0.875
+     }
+    },
+    "stage_two": {
+     "score": 0.3341286472565139,
+     "column": "score",
+     "row": "extended_pdm_score_stage_two",
+     "n": 204,
+     "submetrics": {
+      "NC": 0.6753149753128314,
+      "DAC": 0.6388556549147113,
+      "DDC": 0.8048395134816405,
+      "TLC": 0.875,
+      "EP": 0.759838895283274,
+      "TTC": 0.6753149753128314,
+      "LK": 0.6146559218168826,
+      "HC": 0.9958333333333333,
+      "EC": 0.7208095807118616
+     }
+    }
+   },
+   "submetrics": {
+    "combined_row": {
+     "NC_s1": 0.71875,
+     "NC_s2": 0.6753149753128314,
+     "DAC_s1": 0.625,
+     "DAC_s2": 0.6388556549147113,
+     "DDC_s1": 0.90625,
+     "DDC_s2": 0.8048395134816405,
+     "TLC_s1": 1.0,
+     "TLC_s2": 0.875,
+     "EP_s1": 0.8445232685540034,
+     "EP_s2": 0.759838895283274,
+     "TTC_s1": 0.6875,
+     "TTC_s2": 0.6753149753128314,
+     "LK_s1": 1.0,
+     "LK_s2": 0.6146559218168826,
+     "HC_s1": 1.0,
+     "HC_s2": 0.9958333333333333,
+     "EC_s1": 0.875,
+     "EC_s2": 0.7208095807118616
+    },
+    "_note": "per-stage sub-metrics are also in per_stage.<stage>.submetrics (official stage summary rows)"
+   },
+   "per_log": {
+    "_statistic": "PLAIN mean of the official per-token `score` rows, by nuPlan log and stage \u2014 NOT the official aggregation (which weights stage-2 rows by the stage-1 endpoint kernel)",
+    "2021.08.16.14.23.37_veh-45_00015_00132": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.4816019529329408
+     },
+     "stage_two": {
+      "n": 20,
+      "score_mean": 0.6977120329625451
+     }
+    },
+    "2021.08.30.14.54.34_veh-40_00439_00835": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.4924430865284862
+     },
+     "stage_two": {
+      "n": 30,
+      "score_mean": 0.4294927627365971
+     }
+    },
+    "2021.09.16.13.53.10_veh-42_00180_00342": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.41066394906727977
+     },
+     "stage_two": {
+      "n": 22,
+      "score_mean": 0.23756726503550019
+     }
+    },
+    "2021.09.16.15.47.30_veh-45_01199_01391": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.25
+     },
+     "stage_two": {
+      "n": 62,
+      "score_mean": 0.2515633245557386
+     }
+    },
+    "2021.09.16.19.27.01_veh-45_01749_03230": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.8738580052140683
+     },
+     "stage_two": {
+      "n": 22,
+      "score_mean": 0.5441026469983776
+     }
+    },
+    "2021.09.29.19.02.14_veh-28_02911_03005": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 30,
+      "score_mean": 0.2658117321381558
+     }
+    },
+    "2021.10.06.08.16.17_veh-52_01590_01725": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.9237467100106085
+     },
+     "stage_two": {
+      "n": 18,
+      "score_mean": 0.5006555525894933
+     }
+    }
+   },
+   "paired": {
+    "STOP": {
+     "status": "OK",
+     "headline_delta": -0.11554603922911119,
+     "S2_EPDMS_u_delta": -0.12411531641801543,
+     "by_stage": {
+      "stage_one": {
+       "n": 16,
+       "score_mean_delta": -0.11743506670036383,
+       "official_stage_row_delta": -0.1174350667003638,
+       "wins": 8,
+       "ties": 0,
+       "losses": 8,
+       "submetric_mean_deltas": {
+        "NC": -0.28125,
+        "DAC": -0.375,
+        "DDC": -0.09375,
+        "TLC": 0.0,
+        "EP": 0.4708055736114859,
+        "TTC": -0.3125,
+        "LK": 0.0,
+        "HC": 0.8125,
+        "EC": 0.875
+       }
+      },
+      "stage_two": {
+       "n": 204,
+       "score_mean_delta": -0.13073045691098686,
+       "official_stage_row_delta": -0.18711834052424858,
+       "wins": 83,
+       "ties": 38,
+       "losses": 83,
+       "submetric_mean_deltas": {
+        "NC": -0.2450980392156863,
+        "DAC": -0.21078431372549022,
+        "DDC": -0.17156862745098034,
+        "TLC": -0.03431372549019607,
+        "EP": 0.35894416048264627,
+        "TTC": -0.2450980392156863,
+        "LK": -0.02941176470588236,
+        "HC": 0.33333333333333337,
+        "EC": 0.33333333333333337
+       }
+      }
+     },
+     "wins": 91,
+     "ties": 38,
+     "losses": 91,
+     "_wtl_scope": "per-scene wins/ties/losses pooled over the common tokens of BOTH stages (tie band 1e-12); per stage in by_stage.<stage>",
+     "n_common": 220
+    },
+    "CV": {
+     "status": "SELF"
+    }
+   },
+   "interval": {
+    "status": "UNAVAILABLE",
+    "reason": "\u26d4 warmup NEVER carries a CI \u2014 D-BENCH-PORT (PI approval 2026-08-29): 7 log groups < the RG-14 floor of 8 (products/P7-TanitEval/RELEASE_GATE.md); the 7 is re-read from scene_filter/warmup_two_stage.yaml log_names on every run.",
+    "n": 7,
+    "pre_csv_frame": {
+     "captured": true,
+     "path": "D:/Projects/TanitAD/taniteval/results/bench/navsim_v2/warmup_two_stage/20260920T075608Z-navsim_v2-none-5e2458/raw/CV/CV_final_scores_frame.csv",
+     "why_needed": "the published CSV drops `weight`/`log_name` (run_pdm_score.py:422)"
+    }
+   },
+   "families": {
+    "longitudinal": {
+     "status": "PARTIAL",
+     "n": 16,
+     "scope": "OUR instruments on the 16 STAGE-1 scenes only (agent vs logged human future, dt 0.5 s, K=8); stage-2 synthetic scenes have NO human future (0 future frames) \u2014 frame check: verified",
+     "tier": "T1",
+     "metrics": {
+      "speed_mae_mps": 0.8928,
+      "along_mae_m": 1.2669,
+      "speed_bias_mps": 0.3812,
+      "along_bias_m": 0.9394,
+      "accel_mae_mps2": 0.4637,
+      "progress_ratio_mean": 1.0639
+     },
+     "reason": "distance-keeping UNAVAILABLE: no lead-agent track supplied \u2014 pass `lead=` (see this function's caller docstring). PhysicalAI-AV ships obstacle.offline (3D agent tracks, 97.44 % of the corpus); the reader is `Architecture & Inference/Implementation/incoming/2026-08-03-longitudinal-distance-keeping/build_lead_tracks.py`. Not supplying it is a WORK ITEM, not a pass."
+    },
+    "lateral": {
+     "status": "OK",
+     "n": 16,
+     "scope": "OUR instruments on the 16 STAGE-1 scenes only (agent vs logged human future, dt 0.5 s, K=8); stage-2 synthetic scenes have NO human future (0 future frames) \u2014 frame check: verified",
+     "tier": "T1",
+     "metrics": {
+      "cross_mae_m": 1.0658,
+      "heading_mae_deg": 7.4799,
+      "curvature_mae_1pm": 0.015494,
+      "yaw_rate_mae_degps": 4.4749,
+      "cross_bias_m": -0.1605
+     }
+    },
+    "tactical": {
+     "status": "OK",
+     "n": 16,
+     "scope": "OUR instruments on the 16 STAGE-1 scenes only (agent vs logged human future, dt 0.5 s, K=8); stage-2 synthetic scenes have NO human future (0 future frames) \u2014 frame check: verified",
+     "tier": "T1",
+     "metrics": {
+      "lateral_decision.accuracy": 0.625,
+      "lateral_decision.kappa": 0.0,
+      "longitudinal_decision.accuracy": 0.625,
+      "longitudinal_decision.kappa": 0.0,
+      "goal_setting.goal_point_error_m": 5.0551
+     },
+     "_is_not": "trajectory-derived EXECUTED manoeuvres on both sides \u2014 NOT selected-vs-executed"
+    },
+    "strategic": {
+     "status": "UNAVAILABLE",
+     "reason": "PhysicalAI-AV carries NO map, NO lane graph, NO junction/roundabout label, NO traffic-light feature and NO route/goal signal \u2014 the dataset card says verbatim 'we do not include open maps data', and obstacle.offline's enum over 87,481 cuboids is 10 classes, ALL DYNAMIC AGENTS. `egomotion` carries no lat/lon/GNSS either (clip-local metres), so OSM map-matching on our traces is impossible. \u21d2 there is no admissible strategic LABEL on this split, and therefore no strategic decision or route/goal quality to score. \u26d4 The two label sources that DO exist are both inadmissible, for stated reasons and not for want of effort: (a) a route class read off the ego's OWN FUTURE yaw cannot tell whether the map admitted a choice at all \u2014 that is how the closed-loop harness once published route_head_eq_logged = 1.0000 on a clip where every junction had exactly ONE continuation, and GATE_PROTOCOL \u00a70.7 declares nonav_route_beats_majority VOID BY CONSTRUCTION; (b) a supplied route is optimistic by construction here because our only route supplier is the ego's own future path. | NavSim: \u26a0\ufe0f The generic reason above is PhysicalAI-specific (no map in the corpus). On NavSim the fact is DIFFERENT and must not be conflated: the lane graph and route EXIST, but `driving_command` is an INPUT and is never scored, and the Scene object carrying the map is TRAINING-ONLY at inference (NAVSIM_PROTOCOL.md:470-474, :812). So STRATEGIC is absent because the BENCHMARK declines to measure it, not because the data lacks it \u2014 which makes it a buildable WORK ITEM here (audit seam 7, taniteval/strategic_optionset.py:193), unlike on PhysicalAI.",
+     "n": 16
+    }
+   },
+   "statistics": {
+    "S2_EPDMS_u": {
+     "value": 0.39713167136274696,
+     "n_groups": 16,
+     "group_sizes": [
+      10,
+      10,
+      15,
+      15,
+      11,
+      11,
+      12,
+      12,
+      19,
+      19,
+      11,
+      11,
+      15,
+      15,
+      9,
+      9
+     ],
+     "n_scenes": 204,
+     "what": "E2's stage-2-only statistic: mean over groups of the uniform within-group mean of the official stage-2 `score` \u2014 NOT a two-stage EPDMS"
+    },
+    "stage_one_scene_mean": 0.4602892129691729,
+    "stage_two_scene_mean": 0.3755825472514974
+   },
+   "caveats": [],
+   "modality": {
+    "sensor_set": "none \u2014 ego-status only (ego_statuses[-1].ego_velocity)",
+    "setting": "kinematic floor: constant-velocity straight-line extrapolation; perception-free, map-free, route-free",
+    "ego_status_used": true,
+    "vision_only_claimed": false
+   },
+   "controls": {
+    "C4_formula": {
+     "n_rows": 220,
+     "n_rows_with_nan_EC_dropped_to_14": 0,
+     "max_abs_diff": 1.1102230246251565e-16,
+     "tol": 1e-09,
+     "pass": true
+    },
+    "C5_aggregate": {
+     "max_abs_weight_diff": 1.1102230246251565e-16,
+     "max_abs_summary_diff": 1.1102230246251565e-16,
+     "tol": 1e-09,
+     "pass": true,
+     "promoted_from": "E1 code/verify_controls.py C5 (inline) -> function, same arithmetic"
+    },
+    "reference_check": {
+     "reference": "D:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-warmup-reference-epdms/raw/A1/devkit_2026.09.19.12.24.20.csv",
+     "md5": "b4b33ac29c39c37832371b8b68c9f898",
+     "reference_md5": "b4b33ac29c39c37832371b8b68c9f898",
+     "file_identical": true,
+     "same_header": true,
+     "same_token_set": true,
+     "same_row_order": true,
+     "n_numeric_cells": 4237,
+     "max_abs_diff": 0.0,
+     "nan_pattern_mismatch": 0,
+     "first_or_worst_difference": null,
+     "cells_identical": true,
+     "headline_equals_banked": true,
+     "banked_combined_score": 0.1853562745165113,
+     "external": {
+      "value_x100": 18.5356,
+      "round_dp": 4,
+      "source": "HF warmup leaderboard baseline_constant_velocity, INHERITED via products/P7-TanitEval/benchmarks/NAVSIM_PROTOCOL.md \u00a76.3 (retrieved 2026-08-23)",
+      "ours_x100_rounded": 18.5356,
+      "reproduced": true
+     },
+     "source": "E1 A1 constant_velocity_agent, official two-stage runner (MEASURED); E2 CV_official is byte-identical"
+    },
+    "criteria_check": {
+     "rc": 0,
+     "json": "raw/criteria_CV.json",
+     "json_written": true,
+     "registry_version": "2.10.2",
+     "unreadable": [],
+     "n_violations": 0,
+     "n_work_items": 11,
+     "scope": [
+      "IN_SCOPE"
+     ]
+    },
+    "navsim_gates": {
+     "navsim.estimator_unit": "PASS",
+     "navsim.ego_enforcement": "NOT_APPLICABLE_DECLARED",
+     "navsim.modality_label": "PASS",
+     "navsim.cross_protocol": "PASS"
+    },
+    "navsim_gate_mutations_all_red": true
+   },
+   "files": {
+    "scores": "scores/CV.csv",
+    "artifact": "artifacts/CV.json",
+    "plans": "plans/CV.npz",
+    "criteria": "criteria/CV.txt",
+    "counts": "raw/CV/CV.counts.json",
+    "wrapper_manifest": "raw/CV/CV_manifest.json",
+    "hooks": "raw/CV/CV_hooks.json",
+    "final_scores_frame": "raw/CV/CV_final_scores_frame.csv"
+   }
+  },
+  "STOP": {
+   "kind": "floor",
+   "status": "OK",
+   "declared_inputs": [],
+   "added_by_rule": false,
+   "headline": {
+    "value": 0.3009023137456225,
+    "x100": 30.090231374562247,
+    "column": "score",
+    "row": "extended_pdm_score_combined",
+    "n": 220,
+    "statistic": "official two-stage EPDMS: run_pdm_score.py::compute_final_scores (EC injected, /16) aggregated over mapping keys ((s1*wavg(now) + s1'*wavg(prev))/2)"
+   },
+   "per_stage": {
+    "stage_one": {
+     "score": 0.5777242796695368,
+     "column": "score",
+     "row": "extended_pdm_score_stage_one",
+     "n": 16,
+     "submetrics": {
+      "NC": 1.0,
+      "DAC": 1.0,
+      "DDC": 1.0,
+      "TLC": 1.0,
+      "EP": 0.3737176949425176,
+      "TTC": 1.0,
+      "LK": 1.0,
+      "HC": 0.1875,
+      "EC": 0.0
+     }
+    },
+    "stage_two": {
+     "score": 0.5212469877807625,
+     "column": "score",
+     "row": "extended_pdm_score_stage_two",
+     "n": 204,
+     "submetrics": {
+      "NC": 0.9424342105263158,
+      "DAC": 0.9283891547049441,
+      "DDC": 0.9858552631578947,
+      "TLC": 0.9791666666666667,
+      "EP": 0.3414751203243973,
+      "TTC": 0.9424342105263158,
+      "LK": 0.6140749601275917,
+      "HC": 0.7038925438596492,
+      "EC": 0.27247474747474754
+     }
+    }
+   },
+   "submetrics": {
+    "combined_row": {
+     "NC_s1": 1.0,
+     "NC_s2": 0.9424342105263158,
+     "DAC_s1": 1.0,
+     "DAC_s2": 0.9283891547049441,
+     "DDC_s1": 1.0,
+     "DDC_s2": 0.9858552631578947,
+     "TLC_s1": 1.0,
+     "TLC_s2": 0.9791666666666667,
+     "EP_s1": 0.3737176949425176,
+     "EP_s2": 0.3414751203243973,
+     "TTC_s1": 1.0,
+     "TTC_s2": 0.9424342105263158,
+     "LK_s1": 1.0,
+     "LK_s2": 0.6140749601275917,
+     "HC_s1": 0.1875,
+     "HC_s2": 0.7038925438596492,
+     "EC_s1": 0.0,
+     "EC_s2": 0.27247474747474754
+    },
+    "_note": "per-stage sub-metrics are also in per_stage.<stage>.submetrics (official stage summary rows)"
+   },
+   "per_log": {
+    "_statistic": "PLAIN mean of the official per-token `score` rows, by nuPlan log and stage \u2014 NOT the official aggregation (which weights stage-2 rows by the stage-1 endpoint kernel)",
+    "2021.08.16.14.23.37_veh-45_00015_00132": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.5130171539121646
+     },
+     "stage_two": {
+      "n": 20,
+      "score_mean": 0.46560355969972955
+     }
+    },
+    "2021.08.30.14.54.34_veh-40_00439_00835": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.5197644841232798
+     },
+     "stage_two": {
+      "n": 30,
+      "score_mean": 0.5627848980081189
+     }
+    },
+    "2021.09.16.13.53.10_veh-42_00180_00342": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.6098917338195682
+     },
+     "stage_two": {
+      "n": 22,
+      "score_mean": 0.5636434587331537
+     }
+    },
+    "2021.09.16.15.47.30_veh-45_01199_01391": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.6067364358490549
+     },
+     "stage_two": {
+      "n": 62,
+      "score_mean": 0.42160783023299536
+     }
+    },
+    "2021.09.16.19.27.01_veh-45_01749_03230": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.635355663275923
+     },
+     "stage_two": {
+      "n": 22,
+      "score_mean": 0.6864727793716173
+     }
+    },
+    "2021.09.29.19.02.14_veh-28_02911_03005": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.6274953194107734
+     },
+     "stage_two": {
+      "n": 30,
+      "score_mean": 0.4031800930912218
+     }
+    },
+    "2021.10.06.08.16.17_veh-52_01590_01725": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.5027970111164756
+     },
+     "stage_two": {
+      "n": 18,
+      "score_mean": 0.6308105116345168
+     }
+    }
+   },
+   "paired": {
+    "STOP": {
+     "status": "SELF"
+    },
+    "CV": {
+     "status": "OK",
+     "headline_delta": 0.11554603922911119,
+     "S2_EPDMS_u_delta": 0.12411531641801543,
+     "by_stage": {
+      "stage_one": {
+       "n": 16,
+       "score_mean_delta": 0.11743506670036383,
+       "official_stage_row_delta": 0.1174350667003638,
+       "wins": 8,
+       "ties": 0,
+       "losses": 8,
+       "submetric_mean_deltas": {
+        "NC": 0.28125,
+        "DAC": 0.375,
+        "DDC": 0.09375,
+        "TLC": 0.0,
+        "EP": -0.4708055736114859,
+        "TTC": 0.3125,
+        "LK": 0.0,
+        "HC": -0.8125,
+        "EC": -0.875
+       }
+      },
+      "stage_two": {
+       "n": 204,
+       "score_mean_delta": 0.13073045691098686,
+       "official_stage_row_delta": 0.18711834052424858,
+       "wins": 83,
+       "ties": 38,
+       "losses": 83,
+       "submetric_mean_deltas": {
+        "NC": 0.2450980392156863,
+        "DAC": 0.21078431372549022,
+        "DDC": 0.17156862745098034,
+        "TLC": 0.03431372549019607,
+        "EP": -0.35894416048264627,
+        "TTC": 0.2450980392156863,
+        "LK": 0.02941176470588236,
+        "HC": -0.33333333333333337,
+        "EC": -0.33333333333333337
+       }
+      }
+     },
+     "wins": 91,
+     "ties": 38,
+     "losses": 91,
+     "_wtl_scope": "per-scene wins/ties/losses pooled over the common tokens of BOTH stages (tie band 1e-12); per stage in by_stage.<stage>",
+     "n_common": 220
+    }
+   },
+   "interval": {
+    "status": "UNAVAILABLE",
+    "reason": "\u26d4 warmup NEVER carries a CI \u2014 D-BENCH-PORT (PI approval 2026-08-29): 7 log groups < the RG-14 floor of 8 (products/P7-TanitEval/RELEASE_GATE.md); the 7 is re-read from scene_filter/warmup_two_stage.yaml log_names on every run.",
+    "n": 7,
+    "pre_csv_frame": {
+     "captured": true,
+     "path": "D:/Projects/TanitAD/taniteval/results/bench/navsim_v2/warmup_two_stage/20260920T075608Z-navsim_v2-none-5e2458/raw/STOP/STOP_final_scores_frame.csv",
+     "why_needed": "the published CSV drops `weight`/`log_name` (run_pdm_score.py:422)"
+    }
+   },
+   "families": {
+    "longitudinal": {
+     "status": "PARTIAL",
+     "n": 16,
+     "scope": "OUR instruments on the 16 STAGE-1 scenes only (agent vs logged human future, dt 0.5 s, K=8); stage-2 synthetic scenes have NO human future (0 future frames) \u2014 frame check: verified",
+     "tier": "T1",
+     "metrics": {
+      "speed_mae_mps": 6.9285,
+      "along_mae_m": 15.5075,
+      "speed_bias_mps": -6.9285,
+      "along_bias_m": -15.5075,
+      "accel_mae_mps2": 0.4637,
+      "progress_ratio_mean": 0.0
+     },
+     "reason": "distance-keeping UNAVAILABLE: no lead-agent track supplied \u2014 pass `lead=` (see this function's caller docstring). PhysicalAI-AV ships obstacle.offline (3D agent tracks, 97.44 % of the corpus); the reader is `Architecture & Inference/Implementation/incoming/2026-08-03-longitudinal-distance-keeping/build_lead_tracks.py`. Not supplying it is a WORK ITEM, not a pass."
+    },
+    "lateral": {
+     "status": "PARTIAL",
+     "n": 16,
+     "scope": "OUR instruments on the 16 STAGE-1 scenes only (agent vs logged human future, dt 0.5 s, K=8); stage-2 synthetic scenes have NO human future (0 future frames) \u2014 frame check: verified",
+     "tier": "T1",
+     "metrics": {
+      "cross_mae_m": 1.0658,
+      "cross_bias_m": -0.1605
+     },
+     "reason": "undefined or refused terms \u2014 heading_mae_deg: heading_mae_deg is UNDEFINED for this plan: 128 step(s) moved less than min_ds_m=0.25 m (n_steps_heading=0, n_steps_curvature=0) \u2014 a stationary path has no tangent, so heading/curvature/yaw-rate errors do not exist (four_families.lateral min_ds rule); reported as a refusal, never as zero | curvature_mae_1pm: curvature_mae_1pm is UNDEFINED for this plan: 128 step(s) moved less than min_ds_m=0.25 m (n_steps_heading=0, n_steps_curvature=0) \u2014 a stationary path has no tangent, so heading/curvature/yaw-rate errors do not exist (four_families.lateral min_ds rule); reported as a refusal, never as zero | yaw_rate_mae_degps: yaw_rate_mae_degps is UNDEFINED for this plan: 128 step(s) moved less than min_ds_m=0.25 m (n_steps_heading=0, n_steps_curvature=0) \u2014 a stationary path has no tangent, so heading/curvature/yaw-rate errors do not exist (four_families.lateral min_ds rule); reported as a refusal, never as zero"
+    },
+    "tactical": {
+     "status": "OK",
+     "n": 16,
+     "scope": "OUR instruments on the 16 STAGE-1 scenes only (agent vs logged human future, dt 0.5 s, K=8); stage-2 synthetic scenes have NO human future (0 future frames) \u2014 frame check: verified",
+     "tier": "T1",
+     "metrics": {
+      "lateral_decision.accuracy": 0.625,
+      "lateral_decision.kappa": 0.0,
+      "longitudinal_decision.accuracy": 0.625,
+      "longitudinal_decision.kappa": 0.0,
+      "goal_setting.goal_point_error_m": 27.4573
+     },
+     "_is_not": "trajectory-derived EXECUTED manoeuvres on both sides \u2014 NOT selected-vs-executed"
+    },
+    "strategic": {
+     "status": "UNAVAILABLE",
+     "reason": "PhysicalAI-AV carries NO map, NO lane graph, NO junction/roundabout label, NO traffic-light feature and NO route/goal signal \u2014 the dataset card says verbatim 'we do not include open maps data', and obstacle.offline's enum over 87,481 cuboids is 10 classes, ALL DYNAMIC AGENTS. `egomotion` carries no lat/lon/GNSS either (clip-local metres), so OSM map-matching on our traces is impossible. \u21d2 there is no admissible strategic LABEL on this split, and therefore no strategic decision or route/goal quality to score. \u26d4 The two label sources that DO exist are both inadmissible, for stated reasons and not for want of effort: (a) a route class read off the ego's OWN FUTURE yaw cannot tell whether the map admitted a choice at all \u2014 that is how the closed-loop harness once published route_head_eq_logged = 1.0000 on a clip where every junction had exactly ONE continuation, and GATE_PROTOCOL \u00a70.7 declares nonav_route_beats_majority VOID BY CONSTRUCTION; (b) a supplied route is optimistic by construction here because our only route supplier is the ego's own future path. | NavSim: \u26a0\ufe0f The generic reason above is PhysicalAI-specific (no map in the corpus). On NavSim the fact is DIFFERENT and must not be conflated: the lane graph and route EXIST, but `driving_command` is an INPUT and is never scored, and the Scene object carrying the map is TRAINING-ONLY at inference (NAVSIM_PROTOCOL.md:470-474, :812). So STRATEGIC is absent because the BENCHMARK declines to measure it, not because the data lacks it \u2014 which makes it a buildable WORK ITEM here (audit seam 7, taniteval/strategic_optionset.py:193), unlike on PhysicalAI.",
+     "n": 16
+    }
+   },
+   "statistics": {
+    "S2_EPDMS_u": {
+     "value": 0.5212469877807624,
+     "n_groups": 16,
+     "group_sizes": [
+      10,
+      10,
+      15,
+      15,
+      11,
+      11,
+      12,
+      12,
+      19,
+      19,
+      11,
+      11,
+      15,
+      15,
+      9,
+      9
+     ],
+     "n_scenes": 204,
+     "what": "E2's stage-2-only statistic: mean over groups of the uniform within-group mean of the official stage-2 `score` \u2014 NOT a two-stage EPDMS"
+    },
+    "stage_one_scene_mean": 0.5777242796695368,
+    "stage_two_scene_mean": 0.5063130041624844
+   },
+   "caveats": [],
+   "modality": {
+    "sensor_set": "none \u2014 reads no input at all",
+    "setting": "trivial floor: x = y = heading = 0 at every 0.5 s pose (EP == 1 when the best compliant progress <= 5 m, pdm_scorer.py:231-236)",
+    "ego_status_used": false,
+    "vision_only_claimed": false
+   },
+   "controls": {
+    "C4_formula": {
+     "n_rows": 220,
+     "n_rows_with_nan_EC_dropped_to_14": 0,
+     "max_abs_diff": 1.1102230246251565e-16,
+     "tol": 1e-09,
+     "pass": true
+    },
+    "C5_aggregate": {
+     "max_abs_weight_diff": 6.938893903907228e-17,
+     "max_abs_summary_diff": 3.3306690738754696e-16,
+     "tol": 1e-09,
+     "pass": true,
+     "promoted_from": "E1 code/verify_controls.py C5 (inline) -> function, same arithmetic"
+    },
+    "reference_check": {
+     "reference": "D:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-refcv4b-bridge/raw/score_STOP_zero.csv",
+     "md5": "4a15c3a1d59234e518291a1a9e1d5bff",
+     "reference_md5": "4a15c3a1d59234e518291a1a9e1d5bff",
+     "file_identical": true,
+     "same_header": true,
+     "same_token_set": true,
+     "same_row_order": true,
+     "n_numeric_cells": 4237,
+     "max_abs_diff": 0.0,
+     "nan_pattern_mismatch": 0,
+     "first_or_worst_difference": null,
+     "cells_identical": true,
+     "headline_equals_banked": true,
+     "banked_combined_score": 0.3009023137456225,
+     "source": "E2 STOP_zero seam (all-zero plan), official two-stage runner (MEASURED)"
+    },
+    "criteria_check": {
+     "rc": 0,
+     "json": "raw/criteria_STOP.json",
+     "json_written": true,
+     "registry_version": "2.10.2",
+     "unreadable": [],
+     "n_violations": 0,
+     "n_work_items": 14,
+     "scope": [
+      "IN_SCOPE"
+     ]
+    },
+    "navsim_gates": {
+     "navsim.estimator_unit": "PASS",
+     "navsim.ego_enforcement": "NOT_APPLICABLE_DECLARED",
+     "navsim.modality_label": "PASS",
+     "navsim.cross_protocol": "PASS"
+    },
+    "navsim_gate_mutations_all_red": true
+   },
+   "files": {
+    "scores": "scores/STOP.csv",
+    "artifact": "artifacts/STOP.json",
+    "plans": "plans/STOP.npz",
+    "criteria": "criteria/STOP.txt",
+    "counts": "raw/STOP/STOP.counts.json",
+    "wrapper_manifest": "raw/STOP/STOP_manifest.json",
+    "hooks": "raw/STOP/STOP_hooks.json",
+    "final_scores_frame": "raw/STOP/STOP_final_scores_frame.csv"
+   }
+  }
+ },
+ "controls": {
+  "arm_notes": [],
+  "route_command_is_a_route_level_oracle": {
+   "what": "NavSim driving_command is a ROUTE-LEVEL ORACLE",
+   "source": "W2 / E3 (2026-09-20), four probes",
+   "verdict": {
+    "status": "CHECKED",
+    "verdict": "PARTIAL \u2014 ROUTE-LEVEL ORACLE",
+    "evidence_class": "PUBLISHED-CODE (mechanism) + MEASURED (four empirical probes)",
+    "one_line": "driving_command is computed from (the ego pose NOW, nuPlan's route, the map) \u2014 not from the expert's future trajectory \u2014 but the route is the expert's own driven path at ROADBLOCK granularity, so the command carries the expert's future ROUTE CHOICE. Not a trajectory leak (no speed, stop or lane-change information).",
+    "measured": {
+     "reproduction_by_openscene_code": "1,902/1,902 frames (turning 739/739)",
+     "turning_commands_from_FUTURE_route": "710/739 = 96.1 %",
+     "turning_commands_from_NO_FUTURE_route": "491/739 = 66.4 %",
+     "route_starts_behind_the_ego": "83.5 % of 1,921 nuPlan scenes",
+     "stage_two_command_copied_from_expert_frame": "5,462/5,462 navhard, 204/204 warmup",
+     "best_threshold_rule_on_future_path": "94.2-94.7 % (n 65,783) \u2014 below the 99 % bar"
+    },
+    "consequence": "a command-conditioned NavSim number is 'driving with an ORACLE ROUTE': comparable within NavSim, never evidence of route/strategic skill; the command may never be a route-head LABEL; pair the command arm with a command-withheld arm.",
+    "evidence": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/RESULT.md \u00a7B; raw/route_leak_probe.json; raw/stage2_command_provenance.json",
+    "n": 1902
+   },
+   "applies_to": "every arm that consumes driving_command"
+  },
+  "gallery_inputs": {
+   "CV": {
+    "status": "OK",
+    "n": 220,
+    "path": "CV.npz",
+    "shape": [
+     220,
+     8,
+     3
+    ],
+    "sampling": [
+     8,
+     0.5
+    ],
+    "n_cv_standin": 0,
+    "poses_from": "the scorer's own pdm_score hook (what the official runner executed)"
+   },
+   "STOP": {
+    "status": "OK",
+    "n": 220,
+    "path": "STOP.npz",
+    "shape": [
+     220,
+     8,
+     3
+    ],
+    "sampling": [
+     8,
+     0.5
+    ],
+    "n_cv_standin": 0,
+    "poses_from": "the scorer's own pdm_score hook (what the official runner executed)"
+   },
+   "scenes": {
+    "status": "OK",
+    "n_tokens": 220,
+    "path": "scenes.json",
+    "frame_bank_declared": true
+   }
+  },
+  "scoring_counts": {
+   "CV": {
+    "status": "PASS",
+    "failures": [],
+    "wall_s": 142.6,
+    "log_successful": 220,
+    "log_failed": 0,
+    "csv_valid_rows": 220,
+    "agent_calls": null
+   },
+   "STOP": {
+    "status": "PASS",
+    "failures": [],
+    "wall_s": 149.6,
+    "log_successful": 220,
+    "log_failed": 0,
+    "csv_valid_rows": 220,
+    "agent_calls": {
+     "seam": 220,
+     "cv_standin": 0,
+     "UNKNOWN_TOKEN": 0
+    }
+   }
+  }
+ },
+ "provenance": {
+  "devkit": {
+   "repo": "autonomousvision/navsim",
+   "sha": "UNAVAILABLE",
+   "patches": [
+    {
+     "name": "navsim/common/dataclasses.py PosixPath unpickler (Windows)",
+     "kind": "pre-existing",
+     "evidence": "E1 RESULT.md \u00a74 (blob 596cb7d in the source checkout)",
+     "raw_bytes_git_blob_now": "20673663a56e9239daf4ebceff7a2ef5db99e8ec"
+    },
+    {
+     "name": "venv fcntl.py flock shim",
+     "kind": "pre-existing",
+     "evidence": "E1 RESULT.md \u00a74 (sha256 75184a48...)",
+     "raw_bytes_git_blob_now": "6dfec7cf53c89d847886cfbe5328494195bff866"
+    },
+    {
+     "name": "nuplan-devkit setup.py packaging-only change",
+     "kind": "pre-existing",
+     "evidence": "E1 RESULT.md \u00a74"
+    },
+    {
+     "name": "C: copy navsim/common/dataloader.py: MetricCacheLoader token split on either separator",
+     "kind": "harness",
+     "evidence": "E1 code/patches/apply_dataloader_patch.py, applied 2026-09-19 13:04 (raw/navhard/dataloader_copy_patch.json); needed for process-pool scoring",
+     "raw_bytes_git_blob_now": "b850e1624f581f7dda6d33082caf017a8aad55f9"
+    },
+    {
+     "name": "MetricCacheLoader._load_metric_cache_paths monkeypatch (navsim_win.py --patch-loader)",
+     "kind": "in-process",
+     "evidence": "E1 code/navsim_win.py, pinned by test_navsim_win_patch.py; separator only"
+    }
+   ],
+   "pin": "autonomousvision/navsim@0a380a9 (2025-10-27; post-#151 fix, MEASURED by E1: README changelog 2025/09/29 + pdm_score.py:194-219)",
+   "sha_probe": {
+    "sha": "UNAVAILABLE",
+    "matches_pin": false,
+    "reason": "FileNotFoundError: [WinError 2] Das System kann die angegebene Datei nicht finden"
+   },
+   "runtime": "C:/Users/Admin/navsim-crun",
+   "wrapper": "taniteval/taniteval/bench/navsim/devkit_side/navsim_win.py"
+  },
+  "split_yaml_counts": {
+   "stage_one": 16,
+   "stage_two": 204,
+   "log_names": 7,
+   "mapping": 8
+  },
+  "promoted_from": [
+   "E1 2026-09-19-navsim-warmup-reference-epdms",
+   "E2 2026-09-19-navsim-refcv4b-bridge"
+  ],
+  "ckpt": {
+   "path": null,
+   "sha256": null,
+   "registry_key": null,
+   "note": "--ckpt none: floors / references only",
+   "registry_key_display": "no checkpoint (devkit floors only)"
+  },
+  "_ckpt_backfilled": "2026-09-20: copied VERBATIM from this run's own bench_run.json.ckpt, which is the same object the suite now emits directly. These runs predate the field; they are devkit-floor runs, so the triple is null and the page says 'devkit floors only (no checkpoint)'."
+ }
+}

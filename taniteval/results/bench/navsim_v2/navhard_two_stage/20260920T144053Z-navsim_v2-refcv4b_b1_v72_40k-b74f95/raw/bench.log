@@ -1,0 +1,19 @@
+16:40:56 [bench] run 20260920T144053Z-navsim_v2-refcv4b_b1_v72_40k-b74f95 -> D:\Projects\TanitAD\taniteval\results\bench\navsim_v2\navhard_two_stage\20260920T144053Z-navsim_v2-refcv4b_b1_v72_40k-b74f95
+16:40:57 [navsim] CV added by rule (MANDATORY NavSim floor)
+16:40:57 [navsim] STOP added by rule (MANDATORY NavSim floor)
+16:40:57 [navsim] ECHO added by rule (ECHO floor: a checkpoint is scored)
+16:40:58 [navsim] export reused: C:\Users\Admin\navsim-crun\exp\tanitad_bench\exports\navhard_two_stage\navsim_agent_inputs.json (content key + sha256 match)
+16:41:00 ⛔ FAILED: StackShadowError: ⛔ STACK SHADOWING — `tanitad` would be imported from
+    ['D:\\Projects\\TanitAD\\stack\\tanitad\\__init__.py', 'D:\\Projects\\TanitAD\\stack\\tanitad']
+  but the pinned stack root is
+    G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\stack   (intent: installed:find_spec)
+  This is the defect that publishes a PLAUSIBLE WRONG NUMBER rather
+  than an error: 28 taniteval modules used to sys.path.insert(0,
+  '/root/TanitAD/stack'), and on pod2 that tree is pre-v5.
+  ⇒ export TANITEVAL_STACK_OVERRIDE=<the stack you mean> BEFORE python3 starts,
+    and make sure no other stack tree precedes it on sys.path.
+    (sys.path[0:4] = ['D:\\Projects\\TanitAD\\tools', 'D:\\Projects\\TanitAD\\stack\\scripts', 'D:\\Projects\\TanitAD\\stack', 'G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\stack'])
+  To downgrade deliberately: TANITEVAL_STACK_GUARD=warn — it is recorded in the
+  guard's report() so no artifact can hide it.
+16:41:00 [bench] report: SKIPPED
+16:41:00 [bench] FAILED in 4.3 s -> D:\Projects\TanitAD\taniteval\results\bench\navsim_v2\navhard_two_stage\20260920T144053Z-navsim_v2-refcv4b_b1_v72_40k-b74f95

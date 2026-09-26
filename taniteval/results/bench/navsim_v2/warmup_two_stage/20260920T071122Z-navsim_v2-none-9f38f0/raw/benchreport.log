@@ -1,0 +1,18 @@
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "D:\Projects\TanitAD\taniteval\taniteval\benchreport\__main__.py", line 6, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "D:\Projects\TanitAD\taniteval\taniteval\benchreport\cli.py", line 85, in main
+    r = build(a.run_dir, published=a.published, gallery_n=a.gallery, no_gallery=a.no_gallery,
+              navsim_python=a.navsim_python, devkit=a.devkit, max_per_log=a.max_per_log)
+  File "D:\Projects\TanitAD\taniteval\taniteval\benchreport\cli.py", line 44, in build
+    res = render_report(run_dir, published_path=pub, gallery=gal, extra_banners=extra)
+  File "D:\Projects\TanitAD\taniteval\taniteval\benchreport\render.py", line 677, in render_report
+    body = (banners_html(run, extra) + overview_html(run) + headline_html(run, published, figs) + paired_html(run, figs)
+                                       ~~~~~~~~~~~~~^^^^^
+  File "D:\Projects\TanitAD\taniteval\taniteval\benchreport\render.py", line 172, in overview_html
+    f'<div class="v">{_n(run, p["wins"], "int", *k, "wins")} / {_n(run, p["ties"], "int", *k, "ties")}'
+                              ~^^^^^^^^
+KeyError: 'wins'

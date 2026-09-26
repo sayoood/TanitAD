@@ -1,0 +1,10 @@
+{
+  "_what": "This run's rendered report is deliberately NOT in git.",
+  "why": "A report is a DETERMINISTIC artifact of summary.json + the renderer at a given commit. MEASURED 2026-09-20: two independent renders of the same run produced 11/11 BYTE-IDENTICAL files, with no render-clock stamp (the only embedded timestamps trace to the run itself) and no absolute paths. Keeping one copy per run cost 67 files / 6.1 MB, of which 3.2 MB was duplicate renders.",
+  "regenerate_with": "python -m taniteval.benchreport <this run dir>",
+  "what_IS_in_git": "the NavSim v2 RUN OF RECORD's report (20260920T075608Z-navsim_v2-none-5e2458) and the internal_t1 run's, so at least one rendered report is readable straight from the repo without running anything -- the PI asked for reporting to be part of the suite.",
+  "the_run_itself_IS_in_git": "yes -- bench_run.json, summary.json, scores/, artifacts/, criteria/ and raw/ are all staged. Only report/ is regenerated.",
+  "caveat": "⚠ 'Deterministic' is relative to a RENDERER VERSION. W5's renderer is live code (a module was renamed mid-stream on 2026-09-20), so a regeneration months from now reproduces the report of THAT commit, not necessarily this byte sequence. The numbers come from summary.json either way, and summary.json IS in git.",
+  "decision_by": "W1 as run owner, on the orchestrator's ruling 2026-09-20; determinism MEASURED before acting.",
+  "ignore_rule": "taniteval/results/bench/.gitignore"
+}

@@ -1,0 +1,27 @@
+# W1 (EvalFlyWheel suite core) -- which rendered reports live in git.
+#
+# A report is written INTO its run directory by `python -m taniteval.benchreport <run_dir>`
+# (the BUILD_PLAN section 1 contract: the report lives in the run). It is a DETERMINISTIC artifact
+# of summary.json + the renderer at a given commit -- MEASURED 2026-09-20: two independent renders
+# of the same run produced 11/11 BYTE-IDENTICAL files, no render-clock stamp (the only embedded
+# timestamps trace to the run itself) and no absolute paths. So a report REGENERATES, and git does
+# not need a copy per run: 67 files / 6.1 MB today, of which 3.2 MB is duplicate renders.
+#
+# KEPT ON PURPOSE, because the PI asked for reporting to be part of the suite and at least one
+# rendered report must be readable straight from the repo without running anything:
+#   * the NavSim v2 RUN OF RECORD, and
+#   * the internal_t1 run (3 files, 51 KB).
+#
+# To bring any other run's report back:  python -m taniteval.benchreport <run_dir>
+#
+# NB the pattern excludes report CONTENTS (`report/**`), not the directory (`report/`). Git cannot
+# re-include a file whose PARENT DIRECTORY is excluded, so excluding the directory would make every
+# negation below silently dead -- a rule that looks right and does nothing.
+**/report/**
+!navsim_v2/warmup_two_stage/20260920T075608Z-navsim_v2-none-5e2458/report/**
+# navhard's run of record, kept for the same reason: it is the ONLY navhard report, and navhard
+# is the split that can carry an INTERVAL at all (76 log clusters; warmup has 7, below the floor
+# of 8). One report per SPLIT still honours the ruling's intent -- at least one rendered report
+# readable straight from the repo -- without keeping five copies of the same render.
+!navsim_v2/navhard_two_stage/20260920T082848Z-navsim_v2-none-06e257/report/**
+!internal_t1/v2ep-eval124clean-416x1024cyl-halfB/20260920T073353Z-internal_t1-none-04264a/report/**

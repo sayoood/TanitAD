@@ -1,0 +1,37 @@
+{
+ "_what": "devkit-side files PROMOTED byte-for-byte (run by the NavSim venv, Python 3.9). A promoted file must keep blob == origin_blob; taniteval/tests/test_bench_suite_promotion.py asserts it. Origins are the historical record and are never edited.",
+ "promoted_utc": "2026-09-19",
+ "by": "EvalFlyWheel W1 (2026-09-19-suite-core-navsim-v2)",
+ "files": {
+  "navsim_win.py": {
+   "origin": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-warmup-reference-epdms/code/navsim_win.py",
+   "origin_blob": "11d5e3ccd9201580046d33b03ea8940c09d97077",
+   "blob": "935fa44c459a3ee52c5582db288c5b95394ece54",
+   "w1_additions": [
+    "--dump-preaggregation flag + the worker_map hook, delimited by '# --- W1 ADDITION' / '# --- end W1 ADDITION'. Removing exactly those blocks reproduces E1's file BYTE-FOR-BYTE (pinned by taniteval/tests/test_bench_suite_promotion.py::test_navsim_win_is_e1_plus_marked_additions). Reason: MEASURED 2026-09-19 navhard CV — all 5,912 scenarios scored (68 min), aggregation crashed, no CSV, pdm_calls=0 under a process pool."
+   ],
+   "re_promoted_utc": "2026-09-20 (2nd re-promotion)",
+   "re_promoted_why": "Re-applied by 3-way ALIGNMENT, never by line number (E1's edit sits ABOVE both blocks and shifted them +7). The binding check is the promotion test's own rule, asserted BEFORE writing: stripping the two marked blocks from the product reproduces E1's origin BYTE-FOR-BYTE. Written with os.replace (atomic) because a scorer subprocess may import this file at any moment. Tool: FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-suite-core-navsim-v2/code/w1_repromote_navsim_win.py",
+   "re_promotion_history": [
+    {
+     "origin_blob": "96d13540aa3bb678de1d34577391ced29c2eb07f",
+     "why": "E1's CSV pre-aggregation dump without ego_simulated_states; W1 added the worker_map-seam dump (CSV + PICKLE, re-aggregatable)"
+    },
+    {
+     "origin_blob": "11d5e3ccd9201580046d33b03ea8940c09d97077",
+     "why": "RAM-guard Monitor default sustain 3 -> 60 samples (2 min). MEASURED by E1 2026-09-20: sustain=3 (6 s) killed a navhard CV run at 5,576/5,912 scored scenes -- 75 min lost -- on a dip to 2,634 MB lasting three samples while E1's own process held 828 MB. Aborting frees only our ~0.8 GB and cannot fix a shortage another process caused. The HARD floor (one sample < 2,000 MB) is unchanged, so a genuinely dangerous state still aborts at once. The diff is 19 lines, entirely inside Monitor.__init__ -- the SCORING path is untouched, so no score can differ."
+    }
+   ]
+  },
+  "tanitad_seam_agent.py": {
+   "origin": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-refcv4b-bridge/code/tanitad_seam_agent.py",
+   "origin_blob": "d9561bc67639f20ecd148a3b7ab81a1ec42ee8de",
+   "blob": "d9561bc67639f20ecd148a3b7ab81a1ec42ee8de"
+  },
+  "export_agent_inputs.py": {
+   "origin": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-refcv4b-bridge/code/export_agent_inputs.py",
+   "origin_blob": "6659b6fe9cf389294982902b3faa0dfac675df90",
+   "blob": "6659b6fe9cf389294982902b3faa0dfac675df90"
+  }
+ }
+}

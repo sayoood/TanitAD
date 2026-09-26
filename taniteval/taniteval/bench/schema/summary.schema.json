@@ -1,0 +1,559 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "taniteval.bench.summary/1",
+ "title": "TanitEval one-command suite: summary.json (the per-run, per-arm result record)",
+ "description": "The ONE file the leaderboard generator (W4) and the report (W5) read. Contract: FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-eval-suite-build/BUILD_PLAN.md section 1. Owner W1. Binding rules encoded here: headline read from the devkit `score` column and NEVER `pdm_score`; STOP and CV floors on every NavSim run; an interval only if the estimator admits it, else {status: UNAVAILABLE, reason, n}; the four families reported or refused PER FAMILY with reason + n; one protocol per run from a closed set. Cross-field rules JSON Schema cannot express (every floor is an arm; every arm is paired against every floor) are enforced by taniteval.bench.contract.validate_summary.",
+ "type": "object",
+ "required": [
+  "schema",
+  "run_id",
+  "benchmark",
+  "protocol",
+  "split",
+  "claim_bearing",
+  "evidence_class",
+  "stamps",
+  "headline_metric",
+  "floors",
+  "arms"
+ ],
+ "properties": {
+  "schema": {
+   "const": "taniteval.bench.summary/1"
+  },
+  "run_id": {
+   "type": "string",
+   "minLength": 1
+  },
+  "benchmark": {
+   "enum": [
+    "navsim_v2",
+    "navsim_v1",
+    "nuscenes_ol",
+    "internal_t1"
+   ]
+  },
+  "protocol": {
+   "enum": [
+    "EPDMS_v2_navhard_two_stage",
+    "EPDMS_v2_warmup_two_stage",
+    "EPDMS_v2_private_test_hard_two_stage",
+    "EPDMS_v2_navtest_single_stage",
+    "PDMS_v1_navtest",
+    "nuScenes_OL_L2_stp3",
+    "nuScenes_OL_L2_uniad",
+    "TanitAD_T1_refc_physicalai"
+   ]
+  },
+  "split": {
+   "type": "string",
+   "minLength": 1
+  },
+  "claim_bearing": {
+   "type": "boolean"
+  },
+  "evidence_class": {
+   "enum": [
+    "MEASURED",
+    "INHERITED",
+    "ESTIMATED"
+   ]
+  },
+  "stamps": {
+   "type": "object",
+   "required": [
+    "tier",
+    "loop"
+   ],
+   "properties": {
+    "tier": {
+     "enum": [
+      "T0",
+      "T1",
+      "T1*",
+      "T1-family",
+      "T2",
+      "OPEN-LOOP-L2"
+     ]
+    },
+    "loop": {
+     "type": "object",
+     "minProperties": 1
+    },
+    "closed_loop": {
+     "type": "boolean"
+    }
+   }
+  },
+  "headline_metric": {
+   "type": "object",
+   "required": [
+    "name",
+    "column",
+    "higher_is_better",
+    "statistic"
+   ],
+   "properties": {
+    "name": {
+     "type": "string",
+     "minLength": 1
+    },
+    "column": {
+     "type": "string",
+     "not": {
+      "const": "pdm_score"
+     }
+    },
+    "higher_is_better": {
+     "type": "boolean"
+    },
+    "statistic": {
+     "type": "string",
+     "minLength": 1
+    }
+   }
+  },
+  "floors": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  },
+  "arms": {
+   "type": "object",
+   "minProperties": 1,
+   "additionalProperties": {
+    "$ref": "#/$defs/arm"
+   }
+  },
+  "controls": {
+   "type": "object"
+  },
+  "report": {
+   "type": "object"
+  },
+  "provenance": {
+   "type": "object",
+   "description": "How the numbers were produced. `ckpt` is the SAME triple bench_run.json carries and is REQUIRED the moment any arm has kind 'model': a leaderboard row that cannot say which checkpoint made it is anonymous. On a devkit-floor run (--ckpt none) its fields are null and the page says 'devkit floors only'. Enforced in contract.validate_summary, which write_summary raises on -- a refusal, not a convention.",
+   "properties": {
+    "ckpt": {
+     "type": [
+      "object",
+      "null"
+     ],
+     "properties": {
+      "path": {
+       "type": [
+        "string",
+        "null"
+       ]
+      },
+      "sha256": {
+       "type": [
+        "string",
+        "null"
+       ]
+      },
+      "registry_key": {
+       "type": [
+        "string",
+        "null"
+       ]
+      },
+      "registry_key_display": {
+       "type": [
+        "string",
+        "null"
+       ],
+       "minLength": 1,
+       "description": "What a leaderboard cell SHOWS for 'which checkpoint'. NEVER blank (orchestrator ruling 2026-09-20): the registry key when there is one, else 'sha256:<12 hex>' so a reader can still identify the checkpoint at a glance. A blank cell reads as 'no checkpoint' when the truth is 'identified, not cross-referenced'. Computed ONCE by contract.ckpt_display and written into the artifact -- renderers must USE it, not re-derive it, or two producers can format the same row differently."
+      }
+     }
+    },
+    "devkit": {
+     "type": [
+      "object",
+      "null"
+     ]
+    }
+   }
+  }
+ },
+ "allOf": [
+  {
+   "if": {
+    "properties": {
+     "benchmark": {
+      "enum": [
+       "navsim_v2",
+       "navsim_v1"
+      ]
+     }
+    },
+    "required": [
+     "benchmark"
+    ]
+   },
+   "then": {
+    "properties": {
+     "headline_metric": {
+      "properties": {
+       "column": {
+        "const": "score"
+       }
+      }
+     },
+     "floors": {
+      "allOf": [
+       {
+        "contains": {
+         "const": "STOP"
+        }
+       },
+       {
+        "contains": {
+         "const": "CV"
+        }
+       }
+      ]
+     },
+     "arms": {
+      "additionalProperties": {
+       "required": [
+        "per_stage",
+        "per_log",
+        "submetrics"
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "if": {
+    "properties": {
+     "benchmark": {
+      "const": "nuscenes_ol"
+     }
+    },
+    "required": [
+     "benchmark"
+    ]
+   },
+   "then": {
+    "properties": {
+     "claim_bearing": {
+      "const": false
+     }
+    }
+   }
+  }
+ ],
+ "$defs": {
+  "unavailable": {
+   "type": "object",
+   "required": [
+    "status",
+    "reason",
+    "n"
+   ],
+   "properties": {
+    "status": {
+     "const": "UNAVAILABLE"
+    },
+    "reason": {
+     "type": "string",
+     "minLength": 1
+    },
+    "n": {
+     "type": "integer",
+     "minimum": 0
+    }
+   }
+  },
+  "headline_value": {
+   "type": "object",
+   "required": [
+    "value",
+    "column",
+    "statistic",
+    "n"
+   ],
+   "properties": {
+    "value": {
+     "type": "number"
+    },
+    "column": {
+     "type": "string",
+     "not": {
+      "const": "pdm_score"
+     }
+    },
+    "statistic": {
+     "type": "string",
+     "minLength": 1
+    },
+    "n": {
+     "type": "integer",
+     "minimum": 1
+    },
+    "x100": {
+     "type": "number"
+    }
+   }
+  },
+  "interval_value": {
+   "type": "object",
+   "required": [
+    "status",
+    "estimator",
+    "cluster_unit",
+    "lo",
+    "hi",
+    "n_clusters"
+   ],
+   "properties": {
+    "status": {
+     "const": "OK"
+    },
+    "estimator": {
+     "type": "string",
+     "minLength": 1,
+     "not": {
+      "const": "overlapping_holdout_se"
+     }
+    },
+    "cluster_unit": {
+     "type": "string",
+     "minLength": 1
+    },
+    "lo": {
+     "type": "number"
+    },
+    "hi": {
+     "type": "number"
+    },
+    "n_clusters": {
+     "type": "integer",
+     "minimum": 2
+    }
+   }
+  },
+  "family": {
+   "type": "object",
+   "required": [
+    "status",
+    "n"
+   ],
+   "properties": {
+    "status": {
+     "enum": [
+      "OK",
+      "PARTIAL",
+      "UNAVAILABLE"
+     ]
+    },
+    "n": {
+     "type": "integer",
+     "minimum": 0
+    },
+    "reason": {
+     "type": "string"
+    }
+   },
+   "if": {
+    "properties": {
+     "status": {
+      "enum": [
+       "UNAVAILABLE",
+       "PARTIAL"
+      ]
+     }
+    },
+    "required": [
+     "status"
+    ]
+   },
+   "then": {
+    "required": [
+     "reason"
+    ],
+    "properties": {
+     "reason": {
+      "minLength": 1
+     }
+    }
+   }
+  },
+  "paired": {
+   "type": "object",
+   "required": [
+    "status"
+   ],
+   "properties": {
+    "status": {
+     "enum": [
+      "OK",
+      "SELF",
+      "UNAVAILABLE"
+     ]
+    }
+   },
+   "allOf": [
+    {
+     "if": {
+      "properties": {
+       "status": {
+        "const": "OK"
+       }
+      },
+      "required": [
+       "status"
+      ]
+     },
+     "then": {
+      "required": [
+       "headline_delta",
+       "n_common"
+      ],
+      "properties": {
+       "headline_delta": {
+        "type": [
+         "number",
+         "null"
+        ]
+       },
+       "n_common": {
+        "type": "integer",
+        "minimum": 0
+       }
+      }
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "status": {
+        "const": "UNAVAILABLE"
+       }
+      },
+      "required": [
+       "status"
+      ]
+     },
+     "then": {
+      "required": [
+       "reason",
+       "n"
+      ]
+     }
+    }
+   ]
+  },
+  "arm": {
+   "type": "object",
+   "required": [
+    "kind",
+    "status",
+    "declared_inputs",
+    "headline",
+    "paired",
+    "interval",
+    "families",
+    "files"
+   ],
+   "properties": {
+    "kind": {
+     "enum": [
+      "model",
+      "floor",
+      "reference"
+     ]
+    },
+    "status": {
+     "enum": [
+      "OK",
+      "FAILED",
+      "REFUSED"
+     ]
+    },
+    "declared_inputs": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "headline": {
+     "oneOf": [
+      {
+       "$ref": "#/$defs/headline_value"
+      },
+      {
+       "$ref": "#/$defs/unavailable"
+      }
+     ]
+    },
+    "per_stage": {
+     "type": "object"
+    },
+    "submetrics": {
+     "type": "object"
+    },
+    "per_log": {
+     "type": "object"
+    },
+    "paired": {
+     "type": "object",
+     "additionalProperties": {
+      "$ref": "#/$defs/paired"
+     }
+    },
+    "interval": {
+     "oneOf": [
+      {
+       "$ref": "#/$defs/interval_value"
+      },
+      {
+       "$ref": "#/$defs/unavailable"
+      }
+     ]
+    },
+    "families": {
+     "type": "object",
+     "required": [
+      "longitudinal",
+      "lateral",
+      "tactical",
+      "strategic"
+     ],
+     "properties": {
+      "longitudinal": {
+       "$ref": "#/$defs/family"
+      },
+      "lateral": {
+       "$ref": "#/$defs/family"
+      },
+      "tactical": {
+       "$ref": "#/$defs/family"
+      },
+      "strategic": {
+       "$ref": "#/$defs/family"
+      }
+     }
+    },
+    "files": {
+     "type": "object"
+    },
+    "modality": {
+     "type": "object"
+    },
+    "statistics": {
+     "type": "object"
+    },
+    "controls": {
+     "type": "object"
+    }
+   }
+  }
+ }
+}

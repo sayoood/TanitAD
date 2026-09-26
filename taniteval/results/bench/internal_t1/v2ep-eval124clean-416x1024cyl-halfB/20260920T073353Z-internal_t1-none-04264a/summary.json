@@ -1,0 +1,709 @@
+{
+ "schema": "taniteval.bench.summary/1",
+ "run_id": "20260920T073353Z-internal_t1-none-04264a",
+ "benchmark": "internal_t1",
+ "protocol": "TanitAD_T1_refc_physicalai",
+ "split": "v2ep-eval124clean-416x1024cyl-halfB",
+ "claim_bearing": true,
+ "evidence_class": "MEASURED",
+ "stamps": {
+  "tier": "T1*",
+  "loop": {
+   "os": "one-shot plan, NO action input (T1* \u2014 the ruling is OPEN)",
+   "ha/ha0": "T1 (integrated controls)"
+  },
+  "closed_loop": false,
+  "per_arm_tier": {
+   "os": "T1",
+   "ha": "T1",
+   "ha0": "T1",
+   "ha0_ext": "T1"
+  }
+ },
+ "headline_metric": {
+  "name": "ADE",
+  "column": "ade_dense_m",
+  "higher_is_better": false,
+  "statistic": "mean ADE over the dense grid; the admissible cross-model claim is the MARGIN over ha0"
+ },
+ "floors": [
+  "ha0"
+ ],
+ "arms": {
+  "os": {
+   "kind": "model",
+   "status": "OK",
+   "declared_inputs": [
+    "frames (window)",
+    "nav_cmd (v7.2 token, per --nav-source)",
+    "v0[t0] (measured)"
+   ],
+   "tier": "T1",
+   "headline": {
+    "value": 2.9098,
+    "column": "ade_dense_m",
+    "n": 9,
+    "statistic": "mean ADE over the dense grid (full_set point estimate), refcv3_arm.py"
+   },
+   "paired": {
+    "ha0": {
+     "status": "OK",
+     "headline_delta": 2.3682,
+     "n_common": 9,
+     "direction": "os - ha0 (ADE: NEGATIVE is better)",
+     "interval": {
+      "lo": 1.8778,
+      "hi": 2.7605,
+      "separated": true,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_episodes": 2,
+      "admissible": false
+     }
+    }
+   },
+   "interval": {
+    "status": "UNAVAILABLE",
+    "n": 2,
+    "reason": "2 episodes < the RG-14 floor of 8: the tool's interval [2.0877, 3.5675] is not admissible"
+   },
+   "families": {
+    "longitudinal": {
+     "status": "PARTIAL",
+     "n": 9,
+     "scope": "refcv3_arm.py on 9 windows / 2 episodes",
+     "tier": "T1",
+     "metrics": {
+      "speed_mae_mps": 2.0668,
+      "along_mae_m": 2.1545,
+      "speed_bias_mps": -0.0512,
+      "along_bias_m": -0.7012,
+      "accel_mae_mps2": 3.8751,
+      "progress_ratio_mean": 0.9002
+     },
+     "reason": "distance-keeping UNAVAILABLE: no lead agent inside the |lat| < 2.0 m corridor ahead of the predicted path in any of the 9 windows \u2014 free-flow, not a failure"
+    },
+    "lateral": {
+     "status": "OK",
+     "n": 9,
+     "scope": "refcv3_arm.py on 9 windows / 2 episodes",
+     "tier": "T1",
+     "metrics": {
+      "cross_mae_m": 1.5786,
+      "heading_mae_deg": 21.5812,
+      "curvature_mae_1pm": 0.12421,
+      "yaw_rate_mae_degps": 51.9184,
+      "cross_bias_m": 0.3809
+     }
+    },
+    "tactical": {
+     "status": "OK",
+     "n": 9,
+     "scope": "refcv3_arm.py on 9 windows / 2 episodes",
+     "tier": "T1",
+     "metrics": {
+      "lateral_decision.accuracy": 0.0,
+      "lateral_decision.kappa": 0.0,
+      "longitudinal_decision.accuracy": 0.3333,
+      "longitudinal_decision.kappa": 0.1,
+      "goal_setting.goal_point_error_m": 4.7931
+     },
+     "_is_not": "trajectory-derived EXECUTED manoeuvres on both sides \u2014 NOT selected-vs-executed"
+    },
+    "strategic": {
+     "status": "UNAVAILABLE",
+     "reason": "strategic decisions not present in the scored pass (missing ['route_pred', 'route_gt']). A world-model FIDELITY pass does not traverse the hierarchy \u2014 run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM.",
+     "n": 0
+    }
+   },
+   "statistics": {
+    "ade_dense_m": {
+     "mean": 2.9098,
+     "lo": 2.0877,
+     "hi": 3.5675,
+     "ci95": 0.7399,
+     "se": 0.5595,
+     "reducer": "mean",
+     "n_windows": 9,
+     "n_episodes": 2,
+     "n_boot": 50,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "fde_last_m": {
+     "mean": 4.7931,
+     "lo": 3.6016,
+     "hi": 5.7463,
+     "ci95": 1.0723,
+     "se": 0.8109,
+     "reducer": "mean",
+     "n_windows": 9,
+     "n_episodes": 2,
+     "n_boot": 50,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "LON_speed_mae_mps": {
+     "mean": 2.0668,
+     "lo": 1.7249,
+     "hi": 2.3403,
+     "ci95": 0.3077,
+     "se": 0.2327,
+     "reducer": "mean",
+     "n_windows": 9,
+     "n_episodes": 2,
+     "n_boot": 50,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "LON_along_mae_m": {
+     "mean": 2.1545,
+     "lo": 0.9634,
+     "hi": 3.1074,
+     "ci95": 1.072,
+     "se": 0.8106,
+     "reducer": "mean",
+     "n_windows": 9,
+     "n_episodes": 2,
+     "n_boot": 50,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "LAT_cross_mae_m": {
+     "mean": 1.5786,
+     "lo": 1.4487,
+     "hi": 1.741,
+     "ci95": 0.1461,
+     "se": 0.1105,
+     "reducer": "mean",
+     "n_windows": 9,
+     "n_episodes": 2,
+     "n_boot": 50,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "LAT_heading_mae_deg": {
+     "mean": 21.5812,
+     "lo": 15.7404,
+     "hi": 26.2538,
+     "ci95": 5.2567,
+     "se": 3.975,
+     "reducer": "mean",
+     "n_windows": 9,
+     "n_episodes": 2,
+     "n_boot": 50,
+     "estimator": "episode_cluster_bootstrap",
+     "n_windows_dropped_no_valid_step": 0
+    }
+   },
+   "files": {
+    "record": "raw/refcv3_arm.json"
+   }
+  },
+  "ha": {
+   "kind": "reference",
+   "status": "OK",
+   "declared_inputs": [
+    "frames <= t0 (the closing action)",
+    "v0[t0]"
+   ],
+   "tier": "T1",
+   "headline": {
+    "value": 0.1946,
+    "column": "ade_dense_m",
+    "n": 9,
+    "statistic": "mean ADE over the dense grid (full_set point estimate), refcv3_arm.py"
+   },
+   "paired": {
+    "ha0": {
+     "status": "OK",
+     "headline_delta": -0.3471,
+     "n_common": 9,
+     "direction": "ha - ha0 (ADE: NEGATIVE is better)",
+     "interval": {
+      "lo": -0.612,
+      "hi": -0.0159,
+      "separated": true,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_episodes": 2,
+      "admissible": false
+     }
+    }
+   },
+   "interval": {
+    "status": "UNAVAILABLE",
+    "n": 2,
+    "reason": "2 episodes < the RG-14 floor of 8: the tool's interval [0.194, 0.195] is not admissible"
+   },
+   "families": {
+    "longitudinal": {
+     "status": "PARTIAL",
+     "n": 9,
+     "scope": "refcv3_arm.py on 9 windows / 2 episodes",
+     "tier": "T1",
+     "metrics": {
+      "speed_mae_mps": 0.1477,
+      "along_mae_m": 0.1455,
+      "speed_bias_mps": -0.0725,
+      "along_bias_m": -0.1006,
+      "accel_mae_mps2": 0.1667,
+      "progress_ratio_mean": 0.993
+     },
+     "reason": "distance-keeping UNAVAILABLE: no lead agent inside the |lat| < 2.0 m corridor ahead of the predicted path in any of the 9 windows \u2014 free-flow, not a failure"
+    },
+    "lateral": {
+     "status": "OK",
+     "n": 9,
+     "scope": "refcv3_arm.py on 9 windows / 2 episodes",
+     "tier": "T1",
+     "metrics": {
+      "cross_mae_m": 0.11,
+      "heading_mae_deg": 1.0787,
+      "curvature_mae_1pm": 0.00444,
+      "yaw_rate_mae_degps": 1.6854,
+      "cross_bias_m": -0.0244
+     }
+    },
+    "tactical": {
+     "status": "OK",
+     "n": 9,
+     "scope": "refcv3_arm.py on 9 windows / 2 episodes",
+     "tier": "T1",
+     "metrics": {
+      "lateral_decision.accuracy": 1.0,
+      "lateral_decision.kappa": 1.0,
+      "longitudinal_decision.accuracy": 1.0,
+      "longitudinal_decision.kappa": 1.0,
+      "goal_setting.goal_point_error_m": 0.4369
+     },
+     "_is_not": "trajectory-derived EXECUTED manoeuvres on both sides \u2014 NOT selected-vs-executed"
+    },
+    "strategic": {
+     "status": "UNAVAILABLE",
+     "reason": "strategic decisions not present in the scored pass (missing ['route_pred', 'route_gt']). A world-model FIDELITY pass does not traverse the hierarchy \u2014 run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM.",
+     "n": 0
+    }
+   },
+   "statistics": {
+    "ade_dense_m": {
+     "mean": 0.1946,
+     "lo": 0.194,
+     "hi": 0.195,
+     "ci95": 0.0005,
+     "se": 0.0004,
+     "reducer": "mean",
+     "n_windows": 9,
+     "n_episodes": 2,
+     "n_boot": 50,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "fde_last_m": {
+     "mean": 0.4369,
+     "lo": 0.3582,
+     "hi": 0.4999,
+     "ci95": 0.0708,
+     "se": 0.0536,
+     "reducer": "mean",
+     "n_windows": 9,
+     "n_episodes": 2,
+     "n_boot": 50,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "LON_speed_mae_mps": {
+     "mean": 0.1477,
+     "lo": 0.1447,
+     "hi": 0.1502,
+     "ci95": 0.0027,
+     "se": 0.0021,
+     "reducer": "mean",
+     "n_windows": 9,
+     "n_episodes": 2,
+     "n_boot": 50,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "LON_along_mae_m": {
+     "mean": 0.1455,
+     "lo": 0.129,
+     "hi": 0.166,
+     "ci95": 0.0185,
+     "se": 0.014,
+     "reducer": "mean",
+     "n_windows": 9,
+     "n_episodes": 2,
+     "n_boot": 50,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "LAT_cross_mae_m": {
+     "mean": 0.11,
+     "lo": 0.0816,
+     "hi": 0.1328,
+     "ci95": 0.0256,
+     "se": 0.0194,
+     "reducer": "mean",
+     "n_windows": 9,
+     "n_episodes": 2,
+     "n_boot": 50,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "LAT_heading_mae_deg": {
+     "mean": 1.0787,
+     "lo": 0.297,
+     "hi": 1.7041,
+     "ci95": 0.7035,
+     "se": 0.532,
+     "reducer": "mean",
+     "n_windows": 9,
+     "n_episodes": 2,
+     "n_boot": 50,
+     "estimator": "episode_cluster_bootstrap",
+     "n_windows_dropped_no_valid_step": 0
+    }
+   },
+   "files": {
+    "record": "raw/refcv3_arm.json"
+   }
+  },
+  "ha0": {
+   "kind": "floor",
+   "status": "OK",
+   "declared_inputs": [
+    "v0[t0] (measured)"
+   ],
+   "tier": "T1",
+   "headline": {
+    "value": 0.5417,
+    "column": "ade_dense_m",
+    "n": 9,
+    "statistic": "mean ADE over the dense grid (full_set point estimate), refcv3_arm.py"
+   },
+   "paired": {
+    "ha0": {
+     "status": "SELF"
+    }
+   },
+   "interval": {
+    "status": "UNAVAILABLE",
+    "n": 2,
+    "reason": "2 episodes < the RG-14 floor of 8: the tool's interval [0.2099, 0.807] is not admissible"
+   },
+   "families": {
+    "longitudinal": {
+     "status": "PARTIAL",
+     "n": 9,
+     "scope": "refcv3_arm.py on 9 windows / 2 episodes",
+     "tier": "T1",
+     "metrics": {
+      "speed_mae_mps": 0.3918,
+      "along_mae_m": 0.3453,
+      "speed_bias_mps": -0.0417,
+      "along_bias_m": -0.0363,
+      "accel_mae_mps2": 0.4016,
+      "progress_ratio_mean": 0.9909
+     },
+     "reason": "distance-keeping UNAVAILABLE: no lead agent inside the |lat| < 2.0 m corridor ahead of the predicted path in any of the 9 windows \u2014 free-flow, not a failure"
+    },
+    "lateral": {
+     "status": "OK",
+     "n": 9,
+     "scope": "refcv3_arm.py on 9 windows / 2 episodes",
+     "tier": "T1",
+     "metrics": {
+      "cross_mae_m": 0.2922,
+      "heading_mae_deg": 2.3312,
+      "curvature_mae_1pm": 0.005836,
+      "yaw_rate_mae_degps": 2.266,
+      "cross_bias_m": 0.2538
+     }
+    },
+    "tactical": {
+     "status": "OK",
+     "n": 9,
+     "scope": "refcv3_arm.py on 9 windows / 2 episodes",
+     "tier": "T1",
+     "metrics": {
+      "lateral_decision.accuracy": 0.8889,
+      "lateral_decision.kappa": 0.0,
+      "longitudinal_decision.accuracy": 0.7778,
+      "longitudinal_decision.kappa": 0.0,
+      "goal_setting.goal_point_error_m": 1.1349
+     },
+     "_is_not": "trajectory-derived EXECUTED manoeuvres on both sides \u2014 NOT selected-vs-executed"
+    },
+    "strategic": {
+     "status": "UNAVAILABLE",
+     "reason": "strategic decisions not present in the scored pass (missing ['route_pred', 'route_gt']). A world-model FIDELITY pass does not traverse the hierarchy \u2014 run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM.",
+     "n": 0
+    }
+   },
+   "statistics": {
+    "ade_dense_m": {
+     "mean": 0.5417,
+     "lo": 0.2099,
+     "hi": 0.807,
+     "ci95": 0.2985,
+     "se": 0.2258,
+     "reducer": "mean",
+     "n_windows": 9,
+     "n_episodes": 2,
+     "n_boot": 50,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "fde_last_m": {
+     "mean": 1.1349,
+     "lo": 0.4295,
+     "hi": 1.6993,
+     "ci95": 0.6349,
+     "se": 0.4801,
+     "reducer": "mean",
+     "n_windows": 9,
+     "n_episodes": 2,
+     "n_boot": 50,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "LON_speed_mae_mps": {
+     "mean": 0.3918,
+     "lo": 0.0986,
+     "hi": 0.6264,
+     "ci95": 0.2639,
+     "se": 0.1995,
+     "reducer": "mean",
+     "n_windows": 9,
+     "n_episodes": 2,
+     "n_boot": 50,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "LON_along_mae_m": {
+     "mean": 0.3453,
+     "lo": 0.0876,
+     "hi": 0.5514,
+     "ci95": 0.2319,
+     "se": 0.1753,
+     "reducer": "mean",
+     "n_windows": 9,
+     "n_episodes": 2,
+     "n_boot": 50,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "LAT_cross_mae_m": {
+     "mean": 0.2922,
+     "lo": 0.1733,
+     "hi": 0.3874,
+     "ci95": 0.1071,
+     "se": 0.081,
+     "reducer": "mean",
+     "n_windows": 9,
+     "n_episodes": 2,
+     "n_boot": 50,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "LAT_heading_mae_deg": {
+     "mean": 2.3312,
+     "lo": 0.5869,
+     "hi": 3.7267,
+     "ci95": 1.5699,
+     "se": 1.1871,
+     "reducer": "mean",
+     "n_windows": 9,
+     "n_episodes": 2,
+     "n_boot": 50,
+     "estimator": "episode_cluster_bootstrap",
+     "n_windows_dropped_no_valid_step": 0
+    }
+   },
+   "files": {
+    "record": "raw/refcv3_arm.json"
+   }
+  },
+  "ha0_ext": {
+   "kind": "floor",
+   "status": "OK",
+   "declared_inputs": [
+    "v0[t0]",
+    "a0[t0]",
+    "kappa0[t0]"
+   ],
+   "tier": "T1",
+   "headline": {
+    "value": 0.1884,
+    "column": "ade_dense_m",
+    "n": 9,
+    "statistic": "mean ADE over the dense grid (full_set point estimate), refcv3_arm.py"
+   },
+   "paired": {
+    "ha0": {
+     "status": "OK",
+     "headline_delta": -0.35329999999999995,
+     "n_common": 9,
+     "direction": "ha0_ext - ha0 (difference of means; no paired CI in the record)"
+    }
+   },
+   "interval": {
+    "status": "UNAVAILABLE",
+    "n": 2,
+    "reason": "2 episodes < the RG-14 floor of 8: the tool's interval [0.1858, 0.1904] is not admissible"
+   },
+   "families": {
+    "longitudinal": {
+     "status": "PARTIAL",
+     "n": 9,
+     "scope": "refcv3_arm.py on 9 windows / 2 episodes",
+     "tier": "T1",
+     "metrics": {
+      "speed_mae_mps": 0.1477,
+      "along_mae_m": 0.1441,
+      "speed_bias_mps": -0.0725,
+      "along_bias_m": -0.0992,
+      "accel_mae_mps2": 0.1667,
+      "progress_ratio_mean": 0.9932
+     },
+     "reason": "distance-keeping UNAVAILABLE: no lead agent inside the |lat| < 2.0 m corridor ahead of the predicted path in any of the 9 windows \u2014 free-flow, not a failure"
+    },
+    "lateral": {
+     "status": "OK",
+     "n": 9,
+     "scope": "refcv3_arm.py on 9 windows / 2 episodes",
+     "tier": "T1",
+     "metrics": {
+      "cross_mae_m": 0.1039,
+      "heading_mae_deg": 1.0374,
+      "curvature_mae_1pm": 0.004286,
+      "yaw_rate_mae_degps": 1.6283,
+      "cross_bias_m": 0.0004
+     }
+    },
+    "tactical": {
+     "status": "OK",
+     "n": 9,
+     "scope": "refcv3_arm.py on 9 windows / 2 episodes",
+     "tier": "T1",
+     "metrics": {
+      "lateral_decision.accuracy": 1.0,
+      "lateral_decision.kappa": 1.0,
+      "longitudinal_decision.accuracy": 1.0,
+      "longitudinal_decision.kappa": 1.0,
+      "goal_setting.goal_point_error_m": 0.4203
+     },
+     "_is_not": "trajectory-derived EXECUTED manoeuvres on both sides \u2014 NOT selected-vs-executed"
+    },
+    "strategic": {
+     "status": "UNAVAILABLE",
+     "reason": "strategic decisions not present in the scored pass (missing ['route_pred', 'route_gt']). A world-model FIDELITY pass does not traverse the hierarchy \u2014 run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM.",
+     "n": 0
+    }
+   },
+   "statistics": {
+    "ade_dense_m": {
+     "mean": 0.1884,
+     "lo": 0.1858,
+     "hi": 0.1904,
+     "ci95": 0.0023,
+     "se": 0.0017,
+     "reducer": "mean",
+     "n_windows": 9,
+     "n_episodes": 2,
+     "n_boot": 50,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "fde_last_m": {
+     "mean": 0.4203,
+     "lo": 0.3407,
+     "hi": 0.4839,
+     "ci95": 0.0716,
+     "se": 0.0542,
+     "reducer": "mean",
+     "n_windows": 9,
+     "n_episodes": 2,
+     "n_boot": 50,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "LON_speed_mae_mps": {
+     "mean": 0.1477,
+     "lo": 0.1447,
+     "hi": 0.1501,
+     "ci95": 0.0027,
+     "se": 0.002,
+     "reducer": "mean",
+     "n_windows": 9,
+     "n_episodes": 2,
+     "n_boot": 50,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "LON_along_mae_m": {
+     "mean": 0.1441,
+     "lo": 0.1269,
+     "hi": 0.1656,
+     "ci95": 0.0193,
+     "se": 0.0146,
+     "reducer": "mean",
+     "n_windows": 9,
+     "n_episodes": 2,
+     "n_boot": 50,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "LAT_cross_mae_m": {
+     "mean": 0.1039,
+     "lo": 0.0712,
+     "hi": 0.13,
+     "ci95": 0.0294,
+     "se": 0.0222,
+     "reducer": "mean",
+     "n_windows": 9,
+     "n_episodes": 2,
+     "n_boot": 50,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "LAT_heading_mae_deg": {
+     "mean": 1.0374,
+     "lo": 0.2656,
+     "hi": 1.6549,
+     "ci95": 0.6947,
+     "se": 0.5253,
+     "reducer": "mean",
+     "n_windows": 9,
+     "n_episodes": 2,
+     "n_boot": 50,
+     "estimator": "episode_cluster_bootstrap",
+     "n_windows_dropped_no_valid_step": 0
+    }
+   },
+   "files": {
+    "record": "raw/refcv3_arm.json"
+   }
+  }
+ },
+ "provenance": {
+  "tool": "taniteval/tools/refcv3_arm.py",
+  "tool_provenance": {
+   "verdict": "REAL_CHECKPOINT_ON_SMOKE_CORPUS",
+   "checkpoint_scale": "TRAINED",
+   "corpus_scale": "SMOKE",
+   "bank_scale": "REAL",
+   "unverified_on_a_real_checkpoint": false,
+   "discriminators": {
+    "model.step": 2000,
+    "model.n_anchors": 128,
+    "grid.n_episodes": 2,
+    "grid.n_windows": 9
+   },
+   "thresholds": {
+    "trained_step_at_or_above": 1000,
+    "full_corpus_episodes_at_or_above": 10,
+    "full_corpus_windows_at_or_above": 500,
+    "real_bank_anchors_above": 64
+   },
+   "not_a_discriminator": {
+    "model.state_dict_load": "CARRIED for the record, NEVER read here: a random-init model saved and reloaded also reports empty missing/unexpected keys, so a clean strict load says nothing about trainedness",
+    "the tool's own validation history": "`_unverified` used to be emitted unconditionally and therefore described the TOOL, not the RUN \u2014 that is the defect this block replaces (D-EVALTOOL-STAMP-BLIND)"
+   },
+   "_reading": "SYNTHETIC_FIXTURE = a smoke/random-init checkpoint; nothing here is a result. REAL_CHECKPOINT_ON_SMOKE_CORPUS = a real arm exercised on a slice \u2014 the TOOL is verified, the NUMBERS are not an eval. REAL_CHECKPOINT_ON_REAL_CORPUS = a quotable arm, subject to its tier stamp and estimator as usual. `bank_scale` is reported BESIDE the verdict rather than folded into it: a real step count on a smoke-sized bank is a coherent thing to want (a long smoke run) and must stay visible instead of being averaged into one label.",
+   "_not_what_this_proves": "the stamp reads the run's SELF-REPORTED fields. It ends the unconditional boilerplate \u2014 it is NOT a forgery detector, and a manifest whose `model.step` is wrong is outside what any stamp can see."
+  },
+  "n_windows": 9,
+  "n_episodes": 2,
+  "mode": "analyze-only",
+  "ckpt": {
+   "path": "C:/Users/Admin/tanitad-caches/a3-heldout-20260919/run/ckpt.pt",
+   "sha256": "54320ec2d72a0b6fd9f2413bfbfd8c999eebd9ed01a7bb7c0e631739313d07ef",
+   "registry_key": null,
+   "source": "refcv3.manifest.model.ckpt (the checkpoint the tool loaded)",
+   "config_json": "C:/Users/Admin/tanitad-caches/a3-heldout-20260919/run/config.json",
+   "registry_key_status": "NOT NAMED by the operator (--registry-key) \u2014 a leaderboard row needs it; the checkpoint is still uniquely identified by its sha256",
+   "_backfilled": "2026-09-20: this run published a MODEL arm ('os') with a null checkpoint -- an anonymous row -- while the path sat in raw/refcv3_arm.json at refcv3.manifest.model.ckpt. The sha256 was computed from that file now; it is the same file the run loaded (the path is recorded in the run's own artifact). Found by the new structural check, not by inspection.",
+   "registry_key_display": "sha256:54320ec2d72a"
+  }
+ }
+}

@@ -1,0 +1,539 @@
+{
+ "schema": "tanitad.leaderboard_sources/1",
+ "_rule": "POINTERS ONLY for values. No MEASURED value may be typed into this file: every number the generator prints is read at build time from a registry-anchored raw eval JSON (JSON pointer), a W1 bench summary.json, or products/P7-TanitEval/benchmarks/published_results.json. Identities inside labels (checkpoint steps, registry section numbers, work-item ids) are allowed; counts, scores and deltas are not.",
+ "target_md": "Benchmarks & Eval/LEADERBOARD.md",
+ "target_html": "Benchmarks & Eval/leaderboard.html",
+ "markers": {
+  "begin": "<!-- BENCH:BEGIN -->",
+  "end": "<!-- BENCH:END -->"
+ },
+ "insert_before_line_prefix": "*Rebuilt **2026-08-23**",
+ "published_results": "products/P7-TanitEval/benchmarks/published_results.json",
+ "registry": "Project Steering/MODEL_REGISTRY.md",
+ "bench_glob": "taniteval/results/bench/*/*/*/summary.json",
+ "currency_audit": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-leaderboard-currency/raw/currency_audit.json",
+ "protocol_order": [
+  "EPDMS_v2_navhard_two_stage",
+  "EPDMS_v2_warmup_two_stage",
+  "PDMS_v1_navtest",
+  "EPDMS_v2_navtest_single_stage",
+  "nuScenes_OL_L2_stp3",
+  "nuScenes_OL_L2_uniad",
+  "Bench2Drive_closed_loop"
+ ],
+ "legacy_bench": [
+  {
+   "id": "e2_refcv4b_warmup",
+   "_why_legacy": "MEASURED 2026-09-20: W1's run-dir contract HAS landed and three real warmup runs exist — but they carry ONLY the two devkit floors (STOP, CV). This banked run is the ONLY source for refcv4b's eight seam arms, whose paired columns are computed WITHIN it. ⛔ Deleting this entry would not 'let the generator read the real runs'; it would delete the refcv4b result and leave two floors. The loader supersedes a legacy RUN only when a W1 run reports a value for EVERY one of its arms; until a W1 run scores the refcv4b arms, the overlap (STOP, CV) is reported as a cross-rig reproduction instead.",
+   "adapter": "e2_scores_summary",
+   "protocol": "EPDMS_v2_warmup_two_stage",
+   "path": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-refcv4b-bridge/raw/scores_summary.json",
+   "manifest_pattern": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-refcv4b-bridge/raw/seam_{arm}.manifest.json",
+   "result_doc": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-refcv4b-bridge/RESULT.md",
+   "harness": "autonomousvision/navsim@0a380a9 (post-#151) + 3 local patches + E1 Windows loader patch",
+   "ckpt": "refcv4b-b1-v72-40k · ckpt_40284_FINAL.pt md5 99b573e8277d94a5e3bfbf630cb4d751 (registry §4.6)",
+   "registry_anchor": "### 4.6 REF-C **v4b**",
+   "tier_loop": "T1-family · stage 1 OPEN · stage 2 UNRULED · background traffic IDM-reactive",
+   "floor_arms": {
+    "STOP": "STOP_zero",
+    "CV": "CV_official"
+   },
+   "arms": [
+    {
+     "key": "STOP_zero",
+     "label": "STOP — the all-zero plan",
+     "kind": "floor",
+     "declared": "none (does not move)"
+    },
+    {
+     "key": "CV_official",
+     "label": "CV — the devkit constant-velocity agent",
+     "kind": "floor",
+     "declared": "devkit ego status"
+    },
+    {
+     "key": "ECHO_ha0_ext",
+     "label": "ECHO — constant measured a0 and κ0",
+     "kind": "floor",
+     "declared": "t0 ego state only"
+    },
+    {
+     "key": "K4_seam_cv",
+     "label": "K4 — CV routed through our seam (transparency control)",
+     "kind": "control",
+     "declared": "devkit ego status"
+    },
+    {
+     "key": "A1_ego_cmd",
+     "label": "refcv4b · A1 frames + t0 ego + command",
+     "kind": "model"
+    },
+    {
+     "key": "A3_ego_nocmd",
+     "label": "refcv4b · A3 frames + t0 ego, no command",
+     "kind": "model"
+    },
+    {
+     "key": "A1NT_ego_cmd_nearest",
+     "label": "refcv4b · A1NT (nearest-timestamp frames)",
+     "kind": "model"
+    },
+    {
+     "key": "A2_vision_pure",
+     "label": "refcv4b · A2 vision-pure (the doctrine's claim-bearing arm)",
+     "kind": "model"
+    },
+    {
+     "key": "A2NT_vision_pure_nearest",
+     "label": "refcv4b · A2NT vision-pure, nearest-timestamp",
+     "kind": "model"
+    },
+    {
+     "key": "A4_blind_ego_cmd",
+     "label": "refcv4b · A4 frames-blind (deliberate regression)",
+     "kind": "ablation"
+    }
+   ],
+   "ckpt_registry_key": "refcv4b-b1-v72-40k",
+   "ckpt_path": "D:/Projects/TanitAD-artifacts/refcv4b_final/ckpt_40284_FINAL.pt",
+   "ckpt_md5": "99b573e8277d94a5e3bfbf630cb4d751",
+   "devkit_repo": "autonomousvision/navsim",
+   "devkit_sha": "0a380a9",
+   "devkit_patches": [
+    {
+     "name": "3 local patches + E1 Windows loader patch (count and names as recorded by E2; not re-derived here)"
+    }
+   ],
+   "ckpt_sha256": "090ee8d2584acc81e3738ab28f8f5bf2ed6bfb0d0cc6fba887de2a0cbddcbaa4",
+   "ckpt_sha256_provenance": "MEASURED 2026-09-20 by W4 over the file at `ckpt_path` (1,285,301,425 B). ⭐ The banked E2 record identifies its checkpoint by md5 only; that md5 was RE-COMPUTED over this same file and matches 99b573e8277d94a5e3bfbf630cb4d751 exactly, which is what licenses attaching this sha256 to E2's run. ⛔ Not copied from any report."
+  },
+  {
+   "id": "e1_hf_reproduction",
+   "adapter": "json_pointer",
+   "protocol": "EPDMS_v2_warmup_two_stage",
+   "path": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-warmup-reference-epdms/raw/controls.json",
+   "pointers": {
+    "local_x100": "/C8_external/local_combined_x100",
+    "reference": "/C8_external/reference",
+    "delta": "/C8_external/delta",
+    "reproduced": "/C8_external/reproduced"
+   },
+   "label": "E1 harness validation — our official two-stage runner vs the HF warmup leaderboard's CV row"
+  },
+  {
+   "id": "e1_navhard_cv_attempt",
+   "adapter": "json_pointer",
+   "protocol": "EPDMS_v2_navhard_two_stage",
+   "render": "navhard_attempt",
+   "path": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-warmup-reference-epdms/raw/navhard/N1/N1_manifest.json",
+   "pointers": {
+    "status": "/status",
+    "wall_s": "/resources/wall_s",
+    "started": "/started_local",
+    "ended": "/ended_local",
+    "devkit_sha": "/navsim_devkit_sha",
+    "label": "/label"
+   },
+   "label": "TanitAD — CV (devkit agent) on navhard_two_stage, first attempt of the official runner",
+   "inherited_note": "INHERITED (orchestrator, 2026-09-20): the per-scenario scoring completed for all scenarios before the aggregation step died; nothing in this artifact records that count, so it is not printed as a number."
+  },
+  {
+   "id": "e1_navhard_human_s1",
+   "adapter": "json_pointer",
+   "protocol": "EPDMS_v2_navhard_two_stage",
+   "render": "reference_arm",
+   "path": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-warmup-reference-epdms/raw/navhard/human_stage_one_navhard.json",
+   "pointers": {
+    "value_x100": "/EPDMS",
+    "n": "/n_valid",
+    "arm": "/arm",
+    "EP": "/EP",
+    "EC": "/EC",
+    "HC": "/HC"
+   },
+   "scale_x100": [
+    "value_x100",
+    "EP",
+    "EC",
+    "HC"
+   ],
+   "label": "Human (the logged expert) — navhard STAGE 1 ONLY",
+   "scope_note": "⛔ STAGE 1 ONLY — NOT comparable with any two-stage EPDMS column. The TWO-STAGE human is UNDEFINED on this benchmark: every synthetic stage-2 scene has num_future_frames = 0, so the official runner exits 1 and writes no CSV. ⇒ reported as undefined, ⛔ never imputed."
+  },
+  {
+   "id": "e1_navhard_vs_published",
+   "adapter": "json_pointer",
+   "protocol": "EPDMS_v2_navhard_two_stage",
+   "render": "repro_published",
+   "path": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-warmup-reference-epdms/raw/navhard/compare_published_CV.json",
+   "pointers": {
+    "ours": "/epdms/ours_x100",
+    "paper": "/epdms/published_paper",
+    "d_paper": "/epdms/delta_vs_paper",
+    "lb": "/epdms/published_leaderboard_INHERITED",
+    "d_lb": "/epdms/delta_vs_leaderboard",
+    "s1": "/epdms/stage_one_x100",
+    "s2": "/epdms/stage_two_x100",
+    "worst_sub": "/worst_submetric_abs_delta",
+    "n_terms": "/printed_precision_test/n_terms",
+    "n_trunc": "/printed_precision_test/n_match_truncation",
+    "n_round": "/printed_precision_test/n_match_rounding",
+    "prereg": "/printed_precision_test/prereg_note",
+    "src": "/source"
+   },
+   "label": "E1 harness validation — our CV arm vs the HF navhard leaderboard and vs [N2] Table 2"
+  },
+  {
+   "id": "e1_warmup_human_on",
+   "adapter": "devkit_csv",
+   "protocol": "EPDMS_v2_warmup_two_stage",
+   "render": "reference_arm",
+   "path": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-warmup-reference-epdms/raw/A2b/devkit_2026.09.19.12.59.01.csv",
+   "summary_row": "average_all_frames",
+   "column": "score",
+   "label": "Human (the logged expert) — warmup STAGE 1 ONLY, human filter ON (A2b)",
+   "scope_note": "⛔ STAGE 1 ONLY. The two-stage human is UNDEFINED here for the same reason as on navhard (num_future_frames = 0 on every synthetic scene)."
+  },
+  {
+   "id": "e1_warmup_human_off",
+   "adapter": "devkit_csv",
+   "protocol": "EPDMS_v2_warmup_two_stage",
+   "render": "reference_arm",
+   "path": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-warmup-reference-epdms/raw/M1/devkit_2026.09.19.12.59.26.csv",
+   "summary_row": "average_all_frames",
+   "column": "score",
+   "label": "Human — warmup stage 1, human filter OFF (M1, the deliberate-regression arm)",
+   "scope_note": "The mutation arm for the filter itself: switching the human filter off must LOWER the human's own score, and it does."
+  },
+  {
+   "id": "w3_navtest_arms",
+   "adapter": "w3_navtest_analysis",
+   "protocol": "PDMS_v1_navtest",
+   "path": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-v1-navtest/raw/analysis_navtest.json",
+   "result_doc": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-v1-navtest/RESULT.md",
+   "spec_doc": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-v1-navtest/SPEC.md",
+   "arms": {
+    "CV": {
+     "kind": "floor",
+     "label": "CV — the devkit constant-velocity agent",
+     "declared": "ego_velocity[t0] (devkit ego status)"
+    },
+    "STOP": {
+     "kind": "floor",
+     "label": "STOP — the all-zero plan (reads nothing, does nothing)",
+     "declared": "none"
+    },
+    "HUMAN": {
+     "kind": "reference",
+     "label": "HUMAN — the logged expert trajectory",
+     "declared": "the logged future (a CEILING, never deployable)"
+    }
+   },
+   "failed_prediction": "⚠️ **W3's pre-registered range was WRONG, and it is recorded as a failed prediction rather than re-fitted** (its own words): SPEC §6 committed **STOP ∈ [38, 60], point ≈ 45**; the measured **61.82 is ABOVE the range**. Both committed *inequalities* still hold — STOP > CV (+41.17) and STOP < the published Ego-Status-MLP (61.82 < 65.6 / 66.4) — but the band did not contain the answer, because the braking progress and the ≤ 5 m regime were both under-estimated."
+  },
+  {
+   "id": "w3_print_convention",
+   "adapter": "json_pointer",
+   "protocol": "PDMS_v1_navtest",
+   "render": "print_convention",
+   "path": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-v1-navtest/raw/print_convention_probe.json",
+   "pointers": {
+    "question": "/question",
+    "verdict": "/verdict",
+    "consequence": "/consequence",
+    "tally": "/tally_over_leaderboard_cells",
+    "internal_implies": "/internal_test/implies",
+    "internal_caveat": "/internal_test/caveat",
+    "prior": "/prior",
+    "pm_what": "/post_measurement_2026_09_20/what_changed",
+    "pm_cell": "/post_measurement_2026_09_20/cell_verdict",
+    "pm_paper": "/post_measurement_2026_09_20/paper_verdict",
+    "pm_assumption": "/post_measurement_2026_09_20/assumption_stated",
+    "pm_consequence": "/post_measurement_2026_09_20/consequence",
+    "pm_provenance": "/post_measurement_2026_09_20/provenance"
+   },
+   "label": "Print convention of [N1] arXiv 2406.15349v2 — does it round or truncate?"
+  }
+ ],
+ "internal": [
+  {
+   "id": "refcv4b",
+   "claim": "refcv4b — the best B1 arm (T1 panel)",
+   "tier": "T1",
+   "loop": "OPEN",
+   "grid_label": "B1 v7.2 EVAL",
+   "metric": "ade_m, 0–2 s (m, lower is better)",
+   "registry_anchor": "### 4.6 REF-C **v4b**",
+   "registry_section": "§4.6",
+   "path": "TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-07-refcv5-v2-comparison/raw/refcv5-v2_vs_refcv4b.json",
+   "n_windows": "/grid/n_windows",
+   "n_episodes": "/grid/n_episodes",
+   "level": "/four_families/base/table/os/ade_m",
+   "rig": "dev-box RTX 4060 roll; the A40 roll reads differently at the 3rd decimal (registry D-OS-ADE-CROSSRIG-RESOLVED) — the paired margins are rig-free",
+   "margins": [
+    {
+     "floor": "ha0_ext (echo)",
+     "ptr": "/paired/refcv4b: os - ha0_ext"
+    },
+    {
+     "floor": "ha (hold-action)",
+     "ptr": "/paired/refcv4b: os - ha"
+    },
+    {
+     "floor": "ha0 (straight line, measured v0)",
+     "ptr": "/paired/refcv4b: os - ha0"
+    }
+   ],
+   "families_note": "per-family LEVELS for this arm and its three floors are on this page (hand-written §1d.6.3 and §1e.1, the same windows); the panel artifact pairs ADE only — a paired per-family re-read from the banked dumps is §12 W-26",
+   "strategic_computed": {
+    "ptr": "/four_families/base/strategic_computed",
+    "path": "TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-07-refcv5-v2-comparison/raw/refcv5-v2_vs_refcv4b.json"
+   }
+  },
+  {
+   "id": "refcv5v2",
+   "claim": "refcv5-v2 — the WP-4 sampler rung (T1 panel)",
+   "tier": "T1",
+   "loop": "OPEN",
+   "grid_label": "B1 v7.2 EVAL",
+   "metric": "ade_m, 0–2 s (m, lower is better)",
+   "registry_anchor": "### 4.8 REF-C **v5-v2**",
+   "registry_section": "§4.8",
+   "path": "TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-07-refcv5-v2-comparison/raw/refcv5-v2_vs_refcv4b.json",
+   "n_windows": "/grid/n_windows",
+   "n_episodes": "/grid/n_episodes",
+   "level": "/four_families/new/table/os/ade_m",
+   "margins": [
+    {
+     "floor": "ha0_ext (echo) — the committed bar BAR-REFCV5V2-1",
+     "ptr": "/paired/refcv5-v2: os - ha0_ext"
+    },
+    {
+     "floor": "ha (hold-action)",
+     "ptr": "/paired/refcv5-v2: os - ha"
+    },
+    {
+     "floor": "ha0 (straight line, measured v0)",
+     "ptr": "/paired/refcv5-v2: os - ha0"
+    }
+   ],
+   "families_note": "as refcv4b — per-family levels in §1d.6.3 / §1e.1; ADE is the only paired family in the panel artifact (§12 W-26)",
+   "strategic_computed": {
+    "ptr": "/four_families/new/strategic_computed",
+    "path": "TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-07-refcv5-v2-comparison/raw/refcv5-v2_vs_refcv4b.json"
+   }
+  },
+  {
+   "id": "refcv3",
+   "claim": "refcv3 — final step 40,284 (T1 read)",
+   "tier": "T1 (stamped; ruling UNRULED)",
+   "loop": "OPEN",
+   "grid_label": "B1 v7.2 EVAL",
+   "metric": "ade_m, 0–2 s (m, lower is better)",
+   "registry_anchor": "### 4.5 REF-C **v3**",
+   "registry_section": "§4.5",
+   "path": "taniteval/results/refcv3-40284-openloop.ARM.json",
+   "n_windows": "/n_windows",
+   "n_episodes": "/n_episodes",
+   "level": "/arms/os/intervals/metrics/ade_dense_m",
+   "margins": [
+    {
+     "floor": "ha (hold-action)",
+     "ptr": "/paired_decision_grade/paired_os_minus_ha/ade_m"
+    },
+    {
+     "floor": "ha0 (straight line, measured v0)",
+     "ptr": "/paired_decision_grade/paired_os_minus_ha0/ade_m"
+    }
+   ],
+   "families": [
+    {
+     "floor": "ha0",
+     "ptr": "/refcv3/families_paired/paired_os_minus_ha0/families"
+    },
+    {
+     "floor": "ha",
+     "ptr": "/refcv3/families_paired/paired_os_minus_ha/families"
+    }
+   ],
+   "strategic_probe": {
+    "ptr": "/four_families/strategic/conditionings",
+    "path": "taniteval/results/refcv3-40284-openloop.json"
+   }
+  },
+  {
+   "id": "refav1",
+   "claim": "refav1 — final step 21,109 (T1 read)",
+   "tier": "T1",
+   "loop": "OPEN",
+   "grid_label": "B1 v7.2 EVAL (stride 40)",
+   "metric": "ade_m, 0–2 s (m, lower is better)",
+   "registry_anchor": "### 2.4 REF-A **v1**",
+   "registry_section": "§2.4",
+   "path": "taniteval/results/refav1-21109-openloop.json",
+   "n_windows": "/n_windows",
+   "n_episodes": "/n_episodes",
+   "level": "/arms/cl/intervals/metrics/ade_dense_m",
+   "margins": [
+    {
+     "floor": "ha0 (straight line, measured v0)",
+     "ptr": "/paired_decision_grade/paired_cl_minus_ha0/ade_m"
+    },
+    {
+     "floor": "ha (hold-action)",
+     "ptr": "/paired_decision_grade/paired_cl_minus_ha/ade_m"
+    }
+   ],
+   "families": [
+    {
+     "floor": "ha0",
+     "ptr": "/refav1/families_paired/paired_cl_minus_ha0/families"
+    },
+    {
+     "floor": "ha",
+     "ptr": "/refav1/families_paired/paired_cl_minus_ha/families"
+    }
+   ],
+   "strategic_probe": {
+    "ptr": "/refav1/strategic/conditionings"
+   }
+  },
+  {
+   "id": "stagea",
+   "claim": "flagship line — stage-A repaired (T1, corpus C3)",
+   "tier": "T1",
+   "loop": "OPEN",
+   "grid_label": "C3 w120 val, stride 1",
+   "metric": "ade_dense_m (m, lower is better)",
+   "registry_anchor": "### 1.14 v5.8f",
+   "registry_section": "§1.14",
+   "path": "TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-08-18-v58f-artifact-banking/gates/four_families/ff_stageA_cl.json",
+   "n_windows": "/n_windows",
+   "n_episodes": "/n_episodes",
+   "level": "/intervals/metrics/ade_dense_m",
+   "margins": [
+    {
+     "floor": "ha (hold-action; no ha0 in this dump)",
+     "ptr": "/paired/stageA:ha_minus_stageA:cl/ade_dense_m",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-08-18-v58f-artifact-banking/gates/four_families/ff_comparison.full.json",
+     "invert": true
+    }
+   ],
+   "families": [
+    {
+     "floor": "ha",
+     "ptr": "/paired/stageA:ha_minus_stageA:cl",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-08-18-v58f-artifact-banking/gates/four_families/ff_comparison.full.json",
+     "invert": true,
+     "flat": true
+    }
+   ],
+   "families_note": "STRATEGIC: NOT MEASURED on corpus C3 — the page's §1a.5 carries the artifact's reason"
+  },
+  {
+   "id": "closed_refcv3",
+   "claim": "refcv3 — CLOSED loop, Thor NuRec-gsplat render",
+   "tier": "T2",
+   "loop": "CLOSED",
+   "grid_label": "1 NuRec scene, empty (road + background layers), 9 starts × 50 ticks",
+   "metric": "ade_0_2s (m, lower is better)",
+   "registry_anchor": "AND THAT PANEL HAD NO FLOOR",
+   "registry_section": "§1.12 banner",
+   "path": "taniteval/results/2026-09-04-closedloop-floor/FLOOR_SUMMARY.json",
+   "n_windows": "/margins/V3_refcv3_vs_ha0/paired_n_windows",
+   "n_episodes": "/margins/V3_refcv3_vs_ha0/n_clusters",
+   "cluster_word": "rollout starts",
+   "level": "/levels/closed:refcv3/metrics/ade_0_2s",
+   "margins": [
+    {
+     "floor": "cl_ha0_ext (constant turn rate)",
+     "ptr": "/margins/V3_refcv3_vs_haext/families/ADE/ade_0_2s"
+    },
+    {
+     "floor": "cl_ha0 (straight line, measured v0)",
+     "ptr": "/margins/V3_refcv3_vs_ha0/families/ADE/ade_0_2s"
+    }
+   ],
+   "families": [
+    {
+     "floor": "cl_ha0",
+     "ptr": "/margins/V3_refcv3_vs_ha0/families"
+    },
+    {
+     "floor": "cl_ha0_ext",
+     "ptr": "/margins/V3_refcv3_vs_haext/families"
+    }
+   ]
+  },
+  {
+   "id": "closed_refcbase",
+   "claim": "refc-base — CLOSED loop, same panel",
+   "tier": "T2",
+   "loop": "CLOSED",
+   "grid_label": "1 NuRec scene, empty, 9 starts × 50 ticks",
+   "metric": "ade_0_2s (m, lower is better)",
+   "registry_anchor": "AND THAT PANEL HAD NO FLOOR",
+   "registry_section": "§1.12 banner",
+   "path": "taniteval/results/2026-09-04-closedloop-floor/FLOOR_SUMMARY.json",
+   "n_windows": "/margins/V3_refcbase_vs_ha0/paired_n_windows",
+   "n_episodes": "/margins/V3_refcbase_vs_ha0/n_clusters",
+   "cluster_word": "rollout starts",
+   "level": "/levels/closed:refc-base/metrics/ade_0_2s",
+   "margins": [
+    {
+     "floor": "cl_ha0_ext (constant turn rate)",
+     "ptr": "/margins/V3_refcbase_vs_haext/families/ADE/ade_0_2s"
+    },
+    {
+     "floor": "cl_ha0 (straight line, measured v0)",
+     "ptr": "/margins/V3_refcbase_vs_ha0/families/ADE/ade_0_2s"
+    }
+   ],
+   "families": [
+    {
+     "floor": "cl_ha0",
+     "ptr": "/margins/V3_refcbase_vs_ha0/families"
+    },
+    {
+     "floor": "cl_ha0_ext",
+     "ptr": "/margins/V3_refcbase_vs_haext/families"
+    }
+   ]
+  },
+  {
+   "id": "closed_flagship",
+   "claim": "flagship v1 — CLOSED loop, same panel",
+   "tier": "T2",
+   "loop": "CLOSED",
+   "grid_label": "1 NuRec scene, empty, 9 starts × 50 ticks",
+   "metric": "ade_0_2s (m, lower is better)",
+   "registry_anchor": "AND THAT PANEL HAD NO FLOOR",
+   "registry_section": "§1.12 banner",
+   "path": "taniteval/results/2026-09-04-closedloop-floor/FLOOR_SUMMARY.json",
+   "n_windows": "/margins/V3_flagshipv1_vs_ha0/paired_n_windows",
+   "n_episodes": "/margins/V3_flagshipv1_vs_ha0/n_clusters",
+   "cluster_word": "rollout starts",
+   "level": "/levels/closed:flagship-v1/metrics/ade_0_2s",
+   "margins": [
+    {
+     "floor": "cl_ha0_ext (constant turn rate)",
+     "ptr": "/margins/V3_flagshipv1_vs_haext/families/ADE/ade_0_2s"
+    },
+    {
+     "floor": "cl_ha0 (straight line, measured v0)",
+     "ptr": "/margins/V3_flagshipv1_vs_ha0/families/ADE/ade_0_2s"
+    }
+   ],
+   "families": [
+    {
+     "floor": "cl_ha0",
+     "ptr": "/margins/V3_flagshipv1_vs_ha0/families"
+    },
+    {
+     "floor": "cl_ha0_ext",
+     "ptr": "/margins/V3_flagshipv1_vs_haext/families"
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,451 @@
+{
+ "tool": "taniteval/adapters/navsim.py",
+ "arm": "A1@navhard_two_stage",
+ "tier": "T1",
+ "n_windows": 5912,
+ "n_episodes": {
+  "status": "UNAVAILABLE",
+  "reason": "NavSim's unit is a scene TOKEN. Reporting a token count as an episode count would assert the very clustering this adapter refuses to assume. See estimator.interval.",
+  "n": 1
+ },
+ "n_scenes": 5912,
+ "protocol": {
+  "tier": "T1",
+  "tier_rationale": {
+   "recommended_single_stage": "T1",
+   "why": "T0 is TEACHER-FORCED — the predictor consumes the RECORDED future actions. A NavSim agent consumes NO future actions: it emits a 4 s plan from the initial observation and that plan is what gets executed by the LQR + kinematic-bicycle propagation (NAVSIM_PROTOCOL.md:424-435). Nothing recorded is fed back. ⇒ T0 is WRONG; T1 (the arm's own output is executed) is the closest member of our vocabulary.",
+   "⚠️_where_it_is_imperfect": "T1 in our vocabulary is an ACTION-CLOSED loop. NavSim is NOT closed: the agent is queried exactly ONCE per scene and receives no environmental feedback (NAVSIM_PROTOCOL.md:424-428). It is open-loop planning scored through a simulated ego. Calling it T1 overstates the closure; calling it T0 misstates the mechanism. State the mechanism alongside the stamp.",
+   "⚠️_two_stage_is_arguably_T2": "NavSim v2 Stage 2 scores the agent on PRE-RENDERED MTGS observations — a re-perception step, which is what CRITERIA_REGISTRY calls T2. ⛔ But ff_rescore.resolve_tier and t1_eval.resolve_tiers accept ONLY T0/T1 (audit section D), so a T2 stamp is refused downstream today. Unresolved; do not stamp T2 without extending those two resolvers first."
+  },
+  "benchmark": "NavSim",
+  "variant": "EPDMS_v2",
+  "split": "navhard_two_stage",
+  "navsim_protocol": "EPDMS_v2_navhard_two_stage",
+  "navsim_protocol_source": "derived from (variant, split)",
+  "protocol_doc": "products/P7-TanitEval/benchmarks/NAVSIM_PROTOCOL.md",
+  "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+  "inference_inputs": {
+   "inputs": {
+    "cameras": {
+     "used": true,
+     "spec": "8 cameras, 1920x1080 (cam_f0,l0,l1,l2,r0,r1,r2,b0)",
+     "privileged_under_vision_only_rule": false
+    },
+    "lidar": {
+     "used": false,
+     "spec": "merged 5-sensor point cloud, (6, n) float32",
+     "privileged_under_vision_only_rule": false,
+     "⚠️": "a SENSOR but NOT vision — excluded under a strict camera-only reading of the binding rule."
+    },
+    "ego_velocity": {
+     "used": true,
+     "privileged": true
+    },
+    "ego_acceleration": {
+     "used": true,
+     "privileged": true
+    },
+    "ego_pose_history": {
+     "used": false,
+     "privileged": true,
+     "spec": "4 history frames (num_history_frames=4)"
+    },
+    "driving_command": {
+     "used": true,
+     "privileged": false,
+     "dim": 4,
+     "⚠️_cardinality": "4-dim (left, forward, right, UNKNOWN) in the devkit and docs/agents.md. The paper says 3. IMPLEMENT 4 — NAVSIM_PROTOCOL.md:502-504.",
+     "kind": "a ROUTE/GOAL signal, not ego kinematics: derived from the lane graph 20 m ahead of the ego's CURRENT pose, disentangled from obstacles and traffic signs — but the route itself is the EXPERT'S OWN PATH at roadblock granularity: an ORACLE ROUTE (ROUTE_LEAK_VERDICT, PARTIAL). Admissible under the goal/situation-disjoint rule; optimistic by construction."
+    },
+    "history_frames": 4
+   },
+   "ego_channels_consumed": [
+    "ego_velocity",
+    "ego_acceleration"
+   ],
+   "vision_only": false,
+   "privileged": false,
+   "claimed_abstention_from_ego": false,
+   "⛔_framework_cannot_verify": "NavSim ALWAYS populates EgoStatus and has no switch to remove it; nothing in the framework checks that an agent declined to read it (NAVSIM_PROTOCOL.md:488-492). ⇒ a vision-only claim on NavSim must be enforced and evidenced ON OUR SIDE (e.g. by zeroing the channel in our own agent wrapper and banking the diff). A bare 'camera-only' label on a leaderboard row is the AUTHORS' claim, never the server's (:542-543).",
+   "_no_ego_free_published_number": "NavSim publishes no fully ego-free result. Design against TransFuser B1 'Goal only' = 81.8 PDMS."
+  },
+  "vision_only": false,
+  "goal_source": "NavSim driving_command[t0] mapped onto refb.NAV_COMMANDS",
+  "simulation_semantics": "the agent is queried ONCE per scene; the plan is then fixed and propagated by an LQR + kinematic bicycle model at 10 Hz over 4 s, with NO environmental feedback. Submitted velocity and acceleration are DISCARDED — poses only (NAVSIM_PROTOCOL.md:424-440).",
+  "corpus": "NavSim navhard_two_stage (OpenScene test logs; 76 logs; 450 stage-1 + 5462 stage-2 tokens) — a different benchmark from the TanitAD parity corpus physicalai-train-e438721ae894",
+  "parity_key": "n/a — a NavSim split; the TanitAD parity corpus (physicalai-train-e438721ae894 / f09e44db) does not apply",
+  "devkit_sha": "0a380a9063d7162ec93d0f51e9990ebac585f720",
+  "devkit_pin_full": "autonomousvision/navsim@0a380a9063d7162ec93d0f51e9990ebac585f720 (2025-10-27; post-#151 fix, MEASURED by E1)",
+  "harness_modifications": [
+   "PRE-EXISTING navsim/common/dataclasses.py PosixPath unpickler",
+   "PRE-EXISTING venv fcntl.py flock shim",
+   "PRE-EXISTING nuplan-devkit setup.py (packaging only)",
+   "E1 dataloader.py token-separator fix in the C: copy + in-process monkeypatch — reader only"
+  ],
+  "runtime": "C:/Users/Admin/navsim-crun (E1's verified mirror)",
+  "sensor_set": "3-camera stitch cam_l0+cam_f0+cam_r0 -> 256x640 cylindrical (PHYSICALAI_WIDE120_256x640), frames construction ST",
+  "setting": "perception-free one-shot anchor planner, ZERO-SHOT on NavSim (no NavSim training)",
+  "ego_status_enforcement": {
+   "vision_only_claimed": false,
+   "status": "NOT_APPLICABLE",
+   "reason": "arm is NOT vision-only and does not claim to be: 3-camera stitch cam_l0+cam_f0+cam_r0 -> 256x640 cylindrical (PHYSICALAI_WIDE120_256x640), frames construction ST"
+  },
+  "loop": {
+   "stage_one": "OPEN (PI ruling 2026-09-02: fixed plan, ego never re-queried)",
+   "stage_two": "UNRULED under the 2026-09-02 vocabulary (one-shot re-perception of a rendered perturbed start)",
+   "background_traffic": "IDM-REACTIVE vehicles in BOTH stages (run_pdm_score.py:77-79,132-134)"
+  },
+  "tier_note": "T1-family: the arm's own plan is executed by LQR + kinematic bicycle; nothing recorded is fed back"
+ },
+ "four_families": {
+  "longitudinal": {
+   "status": "UNAVAILABLE",
+   "reason": "no navhard_two_stage scene carries BOTH this arm's camera input and a logged human future: the 5462 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), and the 450 stage-1 scenes have a human future but their camera frames are not unpacked on this box — so 450 stage-1 rows of this arm are the devkit CV STAND-IN and none of this arm's plans can be compared with a human future. Unblock = extract the stage-1 frames from the verified OpenScene test camera archives (then n = 450).",
+   "n": 0,
+   "tier": "T1",
+   "speed_mae_mps": {
+    "status": "UNAVAILABLE",
+    "reason": "no navhard_two_stage scene carries BOTH this arm's camera input and a logged human future: the 5462 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), and the 450 stage-1 scenes have a human future but their camera frames are not unpacked on this box — so 450 stage-1 rows of this arm are the devkit CV STAND-IN and none of this arm's plans can be compared with a human future. Unblock = extract the stage-1 frames from the verified OpenScene test camera archives (then n = 450).",
+    "n": 0
+   },
+   "along_mae_m": {
+    "status": "UNAVAILABLE",
+    "reason": "no navhard_two_stage scene carries BOTH this arm's camera input and a logged human future: the 5462 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), and the 450 stage-1 scenes have a human future but their camera frames are not unpacked on this box — so 450 stage-1 rows of this arm are the devkit CV STAND-IN and none of this arm's plans can be compared with a human future. Unblock = extract the stage-1 frames from the verified OpenScene test camera archives (then n = 450).",
+    "n": 0
+   },
+   "ego_progress": {
+    "status": "UNAVAILABLE",
+    "reason": "no navhard_two_stage scene carries BOTH this arm's camera input and a logged human future: the 5462 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), and the 450 stage-1 scenes have a human future but their camera frames are not unpacked on this box — so 450 stage-1 rows of this arm are the devkit CV STAND-IN and none of this arm's plans can be compared with a human future. Unblock = extract the stage-1 frames from the verified OpenScene test camera archives (then n = 450).",
+    "n": 0
+   }
+  },
+  "lateral": {
+   "status": "UNAVAILABLE",
+   "reason": "no navhard_two_stage scene carries BOTH this arm's camera input and a logged human future: the 5462 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), and the 450 stage-1 scenes have a human future but their camera frames are not unpacked on this box — so 450 stage-1 rows of this arm are the devkit CV STAND-IN and none of this arm's plans can be compared with a human future. Unblock = extract the stage-1 frames from the verified OpenScene test camera archives (then n = 450).",
+   "n": 0,
+   "tier": "T1",
+   "cross_mae_m": {
+    "status": "UNAVAILABLE",
+    "reason": "no navhard_two_stage scene carries BOTH this arm's camera input and a logged human future: the 5462 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), and the 450 stage-1 scenes have a human future but their camera frames are not unpacked on this box — so 450 stage-1 rows of this arm are the devkit CV STAND-IN and none of this arm's plans can be compared with a human future. Unblock = extract the stage-1 frames from the verified OpenScene test camera archives (then n = 450).",
+    "n": 0
+   },
+   "heading_mae_deg": {
+    "status": "UNAVAILABLE",
+    "reason": "no navhard_two_stage scene carries BOTH this arm's camera input and a logged human future: the 5462 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), and the 450 stage-1 scenes have a human future but their camera frames are not unpacked on this box — so 450 stage-1 rows of this arm are the devkit CV STAND-IN and none of this arm's plans can be compared with a human future. Unblock = extract the stage-1 frames from the verified OpenScene test camera archives (then n = 450).",
+    "n": 0
+   },
+   "yaw_rate_mae_degps": {
+    "status": "UNAVAILABLE",
+    "reason": "no navhard_two_stage scene carries BOTH this arm's camera input and a logged human future: the 5462 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), and the 450 stage-1 scenes have a human future but their camera frames are not unpacked on this box — so 450 stage-1 rows of this arm are the devkit CV STAND-IN and none of this arm's plans can be compared with a human future. Unblock = extract the stage-1 frames from the verified OpenScene test camera archives (then n = 450).",
+    "n": 0
+   }
+  },
+  "tactical": {
+   "status": "UNAVAILABLE",
+   "reason": "no navhard_two_stage scene carries BOTH this arm's camera input and a logged human future: the 5462 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), and the 450 stage-1 scenes have a human future but their camera frames are not unpacked on this box — so 450 stage-1 rows of this arm are the devkit CV STAND-IN and none of this arm's plans can be compared with a human future. Unblock = extract the stage-1 frames from the verified OpenScene test camera archives (then n = 450).",
+   "n": 0,
+   "tier": "T1",
+   "lateral_decision": {
+    "status": "UNAVAILABLE",
+    "reason": "no navhard_two_stage scene carries BOTH this arm's camera input and a logged human future: the 5462 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), and the 450 stage-1 scenes have a human future but their camera frames are not unpacked on this box — so 450 stage-1 rows of this arm are the devkit CV STAND-IN and none of this arm's plans can be compared with a human future. Unblock = extract the stage-1 frames from the verified OpenScene test camera archives (then n = 450).",
+    "n": 0,
+    "confusion_gt_rows_pred_cols": {
+     "status": "UNAVAILABLE",
+     "reason": "no navhard_two_stage scene carries BOTH this arm's camera input and a logged human future: the 5462 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), and the 450 stage-1 scenes have a human future but their camera frames are not unpacked on this box — so 450 stage-1 rows of this arm are the devkit CV STAND-IN and none of this arm's plans can be compared with a human future. Unblock = extract the stage-1 frames from the verified OpenScene test camera archives (then n = 450).",
+     "n": 0
+    }
+   },
+   "goal_setting": {
+    "status": "UNAVAILABLE",
+    "reason": "no navhard_two_stage scene carries BOTH this arm's camera input and a logged human future: the 5462 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), and the 450 stage-1 scenes have a human future but their camera frames are not unpacked on this box — so 450 stage-1 rows of this arm are the devkit CV STAND-IN and none of this arm's plans can be compared with a human future. Unblock = extract the stage-1 frames from the verified OpenScene test camera archives (then n = 450).",
+    "n": 0
+   }
+  },
+  "strategic": {
+   "status": "UNAVAILABLE",
+   "reason": "no navhard_two_stage scene carries BOTH this arm's camera input and a logged human future: the 5462 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), and the 450 stage-1 scenes have a human future but their camera frames are not unpacked on this box — so 450 stage-1 rows of this arm are the devkit CV STAND-IN and none of this arm's plans can be compared with a human future. Unblock = extract the stage-1 frames from the verified OpenScene test camera archives (then n = 450).",
+   "n": 0,
+   "tier": "T1"
+  },
+  "_families_unavailable": [
+   "longitudinal",
+   "lateral",
+   "tactical",
+   "strategic"
+  ],
+  "_complete": false,
+  "_rule_satisfied": true,
+  "_tier": "T1",
+  "_binding_rule": "Sayed 2026-08-02: LONGITUDINAL + LATERAL + TACTICAL + STRATEGIC in ADDITION to ADE, per-family, never pooled. A family reported UNAVAILABLE is a WORK ITEM, not a pass.",
+  "_w1_scope": "OUR instruments on the 450 STAGE-1 scenes only (agent vs logged human future, dt 0.5 s, K=8); stage-2 synthetic scenes have NO human future (0 future frames) — frame check: not built: stage-1 rows are a CV stand-in, not this arm"
+ },
+ "benchmark": {
+  "navsim": {
+   "score": {
+    "status": "UNAVAILABLE",
+    "reason": "two-stage EPDMS UNDEFINED for A1: 450 stage-1 rows are the devkit CV STAND-IN (no stage-1 frames), so both the stage-1 factor and the stage-2 kernel weights are not this arm's",
+    "n": 450
+   },
+   "variant": "EPDMS_v2 / navhard_two_stage",
+   "submetrics": {
+    "stage_two": {
+     "variant": "EPDMS_v2",
+     "denominator": 16,
+     "_note": "EC is injected downstream by run_pdm_score.py::compute_final_scores; the per-frame `pdm_score` column has it MASKED OUT and /14.",
+     "NC": {
+      "value": 0.8579148707219033,
+      "role": "multiplier"
+     },
+     "DAC": {
+      "value": 0.6499449946958963,
+      "role": "multiplier"
+     },
+     "DDC": {
+      "value": 0.8062704016111782,
+      "role": "multiplier"
+     },
+     "TLC": {
+      "value": 0.9790808298777893,
+      "role": "multiplier"
+     },
+     "EP": {
+      "value": 0.6637439878985214,
+      "role": "weighted w=5"
+     },
+     "TTC": {
+      "value": 0.8247259352447439,
+      "role": "weighted w=5"
+     },
+     "LK": {
+      "value": 0.5233856514571519,
+      "role": "weighted w=2"
+     },
+     "HC": {
+      "value": 0.9584870592117785,
+      "role": "weighted w=2"
+     },
+     "EC": {
+      "value": 0.40627786716115627,
+      "role": "weighted w=2"
+     },
+     "_missing_terms": []
+    }
+   },
+   "ego_inputs": {
+    "inputs": {
+     "cameras": {
+      "used": true,
+      "spec": "8 cameras, 1920x1080 (cam_f0,l0,l1,l2,r0,r1,r2,b0)",
+      "privileged_under_vision_only_rule": false
+     },
+     "lidar": {
+      "used": false,
+      "spec": "merged 5-sensor point cloud, (6, n) float32",
+      "privileged_under_vision_only_rule": false,
+      "⚠️": "a SENSOR but NOT vision — excluded under a strict camera-only reading of the binding rule."
+     },
+     "ego_velocity": {
+      "used": true,
+      "privileged": true
+     },
+     "ego_acceleration": {
+      "used": true,
+      "privileged": true
+     },
+     "ego_pose_history": {
+      "used": false,
+      "privileged": true,
+      "spec": "4 history frames (num_history_frames=4)"
+     },
+     "driving_command": {
+      "used": true,
+      "privileged": false,
+      "dim": 4,
+      "⚠️_cardinality": "4-dim (left, forward, right, UNKNOWN) in the devkit and docs/agents.md. The paper says 3. IMPLEMENT 4 — NAVSIM_PROTOCOL.md:502-504.",
+      "kind": "a ROUTE/GOAL signal, not ego kinematics: derived from the lane graph 20 m ahead of the ego's CURRENT pose, disentangled from obstacles and traffic signs — but the route itself is the EXPERT'S OWN PATH at roadblock granularity: an ORACLE ROUTE (ROUTE_LEAK_VERDICT, PARTIAL). Admissible under the goal/situation-disjoint rule; optimistic by construction."
+     },
+     "history_frames": 4
+    },
+    "ego_channels_consumed": [
+     "ego_velocity",
+     "ego_acceleration"
+    ],
+    "vision_only": false,
+    "privileged": false,
+    "claimed_abstention_from_ego": false,
+    "⛔_framework_cannot_verify": "NavSim ALWAYS populates EgoStatus and has no switch to remove it; nothing in the framework checks that an agent declined to read it (NAVSIM_PROTOCOL.md:488-492). ⇒ a vision-only claim on NavSim must be enforced and evidenced ON OUR SIDE (e.g. by zeroing the channel in our own agent wrapper and banking the diff). A bare 'camera-only' label on a leaderboard row is the AUTHORS' claim, never the server's (:542-543).",
+    "_no_ego_free_published_number": "NavSim publishes no fully ego-free result. Design against TransFuser B1 'Goal only' = 81.8 PDMS."
+   },
+   "route_leak_check": {
+    "status": "CHECKED",
+    "verdict": "PARTIAL — ROUTE-LEVEL ORACLE",
+    "evidence_class": "PUBLISHED-CODE (mechanism) + MEASURED (four empirical probes)",
+    "one_line": "driving_command is computed from (the ego pose NOW, nuPlan's route, the map) — not from the expert's future trajectory — but the route is the expert's own driven path at ROADBLOCK granularity, so the command carries the expert's future ROUTE CHOICE. Not a trajectory leak (no speed, stop or lane-change information).",
+    "measured": {
+     "reproduction_by_openscene_code": "1,902/1,902 frames (turning 739/739)",
+     "turning_commands_from_FUTURE_route": "710/739 = 96.1 %",
+     "turning_commands_from_NO_FUTURE_route": "491/739 = 66.4 %",
+     "route_starts_behind_the_ego": "83.5 % of 1,921 nuPlan scenes",
+     "stage_two_command_copied_from_expert_frame": "5,462/5,462 navhard, 204/204 warmup",
+     "best_threshold_rule_on_future_path": "94.2-94.7 % (n 65,783) — below the 99 % bar"
+    },
+    "consequence": "a command-conditioned NavSim number is 'driving with an ORACLE ROUTE': comparable within NavSim, never evidence of route/strategic skill; the command may never be a route-head LABEL; pair the command arm with a command-withheld arm.",
+    "evidence": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/RESULT.md §B; raw/route_leak_probe.json; raw/stage2_command_provenance.json",
+    "n": 1902
+   },
+   "families_absent_natively": {
+    "_what_this_block_is": "the criteria that NAVSIM'S OWN SCORE cannot supply, by construction. Our four_families block is computed separately from the trajectory geometry and is NOT limited by this list. Never merge the two.",
+    "longitudinal_target_speed": {
+     "status": "UNAVAILABLE",
+     "reason": "NavSim publishes no target-speed term. EP (ego progress) is a normalised progress ratio and TTC is a BINARY within-bound flag, neither of which is a speed error. ⇒ absent from the BENCHMARK; our own four_families.longitudinal computes it from the trajectory instead. NAVSIM_PROTOCOL.md:807.",
+     "n": 1
+    },
+    "longitudinal_distance_keeping_continuous": {
+     "status": "UNAVAILABLE",
+     "reason": "NavSim's TTC is a BINARY within-bound flag on a 0.9 s projection, not a headway in metres, a time-gap in seconds, or a continuous TTC. Our binding criterion needs the continuous quantity, which requires a lead block (four_families.py:1153-1155). PARTIAL coverage only. NAVSIM_PROTOCOL.md:806.",
+     "n": 1
+    },
+    "lateral_heading_curvature_yaw": {
+     "status": "UNAVAILABLE",
+     "reason": "NavSim has no heading, curvature or yaw-rate ERROR. Its yaw-rate (0.95 rad/s) and yaw-accel (1.93 rad/s^2) bounds are FEASIBILITY GATES inside comfort, and LK is a thresholded centreline flag, not a cross-track error in metres. ⇒ absent from the BENCHMARK; our own four_families.lateral computes all four from the trajectory. NAVSIM_PROTOCOL.md:809-810.",
+     "n": 1
+    },
+    "tactical_declared_decision": {
+     "status": "UNAVAILABLE",
+     "reason": "NavSim scores the EXECUTED trajectory and never a manoeuvre decision, so 'selected vs executed' is unobtainable from it. ⚠️ Our four_families.tactical block on this data is TRAJECTORY-DERIVED — both label streams are EXECUTED manoeuvres (the arm's and the human's), which four_families.py:828-833 states is explicitly NOT 'selected vs executed'. Closing this needs a tactical head. NAVSIM_PROTOCOL.md:811.",
+     "n": 1
+    },
+    "strategic_decision_and_route_goal": {
+     "status": "UNAVAILABLE",
+     "reason": "NavSim's `driving_command` is an INPUT to the agent and is never scored, so the benchmark reports no strategic decision or route/goal quality at all. ⚠️ It therefore also cannot DETECT a route-head echo — the defect measured on flagship v1 (369/369 bijection, scored 1.0000). NAVSIM_PROTOCOL.md:812, :828-829.",
+     "n": 1
+    },
+    "_added_by_navsim_that_we_do_not_instrument": {
+     "safety": "NC, DAC, DDC, TLC — four rule-compliance terms we have no family for",
+     "comfort": "C / HC, and EC (a CROSS-FRAME consistency term we do not have)",
+     "_note": "these are a REASON TO ADOPT NavSim, recorded here so the trade is visible in both directions. NAVSIM_PROTOCOL.md:813-814."
+    }
+   },
+   "THE_COLUMN_TRAP": "⛔ `pdm_score` IS NOT THE EPDMS. PDMScorer._aggregate_pdm_scores masks Extended Comfort OUT and divides by 5+5+2+2 = 14. The real EPDMS (denominator 16) is assembled downstream in run_pdm_score.py::compute_final_scores, which injects two_frame_extended_comfort into the weighted vector and recomputes `score = multiplicative_metrics_prod * (sum w*m / sum w)`. Reading `pdm_score` yields a 14-denominator, EC-free number THAT LOOKS LIKE A VALID EPDMS. Read the `score` column. (NAVSIM_PROTOCOL.md:281-290; CRITERIA_REGISTRY.json benchmarks.navsim.THE_COLUMN_TRAP.)"
+  }
+ },
+ "estimator": {
+  "point_estimate": "devkit summary rows (two-stage aggregation)",
+  "cluster_unit": "log_name",
+  "interval": {
+   "status": "UNAVAILABLE",
+   "n": 76,
+   "reason": "the only two-stage aggregate for A1 is the CV-stand-in HYBRID (450 stage-1 rows are the devkit CV agent, which also sets the stage-2 kernel weights); an interval on it is an interval on the hybrid, not on this arm"
+  }
+ },
+ "_two_blocks": "⛔ `four_families` is OUR instruments on NavSim TRAJECTORY GEOMETRY. `benchmark.navsim` is NAVSIM'S OWN score. They measure different things and must never be merged or averaged.",
+ "refused": {
+  "inference_seed_replicate": "the floor arms are deterministic and the scoring path has no RNG (E1 C7: a hash-seed-2 replicate reproduced every per-token value bit-for-bit); a sampling planner arm would need an inference-seed replicate.",
+  "headway_ttc_distance_keeping": "no navhard_two_stage scene carries BOTH this arm's camera input and a logged human future: the 5462 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), and the 450 stage-1 scenes have a human future but their camera frames are not unpacked on this box — so 450 stage-1 rows of this arm are the devkit CV STAND-IN and none of this arm's plans can be compared with a human future. Unblock = extract the stage-1 frames from the verified OpenScene test camera archives (then n = 450).",
+  "curvature_mae_at_this_resolution": "no navhard_two_stage scene carries BOTH this arm's camera input and a logged human future: the 5462 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), and the 450 stage-1 scenes have a human future but their camera frames are not unpacked on this box — so 450 stage-1 rows of this arm are the devkit CV STAND-IN and none of this arm's plans can be compared with a human future. Unblock = extract the stage-1 frames from the verified OpenScene test camera archives (then n = 450).",
+  "nav_compliance": "no navhard_two_stage scene carries BOTH this arm's camera input and a logged human future: the 5462 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), and the 450 stage-1 scenes have a human future but their camera frames are not unpacked on this box — so 450 stage-1 rows of this arm are the devkit CV STAND-IN and none of this arm's plans can be compared with a human future. Unblock = extract the stage-1 frames from the verified OpenScene test camera archives (then n = 450)."
+ },
+ "_w1_lateral_refusals": [],
+ "counts": {
+  "stage_one_expected": 450,
+  "stage_two_expected": 5462,
+  "valid": {
+   "stage_one": 450,
+   "stage_two": 5462
+  },
+  "four_families_windows": 0,
+  "log_groups": 76,
+  "stage_one_cv_standin_rows": 450
+ },
+ "hybrid_combined_row_NOT_this_arm": {
+  "what": "the devkit's combined row for this arm = CV stage 1 x this arm's stage 2 (a HYBRID)",
+  "interval_on_the_hybrid": {
+   "status": "UNAVAILABLE",
+   "n": 76,
+   "reason": "the only two-stage aggregate for A1 is the CV-stand-in HYBRID (450 stage-1 rows are the devkit CV agent, which also sets the stage-2 kernel weights); an interval on it is not an interval on this arm. The hybrid's own interval is kept under statistics.official_combined_row_HYBRID.interval_NOT_this_arm"
+  }
+ },
+ "controls": {
+  "C4_formula": {
+   "n_rows": 5912,
+   "n_rows_with_nan_EC_dropped_to_14": 0,
+   "max_abs_diff": 1.1102230246251565e-16,
+   "tol": 1e-09,
+   "pass": true
+  },
+  "C5_aggregate": {
+   "max_abs_weight_diff": 2.4551204402811777e-09,
+   "max_abs_summary_diff": 8.931189121597072e-12,
+   "tol": 1e-09,
+   "pass": false,
+   "promoted_from": "E1 code/verify_controls.py C5 (inline) -> function, same arithmetic"
+  }
+ },
+ "_w7_refused_criteria": [
+  "long.target_speed",
+  "long.along_track_error",
+  "long.progress",
+  "long.distance_keeping",
+  "lat.cross_track",
+  "lat.heading",
+  "lat.curvature",
+  "lat.yaw_rate",
+  "tac.manoeuvre_decision",
+  "tac.confusion",
+  "tac.goal_selection",
+  "strat.nav_compliance"
+ ],
+ "_w1_adapter_gaps": [
+  "G1 long/stage-suffixed devkit columns vs short keys",
+  "G2 estimator.cluster_unit",
+  "G3 protocol.ego_status_enforcement",
+  "G4 protocol.sensor_set/setting",
+  "G5 protocol.navsim_protocol/devkit_sha",
+  "G6 protocol.corpus/controls",
+  "criteria_check.py never evaluates benchmarks.navsim (W2 owns the fix)"
+ ],
+ "_promoted_from": [
+  "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-warmup-reference-epdms/code/build_artifacts.py",
+  "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-refcv4b-bridge/code/build_artifacts.py"
+ ],
+ "navsim_gate_selfcheck": {
+  "gates": {
+   "navsim.estimator_unit": "PASS",
+   "navsim.ego_enforcement": "NOT_APPLICABLE_DECLARED",
+   "navsim.modality_label": "PASS",
+   "navsim.cross_protocol": "PASS"
+  },
+  "criteria": {
+   "navsim.score": {
+    "state": "REFUSED",
+    "detail": "benchmark.navsim.score: two-stage EPDMS UNDEFINED for A1: 450 stage-1 rows are the devkit CV STAND-IN (no stage-1 frames), so both the stage-1 factor and the st"
+   },
+   "navsim.variant": {
+    "state": "PRESENT",
+    "detail": "benchmark.navsim.variant"
+   },
+   "navsim.submetrics": {
+    "state": "PRESENT",
+    "detail": "benchmark.navsim.submetrics"
+   },
+   "navsim.ego_inputs": {
+    "state": "PRESENT",
+    "detail": "benchmark.navsim.ego_inputs"
+   },
+   "navsim.route_leak_check": {
+    "state": "PRESENT",
+    "detail": "benchmark.navsim.route_leak_check: status=CHECKED"
+   }
+  },
+  "mutations_all_red": true,
+  "mutations": {
+   "navsim.estimator_unit": "FAIL",
+   "navsim.ego_enforcement": "FAIL",
+   "navsim.modality_label": "FAIL",
+   "navsim.cross_protocol": "FAIL",
+   "navsim.cross_protocol(short_sha)": "FAIL",
+   "all_red": true
+  },
+  "_note": "E1's evaluator: criteria_check.py (registry v2.9.0) does not evaluate these gates"
+ }
+}

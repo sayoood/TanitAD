@@ -196,6 +196,12 @@ def _f(x, nd=4):
         return "n/a"
     if isinstance(x, bool):
         return "yes" if x else "no"
+    # A REFUSED term arrives as a block, not a scalar (W2, 2026-09-20): four_families now
+    # returns {status, reason, n} where it used to return None for an UNDEFINED lateral term
+    # (a stationary plan has no path tangent). Render it as a short token WITH its n — the
+    # fallthrough below would otherwise str() a ~600-character dict into one table cell.
+    if isinstance(x, dict) and str(x.get("status", "")).upper() in ("UNAVAILABLE", "REFUSED"):
+        return f"REFUSED (n={x.get('n', 0)}) — " + str(x.get("reason", "no reason given"))[:70]
     try:
         return f"{float(x):.{nd}f}"
     except (TypeError, ValueError):

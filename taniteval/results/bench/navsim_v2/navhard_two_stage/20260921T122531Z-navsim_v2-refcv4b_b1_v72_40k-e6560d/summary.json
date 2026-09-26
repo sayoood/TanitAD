@@ -1,0 +1,6775 @@
+{
+ "schema": "taniteval.bench.summary/1",
+ "run_id": "20260921T122531Z-navsim_v2-refcv4b_b1_v72_40k-e6560d",
+ "benchmark": "navsim_v2",
+ "protocol": "EPDMS_v2_navhard_two_stage",
+ "split": "navhard_two_stage",
+ "claim_bearing": true,
+ "evidence_class": "MEASURED",
+ "stamps": {
+  "tier": "T1-family",
+  "loop": {
+   "stage_one": "OPEN (PI ruling 2026-09-02)",
+   "stage_two": "UNRULED (2026-09-02 vocabulary)",
+   "background_traffic": "IDM-reactive vehicles in BOTH stages; ego non-reactive"
+  },
+  "closed_loop": false
+ },
+ "headline_metric": {
+  "name": "EPDMS",
+  "column": "score",
+  "higher_is_better": true,
+  "statistic": "official two-stage EPDMS (row extended_pdm_score_combined)",
+  "forbidden_column": "pdm_score",
+  "range": [
+   0.0,
+   1.0
+  ]
+ },
+ "floors": [
+  "STOP",
+  "CV"
+ ],
+ "arms": {
+  "CV": {
+   "kind": "floor",
+   "status": "OK",
+   "declared_inputs": [
+    "ego_velocity[t0]"
+   ],
+   "added_by_rule": true,
+   "headline": {
+    "value": 0.11481608441648,
+    "x100": 11.481608441648,
+    "column": "score",
+    "row": "extended_pdm_score_combined",
+    "n": 5912,
+    "statistic": "official two-stage EPDMS: run_pdm_score.py::compute_final_scores (EC injected, /16) aggregated over mapping keys ((s1*wavg(now) + s1'*wavg(prev))/2)"
+   },
+   "per_stage": {
+    "stage_one": {
+     "score": 0.28958783902161,
+     "column": "score",
+     "row": "extended_pdm_score_stage_one",
+     "n": 450,
+     "submetrics": {
+      "NC": 0.8888888888888888,
+      "DAC": 0.4288888888888889,
+      "DDC": 0.7066666666666667,
+      "TLC": 0.9933333333333333,
+      "EP": 0.7753343063173437,
+      "TTC": 0.8733333333333333,
+      "LK": 0.7866666666666666,
+      "HC": 0.9711111111111111,
+      "EC": 0.6044444444444445
+     }
+    },
+    "stage_two": {
+     "score": 0.34246385161221155,
+     "column": "score",
+     "row": "extended_pdm_score_stage_two",
+     "n": 5462,
+     "submetrics": {
+      "NC": 0.8320799459890021,
+      "DAC": 0.5913586789370281,
+      "DDC": 0.7653314393712489,
+      "TLC": 0.9805979731707632,
+      "EP": 0.7138477655968718,
+      "TTC": 0.8114316924359216,
+      "LK": 0.4798008021213655,
+      "HC": 0.971744042485965,
+      "EC": 0.6198124659133393
+     }
+    }
+   },
+   "submetrics": {
+    "combined_row": {
+     "NC_s1": 0.8888888888888888,
+     "NC_s2": 0.8320799459890021,
+     "DAC_s1": 0.4288888888888889,
+     "DAC_s2": 0.5913586789370281,
+     "DDC_s1": 0.7066666666666667,
+     "DDC_s2": 0.7653314393712489,
+     "TLC_s1": 0.9933333333333333,
+     "TLC_s2": 0.9805979731707632,
+     "EP_s1": 0.7753343063173437,
+     "EP_s2": 0.7138477655968718,
+     "TTC_s1": 0.8733333333333333,
+     "TTC_s2": 0.8114316924359216,
+     "LK_s1": 0.7866666666666666,
+     "LK_s2": 0.4798008021213655,
+     "HC_s1": 0.9711111111111111,
+     "HC_s2": 0.971744042485965,
+     "EC_s1": 0.6044444444444445,
+     "EC_s2": 0.6198124659133393
+    },
+    "_note": "per-stage sub-metrics are also in per_stage.<stage>.submetrics (official stage summary rows)"
+   },
+   "per_log": {
+    "_statistic": "PLAIN mean of the official per-token `score` rows, by nuPlan log and stage — NOT the official aggregation (which weights stage-2 rows by the stage-1 endpoint kernel)",
+    "2021.05.25.14.16.10_veh-35_01100_01664": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 22,
+      "score_mean": 0.37929072590267854
+     }
+    },
+    "2021.05.25.14.16.10_veh-35_01690_02183": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 1.0
+     },
+     "stage_two": {
+      "n": 22,
+      "score_mean": 0.45872460949275456
+     }
+    },
+    "2021.05.25.14.16.10_veh-35_03373_03550": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 14,
+      "score_mean": 0.42112300225381843
+     }
+    },
+    "2021.05.25.14.24.08_veh-25_03764_04034": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 26,
+      "score_mean": 0.5877923585627052
+     }
+    },
+    "2021.05.25.14.26.37_veh-27_04122_04279": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.9349305854055372
+     },
+     "stage_two": {
+      "n": 20,
+      "score_mean": 0.19375
+     }
+    },
+    "2021.05.25.15.59.03_veh-30_00625_00855": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 14,
+      "score_mean": 0.42880840009963206
+     }
+    },
+    "2021.05.25.15.59.03_veh-30_04027_04200": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.7855986016056131
+     },
+     "stage_two": {
+      "n": 12,
+      "score_mean": 0.40420677798240007
+     }
+    },
+    "2021.05.25.15.59.03_veh-30_04463_04606": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 40,
+      "score_mean": 0.31801657173909453
+     }
+    },
+    "2021.05.25.17.54.41_veh-35_01905_02121": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 16,
+      "score_mean": 0.3956537654054959
+     }
+    },
+    "2021.05.25.17.54.41_veh-35_04111_04288": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.6436725851220619
+     },
+     "stage_two": {
+      "n": 40,
+      "score_mean": 0.36350725146122875
+     }
+    },
+    "2021.06.03.12.02.06_veh-35_00233_00609": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 14,
+      "score_mean": 0.37662920979290887
+     }
+    },
+    "2021.06.03.13.55.17_veh-35_02572_02855": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 22,
+      "score_mean": 0.2239596967098768
+     }
+    },
+    "2021.06.03.13.55.17_veh-35_02866_03582": {
+     "stage_one": {
+      "n": 8,
+      "score_mean": 0.67369561385896
+     },
+     "stage_two": {
+      "n": 104,
+      "score_mean": 0.4807739053174234
+     }
+    },
+    "2021.06.03.17.06.58_veh-35_02571_02742": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 24,
+      "score_mean": 0.25976291381740685
+     }
+    },
+    "2021.06.03.17.06.58_veh-35_03860_03992": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 16,
+      "score_mean": 0.619035461188082
+     }
+    },
+    "2021.06.03.18.47.39_veh-35_00257_00492": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.8873307984661125
+     },
+     "stage_two": {
+      "n": 12,
+      "score_mean": 0.5330923492350184
+     }
+    },
+    "2021.06.03.18.47.39_veh-35_00503_00777": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 12,
+      "score_mean": 0.520882943114937
+     }
+    },
+    "2021.06.28.13.53.26_veh-26_00492_00696": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 20,
+      "score_mean": 0.0
+     }
+    },
+    "2021.06.28.15.02.02_veh-38_02398_02848": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 24,
+      "score_mean": 0.248273061396541
+     }
+    },
+    "2021.06.28.16.29.11_veh-38_03263_03766": {
+     "stage_one": {
+      "n": 8,
+      "score_mean": 0.6406930961728091
+     },
+     "stage_two": {
+      "n": 102,
+      "score_mean": 0.49621799508510134
+     }
+    },
+    "2021.06.28.20.24.43_veh-38_03385_04952": {
+     "stage_one": {
+      "n": 14,
+      "score_mean": 0.044638376406146145
+     },
+     "stage_two": {
+      "n": 144,
+      "score_mean": 0.5236166893992578
+     }
+    },
+    "2021.08.16.14.23.37_veh-45_00015_00132": {
+     "stage_one": {
+      "n": 10,
+      "score_mean": 0.26214359427600104
+     },
+     "stage_two": {
+      "n": 106,
+      "score_mean": 0.3015976875813734
+     }
+    },
+    "2021.08.30.13.45.25_veh-40_00610_00771": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.42333657568374117
+     },
+     "stage_two": {
+      "n": 72,
+      "score_mean": 0.12028871475180673
+     }
+    },
+    "2021.08.30.13.45.25_veh-40_00878_01104": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.4267807301095954
+     },
+     "stage_two": {
+      "n": 40,
+      "score_mean": 0.3096930106907766
+     }
+    },
+    "2021.08.30.13.45.25_veh-40_01116_01336": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.4906913351301798
+     },
+     "stage_two": {
+      "n": 36,
+      "score_mean": 0.29867013430351635
+     }
+    },
+    "2021.08.30.14.54.34_veh-40_00439_00835": {
+     "stage_one": {
+      "n": 10,
+      "score_mean": 0.4656198850198626
+     },
+     "stage_two": {
+      "n": 128,
+      "score_mean": 0.34195071118292886
+     }
+    },
+    "2021.08.30.16.16.44_veh-40_00256_00716": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 16,
+      "score_mean": 0.3939734743739176
+     }
+    },
+    "2021.08.30.16.16.44_veh-40_00779_01088": {
+     "stage_one": {
+      "n": 10,
+      "score_mean": 0.3574496603514665
+     },
+     "stage_two": {
+      "n": 102,
+      "score_mean": 0.41156743036214716
+     }
+    },
+    "2021.08.30.16.16.44_veh-40_01099_01351": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.46875
+     },
+     "stage_two": {
+      "n": 40,
+      "score_mean": 0.27333961160947834
+     }
+    },
+    "2021.09.09.17.18.51_veh-48_01248_01450": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.34912461478723555
+     },
+     "stage_two": {
+      "n": 26,
+      "score_mean": 0.23753932614557305
+     }
+    },
+    "2021.09.16.13.53.10_veh-42_00077_00153": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.5
+     },
+     "stage_two": {
+      "n": 46,
+      "score_mean": 0.33620015705740136
+     }
+    },
+    "2021.09.16.13.53.10_veh-42_00180_00342": {
+     "stage_one": {
+      "n": 16,
+      "score_mean": 0.22986747835895022
+     },
+     "stage_two": {
+      "n": 212,
+      "score_mean": 0.2133758030182878
+     }
+    },
+    "2021.09.16.13.53.10_veh-42_00860_01069": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.7162057772944185
+     },
+     "stage_two": {
+      "n": 66,
+      "score_mean": 0.28115452394295637
+     }
+    },
+    "2021.09.16.13.53.10_veh-42_01510_01591": {
+     "stage_one": {
+      "n": 6,
+      "score_mean": 0.16666666666666666
+     },
+     "stage_two": {
+      "n": 72,
+      "score_mean": 0.1272807084041493
+     }
+    },
+    "2021.09.16.14.39.34_veh-42_00032_00186": {
+     "stage_one": {
+      "n": 12,
+      "score_mean": 0.21059270057520751
+     },
+     "stage_two": {
+      "n": 172,
+      "score_mean": 0.2925902838901028
+     }
+    },
+    "2021.09.16.14.39.34_veh-42_00297_00935": {
+     "stage_one": {
+      "n": 20,
+      "score_mean": 0.3674493443566603
+     },
+     "stage_two": {
+      "n": 294,
+      "score_mean": 0.29052058605251463
+     }
+    },
+    "2021.09.16.14.39.34_veh-42_01111_01448": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.3551739816747602
+     },
+     "stage_two": {
+      "n": 50,
+      "score_mean": 0.43122941755798755
+     }
+    },
+    "2021.09.16.14.39.34_veh-42_01609_01687": {
+     "stage_one": {
+      "n": 6,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 56,
+      "score_mean": 0.03125
+     }
+    },
+    "2021.09.16.15.12.03_veh-42_01037_01434": {
+     "stage_one": {
+      "n": 8,
+      "score_mean": 0.4375
+     },
+     "stage_two": {
+      "n": 116,
+      "score_mean": 0.3851250548272262
+     }
+    },
+    "2021.09.16.15.47.30_veh-45_01199_01391": {
+     "stage_one": {
+      "n": 6,
+      "score_mean": 0.30641385770504553
+     },
+     "stage_two": {
+      "n": 76,
+      "score_mean": 0.25939244519680305
+     }
+    },
+    "2021.09.16.16.20.27_veh-08_02435_02525": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.8060049410984915
+     },
+     "stage_two": {
+      "n": 40,
+      "score_mean": 0.3539360894541145
+     }
+    },
+    "2021.09.16.17.40.09_veh-45_02539_02745": {
+     "stage_one": {
+      "n": 10,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 102,
+      "score_mean": 0.12997853187615957
+     }
+    },
+    "2021.09.16.19.12.04_veh-42_00289_00398": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 48,
+      "score_mean": 0.27435752912442707
+     }
+    },
+    "2021.09.16.19.12.04_veh-42_01438_01677": {
+     "stage_one": {
+      "n": 8,
+      "score_mean": 0.234375
+     },
+     "stage_two": {
+      "n": 142,
+      "score_mean": 0.2957282816109236
+     }
+    },
+    "2021.09.16.19.27.01_veh-45_00472_00711": {
+     "stage_one": {
+      "n": 8,
+      "score_mean": 0.198414432755954
+     },
+     "stage_two": {
+      "n": 66,
+      "score_mean": 0.13250334011142548
+     }
+    },
+    "2021.09.16.19.27.01_veh-45_01749_03230": {
+     "stage_one": {
+      "n": 30,
+      "score_mean": 0.34793921423250246
+     },
+     "stage_two": {
+      "n": 372,
+      "score_mean": 0.3653911780615886
+     }
+    },
+    "2021.09.16.19.49.00_veh-42_00990_01609": {
+     "stage_one": {
+      "n": 14,
+      "score_mean": 0.25967879011802913
+     },
+     "stage_two": {
+      "n": 132,
+      "score_mean": 0.3169813156778771
+     }
+    },
+    "2021.09.16.21.13.37_veh-42_00172_00347": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 16,
+      "score_mean": 0.16019305157504682
+     }
+    },
+    "2021.09.29.14.44.26_veh-28_00238_00320": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.388395885964469
+     },
+     "stage_two": {
+      "n": 66,
+      "score_mean": 0.2585082552086882
+     }
+    },
+    "2021.09.29.14.44.26_veh-28_00337_00504": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 64,
+      "score_mean": 0.3419146932224615
+     }
+    },
+    "2021.09.29.14.44.26_veh-28_00528_00992": {
+     "stage_one": {
+      "n": 10,
+      "score_mean": 0.17824377014483608
+     },
+     "stage_two": {
+      "n": 112,
+      "score_mean": 0.3764953369452137
+     }
+    },
+    "2021.09.29.14.44.26_veh-28_01202_01296": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 1.0
+     },
+     "stage_two": {
+      "n": 12,
+      "score_mean": 0.5432679048041932
+     }
+    },
+    "2021.09.29.14.44.26_veh-28_01331_01485": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 44,
+      "score_mean": 0.10245372375367562
+     }
+    },
+    "2021.09.29.15.23.04_veh-28_00601_00802": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 1.0
+     },
+     "stage_two": {
+      "n": 10,
+      "score_mean": 0.55
+     }
+    },
+    "2021.09.29.15.23.04_veh-28_00814_01101": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.4573322567899592
+     },
+     "stage_two": {
+      "n": 24,
+      "score_mean": 0.1534804636069609
+     }
+    },
+    "2021.09.29.18.19.40_veh-28_00438_00833": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.7045552800174788
+     },
+     "stage_two": {
+      "n": 36,
+      "score_mean": 0.5567725783339115
+     }
+    },
+    "2021.09.29.18.19.40_veh-28_00844_01218": {
+     "stage_one": {
+      "n": 6,
+      "score_mean": 0.5366511364777566
+     },
+     "stage_two": {
+      "n": 40,
+      "score_mean": 0.41022255909698746
+     }
+    },
+    "2021.09.29.18.19.40_veh-28_01268_01685": {
+     "stage_one": {
+      "n": 8,
+      "score_mean": 0.5036766338821483
+     },
+     "stage_two": {
+      "n": 70,
+      "score_mean": 0.4017459425261303
+     }
+    },
+    "2021.09.29.19.02.14_veh-28_00273_00514": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 62,
+      "score_mean": 0.3395547043677536
+     }
+    },
+    "2021.09.29.19.02.14_veh-28_00540_00917": {
+     "stage_one": {
+      "n": 6,
+      "score_mean": 0.8519159968677624
+     },
+     "stage_two": {
+      "n": 78,
+      "score_mean": 0.45164222054227665
+     }
+    },
+    "2021.09.29.19.02.14_veh-28_00964_01689": {
+     "stage_one": {
+      "n": 10,
+      "score_mean": 0.36262387665684204
+     },
+     "stage_two": {
+      "n": 82,
+      "score_mean": 0.34965456299626807
+     }
+    },
+    "2021.09.29.19.02.14_veh-28_02451_02708": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.2373930900533184
+     },
+     "stage_two": {
+      "n": 68,
+      "score_mean": 0.3180191234663093
+     }
+    },
+    "2021.09.29.19.02.14_veh-28_02911_03005": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 30,
+      "score_mean": 0.2658117321381558
+     }
+    },
+    "2021.09.29.19.02.14_veh-28_03198_03360": {
+     "stage_one": {
+      "n": 6,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 74,
+      "score_mean": 0.2756379501070524
+     }
+    },
+    "2021.10.06.07.26.10_veh-52_00006_00398": {
+     "stage_one": {
+      "n": 12,
+      "score_mean": 0.3471124113584776
+     },
+     "stage_two": {
+      "n": 148,
+      "score_mean": 0.47798926596806596
+     }
+    },
+    "2021.10.06.07.26.10_veh-52_00422_00728": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.2320596012714754
+     },
+     "stage_two": {
+      "n": 70,
+      "score_mean": 0.38751866387482203
+     }
+    },
+    "2021.10.06.07.26.10_veh-52_00772_00917": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 18,
+      "score_mean": 0.3859928846008589
+     }
+    },
+    "2021.10.06.07.26.10_veh-52_00953_01126": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.2262064192829099
+     },
+     "stage_two": {
+      "n": 50,
+      "score_mean": 0.3974950303511712
+     }
+    },
+    "2021.10.06.07.26.10_veh-52_01245_02064": {
+     "stage_one": {
+      "n": 22,
+      "score_mean": 0.19430886153667945
+     },
+     "stage_two": {
+      "n": 274,
+      "score_mean": 0.3186557407202216
+     }
+    },
+    "2021.10.06.07.26.10_veh-52_02208_02394": {
+     "stage_one": {
+      "n": 10,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 132,
+      "score_mean": 0.42101203931999165
+     }
+    },
+    "2021.10.06.08.16.17_veh-52_00181_00574": {
+     "stage_one": {
+      "n": 10,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 120,
+      "score_mean": 0.37552775816146833
+     }
+    },
+    "2021.10.06.08.16.17_veh-52_00612_00782": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 24,
+      "score_mean": 0.15565093554991546
+     }
+    },
+    "2021.10.06.08.16.17_veh-52_00922_01296": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 32,
+      "score_mean": 0.3858648441177376
+     }
+    },
+    "2021.10.06.08.16.17_veh-52_01430_01579": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.25
+     },
+     "stage_two": {
+      "n": 60,
+      "score_mean": 0.3313314827090982
+     }
+    },
+    "2021.10.06.08.16.17_veh-52_01590_01725": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.6916699936697779
+     },
+     "stage_two": {
+      "n": 40,
+      "score_mean": 0.42159240850790763
+     }
+    },
+    "2021.10.06.08.16.17_veh-52_01949_02501": {
+     "stage_one": {
+      "n": 18,
+      "score_mean": 0.3051541756929326
+     },
+     "stage_two": {
+      "n": 258,
+      "score_mean": 0.26080203124502443
+     }
+    }
+   },
+   "paired": {
+    "STOP": {
+     "status": "OK",
+     "headline_delta": -0.18371604101050237,
+     "S2_EPDMS_u_delta": -0.1439131879889775,
+     "by_stage": {
+      "stage_one": {
+       "n": 450,
+       "score_mean_delta": -0.2735740174278881,
+       "official_stage_row_delta": -0.2735740174278881,
+       "wins": 135,
+       "ties": 39,
+       "losses": 276,
+       "submetric_mean_deltas": {
+        "NC": -0.10777777777777786,
+        "DAC": -0.5022222222222222,
+        "DDC": -0.29333333333333333,
+        "TLC": -0.004444444444444473,
+        "EP": 0.43438858378489265,
+        "TTC": -0.12444444444444447,
+        "LK": -0.10444444444444445,
+        "HC": 0.4822222222222223,
+        "EC": 0.5155555555555555
+       }
+      },
+      "stage_two": {
+       "n": 5462,
+       "score_mean_delta": -0.14087622917996767,
+       "official_stage_row_delta": -0.16438248314857723,
+       "wins": 1689,
+       "ties": 1392,
+       "losses": 2381,
+       "submetric_mean_deltas": {
+        "NC": -0.12266569022336138,
+        "DAC": -0.29384840717685834,
+        "DDC": -0.2162211644086416,
+        "TLC": -0.009337239106554374,
+        "EP": 0.3162599076962306,
+        "TTC": -0.12834126693518855,
+        "LK": -0.06151592823141705,
+        "HC": 0.3203954595386306,
+        "EC": 0.3427316001464665
+       }
+      }
+     },
+     "wins": 1824,
+     "ties": 1431,
+     "losses": 2657,
+     "_wtl_scope": "per-scene wins/ties/losses pooled over the common tokens of BOTH stages (tie band 1e-12); per stage in by_stage.<stage>",
+     "n_common": 5912
+    },
+    "CV": {
+     "status": "SELF"
+    }
+   },
+   "interval": {
+    "status": "OK",
+    "estimator": "navsim_log_cluster_bootstrap",
+    "cluster_unit": "log_name",
+    "lo": 0.0825,
+    "hi": 0.145,
+    "n_clusters": 76,
+    "detail": {
+     "status": "OK",
+     "estimator": "navsim_log_cluster_bootstrap",
+     "cluster_unit": "log_name",
+     "resample_unit": "log_name",
+     "aggregation": "two_stage_mapping_key_mean",
+     "aggregation_source": "run_pdm_score.py::calculate_individual_mapping_scores L242-290 @0a380a9 — per key ((s1(orig)*wavg(now)) + (s1(prev)*wavg(prev)))/2, then pd.DataFrame(...).mean() (skipna) over keys",
+     "point": 0.1148,
+     "mean": 0.1148,
+     "lo": 0.0825,
+     "hi": 0.145,
+     "ci95": 0.0313,
+     "se": 0.0153,
+     "bootstrap_mean": 0.1145,
+     "n_clusters": 76,
+     "n_units": 225,
+     "n_units_nan": 0,
+     "min_clusters": 8,
+     "n_boot": 2000,
+     "seed": 0,
+     "alpha": 0.05,
+     "reproduces_official": {
+      "status": "OK",
+      "official_value": 0.11481608441648,
+      "point": 0.11481608441648,
+      "abs_diff": 0.0,
+      "tol": 1e-09
+     },
+     "sensitivity_nuplan_drive": {
+      "status": "OK",
+      "unit": "nuplan_drive",
+      "n_clusters": 34,
+      "lo": 0.091,
+      "hi": 0.1471,
+      "se": 0.0146
+     },
+     "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? — evaluation-set variance only. ⛔ BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT — read it against a replicate arm's floor.",
+     "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+     "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+     "_machine": "taniteval.ci.episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna) — the SAME draws, cross-checked",
+     "_forbidden": "⛔ scene-token resampling (overlapping units), the episode-cluster bootstrap under any other unit, and overlapping_holdout_se (biases the point estimate) are NOT admissible for NavSim.",
+     "protocol": "EPDMS_v2_navhard_two_stage"
+    },
+    "pre_csv_frame": {
+     "captured": true,
+     "path": "D:/Projects/TanitAD/taniteval/results/bench/navsim_v2/navhard_two_stage/20260921T122531Z-navsim_v2-refcv4b_b1_v72_40k-e6560d/raw/CV/CV_final_scores_frame.csv",
+     "why_needed": "the published CSV drops `weight`/`log_name` (run_pdm_score.py:422)"
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? — evaluation-set variance only. ⛔ BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT — read it against a replicate arm's floor."
+   },
+   "families": {
+    "longitudinal": {
+     "status": "PARTIAL",
+     "n": 450,
+     "scope": "OUR instruments on the 450 STAGE-1 scenes only (agent vs logged human future, dt 0.5 s, K=8); stage-2 synthetic scenes have NO human future (0 future frames) — frame check: verified",
+     "tier": "T1",
+     "metrics": {
+      "speed_mae_mps": 1.015,
+      "along_mae_m": 1.6269,
+      "speed_bias_mps": 0.1636,
+      "along_bias_m": 0.7664,
+      "accel_mae_mps2": 0.5144,
+      "progress_ratio_mean": 0.9693
+     },
+     "reason": "distance-keeping UNAVAILABLE: no lead-agent track supplied — pass `lead=` (see this function's caller docstring). PhysicalAI-AV ships obstacle.offline (3D agent tracks, 97.44 % of the corpus); the reader is `Architecture & Inference/Implementation/incoming/2026-08-03-longitudinal-distance-keeping/build_lead_tracks.py`. Not supplying it is a WORK ITEM, not a pass."
+    },
+    "lateral": {
+     "status": "OK",
+     "n": 450,
+     "scope": "OUR instruments on the 450 STAGE-1 scenes only (agent vs logged human future, dt 0.5 s, K=8); stage-2 synthetic scenes have NO human future (0 future frames) — frame check: verified",
+     "tier": "T1",
+     "metrics": {
+      "cross_mae_m": 1.488,
+      "heading_mae_deg": 11.8811,
+      "curvature_mae_1pm": 0.027533,
+      "yaw_rate_mae_degps": 6.5721,
+      "cross_bias_m": -0.4882
+     }
+    },
+    "tactical": {
+     "status": "OK",
+     "n": 450,
+     "scope": "OUR instruments on the 450 STAGE-1 scenes only (agent vs logged human future, dt 0.5 s, K=8); stage-2 synthetic scenes have NO human future (0 future frames) — frame check: verified",
+     "tier": "T1",
+     "metrics": {
+      "lateral_decision.accuracy": 0.42,
+      "lateral_decision.kappa": 0.0,
+      "longitudinal_decision.accuracy": 0.4133,
+      "longitudinal_decision.kappa": 0.0,
+      "goal_setting.goal_point_error_m": 6.3223
+     },
+     "_is_not": "trajectory-derived EXECUTED manoeuvres on both sides — NOT selected-vs-executed"
+    },
+    "strategic": {
+     "status": "UNAVAILABLE",
+     "reason": "PhysicalAI-AV carries NO map, NO lane graph, NO junction/roundabout label, NO traffic-light feature and NO route/goal signal — the dataset card says verbatim 'we do not include open maps data', and obstacle.offline's enum over 87,481 cuboids is 10 classes, ALL DYNAMIC AGENTS. `egomotion` carries no lat/lon/GNSS either (clip-local metres), so OSM map-matching on our traces is impossible. ⇒ there is no admissible strategic LABEL on this split, and therefore no strategic decision or route/goal quality to score. ⛔ The two label sources that DO exist are both inadmissible, for stated reasons and not for want of effort: (a) a route class read off the ego's OWN FUTURE yaw cannot tell whether the map admitted a choice at all — that is how the closed-loop harness once published route_head_eq_logged = 1.0000 on a clip where every junction had exactly ONE continuation, and GATE_PROTOCOL §0.7 declares nonav_route_beats_majority VOID BY CONSTRUCTION; (b) a supplied route is optimistic by construction here because our only route supplier is the ego's own future path. | NavSim: ⚠️ The generic reason above is PhysicalAI-specific (no map in the corpus). On NavSim the fact is DIFFERENT and must not be conflated: the lane graph and route EXIST, but `driving_command` is an INPUT and is never scored, and the Scene object carrying the map is TRAINING-ONLY at inference (NAVSIM_PROTOCOL.md:470-474, :812). So STRATEGIC is absent because the BENCHMARK declines to measure it, not because the data lacks it — which makes it a buildable WORK ITEM here (audit seam 7, taniteval/strategic_optionset.py:193), unlike on PhysicalAI.",
+     "n": 450
+    }
+   },
+   "statistics": {
+    "S2_EPDMS_u": {
+     "value": 0.3389137264888157,
+     "n_groups": 450,
+     "group_sizes": [
+      11,
+      11,
+      11,
+      11,
+      7,
+      7,
+      13,
+      13,
+      10,
+      10,
+      7,
+      7,
+      6,
+      6,
+      20,
+      20,
+      8,
+      8,
+      20,
+      20,
+      7,
+      7,
+      11,
+      11,
+      16,
+      16,
+      10,
+      10,
+      20,
+      20,
+      6,
+      6,
+      12,
+      12,
+      8,
+      8,
+      6,
+      6,
+      6,
+      6,
+      10,
+      10,
+      12,
+      12,
+      7,
+      7,
+      18,
+      18,
+      17,
+      17,
+      9,
+      9,
+      7,
+      7,
+      18,
+      18,
+      12,
+      12,
+      11,
+      11,
+      5,
+      5,
+      14,
+      14,
+      5,
+      5,
+      9,
+      9,
+      19,
+      19,
+      8,
+      8,
+      7,
+      7,
+      10,
+      10,
+      17,
+      17,
+      19,
+      19,
+      5,
+      5,
+      15,
+      15,
+      18,
+      18,
+      15,
+      15,
+      9,
+      9,
+      17,
+      17,
+      12,
+      12,
+      11,
+      11,
+      8,
+      8,
+      9,
+      9,
+      12,
+      12,
+      12,
+      12,
+      13,
+      13,
+      5,
+      5,
+      7,
+      7,
+      13,
+      13,
+      13,
+      13,
+      13,
+      13,
+      10,
+      10,
+      11,
+      11,
+      9,
+      9,
+      14,
+      14,
+      17,
+      17,
+      18,
+      18,
+      17,
+      17,
+      12,
+      12,
+      8,
+      8,
+      20,
+      20,
+      13,
+      13,
+      20,
+      20,
+      7,
+      7,
+      9,
+      9,
+      18,
+      18,
+      13,
+      13,
+      14,
+      14,
+      20,
+      20,
+      16,
+      16,
+      5,
+      5,
+      20,
+      20,
+      14,
+      14,
+      12,
+      12,
+      17,
+      17,
+      14,
+      14,
+      17,
+      17,
+      20,
+      20,
+      5,
+      5,
+      10,
+      10,
+      18,
+      18,
+      10,
+      10,
+      15,
+      15,
+      9,
+      9,
+      11,
+      11,
+      8,
+      8,
+      5,
+      5,
+      17,
+      17,
+      20,
+      20,
+      16,
+      16,
+      7,
+      7,
+      12,
+      12,
+      19,
+      19,
+      20,
+      20,
+      7,
+      7,
+      15,
+      15,
+      11,
+      11,
+      10,
+      10,
+      8,
+      8,
+      17,
+      17,
+      7,
+      7,
+      19,
+      19,
+      19,
+      19,
+      14,
+      14,
+      19,
+      19,
+      15,
+      15,
+      6,
+      6,
+      7,
+      7,
+      5,
+      5,
+      5,
+      5,
+      13,
+      13,
+      14,
+      14,
+      13,
+      13,
+      13,
+      13,
+      16,
+      16,
+      11,
+      11,
+      15,
+      15,
+      17,
+      17,
+      9,
+      9,
+      10,
+      10,
+      11,
+      11,
+      8,
+      8,
+      20,
+      20,
+      11,
+      11,
+      11,
+      11,
+      8,
+      8,
+      12,
+      12,
+      8,
+      8,
+      9,
+      9,
+      13,
+      13,
+      5,
+      5,
+      8,
+      8,
+      13,
+      13,
+      20,
+      20,
+      13,
+      13,
+      19,
+      19,
+      6,
+      6,
+      11,
+      11,
+      11,
+      11,
+      15,
+      15,
+      13,
+      13,
+      6,
+      6,
+      8,
+      8,
+      14,
+      14,
+      5,
+      5,
+      12,
+      12,
+      8,
+      8,
+      10,
+      10,
+      7,
+      7,
+      8,
+      8,
+      5,
+      5,
+      6,
+      6,
+      6,
+      6,
+      12,
+      12,
+      11,
+      11,
+      11,
+      11,
+      20,
+      20,
+      20,
+      20,
+      14,
+      14,
+      5,
+      5,
+      12,
+      12,
+      11,
+      11,
+      5,
+      5,
+      8,
+      8,
+      5,
+      5,
+      20,
+      20,
+      14,
+      14,
+      15,
+      15,
+      8,
+      8,
+      12,
+      12,
+      17,
+      17,
+      16,
+      16,
+      10,
+      10,
+      14,
+      14,
+      10,
+      10,
+      9,
+      9,
+      15,
+      15,
+      15,
+      15,
+      20,
+      20,
+      9,
+      9,
+      12,
+      12,
+      13,
+      13,
+      8,
+      8,
+      13,
+      13,
+      14,
+      14,
+      20,
+      20,
+      16,
+      16,
+      15,
+      15,
+      11,
+      11,
+      17,
+      17,
+      5,
+      5,
+      8,
+      8,
+      10,
+      10,
+      8,
+      8,
+      19,
+      19,
+      11,
+      11,
+      13,
+      13,
+      15,
+      15,
+      7,
+      7,
+      18,
+      18,
+      8,
+      8,
+      17,
+      17,
+      10,
+      10,
+      12,
+      12,
+      16,
+      16,
+      10,
+      10,
+      20,
+      20,
+      9,
+      9,
+      11,
+      11,
+      15,
+      15,
+      8,
+      8,
+      11,
+      11,
+      18,
+      18,
+      12,
+      12,
+      16,
+      16,
+      14,
+      14,
+      17,
+      17,
+      18,
+      18
+     ],
+     "n_scenes": 5462,
+     "what": "E2's stage-2-only statistic: mean over groups of the uniform within-group mean of the official stage-2 `score` — NOT a two-stage EPDMS"
+    },
+    "stage_one_scene_mean": 0.28958783902161,
+    "stage_two_scene_mean": 0.329355734515099
+   },
+   "caveats": [
+    {
+     "id": "FLOOR_REUSED_FROM_SOURCE_RUN",
+     "one_line": "CV was NOT re-scored in this run: its per-token rows are adopted, byte-identical, from 20260920T082848Z-navsim_v2-none-06e257, which scored the identical token set under the identical devkit, patches, metric cache and agent inputs",
+     "consequence": "its numbers equal the source run's by construction; the pairing with this run's model arms is on the same tokens",
+     "record": "raw/CV/CV.reused.json"
+    }
+   ],
+   "reused_from": "20260920T082848Z-navsim_v2-none-06e257",
+   "modality": {
+    "sensor_set": "none — ego-status only (ego_statuses[-1].ego_velocity)",
+    "setting": "kinematic floor: constant-velocity straight-line extrapolation; perception-free, map-free, route-free",
+    "ego_status_used": true,
+    "vision_only_claimed": false
+   },
+   "controls": {
+    "C4_formula": {
+     "n_rows": 5912,
+     "n_rows_with_nan_EC_dropped_to_14": 0,
+     "max_abs_diff": 2.220446049250313e-16,
+     "tol": 1e-09,
+     "pass": true
+    },
+    "C5_aggregate": {
+     "max_abs_weight_diff": 2.4551204402811777e-09,
+     "max_abs_summary_diff": 6.583622536027178e-12,
+     "tol": 1e-09,
+     "pass": false,
+     "promoted_from": "E1 code/verify_controls.py C5 (inline) -> function, same arithmetic"
+    },
+    "stage1_reference_check": {
+     "status": "MATCH",
+     "n": 450,
+     "expected_n": 450,
+     "vs_e1_measured": {
+      "NC": {
+       "ours_x100": 88.88888888888889,
+       "e1_x100": 88.89,
+       "equal_2dp": true
+      },
+      "DAC": {
+       "ours_x100": 42.888888888888886,
+       "e1_x100": 42.89,
+       "equal_2dp": true
+      },
+      "DDC": {
+       "ours_x100": 70.66666666666667,
+       "e1_x100": 70.67,
+       "equal_2dp": true
+      },
+      "TLC": {
+       "ours_x100": 99.33333333333333,
+       "e1_x100": 99.33,
+       "equal_2dp": true
+      },
+      "EP": {
+       "ours_x100": 77.53343063173436,
+       "e1_x100": 77.53,
+       "equal_2dp": true
+      },
+      "TTC": {
+       "ours_x100": 87.33333333333333,
+       "e1_x100": 87.33,
+       "equal_2dp": true
+      },
+      "LK": {
+       "ours_x100": 78.66666666666666,
+       "e1_x100": 78.67,
+       "equal_2dp": true
+      },
+      "HC": {
+       "ours_x100": 97.11111111111111,
+       "e1_x100": 97.11,
+       "equal_2dp": true
+      }
+     },
+     "identical_to_e1": true,
+     "vs_published": {
+      "NC": {
+       "ours_truncated_1dp": 88.8,
+       "ours_rounded_1dp": 88.9,
+       "published": 88.8,
+       "match_truncating": true,
+       "match_rounding": false
+      },
+      "DAC": {
+       "ours_truncated_1dp": 42.8,
+       "ours_rounded_1dp": 42.9,
+       "published": 42.8,
+       "match_truncating": true,
+       "match_rounding": false
+      },
+      "DDC": {
+       "ours_truncated_1dp": 70.6,
+       "ours_rounded_1dp": 70.7,
+       "published": 70.6,
+       "match_truncating": true,
+       "match_rounding": false
+      },
+      "TLC": {
+       "ours_truncated_1dp": 99.3,
+       "ours_rounded_1dp": 99.3,
+       "published": 99.3,
+       "match_truncating": true,
+       "match_rounding": true
+      },
+      "EP": {
+       "ours_truncated_1dp": 77.5,
+       "ours_rounded_1dp": 77.5,
+       "published": 77.5,
+       "match_truncating": true,
+       "match_rounding": true
+      },
+      "TTC": {
+       "ours_truncated_1dp": 87.3,
+       "ours_rounded_1dp": 87.3,
+       "published": 87.3,
+       "match_truncating": true,
+       "match_rounding": true
+      },
+      "LK": {
+       "ours_truncated_1dp": 78.6,
+       "ours_rounded_1dp": 78.7,
+       "published": 78.6,
+       "match_truncating": true,
+       "match_rounding": false
+      },
+      "HC": {
+       "ours_truncated_1dp": 97.1,
+       "ours_rounded_1dp": 97.1,
+       "published": 97.1,
+       "match_truncating": true,
+       "match_rounding": true
+      }
+     },
+     "n_match_truncating": 8,
+     "n_match_rounding": 4,
+     "n_compared": 8,
+     "comparison_rule": "TRUNCATE to 1 dp, never round",
+     "published_source": "PRIMARY, banked: library key 2506.04218 ('Pseudo-Simulation for Autonomous Driving', sha256 a8431697ffa2...), PDF page 8, Table 2 'navhard leaderboard. Snapshot from 03/2026', column 'CV [8]', rows '<metric> S1'. READ FROM THE BANKED PDF by W1 2026-09-20 (pypdf), NOT inherited from a summary: E1 reported the match and W1 re-derived the published column itself.",
+     "how_to_read": "identical_to_e1 FALSE is the first thing to chase, ahead of everything else: same split, same scorer, same scenes must give the same number. The published comparison is the independent, weaker check."
+    },
+    "criteria_check": {
+     "rc": 0,
+     "json": "raw/criteria_CV.json",
+     "json_written": true,
+     "registry_version": "2.10.3",
+     "unreadable": [],
+     "n_violations": 0,
+     "n_work_items": 9,
+     "scope": [
+      "IN_SCOPE"
+     ]
+    },
+    "navsim_gates": {
+     "navsim.estimator_unit": "FAIL",
+     "navsim.ego_enforcement": "NOT_APPLICABLE_DECLARED",
+     "navsim.modality_label": "PASS",
+     "navsim.cross_protocol": "PASS"
+    },
+    "navsim_gate_mutations_all_red": true
+   },
+   "files": {
+    "scores": "scores/CV.csv",
+    "artifact": "artifacts/CV.json",
+    "plans": "plans/CV.npz",
+    "criteria": "criteria/CV.txt",
+    "counts": "raw/CV/CV.counts.json",
+    "wrapper_manifest": "raw/CV/CV_manifest.json",
+    "hooks": "raw/CV/CV_hooks.json",
+    "final_scores_frame": "raw/CV/CV_final_scores_frame.csv"
+   }
+  },
+  "STOP": {
+   "kind": "floor",
+   "status": "OK",
+   "declared_inputs": [],
+   "added_by_rule": true,
+   "headline": {
+    "value": 0.2985321254269824,
+    "x100": 29.853212542698238,
+    "column": "score",
+    "row": "extended_pdm_score_combined",
+    "n": 5912,
+    "statistic": "official two-stage EPDMS: run_pdm_score.py::compute_final_scores (EC injected, /16) aggregated over mapping keys ((s1*wavg(now) + s1'*wavg(prev))/2)"
+   },
+   "per_stage": {
+    "stage_one": {
+     "score": 0.5631618564494981,
+     "column": "score",
+     "row": "extended_pdm_score_stage_one",
+     "n": 450,
+     "submetrics": {
+      "NC": 0.9966666666666667,
+      "DAC": 0.9311111111111111,
+      "DDC": 1.0,
+      "TLC": 0.9977777777777778,
+      "EP": 0.3409457225324509,
+      "TTC": 0.9977777777777778,
+      "LK": 0.8911111111111111,
+      "HC": 0.4888888888888889,
+      "EC": 0.08888888888888889
+     }
+    },
+    "stage_two": {
+     "score": 0.5068463347607888,
+     "column": "score",
+     "row": "extended_pdm_score_stage_two",
+     "n": 5462,
+     "submetrics": {
+      "NC": 0.9634202231893667,
+      "DAC": 0.8758052991517904,
+      "DDC": 0.9607588613943102,
+      "TLC": 0.9942406482406482,
+      "EP": 0.371343983595139,
+      "TTC": 0.9472808661997439,
+      "LK": 0.5285864822527447,
+      "HC": 0.7019297933557479,
+      "EC": 0.3709098323094562
+     }
+    }
+   },
+   "submetrics": {
+    "combined_row": {
+     "NC_s1": 0.9966666666666667,
+     "NC_s2": 0.9634202231893667,
+     "DAC_s1": 0.9311111111111111,
+     "DAC_s2": 0.8758052991517904,
+     "DDC_s1": 1.0,
+     "DDC_s2": 0.9607588613943102,
+     "TLC_s1": 0.9977777777777778,
+     "TLC_s2": 0.9942406482406482,
+     "EP_s1": 0.3409457225324509,
+     "EP_s2": 0.371343983595139,
+     "TTC_s1": 0.9977777777777778,
+     "TTC_s2": 0.9472808661997439,
+     "LK_s1": 0.8911111111111111,
+     "LK_s2": 0.5285864822527447,
+     "HC_s1": 0.4888888888888889,
+     "HC_s2": 0.7019297933557479,
+     "EC_s1": 0.08888888888888889,
+     "EC_s2": 0.3709098323094562
+    },
+    "_note": "per-stage sub-metrics are also in per_stage.<stage>.submetrics (official stage summary rows)"
+   },
+   "per_log": {
+    "_statistic": "PLAIN mean of the official per-token `score` rows, by nuPlan log and stage — NOT the official aggregation (which weights stage-2 rows by the stage-1 endpoint kernel)",
+    "2021.05.25.14.16.10_veh-35_01100_01664": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.7760700347881737
+     },
+     "stage_two": {
+      "n": 22,
+      "score_mean": 0.6122620538871605
+     }
+    },
+    "2021.05.25.14.16.10_veh-35_01690_02183": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.6534033573821276
+     },
+     "stage_two": {
+      "n": 22,
+      "score_mean": 0.4197952554733602
+     }
+    },
+    "2021.05.25.14.16.10_veh-35_03373_03550": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.474703381040711
+     },
+     "stage_two": {
+      "n": 14,
+      "score_mean": 0.619751891319698
+     }
+    },
+    "2021.05.25.14.24.08_veh-25_03764_04034": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.375
+     },
+     "stage_two": {
+      "n": 26,
+      "score_mean": 0.5428706171677414
+     }
+    },
+    "2021.05.25.14.26.37_veh-27_04122_04279": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.7443691608953524
+     },
+     "stage_two": {
+      "n": 20,
+      "score_mean": 0.4885626013070583
+     }
+    },
+    "2021.05.25.15.59.03_veh-30_00625_00855": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.2760904162066675
+     },
+     "stage_two": {
+      "n": 14,
+      "score_mean": 0.5458111886715289
+     }
+    },
+    "2021.05.25.15.59.03_veh-30_04027_04200": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.7184464846698654
+     },
+     "stage_two": {
+      "n": 12,
+      "score_mean": 0.667314723512033
+     }
+    },
+    "2021.05.25.15.59.03_veh-30_04463_04606": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.6916029486437103
+     },
+     "stage_two": {
+      "n": 40,
+      "score_mean": 0.5723406789089447
+     }
+    },
+    "2021.05.25.17.54.41_veh-35_01905_02121": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.5365257108044507
+     },
+     "stage_two": {
+      "n": 16,
+      "score_mean": 0.5773349117802263
+     }
+    },
+    "2021.05.25.17.54.41_veh-35_04111_04288": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.714361220366748
+     },
+     "stage_two": {
+      "n": 40,
+      "score_mean": 0.46096626394645146
+     }
+    },
+    "2021.06.03.12.02.06_veh-35_00233_00609": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 14,
+      "score_mean": 0.6416709066669218
+     }
+    },
+    "2021.06.03.13.55.17_veh-35_02572_02855": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.5725078676499128
+     },
+     "stage_two": {
+      "n": 22,
+      "score_mean": 0.40289629305339436
+     }
+    },
+    "2021.06.03.13.55.17_veh-35_02866_03582": {
+     "stage_one": {
+      "n": 8,
+      "score_mean": 0.647676446682395
+     },
+     "stage_two": {
+      "n": 104,
+      "score_mean": 0.5770621025022215
+     }
+    },
+    "2021.06.03.17.06.58_veh-35_02571_02742": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.75
+     },
+     "stage_two": {
+      "n": 24,
+      "score_mean": 0.5885426726162757
+     }
+    },
+    "2021.06.03.17.06.58_veh-35_03860_03992": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.28968519387884223
+     },
+     "stage_two": {
+      "n": 16,
+      "score_mean": 0.49848070197838257
+     }
+    },
+    "2021.06.03.18.47.39_veh-35_00257_00492": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.8588312087619332
+     },
+     "stage_two": {
+      "n": 12,
+      "score_mean": 0.7395833333333334
+     }
+    },
+    "2021.06.03.18.47.39_veh-35_00503_00777": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 12,
+      "score_mean": 0.8125
+     }
+    },
+    "2021.06.28.13.53.26_veh-26_00492_00696": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.75
+     },
+     "stage_two": {
+      "n": 20,
+      "score_mean": 0.38495631190189983
+     }
+    },
+    "2021.06.28.15.02.02_veh-38_02398_02848": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.6723346171669824
+     },
+     "stage_two": {
+      "n": 24,
+      "score_mean": 0.5739887461030048
+     }
+    },
+    "2021.06.28.16.29.11_veh-38_03263_03766": {
+     "stage_one": {
+      "n": 8,
+      "score_mean": 0.7312086407275723
+     },
+     "stage_two": {
+      "n": 102,
+      "score_mean": 0.6100092326189593
+     }
+    },
+    "2021.06.28.20.24.43_veh-38_03385_04952": {
+     "stage_one": {
+      "n": 14,
+      "score_mean": 0.584249065839311
+     },
+     "stage_two": {
+      "n": 144,
+      "score_mean": 0.6246909406815744
+     }
+    },
+    "2021.08.16.14.23.37_veh-45_00015_00132": {
+     "stage_one": {
+      "n": 10,
+      "score_mean": 0.5461503154565364
+     },
+     "stage_two": {
+      "n": 106,
+      "score_mean": 0.4456746956980141
+     }
+    },
+    "2021.08.30.13.45.25_veh-40_00610_00771": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.4408759645587418
+     },
+     "stage_two": {
+      "n": 72,
+      "score_mean": 0.3835917809632392
+     }
+    },
+    "2021.08.30.13.45.25_veh-40_00878_01104": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.6138730015376352
+     },
+     "stage_two": {
+      "n": 40,
+      "score_mean": 0.45710839982853224
+     }
+    },
+    "2021.08.30.13.45.25_veh-40_01116_01336": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.45585497143246145
+     },
+     "stage_two": {
+      "n": 36,
+      "score_mean": 0.43074254606771833
+     }
+    },
+    "2021.08.30.14.54.34_veh-40_00439_00835": {
+     "stage_one": {
+      "n": 10,
+      "score_mean": 0.6166892000214491
+     },
+     "stage_two": {
+      "n": 128,
+      "score_mean": 0.49367676919011794
+     }
+    },
+    "2021.08.30.16.16.44_veh-40_00256_00716": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.875
+     },
+     "stage_two": {
+      "n": 16,
+      "score_mean": 0.5297003160188899
+     }
+    },
+    "2021.08.30.16.16.44_veh-40_00779_01088": {
+     "stage_one": {
+      "n": 10,
+      "score_mean": 0.5886362461859913
+     },
+     "stage_two": {
+      "n": 102,
+      "score_mean": 0.5099815582242373
+     }
+    },
+    "2021.08.30.16.16.44_veh-40_01099_01351": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.7241191084535834
+     },
+     "stage_two": {
+      "n": 40,
+      "score_mean": 0.5513695359122129
+     }
+    },
+    "2021.09.09.17.18.51_veh-48_01248_01450": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.6193276794571541
+     },
+     "stage_two": {
+      "n": 26,
+      "score_mean": 0.4141613281921617
+     }
+    },
+    "2021.09.16.13.53.10_veh-42_00077_00153": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.5665573214932765
+     },
+     "stage_two": {
+      "n": 46,
+      "score_mean": 0.4397866909405543
+     }
+    },
+    "2021.09.16.13.53.10_veh-42_00180_00342": {
+     "stage_one": {
+      "n": 16,
+      "score_mean": 0.5353466533174378
+     },
+     "stage_two": {
+      "n": 212,
+      "score_mean": 0.3985699122297012
+     }
+    },
+    "2021.09.16.13.53.10_veh-42_00860_01069": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.6081567889689439
+     },
+     "stage_two": {
+      "n": 66,
+      "score_mean": 0.5171946740659497
+     }
+    },
+    "2021.09.16.13.53.10_veh-42_01510_01591": {
+     "stage_one": {
+      "n": 6,
+      "score_mean": 0.531483505283413
+     },
+     "stage_two": {
+      "n": 72,
+      "score_mean": 0.2743338961668439
+     }
+    },
+    "2021.09.16.14.39.34_veh-42_00032_00186": {
+     "stage_one": {
+      "n": 12,
+      "score_mean": 0.3461281590331868
+     },
+     "stage_two": {
+      "n": 172,
+      "score_mean": 0.361181579840956
+     }
+    },
+    "2021.09.16.14.39.34_veh-42_00297_00935": {
+     "stage_one": {
+      "n": 20,
+      "score_mean": 0.5512690542429983
+     },
+     "stage_two": {
+      "n": 294,
+      "score_mean": 0.4402043805685826
+     }
+    },
+    "2021.09.16.14.39.34_veh-42_01111_01448": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.6456222458824235
+     },
+     "stage_two": {
+      "n": 50,
+      "score_mean": 0.6511270652916207
+     }
+    },
+    "2021.09.16.14.39.34_veh-42_01609_01687": {
+     "stage_one": {
+      "n": 6,
+      "score_mean": 0.5282632654796156
+     },
+     "stage_two": {
+      "n": 56,
+      "score_mean": 0.26528854001037044
+     }
+    },
+    "2021.09.16.15.12.03_veh-42_01037_01434": {
+     "stage_one": {
+      "n": 8,
+      "score_mean": 0.7480902466930425
+     },
+     "stage_two": {
+      "n": 116,
+      "score_mean": 0.5075262574693453
+     }
+    },
+    "2021.09.16.15.47.30_veh-45_01199_01391": {
+     "stage_one": {
+      "n": 6,
+      "score_mean": 0.6420173223164302
+     },
+     "stage_two": {
+      "n": 76,
+      "score_mean": 0.3959515594327332
+     }
+    },
+    "2021.09.16.16.20.27_veh-08_02435_02525": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.5957487762623488
+     },
+     "stage_two": {
+      "n": 40,
+      "score_mean": 0.5129779639088518
+     }
+    },
+    "2021.09.16.17.40.09_veh-45_02539_02745": {
+     "stage_one": {
+      "n": 10,
+      "score_mean": 0.4172817543286218
+     },
+     "stage_two": {
+      "n": 102,
+      "score_mean": 0.35379859030777205
+     }
+    },
+    "2021.09.16.19.12.04_veh-42_00289_00398": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.5179659800480073
+     },
+     "stage_two": {
+      "n": 48,
+      "score_mean": 0.36136590628522763
+     }
+    },
+    "2021.09.16.19.12.04_veh-42_01438_01677": {
+     "stage_one": {
+      "n": 8,
+      "score_mean": 0.5470908509741046
+     },
+     "stage_two": {
+      "n": 142,
+      "score_mean": 0.4186652674577834
+     }
+    },
+    "2021.09.16.19.27.01_veh-45_00472_00711": {
+     "stage_one": {
+      "n": 8,
+      "score_mean": 0.46458356025356584
+     },
+     "stage_two": {
+      "n": 66,
+      "score_mean": 0.35524974840070395
+     }
+    },
+    "2021.09.16.19.27.01_veh-45_01749_03230": {
+     "stage_one": {
+      "n": 30,
+      "score_mean": 0.5060280031154225
+     },
+     "stage_two": {
+      "n": 372,
+      "score_mean": 0.4561664169458154
+     }
+    },
+    "2021.09.16.19.49.00_veh-42_00990_01609": {
+     "stage_one": {
+      "n": 14,
+      "score_mean": 0.6019516112558883
+     },
+     "stage_two": {
+      "n": 132,
+      "score_mean": 0.4572496177723736
+     }
+    },
+    "2021.09.16.21.13.37_veh-42_00172_00347": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.75
+     },
+     "stage_two": {
+      "n": 16,
+      "score_mean": 0.4264876972202696
+     }
+    },
+    "2021.09.29.14.44.26_veh-28_00238_00320": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.6848418393515778
+     },
+     "stage_two": {
+      "n": 66,
+      "score_mean": 0.44027742341673154
+     }
+    },
+    "2021.09.29.14.44.26_veh-28_00337_00504": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.5773223984839166
+     },
+     "stage_two": {
+      "n": 64,
+      "score_mean": 0.4704452665712586
+     }
+    },
+    "2021.09.29.14.44.26_veh-28_00528_00992": {
+     "stage_one": {
+      "n": 10,
+      "score_mean": 0.5877427440286478
+     },
+     "stage_two": {
+      "n": 112,
+      "score_mean": 0.4936738358403018
+     }
+    },
+    "2021.09.29.14.44.26_veh-28_01202_01296": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.875
+     },
+     "stage_two": {
+      "n": 12,
+      "score_mean": 0.7091982710043928
+     }
+    },
+    "2021.09.29.14.44.26_veh-28_01331_01485": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.5130581565017388
+     },
+     "stage_two": {
+      "n": 44,
+      "score_mean": 0.40997553822211064
+     }
+    },
+    "2021.09.29.15.23.04_veh-28_00601_00802": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 1.0
+     },
+     "stage_two": {
+      "n": 10,
+      "score_mean": 0.55
+     }
+    },
+    "2021.09.29.15.23.04_veh-28_00814_01101": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.641055165099506
+     },
+     "stage_two": {
+      "n": 24,
+      "score_mean": 0.42352731802644183
+     }
+    },
+    "2021.09.29.18.19.40_veh-28_00438_00833": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.5771110611236562
+     },
+     "stage_two": {
+      "n": 36,
+      "score_mean": 0.6132915680730392
+     }
+    },
+    "2021.09.29.18.19.40_veh-28_00844_01218": {
+     "stage_one": {
+      "n": 6,
+      "score_mean": 0.6773562770065532
+     },
+     "stage_two": {
+      "n": 40,
+      "score_mean": 0.5198321687944765
+     }
+    },
+    "2021.09.29.18.19.40_veh-28_01268_01685": {
+     "stage_one": {
+      "n": 8,
+      "score_mean": 0.5004320126428371
+     },
+     "stage_two": {
+      "n": 70,
+      "score_mean": 0.6164467193364522
+     }
+    },
+    "2021.09.29.19.02.14_veh-28_00273_00514": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.3896843267780306
+     },
+     "stage_two": {
+      "n": 62,
+      "score_mean": 0.4222552717308233
+     }
+    },
+    "2021.09.29.19.02.14_veh-28_00540_00917": {
+     "stage_one": {
+      "n": 6,
+      "score_mean": 0.6657213032028696
+     },
+     "stage_two": {
+      "n": 78,
+      "score_mean": 0.5596540877832186
+     }
+    },
+    "2021.09.29.19.02.14_veh-28_00964_01689": {
+     "stage_one": {
+      "n": 10,
+      "score_mean": 0.6052333705951617
+     },
+     "stage_two": {
+      "n": 82,
+      "score_mean": 0.537603589261741
+     }
+    },
+    "2021.09.29.19.02.14_veh-28_02451_02708": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.3816509155947012
+     },
+     "stage_two": {
+      "n": 68,
+      "score_mean": 0.40381205422635136
+     }
+    },
+    "2021.09.29.19.02.14_veh-28_02911_03005": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.6274953194107734
+     },
+     "stage_two": {
+      "n": 30,
+      "score_mean": 0.4031800930912219
+     }
+    },
+    "2021.09.29.19.02.14_veh-28_03198_03360": {
+     "stage_one": {
+      "n": 6,
+      "score_mean": 0.48405663266716265
+     },
+     "stage_two": {
+      "n": 74,
+      "score_mean": 0.433604028398023
+     }
+    },
+    "2021.10.06.07.26.10_veh-52_00006_00398": {
+     "stage_one": {
+      "n": 12,
+      "score_mean": 0.530048069207255
+     },
+     "stage_two": {
+      "n": 148,
+      "score_mean": 0.5024168665494247
+     }
+    },
+    "2021.10.06.07.26.10_veh-52_00422_00728": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.5634562476431482
+     },
+     "stage_two": {
+      "n": 70,
+      "score_mean": 0.472746223006357
+     }
+    },
+    "2021.10.06.07.26.10_veh-52_00772_00917": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.6481646684931187
+     },
+     "stage_two": {
+      "n": 18,
+      "score_mean": 0.5595897660642238
+     }
+    },
+    "2021.10.06.07.26.10_veh-52_00953_01126": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.5176955325404445
+     },
+     "stage_two": {
+      "n": 50,
+      "score_mean": 0.5379474163602503
+     }
+    },
+    "2021.10.06.07.26.10_veh-52_01245_02064": {
+     "stage_one": {
+      "n": 22,
+      "score_mean": 0.5511855986368275
+     },
+     "stage_two": {
+      "n": 274,
+      "score_mean": 0.4071299276558947
+     }
+    },
+    "2021.10.06.07.26.10_veh-52_02208_02394": {
+     "stage_one": {
+      "n": 10,
+      "score_mean": 0.5951291076927345
+     },
+     "stage_two": {
+      "n": 132,
+      "score_mean": 0.5538551138321148
+     }
+    },
+    "2021.10.06.08.16.17_veh-52_00181_00574": {
+     "stage_one": {
+      "n": 10,
+      "score_mean": 0.642879419084153
+     },
+     "stage_two": {
+      "n": 120,
+      "score_mean": 0.49575430987021635
+     }
+    },
+    "2021.10.06.08.16.17_veh-52_00612_00782": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.4994230288584077
+     },
+     "stage_two": {
+      "n": 24,
+      "score_mean": 0.3657295988821179
+     }
+    },
+    "2021.10.06.08.16.17_veh-52_00922_01296": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.5004670817023138
+     },
+     "stage_two": {
+      "n": 32,
+      "score_mean": 0.4428659041341926
+     }
+    },
+    "2021.10.06.08.16.17_veh-52_01430_01579": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.7514334648076513
+     },
+     "stage_two": {
+      "n": 60,
+      "score_mean": 0.5289658516161888
+     }
+    },
+    "2021.10.06.08.16.17_veh-52_01590_01725": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.5023606124808255
+     },
+     "stage_two": {
+      "n": 40,
+      "score_mean": 0.5306958568886475
+     }
+    },
+    "2021.10.06.08.16.17_veh-52_01949_02501": {
+     "stage_one": {
+      "n": 18,
+      "score_mean": 0.49636213656947287
+     },
+     "stage_two": {
+      "n": 258,
+      "score_mean": 0.451643930824142
+     }
+    }
+   },
+   "paired": {
+    "STOP": {
+     "status": "SELF"
+    },
+    "CV": {
+     "status": "OK",
+     "headline_delta": 0.18371604101050237,
+     "S2_EPDMS_u_delta": 0.1439131879889775,
+     "by_stage": {
+      "stage_one": {
+       "n": 450,
+       "score_mean_delta": 0.2735740174278881,
+       "official_stage_row_delta": 0.2735740174278881,
+       "wins": 276,
+       "ties": 39,
+       "losses": 135,
+       "submetric_mean_deltas": {
+        "NC": 0.10777777777777786,
+        "DAC": 0.5022222222222222,
+        "DDC": 0.29333333333333333,
+        "TLC": 0.004444444444444473,
+        "EP": -0.43438858378489265,
+        "TTC": 0.12444444444444447,
+        "LK": 0.10444444444444445,
+        "HC": -0.4822222222222223,
+        "EC": -0.5155555555555555
+       }
+      },
+      "stage_two": {
+       "n": 5462,
+       "score_mean_delta": 0.14087622917996767,
+       "official_stage_row_delta": 0.16438248314857723,
+       "wins": 2381,
+       "ties": 1392,
+       "losses": 1689,
+       "submetric_mean_deltas": {
+        "NC": 0.12266569022336138,
+        "DAC": 0.29384840717685834,
+        "DDC": 0.2162211644086416,
+        "TLC": 0.009337239106554374,
+        "EP": -0.3162599076962306,
+        "TTC": 0.12834126693518855,
+        "LK": 0.06151592823141705,
+        "HC": -0.3203954595386306,
+        "EC": -0.3427316001464665
+       }
+      }
+     },
+     "wins": 2657,
+     "ties": 1431,
+     "losses": 1824,
+     "_wtl_scope": "per-scene wins/ties/losses pooled over the common tokens of BOTH stages (tie band 1e-12); per stage in by_stage.<stage>",
+     "n_common": 5912
+    }
+   },
+   "interval": {
+    "status": "OK",
+    "estimator": "navsim_log_cluster_bootstrap",
+    "cluster_unit": "log_name",
+    "lo": 0.2737,
+    "hi": 0.3253,
+    "n_clusters": 76,
+    "detail": {
+     "status": "OK",
+     "estimator": "navsim_log_cluster_bootstrap",
+     "cluster_unit": "log_name",
+     "resample_unit": "log_name",
+     "aggregation": "two_stage_mapping_key_mean",
+     "aggregation_source": "run_pdm_score.py::calculate_individual_mapping_scores L242-290 @0a380a9 — per key ((s1(orig)*wavg(now)) + (s1(prev)*wavg(prev)))/2, then pd.DataFrame(...).mean() (skipna) over keys",
+     "point": 0.2985,
+     "mean": 0.2985,
+     "lo": 0.2737,
+     "hi": 0.3253,
+     "ci95": 0.0258,
+     "se": 0.0131,
+     "bootstrap_mean": 0.2986,
+     "n_clusters": 76,
+     "n_units": 225,
+     "n_units_nan": 0,
+     "min_clusters": 8,
+     "n_boot": 2000,
+     "seed": 0,
+     "alpha": 0.05,
+     "reproduces_official": {
+      "status": "OK",
+      "official_value": 0.2985321254269824,
+      "point": 0.2985321254269824,
+      "abs_diff": 0.0,
+      "tol": 1e-09
+     },
+     "sensitivity_nuplan_drive": {
+      "status": "OK",
+      "unit": "nuplan_drive",
+      "n_clusters": 34,
+      "lo": 0.2765,
+      "hi": 0.3275,
+      "se": 0.0133
+     },
+     "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? — evaluation-set variance only. ⛔ BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT — read it against a replicate arm's floor.",
+     "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+     "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+     "_machine": "taniteval.ci.episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna) — the SAME draws, cross-checked",
+     "_forbidden": "⛔ scene-token resampling (overlapping units), the episode-cluster bootstrap under any other unit, and overlapping_holdout_se (biases the point estimate) are NOT admissible for NavSim.",
+     "protocol": "EPDMS_v2_navhard_two_stage"
+    },
+    "pre_csv_frame": {
+     "captured": true,
+     "path": "D:/Projects/TanitAD/taniteval/results/bench/navsim_v2/navhard_two_stage/20260921T122531Z-navsim_v2-refcv4b_b1_v72_40k-e6560d/raw/STOP/STOP_final_scores_frame.csv",
+     "why_needed": "the published CSV drops `weight`/`log_name` (run_pdm_score.py:422)"
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? — evaluation-set variance only. ⛔ BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT — read it against a replicate arm's floor."
+   },
+   "families": {
+    "longitudinal": {
+     "status": "PARTIAL",
+     "n": 450,
+     "scope": "OUR instruments on the 450 STAGE-1 scenes only (agent vs logged human future, dt 0.5 s, K=8); stage-2 synthetic scenes have NO human future (0 future frames) — frame check: verified",
+     "tier": "T1",
+     "metrics": {
+      "speed_mae_mps": 5.5426,
+      "along_mae_m": 12.0816,
+      "speed_bias_mps": -5.5426,
+      "along_bias_m": -12.0725,
+      "accel_mae_mps2": 0.5144,
+      "progress_ratio_mean": 0.0
+     },
+     "reason": "distance-keeping UNAVAILABLE: no lead-agent track supplied — pass `lead=` (see this function's caller docstring). PhysicalAI-AV ships obstacle.offline (3D agent tracks, 97.44 % of the corpus); the reader is `Architecture & Inference/Implementation/incoming/2026-08-03-longitudinal-distance-keeping/build_lead_tracks.py`. Not supplying it is a WORK ITEM, not a pass."
+    },
+    "lateral": {
+     "status": "PARTIAL",
+     "n": 450,
+     "scope": "OUR instruments on the 450 STAGE-1 scenes only (agent vs logged human future, dt 0.5 s, K=8); stage-2 synthetic scenes have NO human future (0 future frames) — frame check: verified",
+     "tier": "T1",
+     "metrics": {
+      "cross_mae_m": 1.488,
+      "cross_bias_m": -0.4882
+     },
+     "reason": "undefined or refused terms — heading_mae_deg: heading_mae_deg is UNDEFINED here: 0 of 3600 steps cleared the min-displacement gate min_ds_m=0.25 m (= MIN_DS_MPS 0.5 m/s x dt 0.5 s). A path whose steps do not move has NO TANGENT, so heading / yaw-rate / curvature ERRORS do not exist for it. ⛔ Refused with its n rather than returned as null (whic | curvature_mae_1pm: curvature_mae_1pm is UNDEFINED here: 0 of 3150 step pairs cleared the min-displacement gate min_ds_m=0.25 m (= MIN_DS_MPS 0.5 m/s x dt 0.5 s). A path whose steps do not move has NO TANGENT, so heading / yaw-rate / curvature ERRORS do not exist for it. ⛔ Refused with its n rather than returned as nul | yaw_rate_mae_degps: yaw_rate_mae_degps is UNDEFINED here: 0 of 3150 step PAIRS cleared the min-displacement gate min_ds_m=0.25 m (= MIN_DS_MPS 0.5 m/s x dt 0.5 s). A path whose steps do not move has NO TANGENT, so heading / yaw-rate / curvature ERRORS do not exist for it. ⛔ Refused with its n rather than returned as nu"
+    },
+    "tactical": {
+     "status": "OK",
+     "n": 450,
+     "scope": "OUR instruments on the 450 STAGE-1 scenes only (agent vs logged human future, dt 0.5 s, K=8); stage-2 synthetic scenes have NO human future (0 future frames) — frame check: verified",
+     "tier": "T1",
+     "metrics": {
+      "lateral_decision.accuracy": 0.42,
+      "lateral_decision.kappa": 0.0,
+      "longitudinal_decision.accuracy": 0.4133,
+      "longitudinal_decision.kappa": 0.0,
+      "goal_setting.goal_point_error_m": 21.8602
+     },
+     "_is_not": "trajectory-derived EXECUTED manoeuvres on both sides — NOT selected-vs-executed"
+    },
+    "strategic": {
+     "status": "UNAVAILABLE",
+     "reason": "PhysicalAI-AV carries NO map, NO lane graph, NO junction/roundabout label, NO traffic-light feature and NO route/goal signal — the dataset card says verbatim 'we do not include open maps data', and obstacle.offline's enum over 87,481 cuboids is 10 classes, ALL DYNAMIC AGENTS. `egomotion` carries no lat/lon/GNSS either (clip-local metres), so OSM map-matching on our traces is impossible. ⇒ there is no admissible strategic LABEL on this split, and therefore no strategic decision or route/goal quality to score. ⛔ The two label sources that DO exist are both inadmissible, for stated reasons and not for want of effort: (a) a route class read off the ego's OWN FUTURE yaw cannot tell whether the map admitted a choice at all — that is how the closed-loop harness once published route_head_eq_logged = 1.0000 on a clip where every junction had exactly ONE continuation, and GATE_PROTOCOL §0.7 declares nonav_route_beats_majority VOID BY CONSTRUCTION; (b) a supplied route is optimistic by construction here because our only route supplier is the ego's own future path. | NavSim: ⚠️ The generic reason above is PhysicalAI-specific (no map in the corpus). On NavSim the fact is DIFFERENT and must not be conflated: the lane graph and route EXIST, but `driving_command` is an INPUT and is never scored, and the Scene object carrying the map is TRAINING-ONLY at inference (NAVSIM_PROTOCOL.md:470-474, :812). So STRATEGIC is absent because the BENCHMARK declines to measure it, not because the data lacks it — which makes it a buildable WORK ITEM here (audit seam 7, taniteval/strategic_optionset.py:193), unlike on PhysicalAI.",
+     "n": 450
+    }
+   },
+   "statistics": {
+    "S2_EPDMS_u": {
+     "value": 0.4828269144777932,
+     "n_groups": 450,
+     "group_sizes": [
+      11,
+      11,
+      11,
+      11,
+      7,
+      7,
+      13,
+      13,
+      10,
+      10,
+      7,
+      7,
+      6,
+      6,
+      20,
+      20,
+      8,
+      8,
+      20,
+      20,
+      7,
+      7,
+      11,
+      11,
+      16,
+      16,
+      10,
+      10,
+      20,
+      20,
+      6,
+      6,
+      12,
+      12,
+      8,
+      8,
+      6,
+      6,
+      6,
+      6,
+      10,
+      10,
+      12,
+      12,
+      7,
+      7,
+      18,
+      18,
+      17,
+      17,
+      9,
+      9,
+      7,
+      7,
+      18,
+      18,
+      12,
+      12,
+      11,
+      11,
+      5,
+      5,
+      14,
+      14,
+      5,
+      5,
+      9,
+      9,
+      19,
+      19,
+      8,
+      8,
+      7,
+      7,
+      10,
+      10,
+      17,
+      17,
+      19,
+      19,
+      5,
+      5,
+      15,
+      15,
+      18,
+      18,
+      15,
+      15,
+      9,
+      9,
+      17,
+      17,
+      12,
+      12,
+      11,
+      11,
+      8,
+      8,
+      9,
+      9,
+      12,
+      12,
+      12,
+      12,
+      13,
+      13,
+      5,
+      5,
+      7,
+      7,
+      13,
+      13,
+      13,
+      13,
+      13,
+      13,
+      10,
+      10,
+      11,
+      11,
+      9,
+      9,
+      14,
+      14,
+      17,
+      17,
+      18,
+      18,
+      17,
+      17,
+      12,
+      12,
+      8,
+      8,
+      20,
+      20,
+      13,
+      13,
+      20,
+      20,
+      7,
+      7,
+      9,
+      9,
+      18,
+      18,
+      13,
+      13,
+      14,
+      14,
+      20,
+      20,
+      16,
+      16,
+      5,
+      5,
+      20,
+      20,
+      14,
+      14,
+      12,
+      12,
+      17,
+      17,
+      14,
+      14,
+      17,
+      17,
+      20,
+      20,
+      5,
+      5,
+      10,
+      10,
+      18,
+      18,
+      10,
+      10,
+      15,
+      15,
+      9,
+      9,
+      11,
+      11,
+      8,
+      8,
+      5,
+      5,
+      17,
+      17,
+      20,
+      20,
+      16,
+      16,
+      7,
+      7,
+      12,
+      12,
+      19,
+      19,
+      20,
+      20,
+      7,
+      7,
+      15,
+      15,
+      11,
+      11,
+      10,
+      10,
+      8,
+      8,
+      17,
+      17,
+      7,
+      7,
+      19,
+      19,
+      19,
+      19,
+      14,
+      14,
+      19,
+      19,
+      15,
+      15,
+      6,
+      6,
+      7,
+      7,
+      5,
+      5,
+      5,
+      5,
+      13,
+      13,
+      14,
+      14,
+      13,
+      13,
+      13,
+      13,
+      16,
+      16,
+      11,
+      11,
+      15,
+      15,
+      17,
+      17,
+      9,
+      9,
+      10,
+      10,
+      11,
+      11,
+      8,
+      8,
+      20,
+      20,
+      11,
+      11,
+      11,
+      11,
+      8,
+      8,
+      12,
+      12,
+      8,
+      8,
+      9,
+      9,
+      13,
+      13,
+      5,
+      5,
+      8,
+      8,
+      13,
+      13,
+      20,
+      20,
+      13,
+      13,
+      19,
+      19,
+      6,
+      6,
+      11,
+      11,
+      11,
+      11,
+      15,
+      15,
+      13,
+      13,
+      6,
+      6,
+      8,
+      8,
+      14,
+      14,
+      5,
+      5,
+      12,
+      12,
+      8,
+      8,
+      10,
+      10,
+      7,
+      7,
+      8,
+      8,
+      5,
+      5,
+      6,
+      6,
+      6,
+      6,
+      12,
+      12,
+      11,
+      11,
+      11,
+      11,
+      20,
+      20,
+      20,
+      20,
+      14,
+      14,
+      5,
+      5,
+      12,
+      12,
+      11,
+      11,
+      5,
+      5,
+      8,
+      8,
+      5,
+      5,
+      20,
+      20,
+      14,
+      14,
+      15,
+      15,
+      8,
+      8,
+      12,
+      12,
+      17,
+      17,
+      16,
+      16,
+      10,
+      10,
+      14,
+      14,
+      10,
+      10,
+      9,
+      9,
+      15,
+      15,
+      15,
+      15,
+      20,
+      20,
+      9,
+      9,
+      12,
+      12,
+      13,
+      13,
+      8,
+      8,
+      13,
+      13,
+      14,
+      14,
+      20,
+      20,
+      16,
+      16,
+      15,
+      15,
+      11,
+      11,
+      17,
+      17,
+      5,
+      5,
+      8,
+      8,
+      10,
+      10,
+      8,
+      8,
+      19,
+      19,
+      11,
+      11,
+      13,
+      13,
+      15,
+      15,
+      7,
+      7,
+      18,
+      18,
+      8,
+      8,
+      17,
+      17,
+      10,
+      10,
+      12,
+      12,
+      16,
+      16,
+      10,
+      10,
+      20,
+      20,
+      9,
+      9,
+      11,
+      11,
+      15,
+      15,
+      8,
+      8,
+      11,
+      11,
+      18,
+      18,
+      12,
+      12,
+      16,
+      16,
+      14,
+      14,
+      17,
+      17,
+      18,
+      18
+     ],
+     "n_scenes": 5462,
+     "what": "E2's stage-2-only statistic: mean over groups of the uniform within-group mean of the official stage-2 `score` — NOT a two-stage EPDMS"
+    },
+    "stage_one_scene_mean": 0.5631618564494981,
+    "stage_two_scene_mean": 0.4702319636950667
+   },
+   "caveats": [
+    {
+     "id": "FLOOR_REUSED_FROM_SOURCE_RUN",
+     "one_line": "STOP was NOT re-scored in this run: its per-token rows are adopted, byte-identical, from 20260920T082848Z-navsim_v2-none-06e257, which scored the identical token set under the identical devkit, patches, metric cache and agent inputs",
+     "consequence": "its numbers equal the source run's by construction; the pairing with this run's model arms is on the same tokens",
+     "record": "raw/STOP/STOP.reused.json"
+    }
+   ],
+   "reused_from": "20260920T082848Z-navsim_v2-none-06e257",
+   "modality": {
+    "sensor_set": "none — reads no input at all",
+    "setting": "trivial floor: x = y = heading = 0 at every 0.5 s pose (EP == 1 when the best compliant progress <= 5 m, pdm_scorer.py:231-236)",
+    "ego_status_used": false,
+    "vision_only_claimed": false
+   },
+   "controls": {
+    "C4_formula": {
+     "n_rows": 5912,
+     "n_rows_with_nan_EC_dropped_to_14": 0,
+     "max_abs_diff": 1.1102230246251565e-16,
+     "tol": 1e-09,
+     "pass": true
+    },
+    "C5_aggregate": {
+     "max_abs_weight_diff": 6.81222522835867e-10,
+     "max_abs_summary_diff": 1.5886181259361365e-12,
+     "tol": 1e-09,
+     "pass": true,
+     "promoted_from": "E1 code/verify_controls.py C5 (inline) -> function, same arithmetic"
+    },
+    "criteria_check": {
+     "rc": 0,
+     "json": "raw/criteria_STOP.json",
+     "json_written": true,
+     "registry_version": "2.10.3",
+     "unreadable": [],
+     "n_violations": 0,
+     "n_work_items": 12,
+     "scope": [
+      "IN_SCOPE"
+     ]
+    },
+    "navsim_gates": {
+     "navsim.estimator_unit": "FAIL",
+     "navsim.ego_enforcement": "NOT_APPLICABLE_DECLARED",
+     "navsim.modality_label": "PASS",
+     "navsim.cross_protocol": "PASS"
+    },
+    "navsim_gate_mutations_all_red": true
+   },
+   "files": {
+    "scores": "scores/STOP.csv",
+    "artifact": "artifacts/STOP.json",
+    "plans": "plans/STOP.npz",
+    "criteria": "criteria/STOP.txt",
+    "counts": "raw/STOP/STOP.counts.json",
+    "wrapper_manifest": "raw/STOP/STOP_manifest.json",
+    "hooks": "raw/STOP/STOP_hooks.json",
+    "final_scores_frame": "raw/STOP/STOP_final_scores_frame.csv"
+   }
+  },
+  "ECHO": {
+   "kind": "floor",
+   "status": "OK",
+   "declared_inputs": [
+    "ego_velocity[t0]",
+    "ego_acceleration[t0]"
+   ],
+   "added_by_rule": true,
+   "headline": {
+    "value": 0.14293848144114832,
+    "x100": 14.293848144114833,
+    "column": "score",
+    "row": "extended_pdm_score_combined",
+    "n": 5912,
+    "statistic": "official two-stage EPDMS: run_pdm_score.py::compute_final_scores (EC injected, /16) aggregated over mapping keys ((s1*wavg(now) + s1'*wavg(prev))/2)"
+   },
+   "per_stage": {
+    "stage_one": {
+     "score": 0.386637542152985,
+     "column": "score",
+     "row": "extended_pdm_score_stage_one",
+     "n": 450,
+     "submetrics": {
+      "NC": 0.9,
+      "DAC": 0.5155555555555555,
+      "DDC": 0.7655555555555555,
+      "TLC": 0.9933333333333333,
+      "EP": 0.7866269427051422,
+      "TTC": 0.8688888888888889,
+      "LK": 0.82,
+      "HC": 0.9711111111111111,
+      "EC": 0.8
+     }
+    },
+    "stage_two": {
+     "score": 0.32527952361385604,
+     "column": "score",
+     "row": "extended_pdm_score_stage_two",
+     "n": 5462,
+     "submetrics": {
+      "NC": 0.8238477355559366,
+      "DAC": 0.5344639253564745,
+      "DDC": 0.696255247107339,
+      "TLC": 0.9788847190028713,
+      "EP": 0.6742984455610773,
+      "TTC": 0.7893208042816622,
+      "LK": 0.4134256717935869,
+      "HC": 0.9838160912625231,
+      "EC": 0.8365006138586518
+     }
+    }
+   },
+   "submetrics": {
+    "combined_row": {
+     "NC_s1": 0.9,
+     "NC_s2": 0.8238477355559366,
+     "DAC_s1": 0.5155555555555555,
+     "DAC_s2": 0.5344639253564745,
+     "DDC_s1": 0.7655555555555555,
+     "DDC_s2": 0.696255247107339,
+     "TLC_s1": 0.9933333333333333,
+     "TLC_s2": 0.9788847190028713,
+     "EP_s1": 0.7866269427051422,
+     "EP_s2": 0.6742984455610773,
+     "TTC_s1": 0.8688888888888889,
+     "TTC_s2": 0.7893208042816622,
+     "LK_s1": 0.82,
+     "LK_s2": 0.4134256717935869,
+     "HC_s1": 0.9711111111111111,
+     "HC_s2": 0.9838160912625231,
+     "EC_s1": 0.8,
+     "EC_s2": 0.8365006138586518
+    },
+    "_note": "per-stage sub-metrics are also in per_stage.<stage>.submetrics (official stage summary rows)"
+   },
+   "per_log": {
+    "_statistic": "PLAIN mean of the official per-token `score` rows, by nuPlan log and stage — NOT the official aggregation (which weights stage-2 rows by the stage-1 endpoint kernel)",
+    "2021.05.25.14.16.10_veh-35_01100_01664": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 22,
+      "score_mean": 0.37495014840369867
+     }
+    },
+    "2021.05.25.14.16.10_veh-35_01690_02183": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.9020375778608186
+     },
+     "stage_two": {
+      "n": 22,
+      "score_mean": 0.4344965148741839
+     }
+    },
+    "2021.05.25.14.16.10_veh-35_03373_03550": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 14,
+      "score_mean": 0.5071668614014923
+     }
+    },
+    "2021.05.25.14.24.08_veh-25_03764_04034": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 26,
+      "score_mean": 0.500952620816298
+     }
+    },
+    "2021.05.25.14.26.37_veh-27_04122_04279": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.9329266106144627
+     },
+     "stage_two": {
+      "n": 20,
+      "score_mean": 0.24375
+     }
+    },
+    "2021.05.25.15.59.03_veh-30_00625_00855": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 14,
+      "score_mean": 0.3432599061468982
+     }
+    },
+    "2021.05.25.15.59.03_veh-30_04027_04200": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.8802245912124591
+     },
+     "stage_two": {
+      "n": 12,
+      "score_mean": 0.2001585657654205
+     }
+    },
+    "2021.05.25.15.59.03_veh-30_04463_04606": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 40,
+      "score_mean": 0.27700392468334634
+     }
+    },
+    "2021.05.25.17.54.41_veh-35_01905_02121": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 16,
+      "score_mean": 0.4643598981995162
+     }
+    },
+    "2021.05.25.17.54.41_veh-35_04111_04288": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.9050943011779282
+     },
+     "stage_two": {
+      "n": 40,
+      "score_mean": 0.2938657958106999
+     }
+    },
+    "2021.06.03.12.02.06_veh-35_00233_00609": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 14,
+      "score_mean": 0.36846980595003564
+     }
+    },
+    "2021.06.03.13.55.17_veh-35_02572_02855": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 22,
+      "score_mean": 0.41963261192113177
+     }
+    },
+    "2021.06.03.13.55.17_veh-35_02866_03582": {
+     "stage_one": {
+      "n": 8,
+      "score_mean": 0.6664579594305499
+     },
+     "stage_two": {
+      "n": 104,
+      "score_mean": 0.4654989309684149
+     }
+    },
+    "2021.06.03.17.06.58_veh-35_02571_02742": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 24,
+      "score_mean": 0.42505016182123806
+     }
+    },
+    "2021.06.03.17.06.58_veh-35_03860_03992": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 16,
+      "score_mean": 0.23918262283605296
+     }
+    },
+    "2021.06.03.18.47.39_veh-35_00257_00492": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.9514748636841276
+     },
+     "stage_two": {
+      "n": 12,
+      "score_mean": 0.44960855076431594
+     }
+    },
+    "2021.06.03.18.47.39_veh-35_00503_00777": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 12,
+      "score_mean": 0.6881381863576578
+     }
+    },
+    "2021.06.28.13.53.26_veh-26_00492_00696": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.5
+     },
+     "stage_two": {
+      "n": 20,
+      "score_mean": 0.1914121801880082
+     }
+    },
+    "2021.06.28.15.02.02_veh-38_02398_02848": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 24,
+      "score_mean": 0.47405110663344363
+     }
+    },
+    "2021.06.28.16.29.11_veh-38_03263_03766": {
+     "stage_one": {
+      "n": 8,
+      "score_mean": 0.5320945346077778
+     },
+     "stage_two": {
+      "n": 102,
+      "score_mean": 0.5136962349231184
+     }
+    },
+    "2021.06.28.20.24.43_veh-38_03385_04952": {
+     "stage_one": {
+      "n": 14,
+      "score_mean": 0.3140580092600159
+     },
+     "stage_two": {
+      "n": 144,
+      "score_mean": 0.5118245550724634
+     }
+    },
+    "2021.08.16.14.23.37_veh-45_00015_00132": {
+     "stage_one": {
+      "n": 10,
+      "score_mean": 0.16020720013401213
+     },
+     "stage_two": {
+      "n": 106,
+      "score_mean": 0.30364427053347437
+     }
+    },
+    "2021.08.30.13.45.25_veh-40_00610_00771": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.44117994440352404
+     },
+     "stage_two": {
+      "n": 72,
+      "score_mean": 0.196298088997431
+     }
+    },
+    "2021.08.30.13.45.25_veh-40_00878_01104": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.5
+     },
+     "stage_two": {
+      "n": 40,
+      "score_mean": 0.37721494374960274
+     }
+    },
+    "2021.08.30.13.45.25_veh-40_01116_01336": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 36,
+      "score_mean": 0.25534900610308714
+     }
+    },
+    "2021.08.30.14.54.34_veh-40_00439_00835": {
+     "stage_one": {
+      "n": 10,
+      "score_mean": 0.33091938045152597
+     },
+     "stage_two": {
+      "n": 128,
+      "score_mean": 0.2738248012950808
+     }
+    },
+    "2021.08.30.16.16.44_veh-40_00256_00716": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 16,
+      "score_mean": 0.4474596596726441
+     }
+    },
+    "2021.08.30.16.16.44_veh-40_00779_01088": {
+     "stage_one": {
+      "n": 10,
+      "score_mean": 0.48127886401255593
+     },
+     "stage_two": {
+      "n": 102,
+      "score_mean": 0.3874937744646453
+     }
+    },
+    "2021.08.30.16.16.44_veh-40_01099_01351": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.71875
+     },
+     "stage_two": {
+      "n": 40,
+      "score_mean": 0.3763791839010821
+     }
+    },
+    "2021.09.09.17.18.51_veh-48_01248_01450": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 26,
+      "score_mean": 0.1442497418038089
+     }
+    },
+    "2021.09.16.13.53.10_veh-42_00077_00153": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.5
+     },
+     "stage_two": {
+      "n": 46,
+      "score_mean": 0.27465560233087666
+     }
+    },
+    "2021.09.16.13.53.10_veh-42_00180_00342": {
+     "stage_one": {
+      "n": 16,
+      "score_mean": 0.26629448516801
+     },
+     "stage_two": {
+      "n": 212,
+      "score_mean": 0.22552054375008362
+     }
+    },
+    "2021.09.16.13.53.10_veh-42_00860_01069": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.80209960522578
+     },
+     "stage_two": {
+      "n": 66,
+      "score_mean": 0.21416373695013652
+     }
+    },
+    "2021.09.16.13.53.10_veh-42_01510_01591": {
+     "stage_one": {
+      "n": 6,
+      "score_mean": 0.16666666666666666
+     },
+     "stage_two": {
+      "n": 72,
+      "score_mean": 0.15281970008064832
+     }
+    },
+    "2021.09.16.14.39.34_veh-42_00032_00186": {
+     "stage_one": {
+      "n": 12,
+      "score_mean": 0.2836401335831879
+     },
+     "stage_two": {
+      "n": 172,
+      "score_mean": 0.20981123922356773
+     }
+    },
+    "2021.09.16.14.39.34_veh-42_00297_00935": {
+     "stage_one": {
+      "n": 20,
+      "score_mean": 0.47880485113047505
+     },
+     "stage_two": {
+      "n": 294,
+      "score_mean": 0.25721849935686286
+     }
+    },
+    "2021.09.16.14.39.34_veh-42_01111_01448": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.3363251090755134
+     },
+     "stage_two": {
+      "n": 50,
+      "score_mean": 0.5010841354173412
+     }
+    },
+    "2021.09.16.14.39.34_veh-42_01609_01687": {
+     "stage_one": {
+      "n": 6,
+      "score_mean": 0.33234201611069414
+     },
+     "stage_two": {
+      "n": 56,
+      "score_mean": 0.14799752394572582
+     }
+    },
+    "2021.09.16.15.12.03_veh-42_01037_01434": {
+     "stage_one": {
+      "n": 8,
+      "score_mean": 0.6933026777019451
+     },
+     "stage_two": {
+      "n": 116,
+      "score_mean": 0.3976216638263176
+     }
+    },
+    "2021.09.16.15.47.30_veh-45_01199_01391": {
+     "stage_one": {
+      "n": 6,
+      "score_mean": 0.16666666666666666
+     },
+     "stage_two": {
+      "n": 76,
+      "score_mean": 0.321476157876064
+     }
+    },
+    "2021.09.16.16.20.27_veh-08_02435_02525": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.7318947405961557
+     },
+     "stage_two": {
+      "n": 40,
+      "score_mean": 0.29819744992877534
+     }
+    },
+    "2021.09.16.17.40.09_veh-45_02539_02745": {
+     "stage_one": {
+      "n": 10,
+      "score_mean": 0.04102347449331348
+     },
+     "stage_two": {
+      "n": 102,
+      "score_mean": 0.17044141071461716
+     }
+    },
+    "2021.09.16.19.12.04_veh-42_00289_00398": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.2452576356203843
+     },
+     "stage_two": {
+      "n": 48,
+      "score_mean": 0.1166540493020951
+     }
+    },
+    "2021.09.16.19.12.04_veh-42_01438_01677": {
+     "stage_one": {
+      "n": 8,
+      "score_mean": 0.125
+     },
+     "stage_two": {
+      "n": 142,
+      "score_mean": 0.2988803511791464
+     }
+    },
+    "2021.09.16.19.27.01_veh-45_00472_00711": {
+     "stage_one": {
+      "n": 8,
+      "score_mean": 0.4519975256358518
+     },
+     "stage_two": {
+      "n": 66,
+      "score_mean": 0.369606202148584
+     }
+    },
+    "2021.09.16.19.27.01_veh-45_01749_03230": {
+     "stage_one": {
+      "n": 30,
+      "score_mean": 0.43378311197671166
+     },
+     "stage_two": {
+      "n": 372,
+      "score_mean": 0.3238367565176182
+     }
+    },
+    "2021.09.16.19.49.00_veh-42_00990_01609": {
+     "stage_one": {
+      "n": 14,
+      "score_mean": 0.2493042105660705
+     },
+     "stage_two": {
+      "n": 132,
+      "score_mean": 0.316522072697936
+     }
+    },
+    "2021.09.16.21.13.37_veh-42_00172_00347": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 16,
+      "score_mean": 0.24590703896177915
+     }
+    },
+    "2021.09.29.14.44.26_veh-28_00238_00320": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.4898266868412553
+     },
+     "stage_two": {
+      "n": 66,
+      "score_mean": 0.34967165015441337
+     }
+    },
+    "2021.09.29.14.44.26_veh-28_00337_00504": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.21664966985333528
+     },
+     "stage_two": {
+      "n": 64,
+      "score_mean": 0.33545407085004697
+     }
+    },
+    "2021.09.29.14.44.26_veh-28_00528_00992": {
+     "stage_one": {
+      "n": 10,
+      "score_mean": 0.3701193084010928
+     },
+     "stage_two": {
+      "n": 112,
+      "score_mean": 0.3372096798895599
+     }
+    },
+    "2021.09.29.14.44.26_veh-28_01202_01296": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 1.0
+     },
+     "stage_two": {
+      "n": 12,
+      "score_mean": 0.5781849574704533
+     }
+    },
+    "2021.09.29.14.44.26_veh-28_01331_01485": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 44,
+      "score_mean": 0.321725996919668
+     }
+    },
+    "2021.09.29.15.23.04_veh-28_00601_00802": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 1.0
+     },
+     "stage_two": {
+      "n": 10,
+      "score_mean": 0.55
+     }
+    },
+    "2021.09.29.15.23.04_veh-28_00814_01101": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.8354658998545065
+     },
+     "stage_two": {
+      "n": 24,
+      "score_mean": 0.24227631685718373
+     }
+    },
+    "2021.09.29.18.19.40_veh-28_00438_00833": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.9665105116789113
+     },
+     "stage_two": {
+      "n": 36,
+      "score_mean": 0.6429578172827886
+     }
+    },
+    "2021.09.29.18.19.40_veh-28_00844_01218": {
+     "stage_one": {
+      "n": 6,
+      "score_mean": 0.6223521536892475
+     },
+     "stage_two": {
+      "n": 40,
+      "score_mean": 0.44693863330015143
+     }
+    },
+    "2021.09.29.18.19.40_veh-28_01268_01685": {
+     "stage_one": {
+      "n": 8,
+      "score_mean": 0.46135096655154206
+     },
+     "stage_two": {
+      "n": 70,
+      "score_mean": 0.4598476254959977
+     }
+    },
+    "2021.09.29.19.02.14_veh-28_00273_00514": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 62,
+      "score_mean": 0.3014865232357164
+     }
+    },
+    "2021.09.29.19.02.14_veh-28_00540_00917": {
+     "stage_one": {
+      "n": 6,
+      "score_mean": 0.8381929715967323
+     },
+     "stage_two": {
+      "n": 78,
+      "score_mean": 0.3928011932101962
+     }
+    },
+    "2021.09.29.19.02.14_veh-28_00964_01689": {
+     "stage_one": {
+      "n": 10,
+      "score_mean": 0.3
+     },
+     "stage_two": {
+      "n": 82,
+      "score_mean": 0.42050484968042484
+     }
+    },
+    "2021.09.29.19.02.14_veh-28_02451_02708": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.2434643915469716
+     },
+     "stage_two": {
+      "n": 68,
+      "score_mean": 0.34939897481714777
+     }
+    },
+    "2021.09.29.19.02.14_veh-28_02911_03005": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.7401145975322254
+     },
+     "stage_two": {
+      "n": 30,
+      "score_mean": 0.31994992504547143
+     }
+    },
+    "2021.09.29.19.02.14_veh-28_03198_03360": {
+     "stage_one": {
+      "n": 6,
+      "score_mean": 0.6225499400647524
+     },
+     "stage_two": {
+      "n": 74,
+      "score_mean": 0.2670175167567967
+     }
+    },
+    "2021.10.06.07.26.10_veh-52_00006_00398": {
+     "stage_one": {
+      "n": 12,
+      "score_mean": 0.45875103857638816
+     },
+     "stage_two": {
+      "n": 148,
+      "score_mean": 0.3874862689314492
+     }
+    },
+    "2021.10.06.07.26.10_veh-52_00422_00728": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.46108982794412157
+     },
+     "stage_two": {
+      "n": 70,
+      "score_mean": 0.3351400590796012
+     }
+    },
+    "2021.10.06.07.26.10_veh-52_00772_00917": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.9697389374053713
+     },
+     "stage_two": {
+      "n": 18,
+      "score_mean": 0.29192045834355096
+     }
+    },
+    "2021.10.06.07.26.10_veh-52_00953_01126": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 50,
+      "score_mean": 0.31308946036620605
+     }
+    },
+    "2021.10.06.07.26.10_veh-52_01245_02064": {
+     "stage_one": {
+      "n": 22,
+      "score_mean": 0.44205022963948704
+     },
+     "stage_two": {
+      "n": 274,
+      "score_mean": 0.2749268716067418
+     }
+    },
+    "2021.10.06.07.26.10_veh-52_02208_02394": {
+     "stage_one": {
+      "n": 10,
+      "score_mean": 0.3874569227511846
+     },
+     "stage_two": {
+      "n": 132,
+      "score_mean": 0.45720030636704634
+     }
+    },
+    "2021.10.06.08.16.17_veh-52_00181_00574": {
+     "stage_one": {
+      "n": 10,
+      "score_mean": 0.35073206796098044
+     },
+     "stage_two": {
+      "n": 120,
+      "score_mean": 0.31862528722994315
+     }
+    },
+    "2021.10.06.08.16.17_veh-52_00612_00782": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 24,
+      "score_mean": 0.28449147363452504
+     }
+    },
+    "2021.10.06.08.16.17_veh-52_00922_01296": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.4592327578785823
+     },
+     "stage_two": {
+      "n": 32,
+      "score_mean": 0.24966543961925208
+     }
+    },
+    "2021.10.06.08.16.17_veh-52_01430_01579": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.4913551709548554
+     },
+     "stage_two": {
+      "n": 60,
+      "score_mean": 0.4426734750207529
+     }
+    },
+    "2021.10.06.08.16.17_veh-52_01590_01725": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.6892100227863045
+     },
+     "stage_two": {
+      "n": 40,
+      "score_mean": 0.4813741891968982
+     }
+    },
+    "2021.10.06.08.16.17_veh-52_01949_02501": {
+     "stage_one": {
+      "n": 18,
+      "score_mean": 0.35782297706120875
+     },
+     "stage_two": {
+      "n": 258,
+      "score_mean": 0.2772476972923571
+     }
+    }
+   },
+   "paired": {
+    "STOP": {
+     "status": "OK",
+     "headline_delta": -0.15559364398583406,
+     "S2_EPDMS_u_delta": -0.14154670064757646,
+     "by_stage": {
+      "stage_one": {
+       "n": 450,
+       "score_mean_delta": -0.17652431429651308,
+       "official_stage_row_delta": -0.1765243142965131,
+       "wins": 185,
+       "ties": 32,
+       "losses": 233,
+       "submetric_mean_deltas": {
+        "NC": -0.09666666666666668,
+        "DAC": -0.41555555555555557,
+        "DDC": -0.23444444444444446,
+        "TLC": -0.004444444444444473,
+        "EP": 0.4456812201726914,
+        "TTC": -0.12888888888888883,
+        "LK": -0.07111111111111112,
+        "HC": 0.4822222222222223,
+        "EC": 0.7111111111111111
+       }
+      },
+      "stage_two": {
+       "n": 5462,
+       "score_mean_delta": -0.14343047546912935,
+       "official_stage_row_delta": -0.18156681114693274,
+       "wins": 1796,
+       "ties": 1521,
+       "losses": 2145,
+       "submetric_mean_deltas": {
+        "NC": -0.1385023800805566,
+        "DAC": -0.3295496155254486,
+        "DDC": -0.271329183449286,
+        "TLC": -0.008055657268399852,
+        "EP": 0.26207127036460887,
+        "TTC": -0.15324057121933354,
+        "LK": -0.06224826071036249,
+        "HC": 0.3268033687294032,
+        "EC": 0.5573050164774809
+       }
+      }
+     },
+     "wins": 1981,
+     "ties": 1553,
+     "losses": 2378,
+     "_wtl_scope": "per-scene wins/ties/losses pooled over the common tokens of BOTH stages (tie band 1e-12); per stage in by_stage.<stage>",
+     "n_common": 5912
+    },
+    "CV": {
+     "status": "OK",
+     "headline_delta": 0.028122397024668316,
+     "S2_EPDMS_u_delta": 0.0023664873414010468,
+     "by_stage": {
+      "stage_one": {
+       "n": 450,
+       "score_mean_delta": 0.09704970313137501,
+       "official_stage_row_delta": 0.09704970313137501,
+       "wins": 150,
+       "ties": 230,
+       "losses": 70,
+       "submetric_mean_deltas": {
+        "NC": 0.011111111111111183,
+        "DAC": 0.08666666666666667,
+        "DDC": 0.05888888888888888,
+        "TLC": 0.0,
+        "EP": 0.01129263638779876,
+        "TTC": -0.004444444444444362,
+        "LK": 0.033333333333333326,
+        "HC": 0.0,
+        "EC": 0.1955555555555556
+       }
+      },
+      "stage_two": {
+       "n": 5462,
+       "score_mean_delta": -0.0025542462891616816,
+       "official_stage_row_delta": -0.01718432799835551,
+       "wins": 1281,
+       "ties": 2873,
+       "losses": 1308,
+       "submetric_mean_deltas": {
+        "NC": -0.01583668985719522,
+        "DAC": -0.03570120834859025,
+        "DDC": -0.05510801904064444,
+        "TLC": 0.0012815818381545219,
+        "EP": -0.054188637331621714,
+        "TTC": -0.024899304284144996,
+        "LK": -0.0007323324789454411,
+        "HC": 0.006407909190772609,
+        "EC": 0.21457341633101434
+       }
+      }
+     },
+     "wins": 1431,
+     "ties": 3103,
+     "losses": 1378,
+     "_wtl_scope": "per-scene wins/ties/losses pooled over the common tokens of BOTH stages (tie band 1e-12); per stage in by_stage.<stage>",
+     "n_common": 5912
+    }
+   },
+   "interval": {
+    "status": "OK",
+    "estimator": "navsim_log_cluster_bootstrap",
+    "cluster_unit": "log_name",
+    "lo": 0.1168,
+    "hi": 0.1698,
+    "n_clusters": 76,
+    "detail": {
+     "status": "OK",
+     "estimator": "navsim_log_cluster_bootstrap",
+     "cluster_unit": "log_name",
+     "resample_unit": "log_name",
+     "aggregation": "two_stage_mapping_key_mean",
+     "aggregation_source": "run_pdm_score.py::calculate_individual_mapping_scores L242-290 @0a380a9 — per key ((s1(orig)*wavg(now)) + (s1(prev)*wavg(prev)))/2, then pd.DataFrame(...).mean() (skipna) over keys",
+     "point": 0.1429,
+     "mean": 0.1429,
+     "lo": 0.1168,
+     "hi": 0.1698,
+     "ci95": 0.0265,
+     "se": 0.0135,
+     "bootstrap_mean": 0.1429,
+     "n_clusters": 76,
+     "n_units": 225,
+     "n_units_nan": 0,
+     "min_clusters": 8,
+     "n_boot": 2000,
+     "seed": 0,
+     "alpha": 0.05,
+     "reproduces_official": {
+      "status": "OK",
+      "official_value": 0.14293848144114832,
+      "point": 0.14293848144114832,
+      "abs_diff": 0.0,
+      "tol": 1e-09
+     },
+     "sensitivity_nuplan_drive": {
+      "status": "OK",
+      "unit": "nuplan_drive",
+      "n_clusters": 34,
+      "lo": 0.1184,
+      "hi": 0.1733,
+      "se": 0.0139
+     },
+     "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? — evaluation-set variance only. ⛔ BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT — read it against a replicate arm's floor.",
+     "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+     "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+     "_machine": "taniteval.ci.episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna) — the SAME draws, cross-checked",
+     "_forbidden": "⛔ scene-token resampling (overlapping units), the episode-cluster bootstrap under any other unit, and overlapping_holdout_se (biases the point estimate) are NOT admissible for NavSim.",
+     "protocol": "EPDMS_v2_navhard_two_stage"
+    },
+    "pre_csv_frame": {
+     "captured": true,
+     "path": "D:/Projects/TanitAD/taniteval/results/bench/navsim_v2/navhard_two_stage/20260921T122531Z-navsim_v2-refcv4b_b1_v72_40k-e6560d/raw/ECHO/ECHO_final_scores_frame.csv",
+     "why_needed": "the published CSV drops `weight`/`log_name` (run_pdm_score.py:422)"
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? — evaluation-set variance only. ⛔ BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT — read it against a replicate arm's floor."
+   },
+   "families": {
+    "longitudinal": {
+     "status": "PARTIAL",
+     "n": 450,
+     "scope": "OUR instruments on the 450 STAGE-1 scenes only (agent vs logged human future, dt 0.5 s, K=8); stage-2 synthetic scenes have NO human future (0 future frames) — frame check: verified",
+     "tier": "T1",
+     "metrics": {
+      "speed_mae_mps": 0.711,
+      "along_mae_m": 1.2184,
+      "speed_bias_mps": 0.1492,
+      "along_bias_m": 0.2477,
+      "accel_mae_mps2": 0.4334,
+      "progress_ratio_mean": 0.9455
+     },
+     "reason": "distance-keeping UNAVAILABLE: no lead-agent track supplied — pass `lead=` (see this function's caller docstring). PhysicalAI-AV ships obstacle.offline (3D agent tracks, 97.44 % of the corpus); the reader is `Architecture & Inference/Implementation/incoming/2026-08-03-longitudinal-distance-keeping/build_lead_tracks.py`. Not supplying it is a WORK ITEM, not a pass."
+    },
+    "lateral": {
+     "status": "OK",
+     "n": 450,
+     "scope": "OUR instruments on the 450 STAGE-1 scenes only (agent vs logged human future, dt 0.5 s, K=8); stage-2 synthetic scenes have NO human future (0 future frames) — frame check: verified",
+     "tier": "T1",
+     "metrics": {
+      "cross_mae_m": 0.9718,
+      "heading_mae_deg": 9.1368,
+      "curvature_mae_1pm": 0.024787,
+      "yaw_rate_mae_degps": 6.3533,
+      "cross_bias_m": 0.0617
+     }
+    },
+    "tactical": {
+     "status": "OK",
+     "n": 450,
+     "scope": "OUR instruments on the 450 STAGE-1 scenes only (agent vs logged human future, dt 0.5 s, K=8); stage-2 synthetic scenes have NO human future (0 future frames) — frame check: verified",
+     "tier": "T1",
+     "metrics": {
+      "lateral_decision.accuracy": 0.6044,
+      "lateral_decision.kappa": 0.3744,
+      "longitudinal_decision.accuracy": 0.6044,
+      "longitudinal_decision.kappa": 0.4032,
+      "goal_setting.goal_point_error_m": 4.8327
+     },
+     "_is_not": "trajectory-derived EXECUTED manoeuvres on both sides — NOT selected-vs-executed"
+    },
+    "strategic": {
+     "status": "UNAVAILABLE",
+     "reason": "PhysicalAI-AV carries NO map, NO lane graph, NO junction/roundabout label, NO traffic-light feature and NO route/goal signal — the dataset card says verbatim 'we do not include open maps data', and obstacle.offline's enum over 87,481 cuboids is 10 classes, ALL DYNAMIC AGENTS. `egomotion` carries no lat/lon/GNSS either (clip-local metres), so OSM map-matching on our traces is impossible. ⇒ there is no admissible strategic LABEL on this split, and therefore no strategic decision or route/goal quality to score. ⛔ The two label sources that DO exist are both inadmissible, for stated reasons and not for want of effort: (a) a route class read off the ego's OWN FUTURE yaw cannot tell whether the map admitted a choice at all — that is how the closed-loop harness once published route_head_eq_logged = 1.0000 on a clip where every junction had exactly ONE continuation, and GATE_PROTOCOL §0.7 declares nonav_route_beats_majority VOID BY CONSTRUCTION; (b) a supplied route is optimistic by construction here because our only route supplier is the ego's own future path. | NavSim: ⚠️ The generic reason above is PhysicalAI-specific (no map in the corpus). On NavSim the fact is DIFFERENT and must not be conflated: the lane graph and route EXIST, but `driving_command` is an INPUT and is never scored, and the Scene object carrying the map is TRAINING-ONLY at inference (NAVSIM_PROTOCOL.md:470-474, :812). So STRATEGIC is absent because the BENCHMARK declines to measure it, not because the data lacks it — which makes it a buildable WORK ITEM here (audit seam 7, taniteval/strategic_optionset.py:193), unlike on PhysicalAI.",
+     "n": 450
+    }
+   },
+   "statistics": {
+    "S2_EPDMS_u": {
+     "value": 0.3412802138302167,
+     "n_groups": 450,
+     "group_sizes": [
+      11,
+      11,
+      11,
+      11,
+      7,
+      7,
+      13,
+      13,
+      10,
+      10,
+      7,
+      7,
+      6,
+      6,
+      20,
+      20,
+      8,
+      8,
+      20,
+      20,
+      7,
+      7,
+      11,
+      11,
+      16,
+      16,
+      10,
+      10,
+      20,
+      20,
+      6,
+      6,
+      12,
+      12,
+      8,
+      8,
+      6,
+      6,
+      6,
+      6,
+      10,
+      10,
+      12,
+      12,
+      7,
+      7,
+      18,
+      18,
+      17,
+      17,
+      9,
+      9,
+      7,
+      7,
+      18,
+      18,
+      12,
+      12,
+      11,
+      11,
+      5,
+      5,
+      14,
+      14,
+      5,
+      5,
+      9,
+      9,
+      19,
+      19,
+      8,
+      8,
+      7,
+      7,
+      10,
+      10,
+      17,
+      17,
+      19,
+      19,
+      5,
+      5,
+      15,
+      15,
+      18,
+      18,
+      15,
+      15,
+      9,
+      9,
+      17,
+      17,
+      12,
+      12,
+      11,
+      11,
+      8,
+      8,
+      9,
+      9,
+      12,
+      12,
+      12,
+      12,
+      13,
+      13,
+      5,
+      5,
+      7,
+      7,
+      13,
+      13,
+      13,
+      13,
+      13,
+      13,
+      10,
+      10,
+      11,
+      11,
+      9,
+      9,
+      14,
+      14,
+      17,
+      17,
+      18,
+      18,
+      17,
+      17,
+      12,
+      12,
+      8,
+      8,
+      20,
+      20,
+      13,
+      13,
+      20,
+      20,
+      7,
+      7,
+      9,
+      9,
+      18,
+      18,
+      13,
+      13,
+      14,
+      14,
+      20,
+      20,
+      16,
+      16,
+      5,
+      5,
+      20,
+      20,
+      14,
+      14,
+      12,
+      12,
+      17,
+      17,
+      14,
+      14,
+      17,
+      17,
+      20,
+      20,
+      5,
+      5,
+      10,
+      10,
+      18,
+      18,
+      10,
+      10,
+      15,
+      15,
+      9,
+      9,
+      11,
+      11,
+      8,
+      8,
+      5,
+      5,
+      17,
+      17,
+      20,
+      20,
+      16,
+      16,
+      7,
+      7,
+      12,
+      12,
+      19,
+      19,
+      20,
+      20,
+      7,
+      7,
+      15,
+      15,
+      11,
+      11,
+      10,
+      10,
+      8,
+      8,
+      17,
+      17,
+      7,
+      7,
+      19,
+      19,
+      19,
+      19,
+      14,
+      14,
+      19,
+      19,
+      15,
+      15,
+      6,
+      6,
+      7,
+      7,
+      5,
+      5,
+      5,
+      5,
+      13,
+      13,
+      14,
+      14,
+      13,
+      13,
+      13,
+      13,
+      16,
+      16,
+      11,
+      11,
+      15,
+      15,
+      17,
+      17,
+      9,
+      9,
+      10,
+      10,
+      11,
+      11,
+      8,
+      8,
+      20,
+      20,
+      11,
+      11,
+      11,
+      11,
+      8,
+      8,
+      12,
+      12,
+      8,
+      8,
+      9,
+      9,
+      13,
+      13,
+      5,
+      5,
+      8,
+      8,
+      13,
+      13,
+      20,
+      20,
+      13,
+      13,
+      19,
+      19,
+      6,
+      6,
+      11,
+      11,
+      11,
+      11,
+      15,
+      15,
+      13,
+      13,
+      6,
+      6,
+      8,
+      8,
+      14,
+      14,
+      5,
+      5,
+      12,
+      12,
+      8,
+      8,
+      10,
+      10,
+      7,
+      7,
+      8,
+      8,
+      5,
+      5,
+      6,
+      6,
+      6,
+      6,
+      12,
+      12,
+      11,
+      11,
+      11,
+      11,
+      20,
+      20,
+      20,
+      20,
+      14,
+      14,
+      5,
+      5,
+      12,
+      12,
+      11,
+      11,
+      5,
+      5,
+      8,
+      8,
+      5,
+      5,
+      20,
+      20,
+      14,
+      14,
+      15,
+      15,
+      8,
+      8,
+      12,
+      12,
+      17,
+      17,
+      16,
+      16,
+      10,
+      10,
+      14,
+      14,
+      10,
+      10,
+      9,
+      9,
+      15,
+      15,
+      15,
+      15,
+      20,
+      20,
+      9,
+      9,
+      12,
+      12,
+      13,
+      13,
+      8,
+      8,
+      13,
+      13,
+      14,
+      14,
+      20,
+      20,
+      16,
+      16,
+      15,
+      15,
+      11,
+      11,
+      17,
+      17,
+      5,
+      5,
+      8,
+      8,
+      10,
+      10,
+      8,
+      8,
+      19,
+      19,
+      11,
+      11,
+      13,
+      13,
+      15,
+      15,
+      7,
+      7,
+      18,
+      18,
+      8,
+      8,
+      17,
+      17,
+      10,
+      10,
+      12,
+      12,
+      16,
+      16,
+      10,
+      10,
+      20,
+      20,
+      9,
+      9,
+      11,
+      11,
+      15,
+      15,
+      8,
+      8,
+      11,
+      11,
+      18,
+      18,
+      12,
+      12,
+      16,
+      16,
+      14,
+      14,
+      17,
+      17,
+      18,
+      18
+     ],
+     "n_scenes": 5462,
+     "what": "E2's stage-2-only statistic: mean over groups of the uniform within-group mean of the official stage-2 `score` — NOT a two-stage EPDMS"
+    },
+    "stage_one_scene_mean": 0.386637542152985,
+    "stage_two_scene_mean": 0.32680148822593724
+   },
+   "caveats": [
+    {
+     "id": "FLOOR_REUSED_FROM_SOURCE_RUN",
+     "one_line": "ECHO was NOT re-scored in this run: its per-token rows are adopted, byte-identical, from 20260921T091732Z-navsim_v2-refcv4b_b1_v72_40k-f99b29, which scored the identical token set under the identical devkit, patches, metric cache and agent inputs",
+     "consequence": "its numbers equal the source run's by construction; the pairing with this run's model arms is on the same tokens",
+     "record": "raw/ECHO/ECHO.reused.json"
+    }
+   ],
+   "reused_from": "20260921T091732Z-navsim_v2-refcv4b_b1_v72_40k-f99b29",
+   "modality": {
+    "sensor_set": "none — the model arm's own declared t0 ego inputs, echoed",
+    "setting": "echo floor: what the ego inputs alone produce, no perception, no route",
+    "ego_status_used": true,
+    "vision_only_claimed": false
+   },
+   "controls": {
+    "C4_formula": {
+     "n_rows": 5912,
+     "n_rows_with_nan_EC_dropped_to_14": 0,
+     "max_abs_diff": 2.220446049250313e-16,
+     "tol": 1e-09,
+     "pass": true
+    },
+    "C5_aggregate": {
+     "max_abs_weight_diff": 1.2429995921436898e-09,
+     "max_abs_summary_diff": 1.076305711222858e-12,
+     "tol": 1e-09,
+     "pass": false,
+     "promoted_from": "E1 code/verify_controls.py C5 (inline) -> function, same arithmetic"
+    },
+    "criteria_check": {
+     "rc": 0,
+     "json": "raw/criteria_ECHO.json",
+     "json_written": true,
+     "registry_version": "2.10.3",
+     "unreadable": [],
+     "n_violations": 0,
+     "n_work_items": 9,
+     "scope": [
+      "IN_SCOPE"
+     ]
+    },
+    "navsim_gates": {
+     "navsim.estimator_unit": "FAIL",
+     "navsim.ego_enforcement": "NOT_APPLICABLE_DECLARED",
+     "navsim.modality_label": "PASS",
+     "navsim.cross_protocol": "PASS"
+    },
+    "navsim_gate_mutations_all_red": true
+   },
+   "files": {
+    "scores": "scores/ECHO.csv",
+    "artifact": "artifacts/ECHO.json",
+    "plans": "plans/ECHO.npz",
+    "criteria": "criteria/ECHO.txt",
+    "counts": "raw/ECHO/ECHO.counts.json",
+    "wrapper_manifest": "raw/ECHO/ECHO_manifest.json",
+    "hooks": "raw/ECHO/ECHO_hooks.json",
+    "final_scores_frame": "raw/ECHO/ECHO_final_scores_frame.csv"
+   }
+  },
+  "A1": {
+   "kind": "model",
+   "status": "OK",
+   "declared_inputs": [
+    "cameras: cam_l0+cam_f0+cam_r0 stitched -> 256x640 cylindrical, t0 frame (ST)",
+    "ego_velocity[t0]",
+    "ego_acceleration[t0]",
+    "driving_command[t0]"
+   ],
+   "added_by_rule": false,
+   "headline": {
+    "status": "UNAVAILABLE",
+    "n": 450,
+    "reason": "two-stage EPDMS UNDEFINED for A1: 450 stage-1 rows are the devkit CV stand-in (no stage-1 frames), which set both the stage-1 factor and the stage-2 kernel weights — see statistics.S2_EPDMS_u (stage 2 only) and statistics.official_combined_row_HYBRID"
+   },
+   "per_stage": {
+    "stage_one": {
+     "score": 0.28958783902161,
+     "column": "score",
+     "row": "extended_pdm_score_stage_one",
+     "n": 450,
+     "submetrics": {
+      "NC": 0.8888888888888888,
+      "DAC": 0.4288888888888889,
+      "DDC": 0.7066666666666667,
+      "TLC": 0.9933333333333333,
+      "EP": 0.7753343063173437,
+      "TTC": 0.8733333333333333,
+      "LK": 0.7866666666666666,
+      "HC": 0.9711111111111111,
+      "EC": 0.6044444444444445
+     }
+    },
+    "stage_two": {
+     "score": 0.3768098276832785,
+     "column": "score",
+     "row": "extended_pdm_score_stage_two",
+     "n": 5462,
+     "submetrics": {
+      "NC": 0.8579148707219033,
+      "DAC": 0.6499449946958963,
+      "DDC": 0.8062704016111782,
+      "TLC": 0.9790808298777893,
+      "EP": 0.6637439878985214,
+      "TTC": 0.8247259352447439,
+      "LK": 0.5233856514571519,
+      "HC": 0.9584870592117785,
+      "EC": 0.40627786716115627
+     }
+    }
+   },
+   "submetrics": {
+    "combined_row": {
+     "NC_s1": 0.8888888888888888,
+     "NC_s2": 0.8579148707219033,
+     "DAC_s1": 0.4288888888888889,
+     "DAC_s2": 0.6499449946958963,
+     "DDC_s1": 0.7066666666666667,
+     "DDC_s2": 0.8062704016111782,
+     "TLC_s1": 0.9933333333333333,
+     "TLC_s2": 0.9790808298777893,
+     "EP_s1": 0.7753343063173437,
+     "EP_s2": 0.6637439878985214,
+     "TTC_s1": 0.8733333333333333,
+     "TTC_s2": 0.8247259352447439,
+     "LK_s1": 0.7866666666666666,
+     "LK_s2": 0.5233856514571519,
+     "HC_s1": 0.9711111111111111,
+     "HC_s2": 0.9584870592117785,
+     "EC_s1": 0.6044444444444445,
+     "EC_s2": 0.40627786716115627
+    },
+    "_note": "per-stage sub-metrics are also in per_stage.<stage>.submetrics (official stage summary rows)"
+   },
+   "per_log": {
+    "_statistic": "PLAIN mean of the official per-token `score` rows, by nuPlan log and stage — NOT the official aggregation (which weights stage-2 rows by the stage-1 endpoint kernel)",
+    "2021.05.25.14.16.10_veh-35_01100_01664": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 22,
+      "score_mean": 0.5024870910209501
+     }
+    },
+    "2021.05.25.14.16.10_veh-35_01690_02183": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 1.0
+     },
+     "stage_two": {
+      "n": 22,
+      "score_mean": 0.4354349057380651
+     }
+    },
+    "2021.05.25.14.16.10_veh-35_03373_03550": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 14,
+      "score_mean": 0.5714285714285714
+     }
+    },
+    "2021.05.25.14.24.08_veh-25_03764_04034": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 26,
+      "score_mean": 0.6682239782264752
+     }
+    },
+    "2021.05.25.14.26.37_veh-27_04122_04279": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.9349305854055372
+     },
+     "stage_two": {
+      "n": 20,
+      "score_mean": 0.24375
+     }
+    },
+    "2021.05.25.15.59.03_veh-30_00625_00855": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 14,
+      "score_mean": 0.43705427978493944
+     }
+    },
+    "2021.05.25.15.59.03_veh-30_04027_04200": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.7855986016056131
+     },
+     "stage_two": {
+      "n": 12,
+      "score_mean": 0.2592928131649784
+     }
+    },
+    "2021.05.25.15.59.03_veh-30_04463_04606": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 40,
+      "score_mean": 0.5076934309370706
+     }
+    },
+    "2021.05.25.17.54.41_veh-35_01905_02121": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 16,
+      "score_mean": 0.49006358493271773
+     }
+    },
+    "2021.05.25.17.54.41_veh-35_04111_04288": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.6436725851220619
+     },
+     "stage_two": {
+      "n": 40,
+      "score_mean": 0.32181411260722825
+     }
+    },
+    "2021.06.03.12.02.06_veh-35_00233_00609": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 14,
+      "score_mean": 0.36416760199622394
+     }
+    },
+    "2021.06.03.13.55.17_veh-35_02572_02855": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 22,
+      "score_mean": 0.40389617250054644
+     }
+    },
+    "2021.06.03.13.55.17_veh-35_02866_03582": {
+     "stage_one": {
+      "n": 8,
+      "score_mean": 0.67369561385896
+     },
+     "stage_two": {
+      "n": 104,
+      "score_mean": 0.453001782480859
+     }
+    },
+    "2021.06.03.17.06.58_veh-35_02571_02742": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 24,
+      "score_mean": 0.42547437707663915
+     }
+    },
+    "2021.06.03.17.06.58_veh-35_03860_03992": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 16,
+      "score_mean": 0.48152048597492403
+     }
+    },
+    "2021.06.03.18.47.39_veh-35_00257_00492": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.8873307984661125
+     },
+     "stage_two": {
+      "n": 12,
+      "score_mean": 0.6146480040902248
+     }
+    },
+    "2021.06.03.18.47.39_veh-35_00503_00777": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 12,
+      "score_mean": 0.6875293201109794
+     }
+    },
+    "2021.06.28.13.53.26_veh-26_00492_00696": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 20,
+      "score_mean": 0.23172173141962013
+     }
+    },
+    "2021.06.28.15.02.02_veh-38_02398_02848": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 24,
+      "score_mean": 0.4758508307734273
+     }
+    },
+    "2021.06.28.16.29.11_veh-38_03263_03766": {
+     "stage_one": {
+      "n": 8,
+      "score_mean": 0.6406930961728091
+     },
+     "stage_two": {
+      "n": 102,
+      "score_mean": 0.5157614163917998
+     }
+    },
+    "2021.06.28.20.24.43_veh-38_03385_04952": {
+     "stage_one": {
+      "n": 14,
+      "score_mean": 0.044638376406146145
+     },
+     "stage_two": {
+      "n": 144,
+      "score_mean": 0.5229044674868091
+     }
+    },
+    "2021.08.16.14.23.37_veh-45_00015_00132": {
+     "stage_one": {
+      "n": 10,
+      "score_mean": 0.26214359427600104
+     },
+     "stage_two": {
+      "n": 106,
+      "score_mean": 0.4332913595775988
+     }
+    },
+    "2021.08.30.13.45.25_veh-40_00610_00771": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.42333657568374117
+     },
+     "stage_two": {
+      "n": 72,
+      "score_mean": 0.2551894231099358
+     }
+    },
+    "2021.08.30.13.45.25_veh-40_00878_01104": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.4267807301095954
+     },
+     "stage_two": {
+      "n": 40,
+      "score_mean": 0.4123805473582392
+     }
+    },
+    "2021.08.30.13.45.25_veh-40_01116_01336": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.4906913351301798
+     },
+     "stage_two": {
+      "n": 36,
+      "score_mean": 0.39854928341722495
+     }
+    },
+    "2021.08.30.14.54.34_veh-40_00439_00835": {
+     "stage_one": {
+      "n": 10,
+      "score_mean": 0.4656198850198626
+     },
+     "stage_two": {
+      "n": 128,
+      "score_mean": 0.35876671530353066
+     }
+    },
+    "2021.08.30.16.16.44_veh-40_00256_00716": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 16,
+      "score_mean": 0.47244203052539757
+     }
+    },
+    "2021.08.30.16.16.44_veh-40_00779_01088": {
+     "stage_one": {
+      "n": 10,
+      "score_mean": 0.3574496603514665
+     },
+     "stage_two": {
+      "n": 102,
+      "score_mean": 0.4121570839182027
+     }
+    },
+    "2021.08.30.16.16.44_veh-40_01099_01351": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.46875
+     },
+     "stage_two": {
+      "n": 40,
+      "score_mean": 0.4131196733564285
+     }
+    },
+    "2021.09.09.17.18.51_veh-48_01248_01450": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.34912461478723555
+     },
+     "stage_two": {
+      "n": 26,
+      "score_mean": 0.17313841230509117
+     }
+    },
+    "2021.09.16.13.53.10_veh-42_00077_00153": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.5
+     },
+     "stage_two": {
+      "n": 46,
+      "score_mean": 0.29362289599381036
+     }
+    },
+    "2021.09.16.13.53.10_veh-42_00180_00342": {
+     "stage_one": {
+      "n": 16,
+      "score_mean": 0.22986747835895022
+     },
+     "stage_two": {
+      "n": 212,
+      "score_mean": 0.27467438760610957
+     }
+    },
+    "2021.09.16.13.53.10_veh-42_00860_01069": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.7162057772944185
+     },
+     "stage_two": {
+      "n": 66,
+      "score_mean": 0.31097749269396513
+     }
+    },
+    "2021.09.16.13.53.10_veh-42_01510_01591": {
+     "stage_one": {
+      "n": 6,
+      "score_mean": 0.16666666666666666
+     },
+     "stage_two": {
+      "n": 72,
+      "score_mean": 0.23793772948019498
+     }
+    },
+    "2021.09.16.14.39.34_veh-42_00032_00186": {
+     "stage_one": {
+      "n": 12,
+      "score_mean": 0.21059270057520751
+     },
+     "stage_two": {
+      "n": 172,
+      "score_mean": 0.3018450290162921
+     }
+    },
+    "2021.09.16.14.39.34_veh-42_00297_00935": {
+     "stage_one": {
+      "n": 20,
+      "score_mean": 0.3674493443566603
+     },
+     "stage_two": {
+      "n": 294,
+      "score_mean": 0.3099719672295653
+     }
+    },
+    "2021.09.16.14.39.34_veh-42_01111_01448": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.3551739816747602
+     },
+     "stage_two": {
+      "n": 50,
+      "score_mean": 0.4865978008836271
+     }
+    },
+    "2021.09.16.14.39.34_veh-42_01609_01687": {
+     "stage_one": {
+      "n": 6,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 56,
+      "score_mean": 0.1952363901726176
+     }
+    },
+    "2021.09.16.15.12.03_veh-42_01037_01434": {
+     "stage_one": {
+      "n": 8,
+      "score_mean": 0.4375
+     },
+     "stage_two": {
+      "n": 116,
+      "score_mean": 0.4285576822683589
+     }
+    },
+    "2021.09.16.15.47.30_veh-45_01199_01391": {
+     "stage_one": {
+      "n": 6,
+      "score_mean": 0.30641385770504553
+     },
+     "stage_two": {
+      "n": 76,
+      "score_mean": 0.31668906098153776
+     }
+    },
+    "2021.09.16.16.20.27_veh-08_02435_02525": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.8060049410984915
+     },
+     "stage_two": {
+      "n": 40,
+      "score_mean": 0.28235087469742765
+     }
+    },
+    "2021.09.16.17.40.09_veh-45_02539_02745": {
+     "stage_one": {
+      "n": 10,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 102,
+      "score_mean": 0.16802891627193198
+     }
+    },
+    "2021.09.16.19.12.04_veh-42_00289_00398": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 48,
+      "score_mean": 0.2964751681675489
+     }
+    },
+    "2021.09.16.19.12.04_veh-42_01438_01677": {
+     "stage_one": {
+      "n": 8,
+      "score_mean": 0.234375
+     },
+     "stage_two": {
+      "n": 142,
+      "score_mean": 0.3957090565577872
+     }
+    },
+    "2021.09.16.19.27.01_veh-45_00472_00711": {
+     "stage_one": {
+      "n": 8,
+      "score_mean": 0.198414432755954
+     },
+     "stage_two": {
+      "n": 66,
+      "score_mean": 0.23937211823926008
+     }
+    },
+    "2021.09.16.19.27.01_veh-45_01749_03230": {
+     "stage_one": {
+      "n": 30,
+      "score_mean": 0.34793921423250246
+     },
+     "stage_two": {
+      "n": 372,
+      "score_mean": 0.3428482780753902
+     }
+    },
+    "2021.09.16.19.49.00_veh-42_00990_01609": {
+     "stage_one": {
+      "n": 14,
+      "score_mean": 0.25967879011802913
+     },
+     "stage_two": {
+      "n": 132,
+      "score_mean": 0.3481953599536503
+     }
+    },
+    "2021.09.16.21.13.37_veh-42_00172_00347": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 16,
+      "score_mean": 0.34033148475087605
+     }
+    },
+    "2021.09.29.14.44.26_veh-28_00238_00320": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.388395885964469
+     },
+     "stage_two": {
+      "n": 66,
+      "score_mean": 0.38839040427081384
+     }
+    },
+    "2021.09.29.14.44.26_veh-28_00337_00504": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 64,
+      "score_mean": 0.3895283188957806
+     }
+    },
+    "2021.09.29.14.44.26_veh-28_00528_00992": {
+     "stage_one": {
+      "n": 10,
+      "score_mean": 0.17824377014483608
+     },
+     "stage_two": {
+      "n": 112,
+      "score_mean": 0.40108857022441946
+     }
+    },
+    "2021.09.29.14.44.26_veh-28_01202_01296": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 1.0
+     },
+     "stage_two": {
+      "n": 12,
+      "score_mean": 0.4801787059366765
+     }
+    },
+    "2021.09.29.14.44.26_veh-28_01331_01485": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 44,
+      "score_mean": 0.3342505910233638
+     }
+    },
+    "2021.09.29.15.23.04_veh-28_00601_00802": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 1.0
+     },
+     "stage_two": {
+      "n": 10,
+      "score_mean": 0.55
+     }
+    },
+    "2021.09.29.15.23.04_veh-28_00814_01101": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.4573322567899592
+     },
+     "stage_two": {
+      "n": 24,
+      "score_mean": 0.23350518712397772
+     }
+    },
+    "2021.09.29.18.19.40_veh-28_00438_00833": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.7045552800174788
+     },
+     "stage_two": {
+      "n": 36,
+      "score_mean": 0.5924607611584034
+     }
+    },
+    "2021.09.29.18.19.40_veh-28_00844_01218": {
+     "stage_one": {
+      "n": 6,
+      "score_mean": 0.5366511364777566
+     },
+     "stage_two": {
+      "n": 40,
+      "score_mean": 0.4674976449856095
+     }
+    },
+    "2021.09.29.18.19.40_veh-28_01268_01685": {
+     "stage_one": {
+      "n": 8,
+      "score_mean": 0.5036766338821483
+     },
+     "stage_two": {
+      "n": 70,
+      "score_mean": 0.502155542202305
+     }
+    },
+    "2021.09.29.19.02.14_veh-28_00273_00514": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 62,
+      "score_mean": 0.3200413872437884
+     }
+    },
+    "2021.09.29.19.02.14_veh-28_00540_00917": {
+     "stage_one": {
+      "n": 6,
+      "score_mean": 0.8519159968677624
+     },
+     "stage_two": {
+      "n": 78,
+      "score_mean": 0.4736650477197678
+     }
+    },
+    "2021.09.29.19.02.14_veh-28_00964_01689": {
+     "stage_one": {
+      "n": 10,
+      "score_mean": 0.36262387665684204
+     },
+     "stage_two": {
+      "n": 82,
+      "score_mean": 0.45445452251568663
+     }
+    },
+    "2021.09.29.19.02.14_veh-28_02451_02708": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.2373930900533184
+     },
+     "stage_two": {
+      "n": 68,
+      "score_mean": 0.4396932792710915
+     }
+    },
+    "2021.09.29.19.02.14_veh-28_02911_03005": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 30,
+      "score_mean": 0.3878734363095381
+     }
+    },
+    "2021.09.29.19.02.14_veh-28_03198_03360": {
+     "stage_one": {
+      "n": 6,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 74,
+      "score_mean": 0.3880318362952588
+     }
+    },
+    "2021.10.06.07.26.10_veh-52_00006_00398": {
+     "stage_one": {
+      "n": 12,
+      "score_mean": 0.3471124113584776
+     },
+     "stage_two": {
+      "n": 148,
+      "score_mean": 0.4664237022200876
+     }
+    },
+    "2021.10.06.07.26.10_veh-52_00422_00728": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.2320596012714754
+     },
+     "stage_two": {
+      "n": 70,
+      "score_mean": 0.42139468405713015
+     }
+    },
+    "2021.10.06.07.26.10_veh-52_00772_00917": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 18,
+      "score_mean": 0.3329185387338624
+     }
+    },
+    "2021.10.06.07.26.10_veh-52_00953_01126": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.2262064192829099
+     },
+     "stage_two": {
+      "n": 50,
+      "score_mean": 0.4597624699640136
+     }
+    },
+    "2021.10.06.07.26.10_veh-52_01245_02064": {
+     "stage_one": {
+      "n": 22,
+      "score_mean": 0.19430886153667945
+     },
+     "stage_two": {
+      "n": 274,
+      "score_mean": 0.3076897936217466
+     }
+    },
+    "2021.10.06.07.26.10_veh-52_02208_02394": {
+     "stage_one": {
+      "n": 10,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 132,
+      "score_mean": 0.47539820559751167
+     }
+    },
+    "2021.10.06.08.16.17_veh-52_00181_00574": {
+     "stage_one": {
+      "n": 10,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 120,
+      "score_mean": 0.38965155163115217
+     }
+    },
+    "2021.10.06.08.16.17_veh-52_00612_00782": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 24,
+      "score_mean": 0.3148778133213886
+     }
+    },
+    "2021.10.06.08.16.17_veh-52_00922_01296": {
+     "stage_one": {
+      "n": 2,
+      "score_mean": 0.0
+     },
+     "stage_two": {
+      "n": 32,
+      "score_mean": 0.3564257393340475
+     }
+    },
+    "2021.10.06.08.16.17_veh-52_01430_01579": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.25
+     },
+     "stage_two": {
+      "n": 60,
+      "score_mean": 0.43549224910523593
+     }
+    },
+    "2021.10.06.08.16.17_veh-52_01590_01725": {
+     "stage_one": {
+      "n": 4,
+      "score_mean": 0.6916699936697779
+     },
+     "stage_two": {
+      "n": 40,
+      "score_mean": 0.4773365391568702
+     }
+    },
+    "2021.10.06.08.16.17_veh-52_01949_02501": {
+     "stage_one": {
+      "n": 18,
+      "score_mean": 0.3051541756929326
+     },
+     "stage_two": {
+      "n": 258,
+      "score_mean": 0.3309008184227752
+     }
+    }
+   },
+   "paired": {
+    "STOP": {
+     "status": "OK",
+     "headline_delta": null,
+     "S2_EPDMS_u_delta": -0.0986912913356624,
+     "by_stage": {
+      "stage_one": {
+       "n": 450,
+       "score_mean_delta": -0.2735740174278881,
+       "official_stage_row_delta": -0.2735740174278881,
+       "wins": 135,
+       "ties": 39,
+       "losses": 276,
+       "submetric_mean_deltas": {
+        "NC": -0.10777777777777786,
+        "DAC": -0.5022222222222222,
+        "DDC": -0.29333333333333333,
+        "TLC": -0.004444444444444473,
+        "EP": 0.43438858378489265,
+        "TTC": -0.12444444444444447,
+        "LK": -0.10444444444444445,
+        "HC": 0.4822222222222223,
+        "EC": 0.5155555555555555
+       }
+      },
+      "stage_two": {
+       "n": 5462,
+       "score_mean_delta": -0.09602109651532348,
+       "official_stage_row_delta": -0.1300365070775103,
+       "wins": 2176,
+       "ties": 1434,
+       "losses": 1852,
+       "submetric_mean_deltas": {
+        "NC": -0.10316733797143907,
+        "DAC": -0.21274258513365074,
+        "DDC": -0.16779567923837424,
+        "TLC": -0.008787989747345293,
+        "EP": 0.24422850176041777,
+        "TTC": -0.1202856096667887,
+        "LK": -0.02819480043939948,
+        "HC": 0.2980593189307946,
+        "EC": 0.14024166971805202
+       }
+      }
+     },
+     "wins": 2311,
+     "ties": 1473,
+     "losses": 2128,
+     "_wtl_scope": "per-scene wins/ties/losses pooled over the common tokens of BOTH stages (tie band 1e-12); per stage in by_stage.<stage>",
+     "n_common": 5912
+    },
+    "CV": {
+     "status": "OK",
+     "headline_delta": null,
+     "S2_EPDMS_u_delta": 0.04522189665331511,
+     "by_stage": {
+      "stage_one": {
+       "n": 450,
+       "score_mean_delta": 0.0,
+       "official_stage_row_delta": 0.0,
+       "wins": 0,
+       "ties": 450,
+       "losses": 0,
+       "submetric_mean_deltas": {
+        "NC": 0.0,
+        "DAC": 0.0,
+        "DDC": 0.0,
+        "TLC": 0.0,
+        "EP": 0.0,
+        "TTC": 0.0,
+        "LK": 0.0,
+        "HC": 0.0,
+        "EC": 0.0
+       }
+      },
+      "stage_two": {
+       "n": 5462,
+       "score_mean_delta": 0.044855132664644186,
+       "official_stage_row_delta": 0.03434597607106693,
+       "wins": 1426,
+       "ties": 2635,
+       "losses": 1401,
+       "submetric_mean_deltas": {
+        "NC": 0.019498352251922313,
+        "DAC": 0.0811058220432076,
+        "DDC": 0.048425485170267346,
+        "TLC": 0.0005492493592090808,
+        "EP": -0.07203140593581281,
+        "TTC": 0.008055657268399852,
+        "LK": 0.03332112779201757,
+        "HC": -0.022336140607835953,
+        "EC": -0.20248993042841446
+       }
+      }
+     },
+     "wins": 1426,
+     "ties": 3085,
+     "losses": 1401,
+     "_wtl_scope": "per-scene wins/ties/losses pooled over the common tokens of BOTH stages (tie band 1e-12); per stage in by_stage.<stage>",
+     "n_common": 5912
+    }
+   },
+   "interval": {
+    "status": "UNAVAILABLE",
+    "n": 76,
+    "reason": "the only two-stage aggregate for A1 is the CV-stand-in HYBRID (450 stage-1 rows are the devkit CV agent, which also sets the stage-2 kernel weights); an interval on it is not an interval on this arm. The hybrid's own interval is kept under statistics.official_combined_row_HYBRID.interval_NOT_this_arm"
+   },
+   "families": {
+    "longitudinal": {
+     "status": "UNAVAILABLE",
+     "reason": "no warmup scene carries BOTH the model's camera input and a logged future: the 204 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), the 16 stage-1 scenes have a future but 0/192 camera jpgs on this box. Unblock = the stage-1 original frames (then n = 16).",
+     "n": 0
+    },
+    "lateral": {
+     "status": "UNAVAILABLE",
+     "reason": "no warmup scene carries BOTH the model's camera input and a logged future: the 204 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), the 16 stage-1 scenes have a future but 0/192 camera jpgs on this box. Unblock = the stage-1 original frames (then n = 16).",
+     "n": 0
+    },
+    "tactical": {
+     "status": "UNAVAILABLE",
+     "reason": "no warmup scene carries BOTH the model's camera input and a logged future: the 204 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), the 16 stage-1 scenes have a future but 0/192 camera jpgs on this box. Unblock = the stage-1 original frames (then n = 16).",
+     "n": 0
+    },
+    "strategic": {
+     "status": "UNAVAILABLE",
+     "reason": "no warmup scene carries BOTH the model's camera input and a logged future: the 204 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), the 16 stage-1 scenes have a future but 0/192 camera jpgs on this box. Unblock = the stage-1 original frames (then n = 16).",
+     "n": 0
+    }
+   },
+   "statistics": {
+    "S2_EPDMS_u": {
+     "value": 0.3841356231421308,
+     "n_groups": 450,
+     "group_sizes": [
+      11,
+      11,
+      11,
+      11,
+      7,
+      7,
+      13,
+      13,
+      10,
+      10,
+      7,
+      7,
+      6,
+      6,
+      20,
+      20,
+      8,
+      8,
+      20,
+      20,
+      7,
+      7,
+      11,
+      11,
+      16,
+      16,
+      10,
+      10,
+      20,
+      20,
+      6,
+      6,
+      12,
+      12,
+      8,
+      8,
+      6,
+      6,
+      6,
+      6,
+      10,
+      10,
+      12,
+      12,
+      7,
+      7,
+      18,
+      18,
+      17,
+      17,
+      9,
+      9,
+      7,
+      7,
+      18,
+      18,
+      12,
+      12,
+      11,
+      11,
+      5,
+      5,
+      14,
+      14,
+      5,
+      5,
+      9,
+      9,
+      19,
+      19,
+      8,
+      8,
+      7,
+      7,
+      10,
+      10,
+      17,
+      17,
+      19,
+      19,
+      5,
+      5,
+      15,
+      15,
+      18,
+      18,
+      15,
+      15,
+      9,
+      9,
+      17,
+      17,
+      12,
+      12,
+      11,
+      11,
+      8,
+      8,
+      9,
+      9,
+      12,
+      12,
+      12,
+      12,
+      13,
+      13,
+      5,
+      5,
+      7,
+      7,
+      13,
+      13,
+      13,
+      13,
+      13,
+      13,
+      10,
+      10,
+      11,
+      11,
+      9,
+      9,
+      14,
+      14,
+      17,
+      17,
+      18,
+      18,
+      17,
+      17,
+      12,
+      12,
+      8,
+      8,
+      20,
+      20,
+      13,
+      13,
+      20,
+      20,
+      7,
+      7,
+      9,
+      9,
+      18,
+      18,
+      13,
+      13,
+      14,
+      14,
+      20,
+      20,
+      16,
+      16,
+      5,
+      5,
+      20,
+      20,
+      14,
+      14,
+      12,
+      12,
+      17,
+      17,
+      14,
+      14,
+      17,
+      17,
+      20,
+      20,
+      5,
+      5,
+      10,
+      10,
+      18,
+      18,
+      10,
+      10,
+      15,
+      15,
+      9,
+      9,
+      11,
+      11,
+      8,
+      8,
+      5,
+      5,
+      17,
+      17,
+      20,
+      20,
+      16,
+      16,
+      7,
+      7,
+      12,
+      12,
+      19,
+      19,
+      20,
+      20,
+      7,
+      7,
+      15,
+      15,
+      11,
+      11,
+      10,
+      10,
+      8,
+      8,
+      17,
+      17,
+      7,
+      7,
+      19,
+      19,
+      19,
+      19,
+      14,
+      14,
+      19,
+      19,
+      15,
+      15,
+      6,
+      6,
+      7,
+      7,
+      5,
+      5,
+      5,
+      5,
+      13,
+      13,
+      14,
+      14,
+      13,
+      13,
+      13,
+      13,
+      16,
+      16,
+      11,
+      11,
+      15,
+      15,
+      17,
+      17,
+      9,
+      9,
+      10,
+      10,
+      11,
+      11,
+      8,
+      8,
+      20,
+      20,
+      11,
+      11,
+      11,
+      11,
+      8,
+      8,
+      12,
+      12,
+      8,
+      8,
+      9,
+      9,
+      13,
+      13,
+      5,
+      5,
+      8,
+      8,
+      13,
+      13,
+      20,
+      20,
+      13,
+      13,
+      19,
+      19,
+      6,
+      6,
+      11,
+      11,
+      11,
+      11,
+      15,
+      15,
+      13,
+      13,
+      6,
+      6,
+      8,
+      8,
+      14,
+      14,
+      5,
+      5,
+      12,
+      12,
+      8,
+      8,
+      10,
+      10,
+      7,
+      7,
+      8,
+      8,
+      5,
+      5,
+      6,
+      6,
+      6,
+      6,
+      12,
+      12,
+      11,
+      11,
+      11,
+      11,
+      20,
+      20,
+      20,
+      20,
+      14,
+      14,
+      5,
+      5,
+      12,
+      12,
+      11,
+      11,
+      5,
+      5,
+      8,
+      8,
+      5,
+      5,
+      20,
+      20,
+      14,
+      14,
+      15,
+      15,
+      8,
+      8,
+      12,
+      12,
+      17,
+      17,
+      16,
+      16,
+      10,
+      10,
+      14,
+      14,
+      10,
+      10,
+      9,
+      9,
+      15,
+      15,
+      15,
+      15,
+      20,
+      20,
+      9,
+      9,
+      12,
+      12,
+      13,
+      13,
+      8,
+      8,
+      13,
+      13,
+      14,
+      14,
+      20,
+      20,
+      16,
+      16,
+      15,
+      15,
+      11,
+      11,
+      17,
+      17,
+      5,
+      5,
+      8,
+      8,
+      10,
+      10,
+      8,
+      8,
+      19,
+      19,
+      11,
+      11,
+      13,
+      13,
+      15,
+      15,
+      7,
+      7,
+      18,
+      18,
+      8,
+      8,
+      17,
+      17,
+      10,
+      10,
+      12,
+      12,
+      16,
+      16,
+      10,
+      10,
+      20,
+      20,
+      9,
+      9,
+      11,
+      11,
+      15,
+      15,
+      8,
+      8,
+      11,
+      11,
+      18,
+      18,
+      12,
+      12,
+      16,
+      16,
+      14,
+      14,
+      17,
+      17,
+      18,
+      18
+     ],
+     "n_scenes": 5462,
+     "what": "E2's stage-2-only statistic: mean over groups of the uniform within-group mean of the official stage-2 `score` — NOT a two-stage EPDMS"
+    },
+    "stage_one_scene_mean": 0.28958783902161,
+    "stage_two_scene_mean": 0.37421086717974317,
+    "official_combined_row_HYBRID": {
+     "value": 0.11132923385091437,
+     "why_not_the_headline": "stage 1 = devkit CV stand-in; the combined row mixes CV and the model",
+     "interval_NOT_this_arm": {
+      "status": "OK",
+      "estimator": "navsim_log_cluster_bootstrap",
+      "cluster_unit": "log_name",
+      "lo": 0.0834,
+      "hi": 0.139,
+      "n_clusters": 76,
+      "detail": {
+       "status": "OK",
+       "estimator": "navsim_log_cluster_bootstrap",
+       "cluster_unit": "log_name",
+       "resample_unit": "log_name",
+       "aggregation": "two_stage_mapping_key_mean",
+       "aggregation_source": "run_pdm_score.py::calculate_individual_mapping_scores L242-290 @0a380a9 — per key ((s1(orig)*wavg(now)) + (s1(prev)*wavg(prev)))/2, then pd.DataFrame(...).mean() (skipna) over keys",
+       "point": 0.1113,
+       "mean": 0.1113,
+       "lo": 0.0834,
+       "hi": 0.139,
+       "ci95": 0.0278,
+       "se": 0.014,
+       "bootstrap_mean": 0.1109,
+       "n_clusters": 76,
+       "n_units": 225,
+       "n_units_nan": 0,
+       "min_clusters": 8,
+       "n_boot": 2000,
+       "seed": 0,
+       "alpha": 0.05,
+       "reproduces_official": {
+        "status": "UNCHECKED",
+        "reason": "no official_value supplied — pass the devkit's summary row (`extended_pdm_score_combined` / `average_all_frames`) to prove the resampled statistic IS the official aggregate"
+       },
+       "sensitivity_nuplan_drive": {
+        "status": "OK",
+        "unit": "nuplan_drive",
+        "n_clusters": 34,
+        "lo": 0.0867,
+        "hi": 0.1454,
+        "se": 0.015
+       },
+       "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? — evaluation-set variance only. ⛔ BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT — read it against a replicate arm's floor.",
+       "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+       "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+       "_machine": "taniteval.ci.episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna) — the SAME draws, cross-checked",
+       "_forbidden": "⛔ scene-token resampling (overlapping units), the episode-cluster bootstrap under any other unit, and overlapping_holdout_se (biases the point estimate) are NOT admissible for NavSim.",
+       "protocol": "EPDMS_v2_navhard_two_stage"
+      },
+      "pre_csv_frame": {
+       "captured": true,
+       "path": "D:/Projects/TanitAD/taniteval/results/bench/navsim_v2/navhard_two_stage/20260921T122531Z-navsim_v2-refcv4b_b1_v72_40k-e6560d/raw/A1/A1_final_scores_frame.csv",
+       "why_needed": "the published CSV drops `weight`/`log_name` (run_pdm_score.py:422)"
+      },
+      "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? — evaluation-set variance only. ⛔ BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT — read it against a replicate arm's floor."
+     }
+    }
+   },
+   "caveats": [
+    {
+     "id": "ROUTE_LEVEL_ORACLE",
+     "one_line": "driving_command is computed from (the ego pose NOW, nuPlan's route, the map) — not from the expert's future trajectory — but the route is the expert's own driven path at ROADBLOCK granularity, so the command carries the expert's future ROUTE CHOICE. Not a trajectory leak (no speed, stop or lane-change information).",
+     "consequence": "a command-conditioned NavSim number is 'driving with an ORACLE ROUTE': comparable within NavSim, never evidence of route/strategic skill; the command may never be a route-head LABEL; pair the command arm with a command-withheld arm.",
+     "measured": {
+      "reproduction_by_openscene_code": "1,902/1,902 frames (turning 739/739)",
+      "turning_commands_from_FUTURE_route": "710/739 = 96.1 %",
+      "turning_commands_from_NO_FUTURE_route": "491/739 = 66.4 %",
+      "route_starts_behind_the_ego": "83.5 % of 1,921 nuPlan scenes",
+      "stage_two_command_copied_from_expert_frame": "5,462/5,462 navhard, 204/204 warmup",
+      "best_threshold_rule_on_future_path": "94.2-94.7 % (n 65,783) — below the 99 % bar"
+     }
+    },
+    {
+     "id": "SCORES_ADOPTED_FOR_RE_DERIVATION",
+     "one_line": "A1 was NOT re-scored: its per-token rows are adopted, byte-identical, from 20260921T091732Z-navsim_v2-refcv4b_b1_v72_40k-f99b29 (the run that scored them; plan byte-equal) to rebuild artifacts/summary/criteria after a builder fix",
+     "consequence": "no number here is a new measurement; every score equals the source run's",
+     "record": "raw/A1/A1.reused.json"
+    }
+   ],
+   "scores_adopted_from": "20260921T091732Z-navsim_v2-refcv4b_b1_v72_40k-f99b29",
+   "modality": {
+    "sensor_set": "3-camera stitch cam_l0+cam_f0+cam_r0 -> 256x640 cylindrical (PHYSICALAI_WIDE120_256x640), frames construction ST",
+    "setting": "perception-free one-shot anchor planner, ZERO-SHOT on NavSim (no NavSim training)",
+    "ego_status_used": true,
+    "vision_only_claimed": false
+   },
+   "controls": {
+    "C4_formula": {
+     "n_rows": 5912,
+     "n_rows_with_nan_EC_dropped_to_14": 0,
+     "max_abs_diff": 1.1102230246251565e-16,
+     "tol": 1e-09,
+     "pass": true
+    },
+    "C5_aggregate": {
+     "max_abs_weight_diff": 2.4551204402811777e-09,
+     "max_abs_summary_diff": 8.931189121597072e-12,
+     "tol": 1e-09,
+     "pass": false,
+     "promoted_from": "E1 code/verify_controls.py C5 (inline) -> function, same arithmetic"
+    },
+    "criteria_check": {
+     "rc": 0,
+     "json": "raw/criteria_A1.json",
+     "json_written": true,
+     "registry_version": "2.10.3",
+     "unreadable": [],
+     "n_violations": 0,
+     "n_work_items": 21,
+     "scope": [
+      "IN_SCOPE"
+     ]
+    },
+    "navsim_gates": {
+     "navsim.estimator_unit": "PASS",
+     "navsim.ego_enforcement": "NOT_APPLICABLE_DECLARED",
+     "navsim.modality_label": "PASS",
+     "navsim.cross_protocol": "PASS"
+    },
+    "navsim_gate_mutations_all_red": true
+   },
+   "files": {
+    "scores": "scores/A1.csv",
+    "artifact": "artifacts/A1.json",
+    "plans": "plans/A1.npz",
+    "criteria": "criteria/A1.txt",
+    "counts": "raw/A1/A1.counts.json",
+    "wrapper_manifest": "raw/A1/A1_manifest.json",
+    "hooks": "raw/A1/A1_hooks.json",
+    "final_scores_frame": "raw/A1/A1_final_scores_frame.csv"
+   }
+  }
+ },
+ "controls": {
+  "arm_notes": [
+   "CV added by rule (MANDATORY NavSim floor)",
+   "STOP added by rule (MANDATORY NavSim floor)",
+   "ECHO added by rule (ECHO floor: a checkpoint is scored)"
+  ],
+  "route_command_is_a_route_level_oracle": {
+   "what": "NavSim driving_command is a ROUTE-LEVEL ORACLE",
+   "source": "W2 / E3 (2026-09-20), four probes",
+   "verdict": {
+    "status": "CHECKED",
+    "verdict": "PARTIAL — ROUTE-LEVEL ORACLE",
+    "evidence_class": "PUBLISHED-CODE (mechanism) + MEASURED (four empirical probes)",
+    "one_line": "driving_command is computed from (the ego pose NOW, nuPlan's route, the map) — not from the expert's future trajectory — but the route is the expert's own driven path at ROADBLOCK granularity, so the command carries the expert's future ROUTE CHOICE. Not a trajectory leak (no speed, stop or lane-change information).",
+    "measured": {
+     "reproduction_by_openscene_code": "1,902/1,902 frames (turning 739/739)",
+     "turning_commands_from_FUTURE_route": "710/739 = 96.1 %",
+     "turning_commands_from_NO_FUTURE_route": "491/739 = 66.4 %",
+     "route_starts_behind_the_ego": "83.5 % of 1,921 nuPlan scenes",
+     "stage_two_command_copied_from_expert_frame": "5,462/5,462 navhard, 204/204 warmup",
+     "best_threshold_rule_on_future_path": "94.2-94.7 % (n 65,783) — below the 99 % bar"
+    },
+    "consequence": "a command-conditioned NavSim number is 'driving with an ORACLE ROUTE': comparable within NavSim, never evidence of route/strategic skill; the command may never be a route-head LABEL; pair the command arm with a command-withheld arm.",
+    "evidence": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/RESULT.md §B; raw/route_leak_probe.json; raw/stage2_command_provenance.json",
+    "n": 1902
+   },
+   "applies_to": "every arm that consumes driving_command"
+  },
+  "floors_provenance": {
+   "status": "REUSED",
+   "arms": {
+    "CV": {
+     "reused": true,
+     "kind": "floor",
+     "source_run": "20260920T082848Z-navsim_v2-none-06e257",
+     "source_run_dir": "D:/Projects/TanitAD/taniteval/results/bench/navsim_v2/navhard_two_stage/20260920T082848Z-navsim_v2-none-06e257",
+     "rule": "the mandatory-floors rule is SATISFIED by a floor scored on the SAME TOKENS: this arm's per-token rows are adopted, byte-identical, from a run that scored the identical token set with the identical devkit, patch set, metric cache and agent inputs. It was NOT re-scored in this run, and that is recorded, never skipped.",
+     "why": "the killer that aborted refcv4b's navhard scoring twice (E1_RAM_GUARD_ABORT at 948-1,750 MB available while other sessions' jobs held the box) struck both times at ~80 % of the FIRST scored arm; re-scoring two floors that already exist was ~3 h of pure exposure to it",
+     "checked": {
+      "source_arm_completed": {
+       "status": "PASS",
+       "rc": 0,
+       "log_successful": 5912,
+       "log_failed": 0,
+       "csv_valid_rows": 5912,
+       "expected_tokens": 5912
+      },
+      "split": "navhard_two_stage",
+      "protocol": "EPDMS_v2_navhard_two_stage",
+      "devkit_sha": "0a380a9063d7162ec93d0f51e9990ebac585f720",
+      "patch_set": [
+       "C: copy navsim/common/dataloader.py: MetricCacheLoader token split on either separator",
+       "C: copy navsim/planning/simulation/observation/navsim_idm/navsim_idm_agent_manager.py: IDM degenerate-path assert (a fully consumed baseline)",
+       "MetricCacheLoader._load_metric_cache_paths monkeypatch (navsim_win.py --patch-loader)",
+       "navsim/common/dataclasses.py PosixPath unpickler (Windows)",
+       "nuplan-devkit setup.py packaging-only change",
+       "venv fcntl.py flock shim"
+      ],
+      "metric_cache": "C:/Users/Admin/navsim-crun/exp/metric_cache_navhard_two_stage",
+      "token_set": {
+       "n": 5912,
+       "n_stage1": 450,
+       "n_stage2": 5462,
+       "equal_by_value_with_stage_labels": true
+      },
+      "export_sha256": "ad677f8bd6f4c451b41a9160def5e81d47a3ef6a0ac5f90900accedc2d0afcb1",
+      "seam_byte_equal": null
+     },
+     "scores_csv_sha256": "3d32254a6ae1fda40e327355b81278f12a3ddc0020bbe7815692057b2f6ea262",
+     "files_copied": [
+      "CV.counts.json",
+      "CV.devkit.csv",
+      "CV.run_pdm_score.log",
+      "CV.score.log",
+      "CV_final_scores_frame.csv",
+      "CV_final_scores_frame_PRE_AGGREGATION.csv",
+      "CV_hooks.json",
+      "CV_manifest.json",
+      "CV_preaggregation.csv.offrepo.json",
+      "CV_preaggregation.pkl.offrepo.json"
+     ]
+    },
+    "STOP": {
+     "reused": true,
+     "kind": "floor",
+     "source_run": "20260920T082848Z-navsim_v2-none-06e257",
+     "source_run_dir": "D:/Projects/TanitAD/taniteval/results/bench/navsim_v2/navhard_two_stage/20260920T082848Z-navsim_v2-none-06e257",
+     "rule": "the mandatory-floors rule is SATISFIED by a floor scored on the SAME TOKENS: this arm's per-token rows are adopted, byte-identical, from a run that scored the identical token set with the identical devkit, patch set, metric cache and agent inputs. It was NOT re-scored in this run, and that is recorded, never skipped.",
+     "why": "the killer that aborted refcv4b's navhard scoring twice (E1_RAM_GUARD_ABORT at 948-1,750 MB available while other sessions' jobs held the box) struck both times at ~80 % of the FIRST scored arm; re-scoring two floors that already exist was ~3 h of pure exposure to it",
+     "checked": {
+      "source_arm_completed": {
+       "status": "PASS",
+       "rc": 0,
+       "log_successful": 5912,
+       "log_failed": 0,
+       "csv_valid_rows": 5912,
+       "expected_tokens": 5912
+      },
+      "split": "navhard_two_stage",
+      "protocol": "EPDMS_v2_navhard_two_stage",
+      "devkit_sha": "0a380a9063d7162ec93d0f51e9990ebac585f720",
+      "patch_set": [
+       "C: copy navsim/common/dataloader.py: MetricCacheLoader token split on either separator",
+       "C: copy navsim/planning/simulation/observation/navsim_idm/navsim_idm_agent_manager.py: IDM degenerate-path assert (a fully consumed baseline)",
+       "MetricCacheLoader._load_metric_cache_paths monkeypatch (navsim_win.py --patch-loader)",
+       "navsim/common/dataclasses.py PosixPath unpickler (Windows)",
+       "nuplan-devkit setup.py packaging-only change",
+       "venv fcntl.py flock shim"
+      ],
+      "metric_cache": "C:/Users/Admin/navsim-crun/exp/metric_cache_navhard_two_stage",
+      "token_set": {
+       "n": 5912,
+       "n_stage1": 450,
+       "n_stage2": 5462,
+       "equal_by_value_with_stage_labels": true
+      },
+      "export_sha256": "ad677f8bd6f4c451b41a9160def5e81d47a3ef6a0ac5f90900accedc2d0afcb1",
+      "seam_byte_equal": true
+     },
+     "scores_csv_sha256": "137ad745d9da88fa5de61eeab41091660a01eefa90318694e85a17db297a14c7",
+     "files_copied": [
+      "STOP.calls.jsonl",
+      "STOP.counts.json",
+      "STOP.devkit.csv",
+      "STOP.run_pdm_score.log",
+      "STOP.score.log",
+      "STOP_final_scores_frame.csv",
+      "STOP_final_scores_frame_PRE_AGGREGATION.csv",
+      "STOP_hooks.json",
+      "STOP_manifest.json",
+      "STOP_preaggregation.csv.offrepo.json",
+      "STOP_preaggregation.pkl.offrepo.json"
+     ]
+    },
+    "ECHO": {
+     "reused": true,
+     "kind": "floor",
+     "source_run": "20260921T091732Z-navsim_v2-refcv4b_b1_v72_40k-f99b29",
+     "source_run_dir": "D:/Projects/TanitAD/taniteval/results/bench/navsim_v2/navhard_two_stage/20260921T091732Z-navsim_v2-refcv4b_b1_v72_40k-f99b29",
+     "rule": "the mandatory-floors rule is SATISFIED by a floor scored on the SAME TOKENS: this arm's per-token rows are adopted, byte-identical, from a run that scored the identical token set with the identical devkit, patch set, metric cache and agent inputs. It was NOT re-scored in this run, and that is recorded, never skipped.",
+     "why": "the killer that aborted refcv4b's navhard scoring twice (E1_RAM_GUARD_ABORT at 948-1,750 MB available while other sessions' jobs held the box) struck both times at ~80 % of the FIRST scored arm; re-scoring two floors that already exist was ~3 h of pure exposure to it",
+     "checked": {
+      "source_arm_completed": {
+       "status": "PASS",
+       "rc": 0,
+       "log_successful": 5912,
+       "log_failed": 0,
+       "csv_valid_rows": 5912,
+       "expected_tokens": 5912
+      },
+      "split": "navhard_two_stage",
+      "protocol": "EPDMS_v2_navhard_two_stage",
+      "devkit_sha": "0a380a9063d7162ec93d0f51e9990ebac585f720",
+      "patch_set": [
+       "C: copy navsim/common/dataloader.py: MetricCacheLoader token split on either separator",
+       "C: copy navsim/planning/simulation/observation/navsim_idm/navsim_idm_agent_manager.py: IDM degenerate-path assert (a fully consumed baseline)",
+       "MetricCacheLoader._load_metric_cache_paths monkeypatch (navsim_win.py --patch-loader)",
+       "navsim/common/dataclasses.py PosixPath unpickler (Windows)",
+       "nuplan-devkit setup.py packaging-only change",
+       "venv fcntl.py flock shim"
+      ],
+      "metric_cache": "C:/Users/Admin/navsim-crun/exp/metric_cache_navhard_two_stage",
+      "token_set": {
+       "n": 5912,
+       "n_stage1": 450,
+       "n_stage2": 5462,
+       "equal_by_value_with_stage_labels": true
+      },
+      "export_sha256": "ad677f8bd6f4c451b41a9160def5e81d47a3ef6a0ac5f90900accedc2d0afcb1",
+      "seam_byte_equal": true
+     },
+     "scores_csv_sha256": "68eee08e0188de2654080190eec061b9b310ecf98c917b8298469f9a4f3c4796",
+     "files_copied": [
+      "ECHO.calls.jsonl",
+      "ECHO.counts.json",
+      "ECHO.devkit.csv",
+      "ECHO.run_pdm_score.log",
+      "ECHO.score.log",
+      "ECHO_final_scores_frame.csv",
+      "ECHO_final_scores_frame_PRE_AGGREGATION.csv",
+      "ECHO_hooks.json",
+      "ECHO_manifest.json",
+      "ECHO_preaggregation.csv.offrepo.json",
+      "ECHO_preaggregation.pkl.offrepo.json"
+     ]
+    }
+   },
+   "mandatory_floors_rule": "SATISFIED by floors scored ON THE SAME TOKENS: the adopted per-token rows come from a run that scored the identical token set (by value, with stage labels) under the identical devkit sha, patch set, metric cache and agent inputs; see raw/<arm>/<arm>.reused.json"
+  },
+  "model_scores_provenance": {
+   "status": "ADOPTED_FOR_RE_DERIVATION",
+   "arms": {
+    "A1": {
+     "reused": true,
+     "kind": "model",
+     "source_run": "20260921T091732Z-navsim_v2-refcv4b_b1_v72_40k-f99b29",
+     "source_run_dir": "D:/Projects/TanitAD/taniteval/results/bench/navsim_v2/navhard_two_stage/20260921T091732Z-navsim_v2-refcv4b_b1_v72_40k-f99b29",
+     "rule": "RE-DERIVATION, NOT A NEW MEASUREMENT: this model arm's per-token rows are adopted, byte-identical, from the run that SCORED them; the plan (seam) is byte-equal, so the scorer's output is the same output. Adopted only to rebuild artifacts/summary after a builder fix.",
+     "why": "the killer that aborted refcv4b's navhard scoring twice (E1_RAM_GUARD_ABORT at 948-1,750 MB available while other sessions' jobs held the box) struck both times at ~80 % of the FIRST scored arm; re-scoring two floors that already exist was ~3 h of pure exposure to it",
+     "checked": {
+      "source_arm_completed": {
+       "status": "PASS",
+       "rc": 0,
+       "log_successful": 5912,
+       "log_failed": 0,
+       "csv_valid_rows": 5912,
+       "expected_tokens": 5912
+      },
+      "split": "navhard_two_stage",
+      "protocol": "EPDMS_v2_navhard_two_stage",
+      "devkit_sha": "0a380a9063d7162ec93d0f51e9990ebac585f720",
+      "patch_set": [
+       "C: copy navsim/common/dataloader.py: MetricCacheLoader token split on either separator",
+       "C: copy navsim/planning/simulation/observation/navsim_idm/navsim_idm_agent_manager.py: IDM degenerate-path assert (a fully consumed baseline)",
+       "MetricCacheLoader._load_metric_cache_paths monkeypatch (navsim_win.py --patch-loader)",
+       "navsim/common/dataclasses.py PosixPath unpickler (Windows)",
+       "nuplan-devkit setup.py packaging-only change",
+       "venv fcntl.py flock shim"
+      ],
+      "metric_cache": "C:/Users/Admin/navsim-crun/exp/metric_cache_navhard_two_stage",
+      "token_set": {
+       "n": 5912,
+       "n_stage1": 450,
+       "n_stage2": 5462,
+       "equal_by_value_with_stage_labels": true
+      },
+      "export_sha256": "ad677f8bd6f4c451b41a9160def5e81d47a3ef6a0ac5f90900accedc2d0afcb1",
+      "seam_byte_equal": true
+     },
+     "scores_csv_sha256": "0f9fa7a8fa8e3818ab82dcdb763d007a9bc76e88032d808c93d85b23b271a1ea",
+     "files_copied": [
+      "A1.calls.jsonl",
+      "A1.counts.json",
+      "A1.devkit.csv",
+      "A1.run_pdm_score.log",
+      "A1.score.log",
+      "A1_final_scores_frame.csv",
+      "A1_final_scores_frame_PRE_AGGREGATION.csv",
+      "A1_hooks.json",
+      "A1_manifest.json",
+      "A1_preaggregation.csv.offrepo.json",
+      "A1_preaggregation.pkl.offrepo.json"
+     ]
+    }
+   },
+   "what": "the model arm was NOT re-scored: its per-token rows are adopted from the run that scored them (plan byte-equal), to rebuild artifacts/summary/criteria after a builder fix. No number in this run is a new measurement of the model."
+  },
+  "gallery_inputs": {
+   "CV": {
+    "status": "OK",
+    "n": 5912,
+    "path": "CV.npz",
+    "shape": [
+     5912,
+     8,
+     3
+    ],
+    "sampling": [
+     8,
+     0.5
+    ],
+    "n_cv_standin": 0,
+    "poses_from": "the scorer's own pdm_score hook (what the official runner executed)"
+   },
+   "STOP": {
+    "status": "OK",
+    "n": 5912,
+    "path": "STOP.npz",
+    "shape": [
+     5912,
+     8,
+     3
+    ],
+    "sampling": [
+     8,
+     0.5
+    ],
+    "n_cv_standin": 0,
+    "poses_from": "the scorer's own pdm_score hook (what the official runner executed)"
+   },
+   "ECHO": {
+    "status": "OK",
+    "n": 5912,
+    "path": "ECHO.npz",
+    "shape": [
+     5912,
+     8,
+     3
+    ],
+    "sampling": [
+     8,
+     0.5
+    ],
+    "n_cv_standin": 0,
+    "poses_from": "the scorer's own pdm_score hook (what the official runner executed)"
+   },
+   "A1": {
+    "status": "OK",
+    "n": 5912,
+    "path": "A1.npz",
+    "shape": [
+     5912,
+     8,
+     3
+    ],
+    "sampling": [
+     8,
+     0.5
+    ],
+    "n_cv_standin": 450,
+    "poses_from": "the scorer's own pdm_score hook (what the official runner executed)"
+   },
+   "scenes": {
+    "status": "OK",
+    "n_tokens": 5912,
+    "path": "scenes.json",
+    "frame_bank_declared": true,
+    "omitted_null_keys": []
+   }
+  },
+  "scoring_counts": {
+   "CV": {
+    "status": "PASS",
+    "failures": [],
+    "wall_s": 0.0,
+    "log_successful": 5912,
+    "log_failed": 0,
+    "csv_valid_rows": 5912,
+    "agent_calls": null
+   },
+   "STOP": {
+    "status": "PASS",
+    "failures": [],
+    "wall_s": 0.0,
+    "log_successful": 5912,
+    "log_failed": 0,
+    "csv_valid_rows": 5912,
+    "agent_calls": {
+     "seam": 5912,
+     "cv_standin": 0,
+     "UNKNOWN_TOKEN": 0
+    }
+   },
+   "ECHO": {
+    "status": "PASS",
+    "failures": [],
+    "wall_s": 0.0,
+    "log_successful": 5912,
+    "log_failed": 0,
+    "csv_valid_rows": 5912,
+    "agent_calls": {
+     "seam": 5912,
+     "cv_standin": 0,
+     "UNKNOWN_TOKEN": 0
+    }
+   },
+   "A1": {
+    "status": "PASS",
+    "failures": [],
+    "wall_s": 0.0,
+    "log_successful": 5912,
+    "log_failed": 0,
+    "csv_valid_rows": 5912,
+    "agent_calls": {
+     "seam": 5462,
+     "cv_standin": 450,
+     "UNKNOWN_TOKEN": 0
+    }
+   }
+  }
+ },
+ "provenance": {
+  "devkit": {
+   "repo": "autonomousvision/navsim",
+   "sha": "0a380a9063d7162ec93d0f51e9990ebac585f720",
+   "patches": [
+    {
+     "name": "navsim/common/dataclasses.py PosixPath unpickler (Windows)",
+     "kind": "pre-existing",
+     "evidence": "E1 RESULT.md §4 (blob 596cb7d in the source checkout)",
+     "raw_bytes_git_blob_now": "20673663a56e9239daf4ebceff7a2ef5db99e8ec",
+     "normalised_git_blob_now": "596cb7d6bd5744093b4409f9cbb70d9fcf8535e7",
+     "hash_basis": {
+      "raw_bytes_git_blob_now": "sha1('blob <len>\u0000' + RAW bytes), no eol conversion. STRONGER for 'did this file change at all'. This is what E1's apply_*_patch.py prints.",
+      "normalised_git_blob_now": "`git hash-object` = the blob AFTER git's text/eol conversion. ⛔ BLIND to a pure CRLF<->LF change. Quote it only against other git-side ids, never against a raw-byte record."
+     }
+    },
+    {
+     "name": "venv fcntl.py flock shim",
+     "kind": "pre-existing",
+     "evidence": "E1 RESULT.md §4 (sha256 75184a48...)",
+     "raw_bytes_git_blob_now": "6dfec7cf53c89d847886cfbe5328494195bff866",
+     "normalised_git_blob_now": "6dfec7cf53c89d847886cfbe5328494195bff866",
+     "hash_basis": {
+      "raw_bytes_git_blob_now": "sha1('blob <len>\u0000' + RAW bytes), no eol conversion. STRONGER for 'did this file change at all'. This is what E1's apply_*_patch.py prints.",
+      "normalised_git_blob_now": "`git hash-object` = the blob AFTER git's text/eol conversion. ⛔ BLIND to a pure CRLF<->LF change. Quote it only against other git-side ids, never against a raw-byte record."
+     }
+    },
+    {
+     "name": "nuplan-devkit setup.py packaging-only change",
+     "kind": "pre-existing",
+     "evidence": "E1 RESULT.md §4"
+    },
+    {
+     "name": "C: copy navsim/common/dataloader.py: MetricCacheLoader token split on either separator",
+     "kind": "harness",
+     "evidence": "E1 code/patches/apply_dataloader_patch.py, applied 2026-09-19 13:04 (raw/navhard/dataloader_copy_patch.json); needed for process-pool scoring",
+     "raw_bytes_git_blob_now": "b850e1624f581f7dda6d33082caf017a8aad55f9",
+     "normalised_git_blob_now": "ad06ac3cc552e2316484096cb93b5683f6624002",
+     "hash_basis": {
+      "raw_bytes_git_blob_now": "sha1('blob <len>\u0000' + RAW bytes), no eol conversion. STRONGER for 'did this file change at all'. This is what E1's apply_*_patch.py prints.",
+      "normalised_git_blob_now": "`git hash-object` = the blob AFTER git's text/eol conversion. ⛔ BLIND to a pure CRLF<->LF change. Quote it only against other git-side ids, never against a raw-byte record."
+     }
+    },
+    {
+     "name": "C: copy navsim/planning/simulation/observation/navsim_idm/navsim_idm_agent_manager.py: IDM degenerate-path assert (a fully consumed baseline)",
+     "kind": "harness",
+     "evidence": "E1 code/patches/apply_idm_degenerate_path_patch.py, applied 2026-09-20 08:58 (raw/navhard/idm_degenerate_path_patch.json). MECHANISM: a fully consumed IDM baseline yields a ZERO-LENGTH path_to_go whose flat-cap buffer is an EMPTY polygon under shapely 2.0.7, so the agent cannot intersect its own path and the assert at navsim_idm_agent_manager.py:84 fires. Scope: the ASSERT CONDITION ONLY - it falls through to the devkit's own free-road branch. Verified by E1 effective 3/3 and INERT 4/4 (healthy tokens bit-identical).",
+     "why_it_is_a_precondition_not_a_footnote": "MEASURED by E1: 166 of 5,462 stage-2 tokens (0 of 450 stage-1) hit it, and ONE assert takes the whole run down. Without this patch the navhard numbers DO NOT EXIST - it is a precondition of the number, not a caveat on it.",
+     "blob_pre_patch": "1924b7c1e9ea2bd0436d475741e6b2e3a2f7b652",
+     "blob_post_patch_e1": "b95bcc7f62246017ea9ab5dca92383c6b50d234b",
+     "reader_note": "⚠ VERIFY THIS ONE WITH RAW BYTES, NOT `git hash-object`. The file is 100% CRLF (166/166), and `git hash-object` applies the text/eol conversion, returning 214ef5ee39944c3584cb16eaaffd53853fc9db85 for these same bytes - a DIFFERENT number that looks exactly like a mismatch with E1's record. git_blob() below reads raw bytes and agrees with E1 (MEASURED 2026-09-20). A pure line-ending change is invisible to the normalising hash and visible to this one.",
+     "raw_bytes_git_blob_now": "b95bcc7f62246017ea9ab5dca92383c6b50d234b",
+     "normalised_git_blob_now": "214ef5ee39944c3584cb16eaaffd53853fc9db85",
+     "hash_basis": {
+      "raw_bytes_git_blob_now": "sha1('blob <len>\u0000' + RAW bytes), no eol conversion. STRONGER for 'did this file change at all'. This is what E1's apply_*_patch.py prints.",
+      "normalised_git_blob_now": "`git hash-object` = the blob AFTER git's text/eol conversion. ⛔ BLIND to a pure CRLF<->LF change. Quote it only against other git-side ids, never against a raw-byte record."
+     }
+    },
+    {
+     "name": "MetricCacheLoader._load_metric_cache_paths monkeypatch (navsim_win.py --patch-loader)",
+     "kind": "in-process",
+     "evidence": "E1 code/navsim_win.py, pinned by test_navsim_win_patch.py; separator only"
+    }
+   ],
+   "pin": "autonomousvision/navsim@0a380a9 (2025-10-27; post-#151 fix, MEASURED by E1: README changelog 2025/09/29 + pdm_score.py:194-219)",
+   "sha_probe": {
+    "sha": "0a380a9063d7162ec93d0f51e9990ebac585f720",
+    "matches_pin": true,
+    "source": "D:\\Archive\\devbox-C\\navsim\\devkit"
+   },
+   "runtime": "C:/Users/Admin/navsim-crun",
+   "wrapper": "taniteval/taniteval/bench/navsim/devkit_side/navsim_win.py"
+  },
+  "split_yaml_counts": {
+   "stage_one": 450,
+   "stage_two": 5462,
+   "log_names": 76,
+   "mapping": 225
+  },
+  "ckpt": {
+   "path": "D:/Projects/TanitAD-artifacts/refcv4b_final/ckpt_40284_FINAL.pt",
+   "sha256": "090ee8d2584acc81e3738ab28f8f5bf2ed6bfb0d0cc6fba887de2a0cbddcbaa4",
+   "registry_key": "refcv4b-b1-v72-40k",
+   "registry_key_display": "refcv4b-b1-v72-40k"
+  },
+  "promoted_from": [
+   "E1 2026-09-19-navsim-warmup-reference-epdms",
+   "E2 2026-09-19-navsim-refcv4b-bridge"
+  ]
+ }
+}

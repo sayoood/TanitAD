@@ -1,0 +1,82 @@
+rc=0
+=== A1.json ===
+tier: T1  (driving-performance tier)
+
+LONGITUDINAL  [0/4 present]
+   [ WORK ] target-speed accuracy
+            -> four_families.longitudinal.speed_mae_mps: no navhard_two_stage scene carries BOTH this arm's camera input and a logged human future: the 5462 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), and the 450 st (n=0)
+   [ WORK ] along-track displacement error
+            -> four_families.longitudinal.along_mae_m: no navhard_two_stage scene carries BOTH this arm's camera input and a logged human future: the 5462 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), and the 450 st (n=0)
+   [ WORK ] ego progress
+            -> four_families.longitudinal.ego_progress: no navhard_two_stage scene carries BOTH this arm's camera input and a logged human future: the 5462 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), and the 450 st (n=0)
+   [ WORK ] distance-keeping (headway / time-gap / TTC to the lead agent)
+            -> no navhard_two_stage scene carries BOTH this arm's camera input and a logged human future: the 5462 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), and the 450 stage-1 scenes have a human future but their camera frames are not unpacked on this box — so 450 stage-1 rows of this arm are the devkit CV STAND-IN and none of this arm's plans can be compared with a human future. Unblock = extract the stage-1 frames from the verified OpenScene test camera archives (then n = 450).
+
+LATERAL  [0/4 present]
+   [ WORK ] cross-track error
+            -> four_families.lateral.cross_mae_m: no navhard_two_stage scene carries BOTH this arm's camera input and a logged human future: the 5462 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), and the 450 st (n=0)
+   [ WORK ] heading error
+            -> four_families.lateral.heading_mae_deg: no navhard_two_stage scene carries BOTH this arm's camera input and a logged human future: the 5462 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), and the 450 st (n=0)
+   [ WORK ] curvature error
+            -> no navhard_two_stage scene carries BOTH this arm's camera input and a logged human future: the 5462 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), and the 450 stage-1 scenes have a human future but their camera frames are not unpacked on this box — so 450 stage-1 rows of this arm are the devkit CV STAND-IN and none of this arm's plans can be compared with a human future. Unblock = extract the stage-1 frames from the verified OpenScene test camera archives (then n = 450).
+   [ WORK ] yaw-rate error
+            -> four_families.lateral.yaw_rate_mae_degps: no navhard_two_stage scene carries BOTH this arm's camera input and a logged human future: the 5462 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), and the 450 st (n=0)
+
+TACTICAL  [0/3 present]
+   [ WORK ] manoeuvre-decision quality (selected vs executed)
+            -> four_families.tactical.lateral_decision: no navhard_two_stage scene carries BOTH this arm's camera input and a logged human future: the 5462 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), and the 450 st (n=0)
+   [ WORK ] confusion over the manoeuvre classes
+            -> four_families.tactical.lateral_decision.confusion_gt_rows_pred_cols: no navhard_two_stage scene carries BOTH this arm's camera input and a logged human future: the 5462 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), and the 450 st (n=0)
+   [ WORK ] tactical goal / anchor selection quality
+            -> four_families.tactical.goal_setting: no navhard_two_stage scene carries BOTH this arm's camera input and a logged human future: the 5462 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), and the 450 st (n=0)
+
+STRATEGIC  [0/5 present]
+   [ WORK ] strategic decision quality
+            -> four_families.strategic: no navhard_two_stage scene carries BOTH this arm's camera input and a logged human future: the 5462 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), and the 450 st (n=0)
+   [ WORK ] strategic route / goal-setting quality
+            -> four_families.strategic: no navhard_two_stage scene carries BOTH this arm's camera input and a logged human future: the 5462 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), and the 450 st (n=0)
+   [ WORK ] nav-COMPLIANCE — the emitted BEHAVIOUR follows the route command (imminent windows)
+            -> no navhard_two_stage scene carries BOTH this arm's camera input and a logged human future: the 5462 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), and the 450 stage-1 scenes have a human future but their camera frames are not unpacked on this box — so 450 stage-1 rows of this arm are the devkit CV STAND-IN and none of this arm's plans can be compared with a human future. Unblock = extract the stage-1 frames from the verified OpenScene test camera archives (then n = 450).
+   [ WORK ] nav-compliance CONTROL: paired drop under nav-SHUFFLE (token permuted across windows)
+            -> no navhard_two_stage scene carries BOTH this arm's camera input and a logged human future: the 5462 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), and the 450 stage-1 scenes have a human future but their camera frames are not unpacked on this box — so 450 stage-1 rows of this arm are the devkit CV STAND-IN and none of this arm's plans can be compared with a human future. Unblock = extract the stage-1 frames from the verified OpenScene test camera archives (then n = 450).
+   [ WORK ] nav-compliance CONTROL: paired drop under nav-ZERO (nav withheld, E13 skipped)
+            -> no navhard_two_stage scene carries BOTH this arm's camera input and a logged human future: the 5462 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), and the 450 stage-1 scenes have a human future but their camera frames are not unpacked on this box — so 450 stage-1 rows of this arm are the devkit CV STAND-IN and none of this arm's plans can be compared with a human future. Unblock = extract the stage-1 frames from the verified OpenScene test camera archives (then n = 450).
+
+ARTIFACT HYGIENE
+   [  ok  ] tier stamp present
+   [ WORK ] estimator named
+            -> estimator.interval: the only two-stage aggregate for A1 is the CV-stand-in HYBRID (450 stage-1 rows are the devkit CV agent, which also sets the stage-2 kernel weights); an interval on it is an interval on the hybrid, no (n=76)
+   [  ok  ] n printed (windows and episodes)
+   [  ok  ] overlapping_holdout_se not used as a decision-grade interval
+   [  ok  ] corpus identity recorded (parity key + skip-hash)
+   [  ok  ] headline metrics reported against their trivial control(s)
+   [ WORK ] stochastic planner: inference-seed replicate + the seed floor
+            -> the floor arms are deterministic and the scoring path has no RNG (E1 C7: a hash-seed-2 replicate reproduced every per-token value bit-for-bit); a sampling planner arm would need an inference-seed replicate.
+
+LEAK GUARDS
+   [  ok  ] Inference uses VISION ONLY. Labels may use ego/privileged data (PI, 2026-08-03, binding).
+   [  ok  ] The goal path and the situation path stay information-disjoint at inference; a goal input must not carry the situation classifier's output in any form (PI, 2026-08-03, binding).
+   [MISSING] A route/goal head scoring near 1.0 must publish its echo test against its own input.
+            -> no key present and not refused
+
+BENCHMARK GATES
+   [  ok  ] protocol tag is a registered one
+   [ WORK ] EPDMS/PDMS from the `score` column
+            -> benchmark.navsim.score: two-stage EPDMS UNDEFINED for A1: 450 stage-1 rows are the devkit CV STAND-IN (no stage-1 frames), so both the stage-1 factor and the stage-2 kernel weights are not this arm's (n=450)
+   [  ok  ] which variant + split named
+   [  ok  ] every sub-metric reported
+   [  ok  ] declared ego inputs (vision-only compliance)
+   [  ok  ] route_roadblock_ids provenance checked
+   [ WORK ] GATE navsim.ego_enforcement
+            -> declared not applicable (no vision-only claim): arm is NOT vision-only and does not claim to be: 3-camera stitch cam_l0+cam_f0+cam_r0 -> 256x640 cylindrical (PHYSICALAI_WIDE120_256x640), frames construction S
+   [ WORK ] GATE navsim.estimator_unit
+            -> interval refused: the only two-stage aggregate for A1 is the CV-stand-in HYBRID (450 stage-1 rows are the devkit CV agent, which also sets the stage-2 kernel weights); an interva (n=76)
+   [  ok  ] GATE navsim.modality_label
+   [  ok  ] GATE navsim.cross_protocol
+
+VIOLATIONS (silently absent, required): 0
+WORK ITEMS (refused with a reason, or partial): 21
+
+wrote D:\Projects\TanitAD\taniteval\results\bench\navsim_v2\navhard_two_stage\20260921T122714Z-navsim_v2-refcv4b_b1_v72_40k-859e25\raw\criteria_A1.json
+
+[stderr]

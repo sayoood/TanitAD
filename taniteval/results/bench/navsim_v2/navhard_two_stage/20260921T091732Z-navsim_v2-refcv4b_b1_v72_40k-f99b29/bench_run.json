@@ -1,0 +1,752 @@
+{
+ "schema": "taniteval.bench.bench_run/1",
+ "run_id": "20260921T091732Z-navsim_v2-refcv4b_b1_v72_40k-f99b29",
+ "utc": "2026-09-21T09:17:32Z",
+ "utc_end": "2026-09-21T12:05:16Z",
+ "benchmark": "navsim_v2",
+ "arms": [
+  {
+   "name": "CV",
+   "kind": "floor",
+   "declared_inputs": [
+    "ego_velocity[t0]"
+   ],
+   "added_by_rule": true,
+   "status": "OK",
+   "reused_from": "20260920T082848Z-navsim_v2-none-06e257"
+  },
+  {
+   "name": "STOP",
+   "kind": "floor",
+   "declared_inputs": [],
+   "added_by_rule": true,
+   "status": "OK",
+   "reused_from": "20260920T082848Z-navsim_v2-none-06e257"
+  },
+  {
+   "name": "ECHO",
+   "kind": "floor",
+   "declared_inputs": [
+    "ego_velocity[t0]",
+    "ego_acceleration[t0]"
+   ],
+   "added_by_rule": true,
+   "status": "OK"
+  },
+  {
+   "name": "A1",
+   "kind": "model",
+   "declared_inputs": [
+    "cameras: cam_l0+cam_f0+cam_r0 stitched -> 256x640 cylindrical, t0 frame (ST)",
+    "ego_velocity[t0]",
+    "ego_acceleration[t0]",
+    "driving_command[t0]"
+   ],
+   "added_by_rule": false,
+   "status": "OK"
+  }
+ ],
+ "status": "COMPLETE",
+ "report": {
+  "status": "RENDERED",
+  "rc": 0,
+  "index": "report/index.html",
+  "index_exists": true,
+  "log": "raw/benchreport.log",
+  "wall_s": 12.1,
+  "verify": {
+   "status": "PASS",
+   "n_numbers_checked": 957,
+   "n_refusals_checked": 12,
+   "n_errors": 0,
+   "errors": [],
+   "coverage_missing": [],
+   "summary_sha_note": "summary.json read directly; renderer code not imported",
+   "published_file": "D:\\Projects\\TanitAD\\products\\P7-TanitEval\\benchmarks\\published_results.json",
+   "gallery": {
+    "status": "RENDERED",
+    "n_rendered": 8,
+    "selection_rule": "stage-2 scenes the arm answered itself, ranked by the arm's per-scene `score` ascending, then by its deficit against the best floor on that scene, then by token; at most 2 per log"
+   }
+  }
+ },
+ "command": [
+  "C:\\Users\\Admin\\venvs\\tanitad\\Scripts\\python.exe",
+  "D:\\Projects\\TanitAD\\taniteval\\taniteval\\bench\\__main__.py",
+  "navsim_v2",
+  "--ckpt",
+  "D:/Projects/TanitAD-artifacts/refcv4b_final/ckpt_40284_FINAL.pt",
+  "--split",
+  "navhard_two_stage",
+  "--arms",
+  "A1",
+  "--device",
+  "auto",
+  "--registry-key",
+  "refcv4b-b1-v72-40k",
+  "--ckpt-md5",
+  "99b573e8277d94a5e3bfbf630cb4d751",
+  "--frame-bank",
+  "C:/Users/Admin/tanitad-caches/navsim-frames-navhard-20260920",
+  "--cpu-threads",
+  "16",
+  "--reuse-seams",
+  "D:/Projects/TanitAD/taniteval/results/bench/navsim_v2/navhard_two_stage/20260920T144140Z-navsim_v2-refcv4b_b1_v72_40k-b11027/raw/model",
+  "--reuse-floors",
+  "D:/Projects/TanitAD/taniteval/results/bench/navsim_v2/navhard_two_stage/20260920T082848Z-navsim_v2-none-06e257"
+ ],
+ "git_head": "37645fcc61b158a327e6597e64e0abb64dcbc46d",
+ "git": {
+  "sha": "37645fcc61b158a327e6597e64e0abb64dcbc46d",
+  "branch": "agent/arch-inf-20260803",
+  "suite_code_blobs": {
+   "taniteval/taniteval/bench/__init__.py": "b20b83f09ffebcca3b36d1cc1ead9ae199b0df6f",
+   "taniteval/taniteval/bench/__main__.py": "f15d4c6ac42eac1be4c2e3d47e2e37004719a2ea",
+   "taniteval/taniteval/bench/_legacy.py": "3e263ebba1229b2df9261d608f5e54d0a6a0e6b7",
+   "taniteval/taniteval/bench/cli.py": "4b6963ad317411cdc25b296a86695df8e16a3ad9",
+   "taniteval/taniteval/bench/contract.py": "b7b61ea02b41aa0692e1685a43526b41c4cd215c",
+   "taniteval/taniteval/bench/gpu_gap.py": "b91fc46186a78d90c63242f5ce1e2a5e01c3ea5e",
+   "taniteval/taniteval/bench/internal_t1.py": "cf9de71c21a83ba8a2457151efb2700607750033",
+   "taniteval/taniteval/bench/navsim/__init__.py": "a684bc2b39d3a3b59cb2244a6e56d56481f346e8",
+   "taniteval/taniteval/bench/navsim/artifacts.py": "f87ce653b11858a8db9115329f515d4cc1539c08",
+   "taniteval/taniteval/bench/navsim/benchmark.py": "ef3d89156412c1572a1cc36901f174ad309b1adf",
+   "taniteval/taniteval/bench/navsim/bridge.py": "f5f2d82cf867f2911ea9ebc8c62f4d75949dfbb4",
+   "taniteval/taniteval/bench/navsim/devkit_side/export_agent_inputs.py": "6659b6fe9cf389294982902b3faa0dfac675df90",
+   "taniteval/taniteval/bench/navsim/devkit_side/navsim_win.py": "935fa44c459a3ee52c5582db288c5b95394ece54",
+   "taniteval/taniteval/bench/navsim/devkit_side/reaggregate.py": "78b004f9869c291445ecae4de056bae529cfab5b",
+   "taniteval/taniteval/bench/navsim/devkit_side/tanitad_seam_agent.py": "d9561bc67639f20ecd148a3b7ab81a1ec42ee8de",
+   "taniteval/taniteval/bench/navsim/export.py": "5a762ed901a38ec00835b101b851919f96a96f2b",
+   "taniteval/taniteval/bench/navsim/floor_reuse.py": "894de8e51cf03aa06c828056121799d653f1825c",
+   "taniteval/taniteval/bench/navsim/model_arms.py": "ed5eae26609ab6846f4c71cf0e47299f7c7dc09f",
+   "taniteval/taniteval/bench/navsim/plans.py": "0de435854d1d7ec72837ae7e324bf104e37f6204",
+   "taniteval/taniteval/bench/navsim/profiles.py": "03aadbcd0f7bff5e8e162ab5941ae542f5f529e9",
+   "taniteval/taniteval/bench/navsim/scoring.py": "e3eeefbc9407a3813be81664552cfa47d1639b8d",
+   "taniteval/taniteval/bench/navsim/seams.py": "fc4e270c5a3356d4ec60fd87bb9da8edecd03a4c",
+   "taniteval/taniteval/bench/navsim/summarize.py": "98b014d8d9293758d91f2090c32613cf8533a7ba",
+   "taniteval/taniteval/bench/plugins/__init__.py": "be8e23d52a914757ae2822c25a554ecbc1d0d36f",
+   "taniteval/taniteval/bench/plugins/navsim_v1.py": "32a0925bde71fb4bc9b608a00edbdf45857beeff",
+   "taniteval/taniteval/bench/plugins/nuscenes_ol.py": "d123d005fdc9b1fd47daa9bcc0b07fb6e59fb47f",
+   "taniteval/taniteval/bench/report_hook.py": "1770fbce95bb4d3443b944a61590ccf99cce9713",
+   "taniteval/taniteval/bench/schema_check.py": "81c6e306246faac2777411e83410edb2ba1f8e32",
+   "taniteval/taniteval/bench/submission.py": "5babcd1c29d35c519da6466cb46584eb3f2f66bf"
+  }
+ },
+ "ckpt": {
+  "path": "D:/Projects/TanitAD-artifacts/refcv4b_final/ckpt_40284_FINAL.pt",
+  "sha256": "090ee8d2584acc81e3738ab28f8f5bf2ed6bfb0d0cc6fba887de2a0cbddcbaa4",
+  "registry_key": "refcv4b-b1-v72-40k",
+  "registry_key_display": "refcv4b-b1-v72-40k"
+ },
+ "suite_version": "1.0.0",
+ "protocol": "EPDMS_v2_navhard_two_stage",
+ "split": {
+  "name": "navhard_two_stage",
+  "n_scenes": 5912,
+  "n_logs": 76,
+  "n_stage_one": 450,
+  "n_stage_two": 5462,
+  "notes": [
+   "the metric cache is built by the agent-free waiter after A8 (FlyWheels/…/2026-09-19-navhard-download/code/navhard_after_a8.sh); the suite never rebuilds it"
+  ]
+ },
+ "devkit": {
+  "repo": "autonomousvision/navsim",
+  "sha": "0a380a9063d7162ec93d0f51e9990ebac585f720",
+  "patches": [
+   {
+    "name": "navsim/common/dataclasses.py PosixPath unpickler (Windows)",
+    "kind": "pre-existing",
+    "evidence": "E1 RESULT.md §4 (blob 596cb7d in the source checkout)",
+    "raw_bytes_git_blob_now": "20673663a56e9239daf4ebceff7a2ef5db99e8ec",
+    "normalised_git_blob_now": "596cb7d6bd5744093b4409f9cbb70d9fcf8535e7",
+    "hash_basis": {
+     "raw_bytes_git_blob_now": "sha1('blob <len>\u0000' + RAW bytes), no eol conversion. STRONGER for 'did this file change at all'. This is what E1's apply_*_patch.py prints.",
+     "normalised_git_blob_now": "`git hash-object` = the blob AFTER git's text/eol conversion. ⛔ BLIND to a pure CRLF<->LF change. Quote it only against other git-side ids, never against a raw-byte record."
+    }
+   },
+   {
+    "name": "venv fcntl.py flock shim",
+    "kind": "pre-existing",
+    "evidence": "E1 RESULT.md §4 (sha256 75184a48...)",
+    "raw_bytes_git_blob_now": "6dfec7cf53c89d847886cfbe5328494195bff866",
+    "normalised_git_blob_now": "6dfec7cf53c89d847886cfbe5328494195bff866",
+    "hash_basis": {
+     "raw_bytes_git_blob_now": "sha1('blob <len>\u0000' + RAW bytes), no eol conversion. STRONGER for 'did this file change at all'. This is what E1's apply_*_patch.py prints.",
+     "normalised_git_blob_now": "`git hash-object` = the blob AFTER git's text/eol conversion. ⛔ BLIND to a pure CRLF<->LF change. Quote it only against other git-side ids, never against a raw-byte record."
+    }
+   },
+   {
+    "name": "nuplan-devkit setup.py packaging-only change",
+    "kind": "pre-existing",
+    "evidence": "E1 RESULT.md §4"
+   },
+   {
+    "name": "C: copy navsim/common/dataloader.py: MetricCacheLoader token split on either separator",
+    "kind": "harness",
+    "evidence": "E1 code/patches/apply_dataloader_patch.py, applied 2026-09-19 13:04 (raw/navhard/dataloader_copy_patch.json); needed for process-pool scoring",
+    "raw_bytes_git_blob_now": "b850e1624f581f7dda6d33082caf017a8aad55f9",
+    "normalised_git_blob_now": "ad06ac3cc552e2316484096cb93b5683f6624002",
+    "hash_basis": {
+     "raw_bytes_git_blob_now": "sha1('blob <len>\u0000' + RAW bytes), no eol conversion. STRONGER for 'did this file change at all'. This is what E1's apply_*_patch.py prints.",
+     "normalised_git_blob_now": "`git hash-object` = the blob AFTER git's text/eol conversion. ⛔ BLIND to a pure CRLF<->LF change. Quote it only against other git-side ids, never against a raw-byte record."
+    }
+   },
+   {
+    "name": "C: copy navsim/planning/simulation/observation/navsim_idm/navsim_idm_agent_manager.py: IDM degenerate-path assert (a fully consumed baseline)",
+    "kind": "harness",
+    "evidence": "E1 code/patches/apply_idm_degenerate_path_patch.py, applied 2026-09-20 08:58 (raw/navhard/idm_degenerate_path_patch.json). MECHANISM: a fully consumed IDM baseline yields a ZERO-LENGTH path_to_go whose flat-cap buffer is an EMPTY polygon under shapely 2.0.7, so the agent cannot intersect its own path and the assert at navsim_idm_agent_manager.py:84 fires. Scope: the ASSERT CONDITION ONLY - it falls through to the devkit's own free-road branch. Verified by E1 effective 3/3 and INERT 4/4 (healthy tokens bit-identical).",
+    "why_it_is_a_precondition_not_a_footnote": "MEASURED by E1: 166 of 5,462 stage-2 tokens (0 of 450 stage-1) hit it, and ONE assert takes the whole run down. Without this patch the navhard numbers DO NOT EXIST - it is a precondition of the number, not a caveat on it.",
+    "blob_pre_patch": "1924b7c1e9ea2bd0436d475741e6b2e3a2f7b652",
+    "blob_post_patch_e1": "b95bcc7f62246017ea9ab5dca92383c6b50d234b",
+    "reader_note": "⚠ VERIFY THIS ONE WITH RAW BYTES, NOT `git hash-object`. The file is 100% CRLF (166/166), and `git hash-object` applies the text/eol conversion, returning 214ef5ee39944c3584cb16eaaffd53853fc9db85 for these same bytes - a DIFFERENT number that looks exactly like a mismatch with E1's record. git_blob() below reads raw bytes and agrees with E1 (MEASURED 2026-09-20). A pure line-ending change is invisible to the normalising hash and visible to this one.",
+    "raw_bytes_git_blob_now": "b95bcc7f62246017ea9ab5dca92383c6b50d234b",
+    "normalised_git_blob_now": "214ef5ee39944c3584cb16eaaffd53853fc9db85",
+    "hash_basis": {
+     "raw_bytes_git_blob_now": "sha1('blob <len>\u0000' + RAW bytes), no eol conversion. STRONGER for 'did this file change at all'. This is what E1's apply_*_patch.py prints.",
+     "normalised_git_blob_now": "`git hash-object` = the blob AFTER git's text/eol conversion. ⛔ BLIND to a pure CRLF<->LF change. Quote it only against other git-side ids, never against a raw-byte record."
+    }
+   },
+   {
+    "name": "MetricCacheLoader._load_metric_cache_paths monkeypatch (navsim_win.py --patch-loader)",
+    "kind": "in-process",
+    "evidence": "E1 code/navsim_win.py, pinned by test_navsim_win_patch.py; separator only"
+   }
+  ],
+  "pin": "autonomousvision/navsim@0a380a9 (2025-10-27; post-#151 fix, MEASURED by E1: README changelog 2025/09/29 + pdm_score.py:194-219)",
+  "sha_probe": {
+   "sha": "0a380a9063d7162ec93d0f51e9990ebac585f720",
+   "matches_pin": true,
+   "source": "D:\\Archive\\devbox-C\\navsim\\devkit"
+  },
+  "runtime": "C:/Users/Admin/navsim-crun",
+  "wrapper": "taniteval/taniteval/bench/navsim/devkit_side/navsim_win.py"
+ },
+ "stamps": {
+  "tier": "T1-family",
+  "loop": {
+   "stage_one": "OPEN (PI ruling 2026-09-02)",
+   "stage_two": "UNRULED (2026-09-02 vocabulary)",
+   "background_traffic": "IDM-reactive vehicles in BOTH stages; ego non-reactive"
+  },
+  "evidence_class": "MEASURED",
+  "closed_loop": false
+ },
+ "claim_bearing": true,
+ "device": {
+  "requested": "auto",
+  "used": "none",
+  "scoring": "cpu",
+  "gpu_gap": {
+   "status": "NOT_INVOKED",
+   "reason": "no inference ran: every model arm was adopted from a banked seam (--reuse-seams)",
+   "reused_from": "D:/Projects/TanitAD/taniteval/results/bench/navsim_v2/navhard_two_stage/20260920T144140Z-navsim_v2-refcv4b_b1_v72_40k-b11027/raw/model"
+  }
+ },
+ "wall_s": 10063.3,
+ "files": {
+  "artifacts/A1.json": {
+   "bytes": 23708,
+   "sha256": "85f85708168c5445916bab350d995f5488190a4ec5f53228cadcdb8141d03239",
+   "location": "repo"
+  },
+  "artifacts/CV.json": {
+   "bytes": 66981,
+   "sha256": "a0e9a273834f1eee0f002e81c7f50dda36cefeac7bfed6c0fd48c96db0f967e3",
+   "location": "repo"
+  },
+  "artifacts/ECHO.json": {
+   "bytes": 63673,
+   "sha256": "f0a90fd53c8f9d1ef8ca0a02a023f14dc24751dbd830fbefafe7148fc699bd97",
+   "location": "repo"
+  },
+  "artifacts/STOP.json": {
+   "bytes": 66850,
+   "sha256": "623112cfaa1d78dac7107c76d8fc3e8f11646c698abb47887d10da7d143bfe85",
+   "location": "repo"
+  },
+  "criteria/A1.txt": {
+   "bytes": 4804,
+   "sha256": "086ae1306de99a9ecb3e4a66e23d8f0c642ae9eecdcf03c64f462bf313ebd07e",
+   "location": "repo"
+  },
+  "criteria/CV.txt": {
+   "bytes": 4562,
+   "sha256": "02fcee9e5a52b380af071e5456bfa04a70ac555f82d2c2f530d20e2832f4c2e0",
+   "location": "repo"
+  },
+  "criteria/ECHO.txt": {
+   "bytes": 4571,
+   "sha256": "d2b20986734e6e4088a5a95f4b4f623e277e27f96b3ceabb39bc13fea5585438",
+   "location": "repo"
+  },
+  "criteria/STOP.txt": {
+   "bytes": 5333,
+   "sha256": "d87651c22b2fe9ae27868a4a9411c98d486f73940da77309359f7064a8be4fb9",
+   "location": "repo"
+  },
+  "plans/A1.npz": {
+   "bytes": 552715,
+   "sha256": "7f2427e7f0e2e2a18e541815a14ba6326858885ffc4e944add89da4fb554db35",
+   "location": "repo"
+  },
+  "plans/CV.npz": {
+   "bytes": 249143,
+   "sha256": "d1faa8a72df069c78a1cc80db180264ea28663777ec5332f01d8659ba3707a5a",
+   "location": "repo"
+  },
+  "plans/ECHO.npz": {
+   "bytes": 526147,
+   "sha256": "b743f4ef66db8d6929b6afe7092e4034e978b9c1c697fd04eaf3993b3deb6c30",
+   "location": "repo"
+  },
+  "plans/STOP.npz": {
+   "bytes": 76545,
+   "sha256": "a80b694539d96d688c73352e6c6cd282047a18a8f41bf839439187c99fb6a8ed",
+   "location": "repo"
+  },
+  "raw/A1/A1.calls.jsonl": {
+   "bytes": 522133,
+   "sha256": "6c5f74bce793307861e7677f61c15a2d2ef7e76e68d2f0493068a90319312c7c",
+   "location": "repo"
+  },
+  "raw/A1/A1.counts.json": {
+   "bytes": 4762,
+   "sha256": "ff6094e5c50118b3036e8b3d60b884adfe726a40759654f19445a3b297ec4e97",
+   "location": "repo"
+  },
+  "raw/A1/A1.devkit.csv": {
+   "bytes": 550609,
+   "sha256": "0f9fa7a8fa8e3818ab82dcdb763d007a9bc76e88032d808c93d85b23b271a1ea",
+   "location": "repo"
+  },
+  "raw/A1/A1.run_pdm_score.log": {
+   "bytes": 1092861,
+   "sha256": "44adc80543c9f4eceb7c343429cdd34c37f9345e8899630251fb605429a72c6f",
+   "location": "repo"
+  },
+  "raw/A1/A1.score.log": {
+   "bytes": 1351959,
+   "sha256": "17da9bac824a7bb196c8527d297d074ffa321b397f096e6444c236821b256f0a",
+   "location": "repo"
+  },
+  "raw/A1/A1_final_scores_frame.csv": {
+   "bytes": 1436310,
+   "sha256": "67c759e91b6b8f6512e4a01f2260848644239243db07b68f31376fc5fb1c6389",
+   "location": "repo"
+  },
+  "raw/A1/A1_final_scores_frame_PRE_AGGREGATION.csv": {
+   "bytes": 1590658,
+   "sha256": "86a80d18b5dd1e700ca1af3252051d9fb1d98aa3b9de3d66c84f0b6664b6a7e6",
+   "location": "repo"
+  },
+  "raw/A1/A1_hooks.json": {
+   "bytes": 6629895,
+   "sha256": "d1bff71daff6a75bd6d6429bae86db72510cface0db1cf6fec61287c6ee6e4c5",
+   "location": "repo"
+  },
+  "raw/A1/A1_manifest.json": {
+   "bytes": 20080,
+   "sha256": "f314cb78bf7816a28e4c53c6e96933365d3796e1c512ecf280008e08f0f35713",
+   "location": "repo"
+  },
+  "raw/A1/A1_preaggregation.csv": {
+   "bytes": 45965249,
+   "sha256": "11fe69812f3ca43da478314a68cd6897e0826436f569bf1f93d3df3d4b866a6a",
+   "location": "offrepo",
+   "offrepo_path": "C:/Users/Admin/tanitad-bench-offrepo/navsim_v2/navhard_two_stage/20260921T091732Z-navsim_v2-refcv4b_b1_v72_40k-f99b29/raw/A1/A1_preaggregation.csv"
+  },
+  "raw/A1/A1_preaggregation.pkl": {
+   "bytes": 23433595,
+   "sha256": "17767e52982c8bab8add08dc75fc63f7f890b36ff90bb482c24607dfeb937d6c",
+   "location": "offrepo",
+   "offrepo_path": "C:/Users/Admin/tanitad-bench-offrepo/navsim_v2/navhard_two_stage/20260921T091732Z-navsim_v2-refcv4b_b1_v72_40k-f99b29/raw/A1/A1_preaggregation.pkl"
+  },
+  "raw/bench.log": {
+   "bytes": 1428,
+   "sha256": "68bb385e90aa8a6900297d86bb9eff37adc10b71c79c8dd8a108df8ca4becb29",
+   "location": "repo"
+  },
+  "raw/benchreport.log": {
+   "bytes": 533,
+   "sha256": "fb8a526ecdb5530dba7b3315ddd91c77c1301edcd2363a1c12af9eb552e529af",
+   "location": "repo"
+  },
+  "raw/criteria_A1.json": {
+   "bytes": 14985,
+   "sha256": "a7c563b3a34a3f26c4e8df553366ab6ccfad5ce009291928d6bcc0f080658f2a",
+   "location": "repo"
+  },
+  "raw/criteria_CV.json": {
+   "bytes": 13741,
+   "sha256": "29fa189cbcacdd9f50d817a247637fec126b1ab58635d9cab7b96c5db0fbadf6",
+   "location": "repo"
+  },
+  "raw/criteria_ECHO.json": {
+   "bytes": 13753,
+   "sha256": "52dfd8df468225c4ec9d1dbe80a57b5c8a9928f911e11daffc8617c2d1e57103",
+   "location": "repo"
+  },
+  "raw/criteria_STOP.json": {
+   "bytes": 15494,
+   "sha256": "43ba296547b6ffff04ffd504dd984ca38834774f9b09273306df1a012c6db5e6",
+   "location": "repo"
+  },
+  "raw/CV/CV.counts.json": {
+   "bytes": 5852,
+   "sha256": "5f2bce1397e5aba62a73c0e98a6512a2b764b8fcb1da73b315a8ae5a6cac1009",
+   "location": "repo"
+  },
+  "raw/CV/CV.devkit.csv": {
+   "bytes": 541749,
+   "sha256": "3d32254a6ae1fda40e327355b81278f12a3ddc0020bbe7815692057b2f6ea262",
+   "location": "repo"
+  },
+  "raw/CV/CV.reused.json": {
+   "bytes": 2406,
+   "sha256": "1555fb54e47480010defddf898ed13e7aa15a8bf2aabd71676fc2d82debd56e2",
+   "location": "repo"
+  },
+  "raw/CV/CV.run_pdm_score.log": {
+   "bytes": 1092844,
+   "sha256": "24f4a9a538f2137cc1ffb17044b6b37d5b298f52a5631081f3295fa899c6ea1f",
+   "location": "repo"
+  },
+  "raw/CV/CV.score.log": {
+   "bytes": 1349696,
+   "sha256": "18d38d3bbc4e6a40b90c93f7a6ce81f501667481846ee433ead90076aa0c2666",
+   "location": "repo"
+  },
+  "raw/CV/CV_final_scores_frame.csv": {
+   "bytes": 1420986,
+   "sha256": "af1c02b6baf7e0fa7012b54a6ac24829c8aed3c17132fbf20283428b4fec1d40",
+   "location": "repo"
+  },
+  "raw/CV/CV_final_scores_frame_PRE_AGGREGATION.csv": {
+   "bytes": 1577279,
+   "sha256": "859187136c4d1212ca0537b2e05c8e2d9d05bb3bde40ac0b6b5ed80fbbdc70d3",
+   "location": "repo"
+  },
+  "raw/CV/CV_hooks.json": {
+   "bytes": 5348098,
+   "sha256": "bcb1b1af0f19c9515a10e3f26d170ecc05fe305855623c32efaa5eeab9de52e9",
+   "location": "repo"
+  },
+  "raw/CV/CV_manifest.json": {
+   "bytes": 18889,
+   "sha256": "f3d157eb735180eb8ce2bfbda5da62d34fcd4c030d3fd901663ac6224c7bee57",
+   "location": "repo"
+  },
+  "raw/CV/CV_preaggregation.csv.offrepo.json": {
+   "bytes": 337,
+   "sha256": "0301e483097886657d4dd2eff09f888169f50e625447fa8bf9e9ee173770a758",
+   "location": "repo"
+  },
+  "raw/CV/CV_preaggregation.pkl.offrepo.json": {
+   "bytes": 337,
+   "sha256": "de602c2703152c0a7e60a9476d559ad813dec4e2baa99ea76dd0fae56e79a2d0",
+   "location": "repo"
+  },
+  "raw/ECHO/ECHO.calls.jsonl": {
+   "bytes": 519361,
+   "sha256": "be94e285ec7a1fd8c4a59f1d31bad5da1473e4a1c88a2ebfe9b33c764f858a64",
+   "location": "repo"
+  },
+  "raw/ECHO/ECHO.counts.json": {
+   "bytes": 4794,
+   "sha256": "8dba5db234a3dddcf0b8d509db3dc1b7f22616cc49a3a4b74a696084168f78b7",
+   "location": "repo"
+  },
+  "raw/ECHO/ECHO.devkit.csv": {
+   "bytes": 540900,
+   "sha256": "68eee08e0188de2654080190eec061b9b310ecf98c917b8298469f9a4f3c4796",
+   "location": "repo"
+  },
+  "raw/ECHO/ECHO.run_pdm_score.log": {
+   "bytes": 1092863,
+   "sha256": "dc67de3608b3019349b7d519589bba48dbb76b0f23ac199e89d403bcb04fa527",
+   "location": "repo"
+  },
+  "raw/ECHO/ECHO.score.log": {
+   "bytes": 1363259,
+   "sha256": "7691c3a0b16c43aabb2431b3dfcc0eafd43dd61dbdd4b6078e8d252138533ede",
+   "location": "repo"
+  },
+  "raw/ECHO/ECHO_final_scores_frame.csv": {
+   "bytes": 1422374,
+   "sha256": "d5fe19475d0f52835eb0e12650084fa9d5fc83f22d733b56673bdb5f37e0d84f",
+   "location": "repo"
+  },
+  "raw/ECHO/ECHO_final_scores_frame_PRE_AGGREGATION.csv": {
+   "bytes": 1573442,
+   "sha256": "d35f01aa49bd4cde2239e02cca67b06c56db84ca3ab094221d6930584d308a31",
+   "location": "repo"
+  },
+  "raw/ECHO/ECHO_hooks.json": {
+   "bytes": 6934884,
+   "sha256": "9078a402c8d4210d604749567796e90b03f8e4ca88c92402d099095b22489da0",
+   "location": "repo"
+  },
+  "raw/ECHO/ECHO_manifest.json": {
+   "bytes": 18516,
+   "sha256": "a4008d1b8fd2d542d5dd6184bc83a890007348327a473667bd5f8d3d583a72e2",
+   "location": "repo"
+  },
+  "raw/ECHO/ECHO_preaggregation.csv": {
+   "bytes": 45939915,
+   "sha256": "64db7cb66c4007d4fbcf20a998c0d5954cc2df69b8a433e42c49f6ce74e6a014",
+   "location": "offrepo",
+   "offrepo_path": "C:/Users/Admin/tanitad-bench-offrepo/navsim_v2/navhard_two_stage/20260921T091732Z-navsim_v2-refcv4b_b1_v72_40k-f99b29/raw/ECHO/ECHO_preaggregation.csv"
+  },
+  "raw/ECHO/ECHO_preaggregation.pkl": {
+   "bytes": 23433595,
+   "sha256": "73e27ebe2eca7f5e231809f5b6be7621fd767212831deebebded5bdfa4f93493",
+   "location": "offrepo",
+   "offrepo_path": "C:/Users/Admin/tanitad-bench-offrepo/navsim_v2/navhard_two_stage/20260921T091732Z-navsim_v2-refcv4b_b1_v72_40k-f99b29/raw/ECHO/ECHO_preaggregation.pkl"
+  },
+  "raw/export_record.json": {
+   "bytes": 1067,
+   "sha256": "da450bd901d7bdafafbf2e1a80b4479e52523672645fcaed5b4c28cfddaf2048",
+   "location": "repo"
+  },
+  "raw/gallery_inputs.json": {
+   "bytes": 1193,
+   "sha256": "b7afc67718dd9012edb31a7e1c4b15f686127c97ea13cd47e9f6821b059d9d37",
+   "location": "repo"
+  },
+  "raw/model/A1.manifest.json": {
+   "bytes": 14158310,
+   "sha256": "24c897b53c4517942f49518938d79a33afc23a89e0c9125a80f530c776095925",
+   "location": "repo"
+  },
+  "raw/model/A1.npz": {
+   "bytes": 2532124,
+   "sha256": "dd7814b7e74e8e851c4a6c373d2ec190f2563b42bbf29945c5952f27a2839284",
+   "location": "repo"
+  },
+  "raw/model/model_run.json": {
+   "bytes": 683,
+   "sha256": "00a6b777ef70f81dfe4bc302ad569473626cb5f0502f1b74eda2d6d0c7f9f3ea",
+   "location": "repo"
+  },
+  "raw/preflight.json": {
+   "bytes": 499,
+   "sha256": "080024d1edbf766bbea88ce6a627f6c985c594d90ac4ac33c13906ddb4620e39",
+   "location": "repo"
+  },
+  "raw/seams/ECHO.npz": {
+   "bytes": 2555748,
+   "sha256": "a1170bdb36adf9a8ec4b2e55da887dd21b2f35e4edcfd4986a92b5babbd5aceb",
+   "location": "repo"
+  },
+  "raw/seams/ECHO.npz.manifest.json": {
+   "bytes": 904249,
+   "sha256": "112441d459aad0557d45aad6394087687fde4a5367f3e4f917855329e1cfe882",
+   "location": "repo"
+  },
+  "raw/seams/STOP.npz": {
+   "bytes": 2555748,
+   "sha256": "2100c73dd534dbac0c7b6493b7c159c22fca8e755e9c264c10a29a873b7790fd",
+   "location": "repo"
+  },
+  "raw/STOP/STOP.calls.jsonl": {
+   "bytes": 519394,
+   "sha256": "af2e5ab53a22456bb041bd36930f6ac71a2d484a117093f3f12acff3a0f50b2b",
+   "location": "repo"
+  },
+  "raw/STOP/STOP.counts.json": {
+   "bytes": 6353,
+   "sha256": "73f87d4e54b40d1ecabe49a918de8f4023c4e6a0fb134f4e2bde478f26c659f9",
+   "location": "repo"
+  },
+  "raw/STOP/STOP.devkit.csv": {
+   "bytes": 587916,
+   "sha256": "137ad745d9da88fa5de61eeab41091660a01eefa90318694e85a17db297a14c7",
+   "location": "repo"
+  },
+  "raw/STOP/STOP.reused.json": {
+   "bytes": 2449,
+   "sha256": "c62bc56be2419a597bcace2244000b0b0db54a0ef2854fd63e0974204369f62e",
+   "location": "repo"
+  },
+  "raw/STOP/STOP.run_pdm_score.log": {
+   "bytes": 1092848,
+   "sha256": "7f9a79d7df7672d2dd3c8454ea7396c63429d50ebca3aceaf6f802b980499e64",
+   "location": "repo"
+  },
+  "raw/STOP/STOP.score.log": {
+   "bytes": 1358333,
+   "sha256": "35ec627caf3fa2d568d6aedeb9b3e0fab9fc6d4c0fe85ee402d39798fae56e23",
+   "location": "repo"
+  },
+  "raw/STOP/STOP_final_scores_frame.csv": {
+   "bytes": 1491737,
+   "sha256": "e75aede4a4ae9c06a242e9398ed2f0520d5e49eceb781e133fbc6a6edcb17886",
+   "location": "repo"
+  },
+  "raw/STOP/STOP_final_scores_frame_PRE_AGGREGATION.csv": {
+   "bytes": 1661511,
+   "sha256": "a23860a398755cfe4f5fd40cd8775fbb78db6a99278f460f312b138d83388732",
+   "location": "repo"
+  },
+  "raw/STOP/STOP_hooks.json": {
+   "bytes": 4704261,
+   "sha256": "f506e26775a04f46c716d6db9cf1ef9653041193f24ed887ca5ded7492db08f4",
+   "location": "repo"
+  },
+  "raw/STOP/STOP_manifest.json": {
+   "bytes": 20234,
+   "sha256": "4e98a339517cf1f37b392753a2c79fd1626849925cee1466bb7b95b304bf916c",
+   "location": "repo"
+  },
+  "raw/STOP/STOP_preaggregation.csv.offrepo.json": {
+   "bytes": 341,
+   "sha256": "2031b02bf7ff4d307c784917181df9cd94582516d736aac9d0fd8e1eec4b61f1",
+   "location": "repo"
+  },
+  "raw/STOP/STOP_preaggregation.pkl.offrepo.json": {
+   "bytes": 341,
+   "sha256": "0eeb45e8b23d8ffcea37a4d11e898a548b8fb867ab8b7b155f86c73f92608078",
+   "location": "repo"
+  },
+  "report/fig/gallery/job.json": {
+   "bytes": 33162,
+   "sha256": "30cff3536e384b7d5abd40bfb3f2d0085896c16f4c8787f8d4377c58f218b93a",
+   "location": "repo"
+  },
+  "report/fig/gallery/manifest.json": {
+   "bytes": 2554,
+   "sha256": "c12a40b0ba9d75781004b252118b731bf29e4b3ebb0c8b53a769aae317cf0081",
+   "location": "repo"
+  },
+  "report/fig/gallery/render.log": {
+   "bytes": 274,
+   "sha256": "d7147332adf2ce7633dad25293f03e39805e6929394b32e47823212bf8e3fd66",
+   "location": "repo"
+  },
+  "report/fig/gallery/scene_0acf0c1a301a7180c.png": {
+   "bytes": 335223,
+   "sha256": "70b32034ab57517da5763b63e5108aa75ff3c13418eecb29c8110bc9d874f79a",
+   "location": "repo"
+  },
+  "report/fig/gallery/scene_1189a6ada09f1958a.png": {
+   "bytes": 361052,
+   "sha256": "05e4b72556e68626a72acc10b75e173e112efe01983ce4368a77d90a02403ce4",
+   "location": "repo"
+  },
+  "report/fig/gallery/scene_15e9e852fea33e966.png": {
+   "bytes": 338774,
+   "sha256": "bab9d901f7587522f4fa9a1c99119ae18b18f42f0f1c147e19d555039a4b3ef3",
+   "location": "repo"
+  },
+  "report/fig/gallery/scene_1b742b73235363011.png": {
+   "bytes": 353349,
+   "sha256": "90c66e4ffc2822b1aa3c7e8cd266c88130331075a9d95dc781d512b0f03e4dd5",
+   "location": "repo"
+  },
+  "report/fig/gallery/scene_1e90f84f7e7bca603.png": {
+   "bytes": 311744,
+   "sha256": "4f4efa4a0058e73773a23de87bdb5e3aafdb0e3ba084446baf3624708663d859",
+   "location": "repo"
+  },
+  "report/fig/gallery/scene_3b99197cc8a0e07a3.png": {
+   "bytes": 337388,
+   "sha256": "5961a265b3556a475870be1453395502d882c5677cc5421aa0fd0bae5c16e8f9",
+   "location": "repo"
+  },
+  "report/fig/gallery/scene_47a79d5ba0ff53156.png": {
+   "bytes": 322839,
+   "sha256": "57c242a54e6428da05e45b895447b09742d8209547b4220acd06c951e96a7b33",
+   "location": "repo"
+  },
+  "report/fig/gallery/scene_5177a4ffa159dea26.png": {
+   "bytes": 298805,
+   "sha256": "dcc7be031c1bc2bca1739c98ed0114cf8ffcc71dde4876c940fc9d5f5e3bee28",
+   "location": "repo"
+  },
+  "report/fig/headline_official.svg": {
+   "bytes": 20542,
+   "sha256": "2567ef29210973f5ca3b351ec62e8b8415be0d5a1cfeb082771154583adcda86",
+   "location": "repo"
+  },
+  "report/fig/headline_s2u.svg": {
+   "bytes": 8416,
+   "sha256": "bcad96d745ceca629f63c2f00646077ba597cc5834ddcd39b0ddd0da69181ef3",
+   "location": "repo"
+  },
+  "report/fig/per_log.svg": {
+   "bytes": 109620,
+   "sha256": "809d951d9c3b11ee621fbece4ed1a277b349c9e93f0df2a05c4f1acca44d6bdb",
+   "location": "repo"
+  },
+  "report/fig/wtl_CV_pooled.svg": {
+   "bytes": 11321,
+   "sha256": "8680358bdc5a99b6e7707155750f9c99aee4e51f32a32d30b0cc4cbb80305a5b",
+   "location": "repo"
+  },
+  "report/fig/wtl_CV_stage_one.svg": {
+   "bytes": 10899,
+   "sha256": "dae06a1bbe760affe8627228029deaaef166890dc86a1e804d19abdb67ef491c",
+   "location": "repo"
+  },
+  "report/fig/wtl_CV_stage_two.svg": {
+   "bytes": 11885,
+   "sha256": "b0ff6b3dd1a643958ddcf5c54f05df7661363340f01973696ba00c3fa499a263",
+   "location": "repo"
+  },
+  "report/fig/wtl_STOP_pooled.svg": {
+   "bytes": 11397,
+   "sha256": "2ae00d2fb0d0829526dc1978ab323767ffc2fd43b32cf7e6962b2d1849425e8d",
+   "location": "repo"
+  },
+  "report/fig/wtl_STOP_stage_one.svg": {
+   "bytes": 11809,
+   "sha256": "f3995963849620bb6d461e4bc56381e22b3ec6e969e2f158a503e4fdf8b633a0",
+   "location": "repo"
+  },
+  "report/fig/wtl_STOP_stage_two.svg": {
+   "bytes": 11958,
+   "sha256": "2d7d0001d8004a94e699c26a77e05de699aeb4ad01279a50afe97243c30a91ec",
+   "location": "repo"
+  },
+  "report/index.html": {
+   "bytes": 317719,
+   "sha256": "b2459a19857166555ba36d00831b9ab6582ef48af7eb33477aebe1f89e63a7f7",
+   "location": "repo"
+  },
+  "report/verify.json": {
+   "bytes": 593,
+   "sha256": "fb52cd09ab1c7e5aeb8bffd7adb4ad6afb890f78f0497e7b1bfb3f8f470b1efb",
+   "location": "repo"
+  },
+  "scenes.json": {
+   "bytes": 2368549,
+   "sha256": "5c9cc50657fe0320eda2b58efad7b3bd2946eb4bea4032ef4112bc88ea0df262",
+   "location": "repo"
+  },
+  "scores/A1.csv": {
+   "bytes": 550609,
+   "sha256": "0f9fa7a8fa8e3818ab82dcdb763d007a9bc76e88032d808c93d85b23b271a1ea",
+   "location": "repo"
+  },
+  "scores/CV.csv": {
+   "bytes": 541749,
+   "sha256": "3d32254a6ae1fda40e327355b81278f12a3ddc0020bbe7815692057b2f6ea262",
+   "location": "repo"
+  },
+  "scores/ECHO.csv": {
+   "bytes": 540900,
+   "sha256": "68eee08e0188de2654080190eec061b9b310ecf98c917b8298469f9a4f3c4796",
+   "location": "repo"
+  },
+  "scores/STOP.csv": {
+   "bytes": 587916,
+   "sha256": "137ad745d9da88fa5de61eeab41091660a01eefa90318694e85a17db297a14c7",
+   "location": "repo"
+  },
+  "summary.json": {
+   "bytes": 162869,
+   "sha256": "b0d9dd4ad225154324881097be69afc0678248ca1578ce33d1c21d323fda330a",
+   "location": "repo"
+  }
+ }
+}

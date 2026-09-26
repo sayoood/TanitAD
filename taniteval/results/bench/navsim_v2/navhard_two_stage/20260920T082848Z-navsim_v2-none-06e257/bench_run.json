@@ -1,0 +1,426 @@
+{
+ "schema": "taniteval.bench.bench_run/1",
+ "run_id": "20260920T082848Z-navsim_v2-none-06e257",
+ "utc": "2026-09-20T08:28:50Z",
+ "utc_end": "2026-09-20T11:32:21Z",
+ "benchmark": "navsim_v2",
+ "arms": [
+  {
+   "name": "CV",
+   "kind": "floor",
+   "declared_inputs": [
+    "ego_velocity[t0]"
+   ],
+   "added_by_rule": false,
+   "status": "OK"
+  },
+  {
+   "name": "STOP",
+   "kind": "floor",
+   "declared_inputs": [],
+   "added_by_rule": false,
+   "status": "OK"
+  }
+ ],
+ "status": "COMPLETE",
+ "report": {
+  "status": "RENDERED",
+  "rc": 3,
+  "index": "report/index.html",
+  "index_exists": true,
+  "log": "raw/benchreport.log",
+  "wall_s": 0.8,
+  "warning": "taniteval.benchreport exited 3 but wrote a non-empty page \u2014 read raw/benchreport.log and report/verify.json for what it could not do",
+  "verify": {
+   "status": "PASS",
+   "n_numbers_checked": 481,
+   "n_refusals_checked": 5,
+   "n_errors": 0,
+   "errors": [],
+   "coverage_missing": [],
+   "summary_sha_note": "summary.json read directly; renderer code not imported",
+   "published_file": "D:\\Projects\\TanitAD\\products\\P7-TanitEval\\benchmarks\\published_results.json",
+   "gallery": {
+    "status": "UNAVAILABLE",
+    "reason": "no selected scene has both its scene pickle and its frame bank entry: [{'token': '151d16ac2d96ae161', 'reason': 'missing input:  frames frames\\\\34330fff06809cea7.npy'}, {'token': '155b9d04c8ecbdf6e', 'reason': 'missing input:  frames frames\\\\65118548d5ff98d55.npy'}]"
+   }
+  },
+  "repaired_after_failure": {
+   "original": {
+    "status": "REPORT_FAILED",
+    "rc": 1,
+    "index": null,
+    "index_exists": false,
+    "log": "raw/benchreport.log",
+    "wall_s": 0.4
+   },
+   "what_failed": "the suite wrote scenes.json with frame_bank = null (navhard has no entry in model_arms.DEFAULT_BANKS); W5's gallery does Path(run.scenes.get('frame_bank','')) and a dict default does NOT fire on a present-but-null key, so it raised TypeError: Path(None) and took down the whole report of a COMPLETE run.",
+   "whose_defect": "W1's. The null was emitted by navsim/plans.py::write_scenes. W5's .get(...,'') is a reasonable read of a contract that promised a string or no key.",
+   "fixed_by": "navsim/plans.py::_drop_top_level_nulls -- write_scenes now drops top-level nulls, so the CLASS cannot recur for any key; and report_hook now records a REASON, not just a log path.",
+   "scores_unaffected": "yes. The report hook runs AFTER scoring, in a SUBPROCESS, and touches no score. This run's status was COMPLETE throughout and its numbers never changed.",
+   "re_rendered_utc": "2026-09-20"
+  },
+  "re_rendered_after_patch_amendment": "2026-09-20 -- so the page's harness column matches the record",
+  "re_rendered_after_ckpt_display": "2026-09-20 -- registry_key_display added; page kept in step"
+ },
+ "command": [
+  "C:\\Users\\Admin\\venvs\\tanitad\\Scripts\\python.exe",
+  "D:\\Projects\\TanitAD\\taniteval\\taniteval\\bench\\__main__.py",
+  "navsim_v2",
+  "--ckpt",
+  "none",
+  "--split",
+  "navhard_two_stage",
+  "--arms",
+  "CV,STOP",
+  "--ram-floor-mb",
+  "2400"
+ ],
+ "git_head": "37645fcc61b158a327e6597e64e0abb64dcbc46d",
+ "git": {
+  "sha": "37645fcc61b158a327e6597e64e0abb64dcbc46d",
+  "branch": "agent/arch-inf-20260803",
+  "suite_code_blobs": {
+   "taniteval/taniteval/bench/__init__.py": "b20b83f09ffebcca3b36d1cc1ead9ae199b0df6f",
+   "taniteval/taniteval/bench/__main__.py": "f15d4c6ac42eac1be4c2e3d47e2e37004719a2ea",
+   "taniteval/taniteval/bench/_legacy.py": "3e263ebba1229b2df9261d608f5e54d0a6a0e6b7",
+   "taniteval/taniteval/bench/cli.py": "e5ad50c8ac7a84aa4bcab0bf128b60e9af4f04bd",
+   "taniteval/taniteval/bench/contract.py": "7cd00cc920012e20a06ab44083fae1fab5df21fb",
+   "taniteval/taniteval/bench/gpu_gap.py": "b91fc46186a78d90c63242f5ce1e2a5e01c3ea5e",
+   "taniteval/taniteval/bench/internal_t1.py": "276fa4d06fd45a9a42501f399fa354b5afd80163",
+   "taniteval/taniteval/bench/navsim/__init__.py": "a684bc2b39d3a3b59cb2244a6e56d56481f346e8",
+   "taniteval/taniteval/bench/navsim/artifacts.py": "f87ce653b11858a8db9115329f515d4cc1539c08",
+   "taniteval/taniteval/bench/navsim/benchmark.py": "7f8d15dff624bb07c8c1ce58053c32ee2c4b5b3b",
+   "taniteval/taniteval/bench/navsim/bridge.py": "f5f2d82cf867f2911ea9ebc8c62f4d75949dfbb4",
+   "taniteval/taniteval/bench/navsim/devkit_side/export_agent_inputs.py": "6659b6fe9cf389294982902b3faa0dfac675df90",
+   "taniteval/taniteval/bench/navsim/devkit_side/navsim_win.py": "64186cceb3b032bf5002b824f452695e4107cd28",
+   "taniteval/taniteval/bench/navsim/devkit_side/reaggregate.py": "78b004f9869c291445ecae4de056bae529cfab5b",
+   "taniteval/taniteval/bench/navsim/devkit_side/tanitad_seam_agent.py": "d9561bc67639f20ecd148a3b7ab81a1ec42ee8de",
+   "taniteval/taniteval/bench/navsim/export.py": "5a762ed901a38ec00835b101b851919f96a96f2b",
+   "taniteval/taniteval/bench/navsim/model_arms.py": "411c966e885353805d533956680e31c284592d0b",
+   "taniteval/taniteval/bench/navsim/plans.py": "860551cb7f31ff4bbd65631ad3532c20ab2e6960",
+   "taniteval/taniteval/bench/navsim/profiles.py": "ac01166c65f85b52e77f40b7a50c40e4fc0a2606",
+   "taniteval/taniteval/bench/navsim/scoring.py": "3666797d428a3b7ac540c549988e8459448f2e53",
+   "taniteval/taniteval/bench/navsim/seams.py": "fc4e270c5a3356d4ec60fd87bb9da8edecd03a4c",
+   "taniteval/taniteval/bench/navsim/summarize.py": "ff999d4d31283c53dbd4af467600a30703b54745",
+   "taniteval/taniteval/bench/plugins/__init__.py": "be8e23d52a914757ae2822c25a554ecbc1d0d36f",
+   "taniteval/taniteval/bench/plugins/navsim_v1.py": "bc2d8b82333dc8500d8ca9d615a0b8c688f8167d",
+   "taniteval/taniteval/bench/plugins/nuscenes_ol.py": "d123d005fdc9b1fd47daa9bcc0b07fb6e59fb47f",
+   "taniteval/taniteval/bench/report_hook.py": "79962bd22d765945f2387f6a1d93ce677ecfd997",
+   "taniteval/taniteval/bench/schema_check.py": "81c6e306246faac2777411e83410edb2ba1f8e32",
+   "taniteval/taniteval/bench/submission.py": "5babcd1c29d35c519da6466cb46584eb3f2f66bf"
+  }
+ },
+ "ckpt": {
+  "path": null,
+  "sha256": null,
+  "registry_key": null,
+  "note": "--ckpt none: floors / references only",
+  "registry_key_display": "no checkpoint (devkit floors only)"
+ },
+ "suite_version": "1.0.0",
+ "protocol": "EPDMS_v2_navhard_two_stage",
+ "split": {
+  "name": "navhard_two_stage",
+  "n_scenes": 5912,
+  "n_logs": 76,
+  "n_stage_one": 450,
+  "n_stage_two": 5462,
+  "notes": [
+   "the metric cache is built by the agent-free waiter after A8 (FlyWheels/\u2026/2026-09-19-navhard-download/code/navhard_after_a8.sh); the suite never rebuilds it"
+  ]
+ },
+ "devkit": {
+  "repo": "autonomousvision/navsim",
+  "sha": "0a380a9063d7162ec93d0f51e9990ebac585f720",
+  "patches": [
+   {
+    "name": "navsim/common/dataclasses.py PosixPath unpickler (Windows)",
+    "kind": "pre-existing",
+    "evidence": "E1 RESULT.md \u00a74 (blob 596cb7d in the source checkout)",
+    "raw_bytes_git_blob_now": "20673663a56e9239daf4ebceff7a2ef5db99e8ec"
+   },
+   {
+    "name": "venv fcntl.py flock shim",
+    "kind": "pre-existing",
+    "evidence": "E1 RESULT.md \u00a74 (sha256 75184a48...)",
+    "raw_bytes_git_blob_now": "6dfec7cf53c89d847886cfbe5328494195bff866"
+   },
+   {
+    "name": "nuplan-devkit setup.py packaging-only change",
+    "kind": "pre-existing",
+    "evidence": "E1 RESULT.md \u00a74"
+   },
+   {
+    "name": "C: copy navsim/common/dataloader.py: MetricCacheLoader token split on either separator",
+    "kind": "harness",
+    "evidence": "E1 code/patches/apply_dataloader_patch.py, applied 2026-09-19 13:04 (raw/navhard/dataloader_copy_patch.json); needed for process-pool scoring",
+    "raw_bytes_git_blob_now": "b850e1624f581f7dda6d33082caf017a8aad55f9"
+   },
+   {
+    "name": "MetricCacheLoader._load_metric_cache_paths monkeypatch (navsim_win.py --patch-loader)",
+    "kind": "in-process",
+    "evidence": "E1 code/navsim_win.py, pinned by test_navsim_win_patch.py; separator only"
+   },
+   {
+    "name": "C: copy navsim/planning/simulation/observation/navsim_idm/navsim_idm_agent_manager.py: IDM degenerate-path assert (a fully consumed baseline)",
+    "kind": "harness",
+    "evidence": "E1 code/patches/apply_idm_degenerate_path_patch.py, applied 2026-09-20 08:58 (raw/navhard/idm_degenerate_path_patch.json). MECHANISM: a fully consumed IDM baseline yields a ZERO-LENGTH path_to_go whose flat-cap buffer is an EMPTY polygon under shapely 2.0.7, so the agent cannot intersect its own path and the assert at navsim_idm_agent_manager.py:84 fires. Scope: the ASSERT CONDITION ONLY - it falls through to the devkit's own free-road branch. Verified by E1 effective 3/3 and INERT 4/4 (healthy tokens bit-identical).",
+    "why_it_is_a_precondition_not_a_footnote": "MEASURED by E1: 166 of 5,462 stage-2 tokens (0 of 450 stage-1) hit it, and ONE assert takes the whole run down. Without this patch the navhard numbers DO NOT EXIST - it is a precondition of the number, not a caveat on it.",
+    "blob_pre_patch": "1924b7c1e9ea2bd0436d475741e6b2e3a2f7b652",
+    "blob_post_patch_e1": "b95bcc7f62246017ea9ab5dca92383c6b50d234b",
+    "reader_note": "\u26a0 VERIFY THIS ONE WITH RAW BYTES, NOT `git hash-object`. The file is 100% CRLF (166/166), and `git hash-object` applies the text/eol conversion, returning 214ef5ee39944c3584cb16eaaffd53853fc9db85 for these same bytes - a DIFFERENT number that looks exactly like a mismatch with E1's record. git_blob() below reads raw bytes and agrees with E1 (MEASURED 2026-09-20). A pure line-ending change is invisible to the normalising hash and visible to this one.",
+    "raw_bytes_git_blob_now": "b95bcc7f62246017ea9ab5dca92383c6b50d234b",
+    "normalised_git_blob_now": "214ef5ee39944c3584cb16eaaffd53853fc9db85",
+    "hash_basis": {
+     "raw_bytes_git_blob_now": "sha1('blob <len>\u0000' + RAW bytes), no eol conversion. STRONGER for 'did this file change at all'. This is what E1's apply_*_patch.py prints.",
+     "normalised_git_blob_now": "`git hash-object` = the blob AFTER git's text/eol conversion. \u26d4 BLIND to a pure CRLF<->LF change. Quote it only against other git-side ids, never against a raw-byte record."
+    }
+   }
+  ],
+  "pin": "autonomousvision/navsim@0a380a9 (2025-10-27; post-#151 fix, MEASURED by E1: README changelog 2025/09/29 + pdm_score.py:194-219)",
+  "sha_probe": {
+   "sha": "0a380a9063d7162ec93d0f51e9990ebac585f720",
+   "matches_pin": true,
+   "source": "D:\\Archive\\devbox-C\\navsim\\devkit"
+  },
+  "runtime": "C:/Users/Admin/navsim-crun",
+  "wrapper": "taniteval/taniteval/bench/navsim/devkit_side/navsim_win.py",
+  "patches_amended": {
+   "added": [
+    "C: copy navsim/planning/simulation/observation/navsim_idm/navsim_idm_agent_manager.py: IDM degenerate-path assert (a fully consumed baseline)"
+   ],
+   "when": "2026-09-20, after the run finished",
+   "why": "this run started 10:28:48 and the suite's devkit_patches() gained the IDM entry at ~10:45, so the record was written with 5 entries and UNDER-SPECIFIED the harness column for these numbers -- exactly what E1 flagged.",
+   "evidence_it_was_in_force_for_the_WHOLE_run": "the patched file's mtime is 2026-09-20 08:58:02, i.e. 1h30m BEFORE the run started, and its raw-byte blob is unchanged since (b95bcc7f62246017ea9ab5dca92383c6b50d234b, E1's apply_*_patch.py record). This is not an assumption: without the patch 166/5,462 stage-2 tokens assert and ONE assert takes the whole run down -- a run that COMPLETED 5,462 stage-2 tokens is itself proof the patch was active.",
+   "why_this_is_not_a_number_change": "no score, interval or arm was touched; only the harness column that describes the devkit the numbers were produced on."
+  }
+ },
+ "stamps": {
+  "tier": "T1-family",
+  "loop": {
+   "stage_one": "OPEN (PI ruling 2026-09-02)",
+   "stage_two": "UNRULED (2026-09-02 vocabulary)",
+   "background_traffic": "IDM-reactive vehicles in BOTH stages; ego non-reactive"
+  },
+  "evidence_class": "MEASURED",
+  "closed_loop": false
+ },
+ "claim_bearing": true,
+ "device": {
+  "requested": "auto",
+  "used": "none",
+  "scoring": "cpu",
+  "gpu_gap": {
+   "status": "NOT_INVOKED",
+   "reason": "no model inference in this run"
+  }
+ },
+ "wall_s": 11010.7,
+ "files": {
+  "artifacts/CV.json": {
+   "bytes": 63786,
+   "sha256": "340ac666fe895ff925046a0584d22f227eaac4150d0f0c5a719ca67a040eb2e7",
+   "location": "repo"
+  },
+  "artifacts/STOP.json": {
+   "bytes": 66836,
+   "sha256": "f1979c4be53c9f058850c1847cb945952205aa3a180245c5e297d20e6e134a55",
+   "location": "repo"
+  },
+  "criteria/CV.txt": {
+   "bytes": 4513,
+   "sha256": "02fc37e71f9d06bb287c7661bb7965292bc426dca4e923b4022342bac6d5e330",
+   "location": "repo"
+  },
+  "criteria/STOP.txt": {
+   "bytes": 5284,
+   "sha256": "a919096291cae1576ae7ac4337a98f79a53bc7588fcdbe6a4486b51f8a333716",
+   "location": "repo"
+  },
+  "plans/CV.npz": {
+   "bytes": 249143,
+   "sha256": "d1faa8a72df069c78a1cc80db180264ea28663777ec5332f01d8659ba3707a5a",
+   "location": "repo"
+  },
+  "plans/STOP.npz": {
+   "bytes": 76545,
+   "sha256": "a80b694539d96d688c73352e6c6cd282047a18a8f41bf839439187c99fb6a8ed",
+   "location": "repo"
+  },
+  "raw/bench.log": {
+   "bytes": 575,
+   "sha256": "50a52d044948131c15f1f69df0d925b7fc1383d3c76f3b8549d49e5e6d55caae",
+   "location": "repo"
+  },
+  "raw/benchreport.log": {
+   "bytes": 1621,
+   "sha256": "f05aa579fcf1f89369208a1c23e6dade1c0ba9d8eb96f425c3661a632fadf602",
+   "location": "repo"
+  },
+  "raw/CODE_CHANGED_MIDRUN.json": {
+   "bytes": 4167,
+   "sha256": "960732041469fab632bf03df5978c2e2160d3ea2721b96d1a9f613ff9da9c7e4",
+   "location": "repo"
+  },
+  "raw/criteria_CV.json": {
+   "bytes": 13671,
+   "sha256": "c1b7d34747eb5bac0cc9e5da22f8d78edd44677a9b44f627fb744e66164cbebd",
+   "location": "repo"
+  },
+  "raw/criteria_STOP.json": {
+   "bytes": 15424,
+   "sha256": "f229a3333d32738ff6a9ee5db8765063aa457805e5e1b0f565a6bde7d0ef01c2",
+   "location": "repo"
+  },
+  "raw/CV/CV.counts.json": {
+   "bytes": 3333,
+   "sha256": "51012682a39cef4a3116a44e851f4c27d01752e129f8ee0add41e494d1e3439d",
+   "location": "repo"
+  },
+  "raw/CV/CV.devkit.csv": {
+   "bytes": 541749,
+   "sha256": "3d32254a6ae1fda40e327355b81278f12a3ddc0020bbe7815692057b2f6ea262",
+   "location": "repo"
+  },
+  "raw/CV/CV.run_pdm_score.log": {
+   "bytes": 1092844,
+   "sha256": "24f4a9a538f2137cc1ffb17044b6b37d5b298f52a5631081f3295fa899c6ea1f",
+   "location": "repo"
+  },
+  "raw/CV/CV.score.log": {
+   "bytes": 1349696,
+   "sha256": "18d38d3bbc4e6a40b90c93f7a6ce81f501667481846ee433ead90076aa0c2666",
+   "location": "repo"
+  },
+  "raw/CV/CV_final_scores_frame.csv": {
+   "bytes": 1420986,
+   "sha256": "af1c02b6baf7e0fa7012b54a6ac24829c8aed3c17132fbf20283428b4fec1d40",
+   "location": "repo"
+  },
+  "raw/CV/CV_final_scores_frame_PRE_AGGREGATION.csv": {
+   "bytes": 1577279,
+   "sha256": "859187136c4d1212ca0537b2e05c8e2d9d05bb3bde40ac0b6b5ed80fbbdc70d3",
+   "location": "repo"
+  },
+  "raw/CV/CV_hooks.json": {
+   "bytes": 5348098,
+   "sha256": "bcb1b1af0f19c9515a10e3f26d170ecc05fe305855623c32efaa5eeab9de52e9",
+   "location": "repo"
+  },
+  "raw/CV/CV_manifest.json": {
+   "bytes": 18889,
+   "sha256": "f3d157eb735180eb8ce2bfbda5da62d34fcd4c030d3fd901663ac6224c7bee57",
+   "location": "repo"
+  },
+  "raw/CV/CV_preaggregation.csv": {
+   "bytes": 45952321,
+   "sha256": "c10e8f9af2041b8e6c23a4a54795d9bdf76934301e6f4bf9a83bff7db35208b2",
+   "location": "offrepo",
+   "offrepo_path": "C:/Users/Admin/tanitad-bench-offrepo/navsim_v2/navhard_two_stage/20260920T082848Z-navsim_v2-none-06e257/raw/CV/CV_preaggregation.csv"
+  },
+  "raw/CV/CV_preaggregation.pkl": {
+   "bytes": 23433595,
+   "sha256": "81f8a0a53b47f8fb2bd7d3d8c1008c6213776ff3018d33d191027eb2b4eae2fd",
+   "location": "offrepo",
+   "offrepo_path": "C:/Users/Admin/tanitad-bench-offrepo/navsim_v2/navhard_two_stage/20260920T082848Z-navsim_v2-none-06e257/raw/CV/CV_preaggregation.pkl"
+  },
+  "raw/export_record.json": {
+   "bytes": 1068,
+   "sha256": "0ab7d56189f5fe8c571df65044afda4f74b9b5165b42ce99cdf9b85e983afa27",
+   "location": "repo"
+  },
+  "raw/gallery_inputs.json": {
+   "bytes": 642,
+   "sha256": "8829837d5f78c5302baba7508a14ab666b315cca70724ad190200976b6f7fa09",
+   "location": "repo"
+  },
+  "raw/preflight.json": {
+   "bytes": 499,
+   "sha256": "080024d1edbf766bbea88ce6a627f6c985c594d90ac4ac33c13906ddb4620e39",
+   "location": "repo"
+  },
+  "raw/seams/STOP.npz": {
+   "bytes": 2555748,
+   "sha256": "2100c73dd534dbac0c7b6493b7c159c22fca8e755e9c264c10a29a873b7790fd",
+   "location": "repo"
+  },
+  "raw/STOP/STOP.calls.jsonl": {
+   "bytes": 519394,
+   "sha256": "af2e5ab53a22456bb041bd36930f6ac71a2d484a117093f3f12acff3a0f50b2b",
+   "location": "repo"
+  },
+  "raw/STOP/STOP.counts.json": {
+   "bytes": 3790,
+   "sha256": "7d2e4d0ad3b94f905f0a108f1df8eccacdc1c825c74c0d2d22b76c781f8f522f",
+   "location": "repo"
+  },
+  "raw/STOP/STOP.devkit.csv": {
+   "bytes": 587916,
+   "sha256": "137ad745d9da88fa5de61eeab41091660a01eefa90318694e85a17db297a14c7",
+   "location": "repo"
+  },
+  "raw/STOP/STOP.run_pdm_score.log": {
+   "bytes": 1092848,
+   "sha256": "7f9a79d7df7672d2dd3c8454ea7396c63429d50ebca3aceaf6f802b980499e64",
+   "location": "repo"
+  },
+  "raw/STOP/STOP.score.log": {
+   "bytes": 1358333,
+   "sha256": "35ec627caf3fa2d568d6aedeb9b3e0fab9fc6d4c0fe85ee402d39798fae56e23",
+   "location": "repo"
+  },
+  "raw/STOP/STOP_final_scores_frame.csv": {
+   "bytes": 1491737,
+   "sha256": "e75aede4a4ae9c06a242e9398ed2f0520d5e49eceb781e133fbc6a6edcb17886",
+   "location": "repo"
+  },
+  "raw/STOP/STOP_final_scores_frame_PRE_AGGREGATION.csv": {
+   "bytes": 1661511,
+   "sha256": "a23860a398755cfe4f5fd40cd8775fbb78db6a99278f460f312b138d83388732",
+   "location": "repo"
+  },
+  "raw/STOP/STOP_hooks.json": {
+   "bytes": 4704261,
+   "sha256": "f506e26775a04f46c716d6db9cf1ef9653041193f24ed887ca5ded7492db08f4",
+   "location": "repo"
+  },
+  "raw/STOP/STOP_manifest.json": {
+   "bytes": 20234,
+   "sha256": "4e98a339517cf1f37b392753a2c79fd1626849925cee1466bb7b95b304bf916c",
+   "location": "repo"
+  },
+  "raw/STOP/STOP_preaggregation.csv": {
+   "bytes": 46037004,
+   "sha256": "c53771c2682932c837d8e154812631ca97277d14268c119b1a5c154f27808ed4",
+   "location": "offrepo",
+   "offrepo_path": "C:/Users/Admin/tanitad-bench-offrepo/navsim_v2/navhard_two_stage/20260920T082848Z-navsim_v2-none-06e257/raw/STOP/STOP_preaggregation.csv"
+  },
+  "raw/STOP/STOP_preaggregation.pkl": {
+   "bytes": 23433595,
+   "sha256": "931ec5bbb8f5c1b4acdad0c6950ddbcddba454362b468fb7599ccc6bb53d5167",
+   "location": "offrepo",
+   "offrepo_path": "C:/Users/Admin/tanitad-bench-offrepo/navsim_v2/navhard_two_stage/20260920T082848Z-navsim_v2-none-06e257/raw/STOP/STOP_preaggregation.pkl"
+  },
+  "scenes.json": {
+   "bytes": 2368491,
+   "sha256": "333e0e03d1d32a85a72a72d7dfca43133a32e46cef1b2c512788a6d6aceefdd5",
+   "location": "repo"
+  },
+  "scores/CV.csv": {
+   "bytes": 541749,
+   "sha256": "3d32254a6ae1fda40e327355b81278f12a3ddc0020bbe7815692057b2f6ea262",
+   "location": "repo"
+  },
+  "scores/STOP.csv": {
+   "bytes": 587916,
+   "sha256": "137ad745d9da88fa5de61eeab41091660a01eefa90318694e85a17db297a14c7",
+   "location": "repo"
+  },
+  "summary.json": {
+   "bytes": 76072,
+   "sha256": "966fd53cbe660fea583a0d16629fd7b80853ab09239e2e41b2d859765b1bc454",
+   "location": "repo"
+  }
+ }
+}

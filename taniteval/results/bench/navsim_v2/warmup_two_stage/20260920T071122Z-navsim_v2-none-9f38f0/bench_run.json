@@ -1,0 +1,333 @@
+{
+ "schema": "taniteval.bench.bench_run/1",
+ "run_id": "20260920T071122Z-navsim_v2-none-9f38f0",
+ "utc": "2026-09-20T07:11:22Z",
+ "utc_end": "2026-09-20T07:19:33Z",
+ "benchmark": "navsim_v2",
+ "arms": [
+  {
+   "name": "CV",
+   "kind": "floor",
+   "declared_inputs": [
+    "ego_velocity[t0]"
+   ],
+   "added_by_rule": false,
+   "status": "OK"
+  },
+  {
+   "name": "STOP",
+   "kind": "floor",
+   "declared_inputs": [],
+   "added_by_rule": false,
+   "status": "OK"
+  }
+ ],
+ "status": "COMPLETE",
+ "report": {
+  "status": "REPORT_FAILED",
+  "rc": 1,
+  "index_exists": false,
+  "log": "raw/benchreport.log",
+  "wall_s": 0.2
+ },
+ "command": [
+  "C:\\Users\\Admin\\venvs\\tanitad\\Scripts\\python.exe",
+  "D:\\Projects\\TanitAD\\taniteval\\taniteval\\bench\\__main__.py",
+  "navsim_v2",
+  "--ckpt",
+  "none",
+  "--split",
+  "warmup_two_stage",
+  "--arms",
+  "CV,STOP"
+ ],
+ "git_head": "UNAVAILABLE",
+ "git": {
+  "sha": "UNAVAILABLE",
+  "reason": "FileNotFoundError: [WinError 2] Das System kann die angegebene Datei nicht finden",
+  "suite_code_blobs": {
+   "taniteval/taniteval/bench/__init__.py": "b20b83f09ffebcca3b36d1cc1ead9ae199b0df6f",
+   "taniteval/taniteval/bench/__main__.py": "f15d4c6ac42eac1be4c2e3d47e2e37004719a2ea",
+   "taniteval/taniteval/bench/_legacy.py": "3e263ebba1229b2df9261d608f5e54d0a6a0e6b7",
+   "taniteval/taniteval/bench/cli.py": "bd73998c80e945e94be55078b92da44c12b6ff6c",
+   "taniteval/taniteval/bench/contract.py": "832e2de012cf1a5f0cb9430ab7ffd4cf46d351aa",
+   "taniteval/taniteval/bench/gpu_gap.py": "0a9281063ab7ff480ddc2e8ffbd25c95e9c06425",
+   "taniteval/taniteval/bench/internal_t1.py": "5b7d68f1b190105f9063690fa9e8ebed1120f4ed",
+   "taniteval/taniteval/bench/navsim/__init__.py": "a684bc2b39d3a3b59cb2244a6e56d56481f346e8",
+   "taniteval/taniteval/bench/navsim/artifacts.py": "7901bcb432318d20810defb6217a58e99c121a15",
+   "taniteval/taniteval/bench/navsim/benchmark.py": "9f125d35a9aa0fea7fd3054144986a98b20e5256",
+   "taniteval/taniteval/bench/navsim/bridge.py": "f5f2d82cf867f2911ea9ebc8c62f4d75949dfbb4",
+   "taniteval/taniteval/bench/navsim/devkit_side/export_agent_inputs.py": "6659b6fe9cf389294982902b3faa0dfac675df90",
+   "taniteval/taniteval/bench/navsim/devkit_side/navsim_win.py": "c8cadd277074eda2f380840082618fe95de31671",
+   "taniteval/taniteval/bench/navsim/devkit_side/reaggregate.py": "78b004f9869c291445ecae4de056bae529cfab5b",
+   "taniteval/taniteval/bench/navsim/devkit_side/tanitad_seam_agent.py": "d9561bc67639f20ecd148a3b7ab81a1ec42ee8de",
+   "taniteval/taniteval/bench/navsim/export.py": "5a762ed901a38ec00835b101b851919f96a96f2b",
+   "taniteval/taniteval/bench/navsim/model_arms.py": "411c966e885353805d533956680e31c284592d0b",
+   "taniteval/taniteval/bench/navsim/profiles.py": "ad2074cf2eac29fb3ee8117519ee8fd027dba630",
+   "taniteval/taniteval/bench/navsim/scoring.py": "ace62f8aad1b4513e98dda841e996f11d512b211",
+   "taniteval/taniteval/bench/navsim/seams.py": "fc4e270c5a3356d4ec60fd87bb9da8edecd03a4c",
+   "taniteval/taniteval/bench/navsim/summarize.py": "fc5283c9f963d8053766be4345ba71e9fe9ddfdb",
+   "taniteval/taniteval/bench/plugins/__init__.py": "be8e23d52a914757ae2822c25a554ecbc1d0d36f",
+   "taniteval/taniteval/bench/plugins/navsim_v1.py": "e59b01c0083c17e062ade2481d1e25338db58ccb",
+   "taniteval/taniteval/bench/plugins/nuscenes_ol.py": "d123d005fdc9b1fd47daa9bcc0b07fb6e59fb47f",
+   "taniteval/taniteval/bench/report_hook.py": "6cf27aceafd22a3f2cda25a36e2174f2b32d1bd2",
+   "taniteval/taniteval/bench/schema_check.py": "81c6e306246faac2777411e83410edb2ba1f8e32",
+   "taniteval/taniteval/bench/submission.py": "5babcd1c29d35c519da6466cb46584eb3f2f66bf"
+  }
+ },
+ "ckpt": {
+  "path": null,
+  "sha256": null,
+  "registry_key": null,
+  "note": "--ckpt none: floors / references only",
+  "registry_key_display": "no checkpoint (devkit floors only)"
+ },
+ "suite_version": "1.0.0",
+ "protocol": "EPDMS_v2_warmup_two_stage",
+ "split": {
+  "name": "warmup_two_stage",
+  "n_scenes": 220,
+  "n_logs": 7,
+  "n_stage_one": 16,
+  "n_stage_two": 204,
+  "notes": [
+   "stage 1 has NO camera frames on this box (E2: 0/192 original jpgs) \u2014 a camera arm's stage 1 is a declared CV stand-in and its two-stage EPDMS is UNDEFINED",
+   "EP == 1 for every proposal when the best compliant progress <= 5 m (pdm_scorer.py:231-236): STOP beats CV on warmup (E2: 0.3009 vs 0.1854)"
+  ]
+ },
+ "devkit": {
+  "repo": "autonomousvision/navsim",
+  "sha": "UNAVAILABLE",
+  "patches": [
+   {
+    "name": "navsim/common/dataclasses.py PosixPath unpickler (Windows)",
+    "kind": "pre-existing",
+    "evidence": "E1 RESULT.md \u00a74 (blob 596cb7d in the source checkout)",
+    "raw_bytes_git_blob_now": "20673663a56e9239daf4ebceff7a2ef5db99e8ec"
+   },
+   {
+    "name": "venv fcntl.py flock shim",
+    "kind": "pre-existing",
+    "evidence": "E1 RESULT.md \u00a74 (sha256 75184a48...)",
+    "raw_bytes_git_blob_now": "6dfec7cf53c89d847886cfbe5328494195bff866"
+   },
+   {
+    "name": "nuplan-devkit setup.py packaging-only change",
+    "kind": "pre-existing",
+    "evidence": "E1 RESULT.md \u00a74"
+   },
+   {
+    "name": "C: copy navsim/common/dataloader.py: MetricCacheLoader token split on either separator",
+    "kind": "harness",
+    "evidence": "E1 code/patches/apply_dataloader_patch.py, applied 2026-09-19 13:04 (raw/navhard/dataloader_copy_patch.json); needed for process-pool scoring",
+    "raw_bytes_git_blob_now": "b850e1624f581f7dda6d33082caf017a8aad55f9"
+   },
+   {
+    "name": "MetricCacheLoader._load_metric_cache_paths monkeypatch (navsim_win.py --patch-loader)",
+    "kind": "in-process",
+    "evidence": "E1 code/navsim_win.py, pinned by test_navsim_win_patch.py; separator only"
+   }
+  ],
+  "pin": "autonomousvision/navsim@0a380a9 (2025-10-27; post-#151 fix, MEASURED by E1: README changelog 2025/09/29 + pdm_score.py:194-219)",
+  "sha_probe": {
+   "sha": "UNAVAILABLE",
+   "matches_pin": false,
+   "reason": "FileNotFoundError: [WinError 2] Das System kann die angegebene Datei nicht finden"
+  },
+  "runtime": "C:/Users/Admin/navsim-crun",
+  "wrapper": "taniteval/taniteval/bench/navsim/devkit_side/navsim_win.py"
+ },
+ "stamps": {
+  "tier": "T1-family",
+  "loop": {
+   "stage_one": "OPEN (PI ruling 2026-09-02)",
+   "stage_two": "UNRULED (2026-09-02 vocabulary)",
+   "background_traffic": "IDM-reactive vehicles in BOTH stages; ego non-reactive"
+  },
+  "evidence_class": "MEASURED",
+  "closed_loop": false
+ },
+ "claim_bearing": true,
+ "device": {
+  "requested": "auto",
+  "used": "none",
+  "scoring": "cpu",
+  "gpu_gap": {
+   "status": "NOT_INVOKED",
+   "reason": "no model inference in this run"
+  }
+ },
+ "wall_s": 490.2,
+ "files": {
+  "artifacts/CV.json": {
+   "bytes": 60147,
+   "sha256": "f922869a2510e51ea64a2e1d8a03bf74b846aba4455b52e2954b6d91971ab8ad",
+   "location": "repo"
+  },
+  "artifacts/STOP.json": {
+   "bytes": 61136,
+   "sha256": "aa83cd33c0f79dc498e51b324f9acbba4874b8e09817d761a00f2f595f307ae5",
+   "location": "repo"
+  },
+  "criteria/CV.txt": {
+   "bytes": 4643,
+   "sha256": "c9be4520f62251e019170dd5f42456929d9c96ce85ccf531668ec48eaf886230",
+   "location": "repo"
+  },
+  "criteria/STOP.txt": {
+   "bytes": 5420,
+   "sha256": "ae9b184f7303236ecf05ce919a56291f1f3bb7a14eb2ad9091ddded6d858ac26",
+   "location": "repo"
+  },
+  "raw/bench.log": {
+   "bytes": 668,
+   "sha256": "86868ff1adf35da64335f0957e3b529f6f386178460eef794ff9da3f1bba682f",
+   "location": "repo"
+  },
+  "raw/benchreport.log": {
+   "bytes": 1274,
+   "sha256": "1cba3fd2cf9cb9b9b398bf5661bd5afa7f6cafde663033bb1509a543673af616",
+   "location": "repo"
+  },
+  "raw/criteria_CV.json": {
+   "bytes": 13931,
+   "sha256": "7bb29e2678b5c3817bfe8bfb60ee681fbbe5018a2117cc099319a77658f33585",
+   "location": "repo"
+  },
+  "raw/criteria_STOP.json": {
+   "bytes": 15696,
+   "sha256": "9617c1352bf0b137482630370eb2dcd1c98be4a189ea4eb23bccb4e80a6acbbc",
+   "location": "repo"
+  },
+  "raw/CV/CV.counts.json": {
+   "bytes": 3300,
+   "sha256": "eaf33b0b97a71355ac4a3fb0b3cb27aaca176d96cb169b14a3045f1c1bdbb543",
+   "location": "repo"
+  },
+  "raw/CV/CV.devkit.csv": {
+   "bytes": 21363,
+   "sha256": "cef274c1667462f3407431bbf9fcff2ac68afadb8a24a204511625fc291381d8",
+   "location": "repo"
+  },
+  "raw/CV/CV.run_pdm_score.log": {
+   "bytes": 41350,
+   "sha256": "56be188d1431e1df71364cc31d7bea96d35ec9c2f7c911d1bf4b1ebfa1aa6b1a",
+   "location": "repo"
+  },
+  "raw/CV/CV.score.log": {
+   "bytes": 53557,
+   "sha256": "cf4c95622c977c672678a6e0f07c2970e792a4aad2a734c87ab2ab4fe5b44109",
+   "location": "repo"
+  },
+  "raw/CV/CV_final_scores_frame.csv": {
+   "bytes": 53646,
+   "sha256": "689529ff8c990efb0ee9267055fad64fb2fb08f02002785661797f6105542acc",
+   "location": "repo"
+  },
+  "raw/CV/CV_hooks.json": {
+   "bytes": 198838,
+   "sha256": "774300ec64d56b98726781aa2187edacb86b4d79e9fa97cd5fe9e2c847485fcd",
+   "location": "repo"
+  },
+  "raw/CV/CV_manifest.json": {
+   "bytes": 5935,
+   "sha256": "c7014118a9be4e26609c5b4871f364301d311632b47eb9896c0ca7adae8f3ecc",
+   "location": "repo"
+  },
+  "raw/CV/CV_preaggregation.csv": {
+   "bytes": 1710171,
+   "sha256": "2f2d0c43d3e2019ae0d4606b6e91a5aaa9a4496d001efb6c7b9d3eebe76677a6",
+   "location": "repo"
+  },
+  "raw/CV/CV_preaggregation.pkl": {
+   "bytes": 873678,
+   "sha256": "e664578a96c2dd13a475a5bd555a553e95efe97097a9485c65ac0eecfa27abaf",
+   "location": "repo"
+  },
+  "raw/export_record.json": {
+   "bytes": 1056,
+   "sha256": "16ccde540fdd223c00b8a0468744a68a8648fa93c2ada873abb9c8fb03e8d236",
+   "location": "repo"
+  },
+  "raw/export_vs_banked.json": {
+   "bytes": 282,
+   "sha256": "0999f189245f6122e5c800564de124bf9fdbfaf7c3be7d75f13a9c6e60550a9b",
+   "location": "repo"
+  },
+  "raw/preflight.json": {
+   "bytes": 841,
+   "sha256": "a3ae35815398ac3140da573d841a71883b2c9548fa329c77c5eab0e0f193a37e",
+   "location": "repo"
+  },
+  "raw/seams/STOP.npz": {
+   "bytes": 96804,
+   "sha256": "75855e3e979016c12b583970950c654c4bf7acb57788acc8b434394c0c78db6d",
+   "location": "repo"
+  },
+  "raw/STOP/STOP.calls.jsonl": {
+   "bytes": 19562,
+   "sha256": "0a9df1eb12a0dc354d5be07bd80a803e066ca7bfd91dd9119b48c09d4a5d9fae",
+   "location": "repo"
+  },
+  "raw/STOP/STOP.counts.json": {
+   "bytes": 3754,
+   "sha256": "a2b859b3337f4df6a41f89822aff13f1330e6602398e451e2074811572b0383a",
+   "location": "repo"
+  },
+  "raw/STOP/STOP.devkit.csv": {
+   "bytes": 23234,
+   "sha256": "a5b1769ed22f7105ce4dea09b337a1303730f687f74f7382f2f5597cbf27d392",
+   "location": "repo"
+  },
+  "raw/STOP/STOP.run_pdm_score.log": {
+   "bytes": 41352,
+   "sha256": "bcb3e49d786ef15f6a2834d68169579591a10c364da2619ea810cd14a800e3a1",
+   "location": "repo"
+  },
+  "raw/STOP/STOP.score.log": {
+   "bytes": 53567,
+   "sha256": "bdda844859c5a698d5fc4c3fa9f31cd938f25ccb989f5fc5e42fea6d6ac2299c",
+   "location": "repo"
+  },
+  "raw/STOP/STOP_final_scores_frame.csv": {
+   "bytes": 56695,
+   "sha256": "8cdb8a1653c0ff710b9a5c33fb1aadfd744f447d4cc5208f3e27ca1added3a20",
+   "location": "repo"
+  },
+  "raw/STOP/STOP_hooks.json": {
+   "bytes": 175188,
+   "sha256": "0812ea6e34b17a87d63b0a57d454be0ab34adf465623bed2aeb02ed0f3e0808f",
+   "location": "repo"
+  },
+  "raw/STOP/STOP_manifest.json": {
+   "bytes": 6753,
+   "sha256": "386836e26491fc660997ad38cbd8ef9200e23449918f5393ab459e86e28c9464",
+   "location": "repo"
+  },
+  "raw/STOP/STOP_preaggregation.csv": {
+   "bytes": 1714494,
+   "sha256": "9c767147cafb4421bfb98d12b2957e50c9e2c4d63138566fb1cde4d8c0dbe515",
+   "location": "repo"
+  },
+  "raw/STOP/STOP_preaggregation.pkl": {
+   "bytes": 873678,
+   "sha256": "2b508134cf1b4d5691625ad7d9ec15f2da4f88f249931d42d5c0f7e4dfd93e40",
+   "location": "repo"
+  },
+  "scores/CV.csv": {
+   "bytes": 21363,
+   "sha256": "cef274c1667462f3407431bbf9fcff2ac68afadb8a24a204511625fc291381d8",
+   "location": "repo"
+  },
+  "scores/STOP.csv": {
+   "bytes": 23234,
+   "sha256": "a5b1769ed22f7105ce4dea09b337a1303730f687f74f7382f2f5597cbf27d392",
+   "location": "repo"
+  },
+  "summary.json": {
+   "bytes": 29004,
+   "sha256": "808fd7c39b18c034213dfa52a6943d548600188004a3fa069a157746866c741d",
+   "location": "repo"
+  }
+ }
+}
