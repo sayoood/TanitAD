@@ -39,6 +39,11 @@ if [ "${CUDNN_BENCH:-0}" = "1" ]; then SPEED_ARGS+=(--cudnn-benchmark); fi
 if [ "${TRUNK_FOLD_BN:-0}" = "1" ]; then SPEED_ARGS+=(--trunk-fold-bn); fi
 if [ "${TRUNK_DEDUP:-0}" = "1" ]; then SPEED_ARGS+=(--trunk-dedup-frames); fi
 if [ "${TRUNK_COMPILE:-0}" = "1" ]; then SPEED_ARGS+=(--trunk-compile); fi
+# A16 2026-09-26: the TRUE label clock. CLIP_CLOCK=<sidecar.jsonl> passes --clip-clock-sidecar
+# (built by stack/scripts/build_clip_clock_sidecar.py from each clip's 100 Hz egomotion log).
+# Unset -> no flag: the trainer then clocks labels from each clip's own poses, grid_start 0.
+CLOCK_ARGS=()
+if [ -n "${CLIP_CLOCK:-}" ]; then CLOCK_ARGS=(--clip-clock-sidecar "$CLIP_CLOCK"); fi
 EVAL_ARGS=()
 if [ "$EVAL" = "1" ]; then
   EVAL_ARGS=(--eval-cache "$D/refcv6-b1-416x1024-eval139"
@@ -67,6 +72,7 @@ exec /home/nvidia/venvs/tanitad-train/bin/python "$CODE/stack/scripts/refc_v3_tr
   --equalize-bottom-rows 43 --opt dd --lr 1e-4 --warmup 2000 --seed 0 --u8-batches \
   ${CKPT_ARGS[@]+"${CKPT_ARGS[@]}"} \
   ${SPEED_ARGS[@]+"${SPEED_ARGS[@]}"} \
+  ${CLOCK_ARGS[@]+"${CLOCK_ARGS[@]}"} \
   --workers "$WORKERS" --conflict-every "$CONFLICT_EVERY" \
   --save-every "$SAVE_EVERY" --log-every "$LOG_EVERY" --batch "$BATCH" --steps "$STEPS" \
   --out "$OUT"

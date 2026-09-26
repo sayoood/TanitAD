@@ -4524,7 +4524,12 @@ class RefCModel(nn.Module):
             out["u0_hat"] = dec["u0_hat"]        # refcv5 WP-4's x0 loss target
         if "cons_score" in dec:
             out["cons_score"] = dec["cons_score"]
-        for _k in ("prefinal_logits", "reach_keep"):
+        # ⛔⛔ A16 2026-09-26: refcv6 F3's per-stage outputs MUST pass through. The trainer's
+        # per-stage loss reads `layer_u0_hat` / `layer_logits` from THIS dict; the whitelist that
+        # omitted them skipped F3's loss for the whole of refcv6-r101-s0 (0 of 668 training rows
+        # carried `cascade`; stage-0..2 heads bit-identical across 29,000 steps). Pinned by
+        # tests/test_refcv6_f3_cascade_reaches_loss.py on the REAL train().
+        for _k in ("prefinal_logits", "reach_keep", "layer_u0_hat", "layer_logits"):
             # S1b's in-forward control and S1c's CE support, passed through
             # VERBATIM: `compute_losses` reads `reach_keep` and the probes read
             # both. Re-deriving either outside the decoder is how two
