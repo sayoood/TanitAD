@@ -5237,14 +5237,12 @@ wrong cause.
 
 ---
 
-## 14. REFe — DriveZero reproduction on NAVSIM navtrain (their data, their benchmark) [NO EVAL TIER YET]
 ## 14. REFe — DriveZero reproduction on NAVSIM navtrain (their data, their benchmark) [SUBSET EVAL ONLY: NAVSIM v1 PDMS, 200 navtest tokens]
 
 ### 14.1 `vitl16_navtrain10_grow_tau0.3` — 🔄 **TRAINING** (since 2026-09-24 01:17 Berlin / 23:17:34Z)
 
 | Field | Value |
 |---|---|
-| **Status** | 🔄 **TRAINING.** ⛔ No evaluation exists yet: the trainer's `traj_L1` (19.54 at step 0 -> 3.97 at step 31) is a TRAINING curve, not a result, and carries no tier. The first quotable number is the NAVSIM PDMS eval of a checkpoint. |
 | **Status** | 🔄 **TRAINING.** **EVALUATED on a 200-token navtest SUBSET only** (W3's `A1_sub200_tokens.json`, 93 logs; tier: NAVSIM v1 PDMS = an open-loop plan pseudo-simulated against the logged agents; log-cluster bootstrap; `…/eval/SPEC_NAVTEST.md`): PDMS after epochs 1/2/3/5/8/11 = **31.33 / 27.51 / 29.60 / 53.48 / 49.28 / 43.83** against STOP 62.58, CV 21.82 and HUMAN 94.12 on the same tokens -- below standing still at every point. ⭐ **SPEC E-6 (2026-09-26, snapshot after epoch 11): SELECTION-BOUND** -- every one of the 64 proposals scored by the harness: best of 64 **91.2 [89.2, 93.1]**, planner's pick **43.8 [37.4, 50.6]**, random **43.2 [38.9, 47.7]**; selection skill **0.013 [-0.089, 0.121]** (`…/eval/RESULT_E6_sub200_ep011.md`, GOALS_AND_CLAIMS D-REFE-SEL-1). The trainer's `traj_L1` is a TRAINING curve, not a result. The full 12,146-token navtest is reserved for the final checkpoint. |
 | **Location** | A40 pod `growing_orange_anaconda` (RunPod `7ahcdqeljcdlkw`, **no persistent volume**): `/workspace/data/refe_runs/vitl16_navtrain10_grow_tau0.3/` -- `ckpt_last.pt` every 20 min (partial: LoRA + heads + AdamW + schedule + data position + RNG + the epoch's bank snapshot), `snap_epochNNN.pt` per epoch, `model_final.pt` + `summary.json {"done": true}` at the end. Supervisor: `refe-plan/code/pod_train.sh GROW=1` (self-healing, `flock`, stops on done=true), launched by the pod-side watcher `/workspace/wait_then_train.sh`. |
 | **Architecture** | REFe (`…/2026-09-20-refe-plan/refe/model.py`): frozen **DINOv3 ViT-L/16** (timm mirror, rev `30c1109559f6…`, weights sha256 `45172f209c95…`, 366 tensors mapped, missing 0) + LoRA, **4 cameras at 512x960**, per-sample PETR camera rig (`calib_table.json`, calib sha256 `a20067579fb4…`, 12 distinct rigs in the first bank), 64 trajectory proposals (WTA) + 6-component PDM scorer. **322,070,854 params total / 18,991,426 trainable** (`config.json`). Frozen-trunk fingerprint `ff2834bf522a4a93…`. |
