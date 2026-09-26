@@ -16096,3 +16096,11 @@ PI_DECISION_QUEUE, 2026-09-26 yaw item).
 | **D-REFCV6-CONTROL-HEAD-NO-GRAD** | MEASURED (F-2) on the tip: under F3, `decoder.control_head` is built but receives NO gradient. A declared-trainable group without gradient trips G-LIVE, so it must be fixed, or declared untrainable and not built, before the refcv7 smoke. | NEW-1 RESULT §F-2 | MEASURED; owner: declared-vs-built batch 2 |
 | **D-REFCV6-EGO-DROPOUT-LEAK** | MEASURED from source (F-4): ego-dropout withholds v0, but the ego-history channel still carries v at every past step, INCLUDING t0. The dropout therefore never hid the speed from the model. | NEW-1 RESULT §F-4 | MEASURED; its handling in refcv7 is stated by NEW-1 before launch |
 | **D-REFCV6-EGOHIST-SMOKE-GAP** | F-3: `ds.ego_history` is set only inside the `--v7-labels` branch (`refc_v3_train.py:7276`), so no synthetic smoke exercises ego history. The G-LIVE smoke must run on the REAL `--v7-labels` config. | NEW-1 RESULT §F-3 | MEASURED |
+
+<!-- REFCV7-A6-OPTION-C-MAXIMAL-RANGE-2026-09-27 -->
+### 2026-09-27 ~00:20 — refcv7: one high-resolution lift for everything (PI option c); the map range is maximal
+
+| id | record | evidence | status |
+|---|---|---|---|
+| **D-REFCV7-OPTION-C** | PI, verbatim: *"do c and assure that the range of the map is maximal and not only 20 m"*. ⇒ One stride-8 → 0.25 m lift and BEV encoder feed the 10 cm map decoder AND a pooled 0.5 m BEV for box3d, the planner's cross-attention and the BEV tokens. The stride-16 lift and the 0.5 m map head are removed. The planner's input changes, is declared, and is checked by G-DVB. | `Project Steering/SPEC_REFCV7.md` §11 (A6) | RULED (PI) |
+| **D-REFCV7-MAP-RANGE-MAXIMAL** | Bars in EVERY range band, not only 0–20 m. Grid extent = the largest 10 m steps where ≥ 50 % of TRAIN frames have seen SAM3 world-map ground truth. The rule is fixed before the census, which runs on Thor from the stored `semantic_maps/worldmap`. Never smaller than 60 m × ±16 m, and within the Thor budget (+25 % s/step goes to the PI). The ground truth is re-exported as `sam3_map_gt/3`, byte-identical to `/2` inside the old window. | `SPEC_REFCV7.md` §11.2 | REGISTERED (rule before measurement) |

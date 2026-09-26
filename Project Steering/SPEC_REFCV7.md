@@ -195,3 +195,28 @@ NEW-1 builder, MEASURED from source and on the battery's step-30k surface (4,754
 - **Selection sees absolute plans.** The prior is composed upstream of selection, so nav compliance and the ceiling filter read P + Δ (the A2 requirement). Pinned by `test_A2_…` with a red arm that feeds Δ.
 - **With `--residual-prior off` the model is bit-identical to refcv6**, by a sha256 over every loss scalar, gradient and planner output.
 - A PI ruling on the steer channel at inference would make `ha0_ext` available in a later arm. It is not needed for refcv7.
+
+## 11. Amendment A6 (2026-09-27 ~00:20 Berlin): one high-resolution lift for everything (PI option c), and the map range is MAXIMAL
+
+**PI, verbatim (2026-09-27):** *"do c and assure that the range of the map is maximal and not only 20 m"*.
+
+### 11.1 Architecture: option (c)
+- **ONE lift** samples the stride-8 trunk map into a 0.25 m BEV grid, followed by one BEV encoder. It feeds two things:
+  - **(i) the map decoder**, which outputs 10 cm logits, the only map;
+  - **(ii) a pooled BEV at the planner's grid** (0.5 m), which replaces the stride-16 lift for EVERY consumer: box3d, the planner's BEV cross-attention and the 30 × 16 BEV tokens.
+- **Removed:** the stride-16 0.5 m lift and the 0.5 m map head and loss. There is no `aux05_*`, and nothing at 0.5 m is supervised as a map.
+- **This changes the planner's input** relative to refcv6. It is declared here, and G-DVB checks that every consumer reads the pooled high-resolution BEV. The regression arm is a consumer still wired to a stride-16 lift.
+- **Cost is measured in the Thor G-LIVE smoke.** More than +25 % s/step over refcv6's 6.4 s goes back to the PI, as in §6.2.
+
+### 11.2 The map range is MAXIMAL, fixed by a rule set BEFORE any measurement
+1. **Every range band is evaluated and carries a bar**, not only 0–20 m. The bands are 0–20 / 20–40 / 40–60 m, plus every further 20 m band the grid gains.
+   - The per-class IoU bars BAR-M7-1..3 apply in EVERY band: refcv7 − refcv6@38k > 0, separated. The positional-prior control must also be beaten in every band.
+   - Far bands are reported with their n. A band where refcv6's baseline and refcv7 both read 0 is reported as such, never dropped.
+2. **The grid extent is the largest one the SAM3 ground truth supports.** The ground truth is the per-clip 10 cm world map, stored in the corpus as `semantic_maps/worldmap`.
+   - **The rule:** x_max (ahead) and y_half (to each side) are the largest 10 m steps at which **at least 50 % of TRAIN frames have seen ground truth** in that ring.
+   - **Measured by a coverage census** on Thor, reading the stored world maps. It uses the TRAIN split only; nothing is tuned on eval.
+   - **Constraints:** no smaller than today's 60 m × ±16 m, and within the Thor memory and time budget (the +25 % rule). If the budget binds, the PI chooses between range and cost.
+   - The census, its per-ring coverage table and the chosen extent are banked BEFORE any refcv7 map number exists.
+3. **The ground truth is re-exported** from the stored world maps at the chosen extent, on Thor, as a new schema version (`tanitad.sam3_map_gt/3`). SAM3 is NOT re-run.
+   - The 10 cm codes inside the old 60 × 32 m window must be byte-identical to `/2`. That is the control.
+4. **The 10 cm head, reader, metrics and pooling take the extent as a declared parameter.** G-HYG and G-DVB check that the built grid equals the declared extent.
