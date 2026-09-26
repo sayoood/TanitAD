@@ -19,8 +19,15 @@ $PY recompute_a3.py "$BW/raw/$t" > $B/raw/$t/A3_recompute.log 2>&1
 a3=$?
 $PY lever_panel.py "$BW/raw/$t" > $B/raw/$t/levers.log 2>&1
 lv=$?
+# EXPLORATORY context for L2 (not pre-registered): the same cross-fit on the banked baselines
+$PY lever_context.py "$BW/raw/$t" > $B/raw/$t/lever_context.log 2>&1
+# SPEC A5: TACTICAL under both label clocks (the tables are built and controlled once, raw/label_clock/)
+$PY tactical_dual_clock.py "$BW/raw/$t" > $B/raw/$t/tactical_clocks.log 2>&1
+tc=$?
 $PY summarize_battery.py "$BW/raw/$t" 0 > $B/raw/$t/TABLES_s0.md 2>&1
 [ -s $B/raw/$t/analysis_s1.json ] && $PY summarize_battery.py "$BW/raw/$t" 1 > $B/raw/$t/TABLES_s1.md 2>&1
+# the RESULT.md digest of this tag (both seeds, bars, levers, dual-clock TACTICAL), copied from the JSONs
+$PY result_section.py "$BW/raw/$t" > $B/raw/$t/RESULT_SECTION.md 2>&1
 $PY bank_tag.py "$BW/raw/$t" "$PKG/raw/$t" > $B/raw/$t/bank_post.log 2>&1 || { echo "ZZPOSTBANKFAIL_${t}ZZ $(date +%FT%T)" >> $WL; exit 1; }
 if [ -s $B/raw/$t/levers/levers.json ]; then
   $PY bank_tag.py "$BW/raw/$t/levers" "$PKG/raw/$t/levers" >> $B/raw/$t/bank_post.log 2>&1 || echo "ZZPOSTLEVERBANKFAIL_${t}ZZ $(date +%FT%T)" >> $WL
@@ -29,4 +36,4 @@ fi
   for f in $(ls "$PKG/raw/$t"); do [ -f "$PKG/raw/$t/$f" ] && echo "$REL/raw/$t/$f"; done
   if [ -d "$PKG/raw/$t/levers" ]; then for f in $(ls "$PKG/raw/$t/levers"); do echo "$REL/raw/$t/levers/$f"; done; fi
 } >> "$PKG/LANDING_READY.txt"
-echo "ZZPOSTDONE_${t}ZZ a3=$a3 levers=$lv $(date +%FT%T)" >> $WL
+echo "ZZPOSTDONE_${t}ZZ a3=$a3 levers=$lv clocks=$tc $(date +%FT%T)" >> $WL

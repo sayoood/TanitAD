@@ -2,22 +2,28 @@
 
 **Stream:** EvalFlyWheel, refcv6 standard tests, four-family held-out battery (the NavSim suite is a sibling stream).
 **Author:** EvalFlyWheel agent, working from the Master Mind session, 2026-09-23/24 and 2026-09-26.
-**Pre-registration:** `SPEC.md`, registered 2026-09-23 23:33 Berlin (sha256 `32625b9a…`), before any refcv6 forward. Two amendments, each written BEFORE the measurement it governs:
+**Pre-registration:** `SPEC.md`, registered 2026-09-23 23:33 Berlin (sha256 `32625b9a…`), before any refcv6 forward. Five amendments, each written BEFORE the measurement it governs:
 * **A1** (09-24 01:11, `1ae8f6af…`): new deliberate regressions M2–M4, after the as-registered M1 had no power (§1).
 * **A2** (09-26 09:50, `7bfca6cf…`): the wrapper control is redefined to isolate the merge from bf16 arithmetic, after step 5000's wrapper clause read FAIL (§1b).
 * **A3** (09-26 12:46, `fd65da5c…`): the paired LATERAL yaw-rate cell is masked to steps with a path tangent (four_families' own `pair_valid`), after the shared unmasked cell was measured inflating refcv4b 6.4× (§5 F10). No bar reads yaw-rate.
 * **A4** (09-26 12:58, `e94e1ab6…`): a zero-training LEVER PANEL, reported with no bar, under RULE ZERO. L1 inference-seed average; L2 causal-hold blend `w·os + (1−w)·ha` (2-fold episode-disjoint cross-fit, identity and shuffled-plan controls); L2e echo blend (diagnostic only); L3 deterministic DDIM (eps = 0, one extra GPU roll). Each lever is a DIFFERENT planner from the registered arm.
+* **A5** (09-26 13:55, `a8095594…`): the A16 mid-run switch. Per-step stamps; the FINAL runs on the 82c2331 tree with the run's post-switch config; a tree-equivalence control; TACTICAL under BOTH label clocks with controls C1–C4; no curve fit across step 34,500.
 **Evidence class:** MEASURED (ours) unless stated. Every number cites a JSON under `raw/`.
 
 > ⛔ **Every number from the kit checkpoint (step 1000) is PIPELINE VALIDATION ONLY (SPEC §3.6).**
 > No bar is evaluated on it, and no step-1000 number is a result about refcv6.
 
-> ⛔ **RUN-DEFECT STAMP, carried by every refcv6 number in this document** (Master Mind audit
+> ⛔⛔ **THE RUN WAS SWITCHED MID-WAY (PI: "Stop now, resume with fixes", 2026-09-26 13:30).** It stopped at step 34,500 and resumed on 82c2331. F3's cascade loss trains from there, and tactical labels are read on the true clip clock.
+> * Checkpoints at step ≤ 34,500 (5k, 15k, 20k, 30k) carry the pre-switch stamp below.
+> * **The FINAL is the post-switch HYBRID:** *"hybrid: F3 cascade loss + true label clock from step 34,500"*.
+> * A comparison across the switch mixes training time with the fix, and is never attributed to the fix alone (SPEC A5).
+>
+> ⛔ **RUN-DEFECT STAMP (pre-switch checkpoints)** (Master Mind audit
 > `92337fa6`; register `D-REFCV6-F3-WHITELIST`, `D-REFCV6-LABEL-CLOCK`, landed `9d16c441`):
 > **"F3 detach-only (no per-stage loss), F4 on the last layer only; tactical labels ~0.37 s early."**
 > * Decoder stages 0–2 carry frozen, randomly-initialised modulations: their heads are bit-identical at 1k / 5k / 30k.
 > * The tactical band is read on the provider row at `row × 0.1`; the true anchor is at 8.369 s. On the eval split, 598 / 5,699 (10.5 %) of tactical-supervised windows lie outside the true ±2 s band.
-> * **My TACTICAL declared-head scores use the trainer's own label code**, i.e. the same early clock as training. They measure agreement with the labels the model was trained on, not with the true band. The trajectory-derived tactical κ reads no label and is not exposed.
+> * **Since A5, TACTICAL is scored under BOTH label clocks at every checkpoint.** Label tables are built once with 82c2331's own V3Dataset. The OLD table reproduces the old-tree roll labels bit for bit on 4,754 / 4,754 windows, and the corrected clock's eval census equals the run's own. PRIMARY is OLD for a pre-switch checkpoint and CORRECTED for the FINAL. The trajectory-derived tactical κ reads no label and is not exposed.
 > * A cache row is 0.100667 s (programme-wide). Rates in m/s assume 0.1 s, i.e. +0.67 %, identically for every arm, baseline and control.
 > * ⛔ **No weakness below is attributed to the registered refcv6 design while these hold.**
 
@@ -26,18 +32,27 @@
 | checkpoint | G0 as registered | G0-A1 | G0-A2 (operative gate) | battery (T1, S2 + S6, 2 inference seeds) |
 |---|---|---|---|---|
 | step 1000 (kit) | VOID (M1 no power) | **PASS** | **PASS** (fp32 wrapper 6.7e-7; bf16 P1 8.4e-4; W1/W2 detected 1/26) | pipeline validation only: seed 0 rolled on GPU; panel on CPU (§3) |
-| step 5000 | FAIL (wrapper 3.9e-3 + M1 VOID) | **FAIL** (wrapper clause only) | **PASS** (fp32 wrapper 1.9e-6; §1b) | queued in `code/chain_milestones.sh` |
-| step 30000 | — | — | — | queued (ckpt pulled read-only, md5 `0c5c67b3…`) |
-| FINAL (step 50,400) | — | — | — | the chain waits for `summary.json` (Thor ETA ~09-27 19:30 Berlin), pulls `ckpt.pt` with 3-way md5, then runs |
+| step 5000 | FAIL (wrapper 3.9e-3 + M1 VOID) | **FAIL** (wrapper clause only) | **PASS** (fp32 wrapper 1.9e-6; §1b) | **DONE, both seeds (§4)**: BAR-R6-1..4 **FAIL**, BAR-R6-5 **PASS**. The A4 L2 blend beats the echo (−0.0122 sep, both seeds). Banked `raw/step5000/` |
+| step 30000 | — | — | — | RUNNING in `chain_milestones.sh` (full G0 + A1 + A2, 2 seeds; old tree = its training tree) |
+| step 15000 / 20000 (optional) | — | — | — | `chain_optional.sh`: after the L3 rolls, never started after 12:00 09-27 (ckpts pulled read-only, md5 `46eb2185…` / `f4320c89…`) |
+| FINAL (step 50,400; post-switch HYBRID) | — | — | — | `chain_final_v2.sh` on the **82c2331 tree** (SPEC A5). It waits for `summary.json` (Thor ETA ~09-27 19:30 Berlin), pulls `ckpt.pt`, metrics and config with 3-way md5, then runs. The old chain's final stage is DEFERRED |
 
-**Unattended chain.** `code/chain_milestones.sh` runs step 5000, then step 30000, then the final, and logs to `raw/chain.log` on the dev box.
+**Unattended chains.** `code/chain_milestones.sh` runs step 5000 and then step 30000, both on their training tree. It logs to `raw/chain.log` on the dev box. Its final stage is DEFERRED (SPEC A5): `pull_final.sh` now prints `ZZFINALDEFERREDZZ`, and `code/chain_final_v2.sh` runs the FINAL on the 82c2331 tree.
 * It banks each tag, sanitized, into `raw/<tag>/`.
 * It appends the paths to `LANDING_READY.txt`.
 * Every GPU stage waits on the dev-box gate. The orchestrator holds no CUDA context.
 
 **Post-bank watcher** (`code/post_chain_watch.sh`, started 13:07 09-26, markers in `raw/post_watch.log`). After the chain banks a tag it runs `post_tag.sh <tag>`: the A3 recompute (step 5000 only, whose panels predate A3), the A4 lever panel, re-rendered tables, a re-bank and a LANDING_READY append. After step 30000 is banked, while the chain waits on Thor, it runs the L3 eps0 rolls for step 5000 and step 30000 behind the gate; after the final, L3 for the final.
 
-**If I am stopped:** the chain keeps going. Read `raw/chain.log` markers (`ZZB5000DONEZZ`, `ZZB30000DONEZZ`, `ZZFINALOKZZ`, `ZZBFINALDONEZZ`, `ZZBANKED_<tag>ZZ`) and each tag's `battery_summary.json`.
+**If I am stopped:** every chain keeps going unattended. Read these marker logs, plus each tag's `battery_summary.json` and `RESULT_SECTION.md` (`code/result_section.py <tag_dir>`):
+* `raw/chain.log`: `ZZB30000DONEZZ`, `ZZBANKED_step30000ZZ`, then `ZZNOFINALZZ … ZZFINALDEFERREDZZ` (by design, A5) and `ZZCHAINMENDZZ`.
+* `raw/post_watch.log`: `ZZPOSTDONE_<tag>ZZ`, `ZZL3DONE_<tag>ZZ`.
+* `raw/optional.log`: `ZZOPTDONE_15000ZZ`, `ZZOPTDONE_20000ZZ`.
+* `raw/final_v2.log`: `ZZFINALWAITZZ` polls, `ZZFINALOKZZ`, `ZZBFINALDONEZZ`, `ZZBANKED_finalZZ`, `ZZFINALV2ENDZZ`.
+
+The headline is BAR-R6-1 at BOTH seeds of the FINAL tag (`raw/final/battery_summary.json` → `bars`).
+
+**Where I stopped** (updated each turn): 2026-09-26 ~14:15. Step 5000 is done and banked; step 30000 is running; the FINAL chain is polling Thor.
 
 <!-- HEADLINE -->
 
@@ -209,7 +224,112 @@ The **VOID gates** are checked on every panel: model-free arms bit-identical acr
 * ⚠️ **Escalated as an instrument-design question.** Restrict the population to v0 ≤ ceiling, or score a deceleration-toward-the-ceiling criterion. Either way it is the owner's or PI's call, because the bar was frozen before training and I do not move it.
 
 
-<!-- STEP5000 -->
+## 4. Step 5000: the first milestone reading (T1 primary; S2 + S6; inference seeds 0 and 1)
+
+> ⛔ **Pre-switch checkpoint.** The stamp applies: *F3 detach-only, F4 on the last layer only; tactical labels ~0.37 s early*. No weakness below is attributed to the registered design.
+>
+> Step 5000 is ~10 % of the 50,400-step run. This is an early-checkpoint reading, not the headline.
+>
+> Evidence class: MEASURED. The full digest is `raw/step5000/RESULT_SECTION.md` (rendered from the JSONs by `code/result_section.py`); full tables are `raw/step5000/TABLES_s0.md` and `TABLES_s1.md`.
+
+**Gate.** G0 as registered: **FAIL**. G0-A1: **FAIL**, on the wrapper clause only (3.921e-3). **G0-A2 (operative): PASS**, with an fp32 wrapper of 1.89e-6 (§1b).
+
+**Bars.** SPEC §3.4 requires each bar to hold at BOTH inference seeds. Surface S2, ADE 0–2 s, paired episode-cluster bootstrap, 4,754 windows / 139 episodes.
+
+| bar | seed 0 | seed 1 | verdict |
+|---|---|---|---|
+| **BAR-R6-1** (primary) `os − ha0_ext` | +0.0885 [+0.0695, +0.1094] sep | +0.0885 [+0.0695, +0.1092] sep | **FAIL** |
+| BAR-R6-2 `os − ha` | +0.0761 [+0.0569, +0.0974] sep | +0.0761 [+0.0569, +0.0971] sep | FAIL |
+| BAR-R6-3 `os − refcv4b` | +0.0797 [+0.0574, +0.1017] sep | +0.0797 [+0.0577, +0.1023] sep | FAIL |
+| BAR-R6-4 `os − refcv5-v2` | +0.0681 [+0.0456, +0.0909] sep | +0.0681 [+0.0455, +0.0909] sep | FAIL |
+| BAR-R6-5 S6 `os − ha0_ext`, ADE 1–6 s | **−0.4729 [−0.7531, −0.1780] sep** | **−0.4601 [−0.7453, −0.1658] sep** | **PASS** |
+
+* **Inference-seed replicate.** `os(s0) − os(s1)` = +0.0000 [−0.0025, +0.0027]. The planner does sample: the max per-window path difference is 3.33 m, and the mean |Δ| at 2 s is 0.21 m.
+* **The ~0.08 m gaps are ~30× that floor.** The failure is not inference noise.
+
+**What the gap to the echo is made of** (paired, seed 0; seed 1 agrees to the third decimal).
+* It is spread across both families:
+  * along-track +0.0486 sep;
+  * speed MAE +0.0495 sep;
+  * cross-track +0.0588 sep;
+  * heading +0.42° sep;
+  * yaw-rate +0.0039 rad/s sep (A3 cell).
+* Against refcv4b, speed is not separated (+0.0134). The deficit there is lateral (cross-track +0.0689 sep, heading +0.50° sep) with a small along-track term (+0.0280 sep).
+
+**Levels (seed 0).**
+
+| arm | ADE 0–2 s | cross-track m | tgt-speed acc |
+|---|---|---|---|
+| `os` | 0.3771 [0.3458, 0.4138] | 0.1668 | 0.810 |
+| echo `ha0_ext` | 0.2886 | 0.1079 | 0.866 |
+| hold `ha` | 0.3010 | 0.1238 | 0.866 |
+| refcv4b | 0.2974 | 0.0979 | 0.832 |
+| refcv5-v2 | 0.3090 | 0.0994 | 0.834 |
+| CV `ha0` | 0.6764 | 0.3170 | 0.705 |
+
+* `os` beats constant velocity by −0.2993 sep.
+* Distance keeping (69 episodes with a lead): min time-gap 4.12 s, min TTC 24.07 s. `os` is closing on 515 windows, against 446 for the echo.
+
+**No programme arm clears BAR-R6-1 on this surface.** Seed 0, S2:
+* refcv4b − echo = +0.0088 [−0.0058, +0.0249], not separated;
+* refcv5-v2 − echo = +0.0204 [+0.0046, +0.0383], separated worse.
+
+The primary bar is one the programme has not yet cleared with any arm.
+
+**Other readings.**
+* **Nav.** Withholding nav costs +0.0246 sep and shuffling it +0.0100 sep. Withholding max-speed costs +0.0020, not separated.
+* **T-FLIP: FAIL** at both seeds. follows_FED is 0.25 against a bar of 0.50, but already above refcv5-v2's 0.205. true − shuffled is 0.1534 (seed 1: 0.1335), against a bar of 0.38; refcv5-v2 reads 0.099.
+* **OBEDIENCE: FAIL.** This is structural (§3, F8): 2,216 of 2,294 rows have no compliant candidate.
+
+**TACTICAL under both label clocks (SPEC A5).**
+* The declared tactical heads are **deterministic in the inference seed**: their logits are bit-identical in the seed-0 and seed-1 dumps. Their readings therefore carry no inference variance.
+
+| head (v6 behaviour decoder) | OLD clock ⭐ primary | CORRECTED clock |
+|---|---|---|
+| LAT acc [CI] · κ (n in band) | 0.7169 [0.6427, 0.7857] · 0.2418 (1,141) | 0.7134 [0.6392, 0.7821] · 0.2300 (1,106) |
+| LAT, nav zeroed | 0.6713 · **0.0066** (the majority rate is 0.6713) | 0.6718 · 0.0068 |
+| LON acc [CI] · κ (n in band) | 0.3707 [0.3003, 0.4432] · 0.1821 | 0.3680 [0.2965, 0.4418] · 0.1786 |
+
+* The lateral decision is nav-driven: with nav zeroed, κ collapses to ~0.
+* FOLLOW_LANE goal AUROC: 0.7372 (OLD) / 0.7369 (CORRECTED).
+* CORRIDOR_OFFSET sits exactly at the n_pos floor under OLD (200) and falls below it under CORRECTED (193 → UNSCOREABLE). SPEED_BAND is positive on every in-band window, so its AUROC is undefined. Every other token is below the floor under both clocks.
+* **STRATEGIC: NOT APPLICABLE, n = 0.** The strategic layer is OFF.
+
+**S6 (1–6 s).**
+* `os` ADE is 3.0749 / 3.0877 m (seeds 0 / 1).
+* It beats the echo (BAR-R6-5 PASS), but is worse than refcv4b (+0.3524 / +0.3652 sep) and refcv5-v2 (+0.3609 / +0.3737 sep).
+
+**⭐ RULE ZERO. BAR-R6-1 failed at step 5000; the next lever, and its result (SPEC A4, reported with no bar).**
+* A4 was registered at 12:58, before either seed's lever reading existed. The step-5000 `os − echo` surface had already been seen, so this checkpoint's lever readings are post-registration measurements on a seen surface.
+* **L2, the causal-hold blend `w·os + (1−w)·ha`** (w cross-fitted per instant on the other episode-parity fold; w = 0.20 / 0.20–0.25 / 0.30 / 0.40 at 0.5 / 1 / 1.5 / 2 s):
+
+  | cell | seed 0 | seed 1 |
+  |---|---|---|
+  | blend − echo | **−0.0122 [−0.0200, −0.0042] sep** | **−0.0123 [−0.0200, −0.0045] sep** |
+  | blend − `ha` | −0.0246 sep | −0.0247 sep |
+
+  * The shuffled-plan control reads **exactly +0.0000** (w = 0 on both folds), so the gain is not shrinkage.
+  * The identity control passes.
+  * ⇒ **The committed A4 interpretation fires. refcv6's plan already carries 0–2 s information that a causal kinematic hold lacks, and a cross-fitted composite beats the echo bar that no programme arm has cleared.**
+  * The next lever is a **residual-on-kinematic-prior output parameterisation**, a training change. It is blocked on an MM/PI decision.
+* **L2e** (echo blend, diagnostic only): −0.0202 sep at both seeds.
+* **EXPLORATORY context** (not pre-registered; `raw/step5000/levers/context_baseline_blends.json`): **the L2 gain is generic, not refcv6-specific.** The same cross-fit applied to the banked baselines, on the same windows:
+
+  | arm blended with `ha` | arm − echo | blend − echo | w |
+  |---|---|---|---|
+  | refcv4b | +0.0088 ns | **−0.0315 [−0.0398, −0.0227] sep** | ≈ 0.5 |
+  | refcv5-v2 s0 | +0.0204 sep | **−0.0267 [−0.0350, −0.0178] sep** | ≈ 0.45–0.6 |
+  | refcv6 at step 5000 | +0.0885 sep | −0.0122 sep | 0.2–0.4 |
+
+  * Every REF-C arm's 0–2 s error is complementary to the causal kinematic hold, so every one clears the echo bar by composition.
+  * ⇒ A residual-on-kinematic-prior output is a **programme-wide** lever, not a refcv6-only one.
+  * At step 5000, refcv6's composite is still the weakest of the three.
+* **L1** (seed average): `os_avg − echo` = +0.0831 sep, still failing. The sampling term is only 0.0054 m, so inference variance is not the lever.
+* **L3** (deterministic DDIM): queued by the watcher for after step 30000.
+
+<!-- STEP30000 -->
+
+<!-- FINAL -->
 
 
 ---
@@ -238,13 +358,17 @@ The **VOID gates** are checked on every panel: model-free arms bit-identical acr
 
 | artifact | where it lives | only in one place? |
 |---|---|---|
-| `SPEC.md` (registration + A1 + A2) and its sha records `raw/SPEC_SHA256_*.txt` | repo:`PKG` (batch 1) + dev box `C:/Users/Admin/ev6_battery/` | no |
+| `SPEC.md` (registration + A1–A5) and its sha records `raw/SPEC_SHA256_*.txt` | repo:`PKG` (batch 1) + dev box `C:/Users/Admin/ev6_battery/` | no |
 | battery code, `code/*.py`, `code/*.sh` (loader, roll, panel, runner, G0/A1/A2 tools, gate + test, chain, pulls, renderers, sanitizer) | repo:`PKG/code/` + dev box `C:/Users/Admin/ev6_battery/code/` | no |
 | model-free pairing proof, kit checks, controls | repo:`PKG/raw/{pairing_surface.json,kit_checks,controls}` | no |
 | G0 / G0-A1 / G0-A2 at step 1000 and step 5000 | repo:`PKG/raw/g0_step1000/`, `PKG/raw/step5000/` (+ dev box `raw/`) | no |
 | step-1000 pipeline validation (analysis, cross-paired, tactical, S6, acceptance, tables) | repo:`PKG/raw/step1000/` | no |
-| battery tags step5000 / step30000 / final (JSON, logs, tables, dump tarball ≤ 19 MiB) | auto-banked to `PKG/raw/<tag>/` by `chain_milestones.sh`, then landed from `LANDING_READY.txt` | dev box only until landed |
+| battery tags step5000 / step30000 / step15000 / step20000 / final (JSON, logs, tables, `RESULT_SECTION.md`, `TACTICAL_CLOCKS.md`, `levers/`, dump tarball ≤ 19 MiB) | auto-banked to `PKG/raw/<tag>/` by the chains (`chain_milestones.sh`, `chain_optional.sh`, `chain_final_v2.sh`) and `post_tag.sh`, then landed from `LANDING_READY.txt` | dev box only until landed |
 | per-window decision sidecars (`dump_s*/decisions/*.npz`, ~25 KB/window) and the panel/S6 dumps | dev box `C:/Users/Admin/ev6_battery/raw/<tag>/` | **YES, dev box only**: derivable from the banked dumps plus the banked baseline dumps; too large to land |
 | checkpoints `ckpt_step1000.pt`, `ckpt_5000.pt`, `ckpt_30000.pt`, `ckpt_final.pt` + `MD5SUMS` | dev box `D:/refcv6_eval_kit/ckpt/` (read-only copies of Thor files) | copies; the originals are on Thor |
 | SAM3 GT for the 137 eval clips, byte-identical to Thor | dev box `D:/refcv6_eval_kit/data/sam3_gt_eval_thor137/` (+ `_GT_RECORD.json` landed) | copy |
+| A3 evidence: yaw-mask probe, A3 recompute records | repo:`PKG/raw/a3/` + dev box `raw/a3/` | no |
+| A5 evidence: label tables (both clocks, 23,772 eval windows) + controls C1–C4, tree-equivalence roll, clock census vs the run, resume config | repo:`PKG/raw/label_clock/`, `PKG/raw/a5/` + dev box | no |
+| the 82c2331 code tree the FINAL runs on (`git archive` of stack/, taniteval/, tools/, products/P7-TanitEval, lead block, refcv5_compare, sidecar) | dev box `C:/Users/Admin/ev6_82c2331/` | **dev box only**, but it is a pure export of commit `82c2331` (reproducible with `git archive`) |
+| clip-clock sidecar (md5 `78466f99…` == Thor == audit package) | dev box `D:/refcv6_eval_kit/data/refcv6_clip_clock_sidecar.jsonl` | copy; the original is landed in the audit package |
 

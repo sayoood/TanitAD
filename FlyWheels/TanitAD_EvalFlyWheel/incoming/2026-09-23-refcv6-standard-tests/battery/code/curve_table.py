@@ -49,6 +49,19 @@ def lever(root, tag, seed, which):
 def main():
     root = Path(sys.argv[1])
     tags = sys.argv[2:]
+    steps = {}
+    for t in tags:
+        f = root / t / "battery_summary.json"
+        steps[t] = json.load(open(f, encoding="utf-8")).get("step") if f.exists() else None
+    print("### refcv6 across checkpoints — a TABLE, not a fit\n")
+    print("⛔ **Two experiments (SPEC A5).** Checkpoints at step ≤ 34,500 are pre-switch: *F3 detach-only, F4 on "
+          "the last layer only; tactical labels ~0.37 s early*. A later checkpoint (the FINAL) is the post-switch "
+          "*hybrid: F3 cascade loss + true label clock from step 34,500* (resumed on 82c2331). A difference across "
+          "the switch MIXES training time with the fix and is never attributed to the fix alone; no learning-curve "
+          "fit spans step 34,500. TACTICAL is not in this table: each tag's `TACTICAL_CLOCKS.md` carries it under "
+          "both label clocks.\n")
+    print("Steps: " + ", ".join(f"{t} = {steps[t]}" + (" (post-switch hybrid)" if (steps[t] or 0) > 34500 else "")
+                                for t in tags) + "\n")
     for seed in (0, 1):
         print(f"\n#### ADE paired cells (m, b − a, T1), inference seed {seed}\n")
         print("| cell | " + " | ".join(tags) + " |")

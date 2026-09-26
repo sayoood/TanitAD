@@ -68,6 +68,8 @@ PATH_REMAP = {
     "--agent-rig-extrinsics": str(KIT / "data/refcv6_train_eval139_extrinsics.json"),
     "--map-gt-root": str(KIT / "data/sam3_gt_eval_thor137"),
     "--join3d": str(KIT / "data/join3d/b1_train_plus_eval_agents_3d.jsonl.xz"),
+    # SPEC A5 (A16 switch, resumed on 82c2331): md5 78466f99... on Thor == the audit package copy
+    "--clip-clock-sidecar": str(KIT / "data/refcv6_clip_clock_sidecar.jsonl"),
 }
 #: flags whose TRAIN-side file is not in the kit and is not read by anything this module builds
 TRAIN_ONLY_PATHS = ("--v2-cache", "--v7-labels", "--speed-max-sidecar-v6", "--out")
@@ -389,6 +391,14 @@ def build_eval_dataset(model, cfg, args, config: dict, *, with_perception_target
     e_lab, e_man = v7l.load_v7_labels(args.eval_labels, allow_oracle_nav=True)
     e_ds.v7_by_sid = {stable_episode_id(l.clip_id): l for l in e_lab}
     e_ds.v7_dt = 0.1
+    # SPEC A5 -- train():7514-7515 at 82c2331 (A16 label clock): the eval dataset's clock is resolved
+    # ONCE, exactly where that trainer resolves it. A pre-A16 tree's V3Dataset has no such method: its
+    # labels are on the historical (t + w - 1) * 0.1 clock, and that is RECORDED, never assumed.
+    if hasattr(e_ds, "enable_clip_clock"):
+        rec["label_clock"] = e_ds.enable_clip_clock(getattr(args, "clip_clock_sidecar", None))
+    else:
+        rec["label_clock"] = {"rule": "(t + w - 1) * 0.1 s -- pre-A16 tree (V3Dataset has no "
+                                      "enable_clip_clock)", "sidecar": None}
     rec["labels"] = {"path": args.eval_labels, "md5": e_man.md5, "n_records": e_man.n_records}
     if nav_on:
         rec["nav"] = e_ds.enable_nav_from_v7(e_man)

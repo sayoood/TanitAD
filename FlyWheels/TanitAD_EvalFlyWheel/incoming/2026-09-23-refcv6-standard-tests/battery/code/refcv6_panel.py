@@ -350,14 +350,37 @@ def _kappa(t, p, n):
     return (float((po - pe) / (1 - pe)) if pe < 1 else None), cm
 
 
-def tactical_v6(extras_npz: str, clip_eid: dict, n_boot=2000, seed=0) -> dict:
+def labels_for_extras(extras_npz: str, tables_npz: str, clock: str) -> dict:
+    """SPEC A5: one clock's per-window labels from `label_clock_table.py`'s tables, aligned to the
+    extras rows by (clip_index = dataset episode index, ws). Refuses a window the table lacks."""
+    ex = np.load(extras_npz)
+    tb = np.load(tables_npz)
+    key = {(int(e), int(w)): i for i, (e, w) in enumerate(zip(tb["e_i"], tb["ws"]))}
+    rows = [key.get((int(c), int(w))) for c, w in zip(ex["clip_index"], ex["ws"])]
+    if any(r is None for r in rows):
+        raise SystemExit(f"[panel] {sum(r is None for r in rows)} extras windows are not in the "
+                         f"label table -- refusing (SPEC A5)")
+    r = np.asarray(rows)
+    return {"lat": tb[f"lat_{clock}"][r], "lon": tb[f"lon_{clock}"][r],
+            "gy": tb[f"gy_{clock}"][r], "gw": tb[f"gw_{clock}"][r], "clock": clock,
+            "tables_npz": str(tables_npz)}
+
+
+def tactical_v6(extras_npz: str, clip_eid: dict, n_boot=2000, seed=0, labels: dict | None = None) -> dict:
+    """`labels` (SPEC A5, from `labels_for_extras`) replaces the four label arrays the roll recorded
+    (lat_v7 / lon_v7 / tac_goal_y / tac_goal_w) -- the model outputs are untouched. None = as rolled."""
     from taniteval import ci as _ci
     from tanitad.data import v7_labels as v7l
     from tanitad.models import vocab_v7
-    ex = np.load(extras_npz)
+    exz = np.load(extras_npz)
+    ex = {k: exz[k] for k in exz.files}
+    if labels is not None:
+        ex["lat_v7"], ex["lon_v7"] = labels["lat"], labels["lon"]
+        ex["tac_goal_y"], ex["tac_goal_w"] = labels["gy"], labels["gw"]
     eid = np.asarray([clip_eid[int(c)] for c in ex["clip_index"]])
     out = {"n_windows": int(len(eid)), "estimator": "episode_cluster_bootstrap (accuracy); kappa and "
-           "per-class rates are full-set", "tier": "T1 (UNRULED)"}
+           "per-class rates are full-set", "tier": "T1 (UNRULED)",
+           "label_clock": (labels or {}).get("clock", "as rolled (the roll tree's V3Dataset)")}
     names = {"lat": list(v7l.HEADS["tac_lat"]), "lon": list(v7l.HEADS["tac_lon"])}
     for head in ("lat", "lon"):
         lab = ex[f"{head}_v7"].astype(np.int64)
@@ -367,7 +390,7 @@ def tactical_v6(extras_npz: str, clip_eid: dict, n_boot=2000, seed=0) -> dict:
         for surf, key in (("v6_behaviour_decoder", f"nav_true.tacv6_{head}_logits"),
                           ("z_tac_v7_heads", f"nav_true.{head}_logits_tac"),
                           ("v6_behaviour_decoder_NAVZERO", f"nav_zero.tacv6_{head}_logits")):
-            if key not in ex.files:
+            if key not in ex:
                 blk[surf] = {"status": "ABSENT", "key": key}
                 continue
             pred = np.nanargmax(np.nan_to_num(ex[key], nan=-1e9), axis=1)
@@ -392,7 +415,7 @@ def tactical_v6(extras_npz: str, clip_eid: dict, n_boot=2000, seed=0) -> dict:
     goal = {"tokens": toks, "scoreability_floor_n_pos": floor, "per_class": {}}
     for surf, key in (("nav_true", "nav_true.tacv6_goal_logits"),
                       ("nav_zero", "nav_zero.tacv6_goal_logits")):
-        if key not in ex.files:
+        if key not in ex:
             continue
         lg = ex[key]
         pc = {}

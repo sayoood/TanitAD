@@ -277,3 +277,50 @@ It is **PIPELINE VALIDATION ONLY**. The runner is run end to end on it, and G0 i
 * **When it runs.** Only behind the dev-box gate, and only when the chain is not using the GPU. Otherwise it is reported as **NOT RUN (compute)**, with the reason.
 
 **Ranking (RULE ZERO item 5).** The levers are ranked by their measured `− ha0_ext` effect. The largest is named as the next lever, with its evidence class, in RESULT.md.
+
+## AMENDMENT A5: registered 2026-09-26 ~14:15 Europe/Berlin. The mid-run fix switch (A16) and the LABEL CLOCK. Written BEFORE any post-switch (FINAL) number existed and BEFORE any dual-clock tactical score was computed
+
+**What happened (INHERITED from the Master Mind, 2026-09-26).** The PI ruled "Stop now, resume with fixes".
+* `refcv6-r101-s0` stopped at step 34,500 (`ckpt.pt` md5 `3fbbde74…`) and resumed from there on commit `82c2331`.
+* Two things changed from that step on:
+  * F3's cascade loss now trains (it never ran before; D-REFCV6-F3-WHITELIST).
+  * Tactical labels are read on the clip's TRUE clock (D-REFCV6-LABEL-CLOCK), via `--clip-clock-sidecar`.
+
+**What I measured here.** Read-only plumbing on the Master Mind's git dir, with EOL-normalised blob comparisons, plus the resumed run's `config.json` pulled read-only (md5 `a3193a46…`).
+* From fe5872f to 82c2331, five eval-relevant files change: `refc.py`, `refc_v3.py`, `refc_v3_train.py`, `tools/criteria_check.py` and `CRITERIA_REGISTRY.json`.
+* `refc.py` only passes `layer_u0_hat` / `layer_logits` through.
+* `refc_v3.py`'s additions are refcv7-only, built last, and OFF for refcv6.
+* **The refcv6 inference path is therefore unchanged.** `refcv3_arm`, `refav1_arm`, `four_families`, `ci`, `refcv6_acceptance`, `v7_labels` and `v2_dataset` are identical in both trees.
+* The clock changes only `lat_v7`, `lon_v7`, `tac_goal_y` and `tac_goal_w` (`V3Dataset.__getitem__`). `nav_from_v7` is per clip, and nothing on the max-speed path changed.
+* The resumed `config.json` differs from the kit's in exactly one argv pair: `--clip-clock-sidecar /home/nvidia/data/refcv6_clip_clock_sidecar.jsonl`.
+
+**A5.**
+1. **Two experiments, stamped per checkpoint** (the Master Mind's wording).
+   * Step ≤ 34,500 (5k, 15k, 20k, 30k): *"F3 detach-only, F4 on the last layer only; tactical labels ~0.37 s early"*.
+   * Step > 34,500 (the FINAL): *"hybrid: F3 cascade loss + true label clock from step 34,500"*.
+   * A comparison across the switch mixes training time with the fix, and is never attributed to the fix alone.
+   * **No learning-curve fit across step 34,500**, because it spans two experiments. The cross-checkpoint table (CURVE) is a table, not a fit, and it carries this note.
+2. **The FINAL runs on an 82c2331 tree, never on the old one.** Its in-run eval carries the cascade term and corrected-clock labels, so G0 on the old tree would compare against the wrong target.
+   * **Config:** the run's `config.json`, pulled at the final. If it is not argv-identical to `a3193a46…`, the difference is recorded and the pulled one is used.
+   * **Sidecar:** remapped to the audit package's copy, only after md5 equality with Thor's file.
+   * **Clock call:** the loader calls `enable_clip_clock(sidecar)` on the eval dataset at the same point the 82c2331 trainer does, and only on a tree whose `V3Dataset` has it.
+   * **Gates unchanged:** G0, G0-A1 and G0-A2 as registered. A new eval term such as the cascade loss is classified by the registered SMOOTH_OR_STOCHASTIC rule (8-seed spread). Pre-switch checkpoints stay on their own training tree.
+3. **Inference-equivalence control.**
+   * **Test:** the same checkpoint (`ckpt_30000.pt`) is rolled on the same windows on both trees, on CPU in fp32. `os`, `ha`, `ha0_ext` and `g` must be bit-identical.
+   * **If they are not:** the FINAL's rolls are reported as not comparable with the pre-switch batteries, and the reason is named.
+4. **TACTICAL is scored under BOTH clocks for EVERY checkpoint.** The rollouts are shared; only the label assignment differs.
+   * **Label tables:** per-window tables are built ONCE with 82c2331's own `V3Dataset`, with no re-derivation.
+     * OLD = `legacy_label_clock = True`, i.e. `(t + w − 1) · 0.1` s, the clock pre-switch checkpoints trained on.
+     * CORRECTED = `enable_clip_clock(sidecar)`, i.e. `grid_start + (t + w − 1 + n_stack − 1) · dt`. Clips the sidecar lacks fall back to pose dt, and the fallback is counted.
+   * **Coverage:** the tables cover the battery's S2 windows and the FULL eval index.
+   * **Scoring:** `tactical_v6` is re-scored with each table.
+   * **Primary clock:** CORRECTED for the FINAL; OLD for 5k / 15k / 20k / 30k. Every tactical number carries its clock and dt source beside its tier.
+   * **Comparisons:** no tactical comparison across the switch is shown without both clocks.
+5. **Controls, written as literals; any failure REFUSES the dual-clock table.**
+   * **C1.** The OLD table equals, bit for bit and NaN-aware, the labels in the old-tree roll's extras on every S2 window of that roll (`lat_v7`, `lon_v7`, `tac_goal_y`, `tac_goal_w`).
+   * **C2.** On ≥ 20 windows over ≥ 5 clips, under both clocks, the direct computation equals the full `__getitem__` item.
+   * **C3.** OLD and CORRECTED must DIFFER, i.e. change the tactical band membership (`lat_v7` in-band vs `IGNORE`) on **> 0** windows. Otherwise it is the "same clock twice" failure (`legacy_label_clock` has no CLI flag and defaults to False).
+     * On the FULL eval index the count is reported against A16's MEASURED **598 / 5,699 (10.5 %)**.
+     * Membership changes and class changes are reported separately.
+   * **C4 (mirror).** Two independent builds of the same clock are bit-identical.
+6. **Scope.** ADE, LONGITUDINAL and LATERAL read no label and are unaffected. The only thing that changed for them at the switch is the model.

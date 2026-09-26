@@ -19,6 +19,26 @@ LABEL = {"os": "**refcv6 `os`**", "os_navzero": "refcv6 nav withheld", "os_navsh
          "oracle_sel": "`oracle_sel` (T0 ceiling)"}
 
 
+SWITCH_STEP = 34500      # PI "stop now, resume with fixes" (A16), resumed on 82c2331 at this step
+
+
+def run_stamp(step: int) -> str:
+    """The Master Mind's per-checkpoint stamp (2026-09-26): which experiment a checkpoint belongs to."""
+    if step <= SWITCH_STEP:
+        return ("⛔ **Run-defect stamp (pre-switch checkpoint, step ≤ 34,500):** F3 detach-only, F4 on the last "
+                "layer only; tactical labels ~0.37 s early (D-REFCV6-F3-WHITELIST, D-REFCV6-LABEL-CLOCK; audit "
+                "92337fa6). No weakness below may be attributed to the REGISTERED design while these hold. TACTICAL "
+                "is read under BOTH label clocks (SPEC A5); this checkpoint's PRIMARY clock is the OLD one it was "
+                "trained on. Physical-unit rates use dt = 0.5 s for a true 0.5033 s (row = 0.100667 s), identically "
+                "for every arm and baseline.")
+    return ("⛔ **Run stamp (post-switch checkpoint, step > 34,500):** hybrid: F3 cascade loss + true label clock "
+            "from step 34,500 (resumed on 82c2331; F4 unchanged). A comparison with a pre-switch checkpoint MIXES "
+            "training time with the fix and is never attributed to the fix alone. TACTICAL is read under BOTH label "
+            "clocks (SPEC A5); this checkpoint's PRIMARY clock is the CORRECTED one. Physical-unit rates use "
+            "dt = 0.5 s for a true 0.5033 s (row = 0.100667 s), identically for every arm and baseline.")
+
+
+
 def f(v, nd=4):
     if v is None:
         return "—"
@@ -155,13 +175,7 @@ def main():
           "episode-cluster bootstrap (n_boot 2000, seed 0, cluster = clip). One training seed: every "
           "separated cell answers the EPISODE question only; the INFERENCE question is answered by the "
           "seed replicate.\n")
-    print("⛔ **Run-defect stamp (every refcv6 number):** F3 detach-only (no per-stage loss), F4 on the "
-          "last layer only; tactical labels ~0.37 s early (D-REFCV6-F3-WHITELIST, D-REFCV6-LABEL-CLOCK; "
-          "audit 92337fa6). No weakness below may be attributed to the REGISTERED design while these "
-          "hold. The TACTICAL declared-head scores use the trainer's label clock, i.e. the same "
-          "~0.37 s-early admission as training (eval: 598/5,699 = 10.5 % of tactical-supervised "
-          "windows lie outside the true ±2 s band). Physical-unit rates use dt = 0.5 s for a true "
-          "0.5033 s (row = 0.100667 s), identically for every arm and baseline.\n")
+    print(run_stamp(int(s["step"])) + "\n")
     g0 = (s.get("stages") or {}).get("g0") or {}
     print("### Gate\n")
     print(f"* G0 as registered: **{g0.get('G0_as_registered')}**; G0-A1: **{g0.get('G0_A1')}**; "

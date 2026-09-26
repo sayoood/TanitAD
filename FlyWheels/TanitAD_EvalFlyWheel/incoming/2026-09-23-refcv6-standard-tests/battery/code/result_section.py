@@ -54,8 +54,7 @@ def main():
          "bootstrap. One training seed. Every separated cell answers only the EPISODE question; the INFERENCE question "
          "is answered by the two-seed replicate below.",
          "",
-         "⛔ **Run-defect stamp:** F3 detach-only, F4 on the last layer only; tactical labels ~0.37 s early. No "
-         "weakness here is attributed to the registered design.",
+         SB.run_stamp(int(s["step"])),
          "",
          f"**Gate.** G0 as registered **{g0.get('G0_as_registered')}**, G0-A1 **{g0.get('G0_A1')}**, "
          f"G0-A2 (operative) **{g0.get('G0_A2')}**.",
@@ -102,6 +101,9 @@ def main():
             ln = [f"{h.upper()}: v6 decoder acc {SB.ci((t[h].get('v6_behaviour_decoder') or {}).get('acc'))} "
                   f"κ {SB.f((t[h].get('v6_behaviour_decoder') or {}).get('kappa'))}" for h in ("lat", "lon")]
             L += ["", f"**TACTICAL, inference seed {k}:** " + "; ".join(ln)]
+    tcm = d / "TACTICAL_CLOCKS.md"
+    if tcm.exists():
+        L += ["", tcm.read_text(encoding="utf-8")]
     L += ["", "**STRATEGIC: NOT APPLICABLE, n = 0.** The strategic layer is OFF (`--no-strategic`); its route CE is "
           "gated off in training, so the route head is untrained and is not scored."]
     s6r = ["| seed | os ADE 1–6 s [CI] | os − ha0_ext | os − refcv4b | os − refcv5-v2 s0 |", "|---|---|---|---|---|"]

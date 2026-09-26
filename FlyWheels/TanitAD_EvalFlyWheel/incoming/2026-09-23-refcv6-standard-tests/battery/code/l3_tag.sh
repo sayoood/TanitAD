@@ -7,7 +7,12 @@ BW='C:/Users/Admin/ev6_battery'
 PKG=/d/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/battery
 REL=FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/battery
 PY=/c/Users/Admin/venvs/tanitad/Scripts/python.exe
-export PYTHONPATH="C:/Users/Admin/ev6/stack;C:/Users/Admin/ev6/taniteval"
+# SPEC A5: a post-switch tag (the FINAL) is rolled on the 82c2331 tree with the run's post-switch config:
+# the caller sets L3_REPO / L3_CONFIG; a pre-switch tag keeps the defaults (its own training tree).
+L3_REPO=${L3_REPO:-C:/Users/Admin/ev6}
+L3_CONFIG=${L3_CONFIG:-D:/refcv6_eval_kit/ckpt/config.json}
+export REFCV6_REPO="$L3_REPO"
+export PYTHONPATH="$L3_REPO/stack;$L3_REPO/taniteval"
 export OMP_NUM_THREADS=8 PYTHONIOENCODING=utf-8 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1
 t=$1
 ck=$2
@@ -18,7 +23,7 @@ if [ -s $B/raw/$t/levers/eps0.json ] && grep -q '"cells"' $B/raw/$t/levers/eps0.
 fi
 [ -s $B/raw/$t/panel_s0/manifest.json ] || { echo "ZZL3NOPANEL_${t}ZZ $(date +%FT%T)" >> $WL; exit 1; }
 echo "ZZL3START_${t}ZZ $(date +%FT%T)" >> $WL
-$PY lever_eps0.py "$BW/raw/$t" --ckpt "$ck" > $B/raw/$t/levers_eps0.log 2>&1
+$PY lever_eps0.py "$BW/raw/$t" --ckpt "$ck" --config "$L3_CONFIG" > $B/raw/$t/levers_eps0.log 2>&1
 if [ -s $B/raw/$t/levers/eps0.json ] && grep -q '"cells"' $B/raw/$t/levers/eps0.json; then
   if $PY bank_tag.py "$BW/raw/$t/levers" "$PKG/raw/$t/levers" > $B/raw/$t/bank_levers_eps0.log 2>&1; then
     { echo ""; echo "## $(date +%F) battery tag $t: A4 lever L3, deterministic DDIM eps = 0 (l3_tag.sh; sanitized)"
