@@ -1,7 +1,8 @@
 """Build the refcv6 Training Watch page -- the refcv3 / refcv4b Training Watch format.
 
 Pulls the run's own artifacts from Thor (metrics.jsonl, config.json, the supervisor log, the stderr
-size, the live pids, the checkpoint stamp) and computes every number on the page from them.
+size AND content, the live pids, the checkpoint stamp) and computes every number on the page from
+them. Every stderr line must be diagnosed in FACTS["stderr_diagnosed"] or it fails the health chip.
 Nothing is typed by hand except the fixed launch facts in FACTS, each of which is banked in
 `TanitAD Research Lab/Architecture & Inference/Research/2026-09-23-refcv6-fixes/`.
 
@@ -18,6 +19,7 @@ import html as _html
 import json
 import math
 import os
+import re
 import subprocess
 import sys
 from datetime import datetime, timedelta, timezone
@@ -40,7 +42,24 @@ FACTS = {
         ("287d72e", "logging-only switch at the step-500 checkpoint", "2026-09-23 21:45"),
     ],
     "pi": ('"Full, ~4.0 days (Recommended)"', '"Keep every 10th (Recommended)"'),
+    # Every stderr line is either DIAGNOSED here -- exact text, with the diagnosis and its date --
+    # or it counts as undiagnosed and fails the health check. A new instance of a known warning
+    # carries a new timestamp, so it is undiagnosed again: a second recompile is news.
+    "stderr_diagnosed": {
+        "W0924 09:03:45.814000 3346338 torch/_inductor/utils.py:1953] [0/2] Not enough SMs to use "
+        "max_autotune_gemm mode": (
+            "benign, diagnosed 2026-09-26: Inductor's notice that Thor's 20 SMs are too few for "
+            "max-autotune GEMM, a mode this run does not use. Printed when the backbone compiled a "
+            "third time ([0/2]) at step ~6,571 (2026-09-24 09:03 Berlin): ~35 s once; median plain "
+            "pace 6.552 s/step over steps 3,000-6,500 vs 6.606 over 6,600-9,000."),
+    },
 }
+# the supervisor's traceback / OOM pattern (sup_refcv6.sh), applied here to the stderr CONTENT
+ERR_PAT = re.compile("Trace" "back|CUDA out of mem" "ory|OutOfMemory")
+# ZZ<arm>-<step>-<steps>-<tracebacks>-<launch>ZZ; <step> is -1 before the first row, and
+# <tracebacks> can span a newline ("0\n0": grep -c prints 0 AND exits 1, then `|| echo 0`)
+TOKEN_RE = re.compile(r"ZZrefcv6-r101-s0-(-?\d+)-(\d+)-([^Z]*?)-(\d+)ZZ")
+STDERR_CAP = 65536
 
 
 # ------------------------------------------------------------------ pull ----
@@ -76,9 +95,18 @@ def pull() -> None:
         'echo "K:ckpt=$(stat -c \'%s %Y\' $O/ckpt.pt 2>/dev/null)"',
         'echo "K:done=$(test -e $O/summary.json && echo 1 || echo 0)"',
         'echo "K:now=$(date -u +%s)"',
+        # the stderr CONTENT in the same breath as its size: a non-empty stderr is read and
+        # diagnosed line by line, never judged by its byte count
+        "echo ZZSTDERR-BEGIN", f"tail -c {STDERR_CAP} $O/train.stderr.log 2>/dev/null",
+        "echo", "echo ZZSTDERR-END",
     ])
+    out = _ssh(cmd)
+    head, sep, rest = out.partition("ZZSTDERR-BEGIN\n")
+    body, sep2, _ = rest.rpartition("ZZSTDERR-END")
+    if not sep or not sep2:
+        raise SystemExit("ZZWATCH-PULL-FAIL stderr section missing from the remote state")
     kv = {}
-    for line in _ssh(cmd).splitlines():
+    for line in head.splitlines():
         if line.startswith("K:") and "=" in line:
             k, _, v = line[2:].partition("=")
             kv[k.strip()] = v.strip()
@@ -87,6 +115,8 @@ def pull() -> None:
     if missing:
         raise SystemExit(f"ZZWATCH-PULL-FAIL remote state incomplete: {missing}")
     json.dump(kv, open(os.path.join(L, "remote_state.json"), "w"), indent=1)
+    with open(os.path.join(L, "stderr_tail.log"), "w", encoding="utf-8", newline="\n") as fh:
+        fh.write(body[:-1] if body.endswith("\n") else body)     # drop the separator `echo`
 
 
 # ------------------------------------------------------------------ load ----
@@ -272,14 +302,30 @@ def build() -> str:
     # ------------------------------------------------------------ status --
     sup_alive, tr_alive = st.get("sup_alive") == "1", st.get("train_alive") == "1"
     stderr_b = int(st.get("stderr_bytes", "-1"))
-    token = [t for t in sup_log.split() if t.startswith("ZZrefcv6-r101-s0-")]
+    # ⛔ the token is matched WHOLE across line breaks. Splitting the log on whitespace once read
+    # the first half of a split token ("...-50400-0" / "0-1ZZ") and reported <steps> as n_err.
+    toks = list(TOKEN_RE.finditer(sup_log))
+    token = toks[-1].group(0) if toks else None
     n_err = launch_no = None
-    if token:
-        parts = token[-1].strip("Z").split("-")
-        try:
-            n_err, launch_no = int(parts[-2]), int(parts[-1])
-        except (ValueError, IndexError):
-            pass
+    token_split = False
+    field = ""
+    if toks:
+        field = toks[-1].group(3)            # "U" = the supervisor could not READ its stderr
+        token_split = any(c.isspace() for c in field)
+        ints = re.findall(r"\d+", field)
+        n_err = int(ints[0]) if ints else None   # grep -c's own count; `|| echo 0` only APPENDS a 0
+        launch_no = int(toks[-1].group(4))
+    token_ok = n_err is not None or "ZZrefcv6-r101-s0-" not in sup_log
+    # the stderr CONTENT, read line by line: every line is diagnosed in FACTS or it fails
+    sp = os.path.join(L, "stderr_tail.log")
+    stderr_txt = open(sp, encoding="utf-8", errors="replace").read() if os.path.exists(sp) else ""
+    stderr_read_ok = stderr_b >= 0 and len(stderr_txt.encode("utf-8")) >= min(stderr_b, STDERR_CAP)
+    stderr_truncated = stderr_b > STDERR_CAP
+    stderr_lines = [ln for ln in stderr_txt.splitlines() if ln.strip()]
+    diag = FACTS["stderr_diagnosed"]
+    stderr_undiag = [ln for ln in stderr_lines if ln not in diag]
+    n_err_client = sum(1 for ln in stderr_lines if ERR_PAT.search(ln))
+    stderr_ok = stderr_read_ok and not stderr_truncated and not stderr_undiag and n_err_client == 0
     launches_total = sup_log.count("lock acquired")
     done = st.get("done") == "1"
     ckpt = st.get("ckpt", "").split()
@@ -304,8 +350,14 @@ def build() -> str:
     learning = bool(ev) and len(ev) >= 2 and e_last["eval_traj"] < e_first["eval_traj"]
     chips = (chip(tr_alive and sup_alive and not done, "training", "finished" if done else "NOT RUNNING", warn=done)
              + chip(learning or len(ev) < 2, "learning" if len(ev) >= 2 else "first eval in", "eval traj not falling", warn=True)
-             + chip(unplanned == 0 and (n_err in (0, None)), f"{unplanned} unplanned deaths · {planned} planned switch",
-                    f"{unplanned} unplanned deaths · n_err {n_err}")
+             + chip(unplanned == 0 and token_ok and (n_err in (0, None)),
+                    f"{unplanned} unplanned deaths · {planned} planned switch",
+                    f"{unplanned} unplanned deaths · tracebacks "
+                    f"{n_err if token_ok else 'NOT READ' if field.strip() == 'U' else 'UNPARSED'}")
+             + chip(stderr_ok,
+                    "stderr empty" if not stderr_lines else f"stderr: {len(stderr_lines)} line(s), all diagnosed",
+                    ("stderr NOT READ" if not stderr_read_ok else "stderr past the read cap" if stderr_truncated
+                     else f"stderr: {len(stderr_undiag)} UNDIAGNOSED line(s)"))
              + chip(readings_ok, "conflict readings recording", "conflict readings MISSING"))
 
     # ------------------------------------------------------------ charts --
@@ -437,8 +489,14 @@ def build() -> str:
               f'<tr><td>supervisor / trainer pid</td><td class="num">{esc(st.get("sup_pid"))} {"alive" if sup_alive else "GONE"} · '
               f'{esc(st.get("train_pid"))} {"alive" if tr_alive else "GONE"}</td><td class="muted">checked by pid with <code>ps -p</code></td></tr>'
               f'<tr><td>launches in the supervisor log</td><td class="num">{launches_total}</td><td class="muted">{planned} planned (the step-500 switch) · {unplanned} unplanned</td></tr>'
-              f'<tr><td>supervisor token</td><td class="num">{esc(token[-1]) if token else "—"}</td><td class="muted">step · steps · tracebacks · launch</td></tr>'
-              f'<tr><td>train.stderr.log</td><td class="num">{stderr_b:,} B</td><td class="muted">{"empty" if stderr_b == 0 else "NOT EMPTY — read it"}</td></tr>'
+              f'<tr><td>supervisor token</td><td class="num">{esc(token.replace(chr(10), " ⏎ ")) if token else "—"}</td><td class="muted">step · steps · tracebacks · launch'
+              + (f' — read as {n_err} tracebacks: the supervisor printed its zero twice across a line break '
+                 '(<code>grep -c</code> prints 0 and exits 1, then <code>|| echo 0</code>); the live supervisor '
+                 'is left untouched, the script is fixed for the next launch' if token_split else '') + '</td></tr>'
+              f'<tr><td>train.stderr.log</td><td class="num">{stderr_b:,} B · {len(stderr_lines)} line(s)</td><td class="muted">'
+              + ("empty" if not stderr_lines and stderr_read_ok else "NOT READ — the pulled content is shorter than the file"
+                 if not stderr_read_ok else f"{len(stderr_undiag)} undiagnosed · {n_err_client} traceback/OOM lines, "
+                 "counted from the content itself (below)") + '</td></tr>'
               f'<tr><td>peak device memory</td><td class="num">{mem_peak:.2f} GB</td><td class="muted"><code>cuda_max_mem_gb</code> — the only admissible probe on Thor</td></tr>'
               f'<tr><td>frames computed / slots</td><td class="num">{fmt(comp,0)} / {fmt(slots,0)} ({fmt(dd_frac*100 if dd_frac else None,1)} %)</td><td class="muted">each distinct frame once (sec. 10); a window needs 10 of 24</td></tr>'
               f'<tr><td>conflict readings</td><td class="num">{len(cd)} · last at step {cd_last["step"] if cd_last else "—"}</td><td class="muted">every 10th step since 500; {len(cd_after)} since the switch</td></tr>'
@@ -449,6 +507,10 @@ def build() -> str:
               f'<tr><td>checkpoint</td><td class="num">{fmt(ckpt_gb,2)} GB · {fmt(ckpt_age_min,0)} min old</td><td class="muted">overwritten every 500 steps</td></tr>'
               f'<tr><td>learning rate (now)</td><td class="num">{(last.get("lr") or 0):.3e}</td><td class="muted">{"in the 2,000-step warmup" if step_now < 2000 else "cosine decay to 50,400"}</td></tr>'
               '</table></div>')
+    stderr_tbl = ('<h3>train.stderr.log, line by line</h3><div style="overflow-x:auto"><table><tr><th>line</th><th>diagnosis</th></tr>'
+                  + "".join(f'<tr><td><code>{esc(ln)}</code></td><td>{esc(diag[ln]) if ln in diag else "<b>UNDIAGNOSED</b> — read it on Thor"}</td></tr>'
+                            for ln in stderr_lines[-40:])
+                  + '</table></div>') if stderr_lines else ""
 
     fam = ('<div style="overflow-x:auto"><table><tr><th>family</th><th>what the in-run eval shows (T0)</th><th>the decision-grade test</th></tr>'
            f'<tr><td>LONGITUDINAL</td><td>2 s goal error {fmt(e_last.get("eval_goal2s_err_m") if e_last else None,2)} m (along- and cross-track mixed)</td><td>speed accuracy, headway, TTC — EvalFlyWheel battery, requested 2026-09-23</td></tr>'
@@ -466,7 +528,8 @@ def build() -> str:
                     f"over {len(ev)} eval(s) from step {e_first['step']:,} to {e_last['step']:,}.</li>")
     says.append(f"<li><b>Pace.</b> {pace:.2f} s/step marginal over the last {k} logged rows ⇒ finish ≈ {finish:%a %d %b %H:%M} Berlin.</li>")
     says.append(f"<li><b>Stability.</b> {len(segs)} segment(s): {planned} planned switch, {unplanned} unplanned; "
-                f"stderr {stderr_b:,} B; peak {mem_peak:.2f} GB.</li>")
+                f"stderr {stderr_b:,} B in {len(stderr_lines)} line(s), {len(stderr_undiag)} undiagnosed, "
+                f"{n_err_client} traceback/OOM; peak {mem_peak:.2f} GB.</li>")
     if cd_after:
         cvals = [r["cd_cos"] for r in cd_after if r.get("cd_cos") is not None]
         neg = sum(1 for v in cvals if v < 0)
@@ -523,6 +586,7 @@ def build() -> str:
 {seg_table}
 <h3>Health</h3>
 {health}
+{stderr_tbl}
 
 <h2>What the evals say</h2>
 <p>All {len(ev)} held-out evals, unedited — the same {ev_windows[0] if ev_windows else '—'} windows each time.</p>
@@ -570,6 +634,9 @@ built by <code>taniteval/tools/training_watch/build_watch_refcv6.py</code>, no h
                    k2: e_last.get(k2) for k2 in ("step", "eval_loss", "eval_traj", "eval_goal2s_err_m",
                                                  "eval_anchor_acc", "eval_map_iou_drivable")},
                "segments": len(segs), "unplanned": unplanned, "n_err": n_err, "stderr_bytes": stderr_b,
+               "n_err_client": n_err_client, "token_ok": token_ok, "token_split": token_split,
+               "stderr_lines": len(stderr_lines), "stderr_undiagnosed": len(stderr_undiag),
+               "stderr_read_ok": stderr_read_ok and not stderr_truncated,
                "sup_alive": sup_alive, "train_alive": tr_alive, "done": done,
                "cd_last_step": cd_last and cd_last["step"], "cd_cos_last": cd_last and cd_last.get("cd_cos"),
                "readings_ok": readings_ok, "mem_peak_gb": round(mem_peak, 3)}

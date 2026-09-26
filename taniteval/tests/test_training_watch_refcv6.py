@@ -8,7 +8,12 @@ network (`build()` only, never `pull()`) on a synthetic run directory:
 * an UNPLANNED relaunch (an extra elapsed_s reset beyond the one planned switch) flips the
   summary's `unplanned` to 1 and the chip to "unplanned deaths";
 * conflict readings that stopped arriving flip `readings_ok` to False;
-* a dead trainer pid flips `train_alive` and the chip to "NOT RUNNING".
+* a dead trainer pid flips `train_alive` and the chip to "NOT RUNNING";
+* a supervisor token SPLIT over two lines (its `grep -c ... || echo 0` printing 0 twice, MEASURED
+  2026-09-26 on the live run from step 6,571) reads as 0 tracebacks, never as the step count;
+* stderr is judged by its CONTENT: the one diagnosed line passes, an undiagnosed line or a
+  traceback fails, a second instance of the diagnosed warning is undiagnosed again, and a stderr
+  that has bytes on Thor but was not read fails.
 The expected values are literals, not expressions over the builder.
 """
 from __future__ import annotations
@@ -32,7 +37,13 @@ def _load(monkeypatch, run_dir):
     return mod
 
 
-def _run_dir(tmp_path, *, relaunch=False, stale_readings=False, trainer_alive=True):
+# the live run's one stderr line, byte for byte (112 B with its newline)
+DIAGNOSED = ("W0924 09:03:45.814000 3346338 torch/_inductor/utils.py:1953] [0/2] Not enough SMs to use "
+             "max_autotune_gemm mode")
+
+
+def _run_dir(tmp_path, *, relaunch=False, stale_readings=False, trainer_alive=True,
+             split_token=False, stderr=None, stderr_bytes=None):
     d = tmp_path / "watch"
     d.mkdir()
     rows = [{"step": 1, "conflict_controls": {"ok": True}}]
@@ -65,10 +76,14 @@ def _run_dir(tmp_path, *, relaunch=False, stale_readings=False, trainer_alive=Tr
     n_launch = 3 if relaunch else 2
     (d / "sup.log").write_text("".join(
         f"[sup] lock acquired (fd 200); supervisor pid {100 + i}\n" for i in range(n_launch))
-        + "ZZrefcv6-r101-s0-1000-50400-0-1ZZ\n", encoding="utf-8")
+        + ("ZZrefcv6-r101-s0-1000-50400-0\n0-1ZZ\n" if split_token
+           else "ZZrefcv6-r101-s0-1000-50400-0-1ZZ\n"), encoding="utf-8")
+    if stderr is not None:
+        (d / "stderr_tail.log").write_bytes(stderr.encode("utf-8"))
+    sb = stderr_bytes if stderr_bytes is not None else len((stderr or "").encode("utf-8"))
     (d / "remote_state.json").write_text(json.dumps({
         "sup_pid": "101", "train_pid": "202", "sup_alive": "1",
-        "train_alive": "1" if trainer_alive else "0", "stderr_bytes": "0",
+        "train_alive": "1" if trainer_alive else "0", "stderr_bytes": str(sb),
         "ckpt": "1170622369 1790000000", "done": "0", "now": "1790000600"}), encoding="utf-8")
     import shutil
     shutil.copy(BUILDER.parent / "watch.css", d / "watch.css")
@@ -109,3 +124,55 @@ def test_a_dead_trainer_is_reported_NOT_RUNNING(tmp_path, monkeypatch):
     page, summary = mod.build()
     assert summary["train_alive"] is False
     assert "NOT RUNNING" in page
+
+
+def test_a_SPLIT_supervisor_token_reads_zero_tracebacks_not_the_step_count(tmp_path, monkeypatch):
+    mod = _load(monkeypatch, _run_dir(tmp_path, split_token=True))
+    page, summary = mod.build()
+    assert summary["n_err"] == 0 and summary["token_split"] is True and summary["token_ok"] is True
+    assert "0 unplanned deaths · 1 planned switch" in page
+
+
+def test_the_DIAGNOSED_stderr_line_passes(tmp_path, monkeypatch):
+    mod = _load(monkeypatch, _run_dir(tmp_path, stderr=DIAGNOSED + "\n"))
+    page, summary = mod.build()
+    assert summary["stderr_bytes"] == 112 and summary["stderr_lines"] == 1
+    assert summary["stderr_undiagnosed"] == 0 and summary["n_err_client"] == 0
+    assert summary["stderr_read_ok"] is True
+    assert "stderr: 1 line(s), all diagnosed" in page
+
+
+def test_an_UNDIAGNOSED_line_fails_and_a_traceback_is_counted_from_the_content(tmp_path, monkeypatch):
+    err = DIAGNOSED + "\nTrace" "back (most recent call last):\n  File \"x.py\", line 1\nRuntimeError: boom\n"
+    mod = _load(monkeypatch, _run_dir(tmp_path, stderr=err))
+    page, summary = mod.build()
+    assert summary["stderr_lines"] == 4 and summary["stderr_undiagnosed"] == 3
+    assert summary["n_err_client"] == 1
+    assert "stderr: 3 UNDIAGNOSED line(s)" in page and "<b>UNDIAGNOSED</b>" in page
+
+
+def test_a_SECOND_instance_of_the_diagnosed_warning_is_undiagnosed_again(tmp_path, monkeypatch):
+    again = ("W0926 11:00:00.000000 3346338 torch/_inductor/utils.py:1953] [0/3] Not enough SMs to use "
+             "max_autotune_gemm mode")
+    mod = _load(monkeypatch, _run_dir(tmp_path, stderr=DIAGNOSED + "\n" + again + "\n"))
+    page, summary = mod.build()
+    assert summary["stderr_lines"] == 2 and summary["stderr_undiagnosed"] == 1
+    assert "stderr: 1 UNDIAGNOSED line(s)" in page
+
+
+def test_a_stderr_that_was_NOT_READ_fails(tmp_path, monkeypatch):
+    # 112 B on Thor, nothing pulled: never read that as a clean stderr
+    mod = _load(monkeypatch, _run_dir(tmp_path, stderr="", stderr_bytes=112))
+    page, summary = mod.build()
+    assert summary["stderr_read_ok"] is False and "stderr NOT READ" in page
+
+
+def test_an_UNREAD_supervisor_count_fails(tmp_path, monkeypatch):
+    # the fixed supervisor prints U when grep could not read its log (exit 2)
+    d = _run_dir(tmp_path)
+    (d / "sup.log").write_text((d / "sup.log").read_text(encoding="utf-8").replace(
+        "ZZrefcv6-r101-s0-1000-50400-0-1ZZ", "ZZrefcv6-r101-s0-1000-50400-U-1ZZ"), encoding="utf-8")
+    mod = _load(monkeypatch, d)
+    page, summary = mod.build()
+    assert summary["n_err"] is None and summary["token_ok"] is False
+    assert "tracebacks NOT READ" in page

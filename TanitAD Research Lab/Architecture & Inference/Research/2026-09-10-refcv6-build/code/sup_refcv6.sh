@@ -213,7 +213,14 @@ while [ "$launch" -lt "$MAX_RELAUNCH" ]; do
       # ⛔ the searched words are BUILT here, never written literally, so this
       #    command line cannot match itself in an echoing PTY.
       pat="$(printf 'Trace''back|CUDA out of mem''ory|OutOfMemory')"
-      n_err="$(grep -Ec "$pat" "$ERRLOG" 2>/dev/null || echo 0)"
+      # ⛔ NOT `|| echo 0`: grep -c prints its count AND exits 1 when it is zero, so that
+      #    printed a SECOND 0 and split this token over two lines -- MEASURED 2026-09-26 on
+      #    refcv6-r101-s0 from step 6,571, the first time its stderr was non-empty; the watch
+      #    then read <steps> as the traceback count. Exit 2 means the log could not be READ:
+      #    that is U (unread), never zero errors.
+      rc=0
+      n_err="$(grep -Ec "$pat" "$ERRLOG" 2>/dev/null)" || rc=$?
+      [ "$rc" -le 1 ] || n_err=U
     fi
     echo "ZZ${ARM}-${cur}-${STEPS}-${n_err}-${launch}ZZ" | tee -a "$SUPLOG" > /dev/null
     sleep "$POLL_S" 200>&-   # ⛔ rule 1: the sleep gets it too (this exact child

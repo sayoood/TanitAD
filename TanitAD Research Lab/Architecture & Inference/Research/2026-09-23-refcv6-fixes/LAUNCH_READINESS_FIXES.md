@@ -528,3 +528,84 @@ from `ckpt.pt` with the data position. The switch step and the new pids are reco
 **Monitoring:** two session crons on the dev box — a progress check at 08/12/16/20:13 Berlin and a
 night check at 00/04:13 — each read both pids, the last training row, the supervisor's opaque
 progress token and the latest in-run eval, and stay SILENT on a healthy run.
+
+## 12. Two health flags at step 32,050, both false — and the two defects behind them (2026-09-26)
+
+**What tripped.** The 08:13 Berlin watch refresh read the run at **step 32,050 / 50,400** with both
+pids alive, 0 unplanned relaunches and the conflict readings current, but two of its health
+criteria failed: `stderr_bytes` **112** (it had been 0) and `n_err` **50,400**. Neither was a
+fault in the run. Each was a defect in how the run was being read, and one of them had been hiding
+the stderr line for two days.
+
+**The stderr line (MEASURED, read on Thor).** `train.stderr.log` is one line, 112 B, written by
+the trainer's pid 3346338 at 2026-09-24 09:03:45 (Thor's clock is Berlin time: `date -u` read
+06:54:53Z while `metrics.jsonl` showed an mtime of 08:54:12):
+
+```
+W0924 09:03:45.814000 3346338 torch/_inductor/utils.py:1953] [0/2] Not enough SMs to use max_autotune_gemm mode
+```
+
+It is Inductor's notice that Thor's 20 SMs are too few for max-autotune GEMM, a mode this run does
+not use. `[0/2]` is frame 0's **third** compile of the backbone: the first split supervisor token
+(below) sits at **step 6,571**, and the 50-step interval ending at 6,600 read **7.27 s/step**
+against ~6.56 around it, so the recompile cost roughly **35 s, once**. The median plain pace (50-step
+intervals with no in-run eval, from the run's own `elapsed_s`) moved from **6.552 s/step** over
+3,000–6,500 (n = 63) to **6.606** over 6,600–9,000 (n = 44), a step of about +0.8 %. The slow drift
+around it began before the recompile: 6.516 over 500–3,000 (n = 45), then 6.610 / 6.617 / 6.625 /
+6.630 / 6.654 / 6.654 over the following windows up to step 32,100 (n = 54–72 each), +2.1 % in all.
+Nothing here is worth a restart.
+
+**The error count of 50,400.** `sup_refcv6.sh` counts tracebacks only once stderr is non-empty (a
+`[ -s ]` guard), with `n_err="$(grep -Ec "$pat" "$ERRLOG" 2>/dev/null || echo 0)"`. On zero matches
+`grep -c` prints `0` **and exits 1**, so `|| echo 0` prints a second `0`. From step 6,571 onward every
+token was split over two lines (`…-50400-0` then `0-1ZZ`): at the time of reading the log held
+**574 split tokens and 149 whole ones**. The watch parser split the log on whitespace and took the
+last two fields of the first half, so it read the **step total** as the traceback count. The real
+count is **0**, twice over: the supervisor's own grep (the first `0`) and, independently, the stderr
+content read line by line (one line, no traceback or OOM). The same line hid a second defect: when
+grep cannot read the log (exit 2) it prints nothing, so `|| echo 0` reported an unread log as
+**zero errors**.
+
+**Why it went unseen for two days.** No watch refresh ran between the step-1,150 build
+(2026-09-23 evening) and this one. The session did not run in that window; the last messages
+before the gap were both EvalFlyWheel agents stopping on the weekly usage limit. The first refresh
+afterwards caught both flags.
+
+**The fixes (this commit):**
+
+1. `taniteval/tools/training_watch/build_watch_refcv6.py` matches the token **whole, across line
+   breaks** (`TOKEN_RE`). It takes grep's own count, the first integer, since `|| echo 0` only
+   appends one, and flags a split token on the page. It reads the stderr **content** in the same
+   ssh call as its size. **Every line must be diagnosed by its exact text** in
+   `FACTS["stderr_diagnosed"]`, with a dated diagnosis, or it counts as undiagnosed and fails a
+   new stderr chip. A second instance of a known warning carries a new timestamp, so it is
+   undiagnosed again. A pulled content shorter than the file fails as NOT READ, and tracebacks
+   are also counted from the content itself (`n_err_client`). A `U` from the supervisor reads as
+   NOT READ, never as zero.
+2. `…/2026-09-10-refcv6-build/code/sup_refcv6.sh` is fixed for the **next** launch:
+   `n_err="$(grep …)" || rc=$?`, and `U` when grep exits 2. The **live supervisor is not edited**,
+   because bash reads a running script by byte offset. It keeps emitting split tokens, which the
+   parser now reads correctly.
+3. The two session crons now judge health on `stderr_undiagnosed == 0` and `stderr_read_ok`,
+   `n_err == 0` **and** `n_err_client == 0`, and `token_ok`, **instead of** `stderr_bytes == 0`.
+   That criterion would stay red for the rest of the run over one diagnosed line. A new stderr line
+   still fails until it has been read and diagnosed.
+
+**Proofs.** On a clean tree (git archive of `fe5872f`'s `taniteval/` plus the two changed files)
+`test_training_watch_refcv6.py` gives **10 passed**. The **mutation proof is 9/9 RED**, restored,
+with a green final run (`raw/mutation_proof_training_watch_refcv6_stderr.json`). The arms are the
+three from commit I and six new ones. One of them restores the historical whitespace-split parser
+**verbatim**, which reads the split token as 50,400 again. The others: the content ignored, the
+read check dropped, a diagnosis matched by message instead of by exact line (a recurrence then
+passes silently), the client count dropped, and an unread count read as zero. The supervisor fix
+is proven on the script's **real** block, cut out by its anchors, over four stderr logs, with the
+expected tokens written as literals. The old block splits the token on the live run's benign line
+and reports an unreadable log as `0`; the fixed block emits one line and `U`. That is **8/8 cases**,
+in `raw/sup_token_proof.json`, via `code/run_block.sh` and `code/sup_token_proof.py`.
+
+**The in-run evals, for the record (T0, 128 fixed windows, never a driving claim):** at step 32,000
+eval traj **0.586** (1.219 at step 1,000), 2 s goal error **3.59 m** (5.21), anchor accuracy
+**0.5625** (0.055; chance 1/117 = 0.0085), map drivable IoU **0.677** (0.583). The all-in pace over the last
+500 steps, one eval included, is **6.78 s/step**. Each in-run eval adds about 64 s: the 50-step
+intervals that follow one read ~7.93–7.98 s/step against ~6.65. The finish is therefore
+**≈ 2026-09-27 19:30 Berlin**, not the ~17:50 projected at step 1,150 from a window with no eval in it.
