@@ -162,3 +162,17 @@ Every refcv7 evaluation reports, on the same windows:
    - **G-DVB logging:** the eval metric list includes per-class 10 cm IoU for all 8 classes × 3 x-bands (0–20 / 20–40 / 40–60 m) plus per-class loss shares, and the Training Watch shows them. Drivable-only logging FAILS.
    - **G-MAP-OVERFIT:** the 10 cm head, trained on a small fixed set of real TRAIN frames, reaches a literal per-class IoU threshold on every class present. The protocol and thresholds are pre-registered by the audit in `raw/PREREG_G_MAP_OVERFIT.md` BEFORE any run. Its PASS record, bound to the launch commit, is a launch prerequisite.
 4. **The per-class signal audit** traces the refcv6 path and the NEW-2 design end to end. Its evidence gates any further change to the map head: the loss, the weights, the lift resolution and the auxiliary head.
+
+## 9. Amendment A4 (2026-09-26 ~23:00 Berlin): NEW-2 corrections from the map-signal audit, made before any NEW-2 number exists
+
+Source: `TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-map-signal-audit/` (interim), reviewed and accepted by the Master Mind. Everything below is ANALYTIC or from source; no NEW-2 model output has been read.
+
+1. **Decision rule: the argmax is prior-corrected.** Under median-frequency class weights w, the softmax learns q ∝ w·P(c|x). The raw argmax therefore calls a rare class at a small posterior; for lane lines that is about 5 %.
+   - NEW-2 declares `decision_rule` (default `prior_corrected`: argmax(z − log w), with the same frozen weights). It logs both rules and scores the bars (BAR-M7-1..4) and G-MAP-OVERFIT on the corrected rule.
+   - ANALYTIC per-class ceilings at 0–20 m, raw → corrected: lane 0.51 → 0.91, crosswalk 0.56 → 0.95, arrow 0.38 → 0.89, edge 0.21 → 0.73, hatched 0.48 → 0.92, drivable 0.91 → 0.99.
+2. **G-MAP-OVERFIT's must-fail arm is `s8_zeros`** (the stride-8 features zeroed). `s8_detached` stays informative only, because ImageNet stride-8 features can still memorise 16 frames, so it is not a valid must-fail arm.
+   - The protocol is `raw/PREREG_G_MAP_OVERFIT.md` + `raw/gmo_spec.json`: 16 TRAIN frames from 4 clips (frameset md5 4eafa03c), 1,000 steps, batch 4, AdamW 1e-3, seed 0.
+   - Pass, on pooled IoU at 0–20 m: big classes ≥ 0.85; lane, crosswalk, arrow, edge and hatched ≥ 0.50; ≥ 1,000 scored cells per class, else FAIL.
+   - `lane_w0` must fail on lane; `s8_zeros` must fail on all five thin classes; controls C1–C3 must read their known values.
+3. **Log names.** Under `--map-hires on`, the 0.5 m auxiliary's keys are `aux05_*`, so no report or Watch can label them "the map". The legacy `map*` names remain only with `--map-hires off`.
+4. **Gradient-reach logging must be live** (D-REFCV6-GRAD-REACH-DEAD). It is fixed trainer-wide in declared-vs-built batch 2. G-LIVE asserts the `ga_*` keys for every trainable group, and its regression arm, the old off-by-one, gives zero keys and must FAIL.
