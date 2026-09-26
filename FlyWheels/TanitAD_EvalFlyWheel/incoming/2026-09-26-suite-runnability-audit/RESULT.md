@@ -701,3 +701,29 @@ never run here.** Today's floors reproducing PARA-Drive to 0.6–4.4 % vouch for
 ⛔ **Not fixed by installing OpenCV:** `CLAUDE.md` records `uv pip install` silently dragging torch forward to
 a wheel the driver cannot run. The safe fix is a **banked reference raster** produced once by OpenCV
 elsewhere and compared as a literal — a named work item.
+
+### §23a The OpenCV reference — exact spec, AWAITING THE PI's download approval
+
+Master Mind's route: a SEPARATE throwaway env holding only OpenCV + numpy, so no dependency closure can reach
+torch. Refined here, because the obvious version is the WRONG reference:
+* ⛔ **Not the latest OpenCV.** `nuscenes_planning.py` documents `cv_fill_poly` as a PORT of **OpenCV 4.5.4**
+  `drawing.cpp` (LINE_8, shift 0), pinned `opencv/opencv@4.5.4`. Latest on PyPI is **5.0.0.93**; latest 4.x is
+  4.14.0.94. A reference raster is only valid from the routine the port claims to reproduce.
+* 4.5.4 wheels exist only for **cp36–cp310**, built against **numpy 1.x** ⇒ they cannot go in the 3.13 env.
+  This box already has uv **CPython 3.9.25** (the NavSim runtime's interpreter); a NEW venv from it modifies
+  nothing.
+
+**Proposed download (PyPI, `files.pythonhosted.org`), sizes from PyPI metadata — nothing fetched yet:**
+
+| file | bytes | sha256 (prefix) |
+|---|---:|---|
+| `opencv_python_headless-4.5.4.60-cp39-cp39-win_amd64.whl` | 35,024,208 | per PyPI metadata |
+| `numpy-1.26.4-cp39-cp39-win_amd64.whl` | 15,814,633 | `3373d5d70a5fe74a…` |
+| **total** | **50,838,841** | |
+
+⭐ **Dependency closure VERIFIED from `requires_dist`**, not assumed: opencv-python-headless → numpy only;
+numpy → nothing. **Torch is unreachable.**
+**Where:** `C:/Users/Admin/venvs/opencv-ref-454/` (never `%TEMP%`, never the tanitad venv).
+**What it does, once:** render a fixed set of polygons (incl. degenerate, concave, off-grid and
+self-touching cases) with real `cv2.fillPoly` 4.5.4, bank the rasters as literals (`.npz` + sha256); a test in
+the MAIN venv then compares the port against them, with a mutation arm. The throwaway env can be deleted after.
