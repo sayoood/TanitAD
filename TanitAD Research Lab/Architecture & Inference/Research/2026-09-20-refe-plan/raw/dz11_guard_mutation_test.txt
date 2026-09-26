@@ -1,0 +1,61 @@
+DZ-11 preflight guard -- MUTATION TEST, RE-RUN 2026-09-20 AFTER THE GUARD WAS CHANGED.
+Runner: code/dz11_guard_mutation.sh (scratch fixture, no real data touched). 7 arms, 7 pass.
+
+WHY THE GUARD CHANGED, AND WHY IT IS NOT A WEAKENING
+  The preflight required BOTH trainval AND test unconditionally, whatever tasks were asked for.
+  MEASURED 2026-09-20: that made the four **test14** tasks -- the rows DriveZero's headline table
+  reports, and the ones that read the TEST split ONLY -- exit 3 while the VAL split was still
+  downloading. Val is NETWORK-bound at ~0.7-1.6 MB/s (measured against 11.6 MB/s local disk and a
+  1.62 MB/s MEMORY-ONLY S3 range GET, so the link is the constraint, not the disk), i.e. ~40 h.
+  ⇒ the coupling would have stalled the headline reproduction for 40 h for no reason, and it would
+  have surfaced the moment the arrange fired -- overnight -- rather than now.
+  ⭐ The guard now checks the split each REQUESTED task actually reads. Every split that IS read is
+  still checked by DB count AND size, which is what stops a MINI directory being scored as val14.
+  Arms 1-5 below prove the refusals still fire; arm 6 proves the new behaviour; arm 7 proves the
+  both-splits path is untouched.
+
+ARMS (exit codes read from $? DIRECTLY -- never through a pipe, which reports tail's status)
+1 test split is MINI-sized (64 DBs)                   refuse   exit 3  "only 64 DBs -- is this the MINI split?"
+2 test split has 300 DBs but 0 GB (partial extract)   refuse   exit 3  "only 0 GB -- extraction incomplete or MINI"
+3 inherited DRIVERL_EVAL_DB_LINK_ROOT                 refuse   exit 4  "REFUSING an inherited ..."
+4 val14 asked for while trainval is ABSENT            refuse   exit 3  "trainval: ... does not exist"
+5 task name names neither split                       refuse   exit 3  "names neither a val14 nor a test14 task"
+6 CONTROL test14 only, trainval ABSENT                PROCEED  reached HEADLINE_RUN   <- THE NEW BEHAVIOUR
+7 CONTROL both asked for, both present                PROCEED  reached HEADLINE_RUN
+
+PASS 7   FAIL 0   GUARD_MUTATION_OK
+
+TEST DESIGN NOTES, kept from the first run and extended
+* Case 3 was initially UNREACHABLE -- the size guard fired first, so the branch it was meant to
+  exercise never ran and the test would have been green without proving anything. Thresholds are
+  env-overridable ONLY to reach it, and any override prints
+  "*** THIS IS A TEST MODE. Any score produced under it is INADMISSIBLE."
+* Cases 6 and 7 are the discriminating controls. Without them, a guard that refuses EVERYTHING
+  passes 1-5 and is green forever in the wrong direction. ⭐ Arm 6 is also the only arm that would
+  have caught the coupling being fixed here: it is exactly the configuration the headline run will
+  be launched in tonight.
+* A PASS control reports rc 2, not 0 -- the preflight is cleared and the REAL eval then fails on a
+  fixture of empty files. The control is the HEADLINE_RUN marker, never the exit code.
+
+--------------------------------------------------------------------------------------------
+SUPERSEDED FIRST RUN (4 arms), kept for the record:
+DZ-11 preflight guard -- MUTATION TEST, 2026-09-20. Run with a scratch fixture, no real data touched.
+The guard exists because their runner silently overrides the DB dir:
+  run_driverl_nuplan_eval.sh:197  link="${DRIVERL_EVAL_DB_LINK_ROOT:-}/driverl_${FILTER#driverl_}"
+  run_driverl_nuplan_eval.sh:198  [[ -n "$DRIVERL_EVAL_DB_LINK_ROOT" && -e "$link" ]] && DB="$link"
+and Stage 0 left D:/.../data/nuplan/dblinks/driverl_val14 holding 64 *MINI* DBs. Inheriting that
+variable would make val14_nr/val14_r report a "val14" score computed on mini logs, WITHOUT erroring.
+
+case                                              expected  observed
+1 trainval = 64 DBs (mini-sized)                  refuse    exit 3  "only 64 DBs -- is this the MINI split?"
+2 trainval = 300 DBs but 0 GB (partial extract)   refuse    exit 3  "only 0 GB -- extraction incomplete or MINI"
+3 DRIVERL_EVAL_DB_LINK_ROOT inherited             refuse    exit 4  "REFUSING an inherited ..."
+4 CONTROL: same fixture, no DB_LINK_ROOT          PROCEED   reached HEADLINE_RUN
+
+Notes on test design:
+* Case 3 was initially UNREACHABLE -- the size guard fired first, so the branch it was meant to
+  exercise never ran and the test would have been green without proving anything. Thresholds were
+  made env-overridable ONLY to reach it, and any override prints
+  "*** THIS IS A TEST MODE. Any score produced under it is INADMISSIBLE."
+* Case 4 is the discriminating control. Without it, a guard that refuses EVERYTHING passes cases 1-3
+  and is green forever in the wrong direction.

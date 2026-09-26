@@ -1,0 +1,32 @@
+STATED BY THE PAPER (the only three param counts in 32 pages)
+  DriveRL teacher (privileged, structured)       5.70 M
+  DriveZero student, FULL                      338.46 M
+  DriveZero student, TRAINABLE                  18.58 M  (5.49 %)
+
+DERIVED by subtraction
+  FROZEN part of the student                   319.88 M
+  => this is DriveVFM ViT-L plus any frozen glue; the paper does not split it further
+
+STANDARD ViT LADDER (computed here, patch 16 @ 512x512, 5 extra tokens = 4 summary + cls)
+  ViT-S   depth 12 width  384      21.98 M
+  ViT-B   depth 12 width  768      86.44 M
+  ViT-L   depth 24 width 1024     304.15 M
+
+CONSISTENCY CHECK
+  frozen student part        319.88 M
+  standard ViT-L             304.15 M
+  RESIDUAL (frozen glue)      15.73 M   <- NOT explained by the paper
+
+TRAINABLE BUDGET, DERIVED
+  Q/V LoRA rank 32 on 24 blocks of width 1024       3.15 M
+  stated trainable                               18.58 M
+  => heads (2 decoders, registers, queries)      15.43 M
+
+WHAT THE PAPER NEVER STATES ABOUT THE ENCODER
+  - DriveVFM parameter count (any of S/B/L)
+  - patch size  -- no ViT-L/14 or /16 notation appears anywhere
+  - width / depth / heads of DriveVFM
+  - GPU count or GPU-hours for DriveVFM pretraining
+  - the mixture RATIOS across the six data sources ('identical mixture ratios' is asserted, never given)
+  - per-source image counts, or any figure in hours
+  - student inference latency or FLOPs

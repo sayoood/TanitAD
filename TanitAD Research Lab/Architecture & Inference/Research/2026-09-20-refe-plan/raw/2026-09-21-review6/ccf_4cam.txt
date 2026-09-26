@@ -1,0 +1,19 @@
+== what each component believes ==
+  model.REFeConfig      ego_dim 7   n_cameras 4   cameras ('CAM_F0', 'CAM_L0', 'CAM_R0', 'CAM_B0')
+  planner.py  (AST)     ego literal 7
+  train.py    (AST)     CAMERAS ('CAM_F0', 'CAM_L0', 'CAM_R0', 'CAM_B0')
+  build_targets (AST)   CAMERAS ('CAM_F0', 'CAM_L0', 'CAM_R0', 'CAM_B0')
+  target bank           ego 7-D   images 4   cameras ['CAM_F0', 'CAM_L0', 'CAM_R0', 'CAM_B0']   goal 4-D
+                        <- D:/Projects/TanitAD/data/refe_targets_4cam\targets_rank0.jsonl
+
+  [PASS] 1 bank ego width == model ego_dim
+  [PASS] 2 bank camera list == model cameras, in order
+  [PASS] 3 bank image count == model n_cameras
+  [PASS] 4 trainer CAMERAS == model cameras
+  [PASS] 4b builder CAMERAS == model cameras
+  [PASS] 5 planner ego literal == model ego_dim
+  [PASS] 6 bank goal width >= model goal input
+  [PASS] 7 CONTROL a real bank row was actually read
+
+CONSUMERS_CONFORM
+CCF_4CAM_EXIT=0

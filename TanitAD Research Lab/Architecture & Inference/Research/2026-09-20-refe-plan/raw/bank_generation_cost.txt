@@ -1,0 +1,38 @@
+WHAT A REAL REFe TARGET BANK COSTS TO GENERATE. MEASURED 2026-09-20.
+
+The rollouts, not the training, are the expensive half -- and this was not in the first handoff.
+
+  MEASURED teacher rate, dev box, sequential worker: 114 s/scenario (15m12s for 8 scenarios).
+
+  num_scenarios_per_type x 14 types      scenarios   x2 ranks   SEQUENTIAL hours
+     10                                      140         280          8.9
+     20  (the yaml's default)                280         560         17.7
+     50                                      700       1,400         44.3
+    100                                    1,400       2,800         88.7
+
+!! THIS IS SIMULATION, NOT TRAINING. It is mostly CPU, so a pod's A40 does NOT make it ~3x faster
+   the way it does for REFe's forward/backward. Do not assume the pod absorbs this cost.
+
+THE LEVER THAT DOES APPLY: their runner exposes DRIVERL_EVAL_WORKER_MODE=ray_local, which
+parallelises simulations across cores. With OMP_NUM_THREADS set (the documented TanitAD trap --
+torch spawns ~113 threads per process and concurrent arms otherwise sit at 0-6% GPU looking hung),
+a 4-8x speedup is plausible, taking the 20-per-type bank from ~17.7 h to roughly 2-4 h.
+  => MEASURE that speedup before relying on it.
+
+!! AND THE PARALLELISM CEILING IS RAM, NOT CORES -- MEASURED 2026-09-20 16:3x:
+      logical processors : 24
+      total RAM          : 31.8 GB
+      FREE RAM           : 6.7 GB   (79 % used; top holders are ANOTHER AGENT's python at 2.42 GB,
+                                     Obsidian 1.8 GB, and three more pythons)
+   A nuPlan simulation worker costs roughly 1-2 GB, so free RAM admits about THREE workers, not the
+   eight the core count suggests. The programme has already paid for this mistake once: a job was
+   read as 'PCIe-bound' at 41 % GPU when the HOST was thrashing, and the rule banked from it is
+   PRICE AGAINST FREE RAM, NOT TOTAL.
+   => realistic speedup here is ~3x, so the 20-per-type bank is ~6 h rather than ~2-4 h.
+   => and that budget moves when other agents' jobs start or stop. Re-check free RAM immediately
+      before launching, not once.
+
+IMBALANCE WARNING: `changing_lane` has only 22 tagged instances in mini and
+`following_lane_with_lead` 56, against 39,329 for high_magnitude_speed. Any cap above ~20 produces
+a bank whose rare types are exhausted while common ones saturate. Report the REALISED per-type
+counts with any result; do not quote the cap as though it were met.

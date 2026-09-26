@@ -1,0 +1,23 @@
+device: NVIDIA GeForce RTX 4060  8.00 GiB
+
+  backbone   cams  batch    s/step   s/sample  peak GiB  note
+  vits16        1      1     0.127      0.127      0.66  ok
+  vits16        2      1     0.243      0.243      1.06  ok
+  vits16        4      1     0.492      0.492      1.93  ok
+  vitb16        1      1     0.279      0.279      1.33  ok
+  vitb16        2      1     0.554      0.554      2.16  ok
+  vitb16        4      1     1.139      1.139      3.69  ok
+  vitl16        1      1     0.788      0.788      3.44  ok
+  vitl16        2      1     1.630      1.630      5.52  ok
+  vitl16        4      1    27.074     27.074      9.49  TOO CLOSE TO THE CARD -- not quotable
+
+== the question: is the step time LINEAR in the camera count? ==
+  backbone    t(2)/t(1)   t(4)/t(1)   (analytic prediction: 2.00 / 4.00)
+  vits16          1.914       3.874
+  vitb16          1.987       4.087
+  vitl16          2.067          --
+
+  MEASURED 4-camera multipliers: vits16 3.874, vitb16 4.087
+  range 3.874-4.087 against the analytic 4.00 (CONSISTENT)
+
+[exited with code 0]

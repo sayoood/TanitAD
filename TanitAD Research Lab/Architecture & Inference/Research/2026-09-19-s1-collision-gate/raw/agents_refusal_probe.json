@@ -1,0 +1,205 @@
+{
+ "_what": "do the `agents` refusals differ from KEPT \u2014 split into two questions",
+ "_evidence_class": "MEASURED (ours)",
+ "_no_model_pass": true,
+ "dead_episodes": [
+  21,
+  37
+ ],
+ "n_agents_total": 633,
+ "n_agents_in_dead_episodes": 264,
+ "n_agents_scattered": 369,
+ "Q1_dead_clips": {
+  "dead": {
+   "group": "dead episodes (all windows)",
+   "n_windows": 342,
+   "frac_labelled": 0.0731,
+   "mean_n_raw": 0.105,
+   "mean_n_gate": 0.0
+  },
+  "live": {
+   "group": "live episodes (all windows)",
+   "n_windows": 10258,
+   "frac_labelled": 0.9655,
+   "mean_n_raw": 35.808,
+   "mean_n_gate": 6.426
+  }
+ },
+ "Q2_scattered_within_episode": {
+  "n_episodes_paired": 5,
+  "per_episode": [
+   {
+    "ep": 1,
+    "n_ag": 59,
+    "n_ok": 73,
+    "d_frac_labelled": -1.0,
+    "d_mean_n_gate": -0.164
+   },
+   {
+    "ep": 17,
+    "n_ag": 51,
+    "n_ok": 81,
+    "d_frac_labelled": -1.0,
+    "d_mean_n_gate": 0.0
+   },
+   {
+    "ep": 26,
+    "n_ag": 100,
+    "n_ok": 32,
+    "d_frac_labelled": -0.95,
+    "d_mean_n_gate": -0.075
+   },
+   {
+    "ep": 47,
+    "n_ag": 37,
+    "n_ok": 95,
+    "d_frac_labelled": -1.0,
+    "d_mean_n_gate": -0.411
+   },
+   {
+    "ep": 60,
+    "n_ag": 122,
+    "n_ok": 10,
+    "d_frac_labelled": -0.5984,
+    "d_mean_n_gate": 0.0
+   }
+  ],
+  "median_d_frac_labelled": -1.0,
+  "median_d_mean_n_gate": -0.075,
+  "n_episodes_where_refused_are_DENSER": 0
+ },
+ "Q3_ego_speed_independent_of_join": {
+  "ci_agents_episode_clustered": {
+   "mean": 2.1252,
+   "lo": 1.7363,
+   "hi": 2.5703,
+   "ci95": 0.417,
+   "se": 0.1984,
+   "reducer": "mean",
+   "n_windows": 369,
+   "n_episodes": 5,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap"
+  },
+  "ci_kept_episode_clustered": {
+   "mean": 1.021,
+   "lo": 0.8416,
+   "hi": 1.2274,
+   "ci95": 0.1929,
+   "se": 0.0973,
+   "reducer": "mean",
+   "n_windows": 7549,
+   "n_episodes": 60,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap"
+  },
+  "n_episodes_agents": 5,
+  "n_episodes_kept": 60,
+  "_why": "Q2 is circular: `agents` and `labelled` both read the join. Poses do not.",
+  "n_agents_scattered": 369,
+  "n_kept": 7549,
+  "median_ego_step_m_agents": 1.9242,
+  "median_ego_step_m_kept": 0.8698,
+  "mean_ego_step_m_agents": 2.1252,
+  "mean_ego_step_m_kept": 1.021
+ },
+ "Q4_dose_response_join_miss_vs_speed": {
+  "_why": "a monotone rise would implicate the JOIN BUILDER at speed; a flat curve would make the 2.08x a two-group artefact",
+  "bins": [
+   {
+    "decile": 1,
+    "speed_lo": 0.0,
+    "speed_hi": 0.1385,
+    "n_windows": 1025,
+    "n_episodes": 18,
+    "frac_agents_refused": 0.0,
+    "frac_unlabelled": 0.0
+   },
+   {
+    "decile": 2,
+    "speed_lo": 0.139,
+    "speed_hi": 0.4135,
+    "n_windows": 1026,
+    "n_episodes": 28,
+    "frac_agents_refused": 0.0,
+    "frac_unlabelled": 0.0
+   },
+   {
+    "decile": 3,
+    "speed_lo": 0.4135,
+    "speed_hi": 0.5977,
+    "n_windows": 1026,
+    "n_episodes": 30,
+    "frac_agents_refused": 0.0,
+    "frac_unlabelled": 0.0
+   },
+   {
+    "decile": 4,
+    "speed_lo": 0.5978,
+    "speed_hi": 0.7574,
+    "n_windows": 1026,
+    "n_episodes": 33,
+    "frac_agents_refused": 0.0,
+    "frac_unlabelled": 0.0
+   },
+   {
+    "decile": 5,
+    "speed_lo": 0.7575,
+    "speed_hi": 0.8939,
+    "n_windows": 1026,
+    "n_episodes": 35,
+    "frac_agents_refused": 0.0,
+    "frac_unlabelled": 0.0
+   },
+   {
+    "decile": 6,
+    "speed_lo": 0.8939,
+    "speed_hi": 1.0156,
+    "n_windows": 1025,
+    "n_episodes": 31,
+    "frac_agents_refused": 0.0,
+    "frac_unlabelled": 0.0
+   },
+   {
+    "decile": 7,
+    "speed_lo": 1.0156,
+    "speed_hi": 1.2301,
+    "n_windows": 1026,
+    "n_episodes": 26,
+    "frac_agents_refused": 0.0,
+    "frac_unlabelled": 0.0
+   },
+   {
+    "decile": 8,
+    "speed_lo": 1.2303,
+    "speed_hi": 1.5834,
+    "n_windows": 1026,
+    "n_episodes": 17,
+    "frac_agents_refused": 0.0361,
+    "frac_unlabelled": 0.0361
+   },
+   {
+    "decile": 9,
+    "speed_lo": 1.5835,
+    "speed_hi": 2.275,
+    "n_windows": 1026,
+    "n_episodes": 10,
+    "frac_agents_refused": 0.2349,
+    "frac_unlabelled": 0.2573
+   },
+   {
+    "decile": 10,
+    "speed_lo": 2.2756,
+    "speed_hi": 3.6514,
+    "n_windows": 1026,
+    "n_episodes": 7,
+    "frac_agents_refused": 0.0887,
+    "frac_unlabelled": 0.0517
+   }
+  ],
+  "frac_refused_lowest_decile": 0.0,
+  "frac_refused_highest_decile": 0.0887,
+  "monotone_nondecreasing": false,
+  "n_deciles_with_zero_refusals": 7
+ }
+}

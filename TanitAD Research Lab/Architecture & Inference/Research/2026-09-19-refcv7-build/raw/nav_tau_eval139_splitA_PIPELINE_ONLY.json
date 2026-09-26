@@ -1,0 +1,33 @@
+{
+ "tau": 0.1490669596195221,
+ "youden_j": 0.2173,
+ "tpr_informative": 0.3816,
+ "fpr_follow": 0.1643,
+ "unit": "rad",
+ "n_pos": 794,
+ "n_neg": 1053,
+ "p10_informative": 0.0009,
+ "p50_informative": 0.0477,
+ "p50_follow": 0.0295,
+ "p90_follow": 0.2625,
+ "status": "OK",
+ "rule": "argmax over the grid of TPR(informative |GT| >= tau) - FPR(follow |GT| >= tau); derived from GT + label only",
+ "split_v2_cache": "D:/Projects/TanitAD-artifacts/v2ep-eval139-416x1024cyl-splitA",
+ "labels": "D:/Projects/TanitAD-artifacts/_s2build-copy-20260919/release/v8/s2_labels_v8_eval.jsonl.gz",
+ "windows_scored": 1847,
+ "stride": 5,
+ "window": 8,
+ "nav_from_v7_stats": {
+  "n_clips": 70,
+  "follow": 40,
+  "left": 10,
+  "right": 20,
+  "missing": 0,
+  "derivation": "v7.2 nav_command token (oracle, provenance ego-future; allow_oracle_nav=True)",
+  "unlabeled_default": "nav_cmd=0 ('follow') + nav_valid=False (refav1_loader convention)",
+  "label_md5": "eefc38d1453bd1c73802d44d45affced",
+  "allow_oracle_nav": true
+ },
+ "rule_source": "taniteval.nav_compliance.derive_tolerance",
+ "heading_rule": "compliance_target: last-segment heading, 0.05 m stall"
+}

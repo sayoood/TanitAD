@@ -1,0 +1,32 @@
+REACTIVE (val14_r, IDM background) TTS sweep -- INTERIM, N=8 only. Sweep still running (N=16/32/64).
+Banked as raw numbers ONLY. No interpretive section written until the sweep completes: this sweep IS
+the control for FINDING_TEACHER_STALL.md sections 10-12, and the retraction earlier today was caused
+by exactly the error of building on a finding before its queued control had run.
+
+paired per-scenario, reactive N=1 vs N=8 (identical tokens)
+scenario type                                   N=1     N=8   delta
+accelerating_at_traffic_light_without_lead    99.99  100.00   +0.01
+changing_lane_to_left                         97.60   97.60   +0.00
+following_lane_with_lead                      92.96   92.96   +0.00
+near_multiple_vehicles                        97.27   97.17   -0.10
+starting_left_turn                            95.19   95.07   -0.12
+starting_protected_noncross_turn              99.91   99.91   +0.00
+starting_unprotected_cross_turn               94.76   94.76   +0.00
+stopping_at_stop_sign_with_lead              100.00  100.00   +0.00
+  mean paired delta (reactive N=8)  = -0.026      [non-reactive N=8 was +0.105]
+  scenarios worse than N=1          = 2           [non-reactive N=8 had 0]
+  suite 97.21 -> 97.18                            [non-reactive 97.19 -> 97.30]
+
+braking-bias probe, reactive N=8
+  run     switches  d_jerk SELECTED  d_jerk pool  % selected slower  % pool slower
+  m-r-8         14          -1.5318      -0.3282              64.3%         71.4%
+
+!! UNDERPOWERED AND INTERNALLY CONTRADICTORY AT N=8 -- DO NOT READ A VERDICT FROM THIS ROW:
+   n = 14 switches only (non-reactive N=8 had 24; N=32/64 had 57/62).
+   The two statistics DISAGREE in direction:
+     - by COUNT the POOL is more braking-skewed than the SELECTION (71.4% vs 64.3%)
+       -> this is the opposite of a selection bias, and the pool control does NOT isolate one here;
+     - by MEAN the SELECTION is far more strongly braking (-1.53 vs -0.33)
+       -> consistent with "when it does switch to a braking action, it picks a hard one".
+   With n=14 neither is reliable. The claim is neither supported nor refuted at this arm.
+   The powered arms are N=32 and N=64; wait for them.

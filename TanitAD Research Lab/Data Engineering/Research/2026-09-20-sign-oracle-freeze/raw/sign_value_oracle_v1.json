@@ -1,0 +1,827 @@
+{
+ "name": "sign_value_oracle_v1",
+ "what": "posted speed-limit VALUES read from the v7.2 train CoT text; the fixed validation set for E-DE-SIGN-1 (a candidate sign reader). Ego-free by construction.",
+ "provenance": {
+  "derived_from": "TanitAD Research Lab/Data Engineering/Research/2026-09-18-cot-sign-values/raw/cot_sign_values.json",
+  "source_sha256": "99662d0b2a2517716dba310c52fd855a07bc3b4f09761bd5ccc2f7567ed22997",
+  "measuring_package": "TanitAD Research Lab/Data Engineering/Research/2026-09-18-cot-sign-values/RESULT.md",
+  "frozen_by": "TanitAD Research Lab/Data Engineering/Research/2026-09-20-sign-oracle-freeze/ (E-DE-SIGN-4 / LR15-5)",
+  "frozen_on": "2026-09-20",
+  "corpus": "v7.2 train, 4,572 clips",
+  "evidence_class": "MEASURED for the parse; the CoT itself is a VLM reading (provenance vlm-cot), so agreement with this oracle is reader-vs-VLM, NOT reader-vs-ground-truth"
+ },
+ "limits": [
+  "RECALL IS NOT BOUNDED: 43 is a lower bound on the valued supply (a phrasing none of the four patterns covers is missed). Absence of a clip from this file is NOT evidence that the clip has no sign.",
+  "n = 42 gated clips. Any accuracy read off this set carries a +-15 pp-class 95% interval.",
+  "Class balance is skewed: 30 km/h is the plurality. See gate_characterisation.null_floors.",
+  "Eval is 0/147 (E-DE-SIGN-3 F5): this set validates on TRAIN only, and a reader validated here has NO validation reference on eval.",
+  "The boolean speed_limit flag is a leaky index in both directions (2 of 43 valued clips are NOT flagged); do not re-derive this set from the flag."
+ ],
+ "gate": {
+  "committed_by": "LAB_BACKLOG LR15-5 (proposed 2026-09-18 as E-DE-SIGN-4 / DE18-1)",
+  "statement": "a candidate reader is admissible only if exact-value agreement >= 0.80 AND the Wilson 95% lower bound >= 0.65, on the 42 Vienna clips",
+  "scored_on": "gated_clips (42). carried_clips are reported separately and are NOT in the gate.",
+  "comparison": "exact integer value match; unit must match."
+ },
+ "gated_clips": [
+  {
+   "clip_id": "0119f6cd59a5",
+   "value": 40,
+   "unit": "km/h",
+   "country": "Estonia",
+   "daynight": "day",
+   "flagged": true
+  },
+  {
+   "clip_id": "034334ad956e",
+   "value": 60,
+   "unit": "km/h",
+   "country": "Denmark",
+   "daynight": "day",
+   "flagged": true
+  },
+  {
+   "clip_id": "0b2db862464a",
+   "value": 50,
+   "unit": "km/h",
+   "country": "France",
+   "daynight": "day",
+   "flagged": true
+  },
+  {
+   "clip_id": "0e16a76bfd8f",
+   "value": 50,
+   "unit": "km/h",
+   "country": "France",
+   "daynight": "night",
+   "flagged": true
+  },
+  {
+   "clip_id": "0fb91acb43e5",
+   "value": 30,
+   "unit": "km/h",
+   "country": "France",
+   "daynight": "night",
+   "flagged": true
+  },
+  {
+   "clip_id": "13da7cbf9967",
+   "value": 30,
+   "unit": "km/h",
+   "country": "France",
+   "daynight": "night",
+   "flagged": true
+  },
+  {
+   "clip_id": "1571af55bdf9",
+   "value": 20,
+   "unit": "km/h",
+   "country": "Portugal",
+   "daynight": "day",
+   "flagged": true
+  },
+  {
+   "clip_id": "1a2f19878e28",
+   "value": 30,
+   "unit": "km/h",
+   "country": "Latvia",
+   "daynight": "day",
+   "flagged": true
+  },
+  {
+   "clip_id": "1aa0712d89e5",
+   "value": 30,
+   "unit": "km/h",
+   "country": "France",
+   "daynight": "night",
+   "flagged": true
+  },
+  {
+   "clip_id": "25e757f9572d",
+   "value": 60,
+   "unit": "km/h",
+   "country": "Belgium",
+   "daynight": "night",
+   "flagged": true
+  },
+  {
+   "clip_id": "2ba7a0f4875f",
+   "value": 30,
+   "unit": "km/h",
+   "country": "Denmark",
+   "daynight": "day",
+   "flagged": true
+  },
+  {
+   "clip_id": "2c6b55b7d10e",
+   "value": 100,
+   "unit": "km/h",
+   "country": "Greece",
+   "daynight": "day",
+   "flagged": true
+  },
+  {
+   "clip_id": "2d8b215e1a1d",
+   "value": 30,
+   "unit": "km/h",
+   "country": "Italy",
+   "daynight": "night",
+   "flagged": true
+  },
+  {
+   "clip_id": "2e19d2184e04",
+   "value": 50,
+   "unit": "km/h",
+   "country": "Portugal",
+   "daynight": "day",
+   "flagged": true
+  },
+  {
+   "clip_id": "2eca6bc6e410",
+   "value": 50,
+   "unit": "km/h",
+   "country": "Sweden",
+   "daynight": "night",
+   "flagged": true
+  },
+  {
+   "clip_id": "3796965819c9",
+   "value": 70,
+   "unit": "km/h",
+   "country": "Portugal",
+   "daynight": "day",
+   "flagged": true
+  },
+  {
+   "clip_id": "44fba1a554ad",
+   "value": 120,
+   "unit": "km/h",
+   "country": "Spain",
+   "daynight": "day",
+   "flagged": true
+  },
+  {
+   "clip_id": "4adc32eea311",
+   "value": 70,
+   "unit": "km/h",
+   "country": "Slovenia",
+   "daynight": "day",
+   "flagged": true
+  },
+  {
+   "clip_id": "58e162034c5e",
+   "value": 60,
+   "unit": "km/h",
+   "country": "Estonia",
+   "daynight": "day",
+   "flagged": true
+  },
+  {
+   "clip_id": "5e78b6b9f86c",
+   "value": 30,
+   "unit": "km/h",
+   "country": "Greece",
+   "daynight": "day",
+   "flagged": false
+  },
+  {
+   "clip_id": "5fc5e1c72a76",
+   "value": 50,
+   "unit": "km/h",
+   "country": "Finland",
+   "daynight": "day",
+   "flagged": true
+  },
+  {
+   "clip_id": "6229bb5b5f31",
+   "value": 60,
+   "unit": "km/h",
+   "country": "Denmark",
+   "daynight": "day",
+   "flagged": true
+  },
+  {
+   "clip_id": "7ee1572293d4",
+   "value": 100,
+   "unit": "km/h",
+   "country": "Italy",
+   "daynight": "day",
+   "flagged": true
+  },
+  {
+   "clip_id": "81b53d7bb52e",
+   "value": 50,
+   "unit": "km/h",
+   "country": "Austria",
+   "daynight": "night",
+   "flagged": true
+  },
+  {
+   "clip_id": "835f138aade6",
+   "value": 70,
+   "unit": "km/h",
+   "country": "Finland",
+   "daynight": "day",
+   "flagged": true
+  },
+  {
+   "clip_id": "9b12c1295999",
+   "value": 70,
+   "unit": "km/h",
+   "country": "Belgium",
+   "daynight": "day",
+   "flagged": true
+  },
+  {
+   "clip_id": "9f1b16cb25e9",
+   "value": 30,
+   "unit": "km/h",
+   "country": "Greece",
+   "daynight": "night",
+   "flagged": false
+  },
+  {
+   "clip_id": "a20cad705f95",
+   "value": 70,
+   "unit": "km/h",
+   "country": "Austria",
+   "daynight": "day",
+   "flagged": true
+  },
+  {
+   "clip_id": "a5e4357d897b",
+   "value": 50,
+   "unit": "km/h",
+   "country": "France",
+   "daynight": "day",
+   "flagged": true
+  },
+  {
+   "clip_id": "ac984473d1f2",
+   "value": 50,
+   "unit": "km/h",
+   "country": "Portugal",
+   "daynight": "night",
+   "flagged": true
+  },
+  {
+   "clip_id": "af375d5a6c6e",
+   "value": 30,
+   "unit": "km/h",
+   "country": "Austria",
+   "daynight": "night",
+   "flagged": true
+  },
+  {
+   "clip_id": "b097765971d9",
+   "value": 40,
+   "unit": "km/h",
+   "country": "Denmark",
+   "daynight": "night",
+   "flagged": true
+  },
+  {
+   "clip_id": "b3eae01325be",
+   "value": 30,
+   "unit": "km/h",
+   "country": "Latvia",
+   "daynight": "day",
+   "flagged": true
+  },
+  {
+   "clip_id": "cc8ed4c8e413",
+   "value": 80,
+   "unit": "km/h",
+   "country": "Austria",
+   "daynight": "day",
+   "flagged": true
+  },
+  {
+   "clip_id": "cd5b27aeb42e",
+   "value": 60,
+   "unit": "km/h",
+   "country": "Belgium",
+   "daynight": "night",
+   "flagged": true
+  },
+  {
+   "clip_id": "d8c3a12ea977",
+   "value": 30,
+   "unit": "km/h",
+   "country": "Portugal",
+   "daynight": "night",
+   "flagged": true
+  },
+  {
+   "clip_id": "dd6c33d5d52f",
+   "value": 30,
+   "unit": "km/h",
+   "country": "Italy",
+   "daynight": "night",
+   "flagged": true
+  },
+  {
+   "clip_id": "e21cd22c73f7",
+   "value": 30,
+   "unit": "km/h",
+   "country": "Austria",
+   "daynight": "night",
+   "flagged": true
+  },
+  {
+   "clip_id": "efbe8651cf8d",
+   "value": 40,
+   "unit": "km/h",
+   "country": "Spain",
+   "daynight": "day",
+   "flagged": true
+  },
+  {
+   "clip_id": "f58284d90627",
+   "value": 60,
+   "unit": "km/h",
+   "country": "France",
+   "daynight": "night",
+   "flagged": true
+  },
+  {
+   "clip_id": "fd00383c1a35",
+   "value": 100,
+   "unit": "km/h",
+   "country": "Netherlands",
+   "daynight": "day",
+   "flagged": true
+  },
+  {
+   "clip_id": "fe9b3678d2a7",
+   "value": 20,
+   "unit": "km/h",
+   "country": "Portugal",
+   "daynight": "day",
+   "flagged": true
+  }
+ ],
+ "carried_clips_not_in_gate": [
+  {
+   "clip_id": "6902f936018f",
+   "value": 35,
+   "unit": "mph",
+   "country": "United States",
+   "daynight": "night",
+   "flagged": true
+  }
+ ],
+ "counts": {
+  "gated": 42,
+  "carried": 1,
+  "day": 25,
+  "night": 17,
+  "value_hist": {
+   "20": 2,
+   "30": 13,
+   "40": 3,
+   "50": 8,
+   "60": 6,
+   "70": 5,
+   "80": 1,
+   "100": 3,
+   "120": 1
+  },
+  "countries": {
+   "Austria": 5,
+   "Belgium": 3,
+   "Denmark": 4,
+   "Estonia": 2,
+   "Finland": 2,
+   "France": 7,
+   "Greece": 3,
+   "Italy": 3,
+   "Latvia": 2,
+   "Netherlands": 1,
+   "Portugal": 6,
+   "Slovenia": 1,
+   "Spain": 2,
+   "Sweden": 1
+  }
+ },
+ "gate_characterisation": {
+  "n_gated": 42,
+  "k_min_to_pass": 34,
+  "gate_reduces_to": "k >= 34 of 42 correct",
+  "wilson_clause_binds_at_n42": false,
+  "wilson_clause_note": "the Wilson clause is VACUOUS at n=42: every k that clears the 0.80 point estimate also clears the 0.65 lower bound, so the gate is a single test",
+  "wilson_clause_would_bind_for_n_in": "5..36 (29 values in 5..400)",
+  "operating_characteristic": [
+   {
+    "true_accuracy": 0.5,
+    "P_pass": 0.0
+   },
+   {
+    "true_accuracy": 0.6,
+    "P_pass": 0.0033
+   },
+   {
+    "true_accuracy": 0.65,
+    "P_pass": 0.019
+   },
+   {
+    "true_accuracy": 0.7,
+    "P_pass": 0.0798
+   },
+   {
+    "true_accuracy": 0.75,
+    "P_pass": 0.2429
+   },
+   {
+    "true_accuracy": 0.8,
+    "P_pass": 0.5309
+   },
+   {
+    "true_accuracy": 0.85,
+    "P_pass": 0.8311
+   },
+   {
+    "true_accuracy": 0.9,
+    "P_pass": 0.9789
+   },
+   {
+    "true_accuracy": 0.95,
+    "P_pass": 0.9998
+   },
+   {
+    "true_accuracy": 0.99,
+    "P_pass": 1.0
+   }
+  ],
+  "P_pass_at_nominal_bar_0.80": 0.5309,
+  "true_accuracy_needed_for_80pct_pass": 0.8438,
+  "null_floors": {
+   "majority_class": {
+    "rule": "answer the plurality value on every clip",
+    "value": "30",
+    "expected_k": 13,
+    "accuracy": 0.3095,
+    "passes_gate": false
+   },
+   "marginal_guesser": {
+    "rule": "sample from the oracle's own value marginal",
+    "expected_accuracy": 0.1803,
+    "expected_k": 7.57,
+    "passes_gate": false
+   },
+   "n_distinct_values": 9
+  },
+  "subgroups": {
+   "day": 25,
+   "night": 17,
+   "min_detectable_day_night_gap_95pct": 0.2465,
+   "note": "normal-approximation SE of a difference of proportions at p=0.80 in both arms; a night-vs-day gap smaller than this is invisible here"
+  },
+  "per_k_table": [
+   {
+    "k": 0,
+    "point": 0.0,
+    "wilson_lo95": -0.0,
+    "clause_point": false,
+    "clause_wilson": false,
+    "passes": false
+   },
+   {
+    "k": 1,
+    "point": 0.0238,
+    "wilson_lo95": 0.0042,
+    "clause_point": false,
+    "clause_wilson": false,
+    "passes": false
+   },
+   {
+    "k": 2,
+    "point": 0.0476,
+    "wilson_lo95": 0.0132,
+    "clause_point": false,
+    "clause_wilson": false,
+    "passes": false
+   },
+   {
+    "k": 3,
+    "point": 0.0714,
+    "wilson_lo95": 0.0246,
+    "clause_point": false,
+    "clause_wilson": false,
+    "passes": false
+   },
+   {
+    "k": 4,
+    "point": 0.0952,
+    "wilson_lo95": 0.0377,
+    "clause_point": false,
+    "clause_wilson": false,
+    "passes": false
+   },
+   {
+    "k": 5,
+    "point": 0.119,
+    "wilson_lo95": 0.0519,
+    "clause_point": false,
+    "clause_wilson": false,
+    "passes": false
+   },
+   {
+    "k": 6,
+    "point": 0.1429,
+    "wilson_lo95": 0.0672,
+    "clause_point": false,
+    "clause_wilson": false,
+    "passes": false
+   },
+   {
+    "k": 7,
+    "point": 0.1667,
+    "wilson_lo95": 0.0832,
+    "clause_point": false,
+    "clause_wilson": false,
+    "passes": false
+   },
+   {
+    "k": 8,
+    "point": 0.1905,
+    "wilson_lo95": 0.0998,
+    "clause_point": false,
+    "clause_wilson": false,
+    "passes": false
+   },
+   {
+    "k": 9,
+    "point": 0.2143,
+    "wilson_lo95": 0.1171,
+    "clause_point": false,
+    "clause_wilson": false,
+    "passes": false
+   },
+   {
+    "k": 10,
+    "point": 0.2381,
+    "wilson_lo95": 0.1348,
+    "clause_point": false,
+    "clause_wilson": false,
+    "passes": false
+   },
+   {
+    "k": 11,
+    "point": 0.2619,
+    "wilson_lo95": 0.153,
+    "clause_point": false,
+    "clause_wilson": false,
+    "passes": false
+   },
+   {
+    "k": 12,
+    "point": 0.2857,
+    "wilson_lo95": 0.1717,
+    "clause_point": false,
+    "clause_wilson": false,
+    "passes": false
+   },
+   {
+    "k": 13,
+    "point": 0.3095,
+    "wilson_lo95": 0.1907,
+    "clause_point": false,
+    "clause_wilson": false,
+    "passes": false
+   },
+   {
+    "k": 14,
+    "point": 0.3333,
+    "wilson_lo95": 0.2101,
+    "clause_point": false,
+    "clause_wilson": false,
+    "passes": false
+   },
+   {
+    "k": 15,
+    "point": 0.3571,
+    "wilson_lo95": 0.2299,
+    "clause_point": false,
+    "clause_wilson": false,
+    "passes": false
+   },
+   {
+    "k": 16,
+    "point": 0.381,
+    "wilson_lo95": 0.25,
+    "clause_point": false,
+    "clause_wilson": false,
+    "passes": false
+   },
+   {
+    "k": 17,
+    "point": 0.4048,
+    "wilson_lo95": 0.2704,
+    "clause_point": false,
+    "clause_wilson": false,
+    "passes": false
+   },
+   {
+    "k": 18,
+    "point": 0.4286,
+    "wilson_lo95": 0.2912,
+    "clause_point": false,
+    "clause_wilson": false,
+    "passes": false
+   },
+   {
+    "k": 19,
+    "point": 0.4524,
+    "wilson_lo95": 0.3122,
+    "clause_point": false,
+    "clause_wilson": false,
+    "passes": false
+   },
+   {
+    "k": 20,
+    "point": 0.4762,
+    "wilson_lo95": 0.3336,
+    "clause_point": false,
+    "clause_wilson": false,
+    "passes": false
+   },
+   {
+    "k": 21,
+    "point": 0.5,
+    "wilson_lo95": 0.3553,
+    "clause_point": false,
+    "clause_wilson": false,
+    "passes": false
+   },
+   {
+    "k": 22,
+    "point": 0.5238,
+    "wilson_lo95": 0.3772,
+    "clause_point": false,
+    "clause_wilson": false,
+    "passes": false
+   },
+   {
+    "k": 23,
+    "point": 0.5476,
+    "wilson_lo95": 0.3995,
+    "clause_point": false,
+    "clause_wilson": false,
+    "passes": false
+   },
+   {
+    "k": 24,
+    "point": 0.5714,
+    "wilson_lo95": 0.4221,
+    "clause_point": false,
+    "clause_wilson": false,
+    "passes": false
+   },
+   {
+    "k": 25,
+    "point": 0.5952,
+    "wilson_lo95": 0.4449,
+    "clause_point": false,
+    "clause_wilson": false,
+    "passes": false
+   },
+   {
+    "k": 26,
+    "point": 0.619,
+    "wilson_lo95": 0.4681,
+    "clause_point": false,
+    "clause_wilson": false,
+    "passes": false
+   },
+   {
+    "k": 27,
+    "point": 0.6429,
+    "wilson_lo95": 0.4917,
+    "clause_point": false,
+    "clause_wilson": false,
+    "passes": false
+   },
+   {
+    "k": 28,
+    "point": 0.6667,
+    "wilson_lo95": 0.5155,
+    "clause_point": false,
+    "clause_wilson": false,
+    "passes": false
+   },
+   {
+    "k": 29,
+    "point": 0.6905,
+    "wilson_lo95": 0.5397,
+    "clause_point": false,
+    "clause_wilson": false,
+    "passes": false
+   },
+   {
+    "k": 30,
+    "point": 0.7143,
+    "wilson_lo95": 0.5643,
+    "clause_point": false,
+    "clause_wilson": false,
+    "passes": false
+   },
+   {
+    "k": 31,
+    "point": 0.7381,
+    "wilson_lo95": 0.5893,
+    "clause_point": false,
+    "clause_wilson": false,
+    "passes": false
+   },
+   {
+    "k": 32,
+    "point": 0.7619,
+    "wilson_lo95": 0.6147,
+    "clause_point": false,
+    "clause_wilson": false,
+    "passes": false
+   },
+   {
+    "k": 33,
+    "point": 0.7857,
+    "wilson_lo95": 0.6406,
+    "clause_point": false,
+    "clause_wilson": false,
+    "passes": false
+   },
+   {
+    "k": 34,
+    "point": 0.8095,
+    "wilson_lo95": 0.667,
+    "clause_point": true,
+    "clause_wilson": true,
+    "passes": true
+   },
+   {
+    "k": 35,
+    "point": 0.8333,
+    "wilson_lo95": 0.694,
+    "clause_point": true,
+    "clause_wilson": true,
+    "passes": true
+   },
+   {
+    "k": 36,
+    "point": 0.8571,
+    "wilson_lo95": 0.7216,
+    "clause_point": true,
+    "clause_wilson": true,
+    "passes": true
+   },
+   {
+    "k": 37,
+    "point": 0.881,
+    "wilson_lo95": 0.75,
+    "clause_point": true,
+    "clause_wilson": true,
+    "passes": true
+   },
+   {
+    "k": 38,
+    "point": 0.9048,
+    "wilson_lo95": 0.7793,
+    "clause_point": true,
+    "clause_wilson": true,
+    "passes": true
+   },
+   {
+    "k": 39,
+    "point": 0.9286,
+    "wilson_lo95": 0.8099,
+    "clause_point": true,
+    "clause_wilson": true,
+    "passes": true
+   },
+   {
+    "k": 40,
+    "point": 0.9524,
+    "wilson_lo95": 0.8421,
+    "clause_point": true,
+    "clause_wilson": true,
+    "passes": true
+   },
+   {
+    "k": 41,
+    "point": 0.9762,
+    "wilson_lo95": 0.8768,
+    "clause_point": true,
+    "clause_wilson": true,
+    "passes": true
+   },
+   {
+    "k": 42,
+    "point": 1.0,
+    "wilson_lo95": 0.9162,
+    "clause_point": true,
+    "clause_wilson": true,
+    "passes": true
+   }
+  ]
+ }
+}

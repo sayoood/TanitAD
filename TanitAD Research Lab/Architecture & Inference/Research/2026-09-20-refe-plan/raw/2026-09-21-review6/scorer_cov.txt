@@ -1,0 +1,16 @@
+target tuples: 2182
+
+refe_scorer_targets_full: files ['scorer_targets.jsonl']
+  rows 2,332  distinct frame-keys 212  rank histogram {0: 2332}
+  JOIN onto the 2,182 target tuples: 212 covered = 9.7 %
+  rank-BLIND join: 424 = 19.4 %   (the difference is what `rank` costs)
+
+refe_scorer_targets_r1: files ['scorer_targets_rank1.jsonl']
+  rows 2,332  distinct frame-keys 212  rank histogram {1: 2332}
+  JOIN onto the 2,182 target tuples: 212 covered = 9.7 %
+  rank-BLIND join: 424 = 19.4 %   (the difference is what `rank` costs)
+
+refe_scorer_targets: files ['scorer_targets.jsonl']
+  rows 54  distinct frame-keys 6  rank histogram {'MISSING': 54}
+  JOIN onto the 2,182 target tuples: 0 covered = 0.0 %
+  rank-BLIND join: 12 = 0.5 %   (the difference is what `rank` costs)

@@ -1,0 +1,14 @@
+Stage 2b self-test: do the released calculators connect to a nuPlan ScenarioData?
+
+  feature builder import                    OK
+  ScenarioData import                       OK
+  agent 0 is the ego                        CONFIRMED
+  polygon cache exists (must be cleared)    YES
+  six calculators importable                6/6  ['OffRoad', 'NuPlanCollision', 'NuPlanTTC', 'Comfort', 'GoalReaching', 'CenterLine']
+
+  components, in the order the scorer target must use: ('off_road', 'collision', 'ttc', 'comfort', 'goal_reaching', 'center_line')
+
+SCORER_SELFTEST_OK
+
+  NOT DONE YET: wiring these targets into train.py. Until that happens the scorer
+  trains against a placeholder and proposal selection at inference stays arbitrary.

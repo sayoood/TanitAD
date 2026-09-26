@@ -1,0 +1,24 @@
+exFAT 1 MB CLUSTERS INFLATE THE CAMERA CORPUS 5x. MEASURED 2026-09-20.
+
+  D: FileSystemType exFAT, AllocationUnitSize 1,048,576 bytes (1 MiB)
+  MEASURED on the 6 fetched logs: 26,060 JPEGs, 5.08 GB of DATA, mean 204 KB/file
+  every file occupies a whole 1 MiB cluster => 25 GB ON DISK
+  inflation factor 5.0x
+
+  PROJECTION for front-camera-only nuPlan, as LOOSE JPEGs on this volume:
+    mini    50.7 GB data  ~ 273,630 files  ->     267 GB ON DISK
+    test    73.0 GB data  ~ 390,900 files  ->     382 GB ON DISK
+    val     99.0 GB data  ~ 521,200 files  ->     509 GB ON DISK
+    ALL    222.7 GB data                    ->    1158 GB ON DISK
+
+  D: free right now: 846 GB, and the nuPlan DB pull needs ~481 GB at peak.
+  => loose-JPEG storage for all three splits DOES NOT FIT. Even mini alone (~274 GB) plus
+     the DB pull is ~755 GB of 846 GB -- no margin.
+
+  MITIGATION, and it costs nothing: the frames ALREADY come out of zip archives. Keeping
+  one container per LOG (6 files instead of 26,060) removes the inflation entirely, because
+  the loss is per-FILE, not per-byte. The dataloader reads from the container by offset --
+  which is exactly what fetch_front_camera.py already does against the remote zip.
+
+  !! This is why 'du' and 'sum of file sizes' must both be quoted for a many-small-files
+     corpus. I budgeted 50.7 GB for mini camera; the real cost as loose files is ~274 GB.

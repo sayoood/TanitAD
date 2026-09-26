@@ -1,0 +1,20 @@
+  REFe 30.23 M total / 7.92 M trainable (26.20 %)  device=cuda
+  *** SYNTHETIC IMAGES: this run validates the LOOP MECHANICS ONLY.
+  *** Its loss says nothing about driving and must not be quoted as a result.
+  bank: 8 tuples   batch 8   OVERFIT CONTROL on 8 tuples
+  *** DELIBERATE REGRESSION: optimizer given an EMPTY parameter set.
+  *** If the overfit control still PASSES below, the control is inert.
+    step     0  traj_L1   1.2460  score  0.0669  winners 2/8     1.3s
+    step    25  traj_L1   1.2460  score  0.0669  winners 2/8    24.4s
+    step    50  traj_L1   1.2460  score  0.0669  winners 2/8    47.7s
+    step    75  traj_L1   1.2460  score  0.0669  winners 2/8    70.6s
+    step   100  traj_L1   1.2460  score  0.0669  winners 2/8    93.2s
+    step   125  traj_L1   1.2460  score  0.0669  winners 2/8   115.7s
+    step   150  traj_L1   1.2460  score  0.0669  winners 2/8   768.1s
+    step   175  traj_L1   1.2460  score  0.0669  winners 2/8   790.6s
+    step   200  traj_L1   1.2460  score  0.0669  winners 2/8   813.2s
+
+[stopped at step 200 by the operator -- the answer was already conclusive]
+traj_L1 held at EXACTLY 1.2460 for 200 consecutive steps with an emptied optimizer, against a
+1.3130 -> 0.0388 (97 %) reduction on the real arm. The overfit control is discriminating, not inert.
+Step time was 4.07 s here vs 0.93 s on the real arm -- GPU contention, see raw/devbox_gpu_contention.txt.

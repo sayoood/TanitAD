@@ -1,0 +1,32 @@
+== what each component believes ==
+  model.REFeConfig      ego_dim 7   n_cameras 4   cameras ('CAM_F0', 'CAM_L0', 'CAM_R0', 'CAM_B0')
+  planner.py  (AST)     ego literal 7
+  train.py    (AST)     CAMERAS ('CAM_F0', 'CAM_L0', 'CAM_R0', 'CAM_B0')
+  build_targets (AST)   CAMERAS ('CAM_F0', 'CAM_L0', 'CAM_R0', 'CAM_B0')
+  target bank           ego 8-D   images 1   cameras None   goal 4-D
+                        <- D:/Projects/TanitAD/data/refe_targets\targets_rank0.jsonl
+
+  [FAIL] 1 bank ego width == model ego_dim
+  [FAIL] 2 bank camera list == model cameras, in order
+  [FAIL] 3 bank image count == model n_cameras
+  [PASS] 4 trainer CAMERAS == model cameras
+  [PASS] 4b builder CAMERAS == model cameras
+  [PASS] 5 planner ego literal == model ego_dim
+  [PASS] 6 bank goal width >= model goal input
+  [PASS] 7 CONTROL a real bank row was actually read
+
+== SELF-TEST: each arm must go RED under the divergence it exists for ==
+  [PASS] CONTROL: the un-mutated inputs pass every arm
+  [RED ] arm 1: a bank banked at 8-D against a 7-D model
+  [RED ] arm 2: a bank that names only CAM_F0
+  [RED ] arm 3: a bank row carrying one image for a 4-camera rig
+  [RED ] arm 4: a trainer left behind on one camera
+  [RED ] arm 4b: a builder left behind on one camera
+  [RED ] arm 5: a planner still building the 8-element ego literal
+  [RED ] arm 6: a bank whose goal is narrower than the model's input
+  [RED ] arm 7: a bank that could not be read at all
+
+SELF_TEST_OK -- every arm goes red under its own historical divergence, alone
+
+CONSUMERS_DIVERGED
+CCF_SELFTEST_EXIT=1

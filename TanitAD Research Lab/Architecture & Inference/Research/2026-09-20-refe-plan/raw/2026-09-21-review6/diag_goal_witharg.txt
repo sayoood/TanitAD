@@ -1,0 +1,21 @@
+C:\Users\Admin\dz\DriveZero\DriveRL\nuplan-devkit\nuplan\common\maps\nuplan_map\utils.py:413: RuntimeWarning: invalid value encountered in cast
+  return elements.iloc[np.where(elements[column_label].to_numpy().astype(int) == int(desired_value))]
+C:\Users\Admin\dz\DriveZero\DriveRL\nuplan-devkit\nuplan\common\maps\nuplan_map\utils.py:413: RuntimeWarning: invalid value encountered in cast
+  return elements.iloc[np.where(elements[column_label].to_numpy().astype(int) == int(desired_value))]
+goal_positions (1, 128, 5, 4)  nonzero 20
+  ego goal points (ego frame): [[29.99, -0.63], [59.97, -1.77]]
+  distance from ego origin   : [30.0, 60.0] m
+  goal_reaching_threshold          3.0000
+  goal_reaching_weight             0.3000
+  goal_reaching_distance_weight    0.0000
+  survival_reward_numerator        0.0000
+
+  teacher 4 s endpoint      : [24.78, -0.52]  |24.78| m
+  => a 0.2 s STEP covers ~1-2 m; the nearest goal is the distance above.
+     GoalReaching fires only when the step's swept segment passes within the threshold,
+     so 0.0000 on a 4 s proposal is EXPECTED, not a broken calculator.
+
+  CONTROL -- a candidate driven ONTO the nearest goal point [30.0, -0.6]:
+    goal_reaching.GoalReaching.info              teacher   0.0000   onto-goal   1.0000
+    goal_reaching.GoalReaching.reward            teacher  -0.0000   onto-goal  -0.0000
+    goal_reaching.GoalReaching.stage_reached     teacher   0.0000   onto-goal   1.0000

@@ -1,0 +1,21 @@
+  bank: 6 tuples in 4 scenes (2 with a rank-1 twin), 22 scorer rows carved from C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/bd7d00af-b98e-42f1-a53c-cb4113059b0f/scratchpad/traindir_ok
+  [U] PASS -- exit 0, final + epoch snapshots
+  [U.scenes] PASS -- trainer groups 6 rows into 4 scenes (2 singles, 2 twins) and epochs over the scenes
+  [H.halt] PASS -- exit 7, halted at step 3 epoch 1 pos 2 (want 3 / 1 / 2: MID-epoch)
+  [H.resume==U] PASS -- exit 0, identical
+  [M1.pos_lost_DIFFERS] PASS -- exit 0, 228 tensor(s) differ, e.g. ['registers', 'queries']
+  [M2.opt_lost_DIFFERS] PASS -- exit 0, 228 tensor(s) differ, e.g. ['registers', 'queries']
+  [R1.changed_lr_REFUSED] PASS -- exit 4
+  [R4.changed_epoch_unit_REFUSED] PASS -- exit 4
+  [R2.no_out_REFUSED] PASS -- exit 4
+  [R3.done_is_final] PASS -- exit 0, model_final sha unchanged
+  [P.planner_strict_load] PASS -- 415 tensors, strict; planner's loader reads it as refe-full-v1
+  [S.snapshot_loads] PASS -- refe-partial-v1, 228 partial tensors applied exactly
+  [S.wrong_trunk_REFUSED] PASS -- partial checkpoint refused: frozen-trunk fingerprint 9a3631954881 != recorded 000000000000 -- this partial was trained o
+  [SC1.one_row_per_scene] PASS -- 25 epochs, every scene exactly once in each
+  [SC2.twins_take_turns] PASS -- uses over 25 epochs {0: 12, 1: 13, 2: 13, 3: 12, 4: 25, 5: 25}
+  [SC3.mixed_within_epoch] PASS -- rank-1 share per epoch 0.48-0.52 over 400 twin scenes
+  [SC-M1.parity_DETECTED] PASS -- parity sampler's per-epoch rank-1 share 0.00-1.00 (must be 0 or 1)
+  [SC-M2.row_epoch_DETECTED] PASS -- a row epoch visits scenes [0, 0, 1, 1, 2, 3] (twin scenes twice)
+  report: C:\Users\Admin\AppData\Local\Temp\claude\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\bd7d00af-b98e-42f1-a53c-cb4113059b0f\scratchpad\resume_work3\resume_report.json
+RESUME_EXACT_AND_GUARDS_LIVE

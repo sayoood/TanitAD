@@ -254,3 +254,15 @@ UniDrive-WM `2601.04453` · DriveWAM `2605.28544` · CoWorld-VLA `2605.10426` ·
 * **Two independent controlled ablations:** DeepSight T3 (Dev-10, one seed) VAE-codebook target **27.75 / 14.66 DS** (1 / 5 frames) vs DINOv3-feature target **74.79 / 86.57**; World Tokens T2 (LIBERO-Long) RGB anchor **91.5 < no-WM 92.8 < full 97.0**.
 * **Backdoor:** a poisoned latent-WM checkpoint steers the victim's own MPC/actor optimisation to the attacker's action on **100 %** of triggered steps, with **≥ ~75 %** clean success, so it passes pre-deployment diagnostics.
 **Our position:** CONFIRMS the latent/semantic-target choice (T-12) and adjudicates N-19-2 (NVIDIA, pixel coupling) **UNSUPPORTED-AS-STATED**. New hygiene item: pin the sha256 of every upstream checkpoint (DINOv3, SAM3, Cosmos, Alpamayo) in run records. Experiment FS19-3.
+
+### 2026-09-20-01 — Drive-HWM `2609.03572` (full text, local pypdf) ⭐⭐⭐
+
+**The hierarchy edge has a published matched number for the first time, and it is small.** Table IV,
+NAVSIM v1 PDMS: `Fast only` (flat) **93.0** · `Slow only` **90.2** · hierarchical **K=4 93.0 · K=8 93.8 · K=12 93.2**.
+⇒ +0.8 at one horizon, **+0.0 at K=4**, +0.2 at K=12; one run per row, **no CIs**.
+Authors' reading of `Slow only`: *"long-horizon predictions alone cannot promptly adapt to newly observed changes."*
+Table VII (slow→fast conditioning): **FiLM 93.8** > AdaLN 93.3 > GCA 93.1 > cross-attn 93.0 > concat 92.5
+⇒ published support for the FiLM conditioning the v7 predictor already uses.
+**Class:** PUBLISHED, numbers re-read locally ⇒ registry-admissible.
+**Moves:** backlog row 18 (H1b) — the thesis gains an external datapoint and loses expected effect size.
+**Source:** Daily/2026-09-20/RESULT.md

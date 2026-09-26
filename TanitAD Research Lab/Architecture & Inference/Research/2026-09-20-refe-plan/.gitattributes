@@ -1,0 +1,5 @@
+# Scoped to this package. Pods receive these scripts by SHIPPING, not git clone, and the dev box
+# runs core.autocrlf=true -- so without this, the next Windows checkout turns *.sh into CRLF and a
+# shipped script dies on Linux with a carriage-return "command not found" error before it runs.
+*.sh text eol=lf
+*.py text eol=lf

@@ -572,3 +572,46 @@ own RESULT.md §4.
 3. **D-7** `1604.06915`.
 4. A3 with a changed term: "DINOv3 BEV feature target world model".
 5. B2/B3 transfer empties: "gated delta net video predictor robotics", "consistency distillation world model rollout".
+
+## Twelfth pass — 2026-09-20 (LAB-RUN-017)
+
+| # | band | track | last SCAN | last DEEP | ledger | note |
+|---|---|---|---|---|---|---|
+| D1 | D | Opponent doctrine | **2026-09-20** | **2026-09-20** | [`../Opponent Analysis/OPPONENT_CLAIMS_REGISTER.md`](../Opponent%20Analysis/OPPONENT_CLAIMS_REGISTER.md) | **W-20-1…4, M-20-1.** ⭐⭐⭐ **D-7 CLOSED after 5 passes** (it was banked all along) and **it changes sides**; **D-14 CLOSED** as adjudicated-unverifiable ⇒ new **D-15** |
+| A1 | A | World models | **2026-09-20** | ⭐⭐⭐ **2026-09-20 FULL TEXT** | [`LEDGER_A1_world_models.md`](LEDGER_A1_world_models.md) | ⭐⭐⭐ **Drive-HWM** — the hierarchy edge's first matched number: **93.0 flat vs 93.8 K=8, but +0.0 at K=4**. FiLM conditioning best of five |
+| A2 | A | JEPA | **2026-09-20** | **2026-09-20** (via A1 T-V + local re-read) | [`LEDGER_A2_jepa.md`](LEDGER_A2_jepa.md) | ⭐⭐ **V-JEPA 93.8 > CogVideo 93.0 / WAN 93.2** as the slow-WM backbone. V-1 re-find on `2601.00844` recorded |
+| A3 | A | Vision encoders | **2026-09-20** | — | [`LEDGER_A3_vision_encoders.md`](LEDGER_A3_vision_encoders.md) | ⛔ **E-A3, 5th consecutive**; evidence keeps arriving as encoder-as-backbone |
+| A4 | A | VLA | **2026-09-20** | — | [`LEDGER_A4_vla.md`](LEDGER_A4_vla.md) | scan — DriveVLA-W0 93.0 PDMS is Drive-HWM's strongest baseline |
+| A5 | A | Benchmarks | **2026-09-20** | **2026-09-20** | [`LEDGER_A5_benchmarks.md`](LEDGER_A5_benchmarks.md) | ⛔⭐ **two-stamp catch #2**: Drive-HWM's EPDMS **86.4 is navtest**; navhard still tops at **57.1** |
+| B1 | B | VLM | **2026-09-20** | — | — | `2606.08860` located + **locally re-read** (served the DataEng package, not a Band-B slot) |
+| B2 | B | Post-transformer | **2026-09-20** | — | [`LEDGER_B2_post_transformer.md`](LEDGER_B2_post_transformer.md) | ⛔ **E-B2 (4th)** |
+| B3 | B | Efficient decoding | **2026-09-20** | — | — | ⛔ **E-B3 (2nd)** — all KV-cache/LLM-serving; none prices a WM rollout |
+| B4 | B | Efficient training | **2026-09-20** | — | — | scan only |
+| B5 | B | Post-training / RL | **2026-09-20** | ⭐ **2026-09-20** | [`LEDGER_B5_post_training.md`](LEDGER_B5_post_training.md) | ⛔⭐ **WMPO** — pixel space **on purpose**; the actively-sought counter-argument, **unquantified** |
+| B6 | B | Self-improving | **2026-09-20** | ⭐⭐ **2026-09-20 (first ever)** | [`LEDGER_B6_self_improving.md`](LEDGER_B6_self_improving.md) (**new**) | ⭐⭐ **RISE** — label-free improvement in imagination; **I-3 served (partial)**; **I-1's quality half answered externally, with PROGRESS as the value target** |
+| B7 | B | Diffusion / flow | **2026-09-20** | — | [`LEDGER_B7_diffusion_flow.md`](LEDGER_B7_diffusion_flow.md) | scan only — DiffusionDrive appears as a baseline row |
+| B8 | B | Tokenizers | **2026-09-20** | — | [`LEDGER_B8_tokenizers.md`](LEDGER_B8_tokenizers.md) | scan only |
+| B9 | B | Data curation | **2026-09-20** | — | — | ⛔ **E-TSR (new)** — no published acceptance threshold for a deployed speed-limit reader ⇒ our 0.80 bar has **no anchor** |
+| B10 | B | Retrieval | **2026-09-20** | — | [`LEDGER_B10_retrieval.md`](LEDGER_B10_retrieval.md) | ⛔ **E-VPR-GEOM (new)** — no located analogue for place-vs-geometry across encoder stages |
+| B11 | B | Physics operators | **2026-09-20** | — | [`LEDGER_B11_physics_operators.md`](LEDGER_B11_physics_operators.md) | scan only |
+| B12 | B | Memory / long context | **2026-09-20** | — | [`LEDGER_B12_memory_horizon.md`](LEDGER_B12_memory_horizon.md) | ⚠️ **the pass's UNDER-SERVED clause** — a finding via A1's K-sweep (optimum is **interior**: K=8 > K=4 and K=12), but **no dedicated probe**. Next rotation #2 |
+| B13 | B | 3D / occupancy | **2026-09-20** | ⭐⭐ **2026-09-20** | [`LEDGER_B13_3d_geometry.md`](LEDGER_B13_3d_geometry.md) | ⭐⭐⭐ **DualPathOcc** — one-hot depth **35.96 < no depth 36.92**; a hard geometric target loses to none |
+| C1 | C | Releases | **2026-09-20** | — | [`LEDGER_C1_releases.md`](LEDGER_C1_releases.md) | Waymo 14 metros / ~4,000 vehicles / ~500 k rides-wk; Wayve London-Uber + $1.2 B at $8.6 B |
+| C2 | C | Release notes | **2026-09-20** | — | [`LEDGER_C1_releases.md`](LEDGER_C1_releases.md) (C2) | ⭐ **JetPack 7.2.1 = TensorRT 10.16.2** ⇒ Thor stays on the D-B1-GATE line; **2nd probe confirming LR15-10** |
+| C3 | C | Regulatory | **2026-09-20** | — | [`LEDGER_C3_regulatory.md`](LEDGER_C3_regulatory.md) | UN ADS **GTR** adopted at the **June 2026 WP.29** session — same session as R185 / **D-4**; consistent, not a substitute |
+| C4 | C | Community signals | **2026-09-20** | via A5 | [`LEDGER_A5_benchmarks.md`](LEDGER_A5_benchmarks.md) | no navhard entry above 57.1 |
+
+### ⛔ Coverage honesty
+**22 / 22 tracks carry a named query.** DEEP: **D1, A1 (full text), A2, A5, B5, B6, B13** — **three dedicated
+Band-B deep-reads**, the bar met **without** counting B12's A1-derived finding. **A3 not deep-read (E-A3, 5th).**
+**Full texts: 3 via local pypdf** (Drive-HWM, `1604.06915`, `2606.08860`) + **4 via the fetch summariser**
+(RISE, WMPO, DualPathOcc, the Waymo blog), all four **pre-committed for local re-read before registry use**
+per FS19-9. **9 empties/blocks named.** **Library 521 → 529.**
+⚠️ **B12 is under-served and is named as such**, in the pass's own summary, rather than smoothed over.
+
+### Next rotation — pre-committed
+1. **Local pypdf re-read** of RISE, WMPO, DualPathOcc before any of their numbers enters the registry.
+2. **B12 dedicated deep-read** — today's under-served clause.
+3. **D-11 (GAIA-4)** and **D-13 (Elluswamy transcript)** — untouched three passes.
+4. **E-WV20** via `wayve.ai`'s own technical blog, not a news aggregator.
+5. **A3 with a changed term again** — five empties is a signal about the term, not the field.

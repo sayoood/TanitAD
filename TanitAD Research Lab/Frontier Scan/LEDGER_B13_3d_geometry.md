@@ -154,3 +154,16 @@ Auxiliary pretraining head "unsplats" BEV features to a 3-D volume predicting **
 ⭐ **Our position:** supervision = LiDAR + camera + calibration. **The A&I FlyWheel built a LiDAR BEV GT over 139 PhysicalAI clips on 2026-09-13** (`…/2026-09-13-bev-lidar-corpus-and-head/`) ⇒ the self-supervised-occupancy redirect (S-3) is **unblocked on data**. ⛔ **But it is an ENCODER pretraining loss** — the seventh encoder-side lever this month; the frozen trunk forfeits it. Its gain is largest in the low-label regime the A&I head is in (82 train clips; `main − pixel` +0.0291 [−0.0040, +0.0693], INHERITED).
 Scan: **no Sept-2026 camera-only occupancy item** (EMPTY, probe 1).
 → `Frontier Scan/Daily/2026-09-13/RESULT.md` F5 · experiment `E-B13-OCCF-1`
+
+### 2026-09-20-01 — DualPathOcc `2609.06370`: a hard geometric target loses to **no** target ⭐⭐⭐
+
+Occ3D-nuScenes, Table 4: **one-hot depth supervision 35.96 mIoU < no depth supervision 36.92**;
+Gaussian depth (σ=1.5) **36.94** ≈ none. Authors: hard surface-centered targets create
+*"a mismatch between surface-based depth signals and volumetric occupancy learning."*
+Table 2 component ladder from FlashOcc 32.08: Spatial Enhancer +3.23, height-aware loss +3.63,
+dual-path +4.12, +SENet +4.84, all **+5.29 → 37.37**. BEV compression runs **800×800 → 200×200**.
+⭐ Pairs with Drive-HWM Table VI (**BEV 71.2 < depth 74.5 < RGB 76.8 < optical flow 83.7** on FEM).
+⇒ **a direct caution on FS19-3 and the SAM3-map-as-BEV-GT direction**: run a **flow** target arm and a
+**no-supervision control**, never BEV-only.
+**Class:** PUBLISHED (HTML ablation) — ⚠️ **summariser-sourced, pre-committed for local re-read before registry use (FS19-9)**.
+**Source:** Daily/2026-09-20/RESULT.md

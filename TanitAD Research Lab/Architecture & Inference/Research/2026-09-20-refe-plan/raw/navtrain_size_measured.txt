@@ -1,0 +1,48 @@
+NAVTRAIN IS 449.0 GB, MEASURED -- AND IT MUST BE PULLED WHERE THE COMPUTE IS, NOT HERE.
+MEASURED 2026-09-20 from the Hugging Face dataset metadata API. NOTHING WAS DOWNLOADED.
+Source: https://huggingface.co/api/datasets/OpenDriveLab/OpenScene/tree/main/navsim?recursive=true
+
+THIS CONFIRMS A FIGURE THAT HAD BEEN CARRIED AS AN ESTIMATE
+  REFE_PLAN.md carried '~450 GB (backlog row 3; to confirm on the OpenScene page)'.
+  MEASURED: 449.0 GB over 64 files. The estimate was right to within 0.2 %.
+
+THE SPLIT, WHICH IS THE PART THAT CHANGES A DECISION
+  group              files        GB
+  navtrain_current      32     304.5     <- the CURRENT frame; what REFe consumes
+  navtrain_history      32     144.5     <- history frames; REFe uses the current frame only
+  TOTAL                 64     449.0
+
+FOR CONTEXT, the neighbouring trees (same API call, same day):
+  openscene-v1.1/openscene_sensor_trainval_camera   200 files   1,242 GB (the FULL trainval
+     camera set; navtrain is the 'small portion' of it, repackaged as the navsim/ shards)
+  navsim-v2                                           5 files      50 GB (navhard etc.)
+  openscene-v1.1/openscene_metadata_trainval.tgz                    7.05 GB (annotations)
+
+TIME TO PULL, at link speeds MEASURED ON THIS BOX TODAY
+  link                            full 449 GB   current-only 304.5 GB
+  dev box, measured 1.6 MB/s          77.0 h                52.2 h
+  dev box, best seen 3.8 MB/s         33.3 h                22.6 h
+  pod, typical 100 MB/s                1.2 h                 0.8 h
+  pod, HF relay 118 MB/s               1.1 h                 0.7 h
+
+  The 1.6 MB/s is a MEMORY-ONLY range GET against S3 taken while the val pull was running,
+  so it is the link and not the disk (the same probe measured local disk at 11.6 MB/s).
+  3.8 MB/s is what the nuPlan test split actually achieved earlier today, 95.9 GB in 7h06m.
+
+⛔ THE CONCLUSION, AND IT IS A PI DECISION, NOT A TECHNICAL ONE
+  Pulling navtrain to the dev box is FEASIBLE but costs 2-3 DAYS of a link that is already
+  carrying the nuPlan val split (itself ~40 h at the same measured rate), and the two would
+  share the same bottleneck. On a pod it is ~1 hour.
+  ⇒ navtrain should be pulled ON THE POD. This is the same rule the programme already
+    recorded after measuring the 1.2 MB/s uplink: move HF-resident sources and build where
+    the compute is. It also reframes the pod request -- the pod is needed for the DATA, not
+    only for the training.
+
+⚠️ WHAT THIS DOES NOT SAY
+  * It does not say we can skip navtrain_history. REFe consumes the current frame, but the
+    feature builder's history window (history_steps 5) may need history frames -- that is
+    UNVERIFIED here and must be settled from the loader before anyone pulls only 304.5 GB.
+  * It does not price EXTRACTION. These are .tgz; the extracted footprint is larger and is
+    not measurable from the metadata API.
+  * CAM_F0-only does NOT reduce the DOWNLOAD. The shards are gzipped tarballs of all
+    cameras, so the bytes crossing the link are the same; only the retained disk shrinks.

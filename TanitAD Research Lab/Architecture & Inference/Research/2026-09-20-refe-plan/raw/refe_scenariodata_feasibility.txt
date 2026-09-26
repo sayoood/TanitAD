@@ -1,0 +1,47 @@
+STRONGER CHECK: a name appearing in a file is not the same as an array being produced.
+Running THEIR nuPlan map-array builder on a real scenario and listing what it ACTUALLY emits.
+
+  _build_map_arrays parameters: map_api, anchor, total_frames, sampled_frames, map_query_frames, tl_by_token, route_roadblock_ids, radius_m, max_center_segments, max_boundary_segments, include_traffic_lights
+
+  _empty_map_arrays emits 18 arrays:
+    lanes_centers_attributes           (64, 3)
+    lanes_centers_groups               (64,)
+    lanes_centers_ids                  (64,)
+    lanes_centers_left_groups          (64, 2)
+    lanes_centers_masks                (64,)
+    lanes_centers_next_groups          (64, 4)
+    lanes_centers_points               (64, 2, 2)
+    lanes_centers_right_groups         (64, 2)
+    lanes_centers_tl_masks             (64, 1)
+    lanes_centers_tl_states            (64, 1, 4)
+    other_lanes_attributes             (64, 3)
+    other_lanes_groups                 (64,)
+    other_lanes_ids                    (64,)
+    other_lanes_masks                  (64,)
+    other_lanes_next_groups            (64, 4)
+    other_lanes_points                 (64, 2, 2)
+    other_lanes_tl_masks               (64, 1)
+    other_lanes_tl_states              (64, 1, 4)
+
+  ScenarioData REQUIRED fields vs what _empty_map_arrays actually emits:
+    npc_id_array                     not from the map builder (agents/ego path)
+    lanes_points                     MAP ARRAY: other_lanes_points
+    lanes_points_mask                not from the map builder (agents/ego path)
+    lanes_centers_points             MAP ARRAY: lanes_centers_points
+    lanes_centers_mask               MAP ARRAY: lanes_centers_masks
+    route_points_array               not from the map builder (agents/ego path)
+    route_points_mask                not from the map builder (agents/ego path)
+    occupancy_grid                   not from the map builder (agents/ego path)
+    agent_positions_all              not from the map builder (agents/ego path)
+    agent_velocity_all               not from the map builder (agents/ego path)
+    agent_size_all                   not from the map builder (agents/ego path)
+    agent_orientation_all            not from the map builder (agents/ego path)
+    agent_type_all                   not from the map builder (agents/ego path)
+    npc_mask_all                     not from the map builder (agents/ego path)
+
+  3/14 required fields come from the MAP builder;
+  the remainder are agent/ego tensors, which the feature builder assembles from the
+  simulation's own DetectionsTracks -- i.e. available at every step, no new geometry.
+
+  VERDICT: the ScenarioData builder is an ASSEMBLY job over two existing sources
+  (their map arrays + nuPlan's tracked objects), not new perception or geometry code.

@@ -617,3 +617,33 @@ TechCrunch 2026-09-01 ("Waymo goes on offense"): its primary is the *10 AI Lesso
 | D-12 (AlpaSim fidelity) | ⛔ OPEN — T-11 now fixes the FORM its measurement must take |
 | D-13 (Elluswamy transcript) | ⛔ STANDS — 2nd probe EMPTY; speaker's own X post exists but is unfetchable here |
 | **D-14** *(new)* | Waymo *Reference Driver* (2026-06 blog + Nature Comms, TU Delft) — unadjudicated A5/Band-D claim about benchmarking AVs against humans |
+
+## Twelfth pass — 2026-09-20 (LAB-RUN-017): the two oldest debts, closed
+
+`Source: TanitAD Research Lab/Opponent Analysis/Research/2026-09-20-red-and-the-modularity-proof/RESULT.md. Seven-step adjudication per amendment 7.1. APPEND-ONLY.`
+
+| id | claim | experiment? | confirming (independent) | contradicting (actively sought) | verdict | binds on us? | flips it |
+|---|---|---|---|---|---|---|---|
+| **W-20-1** | Waymo `ReD` establishes a reference model of competent human collision-avoidance response (2026-06 blog, `PUBLISHED-BLOG`) | NOT INSPECTABLE - the Nature Comms primary `s41467-026-73345-0` returns **303 to an IdP login**; the blog reports **zero numbers** | none independent of Waymo | the predecessor's own scope concession (W-20-3); the three-expert context objection | **NOT-ADJUDICABLE-AS-PUBLISHED** | YES as a RULE: **no ReD number may enter our registry or any comparison table** | the Nature Comms full text, read (new debt **D-15**) |
+| **W-20-2** | `ReD` models **proactive** avoidance, not only last-second reaction | NO - capability assertion, no number | - | the claim's value depends on conceding NIEON's defect | SUPPORTED-AS-INTENT, UNSUPPORTED-AS-MEASURED | YES, favourably: the largest operator concedes a reactive-only benchmark is insufficient - our strategic-tier argument | a proactive-avoidance score with n and CI |
+| **W-20-3** | **CONCESSION** (Waymo's own, NIEON): it *"is a tool for evaluating collision avoidance only, as it **inherits the pre-conflict behaviors** ... of the ADS being evaluated"*; models a driver *"that does not exist in the human population"* | admission | - | - | **SUPPORTED** | **YES, strongest of the pass** - a benchmark partly built from the system under test is structurally our **T1 self-action open loop**; an opponent documented our failure mode in its own safety case | - |
+| **W-20-4** | **CONCESSION:** counterfactual/disengagement simulation *"cannot definitively predict exactly what would have occurred"* | admission | pseudo-sim R2 0.8 vs closed loop (`2506.04218`) | - | **SUPPORTED** | YES - bounds **D-12**; a counterfactual evaluator is an estimator and must be reported as one (**T-11**) | - |
+| **M-20-1** ⭐ | Mobileye `1604.06915`: end-to-end needs *"exponentially larger"* sample complexity than semantic abstraction | **NO - a CONSTRUCTION**, 4 pages, PAC-style, no dataset. Engine: Definition 1 (c-approximate independence) on a **conjunctive** target `g = z1^...^zT` ⇒ `P[g] <= c^T * prod P[zt]`. Its own abstract: *"cases in which"* | the arithmetic is sound; the worked figure (P[zt]~1e-6, c=1.1, T=3 ⇒ P[g] <= 1.34e-18) is internally consistent | DeepSight (monolithic E2E VLA tops Bench2Drive, but with structure-shaped aux losses); **ours, MEASURED**: speed-as-3rd-action-channel took REF-A 3.73 -> 0.83 m, which **confirms** | **SUPPORTED-UNDER-ITS-ASSUMPTION.** Not "modularity wins" but "**a task that factors into approximately-independent sub-events is cheaper to learn factored**" | **YES, favourably - and it retires a mis-framing.** Our hierarchy IS a factorisation claim, so this is an argument FOR a structured design. What it binds is the **burden**: show OUR factorisation is approximately independent ⇒ **H1b** (backlog row 18) | a task provably factoring this way where E2E matches modular at equal data |
+
+⛔ **Correction to this register's own 2026-09-19 framing.** Row **M-19-1** recorded the argument as *"SUPPORTED as a sample-complexity argument; CONTESTED as a system claim"* while noting the source was **unread**. With the source read, the sharper statement is M-20-1: the sample-complexity half is **conditional on a task assumption**, and naming that condition is exactly what the unread text was hiding. M-19-1 is **not retracted** - it is superseded in precision.
+
+### ⚠️ OPPONENT STRENGTHS, recorded
+15. Waymo publishes its own benchmark's limitations, in the open, **years before** outside critics reach them. Our eval docs match that discipline only in places.
+16. `ReD` is *"fully automated, thus potentially allowing for application on large test sets with thousands of scenarios"* - a scaled counterfactual evaluator we do not have (D-12 is unprovisioned).
+17. `ReD` attempts the **right repair** to the inheritance defect (proactive avoidance), rather than defending the predecessor.
+18. Mobileye's argument has stood a decade and has absorbed its own counter-examples; it is stronger read than caricatured.
+
+### Standing debt status this pass
+| id | status |
+|---|---|
+| **D-7** (`1604.06915` full text) | ✅ **CLOSED 2026-09-20** - read in full from the bank. ⛔ **Process note: it was banked all along.** Five passes recorded "not reached"; the cost of reaching it was one `find`. A debt that is re-declared without re-probing its cheapest route is a habit, not a blocker |
+| **D-14** (Waymo *Reference Driver*) | ✅ **CLOSED as adjudicated-unverifiable** - doctrine recorded, experiment unreadable ⇒ split into **D-15** |
+| **D-15** *(new)* | *Nature Communications* `s41467-026-73345-0` (ReD, with TU Delft) - paywalled/IdP. ⛔ **PI-queue**, same class as D-4: a human saves the PDF, the Lab banks and reads it |
+| **D-4** (UNECE GRVA / UN R185) | ⛔ STANDS - not re-probed (blocked on a human action, not a search). Noted from the C3 sweep: the UN ADS **global technical regulation** was adopted at the **same June 2026 WP.29 session**, consistent with the pinned request |
+| **D-11** (GAIA-4), **D-13** (Elluswamy transcript) | ⛔ STAND - not reached |
+| **E-WV20** *(new empty)* | Wayve doctrine via Axios 2026-09-16: **HTTP 403**. A Band-D Wayve item was attempted and not obtained; next route is `wayve.ai`'s own technical blog |

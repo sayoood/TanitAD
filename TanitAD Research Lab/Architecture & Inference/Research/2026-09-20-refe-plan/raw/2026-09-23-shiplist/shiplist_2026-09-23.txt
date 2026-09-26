@@ -1,0 +1,76 @@
+RUNTIME (17) -- must ship:
+    code/augment_routes.py
+    code/route_lane_rank_patch.py
+    refe/augment_search.py
+    refe/build_scorer_targets.py
+    refe/build_targets.py
+    refe/build_teacher_rollouts.py
+    refe/calib_table.py
+    refe/ckpt_io.py
+    refe/load_dinov3.py
+    refe/model.py
+    refe/navtrain_scenarios.py
+    refe/planner.py
+    refe/route_rank.py
+    refe/score_proposals.py
+    refe/scorer_gate.py
+    refe/train.py
+    refe/validate_model.py
+
+GATES + their extra deps (10):
+    refe/diag_architecture.py
+    refe/diag_calib.py
+    refe/diag_consumer_conformance.py
+    refe/diag_guard_audit.py
+    refe/diag_planner_holds.py
+    refe/diag_rank_distinctness.py
+    refe/diag_rope.py
+    refe/diag_schedule.py
+    refe/diag_signal_consistency.py
+    refe/diag_train_resume.py
+
+NOT reachable (34) -- evidence, not runtime:
+    code/arrange_splits.py
+    code/contact_sheet.py
+    code/critic_flatness.py
+    code/fetch_front_camera.py
+    code/fetch_navtrain_dbs.py
+    code/finalize_mini.py
+    code/lane_change_probe.py
+    code/pool_size_bias.py
+    code/probe_cam_calib.py
+    code/refe_expt_cost.py
+    code/refe_final_reco.py
+    code/refe_flops.py
+    code/refe_reconstruct_theirs.py
+    code/refe_sizing_params.py
+    code/render_teacher_bev.py
+    code/stage0_post.py
+    code/stall_census.py
+    code/switch_direction.py
+    code/tts_sweep_analysis.py
+    code/verify_extract_split.py
+    refe/_probe_comfort.py
+    refe/_probe_comfort2.py
+    refe/_probe_comfort3.py
+    refe/_probe_shapes.py
+    refe/diag_aimed.py
+    refe/diag_batch.py
+    refe/diag_cameras.py
+    refe/diag_cost.py
+    refe/diag_curbdist.py
+    refe/diag_determinism.py
+    refe/diag_enrich_cost.py
+    refe/diag_goal.py
+    refe/diag_keys.py
+    refe/diag_scorer_components.py
+
+!! REACHABLE BUT ABSENT from POD_HANDOFF's 9-file list (8):
+    code/route_lane_rank_patch.py
+    refe/augment_search.py
+    refe/build_teacher_rollouts.py
+    refe/calib_table.py
+    refe/ckpt_io.py
+    refe/navtrain_scenarios.py
+    refe/route_rank.py
+    refe/scorer_gate.py

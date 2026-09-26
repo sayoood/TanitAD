@@ -116,3 +116,15 @@ Full adjudication: `../Opponent Analysis/OPPONENT_CLAIMS_REGISTER.md` rows **A16
 
 `HTML primary via summariser` · arXiv **2609.06055**. DriveRL: mixed-agent closed-loop RL converting logs into interactive environments; PPO teacher **5.70 M params** on structured privileged observations; student learns by winner-takes-all distillation. RL-only < human (93.61 vs 93.92); **+ goal augmentation 94.41**. Concession: self-play benefit is small on nuPlan because IDM background agents do not reward natural interaction.
 **Our position:** RL where RL is cheap (a 5.7 M teacher on vectors), imitation where perception is expensive — and admissible under our label/inference split. FS18-2. Also scanned: Crisp-Drive `2609.03225`, CRAFT `2605.04470`, OmniDreams `2606.03159`.
+
+### 2026-09-20-01 — WMPO `2511.09515`: the counter-argument to our semantic-target thread ⛔⭐
+
+Verbatim: *"In contrast to widely used latent world models, WMPO focuses on pixel-based predictions
+that align the 'imagined' trajectories with the VLA features pretrained with web-scale images."*
+⚠️ The abstract gives **no numbers and no matched latent baseline** ⇒ the contradiction is **unquantified**.
+⭐ It is a **different** argument from N-19-2 (`UNSUPPORTED-AS-STATED`): alignment-with-pretraining, not
+physics-from-pixels — and that version is **not refuted by anything we hold**.
+⇒ **T-12's falsifier should be widened**: the pixel case bites only when the downstream consumer is
+**web-pretrained**, which our trunk is not. Recording the boundary keeps T-12 honest.
+**Class:** PUBLISHED (abstract-deep, via summariser).
+**Source:** Daily/2026-09-20/RESULT.md

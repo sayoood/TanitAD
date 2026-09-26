@@ -1,0 +1,717 @@
+<title>REFe Training Run</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root {
+  --page: #f6f6f3; --surface: #fcfcfb; --surface-2: #f0efec;
+  --ink: #0b0b0b; --ink-2: #52514e; --muted: #7a7872; --grid: #e6e5df; --axis: #c3c2b7;
+  --ring: rgba(11,11,11,0.10);
+  --s1: #2a78d6; --s1-wash: rgba(42,120,214,0.10); --s2: #eb6834; --s3: #1baf7a; --deemph: #b4b2aa;
+  --good: #0ca30c; --good-ink: #006300; --warn: #fab219; --serious: #ec835a; --critical: #d03b3b;
+  --band: rgba(42,120,214,0.06);
+  --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19; --surface-2: #232321;
+    --ink: #ffffff; --ink-2: #c3c2b7; --muted: #95938c; --grid: #2c2c2a; --axis: #45453f;
+    --ring: rgba(255,255,255,0.10);
+    --s1: #3987e5; --s1-wash: rgba(57,135,229,0.14); --s2: #d95926; --s3: #199e70; --deemph: #5c5b55;
+    --good-ink: #0ca30c; --band: rgba(57,135,229,0.09);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d; --surface: #1a1a19; --surface-2: #232321;
+  --ink: #ffffff; --ink-2: #c3c2b7; --muted: #95938c; --grid: #2c2c2a; --axis: #45453f;
+  --ring: rgba(255,255,255,0.10);
+  --s1: #3987e5; --s1-wash: rgba(57,135,229,0.14); --s2: #d95926; --s3: #199e70; --deemph: #5c5b55;
+  --good-ink: #0ca30c; --band: rgba(57,135,229,0.09);
+}
+* { box-sizing: border-box; }
+body { background: var(--page); color: var(--ink); font-family: var(--sans); font-size: 15px; line-height: 1.55; }
+.wrap { max-width: 1160px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 64px; }
+@media (max-width: 560px) { .wrap { padding-inline: 16px; } }
+h1, h2, h3 { text-wrap: balance; margin: 0; }
+h1 { font-size: 30px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.2; }
+h2 { font-size: 21px; font-weight: 600; letter-spacing: -0.005em; }
+h3 { font-size: 15px; font-weight: 600; }
+p { margin: 0; }
+.eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.mono { font-family: var(--mono); }
+.num { font-variant-numeric: tabular-nums; }
+.lead { color: var(--ink-2); max-width: 70ch; }
+header.top { display: grid; gap: 10px; padding-bottom: 22px; border-bottom: 1px solid var(--grid); }
+.runline { font-family: var(--mono); font-size: 13px; color: var(--ink-2); display: flex; flex-wrap: wrap; gap: 6px 18px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.chip { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; padding: 4px 10px 4px 8px; border-radius: 999px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--ring); color: var(--ink); }
+.chip i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex: none; }
+.chip .ic { font-style: normal; font-weight: 600; font-size: 12px; width: 14px; text-align: center; }
+.s-good i { background: var(--good); } .s-warn i { background: var(--warn); } .s-serious i { background: var(--serious); } .s-critical i { background: var(--critical); } .s-info i { background: var(--s1); }
+section { padding-top: 34px; display: grid; gap: 16px; }
+.sec-head { display: grid; gap: 6px; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+.tile { background: var(--surface); border-radius: 10px; box-shadow: inset 0 0 0 1px var(--ring); padding: 14px 16px 13px; display: grid; gap: 3px; align-content: start; }
+.tile .lab { font-size: 13px; color: var(--ink-2); }
+.tile .val { font-size: 26px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.2; }
+.tile .sub { font-size: 12.5px; color: var(--muted); }
+.progress { background: var(--surface); border-radius: 10px; box-shadow: inset 0 0 0 1px var(--ring); padding: 16px 18px; display: grid; gap: 10px; }
+.meter { position: relative; height: 12px; background: var(--s1-wash); border-radius: 6px; }
+.meter .fill { position: absolute; inset: 0 auto 0 0; background: var(--s1); border-radius: 6px; }
+.meter .tick { position: absolute; top: -3px; bottom: -3px; width: 1px; background: var(--axis); }
+.meter-legend { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--ink-2); }
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 860px) { .grid2 { grid-template-columns: minmax(0, 1fr); } }
+figure { margin: 0; background: var(--surface); border-radius: 10px; box-shadow: inset 0 0 0 1px var(--ring); padding: 16px 16px 12px; display: grid; gap: 8px; min-width: 0; }
+figure .fh { display: grid; gap: 3px; }
+figure .fh h3 + p { font-size: 13.5px; color: var(--ink-2); }
+.chart { position: relative; width: 100%; min-width: 0; }
+.chart svg { display: block; width: 100%; overflow: visible; }
+.chart text { font-family: var(--sans); font-size: 11.5px; fill: var(--muted); }
+.chart .lbl { fill: var(--ink-2); font-size: 12px; }
+.chart .lbl-strong { fill: var(--ink); font-size: 12px; font-weight: 600; }
+.axis path, .axis line { stroke: var(--axis); }
+.gridline { stroke: var(--grid); stroke-width: 1; }
+.tip { position: absolute; pointer-events: none; background: var(--surface); color: var(--ink); box-shadow: 0 4px 16px rgba(0,0,0,0.12), inset 0 0 0 1px var(--ring); border-radius: 8px; padding: 8px 10px; font-size: 12.5px; line-height: 1.45; min-width: 150px; z-index: 5; }
+.tip .t-h { font-size: 12px; color: var(--muted); margin-bottom: 3px; font-family: var(--mono); }
+.tip .t-r { display: grid; grid-template-columns: 14px auto 1fr; align-items: center; column-gap: 7px; }
+.tip .t-r b { font-weight: 600; font-variant-numeric: tabular-nums; }
+.tip .t-r span { color: var(--ink-2); }
+.tip .key { width: 12px; height: 2px; border-radius: 1px; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12.5px; color: var(--ink-2); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend .lk { width: 14px; height: 2px; border-radius: 1px; display: inline-block; }
+.legend .sw { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+details.tv { font-size: 13px; }
+details.tv summary { cursor: pointer; color: var(--ink-2); width: max-content; padding: 2px 0; }
+details.tv summary:focus-visible { outline: 2px solid var(--s1); outline-offset: 2px; border-radius: 3px; }
+.tbl { overflow-x: auto; margin-top: 8px; }
+table { border-collapse: collapse; font-size: 12.5px; width: 100%; }
+th, td { text-align: right; padding: 5px 8px; border-bottom: 1px solid var(--grid); white-space: nowrap; font-variant-numeric: tabular-nums; }
+th:first-child, td:first-child { text-align: left; }
+th { font-weight: 600; color: var(--ink-2); }
+.findings { display: grid; gap: 10px; }
+.finding { background: var(--surface); border-radius: 10px; box-shadow: inset 0 0 0 1px var(--ring); padding: 14px 16px; display: grid; grid-template-columns: 118px minmax(0, 1fr); gap: 4px 16px; align-items: start; }
+@media (max-width: 620px) { .finding { grid-template-columns: minmax(0, 1fr); } }
+.finding h3 { margin-bottom: 3px; }
+.finding p { color: var(--ink-2); font-size: 14px; max-width: 78ch; }
+.finding .next { margin-top: 6px; font-size: 13.5px; color: var(--ink); }
+.caveats { display: grid; gap: 8px; font-size: 13.5px; color: var(--ink-2); max-width: 90ch; }
+.caveats li { margin-bottom: 4px; }
+.pending { color: var(--muted); font-style: italic; }
+a { color: var(--s1); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="eyebrow">TanitAD Research Lab · REFe · DriveZero reproduction on NAVSIM navtrain</div>
+    <h1>REFe training run</h1>
+    <div class="runline"><span id="r-name"></span><span>A40 pod · ViT-L/16 DINOv3 + LoRA · 4 cameras · 64 proposals + PDM scorer</span><span id="r-asof"></span></div>
+    <div class="chips" id="chips"></div>
+  </header>
+
+  <section id="now">
+    <div class="sec-head"><h2>Where the run stands</h2>
+      <p class="lead" id="now-lead"></p></div>
+    <div class="kpis" id="kpis"></div>
+    <div class="progress">
+      <div class="meter" id="meter"><div class="fill" id="meter-fill"></div></div>
+      <div class="meter-legend" id="meter-legend"></div>
+    </div>
+    <figure>
+      <div class="fh"><h3>What ran when</h3><p>Data preparation on the pod and the dev box, beside the training run. Times are Europe/Berlin.</p></div>
+      <div class="legend" id="tl-legend"></div>
+      <div class="chart" id="timeline"></div>
+      <details class="tv"><summary>Table view</summary><div class="tbl" id="timeline-t"></div></details>
+    </figure>
+  </section>
+
+  <section id="signals">
+    <div class="sec-head"><h2>Learning signals</h2>
+      <p class="lead">These are training-time signals, logged from the last 4-sample micro-batch of every 256-sample optimiser step. They show whether training is working. They are not driving results; those come from the NAVSIM evaluation further down.</p></div>
+    <figure>
+      <div class="fh"><h3>Trajectory loss (winner-takes-all L1, log scale)</h3><p id="cap-l1"></p></div>
+      <div class="legend"><span><i class="lk" style="background:var(--s1)"></i>median of 51 steps</span><span><i class="lk" style="background:var(--s1);opacity:.3"></i>each step</span><span><i class="sw" style="background:var(--band)"></i>bank still growing</span></div>
+      <div class="chart" id="c-l1"></div>
+      <details class="tv"><summary>Table view (per epoch)</summary><div class="tbl" id="t-epochs"></div></details>
+    </figure>
+    <div class="grid2">
+      <figure>
+        <div class="fh"><h3>Scorer loss</h3><p id="cap-score"></p></div>
+        <div class="chart" id="c-score"></div>
+      </figure>
+      <figure>
+        <div class="fh"><h3>Share of samples with scorer targets</h3><p id="cap-cov"></p></div>
+        <div class="legend"><span><i class="lk" style="background:var(--s1)"></i>last 50 steps</span><span><i class="lk" style="background:var(--deemph)"></i>since step 0 (what the log prints)</span></div>
+        <div class="chart" id="c-cov"></div>
+      </figure>
+      <figure>
+        <div class="fh"><h3>Distinct winning proposals per micro-batch</h3><p id="cap-win"></p></div>
+        <div class="chart" id="c-win"></div>
+      </figure>
+      <figure>
+        <div class="fh"><h3>Scorer candidates to nearest proposal</h3><p id="cap-ad"></p></div>
+        <div class="chart" id="c-ad"></div>
+      </figure>
+    </div>
+    <figure>
+      <div class="fh"><h3>Learning rate (cosine to zero at step 10,075)</h3><p id="cap-lr"></p></div>
+      <div class="legend"><span><i class="lk" style="background:var(--s1)"></i>applied</span><span><i class="lk" style="background:var(--deemph)"></i>still ahead</span></div>
+      <div class="chart" id="c-lr"></div>
+    </figure>
+  </section>
+
+  <section id="bank">
+    <div class="sec-head"><h2>The training bank grew while training ran</h2>
+      <p class="lead" id="bank-lead"></p></div>
+    <div class="grid2">
+      <figure>
+        <div class="fh"><h3>Training tuples read at each epoch</h3><p>Rank-0 targets (one per scene) and goal-augmented twins.</p></div>
+        <div class="legend"><span><i class="sw" style="background:var(--s1)"></i>rank-0 scenes</span><span><i class="sw" style="background:var(--s2)"></i>augmented twins</span></div>
+        <div class="chart" id="c-bank"></div>
+      </figure>
+      <figure>
+        <div class="fh"><h3>Scorer frames read at each epoch</h3><p id="cap-scf"></p></div>
+        <div class="chart" id="c-scf"></div>
+      </figure>
+    </div>
+    <details class="tv"><summary>Table view (bank per epoch)</summary><div class="tbl" id="t-bank"></div></details>
+  </section>
+
+  <section id="speed">
+    <div class="sec-head"><h2>Speed</h2><p class="lead" id="speed-lead"></p></div>
+    <figure>
+      <div class="fh"><h3>Seconds per optimiser step (256 samples)</h3><p>Steps slower than 60 s sit above the plotted range and are marked on the top edge. Most are epoch boundaries, which re-read the bank and save a snapshot; the first is compilation warm-up.</p></div>
+      <div class="chart" id="c-speed"></div>
+    </figure>
+  </section>
+
+  <section id="eval">
+    <div class="sec-head"><h2>NAVSIM evaluation: the learning curve</h2>
+      <p class="lead" id="eval-lead"></p></div>
+    <div class="grid2">
+      <figure>
+        <div class="fh"><h3>PDMS per snapshot, with 95% intervals</h3><p>200 navtest tokens over 93 logs, log-cluster bootstrap. Reference arms are scored on the same tokens.</p></div>
+        <div class="legend"><span><i class="sw" style="background:var(--s1)"></i>REFe</span><span><i class="lk" style="background:var(--deemph)"></i>reference arms</span></div>
+        <div class="chart" id="c-pdms"></div>
+      </figure>
+      <figure>
+        <div class="fh"><h3>Do the 64 proposals differ?</h3><p>Open-loop ADE against the human future: the planner's pick, a random pick, and the best of 64.</p></div>
+        <div class="legend"><span><i class="lk" style="background:var(--s1)"></i>selected</span><span><i class="lk" style="background:var(--s2)"></i>random (mean of 64)</span><span><i class="lk" style="background:var(--s3)"></i>oracle (best of 64)</span></div>
+        <div class="chart" id="c-ade"></div>
+      </figure>
+    </div>
+    <figure>
+      <div class="fh"><h3>Scores and the four metric families per snapshot</h3><p id="cap-fam"></p></div>
+      <div class="tbl" id="t-eval"></div>
+    </figure>
+  </section>
+
+  <section id="reading">
+    <div class="sec-head"><h2>Interpretation</h2><p class="lead">What the data says, what is at risk, and what is being done about it.</p></div>
+    <div class="findings" id="findings"></div>
+  </section>
+
+  <section id="sources">
+    <div class="sec-head"><h2>Sources and caveats</h2></div>
+    <ul class="caveats" id="caveats"></ul>
+  </section>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script id="data" type="application/json">/*__DATA__*/</script>
+<script>
+(function () {
+  "use strict";
+  const D = JSON.parse(document.getElementById("data").textContent);
+  const P = D.progress, S = D.series;
+  const fmt = (v, d = 2) => (v == null || !isFinite(v)) ? "–" : Number(v).toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+  const int = v => (v == null) ? "–" : Math.round(v).toLocaleString("en-US");
+  const pct = (v, d = 1) => (v == null || !isFinite(v)) ? "–" : (100 * v).toFixed(d) + " %";
+  const el = (tag, attrs = {}, text) => { const e = document.createElement(tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (text != null) e.textContent = text; return e; };
+  const $ = id => document.getElementById(id);
+
+  // ---------- header, chips, KPIs ----------
+  $("r-name").textContent = D.run.name;
+  $("r-asof").textContent = "data as of " + D.generated_local + " (Berlin)";
+  const doneFrac = (P.last_step + 1) / P.total_steps;
+  const etaDate = new Date(new Date(D.generated_local.replace(" ", "T") + ":00+02:00").getTime() + P.eta_h * 3600e3);
+  const berlin = d => d.toLocaleString("en-GB", { timeZone: "Europe/Berlin", weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+  const totalDays = (P.elapsed_h + P.eta_h) / 24;
+  const A = D.assembler, readNow = D.bank_events[D.bank_events.length - 1].scorer_frames;
+  const bankFixed = A.scorer_frames > readNow;
+  const chips = [
+    ["s-good", "✓", "Training healthy, " + fmt(P.steady_s_per_step_median, 1) + " s/step"],
+    ["s-good", "✓", "Data preparation finished on both machines"],
+    bankFixed ? ["s-good", "✓", "Scorer bank restored to " + int(A.scorer_frames) + " frames; read from the next epoch"]
+              : ["s-serious", "!", "Scorer bank incomplete"],
+    ["s-good", "✓", "Eval environment rebuilt, reproduces a banked result bit for bit"],
+  ].concat((() => {
+    // SPEC_NAVTEST Amendment 2, read at the snapshot after epoch 8: collapsed iff spread < 0.5 m AND oracle within 0.2 m of random
+    const e8 = D.evals.find(v => v.epoch === 8);
+    if (!e8) return [["s-warn", "?", "Proposal diversity: pre-registered check at epoch 8 pending"]];
+    const col = e8.proposals.endpoint_spread_m < 0.5 && (e8.proposals.ade_random_m - e8.proposals.ade_oracle_m) < 0.2;
+    return [col ? ["s-critical", "!", "Proposal head collapsed at epoch 8: decision needed"] : ["s-good", "✓", "Proposals diverse: pre-registered check passed at epoch 8"]];
+  })());
+  chips.forEach(([cls, ic, txt]) => { const c = el("span", { class: "chip " + cls }); c.append(el("i"), el("b", { class: "ic", "aria-hidden": "true" }, ic), document.createTextNode(txt)); $("chips").append(c); });
+  $("now-lead").textContent = "Step " + int(P.last_step + 1) + " of " + int(P.total_steps) + " (" + (100 * doneFrac).toFixed(1) +
+    " %), epoch " + P.epoch_now + " of 25. At the measured pace the run finishes " + berlin(etaDate) +
+    ", " + totalDays.toFixed(1) + " days after launch, inside the 7-day budget.";
+  const kpis = [
+    ["Optimiser steps", int(P.last_step + 1), "of " + int(P.total_steps) + " planned"],
+    ["Finish (estimate)", berlin(etaDate), P.eta_h.toFixed(0) + " h to go · " + totalDays.toFixed(1) + " d in total"],
+    ["Pace", fmt(P.steady_s_per_step_median, 1) + " s/step", "p10–p90 " + fmt(P.steady_p10_p90[0], 1) + "–" + fmt(P.steady_p10_p90[1], 1) + " s · " + fmt(P.steady_s_per_step_median / 256, 3) + " s/sample"],
+    ["Trajectory loss", fmt(P.traj_L1_med_now, 3), "from " + fmt(P.traj_L1_first, 1) + " at step 1 (median of 51 steps)"],
+    ["Training bank", int(189888) + " tuples", "103,037 scenes + 86,851 augmented twins"],
+    ["Scorer frames in bank", int(A.scorer_frames), bankFixed ? "restored " + A.last_local + " · training has read " + int(readNow) + " so far" : "of ~189,888"],
+  ];
+  kpis.forEach(([l, v, s]) => { const t = el("div", { class: "tile" }); t.append(el("div", { class: "lab" }, l), el("div", { class: "val" }, v), el("div", { class: "sub" }, s)); $("kpis").append(t); });
+  $("meter-fill").style.width = (100 * doneFrac).toFixed(2) + "%";
+  D.epoch_events.forEach(e => { const t = el("div", { class: "tick", title: "epoch " + e.epoch + " begins at step " + e.step }); t.style.left = (100 * e.step / P.total_steps) + "%"; $("meter").append(t); });
+  [["Launched " + D.run.start_local], [int(P.last_step + 1) + " steps done · " + fmt(P.elapsed_h, 1) + " h"], ["Ticks mark the " + D.epoch_events.length + " epoch starts so far"], ["Planned end: step " + int(P.total_steps)]]
+    .forEach(([t]) => $("meter-legend").append(el("span", {}, t)));
+
+  // ---------- shared chart machinery ----------
+  const charts = [];
+  function mount(id, draw) { const host = $(id); const c = { host, draw }; charts.push(c); return c; }
+  function tipFor(host) { let t = host.querySelector(".tip"); if (!t) { t = el("div", { class: "tip", role: "status" }); t.hidden = true; host.append(t); } return t; }
+  function showTip(host, tip, x, y, head, rows) {
+    tip.replaceChildren(el("div", { class: "t-h" }, head));
+    rows.forEach(r => { const row = el("div", { class: "t-r" }); const k = el("i", { class: "key" }); k.style.background = r.color; row.append(k, el("b", {}, r.value), el("span", {}, r.label)); tip.append(row); });
+    tip.hidden = false;
+    const hw = host.clientWidth, tw = tip.offsetWidth;
+    let left = x + 14; if (left + tw > hw) left = x - tw - 14; if (left < 0) left = 0;
+    tip.style.left = left + "px"; tip.style.top = Math.max(0, y - 10) + "px";
+  }
+
+  function lineChart(id, o) {
+    return mount(id, host => {
+      host.replaceChildren();
+      const W = Math.max(280, host.clientWidth), H = o.height || 240;
+      const m = { t: o.epochLabels ? 22 : 12, r: o.rightPad || 64, b: 30, l: 50 };
+      const svg = d3.select(host).append("svg").attr("viewBox", `0 0 ${W} ${H}`).attr("height", H)
+        .attr("role", "img").attr("aria-label", o.aria || "");
+      const X = o.x, xs = d3.scaleLinear().domain(o.xDomain || d3.extent(X)).range([m.l, W - m.r]);
+      const ys = (o.ylog ? d3.scaleLog() : d3.scaleLinear()).domain(o.yDomain).range([H - m.b, m.t]);
+      if (o.clamp) ys.clamp(true);
+      if (o.bands) o.bands.forEach(b => svg.append("rect").attr("x", xs(b[0])).attr("y", m.t).attr("width", Math.max(0, xs(b[1]) - xs(b[0])))
+        .attr("height", H - m.b - m.t).style("fill", "var(--band)"));
+      const yt = o.yTicks ? ys.ticks(o.yTicks) : (o.ylog ? o.yLogTicks : ys.ticks(5));
+      svg.append("g").selectAll("line").data(yt).join("line").attr("class", "gridline")
+        .attr("x1", m.l).attr("x2", W - m.r).attr("y1", d => ys(d)).attr("y2", d => ys(d));
+      svg.append("g").selectAll("text").data(yt).join("text").attr("x", m.l - 8).attr("y", d => ys(d)).attr("dy", "0.32em")
+        .attr("text-anchor", "end").attr("class", "num").text(o.yFmt || (d => d));
+      const xt = xs.ticks(Math.max(3, Math.floor((W - m.l - m.r) / 90)));
+      svg.append("line").attr("x1", m.l).attr("x2", W - m.r).attr("y1", H - m.b).attr("y2", H - m.b).style("stroke", "var(--axis)");
+      svg.append("g").selectAll("text").data(xt).join("text").attr("x", d => xs(d)).attr("y", H - m.b + 17)
+        .attr("text-anchor", "middle").attr("class", "num").text(d => d3.format(",")(d));
+      if (o.xLabel) svg.append("text").attr("x", W - m.r).attr("y", H - 2).attr("text-anchor", "end").text(o.xLabel);
+      if (o.epochLabels) {
+        const every = W < 520 ? 3 : 1;
+        D.epoch_events.forEach((e, i) => {
+          if (e.step < xs.domain()[0] || e.step > xs.domain()[1]) return;
+          svg.append("line").attr("x1", xs(e.step)).attr("x2", xs(e.step)).attr("y1", m.t).attr("y2", H - m.b).style("stroke", "var(--grid)");
+          if ((i + 1) % every === 0) svg.append("text").attr("x", xs(e.step)).attr("y", m.t - 7).attr("text-anchor", "middle").text("e" + e.epoch);
+        });
+      }
+      (o.refs || []).forEach(r => {
+        svg.append("line").attr("x1", m.l).attr("x2", W - m.r).attr("y1", ys(r.y)).attr("y2", ys(r.y)).style("stroke", r.color || "var(--deemph)").style("stroke-width", 1.5);
+        svg.append("text").attr("x", W - m.r + 6).attr("y", ys(r.y)).attr("dy", "0.32em").attr("class", "lbl").text(r.label);
+      });
+      o.series.forEach(s => {
+        const pts = X.map((x, i) => [x, s.y[i]]).filter(p => p[1] != null && isFinite(p[1]) && (!o.ylog || p[1] > 0) && p[0] >= xs.domain()[0] && p[0] <= xs.domain()[1]);
+        const line = d3.line().x(p => xs(p[0])).y(p => ys(p[1])).curve(s.step ? d3.curveStepAfter : d3.curveLinear);
+        svg.append("path").attr("d", line(pts)).style("fill", "none").style("stroke", s.color)
+          .style("stroke-width", s.w || 2).style("opacity", s.opacity == null ? 1 : s.opacity)
+          .style("stroke-linejoin", "round").style("stroke-linecap", "round");
+        if (s.end && pts.length) {
+          const p = pts[pts.length - 1];
+          svg.append("circle").attr("cx", xs(p[0])).attr("cy", ys(p[1])).attr("r", 4).style("fill", s.color).style("stroke", "var(--surface)").style("stroke-width", 2);
+          svg.append("text").attr("x", xs(p[0]) + 8).attr("y", ys(p[1])).attr("dy", "0.32em").attr("class", "lbl-strong num").text((s.endFmt || (v => v))(p[1]));
+        }
+      });
+      (o.marks || []).forEach(mk => {
+        svg.append("path").attr("d", d3.symbol(d3.symbolTriangle, 36)()).attr("transform", `translate(${xs(mk.x)},${m.t + 5}) rotate(0)`).style("fill", "var(--ink-2)");
+      });
+      // hover: crosshair snaps to the nearest logged step
+      const tip = tipFor(host), cross = svg.append("line").style("stroke", "var(--axis)").style("opacity", 0).attr("y1", m.t).attr("y2", H - m.b);
+      const dots = o.series.filter(s => s.hover !== false).map(s => svg.append("circle").attr("r", 4).style("fill", s.color).style("stroke", "var(--surface)").style("stroke-width", 2).style("opacity", 0));
+      const bis = d3.bisector(d => d).center;
+      const hit = svg.append("rect").attr("x", m.l).attr("y", m.t).attr("width", W - m.l - m.r).attr("height", H - m.t - m.b).style("fill", "transparent").attr("tabindex", 0);
+      function at(px) {
+        const xv = xs.invert(px); let i = bis(X, xv); i = Math.max(0, Math.min(X.length - 1, i));
+        cross.attr("x1", xs(X[i])).attr("x2", xs(X[i])).style("opacity", 1);
+        const rows = [];
+        o.series.filter(s => s.hover !== false).forEach((s, k) => {
+          const v = s.y[i];
+          if (v != null && isFinite(v) && (!o.ylog || v > 0)) { dots[k].attr("cx", xs(X[i])).attr("cy", ys(v)).style("opacity", 1); rows.push({ color: s.color, value: (s.fmt || (z => z))(v), label: s.label }); }
+          else dots[k].style("opacity", 0);
+        });
+        showTip(host, tip, xs(X[i]) / W * host.clientWidth, 8, (o.headFmt || (x => "step " + d3.format(",")(x)))(X[i], i), rows);
+      }
+      hit.on("pointermove", ev => at(d3.pointer(ev)[0])).on("pointerleave blur", () => { tip.hidden = true; cross.style("opacity", 0); dots.forEach(d => d.style("opacity", 0)); })
+        .on("focus", () => at(W - m.r - 1));
+    });
+  }
+
+  function barChart(id, o) {
+    return mount(id, host => {
+      host.replaceChildren();
+      const W = Math.max(280, host.clientWidth), H = o.height || 230, m = { t: 14, r: o.rightPad || 16, b: 30, l: 58 };
+      const svg = d3.select(host).append("svg").attr("viewBox", `0 0 ${W} ${H}`).attr("height", H).attr("role", "img").attr("aria-label", o.aria || "");
+      const cats = o.rows.map(r => r.cat);
+      const xs = d3.scaleBand().domain(cats).range([m.l, W - m.r]).paddingInner(0.3).paddingOuter(0.15);
+      const ys = d3.scaleLinear().domain([0, o.yMax]).nice().range([H - m.b, m.t]);
+      const bw = Math.min(24, xs.bandwidth()), off = (xs.bandwidth() - bw) / 2;
+      svg.append("g").selectAll("line").data(ys.ticks(4)).join("line").attr("class", "gridline").attr("x1", m.l).attr("x2", W - m.r).attr("y1", d => ys(d)).attr("y2", d => ys(d));
+      svg.append("g").selectAll("text").data(ys.ticks(4)).join("text").attr("x", m.l - 8).attr("y", d => ys(d)).attr("dy", "0.32em").attr("text-anchor", "end").attr("class", "num").text(d => d3.format("~s")(d));
+      svg.append("g").selectAll("text").data(cats).join("text").attr("x", d => xs(d) + xs.bandwidth() / 2).attr("y", H - m.b + 17).attr("text-anchor", "middle").attr("class", "num").text(d => d);
+      if (o.xLabel) svg.append("text").attr("x", m.l).attr("y", H - 2).text(o.xLabel);
+      const tip = tipFor(host);
+      o.rows.forEach(r => {
+        let base = 0; const g = svg.append("g");
+        o.keys.forEach((k, ki) => {
+          const v = r[k.key] || 0; if (v <= 0) return;
+          const y0 = ys(base), y1 = ys(base + v), top = ki === o.keys.length - 1 || o.keys.slice(ki + 1).every(kk => !(r[kk.key] > 0));
+          const h = Math.max(0, y0 - y1 - (base > 0 ? 2 : 0));
+          const x = xs(r.cat) + off, y = y1, rad = top ? Math.min(4, h) : 0;
+          const d = top ? `M${x},${y + h} V${y + rad} Q${x},${y} ${x + rad},${y} H${x + bw - rad} Q${x + bw},${y} ${x + bw},${y + rad} V${y + h} Z` : `M${x},${y} h${bw} v${h} h${-bw} Z`;
+          g.append("path").attr("d", d).style("fill", k.color);
+          base += v;
+        });
+        const hit = svg.append("rect").attr("x", xs(r.cat)).attr("y", m.t).attr("width", xs.bandwidth()).attr("height", H - m.t - m.b).style("fill", "transparent").attr("tabindex", 0);
+        const show = () => showTip(host, tip, (xs(r.cat) + xs.bandwidth()) / W * host.clientWidth, 10, o.headFmt(r),
+          o.keys.map(k => ({ color: k.color, value: int(r[k.key] || 0), label: k.label })).concat(o.extraRows ? o.extraRows(r) : []));
+        hit.on("pointermove focus", show).on("pointerleave blur", () => { tip.hidden = true; });
+      });
+      (o.refs || []).forEach(rf => {
+        svg.append("line").attr("x1", m.l).attr("x2", W - m.r).attr("y1", ys(rf.y)).attr("y2", ys(rf.y)).style("stroke", "var(--deemph)").style("stroke-width", 1.5);
+        svg.append("text").attr("x", W - m.r).attr("y", ys(rf.y) - 6).attr("text-anchor", "end").attr("class", "lbl").text(rf.label);
+      });
+      if (o.labelTop) o.rows.forEach(r => {
+        const tot = o.keys.reduce((a, k) => a + (r[k.key] || 0), 0);
+        if (o.labelTop(r)) svg.append("text").attr("x", xs(r.cat) + xs.bandwidth() / 2).attr("y", ys(tot) - 6).attr("text-anchor", "middle").attr("class", "lbl num").text(o.labelTop(r));
+      });
+    });
+  }
+
+  // end labels that would collide are pushed apart vertically and tied back with a short leader tick
+  function dodge(items, gap) {
+    items.sort((a, b) => a.y - b.y);
+    for (let i = 1; i < items.length; i++) if (items[i].ly - items[i - 1].ly < gap) items[i].ly = items[i - 1].ly + gap;
+    return items;
+  }
+  function endLabels(svg, items, x0, cls) {
+    items.forEach(it => { it.ly = it.y; });
+    dodge(items, 14).forEach(it => {
+      if (Math.abs(it.ly - it.y) > 1) svg.append("line").attr("x1", x0).attr("x2", x0 + 5).attr("y1", it.y).attr("y2", it.ly).style("stroke", "var(--axis)");
+      svg.append("text").attr("x", x0 + 7).attr("y", it.ly).attr("dy", "0.32em").attr("class", cls || "lbl num").text(it.text);
+    });
+  }
+
+  function table(id, head, rows) {
+    const t = el("table"), thead = el("thead"), tr = el("tr");
+    head.forEach(h => tr.append(el("th", { scope: "col" }, h))); thead.append(tr); t.append(thead);
+    const tb = el("tbody"); rows.forEach(r => { const row = el("tr"); r.forEach(c => row.append(el("td", {}, c))); tb.append(row); }); t.append(tb);
+    $(id).replaceChildren(t);
+  }
+
+  // ---------- timeline ----------
+  const TL = [
+    { row: "Training (A40)", a: "2026-09-24 01:17", b: D.generated_local, kind: "run", note: "running" },
+    { row: "Training (A40)", a: D.generated_local, b: null, kind: "plan", note: "still to run" },
+    { row: "Pod data prep", a: "2026-09-24 00:37", b: "2026-09-24 06:43", kind: "s1", note: "rank-0 targets, 10 Hz" },
+    { row: "Pod data prep", a: "2026-09-24 06:44", b: "2026-09-25 01:07", kind: "s2", note: "goal augmentation" },
+    { row: "Pod data prep", a: "2026-09-25 01:07", b: "2026-09-25 16:16", kind: "s3", note: "PDM scorer targets" },
+    { row: "Dev box data prep", a: "2026-09-24 00:35", b: "2026-09-24 06:08", kind: "s1", note: "rank-0 targets, 10 Hz" },
+    { row: "Dev box data prep", a: "2026-09-24 06:08", b: "2026-09-24 14:33", kind: "s2", note: "goal augmentation" },
+    { row: "Dev box data prep", a: "2026-09-24 14:33", b: "2026-09-24 19:47", kind: "s3", note: "PDM scorer targets" },
+  ];
+  const EV = [
+    { t: "2026-09-24 03:36", row: "Pod data prep", label: "faster map features switched on" },
+    { t: "2026-09-24 19:02", row: "Dev box data prep", label: "uploads to the pod stopped (124,619 scorer rows left behind)" },
+    { t: "2026-09-25 10:06", row: "Pod data prep", label: "bank assembler stopped (later scorer frames not added)" },
+  ];
+  const pt = s => new Date(s.replace(" ", "T") + ":00+02:00");
+  const etaEnd = etaDate;
+  TL.forEach(d => { d.A = pt(d.a); d.B = d.b ? pt(d.b) : etaEnd; });
+  const kindColor = { run: "var(--s1)", plan: "var(--s1-wash)", s1: "var(--s1)", s2: "var(--s2)", s3: "var(--s3)" };
+  [["var(--s1)", "rank-0 targets / training"], ["var(--s2)", "goal augmentation"], ["var(--s3)", "PDM scorer targets"], ["var(--s1-wash)", "training still to run"]]
+    .forEach(([c, l]) => { const s = el("span"); const i = el("i", { class: "sw" }); i.style.background = c; s.append(i, document.createTextNode(l)); $("tl-legend").append(s); });
+  mount("timeline", host => {
+    host.replaceChildren();
+    const W = Math.max(300, host.clientWidth), rows = ["Training (A40)", "Pod data prep", "Dev box data prep"];
+    const narrow = W < 560, m = { t: 22, r: 12, b: 26, l: narrow ? 12 : 136 }, rh = narrow ? 44 : 34, H = m.t + rows.length * rh + m.b;
+    const svg = d3.select(host).append("svg").attr("viewBox", `0 0 ${W} ${H}`).attr("height", H).attr("role", "img").attr("aria-label", "Timeline of data preparation and training");
+    const xs = d3.scaleTime().domain([pt("2026-09-23 23:30"), d3.timeHour.offset(etaEnd, 6)]).range([m.l, W - m.r]);
+    const days = d3.timeDay.range(d3.timeDay.ceil(xs.domain()[0]), xs.domain()[1]);
+    svg.append("g").selectAll("line").data(days).join("line").attr("class", "gridline").attr("x1", d => xs(d)).attr("x2", d => xs(d)).attr("y1", m.t - 6).attr("y2", H - m.b);
+    svg.append("g").selectAll("text").data(days).join("text").attr("x", d => xs(d) + 4).attr("y", H - m.b + 16)
+      .text(d => d.toLocaleDateString("en-GB", { timeZone: "Europe/Berlin", weekday: narrow ? undefined : "short", day: "numeric", month: narrow ? undefined : "short" }));
+    const yr = r => m.t + rows.indexOf(r) * rh + (narrow ? 16 : 6);
+    rows.forEach(r => svg.append("text").attr("x", narrow ? m.l : m.l - 10).attr("y", narrow ? yr(r) - 5 : yr(r) + 9).attr("text-anchor", narrow ? "start" : "end").attr("class", "lbl").text(r));
+    const tip = tipFor(host);
+    TL.forEach(d => {
+      const x0 = xs(d.A), x1 = Math.max(x0 + 2, xs(d.B)), y = yr(d.row), h = 18;
+      const r = svg.append("rect").attr("x", x0).attr("y", y).attr("width", Math.max(1, x1 - x0 - 2)).attr("height", h).attr("rx", 3).style("fill", kindColor[d.kind]).attr("tabindex", 0);
+      if (d.kind === "plan") r.style("stroke", "var(--s1)").style("stroke-width", 1).style("stroke-opacity", 0.35);
+      const hours = ((d.B - d.A) / 3600e3).toFixed(1);
+      const show = () => showTip(host, tip, x1 / W * host.clientWidth, y, d.row, [{ color: kindColor[d.kind], value: hours + " h", label: d.note + " · " + d.a + " → " + (d.b || berlin(etaEnd)) }]);
+      r.on("pointermove focus", show).on("pointerleave blur", () => { tip.hidden = true; });
+    });
+    const now = pt(D.generated_local);
+    svg.append("line").attr("x1", xs(now)).attr("x2", xs(now)).attr("y1", m.t - 12).attr("y2", H - m.b).style("stroke", "var(--ink)").style("stroke-width", 1.5);
+    svg.append("text").attr("x", xs(now) + 4).attr("y", m.t - 10).attr("class", "lbl-strong").text("now");
+    EV.forEach(e => {
+      const x = xs(pt(e.t)), y = yr(e.row) + 9;
+      const g = svg.append("g").attr("tabindex", 0);
+      g.append("path").attr("d", d3.symbol(d3.symbolDiamond, 64)()).attr("transform", `translate(${x},${y})`).style("fill", "var(--ink)").style("stroke", "var(--surface)").style("stroke-width", 2);
+      g.append("rect").attr("x", x - 12).attr("y", y - 12).attr("width", 24).attr("height", 24).style("fill", "transparent");
+      const show = () => showTip(host, tip, x / W * host.clientWidth, y, e.t, [{ color: "var(--ink)", value: "◆", label: e.label }]);
+      g.on("pointermove focus", show).on("pointerleave blur", () => { tip.hidden = true; });
+    });
+  });
+  table("timeline-t", ["Machine", "Stage", "Start", "End", "Hours"], TL.map(d => [d.row, d.note, d.a, d.b || berlin(etaEnd) + " (estimate)", ((d.B - d.A) / 3600e3).toFixed(1)])
+    .concat(EV.map(e => [e.row, "event: " + e.label, e.t, "", ""])));
+
+  // ---------- learning signals ----------
+  const X = S.step.map(s => s + 1), firstScore = D.epoch_events.find(e => e.epoch === 5).step;
+  const pe = D.per_epoch;
+  $("cap-l1").textContent = "Median per epoch " + pe.map(e => fmt(e.traj_L1_median, 2)).join(" → ") + " (epochs 0–" + pe[pe.length - 1].epoch +
+    "). Still falling, with the learning rate at " + (100 * S.lr[S.lr.length - 1] / 2e-4).toFixed(0) + " % of its peak. The loss is the distance of the BEST of 64 proposals to the teacher's rollout, so it flatters the model by construction.";
+  lineChart("c-l1", {
+    x: X, ylog: true, yDomain: [0.08, 25], yLogTicks: [0.1, 0.3, 1, 3, 10], yFmt: d => d, epochLabels: true, height: 290,
+    bands: [[0, D.epoch_events.find(e => e.epoch === 8).step]],
+    series: [
+      { y: S.traj_L1, color: "var(--s1)", w: 1, opacity: 0.28, label: "this step", fmt: v => fmt(v, 3) },
+      { y: S.traj_L1_med, color: "var(--s1)", w: 2, label: "median of 51 steps", fmt: v => fmt(v, 3), end: true, endFmt: v => fmt(v, 3) },
+    ], aria: "Trajectory loss on a log scale falling from 19.5 to about 0.22 over 3,500 steps",
+  });
+  table("t-epochs", ["Epoch", "Steps", "Loss median", "Scorer loss median", "Winners (of 4)", "Cand→proposal (m)", "Scorer coverage", "s/step", "Bank tuples", "Scorer frames"],
+    pe.map(e => [e.epoch, int(e.steps), fmt(e.traj_L1_median, 3), e.score_median == null ? "–" : fmt(e.score_median, 4), fmt(e.winners_mean, 2),
+      e.assign_d_median == null ? "–" : fmt(e.assign_d_median, 2), pct(e.scorer_cov_window), fmt(e.s_per_step_median, 2), int(e.bank_tuples), int(e.bank_scorer_frames)]));
+
+  const e5 = pe.find(e => e.epoch === 5), eN = pe[pe.length - 1];
+  $("cap-score").textContent = "Binary cross-entropy on the six PDM components, scaled by 0.1. Targets first arrived in epoch 5 (median " + fmt(e5.score_median, 3) +
+    "); now " + fmt(eN.score_median, 3) + ", about " + fmt(10 * eN.score_median, 2) + " mean BCE per candidate.";
+  lineChart("c-score", {
+    x: X, xDomain: [firstScore, X[X.length - 1]], yDomain: [0, 0.3], clamp: true, epochLabels: true, height: 220, rightPad: 56,
+    series: [
+      { y: S.score, color: "var(--s1)", w: 1, opacity: 0.25, label: "this step", fmt: v => fmt(v, 4) },
+      { y: S.score_med, color: "var(--s1)", w: 2, label: "median of 51 steps", fmt: v => fmt(v, 4), end: true, endFmt: v => fmt(v, 3) },
+    ], aria: "Scorer loss since epoch 5",
+  });
+  $("cap-cov").textContent = "Since epoch 8 about " + pct(eN.scorer_cov_window, 0) + " of samples carry PDM targets. The trainer prints the since-start ratio (" +
+    pct(P.scorer_cov_cum_now) + "), which the scorer-less early epochs dilute.";
+  lineChart("c-cov", {
+    x: X, yDomain: [0, 1], yTicks: 5, yFmt: d => (100 * d).toFixed(0) + "%", epochLabels: true, height: 220, rightPad: 52,
+    series: [
+      { y: S.scorer_cov_win, color: "var(--s1)", w: 2, label: "last 50 steps", fmt: v => pct(v), end: true, endFmt: v => pct(v, 0) },
+      { y: S.scorer_cov_cum, color: "var(--deemph)", w: 2, label: "since step 0", fmt: v => pct(v), end: true, endFmt: v => pct(v, 0) },
+    ], aria: "Share of samples with scorer targets",
+  });
+  $("cap-win").textContent = "How many of the 4 samples in a micro-batch picked different proposals as their winner. It dipped to " +
+    fmt(pe.find(e => e.epoch === 2).winners_mean, 2) + " in epoch 2 and has held near " + fmt(eN.winners_mean, 1) + " since epoch 4: proposals are being used, not abandoned.";
+  lineChart("c-win", {
+    x: X, yDomain: [1, 4], yTicks: 3, epochLabels: true, height: 220, rightPad: 44,
+    series: [{ y: S.winners_mean, color: "var(--s1)", w: 2, label: "mean of 51 steps", fmt: v => fmt(v, 2), end: true, endFmt: v => fmt(v, 2) }],
+    aria: "Distinct winning proposals per micro-batch",
+  });
+  $("cap-ad").textContent = "Mean distance from each banked scorer candidate to the model's nearest proposal: flat near " +
+    fmt(eN.assign_d_median, 1) + " m since epoch 5. The scorer is taught on trajectories that sit that far from what the model actually proposes.";
+  lineChart("c-ad", {
+    x: X, xDomain: [firstScore, X[X.length - 1]], yDomain: [0, 8], clamp: true, epochLabels: true, height: 220, rightPad: 50,
+    series: [
+      { y: S.assign_d, color: "var(--s1)", w: 1, opacity: 0.25, label: "this step (m)", fmt: v => fmt(v, 2) + " m" },
+      { y: S.assign_d_med, color: "var(--s1)", w: 2, label: "median of 51 steps", fmt: v => fmt(v, 2) + " m", end: true, endFmt: v => fmt(v, 1) + " m" },
+    ], aria: "Distance from scorer candidates to the nearest proposal",
+  });
+  const lrPlanX = d3.range(X[X.length - 1], P.total_steps + 1, 25), lrPlan = lrPlanX.map(s => 1e-4 * (1 + Math.cos(Math.PI * s / P.total_steps)));
+  $("cap-lr").textContent = "Now " + S.lr[S.lr.length - 1].toExponential(2) + " of a 2e-4 peak. Most of the decay, where losses usually drop further, is still ahead.";
+  lineChart("c-lr", {
+    x: X.concat(lrPlanX), xDomain: [0, P.total_steps], yDomain: [0, 2.1e-4], yTicks: 4, yFmt: d => d === 0 ? "0" : d.toExponential(0), height: 180, rightPad: 64,
+    series: [
+      { y: S.lr.concat(lrPlanX.map(() => null)), color: "var(--s1)", w: 2, label: "applied", fmt: v => v.toExponential(2), end: true, endFmt: v => "now" },
+      { y: S.lr.map(() => null).concat(lrPlan), color: "var(--deemph)", w: 2, label: "still ahead", fmt: v => v.toExponential(2) },
+    ], aria: "Cosine learning-rate schedule", headFmt: x => "step " + d3.format(",")(Math.round(x)),
+  });
+
+  // ---------- bank ----------
+  const BE = D.bank_events;
+  $("bank-lead").textContent = "Training started on the first 7,536 rank-0 targets while data preparation kept running. Every epoch re-read a byte snapshot of the bank: all 103,037 scenes by epoch 4, all 86,851 augmented twins by epoch 7. Scorer frames stopped growing at 120,264 after epoch 8, because the bank assembler on the pod stopped and the dev box's last uploads never ran." +
+    (bankFixed ? " Both were repaired on " + A.last_local + ": the bank now holds " + int(A.scorer_frames) + " scorer frames, and training reads them from its next epoch boundary." : "");
+  barChart("c-bank", {
+    rows: BE.map(b => ({ cat: b.epoch, r0: b.rank0, r1: b.rank1, at: b.at_local })), yMax: 200000, height: 230, xLabel: "epoch",
+    keys: [{ key: "r0", color: "var(--s1)", label: "rank-0 scenes" }, { key: "r1", color: "var(--s2)", label: "augmented twins" }],
+    headFmt: r => "epoch " + r.cat + " · read " + r.at, labelTop: r => (r.cat === 0 || r.cat === 4 || r.cat === BE.length - 1) ? d3.format("~s")(r.r0 + r.r1) : null,
+    aria: "Training tuples per epoch",
+  });
+  $("cap-scf").textContent = "Frames with PDM targets that training read at each epoch. The line is what the bank holds now. The flat run from epoch 8 is the gap that was repaired" + (bankFixed ? " on " + A.last_local + "." : ".");
+  barChart("c-scf", {
+    rows: BE.map(b => ({ cat: b.epoch, sf: b.scorer_frames, at: b.at_local })), yMax: 200000, height: 230, xLabel: "epoch",
+    keys: [{ key: "sf", color: "var(--s3)", label: "scorer frames" }], refs: [{ y: A.scorer_frames, label: "in the bank now: " + int(A.scorer_frames) }],
+    headFmt: r => "epoch " + r.cat + " · read " + r.at, labelTop: r => r.sf > 0 && (r.cat === 5 || r.cat === 8 || r.cat === BE.length - 1) ? d3.format("~s")(r.sf) : null,
+    aria: "Scorer frames per epoch",
+  });
+  table("t-bank", ["Epoch", "Read at (Berlin)", "Scenes", "Rank-0", "Augmented", "Tuples", "Scorer frames", "Candidates / sample"],
+    BE.map(b => [b.epoch, b.at_local, int(b.scenes), int(b.rank0), int(b.rank1), int(b.tuples), int(b.scorer_frames), fmt(b.cov_norm, 2)]));
+
+  // ---------- speed ----------
+  const bnd = new Set(D.epoch_events.map(e => e.step));
+  $("speed-lead").textContent = "Steady at a median " + fmt(P.steady_s_per_step_median, 2) + " s per 256-sample step (10th–90th percentile " +
+    fmt(P.steady_p10_p90[0], 2) + "–" + fmt(P.steady_p10_p90[1], 2) + " s), with data preparation running beside it on the same pod for the first 39 hours. Epoch boundaries add about 105 s once each. Peak GPU memory " + fmt(P.mem_gb_max, 1) + " GB of 46 GB; " + P.n_ckpts + " resume checkpoints written so far.";
+  lineChart("c-speed", {
+    x: X, yDomain: [55, 60], clamp: true, height: 200, rightPad: 60, epochLabels: false,
+    refs: [{ y: P.steady_s_per_step_median, label: fmt(P.steady_s_per_step_median, 1) + " s", color: "var(--deemph)" }],
+    marks: S.step.filter((s, i) => S.s_per_step[i] > 60).map(s => ({ x: s + 1 })),
+    series: [{ y: S.s_per_step, color: "var(--s1)", w: 1, opacity: 0.8, label: "s this step", fmt: v => fmt(v, 1) + " s" }],
+    aria: "Seconds per optimiser step",
+  });
+
+  // ---------- evaluation ----------
+  const EVs = D.evals, pending = [5, 8, 11].filter(e => !EVs.some(v => v.epoch === e));
+  const fl = EVs[0].floors;
+  $("eval-lead").textContent = "NAVSIM v1 PDMS is an open-loop plan scored by pseudo-simulation against the logged agents (W3's harness, reproduced exactly). The snapshots after epochs 1 to 5 predate the scorer's first targets, so their choice among the 64 proposals was untrained. " +
+    (pending.length ? "Snapshots " + pending.join(", ") + " are being evaluated now." : "The snapshot after epoch 5 had the first augmented twins but no scorer training yet; the snapshots after epochs 8 and 11 had both.");
+  mount("c-pdms", host => {
+    host.replaceChildren();
+    const W = Math.max(280, host.clientWidth), H = 260, m = { t: 12, r: 112, b: 30, l: 40 };
+    const svg = d3.select(host).append("svg").attr("viewBox", `0 0 ${W} ${H}`).attr("height", H).attr("role", "img").attr("aria-label", "PDMS per snapshot with reference arms");
+    const xsVals = [1, 2, 3, 5, 8, 11], xs = d3.scalePoint().domain(xsVals).range([m.l + 10, W - m.r - 10]), ys = d3.scaleLinear().domain([0, 100]).range([H - m.b, m.t]);
+    svg.append("g").selectAll("line").data([0, 25, 50, 75, 100]).join("line").attr("class", "gridline").attr("x1", m.l).attr("x2", W - m.r).attr("y1", d => ys(d)).attr("y2", d => ys(d));
+    svg.append("g").selectAll("text").data([0, 25, 50, 75, 100]).join("text").attr("x", m.l - 8).attr("y", d => ys(d)).attr("dy", "0.32em").attr("text-anchor", "end").attr("class", "num").text(d => d);
+    svg.append("g").selectAll("text").data(xsVals).join("text").attr("x", d => xs(d)).attr("y", H - m.b + 17).attr("text-anchor", "middle").attr("class", "num").text(d => "e" + d);
+    const refLabels = [];
+    [["HUMAN", "human"], ["STOP", "stand still"], ["refcv4b_A1", "refcv4b"], ["CV", "const. velocity"]].forEach(([k, lab]) => {
+      const f = fl[k]; if (!f) return;
+      svg.append("rect").attr("x", m.l).attr("width", W - m.r - m.l).attr("y", ys(f.ci[1])).attr("height", Math.max(1, ys(f.ci[0]) - ys(f.ci[1]))).style("fill", "var(--surface-2)");
+      svg.append("line").attr("x1", m.l).attr("x2", W - m.r).attr("y1", ys(f.pdms)).attr("y2", ys(f.pdms)).style("stroke", "var(--deemph)").style("stroke-width", 1.5);
+      refLabels.push({ y: ys(f.pdms), text: lab + " " + fmt(f.pdms, 1) });
+    });
+    endLabels(svg, refLabels, W - m.r, "lbl");
+    const tip = tipFor(host);
+    EVs.forEach(v => {
+      const x = xs(v.epoch);
+      svg.append("line").attr("x1", x).attr("x2", x).attr("y1", ys(v.pdms_ci[0])).attr("y2", ys(v.pdms_ci[1])).style("stroke", "var(--s1)").style("stroke-width", 2);
+      svg.append("circle").attr("cx", x).attr("cy", ys(v.pdms)).attr("r", 5).style("fill", "var(--s1)").style("stroke", "var(--surface)").style("stroke-width", 2);
+      svg.append("text").attr("x", x + 9).attr("y", ys(v.pdms)).attr("dy", "0.32em").attr("class", "lbl-strong num").text(fmt(v.pdms, 1));
+      const hit = svg.append("rect").attr("x", x - 14).attr("y", m.t).attr("width", 28).attr("height", H - m.t - m.b).style("fill", "transparent").attr("tabindex", 0);
+      const show = () => showTip(host, tip, x / W * host.clientWidth, 8, "snapshot after epoch " + v.epoch, [
+        { color: "var(--s1)", value: fmt(v.pdms, 2) + " [" + fmt(v.pdms_ci[0], 1) + ", " + fmt(v.pdms_ci[1], 1) + "]", label: "REFe PDMS" },
+        { color: "var(--deemph)", value: fmt(v.vs_stop.delta, 1), label: "vs stand still" }, { color: "var(--deemph)", value: fmt(v.vs_cv.delta, 1), label: "vs constant velocity" }]);
+      hit.on("pointermove focus", show).on("pointerleave blur", () => { tip.hidden = true; });
+    });
+    pending.forEach(e => {
+      const x = xs(e);
+      svg.append("circle").attr("cx", x).attr("cy", ys(8)).attr("r", 5).style("fill", "var(--surface)").style("stroke", "var(--deemph)").style("stroke-width", 1.5);
+      svg.append("text").attr("x", x).attr("y", ys(8) - 11).attr("text-anchor", "middle").text("pending");
+    });
+  });
+  mount("c-ade", host => {
+    host.replaceChildren();
+    const W = Math.max(280, host.clientWidth), H = 260, m = { t: 12, r: 86, b: 30, l: 40 };
+    const svg = d3.select(host).append("svg").attr("viewBox", `0 0 ${W} ${H}`).attr("height", H).attr("role", "img").attr("aria-label", "ADE of selected, random and oracle proposals");
+    const xsVals = [1, 2, 3, 5, 8, 11], xs = d3.scalePoint().domain(xsVals).range([m.l + 10, W - m.r - 10]), ys = d3.scaleLinear().domain([0, 5]).range([H - m.b, m.t]);
+    svg.append("g").selectAll("line").data(ys.ticks(5)).join("line").attr("class", "gridline").attr("x1", m.l).attr("x2", W - m.r).attr("y1", d => ys(d)).attr("y2", d => ys(d));
+    svg.append("g").selectAll("text").data(ys.ticks(5)).join("text").attr("x", m.l - 8).attr("y", d => ys(d)).attr("dy", "0.32em").attr("text-anchor", "end").attr("class", "num").text(d => d + " m");
+    svg.append("g").selectAll("text").data(xsVals).join("text").attr("x", d => xs(d)).attr("y", H - m.b + 17).attr("text-anchor", "middle").attr("class", "num").text(d => "e" + d);
+    const ser = [["ade_selected_m", "var(--s1)", "selected"], ["ade_random_m", "var(--s2)", "random"], ["ade_oracle_m", "var(--s3)", "oracle"]];
+    const adeLabels = []; let lastX = 0;
+    ser.forEach(([k, c, lab]) => {
+      const pts = EVs.map(v => [v.epoch, v.proposals[k]]).filter(p => p[1] != null);
+      svg.append("path").attr("d", d3.line().x(p => xs(p[0])).y(p => ys(p[1]))(pts)).style("fill", "none").style("stroke", c).style("stroke-width", 2);
+      pts.forEach(p => svg.append("circle").attr("cx", xs(p[0])).attr("cy", ys(p[1])).attr("r", 4).style("fill", c).style("stroke", "var(--surface)").style("stroke-width", 2));
+      const lp = pts[pts.length - 1];
+      if (lp) { adeLabels.push({ y: ys(lp[1]), text: lab + " " + fmt(lp[1], 2) }); lastX = xs(lp[0]); }
+    });
+    endLabels(svg, adeLabels, lastX + 4);
+    const tip = tipFor(host);
+    EVs.forEach(v => {
+      const x = xs(v.epoch), hit = svg.append("rect").attr("x", x - 14).attr("y", m.t).attr("width", 28).attr("height", H - m.t - m.b).style("fill", "transparent").attr("tabindex", 0);
+      const show = () => showTip(host, tip, x / W * host.clientWidth, 8, "snapshot after epoch " + v.epoch, ser.map(([k, c, lab]) => ({ color: c, value: fmt(v.proposals[k], 3) + " m", label: lab }))
+        .concat([{ color: "var(--ink-2)", value: fmt(v.proposals.endpoint_spread_m, 3) + " m", label: "endpoint spread" }, { color: "var(--ink-2)", value: String(v.proposals.oracle_index_distinct), label: "proposals ever best" }]));
+      hit.on("pointermove focus", show).on("pointerleave blur", () => { tip.hidden = true; });
+    });
+    pending.forEach(e => svg.append("text").attr("x", xs(e)).attr("y", ys(0.3)).attr("text-anchor", "middle").text("pending"));
+  });
+  $("cap-fam").textContent = "Tier: " + (EVs[0].families.tier || "") + ". Distance keeping needs a lead-agent track the export does not carry; the strategic family is not scored by NAVSIM (route choice is an input there), so both are unavailable with that reason, not missing.";
+  const colH = ["Metric"].concat(EVs.map(v => "after epoch " + v.epoch)).concat(pending.map(e => "after epoch " + e));
+  const rowsF = [
+    ["PDMS (95% interval)", v => fmt(v.pdms, 2) + " [" + fmt(v.pdms_ci[0], 1) + ", " + fmt(v.pdms_ci[1], 1) + "]"],
+    ["vs stand still (PDMS points)", v => fmt(v.vs_stop.delta, 1) + (v.vs_stop.separated ? " · separated" : "")],
+    ["vs constant velocity", v => fmt(v.vs_cv.delta, 1) + (v.vs_cv.separated ? " · separated" : " · not separated")],
+    ["No collision (NC)", v => fmt(v.subscores.NC, 1)], ["Drivable area (DAC)", v => fmt(v.subscores.DAC, 1)], ["Ego progress (EP)", v => fmt(v.subscores.EP, 1)],
+    ["Time to collision (TTC)", v => fmt(v.subscores.TTC, 1)], ["Comfort (C)", v => fmt(v.subscores.C, 1)], ["Driving direction (DDC)", v => fmt(v.subscores.DDC, 1)],
+    ["Tokens zeroed by NC or DAC", v => v.zeroed + " of " + v.n_tokens],
+    ["Longitudinal · speed error (m/s)", v => fmt(v.families.speed_mae_mps, 2) + " (bias " + fmt(v.families.speed_bias_mps, 2) + ")"],
+    ["Longitudinal · progress vs human (median)", v => fmt(v.families.progress_ratio_median, 2)],
+    ["Longitudinal · distance keeping", v => v.families.distance_keeping.toLowerCase()],
+    ["Lateral · heading error (°)", v => fmt(v.families.heading_mae_deg, 1)], ["Lateral · curvature error (1/m)", v => fmt(v.families.curvature_mae_1pm, 3)],
+    ["Lateral · cross-track offset (m)", v => fmt(v.families.cross_mae_m, 2)], ["Tactical · goal-point error (m)", v => fmt(v.families.goal_point_error_m, 2)],
+    ["Strategic", v => v.families.strategic.toLowerCase()],
+    ["Proposals · endpoint spread (m)", v => fmt(v.proposals.endpoint_spread_m, 3)], ["Proposals · ever best (of 64)", v => String(v.proposals.oracle_index_distinct)],
+  ];
+  table("t-eval", colH, rowsF.map(([lab, f]) => [lab].concat(EVs.map(f)).concat(pending.map(() => "pending"))));
+
+  // ---------- findings ----------
+  // ---- findings computed from the learning-curve points ----
+  const lastE = EVs[EVs.length - 1], e8 = EVs.find(v => v.epoch === 8), gapOf = v => v.proposals.ade_random_m - v.proposals.ade_oracle_m;
+  const spreadList = EVs.map(v => "e" + v.epoch + " " + fmt(v.proposals.endpoint_spread_m, 2)).join(", ");
+  let divFinding;
+  if (e8) {
+    const col = e8.proposals.endpoint_spread_m < 0.5 && gapOf(e8) < 0.2;
+    divFinding = [col ? "s-critical" : "s-good", col ? "Decision needed" : "Closed", col ? "The proposal head has collapsed" : "The 64 proposals are not collapsed",
+      "Pre-registered rule (SPEC Amendment 2), read at the snapshot after epoch 8, the first after a full epoch with every augmented twin: collapsed if the endpoint spread is under 0.5 m and the best proposal is within 0.2 m of a random one. After epoch 8: spread " + fmt(e8.proposals.endpoint_spread_m, 2) + " m, best " + fmt(e8.proposals.ade_oracle_m, 2) + " m vs random " + fmt(e8.proposals.ade_random_m, 2) + " m, " + e8.proposals.oracle_index_distinct + " of 64 proposals best somewhere. Spread by snapshot: " + spreadList + " m.",
+      col ? "The query-scale question goes to you as a recipe decision." : "The watch is closed; diversity stays on this page as a trend."];
+  } else {
+    divFinding = ["s-warn", "Watch", "Proposal diversity", "Endpoint spread by snapshot: " + spreadList + " m. The pre-registered decision reads the snapshot after epoch 8.", "Apply SPEC Amendment 2 when that point lands."];
+  }
+  const selBad = lastE.proposals.ade_selected_m > lastE.proposals.ade_random_m;
+  const selFinding = [selBad ? "s-serious" : "s-warn", selBad ? "Bottleneck" : "Watch", "Choosing among the proposals is now the bottleneck",
+    "After epoch " + lastE.epoch + " the best of 64 proposals lands " + fmt(lastE.proposals.ade_oracle_m, 2) + " m from the human's future, a random proposal " + fmt(lastE.proposals.ade_random_m, 2) + " m, and the planner's pick " + fmt(lastE.proposals.ade_selected_m, 2) + " m" + (selBad ? ", worse than picking at random" : "") + ". Picks by snapshot: " + EVs.map(v => "e" + v.epoch + " " + fmt(v.proposals.ade_selected_m, 2)).join(", ") + " m. The snapshot after epoch 5 had no scorer training yet; later snapshots have.",
+    "Watch the pick close in on the best proposal as the scorer trains on the complete bank from epoch 12."];
+  const aboveStop = lastE.vs_stop && lastE.vs_stop.delta > 0 && lastE.vs_stop.separated;
+  const pdmsFinding = [aboveStop ? "s-good" : "s-serious", aboveStop ? "Above standing still" : "Not yet driving", aboveStop ? "NAVSIM PDMS beats standing still" : "NAVSIM PDMS is below standing still",
+    "PDMS by snapshot: " + EVs.map(v => "e" + v.epoch + " " + fmt(v.pdms, 1)).join(", ") + ", against " + fmt(fl.STOP.pdms, 1) + " for standing still and " + fmt(fl.CV.pdms, 1) + " for constant velocity. Latest: no collision " + fmt(lastE.subscores.NC, 1) + ", drivable area " + fmt(lastE.subscores.DAC, 1) + ", progress " + fmt(lastE.subscores.EP, 1) + ", " + lastE.zeroed + " of 200 tokens zeroed. The picked plans are cautious: they cover " + fmt(lastE.families.progress_ratio_median, 2) + " of the human's distance with a speed bias of " + fmt(lastE.families.speed_bias_mps, 2) + " m/s. Slow plans rarely collide or leave the road, and NAVSIM scores that well (standing still scores " + fmt(fl.STOP.pdms, 1) + "), so part of the gain is caution rather than driving.",
+    "Better selection should raise progress without giving back safety; the full 12,146-token navtest run is for the final checkpoint."];
+  const F = [
+    ["s-good", "On track", "Pace and finish date", "The A40 has held " + fmt(P.steady_s_per_step_median, 1) + " s per step for " + fmt(P.elapsed_h, 0) + " hours, including the 39 hours when data preparation shared the pod's CPUs. The run ends around " + berlin(etaDate) + ", " + totalDays.toFixed(1) + " days in total, inside the 7-day budget.", "Nothing to change. Next check: the scorer catch-up enters at the epoch-12 boundary."],
+    ["s-good", "On track", "The proposals are learning", "Loss medians fell every epoch (" + fmt(pe[0].traj_L1_median, 1) + " → " + fmt(eN.traj_L1_median, 2) + "). On NAVSIM the best of the 64 proposals now lands " + fmt(lastE.proposals.ade_oracle_m, 2) + " m from the human's future on average (open-loop ADE), down from " + fmt(EVs[0].proposals.ade_oracle_m, 2) + " m after epoch 1 (" + EVs.map(v => fmt(v.proposals.ade_oracle_m, 2)).join(" → ") + " m).", "The proposals are good enough to drive well; whether the planner picks the right one is the next finding."],
+    [bankFixed ? "s-good" : "s-serious", bankFixed ? "Fixed" : "Fixing now", "A third of the scorer's targets reached training late",
+      "Training has read 120,264 scorer frames since epoch 8, about 63 % of what data preparation produced. Two causes: the pod's bank assembler stopped on Sep 25 at 10:06 with no error logged and no OOM kill recorded, and the dev box's uploader died on Sep 24 at 19:02, leaving 124,619 scorer rows behind. " +
+      (bankFixed ? "On " + A.last_local + " the rows were re-uploaded and one catch-up pass brought the bank to " + int(A.scorer_frames) + " frames (" + int(A.sc0) + " rank-0, " + int(A.sc1) + " augmented)." : ""),
+      bankFixed ? "From the next epoch boundary training reads the complete scorer bank; the trainer's next bank line must show " + int(A.scorer_frames) + " frames." : "Re-upload the rows, then run one catch-up assembler pass."],
+    divFinding,
+    selFinding,
+    ["s-warn", "Watch", "The scorer learns on trajectories the model does not propose", "The scorer is supervised on a fixed candidate set around the teacher's path (lateral ±2/±4 m, speed ×0.5/×1.5, stop, reverse, over-curb), assigned to the nearest proposal. That nearest proposal is about " + fmt(eN.assign_d_median, 1) + " m away and has not come closer since epoch 5. This is a declared departure from DriveZero, which scores the student's own proposals online, and the most likely reason the selection lags.", "If the pick stays far from the best proposal once the scorer has trained on the complete bank, this departure is the first thing to revisit."],
+    pdmsFinding,
+    ["s-good", "Fixed", "The evaluation environment was damaged and has been rebuilt", "The eval venv lived under the Windows temp folder, and a cleanup removed part of its packages on Sep 24 around 17:46, so torch could no longer import and the learning curve stopped after epoch 3. It was rebuilt offline from the local package cache into a permanent location and reproduces a banked evaluation bit for bit: the same poses and the same PDMS, 19.6473.", "No further action; long-lived environments no longer live under the temp folder."],
+  ];
+  F.forEach(([cls, state, h, p, next]) => {
+    const f = el("article", { class: "finding" });
+    const c = el("span", { class: "chip " + cls }); c.append(el("i"), document.createTextNode(state));
+    const b = el("div"); b.append(el("h3", {}, h), el("p", {}, p), el("p", { class: "next" }, "Next: " + next));
+    f.append(el("div", {}, ""), b); f.firstChild.append(c); $("findings").append(f);
+  });
+
+  // ---------- caveats ----------
+  [
+    "Training metrics come from the trainer's own log (metrics.jsonl, one record per optimiser step; 3,498 steps). traj_L1, scorer loss, winners and candidate distance describe the last 4-sample micro-batch of each 256-sample step, so single steps are noisy; medians over 51 steps are drawn on top.",
+    "The trajectory loss is winner-takes-all: it is the error of the best of 64 proposals, which is optimistic by construction. No number on this page from the trainer is a driving result or carries an evaluation tier.",
+    "NAVSIM numbers: PDMS v1 on W3's fixed 200-token navtest subset (93 logs), scored through W3's harness (reproduced exactly on the human seam before any REFe score). Intervals are log-cluster bootstrap 95%; paired deltas use the paired version. Open-loop pseudo-simulation, not closed loop.",
+    "Declared departures from DriveZero: bf16 autocast, a bank that grows during training, 10 Hz teacher rollouts (PI decision pending), gradient accumulation 4 × 64, and a scorer supervised on a fixed candidate set instead of the student's own proposals.",
+    "Timeline times are Europe/Berlin, read from the pod's and dev box's own logs. The finish estimate assumes the average pace so far including epoch boundaries (" + fmt(P.avg_s_per_step_all, 2) + " s/step).",
+    "Evidence: run directory vitl16_navtrain10_grow_tau0.3 on the A40 pod; learning-curve points in D:/Projects/TanitAD/data/refe_navtest/points/; package READINESS.md C21–C23 and I11; SPEC_NAVTEST.md Amendment 2 (blob eafc3097…).",
+  ].forEach(t => $("caveats").append(el("li", {}, t)));
+
+  // ---------- render + keep in step with the container ----------
+  function renderAll() { charts.forEach(c => { try { c.draw(c.host); } catch (e) { c.host.replaceChildren(el("p", { class: "pending" }, "This chart could not be drawn: " + e.message)); } }); }
+  renderAll();
+  let raf = 0; const ro = new ResizeObserver(() => { cancelAnimationFrame(raf); raf = requestAnimationFrame(renderAll); });
+  ro.observe(document.querySelector(".wrap"));
+})();
+</script>

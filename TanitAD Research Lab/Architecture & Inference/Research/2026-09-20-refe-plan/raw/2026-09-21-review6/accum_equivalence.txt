@@ -1,0 +1,27 @@
+== 1. TRAJECTORY term ==
+  batch 8 one step  vs  4 micro-batches of 2 with /accum
+  max |g_big - g_acc| = 0.000e+00   rel 0.000e+00
+  -> EQUIVALENT (as claimed)
+
+== 2. SCORE term: per-sample BCE means, mask, and the two normalisations ==
+  covered candidates: sample 0 -> 3 (losses 1,2,3), sample 5 -> 1 (loss 10); total mass 4
+  ONE BATCH of 8: (sum 16.0) / (mask 4.0) = 4.0000
+    micro 0 (samples 0-1): mask 3  l_score 2.0000  contributes 0.5000
+    micro 1 (samples 2-3): mask 0  l_score 0.0000  contributes 0.0000
+    micro 2 (samples 4-5): mask 1  l_score 10.0000  contributes 2.5000
+    micro 3 (samples 6-7): mask 0  l_score 0.0000  contributes 0.0000
+  ACCUMULATED total = 3.0000   vs one-batch 4.0000
+  RATIO accumulated/true = 0.7500   LITERAL EXPECTATION for equivalence: 1.0000
+  -> ** NOT EQUIVALENT ** the score loss is re-weighted
+
+  per-sample effective weight (what the gradient actually sees):
+    one batch : sample 0 -> 3/4 = 0.750 of the loss mass, sample 5 -> 1/4 = 0.250
+    accumulated: sample 0 -> its micro has mask 3, weight 1/4 = 0.250 of a mean over 3
+                 sample 5 -> its micro has mask 1, weight 1/4 = 0.250 of a mean over 1
+    => the ONE covered candidate in micro 2 is weighted 3x more heavily than each of
+       the three in micro 0. A true batch of 256 weights all four equally.
+
+== 3. uncovered micro-batches dilute the score loss ==
+  2 of 4 micro-batches carry any supervision; the /accum divisor is 4 regardless
+  => the score term's effective weight is scaled by 2/4 = 0.50 against a true batch
+  at the MEASURED ~10 % frame coverage and batch 4, P(a micro is uncovered) = 0.9^4 = 0.656

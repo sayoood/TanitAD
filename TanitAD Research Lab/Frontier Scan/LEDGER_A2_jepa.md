@@ -437,3 +437,16 @@ comparable accuracy"*) · `2602.03604` EB-JEPA.
 
 `abstract-only` · arXiv **2609.03294** (Pham & Bera, 2026-09-03) · banked. Quasi-Newton optimisation of the whole action horizon through a frozen LeWorldModel, with a terminal latent-goal + decoder-descriptor energy: mean success **77.5 % (LeWM + CEM) → 94.8 %**, 4 domains, matched protocol.
 **Our position:** the refav1 planner is a **sampler** (iCEM) with an inference-seed floor ≈ **0.30 m** ADE (INHERITED, `D-REFAV1-SEED-GOAL-MISMATCH`). A deterministic refinement from a fixed init attacks the **inference** variance source directly. FS19-4 commits ≥ 3× spread reduction at equal-or-better mean. ⚠️ Abstract-only, so it may not decide a GPU-day.
+
+### 2026-09-20-01 — V-JEPA as a driving world model's backbone (via Drive-HWM Table V) ⭐⭐
+
+As the **slow world model** backbone with the fast model fixed to Emu3: **V-JEPA 93.8** vs
+**CogVideo 93.0** and **WAN 93.2** — a JEPA encoder beating two **video-generation** backbones
+inside a driving WM. ⚠️ single run per row, no CI.
+⭐ **V-1 re-find, recorded:** `2601.00844` is **not** a new find (10 prior files; this line's founding
+citation). Local re-read: *"we **learn representations such that** the Euclidean distance … approximates
+the negative goal-conditioned value"* — the encoder is **shaped**; the string *"frozen"* appears **0 times**;
+evaluated on toy wall (200 instances) / maze (80) only.
+**Class:** PUBLISHED (Table V local); PUBLISHED (2601.00844 local re-read).
+**Moves:** supports the JEPA line; bounds what `2601.00844` can be cited for (mechanism, never a number of ours).
+**Source:** Daily/2026-09-20/RESULT.md

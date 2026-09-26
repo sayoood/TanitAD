@@ -274,3 +274,13 @@ its full text is a debt.** No rung threshold is quoted as a number.
 `HTML via summariser` DriveVLA-M0 **2608.10413**: navhard **47.0 EPDMS, two-stage**; navtest **94.1 PDMS**; ego at inference.
 **Verified today from the local PDF:** DriveZero **57.1 (Scale) / 51.5 (base)** are both navhard **two-stage** EPDMS; SimScale data: Stage 1 **−1.8**, Stage 2 **+8.3**.
 ⚠️ **E-A5:** no new SOTA after DriveZero-Scale. **D-14 (new):** Waymo's *Reference Driver* (2026-06) is an A5 claim about benchmarking AVs against humans and is unadjudicated.
+
+### 2026-09-20-01 — a two-stamp catch: Drive-HWM's EPDMS 86.4 is **navtest**, not navhard ⛔⭐
+
+The NAVSIM v2 table reports Drive-HWM **EPDMS 86.4**, but the same table carries an **`Ego Status`
+blind row at 64.0** and **TransFuser at 76.7** — navtest magnitudes. In-PDF search for `navtest` and
+`navhard` returns **0 and 0**: the split is **not stamped in the paper**.
+⇒ **86.4 does NOT enter the navhard stamp table**, where **57.1** (DriveZero, two-stage) still stands.
+This is FS18 row 32's two-stamp rule (split **and** fix) catching its **second** paper.
+**Class:** MEASURED (our in-PDF probe) on a PUBLISHED table.
+**Source:** Daily/2026-09-20/RESULT.md

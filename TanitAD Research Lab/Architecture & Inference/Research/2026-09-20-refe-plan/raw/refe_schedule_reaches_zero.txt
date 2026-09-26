@@ -1,0 +1,46 @@
+THE LR SCHEDULE REACHES EXACTLY ZERO. MEASURED 2026-09-20 on PI instruction.
+
+WHAT WAS WRONG. train.py built `AdamW(lr=a.lr, weight_decay=1e-4)` with NO SCHEDULER AT ALL and a
+default `--lr 3e-4`, against the paper's "an initial learning rate of 2 x 10^-4 decayed to zero via
+cosine annealing". Both halves were UNINTENDED divergences -- nothing in our docs had justified
+either -- and the PI instructed the fix directly.
+
+WHAT CHANGED
+  --lr default            3e-4 -> 2e-4
+  scheduler               none -> CosineAnnealingLR(T_max=steps, eta_min=0.0)
+  --weight-decay          exposed (was hardcoded 1e-4)
+  --no-cosine             added, ablation only
+  --epochs                added; DERIVES --steps as epochs * ceil(len(bank)/batch) BEFORE the
+                          optimiser is built, so "25 epochs at batch 256" is expressible in its own
+                          unit and the cosine T_max spans the whole run. Until now the trainer
+                          counted steps only, so the paper's schedule could not be stated at all.
+  live LR                 printed on every log line, so the decay is OBSERVED, not assumed
+
+WHY THIS TEST IS NOT A TRAINING RUN. Verifying a schedule by training is expensive and answers the
+wrong question: the 62-step confirmation run took 108 s for its FIRST step under load, and a loss
+curve cannot separate "the scheduler is configured correctly" from "the model happened to improve".
+The schedule is a property of the optimiser, so this tests the optimiser -- in under a second.
+
+⭐ THE CONTROL IS THE --no-cosine ARM. A check that only asserts "the LR went down" passes on any
+decaying schedule and on several wrong ones. The ablation must hold the LR FLAT at 2e-4, and it
+does. If both arms decayed, the flag would do nothing and this test would be inert -- the same
+failure mode as the four self-referential checks logged on 2026-09-07.
+
+Instrument: refe/diag_schedule.py (re-runnable, exit 0 on SCHEDULE_OK).
+================================================================================================
+The paper: AdamW, initial LR 2e-4, DECAYED TO ZERO via cosine annealing.
+
+    step       cosine    --no-cosine
+       0    2.000e-04      2.000e-04
+      15    1.725e-04      2.000e-04
+      31    1.000e-04      2.000e-04
+      46    3.110e-05      2.000e-04
+      62    0.000e+00      2.000e-04
+
+  [PASS] starts at the paper's 2e-4
+  [PASS] ends at EXACTLY zero
+  [PASS] is monotonically non-increasing
+  [PASS] halfway value is near half (cosine, not linear)
+  [PASS] CONTROL: --no-cosine stays FLAT at 2e-4
+
+SCHEDULE_OK

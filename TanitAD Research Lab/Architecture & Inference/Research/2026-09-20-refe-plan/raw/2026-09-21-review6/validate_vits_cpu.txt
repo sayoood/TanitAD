@@ -1,0 +1,41 @@
+== 1. parameter accounting ==
+  REFe total        31,949,830  (31.95 M)
+  REFe trainable    10,362,882  (10.36 M)  = 32.43 %
+  DriveZero pub.   338,460,000  (338.46 M) / 18.58 M = 5.49 %   [ViT-L, 4 cameras -- NOT a target]
+  per group (total / trainable):
+    backbone.frozen         21,586,944 /          0
+    dec                      4,213,760 /  4,213,760
+    score_dec                4,213,760 /  4,213,760
+    reg_compress               889,344 /    889,344
+    backbone.lora              589,824 /    589,824
+    scene_proj                  98,560 /     98,560
+    score_q_mlp                 81,408 /     81,408
+    traj_head                   81,212 /     81,212
+    ego_enc                     77,056 /     77,056
+    pos3d_mlp                   75,456 /     75,456
+    registers                   24,576 /     24,576
+    queries                     16,384 /     16,384
+    score_head                   1,542 /      1,542
+    goal_freqs                       4 /          0
+
+== 2. LoRA is identity at init (B zeroed) ==
+  max |with_lora - without_lora| = 0.000e+00   PASS
+
+== 3. trainable tensors, asserted BY NAME ==
+  trainable tensors: 228   backbone ones: 48 (all LoRA A/B)
+  backbone tensors trainable that are NOT LoRA: 0   PASS
+  expected LoRA tensors = 2 proj x 2 mats x 12 blocks = 48   got 48   PASS
+
+== 4-6. forward/backward on cpu ==
+  batch 1 x 4 cameras   (B=1 by default here: 4 x ViT-L at B=2 needs ~19 GB; pass --batch to override)
+  traj  (1, 64, 20, 3)   expect (1, 64, 20, 3)
+  score (1, 64, 6)  expect (1, 64, 6)
+  WTA winner index per sample: [41]
+  traj_head grad present: True
+  scorer detached (score-only loss leaves queries grad-free): PASS
+  deliberate-regression arm (scorer re-attached) goes RED: PASS
+  score-only loss leaves the BACKBONE LoRA grad-free: PASS   [REFe's EXTRA detach of visual_ctx, not the paper's -- see the note here]
+  the trajectory loss DOES reach the LoRA adapters: PASS
+
+VALIDATE_OK
+EXIT=0

@@ -1,0 +1,23 @@
+  targets_rank0.jsonl          1,091 rows
+  targets_rank1.jsonl          1,091 rows
+
+  targets_rank0.jsonl vs targets_rank1.jsonl: 1,091 shared keys
+    trajectories differing : 1,091 / 1,091
+    goals differing        : 1,064 / 1,091   (median separation 3.57 m)
+    images differing       : 0 / 1,091   (must be 0)
+    TRUE duplicates        : 0   (same traj AND same goal)
+
+  [PASS] 1 the two ranks share keys at all
+  [PASS] 2 EVERY shared key has a DIFFERENT trajectory
+  [PASS] 3 images are IDENTICAL (same frames, different route)
+  [PASS] 4 no frame is a TRUE duplicate (same traj AND same goal)
+
+== SELF-TEST: the arms must go RED on a relabelled copy ==
+  [RED ] arm 2 on a relabelled copy (0 of 1091 trajectories differ)
+  [RED ] arm 4 on a relabelled copy (1091 true duplicates)
+  [GREEN] CONTROL arm 3 stays green on a relabelled copy (it tests alignment, not novelty)
+
+SELF_TEST_OK
+
+RANKS_ARE_DISTINCT
+EXIT=0

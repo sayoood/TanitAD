@@ -84,6 +84,19 @@ def arm(counts: np.ndarray, seed: int = 0) -> dict:
             "total": round(float(out["total"]), 6)}
 
 
+# ⛔ A CHECKER MUST NOT DIE ON ITS OWN OUTPUT. MEASURED 2026-09-20: three separate
+# readouts crashed with a cp1252 `UnicodeEncodeError` on this box mid-print -- one of
+# them after reporting "lines lost = 1" but BEFORE naming the line, i.e. it had verified
+# nothing while looking like it had. Relying on the caller to export PYTHONIOENCODING is
+# a habit; this is a guard. `errors="replace"` means the print degrades instead of
+# raising even if the stream cannot take utf-8.
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+except Exception:  # noqa: BLE001 -- a stream that cannot be reconfigured is not fatal
+    pass
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--bank", required=True)

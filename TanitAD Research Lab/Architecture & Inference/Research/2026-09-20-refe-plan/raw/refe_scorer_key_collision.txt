@@ -1,0 +1,41 @@
+THE SCORER BANK WAS KEYED BY (log_name, step) AND ONE DRIVE LOG HOLDS SEVERAL SCENARIOS.
+MEASURED 2026-09-20. Caught by ARITHMETIC in a report I had just built, not by reading code.
+
+THE DEFECT
+  ScorerBank keyed its per-frame candidates by (log_name, step). log_name is the DRIVE LOG.
+  One drive log contains SEVERAL scenarios with different tokens, and their step indices
+  overlap. So a frame's candidate set was silently POOLED with a different scenario's
+  candidates at the same step index, and the scorer was supervised on trajectories belonging
+  to another scene.
+
+MEASURED SCALE
+  rows                        2,052
+  distinct (log, step)          154   max rows per key 27   <- 3x the 9-candidate set
+  distinct (log, token, step)   228   max rows per key  9   <- correct
+  COLLIDING (log, step) keys     50 of 154
+  tokens per log: one log carries 3, another 2, the rest 1
+
+WHAT MADE IT VISIBLE -- and it was not the code
+  the per-candidate assignment report printed
+      teacher   n 837   mean assign_d  5.73 m
+      stopped   n 605   mean assign_d 15.35 m
+  against a stated coverage of 605 SAMPLES. n = 837 for a candidate that appears ONCE per
+  sample is impossible. The second tell was physical: the winner-takes-all distance to the
+  teacher trajectory had fallen to 0.57 while the nearest proposal to the teacher CANDIDATE
+  sat at 5.73 m -- the same trajectory, two irreconcilable distances.
+
+WHY THE ORDERING STILL LOOKED RIGHT, WHICH IS THE DANGEROUS PART
+  teacher 5.73 < lat+-2 5.91/6.01 < lat+-4 6.41/6.55 < lon 8.27/10.80 < stopped 15.35 <
+  over-curb 17.21 -- a clean monotone ordering, exactly what the instrument was built to show.
+  A contaminated bank produced a CORRECT-LOOKING qualitative result. Only the count refuted it.
+
+THE FIX
+  key by (log_name, token, step). 224 of 231 scorer keys still join the trajectory bank
+  (the 7 lost are frames the trajectory bank had already dropped for a missing camera).
+
+THE TRANSFERABLE RULE
+  A COMPOSITE KEY MUST BE PROVEN UNIQUE ON THE DATA, NOT ASSUMED FROM ITS NAME. 'log' reads
+  like a scenario and is not one. Print the max rows per key next to the distinct-key count
+  whenever a bank is joined; those two numbers together are the whole check, and they cost
+  nothing. Same family as the earlier failures in this package: the qualitative answer looked
+  right while a count did not add up.
