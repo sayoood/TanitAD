@@ -263,3 +263,29 @@ def test_an_unreadable_eval_package_shows_nothing_rather_than_a_guess(tmp_path, 
     assert "No banked NavSim milestone was readable" in page
     assert summary["navsim"] == {} and summary["battery_steps"] == []
     assert 'class="chip crit verdict"' not in page and 'class="chip good verdict"' not in page
+
+
+def test_a_SUBSET_navtest_shows_its_own_n_and_keeps_the_qualifier(tmp_path, monkeypatch):
+    """MEASURED 2026-09-26: step 30000's navtest was banked on 1,464 tokens (not the published 12,146) with the
+    verdict "FAIL (SUBSET — not the published split)". The page must show each cell's own n and keep the
+    qualifier, so a subset can never read as the full split."""
+    pkg, live = _eval_pkg(tmp_path)
+    m30 = pkg / "navsim" / "raw" / "milestones" / "step30000"
+    arms = {"R6_A1": {"PDMS": 64.1368, "interval": {"lo": 0.6173, "hi": 0.6656}},
+            "STOP": {"PDMS": 61.7235}, "CV": {"PDMS": 19.4959}, "HUMAN": {"PDMS": 94.81}}
+    (m30 / "summary_navtest.json").write_text(json.dumps({"n_tokens": 1464, "arms": arms, "pairs": {
+        "R6_A1__minus__STOP": {"interval": {"delta": 0.0241, "lo": -0.0048, "hi": 0.0524}}}}), encoding="utf-8")
+    bars = json.loads((m30 / "BARS.json").read_text(encoding="utf-8"))
+    bars["bars"]["navtest"] = {"verdict": "FAIL (SUBSET — not the published split)"}
+    (m30 / "BARS.json").write_text(json.dumps(bars), encoding="utf-8")
+    mod = _load(monkeypatch, _run_dir(tmp_path), eval_pkg=pkg, eval_live=live)
+    page, summary = mod.build()
+    assert summary["navsim"]["30000"]["navtest"] == 64.1368
+    assert "n = 1,464" in page and "n = 12,146" in page          # each cell carries its own sample count
+    assert "STOP on these samples 61.72" in page and "STOP on these samples 61.82" in page
+    # the qualifier sits DIRECTLY beside the chip -- the summary line also quotes the verdict, so a bare
+    # "in page" check would pass even if the table dropped it (MEASURED: that arm escaped, 7/8)
+    assert ('<span class="chip crit verdict"><i></i>bar failed</span> <span class="muted">'
+            '(SUBSET — not the published split)</span>') in page
+    assert "bar: FAIL (SUBSET — not the published split)" in page   # and the summary line carries it too
+    assert "12k tokens" not in page                              # no fixed label that would mislabel a subset

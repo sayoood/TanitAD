@@ -44,6 +44,12 @@ ARMS = [
     ("every checkpoint stamped post-switch",
      "if step <= SWITCH_STEP else",
      "if step < 0 else"),
+    ("the cell's own sample count dropped",
+     "if isinstance(n, int) else",
+     "if False else"),
+    ("the verdict's SUBSET qualifier dropped",
+     """'<span class="chip crit verdict"><i></i>bar failed</span>' + rest(4)""",
+     """'<span class="chip crit verdict"><i></i>bar failed</span>'"""),
 ]
 
 

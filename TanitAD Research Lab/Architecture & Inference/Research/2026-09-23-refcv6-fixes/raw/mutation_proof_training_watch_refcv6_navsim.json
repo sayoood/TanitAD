@@ -1,11 +1,11 @@
 {
  "_what": "clean-tree run + mutation proof of the refcv6 Training Watch NavSim + battery section (added 2026-09-26)",
  "_evidence_class": "MEASURED (ours), CPU",
- "tip": "a1328e52ac6183b001353b59403e6fd13624e52a",
+ "tip": "5e653b1cb5a14eddb78d8fec50ce0cdf8b187a46",
  "clean_tree": {
   "rc": 0,
   "failed": [],
-  "summary": "13 passed in 0.26s"
+  "summary": "14 passed in 0.20s"
  },
  "arms": [
   {
@@ -40,6 +40,7 @@
    "arm": "a FAIL verdict chip that looks like a health chip",
    "went_RED": true,
    "caught_by": [
+    "test_a_SUBSET_navtest_shows_its_own_n_and_keeps_the_qualifier",
     "test_navsim_kpis_are_read_from_the_banked_milestones_and_a_started_split_reads_running"
    ]
   },
@@ -49,13 +50,27 @@
    "caught_by": [
     "test_navsim_kpis_are_read_from_the_banked_milestones_and_a_started_split_reads_running"
    ]
+  },
+  {
+   "arm": "the cell's own sample count dropped",
+   "went_RED": true,
+   "caught_by": [
+    "test_a_SUBSET_navtest_shows_its_own_n_and_keeps_the_qualifier"
+   ]
+  },
+  {
+   "arm": "the verdict's SUBSET qualifier dropped",
+   "went_RED": true,
+   "caught_by": [
+    "test_a_SUBSET_navtest_shows_its_own_n_and_keeps_the_qualifier"
+   ]
   }
  ],
  "restored_ok": true,
  "final_clean_run": {
   "rc": 0,
   "failed": [],
-  "summary": "13 passed in 0.16s"
+  "summary": "14 passed in 0.17s"
  },
- "_VERDICT": "MUTATION-PROVEN -- 6/6 arms RED; restored; final run green."
+ "_VERDICT": "MUTATION-PROVEN -- 8/8 arms RED; restored; final run green."
 }

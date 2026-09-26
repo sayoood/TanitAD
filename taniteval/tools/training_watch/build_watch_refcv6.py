@@ -270,10 +270,12 @@ def battery_read():
 
 
 def _verdict(v):
-    if v == "PASS":
-        return '<span class="chip good verdict"><i></i>bar passed</span>'
-    if v == "FAIL":
-        return '<span class="chip crit verdict"><i></i>bar failed</span>'
+    s = str(v or "")
+    rest = lambda k: (f' <span class="muted">{esc(s[k:].strip())}</span>' if s[k:].strip() else "")
+    if s.startswith("PASS"):                    # a qualifier ("SUBSET — not the published split") is KEPT
+        return '<span class="chip good verdict"><i></i>bar passed</span>' + rest(4)
+    if s.startswith("FAIL"):
+        return '<span class="chip crit verdict"><i></i>bar failed</span>' + rest(4)
     return esc(v or "—")
 
 
@@ -299,10 +301,14 @@ def navsim_html(ns):
         else:
             v = f'<b>{fmt(r["value"], 4)}</b>'
             d = f'margin {fmt(r["margin"], 4)} (seed floor {fmt(r["floor"], 4)}); no interval: {esc(r.get("interval") or "—")}'
-        return f'<td class="num">{v}<br><span class="muted">{d}</span><br>{_verdict(r.get("verdict"))}</td>'
+        nd = 2 if split == "navtest" else 4
+        n = r.get("n")
+        nn = f'n = {n:,}' if isinstance(n, int) else "n —"
+        return (f'<td class="num">{v}<br><span class="muted">{d}</span><br><span class="muted">{nn} · STOP on '
+                f'these samples {fmt(r.get("STOP"), nd)}</span><br>{_verdict(r.get("verdict"))}</td>')
     head = "".join(f'<th class="num">step {s:,}<br><span class="muted">{esc(stamp_for(s))}</span></th>' for s in steps)
-    lab = {"navtest": "navtest · PDMS (×100) · 12k tokens", "navhard": "navhard · official two-stage EPDMS",
-           "warmup": "warmup · S2-EPDMS-u · 204 scenes"}
+    lab = {"navtest": "navtest · PDMS (×100)", "navhard": "navhard · official two-stage EPDMS",
+           "warmup": "warmup · S2-EPDMS-u"}
     rows = []
     for split in ("navtest", "navhard", "warmup"):
         c = ctrl.get(split, {})
@@ -753,7 +759,8 @@ def build() -> str:
         parts = []
         for s in ns_steps:
             got = [f"{sp} {ns[s][sp]['metric']} {fmt(ns[s][sp]['value'], 2 if sp == 'navtest' else 4)} "
-                   f"(STOP {fmt(ns[s][sp].get('STOP'), 2 if sp == 'navtest' else 4)})"
+                   f"(STOP {fmt(ns[s][sp].get('STOP'), 2 if sp == 'navtest' else 4)}, n {ns[s][sp].get('n')}; "
+                   f"bar: {esc(ns[s][sp].get('verdict') or '—')})"
                    for sp in ("navtest", "navhard", "warmup") if ns[s].get(sp, {}).get("status") == "ok"]
             run = [sp for sp in ("navtest", "navhard", "warmup") if ns[s].get(sp, {}).get("status") == "running"]
             parts.append(f"step {s:,}: " + ("; ".join(got) or "nothing banked")
