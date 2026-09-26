@@ -47,9 +47,11 @@ Per **labelled** window (`pad` 32, box3d head `n_queries` **100**):
 | **360° population** (today's supervision) | **31.13** | 20 | 97 | 149 | 2.26 % |
 | **gate-relevant** (`x ∈ [0,60]`, `\|y\| ≤ 16`) | **4.634** | 3 | 16 | 34 | **24.88 %** |
 | 360° *delivered* after the pad-32 truncation | **18.95** | 20 | 32 | 32 | 2.26 % |
-| gate *delivered* after the pad | **4.632** | 3 | 16 | 32 | 24.88 % |
+| gate *delivered* after the pad (trainer's order) | **3.989** | 3 | 13 | 20 | 25.02 % |
 
-halfB, same order: **37.00 / 6.639 / 19.79 / 5.600**; zero-gate windows **22.93 %**.
+halfB, same order: **37.00 / 6.639 / 19.79 / 4.624**; zero-gate windows **22.93 %**.
+⚠️ The two *delivered-gate* figures (3.989 / 4.624) are the CORRECTED ones — see the
+truncation-order retraction below; they read 4.632 / 5.600 before it.
 
 * **Gate share of all supervised boxes: 14.88 % (halfA), 17.94 % (halfB).** ⇒ **~85 % of the boxes
   the head is trained on lie outside the population the gate reads.** That is P3's hypothesis,
@@ -57,9 +59,27 @@ halfB, same order: **37.00 / 6.639 / 19.79 / 5.600**; zero-gate windows **22.93 
 * **The pad DOES bind on 360°:** 34.33 % (halfA) / 40.04 % (halfB) of labelled windows carry more
   than 32 raw targets, so their farthest boxes never reach the head at all. The truncation is
   `argsort(hypot(x, y))[:32]` — by distance, which already tilts toward the near field.
-* ⚠️ **The pad also bites the gate population on halfB, and not on halfA:** halfB drops
-  **10,321 of 65,918** gate boxes (15.7 %) because some windows hold up to **128** gate-relevant
-  agents; halfA drops **26 of 47,348** (0.05 %). The two halves are not interchangeable here.
+* ⛔ **CORRECTED 2026-09-20 — THE PAD BITES BOTH HALVES AND I UNDERSTATED IT ON EACH.** I first
+  published *"halfB drops 10,321 of 65,918 gate boxes (15.7 %); halfA drops 26 (0.05 %)"*.
+  **Both were wrong.** My census applied the pad to the **gate subset**
+  (`nearest_n(cx[g], cy[g], pad)`); the trainer applies it to **ALL targets**
+  (`_agent_item`: `argsort(hypot(x, y))[:pad]`) and filters to near-forward only LATER, at
+  scoring. A near-BEHIND target therefore consumes a slot my version silently handed to a gate
+  target. MEASURED in the trainer's own order:
+
+  | half | gate targets/window pre-pad | DELIVERED to the head | dropped |
+  |---|---|---|---|
+  | halfA | 4.6342 | **3.9894** | **13.91 %** (I said 0.05 %) |
+  | halfB | 6.6389 | **4.6235** | **30.36 %** (I said 15.66 %) |
+
+  ⭐ **This STRENGTHENS P3 and adds a mechanism nobody had quantified.** Under 360° supervision
+  the pad alone withholds **13.9–30.4 %** of gate-relevant targets from the head *before any loss
+  is computed*, purely because near-behind targets occupy the 32 slots. Under gate-relevant
+  supervision that loss largely disappears, since gate targets rarely exceed the pad — so P3 has
+  a second, mechanical benefit independent of the loss-capacity argument in §2.
+  ⭐ **How it was caught:** a cross-check written expecting agreement — the bar draw's raw gate
+  targets (139) against its banked matched n (129) — disagreed. The corrected order reproduces
+  **129 exactly**; the wrong order gives 139. `code/probe_pad_order.py`, `raw/pad_order_probe.json`.
 
 ## 3. ⚠️ CORRECTION — the pre-registration's density figures do not reproduce
 
@@ -174,8 +194,9 @@ failure that matters.)*
    explanation** for a P3 regression, read from the presence/no-object terms.
 3. Record that the **query budget does not bind** (n_queries 100 ≥ pad 32), so no disentangling arm
    is needed — with §4's retraction, so the question is not re-opened later.
-4. Note that **halfA and halfB differ materially** (gate density 4.63 vs 6.64; pad drops 0.05 % vs
-   15.7 % of gate boxes), so an eval-cache density may not be quoted for a train-cache claim.
+4. Note that **halfA and halfB differ materially** (gate density 4.63 vs 6.64; pad drops
+   **13.91 % vs 30.36 %** of gate boxes — corrected 2026-09-20, see §2), so an eval-cache density
+   may not be quoted for a train-cache claim.
 
 ## 8. Deliverable manifest
 

@@ -83,22 +83,25 @@ valid. :func:`read_epdms` REFUSES ``pdm_score`` by name — see
 ``NAVSIM_PROTOCOL.md:281-290`` and ``CRITERIA_REGISTRY.json``
 ``benchmarks.navsim.THE_COLUMN_TRAP``.
 
-⛔ THE ESTIMATOR IS AN OPEN QUESTION — THIS MODULE DOES NOT CLOSE IT
--------------------------------------------------------------------
-Our decision-grade interval is the **episode-cluster bootstrap**
-(``taniteval/taniteval/ci.py``). It does **not** transfer: NavSim's unit is a
-**scene token**, and ``docs/splits.md`` states *"NavSim splits contain
-overlapping scenes"* — so scene tokens are **not independent draws**, and
-clustering by nuPlan log has never been pre-registered here. Inventing either
-would manufacture a decision-grade interval out of an unsettled unit.
+⭐ THE ESTIMATOR IS SETTLED (W2/E3, 2026-09-19) — a LOG-CLUSTER bootstrap
+-------------------------------------------------------------------------
+Pre-registered in ``FlyWheels/TanitAD_EvalFlyWheel/incoming/
+2026-09-19-navsim-estimator-and-route-leak/SPEC.md`` and implemented in
+:mod:`adapters.navsim_ci`: clusters = the OpenScene ``log_name``, B = 2000, n >= 8
+(RG-14), and the statistic is the devkit's OWN aggregate (two-stage: per mapping
+key, then a skip-NaN mean over keys). MEASURED why: scenes overlap heavily WITHIN a
+log (navtest: 5.55 scenes per key frame) and share nothing ACROSS logs.
 
-⇒ :func:`scenes_to_win` sets ``win["eid"] = None`` **on purpose**. That is not a
-loss of data (the tokens are preserved under ``win["_navsim"]["scene_tokens"]``):
-it makes the harness's own guard fire, so every interval inside ``all_families``
-self-refuses with a reason and an ``n`` (``four_families.py:658-664``) instead of
-returning a scene-token bootstrap that would look valid. :func:`estimator_refusal`
-adds the NavSim-specific reason at the top level.
-⇒ ``NAVSIM_PROTOCOL.md`` §8.5 and §9 item 15. **A PI decision, not an implementation gap.**
+⇒ :func:`scenes_to_win` still sets ``win["eid"] = None`` by default, so the
+harness's own intervals self-refuse (``four_families.py:658-664``) rather than
+resampling scene tokens; pass ``log_names=`` and they resample LOGS instead.
+⇒ :func:`build_artifact` emits ``estimator.cluster_unit = "log_name"`` always, and
+an ``estimator.interval`` from ``navsim_ci`` when one is passed (``interval=``),
+else an honest refusal. warmup (7 logs) and private_test_hard can never carry one.
+
+⭐ THE ROUTE LEAK IS SETTLED TOO — :data:`ROUTE_LEAK_VERDICT`: PARTIAL, a ROUTE-LEVEL
+ORACLE. ``driving_command`` is computed from (pose now, nuPlan route, map) only,
+but the route is the expert's own driven path at roadblock granularity.
 """
 from __future__ import annotations
 
@@ -122,6 +125,17 @@ for _pth in (os.path.join(_REPO, "stack"),
 ADAPTER = "taniteval/adapters/navsim.py"
 PROTOCOL_DOC = "products/P7-TanitEval/benchmarks/NAVSIM_PROTOCOL.md"
 DEVKIT_PIN = "autonomousvision/navsim@0a380a9 (2025-10-27)"
+#: The full SHAs the registry's cross-protocol gate REQUIRES per protocol
+#: (``CRITERIA_REGISTRY.json`` ``GATE_no_cross_protocol_comparison.devkit_pins``).
+#: ⛔ Never auto-stamped onto an artifact: the SHA is a fact about the RUN, and
+#: stamping v1.1's SHA on a number the v2 scorer produced is the exact trap the
+#: gate exists for. :func:`build_artifact` emits only what the caller passes.
+DEVKIT_SHA_V2 = "0a380a9063d7162ec93d0f51e9990ebac585f720"
+DEVKIT_SHA_V1 = "3e8291bfa89ff247231e0227778840cd0a036896"
+E3_PACKAGE = ("FlyWheels/TanitAD_EvalFlyWheel/incoming/"
+              "2026-09-19-navsim-estimator-and-route-leak")
+#: SPEC §3 — the settled resampling unit.
+CLUSTER_UNIT = "log_name"
 
 #: ⛔ The ONLY admissible EPDMS/PDMS column, and the one that must never be read
 #: as it. ``NAVSIM_PROTOCOL.md:281-290``.
@@ -147,6 +161,36 @@ VARIANTS = {
 #: Four mutually incomparable protocols exist — ``NAVSIM_PROTOCOL.md:549-556``.
 SPLITS = ("navtest", "navhard_two_stage", "private_test_hard_two_stage",
           "warmup_two_stage", "navtrain")
+
+#: (variant, split) -> the registry's protocol tag (closed set of
+#: ``GATE_no_cross_protocol_comparison``). Anything else has NO tag and the gate FAILS.
+PROTOCOL_TAGS = {
+    ("EPDMS_v2", "navhard_two_stage"): "EPDMS_v2_navhard_two_stage",
+    ("EPDMS_v2", "warmup_two_stage"): "EPDMS_v2_warmup_two_stage",
+    ("EPDMS_v2", "private_test_hard_two_stage"): "EPDMS_v2_private_test_hard_two_stage",
+    ("EPDMS_v2", "navtest"): "EPDMS_v2_navtest_single_stage",
+    ("PDMS_v1", "navtest"): "PDMS_v1_navtest",
+}
+
+
+#: MEASURED (E3 census, ``<E3_PACKAGE>/raw/split_census.json``; the devkit's own
+#: filter_scenes and a re-derivation agree token for token): the corpus each split IS.
+SPLIT_CENSUS = {
+    "navhard_two_stage": {"stage1_tokens": 450, "stage2_tokens": 5462, "mapping_keys": 225,
+                          "log_names": 76, "nuplan_drives": 34, "cities": 4},
+    "navtest": {"stage1_tokens": 12146, "log_names": 136, "nuplan_drives": 44, "cities": 4},
+    "warmup_two_stage": {"stage1_tokens": 16, "stage2_tokens": 204, "mapping_keys": 8,
+                         "log_names": 7, "nuplan_drives": 7, "cities": 3},
+    "private_test_hard_two_stage": {"stage1_tokens": 140, "stage2_tokens": 1732,
+                                    "log_names": None, "note": "logs not released"},
+    "navtrain": {"stage1_tokens": 103288, "log_names": 1192, "nuplan_drives": 162,
+                 "note": "YAML counts only — trainval logs are not local"},
+}
+
+
+def navsim_protocol_tag(variant: str, split) -> "str | None":
+    """The registry tag for a (variant, split), or None when no protocol exists."""
+    return PROTOCOL_TAGS.get((variant, split))
 
 #: ``resolve_tier`` (``tools/ff_rescore.py:126-141``) accepts only T0/T1; the
 #: criteria registry additionally defines T2. An unstamped arm is a HARD ERROR
@@ -553,22 +597,45 @@ def read_epdms(row, *, variant: str = "EPDMS_v2") -> dict:
     return out
 
 
-def submetrics_from_row(row, *, variant: str = "EPDMS_v2") -> dict:
+#: The devkit's LONG column names (``PDMResults`` fields, dataclasses.py:844-852
+#: @0a380a9; EC is injected downstream). E1's gap G1: the CSV carries these, often
+#: stage-suffixed (``_stage_one`` / ``_stage_two``), never the short keys.
+DEVKIT_COLUMNS = {"NC": "no_at_fault_collisions", "DAC": "drivable_area_compliance",
+                  "DDC": "driving_direction_compliance", "TLC": "traffic_light_compliance",
+                  "EP": "ego_progress", "TTC": "time_to_collision_within_bound",
+                  "LK": "lane_keeping", "HC": "history_comfort",
+                  "EC": "two_frame_extended_comfort", "C": "comfort"}
+
+
+def submetrics_from_row(row, *, variant: str = "EPDMS_v2", stage=None) -> dict:
     """Every sub-metric the variant defines, or an explicit per-term absence.
 
     ``navsim.submetrics`` is a REQUIRED criterion (``CRITERIA_REGISTRY.json``)
     because *"a composite alone hides which term moved"*.
+
+    Accepts the short keys (``NC``), their lower case, AND the devkit's long column
+    names (``no_at_fault_collisions``); ``stage="one"|"two"`` reads the devkit CSV's
+    ``<long>_stage_one|_stage_two`` columns (E1 gap G1).
     """
     if variant not in VARIANTS:
         raise NavSimAdapterError(f"unknown variant {variant!r}")
+    if stage not in (None, "one", "two"):
+        raise NavSimAdapterError(f"stage must be None, 'one' or 'two', got {stage!r}")
     row = dict(row)
     spec = VARIANTS[variant]
     terms = list(spec["multipliers"]) + list(spec["weighted"])
     out = {"variant": variant, "denominator": spec["denominator"],
            "_note": spec["note"]}
+    if stage is not None:
+        out["stage"] = stage
     missing = []
     for t in terms:
-        key = next((k for k in (t, t.lower()) if k in row and row[k] is not None), None)
+        cands = [t, t.lower()]
+        if t in DEVKIT_COLUMNS:
+            long_ = DEVKIT_COLUMNS[t]
+            cands += ([f"{long_}_stage_{stage}"] if stage else []) + [long_]
+        key = next((k for k in cands if k in row and row[k] is not None
+                    and str(row[k]).strip().lower() not in ("", "nan")), None)
         if key is None:
             missing.append(t)
             out[t] = {"status": "UNAVAILABLE",
@@ -588,40 +655,55 @@ def submetrics_from_row(row, *, variant: str = "EPDMS_v2") -> dict:
 # --------------------------------------------------------------------------- #
 # 4. Refusals — the estimator, and the families NavSim does not have           #
 # --------------------------------------------------------------------------- #
+#: ⚠️ The NAME is kept for import compatibility (E1's build_artifacts.py reads it);
+#: the unit is no longer unsettled, so the TEXT now says why THIS artifact has no
+#: interval — the estimator needs per-unit contributions + log names it was not given.
 ESTIMATOR_UNSETTLED_REASON = (
-    "cluster unit unsettled — NavSim's resampling unit is a SCENE TOKEN, not an "
-    "episode. taniteval.ci.episode_cluster_bootstrap resamples EPISODES, and "
-    "the two are not interchangeable here: docs/splits.md states verbatim that "
-    "\"NavSim splits contain overlapping scenes\", so scene tokens are NOT "
-    "independent draws, and clustering by nuPlan log (the obvious alternative) "
-    "has never been pre-registered for this programme. ⛔ Emitting either would "
-    "manufacture a decision-grade interval from an unsettled unit — worse than "
-    "no interval, because it would look valid. The point estimate below is the "
-    "full_set pooled mean and is unaffected. OPEN DESIGN QUESTION FOR THE PI: "
-    "NAVSIM_PROTOCOL.md sec 8.5 and sec 9 item 15.")
+    "no interval computed for this artifact. The NavSim estimator is SETTLED "
+    "(2026-09-19, W2/E3): a LOG-CLUSTER bootstrap over the OpenScene log_name, "
+    "B = 2000, n_clusters >= 8 (RG-14), of the devkit's OWN aggregate — "
+    "taniteval/adapters/navsim_ci.py, pre-registered in " + E3_PACKAGE + "/SPEC.md. "
+    "It needs each unit's contribution (per token; per mapping key for two-stage, "
+    "from the pre-CSV frame WITH its `weight` column) and its log_name, and none "
+    "were passed to build_artifact(interval=...). ⛔ A scene-token or episode-"
+    "cluster interval is NOT a substitute (scenes overlap within a log: 5.55 "
+    "scenes per key frame on navtest). The point estimate is the full-set value "
+    "and is unaffected.")
+
+#: Splits that can NEVER carry an interval, with the measured reason (SPEC §5).
+NO_INTERVAL_SPLITS = {
+    "warmup_two_stage": ("warmup_two_stage has 7 log_name clusters < the RG-14 floor of 8 "
+                         "(MEASURED, raw/split_census.json; confirms D-BENCH-PORT) — no "
+                         "interval is admissible on this split, ever."),
+    "private_test_hard_two_stage": ("private_test_hard_two_stage: log identities and "
+                                    "per-scene scores are not released (0/140 tokens in "
+                                    "the local test metadata vs the navhard control "
+                                    "450/450) — no interval can be formed."),
+}
 
 
-def estimator_refusal(n: int) -> dict:
+def estimator_refusal(n: int, *, split=None, reason=None) -> dict:
     """The interval's honest n/a — reason + n, the harness's inline idiom.
 
-    ``tools/criteria_check.py:131-145`` reads ``{"status", "reason", "n"}`` as
-    REFUSED (a work item); the SAME object without a ``reason`` is read as
-    ABSENT (a silent omission). Both fields are therefore mandatory here.
+    ``tools/criteria_check.py`` reads ``{"status", "reason", "n"}`` as REFUSED (a
+    work item); the SAME object without a ``reason`` is read as ABSENT. Both fields
+    are therefore mandatory here. ``split`` selects the split's standing reason when
+    it can never carry an interval (:data:`NO_INTERVAL_SPLITS`).
     """
+    why = reason or NO_INTERVAL_SPLITS.get(split) or ESTIMATOR_UNSETTLED_REASON
     return {"status": "UNAVAILABLE",
-            "reason": ESTIMATOR_UNSETTLED_REASON,
+            "reason": why,
             "n": int(n),
             "n_windows_it_would_have_had": int(n),
-            "estimator_if_it_were_settled": "episode_cluster_bootstrap (taniteval/ci.py)",
-            "_is_a_work_item": ("⛔ A PI DECISION, not an implementation gap. The "
-                                "adapter deliberately passes eid=None so the "
-                                "harness's own guard (four_families.py:658-664) "
-                                "fires on every interval rather than returning a "
-                                "scene-token bootstrap."),
+            "cluster_unit": CLUSTER_UNIT,
+            "estimator_if_it_could_rule": "navsim_log_cluster_bootstrap (taniteval/adapters/navsim_ci.py)",
+            "_is_a_work_item": ("an interval needs the per-unit contributions + log_name; "
+                                "navsim_ci.interval_from_run builds it from a devkit run."),
             "_forbidden": ("⛔ overlapping_holdout_se is NOT a fallback here. It "
                            "BIASES THE POINT ESTIMATE (mean-of-split-means): "
                            "MEASURED -6.67 % to +11.69 % on headline ade_0_2s "
-                           "across 27 arms, bidirectional.")}
+                           "across 27 arms, bidirectional. Nor is a scene-token "
+                           "bootstrap: scene tokens overlap within a log.")}
 
 
 def navsim_native_family_refusals(n: int) -> dict:
@@ -716,10 +798,13 @@ def scenes_to_win(pred_poses, gt_poses=None, *, frame: str,
                   origin_included: bool, dt_s: float,
                   origin_xy=None, origin_yaw=None,
                   scene_tokens=None, ego_speed_mps=None,
-                  verify: bool = True, tol: float = 0.35) -> dict:
+                  verify: bool = True, tol: float = 0.35,
+                  log_names=None) -> dict:
     """NavSim scenes -> the harness ``win`` dict. The core of this adapter.
 
-    ⛔ ``win["eid"]`` is set to **None** deliberately — see the module docstring.
+    ⛔ ``win["eid"]`` is **None** unless ``log_names`` (one OpenScene ``log_name``
+    per scene) is passed: then the harness's episode-cluster machinery resamples
+    LOGS — the settled NavSim unit (SPEC §3). Scene tokens are NEVER used as eid.
     The scene tokens are preserved under ``win["_navsim"]["scene_tokens"]``.
 
     ⛔ ``dt_s`` has NO DEFAULT. It is the spacing of the DENSE columns. NavSim's
@@ -768,6 +853,17 @@ def scenes_to_win(pred_poses, gt_poses=None, *, frame: str,
     if tokens is not None and len(tokens) != N:
         raise NavSimAdapterError(
             f"scene_tokens has {len(tokens)} entries for {N} scenes")
+    logs = None
+    if log_names is not None:
+        logs = [str(x) for x in log_names]
+        if len(logs) != N:
+            raise NavSimAdapterError(
+                f"log_names has {len(logs)} entries for {N} scenes — a positional "
+                f"join on mismatched rows assigns scenes to the wrong log")
+        if tokens is not None and logs == tokens:
+            raise NavSimAdapterError(
+                "log_names equals scene_tokens — that is scene-token resampling "
+                "under another name (SPEC §3 forbids it)")
 
     frame_evidence = None
     if verify:
@@ -794,8 +890,8 @@ def scenes_to_win(pred_poses, gt_poses=None, *, frame: str,
         "gt": (gt[:, idx] if gt is not None else None),
         "wp_steps": contract,
         "dt_s": dt_s,
-        # ⛔ DELIBERATELY None — see the module docstring and estimator_refusal().
-        "eid": None,
+        # ⛔ None unless log_names were given — never scene tokens (SPEC §3).
+        "eid": logs,
         # ---- OPTIONAL, each unlocks a family ----
         "v0": v0,
         "speed": v0,
@@ -814,7 +910,11 @@ def scenes_to_win(pred_poses, gt_poses=None, *, frame: str,
                               "simulator state array (0.1 s, 41 states) differ; "
                               "NAVSIM_PROTOCOL.md:415-417."),
             "scene_tokens": tokens,
-            "eid_is_none_because": ESTIMATOR_UNSETTLED_REASON,
+            "eid_is": ("log_name (the settled NavSim cluster unit)" if logs is not None
+                       else None),
+            "n_log_clusters": (len(set(logs)) if logs is not None else None),
+            "eid_is_none_because": (None if logs is not None else
+                                    "no log_names passed — " + ESTIMATOR_UNSETTLED_REASON),
             "pred_meta": pred_meta,
             "gt_meta": gt_meta,
             "frame_verification": frame_evidence,
@@ -904,7 +1004,15 @@ def four_families_block(win: dict, *, tier: str, n_boot: int = 2000,
         "because the BENCHMARK declines to measure it, not because the data "
         "lacks it — which makes it a buildable WORK ITEM here (audit seam 7, "
         "taniteval/strategic_optionset.py:193), unlike on PhysicalAI.")
-    fam["_navsim_estimator"] = estimator_refusal(n)
+    if win.get("eid") is not None:
+        fam["_navsim_estimator"] = {
+            "cluster_unit": CLUSTER_UNIT,
+            "n_log_clusters": len(set(win["eid"])),
+            "note": ("the four_families intervals above resample LOG_NAME clusters "
+                     "(win['eid'] = log names): the settled NavSim unit. Below "
+                     "8 logs the harness's own intervals are not decision-grade (RG-14).")}
+    else:
+        fam["_navsim_estimator"] = estimator_refusal(n)
     return fam
 
 
@@ -942,7 +1050,8 @@ def tier_rationale() -> dict:
 def navsim_inference_inputs(*, cameras=True, lidar=False,
                             ego_velocity=True, ego_acceleration=True,
                             ego_pose_history=True, driving_command=True,
-                            claimed_abstention_from_ego: bool = False) -> dict:
+                            claimed_abstention_from_ego: bool = False,
+                            privileged: bool = False) -> dict:
     """What the agent consumed at inference — recorded HONESTLY.
 
     ⛔ Defaults reflect what NavSim ACTUALLY hands every agent. ``EgoStatus`` is
@@ -976,17 +1085,24 @@ def navsim_inference_inputs(*, cameras=True, lidar=False,
                                "devkit and docs/agents.md. The paper says 3. "
                                "IMPLEMENT 4 — NAVSIM_PROTOCOL.md:502-504."),
             "kind": ("a ROUTE/GOAL signal, not ego kinematics: derived from the "
-                     "lane graph 20 m ahead, and explicitly disentangled from "
-                     "obstacles and traffic signs. Admissible in principle under "
-                     "the goal-input rule."),
+                     "lane graph 20 m ahead of the ego's CURRENT pose, disentangled "
+                     "from obstacles and traffic signs — but the route itself is the "
+                     "EXPERT'S OWN PATH at roadblock granularity: an ORACLE ROUTE "
+                     "(ROUTE_LEAK_VERDICT, PARTIAL). Admissible under the "
+                     "goal/situation-disjoint rule; optimistic by construction."),
         },
         "history_frames": 4,
     }
-    vision_only = not ego_used
+    # ⚠️ "vision-only" needs the CAMERAS and nothing privileged. MEASURED 2026-09-19:
+    # E1's privileged log-replay (human) arm used no ego channel and no camera, and the
+    # old `not ego_used` stamped it vision_only=True — the registry's ego gate now FAILS
+    # that incoherence.
+    vision_only = (not ego_used) and bool(cameras) and not privileged
     return {
         "inputs": inputs,
         "ego_channels_consumed": ego_used,
         "vision_only": vision_only,
+        "privileged": bool(privileged),
         "claimed_abstention_from_ego": bool(claimed_abstention_from_ego),
         "⛔_framework_cannot_verify": (
             "NavSim ALWAYS populates EgoStatus and has no switch to remove it; "
@@ -1002,8 +1118,45 @@ def navsim_inference_inputs(*, cameras=True, lidar=False,
     }
 
 
-def route_leak_check(status: str = "UNVERIFIED", evidence: str = "") -> dict:
-    """The ``navsim.route_leak_check`` criterion — never silently 'fine'."""
+#: The SETTLED verdict (W2/E3, 2026-09-19) — pinned equal to the registry's
+#: ``benchmarks.navsim.ROUTE_LEAK_VERDICT`` by ``test_navsim_adapter.py``.
+ROUTE_LEAK_VERDICT = {
+    "status": "CHECKED",
+    "verdict": "PARTIAL — ROUTE-LEVEL ORACLE",
+    "evidence_class": "PUBLISHED-CODE (mechanism) + MEASURED (four empirical probes)",
+    "one_line": ("driving_command is computed from (the ego pose NOW, nuPlan's route, the map) "
+                 "— not from the expert's future trajectory — but the route is the expert's "
+                 "own driven path at ROADBLOCK granularity, so the command carries the "
+                 "expert's future ROUTE CHOICE. Not a trajectory leak (no speed, stop or "
+                 "lane-change information)."),
+    "measured": {
+        "reproduction_by_openscene_code": "1,902/1,902 frames (turning 739/739)",
+        "turning_commands_from_FUTURE_route": "710/739 = 96.1 %",
+        "turning_commands_from_NO_FUTURE_route": "491/739 = 66.4 %",
+        "route_starts_behind_the_ego": "83.5 % of 1,921 nuPlan scenes",
+        "stage_two_command_copied_from_expert_frame": "5,462/5,462 navhard, 204/204 warmup",
+        "best_threshold_rule_on_future_path": "94.2-94.7 % (n 65,783) — below the 99 % bar"},
+    "consequence": ("a command-conditioned NavSim number is 'driving with an ORACLE ROUTE': "
+                    "comparable within NavSim, never evidence of route/strategic skill; the "
+                    "command may never be a route-head LABEL; pair the command arm with a "
+                    "command-withheld arm."),
+    "evidence": E3_PACKAGE + "/RESULT.md §B; raw/route_leak_probe.json; "
+                "raw/stage2_command_provenance.json",
+    "n": 1902,
+}
+
+
+def route_leak_check(status: "str | None" = None, evidence: str = "") -> dict:
+    """The ``navsim.route_leak_check`` criterion — never silently 'fine'.
+
+    Default (no argument): the SETTLED verdict, :data:`ROUTE_LEAK_VERDICT`.
+    ``"UNVERIFIED"`` still returns the historical refusal (callers that pinned it
+    keep working — but criteria_check FAILS it on an arm that consumes the command).
+    Any other string keeps the old free-form ``{"status": "OK"}`` form.
+    """
+    if status is None:
+        import copy as _copy
+        return _copy.deepcopy(ROUTE_LEAK_VERDICT)
     if status == "UNVERIFIED":
         return {"status": "UNAVAILABLE",
                 "reason": ("whether nuPlan's `route_roadblock_ids` is itself "
@@ -1026,13 +1179,41 @@ def build_artifact(win: dict, *, tier: str, variant: str = "EPDMS_v2",
                    epdms=None, submetrics=None,
                    inference_inputs=None, goal_source: str | None = None,
                    route_leak: dict | None = None,
-                   n_boot: int = 2000, seed: int = 0) -> dict:
+                   n_boot: int = 2000, seed: int = 0,
+                   interval: dict | None = None,
+                   navsim_protocol: str | None = None,
+                   devkit_sha: str | None = None,
+                   sensor_set: str | None = None,
+                   setting: str | None = None,
+                   ego_status_enforcement: dict | None = None,
+                   protocol_extra: dict | None = None,
+                   controls: dict | None = None,
+                   nav_compliance: dict | None = None,
+                   refused: dict | None = None) -> dict:
     """The full artifact, shaped for ``tools/criteria_check.py``.
 
     Key paths are the registry's (``CRITERIA_REGISTRY.json``): ``four_families.*``
     for the families, ``protocol.inference_inputs`` / ``protocol.goal_source``
     for the leak guards, ``benchmark.navsim.*`` for the five NavSim criteria,
     ``estimator.interval`` + ``tier`` + ``n_windows`` for hygiene.
+
+    The four blocking NavSim gates (registry >= 2.10.0, evaluated by
+    ``criteria_check.check_navsim``) read: ``estimator.cluster_unit`` (always
+    emitted: ``log_name``) + ``estimator.interval`` (``interval=`` from
+    :mod:`adapters.navsim_ci`, else a refusal); ``protocol.ego_status_enforcement``
+    (``ego_status_enforcement=``: a mechanism + evidence, or a reasoned n/a);
+    ``protocol.sensor_set`` / ``protocol.setting``; ``protocol.navsim_protocol``
+    (derived from variant + split unless passed) + ``protocol.devkit_sha``
+    (``devkit_sha=`` — ⛔ never auto-stamped: it is a fact about the run).
+    Nothing the caller did not declare is fabricated: a missing declaration stays
+    missing and the gate says so.
+
+    ``nav_compliance`` (a ``taniteval.nav_compliance`` block: the plan vs the TRUE
+    command with its shuffle + zero controls) lands at
+    ``four_families.strategic.nav_compliance``; without it the three
+    ``strat.nav_compliance*`` criteria are DECLINED in ``refused`` with the reason —
+    MEASURED 2026-09-19: before this default every NavSim artifact left them
+    silently ABSENT (registry >= 2.6 added them; the adapter never answered).
     """
     if tier not in TIERS:
         raise NavSimAdapterError(f"tier must be one of {TIERS}, got {tier!r}")
@@ -1045,6 +1226,8 @@ def build_artifact(win: dict, *, tier: str, variant: str = "EPDMS_v2",
     n = int(win["pred_dense"].shape[0])
     fam = four_families_block(win, tier=tier, n_boot=n_boot, seed=seed)
     ii = inference_inputs if inference_inputs is not None else navsim_inference_inputs()
+    tag = navsim_protocol if navsim_protocol is not None else navsim_protocol_tag(variant, split)
+    iv = interval if interval is not None else estimator_refusal(n, split=split)
 
     score_block = epdms if epdms is not None else {
         "status": "UNAVAILABLE",
@@ -1060,7 +1243,7 @@ def build_artifact(win: dict, *, tier: str, variant: str = "EPDMS_v2",
                    "which term moved, so the registry makes them REQUIRED."),
         "n": 0}
 
-    return {
+    art = {
         "tool": ADAPTER,
         "arm": arm,
         # ⛔ tier at the TOP level: tools/criteria_check.resolve_tier reads
@@ -1082,17 +1265,19 @@ def build_artifact(win: dict, *, tier: str, variant: str = "EPDMS_v2",
             "benchmark": "NavSim",
             "variant": variant,
             "split": split,
+            "navsim_protocol": tag,
+            "navsim_protocol_source": ("passed by the caller" if navsim_protocol is not None
+                                       else "derived from (variant, split)"),
             "protocol_doc": PROTOCOL_DOC,
             "devkit_pin": DEVKIT_PIN,
             "inference_inputs": ii,
             "vision_only": ii.get("vision_only"),
             "goal_source": goal_source or (
                 "NavSim `driving_command` (4-dim one-hot), derived from the "
-                "ROUTE LANE GRAPH 20 m ahead and explicitly disentangled from "
-                "obstacles and traffic signs. ⚠️ Admissible under the "
-                "goal/situation-disjoint rule ONLY while route_leak_check is "
-                "settled: its upstream `route_roadblock_ids` provenance is "
-                "UNVERIFIED."),
+                "route lane graph 20 m ahead of the CURRENT pose — an ORACLE ROUTE: "
+                "the route is the expert's own path at roadblock granularity "
+                "(ROUTE_LEAK_VERDICT, PARTIAL). Admissible under the "
+                "goal/situation-disjoint rule; optimistic by construction."),
             "simulation_semantics": (
                 "the agent is queried ONCE per scene; the plan is then fixed "
                 "and propagated by an LQR + kinematic bicycle model at 10 Hz "
@@ -1106,19 +1291,57 @@ def build_artifact(win: dict, *, tier: str, variant: str = "EPDMS_v2",
             "variant": f"{variant} / {split or 'SPLIT-NOT-NAMED'}",
             "submetrics": sub_block,
             "ego_inputs": ii,
-            "route_leak_check": route_leak or route_leak_check(),
+            "route_leak_check": route_leak if route_leak is not None else route_leak_check(),
             "families_absent_natively": navsim_native_family_refusals(n),
             "THE_COLUMN_TRAP": _COLUMN_TRAP_WHY,
         }},
         "estimator": {
-            "point_estimate": "full_set pooled mean over scenes",
-            "interval": estimator_refusal(n),
+            "point_estimate": ("the devkit's own aggregate (two-stage: per mapping key, "
+                               "then a skip-NaN mean over keys; single-stage: skip-NaN "
+                               "mean over tokens)"),
+            "cluster_unit": CLUSTER_UNIT,
+            "interval": iv,
         },
         "_two_blocks": (
             "⛔ `four_families` is OUR instruments on NavSim TRAJECTORY "
             "GEOMETRY. `benchmark.navsim` is NAVSIM'S OWN score. They measure "
             "different things and must never be merged or averaged."),
     }
+    pr = art["protocol"]
+    if split is not None:
+        # the corpus IS the split's scene filter — declared, not inferred (hyg.parity)
+        c = SPLIT_CENSUS.get(split, {})
+        pr["corpus"] = (f"NavSim {split} (devkit scene filter @{DEVKIT_PIN}; "
+                        + ", ".join(f"{k} {v}" for k, v in c.items() if k != "note")
+                        + ") — a community benchmark split, NOT the TanitAD parity corpus")
+        pr["parity_key"] = ("n/a — a NavSim split; the TanitAD parity corpus "
+                            "(physicalai-train-e438721ae894 / f09e44db) does not apply")
+    for key, val in (("devkit_sha", devkit_sha), ("sensor_set", sensor_set),
+                     ("setting", setting), ("ego_status_enforcement", ego_status_enforcement)):
+        if val is not None:
+            pr[key] = val
+    if protocol_extra:
+        for key, val in protocol_extra.items():
+            if key in pr and key not in ("corpus", "loop", "controls"):
+                raise NavSimAdapterError(
+                    f"protocol_extra would overwrite protocol.{key} — pass it through its "
+                    f"own argument so the adapter's refusal logic still applies")
+            pr[key] = val
+    if controls is not None:
+        art["controls"] = controls
+    if nav_compliance is not None:
+        art["four_families"]["strategic"]["nav_compliance"] = nav_compliance
+    else:
+        why = ("no nav-compliance readout was passed to this NavSim artifact. NavSim's own "
+               "score never measures behaviour against the command; the readout needs the "
+               "plan under TRUE / SHUFFLED / ZERO command conditionings on the same scenes "
+               "(taniteval/taniteval/nav_compliance.py). ⚠️ The command is an ORACLE route "
+               "(ROUTE_LEAK_VERDICT), so a compliance rate reads route-FOLLOWING given the "
+               "expert's route, never route choice.")
+        art["refused"] = {"nav_compliance": why, "nav_compliance_controls": why}
+    if refused:
+        art.setdefault("refused", {}).update(refused)
+    return art
 
 
 # --------------------------------------------------------------------------- #
@@ -1144,16 +1367,22 @@ def to_ff_dump(win: dict, label: str = "navsim") -> dict:
     return {
         "kind": "navsim_scenes",
         "gt": np.asarray(win["gt_dense"], dtype=np.float64),
-        "eid": (list(tokens) if tokens else [str(i) for i in range(n)]),
+        # log_name clusters when the win carries them; otherwise the scene tokens,
+        # flagged by _cluster_unit_unsettled so no bootstrap may consume them.
+        "eid": (list(win["eid"]) if win.get("eid") is not None
+                else (list(tokens) if tokens else [str(i) for i in range(n)])),
         "dt_s": float(win["dt_s"]),
         "dt_provenance": win.get("_navsim", {}).get("dt_provenance"),
         "wp_steps": None,      # dense path supplied; no sparse tick contract
         "source": PROTOCOL_DOC,
-        "n_episodes": len(set(tokens)) if tokens else n,
+        "n_episodes": (len(set(win["eid"])) if win.get("eid") is not None
+                       else (len(set(tokens)) if tokens else n)),
         "v0": win.get("v0"),
         "arms": {label: (label, np.asarray(win["pred_dense"], dtype=np.float64))},
-        "_cluster_unit_unsettled": True,
-        "_estimator_refusal": estimator_refusal(n),
+        # True when this dump carries no log_name clusters (eid falls back to tokens,
+        # which a bootstrap must never resample). Name kept for compatibility.
+        "_cluster_unit_unsettled": win.get("eid") is None,
+        "_estimator_refusal": (estimator_refusal(n) if win.get("eid") is None else None),
         "_not_wired": ("⛔ ff_rescore.load_dump has NOT been given a branch for "
                        "this. Wiring it would silently enable a scene-token "
                        "episode-cluster bootstrap. PI decision first."),

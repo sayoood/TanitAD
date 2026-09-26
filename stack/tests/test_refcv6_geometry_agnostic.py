@@ -225,7 +225,11 @@ OWNED = ("models/bev_encoder.py", "models/box3d_head.py",
          "models/refc_bev_coupling.py", "models/trunk_shapes.py",
          "models/refcv6_perception_branch.py",     # the trainer's assembly
          "data/agent_cuboid_gt.py", "data/lift_orientation.py",
-         "data/perception_targets.py")
+         "data/perception_targets.py",
+         # ⭐ refcv7 (PI 2026-09-19): the same ban applies to the new heads —
+         # their token counts and raster indices are DERIVED from the tensors
+         # and the SAM3 meta, never typed.
+         "refs/refcv7_heads.py", "refs/refcv7_oracle.py", "refs/refcv7_toad.py")
 
 
 #: image-geometry numbers that must never be a literal in executable code.

@@ -329,7 +329,19 @@ def test_navsim_variant_denominators_are_pinned(registry):
     v = registry["benchmarks"]["navsim"]["variants"]
     assert v["PDMS_v1"]["denominator"] == 12
     assert v["EPDMS_v2"]["denominator"] == 16
-    assert set(v["EPDMS_v2"]["multipliers"]) == {"NC", "DAC", "DDC"}
+    # ⛔ registry <= 2.9.0 pinned {NC, DAC, DDC} HERE — the test guarded the defect.
+    # The devkit multiplies by FOUR (pdm_enums.py:165-171 @0a380a9) and this very
+    # block's EPDMS_submetrics already did. The LITERAL list, in order:
+    assert v["EPDMS_v2"]["multipliers"] == ["NC", "DAC", "DDC", "TLC"]
+    assert v["PDMS_v1"]["multipliers"] == ["NC", "DAC"]
+
+
+def test_the_variant_multipliers_agree_with_the_submetric_formula(registry):
+    """The cross-check that would have caught the TLC omission on the day: two blocks
+    of ONE registry describing the same formula must name the same multipliers."""
+    nv = registry["benchmarks"]["navsim"]
+    assert set(nv["variants"]["EPDMS_v2"]["multipliers"]) == \
+        set(nv["EPDMS_submetrics"]["multiplicative"])
 
 
 def test_nuscenes_openloop_planning_is_NOT_adoptable(registry):
@@ -379,6 +391,108 @@ def test_no_benchmark_is_left_pending_without_its_protocol_doc(registry):
             doc = ROOT / b["protocol_doc"]
             assert doc.exists(), f"{name} is adopted but {b['protocol_doc']} is missing"
             assert b.get("primary"), f"{name} adopted with no primary source cited"
+
+
+# ---------------------------------- nuScenes open-loop planning: not a criterion (W6) ---
+# H-EVAL-6 SUPPORTED + D-BENCH-PORT SKIP claim-bearing. The guard separates an honest
+# external-comparability record from the two ways the number gets misused: one arm per way, plus
+# a control proving the guard touches nothing else.
+
+def _nusc_artifact(claim_bearing=False, extra=None):
+    art = {
+        "schema": "taniteval.nuscenes_planning/1",
+        "claim_bearing": claim_bearing,
+        "claim_bearing_reason": "H-EVAL-6: inadmissible as a TanitAD criterion; D-BENCH-PORT SKIP",
+        "protocol": {"nuscenes_protocol": "nuScenes_OL_L2_uniad"},
+        "benchmark": {"nuscenes": {"planning": {
+            "protocol_tag": "nuscenes-planning/uniad-noavg+uniad@609ee08",
+            "protocol": "nuScenes_OL_L2_uniad",
+            "command_source": "none",
+            "gt_control": {"status": "OK", "n": 6019,
+                           "gt_collision_box_pct": {"avg_1_2_3s": 0.36}},
+            "nonstraight": {"status": "OK", "n": 686},
+            "results": {"rows": [{"protocol_tag": "nuscenes-planning/uniad-noavg+uniad@609ee08",
+                                  "metric": "L2_m", "horizon": "1s", "value": 1.03,
+                                  "n_samples": 6019}]}}}},
+    }
+    art.update(extra or {})
+    return art
+
+
+def test_a_nuscenes_planning_record_is_EXTERNAL_ONLY_and_is_never_scored(registry):
+    res = cc.check_artifact(_nusc_artifact(), registry)
+    assert res["scope"] == cc.EXTERNAL_ONLY
+    assert res["n_violations"] == 0 and res["families"] == {}
+    assert [r["state"] for r in res["benchmarks"]] == [cc.PRESENT]
+
+
+def test_DELIBERATE_REGRESSION_a_claim_bearing_nuscenes_record_is_a_violation(registry):
+    for cb in (True, None):
+        art = _nusc_artifact(claim_bearing=cb)
+        if cb is None:
+            art.pop("claim_bearing")
+        res = cc.check_artifact(art, registry)
+        ids = [v["id"] for v in res["violations"]]
+        assert cc.NUSC_GATE_ID in ids, (cb, ids)
+
+
+def test_DELIBERATE_REGRESSION_nuscenes_numbers_inside_a_driving_artifact_are_a_violation(
+        compliant, registry):
+    art = copy.deepcopy(compliant)
+    art["benchmark"] = _nusc_artifact()["benchmark"]
+    art["claim_bearing"] = False                       # even declared false: still a misuse
+    res = cc.check_artifact(art, registry)
+    assert res["scope"] == cc.IN_SCOPE                 # it IS scored - and it FAILS
+    assert cc.NUSC_GATE_ID in [v["id"] for v in res["violations"]]
+
+
+def test_the_nuscenes_guard_leaves_every_other_artifact_alone(compliant, registry):
+    """The control: a guard that fires on everything is not a guard."""
+    assert cc.nuscenes_planning_state(compliant, registry)[0] == "none"
+    assert cc.check_artifact(compliant, registry)["n_violations"] == 0
+    assert cc.check_artifact({"fp32": {"params": 1}}, registry)["scope"] == cc.OUT_OF_SCOPE
+
+
+def test_DELIBERATE_REGRESSION_a_nuScenes_OL_TAG_alone_must_declare_claim_bearing_false(registry):
+    """⭐ W2's arm on top of W6's three: a record need not carry a planning BLOCK to be a
+    nuScenes open-loop number — a suite record whose PROTOCOL TAG is `nuScenes_OL_*` is one,
+    and claiming it (claim_bearing true, or absent) is a VIOLATION. A second detection
+    mechanism, because one detector is one detector."""
+    base = {"schema": "taniteval.bench.summary/1", "protocol": "nuScenes_OL_L2_stp3",
+            "claim_bearing": False}
+    res = cc.check_artifact(dict(base), registry)
+    assert res["scope"] == cc.EXTERNAL_ONLY and res["n_violations"] == 0
+    for bad in (True, None):
+        art = dict(base)
+        if bad is None:
+            art.pop("claim_bearing")
+        else:
+            art["claim_bearing"] = bad
+        ids = [v["id"] for v in cc.check_artifact(art, registry)["violations"]]
+        assert cc.NUSC_GATE_ID in ids, (bad, ids)
+    # the CONTROL that keeps the arm honest: a NavSim tag is untouched by this guard
+    nav = {"schema": "taniteval.bench.summary/1", "protocol": "EPDMS_v2_navhard_two_stage"}
+    assert cc.nuscenes_planning_state(nav, registry)[0] == "none"
+
+
+def test_DELIBERATE_REGRESSION_a_nuScenes_OL_tag_inside_a_driving_artifact_is_a_violation(
+        compliant, registry):
+    """The misuse W6's row exists for, reached through the TAG rather than the block: a
+    TanitAD driving artifact may not carry a nuScenes open-loop number, whatever its
+    claim_bearing flag says (H-EVAL-6)."""
+    art = copy.deepcopy(compliant)
+    art["protocol"]["nuscenes_protocol"] = "nuScenes_OL_L2_uniad"
+    art["claim_bearing"] = False
+    res = cc.check_artifact(art, registry)
+    assert res["scope"] == cc.IN_SCOPE            # it IS scored — and it FAILS
+    assert cc.NUSC_GATE_ID in [v["id"] for v in res["violations"]]
+
+
+def test_the_registry_carries_the_not_a_criterion_gate(registry):
+    gate = registry["benchmarks"]["nuscenes"]["tasks"]["planning_openloop"]["GATE_not_a_criterion"]
+    assert gate["blocking"] is True and gate["id"] == cc.NUSC_GATE_ID
+    assert "claim_bearing" in gate["rule"] and "H-EVAL-6" in gate["why"]
+    assert "benchmark.nuscenes.planning" in gate["detect_keys"]
 
 
 # ------------------------------- the registry self-check (C133-b, 2026-08-23) ---
@@ -562,11 +676,38 @@ def navsim(registry) -> dict:
 def test_navsim_estimator_gate_exists_and_blocks(navsim):
     """⛔ NavSim resamples SCENE TOKENS, not episodes, and its scenes explicitly
     OVERLAP. Resampling overlapping units as independent understates variance —
-    the overlapping_holdout_se family, on a borrowed benchmark."""
+    the overlapping_holdout_se family, on a borrowed benchmark.
+    registry 2.10.0: SETTLED as a log-cluster bootstrap (W2/E3 SPEC + census)."""
     g = navsim["GATE_estimator_cluster_unit"]
     assert g["blocking"] is True
-    assert "UNAVAILABLE" in g["admissible_until_settled"]
+    assert g["status"].startswith("SETTLED")
+    assert g["cluster_unit"] == "log_name"
+    assert g["min_clusters"] == 8 and g["n_boot_min"] == 2000
+    assert "UNAVAILABLE" in g["admissible_refusal"]
     assert "scene" in g["why"].lower() and "overlap" in g["why"].lower()
+    # the census literals the ceiling check uses (MEASURED, two agreeing derivations)
+    assert g["max_clusters_by_protocol"] == {
+        "EPDMS_v2_navhard_two_stage": 76, "EPDMS_v2_warmup_two_stage": 7,
+        "EPDMS_v2_navtest_single_stage": 136, "PDMS_v1_navtest": 136,
+        "EPDMS_v2_private_test_hard_two_stage": None}
+
+
+def test_the_registry_STATES_the_post_settlement_form_so_2_9_0_cannot_be_re_derived(navsim):
+    """⛔ MEASURED 2026-09-20: E1 read this gate from HEAD — registry **2.9.0**, whose
+    `admissible_until_settled` admits ONLY {status: UNAVAILABLE} — and down-declared a valid
+    76-cluster navhard interval, because the settled gate lives in a working tree that is
+    STAGED AND UNCOMMITTED. The registry must therefore SAY its post-settlement form, and say
+    that the old text is dead; a gate nobody can read is a gate nobody obeys."""
+    g = navsim["GATE_estimator_cluster_unit"]
+    assert "admissible_until_settled" not in g, "the 2.9.0 key must not survive"
+    form = g["post_settlement_form"]
+    assert "11.4816" in form["PASS"] and "76 log clusters" in form["PASS"]
+    assert "7 log_names" in form["REFUSED"] and "WORK ITEM" in form["REFUSED"]
+    fails = " | ".join(form["FAIL"])
+    for must in ("FALSE REFUSAL", "single token", "RG-14", "n_boot", "episode-cluster"):
+        assert must in fails, must
+    assert "2.9.0" in g["supersedes"] and "COMMITTED" in g["supersedes"]
+    assert "_admissible_interval_hiding_in" in g["false_refusal_rule"]
 
 
 def test_navsim_ego_enforcement_gate_demands_a_MECHANISM_not_an_assertion(navsim):
@@ -586,17 +727,39 @@ def test_navsim_modality_label_gate_exists(navsim):
         assert k in g["keys"]
 
 
-def test_the_comparable_ladder_is_recorded_with_its_source(navsim):
-    """Our comparable class is front-camera-only + perception-free, NOT the
-    multi-camera headline. Pin the ladder so a future report cannot drift to the
-    flattering row."""
-    lad = navsim["GATE_modality_label"]["comparable_ladder_perception_free_front_only"]
-    assert "2601.22032" in lad["_source"]
-    assert lad["LAW"]["PDMS"] == 83.8
+def test_the_comparable_ladder_is_recorded_with_its_source_and_its_INPUTS(navsim):
+    """Our comparable class is PERCEPTION-FREE at our scale band. ⛔ It is NOT
+    modality-matched: re-read from the banked PDF 2026-09-20 (Drive-JEPA Table 2, p.8),
+    LAW and World4Drive print `C & L` — camera AND LiDAR. Pin the ladder AND each rung's
+    printed inputs, so a future report can drift to neither the flattering row nor the
+    wrong modality."""
+    g = navsim["GATE_modality_label"]
+    lad = g["comparable_ladder_perception_free"]
+    assert "2601.22032" in lad["_source"] and "Table 2" in lad["_source"]
+    assert lad["LAW"]["PDMS"] == 83.8 and lad["LAW"]["inputs"] == "C & L"
+    assert lad["World4Drive"]["inputs"] == "C & L"
+    assert lad["Epona"]["PDMS"] == 86.2 and lad["Epona"]["PDMS_table1_p4"] == 86.1
     assert lad["Drive-JEPA"]["PDMS"] == 89.0
+    assert lad["Drive-JEPA"]["inputs"].startswith("Camera")
     # the entry rung must stay inside our parameter budget, or the ladder is the
     # wrong one to be quoting at all
     assert lad["LAW"]["encoder"] == "21M"
+    # the old key must not silently keep working with the wrong class attached
+    assert isinstance(g["comparable_ladder_perception_free_front_only"], str)
+
+
+def test_DELIBERATE_REGRESSION_the_drive_jepa_modality_attribution_cannot_return(navsim):
+    """⛔ The corrected fact, pinned as a LITERAL: the three-camera 1024x256 stack is
+    TRANSFUSER's; Drive-JEPA is front-camera-only at 2x512x256 in EVERY row (Table 8 p.14
+    + §4.2 p.7 of the banked PDF). The superseded sentence said the opposite and reached
+    two briefs before W4 caught it."""
+    why = navsim["GATE_modality_label"]["why"]
+    assert "Transfuser, HydraMDP++, DriveSuprim and GoalFlow run at 1024x256" in why
+    assert "Drive-JEPA at 2x512x256 — the FRONT CAMERA ONLY" in why
+    assert "Drive-JEPA's 93.7 PDMS headline uses 1024x256" not in why
+    assert "CORRECTED 2026-09-20" in why
+    assert navsim["published_reference_numbers"]["_qualifiers_that_travel_with_each_number"][
+        "DrivoR navhard 56.3"].startswith("= DrivoR + 134k")
 
 
 def test_drive_jepa_v1_number_is_93_7_not_93_3(navsim):
@@ -1609,3 +1772,535 @@ def test_ONLY_the_scored_arm_is_read_on_a_refcv3_record(refcv3, registry):
     after = cc.check_artifact(art, registry)
     assert after == before, \
         "a non-scored arm changed the verdict - scoring is not arm-scoped on this schema"
+
+
+# =========================================================================== #
+# BENCHMARK GATES ARE MACHINERY (registry 2.10.0, W2 / E3 resumed)            #
+# =========================================================================== #
+# ⛔ MEASURED 2026-09-19 by E1 and, independently, by E2: before 2.10.0 this tool
+# evaluated NONE of `benchmarks.navsim` — all four BLOCKING gates were unenforced
+# and every NavSim artifact passed. Each gate below ships with a mutation arm that
+# reintroduces the failure it exists for and must go RED; the fixture is hand-built
+# (the `compliant` principle above), and every expectation is a literal.
+
+V2_SHA = "0a380a9063d7162ec93d0f51e9990ebac585f720"
+V1_SHA = "3e8291bfa89ff247231e0227778840cd0a036896"
+GATES = ("navsim.estimator_unit", "navsim.ego_enforcement", "navsim.modality_label",
+         "navsim.cross_protocol")
+
+
+def _navsim_art() -> dict:
+    """A NavSim artifact that satisfies every NavSim criterion and gate."""
+    return {
+        "tool": "taniteval/adapters/navsim.py", "tier": "T1", "n_windows": 450,
+        "four_families": {"_tier": "T1"},
+        "protocol": {
+            "tier": "T1", "navsim_protocol": "EPDMS_v2_navhard_two_stage",
+            "devkit_sha": V2_SHA,
+            "sensor_set": "3-camera stitch cam_l0+cam_f0+cam_r0 -> 256x640 cylindrical",
+            "setting": "perception-free, zero-shot from PhysicalAI-AV",
+            "vision_only": False,
+            "ego_status_enforcement": {
+                "mechanism": "declared-input seam: only the declared t0 fields are copied",
+                "declared_fields": ["ego_velocity[t0]", "driving_command[t0]"],
+                "evidence": {"file": "raw/K5_K6_ego_mutation.json", "byte_identical": 20}},
+        },
+        "benchmark": {"navsim": {
+            "score": {"value": 0.4412, "column": "score", "variant": "EPDMS_v2"},
+            "variant": "EPDMS_v2 / navhard_two_stage",
+            "submetrics": {"NC": {"value": 1.0}},
+            "ego_inputs": {"inputs": {"driving_command": {"used": True}}},
+            "route_leak_check": {"status": "CHECKED",
+                                 "verdict": "PARTIAL — ROUTE-LEVEL ORACLE"},
+        }},
+        "estimator": {"cluster_unit": "log_name", "interval": {
+            "status": "OK", "estimator": "navsim_log_cluster_bootstrap",
+            "cluster_unit": "log_name", "resample_unit": "log_name",
+            "aggregation": "two_stage_mapping_key_mean",
+            "point": 0.4412, "lo": 0.3921, "hi": 0.4907,
+            "n_clusters": 76, "n_units": 225, "n_boot": 2000}},
+    }
+
+
+def _set(d: dict, dotted: str, value):
+    parts = dotted.split(".")
+    for p in parts[:-1]:
+        d = d.setdefault(p, {})
+    if value is _DEL:
+        d.pop(parts[-1], None)
+    else:
+        d[parts[-1]] = value
+
+
+_DEL = object()
+
+
+def _gates(art, registry) -> dict:
+    return {r["id"]: r for r in cc.check_navsim(art, registry)}
+
+
+def test_a_fully_declared_navsim_artifact_passes_every_gate(registry):
+    rows = _gates(_navsim_art(), registry)
+    for gid in GATES:
+        assert rows[gid]["state"] == cc.PRESENT, (gid, rows[gid]["detail"])
+    for cid in ("navsim.score", "navsim.variant", "navsim.submetrics",
+                "navsim.ego_inputs", "navsim.route_leak_check"):
+        assert rows[cid]["state"] == cc.PRESENT, (cid, rows[cid]["detail"])
+
+
+@pytest.mark.parametrize("gate,mutation", [
+    # estimator — every way the SPEC says an interval FAILS
+    ("navsim.estimator_unit", [("estimator.interval.estimator", "episode_cluster_bootstrap")]),
+    ("navsim.estimator_unit", [("estimator.interval.estimator", "overlapping_holdout_se")]),
+    ("navsim.estimator_unit", [("estimator.interval.n_clusters", 450)]),       # tokens > 76 logs
+    ("navsim.estimator_unit", [("estimator.interval.n_clusters", 7)]),         # < floor 8
+    ("navsim.estimator_unit", [("estimator.interval.resample_unit", "scene_token")]),
+    ("navsim.estimator_unit", [("estimator.interval.aggregation", "single_stage_token_mean")]),
+    ("navsim.estimator_unit", [("estimator.interval.n_boot", 200)]),
+    ("navsim.estimator_unit", [("estimator.cluster_unit", "scene_token")]),
+    ("navsim.estimator_unit", [("estimator.cluster_unit", _DEL)]),
+    ("navsim.estimator_unit", [("estimator.interval", _DEL)]),
+    ("navsim.estimator_unit", [("protocol.navsim_protocol", "EPDMS_v2_warmup_two_stage"),
+                               ("benchmark.navsim.variant", "EPDMS_v2 / warmup_two_stage"),
+                               ("estimator.interval.n_clusters", 8)]),         # warmup has 7
+    # ego enforcement — 'we did not use it' is an assertion
+    ("navsim.ego_enforcement", [("protocol.ego_status_enforcement",
+                                 {"vision_only_claimed": True, "note": "we did not use it"})]),
+    ("navsim.ego_enforcement", [("protocol.ego_status_enforcement", "we did not use it")]),
+    ("navsim.ego_enforcement", [("protocol.ego_status_enforcement", _DEL)]),
+    ("navsim.ego_enforcement", [("protocol.ego_status_enforcement.evidence", _DEL),
+                                ("protocol.vision_only", True)]),
+    ("navsim.ego_enforcement", [("protocol.ego_status_enforcement",
+                                 {"vision_only_claimed": False, "status": "NOT_APPLICABLE",
+                                  "reason": "privileged log replay"}),
+                                ("protocol.vision_only", True)]),              # incoherent
+    # modality — the server records none; the label is ours
+    ("navsim.modality_label", [("protocol.sensor_set", _DEL)]),
+    ("navsim.modality_label", [("protocol.setting", "")]),
+    ("navsim.modality_label", [("protocol.sensor_set",
+                                {"status": "UNAVAILABLE", "reason": "x", "n": 0})]),
+    # cross-protocol — ~30 points separate two protocols wearing one name
+    ("navsim.cross_protocol", [("protocol.navsim_protocol", _DEL)]),
+    ("navsim.cross_protocol", [("protocol.navsim_protocol", "EPDMS_v2_navtest")]),
+    ("navsim.cross_protocol", [("protocol.navsim_protocol", "nuScenes_OL_L2_stp3")]),
+    ("navsim.cross_protocol", [("protocol.devkit_sha", "0a380a9")]),
+    ("navsim.cross_protocol", [("protocol.devkit_sha", "f" * 40)]),            # unregistered
+    ("navsim.cross_protocol", [("protocol.navsim_protocol", "PDMS_v1_navtest")]),  # v2 SHA
+    ("navsim.cross_protocol", [("benchmark.navsim.variant", "PDMS_v1 / navhard_two_stage")]),
+])
+def test_DELIBERATE_REGRESSION_each_gate_goes_RED_on_its_own_failure(registry, gate, mutation):
+    art = _navsim_art()
+    for key, val in mutation:
+        _set(art, key, val)
+    rows = _gates(art, registry)
+    assert rows[gate]["state"] == cc.ABSENT, \
+        f"{gate} stayed {rows[gate]['state']} under {mutation}: {rows[gate]['detail']}"
+    res = cc.check_artifact(art, registry)
+    assert gate in [v["id"] for v in res["violations"]], "a gate FAIL must be a violation"
+
+
+def test_an_honest_refusal_is_a_work_item_not_a_pass_and_not_a_violation(registry):
+    art = _navsim_art()
+    _set(art, "estimator.interval", {"status": "UNAVAILABLE", "n": 7,
+                                     "reason": "warmup: 7 logs < the RG-14 floor of 8"})
+    _set(art, "protocol.ego_status_enforcement",
+         {"vision_only_claimed": False, "status": "NOT_APPLICABLE",
+          "reason": "reference arm, not vision-only"})
+    rows = _gates(art, registry)
+    assert rows["navsim.estimator_unit"]["state"] == cc.REFUSED
+    assert rows["navsim.ego_enforcement"]["state"] == cc.REFUSED
+    res = cc.check_artifact(art, registry)
+    work = {w["id"] for w in res["work_items"]}
+    assert {"navsim.estimator_unit", "navsim.ego_enforcement"} <= work
+    assert not ({"navsim.estimator_unit", "navsim.ego_enforcement"} &
+                {v["id"] for v in res["violations"]})
+
+
+# ------------------------------------------------------------------------- #
+# THE POST-SETTLEMENT FORM (registry 2.10.3) — and the case E1 hit for real  #
+# ------------------------------------------------------------------------- #
+# ⛔ MEASURED 2026-09-20. E1's navhard CV run computed a valid interval with the settled
+# log-cluster bootstrap (76 clusters, EPDMS x100 11.4816, CI [8.25, 14.50]) and then
+# DECLARED NONE, because it read the gate from **HEAD, registry 2.9.0** — whose text admits
+# only {status: UNAVAILABLE} until the unit is settled — while the settled gate has lived in
+# the working tree, STAGED AND UNCOMMITTED, since 2.10.0. The gate did not need loosening;
+# the two shapes the artifact actually carries needed CATCHING, because both read exactly
+# like an honest refusal.
+
+def _valid_navhard_interval() -> dict:
+    """E1's real navhard CV interval, to the digits it banked."""
+    return {"status": "OK", "estimator": "navsim_log_cluster_bootstrap",
+            "cluster_unit": "log_name", "resample_unit": "log_name",
+            "aggregation": "two_stage_mapping_key_mean",
+            "point": 0.1148, "lo": 0.0825, "hi": 0.145,
+            "n_clusters": 76, "n_units": 225, "n_boot": 2000}
+
+
+def test_a_VALID_NAVHARD_INTERVAL_IS_NOT_REFUSED(registry):
+    """⭐ THE CASE THAT WAS REPORTED BROKEN, named so it cannot regress silently: 76 log
+    clusters on navhard, the official two-stage aggregation, B = 2000 — this PASSES, and the
+    detail says what it passed on."""
+    art = _navsim_art()
+    _set(art, "estimator.interval", _valid_navhard_interval())
+    row = _gates(art, registry)["navsim.estimator_unit"]
+    assert row["state"] == cc.PRESENT, row["detail"]
+    assert "navsim_log_cluster_bootstrap over 76 log_names" in row["detail"]
+    assert "two_stage_mapping_key_mean" in row["detail"]
+    res = cc.check_artifact(art, registry)
+    assert "navsim.estimator_unit" not in {v["id"] for v in res["violations"]}
+    assert "navsim.estimator_unit" not in {w["id"] for w in res["work_items"]}
+
+
+def test_DELIBERATE_REGRESSION_a_FALSE_REFUSAL_that_HIDES_an_admissible_interval_FAILS(registry):
+    """⛔ The exact shape of E1's artifact: UNAVAILABLE with a reason, and the real interval
+    tucked under `summary_interval`. It reads like an honest refusal and would have been
+    filed as a WORK ITEM — i.e. the measurement would have stayed invisible."""
+    art = _navsim_art()
+    _set(art, "estimator.interval", {
+        "status": "UNAVAILABLE", "n": 76,
+        "reason": ("a numeric interval exists in summary.json; the v2.9.0 registry gate admits "
+                   "only UNAVAILABLE here until W2 updates it"),
+        "summary_interval": _valid_navhard_interval()})
+    row = _gates(art, registry)["navsim.estimator_unit"]
+    assert row["state"] == cc.ABSENT, row["detail"]
+    assert "FALSE REFUSAL" in row["detail"] and "summary_interval" in row["detail"]
+    assert "navsim.estimator_unit" in {v["id"] for v in
+                                       cc.check_artifact(art, registry)["violations"]}
+
+
+def test_a_refusal_that_hides_an_INADMISSIBLE_interval_stays_an_honest_refusal(registry):
+    """⛔ THE DISCRIMINATING CONTROL — without it the detector would merely be firing on the
+    word 'interval'. A refusal that banks a REJECTED candidate (an episode-cluster CI, the
+    wrong unit for NavSim) is still an honest refusal and must stay a WORK ITEM."""
+    bad = _valid_navhard_interval()
+    bad["estimator"] = "episode_cluster_bootstrap"
+    art = _navsim_art()
+    _set(art, "estimator.interval", {
+        "status": "UNAVAILABLE", "n": 76,
+        "reason": "only an episode-cluster CI was computed, and it is not admissible for NavSim",
+        "rejected_candidate": bad})
+    row = _gates(art, registry)["navsim.estimator_unit"]
+    assert row["state"] == cc.REFUSED, row["detail"]
+    # ...and the same block WITH an admissible interval in it is the failing case
+    _set(art, "estimator.interval.rejected_candidate", _valid_navhard_interval())
+    assert _gates(art, registry)["navsim.estimator_unit"]["state"] == cc.ABSENT
+
+
+def test_a_cluster_unit_REFUSAL_whose_reason_is_ONE_TOKEN_FAILS(registry):
+    """⛔ MEASURED on E1's artifact: `estimator.cluster_unit = {status: UNAVAILABLE, n: 76,
+    reason: "log_name"}` — the UNIT NAME in the reason field. A single token cannot explain
+    anything, and the refusal shape then hides a unit that is in fact settled and correct."""
+    art = _navsim_art()
+    _set(art, "estimator.cluster_unit",
+         {"status": "UNAVAILABLE", "n": 76, "reason": "log_name"})
+    row = _gates(art, registry)["navsim.estimator_unit"]
+    assert row["state"] == cc.ABSENT, row["detail"]
+    assert "single token" in row["detail"] and "'log_name'" in row["detail"]
+
+    # the control: a REAL reason on the same shape is still an honest refusal
+    _set(art, "estimator.cluster_unit",
+         {"status": "UNAVAILABLE", "n": 0,
+          "reason": "the log identities of this private split are not released"})
+    _set(art, "estimator.interval",
+         {"status": "UNAVAILABLE", "n": 0, "reason": "no cluster unit is observable here"})
+    assert _gates(art, registry)["navsim.estimator_unit"]["state"] == cc.REFUSED
+
+
+def test_warmup_still_CANNOT_carry_an_interval_and_its_refusal_is_a_work_item(registry):
+    """The other half of the settled rule: 7 log_names < the RG-14 floor of 8, forever."""
+    art = _navsim_art()
+    _set(art, "protocol.navsim_protocol", "EPDMS_v2_warmup_two_stage")
+    _set(art, "benchmark.navsim.variant", "EPDMS_v2 / warmup_two_stage")
+    iv = _valid_navhard_interval()
+    iv["n_clusters"] = 7
+    _set(art, "estimator.interval", iv)
+    assert _gates(art, registry)["navsim.estimator_unit"]["state"] == cc.ABSENT
+    _set(art, "estimator.interval", {"status": "UNAVAILABLE", "n": 7,
+                                     "reason": "warmup has 7 log_names < the RG-14 floor of 8"})
+    row = _gates(art, registry)["navsim.estimator_unit"]
+    assert row["state"] == cc.REFUSED and "7 log_names" in row["detail"]
+
+
+def test_E1s_REAL_navhard_artifact_is_diagnosed_and_PASSES_once_the_interval_is_promoted(registry):
+    """⭐ The decisive arm, on the REAL banked artifact rather than a fixture: as published it
+    is diagnosed (not silently filed as a work item), and the moment its own nested interval is
+    promoted and its cluster_unit declared as the string, the gate PASSES. That is the proof
+    that nothing in the gate was blocking a correct artifact."""
+    import glob
+    import os
+    repo = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    # ⛔ W7 2026-09-21: PIN the artifact this test is ABOUT. It used `hits[-1]` — the LATEST navhard
+    # run — so its subject silently drifted onto whatever landed next. When the artifact builder was
+    # FIXED (settled `cluster_unit` string + the interval promoted), the newest run became correct AS
+    # PUBLISHED and this test went red for proving the fix works. The demonstration concerns E1's
+    # banked run 06e257; the complementary claim (a post-fix artifact passes as published) is its own
+    # test below.
+    hits = sorted(glob.glob(os.path.join(
+        repo, "taniteval", "results", "bench", "navsim_v2", "navhard_two_stage",
+        "*-navsim_v2-none-06e257", "artifacts", "CV.json")))
+    if not hits:
+        pytest.skip("NO_TREE: E1's banked navhard run 06e257 is not under taniteval/results/bench/navsim_v2")
+    with open(hits[-1], encoding="utf-8") as f:
+        art = json.load(f)
+
+    row = _gates(art, registry)["navsim.estimator_unit"]
+    assert row["state"] == cc.ABSENT, f"as published it must be DIAGNOSED, not passed: {row}"
+
+    nested = cc._dig(art, "estimator.interval.summary_interval.detail")[1]
+    if not isinstance(nested, dict):
+        pytest.skip("NO_TREE: this banked artifact carries no nested summary_interval.detail")
+    art["estimator"]["cluster_unit"] = "log_name"
+    art["estimator"]["interval"] = nested
+    row = _gates(art, registry)["navsim.estimator_unit"]
+    assert row["state"] == cc.PRESENT, row["detail"]
+    assert "76 log_names" in row["detail"]
+    # the numbers this stream told the orchestrator about, read back off the artifact
+    assert nested["n_clusters"] == 76 and nested["n_boot"] >= 2000
+    assert round(nested["lo"] * 100, 2) == 8.25 and round(nested["hi"] * 100, 2) == 14.50
+
+
+def test_a_POST_FIX_navhard_artifact_passes_the_estimator_gate_AS_PUBLISHED(registry):
+    """⭐ The complement of the test above (W7, 2026-09-21). The artifact builder now declares the
+    settled `cluster_unit` string and promotes an admissible interval — so a navhard run built after
+    the fix must PASS `navsim.estimator_unit` with NO edit, and a CV-stand-in MODEL arm must be a
+    REASONED REFUSAL (its only two-stage aggregate is the CV/model HYBRID), never a pass on the
+    hybrid's interval. Pinned to the first run built with the fix (859e25)."""
+    import glob
+    import os
+    repo = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    base = os.path.join(repo, "taniteval", "results", "bench", "navsim_v2", "navhard_two_stage")
+    cv = sorted(glob.glob(os.path.join(base, "*-859e25", "artifacts", "CV.json")))
+    a1 = sorted(glob.glob(os.path.join(base, "*-859e25", "artifacts", "A1.json")))
+    if not cv or not a1:
+        pytest.skip("NO_TREE: the post-fix navhard run 859e25 is not under taniteval/results/bench/navsim_v2")
+    with open(cv[-1], encoding="utf-8") as f:
+        art = json.load(f)
+    row = _gates(art, registry)["navsim.estimator_unit"]
+    assert row["state"] == cc.PRESENT, row["detail"]
+    assert "76 log_names" in row["detail"]
+    with open(a1[-1], encoding="utf-8") as f:
+        art = json.load(f)
+    row = _gates(art, registry)["navsim.estimator_unit"]
+    assert row["state"] == cc.REFUSED, row["detail"]
+    assert "HYBRID" in art["estimator"]["interval"]["reason"]
+
+
+def test_a_crashed_headline_still_passes_the_STRUCTURAL_gates(registry):
+    """⛔ MEASURED 2026-09-20 (W1): the navhard CV run scored all 5,912 scenarios and then
+    died INSIDE the official aggregation (TypeError on NaN arrays), so its headline is
+    UNDEFINED. An artifact that says so with a reason is a WORK ITEM — and the structural
+    gates (modality, protocol tag + SHA, ego enforcement) must still be evaluated and PASS.
+    The same artifact with its ESTIMATOR DECLARATION missing is a violation: a headline
+    that could not be computed is honest; an undeclared estimator is not."""
+    art = _navsim_art()
+    crash = {"status": "UNAVAILABLE", "n": 5912,
+             "reason": ("the official two-stage aggregation raised TypeError on NaN arrays "
+                        "after all 5,912 scenarios scored — no combined EPDMS exists")}
+    _set(art, "benchmark.navsim.score", dict(crash))
+    _set(art, "benchmark.navsim.submetrics", dict(crash))
+    _set(art, "estimator.interval", {"status": "UNAVAILABLE", "n": 225,
+                                     "reason": "no aggregate to bootstrap: " + crash["reason"]})
+    rows = _gates(art, registry)
+    assert rows["navsim.score"]["state"] == cc.REFUSED
+    assert rows["navsim.submetrics"]["state"] == cc.REFUSED
+    assert rows["navsim.estimator_unit"]["state"] == cc.REFUSED
+    for gid in ("navsim.modality_label", "navsim.cross_protocol", "navsim.ego_enforcement"):
+        assert rows[gid]["state"] == cc.PRESENT, (gid, rows[gid]["detail"])
+    assert not [v for v in cc.check_artifact(art, registry)["violations"]
+                if v["id"].startswith("navsim.")]
+    # ...and an UNDECLARED estimator in the same artifact IS a violation
+    _set(art, "estimator", _DEL)
+    rows2 = _gates(art, registry)
+    assert rows2["navsim.estimator_unit"]["state"] == cc.ABSENT
+    for gid in ("navsim.modality_label", "navsim.cross_protocol"):
+        assert rows2[gid]["state"] == cc.PRESENT
+
+
+def test_a_reasonless_refusal_is_still_a_violation(registry):
+    art = _navsim_art()
+    _set(art, "estimator.interval", {"status": "UNAVAILABLE", "n": 7})
+    assert _gates(art, registry)["navsim.estimator_unit"]["state"] == cc.ABSENT
+
+
+def test_the_column_trap_is_a_violation(registry):
+    """⛔ `pdm_score` masks EC and divides by 14 — it LOOKS like a valid EPDMS."""
+    art = _navsim_art()
+    _set(art, "benchmark.navsim.score.column", "pdm_score")
+    row = _gates(art, registry)["navsim.score"]
+    assert row["state"] == cc.ABSENT and "column trap" in row["detail"]
+
+
+def test_a_command_conditioned_arm_needs_the_settled_route_leak_verdict(registry):
+    """ROUTE_LEAK_VERDICT (PARTIAL, a route-level oracle): an arm that CONSUMES the
+    command must carry the verdict; the pre-2.10.0 'UNVERIFIED' refusal FAILS on it
+    and stays a work item on an arm that does not consume the command."""
+    art = _navsim_art()
+    _set(art, "benchmark.navsim.route_leak_check",
+         {"status": "UNAVAILABLE", "reason": "UNVERIFIED", "n": 0})
+    assert _gates(art, registry)["navsim.route_leak_check"]["state"] == cc.ABSENT
+    _set(art, "benchmark.navsim.ego_inputs.inputs.driving_command.used", False)
+    assert _gates(art, registry)["navsim.route_leak_check"]["state"] == cc.REFUSED
+
+
+def test_DELIBERATE_REGRESSION_without_the_benchmark_block_the_checker_is_blind(
+        registry, monkeypatch):
+    """⭐ The pre-2.10.0 checker, reconstructed: remove the benchmark evaluation and a
+    NavSim artifact with a SCENE-TOKEN interval reads CLEAN. That is exactly the state
+    E1 and E2 measured; the block is what turns the registry's gates into machinery."""
+    art = _navsim_art()
+    _set(art, "estimator.interval.n_clusters", 450)
+    assert "navsim.estimator_unit" in [v["id"] for v in cc.check_artifact(art, registry)["violations"]]
+    monkeypatch.setattr(cc, "check_benchmarks", lambda a, r: [])
+    blind = cc.check_artifact(art, registry)
+    assert not any(v["id"].startswith("navsim.") for v in blind["violations"])
+
+
+def test_a_registered_gate_without_an_evaluator_is_itself_a_violation(registry):
+    """A gate the machinery cannot evaluate is a note — so an unknown GATE_* fails loud."""
+    reg = copy.deepcopy(registry)
+    reg["benchmarks"]["navsim"]["GATE_new_rule"] = {"id": "navsim.new_rule",
+                                                    "blocking": True, "keys": ["x"]}
+    row = {r["id"]: r for r in cc.check_navsim(_navsim_art(), reg)}["navsim.new_rule"]
+    assert row["state"] == cc.ABSENT and "no evaluator" in row["detail"]
+
+
+def test_the_v1_alias_is_a_navsim_claim_and_a_v1_tag_needs_the_v1_sha(registry):
+    art = _navsim_art()
+    art["benchmark"] = {"navsim_v1": art["benchmark"]["navsim"]}
+    _set(art, "protocol.navsim_protocol", "PDMS_v1_navtest")
+    _set(art, "benchmark.navsim_v1.variant", "PDMS_v1 / navtest")
+    _set(art, "estimator.interval.aggregation", "single_stage_token_mean")
+    assert _gates(art, registry)["navsim.cross_protocol"]["state"] == cc.ABSENT   # v2 SHA
+    _set(art, "protocol.devkit_sha", V1_SHA)
+    rows = _gates(art, registry)
+    assert rows["navsim.cross_protocol"]["state"] == cc.PRESENT
+    assert rows["navsim.estimator_unit"]["state"] == cc.PRESENT
+
+
+def test_an_artifact_that_claims_no_benchmark_gets_no_benchmark_rows(compliant, registry):
+    res = cc.check_artifact(compliant, registry)
+    assert res["benchmarks"] == []
+    assert res["n_violations"] == 0
+
+
+# ------------------------------------------------ the protocol-tag union ---
+def test_the_protocol_tag_union_is_the_eight_suite_tags(registry):
+    """One source of truth: NavSim's five, nuScenes' two, the internal one — each in
+    its OWN block, the union computed (never stored)."""
+    tags = cc.registered_protocol_tags(registry)
+    assert set(tags) == {
+        "EPDMS_v2_navhard_two_stage", "EPDMS_v2_warmup_two_stage",
+        "EPDMS_v2_private_test_hard_two_stage", "EPDMS_v2_navtest_single_stage",
+        "PDMS_v1_navtest", "nuScenes_OL_L2_stp3", "nuScenes_OL_L2_uniad",
+        "TanitAD_T1_refc_physicalai"}
+    closed = set(registry["benchmarks"]["navsim"]["GATE_no_cross_protocol_comparison"]["closed_set"])
+    assert not ({"nuScenes_OL_L2_stp3", "nuScenes_OL_L2_uniad",
+                 "TanitAD_T1_refc_physicalai"} & closed), "never merged into NavSim's set"
+
+
+def test_the_union_equals_the_suite_schema_enum(registry):
+    """W1's summary.schema.json and the registry must name the same tags."""
+    p = ROOT / "taniteval" / "taniteval" / "bench" / "schema" / "summary.schema.json"
+    if not p.exists():
+        pytest.skip(f"NO_TREE: {p} (the suite schema, W1) is not in this checkout")
+    enum = set(json.loads(p.read_text(encoding="utf-8"))["properties"]["protocol"]["enum"])
+    assert enum == set(cc.registered_protocol_tags(registry))
+
+
+@pytest.mark.parametrize("tag,expected", [
+    ("EPDMS_v2_navhard_two_stage", "PRESENT"),
+    ("nuScenes_OL_L2_uniad", "PRESENT"),
+    ("EPDMS_v2_navtest", "ABSENT"),
+    ("navhard", "ABSENT"),
+])
+def test_a_tag_outside_the_union_is_a_violation(compliant, registry, tag, expected):
+    art = copy.deepcopy(compliant)
+    art["protocol"]["protocol_tag"] = tag
+    row = next(r for r in cc.check_artifact(art, registry)["benchmarks"]
+               if r["id"] == "protocol.tag_registered")
+    assert row["state"] == expected, row["detail"]
+
+
+def test_free_text_protocol_sentences_are_not_read_as_tags(compliant, registry):
+    """MEASURED: 24 banked artifacts carry `protocol: '<a sentence>'`. Reading those
+    as tags would manufacture violations; only a suite record's bare string counts."""
+    art = copy.deepcopy(compliant)
+    art["protocol"] = "PSEUDO-SIMULATION. Perturbed observation states are PRE-GENERATED"
+    assert cc.check_artifact(art, registry)["benchmarks"] == []
+    art["schema"] = "taniteval.bench.summary/1"
+    rows = cc.check_artifact(art, registry)["benchmarks"]
+    assert rows and rows[0]["state"] == cc.ABSENT
+
+
+def test_every_protocol_tag_source_resolves(registry):
+    for src in registry["protocol_tags"]["sources"]:
+        found, val = cc._dig(registry, src)
+        assert found and val, f"{src} does not resolve"
+
+
+# ------------------------------------------------ the navsim_v1 block ---
+def test_the_navsim_v1_block_pins_formula_sha_and_aggregation(registry):
+    v1 = registry["benchmarks"]["navsim_v1"]
+    assert v1["protocol_tag"] == "PDMS_v1_navtest"
+    assert v1["devkit_pin_required"] == V1_SHA
+    assert v1["formula"] == "PDMS_v1 = NC * DAC * (5*EP + 5*TTC + 2*C) / 12"
+    assert v1["multipliers"] == ["NC", "DAC"]
+    assert v1["weighted"] == {"EP": 5, "TTC": 5, "C": 2}
+    assert v1["denominator"] == 12 == sum(v1["weighted"].values())
+    pins = registry["benchmarks"]["navsim"]["GATE_no_cross_protocol_comparison"]["devkit_pins"]
+    assert pins["PDMS_v1_navtest"] == [V1_SHA]
+    assert all(p == [V2_SHA] for t, p in pins.items() if t.startswith("EPDMS_v2"))
+
+
+# ------------------------------------------------ the route-leak verdict ---
+def test_the_route_leak_verdict_is_recorded_with_its_evidence(registry):
+    rv = registry["benchmarks"]["navsim"]["ROUTE_LEAK_VERDICT"]
+    assert rv["verdict"] == "PARTIAL — ROUTE-LEVEL ORACLE"
+    assert "1,902/1,902" in rv["measured"]["reproduction"]
+    assert any("create_openscene_metadata.py:122-127" in m for m in rv["mechanism_at_source"])
+
+
+# ------------------------------------------------ the real artifacts ---
+_E = ROOT / "FlyWheels" / "TanitAD_EvalFlyWheel" / "incoming"
+
+
+# ⚠️ These artifacts belong to OTHER streams and are rebuilt as their adapters move — MEASURED:
+# E1's two were rebuilt at 09:28 on 2026-09-20 with the updated adapter, which turned the human
+# arm's ego row from a FAIL (incoherent `vision_only: true` on a privileged log replay) into a
+# reasoned REFUSED. So each row is pinned to the SET of states that is honest for that arm, with
+# the state that must NEVER appear named — a test that pinned one sibling's current bytes would
+# fail on their next legitimate rebuild and teach nobody anything.
+@pytest.mark.parametrize("rel,expect,forbidden", [
+    # E1's CV reference: warmup cannot rule, so the estimator row is a work item; both modality
+    # labels present; the arm consumes no route, so the leak row is a reasoned refusal.
+    ("2026-09-19-navsim-warmup-reference-epdms/raw/artifacts/"
+     "A1_constant_velocity_agent_warmup_two_stage.json",
+     {"navsim.estimator_unit": {"REFUSED"}, "navsim.ego_enforcement": {"REFUSED", "PRESENT"},
+      "navsim.modality_label": {"PRESENT"}, "navsim.cross_protocol": {"PRESENT"},
+      "navsim.route_leak_check": {"REFUSED", "PRESENT"}},
+     {"navsim.estimator_unit": "PRESENT"}),
+    # E1's privileged human replay: it may DECLARE the ego gate not applicable (REFUSED) — it may
+    # never PASS it, because it is not vision-only and has no enforcement mechanism.
+    ("2026-09-19-navsim-warmup-reference-epdms/raw/artifacts/"
+     "A2_human_agent_warmup_two_stage.json",
+     {"navsim.ego_enforcement": {"REFUSED", "ABSENT"}, "navsim.cross_protocol": {"PRESENT"},
+      "navsim.score": {"REFUSED"}},
+     {"navsim.ego_enforcement": "PRESENT"}),
+    # E2's command-conditioned refcv4b arm: mechanism + evidence PASS. Its route-leak row is
+    # ABSENT while it carries the pre-settlement "UNVERIFIED" and becomes PRESENT once rebuilt
+    # with the settled verdict — both are honest states of a real file; a PASS-by-refusal is not.
+    ("2026-09-19-navsim-refcv4b-bridge/raw/artifact_A1_ego_cmd.json",
+     {"navsim.ego_enforcement": {"PRESENT"},
+      "navsim.route_leak_check": {"ABSENT", "PRESENT"},
+      "navsim.estimator_unit": {"REFUSED", "PRESENT"}, "navsim.cross_protocol": {"PRESENT"}},
+     {"navsim.route_leak_check": "REFUSED"}),
+])
+def test_the_banked_navsim_artifacts_read_as_measured(registry, rel, expect, forbidden):
+    p = _E / rel
+    if not p.exists():
+        pytest.skip(f"NO_TREE: {p} is not in this checkout")
+    rows = _gates(cc._read_json(p), registry)
+    for cid, ok in expect.items():
+        assert rows[cid]["state"] in ok, (cid, rows[cid]["state"], rows[cid]["detail"][:120])
+    for cid, never in forbidden.items():
+        assert rows[cid]["state"] != never, (cid, rows[cid]["detail"][:120])

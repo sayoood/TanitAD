@@ -27,9 +27,23 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import sys
 from pathlib import Path
 
+#: ⛔⛔ THE HEADLINE IS THE **360°** POPULATION, NOT THE GATE'S. `eval_box3d_centre` is
+#: `slot_set_loss`'s centre term: `Σ|pred − tgt|` over **every matched row**, divided by their
+#: count (`agent_slots.py:577`) — no population filter. `PREREG_PERCEPTION_BOX_QUALITY` states
+#: its targets per population (**near-forward 6.06 m PRIMARY**, all-matched 12.04 m secondary)
+#: and every SUPPORTED criterion for `P1`/`P3`/`P5` is written on the **near-forward** error.
+#: ⇒ A floor quoted from this key and compared against a near-forward verdict is a
+#: CROSS-POPULATION comparison and is inadmissible. The two populations differ by ~2× on the
+#: banked read, so it is not a rounding matter.
+#: ⛔ The near-forward number needs per-window pred/target pairs (`box_quality.match_pairs`),
+#: i.e. `--eval-window-dump`, which the P arms' base config does NOT carry. Until that is
+#: resolved (see `P_PANEL_DUMP_GAP.md`) this reporter's headline is the SECONDARY metric, and
+#: :func:`render` says so on every line it prints.
 HEAD = "eval_box3d_centre"
+HEAD_POPULATION = "all_360 (SECONDARY) - NOT the near-forward primary the verdicts use"
 
 #: ⛔ Per family, NEVER pooled. Order is the doctrine's order; `perception` is this panel's own.
 FAMILIES: dict[str, tuple[str, ...]] = {
@@ -41,6 +55,12 @@ FAMILIES: dict[str, tuple[str, ...]] = {
     "perception": ("eval_box3d_centre", "eval_box3d_size", "eval_box3d_yaw",
                    "eval_box3d_presence", "eval_box3d_cls", "eval_box3d_z", "eval_box3d_h"),
 }
+
+
+#: ⛔ Unparseable metrics lines, per file, so a damaged artifact is VISIBLE rather than
+#: silently skipped. A bare `except: continue` cannot tell "different kind of row" from
+#: "this file is truncated", and a trainer killed mid-write leaves exactly that.
+_UNPARSEABLE: dict[str, int] = {}
 
 
 def final_eval_row(run_dir: Path) -> dict | None:
@@ -56,7 +76,8 @@ def final_eval_row(run_dir: Path) -> dict | None:
                 continue
             try:
                 d = json.loads(line)
-            except Exception:                                # noqa: BLE001
+            except Exception:                                # noqa: BLE001 — COUNTED
+                _UNPARSEABLE[str(met)] = _UNPARSEABLE.get(str(met), 0) + 1
                 continue
             if HEAD in d:
                 best = d
@@ -128,6 +149,7 @@ def report(p0: dict | None, p0b: dict | None, a8: dict | None = None,
             "what": "|P0 - P0b|, same pinned tree, seeds differ, nothing else moved",
             "admissible_as": "THE SEED FLOOR",
             "headline_key": HEAD,
+            "headline_population": HEAD_POPULATION,
             "headline_abs_delta": floor["perception"][HEAD]["abs_delta"],
             "by_family": floor,
             "seeds": (seeds or {}),
@@ -168,7 +190,9 @@ def render(rep: dict) -> str:
         raise ValueError("the |P0 - A8| block MUST carry its upper-bound label; refusing to "
                          "render a report that could be read as two floors")
     lines = ["SEED FLOOR (quote this): |P0 - P0b| %s = %s"
-             % (HEAD, _fmt(sf["headline_abs_delta"])), "  seeds: %s" % (sf.get("seeds") or {})]
+             % (HEAD, _fmt(sf["headline_abs_delta"])),
+             "  population: %s" % HEAD_POPULATION,
+             "  seeds: %s" % (sf.get("seeds") or {})]
     for fam, d in sf["by_family"].items():
         got = {k: _fmt(v["abs_delta"]) for k, v in d.items() if v["abs_delta"] is not None}
         miss = [k for k, v in d.items() if v["abs_delta"] is None]
@@ -187,6 +211,19 @@ def _fmt(v):
     return "n/a" if v is None else ("%.6g" % v)
 
 
+# ⛔ A CHECKER MUST NOT DIE ON ITS OWN OUTPUT. MEASURED 2026-09-20: three separate
+# readouts crashed with a cp1252 `UnicodeEncodeError` on this box mid-print -- one of
+# them after reporting "lines lost = 1" but BEFORE naming the line, i.e. it had verified
+# nothing while looking like it had. Relying on the caller to export PYTHONIOENCODING is
+# a habit; this is a guard. `errors="replace"` means the print degrades instead of
+# raising even if the stream cannot take utf-8.
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+except Exception:  # noqa: BLE001 -- a stream that cannot be reconfigured is not fatal
+    pass
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--p0", required=True, help="the P0-REPLICATE arm dir (containing run/)")
@@ -203,6 +240,8 @@ def main(argv=None) -> int:
     seeds = {k: _seed_of(Path(v) / "run" if (Path(v) / "run").exists() else Path(v))
              for k, v in (("P0", a.p0), ("P0b", a.p0b)) if v}
     rep = report(p0, p0b, a8, seeds=seeds)
+    if _UNPARSEABLE:
+        rep["unparseable_metrics_lines"] = dict(_UNPARSEABLE)   # ⛔ surfaced, never swallowed
     print(render(rep))
     if a.out:
         Path(a.out).write_text(json.dumps(rep, indent=1), encoding="utf-8")

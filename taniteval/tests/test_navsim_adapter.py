@@ -141,7 +141,28 @@ def test_eid_is_none_on_purpose_and_tokens_are_preserved():
         "eid must be None so the harness's own interval guard fires "
         "(four_families.py:658-664) instead of a scene-token bootstrap")
     assert win["_navsim"]["scene_tokens"][0] == "tok0000"
-    assert "cluster unit unsettled" in win["_navsim"]["eid_is_none_because"]
+    # registry 2.10.0: the unit is SETTLED (log_name); eid stays None only because
+    # no log names were passed — and the reason must say so, not "unsettled"
+    assert "no log_names passed" in win["_navsim"]["eid_is_none_because"]
+    assert "LOG-CLUSTER bootstrap" in win["_navsim"]["eid_is_none_because"]
+
+
+def test_log_names_make_the_harness_resample_LOGS_never_tokens():
+    """⭐ The settled unit reaches the four families: eid = log_name (SPEC §3)."""
+    logs = [f"log{i // 3}" for i in range(N)]
+    win = make_win(log_names=logs)
+    assert win["eid"] == logs
+    assert win["_navsim"]["n_log_clusters"] == N // 3
+    assert win["_navsim"]["eid_is"].startswith("log_name")
+
+
+def test_DELIBERATE_REGRESSION_scene_tokens_passed_as_log_names_are_refused():
+    """The caller defect the SPEC forbids, under another name."""
+    toks = [f"tok{i:04d}" for i in range(N)]
+    with pytest.raises(NS.NavSimAdapterError, match="scene-token resampling"):
+        make_win(log_names=toks)
+    with pytest.raises(NS.NavSimAdapterError, match="positional join"):
+        make_win(log_names=["log0"] * (N - 1))
 
 
 # ========================================================================== #
@@ -481,12 +502,17 @@ def test_without_ground_truth_every_family_refuses_with_reason_and_n():
 
 
 # ========================================================================== #
-# 7. ⛔ THE ESTIMATOR IS LEFT OPEN                                            #
+# 7. ⛔ THE ESTIMATOR: SETTLED (registry 2.10.0), and still never INVENTED     #
 # ========================================================================== #
 def test_no_confidence_interval_is_invented_anywhere():
+    """No per-unit contributions + log names were passed, so no interval exists —
+    and the refusal says WHY in the settled vocabulary, naming the cluster unit."""
     art = NS.build_artifact(make_win(), tier="T1", split="navtest", n_boot=40)
+    assert art["estimator"]["cluster_unit"] == "log_name"
     assert art["estimator"]["interval"]["status"] == "UNAVAILABLE"
-    assert "cluster unit unsettled" in art["estimator"]["interval"]["reason"]
+    assert "LOG-CLUSTER bootstrap" in art["estimator"]["interval"]["reason"]
+    assert "unsettled" not in art["estimator"]["interval"]["reason"], \
+        "the unit is settled — a stale 'unsettled' refusal would misinform the reader"
     # and the harness's OWN interval blocks self-refuse because eid is None
     tac = art["four_families"]["tactical"]
     if tac.get("status") == "OK":
@@ -589,10 +615,39 @@ def test_a_claimed_vision_only_arm_still_records_that_navsim_cannot_verify_it():
     assert "enforced and evidenced ON OUR SIDE" in ii["⛔_framework_cannot_verify"]
 
 
-def test_route_leak_check_defaults_to_an_explicit_unverified():
+def test_route_leak_check_defaults_to_the_SETTLED_verdict():
+    """registry 2.10.0: the leak check is SETTLED (W2/E3) — PARTIAL, a route-level
+    oracle. The default returns it; the historical explicit 'UNVERIFIED' call still
+    returns the old refusal so pinned callers keep working (the checker FAILS that
+    refusal on an arm that consumes the command)."""
     r = NS.route_leak_check()
-    assert r["status"] == "UNAVAILABLE"
-    assert "route_roadblock_ids" in r["reason"]
+    assert r["status"] == "CHECKED"
+    assert r["verdict"] == "PARTIAL — ROUTE-LEVEL ORACLE"
+    assert "1,902/1,902" in r["measured"]["reproduction_by_openscene_code"]
+    old = NS.route_leak_check("UNVERIFIED")
+    assert old["status"] == "UNAVAILABLE" and "route_roadblock_ids" in old["reason"]
+    # the default is a COPY — a caller mutating it cannot corrupt the next artifact
+    r["verdict"] = "tampered"
+    assert NS.route_leak_check()["verdict"] == "PARTIAL — ROUTE-LEVEL ORACLE"
+
+
+def test_the_adapter_verdict_is_the_registry_verdict():
+    """Two-sided pin: the constant the adapter emits and the registry block the
+    checker reads must say the same thing."""
+    reg = _registry()
+    rv = reg["benchmarks"]["navsim"]["ROUTE_LEAK_VERDICT"]
+    assert rv["verdict"] == NS.ROUTE_LEAK_VERDICT["verdict"]
+    assert "navsim.py::route_leak_check" in rv["consumed_by"]
+
+
+def test_a_privileged_or_camera_free_arm_is_never_vision_only():
+    """MEASURED 2026-09-19: the old rule (`not ego_used`) stamped E1's privileged
+    log-replay arm vision_only=True. Vision-only needs the cameras and nothing
+    privileged."""
+    none = dict(ego_velocity=False, ego_acceleration=False, ego_pose_history=False)
+    assert NS.navsim_inference_inputs(cameras=False, **none)["vision_only"] is False
+    assert NS.navsim_inference_inputs(privileged=True, **none)["vision_only"] is False
+    assert NS.navsim_inference_inputs(**none)["vision_only"] is True
 
 
 def test_tier_is_required_and_has_no_default():
@@ -697,7 +752,55 @@ def test_navsim_criteria_resolve_as_present_or_refused_never_absent():
     absent = {k: v for k, v in rows.items() if v[0] == cc.ABSENT}
     assert not absent, f"criteria landed in ABSENT: {absent}"
     assert rows["navsim.score"][0] == cc.PRESENT
-    assert rows["navsim.route_leak_check"][0] == cc.REFUSED
+    # registry 2.10.0: the leak check is SETTLED, so the default artifact carries the
+    # verdict (PRESENT) — it used to be an honest UNVERIFIED refusal (REFUSED)
+    assert rows["navsim.route_leak_check"][0] == cc.PRESENT
+
+
+def test_a_fully_declared_artifact_passes_all_four_blocking_gates_end_to_end():
+    """⭐ adapter -> navsim_ci -> criteria_check, with nothing hand-typed: a real
+    log-cluster interval from navsim_ci, the declarations the gates read, and the
+    checker's own verdict. Every gate must read PRESENT (PASS)."""
+    from adapters import navsim_ci as NC
+    cc, reg = _criteria_check(), _registry()
+    logs = [f"log{i % 12}" for i in range(N)]            # 12 logs >= the floor of 8
+    rng = np.random.default_rng(5)
+    iv = NC.log_cluster_bootstrap(rng.uniform(0.3, 0.9, N), logs,
+                                  aggregation=NC.AGG_SINGLE_STAGE)
+    art = NS.build_artifact(
+        make_win(log_names=logs), tier="T1", split="navtest", n_boot=40,
+        epdms=NS.read_epdms({"score": 0.61}),
+        submetrics=NS.submetrics_from_row(
+            {"NC": 1.0, "DAC": 1.0, "DDC": 1.0, "TLC": 1.0, "EP": 0.83,
+             "TTC": 1.0, "LK": 1.0, "HC": 1.0, "EC": 0.5}),
+        interval=iv, devkit_sha=NS.DEVKIT_SHA_V2,
+        sensor_set="3-camera stitch -> 256x640 cylindrical",
+        setting="perception-free, zero-shot",
+        ego_status_enforcement={"mechanism": "declared-input seam",
+                                "evidence": {"file": "raw/K5_K6_ego_mutation.json",
+                                             "byte_identical": 20}})
+    assert art["protocol"]["navsim_protocol"] == "EPDMS_v2_navtest_single_stage"
+    rows = {r["id"]: r for r in cc.check_navsim(art, reg)}
+    for gid in ("navsim.estimator_unit", "navsim.ego_enforcement",
+                "navsim.modality_label", "navsim.cross_protocol"):
+        assert rows[gid]["state"] == cc.PRESENT, (gid, rows[gid]["detail"])
+    res = cc.check_artifact(art, reg)
+    assert res["n_violations"] == 0, [(v["id"], v["detail"][:90]) for v in res["violations"]]
+
+
+def test_DELIBERATE_REGRESSION_the_same_artifact_with_a_scene_token_interval_FAILS():
+    """The mutation for the test above: a scene-token interval, dressed in the right
+    estimator name, is caught by the ceiling (more clusters than the split's logs)."""
+    from adapters import navsim_ci as NC
+    cc, reg = _criteria_check(), _registry()
+    toks = [f"tok{i:04d}" for i in range(200)]
+    iv = NC.log_cluster_bootstrap(np.linspace(0.2, 0.9, 200), toks,
+                                  aggregation=NC.AGG_SINGLE_STAGE)
+    art = NS.build_artifact(make_win(), tier="T1", split="navtest", n_boot=40,
+                            interval=iv, devkit_sha=NS.DEVKIT_SHA_V2)
+    rows = {r["id"]: r for r in cc.check_navsim(art, reg)}
+    assert rows["navsim.estimator_unit"]["state"] == cc.ABSENT
+    assert "exceeds" in rows["navsim.estimator_unit"]["detail"]
 
 
 def test_leak_guards_and_hygiene_resolve():

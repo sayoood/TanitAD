@@ -10,7 +10,24 @@
 | 5 | controls C1, C3–C8 | `code/verify_controls.py` | — |
 | 6 | TanitEval artifacts + `tools/criteria_check.py` + my NavSim-gate evaluator | `code/build_artifacts.py` | — |
 | 7 | navhard price (ESTIMATED from step 2/4 per-scene timings) | `code/price_navhard.py` | — |
-| 8 | **priority 2 (coordinator, PI-authorised 11:3x):** if price ≤ 6 h CPU → navhard cache + official CV/human scoring + published cross-check (CV ≈ 11.4, [N2]v3 Tab. 2) | after `EXTRACT_DONE.json` exists | — |
+| 8 | **priority 2 (coordinator, PI-authorised):** navhard cache + official CV/human scoring + published cross-check | see below | in flight |
+
+## navhard (priority 2) — what actually ran
+
+| # | step | outcome |
+|---|---|---|
+| 8.1 | pricing from warmup per-scene costs | ESTIMATED 3.80 h cache + 3.63 h CV (raw/navhard_price.json) |
+| 8.2 | mirror verify + 76 logs copied, sha256 | 0 mismatches |
+| 8.3 | cache (orchestrator's 1-worker C: variant of `run_navhard.sh`, 5,187 s) | 5,912 entries |
+| 8.4 | **E1 content-verified the cache** (the chain had not) → `CACHE_DONE.json` | 450 + 5,462, sets == yaml, 0 type mismatches |
+| 8.5 | N1 try 1 (overnight) | ⛔ rc 1 in the aggregation, no CSV; **verified unrecoverable** |
+| 8.6 | diagnose → zero-length `path_to_go` ⇒ empty flat-cap buffer (shapely 2.0.7) | `raw/navhard/diag/idm_assert_diag.json` |
+| 8.7 | patch the C: **copy** (assert condition only) + verify effective AND inert | 3/3 fixed, 4/4 bit-identical |
+| 8.8 | N1 try 2 (mine, sequential) | 0 agent failures in 5,576 scenes; ⛔ **my RAM guard aborted at 95 %** (another process's dip); all 450 stage-1 rows survived in the hooks |
+| 8.9 | **stage-1 vs published**, from those banked rows | **8/8 sub-metrics match [N2]v3 Tab. 2 under truncation** |
+| 8.10 | guard policy `sustain` 3 → 60 samples; W1 asked to re-promote | done |
+| 8.11 | N1 try 3 **through W1's suite** (`taniteval.bench navsim_v2 … --arms CV,STOP --ram-floor-mb 2400`) | in flight; carries pre-agg dump + settled interval + artifact + gates |
+| 8.12 | human stage-1 arm (N2b), controls, published comparison, artifact | after 8.11 (one worker) |
 
 ## ⚠️ Deviation 1 — the runtime moved to a verified C: mirror (11:40–12:03)
 

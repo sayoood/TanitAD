@@ -91,8 +91,15 @@ class Monitor(threading.Thread):
     ``sustain`` CONSECUTIVE samples, or immediately below ``hard_floor_mb``. Every
     sub-floor sample is counted and reported, so a transient dip is visible, not hidden."""
 
-    def __init__(self, floor_mb: float, interval_s: float, on_abort, sustain: int = 3,
+    def __init__(self, floor_mb: float, interval_s: float, on_abort, sustain: int = 60,
                  hard_floor_mb: float = 2000.0):
+        # sustain 3 -> 60 (2026-09-20, MEASURED): with sustain=3 (6 s) the guard killed a navhard CV
+        # run at 5,576 of 5,912 scored scenes — 75 minutes lost — on a dip to 2,634 MB that lasted
+        # three samples, while THIS process held 828 MB. Aborting frees only our own ~0.8 GB and
+        # cannot fix a system-wide shortage that another process caused; the hard floor (a single
+        # sample below 2,000 MB) still aborts immediately. ⇒ the 3 GB floor now needs a SUSTAINED
+        # 2-minute breach, which is the state the brief's "never let free RAM fall below ~3 GB"
+        # is actually about.
         super().__init__(daemon=True)
         self.floor_mb, self.interval_s, self.on_abort = floor_mb, interval_s, on_abort
         self.sustain, self.hard_floor_mb = sustain, hard_floor_mb
@@ -270,6 +277,31 @@ def main() -> int:
 
         mod.pdm_score = pdm_score_hook
         manifest["hooks"].append(f"{SCRIPTS[a.script]}.pdm_score (observation only)")
+
+    # ⭐ BANK THE PRIMARY BEFORE THE ANALYSIS STEP. MEASURED 2026-09-19: a navhard CV run rolled out
+    # all 5,912 scenes in 68 min and then died in the AGGREGATION (one NaN row -> scene_aggregator
+    # assert -> uncaught TypeError), writing NO csv — the whole rollout was lost because the only
+    # dump hung off compute_final_scores, which never ran. This hook dumps the per-token frame that
+    # ENTERS the aggregation, so a re-analysis never needs the GPU/CPU time again.
+    if a.dump_final_scores is not None and hasattr(mod, "create_scene_aggregators"):
+        _orig_csa = mod.create_scene_aggregators
+        _pre_path = a.dump_final_scores.with_name(a.dump_final_scores.stem + "_PRE_AGGREGATION.csv")
+
+        def csa_hook(all_mappings, full_score_df, proposal_sampling):
+            try:
+                d = full_score_df.drop(columns=[c for c in ("ego_simulated_states",) if c in full_score_df.columns]).copy()
+                for c in d.columns:
+                    if d[c].dtype == object:
+                        d[c] = d[c].astype(str)
+                d.to_csv(_pre_path, index=False)
+                manifest["pre_aggregation_dump"] = {"path": str(_pre_path), "rows": int(len(d))}
+            except Exception as e:                                   # noqa: BLE001
+                manifest["pre_aggregation_dump_error"] = repr(e)
+            write_all("RUNNING_AGGREGATION")
+            return _orig_csa(all_mappings, full_score_df, proposal_sampling)
+
+        mod.create_scene_aggregators = csa_hook
+        manifest["hooks"].append(f"{SCRIPTS[a.script]}.create_scene_aggregators (PRE-AGGREGATION dump)")
 
     if a.dump_final_scores is not None and hasattr(mod, "compute_final_scores"):
         _orig_cfs = mod.compute_final_scores

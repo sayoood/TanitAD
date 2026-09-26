@@ -28,6 +28,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import sys
 from pathlib import Path
 
 HEAD = "eval_box3d_centre"
@@ -45,9 +46,20 @@ def flag_value(argv, flag, n=1):
     return None
 
 
-def last_eval_row(metrics_path: Path) -> dict | None:
-    """The LAST row carrying the headline. ⛔ Not the last line: train rows have no eval keys."""
-    best = None
+def last_eval_row(metrics_path: Path) -> tuple[dict | None, int]:
+    """The LAST row carrying the headline, and the COUNT OF UNPARSEABLE LINES.
+
+    ⛔ Not the last line: train rows have no eval keys.
+    ⛔ AND THE SKIP IS COUNTED, NEVER SILENT. A bare `except: continue` here cannot distinguish
+    "this line is a different kind of thing" from "this file is damaged". MEASURED in the pinned tree: every metrics write is a COMPLETE line followed immediately by `log.flush()` (`refc_v3_train.py` :7180-7181, and four sibling sites 7093/7098, 7261/7263, 7273/7274, 7324/7328; the file is opened once in append mode at :6958).
+    ⇒ A hard kill therefore loses the final ROW, not half of one: killed between rows, or between `write()` and `flush()`, the file PARSES PERFECTLY and is simply SHORT. The only partial-line window is inside the flush syscall itself. ⛔ SO FOR A SIGKILL OR A cgroup-OOM — this box's documented trainer death — `n_unparseable_metrics_lines` is STRUCTURALLY BLIND, and the STEP-COUNT check is what fires. The unparseable counter's real triggers are power loss, a filesystem fault, or a different writer that does not flush per row.
+    Swallowing it would let the checker read an EARLIER row as the final one and pass an arm
+    whose artifact never fully parsed. The count is returned so the caller can refuse.
+
+    ⚠️ A7-IN-s0, the arm paused on 2026-09-20, is the CLEAN counter-example and was VERIFIED rather than assumed: 107 lines, **0 unparseable**, file ends with a newline, last row step 1,070 = 107 x 10. ⚠️ I had written that this arm's kill DID truncate it; that was FALSE — a plausible mechanism asserted about a specific file without opening it. Why it stayed clean is NOT established: the ordered kill (trainer last, by explicit PID) and a per-row flush are both candidates and I have separated neither. *(Class named with the Master Mind 2026-09-20: the swallow
+    living in the CHECKER's own error handling rather than in the code under test.)*
+    """
+    best, n_bad = None, 0
     with open(metrics_path, encoding="utf-8") as f:
         for line in f:
             line = line.strip()
@@ -55,11 +67,12 @@ def last_eval_row(metrics_path: Path) -> dict | None:
                 continue
             try:
                 d = json.loads(line)
-            except Exception:                               # noqa: BLE001
+            except Exception:                               # noqa: BLE001 — COUNTED, not dropped
+                n_bad += 1
                 continue
             if HEAD in d:
                 best = d
-    return best
+    return best, n_bad
 
 
 def check(arm_dir: Path, *, seed: int, steps: int) -> dict:
@@ -84,7 +97,11 @@ def check(arm_dir: Path, *, seed: int, steps: int) -> dict:
         bad.append("run/metrics.jsonl MISSING")
         row = None
     else:
-        row = last_eval_row(met_p)
+        row, n_bad = last_eval_row(met_p)
+        rep["n_unparseable_metrics_lines"] = n_bad
+        if n_bad:
+            bad.append(f"⛔ {n_bad} unparseable line(s) in metrics.jsonl — the artifact did not "
+                       f"fully parse, so the 'last' eval row may not be the last one written")
         if row is None:
             bad.append(f"no eval row carrying {HEAD} — the arm never completed an eval")
     if row is not None:
@@ -105,6 +122,19 @@ def check(arm_dir: Path, *, seed: int, steps: int) -> dict:
     rep["reasons"] = bad
     rep["status"] = "VALID" if not bad else "INVALID"
     return rep
+
+
+# ⛔ A CHECKER MUST NOT DIE ON ITS OWN OUTPUT. MEASURED 2026-09-20: three separate
+# readouts crashed with a cp1252 `UnicodeEncodeError` on this box mid-print -- one of
+# them after reporting "lines lost = 1" but BEFORE naming the line, i.e. it had verified
+# nothing while looking like it had. Relying on the caller to export PYTHONIOENCODING is
+# a habit; this is a guard. `errors="replace"` means the print degrades instead of
+# raising even if the stream cannot take utf-8.
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+except Exception:  # noqa: BLE001 -- a stream that cannot be reconfigured is not fatal
+    pass
 
 
 def main(argv=None) -> int:

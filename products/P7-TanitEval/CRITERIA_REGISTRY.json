@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "version": "2.9.0",
+ "version": "2.10.3",
  "created": "2026-08-23",
  "owner": "TanitAD_EvalFlyWheel",
  "why": "TANITAD_PROGRAMME.md §5 charter: 'Criteria completeness is enforced by machinery, not memory — we measurably failed to keep them complete by hand.' This file is the machine-readable registry every eval output is diffed against. A criterion may be PRESENT or REFUSED-with-a-reason; it may never be SILENTLY ABSENT.",
@@ -128,7 +128,15 @@
     "note": "re-perception sim."
    }
   },
-  "key_paths_note": "Order matters: resolve_tier takes the FIRST path that yields a string. The refav1 paths are LAST so promoting them cannot change any other schema's stamp. Emitter: taniteval/taniteval/four_families.py:1811 (`fam[\"_tier\"] = tier`)."
+  "key_paths_note": "Order matters: resolve_tier takes the FIRST path that yields a string. The refav1 paths are LAST so promoting them cannot change any other schema's stamp. Emitter: taniteval/taniteval/four_families.py:1811 (`fam[\"_tier\"] = tier`).",
+  "internal_protocols": {
+   "TanitAD_T1_refc_physicalai": {
+    "tier": "T1",
+    "what": "the internal T1 panel (taniteval/tools/refcv3_arm.py / four_families, episode-cluster bootstrap) on the PhysicalAI eval clip set",
+    "estimator": "episode_cluster_bootstrap (taniteval/ci.py) — the NavSim log-cluster rule does not apply here",
+    "note": "an internal protocol, never merged into a benchmark closed set"
+   }
+  }
  },
  "families": {
   "LONGITUDINAL": {
@@ -604,7 +612,6 @@
    ],
    "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
    "THE_COLUMN_TRAP": "READ `score`, NEVER `pdm_score`. PDMScorer._aggregate_pdm_scores masks Extended Comfort out and divides by 14; the real EPDMS (denominator 16) is assembled downstream in run_pdm_score.py::compute_final_scores. The wrong column looks perfectly valid.",
-   "ESTIMATOR_UNRESOLVED": "Our episode-cluster bootstrap does NOT transfer - NavSim's resampling unit is a scene token, not an episode. Do not report a NavSim CI until the cluster unit is settled and pre-registered.",
    "variants": {
     "PDMS_v1": {
      "multipliers": [
@@ -617,13 +624,16 @@
       "C": 2
      },
      "denominator": 12,
-     "note": "DDC exists in v1 code with weight 0.0 (pdm_scorer.py:39-48)"
+     "note": "DDC exists in v1 code with weight 0.0 (pdm_scorer.py:39-48)",
+     "devkit_pin_required": "3e8291bfa89ff247231e0227778840cd0a036896",
+     "source": "PUBLISHED-CODE navsim v1.1.0 @3e8291b (unpacked archive, not a git checkout: file sha256 pdm_enums.py 827e7338…, pdm_scorer.py 02ab0750…): MultiMetricIndex = NO_COLLISION, DRIVABLE_AREA (pdm_enums.py:156-160); weights progress 5, ttc 5, comfortable 2, driving_direction 0 (pdm_scorer.py:38-42) -> denominator 12."
     },
     "EPDMS_v2": {
      "multipliers": [
       "NC",
       "DAC",
-      "DDC"
+      "DDC",
+      "TLC"
      ],
      "weighted": {
       "EP": 5,
@@ -632,7 +642,8 @@
       "HC": 2,
       "EC": 2
      },
-     "denominator": 16
+     "denominator": 16,
+     "multipliers_source": "PUBLISHED-CODE autonomousvision/navsim@0a380a9 pdm_enums.py:165-171 MultiMetricIndex = NO_COLLISION, DRIVABLE_AREA, TRAFFIC_LIGHT_COMPLIANCE, DRIVING_DIRECTION; weights pdm_scorer.py:44-48 (EP 5, TTC 5, LK 2, HC 2, EC 2 = 16). MEASURED by E1 control C4: per-token score = NC*DAC*DDC*TLC*(5EP+5TTC+2LK+2HC+2EC)/16 on 220 rows, max |d| 1.1e-16. ⛔ Until registry 2.10.0 this list read [NC, DAC, DDC] — TLC was missing while this block's own EPDMS_submetrics multiplied by it (caught by E1 and E2, 2026-09-19)."
     }
    },
    "criteria": [
@@ -643,7 +654,8 @@
      "keys": [
       "benchmark.navsim.score"
      ],
-     "note": "NOT `pdm_score` - see the column trap above."
+     "note": "NOT `pdm_score` - see the column trap above.",
+     "checker_rule": "a `benchmark.navsim.score` block whose `column` is not `score` FAILS (the column trap)."
     },
     {
      "id": "navsim.variant",
@@ -679,19 +691,77 @@
      "keys": [
       "benchmark.navsim.route_leak_check"
      ],
-     "note": "UNVERIFIED whether nuPlan's route_roadblock_ids derives from the expert path. Run this leak check BEFORE quoting a route-conditioned result - same family as our route-head echo."
+     "note": "SETTLED 2026-09-19 (W2/E3) — see ROUTE_LEAK_VERDICT: PARTIAL, a ROUTE-LEVEL ORACLE. The command is a function of (pose now, route, map) only (reproduced 1,902/1,902), but the route is the expert's own path at roadblock granularity. tools/criteria_check.py: an arm that CONSUMES driving_command must carry the settled verdict (a refusal or 'UNVERIFIED' FAILS); an arm that consumes no route may declare it not applicable with a reason."
     }
    ],
    "GATE_estimator_cluster_unit": {
     "id": "navsim.estimator_unit",
     "blocking": true,
-    "rule": "A NavSim artifact MUST declare `estimator.cluster_unit`. Until the unit is settled and PRE-REGISTERED, the only admissible interval is an explicit {status:UNAVAILABLE, reason, n}. ⛔ A bare point estimate with no interval block, or an interval computed with the episode-cluster bootstrap, FAILS.",
-    "why": "Our episode-cluster bootstrap does not transfer: NavSim resamples SCENE TOKENS, not episodes, and NavSim scenes are explicitly allowed to OVERLAP (PUB-DEVKIT docs/splits.md: 'NavSim splits contain overlapping scenes'). Resampling overlapping units as if independent understates the variance — the same family as overlapping_holdout_se, which biases the POINT ESTIMATE bidirectionally up to a sign flip. Inventing a CI here would reproduce a retracted defect on a borrowed benchmark.",
+    "rule": "A NavSim artifact MUST declare `estimator.cluster_unit` = \"log_name\" and an `estimator.interval` that is EITHER an honest {status: UNAVAILABLE, reason, n} (a WORK ITEM) OR a navsim_log_cluster_bootstrap interval with resample_unit log_name, 8 <= n_clusters <= the split's log count, the protocol's official aggregation and n_boot >= 2000. ⛔ Anything else FAILS: a scene-token / mapping-key / episode-cluster / overlapping_holdout_se interval, n_clusters < 8, n_clusters above the split's log count (a finer unit was resampled), an unnamed aggregation, a missing cluster_unit, or no interval block at all.",
+    "why": "MEASURED (FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/raw/split_census.json): scenes OVERLAP within a log — navtest consecutive scenes share a median 13 of 14 frames and each key frame sits in 5.55 scenes; navhard's orig/prev tokens share 11 of 12 frames and are coupled by the EC term — while logs share nothing (0 shared tokens, 0 time-overlapping segment pairs, min gap 11.5 s) and every stage-2 scene lives in its key's log (5,462/5,462 navhard, 204/204 warmup). Resampling overlapping scene tokens as independent understates the variance — the overlapping_holdout_se family on a borrowed benchmark. The CONTROL reads its known value: the OpenScene standard `test` split (frame_interval null) has frame-reuse factor 1.0000.",
     "keys": [
      "estimator.cluster_unit",
      "estimator.interval"
     ],
-    "admissible_until_settled": "UNAVAILABLE with a reason and n"
+    "status": "SETTLED 2026-09-19 (was UNRESOLVED through registry 2.9.0); post-settlement form stated in the registry 2026-09-20 (2.10.3)",
+    "cluster_unit": "log_name",
+    "sensitivity_unit": "nuplan_drive",
+    "sensitivity_rule": "computed beside the primary when >= 8 drives; a PAIRED lever claim is `separated` only if separated under log_name AND nuplan_drive (no tunable threshold); with < 8 drives the claim is scoped 'log level only'. And per H-ESTIM-SEED-1 a separated interval is NECESSARY, not sufficient — a lever claim also needs a replicate arm.",
+    "estimators_admissible": [
+     "navsim_log_cluster_bootstrap",
+     "paired_navsim_log_cluster_bootstrap"
+    ],
+    "min_clusters": 8,
+    "min_clusters_source": "RG-14 — tools/release_gate.py:85 EPISODE_CLUSTER_FLOOR = 8",
+    "n_boot_min": 2000,
+    "aggregation_by_protocol": {
+     "EPDMS_v2_navhard_two_stage": "two_stage_mapping_key_mean",
+     "EPDMS_v2_warmup_two_stage": "two_stage_mapping_key_mean",
+     "EPDMS_v2_private_test_hard_two_stage": "two_stage_mapping_key_mean",
+     "EPDMS_v2_navtest_single_stage": "single_stage_token_mean",
+     "PDMS_v1_navtest": "single_stage_token_mean"
+    },
+    "aggregation_sources": {
+     "two_stage_mapping_key_mean": "run_pdm_score.py::calculate_individual_mapping_scores L242-290 @0a380a9",
+     "single_stage_token_mean": "run_pdm_score_one_stage.py L293 @0a380a9 (EPDMS v2); run_pdm_score.py L144 @3e8291b (PDMS v1)"
+    },
+    "max_clusters_by_protocol": {
+     "EPDMS_v2_navhard_two_stage": 76,
+     "EPDMS_v2_warmup_two_stage": 7,
+     "EPDMS_v2_navtest_single_stage": 136,
+     "PDMS_v1_navtest": 136,
+     "EPDMS_v2_private_test_hard_two_stage": null
+    },
+    "max_clusters_note": "the split's `log_name` count, MEASURED by two agreeing derivations (the devkit's own filter_scenes executed verbatim + a re-derivation). None = not observable locally (private_test_hard: 0/140 tokens in the test metadata vs the navhard control 450/450).",
+    "can_rule_by_protocol": {
+     "EPDMS_v2_navhard_two_stage": "YES — 76 logs / 34 drives",
+     "EPDMS_v2_navtest_single_stage": "YES — 136 logs / 44 drives",
+     "PDMS_v1_navtest": "YES — 136 logs / 44 drives",
+     "EPDMS_v2_warmup_two_stage": "⛔ NEVER — 7 logs < 8 (D-BENCH-PORT, re-measured)",
+     "EPDMS_v2_private_test_hard_two_stage": "⛔ NEVER — log identities and per-scene scores are not released"
+    },
+    "reproduces_official": "MEASURED: the full-sample point reproduces the devkit's `extended_pdm_score_combined` on E1's real CV warmup run exactly (0.1853562745165113, |d| 0.0); the per-key aggregation equals the devkit's own function on 4 fixtures incl. physically duplicated logs (FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/raw/devkit_aggregation_reference*.json).",
+    "admissible_refusal": "UNAVAILABLE with a reason and n — a WORK ITEM, never a pass",
+    "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+    "census": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/raw/split_census.json",
+    "implementation": "taniteval/adapters/navsim_ci.py",
+    "post_settlement_form": {
+     "PASS": "a `navsim_log_cluster_bootstrap` (or its paired form) over >= min_clusters and <= the split's `log_name` count, carrying the protocol's official aggregation, n_boot >= n_boot_min and numeric lo/hi. MEASURED EXAMPLE (E1, 2026-09-20): navhard CV, 76 log clusters, EPDMS x100 = 11.4816, CI [8.25, 14.50] — this PASSES.",
+     "REFUSED": "{status: UNAVAILABLE, reason, n} with a REAL reason — a WORK ITEM, never a pass. warmup_two_stage is the standing case: 7 log_names < the RG-14 floor of 8.",
+     "FAIL": [
+      "scene-token / mapping-key / episode-cluster / overlapping_holdout_se resampling",
+      "n_clusters < min_clusters (the RG-14 floor of 8)",
+      "n_clusters > the split's log_name count — a unit finer than log_name was resampled",
+      "an unregistered aggregation, or one that is not this protocol's official aggregation",
+      "n_boot < n_boot_min",
+      "a bare point estimate with no interval block, or no `estimator.cluster_unit` at all",
+      "an interval block with no numeric lo/hi",
+      "FALSE REFUSAL: {status: UNAVAILABLE} declared while an ADMISSIBLE interval sits nested inside the same block (e.g. under `summary_interval`) — MEASURED on E1's navhard CV artifact 2026-09-20",
+      "a `cluster_unit` REFUSAL whose `reason` is a single token — the unit name stuffed into the reason field (same artifact: reason='log_name')"
+     ]
+    },
+    "supersedes": "⛔ registry 2.9.0's `admissible_until_settled` — *'until the unit is settled and PRE-REGISTERED, the only admissible interval is {status:UNAVAILABLE}'* — is DEAD from 2.10.0. MEASURED 2026-09-20: E1 built its navhard artifact against the 2.9.0 copy AT HEAD (`git show HEAD:products/P7-TanitEval/CRITERIA_REGISTRY.json` reads version 2.9.0) because this gate's update is STAGED AND NOT COMMITTED, and consequently down-declared a valid 76-cluster interval. ⭐ THE GENERAL RULE THAT COST: an artifact is built against the registry a process can READ — a staged gate is not in force for anyone until it is COMMITTED, and 'the working tree says otherwise' is not a defence a second agent can use.",
+    "false_refusal_rule": "An artifact that declares UNAVAILABLE while HOLDING an admissible interval FAILS. The gate exists so that a NavSim number carries its interval; an artifact that HAS one and hides it is misreporting, not declining — and a false refusal reads exactly like an honest one, so it must be detected rather than trusted. Implementation: `tools/criteria_check.py::_admissible_interval_hiding_in`, which validates the nested block with the SAME validator the declared interval goes through (`_navsim_interval_ok`), so the gate cannot admit a block in one place and reject the identical block in the other."
    },
    "GATE_ego_status_enforcement": {
     "id": "navsim.ego_enforcement",
@@ -704,41 +774,56 @@
     ],
     "keys": [
      "protocol.ego_status_enforcement"
-    ]
+    ],
+    "checker_rule": "tools/criteria_check.py: PASS = `protocol.ego_status_enforcement` is an object with a non-empty `mechanism` AND non-empty structured `evidence` (a dict/list, or a string naming an artifact file). An arm that does NOT claim vision-only may instead DECLARE the gate not applicable with a `reason` (REFUSED — a work item). ⛔ FAIL: a vision-only claim (`vision_only_claimed` or `protocol.vision_only` true) without mechanism AND evidence; a bare string; an object with neither. ABSENT: no block at all."
    },
    "GATE_modality_label": {
     "id": "navsim.modality_label",
     "blocking": true,
     "rule": "A NavSim artifact MUST declare `protocol.sensor_set` and `protocol.setting` (e.g. 'front-camera-only, perception-free'). ⛔ Comparing our row against a multi-camera or perception-based row without both fields present FAILS.",
-    "why": "The leaderboard server records NO modality — only TEAM_NAME, AUTHORS, EMAIL, INSTITUTION, COUNTRY — so every 'camera-only' claim in the field is the authors', not the server's. MEASURED 2026-08-27 from the banked primary: Drive-JEPA's 93.7 PDMS headline uses 1024x256 stacking FRONT+LEFT+RIGHT, while its perception-free row uses the front camera only at 512x256. Comparing our single 256x640 front-camera arm against the 93.7 row would be a category error in our own favour's opposite direction — and comparing it against the perception-free ladder is legitimate. The label is what makes the difference visible.",
-    "comparable_ladder_perception_free_front_only": {
-     "_source": "PUB-PAPER Drive-JEPA (arXiv 2601.22032) Table 1, read from the banked PDF",
+    "why": "The leaderboard server records NO modality — only TEAM_NAME, AUTHORS, EMAIL, INSTITUTION, COUNTRY — so every 'camera-only' claim in the field is the authors', not the server's, and the INPUTS behind two rows can differ by a factor of four. MEASURED 2026-09-20 from the banked primary (TanitAD Research Lab/Library/papers/2601.22032_Drive-JEPA-Video-JEPA-Meets-Multimodal-Trajectory-Distillati.pdf, sha256 d88c053a67ac…, == library.json), Drive-JEPA Table 8 p.14 'Input image resolution': Transfuser, HydraMDP++, DriveSuprim and GoalFlow run at 1024x256 'formed by stacking the front, left, and right camera images'; iPad at 4x768x432 (four views incl. back); Drive-JEPA at 2x512x256 — the FRONT CAMERA ONLY, two consecutive frames (also §4.2 p.7: 'We use only the front-view camera, resized to 512x256'). ⛔ CORRECTED 2026-09-20 (flagged by W4, re-read from the PDF by W2): until registry 2.10.1 this text attributed the three-camera 1024x256 stack to DRIVE-JEPA's headline — it is TRANSFUSER's, and Drive-JEPA is front-camera-only in every row, headline included. Comparing our single 256x640 front-camera arm against a three- or four-camera row is a category error in whichever direction it flatters; the label is what makes it visible.",
+    "keys": [
+     "protocol.sensor_set",
+     "protocol.setting"
+    ],
+    "checker_rule": "tools/criteria_check.py: PASS = `protocol.sensor_set` AND `protocol.setting` are both non-empty strings. ⛔ A refusal object is not a label and FAILS; a missing field is ABSENT.",
+    "why_correction_note": "⚠️ The superseded sentence may still be quoted in EvalFlyWheel packages written before 2026-09-20 (MEASURED: it is in FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-leaderboard-currency/raw/external_field_sources.json, and it was written into the W1/E2 briefs). The registry is the source of truth; those copies are stale.",
+    "comparable_ladder_perception_free": {
+     "_source": "PUB-PAPER Drive-JEPA (arXiv 2601.22032) **Table 2, p.8** (the first block is the perception-free setting), re-read from the banked PDF by W2 2026-09-20; sha256 d88c053a67ac…",
      "LAW": {
       "encoder": "21M",
       "data_h": 20,
-      "PDMS": 83.8
+      "PDMS": 83.8,
+      "inputs": "C & L",
+      "backbone": "resnet34"
      },
      "World4Drive": {
       "encoder": "21M",
       "data_h": 20,
-      "PDMS": 85.1
+      "PDMS": 85.1,
+      "inputs": "C & L",
+      "backbone": "resnet34"
      },
      "Epona": {
       "encoder": "1.1B",
       "data_h": 128,
-      "PDMS": 86.1
+      "PDMS": 86.2,
+      "inputs": "Camera",
+      "backbone": "ViT/G",
+      "PDMS_note": "the ladder IS Table 2 p.8, so 86.2 is the value; the SAME paper prints 86.1 in Table 1 p.4 — an internal inconsistency, and the reason a number carries its table",
+      "PDMS_table1_p4": 86.1
      },
      "Drive-JEPA": {
       "encoder": "307M",
       "data_h": 330,
-      "PDMS": 89.0
+      "PDMS": 89.0,
+      "inputs": "Camera (2x512x256, front only)",
+      "backbone": "ViT/L"
      },
-     "_note": "This is TanitAD's comparable class: front-camera-only, perception-free (supervised solely by human trajectories, no perception annotations), entry rung 21M and top rung 307M — our scale band."
+     "_note": "TanitAD's comparable class is PERCEPTION-FREE (supervised solely by human trajectories, no perception annotations) at our scale band (entry rung 21M, top rung 307M). ⚠️ It is NOT a modality-matched class: LAW and World4Drive take LiDAR. The only camera-only rungs are Epona (ViT/G, 1.1B) and Drive-JEPA.",
+     "_inputs_column": "⛔ THE LADDER IS NOT 'FRONT-CAMERA-ONLY' — Table 2 prints an `Inputs` column: LAW 'C & L' and World4Drive 'C & L' (camera AND LiDAR), Epona 'Camera', Drive-JEPA 'Camera'. Only the top two rungs are camera-only. Key renamed from comparable_ladder_perception_free_front_only in 2.10.1."
     },
-    "keys": [
-     "protocol.sensor_set",
-     "protocol.setting"
-    ]
+    "comparable_ladder_perception_free_front_only": "RENAMED 2026-09-20 -> `comparable_ladder_perception_free`. The old name asserted a modality the primary contradicts (LAW and World4Drive print 'C & L' in Drive-JEPA Table 2). A consumer that indexes this key now fails loudly instead of quoting a wrong class."
    },
    "published_reference_numbers": {
     "_evidence": "PUB-PAPER, extracted by the EvalFlyWheel from the banked PDFs 2026-08-27",
@@ -747,14 +832,22 @@
     "drive_jepa_v2_EPDMS": 87.8,
     "drive_jepa_perception_free_front_only_PDMS": 89.0,
     "latent_wam_v2_EPDMS": 89.3,
-    "_harness_pin": "⛔ v1 PDMS must come from the v1.1 BRANCH — `main` is v2 and its scorer is the EPDMS scorer, so 'v1 PDMS from main' silently computes a different metric. Neither paper states a devkit SHA, and the 2025-09-29 human-filter bugfix (issue #151) sits between v2.2 and now, so which side they are on is UNVERIFIED. Pin OUR SHA beside our number."
+    "_harness_pin": "⛔ v1 PDMS must come from the v1.1 BRANCH — `main` is v2 and its scorer is the EPDMS scorer, so 'v1 PDMS from main' silently computes a different metric. Neither paper states a devkit SHA, and the 2025-09-29 human-filter bugfix (issue #151) sits between v2.2 and now, so which side they are on is UNVERIFIED. Pin OUR SHA beside our number.",
+    "drive_jepa_perception_free_PDMS_NOTE": "89.0 is Drive-JEPA ViT/L, Camera-only, in Table 2's perception-free block (p.8). The block's other rungs are NOT camera-only (LAW / World4Drive: 'C & L'). The key name '…_front_only' is kept for continuity; read this note with it.",
+    "_qualifiers_that_travel_with_each_number": {
+     "_evidence": "INHERITED from W4's currency audit (FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-leaderboard-currency/RESULT.md §2 findings 1-4), which verified each against a banked primary. ⛔ Not re-read by W2 — W4's products/P7-TanitEval/benchmarks/published_results.json is the primary record; a number quoted from here must carry its qualifier.",
+     "PDM-Closed navhard 51.3 vs 56.6": "51.3 is PRE-#151 (the human-filter fix); 56.6 is post-fix. The two are not one number.",
+     "DrivoR navhard 56.3": "= DrivoR + 134k SimScale SYNTHETIC training samples + TOAD test-time search. Navtrain-only DrivoR is 48.3.",
+     "Drive-JEPA 93.3 vs 93.7": "93.7 is the abstract and §1; 93.3 appears only in the paper's own NeurIPS checklist, misquoting its abstract.",
+     "navtest ladder backbones": "Transfuser 76.7 and Hydra-MDP++ 81.4 are ResNet34 rows; DriveSuprim 87.1 and Drive-JEPA 87.8 are ViT/L; DriveSuprim at ResNet34 reads 83.1."
+    }
    },
    "OFFICIAL_COLUMN": {
     "column": "navhard_two_stage EPDMS",
     "harness": "autonomousvision/navsim @ <SHA> — the SHA is part of the column, not a footnote",
     "devkit_pin_used_for_this_registry": "0a380a9 (2025-10-27)",
     "why": "⛔ NavSim v2 carries TWO protocols both called 'EPDMS', roughly 30 POINTS APART: the method papers' single-stage navtest-EPDMS (~76-88) and the challenge's navhard-two-stage (~35-56). A single 'EPDMS' column lets them be read as one metric — precise about the wrong thing, which is the overlapping_holdout_se class exactly. The NavSim authors explicitly disown the navtest variant in print.",
-    "consequence_for_our_positioning": "⭐ MEASURED 2026-08-28 by the EvalFlyWheel from the banked PDF (arXiv 2601.22032), SEVEN probe terms all zero — 'navhard', 'nav hard', 'two_stage', 'two-stage', 'two stage', 'private_test', 'challenge': Drive-JEPA NEVER mentions navhard. Its 87.8 'EPDMS on v2' is therefore the navtest variant, NOT the challenge protocol. ⇒ a navhard number of ours is NOT comparable to Drive-JEPA's 87.8. The camera-only navhard bar to anchor against is DrivoR 56.3 EPDMS at ~40M params (privileged ceiling 56.6).",
+    "consequence_for_our_positioning": "⭐ MEASURED 2026-08-28 by the EvalFlyWheel from the banked PDF (arXiv 2601.22032), SEVEN probe terms all zero — 'navhard', 'nav hard', 'two_stage', 'two-stage', 'two stage', 'private_test', 'challenge': Drive-JEPA NEVER mentions navhard. Its 87.8 'EPDMS on v2' is therefore the navtest variant, NOT the challenge protocol. ⇒ a navhard number of ours is NOT comparable to Drive-JEPA's 87.8. The camera-only navhard bar to anchor against is DrivoR 56.3 EPDMS at ~40M params (privileged ceiling 56.6). ⚠️ QUALIFIED 2026-09-20 (INHERITED from W4's audit): 'DrivoR 56.3' is DrivoR + 134k synthetic + TOAD test-time search (navtrain-only DrivoR 48.3), and the 56.6 privileged ceiling is PDM-Closed POST-#151 (its pre-fix value is 51.3). Quote the qualifier or the number is three things at once.",
     "what_still_stands": "Drive-JEPA's PERCEPTION-FREE ladder is PDMS on NavSim v1 (their Table 2, 'the first block is the perception-free setting'): LAW 83.8 / World4Drive 85.1 / Epona 86.1 / Drive-JEPA 89.0. That is a v1 PDMS claim and remains valid AS A v1 CLAIM — it must never be printed in an EPDMS column."
    },
    "GATE_no_cross_protocol_comparison": {
@@ -773,7 +866,25 @@
     "keys": [
      "protocol.navsim_protocol",
      "protocol.devkit_sha"
-    ]
+    ],
+    "devkit_pins": {
+     "EPDMS_v2_navhard_two_stage": [
+      "0a380a9063d7162ec93d0f51e9990ebac585f720"
+     ],
+     "EPDMS_v2_warmup_two_stage": [
+      "0a380a9063d7162ec93d0f51e9990ebac585f720"
+     ],
+     "EPDMS_v2_private_test_hard_two_stage": [
+      "0a380a9063d7162ec93d0f51e9990ebac585f720"
+     ],
+     "EPDMS_v2_navtest_single_stage": [
+      "0a380a9063d7162ec93d0f51e9990ebac585f720"
+     ],
+     "PDMS_v1_navtest": [
+      "3e8291bfa89ff247231e0227778840cd0a036896"
+     ]
+    },
+    "checker_rule": "tools/criteria_check.py: PASS = `protocol.navsim_protocol` is in closed_set AND `protocol.devkit_sha` is a full 40-hex SHA registered in devkit_pins for THAT protocol AND (when present) `benchmark.navsim.variant` names the protocol's variant. ⛔ A v1 PDMS stamped with the v2 SHA FAILS — 'v1 PDMS from main silently computes EPDMS' — as does an unregistered SHA (register it first: the SHA is part of the column)."
    },
    "EPDMS_submetrics": {
     "_formula": "EPDMS = prod(NC,DAC,DDC,TLC) * ( sum_w(TTC,EP,HC,LK,EC) / 16 ); filter_m = 1.0 if the human also violated m, else m(agent)",
@@ -886,6 +997,42 @@
      "tac.goal_selection",
      "strat.route_goal"
     ]
+   },
+   "ESTIMATOR_RULE": "SETTLED 2026-09-19 (W2/E3, pre-registered SPEC FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md): the NavSim interval is a LOG-CLUSTER bootstrap — clusters = OpenScene `log_name`, B = 2000, percentile 95 %, n_clusters >= 8 (RG-14) — of the OFFICIAL aggregate (two-stage: the devkit's per-mapping-key product then a skip-NaN mean over keys; single-stage: skip-NaN mean over tokens). Implementation taniteval/adapters/navsim_ci.py. Scene-token resampling, the episode-cluster bootstrap under any other unit and overlapping_holdout_se FAIL. warmup (7 logs) and private_test_hard (logs not observable) can NEVER carry an interval.",
+   "ROUTE_LEAK_VERDICT": {
+    "verdict": "PARTIAL — ROUTE-LEVEL ORACLE",
+    "settled": "2026-09-19 (W2/E3)",
+    "evidence_class": "PUBLISHED-CODE (mechanism) + MEASURED (four empirical probes)",
+    "one_line": "NavSim's driving_command is computed from (the ego pose NOW, nuPlan's route, the map) — not from the expert's future trajectory — but the route itself is the expert's own driven path at ROADBLOCK granularity, so the command carries the expert's future ROUTE CHOICE (which way at the next junction). It is not a trajectory leak (no speed, stop or lane-change information).",
+    "mechanism_at_source": [
+     "OpenDriveLab/OpenScene@7286074 DriveEngine/process_data/create_openscene_metadata.py:95-99 — roadblock_ids = lidar_pc.scene.roadblock_ids (the nuPlan DB scene row)",
+     "…create_openscene_metadata.py:122-127 — driving_command = get_driving_command(ego_pose NOW, map_api, roadblock_ids)",
+     "…helpers/driving_command.py:40-100 — route correction, Dijkstra centreline, target 20 m ahead, |y| >= 2 m -> left/right else forward; unknown when the route is unrecoverable",
+     "nuplan-devkit@ce3c323 docs/nuplan_schema.md:181-190 — a scene 'stores a goal … that is a future ego pose from beyond that scene … a sequence of road blocks to navigate towards the goal'",
+     "nuplan-devkit@ce3c323 nuplan_scenario.py:171-177 — `_route_roadblock_ids`: 'Route roadblock ids extracted from expert trajectory'; :238-242 get_route_roadblock_ids reads scene.roadblock_ids (nuplan_scenario_queries.py:307-325)",
+     "autonomousvision/navsim@0a380a9 dataclasses.py:204, :429, :468, :588 — the devkit only READS driving_command from the pickles; it never computes it (git grep over the pinned tree: 0 computations; control: roadblock_ids 5 hits in the same file)"
+    ],
+    "measured": {
+     "reproduction": "1,902/1,902 stage-1 frames (turning 739/739) — OpenScene's own function on (pose, stored route, map) reproduces the stored command exactly",
+     "route_starts_behind_the_ego": "83.5 % of 1,921 nuPlan scenes (median ego index 1) — a navigation route computed at scene start would start AT the ego",
+     "route_ahead_is_the_driven_path": "79.8 % of scenes: every route block ahead is driven by the logged ego or lies beyond the recorded segment; NULL control (no-future straight-ahead route) 34.6 %; visits in route order 96.4 %",
+     "counterfactual_turning_commands": "a route built from the ego's FUTURE path reproduces 710/739 = 96.1 % of turning commands; a NO-FUTURE straight-ahead route 491/739 = 66.4 %",
+     "agreement_with_future_path": "best threshold rule (lateral offset of the logged path after 20 m of driven arc, |y| >= 2-3 m) 94.2-94.7 % on 65,783 frames; 4 s horizon rules <= 86 % — below the 99 % 'deterministic function of the future trajectory' bar",
+     "stage_two": "every synthetic scene's command AND route are COPIED from the original frame at the same timestamp (5,462/5,462 navhard, 204/204 warmup) — the command the EXPERT had there, not one recomputed at the perturbed start (recomputation would agree on 83.9 % of 778 sampled)"
+    },
+    "consequences": [
+     "a driving_command-conditioned NavSim number is 'driving with an ORACLE ROUTE' — comparable within NavSim (every agent receives it) but never evidence of route/strategic skill",
+     "the command may never be the LABEL of a route/strategic head (the route-echo defect: flagship v1 369/369; D-REFAV1-ROUTE-LABEL-IS-THE-NAV)",
+     "report the command-withheld arm PAIRED with the command arm; their delta is the value of the oracle route to the agent (E2: A1 - A3 = +0.0124 on warmup stage 2)",
+     "admissible under the goal/situation-disjoint rule (it is not the situation classifier's output) but optimistic by construction, exactly like refcv4b's 'oracle, provenance ego-future' nav token"
+    ],
+    "artifacts": [
+     "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/RESULT.md",
+     "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/raw/route_leak_probe.json",
+     "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/raw/stage2_command_provenance.json",
+     "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/raw/source_probes/SHA256SUMS.txt"
+    ],
+    "consumed_by": "taniteval/adapters/navsim.py::route_leak_check (default) — pinned equal by taniteval/tests/test_navsim_adapter.py"
    }
   },
   "nuscenes": {
@@ -1015,9 +1162,84 @@
        ],
        "note": "Most of nuScenes val is straight-line constant-velocity driving."
       }
-     ]
+     ],
+     "protocol_tags": [
+      "nuScenes_OL_L2_stp3",
+      "nuScenes_OL_L2_uniad"
+     ],
+     "protocol_tags_map": {
+      "nuScenes_OL_L2_stp3": "stp3 (L2 averaged UP TO the timestep)",
+      "nuScenes_OL_L2_uniad": "uniad (L2 AT the timestep)"
+     },
+     "protocol_tags_note": "the suite's tags (taniteval/taniteval/bench/schema/summary.schema.json, W1); claim_bearing is false by API — the task stays INADMISSIBLE as a criterion.",
+     "GATE_not_a_criterion": {
+      "id": "nusc.plan.not_a_criterion",
+      "blocking": true,
+      "rule": "An artifact carrying a nuScenes open-loop PLANNING block must declare `claim_bearing: false` and must NOT be an in-scope TanitAD driving artifact. claim_bearing true or absent FAILS; nuScenes planning numbers inside a driving artifact FAIL even when the flag says false. An honest external-comparability record is reported as EXTERNAL_ONLY: never scored, never counted as compliant.",
+      "why": "H-EVAL-6 (SUPPORTED) + D-BENCH-PORT (PI 2026-08-29: SKIP claim-bearing). There is no official nuScenes planning protocol; the averaging convention alone moves one checkpoint 0.72 -> 1.22 m and flips the UniAD/VAD ranking; the GT human trajectory scores 0.36-0.96 % collision; and the field's high-level command is the GT future thresholded at +/-2 m - our route-echo defect, published as SOTA.",
+      "detect_keys": [
+       "benchmark.nuscenes.planning",
+       "benchmark.nuscenes.planning.protocol_tag",
+       "schema == taniteval.nuscenes_planning/1",
+       "a protocol TAG matching nuScenes_OL_* (W2: the second mechanism — a suite record carries no planning block)"
+      ],
+      "keys": [
+       "claim_bearing",
+       "benchmark.nuscenes.planning.protocol_tag",
+       "benchmark.nuscenes.planning.gt_control",
+       "benchmark.nuscenes.planning.command_source",
+       "benchmark.nuscenes.planning.nonstraight"
+      ],
+      "harness": "taniteval/adapters/nuscenes_planning.py (W6): both conventions verbatim to the pinned reference code, claim_bearing:false enforced by API; taniteval/taniteval/bench/plugins/nuscenes_ol.py runs ONE convention per run.",
+      "ships_with": "tools/tests/test_criteria_check.py: W6's EXTERNAL_ONLY arm + two deliberate misuse arms + a control, and W2's two TAG-detected misuse arms with their own NavSim control",
+      "authored_by": "W6 (E5), FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-nuscenes-planning-harness/code/criteria_guard.patch — integrated verbatim by W2"
+     }
     }
    }
+  },
+  "navsim_v1": {
+   "pending": false,
+   "protocol_tag": "PDMS_v1_navtest",
+   "artifact_key": "benchmark.navsim",
+   "_artifact_key_note": "one adapter for both NavSim generations (taniteval/adapters/navsim.py::build_artifact, variant PDMS_v1); the protocol tag distinguishes them and every benchmarks.navsim GATE_* applies unchanged. `benchmark.navsim_v1` is ALSO recognised as a claim.",
+   "protocol_doc": "products/P7-TanitEval/benchmarks/NAVSIM_PROTOCOL.md",
+   "primary": [
+    "arXiv:2406.15349"
+   ],
+   "devkit_pin": "autonomousvision/navsim v1.1.0 @3e8291bfa89ff247231e0227778840cd0a036896 (pinned 2025-06-05)",
+   "devkit_pin_required": "3e8291bfa89ff247231e0227778840cd0a036896",
+   "local_tree": "D:/Archive/devbox-C/navsim/navsim-3e8291bfa89ff247231e0227778840cd0a036896/ (unpacked archive, not a git checkout — cite file sha256)",
+   "formula": "PDMS_v1 = NC * DAC * (5*EP + 5*TTC + 2*C) / 12",
+   "multipliers": [
+    "NC",
+    "DAC"
+   ],
+   "weighted": {
+    "EP": 5,
+    "TTC": 5,
+    "C": 2
+   },
+   "denominator": 12,
+   "ddc_note": "DDC exists in v1 code with weight 0.0 (pdm_scorer.py:38-42 @v1.1) — a navtest DDC column contributes NOTHING to PDMS v1",
+   "score_column": "score (PDMResults.score, dataclasses.py:568 @v1.1; v1 has no pdm_score column)",
+   "aggregation": "single_stage_token_mean — run_pdm_score.py:144 @v1.1: pdm_score_df.drop(columns=['token','valid']).mean(skipna=True)",
+   "split": {
+    "name": "navtest",
+    "scene_filter": "4 history + 10 future frames, frame_interval 1",
+    "n_tokens": 12146,
+    "n_logs": 136,
+    "n_drives": 44,
+    "source": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/raw/split_census.json (v2 navtest; the v1.1 scene_filter/navtest.yaml has the same 136 + 12,146 entries — W3 to pin the byte identity)"
+   },
+   "sources": {
+    "pdm_enums.py": "827e7338b8e553684f87a0fc27a16cff3e3ee382e2a18271145e7e549a6c52bc",
+    "pdm_scorer.py": "02ab075017d4edb1c8bba6476ef1674b84d43dbca0f599df87cfe052b2dd5211",
+    "run_pdm_score.py": "7299fa4617e4d5116732e1c9fcf92a991775cc476bfd00eacd8f6394792191d1",
+    "dataclasses.py": "17d96f48101982d4a0842bb4cc1de441672207ad9fed3e460bbbdcf74440a32b",
+    "scene_filter/navtest.yaml": "61284edf5003c0291f843ce9817c822ba306609a62d54544223adae3fc7fc9cd"
+   },
+   "gates": "every benchmarks.navsim GATE_* applies; the cross-protocol gate REQUIRES this pin for PDMS_v1_navtest — 'v1 PDMS from main silently computes a different metric'",
+   "comparable_ladder": "benchmarks.navsim.GATE_modality_label.comparable_ladder_perception_free_front_only (LAW 83.8 / World4Drive 85.1 / Epona 86.1 / Drive-JEPA 89.0 — v1 PDMS)"
   }
  },
  "schema_note": "Three artifact schemas are recognised: `taniteval.driving` (headline.* + a top-level `refused` block); `four_families` (ff_*.json, per-family blocks whose criteria decline inline via {status:UNAVAILABLE, reason, n}); and `refav1` (rec_*.json from taniteval/tools/refav1_arm.py, which nests a full four_families block PER ARM at arms.<arm>.four_families.* and adds a record-level `refav1` block for the protocol, the strategic/tactical declared heads and the trivial profile). All three refusal idioms are honest and all three are read. The refav1 records are the programme's only T1 driving artifacts; see `arm_scoring` for which arm is scored and why the other four are not.",
@@ -1110,6 +1332,54 @@
    "change": "in-scope marker `arms.os.four_families` + arms.os.* key alternatives mirrored from arms.cl.*, and refcv3.strategic.conditionings.* for strat.decision / strat.route_goal. Adds `arm_scoring.schemas` naming the planner arm PER SCHEMA. ALSO mirrors arms.cl.*->arms.os.* and refav1.*->refcv3.* across tiers.key_paths, artifact_hygiene and leak_guards -- the first pass walked only `families`, which left the refcv4b artifact reading tier UNSTAMPED and 5 hygiene/leak criteria MISSING while the artifact declared every one of them.",
    "why": "refcv3/refcv4 per-arm schema (taniteval/tools/refcv3_arm.py): the four families are nested PER ARM at arms.<arm>.four_families.*, exactly like refav1, but the planner arm is `os` (the one-shot planner), not `cl`. The v2.7.0 fix added only the `arms.cl` marker, so EVERY refcv3 and refcv4b landing artifact still read UNKNOWN_SCOPE -- invisible to the census while carrying all four binding families. MEASURED 2026-09-06 on the refcv4b @40284 landing eval (4,823 windows / 141 episodes). Same root-cause class as the v2.7.0 refav1 miss, repeated for a second model family: a scope marker enumerated per-schema rather than derived.",
    "measured": "BEFORE: refcv4b_t1.json (4,823 windows / 141 episodes, all four families emitted) read UNKNOWN_SCOPE and was not scored at all. AFTER the families-only pass: scored, but tier UNSTAMPED + 5 violations, all of them marker misses rather than real gaps (the artifact carries arms.os.tier='T1', arms.os.four_families._protocol.{inference_inputs,vision_only,goal_source,goal_situation_disjoint,corpus,parity_key} and refcv3.trivial_profile)."
+  },
+  {
+   "version": "2.10.0",
+   "date": "2026-09-19",
+   "by": "EvalFlyWheel W2 (E3 resumed)",
+   "change": "(a) tools/criteria_check.py now EVALUATES benchmarks.navsim — the five criteria and all four blocking GATE_* — and FAILS an artifact whose protocol tag is outside the registered union; (b) EPDMS_v2 multipliers gain TLC; (c) GATE_estimator_cluster_unit UNRESOLVED -> SETTLED (log-cluster bootstrap, SPEC + census); (d) ROUTE_LEAK_VERDICT = PARTIAL, route-level oracle; (e) benchmarks.navsim_v1; plus the protocol_tags union with nuScenes + internal tags in their own blocks.",
+   "why": "MEASURED 2026-09-19 by E1 and independently by E2: criteria_check.py evaluated NONE of benchmarks.navsim, so all four blocking NavSim gates were unenforced and every NavSim artifact passed; and the EPDMS_v2 multiplier list omitted TLC while this registry's own EPDMS_submetrics multiplied by it.",
+   "ships_with": "tools/tests/test_criteria_check.py — a deliberate-regression arm per gate that must go RED; taniteval/tests/test_navsim_ci.py — literal analytic targets, the devkit-reference literal, the real-run reproduction and a RED code mutation."
+  },
+  {
+   "version": "2.10.1",
+   "date": "2026-09-20",
+   "by": "EvalFlyWheel W2 (E3 resumed)",
+   "change": "GATE_modality_label.why CORRECTED — the three-camera 1024x256 stack is TRANSFUSER's, not Drive-JEPA's (which is front-camera-only at 2x512x256 in every row); `comparable_ladder_perception_free_front_only` renamed to `comparable_ladder_perception_free` with each rung's printed Inputs (LAW and World4Drive are 'C & L'), Epona's 86.1/86.2 self-inconsistency recorded; published_reference_numbers gains the qualifiers PDM-Closed 51.3 (pre-#151) / DrivoR 56.3 (+134k synthetic + TOAD) / the navtest backbone mix; protocol_tags records that external-only cited tags stay outside the union.",
+   "why": "W4 flagged the modality sentence; W2 owns the registry and re-read the banked primary rather than taking a correction on trust (Drive-JEPA 2601.22032, sha256 d88c053a67ac…: Table 8 p.14 and §4.2 p.7 for the resolution, Table 2 p.8 for the Inputs column). A wrong modality claim in a GATE about modality labels is the worst place for one.",
+   "ships_with": "tools/tests/test_criteria_check.py — the ladder/modality pins rewritten to the verified literals, with a regression arm that fails if the Drive-JEPA attribution returns."
+  },
+  {
+   "version": "2.10.2",
+   "date": "2026-09-20",
+   "by": "W6 (E5), integrated by EvalFlyWheel W2 (E3)",
+   "change": "ADD benchmarks.nuscenes.tasks.planning_openloop.GATE_not_a_criterion and the checker's EXTERNAL_ONLY scope: a nuScenes open-loop planning record is reported and never scored; claiming one (claim_bearing true or absent), or embedding its numbers in a TanitAD driving artifact, is a VIOLATION. W2 added a second detection mechanism — a protocol tag matching nuScenes_OL_* — so a suite record with no planning block cannot slip through.",
+   "why": "H-EVAL-6 is SUPPORTED and D-BENCH-PORT marks nuScenes-OL SKIP claim-bearing, but nothing in the machinery could SEE such a record: it read UNKNOWN_SCOPE (surfaced for a human, uncounted) or — if it carried a four_families / headline.ade_* key — would be scored as a TanitAD driving eval. A rule enforced only in prose is the failure class this instrument exists for.",
+   "ships_with": "tools/tests/test_criteria_check.py — W6's EXTERNAL_ONLY arm, two misuse arms and a control, plus W2's two tag-detected misuse arms; the code and test hunks of W6's patch applied verbatim (`git apply`), only its registry hunk was re-landed here because the registry had moved to 2.10.1."
   }
- ]
+ ],
+ "protocol_tags": {
+  "rule": "ONE source of truth for protocol tags: the UNION of the blocks listed in `sources`, each tag living in its own block and never merged into another benchmark's closed set. tools/criteria_check.py FAILS an artifact whose tag (at any `key_paths`) is outside the union; a NavSim artifact must additionally carry a NavSim tag. The suite schema (taniteval/taniteval/bench/schema/summary.schema.json) must equal the union — W1 tests the equality.",
+  "sources": [
+   "benchmarks.navsim.GATE_no_cross_protocol_comparison.closed_set",
+   "benchmarks.nuscenes.tasks.planning_openloop.protocol_tags",
+   "tiers.internal_protocols"
+  ],
+  "key_paths": [
+   "protocol.navsim_protocol",
+   "protocol.protocol_tag",
+   "protocol.nuscenes_protocol",
+   "protocol_tag"
+  ],
+  "function": "tools/criteria_check.py::registered_protocol_tags(registry)",
+  "suite_record_key_paths": [
+   "protocol"
+  ],
+  "suite_record_schema_prefix": "taniteval.bench.",
+  "key_paths_note": "A bare top-level `protocol` STRING is read as a tag ONLY on a suite record (`schema` starting with taniteval.bench.): MEASURED 2026-09-19, 24 banked artifacts carry a free-text `protocol` sentence (e.g. 'PSEUDO-SIMULATION. Perturbed observation states…'), and reading those as tags would manufacture violations — the wrong-scope probe the registry's `applicability.why` forbids.",
+  "external_only_tags": "Tags that exist only to label CITED external rows (e.g. `Bench2Drive_closed_loop` in W4's published_results.json) are NOT protocol tags for our artifacts and are deliberately OUTSIDE this union: nothing we produce may carry one."
+ },
+ "_version_history": {
+  "2.10.3": "2026-09-20 (W2/E3): GATE_estimator_cluster_unit states its POST-SETTLEMENT form, supersedes the 2.9.0 text explicitly, and FAILS a false refusal (UNAVAILABLE while holding an admissible interval) and a one-token cluster_unit refusal reason. No rule was loosened: the working-tree gate had admitted a valid log-cluster interval since 2.10.0."
+ }
 }

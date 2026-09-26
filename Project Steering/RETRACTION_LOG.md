@@ -16348,3 +16348,1323 @@ so the artifact carries a number nobody can re-check (the "a summary is not a pa
 computation). **Durable fix:** `code/step_budget.py` banks the method and is applied identically to
 every smoke (`raw/step_budget_S3_S4_S8.json`); a smoke comparison quotes the projected launch
 s/step from it, never a window mean read by hand.
+### RETR-2026-09-20-W5-SIBLING-FILE-LINE — a `file:line` into another stream's LIVE code, quoted later as a fact
+**Asserted (EvalFlyWheel W5, 2026-09-19):** `taniteval/taniteval/leaderboard/build.py:66` imports
+`taniteval.report` (raised as an integration ask, and relayed by the orchestrator as an instruction to W4).
+**NOT REPRODUCED (W4, 2026-09-20):** that string occurs in **0** of the six leaderboard modules, in the
+worktree and in the index.
+⭐ **The diagnosis is not "a bad grep". W5's read was CORRECT AT THE TIME and the file was rewritten
+underneath it** — `build.py` mtime 2026-09-20 09:42, after W5's 2026-09-19 ~16:05 read, and the
+discriminator is the docstring W5 quoted (*"Unknown API → no charts"*), which now has **0 hits repo-wide**.
+⛔ **CLASS: a true observation of a SIBLING STREAM'S IN-FLIGHT FILE, carried into a deliverable as a
+standing fact.** Same family as *the repo advances mid-session* and *a summary is not a path*, with the
+object swapped for another agent's live code.
+⇒ **RULE: a `file:line` into a sibling's in-flight code is PERISHABLE. Re-read it immediately before
+asserting it in a deliverable, or cite it with the timestamp of the read rather than as a fact.**
+⚠️ The real defect in that area was W4's own find, not W5's: a leftover fallback import of
+`taniteval.benchreport.html` — the module W5 renamed to `page.py` mid-stream, which made that rename an
+INTERFACE change rather than an internal tidy. Fixed; W5 has since pinned the four names W4 depends on.
+Evidence: `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-visual-reporting/RESULT.md` §1b.
+
+### RETR-2026-09-20-W6-CONSISTENCY-AS-INDEPENDENCE — a consistency check offered as an independent control
+**Asserted (EvalFlyWheel W6, 2026-09-20):** *"15 of my rows share a (paper, table) with rows W4 extracted,
+and the page agrees 15/15, 0 disagreements"* — offered as the independent control its own pypdf re-check
+could not be, and **relayed to the PI by the orchestrator in that form**.
+**RE-DERIVED (W4, then W6 itself with `code/recount_row_overlap.py`):** 15 rows share a **paper**; **5**
+share an exact `(library_key, table)`; **0** share a `(paper, page, system)` cell; **0** share a full
+value-set. ⇒ what agreed was **which page a table sits on** — fixed by the paper's layout — while the claim
+was about the tables' **values**. **No number in those 39 rows had been read twice by two readers.**
+⛔ **Two mechanisms, both worth the log:** (a) **scope** — a true measurement quoted outside it reads
+exactly like an answer (the `df` / `step_s` family); (b) **key loosening** — the join key stripped the
+sub-table parenthetical (`'Tab. 1 (ID-3)'` → `'Tab. 1'`), merging distinct sub-tables and inflating
+**5 → 15**: a key normalised for convenience silently became the claim's denominator.
+⭐ **And a trap W6 found while correcting itself:** once W4 merged the rows, running the overlap script
+unfiltered compares the 39 rows **with themselves** and reads a perfect 39/39 on every key. The banked
+instrument now filters by row id and prints both counts plus the merged-row total, so the trap is visible
+rather than silently avoided.
+✅ **Resolution of the consequence (orchestrator, 2026-09-20, MEASURED):** W6's COMMS asked W4 to run its
+PyMuPDF verifier over the 39 rows, believing it had not. It HAD: `…/2026-09-19-leaderboard-currency/raw/
+verify_published_against_pdfs.json` records `n_rows 113 · n_verifiable 112 · 112 PASS · true_arm_failures 0
+· pdf_sha256_ok`, i.e. the merged file including all 39. ⚠️ **Residual, stated rather than rounded away:**
+that verifier's own mutation arms are RED on **108/112** rows for a perturbed value and **93/112** for a
+wrong page — so 4 and 19 rows respectively are carried by a check that is not provably discriminating there.
+Evidence: `…/2026-09-19-nuscenes-planning-harness/RESULT.md` F12.
+
+---
+
+## 2026-09-20 — "The released DriveZero teacher is slow" (Research Lab, caught in the same turn, never shipped)
+
+**Class: A SUITE MEAN READ AS A PER-ITEM PROPERTY** — the `df` / cgroup / `step_s` family, with the
+wrong scope being *aggregation* rather than units or host.
+
+**What I wrote:** from Stage 0's 8-scenario mini run, *"on this sample the released teacher is safe,
+legal, comfortable and **slow**"*, reasoning from the suite's `ego_progress_along_expert_route`
+**0.938** plus a video of its worst scenario.
+
+**What is true (MEASURED, `…/2026-09-20-refe-plan/raw/stall_census_m-nr-n.txt`):** per-scenario path
+length against the human expert reads **1.187 · 1.107 · 1.091 · 1.083 · 1.068 · 0.965 · 0.910 ·
+0.617**. The teacher travels **further than the expert in 4 of 8** scenarios and ≥ 0.91 in 6. It is
+not a slow policy; **one** scenario (`changing_lane_to_left`, a failure to resume from a stop) carries
+the entire suite deficit.
+
+**Why the mean could not show it, and this is the transferable part:** the harness **clamps
+per-scenario progress at 1.0**, so the four over-travelling scenarios contribute exactly 1.0 and are
+structurally unable to offset the 0.617. ⇒ **On any clamped or saturating metric, the mean is a
+one-way filter: it can be dragged down by an outlier and can never be pulled back up.** Reading such
+a mean as a central tendency is a category error, not a rounding one.
+
+⛔ **The rule this adds:** before describing a policy from an aggregate, check whether the per-item
+metric **saturates**. If it does, the per-item distribution is mandatory, not optional. Cost here was
+**one CPU-only probe** (`code/stall_census.py`), which is the argument for always paying it.
+
+⭐ **What the census bought beyond the correction:** it also DISCRIMINATED the finding it was checking.
+**4 of 8 scenarios stall**, but three stalls are *correct* — `stopping_at_stop_sign_with_lead` stalls
+86 % of its steps and scores **1.0000**. The real defect is not "stalls" but **"stalls and never
+resumes with a clear road"**, which is **1 of 8**. A claim and its control came from the same probe.
+
+---
+
+## 2026-09-20 — "The released DriveZero teacher fails to resume from a stop" (Research Lab) — RETRACTED the same day by its own queued control
+
+**Class: A BENCHMARK-PROTOCOL ARTIFACT READ AS A PROPERTY OF THE SYSTEM UNDER TEST.**
+The `df` / cgroup / `step_s` family, with the wrong scope being the **evaluation protocol**.
+
+**What I claimed:** on nuPlan mini, `changing_lane_to_left`, the teacher brakes to a stop 0.5 m
+behind its lead and never resumes, costing 39 % of route progress. I eliminated four alternative
+explanations by measurement (blocked / goal reached / red light / crossing traffic), triangulated it
+across three TTS arms, built a §5 consequence for REFe's Stage-2 target builder, and **reported it to
+the PI with a rendered video**.
+
+**What is true (MEASURED, `…/2026-09-20-refe-plan/raw/stall_census_m-r-n.txt`):** re-running the same
+token with **reactive (IDM) background agents instead of log replay** — the only change —
+
+| protocol | distance | stalled | final speed | score | progress |
+|---|---|---|---|---|---|
+| non-reactive | 39.5 m | 36 % | 0.03 m/s | 87.46 | 0.6129 |
+| **reactive** | **59.8 m** | **0 %** | **3.90 m/s** | **97.60** | **0.9256** |
+
+**The stall does not exist under reactive agents.** In log replay, background vehicles execute their
+recorded trajectories *regardless of the ego*, so the teacher was driven into a 0.5 m lead gap that
+an IDM agent would never create. My elimination of *"blocked by a lead"* was **right about the gap
+and wrong about the cause**: the trap was the ARRIVAL at 0.5 m, not the persistence of it.
+
+⛔ **The process failure, which is the transferable part.** I **named this exact confound myself** in
+the document's §4 and wrote that the reactive protocol "remains the clean cross-check and is queued".
+Then I wrote **eleven further sections on top of the finding before running it.** ⇒ **When a document
+names a confound and queues its control, that control is a BLOCKER on the headline claim, not a
+footnote.** Run it before building, not after. The control cost **one 15-minute GPU run**.
+
+⚠️ **Scope of the retraction, so it is not over-applied:** the TTS-sweep results (§10–§12: switch rate
+rising with N, braking-biased selection, monotone score decline) do **not** rest on the stall — the
+scenario carrying that decline, `starting_left_turn`, has **0 % stalled steps in both protocols**. A
+reactive replication of the sweep is running. What IS damaged beyond the headline: **§9's tie-breaker**
+for "the critic is flat at low speed" was this scenario, so §9 reverts to the confound it named.
+
+
+---
+
+## 2026-09-20 — "REFe's scorer is INERT" — RETRACTED the same day. Class: **THE READOUT, NOT THE INSTRUMENT** (and a control that never committed its violation)
+
+**Retracted claim.** *"The scorer pipeline runs and is INERT: 0 of 9 signals differ across the
+teacher's path, a 25 m sideways veer and a stationary ego. A builder-produced `ScenarioData` is
+necessary but not sufficient; the engine-side derivation has to be reproduced."*
+
+**What is true (MEASURED, `…/2026-09-20-refe-plan/raw/refe_scorer_discriminates.txt`).** The scorer
+distinguishes a legal path from one that drives over a curb: `OffRoad.info` **0.0000** on the
+teacher's own trajectory and **1.0000** (reward −1.6994) on a path aimed through the nearest curb,
+with **10 of 28** signals separating under step-wise scoring against 3 at the endpoint. The
+builder's object is sufficient; nothing had to be reproduced.
+
+**Three root causes, each its own class.**
+
+1. **THE READOUT WAS THE INERT PART.** Every calculator writes `{"reward":…, "info":…}`. `reward` is
+   the weighted, saturated training signal and is flat across candidates *by design*; `info` is the
+   raw event/offset channel. My reader collapsed each dict to `reward` and discarded `info` —
+   so *"0 of 9 signals differ"* was a statement about my reader. The discriminating value
+   (`CenterLine.info` 0.0691 vs 0.3211) was present in the very first run. ⚠️ **Third occurrence of
+   wrong-level-of-a-nested-dict in the same file** — the two earlier ones were caught, this one was
+   promoted to a finding.
+2. **THE DELIBERATE-REGRESSION ARM NEVER COMMITTED THE VIOLATION.** The "25 m sideways veer"
+   moves the ego *away* from the nearest curb in this scene: corner distance **10.66 m** at 0 m,
+   **19.06 m** at +14 m, minimum **0.87 m** at +40 m, never touching. OffRoad was **correct** to
+   stay silent, and I was one step from filing *"their off-road detector is broken"*. ⭐ The fix is
+   an **analytic target**: aim at a curb segment read out of the map, so the expected verdict is
+   known by construction rather than assumed from a guess about geometry.
+3. **ENDPOINT SCORING HID A MID-HORIZON VIOLATION.** `extract_recent_agent_polygons` reads only
+   timesteps −1 and −2, and OffRoad is a per-step **crossing** detector. MEASURED: the *identical*
+   over-curb path reads `OffRoad.info` **0.0000** scored at its endpoint and **1.0000** scored step
+   by step. A 20-step proposal must be scored the way the RL engine scores it — once per step.
+
+**And the named next fix I had queued was wrong.** *"Populate `lanes_centers_groups` / `_ids` /
+`_next_groups` and re-run"* is implemented, and the with- and without-enrichment arms are
+**identical on all 28 signals**. The lane graph is **not load-bearing** for these six calculators.
+(The older sub-claim that obtaining those arrays "is genuine reconstruction work" is also wrong:
+one offline `_build_map_arrays` call returns 1,019 nonzero groups and 4,095 next-group links.)
+⇒ **I diagnosed from structure — "this array is empty, that must be why" — instead of from a
+control.** The control was cheap, and it was the only thing that ever settled this question.
+
+**A fourth thing the same run caught, which was never in the claim.** The builder's
+`domain_randomization` defaults to `None`, so the `ScenarioData` **draws** its reward weights:
+`collision_reward_weight` **−1.0415** instead of the configured **−1.0**, giving **−1.5194** in one
+process and **−1.7086** in the next for identical input. Within a process it is stable 5/5, so a
+single run looks perfectly deterministic and the drift appears only across runs — the shape that
+silently poisons a bank built in shards. Their released yaml already carries the deterministic
+values under a comment saying so; we were not passing them. Now exactly −1.0 across processes.
+⚠️ The `info` channels were reproducible throughout; only the weighted `reward` channels moved.
+
+**Transferable rule.** *When a finding rests on "signals did not differ", prove the READER can see a
+difference at all before blaming the instrument — and make the deliberate-regression arm's violation
+an ANALYTIC one, constructed from the same data the detector reads.* Same family as the four
+2026-09-07 self-referential checks: a control that cannot go red is not a control, and here the arm
+could not go red because it never left the road.
+
+
+---
+
+## 09-20 — ⛔ "navhard's stage-1 camera archives are NOT ON THIS BOX" (W7) <!-- W7-SCOPE-2026-09-20 -->
+
+**Retracted claim.** That refcv4b's official two-stage EPDMS on `navhard_two_stage` is undefined
+*because the OpenScene test camera archives are not on this box.* **The first half is right and
+stands; the second half was FALSE.** The archives are on this box — **32 shards, 127,882,665,618 B,
+sha256-verified 32/32** (`…/2026-09-19-navhard-download/raw/receipt_navtest_camera.json`,
+`all_verified: true`) — and navhard's stage-1 frames are inside them. Corrected the same turn, before
+any number was published against it: the true statement is **"not UNPACKED anywhere this run can
+read them"**, and the two-stage EPDMS is recoverable by **EXTRACTION**, not by a new download.
+Caught by the orchestrator; re-established independently by me on the archive side
+(`…/2026-09-20-navhard-refcv4b/raw/stage1_in_archives_shard6.json`): shard 6 holds **2 of the 76
+navhard logs and ALL 120/120 of their stage-1 files, complete per log**, with a stage-2 control
+reading **exactly 0/1,185**.
+
+**Root-cause class: C2 (absence from a single probe) — but the useful lesson is a SHARPENING of it,
+because by the letter of C2 I did everything right.** I ran **two mechanistically different probes
+over eight roots**, each with a same-breath control that read non-zero: exact relative paths
+(0/5,400 vs 65,544/65,544), then match-by-BASENAME over a full tree walk, immune to directory layout
+(0/3,375 vs 40,965/40,965). That is exactly what C2 asks for, and it was **still the wrong answer**,
+because **both probes shared one unexamined PREMISE — that "present" means "present as an unpacked
+file".** ⛔ **Multiplying probes does not test a premise they share.** It is the same shape as
+*"repeated samples through ONE broken channel are one sample"*, with the shared thing being an
+assumption instead of a channel — and it is harder to see, because the probes really were
+independent in mechanism and really did disagree about nothing.
+
+**Recognition signal, and it is cheap.** Before writing *"X does not exist"*, say out loud what FORM
+you searched for and ask what other forms X could take: **unpacked file · inside an archive · on
+another host · behind a different name · derivable from something present**. Here one word —
+*"unpacked"* — was the whole error, and it was absent from a sentence that was otherwise carefully
+measured. ⇒ **Write the form INTO the claim** (*"not unpacked under these 8 roots"*), never the
+unqualified absence. A claim that names its own scope cannot be over-read later, including by the
+person who wrote it.
+
+⚠️ **What the episode did NOT change:** the census itself, the controls, the refusal to let a CV
+stand-in be scored as refcv4b, and the run's UNDEFINED headline. The measurement was right; its
+SCOPE was wrong. ⭐ Same family as the `df` / Thor `free` / cgroup `usage_in_bytes` / `step_s` /
+cylindrical-FOV / anchor-units traps — **a true measurement quoted outside its scope reads exactly
+like an answer** — with the scope here being the *storage form* of the thing that was absent.
+
+**Second, smaller correction from the same turn, caught before publication and logged because the
+class recurs.** I listed **five** EPDMS multipliers from memory (NC, DAC, DDC, TLC, **TTC**). There
+are **four**: `prod(NC, DAC, DDC, TLC) x sum(w*m)/sum(w)`, and TTC is a *weighted* term at w = 5.0.
+**The DATA caught it, not a re-read**: my own zero-attribution reported TTC zeroing 242 STOP scenes
+while being the UNIQUE zero in **0** of them — impossible for a real multiplier. Class **C4
+(inherited without re-verification)**, with recall as the "source". ⇒ weights are now read from
+`summarize.py::epdms_formula` (promoted verbatim, pinned by `test_bench_suite_promotion.py`), and the
+counterfactual lever ranking is admitted only after the local formula reproduces the devkit's own
+`score` column — **measured max_abs_diff 1.11e-16 over 5,462 rows**. A ceiling computed from a
+formula that cannot reproduce the real number is fiction.
+
+
+---
+
+## 2026-09-20 — REFe conformance: seven defects, and FOUR MORE found by the proof of the fixes. Class: **A FIX IS A HYPOTHESIS UNTIL ITS PROOF FAILS SOMETHING**
+
+**Context.** An independent paper-conformance review of REFe against DriveZero found seven defects.
+The PI instructed that all be fixed with proof. The fixes are recorded in
+`…/2026-09-20-refe-plan/PAPER_CONFORMANCE_REVIEW.md`; this entry logs the **process** result, which
+is the transferable part: **writing a proof for each fix caught four further errors that code review
+and a successful run had both missed.**
+
+### The four the PROOF caught, after the fixes were already believed done
+
+1. ⛔ **A derived velocity exactly 2× too large.** `inject_proposal` now derives the ego's velocity
+   from the injected poses. The candidate's poses are **0.2 s** apart (20 samples at STRIDE 2 over a
+   10 Hz history) and the first version divided by the **engine's 0.1 s** `frame_time_interval`.
+   MEASURED: the teacher's injected horizon ran 5.769 → 19.500 m/s, mean **12.393**, on a path whose
+   true mean is ~6.2. ⭐ **Nothing errors. Comfort, jerk and time-to-collision simply score a car
+   going twice as fast, and both the wrong and the right number look like plausible speeds.** Only
+   an **identity** sees this: derived speed must equal displacement ÷ elapsed time. Same family as
+   the STRIDE bug that silently halved the target horizon — *a rate that is correct for one object,
+   quoted for another*.
+2. ⛔ **"Progress" measured along whichever lane was NEAREST at each moment.**
+   `calculate_baseline_progress` returns arc length from the first point of the nearest baseline, so
+   the origin **jumps** when the ego crosses onto a new segment. MEASURED: the teacher read
+   **−8.54 m** of "advance" while driving forward, and `teacher` / `lat±4` / `over-curb` —
+   geometrically very different paths — **all read the same −8.54**, while `stopped` read 0.00. The
+   identical values across unlike paths are what made it legible; the negative sign alone would have
+   been dismissed as a convention.
+3. ⚠️ **A constant component was NOT only a bug — it was the candidate set.** `comfort` stayed at
+   1.0000 for every candidate even after the velocities differed hugely (teacher 12.393 vs stopped
+   0.000). Every candidate in the set is **smooth**, so a correct comfort calculator returns 1.0 for
+   all of them. The component was constant **by construction of the test set**, and no fix to the
+   scorer could have changed that. Fixed by adding a deliberately uncomfortable candidate.
+4. ⚠️ **One arm failed on MY THRESHOLD, not on the code** — asserting the PDM aggregate under 1e-3
+   for a collision candidate built from a logit of −6, where sigmoid(−6) = 0.00247. Recorded because
+   the opposite mistake, *a threshold looser than the effect*, is the one that hides a real defect.
+
+### And a guard of mine that was inert while a doc cited it as proof
+
+`ScorerBank.variance_report` pooled every row into one sd per component, so a component **constant
+across the candidates of every frame** passed on between-frame spread alone. MEASURED with the
+corrected within-frame guard: **`comfort` varies in 0.0 % of 620 frames** while its pooled sd
+**0.120** is *larger* than `center_line`'s 0.108, which ranks in **76.8 %** — the pooled number did
+not even order the components correctly. Root-cause class: **a check whose question is narrower than
+the claim hung on it**, the same family as the 2026-09-07 self-referential checks and the
+episode-cluster bootstrap's blindness to training variance.
+
+### Consequence for the data, stated rather than buried
+
+The existing **7,960-row** scorer bank is **quarantined, not deleted**
+(`data/refe_scorer_targets_PRE_FIX_2026-09-20/` with a `WHY_THIS_IS_STALE.txt`). Four fixes changed
+what a row **means**: no `progress.ep` or `ddc.violation` leaves exist in it, its `comfort` came from
+held velocities, and anything built inside the 2× window describes a car going twice as fast. A
+consumer reading the new component list against those rows gets the **1.0 fallback** and would never
+notice.
+
+**Transferable rule.** ⭐ **Write the proof before believing the fix, and make one arm an IDENTITY
+rather than a comparison.** Every one of the four above survived code review and a clean run; three
+were caught only because a number had to equal another number computed a different way, and the
+fourth because unlike inputs produced identical outputs. A fix that merely *runs* has been tested
+for nothing.
+
+
+---
+
+## 2026-09-21 — REFe's four-camera extension: five retractions, four of them one root-cause class
+
+**Class for four of the five: A TRUE NUMBER QUOTED OUTSIDE ITS SCOPE.** This is the programme's
+most-repeated failure (`df` on a pod, `free` on Thor, cgroup `usage_in_bytes`, `step_s`, the
+cylindrical FOV, the epcache consumer). Every instance below is the same shape: a correct
+measurement, read where it does not apply, producing a plausible answer.
+
+### R1 · `ego_dim = 9` "per Table A2" — Table A2 is the TEACHER's schema
+
+**Retracted:** *"Table A2 lists the teacher's 'Ego state 9-D, Current frame', so the student's ego
+vector is 9-D."* The caption reads **"Structured Teacher input schema"** (paper p. 25), and its
+neighbouring rows are *"Actor history 15-D / frame, ≤96 actors"* and *"Vector-map segment 10-D /
+token"* — inputs the **camera-only student provably does not have**. ⚠️ The paper dimensions the
+student's ego input **nowhere**; it says only *"the multi-view images of the current frame, **the
+ego kinematics**, and a navigation command"* (p. 7).
+
+⛔ **Consequence, which is why this is not cosmetic:** the 9-D version filled the two new slots with
+the ego's **length and width** — geometry, not kinematics, and on nuPlan **constant** (a Pacifica
+throughout, 5.176 × 2.297 m). It bought **zero information** and invalidated all 4,146 banked rows,
+the trainer and the planner. **Now 7 real kinematic scalars**, no pad and no constants; bank rebuilt
+at `data/refe_targets_4cam` (2,182 tuples, 73.2 % coverage).
+
+### R2 · "Cameras chosen for 360 coverage from nuPlan's eight" — false, and our own calibration refutes it
+
+MEASURED over all C(8,4) = 70 subsets on a 0.05° azimuth grid: `F0/L0/R0/B0` covers **70.76 %** of
+azimuth with **two 52.7° blind sectors at ±91…144°** — the rear quarters, i.e. the lane-change blind
+spots — and ranks **22nd of 70**. `F0/L1/R1/B0` would give 78.10 %.
+
+⭐ **This is NOT a defect in the reproduction, and that is the point.** The paper names these four
+(Table A12) and **never claims 360° coverage** — zero occurrences of *"field of view"*, *"FOV"* or
+*"surround"* in 32 pages. The choice is right **because it is theirs**. Inventing a geometric
+justification for it was the error. Root-cause class: **a rationalisation attached to a correct
+decision, which then reads as evidence.**
+
+### R3 · The A40 cost basis — a ONE-camera number carrying a FOUR-camera model
+
+**Retracted:** the `0.780 s/sample` basis and every hour figure derived from it, including the
+cross-check *"608.5 A40-hours against the paper's 608"*.
+
+⛔ **The cross-check was the most dangerous part.** It compared **our 1-camera cost** against **their
+4-camera cost** — two errors of the same size in opposite places, which read as agreement and made
+the number look validated. MEASURED replacement: camera scaling is **linear** (×3.874 ViT-S, ×4.087
+ViT-B, analytic ×4.00), ViT-L at 4 cameras is **3.05–3.26 s/sample**, and the full paper-scale arm
+is **2,380–3,080 A40-hours = 99–128 days on one card**, not 25. Artifact:
+`…/2026-09-20-refe-plan/TRAINING_TIME.md` + `raw/2026-09-21-camera-scaling/`.
+
+### R4 · The banked 4-camera seconds were PAGING, not compute
+
+**Retracted:** the 4-camera timings in the cost table and the "×15.25 compute scaling" read off
+them. MEASURED: at ViT-L × 4 cameras this 8 GiB card peaks at **9.49 GiB** and the step reads
+**27.074 s against the 2-camera 1.630 s** — a 34× outlier that is the PCIe bus. Root-cause class:
+**a probe that does not assert residency publishes the bus speed and calls it compute** — the
+`df`/`free`/cgroup family again. The replacement probe **refuses** any configuration within 1 GiB
+of the card and says so.
+
+### R5 · `reg_compress is 12,598,272 trainable at 1024`
+
+MEASURED: **6,303,744**. The figure predates the `reg_mlp_ratio = 1` ruling recorded 40 lines above
+it in the same file. The conclusion it supported (*"this is why REFe exceeds the paper's 18.58 M"*)
+still holds, at **half** the stated margin. Class: **a load-bearing number left behind by a ruling
+that changed it.**
+
+### And a defect that supersedes a published geometry claim
+
+`_frustum` unprojected an **ideal pinhole through DISTORTED images**. nuPlan's `camera.distortion`
+is the Caltech model and the devkit **never rectifies** (`undistort` appears nowhere in it), so the
+JPEGs carry the lens. MEASURED consequence: **+6.39° ray error at the corner (~11 m lateral at
+60 m)**, and the same world point at ego (25, 12, 0) reconstructs **~1.7 m apart** from CAM_F0 vs
+CAM_L0 — destroying the cross-camera metric agreement the ego-frame lift exists for. ⇒ the earlier
+**"true HFOV 62.85°"** is superseded: with the distortion inverted it is **~70.9°** at the last
+patch centre. Fixed by inverting the Caltech polynomial inside the cached frustum; **verified
+against an analytic round trip, worst error 1.6e-13**, with `undistort=False` retained as the
+ablation arm.
+
+**Transferable rule for all six.** ⭐ **Before quoting a number, name the object it was measured on
+and check that object is the one you are talking about.** Four of tonight's five retractions are a
+correct measurement in the wrong scope — teacher vs student, one camera vs four, resident vs paging,
+pre-ruling vs post-ruling. None would have been caught by re-running the producer; each was caught
+by an **independently derived** cross-check, and the one that nearly escaped (R3) is the one whose
+wrong cross-check *agreed with it*.
+
+
+### R6 (same night, 2026-09-21) — "2,182 tuples" was 1,091 DUPLICATED, and I found it by checking a coincidence
+
+**Retracted:** the target bank's size (*"2,182 tuples"*), and the claim that the rank-1 scorer pass
+**doubled** supervision coverage from 9.7 % to 19.4 %.
+
+⛔ **`--rank` is a LABEL, not a selector.** The rank-1 data lives in a DIFFERENT rollout directory
+(`C:/dzo/m-nr-n` is rank 0, `C:/dzo/m-nr-r1` is rank 1) because the teacher is re-rolled against a
+different goal/route variant. Building with `--run <rank-0 dir> --rank 1` produces a **relabelled
+copy of rank 0**. MEASURED before the fix: **0 of 1,091** shared target keys differed in trajectory,
+goal OR image, and the two scorer files were identical apart from the rank digit — **2,332 of 2,332
+trajectories and 2,332 of 2,332 PDM targets the same**. Roughly 30 minutes of compute produced a
+file whose only new bytes were one character.
+
+⭐ **NEITHER A SIZE NOR AN md5 CHECK WOULD HAVE CAUGHT IT, and that is the transferable part.** The
+two files had **exactly** the same byte count (6,302,277) and **different** md5s — because the one
+field that changed was the same width in both. Size says "identical", md5 says "different", and
+both answers are useless. Only a comparison of **the content that matters** — the trajectories —
+settles it. *(What actually triggered the check was noticing the byte counts matched to the digit.
+A coincidence is a cheap and underrated probe.)*
+
+⚠️ **And my first verdict on the FIXED data was wrong in the other direction.** I required all 1,091
+goals to differ; 27 genuinely coincide, in the two logs where the route variants pass through the
+same look-ahead point, and **0 of those 27 share a trajectory**. A threshold tighter than the
+phenomenon is a failing test, not a failing fix — the same error this package logged in
+`diag_scorer_components.py` one day earlier.
+
+**Fixed:** rank 1 rebuilt from `m-nr-r1`. MEASURED after: **1,091/1,091** trajectories differ, goals
+differ on 1,064 with a median separation of 3.57 m, images identical (correct — same frames,
+different route). Pinned by `refe/diag_rank_distinctness.py`, whose self-test reconstructs the
+relabelled copy and requires arms 2 and 4 to go RED while the alignment control **stays green**.
+
+⛔⛔ **AND THE BLAST RADIUS IS NARROWER THAN THIS ENTRY FIRST CLAIMED — I CHECKED, AND THE
+CORRECTION MATTERS.** MEASURED on the PRE-EXISTING banks: `refe_targets` (1,091/1,091 trajectories
+differ) and `refe_targets_real` (982/982) are **both genuinely distinct**. Whoever built them used
+the right run directories. ⇒ **this was a REGRESSION I introduced tonight** while rebuilding the
+bank for four cameras, not a long-standing programme error, and every historical *"2,182 tuples"*
+claim in `REFE_PLAN.md`, `REFE_MODEL.md` and the three prior reviews was **CORRECT when written and
+is correct again now**. ⚠️ Recorded because the first draft of this entry implied those documents
+were wrong; over-stating a blast radius is its own error, and the same "check the second location"
+rule that catches a false absence catches a false generalisation.
+
+**Root-cause class:** *a parameter that names a thing it does not select.* Same family as the units
+retraction (R1's Table A2) — the caller's intent and the code's behaviour diverged silently, and
+every downstream number inherited the divergence while looking larger and better.
+
+
+### R7 (same night) — the camera fetch covered 6 of the 7 logs the bank needs, because the list was HAND-WRITTEN
+
+**Retracted:** the implicit claim that the four-camera fetch covered the training bank.
+
+MEASURED after the fetch completed: **982 of 1,091 tuples (90.0 %)** resolved all four cameras, and
+**every one of the 109 failures came from a single log** — `2021.06.09.14.58.55_veh-35_01095_01484`.
+The bank references **7** logs; the fetch script's hardcoded `LOGS` list named **6**.
+
+⭐ **Why it survived a read-through:** the missed log is a different SEGMENT of the **same recording
+session** as one that WAS listed (`2021.06.09.14.58.55_veh-35_01894_02311`). The two differ only in
+the frame-range suffix, so a hand-check of the list against the bank reads as a match.
+
+⚠️ **A clean 90 % is more dangerous than a ragged one.** Had the failures been scattered they would
+have looked like a fetch problem; concentrated in one log they look like a property of the data.
+The diagnostic that settled it in one line was grouping the failures BY LOG rather than counting
+them.
+
+**Fixed at the right layer:** `fetch_front_camera.py --logs-from-bank <targets-dir>` derives the
+list from the bank and **REFUSES (exit 4)** on an empty bank rather than falling back to fetching
+everything. `pod_bootstrap.sh` uses it and then verifies by CONTENT — every tuple must resolve all
+four cameras — rather than by container count.
+
+⚠️ **And my own verification of that control first read `exit=0`**, because I read `$?` through a
+`| tail -2`. The true exit is **4**. That is the documented pipeline trap, committed inside the
+check written to prove a refusal works — the admissible evidence is the artifact (the refusal
+message, the absent output), never the status code a shell hands back through a pipe.
+
+⛔⛔ **AND THE SAME LIST HAD ALREADY DONE THE SAME DAMAGE TO THE FRONT CAMERA — I ONLY SAW IT ON
+THE SECOND PASS.** After fetching L0/R0/B0 for the missing log, coverage read **90.0 % again**, and
+the newly incomplete tuples were missing **CAM_F0** instead. The ORIGINAL front-camera fetch, weeks
+of work earlier, had used the SAME hand-written six-log list. ⚠️ So the defect was never "three
+channels are missing for one log" — it was **"one log is missing from every fetch this package has
+ever run"**, and the first repair moved the symptom to a different camera rather than removing it.
+⭐ The tell was that the percentage did not move: **90.0 % before and 90.0 % after**. A repair that
+leaves the headline number EXACTLY unchanged has almost certainly not touched the cause.
+
+**Root-cause class:** *a list that is a copy of a fact, drifting from the fact.* Same family as the
+stale feature-count table and the hardcoded constants this file already records: the bank IS the
+fact, and anything that restates it will eventually disagree with it.
+
+
+### R8 (2026-09-21, from the sixth independent review) — three defects I shipped tonight, and one claim of the reviewer's that did not survive
+
+**R8a · `--accum` silently multiplied the epoch count.** `train.py` derived `steps` from
+`ceil(len(bank) / batch)` -- MICRO-batches -- while `step` now counts OPTIMISER steps. MEASURED:
+`--epochs 2` printed the **identical** step count at `--accum 1` and `--accum 4` while consuming
+**2 vs 8** epochs of data, so the two runs are indistinguishable from the log. The recipe this
+package itself published, `--batch 4 --accum 64`, would have run **1,601 epochs, not 25**, and
+every wall-clock figure derived from it was **64x optimistic**. Fixed (divide by `batch * accum`)
+and now self-evidencing: the trainer prints the realised epoch count, which must equal `--epochs`.
+MEASURED after: 25.02 at accum 1, 25.11 at accum 4.
+
+**R8b · The score loss broke accumulation.** Normalising each micro-batch by its OWN covered-
+candidate count gives `mean_i(S_i / n_i)`, not the full-batch `sum_i(S_i) / sum_i(n_i)`; the two
+agree only when every `n_i` is equal, and coverage is ~19 %. MEASURED ratio **0.7500** against a
+literal expectation of 1.0. Fixed with a CONSTANT denominator derived from the bank, so a
+poorly-covered micro-batch contributes less gradient instead of being upweighted to parity.
+
+**R8c · The `_frustum` cache key omitted every quantity the frustum depends on.** MEASURED:
+flipping `undistort`, changing `cam_distortion`, or moving an extrinsic on a LIVE instance after
+one call each gave **max |delta| = 0.000000e+00**. ⛔ **So the distortion ablation I had just
+declared was INERT under exactly the mutation pattern this package's own `diag_guard_audit.py`
+uses** -- and no instrument anywhere exercised it. *(`train.py --no-undistort` was safe only
+because it sets the flag before construction, which is luck, not design.)* Fixed; the three
+mutations now read 9.08e-02 / 5.12e-02 / 1.67e-02 with a restore control at exactly 0.
+⭐ **Transferable: a cache key must name every input its value depends on, or the cache converts a
+configuration change into a no-op -- and an ablation that cannot move is indistinguishable from an
+ablation that has no effect.**
+
+**R8d · And one of the review's three blockers does NOT survive.** It reported the 4-camera bank
+"untrainable", with CAM_L0/R0/B0 resolving **0/200** against CAM_F0's 200/200. MEASURED on the same
+rows through the ACTUAL read path: **all four channels return bytes, 200/200 each**; the literal
+path check returns **zero for every channel including CAM_F0**. The bank stores DB-relative paths
+while containers store bare basenames, so a path-existence test answers a different question than
+`index_images` + `FrameStore.read`. ⚠️ Class: **a claim about the lookup method reported as a claim
+about the data** -- the same shape as this log's own "0 of 9 signals differ". The reviewer's
+same-breath control (CAM_F0 non-zero) was real but insufficient: it varied the CHANNEL while
+holding the broken METHOD fixed. Current state, verified end to end: **2,182 / 2,182 = 100.0 %** of
+tuples resolve all four cameras and decode, across all 7 logs.
+
+**Also corrected from the review, all three upheld:** the A40 multiplier band (**3.0 was supported
+by none of my own three sources**; 2.475-2.559 is); the arm-D headline (**99-128 -> 123-133 days**);
+and the H20 cross-check, which used NVIDIA's **SPARSE** TF32 column and so flattered us -- REFe is
+**~4.3-5.3x** slower per sample than DriveZero's implementation, not 2.4-2.6x.
+⚠️ One of its corrections did NOT hold: it proposed `r^2` for the camera multiplier, but where all
+three camera counts are measured `2r` beats `r^2` on both backbones (ViT-S err 0.047 vs 0.213).
+The defensible band brackets both of us: **3.217-3.372 s/sample**.
+
+
+### R9 (2026-09-21) — ⛔⛔ THE ENTIRE TARGET BANK PAIRS EACH CAMERA FRAME WITH AN EGO THAT IS SOMEWHERE ELSE
+
+**Retracted:** that the REFe target bank is usable training data at all. **Both ranks. Every tuple.**
+
+The banked rollouts are **closed-loop simulations** -- the directories are literally
+`closed_loop_..._driverl_val14_nr`, the DriveRL planner *driving*. In a closed-loop run the ego
+leaves the logged path. But camera frames exist **only for the logged trajectory**, and
+`build_targets.build_one` fetches them **by timestamp** from the real log DB while taking the ego
+state and the future trajectory from the **simulation**.
+
+MEASURED over all 10 logs, simulated ego vs the logged ego whose frame the tuple uses:
+
+| | |
+|---|---|
+| states more than 0.5 m apart | **1,237 / 1,491 = 83.0 %** |
+| worst single log | **max 24.70 m**, mean 7.99 m |
+| worst mean | **11.31 m** |
+| rank 1 is no better | 83.9 % of steps > 0.5 m |
+
+⇒ the model would be shown the world **from one pose** and trained to predict a trajectory
+**from another**, on average metres away. That is not noise; it is a systematically wrong
+input-output pairing, and it would be invisible in the loss curve because the targets are
+self-consistent.
+
+⭐ **The paper says exactly how to avoid it, and we had quoted the sentence without acting on it:**
+*"It is a camera-only end-to-end planner trained **open-loop on logged frames**, and the training
+targets come from **rolling out the frozen teacher at each frame**"* (p. 7), with *"all background
+actors following the driving log"* (p. 8). The teacher is **re-seeded at every logged frame**, so
+the ego never drifts from the log; only the 20-step *future* is simulated.
+
+⇒ **The closed-loop runs are the right artifact for SCORING the teacher (our 89.755 on Test14-hard
+stands) and the wrong artifact for BUILDING student tuples.** One set of rollouts was used for two
+incompatible purposes.
+
+⚠️ **Why nothing caught it.** Every instrument built tonight checks INTERNAL consistency -- that
+the bank agrees with the model, that the ranks differ, that four cameras resolve. **All of those
+pass on this bank**, because it is internally consistent. Nothing compared the tuple against the
+**external** object it implicitly claims to describe: the pose the camera was actually at. Same
+family as the whole `_frustum`/units/scope group -- *a correct measurement of the wrong object.*
+
+**Root-cause class:** *an artifact reused for a purpose its construction does not support.*
+Directly analogous to the epcache trap already in `CLAUDE.md` -- price the artifact the CONSUMER
+opens, not the one you happen to have.
+
+**Fix: IMPLEMENTED AND VALIDATED 2026-09-21** -- `refe/build_teacher_rollouts.py`. For each
+logged frame the ego is seeded at THAT FRAME'S LOGGED STATE and the teacher is rolled `SPAN` steps
+with background actors replaying the log; only the 4-second future is simulated, so the camera
+frame and the ego state describe the same pose.
+
+⭐ **The fidelity control is what makes it trustworthy, and it failed first.** A rollout seeded at
+frame 0 must reproduce their EXISTING closed-loop run's first 40 steps, because at frame 0 the two
+constructions are the same run by definition -- and the closed-loop logs were produced by THEIR
+runner, so it is an independent reference rather than self-agreement. First reading: **two logs
+matched to 0.008/0.027 m, one diverged 0.355 m.** Final reading after the fix: **0.000 m on all
+three logs.**
+
+⛔⛔ **AND THE DIAGNOSIS NEARLY DIED ON A FALSE NULL -- this is the transferable part.** The shape
+of the failure (only the most dynamic log diverging) pointed at the history buffer, so I raised it
+from 4 states to 21 (their `simulation_history_buffer_duration: 2.0`). The numbers came back
+**IDENTICAL TO THREE DECIMALS**, which reads exactly like a refuted hypothesis.
+⚠️ **The test was invalid.** I ran it at **frame 0**, where the clamp `max(0, i - N + 1)` collapses
+the window to a SINGLE state for every N -- so 0.2 s, 2.0 s and 4.0 s were byte-identical because
+the knob had never moved. **A knob tested at the one operating point where it cannot move is not a
+tested knob.** The real defect was deeper than the size: their
+`SimulationHistoryBuffer.initialize_from_scenario` seeds from `get_ego_past_trajectory`, which
+reaches **BEFORE** the iteration into the log, and an index window over iterations cannot go
+earlier than 0 at all. Seeding from the scenario's past gives 0.000 m, and the knob then visibly
+moves (0.2 s -> 0.312 m, 2.0 s -> 0.000, 4.0 s -> 0.000, i.e. 2.0 s saturates).
+⭐ What saved it was asking **why a change with no effect had no effect**, instead of accepting the
+null. Same family as this log's other estimator failures: the measurement was fine, its OPERATING
+POINT made it blind.
+
+⚠️ Two further traps fixed in the same harness, both of which would have corrupted the bank
+silently: the planner is **stateful** (policy forwarded at 5 Hz against `_last_policy_time_us`,
+plus a cached action) and must be reset between rollouts or rollout k depends on rollout k-1 --
+destroying the independence the construction exists for; and `DriveRLOneStageController` takes the
+**scenario** in its constructor, so hoisting it out of the loop would have bound every log's
+rollouts to the first log's scenario.
+
+
+### R10 (2026-09-21) — "the closed-loop problem is solved" was true of ONE signal out of THREE
+
+**Retracted:** my statement to the PI that the per-frame harness solved the closed-loop problem. It
+fixed the **trajectory target** only. The PI asked the sharper question -- *"is the problem of using
+the teacher signals consistently to the frames solved?"* -- and two of the three signals were still
+built around the drifted closed-loop ego:
+
+* **the GOAL.** `build_teacher_rollouts.py` read it from the CLOSED-LOOP log. MEASURED against the
+  goal the teacher actually received at the logged frame: up to **8.39 m** apart, mean **4.15 m**,
+  identical at step 0 and diverging after -- the pose drift in a second field. The paper requires
+  the student's command to be *"derived from the goal point given to the teacher, so student and
+  teacher share one driving intent."* They did not.
+* **the six PDM SCORER targets** -- centred on the drifted ego in FOUR places: the scoring
+  context's history, the teacher trajectory, the lane-graph anchor, and so the candidate set.
+
+⛔⛔ **And the fix reintroduced a defect this package had already logged.** The new
+`--perframe-bank` lookup keyed on `(log, step)`; one log carries up to **three scenarios**, so 60
+rollouts collapsed to **42 keys** and the losers were **scored with another scenario's teacher
+trajectory** -- while both builders printed OK. This is `D-REFE-KEYCOLLIDE-1` verbatim (*"log_name
+reads like a scenario and is not one"*). My new consistency instrument had the SAME collision.
+⭐ **What caught it: two counts that could not both be right** -- 60 rollouts written, 42 loaded,
+53 frames scored. A builder's success line is the process's claim about itself; the counts were
+evidence.
+
+**Fixed and verified:** goal captured from the planner on each rollout's first step; scorer built
+at the LOGGED ego around the per-frame rollout; both keyed on `(log, token, step)`.
+`refe/diag_signal_consistency.py`: **SIGNALS_CONSISTENT + SELF_TEST_OK** -- scorer teacher ==
+per-frame rollout **53/53**; step-0 goals match the closed-loop goal **10/10** (the control: the
+constructions coincide there); late goals DIFFER from it **37/40**; every arm goes RED under its
+historical defect (a 5 m origin drift, closed-loop goals, a shifted scorer trajectory).
+
+⚠️ **And one of its own thresholds was wrong on first run.** P2 passed at **0.486 m against 0.5 m**
+-- a 3 % margin. That gap is the rig's camera-to-state SYNC term (max 0.543 m), not drift, and the
+full bank's faster segments would have failed correct data. Moved to 1.0 m: above the sync term,
+far below the drift (max 24.70 m); the 5 m mutation still goes red.
+
+**Root-cause class:** *a fix scoped to the field that was measured, not to the construction that
+was wrong.* The defect was "these signals come from the drifted run"; I fixed "the trajectory comes
+from the drifted run". Every field sourced from the same artifact inherits the same defect.
+
+
+---
+
+## 09-21 — ⛔ "the RAM-gated retry is armed and will land the navhard number" (W7) <!-- W7-FALSE-SUCCESS-2026-09-21 -->
+
+**Retracted claim.** That `retry_scoring.sh` would keep retrying until the navhard scoring
+succeeded. **It declared SUCCESS on an all-FAILED run and stopped.** Attempt 1
+(`…/20260920T201038Z-navsim_v2-refcv4b_b1_v72_40k-d3c2b2`) died like attempt 0 — every arm
+`E1_RAM_GUARD_ABORT` at **948–1,750 MB** available while other sessions held the box — and the script
+logged `BENCH_STATUS=FAILED`, then `SUCCESS` **on the next line**, wrote `SUCCESSFUL_RUN_DIR.txt` at the
+failed run and **exited with 5 of 6 attempts unused**. Caught by the orchestrator from the artifacts;
+verified by me the same way.
+
+**Root-cause class: a fix applied to ONE COPY of a check that lives in TWO.** The line was
+`[ -f "$RD/summary.json" ]` — existence. The evening before, I had found that exact defect in
+`finish_when_done.sh` (the suite writes `summary.json` for FAILED runs too), fixed it there, and
+**written the lesson down** — while the identical test sat untouched in the sibling script launched in
+the same hour. ⭐ The recognition signal is not "is this check right?" but **"where ELSE does this check
+live?"** A lesson recorded against one file is not a lesson applied to the codebase. ⇒ **Structural fix,
+not a second patch:** ONE shared judge (`code/judge_run.py`, content-gated: every required arm `status:
+OK`), called by both scripts, so no copy of the logic exists to drift; mutation-tested against the REAL
+failed summary (must read FAILED) and a fabricated all-OK copy (must read SUCCESS). Same family as C16
+(a check whose ordering/placement defeats it) and the "a check that shares the defect it checks for"
+entries: the check was *correct in the place I looked*.
+
+**Also from the same chain, both mine:** (i) the tombstone step invoked `python -m taniteval.bench`
+from the repo root → `No module named taniteval.bench` — the namespace-shadow trap already in the memory
+index, re-hit because the command was written from memory rather than copied from the working launch;
+(ii) the content-gated finisher correctly judged `arms OK: 0` but wrote its `FAILURE_REPORT.md` with a
+**relative path before its `cd`**, so the failure report — the one artifact meant to say "this failed"
+— landed in the repo root and its `git add` failed. ⚠️ A guard whose OUTPUT cannot be found is
+indistinguishable from a guard that did not run.
+
+**A fourth, caught before it fired:** `read_summary.py` silently filtered a missing floor out of the
+pre-registered `max(CV, STOP, ECHO)`. A RAM-killed ECHO would have let the bar be decided over the
+survivors — moving the goalpost after seeing which arms lived. Now UNDEFINED, with a control.
+
+**What it cost:** attempt 1's ~71 min of scoring (the kill was not mine to prevent) plus ~12 h of the
+retry sitting idle behind a false success while the box was, at times, quiet. **What it did NOT cost:**
+any number — nothing was published from d3c2b2, and the A1 seam (3.12 h) survived intact and was
+adopted again at 11:17:42 on 09-21 via `--reuse-seams`.
+
+
+### R11 (2026-09-21) — rank 1 was a copy of rank 0 AGAIN, in the new builder, for a new reason
+
+**Retracted:** the first full per-frame rebuild's rank-1 bank. MEASURED: **1,101 / 1,101** rank-1
+trajectories AND goals byte-identical to rank 0; both banks exactly 1,101 rollouts and 5,170
+scorer rows. The pipeline exited **0**. Its gates did not: the step-0 goal control (G1) and the
+rank-distinctness gate both went RED, which is the only reason it did not become training data.
+
+⛔ **Cause.** The rank-k route comes from `code/route_lane_rank_patch.py`, which `sitecustomize.py`
+installs at interpreter start **only if** `DRIVERL_EVAL_ROUTE_LANE_RANK` is set. The closed-loop
+runner set it. The per-frame builder rolls the teacher ITSELF and never did, so `--rank 1 --run
+m-nr-r1` rolled the rank-0 route on the rank-1 logs.
+
+⭐⭐ **This is R6 in a new costume, and the costume is the lesson.** R6's fix was *"rank 1 lives in
+`m-nr-r1`"* -- correct for a builder that HARVESTS finished rollouts, because those carry their
+route. It was silently wrong for a builder that RUNS the teacher, where the rank lives in the route
+patch. **A fix that locates a parameter in one construction is not a fix for the next
+construction.** The durable remedy is to make the parameter an explicit, asserted property of the
+process: `refe/route_rank.py` makes `--rank` SELECT the route, and refuses (a) an env var naming a
+different rank and (b) a stale patch left active on a rank-0 run.
+
+**Verified, with a control that had to fail:** rank 1 with the patch reproduces THEIR rank-1
+closed-loop run at **0.000 m on all 3 logs**; rank 0 on the same logs -- the bug, reconstructed --
+**FAILS** (0.736 m). ⚠️ The control diverged clearly on only ONE of three logs (0.028 / 0.074 m on
+the others, where the two routes coincide for 4 s). Run on the first log alone it would have
+"passed" and I would have concluded the route patch did nothing -- the same single-operating-point
+trap as the history buffer (R9).
+
+⚠️ **And the rebuild script nearly loaded the duplicate into training.** Renaming the bad files in
+place to `*.DUPLICATE_OF_RANK0.jsonl` still matched both `targets_rank*.jsonl` and
+`scorer_targets*.jsonl`; the trainer's ScorerBank globs the latter. Caught before running; they now
+go to a subdirectory, which both non-recursive globs skip. A quarantine that the consumer can still
+read is not a quarantine.
+
+
+### R12 (2026-09-22) — the devkit's own token query silently dropped 25.4 % of navtrain, with a bias
+
+**Retracted:** the first `refe/navtrain_scenarios.py`, which built scenarios through the devkit's
+`get_scenarios_from_db(filter_tokens=...)` — the function `nuplan_scenario_filter_utils` itself uses.
+MEASURED over the 214 locally-held navtrain logs: **13,565 of 18,179 frames survived (74.62 %)** and
+**19 logs yielded ZERO**. Nothing errored; the bank would simply have been smaller.
+
+⛔ **Cause.** That query restricts every result to `valid_scenes`:
+
+    WHERE o.row_num >= 3 AND o.row_num < n.cnt - 1     -- "at least 2 scenes before and 2 after"
+
+I read that as cheap because a nuPlan scene is commonly ~20 frames, so four scenes is ~80 frames of
+a multi-thousand-frame log. **MEASURED on these DBs a scene is ~330–380 `lidar_pc` rows**, so the
+rule discards ~1,400 frames per log, and our navtrain DBs are short slices (median ~3,580 rows ≈ 10
+scenes). The loss is therefore `4 / n_scenes`:
+
+| scenes in log | 4 | 8 | 10 | 16 |
+|---|---|---|---|---|
+| kept | **0/4** | 4/8 | 6/10 | 12/16 |
+
+⚠️ **The loss is BIASED, not random** — it removes the SHORTEST logs preferentially, so the
+surviving bank would have over-represented long continuous drives. No gate we own could have seen
+it: every one of them checks the consistency of the rows that exist, not the rows that never
+arrived.
+
+⭐ **The general lesson.** `valid_scenes` is a coarse PROXY for "this frame has room for history and
+future", written for a consumer extracting 20 s scenarios. REFe's requirement is exact and much
+smaller: `BUFFER_S = 2.0 s` back, `SPAN = 40` steps forward. **A convenience filter encodes ITS
+consumer's margin, not yours** — price it against the requirement you actually have. The proxy is
+now replaced by the requirement itself, asserted per frame against the row index: **18,179 / 18,179**.
+
+**Verified against the thing it replaces:** on the 1,875 tokens the devkit query *does* return, the
+hand-built scenario agrees with the devkit-built one on **ego state at iteration 0 (10 scalars), the
+full 2.0 s history (20 states × 10 scalars), tracked objects at iteration 40, the route, the mission
+goal, the map name, the scenario type, the timestamp and the iteration count — 0 disagreements.**
+
+⚠️ **The first version of that control was worthless and said so loudly.** It compared
+`repr(EgoState)`, and `EgoState` defines no `__repr__`, so it compared MEMORY ADDRESSES — reporting
+1,852 / 1,875 "disagreements" that it would have reported no matter how correct the code was. Same
+class as the `math.dist(cam_xy, cam_xy)` tautology with the sign flipped: a guaranteed FAIL rather
+than a guaranteed pass. **A control that cannot come out the other way is not a control.**
+
+**The sibling filter, caught in the same pass:** `include_cameras=True` filters on
+`INNER JOIN image ON img.ego_pose_token = lp.ego_pose_token` — an EXACT pose-token identity. REFe
+pairs each of the four cameras independently within 60 ms, because the cameras are not on a common
+clock. MEASURED: REFe's guard keeps **18,179 / 18,179 (100.00 %)**, the exact-pose join keeps
+**17,785 (97.83 %)** — a further **394 usable frames** discarded here, ~2,240 on the full 103,288
+split. Default now `False`; the guard REFe needs already runs per frame downstream.
+
+**Near-miss recorded beside it, because it was avoided by reading rather than by a gate:**
+`NuPlanScenario.get_route_roadblock_ids()` is keyed on `_initial_lidar_token`, so the cheap
+whole-log scenario shape (one scenario per log, tokens as iteration indices) would have handed the
+teacher the route of the log's FIRST frame for every frame in it. The defect arm was **built, not
+asserted** — MEASURED over 1,061 navtrain frames in 3 logs: per-token route identical to the
+whole-log route **27 / 1,061 (2.5 %)**; mission-goal displacement **median 646.1 m, max 1,425.4 m**.
+⚠️ Every rollout would still have been self-consistent, the ego and camera would still have shared
+one pose, and every gate would have stayed green — the teacher would simply have been driving toward
+a goal half a kilometre away.
+
+
+### R13 (2026-09-22) — a scorer "abort" threw away 44 % of navtrain frames that were maximally usable
+
+**Retracted:** the abort condition `not (ok_curb and ndiff >= 3)` in `build_scorer_targets.py`, and
+the message it printed. MEASURED on the first navtrain pilot: **8 of 18 frames aborted**, against
+**ZERO** on every val14 bank ever built.
+
+⛔ **The message was false for every one of them.** It reads *"scorer could not tell candidates
+apart"*. The split counter shows the opposite:
+
+| | |
+|---|---|
+| aborts caused by `ndiff < 3` (candidates indistinguishable) | **0 / 8** |
+| aborts caused by `!ok_curb` | **8 / 8** |
+| `ndiff` on those very frames | **19–20 signals separating** (histogram `{19: 2, 20: 6}`) |
+
+`ok_curb` requires the analytic **over-curb** candidate — a path aimed through the nearest curb — to
+actually read off-road. That is a property of the CANDIDATE CONSTRUCTION and of the local road
+geometry, not of the frame. On val14's curated urban scenarios the aimed path always left the
+drivable area, so the term never fired and nobody learned it existed. navtrain's wider geometry
+(Las Vegas strip, open intersections) defeats an 8 m over-shoot often enough to cost **44 %**.
+
+⭐⭐ **The file's own rule, six lines above the defect, already forbade this:** *"THE CORRECT CONTROL
+IS ABOUT DISCRIMINATION, NOT ABOUT VIRTUE: refuse a frame only when the scorer cannot tell the
+candidates apart at all, and RECORD the teacher's verdict instead of using it as an entry
+condition."* That rule was written for `teacher_off_road`, which was duly demoted to a recorded
+flag — and `ok_curb`, two lines later, kept doing exactly what the rule prohibits. **A principle
+applied to one term and not to its neighbour.**
+
+⚠️ **Nothing is mislabelled by keeping these frames.** Every candidate's PDM values are COMPUTED,
+so an over-curb candidate that stays on-road simply reports that it stayed on-road. `ok_curb` is now
+a DIAGNOSTIC counter, printed and never gating.
+
+**Verified both ways:**
+* navtrain pilot recovers **10/18 → 18/18 frames, 110 → 198 rows, 0 aborts**; the consistency gate
+  goes from `S1 10/10` to **`S1 18/18`**, still `SIGNALS_CONSISTENT_PARTIAL_2_ARM_NA`.
+* val14 is **content-neutral**: a rebuilt slice gives **22 rows identical, 0 DIFFERENT**, and the
+  over-curb diagnostic reads **0** there — confirming the term never fired on val14, so removing it
+  cannot have changed that bank. (The 11 further rows were a frame at step 5; the banked sweep used
+  `--frame-stride 2`, so odd steps were never in it. A coverage difference in my command, not a
+  content change — checked rather than assumed.)
+
+⚠️ **A wrong explanation was published before it was tested, and is retracted here.** I first told
+the PI the aborts were stationary frames where candidates collapse. **REFUTED by measurement:**
+aborted speeds span **0.042–6.641 m/s** against scored **0.034–7.539 m/s**, fully overlapping, with
+adjacent pairs splitting (0.034 scored / 0.042 aborted; 6.631 scored / 6.641 aborted). The
+plausible mechanism was wrong, and believing it would have made the loss look benign — *boring
+frames* — when it was in fact removing frames by ROAD GEOMETRY, i.e. biased toward exactly the open
+and high-speed scenes the paper's split is full of.
+
+⭐ **Same class as R12**, one stage further down the pipeline: a guard whose semantics do not match
+its purpose, deleting data in a BIASED way that no downstream gate can see — R12 by log length,
+R13 by road geometry. Both were invisible because the bank that survives is internally consistent.
+
+
+### R14 (2026-09-22) — the camera fetcher works on exactly one split, and it is not the one we need
+
+**Retracted:** the implicit claim, carried by `POD_HANDOFF.md` §4 and by `code/pod_bootstrap.sh`,
+that `fetch_front_camera.py --container` is the camera-pull path for whatever split the pod trains
+on. It reads a **ZIP central directory** to range-fetch individual frames. MEASURED by reading the
+first 288 bytes and the last 256 bytes of each archive:
+
+| split | first 4 bytes | `ustar` @257 | archive format |
+|---|---|---|---|
+| **mini** | `504b0304` (`PK\x03\x04`) | no | **ZIP** |
+| test | `6e75706c` (a path) | **yes** | **TAR** |
+| val | `6e75706c` | **yes** | **TAR** |
+| **train** (= navtrain's pixels) | `6e75706c` | **yes** | **TAR** |
+
+⛔ **Only `mini` is a ZIP.** Every other split is a **tar named `.zip`**, whose tail is the tar
+zero-block terminator — there is no central directory to read, so the fetcher cannot index them at
+all. navtrain's pixels live in `train_set`: **43 archives (0–42) of ~116 GiB ≈ 4.87 TiB**, all tar.
+
+⭐ **Why nobody saw it.** The tool was built and MEASURED on `nuplan-v1.1_mini_camera_0.zip`, and the
+handoff's own wording records the scope honestly without anyone reading it as a limit: *"MEASURED by
+indexing all 9 **mini** archives"*. The `~73 GB test / ~99 GB val` figures beside it were
+**projected from mini, never indexed** — which is precisely what you would expect, because indexing
+them is impossible with this code. A number that was never obtained looked like a number that had
+been. *(Class: a tool validated on one artifact and assumed for another whose structure differs —
+the same class as pricing the artifact the CONSUMER opens.)*
+
+⚠️ **This is a blocker for the pixel pull, not for target generation.** Teacher rollouts read the DB
+`image` table (metadata) and need no pixels at all, so the navtrain target bank is unaffected. What
+is blocked is the TRAINING run's frame source.
+
+⭐ **It is recoverable, and cheaply.** MEASURED by walking the first tar headers of
+`train_camera_0`: members are **grouped by `<log>/<camera>/`** and the paths are exactly what REFe's
+rows already reference (`<log>/CAM_F0/<token>.jpg`, ~200 KB each). Because a log's frames are
+CONTIGUOUS, a log's byte range can be bracketed by a **binary search over 512-byte headers** — about
+20 range requests to find the log, then a few hundred to walk its members — instead of the ~580 k
+header reads a blind walk would need. The resulting per-archive index is cacheable exactly as
+`REFE_CD_CACHE` already caches zip central directories.
+
+**Work item:** a tar-aware branch in `fetch_front_camera.py` (`--container` output unchanged), plus
+an index cache. Until it exists, **no navtrain training run can be fed**, and any plan that assumes
+the camera pull is solved is assuming a path that has only ever run against mini.
+
+⛔⛔ **AMENDED SAME HOUR — THE RECOVERY PLAN ABOVE IS REFUTED.** The paragraph above claims a
+log's byte range can be bracketed by a **binary search** over tar headers. That requires the archive
+to be sorted by path. **It is not.** MEASURED by landing on 9 offsets across `train_camera_0`
+(checksum-validated headers, not just the `ustar` magic) and reading the log name at each:
+
+|   offset | log | |
+|---|---|---|
+|  5 % | 2021.05.12.23.36.44_veh-35_00063_00141 | |
+| 15 % | 2021.05.12.22.28.35_veh-35_00620_01164 | **out of order** |
+| 30 % | 2021.05.12.19.36.12_veh-35_00005_00204 | **out of order** |
+| 45 % | 2021.05.12.23.36.44_veh-35_00712_00774 | |
+| 60 % | 2021.05.12.22.00.38_veh-35_00215_00995 | **out of order** |
+| 75 % | 2021.05.12.19.36.12_veh-35_00568_01168 | **out of order** |
+| 99 % | 2021.05.12.22.28.35_veh-35_00025_00115 | **out of order** |
+
+Members ARE grouped by `<log>/<camera>/` (a directory's frames are contiguous), and the archive
+carries **8 camera channels**, not 4 (CAM_L1/L2/R1/R2 seen alongside F0/B0/L0/R0) — but the LOGS
+are interleaved arbitrarily, so there is no ordering to search. A binary search would have returned
+a confidently wrong byte range.
+
+⚠️ **I published the binary-search plan before testing the assumption it rests on.** The sorted-ness
+was inferred from ONE probe that read the first 12 members of the archive — all necessarily from the
+first directory, which can say nothing about global order. *(Class: a property observed at one
+operating point generalised to the whole artifact — the same shape as the R9 history-buffer false
+null and the R11 single-log control.)*
+
+**What is actually true:** indexing a tar requires WALKING EVERY HEADER. At ~200 KB per frame that
+is ~580 k headers per 116 GiB archive; one range request each is ~580 k requests per archive and
+**43 archives**, while reading contiguous windows instead means downloading the payload too, i.e.
+the whole 4.87 TiB. **Neither is viable as stated, so the pixel source is an OPEN question**, not a
+solved one with an implementation pending. Candidates to evaluate, in order: (a) the OpenScene
+navtrain sensor set the PI already sized at **449 GB**, which is NAVSIM-native and may carry the
+same tokens; (b) a published manifest/index for the nuPlan tars, if one exists; (c) a one-off
+full-archive index built once on a fat pipe and cached. **Do not budget a navtrain training run
+until one of these is MEASURED.**
+
+⭐⭐ **RESOLVED — AND THE ANSWER IS TO STOP TRYING TO FIX THE nuPlan TAR.** The pixel source for
+navtrain should be **OpenScene `navsim/navtrain_current`**, which the programme had already sized
+and which needs no indexing work at all.
+
+| | |
+|---|---|
+| navtrain_current | **32 `.tgz`, 304.5 GB** (MEASURED, HF metadata API) |
+| vs the nuPlan train tars | **4.87 TiB** — 16x larger, because it is the whole train split rather than navtrain |
+| pull time on a pod | **~0.8 h** at the banked 100 MB/s |
+
+⭐ **The layouts already match.** OpenScene's scene metadata gives each camera a `data_path` of
+exactly the form REFe's rows already carry from the nuPlan DB's `image.filename_jpg`:
+
+    CAM_F0: 2021.05.25.14.16.10_veh-35_00083_00485/CAM_F0/40ddca51113e5e2d.jpg
+
+i.e. `<log_name>/<CAM>/<token>.jpg`, with all four of REFe's channels present (of 8: F0, L0, R0,
+L1, R1, L2, R2, B0). And `build_targets.index_images` already walks a directory tree indexing BOTH
+loose `.jpg` files and `_CAM_*.zip` containers -- *"so both layouts work"* -- keyed by basename,
+raising on a collision rather than mis-serving. ⇒ download, extract, point `--images-root` at it.
+**No tar indexing, no token mapping, no fetcher rewrite.**
+
+⚠️ **Verification scope, stated because this entry has already been wrong twice.**
+VERIFIED: the 32-file/304.5 GB listing (HF metadata API); the `data_path` format (read from LOCAL
+`openscene-v1.1` metadata, **test** split — not navtrain's own pickles, which we do not hold);
+`index_images` accepting loose jpgs (read from source). NOT VERIFIED: that extracting a
+`navtrain_current_*.tgz` yields that tree at the archive root, which needs one shard (smallest
+**4.3 GB**) to settle and is a DOWNLOAD requiring PI permission. **Confirm that before the pod pull
+is scheduled** — it is the one remaining assumption in the chain.
+
+⚠️ On exFAT, ~1.5 M loose 200 KB files would inflate ~5x (1 MiB clusters); on an ext4 pod with
+4 KiB blocks the inflation is negligible. Check the pod volume before extracting, per §4.
+
+⭐⭐ **PIXEL CHAIN CLOSED 2026-09-22 (PI authorised the shard download).** The one unverified
+assumption — that a `navtrain_current_*.tgz` extracts to the tree REFe's rows reference — is now
+MEASURED, and it cost **6 MiB, not 4.19 GiB**: gzip is a stream, so the archive head decompresses
+on its own and lists its first members. (The full 4.19 GiB download runs in parallel as the PI
+asked, to confirm at scale.)
+
+    navtrain_current_25/2021.06.14.14.25.15_veh-26_03592_03664/CAM_B0/13f9efbdd8fc5fc2.jpg
+
+⇒ `<shard>/<log>/<CAM>/<token>.jpg` — the expected tree **with one extra leading directory named
+after the shard**, so 32 shards extract to 32 top-level dirs. ⭐ **That is harmless and needs no
+code change**: `build_targets.index_images` walks the tree recursively and keys on
+`os.path.basename(r)`, and `FrameStore.read` looks up by `os.path.basename(image_ref)` — depth is
+irrelevant. Extract every shard under ONE root and point `--images-root` at it.
+⚠️ The index is basename-keyed and **RAISES on a collision** rather than mis-serving, which is the
+right failure mode if two shards ever repeat a token hash. Frames are ~200-240 KB, matching the
+~200 KB assumed in the size arithmetic. The tar is GNU/pax (`././@PaxHeader` entries interleaved);
+`tarfile` handles these transparently.
+
+
+### R15 (2026-09-23) — the trainer never loaded the pretrained trunk, and 26 A40-days were about to be spent on random weights
+
+**Retracted:** every statement in this package that REFe trains a *frozen pretrained DINOv3* trunk.
+Until tonight `train.py` did not load the checkpoint at all.
+
+**MEASURED, by building the model exactly as the trainer does and then applying the official mapper:**
+
+    cfg = REFeConfig.for_backbone("vits16")     # train.py:380
+    model = REFe(cfg)                           # train.py:394  <- and nothing else
+    loaded, missing, unused = load_dinov3.map_into_backbone(model.backbone, load_state(wdir))
+    -> loaded=186  missing=0  unused=0
+    -> 186 backbone tensors CHANGE; `cls_token` and `reg_token` read all-zeros beforehand
+
+The mapping is clean and complete, and **every tensor in it moves** — so the trainer-built model
+carried none of them. `load_dinov3.py` is the only thing that fills the trunk, and its **sole
+importer was `diag_rope.py`**. `model.py` contains no `load_state_dict`, `torch.load`,
+`safetensors`, `from_pretrained` or `timm.create` anywhere.
+
+⇒ **REFe would have trained a frozen RANDOM trunk.** At arm A + augmentation that is
+**618–640 A40-hours ≈ 26 days** spent learning LoRA adapters over noise, and the result would have
+been reported against a published DINOv3 ViT-L number (94.55 PDMS) it could not possibly approach.
+
+⛔ **Why nothing caught it — three independent blinds, all already named in the advisory.**
+1. **Nothing errors.** A randomly-initialised frozen trunk is a valid tensor. The forward pass runs,
+   the LoRA adapters and both heads train, and the loss falls.
+2. **The banked overfit control would have passed identically.** `1.9316 -> 0.3730 (80.7 %)` over
+   eight scenarios does not need good features — memorising eight targets needs capacity, not
+   representation. It was quoted as evidence the loop works, and it *was*; it was never evidence
+   about the trunk.
+3. **`diag_rope` stayed green because IT loads the weights itself.** The one gate that touches the
+   checkpoint imports `load_dinov3` directly, so it proved the *mapper* correct while saying nothing
+   about whether the *trainer* uses it. ⭐ A gate that constructs its own correct input cannot see a
+   consumer that never asks for one — the exact structural point
+   `diag_consumer_conformance.py` was written to make, applied to weights instead of shapes.
+
+**Fixed, and the fix refuses rather than warns:** `train.py` now maps the checkpoint into the
+backbone after construction, prints `loaded/missing/unused`, and **returns 3** if zero tensors
+mapped or if the mapping is incomplete — because a load that silently no-ops is the same defect
+wearing a print statement. `--weights none` remains available and announces itself as an ABLATION
+whose numbers may not be compared with the paper.
+
+**Verified both ways:**
+* default → `trunk: loaded 186 tensors from …/dinov3-vits16 (missing 0, unused 0)`
+* `--weights none` → the ablation banner, no load
+
+⭐ **The durable lesson, and it is not "we forgot a line".** Every artifact in the package pointed at
+a loaded trunk: `model.py` documents the checkpoint's tensor names and counts, `BACKBONES` carries
+each variant's weight directory *and its published PDMS*, `load_dinov3.py` exists and is correct,
+and the weights were on disk in all three sizes. **The only missing thing was the CALL, and no
+instrument asked whether it happened.** Ask of every pretrained component, once: *what line loads
+it, and what fails if that line is deleted?* Here the answer was "nothing fails" — which is the
+whole finding.
+
+### R16 (2026-09-23) - the navtrain bank had HALF the paper's horizon at DOUBLE its rate, and three of four shards were dying on the same root cause
+
+**Retracted:** the first navtrain rank-0 bank (2,117 rows, quarantined under
+`data/refe_navtrain/_INVALID_2s_horizon_20Hz_stride/`) and the geometry constants that produced it.
+
+`build_teacher_rollouts.py` carried `HORIZON = 20`, `STRIDE = 2  # sim is 10 Hz`, `SPAN = 40 # 4.0 s`.
+Those are correct **for a scenario whose `database_interval` is 0.1**, and every val14 scenario's is,
+because THEIR SIMULATION SUBSAMPLES the database. The raw nuPlan `lidar_pc` stream is **20 Hz**.
+MEASURED, same constants, two sources:
+
+| source | `database_interval` | `SPAN=40` | `STRIDE=2` |
+|---|---|---|---|
+| val14 closed-loop sim log | 0.10 | **4.00 s** OK | **5.0 Hz** OK |
+| navtrain per-token scenario | **0.05** | **2.00 s** WRONG | **10.0 Hz** WRONG |
+
+So every navtrain target was a 2-second future sampled at 10 Hz, against the published 4 seconds at
+5 Hz (Table A12). **Nothing downstream could see it**: 20 samples x 3 numbers is the right SHAPE
+either way, the consistency gate compares the bank against itself, and the scorer builds its
+candidates around whatever trajectory it is handed.
+
+**The same root cause was also killing the run.** Three of four generation shards died at ~23:07 with
+    AttributeError: 'NoneType' object has no attribute 'hex'   (nuplan_db/lidar_pc.py:37)
+via `rollout_from_frame -> get_past_tracked_objects(2.0 s) -> get_sampled_lidarpcs_from_db`. At 20 Hz
+2.0 s of history is **40 rows, not 20**, so frames admitted by my `HISTORY_ROWS = 20` margin walked off
+the front of the log, where `prev_token` is NULL -- and the devkit's guard tests that the COLUMN
+exists, not that the VALUE is non-null. ⚠️ Throughput did not degrade gracefully, it collapsed to one
+shard, and the only visible symptom was a slow row count. **A dead shard and a slow shard look
+identical from outside.**
+
+⭐ **This is R6/R11/R12/R13 a fifth time, and the pattern is now unmistakable: a constant that encodes
+an assumption about ONE construction, carried into a NEW construction where the assumption no longer
+holds.** R6: the rank lives in the run directory. R11: the rank lives in the route patch. R12: a scene
+is ~20 frames. R13: the over-curb candidate always leaves the road. R16: the scenario ticks at 10 Hz.
+**Fix: stop encoding it.** `geometry_for(scenario)` derives `(stride, span, history_rows)` from the
+scenario's own `database_interval` and RAISES if the published 0.2 s period does not divide cleanly --
+refusing to approximate rather than rounding. `navtrain_scenarios._rows_for()` derives the eligibility
+margin from each log's own measured interval the same way. **Seconds are the requirement; rows are
+derived.**
+
+**Verified:** `geometry_for` on a navtrain scenario returns stride 4 / span 80 / history 40, measured
+back as **4.00 s at 5.0 Hz**; the val14 path still derives 2 / 40 and the fidelity control still reads
+**0.000 m on all three logs (FIDELITY_OK)**. Yield with the corrected margin: **18,135 / 18,179**
+(44 frames lost to the longer tail, 0.24 %).
+
+⚠️ **Cost consequence:** the rollout is now 80 steps instead of 40, so stage A roughly DOUBLES. The
+earlier 6.8 h estimate for the local subset is withdrawn pending re-measurement.
+
+### R17 (2026-09-23) - the R16 fix was an off-by-one short, and a shard had already died on it
+
+**Retracted:** R16's statement that deriving the margin from the scenario rate "also fixes the crash".
+It fixed the RATE (20 -> 40 rows) and left the COMPARISON wrong. `navtrain_scenarios` skipped frames with
+`i < history_rows`, which ADMITS `i == 40`. A 2.0 s history reads rows `[i-40, i]`; at `i == 40` that
+includes row 0, whose `prev_token` is NULL, and the devkit raises.
+
+**MEASURED, not reasoned** - the same query at consecutive positions on one log:
+    pos 38 / 39 / 40 -> AttributeError: 'NoneType' object has no attribute 'hex'
+    pos 41 / 42 / 43 -> OK, 40 samples
+**13 navtrain frames sit at exactly position 40.** When found, **shard 0 of the live corrected run had
+already died on one** (1 traceback, the same AttributeError) and the run was down to three shards with
+nothing watching it. The fix was not precautionary.
+
+**Fixed:** `i <= history_rows` is now skipped. Yield **18,122** (= 18,135 - 13, exactly as predicted);
+smallest admitted position **41**. No existing rows needed quarantining: a pos-40 frame could only ever
+crash, never be written.
+
+⭐⭐ **And the durable fix is not the comparison - it is that one bad frame can no longer kill a shard.**
+Twice in one night a single frame took down a 16-hour shard, and both deaths were silent from outside:
+**a dead shard and a slow shard produce the same row count.** Two layers now:
+* **per-frame backstop** in `build_teacher_rollouts.build_navtrain` and `augment_search`: an exception
+  costs ONE frame (or one ladder attempt), is COUNTED and printed as `FRAME_ERROR #n`, and the planner
+  state is reset. ⚠️ Counted, never silent - a backstop that swallows errors without a count is how a
+  25 % loss hides (R12).
+* **self-healing shards** in the runner: each shard runs in a bounded restart loop (`MAXR=20`), safe
+  because `--resume` makes a restart cost nothing - the bank file IS the progress. Every restart is
+  logged as an opaque `ZZRESTART` marker.
+* **detached launch** (WMI `Win32_Process.Create`): the previous run was killed when the Claude session
+  exited at 01:29 (all four logs stop at the same second, 0 tracebacks) and 5.5 h were lost.
+
+⚠️ **Class:** a fix verified at the property it targeted (the RATE: 40 rows, 4.00 s, 5.0 Hz - all
+correct) and not at the failure that motivated it (the CRASH). The R16 verification checked geometry;
+nothing re-ran the crash at the boundary. **Verify a fix against the failure, not only against the
+spec.**
+
+### R18 (2026-09-23) - the augmented half could not be scored at all, and the obvious fix would have mis-scored 41 % of it
+
+**Retracted:** the implicit claim that the diversity search's output feeds the scorer like any other bank.
+Two defects, found while writing the pod orchestrator rather than by any gate:
+
+1. **The file was invisible.** `augment_search.py` writes `targets_aug.jsonl`; `build_scorer_targets.py` loads
+   `targets_rank{rank}.jsonl`. The augmented half would have produced ZERO scorer rows. Fixed with
+   `--perframe-file`.
+2. **The parameter was per-row; the scorer's was global.** Each augmented row carries its OWN alternative
+   intent -- `lane_rank k` or `goal_horizon_s h` -- and the paper requires the SAME augmented route to score
+   the student's proposals. A process-global `--rank 1` scores every row against lane-rank 1: **R11 again, at
+   the row level.** Fixed: every row sets its own state explicitly (a plain row resets to base, so a goal
+   horizon cannot leak into the next row), and `--rank 0` on an augmented bank is REFUSED because it would
+   leave the route patch uninstalled and every `set_rank(k)` would write a variable nothing reads.
+
+**Verified with a mutation, because the obvious check is a tautology.** Pairing reads 29/29 -- but the scorer
+copies `aug` from its input, so it would read 29/29 if applying it did nothing. The discriminating control:
+strip `aug`, score the same bank under a global rank 1, and compare PDM targets frame by frame:
+
+| row class | frames that differ | required |
+|---|---|---|
+| lane-rank 1 (CONTROL - identical state either way) | **0 / 10** | must match |
+| lane-rank 2 | **1 / 1** | must differ |
+| goal horizon | **11 / 18** | should differ |
+
+The components that moved are exactly the route- and goal-dependent ones (`goal_reaching` 36,
+`progress.advance_m` 20, `progress.ep` 12). Gate on the augmented bank: **S1 29/29**, P1 max 0.245 m, P2 max
+0.104 m. ⇒ **The natural global-rank fix would have mis-scored 12 of 29 augmented frames (41 %) with every
+consistency gate still green** -- S1 checks the TRAJECTORY, not the route the scores were computed along.
+
+⭐ **Class:** a pairing check that reads back a label the pipeline itself wrote is a tautology. Proving an
+input was APPLIED needs a mutation that removes it and must change the output -- plus a control subset where
+removing it must change NOTHING (here lane-rank 1, 0/10), which is what rules out "it differs for some
+unrelated reason".
+
+### R19 (2026-09-23) - the trainer could not see the augmentation the PI had just chosen
+
+**Retracted:** the implicit claim that a finished augmented bank reaches training. `train.py` loads
+`targets_rank*.jsonl`; the diversity search writes `targets_aug.jsonl`. **The glob never matched it**, so a run
+would have trained on rank 0 alone -- dropping the goal augmentation the paper credits with **+0.80 PDMS**
+(Table 7: teacher-only 93.61 < human 93.92 < teacher + goal aug 94.41), minutes after the PI selected it.
+The scorer bank had the same problem one level up: it reads ONE directory and the two scorer outputs lived in
+two. Nothing would have errored; the loss would have fallen; the run would simply have been missing half its
+design.
+
+**The semantics were checked BEFORE the plumbing was fixed, because renaming a file cannot fix a wrong goal.**
+An augmented row must feed the model its AUGMENTED goal, or it teaches "same goal -> two different
+trajectories". MEASURED on the pilot: the trainer feeds `r["goal"]` (l.373), and every augmented row's goal
+moved from its rank-0 twin -- lane rank median **4.0 m**, goal horizon median **18.7 m**, **0 identical**. The
+trainer keeps rows in a LIST (no rank-blind key could overwrite a twin), `ScorerBank` keys on
+`(log, token, step, rank)`, and the lookup passes the row's own `rank`.
+
+**Fixed two ways.** `pod_dataprep.sh` assembles ONE rank-named training directory, and `TargetBank` now
+**REFUSES** any `targets_*.jsonl` left in its directory unloaded, and prints rows per rank at load.
+**Verified on the pilot's real rows:** loads **{0: 56, 1: 29}**; a stray `targets_aug.jsonl` is refused;
+**29/29** augmented rows join their own rank-1 scorer targets.
+
+⭐ **Class: an interface between two stages that each passed their own checks.** The search was verified
+(yield, divergence, per-row scoring R18); the trainer was verified (trunk load R15, consumer conformance).
+Neither check looked at the HANDOFF between them -- the filename. *The same shape as R14 (a tool validated on
+one artifact) at the boundary between two of our own tools.* Every producer->consumer seam needs one test
+that runs the consumer on the producer's real output.
+
+### R20 (2026-09-23) - the trainer saved NOTHING: no checkpoint, no final model, no resume
+
+**Retracted:** the implicit claim that `train.py` could run the training the PI had just approved.
+It had no `torch.save` anywhere, no output directory and no resume. The planned run is ViT-L for
+**~64-70 A40-days on ONE pod**; any pod restart would have cost all of it, and a run that FINISHED
+would have produced **no model at all** -- the trained weights lived only in process memory.
+
+**Why nobody saw it:** every run the trainer had ever done -- overfit controls, smoke steps, the
+four-camera rehearsal -- ends inside one process, where persistence is invisible by construction.
+The checks were green because none of them outlived the process that held the answer.
+
+**Fixed:** `--out` run directory (`config.json`, `metrics.jsonl`, `ckpt_last.pt`,
+`snap_epochNNN.pt`, `model_final.pt`, `summary.json {"done": true}` written LAST); atomic writes;
+`--resume` restores model + AdamW + cosine schedule + RNG + the exact DATA POSITION (a per-epoch
+seeded sampler, so a mid-epoch resume neither replays nor skips samples); a resume whose defining
+arguments, bank content or frozen-trunk fingerprint changed is REFUSED, not reconciled; a real run
+without `--out` is refused. Partial checkpoints (~76 MB for ViT-L, the 94 % frozen trunk rebuilt
+from DINOv3 and fingerprinted) via `refe/ckpt_io.py`, shared with `planner.py`.
+
+**Verified (MEASURED, `refe/diag_train_resume.py`, real trainer as a subprocess, 11 arms):** halt
+at step 3 -- MID-epoch, epoch 1 sample 2 of 4 -- then resume is **BIT-IDENTICAL** to the
+uninterrupted run (every tensor `torch.equal`). The two realistic ways to get resume wrong each go
+RED: data position zeroed -> **228 tensors differ**; optimiser state dropped -> **228 differ**.
+Changed `--lr` REFUSED (exit 4); `--epochs` without `--out` REFUSED; relaunch of a finished run
+leaves `model_final.pt` byte-identical; the final model loads through the planner's strict path;
+an epoch snapshot loads exactly and one carrying a wrong trunk fingerprint is REFUSED.
+
+**Class:** a property no check can see because every check runs inside the scope that hides it --
+the same family as a check that shares the defect it checks for. *Ask of any long job: what does
+it leave on disk if it is killed at 60 % -- and if it finishes?*
+
+### R21 (2026-09-23) - "depth is irrelevant" was true of the PRODUCER'S indexer, not the TRAINER'S
+
+**Retracted:** `READINESS` D6's *"`index_images` is basename-keyed so depth is irrelevant"*, read
+as a statement about training. It is true of `build_targets.index_images`. The trainer reads frames
+through **`train.FrameStore`**, which resolved a frame by its direct path and then fell back to
+`glob(root/**/<name>, recursive=True)` -- **per image**. OpenScene extracts as
+`navtrain_current_N/<log>/<CAM>/<hash>.jpg` while a row names `<log>/<CAM>/<hash>.jpg`, so on the
+pod the direct path **always misses** and every read walks the whole pixel tree.
+
+**MEASURED:** one recursive glob over a pod-shaped tree of 41,280 files = **808-1,040 ms** on local
+NTFS (two runs, the second more contended; a LOWER bound for network MooseFS). Linear to navtrain's
+413,152 frames: **~32-42 s of globbing per 4-camera sample against ~1.3 s of compute** -- a run of ~65 days would have taken years, and
+nothing would have errored. The replacement (one `os.walk`, then a dict) costs **0.85 s once** at
+that size and **40 ns** per lookup.
+
+**And its twin:** a frame that did not resolve RAISED inside `__getitem__`. Under a supervisor that
+is a crash LOOP -- the resume restores the exact data position and re-reads the same tuple.
+`TargetBank` now resolves every tuple's frames at LOAD: absent frames are dropped, counted and
+named; above `--max-missing-images` (0.1 %) the load is refused as a broken join.
+
+**Verified on the REAL pod layout** (one navtrain log held both as a DB and inside OpenScene shard
+25): the producer's image choice matches OpenScene's association **61/61 frames x 4 cameras**, in
+both directions (every shipped frame maps to a navtrain token); the trainer resolves **61/61**,
+decodes and trains; one frame removed -> REFUSED at 0.1 %, DROPPED (1, named) at 5 %; a whole
+camera removed -> REFUSED (0/61).
+
+**Class:** a true statement about one component quoted for ANOTHER component with the same job --
+the `df` / `free` / `step_s` scope error, between two of our own modules. The corrected D6 names
+the consumer's loader, which the 2026-08-29 rule already demands of any cost estimate.
+
+### R22 (2026-09-23) - "the rigs differ by centimetres" was the translation; the ROTATION was never measured
+
+**Retracted:** `REFeConfig`'s own justification for baking ONE vehicle's camera calibration into the
+model -- *"Practically small -- the 22 rigs differ by centimetres"*. True of the translation, and
+silent about the rotation, which is what displaces a lifted feature.
+
+**MEASURED** (`calib_table.py` over every local nuPlan DB; `calib_spread.py` over navtrain's):
+**26-30 distinct exact rigs per camera over 2,774 logs**, and the baked rig is exact on **88 of
+them (3.2 %)**. On the 214 locally held navtrain logs (12 vehicles, 12 rigs per camera) the camera
+ROTATION differs from the baked rig by a median **0.84-1.52 deg** and up to **2.67 deg**
+(CAM_F0); translation up to 9.3 cm; one vehicle's intrinsics by up to 38 px. At 2.67 deg a
+feature lifted to 30 m lands ~1.4 m off; the worst real vehicle moves the encoding by **2.88 m**
+within the 60 m frustum.
+
+**Why it matters for a reproduction:** the paper (p. 8) enriches the visual tokens with "3D
+position embeddings [50]" -- [50] is **PETR**, which builds that embedding from **each sample's own**
+intrinsics and extrinsics. Baking one rig is a departure from the cited construction, and the
+model's comment already said so ("to realise it fully the extrinsics must arrive PER SAMPLE").
+
+**Fixed:** `refe/calib_table.py` (each log's rig from its DB `camera` table) -> the trainer attaches
+it per tuple (`--calib`; a tuple without one is dropped and counted, never given the baked rig) ->
+the model lifts each UNIQUE rig once (cached; ~30 exist) and gathers per sample -> the planner
+reads the scenario's rig from its DB and refuses rather than falling back. `calib=None` still
+means the baked rig: the pre-R22 behaviour, now an explicit ablation.
+
+**Verified:** old vs new model **bit-identical** on the default path (frustum + embedding, ViT-S
+and ViT-L x undistort on/off x fp32/bf16, 12/12); `refe/diag_calib.py` 8/8 -- the lifted points
+match an INDEPENDENT reference (OpenCV `undistortPointsIter` + a textbook numpy quaternion) to
+**1.3-1.7e-5 m** for the baked rig AND the farthest real vehicle; another vehicle's rig moves the
+encoding; a mixed batch equals its single-sample rows exactly; the cache key names the rig;
+gradients reach `pos3d_mlp`. Trainer: 85/85 pilot tuples carry their own rig (6 distinct);
+planner: the rig it reads from a log's DB equals the table's.
+
+**Class:** a claim scoped to the dimension that was measured (translation) and silent about the
+one that matters (rotation) -- *a true number quoted outside its scope*, where the scope was a
+COMPONENT of the quantity rather than a different quantity.
+
+### R23 (2026-09-23) - the load-bearing conformance gate read a SCORER row and called the bank divergent
+
+**Retracted:** that `diag_consumer_conformance.py --targets <dir>` checks what the trainer trains
+on. Given a directory it read `**/*.jsonl` and took the FIRST row of the FIRST file. In the
+assembled training directory (R19) the first file alphabetically is `scorer_targets_rank1.jsonl`
+-- a scorer row with no ego, cameras or goal -- so the gate reported **CONSUMERS_DIVERGED on a
+correct bank** (arms 1/2/3/6 FAIL) while its own control, *"a real bank row was actually read"*,
+PASSED: it had read a row, just not one the trainer consumes. On `$BANK/r0` (one rank file, no
+scorer files) the same gate was green, which is why every earlier run agreed with it.
+
+**The worse half, found fixing it:** even pointed at the right file, the gate checked only the
+first row of the FIRST rank file. Rank 1 comes from a different producer (`augment_search.py`)
+than rank 0, so a rank-1-only divergence was invisible to it.
+
+**Fixed:** the gate selects files with the CONSUMER's glob (`targets_rank*.jsonl`, as
+`train.TargetBank`), reads the first row of EVERY rank file, and an arm passes only if it passes
+on all of them. **Verified:** train dir -> both ranks read, 7/7, CONSUMERS_CONFORM; self-test
+still SELF_TEST_OK; **mutation** -- a rank-1 file of one-camera rows beside a correct rank-0 file
+-> arms 2 and 3 RED, CONSUMERS_DIVERGED.
+
+**Class:** a guard that reads a different artifact from its consumer (R21's family, inside a
+gate); and a control that proves *something* was read rather than *the right thing* -- the same
+shape as "a check that shares the defect it checks for".
+
+### R23b (2026-09-23) - the data-prep `gate` stage PRINTED its verdicts and asserted nothing
+
+**Retracted:** `pod_dataprep.sh`'s claim (in its own header) that the `gate` stage gates. It ran
+both diagnostics as `... 2>&1 | tail -3` and moved on: a CONSUMERS_DIVERGED or
+SIGNALS_INCONSISTENT verdict scrolled past and the script still ended `ZZDONE`, which is the marker
+the training runbook waits for. It also gated `r0/` -- one rank, and not the directory the trainer
+reads. Found while wiring R22 into the stage list, before any pod ran it.
+
+**Fixed:** each verdict is written to a file and the stage EXITS 1 unless it reads
+CONSUMERS_CONFORM (both ranks, R23) and SIGNALS_CONSISTENT for rank 0 AND rank 1 -- the augmented
+half's signal consistency had never been gated in the pipeline. Train-dir assembly moved out of
+`score` into its own `assemble` stage (it now also carries the camera rigs), so it re-runs without
+recomputing a scorer target. **Verified on the fake pod:** green on the real one-log bank; with the
+rank-1 file mutated to one camera the stage prints CONSUMERS_DIVERGED + `ZZFAIL`, exits 1, and
+`ZZDONE` never appears.
+
+**Class:** a gate whose failure has no consequence -- `$?` through a pipe, and a success marker
+that does not depend on the verdict. The CLAUDE.md rule "assert on the artifact, not the status"
+had been applied to the launcher and not to the stage that feeds it.
+
+### R24 (2026-09-23) - "25 epochs" counted ROWS; the paper counts SCENES -- 1.71x its budget
+
+**Retracted:** the implicit claim that `train.py --epochs 25` reproduces DriveZero's schedule on our
+goal-augmented bank. The trainer's epoch was one pass over the bank's ROWS. Our bank stores each
+goal-augmented target as an extra row beside its scene's rank-0 row, so at tau 0.3 it holds
+**~176,197 rows for 103,039 scenes (1.71 per scene)**. The paper counts its training data in
+SCENES -- Table A12: *"100K navtrain + 237K SimScale scenes ... Epochs 25"*; the navtrain-only
+backbone rows (Table A13, our 94.55 anchor) hold *"all other settings fixed"*. So our 25 epochs
+were **4.40 M sample-passes against the paper's ~2.58 M**, and the published pod timeline
+(~64-70 A40-days) was 1.71x the paper's budget. It also weighted scenes unevenly: a scene with an
+augmented twin was visited twice per epoch, the ~29 % without one once.
+
+⚠️ **Scope of the correction:** the paper does not state how its augmented targets enter an epoch.
+"One pass over scenes" is the reading its own unit supports; it is a PI DECISION (2026-09-23), not
+a published fact.
+
+**Fixed:** `train.py --epoch-unit scenes` (the default; `rows` kept as the explicit alternative).
+`SceneEpochSampler` visits every scene exactly once per epoch in a seeded order and uses ONE of
+its rows, member `(epoch + offset[scene]) mod k` -- so twins take turns (13/12 over 25 epochs) and
+every epoch MIXES logged and augmented goals across scenes; a pure function of (seed, epoch), so
+resume stays exact. The epochs->steps derivation divides the SCENE count; `epoch_unit` and
+`n_scenes` are in the resume identity; a scene holding the same rank twice (a duplicated row) is
+refused. **Verified:** pilot 85 rows = 56 scenes (27 single + 29 twins), `--epochs 2` = exactly
+2.00 scene-epochs; `diag_train_resume.py` on a twin-scene bank -- see READINESS I7 for the arm table,
+including two mutations that must go RED (a parity sampler: whole epochs single-goal; a row epoch:
+twins visited twice).
+
+**Effect:** ViT-L on one A40 at FP32 -> **~37-41 days instead of ~64-70** (ESTIMATED A40
+multiplier, as before).
+
+**Class:** a true count quoted in the wrong UNIT -- epochs of rows for epochs of scenes -- which
+the `df` / `step_s` / units family predicts; it survived because augmentation was added AFTER the
+epoch logic was written and nothing re-asked what one epoch passes over.

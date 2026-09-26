@@ -508,11 +508,17 @@ route lane-graph centreline (Dijkstra over `route_roadblock_ids`), interpolate *
 ahead, convert to ego frame; `y ≥ +2 m → left`, `y ≤ −2 m → right`, else `forward`;
 `unknown` when the route is unrecoverable.
 
-⚠️ **Open leak question, UNVERIFIED and load-bearing for us:** whether nuPlan's
-`route_roadblock_ids` is itself derived from the expert's driven path. The devkit reads it
-straight from the nuPlan DB with no derivation exposed. This is the same family as our own
-*"a supplied route is optimistic by construction on PhysicalAI"* rule. **Run this check before
-adopting a NavSim-style route command as evidence of route-following skill.**
+⭐ **SETTLED 2026-09-19 (W2/E3) — PARTIAL, a ROUTE-LEVEL ORACLE** (§9 item 4; registry
+`benchmarks.navsim.ROUTE_LEAK_VERDICT`). The command is computed from (the ego pose NOW, the
+nuPlan route, the map) and from nothing else — OpenScene's own `get_driving_command`
+reproduces the stored command on **1,902/1,902** local frames — but `route_roadblock_ids` IS
+the expert's own driven path at roadblock granularity (nuPlan's schema: the goal is *"a future
+ego pose from beyond that scene"*; nuplan-devkit's own `_route_roadblock_ids` is *"extracted
+from expert trajectory"*; measured: the route starts behind the ego in 83.5 % of scenes and its
+forward blocks are the ones the ego drives, 79.8 % vs a 34.6 % no-future control). ⇒ the same
+family as *"a supplied route is optimistic by construction on PhysicalAI"*: **a
+command-conditioned NavSim number is driving with an ORACLE ROUTE** — comparable inside NavSim,
+never evidence of route or strategic skill, and never a route-head LABEL.
 
 ### 5.2 Submission format
 
@@ -830,8 +836,14 @@ a wholly different instrument, which is exactly why it is worth adopting.
 5. **Estimator:** NavSim publishes **point estimates only**; the leaderboard's only dispersion
    is a multi-seed ± on three baseline rows. Our `taniteval/ci.py` episode-cluster bootstrap
    does not transfer directly, because NavSim's unit is a **scene token**, not an episode.
-   ⇒ **An open design question**, not a solved one. Do not report a NavSim CI until the
-   clustering unit is settled.
+   ⭐ **SETTLED 2026-09-19 (W2/E3):** the NavSim interval is a **LOG-CLUSTER bootstrap** —
+   clusters = the OpenScene `log_name`, B = 2000, n_clusters ≥ 8 (RG-14) — of the **devkit's
+   own aggregate** (two-stage: per mapping key, then a skip-NaN mean over keys; single-stage:
+   a skip-NaN mean over tokens). Pre-registered SPEC + census in
+   `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/`;
+   implementation `taniteval/adapters/navsim_ci.py`; gate `GATE_estimator_cluster_unit`
+   (registry 2.10.0). ⛔ warmup (7 logs) and private_test_hard (log identities not released)
+   can never carry one; scene-token, mapping-key and episode-cluster intervals FAIL the gate.
 
 **Registry hand-off.** `benchmarks.navsim` is `pending: true` with
 `protocol_doc` already pointing at this file. Filling `criteria` must ship **with its
@@ -847,7 +859,7 @@ item and is **not** done by this document.
 | 1 | `navmini` scenario count ("396") | **UNVERIFIED** — appears only in a secondary summary; absent from `docs/splits.md` and both papers. Do not quote. |
 | 2 | `private_test_hard_two_stage` split size | **UNVERIFIED** — only 14 MB logs / 11 GB sensors published. A "~280 Stage-1 frames" figure inferred from sub-score granularity is an **inference**, not a source. |
 | 3 | AGC2025 challenge winner identity | **UNVERIFIED** — rank 1 is a team name (`Simple`) with no primary technical report. |
-| 4 | Provenance of nuPlan `route_roadblock_ids` — is the route derived from the expert path? | **UNVERIFIED** and load-bearing for our goal-admissibility rule (§5.1). |
+| 4 | Provenance of nuPlan `route_roadblock_ids` — is the route derived from the expert path? | ⭐ **SETTLED 2026-09-19 (W2/E3): PARTIAL — a ROUTE-LEVEL ORACLE.** The command is a function of (the ego pose NOW, the route, the map) ONLY — reproduced 1,902/1,902 with OpenScene's own `get_driving_command` — but the route IS the expert's driven path at roadblock granularity: it starts BEHIND the ego in 83.5 % of 1,921 nuPlan scenes, its forward blocks are the ones the logged ego drives (79.8 % vs a 34.6 % no-future null control), and a route rebuilt from the ego's FUTURE reproduces 96.1 % of turning commands against 66.4 % from a no-future route. It is NOT a trajectory leak (best future-path threshold rule 94.2–94.7 %, below the 99 % bar; no speed/stop/lane-change information). ⇒ a command-conditioned number is *driving with an oracle route*. Registry `benchmarks.navsim.ROUTE_LEAK_VERDICT`; evidence `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/RESULT.md` §B. |
 | 5 | Storage total: [N1] says the curated benchmark is **450 GB**; `docs/splits.md` lists navtrain 445 GB + navtest 223 GB separately | **Sources disagree**; both named. Likely 450 GB ≈ navtrain-only. Budget from `docs/splits.md`. |
 | 6 | History span: **1.5 s** ([N1] §3.1) vs *"2 seconds into the past"* (`docs/agents.md`), both = 4 frames | **Sources disagree**; both named. |
 | 7 | Driving command cardinality: **3** ([N1] §3) vs **4** (devkit + `docs/agents.md`) | **Sources disagree**; implement 4. |
@@ -858,7 +870,7 @@ item and is **not** done by this document.
 | 12 | Modality of every live-leaderboard row | **UNVERIFIED** — neither leaderboard API exposes a modality field (§5.2). |
 | 13 | Hydra-MDP's 91.3 on Leaderboard 1.1 ([N1] Tab. 3) | **PUB-PAPER** but no longer re-checkable — Hydra-MDP is absent from the live navtest leaderboard. |
 | 14 | Per-team numeric scores for the CVPR 2024 challenge (463 submissions, 143 teams) | In [N1] supplementary, **not retrieved**. |
-| 15 | Whether our episode-cluster bootstrap transfers to NavSim's scene-token unit | **Open design question** (§8.5) |
+| 15 | Whether our episode-cluster bootstrap transfers to NavSim's scene-token unit | ⭐ **SETTLED 2026-09-19 (W2/E3): it does not — the unit is the OpenScene `log_name`.** Pre-registered SPEC + census in `…/2026-09-19-navsim-estimator-and-route-leak/`; implementation `taniteval/adapters/navsim_ci.py`; gate `benchmarks.navsim.GATE_estimator_cluster_unit` (registry 2.10.0), enforced by `tools/criteria_check.py`. MEASURED: navtest scenes share a median 13 of 14 frames (5.55 scenes per key frame) while logs share nothing; navhard has 76 logs / 34 drives, navtest 136 / 44, warmup 7 ⇒ ⛔ warmup and private_test_hard can NEVER carry an interval. |
 
 ---
 

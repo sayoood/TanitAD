@@ -98,9 +98,19 @@ def census(ds, eps, reader, window: int, *, pad: int, queries: int) -> dict:
         n_raw.append(int(cx.shape[0]))
         g = np.nonzero(gate_mask(cx, cy))[0]
         n_gate.append(int(g.size))
-        # what each population actually DELIVERS to the head after the pad truncation
+        # ⛔ WHAT EACH POPULATION DELIVERS TO THE HEAD, IN THE TRAINER'S OWN ORDER.
+        # CORRECTED 2026-09-20: this previously computed `nearest_n(cx[g], cy[g], pad)` — the
+        # nearest `pad` among GATE targets. The trainer does something else
+        # (`refc_v3_train._agent_item`): `argsort(hypot(x, y))[:pad]` over **ALL** targets, with
+        # the near-forward filter applied LATER, at scoring. So a near-BEHIND target consumes a
+        # slot that the old version silently handed to a gate target.
+        # MEASURED (`raw/pad_order_probe.json`): on halfB the wrong order says 15.66 % of gate
+        # targets are dropped; the trainer's order says **30.36 %** — understated by 1.94x, and
+        # that figure had been published. The corrected order also reproduces the bar draw's
+        # matched n EXACTLY (129 of 139 pre-pad), which the wrong order could not.
         n_kept_raw.append(min(int(cx.shape[0]), pad))
-        keep_g = g[nearest_n(cx[g], cy[g], pad)] if g.size > pad else g
+        keep_all = nearest_n(cx, cy, pad) if cx.shape[0] > pad else np.arange(cx.shape[0])
+        keep_g = keep_all[gate_mask(cx[keep_all], cy[keep_all])]
         n_kept_gate.append(int(keep_g.size))
         sel_idx.append(keep_g.astype(np.int16))
         sel_off.append(sel_off[-1] + int(keep_g.size))
@@ -164,6 +174,19 @@ def grid_verdict(rep: dict, expect: dict) -> tuple[dict, list, str]:
     if n_checked == 0:
         return checks, bad, "UNVERIFIED — no literal was compared; census only, do NOT bank"
     return checks, bad, "OK"
+
+
+# ⛔ A CHECKER MUST NOT DIE ON ITS OWN OUTPUT. MEASURED 2026-09-20: three separate
+# readouts crashed with a cp1252 `UnicodeEncodeError` on this box mid-print -- one of
+# them after reporting "lines lost = 1" but BEFORE naming the line, i.e. it had verified
+# nothing while looking like it had. Relying on the caller to export PYTHONIOENCODING is
+# a habit; this is a guard. `errors="replace"` means the print degrades instead of
+# raising even if the stream cannot take utf-8.
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+except Exception:  # noqa: BLE001 -- a stream that cannot be reconfigured is not fatal
+    pass
 
 
 def main(argv=None) -> int:

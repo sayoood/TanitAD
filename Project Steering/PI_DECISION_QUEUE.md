@@ -1656,3 +1656,71 @@ with no other python process on the box (`ps` read before each launch).
 
 **What still belongs to the PI during the run:** stopping it, extending it, and any change of arm.
 A healthy run does not wake the PI.
+<!-- PIQ-REFE-NAVTRAIN-2026-09-20 -->
+
+## 🔴 NEW ITEM (2026-09-20) — REFe scaled training needs navtrain, and it should be pulled ON THE POD
+
+**The decision:** authorise the **navtrain** pull, and authorise it **on a pod** rather than on the
+dev box.
+
+**Why it is now decidable — the figure is MEASURED, not estimated.** `REFE_PLAN.md` carried
+*"~450 GB (backlog row 3; to confirm on the OpenScene page)"*. Measured 2026-09-20 from the Hugging
+Face dataset metadata API, **nothing downloaded**: **449.0 GB over 64 files**, split
+**`navtrain_current` 32 files / 304.5 GB** and **`navtrain_history` 32 files / 144.5 GB**. The old
+estimate was right to within 0.2 %.
+
+| link | full 449 GB | current-only 304.5 GB |
+|---|---|---|
+| dev box, measured today | **77.0 h** | 52.2 h |
+| dev box, best seen today | 33.3 h | 22.6 h |
+| pod, typical | **1.2 h** | 0.8 h |
+
+The dev-box rate is a **memory-only** range GET against S3 taken while the val pull ran, so it is
+the **link** and not the disk (the same probe read local disk at 11.6 MB/s). The "best seen" row is
+what the nuPlan test split actually achieved today: 95.9 GB in 7 h 06 m.
+
+⇒ Pulling navtrain here is feasible but costs **2–3 days** of a link already carrying the nuPlan
+val split (itself ~40 h at the same measured rate); the two share one bottleneck. **This reframes
+the pod request: the pod is needed for the DATA, not only for the training.**
+
+**What is blocked without it.** REFe is at **rehearsal scale** — 249 scorer frames and 982
+trajectory tuples per route rank, from **10 simulation logs**, against the paper's **100 K
+scenarios**. The pipeline is end-to-end functional and gated; the data is ~0.2 % of the paper's.
+
+⚠️ **Two things deliberately NOT asserted here.** (a) Whether `navtrain_history` can be skipped —
+REFe consumes the current frame, but the feature builder's 5-step history window may need those
+frames, and that is **UNVERIFIED** until read from the loader; nobody should pull only 304.5 GB on
+this note. (b) CAM_F0-only does **not** shrink the download: the shards are gzipped tarballs of all
+cameras, so the bytes crossing the link are unchanged and only the retained disk shrinks.
+
+Evidence: `TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/navtrain_size_measured.txt`
+
+
+<!-- PIQ-REFE-NAVTRAIN-RULED-2026-09-20 -->
+> ✅ **RULED THE SAME DAY (PI, 2026-09-20), verbatim:** *"Remeber we will train using a40 pod, so we
+> need there the data and not on the local box."*
+> ⇒ **navtrain is pulled ON THE A40 POD, not on the dev box.** The item above is ANSWERED; what
+> remains is provisioning, which is the PI's, and the pod-side pull recipe, which is mine.
+> ⚠️ Two consequences worth stating so nobody re-derives them:
+> * The dev box will NOT hold navtrain. Its nuPlan test/val pull continues here because those feed
+>   the **DZ-11 headline reproduction**, which runs on this box's 4060 and needs the nuPlan splits,
+>   not navtrain. The two data streams have different destinations and should not be conflated.
+> * The `navtrain_history` question (144.5 GB of the 449.0 GB) is still **UNVERIFIED** and is now a
+>   pod-side decision: settle it by reading the feature builder's history window BEFORE the pull,
+>   not after, because on a pod the whole 449 GB costs ~1.2 h and re-pulling is cheap enough that
+>   nobody will notice the waste.
+
+## 🔴 NEW ITEM (2026-09-26 ~10:40 Berlin) — REFe's scorer has no selection skill: how should it be supervised?
+
+**MEASURED (SPEC_NAVTEST E-6, rule fixed before the table was read; `…/2026-09-20-refe-plan/eval/RESULT_E6_sub200_ep011.md`, GOALS_AND_CLAIMS D-REFE-SEL-1).** Every one of the 64 proposals of the snapshot after epoch 11 was scored by the unchanged NAVSIM harness on W3's 200 tokens: best of 64 **91.2 [89.2, 93.1]** PDMS, the planner's pick **43.8 [37.4, 50.6]**, a random proposal **43.2 [38.9, 47.7]** (standing still 62.6, human 94.1). Selection skill **0.013 [-0.089, 0.121]** -> **SELECTION-BOUND**. Within a scene the scorer's drivable-area / driving-direction / comfort outputs rank at chance (AUC 0.54 / 0.53 / 0.49); it believes 97 % of proposals stay on the road where 67 % do. The proposal head is good; the choice is random.
+
+**Why (consistent with every number, not yet shown causal):** `refe/train.py` supervises the scorer with the 8-9 FIXED banked candidates of a frame (teacher, lateral +-2/+-4 m, speed x0.5/x1.5, stop, jerky, reverse, over-curb), each attached to its NEAREST proposal ~4 m away, so most of the 64 proposals are never supervised and the supervised ones learn the scores of a different path. This is our DECLARED departure from DriveZero, which scores the student's OWN proposals.
+
+**Options.**
+- **A (recommended) — on-policy scorer fine-tune AFTER the run, the paper's mechanism:** freeze the final model, dump its 64 proposals on ~10k navtrain frames (A40, ESTIMATE <= 20 min), score every proposal with the SAME teacher scorer that built the bank (`refe/score_proposals.py`; ESTIMATE ~0.5 s per proposal from READINESS C23's MEASURED 4.41 s per 8-9 candidates -> ~90 core-hours, ~4.5 h on the pod's 7.65 CPUs + the dev box), fine-tune ONLY the scorer head on those exact targets (ESTIMATE 1-2 h), re-take E-6. ~6-7 pod-hours after training ends (run total ~7.0 days); the running training is untouched. New code (a scorer-head fine-tune entry point) is written and tested on the dev box first.
+- **B — change the running trainer now** (e.g. drop assignments farther than ~1 m, or score proposals during training): risks the 7-day budget and the bit-exact resume; not recommended.
+- **C — no recipe change:** keep measuring E-6 at every snapshot (automatic, free). The complete scorer bank is read from epoch 12 (~12:38 today); if skill moves, that is evidence against the mechanism above.
+- **D — a test-time rule without the scorer:** the exploratory rules gain ~+4-5 PDMS on these 200 tokens (untested elsewhere) against ~47 points of headroom, and depart from the paper's selection. Not recommended as the fix.
+
+**DEFAULT if the PI says nothing:** C, plus A's code prepared and validated on the dev box at no pod cost. Nothing beyond the training runs on the pod without an explicit go; at the end of training the checkpoint is backed up first (the pod has no persistent volume).
+

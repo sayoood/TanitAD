@@ -1,5 +1,5 @@
 {
- "registry_version": "2.9.0",
+ "registry_version": "2.10.3",
  "unreadable": [],
  "artifacts": {
   "A2_human_agent_warmup_two_stage.json": {
@@ -204,8 +204,80 @@
      "detail": "no key present and not refused"
     }
    ],
+   "benchmarks": [
+    {
+     "id": "protocol.tag_registered",
+     "label": "protocol tag is a registered one",
+     "required": true,
+     "state": "PRESENT",
+     "detail": "EPDMS_v2_warmup_two_stage (benchmarks.navsim.GATE_no_cross_protocol_comparison.closed_set)"
+    },
+    {
+     "id": "navsim.score",
+     "label": "EPDMS/PDMS from the `score` column",
+     "required": true,
+     "state": "REFUSED",
+     "detail": "benchmark.navsim.score: two-stage EPDMS UNDEFINED for human_agent: the OFFICIAL two-stage runner EXITED 1 and wrote NO CSV (MEASURED, raw/A2/A2.log): 204/204 stage-2 agent calls raised IndexError at dataclasses.py:371 -> Ass (n=204)"
+    },
+    {
+     "id": "navsim.variant",
+     "label": "which variant + split named",
+     "required": true,
+     "state": "PRESENT",
+     "detail": "benchmark.navsim.variant"
+    },
+    {
+     "id": "navsim.submetrics",
+     "label": "every sub-metric reported",
+     "required": true,
+     "state": "PRESENT",
+     "detail": "benchmark.navsim.submetrics"
+    },
+    {
+     "id": "navsim.ego_inputs",
+     "label": "declared ego inputs (vision-only compliance)",
+     "required": true,
+     "state": "PRESENT",
+     "detail": "benchmark.navsim.ego_inputs"
+    },
+    {
+     "id": "navsim.route_leak_check",
+     "label": "route_roadblock_ids provenance checked",
+     "required": true,
+     "state": "REFUSED",
+     "detail": "benchmark.navsim.route_leak_check: this reference arm consumes no route / driving_command input, so a route-derived leak cannot enter it (n=220)"
+    },
+    {
+     "id": "navsim.ego_enforcement",
+     "label": "GATE navsim.ego_enforcement",
+     "required": true,
+     "state": "REFUSED",
+     "detail": "declared not applicable (no vision-only claim): reference arm, NOT vision-only and not claimed to be: none — PRIVILEGED log replay (Scene.get_future_trajectory: the recorded future)"
+    },
+    {
+     "id": "navsim.estimator_unit",
+     "label": "GATE navsim.estimator_unit",
+     "required": true,
+     "state": "REFUSED",
+     "detail": "interval refused: ⛔ warmup NEVER carries a CI — D-BENCH-PORT (PI approval 2026-08-29, Project Steering/GOALS_AND_CLAIMS.md): 7 log groups < the RG-14 floor of 8 (products/P7-Tani (n=220)"
+    },
+    {
+     "id": "navsim.modality_label",
+     "label": "GATE navsim.modality_label",
+     "required": true,
+     "state": "PRESENT",
+     "detail": "PASS — sensor_set and setting declared"
+    },
+    {
+     "id": "navsim.cross_protocol",
+     "label": "GATE navsim.cross_protocol",
+     "required": true,
+     "state": "PRESENT",
+     "detail": "PASS — EPDMS_v2_warmup_two_stage @ 0a380a9063"
+    }
+   ],
    "n_violations": 0,
-   "n_work_items": 8,
+   "n_work_items": 12,
    "violations": [],
    "work_items": [
     {
@@ -263,6 +335,34 @@
      "required": false,
      "state": "REFUSED",
      "detail": "both agents are deterministic and the scoring path contains no RNG (grep 'random' over evaluate/, planning/simulation/, traffic_agents_policies/, planning/metric_caching/: 0 files); a process replicate with a different hash seed (R1) reproduced every per-token value bit-for-bit (controls.C7_determinism, raw/C7_diagnosis.json)."
+    },
+    {
+     "id": "navsim.score",
+     "label": "EPDMS/PDMS from the `score` column",
+     "required": true,
+     "state": "REFUSED",
+     "detail": "benchmark.navsim.score: two-stage EPDMS UNDEFINED for human_agent: the OFFICIAL two-stage runner EXITED 1 and wrote NO CSV (MEASURED, raw/A2/A2.log): 204/204 stage-2 agent calls raised IndexError at dataclasses.py:371 -> Ass (n=204)"
+    },
+    {
+     "id": "navsim.route_leak_check",
+     "label": "route_roadblock_ids provenance checked",
+     "required": true,
+     "state": "REFUSED",
+     "detail": "benchmark.navsim.route_leak_check: this reference arm consumes no route / driving_command input, so a route-derived leak cannot enter it (n=220)"
+    },
+    {
+     "id": "navsim.ego_enforcement",
+     "label": "GATE navsim.ego_enforcement",
+     "required": true,
+     "state": "REFUSED",
+     "detail": "declared not applicable (no vision-only claim): reference arm, NOT vision-only and not claimed to be: none — PRIVILEGED log replay (Scene.get_future_trajectory: the recorded future)"
+    },
+    {
+     "id": "navsim.estimator_unit",
+     "label": "GATE navsim.estimator_unit",
+     "required": true,
+     "state": "REFUSED",
+     "detail": "interval refused: ⛔ warmup NEVER carries a CI — D-BENCH-PORT (PI approval 2026-08-29, Project Steering/GOALS_AND_CLAIMS.md): 7 log groups < the RG-14 floor of 8 (products/P7-Tani (n=220)"
     }
    ]
   }

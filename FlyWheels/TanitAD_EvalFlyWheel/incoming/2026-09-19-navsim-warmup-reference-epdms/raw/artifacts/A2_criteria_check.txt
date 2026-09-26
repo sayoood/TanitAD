@@ -48,8 +48,24 @@ LEAK GUARDS
    [MISSING] A route/goal head scoring near 1.0 must publish its echo test against its own input.
             -> no key present and not refused
 
+BENCHMARK GATES
+   [  ok  ] protocol tag is a registered one
+   [ WORK ] EPDMS/PDMS from the `score` column
+            -> benchmark.navsim.score: two-stage EPDMS UNDEFINED for human_agent: the OFFICIAL two-stage runner EXITED 1 and wrote NO CSV (MEASURED, raw/A2/A2.log): 204/204 stage-2 agent calls raised IndexError at dataclasses.py:371 -> Ass (n=204)
+   [  ok  ] which variant + split named
+   [  ok  ] every sub-metric reported
+   [  ok  ] declared ego inputs (vision-only compliance)
+   [ WORK ] route_roadblock_ids provenance checked
+            -> benchmark.navsim.route_leak_check: this reference arm consumes no route / driving_command input, so a route-derived leak cannot enter it (n=220)
+   [ WORK ] GATE navsim.ego_enforcement
+            -> declared not applicable (no vision-only claim): reference arm, NOT vision-only and not claimed to be: none — PRIVILEGED log replay (Scene.get_future_trajectory: the recorded future)
+   [ WORK ] GATE navsim.estimator_unit
+            -> interval refused: ⛔ warmup NEVER carries a CI — D-BENCH-PORT (PI approval 2026-08-29, Project Steering/GOALS_AND_CLAIMS.md): 7 log groups < the RG-14 floor of 8 (products/P7-Tani (n=220)
+   [  ok  ] GATE navsim.modality_label
+   [  ok  ] GATE navsim.cross_protocol
+
 VIOLATIONS (silently absent, required): 0
-WORK ITEMS (refused with a reason, or partial): 8
+WORK ITEMS (refused with a reason, or partial): 12
 
 wrote raw\artifacts\A2_criteria_check.json
 

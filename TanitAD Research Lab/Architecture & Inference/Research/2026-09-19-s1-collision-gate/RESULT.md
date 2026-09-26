@@ -22,6 +22,28 @@ any S1 data**.
 | **agent GT** | the trainer's own join attach: **62/62 episodes, 9,929/10,600 windows labelled (93.7 %)**, 367,351 target boxes, pad 32 |
 | **smoke** | A3's finished checkpoint, 2 windows, CPU: the whole chain runs — load → perception → forward → fan → gates → box read → analyze |
 
+> ### ✅ PI RULING, 2026-09-20 — `H-DAC-DEF-1` is CLOSED, and it bounds what follows
+>
+> **VERIFIED from the commits, not inherited:** `50857f4` and `ae9edc1`, read directly after
+> fetching them (they were absent from this worktree when the Master Mind first reported them,
+> and I did not record the ruling until I could open it).
+>
+> ⭐ **DAC settles as a LOW-NOISE PENALTY, ⛔ NOT a correctness criterion.**
+> * **LICENSED** — the term as a penalty in training and selection, and quoting its magnitude
+>   as such.
+> * ⛔ **FORBIDDEN** — quoting any DAC number as evidence a plan **stayed on the drivable
+>   surface**; claiming a candidate was validated against human judgement for correctness;
+>   reopening the adjudication as though a larger pack would settle it.
+>
+> ⚠️ **How this section stands under the ruling.** The 44.6 % below is a measurement of DAC
+> **false-alarming on the human**, which is evidence *for* ruling (B) rather than a correctness
+> claim — it is squarely inside the licensed use. ⛔ **No number in this document is offered as
+> evidence that any plan stayed on the drivable surface**, and none may be quoted that way.
+> The S1A.6 round-trip's `DAC 0.9959` is a REPRESENTATION-FIDELITY check between two encodings
+> of the same path, not a drivable-surface claim.
+> ⚠️ One phrase below read *"human DAC compliance"*; **"compliance" imports exactly the
+> correctness framing the ruling forbids**, so it is corrected to *"human DAC pass-rate"*.
+
 ## ⛔ A finding that outlives S1: under a LIVE SAM3 map, DAC zeroes the HUMAN on 44.6 % of windows
 
 **MEASURED** (`raw/roundtrip_halfB_A8cfg.json`, 736 held-out windows): the recorded human's own
@@ -35,7 +57,7 @@ the window.
 read `human_pdms` **0.986 with 0/493 zeros** — but those runs had **DAC DEAD**: nothing passed
 the drivable map, so `score_candidates` defaulted the multiplier to ONES. The
 *"DAC IS LIVE / DAC IS DEAD"* stamp postdates them and **no ddv2 log carries it**. ⇒ The two
-numbers measure different things, and 44.6 % is the first reading of human DAC compliance with
+numbers measure different things, and 44.6 % is the first reading of the human DAC pass-rate with
 the map **live**.
 
 ### ⭐ WHERE the human's DAC fails — near and early, at borderline cells, NOT at far range

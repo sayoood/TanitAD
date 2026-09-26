@@ -1,6 +1,6 @@
 {
  "tool": "taniteval/adapters/navsim.py",
- "arm": "human_agent@warmup",
+ "arm": "human_agent@warmup_two_stage",
  "tier": "T1",
  "n_windows": 220,
  "n_episodes": {
@@ -20,6 +20,8 @@
   "benchmark": "NavSim",
   "variant": "EPDMS_v2",
   "split": "warmup_two_stage",
+  "navsim_protocol": "EPDMS_v2_warmup_two_stage",
+  "navsim_protocol_source": "passed by the caller",
   "protocol_doc": "products/P7-TanitEval/benchmarks/NAVSIM_PROTOCOL.md",
   "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
   "inference_inputs": {
@@ -53,29 +55,23 @@
      "privileged": false,
      "dim": 4,
      "⚠️_cardinality": "4-dim (left, forward, right, UNKNOWN) in the devkit and docs/agents.md. The paper says 3. IMPLEMENT 4 — NAVSIM_PROTOCOL.md:502-504.",
-     "kind": "a ROUTE/GOAL signal, not ego kinematics: derived from the lane graph 20 m ahead, and explicitly disentangled from obstacles and traffic signs. Admissible in principle under the goal-input rule."
+     "kind": "a ROUTE/GOAL signal, not ego kinematics: derived from the lane graph 20 m ahead of the ego's CURRENT pose, disentangled from obstacles and traffic signs — but the route itself is the EXPERT'S OWN PATH at roadblock granularity: an ORACLE ROUTE (ROUTE_LEAK_VERDICT, PARTIAL). Admissible under the goal/situation-disjoint rule; optimistic by construction."
     },
     "history_frames": 4
    },
    "ego_channels_consumed": [],
-   "vision_only": true,
+   "vision_only": false,
+   "privileged": false,
    "claimed_abstention_from_ego": false,
    "⛔_framework_cannot_verify": "NavSim ALWAYS populates EgoStatus and has no switch to remove it; nothing in the framework checks that an agent declined to read it (NAVSIM_PROTOCOL.md:488-492). ⇒ a vision-only claim on NavSim must be enforced and evidenced ON OUR SIDE (e.g. by zeroing the channel in our own agent wrapper and banking the diff). A bare 'camera-only' label on a leaderboard row is the AUTHORS' claim, never the server's (:542-543).",
    "_no_ego_free_published_number": "NavSim publishes no fully ego-free result. Design against TransFuser B1 'Goal only' = 81.8 PDMS."
   },
-  "vision_only": true,
+  "vision_only": false,
   "goal_source": "none — log replay of the recorded future (privileged; not an admissible inference input)",
   "simulation_semantics": "the agent is queried ONCE per scene; the plan is then fixed and propagated by an LQR + kinematic bicycle model at 10 Hz over 4 s, with NO environmental feedback. Submitted velocity and acceleration are DISCARDED — poses only (NAVSIM_PROTOCOL.md:424-440).",
-  "navsim_protocol": "EPDMS_v2_warmup_two_stage",
+  "corpus": "NavSim warmup_two_stage (OpenScene test logs; 7 logs; 16 stage-1 + 204 stage-2 tokens) — a different benchmark from the TanitAD parity corpus physicalai-train-e438721ae894; no parity key applies",
+  "parity_key": "n/a — a NavSim split; the TanitAD parity corpus (physicalai-train-e438721ae894 / f09e44db) does not apply",
   "devkit_sha": "0a380a9063d7162ec93d0f51e9990ebac585f720",
-  "devkit_pin_full": "autonomousvision/navsim@0a380a9063d7162ec93d0f51e9990ebac585f720 (2025-10-27; post-#151 fix, MEASURED: README changelog 2025/09/29 + pdm_score.py:194-219)",
-  "harness_modifications": [
-   "PRE-EXISTING navsim/common/dataclasses.py PosixPath unpickler (blob 596cb7d)",
-   "PRE-EXISTING venv fcntl.py flock shim (sha256 75184a48...)",
-   "PRE-EXISTING nuplan-devkit setup.py (packaging only)",
-   "E1 monkeypatch: MetricCacheLoader token separator (code/navsim_win.py) — reader only"
-  ],
-  "runtime": "C:/Users/Admin/navsim-crun (verified mirror; raw/devkit_copy_verify.json, raw/data_mirror_verify_*.json)",
   "sensor_set": "none — PRIVILEGED log replay (Scene.get_future_trajectory: the recorded future)",
   "setting": "privileged reference, NOT a planner: replays the logged human future; human-penalty filter applies on stage 1",
   "ego_status_enforcement": {
@@ -83,7 +79,15 @@
    "status": "NOT_APPLICABLE",
    "reason": "reference arm, NOT vision-only and not claimed to be: none — PRIVILEGED log replay (Scene.get_future_trajectory: the recorded future)"
   },
-  "corpus": "NavSim warmup_two_stage (OpenScene test logs; 7 logs; 16 stage-1 + 204 stage-2 tokens) — a different benchmark from the TanitAD parity corpus physicalai-train-e438721ae894; no parity key applies",
+  "devkit_pin_full": "autonomousvision/navsim@0a380a9063d7162ec93d0f51e9990ebac585f720 (2025-10-27; post-#151 fix, MEASURED: README changelog 2025/09/29 + pdm_score.py:194-219)",
+  "harness_modifications": [
+   "PRE-EXISTING navsim/common/dataclasses.py PosixPath unpickler (git-normalised blob 596cb7d)",
+   "PRE-EXISTING venv fcntl.py flock shim (sha256 75184a48...)",
+   "PRE-EXISTING nuplan-devkit setup.py (packaging only)",
+   "E1 patch: MetricCacheLoader token separator (raw-byte blobs 0a62e6a0 -> b850e162; monkeypatch twin in code/navsim_win.py)",
+   "E1 patch: IDM zero-length path_to_go assert (raw-byte blobs 1924b7c1 -> b95bcc7f) — REQUIRED for navhard to complete at all"
+  ],
+  "runtime": "C:/Users/Admin/navsim-crun (verified mirror; raw/devkit_copy_verify.json, raw/data_mirror_verify_*.json)",
   "loop": {
    "stage_one": "OPEN (PI ruling 2026-09-02: fixed plan, ego never re-queried)",
    "stage_two": "UNRULED under the 2026-09-02 vocabulary (one-shot re-perception of a 3DGS-rendered perturbed start)",
@@ -360,6 +364,9 @@
    "cross_mae_m": 0.0,
    "cross_bias_m": 0.0,
    "cross_final_mae_m": 0.0,
+   "_cross_is": "lateral OFFSET at matched time index (mean |y_pred - y_gt| in the window's ego frame), NOT a distance to the GT path: no projection, no arc-length matching. Read it WITH _along_mae_m_for_context and with the LONGITUDINAL family; a large along-track error makes it uninterpretable as a lateral error (two arms with y == 0 score identically however differently they drive).",
+   "_along_mae_m_for_context": 0.0,
+   "_projection_based_alternative": "taniteval/taniteval/lateral.py::frenet_dense decomposes pred-gt in the GT PATH's own frame (along^2 + cross^2 == ||pred-gt||^2); driving.py publishes it as headline.pathgeom_crosstrack_m.",
    "n_steps_heading": 128,
    "n_steps_curvature": 112,
    "n_steps_yaw_rate": 112,
@@ -786,13 +793,15 @@
      "heading_mae_deg",
      "yaw_rate_mae_degps"
     ],
-    "undeclared": [],
+    "undeclared": [
+     "_along_mae_m_for_context"
+    ],
     "not_reported": [],
-    "complete": true,
-    "⛔_verdict": "every reported component carries an interval or a reasoned refusal"
+    "complete": false,
+    "⛔_verdict": "VIOLATION — a reported component carries no interval and no reason"
    }
   },
-  "_intervals_complete": true,
+  "_intervals_complete": false,
   "_intervals_rule": "every component the LONGITUDINAL and LATERAL blocks REPORT carries an episode-cluster-bootstrap interval (taniteval.ci, cluster unit = the episode), or an explicit {status,reason,n}. ⛔ overlapping_holdout_se is never used: it biases the POINT ESTIMATE, not only the interval. Any TWO-ARM delta must use ci.paired_episode_cluster_bootstrap — never a combination of two single-arm intervals in quadrature.",
   "_complete": false,
   "_longitudinal_claim_admissible": false,
@@ -820,12 +829,13 @@
   ],
   "_navsim_estimator": {
    "status": "UNAVAILABLE",
-   "reason": "cluster unit unsettled — NavSim's resampling unit is a SCENE TOKEN, not an episode. taniteval.ci.episode_cluster_bootstrap resamples EPISODES, and the two are not interchangeable here: docs/splits.md states verbatim that \"NavSim splits contain overlapping scenes\", so scene tokens are NOT independent draws, and clustering by nuPlan log (the obvious alternative) has never been pre-registered for this programme. ⛔ Emitting either would manufacture a decision-grade interval from an unsettled unit — worse than no interval, because it would look valid. The point estimate below is the full_set pooled mean and is unaffected. OPEN DESIGN QUESTION FOR THE PI: NAVSIM_PROTOCOL.md sec 8.5 and sec 9 item 15.",
+   "reason": "no interval computed for this artifact. The NavSim estimator is SETTLED (2026-09-19, W2/E3): a LOG-CLUSTER bootstrap over the OpenScene log_name, B = 2000, n_clusters >= 8 (RG-14), of the devkit's OWN aggregate — taniteval/adapters/navsim_ci.py, pre-registered in FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md. It needs each unit's contribution (per token; per mapping key for two-stage, from the pre-CSV frame WITH its `weight` column) and its log_name, and none were passed to build_artifact(interval=...). ⛔ A scene-token or episode-cluster interval is NOT a substitute (scenes overlap within a log: 5.55 scenes per key frame on navtest). The point estimate is the full-set value and is unaffected.",
    "n": 16,
    "n_windows_it_would_have_had": 16,
-   "estimator_if_it_were_settled": "episode_cluster_bootstrap (taniteval/ci.py)",
-   "_is_a_work_item": "⛔ A PI DECISION, not an implementation gap. The adapter deliberately passes eid=None so the harness's own guard (four_families.py:658-664) fires on every interval rather than returning a scene-token bootstrap.",
-   "_forbidden": "⛔ overlapping_holdout_se is NOT a fallback here. It BIASES THE POINT ESTIMATE (mean-of-split-means): MEASURED -6.67 % to +11.69 % on headline ade_0_2s across 27 arms, bidirectional."
+   "cluster_unit": "log_name",
+   "estimator_if_it_could_rule": "navsim_log_cluster_bootstrap (taniteval/adapters/navsim_ci.py)",
+   "_is_a_work_item": "an interval needs the per-unit contributions + log_name; navsim_ci.interval_from_run builds it from a devkit run.",
+   "_forbidden": "⛔ overlapping_holdout_se is NOT a fallback here. It BIASES THE POINT ESTIMATE (mean-of-split-means): MEASURED -6.67 % to +11.69 % on headline ade_0_2s across 27 arms, bidirectional. Nor is a scene-token bootstrap: scene tokens overlap within a log."
   },
   "_e1_scope": "OUR instruments on the 16 STAGE-1 scenes only (agent vs logged human future, dt 0.5 s, K=8). Stage-2 synthetic scenes have NO human future (0 future frames), so no geometry family exists there. frame check: verified"
  },
@@ -941,12 +951,13 @@
       "privileged": false,
       "dim": 4,
       "⚠️_cardinality": "4-dim (left, forward, right, UNKNOWN) in the devkit and docs/agents.md. The paper says 3. IMPLEMENT 4 — NAVSIM_PROTOCOL.md:502-504.",
-      "kind": "a ROUTE/GOAL signal, not ego kinematics: derived from the lane graph 20 m ahead, and explicitly disentangled from obstacles and traffic signs. Admissible in principle under the goal-input rule."
+      "kind": "a ROUTE/GOAL signal, not ego kinematics: derived from the lane graph 20 m ahead of the ego's CURRENT pose, disentangled from obstacles and traffic signs — but the route itself is the EXPERT'S OWN PATH at roadblock granularity: an ORACLE ROUTE (ROUTE_LEAK_VERDICT, PARTIAL). Admissible under the goal/situation-disjoint rule; optimistic by construction."
      },
      "history_frames": 4
     },
     "ego_channels_consumed": [],
-    "vision_only": true,
+    "vision_only": false,
+    "privileged": false,
     "claimed_abstention_from_ego": false,
     "⛔_framework_cannot_verify": "NavSim ALWAYS populates EgoStatus and has no switch to remove it; nothing in the framework checks that an agent declined to read it (NAVSIM_PROTOCOL.md:488-492). ⇒ a vision-only claim on NavSim must be enforced and evidenced ON OUR SIDE (e.g. by zeroing the channel in our own agent wrapper and banking the diff). A bare 'camera-only' label on a leaderboard row is the AUTHORS' claim, never the server's (:542-543).",
     "_no_ego_free_published_number": "NavSim publishes no fully ego-free result. Design against TransFuser B1 'Goal only' = 81.8 PDMS."
@@ -993,29 +1004,15 @@
   }
  },
  "estimator": {
-  "point_estimate": "devkit summary rows (two-stage aggregation) / plain mean (one-stage runner)",
-  "cluster_unit": {
-   "status": "UNAVAILABLE",
-   "n": 7,
-   "reason": "scene token vs nuPlan log unsettled (NAVSIM_PROTOCOL.md §8.5/§9 #15); warmup has 7 log groups"
-  },
+  "point_estimate": "the devkit's own aggregate (two-stage: per mapping key, then a skip-NaN mean over keys; single-stage: skip-NaN mean over tokens)",
+  "cluster_unit": "log_name",
   "interval": {
    "status": "UNAVAILABLE",
-   "reason": "⛔ warmup NEVER carries a CI — D-BENCH-PORT (PI approval 2026-08-29, Project Steering/GOALS_AND_CLAIMS.md): 7 log groups < the RG-14 floor of 8 (products/P7-TanitEval/RELEASE_GATE.md). The 7 is re-MEASURED from scene_filter/warmup_two_stage.yaml `log_names`. Independently, the NavSim cluster unit (scene token vs nuPlan log) is unsettled — cluster unit unsettled — NavSim's resampling unit is a SCENE TOKEN, not an episode. taniteval.ci.episode_cluster_bootstrap resamples EPISODES, and the two are not interchangeable here: docs/splits.md states verbatim that \"NavSim splits contain overlapping scenes\", so scene tokens are NOT independent draws, and clustering by nuPlan log (the obvious alternative) has never been pre-registered for this programme. ⛔ Emitting either would manufacture a decision-grade interval from an unsettled unit — worse than no interval, because it would look valid. The point estimate below is the full_set pooled mean and is unaffected. OPEN DESIGN QUESTION FOR THE PI: NAVSIM_PROTOCOL.md sec 8.5 and sec 9 item 15.",
+   "reason": "⛔ warmup NEVER carries a CI — D-BENCH-PORT (PI approval 2026-08-29, Project Steering/GOALS_AND_CLAIMS.md): 7 log groups < the RG-14 floor of 8 (products/P7-TanitEval/RELEASE_GATE.md). The 7 is re-MEASURED from scene_filter/warmup_two_stage.yaml `log_names`. Independently, the NavSim cluster unit (scene token vs nuPlan log) is unsettled — no interval computed for this artifact. The NavSim estimator is SETTLED (2026-09-19, W2/E3): a LOG-CLUSTER bootstrap over the OpenScene log_name, B = 2000, n_clusters >= 8 (RG-14), of the devkit's OWN aggregate — taniteval/adapters/navsim_ci.py, pre-registered in FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md. It needs each unit's contribution (per token; per mapping key for two-stage, from the pre-CSV frame WITH its `weight` column) and its log_name, and none were passed to build_artifact(interval=...). ⛔ A scene-token or episode-cluster interval is NOT a substitute (scenes overlap within a log: 5.55 scenes per key frame on navtest). The point estimate is the full-set value and is unaffected.",
    "n": 220
   }
  },
  "_two_blocks": "⛔ `four_families` is OUR instruments on NavSim TRAJECTORY GEOMETRY. `benchmark.navsim` is NAVSIM'S OWN score. They measure different things and must never be merged or averaged.",
- "counts": {
-  "stage_one_expected": 16,
-  "stage_two_expected": 204,
-  "valid": {
-   "stage_one": 0,
-   "stage_two": 0
-  },
-  "four_families_windows": 16,
-  "log_groups": 7
- },
  "controls": {
   "split": "warmup_two_stage",
   "alias": {},
@@ -1235,6 +1232,16 @@
   "nav_compliance": "the reference arm consumes NO route / driving_command input (constant_velocity_agent.py reads only ego_velocity; human_agent replays the log), so 'behaviour follows the route command' is undefined for it; NavSim itself never scores the route (NAVSIM_PROTOCOL.md:812).",
   "nav_compliance_controls": "no route input exists to shuffle or withhold (see nav_compliance).",
   "inference_seed_replicate": "both agents are deterministic and the scoring path contains no RNG (grep 'random' over evaluate/, planning/simulation/, traffic_agents_policies/, planning/metric_caching/: 0 files); a process replicate with a different hash seed (R1) reproduced every per-token value bit-for-bit (controls.C7_determinism, raw/C7_diagnosis.json)."
+ },
+ "counts": {
+  "stage_one_expected": 16,
+  "stage_two_expected": 204,
+  "valid": {
+   "stage_one": 0,
+   "stage_two": 0
+  },
+  "four_families_windows": 16,
+  "log_groups": 7
  },
  "_e1_adapter_gaps": [
   "G1 long/stage-suffixed devkit columns vs short keys",

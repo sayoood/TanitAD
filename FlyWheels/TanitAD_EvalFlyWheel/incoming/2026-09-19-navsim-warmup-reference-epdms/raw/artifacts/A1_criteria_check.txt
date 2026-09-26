@@ -48,8 +48,23 @@ LEAK GUARDS
    [MISSING] A route/goal head scoring near 1.0 must publish its echo test against its own input.
             -> no key present and not refused
 
+BENCHMARK GATES
+   [  ok  ] protocol tag is a registered one
+   [  ok  ] EPDMS/PDMS from the `score` column
+   [  ok  ] which variant + split named
+   [  ok  ] every sub-metric reported
+   [  ok  ] declared ego inputs (vision-only compliance)
+   [ WORK ] route_roadblock_ids provenance checked
+            -> benchmark.navsim.route_leak_check: this reference arm consumes no route / driving_command input, so a route-derived leak cannot enter it (n=220)
+   [ WORK ] GATE navsim.ego_enforcement
+            -> declared not applicable (no vision-only claim): reference arm, NOT vision-only and not claimed to be: none — ego-status only (ego_statuses[-1].ego_velocity)
+   [ WORK ] GATE navsim.estimator_unit
+            -> interval refused: ⛔ warmup NEVER carries a CI — D-BENCH-PORT (PI approval 2026-08-29, Project Steering/GOALS_AND_CLAIMS.md): 7 log groups < the RG-14 floor of 8 (products/P7-Tani (n=220)
+   [  ok  ] GATE navsim.modality_label
+   [  ok  ] GATE navsim.cross_protocol
+
 VIOLATIONS (silently absent, required): 0
-WORK ITEMS (refused with a reason, or partial): 8
+WORK ITEMS (refused with a reason, or partial): 11
 
 wrote raw\artifacts\A1_criteria_check.json
 

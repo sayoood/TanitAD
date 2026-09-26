@@ -9,8 +9,12 @@ every family the source dataset cannot supply.
 
 Modules
 -------
-``navsim``  NavSim v1 (PDMS) / v2 (EPDMS) scenes -> ``win``.
-            ⛔ Reads ``score``, never ``pdm_score``.
-            ⛔ Emits no confidence interval: NavSim's cluster unit is unsettled.
+``navsim``     NavSim v1 (PDMS) / v2 (EPDMS) scenes -> ``win`` + the TanitEval artifact.
+               ⛔ Reads ``score``, never ``pdm_score``.
+``navsim_ci``  the NavSim interval: a LOG-CLUSTER bootstrap (clusters = the OpenScene
+               ``log_name``, n >= 8) of the DEVKIT'S OWN aggregate. Pre-registered
+               2026-09-19 in ``FlyWheels/TanitAD_EvalFlyWheel/incoming/
+               2026-09-19-navsim-estimator-and-route-leak/SPEC.md``; ⛔ scene-token,
+               mapping-key and episode-cluster intervals are refused.
 """
-__all__ = ["navsim"]
+__all__ = ["navsim", "navsim_ci"]

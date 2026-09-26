@@ -13,22 +13,40 @@ CR="C:/Users/Admin/navsim-crun"
 PY="$CR/venv/Scripts/python.exe"
 WRAP="$PKG/code/navsim_win.py"
 RAW="$PKG/raw/navhard"
-EXP="C:/Users/Admin/navsim/exp"
+EXP="C:/Users/Admin/navsim-crun/exp"   # C:-ONLY (Master Mind: NavSim stays off D: while A7/A8 train)
 CACHE="$EXP/metric_cache_navhard_two_stage"
 DATA="$CR/data/openscene"
 SYN_SCENES="$DATA/navhard_two_stage/synthetic_scene_pickles"
-SYN_SENSORS="C:/Users/Admin/navsim/data/openscene/navhard_two_stage/sensor_blobs"   # never read (no-sensor agents)
+SYN_SENSORS="$CR/data/openscene/navhard_two_stage/sensor_blobs"   # never read (no-sensor agents)
 export PYTHONUTF8=1 PYTHONIOENCODING=utf-8
 export NUPLAN_MAP_VERSION="nuplan-maps-v1.0" NUPLAN_MAPS_ROOT="$CR/data/maps"
 export NAVSIM_EXP_ROOT="$EXP" NAVSIM_DEVKIT_ROOT="$CR/devkit" OPENSCENE_DATA_ROOT="$DATA"
 export OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 OPENBLAS_NUM_THREADS=2 NUMEXPR_NUM_THREADS=2
-POOL=(worker=single_machine_thread_pool worker.use_process_pool=true worker.max_workers=2)
+# ONE worker (coordinator constraint).  keeps everything in the parent process, so the
+# wrapper's per-token hooks AND the pre-aggregation dump both record; chunking is identical to a
+# 1-worker pool (worker_map -> chunk_list(..., 1) -> a single chunk).
+POOL=(worker=sequential)
 step="${1:?step}"
 mkdir -p "$RAW/$step"
 case "$step" in
-  mirror)  # copy the extracted navhard synthetic pickles + the 76 logs to the C: mirror, then sha256-verify
-    [ -f "C:/Users/Admin/navsim/data/openscene/navhard_two_stage/EXTRACT_DONE.json" ] || { echo "EXTRACT_DONE.json absent - refusing"; exit 2; }
-    powershell.exe -NoProfile -Command "robocopy 'D:\\Archive\\devbox-C\\navsim\\data\\openscene\\navhard_two_stage\\synthetic_scene_pickles' 'C:\\Users\\Admin\\navsim-crun\\data\\openscene\\navhard_two_stage\\synthetic_scene_pickles' /E /MT:8 /R:2 /W:1 /NFL /NDL /NP /NJH /NJS | Out-Null; 'synthetic rc=' + \$LASTEXITCODE"
+  mirror)  # the C: pickle copy is EXTRACTED BY THE ORCHESTRATOR (never written here); E1 only VERIFIES it,
+           # and copies + sha256-verifies the 76 logs (not part of that extraction).
+    "$PY" - <<'PYEOF'
+import json, os, hashlib, random, sys
+m = "C:/Users/Admin/navsim-crun/data/openscene/navhard_two_stage/EXTRACT_DONE.json"
+if not os.path.exists(m) or not json.load(open(m)).get("ok"):
+    print("C: EXTRACT_DONE.json absent or not ok - refusing"); sys.exit(2)
+c = "C:/Users/Admin/navsim-crun/data/openscene/navhard_two_stage/synthetic_scene_pickles"
+d = "C:/Users/Admin/navsim/data/openscene/navhard_two_stage/synthetic_scene_pickles"
+names = sorted(os.listdir(c)); zero = [n for n in names if os.path.getsize(os.path.join(c, n)) == 0]
+random.seed(19); sample = random.sample(names, 100)
+sha = lambda p: hashlib.sha256(open(p, "rb").read()).hexdigest()
+mism = [n for n in sample if sha(os.path.join(c, n)) != sha(os.path.join(d, n))]
+res = {"n_pickles_C": len(names), "n_zero_byte": len(zero), "sha256_sample": 100, "sample_mismatches": mism,
+       "set_equal_to_D": set(names) == set(os.listdir(d)), "ok": len(names) == 5462 and not zero and not mism}
+json.dump(res, open("D:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-warmup-reference-epdms/raw/navhard/mirror/c_copy_verify.json", "w"), indent=1)
+print(res); sys.exit(0 if res["ok"] else 1)
+PYEOF
     "$PY" - <<'PYEOF'
 import yaml, shutil, os
 sf = yaml.safe_load(open("C:/Users/Admin/navsim-crun/devkit/navsim/planning/script/config/common/train_test_split/scene_filter/navhard_two_stage.yaml"))
@@ -39,9 +57,9 @@ for ln in sf["log_names"]:
         shutil.copy2(f"{src}/{ln}.pkl", f"{dst}/{ln}.pkl"); n += 1
 print("logs copied", n, "of", len(sf["log_names"]))
 PYEOF
-    rels=(openscene/navhard_two_stage/synthetic_scene_pickles)
+    rels=()
     for ln in $("$PY" -c "import yaml;print(' '.join(yaml.safe_load(open('C:/Users/Admin/navsim-crun/devkit/navsim/planning/script/config/common/train_test_split/scene_filter/navhard_two_stage.yaml'))['log_names']))"); do rels+=("openscene/navsim_logs/test/$ln.pkl"); done
-    "$PY" "$PKG/code/verify_mirror.py" "$RAW/mirror/data_mirror_verify_navhard.json" "${rels[@]}" ;;
+    "$PY" "$PKG/code/verify_mirror.py" "$RAW/mirror/data_mirror_verify_navhard_logs.json" "${rels[@]}" ;;
   cache)
     "$PY" "$WRAP" --script metric_caching --label nh_cache --out-dir "$RAW/cache" -- \
       train_test_split=navhard_two_stage "metric_cache_path=$CACHE" "synthetic_scenes_path=$SYN_SCENES" "${POOL[@]}" ;;

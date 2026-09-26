@@ -3,43 +3,11 @@
   "artifact": "raw\\artifacts\\A1_constant_velocity_agent_warmup_two_stage.json",
   "criteria_check_rc": 0,
   "criteria_check_json_written": true,
-  "navsim_gates": {
-   "criteria": {
-    "navsim.score": {
-     "state": "PRESENT",
-     "detail": "benchmark.navsim.score"
-    },
-    "navsim.variant": {
-     "state": "PRESENT",
-     "detail": "benchmark.navsim.variant"
-    },
-    "navsim.submetrics": {
-     "state": "PRESENT",
-     "detail": "benchmark.navsim.submetrics"
-    },
-    "navsim.ego_inputs": {
-     "state": "PRESENT",
-     "detail": "benchmark.navsim.ego_inputs"
-    },
-    "navsim.route_leak_check": {
-     "state": "REFUSED",
-     "detail": "benchmark.navsim.route_leak_check: this reference arm consumes no route / driving_command input, so a route-derived leak cannot enter it (n=220)"
-    }
-   },
-   "gates": {
-    "navsim.estimator_unit": "PASS",
-    "navsim.ego_enforcement": "NOT_APPLICABLE_DECLARED",
-    "navsim.modality_label": "PASS",
-    "navsim.cross_protocol": "PASS"
-   }
-  },
-  "gate_mutations_all_red": {
-   "navsim.estimator_unit": "FAIL",
-   "navsim.ego_enforcement": "FAIL",
-   "navsim.modality_label": "FAIL",
-   "navsim.cross_protocol": "FAIL",
-   "navsim.cross_protocol(short_sha)": "FAIL",
-   "all_red": true
+  "navsim_gates_per_criteria_check": {
+   "navsim.ego_enforcement": "WORK",
+   "navsim.estimator_unit": "WORK",
+   "navsim.modality_label": "ok",
+   "navsim.cross_protocol": "ok"
   },
   "four_families_frame": "verified",
   "two_stage_defined": true,
@@ -53,43 +21,11 @@
   "artifact": "raw\\artifacts\\A2_human_agent_warmup_two_stage.json",
   "criteria_check_rc": 0,
   "criteria_check_json_written": true,
-  "navsim_gates": {
-   "criteria": {
-    "navsim.score": {
-     "state": "REFUSED",
-     "detail": "benchmark.navsim.score: two-stage EPDMS UNDEFINED for human_agent: the OFFICIAL two-stage runner EXITED 1 and wrote NO CSV (MEASURED, raw/A2/A2.log): 204/204 st"
-    },
-    "navsim.variant": {
-     "state": "PRESENT",
-     "detail": "benchmark.navsim.variant"
-    },
-    "navsim.submetrics": {
-     "state": "PRESENT",
-     "detail": "benchmark.navsim.submetrics"
-    },
-    "navsim.ego_inputs": {
-     "state": "PRESENT",
-     "detail": "benchmark.navsim.ego_inputs"
-    },
-    "navsim.route_leak_check": {
-     "state": "REFUSED",
-     "detail": "benchmark.navsim.route_leak_check: this reference arm consumes no route / driving_command input, so a route-derived leak cannot enter it (n=220)"
-    }
-   },
-   "gates": {
-    "navsim.estimator_unit": "PASS",
-    "navsim.ego_enforcement": "NOT_APPLICABLE_DECLARED",
-    "navsim.modality_label": "PASS",
-    "navsim.cross_protocol": "PASS"
-   }
-  },
-  "gate_mutations_all_red": {
-   "navsim.estimator_unit": "FAIL",
-   "navsim.ego_enforcement": "FAIL",
-   "navsim.modality_label": "FAIL",
-   "navsim.cross_protocol": "FAIL",
-   "navsim.cross_protocol(short_sha)": "FAIL",
-   "all_red": true
+  "navsim_gates_per_criteria_check": {
+   "navsim.ego_enforcement": "WORK",
+   "navsim.estimator_unit": "WORK",
+   "navsim.modality_label": "ok",
+   "navsim.cross_protocol": "ok"
   },
   "four_families_frame": "verified",
   "two_stage_defined": false,
