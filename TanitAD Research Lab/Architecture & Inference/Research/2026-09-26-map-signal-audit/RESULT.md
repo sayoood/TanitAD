@@ -76,7 +76,13 @@ D1, D2, D3 and D6 are **ACCEPTED as SPEC_REFCV7 §9 (A4, `b3f7ea6`) but NOT yet 
   - Must-fail arms: `lane_w0` and `s8_zeros`.
 - **G-DVB/map-logging**: `raw/LOGGING_SPEC_MAP10.md`; its regression arm is drivable-only logging.
 
-**Architecture (§7):** keep the 0.5 m head as a declared internal auxiliary (`aux05_*`), i.e. option (a). The PI decides.
+**Architecture (§7):** I recommended option (a), keeping the 0.5 m head as a declared internal auxiliary. **The PI chose (c)** on 2026-09-27: one 0.25 m lift for everything, and a MAXIMAL range (SPEC_REFCV7 §11, A6, `546f34c`).
+
+**Map extent (§9A, A6):** the pre-registered census on all 4,369 TRAIN clips (78,321 frames; byte-identity controls 24/24) selects **100 m ahead × ±30 m**.
+- It is robust to every sensitivity variant.
+- The limits come from the SAM3 renderer's 35 m camera range (`R_MAX`, sam3map_render_v5m.py:33) plus the drive remaining in each clip.
+- A `/3` re-export takes ~1.5 h on 6 Thor workers and ~19.6 GB, and it is byte-identical to `/2` inside the old window only with ANCHORED coordinates.
+- The decoder's saved activations grow to ~21 GB at b16 (~1.1 GB with `grad_ckpt`); the s/step cost is UNMEASURED.
 
 **⛔ INTEGRATION NEEDED (Master Mind).**
 - (i) The builder's `code/fix/` must implement D1, D2, D3 and D6 before any G-MAP run.
@@ -332,6 +338,8 @@ On compute, the lift projection is 129 GFLOP fwd (refcv6) and 258 GFLOP fwd (a p
 | **(b) remove it; the map is 10 cm only** | saves only the 873-param head's loss. The 0.5 m LIFT and BEV encoder must stay, because box3d, the 30 × 16 BEV tokens and the planner's cross-attention read them. | **highest.** The planner-facing BEV encoder loses its only dense supervision and is shaped by box3d and tactical alone. That changes a refcv6-validated input for no memory gain. | only the weighted 10 cm signal reaches the trunk: thin-heavy at convergence, big classes 2.7 % |
 | **(c) one high-res lift (stride 8 @ 0.25 m)** feeding the 10 cm decoder AND a pooled 120 × 64 BEV for planner, box3d and cross-attention | saves the stride-16 lift: −1.9 GiB saved and −5.6 GiB transient vs (a) | **medium-high.** The planner, box3d and tokens would read layer2 features (512 ch) instead of layer3 (1024 ch), which are less semantic, and the geometry changes. A second variable on top of NEW-1. | one consistent BEV. It still wants an unweighted big-class term on the pooled features, i.e. (c) + the aux loss. |
 
+> **SUPERSEDED by the PI's decision (2026-09-27): option (c)** (SPEC_REFCV7 §11.1, A6, `546f34c`). The recommendation below is kept as written, for the record. Its argument about the big-class signal still applies to (c): the pooled planner BEV now receives only the class-weighted 10 cm gradient. The logging spec's per-class loss shares (§6) are the instrument that will show whether drivable starves.
+
 **Recommendation: (a)** for refcv7 (the PI decides):
 - it is `--map-lowres on`, keys renamed `aux05_*` (D6), reported only as "0.5 m auxiliary";
 - (c) is a separate, pre-registered v7-tiny-ladder experiment after refcv7's first bars. It is the cleaner end-state, but it is a planner-input change and must not ride along with NEW-1.
@@ -372,6 +380,73 @@ On compute, the lift projection is 129 GFLOP fwd (refcv6) and 258 GFLOP fwd (a p
   - the `ga_mh_*` keys appear (> 0);
   - **must fail:** drivable-only logging, per-batch IoU instead of counts, a Watch without the panel, and the reach off-by-one.
 
+## 9A. Task 8 (SPEC_REFCV7 §11.2, A6) — the maximal map extent: the coverage census
+
+**PI (verbatim):** *"do c and assure that the range of the map is maximal and not only 20 m"*. The rule is fixed in the SPEC; this census sets the number.
+
+**Order of work.**
+1. **PREREG first:** `raw/PREREG_MAP_EXTENT_CENSUS.md`, md5 `d4d02505…`, mtime 00:19:32. It was written before any world map was read; only the exporter source and file listings had been read.
+2. **The run:** Thor, 00:21–00:22, fresh dir `/home/nvidia/msa_0021/`, script md5 `3da14c3f…` verified after scp. CPU, `nice 19`, 6 workers, the production interpreter (`tanitad-edge`, numpy 2.5.1), read-only on the corpus.
+
+**Validity gate (it ran first; the census would have aborted otherwise):**
+
+| control | frames | identical | differing bytes |
+|---|---:|---:|---:|
+| **C1** — the exporter's own expression re-crops the `[600, 320]` window from the world map on the stored `T_world_rig`, vs the stored `/2` `fine_codes` | 24 (2 per clip × 12 TRAIN clips) | **24 / 24** | **0** |
+| **C2** — the census sampler inside the old window vs `fine_codes[2::5, 2::5]` | 24 | **24 / 24** | 0 |
+
+**Coverage.** 4,369 / 4,369 TRAIN clips (0 missing), **78,321 frames** (17–18 per clip, one per second over the training label frames).
+- "Seen in a ring" means ≥ 20 % of the ring's 10 cm samples are not-255.
+- Coverage is frame-weighted; the clip-weighted values agree to ≤ 0.001.
+- `raw/thor_0021_census/census_table.json` also carries the full block table x 0–200 m × |y| 0–60 m.
+
+| x-ring (ahead, \|y\| < 16 m) | 0–10 | 10–20 | 20–30 | 30–40 | 40–50 | 50–60 | 60–70 | 70–80 | 80–90 | **90–100** | 100–110 | 110–120 | 140–150 | 190–200 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| coverage | 1.000 | 1.000 | 1.000 | 1.000 | 0.941 | 0.846 | 0.754 | 0.672 | 0.598 | **0.532** | 0.473 | 0.422 | 0.300 | 0.174 |
+
+| y-ring (to the side, x < 60 m) | 0–10 | 10–20 | **20–30** | 30–40 | 40–50 | 50–60 |
+|---|---|---|---|---|---|---|
+| coverage | 1.000 | 1.000 | **0.9996** | 0.205 | 0.128 | 0.097 |
+
+**THE RULE SELECTS x_max = 100 m and y_half = ±30 m**, i.e. a 100 m × 60 m map (3.125× today's 60 × 32 m area). Neither lies on the census edge.
+- **Robust:** the same 100 / 30 at the 5 % and the 50 % seen-thresholds, with x-rings taken within |y| < 10 m, with y-rings taken within x < 30 m, and clip-weighted. The rule could have moved; it did not.
+
+**Why these numbers (READ from the renderer source; the source is PUBLISHED-CODE, the attribution is INFERRED):**
+- `sam3map_render_v5m.py:33` sets `R_MAX = 35.0` m. The renderer labels a world cell only within 35 m of SOME camera position in the clip, and the world map's extent is the trajectory padded by R_MAX + 12 m (`:234`).
+- **Lateral:** the ±30 m cliff (1.00 → 0.21) is that 35 m camera range around the driven path. The camera's field of view does not set it. More lateral range needs a re-RENDER, which the SPEC excludes ("SAM3 is NOT re-run").
+- **Ahead:** coverage past 35 m falls with the distance the ego still drives in the clip. At 100 m, 53 % of TRAIN frames still have the rest of the drive in front of them.
+
+**Physics caveat.** It changes no number, but it matters for what the far bands can show. The far GT is non-causal: a cell 60–100 m ahead is labelled from a LATER camera position.
+- From the current frame, 60–100 m of road spans **~4.4 image rows**. This is ANALYTIC: `row = 203.1 + 630/d`, fitted to the measured rows at 40, 50 and 59 m, with d the distance from the camera.
+- That is **< 1 stride-8 feature row**. At 100 m a 0.15 m line is 0.75 px wide.
+- Expect the thin-class bars in the 60–100 m bands to read ~0 for both refcv6 and refcv7. SPEC §11.2.1 already requires such bands to be reported as such, not dropped.
+
+**The `/3` re-export**, timed on 20 TRAIN clips at 100 × ±30 m (`code/reexport_v3_timing.py`, `raw/thor_0021_census/reexport_v3_timing.json`; built in memory, nothing written to disk):
+- **7.26 s per clip** (median 7.23, max 8.31) in one process.
+- ⇒ **all 4,508 clips (train + eval) in ~9.1 h on one process, ~1.5 h on 6**.
+- 4.35 MB per clip, against 2.10 MB for `/2`; **~19.6 GB** in all.
+- **Inside the old 60 × 32 m window, `/3` equals `/2` byte-for-byte:** `fine_codes` AND `cart_frac`, on **all 4,020 frames**.
+
+⚠️ **That identity needs ANCHORED coordinates.** `/2` writes a lateral cell centre as `−y_half + (j + 0.5)·cell`. At y_half = 30 the same cell gets a different float, and a `floor()` on a world-map cell boundary can flip a code. The prototype writes `y = −16 + (j_rel + 0.5)·cell` with `j_rel = j − 140` (fine) or `j − 28` (0.5 m). **Requested of the `/3` exporter's author (via the Master Mind): use this form.**
+
+**The 10 cm decoder at b16, ANALYTIC from the builder's shapes** (`code/decoder_cost_extent.py`, `raw/decoder_cost_extent.json`; fp32; the builder's measured per-sample accounting scaled by area, with this file's own layer count as the check):
+
+| | 60 m × ±16 m | **100 m × ±30 m** |
+|---|---:|---:|
+| lift grid @ 0.25 m / logit grid @ 0.1 m | 240 × 128 / 600 × 320 | 400 × 240 / 1000 × 600 |
+| saved for backward, b16 (builder's measure, scaled) | 6.85 GB | **21.4 GB** |
+| the same, own layer count | 7.48 GB | 23.15 GB |
+| with `grad_ckpt` (builder, scaled) | 0.36 GB | 1.14 GB |
+| logits / their gradient, b16 | 0.09 / 0.09 GB | 0.29 / 0.29 GB |
+| largest transient activation gradient, b16 | 0.37 GB | 1.14 GB |
+| fwd FLOP per sample | 34 GFLOP | 102 GFLOP |
+| fwd + bwd per step, b16 | 1.6 TFLOP (5 % of the trunk's ~32) | **4.9 TFLOP (15 %)** |
+
+- **Memory.** Against refcv6's measured 21.6 GB Thor peak, the new extent adds ~21 GB without checkpointing (≈ 43+ GB) or ~1 GB with `grad_ckpt`, which recomputes the branch (~+30 % of its FLOPs).
+- **Time.** The FLOP share alone predicts +5 % (today's extent) to +15 % (100 × 60) per step. The GroupNorm/GELU passes over 21 GB of activations are memory-bound on top of that. Whether 100 × ±30 m stays under the PI's +25 % s/step line is **UNMEASURED**: the Thor G-LIVE smoke decides, and above +25 % the PI chooses between range and cost (§11.2.2).
+
+**Design note for option (c).** The pooled 0.5 m BEV that now feeds box3d, the planner's cross-attention and the 30 × 16 tokens would grow from 120 × 64 to 200 × 120. Each token would then cover ~3.3 m × 3.75 m instead of 2 m × 2 m. Either crop the planner's pooled BEV to 60 × 32 m or DECLARE the geometry change (G-DVB). It must not change silently.
+
 ## 10. Disclosures
 
 1. **22:26:** `code/analytic_class_signal.py` (CPU, ~300 MB, 130 s) was started at **4.32 GB free**, below my own 7.5 GB start gate. It finished cleanly and has not recurred: the heavy probe is gated by code (`wait_then_probe.py` + the probe's own 3-sample gate and a 4.0 GB abort watchdog).
@@ -387,6 +462,11 @@ On compute, the lift projection is 129 GFLOP fwd (refcv6) and 258 GFLOP fwd (a p
    - no pip installs; no other process touched;
    - its outputs were pulled back md5-verified into `raw/thor_2358/`. The dir is left in place and holds no clip id.
 7. **Box-presence task.** It was added and then moved to the box-head audit mid-run. My partial is banked as `raw/box_presence_partial.{md,json}`, and the Master Mind has the paths.
+8. **Thor, the extent census and `/3` timing** (the Master Mind's brief, GO-THOR rules):
+   - run in the fresh dir `/home/nvidia/msa_0021/`, CPU, `nice 19`, `tanitad-edge`, read-only on `/home/nvidia/sam3map` and `/home/nvidia/data`;
+   - the `/3` prototype built its arrays in memory and wrote nothing but its JSON; no other process was touched;
+   - outputs are pulled back md5-verified into `raw/thor_0021_census/`.
+9. **`code/decoder_cost_extent.py`** is pure arithmetic (< 1 s, no data). It ran on the dev box at 6.39 GB free, below my 7.5 GB rule, which is meant for compute jobs. Disclosed anyway.
 
 ## 11. Deliverable manifest
 
@@ -414,4 +494,8 @@ On compute, the lift projection is 129 GFLOP fwd (refcv6) and 258 GFLOP fwd (a p
 | `code/lift_resolution.py`, `code/analytic_class_signal.py`, `code/arch_memory_analytic.py`, `code/gmo_select_train_frames.py`, `code/measure_class_signal_38k.py` (Thor copy md5 `edb608bb…`), `code/wait_then_probe.py`, `code/summarize_probe.py` | repo (D:) | yes, until landed; the probe also sits at `thor:/home/nvidia/msa_2358/` |
 | clean tree of `2c510fb` (stack, taniteval, tools) | `C:/Users/Admin/msa_tree_2210` (dev box); `thor:/home/nvidia/msa_2358/tree` + `tree_2c510fb.tar` (`ec162e92…`) | scratch, reproducible from git `2c510fb`; not landable |
 | Thor ship bundle | `C:/Users/Admin/msa_thor_bundle_0000/` | scratch, reproducible |
+| `raw/PREREG_MAP_EXTENT_CENSUS.md` (md5 `d4d02505…`) | repo (D:) | yes, until landed |
+| `code/map_extent_census.py` (`3da14c3f…`), `code/reexport_v3_timing.py` (`b2a7c4b6…`) | repo (D:) and `thor:/home/nvidia/msa_0021/` | no (md5-equal) |
+| `code/decoder_cost_extent.py`, `raw/decoder_cost_extent.json` | repo (D:) | yes |
+| `raw/thor_0021_census/census_table.json` (`b61dfa50…`), `census_controls.json` (`acb96b92…`), `census_stdout.log`, `reexport_v3_timing.json` (`d81285ba…`), `reexport_stdout.log` | repo (D:) and `thor:/home/nvidia/msa_0021/out/` | no (md5-equal) |
 
