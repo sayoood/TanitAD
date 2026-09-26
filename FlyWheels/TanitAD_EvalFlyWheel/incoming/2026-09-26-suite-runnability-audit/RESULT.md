@@ -406,3 +406,114 @@ by files MISSING from HEAD, and a fresh checkout has none — the old test would
 understating the fix ~75x and hiding the correctness bug entirely. The stale tree is the only place the
 defect reproduces, and it is the *same* tree before and after, which is what the timing comparison
 required. The tip was then used for the thing it IS authoritative about: the gate's verdict.
+
+## §15 Re-run after all five batches landed — the gate is now RUNNABLE; 0 regressions
+
+⛔ **Which HEAD, stated first.** The D: tree's HEAD is `37645fc`, **155 commits** behind the true tip
+(`048ae3b9`, read from the mirror BY NAME). Its shared worktree is a MIX — probed on 195 files changed
+in the last 8 tip commits: my batch files are **byte-identical** to the tip, while e.g.
+`battery/SPEC.md` is genuinely different and LARGER than the tip (unlanded edits ahead of it).
+⚠️ A first `git hash-object` probe read **138 of 195 "differ"** — mostly the EOL-filter artifact
+(CRLF worktree vs LF blobs); raw-byte comparison showed my files SAME. So this run measures **the
+current shared worktree**, which is neither my HEAD nor the landed tip, and it is labelled as such.
+
+MEASURED, exit code written to a FILE (not read through a pipe):
+
+| | first run (09-26 morning) | re-run |
+|---|---|---|
+| failed / passed / skipped | 31 / 2,380 / 27 | **31 / 2,388 / 27** |
+| wall | **43m 09s** | **9m 40s** |
+| real exit code | reported 0 — **it was `tail`'s** | **`PYTEST_RC=1`** |
+
+* ⭐ **4.5x faster** — the gate is now something a stream will actually run before committing. Almost
+  all of it is batch 5 (one test: 26m 25s → 0.53 s).
+* **Same 31, file for file** (release_gate 17, render_openloop_video 9, registry_paths_allow 2,
+  library_tracking 1, library 1, benchreport_legacy_compat 1) — taken from this run's full 76 KB output,
+  not the pytest cache. ⇒ **0 regressions from everything landed; 0 of the 31 fixed.**
+* **+8 passed = exactly mine** (5 style pins + 3 library arms; the 19 GPU-gate tests were already in the
+  first run's 2,380).
+* The library gate is RED here **for the stale-HEAD reason** and now says so correctly (86 MISSING, not
+  "mount flapping"); at the true tip it reads 552/552. ⇒ **expected count at the tip: 30.**
+
+## §16 ⛔ A leaderboard column we can see but cannot enter
+
+`navsim_v2 --split navtest_single_stage` → **REFUSED**: *"not supported by navsim_v2 here; supported
+['navhard_two_stage', 'warmup_two_stage'] (navtest single-stage is not wired — PDMS_v1 navtest is W3's
+navsim_v1)"*. The profile EXISTS in `navsim/profiles.py`; the benchmark does not accept it.
+
+⇒ `published_results.json` carries **18 external rows** under `EPDMS_v2_navtest_single_stage`
+(DiffusionDrive-V2 at 87.5, among others) and **we have no way to produce our own number in that
+column.** ⭐ The refusal is the RIGHT behaviour — it names the missing wiring instead of running
+something else — so this is a gap, not a defect.
+**What it would take (ESTIMATED, not measured):** the navtest frame bank (32/32 shards) and the v1
+metric cache already exist, but EPDMS needs v2 cache fields (DDC, TLC, LK, HC, EC) that the v1.1 PDMS
+cache does not carry — so a **v2 navtest metric cache** must be built (CPU, hours) before the profile
+can be wired. It is the only NAVSIM protocol on our leaderboard we cannot currently run.
+
+## §17 nuScenes, first contact (PI 2026-09-26: *"yes I accepted the terms, run the meta tier"*)
+
+**Download.** `v1.0-trainval_meta.tgz`, **461,678,030 B**, public bucket `motional-nuscenes`, 191 s,
+receipt `raw/nuscenes/RECEIPT_meta.json` (`accepted_terms_by: Sayed`). Landed packed at
+`D:/Archive/devbox-C/nuscenes/archives/` — **off-repo, one copy**, re-fetchable with the same command.
+
+⛔ **The publisher's own checksum file is WRONG for this object** — and it would have sent us re-downloading
+a perfect file. Our md5 `537d3954…` ≠ the bucket's `md5.checksum` entry `3eee6988…`, at an exactly matching
+byte count. Three independent probes settled it: `gzip -t` (CRC-32 over the whole stream) **OK**; the tar
+index lists 21 members cleanly; and ⭐ **S3's multipart ETag recomputed from OUR bytes (8 MiB parts) =
+`fd4ea76d8701fb567a67a65025d0b022-56`, identical to the live object's** ⇒ our file is byte-for-byte the
+object served today. `md5.checksum` (uploaded 66 s before the archive, 2024-01-30) does not describe it.
+⚠️ **Work item before the 45 GB `planning` tier:** verify each archive by **multipart ETag**, not by
+`md5.checksum` — the script fetches that file but never compares against it, so today it verifies nothing
+beyond byte count.
+
+**Content, by independent statistic:** 13 tables parse — **850 scenes, 34,149 samples, 1,166,187
+annotations, 23 categories, 4 maps**, matching nuScenes' published trainval figures.
+
+**Floors, MEASURED, non-claim-bearing (H-EVAL-6), no interval (no pre-registered cluster unit):**
+
+| protocol | pipeline | n (pre-registered) | GT L2 | STOP L2 | CV L2 | GT-collision floor |
+|---|---|---|---|---|---|---|
+| `nuScenes_OL_L2_uniad` | UniAD | **6,019** ✅ | 0.0 | 9.349 m | 1.365 m | **0.413 %** (PARA-Drive Tab. 8: 0.36 %) |
+| `nuScenes_OL_L2_stp3` | VAD | **5,119** ✅ | 0.0 | 6.591 m | 0.818 m | ⛔ **REFUSED** (was 0.359 %; see below) |
+
+Two of W6's three pre-registered counts reproduced exactly; the third (**4,819**, AD-MLP's 8-future rule)
+belongs to a construction not yet run. ⭐ The two conventions also show *why* the suite refuses to run
+without naming one: the same CV floor reads **1.37 m** (value AT t) vs **0.82 m** (mean UP TO t).
+
+### ⛔⛔ The VAD collision column was computed over the WRONG OBJECTS — found, proven, fixed
+
+`occupancy_vad` selects colliding agents by raw `category.json` **index** — `{2..8}` pedestrian,
+`{14..23}` vehicle (`VAD_HUMAN_INDEX`/`VAD_VEHICLE_INDEX`) — correct only for the **32-entry lidarseg**
+ordering (W6's F10). The base metadata has **23** entries. The audit, run for the first time:
+
+* "pedestrian" `{2..8}` selects wheelchair, stroller, personal mobility, police officer, construction
+  worker, **`animal`** and **`vehicle.car`** — and **misses `human.pedestrian.adult` and `child`**;
+* "vehicle" `{14..23}` selects construction, ambulance, police, trailer, **barrier, traffic cone,
+  pushable, debris, bicycle rack** — and **misses car, truck, both buses, motorcycle and bicycle**;
+  index **23 does not exist**.
+
+⭐ **External confirmation, not just a code reading:** that grid gave a VAD-protocol GT-collision floor of
+**0.359 %** against **PARA-Drive Table 8's published 0.96 %** — **2.7x too low**, precisely the direction
+dropping most road users predicts. UniAD is unaffected: `occupancy_uniad` selects by **name**.
+
+⛔ **Eighth instance of "built, tested, unreachable from its caller":** `vad_category_index_audit` existed
+for exactly this first contact, and its comment says it *"prints it on first contact"* — but it had **zero
+call sites**. First contact happened and it said nothing.
+
+**Fix** (`taniteval/adapters/nuscenes_planning.py`): `vad_category_order_ok()` gates the VAD pipeline
+BEFORE the grid is built; on a False, `kernel_vad` gets `occ=None` and returns collision
+**UNAVAILABLE with the reason** (a new branch mirroring `kernel_stp3`'s), and the audit is written into
+`summary.json → controls.vad_category_audit` on **every** VAD run, pass or refuse. **7 tests**
+(`taniteval/tests/test_nuscenes_vad_category_gate.py`): refuse on the real 23-entry file with the exact
+missed classes; a SYNTHETIC intended-ordering fixture as the positive control (so "always refuse" fails);
+L2 bit-identical with and without the refusal; and ⛔ a refused collision is never published as a fake
+0.0 %. **64 pass** with the existing 57. ⭐ **Proven reachable end-to-end, not only in tests:** the real
+re-run reads collision `UNAVAILABLE` with the reason, the audit is in the summary, and **L2 is bit-for-bit
+unchanged** (STOP `6.590993453736307`, CV `0.8181846342993767`). The pre-fix run is **tombstoned**
+(`TOMBSTONE.json`, directory kept, its 0.359 % retained as the record of the defect).
+
+**Next lever, and it has a real acceptance target now:** computing VAD collision as published needs the
+**32-entry lidarseg `category.json`** (inside the nuScenes-lidarseg expansion — a new download, PI's call)
+or a name-based reimplementation. ⛔ Not by guessing the 32-entry order — that assumption IS the bug.
+⭐ Whichever route: **it must reproduce PARA-Drive's 0.96 % VAD GT-collision floor** before any VAD
+collision number is quoted.

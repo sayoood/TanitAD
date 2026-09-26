@@ -69,3 +69,73 @@ taniteval/tests/test_published_results_style.py
 # Verdict: FAILS on my stale tree naming 86 PDFs (correct); 552/552 present at tip 4c94f4ee => PASSES.
 tools/tests/test_library_tracking.py
 FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-suite-runnability-audit/RESULT.md
+
+## 2026-09-26 batch 6 -- nuScenes: a metadata-only fetch tier
+
+# The fetch script offered pilot|planning|maps|sweeps; "planning" bundles the 0.46 GB metadata with all
+# ten keyframe parts (45.36 GB), so there was NO cheap first step. Added `meta` = v1.0-trainval_meta.tgz
+# (461,678,030 B) alone: validates the harness end to end (GT-collision floor, STOP+CV floors, sample
+# counts, VAD audit) before the 44.9 GB pull. VERIFIED: bash -n OK; the Terms-of-Use gate STILL refuses
+# without the attestation (rc 2, no network touched); meta resolves to exactly that one file.
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-nuscenes-planning-harness/code/fetch_nuscenes_after_tou.sh
+
+## 2026-09-26 batch 7 -- nuScenes first contact + the VAD category gate (8th unreachable-guard instance)
+
+# Metadata tier downloaded (PI-authorised, Terms accepted by Sayed); verified byte-identical to the live
+# S3 object by multipart ETag (the bucket md5.checksum entry does NOT match it). Floors run under both
+# conventions. VAD collision was computed over the WRONG categories on the 23-entry base metadata (0.359%
+# vs PARA-Drive 0.96%); now REFUSED with the reason, audit recorded every run, L2 bit-identical. See §17.
+taniteval/adapters/nuscenes_planning.py
+taniteval/tests/test_nuscenes_vad_category_gate.py
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-suite-runnability-audit/RESULT.md
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-suite-runnability-audit/raw/nuscenes/RECEIPT_meta.json
+# run dirs (report/** is gitignored by policy): UniAD, the REFUSED VAD re-run, and the TOMBSTONED pre-fix run
+taniteval/results/bench/nuscenes_ol/val/20260926T131756Z-nuscenes_ol-none-21abb2/artifacts/CV.json
+taniteval/results/bench/nuscenes_ol/val/20260926T131756Z-nuscenes_ol-none-21abb2/artifacts/GT.json
+taniteval/results/bench/nuscenes_ol/val/20260926T131756Z-nuscenes_ol-none-21abb2/artifacts/STOP.json
+taniteval/results/bench/nuscenes_ol/val/20260926T131756Z-nuscenes_ol-none-21abb2/bench_run.json
+taniteval/results/bench/nuscenes_ol/val/20260926T131756Z-nuscenes_ol-none-21abb2/criteria/CV.txt
+taniteval/results/bench/nuscenes_ol/val/20260926T131756Z-nuscenes_ol-none-21abb2/criteria/GT.txt
+taniteval/results/bench/nuscenes_ol/val/20260926T131756Z-nuscenes_ol-none-21abb2/criteria/STOP.txt
+taniteval/results/bench/nuscenes_ol/val/20260926T131756Z-nuscenes_ol-none-21abb2/raw/bench.log
+taniteval/results/bench/nuscenes_ol/val/20260926T131756Z-nuscenes_ol-none-21abb2/raw/benchreport.log
+taniteval/results/bench/nuscenes_ol/val/20260926T131756Z-nuscenes_ol-none-21abb2/raw/criteria_CV.json
+taniteval/results/bench/nuscenes_ol/val/20260926T131756Z-nuscenes_ol-none-21abb2/raw/criteria_GT.json
+taniteval/results/bench/nuscenes_ol/val/20260926T131756Z-nuscenes_ol-none-21abb2/raw/criteria_STOP.json
+taniteval/results/bench/nuscenes_ol/val/20260926T131756Z-nuscenes_ol-none-21abb2/scores/CV.csv
+taniteval/results/bench/nuscenes_ol/val/20260926T131756Z-nuscenes_ol-none-21abb2/scores/GT.csv
+taniteval/results/bench/nuscenes_ol/val/20260926T131756Z-nuscenes_ol-none-21abb2/scores/STOP.csv
+taniteval/results/bench/nuscenes_ol/val/20260926T131756Z-nuscenes_ol-none-21abb2/summary.json
+taniteval/results/bench/nuscenes_ol/val/20260926T131946Z-nuscenes_ol-none-0885ff/TOMBSTONE.json
+taniteval/results/bench/nuscenes_ol/val/20260926T131946Z-nuscenes_ol-none-0885ff/artifacts/CV.json
+taniteval/results/bench/nuscenes_ol/val/20260926T131946Z-nuscenes_ol-none-0885ff/artifacts/GT.json
+taniteval/results/bench/nuscenes_ol/val/20260926T131946Z-nuscenes_ol-none-0885ff/artifacts/STOP.json
+taniteval/results/bench/nuscenes_ol/val/20260926T131946Z-nuscenes_ol-none-0885ff/bench_run.json
+taniteval/results/bench/nuscenes_ol/val/20260926T131946Z-nuscenes_ol-none-0885ff/criteria/CV.txt
+taniteval/results/bench/nuscenes_ol/val/20260926T131946Z-nuscenes_ol-none-0885ff/criteria/GT.txt
+taniteval/results/bench/nuscenes_ol/val/20260926T131946Z-nuscenes_ol-none-0885ff/criteria/STOP.txt
+taniteval/results/bench/nuscenes_ol/val/20260926T131946Z-nuscenes_ol-none-0885ff/raw/bench.log
+taniteval/results/bench/nuscenes_ol/val/20260926T131946Z-nuscenes_ol-none-0885ff/raw/benchreport.log
+taniteval/results/bench/nuscenes_ol/val/20260926T131946Z-nuscenes_ol-none-0885ff/raw/criteria_CV.json
+taniteval/results/bench/nuscenes_ol/val/20260926T131946Z-nuscenes_ol-none-0885ff/raw/criteria_GT.json
+taniteval/results/bench/nuscenes_ol/val/20260926T131946Z-nuscenes_ol-none-0885ff/raw/criteria_STOP.json
+taniteval/results/bench/nuscenes_ol/val/20260926T131946Z-nuscenes_ol-none-0885ff/scores/CV.csv
+taniteval/results/bench/nuscenes_ol/val/20260926T131946Z-nuscenes_ol-none-0885ff/scores/GT.csv
+taniteval/results/bench/nuscenes_ol/val/20260926T131946Z-nuscenes_ol-none-0885ff/scores/STOP.csv
+taniteval/results/bench/nuscenes_ol/val/20260926T131946Z-nuscenes_ol-none-0885ff/summary.json
+taniteval/results/bench/nuscenes_ol/val/20260926T132840Z-nuscenes_ol-none-fcfc20/artifacts/CV.json
+taniteval/results/bench/nuscenes_ol/val/20260926T132840Z-nuscenes_ol-none-fcfc20/artifacts/GT.json
+taniteval/results/bench/nuscenes_ol/val/20260926T132840Z-nuscenes_ol-none-fcfc20/artifacts/STOP.json
+taniteval/results/bench/nuscenes_ol/val/20260926T132840Z-nuscenes_ol-none-fcfc20/bench_run.json
+taniteval/results/bench/nuscenes_ol/val/20260926T132840Z-nuscenes_ol-none-fcfc20/criteria/CV.txt
+taniteval/results/bench/nuscenes_ol/val/20260926T132840Z-nuscenes_ol-none-fcfc20/criteria/GT.txt
+taniteval/results/bench/nuscenes_ol/val/20260926T132840Z-nuscenes_ol-none-fcfc20/criteria/STOP.txt
+taniteval/results/bench/nuscenes_ol/val/20260926T132840Z-nuscenes_ol-none-fcfc20/raw/bench.log
+taniteval/results/bench/nuscenes_ol/val/20260926T132840Z-nuscenes_ol-none-fcfc20/raw/benchreport.log
+taniteval/results/bench/nuscenes_ol/val/20260926T132840Z-nuscenes_ol-none-fcfc20/raw/criteria_CV.json
+taniteval/results/bench/nuscenes_ol/val/20260926T132840Z-nuscenes_ol-none-fcfc20/raw/criteria_GT.json
+taniteval/results/bench/nuscenes_ol/val/20260926T132840Z-nuscenes_ol-none-fcfc20/raw/criteria_STOP.json
+taniteval/results/bench/nuscenes_ol/val/20260926T132840Z-nuscenes_ol-none-fcfc20/scores/CV.csv
+taniteval/results/bench/nuscenes_ol/val/20260926T132840Z-nuscenes_ol-none-fcfc20/scores/GT.csv
+taniteval/results/bench/nuscenes_ol/val/20260926T132840Z-nuscenes_ol-none-fcfc20/scores/STOP.csv
+taniteval/results/bench/nuscenes_ol/val/20260926T132840Z-nuscenes_ol-none-fcfc20/summary.json

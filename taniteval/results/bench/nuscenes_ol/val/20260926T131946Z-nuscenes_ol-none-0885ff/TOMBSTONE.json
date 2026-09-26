@@ -1,0 +1,9 @@
+{
+ "TOMBSTONE": true,
+ "run_id": "20260926T131946Z-nuscenes_ol-none-0885ff",
+ "removed_utc": "2026-09-26T13:30:46Z",
+ "superseded_by": "20260926T132840Z-nuscenes_ol-none-fcfc20",
+ "why": "VAD-pipeline collision computed over the WRONG categories: VAD selects colliding agents by raw category.json INDEX ({2..8} ped, {14..23} veh), valid only for the 32-entry lidarseg ordering; the base v1.0-trainval_meta has 23 entries, so the grid excluded adult/child pedestrians and all cars/trucks/buses/two-wheelers while including barriers and traffic cones. Its GT-collision floor 0.359 pct vs PARA-Drive Tab.8 published 0.96 pct (2.7x low). L2 in this run is CORRECT and bit-identical to the superseding run; only collision is withdrawn.",
+ "evidence_kept": "summary.json, scores/*.csv and the 0.359 pct figure are retained unmodified as the record of the defect",
+ "rule": "taniteval/results/bench/** is APPEND-ONLY (W4, 2026-09-20): a withdrawn run leaves this tombstone instead of vanishing under a consumer that has already cited it"
+}

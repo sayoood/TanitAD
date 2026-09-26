@@ -439,7 +439,7 @@ def _single_coll_vad(traj: np.ndarray, seg: np.ndarray) -> np.ndarray:
     return out
 
 
-def kernel_vad(pred, gt, occ, fut_valid) -> KernelOutput:
+def kernel_vad(pred, gt, occ, fut_valid, unavailable_reason: str = "") -> KernelOutput:
     """VAD ``compute_planner_metric_stp3`` + ``evaluate_coll`` (VAD.py:593-641,
     metric_stp3.py:242-308 @1688c4b). No x flip; L2 is the per-waypoint Euclidean distance.
 
@@ -452,6 +452,16 @@ def kernel_vad(pred, gt, occ, fut_valid) -> KernelOutput:
     n = pred.shape[0]
     fv = np.asarray(fut_valid, dtype=bool)
     l2 = np.sqrt(((pred - gt) ** 2).sum(axis=-1)).astype(np.float64)
+    if occ is None:
+        # ⛔ REFUSED, never guessed: L2 stays valid, collision is not computed. The caller passes
+        # ``occ=None`` when VAD's literal category indices do not select VAD's intended classes on
+        # this category.json (see :func:`vad_category_order_ok`) — the grid would otherwise hold
+        # the wrong objects and yield a plausible, wrong collision rate.
+        z = np.zeros((n, N_FUTURE), np.int8)
+        return KernelOutput(Pipeline.VAD, l2, z, z.copy(), z.copy(), np.ones((n, N_FUTURE), bool), fv,
+                            collision_available=False,
+                            collision_unavailable_reason=unavailable_reason or (
+                                "VAD occupancy not supplied; collision not computed"))
     obj = np.zeros((n, N_FUTURE), np.int8)
     box = np.zeros((n, N_FUTURE), np.int8)
     gtc = np.zeros((n, N_FUTURE), np.int8)
@@ -1162,6 +1172,47 @@ def vad_category_index_audit(meta: Meta) -> dict:
                                            if n.startswith("vehicle.") and i not in VAD_VEHICLE_INDEX]}
 
 
+def vad_category_order_ok(audit: dict) -> tuple[bool, str]:
+    """Do VAD's LITERAL index sets select VAD's INTENDED classes on this ``category.json``?
+
+    ⛔ WHY (MEASURED 2026-09-26, first contact with real metadata). VAD selects colliding agents by
+    raw ``category.json`` INDEX — ``{2..8}`` pedestrian, ``{14..23}`` vehicle — which is right only for
+    the 32-entry lidarseg ordering. The base ``v1.0-trainval_meta`` ships **23** entries, and there the
+    same indices pick ``animal`` and ``vehicle.car`` as "human", barriers / traffic cones / debris /
+    bicycle racks as "vehicle", and MISS ``human.pedestrian.adult``/``child`` and every car, truck,
+    bus, motorcycle and bicycle; index 23 does not exist. The VAD-protocol GT-collision floor then read
+    **0.359 %** against PARA-Drive Table 8's published **0.96 %** — 2.7x too low, in exactly the
+    direction dropping most road users predicts.
+
+    ⭐ This function existed only as ``vad_category_index_audit``, which the benchmark NEVER CALLED —
+    the eighth "built, tested, unreachable from its caller" instance. It is now the gate: the scorer
+    calls it for the VAD pipeline and REFUSES collision on a False.
+
+    True iff: no index is out of range, the pedestrian set selects ONLY ``human.*`` names and ALL of
+    them, and the vehicle set selects ONLY ``vehicle.*`` names and ALL of them.
+    """
+    bad = []
+    if audit["indices_out_of_range"]:
+        bad.append(f"indices {audit['indices_out_of_range']} out of range for "
+                   f"{audit['n_categories']} categories")
+    wrong_h = {i: n for i, n in audit["human_index_2_8"].items() if not n.startswith("human.")}
+    wrong_v = {i: n for i, n in audit["vehicle_index_14_23"].items() if not n.startswith("vehicle.")}
+    if wrong_h:
+        bad.append(f"pedestrian indices select non-human {wrong_h}")
+    if wrong_v:
+        bad.append(f"vehicle indices select non-vehicle {wrong_v}")
+    if audit["human_names_not_selected"]:
+        bad.append(f"pedestrians MISSED {audit['human_names_not_selected']}")
+    if audit["vehicle_names_not_selected"]:
+        bad.append(f"vehicles MISSED {audit['vehicle_names_not_selected']}")
+    if not bad:
+        return True, ""
+    return False, ("VAD collision REFUSED: its literal category indices ({2..8} pedestrian, "
+                   "{14..23} vehicle) assume the 32-entry lidarseg category.json ordering, but this "
+                   f"one has {audit['n_categories']} entries — " + "; ".join(bad)
+                   + ". A grid built from them holds the wrong objects. L2 is unaffected.")
+
+
 # --------------------------------------------------------------------------- #
 # 8. Input adapter — nuScenes CAM_FRONT -> our cylindrical training frame        #
 # --------------------------------------------------------------------------- #
@@ -1502,6 +1553,22 @@ def evaluate_arms(meta: Meta, scene_names: Sequence[str], protocol: str,
     gt = np.zeros((n, N_FUTURE, 2))
     valid = np.zeros((n, N_FUTURE), bool)
     occ = np.zeros((n, N_FUTURE, BEV, BEV), np.uint8) if tag.pipeline is not Pipeline.STP3 else None
+    # ⛔ The VAD pipeline selects colliding agents by raw category INDEX. Decide BEFORE the grid is
+    # built: if those indices do not pick VAD's intended classes here, refuse collision (L2 stands)
+    # rather than compute a plausible collision rate over the wrong objects.
+    vad_audit, coll_refusal = None, ""
+    if tag.pipeline is Pipeline.VAD:
+        raw_audit = vad_category_index_audit(meta)
+        ok, coll_refusal = vad_category_order_ok(raw_audit)
+        vad_audit = {"order_ok": ok, "refusal_reason": coll_refusal or None,
+                     "n_categories": raw_audit["n_categories"],
+                     "indices_out_of_range": raw_audit["indices_out_of_range"],
+                     "pedestrian_set_selects": {str(i): v for i, v in raw_audit["human_index_2_8"].items()},
+                     "vehicle_set_selects": {str(i): v for i, v in raw_audit["vehicle_index_14_23"].items()},
+                     "pedestrians_missed": raw_audit["human_names_not_selected"],
+                     "vehicles_missed": raw_audit["vehicle_names_not_selected"]}
+        if not ok:
+            occ = None
     scored = np.array([r[key] for r in rows], bool)
     cmds = []
     samples = [meta.by["sample"][r["sample_token"]] for r in rows]
@@ -1511,7 +1578,7 @@ def evaluate_arms(meta: Meta, scene_names: Sequence[str], protocol: str,
         if occ is not None:
             occ[i] = occupancy_uniad(meta, s) if tag.pipeline is Pipeline.UNIAD else occupancy_vad(meta, s)
     out = {"tag": tag, "rows": rows, "gt": gt, "valid": valid, "scored": scored,
-           "commands_gt": cmds, "arms": {}}
+           "commands_gt": cmds, "arms": {}, "vad_category_audit": vad_audit}
     all_arms = list(arms) + list((model_arms or {}).keys())
     for arm in all_arms:
         extra = {}
@@ -1536,7 +1603,7 @@ def evaluate_arms(meta: Meta, scene_names: Sequence[str], protocol: str,
         if tag.pipeline is Pipeline.UNIAD:
             k = kernel_uniad(pred, gt, valid, occ)
         elif tag.pipeline is Pipeline.VAD:
-            k = kernel_vad(pred, gt, occ, scored)
+            k = kernel_vad(pred, gt, occ, scored, unavailable_reason=coll_refusal)
         else:
             k = kernel_stp3(pred, gt, None, scored)
         res = score(k, tag)
@@ -1670,7 +1737,11 @@ def build_run_outputs(ev: dict, *, split_name: str, n_scenes: int, n_logs: int |
                             "higher_is_better": False,
                             "statistic": f"{tag.reduction.value} reduction on {tag.pipeline.value}"},
         "floors": floors, "arms": {k: v["summary_arm"] for k, v in arms.items()},
-        "controls": {"gt_control": gt_ctrl},
+        "controls": {"gt_control": gt_ctrl,
+                     # recorded on EVERY VAD-pipeline run, pass or refuse — an audit that only
+                     # speaks when it fails is indistinguishable from one that never ran
+                     **({"vad_category_audit": ev["vad_category_audit"]}
+                        if ev.get("vad_category_audit") is not None else {})},
         "provenance": {"protocol_tag": tag.to_dict(), "pins": PINS,
                        "claim_bearing_reason": CLAIM_BEARING_REASON, "split": split},
     }
