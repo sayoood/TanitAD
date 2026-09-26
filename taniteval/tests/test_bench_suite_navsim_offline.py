@@ -161,6 +161,9 @@ def test_cv_families_reproduce_e1_artifact(offline_run):
     assert f["lateral"]["metrics"]["cross_mae_m"] == 1.0658
     assert f["lateral"]["metrics"]["heading_mae_deg"] == 7.4799
     assert f["strategic"]["status"] == "UNAVAILABLE" and f["strategic"]["reason"]
+    # ⛔ NAVSIM has a map: the PhysicalAI-AV "no map" reason is true-but-wrong-for-the-reader here (2026-09-26)
+    assert "PhysicalAI-AV carries NO map" not in f["strategic"]["reason"]
+    assert "DOES carry a map" in f["strategic"]["reason"]
     assert f["longitudinal"]["n"] == 16
 
 

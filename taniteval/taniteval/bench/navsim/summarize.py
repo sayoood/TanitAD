@@ -320,7 +320,10 @@ def families_from_artifact(art: dict, scope: str) -> dict:
         if st not in ("OK", "PARTIAL"):
             reason = str(b.get("reason") or "UNAVAILABLE without a reason (adapter)")
             if b.get("navsim_specific_reason"):
-                reason += " | NavSim: " + str(b["navsim_specific_reason"])
+                # a LEGACY artifact (before 2026-09-26): its `reason` is the PhysicalAI-AV "no map" text and its
+                # own side key says so. Show the NavSim fact, never the other corpus's reason first.
+                reason = (str(b["navsim_specific_reason"]) + " [legacy artifact: its generic `reason` field is "
+                          "PhysicalAI-specific and is not shown]")
             out[fam] = {"status": "UNAVAILABLE", "reason": reason, "n": int(b.get("n", 0) or 0)}
             continue
         blk = {"status": "OK", "n": n, "scope": scope, "tier": b.get("tier"), "metrics": {}}

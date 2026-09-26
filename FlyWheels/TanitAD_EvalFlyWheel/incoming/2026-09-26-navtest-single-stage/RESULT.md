@@ -94,6 +94,8 @@ Token `937ca624cc2658a6`, CV: v1.1 NC **0.5** (a static-object collision), v2 NC
 
 ## 5. What runs next without me (agent-free) — and what to read
 
+* ⛔ **SUPERSEDED 2026-09-26 21:00 Berlin — the gate below is the ORIGINAL one; the live waiter is PID 46536 on the
+  REWIRED gate in §8** (refcv6 was stopped by the PI, so gate (b) could never fire).
 * **`code/navtest_full_after_final.py`** (PID 2052, relaunched 16:54 with the start gate + reuse below; log `raw/full_waiter.log`; the first instance's log is `raw/full_waiter.attempt1_superseded.log`): waits until **(a)** `metric_cache_navtest_v2/CACHE_DONE.json` certifies the yaml token set, **(b)** `ZZFINALV2ENDZZ` follows the latest `ZZFINALV2STARTZZ` in `C:/Users/Admin/ev6_battery/raw/final_v2.log`, **(c)** no `run_battery.py` is alive; then a sustained window of **≥ 11.5 GB available** (the 9 GB floor + the scorer's own ESTIMATED ~2.5 GB peak — the wrapper's guard counts our footprint too, so starting AT the floor would yield on itself); then the full CLI run (CV, STOP, HUMAN; wrapper floor 9 GB; up to 6 attempts, each retry adopting the arms that already PASSED via `--reuse-scored-arms`) and the pre-registered post-checks → **`raw/verdict_full.json`** (`validated_under_A2`, plus the original C-NC/C-TTC reported beside it). Its post-pipeline was tested end-to-end on the smoke (`raw/verdict_smoke218_pipelinetest.json`).
 * **The cache builder** (`raw/cache_full.driver.log`) — resumable: re-running the same command skips finished groups.
 * ⚠ If either process dies with this session, relaunch (cwd `D:/Projects/TanitAD/taniteval`):
@@ -104,6 +106,9 @@ Token `937ca624cc2658a6`, CV: v1.1 NC **0.5** (a static-object collision), v2 NC
 
 * **E1 → W4 (leaderboard)** — the `EPDMS_v2_navtest_single_stage` column **mixes 8 `pre` / 6 `unverified` / 4 `post` rows**; our number is **post-#151** (`summary.provenance.harness.fix151 = "post"`, caveat `FIX151_POST_ONLY_COMPARABLE` on every arm) and is comparable **only to the 4 post rows** (DiffusionDrive 84.5, DDv2 87.5, Latent-WAM 89.3, DriveFuture 89.9) — and even those only if they were scored with **non-reactive** traffic, which **no banked primary states** (searched 2605.09701, 2512.07745, 2604.03581, 2506.04218). `Human (logged) 90.3` is pre-fix/INFERRED and **not a target**. The renderer does not read `provenance.harness.fix151` for OUR rows today — they must land in the post table. The 0E.4 "TanitAD — any arm: NOT TARGETED" line needs revisiting once the full-split floors exist.
 * **E2 → Master Mind** — the full split is blocked on the shared box (§0); nothing to decide unless the 9 GB floor should be relaxed for a 0.5 GB process (the brief set it; I did not move it). Single committer: see `LANDING_READY.txt`.
+* ✅ **E3 RESOLVED 2026-09-26 (EvalFlyWheel orchestrator)** — the n/a reason is now stated per corpus and NavSim
+  artifacts carry the NavSim fact as THE `reason`; see `2026-09-26-suite-runnability-audit/RESULT.md` §24. The
+  original escalation follows.
 * **E3 → W2 (adapter)** — the STRATEGIC refusal text on NavSim artifacts reads *"PhysicalAI-AV carries NO map, NO lane graph …"* — true of PhysicalAI, **wrong for NavSim** (which has maps and a route); a NavSim-specific reason is needed (true-but-wrong-for-the-reader class). Pre-existing, not introduced here.
 * **E4 → whoever wires model arms on navtest** — refused here with the unblock: a `model_arms.DEFAULT_BANKS['navtest_single_stage']` entry + a stage-1-only join of W3's 32-shard bank (`D:/Archive/devbox-C/navsim/exp/w3_navtest_v1/frame_bank`) through the suite's bridge.
 * **E6 → Master Mind (register)** — `REGISTER_ROWS.md` carries 5 rows + 1 retraction candidate for `GOALS_AND_CLAIMS.md` / `RETRACTION_LOG.md`. ⛔ Not edited in place: this worktree's register blob (`740e4a59…`) is OLDER than the tip's (`baeaf548…`), and editing the stale base would revert the tip's newer rows on commit.
@@ -117,6 +122,7 @@ Token `937ca624cc2658a6`, CV: v1.1 NC **0.5** (a static-object collision), v2 NC
 | single-stage run + cache builder | `repo:taniteval/taniteval/bench/navsim/{single_stage.py, cache_build.py}` (staged) |
 | devkit-side | `repo:taniteval/taniteval/bench/navsim/devkit_side/{export_agent_inputs.py, write_cache_metadata.py, PROVENANCE.json}` (staged) |
 | tests | `repo:taniteval/tests/test_bench_navsim_navtest_single_stage.py` (new), `repo:taniteval/tests/test_bench_suite_navsim_offline.py` (literal file list +1) (staged) |
+| the waiter's start-gate tests (§8) | `repo:FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-navtest-single-stage/tests/test_full_waiter_gate.py` (new, 19; staged) |
 | PREREG + hash chain, RESULT, REGISTER_ROWS, LANDING_READY | `repo:FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-navtest-single-stage/` (staged) |
 | analysis code | `repo:…/code/{cross_protocol_check.py, e_t0_from_cache.py, e_obs_digest.py, e_obs_classify.py, counterfactual_v2fn_v1inputs.py, diag_observation_objects.py, navtest_full_after_final.py}` (staged) |
 | smoke evidence | `repo:…/raw/` (smoke token sets, cache-build records, both smoke runs' records, fixtures, E-T0/E-OBS/counterfactual/cross-check JSONs) (staged) |
@@ -124,3 +130,54 @@ Token `937ca624cc2658a6`, CV: v1.1 NC **0.5** (a static-object collision), v2 NC
 | the 12,146-token cache (IN PROGRESS) | `C:/Users/Admin/navsim-crun/exp/metric_cache_navtest_v2` — **one place, off-repo**; rebuildable (§5) |
 | smoke run directories | `D:/Projects/TanitAD/taniteval/results/bench/_scratch/navsim_v2/navtest_single_stage/{20260926T135050Z-…-2e5ea3 (sub200, FAILED in aggregation), 20260926T135821Z-…-ce7ac0 (smoke218, COMPLETE)}` — **worktree only, untracked** (`_scratch`, consumers skip it); their load-bearing records are copied into `raw/smoke200_run/`, `raw/smoke218_run/`, `raw/smoke218_fixtures/` |
 | exports | `C:/Users/Admin/navsim-crun/exp/tanitad_bench/exports/navtest_single_stage__subset_*` — off-repo, rebuilt on demand (content-keyed) |
+
+## 8. REWIRED 2026-09-26 evening — the FINAL gate dropped (refcv6 stopped by the PI), and two defects the rewire exposed
+
+**Why.** The PI stopped refcv6 at 20:40 Berlin (*"go with b, stop refcv6"*; `D:/refcv6_eval_kit/ckpt_final/STOPPED_BY_PI.json`:
+ckpt 38000, md5 `5a2e7222a9f5f8c7aa7bf38ef4698d8a`, and no `summary.json` will be written). Gate (b) above, `ZZFINALV2ENDZZ`
+after the latest `ZZFINALV2STARTZZ`, can therefore never fire: the waiter would have sat out its 72 h and GIVEN UP. The
+Master Mind asked for the rewire: start when `CACHE_DONE.json` exists, no `run_battery.py` runs, the GPU gate passes and
+≥ 11.5 GB is free. Its GPU queue for tonight: **navhard@30k → the PI's agent-box video → the battery's A6 → these floors.**
+The FINAL-chain waiter (`waiter_final`, PID 34612) was stopped by explicit PID and recorded in
+`2026-09-23-refcv6-standard-tests/navsim/raw/milestones/WAITER_FINAL_STOPPED.json`.
+
+**The start gate now** — all four read TOGETHER, and re-read before EVERY run attempt:
+
+| gate | how it is read |
+|---|---|
+| cache DONE | `metric_cache_navtest_v2/CACHE_DONE.json` — MEASURED true: `FULL_SPLIT`, 12,146 / 12,146 stage-one tokens, token sets equal the yaml |
+| GPU gate PASS | the battery's own `battery/code/gpu_gate.py` (used < 4,300 MiB, no other python compute, ≥ 8 GB free RAM) — one definition of "box quiet"; missing script / timeout / any other rc is a WAIT |
+| nothing queued ahead | python processes matching `run_battery`, `ev6_battery`, `run_navsim_refcv6`, `navsim_win.py` (`QUEUE_AHEAD`); an unreadable process table is a WAIT, with a positive control — the waiter's own pid must appear in it |
+| RAM | ≥ 11,500 MB available on 5 consecutive samples |
+
+**Defect 1 — the queue check could not see the queue.** MEASURED ~20:49 Berlin: with A6 holding the GPU (`a6_roll.py`,
+PIDs 47572/15708) and navhard@30k scoring (drivers 35224/39536, scorers 3124/34128), the literal rule read
+`battery_pids: []`. Tonight's battery runs as `a6_chain.sh → a6_roll.py` and never names `run_battery.py`; the gate wait
+between its two rolls is `python -c "import run_battery as RB"` (no `.py`); and navhard@30k was not checked at all. That
+run is in CPU scoring (stage-two scenario 1,869 / 5,462 at 20:53 Berlin), which the GPU gate cannot see — and the E1 RAM
+guard already aborted navtest@30k's official scorer **six times today** while other jobs held the RAM
+(`…/milestones/step30000/INVALID_partial_navtest_score_20260926/INVALID.txt`). Under the literal rule the floors could
+have started beside navhard@30k and repeated exactly that failure. On the same live table the new check read **exactly
+the six queue-ahead PIDs**, and none of the processes that must not block (the waiter itself, a foreign
+`eval_checkpoint.py` / `refe_navtest_seam.py` job, `hfpush_refcv6.py`).
+
+**Defect 2 — a RAM wait that never looked back.** The old loop read its gates ONCE, then waited up to 24 h on RAM alone,
+and then started **even when that RAM wait had FAILED** (`note("RAMOK", gate=g)` and `run_cli` ran unconditionally).
+With a LATCH as the gate (FINAL-ended stays ended) this was nearly harmless; with the GPU gate and the queue, which are
+not latches, a start hours later could land on a box that had filled up again. `wait_until_quiet()` now re-reads cache,
+GPU and queue after the RAM window, and again before every retry.
+
+**Pinned.** `tests/test_full_waiter_gate.py` — **19 passed**, every command line a literal copied from the live process
+table. Mutation arms: the pre-fix rule must MISS A6, navhard@30k and the scorer; a too-broad `battery` pattern would match
+the gate script's own path. Three CODE mutations on a scratch copy each turn exactly one test RED (18 pass, 1 fail each):
+dropping the post-RAM re-read, starting on a failed RAM wait, dropping the own-pid positive control.
+
+**Live.** PID **46536** (venv launcher 49692), relaunched **21:00:42 Berlin** from `D:/Projects/TanitAD/taniteval`; its
+START record carries the new rule, and its first STATE names the six queue-ahead processes and the GPU gate at rc 3
+(7,397 MiB used, two foreign python compute processes). `--gate-once` prints the whole gate once without running or logging
+anything.
+
+**Ordering, stated so nobody is surprised.** The floors now wait for navhard@30k to finish BOTH arms (R6_A1, R6_A1_s1) and
+for any python work in the battery chain. That includes L3 if it starts first: `l3_tag.sh` is alive, waiting for A6's end
+marker, and its `lever_eps0.py` carries the `ev6_battery` root. If the floors should run ahead of L3, that is a one-line
+change to `QUEUE_AHEAD`, and the Master Mind's call.

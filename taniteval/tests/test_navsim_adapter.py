@@ -835,11 +835,23 @@ def test_the_four_families_keys_resolve_for_the_geometry_families():
 
 
 def test_strategic_carries_the_navsim_specific_reason_not_the_physicalai_one():
+    """⛔ Asserted on the PRIMARY `reason` — the field the criteria check and every report quote. Until
+    2026-09-26 this test checked only a side key, and was green while the primary reason told every NavSim
+    reader that the corpus has no map."""
     art = NS.build_artifact(make_win(), tier="T1", split="navtest", n_boot=40)
     s = art["four_families"]["strategic"]
     assert s["status"] == "UNAVAILABLE" and s["n"] == N
-    assert "driving_command` is an INPUT" in s["navsim_specific_reason"]
-    assert "buildable WORK ITEM" in s["navsim_specific_reason"]
+    assert s["corpus"] == "navsim"
+    assert "DOES carry a map" in s["reason"]
+    assert "`driving_command` is an agent INPUT" in s["reason"]
+    assert "ROUTE-LEVEL ORACLE" in s["reason"]
+    for physicalai_only in ("PhysicalAI-AV carries NO map", "we do not include open maps data", "lat/lon"):
+        assert physicalai_only not in s["reason"], physicalai_only
+    assert "EVAL ENGINEERING" in s["_is_a_work_item"] and "CORPUS fact" not in s["_is_a_work_item"]
+    assert "AlpaSim" not in s["_settled"]
+    assert "strategic_optionset" in s["instrument_that_would_close_it"]
+    assert "VLM" not in s["instrument_that_would_close_it"]
+    assert "navsim_specific_reason" not in s      # one reason, not a wrong one plus a correction
 
 
 # ---------------------------------------------------------------------------

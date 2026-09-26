@@ -227,3 +227,35 @@ FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-suite-runnability-audit/RESUL
 taniteval/adapters/nuscenes_planning.py
 taniteval/tests/test_nuscenes_stp3_blacklist_train.py
 FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-suite-runnability-audit/RESULT.md
+
+## 2026-09-26 batch 12 -- REFCV6-STOP: waiter_final stopped; W8's full-floors waiter rewired off FINAL (+2 gate defects fixed, 19 tests)
+# The PI stopped refcv6 (STOPPED_BY_PI.json, ckpt 38000) -> the FINAL chain can never end. waiter_final PID 34612 stopped
+# by explicit PID (record below). W8's waiter no longer waits on FINAL: cache DONE + GPU gate + nothing queued ahead
+# (run_battery / ev6_battery chain / navhard@30k / any navsim_win.py scorer) + a sustained 11.5 GB RAM window, ALL re-read
+# before every run attempt. The literal "no run_battery.py" check read [] while A6 held the GPU (tonight's battery never
+# names that file) and could not see navhard@30k's CPU scoring; the old loop also started after a FAILED RAM wait.
+# 19 tests (literal live command lines; 2 pattern mutations; 3 code mutations each RED on one test). Live: PID 46536.
+# Also carries the audit RESULT.md 23a provenance append (staged 1a7727638e51) in case batch 11 predates it.
+# NOT staged (live, handed over at the waiter's END): FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-navtest-single-stage/raw/full_waiter.log, raw/full_waiter.out
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-navtest-single-stage/code/navtest_full_after_final.py
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-navtest-single-stage/tests/test_full_waiter_gate.py
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-navtest-single-stage/RESULT.md
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/raw/milestones/WAITER_FINAL_STOPPED.json
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-suite-runnability-audit/RESULT.md
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-suite-runnability-audit/LANDING_READY.txt
+
+## 2026-09-26 batch 13 -- E3: the NavSim STRATEGIC n/a no longer tells readers NAVSIM has no map (per-corpus reason; 6 new tests, 3 mutations RED)
+# four_families.STRATEGIC_NA_BY_CORPUS (physicalai verbatim, navsim new; unknown corpus REFUSED); the adapter passes
+# strategic_corpus="navsim"; the summarizer renders legacy artifacts NavSim-first. 438 passed over 11 suites.
+# EOL: four_families.py is CRLF in the tip (ea9b02d4) -- staged BYTE-EXACT (hash-object --no-filters + cacheinfo) so the
+# landing is +73 -15 in 5 hunks, not a whole-file rewrite. The other code/test files differ from the tip by their hunks only.
+# W8's RESULT.md is also in batch 12; it now carries the E3-resolved line too.
+taniteval/taniteval/four_families.py
+taniteval/adapters/navsim.py
+taniteval/taniteval/bench/navsim/summarize.py
+taniteval/tests/test_strategic_na_per_corpus.py
+taniteval/tests/test_navsim_adapter.py
+taniteval/tests/test_bench_suite_navsim_offline.py
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-suite-runnability-audit/RESULT.md
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-navtest-single-stage/RESULT.md
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-suite-runnability-audit/LANDING_READY.txt

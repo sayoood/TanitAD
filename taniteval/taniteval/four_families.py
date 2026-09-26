@@ -1399,18 +1399,35 @@ STRATEGIC_INSTRUMENT_THAT_WOULD_CLOSE_IT = (
     "STRATEGIC family is n/a WITH ITS REASON AND n.")
 
 
-def strategic_unavailable(n_windows: int, tier=None) -> dict:
-    """The STRATEGIC family's honest n/a — reason + n + the closing instrument.
+#: ⛔ THE NAVSIM STRATEGIC REASON (2026-09-26). NAVSIM HAS a map, so the PhysicalAI-AV reason above is
+#: TRUE-BUT-WRONG-FOR-THE-READER on a NavSim artifact: it tells the reader the family is blocked on a
+#: corpus fact, when on NavSim it is blocked on eval engineering. Until this existed the PhysicalAI text
+#: was the PRIMARY ``reason`` on every NavSim artifact, with the correction in a side key that the
+#: criteria check never read.
+NAVSIM_STRATEGIC_UNAVAILABLE_REASON = (
+    "NAVSIM (nuPlan/OpenScene) DOES carry a map, a lane graph and a route — this is NOT the "
+    "PhysicalAI-AV corpus gap. STRATEGIC is n/a here for two different reasons: (1) the BENCHMARK never "
+    "scores it — `driving_command` is an agent INPUT and PDMS/EPDMS have no strategic term "
+    "(NAVSIM_PROTOCOL.md §8, coverage row strat.decision / strat.route_goal: ABSENT); (2) this harness "
+    "has no NAVSIM strategic label builder yet (TANITEVAL_AUDIT.md, seam 7). ⚠️ The route cannot simply "
+    "be read back as the label: `route_roadblock_ids` is the expert's own driven path at roadblock "
+    "granularity — a ROUTE-LEVEL ORACLE (NAVSIM_PROTOCOL.md §9 item 4, SETTLED 2026-09-19; "
+    "adapters.navsim.ROUTE_LEAK_VERDICT) — so a route-derived label would score an arm against its own "
+    "input. The map-carrying Scene is training-only for AGENTS (NAVSIM_PROTOCOL.md §5.1) and admissible "
+    "for building EVAL labels offline.")
 
-    ⛔ Clause 5 of the binding rule: *"Where a family genuinely cannot be
-    computed, say so PER FAMILY with the reason and the n, rather than silently
-    dropping it."* ``n`` here is the number of windows the family WOULD have had
-    — it is not zero, and reporting 0 would understate what is missing.
-    """
-    out = {
-        "status": "UNAVAILABLE",
-        "n": int(n_windows),
-        "n_windows_it_would_have_had": int(n_windows),
+NAVSIM_STRATEGIC_INSTRUMENT = (
+    "a NAVSIM strategic label builder (TANITEVAL_AUDIT.md seam 7): at each decision point, the OPTION SET "
+    "the nuPlan lane graph admits (a junction with a single continuation is refused, never scored), "
+    "labelled with the option the logged ego took — labels may use privileged signals (PI ruling "
+    "2026-08-03) — and scored by `taniteval.strategic_optionset.strategic_family` against its "
+    "best-constant baseline, with the input-echo sweep, so an arm that merely echoes `driving_command` "
+    "cannot read as strategic skill.")
+
+#: ⛔ one statement PER CORPUS. An unknown corpus is REFUSED: borrowing another corpus's reason is exactly
+#: the defect this table exists to prevent.
+STRATEGIC_NA_BY_CORPUS = {
+    "physicalai": {
         "reason": STRATEGIC_UNAVAILABLE_REASON,
         "instrument_that_would_close_it": STRATEGIC_INSTRUMENT_THAT_WOULD_CLOSE_IT,
         "_is_a_work_item": ("⛔ A family reported UNAVAILABLE is a WORK ITEM, not "
@@ -1420,6 +1437,44 @@ def strategic_unavailable(n_windows: int, tier=None) -> dict:
         "_settled": ("CLAUDE.md operating standard rule 2 — settled at five "
                      "independent probes. Do not re-ask; the strategic topology "
                      "must come from AlpaSim or an external corpus."),
+    },
+    "navsim": {
+        "reason": NAVSIM_STRATEGIC_UNAVAILABLE_REASON,
+        "instrument_that_would_close_it": NAVSIM_STRATEGIC_INSTRUMENT,
+        "_is_a_work_item": ("⛔ A family reported UNAVAILABLE is a WORK ITEM, not a pass. On NAVSIM it is "
+                            "blocked on EVAL ENGINEERING, not on the corpus — the map, the lane graph and "
+                            "the route all exist."),
+        "_settled": ("NAVSIM_PROTOCOL.md §8 (strat.* ABSENT from the benchmark) and §9 item 4 (the route "
+                     "is a route-level oracle, SETTLED 2026-09-19). ⛔ Never quote the PhysicalAI-AV "
+                     "reason here: NAVSIM has a map."),
+    },
+}
+
+
+def strategic_unavailable(n_windows: int, tier=None, corpus: str = "physicalai") -> dict:
+    """The STRATEGIC family's honest n/a — reason + n + the closing instrument, FOR THIS CORPUS.
+
+    ⛔ Clause 5 of the binding rule: *"Where a family genuinely cannot be
+    computed, say so PER FAMILY with the reason and the n, rather than silently
+    dropping it."* ``n`` here is the number of windows the family WOULD have had
+    — it is not zero, and reporting 0 would understate what is missing.
+
+    ``corpus`` selects the statement from :data:`STRATEGIC_NA_BY_CORPUS`; an unknown corpus raises
+    rather than falling back to another corpus's reason.
+    """
+    if corpus not in STRATEGIC_NA_BY_CORPUS:
+        raise ValueError(f"no STRATEGIC n/a statement for corpus {corpus!r} — write one in "
+                         f"STRATEGIC_NA_BY_CORPUS; never borrow another corpus's reason")
+    s = STRATEGIC_NA_BY_CORPUS[corpus]
+    out = {
+        "status": "UNAVAILABLE",
+        "n": int(n_windows),
+        "n_windows_it_would_have_had": int(n_windows),
+        "corpus": corpus,
+        "reason": s["reason"],
+        "instrument_that_would_close_it": s["instrument_that_would_close_it"],
+        "_is_a_work_item": s["_is_a_work_item"],
+        "_settled": s["_settled"],
     }
     if tier is not None:
         out["tier"] = tier
@@ -1573,7 +1628,8 @@ def strategic(win: dict, hier: dict | None = None, optionset: dict | None = None
     """
     if no_label is not None:
         return strategic_unavailable(int(no_label.get("n", 0)),
-                                     tier=no_label.get("tier"))
+                                     tier=no_label.get("tier"),
+                                     corpus=no_label.get("corpus", "physicalai"))
     opt = optionset if optionset is not None else win.get("optionset")
     if opt:
         from .strategic_optionset import strategic_family
@@ -1791,7 +1847,8 @@ def all_families(win: dict, hier: dict | None = None, prefer_dense: bool = True,
                  tactical_from_traj: bool = False,
                  strategic_no_label: bool = False,
                  tier: str | None = None, n_boot: int = 2000,
-                 seed: int = 0, protocol: dict | None = None) -> dict:
+                 seed: int = 0, protocol: dict | None = None,
+                 strategic_corpus: str = "physicalai") -> dict:
     """The full binding block for one arm. Attach to every eval result, beside ADE.
 
     ``win`` is a ``rollout.collect``/``refb_eval``/``refc_eval`` window dict; ``pred``/``gt`` are
@@ -1847,7 +1904,8 @@ def all_families(win: dict, hier: dict | None = None, prefer_dense: bool = True,
                            n_boot=n_boot, seed=seed),
         "tactical": tactical(win, hier, traj),
         "strategic": strategic(win, hier, optionset,
-                               no_label=({"n": int(pred.shape[0]), "tier": tier}
+                               no_label=({"n": int(pred.shape[0]), "tier": tier,
+                                          "corpus": strategic_corpus}
                                          if strategic_no_label else None)),
     }
     fam["_grid"] = {

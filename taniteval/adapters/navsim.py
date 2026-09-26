@@ -989,21 +989,14 @@ def four_families_block(win: dict, *, tier: str, n_boot: int = 2000,
     from taniteval import four_families as ff
     # ⛔ strategic_no_label=True is CORRECT for NavSim but for a DIFFERENT reason
     # than PhysicalAI's: NavSim HAS a map and a route, it simply never SCORES
-    # them (NAVSIM_PROTOCOL.md:812). The reason is restated below so the
-    # PhysicalAI-specific text inside strategic_unavailable() cannot be read as
-    # the NavSim fact.
+    # them. strategic_corpus="navsim" makes the NavSim fact THE reason. (Until
+    # 2026-09-26 the PhysicalAI "no map" text was the primary reason here and the
+    # NavSim correction sat in a side key, `navsim_specific_reason`, that the
+    # criteria check never read — so every NavSim criteria report told its reader
+    # that NAVSIM has no map.)
     fam = ff.all_families(win, tactical_from_traj=True,
-                          strategic_no_label=True, tier=tier,
-                          n_boot=n_boot, seed=seed)
-    fam["strategic"]["navsim_specific_reason"] = (
-        "⚠️ The generic reason above is PhysicalAI-specific (no map in the "
-        "corpus). On NavSim the fact is DIFFERENT and must not be conflated: "
-        "the lane graph and route EXIST, but `driving_command` is an INPUT and "
-        "is never scored, and the Scene object carrying the map is TRAINING-ONLY "
-        "at inference (NAVSIM_PROTOCOL.md:470-474, :812). So STRATEGIC is absent "
-        "because the BENCHMARK declines to measure it, not because the data "
-        "lacks it — which makes it a buildable WORK ITEM here (audit seam 7, "
-        "taniteval/strategic_optionset.py:193), unlike on PhysicalAI.")
+                          strategic_no_label=True, strategic_corpus="navsim",
+                          tier=tier, n_boot=n_boot, seed=seed)
     if win.get("eid") is not None:
         fam["_navsim_estimator"] = {
             "cluster_unit": CLUSTER_UNIT,

@@ -733,3 +733,77 @@ lines of `cv2.getBuildInformation()` in the reference's own receipt, beside each
 reference proves its version itself, not via the venv's name. ⛔ And ASSERT `cv2.__version__ == "4.5.4"`
 before rendering anything: a wrong-version raster banked as a reference would pass every later comparison
 while testing nothing.
+
+### §23b §23a is DONE (status line; §23a above is the plan as written)
+
+The download was approved (PI via the Master Mind: *"you can download opencv on D:"*), the Master Mind built the
+env at **`D:/venvs/opencv-ref-454`** (not the `C:/Users/Admin/venvs/…` path proposed above), and the reference
+was rendered with the version assert and the self-proving receipt: **520 / 520 cases pixel-exact, 0 differing
+pixels** (npz sha256 `08e0d3e0…`). Package: `2026-09-26-fillpoly-opencv-reference/RESULT.md`.
+
+## §24 The NavSim STRATEGIC n/a told every reader that NAVSIM has no map — the reason is now stated PER CORPUS
+
+**The defect (W8's escalation E3; class: true-but-wrong-for-the-reader).** Every NavSim artifact's STRATEGIC
+`reason` — the field `tools/criteria_check.py` quotes into `criteria_*.json` and the summary carries into every
+report — was `four_families.STRATEGIC_UNAVAILABLE_REASON`: *"PhysicalAI-AV carries NO map, NO lane graph …"*.
+True of PhysicalAI-AV; **wrong for NAVSIM**, which has a map, a lane graph and a route. The adapter knew: it wrote
+the NavSim fact into a side key, `navsim_specific_reason`. But the criteria check never read that key, and the
+summary appended it AFTER the PhysicalAI sentence (`"<no map> | NavSim: <has a map>"`). What it cost a reader:
+the family read as blocked on a **corpus fact** (*"no rescore can produce it"*, *"must come from AlpaSim or an
+external corpus"*), when on NavSim it is blocked on **eval engineering** — a buildable work item.
+
+**Why the guard missed it.** `test_navsim_adapter.py::test_strategic_carries_the_navsim_specific_reason_not_the_physicalai_one`
+asserted only that the side key contained two phrases. It never asserted that the PhysicalAI text was ABSENT from
+`reason` — green while the thing its name promises was false.
+
+**The fix.**
+* `four_families.STRATEGIC_NA_BY_CORPUS` — one statement per corpus (`physicalai` verbatim as before, `navsim`
+  new), each with its own `reason`, `instrument_that_would_close_it`, `_is_a_work_item` and `_settled`.
+  `strategic_unavailable(n, tier, corpus="physicalai")` stamps `corpus` and **REFUSES** an unknown corpus
+  (`ValueError`) rather than borrowing another corpus's reason. Threaded through `strategic(no_label={"corpus": …})`
+  and `all_families(strategic_corpus=…)`; the default keeps every PhysicalAI caller unchanged.
+* `adapters/navsim.py` passes `strategic_corpus="navsim"` and no longer writes the side key.
+* `bench/navsim/summarize.py` — a LEGACY artifact (one that carries the side key) now renders the NavSim fact,
+  marked `[legacy artifact …]`, instead of leading with the other corpus's claim.
+* The NavSim text cites stable anchors, not line numbers. The old side key's `NAVSIM_PROTOCOL.md:812` and
+  `strategic_optionset.py:193` had drifted (`:193` is now `load_label_reports`). The new anchors:
+  `NAVSIM_PROTOCOL.md` §8 (coverage row `strat.decision / strat.route_goal`: ABSENT), §5.1 (the Scene is
+  training-only for AGENTS), §9 item 4 (the route is a ROUTE-LEVEL ORACLE, SETTLED 2026-09-19;
+  `adapters.navsim.ROUTE_LEAK_VERDICT`), and `TANITEVAL_AUDIT.md` seam 7. ⚠️ It adds the one fact a label builder
+  needs first and the old key lacked: the route cannot be read back as the label, because it IS the expert's path
+  at roadblock granularity. The admissible design is map-derived OPTION SETS via `strategic_optionset.strategic_family`.
+
+**Tests.** `taniteval/tests/test_strategic_na_per_corpus.py` (new, 6; literal strings only).
+`test_navsim_adapter.py`: the named test now asserts on the PRIMARY `reason` — NavSim fact present, the three
+PhysicalAI-only phrases absent, the side key gone. `test_bench_suite_navsim_offline.py`: +2 asserts through the
+REAL bench path (only preflight, export and scoring are faked). **438 passed** across the 11 suites that touch the
+families, the criteria and NavSim — including `stack/tests/test_ff_v58f.py`, whose PhysicalAI assertions are
+unchanged — with imports asserted from `D:/Projects/TanitAD`.
+
+**Mutations — real source edits in an ISOLATED copy** (package, adapters and the 3 test files copied to the
+scratchpad; `stack/`, `FlyWheels/`, `products/` and both `tools/` junctioned; the D: tree never touched). Control
+first: the unmutated copy **95 passed, 1 skipped** (`NO_TREE: no results/bench` — the copy has no results tree
+by design), importing from the copy. Then:
+
+| mutation | RED |
+|---|---|
+| M1 the adapter drops `strategic_corpus="navsim"` | the adapter test and the offline bench-path test (2) |
+| M2 the summarizer appends the NavSim note again | the legacy-rendering test (1) |
+| M3 `strategic()` ignores `no_label["corpus"]` | adapter + offline + the pass-through test (3) |
+
+⚠️ The first control run read **10 failed / 12 errors**: the copy lacked `taniteval/tools/` (a test reads
+`ff_rescore.py`'s source). No mutation result was read until the control was green — a mutation "going RED" on a
+broken harness is not evidence.
+
+**Not rewritten, on purpose.** 8 banked NavSim v2 runs (2026-09-20/21: 4 `navhard_two_stage`, 4
+`warmup_two_stage`, including the refcv4b-b1-v72-40k arms) carry the pre-fix text in their `summary.json`,
+`index.html`, `criteria_*.json` and arm files. A banked artifact records what the harness said at the time. The
+verdicts in them are unaffected (`strat.*` stays REFUSED — only its explanation was wrong), and `LEADERBOARD.md` /
+`leaderboard.html` do not display the reason (**0** occurrences). A re-summarize would render the NavSim fact via
+the legacy path above.
+
+**EOL note for the lander.** The tip (`ea9b02d4`) stores `four_families.py` with **CRLF** (1,976 lines), while
+this worktree's index still holds an older LF blob. A plain `git add` here would have converted it to LF and turned
+the landing into a whole-file rewrite, so it is staged byte-exact (`hash-object -w --no-filters` +
+`update-index --cacheinfo`) with CRLF preserved. Its content diff against the tip is **+73 −15 in 5 hunks**, all
+from this fix; the other four code/test files differ from the tip by exactly their hunks (+7 −14, +4 −1, +14 −2, +3 −0).

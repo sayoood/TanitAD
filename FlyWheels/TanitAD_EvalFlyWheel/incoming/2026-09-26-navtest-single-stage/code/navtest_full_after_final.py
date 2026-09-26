@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
-"""AGENT-FREE WAITER: the FULL-split navtest one-stage floors, run only AFTER the refcv6 FINAL battery.
+"""AGENT-FREE WAITER: the FULL-split navtest one-stage floors, run only when the shared box is QUIET.
+
+⛔ REWIRED 2026-09-26 (~18:50Z) — the refcv6 FINAL dependency is DROPPED. The PI STOPPED refcv6 at 20:40
+Berlin (*"go with b, stop refcv6"*; D:/refcv6_eval_kit/ckpt_final/STOPPED_BY_PI.json: ckpt 38000, md5
+5a2e7222…, and NO summary.json will be written). The FINAL chain therefore never runs and never writes
+``ZZFINALV2ENDZZ`` — a waiter gated on it would wait until --max-wait-h and GIVE UP. Replaced, at the
+Master Mind's request, by the box-quiet GPU gate: tonight's GPU queue is navhard@30k -> the PI's
+agent-box video -> the battery's A6 -> these floors, and the gate holds the floors until that queue drains.
 
     cd D:/Projects/TanitAD/taniteval
     nohup C:/Users/Admin/venvs/tanitad/Scripts/python.exe \
@@ -10,12 +17,22 @@ W8, 2026-09-26. The brief: *"Tonight ~19:30 Berlin the refcv6 FINAL battery runs
 the GPU and >= 8 GB free host RAM … It has priority … schedule the full-split floors to run AFTER the refcv6
 FINAL completes."* This waiter enforces exactly that, then runs the pre-registered validation:
 
-  1. WAIT until ALL hold (polled every --poll-s):
+  1. WAIT until ALL hold AT ONCE (polled every --poll-s, and ALL re-read before EVERY run attempt):
        * the 12,146-token v2 cache is DONE (its CACHE_DONE.json certifies the yaml token set);
-       * the FINAL chain has ENDED: ``ZZFINALV2ENDZZ`` appears in C:/Users/Admin/ev6_battery/raw/final_v2.log
-         AFTER the latest ``ZZFINALV2STARTZZ`` (chain_final_v2.sh writes it last, whether or not the final ran);
-       * NO ``run_battery.py`` process is alive (any tag — the box is shared);
-  2. RAM gate: >= --min-avail-mb (9000) available, sustained (5 samples, the perf counter);
+       * the GPU gate PASSES — the battery's own ``gpu_gate.py`` (the PI's box policy: GPU used < 4300 MiB,
+         NO other python compute on the GPU, >= 8 GB free host RAM), so ONE definition decides "box quiet";
+         an unreadable gate is a WAIT, never a pass (fail closed);
+       * NOTHING QUEUED AHEAD is alive (``QUEUE_AHEAD``): ``run_battery``; the ``ev6_battery`` chain (tonight's
+         A6 runs as a6_chain.sh -> a6_roll.py and NEVER names run_battery.py, so the old check could not see
+         it); navhard@30k's ``run_navsim_refcv6``; any ``navsim_win.py`` scorer. An unreadable process table
+         is a WAIT (its positive control: this process must appear in it);
+       * RAM: >= --start-avail-mb (11500 = the 9000 floor + the scorer's own peak) available, SUSTAINED
+         (5 samples, the perf counter); the run itself then aborts below --min-avail-mb (9000);
+       (was: the FINAL chain had ENDED — dropped 2026-09-26, see above; ``final_ended()`` is kept for the record)
+  2. ⛔ Why every gate is re-read together: FINAL-ended was a LATCH, so checking it once and then waiting only
+     on RAM was sound. The GPU gate and the queue are NOT latches — a RAM wait that never looked back could
+     start the floors hours later on a box that had filled up again (and it used to run even when its 24 h
+     RAM wait had FAILED).
   3. ``python -m taniteval.bench navsim_v2 --ckpt none --split navtest_single_stage --arms CV,STOP,HUMAN
      --ram-floor-mb 9000`` — a RAM-guard abort is retried after the next RAM window (max --runs);
   4. on COMPLETE: E-T0 on the full cache, then ``code/cross_protocol_check.py --full`` (PREREG.md §3).
@@ -43,7 +60,10 @@ sys.path.insert(0, str(TANITEVAL))
 from taniteval.bench.navsim import cache_build as CB          # noqa: E402  (the RAM gate)
 from taniteval.bench.navsim import profiles as P              # noqa: E402
 
-FINAL_LOG = Path("C:/Users/Admin/ev6_battery/raw/final_v2.log")
+FINAL_LOG = Path("C:/Users/Admin/ev6_battery/raw/final_v2.log")      # no longer gates (refcv6 stopped by the PI)
+#: the battery's gate, used by path so the "box quiet" rule has exactly one definition
+GPU_GATE = (PKG.parents[3] / "FlyWheels" / "TanitAD_EvalFlyWheel" / "incoming" /
+            "2026-09-23-refcv6-standard-tests" / "battery" / "code" / "gpu_gate.py")
 TPY = Path("C:/Users/Admin/venvs/tanitad/Scripts/python.exe")
 LOG = PKG / "raw" / "full_waiter.log"
 
@@ -76,14 +96,102 @@ def final_ended() -> dict:
     return {"ok": ok, "why": (lines[ends[-1]] if ok else f"started {lines[starts[-1]]}; no END after it")}
 
 
-def battery_alive() -> list:
+def gpu_gate() -> dict:
+    """The PI's box-quiet gate, by the battery's own script: exit 0 = PASS, 3 = WAIT.
+
+    ⛔ FAIL CLOSED: a missing script, a timeout, or any other exit code is a WAIT, never a pass — a gate
+    that cannot be read must not be the reason the floors start on a busy box."""
+    if not GPU_GATE.exists():
+        return {"ok": False, "why": f"gate script absent: {GPU_GATE}"}
     try:
-        r = subprocess.run(["powershell", "-NoProfile", "-NonInteractive", "-Command",
-                            "Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -match 'run_battery\\.py' } | "
-                            "ForEach-Object { $_.ProcessId }"], capture_output=True, text=True, timeout=120)
-        return [int(x) for x in r.stdout.split() if x.strip().isdigit()]
+        r = subprocess.run([str(TPY), str(GPU_GATE)], capture_output=True, text=True, timeout=180)
     except Exception as e:                                               # noqa: BLE001
-        return [-1]                                                      # unreadable -> treat as alive (fail closed)
+        return {"ok": False, "why": f"gate unreadable: {type(e).__name__}: {e}"}
+    last = (r.stdout.strip().splitlines() or [f"rc {r.returncode}, no output"])[-1][:400]
+    return {"ok": r.returncode == 0, "rc": r.returncode, "why": last}
+
+
+#: what must NOT be alive when the floors start, each labelled with the job it holds them for. Matched against
+#: PYTHON processes only, so the PowerShell query that lists them can never match itself.
+QUEUE_AHEAD = (
+    ("battery (run_battery)", re.compile(r"run_battery")),
+    # ⛔ tonight's battery never names run_battery.py: a6_chain.sh -> a6_roll.py / a6_fit_score.py / bank_tag.py,
+    # and the gate wait between its rolls is ``python -c "import run_battery as RB"``. All carry the battery ROOT.
+    ("battery (ev6_battery chain)", re.compile(r"ev6_battery", re.I)),
+    ("navhard@30k (run_navsim_refcv6)", re.compile(r"run_navsim_refcv6")),
+    # any scorer our NavSim harness launches: RAM-heavy, and the E1 RAM guard aborted navtest@30k's official
+    # scorer SIX times (2026-09-26 14:12-14:46Z) while other jobs held the box's RAM
+    ("NavSim scorer (navsim_win.py)", re.compile(r"navsim_win\.py")),
+)
+
+
+def classify_queue_ahead(procs, self_pids=()) -> list:
+    """PURE: [(pid, cmdline)] -> the processes the floors must wait for, each labelled with its job."""
+    out = []
+    for pid, cmd in procs:
+        if pid in self_pids or not cmd:
+            continue
+        hits = [label for label, rx in QUEUE_AHEAD if rx.search(cmd)]
+        if hits:
+            out.append({"pid": pid, "what": hits[0], "cmd": cmd[:160]})
+    return out
+
+
+def python_processes() -> list:
+    """[(pid, cmdline)] for every live python process. Raises when the table cannot be read."""
+    ps = ("[Console]::OutputEncoding = [Text.Encoding]::UTF8; "
+          "Get-CimInstance Win32_Process | Where-Object { $_.Name -like 'python*' } | "
+          "Select-Object ProcessId, CommandLine | ConvertTo-Json -Compress")
+    r = subprocess.run(["powershell", "-NoProfile", "-NonInteractive", "-Command", ps],
+                       capture_output=True, timeout=120)
+    if r.returncode != 0:
+        raise RuntimeError(f"process query rc {r.returncode}")
+    data = json.loads(r.stdout.decode("utf-8", errors="replace").strip() or "[]")
+    data = [data] if isinstance(data, dict) else data
+    return [(int(d["ProcessId"]), d.get("CommandLine") or "") for d in data]
+
+
+def queue_ahead() -> list:
+    """The live processes queued ahead of the floors. ⛔ FAIL CLOSED, with a POSITIVE control: this waiter is a
+    python process, so a table that does not list its own pid was not read — an empty answer from a failed
+    query must never read as "nothing ahead"."""
+    try:
+        procs = python_processes()
+    except Exception as e:                                               # noqa: BLE001
+        return [{"pid": -1, "what": f"process table unreadable: {type(e).__name__}: {e}"[:200], "cmd": ""}]
+    if not any(pid == os.getpid() for pid, _ in procs):
+        return [{"pid": -1, "what": f"process table unreadable: own pid absent ({len(procs)} rows)", "cmd": ""}]
+    return classify_queue_ahead(procs, self_pids={os.getpid(), os.getppid()})
+
+
+def gates(prof) -> dict:
+    c, g, q = cache_done(prof), gpu_gate(), queue_ahead()
+    return {"cache_done": c, "gpu_gate": g, "queue_ahead": q, "ok": bool(c["ok"] and g["ok"] and not q)}
+
+
+def wait_until_quiet(a, prof, t0: float):
+    """Block until the cache, the GPU gate, the queue AND a sustained RAM window all hold together.
+    -> the gate record, or None when --max-wait-h elapsed first."""
+    last = None
+    while True:
+        s, ram = gates(prof), None
+        if s["ok"]:
+            ram = CB.wait_for_ram(a.start_avail_mb, 5, 6.0, a.poll_s, log=lambda m: None)
+            if ram["ok"]:
+                s = gates(prof)                  # the RAM window took up to --poll-s: re-read everything after it
+                if s["ok"]:
+                    note("STATE", cache_done=s["cache_done"], gpu_gate=s["gpu_gate"], queue_ahead=s["queue_ahead"],
+                         ram=ram, go=True)
+                    return {**s, "ram": ram}
+        key = (s["cache_done"]["ok"], s["gpu_gate"]["ok"], tuple(sorted(x["pid"] for x in s["queue_ahead"])),
+               None if ram is None else ram["ok"])
+        if key != last:
+            note("STATE", cache_done=s["cache_done"], gpu_gate=s["gpu_gate"], queue_ahead=s["queue_ahead"], ram=ram)
+            last = key
+        if time.time() - t0 > a.max_wait_h * 3600:
+            return None
+        if ram is None:                          # a RAM wait already spent the poll interval
+            time.sleep(a.poll_s)
 
 
 def run_cli(a, reuse_from: str | None = None) -> dict:
@@ -184,8 +292,13 @@ def main(argv=None) -> int:
     ap.add_argument("--cache", default=None)
     ap.add_argument("--tokens-file", default=None)
     ap.add_argument("--tag", default="full")
+    ap.add_argument("--gate-once", action="store_true",
+                    help="read every start gate ONCE, print it, run nothing and write no log (verification)")
     a = ap.parse_args(argv)
     prof = P.SPLITS["navtest_single_stage"]
+    if a.gate_once:
+        print(json.dumps({"pid": os.getpid(), **gates(prof)}, indent=1))
+        return 0
     if a.post_only:
         global LOG
         LOG = PKG / "raw" / f"waiter_{a.tag}.log"          # a pipeline test never writes the real waiter's log
@@ -194,31 +307,26 @@ def main(argv=None) -> int:
         print(json.dumps({"validated_under_A2": post.get("validated_under_A2"), "verdict": post.get("verdict")}, indent=1))
         return 0
     rec = {"schema": "w8-full-waiter/1", "started": time.strftime("%Y-%m-%dT%H:%M:%S"), "pid": os.getpid(),
-           "rule": "cache DONE AND FINAL chain ended AND no run_battery.py alive, then a sustained RAM window"}
-    note("START", pid=os.getpid())
+           "rule": ("cache DONE AND the GPU gate PASSES AND nothing queued ahead is alive (run_battery, the "
+                    "ev6_battery chain, navhard@30k run_navsim_refcv6, any navsim_win.py scorer) AND a sustained "
+                    "RAM window -- all re-read together before EVERY run attempt"),
+           "rewired": ("2026-09-26: the refcv6 FINAL dependency was DROPPED -- the PI stopped refcv6 at 20:40 "
+                       "Berlin and no summary.json will be written, so the FINAL chain can never end")}
+    note("START", pid=os.getpid(), rule=rec["rule"])
     t0 = time.time()
-    last = None
-    while True:
-        c, f, b = cache_done(prof), final_ended(), battery_alive()
-        state = (c["ok"], f["ok"], not b)
-        if state != last:
-            note("STATE", cache_done=c, final_ended=f, battery_pids=b)
-            last = state
-        if all(state):
-            break
-        if time.time() - t0 > a.max_wait_h * 3600:
-            rec.update(status="NOT_RUN", reason="max wait elapsed", cache=c, final=f, battery=b)
-            (PKG / "raw" / "full_waiter.json").write_text(json.dumps(rec, indent=1), encoding="utf-8")
-            note("GAVEUP")
-            return 2
-        time.sleep(a.poll_s)
     runs = []
     for i in range(a.runs):
         # ⚠ the START gate is the floor PLUS the scorer's own peak (ESTIMATED ~2.5 GB for the full split; W3's v1
         # full-split analog MEASURED 2.2 GB): the wrapper's guard counts OUR footprint too, so starting at exactly
         # the floor would make the run yield on itself. The wrapper's abort floor stays at --min-avail-mb.
-        g = CB.wait_for_ram(a.start_avail_mb, 5, 6.0, 24 * 3600, log=lambda m: note("RAMWAIT", detail=m))
-        note("RAMOK", gate=g)
+        g = wait_until_quiet(a, prof, t0)
+        if g is None:
+            rec.update(status=(runs[-1].get("status") if runs else None) or "NOT_RUN", runs=runs,
+                       reason=f"max wait elapsed before {'the first run' if not runs else f'retry {i + 1}'}")
+            (PKG / "raw" / "full_waiter.json").write_text(json.dumps(rec, indent=1), encoding="utf-8")
+            note("GAVEUP")
+            return 2
+        note("RAMOK", gate=g["ram"])
         prev = next((x["run_dir"] for x in reversed(runs) if x.get("run_dir")), None)
         r = run_cli(a, reuse_from=prev)
         runs.append(r)
