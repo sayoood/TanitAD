@@ -1,0 +1,29 @@
+### A4 lever panel — 4754 windows / 139 episodes, S2 ADE 0–2 s, T1 (self-action open loop); every lever is a DIFFERENT planner from the registered arm
+
+Estimator: paired episode-cluster bootstrap, n_boot 2000, seed 0, cluster = clip. SPEC sha `314a4845f7de…`.
+
+**L1 inference-seed average** (sign vs single seeds guaranteed; magnitude only)
+
+| cell | ADE m [CI] |
+|---|---|
+| os_avg − ha0_ext | +0.0172 [+0.0016, +0.0336] **sep** |
+| os_avg − os_s0 | -0.0053 [-0.0067, -0.0039] **sep** |
+| os_avg − os_s1 | -0.0052 [-0.0067, -0.0038] **sep** |
+| replicate floor os_s0 − os_s1 | +0.0001 [-0.0027, +0.0027] ns |
+
+|os_s0 − os_s1| per instant (0.5/1/1.5/2 s): mean [0.01769999973475933, 0.06159999966621399, 0.11490000039339066, 0.1793999969959259], p95 [0.03849999979138374, 0.1412000060081482, 0.295199990272522, 0.5411999821662903] m
+
+**L2 causal-hold blend (base `ha`)**
+
+| seed | blend − ha0_ext | blend − base | blend − blend_shuf | blend_shuf − base | w (fold0→1 / fold1→0) | identity |
+|---|---|---|---|---|---|---|
+| seed0 | -0.0364 [-0.0464, -0.0265] **sep** | -0.0488 [-0.0605, -0.0371] **sep** | -0.0488 [-0.0605, -0.0371] **sep** | +0.0000 [+0.0000, +0.0000] ns | [0.65, 0.45, 0.45, 0.5] / [0.65, 0.45, 0.45, 0.55] | PASS |
+| seed1 | -0.0361 [-0.0461, -0.0266] **sep** | -0.0485 [-0.0603, -0.0371] **sep** | -0.0485 [-0.0603, -0.0371] **sep** | +0.0000 [+0.0000, +0.0000] ns | [0.65, 0.45, 0.45, 0.5] / [0.6, 0.4, 0.45, 0.55] | PASS |
+
+**L2e echo blend (base `ha0_ext`, DIAGNOSTIC ONLY)**
+
+| seed | blend − ha0_ext | blend − base | blend − blend_shuf | blend_shuf − base | w (fold0→1 / fold1→0) | identity |
+|---|---|---|---|---|---|---|
+| seed0 | -0.0419 [-0.0519, -0.0321] **sep** | -0.0419 [-0.0519, -0.0321] **sep** | -0.0419 [-0.0519, -0.0321] **sep** | +0.0000 [+0.0000, +0.0000] ns | [0.65, 0.4, 0.4, 0.45] / [0.6, 0.4, 0.4, 0.5] | PASS |
+| seed1 | -0.0418 [-0.0517, -0.0322] **sep** | -0.0418 [-0.0517, -0.0322] **sep** | -0.0418 [-0.0517, -0.0322] **sep** | +0.0000 [+0.0000, +0.0000] ns | [0.65, 0.4, 0.4, 0.45] / [0.6, 0.4, 0.4, 0.5] | PASS |
+

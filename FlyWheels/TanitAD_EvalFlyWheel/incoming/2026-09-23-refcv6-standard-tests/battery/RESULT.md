@@ -33,7 +33,7 @@
 |---|---|---|---|---|
 | step 1000 (kit) | VOID (M1 no power) | **PASS** | **PASS** (fp32 wrapper 6.7e-7; bf16 P1 8.4e-4; W1/W2 detected 1/26) | pipeline validation only: seed 0 rolled on GPU; panel on CPU (§3) |
 | step 5000 | FAIL (wrapper 3.9e-3 + M1 VOID) | **FAIL** (wrapper clause only) | **PASS** (fp32 wrapper 1.9e-6; §1b) | **DONE, both seeds (§4)**: BAR-R6-1..4 **FAIL**, BAR-R6-5 **PASS**. The A4 L2 blend beats the echo (−0.0122 sep, both seeds). Banked `raw/step5000/` |
-| step 30000 | — | — | — | RUNNING in `chain_milestones.sh` (full G0 + A1 + A2, 2 seeds; old tree = its training tree) |
+| step 30000 | FAIL (wrapper 8.1e-3 + M1 VOID) | **FAIL** (wrapper clause only) | **PASS** (fp32 wrapper 2.1e-6) | **DONE, both seeds (§4b)**: BAR-R6-1 **FAIL** (+0.0225 sep), 2–4 FAIL (not separated; ties the arms), 5 **PASS**. L2 blend −0.0364 sep. Banked |
 | step 15000 / 20000 (optional) | — | — | — | `chain_optional.sh`: after the L3 rolls, never started after 12:00 09-27 (ckpts pulled read-only, md5 `46eb2185…` / `f4320c89…`) |
 | FINAL (step 50,400; post-switch HYBRID) | — | — | — | `chain_final_v2.sh` on the **82c2331 tree** (SPEC A5). It waits for `summary.json` (Thor ETA ~09-27 19:30 Berlin), pulls `ckpt.pt`, metrics and config with 3-way md5, then runs. The old chain's final stage is DEFERRED |
 
@@ -52,7 +52,11 @@
 
 The headline is BAR-R6-1 at BOTH seeds of the FINAL tag (`raw/final/battery_summary.json` → `bars`).
 
-**Where I stopped** (updated each turn): 2026-09-26 ~14:15. Step 5000 is done and banked; step 30000 is running; the FINAL chain is polling Thor.
+**Where I stopped** (updated each turn): 2026-09-26 ~15:40 Berlin.
+* Step 5000 is DONE and landed (51a4443 / 048ae3b).
+* Step 30000 is GATE-WAITING: the NavSim sibling's `run_bridge6.py --split navtest` has held the GPU since ~14:07.
+* Queue: 30k → A6 (139 train clips pulled, md5 PASS) → 35k gate dry run (snapshot pulled, md5 `68a4ef3b…`) → L3 → 15k/20k (cutoff 12:00 09-27) → 45k if room → FINAL (`chain_final_v2.sh` polling Thor).
+* Every chain above is armed and running unattended.
 
 <!-- HEADLINE -->
 
@@ -278,7 +282,7 @@ The primary bar is one the programme has not yet cleared with any arm.
 
 **Other readings.**
 * **Nav.** Withholding nav costs +0.0246 sep and shuffling it +0.0100 sep. Withholding max-speed costs +0.0020, not separated.
-* **T-FLIP: FAIL** at both seeds. follows_FED is 0.25 against a bar of 0.50, but already above refcv5-v2's 0.205. true − shuffled is 0.1534 (seed 1: 0.1335), against a bar of 0.38; refcv5-v2 reads 0.099.
+* **T-FLIP: FAIL** at both seeds, on **n = 352 windows / 29 episodes**. follows_FED is 0.25 against a bar of 0.50, but already above refcv5-v2's 0.205. true − shuffled is 0.1534 (seed 1: 0.1335), against a bar of 0.38; refcv5-v2 reads 0.099.
 * **OBEDIENCE: FAIL.** This is structural (§3, F8): 2,216 of 2,294 rows have no compliant candidate.
 
 **TACTICAL under both label clocks (SPEC A5).**
@@ -291,6 +295,7 @@ The primary bar is one the programme has not yet cleared with any arm.
 | LON acc [CI] · κ (n in band) | 0.3707 [0.3003, 0.4432] · 0.1821 | 0.3680 [0.2965, 0.4418] · 0.1786 |
 
 * The lateral decision is nav-driven: with nav zeroed, κ collapses to ~0.
+  * ⚠ **Nav-echo caveat (Master Mind, register REFCV6-BATTERY-5K):** on PhysicalAI the nav input is derived from the ego's own future path, so the nav-true LAT κ (0.2418) is **optimistic by construction**. It is the nav-echo family (H-NAV-ECHO / flagship route head), not evidence of situational reasoning.
 * FOLLOW_LANE goal AUROC: 0.7372 (OLD) / 0.7369 (CORRECTED).
 * CORRIDOR_OFFSET sits exactly at the n_pos floor under OLD (200) and falls below it under CORRECTED (193 → UNSCOREABLE). SPEED_BAND is positive on every in-band window, so its AUROC is undefined. Every other token is below the floor under both clocks.
 * **STRATEGIC: NOT APPLICABLE, n = 0.** The strategic layer is OFF.
@@ -325,9 +330,74 @@ The primary bar is one the programme has not yet cleared with any arm.
   * ⇒ A residual-on-kinematic-prior output is a **programme-wide** lever, not a refcv6-only one.
   * At step 5000, refcv6's composite is still the weakest of the three.
 * **L1** (seed average): `os_avg − echo` = +0.0831 sep, still failing. The sampling term is only 0.0054 m, so inference variance is not the lever.
-* **L3** (deterministic DDIM): queued by the watcher for after step 30000.
+* **L3** (deterministic DDIM): queued after A6.
+* **A6, the DEPLOYABLE form of L2** (registered 14:26, sha `314a4845…`, before any A6 number):
+  * `w` is fit on 139 TRAIN clips (the smallest sha12 among the run's own train clips, disjoint from eval), rolled at step 5000 at both seeds.
+  * The eval set is scored with NO refit.
+  * SUCCESS = blend − echo separated negative at both seeds; FAILURE = not separated at either seed.
+  * It runs after step 30000 (queue: 30k → A6 → L3 → 15k/20k → FINAL).
+  * The 139 clips are already pulled and md5-verified (11.37 GB).
 
-<!-- STEP30000 -->
+## 4b. Step 30000 (T1 primary; S2 + S6; inference seeds 0 and 1)
+
+> ⛔ **Pre-switch checkpoint.** *F3 detach-only, F4 on the last layer only; tactical labels ~0.37 s early.*
+>
+> Evidence class: MEASURED. Full digest: `raw/step30000/RESULT_SECTION.md`; tables: `TABLES_s0.md` and `TABLES_s1.md`. Rolled on this checkpoint's own training tree.
+
+**Gate.** G0 as registered: **FAIL** (wrapper 8.08e-3; M1 VOID). G0-A1: **FAIL** (wrapper clause only; M2/M3/M4 detected on 6/6/4 terms). **G0-A2 (operative): PASS**, with an fp32 wrapper of 2.07e-6, a floor of 1.5e-7, and W1/W2 detected on 1/26 terms. All 82 reproduction terms are inside tolerance:
+* `eval_loss`: 21.23936 in-run vs 21.2899 ± 0.0632;
+* `eval_traj`: 0.57429 vs 0.58183 ± 0.0103.
+
+**Bars** (both seeds; 4,754 windows / 139 episodes).
+
+| bar | seed 0 | seed 1 | verdict |
+|---|---|---|---|
+| **BAR-R6-1** `os − ha0_ext` | +0.0225 [+0.0068, +0.0395] sep | +0.0224 [+0.0070, +0.0387] sep | **FAIL** |
+| BAR-R6-2 `os − ha` | +0.0101 [−0.0066, +0.0280] | +0.0100 [−0.0066, +0.0272] | FAIL (not separated) |
+| BAR-R6-3 `os − refcv4b` | +0.0137 [−0.0029, +0.0317] | +0.0136 [−0.0028, +0.0313] | FAIL (not separated) |
+| BAR-R6-4 `os − refcv5-v2` | +0.0021 [−0.0160, +0.0212] | +0.0020 [−0.0160, +0.0209] | FAIL (not separated) |
+| BAR-R6-5 S6 `os − ha0_ext`, 1–6 s | **−0.7475 [−1.0603, −0.4409] sep** | **−0.7472 [−1.0537, −0.4377] sep** | **PASS** |
+
+* **Replicate floor:** +0.0001 [−0.0027, +0.0027].
+* **5k → 30k (same tree, same clock).**
+  * `os` ADE 0–2 s: 0.3771 → **0.3111** [0.2847, 0.3409].
+  * Gap to the echo: +0.0885 → **+0.0225**, still separated.
+  * The gap is now LONGITUDINAL-led (speed MAE +0.0192 sep; along-track +0.0109, not separated) plus cross-track +0.0163 sep. Heading is no longer separated (+0.05°).
+* **Against the arms.** refcv6 now ties refcv4b and refcv5-v2 at 0–2 s (neither cell is separated) and at 1–6 s (+0.078 / +0.086, not separated).
+* **T0 ceiling.** `oracle_sel` is 0.2435, below the echo.
+
+**⭐ RULE ZERO lever at 30k (A4 L2, the causal-hold blend).**
+
+| seed | blend − echo | blend − hold | w |
+|---|---|---|---|
+| 0 | **−0.0364 [−0.0464, −0.0265] sep** | −0.0488 sep | 0.45–0.65 |
+| 1 | **−0.0361 sep** | −0.0485 sep | 0.45–0.65 |
+
+* The shuffled control reads exactly 0.
+* **The lever grows with training:** −0.0122 at 5k → **−0.0364** at 30k.
+* The weight on `os` rises from 0.2–0.4 to 0.45–0.65.
+* refcv6's composite now beats the baselines' composites: refcv4b −0.0315, refcv5-v2 −0.0267 (exploratory context, same cross-fit).
+* L2e (diagnostic) reads −0.0419 sep.
+* L1 (seed average) still fails (+0.0172 sep).
+* A6 (the train-fit deployable form) runs next, at step 5000 as registered.
+
+**TACTICAL** (primary clock OLD; the heads are deterministic in the inference seed).
+
+| head | OLD clock ⭐ | CORRECTED clock |
+|---|---|---|
+| LAT v6 | acc 0.7546 [0.7002, 0.8121], κ 0.5181 | 0.7514, κ 0.5083 |
+| LAT v6, **nav zeroed** | **κ 0.4081** (it was 0.0066 at 5k) | κ 0.3964 |
+| LON v6 | acc 0.4943, κ 0.3400 | 0.4901, κ 0.3354 |
+
+* ⚠ The nav-true LAT κ is optimistic by construction (the nav-echo caveat). The nav-zeroed κ of **0.41 is the nav-free reading, and it is new at 30k.**
+* FOLLOW_LANE goal AUROC: 0.7999 / 0.7980.
+
+**Acceptance.**
+* **T-FLIP: FAIL.** follows_FED 0.2159 [0.1295, 0.3037]; true − shuffled 0.1562 [0.1054, 0.2111]; n = 352 windows / 29 episodes. Seed 1 reads 0.2216 / 0.1420.
+* **OBEDIENCE: FAIL** (structural).
+* **STRATEGIC:** N/A, n = 0.
+
+<!-- STEP15000_20000 -->
 
 <!-- FINAL -->
 
@@ -346,7 +416,7 @@ The primary bar is one the programme has not yet cleared with any arm.
 | F7 | **My orchestrator deadlocked on its own GPU gate.** After the step-1000 seed-0 roll the process held a CUDA context (1,826 MiB), and `gate_wait()` did not exclude its own pid, so it waited on itself: 11 WAIT rows from 03:39 Berlin. It also blocked the sibling NavSim stream. The Master Mind caught it. | mine; a check that shares the defect it checks for | ✅ Stopped by explicit PID. Fixes: (a) `gpu_gate.evaluate()` always drops the caller's own pids; (b) the orchestrator **never initialises CUDA**, because every GPU stage (G0, G0-A1, each seed roll) is a child process (`roll_seed.py`), and `parent_cuda_initialized` is recorded False. `test_gpu_gate.py` 6/6, including a mutation arm that reproduces the defect. The 8 GB RAM rule is unchanged |
 | F9 | **The §2 wrapper control conflated merge exactness with bf16 batch-size numerics.** Its 1e-3 bar was never measured. It held at step 1000 (8.4e-4) and read 3.9e-3 at step 5000. | an unmeasured tolerance; a control whose question was wider than its purpose | ✅ Amendment A2, registered before measuring: an fp32-deterministic wrapper probe with its own floor and two deliberate wrapper regressions. The merge is exact (1.9e-6); G0-A2 PASS. The as-registered FAIL is kept and reported |
 | F8 | **The frozen OBEDIENCE bar is unsatisfiable on 97.5 % of its population** (§3). | instrument design | ⚠️ **ESCALATED** (owner / PI). Reported, not changed |
-| F10 | **The paired yaw-rate cell in the shared `taniteval/tools/refav1_arm.py::_components` is scored on steps with NO path tangent.** `four_families` masks yaw-rate with `pred.pair_valid & gt.pair_valid` (`four_families.py:786-791`); `_components` masks heading but not yaw-rate (`refav1_arm.py:2058`). MEASURED at step 5000 seed 0 (`code/probes/yaw_mask_probe.py`): refcv4b 0.2034 rad/s unmasked vs 0.0318 masked (6.4×; 235 windows > 1 rad/s carry 83 % of the sum, every one with a stopped/crawling GT step); the cell `os − refcv4b` read −0.1683 rad/s separated and is −0.0042 [−0.0075, −0.0011] on valid steps (40× smaller); `refcv4b − ha0_ext` +0.1721 → +0.0073. Every other paired cell is bit-identical before/after. The same `_components` feeds `paired_openloop.py`, `openloop_suite.py`, `stratified_openloop.py`. | a check that shares the defect it checks for (a mask applied to heading, forgotten on its derivative) | ✅ In-package: SPEC **A3** (registered before any unread panel), `LAT_yaw_rate_mae_radps_valid` in every paired table, the unmasked cell labelled DEFECTIVE; `code/test_yaw_valid.py` 3/3 with a mutation arm that re-introduces the defect and is caught. ⚠️ **ESCALATED**: the shared instrument and any landed paired yaw-rate claim (candidates: `2026-09-05-mm-decisions.md` M26 0.2176 → 0.0427 rad/s; `PREREG_REFCV6.md` L1–L4 yaw-rate clause) are the owner's to re-read |
+| F10 | **The paired yaw-rate cell in the shared `taniteval/tools/refav1_arm.py::_components` is scored on steps with NO path tangent.** `four_families` masks yaw-rate with `pred.pair_valid & gt.pair_valid` (`four_families.py:786-791`); `_components` masks heading but not yaw-rate (`refav1_arm.py:2058`). MEASURED at step 5000 seed 0 (`code/probes/yaw_mask_probe.py`): refcv4b 0.2034 rad/s unmasked vs 0.0318 masked (6.4×; 235 windows > 1 rad/s carry 83 % of the sum, every one with a stopped/crawling GT step); the cell `os − refcv4b` read −0.1683 rad/s separated and is −0.0042 [−0.0075, −0.0011] on valid steps (40× smaller); `refcv4b − ha0_ext` +0.1721 → +0.0073. Every other paired cell is bit-identical before/after. The same `_components` feeds `paired_openloop.py`, `openloop_suite.py`, `stratified_openloop.py`. | a check that shares the defect it checks for (a mask applied to heading, forgotten on its derivative) | ✅ In-package: SPEC **A3** (registered before any unread panel), `LAT_yaw_rate_mae_radps_valid` in every paired table, the unmasked cell labelled DEFECTIVE; `code/test_yaw_valid.py` 3/3 with a mutation arm that re-introduces the defect and is caught. ⚠️ **ESCALATED**: the shared instrument and any landed paired yaw-rate claim (candidates: `2026-09-05-mm-decisions.md` M26 0.2176 → 0.0427 rad/s; `PREREG_REFCV6.md` L1–L4 yaw-rate clause) are the owner's to re-read. ✅ **CLOSED upstream in `da5760e`** (Master Mind 2026-09-26; register YAWMASK-2026-09-26, retraction RETR-2026-09-26-YAWMASK). There the shared cell is masked and equals the A3 cell (13/13 fields), and refcv3 @40,284's LATERAL family flips to WON 3/3. **This battery deliberately does NOT sync its trees** (`ev6` ≡ 287d72e for the pre-switch tags, `ev6_82c2331` for the FINAL, both pre-da5760e). Every tag's JSON therefore carries the same historical shared cell, labelled DEFECTIVE, beside the A3 cell, and only the A3 cell is quoted. Within-battery consistency beats a mid-battery code change. The package's `code/test_yaw_valid.py` is da5760e's post-fix version; the dev copy keeps the pre-fix one, which matches the unsynced trees |
 | F6 | **GPU contention.** 7 REFe `augment_search.py` shards (another stream) held python compute on the RTX 4060 23:18–00:00, and the brief's gate correctly WAITED. My first gated launcher then died on an MSYS `/c/` path inside a Python string (the MSYS-path trap). | environment; mine | ✅ Relaunched with Windows paths. No battery number was affected |
 
 

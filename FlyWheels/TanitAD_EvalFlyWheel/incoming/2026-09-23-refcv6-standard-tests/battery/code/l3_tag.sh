@@ -22,6 +22,19 @@ if [ -s $B/raw/$t/levers/eps0.json ] && grep -q '"cells"' $B/raw/$t/levers/eps0.
   echo "ZZL3SKIP_${t}ZZ already done $(date +%FT%T)" >> $WL; exit 0
 fi
 [ -s $B/raw/$t/panel_s0/manifest.json ] || { echo "ZZL3NOPANEL_${t}ZZ $(date +%FT%T)" >> $WL; exit 1; }
+# Master Mind priority (2026-09-26): A6 before L3. If the A6 chain has started and not ended, wait for it
+# (at most 10 h; a stuck A6 must not starve the rest of the queue).
+AL=$B/raw/a6/a6_chain.log
+if [ -f $AL ] && grep -q ZZA6STARTZZ $AL; then
+  n=0
+  until grep -qE "ZZA6(DONE|FAIL)ZZ" $AL || [ $n -ge 300 ]; do sleep 120; n=$((n+1)); done
+fi
+# ... and the FINAL-gate dry run on the 35k snapshot (gate_dryrun_35k.sh), which runs right after A6
+DL=$B/raw/step35000_gate/dryrun.log
+if [ -f $DL ] && grep -q ZZDRYSTARTZZ $DL; then
+  n=0
+  until grep -qE "ZZDRY(DONE|FAIL)ZZ" $DL || [ $n -ge 150 ]; do sleep 120; n=$((n+1)); done
+fi
 echo "ZZL3START_${t}ZZ $(date +%FT%T)" >> $WL
 $PY lever_eps0.py "$BW/raw/$t" --ckpt "$ck" --config "$L3_CONFIG" > $B/raw/$t/levers_eps0.log 2>&1
 if [ -s $B/raw/$t/levers/eps0.json ] && grep -q '"cells"' $B/raw/$t/levers/eps0.json; then

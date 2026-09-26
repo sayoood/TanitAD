@@ -129,7 +129,8 @@ def main():
               f"CI {(m.get('follows_FED_command') or {}).get('ci')}, against a bar of 0.50 (refcv5-v2: 0.205).",
               f"  * true − shuffled: {(m.get('paired_true_minus_shuffled') or {}).get('delta')} "
               f"CI {(m.get('paired_true_minus_shuffled') or {}).get('ci')}, against a bar of 0.38 (refcv5-v2: 0.099).",
-              f"  * n = {(m.get('follows_FED_command') or {}).get('n_windows')} windows.",
+              f"  * n = {(m.get('follows_FED_command') or {}).get('n_windows')} windows / "
+              f"{(m.get('follows_FED_command') or {}).get('n_episodes')} episodes (quote the n with it).",
               f"* **OBEDIENCE: {ob.get('verdict')}.** Obeys {(ob.get('obeys') or {}).get('mean')}; "
               f"{ob.get('rows_with_no_compliant_candidate')} of {ob.get('n_windows')} rows have NO compliant candidate. "
               "The bar is structurally unsatisfiable on this population (§3 F8)."]

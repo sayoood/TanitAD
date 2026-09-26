@@ -76,4 +76,6 @@ Tier T1 (UNRULED for an action-free model). Declared-head accuracy [episode-clus
 | LANE_CHANGE_L | 0 / — / UNSCOREABLE (n_pos < 200) | 0 / — / UNSCOREABLE (n_pos < 200) |
 | LANE_CHANGE_R | 8 / 1.0000 / UNSCOREABLE (n_pos < 200) | 8 / 1.0000 / UNSCOREABLE (n_pos < 200) |
 
+⚠ Nav-echo caveat (Master Mind register REFCV6-BATTERY-5K): on PhysicalAI the nav input is derived from the ego's own future path, so every nav-true LAT κ here is optimistic by construction (the nav-echo family); the NAVZERO rows are the nav-free reading.
+
 ⭐ = the PRIMARY clock for this checkpoint. A tactical comparison across step 34,500 must show both clocks, and it mixes training time with the fix.

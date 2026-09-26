@@ -71,6 +71,13 @@ PATH_REMAP = {
     # SPEC A5 (A16 switch, resumed on 82c2331): md5 78466f99... on Thor == the audit package copy
     "--clip-clock-sidecar": str(KIT / "data/refcv6_clip_clock_sidecar.jsonl"),
 }
+#: SPEC A6: a RECORDED override (JSON file {flag: local path}) for a roll that is not the eval roll -- the
+#: A6 train-episode roll points --eval-cache / --eval-labels / --speed-max-sidecar-v6-eval at the pulled
+#: TRAIN sub-cache, labels and sidecar. Unset (the default) changes nothing. Every remap, overridden or
+#: not, is written into the load record by `remap_argv`.
+REMAP_OVERRIDES_FILE = os.environ.get("REFCV6_REMAP_OVERRIDES")
+if REMAP_OVERRIDES_FILE:
+    PATH_REMAP.update(json.load(open(REMAP_OVERRIDES_FILE, encoding="utf-8")))
 #: flags whose TRAIN-side file is not in the kit and is not read by anything this module builds
 TRAIN_ONLY_PATHS = ("--v2-cache", "--v7-labels", "--speed-max-sidecar-v6", "--out")
 #: removed from argv, with the reason

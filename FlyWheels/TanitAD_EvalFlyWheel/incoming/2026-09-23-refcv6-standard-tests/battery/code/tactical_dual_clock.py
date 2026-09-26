@@ -84,6 +84,10 @@ def main():
             md.append(f"| {tk} | {o.get('n_pos')} / {SB.f(o.get('auroc'))} / {o.get('status')} | "
                       f"{n.get('n_pos')} / {SB.f(n.get('auroc'))} / {n.get('status')} |")
         md.append("")
+    md.append("⚠ Nav-echo caveat (Master Mind register REFCV6-BATTERY-5K): on PhysicalAI the nav input is derived from "
+              "the ego's own future path, so every nav-true LAT κ here is optimistic by construction (the nav-echo "
+              "family); the NAVZERO rows are the nav-free reading.")
+    md.append("")
     md.append("⭐ = the PRIMARY clock for this checkpoint. A tactical comparison across step 34,500 must show both "
               "clocks, and it mixes training time with the fix.")
     json.dump(out, open(root / "tactical_clocks.json", "w", encoding="utf-8"), indent=1, default=str)

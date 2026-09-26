@@ -205,6 +205,8 @@ Tier T1 (UNRULED for an action-free model). Declared-head accuracy [episode-clus
 | LANE_CHANGE_L | 0 / — / UNSCOREABLE (n_pos < 200) | 0 / — / UNSCOREABLE (n_pos < 200) |
 | LANE_CHANGE_R | 8 / 1.0000 / UNSCOREABLE (n_pos < 200) | 8 / 1.0000 / UNSCOREABLE (n_pos < 200) |
 
+⚠ Nav-echo caveat (Master Mind register REFCV6-BATTERY-5K): on PhysicalAI the nav input is derived from the ego's own future path, so every nav-true LAT κ here is optimistic by construction (the nav-echo family); the NAVZERO rows are the nav-free reading.
+
 ⭐ = the PRIMARY clock for this checkpoint. A tactical comparison across step 34,500 must show both clocks, and it mixes training time with the fix.
 
 
@@ -220,13 +222,13 @@ Tier T1 (UNRULED for an action-free model). Declared-head accuracy [episode-clus
 **Frozen acceptance instruments, inference seed 0.**
 * **T-FLIP: FAIL.** follows_FED 0.25 CI [0.1562, 0.3551], against a bar of 0.50 (refcv5-v2: 0.205).
   * true − shuffled: 0.1534 CI [0.101, 0.209], against a bar of 0.38 (refcv5-v2: 0.099).
-  * n = 352 windows.
+  * n = 352 windows / 29 episodes (quote the n with it).
 * **OBEDIENCE: FAIL.** Obeys 0.0153; 2216 of 2294 rows have NO compliant candidate. The bar is structurally unsatisfiable on this population (§3 F8).
 
 **Frozen acceptance instruments, inference seed 1.**
 * **T-FLIP: FAIL.** follows_FED 0.25 CI [0.1593, 0.3508], against a bar of 0.50 (refcv5-v2: 0.205).
   * true − shuffled: 0.1335 CI [0.0858, 0.1825], against a bar of 0.38 (refcv5-v2: 0.099).
-  * n = 352 windows.
+  * n = 352 windows / 29 episodes (quote the n with it).
 * **OBEDIENCE: FAIL.** Obeys 0.0166; 2216 of 2294 rows have NO compliant candidate. The bar is structurally unsatisfiable on this population (§3 F8).
 * VOID gates, seed 0: STOP True, ha0 True, profiles {'selection_degenerate': False, 'selection_modal_frac': 0.5191, 'n_distinct_selected': 45, 'os_trivial_frac': 0.0189}
 * VOID gates, seed 1: STOP True, ha0 True, profiles {'selection_degenerate': False, 'selection_modal_frac': 0.5187, 'n_distinct_selected': 46, 'os_trivial_frac': 0.0189}
