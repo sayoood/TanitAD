@@ -17738,3 +17738,51 @@ W8's own row, verbatim:
 | id | text |
 |---|---|
 | RETRACTION-CANDIDATE (W8 PREREG §2) | My pre-registration read *"NC function text identical + t0-collider removal the only input change"* as *"NC identical outside E-T0"*. Wrong: the observation window changed underneath the identical function. **Class: identical function text read as identical metric — an input pipeline changed underneath it.** The pre-registered C-NC verdict stays FAILED on the smoke; AMENDMENT A2 (hashed before any full-split score) adds class-aware rules + the function-identity test | for `RETRACTION_LOG.md` | `PREREG.md` A2 |
+
+### RETR-2026-09-26-NAVTEST30K-PARTIAL — "navtest @30k 64.14 vs STOP 61.72 on a 1,464-token SUBSET"
+
+**Retracted:** that figure, and its reading "first point estimate above STOP". It had landed in three places:
+- GOALS REFCV6-BATTERY-30K (29851398);
+- the refcv6 Training Watch (version 8);
+- the HF model card of `tanitad-refcv6-r101-s0`.
+
+**What it was.** Not a subset evaluation but a FAILED scorer run.
+- The official scorer's count guard failed: E1's RAM guard aborted it 6 times (14:12–14:46Z), after 1,464 of 12,146 rows.
+- The NavSim runner gated its parse on the CSV's EXISTENCE, parsed the partial CSV unattended, and wrote a summary and a bar.
+- I read that summary from the LIVE package, called the 1,464 rows a "subset", and propagated it three times. The count guard's FAIL sat one field away.
+
+**Correct reading.**
+- Full split: no valid score; the re-score is queued.
+- W3's 200-token subset: 62.57 vs STOP 62.58, a tie. The inference seed alone moves it by 5.06, separated.
+
+**Class:** A FAILED RUN'S PARTIAL OUTPUT READ AS A SMALLER VALID RUN. This is the "assert on the artifact" family, inverted: the artifact EXISTED, but it was partial. The same family as the NOISE_FLOOR.md that crashed mid-write — "a TRUNCATED artifact that reads like a complete one".
+
+**Rule:**
+- A scored artifact is admissible only with its COUNT GUARD read in the same breath (n rows == n expected).
+- "Subset" names a designed selection, never whatever a crashed run left behind.
+
+**Fixes.**
+- At the consumers, by the NavSim stream: `parse6.py` and `parse_navtest6.py` refuse a non-PASS arm, mutation-tested on this very CSV.
+- The Training Watch builder must refuse the same independently (BACKLOG).
+
+### RETR-2026-09-26-SPEC-OVERWRITE — d0cdbc8 replaced the PI-requested DrivoR-T `SPEC_REFCV7.md` on the branch
+
+**What happened.**
+- I registered path (b) as "refcv7" and landed its spec at `Project Steering/SPEC_REFCV7.md` through the lander's ADD path (stage/).
+- That path already held the 140-line DrivoR-T design the PI requested on 2026-09-19 (*"we will call it refcv7"*), landed at 7e9ccdd that morning.
+- The ADD path wrote the new blob with `update-index --add` without asking whether the tip had the path. It therefore bypassed the append-only and superset guards and silently replaced the document: 112 of its 140 lines left the tip. Git history still holds them.
+
+**Two errors, two classes.**
+1. **A NAME REUSED WITHOUT SEARCHING FOR IT.** I proposed "refcv7" for option (b) without grepping the registry, steering and code for the name. The code carried it: `--refcv7` and `refs/refcv7_*.py`.
+2. **A GUARD WITH A HOLE ON ONE PATH.** Every rewrite guard protected mods/ and mods-rw/; the ADD path was assumed only ever to create files.
+
+**Fix.**
+- The lander now refuses any stage/ path that exists on the tip (`ZZABORT-ADD-EXISTS-ON-TIP`, exit 18).
+- Regression arm, run 2026-09-26: an identical copy of a tip file in stage/ gives exit 18, with the tip unchanged.
+- The DrivoR-T body is restored byte-identical as `Project Steering/SPEC_DRIVORT.md`.
+- The PI ruled the name: *"you can name drivor-t request with an other name"*.
+- I audited all 49 landings since 2026-09-25 for heavy-loss rewrites and found this one unintended overwrite. The others were superset-guarded mods-rw, regenerated artifacts, or the deliberate three-way merge 1ee1c24.
+
+**Rule:**
+- Before naming a new arm or spec, search the name across the registry, the steering docs and the code.
+- Before landing a new file, assert its path is absent from the tip. The lander now enforces this.

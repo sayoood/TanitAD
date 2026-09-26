@@ -75,3 +75,51 @@ Also required:
 2. NEW-1 residual prior (the refcv7 model agent: new modules first; shared-file edits rebased on the tip after 1 lands) → landed.
 3. The launch gate + supervisor enforcement (the gate agent, in parallel on separate files) → landed.
 4. The full gate on the dev box and a Thor smoke → the report to the PI → launch.
+
+## 6. Amendment A1 (2026-09-26 ~21:35 Berlin): the name, and NEW-2, a map head at 10 cm
+
+Registered BEFORE any NEW-2 code or number exists.
+
+### 6.1 The name
+
+**PI, verbatim (2026-09-26):** *"you can name drivor-t request with an other name"*.
+
+- **refcv7 = this spec (path (b)).**
+- The 2026-09-19 DrivoR-T draft carried this file name, landed at `7e9ccdd`, and was displaced by `d0cdbc8`. It now lives in **`Project Steering/SPEC_DRIVORT.md`**, byte-identical below a rename header.
+- DrivoR-T's code still uses `refcv7_*` names: `refs/refcv7_heads.py`, `refcv7_oracle.py`, `refcv7_toad.py`, `scripts/refcv7_derive_nav_tau.py`, and the trainer's `--refcv7`, `--w-r7-wta` and `--w-r7-scorer`.
+  - It gets a mechanical rename to `drivort_*` after the FIX landings.
+  - ⛔ **Until then a refcv7 launch passes none of those flags, and G-DVB lists them as DrivoR-T levers that must be OFF.**
+
+### 6.2 NEW-2: the map head predicts at 10 cm
+
+**PI, verbatim (2026-09-26):** *"Why did we choose 0.5 m cells? The original sam3 maps were very good and fine. Can we increase the resolution to 10 cm?"*
+
+**Evidence:** `TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/RESULT.md`. MEASURED on 137 SAM3 GT files, 2,867 frames:
+- Every GT file already carries the map at **10 cm** (`fine_codes`, 600 × 320). The 0.5 m target is exactly its 5 × 5 average: 0 of all compared cells differ. No SAM3 rebuild is needed.
+- The 0.5 m grid keeps only **0.9 %** of the non-drivable-edge area and **62 %** of the lane-line area, under the eval's ≥ 0.5 rule.
+- refcv6@35k's argmax IoU is **0.009** for lane lines and **0.001** for crosswalks (513 windows, 3 clips).
+
+**What changes:**
+1. **Target:** `fine_codes` @ 0.1 m through a reader with `cart_frac`'s identity and time guards. It is a hard-label CE on seen cells.
+2. **Features:** a map-only lift at 0.25 m (240 × 128) sampling the **stride-8** trunk map (`fmap_s8`), a small BEV decoder, and 600 × 320 logits.
+   - The existing 0.5 m lift, map head, box3d, BEV cross-attention and 30 × 16 BEV tokens are UNCHANGED.
+3. **Loss:** median-frequency class weights, computed once from the TRAIN split's 10 cm GT, then frozen and recorded. Nothing is tuned on eval.
+4. **Guards:**
+   - `fmap_s8` must reach the branch; that is the F3 whitelist class.
+   - G-DVB: the head is built at 600 × 320 with the declared weights.
+   - G-LIVE: the 10 cm loss is finite, and the stride-8 path and the new decoder get a non-zero gradient.
+   - Each check has a regression arm.
+5. **Cost:** measured in the Thor G-LIVE smoke as `torch.cuda.max_memory_allocated()` and s/step. **More than +25 % over refcv6's 6.4 s/step goes to the PI before launch.**
+
+**Bars.** All are scored on the eval kit's 137 SAM3 GT clips, every eval window, at 10 cm. The baseline is refcv6@38k's 0.5 m argmax, nearest-upsampled to 10 cm. The estimator is the paired episode-cluster bootstrap over clips.
+
+- **BAR-M7-1:** lane / road line IoU, 0–20 m band: refcv7 − refcv6@38k > 0, separated.
+- **BAR-M7-2:** crosswalk IoU, 0–20 m band: refcv7 − refcv6@38k > 0, separated.
+- **BAR-M7-3:** non-drivable edge, precision / recall / F1 at 0.2 m tolerance, 0–20 m band: refcv7 − refcv6@38k > 0 on F1, separated.
+- **BAR-M7-4 (non-regression):** drivable IoU is not separated WORSE than refcv6@38k in any band (0–20 / 20–40 / 40–60 m).
+
+**Also required:**
+- all 8 classes × 3 bands, with n (windows, clips) printed;
+- a **positional-prior control** (each cell's train-set majority class) scored on the same windows, which every class bar must also beat;
+- §3's single-seed rule applies: a margin within 2× the replicate floor is NOT PROVEN.
+- ⛔ A missed bar is reported FAILED.

@@ -454,3 +454,26 @@ register rows carry them. The fix itself cannot close the following:
     add a test via `_pin_trainer_cfg` + `--image-hw`, with a mutation arm.
   - Audit every OTHER ad-hoc `cfg.core.encoder.<x> = ...` in `_pin_trainer_cfg` for the same loss. Any undeclared attribute
     set before line 459 dies the same way.
+
+<!-- DRIVORT-RENAME-2026-09-26 -->
+### OPEN — 2026-09-26 — rename DrivoR-T's code from refcv7_* to drivort_* · owner: Master Mind, after the FIX landings
+- **Files:**
+  - `stack/tanitad/refs/refcv7_heads.py`, `refcv7_oracle.py`, `refcv7_toad.py`;
+  - `stack/scripts/refcv7_derive_nav_tau.py`;
+  - `refc_v3.py`'s refcv7 fields;
+  - `refc_v3_train.py`'s `--refcv7`, `--w-r7-wta`, `--w-r7-scorer` and `_pin_refcv7`;
+  - the tests `test_refcv7_*.py` and `test_trainer_imports_without_refcv7.py`.
+- **Why:** the PI ruled on 2026-09-26 that refcv7 = path (b) and DrivoR-T takes another name. Until the rename, a refcv7 launch passes none of those flags, and G-DVB lists them as DrivoR-T levers that must be OFF.
+- **Gate:**
+  - a clean-tree suite shows 0 regressions against the tip;
+  - afterwards, `git grep -i refcv7` hits only path-(b) code and history documents.
+
+### OPEN — 2026-09-26 — Training Watch builder: refuse a NavSim summary whose count guard is not PASS
+- The builder rendered the partial navtest@30k (1,464/12,146) as "64.14 FAIL (SUBSET)".
+- The NavSim parsers now refuse to write such a summary, but the builder should refuse too, independently, and render "UNAVAILABLE (count guard FAIL n/N)".
+- Mutation arm: a summary whose counts FAIL must render UNAVAILABLE.
+
+### OPEN — 2026-09-26 — other sessions' register lines that live only on D:
+- D:'s `GOALS_AND_CLAIMS.md` carries 25 non-blank lines absent from the tip, and `RETRACTION_LOG.md` carries 17. Example: the EvalFlyWheel's "R25 (2026-09-26) … SPEC_NAVTEST Amendment 3" retraction.
+- The D: copies are otherwise ~3,700 lines behind the tip.
+- Owners hand these lines over as append blocks via LANDING_READY; the Master Mind lands them.
