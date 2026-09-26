@@ -176,3 +176,22 @@ Source: `TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-map-s
    - `lane_w0` must fail on lane; `s8_zeros` must fail on all five thin classes; controls C1–C3 must read their known values.
 3. **Log names.** Under `--map-hires on`, the 0.5 m auxiliary's keys are `aux05_*`, so no report or Watch can label them "the map". The legacy `map*` names remain only with `--map-hires off`.
 4. **Gradient-reach logging must be live** (D-REFCV6-GRAD-REACH-DEAD). It is fixed trainer-wide in declared-vs-built batch 2. G-LIVE asserts the `ga_*` keys for every trainable group, and its regression arm, the old off-by-one, gives zero keys and must FAIL.
+
+## 10. Amendment A5 (2026-09-26 ~23:30 Berlin): NEW-1's prior is `ha0_ext_pose`
+
+NEW-1 builder, MEASURED from source and on the battery's step-30k surface (4,754 windows, 139 eval clips, paired episode-cluster bootstrap). Package: `TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-residual-prior/`.
+
+**§1 said the prior is CV/yaw-rate "matching the battery's echo `ha0_ext`". Those two cannot both hold.** `ha0_ext` is constant ACCELERATION + constant CURVATURE, and it reads the recorded STEER at t0 (`refcv3_arm.py:2125-2128` → `refav1_arm.py:445-446` → `kinematic.py:220-264`).
+
+| mode | reads | prior − echo, ADE 0–2 s | 0–6 s | status for refcv7 |
+|---|---|---|---|---|
+| `ha0_ext` | poses + recorded steer at t0 | 0 (bit-equal on 4,754/4,754) | 0 | **excluded**: no PI ruling on the steer channel at inference; NavSim has no steer channel, so BAR-R7-N1 could not be scored |
+| **`ha0_ext_pose`** | past poses only | **+0.0055 [+0.0036, +0.0076]** | +0.0223 | **CHOSEN**: past-only ego history is already admissible (refcv6 §10.3; v0 at t0, PI 2026-09-02); runs in every harness |
+| `cv_yawrate` | past poses only | +0.2293 [+0.1971, +0.2642] | +0.53 | **excluded**: starts 0.23 m behind the bar it must beat |
+
+- **The chosen argv:** `--residual-prior ha0_ext_pose`. It requires `--ego-history`, and G-DVB refuses any other mode for a refcv7 launch.
+- **Not a goalpost move.** BAR-R7-1 still compares against the echo `ha0_ext`, with steer. The prior choice rests on how well each PRIOR FUNCTION matches the echo on real poses; no refcv7 model output exists.
+- **The anchors are unchanged in bytes.** The same 117 anchors now mean residuals around the prior, and `config.json` records `vocabulary_space`. The best-anchor distance to the driven path, residual − absolute, MEASURED: 0–2 s eval −0.0232 [−0.0293, −0.0171] (better); 0–6 s eval −0.0205 [−0.0670, +0.0253] (tie).
+- **Selection sees absolute plans.** The prior is composed upstream of selection, so nav compliance and the ceiling filter read P + Δ (the A2 requirement). Pinned by `test_A2_…` with a red arm that feeds Δ.
+- **With `--residual-prior off` the model is bit-identical to refcv6**, by a sha256 over every loss scalar, gradient and planner output.
+- A PI ruling on the steer channel at inference would make `ha0_ext` available in a later arm. It is not needed for refcv7.
