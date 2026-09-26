@@ -304,3 +304,37 @@ def test_the_two_replicates_differ_ONLY_in_seed():
     assert p0[:4] == ["--out", "A", "--seed", "1"] and p0b[:4] == ["--out", "B", "--seed", "2"]
     assert p0[4:] == p0b[4:], "everything after out/seed must be IDENTICAL between replicates"
     assert len(p0) == len(p0b) == len(base)
+
+
+# ================================================ the move-aside is LOAD-BEARING, not hygiene
+# ⛔ refc_v3_train.py AUTO-RESUMES from any ckpt.pt in --out (model + opt + step, strict, no
+# flag). So launching into a dirty directory silently CONTINUES an earlier run and the result
+# looks like a clean arm. A comment cannot enforce that — count_a7_procs's docstring asserted a
+# guarantee it did not have — so the runner checks, and these pin the check.
+def test_a_directory_holding_a_CHECKPOINT_is_refused(tmp_path):
+    arm = tmp_path / "P0-REPLICATE"
+    (arm / "run").mkdir(parents=True)
+    (arm / "run" / "ckpt.pt").write_bytes(b"weights")
+    ok, why = PR.out_dir_is_clean(arm)
+    assert ok is False and "AUTO-RESUME" in why
+
+
+def test_an_empty_or_absent_directory_is_CLEAN(tmp_path):
+    assert PR.out_dir_is_clean(tmp_path / "nothing-here")[0] is True
+    arm = tmp_path / "P0-REPLICATE"
+    (arm / "run").mkdir(parents=True)
+    assert PR.out_dir_is_clean(arm)[0] is True
+    # a log alone does not make it dirty — only a resumable checkpoint does
+    (arm / "run" / "metrics.jsonl").write_text("{}", encoding="utf-8")
+    assert PR.out_dir_is_clean(arm)[0] is True
+
+
+def test_move_aside_is_what_MAKES_it_clean(tmp_path):
+    """⛔ The two rules are one mechanism: move the partial aside, and the re-run is clean."""
+    arm = tmp_path / "P0-REPLICATE"
+    (arm / "run").mkdir(parents=True)
+    (arm / "run" / "ckpt.pt").write_bytes(b"weights")
+    assert PR.out_dir_is_clean(arm)[0] is False
+    dst = PR.move_aside(tmp_path, "P0-REPLICATE")
+    assert (dst / "run" / "ckpt.pt").exists(), "the checkpoint must be PRESERVED, not deleted"
+    assert PR.out_dir_is_clean(tmp_path / "P0-REPLICATE")[0] is True

@@ -118,3 +118,26 @@ def test_final_eval_row_takes_the_LAST_row_CARRYING_the_headline(tmp_path):
 
 def test_a_missing_metrics_file_reads_None_not_an_empty_row(tmp_path):
     assert PF.final_eval_row(tmp_path) is None
+
+
+# ============================================ the headline's POPULATION must travel with it
+# ⛔ `eval_box3d_centre` is the 360° aggregate (slot_set_loss sums over EVERY matched row).
+# The prereg's SUPPORTED criteria are written on the NEAR-FORWARD error, and the two differ by
+# ~2×. A floor quoted from this key against a near-forward verdict is cross-population and
+# inadmissible, so the population label must be inseparable from the number.
+def test_the_headline_carries_its_POPULATION_in_json_and_text():
+    rep = PF.report(_row(13.0), _row(13.25), _row(14.0))
+    pop = rep["seed_floor"]["headline_population"]
+    assert "all_360" in pop and "SECONDARY" in pop and "near-forward" in pop
+    # ⛔ ADJACENCY, NOT EXISTENCE. An earlier version asserted only that "population:" and
+    # "all_360" appeared SOMEWHERE in the rendered text — an EXISTENCE predicate guarding a claim
+    # about PLACE, which is the defect that let mutation M4 of the doc-checker pass while a table
+    # cell had been reverted. "Inseparable" means the label sits WITH the number, so the test
+    # locates the headline line and requires the population on the line immediately after it.
+    lines = PF.render(rep).splitlines()
+    hi = next(i for i, l in enumerate(lines) if "SEED FLOOR (quote this)" in l)
+    assert hi + 1 < len(lines), "the headline is the last line — nothing can follow it"
+    nxt = lines[hi + 1]
+    assert "population:" in nxt and "all_360" in nxt, (
+        "the population label must sit on the line immediately after the headline; found %r"
+        % nxt[:80])

@@ -37,6 +37,16 @@ MUTATIONS = [
      "    floor = families(p0, a8 if a8 is not None else p0b)  # MUTATION M1\n",
      ["test_the_floor_is_P0_vs_P0b_and_is_LABELLED_as_such",
       "test_the_code_delta_gap_is_reported_because_it_IS_the_code_delta"]),
+    # ⛔ THE DEMOTION MUTATION: the population label still EXISTS but is moved away from the
+    # number it qualifies. An existence-predicate test passes this; an adjacency test must not.
+    # This is the same shape as the landing guard's "appears anywhere" limit and as the
+    # doc-checker's M4 — a claim about PLACE cannot be guarded by a check for PRESENCE.
+    ("M_pop_label_DEMOTED_to_the_end_of_the_report", MOD,
+     '             "  population: %s" % HEAD_POPULATION,' + chr(10) +
+     '             "  seeds: %s" % (sf.get("seeds") or {})]' + chr(10),
+     '             "  seeds: %s" % (sf.get("seeds") or {}),' + chr(10) +
+     '             "  population: %s" % HEAD_POPULATION]  # MUTATION: demoted' + chr(10),
+     ["test_the_headline_carries_its_POPULATION_in_json_and_text"]),
     ("M2_the_upper_bound_label_is_dropped", MOD,
      '            "admissible_as": "UPPER BOUND ONLY - never quote this as the floor",\n',
      '            "admissible_as": "a difference",  # MUTATION M2\n',
@@ -106,6 +116,19 @@ def _run(dst: Path) -> dict:
     failed = sorted(set(re.findall(r"(?:FAILED|ERROR) \S+::(\w+)", out)))
     return {"rc": r.returncode, "failed": failed, "n_failed": len(failed),
             "n_passed": len(set(re.findall(r"PASSED \S+::(\w+)", out))), "tail": out[-400:]}
+
+
+# ⛔ A CHECKER MUST NOT DIE ON ITS OWN OUTPUT. MEASURED 2026-09-20: three separate
+# readouts crashed with a cp1252 `UnicodeEncodeError` on this box mid-print -- one of
+# them after reporting "lines lost = 1" but BEFORE naming the line, i.e. it had verified
+# nothing while looking like it had. Relying on the caller to export PYTHONIOENCODING is
+# a habit; this is a guard. `errors="replace"` means the print degrades instead of
+# raising even if the stream cannot take utf-8.
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+except Exception:  # noqa: BLE001 -- a stream that cannot be reconfigured is not fatal
+    pass
 
 
 def main(argv=None) -> int:

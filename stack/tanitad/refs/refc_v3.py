@@ -108,6 +108,11 @@ from tanitad.refs import refc_tactical as tac
 from tanitad.refs import refcv6_max_speed as v6ms
 from tanitad.refs import refcv6_selection as v6sel
 from tanitad.refs import refcv6_tactical as v6tac
+# ⭐ refcv7 (PI 2026-09-19): DrivoR's proven planning heads on the refcv6 build.
+# Module scope for the same reason as the three above.
+from tanitad.refs import refcv7_heads as r7h
+from tanitad.refs import refcv7_oracle as r7o
+from tanitad.refs import refcv7_toad as r7t
 
 __all__ = [
     "V3_HORIZONS", "SEAM_SLOT", "GOAL_TAU_STEPS", "RefCV3Config",
@@ -553,6 +558,47 @@ class RefCV3Config:
     #: tune after seeing the result: it is stamped into `config.json` and the
     #: report carries precision beside recall at exactly this value.
     tac_decoder_valid_threshold: float = 0.5
+
+    # --- refcv7 (PI 2026-09-19): DrivoR's proven planning heads -------------
+    # `Project Steering/SPEC_REFCV7.md`. refcv7 = refcv6 + a WTA proposal
+    # decoder (64 learned queries, one token per trajectory) + a DISENTANGLED
+    # scorer trained against the PhysicalAI oracle (`refcv7_oracle`) + scorer-
+    # driven selection. ⛔ Default False keeps every refcv6 / earlier build
+    # bit-identical: the modules are built AFTER every existing module (so no
+    # existing parameter's RNG draw moves) and the forward block is skipped.
+    # ⛔ It NEEDS the refcv6 scene hook (the agent slots, the BEV tokens and the
+    # [nav, max-speed, v0, a0] condition exist only there): `__init__` refuses
+    # refcv7 without `tac_decoder_v6`.
+    refcv7: bool = False
+    refcv7_head_cfg: "r7h.Refcv7HeadConfig" = field(
+        default_factory=r7h.Refcv7HeadConfig)
+    #: average-pool factor on the stride-16 map before it becomes scorer/WTA
+    #: image tokens (416x1024: 26x64 -> 13x32 = 416 tokens at 2)
+    refcv7_img_pool: int = 2
+    #: True: the DEPLOYED pick (`out["traj"]`) is the refcv7 scorer's argmax
+    #: over the anchor fan + the WTA proposals; the refcv6 pick is kept as
+    #: `out["traj_v3"]`. False: the scorer trains but does not select (arm).
+    refcv7_select: bool = True
+    #: the behaviour profile (DrivoR §3.4): QUALITY weights of the aggregate.
+    #: Default = PDMS. Stamped; changing it at inference changes the driving
+    #: style without retraining — never tuned on the scored split.
+    refcv7_w_ttc: float = 5.0
+    refcv7_w_ep: float = 5.0
+    refcv7_w_comf: float = 2.0
+    #: SPD hard mask margin above the fed set speed (m/s)
+    refcv7_speed_margin_ms: float = 0.5
+    #: ⭐ TOAD test-time search (arXiv 2606.07170) over the deployed pick.
+    #: ⛔ EVAL/INFERENCE ONLY — never in `model.training`: a search inside the
+    #: training loop would optimise the plan against a scorer that is still
+    #: being fitted to it, and the trained weights would then depend on a
+    #: procedure the loss never saw.
+    refcv7_toad: bool = False
+    refcv7_toad_iters: int = 5
+    refcv7_toad_samples: int = 64
+    refcv7_toad_fit_steps: int = 120
+    #: the INFERENCE seed. Varying it on purpose is how the inference-variance
+    #: floor is measured (the refav1 lesson: iCEM's own seed floor was ~0.30 m).
+    refcv7_toad_seed: int = 0
     #: ⛔ **OFF is the PI's ruling, not a default someone picked.** 2026-09-17,
     #: verbatim: *"you can backpropagate to the trunk"*. With this False the BEV
     #: tokens reach the behaviour decoder ATTACHED, so the tactical loss shapes
@@ -1187,6 +1233,38 @@ class RefCV3Model(nn.Module):
                                          tau_m=cfg.scorer_tau_m)
         self.goal_gate = nn.Parameter(torch.zeros(()))   # zero-init: bit-inert
         self._seam = sl.SeamState()                      # not a buffer (no ckpt key)
+        # ⭐ refcv7 — built LAST, so an OFF build draws exactly the same RNG
+        # stream for every existing parameter (bit-identity is a test, not a
+        # hope: `test_refcv7_model.py`).
+        self.refcv7_wta = None
+        self.refcv7_scorer = None
+        self.refcv7_sources: dict[str, int] = {}
+        if bool(getattr(cfg, "refcv7", False)):
+            if self.tac_decoder_v6 is None:
+                raise ValueError(
+                    "[refcv7] ⛔ refcv7 needs the refcv6 SCENE HOOK "
+                    "(`tac_decoder_v6`): the agent slots, the BEV tokens and the "
+                    "[nav, max-speed, v0, a0] condition exist only there. A "
+                    "refcv7 without them would score trajectories against no "
+                    "scene and no nav — the WP-6 wiring-gap refutation.")
+            _tdc = cfg.tac_decoder_cfg
+            src: dict[str, int] = {}
+            if int(getattr(_tdc, "d_agent", 0) or 0) > 0:
+                src["agents"] = int(_tdc.d_agent)
+            if int(getattr(_tdc, "d_bev", 0) or 0) > 0:
+                src["bev"] = int(_tdc.d_bev)
+            # the image tokens are the stride-16 map; its width is READ from
+            # timm's feature_info (`s16_dim` raises for a non-timm trunk)
+            src["img"] = int(cfg.core.encoder.s16_dim)
+            if int(cfg.refcv7_img_pool) < 1:
+                raise ValueError("[refcv7] refcv7_img_pool must be >= 1")
+            hc = cfg.refcv7_head_cfg
+            hc.cond_dim = 10                      # v6tac.build_condition width
+            hc.n_slots = len(V3_HORIZONS)
+            slot_t = tuple(h * 0.1 for h in V3_HORIZONS)
+            self.refcv7_sources = src
+            self.refcv7_wta = r7h.WTAProposalDecoder(hc, src, slot_t)
+            self.refcv7_scorer = r7h.DisentangledScorer(hc, src, slot_t)
 
     # --- provenance (the PI's admissibility ruling, as data + roles) --------
     def provenance_roles(self) -> dict:
@@ -1629,6 +1707,12 @@ class RefCV3Model(nn.Module):
             cond = v6tac.build_condition(nav_1h, vmax_1h, v0c, a0c,
                                          v_scale=EGO_SCALE_V,
                                          a_scale=EGO_SCALE_A)
+            if self.refcv7_wta is not None:
+                # ⭐ refcv7 reads the SAME scene and the SAME condition the
+                # behaviour decoder reads — one definition, no second spelling.
+                cache.update(r7_cond=cond, r7_agent_tokens=agent_tokens,
+                             r7_agent_pad=agent_pad, r7_bev_tokens=bev_tokens,
+                             r7_bev_pad=bev_pad, r7_v_lim=v_lim)
             out = self.tac_decoder_v6(cond, agent_tokens=agent_tokens,
                                       agent_pad=agent_pad,
                                       bev_tokens=bev_tokens, bev_pad=bev_pad)
@@ -2085,7 +2169,156 @@ class RefCV3Model(nn.Module):
         out["goal_dist"] = sc["goal_dist"]
         if "goal_point_free" in sc:        # E-AG2-style free-decode control
             out["goal_point_free"] = sc["goal_point_free"]
+        if self.refcv7_wta is not None:
+            self._refcv7_forward(out, v0, nav_cmd)
         return out
+
+    # ------------------------------------------------------------------
+    # refcv7 — WTA proposals, the disentangled scorer, scorer selection
+    # ------------------------------------------------------------------
+    def _refcv7_forward(self, out: dict, v0: Tensor | None,
+                        nav_cmd: Tensor | None) -> None:
+        """Adds ``r7_*`` keys and, under ``refcv7_select``, REPLACES the deployed
+        pick ``out["traj"]`` (the refcv6 pick survives as ``out["traj_v3"]``).
+
+        Candidates = the anchor fan (``anchor_traj``) plus the 64 WTA proposals,
+        DETACHED: the scorer can neither see the generators' latents nor train
+        them (DrivoR's disentanglement). The oracle is NOT called here — it is
+        label-side and lives only in the trainer's loss.
+        """
+        cfg = self.cfg
+        if "r7_cond" not in out:
+            raise ValueError(
+                "[refcv7] ⛔ the scene hook did not fire this forward, so there "
+                "is no scene and no condition for the refcv7 heads. The core "
+                "must be called with the refcv6 scene hook (agent slots or BEV "
+                "tokens present).")
+        cond = out["r7_cond"]
+        srcs: dict[str, Tensor] = {}
+        pads: dict[str, Tensor | None] = {}
+        if "agents" in self.refcv7_sources:
+            if out.get("r7_agent_tokens") is None:
+                raise ValueError("[refcv7] ⛔ built with an agent source but no "
+                                 "agent tokens reached this forward")
+            srcs["agents"] = out["r7_agent_tokens"]
+            pads["agents"] = out.get("r7_agent_pad")
+        if "bev" in self.refcv7_sources:
+            if out.get("r7_bev_tokens") is None:
+                raise ValueError("[refcv7] ⛔ built with a BEV source but no BEV "
+                                 "tokens reached this forward (attach the "
+                                 "perception branch)")
+            srcs["bev"] = out["r7_bev_tokens"]
+            pads["bev"] = out.get("r7_bev_pad")
+        f16 = out.get("fmap_s16")
+        if f16 is None:
+            raise ValueError("[refcv7] ⛔ no stride-16 map (`fmap_s16`) — the "
+                             "image tokens need the timm trunk")
+        pool = int(cfg.refcv7_img_pool)
+        if pool > 1:
+            f16 = F.avg_pool2d(f16, pool, ceil_mode=True)
+        srcs["img"] = f16.flatten(2).transpose(1, 2)            # [B, P, C]
+        wta = self.refcv7_wta(srcs, cond, pads)                 # [B, Q, S, 2]
+        fan = out["anchor_traj"]                                # [B, N, S, 2]
+        b, n = fan.shape[0], fan.shape[1]
+        cands = torch.cat([fan.detach(), wta.detach().to(fan.dtype)], dim=1)
+        if v0 is None:
+            v0v = torch.zeros(b, device=fan.device, dtype=fan.dtype)
+        else:
+            v0v = v0.reshape(-1).to(fan.dtype)
+        mem = self.refcv7_scorer.encode_scene(srcs, pads)
+        logits = self.refcv7_scorer.score(mem, cands, v0v, cond)
+        out.update(r7_wta=wta, r7_candidates=cands, r7_logits=logits,
+                   r7_mem=mem, r7_srcs=srcs, r7_pads=pads, r7_n_fan=n,
+                   r7_v0=v0v)
+        # ---- selection ---------------------------------------------------
+        probs = {k: torch.sigmoid(v.float()) for k, v in logits.items()}
+        if nav_cmd is not None:
+            nav = nav_cmd.reshape(-1).long()
+            informative = ((nav == refc.NAV_COMMANDS.index("left"))
+                           | (nav == refc.NAV_COMMANDS.index("right")))
+        else:
+            informative = torch.zeros(b, dtype=torch.bool, device=fan.device)
+        agg = r7o.aggregate(probs, {"ttc": cfg.refcv7_w_ttc,
+                                    "ep": cfg.refcv7_w_ep,
+                                    "comf": cfg.refcv7_w_comf},
+                            nav_informative=informative)
+        keep = torch.ones_like(agg, dtype=torch.bool)
+        if "reach_keep" in out:
+            keep[:, :n] = out["reach_keep"]
+        # the fed set speed is a HARD ceiling on the pick (the PI's obedience
+        # test); an unknown ceiling is +inf and the mask is inert there
+        v_lim = out.get("r7_v_lim")
+        if v_lim is not None:
+            slot_t = torch.tensor([h * 0.1 for h in V3_HORIZONS],
+                                  device=fan.device, dtype=torch.float32)
+            kin = r7o.path_kinematics(
+                cands.float(), slot_t,
+                v0v.float()[:, None].expand(b, cands.shape[1]))
+            vmax = kin["v"].amax(dim=-1)
+            lim = v_lim.to(vmax)[:, None] + float(cfg.refcv7_speed_margin_ms)
+            keep = keep & (vmax <= lim)
+        rank = agg.masked_fill(~keep, float("-inf"))
+        # a row where every candidate is masked keeps the unmasked argmax (and
+        # is COUNTED in `r7_dead_rows`) rather than returning an arbitrary index
+        dead = ~keep.any(dim=1)
+        rank = torch.where(dead[:, None], agg, rank)
+        idx = rank.argmax(dim=1)
+        pick = cands[torch.arange(b, device=fan.device), idx]
+        out["r7_score"] = agg
+        out["r7_sel_idx"] = idx
+        out["r7_pick_is_wta"] = idx >= n
+        out["r7_dead_rows"] = dead.float().mean()
+        out["r7_pick_wta_frac"] = (idx >= n).float().mean()
+        out["traj_r7"] = pick
+        # ---- TOAD test-time search (eval only) ---------------------------
+        if bool(cfg.refcv7_toad) and not self.training:
+            def _reward(xy: Tensor) -> Tensor:
+                lg = self.refcv7_scorer.score(mem, xy, v0v, cond)
+                pr = {k: torch.sigmoid(v.float()) for k, v in lg.items()}
+                return r7o.aggregate(pr, {"ttc": cfg.refcv7_w_ttc,
+                                          "ep": cfg.refcv7_w_ep,
+                                          "comf": cfg.refcv7_w_comf},
+                                     nav_informative=informative)
+
+            u_base, fit_rms = r7t.fit_slot_controls(
+                pick.float(), v0v.float(), tuple(V3_HORIZONS),
+                steps=int(cfg.refcv7_toad_fit_steps))
+            # the other candidates' controls set the search spread; a finite
+            # difference is enough for a STD and costs no optimisation
+            _kin = r7o.path_kinematics(
+                cands.float(), torch.tensor([h * 0.1 for h in V3_HORIZONS],
+                                            device=fan.device, dtype=torch.float32),
+                v0v.float()[:, None].expand(b, cands.shape[1]))
+            _u_prop = torch.stack(
+                [_kin["a_lon"], _kin["yaw_rate"] / _kin["v"].clamp_min(0.5)], dim=-1)
+            _t = r7t.toad_search(
+                _reward, u_base, v0v.float(), tuple(V3_HORIZONS),
+                u_proposals=_u_prop,
+                cfg=r7t.ToadConfig(iters=int(cfg.refcv7_toad_iters),
+                                   samples=int(cfg.refcv7_toad_samples)),
+                seed=int(cfg.refcv7_toad_seed))
+            # ⛔⛔ THE GUARANTEE IS AGAINST THE **ACTUAL** PICK, NOT THE ROLLED ONE.
+            # `toad_search` compares its result with `roll(u_base)`, and that is the
+            # pick only when the inversion is exact. MEASURED while wiring this: on an
+            # UNTRAINED model the fit residual is ~1.97 m, because a free-form
+            # proposal need not be rollable by the unicycle at all. So the last word
+            # is a reward comparison against the trajectory actually selected, and
+            # the residual is emitted every step rather than assumed small.
+            _cmp = torch.stack([_t["xy"].to(pick.dtype), pick], dim=1)   # [B, 2, S, 2]
+            _cmp_r = _reward(_cmp)
+            _take = _cmp_r[:, 0] >= _cmp_r[:, 1]
+            out["traj_toad"] = torch.where(_take[:, None, None], _cmp[:, 0], _cmp[:, 1])
+            out["r7_toad_reward"] = torch.maximum(_cmp_r[:, 0], _cmp_r[:, 1])
+            out["r7_toad_base_reward"] = _cmp_r[:, 1]
+            out["r7_toad_took_search"] = _take
+            out["r7_toad_took_frac"] = _take.float().mean()
+            out["r7_toad_fit_rms_m"] = fit_rms.mean()
+            pick = out["traj_toad"]
+            out["traj_r7"] = pick
+        if bool(cfg.refcv7_select):
+            out["traj_v3"], out["sel_idx_v3"] = out["traj"], out["sel_idx"]
+            out["traj"] = pick
+            out["wp_seq"] = pick
 
     def _tau_slot_2s(self) -> int:
         """Index of the 2 s tau in goal_tau_steps (fails loudly if absent —
@@ -2190,6 +2423,13 @@ def param_breakdown_v3(model: RefCV3Model) -> dict[str, int]:
         if getattr(model, "tac_decoder_v6", None) is not None:
             out["tac_decoder_v6"] = cnt(model.tac_decoder_v6)
             out["tac_behaviour_gate_v6"] = cnt(model.tac_behaviour_gate_v6)
+        # ⭐ refcv7 — two lines, for the same reason refcv6 splits its two: the
+        # PROPOSAL head and the SCORER answer different questions. ⛔ Same
+        # rollability contract: `refcv3_arm.cross_check_config` compares this
+        # ledger key-for-key against a rebuild.
+        if getattr(model, "refcv7_wta", None) is not None:
+            out["refcv7_wta"] = cnt(model.refcv7_wta)
+            out["refcv7_scorer"] = cnt(model.refcv7_scorer)
         # ⚠️ `max_speed_1h_v6` is deliberately ABSENT from this ledger and that
         # is not an omission: `MaxSpeedOneHotEncoder` has ZERO parameters (the
         # one-hot is embedded by whichever consumer reads it, so one encoding

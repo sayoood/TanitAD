@@ -90,6 +90,14 @@ MUTATIONS = [
      '        if not p.exists():\n            bad.append(f"{label}: MISSING {path}")\n            continue\n',
      "        if not p.exists():\n            continue  # MUTATION M9: absent reads as fine\n",
      ["test_preflight_REFUSES_a_missing_or_wrong_input"]),
+    # ⛔ The move-aside is LOAD-BEARING: without the clean check, an arm launched into a dirty
+    # directory SILENTLY auto-resumes (the trainer restores model+opt+step from any ckpt.pt it
+    # finds) and produces a contaminated arm that looks clean in every artifact.
+    ("M13_a_stale_checkpoint_no_longer_refuses", MOD,
+     '    ck = Path(arm_dir) / "run" / "ckpt.pt"\n    if ck.exists():\n',
+     '    ck = Path(arm_dir) / "run" / "ckpt.pt"\n    if False:  # MUTATION M13\n',
+     ["test_a_directory_holding_a_CHECKPOINT_is_refused",
+      "test_move_aside_is_what_MAKES_it_clean"]),
     ("M5_partial_arm_is_DELETED_not_moved", MOD,
      "    dst = d.with_name(f\"{arm}.aborted-{int(time.time())}\")\n    shutil.move(str(d), str(dst))\n    return dst\n",
      "    shutil.rmtree(str(d))  # MUTATION M5\n    return d\n",
@@ -139,6 +147,19 @@ def _run(dst: Path) -> dict:
     failed = sorted(set(re.findall(r"(?:FAILED|ERROR) \S+::(\w+)", out)))
     return {"rc": r.returncode, "failed": failed, "n_failed": len(failed),
             "n_passed": len(set(re.findall(r"PASSED \S+::(\w+)", out))), "tail": out[-400:]}
+
+
+# ⛔ A CHECKER MUST NOT DIE ON ITS OWN OUTPUT. MEASURED 2026-09-20: three separate
+# readouts crashed with a cp1252 `UnicodeEncodeError` on this box mid-print -- one of
+# them after reporting "lines lost = 1" but BEFORE naming the line, i.e. it had verified
+# nothing while looking like it had. Relying on the caller to export PYTHONIOENCODING is
+# a habit; this is a guard. `errors="replace"` means the print degrades instead of
+# raising even if the stream cannot take utf-8.
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+except Exception:  # noqa: BLE001 -- a stream that cannot be reconfigured is not fatal
+    pass
 
 
 def main(argv=None) -> int:
