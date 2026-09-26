@@ -1,0 +1,15 @@
+--- a/stack/tanitad/channel_admissibility.py
++++ b/stack/tanitad/channel_admissibility.py
+@@ -180,6 +180,12 @@
+     # signature-derived guard went RED on both — correctly — and this is the seam
+     # that owns them. ⚠️ TEMPORARY and NOT a label: rig calibration, unplumbed.
+     "tanitad.models.refcv6_perception_branch",   # perception_grid / _valid
++    # ⭐ refcv7 NEW-1 (2026-09-27): the residual prior added `ego_actions` to BOTH
++    # forwards, and the Thor full-suite gate went RED on it in six RL guard files --
++    # correctly. It is read ONLY by `--residual-prior ha0_ext`, which SPEC_REFCV7
++    # section 10 (A5) excludes: the recorded steer at t0 is unruled at inference.
++    # ⚠️ TEMPORARY and NOT a label -- the route back is in the declaration.
++    "tanitad.models.kinematic_prior",            # ego_actions
+ )
+ 
+ 

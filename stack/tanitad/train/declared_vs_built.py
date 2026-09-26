@@ -643,6 +643,37 @@ def _c_graft_lan(m, a):
                "core.decoder.lan_gate is not None")
 
 
+def _c_residual_prior(m, a):
+    """refcv7 NEW-1 (SPEC_REFCV7 section 1). The mode is read from the BUILT decoder
+    (``AnchoredDiffusionDecoder.residual_prior``, set at construction and the attribute every
+    forward branches on) AND from its config; a residual build must also carry the three
+    mechanisms the prior composes with. Expectation: the LITERAL argv value."""
+    want = str(_a(a, "residual_prior", "off"))
+    d = _dec(m)
+    out = _eq("residual_prior", want, str(getattr(d, "residual_prior", "<absent>")),
+              "core.decoder.residual_prior")
+    out += _eq("residual_prior", want, str(getattr(d.cfg, "residual_prior", "<absent>")),
+               "core.decoder.cfg.residual_prior")
+    if want != "off":
+        for ok, where, why in (
+                (bool(getattr(d, "anchor_v0_cond", False)), "core.decoder.anchor_v0_cond",
+                 "the residual vocabulary is rolled per window from v0"),
+                (getattr(d, "time_mlp", None) is not None, "core.decoder.time_mlp",
+                 "the residual IS the DDIM sampler's state"),
+                (getattr(_core(m), "ego_hist", None) is not None, "core.ego_hist",
+                 "the prior reads the observed pose window")):
+            if not ok:
+                out.append(Mismatch("--residual-prior", want, f"{where} missing", where, why))
+        passthrough = tuple(getattr(type(_core(m)), "DECODER_PASSTHROUGH", ()))
+        # literal: the cascade re-roll reads the first two, G-LIVE the third
+        for key in ("residual_prior_ctrl", "residual_prior_v", "residual_prior_path"):
+            if key not in passthrough:
+                out.append(Mismatch("--residual-prior", f"{key} in the forward output",
+                                    "absent", f"{type(_core(m)).__name__}.DECODER_PASSTHROUGH",
+                                    "the F3 re-roll could not compose on P (the A16 class)"))
+    return out
+
+
 # ============================================================================
 # THE REGISTRY — every trainer dest, one entry each (coverage is tested)
 # ============================================================================
@@ -760,6 +791,8 @@ _b("no_strategic", _c_attr("no_strategic", "no_strategic",
                            owner=lambda m: _core(m).cfg,
                            where="core.cfg.no_strategic (the forward gate reads it)"))
 _b("ego_history", _c_ego_history)
+# refcv7 NEW-1: the plan is a residual on a causal kinematic prior
+_b("residual_prior", _c_residual_prior)
 for _d in ("ego_history_kind", "ego_history_hidden", "ego_history_out"):
     register(_d, "elsewhere", reason="checked with --ego-history against core.ego_hist.cfg (G-DVB)")
 _b("ego_state_inject", _c_mod("ego_state_inject", "ego_inj",

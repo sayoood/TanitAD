@@ -161,6 +161,9 @@ from tanitad.refs import goal_point as gpm
 # it pulls the corpus-side raster/projection modules, and an OFF seam must
 # not pay for them.
 from tanitad.refs import refc_sampler as rs
+# refcv7 NEW-1: the causal kinematic prior and THE ONE function that turns a
+# residual into the plan (`kinematic_prior.roll_plan`).
+from tanitad.models import kinematic_prior as _kp
 # refcv5 WP-B (`E-WP-INDEX-1`) — DiffusionDrive coupling (2) [C5]. Cycle-free by
 # construction: `refc_wp_index` imports NOTHING from tanitad, only torch. It is
 # a top-level import (unlike WP-6's `refc_agents`) precisely because it costs
@@ -598,6 +601,15 @@ class DecoderConfig:
     #: map, whose own width is 1024 on resnet101 and 256 on resnet34 and is read
     #: from `feature_info` (`CNNEncoderConfig.s16_dim`), never written down.
     bev_coupling_d_bev: int = 96
+    # ---- refcv7 NEW-1: THE PLAN IS A RESIDUAL ON A CAUSAL KINEMATIC PRIOR --
+    # A DECLARED field (the refcv5 false-provenance rule; after the config-
+    # hygiene fix an undeclared attribute is REFUSED at assignment). "off"
+    # (the DEFAULT) reaches no new code, so refcv6 builds and runs bit for
+    # bit. Any other value (`kinematic_prior.RESIDUAL_PRIOR_MODES`) makes the
+    # sampler's state and the anchor vocabulary RESIDUALS on the prior P, and
+    # `kinematic_prior.roll_plan` the one function that turns a residual into
+    # a path. SPEC_REFCV7 section 1, NEW-1.
+    residual_prior: str = "off"
 
 
 @strict_fields
@@ -1993,6 +2005,30 @@ class AnchoredDiffusionDecoder(nn.Module):
             # putting it in `state_dict` would change checkpoint compatibility
             # for a quantity no run can alter.
             self.sched = rs.DDIMSchedule()
+        # ---- refcv7 NEW-1: the residual prior, validated at BUILD --------- #
+        # Refused rather than half-built: each mechanism the prior needs is
+        # named, and a build lacking one would stamp NEW-1 on a decoder that
+        # cannot compose it. `off` constructs nothing and draws no RNG.
+        self.residual_prior = _kp.check_mode(
+            str(getattr(cfg, "residual_prior", _kp.RESIDUAL_PRIOR_OFF)))
+        if self.residual_prior != _kp.RESIDUAL_PRIOR_OFF:
+            if self.control_head is None:
+                raise ValueError(
+                    f"refcv7 NEW-1: residual_prior={self.residual_prior!r} "
+                    "needs the control-space DDIM sampler (sampler='ddim'): "
+                    "the residual IS the sampler's state. A classifier "
+                    "build has no state to compose on.")
+            if space != "control":
+                raise ValueError(
+                    "refcv7 NEW-1: the residual prior composes CONTROLS; the "
+                    "metre-space sampler (the DD-literal regression arm) has "
+                    "no control state, so P + Delta would be undefined.")
+            if not self.anchor_v0_cond:
+                raise ValueError(
+                    "refcv7 NEW-1: the prior is rolled per window from the "
+                    "measured v0 and the residual vocabulary with it; a "
+                    "FIXED-path bank carries no controls to compose on. "
+                    "Build with --anchor-v0-conditioned.")
         # ---- refcv6 §3: F1..F9 -------------------------------------------- #
         # ⛔ CONSTRUCTED LAST, AND ONLY WHEN ASKED -- the same discipline the
         # sampler above follows, for the same reason: with `cfg.refcv6` None
@@ -2125,7 +2161,8 @@ class AnchoredDiffusionDecoder(nn.Module):
 
     def roll_bank(self, v_ms: Tensor | None, ego_keep: Tensor | None,
                   batch: int, dtype: torch.dtype,
-                  withheld_speed: Tensor | None = None) -> Tensor:
+                  withheld_speed: Tensor | None = None,
+                  prior: "tuple | None" = None) -> Tensor:
         """[B, N, S, 2] — the anchor bank THIS forward decodes.
 
         ``withheld_speed`` [B] (optional) is the model's OWN predicted speed,
@@ -2144,8 +2181,16 @@ class AnchoredDiffusionDecoder(nn.Module):
         from it on a withheld row would put the withheld channel into the
         candidate GEOMETRY. Withheld rows are rolled at ``ref_speed_ms``, so the
         dropout regime is genuinely speed-blind.
+
+        ``prior`` (refcv7 NEW-1) = ``(a0 [B], kappa0 [B], v [B])`` from
+        :meth:`_residual_prior`: the vocabulary's controls are RESIDUALS on
+        it and the bank is ``kinematic_prior.roll_plan`` of them, so the
+        anchor ``(0, 0)`` rolls to ``P`` exactly. REQUIRED on a residual
+        build and REFUSED on an off build (:meth:`_roll_residual_bank`).
         """
         n = self.anchors.shape[0]
+        if self.residual_prior != _kp.RESIDUAL_PRIOR_OFF or prior is not None:
+            return self._roll_residual_bank(prior, batch, dtype)
         if not self.anchor_v0_cond:
             return self.anchors.to(dtype)[None].expand(
                 batch, n, self.n_steps, 2)
@@ -2185,6 +2230,115 @@ class AnchoredDiffusionDecoder(nn.Module):
         path = rollout_unicycle(state0, ctrl, dt=self.anchor_dt)[..., :2]
         return path[:, self.anchor_slots].reshape(
             batch, n, self.n_steps, 2).to(dtype)
+
+    # ---- refcv7 NEW-1: the residual prior's four decoder-side seams ------ #
+    def _prior_speed(self, v_ms: Tensor, ego_keep: Tensor | None,
+                     withheld_speed: Tensor | None) -> Tensor:
+        """[B] the ONE speed this forward rolls every row from.
+
+        (( !! )) The expression is :meth:`roll_bank`'s own (kept rows at
+        ``v_ms``, withheld rows at :meth:`_withheld_ref_speed`), computed
+        ONCE per forward and handed to the bank, the prior AND the sampled
+        fan. The refcv6 sampler rolls its fan from the RAW ``v_ms`` while
+        the bank uses the withheld speed (``refc.py`` ``_sample``), so on a
+        withheld training row the two differ; a residual composed on a
+        prior rolled at one speed into a fan rolled at another is not
+        ``P + Delta``. Pinned bit-equal to the legacy bank by
+        ``test_residual_prior.py`` (a ZERO prior reproduces it).
+        """
+        v = v_ms.reshape(-1).to(torch.float32)
+        if ego_keep is not None:
+            v = torch.where(ego_keep.reshape(-1),
+                            v, self._withheld_ref_speed(v, withheld_speed))
+        return v
+
+    def _residual_prior(self, residual_prior, v_ms: Tensor | None,
+                        ego_keep: Tensor | None, batch: int,
+                        withheld_speed: Tensor | None) -> "tuple | None":
+        """``(a0, kappa0)`` from the model -> ``(a0, kappa0, v)`` as this
+        forward composes it, or ``None`` on an off build.
+
+        Withheld rows get the no-information prior (zero controls at the
+        bank's withheld speed, ``kinematic_prior.withhold``); a forward whose
+        ``v0`` was not supplied at all (``v_ms is None``) is withheld on
+        every row. Both directions of the input REFUSE.
+        """
+        if self.residual_prior == _kp.RESIDUAL_PRIOR_OFF:
+            if residual_prior is not None:
+                raise ValueError(
+                    "refcv7 NEW-1: a residual prior was handed to a decoder "
+                    "built with residual_prior='off'; it would be silently "
+                    "ignored and the record would not say so.")
+            return None
+        if residual_prior is None:
+            raise ValueError(
+                f"refcv7 NEW-1: this decoder was built with residual_prior="
+                f"{self.residual_prior!r} but no prior reached the forward. "
+                f"Its vocabulary and its sampler state are RESIDUALS, so "
+                f"without P every emitted path would be Delta presented as "
+                f"the plan. Refusing.")
+        if self.anchor_withheld_bank == "none":
+            raise ValueError(
+                "refcv7 NEW-1: anchor_withheld_bank='none' rolls EVERY row at "
+                "the reference speed (a speed-blind vocabulary); a prior "
+                "built from the measured state contradicts it. Refusing.")
+        a0, k0 = residual_prior
+        a0 = a0.reshape(-1).to(torch.float32)
+        k0 = k0.reshape(-1).to(torch.float32)
+        if a0.shape[0] != batch or k0.shape[0] != batch:
+            raise ValueError(f"refcv7 NEW-1: prior rows {a0.shape[0]}/"
+                             f"{k0.shape[0]} != batch {batch}")
+        if v_ms is None:
+            v = a0.new_full((batch,), self.anchor_ref_speed)
+            return torch.zeros_like(a0), torch.zeros_like(k0), v
+        v = self._prior_speed(v_ms, ego_keep, withheld_speed)
+        a0, k0 = _kp.withhold(a0, k0, ego_keep)
+        return a0, k0, v
+
+    def _roll_residual_bank(self, prior, batch: int,
+                            dtype: torch.dtype) -> Tensor:
+        """[B, N, S, 2] -- the vocabulary as RESIDUALS on ``P``."""
+        if self.residual_prior == _kp.RESIDUAL_PRIOR_OFF:
+            raise ValueError(
+                "refcv7 NEW-1: roll_bank got a prior on a decoder built "
+                "with residual_prior='off' -- refusing to compose silently.")
+        if prior is None:
+            raise ValueError(
+                "refcv7 NEW-1: roll_bank on a residual build needs the "
+                "forward's prior; without it the bank would be Delta.")
+        a0, k0, v = prior
+        seq = self.anchor_control_seq(batch, torch.float32)
+        return _kp.roll_plan(
+            seq, a0, k0, v, self.anchor_horizons,
+            control_units=self.anchor_control_units, tick=self.anchor_dt,
+            alat_v_floor=self.anchor_alat_v_floor,
+            kappa_cap=self.anchor_kappa_cap).to(dtype)
+
+    def _roll_state(self, z: Tensor, v: Tensor, metre: bool,
+                    prior) -> Tensor:
+        """The sampler's OWN state -> the fan. Off: the legacy
+        :meth:`_state_to_path`, same call. Residual: ``z`` is Delta and the
+        fan is ``kinematic_prior.roll_plan(Delta, P)``."""
+        if prior is None:
+            return self._state_to_path(z, v, metre)
+        a0, k0, pv = prior
+        return _kp.roll_plan(
+            z, a0, k0, pv, self.anchor_horizons,
+            control_units=self.anchor_control_units, tick=self.anchor_dt,
+            alat_v_floor=self.anchor_alat_v_floor,
+            kappa_cap=self.anchor_kappa_cap)
+
+    def _export_controls(self, z: Tensor, prior) -> Tensor:
+        """What leaves the decoder as ``u0_hat`` / ``layer_u0_hat``. Off:
+        ``z`` itself (the SAME object). Residual: the ABSOLUTE controls
+        (``kinematic_prior.absolute_controls``) -- the residual state never
+        leaves this class, so no consumer can mistake Delta for the plan."""
+        if prior is None:
+            return z
+        a0, k0, pv = prior
+        return _kp.absolute_controls(
+            z, a0, k0, pv, control_units=self.anchor_control_units,
+            alat_v_floor=self.anchor_alat_v_floor)
 
     def _feasible(self, x: Tensor, v_ms: Tensor | None) -> Tensor:
         """Project the emitted fan onto the friction-feasible set. No-op when
@@ -2460,14 +2614,44 @@ class AnchoredDiffusionDecoder(nn.Module):
         return conf, du
 
     def _state_to_path(self, state: Tensor, v: Tensor,
-                       metre: bool) -> Tensor:
+                       metre: bool, prior=None) -> Tensor:
         """The sampler's state -> the emitted fan ``[B, N, S, 2]`` in metres.
+
+        (( !! )) refcv7 NEW-1: on a RESIDUAL build ``state`` is an EXPORTED
+        control tensor (``u0_hat`` / ``layer_u0_hat``, ABSOLUTE) and ``prior``
+        is REQUIRED -- rolling exported controls without it would hand the
+        caller a path the model never emitted. ``v`` must then be the
+        prior's own roll speed (``out['residual_prior_v']``). The trainer's F3
+        cascade is the one production caller. The sampler's INTERNAL rolls
+        go through :meth:`_roll_state`, never through here.
 
         In CONTROL space the state is ``(a_lon, a_lat|kappa)`` per slot and the
         path is INTEGRATED, so every sample is flyable by construction. In the
         ``metre`` regression the state already IS the path -- which is exactly
         why that arm is pre-registered to fail the flyability gate.
         """
+        if self.residual_prior != _kp.RESIDUAL_PRIOR_OFF:
+            if prior is None:
+                raise ValueError(
+                    "refcv7 NEW-1: _state_to_path on a residual build needs "
+                    "`prior=` (kinematic_prior.prior_from_out(out)); the "
+                    "exported controls rolled without it are not the plan.")
+            a0, k0, pv = prior
+            if not torch.equal(v.reshape(-1).to(torch.float32),
+                               pv.reshape(-1).to(torch.float32)):
+                raise ValueError(
+                    "refcv7 NEW-1: _state_to_path was handed a speed that is "
+                    "not the prior's roll speed (on a withheld training row "
+                    "the raw v0 differs from the bank's). Pass "
+                    "out['residual_prior_v'].")
+            delta = _kp.residual_controls(
+                state, a0, k0, pv, control_units=self.anchor_control_units,
+                alat_v_floor=self.anchor_alat_v_floor)
+            return self._roll_state(delta, pv, metre, prior)
+        if prior is not None:
+            raise ValueError(
+                "refcv7 NEW-1: _state_to_path got a prior on a decoder built "
+                "with residual_prior='off' -- refusing to compose silently.")
         if metre:
             return state
         return rs.roll_controls(
@@ -2481,7 +2665,8 @@ class AnchoredDiffusionDecoder(nn.Module):
                 agents: Tensor | None = None,
                 agent_pad: Tensor | None = None,
                 agent_pos: Tensor | None = None,
-                bev: Tensor | None = None
+                bev: Tensor | None = None,
+                prior: "tuple | None" = None
                 ) -> tuple[Tensor, Tensor, Tensor, dict]:
         """The truncated-diffusion sampler. -> (fan, u0_hat, conf, telemetry).
 
@@ -2553,6 +2738,10 @@ class AnchoredDiffusionDecoder(nn.Module):
         # never integrate from different initial states.
         v = (bank.new_full((b,), self.anchor_ref_speed)
              if v_ms is None else v_ms.reshape(-1).to(torch.float32))
+        if prior is not None:
+            # refcv7 NEW-1: the fan is rolled from the PRIOR's speed -- the
+            # one `roll_bank` rolled the bank from (`_prior_speed`).
+            v = prior[2]
         t0 = int(cfg.sampler_infer_t)
         k = int(steps) if int(steps) > 0 else int(cfg.sampler_steps)
         k = max(k, 1)
@@ -2619,7 +2808,7 @@ class AnchoredDiffusionDecoder(nn.Module):
             # nothing banked is affected; the stamp records which semantics ran.
             if rv6.f8_flat_waypoint_noise:
                 x_n = x_n.clamp(-1.0, 1.0)
-            x_path = self._state_to_path(denorm(x_n), v, metre)
+            x_path = self._roll_state(denorm(x_n), v, metre, prior)
             tt = (train_t.to(torch.float32) if t is None else
                   torch.full((b,), float(t), device=dev, dtype=torch.float32))
             conf, du = self._decode_ctrl(kv, cond, x_path, tt,
@@ -2635,7 +2824,8 @@ class AnchoredDiffusionDecoder(nn.Module):
             # to get wrong.
             if self.cascade is not None:
                 for du_i, c_i in zip(self._last_layer_du, self._last_layer_conf):
-                    layer_u0.append(denorm(x_n + du_i))
+                    layer_u0.append(self._export_controls(
+                        denorm(x_n + du_i), prior))
                     layer_conf.append(c_i)
             if t is None:
                 break
@@ -2643,7 +2833,10 @@ class AnchoredDiffusionDecoder(nn.Module):
                                   torch.tensor(t, device=dev),
                                   torch.tensor(t_prev, device=dev))
         u0_hat = denorm(x0_hat_n)
-        fan = self._state_to_path(u0_hat, v, metre)
+        fan = self._roll_state(u0_hat, v, metre, prior)
+        # refcv7 NEW-1: the residual never leaves the decoder -- `u0_hat` is
+        # exported ABSOLUTE (the same object when the prior is off).
+        u0_hat = self._export_controls(u0_hat, prior)
         # ⛔ Exported on `self`, not through `tele`: `tele` is JSON-serialised
         # into `config.json` and every log row, and a live tensor with its
         # graph attached in that dict is a memory leak dressed as telemetry.
@@ -2803,7 +2996,8 @@ class AnchoredDiffusionDecoder(nn.Module):
                 tac_lon_prior: Tensor | None = None,
                 behaviour_term: Tensor | None = None,
                 nav_cmd_sel: Tensor | None = None,
-                v_limit_ms: Tensor | None = None) -> dict:
+                v_limit_ms: Tensor | None = None,
+                residual_prior: "tuple | None" = None) -> dict:
         """D-SEL adds five OPTIONAL ranking inputs; with all flags off the
         emitted ``traj`` / ``sel_idx`` are bit-identical to pre-D-SEL REF-C.
 
@@ -2959,8 +3153,13 @@ class AnchoredDiffusionDecoder(nn.Module):
         # per-window roll. `bank` — not `anchors` — is the geometry every
         # consumer below must read, including the anchor target in the trainer,
         # which is why it is also returned.
+        # refcv7 NEW-1: the prior, ONCE per forward -- `(a0, kappa0)` withheld
+        # on dropped rows, and the ONE speed the bank, the prior and the
+        # sampled fan share. `None` on an off build: nothing below changes.
+        _rp = self._residual_prior(residual_prior, v_ms, ego_keep, b,
+                                   withheld_speed)
         bank = self.roll_bank(v_ms, ego_keep, b, fmap.dtype,
-                              withheld_speed=withheld_speed)
+                              withheld_speed=withheld_speed, prior=_rp)
         # ---- refcv6 F7: G independent noise draws per anchor -------------- #
         # ⛔ GROUP-MAJOR, and `tile_anchor_prior` documents why: candidate
         # `g*N + a` must be anchor `a`. `repeat_interleave` would type-check
@@ -3154,9 +3353,16 @@ class AnchoredDiffusionDecoder(nn.Module):
             # which counts module calls through the FORWARD rather than
             # constructing the sampler standalone — the existing coupling-(1)
             # tests all call `s(q, wp, bev)` directly and were green throughout.
+            # refcv7 NEW-1: `prior=` travels ONLY on a residual build, so an
+            # off build calls `_sample` exactly as refcv6 did -- a wrapper of
+            # `_sample` written against the refcv6 signature (the DDv2 chain's
+            # capture hook, `tanitad/rl/ddv2_refc_chain.py`) is untouched by
+            # NEW-1 on every refcv6 build, and a wrapper that cannot carry the
+            # prior fails LOUDLY (TypeError) on a residual build.
+            _smp_kw = {} if _rp is None else {"prior": _rp}
             x, u0_hat, s_conf, smp_tele = self._sample(
                 kv, cond, bank, v_ms, steps, agent_tokens, agent_pad,
-                agent_pos, bev)
+                agent_pos, bev, **_smp_kw)
             # Stage 0 applies to EVERY pass that moves a waypoint; a no-op
             # returning the same object when `feasible_decode` is off.
             x = self._feasible(x, v_ms)
@@ -3411,6 +3617,18 @@ class AnchoredDiffusionDecoder(nn.Module):
                "anchor_traj": x, "anchor_bank": bank,
                "offset": offset, "sel_score": score,
                "traj": traj, "sel_idx": idx, "sel_tele": tele}
+        if _rp is not None:
+            # refcv7 NEW-1: the prior this forward composed on, EMITTED so a
+            # consumer can verify the plan is P + Delta and the launch gate's
+            # G-LIVE can read 'the prior is non-zero where v0 > 0'. Constants
+            # of the window (no parameter), so DETACHED.
+            out["residual_prior_ctrl"] = torch.stack(
+                [_rp[0], _rp[1]], dim=-1).detach()
+            out["residual_prior_v"] = _rp[2].detach()
+            out["residual_prior_path"] = _kp.prior_path(
+                _rp[0], _rp[1], _rp[2], self.anchor_horizons,
+                tick=self.anchor_dt).to(x.dtype).detach()
+            tele["residual_prior"] = self.residual_prior
         # ---- refcv6 F7: the index the eval join must read ------------------ #
         # ⛔ `sel_idx` indexes a CANDIDATE. With G > 1 that is NOT an anchor
         # id, and every consumer that treats it as one silently mis-joins. The
@@ -3537,7 +3755,12 @@ class RefCModel(nn.Module):
     #: that omitted `layer_u0_hat` / `layer_logits` skipped refcv6's F3 cascade loss for 34,500
     #: steps while config.json stamped F3.
     DECODER_PASSTHROUGH: tuple[str, ...] = (
-        "prefinal_logits", "reach_keep", "layer_u0_hat", "layer_logits")
+        "prefinal_logits", "reach_keep", "layer_u0_hat", "layer_logits",
+        # refcv7 NEW-1: the prior this forward composed on. The F3 cascade re-roll READS
+        # `residual_prior_ctrl` / `residual_prior_v` (`kinematic_prior.prior_from_out`) and
+        # the launch gate's G-LIVE reads `residual_prior_path`. Absent from `dec` on an off
+        # build, so the loop below copies nothing there (bit-identity).
+        "residual_prior_ctrl", "residual_prior_v", "residual_prior_path")
 
     def __init__(self, cfg: RefCConfig):
         super().__init__()
@@ -3552,6 +3775,10 @@ class RefCModel(nn.Module):
         # output, never from a second copy of the number.
         self.ego_hist: nn.Module | None = None
         self._ego_window: tuple | None = None
+        # refcv7 NEW-1: the observed window's RECORDED actions, popped WITH
+        # `_ego_window` (a separate attribute, so the 2-tuple every existing
+        # reader indexes is unchanged).
+        self._ego_actions: Tensor | None = None
         _ehc = getattr(cfg, "ego_history", None)
         if _ehc is not None and bool(getattr(_ehc, "enable", False)):
             import dataclasses as _dc
@@ -3637,6 +3864,23 @@ class RefCModel(nn.Module):
             graft_nav_compliance=cfg.graft_nav_compliance,
             nav_compliance_tau_rad=cfg.nav_compliance_tau_rad,
             speed_ceiling_filter=cfg.speed_ceiling_filter)
+        # ---- refcv7 NEW-1: what the residual prior READS must be built ----- #
+        # The prior is computed from the OBSERVED ego window, which reaches the
+        # model only through the ego-history channel, and it is rolled from
+        # `v_ms`, which the decoder receives only under `sel_reach_clamp`. A
+        # residual build without either has no prior to compose on.
+        if self.decoder.residual_prior != _kp.RESIDUAL_PRIOR_OFF:
+            if self.ego_hist is None:
+                raise ValueError(
+                    "refcv7 NEW-1: residual_prior needs the ego-history "
+                    "channel (--ego-history): the prior reads the observed "
+                    "pose window, and that window reaches the model only "
+                    "through it.")
+            if not bool(getattr(cfg, "sel_reach_clamp", False)):
+                raise ValueError(
+                    "refcv7 NEW-1: residual_prior needs sel_reach_clamp: the "
+                    "decoder receives the measured speed (`v_ms`) the prior "
+                    "is rolled from only under it.")
         # ---- refcv5 WP-6: THE AGENT SEAM (default OFF, builds NOTHING) ----
         #
         # ⭐ `agent_head` produces SLOTS, `agent_embed` turns slots into the
@@ -3884,7 +4128,8 @@ class RefCModel(nn.Module):
         }
 
     # --- encode surface -----------------------------------------------------
-    def set_ego_window(self, poses: Tensor, n_past: int) -> None:
+    def set_ego_window(self, poses: Tensor, n_past: int,
+                       actions: Tensor | None = None) -> None:
         """Hand the NEXT forward this batch's observed ego track. ONE SHOT.
 
         ``poses`` ``[B, T, 4]`` = (x, y, yaw, v); ``n_past`` is how many
@@ -3906,6 +4151,33 @@ class RefCModel(nn.Module):
             raise ValueError(f"ego window must be [B, T, >=4], got "
                              f"{tuple(poses.shape)}")
         self._ego_window = (poses, int(n_past))
+        # refcv7 NEW-1 (`ha0_ext` only): the observed window's actions, popped
+        # with the window by the next forward.
+        self._ego_actions = actions
+
+    def _residual_prior_inputs(self, ego_poses: Tensor, n_past: int,
+                               ego_actions: Tensor | None,
+                               v0: Tensor | None) -> tuple:
+        """refcv7 NEW-1: ``(a0 [B], kappa0 [B])`` of this window's prior.
+
+        (( !! )) Consistency, asserted: the pose window must END at the
+        ``v0`` the plan is rolled from. A window shifted by one frame still
+        yields a plausible prior -- and a wrong one on every row.
+        """
+        mode = self.decoder.residual_prior
+        acts = ego_actions if _kp.needs_actions(mode) else None
+        a0, k0 = _kp.prior_controls(mode, ego_poses, n_past, acts,
+                                    dt=float(self.ego_hist.cfg.dt))
+        if v0 is not None:
+            vw = ego_poses[:, int(n_past) - 1, 3].to(torch.float32)
+            dv = float((vw - v0.reshape(-1).to(torch.float32)).abs().max())
+            if dv > _kp.V0_WINDOW_TOL:
+                raise ValueError(
+                    f"refcv7 NEW-1: the pose window's last speed differs "
+                    f"from v0 by up to {dv:.6f} m/s (> {_kp.V0_WINDOW_TOL}). "
+                    f"The window does not end at the frame the plan starts "
+                    f"from; the prior would be built at the wrong t0.")
+        return a0, k0
 
     def encode_pooled(self, frames: Tensor) -> Tensor:
         """frames [B, C, H, W] -> pooled latent [B, F] (LAW target path)."""
@@ -4018,7 +4290,8 @@ class RefCModel(nn.Module):
                 scene_hook=None,
                 bev_hook=None,
                 bev_tokens: Tensor | None = None,
-                bev_pad: Tensor | None = None) -> dict:
+                bev_pad: Tensor | None = None,
+                ego_actions: Tensor | None = None) -> dict:
         """frames [B, W, C, H, W'], nav_cmd [B] long (None -> `follow`), v0 [B]
         current ego speed (None -> zeros; scaled /10 inside). ``maneuver_logits``
         / ``target_latent`` are OPTIONAL external tactical-brain seams (else the
@@ -4436,6 +4709,7 @@ class RefCModel(nn.Module):
         # `ego_poses[:, n_past:]` and asserts the output is bit-identical, so a
         # future read goes RED rather than unnoticed.
         ego_vec = None
+        _rp_in = None                       # refcv7 NEW-1 (None when off)
         if self.ego_hist is not None:
             # ⛔⛔ THE ONE-SHOT CHANNEL, AND WHY IT EXISTS. The v3 wrapper
             # (`refc_v3.py::RefCV3Model.forward`) does not forward `**kwargs`
@@ -4447,10 +4721,13 @@ class RefCModel(nn.Module):
             # batch's condition. ⭐ The permanent fix is one line in
             # `refc_v3.py` — add `ego_poses` to its signature and pass it to
             # both `self.core(...)` calls — and is named in the handover.
+            _win_acts, self._ego_actions = self._ego_actions, None
             if ego_poses is None and self._ego_window is not None:
                 ego_poses, _n = self._ego_window
                 self._ego_window = None
                 ego_n_past = _n if ego_n_past is None else ego_n_past
+                if ego_actions is None:
+                    ego_actions = _win_acts
             if ego_poses is None:
                 raise ValueError(
                     "refcv6 §2b: the ego-history encoder was BUILT but no "
@@ -4462,6 +4739,20 @@ class RefCModel(nn.Module):
             ch = ego_channels_from_poses(ego_poses, n_past,
                                          dt=float(self.ego_hist.cfg.dt))
             ego_vec = self.ego_hist(ch)
+            # refcv7 NEW-1: the prior reads THIS window through the SAME
+            # channel builder (`kinematic_prior.prior_controls` calls
+            # `ego_channels_from_poses`), so the prior and the history encoder
+            # cannot disagree about what t0 was.
+            if self.decoder.residual_prior != _kp.RESIDUAL_PRIOR_OFF:
+                _rp_in = self._residual_prior_inputs(ego_poses, n_past,
+                                                     ego_actions, v0)
+        if (ego_actions is not None and not (
+                self.decoder.residual_prior != _kp.RESIDUAL_PRIOR_OFF
+                and _kp.needs_actions(self.decoder.residual_prior))):
+            raise ValueError(
+                "refcv7 NEW-1: `ego_actions` reached a build whose residual "
+                f"prior ({self.decoder.residual_prior!r}) does not read them "
+                "-- they would be SILENTLY DROPPED.")
         # ⛔⛔ THE GUARD THAT MAKES THE WHOLE FIX SELF-ENFORCING: a coupling
         # that is BUILT, counted in `param_breakdown`, stamped into
         # `config.json` by `bev_coupling_provenance()` and then handed NO MAP
@@ -4497,7 +4788,8 @@ class RefCModel(nn.Module):
                            tac_lon_prior=tac_lon_prior,
                            behaviour_term=behaviour_term,
                            nav_cmd_sel=(nav_cmd if nav_cmd_given else None),
-                           v_limit_ms=v_limit_ms)
+                           v_limit_ms=v_limit_ms,
+                           residual_prior=_rp_in)
         traj = dec["traj"]
         law_pred = self.law_head(torch.cat([pooled, traj.reshape(b, -1)],
                                            dim=-1))

@@ -257,7 +257,8 @@ def test_GDVB_every_trainer_flag_has_an_entry_and_every_entry_is_well_formed():
     # and the reverse: no entry names a flag the parser does not have (a typo'd key would
     # otherwise sit in the registry while the real flag goes unchecked)
     assert set(dvb.REGISTRY) == {a.dest for a in parser._actions if a.dest != "help"}
-    assert len(dvb.REGISTRY) == 202          # the tip's 197 dests + the 5 flags of this batch
+    # the tip's 197 dests + the 5 flags of the fixes batch + refcv7 NEW-1's --residual-prior
+    assert len(dvb.REGISTRY) == 203
     for dest, lever in dvb.REGISTRY.items():
         assert lever.kind in dvb.KINDS, dest
         if lever.kind in ("built", "loss"):
