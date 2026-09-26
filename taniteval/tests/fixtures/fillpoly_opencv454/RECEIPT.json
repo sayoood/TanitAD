@@ -1,0 +1,59 @@
+{
+ "_what": "cv2.fillPoly 4.5.4 reference rasters for taniteval.adapters.nuscenes_planning.cv_fill_poly",
+ "cv2_version": "4.5.4",
+ "cv2_build_info_head": [
+  "General configuration for OpenCV 4.5.4 =====================================",
+  "Version control:               4.5.4",
+  "Platform:"
+ ],
+ "numpy_version": "1.26.4",
+ "python_version": "3.9.25",
+ "call": "cv2.fillPoly(img, [np.array(poly, np.int32)], 1)  # lineType LINE_8 (default), shift 0",
+ "wheels_sha256_recomputed": {
+  "numpy-1.26.4-cp39-cp39-win_amd64.whl": "3373d5d70a5fe74a2c1bb6d2cfd9609ecf686d47a2d7b1d37a8f3b6bf6003aea",
+  "opencv_python_headless-4.5.4.60-cp39-cp39-win_amd64.whl": "a1f9d41c6afe86fdbe85ac31ff9a6ce893af2d0fce68fbd1581dbbc0e4dfcb25"
+ },
+ "polygons_json_sha256": "033ea5d5dd0432522761e5245081056f1c486014b81ae184f5ced1f250dcb01c",
+ "polygons_generated_with": {
+  "python": "3.13.5",
+  "numpy": "2.5.1",
+  "grid_from": "taniteval/adapters/nuscenes_planning.py BEV/DX/BX",
+  "BEV": 200,
+  "DX": 0.5,
+  "BX": -49.75
+ },
+ "npz_file": "fillpoly_cv2_454_reference.npz",
+ "npz_sha256": "08e0d3e0f384a5060eb1ac2e11e8428369b458a2636f6edf108a4a86262de5ca",
+ "groups": {
+  "quads": {
+   "n": 200,
+   "hw": [
+    40,
+    40
+   ],
+   "cv2_raised": [],
+   "filled_pixels_total": 91489,
+   "source": "old test_fillpoly_parity_with_real_cv2: default_rng(0).integers(-20,60,(4,2)) x200"
+  },
+  "boxes": {
+   "n": 300,
+   "hw": [
+    200,
+    200
+   ],
+   "cv2_raised": [],
+   "filled_pixels_total": 16976,
+   "source": "rotated agent boxes via np.round((c-BX+DX/2)/DX), default_rng(1)"
+  },
+  "adversarial": {
+   "n": 20,
+   "hw": [
+    64,
+    64
+   ],
+   "cv2_raised": [],
+   "filled_pixels_total": 15178,
+   "source": "hand-written edge cases"
+  }
+ }
+}

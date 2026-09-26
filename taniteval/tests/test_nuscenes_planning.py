@@ -396,17 +396,23 @@ def test_fillpoly_clips_at_the_grid_edge():
 
 
 def test_fillpoly_parity_with_real_cv2():
-    """NOT RUN on the dev box (no OpenCV in the venv; installing is out of scope). Where cv2
-    exists this compares the port on random quads — a skip here is NOT a pass."""
-    cv2 = pytest.importorskip("cv2", reason="NOT RUN: OpenCV not installed in this venv")
+    """The port vs REAL cv2.fillPoly 4.5.4, on this test's own 200 random quads (seed 0).
+
+    Until 2026-09-26 this SKIPPED on the dev box ("NOT RUN: OpenCV not installed in this venv") — a
+    guard that had never run. It now compares against rasters drawn ONCE by cv2 4.5.4 in a throwaway env
+    and banked in ``fixtures/fillpoly_opencv454/`` (provenance and further arms, incl. mutation, in
+    ``test_fillpoly_opencv454_reference.py``). ⭐ The quads are regenerated here and must EQUAL the banked
+    vertices, so the reference is for THESE inputs: if numpy's stream ever changes, this says so plainly
+    instead of silently comparing different polygons."""
+    ref = np.load(os.path.join(os.path.dirname(os.path.abspath(__file__)), "fixtures", "fillpoly_opencv454",
+                               "fillpoly_cv2_454_reference.npz"), allow_pickle=False)
     rng = np.random.default_rng(0)
-    for _ in range(200):
+    for i in range(200):
         pts = rng.integers(-20, 60, size=(4, 2))
+        assert (ref["quads_polys"][i, :4] == pts).all(), f"case {i}: banked quad != this test's quad"
         a = np.zeros((40, 40), np.uint8)
-        b = np.zeros((40, 40), np.uint8)
         NP.cv_fill_poly(a, [tuple(p) for p in pts.tolist()], 1)
-        cv2.fillPoly(b, [pts.astype(np.int32)], 1)
-        assert (a == b).all(), pts.tolist()
+        assert (a == ref["quads_rasters"][i]).all(), pts.tolist()
 
 
 # --------------------------------------------------------------------------- #
