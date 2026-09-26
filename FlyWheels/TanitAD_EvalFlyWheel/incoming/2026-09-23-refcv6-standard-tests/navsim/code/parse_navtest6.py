@@ -33,6 +33,9 @@ TERMS = {"NC": "no_at_fault_collisions", "DAC": "drivable_area_compliance", "EP"
          "DDC": "driving_direction_compliance", "PDMS": "score"}
 
 
+#: every refcv6 number carries this stamp (Master Mind, 2026-09-26)
+MODEL_STAMP = ('"F3 detach-only, F4 on the last layer only" — Master Mind audit 2026-09-26 (GOALS_AND_CLAIMS D-REFCV6-F3-WHITELIST, D-REFCV6-LABEL-CLOCK; landed 9d16c441): the F3 per-stage cascade loss never ran (decoder stages 0-2 frozen at init) and tactical labels are read ~0.37 s early; INHERITED')
+
 def read(path: str) -> pd.DataFrame:
     df = pd.read_csv(path)
     if "pdm_score" in df.columns:
@@ -87,6 +90,7 @@ def main(argv=None) -> int:
             raise SystemExit(f"⛔ {k} lacks {len(miss)} of the refcv6 tokens — not paired")
     clusters = [tok2log[t] for t in toks]
     out = {"_label": a.label, "protocol": "PDMS_v1_navtest", "n_tokens": len(toks),
+           "model_as_trained": MODEL_STAMP,
            "tokens_subset": os.path.abspath(a.tokens) if a.tokens else None,
            "n_logs": len(set(clusters)), "floors_source": FLOORS,
            "estimator": {"name": ci.ESTIMATOR, "paired": ci.PAIRED_ESTIMATOR,

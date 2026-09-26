@@ -12,7 +12,12 @@ Every number is **MEASURED by this stream** unless marked; its artifact is named
 every NavSim row: tier **T1-family**; stage-1 loop **OPEN**; stage 2 **UNRULED**; v2 background
 **IDM-reactive**, v1 **non-reactive (logged)**; ⛔ never closed loop; **zero-shot** (PhysicalAI-AV B1 →
 nuPlan cameras, 3-camera stitch); the **device + precision** of every refcv6 row is stated beside it
-(amendment A3: one device per split).
+(amendment A3: one device per split). ⚠️ **Model-as-trained stamp on EVERY refcv6 number: "F3
+detach-only, F4 on the last layer only"** — the Master Mind's audit of the live run (2026-09-26,
+`GOALS_AND_CLAIMS` D-REFCV6-F3-WHITELIST and D-REFCV6-LABEL-CLOCK, landed `9d16c441`; INHERITED, not
+re-verified by this stream): the F3 per-stage cascade loss has never run (decoder stages 0–2 frozen
+at initialisation) and tactical labels are read ~0.37 s early. The run continues unchanged unless
+the PI decides otherwise; this stream scores the model as built.
 
 ## 0. Headline (status 2026-09-26 ~10:00Z — updated as checkpoints land)
 
@@ -32,6 +37,8 @@ overshoot the human by > 2 m are at-fault collisions — speed bias +0.68 m/s (f
 (5) The max-speed input is INERT at step 5,000 (200/200 navtest plans bit-identical with it
 withheld; its oracle definition moves 8/200, inside the seed floor) — the ARGMAX ceiling filter the
 run's config declares is not built (§6.7).
+
+**Read every refcv6 number above as "F3 detach-only, F4 on the last layer only"** (header stamp).
 
 **NOT PROVEN / NOT YET MEASURED.** The mid-run (30,000) and FINAL readings — running / armed,
 unattended (§9). The

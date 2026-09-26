@@ -16,6 +16,9 @@ import os
 import sys
 
 
+#: every refcv6 number carries this stamp (Master Mind, 2026-09-26)
+MODEL_STAMP = ('"F3 detach-only, F4 on the last layer only" — Master Mind audit 2026-09-26 (GOALS_AND_CLAIMS D-REFCV6-F3-WHITELIST, D-REFCV6-LABEL-CLOCK; landed 9d16c441): the F3 per-stage cascade loss never ran (decoder stages 0-2 frozen at init) and tactical labels are read ~0.37 s early; INHERITED')
+
 def _j(p):
     try:
         return json.load(open(p, encoding="utf-8"))
@@ -88,7 +91,8 @@ def main(argv=None) -> int:
     a = ap.parse_args(argv)
     ms = _j(os.path.join(a.milestone, "MILESTONE_SUMMARY.json")) or {}
     step = int(ms.get("step", -1))
-    out = {"step": step, "label": ms.get("label"), "spec": "SPEC.md §5 (blob ab7f769a…)"}
+    out = {"step": step, "label": ms.get("label"), "spec": "SPEC.md §5 (blob ab7f769a…)",
+           "model_as_trained": MODEL_STAMP}
     if step < 5000:
         out["bars"] = "NOT_EVALUATED — PIPELINE-VALIDATION (SPEC §6: step < 5,000)"
     else:

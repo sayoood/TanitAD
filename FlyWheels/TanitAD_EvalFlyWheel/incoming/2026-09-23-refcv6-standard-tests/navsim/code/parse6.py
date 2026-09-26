@@ -45,6 +45,9 @@ PAIRS = [("R6_A1", "CV_official", "A1 vs CV"), ("R6_A1", "STOP_zero", "A1 vs STO
          ("STOP_zero", "CV_official", "STOP vs CV (floor ordering)")]
 
 
+#: every refcv6 number carries this stamp (Master Mind, 2026-09-26)
+MODEL_STAMP = ('"F3 detach-only, F4 on the last layer only" — Master Mind audit 2026-09-26 (GOALS_AND_CLAIMS D-REFCV6-F3-WHITELIST, D-REFCV6-LABEL-CLOCK; landed 9d16c441): the F3 per-stage cascade loss never ran (decoder stages 0-2 frozen at init) and tactical labels are read ~0.37 s early; INHERITED')
+
 def _load_mod(name, path):
     spec = importlib.util.spec_from_file_location(name, path)
     m = importlib.util.module_from_spec(spec)
@@ -103,6 +106,7 @@ def main(argv=None) -> int:
     log_of = {t: r["log_name"] for t, r in doc["tokens"].items()}
     mapping = doc["reactive_all_mapping"]
     out = {"_label": a.label, "split": a.split,
+           "model_as_trained": MODEL_STAMP,
            "_primary": "S2-EPDMS-u (E2 SPEC §2) + the official two-stage EPDMS where the arm's "
                        "stage-1 rows are its own", "arms": {}, "pairs": {}}
     arms = {}
