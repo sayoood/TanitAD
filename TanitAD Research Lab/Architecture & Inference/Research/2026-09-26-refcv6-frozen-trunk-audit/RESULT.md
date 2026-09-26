@@ -595,3 +595,31 @@ scratchpad, NOT banked because they carry raw clip ids):** the train view's `_v2
 `_verify_report.json` / `_black_rows_census.json`, the live `metrics.jsonl` and `config.json`
 (`0c9665f5…` = kit), the eval sidecar's `.meta.json`. **To re-run:** set `AUDIT_SCRATCH` to the
 directory holding `thor_pull/`.
+
+## Q3 status (Master Mind, 2026-09-26 evening) — NOT YET PRODUCED; the instrument was made to fit the box
+
+`raw/q3_hooks_forward.json` (Q1 at the launched config, the full Q3 hook table, the tacv6 permutation probe) is
+still OWED. Every attempt so far was stopped by the script's OWN guard (brief rule 6: nothing runs below 8 GB of
+free host RAM) — none crashed and none produced a wrong number:
+
+| attempt | start (GB free) | where it stopped | log |
+|---|---|---|---|
+| chain2 step D | 10.2 gate | the forward | `raw/q3_hooks_forward.log` |
+| retries 1-4 (full build, every output kept alive) | 11.7-13.6 | the forward | `raw/q3_hooks_forward_retry{1..4}.log` |
+| low-memory (nothing kept alive) | 12.6 | the 139-episode dataset build | `raw/q3_hooks_forward_lite.log` |
+| one-episode + nothing kept alive | 11.1 | the forward, after selecting the right window | `raw/q3_hooks_forward_lite1ep.log` |
+
+Two switches were added to `code/q3_hooks_forward.py`, both **off by default** (default = the original behaviour),
+and each run records which mode it used:
+* `Q3_KEEP_ALIVE=0` — no module output is held for the whole forward. Each attention call resolves its key/memory
+  producer AT CALL TIME and accepts it only if a weakref proves the producing output is still alive (so its pointer
+  cannot have been recycled); otherwise it reads **UNRESOLVED**, never a guessed module. `provenance_mode` is written.
+* `Q3_ONLY_EPISODE_SHA12` + `Q3_ONLY_T` — build only the probe window's episode (the joins then read one clip) and
+  take the window by its `t`. MEASURED: it selects episode `1655838298f8`, t = 136 — exactly the full-dataset
+  in-run eval's perm[0] (w = 20658 of 23,772) logged by retries 2 and 4. Recorded as a departure.
+
+The remaining cost is the forward itself (~4-5 GB on CPU fp32 at 416x1024, 9 frames). The run is re-armed to start
+only at >= 13.5 GB free (the box reached 13.25 and 13.59 GB today), still under the 8 GB watchdog. The finding it
+documents is ALREADY established by other means (0 of 3,871 metrics rows carried `cascade` before the fix; the
+stage 0-2 heads were bit-identical at 1k/5k/30k; the fix's tests go RED on the tip) — Q3 is its instrument-level
+record, not its only evidence.

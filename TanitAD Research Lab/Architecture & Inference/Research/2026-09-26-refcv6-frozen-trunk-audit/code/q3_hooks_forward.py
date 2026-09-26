@@ -32,6 +32,7 @@ import os
 import sys
 import threading
 import time
+import weakref
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -121,16 +122,49 @@ def main():
     tr = L.trainer()
     import reproduce_inrun_eval as RIE          # battery helpers, read-only reuse
     law_ahead = int(getattr(tr, "LAW_AHEAD", 5))
-    e_ds, e_eps, drec = L.build_eval_dataset(model, cfg, args, config, with_perception_targets=True,
-                                             dataset_cls=RIE.make_g0_dataset_cls(tr, law_ahead))
+    # Q3_ONLY_EPISODE_SHA12 (Master Mind, 2026-09-26): building all 139 eval episodes WITH perception
+    # targets (the agent join alone reads 776,801 boxes) pushed the host under the 8 GB floor before the
+    # forward on 5 attempts. The probe needs ONE window: keep only its episode's provider (so the joins
+    # read one clip), then take the window by its t. The window's identity is the full-dataset run's
+    # perm[0] (logged in raw/q3_hooks_forward_retry2.log); unset = the original full build.
+    only_sha = os.environ.get("Q3_ONLY_EPISODE_SHA12")
+    if only_sha:
+        import tanitad.data.v2_dataset as _v2d
+        _orig_bvp = _v2d.build_v2_providers
+
+        def _one_episode(*a, **k):
+            eps_all = _orig_bvp(*a, **k)
+            keep = [e for e in eps_all if C.sha12(Path(e.frames._cache.files[e.frames._clip]).name.split(".")[0])
+                    == only_sha]
+            if len(keep) != 1:
+                raise SystemExit(f"[q3] Q3_ONLY_EPISODE_SHA12={only_sha} matched {len(keep)} of {len(eps_all)}")
+            return keep
+        _v2d.build_v2_providers = _one_episode
+    try:
+        e_ds, e_eps, drec = L.build_eval_dataset(model, cfg, args, config, with_perception_targets=True,
+                                                 dataset_cls=RIE.make_g0_dataset_cls(tr, law_ahead))
+    finally:
+        if only_sha:
+            _v2d.build_v2_providers = _orig_bvp
     RIE.patch_frames_to_device(tr)
     rec["departures"] = ["torch.load(ckpt) with mmap=True (same bytes)",
                          f"future_frames: only the LAW stack {law_ahead - 1} is decoded "
                          "(battery G0 class; the only index compute_losses_v3 reads)",
                          "--trunk-compile dropped by the loader (no Triton on Windows)"]
     rec["dataset"] = {k: v for k, v in drec.items() if k in ("n_episodes", "n_windows")}
-    perm = L.inrun_eval_perm(e_ds, int(args.eval_batches), int(args.batch))
-    w0 = int(os.environ.get("Q3_WINDOW", perm[0]))
+    if only_sha:
+        t_want = int(os.environ["Q3_ONLY_T"])
+        hits = [i for i, (_ei, _ts) in enumerate(e_ds.index) if int(_ts) == t_want]
+        if len(hits) != 1:
+            raise SystemExit(f"[q3] t={t_want} matched {len(hits)} windows in episode {only_sha}")
+        w0 = hits[0]
+        rec["departures"].append(
+            f"dataset restricted to ONE episode (sha12 {only_sha}) and the window taken at t={t_want}: the "
+            "full-dataset in-run eval's perm[0] (w=20658 over 23,772 windows, raw/q3_hooks_forward_retry2.log); "
+            "the joins and the map GT therefore read that one clip")
+    else:
+        perm = L.inrun_eval_perm(e_ds, int(args.eval_batches), int(args.batch))
+        w0 = int(os.environ.get("Q3_WINDOW", perm[0]))
     e_i, t_start = e_ds.index[w0]
     item = e_ds[w0]
     batch = torch.utils.data.default_collate([item])
@@ -149,7 +183,24 @@ def main():
     names = {m: n for n, m in model.named_modules()}
     calls = []            # attention calls
     keep_alive = []       # outputs of named modules, held so pointers are not recycled
-    ptr_owner = {}        # data_ptr -> (module name, shape)
+    ptr_owner = {}        # data_ptr -> (module name, shape[, weakref to the output])
+    # Q3_KEEP_ALIVE=0 (Master Mind, 2026-09-26): holding EVERY non-backbone output for the whole forward
+    # (all sampler steps) exceeded the 8 GB host floor on 4 of 4 attempts. In this mode nothing is held:
+    # each attention call resolves its key/memory producer AT CALL TIME, and only if a weakref proves the
+    # producing output is still alive (so its pointer cannot have been recycled); otherwise it reads
+    # UNRESOLVED -- never a guessed module. Default 1 = the original behaviour.
+    LIVE = os.environ.get("Q3_KEEP_ALIVE", "1") != "0"
+
+    def resolve(ptr):
+        own = ptr_owner.get(ptr)
+        if own is None:
+            return None
+        if LIVE:
+            return own[0], own[1]
+        o = own[2]()
+        if o is None or int(o.data_ptr()) != ptr:
+            return ("UNRESOLVED (the producing output was freed before this call)", None)
+        return own[0], own[1]
     trunk = next(m for m in model.modules() if type(m).__name__ == "TimmResNetTrunk")
     stem = trunk.net.conv1
     stem_calls = []
@@ -176,6 +227,7 @@ def main():
                       "v": shape(v), "k_is_v": bool(k is v or (torch.is_tensor(k) and torch.is_tensor(v)
                                                                and k.data_ptr() == v.data_ptr())),
                       "k_ptr": int(k.data_ptr()) if torch.is_tensor(k) else None,
+                      "_owner": resolve(int(k.data_ptr())) if torch.is_tensor(k) else None,
                       "q_ptr": int(q.data_ptr()) if torch.is_tensor(q) else None,
                       "kpm": shape(kpm), "kpm_true": (int(kpm.sum()) if torch.is_tensor(kpm)
                                                        and kpm.dtype == torch.bool else None),
@@ -186,7 +238,8 @@ def main():
         mem = args_[1] if len(args_) > 1 else kwargs.get("memory")
         calls.append({"module": names.get(mod, "?"), "kind": "TransformerDecoderLayer",
                       "tgt": shape(tgt), "memory": shape(mem),
-                      "mem_ptr": int(mem.data_ptr()) if torch.is_tensor(mem) else None})
+                      "mem_ptr": int(mem.data_ptr()) if torch.is_tensor(mem) else None,
+                      "_owner": resolve(int(mem.data_ptr())) if torch.is_tensor(mem) else None})
 
     def out_hook(mod, inp, out):
         nm = names.get(mod, "?")
@@ -194,8 +247,12 @@ def main():
             list(out.values()) if isinstance(out, dict) else [out])
         for i, o in enumerate(outs):
             if torch.is_tensor(o) and o.numel() > 0:
-                ptr_owner[int(o.data_ptr())] = (nm + (f"[{i}]" if len(outs) > 1 else ""), shape(o))
-                keep_alive.append(o)
+                key = nm + (f"[{i}]" if len(outs) > 1 else "")
+                if LIVE:
+                    ptr_owner[int(o.data_ptr())] = (key, shape(o))
+                    keep_alive.append(o)
+                else:
+                    ptr_owner[int(o.data_ptr())] = (key, shape(o), weakref.ref(o))
 
     for n, m in model.named_modules():
         if isinstance(m, nn.MultiheadAttention):
@@ -342,9 +399,12 @@ def main():
     print("[q3] tac permutation/probe", json.dumps(perm_res)[:1500], flush=True)
 
     # ------------------------------------------------------------------ Q3 summary
+    rec["provenance_mode"] = ("keep-alive (every output held; exact pointer map)" if LIVE else
+                              "call-time weakref (nothing held; UNRESOLVED when the producer was freed)")
     for c in calls:
-        p = c.get("k_ptr") or c.get("mem_ptr")
-        own = ptr_owner.get(p)
+        own = c.pop("_owner", None)
+        if LIVE:                            # the original: resolve after the forward, nothing freed
+            own = ptr_owner.get(c.get("k_ptr") or c.get("mem_ptr"))
         c["kv_source_module"] = own[0] if own else "functional (no module output owns this pointer)"
         c["kv_source_shape"] = own[1] if own else None
         c.pop("k_ptr", None)
