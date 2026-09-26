@@ -220,3 +220,27 @@ NEW-1 builder, MEASURED from source and on the battery's step-30k surface (4,754
 3. **The ground truth is re-exported** from the stored world maps at the chosen extent, on Thor, as a new schema version (`tanitad.sam3_map_gt/3`). SAM3 is NOT re-run.
    - The 10 cm codes inside the old 60 × 32 m window must be byte-identical to `/2`. That is the control.
 4. **The 10 cm head, reader, metrics and pooling take the extent as a declared parameter.** G-HYG and G-DVB check that the built grid equals the declared extent.
+
+## 12. Amendment A7 (2026-09-27 ~00:55 Berlin): the map extent the §11.2 rule selected: 100 m ahead × ±30 m
+
+**The census**, MEASURED on Thor. Prereg `…/2026-09-26-map-signal-audit/raw/PREREG_MAP_EXTENT_CENSUS.md` (md5 d4d02505) was written before any world map was read.
+- **Coverage:** 4,369/4,369 TRAIN clips, 78,321 frames. A frame counts as "seen" in a ring when ≥ 20 % of its 10 cm samples are not-255.
+- **Controls:** re-crops of the old window match the stored `/2` `fine_codes` byte for byte on 24/24 frames.
+
+| ahead (\|y\| < 16 m) | 0–40 m | 40–50 | 50–60 | 60–70 | 70–80 | 80–90 | 90–100 | 100–110 |
+|---|---|---|---|---|---|---|---|---|
+| share of frames seen | 1.00 | 0.94 | 0.85 | 0.75 | 0.67 | 0.60 | **0.53** | 0.47 ✗ |
+
+| sideways (x < 60 m) | \|y\| 0–10 | 10–20 | 20–30 | 30–40 |
+|---|---|---|---|---|
+| share of frames seen | 1.00 | 1.00 | **0.9996** | 0.21 ✗ |
+
+**Selected by the rule: x_max = 100 m, y_half = 30 m (100 × 60 m, 3.125× the 60 × 32 m area).**
+- The result is robust at 5 %, 20 % and 50 % seen, with narrower rings, and clip-weighted.
+- **Why the sides stop at 30 m:** the SAM3 world map only labels cells within R_MAX = 35 m of a camera position (`sam3map_render_v5m.py:33`). Wider ground truth would need a SAM3 re-render, which A6 excludes.
+
+**Consequences (BINDING for the build):**
+1. **The 10 cm map grid is 1000 × 600**: x 0–100 m, y ±30 m. The lift runs at 0.25 m over the same extent, 400 × 240. The metrics report bands 0–20 / 20–40 / 40–60 / 60–80 / 80–100 m, and the bars apply in every band. Per the audit's physics caveat, far bands are expected to read near 0 for both models; they are reported, never dropped.
+2. **The planner BEV is CROPPED to 60 m × ±16 m** before the 0.5 m pooling, so the planner's input grid and its token geometry (30 × 16 tokens of 2 × 2 m) are unchanged from refcv6. G-DVB checks it.
+3. **The `/3` ground truth is re-exported** from the stored world maps on Thor with ANCHORED coordinates: lateral centre `y = −16 + (j_rel + 0.5)·cell`, `j_rel = j − 140` on the 10 cm grid and `j − 28` on the 0.5 m grid. The control is byte identity with `/2` inside the old 60 × 32 window, for both `fine_codes` and `cart_frac`, on every frame. Timed at 7.26 s/clip, about 1.5 h on 6 workers, about 19.6 GB.
+4. **Memory:** the 10 cm decoder's saved activations at b16 grow from 6.85 to about 21.4 GB (analytic). **Gradient checkpointing is ON for the 10 cm decoder**, as a declared flag, which takes it to about 1.14 GB. Its s/step cost is MEASURED in the Thor G-LIVE smoke; more than +25 % goes to the PI, which is reserved decision (b).

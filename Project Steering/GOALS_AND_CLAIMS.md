@@ -16104,3 +16104,10 @@ PI_DECISION_QUEUE, 2026-09-26 yaw item).
 |---|---|---|---|
 | **D-REFCV7-OPTION-C** | PI, verbatim: *"do c and assure that the range of the map is maximal and not only 20 m"*. ⇒ One stride-8 → 0.25 m lift and BEV encoder feed the 10 cm map decoder AND a pooled 0.5 m BEV for box3d, the planner's cross-attention and the BEV tokens. The stride-16 lift and the 0.5 m map head are removed. The planner's input changes, is declared, and is checked by G-DVB. | `Project Steering/SPEC_REFCV7.md` §11 (A6) | RULED (PI) |
 | **D-REFCV7-MAP-RANGE-MAXIMAL** | Bars in EVERY range band, not only 0–20 m. Grid extent = the largest 10 m steps where ≥ 50 % of TRAIN frames have seen SAM3 world-map ground truth. The rule is fixed before the census, which runs on Thor from the stored `semantic_maps/worldmap`. Never smaller than 60 m × ±16 m, and within the Thor budget (+25 % s/step goes to the PI). The ground truth is re-exported as `sam3_map_gt/3`, byte-identical to `/2` inside the old window. | `SPEC_REFCV7.md` §11.2 | REGISTERED (rule before measurement) |
+
+<!-- REFCV7-A7-MAP-EXTENT-2026-09-27 -->
+### 2026-09-27 ~00:55 — refcv7 map extent MEASURED: 100 m ahead × ±30 m
+
+| id | record | evidence | status |
+|---|---|---|---|
+| **MEAS-MAP-EXTENT-CENSUS** | The pre-registered §11.2 rule, run on 4,369 TRAIN clips / 78,321 frames with byte-identity controls, selects **x_max 100 m, y_half ±30 m**. Seen coverage ahead is 0.53 at 90–100 m and 0.47 at 100–110 m; sideways it is 0.9996 at 20–30 m and 0.21 at 30–40 m. The result is robust to the threshold and ring choice. The lateral limit is SAM3's R_MAX = 35 m (`sam3map_render_v5m.py:33`). ⇒ **Consequences:** a 10 cm grid of 1000 × 600, bands to 100 m, the planner BEV cropped to 60 × 32 m (unchanged), a `/3` re-export with anchored coordinates, and gradient checkpointing on the decoder. | `…/2026-09-26-map-signal-audit/RESULT.md` §9A + `raw/thor_0021_census/`; `SPEC_REFCV7.md` §12 (A7) | MEASURED; DECIDED by the pre-registered rule |
