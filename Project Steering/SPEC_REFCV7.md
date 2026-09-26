@@ -123,3 +123,28 @@ Registered BEFORE any NEW-2 code or number exists.
 - a **positional-prior control** (each cell's train-set majority class) scored on the same windows, which every class bar must also beat;
 - §3's single-seed rule applies: a margin within 2× the replicate floor is NOT PROVEN.
 - ⛔ A missed bar is reported FAILED.
+
+## 7. Amendment A2 (2026-09-26 ~22:10 Berlin): FIX-4, all three selection mechanisms are ON
+
+**PI, verbatim (2026-09-26):** *"go with your recommendation for E1, assure that the three selection mechanism are on"*.
+
+Declared-vs-built batch 1 builds the three mechanisms refcv6 declared and never built, and wires them OFF by default. For refcv7 all three are **ON**:
+
+| mechanism | flag | refcv7 |
+|---|---|---|
+| 8×8 tactical prior | `--graft-tac8-prior` (needs `--tac-decoder-v6`) | **ON**. It replaces the undeclared image-only lat3/lon3 prior that refcv6 ran instead (+1,872 params). |
+| nav compliance | `--graft-nav-compliance --nav-compliance-tau-rad <τ>` | **ON**. τ is derived ONCE on the full TRAIN split by `taniteval.nav_compliance.derive_tolerance`, recorded with its input sha256s, and never tuned on eval. |
+| max-speed ceiling filter | `--speed-ceiling-filter` (needs `--max-speed-input-v6`) | **ON, at inference only.** See below. |
+
+**The ceiling filter acts at inference only.** A `not self.training` guard at the mask (`refc.py:3337`) keeps the oracle ceiling out of training. The ceiling (`speed_max_derivation_v6`) is derived from the ego's future. Without the guard it would shape training through the LAW input, because the selected plan feeds `law_head` (`refc.py:4461`).
+
+Every refcv7 evaluation reports, on the same windows:
+- the filter **ON**, the model as configured and the primary reading;
+- the filter **OFF**, the sensitivity reading without the oracle.
+
+**Gate consequences (binding):**
+- **G-DVB** asserts that all three mechanisms are BUILT and ON for a refcv7 launch. A refcv7 argv missing any one of them FAILS the gate; that is the regression arm.
+- **The τ file** must exist, and its sha256 is recorded in `config.json`. `--graft-nav-compliance` without a recorded τ file is refused.
+- **G-LIVE** asserts the ceiling mask is inactive in a training step and active in an eval step. Its regression arm activates the mask in training, which must FAIL.
+
+**Interaction with NEW-1.** The nav-compliance term and the ceiling filter act on the ABSOLUTE candidate plans (prior P + residual Δ), never on Δ alone.
