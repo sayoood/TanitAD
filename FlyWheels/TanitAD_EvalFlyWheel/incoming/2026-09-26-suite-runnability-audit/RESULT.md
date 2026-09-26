@@ -316,3 +316,93 @@ frozen-trunk audit already measured the expected magnitude on this very split �
 ⚠️ And the mirror-image control is just as cheap: scoring the SAME clock twice must produce
 **bit-identical** tactical numbers, which proves the comparison harness is deterministic and that any
 difference seen above comes from the clock and not from run-to-run noise.
+
+## §13 The §11 work item, CLOSED — and ONE test is 61 % of the suite's runtime
+
+Isolation pass (each node id run alone), MEASURED 2026-09-26:
+
+| node id | alone | verdict |
+|---|---|---|
+| `test_every_banked_pdf_is_in_head` | **FAILED in 1,585.8 s (26m 25s)** | genuine |
+| `test_real_registry_has_no_dead_or_malformed_citations` | FAILED in 32.4 s | genuine |
+| `test_importing_the_package_is_cheap` | FAILED in 0.9 s | genuine |
+| `test_the_print_convention_block_keeps_…_verdict_and_scope` | **no tests ran** | the stale cache id (§11) |
+
+⇒ **Every failure that resolves also fails in isolation. There is no order-dependence anywhere** —
+which closes §11's retraction properly: the appearance of it came entirely from the stale cache entry.
+
+### ⭐ And here is the root cause of the thing §8 complained about
+
+**`test_every_banked_pdf_is_in_head` alone takes 26m 25s of the full suite's 43m 09s — 61 % of the
+total runtime in ONE test.** That is why *"every recent report measured a SUBSET"*: the suite is not
+usable as a pre-commit gate at that cost, so each stream ran the slice it cared about and the 31
+failures stayed invisible. ⛔ **The subset habit is not carelessness; it is a rational response to a
+43-minute gate**, and it will not change by asking people to be more thorough.
+⇒ Work item, and it is the one with leverage: make that test cheap (it appears to shell out to git
+per banked PDF — a single `git ls-tree`/`cat-file --batch-check` over the set would answer the same
+question in seconds), or mark it `slow` and run it in CI rather than pre-commit. Fixing this one test
+is what makes `pytest -q` a gate anybody will actually run.
+
+⚠️ **Do not re-run it on this checkout to see if it is fixed.** It asks *"is every banked PDF in
+HEAD?"* and my local HEAD is `37645fc`, five days stale — the Master Mind has since landed the Library
+backlog (`1767cfb`) and my batches (`57a2a835`) upstream. Locally it must fail for the backlog reason
+regardless, so 26 minutes here would buy a knowably-wrong answer. It should be re-read on a tree that
+has fetched.
+
+## §14 The slow gate, FIXED — and it was a CORRECTNESS bug wearing a performance costume
+
+**Batch 5.** `tools/tests/test_library_tracking.py`: the per-file `git cat-file -e` loop is replaced by
+ONE `git cat-file --batch-check` over every banked path.
+
+| | before | after |
+|---|---|---|
+| `test_every_banked_pdf_is_in_head` | **1,585.8 s (26m 25s)** | — |
+| the HEAD membership query itself | — | **0.53 s** for 552 paths, one process |
+| the WHOLE file (now 7 tests) | — | **2.13 s** |
+
+⇒ ~**750x** on the file, and the 43-minute suite loses 61 % of its runtime.
+
+### ⛔ But the speed was a symptom. The real defect was the classifier.
+
+The old code called a path "missing" only when stderr contained `does not exist` or
+`Not a valid object`. **git's actual message for the case this test exists to catch is:**
+
+```
+fatal: path 'TanitAD Research Lab/Library/papers/<x>.pdf' exists on disk, but not in 'HEAD'
+```
+
+which matches **neither**. So every genuinely-unbanked PDF was filed as **UNDECIDED** and the gate
+failed with *"the mount was flapping … re-run"* — when the true, actionable diagnosis was
+**"commit these 86 files"**. ⭐ It failed loudly and named the wrong cause: a
+**true-but-wrong-for-the-reader** failure, the class already in auto-memory. And the misclassification
+IS the slowness: 86 missing x 6 attempts x 3 s = **25.8 min of pure sleeping**, which reconciles with
+the measured 26m 25s to within the subprocess overhead.
+
+⭐ **The durable part of the fix is that it no longer parses English.** `--batch-check` answers in a
+protocol — `<sha> blob <size>` or `<input> missing` — so no wording, locale or git-version change can
+reintroduce this. ⛔ And not `ls-tree -r`, per `CLAUDE.md`: it truncates on the G: mount, exits 0, and
+truncates *consistently*, so the answer would depend on where the tree sits.
+
+### The arms that keep it honest (all 6 green; the 7th is the gate itself)
+
+* ⛔ **Deliberate regression:** a real on-disk PDF absent from HEAD must read **missing**, never
+  undecided. ⭐ Written against a REAL temp file, because a fabricated name produces a *different* git
+  message — a fictitious path would not reproduce the bug and the arm would pass while the defect lived.
+* ⭐ **Control that the batch ANSWERED:** present + missing + undecided must equal the input count, and
+  deciding **0 of 552** must REFUSE as INCONCLUSIVE rather than read as "nothing is missing" — the
+  2026-09-05 false finding in reverse.
+* **Control that it is not inert:** `present > 0`, and a paper matching a `library.json` key is found.
+* **A speed bar** at 60 s: loose enough for a slow CI box, far below the 25.8 min sleep storm.
+
+### Verdict on each tree, stated separately
+
+* **My tree (HEAD `37645fc`, five days stale):** the gate **FAILS**, naming **86** PDFs — correct, and
+  now correctly diagnosed.
+* **The true tip (`4c94f4ee` via the mirror):** **552/552 present, 0 missing ⇒ WOULD PASS.**
+
+⚠️ **A principled deviation from the brief, surfaced not hidden.** I was asked to build and time on a
+fresh `git archive` of the tip. ⛔ **The "before" cannot be measured there:** the 26 minutes is caused
+by files MISSING from HEAD, and a fresh checkout has none — the old test would have run in ~21 s,
+understating the fix ~75x and hiding the correctness bug entirely. The stale tree is the only place the
+defect reproduces, and it is the *same* tree before and after, which is what the timing comparison
+required. The tip was then used for the thing it IS authoritative about: the gate's verdict.

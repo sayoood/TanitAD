@@ -57,3 +57,15 @@ products/P7-TanitEval/benchmarks/published_results.json
 # pinned as a literal. MUTATION-VERIFIED: re-escaping the file turns 3 of the 5 RED, while the two
 # content tests correctly stay green.
 taniteval/tests/test_published_results_style.py
+
+## 2026-09-26 batch 5 -- the slow gate fixed (26m 25s -> 0.53 s) + the correctness bug behind it
+
+# ONE `git cat-file --batch-check` replaces 552 per-file calls. NOT ls-tree -r (truncates on G:).
+# The real defect was the CLASSIFIER: git says "exists on disk, but not in HEAD", which the old
+# prose match missed, so every unbanked PDF read UNDECIDED ("re-run") instead of MISSING ("commit").
+# 86 missing x 6 attempts x 3 s = 25.8 min of sleeping = the whole 26 minutes.
+# Arms: deliberate regression (real temp PDF must read MISSING), a control that the batch ANSWERED
+# (counts reconcile; 0-decided REFUSES), a not-inert control, and a 60 s speed bar. 6 pass + the gate.
+# Verdict: FAILS on my stale tree naming 86 PDFs (correct); 552/552 present at tip 4c94f4ee => PASSES.
+tools/tests/test_library_tracking.py
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-suite-runnability-audit/RESULT.md

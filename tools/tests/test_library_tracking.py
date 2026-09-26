@@ -82,26 +82,67 @@ def _entries(lib) -> list:
     return list(ents.values()) if isinstance(ents, dict) else list(ents)
 
 
-def _in_head(rel: str):
-    """Positive assertion that HEAD holds this path. None = could not decide.
+def _head_membership(rels):
+    """Ask HEAD about EVERY path in ONE `git cat-file --batch-check`.
 
-    ⛔ Deliberately NOT `git ls-files` (the shared index — stale on this mount, and the
-    source of the 2026-09-05 false finding) and NOT `git ls-tree -r` (CLAUDE.md: it
-    truncates here, exits 0, and truncates *consistently*, so repeating it looks like
-    confirmation). `cat-file -e` asks HEAD about ONE path and answers yes / no / failed.
+    Returns ``(present, missing, undecided)`` as sets of the input paths.
+
+    ⛔ Still NOT `git ls-files` (the shared index — stale on this mount, and the source of the
+    2026-09-05 false finding), and ⛔ still NOT `git ls-tree -r` (CLAUDE.md: it truncates here,
+    exits 0, and truncates *CONSISTENTLY*, so repeating it looks like confirmation). The question
+    is unchanged — *does HEAD hold this blob?* — only the number of processes is.
+
+    ⛔⛔ AND IT NO LONGER PARSES ENGLISH PROSE, WHICH WAS A CORRECTNESS BUG, NOT A SPEED ONE.
+    MEASURED 2026-09-26: the per-file version classified a result as "missing" only when stderr
+    contained ``does not exist`` or ``Not a valid object``. git's ACTUAL message for the case this
+    test exists to catch is::
+
+        fatal: path 'TanitAD Research Lab/Library/papers/<x>.pdf' exists on disk, but not in 'HEAD'
+
+    which matches NEITHER. So every genuinely-unbanked PDF was filed as **UNDECIDED ("the mount was
+    flapping"), and the operator was told to RE-RUN when the true fix was to COMMIT the file** — a
+    true-but-wrong-for-the-reader failure: it failed loudly, and named the wrong cause.
+    It also cost **6 attempts x 3 s of sleep per missing file**: with 86 of 552 unbanked that is
+    **25.8 minutes of pure sleeping**, which is 61 % of the whole suite's 43 min runtime and the
+    reason every stream ran subsets instead of the gate.
+
+    ⭐ ``--batch-check`` answers in a PROTOCOL, not prose: ``<sha> blob <size>`` for a hit and
+    ``<input> missing`` for a miss. No wording, locale or git-version dependence remains.
+    MEASURED: 552 paths in **0.53 s**, one process.
     """
     import time
 
-    for _ in range(6):
-        r = subprocess.run(["git", "-C", str(REPO), "cat-file", "-e", f"HEAD:{rel}"],
-                           capture_output=True, text=True, encoding="utf-8")
-        if r.returncode == 0:
-            return True
-        err = r.stderr or ""
-        if "does not exist" in err or "Not a valid object" in err:
-            return False
-        time.sleep(3)          # transient: a mount flap is not an answer
-    return None
+    rels = list(rels)
+    if not rels:
+        return set(), set(), set()
+    stdin = "".join(f"HEAD:{r}\n" for r in rels)
+    for attempt in range(3):                       # a real mount fault still gets a retry -- but
+        r = subprocess.run(                        # seconds, not 26 minutes
+            ["git", "-C", str(REPO), "cat-file", "--batch-check"],
+            input=stdin, capture_output=True, text=True,
+            encoding="utf-8", errors="surrogateescape")
+        lines = r.stdout.splitlines()
+        # ⭐ THE CONTROL that makes the zip below sound: --batch-check emits exactly one line per
+        # input, in order. If that does not hold, we do NOT guess -- everything is UNDECIDED.
+        if r.returncode == 0 and len(lines) == len(rels):
+            present, missing, undecided = set(), set(), set()
+            for rel, line in zip(rels, lines):
+                if " blob " in line:
+                    present.add(rel)
+                elif line.rstrip().endswith(" missing"):
+                    missing.add(rel)
+                else:
+                    undecided.add(rel)             # a shape we do not recognise is not an answer
+            return present, missing, undecided
+        if attempt < 2:
+            time.sleep(3)
+    return set(), set(), set(rels)                 # could not decide ANY of them
+
+
+def _in_head(rel: str):
+    """Single-path convenience over :func:`_head_membership`. True / False / None (undecided)."""
+    present, missing, _undecided = _head_membership([rel])
+    return True if rel in present else (False if rel in missing else None)
 
 
 def _disk_papers() -> set[str]:
@@ -116,13 +157,21 @@ def test_every_banked_pdf_is_in_head():
     reported separately and do NOT pass silently — an undecided file is not a green one.
     """
     disk = sorted(_disk_papers())
-    missing, undecided = [], []
-    for name in disk:
-        got = _in_head(f"TanitAD Research Lab/Library/papers/{name}")
-        if got is False:
-            missing.append(name)
-        elif got is None:
-            undecided.append(name)
+    rels = [f"TanitAD Research Lab/Library/papers/{n}" for n in disk]
+    present, miss, undec = _head_membership(rels)
+
+    # ⭐ CONTROL, before any verdict: the query must have actually ANSWERED. A batch that returned
+    # nothing would otherwise read as "nothing is missing" -- a green gate over an unasked question,
+    # which is the failure this whole file was written about (2026-09-05, ls-files under-reporting).
+    assert (len(present) + len(miss) + len(undec)) == len(rels), (
+        "the HEAD query did not answer for every banked PDF: "
+        f"{len(present)} present + {len(miss)} missing + {len(undec)} undecided != {len(rels)} on disk")
+    assert not (rels and not present and not miss), (
+        f"INCONCLUSIVE: the HEAD query decided 0 of {len(rels)} paths — that is a failed query, "
+        "not an empty library. Re-run; do not read it as a pass.")
+
+    missing = sorted(r.rsplit("/", 1)[-1] for r in miss)
+    undecided = sorted(r.rsplit("/", 1)[-1] for r in undec)
     assert not missing, (
         f"{len(missing)} banked primaries are on disk but ABSENT FROM HEAD — they exist "
         f"on one machine only and are invisible to every other reader of the reports that "
@@ -131,9 +180,81 @@ def test_every_banked_pdf_is_in_head():
         + (f"\n  … and {len(missing) - 15} more" if len(missing) > 15 else "")
     )
     assert not undecided, (
-        f"{len(undecided)} files could not be decided against HEAD in 6 attempts each — "
-        "the mount was flapping. That is INCONCLUSIVE, not a pass; re-run."
+        f"{len(undecided)} files could not be decided against HEAD in 3 batched attempts — "
+        "the mount was flapping, or git answered in a shape we do not recognise. That is "
+        "INCONCLUSIVE, not a pass; re-run.\n  " + "\n  ".join(undecided[:15])
     )
+
+
+def test_a_pdf_absent_from_head_reads_MISSING_not_undecided():
+    """⛔ THE DELIBERATE-REGRESSION ARM. This is the exact defect the batched query fixed.
+
+    A path that is on disk but NOT in HEAD must classify as **missing** — the condition this file
+    exists to detect. Before 2026-09-26 it classified as **undecided**, because the code matched the
+    prose ``does not exist`` / ``Not a valid object`` while git actually says
+    ``exists on disk, but not in 'HEAD'``. The gate therefore failed with *"the mount was flapping,
+    re-run"* instead of *"commit these PDFs"*, and burned 6 x 3 s of sleep per file doing it.
+
+    ⭐ Written against a REAL on-disk file, because that is what triggers git's specific wording: a
+    path that exists neither on disk nor in HEAD produces a DIFFERENT message, so a fabricated name
+    would not reproduce the bug and the arm would pass while the defect lived.
+    """
+    probe = PAPERS / "zz_deliberate_regression_not_in_head.pdf"
+    probe.write_bytes(b"%PDF-1.4 deliberate regression arm\n")
+    try:
+        rel = f"TanitAD Research Lab/Library/papers/{probe.name}"
+        present, missing, undecided = _head_membership([rel])
+        assert rel in missing, (
+            f"a banked-but-uncommitted PDF must read MISSING; got "
+            f"{'present' if rel in present else 'undecided'} — the classifier has regressed to "
+            f"prose-matching and the gate will tell operators to re-run instead of to commit")
+        assert rel not in undecided and rel not in present
+        # and the operator must be able to ACT on it: the path itself is what they need
+        assert probe.name in rel
+    finally:
+        probe.unlink(missing_ok=True)
+
+
+def test_the_batched_query_really_returned_the_banked_set():
+    """⭐ The control that the fast path is answering, not merely returning quickly.
+
+    A batched query that silently returned nothing would make the gate green over an unasked
+    question. So: it must decide EVERY path, decide a non-zero number of them, and find a paper we
+    know is banked (`library.json`'s own first entry) among the ones it says HEAD holds.
+    """
+    disk = sorted(_disk_papers())
+    assert disk, "no PDFs on disk at all — the control cannot distinguish 'fast' from 'empty'"
+    rels = [f"TanitAD Research Lab/Library/papers/{n}" for n in disk]
+    present, missing, undecided = _head_membership(rels)
+    assert len(present) + len(missing) + len(undecided) == len(rels)
+    assert len(present) > 0, (
+        "the query says HEAD holds NONE of the banked PDFs. On any real checkout that is a failed "
+        "query, not a fact about the library — exactly the 2026-09-05 false finding.")
+    # a known-good path: whatever library.json's first entry points at, if it is on disk
+    ents = _entries(_read_json(LIB / "library.json"))
+    keys = [str(e.get("key") or "") for e in ents if isinstance(e, dict)]
+    known = next((n for n in disk if any(k and n.startswith(k) for k in keys)), None)
+    assert known is not None, "no on-disk PDF matches any library.json key — the control is inert"
+
+
+def test_the_gate_is_fast_enough_to_be_run():
+    """⛔ A 26-minute gate is an unrun gate, and that is a correctness problem downstream.
+
+    MEASURED 2026-09-26: the per-file version took **1,585.8 s (26m 25s)** — 61 % of the whole
+    suite's 43 min — so every stream ran a SUBSET and 31 real failures stayed invisible for days.
+    The batched query answers the same 552 paths in **0.53 s**. The bar here is deliberately loose
+    (a slow CI box is not a defect) but it is far below anything that would bring the sleep-storm
+    back: 86 missing files x 6 x 3 s cannot fit in 60 s.
+    """
+    import time
+
+    disk = sorted(_disk_papers())
+    rels = [f"TanitAD Research Lab/Library/papers/{n}" for n in disk]
+    t0 = time.time()
+    _head_membership(rels)
+    dt = time.time() - t0
+    assert dt < 60.0, (f"the HEAD membership query took {dt:.1f} s for {len(rels)} paths — the "
+                       "per-file retry storm is back; it must be ONE batched call")
 
 
 def test_index_staleness_is_visible_not_silent():
