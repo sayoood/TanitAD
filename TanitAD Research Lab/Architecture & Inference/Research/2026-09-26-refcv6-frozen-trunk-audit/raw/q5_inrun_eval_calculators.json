@@ -1,0 +1,206 @@
+{
+ "what": "Q5: the in-run eval's calculators -- what they write, how they aggregate, what state they carry",
+ "evidence_class": "MEASURED (live metrics.jsonl scp'd read-only; trainer's V3Dataset)",
+ "part1_live_log": {
+  "n_rows": 4030,
+  "last_step": 33431,
+  "n_train_rows": 668,
+  "n_eval_rows": 66,
+  "n_eval_error_rows": 0,
+  "n_conflict_own_rows": 3294,
+  "eval_nan_or_inf_cells": 0,
+  "eval_windows_values": [
+   128
+  ],
+  "eval_batches_values": [
+   8
+  ],
+  "n_eval_metric_keys": 84,
+  "eval_metric_keys": [
+   "agent_centre",
+   "agent_cls",
+   "agent_n_dropped",
+   "agent_n_labelled",
+   "agent_n_matched",
+   "agent_n_raw",
+   "agent_n_target",
+   "agent_n_truncated",
+   "agent_n_windows",
+   "agent_presence",
+   "agent_rows_no_cam",
+   "agent_rows_with_cam",
+   "agent_size",
+   "agent_yaw",
+   "anchor_acc",
+   "batches",
+   "box3d",
+   "box3d_centre",
+   "box3d_cls",
+   "box3d_h",
+   "box3d_n_centre",
+   "box3d_n_cls",
+   "box3d_n_dropped",
+   "box3d_n_dropped_not_visible",
+   "box3d_n_h",
+   "box3d_n_labelled",
+   "box3d_n_matched",
+   "box3d_n_occ",
+   "box3d_n_rates",
+   "box3d_n_size",
+   "box3d_n_target",
+   "box3d_n_target_prefilter",
+   "box3d_n_target_visible",
+   "box3d_n_windows",
+   "box3d_n_yaw",
+   "box3d_n_z",
+   "box3d_occ",
+   "box3d_presence",
+   "box3d_rates",
+   "box3d_size",
+   "box3d_visible_filter",
+   "box3d_yaw",
+   "box3d_z",
+   "cls",
+   "ego_injected",
+   "goal2s_err_m",
+   "goal_gate",
+   "goal_gate_grad",
+   "goal_score_absmean",
+   "goal_tac",
+   "lat",
+   "lat_tac",
+   "law",
+   "lon",
+   "lon_tac",
+   "loss",
+   "map",
+   "map_gt_drivable_frac",
+   "map_iou_drivable",
+   "map_n_labelled",
+   "map_n_windows",
+   "map_pred_drivable_frac",
+   "map_pred_drivable_prob_mean",
+   "n_map_cells",
+   "n_map_cells_seen",
+   "n_map_cells_unobserved",
+   "nav_injected",
+   "route",
+   "sel_v3",
+   "slot_valid_frac",
+   "tac_label_rows",
+   "tac_label_v7",
+   "tac_v6",
+   "tacv6_goal_bce",
+   "tacv6_goal_conf_bce",
+   "tacv6_lat_ce",
+   "tacv6_lon_ce",
+   "tacv6_n_scene_mean",
+   "tacv6_n_supervised_goal_cells",
+   "tacv6_n_supervised_lat",
+   "tacv6_n_supervised_lon",
+   "tacv6_total_weighted",
+   "traj",
+   "windows"
+  ],
+  "train_keys_not_in_eval": [
+   "cuda_max_mem_gb",
+   "data_batch",
+   "data_epoch",
+   "elapsed_s",
+   "lr",
+   "step",
+   "trunk_frame_slots",
+   "trunk_frames_computed",
+   "withheld_bank_active"
+  ],
+  "eval_keys_not_in_train": [
+   "batches",
+   "windows"
+  ],
+  "cascade_key_rows_train": 0,
+  "cascade_key_rows_eval": 0,
+  "dedup_counter_rows_after_an_eval": {
+   "n": 65,
+   "distinct_(slots,frames)": [
+    [
+     25056,
+     12064
+    ]
+   ]
+  },
+  "dedup_counter_rows_other": {
+   "n": 584,
+   "distinct_(slots,frames)": [
+    [
+     21600,
+     10398
+    ],
+    [
+     21600,
+     10400
+    ]
+   ]
+  }
+ },
+ "part2_fixed_eval_subset": {
+  "len_e_ds": 23772,
+  "config_eval_n_windows": 23772,
+  "perm_first8_sha": "47e87addc314",
+  "n_windows_in_subset": 128,
+  "n_distinct_episodes_in_subset": 80,
+  "per_batch": [
+   {
+    "batch": 0,
+    "n_tactical_in_band": 3,
+    "n_map_labelled": 15,
+    "n_distinct_episodes": 15
+   },
+   {
+    "batch": 1,
+    "n_tactical_in_band": 3,
+    "n_map_labelled": 16,
+    "n_distinct_episodes": 15
+   },
+   {
+    "batch": 2,
+    "n_tactical_in_band": 6,
+    "n_map_labelled": 16,
+    "n_distinct_episodes": 14
+   },
+   {
+    "batch": 3,
+    "n_tactical_in_band": 2,
+    "n_map_labelled": 16,
+    "n_distinct_episodes": 16
+   },
+   {
+    "batch": 4,
+    "n_tactical_in_band": 2,
+    "n_map_labelled": 16,
+    "n_distinct_episodes": 13
+   },
+   {
+    "batch": 5,
+    "n_tactical_in_band": 6,
+    "n_map_labelled": 16,
+    "n_distinct_episodes": 16
+   },
+   {
+    "batch": 6,
+    "n_tactical_in_band": 4,
+    "n_map_labelled": 16,
+    "n_distinct_episodes": 15
+   },
+   {
+    "batch": 7,
+    "n_tactical_in_band": 6,
+    "n_map_labelled": 16,
+    "n_distinct_episodes": 16
+   }
+  ],
+  "batches_with_zero_tactical_rows": 0,
+  "batches_with_zero_map_rows": 0,
+  "multiplicative_bias_on_eval_lat_lon_ce_terms": 1.0,
+  "note": "a batch with n = 0 contributes a COUNTED 0.0 (refcv6_tactical.py:803 `sum / keep.sum().clamp_min(1)`), and eval_<k> divides by all 8 batches, so eval_<k> = (k/8) x (mean over the k supervised batches)"
+ }
+}

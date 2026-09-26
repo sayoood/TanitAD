@@ -1,0 +1,43 @@
+{
+ "what": "Q6: constructed regressions for the guards this audit touched",
+ "evidence_class": "MEASURED (ours, dev box CPU)",
+ "G1_max_speed_sidecar": {
+  "C_real_sidecar_real_meta_run_md5": {
+   "raised": false
+  },
+  "R1_wrong_bin_row": {
+   "raised": true,
+   "type": "SpeedMaxStampError",
+   "msg": "[refcv6-vmax] \u26d4 sid 1760025021937651541: the sidecar says bin 2 but this module's ladder puts v_hi_ms=12.85 in bin 1 (50 km/h). Two ladders is two experiments; "
+  },
+  "R2_md5_mismatch_meta_present": {
+   "raised": true,
+   "type": "SpeedMaxStampError",
+   "msg": "[refcv6-vmax] \u26d4 the sidecar was built over label blob md5 'eefc38d1453bd1c73802d44d45affced' but this run loaded '00000000000000000000000000000000'. The join wo"
+  },
+  "R3_md5_mismatch_meta_ABSENT": {
+   "raised": false
+  },
+  "kit_has_meta": false,
+  "verdict": {
+   "R1_red": true,
+   "R2_red": true,
+   "R3_red": false,
+   "C_green": true
+  }
+ },
+ "G3_label_time": {
+  "guard": "|t_trainer(row) - t_true(row)| <= 0.05 s (PROPOSED; none exists)",
+  "n_checks": 408,
+  "shipped_mapping_violations": 408,
+  "fixed_mapping_passes": 408,
+  "worst_shipped_offset_s": 0.5161,
+  "verdict": {
+   "shipped_red": true,
+   "fixed_green": true
+  }
+ },
+ "G2_pretrained_weights": {
+  "skipped": "RAM < 8.8 GB at the time (brief rule 6)"
+ }
+}
