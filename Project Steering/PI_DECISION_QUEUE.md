@@ -1775,3 +1775,17 @@ The PI, verbatim: *"update CLAUDE.md with the corrected rate"*. It is done in `2
 
 Part 1, the public `tanitad-refc-v3` HF card, is STILL OPEN. Its default stands: the card is
 unchanged.
+
+### ✅ RESOLVED (2026-09-26 ~19:25 Berlin) — three PI answers in one message
+
+The PI, verbatim: *"you can download opencv on D: 1 let it unchanged, 4: I solved with other agent"*.
+
+1. **The public `tanitad-refc-v3` HF card** (part 1 of the yaw-rate item) stays **UNCHANGED**, by the PI's decision.
+   - The corrected LATERAL verdict lives in `MODEL_REGISTRY.md`, `LEADERBOARD.md` and `RETR-2026-09-26-YAWMASK`.
+2. **The OpenCV 4.5.4 reference download** (`…/2026-09-26-suite-runnability-audit/RESULT.md` §23a) is **APPROVED and EXECUTED**.
+   - Location: `D:/venvs/opencv-ref-454/`.
+   - Contents: both wheels checked against PyPI's sizes and sha256 (50,838,841 B), installed offline with `--no-deps`, and
+     asserted to be `cv2.__version__ == "4.5.4"`. Receipts are beside the venv.
+   - Rendering and banking the reference rasters is with the EvalFlyWheel.
+3. **"A second training seed" and "REFe scorer supervision"** (item 4 of the Master Mind's status list) were **solved by
+   the PI with another agent**. Their resolution is recorded in that session, not here.
