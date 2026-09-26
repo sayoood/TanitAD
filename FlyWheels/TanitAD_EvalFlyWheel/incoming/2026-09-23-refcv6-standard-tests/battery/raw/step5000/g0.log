@@ -1,0 +1,39 @@
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] rig camera = PER-CLIP EXTRINSICS from D:\refcv6_eval_kit\data\refcv6_train_eval139_extrinsics.json (4508 clips, z 1.203-1.687 m, pitch -0.0755..+0.0683 rad)
+[v3] ⚠️ a rig camera is built but --agent-w-project and --agent-w-ground are both 0: neither monocular term contributes. That is a legal ablation baseline and the stamp records it, but it is not a projection arm.
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+[g0] model built in 5.6 s; strict missing=0 unexpected=0 step=5000; param_breakdown equal=True; levers={'chunk_ckpt': 8, 'frozen_bn': True, 'bn_pinned': 104, 'relu_out_of_place': 100, 'bf16': True, 'channels_last': True, 'bn_folded': 104, 'dedup_frames': True}
+[v2] D:\refcv6_eval_kit\data\refcv6-b1-416x1024-eval139: 139 providers (channels 9, 416x1024 px), episode ids from 'episode_uid' [collision-free; the as-built 16-bit ids would give only 139 distinct for 139 clips]
+[v2] 139 providers, 139 distinct episode ids
+[v3] nav_from_v7: follow 88 / left 13 / right 38, missing 0 (of 139 clips; md5=eefc38d1453bd1c73802d44d45affced)
+[v3] max_speed_input_v6 (4-way one-hot): 147/147 sidecar rows carry a ceiling, 23772/23772 windows fed (100.0 %), 1 clips ABOVE the 120 km/h top step (clamped, and on those the fed ceiling is one the ego demonstrably exceeded)
+[v3] agent join: 139/139 episodes (stable-63bit), 22663/23772 windows labelled (95.3 %), 776801 prefilter target boxes, pad 397
+[v3] SAM3 map GT: 23430/23772 windows covered (0.9856, floor 0.90, verdict PASS) over 139 clips; states {'ok': 23430, 'no_file': 342, 'frame_out_of_range': 0, 'inconclusive': 0}; layouts ['flat_sha12']
+[g0] eval dataset: 139 episodes -> 23772 windows (203s); subset 128
+[g0] wrapper control: max rel diff 3.921e-03 over 81 terms -> FAIL; flagged merge rules {'out.sel_tele.reach_frac_candidates_clipped': 'wmean', 'out.sel_tele.reach_frac_windows_empty': 'wmean', 'out.goal_gate_value': 'wmean', 'out.goal_score_absmean': 'wmean', 'out.vmax_over_ceiling_frac': 'wmean', 'out.tacv6_valid_frac': 'wmean', 'out.seam_goal_sel_ratio_preclamp_mean': 'wmean', 'out.seam_goal_sel_ratio_preclamp_max': 'wmean', 'out.seam_goal_sel_ratio_max': 'wmean', 'out.seam_goal_sel_bound_frac': 'wmean'}
+[g0] seed 0: eval_loss 28.71974 eval_traj 0.63392 lat_tac 0.77642 (247s, peak 5.34 GiB)
+[g0] seed 1: eval_loss 28.69724 eval_traj 0.65006 lat_tac 0.77642 (250s, peak 5.34 GiB)
+[g0] seed 2: eval_loss 28.75175 eval_traj 0.65379 lat_tac 0.77642 (254s, peak 5.34 GiB)
+[g0] seed 3: eval_loss 28.67928 eval_traj 0.6464 lat_tac 0.77642 (282s, peak 5.34 GiB)
+[g0] seed 4: eval_loss 28.72106 eval_traj 0.64359 lat_tac 0.77642 (245s, peak 5.34 GiB)
+[g0] seed 5: eval_loss 28.71177 eval_traj 0.64249 lat_tac 0.77642 (233s, peak 5.34 GiB)
+[g0] seed 6: eval_loss 28.67219 eval_traj 0.63282 lat_tac 0.77642 (242s, peak 5.34 GiB)
+[g0] seed 7: eval_loss 28.70214 eval_traj 0.65993 lat_tac 0.77642 (244s, peak 5.34 GiB)
+[g0] M1: eval_loss 28.71912 map 0.75826
+{
+ "G0": "FAIL",
+ "reasons": [
+  "wrapper control failed: max rel 3.921e-03",
+  "M1 (no equalize) stayed inside the SMOOTH tolerance: the gate has no power -> VOID"
+ ],
+ "n_terms": 83,
+ "by_class_counts": {
+  "MATCHED": 15,
+  "COUNT": 42,
+  "SMOOTH": 20,
+  "EXCLUDED": 1,
+  "STOCHASTIC": 5
+ }
+}
+[g0] wrote C:\Users\Admin\ev6_battery\raw\step5000\g0.json (2478.1 s)

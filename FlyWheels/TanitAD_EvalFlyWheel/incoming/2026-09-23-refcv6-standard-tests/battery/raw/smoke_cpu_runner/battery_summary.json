@@ -1,0 +1,920 @@
+{
+ "tool": "run_battery.py",
+ "tag": "smoke_runner",
+ "ckpt": "D:/refcv6_eval_kit/ckpt/ckpt_step1000.pt",
+ "ckpt_md5": "7c3ad3c1fbf3d30be5c7733e7b436c65",
+ "step": 1000,
+ "config": "D:\\refcv6_eval_kit\\ckpt\\config.json",
+ "spec_sha256": "32625b9a95f077036e44890219c1d10e4f46d815f88906ea306741f56c85eb03",
+ "is_milestone": false,
+ "started": "2026-09-24T00:43:13",
+ "stages": {
+  "gate": {
+   "skipped": "--skip-gate (smoke)"
+  },
+  "g0": {
+   "G0": "SKIPPED (--no-g0)"
+  },
+  "roll_s0": {
+   "seed": 0,
+   "dump_dir": "C:\\Users\\Admin\\ev6_battery\\raw\\smoke_runner\\dump_s0",
+   "wall_s": 143.3,
+   "n_windows": 6,
+   "n_episodes": 6,
+   "skipped": 0,
+   "extras": {
+    "n_windows": 6,
+    "keys": [
+     "clip_index",
+     "gt_max_speed_6s",
+     "lat_v7",
+     "lon_v7",
+     "nav_flipped.lat_logits_tac",
+     "nav_flipped.lon_logits_tac",
+     "nav_flipped.sel_idx",
+     "nav_flipped.tacv6_goal_conf",
+     "nav_flipped.tacv6_goal_logits",
+     "nav_flipped.tacv6_lat_logits",
+     "nav_flipped.tacv6_lon_logits",
+     "nav_flipped.traj",
+     "nav_shuffled.lat_logits_tac",
+     "nav_shuffled.lon_logits_tac",
+     "nav_shuffled.sel_idx",
+     "nav_shuffled.tacv6_goal_conf",
+     "nav_shuffled.tacv6_goal_logits",
+     "nav_shuffled.tacv6_lat_logits",
+     "nav_shuffled.tacv6_lon_logits",
+     "nav_shuffled.traj",
+     "nav_true.lat_logits_tac",
+     "nav_true.lon_logits_tac",
+     "nav_true.sel_idx",
+     "nav_true.tacv6_goal_conf",
+     "nav_true.tacv6_goal_logits",
+     "nav_true.tacv6_lat_logits",
+     "nav_true.tacv6_lon_logits",
+     "nav_true.traj",
+     "nav_zero.lat_logits_tac",
+     "nav_zero.lon_logits_tac",
+     "nav_zero.sel_idx",
+     "nav_zero.tacv6_goal_conf",
+     "nav_zero.tacv6_goal_logits",
+     "nav_zero.tacv6_lat_logits",
+     "nav_zero.tacv6_lon_logits",
+     "nav_zero.traj",
+     "obey30.n_fan_compliant",
+     "obey30.planned_max_ms",
+     "obey30.traj",
+     "tac_goal_w",
+     "tac_goal_y",
+     "v0",
+     "v_max_ms",
+     "v_max_valid",
+     "vmax_zero.lat_logits_tac",
+     "vmax_zero.lon_logits_tac",
+     "vmax_zero.sel_idx",
+     "vmax_zero.tacv6_goal_conf",
+     "vmax_zero.tacv6_goal_logits",
+     "vmax_zero.tacv6_lat_logits",
+     "vmax_zero.tacv6_lon_logits",
+     "vmax_zero.traj",
+     "ws"
+    ],
+    "clip_sha12_by_index": {
+     "0": "0dfe63214bc2",
+     "1": "c64f0103aece",
+     "2": "54e3dc4b3ae4",
+     "3": "d0c6db065fa0",
+     "4": "c8831556989f",
+     "5": "bfc3a203bd06"
+    },
+    "proxy_calls": 12
+   },
+   "cuda_max_memory_allocated_gib": 0.0,
+   "model_record": {
+    "state_dict": {
+     "strict": true,
+     "missing": [],
+     "unexpected": [],
+     "n_keys": 1101,
+     "ckpt_keys": [
+      "data_pos",
+      "opt",
+      "step"
+     ],
+     "step": 1000
+    },
+    "param_breakdown": {
+     "rebuilt": {
+      "core": 90734473,
+      "phi_tac": 2101504,
+      "str_goal_head": 771,
+      "gstr_cond": 66816,
+      "tac_heads": 14364,
+      "tac_latent_proj": 262656,
+      "scorer": 1145,
+      "nav_inject": 50176,
+      "tac_decoder_v6": 2253828,
+      "tac_behaviour_gate_v6": 2574,
+      "total": 100893747
+     },
+     "config_json": {
+      "core": 90734473,
+      "phi_tac": 2101504,
+      "str_goal_head": 771,
+      "gstr_cond": 66816,
+      "tac_heads": 14364,
+      "tac_latent_proj": 262656,
+      "scorer": 1145,
+      "nav_inject": 50176,
+      "tac_decoder_v6": 2253828,
+      "tac_behaviour_gate_v6": 2574,
+      "total": 100893747
+     },
+     "equal": true
+    },
+    "anchor_file_vs_ckpt_buffers": {
+     "core.decoder.anchors": {
+      "shape": [
+       117,
+       8,
+       2
+      ],
+      "max_abs_diff": 0.0
+     },
+     "core.decoder.anchor_controls": {
+      "shape": [
+       117,
+       2
+      ],
+      "max_abs_diff": 0.0
+     }
+    },
+    "trunk_memory_levers_built": {
+     "chunk_ckpt": 8,
+     "frozen_bn": true,
+     "bn_pinned": 104,
+     "relu_out_of_place": 100,
+     "bf16": true,
+     "channels_last": true,
+     "bn_folded": 104,
+     "dedup_frames": true
+    },
+    "departures": [
+     "train():6946 `assert_ground_prior_is_supervised` (a startup gradient probe) is NOT run: it measures a training property and writes nothing the forward or the loss reads"
+    ]
+   },
+   "window_restriction": {
+    "n_requested": 6,
+    "n_index_before": 23772,
+    "n_index_after": 6,
+    "source": "banked baseline grid (clip, ws), kit clips"
+   },
+   "frame_memo": {
+    "hits": 140,
+    "misses": 180
+   }
+  },
+  "roll_s1": {
+   "seed": 1,
+   "dump_dir": "C:\\Users\\Admin\\ev6_battery\\raw\\smoke_runner\\dump_s1",
+   "wall_s": 293.0,
+   "n_windows": 6,
+   "n_episodes": 6,
+   "skipped": 0,
+   "extras": {
+    "n_windows": 6,
+    "keys": [
+     "clip_index",
+     "gt_max_speed_6s",
+     "lat_v7",
+     "lon_v7",
+     "nav_flipped.lat_logits_tac",
+     "nav_flipped.lon_logits_tac",
+     "nav_flipped.sel_idx",
+     "nav_flipped.tacv6_goal_conf",
+     "nav_flipped.tacv6_goal_logits",
+     "nav_flipped.tacv6_lat_logits",
+     "nav_flipped.tacv6_lon_logits",
+     "nav_flipped.traj",
+     "nav_shuffled.lat_logits_tac",
+     "nav_shuffled.lon_logits_tac",
+     "nav_shuffled.sel_idx",
+     "nav_shuffled.tacv6_goal_conf",
+     "nav_shuffled.tacv6_goal_logits",
+     "nav_shuffled.tacv6_lat_logits",
+     "nav_shuffled.tacv6_lon_logits",
+     "nav_shuffled.traj",
+     "nav_true.lat_logits_tac",
+     "nav_true.lon_logits_tac",
+     "nav_true.sel_idx",
+     "nav_true.tacv6_goal_conf",
+     "nav_true.tacv6_goal_logits",
+     "nav_true.tacv6_lat_logits",
+     "nav_true.tacv6_lon_logits",
+     "nav_true.traj",
+     "nav_zero.lat_logits_tac",
+     "nav_zero.lon_logits_tac",
+     "nav_zero.sel_idx",
+     "nav_zero.tacv6_goal_conf",
+     "nav_zero.tacv6_goal_logits",
+     "nav_zero.tacv6_lat_logits",
+     "nav_zero.tacv6_lon_logits",
+     "nav_zero.traj",
+     "obey30.n_fan_compliant",
+     "obey30.planned_max_ms",
+     "obey30.traj",
+     "tac_goal_w",
+     "tac_goal_y",
+     "v0",
+     "v_max_ms",
+     "v_max_valid",
+     "vmax_zero.lat_logits_tac",
+     "vmax_zero.lon_logits_tac",
+     "vmax_zero.sel_idx",
+     "vmax_zero.tacv6_goal_conf",
+     "vmax_zero.tacv6_goal_logits",
+     "vmax_zero.tacv6_lat_logits",
+     "vmax_zero.tacv6_lon_logits",
+     "vmax_zero.traj",
+     "ws"
+    ],
+    "clip_sha12_by_index": {
+     "0": "0dfe63214bc2",
+     "1": "c64f0103aece",
+     "2": "54e3dc4b3ae4",
+     "3": "d0c6db065fa0",
+     "4": "c8831556989f",
+     "5": "bfc3a203bd06"
+    },
+    "proxy_calls": 12
+   },
+   "cuda_max_memory_allocated_gib": 0.0,
+   "model_record": {
+    "state_dict": {
+     "strict": true,
+     "missing": [],
+     "unexpected": [],
+     "n_keys": 1101,
+     "ckpt_keys": [
+      "data_pos",
+      "opt",
+      "step"
+     ],
+     "step": 1000
+    },
+    "param_breakdown": {
+     "rebuilt": {
+      "core": 90734473,
+      "phi_tac": 2101504,
+      "str_goal_head": 771,
+      "gstr_cond": 66816,
+      "tac_heads": 14364,
+      "tac_latent_proj": 262656,
+      "scorer": 1145,
+      "nav_inject": 50176,
+      "tac_decoder_v6": 2253828,
+      "tac_behaviour_gate_v6": 2574,
+      "total": 100893747
+     },
+     "config_json": {
+      "core": 90734473,
+      "phi_tac": 2101504,
+      "str_goal_head": 771,
+      "gstr_cond": 66816,
+      "tac_heads": 14364,
+      "tac_latent_proj": 262656,
+      "scorer": 1145,
+      "nav_inject": 50176,
+      "tac_decoder_v6": 2253828,
+      "tac_behaviour_gate_v6": 2574,
+      "total": 100893747
+     },
+     "equal": true
+    },
+    "anchor_file_vs_ckpt_buffers": {
+     "core.decoder.anchors": {
+      "shape": [
+       117,
+       8,
+       2
+      ],
+      "max_abs_diff": 0.0
+     },
+     "core.decoder.anchor_controls": {
+      "shape": [
+       117,
+       2
+      ],
+      "max_abs_diff": 0.0
+     }
+    },
+    "trunk_memory_levers_built": {
+     "chunk_ckpt": 8,
+     "frozen_bn": true,
+     "bn_pinned": 104,
+     "relu_out_of_place": 100,
+     "bf16": true,
+     "channels_last": true,
+     "bn_folded": 104,
+     "dedup_frames": true
+    },
+    "departures": [
+     "train():6946 `assert_ground_prior_is_supervised` (a startup gradient probe) is NOT run: it measures a training property and writes nothing the forward or the loss reads"
+    ]
+   },
+   "window_restriction": {
+    "n_requested": 6,
+    "n_index_before": 23772,
+    "n_index_after": 6,
+    "source": "banked baseline grid (clip, ws), kit clips"
+   },
+   "frame_memo": {
+    "hits": 140,
+    "misses": 180
+   }
+  },
+  "panel_s0": {
+   "pairing": {
+    "b_refcv4b": {
+     "clips_missing": 0,
+     "ws_equal_clips": 0,
+     "g_bit_equal_windows": 6,
+     "g_max_abs_diff": 0.0,
+     "model_free_bit_equal": {
+      "ha": 6,
+      "ha0": 6,
+      "ha0_ext": 6
+     },
+     "model_free_max_abs_diff": {
+      "ha": 0.0,
+      "ha0": 0.0,
+      "ha0_ext": 0.0
+     },
+     "n_windows_paired": 6
+    },
+    "b_refcv5v2_s0": {
+     "clips_missing": 0,
+     "ws_equal_clips": 0,
+     "g_bit_equal_windows": 6,
+     "g_max_abs_diff": 0.0,
+     "model_free_bit_equal": {
+      "ha": 6,
+      "ha0": 6,
+      "ha0_ext": 6
+     },
+     "model_free_max_abs_diff": {
+      "ha": 0.0,
+      "ha0": 0.0,
+      "ha0_ext": 0.0
+     },
+     "n_windows_paired": 6
+    },
+    "b_refcv5v2_s1": {
+     "clips_missing": 0,
+     "ws_equal_clips": 0,
+     "g_bit_equal_windows": 6,
+     "g_max_abs_diff": 0.0,
+     "model_free_bit_equal": {
+      "ha": 6,
+      "ha0": 6,
+      "ha0_ext": 6
+     },
+     "model_free_max_abs_diff": {
+      "ha": 0.0,
+      "ha0": 0.0,
+      "ha0_ext": 0.0
+     },
+     "n_windows_paired": 6
+    }
+   },
+   "void_gates_3_4": {
+    "pass": true,
+    "failures": []
+   },
+   "arms": [
+    "os",
+    "ha",
+    "ha0",
+    "ha0_ext",
+    "os_navshuf",
+    "os_navzero",
+    "oracle_sel",
+    "os_navflip",
+    "stop",
+    "b_refcv4b",
+    "b_refcv5v2_s0",
+    "b_refcv5v2_s1",
+    "os_vmaxzero"
+   ],
+   "n_windows": 6
+  },
+  "void_gates_s0": {
+   "stop": {
+    "max_abs_displacement_m": 0.0,
+    "ade_stop_minus_mean_gt_distance_max_abs": 0.0,
+    "pass": true
+   },
+   "ha0": {
+    "max_abs_own_curvature_1pm": 0.0,
+    "tactical_lat_kappa": null,
+    "tactical_lon_kappa": 0.0,
+    "pass": true
+   },
+   "profiles": {
+    "selection_degenerate": false,
+    "selection_modal_frac": 0.5,
+    "n_distinct_selected": 2,
+    "os_trivial_frac": 0.0
+   },
+   "pass_1_2": true
+  },
+  "analysis_s0": {
+   "s6": {
+    "n_windows": 6,
+    "n_dropped_6s_future": 0,
+    "n_episodes": 6,
+    "grid": {
+     "name": "6s",
+     "dt_s": 1.0,
+     "k": 6,
+     "horizons_steps": [
+      10,
+      20,
+      30,
+      40,
+      50,
+      60
+     ],
+     "slots": [
+      1,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "instants_s": [
+      1.0,
+      2.0,
+      3.0,
+      4.0,
+      5.0,
+      6.0
+     ],
+     "dropped_model_slots": [
+      5,
+      15
+     ],
+     "n_frames": 60
+    }
+   },
+   "tflip": "NOT_RUN",
+   "obedience": "UNPOWERED"
+  },
+  "panel_s1": {
+   "pairing": {
+    "b_refcv4b": {
+     "clips_missing": 0,
+     "ws_equal_clips": 0,
+     "g_bit_equal_windows": 6,
+     "g_max_abs_diff": 0.0,
+     "model_free_bit_equal": {
+      "ha": 6,
+      "ha0": 6,
+      "ha0_ext": 6
+     },
+     "model_free_max_abs_diff": {
+      "ha": 0.0,
+      "ha0": 0.0,
+      "ha0_ext": 0.0
+     },
+     "n_windows_paired": 6
+    },
+    "b_refcv5v2_s0": {
+     "clips_missing": 0,
+     "ws_equal_clips": 0,
+     "g_bit_equal_windows": 6,
+     "g_max_abs_diff": 0.0,
+     "model_free_bit_equal": {
+      "ha": 6,
+      "ha0": 6,
+      "ha0_ext": 6
+     },
+     "model_free_max_abs_diff": {
+      "ha": 0.0,
+      "ha0": 0.0,
+      "ha0_ext": 0.0
+     },
+     "n_windows_paired": 6
+    },
+    "b_refcv5v2_s1": {
+     "clips_missing": 0,
+     "ws_equal_clips": 0,
+     "g_bit_equal_windows": 6,
+     "g_max_abs_diff": 0.0,
+     "model_free_bit_equal": {
+      "ha": 6,
+      "ha0": 6,
+      "ha0_ext": 6
+     },
+     "model_free_max_abs_diff": {
+      "ha": 0.0,
+      "ha0": 0.0,
+      "ha0_ext": 0.0
+     },
+     "n_windows_paired": 6
+    }
+   },
+   "void_gates_3_4": {
+    "pass": true,
+    "failures": []
+   },
+   "arms": [
+    "os",
+    "ha",
+    "ha0",
+    "ha0_ext",
+    "os_navshuf",
+    "os_navzero",
+    "oracle_sel",
+    "os_navflip",
+    "stop",
+    "b_refcv4b",
+    "b_refcv5v2_s0",
+    "b_refcv5v2_s1",
+    "os_vmaxzero"
+   ],
+   "n_windows": 6
+  },
+  "void_gates_s1": {
+   "stop": {
+    "max_abs_displacement_m": 0.0,
+    "ade_stop_minus_mean_gt_distance_max_abs": 0.0,
+    "pass": true
+   },
+   "ha0": {
+    "max_abs_own_curvature_1pm": 0.0,
+    "tactical_lat_kappa": null,
+    "tactical_lon_kappa": 0.0,
+    "pass": true
+   },
+   "profiles": {
+    "selection_degenerate": false,
+    "selection_modal_frac": 0.5,
+    "n_distinct_selected": 2,
+    "os_trivial_frac": 0.0
+   },
+   "pass_1_2": true
+  },
+  "analysis_s1": {
+   "s6": {
+    "n_windows": 6,
+    "n_dropped_6s_future": 0,
+    "n_episodes": 6,
+    "grid": {
+     "name": "6s",
+     "dt_s": 1.0,
+     "k": 6,
+     "horizons_steps": [
+      10,
+      20,
+      30,
+      40,
+      50,
+      60
+     ],
+     "slots": [
+      1,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "instants_s": [
+      1.0,
+      2.0,
+      3.0,
+      4.0,
+      5.0,
+      6.0
+     ],
+     "dropped_model_slots": [
+      5,
+      15
+     ],
+     "n_frames": 60
+    }
+   },
+   "tflip": "NOT_RUN",
+   "obedience": "UNPOWERED"
+  },
+  "echo_gate_s0": {
+   "status": "OK",
+   "per_reference": {
+    "ha": {
+     "n_slots": 4,
+     "n_slots_passing": 0,
+     "all_slots_pass": false,
+     "relative_margin_by_slot": [
+      -4.14189,
+      -6.7783,
+      -6.43276,
+      -4.80344
+     ],
+     "separated_by_slot": [
+      true,
+      true,
+      true,
+      true
+     ]
+    },
+    "ha0": {
+     "n_slots": 4,
+     "n_slots_passing": 0,
+     "all_slots_pass": false,
+     "relative_margin_by_slot": [
+      -0.89756,
+      -1.36786,
+      -1.30014,
+      -1.22967
+     ],
+     "separated_by_slot": [
+      true,
+      true,
+      true,
+      true
+     ]
+    },
+    "ha0_ext": {
+     "n_slots": 4,
+     "n_slots_passing": 0,
+     "all_slots_pass": false,
+     "relative_margin_by_slot": [
+      -4.06719,
+      -6.74833,
+      -6.18817,
+      -4.84641
+     ],
+     "separated_by_slot": [
+      true,
+      true,
+      true,
+      true
+     ]
+    }
+   },
+   "margins": "refcv5_compare BAR_PRIMARY relative_margin_required (INHERITED, not a refcv6 bar)"
+  },
+  "criteria_s0": {
+   "registry_version": "2.9.0",
+   "per_artifact": {
+    "analysis_s0.json": {
+     "scope": "IN_SCOPE",
+     "tier": "T1",
+     "n_violations": 0,
+     "n_work_items": 6
+    }
+   }
+  },
+  "echo_gate_s1": {
+   "status": "OK",
+   "per_reference": {
+    "ha": {
+     "n_slots": 4,
+     "n_slots_passing": 0,
+     "all_slots_pass": false,
+     "relative_margin_by_slot": [
+      -4.18536,
+      -6.89493,
+      -6.58128,
+      -4.91541
+     ],
+     "separated_by_slot": [
+      true,
+      true,
+      true,
+      true
+     ]
+    },
+    "ha0": {
+     "n_slots": 4,
+     "n_slots_passing": 0,
+     "all_slots_pass": false,
+     "relative_margin_by_slot": [
+      -0.9136,
+      -1.40337,
+      -1.3461,
+      -1.27269
+     ],
+     "separated_by_slot": [
+      true,
+      true,
+      true,
+      true
+     ]
+    },
+    "ha0_ext": {
+     "n_slots": 4,
+     "n_slots_passing": 0,
+     "all_slots_pass": false,
+     "relative_margin_by_slot": [
+      -4.11003,
+      -6.86452,
+      -6.3318,
+      -4.95921
+     ],
+     "separated_by_slot": [
+      true,
+      true,
+      true,
+      true
+     ]
+    }
+   },
+   "margins": "refcv5_compare BAR_PRIMARY relative_margin_required (INHERITED, not a refcv6 bar)"
+  },
+  "criteria_s1": {
+   "registry_version": "2.9.0",
+   "per_artifact": {
+    "analysis_s1.json": {
+     "scope": "IN_SCOPE",
+     "tier": "T1",
+     "n_violations": 0,
+     "n_work_items": 6
+    }
+   }
+  }
+ },
+ "SMOKE_RESTRICTED_S2": true,
+ "S2": {
+  "n_clips": 6,
+  "n_windows": 6,
+  "source": "C:/Users/Admin/refcv5cmp/out/refcv4b_devbox_dump"
+ },
+ "inference_seed_replicate": {
+  "max_abs_path_diff_m": 0.388916015625,
+  "ade": {
+   "delta": -0.0184,
+   "lo": -0.1128,
+   "hi": 0.0692,
+   "ci95": 0.091,
+   "p_delta_gt0": 0.405,
+   "separated": false,
+   "reducer": "mean",
+   "n_windows": 6,
+   "n_episodes": 6,
+   "n_boot": 200,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "n_dropped_nonfinite": 0
+  }
+ },
+ "bars": [
+  {
+   "id": "BAR-R6-1",
+   "surface": "S2",
+   "a": "ha0_ext",
+   "b": "os",
+   "metric": "ade_m",
+   "statement": "refcv6 beats the ECHO control: os - ha0_ext < 0, CI upper < 0",
+   "per_inference_seed": {
+    "0": {
+     "delta": 0.8365,
+     "lo": 0.5892,
+     "hi": 1.051,
+     "separated": true,
+     "n_windows": 6,
+     "n_episodes": 6,
+     "pass": false
+    },
+    "1": {
+     "delta": 0.8549,
+     "lo": 0.5504,
+     "hi": 1.141,
+     "separated": true,
+     "n_windows": 6,
+     "n_episodes": 6,
+     "pass": false
+    }
+   },
+   "verdict": "NOT EVALUATED (pipeline validation checkpoint; SPEC \u00a73.6)"
+  },
+  {
+   "id": "BAR-R6-2",
+   "surface": "S2",
+   "a": "ha",
+   "b": "os",
+   "metric": "ade_m",
+   "statement": "refcv6 beats HOLD-ACTION: os - ha < 0, separated",
+   "per_inference_seed": {
+    "0": {
+     "delta": 0.8374,
+     "lo": 0.5877,
+     "hi": 1.0544,
+     "separated": true,
+     "n_windows": 6,
+     "n_episodes": 6,
+     "pass": false
+    },
+    "1": {
+     "delta": 0.8558,
+     "lo": 0.5488,
+     "hi": 1.1442,
+     "separated": true,
+     "n_windows": 6,
+     "n_episodes": 6,
+     "pass": false
+    }
+   },
+   "verdict": "NOT EVALUATED (pipeline validation checkpoint; SPEC \u00a73.6)"
+  },
+  {
+   "id": "BAR-R6-3",
+   "surface": "S2",
+   "a": "b_refcv4b",
+   "b": "os",
+   "metric": "ade_m",
+   "statement": "refcv6 beats refcv4b: os - refcv4b.os < 0, separated",
+   "per_inference_seed": {
+    "0": {
+     "delta": 0.7399,
+     "lo": 0.4964,
+     "hi": 0.9813,
+     "separated": true,
+     "n_windows": 6,
+     "n_episodes": 6,
+     "pass": false
+    },
+    "1": {
+     "delta": 0.7583,
+     "lo": 0.4421,
+     "hi": 1.0895,
+     "separated": true,
+     "n_windows": 6,
+     "n_episodes": 6,
+     "pass": false
+    }
+   },
+   "verdict": "NOT EVALUATED (pipeline validation checkpoint; SPEC \u00a73.6)"
+  },
+  {
+   "id": "BAR-R6-4",
+   "surface": "S2",
+   "a": "b_refcv5v2_s0",
+   "b": "os",
+   "metric": "ade_m",
+   "statement": "refcv6 beats refcv5-v2 (seed 0): os - refcv5v2.os < 0, separated",
+   "per_inference_seed": {
+    "0": {
+     "delta": 0.72,
+     "lo": 0.4817,
+     "hi": 0.9628,
+     "separated": true,
+     "n_windows": 6,
+     "n_episodes": 6,
+     "pass": false
+    },
+    "1": {
+     "delta": 0.7384,
+     "lo": 0.4269,
+     "hi": 1.071,
+     "separated": true,
+     "n_windows": 6,
+     "n_episodes": 6,
+     "pass": false
+    }
+   },
+   "verdict": "NOT EVALUATED (pipeline validation checkpoint; SPEC \u00a73.6)"
+  },
+  {
+   "id": "BAR-R6-5",
+   "surface": "S6",
+   "a": "ha0_ext",
+   "b": "os",
+   "metric": "ade_m",
+   "statement": "at 6 s: os - ha0_ext (ADE 0-6 s) < 0, separated",
+   "per_inference_seed": {
+    "0": {
+     "delta": 3.7136,
+     "lo": 2.4981,
+     "hi": 5.0503,
+     "separated": true,
+     "n_windows": 6,
+     "n_episodes": 6,
+     "pass": false
+    },
+    "1": {
+     "delta": 3.8197,
+     "lo": 2.5319,
+     "hi": 5.3323,
+     "separated": true,
+     "n_windows": 6,
+     "n_episodes": 6,
+     "pass": false
+    }
+   },
+   "verdict": "NOT EVALUATED (pipeline validation checkpoint; SPEC \u00a73.6)"
+  }
+ ],
+ "finished": "2026-09-24T00:52:12"
+}
