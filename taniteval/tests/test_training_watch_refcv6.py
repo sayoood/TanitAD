@@ -29,8 +29,12 @@ ROOT = Path(__file__).resolve().parents[2]
 BUILDER = ROOT / "taniteval" / "tools" / "training_watch" / "build_watch_refcv6.py"
 
 
-def _load(monkeypatch, run_dir):
+def _load(monkeypatch, run_dir, eval_pkg=None, eval_live=None):
     monkeypatch.setenv("REFCV6_WATCH_DIR", str(run_dir))
+    # hermetic by default: an EMPTY eval package, so no test reads the real NavSim / battery results
+    # and no verdict chip on the page can satisfy an assertion about a health chip
+    monkeypatch.setenv("REFCV6_EVAL_PKG", str(eval_pkg or run_dir / "no_eval_pkg"))
+    monkeypatch.setenv("REFCV6_EVAL_LIVE", str(eval_live or run_dir / "no_eval_live"))
     spec = importlib.util.spec_from_file_location("build_watch_refcv6_under_test", BUILDER)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
@@ -179,3 +183,83 @@ def test_an_UNREAD_supervisor_count_fails(tmp_path, monkeypatch):
     page, summary = mod.build()
     assert summary["n_err"] is None and summary["token_ok"] is False
     assert "tracebacks NOT READ" in page
+
+
+# ---------------------------------------------------------------- NavSim + battery (2026-09-26) ----
+def _eval_pkg(tmp_path):
+    """A banked step 5000 (all three splits) and a step 30000 with only warmup banked; the live lane
+    has started step 30000's navtest (a bridge dir) but not its navhard."""
+    pkg, live = tmp_path / "evalpkg", tmp_path / "evallive"
+    m5 = pkg / "navsim" / "raw" / "milestones" / "step5000"
+    m30 = pkg / "navsim" / "raw" / "milestones" / "step30000"
+    m5.mkdir(parents=True)
+    m30.mkdir(parents=True)
+    iv = {"lo": 0.443, "hi": 0.4836}
+    arms_nt = {"R6_A1": {"NC": 75.5146, "DAC": 73.2505, "TTC": 61.1806, "EP": 47.2631, "C": 99.9835, "DDC": 89.1734,
+                         "PDMS": 46.4846, "interval": iv},
+               "STOP": {"PDMS": 61.8202}, "CV": {"PDMS": 20.6517}, "HUMAN": {"PDMS": 94.5514}}
+    (m5 / "summary_navtest.json").write_text(json.dumps({"n_tokens": 12146, "arms": arms_nt, "pairs": {
+        "R6_A1__minus__STOP": {"interval": {"delta": -0.1534, "lo": -0.1829, "hi": -0.1277}}}}), encoding="utf-8")
+    (m5 / "summary_navhard.json").write_text(json.dumps({"arms": {
+        "R6_A1": {"official_two_stage_EPDMS": 0.1512, "n_stage2": 5462}, "STOP_zero": {"official_two_stage_EPDMS": 0.2985},
+        "CV_official": {"official_two_stage_EPDMS": 0.1148}, "ECHO_ha0_ext": {"official_two_stage_EPDMS": 0.1429}}}),
+        encoding="utf-8")
+    for d in (m5, m30):
+        (d / "summary_warmup.json").write_text(json.dumps({"arms": {"R6_A1": {"n_stage2": 204}}}), encoding="utf-8")
+    warm = lambda v, m: {"verdict": "FAIL", "values": {"R6_A1": v, "CV_official": 0.3971, "STOP_zero": 0.5212,
+                                                      "ECHO_ha0_ext": 0.4287}, "margin": m, "seed_floor": 0.0157,
+                         "interval": "UNAVAILABLE (7 logs < 8)"}
+    (m5 / "BARS.json").write_text(json.dumps({"bars": {
+        "warmup": warm(0.3966, -0.1247),
+        "navhard": {"verdict": "FAIL", "paired_vs_STOP": {"delta": -0.1473, "lo": -0.1794, "hi": -0.1137}},
+        "navtest": {"verdict": "FAIL", "stretch_published": {"RefPlanner": "77.7 PDMS (a banked reference)"}}}}),
+        encoding="utf-8")
+    (m30 / "BARS.json").write_text(json.dumps({"bars": {
+        "warmup": warm(0.4753, -0.046),
+        "navhard": {"status": "UNAVAILABLE"}, "navtest": {"status": "UNAVAILABLE"}}}), encoding="utf-8")
+    (live / "navsim" / "raw" / "milestones" / "step30000" / "bridge_navtest").mkdir(parents=True)
+    bat = pkg / "battery" / "raw" / "step5000"
+    bat.mkdir(parents=True)
+    (bat / "battery_summary.json").write_text(json.dumps({"bars": [
+        {"id": "BAR-R6-1", "statement": "refcv6 beats the ECHO control", "verdict": "FAIL",
+         "per_inference_seed": {"0": {"delta": 0.0885, "lo": 0.0695, "hi": 0.1094, "separated": True,
+                                      "n_windows": 4754, "n_episodes": 139}}}]}), encoding="utf-8")
+    return pkg, live
+
+
+def test_navsim_kpis_are_read_from_the_banked_milestones_and_a_started_split_reads_running(tmp_path, monkeypatch):
+    pkg, live = _eval_pkg(tmp_path)
+    mod = _load(monkeypatch, _run_dir(tmp_path), eval_pkg=pkg, eval_live=live)
+    page, summary = mod.build()
+    assert summary["navsim"] == {"5000": {"navtest": 46.4846, "navhard": 0.1512, "warmup": 0.3966},
+                                 "30000": {"navtest": "running", "navhard": "not run", "warmup": 0.4753}}
+    assert summary["battery_steps"] == [5000]
+    assert "<b>46.48</b> [44.30, 48.36]" in page                  # PDMS x100 with its log-cluster interval
+    assert "vs STOP -15.34 [-18.29, -12.77]" in page             # the paired read against the STOP plan
+    assert "<b>0.1512</b>" in page and "<b>0.4753</b>" in page
+    assert "pre-switch: F3 detach-only" in page                   # both checkpoints predate the A16 fixes
+    assert "RefPlanner: 77.7 PDMS (a banked reference)" in page   # the published line is READ, never typed
+    assert "No checkpoint beats the STOP plan yet on any split" in page
+    assert "BAR-R6-1" in page and 'class="chip crit verdict"' in page
+
+
+def test_a_checkpoint_that_BEATS_STOP_does_not_get_the_no_checkpoint_sentence(tmp_path, monkeypatch):
+    pkg, live = _eval_pkg(tmp_path)
+    m30 = pkg / "navsim" / "raw" / "milestones" / "step30000" / "BARS.json"
+    bars = json.loads(m30.read_text(encoding="utf-8"))
+    bars["bars"]["warmup"]["values"]["R6_A1"] = 0.6001          # above STOP 0.5212
+    bars["bars"]["warmup"]["verdict"] = "PASS"
+    m30.write_text(json.dumps(bars), encoding="utf-8")
+    mod = _load(monkeypatch, _run_dir(tmp_path), eval_pkg=pkg, eval_live=live)
+    page, summary = mod.build()
+    assert summary["navsim"]["30000"]["warmup"] == 0.6001
+    assert "No checkpoint beats the STOP plan yet" not in page
+    assert 'class="chip good verdict"' in page
+
+
+def test_an_unreadable_eval_package_shows_nothing_rather_than_a_guess(tmp_path, monkeypatch):
+    mod = _load(monkeypatch, _run_dir(tmp_path))                  # the default: an empty eval package
+    page, summary = mod.build()
+    assert "No banked NavSim milestone was readable" in page
+    assert summary["navsim"] == {} and summary["battery_steps"] == []
+    assert 'class="chip crit verdict"' not in page and 'class="chip good verdict"' not in page

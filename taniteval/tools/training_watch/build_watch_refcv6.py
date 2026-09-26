@@ -62,6 +62,13 @@ ERR_PAT = re.compile("Trace" "back|CUDA out of mem" "ory|OutOfMemory")
 # <tracebacks> can span a newline ("0\n0": grep -c prints 0 AND exits 1, then `|| echo 0`)
 TOKEN_RE = re.compile(r"ZZrefcv6-r101-s0-(-?\d+)-(\d+)-([^Z]*?)-(\d+)ZZ")
 STDERR_CAP = 65536
+# The EvalFlyWheel's NavSim suite + four-family battery on snapshotted checkpoints, read as BANKED (the
+# package the agents write to) -- never typed. A split a lane has started but not banked reads "running".
+EVAL_PKG = os.environ.get("REFCV6_EVAL_PKG", r"D:\Projects\TanitAD\FlyWheels\TanitAD_EvalFlyWheel\incoming"
+                                             r"\2026-09-23-refcv6-standard-tests")
+EVAL_LIVE = os.environ.get("REFCV6_EVAL_LIVE", r"C:\Users\Admin\ev6\FlyWheels\TanitAD_EvalFlyWheel\incoming"
+                                               r"\2026-09-23-refcv6-standard-tests")
+SWITCH_STEP = 34500      # the A16 switch: checkpoints after it are "hybrid" (GOALS D-REFCV6-A16-SWITCH)
 
 
 # ------------------------------------------------------------------ pull ----
@@ -156,6 +163,198 @@ def fmt(x, nd=3):
 
 def esc(s) -> str:
     return _html.escape(str(s), quote=True)
+
+
+# ------------------------------------------------------- NavSim + battery ---
+def _jload(path):
+    try:
+        with open(path, encoding="utf-8") as fh:
+            return json.load(fh)
+    except (OSError, ValueError):
+        return None
+
+
+def stamp_for(step: int) -> str:
+    return ("pre-switch: F3 detach-only, F4 on the last layer only; tactical labels ~0.37 s early"
+            if step <= SWITCH_STEP else "hybrid: F3 + true label clock from step 34,500")
+
+
+def _steps_with(root, marker):
+    out = []
+    if os.path.isdir(root):
+        for name in os.listdir(root):
+            m = re.fullmatch(r"step(\d+)", name)
+            if m and os.path.isfile(os.path.join(root, name, marker)):
+                out.append(int(m.group(1)))
+    return sorted(out)
+
+
+def _num(x):
+    return x if isinstance(x, (int, float)) and not isinstance(x, bool) and math.isfinite(x) else None
+
+
+def navsim_read():
+    """Per checkpoint and split: the headline KPI, its controls, the paired read vs STOP and the bar
+    verdict -- or the split's status ("running" / "not run") when nothing is banked for it."""
+    ms = os.path.join(EVAL_PKG, "navsim", "raw", "milestones")
+    live = os.path.join(EVAL_LIVE, "navsim", "raw", "milestones")
+    res, published = {}, {}
+    for step in _steps_with(ms, "BARS.json"):
+        d = os.path.join(ms, f"step{step}")
+        bars = (_jload(os.path.join(d, "BARS.json")) or {}).get("bars", {})
+        pub = (bars.get("navtest") or {}).get("stretch_published") if isinstance(bars.get("navtest"), dict) else None
+        if isinstance(pub, dict) and pub:
+            published = pub                          # the banked reference text, read, never typed
+        row = {}
+        for split in ("navtest", "navhard", "warmup"):
+            s = _jload(os.path.join(d, f"summary_{split}.json"))
+            b = bars.get(split, {}) if isinstance(bars.get(split), dict) else {}
+            if not s or b.get("status") == "UNAVAILABLE":
+                ld = os.path.join(live, f"step{step}")
+                started = any(os.path.exists(os.path.join(ld, f"{p}_{split}")) for p in ("bridge", "scores"))
+                row[split] = {"status": "running" if started else "not run"}
+                continue
+            arms = s.get("arms", {})
+            if split == "navtest":
+                def pd(a):
+                    return _num((arms.get(a) or {}).get("PDMS"))
+                a1 = arms.get("R6_A1") or {}
+                iv = a1.get("interval") or {}
+                pv = ((s.get("pairs") or {}).get("R6_A1__minus__STOP") or {}).get("interval") or {}
+                row[split] = {"status": "ok", "metric": "PDMS (×100)", "value": pd("R6_A1"),
+                              "lo": _num(iv.get("lo")) and iv["lo"] * 100, "hi": _num(iv.get("hi")) and iv["hi"] * 100,
+                              "STOP": pd("STOP"), "CV": pd("CV"), "HUMAN": pd("HUMAN"), "refcv4b": pd("refcv4b_A1"),
+                              "d_stop": _num(pv.get("delta")) and pv["delta"] * 100,
+                              "d_lo": _num(pv.get("lo")) and pv["lo"] * 100, "d_hi": _num(pv.get("hi")) and pv["hi"] * 100,
+                              "n": s.get("n_tokens"), "verdict": b.get("verdict"),
+                              "sub": {a: {k: _num((arms.get(a) or {}).get(k)) for k in ("NC", "DAC", "TTC", "EP", "C", "DDC", "PDMS")}
+                                      for a in ("R6_A1", "STOP", "CV", "HUMAN", "refcv4b_A1") if a in arms}}
+            elif split == "navhard":
+                def ep(a):
+                    return _num((arms.get(a) or {}).get("official_two_stage_EPDMS"))
+                pv = b.get("paired_vs_STOP") or {}
+                row[split] = {"status": "ok", "metric": "two-stage EPDMS", "value": ep("R6_A1"),
+                              "seed1": ep("R6_A1_s1"), "STOP": ep("STOP_zero"), "CV": ep("CV_official"),
+                              "ECHO": ep("ECHO_ha0_ext"), "d_stop": _num(pv.get("delta")),
+                              "d_lo": _num(pv.get("lo")), "d_hi": _num(pv.get("hi")),
+                              "n": (arms.get("R6_A1") or {}).get("n_stage2"), "verdict": b.get("verdict")}
+            else:
+                v = b.get("values") or {}
+                row[split] = {"status": "ok", "metric": "S2-EPDMS-u", "value": _num(v.get("R6_A1")),
+                              "STOP": _num(v.get("STOP_zero")), "CV": _num(v.get("CV_official")),
+                              "ECHO": _num(v.get("ECHO_ha0_ext")), "margin": _num(b.get("margin")),
+                              "floor": _num(b.get("seed_floor")), "interval": b.get("interval"),
+                              "n": (arms.get("R6_A1") or {}).get("n_stage2"), "verdict": b.get("verdict")}
+        res[step] = row
+    return res, published
+
+
+def battery_read():
+    """The battery's pre-registered bars per banked tag (step<N>), both inference seeds."""
+    root = os.path.join(EVAL_PKG, "battery", "raw")
+    res = {}
+    for step in _steps_with(root, "battery_summary.json"):
+        s = _jload(os.path.join(root, f"step{step}", "battery_summary.json")) or {}
+        bars = []
+        for b in s.get("bars", []):
+            seeds = b.get("per_inference_seed") or {}
+            bars.append({"id": b.get("id"), "statement": b.get("statement"), "verdict": b.get("verdict"),
+                         "seeds": {k: (_num(v.get("delta")), _num(v.get("lo")), _num(v.get("hi")), v.get("separated"),
+                                       v.get("n_windows"), v.get("n_episodes")) for k, v in seeds.items()}})
+        lev = (_jload(os.path.join(root, f"step{step}", "levers", "levers.json")) or {}).get("L2_causal_hold_blend") or {}
+        l2 = {k: ((v.get("blend_minus_ha0_ext") or {}).get("delta"), (v.get("blend_minus_ha0_ext") or {}).get("lo"),
+                  (v.get("blend_minus_ha0_ext") or {}).get("hi")) for k, v in lev.items() if isinstance(v, dict)}
+        if bars:
+            res[step] = {"bars": bars, "l2": l2}
+    return res
+
+
+def _verdict(v):
+    if v == "PASS":
+        return '<span class="chip good verdict"><i></i>bar passed</span>'
+    if v == "FAIL":
+        return '<span class="chip crit verdict"><i></i>bar failed</span>'
+    return esc(v or "—")
+
+
+def navsim_html(ns):
+    if not ns:
+        return ('<p class="muted">No banked NavSim milestone was readable under '
+                f'<code>{esc(EVAL_PKG)}</code> — nothing is shown rather than a guess.</p>'), []
+    steps = sorted(ns)
+    ctrl = {}
+    for st_ in reversed(steps):                     # the controls are banked floors: take the latest reading
+        for split, r in ns[st_].items():
+            if r.get("status") == "ok" and split not in ctrl:
+                ctrl[split] = r
+    def cell(r, split):
+        if r.get("status") != "ok":
+            return f'<td class="muted">{esc(r.get("status"))}</td>'
+        if split == "navtest":
+            v = f'<b>{fmt(r["value"], 2)}</b> [{fmt(r["lo"], 2)}, {fmt(r["hi"], 2)}]'
+            d = f'vs STOP {fmt(r["d_stop"], 2)} [{fmt(r["d_lo"], 2)}, {fmt(r["d_hi"], 2)}]'
+        elif split == "navhard":
+            v = f'<b>{fmt(r["value"], 4)}</b> (seed 1: {fmt(r.get("seed1"), 4)})'
+            d = f'vs STOP {fmt(r["d_stop"], 4)} [{fmt(r["d_lo"], 4)}, {fmt(r["d_hi"], 4)}]'
+        else:
+            v = f'<b>{fmt(r["value"], 4)}</b>'
+            d = f'margin {fmt(r["margin"], 4)} (seed floor {fmt(r["floor"], 4)}); no interval: {esc(r.get("interval") or "—")}'
+        return f'<td class="num">{v}<br><span class="muted">{d}</span><br>{_verdict(r.get("verdict"))}</td>'
+    head = "".join(f'<th class="num">step {s:,}<br><span class="muted">{esc(stamp_for(s))}</span></th>' for s in steps)
+    lab = {"navtest": "navtest · PDMS (×100) · 12k tokens", "navhard": "navhard · official two-stage EPDMS",
+           "warmup": "warmup · S2-EPDMS-u · 204 scenes"}
+    rows = []
+    for split in ("navtest", "navhard", "warmup"):
+        c = ctrl.get(split, {})
+        nd = 2 if split == "navtest" else 4
+        rows.append(f'<tr><td>{lab[split]}</td>' + "".join(cell(ns[s].get(split, {"status": "not run"}), split) for s in steps)
+                    + f'<td class="num">{fmt(c.get("STOP"), nd)}</td><td class="num">{fmt(c.get("CV"), nd)}</td>'
+                    f'<td class="num">{fmt(c.get("ECHO"), nd)}</td><td class="num">{fmt(c.get("HUMAN"), nd)}</td></tr>')
+    table = ('<div style="overflow-x:auto"><table><tr><th>split · metric</th>' + head
+             + '<th class="num">STOP</th><th class="num">CV</th><th class="num">ECHO</th><th class="num">human</th></tr>'
+             + "".join(rows) + '</table></div>')
+    subs = []
+    for s in steps:
+        r = ns[s].get("navtest", {})
+        if r.get("status") != "ok" or not r.get("sub"):
+            continue
+        names = {"R6_A1": "refcv6", "STOP": "STOP", "CV": "CV", "HUMAN": "human", "refcv4b_A1": "refcv4b"}
+        subs.append(f'<h3>navtest PDMS sub-scores at step {s:,}</h3><div style="overflow-x:auto"><table><tr><th>arm</th>'
+                    + "".join(f'<th class="num">{k}</th>' for k in ("NC", "DAC", "TTC", "EP", "C", "DDC", "PDMS"))
+                    + "</tr>" + "".join(
+                        f'<tr><td>{names.get(a, a)}</td>' + "".join(
+                            f'<td class="num">{"<b>" if k == "PDMS" else ""}{fmt(v.get(k), 2)}{"</b>" if k == "PDMS" else ""}</td>'
+                            for k in ("NC", "DAC", "TTC", "EP", "C", "DDC", "PDMS")) + "</tr>"
+                        for a, v in r["sub"].items()) + "</table></div>")
+    tiles = []
+    for split, unit in (("navtest", 2), ("navhard", 4), ("warmup", 4)):
+        have = [(s, ns[s][split]) for s in steps if ns[s].get(split, {}).get("status") == "ok"]
+        if have:
+            s, r = have[-1]
+            tiles.append(f'<div class="tile"><b>{fmt(r["value"], unit)}</b><span>{esc(lab[split].split(" · ")[0])} '
+                         f'{esc(r["metric"])} at step {s:,} · STOP {fmt(r.get("STOP"), unit)}</span></div>')
+    return ('<div class="tiles">' + "".join(tiles) + "</div>" + table + "".join(subs)), steps
+
+
+def battery_html(bt):
+    if not bt:
+        return ""
+    out = []
+    for s in sorted(bt):
+        b = bt[s]
+        rows = "".join(
+            f'<tr><td><b>{esc(x["id"])}</b><br><span class="muted">{esc(x["statement"])}</span></td>'
+            + "".join(f'<td class="num">{fmt(v[0], 4)} [{fmt(v[1], 4)}, {fmt(v[2], 4)}]'
+                      f'{" sep" if v[3] else ""}</td>' for _, v in sorted(x["seeds"].items()))
+            + f'<td>{_verdict(x["verdict"])}</td></tr>' for x in b["bars"])
+        l2 = b.get("l2") or {}
+        l2_line = ("<p>Zero-training lever (SPEC A4 L2, pre-registered): the plan blended with the causal kinematic hold "
+                   "beats the echo — " + " · ".join(f"{esc(k)} {fmt(v[0], 4)} [{fmt(v[1], 4)}, {fmt(v[2], 4)}]"
+                                                   for k, v in sorted(l2.items())) + " (m, ADE 0–2 s).</p>") if l2 else ""
+        out.append(f'<h3>Four-family battery (T1) at step {s:,} <span class="muted">— {esc(stamp_for(s))}</span></h3>'
+                   '<div style="overflow-x:auto"><table><tr><th>bar</th><th class="num">inference seed 0</th>'
+                   '<th class="num">inference seed 1</th><th>verdict</th></tr>' + rows + "</table></div>" + l2_line)
+    return "".join(out)
 
 
 # ---------------------------------------------------------------- charts ---
@@ -546,6 +745,25 @@ def build() -> str:
         neg = sum(1 for v in cvals if v < 0)
         says.append(f"<li><b>Gradient conflict.</b> {len(cvals)} readings since the switch: mean cosine "
                     f"{sum(cvals)/len(cvals):+.3f}, {neg} of {len(cvals)} below zero.</li>")
+    ns, ns_pub = navsim_read()
+    bt = battery_read()
+    ns_html, ns_steps = navsim_html(ns)
+    bt_html = battery_html(bt)
+    if ns_steps:
+        parts = []
+        for s in ns_steps:
+            got = [f"{sp} {ns[s][sp]['metric']} {fmt(ns[s][sp]['value'], 2 if sp == 'navtest' else 4)} "
+                   f"(STOP {fmt(ns[s][sp].get('STOP'), 2 if sp == 'navtest' else 4)})"
+                   for sp in ("navtest", "navhard", "warmup") if ns[s].get(sp, {}).get("status") == "ok"]
+            run = [sp for sp in ("navtest", "navhard", "warmup") if ns[s].get(sp, {}).get("status") == "running"]
+            parts.append(f"step {s:,}: " + ("; ".join(got) or "nothing banked")
+                         + (f"; {', '.join(run)} running" if run else ""))
+        says.append("<li><b>NavSim (open loop, EvalFlyWheel).</b> " + " · ".join(parts)
+                    + ". No checkpoint beats the STOP plan yet on any split.</li>"
+                    if all(ns[s][sp].get("value") is not None and ns[s][sp].get("STOP") is not None
+                           and ns[s][sp]["value"] < ns[s][sp]["STOP"]
+                           for s in ns_steps for sp in ns[s] if ns[s][sp].get("status") == "ok")
+                    else "<li><b>NavSim (open loop, EvalFlyWheel).</b> " + " · ".join(parts) + ".</li>")
     doesnt = ["<li>⛔ <b>Nothing here is driving performance.</b> The in-run eval is a T0 world-model diagnostic on "
               f"{ev_windows[0] if ev_windows else '—'} fixed held-out windows. Driving claims come from the four-family "
               "T1 battery and the NavSim suite (EvalFlyWheel), on snapshotted checkpoints — never on Thor while it trains.</li>",
@@ -604,6 +822,17 @@ def build() -> str:
 {evals_table}
 <h3>The four metric families</h3>
 {fam}
+{bt_html}
+
+<h2>NavSim — benchmark KPIs per checkpoint</h2>
+<p>The EvalFlyWheel's NavSim suite on the snapshotted checkpoints (never on Thor while it trains): an <b>open-loop
+benchmark</b>, zero-shot, never closed loop. Each KPI is paired against the model-free controls on the same scenes: STOP
+(an all-zero plan), CV (constant velocity), ECHO (the kinematic extrapolation) and the human log. navtest and navhard carry
+a paired log-cluster bootstrap against STOP; warmup has too few logs for an interval, so its bar uses a seed floor.
+Checkpoints at or before step {SWITCH_STEP:,} predate the A16 fixes.</p>
+{ns_html}
+<p class="muted">{("Published references, not our measurements (as banked by the suite): " + " · ".join(esc(k) + ": " + esc(v) for k, v in ns_pub.items()) + ". ") if ns_pub else ""}Source: the suite's <code>raw/milestones/step*/BARS.json</code> and
+<code>summary_*.json</code>, read by this builder.</p>
 
 <h2>What it says, and what it does not</h2>
 <div class="diag"><div><h3>What it says</h3><ul>{"".join(says)}</ul></div>
@@ -650,7 +879,10 @@ built by <code>taniteval/tools/training_watch/build_watch_refcv6.py</code>, no h
                "stderr_read_ok": stderr_read_ok and not stderr_truncated,
                "sup_alive": sup_alive, "train_alive": tr_alive, "done": done,
                "cd_last_step": cd_last and cd_last["step"], "cd_cos_last": cd_last and cd_last.get("cd_cos"),
-               "readings_ok": readings_ok, "mem_peak_gb": round(mem_peak, 3)}
+               "readings_ok": readings_ok, "mem_peak_gb": round(mem_peak, 3),
+               "navsim": {str(s): {sp: (r.get("value") if r.get("status") == "ok" else r.get("status"))
+                                   for sp, r in ns[s].items()} for s in ns_steps},
+               "battery_steps": sorted(bt)}
     return page, summary
 
 
