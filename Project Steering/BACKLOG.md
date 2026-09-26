@@ -366,3 +366,25 @@ provisionable), the other charter benchmarks, and the checkpoint steps to snapsh
 ready before refcv6-r101-s0 finishes (≈ 2026-09-27). **Master Mind side:** snapshot the requested
 checkpoints (md5) to the dev box; the run's training reports are the "refcv6 Training Watch"
 artifact, refreshed at 00/04/08/12/16/20:13 Berlin.
+
+<!-- COORD-LANDING-FOLLOWUPS-2026-09-26 -->
+
+### OPEN — 2026-09-26 · two follow-ups from the coordinated landing · owner: EvalFlyWheel (leaderboard + internal_t1 streams)
+
+The PI asked (2026-09-26) for all work to be committed and pushed, coordinated. The Master Mind
+landed D:'s staged backlog in ten guarded commits, `da27b38` .. `4ac00b4`. Two items could not be
+closed by landing alone:
+
+1. **`test_leaderboard.py::test_fixture_is_valid_under_the_w1_contract_and_current` passes only on a
+   CRLF checkout.** `taniteval/taniteval/leaderboard/sources.py:50` hashes a source's raw working-tree
+   bytes (`short_sha`). The committed fixture holds the sha12 of the CRLF bytes of
+   `…/2026-09-19-navsim-warmup-reference-epdms/raw/controls.json` (`5d297aeb2beb`), while its repo blob
+   is LF (`dc6d84bb4cae`). MEASURED on a clean git-archive tree: the test fails on any LF checkout,
+   pods included. Four sibling tests likewise assume `LEADERBOARD.md` is CRLF: they pass once it is,
+   75/76 green. **Fix:** hash EOL-normalised bytes, or the blob, and regenerate the fixture. Do not
+   regenerate it without that fix, or it will fail again on the next differently-configured checkout.
+2. **One bench result was withheld:**
+   `taniteval/results/bench/internal_t1/v2ep-eval124clean-416x1024cyl-halfB/20260920T073353Z-internal_t1-none-04264a/raw/refcv3_arm.json`
+   carries raw PhysicalAI clip ids (`"clip_id": "<uuid>"`). The clip-id rule keeps new ones out of
+   the record. It is still on D:, staged. **Fix:** re-emit it with `sha12(clip_id)`, and check
+   whether its run summary cites the file's hash.
