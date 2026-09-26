@@ -525,17 +525,21 @@
     "driving",
     "ego-input",
     "input-pipeline",
+    "nuscenes",
+    "nuscenes-openloop-planning",
     "resnet-trunk",
     "rl-posttrain"
    ],
-   "note": "DiffusionDrive: truncated diffusion policy over ANCHORED trajectory priors, ResNet/BEV encoder + diffusion planner. THE paper REF-C is derived from (D-030: 'REF-C redesigned to a DiffusionDrive anchored decoder'). Was UNBANKED until 2026-08-21 despite being REF-C's origin. | DiffusionDrive: three cropped forward cams concatenated as a 1024x256 image, ResNet-34, 88.1 PDMS NAVSIM | DDv2 analysis 2026-09-05: v1 counterparts read at 9b52ed0 (norm_odo, 2-layer cascade, forward_train) | REF-C vs DiffusionDrive v1/v2 implementation audit (2026-09-05): decoder is an unrolled residual refiner, not a diffusion model; selection never sees the refined fan | RL post-training design for refcv4b/refcv5 (2026-09-05): DDv2's released RL stage explores a TWO-SCALAR (a_lon,a_lat) scale family, additive DDPM term multiplied by zero, so a deterministic fan needs no sampler to be post-trained faithfully | resnet-trunk review 2026-09-15: DD v1 image trunk = timm ResNet-34 ImageNet-init (supp. A), LiDAR ResNet-34 scratch, E2E 100 ep bs512 lr6e-4, 1024x256 single frame, 60M/45FPS (Tab.2) | resnet-trunk review 2026-09-15 (verified vs released code): image_encoder lr_mult 0.5 -> 3e-4, 3-ep warm-up + cosine (transfuser_config.py:123-127, transfuser_agent.py:170-175); ToTensor [0,1] with NO ImageNet mean/std (transfuser_features.py:73); single frame (cameras[-1], GPT asserts seq_len==1); learned pos_emb in fusion GPT + _keyval_embedding on planner KV; paper 4.2 'from scratch' = single-stage training, image trunk still ImageNet-init (supp. A)",
+   "note": "DiffusionDrive: truncated diffusion policy over ANCHORED trajectory priors, ResNet/BEV encoder + diffusion planner. THE paper REF-C is derived from (D-030: 'REF-C redesigned to a DiffusionDrive anchored decoder'). Was UNBANKED until 2026-08-21 despite being REF-C's origin. | DiffusionDrive: three cropped forward cams concatenated as a 1024x256 image, ResNet-34, 88.1 PDMS NAVSIM | DDv2 analysis 2026-09-05: v1 counterparts read at 9b52ed0 (norm_odo, 2-layer cascade, forward_train) | REF-C vs DiffusionDrive v1/v2 implementation audit (2026-09-05): decoder is an unrolled residual refiner, not a diffusion model; selection never sees the refined fan | RL post-training design for refcv4b/refcv5 (2026-09-05): DDv2's released RL stage explores a TWO-SCALAR (a_lon,a_lat) scale family, additive DDPM term multiplied by zero, so a deterministic fan needs no sampler to be post-trained faithfully | resnet-trunk review 2026-09-15: DD v1 image trunk = timm ResNet-34 ImageNet-init (supp. A), LiDAR ResNet-34 scratch, E2E 100 ep bs512 lr6e-4, 1024x256 single frame, 60M/45FPS (Tab.2) | resnet-trunk review 2026-09-15 (verified vs released code): image_encoder lr_mult 0.5 -> 3e-4, 3-ep warm-up + cosine (transfuser_config.py:123-127, transfuser_agent.py:170-175); ToTensor [0,1] with NO ImageNet mean/std (transfuser_features.py:73); single frame (cameras[-1], GPT asserts seq_len==1); learned pos_emb in fusion GPT + _keyval_embedding on planner KV; paper 4.2 'from scratch' = single-stage training, image trunk still ImageNet-init (supp. A) | nuScenes open-loop planning row re-read from the banked PDF for the W6 harness (protocol-tagged external comparability only; H-EVAL-6) | refcv6 diffusion review 2026-09-22: F2's t->t-1 reproduces from the RELEASED code (set_timesteps(1000) => prev_t = t-1), residual retained 0.9475 vs 0.2828 MEASURED; focal gamma2.0/alpha0.25 reduction mean ports exactly; DD clamps INSIDE the test loop (:519) and our F8 clamps once outside",
    "cited_by": [
+    "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-nuscenes-planning-harness/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-21-refcv3-review/REFCV3_REVIEW.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-diffusiondrive-v2-analysis/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-refc-vs-diffusiondrive-audit/RESULT.md",
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-rl-posttrain-refcv4b-refcv5/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-rl-posttrain-refcv4b-refcv5/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-22-refcv6-review/DIFFUSION_PAPER_REVIEW.md"
    ]
   },
   "2603.14482": {
@@ -708,11 +712,13 @@
    "tags": [
     "data-scaling",
     "input-pipeline",
+    "refe-sizing",
     "resnet-trunk"
    ],
-   "note": "World-model future-image prediction as aux signal AMPLIFIES the data scaling law for VLA driving (NAVSIM v1/v2, 680x in-house corpus) - dense self-supervision beats action-only supervision at scale | DriveVLA-W0: NAVSIM SOTA 93.0 PDMS from a SINGLE front camera at 256x144 - lowest resolution in the survey | resnet-trunk review 2026-09-15: DriveVLA-W0 Tab.3: TransFuser-50M ResNet-34 vs TransFuser-7B DINOv3 at 70k/700k/70M frames under action-only supervision | resnet-trunk review 2026-09-15: Tab.3 p.9 ADE at 70k/700k/70M frames, action-only: TransFuser-50M (ResNet-34) 2.5893/1.7464/1.2627 vs TransFuser-7B (DINOv3-init ViT-7B) 2.5757/2.1391/1.2244 - a pretrained 7B backbone does not rescue sparse action supervision",
+   "note": "World-model future-image prediction as aux signal AMPLIFIES the data scaling law for VLA driving (NAVSIM v1/v2, 680x in-house corpus) - dense self-supervision beats action-only supervision at scale | DriveVLA-W0: NAVSIM SOTA 93.0 PDMS from a SINGLE front camera at 256x144 - lowest resolution in the survey | resnet-trunk review 2026-09-15: DriveVLA-W0 Tab.3: TransFuser-50M ResNet-34 vs TransFuser-7B DINOv3 at 70k/700k/70M frames under action-only supervision | resnet-trunk review 2026-09-15: Tab.3 p.9 ADE at 70k/700k/70M frames, action-only: TransFuser-50M (ResNet-34) 2.5893/1.7464/1.2627 vs TransFuser-7B (DINOv3-init ViT-7B) 2.5757/2.1391/1.2244 - a pretrained 7B backbone does not rescue sparse action supervision | DriveVLA-W0: Table 4 -- the action-decoder ranking REVERSES with data scale; query-based is best at NAVSIM 103k frames (88.4 PDMS) and is beaten by autoregressive at 70M frames",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/MODULE_SIZING_STUDY.md",
     "TanitAD Research Lab/Data Engineering/2026-08-22-lab-run-001/RESULT.md"
    ]
   },
@@ -2289,11 +2295,14 @@
     "drivor-analysis",
     "ego-input",
     "input-pipeline",
+    "navsim",
+    "navsim-v1",
     "nuscenes",
     "resnet-trunk"
    ],
-   "note": "NAVSIM v1 NeurIPS2024: non-reactive pseudo-simulation, PDMS, navtrain/navtest | NAVSIM: ~75% of nuScenes is trivial straight driving; displacement metrics uncorrelated with closed-loop; PDMS alternative | NAVSIM v1: navtrain 103k / navtest 12k, 450GB standalone; PDMS = aggregated post-simulation subscores, aligns with closed-loop better than traditional open-loop metrics | NAVSIM Table 2 sensor ablation: front-only 60deg FOV vs 3-cam concat 140/160deg vs 5-cam 240deg PDMS | resnet-trunk review 2026-09-15: navtrain 103k samples from OpenScene 120 h @2Hz; LTF camera-only 83.8 vs TransFuser 84.0 (Tab.1); no-BEV-seg 84.0->81.6 (Tab.2 E1)",
+   "note": "NAVSIM v1 NeurIPS2024: non-reactive pseudo-simulation, PDMS, navtrain/navtest | NAVSIM: ~75% of nuScenes is trivial straight driving; displacement metrics uncorrelated with closed-loop; PDMS alternative | NAVSIM v1: navtrain 103k / navtest 12k, 450GB standalone; PDMS = aggregated post-simulation subscores, aligns with closed-loop better than traditional open-loop metrics | NAVSIM Table 2 sensor ablation: front-only 60deg FOV vs 3-cam concat 140/160deg vs 5-cam 240deg PDMS | resnet-trunk review 2026-09-15: navtrain 103k samples from OpenScene 120 h @2Hz; LTF camera-only 83.8 vs TransFuser 84.0 (Tab.1); no-BEV-seg 84.0->81.6 (Tab.2 E1) | NAVSIM v1.1 navtest reference table re-read 2026-09-19 for W3: Tab.1 p.7 CV 68.0/57.8/50.0/100/19.4/20.6, Human 100/100/100/99.9/87.5/94.8, EgoStatusMLP 93.0/77.3/83.6/100/62.8/65.6; Tab.3 p.9 (NAVSIM 1.1 leaderboard, 3 seeds) TransFuser 83.9+-0.4, LTF 83.5+-0.6, EgoStatusMLP 66.4+-0.9, Hydra-MDP 91.3, CV 20.6; filtering rule p.5: scenes with CV PDMS>0.8 or human<0.8 were REMOVED (W3 control C5)",
    "cited_by": [
+    "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-v1-navtest/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-19-drivor-deep-analysis/RESULT.md",
@@ -2432,12 +2441,16 @@
     "ego-input",
     "input-pipeline",
     "nuscenes",
+    "nuscenes-openloop-planning",
+    "refe-sizing",
     "resnet-trunk"
    ],
-   "note": "UniAD: at-timestep (NoAvg) L2 convention; canonical L2 0.48/0.96/1.65 avg 1.03 | UniAD: 1600x900 input, ResNet-101, BEV 200x200 over [-51.2,51.2]m = 0.512 m/cell | resnet-trunk review 2026-09-15: UniAD loads BEVFormer weights; image backbone FROZEN in both stages (App. E.6); 125.0M, 1.8 FPS A100 (Tab.13)",
+   "note": "UniAD: at-timestep (NoAvg) L2 convention; canonical L2 0.48/0.96/1.65 avg 1.03 | UniAD: 1600x900 input, ResNet-101, BEV 200x200 over [-51.2,51.2]m = 0.512 m/cell | resnet-trunk review 2026-09-15: UniAD loads BEVFormer weights; image backbone FROZEN in both stages (App. E.6); 125.0M, 1.8 FPS A100 (Tab.13) | nuScenes open-loop planning row re-read from the banked PDF for the W6 harness (protocol-tagged external comparability only; H-EVAL-6) | UniAD: at D=256 the Planner is 3 layers -- the shallowest module in the stack, against 6 for TrackFormer and MapFormer and 5 for OccFormer",
    "cited_by": [
+    "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-nuscenes-planning-harness/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/MODULE_SIZING_STUDY.md",
     "products/P7-TanitEval/BENCHMARKS_SPEC.md",
     "products/P7-TanitEval/benchmarks/NUSCENES_PROTOCOL.md"
    ]
@@ -2470,10 +2483,12 @@
     "benchmarks",
     "ego-status-leak",
     "input-pipeline",
-    "nuscenes"
+    "nuscenes",
+    "nuscenes-openloop-planning"
    ],
-   "note": "AD-MLP: ego-status-only MLP tops nuScenes open-loop L2; the shortcut NAVSIM claims to fix | AD-MLP: ego-state-only MLP, no perception, matches SOTA open-loop L2 on nuScenes; uses ST-P3 (TemAvg) eval | AD-MLP: perception-free MLP (past traj+velocity only) cuts nuScenes open-loop L2 ~20pct vs perception methods - the open-loop indictment | AD-MLP: an MLP on ego state ALONE (no perception) beats camera E2E methods on nuScenes open-loop L2 - open-loop metrics can be won by echoing ego state",
+   "note": "AD-MLP: ego-status-only MLP tops nuScenes open-loop L2; the shortcut NAVSIM claims to fix | AD-MLP: ego-state-only MLP, no perception, matches SOTA open-loop L2 on nuScenes; uses ST-P3 (TemAvg) eval | AD-MLP: perception-free MLP (past traj+velocity only) cuts nuScenes open-loop L2 ~20pct vs perception methods - the open-loop indictment | AD-MLP: an MLP on ego state ALONE (no perception) beats camera E2E methods on nuScenes open-loop L2 - open-loop metrics can be won by echoing ego state | nuScenes open-loop planning row re-read from the banked PDF for the W6 harness (protocol-tagged external comparability only; H-EVAL-6)",
    "cited_by": [
+    "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-nuscenes-planning-harness/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
     "TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-29-benchmark-portfolio/RESULT.md",
     "TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-30-anti-echo-control-precedent/RESULT.md",
@@ -2507,10 +2522,12 @@
     "ego-input",
     "input-pipeline",
     "nuscenes",
+    "nuscenes-openloop-planning",
     "resnet-trunk"
    ],
-   "note": "SparseDrive: re-implements collision rate (0.5m grid + fixed-heading drawbacks); L2 aligned to VAD protocol | SparseDrive: -S 256x704 / -B 512x1408; sparse queries not dense BEV | resnet-trunk review 2026-09-15: SparseDrive R50 256x704 / R101 512x1408; stage-2 nothing frozen, backbone lr x0.1 (Tab.7); 85.9M 9.0 FPS 4090",
+   "note": "SparseDrive: re-implements collision rate (0.5m grid + fixed-heading drawbacks); L2 aligned to VAD protocol | SparseDrive: -S 256x704 / -B 512x1408; sparse queries not dense BEV | resnet-trunk review 2026-09-15: SparseDrive R50 256x704 / R101 512x1408; stage-2 nothing frozen, backbone lr x0.1 (Tab.7); 85.9M 9.0 FPS 4090 | nuScenes open-loop planning row re-read from the banked PDF for the W6 harness (protocol-tagged external comparability only; H-EVAL-6)",
    "cited_by": [
+    "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-nuscenes-planning-harness/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md",
     "products/P7-TanitEval/BENCHMARKS_SPEC.md",
@@ -2766,12 +2783,15 @@
     "driving",
     "ego-input",
     "input-pipeline",
+    "nuscenes",
+    "nuscenes-openloop-planning",
     "open-loop-eval",
     "sota-2026-09-03",
     "sota-2026-09-03-decodability"
    ],
-   "note": "BEV-Planner Is Ego Status All You Need: quantifies the nuScenes ego shortcut; proposes CCR | BEV-Planner: nuScenes too simple -> ego-status dominates planning; open-loop metrics do not comprehensively assess planning quality | BEV-Planner: ego status dominates open-loop nuScenes planning; open-loop L2 is a misleading metric, and ego-state shortcut inflates it | Is Ego Status All You Need: an ego-status-only MLP matches full E2E planners on nuScenes open-loop; the deployment-input ablation that exposes it | 73.9% of nuScenes is straight driving; a model that loses its input adopts a straight policy and WINS the pooled average - the mix-artefact hypothesis this stratification tested and refuted on our corpus",
+   "note": "BEV-Planner Is Ego Status All You Need: quantifies the nuScenes ego shortcut; proposes CCR | BEV-Planner: nuScenes too simple -> ego-status dominates planning; open-loop metrics do not comprehensively assess planning quality | BEV-Planner: ego status dominates open-loop nuScenes planning; open-loop L2 is a misleading metric, and ego-state shortcut inflates it | Is Ego Status All You Need: an ego-status-only MLP matches full E2E planners on nuScenes open-loop; the deployment-input ablation that exposes it | 73.9% of nuScenes is straight driving; a model that loses its input adopts a straight policy and WINS the pooled average - the mix-artefact hypothesis this stratification tested and refuted on our corpus | nuScenes open-loop planning row re-read from the banked PDF for the W6 harness (protocol-tagged external comparability only; H-EVAL-6)",
    "cited_by": [
+    "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-nuscenes-planning-harness/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-data-efficiency-thesis/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-decodability/RESULT.md",
@@ -2852,12 +2872,15 @@
    "banked": "2026-08-23",
    "tags": [
     "benchmarks",
+    "nuscenes",
+    "nuscenes-openloop-planning",
     "recovered-orphan"
    ],
    "cited_by": [
+    "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-nuscenes-planning-harness/RESULT.md",
     "products/P7-TanitEval/benchmarks/NUSCENES_PROTOCOL.md"
    ],
-   "note": "index row lost to the pre-2026-08-23 concurrent-write race; bytes verified by sha256, row rebuilt",
+   "note": "index row lost to the pre-2026-08-23 concurrent-write race; bytes verified by sha256, row rebuilt | nuScenes open-loop planning row re-read from the banked PDF for the W6 harness (protocol-tagged external comparability only; H-EVAL-6)",
    "kind": "arxiv",
    "title": "ST-P3: End-to-end Vision-based Autonomous Driving via Spatial-Temporal Feature Learning",
    "authors": [
@@ -2882,15 +2905,18 @@
     "benchmarks",
     "ego-input",
     "input-pipeline",
+    "nuscenes",
+    "nuscenes-openloop-planning",
     "recovered-orphan",
     "resnet-trunk"
    ],
    "cited_by": [
+    "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-nuscenes-planning-harness/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md",
     "products/P7-TanitEval/benchmarks/NUSCENES_PROTOCOL.md"
    ],
-   "note": "index row lost to the pre-2026-08-23 concurrent-write race; bytes verified by sha256, row rebuilt | VAD: VAD-Base 1280x720 + 200x200 BEV (L2 0.72 / coll 0.22) vs VAD-Tiny 640x360 + 100x100 BEV (L2 0.78 / coll 0.38) - halving resolution costs +8% L2 but +73% collision | resnet-trunk review 2026-09-15: VAD ResNet-50, 6 cams 1280x720 (Base), 2 s history, 60 ep; 4.5 FPS; backbone 39% of VAD-Tiny latency (Tab.5)",
+   "note": "index row lost to the pre-2026-08-23 concurrent-write race; bytes verified by sha256, row rebuilt | VAD: VAD-Base 1280x720 + 200x200 BEV (L2 0.72 / coll 0.22) vs VAD-Tiny 640x360 + 100x100 BEV (L2 0.78 / coll 0.38) - halving resolution costs +8% L2 but +73% collision | resnet-trunk review 2026-09-15: VAD ResNet-50, 6 cams 1280x720 (Base), 2 s history, 60 ep; 4.5 FPS; backbone 39% of VAD-Tiny latency (Tab.5) | nuScenes open-loop planning row re-read from the banked PDF for the W6 harness (protocol-tagged external comparability only; H-EVAL-6)",
    "kind": "arxiv",
    "title": "VAD: Vectorized Scene Representation for Efficient Autonomous Driving",
    "authors": [
@@ -3417,11 +3443,13 @@
    "tags": [
     "A5",
     "drivor-analysis",
-    "navsim"
+    "navsim",
+    "refe-sizing"
    ],
-   "note": "DrivoR (CVPR26, Valeo): camera-only, camera-aware register tokens compress multi-cam ViT features; generate+score decoders; the strongest camera-only NavSim family | DrivoR (CVPR26, Valeo) - the id LEADERBOARD.md:1036 mis-attributes to 2606.07170. Base navhard EPDMS 54.6 per two independent primaries. Parameter count (~40M, backlog row 32) UNVERIFIED - unread as of 2026-09-02. | DrivoR v2 full text: navhard 54.6 = +134k SimScale PDM-C-pseudo-labelled data variant; base ViT-S 48.3 post-fix / 45.3 pre-fix; Stage-2 shift = NAVSIM Issue #151 bug fix",
+   "note": "DrivoR (CVPR26, Valeo): camera-only, camera-aware register tokens compress multi-cam ViT features; generate+score decoders; the strongest camera-only NavSim family | DrivoR (CVPR26, Valeo) - the id LEADERBOARD.md:1036 mis-attributes to 2606.07170. Base navhard EPDMS 54.6 per two independent primaries. Parameter count (~40M, backlog row 32) UNVERIFIED - unread as of 2026-09-02. | DrivoR v2 full text: navhard 54.6 = +134k SimScale PDM-C-pseudo-labelled data variant; base ViT-S 48.3 post-fix / 45.3 pre-fix; Stage-2 shift = NAVSIM Issue #151 bug fix | DrivoR (DriveZero ref [34]): registers are APPENDED TO THE ViT INPUT and compressed by the trunk's own self-attention -- NOT a cross-attention block, which the paper explicitly rejects and ablates at 89.3 vs 90.0 PDMS; 'The decoders are 4-layer transformers with an inner dimension of 256. The feed-forward network has a dilation factor of 4'; registers init N(0,1e-6); 16/camera at a 16-32 plateau",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-19-drivor-deep-analysis/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/MODULE_SIZING_STUDY.md",
     "TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-15-epdms-stage1-fingerprint/RESULT.md",
     "TanitAD Research Lab/Opponent Analysis/Research/2026-08-28-navsim-v2-camera-lane/RESULT.md",
     "TanitAD Research Lab/Opponent Analysis/Research/2026-09-02-cw1-resolution-and-evidence-integrity/RESULT.md"
@@ -5351,11 +5379,13 @@
    "banked": "2026-08-30",
    "tags": [
     "input-pipeline",
-    "projection-distortion"
+    "projection-distortion",
+    "refe-sizing"
    ],
-   "note": "Vision Transformers Need Registers: ViTs repurpose LOW-INFORMATION patch tokens into high-norm global-computation tokens, degrading dense prediction; relevant to our ~9pct invalid/padded region",
+   "note": "Vision Transformers Need Registers: ViTs repurpose LOW-INFORMATION patch tokens into high-norm global-computation tokens, degrading dense prediction; relevant to our ~9pct invalid/padded region | Vision Transformers Need Registers (DriveZero ref [16]): 4 registers, 'one register is sufficient to remove artefacts'; these are SCRATCHPAD tokens, not a compression bottleneck -- a scope caveat for anyone quoting '4 registers' at a compressor",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/MODULE_SIZING_STUDY.md"
    ]
   },
   "1812.05752": {
@@ -5469,12 +5499,14 @@
    "banked": "2026-08-30",
    "tags": [
     "data-efficiency",
-    "input-pipeline"
+    "input-pipeline",
+    "refe-sizing"
    ],
-   "note": "Data scaling laws for E2E AD: trained at 512x960 from 3840x2160 native; ADE power law Y=0.6833*X^-0.188, r=-0.963; NO resolution ablation",
+   "note": "Data scaling laws for E2E AD: trained at 512x960 from 3840x2160 native; ADE power law Y=0.6833*X^-0.188, r=-0.963; NO resolution ablation | Data scaling laws for imitation-learning E2E AD: Y = 0.6833 X^(-0.188), Pearson r = -0.963 (NO R2 reported), fit window 10^4 to 4x10^6 demonstrations -- 10^3 is OUTSIDE the fit and the paper says nothing there",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-data-efficiency-thesis/RESULT.md",
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/MODULE_SIZING_STUDY.md"
    ]
   },
   "2305.02008": {
@@ -6204,11 +6236,13 @@
    "sha256": "e7f1066f87c7f2e2c1f3322e9cd2d8df06788c615dbe301fb8bd23cf45715ac4",
    "banked": "2026-08-30",
    "tags": [
-    "input-pipeline"
+    "input-pipeline",
+    "refe-sizing"
    ],
-   "note": "Waymo 'Scaling Laws of Motion Forecasting and Planning' (Baniodeh 2025): the primary data/model scaling-law curve for driving - axis-7 crux",
+   "note": "Waymo 'Scaling Laws of Motion Forecasting and Planning' (Baniodeh 2025): the primary data/model scaling-law curve for driving - axis-7 crux | Waymo scaling laws of motion forecasting and planning: N_opt ~ C^(0.63+-0.08), D_opt ~ C^(0.44+-0.06), i.e. optimal model size should grow ~1.5x as fast as training examples; optimal models are 50x smaller than an LLM at the same compute",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/MODULE_SIZING_STUDY.md"
    ]
   },
   "2605.00066": {
@@ -6878,11 +6912,13 @@
    "banked": "2026-08-30",
    "tags": [
     "data-efficiency",
+    "refe-sizing",
     "resnet-trunk"
    ],
-   "note": "NVIDIA/Stanford data scaling laws for E2E AD, 8192 h: open-loop FDE follows a power law but closed-loop MDBF PLATEAUS at 256 h | resnet-trunk review 2026-09-15: NVIDIA E2E data scaling 16-8192 h, ResNet-18/50; open-loop power law, closed-loop plateau ~256 h (§6)",
+   "note": "NVIDIA/Stanford data scaling laws for E2E AD, 8192 h: open-loop FDE follows a power law but closed-loop MDBF PLATEAUS at 256 h | resnet-trunk review 2026-09-15: NVIDIA E2E data scaling 16-8192 h, ResNet-18/50; open-loop power law, closed-loop plateau ~256 h (§6) | Data scaling laws for E2E AD: Table 4 -- refitting the SAME estimator on only the low-data end gives an exponent 2.74x shallower (-0.1274 vs -0.3486) and an extrapolation loss 8.2x worse; +13.1M ENCODER params bought a 63% data reduction while the 7.2M prediction head was held constant",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-data-efficiency-thesis/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-data-efficiency-thesis/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/MODULE_SIZING_STUDY.md"
    ]
   },
   "2403.02877": {
@@ -6931,10 +6967,13 @@
    "sha256": "99bd589b089f1c61ce9b74591b50212f3fef3f4bc9b91a23ac679bdef329e179",
    "banked": "2026-08-30",
    "tags": [
-    "data-efficiency"
+    "data-efficiency",
+    "refe-sizing"
    ],
-   "note": "",
-   "cited_by": []
+   "note": "MOSAIC: the only navtrain planner study at 10^2-10^3 clip budgets (100-2400 clips, 3 seeds, EPDMS 84.66-90.18); they did NOT shrink the model at small budgets, they raised EPOCHS (60 at <=800 clips, 50 at 1600, 45 at 2400); entropy-uncertainty selection is WORSE than random at every navtrain budget",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/MODULE_SIZING_STUDY.md"
+   ]
   },
   "2504.19077": {
    "key": "2504.19077",
@@ -7362,11 +7401,13 @@
    "sha256": "e3ee296bdf1b34dde4816d36207a0b2b496c66ab352299702e9efc8187e7ec07",
    "banked": "2026-08-30",
    "tags": [
-    "data-efficiency"
+    "data-efficiency",
+    "refe-sizing"
    ],
-   "note": "",
+   "note": "Data scaling laws in imitation learning for robotic manipulation: Table 2a at ~800 demos -- DINOv2 ViT-L fully fine-tuned 0.90, LoRA rank-8 0.72, FROZEN 0.00; Table 2c scaling the action decoder small/base/large = 0.88/0.90/0.83 while the ENCODER gave 0.66/0.81/0.90",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-data-efficiency-thesis/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-data-efficiency-thesis/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/MODULE_SIZING_STUDY.md"
    ]
   },
   "2301.01006": {
@@ -8346,10 +8387,12 @@
    "sha256": "ba1c5eb85c58ac4d1ab81b707019751689b2a7dc10f4d3f5db9ceb8d3ada35e3",
    "banked": "2026-08-31",
    "tags": [
-    "jepa"
+    "jepa",
+    "latent-value-planning"
    ],
-   "note": "Value-guided action planning with JEPA world models",
+   "note": "Value-guided action planning with JEPA world models | Value-guided action planning with JEPA world models (Destrade/Bounou/Le Lidec/Ponce/LeCun): latent distance in the PREDICTION space approximates negative goal-conditioned value -- but the encoder is TRAINED for it, not frozen",
    "cited_by": [
+    "TanitAD Research Lab/Deployment & Optimization/Research/2026-09-20-i1-s16-stage-replication/RESULT.md",
     "TanitAD Research Lab/Frontier Scan/Daily/2026-08-31/RESULT.md"
    ]
   },
@@ -10804,11 +10847,14 @@
    "sha256": "ddc4c057e30fef38b5c1941e472f7d5c7a897938ebc0efa049ef9d401da7e2ae",
    "banked": "2026-09-05",
    "tags": [
+    "nuscenes",
+    "nuscenes-openloop-planning",
     "vla",
     "vla-frontier-2026-09-05"
    ],
-   "note": "Senna: VLM emits meta-actions in language, E2E planner (VAD) executes; decouples high-level decision from trajectory",
+   "note": "Senna: VLM emits meta-actions in language, E2E planner (VAD) executes; decouples high-level decision from trajectory | nuScenes open-loop planning row re-read from the banked PDF for the W6 harness (protocol-tagged external comparability only; H-EVAL-6)",
    "cited_by": [
+    "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-nuscenes-planning-harness/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-extension-frontier/RESULT.md"
    ]
   },
@@ -14419,11 +14465,13 @@
    "tags": [
     "A1-world-models",
     "drivor-analysis",
-    "recovered-orphan"
+    "recovered-orphan",
+    "refe-sizing"
    ],
-   "note": "DriveZero: frozen multi-VFM consolidation +0.53 PDMS over DINOv3-only (ViT-S navtest); 5.7M privileged PPO teacher distilled to vision student; navhard two-stage 57.1 EPDMS (Scale); consumes ego+nav at inference | index row lost to the pre-2026-08-23 concurrent-write race; bytes verified by sha256, row rebuilt",
+   "note": "DriveZero: frozen multi-VFM consolidation +0.53 PDMS over DINOv3-only (ViT-S navtest); 5.7M privileged PPO teacher distilled to vision student; navhard two-stage 57.1 EPDMS (Scale); consumes ego+nav at inference | index row lost to the pre-2026-08-23 concurrent-write race; bytes verified by sha256, row rebuilt | DriveZero (the reproduction target): Table A12 gives 18.58 M trainable / 338.46 M full, 4 cams, 64 proposals, 256-d planning, 4-layer PROPOSAL decoder, 16 registers/camera -- and NO scoring-decoder depth, head count, MLP ratio or 3D-PE form; the 3D PE cites PETR [50] and the registers cite DrivoR [34]",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-19-drivor-deep-analysis/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/MODULE_SIZING_STUDY.md",
     "TanitAD Research Lab/Frontier Scan/Daily/2026-09-18/RESULT.md"
    ]
   },
@@ -14810,6 +14858,811 @@
    "note": "HAD: NAVSIM v2 navtest single-stage EPDMS row cited (INHERITED 88.6) on LEADERBOARD 9.1 - banked to re-read it and its EPDMS implementation side",
    "cited_by": [
     "Benchmarks & Eval/LEADERBOARD.md"
+   ]
+  },
+  "2606.08860": {
+   "key": "2606.08860",
+   "kind": "arxiv",
+   "title": "Vision-Language Work Zone Intelligence for Safety-Critical Speed Regulation of Mixed-Autonomy Vehicles in Dynamic Environments",
+   "authors": [
+    "Angel Martinez-Sanchez",
+    "Kianna Ng",
+    "Wesley Maia",
+    "Laura Fleig",
+    "Maitrayee Keskar",
+    "Erika Maquiling",
+    "Yash Tandon",
+    "Parthib Roy",
+    "Mohan Trivedi",
+    "Ross Greer"
+   ],
+   "published": "2026-06-07",
+   "abstract": "Temporary work-zone speed limits are communicated through visually inconsistent signage and are often missing from digital maps, creating safety risks for human drivers and automated vehicle systems. We present a real-time, onboard perception pipeline that detects active work zones, recognizes associated temporary speed limits, and outputs a law-aware work-zone state and speed value suitable for driver alerts or downstream automated control. The system fuses object detections with semantic verification and temporally smoothed, hysteresis-based state transitions to reduce false activations and flicker in dynamic scenes, and runs fully on low-cost embedded hardware. Evaluated manually on a annotated subset of the ROADWork dataset (490 sequences), the system achieves inside-work-zone event-level recall of 96.5% and event-level precision of 68.7%. Speed-limit recognition evaluated on 35 minu",
+   "url": "https://arxiv.org/abs/2606.08860",
+   "path": "TanitAD Research Lab/Library/papers/2606.08860_Vision-Language-Work-Zone-Intelligence-for-Safety-Critical-S.pdf",
+   "bytes": 3146624,
+   "sha256": "084e533ad2ee0ba6d856137cea5c559977ce23a79648a353b3cee883a450a81c",
+   "banked": "2026-09-20",
+   "tags": [
+    "speed-limit-reader"
+   ],
+   "note": "VLM speed-limit recognition on 35 min in-house driving data: 95.45 pct precision but 53.85 pct RECALL -- the one published operating point for the E-DE-SIGN-1 task, and it is recall-limited",
+   "cited_by": [
+    "TanitAD Research Lab/Data Engineering/Research/2026-09-20-sign-oracle-freeze/RESULT.md"
+   ]
+  },
+  "2609.03572": {
+   "key": "2609.03572",
+   "kind": "arxiv",
+   "title": "Drive-HWM: Hierarchical World Models for Dynamic-Latent Guided Autonomous Driving",
+   "authors": [
+    "Zhaoxin Fan",
+    "Tianbao Zhang",
+    "Wenjun Wu",
+    "Xiaofeng Wang",
+    "Yeying Jin",
+    "Jian Zhao",
+    "Zheng Zhu",
+    "Shuicheng Yan"
+   ],
+   "published": "2026-09-03",
+   "abstract": "World models offer a promising paradigm for autonomous driving by predicting how traffic scenes may evolve and using such predictions to support action generation. However, existing approaches either separate future prediction from action generation or jointly predict them at the same temporal scale, making it difficult to simultaneously achieve long-horizon anticipation and responsive, observation-grounded decision making. We present Drive-HWM, a hierarchical slow--fast world modeling framework that organizes future representation prediction and action generation at complementary temporal scales. The slow world model predicts multi-step future representations to capture extended scene evolution. To explicitly model the abundant motion dynamics in driving environments, we introduce Dynamic-Aware Latents learned through optical-flow prediction. Guided by these future representations, the ",
+   "url": "https://arxiv.org/abs/2609.03572",
+   "path": "TanitAD Research Lab/Library/papers/2609.03572_Drive-HWM-Hierarchical-World-Models-for-Dynamic-Latent-Guide.pdf",
+   "bytes": 11159583,
+   "sha256": "ff512e1c019e01c4dbff651ef0a06903aca2c16b8b123ed3c44acf0caeceaef9",
+   "banked": "2026-09-20",
+   "tags": [
+    "hierarchy-world-model"
+   ],
+   "note": "Drive-HWM: hierarchical slow-fast world model, slow=multi-step future reps, fast=next-frame+immediate action; ablations validate the hierarchical design on NAVSIM v1/v2 -- a published matched datapoint for H1b",
+   "cited_by": [
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-20/RESULT.md"
+   ]
+  },
+  "2602.11075": {
+   "key": "2602.11075",
+   "kind": "arxiv",
+   "title": "RISE: Self-Improving Robot Policy with Compositional World Model",
+   "authors": [
+    "Jiazhi Yang",
+    "Kunyang Lin",
+    "Jinwei Li",
+    "Wencong Zhang",
+    "Tianwei Lin",
+    "Longyan Wu",
+    "Zhizhong Su",
+    "Hao Zhao",
+    "Ya-Qin Zhang",
+    "Li Chen",
+    "Ping Luo",
+    "Xiangyu Yue"
+   ],
+   "published": "2026-02-11",
+   "abstract": "Despite the sustained scaling on model capacity and data acquisition, Vision-Language-Action (VLA) models remain brittle in contact-rich and dynamic manipulation tasks, where minor execution deviations can compound into failures. While reinforcement learning (RL) offers a principled path to robustness, on-policy RL in the physical world is constrained by safety risk, hardware cost, and environment reset. To bridge this gap, we present RISE, a scalable framework of robotic reinforcement learning via imagination. At its core is a Compositional World Model that (i) predicts multi-view future via a controllable dynamics model, and (ii) evaluates imagined outcomes with a progress value model, producing informative advantages for the policy improvement. Such compositional design allows state and value to be tailored by best-suited yet distinct architectures and objectives. These components are",
+   "url": "https://arxiv.org/abs/2602.11075",
+   "path": "TanitAD Research Lab/Library/papers/2602.11075_RISE-Self-Improving-Robot-Policy-with-Compositional-World-Mo.pdf",
+   "bytes": 13398492,
+   "sha256": "727d8112b18f0ff1ec796716c99b7b93597b3d4e79a157209b28550f71a97435",
+   "banked": "2026-09-20",
+   "tags": [
+    "frontier-2026-09-20"
+   ],
+   "note": "frontier scan 2026-09-20",
+   "cited_by": [
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-20/RESULT.md"
+   ]
+  },
+  "2609.06370": {
+   "key": "2609.06370",
+   "kind": "arxiv",
+   "title": "DualPathOcc: Dual-Resolution BEV Encoder for 3D Occupancy Prediction",
+   "authors": [
+    "Lihao Qiu",
+    "Jian Chen",
+    "Ruihao Wang",
+    "Ramu Gautam",
+    "Mei Yang",
+    "Yingtao Jiang"
+   ],
+   "published": "2026-09-06",
+   "abstract": "Predicting 3D occupancy from multi-view images requires preserving geometric detail during 2D-to-3D lifting while reasoning over sparse, volumetric scene representations. We present DualPathOcc, a camera-based framework that combines a Spatial Enhancer for high-resolution feature aggregation before BEV compression, a SENet-augmented dual-path BEV encoder for local-global context modeling, and height-aware weighted cross-entropy for near-ground occupancy. The final model is optimized with occupancy supervision and no explicit depth loss. On single-frame Occ3D-nuScenes, DualPathOcc achieves 37.37 mIoU. We further analyze how surface-centered depth targets interact with volumetric occupancy learning.",
+   "url": "https://arxiv.org/abs/2609.06370",
+   "path": "TanitAD Research Lab/Library/papers/2609.06370_DualPathOcc-Dual-Resolution-BEV-Encoder-for-3D-Occupancy-Pre.pdf",
+   "bytes": 6864740,
+   "sha256": "4474ccc973b02dfcdbfd6acc648c331cc81332f24b361f2998131776bfc97310",
+   "banked": "2026-09-20",
+   "tags": [
+    "frontier-2026-09-20"
+   ],
+   "note": "frontier scan 2026-09-20",
+   "cited_by": [
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-20/RESULT.md"
+   ]
+  },
+  "2511.09515": {
+   "key": "2511.09515",
+   "kind": "arxiv",
+   "title": "WMPO: World Model-based Policy Optimization for Vision-Language-Action Models",
+   "authors": [
+    "Fangqi Zhu",
+    "Zhengyang Yan",
+    "Zicong Hong",
+    "Quanxin Shou",
+    "Xiao Ma",
+    "Song Guo"
+   ],
+   "published": "2025-11-12",
+   "abstract": "Vision-Language-Action (VLA) models have shown strong potential for general-purpose robotic manipulation, but their reliance on expert demonstrations limits their ability to learn from failures and perform self-corrections. Reinforcement learning (RL) addresses these through self-improving interactions with the physical environment, but suffers from high sample complexity on real robots. We introduce World-Model-based Policy Optimization (WMPO), a principled framework for on-policy VLA RL without interacting with the real environment. In contrast to widely used latent world models, WMPO focuses on pixel-based predictions that align the \"imagined\" trajectories with the VLA features pretrained with web-scale images. Crucially, WMPO enables the policy to perform on-policy GRPO that provides stronger performance than the often-used off-policy methods. Extensive experiments in both simulation",
+   "url": "https://arxiv.org/abs/2511.09515",
+   "path": "TanitAD Research Lab/Library/papers/2511.09515_WMPO-World-Model-based-Policy-Optimization-for-Vision-Langua.pdf",
+   "bytes": 1426795,
+   "sha256": "1f3e88874bcb716ad0417347f9c6a73f1dd70c873e7872d3ceed6c57af2b7598",
+   "banked": "2026-09-20",
+   "tags": [
+    "world-model-rl"
+   ],
+   "note": "WMPO: pixel-space (NOT latent) world model for VLA policy optimization, chosen to align imagined rollouts with web-pretrained VLA features -- the actively-sought counter-argument to our semantic-target thread",
+   "cited_by": [
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-20/RESULT.md"
+   ]
+  },
+  "2606.19641": {
+   "key": "2606.19641",
+   "kind": "arxiv",
+   "title": "Scaling Self-Play for End-to-End Driving",
+   "authors": [
+    "Luke Rowe",
+    "Roger Girgis",
+    "Rodrigue de Schaetzen",
+    "Daphne Cornelisse",
+    "Alaap Grandhi",
+    "Felix Heide",
+    "Eugene Vinitsky",
+    "Christopher Pal",
+    "Liam Paull"
+   ],
+   "published": "2026-06-17",
+   "abstract": "End-to-end autonomous driving models are typically trained on offline human-demonstration datasets that provide limited state coverage and often no closed-loop feedback, making them prone to compounding errors when deployed in closed-loop and brittle to long-tail agent interactions. To overcome these limitations, we propose an alternative strategy for training end-to-end driving models: large-scale self-play directly from pixels in simulation. While prior self-play approaches have shown promising transfer to real-world driving, they typically assume vectorized Bird's-Eye-View (BEV) observations that are incompatible with end-to-end policies operating directly on sensor observations. To this end, we introduce Gigapixel, a high-throughput batched driving simulator with perspective rendering, enabling scalable self-play directly from pixel observations. Rather than targeting compute-costly ",
+   "url": "https://arxiv.org/abs/2606.19641",
+   "path": "TanitAD Research Lab/Library/papers/2606.19641_Scaling-Self-Play-for-End-to-End-Driving.pdf",
+   "bytes": 9685219,
+   "sha256": "3e00cc698db77ff5a11b1ea105463838661b7c2e3d8bd550610e4562aff57aeb",
+   "banked": "2026-09-20",
+   "tags": [
+    "rl-teacher-driving"
+   ],
+   "note": "GigaPixel: scaling self-play, pixel student on-policy distilled from a privileged RL teacher; 50.1 EPDMS navhard -- DriveZero's closest rival in the zero-human-demo family",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-drivezero-deep-analysis/RESULT.md"
+   ]
+  },
+  "2510.24108": {
+   "key": "2510.24108",
+   "kind": "arxiv",
+   "title": "Zero-Human Demonstration End-to-end Autonomous Driving with Trajectory Scorer",
+   "authors": [
+    "Zhenxin Li",
+    "Nadine Chang",
+    "Wenhao Yao",
+    "Xinglong Sun",
+    "Zi Wang",
+    "Maying Shen",
+    "Jingde Chen",
+    "Jingyu Song",
+    "Kailin Li",
+    "Zuxuan Wu",
+    "Shiyi Lan",
+    "Jose M. Alvarez"
+   ],
+   "published": "2025-10-28",
+   "abstract": "Human demonstrations are widely considered the cornerstone of end-to-end (E2E) autonomous driving despite human demonstration's scarcity for long-tail and safety-critical scenarios. Nonetheless, current E2E autonomous driving (AD) training paradigms continue to rely on human demonstrations. Imitation learning (IL) requires human demonstrations for training, whereas reinforcement learning (RL) has emerged as a promising alternative to reduce this dependency. However, most existing RL methods for E2E AD still rely implicitly on human demonstrations. A pure rewards-based RL method can overcome the need for human demonstrations, but general RL policy gradient methods suffer from the cold-start problem. In this paper, we propose ZTRS (Zero-human demonstration end-to-end autonomous driving with TRajectory Scorer) - a complete RL-based E2E planning paradigm trained solely on real-world images a",
+   "url": "https://arxiv.org/abs/2510.24108",
+   "path": "TanitAD Research Lab/Library/papers/2510.24108_Zero-Human-Demonstration-End-to-end-Autonomous-Driving-with.pdf",
+   "bytes": 6544131,
+   "sha256": "c45655ef9c277c51a67162c64e01595edc966d33cc5f9e5ffaf0ac89901793c1",
+   "banked": "2026-09-20",
+   "tags": [
+    "rl-teacher-driving"
+   ],
+   "note": "ZTRS: zero-imitation E2E driving with trajectory scoring, RL on REAL images + rule-based rewards, no simulated data; 48.1 EPDMS navhard",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-drivezero-deep-analysis/RESULT.md"
+   ]
+  },
+  "2203.05625": {
+   "key": "2203.05625",
+   "kind": "arxiv",
+   "title": "PETR: Position Embedding Transformation for Multi-View 3D Object Detection",
+   "authors": [
+    "Yingfei Liu",
+    "Tiancai Wang",
+    "Xiangyu Zhang",
+    "Jian Sun"
+   ],
+   "published": "2022-03-10",
+   "abstract": "In this paper, we develop position embedding transformation (PETR) for multi-view 3D object detection. PETR encodes the position information of 3D coordinates into image features, producing the 3D position-aware features. Object query can perceive the 3D position-aware features and perform end-to-end object detection. PETR achieves state-of-the-art performance (50.4% NDS and 44.1% mAP) on standard nuScenes dataset and ranks 1st place on the benchmark. It can serve as a simple yet strong baseline for future research. Code is available at \\url{https://github.com/megvii-research/PETR}.",
+   "url": "https://arxiv.org/abs/2203.05625",
+   "path": "TanitAD Research Lab/Library/papers/2203.05625_PETR-Position-Embedding-Transformation-for-Multi-View-3D-Obj.pdf",
+   "bytes": 4345274,
+   "sha256": "ba1c6a9403c4f0511ca19442ed2c042cc82141622caf6a9dcd15e45128b123f5",
+   "banked": "2026-09-20",
+   "tags": [
+    "refe-sizing"
+   ],
+   "note": "PETR: 3D position embedding = MLP (1x1 conv, 192->4C->C) over ANALYTIC camera-frustum 3D coords, not a learned per-token table; Table 3: 3D PE alone 0.305 mAP vs 2D learned PE 0.069",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/MODULE_SIZING_STUDY.md"
+   ]
+  },
+  "2206.01256": {
+   "key": "2206.01256",
+   "kind": "arxiv",
+   "title": "PETRv2: A Unified Framework for 3D Perception from Multi-Camera Images",
+   "authors": [
+    "Yingfei Liu",
+    "Junjie Yan",
+    "Fan Jia",
+    "Shuailin Li",
+    "Aqi Gao",
+    "Tiancai Wang",
+    "Xiangyu Zhang",
+    "Jian Sun"
+   ],
+   "published": "2022-06-02",
+   "abstract": "In this paper, we propose PETRv2, a unified framework for 3D perception from multi-view images. Based on PETR, PETRv2 explores the effectiveness of temporal modeling, which utilizes the temporal information of previous frames to boost 3D object detection. More specifically, we extend the 3D position embedding (3D PE) in PETR for temporal modeling. The 3D PE achieves the temporal alignment on object position of different frames. A feature-guided position encoder is further introduced to improve the data adaptability of 3D PE. To support for multi-task learning (e.g., BEV segmentation and 3D lane detection), PETRv2 provides a simple yet effective solution by introducing task-specific queries, which are initialized under different spaces. PETRv2 achieves state-of-the-art performance on 3D object detection, BEV segmentation and 3D lane detection. Detailed robustness analysis is also conducte",
+   "url": "https://arxiv.org/abs/2206.01256",
+   "path": "TanitAD Research Lab/Library/papers/2206.01256_PETRv2-A-Unified-Framework-for-3D-Perception-from-Multi-Came.pdf",
+   "bytes": 1114906,
+   "sha256": "5773a7f8bea126fb7273f56556106b5e74116d67318dff037f2fce2ec631266b",
+   "banked": "2026-09-20",
+   "tags": [
+    "refe-sizing"
+   ],
+   "note": "PETRv2: PETR's 3D PE is DATA-INDEPENDENT -- all images from one camera view share it, so it re-derives at any resolution; FPE gates it on features, +1.5 NDS on single-frame PETR",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/MODULE_SIZING_STUDY.md"
+   ]
+  },
+  "2211.14710": {
+   "key": "2211.14710",
+   "kind": "arxiv",
+   "title": "3DPPE: 3D Point Positional Encoding for Multi-Camera 3D Object Detection Transformers",
+   "authors": [
+    "Changyong Shu",
+    "JIajun Deng",
+    "Fisher Yu",
+    "Yifan Liu"
+   ],
+   "published": "2022-11-27",
+   "abstract": "Transformer-based methods have swept the benchmarks on 2D and 3D detection on images. Because tokenization before the attention mechanism drops the spatial information, positional encoding becomes critical for those methods. Recent works found that encodings based on samples of the 3D viewing rays can significantly improve the quality of multi-camera 3D object detection. We hypothesize that 3D point locations can provide more information than rays. Therefore, we introduce 3D point positional encoding, 3DPPE, to the 3D detection Transformer decoder. Although 3D measurements are not available at the inference time of monocular 3D object detection, 3DPPE uses predicted depth to approximate the real point positions. Our hybriddepth module combines direct and categorical depth to estimate the refined depth of each pixel. Despite the approximation, 3DPPE achieves 46.0 mAP and 51.4 NDS on the c",
+   "url": "https://arxiv.org/abs/2211.14710",
+   "path": "TanitAD Research Lab/Library/papers/2211.14710_3DPPE-3D-Point-Positional-Encoding-for-Multi-Camera-3D-Objec.pdf",
+   "bytes": 7007555,
+   "sha256": "82a06a847f52e679d18683a298d28126a7e92d0eccaf2113c2be121277b38d32",
+   "banked": "2026-09-20",
+   "tags": [
+    "refe-sizing"
+   ],
+   "note": "3DPPE: Sine(3D point)+MLP beats PETR's camera-ray PE 0.368 vs 0.337 NDS; Table 9 shows the depth-bin count barely matters (ND=2 0.345 >= ND=64 0.338) -- licence to shrink the PE input from 192 to 6 channels",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/MODULE_SIZING_STUDY.md"
+   ]
+  },
+  "2103.03206": {
+   "key": "2103.03206",
+   "kind": "arxiv",
+   "title": "Perceiver: General Perception with Iterative Attention",
+   "authors": [
+    "Andrew Jaegle",
+    "Felix Gimeno",
+    "Andrew Brock",
+    "Andrew Zisserman",
+    "Oriol Vinyals",
+    "Joao Carreira"
+   ],
+   "published": "2021-03-04",
+   "abstract": "Biological systems perceive the world by simultaneously processing high-dimensional inputs from modalities as diverse as vision, audition, touch, proprioception, etc. The perception models used in deep learning on the other hand are designed for individual modalities, often relying on domain-specific assumptions such as the local grid structures exploited by virtually all existing vision models. These priors introduce helpful inductive biases, but also lock models to individual modalities. In this paper we introduce the Perceiver - a model that builds upon Transformers and hence makes few architectural assumptions about the relationship between its inputs, but that also scales to hundreds of thousands of inputs, like ConvNets. The model leverages an asymmetric attention mechanism to iteratively distill inputs into a tight latent bottleneck, allowing it to scale to handle very large input",
+   "url": "https://arxiv.org/abs/2103.03206",
+   "path": "TanitAD Research Lab/Library/papers/2103.03206_Perceiver-General-Perception-with-Iterative-Attention.pdf",
+   "bytes": 36326964,
+   "sha256": "edbfd63c8bac1fdb43e3bef2495fb12adc37880763f90151b6bb1f69c138a614",
+   "banked": "2026-09-20",
+   "tags": [
+    "refe-sizing"
+   ],
+   "note": "Perceiver: Table 6 -- stacking cross-attends at the FRONT is monotonically harmful (1/2/4/8 = 76.7/76.7/75.9/73.7); latent MLP ratio is 1, not 4; Table 5 -- cross-attention without latent self-attention collapses to 39.4",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/MODULE_SIZING_STUDY.md"
+   ]
+  },
+  "2107.14795": {
+   "key": "2107.14795",
+   "kind": "arxiv",
+   "title": "Perceiver IO: A General Architecture for Structured Inputs &amp; Outputs",
+   "authors": [
+    "Andrew Jaegle",
+    "Sebastian Borgeaud",
+    "Jean-Baptiste Alayrac",
+    "Carl Doersch",
+    "Catalin Ionescu",
+    "David Ding",
+    "Skanda Koppula",
+    "Daniel Zoran",
+    "Andrew Brock",
+    "Evan Shelhamer",
+    "Olivier Hénaff",
+    "Matthew M. Botvinick"
+   ],
+   "published": "2021-07-30",
+   "abstract": "A central goal of machine learning is the development of systems that can solve many problems in as many data domains as possible. Current architectures, however, cannot be applied beyond a small set of stereotyped settings, as they bake in domain &amp; task assumptions or scale poorly to large inputs or outputs. In this work, we propose Perceiver IO, a general-purpose architecture that handles data from arbitrary settings while scaling linearly with the size of inputs and outputs. Our model augments the Perceiver with a flexible querying mechanism that enables outputs of various sizes and semantics, doing away with the need for task-specific architecture engineering. The same architecture achieves strong results on tasks spanning natural language and visual understanding, multi-task and multi-modal reasoning, and StarCraft II. As highlights, Perceiver IO outperforms a Transformer-based ",
+   "url": "https://arxiv.org/abs/2107.14795",
+   "path": "TanitAD Research Lab/Library/papers/2107.14795_Perceiver-IO-A-General-Architecture-for-Structured-Inputs-am.pdf",
+   "bytes": 2878410,
+   "sha256": "3b5a8223a5a78ab149fec1b6411f7351f9f957017983ddc0a5d687f80c0bcbc3",
+   "banked": "2026-09-20",
+   "tags": [
+    "refe-sizing"
+   ],
+   "note": "Perceiver IO: REMOVED the repeated encoder cross-attends (8 vs 1 costs 303 GFLOPs for little gain) -> ONE cross-attend; Table 15 at matched FLOPs -- too FEW latents costs -5.11 GLUE, too many only -0.03",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/MODULE_SIZING_STUDY.md"
+   ]
+  },
+  "1810.00825": {
+   "key": "1810.00825",
+   "kind": "arxiv",
+   "title": "Set Transformer: A Framework for Attention-based Permutation-Invariant Neural Networks",
+   "authors": [
+    "Juho Lee",
+    "Yoonho Lee",
+    "Jungtaek Kim",
+    "Adam R. Kosiorek",
+    "Seungjin Choi",
+    "Yee Whye Teh"
+   ],
+   "published": "2018-10-01",
+   "abstract": "Many machine learning tasks such as multiple instance learning, 3D shape recognition, and few-shot image classification are defined on sets of instances. Since solutions to such problems do not depend on the order of elements of the set, models used to address them should be permutation invariant. We present an attention-based neural network module, the Set Transformer, specifically designed to model interactions among elements in the input set. The model consists of an encoder and a decoder, both of which rely on attention mechanisms. In an effort to reduce computational complexity, we introduce an attention scheme inspired by inducing point methods from sparse Gaussian process literature. It reduces the computation time of self-attention from quadratic to linear in the number of elements in the set. We show that our model is theoretically attractive and we evaluate it on a range of tas",
+   "url": "https://arxiv.org/abs/1810.00825",
+   "path": "TanitAD Research Lab/Library/papers/1810.00825_Set-Transformer-A-Framework-for-Attention-based-Permutation.pdf",
+   "bytes": 4954915,
+   "sha256": "36b5dc3056b24a2221aebf1d80dc48a81eed49339cb349386472251eb64de91f",
+   "banked": "2026-09-20",
+   "tags": [
+    "refe-sizing"
+   ],
+   "note": "Set Transformer: m=16 inducing points BEAT the unbottlenecked model (0.9210 vs 0.9015), attributed to regularisation via the bottleneck -- the low-data argument for keeping the register set small",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/MODULE_SIZING_STUDY.md"
+   ]
+  },
+  "2204.14198": {
+   "key": "2204.14198",
+   "kind": "arxiv",
+   "title": "Flamingo: a Visual Language Model for Few-Shot Learning",
+   "authors": [
+    "Jean-Baptiste Alayrac",
+    "Jeff Donahue",
+    "Pauline Luc",
+    "Antoine Miech",
+    "Iain Barr",
+    "Yana Hasson",
+    "Karel Lenc",
+    "Arthur Mensch",
+    "Katie Millican",
+    "Malcolm Reynolds",
+    "Roman Ring",
+    "Eliza Rutherford"
+   ],
+   "published": "2022-04-29",
+   "abstract": "Building models that can be rapidly adapted to novel tasks using only a handful of annotated examples is an open challenge for multimodal machine learning research. We introduce Flamingo, a family of Visual Language Models (VLM) with this ability. We propose key architectural innovations to: (i) bridge powerful pretrained vision-only and language-only models, (ii) handle sequences of arbitrarily interleaved visual and textual data, and (iii) seamlessly ingest images or videos as inputs. Thanks to their flexibility, Flamingo models can be trained on large-scale multimodal web corpora containing arbitrarily interleaved text and images, which is key to endow them with in-context few-shot learning capabilities. We perform a thorough evaluation of our models, exploring and measuring their ability to rapidly adapt to a variety of image and video tasks. These include open-ended tasks such as vi",
+   "url": "https://arxiv.org/abs/2204.14198",
+   "path": "TanitAD Research Lab/Library/papers/2204.14198_Flamingo-a-Visual-Language-Model-for-Few-Shot-Learning.pdf",
+   "bytes": 31579390,
+   "sha256": "27af622bf50987fd98a03451a27a670adfaeefd5218a3e990b37abc326ba63f0",
+   "banked": "2026-09-20",
+   "tags": [
+    "refe-sizing"
+   ],
+   "note": "Flamingo: Perceiver Resampler = 64 latents, 6 layers, D=1536, 16 heads (head_dim 96), MLP ratio 4 ('hidden size 4D'); Table 10(i) -- a LARGER resampler is 1.7 points WORSE and destabilises training",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/MODULE_SIZING_STUDY.md"
+   ]
+  },
+  "2301.12597": {
+   "key": "2301.12597",
+   "kind": "arxiv",
+   "title": "BLIP-2: Bootstrapping Language-Image Pre-training with Frozen Image Encoders and Large Language Models",
+   "authors": [
+    "Junnan Li",
+    "Dongxu Li",
+    "Silvio Savarese",
+    "Steven Hoi"
+   ],
+   "published": "2023-01-30",
+   "abstract": "The cost of vision-and-language pre-training has become increasingly prohibitive due to end-to-end training of large-scale models. This paper proposes BLIP-2, a generic and efficient pre-training strategy that bootstraps vision-language pre-training from off-the-shelf frozen pre-trained image encoders and frozen large language models. BLIP-2 bridges the modality gap with a lightweight Querying Transformer, which is pre-trained in two stages. The first stage bootstraps vision-language representation learning from a frozen image encoder. The second stage bootstraps vision-to-language generative learning from a frozen language model. BLIP-2 achieves state-of-the-art performance on various vision-language tasks, despite having significantly fewer trainable parameters than existing methods. For example, our model outperforms Flamingo80B by 8.7% on zero-shot VQAv2 with 54x fewer trainable para",
+   "url": "https://arxiv.org/abs/2301.12597",
+   "path": "TanitAD Research Lab/Library/papers/2301.12597_BLIP-2-Bootstrapping-Language-Image-Pre-training-with-Frozen.pdf",
+   "bytes": 6737540,
+   "sha256": "6bc5d399d6127a64ace5167a2f0c00112a49725d2475d80322dbf0083f139e80",
+   "banked": "2026-09-20",
+   "tags": [
+    "refe-sizing"
+   ],
+   "note": "BLIP-2: Q-Former = 32 learned queries at width 768, NARROWER than the ViT-L/14 input it compresses (257x1024); cross-attention inserted every other block (6 of 12); no query-count ablation",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/MODULE_SIZING_STUDY.md"
+   ]
+  },
+  "2508.10104": {
+   "key": "2508.10104",
+   "kind": "arxiv",
+   "title": "DINOv3",
+   "authors": [
+    "Oriane Siméoni",
+    "Huy V. Vo",
+    "Maximilian Seitzer",
+    "Federico Baldassarre",
+    "Maxime Oquab",
+    "Cijo Jose",
+    "Vasil Khalidov",
+    "Marc Szafraniec",
+    "Seungeun Yi",
+    "Michaël Ramamonjisoa",
+    "Francisco Massa",
+    "Daniel Haziza"
+   ],
+   "published": "2025-08-13",
+   "abstract": "Self-supervised learning holds the promise of eliminating the need for manual data annotation, enabling models to scale effortlessly to massive datasets and larger architectures. By not being tailored to specific tasks or domains, this training paradigm has the potential to learn visual representations from diverse sources, ranging from natural to aerial images -- using a single algorithm. This technical report introduces DINOv3, a major milestone toward realizing this vision by leveraging simple yet effective strategies. First, we leverage the benefit of scaling both dataset and model size by careful data preparation, design, and optimization. Second, we introduce a new method called Gram anchoring, which effectively addresses the known yet unsolved issue of dense feature maps degrading during long training schedules. Finally, we apply post-hoc strategies that further enhance our models",
+   "url": "https://arxiv.org/abs/2508.10104",
+   "path": "TanitAD Research Lab/Library/papers/2508.10104_DINOv3.pdf",
+   "bytes": 15823906,
+   "sha256": "c68dc50b1f73e1641a592f777984fc360759e84b7fe65ac4f6e1377927f20b2e",
+   "banked": "2026-09-20",
+   "tags": [
+    "refe-sizing"
+   ],
+   "note": "DINOv3: 4 register tokens, explicitly not ablated further; Table 2 teacher config is head_dim 64 throughout; Fig 20b at 7B scale the register effect is +-0.2",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/MODULE_SIZING_STUDY.md"
+   ]
+  },
+  "2106.04560": {
+   "key": "2106.04560",
+   "kind": "arxiv",
+   "title": "Scaling Vision Transformers",
+   "authors": [
+    "Xiaohua Zhai",
+    "Alexander Kolesnikov",
+    "Neil Houlsby",
+    "Lucas Beyer"
+   ],
+   "published": "2021-06-08",
+   "abstract": "Attention-based neural networks such as the Vision Transformer (ViT) have recently attained state-of-the-art results on many computer vision benchmarks. Scale is a primary ingredient in attaining excellent results, therefore, understanding a model's scaling properties is a key to designing future generations effectively. While the laws for scaling Transformer language models have been studied, it is unknown how Vision Transformers scale. To address this, we scale ViT models and data, both up and down, and characterize the relationships between error rate, data, and compute. Along the way, we refine the architecture and training of ViT, reducing memory consumption and increasing accuracy of the resulting models. As a result, we successfully train a ViT model with two billion parameters, which attains a new state-of-the-art on ImageNet of 90.45% top-1 accuracy. The model also performs well",
+   "url": "https://arxiv.org/abs/2106.04560",
+   "path": "TanitAD Research Lab/Library/papers/2106.04560_Scaling-Vision-Transformers.pdf",
+   "bytes": 855476,
+   "sha256": "9b621bbde887861f32185a466bb18208ca486fd650461af3eab4b54433566e18",
+   "banked": "2026-09-20",
+   "tags": [
+    "refe-sizing"
+   ],
+   "note": "Scaling ViT: MAP attention-pooling head count = 'equal to the number of attention heads in the rest of the model'; Table 2 gives MLP ratio 4 and head_dim 64 for every model up to L/16; L/16 caps at 27% error on 30M images vs 19% on larger",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/MODULE_SIZING_STUDY.md"
+   ]
+  },
+  "2203.09795": {
+   "key": "2203.09795",
+   "kind": "arxiv",
+   "title": "Three things everyone should know about Vision Transformers",
+   "authors": [
+    "Hugo Touvron",
+    "Matthieu Cord",
+    "Alaaeldin El-Nouby",
+    "Jakob Verbeek",
+    "Hervé Jégou"
+   ],
+   "published": "2022-03-18",
+   "abstract": "After their initial success in natural language processing, transformer architectures have rapidly gained traction in computer vision, providing state-of-the-art results for tasks such as image classification, detection, segmentation, and video analysis. We offer three insights based on simple and easy to implement variants of vision transformers. (1) The residual layers of vision transformers, which are usually processed sequentially, can to some extent be processed efficiently in parallel without noticeably affecting the accuracy. (2) Fine-tuning the weights of the attention layers is sufficient to adapt vision transformers to a higher resolution and to other classification tasks. This saves compute, reduces the peak memory consumption at fine-tuning time, and allows sharing the majority of weights across tasks. (3) Adding MLP-based patch pre-processing layers improves Bert-like self-s",
+   "url": "https://arxiv.org/abs/2203.09795",
+   "path": "TanitAD Research Lab/Library/papers/2203.09795_Three-things-everyone-should-know-about-Vision-Transformers.pdf",
+   "bytes": 1854088,
+   "sha256": "a9e28f275467004138f471b939f94a5dffbdf4939b8f9a30edd31d8a39fcf774",
+   "banked": "2026-09-20",
+   "tags": [
+    "refe-sizing"
+   ],
+   "note": "Three things about ViT: explicitly declines to ablate head count ('We do not discuss the latter'); every baseline is head_dim 64; 'the compromise between capacity and overfitting is subtle and depends [on] size of the training set'",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/MODULE_SIZING_STUDY.md"
+   ]
+  },
+  "1905.10650": {
+   "key": "1905.10650",
+   "kind": "arxiv",
+   "title": "Are Sixteen Heads Really Better than One?",
+   "authors": [
+    "Paul Michel",
+    "Omer Levy",
+    "Graham Neubig"
+   ],
+   "published": "2019-05-25",
+   "abstract": "Attention is a powerful and ubiquitous mechanism for allowing neural models to focus on particular salient pieces of information by taking their weighted average when making predictions. In particular, multi-headed attention is a driving force behind many recent state-of-the-art NLP models such as Transformer-based MT models and BERT. These models apply multiple attention mechanisms in parallel, with each attention \"head\" potentially focusing on different parts of the input, which makes it possible to express sophisticated functions beyond the simple weighted average. In this paper we make the surprising observation that even if models have been trained using multiple heads, in practice, a large percentage of attention heads can be removed at test time without significantly impacting performance. In fact, some layers can even be reduced to a single head. We further examine greedy algorit",
+   "url": "https://arxiv.org/abs/1905.10650",
+   "path": "TanitAD Research Lab/Library/papers/1905.10650_Are-Sixteen-Heads-Really-Better-than-One.pdf",
+   "bytes": 576411,
+   "sha256": "f47955ececb443ded32e995d82a9e3fd936f7e85815e7831d4dfcb0cae46d10c",
+   "banked": "2026-09-20",
+   "tags": [
+    "refe-sizing"
+   ],
+   "note": "Are Sixteen Heads Really Better than One: encoder-decoder (CROSS) attention is the LEAST prunable layer type -- a single head costs >=13.5 BLEU -- a warning against low head counts in a compression cross-attention",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/MODULE_SIZING_STUDY.md"
+   ]
+  },
+  "2012.12877": {
+   "key": "2012.12877",
+   "kind": "arxiv",
+   "title": "Training data-efficient image transformers &amp; distillation through attention",
+   "authors": [
+    "Hugo Touvron",
+    "Matthieu Cord",
+    "Matthijs Douze",
+    "Francisco Massa",
+    "Alexandre Sablayrolles",
+    "Hervé Jégou"
+   ],
+   "published": "2020-12-23",
+   "abstract": "Recently, neural networks purely based on attention were shown to address image understanding tasks such as image classification. However, these visual transformers are pre-trained with hundreds of millions of images using an expensive infrastructure, thereby limiting their adoption. In this work, we produce a competitive convolution-free transformer by training on Imagenet only. We train them on a single computer in less than 3 days. Our reference vision transformer (86M parameters) achieves top-1 accuracy of 83.1% (single-crop evaluation) on ImageNet with no external data. More importantly, we introduce a teacher-student strategy specific to transformers. It relies on a distillation token ensuring that the student learns from the teacher through attention. We show the interest of this token-based distillation, especially when using a convnet as a teacher. This leads us to report result",
+   "url": "https://arxiv.org/abs/2012.12877",
+   "path": "TanitAD Research Lab/Library/papers/2012.12877_Training-data-efficient-image-transformers-amp-distillation.pdf",
+   "bytes": 558744,
+   "sha256": "a0fbdd27c115594326fd75b3a0f569fb94cbf0b5c34c84fdc204d993064188bb",
+   "banked": "2026-09-20",
+   "tags": [
+    "refe-sizing"
+   ],
+   "note": "DeiT: bilinear interpolation of a learned positional table reduces its L2 norm and causes 'a significant drop in accuracy' without fine-tuning -- the resolution-lock failure mode, measured",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/MODULE_SIZING_STUDY.md"
+   ]
+  },
+  "2307.06304": {
+   "key": "2307.06304",
+   "kind": "arxiv",
+   "title": "Patch n' Pack: NaViT, a Vision Transformer for any Aspect Ratio and Resolution",
+   "authors": [
+    "Mostafa Dehghani",
+    "Basil Mustafa",
+    "Josip Djolonga",
+    "Jonathan Heek",
+    "Matthias Minderer",
+    "Mathilde Caron",
+    "Andreas Steiner",
+    "Joan Puigcerver",
+    "Robert Geirhos",
+    "Ibrahim Alabdulmohsin",
+    "Avital Oliver",
+    "Piotr Padlewski"
+   ],
+   "published": "2023-07-12",
+   "abstract": "The ubiquitous and demonstrably suboptimal choice of resizing images to a fixed resolution before processing them with computer vision models has not yet been successfully challenged. However, models such as the Vision Transformer (ViT) offer flexible sequence-based modeling, and hence varying input sequence lengths. We take advantage of this with NaViT (Native Resolution ViT) which uses sequence packing during training to process inputs of arbitrary resolutions and aspect ratios. Alongside flexible model usage, we demonstrate improved training efficiency for large-scale supervised and contrastive image-text pretraining. NaViT can be efficiently transferred to standard tasks such as image and video classification, object detection, and semantic segmentation and leads to improved results on robustness and fairness benchmarks. At inference time, the input resolution flexibility can be used",
+   "url": "https://arxiv.org/abs/2307.06304",
+   "path": "TanitAD Research Lab/Library/papers/2307.06304_Patch-n-Pack-NaViT-a-Vision-Transformer-for-any-Aspect-Ratio.pdf",
+   "bytes": 1853088,
+   "sha256": "d4421cab93fe27a49c64120faa46822dc95a563ed70f5495b25112b35619a396",
+   "banked": "2026-09-20",
+   "tags": [
+    "refe-sizing"
+   ],
+   "note": "NaViT: abandoned ViT's learned 2D absolute positional embedding because it requires every (x,y) combination to be seen during training and does not generalise to higher resolution",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/MODULE_SIZING_STUDY.md"
+   ]
+  },
+  "2006.10739": {
+   "key": "2006.10739",
+   "kind": "arxiv",
+   "title": "Fourier Features Let Networks Learn High Frequency Functions in Low Dimensional Domains",
+   "authors": [
+    "Matthew Tancik",
+    "Pratul P. Srinivasan",
+    "Ben Mildenhall",
+    "Sara Fridovich-Keil",
+    "Nithin Raghavan",
+    "Utkarsh Singhal",
+    "Ravi Ramamoorthi",
+    "Jonathan T. Barron",
+    "Ren Ng"
+   ],
+   "published": "2020-06-18",
+   "abstract": "We show that passing input points through a simple Fourier feature mapping enables a multilayer perceptron (MLP) to learn high-frequency functions in low-dimensional problem domains. These results shed light on recent advances in computer vision and graphics that achieve state-of-the-art results by using MLPs to represent complex 3D objects and scenes. Using tools from the neural tangent kernel (NTK) literature, we show that a standard MLP fails to learn high frequencies both in theory and in practice. To overcome this spectral bias, we use a Fourier feature mapping to transform the effective NTK into a stationary kernel with a tunable bandwidth. We suggest an approach for selecting problem-specific Fourier features that greatly improves the performance of MLPs for low-dimensional regression tasks relevant to the computer vision and graphics communities.",
+   "url": "https://arxiv.org/abs/2006.10739",
+   "path": "TanitAD Research Lab/Library/papers/2006.10739_Fourier-Features-Let-Networks-Learn-High-Frequency-Functions.pdf",
+   "bytes": 9922740,
+   "sha256": "0b8f5b65d48c43920bb0033261735738750fec5c998d3e783f3ec0c1a8e9952c",
+   "banked": "2026-09-20",
+   "tags": [
+    "refe-sizing"
+   ],
+   "note": "Fourier Features: a PARAMETER-FREE Fourier map on coordinate inputs lifts 2D image regression 19.32 -> 25.57 PSNR; jointly optimising the frequencies does not improve over leaving them fixed",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/MODULE_SIZING_STUDY.md"
+   ]
+  },
+  "2005.12872": {
+   "key": "2005.12872",
+   "kind": "arxiv",
+   "title": "End-to-End Object Detection with Transformers",
+   "authors": [
+    "Nicolas Carion",
+    "Francisco Massa",
+    "Gabriel Synnaeve",
+    "Nicolas Usunier",
+    "Alexander Kirillov",
+    "Sergey Zagoruyko"
+   ],
+   "published": "2020-05-26",
+   "abstract": "We present a new method that views object detection as a direct set prediction problem. Our approach streamlines the detection pipeline, effectively removing the need for many hand-designed components like a non-maximum suppression procedure or anchor generation that explicitly encode our prior knowledge about the task. The main ingredients of the new framework, called DEtection TRansformer or DETR, are a set-based global loss that forces unique predictions via bipartite matching, and a transformer encoder-decoder architecture. Given a fixed small set of learned object queries, DETR reasons about the relations of the objects and the global image context to directly output the final set of predictions in parallel. The new model is conceptually simple and does not require a specialized library, unlike many other modern detectors. DETR demonstrates accuracy and run-time performance on par w",
+   "url": "https://arxiv.org/abs/2005.12872",
+   "path": "TanitAD Research Lab/Library/papers/2005.12872_End-to-End-Object-Detection-with-Transformers.pdf",
+   "bytes": 7634041,
+   "sha256": "d4b846bd44896e1d21527f48eddc422c263c9a4f8a3fa4be249750956882698d",
+   "banked": "2026-09-20",
+   "tags": [
+    "refe-sizing"
+   ],
+   "note": "DETR: 6-layer decoder at width 256 with 8 heads and 100 queries; AP improves after every decoder layer (+8.2 AP first to last); the CLASSIFICATION head is a single linear layer while the box head is a 3-layer MLP",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/MODULE_SIZING_STUDY.md"
+   ]
+  },
+  "1706.03762": {
+   "key": "1706.03762",
+   "kind": "arxiv",
+   "title": "Attention Is All You Need",
+   "authors": [
+    "Ashish Vaswani",
+    "Noam Shazeer",
+    "Niki Parmar",
+    "Jakob Uszkoreit",
+    "Llion Jones",
+    "Aidan N. Gomez",
+    "Lukasz Kaiser",
+    "Illia Polosukhin"
+   ],
+   "published": "2017-06-12",
+   "abstract": "The dominant sequence transduction models are based on complex recurrent or convolutional neural networks in an encoder-decoder configuration. The best performing models also connect the encoder and decoder through an attention mechanism. We propose a new simple network architecture, the Transformer, based solely on attention mechanisms, dispensing with recurrence and convolutions entirely. Experiments on two machine translation tasks show these models to be superior in quality while being more parallelizable and requiring significantly less time to train. Our model achieves 28.4 BLEU on the WMT 2014 English-to-German translation task, improving over the existing best results, including ensembles by over 2 BLEU. On the WMT 2014 English-to-French translation task, our model establishes a new single-model state-of-the-art BLEU score of 41.8 after training for 3.5 days on eight GPUs, a smal",
+   "url": "https://arxiv.org/abs/1706.03762",
+   "path": "TanitAD Research Lab/Library/papers/1706.03762_Attention-Is-All-You-Need.pdf",
+   "bytes": 2215244,
+   "sha256": "bdfaa68d8984f0dc02beaca527b76f207d99b666d31d1da728ee0728182df697",
+   "banked": "2026-09-20",
+   "tags": [
+    "refe-sizing"
+   ],
+   "note": "Attention Is All You Need: Table 3 -- at d_model 512 the head-count optimum is 8 (d_k=64), single-head -0.9 BLEU and 32 heads -0.7; depth N=6 is best and N=8 is WORSE",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/MODULE_SIZING_STUDY.md"
+   ]
+  },
+  "2106.09685": {
+   "key": "2106.09685",
+   "kind": "arxiv",
+   "title": "LoRA: Low-Rank Adaptation of Large Language Models",
+   "authors": [
+    "Edward J. Hu",
+    "Yelong Shen",
+    "Phillip Wallis",
+    "Zeyuan Allen-Zhu",
+    "Yuanzhi Li",
+    "Shean Wang",
+    "Lu Wang",
+    "Weizhu Chen"
+   ],
+   "published": "2021-06-17",
+   "abstract": "An important paradigm of natural language processing consists of large-scale pre-training on general domain data and adaptation to particular tasks or domains. As we pre-train larger models, full fine-tuning, which retrains all model parameters, becomes less feasible. Using GPT-3 175B as an example -- deploying independent instances of fine-tuned models, each with 175B parameters, is prohibitively expensive. We propose Low-Rank Adaptation, or LoRA, which freezes the pre-trained model weights and injects trainable rank decomposition matrices into each layer of the Transformer architecture, greatly reducing the number of trainable parameters for downstream tasks. Compared to GPT-3 175B fine-tuned with Adam, LoRA can reduce the number of trainable parameters by 10,000 times and the GPU memory requirement by 3 times. LoRA performs on-par or better than fine-tuning in model quality on RoBERTa",
+   "url": "https://arxiv.org/abs/2106.09685",
+   "path": "TanitAD Research Lab/Library/papers/2106.09685_LoRA-Low-Rank-Adaptation-of-Large-Language-Models.pdf",
+   "bytes": 1609513,
+   "sha256": "e9a0d3128767db616085dc0f4e6e455e672e89af823e8ed1282793682787395a",
+   "banked": "2026-09-20",
+   "tags": [
+    "refe-sizing"
+   ],
+   "note": "LoRA: Table 6 -- on GPT-3 175B, rank 1 to 64 on Wq+Wv spans 73.3-73.8 (WikiSQL); 'a rank as small as one suffices'. NO published law ties rank to task complexity or dataset size",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/MODULE_SIZING_STUDY.md"
+   ]
+  },
+  "2203.15556": {
+   "key": "2203.15556",
+   "kind": "arxiv",
+   "title": "Training Compute-Optimal Large Language Models",
+   "authors": [
+    "Jordan Hoffmann",
+    "Sebastian Borgeaud",
+    "Arthur Mensch",
+    "Elena Buchatskaya",
+    "Trevor Cai",
+    "Eliza Rutherford",
+    "Diego de Las Casas",
+    "Lisa Anne Hendricks",
+    "Johannes Welbl",
+    "Aidan Clark",
+    "Tom Hennigan",
+    "Eric Noland"
+   ],
+   "published": "2022-03-29",
+   "abstract": "We investigate the optimal model size and number of tokens for training a transformer language model under a given compute budget. We find that current large language models are significantly undertrained, a consequence of the recent focus on scaling language models whilst keeping the amount of training data constant. By training over 400 language models ranging from 70 million to over 16 billion parameters on 5 to 500 billion tokens, we find that for compute-optimal training, the model size and the number of training tokens should be scaled equally: for every doubling of model size the number of training tokens should also be doubled. We test this hypothesis by training a predicted compute-optimal model, Chinchilla, that uses the same compute budget as Gopher but with 70B parameters and 4$\\times$ more more data. Chinchilla uniformly and significantly outperforms Gopher (280B), GPT-3 (17",
+   "url": "https://arxiv.org/abs/2203.15556",
+   "path": "TanitAD Research Lab/Library/papers/2203.15556_Training-Compute-Optimal-Large-Language-Models.pdf",
+   "bytes": 6004349,
+   "sha256": "3fd3632a8ef48171bd25282990221d49535d75356192f068b3b2ebe08f2aedd4",
+   "banked": "2026-09-20",
+   "tags": [
+    "refe-sizing"
+   ],
+   "note": "Chinchilla: Table 2 gives a=0.46-0.50, b=0.50-0.54; the '20 tokens/param' figure is DERIVED from Table 3, not stated; authors exclude the multi-epoch regime by name and frame cross-modality transfer as an expectation",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/MODULE_SIZING_STUDY.md"
+   ]
+  },
+  "2203.12119": {
+   "key": "2203.12119",
+   "kind": "arxiv",
+   "title": "Visual Prompt Tuning",
+   "authors": [
+    "Menglin Jia",
+    "Luming Tang",
+    "Bor-Chun Chen",
+    "Claire Cardie",
+    "Serge Belongie",
+    "Bharath Hariharan",
+    "Ser-Nam Lim"
+   ],
+   "published": "2022-03-23",
+   "abstract": "The current modus operandi in adapting pre-trained models involves updating all the backbone parameters, ie, full fine-tuning. This paper introduces Visual Prompt Tuning (VPT) as an efficient and effective alternative to full fine-tuning for large-scale Transformer models in vision. Taking inspiration from recent advances in efficiently tuning large language models, VPT introduces only a small amount (less than 1% of model parameters) of trainable parameters in the input space while keeping the model backbone frozen. Via extensive experiments on a wide variety of downstream recognition tasks, we show that VPT achieves significant performance gains compared to other parameter efficient tuning protocols. Most importantly, VPT even outperforms full fine-tuning in many cases across model capacities and training data scales, while reducing per-task storage cost.",
+   "url": "https://arxiv.org/abs/2203.12119",
+   "path": "TanitAD Research Lab/Library/papers/2203.12119_Visual-Prompt-Tuning.pdf",
+   "bytes": 3619567,
+   "sha256": "4544a0741b58fb9fb07e81404875286c30c9d5c9c8a3d489ecc0c5aeafabb7c1",
+   "banked": "2026-09-20",
+   "tags": [
+    "refe-sizing"
+   ],
+   "note": "VPT: at VTAB-1k (exactly 1,000 training examples per task) a 0.53%-trainable prompt beats FULL fine-tuning on 20 of 24 tasks; low-trainable methods dominate in low data and the ordering reverses as data grows",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/MODULE_SIZING_STUDY.md"
+   ]
+  },
+  "2106.10270": {
+   "key": "2106.10270",
+   "kind": "arxiv",
+   "title": "How to train your ViT? Data, Augmentation, and Regularization in Vision Transformers",
+   "authors": [
+    "Andreas Steiner",
+    "Alexander Kolesnikov",
+    "Xiaohua Zhai",
+    "Ross Wightman",
+    "Jakob Uszkoreit",
+    "Lucas Beyer"
+   ],
+   "published": "2021-06-18",
+   "abstract": "Vision Transformers (ViT) have been shown to attain highly competitive performance for a wide range of vision applications, such as image classification, object detection and semantic image segmentation. In comparison to convolutional neural networks, the Vision Transformer's weaker inductive bias is generally found to cause an increased reliance on model regularization or data augmentation (\"AugReg\" for short) when training on smaller training datasets. We conduct a systematic empirical study in order to better understand the interplay between the amount of training data, AugReg, model size and compute budget. As one result of this study we find that the combination of increased compute and AugReg can yield models with the same performance as models trained on an order of magnitude more training data: we train ViT models of various sizes on the public ImageNet-21k dataset which either m",
+   "url": "https://arxiv.org/abs/2106.10270",
+   "path": "TanitAD Research Lab/Library/papers/2106.10270_How-to-train-your-ViT-Data-Augmentation-and-Regularization-i.pdf",
+   "bytes": 911086,
+   "sha256": "b51dee5203da65f13c23a66f14cd7044cfae3586d6b8db42b9e7822096dfef08",
+   "banked": "2026-09-20",
+   "tags": [
+    "refe-sizing"
+   ],
+   "note": "How to train your ViT: on ~3,000-image Pet37 no amount of training time gets a from-scratch ViT near a transferred model; optimal augmentation+regularisation on ImageNet-1k matches plain ImageNet-21k, i.e. AugReg is worth ~10x data",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/MODULE_SIZING_STUDY.md"
    ]
   }
  }
