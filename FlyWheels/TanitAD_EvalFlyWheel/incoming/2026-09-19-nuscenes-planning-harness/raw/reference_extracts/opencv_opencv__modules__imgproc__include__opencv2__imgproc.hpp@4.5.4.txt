@@ -1,0 +1,61 @@
+# PUBLISHED-CODE extract - opencv/opencv @ 4.5.4
+# path: modules/imgproc/include/opencv2/imgproc.hpp
+# git blob sha1 of the fetched file: 9e5375ef4b2164f84eedade9d8b21f567fe2c8a8 (240826 B); verified against the GitHub contents API: MATCH
+# fetched 2026-09-19T13:46:02Z from raw.githubusercontent.com (read-only source text; excerpts only, attribution retained)
+
+## lines 4832-4861: LineIterator ctors
+ 4832      LineIterator( const Mat& img, Point pt1, Point pt2,
+ 4833                    int connectivity = 8, bool leftToRight = false )
+ 4834      {
+ 4835          init(&img, Rect(0, 0, img.cols, img.rows), pt1, pt2, connectivity, leftToRight);
+ 4836          ptmode = false;
+ 4837      }
+ 4838      LineIterator( Point pt1, Point pt2,
+ 4839                    int connectivity = 8, bool leftToRight = false )
+ 4840      {
+ 4841          init(0, Rect(std::min(pt1.x, pt2.x),
+ 4842                       std::min(pt1.y, pt2.y),
+ 4843                       std::max(pt1.x, pt2.x) - std::min(pt1.x, pt2.x) + 1,
+ 4844                       std::max(pt1.y, pt2.y) - std::min(pt1.y, pt2.y) + 1),
+ 4845               pt1, pt2, connectivity, leftToRight);
+ 4846          ptmode = true;
+ 4847      }
+ 4848      LineIterator( Size boundingAreaSize, Point pt1, Point pt2,
+ 4849                    int connectivity = 8, bool leftToRight = false )
+ 4850      {
+ 4851          init(0, Rect(0, 0, boundingAreaSize.width, boundingAreaSize.height),
+ 4852               pt1, pt2, connectivity, leftToRight);
+ 4853          ptmode = true;
+ 4854      }
+ 4855      LineIterator( Rect boundingAreaRect, Point pt1, Point pt2,
+ 4856                    int connectivity = 8, bool leftToRight = false )
+ 4857      {
+ 4858          init(0, boundingAreaRect, pt1, pt2, connectivity, leftToRight);
+ 4859          ptmode = true;
+ 4860      }
+ 4861      void init(const Mat* img, Rect boundingAreaRect, Point pt1, Point pt2, int connectivity, bool leftToRight);
+
+## lines 4891-4912: operator++
+ 4891  inline
+ 4892  uchar* LineIterator::operator *()
+ 4893  {
+ 4894      return ptmode ? 0 : ptr;
+ 4895  }
+ 4896  
+ 4897  inline
+ 4898  LineIterator& LineIterator::operator ++()
+ 4899  {
+ 4900      int mask = err < 0 ? -1 : 0;
+ 4901      err += minusDelta + (plusDelta & mask);
+ 4902      if(!ptmode)
+ 4903      {
+ 4904          ptr += minusStep + (plusStep & mask);
+ 4905      }
+ 4906      else
+ 4907      {
+ 4908          p.x += minusShift + (plusShift & mask);
+ 4909          p.y += minusStep + (plusStep & mask);
+ 4910      }
+ 4911      return *this;
+ 4912  }
+

@@ -1,0 +1,29 @@
+# PUBLISHED-CODE extract - swc-17/SparseDrive @ fbadea693cbef3f3daea7705e521c0dd3321605c
+# path: projects/mmdet3d_plugin/models/motion/decoder.py
+# git blob sha1 of the fetched file: fa673cfa1df835cab69910fc136226dac11e49db (12101 B); verified against the repo tree listing at the pinned commit: MATCH
+# fetched 2026-09-19T13:46:02Z from raw.githubusercontent.com (read-only source text; excerpts only, attribution retained)
+
+## lines 165-186: GT command selects the planning mode
+  165          motion_reg = motion_output["prediction"][-1]
+  166          
+  167          # cmd select
+  168          bs = motion_cls.shape[0]
+  169          bs_indices = torch.arange(bs, device=motion_cls.device)
+  170          cmd = data['gt_ego_fut_cmd'].argmax(dim=-1)
+  171          plan_cls_full = plan_cls.detach().clone()
+  172          plan_cls = plan_cls[bs_indices, cmd]
+  173          plan_reg = plan_reg[bs_indices, cmd]
+  174  
+  175          # rescore
+  176          if self.use_rescore:
+  177              plan_cls = self.rescore(
+  178                  plan_cls,
+  179                  plan_reg, 
+  180                  motion_cls,
+  181                  motion_reg, 
+  182                  det_anchors,
+  183                  det_confidence,
+  184              )
+  185          plan_cls_full[bs_indices, cmd] = plan_cls
+  186          mode_idx = plan_cls.argmax(dim=-1)
+

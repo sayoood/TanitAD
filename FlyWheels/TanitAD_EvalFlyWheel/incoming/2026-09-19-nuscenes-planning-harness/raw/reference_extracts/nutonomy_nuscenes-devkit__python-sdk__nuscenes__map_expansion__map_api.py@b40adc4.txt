@@ -1,0 +1,20 @@
+# PUBLISHED-CODE extract - nutonomy/nuscenes-devkit @ b40adc467b919192899405d9b77871afee8efa07
+# path: python-sdk/nuscenes/map_expansion/map_api.py
+# git blob sha1 of the fetched file: 37a0468256dc677c18c9e8cd530197ae83996467 (101441 B); verified against the GitHub contents API: MATCH
+# fetched 2026-09-19T13:46:02Z from raw.githubusercontent.com (read-only source text; excerpts only, attribution retained)
+
+## lines 89-101: maps older than v1.3 are refused
+   89          # Load the selected map.
+   90          self.json_fname = os.path.join(self.dataroot, 'maps', 'expansion', '{}.json'.format(self.map_name))
+   91          with open(self.json_fname, 'r') as fh:
+   92              self.json_obj = json.load(fh)
+   93  
+   94          # Parse the map version and print an error for deprecated maps.
+   95          if 'version' in self.json_obj:
+   96              self.version = self.json_obj['version']
+   97          else:
+   98              self.version = '1.0'
+   99          if self.version < '1.3':
+  100              raise Exception(f'Error: You are using an outdated map version ({self.version})! '
+  101                              'Please go to https://www.nuscenes.org/download to download the latest map!')
+

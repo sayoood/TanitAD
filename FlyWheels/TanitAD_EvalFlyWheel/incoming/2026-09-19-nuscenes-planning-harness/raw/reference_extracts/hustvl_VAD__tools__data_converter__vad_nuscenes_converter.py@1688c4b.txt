@@ -1,0 +1,134 @@
+# PUBLISHED-CODE extract - hustvl/VAD @ 1688c4b1c3a9e2e7873ca9700ff8058170c0e3c8
+# path: tools/data_converter/vad_nuscenes_converter.py
+# git blob sha1 of the fetched file: 338051cbc544f6860fc3ad6296b1271b037d1bd5 (42317 B); verified against the repo tree listing at the pinned commit: MATCH
+# fetched 2026-09-19T13:46:02Z from raw.githubusercontent.com (read-only source text; excerpts only, attribution retained)
+
+## lines 231-271: fut_valid_flag
+  231          if sample['prev'] != '':
+  232              sample_prev = nusc.get('sample', sample['prev'])
+  233              sd_rec_prev = nusc.get('sample_data', sample_prev['data']['LIDAR_TOP'])
+  234              pose_record_prev = nusc.get('ego_pose', sd_rec_prev['ego_pose_token'])
+  235          else:
+  236              pose_record_prev = None
+  237          if sample['next'] != '':
+  238              sample_next = nusc.get('sample', sample['next'])
+  239              sd_rec_next = nusc.get('sample_data', sample_next['data']['LIDAR_TOP'])
+  240              pose_record_next = nusc.get('ego_pose', sd_rec_next['ego_pose_token'])
+  241          else:
+  242              pose_record_next = None
+  243  
+  244          lidar_path, boxes, _ = nusc.get_sample_data(lidar_token)
+  245  
+  246          mmcv.check_file_exist(lidar_path)
+  247          can_bus = _get_can_bus_info(nusc, nusc_can_bus, sample)
+  248          fut_valid_flag = True
+  249          test_sample = copy.deepcopy(sample)
+  250          for i in range(fut_ts):
+  251              if test_sample['next'] != '':
+  252                  test_sample = nusc.get('sample', test_sample['next'])
+  253              else:
+  254                  fut_valid_flag = False
+  255          ##
+  256          info = {
+  257              'lidar_path': lidar_path,
+  258              'token': sample['token'],
+  259              'prev': sample['prev'],
+  260              'next': sample['next'],
+  261              'can_bus': can_bus,
+  262              'frame_idx': frame_idx,  # temporal related info
+  263              'sweeps': [],
+  264              'cams': dict(),
+  265              'scene_token': sample['scene_token'],  # temporal related info
+  266              'lidar2ego_translation': cs_record['translation'],
+  267              'lidar2ego_rotation': cs_record['rotation'],
+  268              'ego2global_translation': pose_record['translation'],
+  269              'ego2global_rotation': pose_record['rotation'],
+  270              'timestamp': sample['timestamp'],
+  271              'fut_valid_flag': fut_valid_flag,
+
+## lines 349-400: agent future trajectories
+  349              # get future coords for each box
+  350              # [num_box, fut_ts*2]
+  351              num_box = len(boxes)
+  352              gt_fut_trajs = np.zeros((num_box, fut_ts, 2))
+  353              gt_fut_yaw = np.zeros((num_box, fut_ts))
+  354              gt_fut_masks = np.zeros((num_box, fut_ts))
+  355              gt_boxes_yaw = -(gt_boxes[:,6] + np.pi / 2)
+  356              # agent lcf feat (x, y, yaw, vx, vy, width, length, height, type)
+  357              agent_lcf_feat = np.zeros((num_box, 9))
+  358              gt_fut_goal = np.zeros((num_box))
+  359              for i, anno in enumerate(annotations):
+  360                  cur_box = boxes[i]
+  361                  cur_anno = anno
+  362                  agent_lcf_feat[i, 0:2] = cur_box.center[:2]	
+  363                  agent_lcf_feat[i, 2] = gt_boxes_yaw[i]
+  364                  agent_lcf_feat[i, 3:5] = velocity[i]
+  365                  agent_lcf_feat[i, 5:8] = anno['size'] # width,length,height
+  366                  agent_lcf_feat[i, 8] = cat2idx[anno['category_name']] if anno['category_name'] in cat2idx.keys() else -1
+  367                  for j in range(fut_ts):
+  368                      if cur_anno['next'] != '':
+  369                          anno_next = nusc.get('sample_annotation', cur_anno['next'])
+  370                          box_next = Box(
+  371                              anno_next['translation'], anno_next['size'], Quaternion(anno_next['rotation'])
+  372                          )
+  373                          # Move box to ego vehicle coord system.
+  374                          box_next.translate(-np.array(pose_record['translation']))
+  375                          box_next.rotate(Quaternion(pose_record['rotation']).inverse)
+  376                          #  Move box to sensor coord system.
+  377                          box_next.translate(-np.array(cs_record['translation']))
+  378                          box_next.rotate(Quaternion(cs_record['rotation']).inverse)
+  379                          gt_fut_trajs[i, j] = box_next.center[:2] - cur_box.center[:2]
+  380                          gt_fut_masks[i, j] = 1
+  381                          # add yaw diff
+  382                          _, _, box_yaw = quart_to_rpy([cur_box.orientation.x, cur_box.orientation.y,
+  383                                                        cur_box.orientation.z, cur_box.orientation.w])
+  384                          _, _, box_yaw_next = quart_to_rpy([box_next.orientation.x, box_next.orientation.y,
+  385                                                             box_next.orientation.z, box_next.orientation.w])
+  386                          gt_fut_yaw[i, j] = box_yaw_next - box_yaw
+  387                          cur_anno = anno_next
+  388                          cur_box = box_next
+  389                      else:
+  390                          gt_fut_trajs[i, j:] = 0
+  391                          break
+  392                  # get agent goal
+  393                  gt_fut_coords = np.cumsum(gt_fut_trajs[i], axis=-2)
+  394                  coord_diff = gt_fut_coords[-1] - gt_fut_coords[0]
+  395                  if coord_diff.max() < 1.0: # static
+  396                      gt_fut_goal[i] = 9
+  397                  else:
+  398                      box_mot_yaw = np.arctan2(coord_diff[1], coord_diff[0]) + np.pi
+  399                      gt_fut_goal[i] = box_mot_yaw // (np.pi / 4)  # 0-8: goal direction class
+  400  
+
+## lines 430-459: ego future = LiDAR sensor pose; GT-derived command
+  430              # get ego futute traj (offset format)
+  431              ego_fut_trajs = np.zeros((fut_ts+1, 3))
+  432              ego_fut_masks = np.zeros((fut_ts+1))
+  433              sample_cur = sample
+  434              for i in range(fut_ts+1):
+  435                  pose_mat = get_global_sensor_pose(sample_cur, nusc, inverse=False)
+  436                  ego_fut_trajs[i] = pose_mat[:3, 3]
+  437                  ego_fut_masks[i] = 1
+  438                  if sample_cur['next'] == '':
+  439                      ego_fut_trajs[i+1:] = ego_fut_trajs[i]
+  440                      break
+  441                  else:
+  442                      sample_cur = nusc.get('sample', sample_cur['next'])
+  443              # global to ego at lcf
+  444              ego_fut_trajs = ego_fut_trajs - np.array(pose_record['translation'])
+  445              rot_mat = Quaternion(pose_record['rotation']).inverse.rotation_matrix
+  446              ego_fut_trajs = np.dot(rot_mat, ego_fut_trajs.T).T
+  447              # ego to lidar at lcf
+  448              ego_fut_trajs = ego_fut_trajs - np.array(cs_record['translation'])
+  449              rot_mat = Quaternion(cs_record['rotation']).inverse.rotation_matrix
+  450              ego_fut_trajs = np.dot(rot_mat, ego_fut_trajs.T).T
+  451              # drive command according to final fut step offset from lcf
+  452              if ego_fut_trajs[-1][0] >= 2:
+  453                  command = np.array([1, 0, 0])  # Turn Right
+  454              elif ego_fut_trajs[-1][0] <= -2:
+  455                  command = np.array([0, 1, 0])  # Turn Left
+  456              else:
+  457                  command = np.array([0, 0, 1])  # Go Straight
+  458              # offset from lcf -> per-step offset
+  459              ego_fut_trajs = ego_fut_trajs[1:] - ego_fut_trajs[:-1]
+

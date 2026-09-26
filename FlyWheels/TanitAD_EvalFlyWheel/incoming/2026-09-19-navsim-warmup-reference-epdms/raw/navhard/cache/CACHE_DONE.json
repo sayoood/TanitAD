@@ -1,0 +1,41 @@
+{
+ "marker": "CACHE_DONE",
+ "schema": "e1-cache-done/1",
+ "written_local": "2026-09-20 09:09:48",
+ "written_by": "EvalFlyWheel stream E1 (2026-09-19-navsim-warmup-reference-epdms)",
+ "split": "navhard_two_stage",
+ "cache_path": "C:/Users/Admin/navsim-crun/exp/metric_cache_navhard_two_stage",
+ "n_cached": {
+  "stage_one_original": 450,
+  "stage_two_synthetic": 5462,
+  "total": 5912
+ },
+ "n_expected_from_yaml": {
+  "stage_one": 450,
+  "stage_two": 5462,
+  "log_groups": 76
+ },
+ "token_sets_equal_yaml": true,
+ "scene_types_match_yaml": true,
+ "wall_clock_s": 5175.9,
+ "peak_rss_mb": 399.2,
+ "per_scene_s_mean": {
+  "stage_one": 0.0,
+  "stage_two": 0.0
+ },
+ "devkit_sha": "0a380a9063d7162ec93d0f51e9990ebac585f720",
+ "nuplan_devkit_sha": "ce3c323af01c0d7ec5672f7832ef53f9c679aab0",
+ "harness_modifications": [
+  "PRE-EXISTING navsim/common/dataclasses.py PosixPath unpickler (worktree blob 596cb7d)",
+  "PRE-EXISTING venv fcntl.py flock shim (sha256 75184a48...)",
+  "PRE-EXISTING nuplan-devkit setup.py packaging-only change (blob 3ad18c6)"
+ ],
+ "exact_command": "D:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-warmup-reference-epdms/code/navsim_win.py --script metric_caching --label nh_cache --out-dir D:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-warmup-reference-epdms/raw/navhard/cache -- train_test_split=navhard_two_stage metric_cache_path=C:/Users/Admin/navsim-crun/exp/metric_cache_navhard_two_stage synthetic_scenes_path=C:/Users/Admin/navsim-crun/data/openscene/navhard_two_stage/synthetic_scene_pickles worker=single_machine_thread_pool worker.use_process_pool=true worker.max_workers=1",
+ "runtime": "C:/Users/Admin/navsim-crun (verified mirror: venv reinstalled offline from uv cache, devkit copies blob-verified, data sha256-verified) - see E1 raw/devkit_copy_verify.json",
+ "map_root_recorded_in_entries": [
+  "C:/Users/Admin/navsim-crun/data/maps"
+ ],
+ "map_root_note": "the IDM reactive traffic policy RE-OPENS the map at scoring time from this recorded root (navsim_IDM_traffic_agents.py:88). It is a byte-identical copy of C:/Users/Admin/navsim/data/maps. To use another root pass traffic_agents_policy.reactive.map_root_override=<root>.",
+ "reading_on_windows": "⛔ the UNPATCHED devkit MetricCacheLoader cannot read this cache on Windows: {\"status\": \"OK\", \"n_tokens\": 5912}. Apply the separator patch (E1 code/navsim_win.py --patch-loader, _load_metric_cache_paths_patched).",
+ "verified_by": "E1 code/verify_cache.py (C2 scene types + C3 counts, every entry loaded)"
+}

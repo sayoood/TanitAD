@@ -1,0 +1,75 @@
+{
+ "device_gate": {
+  "decision": "REFUSE",
+  "training_pids": [],
+  "mem_used_mib": 1746.0,
+  "record": {
+   "requested": "auto",
+   "training_pids": [],
+   "mem_used_mib": 1746.0,
+   "limit_mib": 1024,
+   "override_flag": "--accept-training-box-load",
+   "override_used": false,
+   "override_passed_as": null,
+   "training_processes": [],
+   "training_process_definition": "taniteval.bench.gpu_gap.TRAINING_SCRIPT_RE (the ONE definition)",
+   "rule": "auto|cuda: model arms WAIT for a GPU gap; cpu: allowed only when no training process is alive, or with --accept-training-box-load (recorded)"
+  },
+  "reason": "model arms WAIT for a GPU gap on --device auto: GPU memory used 1746 MiB >= limit 1024 MiB. Queue it: code/run_bridge_navtest.py --device auto --gpu-gap  then  code/run_v1.py score --arm SEAM:<npz> --cache-name navtest --patch-loader  (W3 package). To run on CPU instead, pass --device cpu explicitly",
+  "gate_source": "taniteval.bench.gpu_gap.device_gate",
+  "allowed": false,
+  "requested": "auto",
+  "accept_training_box_load": false,
+  "accept_via": null,
+  "acquired_device": "cpu",
+  "launcher_semantics": "gpu_gap.py:230-256 \u2014 auto: ONE probe then cpu; cuda: probes to max_wait_s then cpu",
+  "cpu_regate": {
+   "decision": "CPU",
+   "reason": "explicit --device cpu and no training process is alive",
+   "training_pids": [],
+   "mem_used_mib": 1746.0,
+   "record": {
+    "requested": "cpu",
+    "training_pids": [],
+    "mem_used_mib": 1746.0,
+    "limit_mib": 1024,
+    "override_flag": "--accept-training-box-load",
+    "override_used": false,
+    "override_passed_as": null,
+    "training_processes": [],
+    "training_process_definition": "taniteval.bench.gpu_gap.TRAINING_SCRIPT_RE (the ONE definition)",
+    "rule": "auto|cuda: model arms WAIT for a GPU gap; cpu: allowed only when no training process is alive, or with --accept-training-box-load (recorded)"
+   },
+   "gate_source": "taniteval.bench.gpu_gap.device_gate",
+   "allowed": true,
+   "requested": "cpu",
+   "accept_training_box_load": false,
+   "accept_via": null
+  }
+ },
+ "model": {
+  "ckpt": "D:/Projects/TanitAD-artifacts/refcv4b_final/ckpt_40284_FINAL.pt",
+  "ckpt_md5": "99b573e8277d94a5e3bfbf630cb4d751",
+  "step": 40284,
+  "device": "cpu",
+  "registry": "MODEL_REGISTRY.md \u00a74.6 refcv4b-b1-v72-40k",
+  "window_rows": 8,
+  "decoder_steps": 2,
+  "torch": "2.11.0+cu128"
+ },
+ "bank": "D:/Archive/devbox-C/navsim/exp/w3_navtest_v1/frame_bank",
+ "n_tokens": 200,
+ "n_export_tokens_without_bank": 0,
+ "arms": {
+  "A1_ego_cmd": {
+   "seam": "raw\\bridge_navtest_replicate\\seam_A1_ego_cmd.npz",
+   "n": 200,
+   "n_requested": 200,
+   "partial": false,
+   "devices": {
+    "cpu": 200
+   },
+   "s_per_scene": 2.871
+  }
+ }
+}

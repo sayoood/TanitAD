@@ -1,0 +1,29 @@
+# PUBLISHED-CODE extract - NVlabs/BEV-Planner @ 01c28d6db56a178ee3a65bf017fe7996360ef026
+# path: mmdet3d/models/fbbev/planner_head/naive_planner.py
+# git blob sha1 of the fetched file: b1cc1dc2fa0a0c918db6e914673329ced30aef79 (20253 B); verified against the repo tree listing at the pinned commit: MATCH
+# fetched 2026-09-19T13:46:02Z from raw.githubusercontent.com (read-only source text; excerpts only, attribution retained)
+
+## lines 399-420: fut_valid = all masks; per-sample max over steps
+  399          fut_valid_flag = gt_ego_fut_masks.all()
+  400          future_second = 3
+  401          metric_dict['fut_valid_flag'] = fut_valid_flag.cpu().item()
+  402          for i in range(future_second):
+  403              if fut_valid_flag:
+  404                  cur_time = (i+1)*2
+  405                  traj_L2 = self.planning_metric.compute_L2(
+  406                      pred_ego_fut_trajs[0, :cur_time].detach().to(gt_ego_fut_trajs.device),
+  407                      gt_ego_fut_trajs[0, :cur_time]
+  408                  )
+  409  
+  410                  obj_coll, obj_box_coll = self.planning_metric.evaluate_coll(
+  411                      pred_ego_fut_trajs[:, :cur_time].detach().to(gt_ego_fut_trajs.device),
+  412                      gt_ego_fut_trajs[:, :cur_time],
+  413                      gt_fut_segmentations,
+  414                      index = [each['index'] for each in img_metas],
+  415                      ignore_gt=False,
+  416                  )
+  417                  metric_dict['plan_L2_{}s'.format(i+1)] = traj_L2
+  418                  metric_dict['plan_obj_col_{}s'.format(i+1)] = obj_coll.max().item()
+  419                  metric_dict['plan_obj_box_col_{}s'.format(i+1)] = obj_box_coll.max().item()
+  420          
+

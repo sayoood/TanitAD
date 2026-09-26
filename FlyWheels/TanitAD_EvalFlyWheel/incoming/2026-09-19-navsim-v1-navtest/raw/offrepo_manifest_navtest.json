@@ -1,0 +1,124 @@
+{
+ "_what": "files the full-split runs produced that are NOT staged: they live in this package on the dev box. Each is DERIVED and reproducible, and its content is already represented by a staged artifact \u2014 the rows.jsonl duplicates the CSV (it is the aggregation-crash insurance, consumed), the .log is the devkit stdout whose summary lines are parsed into counts.json. sha256 recorded so a later reader can check the copy they find.",
+ "files": [
+  {
+   "path": "raw/CV_navtest/CV_navtest_rows.jsonl",
+   "bytes": 5518203,
+   "sha256": "5c6e6c65b9aa79ed04b27fef730488bfde9b45f58d8cf39cf375157263eef9f7",
+   "location": "devbox only (repo tree, unstaged)"
+  },
+  {
+   "path": "raw/CV_navtest/CV_navtest.log",
+   "bytes": 2989178,
+   "sha256": "5790683450a1e2b12b5d7ded8c065155c572e7518dd95f94ac26b7470ed5f4f6",
+   "location": "devbox only (repo tree, unstaged)"
+  },
+  {
+   "path": "raw/HUMAN_navtest/HUMAN_navtest_rows.jsonl",
+   "bytes": 5663123,
+   "sha256": "5e9c9fb8e88a1f9fe846d1e5781942c258a7a696b5c23415529fcca15599e1bc",
+   "location": "devbox only (repo tree, unstaged)"
+  },
+  {
+   "path": "raw/HUMAN_navtest/HUMAN_navtest.log",
+   "bytes": 2987965,
+   "sha256": "b15dc324b8abc1b0981b803328fbadc27765743d1766876568cc08d81b3042e5",
+   "location": "devbox only (repo tree, unstaged)"
+  },
+  {
+   "path": "raw/STOP_navtest/STOP_navtest_rows.jsonl",
+   "bytes": 5730295,
+   "sha256": "276bca320ce0b7e03adf63a82e0c2ff689888d1665fff8c4a63eb8e0f33314f0",
+   "location": "devbox only (repo tree, unstaged)"
+  },
+  {
+   "path": "raw/STOP_navtest/STOP_navtest.log",
+   "bytes": 2988340,
+   "sha256": "e6dee72285cc91d16a86382f313be45e9776d6bb4281fdb458fa90e2ae3d3397",
+   "location": "devbox only (repo tree, unstaged)"
+  },
+  {
+   "path": "raw/A1_navtest/A1_navtest_rows.jsonl",
+   "bytes": 5601292,
+   "sha256": "ab4feb915790737143420f7583ad34f4217719ec6a7fc44276c1b54bfb7767f2",
+   "location": "devbox only (repo tree, unstaged)",
+   "what": "per-token rows streamed during scoring (aggregation-crash insurance); duplicates the staged CSV"
+  },
+  {
+   "path": "raw/A1_navtest/A1_navtest.log",
+   "bytes": 2988733,
+   "sha256": "87cb0d5e2a0bbc4ef86ec8f8789f2651c8355d9578d2492958c52aabb42a6cdb",
+   "location": "devbox only (repo tree, unstaged)",
+   "what": "the devkit's own scoring log"
+  },
+  {
+   "path": "raw/A1S_navtest/A1S_navtest_rows.jsonl",
+   "bytes": 5598358,
+   "sha256": "862032e5096fafae0d575d36fd6d1a87fe4aefad0b76f3ab2060ad054286d6d6",
+   "location": "devbox only (repo tree, unstaged)",
+   "what": "per-token rows streamed during scoring; duplicates the staged CSV"
+  },
+  {
+   "path": "raw/A1S_navtest/A1S_navtest.log",
+   "bytes": 2984143,
+   "sha256": "d7c436bb696a797b8b7269fe57189bfd72ef18010e7b4acd325f3f0bb24281ac",
+   "location": "devbox only (repo tree, unstaged)",
+   "what": "the devkit's own scoring log"
+  },
+  {
+   "path": "raw/bridge_navtest/rows_A1_ego_cmd.jsonl",
+   "bytes": 9423209,
+   "sha256": "e39429981c5efef59eeb9a696b80c851e777b75e0b462f1d1abf8d469cf26599",
+   "location": "devbox only (repo tree, unstaged)",
+   "what": "the bridge's per-token diagnostics (declared values, ego block, nav, diag) for all 12,146 A1 tokens; the first 50 are in the staged manifest"
+  },
+  {
+   "path": "raw/bridge_navtest/seam_A1S.npz",
+   "bytes": 4034252,
+   "sha256": "2a2b8a2b62f436e62ce06272af6ed79b19966e83ac965d8866d9cfe4e4a3e794",
+   "location": "devbox only (repo tree, unstaged)",
+   "what": "DERIVED: code/smooth_seam.py applied to the staged seam_A1_ego_cmd.npz (deterministic, no parameters)"
+  },
+  {
+   "path": "raw/bridge_navtest_diag/rows_A4_blind_ego_cmd.jsonl",
+   "bytes": 747860,
+   "sha256": "846c7ab9b9b44ae5b7b29143f50fab2dd351ec1c8c7a82ef28ee43ea75fc685c",
+   "location": "devbox only (repo tree, unstaged)",
+   "what": "the A4 bridge's per-token diagnostics (957 tokens)"
+  },
+  {
+   "path": "raw/bridge_navtest_replicate/rows_A1_ego_cmd.jsonl",
+   "bytes": 155120,
+   "sha256": "3dc882ebb1069b7d2f49da03555a94331345509d56f81dd84714e1ee1cd7fc01",
+   "location": "devbox only (repo tree, unstaged)",
+   "what": "the determinism replicate's per-token diagnostics (200 tokens)"
+  }
+ ],
+ "also_unstaged": {
+  "path": "raw/cache_navtest/per_log/",
+  "what": "per-group wrapper manifests/hooks/logs of the 34 cache groups (hundreds of small files); the summary is raw/cache_navtest/per_log_runs.json and cache_navtest.counts.json"
+ },
+ "also_unstaged_2026_09_21": [
+  {
+   "path": "raw/bridge_navtest/chunks_A1_ego_cmd/",
+   "what": "the 61 resume parts of the A1 pass; superseded by the staged seam_A1_ego_cmd.npz, which chunk_assemble() rebuilt from them",
+   "n_files": 61,
+   "bytes": 5240794,
+   "sha256_of_part_sha256s_in_name_order": "cefd226ac1b83c9b8356f637d247f67311e50f46636f2afd54c146197158f488"
+  },
+  {
+   "path": "raw/bridge_navtest_diag/chunks_A4_blind_ego_cmd/",
+   "what": "the A4 pass's resume parts; superseded by the staged seam",
+   "n_files": 5,
+   "bytes": 413218,
+   "sha256_of_part_sha256s_in_name_order": "3071460b42d04826d19c7a886805e86f00cbb82df6a4dd6cb167379965a7947a"
+  },
+  {
+   "path": "raw/bridge_navtest_replicate/chunks_A1_ego_cmd/",
+   "what": "the replicate pass's resume part; superseded by the staged seam",
+   "n_files": 1,
+   "bytes": 86290,
+   "sha256_of_part_sha256s_in_name_order": "2ab809d97c4fa47041a4503efce19450123f6687e6ab4414975c3d5089d7585c"
+  }
+ ]
+}

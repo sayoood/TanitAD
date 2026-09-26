@@ -1,0 +1,37 @@
+# PUBLISHED-CODE extract - E2E-AD/AD-MLP @ 4b93ba085ee47474152f282177865796ea577fc0
+# path: deps/stp3/stp3/planning_metrics.py
+# git blob sha1 of the fetched file: 4c63d04a3ff12f06ba7dbe233666aa08f6f83c8b (5860 B); verified against the repo tree listing at the pinned commit: MATCH
+# fetched 2026-09-19T13:46:02Z from raw.githubusercontent.com (read-only source text; excerpts only, attribution retained)
+
+## lines 119-148: update: x flip commented out; no mask
+  119      def compute_L2(self, trajs, gt_trajs):
+  120          '''
+  121          trajs: torch.Tensor (B, n_future, 3)
+  122          gt_trajs: torch.Tensor (B, n_future, 3)
+  123          '''
+  124          return torch.sqrt((((trajs[:, :, :2] - gt_trajs[:, :, :2]) ** 2)).sum(dim=-1)) 
+  125  
+  126      def update(self, trajs, gt_trajs, segmentation):
+  127          '''
+  128          trajs: torch.Tensor (B, n_future, 3)
+  129          gt_trajs: torch.Tensor (B, n_future, 3)
+  130          segmentation: torch.Tensor (B, n_future, 200, 200)
+  131          '''
+  132          assert trajs.shape == gt_trajs.shape
+  133          # trajs[..., 0] = - trajs[..., 0]
+  134          # gt_trajs[..., 0] = - gt_trajs[..., 0]
+  135          L2 = self.compute_L2(trajs, gt_trajs)
+  136          obj_coll_sum, obj_box_coll_sum = self.evaluate_coll(trajs[:,:,:2], gt_trajs[:,:,:2], segmentation)
+  137  
+  138          self.obj_col += obj_coll_sum
+  139          self.obj_box_col += obj_box_coll_sum
+  140          self.L2 += L2.sum(dim=0)
+  141          self.total +=len(trajs)
+  142  
+  143      def compute(self):
+  144          return {
+  145              'obj_col': self.obj_col / self.total,
+  146              'obj_box_col': self.obj_box_col / self.total,
+  147              'L2' : self.L2 / self.total
+  148          }
+

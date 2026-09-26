@@ -1,0 +1,76 @@
+# PUBLISHED-CODE extract - hustvl/VAD @ 1688c4b1c3a9e2e7873ca9700ff8058170c0e3c8
+# path: projects/mmdet3d_plugin/VAD/VAD.py
+# git blob sha1 of the fetched file: 61818a5ee1eb90bd68e3341355efe73e498ad932 (27020 B); verified against the repo tree listing at the pinned commit: MATCH
+# fetched 2026-09-19T13:46:02Z from raw.githubusercontent.com (read-only source text; excerpts only, attribution retained)
+
+## lines 418-435: GT command selects which planned trajectory is scored
+  418              # ego planning metric
+  419              assert ego_fut_trajs.shape[0] == 1, 'only support batch_size=1 for testing'
+  420              ego_fut_preds = bbox_result['ego_fut_preds']
+  421              ego_fut_trajs = ego_fut_trajs[0, 0]
+  422              ego_fut_cmd = ego_fut_cmd[0, 0, 0]
+  423              ego_fut_cmd_idx = torch.nonzero(ego_fut_cmd)[0, 0]
+  424              ego_fut_pred = ego_fut_preds[ego_fut_cmd_idx]
+  425              ego_fut_pred = ego_fut_pred.cumsum(dim=-2)
+  426              ego_fut_trajs = ego_fut_trajs.cumsum(dim=-2)
+  427  
+  428              metric_dict_planner_stp3 = self.compute_planner_metric_stp3(
+  429                  pred_ego_fut_trajs = ego_fut_pred[None],
+  430                  gt_ego_fut_trajs = ego_fut_trajs[None],
+  431                  gt_agent_boxes = gt_bbox,
+  432                  gt_agent_feats = gt_attr_label.unsqueeze(0),
+  433                  fut_valid_flag = fut_valid_flag
+  434              )
+  435              metric_dict.update(metric_dict_planner_stp3)
+
+## lines 593-641: per-sample stp3-style metric
+  593      def compute_planner_metric_stp3(
+  594          self,
+  595          pred_ego_fut_trajs,
+  596          gt_ego_fut_trajs,
+  597          gt_agent_boxes,
+  598          gt_agent_feats,
+  599          fut_valid_flag
+  600      ):
+  601          """Compute planner metric for one sample same as stp3."""
+  602          metric_dict = {
+  603              'plan_L2_1s':0,
+  604              'plan_L2_2s':0,
+  605              'plan_L2_3s':0,
+  606              'plan_obj_col_1s':0,
+  607              'plan_obj_col_2s':0,
+  608              'plan_obj_col_3s':0,
+  609              'plan_obj_box_col_1s':0,
+  610              'plan_obj_box_col_2s':0,
+  611              'plan_obj_box_col_3s':0,
+  612          }
+  613          metric_dict['fut_valid_flag'] = fut_valid_flag
+  614          future_second = 3
+  615          assert pred_ego_fut_trajs.shape[0] == 1, 'only support bs=1'
+  616          if self.planning_metric is None:
+  617              self.planning_metric = PlanningMetric()
+  618          segmentation, pedestrian = self.planning_metric.get_label(
+  619              gt_agent_boxes, gt_agent_feats)
+  620          occupancy = torch.logical_or(segmentation, pedestrian)
+  621  
+  622          for i in range(future_second):
+  623              if fut_valid_flag:
+  624                  cur_time = (i+1)*2
+  625                  traj_L2 = self.planning_metric.compute_L2(
+  626                      pred_ego_fut_trajs[0, :cur_time].detach().to(gt_ego_fut_trajs.device),
+  627                      gt_ego_fut_trajs[0, :cur_time]
+  628                  )
+  629                  obj_coll, obj_box_coll = self.planning_metric.evaluate_coll(
+  630                      pred_ego_fut_trajs[:, :cur_time].detach(),
+  631                      gt_ego_fut_trajs[:, :cur_time],
+  632                      occupancy)
+  633                  metric_dict['plan_L2_{}s'.format(i+1)] = traj_L2
+  634                  metric_dict['plan_obj_col_{}s'.format(i+1)] = obj_coll.mean().item()
+  635                  metric_dict['plan_obj_box_col_{}s'.format(i+1)] = obj_box_coll.mean().item()
+  636              else:
+  637                  metric_dict['plan_L2_{}s'.format(i+1)] = 0.0
+  638                  metric_dict['plan_obj_col_{}s'.format(i+1)] = 0.0
+  639                  metric_dict['plan_obj_box_col_{}s'.format(i+1)] = 0.0
+  640              
+  641          return metric_dict
+

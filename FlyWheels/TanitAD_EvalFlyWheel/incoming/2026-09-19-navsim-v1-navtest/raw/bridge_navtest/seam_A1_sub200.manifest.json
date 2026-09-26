@@ -1,0 +1,64 @@
+{
+ "arm": "A1_ego_cmd",
+ "spec": {
+  "declared": [
+   "ego_velocity[t0]",
+   "ego_acceleration[t0]",
+   "driving_command[t0]"
+  ],
+  "keep": 1,
+  "nav": "cmd",
+  "frames": "ST",
+  "meaning": "frames + measured t0 ego state + NavSim driving_command -> nav"
+ },
+ "declared_inputs": [
+  "ego_velocity[t0]",
+  "ego_acceleration[t0]",
+  "driving_command[t0]"
+ ],
+ "frames_construction": "ST",
+ "n": 200,
+ "n_requested": 12146,
+ "partial": true,
+ "stalled_on_ram": false,
+ "device": "cpu",
+ "devices": {
+  "cpu": 200
+ },
+ "mixed_device": false,
+ "priority": "BELOW_NORMAL",
+ "resumed_from_parts": 200,
+ "n_parts": 1,
+ "ram_floor_mb": 3000,
+ "ram_wait_min": [],
+ "ram_probe_unreadable": 0,
+ "wall_s": 0.0,
+ "seam": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\D--Projects-TanitAD\\bbcd6d8b-6831-4ca4-8774-3051e3caa1c6\\scratchpad\\w3_sub200\\seam_A1_ego_cmd.npz",
+ "rows_jsonl": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\D--Projects-TanitAD\\bbcd6d8b-6831-4ca4-8774-3051e3caa1c6\\scratchpad\\w3_sub200\\rows_A1_ego_cmd.jsonl",
+ "conversion": "``[K,2]`` ego-frame knots (origin excluded) -> ``[8,3]`` NavSim poses.\n\nMethod (declared in SPEC): a C2 cubic spline in TIME ('not-a-knot', scipy\n``CubicSpline``) per axis through the origin (t=0, (0,0)) and every knot;\nevaluated at ``out_t``. At a knot time the spline reproduces the knot to\nfloat precision (the GT round-trip control asserts < 1e-3 m); at 2.5 s and\n3.5 s it INTERPOLATES (error measured on logged human paths). Heading =\natan2(y'(t), x'(t)) of the same spline \u2014 the rear-axle path tangent, which\nis the kinematic-bicycle yaw at the rear axle (zero side-slip there);\nheld at the previous value (0 = the t0 yaw at t=0) where |p'(t)| < 1.0 m/s,\nand every new value is taken as the branch NEAREST the previous one (so a\nheld value can never be unwrapped into a multi-turn drift). The axes need\nNO permutation: both systems are x-forward / y-left / CCW-positive\n(refb_labels.ego_frame; navsim convert_absolute_to_relative_se2_array).",
+ "per_token": [],
+ "device_gate": {
+  "decision": "CPU",
+  "reason": "explicit --device cpu and no training process is alive",
+  "training_pids": [],
+  "mem_used_mib": 1738.0,
+  "record": {
+   "requested": "cpu",
+   "training_pids": [],
+   "mem_used_mib": 1738.0,
+   "limit_mib": 1024,
+   "override_flag": "--accept-training-box-load",
+   "override_used": false,
+   "override_passed_as": null,
+   "training_processes": [],
+   "training_process_definition": "taniteval.bench.gpu_gap.TRAINING_SCRIPT_RE (the ONE definition)",
+   "rule": "auto|cuda: model arms WAIT for a GPU gap; cpu: allowed only when no training process is alive, or with --accept-training-box-load (recorded)"
+  },
+  "gate_source": "taniteval.bench.gpu_gap.device_gate",
+  "allowed": true,
+  "requested": "cpu",
+  "accept_training_box_load": false,
+  "accept_via": null
+ },
+ "gpu_gap_events": null
+}

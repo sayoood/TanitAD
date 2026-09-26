@@ -1,0 +1,21 @@
+# PUBLISHED-CODE extract - OpenDriveLab/ST-P3 @ 69aabefd2610951d9e34238142776ed2228673be
+# path: stp3/utils/geometry.py
+# git blob sha1 of the fetched file: 8d730a7773c9ac425e3ced8648469c5220c024da (11868 B); verified against the repo tree listing at the pinned commit: MATCH
+# fetched 2026-09-19T13:46:02Z from raw.githubusercontent.com (read-only source text; excerpts only, attribution retained)
+
+## lines 71-84: get_global_pose (LIDAR_TOP sensor pose)
+   71  def get_global_pose(rec, nusc, inverse=False):
+   72      lidar_sample_data = nusc.get('sample_data', rec['data']['LIDAR_TOP'])
+   73  
+   74      sd_ep = nusc.get("ego_pose", lidar_sample_data["ego_pose_token"])
+   75      sd_cs = nusc.get("calibrated_sensor", lidar_sample_data["calibrated_sensor_token"])
+   76      if inverse is False:
+   77          global_from_ego = transform_matrix(sd_ep["translation"], Quaternion(sd_ep["rotation"]), inverse=False)
+   78          ego_from_sensor = transform_matrix(sd_cs["translation"], Quaternion(sd_cs["rotation"]), inverse=False)
+   79          pose = global_from_ego.dot(ego_from_sensor)
+   80      else:
+   81          sensor_from_ego = transform_matrix(sd_cs["translation"], Quaternion(sd_cs["rotation"]), inverse=True)
+   82          ego_from_global = transform_matrix(sd_ep["translation"], Quaternion(sd_ep["rotation"]), inverse=True)
+   83          pose = sensor_from_ego.dot(ego_from_global)
+   84      return pose
+

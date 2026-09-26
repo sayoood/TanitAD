@@ -1,0 +1,48 @@
+{
+ "what": "bounding the frame cache must not change ANY number; a bound below the working set must EVICT",
+ "cache_max_64": {
+  "verdict": "PASS",
+  "frame_cache": {
+   "hits": 6,
+   "misses": 6,
+   "evictions": 0,
+   "max_entries": 64,
+   "bytes_per_entry": 2129920,
+   "why_bounded": "MEASURED 2026-09-20: unbounded, navhard's 5,462 DISTINCT stage-2 scene_tokens would hold 10.83 GB on a box with 7.9 GB available, with a 0 % hit rate (1 token per scene)"
+  },
+  "seconds": 91.2
+ },
+ "cache_max_2": {
+  "verdict": "PASS",
+  "frame_cache": {
+   "hits": 0,
+   "misses": 12,
+   "evictions": 10,
+   "max_entries": 2,
+   "bytes_per_entry": 2129920,
+   "why_bounded": "MEASURED 2026-09-20: unbounded, navhard's 5,462 DISTINCT stage-2 scene_tokens would hold 10.83 GB on a box with 7.9 GB available, with a 0 % hit rate (1 token per scene)"
+  },
+  "seconds": 58.7
+ },
+ "poses_bit_identical": {
+  "A1": {
+   "bit_identical": true,
+   "shape": [
+    8,
+    8,
+    3
+   ],
+   "max_abs_diff": 0.0
+  },
+  "A4": {
+   "bit_identical": true,
+   "shape": [
+    8,
+    8,
+    3
+   ],
+   "max_abs_diff": 0.0
+  }
+ },
+ "verdict": "PASS: the bound is INERT and it DID evict"
+}

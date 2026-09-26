@@ -1,0 +1,28 @@
+# PUBLISHED-CODE extract - OpenDriveLab/UniAD @ 33cd8ecf7ad5ea4b7d779a2176841d3c1c4d4174
+# path: projects/mmdet3d_plugin/datasets/nuscenes_e2e_dataset.py
+# git blob sha1 of the fetched file: c1b93924cf4fd0da8c6a704261d56ccad71986c2 (53650 B); verified against the GitHub contents API: MATCH
+# fetched 2026-09-19T13:46:02Z from raw.githubusercontent.com (read-only source text; excerpts only, attribution retained)
+
+## lines 1025-1045: 2024-03-19: 'Add option for legacy planning metric definition'
+ 1025              if 'planning_results_computed' in results.keys():
+ 1026                  planning_results_computed = results['planning_results_computed']
+ 1027                  planning_tab = PrettyTable()
+ 1028                  planning_tab.title = f"{planning_evaluation_strategy}'s definition planning metrics"
+ 1029                  planning_tab.field_names = [
+ 1030                      "metrics", "0.5s", "1.0s", "1.5s", "2.0s", "2.5s", "3.0s"]
+ 1031                  for key in planning_results_computed.keys():
+ 1032                      value = planning_results_computed[key]
+ 1033                      row_value = []
+ 1034                      row_value.append(key)
+ 1035                      for i in range(len(value)):
+ 1036                          if planning_evaluation_strategy == "stp3":
+ 1037                              row_value.append("%.4f" % float(value[: i + 1].mean()))
+ 1038                          elif planning_evaluation_strategy == "uniad":
+ 1039                              row_value.append("%.4f" % float(value[i]))
+ 1040                          else:
+ 1041                              raise ValueError(
+ 1042                                  "planning_evaluation_strategy should be uniad or spt3"
+ 1043                              )
+ 1044                      planning_tab.add_row(row_value)
+ 1045                  print(planning_tab)
+

@@ -1,0 +1,111 @@
+{
+ "question": "does [N1] arXiv 2406.15349v2 ROUND or TRUNCATE its printed table values?",
+ "primary": {
+  "library_key": "2406.15349",
+  "sha256": "d3bc66d321cfceccc4f431113dea3f0f481d74d29dd283a33e204a4326f0403c"
+ },
+ "prior": "E1 MEASURED that [N2] arXiv 2506.04218v3 TRUNCATES (8/8 truncating vs 4/8 rounding on its Table 2 CV S1 column, n = 450). Same group, different paper: a prior, never proof for [N1].",
+ "internal_test": {
+  "what": "[N1] Table 2 three TransFuser seeds -> the text's '+- 0.56'",
+  "printed_seeds": [
+   83.3,
+   84.0,
+   84.4
+  ],
+  "sample_std_from_printed": 0.556776,
+  "population_std_from_printed": 0.454606,
+  "printed_std": 0.56,
+  "dp": 2,
+  "rounded": 0.56,
+  "truncated": 0.55,
+  "implies": "ROUNDING",
+  "caveat": "the paper's std came from the TRUE seeds, not the printed ones; a true std anywhere in [0.560, 0.570) would also truncate to 0.56"
+ },
+ "leaderboard_cells": [
+  {
+   "cell": "Tab.3 Constant Velocity PDMS",
+   "true_value": 20.6517,
+   "printed": 20.6,
+   "dp": 1,
+   "rounded": 20.7,
+   "truncated": 20.6,
+   "implies": "TRUNCATION",
+   "true_value_source": "INHERITED: HF navtest leaderboard via NAVSIM_PROTOCOL.md 6.1 (retrieved 2026-08-23)"
+  },
+  {
+   "cell": "Tab.3 TransFuser PDMS (3 seeds)",
+   "true_value": 83.8822,
+   "printed": 83.9,
+   "dp": 1,
+   "rounded": 83.9,
+   "truncated": 83.8,
+   "implies": "ROUNDING",
+   "true_value_source": "INHERITED: HF navtest leaderboard via NAVSIM_PROTOCOL.md 6.1 (retrieved 2026-08-23)"
+  },
+  {
+   "cell": "Tab.3 LTF PDMS (3 seeds)",
+   "true_value": 83.5239,
+   "printed": 83.5,
+   "dp": 1,
+   "rounded": 83.5,
+   "truncated": 83.5,
+   "implies": "UNINFORMATIVE (both conventions print the same)",
+   "true_value_source": "INHERITED: HF navtest leaderboard via NAVSIM_PROTOCOL.md 6.1 (retrieved 2026-08-23)"
+  },
+  {
+   "cell": "Tab.3 Ego Status MLP PDMS (3 seeds)",
+   "true_value": 66.3989,
+   "printed": 66.4,
+   "dp": 1,
+   "rounded": 66.4,
+   "truncated": 66.3,
+   "implies": "ROUNDING",
+   "true_value_source": "INHERITED: HF navtest leaderboard via NAVSIM_PROTOCOL.md 6.1 (retrieved 2026-08-23)"
+  },
+  {
+   "cell": "Tab.3 TransFuser +- (3 seeds)",
+   "true_value": 0.4477,
+   "printed": 0.4,
+   "dp": 1,
+   "rounded": 0.4,
+   "truncated": 0.4,
+   "implies": "UNINFORMATIVE (both conventions print the same)",
+   "true_value_source": "INHERITED: HF navtest leaderboard via NAVSIM_PROTOCOL.md 6.1 (retrieved 2026-08-23)"
+  },
+  {
+   "cell": "Tab.3 LTF +- (3 seeds)",
+   "true_value": 0.552,
+   "printed": 0.6,
+   "dp": 1,
+   "rounded": 0.6,
+   "truncated": 0.5,
+   "implies": "ROUNDING",
+   "true_value_source": "INHERITED: HF navtest leaderboard via NAVSIM_PROTOCOL.md 6.1 (retrieved 2026-08-23)"
+  },
+  {
+   "cell": "Tab.3 Ego Status MLP +- (3 seeds)",
+   "true_value": 0.9406,
+   "printed": 0.9,
+   "dp": 1,
+   "rounded": 0.9,
+   "truncated": 0.9,
+   "implies": "UNINFORMATIVE (both conventions print the same)",
+   "true_value_source": "INHERITED: HF navtest leaderboard via NAVSIM_PROTOCOL.md 6.1 (retrieved 2026-08-23)"
+  }
+ ],
+ "tally_over_leaderboard_cells": {
+  "TRUNCATION": 1,
+  "ROUNDING": 3,
+  "UNINFORMATIVE": 3
+ },
+ "verdict": "UNSETTLED for [N1]. The one test internal to the paper implies ROUNDING; the 4 informative leaderboard cells split 3 ROUNDING / 1 TRUNCATION, and that source is a moving target two years newer than the paper, so a single disagreeing cell is as likely to be a different run as a different convention. \u26d4 No convention may be assumed.",
+ "consequence": "SPEC AMENDMENT A1: the verdict reports BOTH readings of the measured value at the table's printed precision \u2014 round-half-up and truncate \u2014 and a cell counts as REPRODUCED only if BOTH read the published digits. One-sided agreement is reported as REPRODUCED_UNDER_<convention> with the other reading printed beside it, never as a bare REPRODUCED, and never chosen for being the flattering one.",
+ "post_measurement_2026_09_20": {
+  "what_changed": "W3 MEASURED the CV arm on the full split: PDMS = 20.651651538606658, which equals the INHERITED leaderboard value at its 4 printed decimals. The 'Tab.3 Constant Velocity PDMS' cell above is therefore no longer print-vs-inherited but print-vs-measured.",
+  "cell_verdict": "SETTLED for this cell: the paper's 20.6 is a TRUNCATION of 20.65165\u2026 (rounding would print 20.7), and the leaderboard's 20.6517 is a ROUNDING of the same number.",
+  "paper_verdict": "UNCHANGED \u2014 still UNSETTLED. The other three informative cells (TransFuser 83.9, Ego-MLP 66.4, LTF \u00b10.6) still read as ROUNDING and are unexplained; they may record a different RUN than the 2026-08-23 leaderboard rather than a different rule. One cell demonstrably truncated is not a convention.",
+  "assumption_stated": "the cell verdict assumes the paper's CV row is the same underlying quantity as W3's measurement; supported (5 sub-scores match Tab. 1 at 1 dp; PDMS matches the LB at 4 dp; the paper states Tab. 3 IS that leaderboard) but not itself measured.",
+  "consequence": "AMENDMENT A1 stays in force for every cell of this paper.",
+  "provenance": "adjudicated by W3 2026-09-20 after the orchestrator relayed 'the paper truncates' and W4 checked that phrasing against THIS file. W4's narrowing was correct."
+ }
+}

@@ -1,0 +1,256 @@
+# W6 -> W2: the nuScenes 'not a criterion' guard (EXTERNAL_ONLY scope + the gate).
+# BASE (git blob sha1 of the worktree file this diff was built against, 2026-09-20):
+#   884efda3a75942d27ff85f1f4898648d1d9d38d8  tools/criteria_check.py
+#   634264f1d57aa7398b386eb880e0be5754ebb554  tools/tests/test_criteria_check.py
+#   252fd8531933a591b32f6a6dd620b24d166d0771  products/P7-TanitEval/CRITERIA_REGISTRY.json
+# Apply:  git apply -p1 <this file>   (from the repo root)
+# If W2 has moved on and a hunk conflicts, the change is small and self-contained:
+#   (1) the EXTERNAL_ONLY constant beside IN_SCOPE / OUT_OF_SCOPE / UNKNOWN_SCOPE,
+#   (2) nuscenes_planning_state() next to _status_of(),
+#   (3) check_artifact(): the early return for an EXTERNAL_ONLY record + the `misuse`
+#       row appended to `benchmarks`,
+#   (4) one census line counting EXTERNAL-ONLY records,
+#   (5) the registry gate GATE_not_a_criterion + five tests (all verbatim in this diff).
+# VERIFIED 2026-09-20: `git apply --check` clean; in a scratch mirror the patched suite
+# reads 171 passed / 4 skipped, and with the UNPATCHED checker the four guard tests FAIL
+# (they test the guard, not the fixture).
+--- a/tools/criteria_check.py
++++ b/tools/criteria_check.py
+@@ -122,6 +122,9 @@
+ 
+ 
+ IN_SCOPE, OUT_OF_SCOPE, UNKNOWN_SCOPE = "IN_SCOPE", "OUT_OF_SCOPE", "UNKNOWN_SCOPE"
++#: A nuScenes open-loop planning record that KNOWS what it is: reported, NEVER scored against the
++#: TanitAD criteria and NEVER counted as compliant (see :func:`nuscenes_planning_state`).
++EXTERNAL_ONLY = "EXTERNAL_ONLY"
+ 
+ 
+ def _matches(artifact: dict, rule: dict) -> bool:
+@@ -154,6 +157,54 @@
+     return UNKNOWN_SCOPE, "matches no in-scope or out-of-scope marker"
+ 
+ 
++# ------------------------------------------------- nuScenes open-loop planning (W6) --- #
++# nuScenes OPEN-LOOP PLANNING IS NOT A TANITAD CRITERION. Register `H-EVAL-6` SUPPORTED, and the
++# PI-approved portfolio marks it SKIP claim-bearing (`D-BENCH-PORT`, 2026-08-29): there is no
++# official protocol; the L2 averaging convention alone moves ONE checkpoint 0.72 -> 1.22 m and
++# FLIPS the UniAD/VAD ranking; the ground-truth HUMAN trajectory scores 0.36-0.96 % collision; and
++# the field's "high-level command" is the GT future thresholded at +-2 m - our own route-echo
++# defect, published as SOTA (`products/P7-TanitEval/benchmarks/NUSCENES_PROTOCOL.md`).
++#
++# The instrument has to tell THREE things apart, and a scope alone cannot:
++#   * a nuScenes planning record declaring `claim_bearing: false`  -> EXTERNAL_ONLY (reported,
++#     never scored, never counted as compliant);
++#   * the SAME record claiming something (`claim_bearing` true or absent) -> VIOLATION;
++#   * nuScenes planning numbers sitting INSIDE an in-scope TanitAD driving artifact -> VIOLATION,
++#     which is the misuse this row exists for - an EXTERNAL_ONLY scope ALONE would excuse it,
++#     because the artifact would simply stop being scored.
++NUSCENES_PLANNING_KEYS = ("benchmark.nuscenes.planning", "benchmark.nuscenes.planning.protocol_tag")
++NUSCENES_PLANNING_SCHEMAS = ("taniteval.nuscenes_planning/1",)
++NUSC_GATE_ID = "nusc.plan.not_a_criterion"
++NUSC_GATE_LABEL = "nuScenes open-loop planning is never a TanitAD criterion (H-EVAL-6)"
++
++
++def nuscenes_planning_state(artifact: dict, registry: dict) -> tuple:
++    """``("none" | "external_only" | "misused", detail)`` for one artifact."""
++    hit = None
++    for k in NUSCENES_PLANNING_KEYS:
++        found, val = _dig(artifact, k)
++        if found and val is not None:
++            hit = k
++            break
++    if hit is None and str(artifact.get("schema", "")) in NUSCENES_PLANNING_SCHEMAS:
++        hit = "schema=" + str(artifact.get("schema"))
++    if hit is None:
++        return "none", ""
++    cb = artifact.get("claim_bearing", None)
++    if cb is not False:
++        return "misused", (
++            f"{FAIL_}carries {hit} but claim_bearing is {cb!r} - it must be exactly false. "
++            f"nuScenes open-loop planning is INADMISSIBLE as a TanitAD criterion (H-EVAL-6 "
++            f"SUPPORTED; D-BENCH-PORT SKIP claim-bearing): a cited external-comparability row only.")
++    scope, why = scope_of(artifact, registry)
++    if scope == IN_SCOPE:
++        return "misused", (
++            f"{FAIL_}carries {hit} INSIDE an in-scope TanitAD driving artifact ({why}) - a "
++            f"nuScenes open-loop number may never stand in a TanitAD criterion artifact, whatever "
++            f"its claim_bearing flag says (H-EVAL-6). Keep it in its own external record.")
++    return "external_only", f"nuScenes open-loop planning ({hit}); claim_bearing false"
++
++
+ # A criterion can be declined in two idioms, and BOTH are honest:
+ #   1. a top-level `refused` block naming it            (taniteval.driving style)
+ #   2. the criterion's own value being a status object  (four_families style):
+@@ -260,12 +311,20 @@
+ 
+ 
+ def check_artifact(artifact: dict, registry: dict) -> dict:
++    nus, nus_why = nuscenes_planning_state(artifact, registry)
++    if nus == "external_only":
++        return {"scope": EXTERNAL_ONLY, "scope_why": nus_why, "tier": None, "tier_raw": None,
++                "tier_is_driving_performance": False, "families": {}, "hygiene": [],
++                "leak_guards": [],
++                "benchmarks": [_row(NUSC_GATE_ID, NUSC_GATE_LABEL, PRESENT, nus_why)],
++                "n_violations": 0, "n_work_items": 0, "violations": [], "work_items": []}
++    misuse = [_row(NUSC_GATE_ID, NUSC_GATE_LABEL, ABSENT, nus_why)] if nus == "misused" else []
+     scope, scope_why = scope_of(artifact, registry)
+     if scope != IN_SCOPE:
+         return {"scope": scope, "scope_why": scope_why, "tier": None, "tier_raw": None,
+                 "tier_is_driving_performance": False, "families": {}, "hygiene": [],
+-                "leak_guards": [], "benchmarks": [], "n_violations": 0, "n_work_items": 0,
+-                "violations": [], "work_items": []}
++                "leak_guards": [], "benchmarks": misuse, "n_violations": len(misuse),
++                "n_work_items": 0, "violations": list(misuse), "work_items": []}
+ 
+     families = {}
+     for fam, spec in registry.get("families", {}).items():
+@@ -303,7 +362,7 @@
+                       "required": guard.get("required", True),
+                       "state": state, "detail": detail})
+ 
+-    benchmarks = check_benchmarks(artifact, registry)
++    benchmarks = check_benchmarks(artifact, registry) + misuse
+ 
+     all_rows = [r for rows in families.values() for r in rows] + hygiene + leaks + benchmarks
+     violations = [r for r in all_rows if r["state"] == ABSENT and r["required"]]
+@@ -806,10 +865,12 @@
+     scoped = {k: v for k, v in report.items() if v.get("scope") == IN_SCOPE}
+     out_of = [k for k, v in report.items() if v.get("scope") == OUT_OF_SCOPE]
+     unknown = [k for k, v in report.items() if v.get("scope") == UNKNOWN_SCOPE]
++    external = [k for k, v in report.items() if v.get("scope") == EXTERNAL_ONLY]
+     n = len(scoped)
+ 
+     out = [f"CRITERIA CENSUS (registry v{registry.get('version')})", "=" * 62,
+            f"{total} artifacts read -> {n} in scope (driving evals), "
++           f"{len(external)} EXTERNAL-ONLY (nuScenes OL: never a criterion), "
+            f"{len(out_of)} out of scope, {len(unknown)} UNKNOWN", ""]
+     if unknown:
+         out.append("UNKNOWN SCOPE — a human must classify these; they are NOT counted "
+--- a/tools/tests/test_criteria_check.py
++++ b/tools/tests/test_criteria_check.py
+@@ -393,6 +393,73 @@
+             assert b.get("primary"), f"{name} adopted with no primary source cited"
+ 
+ 
++# ---------------------------------- nuScenes open-loop planning: not a criterion (W6) ---
++# H-EVAL-6 SUPPORTED + D-BENCH-PORT SKIP claim-bearing. The guard separates an honest
++# external-comparability record from the two ways the number gets misused: one arm per way, plus
++# a control proving the guard touches nothing else.
++
++def _nusc_artifact(claim_bearing=False, extra=None):
++    art = {
++        "schema": "taniteval.nuscenes_planning/1",
++        "claim_bearing": claim_bearing,
++        "claim_bearing_reason": "H-EVAL-6: inadmissible as a TanitAD criterion; D-BENCH-PORT SKIP",
++        "protocol": {"nuscenes_protocol": "nuScenes_OL_L2_uniad"},
++        "benchmark": {"nuscenes": {"planning": {
++            "protocol_tag": "nuscenes-planning/uniad-noavg+uniad@609ee08",
++            "protocol": "nuScenes_OL_L2_uniad",
++            "command_source": "none",
++            "gt_control": {"status": "OK", "n": 6019,
++                           "gt_collision_box_pct": {"avg_1_2_3s": 0.36}},
++            "nonstraight": {"status": "OK", "n": 686},
++            "results": {"rows": [{"protocol_tag": "nuscenes-planning/uniad-noavg+uniad@609ee08",
++                                  "metric": "L2_m", "horizon": "1s", "value": 1.03,
++                                  "n_samples": 6019}]}}}},
++    }
++    art.update(extra or {})
++    return art
++
++
++def test_a_nuscenes_planning_record_is_EXTERNAL_ONLY_and_is_never_scored(registry):
++    res = cc.check_artifact(_nusc_artifact(), registry)
++    assert res["scope"] == cc.EXTERNAL_ONLY
++    assert res["n_violations"] == 0 and res["families"] == {}
++    assert [r["state"] for r in res["benchmarks"]] == [cc.PRESENT]
++
++
++def test_DELIBERATE_REGRESSION_a_claim_bearing_nuscenes_record_is_a_violation(registry):
++    for cb in (True, None):
++        art = _nusc_artifact(claim_bearing=cb)
++        if cb is None:
++            art.pop("claim_bearing")
++        res = cc.check_artifact(art, registry)
++        ids = [v["id"] for v in res["violations"]]
++        assert cc.NUSC_GATE_ID in ids, (cb, ids)
++
++
++def test_DELIBERATE_REGRESSION_nuscenes_numbers_inside_a_driving_artifact_are_a_violation(
++        compliant, registry):
++    art = copy.deepcopy(compliant)
++    art["benchmark"] = _nusc_artifact()["benchmark"]
++    art["claim_bearing"] = False                       # even declared false: still a misuse
++    res = cc.check_artifact(art, registry)
++    assert res["scope"] == cc.IN_SCOPE                 # it IS scored - and it FAILS
++    assert cc.NUSC_GATE_ID in [v["id"] for v in res["violations"]]
++
++
++def test_the_nuscenes_guard_leaves_every_other_artifact_alone(compliant, registry):
++    """The control: a guard that fires on everything is not a guard."""
++    assert cc.nuscenes_planning_state(compliant, registry)[0] == "none"
++    assert cc.check_artifact(compliant, registry)["n_violations"] == 0
++    assert cc.check_artifact({"fp32": {"params": 1}}, registry)["scope"] == cc.OUT_OF_SCOPE
++
++
++def test_the_registry_carries_the_not_a_criterion_gate(registry):
++    gate = registry["benchmarks"]["nuscenes"]["tasks"]["planning_openloop"]["GATE_not_a_criterion"]
++    assert gate["blocking"] is True and gate["id"] == cc.NUSC_GATE_ID
++    assert "claim_bearing" in gate["rule"] and "H-EVAL-6" in gate["why"]
++    assert "benchmark.nuscenes.planning" in gate["detect_keys"]
++
++
+ # ------------------------------- the registry self-check (C133-b, 2026-08-23) ---
+ # A criterion whose keys resolve in NO artifact is a TYPO far more often than a
+ # universal absence - and both print as "0 present". This exact confusion was
+--- a/products/P7-TanitEval/CRITERIA_REGISTRY.json
++++ b/products/P7-TanitEval/CRITERIA_REGISTRY.json
+@@ -1133,7 +1133,27 @@
+       "nuScenes_OL_L2_stp3": "stp3 (L2 averaged UP TO the timestep)",
+       "nuScenes_OL_L2_uniad": "uniad (L2 AT the timestep)"
+      },
+-     "protocol_tags_note": "the suite's tags (taniteval/taniteval/bench/schema/summary.schema.json, W1); claim_bearing is false by API — the task stays INADMISSIBLE as a criterion."
++     "protocol_tags_note": "the suite's tags (taniteval/taniteval/bench/schema/summary.schema.json, W1); claim_bearing is false by API — the task stays INADMISSIBLE as a criterion.",
++     "GATE_not_a_criterion": {
++      "id": "nusc.plan.not_a_criterion",
++      "blocking": true,
++      "rule": "An artifact carrying a nuScenes open-loop PLANNING block must declare `claim_bearing: false` and must NOT be an in-scope TanitAD driving artifact. claim_bearing true or absent FAILS; nuScenes planning numbers inside a driving artifact FAIL even when the flag says false. An honest external-comparability record is reported as EXTERNAL_ONLY: never scored, never counted as compliant.",
++      "why": "H-EVAL-6 (SUPPORTED) + D-BENCH-PORT (PI 2026-08-29: SKIP claim-bearing). There is no official nuScenes planning protocol; the averaging convention alone moves one checkpoint 0.72 -> 1.22 m and flips the UniAD/VAD ranking; the GT human trajectory scores 0.36-0.96 % collision; and the field's high-level command is the GT future thresholded at +/-2 m - our route-echo defect, published as SOTA.",
++      "detect_keys": [
++       "benchmark.nuscenes.planning",
++       "benchmark.nuscenes.planning.protocol_tag",
++       "schema == taniteval.nuscenes_planning/1"
++      ],
++      "keys": [
++       "claim_bearing",
++       "benchmark.nuscenes.planning.protocol_tag",
++       "benchmark.nuscenes.planning.gt_control",
++       "benchmark.nuscenes.planning.command_source",
++       "benchmark.nuscenes.planning.nonstraight"
++      ],
++      "harness": "taniteval/adapters/nuscenes_planning.py (W6): both conventions verbatim to the pinned reference code, claim_bearing:false enforced by API; taniteval/taniteval/bench/plugins/nuscenes_ol.py runs ONE convention per run.",
++      "ships_with": "tools/tests/test_criteria_check.py: an EXTERNAL_ONLY arm, two deliberate misuse arms that must go RED, and a control"
++     }
+     }
+    }
+   },
+@@ -1280,6 +1300,13 @@
+    "change": "(a) tools/criteria_check.py now EVALUATES benchmarks.navsim — the five criteria and all four blocking GATE_* — and FAILS an artifact whose protocol tag is outside the registered union; (b) EPDMS_v2 multipliers gain TLC; (c) GATE_estimator_cluster_unit UNRESOLVED -> SETTLED (log-cluster bootstrap, SPEC + census); (d) ROUTE_LEAK_VERDICT = PARTIAL, route-level oracle; (e) benchmarks.navsim_v1; plus the protocol_tags union with nuScenes + internal tags in their own blocks.",
+    "why": "MEASURED 2026-09-19 by E1 and independently by E2: criteria_check.py evaluated NONE of benchmarks.navsim, so all four blocking NavSim gates were unenforced and every NavSim artifact passed; and the EPDMS_v2 multiplier list omitted TLC while this registry's own EPDMS_submetrics multiplied by it.",
+    "ships_with": "tools/tests/test_criteria_check.py — a deliberate-regression arm per gate that must go RED; taniteval/tests/test_navsim_ci.py — literal analytic targets, the devkit-reference literal, the real-run reproduction and a RED code mutation."
++  },
++  {
++   "version": "2.10.1-W6-proposed",
++   "date": "2026-09-20",
++   "by": "W6 (E5) - PROPOSED PATCH, integrated by W2 / the orchestrator",
++   "change": "ADD benchmarks.nuscenes.tasks.planning_openloop.GATE_not_a_criterion and the checker's EXTERNAL_ONLY scope: a nuScenes open-loop planning record is reported and never scored; claiming one, or embedding its numbers in a TanitAD driving artifact, is a VIOLATION.",
++   "why": "H-EVAL-6 is SUPPORTED and D-BENCH-PORT marks nuScenes-OL SKIP claim-bearing, but nothing in the machinery could SEE such a record: it read UNKNOWN_SCOPE (surfaced for a human, uncounted) or - if it carried a four_families / headline.ade_* key - would be scored as a TanitAD driving eval. A rule enforced only in prose is the failure class this instrument exists for."
+   }
+  ],
+  "protocol_tags": {
+@@ -1302,4 +1329,4 @@
+   "suite_record_schema_prefix": "taniteval.bench.",
+   "key_paths_note": "A bare top-level `protocol` STRING is read as a tag ONLY on a suite record (`schema` starting with taniteval.bench.): MEASURED 2026-09-19, 24 banked artifacts carry a free-text `protocol` sentence (e.g. 'PSEUDO-SIMULATION. Perturbed observation states…'), and reading those as tags would manufacture violations — the wrong-scope probe the registry's `applicability.why` forbids."
+  }
+-}
+\ No newline at end of file
++}

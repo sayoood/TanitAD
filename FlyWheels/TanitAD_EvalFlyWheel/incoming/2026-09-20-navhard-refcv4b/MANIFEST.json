@@ -1,0 +1,74 @@
+{
+ "_what": "every artifact this package produced and WHERE it lives",
+ "utc": "2026-09-21T12:34:42Z",
+ "entries": [
+  {
+   "artifact": "bench run directory (bench_run.json, summary.json, scores/, artifacts/, criteria/, plans/, report/, raw/)",
+   "where": "repo",
+   "path": "taniteval/results/bench/navsim_v2/navhard_two_stage/20260921T122714Z-navsim_v2-refcv4b_b1_v72_40k-859e25",
+   "in_repo": true,
+   "note": "the suite writes >20 MB files off-repo itself with a .offrepo.json sidecar",
+   "n_files": 103,
+   "bytes": 81927968,
+   "gb": 0.076,
+   "files_over_20MB": []
+  },
+  {
+   "artifact": "navhard stage-2 FRAME BANK (5,462 scenes)",
+   "where": "dev box (OFF-REPO \u2014 too large)",
+   "path": "C:/Users/Admin/tanitad-caches/navsim-frames-navhard-20260920",
+   "in_repo": false,
+   "note": "rebuild: code/build_frames.py --split navhard_two_stage --stage 2 --data-root C:/Users/Admin/navsim-crun/data/openscene --out <bank>; then code/finalize_bank.py. Its per-scene sha256[:16] index IS in the repo as raw/BUILD.json's corpus_id + the bank's frames_provenance.parquet (hashed below).",
+   "n_files": 10928,
+   "bytes": 11635266549,
+   "gb": 10.836,
+   "files_over_20MB": []
+  },
+  {
+   "artifact": "frames_provenance.parquet (per-scene sha256[:16])",
+   "where": "dev box",
+   "path": "C:/Users/Admin/tanitad-caches/navsim-frames-navhard-20260920/frames_provenance.parquet",
+   "in_repo": false,
+   "note": "sha256 3204f9eca47812bd2074d38fc69d4cfecfae4cbd01b36ae0b083364218b8bb15 \u00b7 241981 B"
+  },
+  {
+   "artifact": "BUILD.json (frame tag + content assertion)",
+   "where": "dev box",
+   "path": "C:/Users/Admin/tanitad-caches/navsim-frames-navhard-20260920/BUILD.json",
+   "in_repo": false,
+   "note": "sha256 44a6c26ed47496a269ab0bfb2e3a8c3b11a8c22a123db1d260e61e6cdb0a6cbb \u00b7 941 B"
+  },
+  {
+   "artifact": "W7 package (RESULT.md, code/, raw/)",
+   "where": "repo",
+   "path": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-20-navhard-refcv4b",
+   "in_repo": true,
+   "note": "",
+   "n_files": 75,
+   "bytes": 456003,
+   "gb": 0.0,
+   "files_over_20MB": []
+  },
+  {
+   "artifact": "refcv4b checkpoint",
+   "where": "dev box (OFF-REPO, 1.29 GB)",
+   "path": "D:/Projects/TanitAD-artifacts/refcv4b_final/ckpt_40284_FINAL.pt",
+   "in_repo": false,
+   "note": "md5 99b573e8277d94a5e3bfbf630cb4d751 (MODEL_REGISTRY.md \u00a74.6); the run refuses a mismatch"
+  },
+  {
+   "artifact": "devkit runtime (Windows-patched navsim @0a380a9)",
+   "where": "dev box",
+   "path": "C:/Users/Admin/navsim-crun",
+   "in_repo": false,
+   "note": "devkit-side wrapper + blobs are recorded per arm in raw/<arm>/<arm>.counts.json"
+  },
+  {
+   "artifact": "NavSim metric cache (navhard_two_stage)",
+   "where": "dev box",
+   "path": "C:/Users/Admin/navsim-crun/exp/metric_cache_navhard_two_stage",
+   "in_repo": false,
+   "note": "5,912 tokens, verified by counts at preflight \u2014 NOT rebuilt (5,187 s)"
+  }
+ ]
+}

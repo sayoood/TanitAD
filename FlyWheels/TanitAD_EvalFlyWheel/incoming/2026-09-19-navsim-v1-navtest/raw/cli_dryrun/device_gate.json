@@ -1,0 +1,40 @@
+{
+ "decision": "REFUSE",
+ "training_pids": [
+  50240,
+  52264
+ ],
+ "mem_used_mib": 7485.0,
+ "record": {
+  "requested": "auto",
+  "training_pids": [
+   50240,
+   52264
+  ],
+  "mem_used_mib": 7485.0,
+  "limit_mib": 1024,
+  "override_flag": "--accept-training-box-load",
+  "override_used": false,
+  "override_passed_as": null,
+  "training_processes": [
+   {
+    "pid": 50240,
+    "name": "python.exe",
+    "cmdline": "C:\\Users\\Admin\\venvs\\tanitad\\Scripts\\python.exe -u scripts/refc_v3_train.py --arm hier --size tiny --out C:/Users/Admin/tanitad-caches/a7-imagenet-knockout-20260919/A7-IN-s0/run --device cuda --seed 0 --steps 2000 --batch 2 --workers 0 --log-every 10 --save-every 250 --v2-cache D:/Projects/TanitAD-artifacts/v2ep-eval124clean-416x1024cyl-halfA --image-hw 416 1024 --v2-lru 4 --trunk timm --trunk-nam"
+   },
+   {
+    "pid": 52264,
+    "name": "python.exe",
+    "cmdline": "C:\\Users\\Admin\\venvs\\tanitad\\Scripts\\python.exe -u scripts/refc_v3_train.py --arm hier --size tiny --out C:/Users/Admin/tanitad-caches/a7-imagenet-knockout-20260919/A7-IN-s0/run --device cuda --seed 0 --steps 2000 --batch 2 --workers 0 --log-every 10 --save-every 250 --v2-cache D:/Projects/TanitAD-artifacts/v2ep-eval124clean-416x1024cyl-halfA --image-hw 416 1024 --v2-lru 4 --trunk timm --trunk-nam"
+   }
+  ],
+  "training_process_definition": "taniteval.bench.gpu_gap.TRAINING_SCRIPT_RE (the ONE definition)",
+  "rule": "auto|cuda: model arms WAIT for a GPU gap; cpu: allowed only when no training process is alive, or with --accept-training-box-load (recorded)"
+ },
+ "reason": "model arms WAIT for a GPU gap on --device auto: training process alive: pids [50240, 52264]; GPU memory used 7485 MiB >= limit 1024 MiB. Queue it: code/run_bridge_navtest.py --device auto --gpu-gap  then  code/run_v1.py score --arm SEAM:<npz> --cache-name navtest --patch-loader  (W3 package). To run on CPU instead, pass --device cpu explicitly (and --accept-training-box-load, since a training process is alive)",
+ "gate_source": "taniteval.bench.gpu_gap.device_gate",
+ "allowed": false,
+ "requested": "auto",
+ "accept_training_box_load": false,
+ "accept_via": null
+}

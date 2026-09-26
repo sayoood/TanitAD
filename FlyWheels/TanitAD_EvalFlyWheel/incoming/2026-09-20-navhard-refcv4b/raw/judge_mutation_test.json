@@ -1,0 +1,32 @@
+{
+ "_what": "mutation test of code/judge_run.py \u2014 success is judged on summary.json CONTENT, never its existence",
+ "why": "retry_scoring.sh:73 tested [ -f summary.json ]; it logged BENCH_STATUS=FAILED then SUCCESS on the next line, wrote SUCCESSFUL_RUN_DIR.txt at the all-FAILED run d3c2b2, and exited with 5 of 6 attempts unused",
+ "cases": {
+  "REAL_d3c2b2_all_FAILED (must FAIL)": {
+   "judge": "JUDGE=FAILED",
+   "detail": {
+    "verdict": "FAILED",
+    "n_required": 4,
+    "n_ok": 0,
+    "ok": [],
+    "not_ok": {
+     "CV": "FAILED",
+     "STOP": "FAILED",
+     "ECHO": "FAILED",
+     "A1": "FAILED"
+    },
+    "reason": "4 of 4 required arms are not OK: {'CV': 'FAILED', 'STOP': 'FAILED', 'ECHO': 'FAILED', 'A1': 'FAILED'}"
+   }
+  },
+  "fabricated_all_OK (must SUCCEED)": {
+   "judge": "JUDGE=SUCCESS"
+  },
+  "fabricated_3_OK_A1_FAILED (must FAIL)": {
+   "judge": "JUDGE=FAILED"
+  },
+  "summary_ABSENT (must FAIL)": {
+   "judge": "JUDGE=FAILED"
+  }
+ },
+ "verdict": "PASS: 4/4 cases read their required verdict"
+}

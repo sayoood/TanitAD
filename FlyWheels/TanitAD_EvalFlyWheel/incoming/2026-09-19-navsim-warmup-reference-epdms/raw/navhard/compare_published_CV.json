@@ -1,0 +1,156 @@
+{
+ "source": "[N2] arXiv 2506.04218v3 Table 2 (banked primary, library key 2506.04218), column CV",
+ "csv": "D:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-warmup-reference-epdms/raw/navhard/suite/devkit_CV_navhard.csv",
+ "note": "suite run 20260920T082848Z-navsim_v2-none-06e257, CV arm, 5912/5912 valid",
+ "submetrics": {
+  "NC": {
+   "stage_one": {
+    "ours": 88.89,
+    "published": 88.8,
+    "delta": 0.09
+   },
+   "stage_two": {
+    "ours": 83.21,
+    "published": 83.2,
+    "delta": 0.01
+   }
+  },
+  "DAC": {
+   "stage_one": {
+    "ours": 42.89,
+    "published": 42.8,
+    "delta": 0.09
+   },
+   "stage_two": {
+    "ours": 59.14,
+    "published": 59.1,
+    "delta": 0.04
+   }
+  },
+  "DDC": {
+   "stage_one": {
+    "ours": 70.67,
+    "published": 70.6,
+    "delta": 0.07
+   },
+   "stage_two": {
+    "ours": 76.53,
+    "published": 76.5,
+    "delta": 0.03
+   }
+  },
+  "TLC": {
+   "stage_one": {
+    "ours": 99.33,
+    "published": 99.3,
+    "delta": 0.03
+   },
+   "stage_two": {
+    "ours": 98.06,
+    "published": 98.0,
+    "delta": 0.06
+   }
+  },
+  "EP": {
+   "stage_one": {
+    "ours": 77.53,
+    "published": 77.5,
+    "delta": 0.03
+   },
+   "stage_two": {
+    "ours": 71.38,
+    "published": 71.3,
+    "delta": 0.08
+   }
+  },
+  "TTC": {
+   "stage_one": {
+    "ours": 87.33,
+    "published": 87.3,
+    "delta": 0.03
+   },
+   "stage_two": {
+    "ours": 81.14,
+    "published": 81.1,
+    "delta": 0.04
+   }
+  },
+  "LK": {
+   "stage_one": {
+    "ours": 78.67,
+    "published": 78.6,
+    "delta": 0.07
+   },
+   "stage_two": {
+    "ours": 47.98,
+    "published": 47.9,
+    "delta": 0.08
+   }
+  },
+  "HC": {
+   "stage_one": {
+    "ours": 97.11,
+    "published": 97.1,
+    "delta": 0.01
+   },
+   "stage_two": {
+    "ours": 97.17,
+    "published": 97.1,
+    "delta": 0.07
+   }
+  },
+  "EC": {
+   "stage_one": {
+    "ours": 60.44,
+    "published": 60.4,
+    "delta": 0.04
+   },
+   "stage_two": {
+    "ours": 61.98,
+    "published": 61.9,
+    "delta": 0.08
+   }
+  }
+ },
+ "epdms": {
+  "ours_x100": 11.4816,
+  "published_paper": 11.4,
+  "delta_vs_paper": 0.0816,
+  "reproduces_paper_within_0.05": false,
+  "published_leaderboard_INHERITED": 11.4816,
+  "delta_vs_leaderboard": 0.0,
+  "stage_one_x100": 28.9588,
+  "stage_two_x100": 34.2464,
+  "harness_defect_threshold_0.5": false
+ },
+ "worst_submetric_abs_delta": 0.09,
+ "printed_precision_test": {
+  "n_terms": 19,
+  "n_match_truncation": 19,
+  "n_match_rounding": 9,
+  "truncation_all": true,
+  "per_term_truncation": {
+   "NC.stage_one": true,
+   "NC.stage_two": true,
+   "DAC.stage_one": true,
+   "DAC.stage_two": true,
+   "DDC.stage_one": true,
+   "DDC.stage_two": true,
+   "TLC.stage_one": true,
+   "TLC.stage_two": true,
+   "EP.stage_one": true,
+   "EP.stage_two": true,
+   "TTC.stage_one": true,
+   "TTC.stage_two": true,
+   "LK.stage_one": true,
+   "LK.stage_two": true,
+   "HC.stage_one": true,
+   "HC.stage_two": true,
+   "EC.stage_one": true,
+   "EC.stage_two": true,
+   "EPDMS": true
+  },
+  "verdict": "every published term (18 sub-metrics + EPDMS) is reproduced EXACTLY at the paper's printed precision under TRUNCATION",
+  "prereg_note": "SPEC_NAVHARD registered |100*EPDMS - 11.4| <= 0.05, which assumes ROUNDING; that test reads FALSE (delta 0.0816) and is reported as written. The paper truncates (established here on 19 terms), and against the 4-decimal leaderboard value the agreement is EXACT: delta 0.0000."
+ }
+}

@@ -1,0 +1,196 @@
+{
+ "schema": "taniteval.bench.bench_run/1",
+ "run_id": "20260920T085541Z-navsim_v1-none-f4e7dd",
+ "utc": "2026-09-20T08:55:41Z",
+ "utc_end": "2026-09-20T08:56:25Z",
+ "benchmark": "navsim_v1",
+ "arms": [
+  {
+   "name": "CV",
+   "kind": "floor",
+   "declared_inputs": [
+    "ego_velocity[t0]"
+   ],
+   "added_by_rule": false,
+   "status": "SKIPPED",
+   "what": "the devkit's ConstantVelocityAgent — the published lower bound (20.6)"
+  },
+  {
+   "name": "STOP",
+   "kind": "floor",
+   "declared_inputs": [],
+   "added_by_rule": false,
+   "status": "SKIPPED",
+   "what": "w3_agents_v1.StopAgent: 8 x (0,0,0). Reads NOTHING. The do-nothing floor"
+  },
+  {
+   "name": "HUMAN",
+   "kind": "reference",
+   "declared_inputs": [
+    "logged future trajectory (PRIVILEGED, label-side only)"
+   ],
+   "added_by_rule": false,
+   "status": "SKIPPED",
+   "what": "the devkit's HumanAgent — the published ceiling (94.8)"
+  }
+ ],
+ "status": "DRY_RUN_PASSED",
+ "report": {
+  "status": "SKIPPED",
+  "reason": "run DRY_RUN_PASSED"
+ },
+ "command": [
+  "C:\\Users\\Admin\\venvs\\tanitad\\Scripts\\python.exe",
+  "D:\\Projects\\TanitAD\\taniteval\\taniteval\\bench\\__main__.py",
+  "navsim_v1",
+  "--ckpt",
+  "none",
+  "--split",
+  "navtest",
+  "--arms",
+  "CV,STOP,HUMAN",
+  "--dry-run"
+ ],
+ "git_head": "37645fcc61b158a327e6597e64e0abb64dcbc46d",
+ "git": {
+  "sha": "37645fcc61b158a327e6597e64e0abb64dcbc46d",
+  "branch": "agent/arch-inf-20260803",
+  "suite_code_blobs": {
+   "taniteval/taniteval/bench/__init__.py": "b20b83f09ffebcca3b36d1cc1ead9ae199b0df6f",
+   "taniteval/taniteval/bench/__main__.py": "f15d4c6ac42eac1be4c2e3d47e2e37004719a2ea",
+   "taniteval/taniteval/bench/_legacy.py": "3e263ebba1229b2df9261d608f5e54d0a6a0e6b7",
+   "taniteval/taniteval/bench/cli.py": "134d4f7564a339a55600b14382f5ea66880c4a61",
+   "taniteval/taniteval/bench/contract.py": "7cd00cc920012e20a06ab44083fae1fab5df21fb",
+   "taniteval/taniteval/bench/gpu_gap.py": "b91fc46186a78d90c63242f5ce1e2a5e01c3ea5e",
+   "taniteval/taniteval/bench/internal_t1.py": "276fa4d06fd45a9a42501f399fa354b5afd80163",
+   "taniteval/taniteval/bench/navsim/__init__.py": "a684bc2b39d3a3b59cb2244a6e56d56481f346e8",
+   "taniteval/taniteval/bench/navsim/artifacts.py": "f87ce653b11858a8db9115329f515d4cc1539c08",
+   "taniteval/taniteval/bench/navsim/benchmark.py": "5bef6a94396894b55c74e385fc7a0009a2c45e40",
+   "taniteval/taniteval/bench/navsim/bridge.py": "f5f2d82cf867f2911ea9ebc8c62f4d75949dfbb4",
+   "taniteval/taniteval/bench/navsim/devkit_side/export_agent_inputs.py": "6659b6fe9cf389294982902b3faa0dfac675df90",
+   "taniteval/taniteval/bench/navsim/devkit_side/navsim_win.py": "935fa44c459a3ee52c5582db288c5b95394ece54",
+   "taniteval/taniteval/bench/navsim/devkit_side/reaggregate.py": "78b004f9869c291445ecae4de056bae529cfab5b",
+   "taniteval/taniteval/bench/navsim/devkit_side/tanitad_seam_agent.py": "d9561bc67639f20ecd148a3b7ab81a1ec42ee8de",
+   "taniteval/taniteval/bench/navsim/export.py": "5a762ed901a38ec00835b101b851919f96a96f2b",
+   "taniteval/taniteval/bench/navsim/model_arms.py": "411c966e885353805d533956680e31c284592d0b",
+   "taniteval/taniteval/bench/navsim/plans.py": "860551cb7f31ff4bbd65631ad3532c20ab2e6960",
+   "taniteval/taniteval/bench/navsim/profiles.py": "1a634a96b6769c832cd6d4bec066d7196283c038",
+   "taniteval/taniteval/bench/navsim/scoring.py": "e3eeefbc9407a3813be81664552cfa47d1639b8d",
+   "taniteval/taniteval/bench/navsim/seams.py": "fc4e270c5a3356d4ec60fd87bb9da8edecd03a4c",
+   "taniteval/taniteval/bench/navsim/summarize.py": "98b014d8d9293758d91f2090c32613cf8533a7ba",
+   "taniteval/taniteval/bench/plugins/__init__.py": "be8e23d52a914757ae2822c25a554ecbc1d0d36f",
+   "taniteval/taniteval/bench/plugins/navsim_v1.py": "32a0925bde71fb4bc9b608a00edbdf45857beeff",
+   "taniteval/taniteval/bench/plugins/nuscenes_ol.py": "d123d005fdc9b1fd47daa9bcc0b07fb6e59fb47f",
+   "taniteval/taniteval/bench/report_hook.py": "79962bd22d765945f2387f6a1d93ce677ecfd997",
+   "taniteval/taniteval/bench/schema_check.py": "81c6e306246faac2777411e83410edb2ba1f8e32",
+   "taniteval/taniteval/bench/submission.py": "5babcd1c29d35c519da6466cb46584eb3f2f66bf"
+  }
+ },
+ "ckpt": {
+  "path": null,
+  "sha256": null,
+  "registry_key": null,
+  "note": "--ckpt none: floors / references only"
+ },
+ "suite_version": "1.0.0",
+ "protocol": "PDMS_v1_navtest",
+ "split": {
+  "name": "navtest",
+  "n_scenes": 12146,
+  "n_logs": 136,
+  "scene_filter": "D:/Archive/devbox-C/navsim/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/config/common/train_test_split/scene_filter/navtest.yaml",
+  "single_stage": true,
+  "note": "navtest is single-stage: every token is an ORIGINAL log frame"
+ },
+ "devkit": {
+  "repo": "autonomousvision/navsim",
+  "sha": "3e8291bfa89ff247231e0227778840cd0a036896",
+  "patches": [
+   {
+    "name": "MetricCacheLoader._load_metric_cache_paths: separator-agnostic token (E1's function, imported; navsim/common/dataloader.py:180 splits on '/' and nuPlan writes str(WindowsPath))",
+    "kind": "in-process",
+    "control": "W3 C7: the unpatched loader raises IndexError on the real v1.1 cache"
+   }
+  ],
+  "branch": "v1.1",
+  "tree": "D:/Archive/devbox-C/navsim/navsim-3e8291bfa89ff247231e0227778840cd0a036896",
+  "runtime_venv": "C:/Users/Admin/navsim-crun/venv (PYTHONPATH -> v1.1)",
+  "nuplan_devkit": "ce3c323af01c0d7ec5672f7832ef53f9c679aab0 (tag nuplan-devkit-v1.2)",
+  "wrapper": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-v1-navtest/code/navsim_v1_win.py"
+ },
+ "stamps": {
+  "tier": "T1-family",
+  "loop": {
+   "single_stage": "OPEN (one query, the plan is then fixed and propagated by LQR + kinematic bicycle at 10 Hz over 4 s, no environmental feedback)",
+   "background_traffic": "NON-REACTIVE: logged actors replay their recorded futures (v1.1 docs/metrics.md) — unlike v2, which is IDM-reactive"
+  },
+  "evidence_class": "MEASURED",
+  "closed_loop": false
+ },
+ "claim_bearing": true,
+ "dry_run": true,
+ "refusal": "DRY RUN: preflight only, nothing scored — 6159/12146 scenes in the metric cache",
+ "device": {
+  "requested": "auto",
+  "used": "none",
+  "scoring": "cpu",
+  "gpu_gap": {
+   "decision": "REFUSE",
+   "training_pids": [
+    50240,
+    52264
+   ],
+   "mem_used_mib": 7485.0,
+   "record": {
+    "requested": "auto",
+    "training_pids": [
+     50240,
+     52264
+    ],
+    "mem_used_mib": 7485.0,
+    "limit_mib": 1024,
+    "override_flag": "--accept-training-box-load",
+    "override_used": false,
+    "override_passed_as": null,
+    "training_processes": [
+     {
+      "pid": 50240,
+      "name": "python.exe",
+      "cmdline": "C:\\Users\\Admin\\venvs\\tanitad\\Scripts\\python.exe -u scripts/refc_v3_train.py --arm hier --size tiny --out C:/Users/Admin/tanitad-caches/a7-imagenet-knockout-20260919/A7-IN-s0/run --device cuda --seed 0 --steps 2000 --batch 2 --workers 0 --log-every 10 --save-every 250 --v2-cache D:/Projects/TanitAD-artifacts/v2ep-eval124clean-416x1024cyl-halfA --image-hw 416 1024 --v2-lru 4 --trunk timm --trunk-nam"
+     },
+     {
+      "pid": 52264,
+      "name": "python.exe",
+      "cmdline": "C:\\Users\\Admin\\venvs\\tanitad\\Scripts\\python.exe -u scripts/refc_v3_train.py --arm hier --size tiny --out C:/Users/Admin/tanitad-caches/a7-imagenet-knockout-20260919/A7-IN-s0/run --device cuda --seed 0 --steps 2000 --batch 2 --workers 0 --log-every 10 --save-every 250 --v2-cache D:/Projects/TanitAD-artifacts/v2ep-eval124clean-416x1024cyl-halfA --image-hw 416 1024 --v2-lru 4 --trunk timm --trunk-nam"
+     }
+    ],
+    "training_process_definition": "taniteval.bench.gpu_gap.TRAINING_SCRIPT_RE (the ONE definition)",
+    "rule": "auto|cuda: model arms WAIT for a GPU gap; cpu: allowed only when no training process is alive, or with --accept-training-box-load (recorded)"
+   },
+   "reason": "model arms WAIT for a GPU gap on --device auto: training process alive: pids [50240, 52264]; GPU memory used 7485 MiB >= limit 1024 MiB. Queue it: code/run_bridge_navtest.py --device auto --gpu-gap  then  code/run_v1.py score --arm SEAM:<npz> --cache-name navtest --patch-loader  (W3 package). To run on CPU instead, pass --device cpu explicitly (and --accept-training-box-load, since a training process is alive)",
+   "gate_source": "taniteval.bench.gpu_gap.device_gate",
+   "allowed": false,
+   "requested": "auto",
+   "accept_training_box_load": false,
+   "accept_via": null
+  }
+ },
+ "wall_s": 43.8,
+ "files": {
+  "raw/bench.log": {
+   "bytes": 403,
+   "sha256": "cdb79ed4061cd7baa181faf5770fb7f81b8f1d42a82614ee3fde303e9009d111",
+   "location": "repo"
+  },
+  "raw/device_gate.json": {
+   "bytes": 2189,
+   "sha256": "07aff0d0c367e91ebb06c270e76a5f2a70c04eacf5971255b6f3b219c7f336a1",
+   "location": "repo"
+  },
+  "raw/plan.json": {
+   "bytes": 923,
+   "sha256": "0462435eb3091e9429b9505010da3cb80d3495a1d1a01a7df95a6494e97932c0",
+   "location": "repo"
+  }
+ }
+}

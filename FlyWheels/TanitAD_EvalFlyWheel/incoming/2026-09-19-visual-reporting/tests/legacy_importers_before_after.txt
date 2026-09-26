@@ -1,0 +1,24 @@
+# W5 (package 2026-09-19-visual-reporting) — the legacy taniteval.report importers, BEFORE and AFTER
+# Re-verified 2026-09-20 writing DIRECTLY to this file: the session scratchpad is SHARED between streams
+# (W2 measured a same-named script being overwritten by another package), so the earlier generic-named
+# scratch copies are not exclusive provenance. Everything below is produced here, now.
+
+## the importers (grep over taniteval/, tracked + untracked)
+taniteval/tests/test_estimator_closeout.py:30 · taniteval/taniteval/runner.py:641 · taniteval/rerun_all.sh:17
+(W4's taniteval/taniteval/leaderboard/build.py:66 also imports taniteval.report — integration ask 4)
+
+## 1. the legacy file is UNTOUCHED by W5 (index/worktree vs HEAD, both sides length-asserted)
+VERIFIED unchanged: d5633f6855798d3c6344b81545e258014d3352b0
+
+## 2. BEFORE — measured 2026-09-19T13:30Z, no W5 package on disk (taniteval.report -> report.py)
+27 passed  [tests/test_estimator_closeout.py]
+   provenance note: that run's console artifact was written under a GENERIC scratch name before the
+   shared-scratchpad hazard was known; the load-bearing claim (the importers pass WITH W5 present, and
+   report.py is byte-identical to HEAD) is re-measured in sections 1 and 3 below.
+
+## 3. AFTER — now, with taniteval/taniteval/benchreport/ present
+...........................                                              [100%]
+27 passed in 1.72s
+taniteval.report -> report.py ( taniteval )
+build/_lb_rows/_primary callable: True
+taniteval.benchreport -> benchreport w5-1.0

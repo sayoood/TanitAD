@@ -1,0 +1,100 @@
+{
+ "n_stage1": 2,
+ "n_stage2": 6,
+ "seconds": 91.2,
+ "model": {
+  "ckpt": "D:/Projects/TanitAD-artifacts/refcv4b_final/ckpt_40284_FINAL.pt",
+  "ckpt_md5": "99b573e8277d94a5e3bfbf630cb4d751",
+  "step": 40284,
+  "window_rows": 8,
+  "decoder_steps": 2,
+  "n_anchors": 117,
+  "horizons_steps": [
+   5,
+   10,
+   15,
+   20,
+   30,
+   40,
+   50,
+   60
+  ],
+  "state_dict_load": {
+   "missing_keys": [],
+   "unexpected_keys": [],
+   "tolerated_inert_buffers": []
+  },
+  "load_s": 5.4,
+  "torch": "2.11.0+cu128",
+  "frame_tag": {
+   "model_frame": "256x640f305.5775cyl",
+   "bank_frame": [
+    256,
+    640,
+    305.577491,
+    "cylindrical"
+   ],
+   "match": true
+  },
+  "blind_grey_u8": 92
+ },
+ "arms": {
+  "A1": {
+   "e2_arm": "A1_ego_cmd",
+   "n_stage1": 2,
+   "n_stage2": 6,
+   "n_model_rows": 6,
+   "n_cv_standin_rows": 2,
+   "seconds": 23.4,
+   "device_at_end": "cpu",
+   "rss_gb_at_end": 1.95
+  },
+  "A4": {
+   "e2_arm": "A4_blind_ego_cmd",
+   "n_stage1": 2,
+   "n_stage2": 6,
+   "n_model_rows": 8,
+   "n_cv_standin_rows": 0,
+   "seconds": 30.0,
+   "device_at_end": "cpu",
+   "rss_gb_at_end": 1.951
+  }
+ },
+ "checks": {
+  "stage1_rows_are_cv_standin": {
+   "n_stage1_rows": 2,
+   "n_cv_standin": 2,
+   "expect": "equal \u2014 a camera arm cannot answer stage 1 on this corpus"
+  },
+  "stage2_rows_are_model": {
+   "n_stage2_rows": 6,
+   "n_refcv4b": 6,
+   "expect": "equal"
+  },
+  "A1_vs_A4_blind_DISCRIMINATING_CONTROL": {
+   "n_scenes": 6,
+   "n_scenes_differing": 6,
+   "max_abs_pose_diff_m": 20.62588119506836,
+   "expect": "EVERY stage-2 scene differs; identical poses would prove the PIXELS NEVER REACHED THE MODEL, i.e. a broken probe, not a blind arm"
+  },
+  "poses_finite": {
+   "shape": [
+    6,
+    8,
+    3
+   ],
+   "n_nonfinite_A1": 0,
+   "n_nonfinite_A4": 0,
+   "expect": "0 / 0"
+  }
+ },
+ "frame_cache": {
+  "hits": 6,
+  "misses": 6,
+  "evictions": 0,
+  "max_entries": 64,
+  "bytes_per_entry": 2129920,
+  "why_bounded": "MEASURED 2026-09-20: unbounded, navhard's 5,462 DISTINCT stage-2 scene_tokens would hold 10.83 GB on a box with 7.9 GB available, with a 0 % hit rate (1 token per scene)"
+ },
+ "verdict": "PASS"
+}

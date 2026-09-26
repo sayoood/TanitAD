@@ -233,3 +233,322 @@ submission without PI approval** (the suite refuses it).
 compute (metric caches, full scoring, frame banks) **only after A8's `run/summary.json` exists, with ONE
 worker**. The navtest camera download (127.9 GB, sha256-verified per shard) is writing to D: at
 ~12.8 MB/s. If A8 or A7 slows, tell me and I will throttle it.
+
+## 10. THE EVAL SUITE IS BUILT — W1, W2, W4, W5, W6 COMPLETE (2026-09-20); W3 + E1 still running
+
+**One command:** `python -m taniteval.bench <benchmark> --ckpt X --split Y` · `python -m taniteval.leaderboard build`
+· `python -m taniteval.benchreport <run_dir>`. All staged, nothing committed.
+
+| pkg | state | the number that proves it |
+|---|---|---|
+| **W1** suite core + NavSim v2 | ✅ COMPLETE, code-frozen | acceptance on frozen code, 289 s CPU: CV **0.1853562745165113** (= HF warmup LB 18.5356) and STOP **0.3009023137456225**, both CSVs **byte-identical** to E1/E2's banked runs (md5 equal; 4,237 numeric cells, max |Δ| 0.0); 129 tests; `internal_t1` end to end in 8.4 s, 0 GPU |
+| **W2** estimator + gates | ✅ COMPLETE | log-cluster bootstrap reproduces the devkit's own `extended_pdm_score_combined` on E1's real run **exactly** (|Δ| 0.0) and matches the devkit's mapping on duplicated-log fixtures 12/12; `criteria_check` evaluated **NONE** of `benchmarks.navsim` before, now all 4 blocking gates + 5 criteria with **26 RED mutation arms**; registry **2.10.2**; 178 tests |
+| **W4** self-regenerating leaderboard | ✅ COMPLETE | page `e1417dd8…`, 2,284 lines, rebuilt byte-identical under both deletion modes; **113 external rows**, 19/19 banked PDFs sha-clean; new `leaderboard readback` re-parses the rendered page with its own parser (109 cells, 0 errors, `--mutate` RED); 48 tests |
+| **W5** visual reporting | ✅ COMPLETE | report re-parses its own HTML with a verifier sharing no renderer code: **916 numbers + 55 refusals, 0 errors**; failure gallery 8/8 (nuPlan map + agents via the devkit's own `navsim.visualization`, plans projected, round trip 2.8e-14 px); 69 tests |
+| **W6** nuScenes | ✅ COMPLETE | harness in both published conventions, `claim_bearing:false` by API; **39 published rows** with harness commits pinned; 57 tests; ⛔ no number until the PI's registration |
+| **W3** NAVSIM v1 navtest | ⏳ running | v1.1 runtime on the existing venv (asserts it loaded v1.1); frame bank bit-identical to E2's stitch; plugin validates; full-split cache in flight |
+| **E1** navhard reference | ⏳ running | cache built (5,187 s, 1 worker); CV re-run through the suite after the aggregation crash |
+
+### ⭐ Findings that outrank the deliverables
+
+1. ⛔ **`tools/criteria_check.py` evaluated NONE of the NavSim gates** — the four "blocking" gates were paper-only and every NavSim artifact passed. Found independently by E1 and E2, fixed by W2.
+2. ⛔ **The registry's `EPDMS_v2` omitted TLC while its own formula multiplied by it — and the OLD TEST PINNED THE DEFECT.** The `a check that shares the defect it checks` class, again.
+3. ⭐ **The NavSim driving command is a ROUTE-LEVEL ORACLE** (W2, 4 probes): the command is a function of ego-pose-now + route + map (1,902/1,902 reproduced with OpenScene's own function), but the route IS the expert's driven path at roadblock granularity, and stage 2 COPIES command+route from the expert's frame (5,462/5,462 navhard). Not a trajectory leak. ⇒ no route-following claim from a command-conditioned row.
+4. ⛔ **STOP beats CV on BOTH NavSim generations.** v2 warmup: STOP 0.3009 vs CV 0.1854 official two-stage. v1 smoke (20 tokens, NOT navtest): STOP 61.48 vs CV 37.62, human 92.12 — mechanism from source: navtest holds only scenes the human passes, so a stopped ego keeps NC=DAC=TTC=1 ⇒ **5/12 = 41.7 points free**. ⇒ **every NavSim row carries a STOP floor.**
+5. ⛔ **Our warmup model arms have NO official two-stage EPDMS** (stage 1 was the devkit's CV stand-in ⇒ HYBRID; refused by name in both the report and the page). navhard is the fix; its stage-1 frames exist (900/900 sampled).
+6. Corrected external facts: the 1024×256 3-camera stack is **Transfuser's**, not Drive-JEPA's; the "perception-free ladder" is **NOT camera-only** (LAW and World4Drive print `C & L`); PDM-Closed 51.3 is **pre-#151** (56.6 post); DrivoR 56.3 is +134k+TOAD; Drive-JEPA's 93.3 is its own checklist misquoting 93.7.
+7. ⚠️ **Split nesting:** warmup ⊂ navhard (16/16), and **367 of navhard's 450** stage-1 tokens are navtest tokens ⇒ our navhard and navtest columns are not independent samples.
+
+### PI decisions carried (chat, 2026-09-19/20)
+
+NAVSIM v1 download **YES, D: only** (32/32 shards verified, 127,882,665,618 B) · our-model inference **waits for a GPU gap** (arbitrated: `--device cpu` explicit is allowed when no trainer is alive; with a trainer alive it needs a named override recorded in `bench_run.json`) · **no submission** without a named PI approval (the suite refuses) · PENDING with the PI: the 3 Ego-Status-MLP checkpoints (19.6 MB) and the memory-hungry sibling CPU smoke.
+
+### Proposed RETRACTION_LOG entries (I did not edit that file)
+
+* **W5 2026-09-20** — asserted `leaderboard/build.py:66` imports `taniteval.report`; **NOT REPRODUCED** (0 occurrences). ⭐ Class: *another stream's LIVE file observed CORRECTLY, then quoted later as a standing fact* — the file was rewritten at 09:42, after the 16:05 read (discriminator: the quoted docstring now has 0 hits repo-wide). **Remedy: a `file:line` into a sibling's in-flight code is PERISHABLE — re-read at write time, or cite it with its timestamp.**
+* **W6 2026-09-20** — offered "15 of my rows share a (paper, table) with W4's and agree 15/15" as an INDEPENDENT control; W4's re-derivation: 15 share a PAPER, **5** share (library_key, table), **0** share (paper, page, system). ⇒ a CONSISTENCY check, not an independent re-read. (Relayed to the PI by me before the correction; corrected in the same session.)
+
+### Operational findings for the programme
+
+* ⛔ **The session scratchpad is NOT private between streams** — W2's `verify_staged.py` was overwritten by W6's file of the same name and its next "verification" silently verified the OTHER package's paths, printing success. ⇒ namespace scratch filenames; a verifier must print WHICH package and WHICH path list it checked.
+* ⛔ **No module in a package on `sys.path` may share a stdlib name** — W5's `benchreport/html.py` shadowed stdlib `html` and silently killed the gallery.
+* ⛔ **Published run dirs must be APPEND-ONLY** — `results/bench/navsim_v2/warmup_two_stage/` went 4 dirs → 2 under W4's build and a cited run was deleted; W4 now refuses to write when the tree moves.
+* ⚠️ **Box contention:** a sibling CPU training smoke committed **33.9 GB** and drove available memory to **419 MB**, aborting W3's first cache pass.
+
+## 11. ⛔⛔ FOR THE REGISTRY OWNER — our LATERAL family has been reporting an OFFSET, not an error (W2, 2026-09-20)
+
+**Not a NavSim artefact.** The same reducer produces the LATERAL rows in the **refcv3 / refcv4b /
+refcv5-v2 T1 panels and in `MODEL_REGISTRY.md`.** Three defects, all VERIFIED AT SOURCE, all fixed at
+source without re-scoring anything banked.
+
+1. ⛔ **`cross_mae_m` IS A LATERAL OFFSET, NOT A DISTANCE TO THE PATH.** `_seq_geometry` returns the
+   ego-frame **y column** (`four_families.py:187`) differenced at matched time index (`:776`) — no
+   projection, no arc-length matching, no rotation into the GT tangent frame. ⇒ **two arms whose plans
+   have y ≈ 0 score identically however differently they drive.** W1 measured the consequence on the
+   real warmup run: **CV and STOP both read 1.0658 m**, so a LATERAL row quoted alone reads as a tie
+   between a moving arm and a parked one. W2 reproduced the mechanism from scratch: on a curving GT the
+   stationary arm's `cross_mae_m` equals **the GT's own mean |y| to 5e-5** — a property of the human's
+   path, not of the arm.
+   ⭐ **The qualifier every existing LATERAL number needs, verbatim:** *"`cross_mae_m` is a lateral
+   offset at matched time index, informative only while the along-track error is small; read it with the
+   LONGITUDINAL family, and use `headline.pathgeom_crosstrack_m` (`lateral.py::frenet_dense`) when a
+   distance-to-path is meant."* Every lateral block now emits `_cross_is`,
+   `_along_mae_m_for_context` and `_projection_based_alternative` beside the number.
+   ⛔ **Which banked rows get restated is the registry owner's call** — W2 re-scored nothing.
+2. ⛔ **`None` was being read as ABSENT.** The lateral terms returned `null` when no step cleared
+   `min_ds_m`; `criteria_check` read that as a missing key, i.e. a silent omission, on every stationary
+   arm. Now an explicit `{status: UNAVAILABLE, reason, n, n_steps_total, min_ds_m}` — never null, and
+   never `0.0`, which would read as *perfect lateral agreement from a car that never moved*. The defined
+   branch is **byte-identical**, so no banked number moves.
+3. ⛔⛔ **And the half nobody had probed: `yaw_rate_mae_degps` emitted a REACHABLE NaN.** A 2026-08-23
+   comment noted the masking and left it. W2 probed reachability instead of arguing it: **MEASURED — a
+   plan advancing on alternate steps gives `n_head` 24, `n_curv` 0, `yaw_rate_mae_degps` = `nan`.**
+   ⚠️ **A NaN is worse than the null this task was about**: it is a `float`, so it passes every
+   `isinstance(v, (int, float))` guard downstream — `summarize.py` would have written it into a
+   published `metrics` block **as a number**. Guard is now `n_curv`; since `n_curv > 0 ⇒ n_head > 0`,
+   every case that produced a real value produces the identical value.
+
+**Proposed register rows (verbatim in W2's RESULT §D):** `D-FF-LATERAL-NULL` (SUPPORTED — fixed at
+source, 13 tests incl. a null-mutation arm and the reachable-NaN arm) · `D-LAT-CROSS-IS-AN-OFFSET`
+(SUPPORTED — source-verified + reproduced).
+**Suites:** 571 passed / 1 skipped / 17 failed across every consumer of `four_families`; all 17 are
+`tools/tests/test_release_gate.py`'s pre-existing RG-02 fixture failures, **reproduced identically from
+HEAD blobs in an isolated `git archive` tree** (so: pre-existing, not caused here). The 1 skip is
+"OpenCV not installed in this venv".
+
+## 12. ⛔⛔ ACTION REQUIRED FROM YOU — A STAGED GATE IS IN FORCE FOR NOBODY
+
+**THE ASK (two paths, through your guarded lander):** commit
+`products/P7-TanitEval/CRITERIA_REGISTRY.json` (blob **c5f6bedad363**, v**2.10.3**) and
+`tools/criteria_check.py` (blob **1975a0c1f7da**). Everything else of ours can wait for a normal
+landing pass.
+
+**Why it cannot wait.** The SETTLED NavSim estimator gate has lived in the working tree since
+v2.10.0 — **staged and never committed**, because the operating standard tells agents to stage and
+never commit. `git show HEAD:…CRITERIA_REGISTRY.json` still serves **2.9.0**, whose
+`admissible_until_settled` reads *"the ONLY admissible interval is UNAVAILABLE"*.
+⇒ **MEASURED consequence, today:** E1 built its navhard artifact against the registry **a fresh
+process can READ**, and therefore declared `estimator.interval = UNAVAILABLE` **while holding the
+real interval** (CV EPDMS ×100 **11.4816**, log-cluster CI **[8.25, 14.50]**, 76 clusters).
+⭐ **A false refusal reads exactly like an honest one:** the checker would have filed the programme's
+FIRST interval-bearing NavSim measurement as a WORK ITEM, and the number would have stayed
+invisible. W2 caught it only by probing HEAD against the working tree instead of trusting the report
+— and it did NOT loosen the gate: the checker now FAILS a declined interval that holds an admissible
+one (naming the key to promote), with a control proving it fires on admissibility rather than on the
+word "interval".
+⚠️ **The general form deserves attention beyond this file: any guard that lives only in the index is
+a guard nobody is running — and this entire eval suite was built today under exactly that rule.**
+Proposed register row: `D-REGISTRY-STAGED-NOT-IN-FORCE` (W2, RESULT §A.9 carries the diagnosis).
+
+⚠️ **Channel note:** four `SendMessage`s to you have now expired unapproved, including this ask. If
+the approval friction persists, this file is the channel that works — but a commit still needs you.
+
+## 13. ⭐⭐ THE NUMBERS — both NavSim reference columns COMPLETE, both leaderboards reproduced (E1, 2026-09-20)
+
+| split | arm | EPDMS ×100 | against the official value |
+|---|---|---|---|
+| warmup_two_stage | CV, official two-stage runner | **18.535627** | HF warmup LB **18.5356** → Δ **+0.000027** |
+| warmup_two_stage | human, **stage 1 only** | **95.1255** (filter off 87.2014) | ⛔ the two-stage human is **UNDEFINED** |
+| **navhard_two_stage** | CV, official two-stage runner | **11.4816**, 95 % CI **[8.25, 14.50]** | HF navhard LB **11.4816** → **Δ 0.0000**; **19/19** published terms of [N2]v3 Tab. 2 reproduced exactly **under TRUNCATION** (9/19 under rounding) |
+| **navhard_two_stage** | **STOP (our floor)** | **29.8532** | unpublished — ours |
+| navhard_two_stage | human, **stage 1 only** | **93.4796** | — |
+
+MEASURED · tier **T1-family** · stage-1 loop **OPEN**, stage-2 **UNRULED** · navhard **5,912/5,912 valid**,
+76 log clusters (W2's settled estimator) — **the programme's first NavSim interval**; warmup can never
+carry one (7 clusters < the RG-14 floor). Cross-run agreement: W1's checker reads
+`identical_to_e1 = True`, 8/8 sub-metrics at 2 dp on n = 450.
+
+⛔ **THE FINDING THAT OUTRANKS THE NUMBERS: on navhard, STOP (29.85) beats CV (11.48) by 2.60×.**
+EPDMS multiplies its compliance terms, so a stopped ego holds DAC 0.9311 · DDC 1.0000 · NC 0.9967 ·
+TLC 0.9978 · TTC 0.9978 while only EP (0.3409 vs CV's 0.7753) punishes it. ⇒ **"beats CV" is not
+evidence of driving on this benchmark; the bar for any TanitAD arm is STOP.** It now leads the
+navhard block of `LEADERBOARD.md`, computed from the run's own sub-metrics so the sentence cannot
+drift from the numbers beneath it.
+
+**Preconditions of the number existing** (both belong in the column, not a footnote): the IDM
+degenerate-path devkit patch (166/5,462 stage-2 tokens otherwise abort the whole run; verified
+effective 3/3 AND inert 4/4) and the Windows `MetricCacheLoader` separator patch.
+
+**Reported as written rather than relabelled:** two pre-registered controls FAILED — warmup C7 (1 ULP
+in 4 summary cells; all 220 per-token rows bit-identical) and navhard C5 (weight tolerance 2.46e-09
+against a 1e-9 bar, while the summary identity holds at 6.6e-12). Tolerances were mis-specified at
+larger n; neither was widened after the fact.
+
+### Still open — two need the PI, one needs you
+
+1. ⛔ **Commit the staged registry + checker** (§12). **Now TWICE-measured:** E1's false-refusal
+   artifact, and E1's restructure DELETING three functions W1 had promoted (`short_row`,
+   `navsim_gates`, `gate_mutations`) whose pre-edit version is **unrecoverable — not in HEAD, and the
+   index already holds the new blob**. ⭐ *With nothing committed there is no history: an overwrite
+   cannot be undone, and a fresh process reads a stale gate.* W1 kept the promotion pin honest
+   (`ORPHANED_PROMOTIONS`, RED on restoration) instead of dropping the names, which would have gone
+   green while the guarantee shrank.
+2. **PI ruling needed on the stage-2 loop status** — the 3DGS re-rendered counterfactual start is
+   stamped UNRULED by every artifact rather than guessed.
+3. The warmup **C8 reference stays INHERITED**: two probes to read the official leaderboard failed
+   (the `/leaderboard` endpoint returns HTTP 405; the Space renders its table dynamically). One
+   successful read would make it PUB-LB.
+
+## 14. ⭐⭐ NAVSIM v1 REPRODUCED TOO — and a stopped car scores 3× CV on navtest (W3, 2026-09-20)
+
+Full split, all three arms **12,146 / 12,146 successful, 0 failed**; PDMS identity **max |Δ| = 0.0** on
+every one of 3 × 12,146 rows; 0 `criteria_check` violations (registry 2.10.3); LONGITUDINAL /
+LATERAL / TACTICAL OK with log-cluster CIs over **136 logs**, STRATEGIC UNAVAILABLE with its reason.
+
+| arm | NC | DAC | TTC | C | EP | **PDMS** | CI95 (136 log clusters) |
+|---|---|---|---|---|---|---|---|
+| CV | 68.0183 | 57.8380 | 50.0329 | 100.0000 | 19.4370 | **20.6517** | [19.20, 22.22] |
+| **STOP** | 97.3983 | 96.5256 | 96.4021 | 69.4385 | 30.9994 | **61.8202** | [60.70, 63.08] |
+| HUMAN | 100.0000 | 100.0000 | 100.0000 | 99.9012 | 86.9629 | **94.5514** | [93.79, 95.23] |
+
+⛔ **THE FLOOR FINDING NOW HOLDS ON BOTH GENERATIONS: on navtest a stopped car scores 61.82 — 3.0× CV's
+20.65, and within 3.8 points of the published ego-status-MLP baseline (65.6).** Paired on identical
+tokens **+41.17 [+39.50, +42.84]**, W/T/L **8,607 / 727 / 2,812**, leading in EVERY t0 speed band.
+Mechanism MEASURED from the scorer: NC 97.40 · DAC 96.53 · TTC 96.40 make **41.67 points free (5/12)**;
+the LQR's braking coast earns a median **5.41 m**; and on **1,006/12,146 (8.28 %)** tokens the best
+compliant progress is ≤ 5 m so **EP ≡ 1 by rule**. ⇒ **CV is not a floor on navtest either.**
+
+**Verdicts as pre-registered.** CV: five of five sub-scores REPRODUCED; the PDMS cell
+**REPRODUCED_UNDER_TRUNCATION** vs the paper's 20.6 and **REPRODUCED_UNDER_ROUNDING** vs the
+leaderboard's 20.6517. HUMAN: **CLOSE, not reproduced** (94.5514 vs 94.8) — NC/DAC/TTC/Comfort
+reproduce exactly and the ENTIRE gap is **EP 86.9629 vs 87.5**, the only term normalised against a
+COMPUTED quantity. ⚠️ **W3's own pre-registered STOP range [38, 60] was WRONG** (measured 61.82) and is
+recorded as a failed prediction, not re-fitted; C6's NC/DAC thresholds also failed as written.
+
+### ⛔ A retraction chain worth reading as one item — it was caught by checking the ARTIFACT, not the relay
+
+1. **W1** banked navhard CV's external as *"HF leaderboard, 11.4, truncate, Δ 0.0000"* — an entry that
+   **contradicted its own fields** (our 11.4816 vs 11.4 is Δ 0.0816). It had merged TWO artifacts. They
+   never disagreed: the **paper** prints 11.4 at 1 dp (truncating our 11.4816) and the **leaderboard**
+   prints 11.4816 at 4 dp (rounding it). ⭐ **RULE: state the artifact before the convention** —
+   quoting one artifact's convention against the other's row manufactures a **FALSE AGREEMENT, worse
+   than a mismatch because nothing looks wrong.** Pinned by `M-SELFREF`, which re-derives every external
+   reference from the entry's own fields and needs no external data.
+2. **The orchestrator (me)** then relayed W3's cell result as *"the convention is SETTLED — the paper
+   truncates"* — to W4 and to the PI. **W4 checked that phrasing against W3's probe file** and found the
+   opposite verdict standing: *"UNSETTLED … 3 ROUNDING / 1 TRUNCATION … no convention may be assumed"*.
+3. **W3 adjudicated against its own RESULT.md** rather than defending it: the measurement settles the
+   **CELL** (one 20.651651538606658 explains the paper's 20.6 — rounding would print 20.7 — and the
+   leaderboard's 20.6517), **not the paper**; three cells still read as rounding, and those may record a
+   different RUN rather than a different rule. What actually changed is the cell's **evidence class**,
+   print-vs-INHERITED → print-vs-MEASURED, resting on a stated assumption (that the paper's CV row is
+   our quantity) with its counterfactual named: had the paper's CV been 20.6499 both conventions print
+   20.6 and the cell would say nothing.
+⭐ **Class, in W3's words: *true but wrong for the reader* — a claim true of one cell, phrased as a claim
+about the paper, propagated through a relay.** W4 has pinned it structurally: a test now FAILS if *"the
+paper truncates"* appears as an assertion anywhere in the navtest block, admissible only inside the
+quoted account of the relay itself.
+
+## 15. FLEET at 2026-09-20 15:52 local — the GPU gap OPENED and the navhard model arm is running
+
+**A8 wrote its done-marker 2026-09-19 21:10 local; GPU 1,018 / 8,188 MiB with no trainer.** That is
+the condition `D-NAVHARD-GPU-GAP-1` named (*"wait for a gap in the gpu"*), so **W7 launched**:
+refcv4b on `navhard_two_stage`, arms A1 + STOP + CV + ECHO, through W1's `device_gate` (backs off the
+moment a trainer appears or GPU mem ≥ 1 GB). It is the programme's first model row on official EPDMS.
+
+| stream | state |
+|---|---|
+| **W7 refcv4b @ navhard** | RUNNING (launched this turn) |
+| **W3 navtest chain** (agent-free) | RUNNING — camera shards **32/32 verified**, metric cache 119 logs started / 74 marked done, frame bank shard 03 of 32, 6.0 GB |
+| navhard floors | ✅ DONE — CV **0.11481608441648 == official exactly**, CI95 [0.0825, 0.1450] / 76 log clusters; STOP banked; 5,912/5,912 |
+| navhard HUMAN stage 1 | ✅ DONE — EPDMS **0.934796**, 450/450 (NC/DAC/TLC/TTC/LK all 1.0; EP 0.84236 is the whole gap) |
+| PI-gated | the commit · the stage-2 loop ruling · the 3 ego-MLP checkpoints · nuScenes registration |
+
+⚠️ **RAM, not GPU, is this box's binding constraint** — banking ran the pool down to **5,020 MB** and the
+navhard N1 chain step was killed at **2,634 MB against a 3,000 MB floor**. Two heavy streams is the
+honest ceiling here; a third is how the guard-abort loop starts. Holding at two deliberately.
+
+### Two corrections from this turn, both caught by an artifact rather than a status line
+
+1. ⛔ **I misread `N1/N1_manifest.json` as the successful navhard CV. It says `ABORTED_RAM_GUARD`.**
+   The chain's N1 has **never** succeeded; the CV number came from the **W1 suite run**
+   (`20260920T082848Z-…-06e257`, 5,912/5,912 valid). The reference chain's own log still ends
+   *"STOP at N1"*, which reads as *"navhard CV failed"* while the verified number sits beside it —
+   ⭐ the same **status-disconnected-from-artifact** family the repo already documents. The number is
+   sound; only my route to it was wrong.
+2. ⛔ **I was one command from killing W3's live chain.** Two `python … code/after_a8_chain.py`
+   processes looked like a redundant navhard retry; they are the **navtest** chain — *same script
+   basename, different package*. ⭐ **The `pgrep -f` trap in a new costume: I matched a substring of a
+   path instead of identifying the job.** Nothing was killed; the discriminator was the package
+   directory in the cwd, not the process name.
+
+### A third defect, found and already self-healing — worth the pattern, not an action
+
+`S5_bank_s00` died **rc 1** at `build_navtest_frames.py:256` with `NameError: name 'cand' is not
+defined` — a variable that moved into `complete_partial()` during a refactor while the manifest line
+kept referencing it. ⛔ **The frames were already built** (`frames_s00.npy` on disk); it died writing
+the manifest, so the shard produced no DONE marker — *the compute paid for, the output destroyed at
+write time*, exactly the documented analysis-time-failure class. **W3 had already fixed it** (the line
+now reads `len(complete) + len(partial)`, and `cand` survives only in a comment recording the defect),
+which is why s01/s02 passed. ⭐ **And the chain repairs itself without help: line 172 recomputes its
+work list from MISSING DONE MARKERS, not from a status** — so shard 00 is retried on the next pass,
+against fixed code. Resume-by-artifact is what makes that true; a chain resuming from an exit code
+would have skipped it forever.
+
+## 16. ⭐ refcv4b on NAVSIM v1 navtest — FULL SPLIT: 58.9738, FAILS the STOP bar (W3, verified from the artifact)
+
+`raw/BAR_W3_M1.json` (n = 12,146, `full_split: true`, `VERDICT: FAIL`), MEASURED, T1-family, loop OPEN:
+
+| arm | PDMS | paired Δ vs A1's floor | separated |
+|---|---|---|---|
+| CV | 20.6517 | A1 − CV **+0.3832** ±0.0251 | ✅ both levels |
+| STOP | **61.8202** | A1 − STOP **−0.0285** | log ✅ [−0.0497, −0.0077] · drive ✗ [−0.0567, +0.0029] ⇒ **not separated** under the SPEC §5 conjunction; `p_delta_gt0 = 0.0035` |
+| **refcv4b A1** | **58.9738** | — | — |
+| HUMAN | 94.5514 | — | — |
+
+BAR-W3-M2 fails too (58.97 < the published Ego-Status MLP's **65.6**, PUBLISHED). Inference variance: 200 tokens
+re-run a day later came back **bit-identical**. Training variance untested (one checkpoint) — no training claim.
+
+**Mechanism, MEASURED:** the loss is **entirely at commanded turns** — under STRAIGHT (8,070 tokens, 2/3 of
+navtest) A1 **beats** STOP 63.96 vs 62.97; LEFT/RIGHT score 47.24 / 52.03 and carry −3.51 of the −2.85 total.
+3,828 A1 plans score **zero** (off-road 3,224, collision 903) vs STOP's 732; on the rest A1 scores **86.11 vs
+64.58**. Failures are **sideways**: cross-track 5.4×, heading 3.8×, endpoint only 1.47×. Under STRAIGHT on curving
+road it turns **0.149×** the human (60.8 % barely turn); at LEFT it turns the right AMOUNT (1.07×) in the wrong
+PLACE, failing DAC 39.8 %. **Eliminated, each pre-registered:** jitter (smoother → 58.1502, worse), "vision isn't
+helping" (frames-blind → 23.29, vision worth **+34.7**), the scoring path (human through the seam matches the
+devkit to 6.7e-8), heading spin (≤ 6 % of off-road failures).
+
+### ⛔ A relay correction — mine, to the PI, in chat
+
+From W3's 200-token provisional I told the PI refcv4b's zeros came from *"a planner committing to long fast paths
+through non-drivable area"* (median progress 32.07 m vs 18.81 m) and added my own gloss that it was *"a fixable
+defect, not a capability ceiling."* **W3 then found it had read the REFERENCE planner's progress array, not
+refcv4b's; the over-long-plans story is refuted.** The true mechanism is lateral — under-commitment to curves and
+mis-placed turns. It reached the PI in chat only (grep: no file I wrote carries 32.07 or the phrase), and is
+corrected there. ⭐ **Class: relaying a PROVISIONAL mechanism plus my own gloss.** W3 had labelled it a hypothesis;
+the gloss was mine, and it is the part that made the claim read settled.
+
+### ⛔ The bar can be gamed — needs a decision before the next model is scored
+
+*"STOP at every commanded turn, refcv4b elsewhere"* scores **62.4813** and clears BAR-W3-M1. W3 refused it (chosen on
+the test split; wins by exploiting PDMS's reward for not moving) and proposes a **no-stop-at-turns clause**. Adding
+it for the NEXT model is forward design, not a moved goalpost — this model's FAIL stands as written.
+
+### ⚠️ A reader trap in the verdict file, not in the result
+
+`BAR_W3_M1.json`'s `paired_vs_floor.STOP` is `{delta −0.0285, ci95 0.021, separated false}` — which implies
+[−0.0495, −0.0075], excluding zero, beside `separated: false`. The complete source
+(`analysis_navtest.json → arms.A1.paired_interval.STOP`) carries `separated_log_name: true`, the drive-level
+interval and `separated_scope: "log_name AND nuplan_drive (SPEC §5 conjunction)"`. **The projection dropped the three
+fields that make `false` correct.** Anyone reading the verdict file alone could "fix" it to `true`. Fix in W3's
+generator: carry those three fields through. Verdict unaffected either way (FAIL is on the point estimate).
+
+## 17. navhard — the retry reported SUCCESS on a total failure; relaunched (W7 resumed 2026-09-21 ~09:10Z)
+
+Attempt `…/20260920T201038Z-…-d3c2b2`: every arm **FAILED** — `E1_RAM_GUARD_ABORT` at **1,175 / 1,750 / 1,077 /
+948 MB** (hard floor 2,000), CV killed at stage-two scenario **4,294 / 5,462 (79 %) at 23:21:57**, CV's own RSS
+774 MB. The same killer as attempt 0 (STOP had reached 83 %). ⛔ **`retry_scoring.sh:73` tested
+`[ -f summary.json ]`** — and the suite writes one for failures — so it logged SUCCESS 14 s after the kill, wrote
+`SUCCESSFUL_RUN_DIR.txt` naming the all-FAILED run, and **exited with 5 of 6 attempts unused.** The same defect
+W7 fixed in its finisher the day before, surviving in the sibling script. Its post-step then died on
+`No module named taniteval.bench` (the namespace-shadow trap).
+
+⭐ **My extraction waiter was right to refuse** — it was gated on FINISH_REPORT.md, which W7's corrected finisher
+writes only on content, so the false SUCCESS never opened it. Luck of which file it watched, and noted as such:
+⛔ **gate on the primary artifact's CONTENT, never on its existence nor on a derived report's.**
+
+**Next lever handed to W7, largest measured effect first:** stop re-scoring the floors. CV + STOP on navhard are
+already COMPLETE in `…-06e257` (5,912/5,912, CV == official exactly); re-scoring them is ~3 h of pure exposure to a
+killer that has struck twice at ~80 % of the FIRST arm. Score only A1 + ECHO against the banked floors on
+identical tokens, as an explicit, refuse-on-mismatch reuse (devkit sha, patch set, metric cache, token set by
+value). Fallback: chunked scoring with a bit-identical merge control. Box quiet at 09:06Z (14.7 GB free).
