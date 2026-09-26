@@ -1,0 +1,174 @@
+{
+ "seed": 0,
+ "dump_dir": "/home/nvidia/eqcheck_2317/out/B/dump",
+ "wall_s": 80.7,
+ "n_windows": 4,
+ "n_episodes": 2,
+ "skipped": 0,
+ "extras": {
+  "n_windows": 4,
+  "keys": [
+   "clip_index",
+   "gt_max_speed_6s",
+   "lat_v7",
+   "lon_v7",
+   "nav_flipped.lat_logits_tac",
+   "nav_flipped.lon_logits_tac",
+   "nav_flipped.sel_idx",
+   "nav_flipped.tacv6_goal_conf",
+   "nav_flipped.tacv6_goal_logits",
+   "nav_flipped.tacv6_lat_logits",
+   "nav_flipped.tacv6_lon_logits",
+   "nav_flipped.traj",
+   "nav_shuffled.lat_logits_tac",
+   "nav_shuffled.lon_logits_tac",
+   "nav_shuffled.sel_idx",
+   "nav_shuffled.tacv6_goal_conf",
+   "nav_shuffled.tacv6_goal_logits",
+   "nav_shuffled.tacv6_lat_logits",
+   "nav_shuffled.tacv6_lon_logits",
+   "nav_shuffled.traj",
+   "nav_true.lat_logits_tac",
+   "nav_true.lon_logits_tac",
+   "nav_true.sel_idx",
+   "nav_true.tacv6_goal_conf",
+   "nav_true.tacv6_goal_logits",
+   "nav_true.tacv6_lat_logits",
+   "nav_true.tacv6_lon_logits",
+   "nav_true.traj",
+   "nav_zero.lat_logits_tac",
+   "nav_zero.lon_logits_tac",
+   "nav_zero.sel_idx",
+   "nav_zero.tacv6_goal_conf",
+   "nav_zero.tacv6_goal_logits",
+   "nav_zero.tacv6_lat_logits",
+   "nav_zero.tacv6_lon_logits",
+   "nav_zero.traj",
+   "obey30.n_fan_compliant",
+   "obey30.planned_max_ms",
+   "tac_goal_w",
+   "tac_goal_y",
+   "v0",
+   "v_max_ms",
+   "v_max_valid",
+   "vmax_zero.lat_logits_tac",
+   "vmax_zero.lon_logits_tac",
+   "vmax_zero.sel_idx",
+   "vmax_zero.tacv6_goal_conf",
+   "vmax_zero.tacv6_goal_logits",
+   "vmax_zero.tacv6_lat_logits",
+   "vmax_zero.tacv6_lon_logits",
+   "vmax_zero.traj",
+   "ws"
+  ],
+  "clip_sha12_by_index": {
+   "0": "0dfe63214bc2",
+   "1": "c64f0103aece"
+  },
+  "proxy_calls": 8
+ },
+ "cuda_max_memory_allocated_gib": null,
+ "model_record": {
+  "state_dict": {
+   "strict": true,
+   "missing": [],
+   "unexpected": [],
+   "n_keys": 1101,
+   "ckpt_keys": [
+    "step"
+   ],
+   "step": 30000
+  },
+  "param_breakdown": {
+   "rebuilt": {
+    "core": 90734473,
+    "phi_tac": 2101504,
+    "str_goal_head": 771,
+    "gstr_cond": 66816,
+    "tac_heads": 14364,
+    "tac_latent_proj": 262656,
+    "scorer": 1145,
+    "nav_inject": 50176,
+    "tac_decoder_v6": 2253828,
+    "tac_behaviour_gate_v6": 2574,
+    "total": 100893747
+   },
+   "config_json": {
+    "core": 90734473,
+    "phi_tac": 2101504,
+    "str_goal_head": 771,
+    "gstr_cond": 66816,
+    "tac_heads": 14364,
+    "tac_latent_proj": 262656,
+    "scorer": 1145,
+    "nav_inject": 50176,
+    "tac_decoder_v6": 2253828,
+    "tac_behaviour_gate_v6": 2574,
+    "total": 100893747
+   },
+   "equal": true
+  },
+  "anchor_file_vs_ckpt_buffers": {
+   "core.decoder.anchors": {
+    "shape": [
+     117,
+     8,
+     2
+    ],
+    "max_abs_diff": 0.0
+   },
+   "core.decoder.anchor_controls": {
+    "shape": [
+     117,
+     2
+    ],
+    "max_abs_diff": 0.0
+   }
+  },
+  "trunk_memory_levers_built": {
+   "chunk_ckpt": 8,
+   "frozen_bn": true,
+   "bn_pinned": 104,
+   "relu_out_of_place": 100,
+   "bf16": true,
+   "channels_last": true,
+   "bn_folded": 104,
+   "dedup_frames": true
+  },
+  "departures": [
+   "train():6946 `assert_ground_prior_is_supervised` (a startup gradient probe) is NOT run: it measures a training property and writes nothing the forward or the loss reads"
+  ],
+  "trunk_equalize_as_trained": {
+   "status": "SKIPPED by eq_as_trained_roll.py (regression arm: trunk as DECLARED)"
+  }
+ },
+ "window_restriction": {
+  "n_requested": 4,
+  "n_index_before": 23772,
+  "n_index_after": 4,
+  "source": "banked baseline grid (clip, ws), kit clips"
+ },
+ "label_clock": {
+  "rule": "t_now = grid_start_s + (t + w - 1 + n_stack - 1) * dt_s (tanitad/data/clip_clock.py; A16 2026-09-26)",
+  "sidecar": null,
+  "sidecar_rows": null,
+  "n_clips": 139,
+  "n_from_sidecar": 0,
+  "n_pose_dt_grid_start_0": 136,
+  "n_nominal_dt_grid_start_0": 3,
+  "raw_offsets": [
+   2
+  ],
+  "dt_s_median": 0.10066422414062587,
+  "dt_s_min": 0.1,
+  "dt_s_max": 0.10100854179727567
+ },
+ "label_clock_g3": {
+  "status": "NOT RUN: this record names no --clip-clock-sidecar (a pre-switch config); G3 would refuse the pose-dt fallback, so TACTICAL on this build is on an UNVERIFIED clock"
+ },
+ "frame_memo": {
+  "hits": 160,
+  "misses": 40
+ },
+ "device": "cpu"
+}

@@ -107,11 +107,15 @@ def roll_one(ckpt, config, seed, dump_dir, windows, log, device="cuda", frame_me
            "skipped": man["grid"]["n_windows_skipped"], "extras": meta,
            "cuda_max_memory_allocated_gib": (round(torch.cuda.max_memory_allocated() / 2**30, 3)
                                              if torch.cuda.is_initialized() else None),
-           "model_record": {k: st["model_record"][k] for k in ("state_dict", "param_breakdown",
-                                                                "anchor_file_vs_ckpt_buffers",
-                                                                "trunk_memory_levers_built",
-                                                                "departures")},
+           "model_record": {**{k: st["model_record"][k] for k in ("state_dict", "param_breakdown",
+                                                                   "anchor_file_vs_ckpt_buffers",
+                                                                   "trunk_memory_levers_built",
+                                                                   "departures")},
+                            "trunk_equalize_as_trained": st["model_record"].get("trunk_equalize_as_trained")},
            "window_restriction": st.get("window_restriction"),
+           # G3 (SPEC_REFCV7 FIX-2 / E2(b)): TACTICAL's clip exclusion, printed with TACTICAL's n (rule 5)
+           "label_clock": (st.get("dataset_record") or {}).get("label_clock"),
+           "label_clock_g3": (st.get("dataset_record") or {}).get("label_clock_g3"),
            "frame_memo": (None if st.get("memo") is None else
                           {"hits": st["memo"].hits, "misses": st["memo"].misses})}
     del st

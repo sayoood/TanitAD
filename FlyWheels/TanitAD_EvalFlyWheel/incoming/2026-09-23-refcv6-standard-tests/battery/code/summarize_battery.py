@@ -165,6 +165,19 @@ def tactical_tables(t: dict) -> str:
     return "\n".join(out)
 
 
+def g3_line(g3) -> str:
+    """Four-families rule 5: TACTICAL's clip population and its exclusion reason, always printed."""
+    if not g3:
+        return ("TACTICAL clip population: all rolled clips (this roll predates the G3 record: labels on the roll "
+                "tree's own clock, no exclusion)")
+    if "tactical_excluded_clips" in g3:
+        return (f"TACTICAL clip population: **{g3.get('tactical_scored_on_clips')} of {g3.get('n_clips')} clips**. "
+                f"G3 excluded {g3.get('tactical_excluded_clips')} "
+                f"({', '.join(g3.get('tactical_excluded_sha12') or [])}): {g3.get('tactical_excluded_reason')}. "
+                f"Longitudinal / lateral / ADE keep all clips.")
+    return f"TACTICAL clip population: all rolled clips. G3: {g3.get('status')}"
+
+
 def main():
     d = Path(sys.argv[1])
     seed = sys.argv[2] if len(sys.argv) > 2 else "0"
@@ -212,6 +225,8 @@ def main():
     print(paired_table(cp))
     t = json.load(open(d / f"tactical_v6_s{seed}.json", encoding="utf-8"))
     print(f"\n### TACTICAL — declared heads and the 22-token goal set, inference seed {seed}\n")
+    g3 = ((s.get("stages") or {}).get(f"roll_s{seed}") or {}).get("label_clock_g3")
+    print(g3_line(g3) + "\n")
     print(tactical_tables(t))
     s6 = d / f"cross_paired_s6_s{seed}.json"
     if s6.exists():

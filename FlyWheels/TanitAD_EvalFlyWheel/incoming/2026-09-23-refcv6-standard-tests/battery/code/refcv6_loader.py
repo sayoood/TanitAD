@@ -169,6 +169,28 @@ def parse_args(config: dict, remap: dict | None = None):
 # ---------------------------------------------------------------------------------------- #
 # the MODEL -- refc_v3_train.train() lines 6711-6990 + 7618, replayed                       #
 # ---------------------------------------------------------------------------------------- #
+def trunk_rows_as_trained(tr, cfg, config: dict):
+    """-> (cfg, record). ⛔ D-REFCV6-EQUALIZE-DROPPED (SPEC_REFCV7 FIX-3, Master Mind 2026-09-26).
+
+    Before FIX-3 the C26 trunk rows were an UNDECLARED attribute that the `--image-hw` rebuild
+    dropped: refcv6-r101-s0 has `--equalize-bottom-rows 43` in argv and trained an UNEQUALISED trunk
+    (the BEV lift bank did receive the 43 rows, and keeps them below). On a post-FIX tree the pin
+    carries the rows into the trunk as a DECLARED field (`CNNEncoderConfig.trunk_equalize_bottom_rows`),
+    so rebuilding a pre-fix checkpoint "as declared" would EQUALISE a trunk the weights never saw
+    equalised. The trainer's own helper `trunk_equalize_rows_as_trained(config)` says what the RECORDED
+    run's trunk actually zeroed; the rebuilt trunk is set to exactly that.
+    A pre-FIX tree has neither the field nor the helper: the rows never reach its trunk, so it is
+    already as-trained and nothing is changed (recorded)."""
+    enc = cfg.core.encoder
+    if not (hasattr(tr, "trunk_equalize_rows_as_trained") and hasattr(enc, "trunk_equalize_bottom_rows")):
+        return cfg, {"status": "pre-FIX-3 tree: the trunk has no declared equalize field; the rows never "
+                               "reach it, so the rebuild is already as trained"}
+    declared = int(enc.trunk_equalize_bottom_rows)
+    rows, why = tr.trunk_equalize_rows_as_trained(config)
+    enc.trunk_equalize_bottom_rows = int(rows)
+    return cfg, {"status": "set as trained", "declared_by_pin": declared, "as_trained": int(rows), "why": why}
+
+
 def build_model(config: dict, ckpt_path: str, device: str = "cuda", remap: dict | None = None,
                 strict: bool = True):
     """-> (model, cfg, args, record). Mirrors train() block by block (line refs = ev6 == 287d72e).
@@ -209,6 +231,8 @@ def _build_model(config: dict, ckpt_path: str, device: str = "cuda", remap: dict
     cfg = tr._pin_trainer_cfg(
         v3.refc_v3_smoke_config(args.arm == "hier") if args.smoke else
         v3.refc_v3_sized_config(args.size, hier=args.arm == "hier"), args)
+    # ⛔ D-REFCV6-EQUALIZE-DROPPED / SPEC_REFCV7 FIX-3: rebuild the TRUNK as trained, never as declared.
+    cfg, rec["trunk_equalize_as_trained"] = trunk_rows_as_trained(tr, cfg, config)
     # (the delta check at 6754-6762 is a launch gate on a config PAIR; it reads no weights)
     tr._check_anchor_artifact_against_cfg(art, cfg, args)
     if args.graft_lan or args.goal_str:
@@ -369,6 +393,32 @@ def _find_levers(model) -> dict:
 # ---------------------------------------------------------------------------------------- #
 # the HELD-OUT eval dataset -- train() lines 7092-7101 + 7394-7560, replayed                 #
 # ---------------------------------------------------------------------------------------- #
+def label_clock_g3(e_ds, args) -> dict:
+    """⛔ G3 / G-CLOCK (SPEC_REFCV7 FIX-2; declared-vs-built E2(b), Master Mind 2026-09-26): on a post-FIX tree
+    the eval split's label reads are verified against each clip's MEASURED clock, and the clips with NO
+    measured clock (eval-139: 3 stationary clips the sidecar refused) lose their TACTICAL targets only
+    (lat_v7 / lon_v7 / tac_goal_y / tac_goal_w). nav, v_max and every other family keep all clips.
+    * pre-FIX tree (no `assert_label_clock_true`): nothing changes; recorded "pre-FIX tree";
+    * post-FIX tree, a record with NO --clip-clock-sidecar (a pre-switch config): G3 would REFUSE the
+      pose-dt fallback, so it is NOT run and the record says TACTICAL is on an UNVERIFIED clock;
+    * otherwise the trainer's own guard runs, with `exclude_unverified_tactical=True` (eval mode).
+    The excluded clips are also stamped by sha12(clip_id) -- the only clip identity a banked file carries."""
+    if not hasattr(e_ds, "assert_label_clock_true"):
+        return {"status": "pre-FIX tree: V3Dataset has no assert_label_clock_true (G3); TACTICAL on all clips"}
+    side = getattr(args, "clip_clock_sidecar", None)
+    if not side:
+        return {"status": "NOT RUN: this record names no --clip-clock-sidecar (a pre-switch config); G3 would "
+                          "refuse the pose-dt fallback, so TACTICAL on this build is on an UNVERIFIED clock"}
+    g = e_ds.assert_label_clock_true(side, split="eval", exclude_unverified_tactical=True)
+    from tanitad.data.v2_dataset import load_or_build_manifest, stable_episode_id
+    by_sid = {int(stable_episode_id(str(c))): sha12(str(c))
+              for c in load_or_build_manifest(args.eval_cache, verbose=False)["clip_id"]}
+    g["tactical_excluded_sha12"] = sorted(by_sid.get(int(s), f"sid:{s}") for s in
+                                          g.get("tactical_excluded_sids") or [])
+    g["status"] = "G3 run (eval mode: unverified clips excluded from TACTICAL only)"
+    return g
+
+
 def build_eval_dataset(model, cfg, args, config: dict, *, with_perception_targets: bool = True,
                        dataset_cls=None):
     """-> (e_ds, e_eps, record). `with_perception_targets=False` skips the agent / map / 3-D joins
@@ -406,6 +456,7 @@ def build_eval_dataset(model, cfg, args, config: dict, *, with_perception_target
     else:
         rec["label_clock"] = {"rule": "(t + w - 1) * 0.1 s -- pre-A16 tree (V3Dataset has no "
                                       "enable_clip_clock)", "sidecar": None}
+    rec["label_clock_g3"] = label_clock_g3(e_ds, args)
     rec["labels"] = {"path": args.eval_labels, "md5": e_man.md5, "n_records": e_man.n_records}
     if nav_on:
         rec["nav"] = e_ds.enable_nav_from_v7(e_man)

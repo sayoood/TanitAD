@@ -53,6 +53,9 @@ def build(config: dict, *, legacy: bool):
     cfg = tr._pin_trainer_cfg(
         v3.refc_v3_smoke_config(args.arm == "hier") if args.smoke else
         v3.refc_v3_sized_config(args.size, hier=args.arm == "hier"), args)
+    # D-REFCV6-EQUALIZE-DROPPED (FIX-3): the same as-trained trunk override the loader applies. No model is
+    # built here (only window / channels are read), so it changes no label -- it keeps ONE cfg rule.
+    cfg, _eq = L.trunk_rows_as_trained(tr, cfg, config)
     ds, eps, rec = L.build_eval_dataset(None, cfg, args, config, with_perception_targets=False)
     if not hasattr(ds, "legacy_label_clock"):
         raise SystemExit("[labels] this tree's V3Dataset has no legacy_label_clock -- not an A16 tree")
