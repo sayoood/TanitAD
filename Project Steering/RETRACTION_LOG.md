@@ -17668,3 +17668,15 @@ multiplier, as before).
 **Class:** a true count quoted in the wrong UNIT -- epochs of rows for epochs of scenes -- which
 the `df` / `step_s` / units family predicts; it survived because augmentation was added AFTER the
 epoch logic was written and nothing re-asked what one epoch passes over.
+
+### RETR-2026-09-26-F3-LIVE — "F3 ✅ live" (2026-09-22 DIFFUSION_PAPER_REVIEW §1) was a claim about the COMPONENT, not the arm
+
+The review proved F3 on `AnchoredDiffusionDecoder.forward` called directly (`diag_f1_f9_liveness.py`
+builds the decoder), and cited the loss at `refc_v3_train.py:3862-3888` by READING it. Between the
+two sits `RefCModel.forward`, which copies decoder outputs through a WHITELIST that omits
+`layer_u0_hat`. MEASURED 2026-09-26: the live run (`refcv6-r101-s0`) has never logged the `cascade`
+term (0/668 + 0/66 rows) and its stage-0..2 heads are bit-identical across 29,000 steps.
+**Class:** a liveness proof taken on the producer while the consumer reads through an intermediary
+(the advisory's "every instrument built its inputs FROM the component it was testing"); the silent
+`and "<key>" in out` guard is the class-F shape that let it pass. **Durable fix:** assert the TERM in
+the consumer's output on the real `train()` (q3b's arm A/B), and make the F3 block refuse, not skip.
