@@ -590,3 +590,60 @@ and that file is wrong for at least one object (§17).
   it verified"*, **0** verified receipt entries — while the real receipt stayed at MATCH.
 ⭐ The Terms-of-Use refusal still fires FIRST (rc 2, no network touched).
 ⇒ **The 45 GB `planning` tier is now content-verifiable per archive** before anyone relies on it.
+
+## §20 Receipts are now APPEND-ONLY — fixing a regression I introduced
+
+Master Mind, verified at `65fb135`: my ETag re-run **rewrote** `RECEIPT_meta.json`, moving its `utc` from the
+real first fetch (**13:10:51Z**) to the re-verification (13:47:12Z). The cause was structural — the script
+built the receipt with `printf … > "$RECEIPT"`, and `>` truncates on every run.
+
+**`tools/download_receipt.py`** (new): `first_fetch_utc` and `accepted_terms_by` are written ONCE; every run is
+appended to `runs`, every verification to its file's `verifications`; ⛔ a re-fetch with DIFFERENT bytes or md5
+is REFUSED (exit 1), never absorbed; writes are atomic; an old single-`utc` receipt migrates without losing
+meaning. **6 tests**, the key one the exact regression with a CONTROLLED clock (fetch 13:10:51 → re-verify
+13:47:12 → first time must survive), because two calls in the same second would make "unchanged" pass for
+the wrong reason. The fetch script now calls it for open / record / close.
+
+**The real receipt, repaired and re-proven:** the first-fetch time was recovered from the ARTIFACT (git
+`55aa747`, asked by commit, never via the mirror's stale HEAD), restored with a recorded `repairs` entry
+(was 13:47:12Z → now 13:10:51Z, provenance named), then the authorised meta tier was re-run: `first_fetch_utc`
+held at **13:10:51Z** and the new verification was APPENDED beside the old one. Banked copy updated.
+
+## §21 ⭐ The UniAD gap was OUR harness convention — pre-registered H1 CONFIRMED
+
+Master Mind: *"pre-register what would discriminate a harness convention from a genuine difference before
+chasing it."* **`raw/nuscenes/PREREG_UNIAD_GT_FLOOR_GAP.md`**, sha256 `08677e75…`, registered 13:59:38Z BEFORE
+the discriminating number was computed, with three rivals and what each predicts: **H1** our GT floor divides
+by VALID timesteps while the reference divides by ALL samples (predicts a falling valid fraction and every
+horizon within 5 %); **H2** a genuine occupancy difference (predicts no closure); **H3** a different sample set
+(predicts a constant ratio). The code fact behind H1: `per_timestep_means` used `/ n` for model-arm columns
+but `/ v.sum(0)` for the GT floor.
+
+**Result** — with a control first (my recomputation reproduced the banked valid-denominator values exactly):
+
+| | 1 s | 2 s | 3 s | avg |
+|---|---|---|---|---|
+| valid fraction v(t) | 0.950 | 0.900 | 0.850 | — |
+| old (valid-steps) | 0.3847 | 0.4244 | 0.4298 | 0.4130 |
+| **reference (all samples)** | **0.3655** | **0.3821** | **0.3655** | **0.3710** |
+| PARA-Drive Tab. 8 | 0.35 | 0.38 | 0.35 | 0.36 |
+| residual | +4.4 % | +0.6 % | +4.4 % | +3.1 % |
+
+**(a) v(t) falls with horizon ✅ · (b) every horizon within 5 % ✅ ⇒ H1 CONFIRMED.**
+⚠️ NOT pre-registered, reported as corroboration only: the corrected values also reproduce PARA-Drive's
+distinctive **1 s = 3 s < 2 s** shape, which the old monotone-rising values did not.
+⭐ **It explains both protocols at once:** n_valid at 3 s is exactly **5,119** — VAD's sample count. VAD scores only
+full-future samples, so nothing is masked and the denominator cannot matter; that is why VAD matched the moment
+its object set was fixed, and UniAD did not.
+⚠️ Stated limit, as registered: this shows our numbers are **consistent with UniAD's reference convention**;
+PARA-Drive does not state its denominator.
+
+**Fix** (`per_timestep_means`): the GT floor's default is now the reference denominator — the same as every
+model-arm column — and the old value is **kept, labelled** `gt_collision_box_pct_valid_steps_only`; the run
+records its denominator. **4 hand-countable literal tests**, including that the two conventions COINCIDE when
+nothing is masked (the property that makes the change safe for VAD). **71 nuScenes tests pass.**
+**Re-pinned through the real CLI:** UniAD `20260926T140150Z-nuscenes_ol-none-e01c44` → **0.3655 / 0.3821 / 0.3655**; VAD `20260926T140356Z-nuscenes_ol-none-0660f6` → **unchanged**
+1.0354 / 0.9865 / 0.9377; L2 identical on both. The old UniAD run `…-21abb2` is **tombstoned**.
+
+⇒ **Both nuScenes protocols now reproduce PARA-Drive's published GT-collision floors: UniAD within 0.6–4.4 %,
+VAD within 1.5–3.0 %.** Two genuine harness defects, each pre-registered and externally confirmed.

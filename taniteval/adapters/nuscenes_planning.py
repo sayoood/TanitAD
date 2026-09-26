@@ -547,7 +547,9 @@ METRICS = {
     "collision_box_pct": "ego-box collision rate [%] (obj_box_col) — the published 'Col.' column",
     "collision_point_pct": "ego-centre-point collision rate [%] (obj_col) — NOT the published column",
     "gt_collision_box_pct": "RAW collision rate [%] of the GT human trajectory itself — the "
-                            "instrument's false-positive floor (PARA-Drive fn. 4)",
+                            "instrument's false-positive floor (PARA-Drive fn. 4). Denominator: ALL "
+                            "scored samples (masked steps contribute 0), as the reference compute() — "
+                            "NOT valid steps only (see gt_collision_box_pct_valid_steps_only)",
 }
 
 
@@ -626,10 +628,18 @@ def per_timestep_means(k: KernelOutput) -> dict:
            "L2_m": k.l2[sc].sum(axis=0) / n,
            "collision_box_pct": 100.0 * k.obj_box_col[sc].sum(axis=0) / n,
            "collision_point_pct": 100.0 * k.obj_col[sc].sum(axis=0) / n}
-    # the GT floor counts only real (valid) timesteps: UniAD fills invalid frames with 255
     v = k.valid[sc]
-    den = np.maximum(v.sum(axis=0), 1)
-    out["gt_collision_box_pct"] = 100.0 * (k.gt_box_col[sc] * v).sum(axis=0) / den
+    num = (k.gt_box_col[sc] * v).sum(axis=0)           # invalid (255-filled) steps contribute 0
+    # ⭐ DEFAULT = the reference compute() denominator: ALL scored samples, masked steps contributing 0 —
+    # the SAME convention as the model-arm columns above. Pre-registered and CONFIRMED 2026-09-26
+    # (…/raw/nuscenes/PREREG_UNIAD_GT_FLOOR_GAP.md, sha256 08677e75…): with it the UniAD GT floor reads
+    # 0.3655 / 0.3821 / 0.3655 % at 1/2/3 s against PARA-Drive Tab. 8's 0.35 / 0.38 / 0.35 % (+4.4/+0.6/+4.4 %),
+    # reproducing its 1 s = 3 s < 2 s shape. The valid-steps-only denominator used before read
+    # 0.3847 / 0.4244 / 0.4298 — +10/+12/+23 %, growing with horizon exactly as the invalid fraction does.
+    # For VAD / ST-P3 every scored sample has a full future, so the two denominators coincide there.
+    out["gt_collision_box_pct"] = 100.0 * num / n
+    # the previous convention, KEPT and LABELLED so every earlier banked number stays explainable
+    out["gt_collision_box_pct_valid_steps_only"] = 100.0 * num / np.maximum(v.sum(axis=0), 1)
     out["gt_valid_n"] = v.sum(axis=0)
     return out
 
@@ -1679,8 +1689,11 @@ def _gt_control_block(ev: dict) -> dict:
                 "n": int(ev["scored"].sum())}
     m = per_timestep_means(k)
     red = _REDUCERS[ev["tag"].reduction](m["gt_collision_box_pct"])
+    red_valid = _REDUCERS[ev["tag"].reduction](m["gt_collision_box_pct_valid_steps_only"])
     return {"status": "OK", "n": int(m["n"]), "protocol_tag": str(ev["tag"]),
             "gt_collision_box_pct": red["headline"], "gt_collision_box_pct_columns": red["columns"],
+            "gt_collision_denominator": "all scored samples, masked steps contribute 0 (reference compute())",
+            "gt_collision_box_pct_valid_steps_only": red_valid["headline"],
             "note": "RAW box collision of the GT human trajectory under this protocol's own grid "
                     "(PARA-Drive fn. 4). The references EXCLUDE GT-colliding steps from every "
                     "arm's numerator, so in-protocol the GT arm scores 0 by construction; this "

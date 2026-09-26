@@ -43,6 +43,7 @@ WHO="$2"; TIER="${3:-planning}"
 # refuse BEFORE any byte is fetched if the verifier is unreachable -- a download that cannot be
 # content-checked must not be allowed to look checked
 [ -f "$VERIFY" ] || { echo "REFUSED: content verifier missing at $VERIFY" >&2; exit 2; }
+[ -f "$REPO/tools/download_receipt.py" ] || { echo "REFUSED: receipt writer missing" >&2; exit 2; }
 
 # key<TAB>expected bytes (MEASURED 2026-09-19 by bucket LIST, cross-checked by HEAD)
 PILOT="public/v1.0/v1.0-mini.tgz	4168148189
@@ -86,10 +87,12 @@ esac
 
 mkdir -p "$ROOT/archives" "$ROOT/data"
 RECEIPT="$ROOT/archives/RECEIPT_${TIER}.json"
-printf '{"tier": "%s", "accepted_terms_by": "%s", "utc": "%s", "source": "%s", "files": [\n' \
-       "$TIER" "$WHO" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$BASE" > "$RECEIPT"
+# ⛔ APPEND-ONLY (tools/download_receipt.py). This used to be `printf … > "$RECEIPT"`, which TRUNCATED the
+# receipt on every run: re-verifying on 2026-09-26 moved its time from the real first fetch (13:10:51Z)
+# to the re-run (13:47:12Z). first_fetch_utc and accepted_terms_by are now written once, never again.
+RCPT=("$PY" "$REPO/tools/download_receipt.py")
+"${RCPT[@]}" open "$RECEIPT" --tier "$TIER" --who "$WHO" --source "$BASE"
 
-first=1
 while IFS=$'\t' read -r KEY WANT; do
   [ -z "$KEY" ] && continue
   OUT="$ROOT/archives/$(basename "$KEY")"
@@ -112,19 +115,16 @@ while IFS=$'\t' read -r KEY WANT; do
     echo "CONTENT MISMATCH for $KEY against its own S3 ETag — REFUSING to mark it verified" >&2
     exit 1
   fi
-  [ $first -eq 1 ] || printf ',\n' >> "$RECEIPT"
-  printf '  {"key": "%s", "bytes": %s, "md5": "%s", "s3_etag": %s, "etag_verdict": "%s"}' \
-         "$KEY" "$GOT" "$MD5" "$ETAG" "${VERDICT%%:*}" >> "$RECEIPT"
-  first=0
+  # appends a verification; REFUSES (exit 1 under set -e) if these bytes differ from the first fetch
+  "${RCPT[@]}" record "$RECEIPT" --key "$KEY" --bytes "$GOT" --md5 "$MD5" \
+      --etag "${ETAG//\"/}" --verdict "${VERDICT%%:*}"
 done <<< "$LIST"
-printf '\n],\n' >> "$RECEIPT"
 
 # the bucket ships its own md5 list. ⚠️ KEPT FOR REFERENCE ONLY -- it is NOT the verification: MEASURED
 # 2026-09-26 it does not describe the served trainval_meta object. The per-file s3_etag verdicts above are.
 "${CURL[@]}" -o "$ROOT/archives/md5.checksum" "$BASE/public/v1.0/md5.checksum" || true
-printf ' "md5_checksum_file": "archives/md5.checksum",\n' >> "$RECEIPT"
-printf ' "licence": "CC BY-NC-SA 4.0 (research-only, share-alike; derivatives inherit NC+SA). The\\n' >> "$RECEIPT"
-printf '   AWS Open Data registry lists the licence field as Commercial - a CONFLICT recorded in\\n' >> "$RECEIPT"
-printf '   CRITERIA_REGISTRY.json benchmarks.nuscenes.licence_status; treat as research-only."\n}\n' >> "$RECEIPT"
+"${RCPT[@]}" close "$RECEIPT" \
+    --note "md5_checksum_file=archives/md5.checksum (REFERENCE ONLY -- not the verification; see s3_etag verdicts)" \
+    --note "licence=CC BY-NC-SA 4.0 (research-only, share-alike; derivatives inherit NC+SA). The AWS Open Data registry lists the licence field as Commercial - a CONFLICT recorded in CRITERIA_REGISTRY.json benchmarks.nuscenes.licence_status; treat as research-only."
 echo "receipt: $RECEIPT"
 echo "NEXT: extract ONLY what is needed (exFAT clusters are 1 MiB) — see the header of this file."

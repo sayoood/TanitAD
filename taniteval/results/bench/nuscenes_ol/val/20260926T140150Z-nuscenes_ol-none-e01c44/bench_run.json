@@ -1,0 +1,304 @@
+{
+ "schema": "taniteval.bench.bench_run/1",
+ "run_id": "20260926T140150Z-nuscenes_ol-none-e01c44",
+ "utc": "2026-09-26T14:01:51Z",
+ "utc_end": "2026-09-26T14:03:56Z",
+ "benchmark": "nuscenes_ol",
+ "arms": [
+  {
+   "name": "GT",
+   "kind": "reference",
+   "declared_inputs": [
+    "logged_future_lidar_origin (REFERENCE - the instrument's own floor, not a plan)"
+   ],
+   "status": "OK",
+   "added_by_rule": true
+  },
+  {
+   "name": "STOP",
+   "kind": "floor",
+   "declared_inputs": [],
+   "status": "OK",
+   "added_by_rule": true
+  },
+  {
+   "name": "CV",
+   "kind": "floor",
+   "declared_inputs": [
+    "ego_pose(t<=t0) -> v0, heading (causal)"
+   ],
+   "status": "OK",
+   "added_by_rule": true
+  }
+ ],
+ "status": "COMPLETE",
+ "report": {
+  "status": "RENDERED",
+  "rc": 3,
+  "index": "report/index.html",
+  "index_exists": true,
+  "log": "raw/benchreport.log",
+  "wall_s": 0.4,
+  "warning": "taniteval.benchreport exited 3 but wrote a non-empty page — read raw/benchreport.log and report/verify.json for what it could not do",
+  "verify": {
+   "status": "PASS",
+   "n_numbers_checked": 20,
+   "n_refusals_checked": 19,
+   "n_errors": 0,
+   "errors": [],
+   "coverage_missing": [],
+   "summary_sha_note": "summary.json read directly; renderer code not imported",
+   "published_file": "D:\\Projects\\TanitAD\\products\\P7-TanitEval\\benchmarks\\published_results.json",
+   "gallery": {
+    "status": "UNAVAILABLE",
+    "reason": "scenes.json is absent from the run directory — the gallery needs token -> scene pickle / frame bank / map"
+   }
+  }
+ },
+ "command": [
+  "C:\\Users\\Admin\\venvs\\tanitad\\Scripts\\python.exe",
+  "D:\\Projects\\TanitAD\\taniteval\\taniteval\\bench\\__main__.py",
+  "nuscenes_ol",
+  "--ckpt",
+  "none",
+  "--split",
+  "val",
+  "--device",
+  "cpu"
+ ],
+ "git_head": "37645fcc61b158a327e6597e64e0abb64dcbc46d",
+ "git": {
+  "sha": "37645fcc61b158a327e6597e64e0abb64dcbc46d",
+  "branch": "agent/arch-inf-20260803",
+  "suite_code_blobs": {
+   "taniteval/taniteval/bench/__init__.py": "b20b83f09ffebcca3b36d1cc1ead9ae199b0df6f",
+   "taniteval/taniteval/bench/__main__.py": "f15d4c6ac42eac1be4c2e3d47e2e37004719a2ea",
+   "taniteval/taniteval/bench/_legacy.py": "3e263ebba1229b2df9261d608f5e54d0a6a0e6b7",
+   "taniteval/taniteval/bench/cli.py": "e896e24239b63c73f69daff08c34dec3776acfff",
+   "taniteval/taniteval/bench/contract.py": "a84e9210319d1919873518fd36c84f6f8ee850d5",
+   "taniteval/taniteval/bench/gpu_gap.py": "987ac5a613761ea97d99439bd598dd34d3afe672",
+   "taniteval/taniteval/bench/internal_t1.py": "cf9de71c21a83ba8a2457151efb2700607750033",
+   "taniteval/taniteval/bench/navsim/__init__.py": "a684bc2b39d3a3b59cb2244a6e56d56481f346e8",
+   "taniteval/taniteval/bench/navsim/artifacts.py": "c9a924d96e15fb4b761bf774337456b05a870be0",
+   "taniteval/taniteval/bench/navsim/benchmark.py": "573b19be6d3d10291f3d9d7514afabca0d98b226",
+   "taniteval/taniteval/bench/navsim/bridge.py": "f5f2d82cf867f2911ea9ebc8c62f4d75949dfbb4",
+   "taniteval/taniteval/bench/navsim/cache_build.py": "64ba0d05fc5473f7720595ee27bd13abd8a0a662",
+   "taniteval/taniteval/bench/navsim/devkit_side/export_agent_inputs.py": "fe88f5e0002cf8efbff5882cd9056a464589a41e",
+   "taniteval/taniteval/bench/navsim/devkit_side/navsim_win.py": "935fa44c459a3ee52c5582db288c5b95394ece54",
+   "taniteval/taniteval/bench/navsim/devkit_side/reaggregate.py": "78b004f9869c291445ecae4de056bae529cfab5b",
+   "taniteval/taniteval/bench/navsim/devkit_side/tanitad_seam_agent.py": "d9561bc67639f20ecd148a3b7ab81a1ec42ee8de",
+   "taniteval/taniteval/bench/navsim/devkit_side/write_cache_metadata.py": "f86d702ec160ac44b269a131f2b40b4e2071792c",
+   "taniteval/taniteval/bench/navsim/export.py": "e10d44b4f1d4362e40402863cbbb03a9abbea5e9",
+   "taniteval/taniteval/bench/navsim/floor_reuse.py": "e4bbf6fab2d49a870e3c07d870b341649b16577f",
+   "taniteval/taniteval/bench/navsim/model_arms.py": "ed5eae26609ab6846f4c71cf0e47299f7c7dc09f",
+   "taniteval/taniteval/bench/navsim/plans.py": "cfbf5fca08d5118be69af923695c8d25deb504a2",
+   "taniteval/taniteval/bench/navsim/profiles.py": "91c8006f55ffa60655aaa9e6702e3f5e6366ad3d",
+   "taniteval/taniteval/bench/navsim/scoring.py": "c1ea935cf5e6d00cdc19ee70385cd379cece76b8",
+   "taniteval/taniteval/bench/navsim/seams.py": "fc4e270c5a3356d4ec60fd87bb9da8edecd03a4c",
+   "taniteval/taniteval/bench/navsim/single_stage.py": "9d67f496662bd0bda3325de5b820c6436d13879f",
+   "taniteval/taniteval/bench/navsim/summarize.py": "98b014d8d9293758d91f2090c32613cf8533a7ba",
+   "taniteval/taniteval/bench/plugins/__init__.py": "be8e23d52a914757ae2822c25a554ecbc1d0d36f",
+   "taniteval/taniteval/bench/plugins/navsim_v1.py": "32a0925bde71fb4bc9b608a00edbdf45857beeff",
+   "taniteval/taniteval/bench/plugins/nuscenes_ol.py": "d123d005fdc9b1fd47daa9bcc0b07fb6e59fb47f",
+   "taniteval/taniteval/bench/report_hook.py": "1770fbce95bb4d3443b944a61590ccf99cce9713",
+   "taniteval/taniteval/bench/schema_check.py": "81c6e306246faac2777411e83410edb2ba1f8e32",
+   "taniteval/taniteval/bench/submission.py": "5babcd1c29d35c519da6466cb46584eb3f2f66bf"
+  }
+ },
+ "ckpt": {
+  "path": null,
+  "sha256": null,
+  "registry_key": null,
+  "note": "--ckpt none: floors / references only",
+  "registry_key_display": "no checkpoint (devkit floors only)"
+ },
+ "suite_version": "1.0.0",
+ "claim_bearing": false,
+ "claim_bearing_reason": "H-EVAL-6 (SUPPORTED): nuScenes open-loop planning is inadmissible as a TanitAD criterion - no official protocol; the L2 averaging convention alone moves one VAD checkpoint 0.72 -> 1.22 m (+70 %) and flips the UniAD/VAD ranking; the GT human trajectory scores 0.36-0.96 % collision; the field's 'high-level command' is the GT future thresholded at +-2 m (our route-echo defect). D-BENCH-PORT (PI, 2026-08-29): SKIP claim-bearing. Usable ONLY as a cited external-comparability row.",
+ "protocol": "nuScenes_OL_L2_uniad",
+ "stamps": {
+  "tier": "OPEN-LOOP-L2",
+  "loop": {
+   "planner": "OPEN"
+  },
+  "evidence_class": "MEASURED",
+  "closed_loop": false
+ },
+ "devkit": {
+  "repo": "OpenDriveLab/UniAD (reference implementation; nuScenes has NO official planning devkit)",
+  "sha": "609ee083ea51c3521c323f1279dfc4cee0e60467",
+  "patches": [
+   {
+    "name": "taniteval/adapters/nuscenes_planning.py: verbatim kernel + reduction port, cv2.fillPoly port (OpenCV 4.5.4), float64 accumulation",
+    "kind": "harness"
+   }
+  ],
+  "reference_pins": {
+   "stp3": {
+    "repo": "OpenDriveLab/ST-P3",
+    "commit": "69aabefd2610951d9e34238142776ed2228673be",
+    "kernel": "stp3/metrics.py:263-396",
+    "reduction": "evaluate.py:71-73,135-137,162-166",
+    "samples": "stp3/datas/NuscenesData.py:96-148",
+    "gt": "stp3/datas/NuscenesData.py:505-532"
+   },
+   "uniad": {
+    "repo": "OpenDriveLab/UniAD",
+    "commit": "609ee083ea51c3521c323f1279dfc4cee0e60467",
+    "kernel": "projects/mmdet3d_plugin/uniad/dense_heads/planning_head_plugin/planning_metrics.py:15-149",
+    "reduction": "projects/mmdet3d_plugin/datasets/nuscenes_e2e_dataset.py:1030-1050",
+    "first_public_commit": "4e91222da855fa83a8caa55f512536e82f9f9818 (nuscenes_e2e_dataset.py:1024-1036, at-t only)",
+    "stp3_option_added": "33cd8ecf7ad5ea4b7d779a2176841d3c1c4d4174 (2024-03-19)",
+    "samples_gt": "projects/mmdet3d_plugin/datasets/data_utils/trajectory_api.py:226-282",
+    "occupancy": "projects/mmdet3d_plugin/datasets/pipelines/occflow_label.py:11-160; base_e2e.py:560-561"
+   },
+   "vad": {
+    "repo": "hustvl/VAD",
+    "commit": "1688c4b1c3a9e2e7873ca9700ff8058170c0e3c8",
+    "kernel": "projects/mmdet3d_plugin/VAD/planner/metric_stp3.py:75-308",
+    "per_sample": "projects/mmdet3d_plugin/VAD/VAD.py:593-641",
+    "reduction": "projects/mmdet3d_plugin/datasets/nuscenes_vad_dataset.py:1795-1813",
+    "samples_gt": "tools/data_converter/vad_nuscenes_converter.py:248-254,349-459",
+    "agent_filters": "nuscenes_vad_dataset.py:1226-1229; transform_3d.py:11-56; VAD_base_e2e.py:11,330-340"
+   },
+   "admlp": {
+    "repo": "E2E-AD/AD-MLP",
+    "commit": "4b93ba085ee47474152f282177865796ea577fc0",
+    "evaluator": "deps/stp3/evaluate_for_mlp.py:53-120 (ST-P3 reduction on filter_token.pkl)"
+   },
+   "devkit": {
+    "repo": "nutonomy/nuscenes-devkit",
+    "commit": "b40adc467b919192899405d9b77871afee8efa07",
+    "splits": "python-sdk/nuscenes/utils/splits.py:102-150"
+   },
+   "opencv_fillpoly": {
+    "repo": "opencv/opencv",
+    "tag": "4.5.4",
+    "source": "modules/imgproc/src/drawing.cpp:80-145,159-297,1258-1471,1984-2014; include/opencv2/imgproc.hpp:4832-4912"
+   },
+   "mmdet3d_names": {
+    "repo": "open-mmlab/mmdetection3d",
+    "tag": "v0.17.1",
+    "source": "mmdet3d/datasets/nuscenes_dataset.py:54-69,110-112"
+   }
+  }
+ },
+ "split": {
+  "name": "val",
+  "n_scenes": 150,
+  "n_logs": 18,
+  "n_samples_total": 6019,
+  "n_scored": 6019,
+  "sample_rule": "all samples; missing future steps masked (UniAD)"
+ },
+ "protocol_tag": {
+  "tag": "nuscenes-planning/uniad-noavg+uniad@609ee08",
+  "reduction": "uniad-noavg",
+  "pipeline": "uniad@609ee08",
+  "protocol": "nuScenes_OL_L2_uniad",
+  "published_family": "uniad-noavg"
+ },
+ "nuscenes_root": "D:/Archive/devbox-C/nuscenes/data",
+ "device": {
+  "requested": "cpu",
+  "used": "none",
+  "scoring": "cpu",
+  "gpu_gap": {
+   "status": "NOT_INVOKED",
+   "reason": "no model inference in this run"
+  }
+ },
+ "wall_s": 125.3,
+ "files": {
+  "artifacts/CV.json": {
+   "bytes": 709175,
+   "sha256": "f967073e9a840133d24f88942389adf8b84a653a30f52e1bf034a1196eea5c61",
+   "location": "repo"
+  },
+  "artifacts/GT.json": {
+   "bytes": 19162,
+   "sha256": "ed2e69d4c936f0a7b0b38ec7ac0cad9e51c0aeee2e9952e40e8c8903798e0750",
+   "location": "repo"
+  },
+  "artifacts/STOP.json": {
+   "bytes": 19664,
+   "sha256": "0e3a17f6c9b058bc6e2ffb1ae17d1969a21613dcf8cb5e702a00c7ccdac717e2",
+   "location": "repo"
+  },
+  "criteria/CV.txt": {
+   "bytes": 329,
+   "sha256": "20868678f48de126df06c616f51482daa90e4c252df90e6cb75ac462e5fe9fa5",
+   "location": "repo"
+  },
+  "criteria/GT.txt": {
+   "bytes": 329,
+   "sha256": "6d0a5d209230feaa377229d1e104608a335dd5e99617b8876307a0eac74179f3",
+   "location": "repo"
+  },
+  "criteria/STOP.txt": {
+   "bytes": 333,
+   "sha256": "a321f89ed31f85ea9021803c395ad0a2cdd874ca6da5b58dee5b17fa12d0638a",
+   "location": "repo"
+  },
+  "raw/bench.log": {
+   "bytes": 202,
+   "sha256": "fddf919dae66b7bc267a42cbe7683e1faba497714aea79cd149135d968647fe5",
+   "location": "repo"
+  },
+  "raw/benchreport.log": {
+   "bytes": 332,
+   "sha256": "29bed5ec795414ae357d5fa6b9fc5d31449e1861adf09f8dc69a19bd23bcfa15",
+   "location": "repo"
+  },
+  "raw/criteria_CV.json": {
+   "bytes": 777,
+   "sha256": "5c00c39616d4fe14498060f1ef634d8497186e055cb0dc15d3f204b76e7261ee",
+   "location": "repo"
+  },
+  "raw/criteria_GT.json": {
+   "bytes": 777,
+   "sha256": "6b131378c9e787162a461a6e8ad6127fb8547c9107cdd1d9fcd3c3fa0c9ea1eb",
+   "location": "repo"
+  },
+  "raw/criteria_STOP.json": {
+   "bytes": 779,
+   "sha256": "9483958b59a6f8963c0819bdf7a0eb9fb016ab3e06cf7f4b46d4513fa601ad19",
+   "location": "repo"
+  },
+  "report/fig/headline_official.svg": {
+   "bytes": 6779,
+   "sha256": "ef15ba2e58b7373d845e45869f2cb960235e6d1b4ed1f058175ae3bd7acd79df",
+   "location": "repo"
+  },
+  "report/index.html": {
+   "bytes": 36317,
+   "sha256": "3f86b45551d1a30ba2af9d7da5ffb680efd5addda1048388f8ce8d473a58524b",
+   "location": "repo"
+  },
+  "report/verify.json": {
+   "bytes": 495,
+   "sha256": "f2f24c12cd2fee0f3a1203136abe0092005d3b5be732ffd6fcbeb6ae39c2c754",
+   "location": "repo"
+  },
+  "scores/CV.csv": {
+   "bytes": 3886201,
+   "sha256": "322404588fda4ea01c0404f769a11e71d4133867e55b035a628dbbee40d4817f",
+   "location": "repo"
+  },
+  "scores/GT.csv": {
+   "bytes": 3878334,
+   "sha256": "ca5d46b9304d3c57815f6e64c3b579475ba752ab52e7c3972a95d883cc453377",
+   "location": "repo"
+  },
+  "scores/STOP.csv": {
+   "bytes": 3865937,
+   "sha256": "de36f834c2c12dbe23124d1b48fed46688bccc4973d1254dbff52337707ea027",
+   "location": "repo"
+  },
+  "summary.json": {
+   "bytes": 49102,
+   "sha256": "71664b1b5ac54c0f30fcdd0bc44bf6ef9dcb3a278cbf5264125690b775527f1f",
+   "location": "repo"
+  }
+ }
+}

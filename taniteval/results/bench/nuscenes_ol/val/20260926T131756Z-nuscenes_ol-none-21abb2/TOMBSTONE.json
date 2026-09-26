@@ -1,0 +1,9 @@
+{
+ "TOMBSTONE": true,
+ "run_id": "20260926T131756Z-nuscenes_ol-none-21abb2",
+ "removed_utc": "2026-09-26T14:05:27Z",
+ "superseded_by": "20260926T140150Z-nuscenes_ol-none-e01c44",
+ "why": "UniAD GT-collision floor used a NON-reference denominator (valid timesteps only): 0.3847/0.4244/0.4298 pct, +10/+12/+23 pct above PARA-Drive Tab.8 and growing with horizon. Pre-registered H1 (PREREG_UNIAD_GT_FLOOR_GAP.md, sha256 08677e75) CONFIRMED: with the reference compute() denominator (all scored samples) the floor is 0.3655/0.3821/0.3655 pct, within 5 pct at every horizon. L2 and all model-arm columns in this run are CORRECT; only the GT-floor headline is withdrawn.",
+ "evidence_kept": "summary.json and scores/*.csv retained unmodified; the superseding run reports the old value too, labelled gt_collision_box_pct_valid_steps_only",
+ "rule": "taniteval/results/bench/** is APPEND-ONLY (W4, 2026-09-20): a withdrawn run leaves this tombstone instead of vanishing under a consumer that has already cited it"
+}
