@@ -1,7 +1,7 @@
 {
  "schema": "tanitad.published_results/1",
  "file_role": "Every EXTERNAL number the TanitAD leaderboard may print, one row per number, each re-read from a BANKED primary (TanitAD Research Lab/Library, library key + table + PDF page). Consumed by `python -m taniteval.leaderboard build`. Our own numbers never live here: they come from taniteval/results/bench/**/summary.json, the registry and raw eval JSON.",
- "owner": "EvalFlyWheel W4 (leaderboard generator) \u2014 exclusive write; W6 (nuScenes) contributes rows via a patch file",
+ "owner": "EvalFlyWheel W4 (leaderboard generator) — exclusive write; W6 (nuScenes) contributes rows via a patch file",
  "compiled": "2026-09-19",
  "compiled_from": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-leaderboard-currency/raw/external_field_sources.json (per-row reasoning, cross-checks, conflicts)",
  "verification": {
@@ -12,11 +12,11 @@
  "harness_versions": {
   "navsim_fix151": {
    "what": "The official NAVSIM v2 EPDMS implementation changed with the human-behaviour-filter fix (devkit issue #151, 2025-09-29 per CRITERIA_REGISTRY.json benchmarks.navsim.published_reference_numbers._harness_pin). A number computed before it and one computed after it may never share a column.",
-   "our_pin": "autonomousvision/navsim@0a380a9 (2025-10-27) \u2014 POST-fix (MEASURED by E1: README changelog + pdm_score.py:194-219)",
+   "our_pin": "autonomousvision/navsim@0a380a9 (2025-10-27) — POST-fix (MEASURED by E1: README changelog + pdm_score.py:194-219)",
    "values": {
     "post": "the source states, or its values match, the post-fix implementation",
     "pre": "the source states, or its values match, the pre-fix implementation (DrivoR 2601.05083 Tab.14 'before' block; DriveFuture 2605.09701 Tab.2 EPDMS* column)",
-    "unverified": "no source establishes the side \u2014 kept out of comparison",
+    "unverified": "no source establishes the side — kept out of comparison",
     "n/a": "not an EPDMS number (v1 PDMS, nuScenes, Bench2Drive)"
    },
    "papers_state_a_devkit_sha": false
@@ -28,61 +28,61 @@
    "family": "navsim_v2",
    "closed_set": "CRITERIA_REGISTRY.json v2.9.0 benchmarks.navsim.GATE_no_cross_protocol_comparison",
    "official": true,
-   "title": "NAVSIM v2 \u2014 navhard two-stage EPDMS (the OFFICIAL column)",
+   "title": "NAVSIM v2 — navhard two-stage EPDMS (the OFFICIAL column)",
    "metric": "EPDMS",
    "unit": "x100",
    "higher_is_better": true,
    "definition": "Two-stage pseudo-simulation on navhard: 450 stage-1 and 5,462 stage-2 observations (2506.04218 p.7). Official leaderboard: HF space AGC2025/e2e-driving-navhard.",
-   "tanitad_pending": "navhard_two_stage bytes are on D: (sha256 == HF ETag, BUILD_PLAN \u00a70); the metric cache builds after A8; our model inference waits for a GPU gap (PI 2026-09-19). Fills from taniteval/results/bench/navsim_v2/navhard_two_stage/<run_id>/summary.json (W1 contract).",
-   "route_oracle": "\u26a0\ufe0f ROUTE-LEVEL ORACLE: NavSim's driving command is derived from the expert's driven path at roadblock granularity, and on stage 2 the command and route are copied from the expert's own frame (5,462/5,462 navhard; W2 D-NAVSIM-ROUTE-LEAK). It is NOT a trajectory leak \u2014 and \u26d4 no route-following skill may be claimed from a command-conditioned row.",
-   "sample_overlap": "\u26d4 367 of navhard's 450 stage-1 tokens are navtest tokens, and warmup \u2282 navhard (16/16) \u2014 the navhard, navtest and warmup columns are NOT independent samples of each other (W2 D-NAVSIM-SPLIT-NESTING).",
-   "stop_floor_rule": "\u26d4 EVERY NavSim ROW NEEDS ITS **STOP** FLOOR BESIDE CV \u2014 on v1 and v2 alike, and both generations have now MEASURED it: **navhard STOP 29.85 vs CV 11.48 (2.6x)**, **navtest STOP 61.82 vs CV 20.65 (3.0x)**. Mechanism, from source and confirmed by the run: the split keeps only scenes the HUMAN passes, so a stopped ego holds NC / DAC / TTC near 1 \u2014 **5/12 = 41.67 PDMS points free** \u2014 plus comfort at low speed. \u21d2 CV is not the floor it looks like, and on v1 it is also the agent the split was FILTERED with, so it cannot be read as a generic floor at all. \u2b50 The 20-token smoke that first showed this is SUPERSEDED by the full 12,146-token run; its numbers were never printed here and the full-split values are in the table below."
+   "tanitad_pending": "navhard_two_stage bytes are on D: (sha256 == HF ETag, BUILD_PLAN §0); the metric cache builds after A8; our model inference waits for a GPU gap (PI 2026-09-19). Fills from taniteval/results/bench/navsim_v2/navhard_two_stage/<run_id>/summary.json (W1 contract).",
+   "route_oracle": "⚠️ ROUTE-LEVEL ORACLE: NavSim's driving command is derived from the expert's driven path at roadblock granularity, and on stage 2 the command and route are copied from the expert's own frame (5,462/5,462 navhard; W2 D-NAVSIM-ROUTE-LEAK). It is NOT a trajectory leak — and ⛔ no route-following skill may be claimed from a command-conditioned row.",
+   "sample_overlap": "⛔ 367 of navhard's 450 stage-1 tokens are navtest tokens, and warmup ⊂ navhard (16/16) — the navhard, navtest and warmup columns are NOT independent samples of each other (W2 D-NAVSIM-SPLIT-NESTING).",
+   "stop_floor_rule": "⛔ EVERY NavSim ROW NEEDS ITS **STOP** FLOOR BESIDE CV — on v1 and v2 alike, and both generations have now MEASURED it: **navhard STOP 29.85 vs CV 11.48 (2.6x)**, **navtest STOP 61.82 vs CV 20.65 (3.0x)**. Mechanism, from source and confirmed by the run: the split keeps only scenes the HUMAN passes, so a stopped ego holds NC / DAC / TTC near 1 — **5/12 = 41.67 PDMS points free** — plus comfort at low speed. ⇒ CV is not the floor it looks like, and on v1 it is also the agent the split was FILTERED with, so it cannot be read as a generic floor at all. ⭐ The 20-token smoke that first showed this is SUPERSEDED by the full 12,146-token run; its numbers were never printed here and the full-split values are in the table below."
   },
   "EPDMS_v2_warmup_two_stage": {
    "decimals": 4,
    "family": "navsim_v2",
    "closed_set": "CRITERIA_REGISTRY.json v2.9.0",
    "official": false,
-   "title": "NAVSIM v2 \u2014 warmup two-stage EPDMS (a DIFFERENT protocol from navhard)",
+   "title": "NAVSIM v2 — warmup two-stage EPDMS (a DIFFERENT protocol from navhard)",
    "metric": "EPDMS",
    "unit": "x100",
    "higher_is_better": true,
-   "definition": "204 synthetic stage-2 scenes + 16 stage-1 tokens (E1/E2 MEASURED). Warmup intersects navhard; the benchmark authors validated it as a VALIDATION set on request (2606.07170 p.5 footnote). \u26d4 Never carries an interval (7 log groups < the RG-14 floor of 8) and never sits in the navhard column.",
-   "tanitad_pending": "E1/E2 MEASURED 2026-09-19 \u2014 see the generated table",
-   "route_oracle": "\u26a0\ufe0f ROUTE-LEVEL ORACLE: NavSim's driving command is derived from the expert's driven path at roadblock granularity, and on stage 2 the command and route are copied from the expert's own frame (5,462/5,462 navhard; W2 D-NAVSIM-ROUTE-LEAK). It is NOT a trajectory leak \u2014 and \u26d4 no route-following skill may be claimed from a command-conditioned row.",
-   "sample_overlap": "\u26d4 warmup \u2282 navhard (16/16 stage-1 tokens; W2 D-NAVSIM-SPLIT-NESTING) \u2014 a warmup number is a subset read of the navhard split, never an independent sample beside it.",
-   "stop_floor_rule": "\u26d4 EVERY NavSim ROW NEEDS ITS **STOP** FLOOR BESIDE CV \u2014 on v1 and v2 alike, and both generations have now MEASURED it: **navhard STOP 29.85 vs CV 11.48 (2.6x)**, **navtest STOP 61.82 vs CV 20.65 (3.0x)**. Mechanism, from source and confirmed by the run: the split keeps only scenes the HUMAN passes, so a stopped ego holds NC / DAC / TTC near 1 \u2014 **5/12 = 41.67 PDMS points free** \u2014 plus comfort at low speed. \u21d2 CV is not the floor it looks like, and on v1 it is also the agent the split was FILTERED with, so it cannot be read as a generic floor at all. \u2b50 The 20-token smoke that first showed this is SUPERSEDED by the full 12,146-token run; its numbers were never printed here and the full-split values are in the table below."
+   "definition": "204 synthetic stage-2 scenes + 16 stage-1 tokens (E1/E2 MEASURED). Warmup intersects navhard; the benchmark authors validated it as a VALIDATION set on request (2606.07170 p.5 footnote). ⛔ Never carries an interval (7 log groups < the RG-14 floor of 8) and never sits in the navhard column.",
+   "tanitad_pending": "E1/E2 MEASURED 2026-09-19 — see the generated table",
+   "route_oracle": "⚠️ ROUTE-LEVEL ORACLE: NavSim's driving command is derived from the expert's driven path at roadblock granularity, and on stage 2 the command and route are copied from the expert's own frame (5,462/5,462 navhard; W2 D-NAVSIM-ROUTE-LEAK). It is NOT a trajectory leak — and ⛔ no route-following skill may be claimed from a command-conditioned row.",
+   "sample_overlap": "⛔ warmup ⊂ navhard (16/16 stage-1 tokens; W2 D-NAVSIM-SPLIT-NESTING) — a warmup number is a subset read of the navhard split, never an independent sample beside it.",
+   "stop_floor_rule": "⛔ EVERY NavSim ROW NEEDS ITS **STOP** FLOOR BESIDE CV — on v1 and v2 alike, and both generations have now MEASURED it: **navhard STOP 29.85 vs CV 11.48 (2.6x)**, **navtest STOP 61.82 vs CV 20.65 (3.0x)**. Mechanism, from source and confirmed by the run: the split keeps only scenes the HUMAN passes, so a stopped ego holds NC / DAC / TTC near 1 — **5/12 = 41.67 PDMS points free** — plus comfort at low speed. ⇒ CV is not the floor it looks like, and on v1 it is also the agent the split was FILTERED with, so it cannot be read as a generic floor at all. ⭐ The 20-token smoke that first showed this is SUPERSEDED by the full 12,146-token run; its numbers were never printed here and the full-split values are in the table below."
   },
   "EPDMS_v2_navtest_single_stage": {
    "decimals": 1,
    "family": "navsim_v2",
    "closed_set": "CRITERIA_REGISTRY.json v2.9.0",
    "official": false,
-   "title": "NAVSIM v2 \u2014 navtest single-stage EPDMS (the method papers' protocol; NOT comparable to navhard)",
+   "title": "NAVSIM v2 — navtest single-stage EPDMS (the method papers' protocol; NOT comparable to navhard)",
    "metric": "EPDMS",
    "unit": "x100",
    "higher_is_better": true,
-   "definition": "EPDMS on navtest WITHOUT two-stage pseudo-simulation. The benchmark authors discourage reporting this self-made variant and point submitters to the official two-stage leaderboard (2506.04218 p.7, paraphrased). Two implementations exist: legacy EPDMS* and corrected EPDMS (2605.09701 Tab.2) \u2014 they are rendered as separate tables.",
-   "tanitad_pending": "NOT TARGETED \u2014 kept for orientation only",
-   "route_oracle": "\u26a0\ufe0f ROUTE-LEVEL ORACLE: NavSim's driving command is derived from the expert's driven path at roadblock granularity, and on stage 2 the command and route are copied from the expert's own frame (5,462/5,462 navhard; W2 D-NAVSIM-ROUTE-LEAK). It is NOT a trajectory leak \u2014 and \u26d4 no route-following skill may be claimed from a command-conditioned row.",
-   "sample_overlap": "\u26d4 367 of navhard's 450 stage-1 tokens are navtest tokens \u2014 this column and the navhard column share most of their stage-1 scenes (W2 D-NAVSIM-SPLIT-NESTING).",
-   "stop_floor_rule": "\u26d4 EVERY NavSim ROW NEEDS ITS **STOP** FLOOR BESIDE CV \u2014 on v1 and v2 alike, and both generations have now MEASURED it: **navhard STOP 29.85 vs CV 11.48 (2.6x)**, **navtest STOP 61.82 vs CV 20.65 (3.0x)**. Mechanism, from source and confirmed by the run: the split keeps only scenes the HUMAN passes, so a stopped ego holds NC / DAC / TTC near 1 \u2014 **5/12 = 41.67 PDMS points free** \u2014 plus comfort at low speed. \u21d2 CV is not the floor it looks like, and on v1 it is also the agent the split was FILTERED with, so it cannot be read as a generic floor at all. \u2b50 The 20-token smoke that first showed this is SUPERSEDED by the full 12,146-token run; its numbers were never printed here and the full-split values are in the table below."
+   "definition": "EPDMS on navtest WITHOUT two-stage pseudo-simulation. The benchmark authors discourage reporting this self-made variant and point submitters to the official two-stage leaderboard (2506.04218 p.7, paraphrased). Two implementations exist: legacy EPDMS* and corrected EPDMS (2605.09701 Tab.2) — they are rendered as separate tables.",
+   "tanitad_pending": "NOT TARGETED — kept for orientation only",
+   "route_oracle": "⚠️ ROUTE-LEVEL ORACLE: NavSim's driving command is derived from the expert's driven path at roadblock granularity, and on stage 2 the command and route are copied from the expert's own frame (5,462/5,462 navhard; W2 D-NAVSIM-ROUTE-LEAK). It is NOT a trajectory leak — and ⛔ no route-following skill may be claimed from a command-conditioned row.",
+   "sample_overlap": "⛔ 367 of navhard's 450 stage-1 tokens are navtest tokens — this column and the navhard column share most of their stage-1 scenes (W2 D-NAVSIM-SPLIT-NESTING).",
+   "stop_floor_rule": "⛔ EVERY NavSim ROW NEEDS ITS **STOP** FLOOR BESIDE CV — on v1 and v2 alike, and both generations have now MEASURED it: **navhard STOP 29.85 vs CV 11.48 (2.6x)**, **navtest STOP 61.82 vs CV 20.65 (3.0x)**. Mechanism, from source and confirmed by the run: the split keeps only scenes the HUMAN passes, so a stopped ego holds NC / DAC / TTC near 1 — **5/12 = 41.67 PDMS points free** — plus comfort at low speed. ⇒ CV is not the floor it looks like, and on v1 it is also the agent the split was FILTERED with, so it cannot be read as a generic floor at all. ⭐ The 20-token smoke that first showed this is SUPERSEDED by the full 12,146-token run; its numbers were never printed here and the full-split values are in the table below."
   },
   "PDMS_v1_navtest": {
    "decimals": 1,
    "family": "navsim_v1",
    "closed_set": "CRITERIA_REGISTRY.json v2.9.0",
    "official": false,
-   "title": "NAVSIM v1 \u2014 navtest PDMS",
+   "title": "NAVSIM v1 — navtest PDMS",
    "metric": "PDMS",
    "unit": "x100",
    "higher_is_better": true,
-   "definition": "NAVSIM v1 PDMS on navtest; v1 PDMS must come from the devkit's v1.1 branch (CRITERIA_REGISTRY _harness_pin; BUILD_PLAN W3 pins v1.1.0 3e8291b). PDMS = NC*DAC*(5*EP + 5*TTC + 2*C)/12; DDC exists with weight 0. Reported x100. Devkit v1.1 (navsim v1.1 branch); main/0a380a9 is v2 and computes EPDMS \u2014 NEVER mix the two in one table.",
-   "tanitad_pending": "\u2b50 MEASURED \u2014 the devkit floors and the human ceiling are on the board (W3, full split, 12,146 tokens/arm). \u26d4 NO TanitAD ARM yet: the bar it must clear on this protocol is **STOP 61.82**, not CV.",
-   "ladder_note": "The perception-free block of Tab. 2 p.8 is TanitAD's comparable CLASS (no perception annotations), \u26d4 NOT a camera-only class: the primary prints 'C & L' for LAW and World4Drive and 'Camera' for Epona and Drive-JEPA. CRITERIA_REGISTRY key renamed accordingly (W2, registry 2.10.1).",
-   "route_oracle": "\u26a0\ufe0f ROUTE-LEVEL ORACLE: NavSim's driving command is derived from the expert's driven path at roadblock granularity, and on stage 2 the command and route are copied from the expert's own frame (5,462/5,462 navhard; W2 D-NAVSIM-ROUTE-LEAK). It is NOT a trajectory leak \u2014 and \u26d4 no route-following skill may be claimed from a command-conditioned row.",
-   "stop_floor_rule": "\u26d4 EVERY NavSim ROW NEEDS ITS **STOP** FLOOR BESIDE CV \u2014 on v1 and v2 alike, and both generations have now MEASURED it: **navhard STOP 29.85 vs CV 11.48 (2.6x)**, **navtest STOP 61.82 vs CV 20.65 (3.0x)**. Mechanism, from source and confirmed by the run: the split keeps only scenes the HUMAN passes, so a stopped ego holds NC / DAC / TTC near 1 \u2014 **5/12 = 41.67 PDMS points free** \u2014 plus comfort at low speed. \u21d2 CV is not the floor it looks like, and on v1 it is also the agent the split was FILTERED with, so it cannot be read as a generic floor at all. \u2b50 The 20-token smoke that first showed this is SUPERSEDED by the full 12,146-token run; its numbers were never printed here and the full-split values are in the table below.",
-   "split": "navtest: 12146 scenes over 136 logs \u2014 OpenScene test frames filtered so that the constant-velocity agent scores <= 0.8 PDMS and the human >= 0.8 (paper Sec. 3.1, p. 5)"
+   "definition": "NAVSIM v1 PDMS on navtest; v1 PDMS must come from the devkit's v1.1 branch (CRITERIA_REGISTRY _harness_pin; BUILD_PLAN W3 pins v1.1.0 3e8291b). PDMS = NC*DAC*(5*EP + 5*TTC + 2*C)/12; DDC exists with weight 0. Reported x100. Devkit v1.1 (navsim v1.1 branch); main/0a380a9 is v2 and computes EPDMS — NEVER mix the two in one table.",
+   "tanitad_pending": "⭐ MEASURED — the devkit floors and the human ceiling are on the board (W3, full split, 12,146 tokens/arm). ⛔ NO TanitAD ARM yet: the bar it must clear on this protocol is **STOP 61.82**, not CV.",
+   "ladder_note": "The perception-free block of Tab. 2 p.8 is TanitAD's comparable CLASS (no perception annotations), ⛔ NOT a camera-only class: the primary prints 'C & L' for LAW and World4Drive and 'Camera' for Epona and Drive-JEPA. CRITERIA_REGISTRY key renamed accordingly (W2, registry 2.10.1).",
+   "route_oracle": "⚠️ ROUTE-LEVEL ORACLE: NavSim's driving command is derived from the expert's driven path at roadblock granularity, and on stage 2 the command and route are copied from the expert's own frame (5,462/5,462 navhard; W2 D-NAVSIM-ROUTE-LEAK). It is NOT a trajectory leak — and ⛔ no route-following skill may be claimed from a command-conditioned row.",
+   "stop_floor_rule": "⛔ EVERY NavSim ROW NEEDS ITS **STOP** FLOOR BESIDE CV — on v1 and v2 alike, and both generations have now MEASURED it: **navhard STOP 29.85 vs CV 11.48 (2.6x)**, **navtest STOP 61.82 vs CV 20.65 (3.0x)**. Mechanism, from source and confirmed by the run: the split keeps only scenes the HUMAN passes, so a stopped ego holds NC / DAC / TTC near 1 — **5/12 = 41.67 PDMS points free** — plus comfort at low speed. ⇒ CV is not the floor it looks like, and on v1 it is also the agent the split was FILTERED with, so it cannot be read as a generic floor at all. ⭐ The 20-token smoke that first showed this is SUPERSEDED by the full 12,146-token run; its numbers were never printed here and the full-split values are in the table below.",
+   "split": "navtest: 12146 scenes over 136 logs — OpenScene test frames filtered so that the constant-velocity agent scores <= 0.8 PDMS and the human >= 0.8 (paper Sec. 3.1, p. 5)"
   },
   "nuScenes_OL_L2_stp3": {
    "decimals": 2,
@@ -90,15 +90,15 @@
    "closed_set": "W1 closed set (summary.schema.json); not yet in CRITERIA_REGISTRY",
    "official": false,
    "claim_bearing": false,
-   "title": "nuScenes open-loop planning \u2014 ST-P3 convention (L2 averaged up to t)",
+   "title": "nuScenes open-loop planning — ST-P3 convention (L2 averaged up to t)",
    "metric": "L2 m @1/2/3 s + collision % @1/2/3 s",
    "unit": "m / %",
    "higher_is_better": false,
-   "definition": "Averaged-up-to-t reduction (ST-P3 metrics.py; VAD metric_stp3.py; AD-MLP re-uses ST-P3's code) \u2014 NUSCENES_PROTOCOL.md \u00a75.2. BEV-Planner (2312.03031) re-scores every method with one implementation and a 0.1 m grid: same L2 convention, a DIFFERENT collision implementation \u2014 rendered as its own sub-table (`implementation`), never in the same column. \u26d4 Inadmissible as a TanitAD criterion (H-EVAL-6 SUPPORTED; D-BENCH-PORT SKIP claim-bearing).",
-   "tanitad_pending": "NOT RUN \u2014 no bytes. When it runs: `python -m taniteval.bench nuscenes_ol --ckpt <path> --split val (ONE run per convention)`, one run per convention, and it is comparable ONLY with the ego-status-free rows - nus.bevp.uniad_noego (1.03), nus.bevp.vad_noego (1.25), nus.bevp.bev_planner (0.55) - because our binding rule forbids ego status at inference and our arm is command-free.",
-   "harness_note": "\u26d4 THE HARNESS VERSION, NOT THE METHOD, MOVES THESE NUMBERS \u2014 there is no devkit here, so the harness IS the research codebase. the same VAD checkpoint reads 0.72 m under VAD's harness and 1.22 m with the averaging removed (paradrive-cvpr2024 Tab. 1), and the UniAD/VAD ranking flips between the two legacy harnesses (Tab. 8). Our own runs carry (reduction, pipeline) on every row for exactly this reason. Reduction pinned to OpenDriveLab/ST-P3@69aabefd2610951d9e34238142776ed2228673be evaluate.py:71-73,135-137,166; VAD@1688c4b1c3a9e2e7873ca9700ff8058170c0e3c8 metric_stp3.py; AD-MLP@4b93ba085ee47474152f282177865796ea577fc0 re-uses ST-P3's code (deps/stp3). (W6, MEASURED-from-source). Collision implementations in the field: 0.5 m grid, axis-aligned ego box \u2014 ST-P3 / UniAD / VAD (the legacy rows); 0.1 m grid, estimated yaw, trajectory-level \u2014 BEV-Planner (2312.03031); box-vs-box polygons, estimated yaw \u2014 SparseDrive (2405.19620) and DiffusionDrive; oriented box, 0.1 m, first frame removed \u2014 PARA-Drive (code not released).",
-   "command_note": "\u26a0\ufe0f COMMAND IS GT-DERIVED on every published row \u2014 GT-derived: the high-level command is the GT future's final lateral offset thresholded at +-2 m (VAD vad_nuscenes_converter.py:452-457, UniAD trajectory_api.py:272-280, ST-P3 NuscenesData.py:525-530, SparseDrive models/motion/decoder.py:167-173 - MEASURED-from-source at the pinned commits). No command-following skill may be claimed from such a row.",
-   "gt_control_note": "\u26d4 READ THE FLOOR BEFORE THE RANKING: the recorded HUMAN driver 'collides' 0.36 % under the UniAD methodology and 0.96 % under VAD's, and exactly 0.00 % once the ego box is oriented on a 0.1 m grid (paradrive-cvpr2024 Tab. 8 / Tab. 2). \u21d2 no collision number within ~2\u00d7 of its own protocol's floor is readable, and the AV rows EXCLUDE steps where the GT box collides (PARA-Drive fn. 4), so an in-protocol GT arm scores 0 by construction. The GT-human rows are carried in the tables as controls."
+   "definition": "Averaged-up-to-t reduction (ST-P3 metrics.py; VAD metric_stp3.py; AD-MLP re-uses ST-P3's code) — NUSCENES_PROTOCOL.md §5.2. BEV-Planner (2312.03031) re-scores every method with one implementation and a 0.1 m grid: same L2 convention, a DIFFERENT collision implementation — rendered as its own sub-table (`implementation`), never in the same column. ⛔ Inadmissible as a TanitAD criterion (H-EVAL-6 SUPPORTED; D-BENCH-PORT SKIP claim-bearing).",
+   "tanitad_pending": "NOT RUN — no bytes. When it runs: `python -m taniteval.bench nuscenes_ol --ckpt <path> --split val (ONE run per convention)`, one run per convention, and it is comparable ONLY with the ego-status-free rows - nus.bevp.uniad_noego (1.03), nus.bevp.vad_noego (1.25), nus.bevp.bev_planner (0.55) - because our binding rule forbids ego status at inference and our arm is command-free.",
+   "harness_note": "⛔ THE HARNESS VERSION, NOT THE METHOD, MOVES THESE NUMBERS — there is no devkit here, so the harness IS the research codebase. the same VAD checkpoint reads 0.72 m under VAD's harness and 1.22 m with the averaging removed (paradrive-cvpr2024 Tab. 1), and the UniAD/VAD ranking flips between the two legacy harnesses (Tab. 8). Our own runs carry (reduction, pipeline) on every row for exactly this reason. Reduction pinned to OpenDriveLab/ST-P3@69aabefd2610951d9e34238142776ed2228673be evaluate.py:71-73,135-137,166; VAD@1688c4b1c3a9e2e7873ca9700ff8058170c0e3c8 metric_stp3.py; AD-MLP@4b93ba085ee47474152f282177865796ea577fc0 re-uses ST-P3's code (deps/stp3). (W6, MEASURED-from-source). Collision implementations in the field: 0.5 m grid, axis-aligned ego box — ST-P3 / UniAD / VAD (the legacy rows); 0.1 m grid, estimated yaw, trajectory-level — BEV-Planner (2312.03031); box-vs-box polygons, estimated yaw — SparseDrive (2405.19620) and DiffusionDrive; oriented box, 0.1 m, first frame removed — PARA-Drive (code not released).",
+   "command_note": "⚠️ COMMAND IS GT-DERIVED on every published row — GT-derived: the high-level command is the GT future's final lateral offset thresholded at +-2 m (VAD vad_nuscenes_converter.py:452-457, UniAD trajectory_api.py:272-280, ST-P3 NuscenesData.py:525-530, SparseDrive models/motion/decoder.py:167-173 - MEASURED-from-source at the pinned commits). No command-following skill may be claimed from such a row.",
+   "gt_control_note": "⛔ READ THE FLOOR BEFORE THE RANKING: the recorded HUMAN driver 'collides' 0.36 % under the UniAD methodology and 0.96 % under VAD's, and exactly 0.00 % once the ego box is oriented on a 0.1 m grid (paradrive-cvpr2024 Tab. 8 / Tab. 2). ⇒ no collision number within ~2× of its own protocol's floor is readable, and the AV rows EXCLUDE steps where the GT box collides (PARA-Drive fn. 4), so an in-protocol GT arm scores 0 by construction. The GT-human rows are carried in the tables as controls."
   },
   "nuScenes_OL_L2_uniad": {
    "decimals": 2,
@@ -106,28 +106,28 @@
    "closed_set": "W1 closed set (summary.schema.json); not yet in CRITERIA_REGISTRY",
    "official": false,
    "claim_bearing": false,
-   "title": "nuScenes open-loop planning \u2014 UniAD convention (L2 at t)",
+   "title": "nuScenes open-loop planning — UniAD convention (L2 at t)",
    "metric": "L2 m @1/2/3 s + collision % @1/2/3 s",
    "unit": "m / %",
    "higher_is_better": false,
-   "definition": "At-timestep reduction (UniAD planning_evaluation_strategy='uniad') \u2014 NUSCENES_PROTOCOL.md \u00a75.2. The convention alone moves one checkpoint 0.72 \u2192 1.22 m.",
+   "definition": "At-timestep reduction (UniAD planning_evaluation_strategy='uniad') — NUSCENES_PROTOCOL.md §5.2. The convention alone moves one checkpoint 0.72 → 1.22 m.",
    "tanitad_pending": "NOT RUN (as above). When it runs: `python -m taniteval.bench nuscenes_ol --ckpt <path> --split val (ONE run per convention)`, one run per convention, and it is comparable ONLY with the ego-status-free rows - nus.bevp.uniad_noego (1.03), nus.bevp.vad_noego (1.25), nus.bevp.bev_planner (0.55) - because our binding rule forbids ego status at inference and our arm is command-free.",
-   "harness_note": "\u26d4 THE HARNESS VERSION, NOT THE METHOD, MOVES THESE NUMBERS \u2014 there is no devkit here, so the harness IS the research codebase. the same VAD checkpoint reads 0.72 m under VAD's harness and 1.22 m with the averaging removed (paradrive-cvpr2024 Tab. 1), and the UniAD/VAD ranking flips between the two legacy harnesses (Tab. 8). Our own runs carry (reduction, pipeline) on every row for exactly this reason. Reduction pinned to OpenDriveLab/UniAD@609ee083ea51c3521c323f1279dfc4cee0e60467 projects/mmdet3d_plugin/datasets/nuscenes_e2e_dataset.py:1043-1044. (W6, MEASURED-from-source). Collision implementations in the field: 0.5 m grid, axis-aligned ego box \u2014 ST-P3 / UniAD / VAD (the legacy rows); 0.1 m grid, estimated yaw, trajectory-level \u2014 BEV-Planner (2312.03031); box-vs-box polygons, estimated yaw \u2014 SparseDrive (2405.19620) and DiffusionDrive; oriented box, 0.1 m, first frame removed \u2014 PARA-Drive (code not released).",
-   "command_note": "\u26a0\ufe0f COMMAND IS GT-DERIVED on every published row \u2014 GT-derived: the high-level command is the GT future's final lateral offset thresholded at +-2 m (VAD vad_nuscenes_converter.py:452-457, UniAD trajectory_api.py:272-280, ST-P3 NuscenesData.py:525-530, SparseDrive models/motion/decoder.py:167-173 - MEASURED-from-source at the pinned commits). No command-following skill may be claimed from such a row.",
-   "gt_control_note": "\u26d4 READ THE FLOOR BEFORE THE RANKING: the recorded HUMAN driver 'collides' 0.36 % under the UniAD methodology and 0.96 % under VAD's, and exactly 0.00 % once the ego box is oriented on a 0.1 m grid (paradrive-cvpr2024 Tab. 8 / Tab. 2). \u21d2 no collision number within ~2\u00d7 of its own protocol's floor is readable, and the AV rows EXCLUDE steps where the GT box collides (PARA-Drive fn. 4), so an in-protocol GT arm scores 0 by construction. The GT-human rows are carried in the tables as controls."
+   "harness_note": "⛔ THE HARNESS VERSION, NOT THE METHOD, MOVES THESE NUMBERS — there is no devkit here, so the harness IS the research codebase. the same VAD checkpoint reads 0.72 m under VAD's harness and 1.22 m with the averaging removed (paradrive-cvpr2024 Tab. 1), and the UniAD/VAD ranking flips between the two legacy harnesses (Tab. 8). Our own runs carry (reduction, pipeline) on every row for exactly this reason. Reduction pinned to OpenDriveLab/UniAD@609ee083ea51c3521c323f1279dfc4cee0e60467 projects/mmdet3d_plugin/datasets/nuscenes_e2e_dataset.py:1043-1044. (W6, MEASURED-from-source). Collision implementations in the field: 0.5 m grid, axis-aligned ego box — ST-P3 / UniAD / VAD (the legacy rows); 0.1 m grid, estimated yaw, trajectory-level — BEV-Planner (2312.03031); box-vs-box polygons, estimated yaw — SparseDrive (2405.19620) and DiffusionDrive; oriented box, 0.1 m, first frame removed — PARA-Drive (code not released).",
+   "command_note": "⚠️ COMMAND IS GT-DERIVED on every published row — GT-derived: the high-level command is the GT future's final lateral offset thresholded at +-2 m (VAD vad_nuscenes_converter.py:452-457, UniAD trajectory_api.py:272-280, ST-P3 NuscenesData.py:525-530, SparseDrive models/motion/decoder.py:167-173 - MEASURED-from-source at the pinned commits). No command-following skill may be claimed from such a row.",
+   "gt_control_note": "⛔ READ THE FLOOR BEFORE THE RANKING: the recorded HUMAN driver 'collides' 0.36 % under the UniAD methodology and 0.96 % under VAD's, and exactly 0.00 % once the ego box is oriented on a 0.1 m grid (paradrive-cvpr2024 Tab. 8 / Tab. 2). ⇒ no collision number within ~2× of its own protocol's floor is readable, and the AV rows EXCLUDE steps where the GT box collides (PARA-Drive fn. 4), so an in-protocol GT arm scores 0 by construction. The GT-human rows are carried in the tables as controls."
   },
   "Bench2Drive_closed_loop": {
    "decimals": 2,
    "family": "carla",
-   "closed_set": "EXTERNAL-ONLY \u2014 no TanitAD bench; not in the W1 closed set (taniteval/taniteval/bench/schema/summary.schema.json)",
+   "closed_set": "EXTERNAL-ONLY — no TanitAD bench; not in the W1 closed set (taniteval/taniteval/bench/schema/summary.schema.json)",
    "official": false,
    "claim_bearing": "GO-conditional per D-BENCH-PORT",
-   "title": "Bench2Drive (CARLA) \u2014 closed loop, 220 short routes",
+   "title": "Bench2Drive (CARLA) — closed loop, 220 short routes",
    "metric": "Driving Score / Success Rate %",
    "unit": "DS / %",
    "higher_is_better": true,
    "definition": "220 routes (~150 m each) with one safety-critical scenario per route; test towns are seen in training, so it behaves more like a training benchmark than zero-shot (2603.25946 p.17, paraphrased).",
-   "tanitad_pending": "NOT RUN \u2014 no CARLA / Bench2Drive provisioning"
+   "tanitad_pending": "NOT RUN — no CARLA / Bench2Drive provisioning"
   }
  },
  "results": [
@@ -149,10 +149,10 @@
     "fix151": "post",
     "basis": "INFERRED: the same snapshot's PDM-C reads 56.6 = post-fix; DrivoR Tab.14's pre-fix block reads CV 10.9"
    },
-   "modality": "no camera \u2014 ego history only",
+   "modality": "no camera — ego history only",
    "ego_status": "yes",
    "comparison_admissible": true,
-   "notes": "the field's trivial floor \u2014 the analogue of our ha0 / CV"
+   "notes": "the field's trivial floor — the analogue of our ha0 / CV"
   },
   {
    "id": "navhard.ego_mlp",
@@ -193,7 +193,7 @@
    ],
    "harness": {
     "fix151": "post",
-    "basis": "INFERRED; pre-fix 23.1 (2601.05083 Tab.14) \u2014 the 'TransFuser 23.1' printed by 2606.07170 Tab.6 and 2605.09701 Tab.1 is that PRE-fix value"
+    "basis": "INFERRED; pre-fix 23.1 (2601.05083 Tab.14) — the 'TransFuser 23.1' printed by 2606.07170 Tab.6 and 2605.09701 Tab.1 is that PRE-fix value"
    },
    "modality": "forward-facing camera only (2506.04218 p.8)",
    "ego_status": "yes (devkit: driving_command + ego velocity + acceleration; CRITERIA_REGISTRY navsim.ego_inputs, INHERITED)",
@@ -251,7 +251,7 @@
    ],
    "harness": {
     "fix151": "post",
-    "basis": "stated (Tab.14 after-block); pre-fix 41.7 \u2014 also printed as navhard 'GTRS-Dense 41.7' by HAD 2604.03581 Tab.11, i.e. HAD's navhard table is pre-fix"
+    "basis": "stated (Tab.14 after-block); pre-fix 41.7 — also printed as navhard 'GTRS-Dense 41.7' by HAD 2604.03581 Tab.11, i.e. HAD's navhard table is pre-fix"
    },
    "modality": "UNVERIFIED",
    "ego_status": "unverified",
@@ -312,7 +312,7 @@
     "basis": "stated; pre-fix 45.3 (Tab.14)"
    },
    "modality": "4 cameras: front, front-left, front-right, back (2601.05083 p.4)",
-   "ego_status": "yes \u2014 poses, velocities, accelerations and the driving command enter the trajectory queries (2601.05083 p.3)",
+   "ego_status": "yes — poses, velocities, accelerations and the driving command enter the trajectory queries (2601.05083 p.3)",
    "comparison_admissible": true
   },
   {
@@ -378,7 +378,7 @@
      "table": "Tab. 2/6",
      "page": 5,
      "value": 54.6,
-     "note": "identical 18 sub-metrics \u21d2 the widely cited 'DrivoR 54.6' IS the +134k variant"
+     "note": "identical 18 sub-metrics ⇒ the widely cited 'DrivoR 54.6' IS the +134k variant"
     }
    ],
    "harness": {
@@ -416,7 +416,7 @@
     "basis": "the authors name the corrected EPDMS as their primary metric and use the official two-stage protocol"
    },
    "modality": "front + rear camera streams, 2 frames, 2048x512 (2605.09701 p.8); GTRS-Dense scorer",
-   "ego_status": "yes \u2014 an ego-status token in the scene latent (2605.09701 p.4)",
+   "ego_status": "yes — an ego-status token in the scene latent (2605.09701 p.4)",
    "comparison_admissible": true
   },
   {
@@ -475,7 +475,7 @@
     "fix151": "post",
     "basis": "benchmark authors' own snapshot; pre-fix 51.3 (2601.05083 Tab.14; also HAD 2604.03581 Tab.11)"
    },
-   "modality": "privileged \u2014 ground-truth perception",
+   "modality": "privileged — ground-truth perception",
    "ego_status": "yes",
    "comparison_admissible": true,
    "notes": "a ceiling, never a competitor"
@@ -498,7 +498,7 @@
     "fix151": "unverified",
     "basis": "single source, and 2606.07170 Tab.6 also carries pre-fix rows (TransFuser 23.1, DriveSuprim 42.1)"
    },
-   "modality": "4 cameras front/left/right/back at 768x432 (per 2601.22032 App. B \u2014 a third party)",
+   "modality": "4 cameras front/left/right/back at 768x432 (per 2601.22032 App. B — a third party)",
    "ego_status": "unverified",
    "comparison_admissible": false,
    "inadmissible_reason": "fix side unverified"
@@ -563,7 +563,7 @@
    "modality": "UNVERIFIED",
    "ego_status": "unverified",
    "comparison_admissible": false,
-   "inadmissible_reason": "UNRESOLVED CONFLICT: 51.5 (benchmark snapshot) vs 27.1 (two method papers) \u2014 24.4 points, larger than any fix-side shift"
+   "inadmissible_reason": "UNRESOLVED CONFLICT: 51.5 (benchmark snapshot) vs 27.1 (two method papers) — 24.4 points, larger than any fix-side shift"
   },
   {
    "id": "navhard.pre.pdm_closed",
@@ -594,7 +594,7 @@
    "modality": "privileged",
    "ego_status": "yes",
    "comparison_admissible": false,
-   "inadmissible_reason": "PRE-fix harness; the post-fix value is 56.6 \u2014 this row exists to show the version shift, and it is the '51.3' the page's \u00a79.1 had inherited"
+   "inadmissible_reason": "PRE-fix harness; the post-fix value is 56.6 — this row exists to show the version shift, and it is the '51.3' the page's §9.1 had inherited"
   },
   {
    "id": "navhard.pre.cv",
@@ -681,7 +681,7 @@
    ],
    "harness": {
     "fix151": "pre",
-    "basis": "INFERRED: the same table prints PDM-Closed 51.3, LTF 23.1, GTRS-Dense 41.7 \u2014 exactly DrivoR Tab.14's pre-fix block"
+    "basis": "INFERRED: the same table prints PDM-Closed 51.3, LTF 23.1, GTRS-Dense 41.7 — exactly DrivoR Tab.14's pre-fix block"
    },
    "modality": "camera only (image input; LiDAR replaced by learnable embeddings, 2604.03581 p.8)",
    "ego_status": "unverified",
@@ -696,13 +696,13 @@
    "value": 18.5356,
    "source": {
     "library_key": null,
-    "table": "HF warmup leaderboard row, INHERITED via products/P7-TanitEval/benchmarks/NAVSIM_PROTOCOL.md \u00a76.3 (retrieved 2026-08-23)",
+    "table": "HF warmup leaderboard row, INHERITED via products/P7-TanitEval/benchmarks/NAVSIM_PROTOCOL.md §6.3 (retrieved 2026-08-23)",
     "page": null
    },
    "page_tokens": [],
    "harness": {
     "fix151": "post",
-    "basis": "INFERRED: our post-fix harness (@0a380a9) reproduces it to \u0394 +0.000027 (E1 control C8, MEASURED)"
+    "basis": "INFERRED: our post-fix harness (@0a380a9) reproduces it to Δ +0.000027 (E1 control C8, MEASURED)"
    },
    "modality": "no camera",
    "ego_status": "yes",
@@ -923,8 +923,8 @@
     "fix151": "pre",
     "basis": "INFERRED as for the HAD row (baselines equal the EPDMS* column)"
    },
-   "modality": "\u2014",
-   "ego_status": "\u2014",
+   "modality": "—",
+   "ego_status": "—",
    "comparison_admissible": true
   },
   {
@@ -969,7 +969,7 @@
     "basis": "unstated (its baselines match the EPDMS* column)"
    },
    "modality": "front camera only, 2 frames 512x256",
-   "ego_status": "yes \u2014 command, speed, acceleration (2601.22032 p.4)",
+   "ego_status": "yes — command, speed, acceleration (2601.22032 p.4)",
    "comparison_admissible": false,
    "inadmissible_reason": "implementation unstated"
   },
@@ -1046,7 +1046,7 @@
    "ego_status": "unverified",
    "comparison_admissible": false,
    "inadmissible_reason": "implementation unstated",
-   "notes": "\u26d4 the brief's ladder 'Transfuser 76.7 \u2192 Hydra-MDP++ 81.4 \u2192 DriveSuprim 87.1 \u2192 Drive-JEPA 87.8' mixes ResNet34 and ViT/L rows; DriveSuprim at ResNet34 reads 83.1"
+   "notes": "⛔ the brief's ladder 'Transfuser 76.7 → Hydra-MDP++ 81.4 → DriveSuprim 87.1 → Drive-JEPA 87.8' mixes ResNet34 and ViT/L rows; DriveSuprim at ResNet34 reads 83.1"
   },
   {
    "id": "navtest2.djepa_vitl",
@@ -1067,7 +1067,7 @@
     "basis": "unstated"
    },
    "modality": "front camera only, 2 frames 512x256 (2601.22032 p.7, App. B p.14)",
-   "ego_status": "yes \u2014 command, speed, acceleration",
+   "ego_status": "yes — command, speed, acceleration",
    "comparison_admissible": false,
    "inadmissible_reason": "implementation unstated; and Drive-JEPA reports NO navhard number (CRITERIA_REGISTRY, 7 probe terms)"
   },
@@ -1183,7 +1183,7 @@
     "fix151": "n/a",
     "basis": "v1 PDMS"
    },
-   "modality": "Inputs column (Tab. 2 p.8): 'C & L' \u2014 camera AND LiDAR. \u26d4 NOT a camera-only row",
+   "modality": "Inputs column (Tab. 2 p.8): 'C & L' — camera AND LiDAR. ⛔ NOT a camera-only row",
    "ego_status": "unverified",
    "comparison_admissible": true,
    "encoder": "21M",
@@ -1205,7 +1205,7 @@
     "table": "Tab. 1 (the 'Encoder size' row of the perception-free comparison)",
     "page": 4
    },
-   "params_note": "ENCODER parameters as printed ('Encoder size'); \u26d4 the primary states no TOTAL model size, so `params_total` is deliberately ABSENT rather than guessed"
+   "params_note": "ENCODER parameters as printed ('Encoder size'); ⛔ the primary states no TOTAL model size, so `params_total` is deliberately ABSENT rather than guessed"
   },
   {
    "id": "v1.world4drive",
@@ -1225,7 +1225,7 @@
     "fix151": "n/a",
     "basis": "v1 PDMS"
    },
-   "modality": "Inputs column (Tab. 2 p.8): 'C & L' \u2014 camera AND LiDAR. \u26d4 NOT a camera-only row",
+   "modality": "Inputs column (Tab. 2 p.8): 'C & L' — camera AND LiDAR. ⛔ NOT a camera-only row",
    "ego_status": "unverified",
    "comparison_admissible": true,
    "encoder": "21M",
@@ -1247,7 +1247,7 @@
     "table": "Tab. 1 (the 'Encoder size' row of the perception-free comparison)",
     "page": 4
    },
-   "params_note": "ENCODER parameters as printed ('Encoder size'); \u26d4 the primary states no TOTAL model size, so `params_total` is deliberately ABSENT rather than guessed"
+   "params_note": "ENCODER parameters as printed ('Encoder size'); ⛔ the primary states no TOTAL model size, so `params_total` is deliberately ABSENT rather than guessed"
   },
   {
    "id": "v1.epona",
@@ -1269,7 +1269,7 @@
      "table": "Tab. 1",
      "page": 4,
      "value": 86.1,
-     "note": "INTERNAL INCONSISTENCY in the primary: Tab. 2 prints 86.2, Tab. 1 prints 86.1 \u2014 recorded as 86.2/86.1"
+     "note": "INTERNAL INCONSISTENCY in the primary: Tab. 2 prints 86.2, Tab. 1 prints 86.1 — recorded as 86.2/86.1"
     }
    ],
    "harness": {
@@ -1290,7 +1290,7 @@
     "table": "Tab. 1 (the 'Encoder size' row of the perception-free comparison)",
     "page": 4
    },
-   "params_note": "ENCODER parameters as printed ('Encoder size'); \u26d4 the primary states no TOTAL model size, so `params_total` is deliberately ABSENT rather than guessed"
+   "params_note": "ENCODER parameters as printed ('Encoder size'); ⛔ the primary states no TOTAL model size, so `params_total` is deliberately ABSENT rather than guessed"
   },
   {
    "id": "v1.djepa_pf",
@@ -1310,8 +1310,8 @@
     "fix151": "n/a",
     "basis": "v1 PDMS"
    },
-   "modality": "Inputs column (Tab. 2 p.8): 'Camera' \u2014 front camera only, 2 frames at 512x256 (Tab. 8 p.14 + \u00a74.2 p.7; the 1024x256 front+left+right stack is Transfuser's)",
-   "ego_status": "yes \u2014 command, speed, acceleration (p.4)",
+   "modality": "Inputs column (Tab. 2 p.8): 'Camera' — front camera only, 2 frames at 512x256 (Tab. 8 p.14 + §4.2 p.7; the 1024x256 front+left+right stack is Transfuser's)",
+   "ego_status": "yes — command, speed, acceleration (p.4)",
    "comparison_admissible": true,
    "encoder": "307M ViT/L",
    "data": "330 h",
@@ -1332,7 +1332,7 @@
     "table": "Tab. 1 (the 'Encoder size' row of the perception-free comparison)",
     "page": 4
    },
-   "params_note": "ENCODER parameters as printed ('Encoder size'); \u26d4 the primary states no TOTAL model size, so `params_total` is deliberately ABSENT rather than guessed"
+   "params_note": "ENCODER parameters as printed ('Encoder size'); ⛔ the primary states no TOTAL model size, so `params_total` is deliberately ABSENT rather than guessed"
   },
   {
    "id": "v1.djepa_full",
@@ -1357,10 +1357,10 @@
     "fix151": "n/a",
     "basis": "v1 PDMS"
    },
-   "modality": "front camera only, 2x512x256 in EVERY row (Tab. 8 p.14 + \u00a74.2 p.7) \u2014 verified by W2 from the same primary; the 1024x256 stack belongs to Transfuser / HydraMDP++ / DriveSuprim / GoalFlow",
+   "modality": "front camera only, 2x512x256 in EVERY row (Tab. 8 p.14 + §4.2 p.7) — verified by W2 from the same primary; the 1024x256 stack belongs to Transfuser / HydraMDP++ / DriveSuprim / GoalFlow",
    "ego_status": "yes",
    "comparison_admissible": true,
-   "notes": "the paper's own checklist (p.15) misquotes this as 93.3; the page's \u00a79.1 had inherited the misquote"
+   "notes": "the paper's own checklist (p.15) misquotes this as 93.3; the page's §9.1 had inherited the misquote"
   },
   {
    "id": "v1.drivor",
@@ -1456,8 +1456,8 @@
     "fix151": "n/a",
     "basis": "v1 PDMS"
    },
-   "modality": "\u2014",
-   "ego_status": "\u2014",
+   "modality": "—",
+   "ego_status": "—",
    "comparison_admissible": true,
    "cross_checks": [
     {
@@ -1502,7 +1502,7 @@
     "basis": "VAD metric_stp3.py (averaged up to t)"
    },
    "modality": "6 cameras",
-   "ego_status": "no \u2014 switched off for the open-loop comparison (Tab.1 caption)",
+   "ego_status": "no — switched off for the open-loop comparison (Tab.1 caption)",
    "command": "yes (GT-derived per NUSCENES_PROTOCOL.md)",
    "comparison_admissible": true
   },
@@ -1510,7 +1510,7 @@
    "id": "nus.stp3.vad_base_ego",
    "protocol": "nuScenes_OL_L2_stp3",
    "implementation": "ST-P3 metric code as re-used by VAD / AD-MLP (0.5 m collision grid)",
-   "system": "VAD-Base\u2021 (ego status as input)",
+   "system": "VAD-Base‡ (ego status as input)",
    "role": "competitor",
    "values": {
     "l2_1s": 0.17,
@@ -1576,7 +1576,7 @@
     "basis": "the authors use ST-P3's metric implementation (p.3)"
    },
    "modality": "none (no perception)",
-   "ego_status": "yes \u2014 its only input",
+   "ego_status": "yes — its only input",
    "command": "yes",
    "comparison_admissible": true,
    "notes": "the no-vision ego-status floor that beats the perception stacks on this metric"
@@ -1614,7 +1614,7 @@
     "basis": "UniAD at-timestep convention"
    },
    "modality": "6 cameras",
-   "ego_status": "yes \u2014 in the BEV module of the official model (2312.03031 Tab.1 caption, ID-2)",
+   "ego_status": "yes — in the BEV module of the official model (2312.03031 Tab.1 caption, ID-2)",
    "command": "yes",
    "comparison_admissible": true
   },
@@ -1724,7 +1724,7 @@
     "basis": "as above"
    },
    "modality": "none",
-   "ego_status": "yes \u2014 its only input",
+   "ego_status": "yes — its only input",
    "command": "yes",
    "comparison_admissible": true
   },
@@ -1762,9 +1762,9 @@
    },
    "modality": "none",
    "ego_status": "yes (speed)",
-   "command": "\u2014",
+   "command": "—",
    "comparison_admissible": true,
-   "notes": "the constant-velocity floor \u2014 the analogue of our ha0"
+   "notes": "the constant-velocity floor — the analogue of our ha0"
   },
   {
    "id": "b2d.ad_mlp",
@@ -2020,7 +2020,7 @@
    "modality": "camera + LiDAR",
    "ego_status": "unverified",
    "comparison_admissible": true,
-   "notes": "banked 2026-09-19 by W4 \u2014 the page's \u00a79.3 had carried it as INHERITED"
+   "notes": "banked 2026-09-19 by W4 — the page's §9.3 had carried it as INHERITED"
   },
   {
    "id": "b2d.pdm_lite",
@@ -2345,7 +2345,7 @@
    "id": "nus.stp3.vad_tiny_ego",
    "protocol": "nuScenes_OL_L2_stp3",
    "implementation": "ST-P3 metric code as re-used by VAD / AD-MLP (0.5 m collision grid)",
-   "system": "VAD-Tiny\u2021 (ego status as input)",
+   "system": "VAD-Tiny‡ (ego status as input)",
    "role": "competitor",
    "values": {
     "l2_1s": 0.2,
@@ -2676,7 +2676,7 @@
    "id": "nus.bevp.stp3",
    "protocol": "nuScenes_OL_L2_stp3",
    "implementation": "BEV-Planner union re-implementation (0.1 m collision grid, 2312.03031)",
-   "system": "ST-P3 (ID-0, official ckpt) \u2020 erroneous tail GT",
+   "system": "ST-P3 (ID-0, official ckpt) † erroneous tail GT",
    "role": "competitor",
    "values": {
     "l2_1s": 1.59,
@@ -3291,7 +3291,7 @@
    "ego_status": "Yes",
    "command": "yes",
    "comparison_admissible": true,
-   "notes": "\u2b50 the row that decides what this benchmark measures: a perception-free MLP ties the full stack on L2 (0.5568 vs 0.5574) while its map compliance is 10x worse off-road"
+   "notes": "⭐ the row that decides what this benchmark measures: a perception-free MLP ties the full stack on L2 (0.5568 vs 0.5574) while its map compliance is 10x worse off-road"
   },
   {
    "id": "nus.pdstd.paradrive_plus",
@@ -3489,7 +3489,7 @@
    "ego_status": "Yes",
    "command": "yes",
    "comparison_admissible": true,
-   "notes": "\u2b50 where the shortcut breaks: 0.94 % collision vs PARA-Drive's 0.14 % on the same 686 frames - 6.7x - while the two are indistinguishable on full val",
+   "notes": "⭐ where the shortcut breaks: 0.94 % collision vs PARA-Drive's 0.14 % on the same 686 frames - 6.7x - while the two are indistinguishable on full val",
    "subset": "targeted-686"
   },
   {
@@ -3539,10 +3539,10 @@
    ],
    "harness": {
     "fix151": "n/a",
-    "basis": "NAVSIM v1.x devkit \u2014 PDMS = NC*DAC*(5*EP + 5*TTC + 2*C)/12, x100; \u26d4 never mixed with any EPDMS column"
+    "basis": "NAVSIM v1.x devkit — PDMS = NC*DAC*(5*EP + 5*TTC + 2*C)/12, x100; ⛔ never mixed with any EPDMS column"
    },
    "modality": "authors' claim: ego_status",
-   "ego_status": "yes \u2014 ego_status",
+   "ego_status": "yes — ego_status",
    "comparison_admissible": true,
    "submetrics": {
     "NC": 68.0,
@@ -3551,7 +3551,7 @@
     "C": 100.0,
     "EP": 19.4
    },
-   "notes": "the devkit's own baseline; it is also the agent navtest was FILTERED with, so it cannot be read as a generic floor \u2014 see W3's STOP floor",
+   "notes": "the devkit's own baseline; it is also the agent navtest was FILTERED with, so it cannot be read as a generic floor — see W3's STOP floor",
    "evidence_class": "PUBLISHED"
   },
   {
@@ -3571,10 +3571,10 @@
    ],
    "harness": {
     "fix151": "n/a",
-    "basis": "NAVSIM v1.x devkit \u2014 PDMS = NC*DAC*(5*EP + 5*TTC + 2*C)/12, x100; \u26d4 never mixed with any EPDMS column"
+    "basis": "NAVSIM v1.x devkit — PDMS = NC*DAC*(5*EP + 5*TTC + 2*C)/12, x100; ⛔ never mixed with any EPDMS column"
    },
    "modality": "authors' claim: ego_status",
-   "ego_status": "yes \u2014 ego_status, incl. driving command",
+   "ego_status": "yes — ego_status, incl. driving command",
    "comparison_admissible": true,
    "submetrics": {
     "NC": 93.0,
@@ -3603,10 +3603,10 @@
    ],
    "harness": {
     "fix151": "n/a",
-    "basis": "NAVSIM v1.x devkit \u2014 PDMS = NC*DAC*(5*EP + 5*TTC + 2*C)/12, x100; \u26d4 never mixed with any EPDMS column"
+    "basis": "NAVSIM v1.x devkit — PDMS = NC*DAC*(5*EP + 5*TTC + 2*C)/12, x100; ⛔ never mixed with any EPDMS column"
    },
    "modality": "authors' claim: ego_status, camera",
-   "ego_status": "yes \u2014 ego_status, camera",
+   "ego_status": "yes — ego_status, camera",
    "comparison_admissible": true,
    "submetrics": {
     "NC": 97.4,
@@ -3635,10 +3635,10 @@
    ],
    "harness": {
     "fix151": "n/a",
-    "basis": "NAVSIM v1.x devkit \u2014 PDMS = NC*DAC*(5*EP + 5*TTC + 2*C)/12, x100; \u26d4 never mixed with any EPDMS column"
+    "basis": "NAVSIM v1.x devkit — PDMS = NC*DAC*(5*EP + 5*TTC + 2*C)/12, x100; ⛔ never mixed with any EPDMS column"
    },
    "modality": "authors' claim: ego_status, camera, lidar",
-   "ego_status": "yes \u2014 ego_status, camera, lidar",
+   "ego_status": "yes — ego_status, camera, lidar",
    "comparison_admissible": true,
    "submetrics": {
     "NC": 97.7,
@@ -3667,10 +3667,10 @@
    ],
    "harness": {
     "fix151": "n/a",
-    "basis": "NAVSIM v1.x devkit \u2014 PDMS = NC*DAC*(5*EP + 5*TTC + 2*C)/12, x100; \u26d4 never mixed with any EPDMS column"
+    "basis": "NAVSIM v1.x devkit — PDMS = NC*DAC*(5*EP + 5*TTC + 2*C)/12, x100; ⛔ never mixed with any EPDMS column"
    },
    "modality": "authors' claim: ego_status, camera, video",
-   "ego_status": "yes \u2014 ego_status, camera, video",
+   "ego_status": "yes — ego_status, camera, video",
    "comparison_admissible": true,
    "submetrics": {
     "NC": 97.8,
@@ -3699,10 +3699,10 @@
    ],
    "harness": {
     "fix151": "n/a",
-    "basis": "NAVSIM v1.x devkit \u2014 PDMS = NC*DAC*(5*EP + 5*TTC + 2*C)/12, x100; \u26d4 never mixed with any EPDMS column"
+    "basis": "NAVSIM v1.x devkit — PDMS = NC*DAC*(5*EP + 5*TTC + 2*C)/12, x100; ⛔ never mixed with any EPDMS column"
    },
    "modality": "authors' claim: ego_status, camera, video",
-   "ego_status": "yes \u2014 ego_status, camera, video",
+   "ego_status": "yes — ego_status, camera, video",
    "comparison_admissible": true,
    "submetrics": {
     "NC": 97.9,
@@ -3731,10 +3731,10 @@
    ],
    "harness": {
     "fix151": "n/a",
-    "basis": "NAVSIM v1.1 leaderboard \u2014 PDMS = NC*DAC*(5*EP + 5*TTC + 2*C)/12, x100; \u26d4 never mixed with any EPDMS column"
+    "basis": "NAVSIM v1.1 leaderboard — PDMS = NC*DAC*(5*EP + 5*TTC + 2*C)/12, x100; ⛔ never mixed with any EPDMS column"
    },
    "modality": "authors' claim: ego_status, camera, lidar",
-   "ego_status": "yes \u2014 ego_status, camera, lidar",
+   "ego_status": "yes — ego_status, camera, lidar",
    "comparison_admissible": true,
    "submetrics": null,
    "notes": "single seed; the 2024 challenge winner",
@@ -3757,25 +3757,25 @@
    ],
    "harness": {
     "fix151": "n/a",
-    "basis": "NAVSIM v1.1 leaderboard \u2014 PDMS = NC*DAC*(5*EP + 5*TTC + 2*C)/12, x100; \u26d4 never mixed with any EPDMS column"
+    "basis": "NAVSIM v1.1 leaderboard — PDMS = NC*DAC*(5*EP + 5*TTC + 2*C)/12, x100; ⛔ never mixed with any EPDMS column"
    },
    "modality": "authors' claim: camera + LiDAR, ResNet-34 (aligned backbone)",
    "ego_status": "unverified",
    "comparison_admissible": true,
    "submetrics": null,
-   "notes": "the community headline for navtest PDMS. VERIFIED IN THE BANKED PRIMARY (not inherited): p.1 abstract and p.2 both state 88.1 PDMS, p.2 naming the navtest split and the aligned ResNet-34 backbone; Tab. 1 on p.6 is captioned 'Comparison on planning-oriented NAVSIM navtest split with closed-loop metrics'. Cross-checked against the live leaderboard at 88.0157 (NAVSIM_PROTOCOL.md:593). \u26a0 OPEN, recorded not adjudicated: the paper claims +1.6 over Hydra-MDP, i.e. ~86.5, which matches Hydra-MDP-V8192-W-EP (86.5, 2406.06978v4 Tab. 1) \u2014 NOT this file's Hydra-MDP row at 91.3, whose source is 2406.15349 Tab. 3 p.9 (the NAVSIM paper, a different artifact). Which Hydra-MDP number belongs in this column is W4's to settle from the two primaries.",
+   "notes": "the community headline for navtest PDMS. VERIFIED IN THE BANKED PRIMARY (not inherited): p.1 abstract and p.2 both state 88.1 PDMS, p.2 naming the navtest split and the aligned ResNet-34 backbone; Tab. 1 on p.6 is captioned 'Comparison on planning-oriented NAVSIM navtest split with closed-loop metrics'. Cross-checked against the live leaderboard at 88.0157 (NAVSIM_PROTOCOL.md:593). ⚠ OPEN, recorded not adjudicated: the paper claims +1.6 over Hydra-MDP, i.e. ~86.5, which matches Hydra-MDP-V8192-W-EP (86.5, 2406.06978v4 Tab. 1) — NOT this file's Hydra-MDP row at 91.3, whose source is 2406.15349 Tab. 3 p.9 (the NAVSIM paper, a different artifact). Which Hydra-MDP number belongs in this column is W4's to settle from the two primaries.",
    "evidence_class": "PUBLISHED"
   }
  ],
  "not_banked": [
   {
    "system": "ADT (Bench2Drive)",
-   "claimed": "DS 77.90 / SR 55.0 \u2014 'Bench2Drive leaderboard, 2026' (page \u00a79.3)",
-   "status": "INHERITED \u2014 no banked primary; never printed in a comparison cell"
+   "claimed": "DS 77.90 / SR 55.0 — 'Bench2Drive leaderboard, 2026' (page §9.3)",
+   "status": "INHERITED — no banked primary; never printed in a comparison cell"
   },
   {
    "system": "'SOTA claim (survey)' 89.3 EPDMS navtest, arXiv 2606.19641",
-   "status": "INHERITED \u2014 a survey figure is secondary by construction; not banked, not printed"
+   "status": "INHERITED — a survey figure is secondary by construction; not banked, not printed"
   }
  ],
  "provenance": {
@@ -3783,7 +3783,7 @@
    "source": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-nuscenes-planning-harness/code/published_results_nuscenes.patch.json",
    "rows": 39,
    "evidence_class": "PUBLISHED (extracted by W6; re-verified against the banked PDFs by W4's verify_published_against_pdfs.py)",
-   "note": "W6 could not run W4's verifier (no PyMuPDF in its environment; it used pypdf) \u2014 W4's run over the merged file is the admissible check."
+   "note": "W6 could not run W4's verifier (no PyMuPDF in its environment; it used pypdf) — W4's run over the merged file is the admissible check."
   },
   "navsim_v1_rows": {
    "source": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-v1-navtest/raw/published_navtest_v1.json",
@@ -3811,9 +3811,9 @@
    "of_rows": 113,
    "papers_that_DO_print_a_parameter_column_and_are_the_next_cheap_lever": [
     "2212.10156 p.21 '#Param'",
-    "2405.19620 p.8 Tab. 3 'Params (M)' (UniAD 125.0, SparseDrive-S 85.9, SparseDrive-B 104.7 \u2014 \u26a0\ufe0f that paper's OWN reimplementations, so mapping them onto rows from other papers would be a scope error)",
+    "2405.19620 p.8 Tab. 3 'Params (M)' (UniAD 125.0, SparseDrive-S 85.9, SparseDrive-B 104.7 — ⚠️ that paper's OWN reimplementations, so mapping them onto rows from other papers would be a scope error)",
     "2411.15139 p.7 Tab. 3 'Param.' (an ABLATION ladder 57M-102M; the main row's value is not separately printed)",
-    "2512.07745 p.7 (backbone only: ResNet-34 21.8M / V2-99 96.9M \u2014 a BACKBONE count, not a model count)",
+    "2512.07745 p.7 (backbone only: ResNet-34 21.8M / V2-99 96.9M — a BACKBONE count, not a model count)",
     "2604.03581 p.15",
     "2605.09701 p.20"
    ]

@@ -42,3 +42,18 @@ FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-20-navhard-stage1-extract/raw/MA
 #    Provenance: extracted from the sha256-verified navtest camera archives (32 shards,
 #    127,882,665,618 B); reproducible from them in ~1.5-2 h if lost. Relocating it (e.g. private HF)
 #    is a quota/spend decision for the PI and has NOT been done.
+
+## 2026-09-26 batch 4 — UTF-8 restore + a style pin (follow-up to 57a2a835)
+
+# ⛔ MY DEFECT, FIXED: batch 2 wrote this file with json.dumps(indent=1), whose ensure_ascii
+#    defaults to True — flipping all 191 non-ASCII chars to \uXXXX and costing the Master Mind
+#    4 section numbers behind §. Restored with ensure_ascii=False.
+#    Guard used: the PARSED objects are deep-equal before/after (114 rows unchanged); only the
+#    escaping differs. 191 escapes -> 0; 0 literal non-ASCII -> 191; '§' greppable again.
+products/P7-TanitEval/benchmarks/published_results.json
+
+# The durable fix so it cannot recur: 5 tests pinning the serialisation style, with a control that
+# the file really does hold non-ASCII (else the pin passes trivially), and the navtest headline
+# pinned as a literal. MUTATION-VERIFIED: re-escaping the file turns 3 of the 5 RED, while the two
+# content tests correctly stay green.
+taniteval/tests/test_published_results_style.py
