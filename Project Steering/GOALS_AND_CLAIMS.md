@@ -15864,3 +15864,20 @@ Code identity: the run executes `287d72e`; `stack/tanitad` tree `eed94ed8…` ==
 |---|---|---|---|
 | **D-REFCV6-A16-SWITCH** | The live run stopped at the step-34,500 checkpoint and resumed on 82c2331. From there, F3's per-stage cascade loss trains, and tactical labels are read on each clip's measured clock. The first post-switch row is step 34,550, `cascade` 3.097. Label clock: 4,347 of 4,369 train clips come from the sidecar. | MEASURED: `TanitAD Research Lab/Architecture & Inference/Research/2026-09-23-refcv6-fixes/LAUNCH_READINESS_FIXES.md` §13 and `raw/launch_2026-09-23/switch_a16/`. Checkpoint md5 `3fbbde74…`; config md5 `b1b3c991…`; new trainer pid 3410728. | DONE |
 | **Quoting rule** | Checkpoints at or before step 34,500 are *"F3 detach-only, F4 on the last layer only; tactical labels ~0.37 s early"* (D-REFCV6-F3-WHITELIST, D-REFCV6-LABEL-CLOCK). Every later checkpoint, the FINAL included, is *"hybrid: F3 + true label clock from step 34,500"*. A pre-vs-post-switch difference is never attributed to the fix alone. | PI decision 2026-09-26 (AskUserQuestion, option 3 of 4) | BINDING for every refcv6 number |
+
+<!-- REFCV6-NAVSIM-5K-30K-2026-09-26 -->
+### 2026-09-26 — refcv6-r101-s0 on NavSim at steps 5,000 and 30,000: it does not yet beat a STOP plan
+
+MEASURED by the EvalFlyWheel NavSim stream. These are open-loop benchmark scores (tier T1-family,
+zero-shot), never closed loop. Package:
+`FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/` (d7a215a,
+abba1d9, 1218921, 177be6b). The harness reproduces its known values bit for bit on all three
+splits. Both checkpoints are pre-switch: "F3 detach-only, F4 on the last layer only; tactical labels
+~0.37 s early".
+
+| id | claim | evidence | status |
+|---|---|---|---|
+| **BAR-R6-NAVSIM @5k** | refcv6 beats a STOP plan on NavSim | navhard official two-stage EPDMS **0.1512** vs STOP **0.2985** (paired −0.147 [−0.179, −0.114], seed floor 0.009) · navtest PDMS **46.48** vs **61.82** (−15.3 [−18.3, −12.8]) · warmup S2-EPDMS-u **0.3966** vs **0.5212** (seed floor 0.016). It beats CV on navhard and navtest and ties CV on warmup. | **REFUTED at step 5,000**, all three splits |
+| **BAR-R6-W1 @30k** | the same, on warmup at step 30,000 | **0.4753** (+0.079 over step 5,000 on the same device, outside both seed floors); beats CV (+0.078) and ECHO (+0.047); STOP −0.046 | **REFUTED at step 30,000** (warmup; navtest and navhard running); the FINAL is pending (hybrid, post-switch) |
+| **Next lever (RULE ZERO)** | LONGITUDINAL: at 2–5 m/s the chosen plan travels 1.21× the human's 4 s distance, 55.7 % of the plans that overshoot the human are at-fault collisions, and the speed bias is +0.68 m/s. Drivable-area compliance has the largest single-term ceiling on all three splits. Vision is the only input lever beyond noise (A1 − BLIND +0.283 at 30k). | package RESULT.md, step-5000 decomposition | OPEN, for Arch |
+| **D-REFCV6-CONFIG-BUILD** | Of the three selection mechanisms refcv6's `config.json` declares, only ONE is built: the nav-compliance term and the speed-ceiling filter are off. The max-speed input is inert at step 5,000: 200 of 200 plans are bit-identical when it is withheld. | NavSim package RESULT.md | OPEN: a config-vs-build defect, same class as D-REFCV6-F3-WHITELIST |
