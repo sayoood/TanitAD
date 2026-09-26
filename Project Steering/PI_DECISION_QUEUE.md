@@ -1724,3 +1724,26 @@ Evidence: `TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-ref
 
 **DEFAULT if the PI says nothing:** C, plus A's code prepared and validated on the dev box at no pod cost. Nothing beyond the training runs on the pod without an explicit go; at the end of training the checkpoint is backed up first (the pod has no persistent volume).
 
+## 🔴 NEW ITEM (2026-09-26 ~14:30 Berlin) — refcv7 output head: should the planner predict a RESIDUAL on a kinematic prior?
+
+**What was measured** (T1, 4,754 windows / 139 episodes, step 5,000, pre-switch; `GOALS_AND_CLAIMS.md`
+block `REFCV6-BATTERY-5K-2026-09-26`):
+- Over 0–2 s, refcv6 loses to the plain echo by +0.0885 m.
+- At 6 s, it beats the echo by −0.47 m.
+- A **zero-training** blend of the plan with the causal kinematic hold beats the echo:
+  - for refcv6: −0.0122, pre-registered;
+  - for refcv4b: −0.0315, exploratory;
+  - for refcv5-v2: −0.0267, exploratory.
+- So every REF-C arm's short-horizon error is complementary to kinematic extrapolation.
+
+**The lever.** Parameterise the planner output as an explicit kinematic prior plus a learned residual
+(`H-REFCV6-RESIDUAL-PRIOR`). That is an **architecture change and a training run**, so it is yours.
+
+**DEFAULT if the PI says nothing:** no training and no architecture change yet. Two zero-cost
+measurements run first:
+- (a) SPEC A6: fit the blend weight on TRAIN episodes and score it on the eval split. This is the
+  deployable form, and it is inference only.
+- (b) The same L2 reading at step 30,000 and at the FINAL. Does the gain shrink as refcv6 trains?
+
+The residual head is pre-registered for refcv7 in the meantime. If (a) holds and (b) does not
+vanish, the recommendation becomes: build it into refcv7.

@@ -15881,3 +15881,52 @@ splits. Both checkpoints are pre-switch: "F3 detach-only, F4 on the last layer o
 | **BAR-R6-W1 @30k** | the same, on warmup at step 30,000 | **0.4753** (+0.079 over step 5,000 on the same device, outside both seed floors); beats CV (+0.078) and ECHO (+0.047); STOP −0.046 | **REFUTED at step 30,000** (warmup; navtest and navhard running); the FINAL is pending (hybrid, post-switch) |
 | **Next lever (RULE ZERO)** | LONGITUDINAL: at 2–5 m/s the chosen plan travels 1.21× the human's 4 s distance, 55.7 % of the plans that overshoot the human are at-fault collisions, and the speed bias is +0.68 m/s. Drivable-area compliance has the largest single-term ceiling on all three splits. Vision is the only input lever beyond noise (A1 − BLIND +0.283 at 30k). | package RESULT.md, step-5000 decomposition | OPEN, for Arch |
 | **D-REFCV6-CONFIG-BUILD** | Of the three selection mechanisms refcv6's `config.json` declares, only ONE is built: the nav-compliance term and the speed-ceiling filter are off. The max-speed input is inert at step 5,000: 200 of 200 plans are bit-identical when it is withheld. | NavSim package RESULT.md | OPEN: a config-vs-build defect, same class as D-REFCV6-F3-WHITELIST |
+
+<!-- REFCV6-BATTERY-5K-2026-09-26 -->
+### 2026-09-26 — refcv6-r101-s0 four-family battery at step 5,000: it loses to the echo at 0–2 s and beats it at 6 s; a zero-training hold blend beats the echo on every REF-C arm
+
+- **Source:** MEASURED by the EvalFlyWheel battery, package
+  `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/battery/` (51a4443).
+  The Master Mind re-read every number below from the package's raw JSON
+  (`raw/step5000/battery_summary.json`, `levers/levers.json`, `tactical_clocks.json`,
+  `tactical_v6_s0.json`), not from its prose.
+- **Tier and sample:** T1 (self-action open loop); 4,754 windows over 139 episodes.
+- **Estimator:** paired episode-cluster bootstrap, n_boot 2000.
+- **Stamp:** step 5,000 is a pre-switch checkpoint, so every number is "F3 detach-only, F4 on the
+  last layer only; tactical labels ~0.37 s early".
+- ⚠️ **One TRAINING seed.** A "separated" result below answers "would another draw of episodes or
+  another inference run say this?", never "would another training run say this?"
+  (`H-ESTIM-SEED-1`).
+
+| id | claim | evidence | status |
+|---|---|---|---|
+| **BAR-R6-1 @5k** | refcv6 beats the echo (`ha0_ext`) on ADE 0–2 s | `os` − echo **+0.0885 [+0.0695, +0.1094]** at inference seed 0 and +0.0885 [+0.0695, +0.1092] at seed 1. Mean ADE: `os` 0.3771 m vs echo 0.2886 m. | **REFUTED at step 5,000** |
+| **BAR-R6-2/3/4 @5k** | refcv6 beats hold-action, refcv4b and refcv5-v2 on ADE 0–2 s | +0.0761 / +0.0797 / +0.0681. Every one is separated in the wrong direction at both seeds. | **REFUTED at step 5,000** |
+| **BAR-R6-5 @5k** | refcv6 beats the echo at 6 s (ADE 0–6 s) | **−0.4729 [−0.7531, −0.1780]** at seed 0; −0.4601 [−0.7453, −0.1658] at seed 1 | **SUPPORTED at step 5,000** |
+| Inference floor | Another inference run gives the same answer | `os`(s0) − `os`(s1) = +0.0000 [−0.0025, +0.0027]. The paths themselves differ by up to 3.33 m per window. The BAR-R6-1 gap is ~30× this floor. | MEASURED |
+| **SPEC A4 L2** (pre-registered) | refcv6 carries 0–2 s information that the causal hold lacks | The blend `w·os + (1−w)·ha`, with w cross-fitted per instant on the other episode fold (w = 0.2–0.4): blend − echo **−0.0122 [−0.0200, −0.0042]** at seed 0 and −0.0123 [−0.0200, −0.0045] at seed 1. Controls: the shuffled-plan control picks w = 0 and reads +0.0000 exactly, and the identity controls pass. The seed average (L1) does not help: +0.0831. | **SUPPORTED** for a zero-training composite, not the trained arm |
+| EXPLORATORY (not pre-registered) | The complementarity with a kinematic prior is programme-wide | The same blend beats the echo on the banked baselines: refcv4b **−0.0315 [−0.0398, −0.0227]** (w ≈ 0.5); refcv5-v2 s0 −0.0267 [−0.0350, −0.0178]. ⚠️ w is fitted on the eval split's other fold. | CONTEXT only |
+| **H-REFCV6-RESIDUAL-PRIOR** | An output parameterised as a residual on a kinematic prior (an explicit prior plus a learned residual) would carry the L2 gain inside the planner. This is a refcv7-level change, not a refcv6 fix. | The two rows above | **HYPOTHESIS.** Cheapest next step: SPEC A6, the same blend with w fitted on TRAIN episodes (the deployable form, zero training). The architecture change is a PI decision (PI_DECISION_QUEUE, 2026-09-26 item). |
+| TACTICAL @5k | Declared heads, read under both label clocks | See the TACTICAL list below the table. | MEASURED |
+| STRATEGIC | — | Not applicable, n = 0: the strategic layer is off (`--no-strategic`) and its route head is untrained | N/A |
+| **D-REFCV6-A5-DUAL-CLOCK** | The eval reads TACTICAL under both label clocks | See the A5 list below the table. | DONE |
+| **D-YAW-UNMASKED** | The shared paired yaw-rate cell in `taniteval/tools/refav1_arm.py::_components` is scored on steps that have no path tangent | On refcv4b the per-window yaw-rate MAE is 0.2034 rad/s unmasked vs 0.0318 rad/s on valid steps, a 6.4× inflation (battery SPEC A3, `SPEC.md`) | **OPEN.** Fixed in-package by A3. The shared fix, and re-reading M26 and PREREG_REFCV6 L1–L4 under it, are with the yaw-rate agent. |
+
+**TACTICAL @5k, in detail:**
+- The declared heads are deterministic in the inference seed.
+- LAT v6 κ 0.2418 on the old clock (primary) and 0.2300 on the corrected clock.
+  - ⚠️ With nav zeroed, κ falls to **0.0066** (1,141 windows).
+  - On PhysicalAI, nav is derived from the ego's own future path, so this κ is optimistic by
+    construction (the nav-echo family).
+- LON κ 0.1821 on the old clock and 0.1786 on the corrected clock.
+- T-FLIP **FAIL**: follows_FED 0.25 [0.156, 0.355] on 352 windows / 29 episodes. The bar is 0.50;
+  refcv5-v2 reads 0.205.
+- OBEDIENCE: **FAIL** (structural).
+
+**D-REFCV6-A5-DUAL-CLOCK, in detail.** The label tables come from 82c2331's own V3Dataset over
+23,772 windows:
+- OLD in-band 5,699 (A16's denominator); corrected in-band 5,527.
+- 1,012 windows change membership: 592 leave the band and 420 enter it.
+- Controls C1–C4 pass.
+- The clock census equals the run's own `config.json`.
+- `ckpt_30000` is bit-identical across the two trees.
