@@ -26,7 +26,18 @@ def _sha256(p: Path) -> str:
     return hashlib.sha256(Path(p).read_bytes()).hexdigest()
 
 
-def export_key(prof: "P.SplitProfile") -> dict:
+def export_key(prof: "P.SplitProfile", tokens: list | None = None) -> dict:
+    if prof.stages == 1:
+        # ⭐ W8 2026-09-26: a single-stage export is keyed by its TOKEN SET and LOG DIRECTORY too — a
+        # 200-token smoke export must never be reused for the 12,146-token split (or vice versa).
+        toks = sorted(tokens) if tokens is not None else None
+        return {"export_script_blob": P.git_blob(P.EXPORT_SCRIPT),
+                "scene_filter_yaml_sha256": _sha256(P.TTS / "scene_filter" / f"{prof.tts}.yaml"),
+                "split_yaml_sha256": _sha256(P.TTS / f"{prof.tts}.yaml"),
+                "devkit_dataclasses_blob": P.git_blob(P.DEVKIT / "navsim" / "common" / "dataclasses.py"),
+                "logs_dir": str(prof.logs_dir).replace(os.sep, "/"), "single_stage": True,
+                "tokens_sha256": (hashlib.sha256("\n".join(toks).encode("utf-8")).hexdigest() if toks else "FULL_SPLIT"),
+                "split": prof.name}
     return {"export_script_blob": P.git_blob(P.EXPORT_SCRIPT),
             "scene_filter_yaml_sha256": _sha256(P.TTS / "scene_filter" / f"{prof.name}.yaml"),
             "split_yaml_sha256": _sha256(P.TTS / f"{prof.name}.yaml"),
@@ -35,11 +46,16 @@ def export_key(prof: "P.SplitProfile") -> dict:
             "split": prof.name}
 
 
-def ensure_export(prof: "P.SplitProfile", *, root: Path | None = None, log=print) -> tuple:
-    """-> (doc, record). Reuses a cached export only if its content key and sha256 match."""
-    out_dir = Path(root or (P.EXP_ROOT / "exports")) / prof.name
+def ensure_export(prof: "P.SplitProfile", *, root: Path | None = None, log=print, tokens: list | None = None) -> tuple:
+    """-> (doc, record). Reuses a cached export only if its content key and sha256 match.
+
+    ``tokens`` (single-stage only, W8): a SUBSET; its export lives in its own directory."""
+    if tokens is not None and prof.stages != 1:
+        raise P.Refusal(f"{prof.name}: a token subset export is only defined on a single-stage split")
+    key = export_key(prof, tokens)
+    sub = "" if tokens is None else f"__subset_{key['tokens_sha256'][:12]}"
+    out_dir = Path(root or (P.EXP_ROOT / "exports")) / (prof.name + sub)
     doc_path, done = out_dir / "navsim_agent_inputs.json", out_dir / "EXPORT_DONE.json"
-    key = export_key(prof)
     if done.exists() and doc_path.exists():
         d = json.loads(done.read_text(encoding="utf-8"))
         if d.get("key") == key and d.get("sha256") == _sha256(doc_path):
@@ -47,8 +63,18 @@ def ensure_export(prof: "P.SplitProfile", *, root: Path | None = None, log=print
             return json.loads(doc_path.read_text(encoding="utf-8")), {**d, "reused": True}
     out_dir.mkdir(parents=True, exist_ok=True)
     env = P.scorer_env(P.EXP_ROOT)
-    env.update({"E2_SPLIT": prof.name, "E2_SYN_SENSORS": str(prof.syn_sensors).replace(os.sep, "/")})
     cmd = [str(P.PY), str(P.EXPORT_SCRIPT), "--out", str(out_dir), "--skip-log-windows"]
+    if prof.stages == 1:
+        env.update({"E2_SPLIT": prof.tts})
+        cmd += ["--single-stage", "--logs", str(prof.logs_dir)]
+        if tokens is not None:
+            t2l = P.token_to_log(prof)
+            tf = out_dir / "export_tokens.json"
+            tf.write_text(json.dumps({"tokens": sorted(tokens), "log_names": sorted({t2l[t] for t in tokens})}),
+                          encoding="utf-8")
+            cmd += ["--tokens-file", str(tf)]
+    else:
+        env.update({"E2_SPLIT": prof.name, "E2_SYN_SENSORS": str(prof.syn_sensors).replace(os.sep, "/")})
     t0 = time.time()
     lp = out_dir / "export.log"
     with open(lp, "w", encoding="utf-8") as fh:
@@ -58,8 +84,11 @@ def ensure_export(prof: "P.SplitProfile", *, root: Path | None = None, log=print
                         + lp.read_text(encoding="utf-8", errors="replace")[-600:])
     doc = json.loads(doc_path.read_text(encoding="utf-8"))
     bad = []
-    if doc.get("n_stage1") != prof.n_stage1 or doc.get("n_stage2") != prof.n_stage2:
-        bad.append(f"counts {doc.get('n_stage1')}/{doc.get('n_stage2')} != {prof.n_stage1}/{prof.n_stage2}")
+    n1 = len(tokens) if tokens is not None else prof.n_stage1
+    if doc.get("n_stage1") != n1 or doc.get("n_stage2") != prof.n_stage2:
+        bad.append(f"counts {doc.get('n_stage1')}/{doc.get('n_stage2')} != {n1}/{prof.n_stage2}")
+    if tokens is not None and set(doc.get("tokens", {})) != set(tokens):
+        bad.append("the exported token set differs from the requested subset")
     if any(not r.get("fingerprint") for r in doc.get("tokens", {}).values()):
         bad.append("a token has no fingerprint")
     if bad:

@@ -345,7 +345,8 @@ def test_devkit_side_blobs_are_raw_byte_git_blobs_of_the_whole_tree():
     blobs = SC._devkit_side_blobs()
     names = sorted(k.split("devkit_side/")[-1] for k in blobs)
     assert names == ["PROVENANCE.json", "export_agent_inputs.py", "navsim_win.py",
-                     "reaggregate.py", "tanitad_seam_agent.py"]
+                     "reaggregate.py", "tanitad_seam_agent.py",
+                     "write_cache_metadata.py"]          # W8 2026-09-26: the single-stage cache finaliser
     assert all(len(v) == 40 for v in blobs.values())
     # the RAW-byte basis is load-bearing: it must agree with the promotion record, which is raw bytes
     import json

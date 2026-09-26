@@ -94,6 +94,18 @@ def build_parser() -> argparse.ArgumentParser:
             p.add_argument("--reuse-echo", default=None, metavar="RUN_DIR",
                            help="adopt a PASSED ECHO floor from a previous run on the same split (the run "
                                 "may have failed on OTHER arms); REFUSES on any identity mismatch")
+            # ⭐ W8 2026-09-26 — SINGLE-STAGE splits only (navtest_single_stage). A SUBSET run is forced to
+            # _scratch/ and is never claim-bearing: EC pairs ADJACENT scored tokens, so a subset's per-token
+            # score is not the full split's (run_pdm_score_one_stage.py:129-156).
+            p.add_argument("--tokens-file", default=None, metavar="JSON",
+                           help="single-stage only: score a SUBSET (JSON list or {'tokens': [...]}); forces --scratch")
+            p.add_argument("--reuse-scored-arms", default=None, metavar="RUN_DIR",
+                           help="single-stage only: adopt every arm that PASSED in a previous run of this split "
+                                "(identity-checked: devkit, patches, cache sha256s, tokens, inputs, runner, traffic) "
+                                "instead of re-scoring it; REFUSES on any mismatch")
+            p.add_argument("--metric-cache", default=None, metavar="DIR",
+                           help="single-stage SUBSET runs only: a metric cache built for the subset "
+                                "(python -m taniteval.bench.navsim.cache_build --tokens-file … --cache DIR)")
         if b == "nuscenes_ol":
             # W6 (2026-09-20): ONE convention per run and NO DEFAULT — re-scoring the SAME
             # checkpoints under the two legacy harnesses FLIPS the UniAD/VAD ranking (W6, MEASURED),
@@ -184,6 +196,8 @@ def run_benchmark_cmd(a, log=None) -> int:
         ck["note"] = "--ckpt none: floors / references only"
     # never a blank in the key's place (orchestrator ruling 2026-09-20) -- computed ONCE, here
     ck["registry_key_display"] = C.ckpt_display(ck)
+    if getattr(a, "tokens_file", None):
+        a.scratch = True                    # ⛔ W8: a token SUBSET is never a leaderboard result (see --tokens-file)
     root = a.results_root
     if a.dry_run and root is None:
         import tempfile

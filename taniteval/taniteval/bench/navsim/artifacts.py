@@ -422,3 +422,132 @@ def build_arm_artifact(*, arm: str, spec: dict, split: str, protocol: str, raw_r
 
 def _jd(o):
     return o.tolist() if hasattr(o, "tolist") else str(o)
+
+
+# --------------------------------------------------------------------------- #
+# W8 2026-09-26: the SINGLE-STAGE (one-stage runner) artifact                  #
+# --------------------------------------------------------------------------- #
+SINGLE_STAGE_ROW = "average_all_frames"
+
+
+def build_win_single_stage(hooks: list, tokens: set):
+    """Every scored token has a logged human future on a single-stage split (the metric cache's
+    ``human_trajectory``, recorded by the wrapper's pdm_score hook), so OUR four-family instruments
+    run on ALL of them — with ``log_names`` so their intervals resample the settled NavSim unit."""
+    calls = [c for c in hooks if c.get("token") in tokens and c.get("human_poses") is not None]
+    calls.sort(key=lambda c: c["token"])
+    pred = np.asarray([c["agent_poses"] for c in calls], dtype=np.float64)
+    gt = np.asarray([c["human_poses"] for c in calls], dtype=np.float64)
+    v0 = np.asarray([c["v0_mps"] for c in calls], dtype=np.float64)
+    toks = [c["token"] for c in calls]
+    logs = [c.get("log_name") for c in calls]
+    kw = dict(frame="ego", origin_included=False, dt_s=0.5, scene_tokens=toks, ego_speed_mps=v0,
+              log_names=logs if all(logs) else None)
+    try:
+        win = ad.scenes_to_win(pred, gt, verify=True, **kw)
+        fv = "verified"
+    except Exception as e:                                                  # noqa: BLE001
+        win = ad.scenes_to_win(pred, gt, verify=False, **kw)
+        win["_navsim"]["frame_verification"] = {"status": "FAILED", "reason": f"{type(e).__name__}: {e}"[:600],
+                                                "n": len(toks)}
+        fv = "FAILED"
+    return win, fv, len(toks)
+
+
+def build_arm_artifact_single_stage(*, arm: str, spec: dict, split: str, devkit_split: str, protocol: str,
+                                    raw_rows: dict, hooks: list, tokens: set, n_logs: int, interval: dict,
+                                    loop: dict, runtime_note: str = "", controls: dict | None = None) -> dict:
+    """The criteria_check-shaped artifact of ONE arm scored by the ONE-STAGE runner (W8 2026-09-26).
+    Same adapter calls, gates and refusals as :func:`build_arm_artifact`; the differences are the
+    protocol's: ONE summary row (``average_all_frames``), no stage 2, no mapping, and a human future
+    on every token (so the four families cover the whole run, not a stage)."""
+    reg = load_registry()
+    avg = raw_rows.get(SINGLE_STAGE_ROW)
+    body = {t: r for t, r in raw_rows.items() if t != SINGLE_STAGE_ROW}
+    n_valid = sum(1 for t, r in body.items() if t in tokens and r.get("valid") == "True")
+    defined = bool(avg and avg.get("score") not in (None, "", "nan") and n_valid == len(tokens))
+    fam_scope = (f"OUR instruments on ALL {len(tokens)} scored tokens (agent vs the logged human future the "
+                 "metric cache carries, dt 0.5 s, K=8); single-stage: every token is an original log frame")
+    try:
+        win, fv, n_win = build_win_single_stage(hooks, tokens)
+    except Exception as e:                                              # noqa: BLE001 — recorded, never silent
+        win, fv, n_win = None, f"RAISED {type(e).__name__}: {e}"[:300], 0
+    if defined:
+        epdms = ad.read_epdms(short_row(avg, "one_stage_runner") | {"score": float(avg["score"])})
+        epdms["row"] = SINGLE_STAGE_ROW
+        sub = ad.submetrics_from_row(short_row(avg, "one_stage_runner"))
+    else:
+        why = f"one-stage EPDMS UNDEFINED for {arm}: valid rows {n_valid} vs expected {len(tokens)}"
+        epdms = {"status": "UNAVAILABLE", "reason": why, "n": int(len(tokens))}
+        sub = {"status": "UNAVAILABLE", "reason": why, "n": int(len(tokens))}
+    ii = ad.navsim_inference_inputs(**spec["ii"])
+    route_leak = ({"status": "NOT_APPLICABLE", "n": len(tokens),
+                   "reason": "this arm consumes no route / driving_command input, so a route-derived leak cannot enter it"}
+                  if not spec.get("route_input") else ad.route_leak_check())
+    kw = dict(tier="T1", variant="EPDMS_v2", split=devkit_split, arm=f"{arm}@{split}", epdms=epdms, submetrics=sub,
+              inference_inputs=ii, goal_source=spec["goal"], route_leak=route_leak, navsim_protocol=protocol)
+    if win is not None:
+        try:
+            art = ad.build_artifact(win, **kw)
+        except Exception as e:                                          # noqa: BLE001
+            fv = f"four_families RAISED {type(e).__name__}: {e}"[:400]
+            win = None
+    if win is None:
+        dummy = ad.scenes_to_win(np.zeros((1, 8, 3)), None, frame="ego", origin_included=False, dt_s=0.5,
+                                 scene_tokens=["_no_geometry_"], verify=False)
+        art = ad.build_artifact(dummy, **kw)
+        why = f"our geometry families could not be built: {fv}"
+        for fam in ("longitudinal", "lateral", "tactical", "strategic"):
+            art["four_families"][fam] = {"status": "UNAVAILABLE", "reason": why, "n": 0, "tier": "T1"}
+        art["four_families"]["_families_unavailable"] = ["longitudinal", "lateral", "tactical", "strategic"]
+    art["n_windows"] = len(tokens)
+    art["n_scenes"] = len(tokens)
+    art["_w1_lateral_refusals"] = refuse_undefined_lateral(art)
+    art["counts"] = {"tokens_expected": len(tokens), "valid": n_valid, "four_families_windows": n_win,
+                     "log_groups": n_logs, "single_stage": True}
+    art["four_families"]["_w1_scope"] = fam_scope + " — frame check: " + str(fv)
+    est_interval = ({**interval["detail"], **{k: interval[k] for k in ("question_answered",) if k in interval}}
+                    if interval.get("status") == "OK" and isinstance(interval.get("detail"), dict) else interval)
+    art["estimator"] = {"point_estimate": "devkit summary row average_all_frames (skipna mean over tokens)",
+                        "cluster_unit": "log_name", "interval": est_interval}
+    art["tier"] = "T1"
+    art["protocol"].update({
+        "navsim_protocol": protocol, "devkit_sha": SHA,
+        "devkit_pin_full": f"autonomousvision/navsim@{SHA} (2025-10-27; post-#151 fix, MEASURED by E1)",
+        "runner": "navsim.planning.script.run_pdm_score_one_stage (ONE stage; summary row average_all_frames)",
+        "harness_modifications": ["PRE-EXISTING navsim/common/dataclasses.py PosixPath unpickler",
+                                  "PRE-EXISTING venv fcntl.py flock shim",
+                                  "PRE-EXISTING nuplan-devkit setup.py (packaging only)",
+                                  "E1 dataloader.py token-separator fix in the C: copy + in-process monkeypatch — reader only"],
+        "runtime": runtime_note or "C:/Users/Admin/navsim-crun (E1's verified mirror)",
+        "sensor_set": spec["sensor_set"], "setting": spec["setting"],
+        "ego_status_enforcement": (spec["ego_enforcement"] if spec.get("vision_only_claimed") else
+                                   {"vision_only_claimed": False, "status": "NOT_APPLICABLE",
+                                    "reason": "arm is NOT vision-only and does not claim to be: " + spec["sensor_set"]}),
+        "corpus": f"NavSim {devkit_split} (OpenScene test logs; {n_logs} logs; {len(tokens)} original-frame tokens, "
+                  "single stage) — a different benchmark from the TanitAD parity corpus physicalai-train-e438721ae894",
+        "loop": dict(loop),
+        "tier_note": "T1-family: the arm's own plan is executed by LQR + kinematic bicycle; nothing recorded is fed back",
+        "harness_fix151": "post (devkit 0a380a9 carries the human-filter fix of NAVSIM #151, 2025-09-29)",
+    })
+    if controls is not None:
+        art["controls"] = controls
+    art["refused"] = {}
+    if not spec.get("route_input"):
+        art["refused"]["nav_compliance"] = (f"{arm} consumes NO route / driving_command input, so 'behaviour follows the "
+                                            "route command' is undefined for it; NavSim never scores the route.")
+        art["refused"]["nav_compliance_controls"] = "no route input exists to shuffle or withhold."
+    art["refused"]["inference_seed_replicate"] = (
+        "the floor / reference arms are deterministic and the scoring path has no RNG (E1 C7); a sampling planner "
+        "arm would need an inference-seed replicate.")
+    art["_w1_adapter_gaps"] = ["G1 long devkit columns vs short keys", "G2 estimator.cluster_unit",
+                               "G3 protocol.ego_status_enforcement", "G4 protocol.sensor_set/setting",
+                               "G5 protocol.navsim_protocol/devkit_sha", "G6 protocol.corpus/controls",
+                               "criteria_check.py never evaluates benchmarks.navsim (W2 owns the fix)"]
+    art["_built_by"] = "W8 2026-09-26 build_arm_artifact_single_stage (same adapter + E1 gate evaluator)"
+    gates = navsim_gates(json.loads(json.dumps(art, default=_jd)), reg)
+    muts = gate_mutations(json.loads(json.dumps(art, default=_jd)), reg)
+    art["navsim_gate_selfcheck"] = {"gates": gates["gates"], "criteria": gates["criteria"],
+                                    "mutations_all_red": muts["all_red"], "mutations": muts,
+                                    "_note": "E1's evaluator: criteria_check.py (registry v2.9.0) does not evaluate these gates"}
+    return art

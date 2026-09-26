@@ -422,8 +422,12 @@ class BenchContext:
         (+ the full JSON report in ``raw/criteria_<arm>.json``)."""
         art = self.run.p(f"artifacts/{arm}.json")
         js = self.run.p(f"raw/criteria_{arm}.json")
+        # ⛔ W8 2026-09-26, MEASURED: criteria_check prints '⛔' and, under a cp1252 parent (no UTF-8 mode),
+        # its piped stdout is cp1252 -> UnicodeEncodeError at print, rc 1, NO json written — the check
+        # silently never ran. Decoding with encoding="utf-8" below does not help a child that cannot ENCODE.
+        env = {**os.environ, "PYTHONIOENCODING": "utf-8", "PYTHONUTF8": "1"}
         r = subprocess.run([sys.executable, str(REPO / "tools" / "criteria_check.py"), str(art), "--json", str(js)],
-                           capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=str(REPO))
+                           capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=str(REPO), env=env)
         self.run.p(f"criteria/{arm}.txt").write_text(
             f"rc={r.returncode}\n{r.stdout}\n[stderr]\n{r.stderr}", encoding="utf-8")
         out = {"rc": r.returncode, "json": str(js.relative_to(self.run.path)).replace(os.sep, "/"),

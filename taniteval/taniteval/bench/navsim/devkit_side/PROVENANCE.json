@@ -31,7 +31,11 @@
   "export_agent_inputs.py": {
    "origin": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-refcv4b-bridge/code/export_agent_inputs.py",
    "origin_blob": "6659b6fe9cf389294982902b3faa0dfac675df90",
-   "blob": "6659b6fe9cf389294982902b3faa0dfac675df90"
+   "blob": "fe88f5e0002cf8efbff5882cd9056a464589a41e",
+   "w1_additions": [
+    "W8 2026-09-26 (navtest_single_stage): the --single-stage / --logs / --tokens-file flags, their dispatch, and the two functions _stage1_record + export_single_stage, in THREE blocks delimited by '# --- W1 ADDITION' / '# --- end W1 ADDITION'. Removing exactly those blocks reproduces E2's origin BYTE-FOR-BYTE (pinned by taniteval/tests/test_bench_navsim_navtest_single_stage.py::test_export_agent_inputs_is_e2_plus_marked_additions). Reason: the two-stage export refuses a split with no stage 2 ('EMPTY SET'), and a single-stage split's logs are read from the run's navsim_log_path, not OPENSCENE_DATA_ROOT. The two-stage path is untouched."
+   ],
+   "re_promoted_utc": "2026-09-26 (W8)"
   }
  }
 }

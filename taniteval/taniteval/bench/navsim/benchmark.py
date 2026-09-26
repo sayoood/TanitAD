@@ -226,8 +226,16 @@ def run_benchmark(ctx) -> None:
     a = ctx.args
     if a.split not in P.SPLITS:
         raise P.Refusal(f"split {a.split!r} not supported by navsim_v2 here; supported {sorted(P.SPLITS)} "
-                        "(navtest single-stage is not wired — PDMS_v1 navtest is W3's navsim_v1)")
+                        "(PDMS_v1 on navtest is W3's navsim_v1 --split navtest)")
     prof = P.SPLITS[a.split]
+    if prof.stages == 1:
+        # ⭐ W8 2026-09-26: the ONE-STAGE runner path (navtest_single_stage). The two-stage path below is
+        # unchanged; the dispatch is on the PROFILE's stage count, never on the split's name.
+        from .single_stage import run_single_stage
+        return run_single_stage(ctx, prof)
+    if getattr(a, "tokens_file", None) or getattr(a, "metric_cache", None) or getattr(a, "reuse_scored_arms", None):
+        raise P.Refusal(f"--tokens-file / --metric-cache / --reuse-scored-arms are single-stage options; {prof.name} is "
+                        "a two-stage split whose stage 2 is tied to its stage 1 by the mapping (use --reuse-floors)")
     arms, notes = resolve_arms(a.arms, a.ckpt)
     for n in notes:
         ctx.log(f"[navsim] {n}")

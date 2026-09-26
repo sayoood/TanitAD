@@ -17714,3 +17714,27 @@ lever and an instrument defect cancelling, read as skill.
 test_refav1_components_yaw_mask.py` pins literal targets and goes RED on the historical defect and on three wrong
 masks. **Rule:** a metric built from a geometry that publishes a validity mask must use the mask the reference
 estimator uses, and must carry a known-value control on a stopped window (undefined → dropped, never scored).
+
+<!-- RETR-2026-09-26-NAVSIM-V1V2-INPUT -->
+### RETR-2026-09-26-NAVSIM-V1V2-INPUT — "the NC function text is identical" was read as "NC is identical"
+
+**What was wrong.** W8's pre-registration (§2 of its PREREG.md) expected NAVSIM v1.1 and v2 to agree on NC outside the t0-collider
+removal, because the NC function text is identical. The metric cache's observation window differs, though: 5.0 s in v1.1 and 4.0 s in
+v2. An object observed exactly once in that window is placed at every step (a "ghost").
+
+**What it cost.** The pre-registered C-NC identity FAILED on 1 of 218 smoke tokens for CV, and that verdict stays FAILED as registered.
+
+**What proved the mechanism.** The v2 function run on v1.1 inputs reproduces v1.1 NC/DAC exactly on 654 of 654 token×arm pairs. So the
+function is unchanged, and the difference lives entirely in the input.
+
+**Class:** IDENTICAL FUNCTION TEXT READ AS AN IDENTICAL METRIC — an input pipeline changed underneath it. This is the same family as the
+`df` / `step_s` / cylindrical-FOV scope errors: a true statement about one layer, quoted as a statement about the layer that consumes it.
+
+**Rule:** before claiming two versions of a metric agree, diff the INPUT pipeline (caches, windows, interpolation) as well as the function.
+The cheap discriminator is W8's counterfactual: the new function on the old inputs.
+
+W8's own row, verbatim:
+
+| id | text |
+|---|---|
+| RETRACTION-CANDIDATE (W8 PREREG §2) | My pre-registration read *"NC function text identical + t0-collider removal the only input change"* as *"NC identical outside E-T0"*. Wrong: the observation window changed underneath the identical function. **Class: identical function text read as identical metric — an input pipeline changed underneath it.** The pre-registered C-NC verdict stays FAILED on the smoke; AMENDMENT A2 (hashed before any full-split score) adds class-aware rules + the function-identity test | for `RETRACTION_LOG.md` | `PREREG.md` A2 |

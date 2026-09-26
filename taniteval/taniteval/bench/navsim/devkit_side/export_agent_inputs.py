@@ -103,14 +103,108 @@ def es_dict(es) -> dict:
                         str(np.asarray(es.driving_command).dtype)]}
 
 
+# --- W1 ADDITION [W8 2026-09-26: SINGLE-STAGE splits (navtest); the two-stage path is untouched] ---
+def _stage1_record(loader, scene_filter, tok, cv_agent) -> dict:
+    """The stage-1 record, field for field the two-stage loop's (same devkit calls)."""
+    ai = loader.get_agent_input_from_token(tok)
+    frames = loader.scene_frames_dicts[tok]
+    nh = scene_filter.num_history_frames
+    sc = Scene.from_scene_dict_list(frames, ORIG_SENSORS, num_history_frames=nh,
+                                    num_future_frames=scene_filter.num_future_frames,
+                                    sensor_config=SensorConfig.build_no_sensors())
+    human = sc.get_future_trajectory(8)
+    cams = {c: [str(frames[i]["cams"][c.upper()]["data_path"]) for i in range(nh)] for c in CAMS}
+    exists = {c: [bool((ORIG_SENSORS / p).exists()) for p in v] for c, v in cams.items()}
+    return {"stage": 1, "frame_type": "ORIGINAL",
+            "log_name": frames[nh - 1]["log_name"],
+            "map_name": frames[nh - 1]["map_location"],
+            "scene_token": frames[nh - 1]["scene_token"],
+            "frame_tokens": [frames[i]["token"] for i in range(nh)],
+            "timestamps_us": [int(frames[i]["timestamp"]) for i in range(nh)],
+            "ego_statuses": [es_dict(e) for e in ai.ego_statuses],
+            "cams": cams, "cam_files_exist": exists,
+            "human_future_poses": np.asarray(human.poses, dtype=np.float64).tolist(),
+            "human_future_sampling": [human.trajectory_sampling.num_poses,
+                                      human.trajectory_sampling.interval_length],
+            "cv_poses": np.asarray(cv_agent.compute_trajectory(ai).poses, dtype=np.float64).tolist(),
+            "fingerprint": fingerprint(ai.ego_statuses)}
+
+
+def export_single_stage(a, out: pathlib.Path, t0: float) -> int:
+    """Every token of a SINGLE-STAGE split (original log frames only; no synthetic scenes, no mapping),
+    through the same ``SceneLoader.get_agent_input_from_token`` the one-stage runner calls
+    (run_pdm_score_one_stage.py:87). Logs are read from ``--logs`` (the runner's ``navsim_log_path``);
+    ``--tokens-file`` ({"tokens": [...], "log_names": [...]}) restricts to a subset."""
+    sf = yaml.safe_load(open(CFG / "scene_filter" / f"{SPLIT}.yaml", encoding="utf-8"))
+    kw = {k: v for k, v in sf.items() if not k.startswith("_")}
+    if kw.get("include_synthetic_scenes") or kw.get("reactive_synthetic_initial_tokens"):
+        print(f"⛔ {SPLIT} carries two-stage content — not a single-stage split", flush=True)
+        return 2
+    subset = None
+    if a.tokens_file:
+        subset = json.load(open(a.tokens_file, encoding="utf-8"))
+        kw["tokens"] = list(subset["tokens"])
+        kw["log_names"] = list(subset["log_names"])
+    scene_filter = SceneFilter(**kw)
+    logs = pathlib.Path(a.logs)
+    loader = SceneLoader(data_path=logs, original_sensor_path=ORIG_SENSORS, scene_filter=scene_filter,
+                         sensor_config=SensorConfig.build_no_sensors())
+    s1 = sorted(loader.tokens)
+    want = set(kw["tokens"])
+    print(f"[export] single-stage {SPLIT}: tokens {len(s1)} (requested {len(want)}) from {logs}", flush=True)
+    if not s1 or set(s1) != want:
+        print(f"⛔ the loader returned {len(s1)} tokens for {len(want)} requested "
+              f"(missing {len(want - set(s1))}) — refusing a partial export", flush=True)
+        return 2
+    rec, fps = {}, {}
+    cv_agent = ConstantVelocityAgent()
+    for i, tok in enumerate(s1):
+        rec[tok] = _stage1_record(loader, scene_filter, tok, cv_agent)
+        fps.setdefault(rec[tok]["fingerprint"], []).append(tok)
+        if i % 2000 == 0:
+            print(f"[export] {i + 1}/{len(s1)} ({time.time() - t0:.0f} s)", flush=True)
+    coll = {k: v for k, v in fps.items() if len(v) > 1}
+    doc = {"_what": ("EXACT AgentInput ego statuses per scorer token, via the devkit's "
+                     "SceneLoader.get_agent_input_from_token (run_pdm_score_one_stage.py:87) — SINGLE-STAGE."),
+           "devkit": str(DEVKIT), "split": SPLIT, "single_stage": True, "logs_dir": str(logs).replace("\\", "/"),
+           "subset": bool(subset), "n_stage1": len(s1), "n_stage2": 0,
+           "fingerprint_unique": not coll, "fingerprint_collisions": coll,
+           "reactive_all_mapping": [],
+           "stage1_cam_files_present": int(sum(sum(v) for r in rec.values() for v in r["cam_files_exist"].values())),
+           "stage1_cam_files_expected": int(len(s1) * 4 * len(CAMS)),
+           "stage2_cam_files_present": 0, "stage2_cam_files_expected": 0,
+           "tokens": rec,
+           "fingerprint_note": ("NOT guaranteed unique across tokens — a consistency check per token, never the "
+                                "lookup key (the seam is keyed on the scorer token)")}
+    with open(out / "navsim_agent_inputs.json", "w", encoding="utf-8") as fh:
+        json.dump(doc, fh, indent=1)
+    print(f"[export] wrote {len(rec)} single-stage tokens; fingerprint unique={not coll}; "
+          f"stage-1 cam files present {doc['stage1_cam_files_present']}/{doc['stage1_cam_files_expected']} "
+          f"({time.time() - t0:.1f} s)", flush=True)
+    return 0
+
+
+# --- end W1 ADDITION ---
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", required=True)
     ap.add_argument("--skip-log-windows", action="store_true")
+    # --- W1 ADDITION [W8 2026-09-26: single-stage flags] ---
+    ap.add_argument("--single-stage", action="store_true", help="W8: a single-stage split (navtest)")
+    ap.add_argument("--logs", default=None, help="W8: the navsim_log_path of a single-stage run")
+    ap.add_argument("--tokens-file", default=None, help="W8: {tokens, log_names} subset of a single-stage split")
+    # --- end W1 ADDITION ---
     a = ap.parse_args(argv)
     out = pathlib.Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
     t0 = time.time()
+    # --- W1 ADDITION [W8 2026-09-26: single-stage dispatch] ---
+    if a.single_stage:
+        if not a.logs:
+            print("⛔ --single-stage needs --logs (the runner's navsim_log_path)", flush=True)
+            return 2
+        return export_single_stage(a, out, t0)
+    # --- end W1 ADDITION ---
 
     scene_filter, split = build_scene_filter()
     loader = SceneLoader(data_path=LOGS, original_sensor_path=ORIG_SENSORS,

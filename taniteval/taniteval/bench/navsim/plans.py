@@ -103,7 +103,8 @@ def write_scenes(out_path: Path, doc: dict, *, prof, frame_bank: str | None = No
     doc_out = {
         "source": "the run's own devkit AgentInput export (raw/export_record.json names the file + sha256)",
         "what": "per scorer token: stage, log, |v0| (m/s), NavSim command at t0, scene/pickle ids",
-        "synthetic_scene_pickles": str(prof.syn_scenes).replace("\\", "/"),
+        # a single-stage split (W8) has no synthetic scenes: None -> dropped below, never the string "None"
+        "synthetic_scene_pickles": (str(prof.syn_scenes).replace("\\", "/") if prof.syn_scenes else None),
         "frame_bank": frame_bank,
         "maps_root": "C:/Users/Admin/navsim-crun/data/maps",
         "split": prof.name, "protocol": prof.protocol,

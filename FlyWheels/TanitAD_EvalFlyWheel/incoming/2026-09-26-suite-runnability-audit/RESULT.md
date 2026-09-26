@@ -727,3 +727,9 @@ numpy → nothing. **Torch is unreachable.**
 **What it does, once:** render a fixed set of polygons (incl. degenerate, concave, off-grid and
 self-touching cases) with real `cv2.fillPoly` 4.5.4, bank the rasters as literals (`.npz` + sha256); a test in
 the MAIN venv then compares the port against them, with a mutation arm. The throwaway env can be deleted after.
+
+**Provenance the rasters must carry (Master Mind, landed `3cc065f`):** record `cv2.__version__` and the first
+lines of `cv2.getBuildInformation()` in the reference's own receipt, beside each wheel's sha256 — so the
+reference proves its version itself, not via the venv's name. ⛔ And ASSERT `cv2.__version__ == "4.5.4"`
+before rendering anything: a wrong-version raster banked as a reference would pass every later comparison
+while testing nothing.

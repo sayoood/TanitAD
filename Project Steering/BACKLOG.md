@@ -418,3 +418,25 @@ register rows carry them. The fix itself cannot close the following:
 
 - 2026-09-26 update to `YAWMASK-FOLLOWUPS-2026-09-26`, item 1: `CLAUDE.md` is DONE on the PI's instruction (`226d39e`); it now
   reads 4/42 = 9.5 %. The rest of the propagation sweep (`raw/propagation_sites.txt`) stays open.
+
+<!-- NAVSIM-NAVTEST1S-FOLLOWUPS-2026-09-26 -->
+
+### OPEN — 2026-09-26 · navtest single-stage landed (W8); four follow-ups · owner: EvalFlyWheel
+
+1. **Leaderboard comparability (W4).**
+   - The navtest single-stage column mixes 8 pre-#151, 6 unverified and 4 post-#151 published rows.
+   - Ours is post-#151 AND non-reactive, so it is comparable only to post-#151 rows that were also
+     non-reactive. None of the 4 banked papers states which.
+   - The renderer does not yet read our `fix151` stamp. Make it read the stamp and mark every
+     published row's comparability; never compare across the #151 line silently.
+2. **Wrong refusal text (W2).**
+   - The NavSim STRATEGIC refusal says "PhysicalAI-AV carries NO map…", but NavSim HAS maps and
+     routes.
+   - Rewrite the refusal per benchmark.
+   - It predates W8.
+3. **Model arms on navtest single-stage.** They are refused until a
+   `DEFAULT_BANKS['navtest_single_stage']` entry and a stage-1 join of W3's frame bank exist. Build
+   both, then run refcv6's checkpoints on the split.
+4. **Live outputs still to land.** Land the full-split cache build and the full floors
+   (`raw/cache_full/**`, the driver logs, `verdict_full.json`, `cross_protocol_full.json`) once
+   `navtest_full_after_final.py` writes its END marker.
