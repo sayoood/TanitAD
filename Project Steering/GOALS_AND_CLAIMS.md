@@ -15982,3 +15982,32 @@ PI_DECISION_QUEUE, 2026-09-26 yaw item).
 | **D-NAVSIM-1S-SUBSET-AGG-1** | ⚠️ **The devkit's one-stage aggregation CRASHES on a token subset with no adjacent frames** (`run_pdm_score_one_stage.py:222`, `pd.concat([])` of an empty adjacency mapping) — W3's random sub200 (≈2 tokens/log) scored 200/200 and then died. Not a full-split risk (0.5 s frames); **subsets must be whole logs** (which also keeps every token's EC — hence its `score` — identical to the full split) | **SUPPORTED (MEASURED)** | `raw/smoke200_run/`; PREREG AMENDMENT A1 |
 | **D-NAVSIM-PREAGG-COUNT-1** | ⛔ **`scoring.py` counted the pre-aggregation dump's LINES, not records**: `ego_simulated_states` cells span lines (24,600 lines for 200 records), so `AGGREGATION_FAILED` never fired and a fully-scored arm read as a plain FAIL | **SUPPORTED and FIXED** (csv records; pinned by a multi-line-cell test) | `taniteval/taniteval/bench/navsim/scoring.py` |
 | **D-BENCH-CRITERIA-CP1252-1** | ⛔ **`BenchContext.run_criteria` let `criteria_check.py` crash under a cp1252 parent** (`⛔` at print → rc 1, NO json — the check silently never ran; it made the existing offline twin fail in a non-UTF-8 shell) | **SUPPORTED and FIXED** (`PYTHONUTF8=1` in the child env) | `taniteval/taniteval/bench/contract.py` |
+
+<!-- REFCV6-BATTERY-30K-2026-09-26 -->
+### 2026-09-26 — refcv6-r101-s0 at step 30,000: it ties hold, refcv4b and refcv5-v2 at 0–2 s and beats the echo at 6 s by 0.75 m; NavSim navtest (subset) sits above STOP but not separated
+
+- **Battery source:** MEASURED by the EvalFlyWheel battery on a PRE-SWITCH checkpoint, so every number is "F3 detach-only, F4
+  on the last layer only; tactical labels ~0.37 s early".
+- **Tier and sample:** T1 (self-action open loop); 4,754 windows over 139 episodes; both inference seeds; paired
+  episode-cluster bootstrap. One TRAINING seed (`H-ESTIM-SEED-1`).
+- **Where it was read:** the Master Mind read these from `C:/Users/Admin/ev6_battery/raw/step30000/battery_summary.json`,
+  `levers/levers.json` and `tactical_clocks.json`. The tag is auto-banked to
+  `FlyWheels/…/2026-09-23-refcv6-standard-tests/battery/raw/step30000/` and lands from the agent's LANDING_READY.
+
+| id | claim | step 5,000 → step 30,000 (seed 0; seed 1 equal to ±0.0002) | status @30k |
+|---|---|---|---|
+| **BAR-R6-1** | beats the echo, ADE 0–2 s | +0.0885 → **+0.0225 [+0.0068, +0.0395]**, separated | REFUTED (the gap shrank 75 %) |
+| **BAR-R6-2** | beats hold-action | +0.0761 → **+0.0101 [−0.0066, +0.0280]**, not separated | REFUTED (now a tie) |
+| **BAR-R6-3** | beats refcv4b | +0.0797 → **+0.0137 [−0.0029, +0.0317]**, not separated | REFUTED (now a tie) |
+| **BAR-R6-4** | beats refcv5-v2 | +0.0681 → **+0.0021 [−0.0160, +0.0212]**, not separated | REFUTED (now a tie) |
+| **BAR-R6-5** | beats the echo at 6 s | −0.4729 → **−0.7475 [−1.0603, −0.4409]**, separated | SUPPORTED |
+| ADE mean | 0–2 s | `os` 0.3771 → **0.3111 m**; echo 0.2886 m | MEASURED |
+| **SPEC A4 L2** | the zero-training hold blend beats the echo | −0.0122 → **−0.0364 [−0.0464, −0.0265]**, separated at both seeds. The fitted model weight rose from 0.2–0.4 to **0.45–0.65**. | SUPPORTED |
+| TACTICAL | declared heads, κ | LAT 0.2418 → **0.5181** (corrected clock 0.5083); LON 0.1821 → **0.3400** (0.3354). ⭐ With nav ZEROED, LAT κ is **0.4081** (1,141 windows; it was 0.0066 at 5k), so the lateral decision now reads vision, not only nav. The nav-true κ keeps the nav-echo caveat. T-FLIP and OBEDIENCE still FAIL. | MEASURED |
+| **NAVSIM navtest @30k** | refcv6 beats STOP (PDMS) | **64.14 [61.73, 66.56] vs STOP 61.72** on a **1,464-token SUBSET** (135 logs; full-split scoring hit the RAM guard 6 times). Paired **+2.41 [−0.48, +5.24]**, not separated. At 5k (full split): 46.48 vs 61.82. | REFUTED as a bar (FAIL, SUBSET); first point estimate above STOP |
+
+- **Reading:** training closes most of the short-horizon gap. refcv6 is now statistically tied with hold-action, refcv4b
+  and refcv5-v2 at 0–2 s, and 2 cm behind the echo. At 6 s it beats the echo by 0.75 m.
+- The growing L2 gain says the kinematic-prior complementarity persists as the model trains, which supports
+  `H-REFCV6-RESIDUAL-PRIOR`. SPEC A6 (the train-fitted blend) is next in the battery queue.
+- The FINAL (post-switch, "hybrid") runs Sunday night. navhard @30k has been running since 19:21 Berlin.
