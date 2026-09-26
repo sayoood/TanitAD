@@ -14,17 +14,18 @@ every NavSim row: tier **T1-family**; stage-1 loop **OPEN**; stage 2 **UNRULED**
 nuPlan cameras, 3-camera stitch); the **device + precision** of every refcv6 row is stated beside it
 (amendment A3: one device per split).
 
-## 0. Headline (status 2026-09-26 ~08:30Z — updated as checkpoints land)
+## 0. Headline (status 2026-09-26 ~10:00Z — updated as checkpoints land)
 
 **PROVEN.** (1) The NavSim harness still reads its known values on ALL THREE splits through this
 package's own drivers — warmup CV/STOP/ECHO vs E2, navhard CV vs W7 (KH-nav), navtest STOP vs W3
 (KH-navtest) — every cell |Δ| 0.0. (2) refcv6's NavSim inputs are explicit functions with literal /
 analytic tests and regression arms that go RED (68 tests + KL bit-exact against the trainer-exact
-loader). (3) **refcv6 @ step 5,000 — the first RESULT-grade NavSim reading — FAILS both evaluated
+loader). (3) **refcv6 @ step 5,000 — the first RESULT-grade NavSim reading — FAILS all three committed
 bars: navhard official two-stage EPDMS 0.1512 vs STOP 0.2985 (paired −0.147 [−0.179, −0.114], 17×
-the seed floor) and navtest PDMS 46.48 vs STOP 61.82 (paired −15.3 [−18.3, −12.8]).** It beats
-constant velocity on both (navhard +0.036 [+0.005, +0.074]; navtest +25.8) and ties ECHO; it never
-stops. (4) **The measured lever is LONGITUDINAL**: the drivable-area multiplier carries the largest
+the seed floor), navtest PDMS 46.48 vs STOP 61.82 (paired −15.3 [−18.3, −12.8]), and warmup
+S2-EPDMS-u 0.3966 vs STOP 0.5212 (−0.125; seed floor 0.016).** It beats constant velocity on navhard
+(+0.036 [+0.005, +0.074]) and navtest (+25.8), ties it on warmup, ties ECHO on navhard; it never
+stops. Vision is the one input lever beyond inference noise (warmup A1 − BLIND +0.032). (4) **The measured lever is LONGITUDINAL**: the drivable-area multiplier carries the largest
 single-term ceiling (navhard stage 2 +0.170, navtest +11.1), and on navtest the deficit sits at 2–5
 m/s, where the selected plan travels 1.21× the human's 4 s distance and 55.7 % of the plans that
 overshoot the human by > 2 m are at-fault collisions — speed bias +0.68 m/s (four families).
@@ -33,7 +34,7 @@ withheld; its oracle definition moves 8/200, inside the seed floor) — the ARGM
 run's config declares is not built (§6.7).
 
 **NOT PROVEN / NOT YET MEASURED.** The mid-run (30,000) and FINAL readings — running / armed,
-unattended (§9). warmup @ 5,000 — being re-run (the unattended run left it empty; runner fixed). The
+unattended (§9). The
 precision floor KP (CPU fp32 vs CUDA bf16) — waits for the GPU gate, which another session holds.
 Nothing here is closed loop, and every reading is zero-shot (PhysicalAI-AV → nuPlan cameras; the
 NavSim camera sits ~0.57 m higher than the training rigs).
@@ -279,6 +280,9 @@ sensitivity also separated). **BAR-R6-T1: FAILED.** Stretch references (not bars
   the human was slowing behind traffic — a **longitudinal** (distance-keeping) failure, the same
   family CLAUDE.md measured as 88.7 % of the programme's oracle gap. The FOUR FAMILIES agree:
   speed bias **+0.68 m/s** (navtest) / +0.62 (navhard stage 1), i.e. faster than the human.
+  **navhard shows the same band** (W7's speed bands vs STOP, `decomposition_navhard.json`): the
+  deficit peaks at **2–5 m/s** (stage 2 −0.191, n = 1,747; stage 1 −0.184, n = 128) and turns into
+  a WIN at ≥ 12 m/s on stage 2 (+0.180, n = 144) — two splits, two harnesses, one mechanism.
 
 **The four metric families (SPEC §8)** — where a logged human future exists: navhard stage 1
 (n = 450) and navtest (n = 12,146); refcv6 vs CV on the same windows (`families_navhard.json`,
@@ -297,11 +301,35 @@ sensitivity also separated). **BAR-R6-T1: FAILED.** Stretch references (not bars
 Warmup and navhard stage 2 carry no GT future (synthetic starts): LONGITUDINAL / LATERAL / TACTICAL
 UNAVAILABLE there, n = 0.
 
-**warmup_two_stage @ 5,000: MISSING from the unattended run — and why.** The runner's GPU gate passed
-at 04:11Z, the bridge's own gate then waited 900 s while a sibling held the card and REFUSED; nothing
-fell back, so no arm was scored (`bridge_warmup.log`: "⛔ GPU gate closed"). Fixed 2026-09-26 in
-`code/run_navsim_refcv6.py` (a refused CUDA bridge that wrote no row re-runs on CPU — one device per
-split still holds). ⏳ Re-run launched 2026-09-26T08:02Z (`code/campaign_0926.sh`).
+**warmup_two_stage @ 5,000 — device CPU, precision fp32, exact dedup, all six arms.** The unattended
+run of 09-24 left this split EMPTY (the runner's GPU gate passed at 04:11Z, the bridge's own gate then
+waited 900 s while a sibling held the card and refused; nothing fell back). Fixed 2026-09-26 in the
+runner (a refused CUDA bridge that wrote no row re-runs on CPU) and **re-run 2026-09-26T08:18–09:52Z**:
+every arm 220 / 0 / 220 with seam calls == declaration (204 refcv6 + 16 declared CV stand-ins on the
+camera arms — warmup stage 1 has no original frames here; R6_BLIND 220 own); one E1 RAM-guard abort
+(R6_A1_s1, another session's two full-suite pytest runs held ~9.5 GB) retried and PASSED. Harness
+control on this split: CV / STOP / ECHO reproduced bit-exactly (§1).
+
+| warmup @ 5,000 | device | S2-EPDMS-u | stop frac | NC | DAC | DDC | EP | TTC |
+|---|---|---|---|---|---|---|---|---|
+| **R6_A1** | CPU fp32 | **0.3966** | 0.000 | 0.755 | 0.691 | 0.846 | 0.797 | 0.716 |
+| R6_A1_s1 (seed 1) | CPU fp32 | 0.4123 | 0.000 | 0.760 | 0.706 | 0.853 | 0.802 | 0.721 |
+| R6_BLIND (frames-blind; own stage 1: official 0.1191) | CPU fp32 | 0.3645 | 0.000 | 0.657 | 0.662 | 0.784 | 0.773 | 0.647 |
+| R6_NAVOFF | CPU fp32 | 0.4004 | 0.000 | 0.750 | 0.676 | 0.846 | 0.799 | 0.711 |
+| R6_VMAXOFF | CPU fp32 | 0.3980 | 0.000 | 0.755 | 0.696 | 0.848 | 0.798 | 0.716 |
+| R6_A1NT | CPU fp32 | 0.3938 | 0.000 | 0.755 | 0.686 | 0.843 | 0.797 | 0.716 |
+| CV (floor) | model-free | 0.3971 | — | 0.681 | 0.716 | 0.811 | 0.718 | 0.681 |
+| **STOP (floor)** | model-free | **0.5212** | 1.000 | 0.926 | 0.926 | 0.983 | 0.359 | 0.926 |
+| ECHO (floor) | model-free | 0.4287 | — | 0.765 | 0.686 | 0.777 | 0.584 | 0.755 |
+
+Seed floor |S2(A1) − S2(A1_s1)| = **0.0157**. A1 − STOP **−0.1247** (W/T/L 79/32/93), A1 − ECHO −0.0322,
+A1 − CV −0.0006 (inside the seed floor). **BAR-R6-W1: FAILED** (no interval by design: 7 logs < 8).
+Lever reads vs the seed floor: vision (A1 − BLIND) **+0.0320 — beyond it**; nav (A1 − NAVOFF)
+−0.0039, max speed (A1 − VMAXOFF) −0.0015 (2/201/1 scenes), time construction (A1 − A1NT) +0.0028 —
+all inside it. Plan level (`plan_deltas_warmup.json`): seed replicate 4 s endpoint median 0.45 m
+(same anchor 88.2 %); BLIND 1.98 m; NAVOFF 0.39 m; VMAXOFF 0.99 of plans bit-identical. Ladder:
+102/204 stage-2 scenes score 0; unique zeros DAC 36, NC 16; single-term ceilings **DAC +0.135** >
+EP +0.050 > NC +0.048 (`decomposition_warmup.json`) — the same ranking as navhard and navtest.
 
 ## 4. Deliverable 4 — navtest v1 PDMS
 
