@@ -1,0 +1,144 @@
+{
+ "arm": "R6_A1NT",
+ "spec": {
+  "declared": [
+   "ego_pose[1]",
+   "ego_pose[2]",
+   "ego_pose[3]",
+   "ego_velocity[1]",
+   "ego_velocity[2]",
+   "ego_velocity[3]",
+   "driving_command[3]"
+  ],
+  "frames": "NT",
+  "nav": "cmd",
+  "vmax": "map",
+  "seed": 0,
+  "meaning": "R6_A1 with the NEAREST-TIME frame history (declared sensitivity)"
+ },
+ "split": "warmup_two_stage",
+ "declared_inputs": [
+  "ego_pose[1]",
+  "ego_pose[2]",
+  "ego_pose[3]",
+  "ego_velocity[1]",
+  "ego_velocity[2]",
+  "ego_velocity[3]",
+  "driving_command[3]"
+ ],
+ "withheld_egostatus_fields": [
+  "ego_pose[0]",
+  "ego_velocity[0]",
+  "ego_acceleration[0]",
+  "ego_acceleration[1]",
+  "ego_acceleration[2]",
+  "ego_acceleration[3]",
+  "driving_command[0]",
+  "driving_command[1]",
+  "driving_command[2]"
+ ],
+ "external_inputs": {
+  "max_speed": "nuPlan map posted limit of the ego lane at t0",
+  "lift": "NavSim rig calibration (rig6.py)",
+  "frames": "416x1024 cylindrical 3-cam stitch (frames416.py)"
+ },
+ "n_expected": 220,
+ "n_rows": 220,
+ "missing": [],
+ "n_missing": 0,
+ "partial": false,
+ "n_refcv6_rows": 204,
+ "n_cv_standin_rows": 16,
+ "device": [
+  "cpu"
+ ],
+ "precision": [
+  "fp32"
+ ],
+ "model": {
+  "ckpt": "D:/refcv6_eval_kit/ckpt/ckpt_step1000.pt",
+  "ckpt_md5": "7c3ad3c1fbf3d30be5c7733e7b436c65",
+  "step": 1000,
+  "registry": "MODEL_REGISTRY.md \u2014 refcv6-r101-s0 (TRAINING; pipeline validation)",
+  "rebuilt_from": "config.json[argv] -> refc_v3_train.build_parser + _pin_trainer_cfg (the trainer's own build path)",
+  "state_dict_load": {
+   "missing_keys": [],
+   "unexpected_keys": [],
+   "tolerated_inert_buffers": []
+  },
+  "window": 8,
+  "decoder_steps": 2,
+  "n_anchors": 117,
+  "horizons_steps": [
+   5,
+   10,
+   15,
+   20,
+   30,
+   40,
+   50,
+   60
+  ],
+  "load_s": 5.9,
+  "precision": "fp32",
+  "trunk_levers_recorded": {
+   "chunk_ckpt": 8,
+   "frozen_bn": true,
+   "bn_pinned": 104,
+   "relu_out_of_place": 100,
+   "bf16": true,
+   "channels_last": true,
+   "bn_folded": 104,
+   "dedup_frames": true
+  },
+  "trunk_levers_eval": {
+   "chunk_ckpt": 8,
+   "frozen_bn": true,
+   "bn_pinned": 104,
+   "relu_out_of_place": 100,
+   "bf16": false,
+   "channels_last": false,
+   "bn_folded": 104,
+   "dedup_frames": true
+  },
+  "trunk_equalize_bottom_rows_BUILT": 0,
+  "config_edits": {
+   "edits": [
+    "/home/nvidia/data/anchors/refc_anchors_6s_v0cond_alat_117.pt -> D:/refcv6_eval_kit/navsim_aux/refc_anchors_6s_v0cond_alat_117.pt",
+    "/home/nvidia/data/refcv6_train_eval139_extrinsics.json -> D:/refcv6_eval_kit/navsim_aux/refcv6_train_eval139_extrinsics.json",
+    "dropped --trunk-compile (no Triton on Windows)"
+   ],
+   "n_argv": 110
+  },
+  "device": "cpu",
+  "torch": "2.11.0+cu128",
+  "threads": 8,
+  "exact_dedup": true,
+  "lift": {
+   "stride": 16,
+   "heights_m": [
+    0.0,
+    0.5,
+    1.5,
+    2.5
+   ],
+   "equalize_bottom_rows_lift": 43,
+   "road_z_m": -0.3557311968663991,
+   "road_plane_source": "C:\\Users\\Admin\\ev6\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-23-refcv6-standard-tests\\navsim\\raw\\inputs\\road_plane_navhard_warmup_logs.json"
+  }
+ },
+ "gpu_gate": null,
+ "bank2": "C:/Users/Admin/tanitad-caches/refcv6-navsim-20260923/warmup_two_stage",
+ "bank1": null,
+ "inputs": "C:\\Users\\Admin\\ev6\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\navsim_agent_inputs.json",
+ "speed": "C:\\Users\\Admin\\ev6\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-23-refcv6-standard-tests\\navsim\\raw\\inputs\\speed_limits_warmup_two_stage.json",
+ "conversion": "E2's conversion, IMPORTED unchanged: a C2 not-a-knot cubic spline in time through the\norigin and the 8 knots (0.5 ... 6 s), evaluated at NavSim's 0.5 ... 4.0 s (knots reproduced;\n2.5 / 3.5 s interpolated; the 5 s / 6 s knots shape the spline but are not emitted); heading\n= the spline tangent, held below 1.0 m/s (E2 SPEC amendment 1).",
+ "nav_map": {
+  "0": "left",
+  "1": "follow",
+  "2": "right",
+  "3": "follow"
+ },
+ "rows_jsonl": "C:\\Users\\Admin\\ev6\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-23-refcv6-standard-tests\\navsim\\raw\\bridge_warmup_s1000\\rows_R6_A1NT.jsonl",
+ "seconds_this_launch": 473.3
+}
