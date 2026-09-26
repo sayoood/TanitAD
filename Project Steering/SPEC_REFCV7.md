@@ -148,3 +148,17 @@ Every refcv7 evaluation reports, on the same windows:
 - **G-LIVE** asserts the ceiling mask is inactive in a training step and active in an eval step. Its regression arm activates the mask in training, which must FAIL.
 
 **Interaction with NEW-1.** The nav-compliance term and the ceiling filter act on the ABSOLUTE candidate plans (prior P + residual Δ), never on Δ alone.
+
+## 8. Amendment A3 (2026-09-26 ~22:20 Berlin): the map is 10 cm, and every class must be shown to learn before launch
+
+**PI, verbatim (2026-09-26):** *"We need the 10 cm map, no way to use 50 cm. Did we review the wiring, the architecture, the training and the training signal flow for the map heads to verfiy its trained to extact all sematic classes?"*
+
+1. **NEW-2 is REQUIRED, not optional.** refcv7 does not launch without the 10 cm map head. The map is predicted, supervised, evaluated and reported at 10 cm; nothing at 0.5 m is ever reported as "the map".
+   - Whether refcv6's 0.5 m head survives as a declared internal auxiliary, which shapes the planner's 120×64 BEV features, is under audit (`…/2026-09-26-map-signal-audit/`, task 7), and the PI decides.
+   - It is built switchable (`--map-lowres {on,off}`).
+2. **The finding behind this amendment**, MEASURED on `metrics.jsonl`, 4,621 rows: refcv6 logged map quality for the DRIVABLE class only (`map_iou_drivable` and its fractions). Per-class IoU was never logged, so the thin-class collapse went unseen for 38,000 steps. At step 35,000 the argmax IoU was 0.009 for lane lines, 0.001 for crosswalks, and 0.000 for arrows and edges.
+3. **New launch-gate family G-MAP (BINDING)**, each check with a regression arm that must FAIL:
+   - **G-LIVE per-class signal:** every class present in the smoke batches (with ≥ M labelled 10 cm cells) has a finite, non-zero loss contribution and a non-zero gradient on its logit channel.
+   - **G-DVB logging:** the eval metric list includes per-class 10 cm IoU for all 8 classes × 3 x-bands (0–20 / 20–40 / 40–60 m) plus per-class loss shares, and the Training Watch shows them. Drivable-only logging FAILS.
+   - **G-MAP-OVERFIT:** the 10 cm head, trained on a small fixed set of real TRAIN frames, reaches a literal per-class IoU threshold on every class present. The protocol and thresholds are pre-registered by the audit in `raw/PREREG_G_MAP_OVERFIT.md` BEFORE any run. Its PASS record, bound to the launch commit, is a launch prerequisite.
+4. **The per-class signal audit** traces the refcv6 path and the NEW-2 design end to end. Its evidence gates any further change to the map head: the loss, the weights, the lift resolution and the auxiliary head.
