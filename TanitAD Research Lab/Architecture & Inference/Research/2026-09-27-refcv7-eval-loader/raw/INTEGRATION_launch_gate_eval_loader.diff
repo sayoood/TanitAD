@@ -1,0 +1,15 @@
+diff --git a/stack/scripts/launch_gate.py b/stack/scripts/launch_gate.py
+index 2361732..9cf4604 100644
+--- a/stack/scripts/launch_gate.py
++++ b/stack/scripts/launch_gate.py
+@@ -421,6 +421,10 @@ PROFILES: dict[str, dict] = {
+     #: at 10 cm, one lift, 100 m x +-30 m) + A9/A10 (the refined box head)
+     "refcv7": dict(
+         _REFC, name="refcv7",
++        #: G-EVAL's loader: refcv7's OWN (`stack/tanitad/eval/refcv7_loader.py`). The refcv6 battery
++        #: loader cannot build NEW-2's 10 cm branch -- MEASURED 2026-09-27: its strict load fails on
++        #: `_map_hires.lift.unobserved`. On Thor pass `--eval-kit /home/nvidia` (the kit layout).
++        eval_loader="stack/tanitad/eval/refcv7_loader.py",
+         required_checks=BASE_CHECKS + ("G-SUITE-PINNED", "G-MAP-OVERFIT", "G-BOX-OVERFIT"),
+         #: EVERYTHING that needs the data or the launch venv runs on Thor; the dev box runs only
+         #: G-SUITE-PINNED (a full-commit archive with the HF cache) -- its evidence is imported

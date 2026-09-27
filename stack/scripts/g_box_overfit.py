@@ -763,7 +763,12 @@ class TrainerAdapter:
             _hcw, _hcws = _mhr.load_class_weights(a.map_hires_class_weights, extent=_hext)
             _hcfg = _mhr.MapHiresConfig(
                 w_map_hires=float(a.w_map_hires), x_max_m=float(_hext.x_max_m), y_half_m=float(_hext.y_half_m),
-                grad_ckpt=bool(_mhr.declared_grad_ckpt(a)), class_weights_sha256=str(_hcws["sha256"]),
+                grad_ckpt=bool(_mhr.declared_grad_ckpt(a)),
+                # NEW-2 R2/R3 (A12/A15), exactly as train() declares them (refc_v3_train.py:8023-8024): without
+                # them the replay under the A18 launch argv is not the launch model, and G-DVB refuses it
+                near_lift_x_m=float(_mhr.declared_near_lift_m(a)),
+                near_refine_blocks=int(_mhr.declared_near_refine_blocks(a)),
+                class_weights_sha256=str(_hcws["sha256"]),
                 decision_rule=str(getattr(a, "map_hires_decision_rule", _mhr.DECISION_RULES[0])))
             m._map_hires = _mhr.build_map_hires_branch(m, _hcfg).to(dev)
             m._w_map_hires = float(a.w_map_hires)

@@ -308,6 +308,10 @@ _REFC = {
     #: OPEN ITEMS: undecided parts of a profile's launch flag set (refcv7 declares its own; see
     #: `_REFCV7_OPEN_ITEMS`). Empty = the flag set is decided.
     "open_items": (),
+    #: ⛔ SPEC_REFCV7 24 (A19): MAIN-only BINDING overfit records. None = every must-fail arm must
+    #: RUN and fail as registered (the pre-A19 rule). A profile adopting A19 names the policy, its
+    #: SPEC source and the must-fail evidence it INHERITS (see PROFILES['refcv7']).
+    "overfit_main_only": None,
     #: G-MAP-OVERFIT: the pre-registered protocol's LITERALS
     #: (`…/2026-09-26-map-signal-audit/raw/PREREG_G_MAP_OVERFIT.md` + `gmo_spec.json`; SPEC 9
     #: item 2). The gate checks the record against these, never against the bars it carries.
@@ -317,6 +321,9 @@ _REFC = {
         "harness": "stack/scripts/map_hires_overfit.py",
         "band": "0_20",
         "min_cells": 1000,
+        #: prereg sec. 6.4: each class's CE at the end <= this x its step-0 CE (re-judged from the
+        #: record's own numbers under A19)
+        "ce_ratio_max": 0.5,
         "iou_bars": {"nocls": 0.85, "drivable": 0.85, "sidewalk": 0.85, "lane": 0.5,
                      "crosswalk": 0.5, "arrow": 0.5, "edge": 0.5, "hatched": 0.5},
         #: ``near_block_zeros`` (edge): SPEC_REFCV7 20 (A15), kept by 23 (A18) -- zeros into the
@@ -430,6 +437,46 @@ PROFILES: dict[str, dict] = {
     #: at 10 cm, one lift, 100 m x +-30 m) + A9/A10 (the refined box head)
     "refcv7": dict(
         _REFC, name="refcv7",
+        #: G-EVAL's loader: refcv7's OWN (`stack/tanitad/eval/refcv7_loader.py`). The refcv6 battery
+        #: loader cannot build NEW-2's 10 cm branch -- MEASURED 2026-09-27: its strict load fails on
+        #: `_map_hires.lift.unobserved`. On Thor pass `--eval-kit /home/nvidia` (the kit layout).
+        eval_loader="stack/tanitad/eval/refcv7_loader.py",
+        #: ⛔ SPEC_REFCV7 24 (A19, the PI 2026-09-27 17:46 / 17:51 Berlin: "Binding = MAIN only,
+        #: both" / "Keep MAIN-only for both"): a BINDING overfit record whose must-fail arms were NOT
+        #: RUN is accepted -- MAIN is re-judged from its OWN registered literals, never from the
+        #: harness's overall verdict (which reads FAIL without the arms). A must-fail arm that RAN
+        #: and PASSED is still a VOID (A19 excuses absence, never a VOID). The must-fail evidence is
+        #: INHERITED -- stated exactly below and carried in the gate's PASS text, so the token says
+        #: what it does not cover.
+        overfit_main_only={
+            "policy": "A19_MAIN_ONLY_BINDING",
+            "source": "SPEC_REFCV7 24 (A19, landed 36cc332)",
+            "map": {
+                #: the A18 spec with its must-fail rows REMOVED -- the registered harness refuses
+                #: `--arms healthy` on a spec that names must-fail arms (main(): "the gated arm ...
+                #: is not in --arms"); every other literal is A18's. `…/raw/gmo_spec_A19_MAP_MAIN.json`
+                "spec_sha256": "56dea067fdef45e9b905f5741b562e59ad037396067cdbe43278c37f62be4f2a",
+                "inherited": ("the map must-fail arms are INHERITED from A17.1 (the launch map config "
+                              "+ the decay, 1,000 steps): s8_zeros read 0 on every thin class, "
+                              "near_block_zeros read edge 0.199, lane_w0 read lane 0 (A12 and A15 "
+                              "held them too)"),
+                "evidence": ("TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/raw/gmo_early/"
+                             "g_map_overfit_A171.EARLY_NONBINDING.json",),
+            },
+            "box": {
+                "inherited": ("presence_w0 is robust by construction (zero presence-loss weight gives "
+                              "the presence head no gradient); memory_zeros was NOT measured at full "
+                              "scale on the launch head -- it held in the TOY test on the A17 code "
+                              "(18/18 cells, ap2m 0.0022-0.0171) and on the pre-A14 head, and "
+                              "learned_ref also reads BEV tokens pooled from the map branch, so a leak "
+                              "around the blinded memory would not be seen before launch; the PI "
+                              "accepted this knowingly (A19 Q2)"),
+                "evidence": ("TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-box-head/raw/toy/",
+                             "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-box-head/raw/thor_gbo/gbo_early_nonbinding.json",
+                             "stack/tests/test_g_box_overfit.py::"
+                             "test_TOY_the_loop_memorises_and_the_memory_zeros_arm_cannot"),
+            },
+        },
         required_checks=BASE_CHECKS + ("G-SUITE-PINNED", "G-MAP-OVERFIT", "G-BOX-OVERFIT"),
         #: EVERYTHING that needs the data or the launch venv runs on Thor; the dev box runs only
         #: G-SUITE-PINNED (a full-commit archive with the HF cache) -- its evidence is imported
@@ -3585,7 +3632,11 @@ def judge_map_overfit(prof: dict, record: str | None, commit: str, *, argv_sha: 
     * ⛔ SPEC_REFCV7 23 (A18): the record RAN the registered protocol -- the A18 spec (sha256),
       the optimiser's steps / lr / batch / seed / lr_decay, and the map path (near lift, near
       refine blocks) -- each against `map_overfit`'s literals. A record of the superseded
-      1,000-step protocol is REFUSED (the trap the box judge fell into with the prereg's lr)."""
+      1,000-step protocol is REFUSED (the trap the box judge fell into with the prereg's lr);
+    * ⛔ SPEC_REFCV7 24 (A19): under the profile's `overfit_main_only` policy a must-fail arm that
+      did NOT RUN is excused and MAIN is re-judged from the record's own numbers (the harness's
+      overall verdict reads FAIL without the arms and is NOT read); an arm that RAN is judged from
+      its results and a pass is still a VOID. Without the policy every arm must run (pre-A19)."""
     mo = prof.get("map_overfit") or {}
     tag = "G-MAP-OVERFIT"
     if not record or not Path(record).is_file():
@@ -3597,7 +3648,26 @@ def judge_map_overfit(prof: dict, record: str | None, commit: str, *, argv_sha: 
                            "launch_commit": rec.get("launch_commit"),
                            "launch_argv_sha256": rec.get("launch_argv_sha256")}
     reasons: list[str] = []
-    if v.get("G_MAP_OVERFIT") != "PASS":
+    # ⛔ SPEC_REFCV7 24 (A19): which of the GATE'S must-fail arms ran (a result, or a regression
+    # row that says so); an ABSENT arm is excused only under the profile's A19 policy
+    a19 = prof.get("overfit_main_only") or {}
+    a19m = a19.get("map") if isinstance(a19.get("map"), dict) else {}
+    results = rec.get("results") if isinstance(rec.get("results"), dict) else {}
+    reg = v.get("regression_arms") if isinstance(v.get("regression_arms"), dict) else {}
+    gate_mf = [(a_, tuple(c_), False) for a_, c_ in (mo.get("must_fail_any") or {}).items()]
+    gate_mf += [(a_, tuple(c_), True) for a_, c_ in (mo.get("must_fail_all") or {}).items()]
+    ran = {a_: isinstance(results.get(a_), dict) or bool((reg.get(a_) or {}).get("ran"))
+           for a_, _c, _n in gate_mf}
+    absent = [a_ for a_, r_ in ran.items() if not r_]
+    main_only = bool(a19m) and bool(absent)
+    det["a19"] = {"policy": a19.get("policy"), "source": a19.get("source"), "applied": main_only,
+                  "absent_must_fail_arms": absent,
+                  "harness_verdict_not_read": v.get("G_MAP_OVERFIT") if main_only else None}
+    if main_only:
+        det["a19"]["statement"] = (
+            f"MAIN-ONLY binding under {a19.get('source')}: the must-fail arm(s) {absent} were NOT "
+            f"RUN -- {a19m.get('inherited')} (evidence: {'; '.join(a19m.get('evidence') or ())})")
+    elif v.get("G_MAP_OVERFIT") != "PASS":
         reasons.append(f"{tag}: the record's verdict is {v.get('G_MAP_OVERFIT')!r}, not PASS")
     reasons += _overfit_binding_reasons(tag, rec, commit, argv_sha, mo)
     cw = rec.get("class_weights") if isinstance(rec.get("class_weights"), dict) else {}
@@ -3622,9 +3692,12 @@ def judge_map_overfit(prof: dict, record: str | None, commit: str, *, argv_sha: 
             reasons.append(f"{tag}: the record ran at extent {k}={ext.get(k)}, not the launch "
                            f"{want} (SPEC_REFCV7 12)")
     # ⛔ SPEC_REFCV7 23 (A18): the PROTOCOL the record ran
-    if mo.get("spec_sha256") and rec.get("spec_sha256") != mo["spec_sha256"]:
+    ok_specs = [x for x in (mo.get("spec_sha256"), a19m.get("spec_sha256")) if x]
+    if ok_specs and rec.get("spec_sha256") not in ok_specs:
         reasons.append(f"{tag}: the record ran spec {str(rec.get('spec_sha256'))[:16]}..., not the "
-                       f"registered A18 spec {mo['spec_sha256'][:16]}... (SPEC_REFCV7 23)")
+                       f"registered A18 spec {mo['spec_sha256'][:16]}... (SPEC_REFCV7 23)"
+                       + (f" or the A19 MAIN-only spec {a19m['spec_sha256'][:16]}... (SPEC_REFCV7 24)"
+                          if a19m.get("spec_sha256") else ""))
     opt = rec.get("optimiser") if isinstance(rec.get("optimiser"), dict) else {}
     det["optimiser"] = opt
     for k, want in (mo.get("protocol") or {}).items():
@@ -3659,26 +3732,52 @@ def judge_map_overfit(prof: dict, record: str | None, commit: str, *, argv_sha: 
                            f"INCONCLUSIVE => FAIL (prereg sec. 6.1)")
         if not (_finite_num(ic) and float(ic) >= float(bar)):
             reasons.append(f"{tag}: class {c!r} IoU {ic} < the registered bar {bar}")
-    ce_ok = main.get("ce_ratio_ok") if isinstance(main.get("ce_ratio_ok"), dict) else {}
-    bad_ce = sorted(c for c in (mo.get("iou_bars") or {}) if ce_ok.get(c) is not True)
+    if main_only:
+        # A19: the CE ratio and the finite loss from the record's OWN numbers (MAIN's step-0 and
+        # final per-class CE, its finite flag) -- never from the harness's verdict object
+        h_ = results.get("healthy") if isinstance(results.get("healthy"), dict) else {}
+        ce0 = (h_.get("step0") or {}).get("ce_mean") or {}
+        ce1 = (h_.get("final") or {}).get("ce_mean") or {}
+        lim = float(mo.get("ce_ratio_max", 0.5))
+        bad_ce = sorted(c for c in (mo.get("iou_bars") or {})
+                        if not (_finite_num(ce0.get(c)) and _finite_num(ce1.get(c))
+                                and float(ce0[c]) > 0.0 and float(ce1[c]) <= lim * float(ce0[c])))
+        finite_ok = h_.get("loss_finite_every_step") is True
+    else:
+        ce_ok = main.get("ce_ratio_ok") if isinstance(main.get("ce_ratio_ok"), dict) else {}
+        bad_ce = sorted(c for c in (mo.get("iou_bars") or {}) if ce_ok.get(c) is not True)
+        finite_ok = main.get("loss_finite_every_step") is True
     if bad_ce:
         reasons.append(f"{tag}: the per-class CE did not fall to <= 0.5x its step-0 value for "
                        f"{bad_ce} (prereg sec. 6.4)")
-    if main.get("loss_finite_every_step") is not True:
+    if not finite_ok:
         reasons.append(f"{tag}: the MAIN loss is not recorded finite at every step (sec. 6.5)")
-    reg = v.get("regression_arms") if isinstance(v.get("regression_arms"), dict) else {}
     det["regression_arms"] = reg
-    for arm, classes in (mo.get("must_fail_any") or {}).items():
+    det["must_fail"] = {}
+    for arm, classes, need_all in gate_mf:
         a_ = reg.get(arm) or {}
-        if not (a_.get("ran") and set(classes) & set(a_.get("failed") or [])):
-            reasons.append(f"{tag}: must-fail arm {arm!r} did not FAIL {list(classes)} "
-                           f"({a_ or 'not run'})")
-    for arm, classes in (mo.get("must_fail_all") or {}).items():
-        a_ = reg.get(arm) or {}
-        if not (a_.get("ran") and set(classes) <= set(a_.get("failed") or [])):
+        if not ran[arm] and main_only:           # ⛔ A19 excuses ABSENCE -- never a VOID
+            det["must_fail"][arm] = f"NOT RUN -- excused under {a19.get('source')}; inherited"
+            continue
+        fin_ = (results.get(arm) or {}).get("final") if isinstance(results.get(arm), dict) else None
+        if isinstance(fin_, dict) and isinstance(fin_.get("iou"), dict):
+            # judged from the arm's OWN result against the gate's literal bars
+            failed = [c for c, bar in (mo.get("iou_bars") or {}).items()
+                      if not (_finite_num(fin_["iou"].get(c)) and float(fin_["iou"][c]) >= float(bar))]
+            shown = a_ or {"ran": True, "failed": failed, "from": "results"}
+        else:
+            failed = list(a_.get("failed") or []) if ran[arm] else []
+            shown = a_ or "not run"
+        det["must_fail"][arm] = {"ran": ran[arm], "failed": failed}
+        ok = ran[arm] and (set(classes) <= set(failed) if need_all else bool(set(classes) & set(failed)))
+        void = " -- VOID: A19 excuses absence, never a VOID" if (a19m and ran[arm]) else ""
+        if not ok and need_all:
             reasons.append(f"{tag}: must-fail arm {arm!r} must FAIL ALL of {list(classes)} "
-                           f"({a_ or 'not run'}) -- a thin class passing without image "
-                           f"information means the harness scores something else")
+                           f"({shown}) -- a thin class passing without image "
+                           f"information means the harness scores something else" + void)
+        elif not ok:
+            reasons.append(f"{tag}: must-fail arm {arm!r} did not FAIL {list(classes)} "
+                           f"({shown})" + void)
     ctl = v.get("controls") if isinstance(v.get("controls"), dict) else {}
     det["controls_reproduced"] = v.get("controls_reproduced")
     for c in mo.get("controls", ()):
@@ -3724,9 +3823,28 @@ def judge_box_overfit(prof: dict, record: str | None, commit: str, *, argv_sha: 
                            "result": rec.get("RESULT"),
                            "harness_binding_informative": [rec.get("binding"), rec.get("commit")]}
     reasons: list[str] = []
+    # ⛔ SPEC_REFCV7 24 (A19): a must-fail arm the record does not hold is excused only under the
+    # profile's A19 policy; the harness then writes RESULT FAIL (its must-fail arms are absent), so
+    # RESULT is NOT read -- main is re-judged below from its rows, as always
+    a19 = prof.get("overfit_main_only") or {}
+    a19b = a19.get("box") if isinstance(a19.get("box"), dict) else {}
+    arms_a19 = rec.get("arms") if isinstance(rec.get("arms"), dict) else {}
+    absent = [a_ for a_ in (bo.get("must_fail") or {}) if not isinstance(arms_a19.get(a_), dict)]
+    main_only = bool(a19b) and bool(absent)
+    det["a19"] = {"policy": a19.get("policy"), "source": a19.get("source"), "applied": main_only,
+                  "absent_must_fail_arms": absent,
+                  "harness_result_not_read": rec.get("RESULT") if main_only else None}
+    if main_only:
+        det["a19"]["statement"] = (
+            f"MAIN-ONLY binding under {a19.get('source')}: the must-fail arm(s) {absent} were NOT "
+            f"RUN -- {a19b.get('inherited')} (evidence: {'; '.join(a19b.get('evidence') or ())})")
     if rec.get("tool") != bo.get("tool"):
         reasons.append(f"{tag}: the record's tool is {rec.get('tool')!r}, not {bo.get('tool')!r}")
-    if rec.get("RESULT") != "PASS":
+    if main_only:
+        if rec.get("RESULT") == "VOID":
+            reasons.append(f"{tag}: the record's RESULT is 'VOID' -- a must-fail arm passed "
+                           f"(A19 excuses absence, never a VOID)")
+    elif rec.get("RESULT") != "PASS":
         reasons.append(f"{tag}: the record's RESULT is {rec.get('RESULT')!r}, not PASS")
     # the launch argv: the gate's definition (ordered compact JSON), or the harness's own
     # `sha256(json.dumps(argv))` -- both are pure functions of the SAME list
@@ -3825,6 +3943,9 @@ def judge_box_overfit(prof: dict, record: str | None, commit: str, *, argv_sha: 
                            f"{(arms.get('main') or {}).get('verdict')!r}")
     det["must_fail"] = {}
     for arm, crits in (bo.get("must_fail") or {}).items():
+        if main_only and arm in absent:          # ⛔ A19 excuses ABSENCE -- never a VOID
+            det["must_fail"][arm] = f"NOT RUN -- excused under {a19.get('source')}; inherited"
+            continue
         res, why = judged(arm)
         det["must_fail"][arm] = res.get("criteria") if res else why
         if why:
@@ -5486,8 +5607,10 @@ def _job_box_overfit(ctx: Ctx) -> dict[str, dict]:
         if f and Path(f).is_file():
             ev["inputs_read"][k] = fingerprint(f)
     ev["details"].update(det)
-    finish_evidence(ev, "FAIL" if reasons else "PASS",
-                    reasons or [f"G-BOX-OVERFIT PASS {OVERFIT_SCOPE}"])
+    ok_text = f"G-BOX-OVERFIT PASS {OVERFIT_SCOPE}"
+    if (det.get("a19") or {}).get("applied"):
+        ok_text += f"; {det['a19']['statement']}"         # SPEC_REFCV7 24: what it does NOT cover
+    finish_evidence(ev, "FAIL" if reasons else "PASS", reasons or [ok_text])
     return {"G-BOX-OVERFIT": ev}
 
 
@@ -5518,8 +5641,10 @@ def _job_map_overfit(ctx: Ctx) -> dict[str, dict]:
         if f and Path(f).is_file():
             ev["inputs_read"][k] = fingerprint(f)
     ev["details"].update(det)
-    finish_evidence(ev, "FAIL" if reasons else "PASS",
-                    reasons or [f"G-MAP-OVERFIT PASS {OVERFIT_SCOPE}"])
+    ok_text = f"G-MAP-OVERFIT PASS {OVERFIT_SCOPE}"
+    if (det.get("a19") or {}).get("applied"):
+        ok_text += f"; {det['a19']['statement']}"         # SPEC_REFCV7 24: what it does NOT cover
+    finish_evidence(ev, "FAIL" if reasons else "PASS", reasons or [ok_text])
     return {"G-MAP-OVERFIT": ev}
 
 

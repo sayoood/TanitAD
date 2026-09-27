@@ -1,0 +1,88 @@
+.........                                                                [100%]
+=================================== PASSES ====================================
+_______ test_the_loader_rebuilds_the_trainers_refcv7_model_bit_for_bit ________
+---------------------------- Captured stdout setup ----------------------------
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.3, alat_v_floor=2.0, schema=tanitad.anchor_artifact/1
+[v3] rig camera = PER-CLIP EXTRINSICS from C:\Users\Admin\AppData\Local\Temp\pytest-of-Admin\pytest-4157\refcv7_eval_loader0\extr.json (2 clips, z 1.450-1.550 m, pitch -0.0000..+0.0040 rad)
+[v3] ⚠️ a rig camera is built but --agent-w-project and --agent-w-ground are both 0: neither monocular term contributes. That is a legal ablation baseline and the stamp records it, but it is not a projection arm.
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 2 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] ⚠️ agent cls weight: the corpus line could not be DERIVED from --agent-join 'C:\\Users\\Admin\\AppData\\Local\\Temp\\pytest-of-Admin\\pytest-4157\\refcv7_eval_loader0\\__unread__/join.jsonl.xz', so the only source is the --agent-cls-weight key. The guard is single-sourced on this arm and cannot catch an artifact/corpus mismatch.
+[v3] agent cls weight: b1 on corpus line v7-b1-physicalai-b1-w120-256x640cyl, population in_field_and_decode_box (weight-key-only (the join is not a line this table names)) (10 classes, imbalance 1298.6:1, digest c9dbc340acf7d27e)
+[v3] refcv7 map-hires: w=1, extent 60 m x +-16 m -> [600, 320] at 0.1 m, grad_ckpt True, near-lift 20 m, near-refine 1, tap {'s8_tap': True, 's8_module': 'layer2', 's8_dim': 128, 's8_hw': [16, 72], 's8_frame': 'newest', 's8_temporal_fusion': None}, params {'lift': 32896, 'encoder': 406912, 'refine': 20936, 'near': 16448, 'near_refine': 18496, 'total': 495688}, class weights sha256 6efc5957e6d2
+[v3] refcv6 perception: w_map=0 w_box3d=1 bev_source=map_hires_pool; params {'lift': 0, 'bev_encoder': 0, 'map_head': 0, 'box_memory': 91136, 'box_decoder': 3505943, 'bev_pool': 6336, 'box_qpos': 131584, 'box_refpts': 600, 'total': 3735599}
+[v3] anchors: loaded (117, 8, 2) from C:\Users\Admin\AppData\Local\Temp\pytest-of-Admin\pytest-4157\refcv7_eval_loader0\anchors.pt (sha256 fb1193128a15f6eb)
+[v3] anchors: v0-CONDITIONED, controls (117, 2) (accel, lateral accel), units=alat (source: file), rolled per window; withheld rows at 10.0 m/s. straight-ahead control present: True
+[parity] ⚠ NON-PARITY v2 corpus for v3 v2-cache: ['C:\\Users\\Admin\\AppData\\Local\\Temp\\pytest-of-Admin\\pytest-4157\\refcv7_eval_loader0\\__unread__/train'] reference no registered parity key. Results off it are NOT cross-arm comparable with the parity arms.
+---------------------------- Captured stdout call -----------------------------
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.3, alat_v_floor=2.0, schema=tanitad.anchor_artifact/1
+[v3] rig camera = PER-CLIP EXTRINSICS from C:\Users\Admin\AppData\Local\Temp\pytest-of-Admin\pytest-4157\refcv7_eval_loader0\extr.json (2 clips, z 1.450-1.550 m, pitch -0.0000..+0.0040 rad)
+[v3] ⚠️ a rig camera is built but --agent-w-project and --agent-w-ground are both 0: neither monocular term contributes. That is a legal ablation baseline and the stamp records it, but it is not a projection arm.
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 2 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] ⚠️ agent cls weight: the corpus line could not be DERIVED from --agent-join 'C:\\Users\\Admin\\AppData\\Local\\Temp\\pytest-of-Admin\\pytest-4157\\refcv7_eval_loader0\\__unread__/join.jsonl.xz', so the only source is the --agent-cls-weight key. The guard is single-sourced on this arm and cannot catch an artifact/corpus mismatch.
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+______ test_the_record_names_its_departures_and_drops_only_trunk_compile ______
+---------------------------- Captured stdout call -----------------------------
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.3, alat_v_floor=2.0, schema=tanitad.anchor_artifact/1
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 2 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] ⚠️ agent cls weight: the corpus line could not be DERIVED from --agent-join 'C:\\Users\\Admin\\AppData\\Local\\Temp\\pytest-of-Admin\\pytest-4157\\refcv7_eval_loader0\\__unread__/join.jsonl.xz', so the only source is the --agent-cls-weight key. The guard is single-sourced on this arm and cannot catch an artifact/corpus mismatch.
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+_______________________ test_the_loader_is_rng_neutral ________________________
+---------------------------- Captured stdout call -----------------------------
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.3, alat_v_floor=2.0, schema=tanitad.anchor_artifact/1
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 2 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] ⚠️ agent cls weight: the corpus line could not be DERIVED from --agent-join 'C:\\Users\\Admin\\AppData\\Local\\Temp\\pytest-of-Admin\\pytest-4157\\refcv7_eval_loader0\\__unread__/join.jsonl.xz', so the only source is the --agent-cls-weight key. The guard is single-sourced on this arm and cannot catch an artifact/corpus mismatch.
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+_ test_RED_the_refcv6_loader_has_no_map_hires_block_and_FAILS_the_strict_load _
+---------------------------- Captured stdout call -----------------------------
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.3, alat_v_floor=2.0, schema=tanitad.anchor_artifact/1
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 2 decoder layers
+[v3] ⚠️ agent cls weight: the corpus line could not be DERIVED from --agent-join 'C:\\Users\\Admin\\AppData\\Local\\Temp\\pytest-of-Admin\\pytest-4157\\refcv7_eval_loader0\\__unread__/join.jsonl.xz', so the only source is the --agent-cls-weight key. The guard is single-sourced on this arm and cannot catch an artifact/corpus mismatch.
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+________ test_RED_this_loader_with_the_map_hires_block_REMOVED_refuses ________
+---------------------------- Captured stdout call -----------------------------
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.3, alat_v_floor=2.0, schema=tanitad.anchor_artifact/1
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 2 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] ⚠️ agent cls weight: the corpus line could not be DERIVED from --agent-join 'C:\\Users\\Admin\\AppData\\Local\\Temp\\pytest-of-Admin\\pytest-4157\\refcv7_eval_loader0\\__unread__/join.jsonl.xz', so the only source is the --agent-cls-weight key. The guard is single-sourced on this arm and cannot catch an artifact/corpus mismatch.
+_______ test_RED_the_near_lift_and_refine_DROPPED_fails_the_strict_load _______
+---------------------------- Captured stdout call -----------------------------
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.3, alat_v_floor=2.0, schema=tanitad.anchor_artifact/1
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 2 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] ⚠️ agent cls weight: the corpus line could not be DERIVED from --agent-join 'C:\\Users\\Admin\\AppData\\Local\\Temp\\pytest-of-Admin\\pytest-4157\\refcv7_eval_loader0\\__unread__/join.jsonl.xz', so the only source is the --agent-cls-weight key. The guard is single-sourced on this arm and cannot catch an artifact/corpus mismatch.
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+____ test_RED_a_record_whose_10cm_stamp_contradicts_the_rebuild_is_REFUSED ____
+---------------------------- Captured stdout call -----------------------------
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.3, alat_v_floor=2.0, schema=tanitad.anchor_artifact/1
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 2 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] ⚠️ agent cls weight: the corpus line could not be DERIVED from --agent-join 'C:\\Users\\Admin\\AppData\\Local\\Temp\\pytest-of-Admin\\pytest-4157\\refcv7_eval_loader0\\__unread__/join.jsonl.xz', so the only source is the --agent-cls-weight key. The guard is single-sourced on this arm and cannot catch an artifact/corpus mismatch.
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.3, alat_v_floor=2.0, schema=tanitad.anchor_artifact/1
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 2 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] ⚠️ agent cls weight: the corpus line could not be DERIVED from --agent-join 'C:\\Users\\Admin\\AppData\\Local\\Temp\\pytest-of-Admin\\pytest-4157\\refcv7_eval_loader0\\__unread__/join.jsonl.xz', so the only source is the --agent-cls-weight key. The guard is single-sourced on this arm and cannot catch an artifact/corpus mismatch.
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+=========================== short test summary info ===========================
+PASSED tests/test_refcv7_eval_loader.py::test_the_loader_rebuilds_the_trainers_refcv7_model_bit_for_bit
+PASSED tests/test_refcv7_eval_loader.py::test_the_record_names_its_departures_and_drops_only_trunk_compile
+PASSED tests/test_refcv7_eval_loader.py::test_the_loader_is_rng_neutral
+PASSED tests/test_refcv7_eval_loader.py::test_RED_the_refcv6_loader_has_no_map_hires_block_and_FAILS_the_strict_load
+PASSED tests/test_refcv7_eval_loader.py::test_RED_this_loader_with_the_map_hires_block_REMOVED_refuses
+PASSED tests/test_refcv7_eval_loader.py::test_RED_the_near_lift_and_refine_DROPPED_fails_the_strict_load
+PASSED tests/test_refcv7_eval_loader.py::test_RED_a_record_whose_10cm_stamp_contradicts_the_rebuild_is_REFUSED
+PASSED tests/test_refcv7_eval_loader.py::test_RED_an_argv_file_the_kit_does_not_carry_is_REFUSED_and_an_override_is_exempt
+PASSED tests/test_refcv7_eval_loader.py::test_RED_a_REFCV7_env_that_contradicts_the_gates_REFCV6_env_is_REFUSED
+9 passed in 8.50s

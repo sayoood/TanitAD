@@ -1,0 +1,480 @@
+{
+ "schema": "tanitad.launch_gate/1",
+ "kind": "evidence",
+ "check": "G-EVAL",
+ "status": "PASS",
+ "reasons": [],
+ "binding": {
+  "profile": "refcv7",
+  "commit": "37086c399cf209ad2bca8e0ffe19242c5e1e5f56",
+  "tree_sha256": "5b6b59728fc59b2b1b9fb6302ab9258c40df23255791189d3e96187128b38eda",
+  "argv_sha256": "6402d33de75b7f1c6dbdeb9aeedd46a00a82e7325eec420fa179f366213bd5cd"
+ },
+ "inputs_read": {
+  "--anchors": {
+   "kind": "file",
+   "bytes": 13477,
+   "sha256": "897099148d1b16eb109ad24516d1a1b9cc7d60d7a3ce71cd3f14beef33c1d63d",
+   "method": "sha256-v1"
+  },
+  "--agent-rig-extrinsics": {
+   "kind": "file",
+   "bytes": 3367838,
+   "sha256": "8b189d0577f9c9f9f0179877dc29ae264955bf1cc0cfebda7e3347a403987acb",
+   "method": "sha256-v1"
+  },
+  "--nav-compliance-tau-file": {
+   "kind": "file",
+   "bytes": 2410,
+   "sha256": "10ca19db42ed0a49083978a4cb6d0914664d28bc3231ed7058a01d5161e938ca",
+   "method": "sha256-v1"
+  },
+  "--map-hires-class-weights": {
+   "kind": "file",
+   "bytes": 3046,
+   "sha256": "d70dec8087ed73ee6d4129b6fc6e0a97a350f826907462b6b251413ede488b67",
+   "method": "sha256-v1"
+  }
+ },
+ "host": {
+  "node": "FREEDOM2035",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "python": "3.13.5",
+  "torch": "2.11.0+cu128",
+  "cuda": false
+ },
+ "arm": null,
+ "gate_sha256": "9d045988c2e0601ca62ebedc39774c3426e3e47dd3feea1b4df83f5b65e94e40",
+ "started_utc": "2026-09-27T15:56:18Z",
+ "details": {
+  "argv_local": {
+   "kept": {
+    "--anchors": "D:/refcv6_eval_kit/data/anchors/refc_anchors_6s_v0cond_alat_117.pt",
+    "--agent-rig-extrinsics": "D:/refcv6_eval_kit/data/refcv6_train_eval139_extrinsics.json",
+    "--nav-compliance-tau-file": "D:/refcv6_eval_kit/data/refcv7/nav_compliance_tau_train.json",
+    "--map-hires-class-weights": "D:/refcv6_eval_kit/data/refcv7/map_hires_class_weights_train_100x30.json"
+   },
+   "sentinel": {
+    "--v2-cache": "C:\\lgt\\r7ldr_gate\\out_thor1\\scratch\\__gate_unread__\\v2-cache",
+    "--v7-labels": "C:\\lgt\\r7ldr_gate\\out_thor1\\scratch\\__gate_unread__\\v7-labels",
+    "--eval-cache": "C:\\lgt\\r7ldr_gate\\out_thor1\\scratch\\__gate_unread__\\eval-cache",
+    "--eval-labels": "C:\\lgt\\r7ldr_gate\\out_thor1\\scratch\\__gate_unread__\\eval-labels",
+    "--speed-max-sidecar-v6-eval": "C:\\lgt\\r7ldr_gate\\out_thor1\\scratch\\__gate_unread__\\speed-max-sidecar-v6-eval",
+    "--speed-max-sidecar-v6": "C:\\lgt\\r7ldr_gate\\out_thor1\\scratch\\__gate_unread__\\speed-max-sidecar-v6",
+    "--agent-join": "C:\\lgt\\r7ldr_gate\\out_thor1\\scratch\\__gate_unread__\\agent-join",
+    "--map-gt-root": "C:\\lgt\\r7ldr_gate\\out_thor1\\scratch\\__gate_unread__\\map-gt-root",
+    "--join3d": "C:\\lgt\\r7ldr_gate\\out_thor1\\scratch\\__gate_unread__\\join3d",
+    "--vis1-sidecar": "C:\\lgt\\r7ldr_gate\\out_thor1\\scratch\\__gate_unread__\\vis1-sidecar",
+    "--clip-clock-sidecar": "C:\\lgt\\r7ldr_gate\\out_thor1\\scratch\\__gate_unread__\\clip-clock-sidecar"
+   },
+   "dropped": {
+    "--trunk-compile": "no Triton on the CPU host; torch.compile wraps the backbone CALL only (module tree and state_dict unchanged) -- the eval loader drops it too"
+   }
+  },
+  "build_s": 5.2,
+  "model_params": 100468987,
+  "eval_loader": {
+   "path": "C:/lgt/r7ldr/stack/tanitad/eval/refcv7_loader.py",
+   "sha256": "9e0ea3ec0bbf58eca6ee01f5ed465f236552cb5b84d515aefaaa2593cbfd5583"
+  },
+  "eval_stamps": {
+   "path": "C:/lgt/r7ldr_gate/thor_probe_config.json",
+   "sha256": "df6204f1babd1d3d1306f77e1f3609c10a8461c7f5949be95dce25bf1a9d2c42",
+   "source": "--eval-stamps",
+   "written_for_this_argv": true,
+   "used_keys": [
+    "ablate_frames",
+    "admission_sigma_m",
+    "agent_join",
+    "agent_join_digest",
+    "agent_join_stats",
+    "anchors",
+    "arm",
+    "conflict_detector",
+    "cudnn_benchmark",
+    "data_order",
+    "declared_vs_built",
+    "effective_weights",
+    "ego",
+    "frame_batch_bytes_est",
+    "goal_provenance",
+    "goal_tau_steps",
+    "grad_reach_logging",
+    "horizons",
+    "image_hw",
+    "label_clock",
+    "map_hires",
+    "max_speed_input",
+    "max_speed_mode",
+    "max_speed_stats",
+    "nav_args",
+    "nav_args_stats",
+    "nav_cmd_derivation",
+    "nav_from_v7",
+    "nav_from_v7_stats",
+    "param_breakdown",
+    "provenance_roles",
+    "refcv6_max_speed",
+    "refcv6_perception",
+    "refcv6_tactical",
+    "registered_delta",
+    "require_parity",
+    "rig_rung",
+    "seams",
+    "seed",
+    "selection",
+    "size",
+    "slot_refine",
+    "speed_max_derivation",
+    "speed_max_derivation_v6",
+    "synth_clip_ids_from_labels",
+    "tac_goal_stats",
+    "tac_vocab_version",
+    "trunk_bn_recalib",
+    "trunk_memory_levers",
+    "u8_batches",
+    "v2_cache",
+    "v2_parity",
+    "v7_labels",
+    "vis1",
+    "w_tac_goal",
+    "withheld_bank"
+   ]
+  },
+  "strict_load": {
+   "missing": [],
+   "unexpected": [],
+   "n_keys": 1131
+  },
+  "loader_departures": [
+   "argv --trunk-compile REMOVED: no Triton on Windows; torch.compile wraps the backbone CALL only -- module tree and state_dict identical (LAUNCH_READINESS_FIXES.md sec. 10b)",
+   "Thor data paths REMAPPED to the eval kit D:\\refcv6_eval_kit for ['--agent-join', '--agent-rig-extrinsics', '--anchors', '--clip-clock-sidecar', '--eval-cache', '--eval-labels', '--join3d', '--map-gt-root', '--map-hires-class-weights', '--nav-compliance-tau-file', '--speed-max-sidecar-v6-eval', '--vis1-sidecar'] (per flag, basename-checked; recorded in argv_remap)",
+   "tactical-goal pos_weight / class mask from config.json tac_goal_stats (the TRAIN split's own constants; train():8483-8497 derives them from the loaded split)"
+  ],
+  "loader_argv_remap": {
+   "remapped": {
+    "--anchors": {
+     "thor": "/home/nvidia/data/anchors/refc_anchors_6s_v0cond_alat_117.pt",
+     "local": "D:\\refcv6_eval_kit\\data\\anchors\\refc_anchors_6s_v0cond_alat_117.pt",
+     "source": "kit default",
+     "basename_expected": "refc_anchors_6s_v0cond_alat_117.pt"
+    },
+    "--eval-cache": {
+     "thor": "/home/nvidia/data/refcv6-b1-416x1024-eval139",
+     "local": "D:\\refcv6_eval_kit\\data\\refcv6-b1-416x1024-eval139",
+     "source": "kit default",
+     "basename_expected": "refcv6-b1-416x1024-eval139"
+    },
+    "--eval-labels": {
+     "thor": "/home/nvidia/data/v8labels/labels/s2_labels_v8_eval.jsonl.gz",
+     "local": "D:\\refcv6_eval_kit\\data\\v8labels\\labels\\s2_labels_v8_eval.jsonl.gz",
+     "source": "kit default",
+     "basename_expected": "s2_labels_v8_eval.jsonl.gz"
+    },
+    "--speed-max-sidecar-v6-eval": {
+     "thor": "/home/nvidia/data/refcv6_speed_max_v8_eval.jsonl",
+     "local": "D:/refcv6_eval_kit/navsim_aux/refcv6_speed_max_v8_eval.jsonl",
+     "source": "recorded override"
+    },
+    "--agent-join": {
+     "thor": "/home/nvidia/data/joins/b1_train_plus_eval_agents.jsonl.xz",
+     "local": "D:\\refcv6_eval_kit\\data\\joins\\b1_train_plus_eval_agents.jsonl.xz",
+     "source": "kit default",
+     "basename_expected": "b1_train_plus_eval_agents.jsonl.xz"
+    },
+    "--agent-rig-extrinsics": {
+     "thor": "/home/nvidia/data/refcv6_train_eval139_extrinsics.json",
+     "local": "D:\\refcv6_eval_kit\\data\\refcv6_train_eval139_extrinsics.json",
+     "source": "kit default",
+     "basename_expected": "refcv6_train_eval139_extrinsics.json"
+    },
+    "--map-gt-root": {
+     "thor": "/home/nvidia/data/sam3_gt_v3",
+     "local": "D:\\refcv6_eval_kit\\data\\sam3_gt_v3_eval",
+     "source": "kit default",
+     "basename_expected": "sam3_gt_v3"
+    },
+    "--join3d": {
+     "thor": "/home/nvidia/data/join3d/b1_train_plus_eval_agents_3d.jsonl.xz",
+     "local": "D:\\refcv6_eval_kit\\data\\join3d\\b1_train_plus_eval_agents_3d.jsonl.xz",
+     "source": "kit default",
+     "basename_expected": "b1_train_plus_eval_agents_3d.jsonl.xz"
+    },
+    "--vis1-sidecar": {
+     "thor": "/home/nvidia/data/refcv7/vis1_sidecar_refcv6b1_train4369_eval139.npz",
+     "local": "D:\\refcv6_eval_kit\\data\\refcv7\\vis1_sidecar_refcv6b1_train4369_eval139.npz",
+     "source": "kit default",
+     "basename_expected": "vis1_sidecar_refcv6b1_train4369_eval139.npz"
+    },
+    "--nav-compliance-tau-file": {
+     "thor": "/home/nvidia/data/refcv7/nav_compliance_tau_train.json",
+     "local": "D:\\refcv6_eval_kit\\data\\refcv7\\nav_compliance_tau_train.json",
+     "source": "kit default",
+     "basename_expected": "nav_compliance_tau_train.json"
+    },
+    "--map-hires-class-weights": {
+     "thor": "/home/nvidia/data/refcv7/map_hires_class_weights_train_100x30.json",
+     "local": "D:\\refcv6_eval_kit\\data\\refcv7\\map_hires_class_weights_train_100x30.json",
+     "source": "kit default",
+     "basename_expected": "map_hires_class_weights_train_100x30.json"
+    },
+    "--clip-clock-sidecar": {
+     "thor": "/home/nvidia/data/refcv6_clip_clock_sidecar.jsonl",
+     "local": "D:\\refcv6_eval_kit\\data\\refcv6_clip_clock_sidecar.jsonl",
+     "source": "kit default",
+     "basename_expected": "refcv6_clip_clock_sidecar.jsonl"
+    }
+   },
+   "dropped": {
+    "--trunk-compile": "no Triton on Windows; torch.compile wraps the backbone CALL only -- module tree and state_dict identical (LAUNCH_READINESS_FIXES.md sec. 10b)"
+   },
+   "train_only_kept_unread": {
+    "--v2-cache": "/home/nvidia/data/refcv6-b1-416x1024-train",
+    "--v7-labels": "/home/nvidia/data/v8labels/labels/s2_labels_v8_train.jsonl.gz",
+    "--speed-max-sidecar-v6": "/home/nvidia/data/refcv6_speed_max_v8_train.jsonl",
+    "--out": "/home/nvidia/refcv7_run/runs/refcv7-r101-s0"
+   },
+   "kit": "D:\\refcv6_eval_kit",
+   "overrides_file": "C:/Users/Admin/lg0926/inputs/eval_remap_overrides.json"
+  },
+  "state_dict": {
+   "n_trainer": 1131,
+   "n_loader": 1131,
+   "n_differ": 0,
+   "differ": [],
+   "only_trainer": [],
+   "only_loader": []
+  },
+  "map_hires_state_keys": {
+   "trainer": 54,
+   "loader": 54
+  },
+  "model_attributes": {
+   "_bev_shuffle": {
+    "trainer": "False",
+    "loader": "False",
+    "same": true
+   },
+   "_box3d_visible_filter": {
+    "trainer": "True",
+    "loader": "True",
+    "same": true
+   },
+   "_cls_class_weight": {
+    "trainer": "tensor([4.2770e-03, 2.1418e-01, 4.7983e-01, 1.5317e+00, 3.4034e-01, 1.1534e-02,\n",
+    "loader": "tensor([4.2770e-03, 2.1418e-01, 4.7983e-01, 1.5317e+00, 3.4034e-01, 1.1534e-02,\n",
+    "same": true
+   },
+   "_map_lift_valid_mask": {
+    "trainer": "True",
+    "loader": "True",
+    "same": true
+   },
+   "_w_agent": {
+    "trainer": "1.0",
+    "loader": "1.0",
+    "same": true
+   },
+   "_w_bev_aux": {
+    "trainer": "0.0",
+    "loader": "0.0",
+    "same": true
+   },
+   "_w_box3d": {
+    "trainer": "1.0",
+    "loader": "1.0",
+    "same": true
+   },
+   "_w_goal_point": {
+    "trainer": "0.0",
+    "loader": "0.0",
+    "same": true
+   },
+   "_w_map": {
+    "trainer": "0.0",
+    "loader": "0.0",
+    "same": true
+   },
+   "_w_map_hires": {
+    "trainer": "1.0",
+    "loader": "1.0",
+    "same": true
+   },
+   "_w_r7_scorer": {
+    "trainer": "0.0",
+    "loader": "0.0",
+    "same": true
+   },
+   "_w_r7_wta": {
+    "trainer": "0.0",
+    "loader": "0.0",
+    "same": true
+   },
+   "_w_tac_goal": {
+    "trainer": "0.0",
+    "loader": "0.0",
+    "same": true
+   },
+   "_w_tac_v6": {
+    "trainer": "1.0",
+    "loader": "1.0",
+    "same": true
+   },
+   "_w_u0": {
+    "trainer": "0.0",
+    "loader": "0.0",
+    "same": true
+   }
+  },
+  "param_breakdown": {
+   "trainer": {
+    "core": 90787546,
+    "phi_tac": 2101504,
+    "str_goal_head": 771,
+    "gstr_cond": 66816,
+    "tac_heads": 14364,
+    "tac_latent_proj": 262656,
+    "scorer": 1145,
+    "nav_inject": 50176,
+    "tac_decoder_v6": 2253828,
+    "tac_behaviour_gate_v6": 2574,
+    "total": 100468987
+   },
+   "loader": {
+    "core": 90787546,
+    "phi_tac": 2101504,
+    "str_goal_head": 771,
+    "gstr_cond": 66816,
+    "tac_heads": 14364,
+    "tac_latent_proj": 262656,
+    "scorer": 1145,
+    "nav_inject": 50176,
+    "tac_decoder_v6": 2253828,
+    "tac_behaviour_gate_v6": 2574,
+    "total": 100468987
+   }
+  },
+  "probe": {
+   "window_index": 20658,
+   "episode_sid": 4105169087547256295,
+   "t": 136,
+   "n_eval_windows": 23772,
+   "inputs": {
+    "label_clock": {
+     "rule": "t_now = grid_start_s + (t + w - 1 + n_stack - 1) * dt_s (tanitad/data/clip_clock.py; A16 2026-09-26)",
+     "sidecar": "D:\\refcv6_eval_kit\\data\\refcv6_clip_clock_sidecar.jsonl",
+     "sidecar_rows": 4483,
+     "n_clips": 139,
+     "n_from_sidecar": 136,
+     "n_pose_dt_grid_start_0": 0,
+     "n_nominal_dt_grid_start_0": 3,
+     "raw_offsets": [
+      2
+     ],
+     "dt_s_median": 0.10066662995966351,
+     "dt_s_min": 0.1,
+     "dt_s_max": 0.10100496421012953,
+     "g3": {
+      "g3": "PASS",
+      "split": "eval",
+      "tol_s": 0.05,
+      "n_clips": 139,
+      "n_reads_checked": 408,
+      "worst_abs_err_s": 0.0,
+      "n_unverified_clips": 3,
+      "tactical_scored_on_clips": 136,
+      "tactical_excluded_clips": 3,
+      "tactical_excluded_sids": [
+       1131054092343061790,
+       6479814750558219472,
+       8549884407071846968
+      ],
+      "tactical_excluded_reason": "no MEASURED label clock (absent from the clip-clock sidecar): their tactical targets cannot be shown within tol_s of the truth",
+      "families_on_all_clips": [
+       "longitudinal",
+       "lateral",
+       "strategic"
+      ],
+      "mode": "per-family: TACTICAL on verified clips only (E2(b))",
+      "rule": "t_true = grid_start_s + (t + w - 1 + n_stack - 1) * dt_s (sidecar)",
+      "tactical_excluded_sha12": [
+       "081b986f8888",
+       "2aa810802777",
+       "3db625a5f941"
+      ]
+     }
+    },
+    "labels": {
+     "path": "D:\\refcv6_eval_kit\\data\\v8labels\\labels\\s2_labels_v8_eval.jsonl.gz",
+     "md5": "eefc38d1453bd1c73802d44d45affced",
+     "n_records": 147
+    },
+    "n_episodes": 139,
+    "n_windows": 23772
+   },
+   "seed": 1234,
+   "forward_s_each": 104.8
+  },
+  "determinism_control_outputs_differing": 0,
+  "forward": {
+   "n_outputs": 188,
+   "n_differ": 0,
+   "differ": []
+  },
+  "negative_control_outputs_moved": 1,
+  "map_hires_outputs": {
+   "hires_paths": [
+    [
+     "out.perception.map_hires_logits",
+     [
+      1,
+      8,
+      1000,
+      600
+     ]
+    ],
+    [
+     "out.perception.map_hires_lift_valid",
+     [
+      1,
+      400,
+      240
+     ]
+    ]
+   ],
+   "fmap_s8": [
+    1,
+    512,
+    52,
+    128
+   ],
+   "logits": [
+    [
+     "out.perception.map_hires_logits",
+     [
+      1,
+      8,
+      1000,
+      600
+     ]
+    ]
+   ],
+   "lift": [
+    [
+     "out.perception.map_hires_lift_valid",
+     [
+      1,
+      400,
+      240
+     ]
+    ]
+   ]
+  },
+  "child": {
+   "tanitad": "c:\\lgt\\r7ldr\\stack\\tanitad\\__init__.py",
+   "torch": "2.11.0+cu128",
+   "cuda": false
+  }
+ },
+ "finished_utc": "2026-09-27T16:01:16Z"
+}
