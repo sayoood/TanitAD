@@ -1,0 +1,346 @@
+{
+ "schema": "tanitad.launch_argv/1",
+ "arm": "refcv7-r101-s0",
+ "what": "THE refcv7 launch argv. The launch gate binds `argv` (sha256 of the ordered compact JSON array); sup_refcv7.sh runs exactly `argv` through `launch_gate.py exec`. Any edit is a NEW gate run and a new token.",
+ "derived_from": {
+  "file": "refcv6-r101-s0 argv (config.json argv of the run the PI stopped)",
+  "n_tokens": 112
+ },
+ "changes_vs_refcv6": [
+  {
+   "flag": "--residual-prior",
+   "refcv6": null,
+   "refcv7": [
+    "ha0_ext_pose"
+   ],
+   "why": "SPEC_REFCV7 10 (A5): past poses only; needs --ego-history"
+  },
+  {
+   "flag": "--graft-tac8-prior",
+   "refcv6": null,
+   "refcv7": [],
+   "why": "SPEC_REFCV7 7 (A2, PI ruling E1)"
+  },
+  {
+   "flag": "--graft-nav-compliance",
+   "refcv6": null,
+   "refcv7": [],
+   "why": "SPEC_REFCV7 7 (A2, PI ruling E1)"
+  },
+  {
+   "flag": "--nav-compliance-tau-rad",
+   "refcv6": null,
+   "refcv7": [
+    "0.18063741505146028"
+   ],
+   "why": "the banked TRAIN-split tau (ab436ee raw/nav_compliance_tau_train.json)"
+  },
+  {
+   "flag": "--nav-compliance-tau-file",
+   "refcv6": null,
+   "refcv7": [
+    "/home/nvidia/data/refcv7/nav_compliance_tau_train.json"
+   ],
+   "why": "fixes batch 2 (b4a59b9): the trainer reads tau from the file and stamps {path, sha256, tau}"
+  },
+  {
+   "flag": "--speed-ceiling-filter",
+   "refcv6": null,
+   "refcv7": [],
+   "why": "SPEC_REFCV7 7 (A2): inference-only max-speed ceiling"
+  },
+  {
+   "flag": "--w-map",
+   "refcv6": [
+    "1.0"
+   ],
+   "refcv7": [
+    "0"
+   ],
+   "why": "SPEC_REFCV7 11.1 (A6): the 0.5 m map head and loss are REMOVED"
+  },
+  {
+   "flag": "--map-gt-root",
+   "refcv6": [
+    "/home/nvidia/data/sam3_corpus"
+   ],
+   "refcv7": [
+    "/home/nvidia/data/sam3_gt_v3"
+   ],
+   "why": "SPEC_REFCV7 11.2/12 item 3: the /3 export at 100 x +-30 m"
+  },
+  {
+   "flag": "--map-hires",
+   "refcv6": null,
+   "refcv7": [
+    "on"
+   ],
+   "why": "SPEC_REFCV7 8.1 (A3): the 10 cm map is REQUIRED"
+  },
+  {
+   "flag": "--w-map-hires",
+   "refcv6": null,
+   "refcv7": [
+    "1.0"
+   ],
+   "why": "NEW-2 BUILD.md sec. 6: inherits refcv6's map loss budget (0.984/1.048 measured)"
+  },
+  {
+   "flag": "--map-hires-class-weights",
+   "refcv6": null,
+   "refcv7": [
+    "/home/nvidia/data/refcv7/map_hires_class_weights_train_100x30.json"
+   ],
+   "why": "SPEC_REFCV7 13 item 1 (A8): sqrt_mf, TRAIN, at the 100 x +-30 m extent"
+  },
+  {
+   "flag": "--map-hires-decision-rule",
+   "refcv6": null,
+   "refcv7": [
+    "prior_corrected"
+   ],
+   "why": "SPEC_REFCV7 9 item 1 (A4)"
+  },
+  {
+   "flag": "--map-hires-x-max-m",
+   "refcv6": null,
+   "refcv7": [
+    "100"
+   ],
+   "why": "SPEC_REFCV7 12 (A7)"
+  },
+  {
+   "flag": "--map-hires-y-half-m",
+   "refcv6": null,
+   "refcv7": [
+    "30"
+   ],
+   "why": "SPEC_REFCV7 12 (A7)"
+  },
+  {
+   "flag": "--map-hires-grad-ckpt",
+   "refcv6": null,
+   "refcv7": [
+    "on"
+   ],
+   "why": "SPEC_REFCV7 12 item 4 (A7)"
+  },
+  {
+   "flag": "--bev-source",
+   "refcv6": null,
+   "refcv7": [
+    "map_hires_pool"
+   ],
+   "why": "SPEC_REFCV7 11.1 (A6 option c): every consumer reads the pooled BEV"
+  },
+  {
+   "flag": "--bev-planner-crop-m",
+   "refcv6": null,
+   "refcv7": [
+    "60",
+    "16"
+   ],
+   "why": "SPEC_REFCV7 12 item 2 (A7): planner grid unchanged"
+  },
+  {
+   "flag": "--out",
+   "refcv6": [
+    "/home/nvidia/refcv6_run/runs/refcv6-r101-s0"
+   ],
+   "refcv7": [
+    "/home/nvidia/refcv7_run/runs/refcv7-r101-s0"
+   ],
+   "why": "the refcv7 run dir"
+  }
+ ],
+ "argv": [
+  "--arm",
+  "hier",
+  "--size",
+  "small",
+  "--trunk",
+  "timm",
+  "--trunk-name",
+  "resnet101.a1_in1k",
+  "--trunk-mode",
+  "shared",
+  "--trunk-fuse",
+  "concat1x1",
+  "--ego-history",
+  "--no-strategic",
+  "--image-hw",
+  "416",
+  "1024",
+  "--sampler",
+  "ddim",
+  "--f1-random-t",
+  "--f2-dd-step",
+  "--f3-per-layer",
+  "--f4-adaln",
+  "--f5-focal",
+  "--f5-emitting-conf",
+  "--f6-w-u0-zero",
+  "--f9-assert-vocab",
+  "--anchors",
+  "/home/nvidia/data/anchors/refc_anchors_6s_v0cond_alat_117.pt",
+  "--anchor-v0-conditioned",
+  "--n-anchors",
+  "117",
+  "--v2-cache",
+  "/home/nvidia/data/refcv6-b1-416x1024-train",
+  "--v7-labels",
+  "/home/nvidia/data/v8labels/labels/s2_labels_v8_train.jsonl.gz",
+  "--nav-from-v7",
+  "--eval-cache",
+  "/home/nvidia/data/refcv6-b1-416x1024-eval139",
+  "--eval-labels",
+  "/home/nvidia/data/v8labels/labels/s2_labels_v8_eval.jsonl.gz",
+  "--eval-every",
+  "500",
+  "--eval-batches",
+  "8",
+  "--speed-max-sidecar-v6-eval",
+  "/home/nvidia/data/refcv6_speed_max_v8_eval.jsonl",
+  "--tac-decoder-v6",
+  "--w-tac-v6",
+  "1.0",
+  "--tac-decoder-d-bev",
+  "96",
+  "--graft-behaviour-sel",
+  "--max-speed-input-v6",
+  "--speed-max-sidecar-v6",
+  "/home/nvidia/data/refcv6_speed_max_v8_train.jsonl",
+  "--agents",
+  "head",
+  "--agent-join",
+  "/home/nvidia/data/joins/b1_train_plus_eval_agents.jsonl.xz",
+  "--agent-rig-camera",
+  "extrinsics",
+  "--agent-rig-extrinsics",
+  "/home/nvidia/data/refcv6_train_eval139_extrinsics.json",
+  "--agent-cls-weight",
+  "b1",
+  "--w-agent",
+  "1.0",
+  "--w-map",
+  "0",
+  "--map-gt-root",
+  "/home/nvidia/data/sam3_gt_v3",
+  "--w-box3d",
+  "1.0",
+  "--join3d",
+  "/home/nvidia/data/join3d/b1_train_plus_eval_agents_3d.jsonl.xz",
+  "--bev-coupling",
+  "--equalize-bottom-rows",
+  "43",
+  "--residual-prior",
+  "ha0_ext_pose",
+  "--graft-tac8-prior",
+  "--graft-nav-compliance",
+  "--nav-compliance-tau-rad",
+  "0.18063741505146028",
+  "--nav-compliance-tau-file",
+  "/home/nvidia/data/refcv7/nav_compliance_tau_train.json",
+  "--speed-ceiling-filter",
+  "--map-hires",
+  "on",
+  "--w-map-hires",
+  "1.0",
+  "--map-hires-class-weights",
+  "/home/nvidia/data/refcv7/map_hires_class_weights_train_100x30.json",
+  "--map-hires-decision-rule",
+  "prior_corrected",
+  "--map-hires-x-max-m",
+  "100",
+  "--map-hires-y-half-m",
+  "30",
+  "--map-hires-grad-ckpt",
+  "on",
+  "--bev-source",
+  "map_hires_pool",
+  "--bev-planner-crop-m",
+  "60",
+  "16",
+  "--opt",
+  "dd",
+  "--lr",
+  "1e-4",
+  "--warmup",
+  "2000",
+  "--seed",
+  "0",
+  "--u8-batches",
+  "--trunk-chunk-ckpt",
+  "8",
+  "--trunk-frozen-bn",
+  "--trunk-bf16",
+  "--trunk-channels-last",
+  "--trunk-fold-bn",
+  "--trunk-dedup-frames",
+  "--trunk-compile",
+  "--clip-clock-sidecar",
+  "/home/nvidia/data/refcv6_clip_clock_sidecar.jsonl",
+  "--workers",
+  "6",
+  "--conflict-every",
+  "10",
+  "--save-every",
+  "500",
+  "--log-every",
+  "50",
+  "--batch",
+  "16",
+  "--steps",
+  "50400",
+  "--out",
+  "/home/nvidia/refcv7_run/runs/refcv7-r101-s0"
+ ],
+ "todo_box_head": {
+  "status": "NOT LANDED -- the box-head builder (a2e8b42841442809f, package …/2026-09-27-refcv7-box-head/) owns the flag names; they are ADDED here when it lands, and the gate REFUSES this argv for refcv7 until they are (G-BOX-OVERFIT, G-LIVE-PRES).",
+  "levers": [
+   {
+    "id": "R1",
+    "what": "sigmoid focal presence loss (alpha 0.25, gamma 2, weight 2.0, normalised per matched GT) + focal matching cost + prior 0.01, REPLACING the BCE with NO_OBJECT_W 0.1",
+    "flag": "TBD"
+   },
+   {
+    "id": "R2",
+    "what": "per-layer supervision, re-matched per layer (3 layers)",
+    "flag": "TBD"
+   },
+   {
+    "id": "R3",
+    "what": "VIS-1 IGNORE semantics: POSITIVE = vis_frac >= 0.30 AND >= 100 px; every other real GT object IGNORE; train + eval sidecars (sha256 in config.json)",
+    "flag": "TBD (+ the two sidecar paths)"
+   },
+   {
+    "id": "R4",
+    "what": "300 queries on BOTH slot heads",
+    "flag": "TBD"
+   },
+   {
+    "id": "R6 (A10.1, conditional)",
+    "what": "denoising queries `--slot-dn-groups 5` -- only if the Master Mind decides +R6 on the early G-BOX-OVERFIT verdicts",
+    "flag": "--slot-dn-groups 5 (if decided)"
+   }
+  ],
+  "gate": "PROFILES['refcv7']['open_items'] BOX-HEAD -- the gate cannot PASS while it is open"
+ },
+ "todo_map_lift": {
+  "status": "OPEN -- the EARLY (non-binding) G-MAP-OVERFIT MAIN FAILED at step 1,000: lane 0.417 and non-drivable edge 0.076 vs the 0.50 bar; the other six classes pass (INHERITED, Master Mind 2026-09-27). The prereg's sec. 9 lever order applies once R2/C1-C3 validate the harness, and the next lever is the LIFT, so the map path changes once more before launch. One or two lift flags are ADDED here (and as required values in the gate profile) when NEW-2's lift change lands.",
+  "levers": [
+   {
+    "id": "LIFT",
+    "what": "the prereg sec. 9 LIFT lever: Z = 0 plane / 0.1 m near lift / stride 4",
+    "flag": "TBD (one or two flags)"
+   }
+  ],
+  "gate": "PROFILES['refcv7']['open_items'] MAP-LIFT -- the gate cannot PASS while it is open; the BINDING G-MAP-OVERFIT run is made on the final map path"
+ },
+ "launch_prep": [
+  "/home/nvidia/data/refcv7/nav_compliance_tau_train.json := the banked repo file TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/nav_compliance_tau_train.json (sha256 10ca19db42ed0a49083978a4cb6d0914664d28bc3231ed7058a01d5161e938ca)",
+  "/home/nvidia/data/refcv7/map_hires_class_weights_train_100x30.json := compute_map_class_weights.py --v2-cache /home/nvidia/data/refcv6-b1-416x1024-train --gt-root /home/nvidia/data/sam3_gt_v3 --split train (sqrt_mf, pre_registered; NEW-2 BUILD.md sec. 10 step 1)",
+  "G-MAP-OVERFIT and G-BOX-OVERFIT: each BINDING harness run wrapped by `stack/scripts/closure_run.py --binding --out <closure.json> --result <PASS json> --data-root <data dir> ... -- <harness> ... --launch-argv-sha256 <sha256 of THIS argv>` (SPEC_REFCV7 A11); the gate takes the pair (--map-overfit-record + --map-overfit-closure, --box-overfit-record + --box-overfit-closure) and recomputes every closure blob on the launch tree",
+  "the refcv7 Training Watch: DECLARED in PROFILES['refcv7']['map_hires']['watch_builder'] (Master Mind 2026-09-27); the gate builds it from the smoke's metrics.jsonl"
+ ]
+}

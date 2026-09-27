@@ -1,0 +1,653 @@
+{
+ "baseline": {
+  "rc": 0,
+  "failed": [],
+  "tail": "119 passed in 15.07s"
+ },
+ "mutations": [
+  {
+   "key": "hmac_always_ok",
+   "file": "stack/scripts/launch_gate.py",
+   "verdict": "CAUGHT",
+   "named_tests_failed": [
+    "test_REFUSED_when_the_argv_AND_the_token_are_edited_consistently",
+    "test_REFUSED_when_the_token_is_hand_edited"
+   ],
+   "all_failed": [
+    "test_REFUSED_under_another_hosts_key",
+    "test_REFUSED_when_the_argv_AND_the_token_are_edited_consistently",
+    "test_REFUSED_when_the_token_is_hand_edited",
+    "test_supervisor_REFUSES_a_hand_edited_token"
+   ],
+   "tail": "4 failed, 115 passed in 16.97s"
+  },
+  {
+   "key": "verify_skips_argv",
+   "file": "stack/scripts/launch_gate.py",
+   "verdict": "CAUGHT",
+   "named_tests_failed": [
+    "test_REFUSED_when_the_argv_changed_after_the_pass"
+   ],
+   "all_failed": [
+    "test_REFUSED_when_the_argv_changed_after_the_pass",
+    "test_exec_REFUSES_on_its_own_and_never_starts_the_trainer",
+    "test_supervisor_REFUSES_when_the_argv_changed_after_the_pass"
+   ],
+   "tail": "3 failed, 116 passed in 16.09s"
+  },
+  {
+   "key": "verify_skips_tree",
+   "file": "stack/scripts/launch_gate.py",
+   "verdict": "CAUGHT",
+   "named_tests_failed": [
+    "test_REFUSED_when_one_code_file_changed"
+   ],
+   "all_failed": [
+    "test_REFUSED_when_one_code_file_changed"
+   ],
+   "tail": "1 failed, 118 passed in 14.89s"
+  },
+  {
+   "key": "verify_skips_data",
+   "file": "stack/scripts/launch_gate.py",
+   "verdict": "CAUGHT",
+   "named_tests_failed": [
+    "test_REFUSED_when_a_data_input_changed"
+   ],
+   "all_failed": [
+    "test_REFUSED_when_a_data_input_changed"
+   ],
+   "tail": "1 failed, 118 passed in 14.81s"
+  },
+  {
+   "key": "finalize_ignores_FAIL",
+   "file": "stack/scripts/launch_gate.py",
+   "verdict": "CAUGHT",
+   "named_tests_failed": [
+    "test_one_FAIL_makes_a_FAIL_token_and_DEMOTES_the_old_PASS"
+   ],
+   "all_failed": [
+    "test_ERROR_evidence_is_a_FAIL",
+    "test_NEW1_the_ruled_prior_PASSES_the_refused_ones_FAIL_and_the_tau_sha_is_in_the_token",
+    "test_a_standalone_finalize_cannot_mint_a_token_that_run_would_refuse",
+    "test_an_ARM_can_never_produce_a_PASS",
+    "test_one_FAIL_makes_a_FAIL_token_and_DEMOTES_the_old_PASS"
+   ],
+   "tail": "5 failed, 114 passed in 14.24s"
+  },
+  {
+   "key": "finalize_missing_is_pass",
+   "file": "stack/scripts/launch_gate.py",
+   "verdict": "CAUGHT",
+   "named_tests_failed": [
+    "test_missing_evidence_is_INCOMPLETE_never_PASS"
+   ],
+   "all_failed": [
+    "test_an_ARM_can_never_produce_a_PASS",
+    "test_evidence_bound_to_another_argv_is_not_usable",
+    "test_evidence_that_read_OTHER_data_is_not_usable",
+    "test_missing_evidence_is_INCOMPLETE_never_PASS"
+   ],
+   "tail": "4 failed, 115 passed in 13.95s"
+  },
+  {
+   "key": "finalize_accepts_arms",
+   "file": "stack/scripts/launch_gate.py",
+   "verdict": "CAUGHT",
+   "named_tests_failed": [
+    "test_an_ARM_can_never_produce_a_PASS"
+   ],
+   "all_failed": [
+    "test_an_ARM_can_never_produce_a_PASS"
+   ],
+   "tail": "1 failed, 118 passed in 14.57s"
+  },
+  {
+   "key": "live_ignores_absent_terms",
+   "file": "stack/scripts/launch_gate.py",
+   "verdict": "CAUGHT",
+   "named_tests_failed": [
+    "test_G_LIVE_the_F3_defect_as_shipped_FAILS_naming_cascade"
+   ],
+   "all_failed": [
+    "test_G_LIVE_the_F3_defect_as_shipped_FAILS_naming_cascade"
+   ],
+   "tail": "1 failed, 118 passed in 14.62s"
+  },
+  {
+   "key": "clock_ignores_violations",
+   "file": "stack/scripts/launch_gate.py",
+   "verdict": "CAUGHT",
+   "named_tests_failed": [
+    "test_G_CLOCK_the_true_clock_passes_and_the_historical_one_does_not"
+   ],
+   "all_failed": [
+    "test_G_CLOCK_the_true_clock_passes_and_the_historical_one_does_not"
+   ],
+   "tail": "1 failed, 118 passed in 15.16s"
+  },
+  {
+   "key": "drivort_allowed",
+   "file": "stack/scripts/launch_gate.py",
+   "verdict": "CAUGHT",
+   "named_tests_failed": [
+    "test_refcv7_REFUSES_every_DrivoR_T_flag_today_and_after_the_rename"
+   ],
+   "all_failed": [
+    "test_refcv7_REFUSES_every_DrivoR_T_flag_today_and_after_the_rename"
+   ],
+   "tail": "2 failed, 117 passed in 15.22s"
+  },
+  {
+   "key": "needs_pi_is_pass",
+   "file": "stack/scripts/launch_gate.py",
+   "verdict": "CAUGHT",
+   "named_tests_failed": [
+    "test_PI_DECISION_is_its_own_verdict_and_never_verifies"
+   ],
+   "all_failed": [
+    "test_PI_DECISION_is_its_own_verdict_and_never_verifies",
+    "test_an_OPEN_value_decision_makes_the_token_PI_DECISION_until_it_is_recorded"
+   ],
+   "tail": "2 failed, 117 passed in 14.32s"
+  },
+  {
+   "key": "exec_skips_verify",
+   "file": "stack/scripts/launch_gate.py",
+   "verdict": "CAUGHT",
+   "named_tests_failed": [
+    "test_exec_REFUSES_on_its_own_and_never_starts_the_trainer"
+   ],
+   "all_failed": [
+    "test_exec_REFUSES_on_its_own_and_never_starts_the_trainer"
+   ],
+   "tail": "1 failed, 118 passed in 14.30s"
+  },
+  {
+   "key": "supervisor_skips_verify",
+   "file": "stack/ops/sup_refcv7.sh",
+   "verdict": "CAUGHT",
+   "named_tests_failed": [
+    "test_supervisor_REFUSES_when_the_argv_changed_after_the_pass"
+   ],
+   "all_failed": [
+    "test_supervisor_REFUSES_when_the_argv_changed_after_the_pass"
+   ],
+   "tail": "1 failed, 118 passed in 17.96s"
+  },
+  {
+   "key": "supervisor_accepts_train_cmd",
+   "file": "stack/ops/sup_refcv7.sh",
+   "verdict": "CAUGHT",
+   "named_tests_failed": [
+    "test_supervisor_REFUSES_a_free_form_TRAIN_CMD"
+   ],
+   "all_failed": [
+    "test_supervisor_REFUSES_a_free_form_TRAIN_CMD"
+   ],
+   "tail": "1 failed, 118 passed in 16.70s"
+  },
+  {
+   "key": "finalize_skips_profile_rules",
+   "file": "stack/scripts/launch_gate.py",
+   "verdict": "CAUGHT",
+   "named_tests_failed": [
+    "test_NEW1_the_ruled_prior_PASSES_the_refused_ones_FAIL_and_the_tau_sha_is_in_the_token",
+    "test_a_standalone_finalize_cannot_mint_a_token_that_run_would_refuse"
+   ],
+   "all_failed": [
+    "test_NEW1_the_ruled_prior_PASSES_the_refused_ones_FAIL_and_the_tau_sha_is_in_the_token",
+    "test_a_standalone_finalize_cannot_mint_a_token_that_run_would_refuse",
+    "test_an_OPEN_value_decision_makes_the_token_PI_DECISION_until_it_is_recorded"
+   ],
+   "tail": "3 failed, 116 passed in 14.74s"
+  },
+  {
+   "key": "pi_pending_ignored",
+   "file": "stack/scripts/launch_gate.py",
+   "verdict": "CAUGHT",
+   "named_tests_failed": [
+    "test_an_OPEN_value_decision_makes_the_token_PI_DECISION_until_it_is_recorded"
+   ],
+   "all_failed": [
+    "test_an_OPEN_value_decision_makes_the_token_PI_DECISION_until_it_is_recorded"
+   ],
+   "tail": "1 failed, 118 passed in 16.10s"
+  },
+  {
+   "key": "refused_prior_modes_allowed",
+   "file": "stack/scripts/launch_gate.py",
+   "verdict": "CAUGHT",
+   "named_tests_failed": [
+    "test_NEW1_residual_prior_off_is_not_NEW1_and_only_ha0_ext_pose_is_refcv7"
+   ],
+   "all_failed": [
+    "test_NEW1_residual_prior_off_is_not_NEW1_and_only_ha0_ext_pose_is_refcv7",
+    "test_NEW1_the_ruled_prior_PASSES_the_refused_ones_FAIL_and_the_tau_sha_is_in_the_token"
+   ],
+   "tail": "2 failed, 117 passed in 17.30s"
+  },
+  {
+   "key": "tau_stamp_not_required",
+   "file": "stack/scripts/launch_gate.py",
+   "verdict": "CAUGHT",
+   "named_tests_failed": [
+    "test_SPEC7_the_tau_FILE_stamp_path_sha256_tau_must_be_in_config_json"
+   ],
+   "all_failed": [
+    "test_SPEC7_the_tau_FILE_stamp_path_sha256_tau_must_be_in_config_json"
+   ],
+   "tail": "1 failed, 118 passed in 17.64s"
+  },
+  {
+   "key": "tau_labels_content_unchecked",
+   "file": "stack/scripts/launch_gate.py",
+   "verdict": "CAUGHT",
+   "named_tests_failed": [
+    "test_FIX4_the_BANKED_tau_record_binds_the_split_by_path_AND_label_content"
+   ],
+   "all_failed": [
+    "test_FIX4_the_BANKED_tau_record_binds_the_split_by_path_AND_label_content"
+   ],
+   "tail": "1 failed, 118 passed in 15.63s"
+  },
+  {
+   "key": "suite_skip_is_a_pass",
+   "file": "stack/scripts/launch_gate.py",
+   "verdict": "CAUGHT",
+   "named_tests_failed": [
+    "test_G_SUITE_a_skip_for_a_missing_HF_cache_is_NOT_a_pass"
+   ],
+   "all_failed": [
+    "test_G_SUITE_a_skip_for_a_missing_HF_cache_is_NOT_a_pass"
+   ],
+   "tail": "1 failed, 118 passed in 15.49s"
+  },
+  {
+   "key": "ga_reach_ignores_missing_rows",
+   "file": "stack/scripts/launch_gate.py",
+   "verdict": "CAUGHT",
+   "named_tests_failed": [
+    "test_G_LIVE_ga_reach_every_logged_row_every_trainable_group"
+   ],
+   "all_failed": [
+    "test_G_LIVE_ga_reach_every_logged_row_every_trainable_group"
+   ],
+   "tail": "1 failed, 118 passed in 15.95s"
+  },
+  {
+   "key": "overfit_ignores_the_launch_argv",
+   "file": "stack/scripts/launch_gate.py",
+   "verdict": "CAUGHT",
+   "named_tests_failed": [
+    "test_G_MAP_OVERFIT_record_is_a_launch_prerequisite_bound_to_the_launch"
+   ],
+   "all_failed": [
+    "test_G_MAP_OVERFIT_record_is_a_launch_prerequisite_bound_to_the_launch"
+   ],
+   "tail": "1 failed, 118 passed in 14.37s"
+  },
+  {
+   "key": "overfit_presence_floor_off",
+   "file": "stack/scripts/launch_gate.py",
+   "verdict": "CAUGHT",
+   "named_tests_failed": [
+    "test_G_MAP_OVERFIT_every_class_present_at_its_registered_bar_and_the_must_fail_arms"
+   ],
+   "all_failed": [
+    "test_G_MAP_OVERFIT_every_class_present_at_its_registered_bar_and_the_must_fail_arms"
+   ],
+   "tail": "1 failed, 118 passed in 13.59s"
+  },
+  {
+   "key": "unwire_arm_is_a_noop",
+   "file": "stack/scripts/launch_gate.py",
+   "verdict": "CAUGHT",
+   "named_tests_failed": [
+    "test_the_unwire_arm_removes_a_BUILT_selection_term_or_reports_that_it_could_not"
+   ],
+   "all_failed": [
+    "test_the_unwire_arm_removes_a_BUILT_selection_term_or_reports_that_it_could_not"
+   ],
+   "tail": "1 failed, 118 passed in 14.16s"
+  },
+  {
+   "key": "suite_ignores_the_commit",
+   "file": "stack/scripts/launch_gate.py",
+   "verdict": "CAUGHT",
+   "named_tests_failed": [
+    "test_G_SUITE_a_verdict_is_BOUND_to_the_commit_and_the_tree_it_ran_on"
+   ],
+   "all_failed": [
+    "test_G_SUITE_a_verdict_is_BOUND_to_the_commit_and_the_tree_it_ran_on"
+   ],
+   "tail": "1 failed, 118 passed in 13.16s"
+  },
+  {
+   "key": "suite_ignores_new_failures",
+   "file": "stack/scripts/launch_gate.py",
+   "verdict": "CAUGHT",
+   "named_tests_failed": [
+    "test_G_SUITE_a_NEW_failure_outside_the_pinned_list_FAILS"
+   ],
+   "all_failed": [
+    "test_G_SUITE_a_FLAKY_failure_is_admitted_ONLY_with_its_record_cited",
+    "test_G_SUITE_a_NEW_failure_outside_the_pinned_list_FAILS"
+   ],
+   "tail": "2 failed, 117 passed in 13.63s"
+  },
+  {
+   "key": "flaky_admitted_uncited",
+   "file": "stack/scripts/launch_gate.py",
+   "verdict": "CAUGHT",
+   "named_tests_failed": [
+    "test_G_SUITE_a_FLAKY_failure_is_admitted_ONLY_with_its_record_cited"
+   ],
+   "all_failed": [
+    "test_G_SUITE_a_FLAKY_failure_is_admitted_ONLY_with_its_record_cited"
+   ],
+   "tail": "1 failed, 118 passed in 13.53s"
+  },
+  {
+   "key": "probe_callable_skips_backward",
+   "file": "stack/scripts/launch_gate.py",
+   "verdict": "CAUGHT",
+   "named_tests_failed": [
+    "test_the_grad_unreachable_probe_gets_a_callable_that_RUNS_the_backward"
+   ],
+   "all_failed": [
+    "test_the_grad_unreachable_probe_gets_a_callable_that_RUNS_the_backward"
+   ],
+   "tail": "1 failed, 118 passed in 14.33s"
+  },
+  {
+   "key": "suite_pin_unchecked",
+   "file": "stack/scripts/launch_gate.py",
+   "verdict": "CAUGHT",
+   "named_tests_failed": [
+    "test_G_SUITE_the_pinned_env_list_is_content_bound_by_the_profile"
+   ],
+   "all_failed": [
+    "test_G_SUITE_the_pinned_env_list_is_content_bound_by_the_profile"
+   ],
+   "tail": "1 failed, 118 passed in 13.74s"
+  },
+  {
+   "key": "pinned_skip_is_a_pass",
+   "file": "stack/scripts/launch_gate.py",
+   "verdict": "CAUGHT",
+   "named_tests_failed": [
+    "test_G_SUITE_PINNED_every_test_passes_or_skips_for_a_REGISTERED_reason"
+   ],
+   "all_failed": [
+    "test_G_SUITE_PINNED_every_test_passes_or_skips_for_a_REGISTERED_reason"
+   ],
+   "tail": "1 failed, 118 passed in 14.45s"
+  },
+  {
+   "key": "import_closure_blind",
+   "file": "stack/scripts/launch_gate.py",
+   "verdict": "CAUGHT",
+   "named_tests_failed": [
+    "test_G_HYG_import_closure_eager_missing_FAILS_lazy_and_guarded_are_reported"
+   ],
+   "all_failed": [
+    "test_G_HYG_import_closure_eager_missing_FAILS_lazy_and_guarded_are_reported"
+   ],
+   "tail": "1 failed, 118 passed in 14.04s"
+  },
+  {
+   "key": "live_pres_blind",
+   "file": "stack/scripts/launch_gate.py",
+   "verdict": "CAUGHT",
+   "named_tests_failed": [
+    "test_G_LIVE_PRES_both_slot_heads_below_half_at_the_end_of_the_smoke"
+   ],
+   "all_failed": [
+    "test_G_LIVE_PRES_both_slot_heads_below_half_at_the_end_of_the_smoke"
+   ],
+   "tail": "1 failed, 118 passed in 13.80s"
+  },
+  {
+   "key": "box_overfit_arms_unchecked",
+   "file": "stack/scripts/launch_gate.py",
+   "verdict": "CAUGHT",
+   "named_tests_failed": [
+    "test_G_BOX_OVERFIT_the_registered_literals_and_the_must_fail_arms"
+   ],
+   "all_failed": [
+    "test_G_BOX_OVERFIT_the_registered_literals_and_the_must_fail_arms"
+   ],
+   "tail": "1 failed, 118 passed in 15.28s"
+  },
+  {
+   "key": "box_overfit_trusts_the_record",
+   "file": "stack/scripts/launch_gate.py",
+   "verdict": "CAUGHT",
+   "named_tests_failed": [
+    "test_G_BOX_OVERFIT_the_registered_literals_and_the_must_fail_arms"
+   ],
+   "all_failed": [
+    "test_G_BOX_OVERFIT_the_registered_literals_and_the_must_fail_arms"
+   ],
+   "tail": "1 failed, 118 passed in 16.11s"
+  },
+  {
+   "key": "a6_levers_unchecked",
+   "file": "stack/scripts/launch_gate.py",
+   "verdict": "CAUGHT",
+   "named_tests_failed": [
+    "test_SPEC_A6_A7_A8_every_NEW2_lever_has_ONE_admissible_value"
+   ],
+   "all_failed": [
+    "test_SPEC8_the_10cm_map_head_is_REQUIRED_for_refcv7",
+    "test_SPEC_A6_A7_A8_every_NEW2_lever_has_ONE_admissible_value",
+    "test_a_standalone_finalize_cannot_mint_a_token_that_run_would_refuse"
+   ],
+   "tail": "10 failed, 109 passed in 15.39s"
+  },
+  {
+   "key": "closure_ignores_a_changed_blob",
+   "file": "stack/scripts/launch_gate.py",
+   "verdict": "CAUGHT",
+   "named_tests_failed": [
+    "test_closure_binds_a_PASS_and_REFUSES_each_red_arm_of_SPEC_A11"
+   ],
+   "all_failed": [
+    "test_closure_binds_a_PASS_and_REFUSES_each_red_arm_of_SPEC_A11"
+   ],
+   "tail": "1 failed, 118 passed in 46.65s"
+  },
+  {
+   "key": "closure_accepts_an_early_record",
+   "file": "stack/scripts/launch_gate.py",
+   "verdict": "CAUGHT",
+   "named_tests_failed": [
+    "test_closure_binds_a_PASS_and_REFUSES_each_red_arm_of_SPEC_A11"
+   ],
+   "all_failed": [
+    "test_closure_binds_a_PASS_and_REFUSES_each_red_arm_of_SPEC_A11"
+   ],
+   "tail": "1 failed, 118 passed in 13.92s"
+  },
+  {
+   "key": "closure_accepts_a_crashed_harness",
+   "file": "stack/scripts/launch_gate.py",
+   "verdict": "CAUGHT",
+   "named_tests_failed": [
+    "test_closure_binds_a_PASS_and_REFUSES_each_red_arm_of_SPEC_A11"
+   ],
+   "all_failed": [
+    "test_closure_binds_a_PASS_and_REFUSES_each_red_arm_of_SPEC_A11"
+   ],
+   "tail": "1 failed, 118 passed in 16.25s"
+  },
+  {
+   "key": "closure_blind_to_unrecorded_imports",
+   "file": "stack/scripts/launch_gate.py",
+   "verdict": "CAUGHT",
+   "named_tests_failed": [
+    "test_closure_binds_a_PASS_and_REFUSES_each_red_arm_of_SPEC_A11"
+   ],
+   "all_failed": [
+    "test_closure_binds_a_PASS_and_REFUSES_each_red_arm_of_SPEC_A11"
+   ],
+   "tail": "1 failed, 118 passed in 16.35s"
+  },
+  {
+   "key": "closure_blind_to_modules_that_appeared",
+   "file": "stack/scripts/launch_gate.py",
+   "verdict": "CAUGHT",
+   "named_tests_failed": [
+    "test_closure_binds_a_PASS_and_REFUSES_each_red_arm_of_SPEC_A11"
+   ],
+   "all_failed": [
+    "test_closure_binds_a_PASS_and_REFUSES_each_red_arm_of_SPEC_A11"
+   ],
+   "tail": "1 failed, 118 passed in 14.56s"
+  },
+  {
+   "key": "closure_env_mismatch_passes",
+   "file": "stack/scripts/launch_gate.py",
+   "verdict": "CAUGHT",
+   "named_tests_failed": [
+    "test_closure_a_torch_timm_CUDA_cuDNN_mismatch_FAILS"
+   ],
+   "all_failed": [
+    "test_G_MAP_OVERFIT_job_needs_its_closure_and_its_PASS_states_the_isolation_scope",
+    "test_closure_a_torch_timm_CUDA_cuDNN_mismatch_FAILS"
+   ],
+   "tail": "2 failed, 117 passed in 14.81s"
+  },
+  {
+   "key": "map_overfit_job_skips_the_closure",
+   "file": "stack/scripts/launch_gate.py",
+   "verdict": "CAUGHT",
+   "named_tests_failed": [
+    "test_G_MAP_OVERFIT_job_needs_its_closure_and_its_PASS_states_the_isolation_scope"
+   ],
+   "all_failed": [
+    "test_G_MAP_OVERFIT_job_needs_its_closure_and_its_PASS_states_the_isolation_scope"
+   ],
+   "tail": "1 failed, 118 passed in 15.91s"
+  },
+  {
+   "key": "open_items_ignored",
+   "file": "stack/scripts/launch_gate.py",
+   "verdict": "CAUGHT",
+   "named_tests_failed": [
+    "test_the_profile_OPEN_ITEMS_block_a_PASS_until_each_is_closed"
+   ],
+   "all_failed": [
+    "test_the_profile_OPEN_ITEMS_block_a_PASS_until_each_is_closed"
+   ],
+   "tail": "1 failed, 118 passed in 15.67s"
+  },
+  {
+   "key": "throwaway_repo_inherits_GIT_DIR",
+   "file": "stack/scripts/launch_gate.py",
+   "verdict": "CAUGHT",
+   "named_tests_failed": [
+    "test_G_SUITE_PINNED_git_reads_go_to_a_THROWAWAY_repo_never_the_shared_one"
+   ],
+   "all_failed": [
+    "test_G_SUITE_PINNED_git_reads_go_to_a_THROWAWAY_repo_never_the_shared_one"
+   ],
+   "tail": "1 failed, 118 passed in 17.80s"
+  },
+  {
+   "key": "pinned_tests_inherit_GIT_DIR_and_MKL",
+   "file": "stack/scripts/launch_gate.py",
+   "verdict": "CAUGHT",
+   "named_tests_failed": [
+    "test_G_SUITE_PINNED_git_reads_go_to_a_THROWAWAY_repo_never_the_shared_one"
+   ],
+   "all_failed": [
+    "test_G_SUITE_PINNED_git_reads_go_to_a_THROWAWAY_repo_never_the_shared_one"
+   ],
+   "tail": "1 failed, 118 passed in 14.38s"
+  },
+  {
+   "key": "closure_run_from_a_hand_list",
+   "file": "stack/scripts/closure_run.py",
+   "verdict": "CAUGHT",
+   "named_tests_failed": [
+    "test_closure_run_reads_the_modules_from_SYS_MODULES_not_from_a_list"
+   ],
+   "all_failed": [
+    "test_closure_run_reads_the_modules_from_SYS_MODULES_not_from_a_list"
+   ],
+   "tail": "1 failed, 118 passed in 16.25s"
+  },
+  {
+   "key": "closure_run_ignores_code_it_opened",
+   "file": "stack/scripts/closure_run.py",
+   "verdict": "CAUGHT",
+   "named_tests_failed": [
+    "test_closure_run_records_the_imported_tree_modules_FROM_THE_PROCESS"
+   ],
+   "all_failed": [
+    "test_closure_run_records_the_imported_tree_modules_FROM_THE_PROCESS"
+   ],
+   "tail": "1 failed, 118 passed in 17.87s"
+  },
+  {
+   "key": "closure_run_blind_to_lookups",
+   "file": "stack/scripts/closure_run.py",
+   "verdict": "CAUGHT",
+   "named_tests_failed": [
+    "test_closure_binds_a_PASS_and_REFUSES_each_red_arm_of_SPEC_A11",
+    "test_closure_run_records_the_imported_tree_modules_FROM_THE_PROCESS"
+   ],
+   "all_failed": [
+    "test_closure_binds_a_PASS_and_REFUSES_each_red_arm_of_SPEC_A11",
+    "test_closure_run_records_the_imported_tree_modules_FROM_THE_PROCESS"
+   ],
+   "tail": "2 failed, 117 passed in 17.46s"
+  },
+  {
+   "key": "closure_run_records_a_crash_as_success",
+   "file": "stack/scripts/closure_run.py",
+   "verdict": "CAUGHT",
+   "named_tests_failed": [
+    "test_closure_run_a_CRASHED_harness_still_writes_its_record_with_the_exit_status"
+   ],
+   "all_failed": [
+    "test_closure_binds_a_PASS_and_REFUSES_each_red_arm_of_SPEC_A11",
+    "test_closure_run_a_CRASHED_harness_still_writes_its_record_with_the_exit_status"
+   ],
+   "tail": "2 failed, 117 passed in 18.85s"
+  },
+  {
+   "key": "closure_run_ignores_data_roots",
+   "file": "stack/scripts/closure_run.py",
+   "verdict": "CAUGHT",
+   "named_tests_failed": [
+    "test_closure_run_records_the_imported_tree_modules_FROM_THE_PROCESS"
+   ],
+   "all_failed": [
+    "test_closure_binds_a_PASS_and_REFUSES_each_red_arm_of_SPEC_A11",
+    "test_closure_run_records_the_imported_tree_modules_FROM_THE_PROCESS"
+   ],
+   "tail": "2 failed, 117 passed in 14.09s"
+  },
+  {
+   "key": "closure_run_always_binding",
+   "file": "stack/scripts/closure_run.py",
+   "verdict": "CAUGHT",
+   "named_tests_failed": [
+    "test_closure_binds_a_PASS_and_REFUSES_each_red_arm_of_SPEC_A11"
+   ],
+   "all_failed": [
+    "test_closure_binds_a_PASS_and_REFUSES_each_red_arm_of_SPEC_A11"
+   ],
+   "tail": "1 failed, 118 passed in 13.99s"
+  }
+ ],
+ "counts": {
+  "CAUGHT": 51
+ },
+ "verdict": "ALL CAUGHT",
+ "scratch": "C:\\Users\\Admin\\AppData\\Local\\Temp\\gsm_msap7k9y",
+ "n_mutations": 51
+}

@@ -1,0 +1,215 @@
+{
+ "tree": "/home/nvidia/gate_lg_0928/cab",
+ "tree_sha256": "c8ff26fede7464986d78c69568f536b9b89171b3a9b3603ff3d0a1eb148cd210",
+ "argv_file": "/home/nvidia/gate_lg_0928/in/argv_tiny_thor.json",
+ "argv_sha256": "446b7796be1d2d8f56beadd899bf594d2c646cd8b4ffea5bc029bff06c90676f",
+ "started_utc": "2026-09-27T07:31:28Z",
+ "arms": {
+  "no_cascade_passthrough": {
+   "verdict": "CAUGHT",
+   "why": "G-LIVE FAIL: the smoke did not complete: SystemExit: [G-DVB] \u26d4\u26d4 train: 2 lever(s) DECLARED in argv are NOT what the model BUILT. Refusing before the first step -- a run that trains the other arm while its record names this one is FALSE PROVENANCE (D-REFCV6-EQUALIZE-DROPPED, D-REFCV6-F3-WHITELIST, D-REFCV6-CONFIG",
+   "doc": "D-REFCV6-F3-WHITELIST: the per-stage keys leave the decoder pass-through (RefCModel.DECODER_PASSTHROUGH when the tree has it; else popped from the forward's output); with 82c2331's refusal the trainer stops at step 1",
+   "checks": [
+    "G-LIVE"
+   ],
+   "profile": "refc",
+   "elapsed_s": 5.0,
+   "status": {
+    "G-LIVE": "FAIL"
+   }
+  },
+  "no_cascade_silent": {
+   "verdict": "CAUGHT",
+   "why": "G-LIVE FAIL: declared term `cascade` (F3 per-stage cascade loss (D-REFCV6-F3-WHITELIST)) is ABSENT from all 0 training steps",
+   "doc": "the same, and the loss SKIPS silently -- exactly as shipped for 34,500 steps",
+   "checks": [
+    "G-LIVE"
+   ],
+   "profile": "refc",
+   "elapsed_s": 5.1,
+   "status": {
+    "G-LIVE": "FAIL"
+   }
+  },
+  "ga_off_by_one": {
+   "verdict": "NOT-APPLICABLE",
+   "why": "a model with the perception branch or the tactical decoder (a reach log exists to break) (control: ga_on False)",
+   "doc": "the refcv6 gradient-reach trigger re-installed (filled before `step += 1`, written after): `ga_*` keys reach only the FINAL row -- MEASURED 0 keys in refcv6's 4,621 rows (map-signal audit)",
+   "checks": [
+    "G-LIVE"
+   ],
+   "profile": "refc",
+   "elapsed_s": 11.2,
+   "status": {
+    "G-LIVE": "PASS"
+   }
+  },
+  "undeclared_equalize": {
+   "verdict": "CAUGHT",
+   "why": "G-HYG ERROR: UndeclaredConfigAttribute: tanitad.refs.refc.CNNEncoderConfig.trunk_equalize_bottom_rows_undeclared is NOT a declared field. An undeclared attribute lives only in this instance's __dict__ and is dropped by the first dataclasses.replace / asdict / rebuild while every getattr(cfg, 'trunk_equalize_bott",
+   "doc": "the D-REFCV6-EQUALIZE-DROPPED pattern: the pin sets a lever as an UNDECLARED attribute of the encoder config",
+   "checks": [
+    "G-HYG"
+   ],
+   "profile": "refc",
+   "elapsed_s": 3.7,
+   "status": {
+    "G-HYG": "ERROR"
+   }
+  },
+  "drop_fix3_field": {
+   "verdict": "NOT-APPLICABLE",
+   "why": "a declared --equalize-bottom-rows on a timm trunk (FIX-3): with nothing declared, dropping the field changes nothing"
+  },
+  "missing_hygiene_module": {
+   "verdict": "CAUGHT",
+   "why": "G-HYG FAIL: tanitad.train.config_hygiene is not importable -- module not yet landed => the gate FAILS (ModuleNotFoundError: No module named 'tanitad.train.config_hygiene' (gate arm))",
+   "doc": "tanitad.train.config_hygiene cannot be imported",
+   "checks": [
+    "G-HYG"
+   ],
+   "profile": "refc",
+   "elapsed_s": 5.6,
+   "status": {
+    "G-HYG": "FAIL"
+   }
+  },
+  "missing_dvb_module": {
+   "verdict": "CAUGHT",
+   "why": "G-DVB FAIL: tanitad.train.declared_vs_built is not importable -- module not yet landed => the gate FAILS (ModuleNotFoundError: No module named 'tanitad.train.declared_vs_built' (gate arm))",
+   "doc": "tanitad.train.declared_vs_built cannot be imported",
+   "checks": [
+    "G-DVB"
+   ],
+   "profile": "refc",
+   "elapsed_s": 3.7,
+   "status": {
+    "G-DVB": "FAIL"
+   }
+  },
+  "ceiling_active_in_training": {
+   "verdict": "NOT-APPLICABLE",
+   "why": "--speed-ceiling-filter in the argv (the refcv7 selection set)"
+  },
+  "no_fmap_s8_passthrough": {
+   "verdict": "NOT-APPLICABLE",
+   "why": "--map-hires on in the argv (the NEW-2 branch)"
+  },
+  "map_class_weight_zero": {
+   "verdict": "NOT-APPLICABLE",
+   "why": "--map-hires on and --map-hires-class-weights <json> in the argv"
+  },
+  "map_drivable_only_logging": {
+   "verdict": "NOT-APPLICABLE",
+   "why": "--map-hires on in the argv"
+  },
+  "map_iou_not_counts": {
+   "verdict": "NOT-APPLICABLE",
+   "why": "--map-hires on in the argv"
+  },
+  "map_overfit_missing": {
+   "verdict": "NOT-APPLICABLE",
+   "why": "--map-hires on in the argv"
+  }
+ },
+ "controls": {
+  "refc:G-LIVE:argv_tiny_thor.json": {
+   "reused_from": {
+    "G-LIVE": "/home/nvidia/gate_lg_0928/out/tiny_live/evidence"
+   },
+   "status": {
+    "G-LIVE": "PASS"
+   },
+   "reasons": {
+    "G-LIVE": []
+   }
+  },
+  "refc:G-HYG:argv_tiny_thor.json": {
+   "rc": 2,
+   "elapsed_s": 5.6,
+   "tail": [
+    "[gate]   G-EVAL   MISSING",
+    "[gate]   G-CKPT   MISSING",
+    "[gate]   G-SUITE  MISSING",
+    "[gate]   - no usable evidence yet for: ['G-DVB', 'G-LIVE', 'G-CLOCK', 'G-EVAL', 'G-CKPT', 'G-SUITE']",
+    "[gate] verdict INCOMPLETE -> /home/nvidia/gate_lg_0928/out/arms_tiny/control_refc_G-HYG/INCOMPLETE_000000000000.json",
+    "ZZGATE-INCOMPLETE-000000000000ZZ"
+   ],
+   "status": {
+    "G-HYG": "PASS"
+   },
+   "reasons": {
+    "G-HYG": []
+   }
+  },
+  "refc:G-DVB:argv_tiny_thor.json": {
+   "rc": 2,
+   "elapsed_s": 3.7,
+   "tail": [
+    "[gate]   G-EVAL   MISSING",
+    "[gate]   G-CKPT   MISSING",
+    "[gate]   G-SUITE  MISSING",
+    "[gate]   - no usable evidence yet for: ['G-HYG', 'G-LIVE', 'G-CLOCK', 'G-EVAL', 'G-CKPT', 'G-SUITE']",
+    "[gate] verdict INCOMPLETE -> /home/nvidia/gate_lg_0928/out/arms_tiny/control_refc_G-DVB/INCOMPLETE_000000000000.json",
+    "ZZGATE-INCOMPLETE-000000000000ZZ"
+   ],
+   "status": {
+    "G-DVB": "PASS"
+   },
+   "reasons": {
+    "G-DVB": []
+   }
+  }
+ },
+ "token_arms": {
+  "binding": {
+   "tree_sha256": "c8ff26fede7464986d78c69568f536b9b89171b3a9b3603ff3d0a1eb148cd210",
+   "argv_sha256": "446b7796be1d2d8f56beadd899bf594d2c646cd8b4ffea5bc029bff06c90676f",
+   "data_sha256": "15c33c75a25d0f006e80f122420f7b832fe10d4b7ccd5861d05628ca11ef7899"
+  },
+  "control_verify": "MATCH",
+  "alt_tree": "/home/nvidia/gate_lg_0928/tip",
+  "data_arm_flag": "--anchors",
+  "token_argv_changed": {
+   "verdict": "CAUGHT",
+   "why": [
+    "argv differs from the gated argv (sha dd47cfc03ef9 vs 446b7796be1d; ['0 -> 1'])"
+   ]
+  },
+  "token_hand_edited": {
+   "verdict": "CAUGHT",
+   "why": [
+    "HMAC does not verify -- the token was edited, or signed with another key (token key_id 4b70b45d678174a1, this host's 4b70b45d678174a1)"
+   ]
+  },
+  "token_argv_and_token_edited": {
+   "verdict": "CAUGHT",
+   "why": [
+    "HMAC does not verify -- the token was edited, or signed with another key (token key_id 4b70b45d678174a1, this host's 4b70b45d678174a1)"
+   ]
+  },
+  "token_other_key": {
+   "verdict": "CAUGHT",
+   "why": [
+    "HMAC does not verify -- the token was edited, or signed with another key (token key_id 4b70b45d678174a1, this host's 62e0ba2324c98418)"
+   ]
+  },
+  "token_tree_changed": {
+   "verdict": "CAUGHT",
+   "why": [
+    "code tree differs from the gated tree (4b0bcf682afeb240 vs c8ff26fede746498)"
+   ]
+  },
+  "token_data_changed": {
+   "verdict": "CAUGHT",
+   "why": [
+    "data differs from the gated data on ['--anchors']"
+   ]
+  }
+ },
+ "finished_utc": "2026-09-27T07:32:17Z",
+ "counts": {
+  "CAUGHT": 11,
+  "NOT-APPLICABLE": 8
+ }
+}

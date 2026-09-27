@@ -1,0 +1,372 @@
+{
+ "schema": "tanitad.launch_gate/1",
+ "kind": "launch-gate-token",
+ "verdict": "INCOMPLETE",
+ "binding": {
+  "profile": "refcv7",
+  "commit": "0000000000000000000000000000000000000000",
+  "tree_sha256": "c8ff26fede7464986d78c69568f536b9b89171b3a9b3603ff3d0a1eb148cd210",
+  "argv_sha256": "4e576b44d4276663920d2f69158a8530cf72b17dbd9ea69ea3edb6b216cbb6fe",
+  "argv": [
+   "--arm",
+   "hier",
+   "--size",
+   "small",
+   "--trunk",
+   "timm",
+   "--trunk-name",
+   "resnet101.a1_in1k",
+   "--trunk-mode",
+   "shared",
+   "--trunk-fuse",
+   "concat1x1",
+   "--ego-history",
+   "--no-strategic",
+   "--image-hw",
+   "416",
+   "1024",
+   "--sampler",
+   "ddim",
+   "--f1-random-t",
+   "--f2-dd-step",
+   "--f3-per-layer",
+   "--f4-adaln",
+   "--f5-focal",
+   "--f5-emitting-conf",
+   "--f6-w-u0-zero",
+   "--f9-assert-vocab",
+   "--anchors",
+   "/home/nvidia/data/anchors/refc_anchors_6s_v0cond_alat_117.pt",
+   "--anchor-v0-conditioned",
+   "--n-anchors",
+   "117",
+   "--v2-cache",
+   "/home/nvidia/data/refcv6-b1-416x1024-train",
+   "--v7-labels",
+   "/home/nvidia/data/v8labels/labels/s2_labels_v8_train.jsonl.gz",
+   "--nav-from-v7",
+   "--eval-cache",
+   "/home/nvidia/data/refcv6-b1-416x1024-eval139",
+   "--eval-labels",
+   "/home/nvidia/data/v8labels/labels/s2_labels_v8_eval.jsonl.gz",
+   "--eval-every",
+   "500",
+   "--eval-batches",
+   "8",
+   "--speed-max-sidecar-v6-eval",
+   "/home/nvidia/data/refcv6_speed_max_v8_eval.jsonl",
+   "--tac-decoder-v6",
+   "--w-tac-v6",
+   "1.0",
+   "--tac-decoder-d-bev",
+   "96",
+   "--graft-behaviour-sel",
+   "--max-speed-input-v6",
+   "--speed-max-sidecar-v6",
+   "/home/nvidia/data/refcv6_speed_max_v8_train.jsonl",
+   "--agents",
+   "head",
+   "--agent-join",
+   "/home/nvidia/data/joins/b1_train_plus_eval_agents.jsonl.xz",
+   "--agent-rig-camera",
+   "extrinsics",
+   "--agent-rig-extrinsics",
+   "/home/nvidia/data/refcv6_train_eval139_extrinsics.json",
+   "--agent-cls-weight",
+   "b1",
+   "--w-agent",
+   "1.0",
+   "--w-map",
+   "0",
+   "--map-gt-root",
+   "/home/nvidia/data/sam3_gt_v3",
+   "--w-box3d",
+   "1.0",
+   "--join3d",
+   "/home/nvidia/data/join3d/b1_train_plus_eval_agents_3d.jsonl.xz",
+   "--bev-coupling",
+   "--equalize-bottom-rows",
+   "43",
+   "--residual-prior",
+   "ha0_ext_pose",
+   "--graft-tac8-prior",
+   "--graft-nav-compliance",
+   "--nav-compliance-tau-rad",
+   "0.18063741505146028",
+   "--nav-compliance-tau-file",
+   "/home/nvidia/data/refcv7/nav_compliance_tau_train.json",
+   "--speed-ceiling-filter",
+   "--map-hires",
+   "on",
+   "--w-map-hires",
+   "1.0",
+   "--map-hires-class-weights",
+   "/home/nvidia/data/refcv7/map_hires_class_weights_train_100x30.json",
+   "--map-hires-decision-rule",
+   "prior_corrected",
+   "--map-hires-x-max-m",
+   "100",
+   "--map-hires-y-half-m",
+   "30",
+   "--map-hires-grad-ckpt",
+   "on",
+   "--bev-source",
+   "map_hires_pool",
+   "--bev-planner-crop-m",
+   "60",
+   "16",
+   "--opt",
+   "dd",
+   "--lr",
+   "1e-4",
+   "--warmup",
+   "2000",
+   "--seed",
+   "0",
+   "--u8-batches",
+   "--trunk-chunk-ckpt",
+   "8",
+   "--trunk-frozen-bn",
+   "--trunk-bf16",
+   "--trunk-channels-last",
+   "--trunk-fold-bn",
+   "--trunk-dedup-frames",
+   "--trunk-compile",
+   "--clip-clock-sidecar",
+   "/home/nvidia/data/refcv6_clip_clock_sidecar.jsonl",
+   "--workers",
+   "6",
+   "--conflict-every",
+   "10",
+   "--save-every",
+   "500",
+   "--log-every",
+   "50",
+   "--batch",
+   "16",
+   "--steps",
+   "50400",
+   "--out",
+   "/home/nvidia/gate_lg_0928/scratch/refcv7_out"
+  ],
+  "trainer": "stack/scripts/refc_v3_train.py",
+  "gate_inputs": {
+   "gate:clock-reference[0]": "/home/nvidia/gate_lg_0928/in/q4c_grid_vs_egolog_ALLTRAIN.json",
+   "gate:nav-tau-record": "/home/nvidia/data/refcv7/nav_compliance_tau_train.json"
+  },
+  "data": {
+   "--anchors": {
+    "path": "/home/nvidia/data/anchors/refc_anchors_6s_v0cond_alat_117.pt",
+    "kind": "file",
+    "bytes": 13477,
+    "sha256": "897099148d1b16eb109ad24516d1a1b9cc7d60d7a3ce71cd3f14beef33c1d63d",
+    "method": "sha256-v1"
+   },
+   "--v2-cache": {
+    "path": "/home/nvidia/data/refcv6-b1-416x1024-train",
+    "kind": "dir",
+    "n_files": 4371,
+    "bytes": 364238435467,
+    "listing_sha256": "802d62b070e805641c7ba532bfb483260bfa9eea44b3f6dea0070e4a7808539e",
+    "method": "dir-listing-v1 (relpath + size of every file; contents NOT hashed; _v2manifest.pt excluded -- a cache rewrites it on first use)"
+   },
+   "--v7-labels": {
+    "path": "/home/nvidia/data/v8labels/labels/s2_labels_v8_train.jsonl.gz",
+    "kind": "file",
+    "bytes": 2686219,
+    "sha256": "0cb3c5021491f6bad9a17c4c9168c87864a1e371eafa5ec0dd320cf9d5c23371",
+    "method": "sha256-v1"
+   },
+   "--eval-cache": {
+    "path": "/home/nvidia/data/refcv6-b1-416x1024-eval139",
+    "kind": "dir",
+    "n_files": 140,
+    "bytes": 11942313647,
+    "listing_sha256": "632599626aa8889a631c1373d9a71d9c0b443758da0301a15bf2cb9cf565a378",
+    "method": "dir-listing-v1 (relpath + size of every file; contents NOT hashed; _v2manifest.pt excluded -- a cache rewrites it on first use)"
+   },
+   "--eval-labels": {
+    "path": "/home/nvidia/data/v8labels/labels/s2_labels_v8_eval.jsonl.gz",
+    "kind": "file",
+    "bytes": 89276,
+    "sha256": "2c6abfe3370fcad5217f6f3c0e5b869cf9db20bf23d169b4dae471c1e0810e38",
+    "method": "sha256-v1"
+   },
+   "--speed-max-sidecar-v6-eval": {
+    "path": "/home/nvidia/data/refcv6_speed_max_v8_eval.jsonl",
+    "kind": "file",
+    "bytes": 28323,
+    "sha256": "c9dab865d52ecc50c240fcc042ced85aa53daaec608b489690666c33c3944ff2",
+    "method": "sha256-v1"
+   },
+   "--speed-max-sidecar-v6-eval:meta": {
+    "path": "/home/nvidia/data/refcv6_speed_max_v8_eval.jsonl.meta.json",
+    "kind": "file",
+    "bytes": 2519,
+    "sha256": "3b76237f390468d2c872d3e18fcafd50e6a7c770a97a55ec12f7990051a4d1b3",
+    "method": "sha256-v1",
+    "required": true
+   },
+   "--speed-max-sidecar-v6": {
+    "path": "/home/nvidia/data/refcv6_speed_max_v8_train.jsonl",
+    "kind": "file",
+    "bytes": 880186,
+    "sha256": "9671680d3e3a5e6d97e6d1a35f0371c2183d457412ef47d4c5376d32ecf9fcc1",
+    "method": "sha256-v1"
+   },
+   "--speed-max-sidecar-v6:meta": {
+    "path": "/home/nvidia/data/refcv6_speed_max_v8_train.jsonl.meta.json",
+    "kind": "file",
+    "bytes": 2534,
+    "sha256": "24b5d813e8fcab3d4e45eca46bc440fa0ff98f4615a6d616da20dde5f67c3ec6",
+    "method": "sha256-v1",
+    "required": true
+   },
+   "--agent-join": {
+    "path": "/home/nvidia/data/joins/b1_train_plus_eval_agents.jsonl.xz",
+    "kind": "file",
+    "bytes": 327041136,
+    "sha256": "a705a632cef07508d435cb152feac43b0d15137a09b08a527b5235da23d3d053",
+    "method": "sha256-v1"
+   },
+   "--agent-join:meta": {
+    "path": "/home/nvidia/data/joins/b1_train_plus_eval_agents.jsonl.xz.meta.json",
+    "kind": "file",
+    "bytes": 1230,
+    "sha256": "408d3f7bd566c0fc7a7e205e9a2fd962f758d597e99ffed5cf32e51417c053ea",
+    "method": "sha256-v1"
+   },
+   "--agent-rig-extrinsics": {
+    "path": "/home/nvidia/data/refcv6_train_eval139_extrinsics.json",
+    "kind": "file",
+    "bytes": 3367838,
+    "sha256": "8b189d0577f9c9f9f0179877dc29ae264955bf1cc0cfebda7e3347a403987acb",
+    "method": "sha256-v1"
+   },
+   "--map-gt-root": {
+    "path": "/home/nvidia/data/sam3_gt_v3",
+    "kind": "dir",
+    "n_files": 4509,
+    "bytes": 19981557191,
+    "listing_sha256": "75861f263caecddb96b61249f079129d202eb3315236e4242f2bdba19e807ba2",
+    "method": "dir-listing-v1 (relpath + size of every file; contents NOT hashed; _v2manifest.pt excluded -- a cache rewrites it on first use)"
+   },
+   "--join3d": {
+    "path": "/home/nvidia/data/join3d/b1_train_plus_eval_agents_3d.jsonl.xz",
+    "kind": "file",
+    "bytes": 409336004,
+    "sha256": "f25e918d223765b2661f0886a952f4ed444755bd7fee893e4b8e7e77996a53ba",
+    "method": "sha256-v1"
+   },
+   "--nav-compliance-tau-file": {
+    "path": "/home/nvidia/data/refcv7/nav_compliance_tau_train.json",
+    "kind": "file",
+    "bytes": 2410,
+    "sha256": "10ca19db42ed0a49083978a4cb6d0914664d28bc3231ed7058a01d5161e938ca",
+    "method": "sha256-v1"
+   },
+   "--map-hires-class-weights": {
+    "path": "/home/nvidia/data/refcv7/map_hires_class_weights_train_100x30.json",
+    "kind": "file",
+    "bytes": 3046,
+    "sha256": "d70dec8087ed73ee6d4129b6fc6e0a97a350f826907462b6b251413ede488b67",
+    "method": "sha256-v1"
+   },
+   "--clip-clock-sidecar": {
+    "path": "/home/nvidia/data/refcv6_clip_clock_sidecar.jsonl",
+    "kind": "file",
+    "bytes": 864382,
+    "sha256": "de4d7602898f93458270ce2dca83bdcb86dd36b9c56fe8f4ef98774c5c48c5da",
+    "method": "sha256-v1"
+   },
+   "implicit:timm-pretrained:resnet101.a1_in1k": {
+    "kind": "file",
+    "bytes": 178675806,
+    "sha256": "1ba5b660e7c175b3c27c557fc7dc8b2815be830c516815b0155f61b403f27380",
+    "method": "sha256-v1",
+    "hub": "timm/resnet101.a1_in1k/model.safetensors"
+   },
+   "gate:clock-reference[0]": {
+    "path": "/home/nvidia/gate_lg_0928/in/q4c_grid_vs_egolog_ALLTRAIN.json",
+    "kind": "file",
+    "bytes": 2105483,
+    "sha256": "9528c86fbf4bb5bdccf19e1cfe32ecde72f83508a7e86da839d5c067a477cba2",
+    "method": "sha256-v1"
+   },
+   "gate:nav-tau-record": {
+    "path": "/home/nvidia/data/refcv7/nav_compliance_tau_train.json",
+    "kind": "file",
+    "bytes": 2410,
+    "sha256": "10ca19db42ed0a49083978a4cb6d0914664d28bc3231ed7058a01d5161e938ca",
+    "method": "sha256-v1"
+   }
+  },
+  "data_sha256": "81df6a0c177765e42835f8ab957a04f4280c85529aa673265f0703bc6381fc74"
+ },
+ "checks": {
+  "G-HYG": {
+   "status": "PASS",
+   "evidence_path": "/home/nvidia/gate_lg_0928/out/model_r7/evidence/G-HYG.json",
+   "evidence_sha256": "381f2780507f0c0cc77e68598507a5a4499ebef41be05d3b859ad0df9604498f",
+   "host": "thor6",
+   "finished_utc": "2026-09-27T07:30:04Z",
+   "reasons": []
+  },
+  "G-DVB": {
+   "status": "PASS",
+   "evidence_path": "/home/nvidia/gate_lg_0928/out/model_r7/evidence/G-DVB.json",
+   "evidence_sha256": "22b01631b3f47f191b3fb9df567c87fd7b2fc4b6bcc0a9af4ca3826b438a1c8e",
+   "host": "thor6",
+   "finished_utc": "2026-09-27T07:30:05Z",
+   "reasons": []
+  },
+  "G-LIVE": {
+   "status": "MISSING",
+   "rejected": []
+  },
+  "G-CLOCK": {
+   "status": "MISSING",
+   "rejected": []
+  },
+  "G-EVAL": {
+   "status": "MISSING",
+   "rejected": []
+  },
+  "G-CKPT": {
+   "status": "MISSING",
+   "rejected": []
+  },
+  "G-SUITE": {
+   "status": "MISSING",
+   "rejected": []
+  },
+  "G-SUITE-PINNED": {
+   "status": "MISSING",
+   "rejected": []
+  },
+  "G-MAP-OVERFIT": {
+   "status": "MISSING",
+   "rejected": []
+  },
+  "G-BOX-OVERFIT": {
+   "status": "MISSING",
+   "rejected": []
+  }
+ },
+ "reasons": [
+  "no usable evidence yet for: ['G-LIVE', 'G-CLOCK', 'G-EVAL', 'G-CKPT', 'G-SUITE', 'G-SUITE-PINNED', 'G-MAP-OVERFIT', 'G-BOX-OVERFIT']",
+  "OPEN ITEM BOX-HEAD: the box-head flags R1-R4 (SPEC_REFCV7 A9/A10), and whether +R6 `--slot-dn-groups 5` joins them (A10.1, decided on the early G-BOX-OVERFIT verdicts) (owner: the box-head builder names the flags; the Master Mind decides MAIN vs +R6)",
+  "OPEN ITEM MAP-LIFT: one or two NEW-2 LIFT flags: the EARLY (non-binding) G-MAP-OVERFIT MAIN FAILED at step 1,000 (lane 0.417, edge 0.076 vs 0.50; INHERITED, Master Mind 2026-09-27), so the prereg sec. 9 lever order applies -- next is the LIFT (Z = 0 plane / 0.1 m near lift / stride 4) (owner: the NEW-2 builder names the flags; the Master Mind decides)"
+ ],
+ "gate_sha256": "8a059346cc2a45ec8d744a6bdd833bdc6be9af28d50c75d32ea26e54c8af0aa4",
+ "host": {
+  "node": "thor6",
+  "platform": "Linux-6.8.12-tegra-aarch64-with-glibc2.39",
+  "python": "3.12.3",
+  "torch": "2.13.0+cu130",
+  "cuda": false
+ },
+ "created_utc": "2026-09-27T07:30:09Z",
+ "key_id": "c285d10317a605a3",
+ "hmac_sha256": "40546e7fcd17e34b2012fe9bb00c0dddcdd266942082c1f05faef4927cf0f52d"
+}
