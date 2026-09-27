@@ -1,0 +1,61 @@
+[vis] lidar: 95 labelled windows (95 s)
+[vis] 0/95 windows (95 s)
+{
+ "mode": "lidar",
+ "n_windows": 95,
+ "n_gt_rows_3d": 7579,
+ "n_targets": 1125,
+ "n_gt_rows_without_3d_label": 0,
+ "observed_mask_source": [
+  "f-theta observed mask"
+ ],
+ "method": "exact per-pixel ray/oriented-box z-buffer, canonical 416x1024 cylinder, per-clip extrinsics (the renderer's table) and the clip's f-theta observed mask; occluders = every valid GT row with a 3-D label; UPPER bound (static occluders absent)",
+ "targets_per_window_rules": {
+  "baseline_targets_per_window": 11.842105263157896,
+  "vis_frac>=0.10": {
+   "targets_per_window": 9.8,
+   "frac_of_targets_kept": 0.8275555555555556
+  },
+  "vis_frac>=0.30": {
+   "targets_per_window": 8.652631578947368,
+   "frac_of_targets_kept": 0.7306666666666667
+  },
+  "vis_frac>=0.50": {
+   "targets_per_window": 7.231578947368421,
+   "frac_of_targets_kept": 0.6106666666666667
+  },
+  "R1: vis_frac>=0.30 & vis_rows>=8": {
+   "targets_per_window": 8.56842105263158,
+   "frac_of_targets_kept": 0.7235555555555555
+  },
+  "R2: n_vis>=150px & vis_frac>=0.25": {
+   "targets_per_window": 8.0,
+   "frac_of_targets_kept": 0.6755555555555556
+  }
+ },
+ "wall_s": 100.1,
+ "lidar_vs_visibility": {
+  "vis<0.1": {
+   "n": 194,
+   "frac_lidar_ge3": 0.8556701030927835,
+   "median_lidar_pts": 77.0
+  },
+  "0.1<=vis<0.3": {
+   "n": 109,
+   "frac_lidar_ge3": 0.9541284403669725,
+   "median_lidar_pts": 152.0
+  },
+  "0.3<=vis<0.5": {
+   "n": 135,
+   "frac_lidar_ge3": 0.9925925925925926,
+   "median_lidar_pts": 1148.0
+  },
+  "0.5<=vis<1.01": {
+   "n": 687,
+   "frac_lidar_ge3": 0.9970887918486172,
+   "median_lidar_pts": 628.0
+  }
+ }
+}
+{"n": 1125, "median": 0.7072357452484161, "mean": 0.611412433462015, "frac_lt_0.10": 0.17244444444444446, "frac_lt_0.30": 0.2693333333333333, "frac_lt_0.50": 0.3893333333333333, "frac_zero": 0.1351111111111111}
+EXIT=0

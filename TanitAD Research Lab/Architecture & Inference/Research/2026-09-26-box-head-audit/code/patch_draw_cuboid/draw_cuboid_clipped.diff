@@ -1,0 +1,162 @@
+--- a/taniteval/tools/render_refcv6_map_video.py (md5 0becac574e78ed187c161866b0ddd766)
++++ b/taniteval/tools/render_refcv6_map_video.py (md5 e5890efbe4caf7f582584240f5bf4f75)
+@@ -622,20 +622,77 @@
+         n_sl += 1
+ 
+ 
++#: Samples per cuboid edge on the camera overlay. A straight 3-D edge is a CURVE on the cylinder
++#: (``v = f*y/hypot(x, z)`` varies along a horizontal line), so each edge is projected as a sampled 3-D
++#: segment, never as the chord between its two projected corners.
++CUBOID_EDGE_SAMPLES: int = 32
++
++
++def cuboid_edge_runs(cam, corners: np.ndarray, n_samp: int = CUBOID_EDGE_SAMPLES,
++                     refine: int = 24) -> list:
++    """Every edge of an ``[8, 3]`` rig-frame cuboid, projected with the model's OWN per-clip ``RigCamera``
++    as a SAMPLED 3-D segment. Returns ``[(edge_index, [(col, row), ...]), ...]``: one entry per maximal
++    IN-FRAME run of an edge, whose end points are bisected onto the frame border when the edge leaves it.
++
++    ⛔ WHY (box-head audit 2026-09-27, the PI's "one surface" frames). The previous ``draw_cuboid_cam``
++    drew an edge only when BOTH its corners landed in the frame. A cuboid that crosses the +-60 deg border
++    therefore lost every border-crossing edge and read as one flat face: bus #39 in 9f8bedcfb9de, window
++    104, whose rear corners lie beyond 60 deg. It also drew each kept edge as the straight chord between
++    its projected corners, although the cylinder bends a horizontal edge. The projection itself was right
++    (verified independently: raw-mp4 re-render, LiDAR through its own extrinsic, the SAM3 camera model);
++    only the DRAWING dropped and straightened edges."""
++    import torch
++    cor = np.asarray(corners, dtype=np.float64)
++    tt = np.linspace(0.0, 1.0, int(n_samp) + 1)
++
++    def _proj(p):
++        c, r, ok = cam.project(torch.as_tensor(np.atleast_2d(p), dtype=torch.float64))
++        return c.numpy(), r.numpy(), ok.numpy().astype(bool)
++
++    out = []
++    for e, (a, b) in enumerate(CUBOID_EDGES):
++        pa, pb = cor[a], cor[b]
++
++        def _at(s, pa=pa, pb=pb):
++            return pa + (pb - pa) * float(s)
++
++        def _border(s_in, s_out):
++            """Bisect between an in-frame parameter and an out-of-frame one; returns the in-frame end."""
++            for _ in range(int(refine)):
++                m = 0.5 * (s_in + s_out)
++                if bool(_proj(_at(m))[2][0]):
++                    s_in = m
++                else:
++                    s_out = m
++            c, r, _ok = _proj(_at(s_in))
++            return (float(c[0]), float(r[0]))
++
++        col, row, ok = _proj(pa[None, :] + (pb - pa)[None, :] * tt[:, None])
++        run = []
++        for k in range(len(tt)):
++            if ok[k]:
++                if not run and k > 0:
++                    run.append(_border(tt[k], tt[k - 1]))
++                run.append((float(col[k]), float(row[k])))
++            elif run:
++                run.append(_border(tt[k - 1], tt[k]))
++                if len(run) >= 2:
++                    out.append((e, run))
++                run = []
++        if len(run) >= 2:
++            out.append((e, run))
++    return out
++
++
+ def draw_cuboid_cam(cd, cam, corners: np.ndarray, colour, width: int = 2) -> int:
+     """Project an ``[8, 3]`` rig-frame cuboid with the model's OWN per-clip ``RigCamera``
+     (``rig_projection.RigCamera.project``: the cylindrical formula, ``rig_projection.py:272-314``)
+-    and draw every edge whose two ends land in the frame. Returns the number of edges drawn."""
+-    import torch
+-    col, row, ok = cam.project(torch.as_tensor(corners, dtype=torch.float64))
+-    col, row, ok = col.numpy(), row.numpy(), ok.numpy().astype(bool)
+-    n = 0
+-    for a, b in CUBOID_EDGES:
+-        if ok[a] and ok[b]:
+-            cd.line([(float(col[a]), float(row[a])), (float(col[b]), float(row[b]))], fill=colour,
+-                    width=width)
+-            n += 1
+-    return n
++    and draw every IN-FRAME part of every edge as a sampled curve, clipped at the frame border
++    (:func:`cuboid_edge_runs`). Returns the number of edges with at least one drawn part."""
++    runs = cuboid_edge_runs(cam, corners)
++    for _e, pts in runs:
++        cd.line(pts, fill=colour, width=width, joint="curve" if width > 1 else None)
++    return len({e for e, _pts in runs})
+ 
+ 
+ # ============================================================================================= #
+--- a/taniteval/tools/render_refcv6_gt_validation.py (md5 30215c0ae7cc04a8c750ac898124b207)
++++ b/taniteval/tools/render_refcv6_gt_validation.py (md5 62f6d2a0ba46118b92a14e786a120499)
+@@ -1139,6 +1139,37 @@
+ 
+ EDGES = ((0, 1), (1, 2), (2, 3), (3, 0), (4, 5), (5, 6), (6, 7), (7, 4), (0, 4), (1, 5), (2, 6), (3, 7))
+ 
++_RMV_EDGE_RUNS = None
++
++
++def _edge_runs(rig_cam, cor):
++    """``render_refcv6_map_video.cuboid_edge_runs`` -- ONE implementation of the sampled, border-clipped
++    cuboid edges, loaded by path from this tool's own directory and reused (box-head audit 2026-09-27: the
++    old both-corners-in-frame rule turned border-crossing cuboids into single flat faces)."""
++    global _RMV_EDGE_RUNS
++    if _RMV_EDGE_RUNS is None:
++        _RMV_EDGE_RUNS = _by_path("rmv_edge_runs_for_gtval", TOOLS / "render_refcv6_map_video.py").cuboid_edge_runs
++    return _RMV_EDGE_RUNS(rig_cam, cor)
++
++
++def _dashed_polyline(d, pts, fill, width=1, dash=6.0, gap=4.0):
++    """A dashed polyline whose dash phase CONTINUES across vertices (a sampled edge has many short parts,
++    and restarting the pattern on each part would draw it solid)."""
++    on, left = True, dash
++    for (x0, y0), (x1, y1) in zip(pts[:-1], pts[1:]):
++        seg = math.hypot(x1 - x0, y1 - y0)
++        s = 0.0
++        while seg > 0 and s < seg:
++            e = min(s + left, seg)
++            if on:
++                ux, uy = (x1 - x0) / seg, (y1 - y0) / seg
++                d.line([(x0 + ux * s, y0 + uy * s), (x0 + ux * e, y0 + uy * e)], fill=fill, width=width)
++            left -= e - s
++            s = e
++            if left <= 1e-9:
++                on = not on
++                left = dash if on else gap
++
+ 
+ def cyl3(proj, p3):
+     """``render_refcv3_video.CylProjector.__call__``'s formula for a 3-D rig-frame point (the class
+@@ -1179,7 +1210,10 @@
+                      hh[j] if has_z else 0.0, yaw[j])
+         c_, r_, ok = rig_cam.project(torch.as_tensor(cor, dtype=torch.float64))
+         c_, r_, ok = c_.numpy(), r_.numpy(), ok.numpy().astype(bool)
+-        if not ok.any():
++        runs = _edge_runs(rig_cam, cor)
++        if not runs:
++            # ⭐ decided on the EDGES, not the corners: a near cuboid can cross the whole frame with all
++            # eight corners outside it (a bus alongside), and the corner rule skipped it entirely
+             continue
+         # the control: an INDEPENDENT implementation (render_refcv3_video.CylProjector's formula and
+         # its per-clip R, t, f, cx, cy, lifted to 3-D) must land every drawn corner on the same pixel
+@@ -1189,13 +1223,11 @@
+                 max_px = max(max_px, math.hypot(qq[0] - float(c_[k]), qq[1] - float(r_[k])))
+                 n_corn += 1
+         kept = bool(fr["keep"][j])
+-        for e0, e1 in EDGES:
+-            if ok[e0] and ok[e1]:
+-                p0, p1 = (float(c_[e0]), float(r_[e0])), (float(c_[e1]), float(r_[e1]))
+-                if kept:
+-                    d.line([p0, p1], fill=col + (255,), width=2)
+-                else:
+-                    _dashed_line(d, p0, p1, col + (200,), width=1)
++        for _e, run in runs:
++            if kept:
++                d.line(run, fill=col + (255,), width=2, joint="curve")
++            else:
++                _dashed_polyline(d, run, col + (200,), width=1)
+         top = cor[4:].mean(0) if has_z else cor[:4].mean(0)
+         tc, trow, tok = rig_cam.project(torch.as_tensor(top[None], dtype=torch.float64))
+         if not bool(tok[0]):

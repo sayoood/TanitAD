@@ -1,0 +1,41 @@
+[vis] clipgrid: 256 labelled windows (2 s)
+[vis] 0/256 windows (2 s)
+[vis] 100/256 windows (5 s)
+[vis] 200/256 windows (8 s)
+{
+ "mode": "clipgrid",
+ "n_windows": 256,
+ "n_gt_rows_3d": 7162,
+ "n_targets": 1133,
+ "n_gt_rows_without_3d_label": 0,
+ "observed_mask_source": [
+  "f-theta observed mask"
+ ],
+ "method": "exact per-pixel ray/oriented-box z-buffer, canonical 416x1024 cylinder, per-clip extrinsics (the renderer's table) and the clip's f-theta observed mask; occluders = every valid GT row with a 3-D label; UPPER bound (static occluders absent)",
+ "targets_per_window_rules": {
+  "baseline_targets_per_window": 4.42578125,
+  "vis_frac>=0.10": {
+   "targets_per_window": 3.3203125,
+   "frac_of_targets_kept": 0.7502206531332745
+  },
+  "vis_frac>=0.30": {
+   "targets_per_window": 2.69140625,
+   "frac_of_targets_kept": 0.6081200353045013
+  },
+  "vis_frac>=0.50": {
+   "targets_per_window": 2.38671875,
+   "frac_of_targets_kept": 0.5392762577228597
+  },
+  "R1: vis_frac>=0.30 & vis_rows>=8": {
+   "targets_per_window": 2.69140625,
+   "frac_of_targets_kept": 0.6081200353045013
+  },
+  "R2: n_vis>=150px & vis_frac>=0.25": {
+   "targets_per_window": 2.59765625,
+   "frac_of_targets_kept": 0.5869373345101501
+  }
+ },
+ "wall_s": 9.8
+}
+{"n": 1133, "median": 0.597682119205298, "mean": 0.5582911774703277, "frac_lt_0.10": 0.2497793468667255, "frac_lt_0.30": 0.3918799646954987, "frac_lt_0.50": 0.46072374227714036, "frac_zero": 0.1500441306266549}
+EXIT=0
