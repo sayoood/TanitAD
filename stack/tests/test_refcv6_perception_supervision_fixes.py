@@ -566,5 +566,5 @@ def test_SLOT_WIDTHS_ARE_UNMOVED_BY_THESE_FIXES():
     emitted channel layout, so a checkpoint's head columns still mean what they meant."""
     assert SLOT_WIDTH == 21
     assert SLOT3D_WIDTH == 23
-    assert A.N_QUERIES_DEFAULT == 100
+    assert A.N_QUERIES_DEFAULT == 300          # re-ruled by SPEC_REFCV7 A9 R4
     assert len(A.AGENT_CLASSES) == 10

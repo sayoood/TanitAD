@@ -1018,11 +1018,24 @@ def rebuild_config(config: dict):
         hier = args.arm == "hier"
         base = (v3.refc_v3_smoke_config(hier) if args.smoke
                 else v3.refc_v3_sized_config(args.size, hier=hier))
+        # ⛔⛔ refcv7 A9 R4 moved the ONE query spelling 100 -> 300. A record whose argv never
+        # passed --agent-queries (refcv6-r101-s0 included) is rebuilt at its STAMPED count --
+        # the parser default would build a head its checkpoint does not fit.
+        _aq = getattr(tr, "agent_queries_as_trained", None)
+        if _aq is not None and str(getattr(args, "agents", "off")) != "off":
+            _n_q, _why_q = _aq(config, args)
+            if _n_q is not None and int(_n_q) != int(args.agent_queries):
+                args.agent_queries = int(_n_q)
+                src_q = f"; agent_queries -> {int(_n_q)} ({_why_q})"
+            else:
+                src_q = ""
+        else:
+            src_q = ""
         cfg = tr._pin_trainer_cfg(base, args)
         if getattr(args, "graft_lan", False) or getattr(args, "goal_str", False):
             cfg.core.lan = refc.LanConfig(k=len(args.lan_arclengths))
         src = ("config.json[argv] -> refc_v3_train.build_parser + "
-               "_pin_trainer_cfg (the trainer's own build path)")
+               "_pin_trainer_cfg (the trainer's own build path)") + src_q
         # ⛔⛔ D-REFCV6-EQUALIZE-DROPPED (FIX-3, 2026-09-26): rebuild the trunk AS TRAINED. Before
         # the fix, `--equalize-bottom-rows N` with `--image-hw` never reached the trunk, so every
         # pre-fix checkpoint (refcv6-r101-s0 included: argv 43, trunk 0) was trained un-equalised.
@@ -1083,7 +1096,10 @@ def rebuild_perception_branch(model, config: dict, device: str = "cpu",
     kw = {}
     # ⭐ refcv7 A6: `bev_source` is stamped on every run since A6; its absence -- every
     # refcv6 stamp -- rebuilds `s16_lift`, as trained. `planner_crop_m` likewise.
-    for k in ("d_bev", "n_queries", "d_model", "stride", "bev_source"):
+    # ⭐ refcv7 A9: the refined box head's four fields rebuild from the stamp as well (absent in a
+    # pre-A9 stamp -> the pre-A9 defaults, which is what that run built).
+    for k in ("d_bev", "n_queries", "d_model", "stride", "bev_source", "presence_loss",
+              "presence_prior", "deep_supervision", "vis1"):
         if k in st and k in _fields:
             kw[k] = st[k]
     # JSON gives lists; the config wants tuples, and a list would compare unequal

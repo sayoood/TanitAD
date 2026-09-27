@@ -209,7 +209,19 @@ PARAM_BAND: tuple[int, int] = (2_000_000, 4_000_000)
 #: ⛔ THIS IS THE ONLY SPELLING. ``train_v6_staged.py`` imports it for both
 #: its argparse default and its ``getattr`` fallback, and
 #: ``tests/test_v6_agent_slots.py`` FAILS if either re-grows a literal.
-N_QUERIES_DEFAULT: int = 100
+#: ⭐⭐ RE-RULED 2026-09-27 (SPEC_REFCV7 §14 A9, R4 -- M17's zero-drop rule was already BROKEN
+#: at 100): **300**. The refcv6 corpus line (v7-B1, not the parity join M17 was ruled on)
+#: reaches **120 targets per window** on the B1 eval clip ``0191487845ef`` (80.3 mean, 146
+#: targets with no slot -- the literature pass's S-crowd), and DETR's own appendix shows a
+#: 100-query DETR finds every instance only up to ~50, i.e. ~N/2. The rule is therefore
+#: **N >= 2 x the observed max**, which 300 meets (2.5 x 120) BEFORE VIS-1 narrows the targets
+#: (the audit: 26.2 -> 9.0 targets per window at vis >= 0.30 on the crowded pool). The
+#: nuScenes camera heads run 900. Cost: +200 x d_model = +51,200 parameters per head (the
+#: box3d decoder 3,806,999 -> 3,858,199 and the agent head 3,822,869 -> 3,874,069, both inside
+#: PARAM_BAND -- pinned by ``tests/test_refcv7_box_head.py``). ⚠️ A run recorded BEFORE this
+#: ruling is rebuilt at ITS OWN count: ``refc_v3_train.agent_queries_as_trained`` reads the
+#: stamp, and the perception branch is rebuilt from its ``n_queries`` stamp.
+N_QUERIES_DEFAULT: int = 300
 
 #: Hungarian matching costs. DETR's shape (class prob + box L1), with the box
 #: term in METRES so the cost is interpretable rather than an arbitrary scale.
@@ -231,6 +243,13 @@ SLOT_LOSS_W: dict[str, float] = {
 #: DETR's ∅-class down-weight: unmatched slots vastly outnumber matched ones,
 #: and an unweighted BCE simply learns "always empty".
 NO_OBJECT_W: float = 0.1
+
+#: refcv7 A9 R1 -- the PRESENCE term of the Hungarian cost. ``"sigmoid"`` (the default,
+#: every arm before A9, bit-identical): ``MATCH_COST_W["presence"] x (-sigmoid(presence))``.
+#: ``"focal"``: ``slot_presence.FOCAL_MATCH_W`` (2.0) x mmdet's ``FocalLossCost`` on the
+#: presence logit -- the DETR3D / BEVFormer matcher. The class, centre and size terms are
+#: unchanged either way (one variable per arm).
+PRESENCE_COSTS: tuple[str, ...] = ("sigmoid", "focal")
 
 #: The FOV half-angle the join's ``occ`` flag actually encodes.
 #:
@@ -576,7 +595,8 @@ class AgentSlotDecoder(nn.Module):
                  n_queries: int = N_QUERIES_DEFAULT, d_model: int = 256,
                  depth: int = 3, n_heads: int = 8,
                  ranges: SlotDecodeRanges | None = None,
-                 enforce_band: bool = True):
+                 enforce_band: bool = True,
+                 presence_prior: float | None = None):
         super().__init__()
         if n_queries < 1:
             raise ValueError(f"n_queries must be >= 1, got {n_queries}")
@@ -598,6 +618,19 @@ class AgentSlotDecoder(nn.Module):
         #: measured strictly better (see :func:`occ_logit_from_centre`), but it
         #: is a contract change and therefore the PI's call, not a default.
         self.occ_from_geometry: bool = False
+        #: ⛔ refcv7 A9 R2, OPT-IN, DEFAULT OFF (the ``occ_from_geometry`` idiom: an attribute,
+        #: set by the builders from a DECLARED config field). When True, :meth:`forward` also
+        #: reads EVERY decoder layer through the SHARED ``norm`` + ``head`` (0 new parameters) and
+        #: returns the earlier layers' decodes under ``"aux"``; the returned dict's own keys stay
+        #: the LAST layer's, bit-identical to the off path (pinned by a test).
+        self.deep_supervision: bool = False
+        #: refcv7 A9 R1: the presence probability this head was INITIALISED at (the logit bias).
+        #: ``None`` keeps :attr:`PRESENCE_PRIOR` (0.05), so every pre-A9 build is unchanged.
+        self.presence_prior: float = float(
+            self.PRESENCE_PRIOR if presence_prior is None else presence_prior)
+        if not 0.0 < self.presence_prior < 1.0:
+            raise ValueError(f"presence_prior must be in (0, 1), got "
+                             f"{self.presence_prior}")
 
         self.mem_proj = nn.Linear(self.d_memory, self.d_model)
         self.mem_pos = nn.Parameter(torch.zeros(1, self.n_memory,
@@ -614,7 +647,7 @@ class AgentSlotDecoder(nn.Module):
         self.head = nn.Linear(self.d_model, SLOT_WIDTH)
         with torch.no_grad():
             self.head.bias[SLOT_SLICES["presence"]] = math.log(
-                self.PRESENCE_PRIOR / (1.0 - self.PRESENCE_PRIOR))
+                self.presence_prior / (1.0 - self.presence_prior))
 
         n = self.n_params
         if enforce_band and not (PARAM_BAND[0] <= n <= PARAM_BAND[1]):
@@ -650,8 +683,23 @@ class AgentSlotDecoder(nn.Module):
         b = memory.shape[0]
         mem = self.mem_proj(memory) + self.mem_pos.to(memory.dtype)
         q = self.queries.to(memory.dtype).expand(b, -1, -1)
-        raw = self.head(self.norm(self.blocks(q, mem)))          # [B, N, W]
-        return self.decode(raw)
+        if not getattr(self, "deep_supervision", False):
+            raw = self.head(self.norm(self.blocks(q, mem)))      # [B, N, W]
+            return self.decode(raw)
+        # ---- refcv7 A9 R2: every layer through the SHARED norm + head -------- #
+        # ``nn.TransformerDecoder.forward`` is exactly this loop (no masks, not
+        # causal, no stack-level norm), so the LAST entry is bit-identical to the
+        # off path; the earlier ones are the deep-supervision targets.
+        if self.blocks.norm is not None:
+            raise RuntimeError("deep supervision assumes no stack-level norm")
+        x = q
+        raws = []
+        for layer in self.blocks.layers:
+            x = layer(x, mem)
+            raws.append(self.head(self.norm(x)))
+        out = self.decode(raws[-1])
+        out["aux"] = [self.decode(r) for r in raws[:-1]]
+        return out
 
     def decode(self, raw: Tensor) -> dict:
         """Split :data:`SLOT_FIELDS` out of the head output and apply the
@@ -764,7 +812,8 @@ def hungarian(cost: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     return rows, cols
 
 
-def _match_cost(pred: dict, tgt: dict, b: int, keep: np.ndarray) -> np.ndarray:
+def _match_cost(pred: dict, tgt: dict, b: int, keep: np.ndarray,
+                presence_cost: str = "sigmoid") -> np.ndarray:
     """Cost matrix ``[N, A_kept]`` for one batch element, in the declared
     :data:`MATCH_COST_W` mixture. Built under ``no_grad`` by the caller — the
     ASSIGNMENT is a discrete decision and must not be differentiated (DETR)."""
@@ -779,13 +828,23 @@ def _match_cost(pred: dict, tgt: dict, b: int, keep: np.ndarray) -> np.ndarray:
     cls_c = -prob[:, safe]                                   # [N, A]
     cls_c = torch.where(
         (cls_t >= 0)[None, :], cls_c, torch.zeros_like(cls_c))
-    pres = -pred["presence_logit"][b].sigmoid()[:, None].expand_as(centre)
+    if presence_cost == "focal":
+        # refcv7 A9 R1: mmdet FocalLossCost x 2.0 (DETR3D / BEVFormer).
+        from tanitad.models.slot_presence import FOCAL_MATCH_W, focal_presence_cost
+        pres = focal_presence_cost(
+            pred["presence_logit"][b])[:, None].expand_as(centre)
+        w_pres = FOCAL_MATCH_W
+    elif presence_cost == "sigmoid":
+        pres = -pred["presence_logit"][b].sigmoid()[:, None].expand_as(centre)
+        w_pres = w["presence"]
+    else:
+        raise ValueError(f"presence_cost {presence_cost!r} not in {PRESENCE_COSTS}")
     c = (w["centre_m"] * centre + w["size_m"] * size
-         + w["cls"] * cls_c + w["presence"] * pres)
+         + w["cls"] * cls_c + w_pres * pres)
     return c.detach().to(torch.float64).cpu().numpy()
 
 
-def match_slots(pred: dict, tgt: dict) -> dict:
+def match_slots(pred: dict, tgt: dict, *, presence_cost: str = "sigmoid") -> dict:
     """Hungarian-match slots to targets, per batch element.
 
     ``tgt`` carries ``box`` [B, A, 4], ``cls`` [B, A] (long, -1 = unknown) and
@@ -799,7 +858,12 @@ def match_slots(pred: dict, tgt: dict) -> dict:
     declared, not incidental: the near field is the one the plan acts on
     (``time_to_reach`` weighting, O2), and a silent drop would flatter the head
     exactly on crowded frames.
+
+    ``presence_cost`` (refcv7 A9 R1): ``"sigmoid"`` (default, bit-identical) or
+    ``"focal"`` -- see :data:`PRESENCE_COSTS`.
     """
+    if presence_cost not in PRESENCE_COSTS:
+        raise ValueError(f"presence_cost {presence_cost!r} not in {PRESENCE_COSTS}")
     rows, cols, n_t, n_d = [], [], [], []
     n_q = int(pred["box"].shape[1])
     with torch.no_grad():
@@ -816,7 +880,7 @@ def match_slots(pred: dict, tgt: dict) -> dict:
                 cols.append(torch.zeros(0, dtype=torch.long))
                 continue
             keep = valid.cpu().numpy()
-            c = _match_cost(pred, tgt, b, valid)
+            c = _match_cost(pred, tgt, b, valid, presence_cost=presence_cost)
             r, k = hungarian(c)
             rows.append(torch.as_tensor(r, dtype=torch.long))
             cols.append(torch.as_tensor(keep[k], dtype=torch.long))

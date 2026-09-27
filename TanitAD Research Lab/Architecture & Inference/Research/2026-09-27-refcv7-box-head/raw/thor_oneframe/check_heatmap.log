@@ -1,0 +1,15 @@
+[v3] rig camera = PER-CLIP EXTRINSICS from /home/nvidia/data/refcv6_train_eval139_extrinsics.json (4508 clips, z 1.203-1.687 m, pitch -0.0755..+0.0683 rad)
+[v3] ⚠️ a rig camera is built but --agent-w-project and --agent-w-ground are both 0: neither monocular term contributes. That is a legal ablation baseline and the stamp records it, but it is not a projection arm.
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v2] /home/nvidia/data/refcv6-b1-416x1024-train: 4369 providers (channels 9, 416x1024 px), episode ids from 'episode_uid' [collision-free; the as-built 16-bit ids would give only 4246 distinct for 4369 clips]
+[v2] 4369 providers, 4369 distinct episode ids
+[v3] nav_from_v7: follow 11 / left 3 / right 2, missing 0 (of 16 clips; md5=b45377a1f25263b5c0f3d318c126b1ac)
+[v3] max_speed_input_v6 (4-way one-hot): 4572/4572 sidecar rows carry a ceiling, 2737/2737 windows fed (100.0 %), 86 clips ABOVE the 120 km/h top step (clamped, and on those the fed ceiling is one the ego demonstrably exceeded)
+[v3] agent join: 16/16 episodes (stable-63bit), 2737/2737 windows labelled (100.0 %), 112229 prefilter target boxes, pad 400
+[v3] SAM3 map GT at 10 cm (100 m x +-30 m): frac_ok 1.0000 of 2737 windows over 16 clips (verdict PASS)
+[gbo 11:20:17] C3 PASS: totals [113, 77] vs [113, 77]
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+[v3] opt=dd AdamW wd=0.0001 encoder_lr=5.000e-05 (316 tensors) head_lr=1.000e-04 (494 tensors)
+[gbo 11:20:19] check-build: {'dvb_mismatches': [], 'box_decoder_params': 3858199, 'box_memory_params': 287744, 'box_n_queries': 300, 'box_deep_supervision': True, 'box_presence_prior': 0.01, 'box_presence_loss': 'focal', 'box_vis1': True, 'agent_n_queries': 300}

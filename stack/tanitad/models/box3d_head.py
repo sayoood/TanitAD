@@ -238,10 +238,14 @@ class Box3DSlotDecoder(AgentSlotDecoder):
                  depth: int = 3, n_heads: int = 8,
                  ranges: SlotDecodeRanges | None = None,
                  z_range_m: float = Z_RANGE_M, h_range_m: float = H_RANGE_M,
-                 enforce_band: bool = True):
+                 enforce_band: bool = True,
+                 presence_prior: float | None = None):
+        # refcv7 A9 R1: the prior is set on the 2-D head and COPIED below with
+        # the rest of the 2-D init, so there is one spelling of the bias.
         super().__init__(d_memory, n_memory, n_queries=n_queries,
                          d_model=d_model, depth=depth, n_heads=n_heads,
-                         ranges=ranges, enforce_band=False)
+                         ranges=ranges, enforce_band=False,
+                         presence_prior=presence_prior)
         self.z_range_m, self.h_range_m = float(z_range_m), float(h_range_m)
         old = self.head
         self.head = nn.Linear(self.d_model, SLOT3D_WIDTH)

@@ -1,0 +1,37 @@
+[v3] rig camera = PER-CLIP EXTRINSICS from /home/nvidia/data/refcv6_train_eval139_extrinsics.json (4508 clips, z 1.203-1.687 m, pitch -0.0755..+0.0683 rad)
+[v3] ⚠️ a rig camera is built but --agent-w-project and --agent-w-ground are both 0: neither monocular term contributes. That is a legal ablation baseline and the stamp records it, but it is not a projection arm.
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v2] /home/nvidia/data/refcv6-b1-416x1024-train: 4369 providers (channels 9, 416x1024 px), episode ids from 'episode_uid' [collision-free; the as-built 16-bit ids would give only 4246 distinct for 4369 clips]
+[v2] 4369 providers, 4369 distinct episode ids
+[v3] nav_from_v7: follow 11 / left 3 / right 2, missing 0 (of 16 clips; md5=b45377a1f25263b5c0f3d318c126b1ac)
+[v3] max_speed_input_v6 (4-way one-hot): 4572/4572 sidecar rows carry a ceiling, 2737/2737 windows fed (100.0 %), 86 clips ABOVE the 120 km/h top step (clamped, and on those the fed ceiling is one the ego demonstrably exceeded)
+[v3] agent join: 16/16 episodes (stable-63bit), 2737/2737 windows labelled (100.0 %), 112229 prefilter target boxes, pad 400
+[v3] SAM3 map GT at 10 cm (100 m x +-30 m): frac_ok 1.0000 of 2737 windows over 16 clips (verdict PASS)
+[gbo 12:05:15] C3 PASS: totals [113, 77] vs [113, 77]
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+[v3] opt=dd AdamW wd=0.0001 encoder_lr=5.000e-05 (316 tensors) head_lr=1.000e-04 (491 tensors)
+[gbo 12:09:53] main step 100: AP 0.046 P nan R 0.000 conf 0 centre 0.653 pres 0.4591
+[gbo 12:14:25] main step 200: AP 0.111 P nan R 0.000 conf 0 centre 0.559 pres 0.4108
+[gbo 12:18:38] main step 300: AP 0.304 P 1.000 R 0.018 conf 2 centre 0.465 pres 0.3210
+[gbo 12:22:50] main step 400: AP 0.622 P 1.000 R 0.133 conf 15 centre 0.302 pres 0.2167
+[gbo 12:27:03] main step 500: AP 0.859 P 1.000 R 0.319 conf 36 centre 0.364 pres 0.1344
+[gbo 12:31:17] main step 600: AP 0.985 P 1.000 R 0.690 conf 78 centre 0.165 pres 0.0582
+[gbo 12:35:39] main step 700: AP 1.000 P 1.000 R 0.823 conf 93 centre 0.202 pres 0.0264
+[gbo 12:40:07] main step 800: AP 1.000 P 1.000 R 0.903 conf 102 centre 0.298 pres 0.0169
+[gbo 12:44:30] main step 900: AP 1.000 P 1.000 R 0.938 conf 106 centre 0.163 pres 0.0120
+[gbo 12:48:37] main step 1000: AP 1.000 P 1.000 R 0.965 conf 109 centre 0.149 pres 0.0079
+[gbo 12:52:39] main step 1100: AP 1.000 P 1.000 R 0.920 conf 104 centre 0.256 pres 0.0106
+[gbo 12:56:53] main step 1200: AP 1.000 P 1.000 R 1.000 conf 113 centre 0.165 pres 0.0052
+[gbo 13:01:10] main step 1300: AP 1.000 P 1.000 R 1.000 conf 113 centre 0.180 pres 0.0043
+[gbo 13:05:36] main step 1400: AP 1.000 P 1.000 R 0.965 conf 109 centre 0.117 pres 0.0051
+[gbo 13:10:10] main step 1500: AP 1.000 P 1.000 R 1.000 conf 113 centre 0.164 pres 0.0036
+[gbo 13:14:40] main step 1600: AP 1.000 P 1.000 R 1.000 conf 113 centre 0.132 pres 0.0030
+[gbo 13:18:59] main step 1700: AP 1.000 P 1.000 R 1.000 conf 113 centre 0.104 pres 0.0027
+[gbo 13:23:13] main step 1800: AP 1.000 P 1.000 R 0.965 conf 109 centre 0.152 pres 0.0045
+[gbo 13:27:24] main step 1900: AP 1.000 P 1.000 R 1.000 conf 113 centre 0.110 pres 0.0018
+[gbo 13:31:38] main step 2000: AP 0.996 P 0.989 R 0.832 conf 95 centre 0.141 pres 0.0285
+[gbo 13:31:40] arm main: FAIL (5180.7 s, 2.585661761522293 s/step)
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file+cli), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers

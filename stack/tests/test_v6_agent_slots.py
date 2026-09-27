@@ -106,7 +106,9 @@ CONFIG_E_PARAMS, CONFIG_E_KEYS = 336_542_025, 573
 #: moved because the GEOMETRY moved, not because the probe drifted. The
 #: delta is **+21,504 = 84 x 256**: only the query table scales with N, so
 #: the band is not a reason to keep N small.
-PROD_SLOT_PARAMS = 3_228_949
+#: ⭐ refcv7 A9 R4 (2026-09-27): N_QUERIES_DEFAULT 100 -> 300, so the probe moves by EXACTLY
+#: 200 x 256 = 51,200 (3,228,949 at 100 -> 3,280,149 at 300): only the query table scales.
+PROD_SLOT_PARAMS = 3_280_149
 PROD_SLOT_KW = dict(n_queries=N_QUERIES_DEFAULT, d_model=256, depth=3,
                     n_heads=8)
 
@@ -832,7 +834,7 @@ def test_the_slot_query_default_is_the_ruled_measured_value():
     **7.3 m**, inside the braking envelope.
     """
     assert V6Config(tac_vocab_version="v6.0").n_slot_queries \
-        == N_QUERIES_DEFAULT == 100
+        == N_QUERIES_DEFAULT == 300          # re-ruled by SPEC_REFCV7 A9 R4
 
 
 def test_the_slot_query_default_has_exactly_one_spelling():
@@ -915,4 +917,4 @@ def test_the_slot_query_default_has_exactly_one_spelling():
 
     # ---- and the VALUE that actually reaches a run ----------------------
     assert tv6.build_parser().get_default("n_slot_queries") \
-        == N_QUERIES_DEFAULT == 100
+        == N_QUERIES_DEFAULT == 300          # re-ruled by SPEC_REFCV7 A9 R4

@@ -62,6 +62,7 @@ from tanitad.models.bev_encoder import (BEVEncoderConfig, BEVMapBranch,
 from tanitad.models.bev_lift import HEIGHTS_M, BEVLift, build_lift_geometry
 from tanitad.models.box3d_head import (Box3DMemory, Box3DSlotDecoder,
                                        box3d_set_loss)
+from tanitad.models.agent_slots import N_QUERIES_DEFAULT
 from tanitad.models.trunk_shapes import (PERCEPTION_STRIDE,
                                          assert_label_grid_unmoved,
                                          frame_for_width)
@@ -164,7 +165,9 @@ class PerceptionBranchConfig:
     w_box3d: float
     d_bev: int = 128                  # BEVLift.d_out == BEVEncoderConfig.d_in
     bev_cfg: BEVEncoderConfig = field(default_factory=BEVEncoderConfig)
-    n_queries: int = 100              # agent_slots.N_QUERIES_DEFAULT
+    #: ⛔ the ONE spelling (refcv7 A9 R4: 300). A run recorded before the ruling is rebuilt from
+    #: its own ``refcv6_perception.n_queries`` stamp (``refcv3_arm.rebuild_perception_branch``).
+    n_queries: int = N_QUERIES_DEFAULT
     d_model: int = 256
     bev_tokens_hw: tuple[int, int] = (30, 16)
     heights_m: tuple[float, ...] = HEIGHTS_M
@@ -187,6 +190,18 @@ class PerceptionBranchConfig:
     #: `config.json` in isolation gets, and an `occ` number whose source is not
     #: in the record is unattributable between the learned and derived paths.
     occ_from_geometry: bool = False
+    #: ⭐⭐ refcv7 A9 (SPEC_REFCV7 §14) -- the REFINED box head; every default is the pre-A9 arm.
+    #: R1 presence objective (``"bce"`` | ``"focal"``), R1 init prior, R2 per-layer
+    #: supervision, R3 VIS-1 targets. Same four fields, same meaning, as
+    #: ``refc_agents.AgentSeamConfig`` -- the two heads share ``AgentSlotDecoder``.
+    presence_loss: str = "bce"
+    presence_prior: float = 0.05
+    deep_supervision: bool = False
+    vis1: bool = False
+    #: ⭐ refcv7 A14 (SPEC_REFCV7 §19): the BOX head's query selection. "learned" (DEFAULT) = the learned query
+    #: table, the A9 build bit-identical; "heatmap" = HQS (``slot_query_select``): each query anchored at a cell of
+    #: the BEV centre heatmap's top-K (3x3 NMS, K = n_queries), box centre = anchor + tanh(raw) x 4 m.
+    query_select: str = "learned"
     #: ⭐⭐ refcv7 A6 (SPEC_REFCV7 §11.1): WHERE the BEV every consumer reads comes
     #: from (:data:`BEV_SOURCES`, ``--bev-source``). ``"s16_lift"`` (DEFAULT) = the
     #: refcv6 branch, byte for byte. ``"map_hires_pool"``: no stride-16 lift, no 0.5 m
@@ -210,6 +225,9 @@ class PerceptionBranchConfig:
     #: ~1 M parameters in the optimiser whose only gradient is the box loss's --
     #: legal, but a different experiment, and it must be asked for by name.
     def __post_init__(self) -> None:
+        from tanitad.models.slot_query_select import QUERY_SELECT as _QS
+        if str(self.query_select) not in _QS:
+            raise ValueError(f"query_select {self.query_select!r} not in {_QS}")
         if str(self.bev_source) not in BEV_SOURCES:
             raise ValueError(f"bev_source {self.bev_source!r} not in {BEV_SOURCES}")
         if float(self.w_map) < 0.0 or float(self.w_box3d) < 0.0:
@@ -256,6 +274,11 @@ class PerceptionBranchConfig:
                 "heights_m": list(self.heights_m), "stride": int(self.stride),
                 "use_bev_in_box_head": bool(self.use_bev),
                 "occ_from_geometry": bool(self.occ_from_geometry),
+                "presence_loss": str(self.presence_loss),
+                "presence_prior": float(self.presence_prior),
+                "deep_supervision": bool(self.deep_supervision),
+                "vis1": bool(self.vis1),
+                "query_select": str(self.query_select),
                 "bev_encoder": {"d_in": int(self.bev_cfg.d_in),
                                 "d_model": int(self.bev_cfg.d_model),
                                 "d_out": int(self.bev_cfg.d_out),
@@ -463,6 +486,11 @@ class PerceptionBranch(nn.Module):
 
         self.box_mem: Box3DMemory | None = None
         self.box_dec: Box3DSlotDecoder | None = None
+        #: refcv7 A14: the centre heatmap (heatmap) / the learned reference points (learned_ref) + the anchor
+        #: position embed (both anchored modes); all None under the default "learned"
+        self.box_heat = None
+        self.box_refpts = None
+        self.box_qpos = None
         if float(cfg.w_box3d) > 0.0:
             self.box_mem = Box3DMemory(
                 d_image=self.d_image, d_bev=int(cfg.bev_cfg.d_out),
@@ -472,12 +500,26 @@ class PerceptionBranch(nn.Module):
             self.box_dec = Box3DSlotDecoder(
                 d_memory=int(cfg.d_model), n_memory=int(self.box_mem.n_tokens),
                 n_queries=int(cfg.n_queries), d_model=int(cfg.d_model),
-                enforce_band=bool(cfg.enforce_param_band))
+                enforce_band=bool(cfg.enforce_param_band),
+                presence_prior=float(cfg.presence_prior))
             # ⛔ DECLARED IS NOT PLUMBED. A stamped field that never reaches
             # the module it names reads as "the knob does nothing" rather than
             # as a bug -- the refcv6 seam defect verbatim. The test pins THIS
             # line, not the dataclass.
             self.box_dec.occ_from_geometry = bool(cfg.occ_from_geometry)
+            # ⛔ refcv7 A9 R2 -- declared is not plumbed; the test pins THIS line too.
+            self.box_dec.deep_supervision = bool(cfg.deep_supervision)
+            if str(cfg.query_select) == "heatmap":
+                if not cfg.use_bev:
+                    raise ValueError("[perception] ⛔ query_select 'heatmap' needs BEV features (w_map > 0 or "
+                                     "bev_source 'map_hires_pool'): the heatmap would read nothing")
+                from tanitad.models.slot_query_select import AnchorPosEmbed, BEVHeatHead
+                self.box_heat = BEVHeatHead(int(cfg.bev_cfg.d_out))
+                self.box_qpos = AnchorPosEmbed(int(cfg.d_model), cfg.planner_grid)
+            elif str(cfg.query_select) == "learned_ref":
+                from tanitad.models.slot_query_select import AnchorPosEmbed, LearnedRefPoints
+                self.box_refpts = LearnedRefPoints(int(cfg.n_queries), cfg.planner_grid)
+                self.box_qpos = AnchorPosEmbed(int(cfg.d_model), cfg.planner_grid)
 
     # -- refcv6 §4, PI RULING 2026-09-17 R2: BEV TOKENS FOR THE DECODER ----- #
     @property
@@ -548,6 +590,14 @@ class PerceptionBranch(nn.Module):
             # refcv7 A6 only: a refcv6 breakdown keeps its key set (stamped, compared)
             d = {**{k: v for k, v in d.items() if k != "total"},
                  "bev_pool": n(self.bev_pool), "total": d["total"]}
+        if getattr(self, "box_qpos", None) is not None:
+            # refcv7 A14 (anchored modes) only, as bev_pool: the keys appear only when built
+            _x = {"box_qpos": n(self.box_qpos)}
+            if getattr(self, "box_heat", None) is not None:
+                _x["box_heat"] = n(self.box_heat)
+            if getattr(self, "box_refpts", None) is not None:
+                _x["box_refpts"] = n(self.box_refpts)
+            d = {**{k: v for k, v in d.items() if k != "total"}, **_x, "total": d["total"]}
         return d
 
     def forward(self, fmap_s16: Tensor, grid: Tensor | None = None,
@@ -621,7 +671,23 @@ class PerceptionBranch(nn.Module):
             out["bev_tokens"] = self.bev_tokens(bev_feats)
         if self.box_dec is not None:
             mem = self.box_mem(fmap_s16, bev_feats)
-            out["box_slots"] = self.box_dec(mem)
+            if self.box_heat is None and self.box_refpts is None:
+                out["box_slots"] = self.box_dec(mem)
+            elif self.box_refpts is not None:
+                # refcv7 A14 (learned_ref): one trainable anchor per query (DAB-DETR static anchors)
+                from tanitad.models import slot_query_select as _sqs
+                _anc = self.box_refpts(int(mem.shape[0]))
+                out["box_slots"] = _sqs.anchored_forward(self.box_dec, mem, _anc, self.box_qpos(_anc))
+            else:
+                # ⭐ refcv7 A14 (HQS): anchors from the BEV centre heatmap's top-K (DETACHED), the query POSITION
+                # from the anchor at every layer, the box centre anchor-relative (slot_query_select).
+                from tanitad.models import slot_query_select as _sqs
+                _heat = self.box_heat(bev_feats)
+                _anc, _sc = _sqs.choose_anchors(self, _heat)
+                out["box_slots"] = _sqs.anchored_forward(self.box_dec, mem, _anc, self.box_qpos(_anc))
+                out["box_slots"]["heat_logits"] = _heat
+                out["box_slots"]["anchor_scores"] = _sc
+                out["box_slots"]["heat_grid"] = _sqs.heat_grid_of(self.cfg.planner_grid, _heat)
         return out
 
 
@@ -747,14 +813,40 @@ def map_loss_row(logits: Tensor, frac: Tensor, seen: Tensor, *,
 
 
 def box3d_loss_row(slots: dict, tgt: dict, *, weights: dict | None = None,
-                   cls_class_weight=None, visible_filter: bool = True) -> dict:
+                   cls_class_weight=None, visible_filter: bool = True,
+                   presence_loss: str = "bce", vis1: bool = False,
+                   vis: dict | None = None) -> dict:
     """:func:`box3d_set_loss` plus per-term counts, flattened for the log row.
 
     ``visible_filter`` is forwarded verbatim; see :func:`box3d_set_loss` for what it
     does, what it measured, and why it defaults ON as of 2026-09-23.
     """
-    r = box3d_set_loss(slots, tgt, weights=weights, cls_class_weight=cls_class_weight,
-                       visible_filter=visible_filter)
+    # ---- refcv7 A9 (R1-R3): the REFINED path, only when asked for --------------- #
+    from tanitad.models import slot_presence as _sp
+    if _sp.refined_is_legacy(presence_loss, vis1, slots):
+        r = box3d_set_loss(slots, tgt, weights=weights, cls_class_weight=cls_class_weight,
+                           visible_filter=visible_filter)
+    else:
+        if not visible_filter:
+            raise ValueError("refcv7 A9: the refined box loss always applies the field cut; "
+                             "visible_filter=False is the pre-A9 regression arm (legacy path)")
+        r = _sp.refined_box3d_losses(slots, tgt, presence_loss=presence_loss, vis1=vis1,
+                                     vis=vis, visible_filter=True, weights=weights,
+                                     cls_class_weight=cls_class_weight)
+    # ---- refcv7 A14 (HQS): the heatmap's loss, INSIDE the box term, whichever presence path ran ---------- #
+    if slots.get("heat_logits") is not None:
+        from tanitad.models import slot_query_select as _sqs
+        if vis1:
+            from tanitad.data.vis1 import vis1_split as _v1s
+            _spl = _v1s(tgt, n_full=vis["n_full"], n_vis=vis["n_vis"], vis_known=vis["known"])
+            _hpos, _hign = _spl["pos"]["valid"].to(torch.bool), _spl["ignore"]
+        else:
+            from tanitad.refs.refc_agents import visible_target_filter as _vtf
+            _hpos, _hign = _vtf(tgt)["valid"].to(torch.bool), None
+        _ht = _sqs.heat_term(slots["heat_logits"], tgt["box"], _hpos, _hign, slots["heat_grid"])
+        r = {**r, "total": r["total"] + _sqs.HEAT_LOSS_W * _ht["loss"], "loss_heat": _ht["loss"],
+             "n": {**dict(r.get("n") or {}), "heat_pos": _ht["n_pos"],
+                   "heat_pos_outside": _ht["n_pos_outside"], "heat_ignore_cells": _ht["n_ignore_cells"]}}
     row = {"loss": r["total"]}
     for k, v in r.items():
         if k.startswith("loss_") and torch.is_tensor(v):
@@ -766,6 +858,11 @@ def box3d_loss_row(slots: dict, tgt: dict, *, weights: dict | None = None,
     # things -- "the filter is off" and "every box was already visible" -- unless the
     # flag travels beside it. The `anchors.pt` units lesson, in a boolean costume.
     row["box3d_visible_filter"] = 1.0 if visible_filter else 0.0
+    if "_refine" in r:                   # refcv7 A9: the arm, in the log row
+        row["box3d_presence_focal"] = 1.0 if presence_loss == "focal" else 0.0
+        row["box3d_vis1"] = 1.0 if vis1 else 0.0
+        row["box3d_presence_frac_confident"] = _sp.presence_sanity(
+            slots["presence_logit"])["frac_confident"]
     return row
 
 

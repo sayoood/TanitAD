@@ -1,0 +1,85 @@
+{
+ "sidecar_sha256": "278443b3356bca054c15753e7c08d465d71b0327a2ce564e143d091261349dd4",
+ "rule": {
+  "positive": "in visible_target_filter AND vis_frac >= 0.3 AND n_vis >= 100 px",
+  "ignore": "every other row INSIDE visible_target_filter, INCLUDING vis_frac < 0.05, rows with no 3-D label and rows with no silhouette pixel (A10 \u00a715.1); rows outside the filter are neither",
+  "ignore_loss": "excluded from matching; an UNMATCHED slot whose BEV centre is within 2.0 m of an IGNORE row gets presence weight 0",
+  "ignore_eval": "a detection greedy-matched (one-to-one, score order, over POSITIVE U IGNORE) to an IGNORE row leaves the PR count (KITTI DontCare)",
+  "t_pos": 0.3,
+  "px_min": 100,
+  "ignore_radius_m": 2.0,
+  "source": "SPEC_REFCV7.md \u00a714 (A9) R3"
+ },
+ "splits": {
+  "train": {
+   "n_clips": 4369,
+   "n_frames": 833247,
+   "targets_in_filter_per_frame": {
+    "mean": 5.396457472994202,
+    "p50": 3.0,
+    "p99": 33.0,
+    "max": 103
+   },
+   "vis1_positives_per_frame": {
+    "mean": 3.3109954191254216,
+    "p50": 2.0,
+    "p99": 15.0,
+    "max": 40
+   },
+   "vis1_ignore_per_frame": {
+    "mean": 2.0854620538687807,
+    "p50": 0.0,
+    "p99": 21.0,
+    "max": 94
+   },
+   "vis_below_0p05_per_frame": {
+    "mean": 1.075122982741012,
+    "p50": 0.0,
+    "p99": 14.0,
+    "max": 84
+   },
+   "totals": {
+    "in_filter": 4496582,
+    "positive": 2758877,
+    "ignore": 1737705,
+    "hidden_lt_0p05": 895843
+   },
+   "frac_in_filter_positive": 0.6135498029392102
+  },
+  "eval": {
+   "n_clips": 139,
+   "n_frames": 26250,
+   "targets_in_filter_per_frame": {
+    "mean": 5.472076190476191,
+    "p50": 3.0,
+    "p99": 31.0,
+    "max": 120
+   },
+   "vis1_positives_per_frame": {
+    "mean": 3.2201142857142857,
+    "p50": 2.0,
+    "p99": 14.0,
+    "max": 43
+   },
+   "vis1_ignore_per_frame": {
+    "mean": 2.2519619047619046,
+    "p50": 0.0,
+    "p99": 23.0,
+    "max": 95
+   },
+   "vis_below_0p05_per_frame": {
+    "mean": 1.2543619047619048,
+    "p50": 0.0,
+    "p99": 19.0,
+    "max": 77
+   },
+   "totals": {
+    "in_filter": 143642,
+    "positive": 84528,
+    "ignore": 59114,
+    "hidden_lt_0p05": 32927
+   },
+   "frac_in_filter_positive": 0.5884629843639048
+  }
+ }
+}

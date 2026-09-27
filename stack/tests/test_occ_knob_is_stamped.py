@@ -33,6 +33,8 @@ from tanitad.refs.refc_agents import AgentSeamConfig, build_agent_head
 
 # ⛔ FROZEN LITERALS. Adding a knob to either seam means adding it here, on purpose.
 AGENT_SEAM_STAMP_KEYS = {
+    # refcv7 A9 (SPEC_REFCV7 §14): the refined head's four DECLARED knobs, added on purpose
+    "presence_loss", "presence_prior", "deep_supervision", "vis1",
     "enable", "oracle", "oracle_sigma_range_m", "oracle_miss_rate",
     "queries", "d_model", "depth", "n_heads", "enforce_band",
     "w_project", "w_ground", "presence_gate", "presence_hard",
@@ -40,6 +42,9 @@ AGENT_SEAM_STAMP_KEYS = {
     "n_classes", "classes", "n_queries_default_upstream",
 }
 PERCEPTION_STAMP_KEYS = {
+    "query_select",   # refcv7 A14 (HQS)
+    # refcv7 A9 (SPEC_REFCV7 §14): the refined box head's four DECLARED knobs, added on purpose
+    "presence_loss", "presence_prior", "deep_supervision", "vis1",
     "w_map", "w_box3d", "d_bev", "n_queries", "d_model", "bev_tokens_hw",
     "heights_m", "stride", "use_bev_in_box_head", "occ_from_geometry",
     "bev_encoder",

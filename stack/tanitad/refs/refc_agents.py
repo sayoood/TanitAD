@@ -186,7 +186,11 @@ class AgentSeamConfig:
     #: DROP**, never "use the p99" — p99 leaves 1 % of frames dropping and that
     #: 1 % is exactly the crowded frames, which is the flattering-on-hard-frames
     #: failure the recipe exists to prevent.
-    queries: int = 100
+    #: ⭐⭐ RE-RULED 2026-09-27 (SPEC_REFCV7 §14 A9, R4): the ONE spelling, now 300 -- see
+    #: :data:`agent_slots.N_QUERIES_DEFAULT` (>= 2 x the 120-target max on the refcv6 line). A
+    #: record from before the ruling rebuilds at its stamped count
+    #: (``refc_v3_train.agent_queries_as_trained``).
+    queries: int = N_QUERIES_DEFAULT
     d_model: int = 256
     depth: int = 3
     n_heads: int = 8
@@ -218,6 +222,17 @@ class AgentSeamConfig:
     #: be rebuilt from its record, and its `occ` numbers would be
     #: unattributable between the two sources.
     occ_from_geometry: bool = False
+    #: ⭐⭐ refcv7 A9 (SPEC_REFCV7 §14) -- the REFINED head. Every default is the pre-A9 arm,
+    #: so an arm that asks for none of them is bit-identical (``slot_presence.refined_is_legacy``).
+    #: R1: ``"focal"`` = sigmoid focal presence (alpha 0.25, gamma 2, weight 2.0, / n_matched)
+    #: AND the focal matching cost; ``"bce"`` = the historical BCE with NO_OBJECT_W 0.1.
+    presence_loss: str = "bce"
+    #: R1: the presence logit's init prior (0.01 under A9; 0.05 = AgentSlotDecoder.PRESENCE_PRIOR).
+    presence_prior: float = 0.05
+    #: R2: supervise every decoder layer (shared heads, re-matched per layer, summed).
+    deep_supervision: bool = False
+    #: R3: VIS-1 targets with IGNORE semantics (``tanitad.data.vis1``); needs the sidecar.
+    vis1: bool = False
 
     def as_dict(self) -> dict:
         """Serialised into ``config.json['seams']['agents']`` — a run record
@@ -234,6 +249,10 @@ class AgentSeamConfig:
             "presence_gate": float(self.presence_gate),
             "presence_hard": bool(self.presence_hard),
             "occ_from_geometry": bool(self.occ_from_geometry),
+            "presence_loss": str(self.presence_loss),
+            "presence_prior": float(self.presence_prior),
+            "deep_supervision": bool(self.deep_supervision),
+            "vis1": bool(self.vis1),
             "n_classes": int(N_AGENT_CLASSES),
             "classes": list(AGENT_CLASSES),
             "n_queries_default_upstream": int(N_QUERIES_DEFAULT),
@@ -251,12 +270,16 @@ def build_agent_head(cfg: AgentSeamConfig, d_memory: int, n_memory: int
         d_memory=int(d_memory), n_memory=int(n_memory),
         n_queries=int(cfg.queries), d_model=int(cfg.d_model),
         depth=int(cfg.depth), n_heads=int(cfg.n_heads),
-        enforce_band=bool(cfg.enforce_band))
+        enforce_band=bool(cfg.enforce_band),
+        presence_prior=float(getattr(cfg, "presence_prior",
+                                     AgentSlotDecoder.PRESENCE_PRIOR)))
     # ⛔ DECLARED IS NOT PLUMBED. A config field that never reaches the
     # module it names is the refcv6 seam defect verbatim -- six channels
     # declared, two never wired -- and it reads as "the knob does nothing"
     # rather than as a bug. The test pins THIS line, not the dataclass.
     head.occ_from_geometry = bool(cfg.occ_from_geometry)
+    # ⛔ refcv7 A9 R2 -- DECLARED IS NOT PLUMBED, the same rule one line up.
+    head.deep_supervision = bool(getattr(cfg, "deep_supervision", False))
     return head
 
 
@@ -831,7 +854,8 @@ def agent_losses(slots: dict, tgt: dict, cfg: AgentSeamConfig,
                  cam=None,
                  weights: dict | None = None,
                  filter_visible: bool = True,
-                 cls_class_weight=None) -> dict:
+                 cls_class_weight=None,
+                 vis: dict | None = None) -> dict:
     """``slot_set_loss`` + the two monocular terms, per term, with their ``n``.
 
     ⛔ Per-term, never pooled into one score — the four-families discipline's
@@ -846,6 +870,19 @@ def agent_losses(slots: dict, tgt: dict, cfg: AgentSeamConfig,
     carries ``cam_scope`` and ``n["rows_no_cam_*"]`` so a run record states
     which of the three it actually used and how many rows went unsupervised.
     """
+    # ---- refcv7 A9 (R1-R3): the REFINED path, taken only when asked for ------ #
+    # ⭐ The historical configuration (BCE, no VIS-1, no per-layer outputs) never
+    # reaches it, so every pre-A9 arm runs the code below unchanged.
+    from tanitad.models import slot_presence as _sp
+    if not _sp.refined_is_legacy(getattr(cfg, "presence_loss", "bce"),
+                                 getattr(cfg, "vis1", False), slots):
+        if not filter_visible:
+            raise ValueError(
+                "refcv7 A9: the refined agent loss always applies the field cut "
+                "(VIS-1 is applied AFTER visible_target_filter); filter_visible=False "
+                "is the pre-A9 regression arm and runs only on the legacy path.")
+        return _sp.refined_agent_losses(slots, tgt, cfg, cam=cam, weights=weights,
+                                        cls_class_weight=cls_class_weight, vis=vis)
     # ⛔ THE FILTER IS ON BY DEFAULT AND THAT IS THE POINT. Without it 61.8 %
     # of the targets `match_slots` keeps are outside the camera's field
     # (MEASURED, val40 join) and the head is trained to hallucinate. Turning it

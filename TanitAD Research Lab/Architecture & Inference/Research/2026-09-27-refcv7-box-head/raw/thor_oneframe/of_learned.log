@@ -1,0 +1,36 @@
+[v3] rig camera = PER-CLIP EXTRINSICS from /home/nvidia/data/refcv6_train_eval139_extrinsics.json (4508 clips, z 1.203-1.687 m, pitch -0.0755..+0.0683 rad)
+[v3] ⚠️ a rig camera is built but --agent-w-project and --agent-w-ground are both 0: neither monocular term contributes. That is a legal ablation baseline and the stamp records it, but it is not a projection arm.
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v2] /home/nvidia/data/refcv6-b1-416x1024-train: 4369 providers (channels 9, 416x1024 px), episode ids from 'episode_uid' [collision-free; the as-built 16-bit ids would give only 4246 distinct for 4369 clips]
+[v2] 4369 providers, 4369 distinct episode ids
+[v3] nav_from_v7: follow 11 / left 3 / right 2, missing 0 (of 16 clips; md5=b45377a1f25263b5c0f3d318c126b1ac)
+[v3] max_speed_input_v6 (4-way one-hot): 4572/4572 sidecar rows carry a ceiling, 2737/2737 windows fed (100.0 %), 86 clips ABOVE the 120 km/h top step (clamped, and on those the fed ceiling is one the ego demonstrably exceeded)
+[v3] agent join: 16/16 episodes (stable-63bit), 2737/2737 windows labelled (100.0 %), 112229 prefilter target boxes, pad 400
+[v3] SAM3 map GT at 10 cm (100 m x +-30 m): frac_ok 1.0000 of 2737 windows over 16 clips (verdict PASS)
+[gbo 11:38:00] C3 PASS: totals [113, 77] vs [113, 77]
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+[v3] opt=dd AdamW wd=0.0001 encoder_lr=5.000e-05 (316 tensors) head_lr=1.000e-04 (486 tensors)
+[gbo 11:38:26] one-frame main step 25: p_matched median 0.02199649160769662 keep None anchor-keep None conf 0 AP 0.031 loss 47.115
+[gbo 11:38:46] one-frame main step 50: p_matched median 0.05043807811528541 keep 0.0 anchor-keep None conf 0 AP 0.161 loss 44.232
+[gbo 11:39:05] one-frame main step 75: p_matched median 0.14237951995972425 keep 0.0 anchor-keep None conf 0 AP 0.029 loss 31.068
+[gbo 11:39:24] one-frame main step 100: p_matched median 0.17283481460720834 keep 0.0 anchor-keep None conf 0 AP 0.072 loss 29.813
+[gbo 11:39:43] one-frame main step 125: p_matched median 0.18104913232884348 keep 0.0 anchor-keep None conf 0 AP 0.194 loss 23.243
+[gbo 11:40:03] one-frame main step 150: p_matched median 0.1497490261932486 keep 0.0 anchor-keep None conf 0 AP 0.020 loss 21.149
+[gbo 11:40:22] one-frame main step 175: p_matched median 0.14042828850135303 keep 0.0 anchor-keep None conf 0 AP 0.012 loss 22.124
+[gbo 11:40:41] one-frame main step 200: p_matched median 0.16772237403354728 keep 0.0 anchor-keep None conf 0 AP 0.026 loss 18.971
+[gbo 11:41:01] one-frame main step 225: p_matched median 0.17322963672289265 keep 0.07692307692307693 anchor-keep None conf 0 AP 0.059 loss 17.116
+[gbo 11:41:20] one-frame main step 250: p_matched median 0.1940930330325582 keep 0.0 anchor-keep None conf 0 AP 0.237 loss 17.494
+[gbo 11:41:40] one-frame main step 275: p_matched median 0.17282138552151355 keep 0.0 anchor-keep None conf 0 AP 0.034 loss 13.434
+[gbo 11:42:00] one-frame main step 300: p_matched median 0.16886976797127407 keep 0.0 anchor-keep None conf 0 AP 0.015 loss 18.051
+[gbo 11:42:20] one-frame main step 325: p_matched median 0.1737313108116022 keep 0.0 anchor-keep None conf 0 AP 0.027 loss 17.478
+[gbo 11:42:40] one-frame main step 350: p_matched median 0.16782553787556845 keep 0.0 anchor-keep None conf 0 AP 0.202 loss 12.172
+[gbo 11:42:59] one-frame main step 375: p_matched median 0.17969946929491715 keep 0.0 anchor-keep None conf 0 AP 0.076 loss 10.457
+[gbo 11:43:19] one-frame main step 400: p_matched median 0.20809998432663063 keep 0.0 anchor-keep None conf 0 AP 0.116 loss 9.952
+[gbo 11:43:38] one-frame main step 425: p_matched median 0.15793367129867827 keep 0.0 anchor-keep None conf 0 AP 0.044 loss 9.787
+[gbo 11:43:58] one-frame main step 450: p_matched median 0.17535703041629033 keep 0.0 anchor-keep None conf 0 AP 0.116 loss 9.327
+[gbo 11:44:18] one-frame main step 475: p_matched median 0.17146689191222672 keep 0.0 anchor-keep None conf 0 AP 0.170 loss 10.345
+[gbo 11:44:37] one-frame main step 500: p_matched median 0.16800292221332078 keep 0.0 anchor-keep None conf 0 AP 0.022 loss 11.495
+[gbo 11:44:37] one-frame main: {'i_p_matched_median': 0.16800292221332078, 'i_pass': False, 'ii_keep_final100': 0.0, 'ii_key': 'keep', 'ii_windows': 4, 'ii_pass': False, 'PASS': False}
+[gbo 11:44:37] ONE-FRAME RESULT FAIL

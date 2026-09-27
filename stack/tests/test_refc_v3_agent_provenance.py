@@ -630,15 +630,18 @@ def test_P2_config_json_writes_the_CHECKED_stamp():
 # =========================================================================
 
 def test_P3_agent_queries_default_is_100():
-    assert t.AGENT_QUERIES_DEFAULT == 100
-    assert t.build_parser().get_default("agent_queries") == 100
+    # re-ruled by SPEC_REFCV7 A9 R4: the ONE spelling is agent_slots.N_QUERIES_DEFAULT (300)
+    from tanitad.models.agent_slots import N_QUERIES_DEFAULT
+    assert t.AGENT_QUERIES_DEFAULT is N_QUERIES_DEFAULT or \
+        t.AGENT_QUERIES_DEFAULT == N_QUERIES_DEFAULT == 300
+    assert t.build_parser().get_default("agent_queries") == 300
 
 
 def test_P3_the_default_reaches_the_seam_config():
     a = _args("--agents", "oracle")
     cfg = v3.refc_v3_smoke_config(True)
     t._pin_refcv5_seams(cfg, a)
-    assert cfg.core.agents.queries == 100
+    assert cfg.core.agents.queries == 300          # SPEC_REFCV7 A9 R4
 
 
 def test_P3_the_help_text_no_longer_asserts_the_val40_claim():

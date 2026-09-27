@@ -889,6 +889,79 @@ for _d in ("agent_queries", "agent_w_project", "agent_w_ground", "agent_rig_came
         "an agent-seam knob: every value must be recoverable from `seams.agent_knobs` "
         "(`assert_knobs_stamped`), and the seam itself is built-checked by --agents (G-DVB) and "
         "`assert_seams_are_built`"))
+# -- refcv7 A9: the refined slot heads (R1-R3). Each reads BOTH built slot heads -- the
+#    learned agent head (`core.agent_head`) and the box decoder (`_perception.box_dec`) --
+#    and the loss config each head's loss reads. A flag set with NO learned head is itself
+#    a mismatch (declared, built nowhere).
+def _slot_heads(m):
+    out = []
+    ah = getattr(_core(m), "agent_head", None)
+    if ah is not None and hasattr(ah, "deep_supervision"):      # learned, not the oracle
+        out.append(("agent", ah, getattr(getattr(_core(m), "cfg", None), "agents", None)))
+    br = getattr(m, "_perception", None)
+    bd = getattr(br, "box_dec", None) if br is not None else None
+    if bd is not None:
+        out.append(("box3d", bd, getattr(br, "cfg", None)))
+    return out
+
+
+def _c_slot(dest, default, read, where, tol=None):
+    def chk(m, a):
+        want = _a(a, dest, default)
+        want = type(default)(want) if want is not None else default
+        heads = _slot_heads(m)
+        out = []
+        if not heads and want != default:
+            out.append(Mismatch(_flag(dest), want, "no learned slot head built",
+                                "core.agent_head / _perception.box_dec",
+                                "a refinement declared on a model that built no slot head"))
+        for name, dec, lcfg in heads:
+            got = read(dec, lcfg)
+            if tol is not None:
+                out += _near(dest, float(want), got, f"{name}: {where}", tol=tol)
+            else:
+                out += _eq(dest, want, got, f"{name}: {where}")
+        return out
+    return chk
+
+
+def _c_slot_vis1(m, a):
+    want = bool(_a(a, "slot_vis1", False))
+    out = _eq("slot_vis1", want, bool(getattr(m, "_vis1", False)),
+              "model._vis1 (read by the loss-time batch block)")
+    return out + _c_slot("slot_vis1", False, lambda d, c: bool(getattr(c, "vis1", False)),
+                         "loss config .vis1 (read by the loss)")(m, a)
+
+
+_b("slot_presence_loss", _c_slot("slot_presence_loss", "bce",
+                                  lambda d, c: str(getattr(c, "presence_loss", "<absent>")),
+                                  "loss config .presence_loss (read by the loss)"))
+_b("slot_presence_prior", _c_slot("slot_presence_prior", 0.05,
+                                   lambda d, c: getattr(d, "presence_prior", None),
+                                   "decoder.presence_prior (its init bias)", tol=1e-12))
+_b("slot_deep_supervision", _c_slot("slot_deep_supervision", False,
+                                     lambda d, c: bool(getattr(d, "deep_supervision", False)),
+                                     "decoder.deep_supervision (read by the forward)"))
+_b("slot_vis1", _c_slot_vis1)
+
+
+def _c_slot_query_select(m, a):
+    want = str(_a(a, "slot_query_select", "learned") or "learned")
+    br = getattr(m, "_perception", None)
+    out = _eq("slot_query_select", want == "heatmap", getattr(br, "box_heat", None) is not None,
+              "model._perception.box_heat is not None", "HQS's heatmap is built iff heatmap is declared")
+    out += _eq("slot_query_select", want == "learned_ref", getattr(br, "box_refpts", None) is not None,
+               "model._perception.box_refpts is not None", "the reference points are built iff learned_ref")
+    if br is not None:
+        out += _eq("slot_query_select", want, str(getattr(br.cfg, "query_select", "learned")),
+                   "model._perception.cfg.query_select (read by the forward)")
+    return out
+
+
+_b("slot_query_select", _c_slot_query_select)
+register("vis1_sidecar", "data", reason=(
+    "the VIS-1 visibility sidecar (refcv7 A9 R3); its sha256 is stamped in config.json[vis1] "
+    "and the dataset REFUSES a missing clip, frame, row or a mismatched track/centre"))
 _b("w_map", _c_perception)
 register("w_box3d", "elsewhere", reason="checked with --w-map against model._perception (G-DVB)")
 _b("map_lift_valid_mask", _c_attr("map_lift_valid_mask", "_map_lift_valid_mask",

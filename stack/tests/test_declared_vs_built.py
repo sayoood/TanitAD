@@ -265,7 +265,10 @@ def test_GDVB_every_trainer_flag_has_an_entry_and_every_entry_is_well_formed():
     # map_head_hires.register_dvb_levers)
     # + NEW-2 R2's --map-hires-near-lift-m (SPEC_REFCV7 A12, the 0.1 m near-range lift)
     # + NEW-2 R3's --map-hires-near-refine-blocks (SPEC_REFCV7 §20, A15, the decoder lever)
-    assert len(dvb.REGISTRY) == 215
+    assert len(dvb.REGISTRY) == 221
+    # refcv7 A14 (HQS): +1 = --slot-query-select (220 -> 221)
+    # refcv7 A9 (box head): +5 = --slot-presence-loss, --slot-presence-prior,
+    # --slot-deep-supervision, --slot-vis1, --vis1-sidecar (215 -> 220)
     for d in ("map_hires", "w_map_hires", "map_hires_class_weights",
               "map_hires_decision_rule", "map_hires_x_max_m", "map_hires_y_half_m",
               "map_hires_grad_ckpt", "bev_source", "bev_planner_crop_m",

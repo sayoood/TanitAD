@@ -128,6 +128,9 @@ from tanitad.train import grad_conflict as _gcf  # noqa: E402  (refcv6 §6)
 from tanitad.train import config_hygiene as _hyg  # noqa: E402
 from tanitad.train import declared_vs_built as _dvb  # noqa: E402
 from tanitad.models import agent_slots as _agent_slots  # noqa: E402
+from tanitad.models import slot_presence as _slot_presence  # noqa: E402  (refcv7 A9)
+from tanitad.data import vis1 as _vis1  # noqa: E402  (refcv7 A9 R3)
+from tanitad.eval import detection_metrics as _det_metrics  # noqa: E402  (refcv7 A9 P0)
 # --- refcv6 §2/§6: the perception branch (map + 3-D boxes) ------------------ #
 # ⛔ IMPORTED UNCONDITIONALLY, USED ONLY BEHIND A POSITIVE WEIGHT. An
 # analysis-time import that fails AFTER the rollout destroys a run whose
@@ -204,7 +207,12 @@ GOAL_POINT_WEIGHT_DEFAULT = 0.0
 #: MEASURED by two independent implementations (``measure_train_agent_density
 #: .py`` and a numpy-free ``indep_max.py``), agreeing box for box:
 #: `…/Data Engineering/Research/2026-09-05-agent-join-into-batch/RESULT.md` §P3.
-AGENT_QUERIES_DEFAULT = 100
+#: ⭐⭐ RE-RULED 2026-09-27 (SPEC_REFCV7 §14 A9, R4): the ONE spelling is
+#: `agent_slots.N_QUERIES_DEFAULT` (300 = 2.5 x the 120-target max on the refcv6 corpus line;
+#: DETR finds every instance only up to ~N/2). This name stays for its readers. A run
+#: recorded before the ruling (its argv has no --agent-queries) is rebuilt at its STAMPED
+#: count by `agent_queries_as_trained`, never at this default.
+from tanitad.models.agent_slots import N_QUERIES_DEFAULT as AGENT_QUERIES_DEFAULT  # noqa: E402
 #: the registered dominance lever set — build REFUSES any other delta (C122).
 REGISTERED_DELTA_KEYS = {"hier", "core.graft_target_latent"}
 #: ⭐ v4 adds its own lever set on top of the hier/flat pair. Both arms of a
@@ -1232,7 +1240,9 @@ def _pin_refcv5_seams(cfg, args) -> None:
                                 AGENT_QUERIES_DEFAULT)),
             w_project=float(getattr(args, "agent_w_project", 0.0)),
             w_ground=float(getattr(args, "agent_w_ground", 0.0)),
-            presence_hard=bool(getattr(args, "agent_presence_hard", False)))
+            presence_hard=bool(getattr(args, "agent_presence_hard", False)),
+            # ⭐⭐ refcv7 A9: the refined head, from the four --slot-* flags
+            **_slot_refine_kwargs(args))
         core.agents = acfg
         core.decoder.cross_agent = True
         # ⛔⛔ THE CAMERA IS BUILT HERE, AT PIN TIME, SO A CAMERA THAT CANNOT
@@ -1420,6 +1430,7 @@ def _pin_refcv5_seams(cfg, args) -> None:
                  core.decoder.bev_coupling.offset_max_m,
                  int(core.decoder.layers)), flush=True)
     _pin_refcv6_perception(cfg, args)
+    _pin_slot_refine(cfg, args)
     _pin_map_hires(cfg, args)
 
 
@@ -1433,6 +1444,141 @@ def _pin_refcv5_seams(cfg, args) -> None:
 # `--agent-w-ground`, `--w-bev-aux`, `--conflict-detector on`), and once with
 # the object being a HEAD rather than a weight: `tac_goal_tok_head`, 11,286
 # parameters with `grad_abs_sum` EXACTLY 0 for all 40,284 steps.
+
+def _slot_refine_kwargs(args) -> dict:
+    """refcv7 A9 -- the four --slot-* flags as the config fields BOTH slot heads declare
+    (``AgentSeamConfig`` and ``PerceptionBranchConfig``: one spelling of the mapping)."""
+    return {"presence_loss": str(getattr(args, "slot_presence_loss", "bce") or "bce"),
+            "presence_prior": float(getattr(args, "slot_presence_prior", 0.05)),
+            "deep_supervision": bool(getattr(args, "slot_deep_supervision", False)),
+            "vis1": bool(getattr(args, "slot_vis1", False))}
+
+
+def _slot_refine_active(args) -> bool:
+    k = _slot_refine_kwargs(args)
+    return (k["presence_loss"] != "bce" or abs(k["presence_prior"] - 0.05) > 1e-12
+            or k["deep_supervision"] or k["vis1"]
+            or bool(getattr(args, "vis1_sidecar", None)))
+
+
+def _pin_slot_refine(cfg, args) -> None:
+    """⛔ refcv7 A9: refuse every --slot-* / --vis1-sidecar combination that cannot train.
+
+    The M18 rule, again: a flag that parses, is STAMPED, and reaches no head is refused
+    here -- before config.json and before a batch -- never discovered from a flat metric.
+    """
+    if str(getattr(args, "slot_query_select", "learned") or "learned") == "heatmap":
+        if not float(getattr(args, "w_box3d", 0.0) or 0.0) > 0.0:
+            raise SystemExit("[v3] ⛔ --slot-query-select heatmap with --w-box3d 0: HQS selects the BOX head's "
+                             "queries; with no box head it would be stamped and train nothing (M18).")
+        if not (float(getattr(args, "w_map", 0.0) or 0.0) > 0.0
+                or str(getattr(args, "bev_source", "s16_lift") or "s16_lift") == "map_hires_pool"):
+            raise SystemExit("[v3] ⛔ --slot-query-select heatmap needs BEV features (--w-map > 0 or "
+                             "--bev-source map_hires_pool): the heatmap would read nothing.")
+    if str(getattr(args, "slot_query_select", "learned") or "learned") == "learned_ref" \
+            and not float(getattr(args, "w_box3d", 0.0) or 0.0) > 0.0:
+        raise SystemExit("[v3] ⛔ --slot-query-select learned_ref with --w-box3d 0: the anchors belong to the "
+                         "BOX head; with no box head they would be stamped and train nothing (M18).")
+    if not _slot_refine_active(args):
+        return
+    k = _slot_refine_kwargs(args)
+    if not 0.0 < k["presence_prior"] < 1.0:
+        raise SystemExit("[v3] ⛔ --slot-presence-prior must be in (0, 1).")
+    agent_head = str(getattr(args, "agents", "off")) == "head"
+    box_head = float(getattr(args, "w_box3d", 0.0) or 0.0) > 0.0
+    if not (agent_head or box_head):
+        raise SystemExit(
+            "[v3] ⛔ --slot-* / --vis1-sidecar set (%s) but NO learned slot head is built "
+            "(--agents head or --w-box3d > 0). The refinement would be STAMPED and train "
+            "nothing (mm-decisions M18)." % k)
+    if k["vis1"] and not getattr(args, "vis1_sidecar", None):
+        raise SystemExit(
+            "[v3] ⛔ --slot-vis1 without --vis1-sidecar: VIS-1 visibility is PRECOMPUTED "
+            "(scripts/precompute_vis1_sidecar.py) and never guessed.")
+    if getattr(args, "vis1_sidecar", None) and not k["vis1"]:
+        raise SystemExit(
+            "[v3] ⛔ --vis1-sidecar without --slot-vis1: the sidecar would be loaded, "
+            "joined into every batch and read by no loss (mm-decisions M18).")
+    if k["vis1"] and not (getattr(args, "agent_join", None)
+                          and getattr(args, "join3d", None)):
+        raise SystemExit(
+            "[v3] ⛔ --slot-vis1 needs --agent-join AND --join3d: the sidecar is keyed by "
+            "the 2-D join's rows and was z-buffered over the 3-D cuboids.")
+
+
+def agent_queries_as_trained(config: dict, args=None) -> tuple:
+    """``(n, why)`` -- the agent head's query count AS TRAINED, for a loader that re-parses a
+    RECORDED argv with THIS parser.
+
+    ⛔ refcv7 A9 R4 moved the ONE spelling from 100 to 300. A record whose argv never passed
+    ``--agent-queries`` (refcv6-r101-s0 included) would otherwise be rebuilt at the NEW default and
+    fail its strict load -- or, worse, be compared at a count it never had. The stamp
+    ``seams.agents.queries`` is what the run BUILT, so it wins over the parser default; an
+    explicit argv value wins over both. ``(None, why)`` when the record carries neither.
+    """
+    argv = list((config or {}).get("argv") or [])
+    if any(str(x) == "--agent-queries" or str(x).startswith("--agent-queries=")
+           for x in argv):
+        return (int(getattr(args, "agent_queries")) if args is not None else None,
+                "argv --agent-queries")
+    st = (((config or {}).get("seams") or {}).get("agents") or {})
+    if "queries" in st:
+        return int(st["queries"]), "config.json seams.agents.queries (argv silent)"
+    return None, "no --agent-queries in argv and no seams.agents stamp"
+
+
+def _vis1_batch_block(model, batch: dict, device, keep=None):
+    """refcv7 A9 R3: the batch's VIS-1 block for the loss, or ``None`` when VIS-1 is off.
+
+    ⛔ REFUSE, DO NOT SKIP -- the `agent_box` rule: VIS-1 on and no `agent_vis_known` in the
+    batch means the dataset never joined the sidecar, and a silent fallback would train the
+    pre-A9 target set while config.json states VIS-1.
+    """
+    if not bool(getattr(model, "_vis1", False)):
+        return None
+    miss = [k for k in ("agent_vis_full", "agent_vis_px", "agent_vis_known")
+            if k not in batch]
+    if miss:
+        raise SystemExit(
+            "[v3] ⛔ --slot-vis1 but the batch carries no %s: the dataset never joined the "
+            "VIS-1 sidecar (`ds.enable_vis1`)." % miss)
+    v = {"n_full": batch["agent_vis_full"].to(device),
+         "n_vis": batch["agent_vis_px"].to(device),
+         "known": batch["agent_vis_known"].to(device)}
+    if keep is not None:
+        sel = keep.to(device).nonzero(as_tuple=False).flatten()
+        v = {k2: t.index_select(0, sel) for k2, t in v.items()}
+    return v
+
+
+def _slot_refine_block(args, model) -> dict | None:
+    """config.json[`slot_refine`]: the refinement AS BUILT, per head; ``None`` for a pre-A9 arm."""
+    if not _slot_refine_active(args):
+        return None
+    heads = {}
+    ah = getattr(getattr(model, "core", model), "agent_head", None)
+    if ah is not None and hasattr(ah, "deep_supervision"):
+        heads["agent"] = {"n_queries": int(ah.n_queries),
+                          "deep_supervision": bool(ah.deep_supervision),
+                          "presence_prior": float(ah.presence_prior),
+                          "n_decoder_layers": len(ah.blocks.layers),
+                          "n_params": int(ah.n_params)}
+    br = getattr(model, "_perception", None)
+    bd = getattr(br, "box_dec", None) if br is not None else None
+    if bd is not None:
+        heads["box3d"] = {"n_queries": int(bd.n_queries),
+                          "deep_supervision": bool(bd.deep_supervision),
+                          "presence_prior": float(bd.presence_prior),
+                          "n_decoder_layers": len(bd.blocks.layers),
+                          "n_params": int(bd.n_params)}
+    k = _slot_refine_kwargs(args)
+    return {**_slot_presence.refine_stamp(k["presence_loss"], k["vis1"]),
+            "presence_prior": k["presence_prior"],
+            "deep_supervision": k["deep_supervision"], "heads_built": heads,
+            "g_live_presence_max_confident_frac":
+                _slot_presence.G_LIVE_PRESENCE_MAX_CONFIDENT_FRAC,
+            "p0_keys": {h: len(_det_metrics.metric_keys(h)) for h in heads}}
+
 
 def _pin_refcv6_perception(cfg, args) -> None:
     """Refuse every ``--w-map`` / ``--w-box3d`` combination that cannot train.
@@ -2576,6 +2722,12 @@ class V3Dataset(RouteV21Dataset):
     #: reports ``n["z"] == 0`` rather than training on zeros.
     join3d = None
     join3d_stats: dict | None = None
+    #: ⭐⭐ refcv7 A9 R3 -- the VIS-1 sidecar (`tanitad.data.vis1.VIS1Sidecar`), set by
+    #: :meth:`enable_vis1`. While it is None the batch carries NO `agent_vis_*` and a
+    #: `--slot-vis1` loss REFUSES (`_vis1_batch_block`).
+    vis1_sidecar = None
+    vis1_stats: dict | None = None
+    _vis1_sha12: dict | None = None
 
     """RouteV21Dataset + clamped/masked 6 s future + E4.1 tactical goals.
 
@@ -3203,6 +3355,10 @@ class V3Dataset(RouteV21Dataset):
             item["agent_cz"] = _t3["cz"][0]
             item["agent_h"] = _t3["h"][0]
             item["agent_zh_mask"] = _t3["zh_mask"][0]
+        # ---- refcv7 A9 R3: VIS-1, joined from the sidecar BY ROW AND TRACK ---- #
+        if self.vis1_sidecar is not None:
+            item.update(self._vis1_item(eid, int(f), item, int(n_raw), pad,
+                                        order if n_raw > pad else None))
         return item
 
     # ---- refcv6 §2: the SAM3 map GT ------------------------------------- #
@@ -3401,6 +3557,62 @@ class V3Dataset(RouteV21Dataset):
             "n_agents": int(getattr(join3d, "n_agents", 0)),
             "n_clips": int(getattr(join3d, "n_clips", 0))}
         return self.join3d_stats
+
+    # ---- refcv7 A9 R3: the VIS-1 sidecar ------------------------------------------ #
+    def enable_vis1(self, sidecar, *, split: str) -> dict:
+        """Attach the VIS-1 sidecar so `_agent_item` emits `agent_vis_full/px/known`.
+
+        ⛔ REFUSES (never degrades) when the 3-D join or the clip table is absent, or when
+        ANY clip of THIS dataset is missing from the sidecar -- a missing clip would train
+        all its targets as IGNORE while config.json states VIS-1. A frame or row the sidecar
+        lacks refuses at `_agent_item` (`vis1.vis1_block_for_rows`).
+        """
+        import hashlib as _hl
+        if self.agent_join is None or self.join3d is None or not self.map_clip_of_ep:
+            raise SystemExit(
+                "[v3] ⛔ enable_vis1 needs the 2-D agent join, the 3-D join and the "
+                "manifest clip table: the sidecar is keyed by the join's rows and was "
+                "z-buffered over the 3-D cuboids.")
+        eids = sorted({int(self.episodes[e_i].episode_id) for e_i, _ in self.index})
+        miss = [e for e in eids if e not in self.map_clip_of_ep]
+        if miss:
+            raise SystemExit(f"[v3] ⛔ enable_vis1: {len(miss)} episodes have no clip id")
+        self._vis1_sha12 = {e: _hl.sha256(str(self.map_clip_of_ep[e]).encode())
+                            .hexdigest()[:12] for e in eids}
+        sidecar.require_clips(self._vis1_sha12.values(), where=f"{split} dataset")
+        if int(sidecar.meta.get("n_stack", -1)) != int(self.map_n_stack):
+            raise SystemExit(
+                f"[v3] ⛔ the VIS-1 sidecar was built at n_stack "
+                f"{sidecar.meta.get('n_stack')} but this cache is {self.map_n_stack}: the "
+                f"3-D frame offset differs, so the z-buffered cuboids are not these rows.")
+        self.vis1_sidecar = sidecar
+        self.vis1_stats = {"split": split, "n_clips": len(set(self._vis1_sha12.values())),
+                           "sidecar_sha256": sidecar.sha256,
+                           "sidecar_n_clips": sidecar.n_clips}
+        return self.vis1_stats
+
+    def _vis1_item(self, eid: int, f: int, item: dict, n_raw: int, pad: int,
+                   order) -> dict:
+        """`agent_vis_full` / `agent_vis_px` (int32 pixel counts) and `agent_vis_known`
+        (bool) for ONE window, padded like the target block. ⛔ Every key is emitted for a
+        NO_LABEL window too (all unknown) -- `default_collate` needs one key set per batch."""
+        nf = _np.zeros(int(pad), dtype=_np.int32)
+        nv = _np.zeros(int(pad), dtype=_np.int32)
+        kn = _np.zeros(int(pad), dtype=bool)
+        n = int(item["agent_valid"].sum())
+        if bool(item["agent_label"]) and n > 0:
+            tids = self.agent_join.lookup_track_ids(int(eid), int(f))
+            if tids is None:
+                raise SystemExit("[v3] ⛔ VIS-1: the 2-D join carries no track ids")
+            tids = _np.asarray(list(tids), dtype=object)
+            if order is not None:
+                tids = tids[order]
+            nf, nv, kn = _vis1.vis1_block_for_rows(
+                self.vis1_sidecar, self._vis1_sha12[int(eid)], int(f),
+                box=item["agent_box"][:n].numpy(), track_ids=list(tids[:n]),
+                zh_mask=item["agent_zh_mask"][:n].numpy(), pad=int(pad), order=order)
+        return {"agent_vis_full": torch.from_numpy(nf), "agent_vis_px": torch.from_numpy(nv),
+                "agent_vis_known": torch.from_numpy(kn)}
 
     # ======================================================================= #
     # ⭐⭐ A16 2026-09-26 -- THE LABEL CLOCK (`tanitad/data/clip_clock.py`).     #
@@ -4828,12 +5040,15 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
                 ep_ag = ep_ag.index_select(
                     0, keep_ag.nonzero(as_tuple=False).flatten())
             tgt_ag = {k: v.index_select(0, sel) for k, v in tgt_ag.items()}
-            slots_ag = {k: (v.index_select(0, sel)
-                            if torch.is_tensor(v) and v.shape[:1] ==
-                            keep_ag.shape[:1] else v)
-                        for k, v in out["agent_slots"].items()}
+            # refcv7 A9 R2: `select_slots` is the comprehension this replaced, plus the
+            # per-layer "aux" list (a list passed through unselected would misalign rows).
+            slots_ag = _slot_presence.select_slots(out["agent_slots"], sel,
+                                                   int(keep_ag.shape[0]))
         else:
             slots_ag = out["agent_slots"]
+        # refcv7 A9 R3: the VIS-1 block, selected with the SAME label mask.
+        vis_ag = _vis1_batch_block(model, batch, device,
+                                   keep_ag if (keep_ag is not None and n_lab) else None)
         if "agent_n_raw" in batch:
             extra["agent_n_raw"] = float(batch["agent_n_raw"].sum())
         if "agent_n_truncated" in batch:
@@ -4845,7 +5060,8 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
             slots_ag, tgt_ag, core.agents,
             cam=_resolve_rig_cameras(model, ep_ag,
                                      int(tgt_ag["valid"].shape[0])),
-            cls_class_weight=getattr(model, "_cls_class_weight", None))
+            cls_class_weight=getattr(model, "_cls_class_weight", None),
+            vis=vis_ag)
         loss = loss + w_agent * ag["total"]
         for k_ag in ("presence", "cls", "centre", "size", "yaw", "project",
                      "ground"):
@@ -4862,6 +5078,33 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
         # the term the config says it trained.
         extra["agent_rows_with_cam"] = float(ag["n"]["rows_with_cam"])
         extra["agent_rows_no_cam"] = float(ag["n"]["rows_no_cam"])
+        # ⭐⭐ refcv7 A9: the per-layer terms (R2), the VIS-1 counts (R3), the presence
+        # saturation read (G-LIVE) and, in EVAL mode, the P0 detection pack. Emitted only
+        # on the refined path, so a pre-A9 arm's log row is unchanged.
+        if "_refine" in ag:
+            for _kl, _vl in ag.items():
+                if _kl.startswith("loss_layer") or _kl.startswith("loss_presence_layer"):
+                    extra["agent_" + _kl[5:]] = _vl
+            for _kn in ("layers", "presence_exempt", "presence_matched",
+                        "vis1_n_positive", "vis1_n_ignore", "vis1_n_in_filter",
+                        "vis1_n_in_filter_unknown_vis"):
+                if _kn in ag["n"]:
+                    extra[f"agent_n_{_kn}"] = float(ag["n"][_kn])
+            # G-LIVE-PRES (A10 §15.2): the fraction of slots with sigma >= 0.5, every row.
+            extra["agent_presence_frac_confident"] = _slot_presence.presence_sanity(
+                slots_ag["presence_logit"])["frac_confident"]
+            if vis_ag is not None:
+                # LOGGING_SPEC_BOX §1 (the cheap census) every row; in EVAL mode the pack
+                # itself too, POOLED by the eval loop (never a mean of batch ratios).
+                _pk_ag = _det_metrics.window_packs(
+                    slots_ag, tgt_ag, vis_ag,
+                    presence_cost=("focal" if str(core.agents.presence_loss) == "focal"
+                                   else "sigmoid"),
+                    match=ag.get("match"), episode_ids=ep_ag,
+                    cls_weight=getattr(model, "_cls_class_weight", None))
+                extra.update(_det_metrics.train_row_keys(_pk_ag, "agent"))
+                if not model.training:
+                    extra["_det_pack_agent"] = _pk_ag
 
     # ---- WP-D: the BEV auxiliary loss -------------------------------------
     # ⛔ `obstacle.offline` enters HERE, in the loss, and nowhere in the
@@ -5257,11 +5500,11 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
                     "zh_mask": (torch.zeros_like(batch["agent_valid"])
                                 if _z is None else _z).to(device)}
                 _t3 = {k: v.index_select(0, _sel3) for k, v in _t3.items()}
-                _s3 = {k: (v.index_select(0, _sel3)
-                           if torch.is_tensor(v)
-                           and v.shape[:1] == _b3_keep.shape[:1] else v)
-                       for k, v in _pout["box_slots"].items()} \
+                # refcv7 A9 R2: `select_slots` also narrows the per-layer "aux" list.
+                _s3 = _slot_presence.select_slots(_pout["box_slots"], _sel3,
+                                                  int(_b3_keep.shape[0])) \
                     if _b3_keep is not None else _pout["box_slots"]
+                _vis3 = _vis1_batch_block(model, batch, device, _b3_keep)
                 # ⛔⛔ D-1/D-2 (MEASURED 2026-09-22 on v7-B1, 28,958,699 boxes):
                 # until 2026-09-23 this path applied NO field cut, so 59.805 % of its
                 # targets were outside the camera and 50.038 % were BEHIND THE EGO, and
@@ -5269,8 +5512,25 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
                 _brow = _perc.box3d_loss_row(
                     _s3, _t3,
                     cls_class_weight=getattr(model, "_cls_class_weight", None),
-                    visible_filter=bool(getattr(model, "_box3d_visible_filter", True)))
+                    visible_filter=bool(getattr(model, "_box3d_visible_filter", True)),
+                    presence_loss=str(_br.cfg.presence_loss), vis1=bool(_br.cfg.vis1),
+                    vis=_vis3)
                 loss = loss + _w_b3d * _brow["loss"]
+                if _vis3 is not None:
+                    # ⭐ refcv7 A9 P0: LOGGING_SPEC_BOX §1 census every row; the pack itself in
+                    # EVAL mode (pooled by the eval loop). The Hungarian set is only needed there.
+                    _pk_b3 = _det_metrics.window_packs(
+                        _s3, _t3, _vis3,
+                        presence_cost=("focal" if str(_br.cfg.presence_loss) == "focal"
+                                       else "sigmoid"),
+                        episode_ids=(batch["agent_ep"].index_select(
+                            0, _sel3.to(batch["agent_ep"].device))
+                            if "agent_ep" in batch else None),
+                        cls_weight=getattr(model, "_cls_class_weight", None),
+                        with_match=not model.training)
+                    extra.update(_det_metrics.train_row_keys(_pk_b3, "box3d"))
+                    if not model.training:
+                        extra["_det_pack_box3d"] = _pk_b3
                 extra["box3d"] = _brow["loss"]
                 for _k3, _v3 in _brow.items():
                     if _k3 != "loss":
@@ -7733,6 +7993,9 @@ def train(args) -> dict:
     # the expression short-circuited before touching `args`).
     model._map_lift_valid_mask = bool(getattr(args, "map_lift_valid_mask", True))
     model._box3d_visible_filter = bool(getattr(args, "box3d_visible_filter", True))
+    # ⭐⭐ refcv7 A9 R3: VIS-1 travels ON THE MODEL for the same reason -- the loss-time
+    # batch block (`_vis1_batch_block`) has no `args`. G-DVB reads it back.
+    model._vis1 = bool(getattr(args, "slot_vis1", False))
     # ---- refcv7 NEW-2 + A6/A7 (SPEC_REFCV7 §6.2, §11, §12): THE MAP AT 10 cm -- #
     # ⛔ BUILT FIRST -- before the perception branch, because under A6 that branch's
     # planner pool reads THIS branch's 0.25 m encoder (its width and grid are read off
@@ -7820,6 +8083,10 @@ def train(args) -> dict:
             planner_crop_m=tuple(float(v) for v in (
                 getattr(args, "bev_planner_crop_m", None)
                 or _mhr.PLANNER_CROP_DEFAULT)))
+        # ⭐⭐ refcv7 A9: the box head's four refinement fields, from the SAME mapping the
+        # agent head uses (`_slot_refine_kwargs`) -- a declared frozen-dataclass replace.
+        _pcfg = _dc.replace(_pcfg, **_slot_refine_kwargs(args),
+                            query_select=str(getattr(args, "slot_query_select", "learned") or "learned"))
         model._perception = _perc.build_perception_branch(model, _pcfg).to(device)
         _pframe = _perc.frame_for_model(model)
         if model._w_map > 0.0:
@@ -8310,6 +8577,8 @@ def train(args) -> dict:
     map_stats = eval_map_stats = None
     map_fine_stats = eval_map_fine_stats = None       # refcv7 NEW-2
     join3d_stats = eval_join3d_stats = None
+    vis1_stamp = vis1_stats = eval_vis1_stats = _vis1_sc = None     # refcv7 A9 R3
+    calib_dl = calib_stamp = None        # refcv7 A10 §15.3: the INFORMATIVE TRAIN P = R gate
     join_digest = _verify_agent_join(args)
     if getattr(args, "agent_join", None):
         from train_p8_occupancy import JoinFileReader
@@ -8411,6 +8680,29 @@ def train(args) -> dict:
         join3d_stats["frame_key"] = "RAW v2ep (= episode index + n_stack - 1)"
         join3d_stats["n_stack"] = int(ds.map_n_stack)
         print("[v3] 3-D cuboid join: %s" % join3d_stats, flush=True)
+    # ---- refcv7 A9 R3: the VIS-1 sidecar (refused, never degraded) ---------------- #
+    if getattr(args, "slot_vis1", False):
+        _vis1_sc = _vis1.VIS1Sidecar(args.vis1_sidecar)
+        vis1_stamp = _vis1_sc.stamp()
+        vis1_stats = ds.enable_vis1(_vis1_sc, split="train")
+        print("[v3] VIS-1 sidecar: %s sha256 %s (%d clips, %d frames, %d rows)"
+              % (Path(args.vis1_sidecar).name, _vis1_sc.sha256[:16], _vis1_sc.n_clips,
+                 _vis1_sc.n_frames, _vis1_sc.n_rows), flush=True)
+        # A10 §15.3 (INFORMATIVE): the FIXED TRAIN calibration windows (the audit's 256 / 64
+        # clips), banked by sha12 + window start. Missing windows are COUNTED, never refused:
+        # the readout is informative and must not decide whether a run can train.
+        _cal_pos, _cal_miss = _det_metrics.calib_indices(
+            ds.index, lambda _e: ds._vis1_sha12[int(ds.episodes[_e].episode_id)])
+        calib_stamp = {"artifact": _det_metrics.CALIB_WINDOWS_FILE,
+                       "windows_sha256": _det_metrics.load_calib_windows()["windows_sha256"],
+                       "n_listed": len(_cal_pos) + int(_cal_miss), "n_found": len(_cal_pos),
+                       "role": "INFORMATIVE P = R gate only (A10 §15.3)"}
+        if _cal_pos:
+            calib_dl = torch.utils.data.DataLoader(
+                torch.utils.data.Subset(ds, _cal_pos), batch_size=args.batch,
+                shuffle=False, num_workers=0, drop_last=False)
+        print("[v3] P0 calibration set: %d of %d TRAIN windows found"
+              % (len(_cal_pos), len(_cal_pos) + int(_cal_miss)), flush=True)
     # launch-line P4: the run PRINTS its episode/window counts at start — the
     # only way a parity claim about the enumeration is checkable from the log.
     print(f"[v3] {len(eps)} episodes -> {len(ds)} windows "
@@ -8599,6 +8891,8 @@ def train(args) -> dict:
                     _agent_cuboid.open_join3d(
                         args.join3d, clips=set(_e_clip.values())),
                     args.join3d, len(set(_e_clip.values())), split="eval"))
+        if getattr(args, "slot_vis1", False) and _vis1_sc is not None:
+            eval_vis1_stats = e_ds.enable_vis1(_vis1_sc, split="eval")
         # FIXED **and REPRESENTATIVE** windows.
         # ⛔ shuffle=False ALONE IS A TRAP, and it bit this eval on its first
         # run: taking the first N windows takes them from the START of the
@@ -8950,6 +9244,12 @@ def train(args) -> dict:
         "agent_join_digest": join_digest,
         "agent_join_stats": ({"train": agent_stats, "eval": eval_agent_stats}
                              if agent_stats is not None else None),
+        # ⭐⭐ refcv7 A9: the refined slot heads AS BUILT, and the VIS-1 sidecar BY DIGEST.
+        # ⛔ `None` for a pre-A9 arm, so its record differs by nothing a comparison acts on.
+        "slot_refine": _slot_refine_block(args, model),
+        "vis1": ({"sidecar": vis1_stamp, "rule": _vis1.vis1_rule_dict(),
+                  "train": vis1_stats, "eval": eval_vis1_stats, "calib": calib_stamp}
+                 if vis1_stamp is not None else None),
         # ⭐⭐ refcv6 §2/§6. ⛔ `None` when both weights are 0.0 — the key is
         # absent-as-null rather than a zeroed block, so a default run's
         # config.json differs from the pre-branch trainer's by NOTHING a
@@ -9357,6 +9657,7 @@ def train(args) -> dict:
                                     or step == args.steps):
             model.eval()
             acc, nb_e, eval_err = {}, 0, None
+            det_packs = {}          # refcv7 A9 P0: pooled per-window detection packs
             # ⚠️ FAIL LOUD, SURVIVE. An in-training eval is a DIAGNOSTIC; it
             # must never take the run down. A CUDA OOM or a decode error raised
             # in here used to propagate out of train() and END THE RUN. It is
@@ -9380,6 +9681,10 @@ def train(args) -> dict:
                                 acc[k] = acc.get(k, 0.0) + float(v.detach())
                             elif isinstance(v, (int, float, bool)):
                                 acc[k] = acc.get(k, 0.0) + float(v)
+                        for _hd in _det_metrics.HEADS:
+                            if el.get(f"_det_pack_{_hd}"):
+                                det_packs.setdefault(_hd, []).extend(
+                                    el[f"_det_pack_{_hd}"])
                         nb_e += 1
             except Exception as exc:          # noqa: BLE001 (by design)
                 import traceback            # local: this block is the boundary
@@ -9397,6 +9702,42 @@ def train(args) -> dict:
                          .decode("ascii")), flush=True)
             elif nb_e:
                 erow = _eval_row_from_acc(acc, nb_e, model)
+                # ⭐⭐ refcv7 A9 P0: detection is MEASURED, pooled over the eval windows (AP is a
+                # joint ranking, never a batch mean). NaN (undefined) is written as null.
+                for _hd, _pk in det_packs.items():
+                    for _dk, _dv in _det_metrics.summarise(_pk, _hd).items():
+                        erow[_dk] = (None if (isinstance(_dv, float) and _dv != _dv)
+                                     else round(float(_dv), 5))
+                    if erow.get(f"eval_{_hd}_conf_ratio_alarm") == 1.0:
+                        print("[v3:eval] ALARM %s conf_ratio %s outside [0.5, 1.5] (A10 "
+                              "§15.3, a Watch alarm, not a stop)"
+                              % (_hd, erow.get(f"eval_{_hd}_conf_ratio")), flush=True)
+                # A10 §15.3 INFORMATIVE: the P = R gate on the FIXED TRAIN calibration windows, in
+                # eval mode with the RNG isolated (the W-BOOTSTRAP discipline). It can never take
+                # the run down: a failure is stamped into the row and training continues.
+                if calib_dl is not None:
+                    _cpk = {}
+                    try:
+                        model.eval()
+                        with _RngIsolated(device, None), torch.no_grad():
+                            for _cb in calib_dl:
+                                _cl = compute_losses_v3(
+                                    model, _cb, device, mode=args.mode,
+                                    ablate_frames=args.ablate_frames)
+                                for _hd in _det_metrics.HEADS:
+                                    if _cl.get(f"_det_pack_{_hd}"):
+                                        _cpk.setdefault(_hd, []).extend(
+                                            _cl[f"_det_pack_{_hd}"])
+                        for _hd, _pk in _cpk.items():
+                            for _dk, _dv in _det_metrics.calib_keys(_pk, _hd).items():
+                                erow[_dk] = (None if (isinstance(_dv, float) and _dv != _dv)
+                                             else round(float(_dv), 5))
+                    except Exception as _cexc:          # noqa: BLE001 (informative)
+                        import traceback as _tb
+                        _tb.print_exc()
+                        erow["eval_calib_error"] = f"{type(_cexc).__name__}: {_cexc}"
+                    finally:
+                        model.train()
                 erow.update(step=step, eval_batches=nb_e,
                             eval_windows=nb_e * args.batch)
                 log.write(json.dumps(erow) + chr(10))
@@ -9912,7 +10253,9 @@ def build_parser() -> argparse.ArgumentParser:
                     help="weight on the GT-supervised detection set loss.")
     g5.add_argument("--agent-queries", type=int,
                     default=AGENT_QUERIES_DEFAULT,
-                    help="detection queries. 100, ruled by the Master Mind "
+                    help="detection queries. 300 since SPEC_REFCV7 A9 R4 (>= 2x the "
+                         "120-target max on the refcv6 corpus line); before that 100, "
+                         "ruled by the Master Mind "
                          "(mm-decisions M17) on the TRAIN corpus: mean 4.39, "
                          "p99 30, MAX 94 over 433,040 frames / 12,122,129 "
                          "boxes / 2,308 clips. The previous 32 came from "
@@ -10012,6 +10355,36 @@ def build_parser() -> argparse.ArgumentParser:
                          "clips on the train join), so an episode absent from "
                          "the join can match a different clip that is "
                          "present. Stamped into config.json.")
+    # ---- refcv7 A9 (SPEC_REFCV7 §14): the REFINED slot heads, BOTH of them ---------- #
+    g5.add_argument("--slot-presence-loss", default="bce", choices=["bce", "focal"],
+                    help="refcv7 A9 R1, for BOTH slot heads (box3d + agent). 'focal' = sigmoid "
+                         "focal presence (alpha 0.25, gamma 2, weight 2.0, / n matched GT) AND "
+                         "the focal matching cost -- the 5/5 nuScenes camera-head recipe. 'bce' "
+                         "(default) = the pre-A9 BCE with NO_OBJECT_W 0.1, bit-identical.")
+    g5.add_argument("--slot-presence-prior", type=float, default=0.05,
+                    help="refcv7 A9 R1: the presence logit's INIT prior for both slot heads "
+                         "(A9: 0.01; default 0.05 = the pre-A9 AgentSlotDecoder.PRESENCE_PRIOR).")
+    g5.add_argument("--slot-deep-supervision", action="store_true",
+                    help="refcv7 A9 R2: supervise EVERY decoder layer of both slot heads "
+                         "(shared norm+head, re-matched per layer, summed; 0 parameters). "
+                         "Inference reads the last layer.")
+    g5.add_argument("--slot-vis1", action="store_true",
+                    help="refcv7 A9 R3: VIS-1 targets with IGNORE semantics for both slot heads "
+                         "(POSITIVE = in field AND vis_frac >= 0.30 AND >= 100 px; every other "
+                         "real object IGNORE). Needs --vis1-sidecar, --agent-join, --join3d. "
+                         "Also turns on the P0 detection metrics in the in-run eval.")
+    g5.add_argument("--slot-query-select", choices=("learned", "heatmap", "learned_ref"),
+                    default="learned",
+                    help="refcv7 A14 (SPEC_REFCV7 §19): the BOX head's query selection. learned (default) = the "
+                         "learned query table, bit-identical; heatmap = HQS: each query anchored at a cell of a "
+                         "BEV centre heatmap's top-K (DINO mixed query selection), box centre = anchor + "
+                         "tanh(raw) x 4 m. Needs BEV features (--w-map > 0 or --bev-source map_hires_pool). "
+                         "learned_ref = one TRAINABLE anchor per query (DAB-DETR static anchors), same "
+                         "position embed and anchor-relative centre, no heatmap.")
+    g5.add_argument("--vis1-sidecar", default=None,
+                    help="refcv7 A9 R3: the VIS-1 sidecar (.npz) from "
+                         "scripts/precompute_vis1_sidecar.py, covering EVERY clip of the train "
+                         "and eval caches; its sha256 is stamped in config.json[vis1].")
     g5.add_argument("--agent-presence-hard", action="store_true",
                     help="hard-mask sub-threshold slots instead of soft "
                          "scaling. Soft is the default BECAUSE a hard mask has "
