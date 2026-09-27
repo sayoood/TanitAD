@@ -442,3 +442,39 @@ Per RULE ZERO the next arm is fixed now, before the data:
 - a crashed harness, i.e. a non-zero exit status in the closure.
 
 Early non-binding records stay unusable by construction.
+
+## 17. Amendment A12 (2026-09-27 ~09:50 Berlin, BEFORE the lever arm's first number): the map's LIFT lever is a 0.1 m near-range lift
+
+**PI, 2026-09-27 ~09:25:** "Build the lift lever". The pre-registered 1,000-step bar is KEPT.
+
+**Evidence** (the early G-MAP-OVERFIT record, NON-BINDING, banked with the NEW-2 package under `raw/gmo_early/`):
+- **The harness is valid.** R1 `lane_w0` failed lane and R2 `s8_zeros` failed all five thin classes, both as required. C1–C3 reproduce: drivable 414,196 / 907,276 = 0.456527 exactly, 1.0 on all classes, and bit-identical.
+- **MAIN FAILS** at step 1,000: lane 0.417 and edge 0.076 (declared rule); under the raw rule lane 0.490 and edge 0.233, so §9 lever 1 (the decision rule) is excluded. A same-seed replicate reads lane 0.480 and edge 0.096, putting the run-to-run spread on lane at ~0.06.
+- **Informative MAIN_long** (3,000 steps): lane crosses 0.50 at step 1,200; **edge never does** (0.430 at 3,000, decelerating).
+  - Edge is FOUND but misplaced by ~1 cell: at 3,000, F1 at the 0.2 m tolerance is 0.906 while IoU is 0.430.
+- **GT-only grid oracle** on the 16 frames, scored exactly like the harness: a decoder that sees only **0.25 m** class fractions caps **edge at 0.328** (lane 0.770); at 0.5 m, edge reaches 0.022. The 10 cm identity control reads 1.000. **The 0.25 m lift cell is the bottleneck for edges.**
+- **Range does not matter:** edge IoU is flat over 0–25 m (0.40–0.52), while the stride-8 lateral footprint grows 5.5×. So stride 4 attacks a range-dependent limit the record does not show. Nothing implicates height mixing, so there is no measured support for a Z = 0 channel.
+
+**The lever: (b), a near-range 0.1 m lift, map-only.**
+- **Flag and config:** `--map-hires-near-lift-m` (default 0 = off; the arm and the launch use **20**) → `MapHiresConfig.near_lift_x_m`, a declared field (G-HYG).
+- **G-DVB:** the new kind `map_hires_near_lift_m` takes the registry 213 → 214. The flag is refused when `--map-hires` is off, when it is not a multiple of 0.5 m, and when it exceeds x_max.
+- **`NearLiftSkip`:**
+  - it reads the same stride-8 map and applies a 1×1 projection per height (512 → 32);
+  - it samples at the 0.1 m cell centres of x 0–20 m × y ±30 m (200 × 600) at the main lift's 4 heights, summed;
+  - it is ADDED to the 10 cm decoder's upsampled input on those rows, inside the decoder's gradient checkpoint;
+  - it is **zero-initialised**, so the arm starts as MAIN's function; it is built last, so every other parameter initialises exactly as MAIN's (fingerprint pinned);
+  - its geometry is derived from the batch's own 0.25 m geometry and pinned against the exact 0.1 m geometry by a test;
+  - reach keys `ga_mh_near` and `ga_mh_near_n` are declared automatically (D3).
+- **Cost (ANALYTIC):** fwd +0.9 % FLOPs per sample; saved activations +0 GiB at b16 (1.391 GiB, grad checkpointing on); a transient 0.92 GiB at b16; +65,600 params. Time: ≲ +0.1 s/step at b16 (ESTIMATED). NEW-2's own step time is still UNMEASURED; the G-LIVE smoke reads it against the 8.0 s line.
+- **The planner's pooled BEV is untouched.** The shared encoder's input does not change (the A6 seam).
+
+**The lever arm (G-MAP-OVERFIT, same literals).**
+- The prereg literals are unchanged: 16 frames (md5 `4eafa03c`), 1,000 steps, batch 4, AdamW 1e-3, seed 0, the bars, the presence floor, §6.4, the 1 ms guard, C1–C3, both rules, the declared rule, the TRAIN sqrt_mf weights.
+- **MAIN** is the lever arm, with `near_lift_m 20`.
+- **Must fail:**
+  - `s8_zeros`, zeros into BOTH lifts: all five thin classes fail (must_fail_all);
+  - **`near_zeros`**, the near lift's input zeroed with the 0.25 m path intact, i.e. MAIN plus a constant skip: **edge must fail**;
+  - `lane_w0` is kept: lane must fail.
+- **Informative:** `s8_detached`.
+- **If the arm FAILS while its must-fails hold:** §9's next lever is (3), the decoder.
+- **Binding:** A11 applies. Only a run on the launch closure binds; this arm's early run is non-binding.
