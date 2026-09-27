@@ -16111,3 +16111,10 @@ PI_DECISION_QUEUE, 2026-09-26 yaw item).
 | id | record | evidence | status |
 |---|---|---|---|
 | **MEAS-MAP-EXTENT-CENSUS** | The pre-registered §11.2 rule, run on 4,369 TRAIN clips / 78,321 frames with byte-identity controls, selects **x_max 100 m, y_half ±30 m**. Seen coverage ahead is 0.53 at 90–100 m and 0.47 at 100–110 m; sideways it is 0.9996 at 20–30 m and 0.21 at 30–40 m. The result is robust to the threshold and ring choice. The lateral limit is SAM3's R_MAX = 35 m (`sam3map_render_v5m.py:33`). ⇒ **Consequences:** a 10 cm grid of 1000 × 600, bands to 100 m, the planner BEV cropped to 60 × 32 m (unchanged), a `/3` re-export with anchored coordinates, and gradient checkpointing on the decoder. | `…/2026-09-26-map-signal-audit/RESULT.md` §9A + `raw/thor_0021_census/`; `SPEC_REFCV7.md` §12 (A7) | MEASURED; DECIDED by the pre-registered rule |
+
+<!-- REFCV7-A8-NEW2-WEIGHTS-BANDS-2026-09-27 -->
+### 2026-09-27 ~02:20 — refcv7 NEW-2: sqrt(MF) class weights, the per-band bar rule, and the 40-key Watch contract (A8)
+
+| id | record | evidence | status |
+|---|---|---|---|
+| **SPEC-REFCV7-A8** | NEW-2's class weights are **sqrt(median-frequency)**, from TRAIN, frozen, clip 25. Under option (c) there is no 0.5 m auxiliary, so plain MF would leave the big classes (drivable included) 2.7 % of the gradient (ANALYTIC); sqrt(MF) gives 10.4 %. BAR-M7-1..3 pass iff they pass in every band with GT; absent bands are UNDEFINED with n = 0. The Watch contract has 40 `eval_map_hires_iou_{cls}_{band}` keys. A weight-0 decision-rule defect was found and fixed. | `Project Steering/SPEC_REFCV7.md` §13; `…/2026-09-26-refcv7-map-hires/BUILD.md` §5 | REGISTERED, before any NEW-2 number |

@@ -244,3 +244,22 @@ NEW-1 builder, MEASURED from source and on the battery's step-30k surface (4,754
 2. **The planner BEV is CROPPED to 60 m × ±16 m** before the 0.5 m pooling, so the planner's input grid and its token geometry (30 × 16 tokens of 2 × 2 m) are unchanged from refcv6. G-DVB checks it.
 3. **The `/3` ground truth is re-exported** from the stored world maps on Thor with ANCHORED coordinates: lateral centre `y = −16 + (j_rel + 0.5)·cell`, `j_rel = j − 140` on the 10 cm grid and `j − 28` on the 0.5 m grid. The control is byte identity with `/2` inside the old 60 × 32 window, for both `fine_codes` and `cart_frac`, on every frame. Timed at 7.26 s/clip, about 1.5 h on 6 workers, about 19.6 GB.
 4. **Memory:** the 10 cm decoder's saved activations at b16 grow from 6.85 to about 21.4 GB (analytic). **Gradient checkpointing is ON for the 10 cm decoder**, as a declared flag, which takes it to about 1.14 GB. Its s/step cost is MEASURED in the Thor G-LIVE smoke; more than +25 % goes to the PI, which is reserved decision (b).
+
+## 13. Amendment A8 (2026-09-27 ~02:20 Berlin): NEW-2's class weights are sqrt(median-frequency), the per-band bar rule is fixed, and the Watch contract has 40 keys
+
+Registered BEFORE any NEW-2 model number exists. The NEW-2 build record is `…/2026-09-26-refcv7-map-hires/BUILD.md`.
+
+1. **Class weights: sqrt(median-frequency), computed once from TRAIN, frozen, clip 25.**
+   - Option (c) (§11) REMOVED the 0.5 m auxiliary head. Under plain median-frequency weights the big classes keep only **2.7 %** of the gradient at convergence (ANALYTIC; the audit's shares reproduced to 1e-17).
+   - Drivable is the class the planner's BEV depends on, so that would starve it. BAR-M7-4 (drivable non-regression) would be at risk.
+   - sqrt(MF) gives the big classes **10.4 %** (MF with a floor of 0.25 would give 8.6 %) and still up-weights every thin class relative to unweighted CE.
+   - The weights script names each option; refcv7 uses `sqrt_mf`, and its sha256 is recorded in config.json.
+2. **The per-band bar rule, as §11.2 registered:**
+   - BAR-M7-1..3 are evaluated PER BAND (0–20 … 80–100 m). A bar PASSES iff it passes in EVERY band that has ground-truth cells for its class.
+   - A band where the class is absent from GT and from every prediction is reported UNDEFINED with n = 0, and never dropped.
+   - Far bands that read ~0 for both models are reported as such. A missed band makes the bar FAILED, with no goalpost move.
+3. **The Watch contract (G-MAP item 4): 40 keys**, `eval_map_hires_iou_{cls}_{band}`.
+   - cls ∈ {nocls, drivable, lane, crosswalk, arrow, edge, hatched, sidewalk}; band ∈ {0_20, 20_40, 40_60, 60_80, 80_100}.
+   - Beside them, `eval_map_hires_iouraw_*` (the raw decision rule) and `eval_map_hires_lshare_*` (per-class loss share), 40 each.
+   - The refcv7 Watch shows all of them plus a thin-class alarm tile.
+4. **Defect found and fixed in the build, recorded:** under `prior_corrected`, a class with weight 0 was decided on EVERY cell (z − log 0 = +∞), in both the torch and the numpy rule. It is now never decided, and red arms pin it.
