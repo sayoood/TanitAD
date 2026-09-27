@@ -5268,3 +5268,17 @@ wrong cause.
 | quoting stamp | steps ≤ 34,500: "F3 detach-only, F4 on the last layer only; tactical labels ~0.37 s early". Steps > 34,500: "hybrid: F3 + true label clock from 34,500". EVERY step: "trunk C26 equalisation OFF (declared 43, dropped)"; "2 of 3 declared selection mechanisms unbuilt". |
 | last evals | T1 battery at 30k (GOALS `REFCV6-BATTERY-30K-2026-09-26`); NavSim at 5k/30k (`REFCV6-NAVSIM-5K-30K-2026-09-26` + the 30k navtest subset); map head at 35k: drivable IoU 0.70 / 0.62 / 0.73 on 3 clips |
 | successor | **refcv7** (`Project Steering/SPEC_REFCV7.md`) |
+
+### refcv7-r101-s0 — 🔄 TRAINING since 2026-09-28 00:03 Berlin (2026-09-27 22:03:33Z), on Thor, launched by the launch gate's PASS token
+
+| | |
+|---|---|
+| launch | commit `fec3a0dccfda7eeaf34b537337370f1659fd2429`; launch tree digest `537cf4313221ebfc…` (stack + taniteval); canonical argv `stack/ops/runs.d/refcv7-r101-s0.argv.json`, **154 tokens**, gate argv sha256 `6402d33de75b7f1c…`; token `/home/nvidia/refcv7_gate_fec3a0dccf/PASS_fec3a0dccfda.json`. **All 10 checks PASS**: G-HYG, G-DVB, G-LIVE, G-CKPT, G-EVAL, G-CLOCK, G-SUITE, G-SUITE-PINNED, G-MAP-OVERFIT, G-BOX-OVERFIT. The supervisor re-verified the token (MATCH) and started the trainer through `launch_gate.py exec`; the running process's argv EQUALS the gated 154 tokens (MEASURED). |
+| arm | refcv6 (SPEC_REFCV6_V2, resnet101.a1_in1k at 416×1024, nav mandatory, strategic layer OFF) + FIX-1..5 + NEW-1 (residual on the `ha0_ext_pose` prior) + NEW-2 (the map at 10 cm, 100 m × ±30 m, near lift 20 m + 1 near refine block, sqrt_mf TRAIN weights) + the A9/A14.1/A17 box head (focal presence, per-layer supervision, VIS-1 IGNORE semantics, 300 queries, `learned_ref`) + the three selection mechanisms (tac8 prior, nav compliance τ, speed-ceiling filter). SPEC_REFCV7 §1–§25. |
+| size | **100,468,987** parameters (param_breakdown total, identical in the trainer's and the eval loader's build; MEASURED by G-EVAL) |
+| schedule | trainer `stack/scripts/refc_v3_train.py`; batch 16, **50,400 steps**, `--opt dd`, lr 1e-4, warmup 2,000, seed 0; eval every 500 (8 batches), ckpt every 500, log every 50, conflict probe every 10 |
+| cost | **9.876 s/step** (early probe, steps 50→100, MEASURED); **9.946 s/step** (G-LIVE smoke, 89 intervals, MEASURED); **1.54×** refcv6's 6.41. The PI approved ≤ 10.5 s/step (SPEC_REFCV7 §25). ⇒ ~5.8 days, ETA ≈ 2026-10-03 evening (ESTIMATED). The +3.5 s/step over refcv6 is NOT yet attributed (a profiling agent is on it). |
+| binding overfit records (A11 closure, A19 MAIN-only) | map `/home/nvidia/refcv7_bind/run_map/out/g_map_overfit.json`: all 8 classes pass at 3,000 steps (edge 0.547, lane 0.773); box `/home/nvidia/refcv7_bind/run_box/gbo_binding.json`: all six criteria at 2,000 (AP@2m 1.000, P = R = 1.000, 113/113 confident, median centre 0.010 m). Must-fail evidence is INHERITED per A19 (box `memory_zeros` not measured at full scale on the launch head; accepted by the PI). |
+| quoting stamp | "strategic layer OFF: 8 strategic modules + the replaced lat3/lon3 prior pair take zero gradient BY CONSTRUCTION and are admitted by flag in G-LIVE (PI 2026-09-27); their model-side freeze is owed at the next restart". |
+| where | Thor run dir `/home/nvidia/refcv7_run/runs/refcv7-r101-s0` (supervisor `sup_refcv7.sh`, manifest `/home/nvidia/refcv7_run/runs.d/refcv7-r101-s0.env`, code tree `/home/nvidia/refcv7_run/fec3a0dccf`); milestone checkpoints go to the PRIVATE HF repo `Sayood/tanitad-refcv7-r101-s0`. |
+| predecessor | refcv6-r101-s0 (stopped at 38,250) |
