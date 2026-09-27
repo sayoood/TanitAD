@@ -447,6 +447,51 @@ On compute, the lift projection is 129 GFLOP fwd (refcv6) and 258 GFLOP fwd (a p
 
 **Design note for option (c).** The pooled 0.5 m BEV that now feeds box3d, the planner's cross-attention and the 30 × 16 tokens would grow from 120 × 64 to 200 × 120. Each token would then cover ~3.3 m × 3.75 m instead of 2 m × 2 m. Either crop the planner's pooled BEV to 60 × 32 m or DECLARE the geometry change (G-DVB). It must not change silently.
 
+## 9B. Task 9 (A7) — the full `tanitad.sam3_map_gt/3` re-export: STATUS RUNNING at hand-back (00:45)
+
+**Exporter:** `code/sam3map_export_gt_v3.py` (md5 `7b1f7d33…`, verified after scp to `thor:/home/nvidia/msa_0041/`). It uses ANCHORED coordinates:
+- 10 cm cell (i, j): x = (i + 0.5)·0.1, y = −16 + (j − 140 + 0.5)·0.1;
+- 0.5 m cell (ix, iy) with sub-sample (sx, sy): x = (ix + sx)·0.5, y = −16 + (iy − 28 + sy)·0.5.
+
+**What it writes:**
+- `fine_codes [T, 1000, 600]` and `cart_frac [T, 9, 200, 120]`;
+- the time axis, poses and polar grids COPIED unchanged from `/2`;
+- every `/2` reader guard (schema, grid, channels, scale, sha12 identity, time axis, finite poses) plus the world map's own sha12 and resolution;
+- meta: `schema = tanitad.sam3_map_gt/3`, the extent, the anchored formulas, the old-window indices, and provenance (the `/2` file's and the world map's sha256, the exporter md5).
+- Files are written atomically. A clip that fails the control is NOT written, and ANY failure makes the verdict FAIL.
+
+**The control:** on EVERY frame of EVERY clip, `/3` `fine_codes` and `cart_frac` inside the old 60 × 32 m window must be byte-identical to that clip's `/2` arrays.
+
+**Smoke, 3 clips (2 train, 1 eval), then verified independently:**
+- 603 / 603 frames identical, verdict PASS (`raw/thor_0041_v3/smoke_MANIFEST*.json*`).
+- The independent check used the TRAINER's own `/2` reader (`semantic_map_gt.open_clip`). It found:
+  - old-window identity for `fine_codes` and `cart_frac`;
+  - `t_query_us`, `t_img_us`, `cam_frame_idx`, `T_world_rig` and both polar grids equal to `/2`;
+  - `source.clip_sha12` correct, and the `v2_sha256` provenance correct.
+- Seen share per smoke file: 0.82 / 0.90 / 0.87 overall and 0.67 / 0.85 / 0.77 in 60–100 m.
+
+**The full run:**
+- **Scope:** 4,508 jobs (4,369 train + 139 eval; the 2 eval clips without a `/2` file will be listed as NO_V2).
+- **Where and how:** `thor` PID **3465391**, launched 00:43. `tanitad-edge`, 6 workers, `nice 19`.
+- **Output:** `/home/nvidia/data/sam3_gt_v3/<sha12>.sam3mapgt.npz` + `MANIFEST.jsonl` + `MANIFEST_SUMMARY.json` + `EXPORT_OK.json` or `EXPORT_FAILED.json`. Log: `/home/nvidia/msa_0041/v3_full_stdout.log`.
+- **Progress at hand-back:** ~66 clips in ~1.5 min; the finish is ESTIMATED at ~100 min (≈ 02:25 Berlin).
+
+**UPDATE 2026-09-27 ~03:30 (Master Mind, after hand-back): the full run FINISHED at 02:21, verdict PASS** (MEASURED, `raw/thor_0041_v3/EXPORT_OK.json`, `MANIFEST_SUMMARY.json`, `MANIFEST.jsonl`, `v3_full_stdout.log`, pulled with md5 equal to Thor's).
+- **4,506 PASS** (4,369 train + 137 eval), **0 FAIL**, 2 NO_V2: the eval clips `081b986f8888` and `2aa810802777` never had a `/2` file.
+- **The control held on every frame:** 905,556 frames, 905,556 byte-identical to `/2` inside the old 60 × 32 m window, 0 control failures.
+- 19,979,543,593 B in 1.637 h, 6 workers, `tanitad-edge` (numpy 2.5.1), exporter md5 `7b1f7d331e2c4dd28943f162475e3701`.
+- **The eval copy to the dev box PASSED** (`raw/thor_0041_v3/copy_verify_eval.json`): 137 files, 636,747,415 B, 0 sha256 mismatches against the manifest, 0 md5 mismatches against Thor, into `D:/refcv6_eval_kit/data/sam3_gt_v3_eval/`.
+- ⚠️ **`code/copy_eval_v3.sh` had two defects, both found and fixed at its first use:**
+  1. The Windows Python wrote the file list with CRLF, so Thor's tar looked for `<sha12>.sam3mapgt.npz\r`: exit 2, nothing copied. Fixed with `newline='\n'`.
+  2. The `tar cf -` stream over ssh ran at ~0.1 MB/s and hit its 1800 s timeout at 52 of 137 files (rc 124). It was replaced by scp, 16 files per call (941 s for all 137).
+  - Part of the slowness was the D: disk itself. An orphaned recursive `grep` (started 2026-09-26 23:15, parent process gone) read D: at ~45 MB/s until the Master Mind stopped it by explicit PID at 03:25.
+  - The partial first copy was deleted before the re-run; the script refuses a non-empty destination.
+
+**Owed after it finishes** (not done by this agent, which was told to hand back):
+1. Confirm `EXPORT_OK.json` (n_fail must be 0).
+2. Pull `MANIFEST.jsonl`, `MANIFEST_SUMMARY.json` and the log into `raw/thor_0041_v3/`.
+3. Run `bash code/copy_eval_v3.sh <pulled MANIFEST.jsonl>`. It copies the eval PASS files to `D:/refcv6_eval_kit/data/sam3_gt_v3_eval/` and verifies every file twice: sha256 vs the manifest, and md5 vs Thor's md5sum. It writes `COPY_VERIFY.json`.
+
 ## 10. Disclosures
 
 1. **22:26:** `code/analytic_class_signal.py` (CPU, ~300 MB, 130 s) was started at **4.32 GB free**, below my own 7.5 GB start gate. It finished cleanly and has not recurred: the heavy probe is gated by code (`wait_then_probe.py` + the probe's own 3-sample gate and a 4.0 GB abort watchdog).
