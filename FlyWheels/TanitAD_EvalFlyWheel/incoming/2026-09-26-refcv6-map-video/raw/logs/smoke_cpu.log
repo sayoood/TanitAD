@@ -1,0 +1,36 @@
+[mapvid] mode=smoke device=cpu RAM available 12.96 GB, floor 8.0
+[mapvid] ckpt md5 68a4ef3bbb0a3ec707b04f0fb2b6b86f (== expected), config md5 a3193a4685ce0d07a6ae6b89fdc994a8 (== expected); in-run eval_map_iou_drivable @ 35000 = 0.67745
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] rig camera = PER-CLIP EXTRINSICS from D:\refcv6_eval_kit\data\refcv6_train_eval139_extrinsics.json (4508 clips, z 1.203-1.687 m, pitch -0.0755..+0.0683 rad)
+[v3] ⚠️ a rig camera is built but --agent-w-project and --agent-w-ground are both 0: neither monocular term contributes. That is a legal ablation baseline and the stamp records it, but it is not a projection arm.
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+[mapvid] model built (2.0 s) step 35000 strict 0/0, window 8, horizons (5, 10, 15, 20, 30, 40, 50, 60), mode diffusion, sampler ddim, steps 2, valid-mask True, RAM avail 13.30 GB
+[v2] D:\refcv6_eval_kit\data\refcv6-b1-416x1024-eval139: 139 providers (channels 9, 416x1024 px), episode ids from 'episode_uid' [collision-free; the as-built 16-bit ids would give only 139 distinct for 139 clips]
+[v2] 139 providers, 139 distinct episode ids
+[v3] nav_from_v7: follow 88 / left 13 / right 38, missing 0 (of 139 clips; md5=eefc38d1453bd1c73802d44d45affced)
+[v3] max_speed_input_v6 (4-way one-hot): 147/147 sidecar rows carry a ceiling, 23772/23772 windows fed (100.0 %), 1 clips ABOVE the 120 km/h top step (clamped, and on those the fed ceiling is one the ego demonstrably exceeded)
+[mapvid] selection: 137/139 clips fully covered; chosen left=693335b810c3 (171 w), right=0191487845ef (171 w), follow=00213e99adca (171 w)  [6.2 s]
+[v2] D:\refcv6_eval_kit\data\refcv6-b1-416x1024-eval139: 139 providers (channels 9, 416x1024 px), episode ids from 'episode_uid' [collision-free; the as-built 16-bit ids would give only 139 distinct for 139 clips]
+[v2] 139 providers, 139 distinct episode ids
+[v3] nav_from_v7: follow 0 / left 1 / right 0, missing 0 (of 1 clips; md5=eefc38d1453bd1c73802d44d45affced)
+[v3] max_speed_input_v6 (4-way one-hot): 147/147 sidecar rows carry a ceiling, 171/171 windows fed (100.0 %), 1 clips ABOVE the 120 km/h top step (clamped, and on those the fed ceiling is one the ego demonstrably exceeded)
+[v3] SAM3 map GT: 171/171 windows covered (1.0000, floor 0.90, verdict PASS) over 1 clips; states {'ok': 171, 'no_file': 0, 'frame_out_of_range': 0, 'inconclusive': 0}; layouts ['flat_sha12']
+[mapvid] render dataset: 1 episodes -> 171 windows; map_gt {"ok": 171, "no_file": 0, "frame_out_of_range": 0, "inconclusive": 0}; RAM avail 13.30 GB
+[clip 1/1] 693335b810c3 nav=left windows 2/171; 416x1024 cylindrical f_ref 488.924 · cam h 1.363 m, fwd 2.003 m, pitch-down +1.75° (MEASURED per-clip)
+  [draw-independence] {"seeds": [0, 1], "map_logits_max_abs_diff": 0.0, "drivable_mask_identical": true, "argmax_identical": true, "iou_seed_a": 0.7768479776847977, "iou_seed_b": 0.7768479776847977, "traj_max_abs_diff_m": 1.7677478790283203}
+  w001/2 t=0 iou 0.7768 mean 0.7768 pooled 0.7768 | ctl 1.0000/0.9960 flip 0.667 | 148.7 s | RAM 11.6 GB
+  w002/2 t=1 iou 0.7677 mean 0.7723 pooled 0.7722 | ctl 1.0000/0.9961 flip 0.665 | 65.4 s | RAM 11.1 GB
+[clip 1] 693335b810c3 left: mean IoU 0.772272786093258 pooled 0.7722395292488751 (n=2); controls {"n": 2, "consistent_iou_eq_1": 2, "consistent_union0": 0, "consistent_min_iou": 1.0, "onehot_iou_min": 0.9960159362549801, "onehot_iou_sum": 1.9920758259318911, "n_mixed_total": 10, "n_impossible_total": 0, "panel_equal": 2, "panel_checked": 2, "consistent_panel_equal": 2, "mut_flip_iou_max": 0.66711140760507, "mut_flip_red": 2, "mut_chan_red": 2, "cellcount_agree": 2, "onehot_iou_mean": 0.9960379129659456, "pixel_check_on_this_clip": true}
+==============================================================================
+FILE        D:\Projects\TanitAD\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-26-refcv6-map-video\raw\smoke\refcv6_map_step35000_smoke.mp4
+size        424,669 B = 0.40 MiB   [UNDER the 30 MiB delivery limit]
+codec       h264 / High pix=yuv420p
+dimensions  1920x1200   (container metadata)
+avg_fps     10.000      duration 2.70 s
+DECODED     27 frames   decode_clean=True
+consistency n/fps = 2.70 s vs container 2.70 s
+==============================================================================
+
+[mapvid] DONE D:\Projects\TanitAD\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-26-refcv6-map-video\raw\smoke\refcv6_map_step35000_smoke.mp4 (424,669 B, 27 frames) in 255.6 s; RAM {"floor_gb": 8.0, "min_available_gb": 10.38, "process_peak_working_set_gb": 2.56}
+EXIT=0

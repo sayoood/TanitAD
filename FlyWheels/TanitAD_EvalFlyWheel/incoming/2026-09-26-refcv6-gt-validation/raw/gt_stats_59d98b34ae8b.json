@@ -1,0 +1,491 @@
+{
+ "provenance": {
+  "published_source": "PhysicalAI-AV labels/obstacle.offline cuboids (rig frame; the B1 eval mirror obstacle_offline_b1eval)",
+  "join_2d": {
+   "file": "C:/Users/Admin/qland/work/gtval/eval_agents.jsonl",
+   "bytes": 97839483,
+   "built_by": "stack/scripts/build_b1_agent_join.py (join_clip_raw :347; per-track nearest sample world_agents_at + planar SE(2) ego_frame_agents :409-410)",
+   "read_by": "stack/scripts/train_p8_occupancy.py JoinFileReader (:240; lookup :465, lookup_classes :472, lookup_track_ids :481)"
+  },
+  "join_3d": {
+   "file": "C:/Users/Admin/qland/work/gtval/eval_agents_3d.jsonl",
+   "bytes": 117697053,
+   "built_by": "stack/scripts/build_b1_agent_join_3d.py (center_z / size_z re-attached BY TRACK ID; agent_cuboid_gt.py module docstring)",
+   "read_by": "stack/tanitad/data/agent_cuboid_gt.py AgentJoin3D (:298), zh_for_frame (:411), base_from_centre (:430)"
+  },
+  "per_window_gt": "stack/scripts/refc_v3_train.py:2764-2864 V3Dataset._agent_item (raw rows, NO visibility filter; agent_slots.targets_from_join :1014-1077)",
+  "trainer_target_filter": "stack/tanitad/refs/refc_agents.py:410-433 visible_target_filter -> filter_targets_to_visible :336-406; decode box agent_slots.py:526-539 SlotDecodeRanges (x 60 m, |y| 16 m); applied in box3d_set_loss (box3d_head.py:376-411) and agent_losses (refc_agents.py:849-852)",
+  "pad": {
+   "agent_pad": 397,
+   "source": "config.json agent_join_stats.train.agent_pad"
+  },
+  "tree": "C:/Users/Admin/ev6_82c2331",
+  "join_subsets": {
+   "agent_join": {
+    "config_file": "D:\\refcv6_eval_kit\\data\\joins\\b1_train_plus_eval_agents.jsonl.xz",
+    "used_subset": "C:/Users/Admin/qland/work/gtval/eval_agents.jsonl",
+    "subset_bytes": 97839483
+   },
+   "join3d": {
+    "config_file": "D:\\refcv6_eval_kit\\data\\join3d\\b1_train_plus_eval_agents_3d.jsonl.xz",
+    "used_subset": "C:/Users/Admin/qland/work/gtval/eval_agents_3d.jsonl",
+    "subset_bytes": 117697053
+   }
+  }
+ },
+ "n_windows": 171,
+ "n_windows_no_label": 0,
+ "n_windows_labelled_clear": 0,
+ "n_gt_boxes": 1292,
+ "gt_per_labelled_window": {
+  "n": 171,
+  "mean": 7.555555555555555,
+  "median": 8.0,
+  "p10": 5.0,
+  "p90": 11.0,
+  "min": 4.0,
+  "max": 12.0
+ },
+ "targets_per_labelled_window": {
+  "n": 171,
+  "mean": 2.754385964912281,
+  "median": 2.0,
+  "p10": 1.0,
+  "p90": 7.0,
+  "min": 0.0,
+  "max": 8.0
+ },
+ "gt_by_class": {
+  "automobile": 532,
+  "person": 469,
+  "rider": 291
+ },
+ "targets_by_class": {
+  "rider": 179,
+  "automobile": 176,
+  "person": 116
+ },
+ "gt_by_class_per_labelled_window": {
+  "person": 2.742690058479532,
+  "automobile": 3.111111111111111,
+  "rider": 1.7017543859649122
+ },
+ "range_hist_all_gt": {
+  "0-10m": 114,
+  "10-20m": 207,
+  "20-30m": 149,
+  "30-40m": 206,
+  "40-60m": 317,
+  "60-80m": 101,
+  "80-120m": 115,
+  ">=120m": 83
+ },
+ "range_hist_targets": {
+  "0-10m": 39,
+  "10-20m": 97,
+  "20-30m": 101,
+  "30-40m": 109,
+  "40-60m": 124,
+  "60-80m": 1,
+  "80-120m": 0,
+  ">=120m": 0
+ },
+ "frac_outside_120deg_fov": 0.5278637770897833,
+ "filter": {
+  "n_gt": 1292,
+  "n_kept_as_targets": 471,
+  "frac_removed": 0.6354489164086687,
+  "by_reason_any": {
+   "behind ego (x < 0)": {
+    "n": 594,
+    "frac_of_gt": 0.45975232198142413
+   },
+   "outside the 120 deg field": {
+    "n": 88,
+    "frac_of_gt": 0.06811145510835913
+   },
+   "beyond 60 m ahead": {
+    "n": 43,
+    "frac_of_gt": 0.033281733746130034
+   },
+   "|y| > 16 m": {
+    "n": 248,
+    "frac_of_gt": 0.19195046439628483
+   }
+  },
+  "by_primary_reason": {
+   "behind ego (x < 0)": {
+    "n": 594,
+    "frac_of_gt": 0.45975232198142413
+   },
+   "outside the 120 deg field": {
+    "n": 88,
+    "frac_of_gt": 0.06811145510835913
+   },
+   "beyond 60 m ahead": {
+    "n": 43,
+    "frac_of_gt": 0.033281733746130034
+   },
+   "|y| > 16 m": {
+    "n": 96,
+    "frac_of_gt": 0.07430340557275542
+   }
+  },
+  "rule": "refc_agents.visible_target_filter (refc_agents.py:410-433): valid & |atan2(cy,cx)| <= 60 deg & 0 <= cx <= 60 & |cy| <= 16"
+ },
+ "sizes_per_class": {
+  "automobile": {
+   "L": {
+    "n": 532,
+    "mean": 3.861815764043564,
+    "median": 3.8429999351501465,
+    "p10": 3.555999994277954,
+    "p90": 4.068499803543091,
+    "min": 3.438999891281128,
+    "max": 5.459000110626221
+   },
+   "W": {
+    "n": 532,
+    "mean": 1.7737236977519846,
+    "median": 1.7740000486373901,
+    "p10": 1.6390000581741333,
+    "p90": 1.8259999752044678,
+    "min": 1.5809999704360962,
+    "max": 2.256999969482422
+   },
+   "H": {
+    "n": 532,
+    "mean": 1.555193598333158,
+    "median": 1.5269999504089355,
+    "p10": 1.4420000314712524,
+    "p90": 1.5870000123977661,
+    "min": 1.4079999923706055,
+    "max": 2.377000093460083
+   }
+  },
+  "person": {
+   "L": {
+    "n": 469,
+    "mean": 0.6656993666945744,
+    "median": 0.6790000200271606,
+    "p10": 0.6470000147819519,
+    "p90": 0.6819999814033508,
+    "min": 0.593999981880188,
+    "max": 0.6819999814033508
+   },
+   "W": {
+    "n": 469,
+    "mean": 0.7606225935126673,
+    "median": 0.7670000195503235,
+    "p10": 0.7329999804496765,
+    "p90": 0.7839999794960022,
+    "min": 0.6710000038146973,
+    "max": 0.7839999794960022
+   },
+   "H": {
+    "n": 469,
+    "mean": 1.715673778865383,
+    "median": 1.7259999513626099,
+    "p10": 1.7050000429153442,
+    "p90": 1.7350000143051147,
+    "min": 1.5789999961853027,
+    "max": 1.7350000143051147
+   }
+  },
+  "rider": {
+   "L": {
+    "n": 291,
+    "mean": 1.88916840586056,
+    "median": 1.8380000591278076,
+    "p10": 1.8380000591278076,
+    "p90": 1.9780000448226929,
+    "min": 1.8380000591278076,
+    "max": 1.9780000448226929
+   },
+   "W": {
+    "n": 291,
+    "mean": 0.7708281827546477,
+    "median": 0.7549999952316284,
+    "p10": 0.7390000224113464,
+    "p90": 0.8140000104904175,
+    "min": 0.7390000224113464,
+    "max": 0.8140000104904175
+   },
+   "H": {
+    "n": 291,
+    "mean": 1.7095910691723382,
+    "median": 1.6710000038146973,
+    "p10": 1.6710000038146973,
+    "p90": 1.7860000133514404,
+    "min": 1.6710000038146973,
+    "max": 1.7860000133514404
+   }
+  }
+ },
+ "size_outliers_vs_literal_norms": {
+  "n": 0,
+  "frac_of_gt": 0.0,
+  "norms_m": {
+   "automobile": [
+    2.5,
+    6.5,
+    1.3,
+    2.6,
+    1.0,
+    3.0
+   ],
+   "heavy_truck": [
+    4.0,
+    22.0,
+    1.8,
+    3.2,
+    1.8,
+    4.6
+   ],
+   "bus": [
+    6.0,
+    25.0,
+    2.0,
+    3.2,
+    2.4,
+    4.6
+   ],
+   "other_vehicle": [
+    0.8,
+    22.0,
+    0.4,
+    3.5,
+    0.4,
+    4.6
+   ],
+   "trailer": [
+    1.0,
+    20.0,
+    0.8,
+    3.2,
+    0.3,
+    4.6
+   ],
+   "person": [
+    0.1,
+    2.0,
+    0.1,
+    1.5,
+    0.8,
+    2.3
+   ],
+   "rider": [
+    0.3,
+    3.0,
+    0.2,
+    1.5,
+    0.8,
+    2.5
+   ],
+   "stroller": [
+    0.3,
+    1.8,
+    0.2,
+    1.2,
+    0.4,
+    1.6
+   ],
+   "animal": [
+    0.1,
+    3.0,
+    0.1,
+    1.8,
+    0.1,
+    2.5
+   ],
+   "protruding_object": null
+  },
+  "examples": []
+ },
+ "box_bottom_cz_minus_h_over_2": {
+  "n_with_3d_label": 1292,
+  "frac_gt_with_3d_label": 1.0,
+  "frame": "the rig frame of obstacle.offline (reference_frame 'rig', agent_cuboid_gt.py module docstring): +x fwd, +y left, +z up; bottom = join3d cz - h/2 (agent_cuboid_gt.base_from_centre :430); the road plane is z = 0 only if the rig origin sits on the road -- a systematic offset shows up in these medians",
+  "per_class": {
+   "automobile": {
+    "n": 532,
+    "mean": 0.18690583436343736,
+    "median": 0.4361500144004822,
+    "p10": -1.3429200172424316,
+    "p90": 1.3447099566459657,
+    "min": -2.422399938106537,
+    "max": 2.8262999057769775
+   },
+   "person": {
+    "n": 469,
+    "mean": 0.24729146624107096,
+    "median": 0.3389999270439148,
+    "p10": -0.34405999183654784,
+    "p90": 0.6896400332450867,
+    "min": -1.462499976158142,
+    "max": 0.9573000073432922
+   },
+   "rider": {
+    "n": 291,
+    "mean": 0.2548642567138082,
+    "median": 0.18589997291564941,
+    "p10": 0.0875999927520752,
+    "p90": 0.4879000186920166,
+    "min": -0.6060999929904938,
+    "max": 1.760200023651123
+   }
+  },
+  "per_class_hist": {
+   "automobile": {
+    "n": 532,
+    "<-2": 20,
+    "[-2,-1.5)": 30,
+    "[-1.5,-1.25)": 9,
+    "[-1.25,-1)": 17,
+    "[-1,-0.75)": 27,
+    "[-0.75,-0.5)": 23,
+    "[-0.5,-0.25)": 21,
+    "[-0.25,0)": 6,
+    "[0,0.25)": 25,
+    "[0.25,0.5)": 141,
+    "[0.5,0.75)": 116,
+    "[0.75,1)": 24,
+    "[1,1.5)": 29,
+    "[1.5,2)": 25,
+    ">=2": 19
+   },
+   "person": {
+    "n": 469,
+    "<-2": 0,
+    "[-2,-1.5)": 0,
+    "[-1.5,-1.25)": 14,
+    "[-1.25,-1)": 0,
+    "[-1,-0.75)": 3,
+    "[-0.75,-0.5)": 6,
+    "[-0.5,-0.25)": 40,
+    "[-0.25,0)": 44,
+    "[0,0.25)": 58,
+    "[0.25,0.5)": 160,
+    "[0.5,0.75)": 112,
+    "[0.75,1)": 32,
+    "[1,1.5)": 0,
+    "[1.5,2)": 0,
+    ">=2": 0
+   },
+   "rider": {
+    "n": 291,
+    "<-2": 0,
+    "[-2,-1.5)": 0,
+    "[-1.5,-1.25)": 0,
+    "[-1.25,-1)": 0,
+    "[-1,-0.75)": 0,
+    "[-0.75,-0.5)": 2,
+    "[-0.5,-0.25)": 2,
+    "[-0.25,0)": 12,
+    "[0,0.25)": 199,
+    "[0.25,0.5)": 48,
+    "[0.5,0.75)": 6,
+    "[0.75,1)": 7,
+    "[1,1.5)": 12,
+    "[1.5,2)": 3,
+    ">=2": 0
+   }
+  },
+  "pooled_hist": {
+   "n": 1292,
+   "<-2": 20,
+   "[-2,-1.5)": 30,
+   "[-1.5,-1.25)": 23,
+   "[-1.25,-1)": 17,
+   "[-1,-0.75)": 30,
+   "[-0.75,-0.5)": 31,
+   "[-0.5,-0.25)": 63,
+   "[-0.25,0)": 62,
+   "[0,0.25)": 282,
+   "[0.25,0.5)": 349,
+   "[0.5,0.75)": 234,
+   "[0.75,1)": 63,
+   "[1,1.5)": 41,
+   "[1.5,2)": 28,
+   ">=2": 19
+  },
+  "raw_join3d_cz_per_class": {
+   "automobile": {
+    "n": 532,
+    "mean": 0.9645026335300163,
+    "median": 1.2181000113487244,
+    "p10": -0.5731700181961059,
+    "p90": 2.0891800403594973,
+    "min": -1.7043999433517456,
+    "max": 3.55679988861084
+   },
+   "person": {
+    "n": 469,
+    "mean": 1.1051283556737626,
+    "median": 1.1957000494003296,
+    "p10": 0.5234400153160095,
+    "p90": 1.5454599857330322,
+    "min": -0.6729999780654907,
+    "max": 1.8202999830245972
+   },
+   "rider": {
+    "n": 291,
+    "mean": 1.1096597912999773,
+    "median": 1.0463000535964966,
+    "p10": 0.9230999946594238,
+    "p90": 1.3301000595092773,
+    "min": 0.2393999993801117,
+    "max": 2.6057000160217285
+   }
+  },
+  "by_range": {
+   "0-20m": {
+    "n": 321,
+    "mean": 0.24499532951744174,
+    "median": 0.24929994344711304,
+    "p10": 0.12629997730255127,
+    "p90": 0.4609000086784363,
+    "min": -0.5004999935626984,
+    "max": 0.6801000237464905
+   },
+   "20-40m": {
+    "n": 355,
+    "mean": 0.4267828189571139,
+    "median": 0.3390999436378479,
+    "p10": -0.22354000806808472,
+    "p90": 1.5042400598526011,
+    "min": -1.462499976158142,
+    "max": 2.530600070953369
+   },
+   ">=40m": {
+    "n": 616,
+    "mean": 0.09647353692736187,
+    "median": 0.362199991941452,
+    "p10": -1.2031500190496445,
+    "p90": 0.8893000185489655,
+    "min": -2.422399938106537,
+    "max": 2.8262999057769775
+   }
+  },
+  "n_abs_gt_0p5m": 536,
+  "frac_of_3d_labelled": 0.4148606811145511,
+  "ground": "rig frame z = 0 (box3d_head.ground_standing_z: bottom median 0.039 m automobile, MEASURED 2026-09-16 on 51,844 eval cuboids)"
+ },
+ "duplicates_bev_iou_gt_0p5": {
+  "n_pairs": 0,
+  "n_pairs_both_targets": 0,
+  "examples": []
+ },
+ "n_unknown_class": 0,
+ "occ_flag_counts": {
+  "1": 682,
+  "0": 610
+ },
+ "n_rows_truncated_by_pad": 0,
+ "n_duplicate_track_ids_within_a_frame": 0,
+ "clip_sha12": "59d98b34ae8b",
+ "role": "extra (median rule)",
+ "n_windows_rendered": 171,
+ "camera": "416x1024 cylindrical f_ref 488.924 \u00b7 cam h 1.344 m, fwd 2.026 m, pitch-down +0.61\u00b0 (MEASURED per-clip)",
+ "n_tracks": 41
+}

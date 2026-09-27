@@ -1,0 +1,34 @@
+23:20:59 RAM gate passed: avail GB 8.19
+waited 33 x 30 s
+refcv6-r101-s0 step 38,000; hybrid: F3 + true label clock from 34,500; trunk C26 equalisation OFF (declared 43, dropped)
+n windows 513 (3 clips), seen 0.5 m cells 3,647,942 of 3,939,840 (349,975 of them outside map_valid); alignment control 0 / 0 cells differ (must be 0 / 0); seen-definition check 0 (must be 0)
+class                 AP.5>=.5    base    n_pos  AP pres    base    n_pos AP10 0-20 AP10 20-40 AP10 40-60  base10   n_pos10 argmaxIoU  p|pos  p|neg
+seen, no map class       0.812   0.379  1382673    0.823   0.430  1567484     0.868      0.830      0.695   0.381  34761821     0.542  0.642  0.293
+drivable                 0.851   0.377  1373952    0.893   0.420  1532724     0.896      0.859      0.746   0.371  33880647     0.599  0.586  0.147
+lane / road line         0.028   0.009    31111    0.126   0.040   146584     0.063      0.046      0.037   0.013   1202889     0.000  0.024  0.010
+crosswalk                0.035   0.013    46553    0.072   0.030   110398     0.076      0.022      0.020   0.014   1269980     0.003  0.021  0.007
+arrow / text             0.007   0.002     6767    0.025   0.006    23657     0.014      0.008      0.007   0.002    212981     0.000  0.003  0.001
+non-drivable edge        0.000   0.000      714    0.070   0.020    72990     0.020      0.013      0.008   0.004    332016     0.000  0.008  0.005
+hatched area               -     0.000        0    0.001   0.000     1025     0.000      0.000      0.000   0.000      1510       -      -    0.001
+sidewalk / verge         0.627   0.215   783479    0.665   0.250   913583     0.757      0.620      0.358   0.214  19538295     0.358  0.453  0.179
+n per row: 513 windows; 0.5 m cells scored per class 3,647,942; 10 cm fine cells scored 91,200,139 (bands: 0-20m 30,584,607, 20-40m 32,749,356, 40-60m 27,866,176)
+CONTROLS: constant predictor AP (must == base to 3 dp) | shuffled GT AP vs its base
+seen, no map class   0.5m const 0.379 (== base: True) | shuffled 0.363 vs 0.379 ; presence 0.417 vs 0.430 | 10cm const all:True 0-20m:True 20-40m:True 40-60m:True | 10cm shuffled all 0.365 vs 0.381
+drivable             0.5m const 0.377 (== base: True) | shuffled 0.576 vs 0.377 ; presence 0.624 vs 0.420 | 10cm const all:True 0-20m:True 20-40m:True 40-60m:True | 10cm shuffled all 0.567 vs 0.371
+lane / road line     0.5m const 0.009 (== base: True) | shuffled 0.012 vs 0.009 ; presence 0.053 vs 0.040 | 10cm const all:True 0-20m:True 20-40m:True 40-60m:True | 10cm shuffled all 0.019 vs 0.013
+crosswalk            0.5m const 0.013 (== base: True) | shuffled 0.011 vs 0.013 ; presence 0.026 vs 0.030 | 10cm const all:True 0-20m:True 20-40m:True 40-60m:True | 10cm shuffled all 0.012 vs 0.014
+arrow / text         0.5m const 0.002 (== base: True) | shuffled 0.002 vs 0.002 ; presence 0.008 vs 0.006 | 10cm const all:True 0-20m:True 20-40m:True 40-60m:True | 10cm shuffled all 0.003 vs 0.002
+non-drivable edge    0.5m const 0.000 (== base: True) | shuffled 0.000 vs 0.000 ; presence 0.018 vs 0.020 | 10cm const all:True 0-20m:True 20-40m:True 40-60m:True | 10cm shuffled all 0.003 vs 0.004
+hatched area         0.5m const    -   (== base: None) | shuffled    -   vs 0.000 ; presence 0.000 vs 0.000 | 10cm const all:True 0-20m:True 20-40m:True 40-60m:True | 10cm shuffled all 0.000 vs 0.000
+sidewalk / verge     0.5m const 0.215 (== base: True) | shuffled 0.220 vs 0.215 ; presence 0.259 vs 0.250 | 10cm const all:True 0-20m:True 20-40m:True 40-60m:True | 10cm shuffled all 0.219 vs 0.214
+SCENE-BLIND FLOORS: location prior (own clip out) AP and cell-permuted model AP (~base)
+seen, no map class   0.5m >=.5: model 0.812 | loc-prior 0.520 | cell-perm 0.379 | base 0.379 || presence: model 0.823 loc-prior 0.576 || 10cm all: model 0.811 loc-prior 0.521 | by band model/loc-prior 0-20m 0.868/0.585 20-40m 0.830/0.523 40-60m 0.695/0.429
+drivable             0.5m >=.5: model 0.851 | loc-prior 0.680 | cell-perm 0.376 | base 0.377 || presence: model 0.893 loc-prior 0.734 || 10cm all: model 0.840 loc-prior 0.672 | by band model/loc-prior 0-20m 0.896/0.742 20-40m 0.859/0.672 40-60m 0.746/0.539
+lane / road line     0.5m >=.5: model 0.028 | loc-prior 0.009 | cell-perm 0.008 | base 0.009 || presence: model 0.126 loc-prior 0.054 || 10cm all: model 0.045 loc-prior 0.015 | by band model/loc-prior 0-20m 0.063/0.013 20-40m 0.046/0.016 40-60m 0.037/0.017
+crosswalk            0.5m >=.5: model 0.035 | loc-prior 0.013 | cell-perm 0.013 | base 0.013 || presence: model 0.072 loc-prior 0.034 || 10cm all: model 0.036 loc-prior 0.014 | by band model/loc-prior 0-20m 0.076/0.015 20-40m 0.022/0.017 40-60m 0.020/0.013
+arrow / text         0.5m >=.5: model 0.007 | loc-prior 0.002 | cell-perm 0.002 | base 0.002 || presence: model 0.025 loc-prior 0.008 || 10cm all: model 0.009 loc-prior 0.003 | by band model/loc-prior 0-20m 0.014/0.003 20-40m 0.008/0.003 40-60m 0.007/0.001
+non-drivable edge    0.5m >=.5: model 0.000 | loc-prior 0.000 | cell-perm 0.000 | base 0.000 || presence: model 0.070 loc-prior 0.021 || 10cm all: model 0.013 loc-prior 0.004 | by band model/loc-prior 0-20m 0.020/0.003 20-40m 0.013/0.004 40-60m 0.008/0.004
+hatched area         0.5m >=.5: model    -   | loc-prior    -   | cell-perm    -   | base 0.000 || presence: model 0.001 loc-prior 0.000 || 10cm all: model 0.000 loc-prior 0.000 | by band model/loc-prior 0-20m 0.000/0.000 20-40m 0.000/0.000 40-60m 0.000/0.000
+sidewalk / verge     0.5m >=.5: model 0.627 | loc-prior 0.223 | cell-perm 0.215 | base 0.215 || presence: model 0.665 loc-prior 0.261 || 10cm all: model 0.624 loc-prior 0.222 | by band model/loc-prior 0-20m 0.757/0.247 20-40m 0.620/0.233 40-60m 0.358/0.172
+wrote D:\Projects\TanitAD\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-26-refcv6-map-class-analysis\raw\ap_probe_38k.json (68.2 s)
+EXIT=0

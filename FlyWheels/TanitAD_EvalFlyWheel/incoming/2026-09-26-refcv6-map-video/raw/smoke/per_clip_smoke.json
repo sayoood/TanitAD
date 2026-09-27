@@ -1,0 +1,131 @@
+{
+ "what": "refcv6 SAM3 map head, drivable IoU under the TRAINER'S rule (refc_v3_train.py:4506-4521 @ 82c2331) on EVERY eval window of each rendered clip",
+ "caveat": "perception diagnostic, open loop \u2014 not driving performance; one clip = one episode: windows are correlated, no interval quoted",
+ "run": "refcv6-r101-s0",
+ "step": 35000,
+ "hybrid_note": "hybrid: F3 + true label clock from step 34,500",
+ "ckpt_md5": "68a4ef3bbb0a3ec707b04f0fb2b6b86f",
+ "config": {
+  "path": "C:/Users/Admin/ev6_battery/raw/thor_reads/config_resume34500_20260926.json",
+  "md5": "a3193a4685ce0d07a6ae6b89fdc994a8"
+ },
+ "inrun_eval_map_iou_drivable": {
+  "value": 0.67745,
+  "step": 35000,
+  "windows": 128,
+  "batches": 8,
+  "note": "a DIFFERENT window set -- a sanity range, not an identity"
+ },
+ "estimators": {
+  "iou_mean": "mean over windows of the per-window IoU",
+  "iou_pooled": "sum of intersections / sum of unions over the clip's windows",
+  "interval": "none -- windows of one episode are not independent"
+ },
+ "clips": [
+  {
+   "clip_rank": 1,
+   "clip_sha12": "693335b810c3",
+   "nav": "left",
+   "nav_token": "NAV_TURN_L",
+   "n_windows_rendered": 2,
+   "n_windows_clip": 171,
+   "n_labelled": 2,
+   "iou_mean": 0.772272786093258,
+   "iou_pooled": 0.7722395292488751,
+   "iou_min": 0.7676975945017183,
+   "iou_median": 0.772272786093258,
+   "iou_max": 0.7768479776847977,
+   "n_union_zero": 0,
+   "t_label_s_range": [
+    1.1288,
+    1.2293
+   ],
+   "v0_ms_range": [
+    5.0843,
+    5.1308
+   ],
+   "pred_drivable_frac_mean": 0.19091550000000002,
+   "gt_drivable_frac_mean": 0.1841755,
+   "map_acc_argmax_mean": 0.8875445,
+   "map_soft_ce_mean": 0.36227600000000004,
+   "camera": {
+    "frame": {
+     "height": 416,
+     "width": 1024,
+     "f_ref": 488.92398517830253,
+     "projection": "cylindrical"
+    },
+    "codec": "png",
+    "extrinsics_found": true,
+    "label": "416x1024 cylindrical f_ref 488.924 \u00b7 cam h 1.363 m, fwd 2.003 m, pitch-down +1.75\u00b0 (MEASURED per-clip)",
+    "R_vs_pai_extrinsics_table_max_abs": 0.0
+   },
+   "controls": {
+    "n": 2,
+    "consistent_iou_eq_1": 2,
+    "consistent_union0": 0,
+    "consistent_min_iou": 1.0,
+    "onehot_iou_min": 0.9960159362549801,
+    "onehot_iou_sum": 1.9920758259318911,
+    "n_mixed_total": 10,
+    "n_impossible_total": 0,
+    "panel_equal": 2,
+    "panel_checked": 2,
+    "consistent_panel_equal": 2,
+    "mut_flip_iou_max": 0.66711140760507,
+    "mut_flip_red": 2,
+    "mut_chan_red": 2,
+    "cellcount_agree": 2,
+    "onehot_iou_mean": 0.9960379129659456,
+    "pixel_check_on_this_clip": true
+   },
+   "draw_independence": {
+    "seeds": [
+     0,
+     1
+    ],
+    "map_logits_max_abs_diff": 0.0,
+    "drivable_mask_identical": true,
+    "argmax_identical": true,
+    "iou_seed_a": 0.7768479776847977,
+    "iou_seed_b": 0.7768479776847977,
+    "traj_max_abs_diff_m": 1.7677478790283203
+   },
+   "wall_s": 214.0
+  }
+ ],
+ "selection": [
+  {
+   "sha12": "693335b810c3",
+   "episode_index": 127,
+   "nav": "left",
+   "n_windows": 171,
+   "n_ok": 171,
+   "n_no_file": 0,
+   "n_out_of_range": 0,
+   "n_inconclusive": 0
+  },
+  {
+   "sha12": "0191487845ef",
+   "episode_index": 116,
+   "nav": "right",
+   "n_windows": 171,
+   "n_ok": 171,
+   "n_no_file": 0,
+   "n_out_of_range": 0,
+   "n_inconclusive": 0
+  },
+  {
+   "sha12": "00213e99adca",
+   "episode_index": 112,
+   "nav": "follow",
+   "n_windows": 171,
+   "n_ok": 171,
+   "n_no_file": 0,
+   "n_out_of_range": 0,
+   "n_inconclusive": 0
+  }
+ ],
+ "device": "cpu",
+ "seed": 0
+}
