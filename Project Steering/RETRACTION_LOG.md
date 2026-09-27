@@ -17831,3 +17831,22 @@ change needs a disjoint-token confirmation (SPEC E-6).
 **Class:** a formula quoted without its VERSION -- "PDM" names two different benchmark rules (v1 PDMS, v2 EPDMS); the
 `df` / units / camera-projection scope family. It survived because the paper's rule and our harness share every
 component name, so the formula read as the benchmark's own.
+
+### RETR-2026-09-27-GT-Z-SINK — "obstacle.offline boxes sit ~1 m below the LiDAR ground", then "heavy_truck boxes are sunk (a label defect)"
+
+**Retracted: two claims, one class of error.**
+
+1. **The Master Mind's claim**, told to the PI on 2026-09-27 ~00:30 from memory: *"PhysicalAI obstacle.offline boxes sit about 1 m below the LiDAR ground"*.
+   - MEASURED by the box-head audit on OUR join (LiDAR clip 73495082f98b), box bottom vs the LiDAR ground: automobile −0.08 m, person +0.02 m, rider +0.04 m. There is no sink.
+   - The memory came from the qwendrive-v2 frame, whose points carry z − 0.325.
+2. **The audit's own first reading**, which the Master Mind propagated to the PI and into A9 as T1: *"heavy_truck boxes are sunk (−0.63 m pooled), a label defect"*.
+   - The truck rows sit at 90–148 m range, outside the 60 m decode box, so the absolute offsets are terrain and pitch.
+   - Against same-frame neighbours the class offset is +0.02–0.03 m (139 eval clips; 64 train clips).
+   - T1 is withdrawn (SPEC §14.1) before any box number existed.
+
+**Class:** AN ABSOLUTE QUANTITY READ AS A CLASS PROPERTY.
+- (1) is a measurement in another frame convention, quoted as a property of our data.
+- (2) is an absolute height at long range, where terrain and pitch dominate, quoted as a label offset.
+- Both are cured by a RELATIVE control: the same-frame neighbours' offset, or the frame's own ground.
+
+**Rule:** a height or offset claim about a label class carries its control. That is either the class vs same-frame neighbours, or the class vs a ground measured in the SAME frame and at the SAME range. An absolute number alone is inadmissible.

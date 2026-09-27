@@ -315,3 +315,11 @@ The changes apply to BOTH slot heads (box3d and the planner's agent head), which
   - Literal thresholds, must-fail arms (e.g. image memory zeroed; presence loss off) and controls, pre-registered by the box-head audit BEFORE any run.
   - Its PASS record is bound to the launch commit.
 - **G-LIVE presence sanity:** at the end of the Thor smoke the presence logits are not saturated: the fraction of slots with p > 0.5 < 0.5, with the literal set in the gate profile. Every new loss term (focal presence, per-layer aux, VIS-1 masking) is finite and has gradient.
+
+### 14.1 Correction to A9 (2026-09-27 ~02:45 Berlin, before any box number): T1 is WITHDRAWN
+
+A9's **T1** ("heavy_truck: the z/height regression term is dropped, label defect") rested on a finding the box-head audit has now RETRACTED, MEASURED:
+- The 639 heavy_truck GT rows on the GT-validation clips sit at a median range of **90–148 m**, far outside the 60 m decode box, so they are not trainer targets. Their absolute bottoms (−0.97 / −0.76 / −0.32 m) are terrain and pitch at that range; a 0.5° pitch alone gives 0.8–1.3 m there.
+- Measured as the offset d = bottom − the median bottom of the same frame's cars, persons and riders within 15 m, heavy_truck d = −0.13 m (GT-val), **+0.021 m** (139 eval clips, n 90) and **+0.030 m** (64 train clips). That is the same as automobile (−0.006) and person (+0.020).
+
+⇒ **There is NO truck-specific target change in refcv7.** Re-seating trucks on z = 0 would be wrong, because far trucks sit on a slope their neighbours share. R1–R4 stand unchanged.
