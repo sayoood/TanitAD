@@ -4328,13 +4328,27 @@ def job_model(ctx: Ctx, checks: list[str]) -> dict[str, dict]:
         ev = evs["G-EVAL"]
         ev["details"].update(common)
         ev["inputs_read"] = _inputs_read(ctx, ctx.prof["model_input_flags"])
+        # ⛔ IDENTICAL SETTINGS ON BOTH SIDES. The loader's model is in its eval-time state
+        # (requires_grad False on every parameter); the trainer's keeps its training flags.
+        # MEASURED 2026-09-27 on Thor (14907a0): with the flags left as trained, 74 of 188 outputs
+        # differed (the attention layers of both slot heads and everything downstream) while
+        # state_dicts, attributes and non-persistent buffers were all EQUAL; with the trainer's flags
+        # set as the loader's, 0 of 188 differ. On the dev box both kernel paths happened to agree.
+        # The flags are restored afterwards: G-DVB reads them (declared grad-unreachable freezes).
+        _rg = [(p_, p_.requires_grad) for p_ in model.parameters()]
         try:
+            for p_, _f in _rg:
+                p_.requires_grad_(False)
             reasons, det = eval_identity(ctx, T, model, args, scratch, probe_out)
         except SystemExit as e:
             reasons, det = [f"the eval loader REFUSED: {e}"], {}
         except Exception as e:                            # noqa: BLE001
             reasons, det = [f"G-EVAL crashed: {type(e).__name__}: {e}"], {
                 "traceback": traceback.format_exc()[-2500:]}
+        finally:
+            for p_, f_ in _rg:
+                p_.requires_grad_(f_)
+        det["trainer_requires_grad_matched_to_loader"] = True
         if hires and "trainer" in probe_out:
             r2, d2 = hires_output_reasons(ctx.prof, probe_out["trainer"],
                                           tuple(cfg.core.encoder.image_hw()))

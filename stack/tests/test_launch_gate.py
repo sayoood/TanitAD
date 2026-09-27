@@ -553,6 +553,18 @@ def test_the_MODEL_job_drops_trunk_compile_on_every_host(tmp_path):
     assert "--trunk-compile" in rec["dropped"]
 
 
+def test_G_EVAL_compares_under_the_loaders_eval_settings_and_restores_the_flags():
+    """MEASURED 2026-09-27 on Thor: requires_grad left as trained made 74 of 188 outputs differ between
+    two IDENTICAL models; the comparison must run with the loader's eval-time flags, then restore."""
+    import inspect
+    src = inspect.getsource(LG.job_model)
+    i_off = src.index("p_.requires_grad_(False)")
+    i_call = src.index("eval_identity(ctx, T, model, args, scratch, probe_out)")
+    i_restore = src.index("p_.requires_grad_(f_)")
+    assert i_off < i_call < i_restore
+    assert "finally:" in src[i_call:i_restore]
+
+
 def test_smoke_runs_with_the_TRAINER_argv_as_the_process_argv():
     """MEASURED 2026-09-27: the trainer stamps config.json['argv'] = sys.argv[1:]; in-process it
     recorded the gate's own 'check --ctx ...' and G-EVAL crashed. The smoke must set sys.argv."""
