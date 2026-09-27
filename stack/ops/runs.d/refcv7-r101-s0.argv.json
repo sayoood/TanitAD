@@ -202,6 +202,22 @@
     "/home/nvidia/refcv7_run/runs/refcv7-r101-s0"
    ],
    "why": "the refcv7 run dir"
+  },
+  {
+   "flag": "--map-hires-near-lift-m",
+   "refcv6": null,
+   "refcv7": [
+    "20"
+   ],
+   "why": "SPEC_REFCV7 17 (A12): the 0.1 m near-range lift over x 0-20 m (map-only, zero-init); 23 (A18): the map path whose G-MAP-OVERFIT is the 3,000-step protocol"
+  },
+  {
+   "flag": "--map-hires-near-refine-blocks",
+   "refcv6": null,
+   "refcv7": [
+    "1"
+   ],
+   "why": "SPEC_REFCV7 20 (A15): ONE dilated (2, 4) near-range refine block on the near lift's rows (map-only, zero-init last conv); 23 (A18): A15's configuration"
   }
  ],
  "argv": [
@@ -317,6 +333,10 @@
   "30",
   "--map-hires-grad-ckpt",
   "on",
+  "--map-hires-near-lift-m",
+  "20",
+  "--map-hires-near-refine-blocks",
+  "1",
   "--bev-source",
   "map_hires_pool",
   "--bev-planner-crop-m",
@@ -356,17 +376,6 @@
   "--out",
   "/home/nvidia/refcv7_run/runs/refcv7-r101-s0"
  ],
- "todo_map_lift": {
-  "status": "OPEN -- the EARLY (non-binding) G-MAP-OVERFIT MAIN FAILED at step 1,000: lane 0.417 and non-drivable edge 0.076 vs the 0.50 bar; the other six classes pass (INHERITED, Master Mind 2026-09-27). The prereg's sec. 9 lever order applies once R2/C1-C3 validate the harness, and the next lever is the LIFT, so the map path changes once more before launch. One or two lift flags are ADDED here (and as required values in the gate profile) when NEW-2's lift change lands.",
-  "levers": [
-   {
-    "id": "LIFT",
-    "what": "the prereg sec. 9 LIFT lever: Z = 0 plane / 0.1 m near lift / stride 4",
-    "flag": "TBD (one or two flags)"
-   }
-  ],
-  "gate": "PROFILES['refcv7']['open_items'] MAP-LIFT -- the gate cannot PASS while it is open; the BINDING G-MAP-OVERFIT run is made on the final map path"
- },
  "launch_prep": [
   "/home/nvidia/data/refcv7/nav_compliance_tau_train.json := the banked repo file TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/nav_compliance_tau_train.json (sha256 10ca19db42ed0a49083978a4cb6d0914664d28bc3231ed7058a01d5161e938ca)",
   "/home/nvidia/data/refcv7/map_hires_class_weights_train_100x30.json := compute_map_class_weights.py --v2-cache /home/nvidia/data/refcv6-b1-416x1024-train --gt-root /home/nvidia/data/sam3_gt_v3 --split train (sqrt_mf, pre_registered; NEW-2 BUILD.md sec. 10 step 1)",

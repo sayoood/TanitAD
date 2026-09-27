@@ -392,7 +392,15 @@ So from 0.25 m class fractions, edge cannot reach the bar.
   - The must-fails hold. s8_zeros fails all five thin classes. near_zeros fails edge (it reproduces NEW-2 MAIN). lane_w0 fails lane.
   - The lever's effect, isolated by near_zeros: edge +.122 (.072 to .194), lane +.030, and every other class up.
   - Edge at the 0.2 m tolerance: P .902, R .429, F1 .582. The gap is RECALL.
-  - s8_detached (informative) and the end-of-run record (C1–C3, the raw rule, CE ratios, the range profile) were paused by the Master Mind at 11:31:59 for the box head. They are written when the run is resumed; `paused_s` will be stamped then.
+- **The complete record** (`raw/gmo_early/g_map_overfit_A12.EARLY_NONBINDING.json`, md5 `92dd6e14`):
+  - It was paused from 11:31:59 to 13:32:15 Berlin; `paused_s` 7,216 is stamped.
+  - C1–C3 and `time_1ms` hold. **G_MAP_OVERFIT = FAIL.**
+  - Raw rule for MAIN: lane .502 (it would pass), edge .198 (fails). So the decision rule alone cannot pass the gate.
+  - CE@1000 / CE@0: lane .184, edge .238. The area classes sit at .018–.066.
+  - MAIN IoU by range, 0–5 / 5–10 / 10–15 / 15–20 / 20–25 / 25–37 m:
+    - lane: .403 / .661 / .621 / .534 / .373 / .175;
+    - edge: .076 / .220 / .249 / .195 / .122 / .038.
+  - The near lift helps most at 5–15 m.
 
 ## 13. NEW-2 R3: the decoder lever, SPEC_REFCV7 §20 (A15, landed c1ed8d9), stacked on the near lift
 
@@ -434,4 +442,270 @@ Step time is ESTIMATED at ≤ +0.1 s/step at b16.
 - Must-fail: `s8_zeros` (both lifts; all five thin classes) and `near_block_zeros` (edge). `lane_w0` is kept.
 - Runner: `code/gmo_r3_runner.py`, stamped non-binding.
 - Launcher: `code/gmo_r3_launch.sh`. It waits for the A12 run's `A12_DONE` AND for the box builder's chain (PID 3676134) to exit. It tolerates stopped processes and runs one GPU job at a time.
-- Result: PENDING.
+- **Result: MAIN FAILS on edge only** (early, non-binding). Record `raw/gmo_early/g_map_overfit_A15.EARLY_NONBINDING.json`, md5 `a4c70212`; alone on the GPU, 0.711 s/step at b4. IoU at 1,000, declared / raw rule:
+
+| arm | nocls | drivable | sidewalk | lane | crosswalk | arrow | edge | hatched |
+|---|---|---|---|---|---|---|---|---|
+| **MAIN** | .885/.879 | .922/.886 | .946/.922 | **.522**/.522 | .795/.735 | .742/.594 | **.259**/.236 | .829/.748 |
+| s8_zeros | .206/.198 | .515/.447 | .427/.386 | 0/0 | 0/.045 | 0/.010 | 0/0 | 0/.100 |
+| near_block_zeros | .854/.861 | .916/.890 | .924/.922 | .459/.534 | .796/.761 | .700/.695 | .134/.233 | .826/.736 |
+| lane_w0 | .883/.874 | .914/.896 | .942/.934 | 0/0 | .806/.779 | .729/.639 | .216/.259 | .811/.809 |
+
+  - The must-fails hold, and C1–C3 and `time_1ms` hold. **G_MAP_OVERFIT = FAIL** (edge).
+  - The shared init is proven: the fingerprint without the block equals A12's, and without the lift it equals NEW-2's.
+  - Lane now passes (.522, inside the ~.06 replicate spread).
+  - Edge: .259; 0.2 m tolerance P .937, R .581, F1 .717. CE ratios: lane .166, edge .157.
+  - Within the run, the block adds edge +.125 over `near_block_zeros` (the A12 function). Across runs it adds +.065 over A12's MAIN.
+  - Edge rose in every range bin from 5 m out: .052 / .285 / .312 / .237 / .240 / .164.
+  - Next, per the Master Mind: §9 lever (4), the weights (mf), stacked on R3.
+
+## 14. NEW-2 R4: the weights lever, SPEC_REFCV7 §21 (A16, landed 879673c), stacked on R3
+
+**Why (4), from the A15 record.** Edge is still RECALL-limited at step 1,000: at the 0.2 m tolerance P is .937 and R is .581.
+- Under weighted CE a class moves with its weight RELATIVE to the classes that fill most cells (RETR-2026-09-27-A15-WEIGHT-ARGUMENT). Read from the two TRAIN files, mf raises that ratio:
+  - for edge, ×7.6 (w_edge / w_drivable 7.6 → 58.2);
+  - for lane, ×4.6 (4.6 → 20.8).
+- The prior-corrected decision, argmax(z − log w), divides the same weights back out at inference. So the lever changes what is LEARNED, not where the decision threshold sits.
+- Its cost is the big classes' gradient share, about 10.4 % → 2.7 % each at convergence (SPEC §20.1). They pass their 0.85 bars today at .885–.946.
+
+**What R4 changes.** Harness only; no model, trainer or registry change.
+- **`edge_w0`, a new must-fail arm:** edge's LOSS weight is 0, and the decision keeps the run's weights, as in `lane_w0`. An edge pass must therefore come from edge's own weighted loss term.
+- **`class_weights_definition` in a spec:** a weights file of another definition is refused before any trunk is built.
+  - Tests: the refusal (a sqrt_mf file against an mf spec), and its red arm, the acceptance (a file of the registered definition reaches the trunk build).
+  - Two mutations, a check that refuses every file and no check at all, each turn the matching test RED.
+- **The A16 spec** (`raw/gmo_spec_A16.json`, md5 `a4ef45d0`): the A15 spec plus `class_weights_definition: "mf"`, with must-fail `edge_w0` in place of `near_block_zeros`. Every other literal is unchanged. A test pins its md5 and its field diff against A15, with a red arm (a one-byte edit fails it).
+
+**The weights.** `raw/map_hires_class_weights_train_100x30_MF.json` (sha256 `8ff4fd6d`), with provenance in `…_MF.PROVENANCE.json`.
+- Computed by the landed script (blob `8012922f`) with `--definition mf`; otherwise the argv of the sqrt_mf launch file.
+- Same TRAIN inputs: inputs_sha256 `205cdadc`, 4,369 clips, 878,016 frames.
+- Run on CPU at nice 19 with idle I/O; 2,737 s. `pre_registered` is false, as the script writes for every definition but sqrt_mf; the spec's definition check is what admits it.
+
+| class | sqrt_mf (launch) | mf (lever 4) |
+|---|---:|---:|
+| nocls | 0.141 | 0.0199 |
+| drivable | 0.206 | 0.0424 |
+| sidewalk | 0.165 | 0.0272 |
+| lane | 0.939 | 0.883 |
+| crosswalk | 1.074 | 1.154 |
+| arrow | 2.957 | 8.745 |
+| edge | 1.571 | 2.469 |
+| hatched | 2.153 | 4.635 |
+
+**The arm.**
+- Runner: `code/gmo_r4_runner.py`, generated by `code/make_r4_arm.py` from the A15 runner; stamped non-binding.
+- Launcher: `code/gmo_r4_launch.sh`.
+  - One GPU job at a time; stopped processes are tolerated.
+  - Its optional box-PID wait defaults to none. The generator first defaulted it to PID 1, which always exists, so the launcher would have waited forever. That was caught in the dry run before anything was shipped.
+- **Result: MAIN FAILS on 5 of 8 classes** (nocls, drivable, sidewalk, lane, edge; declared rule, early, non-binding). SPEC §22.1 records A16 as FAIL; the launch weights stay sqrt_mf (A8).
+  - **Partial record:** `raw/gmo_early/g_map_overfit_A16.PARTIAL_NONBINDING.json` (md5 `63f20286`), parsed from the harness's own log by `code/a16_partial_record.py`.
+    - The Master Mind stopped the run after MAIN (§22.1: the remaining arms cannot change a FAIL); the arm's python got SIGTERM by explicit PID and exited 143 (`a16_A16_DONE.json`).
+    - So there is no harness verdict: no raw rule, no CE ratios, no C1–C3. The must-fail readings below are DERIVED from the logged step-1,000 IoU against the spec's bars.
+
+| class | bar | A15 MAIN @1000 | A16 MAIN @800 | @900 | **@1000** |
+|---|---|---|---|---|---|
+| nocls | .850 | .885 | .777 | .743 | **.608** FAIL |
+| drivable | .850 | .922 | .877 | .868 | **.813** FAIL |
+| sidewalk | .850 | .946 | .891 | .882 | **.795** FAIL |
+| lane | .500 | .522 | .392 | .426 | **.363** FAIL |
+| crosswalk | .500 | .795 | .730 | .718 | .548 |
+| arrow | .500 | .742 | .703 | .682 | .690 |
+| edge | .500 | .259 | .092 | .086 | **.054** FAIL |
+| hatched | .500 | .829 | .781 | .787 | .606 |
+
+  - The read-out step caught a transient: train loss at steps 800 / 900 / 1,000 read 0.283 / 0.176 / 0.393, and every class dropped at 1,000.
+  - The FAIL does not rest on the transient. At steps 800 and 900, MAIN also misses nocls, lane and edge.
+  - Edge at the 0.2 m tolerance, step 1,000: P 0.869, R 0.119, F1 0.209 (A15: P .937, R .581, F1 .717).
+  - Must-fails, derived, failed as required: {"s8_zeros": true, "edge_w0": true}. `lane_w0` was stopped at step 100; `s8_detached` never ran.
+  - Reading (cross-run, one seed each; the same-seed spread is ~.06 on lane and edge):
+    - mf gave no MEASURABLE edge gain at this horizon and constant lr. Steps 700 / 800 / 900 read .127 / .092 / .086, against A15's .056 / .121 / .086.
+    - It cost the big classes BEYOND the spread, as its gradient share predicted: nocls at steps 800 / 900 read .777 / .743, against .883 / .879.
+  - R4 never landed on its own. Its harness generalisation is folded into R5 (§15).
+
+## 15. NEW-2 R5: G-MAP-OVERFIT's lr decays over the final 10 %, SPEC_REFCV7 §22.1 (A17.1, landed 2ac0bfb)
+
+**PI, ~15:44 Berlin:** "Yes, same rule for the map". This is A17's end-of-run lr decay for G-BOX-OVERFIT, applied to the map. The builder proposed it at 13:32Z, **before any A16 number existed**.
+- The measured reason is in `raw/gmo_early/readout_noise.json`. On every early MAIN, the constant-lr step-1,000 reading is jumpy.
+  - A15's edge read .073 / .056 / .121 / .086 / .259 over steps 600–1,000.
+  - A16's train loss doubled (.176 → .393) in its final 100 steps.
+- The real launch decays its lr (cosine to step 50,400); a constant-lr snapshot does not.
+
+**The change** (harness + its test only):
+- A spec key `lr_decay: {"kind": "cosine_to_zero", "start_step": 900}`. The lr multiplier is 1.0 for steps ≤ 900, then ½(1 + cos(π·(step − 900)/100)): 0.5 at step 950 and 0 at step 1,000.
+- It is applied to every optimiser group before each step's `opt.step()`.
+- With no key, the constant-lr path never touches the lr.
+- A malformed key (an unknown kind, or a start outside (0, steps)) is refused before any trunk is built.
+- The record's `optimiser` stamps `lr_decay`, and each curve row carries the lr in use when the decay is on.
+- **Tests, all with literal expectations:**
+  - the multiplier at steps 1 / 899 / 900 / 925 / 950 / 1,000;
+  - six malformed keys, each refused;
+  - the lr each `opt.step()` applied on the tiny rig: [.01, .01, .005, 0], and [.01] × 4 with no key;
+  - a decay that bites changes the result, while the constant path reproduces itself exactly.
+- **Red arms:** three mutations each turn a test RED: the LambdaLR-style off-by-one (`step − 1`), the decay never applied, and a linear ramp.
+- R5 folds in R4 (§14): `edge_w0` and the spec-registered weights definition.
+
+**The arm** (`raw/gmo_spec_A171.json`, md5 `5abd5b90`), from `code/make_r5_arm.py A171 §22.1 2ac0bfb`:
+- A15's spec plus `lr_decay`, and nothing else. A test pins the md5 and the field diff, `[amends, lr_decay, registered]`.
+- A15's configuration: near lift 20 m, 1 near refine block, and the TRAIN sqrt_mf weights (`d70dec80`).
+- Must fail: `s8_zeros` and `near_block_zeros`; `lane_w0` is kept. Every prereg literal is unchanged.
+- **The candidate is the tip 2ac0bfb plus the R5 blobs.** Of its 2,953 files, 2,949 are blob-exact to 2ac0bfb; the other four are the harness and its test (R4+R5) and the A16 and A17.1 specs.
+  - The tar (`87cecca4`) was shipped to Thor, and `md5sum -c` passed on all 2,953 files (exit 0), with positive checks on the spec and the harness.
+- Runner `code/gmo_r5_runner.py` stamps the record non-binding, with launch_commit `NONBINDING-EARLY-2ac0bfb+NEW2R5+A171`. Launcher: `code/gmo_r5_launch.sh`.
+- Started 2026-09-27 14:07:34Z on the Thor GPU, alone. Steps 1–900 are A15's procedure exactly, so its step-900 reading is also a same-seed replicate of A15's.
+- **Result: MAIN FAILS on edge alone** (declared rule, early, non-binding). It is read from the harness's own step lines in `raw/gmo_early/a171_launch.PARTIAL_at_MAIN.log` (md5 `9e79827b`). The must-fail arms were still running; the complete record follows in an addendum.
+
+| class | bar | A15 @1000 (no decay) | A17.1 @800 | @900 | **@1000** |
+|---|---|---|---|---|---|
+| nocls | .850 | .885 | .886 | .882 | **.921** |
+| drivable | .850 | .922 | .915 | .905 | **.932** |
+| sidewalk | .850 | .946 | .943 | .939 | **.962** |
+| lane | .500 | .522 | .446 | .464 | **.538** |
+| crosswalk | .500 | .795 | .774 | .739 | **.806** |
+| arrow | .500 | .742 | .675 | .690 | **.745** |
+| edge | .500 | .259 | .135 | .149 | **.254** FAIL |
+| hatched | .500 | .829 | .822 | .790 | **.840** |
+
+  - **The decay did what A17.1 registered it for.** Train loss at steps 800 / 900 / 1,000 read 0.269 / 0.221 / 0.167, and every class rose from step 900 to 1,000. A16 had the opposite (loss doubled, every class dropped).
+    - The big classes clear 0.85 with margin, and lane passes.
+  - **Edge's level at step 1,000 is about .25 with or without the decay** (.254 vs A15's .259). So A15's .259 was not a lucky draw, and the read-out is not what keeps edge from its bar.
+  - Edge at the 0.2 m tolerance: P 0.974, R 0.509, F1 0.669. It is still RECALL-limited: the cells it does find are almost all right.
+- **The complete record:** `raw/gmo_early/g_map_overfit_A171.EARLY_NONBINDING.json` (md5 `0186504c`) and `raw/gmo_early/a171_launch.log` (md5 `92bdbd76`). Alone on the GPU; MAIN 0.7024 s/step at b4; peak 5.808 GiB. IoU at 1,000, declared / raw rule:
+
+| arm | nocls | drivable | sidewalk | lane | crosswalk | arrow | edge | hatched |
+|---|---|---|---|---|---|---|---|---|
+| **MAIN** | .921/.919 | .932/.909 | .962/.946 | .538/.557 | .806/.776 | .745/.661 | .254/.301 | .840/.797 |
+| s8_zeros | .170/.146 | .517/.423 | .438/.402 | .000/.000 | .000/.055 | .000/.049 | .000/.000 | .000/.100 |
+| near_block_zeros | .914/.912 | .929/.904 | .956/.941 | .518/.546 | .804/.775 | .724/.651 | .199/.282 | .835/.790 |
+| lane_w0 | .924/.920 | .922/.904 | .962/.948 | .000/.000 | .810/.778 | .748/.648 | .251/.308 | .851/.788 |
+| s8_detached | .904/.902 | .920/.890 | .952/.937 | .471/.507 | .782/.742 | .731/.616 | .159/.255 | .827/.761 |
+
+  - **G_MAP_OVERFIT = FAIL.** MAIN fails the bar on: edge. CE-ratio criterion holds on all 8.
+  - Must-fails, failed as required: {"lane_w0": true, "s8_zeros": true, "near_block_zeros": true}. Controls C1–C3 reproduced: True. Time guard: ['time_1ms'].
+  - The init is A15's, which proves the shared init: every fingerprint equals A15's (True).
+  - The lr each logged step used: 900: 1.00e-03, 1000: 0.00e+00.
+  - CE@1000 / CE@0: lane 0.166, edge 0.156. The area classes sit at 0.016–0.054.
+  - MAIN's edge IoU by range, 0–5 / 5–10 / 10–15 / 15–20 / 20–25 / 25–37 m: .049 / .274 / .312 / .249 / .229 / .080.
+
+**Prepared, NOT run (the Master Mind: it goes to the PI): the second near refine block arm.**
+- Spec `raw/gmo_spec_BLOCK2_DRAFT.json`. Its `registered` field says DRAFT / NOT REGISTERED. Field diff against A17.1: `[amends, near_refine_blocks, registered]` (1 → 2). The generator is `code/make_block2_arm.py`.
+- **No code change:** the flag and config allow up to 4 blocks. `near_block_zeros` zeroes the input of every block, so that arm is the A12 function plus constants.
+- **Cost, ANALYTIC** (`raw/gmo_early/block2_cost.json`, by `code/block2_cost.py`, the real branch):
+  - +4.42 GFLOPs per sample (+4.1 %), +18,496 params, +0 GiB saved at b16;
+  - near-row receptive field 1.2 → 2.4 m.
+  - The one-block row reproduces the A15 cost exactly, which is the control.
+
+**What went to the PI, and the ruling.** The records supported three options:
+- (a) the second block, the largest within-run edge lever measured (+.125 in A15; under the decay A17.1's own reading is +.055: MAIN .254 against `near_block_zeros` .199);
+- (b) the step budget: NEW-2 without levers reached edge .430 at step 3,000 and was still rising;
+- (c) a thin-structure loss term, not built and with no evidence on this rig.
+
+In every arm edge is RECALL-limited: the cells it predicts are right, but too few of them are predicted by step 1,000. **The PI chose (b), "Budget to 3,000 steps"** (SPEC_REFCV7 §23, A18; §16 below). Every 1,000-step FAIL stays on the record.
+
+## 16. A18: G-MAP-OVERFIT at 3,000 steps (SPEC_REFCV7 §23, the PI's "Budget to 3,000 steps", landed 37086c3)
+
+**The amendment.** A18 is a dated goalpost amendment; every 1,000-step FAIL stays on the record.
+- N = 3,000 steps, read out at step 3,000. The A17.1 decay moves with it: lr 1e-3 for steps 0–2,699, then cosine to 0 over 2,700–3,000.
+- The configuration is A15's: near lift 20 m, one near refine block, the TRAIN sqrt_mf weights.
+- Every bar and must-fail is unchanged.
+- The spec is `raw/gmo_spec_A18.json` (md5 `4eda0636`, sha256 `5cb4f6fc…`), built by `code/make_a18_arm.py A18 §23 37086c3` from the A17.1 spec. Its field diff is `[amends, lr_decay, registered, steps]`.
+
+**The early MAIN** (MAIN only, the Master Mind; non-binding):
+- It ran with `code/gmo_a18_main.py` and `code/gmo_a18_launch.sh` on the R5 candidate (2ac0bfb + R5 blobs + the A18 spec), code-identical to 37086c3 + R5 (37086c3 changed only the SPEC). The launch tag is `NONBINDING-EARLY-37086c3+NEW2R5+A18`.
+- The fingerprints are asserted equal to A15's record.
+- It uses the harness's own `load_spec`, `run_arm` (the spec's steps and decay), `controls` and `verdict`.
+- The must-fail arms were not run; they run in the binding run.
+
+- **Result: MAIN PASS** (record `raw/gmo_early/g_map_overfit_A18_MAIN.EARLY_NONBINDING.json`, md5 `a2716f2c`; 0.6946 s/step at b4 alone; peak 5.808 GiB). Declared-rule IoU by step:
+
+| class | bar | @1000 | @1500 | @2000 | @2500 | @2700 | **@3000 (declared / raw)** |
+|---|---|---|---|---|---|---|---|
+| nocls | .850 | .895 | .916 | .939 | .942 | .938 | **.964**/.963 |
+| drivable | .850 | .923 | .935 | .952 | .958 | .958 | **.969**/.957 |
+| sidewalk | .850 | .950 | .959 | .970 | .974 | .972 | **.982**/.974 |
+| lane | .500 | .543 | .621 | .703 | .746 | .709 | **.779**/.758 |
+| crosswalk | .500 | .795 | .834 | .875 | .897 | .879 | **.919**/.895 |
+| arrow | .500 | .707 | .762 | .805 | .815 | .815 | **.845**/.787 |
+| edge | .500 | .213 | .332 | .432 | .460 | .447 | **.555**/.493 |
+| hatched | .500 | .845 | .825 | .864 | .879 | .885 | **.895**/.853 |
+
+  - The first reading at or above 0.50 comes at step 1000 for lane and step 2900 for edge.
+  - Train loss at steps 2,600 / 2,700 / 2,800 / 2,900 / 3,000: 0.12 / 0.101 / 0.085 / 0.087 / 0.075.
+  - CE@3000 / CE@0: lane 0.058, edge 0.063.
+  - C1–C3 on MAIN's logits reproduced: True. Time guard: ['time_1ms'].
+  - Edge at the 0.2 m tolerance, step 3,000: P 0.996, R 0.884, F1 0.937.
+
+**The MAP-LIFT closure** (`LANDING_READY_MAPLIFT.txt`). It lands ONLY on an A18 MAIN PASS, together with R5 (`LANDING_READY.txt`).
+- **The canonical argv carries the FINAL 154-token list.** That is the box A17 argv plus `--map-hires-near-lift-m 20 --map-hires-near-refine-blocks 1`, placed right after `--map-hires-grad-ckpt on`. Its gate sha256 is `6402d33d…`, pinned as a literal in a test with a red arm.
+  - `todo_map_lift` is closed; both flags are in `changes_vs_refcv6` with their SPEC sources.
+- **`launch_gate.py`:**
+  - MAP-LIFT is closed, and both flags are `required_values`.
+  - The G-MAP-OVERFIT judge now binds the A18 PROTOCOL: the spec sha256, steps 3,000, lr 1e-3, batch 4, seed 0, `lr_decay` from 2,700, near lift 20 with one block, and the must-fail `near_block_zeros`.
+  - It checked no protocol literal before, so it would have taken a 1,000-step record: the box judge's trap, inverted. Seven mutations each turn a test RED, including the prereg's lr 2e-4 and the 1,000-step protocol.
+  - Sources are now read utf-8-sig at two sites:
+    - `import_closure`, where G-HYG crashed on the BOM of `tanitad/eval/__init__.py` (the Master Mind's dry run);
+    - `static_eager_own_files`, which silently SKIPPED such a file, so its imports were never required of a closure record.
+    - The fixture-tree tests have literal red arms. No repo BOM was stripped.
+- **The A18 spec pin** is a NEW test file, `stack/tests/test_map_hires_a18_spec.py`, so R5's test file stays R5's.
+
+**The MAP BINDING run** (`code/binding/run_gmo_binding.sh`, the analogue of the box builder's script) wraps the unmodified harness with `closure_run.py --binding`.
+- All four A18 arms: healthy, s8_zeros, near_block_zeros, lane_w0.
+- The A18 spec and the audit's frame set are staged md5-checked under the run dir as closure data.
+- The launch sqrt_mf weights are sha256-checked.
+- `--launch-argv-sha256 6402d33d…`.
+- The harness must be blob `9bec9e88`.
+- PREFLIGHT_ONLY mode, and a strict GPU-idle check.
+- **Dry-run on Thor (PREFLIGHT_ONLY):** on a hard-linked tree with the final argv, every input check passed; it then refused, as it should, because the GPU was busy (exit 4, the A18 MAIN).
+
+## 17. A19: the BINDING overfit runs are MAIN-only (SPEC_REFCV7 §24, the PI 17:46 / 17:51 Berlin, landed 36cc332)
+
+**Found before the map binding started (MEASURED on the frozen harness).** `map_hires_overfit.py` (blob `9bec9e88`, `main()` lines 650–652) refuses a run whose spec names must-fail arms that `--arms` does not run.
+- So `--arms healthy` on the A18 spec itself exits at once with "⛔ the gated arm 'lane_w0' is not in --arms".
+- The early A18 MAIN never hit this: its runner called `run_arm` / `verdict` directly.
+- The A11 closure judge requires the registered harness to be the wrapped script, so a side runner is not an option.
+
+**The A19 map spec** `raw/gmo_spec_A19_MAP_MAIN.json` (md5 `2d11ba07`, sha256 `56dea067…`), from `code/make_a19_map_spec.py 36cc332`:
+- It is the A18 spec with `must_fail` and `must_fail_all` removed; `registered`, `amends` and the inherited-record path are added. Every other literal is A18's.
+- `code/a19_spec_accept_check.py`, on the frozen harness:
+  - `main()` with `--arms healthy` passes every spec check;
+  - the A18 spec is refused (the red arm);
+  - the harness's `verdict()` gives PASS for a passing MAIN with no must-fail rows, and FAIL with edge 0.49.
+- `code/binding/run_gmo_binding_a19.sh` (md5 `a317bfef`) is the binding script for it. The Master Mind's chain started the map binding with this spec at 18:05 Berlin.
+
+**The gate** (`LANDING_READY_A19.txt`, stacked on MAPLIFT):
+- **The policy is explicit in the refcv7 PROFILE:** `overfit_main_only`, which carries:
+  - the policy id and its SPEC source;
+  - the A19 map spec sha256;
+  - the inherited must-fail evidence with its paths:
+    - map: A17.1's record;
+    - box: `presence_w0` by construction, and `memory_zeros` NOT measured at full scale on the launch head (the TOY test and the pre-A14 run). The PI accepted this.
+  - `_REFC` defaults it to None (every arm must run), so refcv6 and refc are unchanged.
+- **Both judges accept a record whose must-fail arms are ABSENT, and MAIN is re-judged from its OWN literals:**
+  - **map:** the 8 bars on the declared rule, ≥ 1,000 cells, the CE ratio (literal 0.5, now `map_overfit.ce_ratio_max`) and the finite loss recomputed from the record's own numbers, C1–C3, the 1 ms guard, and the A18 or A19 spec;
+  - **box:** the six criteria at step 2,000, 113/77, the A17 schedule and the A13 optimiser.
+  - The harness's overall verdict is NOT read under A19: it reads FAIL without the arms.
+- **A must-fail arm that RAN is judged from its own result against the gate's literal bars.** If it passed, that is still a VOID (FAIL).
+- **When A19 applied, the PASS text carries the inherited-evidence statement**, so the token says what it does not cover.
+- **`eval_loader`:** the refcv7 profile defaults to `stack/tanitad/eval/refcv7_loader.py` (the loader agent's integration diff, re-applied).
+- **Tests** (9 new, with literal expectations):
+  - MAIN-only + MAIN PASS → PASS, whatever the harness verdict says;
+  - each missed MAIN literal → a named FAIL, while the harness says PASS;
+  - an arm that RAN and PASSED → VOID FAIL (map and box);
+  - with the profile's A19 field removed, a MAIN-only record FAILS as before;
+  - the A19 spec equals the A18 spec minus its must-fail rows;
+  - the PASS text;
+  - the eval-loader default, with refcv6's as the red arm.
+- **Nine mutations each turn a test RED:**
+  - map requires the harness PASS; map trusts the harness PASS;
+  - map excuses a VOID; map reads the harness flags under A19;
+  - box requires RESULT PASS; box excuses a VOID;
+  - eval loader back to refcv6's; no A19 policy; PASS text without A19.
+
+**The map BINDING (A19, MAIN-only): MAIN PASSES.** The Master Mind's chain ran it on Thor, 18:05–18:39 Berlin (rc 0).
+- Files: record `/home/nvidia/refcv7_bind/run_map/out/g_map_overfit.json` (md5 `75c4c8f2`); closure `…/run_map/gmo_closure.json` (md5 `e740fc67`). Both are the Master Mind's to bank with the gate.
+- Spec 56dea067 (A19), argv 6402d33d, 3,000 steps with the decay from 2,700; `results` holds `healthy` only.
+- Declared-rule IoU at step 3,000: nocls .963, drivable .968, sidewalk .982, lane .773, crosswalk .915, arrow .838, **edge .547**, hatched .893.
+  - Edge's margin is +.047, against the early run's +.055: the fresh draw came in .008 lower.
+- C1–C3 reproduced; the 1 ms guard held.
+- **Pre-judged by the A19 `judge_map_overfit`** (`code/a19_prejudge_binding.py`; record half, the closure half needs Thor):
+  - **PASS**, with A19 applied and the inherited statement carried;
+  - under the pre-A19 profile, the same record FAILS (4 reasons: the spec, and the three arms not run).
+- `code/a19_real_shape_check.py`: the judge passes a real harness-shaped record (the early A18 run's own `run_arm`/`verdict` output), and fails it with edge forced to 0.49.

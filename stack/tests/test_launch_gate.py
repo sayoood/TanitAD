@@ -585,7 +585,9 @@ PRIOR = ["--residual-prior", "ha0_ext_pose", "--ego-history"]      # SPEC_REFCV7
 MAP10 = ["--map-hires", "on", "--w-map-hires", "1.0", "--bev-source", "map_hires_pool",
          "--map-hires-decision-rule", "prior_corrected", "--map-hires-x-max-m", "100",
          "--map-hires-y-half-m", "30", "--map-hires-grad-ckpt", "on",
-         "--bev-planner-crop-m", "60", "16", "--w-map", "0"]
+         "--bev-planner-crop-m", "60", "16", "--w-map", "0",
+         # MAP-LIFT closed (SPEC_REFCV7 17 A12 + 20 A15 + 23 A18): the map path's two flags
+         "--map-hires-near-lift-m", "20", "--map-hires-near-refine-blocks", "1"]
 #: the box head as SPEC_REFCV7 A9 + A14.1 fix it (the BOX-HEAD open item closed 2026-09-27, 28d8365)
 BOXA9 = ["--slot-presence-loss", "focal", "--slot-presence-prior", "0.01", "--slot-deep-supervision",
          "--slot-vis1", "--vis1-sidecar", "/home/nvidia/data/refcv7/vis1_sidecar_refcv6b1_train4369_eval139.npz",
@@ -1168,6 +1170,12 @@ def _gmo_record(commit, argv_sha, cw_sha, **over):
            "decision_rule": "prior_corrected", "extent": {"x_max_m": 100.0, "y_half_m": 30.0},
            "frames_sha12": [f for f, _ in _GMO_FRAMES], "raw_frames": [r for _, r in _GMO_FRAMES],
            "frameset_md5": "4eafa03c2b6a6e6d6336be1d78acb91d",
+           # SPEC_REFCV7 23 (A18): the protocol the record RAN (the harness's own fields)
+           "spec_sha256": "5cb4f6fc4a8c15660237f541f077bfb334337dd287f674f8de02b7d414077c58",
+           "optimiser": {"name": "AdamW", "lr": 0.001, "betas": [0.9, 0.999], "eps": 1e-08,
+                         "weight_decay": 0.0, "batch": 4, "steps": 3000, "seed": 0,
+                         "lr_decay": {"kind": "cosine_to_zero", "start_step": 2700}},
+           "near_lift_m": 20.0, "near_refine_blocks": 1,
            "results": {"healthy": {"final": {"n": {c: 5000 for c in _GMO_BARS},
                                              "iou": {c: b + 0.05 for c, b in _GMO_BARS.items()}}}},
            "verdict": {"band": "0_20", "decision_rule": "prior_corrected",
@@ -1179,7 +1187,10 @@ def _gmo_record(commit, argv_sha, cw_sha, **over):
                            "lane_w0": {"ran": True, "must_fail": ["lane"], "failed": ["lane"],
                                        "rule": "any", "failed_as_required": True},
                            "s8_zeros": {"ran": True, "must_fail": _THIN, "failed": list(_THIN),
-                                        "rule": "all", "failed_as_required": True}},
+                                        "rule": "all", "failed_as_required": True},
+                           "near_block_zeros": {"ran": True, "must_fail": ["edge"],
+                                                "failed": ["edge"], "rule": "any",
+                                                "failed_as_required": True}},
                        "controls": {"C1_constant_drivable": {"reproduced": True},
                                     "C2_gt_as_logits": {"reproduced": True},
                                     "C3_rule_identity_w_ones": {"reproduced": True}},
@@ -2130,21 +2141,20 @@ def test_G_MAP_OVERFIT_job_needs_its_closure_and_its_PASS_states_the_isolation_s
 # the profile's OPEN ITEMS: an undecided flag set can never mint a PASS                        #
 # ------------------------------------------------------------------------------------------ #
 def test_the_profile_OPEN_ITEMS_block_a_PASS_until_each_is_closed(tmp_path, monkeypatch):
-    """Master Mind 2026-09-27: the NEW-2 flag set stays OPEN to one or two lift flags, like the box
-    flags. While an item is open the verdict is INCOMPLETE with the item NAMED."""
-    ids = [it["id"] for it in LG.PROFILES["refcv7"]["open_items"]]
-    assert ids == ["MAP-LIFT"]                       # BOX-HEAD closed 2026-09-27 (the box head landed, 28d8365)
+    """Master Mind 2026-09-27: an undecided part of the flag set is an OPEN ITEM; while one is open
+    the verdict is INCOMPLETE with the item NAMED. Both refcv7 items are CLOSED (BOX-HEAD: the box
+    head landed, 28d8365; MAP-LIFT: SPEC_REFCV7 23, A18 -- its flags are required values, pinned in
+    the MAP-LIFT tests below), so the mechanism is held on a SYNTHETIC item."""
+    p = LG.PROFILES["refcv7"]
+    assert p["open_items"] == ()                     # the refcv7 launch flag set is DECIDED
     ctx, _ = _refcv7_argv_ctx(tmp_path)
     key = LG.load_key(tmp_path / "k.key")
+    assert LG.finalize(ctx, key)[0] == "PASS"
+    it = {"id": "SYNTH", "what": "an undecided lever", "owner": "the test"}
+    monkeypatch.setitem(LG.PROFILES, "refcv7", dict(p, open_items=(it,)))
     verdict, path, tok = LG.finalize(ctx, key)
     assert verdict == "INCOMPLETE" and not LG.verify_token(path, ctx.argv, ctx.tree, key=key)[0]
-    assert [r.split(":")[0] for r in tok["reasons"]] == ["OPEN ITEM MAP-LIFT"]
-    p = LG.PROFILES["refcv7"]
-    it = p["open_items"][0]
-    assert LG.finalize(ctx, key)[2]["reasons"] == [
-        f"OPEN ITEM MAP-LIFT: {it['what']} (owner: {it['owner']})"]
-    monkeypatch.setitem(LG.PROFILES, "refcv7", dict(p, open_items=()))
-    assert LG.finalize(ctx, key)[0] == "PASS"
+    assert tok["reasons"] == ["OPEN ITEM SYNTH: an undecided lever (owner: the test)"]
 
 
 def test_the_BOX_HEAD_item_is_closed_by_its_flags_as_REQUIRED_values():
@@ -2309,3 +2319,172 @@ def test_G_SUITE_PINNED_a_registered_skip_admits_ITS_test_only():
     r, d = LG.judge_pinned_run(files, res, ok)
     assert list(d["unregistered_skips"]) == ["tests.test_x::test_b"] and len(r) == 1
     assert LG.judge_pinned_run(files, res, [r"^no CUDA device$"])[0] == []     # legacy form
+
+
+
+# ------------------------------------------------------------------------------------------ #
+# MAP-LIFT is CLOSED (SPEC_REFCV7 17 A12 + 20 A15 + 23 A18): the map path's two flags are      #
+# required values, the canonical argv carries them, and G-MAP-OVERFIT binds the A18 protocol   #
+# ------------------------------------------------------------------------------------------ #
+_A18_SPEC = (ROOT.parent / "TanitAD Research Lab" / "Architecture & Inference" / "Research"
+             / "2026-09-26-refcv7-map-hires" / "raw" / "gmo_spec_A18.json")
+_CANON_ARGV = ROOT / "ops" / "runs.d" / "refcv7-r101-s0.argv.json"
+
+
+def test_MAP_LIFT_is_closed_and_its_flags_are_required_values():
+    p = LG.PROFILES["refcv7"]
+    assert "MAP-LIFT" not in [it["id"] for it in p["open_items"]]
+    rv = p["required_values"]
+    assert rv["--map-hires-near-lift-m"] == "20" and rv["--map-hires-near-refine-blocks"] == "1"
+    for f in ("--map-hires-near-lift-m", "--map-hires-near-refine-blocks"):
+        assert "SPEC_REFCV7" in p["required_values_why"][f]
+
+
+@pytest.mark.skipif(not _CANON_ARGV.is_file(), reason="the canonical argv is not in this checkout")
+def test_MAP_LIFT_the_canonical_argv_carries_the_map_path_and_a_missing_flag_is_refused():
+    d = json.loads(_CANON_ARGV.read_text(encoding="utf-8"))
+    argv = d["argv"]
+    assert "todo_map_lift" not in d
+    ch = {c["flag"]: c for c in d["changes_vs_refcv6"]}
+    assert ch["--map-hires-near-lift-m"]["refcv7"] == ["20"]
+    assert ch["--map-hires-near-refine-blocks"]["refcv7"] == ["1"]
+    assert "SPEC_REFCV7 17" in ch["--map-hires-near-lift-m"]["why"]
+    assert "SPEC_REFCV7 20" in ch["--map-hires-near-refine-blocks"]["why"]
+    p = LG.PROFILES["refcv7"]
+    reasons, _ = LG.required_on_reasons(p, argv)
+    assert not [r for r in reasons if "--map-hires-near" in r], reasons
+    # red arms: each flag dropped, and each at another value, is a NAMED refusal
+    for f, other in (("--map-hires-near-lift-m", "10"), ("--map-hires-near-refine-blocks", "2")):
+        i = argv.index(f)
+        dropped = argv[:i] + argv[i + 2:]
+        r, _ = LG.required_on_reasons(p, dropped)
+        assert [x for x in r if x.startswith(f)] == [
+            f"{f} {p['required_values'][f]} is REQUIRED for a refcv7 launch "
+            f"({p['required_values_why'][f]}) and the argv has None"]
+        wrong = argv[:i + 1] + [other] + argv[i + 2:]
+        r, _ = LG.required_on_reasons(p, wrong)
+        assert [x for x in r if x.startswith(f)] == [
+            f"{f} {p['required_values'][f]} is REQUIRED for a refcv7 launch "
+            f"({p['required_values_why'][f]}) and the argv has ['{other}']"]
+
+
+@pytest.mark.skipif(not _A18_SPEC.is_file(), reason="the A18 spec is not in this checkout")
+def test_G_MAP_OVERFIT_protocol_literals_are_the_A18_spec_itself():
+    """The profile's protocol literals are not free-standing: they are the registered A18 spec's
+    own (sha256, steps, decay, map path) -- a drift of either side is RED."""
+    import hashlib
+    mo = LG.PROFILES["refcv7"]["map_overfit"]
+    b = _A18_SPEC.read_bytes()
+    assert hashlib.sha256(b).hexdigest() == mo["spec_sha256"]
+    s = json.loads(b.decode("utf-8"))
+    assert s["steps"] == mo["protocol"]["steps"] == 3000
+    assert s["lr_decay"] == mo["protocol"]["lr_decay"] == {"kind": "cosine_to_zero",
+                                                           "start_step": 2700}
+    assert s["lr"] == mo["protocol"]["lr"] == 0.001 and s["batch"] == mo["protocol"]["batch"] == 4
+    assert s["seed"] == mo["protocol"]["seed"] == 0
+    assert s["near_lift_m"] == mo["near_lift_m"] == 20.0
+    assert s["near_refine_blocks"] == mo["near_refine_blocks"] == 1
+    assert {k: tuple(v) for k, v in s["must_fail"].items() if k != "s8_zeros"} \
+        == dict(mo["must_fail_any"])
+    assert tuple(s["must_fail"]["s8_zeros"]) == mo["must_fail_all"]["s8_zeros"]
+
+
+def test_G_MAP_OVERFIT_refuses_a_record_that_did_not_run_the_A18_protocol(tmp_path):
+    """⛔ The box judge's trap (the prereg's lr kept after the protocol moved), checked for the map:
+    the 1,000-step protocol, the prereg lr, no decay, the A17.1 decay, another spec, another map
+    path and a missing near_block_zeros arm are each a NAMED refusal."""
+    p = LG.PROFILES["refcv7"]
+    commit, argv_sha, cw_sha = "ab" * 20, "cd" * 32, "ef" * 32
+    rec = tmp_path / "g_map_overfit.json"
+
+    def judge(r_):
+        rec.write_text(json.dumps(r_), encoding="utf-8")
+        return LG.judge_map_overfit(p, str(rec), commit, argv_sha=argv_sha,
+                                    class_weights_sha256=cw_sha)[0]
+
+    assert judge(_gmo_record(commit, argv_sha, cw_sha)) == []                  # A18 as run
+    T_ = "G-MAP-OVERFIT: the record's optimiser"
+
+    def opt(**kw):
+        r_ = _gmo_record(commit, argv_sha, cw_sha)
+        r_["optimiser"] = dict(r_["optimiser"], **kw)
+        return r_
+    old = opt(steps=1000, lr_decay=None)                                       # the prereg's
+    assert judge(old) == [
+        f"{T_} steps is 1000, not the registered 3000 (SPEC_REFCV7 23, A18)",
+        f"{T_} lr_decay is None, not the registered "
+        "{'kind': 'cosine_to_zero', 'start_step': 2700} (SPEC_REFCV7 23, A18)"]
+    assert judge(opt(lr=2e-4)) == [
+        f"{T_} lr is 0.0002, not the registered 0.001 (SPEC_REFCV7 23, A18)"]
+    assert judge(opt(lr_decay={"kind": "cosine_to_zero", "start_step": 900})) == [
+        f"{T_} lr_decay is {{'kind': 'cosine_to_zero', 'start_step': 900}}, not the registered "
+        "{'kind': 'cosine_to_zero', 'start_step': 2700} (SPEC_REFCV7 23, A18)"]
+    assert judge(opt(steps=True)) == [
+        f"{T_} steps is True, not the registered 3000 (SPEC_REFCV7 23, A18)"]
+    a171 = _gmo_record(commit, argv_sha, cw_sha, spec_sha256="5c" * 32)
+    assert judge(a171) == ["G-MAP-OVERFIT: the record ran spec 5c5c5c5c5c5c5c5c..., not the "
+                           "registered A18 spec 5cb4f6fc4a8c1566... (SPEC_REFCV7 23)"]
+    nb = _gmo_record(commit, argv_sha, cw_sha, near_refine_blocks=2)
+    assert judge(nb) == ["G-MAP-OVERFIT: the record ran near_refine_blocks=2, not the launch "
+                         "map path's 1 (SPEC_REFCV7 17 / 20)"]
+    nl = _gmo_record(commit, argv_sha, cw_sha)
+    del nl["near_lift_m"]
+    assert judge(nl) == ["G-MAP-OVERFIT: the record ran near_lift_m=None, not the launch map "
+                         "path's 20.0 (SPEC_REFCV7 17 / 20)"]
+    nbz = _gmo_record(commit, argv_sha, cw_sha)
+    del nbz["verdict"]["regression_arms"]["near_block_zeros"]
+    assert judge(nbz) == ["G-MAP-OVERFIT: must-fail arm 'near_block_zeros' did not FAIL "
+                          "['edge'] (not run)"]
+
+
+#: the Master Mind 2026-09-27: the launch argv LIST is FINAL -- the box A17 argv (150 tokens) with
+#: `--map-hires-near-lift-m 20 --map-hires-near-refine-blocks 1` right after `--map-hires-grad-ckpt
+#: on`. The binding runs bind THIS sha; the file's metadata may change, its list may not.
+_FINAL_ARGV_SHA256 = "6402d33de75b7f1c6dbdeb9aeedd46a00a82e7325eec420fa179f366213bd5cd"
+
+
+@pytest.mark.skipif(not _CANON_ARGV.is_file(), reason="the canonical argv is not in this checkout")
+def test_the_canonical_argv_is_the_FINAL_list_and_its_gate_sha_is_the_pinned_literal():
+    argv = json.loads(_CANON_ARGV.read_text(encoding="utf-8"))["argv"]
+    assert len(argv) == 154
+    assert LG.argv_sha256(argv) == _FINAL_ARGV_SHA256
+    i = argv.index("--map-hires-grad-ckpt")
+    assert argv[i:i + 6] == ["--map-hires-grad-ckpt", "on", "--map-hires-near-lift-m", "20",
+                             "--map-hires-near-refine-blocks", "1"]
+    # red arm: the same list without the map path is ANOTHER launch (another sha)
+    assert LG.argv_sha256(argv[:i + 2] + argv[i + 6:]) != _FINAL_ARGV_SHA256
+
+
+def _bom_tree(tmp_path):
+    """A trainer whose closure holds a package whose `__init__.py` starts with a UTF-8 BOM (as
+    `tanitad/eval/__init__.py` does) and imports a third-party name and its own submodule."""
+    bom = "﻿".encode("utf-8")
+    tree = tmp_path / "t"
+    (tree / "stack" / "scripts").mkdir(parents=True)
+    (tree / "stack" / "bompkg").mkdir(parents=True)
+    (tree / "stack" / "scripts" / "train.py").write_text("import bompkg\n", encoding="utf-8")
+    (tree / "stack" / "bompkg" / "__init__.py").write_bytes(
+        bom + b"import numpy\nfrom bompkg import sub\n")
+    (tree / "stack" / "bompkg" / "sub.py").write_text("import scipy\n", encoding="utf-8")
+    return tree, bom
+
+
+def test_G_HYG_import_closure_reads_a_BOM_source_as_python_does(tmp_path):
+    """The Master Mind's dry run of the launch config (2026-09-27): "G-HYG import closure crashed:
+    SyntaxError: invalid non-printable character U+FEFF (__init__.py, line 1)". Python's import
+    accepts a BOM; `ast.parse` of a plain utf-8 decode does not -- so the closure reads utf-8-sig."""
+    import ast
+    tree, bom = _bom_tree(tmp_path)
+    with pytest.raises(SyntaxError):                       # the mechanism, literally (red arm)
+        ast.parse((bom + b"import os\n").decode("utf-8"))
+    assert ast.parse((bom + b"import os\n").decode("utf-8-sig")).body   # the fix, literally
+    clo = LG.import_closure(tree, "stack/scripts/train.py")
+    assert clo["n_files"] == 3 and sorted(clo["third_party"]) == ["numpy", "scipy"]
+
+
+def test_the_static_eager_closure_follows_a_BOM_package_instead_of_skipping_it(tmp_path):
+    """The same read in `static_eager_own_files` swallowed the SyntaxError and SKIPPED the file, so a
+    BOM'd package's own imports were never required of a closure record (a silent under-count)."""
+    tree, _ = _bom_tree(tmp_path)
+    assert LG.static_eager_own_files(tree, "stack/scripts/train.py") == [
+        "stack/bompkg/__init__.py", "stack/bompkg/sub.py", "stack/scripts/train.py"]

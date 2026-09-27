@@ -319,10 +319,23 @@ _REFC = {
         "min_cells": 1000,
         "iou_bars": {"nocls": 0.85, "drivable": 0.85, "sidewalk": 0.85, "lane": 0.5,
                      "crosswalk": 0.5, "arrow": 0.5, "edge": 0.5, "hatched": 0.5},
-        "must_fail_any": {"lane_w0": ("lane",)},
+        #: ``near_block_zeros`` (edge): SPEC_REFCV7 20 (A15), kept by 23 (A18) -- zeros into the
+        #: near refine block leave the A12 function, so an edge pass must come from the block
+        "must_fail_any": {"lane_w0": ("lane",), "near_block_zeros": ("edge",)},
         "must_fail_all": {"s8_zeros": ("lane", "crosswalk", "arrow", "edge", "hatched")},
         "controls": ("C1", "C2", "C3"),
         "extent": {"x_max_m": 100.0, "y_half_m": 30.0},
+        #: ⛔ SPEC_REFCV7 23 (A18, the PI 2026-09-27 "Budget to 3,000 steps"): the PROTOCOL the
+        #: binding record must have RUN -- the registered A18 spec by sha256
+        #: (`…/2026-09-26-refcv7-map-hires/raw/gmo_spec_A18.json`), 3,000 steps, lr 1e-3 held to
+        #: step 2,700 then cosine to 0 (A17.1, moved by A18), batch 4, seed 0 -- on A15's map
+        #: path (the near lift 20 m + ONE near refine block; the argv's required values below).
+        #: The prereg's 1,000-step protocol is SUPERSEDED (its FAILs stay on the record): a
+        #: record of it is REFUSED here, never re-judged against these bars.
+        "spec_sha256": "5cb4f6fc4a8c15660237f541f077bfb334337dd287f674f8de02b7d414077c58",
+        "protocol": {"steps": 3000, "lr": 1e-3, "batch": 4, "seed": 0,
+                     "lr_decay": {"kind": "cosine_to_zero", "start_step": 2700}},
+        "near_lift_m": 20.0, "near_refine_blocks": 1,
         "frameset_md5": "4eafa03c2b6a6e6d6336be1d78acb91d",
         "frames": (("10497f0d664b", 10), ("10497f0d664b", 110), ("10497f0d664b", 130),
                    ("10497f0d664b", 150), ("05c575ed45be", 50), ("05c575ed45be", 85),
@@ -393,12 +406,8 @@ _REFC = {
 #: BOX-HEAD was CLOSED 2026-09-27 (the box head landed as 28d8365): its flags are `required_values` /
 #: `required_flags` below, built-checked by `box_required` in G-DVB; +R6 was not adopted (A14.1: LRP).
 _REFCV7_OPEN_ITEMS = (
-    {"id": "MAP-LIFT",
-     "what": "one or two NEW-2 LIFT flags: the EARLY (non-binding) G-MAP-OVERFIT MAIN FAILED at "
-             "step 1,000 (lane 0.417, edge 0.076 vs 0.50; INHERITED, Master Mind "
-             "2026-09-27), so the prereg sec. 9 lever order applies -- next is the LIFT "
-             "(Z = 0 plane / 0.1 m near lift / stride 4)",
-     "owner": "the NEW-2 builder names the flags; the Master Mind decides"},
+    # MAP-LIFT: CLOSED (SPEC_REFCV7 17 A12 + 20 A15 + 23 A18) -- its two flags are required
+    # values below and in the canonical argv; the binding G-MAP-OVERFIT runs A18's protocol
 )
 #: ⛔ SPEC_REFCV7 section 6.1: DrivoR-T's code still answers to `refcv7_*` names. Until its rename
 #: a refcv7 launch passes NONE of these flags, and G-DVB lists them as DrivoR-T levers that must be
@@ -485,6 +494,8 @@ PROFILES: dict[str, dict] = {
             "--slot-presence-prior": "0.01",
             "--slot-query-select": "learned_ref",
             "--vis1-sidecar": "/home/nvidia/data/refcv7/vis1_sidecar_refcv6b1_train4369_eval139.npz",
+            "--map-hires-near-lift-m": "20",
+            "--map-hires-near-refine-blocks": "1",
         },
         required_values_why={
             "--residual-prior": "SPEC_REFCV7 10 (A5): the prior is ha0_ext_pose, past poses only",
@@ -505,6 +516,10 @@ PROFILES: dict[str, dict] = {
                                    "full-model one-frame test PASS; the launch ruling 2026-09-27)",
             "--vis1-sidecar": "SPEC_REFCV7 14 (A9 R3): the VIS-1 sidecar placed by the Master Mind 2026-09-27 "
                               "(sha256 278443b3..., the box-head package raw/thor/vis1_full_record.json)",
+            "--map-hires-near-lift-m": "SPEC_REFCV7 17 (A12): the 0.1 m near-range lift over "
+                                       "x 0-20 m; 23 (A18): the map path G-MAP-OVERFIT ran",
+            "--map-hires-near-refine-blocks": "SPEC_REFCV7 20 (A15): ONE near refine block; 23 "
+                                              "(A18): A15's configuration",
         },
         #: levers that must be passed with a value strictly above 0 (a built head with no live
         #: weight is declared-but-inert)
@@ -1354,7 +1369,10 @@ def import_closure(tree: Path, entry_rel: str) -> dict:
         if f in seen or not f.is_file():
             continue
         seen.add(f)
-        mod = ast.parse(f.read_text(encoding="utf-8", errors="replace"), filename=str(f))
+        # utf-8-sig, as Python decodes a source file: `tanitad/eval/__init__.py` starts with a
+        # UTF-8 BOM, and `ast.parse` of a plain utf-8 decode dies on U+FEFF (the launch config's
+        # G-HYG crashed on it, Master Mind 2026-09-27)
+        mod = ast.parse(f.read_text(encoding="utf-8-sig", errors="replace"), filename=str(f))
         guarded: set[int] = set()
         fn_level: set[int] = set()
         for node in ast.walk(mod):
@@ -3374,8 +3392,8 @@ def static_eager_own_files(tree: Path, script_rel: str) -> list[str]:
         if f in out or not f.is_file():
             continue
         out.add(f)
-        try:
-            mod = ast.parse(f.read_text(encoding="utf-8", errors="replace"))
+        try:                                     # utf-8-sig: a BOM'd source is not skipped
+            mod = ast.parse(f.read_text(encoding="utf-8-sig", errors="replace"))
         except SyntaxError:
             continue
         for n in top_imports(mod.body):
@@ -3563,7 +3581,11 @@ def judge_map_overfit(prof: dict, record: str | None, commit: str, *, argv_sha: 
       the 0-20 m band (fewer is INCONCLUSIVE => FAIL, never "absent") and IoU >= the literal bar;
       the per-class CE ratio and the finite loss the prereg names (`verdict.MAIN`);
     * `lane_w0` FAILS lane; `s8_zeros` FAILS ALL FIVE thin classes; C1-C3 reproduced; the 1 ms
-      time guard held on every clip."""
+      time guard held on every clip;
+    * ⛔ SPEC_REFCV7 23 (A18): the record RAN the registered protocol -- the A18 spec (sha256),
+      the optimiser's steps / lr / batch / seed / lr_decay, and the map path (near lift, near
+      refine blocks) -- each against `map_overfit`'s literals. A record of the superseded
+      1,000-step protocol is REFUSED (the trap the box judge fell into with the prereg's lr)."""
     mo = prof.get("map_overfit") or {}
     tag = "G-MAP-OVERFIT"
     if not record or not Path(record).is_file():
@@ -3599,6 +3621,24 @@ def judge_map_overfit(prof: dict, record: str | None, commit: str, *, argv_sha: 
         if not (_finite_num(ext.get(k)) and float(ext[k]) == float(want)):
             reasons.append(f"{tag}: the record ran at extent {k}={ext.get(k)}, not the launch "
                            f"{want} (SPEC_REFCV7 12)")
+    # ⛔ SPEC_REFCV7 23 (A18): the PROTOCOL the record ran
+    if mo.get("spec_sha256") and rec.get("spec_sha256") != mo["spec_sha256"]:
+        reasons.append(f"{tag}: the record ran spec {str(rec.get('spec_sha256'))[:16]}..., not the "
+                       f"registered A18 spec {mo['spec_sha256'][:16]}... (SPEC_REFCV7 23)")
+    opt = rec.get("optimiser") if isinstance(rec.get("optimiser"), dict) else {}
+    det["optimiser"] = opt
+    for k, want in (mo.get("protocol") or {}).items():
+        got = opt.get(k)
+        ok = (got == want if isinstance(want, dict)
+              else (_finite_num(got) and not isinstance(got, bool) and float(got) == float(want)))
+        if not ok:
+            reasons.append(f"{tag}: the record's optimiser {k} is {got!r}, not the registered "
+                           f"{want!r} (SPEC_REFCV7 23, A18)")
+    for k in ("near_lift_m", "near_refine_blocks"):
+        if k in mo and not (_finite_num(rec.get(k)) and not isinstance(rec.get(k), bool)
+                            and float(rec[k]) == float(mo[k])):
+            reasons.append(f"{tag}: the record ran {k}={rec.get(k)!r}, not the launch map "
+                           f"path's {mo[k]} (SPEC_REFCV7 17 / 20)")
     band, rule = v.get("band"), rec.get("decision_rule") or v.get("decision_rule")
     det.update(band=band, decision_rule=rule)
     if band != mo.get("band"):

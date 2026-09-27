@@ -60,6 +60,22 @@ R2_EDITED = [
     "stack/tests/test_map_hires_overfit.py",
     "stack/tests/test_declared_vs_built.py",
 ]
+#: NEW-2 R4 (§9 lever 4, the weights) and R5 (A17.1, the lr decay; folds R4 in): only the
+#: harness and its test change.
+R4_EDITED = [
+    "stack/scripts/map_hires_overfit.py",
+    "stack/tests/test_map_hires_overfit.py",
+]
+#: the MAP-LIFT CLOSURE (SPEC_REFCV7 23, A18): R5's two files (+ the A18 spec pin) and the
+#: launch gate's closure -- the canonical argv, the gate profile / judge, and the gate's tests
+#: (R5 lands as its OWN LANDING_READY -- the Master Mind 2026-09-27 -- so MAP-LIFT carries only
+#: the gate files; the A18 spec pin is a NEW test file, not an edit of R5's test file)
+MAPLIFT_NEW = ["stack/tests/test_map_hires_a18_spec.py"]
+MAPLIFT_EDITED = [
+    "stack/scripts/launch_gate.py",
+    "stack/tests/test_launch_gate.py",
+    "stack/ops/runs.d/refcv7-r101-s0.argv.json",
+]
 NEWDEP = [
     "stack/tests/test_map_hires_wiring.py",
     "taniteval/tests/test_map_hires_rebuild.py",
@@ -83,13 +99,17 @@ def main(argv=None) -> int:
     ap.add_argument("--pkg", required=True, type=Path)
     ap.add_argument("--git-dir", required=True)
     ap.add_argument("--ref", required=True)
-    ap.add_argument("--set", choices=("new2", "r2", "r3"), default="new2")
+    ap.add_argument("--set", choices=("new2", "r2", "r3", "r4", "r5", "maplift"), default="new2")
     ap.add_argument("--fix-dir", default="code/fix",
                     help="package-relative output dir (code/fix for NEW-2, code/fix_r2 for R2)")
     a = ap.parse_args(argv)
     global BATCH1, EDITED, NEWDEP
     if a.set in ("r2", "r3"):                # R3 (A15) edits the SAME 8 files as R2
         BATCH1, EDITED, NEWDEP = [], list(R2_EDITED), []
+    elif a.set in ("r4", "r5"):              # R5 = R4 + the A17.1 lr decay, same 2 files
+        BATCH1, EDITED, NEWDEP = [], list(R4_EDITED), []
+    elif a.set == "maplift":                 # R5 + the A18 pin + the MAP-LIFT gate closure
+        BATCH1, EDITED, NEWDEP = list(MAPLIFT_NEW), list(MAPLIFT_EDITED), []
     fix = a.pkg / a.fix_dir
     fix_rel = Path(a.fix_dir).as_posix().strip("/")
     if fix.exists():
@@ -130,7 +150,8 @@ def main(argv=None) -> int:
             (fix / f).write_bytes(data)
             rows[f] = ("NEW", blob_id(data), "LF")
         dpath = fix / {"new2": "NEW2_shared_edits.diff", "r2": "NEW2R2_edits.diff",
-                       "r3": "NEW2R3_edits.diff"}[a.set]
+                       "r3": "NEW2R3_edits.diff", "r4": "NEW2R4_edits.diff",
+                       "r5": "NEW2R5_edits.diff", "maplift": "NEW2_MAPLIFT_edits.diff"}[a.set]
         dpath.write_bytes(b"".join(diffs))
         # ---- verification: apply to the RAW tip blobs, compare byte for byte ----
         vt = td / "verify"
@@ -161,6 +182,8 @@ def main(argv=None) -> int:
                   + block(EDITED + NEWDEP))
     else:
         blocks = [f"# {a.set.upper()} (every file EDITED against the tip)"] + block(EDITED)
+        if BATCH1:                           # a set's NEW files (base NEW), after its edits
+            blocks += [f"# {a.set.upper()} NEW files"] + block(BATCH1)
     (fix / "LANDING_BLOCKS.txt").write_bytes(("\n".join(blocks) + "\n").encode("utf-8"))
     n_lines = dpath.read_bytes().count(b"\n")
     print(f"tip {tip}: {len(BATCH1)} batch-1 + {len(EDITED)} edited + {len(NEWDEP)} "

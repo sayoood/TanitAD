@@ -1,0 +1,68 @@
+{
+ "output": "/home/nvidia/gmo_early_0327/weights_mf/map_hires_class_weights_train_100x30_MF.json",
+ "output_sha256": "8ff4fd6d8798031a4af59991833ff724db251618f32c794beb2e5b8575702c98",
+ "script": "/home/nvidia/nb2r3_2374/code/stack/scripts/compute_map_class_weights.py",
+ "script_git_blob": "8012922f1c6027421c2857eb9e43a6cae84294ef",
+ "script_sha256": "585c69aef0816e6ce5aecc489e808a43682f16203cb98e32c54504cf52fe3848",
+ "script_blob_equals_tip": "c36b6dd:stack/scripts/compute_map_class_weights.py = 8012922f (the blob the sqrt_mf launch file was computed with)",
+ "argv": [
+  "--v2-cache",
+  "/home/nvidia/data/refcv6-b1-416x1024-train",
+  "--gt-root",
+  "/home/nvidia/data/sam3_gt_v3",
+  "--split",
+  "train",
+  "--definition",
+  "mf",
+  "--out",
+  "/home/nvidia/gmo_early_0327/weights_mf/map_hires_class_weights_train_100x30_MF.json"
+ ],
+ "env": "PYTHONPATH=<R3 candidate>/stack:<R3 candidate>/taniteval OMP_NUM_THREADS=2 CUDA_VISIBLE_DEVICES= (CPU only) nice -n 19 ionice -c 3 (idle), setsid nohup; PID 3729978; launched 2026-09-27T10:52Z",
+ "argv_defaults_in_effect": {
+  "x_max_m": 100.0,
+  "y_half_m": 30.0,
+  "clip_max": 25.0,
+  "frame_stride": 1,
+  "weight_floor": 0.0
+ },
+ "code_tree": "the NEW-2 R3 candidate (2374cd2 + NEW-2 R3 blobs, landed as 1b8170e), shipped md5-verified (2,853 files)",
+ "python": "/home/nvidia/venvs/tanitad-train/bin/python",
+ "checks": {
+  "schema": "tanitad.map_hires_class_weights/1",
+  "dry_run": false,
+  "definition_id": "mf",
+  "pre_registered": false,
+  "extent": {
+   "x_max_m": 100.0,
+   "y_half_m": 30.0
+  },
+  "split": "train",
+  "n_clips_used": 4369,
+  "frames": 878016,
+  "inputs_sha256": "205cdadc2d946e446ee1aed6fb2ed212a5f3ed36d28219997b736259e33ecef9",
+  "created_utc": "2026-09-27T11:37:49+00:00",
+  "elapsed_s": 2737.1,
+  "weights": [
+   0.019884611752634847,
+   0.04242065046491783,
+   0.8825048838181289,
+   1.1535864261510151,
+   8.744878790146911,
+   2.4686167150713367,
+   4.635252501155014,
+   0.027204371085894366
+  ],
+  "classes": [
+   "seen, no map class",
+   "drivable",
+   "lane / road line",
+   "crosswalk",
+   "arrow / text",
+   "non-drivable edge",
+   "hatched area",
+   "sidewalk / verge"
+  ]
+ },
+ "same_inputs_as_sqrt_mf_launch_file": true,
+ "status": "READINESS ONLY (the Master Mind, 2026-09-27 ~12:55): pre_registered false until SPEC_REFCV7 registers lever (4); the harness refuses it for any spec that does not register class_weights_definition 'mf'"
+}
