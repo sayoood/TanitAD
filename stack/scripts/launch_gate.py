@@ -5829,7 +5829,15 @@ def run_job(ctx: Ctx, ctx_path: Path, job: str, checks: list[str], python: str) 
     with open(log, "a", encoding="utf-8", errors="replace") as fh:
         fh.write(f"\n==== {started} {' '.join(cmd)}\n")
         fh.flush()
-        p = subprocess.Popen(cmd, env=_child_env(ctx), stdout=fh, stderr=subprocess.STDOUT,
+        env = _child_env(ctx)
+        if job == "model":
+            # ⛔ MEASURED 2026-09-27 on Thor (53ecf9b): the model job's trainer build lands on CUDA
+            # there, while G-EVAL's identity probe runs its fixed batch on CPU (`_forward_out` ->
+            # compute_losses_v3(..., "cpu")) and builds the loader on "cpu" -> "tensors on two
+            # devices". G-HYG / G-DVB / G-EVAL are CPU checks by design (the dev-box stage runs
+            # them CPU-only, where G-EVAL PASSED); the model job is CPU-only on EVERY host.
+            env["CUDA_VISIBLE_DEVICES"] = ""
+        p = subprocess.Popen(cmd, env=env, stdout=fh, stderr=subprocess.STDOUT,
                              stdin=subprocess.DEVNULL, **kw)
         t_end = time.time() + timeout
         rc = None

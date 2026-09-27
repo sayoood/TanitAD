@@ -515,6 +515,31 @@ def test_G_LIVE_RED_any_OTHER_dead_group_still_FAILS():
                and "tac_decoder_v6.lat_head" in r for r in reasons)
 
 
+def test_the_MODEL_job_runs_CPU_only_on_every_host_and_the_smoke_does_not(tmp_path, monkeypatch):
+    """MEASURED 2026-09-27 on Thor: G-EVAL crashed on 'tensors on two devices' because the model
+    job built the trainer's model on CUDA while its identity probe runs on CPU."""
+    seen = {}
+
+    class _P:
+        def __init__(self, cmd, env=None, **kw):
+            seen[cmd[cmd.index("--checks") + 1]] = dict(env or {})
+        def wait(self, timeout=None):
+            return 0
+
+    monkeypatch.setattr(LG.subprocess, "Popen", _P)
+    monkeypatch.setenv("CUDA_VISIBLE_DEVICES", "0")
+    ctx = LG.Ctx(profile="refcv7", tree=str(tmp_path), commit="0" * 40, argv=["--x"],
+                 out_dir=str(tmp_path), path_map=[], tree_sha256="0" * 64,
+                 argv_sha256="0" * 64, options={}, arm=None)
+    for job, checks in (("model", ["G-HYG", "G-DVB", "G-EVAL"]), ("smoke", ["G-LIVE", "G-CKPT"])):
+        try:
+            LG.run_job(ctx, tmp_path / "ctx.json", job, checks, "python")
+        except Exception:                                   # noqa: BLE001 -- only the env matters
+            pass
+    assert seen["G-HYG,G-DVB,G-EVAL"]["CUDA_VISIBLE_DEVICES"] == ""
+    assert seen["G-LIVE,G-CKPT"].get("CUDA_VISIBLE_DEVICES") != ""
+
+
 def test_smoke_runs_with_the_TRAINER_argv_as_the_process_argv():
     """MEASURED 2026-09-27: the trainer stamps config.json['argv'] = sys.argv[1:]; in-process it
     recorded the gate's own 'check --ctx ...' and G-EVAL crashed. The smoke must set sys.argv."""
