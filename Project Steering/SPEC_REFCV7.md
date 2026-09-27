@@ -505,3 +505,49 @@ The harness's step is 2× the launch's peak head lr and 4× its trunk lr, and up
 1. The one-frame ladder (diagnostic, running) reports. Its `lr_2e-5` and `frozen_trunk` rungs attribute the collapse.
 2. The corrected MAIN arm runs (non-binding). If it FAILS criterion 2/3 at base rate, the pre-registered A10.1 chain resumes: +R6, then the PI-authorised (2026-09-27) BEV-heatmap query selection.
 3. Only a run on the launch closure (A11) binds.
+
+## 19. Amendment A14 (2026-09-27 ~10:55 Berlin, BEFORE its first number): heatmap query selection (HQS) for the slot heads
+
+**PI, 2026-09-27 ~09:25:** "Diagnose, then build if clean". The diagnosis finds no defect in the A9 refinement. The defect is in the shared slot-decoder design, so the pre-registered A10.1 architecture lever is built.
+
+**The diagnosis** (MEASURED, NON-BINDING; `bx_diag_0929`, `bx_ladder2_0954` on Thor). One frame (`384cb23868d0` t = 149, 13 POSITIVE), 500 steps, one variable per rung.
+
+**Every rung FAILS the one-frame overfit:**
+- the rungs: MAIN, frozen trunk, lr 2e-5, BCE presence, no deep supervision, 100 queries, and **the refcv6 head bundle** (BCE-0.1, prior 0.05, 100 queries, no deep supervision, refcv6 targets);
+- matched-slot presence stays at the base rate: median 0.15–0.28 under focal, 0.63 under BCE-0.1, where every slot fires and every slot scores ~ the same;
+- **the Hungarian assignment never stabilises on a fixed frame**: only 0.4–6.5 % of targets keep their slot over 25 steps;
+- the box memory's frame-specific share falls in every rung (0.41 → 0.04–0.22), frozen trunk included.
+
+**The signal audit** shows the loss wiring is correct:
+- matched slots receive positive presence gradient, 100 % pushed up;
+- the IGNORE mask never zeroes a matched slot (33/33 readings);
+- per-layer targets equal `match_slots` on each layer (33/33).
+
+**Reading (INFERRED, with published support):** this is the known bipartite-matching instability of learned, un-anchored queries with absolute box regression, which DN-DETR, DINO and anchored queries exist to fix. It predates A9: the refcv6 head fails the same test. It also explains the PI's "messy boxes": BCE-0.1's base rate sits ABOVE the 0.5 gate (every slot fires), focal's sits below it (none fires).
+
+**The lever: HQS, box heads only, flag `--slot-query-select {learned,heatmap}`.**
+- The default `learned` is bit-identical to today. `heatmap` is a declared field, with a G-HYG entry and a G-DVB entry.
+- **Heatmap:** 2 conv layers → 1 channel on the box memory's BEV features (under the canonical config, NEW-2's pooled BEV), prior 0.01.
+  - Target: CenterNet Gaussian splats of the VIS-1 POSITIVE centres, with IGNORE cells masked.
+  - Loss: penalty-reduced focal (α 2, β 4), normalised by the number of positives, weight 1.0, inside the box3d term. So `memory_zeros` and `presence_w0` keep their meaning.
+- **Selection:** per frame, 3×3 max-pool NMS, then top-K with K = n_queries (300). Each selected cell is that query's anchor.
+  - The query CONTENT stays the learned table (DINO mixed query selection).
+  - The query POSITION is a sine embedding of the anchor through an MLP, added at every decoder layer.
+  - Anchors are detached; the selection is non-differentiable.
+- **Box centre** = anchor + tanh(raw) × 4 m. Every other field decodes as today.
+
+**The one-frame test, PASS literals.** Same frame, same 500 steps, the A13 launch optimiser, canonical config. At step 500 BOTH must hold:
+- (i) the median presence of Hungarian-matched slots is **≥ 0.50**;
+- (ii) the mean share of targets that keep their slot over the final 100 steps (25-step windows, the ladder's metric) is **≥ 0.80**.
+
+Every rung above reads ≤ 0.065 on (ii).
+
+**Red arm `anchors_removed`:** the heatmap anchors are replaced by the learned reference points, everything else the same. It must FAIL (i) or (ii). If it passes, the test is not measuring the anchors.
+
+**Then the gate.** G-BOX-OVERFIT with HQS: every prereg literal, the A13 optimiser, the A10 reconciliation (113 / 77), the must-fail `memory_zeros` and `presence_w0`. Only a run on the launch closure (A11) binds.
+
+**The pre-registered chain is unchanged and runs on otherwise-idle GPU while HQS is built:**
+- the corrected MAIN (A13, 2,000 steps);
+- then a one-frame +R6 rung (whether denoising alone stabilises the assignment; informative).
+
+If the corrected MAIN or +R6 PASSES G-BOX-OVERFIT, HQS is not needed and stays default-off.
