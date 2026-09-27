@@ -687,3 +687,22 @@ A constant peak lr leaves the final snapshot noisy. The real launch decays its l
 **Unchanged:** every other literal, i.e. the bars, the step-2,000 read-out, the must-fail arms, C1–C4, the 113/77 reconciliation, the declared gate σ ≥ 0.5, the canonical config and the LRP launch configuration (A14.1).
 
 **The binding run** (A11 closure; its three arms are MAIN, memory_zeros and presence_w0) runs with A17 once the harness change has landed.
+
+### 22.1 A17.1 (2026-09-27 ~15:45 Berlin, PI in chat): the same lr decay for G-MAP-OVERFIT; and A16's result
+
+**PI, 2026-09-27 ~15:44, answering whether to apply A17's rule to the map test:** "Yes, same rule for the map". NEW-2 proposed it at 13:32Z (15:32 Berlin), before A16's first number. The PI answered as that number arrived.
+
+**The change.** In every G-MAP-OVERFIT arm of the binding run and of any re-run, the lr holds at 1e-3 for steps 0–899, then follows a **cosine decay to 0 over steps 900–1,000**.
+- The spec key is `lr_decay: {kind: cosine_to_zero, start_step: 900}`. Without the key, the constant-lr path is bit-identical.
+- Literal pins: the multiplier reads 1.0 at 899 and 900, 0.5 at 950, and 0.0 at 1,000.
+- **Unchanged:** every bar, arm and must-fail; C1–C3; the step-1,000 read-out; the 16 frames; the declared rule; the weights.
+- **Why:** the map's constant-lr snapshot jitters ±0.03–0.07 between readings (A15 edge 0.121 → 0.086 → 0.259; MAIN_long 0.381 → 0.315), and same-seed replicates differ by 0.063 on lane. That is the failure the PI fixed for the box in A17.
+
+**A16's result** (MEASURED, NON-BINDING; the lever-on arm judged as registered, without the decay). **MAIN FAILS** at step 1,000 on 5 of 8 classes: nocls 0.608, drivable 0.813, sidewalk 0.795, lane 0.363, edge 0.054.
+- The read-out caught a transient (the train loss went 0.176 → 0.393 over steps 900–1,000).
+- At its better readings (800 and 900) it still fails nocls, lane and edge (≈ 0.09). mf did not speed up edge (0.092 / 0.086 against A15's 0.121 / 0.086), and it cost the big classes the predicted gradient share.
+- **The launch weights stay sqrt_mf (A8).** A16's must-fail arms were STOPPED to free the GPU, since they cannot change a FAIL; this is recorded.
+
+**The next arm** (the decay protocol, PI-approved; a re-run, not a new lever): **A15's configuration** (near lift 20 + one near refine block, sqrt_mf weights) **+ the A17.1 decay**. Every prereg literal, with A15's must-fail pair (s8_zeros, near_block_zeros) and lane_w0.
+- **If edge still fails:** a second near refine block (`--map-hires-near-refine-blocks 2`; the flag already allows up to 4; +4.3 % FLOPs per block) is the proposed next lever. It goes to the PI, since A16 exhausted §9's list.
+- **The step budget is the PI's.**
