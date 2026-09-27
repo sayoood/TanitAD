@@ -323,3 +323,77 @@ A9's **T1** ("heavy_truck: the z/height regression term is dropped, label defect
 - Measured as the offset d = bottom − the median bottom of the same frame's cars, persons and riders within 15 m, heavy_truck d = −0.13 m (GT-val), **+0.021 m** (139 eval clips, n 90) and **+0.030 m** (64 train clips). That is the same as automobile (−0.006) and person (+0.020).
 
 ⇒ **There is NO truck-specific target change in refcv7.** Re-seating trucks on z = 0 would be wrong, because far trucks sit on a slope their neighbours share. R1–R4 stand unchanged.
+
+## 15. Amendment A10 (2026-09-27 ~03:20 Berlin): G-BOX-OVERFIT registered, reconciled to A9's IGNORE rule; the box checks fixed before any box number
+
+Registered BEFORE any refcv7 box number exists. No G-BOX-OVERFIT harness has run. The box-head builder is still computing the VIS-1 sidecar on Thor. The evidence is landed:
+- the literature comparison: 4f02b08;
+- the box-head audit, with the prereg: 35e8207.
+
+### 15.1 G-BOX-OVERFIT: the prereg is binding, with ONE reconciliation
+
+**Prereg:** `TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/PREREG_G_BOX_OVERFIT.md`.
+- md5 `594c71196cc5bbd527fee40b2cb0e3f1`.
+- Frame set `raw/visibility/gbo_frameset.json`, md5 `b291404c36f83c3e397e3b90367e8e7b`.
+- Selector `code/gbo_select.py`, md5 `f9f93f92b60a979b581b8f78be2ec6db`.
+
+**Its literals stand as written:**
+- 16 TRAIN frames and 113 VIS-1 POSITIVES.
+- Batch 4 and N = 2,000 steps.
+- AdamW, lr 2e-4 constant, wd 0, seed 0.
+- The model is the LAUNCH box path with the LAUNCH loss.
+
+**PASS, at step 2,000, requires ALL of:**
+- AP@2 m BEV ≥ 0.90;
+- precision ≥ 0.90 AND recall ≥ 0.90 at the declared gate;
+- |Σ confident − 113| / 113 ≤ 0.10;
+- median centre error ≤ 0.30 m, median |Δl| + |Δw| ≤ 0.30 m, and median |Δz| ≤ 0.15 m;
+- greedy-TP class accuracy ≥ 0.90;
+- the presence term ≤ 0.25 × its step-0 value.
+
+**Must fail:**
+- `memory_zeros`: AP < 0.90;
+- `presence_w0`: criteria 2 and 3 fail.
+
+If either of them passes, the result is VOID. Controls C1–C4 must read their stated values.
+
+**Reconciliation with A9 R3 (binding, A9 wins).**
+- The prereg labels rows with vis_frac < 0.05 as "DROPPED". Under A9 R3 they are IGNORE, not background. An existing object is never taught as "no object".
+- There are 49 such rows on the 16 frames (the DROP column of the prereg's §2 table).
+- So control **C3 reads 113 POSITIVE and 77 IGNORE**: 28 in the 0.05–0.30 or < 100 px band, plus 49 with vis_frac < 0.05. The per-frame counts are POS and IGN + DROP of `gbo_frameset.json`.
+- The loss mask (presence weight 0 for an unmatched slot within 2 m BEV of an IGNORE row) and the DontCare scoring both use all 77.
+- Rows removed by `visible_target_filter` (outside the 120° field or the decode box) stay outside the target set, as in A9 R3.
+
+**Declared gate:** A9's rule, σ(presence logit) ≥ 0.5 on the focal head. The prereg's §4 phrase "the probability the declared objective makes calibrated" is read as exactly this rule. No calibration map is fitted.
+- ANALYTIC, from the literature package's `raw/presence_optimum_by_loss.json`: under the focal objective the 0.5 gate corresponds to a match belief of 0.75, so it is a conservative gate.
+- On memorised frames the focal optimum at belief 1 is p → 1, so criteria 2 and 3 are reachable.
+
+**Where:** Thor (canonical, where all 16 clips' payloads live), GPU. Its PASS record, the harness JSON with every arm and control, is bound to the launch commit (A9).
+
+### 15.2 Box checks at the launch smoke (G-LIVE), fixed now
+
+- **G-LIVE-PRES** (A9): at the end of the Thor smoke, on BOTH slot heads, the fraction of slots with σ ≥ 0.5 is **< 0.5**.
+  - refcv6 red arm: 71–99 of 100 slots per window at its gate.
+  - Every new loss term (focal presence, per-layer aux, VIS-1 masking) is finite and has gradient.
+- **NOT used: the audit's G-LIVE-COUNT** (Σ calibrated presence / positives in [0.7, 1.4]).
+  - It needs a calibrated probability. A9 R1 chose focal WITHOUT a calibration map, per the audit's and the literature's own "never both" rule.
+  - It is recorded as NOT APPLICABLE, never as passed.
+
+### 15.3 Eval-time monitors (Watch alarms, not stops) and informative readouts
+
+Keys follow P0 (A9) and `raw/LOGGING_SPEC_BOX.md`.
+
+- **Box confidence ratio, band [0.5, 1.5]** (the audit's G-LIVE-GATE, tightened to the literature's band). Ratio = confident slots (σ ≥ 0.5, detections greedy-matched to IGNORE rows excluded) / VIS-1 positives, per head. Outside the band is a Watch ALARM.
+  - refcv6 red arm: 3.40 (box3d) / 3.75 (agent) at 0.5.
+  - At its TRAIN P = R gate against VIS-1 positives: 1.77 / 1.55.
+- **INFORMATIVE only** (neither replaces the declared rule nor enters a bar):
+  - the P = R gate derived on a FIXED TRAIN calibration set (the audit's 256 windows of 64 TRAIN clips), with P/R there;
+  - the class-prior-corrected argmax (logit − ln w_c of the stamped class weights) next to the raw argmax. The weights span 1,298:1, and protruding_object is predicted 420 times against 19 GT among matched slots.
+
+### 15.4 The audit's other proposals, and where they go
+
+Each stays DEFERRED with A9's list and carries its MEASURED support for the next arm:
+- **Duplicates** (18 % of FPs at 0.5, 25 % at the P = R gate) → R6, denoising queries.
+- **Mislocalised 2–5 m** (45 % of FPs; presence carries no localisation quality, Spearman −0.016) → R5 plus a quality-aware presence target.
+- **Class tilt** → R8.
+- **M17 re-ruled after VIS-1 on TRAIN** → A9's 300 stays. It is ≥ 2× the pre-VIS-1 maximum of 120; VIS-1 only lowers the count.
