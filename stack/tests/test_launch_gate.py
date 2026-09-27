@@ -430,7 +430,8 @@ def _live(steps, terms=None, rows=None, grads=None, **kw):
     return LG.judge_live(terms if terms is not None else _terms(), kw.pop("problems", []),
                          steps, expect_steps=n, summary={"done": True, "step": n},
                          train_rows=rows, grads=grads, prior=kw.pop("prior", None),
-                         exit_msg=kw.pop("exit_msg", None))
+                         exit_msg=kw.pop("exit_msg", None),
+                         admitted_dead=kw.pop("admitted_dead", None))
 
 
 def test_G_LIVE_the_F3_defect_as_shipped_FAILS_naming_cascade():
@@ -458,6 +459,70 @@ def test_G_LIVE_a_dead_leaf_module_FAILS():
          "dead_groups": [{"group": "core.decoder.cascade.control_heads.0", "numel": 10}]}
     reasons, _ = _live(_steps(30), grads=g)
     assert any("core.decoder.cascade.control_heads.0" in r for r in reasons)
+
+
+# ---- refcv7 (PI 2026-09-27 ~20:55): the 10 dead groups of the launch smoke, admitted by FLAG ---- #
+_R7_DEAD_TEN = ("core.strategic.gru", "core.strategic.proj", "nav_to_str", "str_goal_head",
+                "gstr_embed", "gstr_film", "core.decoder.ctx_to_cond", "core.route_head",
+                "core.decoder.lat_to_anchor", "core.decoder.lon_to_anchor")
+
+
+def _r7_admitted(argv):
+    """exactly as the G-LIVE call site filters the profile table"""
+    return {g: why for g, flag, why in LG.PROFILES["refcv7"]["live_dead_admitted"]
+            if LG.has_flag(argv, flag)}
+
+
+def test_G_LIVE_refcv7_profile_admits_EXACTLY_the_ten_measured_dead_groups():
+    rows = LG.PROFILES["refcv7"]["live_dead_admitted"]
+    assert tuple(sorted(g for g, _f, _w in rows)) == tuple(sorted(_R7_DEAD_TEN))
+    assert {g: f for g, f, _w in rows} == {
+        "core.strategic.gru": "--no-strategic", "core.strategic.proj": "--no-strategic",
+        "nav_to_str": "--no-strategic", "str_goal_head": "--no-strategic",
+        "gstr_embed": "--no-strategic", "gstr_film": "--no-strategic",
+        "core.decoder.ctx_to_cond": "--no-strategic", "core.route_head": "--no-strategic",
+        "core.decoder.lat_to_anchor": "--graft-tac8-prior",
+        "core.decoder.lon_to_anchor": "--graft-tac8-prior"}
+    assert all(w for _g, _f, w in rows)                     # every row carries its reason
+    assert "live_dead_admitted" not in LG.PROFILES["refcv6"]   # other profiles are unchanged
+
+
+def test_G_LIVE_the_ten_dead_groups_PASS_on_the_launch_flags():
+    dead = [{"group": g, "numel": 7} for g in _R7_DEAD_TEN]
+    reasons, det = _live(_steps(30), grads={"n_trainable_params": 20, "dead_groups": dead,
+                                            "nonfinite_params": []},
+                         admitted_dead=_r7_admitted(["--no-strategic", "--graft-tac8-prior"]))
+    assert not any("ZERO gradient" in r for r in reasons)
+    assert sorted(det["dead_groups_admitted"]) == sorted(_R7_DEAD_TEN)
+
+
+def test_G_LIVE_RED_admission_is_void_without_its_flag():
+    dead = [{"group": g, "numel": 7} for g in _R7_DEAD_TEN]
+    grads = {"n_trainable_params": 20, "dead_groups": dead, "nonfinite_params": []}
+    r1, _ = _live(_steps(30), grads=grads, admitted_dead=_r7_admitted(["--graft-tac8-prior"]))
+    assert any("8 declared-trainable leaf module(s) received ZERO gradient" in r for r in r1)
+    r2, _ = _live(_steps(30), grads=grads, admitted_dead=_r7_admitted(["--no-strategic"]))
+    assert any("2 declared-trainable leaf module(s) received ZERO gradient" in r for r in r2)
+
+
+def test_G_LIVE_RED_any_OTHER_dead_group_still_FAILS():
+    dead = [{"group": g, "numel": 7} for g in _R7_DEAD_TEN] + [
+        {"group": "tac_decoder_v6.lat_head", "numel": 257}]
+    reasons, _ = _live(_steps(30), grads={"n_trainable_params": 21, "dead_groups": dead,
+                                          "nonfinite_params": []},
+                       admitted_dead=_r7_admitted(["--no-strategic", "--graft-tac8-prior"]))
+    assert any("1 declared-trainable leaf module(s) received ZERO gradient" in r
+               and "tac_decoder_v6.lat_head" in r for r in reasons)
+
+
+def test_smoke_runs_with_the_TRAINER_argv_as_the_process_argv():
+    """MEASURED 2026-09-27: the trainer stamps config.json['argv'] = sys.argv[1:]; in-process it
+    recorded the gate's own 'check --ctx ...' and G-EVAL crashed. The smoke must set sys.argv."""
+    import inspect
+    src = inspect.getsource(LG.run_smoke)
+    assert 'pat.set(sys, "argv"' in src
+    i_set, i_main = src.index('pat.set(sys, "argv"'), src.index("T.main(list(argv))")
+    assert i_set < i_main                                    # set BEFORE the trainer runs
 
 
 def test_G_LIVE_a_constant_loss_is_a_disconnected_graph():

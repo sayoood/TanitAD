@@ -518,6 +518,35 @@ PROFILES: dict[str, dict] = {
         },
         #: the BOX-HEAD requirement BUILT (G-DVB): the box-head package's guard -- the A9 levers ON in argv
         #: AND built on BOTH slot heads, 300 queries, the learned reference points (A14.1)
+        #: ⭐ G-LIVE's ADMITTED dead groups (PI 2026-09-27 ~20:55: "We dont need these modules for
+        #: refcv7"; MEASURED by the launch smoke on 6fa5e8b: exactly these 10 of 474 leaf groups took
+        #: ZERO gradient). Each is BYPASSED BY CONSTRUCTION under a flag of the launch argv and kept
+        #: BUILT for strict checkpoint loads; it is admitted ONLY while its flag is in the argv, with its
+        #: reason in the evidence -- any OTHER dead group still FAILS G-LIVE. The model-side freeze +
+        #: declaration (tanitad/models/_gradreach, batch 3's design) is owed at the next restart: it
+        #: touches code the binding runs recorded.
+        live_dead_admitted=(
+            ("core.strategic.gru", "--no-strategic",
+             "the strategic context encoder; --no-strategic (PI 2026-09-06) bypasses the layer, never deletes it"),
+            ("core.strategic.proj", "--no-strategic",
+             "the strategic context projection; bypassed with the layer"),
+            ("nav_to_str", "--no-strategic",
+             "nav -> strategic ctx; the nav command still reaches tactical (nav_to_tac) and operative (meas_in)"),
+            ("str_goal_head", "--no-strategic",
+             "the strategic goal head; its hindsight loss is off with the layer"),
+            ("gstr_embed", "--no-strategic",
+             "S-BYPASS-2: the strategic goal's FiLM on the tactical latent is skipped"),
+            ("gstr_film", "--no-strategic",
+             "S-BYPASS-2: the strategic goal's FiLM on the tactical latent is skipped"),
+            ("core.decoder.ctx_to_cond", "--no-strategic",
+             "S-BYPASS-1: the strategic ctx is not handed to the operative decoder"),
+            ("core.route_head", "--no-strategic",
+             "the strategic route read-out; route_loss_applied is False under --no-strategic"),
+            ("core.decoder.lat_to_anchor", "--graft-tac8-prior",
+             "refcv6 4: the tactical 8x8 posterior REPLACES the image-only lat3 prior (refc.py refuses both)"),
+            ("core.decoder.lon_to_anchor", "--graft-tac8-prior",
+             "refcv6 4: the tactical 8x8 posterior REPLACES the image-only lon3 prior (refc.py refuses both)"),
+        ),
         box_required={"module": "tanitad.train.box_head_guard", "fn": "check_refcv7_box_required"},
         dvb_forbid_kinds=("drivort",),
         forbidden_levers=_DRIVORT_OFF,
@@ -2305,8 +2334,10 @@ def declared_terms(T, args) -> tuple[list[dict], list[str]]:
 
 def judge_live(terms: list[dict], problems: list[str], steps: list[dict], *,
                expect_steps: int, summary: dict | None, train_rows: list[dict],
-               grads: dict, prior: dict | None, exit_msg: str | None) -> tuple[list[str], dict]:
-    """The pure G-LIVE verdict. `steps`: one record per TRAINING `compute_losses_v3` call:
+               grads: dict, prior: dict | None, exit_msg: str | None,
+               admitted_dead: dict[str, str] | None = None) -> tuple[list[str], dict]:
+    """The pure G-LIVE verdict. `admitted_dead`: {leaf group: reason} -- the profile's
+    `live_dead_admitted` rows whose FLAG is in the launch argv (the caller filters by argv). `steps`: one record per TRAINING `compute_losses_v3` call:
     {"keys": [...], "nonfinite": [...], "vals": {k: float}}."""
     reasons = list(problems)
     det: dict[str, Any] = {"n_train_steps_seen": len(steps), "expect_steps": expect_steps}
@@ -2369,9 +2400,13 @@ def judge_live(terms: list[dict], problems: list[str], steps: list[dict], *,
     if grads.get("n_trainable_params", 0) == 0:
         reasons.append("no trainable parameter was observed at opt.step -- the capture missed")
     if grads.get("dead_groups"):
-        dg = grads["dead_groups"]
-        reasons.append(f"{len(dg)} declared-trainable leaf module(s) received ZERO gradient over "
-                       f"the whole smoke: {[d['group'] for d in dg[:10]]}")
+        adm = admitted_dead or {}
+        dg = [d for d in grads["dead_groups"] if d["group"] not in adm]
+        det["dead_groups_admitted"] = {d["group"]: adm[d["group"]]
+                                       for d in grads["dead_groups"] if d["group"] in adm}
+        if dg:
+            reasons.append(f"{len(dg)} declared-trainable leaf module(s) received ZERO gradient over "
+                           f"the whole smoke: {[d['group'] for d in dg[:10]]}")
     if grads.get("nonfinite_params"):
         reasons.append(f"non-finite gradients on {len(grads['nonfinite_params'])} parameter(s): "
                        f"{grads['nonfinite_params'][:5]}")
@@ -2841,6 +2876,11 @@ def run_smoke(ctx: Ctx, T, argv: list[str], *, snapshot: str) -> dict:
             return keep, tele
         pat.set(_v6sel.SpeedCeilingFilter, "forward", scf_wrap)
     _apply_smoke_arm(ctx, T, pat, argv)
+    # ⛔ MEASURED 2026-09-27 on Thor (6fa5e8b): the trainer stamps `config.json["argv"] =
+    # sys.argv[1:]`, and in-process that was the GATE's own command line ("check --ctx ..."), so
+    # G-EVAL crashed rebuilding from the smoke's record. The smoke runs as a launch would: the
+    # process argv IS the trainer argv while T.main runs (restored by `pat.restore()`).
+    pat.set(sys, "argv", [str(getattr(T, "__file__", None) or "refc_v3_train.py")] + list(argv))
     t0 = time.time()
     try:
         T.main(list(argv))
@@ -4635,9 +4675,13 @@ def job_smoke(ctx: Ctx, checks: list[str]) -> dict[str, dict]:
         import torch
         ev = evs["G-LIVE"]
         ev["inputs_read"] = all_inputs
+        admitted = {g: f"{why} [admitted while {flag} is in the argv]"
+                    for g, flag, why in ctx.prof.get("live_dead_admitted", ())
+                    if has_flag(ctx.argv, flag)}
         reasons, det = judge_live(terms, problems, run1["steps"], expect_steps=steps,
                                   summary=summ1, train_rows=train_rows(rows1), grads=gt,
-                                  prior=run1["prior"], exit_msg=run1.get("exit"))
+                                  prior=run1["prior"], exit_msg=run1.get("exit"),
+                                  admitted_dead=admitted)
         det.update({"smoke_argv": argv1, "run_dir": str(run_dir), "elapsed_s": run1["elapsed_s"],
                     "declared_terms": terms, "eval_calls": run1["eval_calls"],
                     "out_keys": run1["out_keys"][:120],
