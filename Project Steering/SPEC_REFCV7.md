@@ -734,3 +734,15 @@ The test's purpose (A3, the PI) is that the 10 cm head CAN learn every class. Th
 3. The BINDING runs follow on the launch closure (A11): box A17 and map A18, with every arm.
 
 **If edge still FAILS at 3,000:** the second near refine block is the next lever, and it goes to the PI.
+
+### 23.1 Correction (2026-09-27; its time is its landing commit): three PI-answer times in A17, A17.1 and A18 were written from memory, and they are wrong
+
+The session transcript's timestamps are the record (UTC; Berlin is UTC+2):
+
+| amendment | as written | the record |
+|---|---|---|
+| A17 (§22) | "PI, 2026-09-27 ~13:40 in chat" | asked 13:34 Berlin (11:34:03Z), **answered 15:18 Berlin (13:18:44Z)** |
+| A17.1 (§22.1) | "PI, 2026-09-27 ~15:44"; heading "~15:45" | asked 15:30 Berlin (13:30:15Z), **answered 15:50 Berlin (13:50:46Z)**; landed 2ac0bfb at 15:51 |
+| A18 (§23) | "PI, 2026-09-27 ~16:53"; heading "~16:55" | asked 16:20 Berlin (14:20:43Z), **answered 16:24 Berlin (14:24:23Z)**; landed 37086c3 at 16:25 |
+
+**Nothing else changes.** The PI's words, the options offered, and each amendment's order relative to its arm's first number are as written. RETR-2026-09-27-AMENDMENT-TIMES logs the class.

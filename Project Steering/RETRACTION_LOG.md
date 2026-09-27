@@ -17862,3 +17862,17 @@ component name, so the formula read as the benchmark's own.
 **Consequence:** none for the lever order. A15 stands on the measured shape argument (line classes lag area classes by 4.2× in CE ratio at near-equal weight), and (4) stays the next lever. The SPEC carries a dated correction, §20.1.
 
 **Rule:** a claim that a loss-weighting lever "cannot move" a class must be stated in the RELATIVE weight (vs the dominant classes), not the class's own weight.
+
+### RETR-2026-09-27-AMENDMENT-TIMES: three PI-answer times in SPEC_REFCV7 A17, A17.1 and A18
+
+**Retracted:** "~13:40" (A17, §22), "~15:44" (A17.1, §22.1) and "~16:53" (A18, §23).
+- The record is the session transcript. The PI answered at **15:18, 15:50 and 16:24 Berlin** (13:18:44Z, 13:50:46Z and 14:24:23Z).
+- The questions were asked at 13:34, 15:30 and 16:20 Berlin.
+
+**Class:** A TIME WRITTEN FROM MEMORY, NOT READ FROM THE RECORD.
+- The three errors have no common offset: −1 h 39 min, −6 min and +29 min. So this is not a UTC/Berlin slip that a fixed correction would cure.
+- A "~" marked each value as approximate, but that does not make an unchecked number admissible.
+
+**Consequence:** none for the protocol. Each amendment still precedes its arm's first number, and SPEC_REFCV7 carries the correction as §23.1.
+
+**Rule:** the time of a PI decision in a register is read from the transcript or the landing commit, never written from memory.
