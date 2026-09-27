@@ -263,3 +263,55 @@ Registered BEFORE any NEW-2 model number exists. The NEW-2 build record is `…/
    - Beside them, `eval_map_hires_iouraw_*` (the raw decision rule) and `eval_map_hires_lshare_*` (per-class loss share), 40 each.
    - The refcv7 Watch shows all of them plus a thin-class alarm tile.
 4. **Defect found and fixed in the build, recorded:** under `prior_corrected`, a class with weight 0 was decided on EVERY cell (z − log 0 = +∞), in both the torch and the numpy rule. It is now never decided, and red arms pin it.
+
+## 14. Amendment A9 (2026-09-27 ~02:35 Berlin): the box head is REFINED following proven reference heads, and detection is measured
+
+**PI, verbatim (2026-09-27 ~01:15):** *"based on the compariosn with proven refernce heads, refine our bb head and validate it"*. Registered BEFORE any refcv7 box number exists. This amends A1's "box3d unchanged".
+
+**Evidence:**
+- the literature comparison, `TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-box-head-literature/RESULT.md`: DETR3D, PETR, BEVFormer, StreamPETR and UniAD configs; Efficient DETR; DETR; CityPersons; KITTI; MonoDLE. Primary sources are read online; banking them awaits the PI.
+- the box-head audit, `…/2026-09-26-box-head-audit/`.
+
+**MEASURED on refcv6@38k:**
+- presence AUROC 0.83;
+- at the 0.5 gate, 1,899 confident slots for 509 targets: precision 0.15, recall 0.57, best F1 0.30;
+- no visibility information anywhere in the labels; 26 % of targets under 10 % visible on a representative sample, 56 % on the crowded clips;
+- 0 detection metrics logged in 38k steps.
+
+The changes apply to BOTH slot heads (box3d and the planner's agent head), which share `AgentSlotDecoder`:
+
+| id | change | evidence (published / measured) |
+|---|---|---|
+| **R1** | **Sigmoid focal presence loss** (α 0.25, γ 2, weight 2.0, normalised per matched GT), a **focal matching cost**, and a **prior of 0.01**. This REPLACES the BCE with `NO_OBJECT_W` 0.1. The audit's ln 10 tilt correction is NOT also applied. | Every nuScenes camera head read (5/5) uses focal. Under our BCE the 0.5 gate fires at a 9.1 % match belief. |
+| **R2** | **Per-layer supervision:** shared heads after each of the 3 decoder layers, re-matched per layer (deep supervision). 0 parameters. | Efficient DETR at 3 layers: removing the per-layer loss costs −11.5 AP (39.8 → 28.3). |
+| **R3** | **A camera-visibility supervision set (VIS-1, IGNORE semantics).** One function is used for training targets AND eval scoring, applied after `visible_target_filter`. | 26 % / 56 % of targets under 10 % visible (MEASURED z-buffer). CityPersons and KITTI DontCare never use unlabelable objects as negatives. |
+| **R4** | **300 queries** (M17 re-ruled; +51,200 parameters). The observed maximum is 120 targets per window, so the rule of ≥ 2× the maximum holds before VIS-1 is applied. | DETR: 100 queries find every instance only up to ~50. The nuScenes heads use 900. M17's zero-drop rule was already broken at 100. |
+| **T1** | **heavy_truck:** its z/height regression term is DROPPED (label defect). No label is invented. | MEASURED: truck bottoms at −1.15 m (LiDAR clip) and −0.63 m pooled; car and person are fine. |
+
+**R3, VIS-1 in detail:**
+- **POSITIVE:** vis_frac ≥ 0.30 AND ≥ 100 visible px.
+- **IGNORE:** every other real GT object. That covers vis 0.05–0.30, too few pixels, AND vis < 0.05.
+  - ⚠️ This deviates from the audit's proposal, which made vis < 0.05 background. An existing object must never be taught as "no object".
+  - IGNORE rows are excluded from matching. An unmatched slot whose centre is within 2 m (BEV) of an IGNORE row gets presence weight 0.
+  - At eval, a detection greedy-matched to an IGNORE row leaves the PR count (DontCare).
+- vis_frac is a per-pixel ray/cuboid z-buffer over the clip's own camera and extrinsics, with every GT cuboid as an occluder. It is pre-computed ONCE for train and eval on Thor, as a sidecar keyed by clip sha12, window and track, with its sha256 recorded in config.json.
+
+**Deferred, and named** so the next arm can pick them up:
+- R5, geometry-grounded image-token positions: validate on the ladder first;
+- R6, denoising queries;
+- R7, a detection warm start: a PI decision;
+- R8, class-weight reform (1,299:1 today);
+- R9, a planner-gradient detach arm.
+
+**Detection is MEASURED (P0), with pre-registered bars.**
+- **In-run logging, every eval:**
+  - mAP at 0.5 / 1 / 2 / 4 m BEV centre distance, per class and per band (0–20 / 20–40 / 40–60 m), on VIS-1 positives with IGNORE as DontCare;
+  - presence AUROC;
+  - confident-slots / VIS-1-positives ratio;
+  - P/R at the declared decision rule.
+- **BAR-B7-1:** box3d mAP@2 m (VIS-1, pooled classes): refcv7 − refcv6@38k > 0, separated (paired episode-cluster bootstrap). refcv6@38k is re-scored under the same VIS-1 rule.
+- **BAR-B7-2:** F1 at the declared decision rule (focal, gate 0.5): refcv7 − refcv6@38k at refcv6's best-F1 gate > 0, separated.
+- **G-BOX-OVERFIT (launch prerequisite):** can the head learn to detect on ~16 fixed real TRAIN frames?
+  - Literal thresholds, must-fail arms (e.g. image memory zeroed; presence loss off) and controls, pre-registered by the box-head audit BEFORE any run.
+  - Its PASS record is bound to the launch commit.
+- **G-LIVE presence sanity:** at the end of the Thor smoke the presence logits are not saturated: the fraction of slots with p > 0.5 < 0.5, with the literal set in the gate profile. Every new loss term (focal presence, per-layer aux, VIS-1 masking) is finite and has gradient.
