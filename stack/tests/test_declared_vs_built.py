@@ -263,10 +263,12 @@ def test_GDVB_every_trainer_flag_has_an_entry_and_every_entry_is_well_formed():
     # --map-hires-decision-rule, and A6/A7's --map-hires-x-max-m, --map-hires-y-half-m,
     # --map-hires-grad-ckpt, --bev-source, --bev-planner-crop-m; registered by
     # map_head_hires.register_dvb_levers)
-    assert len(dvb.REGISTRY) == 213
+    # + NEW-2 R2's --map-hires-near-lift-m (SPEC_REFCV7 A12, the 0.1 m near-range lift)
+    assert len(dvb.REGISTRY) == 214
     for d in ("map_hires", "w_map_hires", "map_hires_class_weights",
               "map_hires_decision_rule", "map_hires_x_max_m", "map_hires_y_half_m",
-              "map_hires_grad_ckpt", "bev_source", "bev_planner_crop_m"):
+              "map_hires_grad_ckpt", "bev_source", "bev_planner_crop_m",
+              "map_hires_near_lift_m"):
         assert dvb.REGISTRY[d].kind == ("loss" if d == "w_map_hires" else "built"), d
     for dest, lever in dvb.REGISTRY.items():
         assert lever.kind in dvb.KINDS, dest

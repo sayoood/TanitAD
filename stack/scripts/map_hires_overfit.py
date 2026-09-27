@@ -29,6 +29,17 @@ ARMS (all from ONE shared init):
                       still memorise 16 frames, so it may PASS -- not gated);
 * ``frozen_trunk`` -- informative: the branch alone trains (identical to
                       ``s8_detached`` here, since the trunk has no other loss).
+* ``near_zeros``   -- NEW-2 R2 (SPEC_REFCV7 A12): the 0.1 m near lift samples
+                      ``zeros_like(fmap_s8)`` while the 0.25 m path reads the real map,
+                      i.e. the NEW-2 arm plus a skip that can only learn constants; gated
+                      by an A12 spec's ``must_fail`` row (non-drivable edge). Needs
+                      ``--near-lift-m > 0``.
+
+THE NEAR LIFT (``--near-lift-m``, NEW-2 R2 / A12): 0 (default) = the NEW-2 branch as landed
+(the prereg's MAIN); > 0 = the branch built with ``MapHiresConfig.near_lift_x_m``, every
+other literal unchanged. Its zero-initialised skip is built LAST, so the record also carries
+the branch fingerprint WITHOUT it (``branch_init_sha256_without_near``), which must equal the
+NEW-2 MAIN's for the same seed.
 
 CONTROLS on the same scored cells (§7): C1 drivable everywhere (IoU_drivable =
 n_drivable / n_scored to 1e-9, every other class 0, and it FAILS §6); C2 logits =
@@ -76,7 +87,7 @@ from tanitad.data import semantic_map_gt_fine as F              # noqa: E402
 from tanitad.data.semantic_map_gt_fine import EXTENT_REFCV7, MapExtent  # noqa: E402
 from tanitad.models import map_head_hires as H                  # noqa: E402
 
-ARMS = ("healthy", "lane_w0", "s8_zeros", "s8_detached", "frozen_trunk")
+ARMS = ("healthy", "lane_w0", "s8_zeros", "s8_detached", "frozen_trunk", "near_zeros")
 INFORMATIVE_KNOWN = ("s8_detached", "frozen_trunk", "refcv6_head_05m")
 LANE = 2
 DRIVABLE = 1
@@ -310,10 +321,13 @@ def _forward(trunk, branch, data, idx, device, arm):
     xn = trunk.normalise(x)
     s8 = trunk.s8_from_normalised(xn, torch.arange(x.shape[0]))
     if arm == "s8_zeros":
-        s8 = torch.zeros_like(s8)
+        s8 = torch.zeros_like(s8)                   # BOTH lifts (the near lift reads s8 too)
     elif arm in ("s8_detached", "frozen_trunk"):
         s8 = s8.detach()
-    out = branch(s8, data["grid"][idx].to(device), data["valid"][idx].to(device))
+    kw = {}
+    if arm == "near_zeros":                         # NEW-2 R2: only the near lift sees zeros
+        kw["near_source"] = torch.zeros_like(s8)
+    out = branch(s8, data["grid"][idx].to(device), data["valid"][idx].to(device), **kw)
     return out["map_hires_logits"], H.lift_valid_to_fine(out["map_hires_lift_valid"])
 
 
@@ -347,7 +361,7 @@ def run_arm(arm: str, trunk0, branch0, data: dict, spec: dict, class_weight,
     w_loss = class_weight.clone().to(device)
     if arm == "lane_w0":
         w_loss[LANE] = 0.0
-    trunk_trains = arm in ("healthy", "lane_w0", "s8_zeros")
+    trunk_trains = arm in ("healthy", "lane_w0", "s8_zeros", "near_zeros")
     params = list(branch.parameters()) + (_s8_params(trunk) if trunk_trains else [])
     trunk_before = [p.detach().clone() for p in _s8_params(trunk)]
     opt = torch.optim.AdamW(params, lr=float(spec.get("lr", 1e-3)), betas=(0.9, 0.999),
@@ -525,6 +539,18 @@ def _fingerprint(module) -> str:
     return h.hexdigest()
 
 
+def _fingerprint_without(module, prefix: str) -> str:
+    """:func:`_fingerprint` over the state_dict minus the keys under ``prefix`` -- the NEW-2
+    R2 branch's shared parameters, comparable with the NEW-2 MAIN's fingerprint."""
+    h = hashlib.sha256()
+    for k, v in sorted(module.state_dict().items()):
+        if k.startswith(prefix):
+            continue
+        h.update(k.encode())
+        h.update(v.detach().cpu().contiguous().numpy().tobytes())
+    return h.hexdigest()
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--spec", required=True, type=Path)
@@ -546,6 +572,9 @@ def main(argv=None) -> int:
                     help="the LAUNCH map extent ahead (SPEC_REFCV7 §12: 100)")
     ap.add_argument("--y-half-m", type=float, default=EXTENT_REFCV7.y_half_m,
                     help="the LAUNCH map extent to each side (SPEC_REFCV7 §12: 30)")
+    ap.add_argument("--near-lift-m", type=float, default=0.0,
+                    help="NEW-2 R2 (SPEC_REFCV7 A12): the 0.1 m near lift over x in [0, M) m "
+                         "(MapHiresConfig.near_lift_x_m); 0 = the NEW-2 branch as landed")
     ap.add_argument("--grad-ckpt", choices=("on", "off"), default="on",
                     help="the launch decoder's checkpointing (SPEC_REFCV7 §12 item 4)")
     ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
@@ -564,6 +593,13 @@ def main(argv=None) -> int:
     for x in list(spec.get("must_fail") or {}) + ["healthy"]:
         if x not in arms:
             raise SystemExit(f"⛔ the gated arm {x!r} is not in --arms")
+    if "near_zeros" in arms and not float(a.near_lift_m) > 0.0:
+        raise SystemExit("⛔ the near_zeros arm needs --near-lift-m > 0: without a near lift "
+                         "it is MAIN itself and cannot be a regression arm")
+    if spec.get("near_lift_m") is not None \
+            and float(spec["near_lift_m"]) != float(a.near_lift_m):
+        raise SystemExit(f"⛔ the spec registers near_lift_m {spec['near_lift_m']}, "
+                         f"--near-lift-m is {a.near_lift_m}")
     from tanitad.models import timm_trunk as TT
     from tanitad.models.trunk_shapes import frame_for_width
     tsp = spec.get("trunk") or {}
@@ -582,11 +618,14 @@ def main(argv=None) -> int:
     hcfg = H.MapHiresConfig(w_map_hires=1.0, x_max_m=float(extent.x_max_m),
                             y_half_m=float(extent.y_half_m),
                             grad_ckpt=(a.grad_ckpt == "on"),
+                            near_lift_x_m=float(a.near_lift_m),
                             decision_rule=spec["thresholds"]["decision_rule"],
                             class_weights_sha256=cw_stamp.get("sha256") or "")
     branch = H.MapHiresBranch(hcfg, d_image=trunk.s8_dim, image_hw=trunk.s8_shape)
     fp = {"trunk_init_sha256": _fingerprint(trunk),
           "branch_init_sha256": _fingerprint(branch)}
+    if getattr(branch, "near", None) is not None:
+        fp["branch_init_sha256_without_near"] = _fingerprint_without(branch, "near.")
     frame = frame_for_width(int(hw[1]), int(hw[0]))
     data = load_frames(spec, a.v2_cache, a.gt_root, a.extrinsics, frame, hcfg, eq,
                        cam_ts_dir=a.cam_ts_dir)
@@ -605,6 +644,7 @@ def main(argv=None) -> int:
            "launch_commit": a.launch_commit, "launch_argv_sha256": a.launch_argv_sha256,
            "class_weights": cw_stamp, "decision_rule": spec["thresholds"]["decision_rule"],
            "extent": extent.as_dict(), "branch_config": hcfg.as_dict(),
+           "near_lift_m": float(a.near_lift_m),
            "tap": tap, "trunk_levers": {k: tsp.get(k) for k in
                                         ("chunk_ckpt", "bf16", "channels_last", "fold_bn")},
            "fingerprints": fp, "branch_params": branch.param_breakdown(),

@@ -1560,6 +1560,7 @@ def _pin_map_hires(cfg, args) -> None:
     xm = getattr(args, "map_hires_x_max_m", None)
     yh = getattr(args, "map_hires_y_half_m", None)
     crop = getattr(args, "bev_planner_crop_m", None)
+    nl = getattr(args, "map_hires_near_lift_m", None)       # NEW-2 R2 (A12)
     if mode not in ("off", "on"):
         raise SystemExit(f"[v3] ⛔ --map-hires {mode!r} not in (off, on)")
     if src not in _perc.BEV_SOURCES:
@@ -1586,6 +1587,7 @@ def _pin_map_hires(cfg, args) -> None:
                                    ("--map-hires-x-max-m", xm),
                                    ("--map-hires-y-half-m", yh),
                                    ("--map-hires-grad-ckpt", ck),
+                                   ("--map-hires-near-lift-m", nl),
                                    ("--bev-planner-crop-m", crop),
                                    ("--bev-source",
                                     None if src == _perc.BEV_SOURCES[0] else src))
@@ -1649,6 +1651,17 @@ def _pin_map_hires(cfg, args) -> None:
             "the refcv6 120 x 64 grid, and another crop reaches them SILENTLY. A "
             "different window is a PI decision." % (list(crop),
                                                     list(_mhr.PLANNER_CROP_DEFAULT)))
+    if nl is not None:
+        # ⭐ NEW-2 R2 (SPEC_REFCV7 A12): the 0.1 m near lift -- MapHiresConfig validates the
+        # same rules at build time; refused here, before config.json is written.
+        _nl = float(nl)
+        _k = _nl / _mhr.NEAR_LIFT_STEP_M
+        if not math.isfinite(_nl) or _nl < 0.0 or abs(_k - round(_k)) > 1e-9 \
+                or _nl > float(ext.x_max_m) + 1e-9:
+            raise SystemExit(
+                "[v3] ⛔ --map-hires-near-lift-m %r: the 0.1 m near lift covers x in [0, M) "
+                "m and M must be a finite multiple of %g m, >= 0, and at most the map "
+                "extent (%g m). 0 = no near lift." % (nl, _mhr.NEAR_LIFT_STEP_M, ext.x_max_m))
     if not cw:
         raise SystemExit(
             "[v3] ⛔ --map-hires on needs --map-hires-class-weights <json>: the "
@@ -7730,6 +7743,7 @@ def train(args) -> dict:
             w_map_hires=float(args.w_map_hires),
             x_max_m=float(_hext.x_max_m), y_half_m=float(_hext.y_half_m),
             grad_ckpt=bool(_mhr.declared_grad_ckpt(args)),
+            near_lift_x_m=float(_mhr.declared_near_lift_m(args)),
             class_weights_sha256=str(_hcws["sha256"]),
             decision_rule=str(getattr(args, "map_hires_decision_rule",
                                       _mhr.DECISION_RULES[0])))
@@ -7771,9 +7785,9 @@ def train(args) -> dict:
             "loss": "hard-label CE, 8 classes, ignore_index 255, class-weighted",
         }
         print("[v3] refcv7 map-hires: w=%.4g, extent %g m x +-%g m -> %s at 0.1 m, "
-              "grad_ckpt %s, tap %s, params %s, class weights sha256 %s"
+              "grad_ckpt %s, near-lift %g m, tap %s, params %s, class weights sha256 %s"
               % (model._w_map_hires, _hext.x_max_m, _hext.y_half_m,
-                 list(_hcfg.out_hw), _hcfg.grad_ckpt, _s8,
+                 list(_hcfg.out_hw), _hcfg.grad_ckpt, float(_hcfg.near_lift_x_m), _s8,
                  model._map_hires.param_breakdown(), _hcws["sha256"][:12]), flush=True)
     model._perception = None
     model._lift_bank = None
@@ -10394,6 +10408,14 @@ def build_parser() -> argparse.ArgumentParser:
                     help="the 10 cm map's extent to EACH SIDE, metres (a multiple of "
                          "0.5 m, >= 16). Unset = %g (SPEC_REFCV7 §12)."
                          % _sem_fine.EXTENT_REFCV7.y_half_m)
+    # ⭐ NEW-2 R2 (SPEC_REFCV7 A12): the 0.1 m NEAR-RANGE LIFT into the 10 cm decoder.
+    g6.add_argument("--map-hires-near-lift-m", type=float, default=None,
+                    help="NEW-2 R2 (SPEC_REFCV7 A12): ALSO lift the stride-8 map at the 10 cm "
+                         "label cell over x in [0, M) m, full width, and ADD it to the 10 cm "
+                         "decoder's upsampled input on those rows. Map-only: the shared "
+                         "0.25 m encoder and the planner pool are untouched. A multiple of "
+                         "0.5 m, at most the map extent. Unset / 0 = no near lift (NEW-2 as "
+                         "landed).")
     g6.add_argument("--map-hires-grad-ckpt", choices=("on", "off"), default=None,
                     help="recompute the 10 cm branch's encoder and decoder in backward. "
                          "Unset = ON under --map-hires on (SPEC_REFCV7 §12 item 4: the "

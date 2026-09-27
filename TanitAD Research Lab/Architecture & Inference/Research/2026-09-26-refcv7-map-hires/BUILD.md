@@ -216,3 +216,168 @@ python $CODE/stack/scripts/map_hires_overfit.py --spec "<audit>/raw/gmo_spec.jso
   --extrinsics $D/refcv6_train_eval139_extrinsics.json \
   --launch-commit <sha> --launch-argv-sha256 <sha> --out $OUT/g_map_overfit
 ```
+
+## 11. The TRAIN class weights (MEASURED) and the early, NON-BINDING G-MAP-OVERFIT (Thor)
+
+**The sqrt_mf TRAIN weights at 100 × ±30** were computed on Thor, 2026-09-27 04:14 Berlin, by the candidate's own `compute_map_class_weights.py` (git blob `8012922f…`, the landed batch-1 blob).
+
+- Coverage: 4,369 of 4,369 train clips (coverage 1.0), 878,016 frames, 382.3 G seen cells, 2,518 s.
+- File: `/home/nvidia/gmo_early_0327/weights/map_hires_class_weights_train_100x30.json`, sha256 `d70dec80…`, copied to `raw/`. Its `PROVENANCE.json` (sha256, script blob, argv) sits beside it.
+- The Master Mind copies it to the canonical `/home/nvidia/data/refcv7/` only if the landed blob and argv match.
+
+| class | share of seen cells | f_c (presence-normalised) | **w (sqrt_mf)** |
+|---|---:|---:|---:|
+| seen, no class | 45.09 % | 0.4509 | **0.141** |
+| drivable | 21.13 % | 0.2113 | **0.206** |
+| lane / road line | 0.92 % | 0.0102 | **0.939** |
+| crosswalk | 0.33 % | 0.0078 | **1.074** |
+| arrow / text | 0.04 % | 0.0010 | **2.957** |
+| non-drivable edge | 0.36 % | 0.0036 | **1.571** |
+| hatched | 0.05 % | 0.0019 | **2.153** |
+| sidewalk / verge | 32.09 % | 0.3295 | **0.165** |
+
+median f = 0.00897; nothing clipped (the max is 2.96, far below the clip of 25). MEASURED.
+
+**The early G-MAP-OVERFIT's INPUTS, checked against the prereg.** Read-only, through the harness's own `load_frames`; `code/gmo_inputs_check.py`, `raw/gmo_early_inputs_check.json`.
+
+- The frame-set md5 `4eafa03c…` equals the spec's. The 16 (sha12, raw frame) pairs equal the prereg table.
+- x is [16, 9, 416, 1024]; codes are [16, 1000, 600], read at A7.
+- **The 1 ms time guard (`time_1ms`) passes on all 4 clips / 16 frames**, with `--cam-ts-dir /home/nvidia/data/_b1stage416/r0/camera_front_wide`.
+- Label census, 0–20 m, under three masks:
+
+| class | prereg (approx. cone) | old window, no cone | the harness's scored mask (full width, lift-valid) |
+|---|---:|---:|---:|
+| seen-no-class | 50,123 | 79,283 | 99,924 |
+| drivable | 351,454 | 480,942 | 414,196 |
+| lane | 9,003 | 11,718 | 12,034 |
+| crosswalk | 44,528 | 56,325 | 46,488 |
+| arrow / text | 3,475 | 3,500 | 3,475 |
+| edge | 7,820 | 10,508 | 8,829 |
+| hatched | 18,220 | 24,906 | 18,476 |
+| sidewalk | 190,081 | 302,807 | 303,854 |
+
+Every class clears the 1,000-cell floor under the scored mask. The prereg census was an APPROXIMATE cone; the harness recounts with the exact §4 mask, as the prereg says it would.
+
+**The run:**
+- Scripts: `code/gmo_early_runner.py` (the candidate's harness, unmodified, in-process for peak memory) and `code/gmo_early_launch.sh` / `code/gmo_early_launch2.sh`.
+- The record is stamped `"binding": false`, with `launch_commit` = `NONBINDING-EARLY-b4a59b9+NEW2`, and saved as `g_map_overfit.EARLY_NONBINDING.json`, never the canonical name.
+- Phase 1 REFUSED at 04:14: another agent's GPU job (the box builder's `g_box_overfit.py`) held the GPU. At 04:16 the Master Mind ruled the two runs may SHARE the GPU. The record is stamped `gpu_shared_with`, and its s/step and peak memory are informative only.
+
+**MAIN (healthy) at step 1,000 — FAILS on lane and edge.** Declared rule `prior_corrected`, band 0–20 m, pooled over 16 frames. MEASURED, from the harness's step-1,000 line.
+
+| class | bar | IoU @ 1,000 | verdict | IoU every 100 steps (100 → 1,000) |
+|---|---:|---:|---|---|
+| seen-no-class | 0.85 | 0.873 | pass | .35 .51 .70 .75 .80 .80 .84 .85 .87 .87 |
+| drivable | 0.85 | 0.906 | pass | .59 .71 .81 .84 .85 .86 .88 .89 .90 .91 |
+| sidewalk | 0.85 | 0.936 | pass | .52 .68 .82 .84 .87 .89 .91 .93 .93 .94 |
+| crosswalk | 0.50 | 0.742 | pass | 0 .31 .62 .62 .67 .68 .72 .70 .72 .74 |
+| arrow / text | 0.50 | 0.613 | pass | 0 0 .17 .47 .42 .52 .54 .61 .60 .61 |
+| hatched | 0.50 | 0.782 | pass | .55 .67 .73 .75 .69 .75 .79 .76 .78 .78 |
+| **lane / road line** | 0.50 | **0.417** | **FAIL** | 0 0 0 .13 .20 .20 .35 .39 .36 .42 |
+| **non-drivable edge** | 0.50 | **0.076** | **FAIL** | 0 0 0 0 0 .009 .034 .026 .047 .076 |
+
+- Train loss .217 at step 1,000, against .215 at 900.
+- Lane is still rising at 1,000. Edge first moves at step 600.
+- Presence holds: edge 8,829 cells, lane 12,034. So this is a FAIL, not INCONCLUSIVE.
+- Reported to the Master Mind BEFORE any code was touched: a failing class is a finding.
+- The end-of-run record, below, carries the raw rule, the CE ratios, C1–C3 and R1/R2.
+
+**The end-of-run record** (`raw/gmo_early/g_map_overfit.EARLY_NONBINDING.json`, md5 `2e56f14c`). IoU at step 1,000, declared / raw rule:
+
+| arm | nocls | drivable | sidewalk | lane | crosswalk | arrow | edge | hatched |
+|---|---|---|---|---|---|---|---|---|
+| **MAIN** | .873/.875 | .906/.870 | .936/.930 | **.417/.490** | .742/.685 | .613/.539 | **.076/.233** | .782/.713 |
+| s8_zeros (R2) | .189/.170 | .514/.433 | .433/.350 | 0/0 | 0/.068 | 0/.047 | 0/0 | 0/.102 |
+| lane_w0 (R1) | .889/.890 | .895/.868 | .932/.938 | 0/0 | .735/.715 | .613/.524 | .099/.205 | .788/.746 |
+| s8_detached (informative) | .871/.868 | .901/.862 | .939/.920 | .339/.438 | .729/.675 | .560/.473 | .153/.219 | .797/.731 |
+
+- §6.4, CE@1,000 / CE@0 for MAIN: nocls .080, drivable .135, sidewalk .055, lane .280, crosswalk .067, arrow .079, edge .290, hatched .026. All pass (≤ 0.5).
+- The loss was finite at every step, and `time_1ms` passed on every clip.
+- R1 failed lane, as required. R2 failed all five thin classes, as required.
+- C1: IoU_drivable = 414,196 / 907,276 = 0.456527 exactly. C2: 1.0 for all 8 classes. C3: bit-identical.
+- **G_MAP_OVERFIT = FAIL** (MAIN: lane and edge). Under the raw rule both still fail, so §9's lever 1 (the decision rule) is excluded.
+
+**MAIN_long** (INFORMATIVE; `raw/gmo_early/g_map_overfit_MAIN_long.INFORMATIVE.json`): the MAIN config run for 3,000 steps, alone on the GPU (0.607 s/step at b4). Its init fingerprints are identical to MAIN's.
+- **Replicate.** At step 1,000 it reads lane .480 (MAIN: .417) and edge .096 (.076); the other classes are within ±.003, except hatched (+.021). So the run-to-run spread on lane at 1,000 is about 0.06.
+- **First step at or above the bar**, declared / raw rule; each class stays above once it crosses:
+  - crosswalk 200 / 300; hatched 200 / 300; sidewalk 400 / 500;
+  - drivable 500 / 800; arrow 600 / 900; nocls 800 / 800;
+  - lane **1,200 / 1,300**;
+  - **edge: NEVER.** It reads .430 / .386 at 3,000.
+- Edge's slope per 100 steps: +0.020 over 1,100–2,000 (R² 0.84), then +0.010 over 2,100–3,000 (R² 0.40). It is decelerating.
+- **Edge at the 0.2 m tolerance:**
+
+| step | P | R | F1 | IoU |
+|---|---:|---:|---:|---:|
+| 1,000 | .943 | .246 | .391 | .096 |
+| 2,000 | .967 | .663 | .786 | .305 |
+| 3,000 | .979 | .843 | .906 | .430 |
+
+  By 3,000 steps edge is FOUND and misplaced by about one cell.
+- **Edge by range** at 3,000 (n 164 in the 0–5 m bin):
+
+| 0–5 m | 5–10 m | 10–15 m | 15–20 m | 20–25 m | 25–37 m |
+|---:|---:|---:|---:|---:|---:|
+| .415 | .523 | .448 | .397 | .412 | .348 |
+
+  This is flat, while the stride-8 lateral footprint grows 5.5× over 5–20 m. Lane by range: .799 / .770 / .742 / .734 / .654 / .457.
+
+**The GT-only grid oracle** (`code/grid_oracle.py`, `raw/gmo_early/grid_oracle_16frames.json`): the gate's 16 frames and scored cells. It averages the 10 cm GT to class fractions on a coarse grid, decodes them the way `HiresRefine` does (bilinear), and takes the argmax.
+
+| grid | edge | lane | arrow | crosswalk | hatched | big classes |
+|---|---:|---:|---:|---:|---:|---|
+| 0.1 m (control) | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 |
+| **0.25 m** | **0.328** | 0.770 | 0.823 | 0.936 | 0.916 | .97–.98 |
+| 0.5 m | 0.022 | 0.402 | | | | |
+
+So from 0.25 m class fractions, edge cannot reach the bar.
+
+## 12. NEW-2 R2: the lift lever, SPEC_REFCV7 §17 (A12, landed ab1fb45)
+
+**The choice: (b), a 0.1 m near-range lift, map-only.** Pre-registered before any number of the arm. The case for it, all measured in §11:
+- The 0.25 m class-fraction ceiling for edge is 0.328.
+- The residual edge error is exact-cell placement (tolerance F1 .906 against IoU .430).
+- The error is flat over range, so the stride is not the limit. That argues against (c).
+- Nothing in the record implicates height mixing. That argues against (a).
+- (a) and (c) would change the SHARED encoder and, with it, the planner's BEV.
+
+**What changes** (`code/fix_r2/`: 8 files EDITED against `cef9709`; the diff re-applies byte for byte):
+- `--map-hires-near-lift-m` (default 0 = off; the arm uses 20) maps to `MapHiresConfig.near_lift_x_m`. It is stamped as `near_lift_x_m` and `near_lift_rows`. It must be a multiple of 0.5 m, at least 0, and at most the extent; it is refused under `--map-hires off`.
+- G-DVB kind `map_hires_near_lift_m` (`dvb_check_near_lift`) takes the registry to **214**.
+- `NearLiftSkip` samples the same `fmap_s8` with one 1×1 projection per height (d_image to `d_up`). It runs at the 0.1 m cell centres over x 0–20 m × y ±30 m (200 × 600) and the main lift's 4 heights, summed.
+  - Its output is ADDED to `HiresRefine`'s bilinear-upsampled input on those rows, inside the decoder's checkpoint.
+  - It is **zero-initialised** and built last, so the arm is the NEW-2 function at step 0.
+- The geometry is **derived** from the batch's 0.25 m geometry (`derive_near_geometry`: bilinear, linear extrapolation at the borders, conservative validity). There is no new interface.
+- `ga_mh_near` / `ga_mh_near_n` are declared for D3 automatically.
+- The eval loader rebuilds `near_lift_x_m`.
+- The harness gains `--near-lift-m`, the must-fail arm `near_zeros` (zeros into the near lift only), `_fingerprint_without` and the spec checks.
+
+**Tests.**
+- Derived vs exact 0.1 m geometry, nominal camera, with and without eq43:
+  - p99 error 0.098 / 0.085 image px;
+  - max 0.59 px from 3 m out (inside 3 m the camera-height sample reaches about 13 px; no road-plane sample is involved);
+  - 0 cells valid only in the derived geometry, and 98.0 % of the exact valid cells kept.
+- Zero-init: the shared parameters are identical and the logits equal at step 0.
+- Map-only: `map_hires_bev` is byte-identical when the skip is perturbed.
+- Reach: the gradient reaches the skip from its zero init. With a zero source, the projection's gradient is exactly 0.
+- RED arms: a naive index, a majority validity rule, a non-zero init, 4 DVB disagreements, a loader that drops the field, and a declared-but-unbuilt skip.
+- The A12 spec is md5-pinned and differs from the prereg only in `amends`, `must_fail`, `near_lift_m` and `registered`.
+- **Results.** Dev box, 35 files: **666 passed, 2 skipped**. Thor, gate environment: **660 passed, 8 skipped, 0 failed**.
+
+**Cost** (ANALYTIC, `code/lift_lever_cost.py`, `raw/gmo_early/lift_lever_cost.json`; b1 ×16, grad ckpt on):
+
+| option | saved GiB at b16 | fwd GFLOPs per sample | CPU time | params |
+|---|---:|---:|---:|---:|
+| as landed | 1.391 | 102.5 | 1.00 | 559,048 |
+| **(b)** | 1.391 (+0) | 103.4 (+0.9 %) | 1.057 | +65,600 |
+| (a) | 1.610 | 106.3 | 1.050 | +34,880 |
+| (c) | 1.692 (plus the tap output, 416 vs 208 MiB) | 104.3 | 0.966 | −65,536 |
+
+- (b)'s transient peak is 0.92 GiB at b16.
+- (b)'s step time is ESTIMATED at ≤ +0.1 s at b16. NEW-2's own step time against the 8.0 s line is for G-LIVE to measure.
+
+**The arm** (`raw/gmo_spec_A12.json`, md5 `f0aae8f1…`):
+- The prereg literals are unchanged. MAIN is the lever arm.
+- Must-fail: `s8_zeros` (both lifts; all five thin classes) and `near_zeros` (edge). `lane_w0` (lane) is kept.
+- Runner: `code/gmo_r2_runner.py`, stamped non-binding. Launcher: `code/gmo_r2_launch.sh`, one GPU job at a time, queued behind the box builder's diagnosis.
+- Result: PENDING.

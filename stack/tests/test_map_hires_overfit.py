@@ -152,13 +152,14 @@ def _tiny():
 def test_the_arms_are_what_they_say(tmp_path):
     trunk, branch, data = _tiny()
     spec = O.load_spec(_spec(tmp_path))
+    # near_zeros needs a near lift (NEW-2 R2): run on a near branch in test_R2_* below
     res = {a: O.run_arm(a, trunk, branch, data, spec, torch.ones(8), "cpu")
-           for a in O.ARMS}
+           for a in O.ARMS if a != "near_zeros"}
     assert res["healthy"]["trunk_s8_abs_change"] > 0.0
     for a in ("s8_zeros", "s8_detached", "frozen_trunk"):
         assert res[a]["trunk_s8_abs_change"] == 0.0, a
     assert res["lane_w0"]["w_loss"][2] == 0.0 and res["lane_w0"]["w_decision"][2] == 1.0
-    for a in O.ARMS:
+    for a in res:
         assert res[a]["loss_finite_every_step"] and res[a]["final"]["n"]["lane"] > 0
     assert trunk.s8_tap and all(p.grad is None for p in branch.parameters())
     ctrl = O.controls(data, res["healthy"]["_logits"], torch.ones(8),
@@ -267,3 +268,92 @@ def test_the_statistics_carry_every_band_of_the_A7_extent():
     O.load_spec(_spec(Path(__import__("tempfile").mkdtemp()),
                       thresholds={"iou": dict(ALL8), "band": "60_80", "min_cells": 1,
                                   "decision_rule": "raw"}), band_keys=bk)
+
+
+
+# =========================================================================== #
+# NEW-2 R2 (SPEC_REFCV7 A12): the near-lift arm and its must-fail arm          #
+# =========================================================================== #
+A12_SPEC = (ROOT.parent / "TanitAD Research Lab" / "Architecture & Inference" /
+            "Research" / "2026-09-26-refcv7-map-hires" / "raw" / "gmo_spec_A12.json")
+#: md5 of the A12 spec AS WRITTEN (registered by SPEC_REFCV7 §17, ab1fb45)
+A12_SPEC_MD5 = "f0aae8f10087194ebdada897a435e606"
+
+
+@pytest.mark.skipif(not A12_SPEC.is_file(), reason="the A12 spec is not in this checkout")
+def test_R2_the_A12_spec_loads_as_written_and_amends_only_what_A12_says():
+    import hashlib
+    assert hashlib.md5(A12_SPEC.read_bytes()).hexdigest() == A12_SPEC_MD5
+    from tanitad.data.semantic_map_gt_fine import EXTENT_REFCV7
+    s = O.load_spec(A12_SPEC, decision_rule="prior_corrected", class_weights="w.json",
+                    band_keys=EXTENT_REFCV7.band_keys)
+    assert s["near_lift_m"] == 20.0
+    assert s["must_fail"] == {"lane_w0": ["lane"], "s8_zeros": list(O.THIN),
+                              "near_zeros": ["edge"]}
+    assert s["must_fail_all"] == {"s8_zeros": True}
+    assert len(s["frames"]) == 16 and s["steps"] == 1000 and s["batch"] == 4
+    assert s["frameset_md5"] == "4eafa03c2b6a6e6d6336be1d78acb91d"
+    assert s["amends"]["spec_md5"] == AUDIT_SPEC_MD5                  # the prereg, as landed
+    if AUDIT_SPEC.is_file():
+        base = O.load_spec(AUDIT_SPEC, decision_rule="prior_corrected",
+                           class_weights="w.json", band_keys=EXTENT_REFCV7.band_keys)
+        diff = sorted(k for k in set(base) | set(s)
+                      if base.get(k) != s.get(k))
+        assert diff == ["amends", "must_fail", "near_lift_m", "registered"], diff
+
+
+def _near_tiny(near=10.0):
+    """The trunk and data of :func:`_tiny`, and TWO branches from ONE seed: NEW-2 as landed
+    and with the near lift."""
+    trunk, _branch, data = _tiny()
+    kw = dict(w_map_hires=1.0, d_lift=16, d_model=16, d_up=16, dilations=(1,))
+    torch.manual_seed(0)
+    b0 = H.MapHiresBranch(H.MapHiresConfig(**kw), d_image=trunk.s8_dim,
+                          image_hw=trunk.s8_shape)
+    torch.manual_seed(0)
+    nb = H.MapHiresBranch(H.MapHiresConfig(near_lift_x_m=near, **kw), d_image=trunk.s8_dim,
+                          image_hw=trunk.s8_shape)
+    return trunk, b0, nb, data
+
+
+def test_R2_the_near_arms_run_and_near_zeros_feeds_the_near_lift_zeros(tmp_path):
+    trunk, _b, nb, data = _near_tiny()
+    spec = O.load_spec(_spec(tmp_path, must_fail={"lane_w0": ["lane"],
+                                                  "s8_zeros": list(O.THIN),
+                                                  "near_zeros": ["edge"]}))
+    seen = []
+    orig = type(nb).forward
+
+    def spy(self, f, g, v, *, near_source=None):
+        seen.append(None if near_source is None else float(near_source.abs().sum()))
+        return orig(self, f, g, v, near_source=near_source)
+    type(nb).forward = spy
+    try:
+        res = {a: O.run_arm(a, trunk, nb, data, spec, torch.ones(8), "cpu")
+               for a in ("healthy", "near_zeros")}
+    finally:
+        type(nb).forward = orig
+    assert res["near_zeros"]["trunk_s8_abs_change"] > 0.0      # the trunk trains as in MAIN
+    assert res["near_zeros"]["loss_finite_every_step"]
+    # healthy never passes a source; near_zeros passes zeros on EVERY forward
+    assert None in seen and 0.0 in seen and all(x in (None, 0.0) for x in seen)
+
+
+def test_R2_the_harness_refuses_near_zeros_without_a_near_lift_and_a_spec_mismatch(tmp_path):
+    base = ["--spec", str(_spec(tmp_path)), "--v2-cache", "V", "--gt-root", "G",
+            "--extrinsics", "E", "--out", str(tmp_path / "o"), "--device", "cpu"]
+    with pytest.raises(SystemExit, match="near_zeros arm needs --near-lift-m"):
+        O.main(base + ["--arms", "healthy,lane_w0,s8_zeros,near_zeros"])
+    sp = _spec(tmp_path, near_lift_m=20.0)
+    with pytest.raises(SystemExit, match="registers near_lift_m"):
+        O.main(["--spec", str(sp), "--v2-cache", "V", "--gt-root", "G", "--extrinsics", "E",
+                "--out", str(tmp_path / "o"), "--device", "cpu", "--near-lift-m", "10"])
+
+
+def test_R2_the_record_proves_the_shared_init_with_the_NEW2_MAIN():
+    """``branch_init_sha256_without_near`` of a near branch == ``branch_init_sha256`` of the
+    NEW-2 branch from the same seed; the full fingerprints differ (the zero skip)."""
+    trunk, branch, nb, _d = _near_tiny()
+    assert O._fingerprint_without(nb, "near.") == O._fingerprint(branch)
+    assert O._fingerprint(nb) != O._fingerprint(branch)
+    assert O._fingerprint_without(branch, "near.") == O._fingerprint(branch)

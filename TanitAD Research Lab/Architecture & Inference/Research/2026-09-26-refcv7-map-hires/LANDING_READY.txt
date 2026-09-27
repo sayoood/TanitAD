@@ -1,81 +1,52 @@
-## 2026-09-27 batch 1: refcv7 NEW-2 -- the 10 cm map's NEW modules (A6/A7/A8: extent, /3 reader, shared encoder, sqrt_mf weights, the NEW-2 G-DVB checks), their tests, the weights script, the build record. Independent of every shared file (MEASURED: 4797ffb + batch 1 only, 134 passed). Full files under code/fix/.
-# Base blobs read at 4797ffb7a3697bcf18e99d6269ee36ddfdf65b18. New files only (base NEW); LF.
-# Supersedes every earlier NEW-2 list and the stale 22:37 copies at the same repo paths. RESULT.md is untouched.
+## 2026-09-27 NEW-2 R2 (SPEC_REFCV7 §17, A12): the 10 cm map's lift lever -- a 0.1 m NEAR-RANGE LIFT of the stride-8 map over x 0-20 m (full width), added to the 10 cm decoder only (map-only, zero-initialised, geometry derived from the 0.25 m lift); --map-hires-near-lift-m (G-HYG field MapHiresConfig.near_lift_x_m, G-DVB map_hires_near_lift_m: registry 214); the eval loader's rebuild; the harness's --near-lift-m and must-fail arm near_zeros; the A12 spec; and the EARLY (non-binding) G-MAP-OVERFIT record that chose the lever.
+# Base blobs read at cef9709de91bbc749bd579746203da75e8cdbe43 (NEW-2 as landed; the tip ab1fb45 has the same stack and taniteval). Full files under code/fix_r2/; line endings as each tip blob (EOL column). The unified diff (code/fix_r2/NEW2R2_edits.diff) re-applies to the RAW tip blobs byte for byte (git apply, core.autocrlf=false).
+# If the tip moves: code/rebase_onto_tip.py (3-way, LF-normalised) + code/make_fix_bundle.py --set r2 --fix-dir code/fix_r2 regenerate this block.
 # <package path>  ->  <repo path>     (comment above each: tip base blob | new blob = git hash-object --no-filters | EOL)
-# stack/tanitad/data/semantic_map_gt_fine.py: base NEW | new b4c28ade0ba05c73ec3e178461c6916cb35103fd | LF
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/fix/stack/tanitad/data/semantic_map_gt_fine.py  ->  stack/tanitad/data/semantic_map_gt_fine.py
-# stack/tanitad/models/map_head_hires.py: base NEW | new 90012c7b0367cbf8b62c10961e88b1ee6130e783 | LF
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/fix/stack/tanitad/models/map_head_hires.py  ->  stack/tanitad/models/map_head_hires.py
-# taniteval/taniteval/map_hires_metrics.py: base NEW | new 18f2029018bfdf606ea4f78f64f02c4b62ed1a79 | LF
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/fix/taniteval/taniteval/map_hires_metrics.py  ->  taniteval/taniteval/map_hires_metrics.py
-# stack/scripts/compute_map_class_weights.py: base NEW | new 8012922f1c6027421c2857eb9e43a6cae84294ef | LF
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/fix/stack/scripts/compute_map_class_weights.py  ->  stack/scripts/compute_map_class_weights.py
-# stack/tests/test_semantic_map_gt_fine.py: base NEW | new a603563e54b02405aad134ae091bf72d7a893998 | LF
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/fix/stack/tests/test_semantic_map_gt_fine.py  ->  stack/tests/test_semantic_map_gt_fine.py
-# stack/tests/test_map_head_hires.py: base NEW | new fee5b554aaa40b1c8758058a0970350973e1702e | LF
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/fix/stack/tests/test_map_head_hires.py  ->  stack/tests/test_map_head_hires.py
-# stack/tests/test_compute_map_class_weights.py: base NEW | new 5ac221951cd9cbd43db846125a33bfc7c3d56609 | LF
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/fix/stack/tests/test_compute_map_class_weights.py  ->  stack/tests/test_compute_map_class_weights.py
-# taniteval/tests/test_map_hires_metrics.py: base NEW | new 763bafa0365eb9866ba6cbfd8905e065f869cdd1 | LF
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/fix/taniteval/tests/test_map_hires_metrics.py  ->  taniteval/tests/test_map_hires_metrics.py
-# package files:
+# stack/tanitad/models/map_head_hires.py: base 90012c7b0367cbf8b62c10961e88b1ee6130e783 | new 389898ff06bc05be8e8fecc90572195553ac3c03 | LF
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/fix_r2/stack/tanitad/models/map_head_hires.py  ->  stack/tanitad/models/map_head_hires.py
+# stack/scripts/refc_v3_train.py: base 7263ede2fda9d7c8ccb2de30845c063c5e4277d3 | new 29026ecaea75aedd33a5432edaea79374257dfc2 | CRLF
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/fix_r2/stack/scripts/refc_v3_train.py  ->  stack/scripts/refc_v3_train.py
+# taniteval/tools/refcv3_arm.py: base 0573e79f23b6cfc48ea4d9d179458c4f8d7e805a | new 103dadd5338db5e58f8683d31a380f95e6e8e34d | CRLF
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/fix_r2/taniteval/tools/refcv3_arm.py  ->  taniteval/tools/refcv3_arm.py
+# stack/scripts/map_hires_overfit.py: base b56606866de60710c91ba6a8f603fd8de4007be2 | new e1830fe05997d84ffee86c26701afceea28cbf47 | LF
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/fix_r2/stack/scripts/map_hires_overfit.py  ->  stack/scripts/map_hires_overfit.py
+# stack/tests/test_map_head_hires.py: base fee5b554aaa40b1c8758058a0970350973e1702e | new 0f6e46f57c1fc7f3be777bcfa89e09c3e7a3b8f4 | LF
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/fix_r2/stack/tests/test_map_head_hires.py  ->  stack/tests/test_map_head_hires.py
+# stack/tests/test_map_hires_wiring.py: base 054c21013b82c8ff6a21684a61e0d70d3f36bdcc | new 30468b6e4bfb777c88feaae550b5943110a49ae8 | LF
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/fix_r2/stack/tests/test_map_hires_wiring.py  ->  stack/tests/test_map_hires_wiring.py
+# stack/tests/test_map_hires_overfit.py: base 46490c9b7faf0bcdb3b909a32216b153b8a87652 | new 6c9f2c43ec0b946d04220847269ea6fb81f2535b | LF
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/fix_r2/stack/tests/test_map_hires_overfit.py  ->  stack/tests/test_map_hires_overfit.py
+# stack/tests/test_declared_vs_built.py: base 9ebe449f93d15ac28b49f133392db61582ccd480 | new 62b2c0c305da7ffea9f91f8f01ff629cae6af0a0 | LF
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/fix_r2/stack/tests/test_declared_vs_built.py  ->  stack/tests/test_declared_vs_built.py
+# package files (NEW unless already landed; all LF except the diff):
 TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/BUILD.md
 TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/LANDING_READY.txt
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/cost_map_hires.py
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/loss_budget_w_map_hires.py
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/oracle_05m_at_10cm.py
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/analytic_control_evidence.py
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/d4_weighting_proposals.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/raw/gmo_spec_A12.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/raw/gmo_early/g_map_overfit.EARLY_NONBINDING.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/raw/gmo_early/g_map_overfit_MAIN_long.INFORMATIVE.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/raw/gmo_early/gmo_run.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/raw/gmo_early/launch_long2.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/raw/gmo_early/grid_oracle_16frames.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/raw/gmo_early/lift_lever_cost.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/raw/gmo_early_inputs_check.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/raw/map_hires_class_weights_train_100x30.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/raw/map_hires_class_weights_train_100x30.PROVENANCE.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/gmo_early_runner.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/gmo_early_launch.sh
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/gmo_early_launch2.sh
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/gmo_launch_long2.sh
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/gmo_main_long.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/gmo_inputs_check.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/grid_oracle.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/analyse_long.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/record_tables.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/gmo_summarise.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/lift_lever_cost.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/gmo_r2_runner.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/gmo_r2_launch.sh
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/gmo_r2_launch3.sh
 TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/make_fix_bundle.py
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/rebase_onto_tip.py
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/write_landing_ready.py
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/v3_reader_control.py
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/smoke_train_real.py
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/fix/NEW2_shared_edits.diff
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/fix/BASE_BLOBS.txt
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/fix/LANDING_BLOCKS.txt
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/raw/class_weights_DRYRUN_eval5.json
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/raw/cost_analytic_cpu.json
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/raw/cost_analytic_a6_cpu.json
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/raw/cost_analytic_a6_cpu.log
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/raw/loss_budget_w_map_hires.json
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/raw/analytic_control_fine_reader.json
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/raw/d4_weighting_proposals.json
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/raw/v3_reader_control_eval.json
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/raw/train_smoke_real_files.json
-# REMOVE from the package if present (superseded by code/make_fix_bundle.py): TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/make_fix_bundle.sh
-
-## 2026-09-27 batch 2 (on fixes batch 3 4797ffb; + stack/tests/test_grad_probe_tacgoal.py: its rounding pin follows _train_row_scalars (the Thor full-suite regression)): refcv7 NEW-2 shared-file edits -- A6 one lift in the forward (hook), the planner pool, the stride-8 tap + fmap_s8 pass-through, --bev-source / --bev-planner-crop-m / extent / grad-ckpt flags + pins + G-DVB, the eval-loader rebuild, the ga_mh_* reach keys DECLARED for D3's first-row check -- plus the new files that need them.
-# Base blobs read at 4797ffb7a3697bcf18e99d6269ee36ddfdf65b18 (fixes batch 3 4797ffb). Full files; line endings as each tip blob (EOL column). The unified diff (code/fix/NEW2_shared_edits.diff) re-applies to the RAW tip blobs byte for byte (git apply, core.autocrlf=false).
-# If the tip moves: code/rebase_onto_tip.py (3-way, LF-normalised) + code/make_fix_bundle.py regenerate this block; a conflict exits 2.
-# <package path>  ->  <repo path>     (comment above each: tip base blob | new blob = git hash-object --no-filters | EOL)
-# stack/tanitad/models/timm_trunk.py: base a44e35649ced7e53a3dc00edd8230758225158c2 | new 0f6cf7de2e10066d140d11ac06754886631ec0d2 | CRLF
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/fix/stack/tanitad/models/timm_trunk.py  ->  stack/tanitad/models/timm_trunk.py
-# stack/tanitad/refs/refc.py: base ac7ab9d37843531f345cf1413513e1fb90f850eb | new 5eae73a9c89db679dd5b593fe49a38f75c08c992 | CRLF
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/fix/stack/tanitad/refs/refc.py  ->  stack/tanitad/refs/refc.py
-# stack/tanitad/refs/refc_v3.py: base a357a1b5540c4a55d994df23b1750892768aec8f | new a5e7156752eecf5ce08831457b649bed27a4034c | LF
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/fix/stack/tanitad/refs/refc_v3.py  ->  stack/tanitad/refs/refc_v3.py
-# stack/scripts/refc_v3_train.py: base 507b5579a60605e8238ade00239eb217330de2ac | new 7263ede2fda9d7c8ccb2de30845c063c5e4277d3 | CRLF
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/fix/stack/scripts/refc_v3_train.py  ->  stack/scripts/refc_v3_train.py
-# stack/tanitad/models/refcv6_perception_branch.py: base 65d9f5572ce213fec5953a34c531a2e28a656136 | new 6bba17a4d1edb0fa0a14c3afe6a2dd7088f6260c | CRLF
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/fix/stack/tanitad/models/refcv6_perception_branch.py  ->  stack/tanitad/models/refcv6_perception_branch.py
-# stack/tanitad/train/declared_vs_built.py: base e10575048fd3aa60c59879b77a652865eb9e96ea | new a0c479e830656fdb53d16ab2ca5781ca8ab08a1a | LF
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/fix/stack/tanitad/train/declared_vs_built.py  ->  stack/tanitad/train/declared_vs_built.py
-# taniteval/tools/refcv3_arm.py: base dcea97eb60b1b4dedf3003425c682f577631d27b | new 0573e79f23b6cfc48ea4d9d179458c4f8d7e805a | CRLF
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/fix/taniteval/tools/refcv3_arm.py  ->  taniteval/tools/refcv3_arm.py
-# stack/tests/test_refc_v3_agent_provenance.py: base b09d9bfa44b0e9e01ce7721adb6ca5c8b5ace17e | new 59ddc65736375691cc1d856dab39ffc9e5f29554 | CRLF
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/fix/stack/tests/test_refc_v3_agent_provenance.py  ->  stack/tests/test_refc_v3_agent_provenance.py
-# stack/tests/test_declared_vs_built.py: base 45b6b327e70d19bbf8b0cd90544c9ae2d7bad8ec | new 9ebe449f93d15ac28b49f133392db61582ccd480 | LF
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/fix/stack/tests/test_declared_vs_built.py  ->  stack/tests/test_declared_vs_built.py
-# stack/tests/test_occ_knob_is_stamped.py: base 85498b5adc09ff4cd4f82b34c6c6acc702de5279 | new dc8189e0388b196b1a14e3ddbe55331eb710ba6f | LF
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/fix/stack/tests/test_occ_knob_is_stamped.py  ->  stack/tests/test_occ_knob_is_stamped.py
-# stack/tests/test_grad_probe_tacgoal.py: base 0c76af880188881ef74f7f806cd29201afd52a54 | new 236fd4a01e92e926311b5828632924b66c07e428 | LF
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/fix/stack/tests/test_grad_probe_tacgoal.py  ->  stack/tests/test_grad_probe_tacgoal.py
-# stack/tests/test_map_hires_wiring.py: base NEW | new 054c21013b82c8ff6a21684a61e0d70d3f36bdcc | LF
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/fix/stack/tests/test_map_hires_wiring.py  ->  stack/tests/test_map_hires_wiring.py
-# taniteval/tests/test_map_hires_rebuild.py: base NEW | new 0410594a52ed4cc73e72dee60b3a43495d07dea2 | LF
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/fix/taniteval/tests/test_map_hires_rebuild.py  ->  taniteval/tests/test_map_hires_rebuild.py
-# stack/scripts/map_hires_overfit.py: base NEW | new b56606866de60710c91ba6a8f603fd8de4007be2 | LF
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/fix/stack/scripts/map_hires_overfit.py  ->  stack/scripts/map_hires_overfit.py
-# stack/tests/test_map_hires_overfit.py: base NEW | new 46490c9b7faf0bcdb3b909a32216b153b8a87652 | LF
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/fix/stack/tests/test_map_hires_overfit.py  ->  stack/tests/test_map_hires_overfit.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/write_landing_ready_r2.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/fix_r2/NEW2R2_edits.diff
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/fix_r2/BASE_BLOBS.txt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/fix_r2/LANDING_BLOCKS.txt

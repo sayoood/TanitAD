@@ -48,6 +48,18 @@ EDITED = [
     "stack/tests/test_occ_knob_is_stamped.py",
     "stack/tests/test_grad_probe_tacgoal.py",   # the rounding pin follows _train_row_scalars
 ]
+#: NEW-2 R2 (SPEC_REFCV7 §17, A12: the 0.1 m near-range lift): every file is a TIP file by
+#: then (NEW-2 landed as cef9709), so all are EDITED; `--set r2 --fix-dir code/fix_r2`.
+R2_EDITED = [
+    "stack/tanitad/models/map_head_hires.py",
+    "stack/scripts/refc_v3_train.py",
+    "taniteval/tools/refcv3_arm.py",
+    "stack/scripts/map_hires_overfit.py",
+    "stack/tests/test_map_head_hires.py",
+    "stack/tests/test_map_hires_wiring.py",
+    "stack/tests/test_map_hires_overfit.py",
+    "stack/tests/test_declared_vs_built.py",
+]
 NEWDEP = [
     "stack/tests/test_map_hires_wiring.py",
     "taniteval/tests/test_map_hires_rebuild.py",
@@ -71,10 +83,17 @@ def main(argv=None) -> int:
     ap.add_argument("--pkg", required=True, type=Path)
     ap.add_argument("--git-dir", required=True)
     ap.add_argument("--ref", required=True)
+    ap.add_argument("--set", choices=("new2", "r2"), default="new2")
+    ap.add_argument("--fix-dir", default="code/fix",
+                    help="package-relative output dir (code/fix for NEW-2, code/fix_r2 for R2)")
     a = ap.parse_args(argv)
-    fix = a.pkg / "code" / "fix"
+    global BATCH1, EDITED, NEWDEP
+    if a.set == "r2":
+        BATCH1, EDITED, NEWDEP = [], list(R2_EDITED), []
+    fix = a.pkg / a.fix_dir
+    fix_rel = Path(a.fix_dir).as_posix().strip("/")
     if fix.exists():
-        assert fix.resolve().parts[-2:] == ("code", "fix"), fix
+        assert fix.resolve().parts[-2] == "code" and fix.resolve().parts[-1].startswith("fix"), fix
         shutil.rmtree(fix)
     fix.mkdir(parents=True)
     tip = git(a.git_dir, "rev-parse", a.ref).decode().strip()
@@ -110,7 +129,7 @@ def main(argv=None) -> int:
             (fix / f).parent.mkdir(parents=True, exist_ok=True)
             (fix / f).write_bytes(data)
             rows[f] = ("NEW", blob_id(data), "LF")
-        dpath = fix / "NEW2_shared_edits.diff"
+        dpath = fix / ("NEW2_shared_edits.diff" if a.set == "new2" else "NEW2R2_edits.diff")
         dpath.write_bytes(b"".join(diffs))
         # ---- verification: apply to the RAW tip blobs, compare byte for byte ----
         vt = td / "verify"
@@ -130,15 +149,18 @@ def main(argv=None) -> int:
         for f in files:
             b, n, eol = rows[f]
             out.append(f"# {f}: base {b} | new {n} | {eol}")
-            out.append(f"{PKG_REL}/code/fix/{f}  ->  {f}")
+            out.append(f"{PKG_REL}/{fix_rel}/{f}  ->  {f}")
         return out
     base_lines = [f"# tip {tip} ({a.ref})"] + [
         f"{rows[f][0]}  {f}  ({rows[f][2]} blob)" for f in EDITED]
-    (fix / "BASE_BLOBS.txt").write_text("\n".join(base_lines) + "\n", encoding="utf-8")
-    blocks = (["# BATCH 1 (independent: new files only)"] + block(BATCH1)
-              + ["# BATCH 2 (shared-file edits + the new files that need them)"]
-              + block(EDITED + NEWDEP))
-    (fix / "LANDING_BLOCKS.txt").write_text("\n".join(blocks) + "\n", encoding="utf-8")
+    (fix / "BASE_BLOBS.txt").write_bytes(("\n".join(base_lines) + "\n").encode("utf-8"))
+    if a.set == "new2":
+        blocks = (["# BATCH 1 (independent: new files only)"] + block(BATCH1)
+                  + ["# BATCH 2 (shared-file edits + the new files that need them)"]
+                  + block(EDITED + NEWDEP))
+    else:
+        blocks = ["# R2 (every file EDITED against the tip)"] + block(EDITED)
+    (fix / "LANDING_BLOCKS.txt").write_bytes(("\n".join(blocks) + "\n").encode("utf-8"))
     n_lines = dpath.read_bytes().count(b"\n")
     print(f"tip {tip}: {len(BATCH1)} batch-1 + {len(EDITED)} edited + {len(NEWDEP)} "
           f"new-dependent files; diff {n_lines} lines; verify "

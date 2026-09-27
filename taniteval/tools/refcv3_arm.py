@@ -1158,7 +1158,8 @@ def rebuild_map_hires_branch(model, config: dict, device: str = "cpu", targs=Non
     fields = {f.name for f in dataclasses.fields(_mhr.MapHiresConfig)}
     kw = {k: st[k] for k in ("x_max_m", "y_half_m", "lift_cell_m", "stride",
                              "d_lift", "d_model", "d_up", "norm_groups", "n_classes",
-                             "grad_ckpt", "class_weights_sha256", "decision_rule")
+                             "grad_ckpt", "class_weights_sha256", "decision_rule",
+                             "near_lift_x_m")
           if k in st and k in fields}
     kw.update({k: tuple(st[k]) for k in ("heights_m", "dilations")
                if k in st and k in fields})

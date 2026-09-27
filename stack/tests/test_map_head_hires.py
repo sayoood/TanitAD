@@ -556,7 +556,7 @@ def test_dvb_RED_the_class_weights_file_is_the_one_the_loss_reads(tmp_path):
         "model._map_hires_class_weight"]
 
 
-def test_dvb_registration_is_EXPLICIT_and_names_the_nine_kinds():
+def test_dvb_registration_is_EXPLICIT_and_names_the_ten_kinds():
     got = []
     kinds = H.register_dvb_levers(lambda d, k, c: got.append((d, k, callable(c))))
     assert kinds == {"map_hires": "built", "w_map_hires": "loss",
@@ -564,7 +564,8 @@ def test_dvb_registration_is_EXPLICIT_and_names_the_nine_kinds():
                      "map_hires_decision_rule": "built",
                      "map_hires_x_max_m": "built", "map_hires_y_half_m": "built",
                      "map_hires_grad_ckpt": "built",
-                     "bev_source": "built", "bev_planner_crop_m": "built"}
+                     "bev_source": "built", "bev_planner_crop_m": "built",
+                     "map_hires_near_lift_m": "built"}          # NEW-2 R2 (A12)
     assert got == [("map_hires", "built", True), ("w_map_hires", "loss", True),
                    ("map_hires_class_weights", "built", True),
                    ("map_hires_decision_rule", "built", True),
@@ -572,7 +573,8 @@ def test_dvb_registration_is_EXPLICIT_and_names_the_nine_kinds():
                    ("map_hires_y_half_m", "built", True),
                    ("map_hires_grad_ckpt", "built", True),
                    ("bev_source", "built", True),
-                   ("bev_planner_crop_m", "built", True)]
+                   ("bev_planner_crop_m", "built", True),
+                   ("map_hires_near_lift_m", "built", True)]
     from tanitad.train import declared_vs_built as dvb
     # importing this module registered NOTHING (the trainer registers, at its import)
     assert not (set(H.DVB_KINDS) & set(dvb.REGISTRY)) or "refc_v3_train" in sys.modules
@@ -680,3 +682,212 @@ def test_dvb_the_decision_rule_is_read_off_the_built_config():
     assert H.dvb_check_decision_rule(off, _dvb_args(map_hires="off")) == []
     assert len(H.dvb_check_decision_rule(
         off, _dvb_args(map_hires="off", map_hires_decision_rule="raw"))) == 1
+
+
+
+# =========================================================================== #
+# NEW-2 R2 (SPEC_REFCV7 A12): THE 0.1 m NEAR-RANGE LIFT                         #
+# =========================================================================== #
+def _a7_near(near=20.0):
+    return H.MapHiresConfig(w_map_hires=1.0, x_max_m=100.0, y_half_m=30.0,
+                            near_lift_x_m=near)
+
+
+@pytest.mark.parametrize("near,msg", [
+    (0.3, "multiple of 0.5"), (0.25, "multiple of 0.5"), (100.5, "past the map extent"),
+    (-0.5, ">= 0"), (float("nan"), ">= 0"), (float("inf"), ">= 0")])
+def test_R2_the_near_lift_range_is_validated(near, msg):
+    with pytest.raises(ValueError, match=msg):
+        _a7_near(near)
+
+
+def test_R2_the_near_lift_is_declared_and_stamped():
+    off = H.MapHiresConfig(w_map_hires=1.0, x_max_m=100.0, y_half_m=30.0)
+    assert off.near_lift_x_m == 0.0 and off.near_rows == 0
+    d = _a7_near(20.0).as_dict()
+    assert d["near_lift_x_m"] == 20.0 and d["near_lift_rows"] == 200    # literals
+    assert off.as_dict()["near_lift_x_m"] == 0.0 and off.as_dict()["near_lift_rows"] == 0
+    assert _a7_near(100.0).near_rows == 1000                            # the whole extent
+
+
+def _near_geometry_errors(eq_rows: int) -> dict:
+    """The DERIVED 0.1 m geometry vs the EXACT one (``build_lift_geometry`` on a 0.1 m grid),
+    in IMAGE pixels, on the A7 lift at 20 m, nominal camera."""
+    cfg = _a7_near(20.0)
+    cam = RigCamera.nominal(FRAME_416x1024, height_m=1.5, x_m=1.5)
+    obs = None
+    if eq_rows:
+        obs = torch.ones(416, 1024, dtype=torch.bool)
+        obs[-eq_rows:] = False
+    g25 = L.build_lift_geometry(cam, frame=FRAME_416x1024, stride=8, grid=cfg.lift_grid,
+                                observed=obs)
+    g10 = L.build_lift_geometry(cam, frame=FRAME_416x1024, stride=8,
+                                grid=BEVGrid(x_fwd_m=20.0, y_half_m=30.0, cell_m=0.1),
+                                observed=obs)
+    gd, vd = H.derive_near_geometry(g25.grid.unsqueeze(0), g25.valid.unsqueeze(0),
+                                    near_rows=200, out_w=600)
+    gd, vd = gd[0], vd[0]
+    assert tuple(gd.shape) == (4, 200, 600, 2) and tuple(vd.shape) == (4, 200, 600)
+    both = vd & g10.valid
+    du = (gd[..., 0] - g10.grid[..., 0]).abs() * 128 / 2 * 8      # feature -> image px
+    dv = (gd[..., 1] - g10.grid[..., 1]).abs() * 52 / 2 * 8
+    e = torch.maximum(du, dv)
+    far = both.clone()
+    far[:, :30] = False                                            # x >= 3 m
+    return {"derived_only": int((vd & ~g10.valid).sum()),
+            "kept": float(both.sum()) / float(g10.valid.sum()),
+            "p99": float(e[both].quantile(0.99)), "max_x_ge_3m": float(e[far].max()),
+            "zeros_where_invalid": bool((gd[~vd] == 0).all())}
+
+
+def _assert_near_geometry_is_exact_enough(eq_rows: int) -> None:
+    r = _near_geometry_errors(eq_rows)
+    # MEASURED 2026-09-27 (nominal camera): p99 0.098 / 0.085 px, max over x >= 3 m 0.59 px,
+    # 0 cells valid only in the derived geometry, 98.0 % of the exact valid cells kept.
+    assert r["derived_only"] == 0, r                       # CONSERVATIVE validity
+    assert r["kept"] >= 0.975, r
+    assert r["p99"] < 0.25, r
+    assert r["max_x_ge_3m"] < 1.0, r
+    assert r["zeros_where_invalid"], r
+
+
+@pytest.mark.parametrize("eq_rows", [0, 43])
+def test_R2_the_derived_near_geometry_matches_the_exact_one(eq_rows):
+    """The one design risk of deriving instead of rebuilding: pinned against the EXACT
+    0.1 m geometry of the same camera. (Inside 3 m the camera-height sample sits in the
+    lens's own horizontal plane -- up to ~13 px there, MEASURED -- which is why the max is
+    pinned from 3 m out; no road-plane sample is involved.)"""
+    _assert_near_geometry_is_exact_enough(eq_rows)
+
+
+def test_R2_DELIBERATE_REGRESSION_the_naive_fine_to_coarse_index_goes_RED(monkeypatch):
+    """``a * 0.4`` instead of ``(a + 0.5) * 0.4 - 0.5``: every sample 0.3 coarse cells
+    (7.5 cm) off -- several pixels at 5-10 m. The accuracy pin must fail."""
+    monkeypatch.setattr(H, "_fine_to_coarse_index", lambda n, r, device: torch.arange(
+        int(n), device=device, dtype=torch.float32) * float(r))
+    with pytest.raises(AssertionError):
+        _assert_near_geometry_is_exact_enough(0)
+
+
+def test_R2_DELIBERATE_REGRESSION_a_majority_validity_rule_goes_RED(monkeypatch):
+    """A fine cell 'valid' when most of its weight is valid samples a sanitised-zero
+    coordinate: cells valid in the derived geometry and NOT in the exact one appear."""
+    monkeypatch.setattr(H, "_near_valid", lambda bad: bad < 0.5)
+    with pytest.raises(AssertionError):
+        _assert_near_geometry_is_exact_enough(43)
+
+
+def _small_near_pair(seed=0, near=10.0, grad_ckpt=False):
+    """Two branches from ONE seed on the /2 extent: NEW-2 as landed, and with the near lift."""
+    kw = dict(w_map_hires=1.0, d_lift=16, d_model=16, d_up=16, dilations=(1, 2),
+              grad_ckpt=grad_ckpt)
+    torch.manual_seed(seed)
+    a = H.MapHiresBranch(H.MapHiresConfig(**kw), d_image=16, image_hw=(8, 16))
+    torch.manual_seed(seed)
+    b = H.MapHiresBranch(H.MapHiresConfig(near_lift_x_m=near, **kw), d_image=16,
+                         image_hw=(8, 16))
+    frame = frame_for_width(128, 64)
+    g = L.build_lift_geometry(RigCamera.nominal(frame, height_m=1.5, x_m=1.5), frame=frame,
+                              stride=8, grid=a.cfg.lift_grid)
+    geo = (g.grid.unsqueeze(0).expand(2, *g.grid.shape).contiguous(),
+           g.valid.unsqueeze(0).expand(2, *g.valid.shape).contiguous())
+    torch.manual_seed(seed + 1)
+    return a, b, torch.randn(2, 16, 8, 16), geo
+
+
+def _assert_near_branch_is_new2_at_init(a, b, f, geo) -> None:
+    sa, sb = a.state_dict(), b.state_dict()
+    assert sorted(set(sb) - set(sa)) == ["near.lift.proj.bias", "near.lift.proj.weight",
+                                         "near.lift.unobserved"]
+    assert all(torch.equal(sa[k], sb[k]) for k in sa)             # built LAST
+    with torch.no_grad():
+        la = a(f, *geo)["map_hires_logits"]
+        lb = b(f, *geo)["map_hires_logits"]
+    assert torch.equal(la, lb)                                     # zero-initialised
+
+
+def test_R2_the_near_branch_IS_the_NEW2_branch_at_step_0():
+    a, b, f, geo = _small_near_pair()
+    _assert_near_branch_is_new2_at_init(a, b, f, geo)
+    # d_image 16 x 4 heights x d_up 16 + bias 16 + unobserved 16 -- a literal
+    assert b.param_breakdown() == {"lift": a.param_breakdown()["lift"],
+                                   "encoder": a.param_breakdown()["encoder"],
+                                   "refine": a.param_breakdown()["refine"],
+                                   "near": 1056, "total": a.param_breakdown()["total"] + 1056}
+    assert "near" not in a.param_breakdown()
+
+
+def test_R2_DELIBERATE_REGRESSION_a_non_zero_skip_init_goes_RED():
+    a, b, f, geo = _small_near_pair()
+    with torch.no_grad():
+        b.near.lift.proj.weight.normal_(std=0.02)
+    with pytest.raises(AssertionError):
+        _assert_near_branch_is_new2_at_init(a, b, f, geo)
+
+
+@pytest.mark.parametrize("grad_ckpt", [False, True])
+def test_R2_the_skip_is_MAP_ONLY_and_trains(grad_ckpt):
+    """Perturbing the near lift moves the 10 cm logits and leaves the SHARED 0.25 m encoder
+    output (what the planner pool reads) byte-identical; one backward reaches the skip's
+    projection even from its zero init, and with the regression arm's zero source the
+    projection's gradient is EXACTLY 0 while its bias still trains."""
+    _, b, f, geo = _small_near_pair(grad_ckpt=grad_ckpt)
+    with torch.no_grad():
+        o0 = b(f, *geo)
+        b.near.lift.proj.weight.fill_(0.01)
+        o1 = b(f, *geo)
+    assert torch.equal(o0["map_hires_bev"], o1["map_hires_bev"])   # map-only
+    assert not torch.equal(o0["map_hires_logits"], o1["map_hires_logits"])
+    _, b, f, geo = _small_near_pair(grad_ckpt=grad_ckpt)
+    b.train()
+    fr = f.clone().requires_grad_(True)
+    b(fr, *geo)["map_hires_logits"].square().mean().backward()
+    assert float(b.near.lift.proj.weight.grad.abs().sum()) > 0.0
+    assert float(fr.grad.abs().sum()) > 0.0
+    rep = H.grad_reach_report_hires(None, branch=b)
+    assert sorted(rep) == ["encoder", "lift", "near", "refine"]
+    assert rep["near"]["grad_abs_sum"] > 0.0 and rep["near"]["n_params"] == 1056
+    b.zero_grad(set_to_none=True)
+    b(f, *geo, near_source=torch.zeros_like(f))["map_hires_logits"].square().mean().backward()
+    assert float(b.near.lift.proj.weight.grad.abs().sum()) == 0.0   # literal
+    assert float(b.near.lift.proj.bias.grad.abs().sum()) > 0.0
+
+
+def test_R2_the_near_source_seam_is_refused_where_it_cannot_apply():
+    a, b, f, geo = _small_near_pair()
+    with pytest.raises(ValueError, match="no near lift"):
+        a(f, *geo, near_source=torch.zeros_like(f))
+    with pytest.raises(ValueError, match="near_source"):
+        b(f, *geo, near_source=torch.zeros(2, 16, 8, 8))
+    assert sorted(H.grad_reach_report_hires(None, branch=a)) == ["encoder", "lift", "refine"]
+
+
+def _dvb_near_model(near: float):
+    m = _dvb_model()
+    cfg = H.MapHiresConfig(w_map_hires=1.0, d_lift=16, d_model=16, d_up=16, dilations=(1,),
+                           near_lift_x_m=near)
+    m._map_hires = H.MapHiresBranch(cfg, d_image=16, image_hw=(8, 16))
+    return m
+
+
+def test_R2_dvb_the_near_lift_is_built_iff_declared_GREEN_and_RED():
+    ok = _dvb_near_model(10.0)
+    assert H.dvb_check_near_lift(ok, _dvb_args(map_hires_near_lift_m=10.0)) == []
+    assert H.dvb_check_near_lift(_dvb_model(), _dvb_args()) == []          # unset = 0
+    assert H.dvb_check_near_lift(_dvb_model(), _dvb_args(map_hires_near_lift_m=0.0)) == []
+    off = _dvb_model(on=False, tap=False)
+    assert H.dvb_check_near_lift(off, _dvb_args(map_hires="off")) == []
+    # RED: declared, not built / built, not declared / built at another range / no branch
+    for m, a, where in (
+            (_dvb_model(), _dvb_args(map_hires_near_lift_m=10.0), "model._map_hires.near"),
+            (ok, _dvb_args(), "model._map_hires.near"),
+            (_dvb_near_model(5.0), _dvb_args(map_hires_near_lift_m=10.0),
+             "model._map_hires.near.rows/out_w"),
+            (off, _dvb_args(map_hires="off", map_hires_near_lift_m=10.0),
+             "model._map_hires")):
+        got = H.dvb_check_near_lift(m, a)
+        assert got and all(x.lever == "--map-hires-near-lift-m" for x in got), got
+        assert any(x.read_from == where for x in got), [x.read_from for x in got]
+    st = H.built_state(ok)
+    assert st["near_lift_x_m"] == 10.0 and st["near_lift_built"] is True
+    assert H.built_state(_dvb_model())["near_lift_built"] is False
