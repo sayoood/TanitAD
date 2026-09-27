@@ -577,3 +577,48 @@ If the corrected MAIN or +R6 PASSES G-BOX-OVERFIT, HQS is not needed and stays d
 1. The one-frame test for HQS, LRP and `unanchored`. An arm that fails its one-frame test is dropped.
 2. G-BOX-OVERFIT, with every prereg literal plus A13 and the 113/77 reconciliation, on **LRP first**, the simpler lever. If it PASSES it is the launch configuration and HQS stays default-off. If it FAILS, G-BOX-OVERFIT runs on HQS.
 3. The corrected MAIN (A13) and the one-frame +R6 rung are DEPRIORITISED. They run only if both anchored arms fail. The ladder and this bench both show the learned decoder failing the one-frame test.
+
+## 20. Amendment A15 (2026-09-27 ~11:40 Berlin, BEFORE its first number): the map's next lever is the DECODER, a dilated near-range refine block stacked on the A12 lift
+
+**Evidence** (the A12 early arm, NON-BINDING; the harness is valid). At step 1,000, declared rule:
+- **MAIN** (R2, near lift on) FAILS: lane 0.496, edge 0.194.
+- **Every must-fail failed as required:** `s8_zeros` reads 0 on all five thin classes; `near_zeros` reads edge 0.072; `lane_w0` reads lane 0.
+- **The lever's isolated effect** (MAIN − near_zeros): edge +0.122, lane +0.030.
+- **Edge is RECALL-limited:** P 0.902, R 0.429, F1 0.582 at the 0.2 m tolerance.
+
+**Why the decoder (§9 lever 3) ranks before the weights (lever 4), MEASURED:**
+
+| class | shape | TRAIN sqrt_mf weight | CE@1000 / CE@0 | crosses its bar (MAIN_long) |
+|---|---|---|---|---|
+| crosswalk | area | 1.07 | 0.067 | step 200 |
+| hatched (0.05 % of cells) | area | 2.15 | 0.026 | step 200 |
+| arrow (0.04 %) | area | 2.96 | 0.079 | step 600 |
+| lane | LINE | 0.94 | 0.280 | step 1,200 |
+| edge | LINE | 1.57 | 0.290 | never by 3,000 |
+
+- The lag follows SHAPE, not weight or rarity: the rarest area classes are the fastest. Lane and crosswalk carry nearly the same weight, yet lane's CE ratio is 4.2× higher and it crosses 6× later.
+- The path that must shape 1–2-cell LINES at 0.1 m is the decoder: two 3×3 convs, a receptive field of ≈ 0.5 m.
+- Lever (4) is structurally weak for lane: lane's frequency sits at the median, so every median-frequency variant leaves its weight near 1.
+
+**The lever: `--map-hires-near-refine-blocks`** (default 0 = off; the arm and a PASSING launch use **1**) → `MapHiresConfig.near_refine_blocks`, a declared field.
+- It requires `near_lift_x_m > 0`.
+- A new G-DVB kind, `map_hires_near_refine_blocks`, takes the registry 214 → 215.
+- **`NearRefineBlock`:** one residual block on the NEAR rows (x 0–20 m, full width) at 0.1 m.
+  - Its input is the near skip plus the upsampled features, before conv1.
+  - Layers: 3×3 conv (32 → 32, dilation 2) → GroupNorm → GELU → 3×3 conv (32 → 32, dilation 4), added residually.
+  - The last conv is ZERO-initialised, so the arm starts as R2's function.
+  - It adds ≈ 1.3 m of receptive field, so line evidence can connect along lines.
+- **Map-only:** `map_hires_bev`, the pooled BEV the planner reads, is untouched.
+- **Cost (ANALYTIC):** fwd +4.3 % (103.4 → 107.8 GFLOP per sample); saved activations +0 GiB (inside the decoder checkpoint); a transient +0.25 GiB at b16; +18.5 k params; ≲ +0.1 s/step at b16 (ESTIMATED).
+- **Rejected as costlier and untargeted:** a deeper full-map 0.1 m conv (+10.7 % FLOPs); d_up 64 (+66 % FLOPs, 2.29 GiB per 0.1 m activation at b16).
+
+**The arm.**
+- Setup: the A12 spec plus `near_refine_blocks: 1`, with EVERY prereg literal unchanged. MAIN = R2 + the block.
+- **Must fail:**
+  - `s8_zeros`, zeros into both lifts: all five thin classes fail (must_fail_all);
+  - **`near_block_zeros`**, zeros into the block, which can then add only learned constants and is therefore the A12 function: edge must fail.
+- **Kept:** `lane_w0`, which must fail lane.
+- **Informative:** `near_zeros` and `s8_detached`.
+- **If it FAILS with its must-fails holding:** §9 lever (4), the weights, is next.
+- **Binding:** A11. Only a run on the launch closure binds.
+- **GPU:** after the box G-BOX-OVERFIT arm (the PI's priority, 2026-09-27 11:30) and after A12's paused `s8_detached` completes.
