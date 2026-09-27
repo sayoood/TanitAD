@@ -640,3 +640,50 @@ A15's sentence *"Lever (4) is structurally weak for lane: lane's frequency sits 
 **The A15 choice stands** on the other, MEASURED argument. At nearly the same weight (lane 0.94 vs crosswalk 1.07), the LINE classes lag the AREA classes by 4.2× in CE ratio, and the rarest area classes are the fastest. The order (3) → (4) is unchanged. (4) is now framed as a real, mechanistic lever, not a weak one.
 
 **Readiness for (4)**, if A15 fails with its must-fails holding: the TRAIN mf weights are being computed on Thor (PID 3729978, nice 19 + ionice idle, the landed script blob 8012922f, `--definition mf`, 100 × 30). The file is stamped `pre_registered: false` until (4) is registered.
+
+## 21. Amendment A16 (2026-09-27 ~15:20 Berlin, BEFORE its first number): the map's lever (4), median-frequency weights stacked on R3
+
+**Evidence** (the A15 early arm, NON-BINDING; the harness is valid). At step 1,000, declared rule:
+- **MAIN** (near lift + near refine block) **FAILS on edge alone: 0.259.**
+- **Lane PASSES at 0.522**, although that is inside the ~0.06 replicate spread. The other six classes pass.
+- **The must-fails hold:** s8_zeros reads 0 on all thin classes; near_block_zeros reads edge 0.134; lane_w0 reads lane 0.
+- C1–C3 and the 1 ms guard hold.
+- **The lever effects stack:** edge 0.08–0.10 (NEW-2) → 0.194 (A12) → 0.259 (A15). Edge's CE ratio went 0.290 → 0.238 → 0.157. Edge is still RECALL-limited: P 0.937, R 0.581 at the 0.2 m tolerance.
+- The block's step time is 0.711 s/step at b4, against A12's 0.712, so its cost is not measurable.
+
+**The lever: the TRAIN median-frequency (mf) weights**, `map_hires_class_weights_train_100x30_MF.json`, sha256 `8ff4fd6d8798031a4af59991833ff724db251618f32c794beb2e5b8575702c98`.
+- It is built from the same inputs (sha256) as the sqrt_mf file, by the landed script, over 4,369 clips, with n_clipped 0.
+- **Weights** (nocls, drivable, lane, crosswalk, arrow, edge, hatched, sidewalk): 0.0199, 0.0424, 0.8825, 1.154, 8.745, 2.469, 4.635, 0.0272.
+- **The quantity that moves** (§20.1): w_edge / w_drivable is 58, against 7.6 under sqrt_mf; w_lane / w_drivable is 20.8, against 4.6.
+- **Cost:** the big classes' gradient share falls (~10.4 % → 2.7 % each). They must still clear their 0.85 bars, and those are in the arm's criteria.
+
+**The arm.**
+- Setup: R3 plus `--class-weights <the mf file>`. Every prereg literal is unchanged. The spec adds `class_weights_definition: "mf"`, and the harness refuses a weights file of any other definition before a trunk is built.
+- **Must fail:**
+  - `s8_zeros`: all five thin classes fail;
+  - **`edge_w0`**: edge's LOSS weight is 0 and its decision weight unchanged. Edge must fail, which shows an edge pass comes from edge's own weighted loss.
+- **Kept:** `lane_w0`.
+- **Cross-run lever-off reference:** A15's MAIN, with the same seed, init, frames and harness.
+
+**If it PASSES:**
+- A8's launch weights change from sqrt_mf to **mf**: the canonical argv's class-weights file.
+- The launch gate's profile must then accept `definition_id: mf` with this amendment as its registration.
+- The file's own `pre_registered: false` stamp is the script's convention for anything but sqrt_mf. A16 is the registration.
+
+**If it FAILS with its must-fails holding:** §9's pre-registered levers are EXHAUSTED, and the next step goes to the PI.
+
+## 22. Amendment A17 (2026-09-27 ~15:20 Berlin, BEFORE the binding run): G-BOX-OVERFIT's lr decays over the final 10 %, per the PI
+
+**PI, 2026-09-27 ~13:40 in chat:** "Add an lr decay to the harness". The PI chose this over a robust multi-point read-out and over keeping the literal snapshot.
+
+**Why it was needed.** The early LRP run (non-binding, the A13 constant-peak optimiser) memorised the 16 frames:
+- **10 of 12** readings from step 900 on pass all six criteria, several at AP 1.000, P = R = 1.000 and 113 of 113 confident.
+- It FAILED the registered step-2,000 snapshot on a late transient: R 0.832, 95 confident, while the loss rose 2.16 → 3.05 over the last 100 steps.
+
+A constant peak lr leaves the final snapshot noisy. The real launch decays its lr (cosine to step 50,400). **The early LRP FAIL stays on the record.**
+
+**The change.** In every G-BOX-OVERFIT arm, both optimiser groups keep A13's peak lrs (trunk 5e-5, head 1e-4) for steps 0–1,799. Over **steps 1,800–2,000** (the final 10 %), both follow a **cosine decay from their peak to 0**, which keeps the groups' ratio. Weight decay 1e-4 and clip 10 are unchanged.
+
+**Unchanged:** every other literal, i.e. the bars, the step-2,000 read-out, the must-fail arms, C1–C4, the 113/77 reconciliation, the declared gate σ ≥ 0.5, the canonical config and the LRP launch configuration (A14.1).
+
+**The binding run** (A11 closure; its three arms are MAIN, memory_zeros and presence_w0) runs with A17 once the harness change has landed.
