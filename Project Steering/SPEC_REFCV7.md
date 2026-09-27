@@ -776,3 +776,31 @@ The session transcript's timestamps are the record (UTC; Berlin is UTC+2):
 - A second, MEASURED reason for the map: at A18's 3,000 steps, `near_block_zeros` may itself reach edge ≥ 0.50. The block's effect was +0.055 at 1,000 steps under the decay, equal to MAIN's 3,000-step margin (0.555 vs 0.50). The must-fail could then read "passed" and VOID a binding whose head learns every class.
 
 **The order:** the map MAIN binding first (its edge margin is the thinner one), then the box MAIN binding; then G-LIVE / G-CKPT / G-EVAL on the launch commit; then the token.
+
+### 24.1 A19 in practice (2026-09-27; its time is its landing commit): the map binding runs on an A19 MAIN-only SPEC; the box binding is HELD for a harness fix
+
+- **The map harness refuses `--arms healthy` under the A18 spec.** The frozen `map_hires_overfit.py` (blob 9bec9e88), `main()` lines 650–652, requires every arm the spec's `must_fail` names to be in `--arms`. The map-head builder caught this before the binding started.
+  - The fix keeps the harness frozen. The **A19 MAIN-only map spec** `raw/gmo_spec_A19_MAP_MAIN.json` (md5 2d11ba07a19c50726f94e4de3572155e, sha256 56dea067fdef45e9…) is the A18 spec (md5 4eda0636) with `must_fail` / `must_fail_all` removed and nothing else changed. Its script is `run_gmo_binding_a19.sh` (md5 a317bfef).
+  - Verified on the frozen harness: the A19 spec is accepted with `--arms healthy`; red arm: the A18 spec is refused.
+  - The gate's map judge binds THIS spec's sha256 for the binding record.
+- **The map MAIN binding STARTED 16:05:13Z (18:05 Berlin)** on Thor.
+  - Tree `/home/nvidia/refcv7_bind/tree_map`: tip 37086c3 + the box A17 overlay + R5's harness 9bec9e88 + the 154-token argv (gate sha 6402d33d…).
+  - Wrapped by `closure_run.py --binding`.
+- **A defect found in the box harness before its binding started** (the eval-loader agent, MEASURED on a tiny rig built through the real `train()`):
+  - `g_box_overfit.py` (A17 blob 3c051db7) replays the 10 cm branch WITHOUT `near_lift_x_m` / `near_refine_blocks`. Under the final argv it therefore builds a model that is not the launch model; that exact replay gives 5 G-DVB mismatches.
+  - The box binding is HELD: the Thor chain waits for `BOX_TREE_READY`. It runs on the fixed harness, and the fixed blob lands in the launch commit identically.
+  - The fix is harness-only. `stack/tanitad/**` and the trainer, which the running map binding's closure depends on, are untouched.
+
+## 25. PI cost approval (2026-09-27, SPEC 6.2 item 5, the reserved decision (a)): refcv7 runs at ~9.9 s/step
+
+- **MEASURED** (the early cost probe, NON-BINDING):
+  - Setup: tip 37086c3 + the box A17 overlay, the intended 154-token argv, batch 16, log 50 / conflict 10 as launched, exclusive GPU.
+  - Marginal over steps 50→100: **9.876 s/step**. That is **1.54×** refcv6's 6.41 (measured the same way on refcv6's own metrics.jsonl), above the PI line of 8.0.
+  - `cuda_max_mem_gb` 24.83.
+  - Record: `/home/nvidia/refcv7_probe/probe_result.json`; its config.json md5 0a659ec8.
+  - The trainer logs no per-part timing, so the +3.5 s/step is NOT yet attributed.
+- **PI** (asked 18:01 Berlin, 16:01:19Z, with three options: approve and launch; grad-ckpt off first; profile first). **Answered 18:02 (16:02:50Z): "Approve ~9.9 s/step, launch"**.
+  - Recorded for the gate as `--pi-cost-approval` with `max_s_per_step` **10.5**. That leaves room for the 30-step smoke's noisier reading.
+  - File: `work/refcv7/launch/pi_cost_approval.json`, banked with the launch package.
+- **The run length it implies:** 50,400 steps × 9.88 s ≈ 5.8 days.
+- **Follow-up** (not a blocker): profile the +3.5 s/step on the dev box. A speed-up found later is applied at a checkpoint with a NEW gate run and new binding runs on the new argv.
