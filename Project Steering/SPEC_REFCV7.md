@@ -551,3 +551,29 @@ Every rung above reads ≤ 0.065 on (ii).
 - then a one-frame +R6 rung (whether denoising alone stabilises the assignment; informative).
 
 If the corrected MAIN or +R6 PASSES G-BOX-OVERFIT, HQS is not needed and stays default-off.
+
+### 19.1 A14.1 (2026-09-27 ~11:15 Berlin, BEFORE any Thor number): the one-frame test's metric (ii) and red arm are corrected, and learned reference points become a candidate
+
+**Disclosure: what revealed it.** An INFORMATIVE bench on the dev-box GPU. The box memory of the ladder frame was captured on Thor under the A13 canonical config; the trunk and BEV were frozen; only the box head trained, at the launch head lr 1e-4, weight decay 1e-4, clip 10, for 500 steps, on the landed `box3d_loss_row`. NON-BINDING.
+
+| mode | (i) matched presence median | confident / 13 | registered (ii): slot INDEX kept | matched ANCHOR kept | unmatched max |
+|---|---|---|---|---|---|
+| learned (MAIN decoder) | 0.172 | 0 | 0.000 | — | 0.263 |
+| HQS (A14) | 0.764 | 12 | 0.115 | 0.942 | 0.382 |
+| learned reference points (the registered red arm) | 0.879 | 13 | 1.000 | (the query) | 0.053 |
+
+**The two defects, both in the TEST, not in any arm:**
+1. **Registered (ii) measured top-K RANK churn, not the assignment.** Under HQS the slot index is the rank in a score-sorted top-K, and ranks reorder as scores move. The quantity A14 meant is whether each target keeps its matched ANCHOR.
+2. **The registered red arm is itself an anchoring mechanism.** Learned per-query reference points are DAB-DETR-style anchors, and they PASSED both literals. So the registered test would read VOID by construction, whatever HQS did.
+
+**The corrections.** The bars are unchanged (i ≥ 0.50, ii ≥ 0.80), and so are the frame, the 500 steps, the A13 optimiser and the canonical config.
+- **(ii), for anchored arms:** the mean share of targets that keep their matched ANCHOR over the final 100 steps, in 25-step windows. For HQS the anchor is the selected heatmap cell. For learned reference points the anchor is the query.
+- **The red arm becomes `unanchored`:** zero query position and absolute box regression, i.e. the MAIN decoder. It must FAIL (i) or (ii).
+- **A new candidate arm, LRP:** `--slot-query-select learned_ref`, default off.
+  - DAB-DETR-style learned per-query 2-D reference points; the query position is a sine embedding of the point, added at every layer through the layers' own modules; the box centre is the point + tanh(raw) × 4 m.
+  - It adds +600 parameters (300 × 2) and needs no heatmap. It is a smaller member of the same anchored-query family the PI authorised.
+
+**The order on Thor**, the full model, trunk training, A13 optimiser:
+1. The one-frame test for HQS, LRP and `unanchored`. An arm that fails its one-frame test is dropped.
+2. G-BOX-OVERFIT, with every prereg literal plus A13 and the 113/77 reconciliation, on **LRP first**, the simpler lever. If it PASSES it is the launch configuration and HQS stays default-off. If it FAILS, G-BOX-OVERFIT runs on HQS.
+3. The corrected MAIN (A13) and the one-frame +R6 rung are DEPRIORITISED. They run only if both anchored arms fail. The ladder and this bench both show the learned decoder failing the one-frame test.
