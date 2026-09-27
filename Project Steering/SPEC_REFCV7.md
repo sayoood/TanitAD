@@ -478,3 +478,30 @@ Early non-binding records stay unusable by construction.
 - **Informative:** `s8_detached`.
 - **If the arm FAILS while its must-fails hold:** §9's next lever is (3), the decoder.
 - **Binding:** A11 applies. Only a run on the launch closure binds; this arm's early run is non-binding.
+
+## 18. Amendment A13 (2026-09-27 ~10:05 Berlin, BEFORE the corrected arm's first number and BEFORE the one-frame ladder reports): G-BOX-OVERFIT's optimiser is the LAUNCH optimiser
+
+**The defect.** The prereg (§3) claims to test "the refcv7 LAUNCH box path, as built and configured for the launch", but its optimiser line contradicts that. The box builder read it STATIC at tip ab1fb45:
+
+| | the harness (prereg §3) | the LAUNCH (refcv6 argv = refcv7 canonical argv) |
+|---|---|---|
+| optimiser | AdamW, lr **2e-4 constant for every trainable tensor**, trunk included | `--opt dd` → `timm_trunk.param_groups_dd` (`timm_trunk.py:1316`) → AdamW, two groups by name: `core.encoder.*` (trunk) and the rest |
+| peak lr | 2e-4 | head **1e-4** (`--lr`); trunk **5e-5** (`--encoder-lr-mult` default 0.5, `refc_v3_train.py:10644`) |
+| schedule | constant | 2,000-step linear warm-up, then cosine (`:8644`) |
+| weight decay | 0 | 1e-4 (`:10641` default) |
+| grad clip | none | `clip_grad_norm_(…, 10.0)` every step (`:9203`) |
+| config | MAIN ran on the stride-16 lift | refcv7 canonical: `--map-hires on --bev-source map_hires_pool`, so the box head reads NEW-2's pooled BEV |
+
+The harness's step is 2× the launch's peak head lr and 4× its trunk lr, and up to 40× during the launch's warm-up. The early diagnosis MEASURED the image memory losing its frame-specific variation (37 % → 6 %) within 20 steps. A step size the launch never takes is a candidate cause.
+
+**The correction (a), registered now.** Every G-BOX-OVERFIT arm uses:
+- **the launch's optimiser AS BUILT**: the trainer's own `build_optimizer` with the canonical argv's `--opt dd --lr 1e-4`, the default `--encoder-lr-mult 0.5`, the default `--weight-decay 1e-4`, and `clip_grad_norm_` 10.0;
+- **held at the launch's PEAK lrs, constant, with no warm-up**: a 2,000-step capacity test inside the launch's warm-up would never leave it (option (b), rejected: it would fail from under-training, which is not what the test measures);
+- **on the refcv7 canonical config plus the A9 box flags**: the launch-gate package's `stack/ops/runs.d/refcv7-r101-s0.argv.json` plus R1–R4, with the box head reading NEW-2's pooled BEV. The harness takes the canonical object file (`["argv"]`).
+
+**Unchanged:** every other literal (16 frames, 113 POS / 77 IGNORE, batch 4, 2,000 steps, seed 0, the PASS bars, must-fail `memory_zeros` and `presence_w0`, C1–C4, the declared gate σ ≥ 0.5). The early MAIN / +R6 results under the old optimiser stay on the record as NON-BINDING evidence of the defect.
+
+**The order that follows:**
+1. The one-frame ladder (diagnostic, running) reports. Its `lr_2e-5` and `frozen_trunk` rungs attribute the collapse.
+2. The corrected MAIN arm runs (non-binding). If it FAILS criterion 2/3 at base rate, the pre-registered A10.1 chain resumes: +R6, then the PI-authorised (2026-09-27) BEV-heatmap query selection.
+3. Only a run on the launch closure (A11) binds.
