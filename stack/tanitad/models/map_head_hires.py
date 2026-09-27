@@ -103,6 +103,9 @@ __all__ = [
     # NEW-2 R2 (A12): the 0.1 m near-range lift
     "NearLiftSkip", "derive_near_geometry", "NEAR_LIFT_STEP_M", "declared_near_lift_m",
     "dvb_check_near_lift",
+    # NEW-2 R3 (A15): the near refine block
+    "NearRefineBlock", "NEAR_REFINE_MAX_BLOCKS", "declared_near_refine_blocks",
+    "dvb_check_near_refine",
 ]
 
 #: the JSON the weights script writes and the trainer reads.
@@ -116,6 +119,8 @@ DECISION_RULES: tuple[str, ...] = ("prior_corrected", "raw")
 #: NEW-2 R2 (A12): the near lift's extent is a multiple of this, so it tiles the 0.25 m lift
 #: grid, the 0.1 m label grid and the 0.5 m planner grid exactly.
 NEAR_LIFT_STEP_M = 0.5
+#: NEW-2 R3 (A15): at most this many near refine blocks (the registered arm uses 1).
+NEAR_REFINE_MAX_BLOCKS = 4
 
 
 def decide(logits: Tensor, rule: str, class_weight: Tensor | None = None) -> Tensor:
@@ -204,6 +209,12 @@ class MapHiresConfig:
     #: planner's pooled BEV are untouched. ``0`` (the DEFAULT) builds nothing: the branch is
     #: NEW-2 as landed, parameter for parameter. (``--map-hires-near-lift-m``.)
     near_lift_x_m: float = 0.0
+    #: ⭐ NEW-2 R3 (SPEC_REFCV7 §20, A15; §9 lever 3, THE DECODER, stacked on the near lift):
+    #: residual :class:`NearRefineBlock` s (3x3 dilation 2 -> GN -> GELU -> 3x3 dilation 4,
+    #: last conv zero-initialised) on the NEAR rows at 0.1 m, after the near lift is added.
+    #: Needs ``near_lift_x_m > 0``. ``0`` (the DEFAULT) builds nothing: R2 as landed.
+    #: (``--map-hires-near-refine-blocks``.)
+    near_refine_blocks: int = 0
 
     def __post_init__(self) -> None:
         if str(self.decision_rule) not in DECISION_RULES:
@@ -242,6 +253,13 @@ class MapHiresConfig:
             if nx > float(self.x_max_m) + 1e-9:
                 raise ValueError(f"near_lift_x_m {nx} reaches past the map extent "
                                  f"({self.x_max_m} m ahead)")
+        nb = self.near_refine_blocks
+        if isinstance(nb, bool) or int(nb) != nb or not 0 <= int(nb) <= NEAR_REFINE_MAX_BLOCKS:
+            raise ValueError(f"near_refine_blocks {nb!r} must be an integer in "
+                             f"[0, {NEAR_REFINE_MAX_BLOCKS}]")
+        if int(nb) > 0 and not nx > 0.0:
+            raise ValueError("near_refine_blocks > 0 with near_lift_x_m 0: the block refines "
+                             "the NEAR rows, and without the near lift there are none")
 
     @property
     def extent(self) -> MapExtent:
@@ -285,7 +303,9 @@ class MapHiresConfig:
                 "receptive_field_m": self.receptive_field_m,
                 # NEW-2 R2 (A12): 0 = no near lift (the NEW-2 branch as landed)
                 "near_lift_x_m": float(self.near_lift_x_m),
-                "near_lift_rows": int(self.near_rows)}
+                "near_lift_rows": int(self.near_rows),
+                # NEW-2 R3 (A15): 0 = no near refine block (R2 as landed)
+                "near_refine_blocks": int(self.near_refine_blocks)}
 
 
 def declared_extent(args) -> MapExtent:
@@ -430,7 +450,8 @@ class HiresRefine(nn.Module):
         self.act = nn.GELU()
         self.cls = nn.Conv2d(d, int(cfg.n_classes), 1)
 
-    def forward(self, x: Tensor, near: Tensor | None = None) -> Tensor:
+    def forward(self, x: Tensor, near: Tensor | None = None, near_refine=None,
+                near_block_zero_input: bool = False) -> Tensor:
         x = self.inp(x)
         x = F.interpolate(x, size=self.out_hw, mode="bilinear", align_corners=False)
         if near is not None:
@@ -440,7 +461,10 @@ class HiresRefine(nn.Module):
                     or n > int(x.shape[2]):
                 raise ValueError(f"near-lift skip {tuple(near.shape)} does not fit the "
                                  f"decoder input {tuple(x.shape)}")
-            x = torch.cat([x[:, :, :n] + near, x[:, :, n:]], dim=2)
+            top = x[:, :, :n] + near
+            for blk in (near_refine or ()):         # NEW-2 R3 (A15): the near refine block(s)
+                top = blk(top, zero_input=near_block_zero_input)
+            x = torch.cat([top, x[:, :, n:]], dim=2)
         x = self.act(self.norm1(self.conv1(x)))
         x = self.act(self.norm2(self.conv2(x)))
         return self.cls(x)
@@ -551,6 +575,38 @@ class NearLiftSkip(nn.Module):
         return self.lift(fmap, g, v)
 
 
+class NearRefineBlock(nn.Module):
+    """⭐ NEW-2 R3 (SPEC_REFCV7 §20, A15; the map-signal audit's §9 lever 3, THE DECODER): one
+    residual block at 0.1 m on the NEAR rows, applied after the near lift is added and before
+    the decoder's own convs: ``x + conv_d4(GELU(GN(conv_d2(x))))``.
+
+    WHY (the early records): the classes that lag are the thin LINES, not the rare or the
+    low-weight ones -- at 1,000 steps lane / edge read CE ratio .280 / .290 against crosswalk
+    .067 at nearly lane's weight (1.07 vs 0.94), and in the 3,000-step run crosswalk crosses
+    its bar at step 200, lane at 1,200, edge never. The decoder's own 0.1 m receptive field is
+    0.5 m (two 3x3 convs); dilations 2 and 4 add ~1.3 m, so line evidence can connect along a
+    line. ⛔ MAP-ONLY. ⛔ The last conv is ZERO-initialised: at step 0 the branch is R2's
+    function, and the block is built last so every other parameter initialises as in R2.
+    ``zero_input`` (the G-MAP-OVERFIT ``near_block_zeros`` regression arm ONLY): the residual
+    branch reads zeros, so the block can add nothing but what its constants give."""
+
+    DILATIONS: tuple = (2, 4)
+
+    def __init__(self, cfg: MapHiresConfig):
+        super().__init__()
+        d, g = int(cfg.d_up), int(cfg.norm_groups)
+        d1, d2 = self.DILATIONS
+        self.c1 = nn.Conv2d(d, d, 3, padding=d1, dilation=d1, bias=False)
+        self.n1 = nn.GroupNorm(g, d)
+        self.c2 = nn.Conv2d(d, d, 3, padding=d2, dilation=d2, bias=False)
+        with torch.no_grad():
+            self.c2.weight.zero_()
+
+    def forward(self, x: Tensor, zero_input: bool = False) -> Tensor:
+        h = torch.zeros_like(x) if zero_input else x
+        return x + self.c2(F.gelu(self.n1(self.c1(h))))
+
+
 class MapHiresBranch(nn.Module):
     """``fmap_s8`` (+ this batch's 0.25 m lift geometry) -> 10 cm map logits AND the
     shared 0.25 m BEV features the planner's pool reads."""
@@ -569,6 +625,11 @@ class MapHiresBranch(nn.Module):
         # a branch without it; None = the NEW-2 branch as landed.
         self.near = (NearLiftSkip(cfg, d_image=self.d_image, image_hw=self.image_hw)
                      if int(cfg.near_rows) > 0 else None)
+        # ⭐ NEW-2 R3 (A15): built LAST (after the near lift), so every parameter above
+        # initialises exactly as in R2; None = R2 as landed.
+        self.near_refine = (nn.ModuleList([NearRefineBlock(cfg)
+                                           for _ in range(int(cfg.near_refine_blocks))])
+                            if int(cfg.near_refine_blocks) > 0 else None)
 
     def param_breakdown(self) -> dict:
         def n(m):
@@ -576,12 +637,16 @@ class MapHiresBranch(nn.Module):
         out = {"lift": n(self.lift), "encoder": n(self.encoder), "refine": n(self.refine)}
         if self.near is not None:
             out["near"] = n(self.near)
+        if self.near_refine is not None:
+            out["near_refine"] = n(self.near_refine)
         out["total"] = n(self)
         return out
 
     def _refine_near(self, feats: Tensor, src: Tensor, grid: Tensor,
-                     valid: Tensor) -> Tensor:
-        return self.refine(feats, near=self.near(src, grid, valid))
+                     valid: Tensor, near_block_zeros: bool = False) -> Tensor:
+        return self.refine(feats, near=self.near(src, grid, valid),
+                           near_refine=self.near_refine,
+                           near_block_zero_input=bool(near_block_zeros))
 
     def _run(self, fn, x: Tensor) -> Tensor:
         if self.cfg.grad_ckpt and torch.is_grad_enabled():
@@ -589,12 +654,15 @@ class MapHiresBranch(nn.Module):
         return fn(x)
 
     def forward(self, fmap_s8: Tensor | None, grid: Tensor | None,
-                valid: Tensor | None, *, near_source: Tensor | None = None) -> dict:
+                valid: Tensor | None, *, near_source: Tensor | None = None,
+                near_block_zeros: bool = False) -> dict:
         """⛔ Vision tensors only: no parameter here can carry a label.
 
         ``near_source`` (NEW-2 R2): what the 0.1 m near lift samples instead of ``fmap_s8``.
         ⛔ ONLY the G-MAP-OVERFIT ``near_zeros`` regression arm passes it (zeros); the
-        trainer never does."""
+        trainer never does.
+        ``near_block_zeros`` (NEW-2 R3): the near refine block's residual branch reads zeros.
+        ⛔ ONLY the G-MAP-OVERFIT ``near_block_zeros`` regression arm passes it."""
         if fmap_s8 is None:
             raise MapHiresMissingInput(
                 "[map-hires] ⛔ fmap_s8 is None: the 10 cm branch is built but the "
@@ -611,6 +679,8 @@ class MapHiresBranch(nn.Module):
                              f"the branch was built for {self.d_image}")
         bev = self.lift(fmap_s8, grid, valid)
         feats = self._run(self.encoder, bev)
+        if near_block_zeros and self.near_refine is None:
+            raise ValueError("near_block_zeros given to a branch with no near refine block")
         if self.near is None:
             if near_source is not None:
                 raise ValueError("near_source given to a branch with no near lift")
@@ -622,9 +692,10 @@ class MapHiresBranch(nn.Module):
                                  f"{tuple(fmap_s8.shape)}")
             if self.cfg.grad_ckpt and torch.is_grad_enabled():
                 logits = torch.utils.checkpoint.checkpoint(
-                    self._refine_near, feats, src, grid, valid, use_reentrant=False)
+                    self._refine_near, feats, src, grid, valid, bool(near_block_zeros),
+                    use_reentrant=False)
             else:
-                logits = self._refine_near(feats, src, grid, valid)
+                logits = self._refine_near(feats, src, grid, valid, bool(near_block_zeros))
         if tuple(logits.shape[1:]) != (int(self.cfg.n_classes),) + tuple(self.cfg.out_hw):
             raise RuntimeError(f"map-hires logits {tuple(logits.shape)} are not "
                                f"[B, 8, {self.cfg.out_hw[0]}, {self.cfg.out_hw[1]}]")
@@ -1030,6 +1101,8 @@ def grad_reach_report_hires(model, branch: MapHiresBranch | None = None) -> dict
         parts = [("lift", br.lift), ("encoder", br.encoder), ("refine", br.refine)]
         if getattr(br, "near", None) is not None:
             parts.append(("near", br.near))          # NEW-2 R2 (A12): map-only
+        if getattr(br, "near_refine", None) is not None:
+            parts.append(("near_refine", br.near_refine))  # NEW-2 R3 (A15): map-only
         for name, m in parts:
             s, n, g = grad_abs_sum(m)
             rep[name] = {"grad_abs_sum": s, "n_params": n, "n_params_with_grad": g}
@@ -1065,7 +1138,10 @@ def built_state(model) -> dict:
             "stride16_lift_built": pb is not None and getattr(pb, "lift", None) is not None,
             "bev_pool_built": pb is not None and getattr(pb, "bev_pool", None) is not None,
             "near_lift_x_m": None if br is None else float(br.cfg.near_lift_x_m),
-            "near_lift_built": br is not None and getattr(br, "near", None) is not None}
+            "near_lift_built": br is not None and getattr(br, "near", None) is not None,
+            "near_refine_blocks": None if br is None else int(br.cfg.near_refine_blocks),
+            "near_refine_built": (0 if br is None or getattr(br, "near_refine", None) is None
+                                  else len(br.near_refine))}
 
 
 # --------------------------------------------------------------------------- #
@@ -1081,7 +1157,9 @@ DVB_KINDS: dict = {"map_hires": "built", "w_map_hires": "loss",
                    "map_hires_grad_ckpt": "built",
                    "bev_source": "built", "bev_planner_crop_m": "built",
                    # NEW-2 R2 (A12)
-                   "map_hires_near_lift_m": "built"}
+                   "map_hires_near_lift_m": "built",
+                   # NEW-2 R3 (A15)
+                   "map_hires_near_refine_blocks": "built"}
 
 #: ``--bev-planner-crop-m``'s default and the ONLY value the refcv6 consumers are built
 #: for (SPEC_REFCV7 §12 item 2): the planner's 60 m x +-16 m window.
@@ -1102,6 +1180,12 @@ def declared_near_lift_m(args) -> float:
     """``--map-hires-near-lift-m``; unset = 0.0 (no near lift: NEW-2 as landed)."""
     v = getattr(args, "map_hires_near_lift_m", None)
     return 0.0 if v is None else float(v)
+
+
+def declared_near_refine_blocks(args) -> int:
+    """``--map-hires-near-refine-blocks``; unset = 0 (no near refine block: R2 as landed)."""
+    v = getattr(args, "map_hires_near_refine_blocks", None)
+    return 0 if v is None else int(v)
 
 
 def _mm(lever, declared, built, read_from, why=""):
@@ -1431,6 +1515,43 @@ def dvb_check_near_lift(model, args) -> list:
     return out
 
 
+def dvb_check_near_refine(model, args) -> list:
+    """``--map-hires-near-refine-blocks`` (NEW-2 R3, A15): the BUILT branch carries EXACTLY the
+    declared number of near refine blocks, of the registered design (dilations 2 and 4, the
+    decoder's width), on a branch that HAS the near lift; ``0`` = none. ⛔ The regression arm:
+    a declared block that is not built reads as a real decoder arm."""
+    want = declared_near_refine_blocks(args)
+    br = getattr(model, "_map_hires", None)
+    if br is None:
+        return [] if want == 0 else [_mm(
+            "--map-hires-near-refine-blocks", want, "no 10 cm branch", "model._map_hires",
+            "a decoder block for a branch that is not built")]
+    out = []
+    got = int(br.cfg.near_refine_blocks)
+    if got != want:
+        out.append(_mm("--map-hires-near-refine-blocks", want, got,
+                       "model._map_hires.cfg.near_refine_blocks"))
+    blocks = getattr(br, "near_refine", None)
+    n_built = 0 if blocks is None else len(blocks)
+    if n_built != want:
+        out.append(_mm("--map-hires-near-refine-blocks", want, n_built,
+                       "model._map_hires.near_refine",
+                       "the number of BUILT near refine blocks"))
+    if want > 0 and getattr(br, "near", None) is None:
+        out.append(_mm("--map-hires-near-refine-blocks", want, "no near lift",
+                       "model._map_hires.near",
+                       "the block refines the near rows, which only the near lift creates"))
+    for i, blk in enumerate(blocks or ()):
+        dil = (int(blk.c1.dilation[0]), int(blk.c2.dilation[0]))
+        if dil != tuple(NearRefineBlock.DILATIONS) or int(blk.c1.in_channels) != int(br.cfg.d_up):
+            out.append(_mm("--map-hires-near-refine-blocks",
+                           [list(NearRefineBlock.DILATIONS), int(br.cfg.d_up)],
+                           [list(dil), int(blk.c1.in_channels)],
+                           f"model._map_hires.near_refine[{i}]",
+                           "not the registered block (dilations 2 and 4 at the decoder width)"))
+    return out
+
+
 def register_dvb_levers(register=None) -> dict:
     """Register the NEW-2 levers in G-DVB's registry -> ``{dest: kind}``.
 
@@ -1448,7 +1569,8 @@ def register_dvb_levers(register=None) -> dict:
               "map_hires_grad_ckpt": dvb_check_grad_ckpt,
               "bev_source": dvb_check_bev_source,
               "bev_planner_crop_m": dvb_check_planner_crop,
-              "map_hires_near_lift_m": dvb_check_near_lift}
+              "map_hires_near_lift_m": dvb_check_near_lift,
+              "map_hires_near_refine_blocks": dvb_check_near_refine}
     for dest, kind in DVB_KINDS.items():
         register(dest, kind, checks[dest])
     return dict(DVB_KINDS)

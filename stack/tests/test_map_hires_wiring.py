@@ -195,7 +195,7 @@ from tanitad.data.semantic_map_gt_fine import (                     # noqa: E402
 
 
 def _attach(model, tmp_path=None, w=1.0, *, pool=False, extent=EXTENT_V2,
-            grad_ckpt=False, near=0.0):
+            grad_ckpt=False, near=0.0, blocks=0):
     """The trainer's build order under --map-hires on: the 10 cm branch first, then
     (with a BEV consumer) the perception branch whose planner pool reads it.
     ``near`` (NEW-2 R2, A12): ``MapHiresConfig.near_lift_x_m``."""
@@ -203,7 +203,7 @@ def _attach(model, tmp_path=None, w=1.0, *, pool=False, extent=EXTENT_V2,
     hcfg = H.MapHiresConfig(w_map_hires=w, x_max_m=float(extent.x_max_m),
                             y_half_m=float(extent.y_half_m), d_lift=16, d_model=16,
                             d_up=16, dilations=(1, 2), grad_ckpt=grad_ckpt,
-                            near_lift_x_m=float(near))
+                            near_lift_x_m=float(near), near_refine_blocks=int(blocks))
     model._map_hires = H.build_map_hires_branch(model, hcfg)
     model._w_map_hires = float(w)
     h, wd = model.cfg.core.encoder.image_hw()
@@ -738,7 +738,8 @@ def test_GDVB_the_NEW2_levers_are_registered_and_clean_on_a_built_A6_model(tmp_p
                                 "map_hires_decision_rule", "map_hires_x_max_m",
                                 "map_hires_y_half_m", "map_hires_grad_ckpt",
                                 "bev_source", "bev_planner_crop_m",
-                                "map_hires_near_lift_m"}         # NEW-2 R2 (A12)
+                                "map_hires_near_lift_m",         # NEW-2 R2 (A12)
+                                "map_hires_near_refine_blocks"}  # NEW-2 R3 (A15)
     for d in H.DVB_KINDS:
         assert dvb.REGISTRY[d].kind == H.DVB_KINDS[d]
         assert dvb.REGISTRY[d].check(model, args) == [], d
@@ -752,7 +753,10 @@ def test_GDVB_the_NEW2_levers_are_registered_and_clean_on_a_built_A6_model(tmp_p
                        ({"map_hires_grad_ckpt": "on"}, "map_hires_grad_ckpt"),
                        ({"bev_source": "s16_lift"}, "bev_source"),
                        # NEW-2 R2: a near lift declared on a model built without one
-                       ({"map_hires_near_lift_m": 20.0}, "map_hires_near_lift_m")):
+                       ({"map_hires_near_lift_m": 20.0}, "map_hires_near_lift_m"),
+                       # NEW-2 R3: a decoder block declared on a model built without one
+                       ({"map_hires_near_refine_blocks": 1},
+                        "map_hires_near_refine_blocks")):
         assert dvb.REGISTRY[dest].check(model, _argparse.Namespace(
             **{**vars(args), **over})), dest
 
@@ -990,3 +994,81 @@ def test_R2_the_trainers_compute_losses_trains_the_near_lift_end_to_end():
         assert rep[part]["grad_abs_sum"] > 0.0, (part, rep[part])
     keys = _d3_config(model)["grad_reach_logging"]["keys"]
     assert "ga_mh_near" in keys and "ga_mh_near_n" in keys
+
+
+
+# =========================================================================== #
+# NEW-2 R3 (SPEC_REFCV7 §20, A15): the near refine block through the trainer   #
+# =========================================================================== #
+def test_R3_the_block_pin_GREEN_and_every_dead_or_illegal_value_refuses():
+    _pin(ON + ["--map-hires-near-lift-m", "20", "--map-hires-near-refine-blocks", "1"])
+    _pin(ON + ["--map-hires-near-refine-blocks", "0"])
+    a = T.build_parser().parse_args(ON)
+    assert H.declared_near_refine_blocks(a) == 0                  # unset = none
+    for argv, needle in (
+            (["--arm", "hier", "--out", "X", "--map-hires-near-refine-blocks", "1"],
+             "READ BY NOTHING"),
+            (ON + ["--map-hires-near-refine-blocks", "1"], "without --map-hires-near-lift-m"),
+            (ON + ["--map-hires-near-lift-m", "20", "--map-hires-near-refine-blocks", "5"],
+             "--map-hires-near-refine-blocks"),
+            (ON + ["--map-hires-near-lift-m", "20", "--map-hires-near-refine-blocks", "-1"],
+             "--map-hires-near-refine-blocks")):
+        with pytest.raises(SystemExit) as e:
+            _pin(argv)
+        assert needle in str(e.value), (argv, str(e.value)[:300])
+
+
+def test_R3_the_eval_loader_rebuilds_a_block_model_strictly():
+    A = _arm_module()
+    model, _ = _model()
+    hcfg = _attach(model, pool=True, near=10.0, blocks=1)
+    assert model._map_hires.near_refine is not None
+    cw = {"weights": [1.0] * 8, "sha256": "ab" * 32}
+    tap = model.core.encoder.enable_s8_tap()
+    stamp = {"map_hires": {**hcfg.as_dict(), "class_weights": cw,
+                           "trunk_tap": {k: tap[k] for k in ("s8_module", "s8_dim",
+                                                             "s8_hw")},
+                           "branch_params": model._map_hires.param_breakdown()},
+             "refcv6_perception": {**model._perception.cfg.as_dict(),
+                                   "branch_params": model._perception.param_breakdown()}}
+    assert stamp["map_hires"]["near_refine_blocks"] == 1
+    fresh, _ = _model()
+    A.rebuild_map_hires_branch(fresh, stamp, "cpu")
+    A.rebuild_perception_branch(fresh, stamp, "cpu")
+    res = fresh.load_state_dict(model.state_dict(), strict=False)
+    assert list(res.missing_keys) == [] and list(res.unexpected_keys) == []
+    assert len(fresh._map_hires.near_refine) == 1
+    dropped = {**stamp, "map_hires": {k: v for k, v in stamp["map_hires"].items()
+                                      if k != "near_refine_blocks"}}
+    other, _ = _model()
+    with pytest.raises(SystemExit):
+        A.rebuild_map_hires_branch(other, dropped, "cpu")
+
+
+def test_R3_the_trainers_compute_losses_trains_the_block_end_to_end():
+    torch.manual_seed(0)
+    model, cfg = _model()
+    _attach(model, near=10.0, blocks=1)
+    model.train()
+    eps = T._synth_episodes(2, cfg.core, seed=0, clip_ids=[CLIP, CLIP + "-b"])
+    ds = T.V3Dataset(eps, window=cfg.core.window, max_horizon=20,
+                     channels=cfg.core.encoder.in_channels)
+    batch = torch.utils.data.default_collate([ds[0], ds[1]])
+    v7l = T.v7l
+    batch["lat_v7"] = torch.tensor([0, v7l.IGNORE_ID], dtype=torch.long)
+    batch["lon_v7"] = torch.tensor([len(v7l.HEADS["tac_lon"]) - 1, v7l.IGNORE_ID],
+                                   dtype=torch.long)
+    batch["nav_cmd"] = torch.tensor([1, 2], dtype=torch.long)
+    batch["nav_valid"] = torch.tensor([True, True])
+    batch["tac_goal_y"] = torch.zeros(2, len(v7l.TAC_GOAL_TOKENS))
+    batch["tac_goal_w"] = torch.zeros(2, len(v7l.TAC_GOAL_TOKENS))
+    batch.update(_batch())
+    losses = T.compute_losses_v3(model, batch, "cpu", mode="diffusion")
+    assert "map_hires" in losses and torch.isfinite(losses["loss"])
+    model.zero_grad(set_to_none=True)
+    losses["loss"].backward()
+    rep = H.grad_reach_report_hires(model)
+    for part in ("lift", "encoder", "refine", "near", "near_refine", "trunk_s8_stage"):
+        assert rep[part]["grad_abs_sum"] > 0.0, (part, rep[part])
+    keys = _d3_config(model)["grad_reach_logging"]["keys"]
+    assert "ga_mh_near_refine" in keys and "ga_mh_near_refine_n" in keys

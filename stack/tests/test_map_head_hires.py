@@ -556,7 +556,7 @@ def test_dvb_RED_the_class_weights_file_is_the_one_the_loss_reads(tmp_path):
         "model._map_hires_class_weight"]
 
 
-def test_dvb_registration_is_EXPLICIT_and_names_the_ten_kinds():
+def test_dvb_registration_is_EXPLICIT_and_names_the_eleven_kinds():
     got = []
     kinds = H.register_dvb_levers(lambda d, k, c: got.append((d, k, callable(c))))
     assert kinds == {"map_hires": "built", "w_map_hires": "loss",
@@ -565,7 +565,8 @@ def test_dvb_registration_is_EXPLICIT_and_names_the_ten_kinds():
                      "map_hires_x_max_m": "built", "map_hires_y_half_m": "built",
                      "map_hires_grad_ckpt": "built",
                      "bev_source": "built", "bev_planner_crop_m": "built",
-                     "map_hires_near_lift_m": "built"}          # NEW-2 R2 (A12)
+                     "map_hires_near_lift_m": "built",          # NEW-2 R2 (A12)
+                     "map_hires_near_refine_blocks": "built"}   # NEW-2 R3 (A15)
     assert got == [("map_hires", "built", True), ("w_map_hires", "loss", True),
                    ("map_hires_class_weights", "built", True),
                    ("map_hires_decision_rule", "built", True),
@@ -574,7 +575,8 @@ def test_dvb_registration_is_EXPLICIT_and_names_the_ten_kinds():
                    ("map_hires_grad_ckpt", "built", True),
                    ("bev_source", "built", True),
                    ("bev_planner_crop_m", "built", True),
-                   ("map_hires_near_lift_m", "built", True)]
+                   ("map_hires_near_lift_m", "built", True),
+                   ("map_hires_near_refine_blocks", "built", True)]
     from tanitad.train import declared_vs_built as dvb
     # importing this module registered NOTHING (the trainer registers, at its import)
     assert not (set(H.DVB_KINDS) & set(dvb.REGISTRY)) or "refc_v3_train" in sys.modules
@@ -891,3 +893,136 @@ def test_R2_dvb_the_near_lift_is_built_iff_declared_GREEN_and_RED():
     st = H.built_state(ok)
     assert st["near_lift_x_m"] == 10.0 and st["near_lift_built"] is True
     assert H.built_state(_dvb_model())["near_lift_built"] is False
+
+
+
+# =========================================================================== #
+# NEW-2 R3 (SPEC_REFCV7 §20, A15): THE NEAR REFINE BLOCK (the decoder lever)   #
+# =========================================================================== #
+@pytest.mark.parametrize("kw,msg", [
+    ({"near_refine_blocks": -1}, "integer in"), ({"near_refine_blocks": 5}, "integer in"),
+    ({"near_refine_blocks": 1.5}, "integer in"), ({"near_refine_blocks": True}, "integer in"),
+    ({"near_refine_blocks": 1, "near_lift_x_m": 0.0}, "without the near lift")])
+def test_R3_the_block_count_is_validated(kw, msg):
+    base = {"near_lift_x_m": 10.0}
+    with pytest.raises(ValueError, match=msg):
+        H.MapHiresConfig(w_map_hires=1.0, **{**base, **kw})
+
+
+def test_R3_the_block_is_declared_and_stamped():
+    c = H.MapHiresConfig(w_map_hires=1.0, near_lift_x_m=10.0, near_refine_blocks=1)
+    assert c.as_dict()["near_refine_blocks"] == 1                        # literal
+    assert H.MapHiresConfig(w_map_hires=1.0).as_dict()["near_refine_blocks"] == 0
+    assert H.NearRefineBlock.DILATIONS == (2, 4)
+
+
+def _r2_r3_pair(seed=0, grad_ckpt=False):
+    """R2 (the near lift) and R3 (+ one near refine block) from ONE seed."""
+    kw = dict(w_map_hires=1.0, d_lift=16, d_model=16, d_up=16, dilations=(1, 2),
+              grad_ckpt=grad_ckpt, near_lift_x_m=10.0)
+    torch.manual_seed(seed)
+    a = H.MapHiresBranch(H.MapHiresConfig(**kw), d_image=16, image_hw=(8, 16))
+    torch.manual_seed(seed)
+    b = H.MapHiresBranch(H.MapHiresConfig(near_refine_blocks=1, **kw), d_image=16,
+                         image_hw=(8, 16))
+    frame = frame_for_width(128, 64)
+    g = L.build_lift_geometry(RigCamera.nominal(frame, height_m=1.5, x_m=1.5), frame=frame,
+                              stride=8, grid=a.cfg.lift_grid)
+    geo = (g.grid.unsqueeze(0).expand(2, *g.grid.shape).contiguous(),
+           g.valid.unsqueeze(0).expand(2, *g.valid.shape).contiguous())
+    torch.manual_seed(seed + 1)
+    return a, b, torch.randn(2, 16, 8, 16), geo
+
+
+def _assert_r3_is_r2_at_init(a, b, f, geo) -> None:
+    sa, sb = a.state_dict(), b.state_dict()
+    assert sorted(set(sb) - set(sa)) == ["near_refine.0.c1.weight", "near_refine.0.c2.weight",
+                                         "near_refine.0.n1.bias", "near_refine.0.n1.weight"]
+    assert all(torch.equal(sa[k], sb[k]) for k in sa)             # built LAST
+    with torch.no_grad():
+        la = a(f, *geo)["map_hires_logits"]
+        lb = b(f, *geo)["map_hires_logits"]
+    assert torch.equal(la, lb)                                     # zero-init last conv
+
+
+def test_R3_the_decoder_arm_IS_R2_at_step_0():
+    a, b, f, geo = _r2_r3_pair()
+    _assert_r3_is_r2_at_init(a, b, f, geo)
+    # 2 x (3x3 x 16 x 16) + GN 2 x 16 -- a literal
+    assert b.param_breakdown()["near_refine"] == 4640
+    assert b.param_breakdown()["total"] == a.param_breakdown()["total"] + 4640
+
+
+def test_R3_DELIBERATE_REGRESSION_a_non_zero_last_conv_goes_RED():
+    a, b, f, geo = _r2_r3_pair()
+    with torch.no_grad():
+        b.near_refine[0].c2.weight.normal_(std=0.02)
+    with pytest.raises(AssertionError):
+        _assert_r3_is_r2_at_init(a, b, f, geo)
+
+
+@pytest.mark.parametrize("grad_ckpt", [False, True])
+def test_R3_the_block_is_MAP_ONLY_reaches_only_the_near_rows_and_trains(grad_ckpt):
+    """Perturbing the block moves the logits and leaves map_hires_bev byte-identical; one
+    backward reaches the block from its zero init; with the regression arm's zero input, the
+    block takes EXACTLY zero gradient (it is the A12 function, and stays it)."""
+    _, b, f, geo = _r2_r3_pair(grad_ckpt=grad_ckpt)
+    with torch.no_grad():
+        o0 = b(f, *geo)
+        b.near_refine[0].c2.weight.fill_(0.01)
+        o1 = b(f, *geo)
+    assert torch.equal(o0["map_hires_bev"], o1["map_hires_bev"])   # map-only
+    assert not torch.equal(o0["map_hires_logits"], o1["map_hires_logits"])
+    _, b, f, geo = _r2_r3_pair(grad_ckpt=grad_ckpt)
+    b.train()
+    b(f, *geo)["map_hires_logits"].square().mean().backward()
+    assert float(b.near_refine[0].c2.weight.grad.abs().sum()) > 0.0
+    rep = H.grad_reach_report_hires(None, branch=b)
+    assert sorted(rep) == ["encoder", "lift", "near", "near_refine", "refine"]
+    assert rep["near_refine"]["n_params"] == 4640
+    b.zero_grad(set_to_none=True)
+    b(f, *geo, near_block_zeros=True)["map_hires_logits"].square().mean().backward()
+    for n_, p_ in b.near_refine.named_parameters():
+        assert p_.grad is None or float(p_.grad.abs().sum()) == 0.0, n_   # literal
+    assert float(b.near.lift.proj.weight.grad.abs().sum()) > 0.0        # the lift still trains
+
+
+def test_R3_the_block_seam_is_refused_where_it_cannot_apply():
+    a, b, f, geo = _r2_r3_pair()
+    with pytest.raises(ValueError, match="no near refine block"):
+        a(f, *geo, near_block_zeros=True)
+
+
+def _dvb_r3_model(blocks: int, near: float = 10.0):
+    m = _dvb_model()
+    cfg = H.MapHiresConfig(w_map_hires=1.0, d_lift=16, d_model=16, d_up=16, dilations=(1,),
+                           near_lift_x_m=near, near_refine_blocks=blocks)
+    m._map_hires = H.MapHiresBranch(cfg, d_image=16, image_hw=(8, 16))
+    return m
+
+
+def test_R3_dvb_the_block_is_built_iff_declared_GREEN_and_RED():
+    ok = _dvb_r3_model(1)
+    a1 = _dvb_args(map_hires_near_lift_m=10.0, map_hires_near_refine_blocks=1)
+    assert H.dvb_check_near_refine(ok, a1) == []
+    assert H.dvb_check_near_refine(_dvb_model(), _dvb_args()) == []        # unset = 0
+    off = _dvb_model(on=False, tap=False)
+    assert H.dvb_check_near_refine(off, _dvb_args(map_hires="off")) == []
+    for m, a, where in (
+            (_dvb_r3_model(0), a1, "model._map_hires.near_refine"),     # declared, not built
+            (ok, _dvb_args(map_hires_near_lift_m=10.0), "model._map_hires.near_refine"),
+            (_dvb_r3_model(2), a1, "model._map_hires.near_refine"),     # another count
+            (_dvb_model(), a1, "model._map_hires.near"),                # no near lift built
+            (off, _dvb_args(map_hires="off", map_hires_near_refine_blocks=1),
+             "model._map_hires")):
+        got = H.dvb_check_near_refine(m, a)
+        assert got and all(x.lever == "--map-hires-near-refine-blocks" for x in got), got
+        assert any(x.read_from == where for x in got), [x.read_from for x in got]
+    # RED: a block of another design (dilations) on the SAME declared count
+    bad = _dvb_r3_model(1)
+    blk = bad._map_hires.near_refine[0]
+    blk.c2 = nn.Conv2d(16, 16, 3, padding=1, dilation=1, bias=False)
+    assert any(x.read_from == "model._map_hires.near_refine[0]"
+               for x in H.dvb_check_near_refine(bad, a1))
+    st = H.built_state(ok)
+    assert st["near_refine_blocks"] == 1 and st["near_refine_built"] == 1

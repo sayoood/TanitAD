@@ -1561,6 +1561,7 @@ def _pin_map_hires(cfg, args) -> None:
     yh = getattr(args, "map_hires_y_half_m", None)
     crop = getattr(args, "bev_planner_crop_m", None)
     nl = getattr(args, "map_hires_near_lift_m", None)       # NEW-2 R2 (A12)
+    nrb = getattr(args, "map_hires_near_refine_blocks", None)   # NEW-2 R3 (A15)
     if mode not in ("off", "on"):
         raise SystemExit(f"[v3] ⛔ --map-hires {mode!r} not in (off, on)")
     if src not in _perc.BEV_SOURCES:
@@ -1588,6 +1589,7 @@ def _pin_map_hires(cfg, args) -> None:
                                    ("--map-hires-y-half-m", yh),
                                    ("--map-hires-grad-ckpt", ck),
                                    ("--map-hires-near-lift-m", nl),
+                                   ("--map-hires-near-refine-blocks", nrb),
                                    ("--bev-planner-crop-m", crop),
                                    ("--bev-source",
                                     None if src == _perc.BEV_SOURCES[0] else src))
@@ -1662,6 +1664,18 @@ def _pin_map_hires(cfg, args) -> None:
                 "[v3] ⛔ --map-hires-near-lift-m %r: the 0.1 m near lift covers x in [0, M) "
                 "m and M must be a finite multiple of %g m, >= 0, and at most the map "
                 "extent (%g m). 0 = no near lift." % (nl, _mhr.NEAR_LIFT_STEP_M, ext.x_max_m))
+    if nrb is not None:
+        # ⭐ NEW-2 R3 (SPEC_REFCV7 §20, A15): the near refine block(s) -- validated again by
+        # MapHiresConfig at build time; refused here, before config.json is written.
+        if int(nrb) != nrb or not 0 <= int(nrb) <= _mhr.NEAR_REFINE_MAX_BLOCKS:
+            raise SystemExit(
+                "[v3] ⛔ --map-hires-near-refine-blocks %r: an integer in [0, %d] (0 = none)."
+                % (nrb, _mhr.NEAR_REFINE_MAX_BLOCKS))
+        if int(nrb) > 0 and not float(nl or 0.0) > 0.0:
+            raise SystemExit(
+                "[v3] ⛔ --map-hires-near-refine-blocks %d without --map-hires-near-lift-m > 0: "
+                "the block refines the NEAR rows at 0.1 m, which only the near lift creates "
+                "(SPEC_REFCV7 §20 stacks the decoder lever ON the near lift)." % int(nrb))
     if not cw:
         raise SystemExit(
             "[v3] ⛔ --map-hires on needs --map-hires-class-weights <json>: the "
@@ -7744,6 +7758,7 @@ def train(args) -> dict:
             x_max_m=float(_hext.x_max_m), y_half_m=float(_hext.y_half_m),
             grad_ckpt=bool(_mhr.declared_grad_ckpt(args)),
             near_lift_x_m=float(_mhr.declared_near_lift_m(args)),
+            near_refine_blocks=int(_mhr.declared_near_refine_blocks(args)),
             class_weights_sha256=str(_hcws["sha256"]),
             decision_rule=str(getattr(args, "map_hires_decision_rule",
                                       _mhr.DECISION_RULES[0])))
@@ -7785,9 +7800,11 @@ def train(args) -> dict:
             "loss": "hard-label CE, 8 classes, ignore_index 255, class-weighted",
         }
         print("[v3] refcv7 map-hires: w=%.4g, extent %g m x +-%g m -> %s at 0.1 m, "
-              "grad_ckpt %s, near-lift %g m, tap %s, params %s, class weights sha256 %s"
+              "grad_ckpt %s, near-lift %g m, near-refine %d, tap %s, params %s, class "
+              "weights sha256 %s"
               % (model._w_map_hires, _hext.x_max_m, _hext.y_half_m,
-                 list(_hcfg.out_hw), _hcfg.grad_ckpt, float(_hcfg.near_lift_x_m), _s8,
+                 list(_hcfg.out_hw), _hcfg.grad_ckpt, float(_hcfg.near_lift_x_m),
+                 int(_hcfg.near_refine_blocks), _s8,
                  model._map_hires.param_breakdown(), _hcws["sha256"][:12]), flush=True)
     model._perception = None
     model._lift_bank = None
@@ -10415,6 +10432,13 @@ def build_parser() -> argparse.ArgumentParser:
                          "decoder's upsampled input on those rows. Map-only: the shared "
                          "0.25 m encoder and the planner pool are untouched. A multiple of "
                          "0.5 m, at most the map extent. Unset / 0 = no near lift (NEW-2 as "
+                         "landed).")
+    # ⭐ NEW-2 R3 (SPEC_REFCV7 §20, A15): the near refine block(s), stacked on the near lift.
+    g6.add_argument("--map-hires-near-refine-blocks", type=int, default=None,
+                    help="NEW-2 R3 (SPEC_REFCV7 §20, A15): residual 0.1 m blocks (3x3 dilation "
+                         "2 -> GN -> GELU -> 3x3 dilation 4, last conv zero-initialised) on the "
+                         "NEAR rows of the 10 cm decoder, after the near lift is added. Needs "
+                         "--map-hires-near-lift-m > 0. Map-only. Unset / 0 = none (R2 as "
                          "landed).")
     g6.add_argument("--map-hires-grad-ckpt", choices=("on", "off"), default=None,
                     help="recompute the 10 cm branch's encoder and decoder in backward. "

@@ -83,12 +83,12 @@ def main(argv=None) -> int:
     ap.add_argument("--pkg", required=True, type=Path)
     ap.add_argument("--git-dir", required=True)
     ap.add_argument("--ref", required=True)
-    ap.add_argument("--set", choices=("new2", "r2"), default="new2")
+    ap.add_argument("--set", choices=("new2", "r2", "r3"), default="new2")
     ap.add_argument("--fix-dir", default="code/fix",
                     help="package-relative output dir (code/fix for NEW-2, code/fix_r2 for R2)")
     a = ap.parse_args(argv)
     global BATCH1, EDITED, NEWDEP
-    if a.set == "r2":
+    if a.set in ("r2", "r3"):                # R3 (A15) edits the SAME 8 files as R2
         BATCH1, EDITED, NEWDEP = [], list(R2_EDITED), []
     fix = a.pkg / a.fix_dir
     fix_rel = Path(a.fix_dir).as_posix().strip("/")
@@ -129,7 +129,8 @@ def main(argv=None) -> int:
             (fix / f).parent.mkdir(parents=True, exist_ok=True)
             (fix / f).write_bytes(data)
             rows[f] = ("NEW", blob_id(data), "LF")
-        dpath = fix / ("NEW2_shared_edits.diff" if a.set == "new2" else "NEW2R2_edits.diff")
+        dpath = fix / {"new2": "NEW2_shared_edits.diff", "r2": "NEW2R2_edits.diff",
+                       "r3": "NEW2R3_edits.diff"}[a.set]
         dpath.write_bytes(b"".join(diffs))
         # ---- verification: apply to the RAW tip blobs, compare byte for byte ----
         vt = td / "verify"
@@ -159,7 +160,7 @@ def main(argv=None) -> int:
                   + ["# BATCH 2 (shared-file edits + the new files that need them)"]
                   + block(EDITED + NEWDEP))
     else:
-        blocks = ["# R2 (every file EDITED against the tip)"] + block(EDITED)
+        blocks = [f"# {a.set.upper()} (every file EDITED against the tip)"] + block(EDITED)
     (fix / "LANDING_BLOCKS.txt").write_bytes(("\n".join(blocks) + "\n").encode("utf-8"))
     n_lines = dpath.read_bytes().count(b"\n")
     print(f"tip {tip}: {len(BATCH1)} batch-1 + {len(EDITED)} edited + {len(NEWDEP)} "

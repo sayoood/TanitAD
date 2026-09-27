@@ -152,9 +152,10 @@ def _tiny():
 def test_the_arms_are_what_they_say(tmp_path):
     trunk, branch, data = _tiny()
     spec = O.load_spec(_spec(tmp_path))
-    # near_zeros needs a near lift (NEW-2 R2): run on a near branch in test_R2_* below
+    # near_zeros / near_block_zeros need a near lift / block (NEW-2 R2 / R3): see test_R2_*,
+    # test_R3_* below
     res = {a: O.run_arm(a, trunk, branch, data, spec, torch.ones(8), "cpu")
-           for a in O.ARMS if a != "near_zeros"}
+           for a in O.ARMS if a not in ("near_zeros", "near_block_zeros")}
     assert res["healthy"]["trunk_s8_abs_change"] > 0.0
     for a in ("s8_zeros", "s8_detached", "frozen_trunk"):
         assert res[a]["trunk_s8_abs_change"] == 0.0, a
@@ -357,3 +358,88 @@ def test_R2_the_record_proves_the_shared_init_with_the_NEW2_MAIN():
     assert O._fingerprint_without(nb, "near.") == O._fingerprint(branch)
     assert O._fingerprint(nb) != O._fingerprint(branch)
     assert O._fingerprint_without(branch, "near.") == O._fingerprint(branch)
+
+
+
+# =========================================================================== #
+# NEW-2 R3 (SPEC_REFCV7 §20, A15): the decoder arm and its must-fail arm       #
+# =========================================================================== #
+A15_SPEC = (ROOT.parent / "TanitAD Research Lab" / "Architecture & Inference" /
+            "Research" / "2026-09-26-refcv7-map-hires" / "raw" / "gmo_spec_A15.json")
+#: md5 of the A15 spec AS WRITTEN (registered by SPEC_REFCV7 §20, c1ed8d9)
+A15_SPEC_MD5 = "20929e21a577a6374f31b3f754ddd4d4"
+
+
+@pytest.mark.skipif(not A15_SPEC.is_file(), reason="the A15 spec is not in this checkout")
+def test_R3_the_A15_spec_loads_as_written_and_amends_only_what_A15_says():
+    import hashlib
+    assert hashlib.md5(A15_SPEC.read_bytes()).hexdigest() == A15_SPEC_MD5
+    from tanitad.data.semantic_map_gt_fine import EXTENT_REFCV7
+    s = O.load_spec(A15_SPEC, decision_rule="prior_corrected", class_weights="w.json",
+                    band_keys=EXTENT_REFCV7.band_keys)
+    assert s["near_lift_m"] == 20.0 and s["near_refine_blocks"] == 1
+    assert s["must_fail"] == {"lane_w0": ["lane"], "s8_zeros": list(O.THIN),
+                              "near_block_zeros": ["edge"]}
+    assert s["must_fail_all"] == {"s8_zeros": True}
+    assert len(s["frames"]) == 16 and s["steps"] == 1000 and s["batch"] == 4
+    assert s["amends"]["spec_md5"] == A12_SPEC_MD5                    # the A12 spec, as landed
+    if A12_SPEC.is_file():
+        base = O.load_spec(A12_SPEC, decision_rule="prior_corrected",
+                           class_weights="w.json", band_keys=EXTENT_REFCV7.band_keys)
+        diff = sorted(k for k in set(base) | set(s) if base.get(k) != s.get(k))
+        assert diff == ["amends", "must_fail", "near_refine_blocks", "registered"], diff
+
+
+def _r3_tiny():
+    trunk, _b, data = _tiny()
+    kw = dict(w_map_hires=1.0, d_lift=16, d_model=16, d_up=16, dilations=(1,),
+              near_lift_x_m=10.0)
+    torch.manual_seed(0)
+    r2 = H.MapHiresBranch(H.MapHiresConfig(**kw), d_image=trunk.s8_dim,
+                          image_hw=trunk.s8_shape)
+    torch.manual_seed(0)
+    r3 = H.MapHiresBranch(H.MapHiresConfig(near_refine_blocks=1, **kw),
+                          d_image=trunk.s8_dim, image_hw=trunk.s8_shape)
+    return trunk, r2, r3, data
+
+
+def test_R3_the_block_arms_run_and_near_block_zeros_feeds_the_block_zeros(tmp_path):
+    trunk, _r2, r3, data = _r3_tiny()
+    spec = O.load_spec(_spec(tmp_path, must_fail={"lane_w0": ["lane"],
+                                                  "s8_zeros": list(O.THIN),
+                                                  "near_block_zeros": ["edge"]}))
+    seen = []
+    orig = type(r3).forward
+
+    def spy(self, f, g, v, *, near_source=None, near_block_zeros=False):
+        seen.append(bool(near_block_zeros))
+        return orig(self, f, g, v, near_source=near_source, near_block_zeros=near_block_zeros)
+    type(r3).forward = spy
+    try:
+        res = {a: O.run_arm(a, trunk, r3, data, spec, torch.ones(8), "cpu")
+               for a in ("healthy", "near_block_zeros")}
+    finally:
+        type(r3).forward = orig
+    assert res["near_block_zeros"]["trunk_s8_abs_change"] > 0.0
+    assert res["near_block_zeros"]["loss_finite_every_step"]
+    assert True in seen and False in seen
+
+
+def test_R3_the_harness_refuses_near_block_zeros_without_a_block_and_a_spec_mismatch(tmp_path):
+    base = ["--spec", str(_spec(tmp_path)), "--v2-cache", "V", "--gt-root", "G",
+            "--extrinsics", "E", "--out", str(tmp_path / "o"), "--device", "cpu"]
+    with pytest.raises(SystemExit, match="near_block_zeros arm needs --near-refine-blocks"):
+        O.main(base + ["--near-lift-m", "20",
+                       "--arms", "healthy,lane_w0,s8_zeros,near_block_zeros"])
+    sp = _spec(tmp_path, near_refine_blocks=1)
+    with pytest.raises(SystemExit, match="registers near_refine_blocks"):
+        O.main(["--spec", str(sp), "--v2-cache", "V", "--gt-root", "G", "--extrinsics", "E",
+                "--out", str(tmp_path / "o"), "--device", "cpu", "--near-lift-m", "20"])
+
+
+def test_R3_the_record_proves_the_shared_init_with_R2_and_NEW2():
+    trunk, r2, r3, _d = _r3_tiny()
+    assert O._fingerprint_without(r3, "near_refine.") == O._fingerprint(r2)
+    assert O._fingerprint_without(r3, "near.", "near_refine.") == \
+        O._fingerprint_without(r2, "near.")
+    assert O._fingerprint(r3) != O._fingerprint(r2)

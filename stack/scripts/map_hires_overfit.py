@@ -41,6 +41,14 @@ other literal unchanged. Its zero-initialised skip is built LAST, so the record 
 the branch fingerprint WITHOUT it (``branch_init_sha256_without_near``), which must equal the
 NEW-2 MAIN's for the same seed.
 
+THE NEAR REFINE BLOCK (``--near-refine-blocks``, NEW-2 R3 / A15): stacked on the near lift;
+its regression arm ``near_block_zeros`` feeds the block's residual branch zeros (the A12
+function). The record's ``branch_init_sha256_without_near_refine`` must equal R2's branch
+fingerprint for the same seed.
+* ``near_block_zeros`` -- NEW-2 R3 (SPEC_REFCV7 §20, A15): the near refine block reads zeros;
+                      gated by an A15 spec's ``must_fail`` row (edge). Needs
+                      ``--near-refine-blocks > 0``.
+
 CONTROLS on the same scored cells (§7): C1 drivable everywhere (IoU_drivable =
 n_drivable / n_scored to 1e-9, every other class 0, and it FAILS §6); C2 logits =
 20 · one-hot(label) (IoU 1.0 for every class, under the declared rule); C3 uniform
@@ -87,8 +95,9 @@ from tanitad.data import semantic_map_gt_fine as F              # noqa: E402
 from tanitad.data.semantic_map_gt_fine import EXTENT_REFCV7, MapExtent  # noqa: E402
 from tanitad.models import map_head_hires as H                  # noqa: E402
 
-ARMS = ("healthy", "lane_w0", "s8_zeros", "s8_detached", "frozen_trunk", "near_zeros")
-INFORMATIVE_KNOWN = ("s8_detached", "frozen_trunk", "refcv6_head_05m")
+ARMS = ("healthy", "lane_w0", "s8_zeros", "s8_detached", "frozen_trunk", "near_zeros",
+        "near_block_zeros")
+INFORMATIVE_KNOWN = ("s8_detached", "frozen_trunk", "refcv6_head_05m", "near_zeros")
 LANE = 2
 DRIVABLE = 1
 THIN = ("lane", "crosswalk", "arrow", "edge", "hatched")
@@ -327,6 +336,8 @@ def _forward(trunk, branch, data, idx, device, arm):
     kw = {}
     if arm == "near_zeros":                         # NEW-2 R2: only the near lift sees zeros
         kw["near_source"] = torch.zeros_like(s8)
+    if arm == "near_block_zeros":                   # NEW-2 R3: only the near block sees zeros
+        kw["near_block_zeros"] = True
     out = branch(s8, data["grid"][idx].to(device), data["valid"][idx].to(device), **kw)
     return out["map_hires_logits"], H.lift_valid_to_fine(out["map_hires_lift_valid"])
 
@@ -361,7 +372,8 @@ def run_arm(arm: str, trunk0, branch0, data: dict, spec: dict, class_weight,
     w_loss = class_weight.clone().to(device)
     if arm == "lane_w0":
         w_loss[LANE] = 0.0
-    trunk_trains = arm in ("healthy", "lane_w0", "s8_zeros", "near_zeros")
+    trunk_trains = arm in ("healthy", "lane_w0", "s8_zeros", "near_zeros",
+                           "near_block_zeros")
     params = list(branch.parameters()) + (_s8_params(trunk) if trunk_trains else [])
     trunk_before = [p.detach().clone() for p in _s8_params(trunk)]
     opt = torch.optim.AdamW(params, lr=float(spec.get("lr", 1e-3)), betas=(0.9, 0.999),
@@ -539,12 +551,13 @@ def _fingerprint(module) -> str:
     return h.hexdigest()
 
 
-def _fingerprint_without(module, prefix: str) -> str:
-    """:func:`_fingerprint` over the state_dict minus the keys under ``prefix`` -- the NEW-2
-    R2 branch's shared parameters, comparable with the NEW-2 MAIN's fingerprint."""
+def _fingerprint_without(module, *prefixes: str) -> str:
+    """:func:`_fingerprint` over the state_dict minus the keys under any of ``prefixes`` -- a
+    lever branch's shared parameters, comparable with the fingerprint of the branch it was
+    stacked on (R2 without ``near.`` = NEW-2; R3 without ``near_refine.`` = R2)."""
     h = hashlib.sha256()
     for k, v in sorted(module.state_dict().items()):
-        if k.startswith(prefix):
+        if any(k.startswith(p) for p in prefixes):
             continue
         h.update(k.encode())
         h.update(v.detach().cpu().contiguous().numpy().tobytes())
@@ -575,6 +588,9 @@ def main(argv=None) -> int:
     ap.add_argument("--near-lift-m", type=float, default=0.0,
                     help="NEW-2 R2 (SPEC_REFCV7 A12): the 0.1 m near lift over x in [0, M) m "
                          "(MapHiresConfig.near_lift_x_m); 0 = the NEW-2 branch as landed")
+    ap.add_argument("--near-refine-blocks", type=int, default=0,
+                    help="NEW-2 R3 (SPEC_REFCV7 §20, A15): the near refine blocks "
+                         "(MapHiresConfig.near_refine_blocks); 0 = R2 as landed")
     ap.add_argument("--grad-ckpt", choices=("on", "off"), default="on",
                     help="the launch decoder's checkpointing (SPEC_REFCV7 §12 item 4)")
     ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
@@ -596,6 +612,14 @@ def main(argv=None) -> int:
     if "near_zeros" in arms and not float(a.near_lift_m) > 0.0:
         raise SystemExit("⛔ the near_zeros arm needs --near-lift-m > 0: without a near lift "
                          "it is MAIN itself and cannot be a regression arm")
+    if "near_block_zeros" in arms and not int(a.near_refine_blocks) > 0:
+        raise SystemExit("⛔ the near_block_zeros arm needs --near-refine-blocks > 0: without "
+                         "the block it is MAIN itself and cannot be a regression arm")
+    if spec.get("near_refine_blocks") is not None \
+            and int(spec["near_refine_blocks"]) != int(a.near_refine_blocks):
+        raise SystemExit(f"⛔ the spec registers near_refine_blocks "
+                         f"{spec['near_refine_blocks']}, --near-refine-blocks is "
+                         f"{a.near_refine_blocks}")
     if spec.get("near_lift_m") is not None \
             and float(spec["near_lift_m"]) != float(a.near_lift_m):
         raise SystemExit(f"⛔ the spec registers near_lift_m {spec['near_lift_m']}, "
@@ -619,13 +643,18 @@ def main(argv=None) -> int:
                             y_half_m=float(extent.y_half_m),
                             grad_ckpt=(a.grad_ckpt == "on"),
                             near_lift_x_m=float(a.near_lift_m),
+                            near_refine_blocks=int(a.near_refine_blocks),
                             decision_rule=spec["thresholds"]["decision_rule"],
                             class_weights_sha256=cw_stamp.get("sha256") or "")
     branch = H.MapHiresBranch(hcfg, d_image=trunk.s8_dim, image_hw=trunk.s8_shape)
     fp = {"trunk_init_sha256": _fingerprint(trunk),
           "branch_init_sha256": _fingerprint(branch)}
     if getattr(branch, "near", None) is not None:
-        fp["branch_init_sha256_without_near"] = _fingerprint_without(branch, "near.")
+        fp["branch_init_sha256_without_near"] = _fingerprint_without(branch, "near.",
+                                                                     "near_refine.")
+    if getattr(branch, "near_refine", None) is not None:
+        fp["branch_init_sha256_without_near_refine"] = _fingerprint_without(branch,
+                                                                            "near_refine.")
     frame = frame_for_width(int(hw[1]), int(hw[0]))
     data = load_frames(spec, a.v2_cache, a.gt_root, a.extrinsics, frame, hcfg, eq,
                        cam_ts_dir=a.cam_ts_dir)
@@ -645,6 +674,7 @@ def main(argv=None) -> int:
            "class_weights": cw_stamp, "decision_rule": spec["thresholds"]["decision_rule"],
            "extent": extent.as_dict(), "branch_config": hcfg.as_dict(),
            "near_lift_m": float(a.near_lift_m),
+           "near_refine_blocks": int(a.near_refine_blocks),
            "tap": tap, "trunk_levers": {k: tsp.get(k) for k in
                                         ("chunk_ckpt", "bf16", "channels_last", "fold_bn")},
            "fingerprints": fp, "branch_params": branch.param_breakdown(),

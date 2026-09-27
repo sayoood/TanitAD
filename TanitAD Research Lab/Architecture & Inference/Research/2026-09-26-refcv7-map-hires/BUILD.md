@@ -380,4 +380,58 @@ So from 0.25 m class fractions, edge cannot reach the bar.
 - The prereg literals are unchanged. MAIN is the lever arm.
 - Must-fail: `s8_zeros` (both lifts; all five thin classes) and `near_zeros` (edge). `lane_w0` (lane) is kept.
 - Runner: `code/gmo_r2_runner.py`, stamped non-binding. Launcher: `code/gmo_r2_launch.sh`, one GPU job at a time, queued behind the box builder's diagnosis.
+- **Result: MAIN FAILS** (early, non-binding). The run started 10:40 Berlin, alone on the GPU. The declared-rule IoU at step 1,000, read from the harness's step lines:
+
+| arm | nocls | drivable | sidewalk | lane | crosswalk | arrow | edge | hatched |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| **MAIN (lever)** | .895 | .912 | .944 | **.496** | .780 | .742 | **.194** | .834 |
+| s8_zeros | .195 | .513 | .434 | 0 | 0 | 0 | 0 | 0 |
+| near_zeros | .866 | .901 | .932 | .466 | .730 | .573 | .072 | .779 |
+| lane_w0 | .885 | .913 | .949 | 0 | .802 | .715 | .207 | .827 |
+
+  - The must-fails hold. s8_zeros fails all five thin classes. near_zeros fails edge (it reproduces NEW-2 MAIN). lane_w0 fails lane.
+  - The lever's effect, isolated by near_zeros: edge +.122 (.072 to .194), lane +.030, and every other class up.
+  - Edge at the 0.2 m tolerance: P .902, R .429, F1 .582. The gap is RECALL.
+  - s8_detached (informative) and the end-of-run record (C1–C3, the raw rule, CE ratios, the range profile) were paused by the Master Mind at 11:31:59 for the box head. They are written when the run is resumed; `paused_s` will be stamped then.
+
+## 13. NEW-2 R3: the decoder lever, SPEC_REFCV7 §20 (A15, landed c1ed8d9), stacked on the near lift
+
+**The choice: (3) the decoder, ranked ahead of (4) the weights, from the numbers.** The classes that lag are the thin LINES, not the rare or the low-weight ones:
+- lane (weight .94) against crosswalk (weight 1.07): CE ratio at 1,000 is .280 against .067, and lane crosses its bar at step 1,200 against 200.
+- arrow and hatched are the rarest classes and are among the fastest.
+- edge never crosses by 3,000.
+
+The decoder's own 0.1 m receptive field is 0.5 m. Lane sits at the median frequency, so no median-frequency weighting can raise it.
+
+**What changes** (`code/fix_r3/`: the same 8 files EDITED against `2374cd2`; the diff re-applies byte for byte):
+- `--map-hires-near-refine-blocks` (default 0; the arm uses 1) maps to `MapHiresConfig.near_refine_blocks`, an integer in [0, 4] that needs `near_lift_x_m > 0`. It is stamped, and refused under `--map-hires off` or without the near lift.
+- G-DVB `map_hires_near_refine_blocks` (`dvb_check_near_refine`: the count and the registered design) takes the registry to **215**.
+- `NearRefineBlock` computes `x + conv_d4(GELU(GN(conv_d2(x))))` on the near rows after the near lift is added. It is map-only. The last conv is zero-initialised and the block is built last.
+- `ga_mh_near_refine` is declared automatically, and the eval loader rebuilds the field.
+- The harness gains `--near-refine-blocks`, the must-fail arm `near_block_zeros` (the block reads zeros), and `_fingerprint_without(*prefixes)`.
+
+**Tests.**
+- At step 0 the R3 branch is byte-identical to R2: the shared parameters and the logits.
+- `map_hires_bev` is byte-identical when the block is perturbed.
+- The gradient reaches the block from its zero init. Under `near_block_zeros`, the block's gradient is exactly 0: it IS the A12 function, and it stays so.
+- RED arms: a non-zero last conv, 5 DVB disagreements (including a block of another design), a loader that drops the field, and a declared-but-unbuilt block.
+- The A15 spec is md5-pinned (`20929e21`) and differs from the A12 spec only in `amends`, `must_fail`, `near_refine_blocks` and `registered`.
+- **Results.** Dev box, 35 files: **685 passed, 2 skipped**. Thor, gate environment: **679 passed, 8 skipped, 0 failed**. A literal-pin scan of 644 test files finds 0 broken pins.
+
+**Cost** (ANALYTIC; `code/decoder_lever_cost.py`, `raw/gmo_early/decoder_lever_cost.json`, which measures the REAL R3 branch; b1 ×16, grad ckpt on):
+
+| option | saved GiB at b16 | fwd GFLOPs per sample | params |
+|---|---:|---:|---:|
+| R2 | 1.391 | 103.4 | 624,648 |
+| **R3 (A15)** | 1.391 (+0) | 107.8 (+4.3 %) | 643,144 (+18,496) |
+| a deeper full-map conv (rejected) | | 114.5 | |
+| d_up 64 (rejected) | | 171.3 (2.29 GiB per 0.1 m activation) | |
+
+Step time is ESTIMATED at ≤ +0.1 s/step at b16.
+
+**The arm** (`raw/gmo_spec_A15.json`):
+- The A12 spec plus `near_refine_blocks` 1. MAIN is R2 plus the block.
+- Must-fail: `s8_zeros` (both lifts; all five thin classes) and `near_block_zeros` (edge). `lane_w0` is kept.
+- Runner: `code/gmo_r3_runner.py`, stamped non-binding.
+- Launcher: `code/gmo_r3_launch.sh`. It waits for the A12 run's `A12_DONE` AND for the box builder's chain (PID 3676134) to exit. It tolerates stopped processes and runs one GPU job at a time.
 - Result: PENDING.
