@@ -20,6 +20,14 @@ def main() -> int:
         ok = ok + 1 if free_gb() >= START_GB else 0
         if ok < START_SAMPLES:
             time.sleep(START_GAP_S)
+    if ok < START_SAMPLES:
+        # ⛔ the wait budget ran out: do NOT launch (the first version started anyway)
+        with open(log, "w", encoding="utf-8") as fh:
+            fh.write(f"# {FLOOR_NOTE}\n# cmd: {cmd}\n# NOT RUN: RAM_WAIT_TIMEOUT "
+                     f"({MAX_WAIT_S // 3600} h, last {free_gb():.2f} GiB)\n"
+                     f"# exit None RAM_WAIT_TIMEOUT\n")
+        print(f"gated_cmd NOT RUN status=RAM_WAIT_TIMEOUT log={log}", flush=True)
+        return 8
     with open(log, "w", encoding="utf-8") as fh:
         fh.write(f"# {FLOOR_NOTE}\n# cmd: {cmd}\n")
         fh.flush()

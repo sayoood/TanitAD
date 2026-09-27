@@ -32,7 +32,13 @@ PY = "C:/Users/Admin/venvs/tanitad/Scripts/python.exe"
 START_GB, KILL_GB, RETRIES, FILE_TIMEOUT_S = 7.5, 6.5, 3, 1800
 START_SAMPLES, START_GAP_S = 3, 30.0
 MAX_WAIT_S = 6 * 3600
-FLOOR_NOTE = ("floor: start >= 7.5 GB on 3 consecutive samples 30 s apart, kill < 6.5 GB "
+# UNIT: "GB" in this file is GiB -- ullAvailPhys / 2**30 (free_gb below), the same unit the
+# programme's other RAM guards print as "GB" (run_navsim_refcv6.py: psutil ... / 2**30).
+# 7.5 GiB = 8.05 decimal GB: a decimal probe reads the floor ~7 % LOW.
+# ⛔ When the floor is not met within MAX_WAIT_S the file is NOT launched (RAM_WAIT_TIMEOUT):
+# the first version fell out of the wait loop and started anyway -- a floor that a timer
+# silently turns off is not a floor.
+FLOOR_NOTE = ("floor: start >= 7.5 GiB on 3 consecutive samples 30 s apart, kill < 6.5 GiB "
               "(Master Mind 2026-09-26: box below 8 GB for > 1 h from other sessions; the "
               "NavSim scorer aborts only after 120 s < 3 GB, run_navsim_refcv6.py:317; the "
               "8 GB rule is kept for GPU jobs); OMP_NUM_THREADS=4; one pytest file at a time")
@@ -136,6 +142,16 @@ def main() -> None:
                     ok = ok + 1 if free_gb() >= START_GB else 0
                     if ok < START_SAMPLES:
                         time.sleep(START_GAP_S)
+                if ok < START_SAMPLES:       # budget spent: NEVER start into the squeeze
+                    res = {"file": rel, "status": "RAM_WAIT_TIMEOUT", "attempt": attempt,
+                           "rc": None, "seconds": 0.0, "min_free_gb": round(free_gb(), 2),
+                           "counts": {}, "failed": [], "errors": [],
+                           "tail": f"floor not met within {MAX_WAIT_S // 3600} h: NOT launched"}
+                    fh.write(json.dumps(res) + "\n")
+                    fh.flush()
+                    print(f"[{time.strftime('%H:%M:%S')}] RAM_WAIT_TIMEOUT {rel} (not launched)",
+                          flush=True)
+                    break
                 res = run_one(tree, rundir, rel, env, logdir)
                 res["attempt"] = attempt
                 fh.write(json.dumps(res) + "\n")

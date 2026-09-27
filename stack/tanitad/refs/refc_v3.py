@@ -635,6 +635,11 @@ class RefCV3Config:
     # refcv6-r101-s0 config.json carries no such key (MEASURED 2026-09-26). `None` = not
     # acknowledged; the trainer now stamps it under `seams.u0_absent_under_ddim`.
     u0_absent_under_ddim: str | None = None
+    # ⭐ SPEC_REFCV7 §7 (A2): the BANKED τ file behind `core.nav_compliance_tau_rad` and its sha256,
+    # stamped under `seams.nav_compliance_tau_file`. Provenance only -- the decoder reads the float.
+    # DECLARED (G-HYG): the pin sets the path, `train()` the sha256 after reading the file.
+    nav_compliance_tau_file: str | None = None
+    nav_compliance_tau_sha256: str | None = None
 
     @property
     def n_goal_taus(self) -> int:

@@ -987,6 +987,22 @@ def _pin_refcv6_tactical(cfg, args) -> None:
         cfg.core.graft_tac8_prior = True
     _navc = bool(getattr(args, "graft_nav_compliance", False))
     _navc_tau = float(getattr(args, "nav_compliance_tau_rad", 0.0) or 0.0)
+    # ⛔ SPEC_REFCV7 §7 (A2): the τ's BANKED file. The pin records its path and never OPENS it (an
+    # eval rebuild re-runs this pin on boxes without the file); `train()` holds the float against
+    # it (`_verify_navc_tau_file`) and stamps {path, sha256, tau} into config.json.
+    _navc_file = getattr(args, "nav_compliance_tau_file", None)
+    if _navc_file and not _navc:
+        raise SystemExit(
+            "[v3] ⛔ --nav-compliance-tau-file without --graft-nav-compliance: the banked "
+            "tolerance of a term that is not built -- stamped and read by nothing.")
+    if _navc_file and not _navc_tau > 0.0:
+        raise SystemExit(
+            "[v3] ⛔ --nav-compliance-tau-file needs --nav-compliance-tau-rad as well: the FILE "
+            "verifies the float (train() refuses any difference > 1e-12 and stamps the file's "
+            "sha256), and the FLOAT is what an eval rebuild on a box without the file builds "
+            "from. Pass the file's `tau` exactly.")
+    if _navc_file:
+        cfg.nav_compliance_tau_file = str(_navc_file)
     if _navc and not _navc_tau > 0.0:
         raise SystemExit(
             "[v3] ⛔ --graft-nav-compliance needs --nav-compliance-tau-rad > 0. The tolerance "
@@ -5329,6 +5345,12 @@ def _seam_stamp(cfg, args) -> dict:
         "graft_behaviour_sel": bool(getattr(core, "graft_behaviour_sel", False)),
         "graft_nav_compliance": bool(getattr(core, "graft_nav_compliance", False)),
         "nav_compliance_tau_rad": float(getattr(core, "nav_compliance_tau_rad", 0.0)),
+        # ⭐ SPEC_REFCV7 §7 (A2): the banked τ file behind it -- `None` without the flag
+        "nav_compliance_tau_file": (
+            {"path": cfg.nav_compliance_tau_file,
+             "sha256": getattr(cfg, "nav_compliance_tau_sha256", None),
+             "tau": float(getattr(core, "nav_compliance_tau_rad", 0.0))}
+            if getattr(cfg, "nav_compliance_tau_file", None) else None),
         "speed_ceiling_filter": bool(getattr(core, "speed_ceiling_filter", False)),
         # ⭐⭐ E15 (GP-2, 2026-09-06) — THE GOAL-POINT STAMP, INCLUDING THE
         # MACHINE-READABLE ADMISSIBILITY DECLARATION.
@@ -7002,6 +7024,88 @@ def _conflict_terms(model, losses):
     return (plan, aux)
 
 
+#: SPEC_REFCV7 §7 (A2): `--nav-compliance-tau-rad` must EQUAL the banked τ at this tolerance --
+#: the one `declared_vs_built.check_refcv7_required(tau_file=)` compares at.
+NAVC_TAU_FILE_TOL = 1e-12
+
+
+def _verify_navc_tau_file(args) -> dict | None:
+    """-> ``{path, sha256, tau}`` for ``--nav-compliance-tau-file``, or ``None`` without it.
+
+    ⛔ SPEC_REFCV7 §7 (A2, the PI's E1 ruling): the τ of `--graft-nav-compliance` is the BANKED
+    derivation on the TRAIN split (…/2026-09-26-declared-vs-built/raw/nav_compliance_tau_train.json)
+    and "its sha256 is recorded in config.json". REFUSES a missing or unreadable file, a τ that is
+    not a positive finite number, and a `--nav-compliance-tau-rad` that differs from the file's τ
+    by more than NAVC_TAU_FILE_TOL. Called by `train()` only: `_pin_trainer_cfg` never OPENS the
+    file, because an eval rebuild re-runs the pin from the recorded argv on boxes where the file
+    does not exist (`taniteval/tools/refcv3_arm.rebuild_config`) and must build the same model.
+    """
+    import hashlib
+    p = getattr(args, "nav_compliance_tau_file", None)
+    if not p:
+        return None
+    path = Path(p)
+    if not path.is_file():
+        raise SystemExit(
+            f"[v3] ⛔ --nav-compliance-tau-file {p}: no such file. The tolerance must come from "
+            f"the banked TRAIN-split derivation, or 'compliant' has no evidence behind it.")
+    raw = path.read_bytes()
+    try:
+        tau = float(json.loads(raw.decode("utf-8"))["tau"])
+    except (ValueError, KeyError, TypeError, UnicodeDecodeError) as exc:
+        raise SystemExit(
+            f"[v3] ⛔ --nav-compliance-tau-file {p}: not a tau file ({type(exc).__name__}: "
+            f"{exc}); expected JSON with a numeric `tau` in rad.") from None
+    if not (math.isfinite(tau) and tau > 0.0):
+        raise SystemExit(f"[v3] ⛔ --nav-compliance-tau-file {p}: tau = {tau!r} is not a "
+                         f"positive finite tolerance.")
+    given = float(getattr(args, "nav_compliance_tau_rad", 0.0) or 0.0)
+    if abs(given - tau) > NAVC_TAU_FILE_TOL:
+        raise SystemExit(
+            f"[v3] ⛔ --nav-compliance-tau-rad {given!r} differs from the banked tau {tau!r} in "
+            f"{p} by {abs(given - tau):.3g} rad (> {NAVC_TAU_FILE_TOL:g}). Pass the file's value "
+            f"exactly: the launch gate compares at the same tolerance.")
+    return {"path": str(p), "sha256": hashlib.sha256(raw).hexdigest(), "tau": tau}
+
+
+def _logged_after(step: int, log_every: int, steps: int) -> bool:
+    """True when the step ABOUT TO RUN (the PRE-increment ``step``) is one the loop writes to
+    metrics.jsonl. The loop logs AFTER ``step += 1``, on ``step % log_every == 0 or
+    step == steps``, so a row FILLED before the increment has to test ``step + 1``.
+
+    ⛔⛔ D3 (2026-09-26, MEASURED by the map-signal audit): the per-head gradient-reach row was
+    filled on ``step % log_every == 0`` -- the pre-increment step -- and written after the
+    increment, so fill and write never met: **0 `ga_*` keys in refcv6-r101-s0's 4,621 metrics
+    rows** (only a run's FINAL row, via the ``steps`` clause, could ever carry one). Every
+    instrument that fills a row before the increment uses THIS one rule, so there is a single
+    definition of "this step is logged" (pinned: tests/test_grad_reach_logged.py).
+    """
+    n = int(step) + 1
+    return n % max(1, int(log_every)) == 0 or n >= int(steps)
+
+
+def _grad_reach_declared(model) -> bool:
+    """Whether the run REPORTS per-head gradient reach (``ga_*``): a perception branch or the
+    refcv6 tactical decoder is built (PI RULING 2026-09-17 R3). ONE definition, used by the loop
+    AND by the config.json declaration, so the two cannot drift apart."""
+    return (getattr(model, "_perception", None) is not None
+            or getattr(model, "tac_decoder_v6", None) is not None)
+
+
+def _grad_reach_declaration(model, args) -> dict:
+    """⛔ D3: what the run DECLARES it will log, written into config.json BEFORE step 1, so its
+    metrics can be held against it (`declared_vs_built.check_logged_rows`; the loop runs that
+    check itself on its FIRST log row and refuses). The key set is read off the BUILT model --
+    the parts `grad_reach_report` names -- never written down here."""
+    on = _grad_reach_declared(model)
+    keys = sorted(k for part in (_perc.grad_reach_report(model) if on else {})
+                  for k in (f"ga_{part}", f"ga_{part}_n"))
+    return {"declared": bool(on), "keys": keys,
+            "cadence": "every metrics row: step % log_every == 0 or step == steps",
+            "log_every": int(args.log_every),
+            "source": "refcv6_perception_branch.grad_reach_report, read off the BUILT model"}
+
+
 def _grad_probe_row(model, names, log_every_hit: bool = True) -> dict:
     """Per-module ``sum(|grad|)``, read BEFORE ``clip_grad_norm_`` rescales it.
 
@@ -7100,6 +7204,10 @@ def train(args) -> dict:
     cfg = _pin_trainer_cfg(
         v3.refc_v3_smoke_config(args.arm == "hier") if args.smoke else
         v3.refc_v3_sized_config(args.size, hier=args.arm == "hier"), args)
+    # ⛔ SPEC_REFCV7 §7 (A2): the banked τ file, held against the float BEFORE anything is built
+    _navc_tau_stamp = _verify_navc_tau_file(args)
+    if _navc_tau_stamp is not None:
+        cfg.nav_compliance_tau_sha256 = _navc_tau_stamp["sha256"]
     # ⛔ The delta is derived AT THE SAME SIZE both arms run at. Deriving it at a
     # different rung would compare a config pair neither arm uses. The pair is
     # pinned through the same helper as the built arm, so the recorded delta is
@@ -8083,6 +8191,8 @@ def train(args) -> dict:
                                                   if _l.kind in ("built", "loss")),
                               "mismatches": 0,
                               "module": "tanitad/train/declared_vs_built.py"},
+        # ⛔ D3: what this run declares it LOGS -- held against metrics.jsonl at the first row
+        "grad_reach_logging": _grad_reach_declaration(model, args),
         # ⛔ `argv` records what was TYPED and the seam stamps record what
         # was BUILT; neither says whether each weight's loss term is
         # actually reached. A run record that does not carry its effective
@@ -8395,6 +8505,7 @@ def train(args) -> dict:
     _dpos = {"epoch": _train_sampler.epoch, "batch": _train_sampler.skip_batches}
     it = iter(dl)
     _bev_parity_checked = False        # WP-D: the E-DEC-18b gate fires once
+    _d3_checked = False                # D3: declared-vs-LOGGED, held at the first log row
     while step < args.steps:
         it, batch = next_train_batch(it, dl, _train_sampler, _dpos)
         # ⛔⛔ SCALE EACH GROUP FROM ITS OWN `initial_lr`, NEVER FROM `args.lr`.
@@ -8504,9 +8615,8 @@ def train(args) -> dict:
         # zero_grad wipes it.
         _gp_row = _grad_probe_row(
             model, _gp_names,
-            log_every_hit=bool(_gp_names) and (
-                (step + 1) % args.log_every == 0
-                or (step + 1) >= args.steps))
+            log_every_hit=bool(_gp_names) and _logged_after(
+                step, args.log_every, args.steps))
         # ⛔⛔ refcv6 §2/§6 — PER-HEAD GRADIENT REACH, READ, NEVER ASSUMED.
         # HERE for the same reason `_grad_probe_row` is: after `backward`,
         # before the global clip rescales it, before the next `zero_grad`
@@ -8523,10 +8633,11 @@ def train(args) -> dict:
         # ⛔ Still nothing on an arm with neither seam: `_pr_row` stays empty,
         # no `ga_*` key enters metrics.jsonl, and bit-identity is untouched.
         _pr_row = {}
-        _ga_on = (getattr(model, "_perception", None) is not None
-                  or getattr(model, "tac_decoder_v6", None) is not None)
-        if _ga_on and (
-                step % max(1, args.log_every) == 0 or step + 1 >= args.steps):
+        _ga_on = _grad_reach_declared(model)
+        # ⛔⛔ D3 (2026-09-26): `_logged_after` tests the POST-increment step -- the one the log
+        # below writes. The old `step % log_every == 0` filled pre-steps 0, 50, 100 ... that are
+        # written as steps 1, 51, 101 ... -- never a log step: 0 `ga_*` keys in refcv6's 4,621 rows.
+        if _ga_on and _logged_after(step, args.log_every, args.steps):
             for _pk, _pv in _perc.grad_reach_report(model).items():
                 _pr_row[f"ga_{_pk}"] = _pv["grad_abs_sum"]
                 _pr_row[f"ga_{_pk}_n"] = _pv["n_params_with_grad"]
@@ -8582,6 +8693,18 @@ def train(args) -> dict:
                 row.update(_cd_row)
             log.write(json.dumps(row) + "\n")
             log.flush()
+            # ⛔⛔ D3: a DECLARED instrument must WRITE. The first log row is held against
+            # config.json's own `grad_reach_logging` declaration (the row is written first, so
+            # the evidence stays in metrics.jsonl), and a dead instrument costs `log_every`
+            # steps instead of a run (refcv6-r101-s0: 0 `ga_*` keys in 4,621 rows).
+            if not _d3_checked:
+                _d3_checked = True
+                _d3_bad = _dvb.check_logged_rows(_run_config, [row])
+                if _d3_bad:
+                    raise SystemExit(
+                        "[v3] ⛔ D3: a declared instrument did not reach metrics.jsonl at "
+                        "the first log row (step %d):\n  - %s"
+                        % (step, "\n  - ".join(str(m) for m in _d3_bad)))
             print(f"[v3:{args.arm}] step {step} "
                   f"loss {row['loss']:.4f} traj {row['traj']:.4f}")
         elif _cd_row:
@@ -9770,6 +9893,12 @@ def build_parser() -> argparse.ArgumentParser:
     g6t.add_argument("--nav-compliance-tau-rad", type=float, default=0.0,
                      help="the terminal-heading tolerance of --graft-nav-compliance, DERIVED "
                           "on the TRAIN split (no default that means anything; 0 = unset).")
+    g6t.add_argument("--nav-compliance-tau-file", default=None,
+                     help="SPEC_REFCV7 §7: the BANKED tau file (JSON with a numeric `tau`, e.g. "
+                          ".../2026-09-26-declared-vs-built/raw/nav_compliance_tau_train.json). "
+                          "Needs --nav-compliance-tau-rad too: train() REFUSES a float that "
+                          "differs by > 1e-12, a missing file and an unreadable one, and stamps "
+                          "{path, sha256, tau} into config.json (seams.nav_compliance_tau_file).")
     g6t.add_argument("--speed-ceiling-filter", action="store_true",
                      help="refcv6 §5: the fed 4-way set speed FILTERS THE ARGMAX (the S2 "
                           "pattern; the score stays unmasked). Needs --max-speed-input-v6. "

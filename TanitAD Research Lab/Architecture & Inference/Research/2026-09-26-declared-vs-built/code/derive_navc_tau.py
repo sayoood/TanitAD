@@ -1,4 +1,4 @@
-"""E1 (informative until the PI decides): the nav-compliance tolerance ``tau_rad`` for
+"""E1 (PI ruling 2026-09-26: all three selection mechanisms ON for refcv7): the nav-compliance tolerance ``tau_rad`` for
 ``--graft-nav-compliance``, derived on the FULL refcv6/refcv7 TRAIN split, recorded with the
 sha256 of every input.
 
@@ -26,6 +26,8 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import platform
+import socket
 import sys
 import time
 from pathlib import Path
@@ -115,10 +117,17 @@ def main() -> None:
             neg.append(th)
     res = derive_tolerance(pos, neg)
     res.update({
-        "what": "nav-compliance tau for --graft-nav-compliance (E1; informative until the PI decides)",
-        "evidence_class": "MEASURED (dev box, CPU; GT poses + labels only, no model)",
-        "split": "refcv6/refcv7 TRAIN (4,369 clips; config.json v2_cache "
-                 "/home/nvidia/data/refcv6-b1-416x1024-train)",
+        "what": "nav-compliance tau for --graft-nav-compliance (PI E1 ruling 2026-09-26: all "
+                "three selection mechanisms ON for refcv7)",
+        # ⛔ DERIVED, never typed: the ab436ee version hardcoded "dev box" and was then run on
+        # Thor (RUN_ON_THOR.txt). The host is a fact about the process, so the process says it.
+        "evidence_class": (f"MEASURED ({socket.gethostname()}, {platform.system()} "
+                           f"{platform.machine()}, CPU; GT poses + labels only, no model)"),
+        "host": socket.gethostname(),
+        "platform": platform.platform(),
+        "python": sys.version.split()[0],
+        "torch": torch.__version__,
+        "split": f"TRAIN: the {len(eps):,} clips of the manifest below (the split the model trains on)",
         "inputs": {"manifest": {"path": man_p, "sha256": sha256(man_p),
                                 "n_clips": len(eps)},
                    "labels": {"path": lab_p, "sha256": sha256(lab_p),
