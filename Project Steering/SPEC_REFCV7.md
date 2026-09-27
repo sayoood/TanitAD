@@ -706,3 +706,31 @@ A constant peak lr leaves the final snapshot noisy. The real launch decays its l
 **The next arm** (the decay protocol, PI-approved; a re-run, not a new lever): **A15's configuration** (near lift 20 + one near refine block, sqrt_mf weights) **+ the A17.1 decay**. Every prereg literal, with A15's must-fail pair (s8_zeros, near_block_zeros) and lane_w0.
 - **If edge still fails:** a second near refine block (`--map-hires-near-refine-blocks 2`; the flag already allows up to 4; +4.3 % FLOPs per block) is the proposed next lever. It goes to the PI, since A16 exhausted §9's list.
 - **The step budget is the PI's.**
+
+## 23. Amendment A18 (2026-09-27 ~16:55 Berlin, PI in chat, BEFORE its first number): G-MAP-OVERFIT's step budget is 3,000
+
+**PI, 2026-09-27 ~16:53**, choosing from four options (a second decoder block, both, launch with edge below the bar, or this): **"Budget to 3,000 steps"**.
+
+**This is a dated goalpost amendment**, made by the PI under the prereg's own rule ("Changing any literal … is a goalpost move. It needs a dated amendment with the reason, and the run before it stays on the record"). **Every 1,000-step result stays on the record as FAIL:** NEW-2 MAIN, A12, A15, A16 and A17.1.
+
+**The reason (MEASURED, all NON-BINDING).**
+- **Across three levers and a decay, 7 of 8 classes pass at step 1,000.** The latest, A17.1 (A15's config + the decay), reads the big classes 0.92–0.96, lane 0.538, crosswalk 0.806, arrow 0.745 and hatched 0.840.
+- **Edge is the only failing class:** 0.254 at step 1,000, essentially the same with or without the decay (A15 0.259).
+- **Edge is RECALL-limited, not wrong:** P 0.974, R 0.509 at the 0.2 m tolerance.
+- **Edge rises with steps:** 0.08 → 0.194 → 0.259 across the levers at 1,000; without any lever it reached 0.43 by step 3,000 (NEW-2 MAIN_long).
+
+The test's purpose (A3, the PI) is that the 10 cm head CAN learn every class. The 1,000-step budget was measuring how FAST it learns the thinnest class.
+
+**The change** (it applies to every G-MAP-OVERFIT arm of the binding run and any re-run):
+- **N = 3,000 steps**, the read-out at step 3,000;
+- the A17.1 decay moves with it: lr 1e-3 for steps 0–2,699, then a cosine decay to 0 over 2,700–3,000;
+- **unchanged:** every bar (0.85 big classes / 0.50 thin classes), every must-fail (s8_zeros, near_block_zeros, lane_w0), C1–C3, the 16 frames, batch 4, the declared rule, the presence floor, §6.4, and the 1 ms guard.
+
+**The configuration** is A15's: near lift 20 + one near refine block + sqrt_mf weights.
+
+**The order:**
+1. An EARLY MAIN arm (non-binding) runs now.
+2. If it PASSES, the canonical argv becomes final: `--map-hires-near-lift-m 20 --map-hires-near-refine-blocks 1` plus sqrt_mf.
+3. The BINDING runs follow on the launch closure (A11): box A17 and map A18, with every arm.
+
+**If edge still FAILS at 3,000:** the second near refine block is the next lever, and it goes to the PI.
