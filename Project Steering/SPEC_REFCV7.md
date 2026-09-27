@@ -415,3 +415,30 @@ Per RULE ZERO the next arm is fixed now, before the data:
 - The +R6 arm needs its own must-fail pair: `memory_zeros` and `presence_w0`, as in the prereg.
 - If +R6 also fails criterion 2 or 3, the next lever is an architecture addition: query selection from a BEV proposal heatmap (DINO-style mixed query selection). That goes to the PI as a named blocker, not a silent build.
 - Every early G-BOX-OVERFIT run is NON-BINDING (stamped `binding: false`). Only the run on the launch commit binds.
+
+## 16. Amendment A11 (2026-09-27 ~04:30 Berlin, before any BINDING overfit run): the overfit PASS records bind to a code closure, not a commit sha
+
+**What changes.** A9 (§14) and the prereg bind the G-MAP-OVERFIT and G-BOX-OVERFIT PASS records to the launch COMMIT. They now bind to a **code-closure digest** that must be EQUAL at the launch commit. The literals, bars, must-fail arms and controls are unchanged.
+
+**Why.** The two harnesses' binding arms need roughly 3–4 h of Thor GPU. A commit binding forces all of it to run AFTER the last landing. That landing also carries the launch gate and the Training Watch, neither of which the model imports. A closure binding gives the same guarantee, namely that the code which passed is the code that launches, and it can start as soon as the MODEL code has landed.
+
+**The closure** is recorded by a wrapper (`stack/scripts/closure_run.py`) around the unmodified harness. It holds:
+- (path, git blob) for EVERY module in `sys.modules` whose file lies inside the run's tree, recorded from the process at exit, never from a hand list;
+- the sha256 of every data-contract file the harness opened: frame set, prereg, spec JSON, class weights, VIS-1 sidecar;
+- the harness argv sha256;
+- the harness PASS JSON's path and sha256;
+- the exit status.
+
+**What the gate enforces on the launch commit.** It recomputes each path's blob and requires:
+- the closure digest to be equal;
+- the argv to be the same;
+- `binding: true`;
+- exit status 0.
+
+**Red arms, which must be REFUSED:**
+- one blob differs;
+- a non-binding (early) record is offered;
+- a module imported but not recorded;
+- a crashed harness, i.e. a non-zero exit status in the closure.
+
+Early non-binding records stay unusable by construction.
