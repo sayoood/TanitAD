@@ -465,6 +465,21 @@ def scan_bytes(data: bytes, path: str) -> list[Finding]:
     return out
 
 
+# ⛔ THE SELF-MATCH, THIRD COSTUME (MEASURED 2026-09-27, the refcv7 launch gate's G-SUITE-PINNED on
+# 60f4c06): `*secret*` BLOCKED three banked pytest LOGS OF THIS SCANNER'S OWN TEST
+# (`…/stack__tests__test_secret_scan.py.log`, `…/tests__test_secret_scan.py.log`) -- their basename
+# names the test, not a secret; their CONTENT was scanned (0 candidates). `.log` stays OUT of
+# SOURCE_DOC_SUFFIXES on purpose (a real token once lived in a log), so the exemption is by NAME and
+# narrow: only a basename that names THIS scanner's test module skips the SUBSTRING globs. The exact
+# credential names above and the content tiers still apply to it.
+_OWN_TEST_ARTIFACT_STEMS = ("test_secret_scan.py",)
+
+
+def _is_own_test_artifact(base: str) -> bool:
+    b = base.lower()
+    return any(stem in b for stem in _OWN_TEST_ARTIFACT_STEMS)
+
+
 def scan_path_shape(path: str) -> list[Finding]:
     """Tier B. Path only -- the file is NEVER opened for this finding."""
     base = path.replace("\\", "/").rsplit("/", 1)[-1]
@@ -472,7 +487,8 @@ def scan_path_shape(path: str) -> list[Finding]:
         if fnmatch(base, g):
             return [Finding("secret-path", "credential-filename", path, 0,
                             f"filename matches a credential glob ({g})")]
-    if Path(base).suffix.lower() not in SOURCE_DOC_SUFFIXES:
+    if (Path(base).suffix.lower() not in SOURCE_DOC_SUFFIXES
+            and not _is_own_test_artifact(base)):
         for g in SECRET_NAME_SUBSTRING_GLOBS:
             if fnmatch(base, g):
                 return [Finding("secret-path", "credential-filename", path, 0,
