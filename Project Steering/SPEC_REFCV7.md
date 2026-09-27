@@ -746,3 +746,33 @@ The session transcript's timestamps are the record (UTC; Berlin is UTC+2):
 | A18 (§23) | "PI, 2026-09-27 ~16:53"; heading "~16:55" | asked 16:20 Berlin (14:20:43Z), **answered 16:24 Berlin (14:24:23Z)**; landed 37086c3 at 16:25 |
 
 **Nothing else changes.** The PI's words, the options offered, and each amendment's order relative to its arm's first number are as written. RETR-2026-09-27-AMENDMENT-TIMES logs the class.
+
+## 24. Amendment A19 (2026-09-27, PI in chat, BEFORE either binding run's first number): the BINDING overfit runs are MAIN-only
+
+**PI, 17:41 Berlin (15:41:33Z):** "We need to accelerate things to start training of refcv7".
+- **Q1** (asked 17:44, 15:44:10Z; four options): keep the plan; share the GPU; map MAIN-only; or MAIN-only for both. **Answer 17:46 (15:46:18Z): "Binding = MAIN only, both"**.
+- **Correction, sent before the second question.** Q1's option text said the box must-fails "held in the early runs". For the LAUNCH box head that is not so:
+  - the early full-scale `memory_zeros` / `presence_w0` ran on the pre-A14 (unanchored) head, where MAIN also failed (AP@2m 0.013);
+  - the early `learned_ref` run was MAIN-only (`…/2026-09-27-refcv7-box-head/raw/thor_gbo_lrp/gbo_learned_ref.json`, arms: main).
+- **Q2** (asked 17:47, 15:47:40Z): keep MAIN-only for the box, or add `memory_zeros`. **Answer 17:51 (15:51:29Z): "Keep MAIN-only for both"**.
+
+**The change** (a dated protocol amendment; neither binding run has started):
+- **G-BOX-OVERFIT binding** (A11 closure): the MAIN arm only (`--arms main`). Every A9/A10/A13/A14.1/A17 literal is unchanged: 2,000 steps, the A17 decay, `learned_ref`, the 113/77 frame set, the six criteria at step 2,000.
+- **G-MAP-OVERFIT binding** (A11 closure): the MAIN arm only (`--arms healthy`), on the A18 protocol: 3,000 steps, decay from 2,700, A15's config, sqrt_mf. C1–C3 and the 1 ms guard are still computed on MAIN's logits.
+- **The gate** (`launch_gate.py`): `judge_box_overfit` / `judge_map_overfit` accept a binding record whose must-fail arms are absent, citing A19. MAIN must PASS every registered bar.
+- **Unchanged:** the A11 closure binding, the argv sha256 `6402d33d…`, and the host-env equality.
+
+**The must-fail evidence this INHERITS (stated exactly):**
+- **Map:** held on the exact launch map config, at 1,000 steps. A17.1 (A15 config + decay) held all three:
+  - `s8_zeros` all thin classes 0;
+  - `near_block_zeros` edge 0.199;
+  - `lane_w0` lane 0.
+  A12 and A15 held them too.
+- **Box `presence_w0`:** robust by construction. With zero presence-loss weight the presence head receives no gradient.
+- **Box `memory_zeros`: NOT measured at full scale on the launch head.** It held in the TOY test on the A17 code (18/18 cells, ap2m 0.0022–0.0171) and on the pre-A14 head. `learned_ref` also reads BEV tokens pooled from the map branch, so a leak around the blinded memory would not be seen before launch. **The PI accepted this knowingly (Q2).**
+
+**Why:**
+- The must-fail arms were ~75 % of the binding GPU time: box 2 of 3 arms × ~86 min; map 3 of 4 arms × ~35 min. MAIN-only brings the launch forward by ~4 h.
+- A second, MEASURED reason for the map: at A18's 3,000 steps, `near_block_zeros` may itself reach edge ≥ 0.50. The block's effect was +0.055 at 1,000 steps under the decay, equal to MAIN's 3,000-step margin (0.555 vs 0.50). The must-fail could then read "passed" and VOID a binding whose head learns every class.
+
+**The order:** the map MAIN binding first (its edge margin is the thinner one), then the box MAIN binding; then G-LIVE / G-CKPT / G-EVAL on the launch commit; then the token.
