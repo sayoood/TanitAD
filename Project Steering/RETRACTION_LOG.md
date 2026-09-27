@@ -17850,3 +17850,15 @@ component name, so the formula read as the benchmark's own.
 - Both are cured by a RELATIVE control: the same-frame neighbours' offset, or the frame's own ground.
 
 **Rule:** a height or offset claim about a label class carries its control. That is either the class vs same-frame neighbours, or the class vs a ground measured in the SAME frame and at the SAME range. An absolute number alone is inadmissible.
+
+### RETR-2026-09-27-A15-WEIGHT-ARGUMENT: "the weights lever is structurally weak for lane (lane's weight stays near 1)"
+
+**Retracted:** a ranking argument in SPEC_REFCV7 A15 (landed c1ed8d9). The NEW-2 builder wrote it; the Master Mind copied it into the SPEC without checking the quantity. The builder retracted it itself before A15's first number.
+
+**Why it was wrong:** lane's ABSOLUTE weight does stay near 1 under every median-frequency variant (sqrt_mf 0.94, mf 0.88). But weighted CE moves a class through its weight RELATIVE to the classes that fill most cells. w_lane / w_drivable goes from 4.6 (sqrt_mf) to 20.8 (mf), and w_edge / w_drivable from 7.6 to 58. So the weights lever is real for lane and edge.
+
+**Class:** TRUE BUT WRONG FOR THE READER. A correct fact about the wrong quantity (absolute where relative decides) implied a wrong ranking. See the memory note "true-but-wrong-for-the-reader".
+
+**Consequence:** none for the lever order. A15 stands on the measured shape argument (line classes lag area classes by 4.2× in CE ratio at near-equal weight), and (4) stays the next lever. The SPEC carries a dated correction, §20.1.
+
+**Rule:** a claim that a loss-weighting lever "cannot move" a class must be stated in the RELATIVE weight (vs the dominant classes), not the class's own weight.

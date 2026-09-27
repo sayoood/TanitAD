@@ -622,3 +622,21 @@ If the corrected MAIN or +R6 PASSES G-BOX-OVERFIT, HQS is not needed and stays d
 - **If it FAILS with its must-fails holding:** §9 lever (4), the weights, is next.
 - **Binding:** A11. Only a run on the launch closure binds.
 - **GPU:** after the box G-BOX-OVERFIT arm (the PI's priority, 2026-09-27 11:30) and after A12's paused `s8_detached` completes.
+
+### 20.1 Correction to A15 (2026-09-27 ~12:55 Berlin, before A15's first number): one ranking argument was wrong
+
+A15's sentence *"Lever (4) is structurally weak for lane: lane's frequency sits at the median, so every median-frequency variant leaves its weight near 1"* is **RETRACTED** (RETR-2026-09-27-A15-WEIGHT-ARGUMENT). It was raised by the NEW-2 builder, who authored it.
+
+- It is true of lane's ABSOLUTE weight, but that is the wrong quantity.
+- Under weighted CE, what moves a class is its weight RELATIVE to the classes that fill most cells:
+
+| ratio | sqrt_mf (the launch weights) | mf |
+|---|---|---|
+| w_lane / w_drivable | 0.939 / 0.206 = **4.6** | 0.88 / 0.042 = **20.8** (×4.6) |
+| w_edge / w_drivable | **7.6** | **58** (×7.6) |
+
+- So lever (4), the weights, IS a real lever for lane and edge. Its cost is the big classes' gradient share: about 10.4 % → 2.7 % each at convergence. They pass their 0.85 bars today at 0.89–0.94.
+
+**The A15 choice stands** on the other, MEASURED argument. At nearly the same weight (lane 0.94 vs crosswalk 1.07), the LINE classes lag the AREA classes by 4.2× in CE ratio, and the rarest area classes are the fastest. The order (3) → (4) is unchanged. (4) is now framed as a real, mechanistic lever, not a weak one.
+
+**Readiness for (4)**, if A15 fails with its must-fails holding: the TRAIN mf weights are being computed on Thor (PID 3729978, nice 19 + ionice idle, the landed script blob 8012922f, `--definition mf`, 100 × 30). The file is stamped `pre_registered: false` until (4) is registered.
