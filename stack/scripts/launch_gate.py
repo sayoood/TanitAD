@@ -345,7 +345,15 @@ _REFC = {
         "prereg_md5": "594c71196cc5bbd527fee40b2cb0e3f1",
         "frameset_md5": "b291404c36f83c3e397e3b90367e8e7b",
         "n_frames": 16, "n_pos": 113, "n_ignore": 77,
-        "steps": 2000, "batch": 4, "lr": 2e-4, "seed": 0, "gate": 0.5,
+        "steps": 2000, "batch": 4, "seed": 0, "gate": 0.5,
+        #: SPEC_REFCV7 A13 (sec. 18): the LAUNCH optimiser AS BUILT (`build_optimizer`, `--opt dd --lr 1e-4`:
+        #: AdamW, the trunk group at --encoder-lr-mult 0.5) + clip 10 -- replacing the prereg's `lr 2e-4 on
+        #: every tensor`; the record's per-arm `optimizer` spec (built, i.e. PEAK lrs) is read
+        "optimizer": {"class": "AdamW", "group_lrs": (5e-05, 1e-04), "weight_decay": 1e-4, "clip": 10.0},
+        #: SPEC_REFCV7 A17 (sec. 22, the PI): the peaks held through step 1,799, then a cosine decay to 0 over
+        #: steps 1,800-2,000 (both groups, the ratio kept) -- the record's `literals.lr_schedule`, verbatim
+        "lr_schedule": {"rule": "A17", "hold_peak_through_step": 1799, "decay": "cosine",
+                        "decay_from_step": 1800, "decay_to_step": 2000, "final_factor": 0.0},
         #: PREREG sec. 5, numbered as the prereg numbers them; each term is (row key, op, literal)
         #: on the arm's FINAL row. `count_rel` = |n_conf - 113| / 113 and `presence_ratio` =
         #: presence(2000) / presence(0) are DERIVED by the gate; 6 also needs the loss finite at
@@ -382,12 +390,9 @@ _REFC = {
 #: yet. While ANY is open this profile cannot mint a PASS -- `finalize` names each one and the
 #: verdict is at best INCOMPLETE. An item is closed by landing its flags as `required_values`
 #: (and in the canonical argv `stack/ops/runs.d/refcv7-r101-s0.argv.json`) and deleting it here.
+#: BOX-HEAD was CLOSED 2026-09-27 (the box head landed as 28d8365): its flags are `required_values` /
+#: `required_flags` below, built-checked by `box_required` in G-DVB; +R6 was not adopted (A14.1: LRP).
 _REFCV7_OPEN_ITEMS = (
-    {"id": "BOX-HEAD",
-     "what": "the box-head flags R1-R4 (SPEC_REFCV7 A9/A10), and whether +R6 "
-             "`--slot-dn-groups 5` joins them (A10.1, decided on the early G-BOX-OVERFIT "
-             "verdicts)",
-     "owner": "the box-head builder names the flags; the Master Mind decides MAIN vs +R6"},
     {"id": "MAP-LIFT",
      "what": "one or two NEW-2 LIFT flags: the EARLY (non-binding) G-MAP-OVERFIT MAIN FAILED at "
              "step 1,000 (lane 0.417, edge 0.076 vs 0.50; INHERITED, Master Mind "
@@ -450,7 +455,14 @@ PROFILES: dict[str, dict] = {
             (r"tests\.test_refa_v1_precision::test_cuda_bf16_autocast_tiny_step_has_finite_loss_and_grad_norm",
              r"^no CUDA device$"),
         ),
-        required_flags=("--residual-prior", "--ego-history"),
+        required_flags=("--residual-prior", "--ego-history", "--slot-deep-supervision", "--slot-vis1"),
+        required_flags_why={
+            "--slot-deep-supervision": "SPEC_REFCV7 14 (A9 R2): per-layer supervision of both slot heads",
+            "--slot-vis1": "SPEC_REFCV7 14 + 15.1 (A9 R3, A10): VIS-1 targets and IGNORE semantics",
+        },
+        #: the BOX-HEAD requirement BUILT (G-DVB): the box-head package's guard -- the A9 levers ON in argv
+        #: AND built on BOTH slot heads, 300 queries, the learned reference points (A14.1)
+        box_required={"module": "tanitad.train.box_head_guard", "fn": "check_refcv7_box_required"},
         dvb_forbid_kinds=("drivort",),
         forbidden_levers=_DRIVORT_OFF,
         forbidden_prefixes=("--r7-", "--w-r7-", "--drivort-", "--w-drivort-"),
@@ -469,6 +481,10 @@ PROFILES: dict[str, dict] = {
             "--map-hires-grad-ckpt": "on",
             "--bev-planner-crop-m": ["60", "16"],
             "--w-map": "0",
+            "--slot-presence-loss": "focal",
+            "--slot-presence-prior": "0.01",
+            "--slot-query-select": "learned_ref",
+            "--vis1-sidecar": "/home/nvidia/data/refcv7/vis1_sidecar_refcv6b1_train4369_eval139.npz",
         },
         required_values_why={
             "--residual-prior": "SPEC_REFCV7 10 (A5): the prior is ha0_ext_pose, past poses only",
@@ -483,6 +499,12 @@ PROFILES: dict[str, dict] = {
             "--bev-planner-crop-m": "SPEC_REFCV7 12 item 2 (A7): the planner BEV cropped to "
                                     "60 m x +-16 m",
             "--w-map": "SPEC_REFCV7 11.1 (A6): the 0.5 m map head and loss are REMOVED",
+            "--slot-presence-loss": "SPEC_REFCV7 14 (A9 R1): sigmoid focal presence + the focal matching cost",
+            "--slot-presence-prior": "SPEC_REFCV7 14 (A9 R1): the presence prior 0.01",
+            "--slot-query-select": "SPEC_REFCV7 19.1 (A14.1): the box head's learned reference points (the "
+                                   "full-model one-frame test PASS; the launch ruling 2026-09-27)",
+            "--vis1-sidecar": "SPEC_REFCV7 14 (A9 R3): the VIS-1 sidecar placed by the Master Mind 2026-09-27 "
+                              "(sha256 278443b3..., the box-head package raw/thor/vis1_full_record.json)",
         },
         #: levers that must be passed with a value strictly above 0 (a built head with no live
         #: weight is declared-but-inert)
@@ -1565,8 +1587,41 @@ def forbidden_value_reasons(prof: dict, argv: list[str]) -> list[str]:
 
 
 def required_flag_reasons(prof: dict, argv: list[str]) -> list[str]:
-    return [f"profile {prof['name']} requires {f} in the launch argv (SPEC: NEW-1 is part of "
-            f"this arm)" for f in prof.get("required_flags", ()) if not has_flag(argv, f)]
+    why = dict(prof.get("required_flags_why") or {})
+    return [f"profile {prof['name']} requires {f} in the launch argv "
+            f"({why.get(f, 'SPEC: NEW-1 is part of this arm')})"
+            for f in prof.get("required_flags", ()) if not has_flag(argv, f)]
+
+
+def box_required_reasons(prof: dict, model=None, args=None) -> tuple[list[str], dict]:
+    """The BOX-HEAD requirement BUILT (the box-head package's guard, closed open item BOX-HEAD, 2026-09-27):
+    `prof["box_required"]` names a module + function `fn(model, args) -> list[Mismatch]` ([] = a refcv7 box
+    build: the A9 levers ON in argv AND built on both slot heads, 300 queries, the learned reference points).
+    Inert for a profile that names none; a missing module or function is a named FAIL, never a pass."""
+    spec = prof.get("box_required")
+    if not spec:
+        return [], {"box_required": None}
+    det: dict[str, Any] = {"box_required": f"{spec.get('module')}.{spec.get('fn')}"}
+    try:
+        mod = importlib.import_module(str(spec.get("module")))
+    except Exception as e:                                # noqa: BLE001 -- recorded, never a pass
+        return [f"BOX-HEAD: {spec.get('module')} is not importable ({type(e).__name__}: {e}) -- the box "
+                f"head's requirement cannot be read"], det
+    fn = getattr(mod, str(spec.get("fn")), None)
+    if not callable(fn):
+        return [f"BOX-HEAD: {spec.get('module')} has no `{spec.get('fn')}` -- the box head's requirement "
+                f"cannot be read"], det
+    if model is None or args is None:
+        return ["BOX-HEAD: no built model to check the box head against"], det
+    try:
+        res = fn(model, args)
+    except Exception as e:                                # noqa: BLE001
+        return [f"BOX-HEAD: {spec.get('fn')} crashed: {type(e).__name__}: {str(e)[:300]}"], det
+    det["result"] = [str(x)[:300] for x in (res or [])] if isinstance(res, (list, tuple)) else repr(res)[:300]
+    if not isinstance(res, (list, tuple)):
+        return [f"BOX-HEAD: {spec.get('fn')} returned {type(res).__name__}, not a list"], det
+    return ([f"BOX-HEAD: {len(res)} requirement(s) not met (SPEC_REFCV7 A9/A14.1): "
+             + " | ".join(str(x)[:240] for x in list(res)[:6])] if res else []), det
 
 
 def pi_pending_reasons(prof: dict, argv: list[str]) -> list[str]:
@@ -3608,8 +3663,10 @@ def judge_box_overfit(prof: dict, record: str | None, commit: str, *, argv_sha: 
     -- never against the pass flags or bars the record carries:
 
     * `RESULT` is PASS; the prereg and the frame set are the registered bytes; the literals (steps
-      2,000, batch 4, lr 2e-4, seed 0, 113 POSITIVE / 77 IGNORE after A10) are the prereg's; the
-      record binds THIS launch argv; the harness's G-DVB self-check found no mismatch;
+      2,000, batch 4, seed 0, 113 POSITIVE / 77 IGNORE after A10) are the prereg's; every arm trained
+      with the LAUNCH optimiser (A13: AdamW, groups 5e-5 / 1e-4, weight decay 1e-4, clip 10) on A17's
+      schedule (peaks through 1,799, cosine to 0 over 1,800-2,000); the record binds THIS launch argv;
+      the harness's G-DVB self-check found no mismatch;
     * `main`'s FINAL row (step 2,000) meets EVERY sec. 5 criterion, recomputed here from the row
       values (the count and the presence ratio derived by the gate);
     * each must-fail arm (sec. 6) FAILS every criterion it names, recomputed the same way -- one
@@ -3646,11 +3703,36 @@ def judge_box_overfit(prof: dict, record: str | None, commit: str, *, argv_sha: 
         if rec.get(k) != bo.get(k):
             reasons.append(f"{tag}: {k} {rec.get(k)!r} != the registered {bo.get(k)!r}")
     lit = rec.get("literals") if isinstance(rec.get("literals"), dict) else {}
-    for rk, pk in (("lr", "lr"), ("batch", "batch"), ("seed", "seed"), ("n_pos", "n_pos"),
-                   ("n_ign", "n_ignore")):
+    for rk, pk in (("batch", "batch"), ("seed", "seed"), ("n_pos", "n_pos"), ("n_ign", "n_ignore")):
         if not (_finite_num(lit.get(rk)) and float(lit[rk]) == float(bo[pk])):
             reasons.append(f"{tag}: literal {rk} = {lit.get(rk)!r}, the prereg (with A10's "
                            f"reconciliation) fixes {bo[pk]}")
+    # A17: the lr schedule, verbatim; A13: every arm's optimiser as built (the PEAK groups)
+    if bo.get("lr_schedule") is not None and lit.get("lr_schedule") != dict(bo["lr_schedule"]):
+        reasons.append(f"{tag}: literal lr_schedule = {lit.get('lr_schedule')!r}, SPEC_REFCV7 A17 fixes "
+                       f"{dict(bo['lr_schedule'])!r}")
+    want_opt = bo.get("optimizer")
+    if want_opt is not None:
+        arms0 = rec.get("arms") if isinstance(rec.get("arms"), dict) else {}
+        for arm_name in ("main", *(bo.get("must_fail") or {})):
+            spec = (arms0.get(arm_name) or {}).get("optimizer") if isinstance(arms0.get(arm_name), dict) else None
+            if not isinstance(spec, dict):
+                if arm_name in arms0:
+                    reasons.append(f"{tag}: arm {arm_name!r} records no optimizer spec (SPEC_REFCV7 A13)")
+                continue
+            groups = spec.get("groups") if isinstance(spec.get("groups"), list) else []
+            lrs = sorted(float(g.get("lr")) for g in groups if _finite_num(g.get("lr")))
+            wds = {float(g.get("weight_decay")) for g in groups if _finite_num(g.get("weight_decay"))}
+            ok = (spec.get("class") == want_opt["class"] and len(lrs) == len(groups)
+                  and lrs == sorted(float(x) for x in want_opt["group_lrs"])
+                  and wds == {float(want_opt["weight_decay"])} and len(wds) == 1
+                  and _finite_num(spec.get("clip")) and float(spec["clip"]) == float(want_opt["clip"]))
+            if not ok:
+                reasons.append(f"{tag}: arm {arm_name!r} trained with {spec.get('class')!r} groups "
+                               f"{lrs} weight decay {sorted(wds)} clip {spec.get('clip')!r}, not the "
+                               f"LAUNCH optimiser (SPEC_REFCV7 A13: {want_opt['class']} "
+                               f"{list(want_opt['group_lrs'])}, weight decay {want_opt['weight_decay']}, "
+                               f"clip {want_opt['clip']})")
     if rec.get("steps") != bo.get("steps"):
         reasons.append(f"{tag}: steps = {rec.get('steps')!r}, the prereg fixes {bo.get('steps')}")
     if rec.get("dvb_mismatches"):
@@ -4085,6 +4167,9 @@ def job_model(ctx: Ctx, checks: list[str]) -> dict[str, dict]:
                                      tau_file=ctx.options.get("nav_tau_record"))
         det["required_on"] = rd
         reasons += rr
+        br_, bd_ = box_required_reasons(ctx.prof, model, args)
+        det["box_required"] = bd_
+        reasons += br_
         tfr, tfd = tau_file_flag_reasons(ctx.prof, ctx.argv, parser,
                                          ctx.options.get("nav_tau_record"), pmap)
         det["nav_tau_file_flag"] = tfd

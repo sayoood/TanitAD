@@ -478,6 +478,85 @@ def test_A14_run_one_frame_passes_a_memorising_toy_and_an_uncaptured_assignment_
     assert not G.one_frame_verdict(r2["rows"], 0.9, steps=100, every=25)["ii_pass"]
 
 
+def test_A17_the_lr_factor_at_the_steps_the_SPEC_names():
+    """SPEC_REFCV7 §22 (A17): peaks through step 1,799, cosine from peak (1,800) to 0 (2,000). LITERALS."""
+    assert [G.lr_factor(s) for s in (0, 1, 1799, 1800, 1900, 2000)] == [1.0, 1.0, 1.0, 1.0, 0.5, 0.0]
+    assert G.LR_SCHEDULE == {"rule": "A17", "hold_peak_through_step": 1799, "decay": "cosine",
+                             "decay_from_step": 1800, "decay_to_step": 2000, "final_factor": 0.0}
+    assert G.A17_FACTOR_TABLE == {0: 1.0, 1799: 1.0, 1800: 1.0, 1900: 0.5, 2000: 0.0}
+    assert G.schedule_mismatches(G.lr_factor) == []
+    dec = [G.lr_factor(s) for s in range(1800, 2001)]
+    assert all(a >= b for a, b in zip(dec, dec[1:])) and abs(G.lr_factor(1850) - 0.8535533905932737) < 1e-12
+    # RED arm: the A13 CONSTANT schedule fails the A17 table -- at 1,900 and 2,000
+    mm = G.schedule_mismatches(lambda s, steps=2000: 1.0)
+    assert [m.split(":")[0] for m in mm] == ["step 1900", "step 2000"]
+    # and a cosine over the last 5 % only is caught at 1,900
+    late = G.schedule_mismatches(
+        lambda s, steps=2000: 1.0 if s < 1900 else max(0.0, 0.5 * (1 + math.cos(math.pi * (s - 1900) / 100))))
+    assert [m.split(":")[0] for m in late] == ["step 1900"]
+
+
+def test_A17_run_arm_scales_EVERY_group_by_the_factor_and_keeps_their_ratio():
+    """The loop, not only the function: the lr each optimiser group ACTUALLY carries at each update (two groups, the
+    launch's 5e-5 / 1e-4 peaks, 20 steps -> the decay covers steps 18-20), recorded at ``opt.step``."""
+    seen = []
+
+    class _A:
+        def setup(self, arm, seed):
+            self.enc = torch.nn.Parameter(torch.ones(2))
+            self.head = torch.nn.Parameter(torch.ones(3))
+
+        def params(self, arm):
+            return [self.enc, self.head]
+
+        def optimizer(self, arm, params, lr=None):
+            opt = torch.optim.AdamW([{"params": [self.enc], "lr": 5e-05}, {"params": [self.head], "lr": 1e-04}],
+                                    weight_decay=1e-04)
+            _step = opt.step
+
+            def step(*a, **k):
+                seen.append([g["lr"] for g in opt.param_groups])
+                return _step(*a, **k)
+            opt.step = step
+            return opt, G.optimizer_spec(opt, 10.0)
+
+        def clip(self):
+            pass
+
+        def loss(self, idx):
+            return (self.enc ** 2).sum() + (self.head ** 2).sum()
+
+        def evaluate(self):
+            return _synthetic_packs(), 1.0
+
+        def teardown(self):
+            pass
+    res = G.run_arm(_A(), "main", steps=20, log_every=10)
+    assert len(seen) == 20
+    assert seen[0] == [5e-05, 1e-04] and seen[16] == [5e-05, 1e-04] and seen[17] == [5e-05, 1e-04]
+    assert abs(seen[18][0] - 2.5e-05) < 1e-18 and abs(seen[18][1] - 5e-05) < 1e-18
+    assert seen[19] == [0.0, 0.0]
+    assert all(abs(h * 0.5 - e) < 1e-18 for e, h in seen[:19])                  # the ratio is KEPT
+    assert res["lr_schedule"] == G.LR_SCHEDULE and res["rows"][-1]["lr_factor"] == 0.0
+    assert res["optimizer"]["groups"][1]["lr"] == 1e-04                          # the recorded spec is the PEAK
+    # RED arm: the A13 loop (no schedule) leaves the last updates at the peak
+    seen.clear()
+    orig = G.lr_factor
+    try:
+        G.lr_factor = lambda s, steps=2000: 1.0
+        G.run_arm(_A(), "main", steps=20, log_every=10)
+    finally:
+        G.lr_factor = orig
+    assert seen[19] == [5e-05, 1e-04]
+
+
+def test_A17_the_one_frame_test_keeps_the_constant_peak():
+    """A14.1 as registered: A17 names the G-BOX-OVERFIT arms; the one-frame loop never calls lr_factor."""
+    import inspect
+    assert "lr_factor" not in inspect.getsource(G.run_one_frame)
+    assert "lr_factor" in inspect.getsource(G.run_arm)
+
+
 def test_TOY_the_loop_memorises_and_the_memory_zeros_arm_cannot():
     toy = _Toy()
     main = G.run_arm(toy, "main", steps=1200, log_every=600, lr=1e-3)

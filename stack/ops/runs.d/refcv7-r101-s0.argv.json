@@ -143,6 +143,57 @@
    "why": "SPEC_REFCV7 12 item 2 (A7): planner grid unchanged"
   },
   {
+   "flag": "--slot-presence-loss",
+   "refcv6": null,
+   "refcv7": [
+    "focal"
+   ],
+   "why": "SPEC_REFCV7 14 (A9 R1): sigmoid focal presence (alpha 0.25, gamma 2, weight 2.0, normalised per matched GT) + the focal matching cost, REPLACING refcv6's BCE with NO_OBJECT_W 0.1 -- on BOTH slot heads"
+  },
+  {
+   "flag": "--slot-presence-prior",
+   "refcv6": null,
+   "refcv7": [
+    "0.01"
+   ],
+   "why": "SPEC_REFCV7 14 (A9 R1): the presence logit initialised at p = 0.01 (refcv6 built 0.05)"
+  },
+  {
+   "flag": "--slot-deep-supervision",
+   "refcv6": null,
+   "refcv7": [],
+   "why": "SPEC_REFCV7 14 (A9 R2): per-layer supervision through the shared norm + head, re-matched per layer (3 decoder layers, 0 parameters)"
+  },
+  {
+   "flag": "--slot-vis1",
+   "refcv6": null,
+   "refcv7": [],
+   "why": "SPEC_REFCV7 14 + 15.1 (A9 R3, A10): VIS-1 -- POSITIVE = vis_frac >= 0.30 AND >= 100 px; the rest of the visible-target filter is IGNORE (out of matching; no presence penalty within 2 m; DontCare at eval)"
+  },
+  {
+   "flag": "--vis1-sidecar",
+   "refcv6": null,
+   "refcv7": [
+    "/home/nvidia/data/refcv7/vis1_sidecar_refcv6b1_train4369_eval139.npz"
+   ],
+   "why": "SPEC_REFCV7 14 (A9 R3): the precomputed VIS-1 sidecar, TRAIN 4,369 + EVAL 139 clips, sha256 278443b3356bca054c15753e7c08d465d71b0327a2ce564e143d091261349dd4 (the box-head package's raw/thor/vis1_full_record.json; two controls vs the audit's banked rows, 0 mismatches); the dataset REFUSES a missing clip, frame or row"
+  },
+  {
+   "flag": "--slot-query-select",
+   "refcv6": null,
+   "refcv7": [
+    "learned_ref"
+   ],
+   "why": "SPEC_REFCV7 19 + 19.1 (A14, A14.1): the BOX head's queries are learned reference points -- the full-model one-frame test PASSES (matched presence 0.873, anchor kept 1.000), the unanchored red arm and heatmap selection fail; +R6 (A10.1, --slot-dn-groups) is NOT adopted"
+  },
+  {
+   "flag": null,
+   "lever": "R4 (the code default, no flag)",
+   "refcv6": 100,
+   "refcv7": 300,
+   "why": "SPEC_REFCV7 14 (A9 R4): N_QUERIES_DEFAULT = 300 on BOTH slot heads (agent_slots.py, one spelling)"
+  },
+  {
    "flag": "--out",
    "refcv6": [
     "/home/nvidia/refcv6_run/runs/refcv6-r101-s0"
@@ -230,6 +281,16 @@
   "1.0",
   "--join3d",
   "/home/nvidia/data/join3d/b1_train_plus_eval_agents_3d.jsonl.xz",
+  "--slot-presence-loss",
+  "focal",
+  "--slot-presence-prior",
+  "0.01",
+  "--slot-deep-supervision",
+  "--slot-vis1",
+  "--vis1-sidecar",
+  "/home/nvidia/data/refcv7/vis1_sidecar_refcv6b1_train4369_eval139.npz",
+  "--slot-query-select",
+  "learned_ref",
   "--bev-coupling",
   "--equalize-bottom-rows",
   "43",
@@ -295,37 +356,6 @@
   "--out",
   "/home/nvidia/refcv7_run/runs/refcv7-r101-s0"
  ],
- "todo_box_head": {
-  "status": "NOT LANDED -- the box-head builder (a2e8b42841442809f, package …/2026-09-27-refcv7-box-head/) owns the flag names; they are ADDED here when it lands, and the gate REFUSES this argv for refcv7 until they are (G-BOX-OVERFIT, G-LIVE-PRES).",
-  "levers": [
-   {
-    "id": "R1",
-    "what": "sigmoid focal presence loss (alpha 0.25, gamma 2, weight 2.0, normalised per matched GT) + focal matching cost + prior 0.01, REPLACING the BCE with NO_OBJECT_W 0.1",
-    "flag": "TBD"
-   },
-   {
-    "id": "R2",
-    "what": "per-layer supervision, re-matched per layer (3 layers)",
-    "flag": "TBD"
-   },
-   {
-    "id": "R3",
-    "what": "VIS-1 IGNORE semantics: POSITIVE = vis_frac >= 0.30 AND >= 100 px; every other real GT object IGNORE; train + eval sidecars (sha256 in config.json)",
-    "flag": "TBD (+ the two sidecar paths)"
-   },
-   {
-    "id": "R4",
-    "what": "300 queries on BOTH slot heads",
-    "flag": "TBD"
-   },
-   {
-    "id": "R6 (A10.1, conditional)",
-    "what": "denoising queries `--slot-dn-groups 5` -- only if the Master Mind decides +R6 on the early G-BOX-OVERFIT verdicts",
-    "flag": "--slot-dn-groups 5 (if decided)"
-   }
-  ],
-  "gate": "PROFILES['refcv7']['open_items'] BOX-HEAD -- the gate cannot PASS while it is open"
- },
  "todo_map_lift": {
   "status": "OPEN -- the EARLY (non-binding) G-MAP-OVERFIT MAIN FAILED at step 1,000: lane 0.417 and non-drivable edge 0.076 vs the 0.50 bar; the other six classes pass (INHERITED, Master Mind 2026-09-27). The prereg's sec. 9 lever order applies once R2/C1-C3 validate the harness, and the next lever is the LIFT, so the map path changes once more before launch. One or two lift flags are ADDED here (and as required values in the gate profile) when NEW-2's lift change lands.",
   "levers": [
@@ -340,6 +370,7 @@
  "launch_prep": [
   "/home/nvidia/data/refcv7/nav_compliance_tau_train.json := the banked repo file TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/nav_compliance_tau_train.json (sha256 10ca19db42ed0a49083978a4cb6d0914664d28bc3231ed7058a01d5161e938ca)",
   "/home/nvidia/data/refcv7/map_hires_class_weights_train_100x30.json := compute_map_class_weights.py --v2-cache /home/nvidia/data/refcv6-b1-416x1024-train --gt-root /home/nvidia/data/sam3_gt_v3 --split train (sqrt_mf, pre_registered; NEW-2 BUILD.md sec. 10 step 1)",
+  "/home/nvidia/data/refcv7/vis1_sidecar_refcv6b1_train4369_eval139.npz := the box-head builder's VIS-1 sidecar /home/nvidia/bx_0252/full/vis1_sidecar_refcv6b1_train4369_eval139.npz, placed by the Master Mind 2026-09-27 (sha256 278443b3356bca054c15753e7c08d465d71b0327a2ce564e143d091261349dd4, read on Thor)",
   "G-MAP-OVERFIT and G-BOX-OVERFIT: each BINDING harness run wrapped by `stack/scripts/closure_run.py --binding --out <closure.json> --result <PASS json> --data-root <data dir> ... -- <harness> ... --launch-argv-sha256 <sha256 of THIS argv>` (SPEC_REFCV7 A11); the gate takes the pair (--map-overfit-record + --map-overfit-closure, --box-overfit-record + --box-overfit-closure) and recomputes every closure blob on the launch tree",
   "the refcv7 Training Watch: DECLARED in PROFILES['refcv7']['map_hires']['watch_builder'] (Master Mind 2026-09-27); the gate builds it from the smoke's metrics.jsonl"
  ]

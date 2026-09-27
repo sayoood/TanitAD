@@ -6,13 +6,15 @@ SPEC literal, the way ``declared_vs_built.REFCV7_REQUIRED_ON`` is for the select
 :func:`check_refcv7_box_required` and a non-empty list refuses the launch.
 
 LITERALS (A9): focal presence, prior 0.01, per-layer supervision, VIS-1 with a sidecar, 300 queries on BOTH slot heads
-(the box3d decoder and the planner's learned agent head).
+(the box3d decoder and the planner's learned agent head). A14.1 (SPEC_REFCV7 §19.1) + the launch ruling (the Master Mind,
+2026-09-27, after the full-model one-frame tests): the BOX head's queries are LEARNED REFERENCE POINTS
+(``--slot-query-select learned_ref``), argv AND built.
 """
 from __future__ import annotations
 
 from typing import Any
 
-__all__ = ["REFCV7_BOX_REQUIRED", "REFCV7_N_QUERIES", "check_refcv7_box_required"]
+__all__ = ["REFCV7_BOX_REQUIRED", "REFCV7_N_QUERIES", "REFCV7_BOX_QUERY_SELECT", "check_refcv7_box_required"]
 
 #: argv dest -> the value a refcv7 launch must carry (SPEC_REFCV7 §14 A9 R1-R3). LITERALS, never read from the code.
 REFCV7_BOX_REQUIRED: dict[str, Any] = {
@@ -23,6 +25,8 @@ REFCV7_BOX_REQUIRED: dict[str, Any] = {
 }
 #: A9 R4: both slot heads build 300 queries.
 REFCV7_N_QUERIES: int = 300
+#: A14.1: the BOX head's queries are anchored at learned reference points (the agent head keeps its learned table).
+REFCV7_BOX_QUERY_SELECT: str = "learned_ref"
 
 
 def _mm(lever, declared, built, where, why):
@@ -65,4 +69,15 @@ def check_refcv7_box_required(model, args) -> list:
             out.append(_mm("--slot-vis1", True, getattr(lcfg, "vis1", None), f"{name} loss config", "A9 R3"))
     if not bool(getattr(model, "_vis1", False)):
         out.append(_mm("--slot-vis1", True, getattr(model, "_vis1", None), "model._vis1", "A9 R3"))
+    qs = str(getattr(args, "slot_query_select", "learned") or "learned")
+    if qs != REFCV7_BOX_QUERY_SELECT:
+        out.append(_mm("--slot-query-select", REFCV7_BOX_QUERY_SELECT, qs, "argv",
+                       "SPEC_REFCV7 §19.1 (A14.1): the box head's queries are learned reference points"))
+    if br is not None:
+        built_qs = str(getattr(getattr(br, "cfg", None), "query_select", None))
+        if getattr(br, "box_refpts", None) is None or built_qs != REFCV7_BOX_QUERY_SELECT:
+            out.append(_mm("--slot-query-select", REFCV7_BOX_QUERY_SELECT,
+                           f"cfg.query_select={built_qs}, box_refpts "
+                           f"{'built' if getattr(br, 'box_refpts', None) is not None else 'absent'}",
+                           "model._perception", "A14.1: the reference points BUILT on the box head"))
     return out

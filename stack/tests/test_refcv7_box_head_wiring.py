@@ -252,21 +252,25 @@ def _refcv7_like():
     from tanitad.models.refcv6_perception_branch import PerceptionBranchConfig
     m, a = _model(*AGENT, *REFINE)
     a.slot_vis1, a.vis1_sidecar = True, "vis1_sidecar.npz"
+    a.slot_query_select = "learned_ref"
     m._vis1 = True
     m.core.cfg.agents.vis1 = True
     bd = B3.Box3DSlotDecoder(16, 8, n_queries=300, d_model=32, depth=3, n_heads=4, enforce_band=False,
                              presence_prior=0.01)
     bd.deep_supervision = True
     m._perception = types.SimpleNamespace(
-        box_dec=bd, cfg=PerceptionBranchConfig(w_map=0.0, w_box3d=1.0, presence_loss="focal", presence_prior=0.01,
-                                               deep_supervision=True, vis1=True, enforce_param_band=False))
+        box_dec=bd, box_refpts=object(),
+        cfg=PerceptionBranchConfig(w_map=0.0, w_box3d=1.0, presence_loss="focal", presence_prior=0.01,
+                                   deep_supervision=True, vis1=True, enforce_param_band=False,
+                                   query_select="learned_ref"))
     return m, a
 
 
 def test_the_refcv7_box_requirement_passes_on_a_refcv7_build():
-    from tanitad.train.box_head_guard import REFCV7_BOX_REQUIRED, check_refcv7_box_required
+    from tanitad.train.box_head_guard import REFCV7_BOX_QUERY_SELECT, REFCV7_BOX_REQUIRED, check_refcv7_box_required
     assert REFCV7_BOX_REQUIRED == {"slot_presence_loss": "focal", "slot_presence_prior": 0.01,
                                    "slot_deep_supervision": True, "slot_vis1": True}
+    assert REFCV7_BOX_QUERY_SELECT == "learned_ref"
     m, a = _refcv7_like()
     assert check_refcv7_box_required(m, a) == []
 
@@ -278,6 +282,10 @@ def test_the_refcv7_box_requirement_passes_on_a_refcv7_build():
     (lambda m, a: setattr(m.core.agent_head, "presence_prior", 0.05), "--slot-presence-prior"),
     (lambda m, a: setattr(a, "vis1_sidecar", None), "--vis1-sidecar"),
     (lambda m, a: setattr(m, "_perception", None), "box3d slot head"),
+    # A14.1: the launch's LRP -- declared AND built
+    (lambda m, a: setattr(a, "slot_query_select", "learned"), "--slot-query-select"),
+    (lambda m, a: setattr(a, "slot_query_select", "heatmap"), "--slot-query-select"),
+    (lambda m, a: setattr(m._perception, "box_refpts", None), "--slot-query-select"),
 ])
 def test_RED_ARMS_each_missing_A9_lever_is_named(break_it, lever):
     from tanitad.train.box_head_guard import check_refcv7_box_required

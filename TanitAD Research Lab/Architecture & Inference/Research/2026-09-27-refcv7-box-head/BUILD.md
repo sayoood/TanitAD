@@ -12,6 +12,11 @@ commits only): none of the 14 shared files changed, so the landing is valid ther
 
 ## 0. Headline
 
+⭐ **LANDED** as `28d8365` (the ANCHORED variant, 136/136 blobs; the Master Mind redacted an HF bearer token that Thor's
+offline huggingface_hub error text had dumped into 7 gate-env logs). **Follow-up (§11)**: A17's lr decay in the harness,
+the box tokens in the canonical argv, the BOX-HEAD open item closed in the launch gate (required values + the built
+check), the binding run PREPARED (not run).
+
 1. ⛔ **The refined box head FAILS its early (non-binding) G-BOX-OVERFIT and cannot overfit ONE frame -- and neither
    can refcv6's head.** MAIN at step 2,000: AP@2 m 0.013, 0 confident slots, below its image-zeroed control (0.037);
    +R6 0.102 (§7.2). The diagnosis (§7.4) finds the loss wiring CORRECT; a one-frame ladder fails in EVERY rung (frozen
@@ -283,26 +288,99 @@ points: here R 1.000, 113 confident, z 0.070) BEFORE the binding run.
   rows banked from its log.
 - Nothing was pushed or committed; nothing was written to G:.
 
-## 10. BINDING-run prep (for the Master Mind; nothing here has run)
+## 10. BINDING-run prep (PREPARED, NOT RUN -- the Master Mind starts it on the FINAL canonical argv)
 
-- **Canonical argv additions** (`stack/ops/runs.d/refcv7-r101-s0.argv.json`, whose `todo_box_head` leaves the box flags to
-  this package): `--slot-presence-loss focal --slot-presence-prior 0.01 --slot-deep-supervision --slot-vis1
+`code/binding/run_gbo_binding.sh <launch sha> <launch tree> <run dir>` -- the UNMODIFIED harness under
+`closure_run.py --binding` (A11), 3 arms (main, memory_zeros, presence_w0) x 2,000 steps (~4.5 h on Thor alone at the
+MEASURED 2.59 s/step), the A13 launch optimiser and A17's decay, on `stack/ops/runs.d/refcv7-r101-s0.argv.json` of the
+launch tree. Its pre-flight REFUSES to start unless: the prereg md5 `594c7119…` and the frame-set md5 `b291404c…` (staged
+as DATA under `<run dir>/audit/raw/`, since the launch tree carries no Research Lab files), the placed sidecar's sha256
+`278443b3…`, the canonical argv's box tokens, and an idle GPU all check out. The environment is offline with NO HF token
+(`HF_HUB_DISABLE_IMPLICIT_TOKEN=1`, `HF_TOKEN_PATH` -> a nonexistent path, `HF_TOKEN` / `HUGGING_FACE_HUB_TOKEN`
+unset). ⛔ It waits for the FINAL canonical argv. A16's verdict is in (§22.1: the launch keeps sqrt_mf, so the
+argv's `--map-hires-class-weights` file stays the A8 one), but the argv still carries `todo_map_lift` (A15's
+config + the A17.1 decay is the map's next arm) -- the map flags change the model the harness builds, so the
+binding run starts only on the argv the Master Mind declares final. The closure binds the class-weights file
+and the sidecar as DATA (`--data-root /home/nvidia/data`).
+
+`PREFLIGHT_ONLY=1` runs every check and stops before the run (exit 0 ready, 3 an input, 4 the GPU busy or
+`nvidia-smi` failing -- an unreadable GPU is never read as idle). MEASURED on Thor 2026-09-27 ~16:10 Berlin against
+`/home/nvidia/bx_1600/tree_a17` (the tip 2ac0bfb + this landing): prereg md5 OK, frame-set md5 OK, sidecar sha256 OK,
+box tokens OK, GPU idle -> `PREFLIGHT OK ... NOT started`, exit 0 (`raw/tests_2ac0bfb/binding_preflight.log`). Red
+arms, same breath: the TIP's canonical argv (no box tokens) -> exit 3 naming all six missing flags; a 7-character sha
+-> exit 3 (`binding_preflight_redarm*.log`).
+
+## 11. Follow-up landing on 2ac0bfb (`LANDING_READY_A17.txt`)
+
+The tip moved 28d8365 -> 2ac0bfb (SPEC_REFCV7 §22.1, A17.1) while this was built; `stack/` and `taniteval/` are the
+SAME trees at both (tree ids `cea3d328…` and `4b23eb8c…`, compared by `rev-parse`), so every base blob below is the
+tip's.
+
+- **A17 (SPEC_REFCV7 §22, the PI)**, `g_box_overfit.py`: every G-BOX-OVERFIT arm holds A13's peaks for steps 0-1,799,
+  then a cosine decay to 0 over steps 1,800-2,000 -- one factor for both groups (the ratio kept); weight decay 1e-4 and
+  clip 10 unchanged; the one-frame test (A14.1) keeps the constant peak. The record writes `literals.lr_schedule`
+  (the A17 literal), each arm's `lr_schedule` and optimiser spec (PEAK groups), and `lr_factor` / `group_lrs` per log
+  row. Tests: the factor at steps 0 / 1 / 1,799 / 1,800 / 1,900 / 2,000 = 1 / 1 / 1 / 1 / 0.5 / 0 as LITERALS; the
+  loop's ACTUAL group lrs at every update (two groups, ratio kept); red arms: the A13 constant schedule fails the A17
+  table (1,900 and 2,000), a last-5 % cosine fails it (1,900), and the loop without the schedule leaves the last
+  update at the peak.
+- **The canonical argv** (`stack/ops/runs.d/refcv7-r101-s0.argv.json`, 150 tokens, compact-JSON sha256
+  `74cefcefcdc3b82a…`): `--slot-presence-loss focal --slot-presence-prior 0.01 --slot-deep-supervision --slot-vis1
   --vis1-sidecar /home/nvidia/data/refcv7/vis1_sidecar_refcv6b1_train4369_eval139.npz --slot-query-select learned_ref`
-  (the last one only if the LRP amendment is registered).
-- **The VIS-1 sidecar at launch**: copy `/home/nvidia/bx_0252/full/vis1_sidecar_refcv6b1_train4369_eval139.npz` to
-  `/home/nvidia/data/refcv7/` (sha256 `278443b3356bca054c15753e7c08d465d71b0327a2ce564e143d091261349dd4`); the flag
-  that reads it is `--vis1-sidecar`; the dataset REFUSES a missing clip / frame / row or a mismatched track / centre.
-- **The binding G-BOX-OVERFIT under A11** (the launch tree is stack/ + taniteval/ + tools/; the audit's prereg and
-  frame set are DATA, so `--audit-dir` may point at a copy of the audit's `raw/` on Thor -- the harness reads only
-  `raw/PREREG_G_BOX_OVERFIT.md` and `raw/visibility/gbo_frameset.json`; its loader is vendored in stack/):
+  after `--join3d`; `todo_box_head` REMOVED, its items moved into `changes_vs_refcv6` with their SPEC sources (R4 as a
+  flag-less entry: the code default 300); `launch_prep` names the placed sidecar. Serialised exactly as the file was
+  (round-trip verified).
+- **The launch gate** (`launch_gate.py` -- the refcv7 PROFILE lives there; `launch_gate_refcv7.py` only pins it, so it
+  is unchanged): the BOX-HEAD open item CLOSED (MAP-LIFT stays); `required_values` += `--slot-presence-loss focal`,
+  `--slot-presence-prior 0.01`, `--slot-query-select learned_ref`, `--vis1-sidecar <the placed path>`;
+  `required_flags` += `--slot-deep-supervision`, `--slot-vis1` (with their SPEC sources); G-DVB now calls
+  `tanitad.train.box_head_guard.check_refcv7_box_required(model, args)` (a profile field `box_required`; a missing
+  module / function / model is a named FAIL). ⚠️ **G-BOX-OVERFIT's literals follow A13 + A17**: the prereg's `lr 2e-4`
+  literal would have REFUSED every harness record since A13; the gate now reads the record's A17 `lr_schedule`
+  verbatim and every arm's optimiser spec (AdamW, groups 5e-5 / 1e-4, weight decay 1e-4, clip 10).
+- **The guard** (`box_head_guard.py`): the launch's LRP is required -- `--slot-query-select learned_ref` in argv AND
+  `box_refpts` built on the box head (`REFCV7_BOX_QUERY_SELECT`); 3 new red arms.
+- Tests: `test_launch_gate.py` 128 (the synthetic refcv7 argvs carry the box tokens; the open-item test reads MAP-LIFT
+  only; 2 new tests -- the box values/flags with red arms, the G-DVB box call with red arms; G-BOX-OVERFIT fixtures in
+  the A13/A17 schema + 3 red arms); `test_g_box_overfit.py` 21; `test_refcv7_box_head_wiring.py` 29.
+- **HF token hygiene.** Every Thor launcher of this package now runs offline with NO token:
+  `HF_HUB_DISABLE_IMPLICIT_TOKEN=1`, `HF_TOKEN_PATH=/nonexistent/hf_token_disabled`, `HF_TOKEN` /
+  `HUGGING_FACE_HUB_TOKEN` unset -- the new `run_gbo_binding.sh` and the gate-env test script, and the 12 LANDED
+  launchers under `code/tools/` (`run_full`, `run_smoke`, `run_control`, `run_check`, `run_check_r6`, `run_gbo`,
+  `diag/run_diag`, `diag/run_ladder`, `diag/run_ladder2`, `hqs/run_checks`, `hqs/run_gbo`, `hqs/run_of`), two lines
+  after their `HF_HUB_OFFLINE` export (`code/tools/patch_launcher_hf_scrub.py`, which refused any file that was not
+  the tip's blob). The gate-env run's logs are COUNTED for token-shaped strings on Thor before they leave it
+  (`token_scan.txt`) and again in the package (`code/tools/token_scan.py`, values never printed). My local and
+  Thor copies of the earlier gate-env logs were redacted in place (the landed ones by the Master Mind).
 
-      python stack/scripts/closure_run.py --out <dir>/gbo_closure.json --result <dir>/gbo_binding.json \
-        --data <audit>/raw/PREREG_G_BOX_OVERFIT.md --data <audit>/raw/visibility/gbo_frameset.json \
-        --data /home/nvidia/data/refcv7/vis1_sidecar_refcv6b1_train4369_eval139.npz \
-        --binding --commit <launch sha> --tree <launch tree> -- \
-        stack/scripts/g_box_overfit.py --launch-argv stack/ops/runs.d/refcv7-r101-s0.argv.json --audit-dir <audit> \
-          --out <dir>/gbo_binding.json --device cuda --binding --commit <launch sha> \
-          --candidate "BINDING: launch commit <sha>" --arms main,memory_zeros,presence_w0
+### Evidence (MEASURED 2026-09-27)
+- **Thor, the GATE environment** (`raw/tests_2ac0bfb/tests_{a17,tip}.log`; tanitad-train venv, pytest from
+  `gate_fix_2224/pytest_pkgs`, CPU, nice 19, offline, NO HF token): the same 130 test files (the 125-file related
+  union + the five box-head test files) on a fresh tree of the tip 2ac0bfb and on the tip + this landing (7 blobs
+  verified in the tree before the run; `tanitad` imported from each tree). Landed: 42 failed, 2,614 passed, 59
+  skipped, 19 errors; tip: 42 failed, 2,606 passed, 59 skipped, 19 errors. The failing ids are the SAME 61 on both
+  trees (`code/tools/compare_test_logs.py`: 0 regressions, 0 fixed), and the two short-summary sections (every
+  failure's message head and every skip reason) are IDENTICAL once the tree path is normalised. Their causes are the
+  environment and the tree's shape, not a landed file: timm trunk weights offline (18), modules the gate venv or the
+  archived stack+taniteval tree lacks (`criteria_check`, `psutil`, `scipy`), and guards that read files or a git
+  HEAD outside the archive (session paths, bit-identity baselines). +8 passed = the new tests.
+  Token-shaped strings in the logs: 0 (counted on Thor before they left it, and again here). Launcher:
+  `code/tools/gate_env/run_thor_tests_a17.sh` (+ `verify_blobs.py`, the 130-file list `union_a17.txt`).
+- **Dev box** (`raw/tests_2ac0bfb/devbox_a17.log`; the tree BUILT FROM `LANDING_READY_A17.txt` by
+  `build_tree_from_landing.py`, which verified all 7 base blobs, new blobs and EOLs): the same 130 files, 16 failed,
+  2,675 passed, 24 skipped, 19 errors. That log is `-q -rs` (no FAILED lines), so its 35 F/E characters were mapped
+  1:1 onto the 2,734 collected ids (`devbox_collect.txt`, counts EQUAL; `code/tools/map_progress_to_ids.py`
+  refuses otherwise): all 35 fail on Thor's CLEAN TIP too (`devbox_a17_failures.txt`, 0 in no reference log).
+- **The literal-pin scan** (`raw/tests_2ac0bfb/literal_pin_scan.txt`; `code/tools/scan_literal_pins.py`, 644 tip
+  test files x the 7 landed files): **0 real pins.** One hit, a false positive: `test_g_box_overfit.py` names
+  `refcv7-r101-s0.argv.json` only as a tmp file it WRITES, and its literal `"verdict"` is the harness record's key;
+  the substring left the argv with the removed `todo_box_head` R6 entry ("...on the early G-BOX-OVERFIT verdicts").
+  The files that IMPORT the changed modules (not by file name) are exercised by the two runs above:
+  `test_launch_gate`, `test_config_hygiene`, `test_grad_unreachable_declared`, `test_build_watch_refcv7`,
+  `test_refcv7_hqs`, `test_refcv7_box_head_wiring`, `test_g_box_overfit`.
 
-  The harness drops `--trunk-compile` itself and records it; its optimiser is the launch's (A13); the run is ~2.7 s/step
-  per arm on Thor alone (MEASURED on the early LRP run), i.e. ~4.5 h for the three arms.
+### TODO (not now, the Master Mind 2026-09-27)
+- Three loaders that re-parse a recorded argv were NOT patched for R4's 300 queries and fail LOUDLY (a strict-load size
+  mismatch) on a pre-A9 record: `experiments/alpasim-gsplat/closedloop_drive.py`, `taniteval/tools/seam_probe.py`,
+  `bench/cli.py`. The fix is `refcv3_arm.agent_queries_as_trained`'s pattern (rebuild at the STAMPED
+  `seams.agents.queries`).

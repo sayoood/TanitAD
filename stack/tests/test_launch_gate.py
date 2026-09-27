@@ -586,16 +586,20 @@ MAP10 = ["--map-hires", "on", "--w-map-hires", "1.0", "--bev-source", "map_hires
          "--map-hires-decision-rule", "prior_corrected", "--map-hires-x-max-m", "100",
          "--map-hires-y-half-m", "30", "--map-hires-grad-ckpt", "on",
          "--bev-planner-crop-m", "60", "16", "--w-map", "0"]
+#: the box head as SPEC_REFCV7 A9 + A14.1 fix it (the BOX-HEAD open item closed 2026-09-27, 28d8365)
+BOXA9 = ["--slot-presence-loss", "focal", "--slot-presence-prior", "0.01", "--slot-deep-supervision",
+         "--slot-vis1", "--vis1-sidecar", "/home/nvidia/data/refcv7/vis1_sidecar_refcv6b1_train4369_eval139.npz",
+         "--slot-query-select", "learned_ref"]
 
 
 @pytest.mark.parametrize("missing", REQ3)
 def test_SPEC7_each_of_the_three_selection_mechanisms_is_REQUIRED_ON(missing):
-    argv = ["--arm", "hier", *PRIOR, *MAP10, *[f for f in REQ3 if f != missing]]
+    argv = ["--arm", "hier", *PRIOR, *MAP10, *BOXA9, *[f for f in REQ3 if f != missing]]
     reasons, _ = LG.required_on_reasons(LG.PROFILES["refcv7"], argv)
     assert reasons == [f"{missing} is REQUIRED ON for a refcv7 launch (SPEC_REFCV7 7, PI ruling "
                        f"E1) and the argv does not pass it"]
     assert LG.required_on_reasons(LG.PROFILES["refcv7"],
-                                  ["--arm", "hier", *PRIOR, *MAP10, *REQ3])[0] == []
+                                  ["--arm", "hier", *PRIOR, *MAP10, *BOXA9, *REQ3])[0] == []
     assert LG.required_on_reasons(LG.PROFILES["refcv6"], ["--arm", "hier"])[0] == []
 
 
@@ -603,7 +607,7 @@ def test_SPEC7_each_of_the_three_selection_mechanisms_is_REQUIRED_ON(missing):
 def test_SPEC8_the_10cm_map_head_is_REQUIRED_for_refcv7(hires):
     rest = MAP10[2:]                                   # every NEW-2 lever but the switch
     reasons, _ = LG.required_on_reasons(LG.PROFILES["refcv7"],
-                                        ["--arm", "hier", *PRIOR, *REQ3, *rest, *hires])
+                                        ["--arm", "hier", *PRIOR, *REQ3, *BOXA9, *rest, *hires])
     assert len(reasons) == 1 and reasons[0].startswith("--map-hires on is REQUIRED")
 
 
@@ -616,7 +620,7 @@ def test_SPEC_A6_A7_A8_every_NEW2_lever_has_ONE_admissible_value(flag, bad):
     """A6 (one lift: every consumer reads the pooled BEV; the 0.5 m head removed), A7 (100 x
     +-30 m, grad checkpointing, the 60 x +-16 m planner crop), A4 (the prior-corrected rule): a
     refcv7 argv carrying any other value is REFUSED -- and so is one that leaves it unwritten."""
-    good = ["--arm", "hier", *PRIOR, *MAP10, *REQ3]
+    good = ["--arm", "hier", *PRIOR, *MAP10, *BOXA9, *REQ3]
     assert LG.required_on_reasons(LG.PROFILES["refcv7"], good)[0] == []
     r, _ = LG.required_on_reasons(LG.PROFILES["refcv7"], LG.set_flag(good, flag, bad))
     assert len(r) == 1 and r[0].startswith(flag), r
@@ -627,7 +631,7 @@ def test_SPEC_A6_A7_A8_every_NEW2_lever_has_ONE_admissible_value(flag, bad):
 def test_SPEC7_required_on_reads_the_BUILT_state_through_the_frozen_helper(tmp_path):
     """The fixes agent's frozen API (landed ab436ee): check_refcv7_required(model, args, *,
     tau_file=None) -> list[Mismatch]. The banked tau file is handed through when it exists."""
-    argv = ["--arm", "hier", *PRIOR, *MAP10, *REQ3]
+    argv = ["--arm", "hier", *PRIOR, *MAP10, *BOXA9, *REQ3]
     seen = {}
 
     def good(model, args, *, tau_file=None):
@@ -1362,7 +1366,8 @@ def test_NEW1_residual_prior_off_is_not_NEW1_and_only_ha0_ext_pose_is_refcv7():
         assert r and r[0].startswith(f"--residual-prior ['{mode}'] is REFUSED for a refcv7 "
                                      f"launch (refused values: ['off', 'ha0_ext', 'cv_yawrate']")
     assert LG.forbidden_value_reasons(p, ["--residual-prior", "ha0_ext_pose"]) == []
-    assert LG.required_flag_reasons(p, ["--residual-prior", "ha0_ext_pose"]) == [
+    assert LG.required_flag_reasons(p, ["--residual-prior", "ha0_ext_pose", "--slot-deep-supervision",
+                                        "--slot-vis1"]) == [
         "profile refcv7 requires --ego-history in the launch argv (SPEC: NEW-1 is part of this "
         "arm)"]
 
@@ -1386,8 +1391,10 @@ def _refcv7_argv_ctx(tmp_path, mode="ha0_ext_pose"):
     (data / "refcv6-b1-416x1024-train").mkdir(parents=True)
     (data / "refcv6-b1-416x1024-train" / "ep_0.v2ep.pt").write_bytes(b"x")
     (data / "v8labels" / "labels").mkdir(parents=True)
+    (data / "refcv7").mkdir(parents=True)                 # the box head's VIS-1 sidecar (a data input)
+    (data / "refcv7" / "vis1_sidecar_refcv6b1_train4369_eval139.npz").write_bytes(b"x")
     rec, _ = _banked_tau(data / "v8labels" / "labels")
-    argv = ["--arm", "hier", "--residual-prior", mode, "--ego-history", *MAP10,
+    argv = ["--arm", "hier", "--residual-prior", mode, "--ego-history", *MAP10, *BOXA9,
             "--graft-tac8-prior", "--graft-nav-compliance",
             "--nav-compliance-tau-rad", "0.18063741505146028", "--speed-ceiling-filter",
             "--v2-cache", f"{_H}/refcv6-b1-416x1024-train",
@@ -1395,7 +1402,9 @@ def _refcv7_argv_ctx(tmp_path, mode="ha0_ext_pose"):
             "--out", "/o"]
     tree = _mini_tree(tmp_path / "tree")
     ctx = LG.Ctx(profile="refcv7", tree=str(tree), commit="ab" * 20, argv=argv,
-                 out_dir=str(tmp_path / "gate"), path_map=[[_H, data.as_posix()]],
+                 out_dir=str(tmp_path / "gate"),
+                 # the box head's sidecar is REQUIRED at its launch path (a required value): map that host too
+                 path_map=[[_H, data.as_posix()], ["/home/nvidia/data", data.as_posix()]],
                  tree_sha256=LG.tree_digest(LG.tree_manifest(tree)),
                  argv_sha256=LG.argv_sha256(argv),
                  options={"nav_tau_record": str(rec),
@@ -1688,13 +1697,26 @@ _GBO_MAIN = {"ap2m": 0.95, "prec": 0.93, "rec": 0.94, "n_conf": 117, "centre_p50
              "size_p50_m": 0.18, "z_p50_m": 0.07, "cls_acc": 0.97, "presence": 0.12}
 
 
+#: SPEC_REFCV7 A13: the LAUNCH optimiser as the harness records it (the built -- PEAK -- groups)
+_GBO_OPT = {"class": "AdamW", "clip": 10.0,
+            "groups": [{"name": None, "lr": 5e-05, "weight_decay": 1e-04, "betas": [0.9, 0.999], "eps": 1e-08,
+                        "n_tensors": 316},
+                       {"name": None, "lr": 1e-04, "weight_decay": 1e-04, "betas": [0.9, 0.999], "eps": 1e-08,
+                        "n_tensors": 491}]}
+#: SPEC_REFCV7 A17: the schedule literal the harness writes
+_GBO_SCHED = {"rule": "A17", "hold_peak_through_step": 1799, "decay": "cosine", "decay_from_step": 1800,
+              "decay_to_step": 2000, "final_factor": 0.0}
+
+
 def _gbo_arm(final, *, finite=True, last_step=2000, verdict="PASS"):
     """One arm in the box harness's schema (`g_box_overfit.run_arm`): log rows from step 0, the
-    criteria (only criterion 6's finiteness flag is READ by the gate), the arm's own verdict."""
+    criteria (only criterion 6's finiteness flag is READ by the gate), the arm's own verdict, its
+    optimiser as built (A13)."""
     r0 = {"step": 0, "ap2m": 0.01, "prec": 0.0, "rec": 0.0, "n_conf": 0, "centre_p50_m": 5.0,
           "size_p50_m": 2.0, "z_p50_m": 1.0, "cls_acc": 0.1, "presence": 1.0}
     return {"rows": [r0, {"step": last_step, **final}], "verdict": verdict,
-            "criteria": {"6": {"value": [finite, 1.0, final["presence"], final["presence"]]}}}
+            "criteria": {"6": {"value": [finite, 1.0, final["presence"], final["presence"]]}},
+            "optimizer": json.loads(json.dumps(_GBO_OPT)), "lr_schedule": dict(_GBO_SCHED)}
 
 
 def _gbo_record(argv_sha, **over):
@@ -1703,7 +1725,8 @@ def _gbo_record(argv_sha, **over):
     rec = {"tool": "g_box_overfit.py", "binding": True, "commit": "ab" * 20, "RESULT": "PASS",
            "prereg_md5": "594c71196cc5bbd527fee40b2cb0e3f1",
            "frameset_md5": "b291404c36f83c3e397e3b90367e8e7b", "steps": 2000,
-           "literals": {"lr": 2e-4, "batch": 4, "seed": 0, "n_pos": 113, "n_ign": 77},
+           "literals": {"batch": 4, "seed": 0, "n_pos": 113, "n_ign": 77, "clip": 10.0,
+                        "lr_schedule": dict(_GBO_SCHED)},
            "launch_argv_sha256": argv_sha, "dvb_mismatches": [],
            "C1_C2": {"C1": {"pass": True}, "C2": {"pass": True}}, "C3": {"pass": True},
            "C4_step0": {"step": 0},
@@ -1748,8 +1771,8 @@ def test_G_BOX_OVERFIT_the_registered_literals_and_the_must_fail_arms(tmp_path):
     assert judge(half) == ["G-BOX-OVERFIT: must-fail arm 'presence_w0' must FAIL prereg "
                            "criteria ['2', '3'] and passes ['3'] -- the result is VOID (prereg "
                            "sec. 7)"]
-    c3 = _gbo_record(argv_sha, literals={"lr": 2e-4, "batch": 4, "seed": 0, "n_pos": 113,
-                                         "n_ign": 28})                  # the prereg's pre-A10 count
+    c3 = _gbo_record(argv_sha, literals={"batch": 4, "seed": 0, "n_pos": 113, "n_ign": 28,
+                                         "lr_schedule": dict(_GBO_SCHED)})  # the prereg's pre-A10 count
     assert judge(c3) == ["G-BOX-OVERFIT: literal n_ign = 28, the prereg (with A10's "
                          "reconciliation) fixes 77"]
     nan = _gbo_record(argv_sha)
@@ -1773,6 +1796,20 @@ def test_G_BOX_OVERFIT_the_registered_literals_and_the_must_fail_arms(tmp_path):
     assert judge(_gbo_record("00" * 32)) == ["G-BOX-OVERFIT: the record is bound to argv "
                                              "000000000000, not the launch argv "
                                              f"{argv_sha[:12]}"]
+    # SPEC_REFCV7 A13 + A17 -- RED arms: the EARLY runs' optimiser (every tensor at 2e-4, no weight decay, no
+    # clip); the A13 CONSTANT schedule; an arm that records no optimiser
+    early = _gbo_record(argv_sha)
+    early["arms"]["main"]["optimizer"] = {"class": "AdamW", "clip": None,
+                                          "groups": [{"lr": 2e-4, "weight_decay": 0.0}]}
+    r = judge(early)
+    assert len(r) == 1 and r[0].startswith("G-BOX-OVERFIT: arm 'main' trained with 'AdamW' groups [0.0002]"), r
+    const = _gbo_record(argv_sha)
+    const["literals"]["lr_schedule"] = {"rule": "A13", "decay": "none"}
+    r = judge(const)
+    assert len(r) == 1 and r[0].startswith("G-BOX-OVERFIT: literal lr_schedule = {'rule': 'A13'"), r
+    noopt = _gbo_record(argv_sha)
+    del noopt["arms"]["presence_w0"]["optimizer"]
+    assert judge(noopt) == ["G-BOX-OVERFIT: arm 'presence_w0' records no optimizer spec (SPEC_REFCV7 A13)"]
 
 
 def test_A8_the_class_weight_stamp_in_config_json():
@@ -2096,19 +2133,69 @@ def test_the_profile_OPEN_ITEMS_block_a_PASS_until_each_is_closed(tmp_path, monk
     """Master Mind 2026-09-27: the NEW-2 flag set stays OPEN to one or two lift flags, like the box
     flags. While an item is open the verdict is INCOMPLETE with the item NAMED."""
     ids = [it["id"] for it in LG.PROFILES["refcv7"]["open_items"]]
-    assert ids == ["BOX-HEAD", "MAP-LIFT"]
+    assert ids == ["MAP-LIFT"]                       # BOX-HEAD closed 2026-09-27 (the box head landed, 28d8365)
     ctx, _ = _refcv7_argv_ctx(tmp_path)
     key = LG.load_key(tmp_path / "k.key")
     verdict, path, tok = LG.finalize(ctx, key)
     assert verdict == "INCOMPLETE" and not LG.verify_token(path, ctx.argv, ctx.tree, key=key)[0]
-    assert [r.split(":")[0] for r in tok["reasons"]] == ["OPEN ITEM BOX-HEAD", "OPEN ITEM MAP-LIFT"]
+    assert [r.split(":")[0] for r in tok["reasons"]] == ["OPEN ITEM MAP-LIFT"]
     p = LG.PROFILES["refcv7"]
-    monkeypatch.setitem(LG.PROFILES, "refcv7", dict(p, open_items=p["open_items"][:1]))
     it = p["open_items"][0]
     assert LG.finalize(ctx, key)[2]["reasons"] == [
-        f"OPEN ITEM BOX-HEAD: {it['what']} (owner: {it['owner']})"]
+        f"OPEN ITEM MAP-LIFT: {it['what']} (owner: {it['owner']})"]
     monkeypatch.setitem(LG.PROFILES, "refcv7", dict(p, open_items=()))
     assert LG.finalize(ctx, key)[0] == "PASS"
+
+
+def test_the_BOX_HEAD_item_is_closed_by_its_flags_as_REQUIRED_values():
+    """The box head's flags, as LITERALS: a refcv7 argv carrying any other value -- or leaving one out -- is
+    REFUSED (the closed BOX-HEAD item)."""
+    p = LG.PROFILES["refcv7"]
+    rv = p["required_values"]
+    assert {k: rv[k] for k in ("--slot-presence-loss", "--slot-presence-prior", "--slot-query-select",
+                               "--vis1-sidecar")} == {
+        "--slot-presence-loss": "focal", "--slot-presence-prior": "0.01", "--slot-query-select": "learned_ref",
+        "--vis1-sidecar": "/home/nvidia/data/refcv7/vis1_sidecar_refcv6b1_train4369_eval139.npz"}
+    assert {"--slot-deep-supervision", "--slot-vis1"} <= set(p["required_flags"])
+    assert p["box_required"] == {"module": "tanitad.train.box_head_guard", "fn": "check_refcv7_box_required"}
+    good = ["--arm", "hier", *PRIOR, *MAP10, *BOXA9, *REQ3]
+    assert LG.required_on_reasons(p, good)[0] == [] and LG.required_flag_reasons(p, good) == []
+    for flag, bad in (("--slot-presence-loss", ["bce"]), ("--slot-presence-prior", ["0.05"]),
+                      ("--slot-query-select", ["heatmap"]), ("--slot-query-select", ["learned"]),
+                      ("--vis1-sidecar", ["/elsewhere/sidecar.npz"])):
+        r, _ = LG.required_on_reasons(p, LG.set_flag(good, flag, bad))
+        assert len(r) == 1 and r[0].startswith(flag), r
+        r, _ = LG.required_on_reasons(p, LG.set_flag(good, flag, None))
+        assert len(r) == 1 and r[0].startswith(flag), r
+    for flag in ("--slot-deep-supervision", "--slot-vis1"):
+        r = LG.required_flag_reasons(p, LG.set_flag(good, flag, None))
+        assert len(r) == 1 and flag in r[0] and "A9" in r[0], r
+
+
+def test_G_DVB_calls_the_box_head_guard_and_names_its_mismatches(monkeypatch):
+    """The BUILT half of the closed item: G-DVB runs `box_head_guard.check_refcv7_box_required(model, args)`."""
+    import sys as _sys
+    import types as _types
+    p = LG.PROFILES["refcv7"]
+    fake = _types.ModuleType("tanitad.train.box_head_guard")
+    calls = []
+
+    def ok(model, args):
+        calls.append((model, args))
+        return []
+    fake.check_refcv7_box_required = ok
+    monkeypatch.setitem(_sys.modules, "tanitad.train.box_head_guard", fake)
+    m, a = object(), object()
+    assert LG.box_required_reasons(p, m, a)[0] == [] and calls == [(m, a)]
+    # RED arms: a mismatch is named; no model; the module without the function; a profile without the field
+    fake.check_refcv7_box_required = lambda model, args: ["--slot-query-select: declared learned_ref, built learned"]
+    r = LG.box_required_reasons(p, m, a)[0]
+    assert r == ["BOX-HEAD: 1 requirement(s) not met (SPEC_REFCV7 A9/A14.1): --slot-query-select: declared "
+                 "learned_ref, built learned"]
+    assert "no built model" in LG.box_required_reasons(p, None, a)[0][0]
+    del fake.check_refcv7_box_required
+    assert "has no `check_refcv7_box_required`" in LG.box_required_reasons(p, m, a)[0][0]
+    assert LG.box_required_reasons(LG.PROFILES["refcv6"], m, a) == ([], {"box_required": None})
 
 
 # ------------------------------------------------------------------------------------------ #

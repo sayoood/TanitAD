@@ -16,8 +16,10 @@ LITERALS (changing one after a run is a goalpost move):
     per-layer supervision, VIS-1 POSITIVES + the 77-row IGNORE mask, the launch class weights, z and h);
   * ⭐ A13 (SPEC_REFCV7 §18): the LAUNCH optimiser AS BUILT -- the trainer's own ``build_optimizer`` on the launch
     argv (``--opt dd --lr 1e-4``: AdamW, DD's two groups, the trunk at 0.5 x lr, weight decay 1e-4) and
-    ``clip_grad_norm_`` 10.0 every step, held at those PEAK lrs, constant, no warm-up. (The early runs' AdamW 2e-4
-    on every tensor, no clip, contradicted the prereg's own claim to test the launch box path.) The config is the
+    ``clip_grad_norm_`` 10.0 every step, held at those PEAK lrs, no warm-up. (The early runs' AdamW 2e-4
+    on every tensor, no clip, contradicted the prereg's own claim to test the launch box path.) ⭐ A17 (SPEC_REFCV7
+    §22, the PI): both groups hold the peaks for steps 0-1,799, then follow a COSINE decay from peak to 0 over steps
+    1,800-2,000 (the final 10 %), one factor for every group so their ratio is kept. The config is the
     refcv7 canonical argv + the A9 flags, so the box head reads NEW-2's pooled BEV (``--bev-source
     map_hires_pool``) and the replay builds the 10 cm branch and attaches its fine store as ``train()`` does;
   * batch 4 frames per step by a seeded ``randperm`` over the 16 (seed 0); N = 2,000 steps (500 passes);
@@ -88,7 +90,15 @@ ONE_FRAME_ARMS = ("main", "anchors_removed")
 CLIP_NORM = 10.0
 OPTIMIZER_RULE = ("A13 (SPEC_REFCV7 §18): the trainer's build_optimizer(model, launch args) -- --opt dd: AdamW, "
                   "DD's two groups (core.encoder.* at --encoder-lr-mult x lr, the rest at --lr), --weight-decay -- "
-                  "held at those PEAK lrs, constant, no warm-up; clip_grad_norm_(model.parameters(), 10.0) every step")
+                  "at those PEAK lrs, no warm-up; clip_grad_norm_(model.parameters(), 10.0) every step; A17 (§22): "
+                  "the peaks held through step 1,799, then a cosine decay to 0 over steps 1,800-2,000")
+#: A17 (SPEC_REFCV7 §22): the lr SCHEDULE of every G-BOX-OVERFIT arm, as a literal the launch gate compares. Every
+#: group's lr at optimiser step s (1-based; the update that produces step s) = its peak x ``lr_factor(s)``.
+LR_SCHEDULE = {"rule": "A17", "hold_peak_through_step": 1799, "decay": "cosine", "decay_from_step": 1800,
+               "decay_to_step": 2000, "final_factor": 0.0}
+#: the A17 factor at the steps the SPEC names -- a LITERAL table a schedule is held to (the constant A13 schedule
+#: fails it at 1,900 and 2,000)
+A17_FACTOR_TABLE = {0: 1.0, 1799: 1.0, 1800: 1.0, 1900: 0.5, 2000: 0.0}
 
 
 def md5_bytes(b: bytes) -> str:
@@ -128,6 +138,30 @@ def other_gpu_jobs(patterns=GPU_JOB_PATTERNS, proc_root: str = "/proc", me: int 
 # --------------------------------------------------------------------------------------------------------- #
 # the literal pieces (pure; unit-tested)                                                                   #
 # --------------------------------------------------------------------------------------------------------- #
+def lr_factor(step: int, steps: int = STEPS) -> float:
+    """A17: the multiplier on EVERY group's peak lr at optimiser step ``step`` of an arm of ``steps`` steps: 1.0 before
+    the final 10 % (``start = steps - steps // 10`` = 1,800 of 2,000), then ``0.5 * (1 + cos(pi * (step - start) /
+    (steps - start)))`` -- 1.0 at ``start``, 0.5 half-way, 0.0 at ``steps`` (and beyond)."""
+    steps = int(steps)
+    start = steps - steps // 10
+    if step < start:
+        return 1.0
+    if step >= steps:
+        return 0.0
+    return 0.5 * (1.0 + math.cos(math.pi * (step - start) / float(steps - start)))
+
+
+def schedule_mismatches(fn, table: dict | None = None, steps: int = STEPS) -> list:
+    """Every step of A17's literal table at which ``fn(step, steps)`` differs (1e-12) -> [] for the A17 schedule."""
+    table = A17_FACTOR_TABLE if table is None else table
+    out = []
+    for st, want in sorted(table.items()):
+        got = float(fn(st, steps))
+        if abs(got - float(want)) > 1e-12:
+            out.append(f"step {st}: factor {got} != A17's {want}")
+    return out
+
+
 def trainer_clip_literal(src: str) -> float:
     """The max-norm literal of the ONE ``clip_grad_norm_(model.parameters(), <x>)`` call inside the trainer's
     ``train()``; refuses zero or several (a second clip site would make "the launch's clip" ambiguous)."""
@@ -351,10 +385,15 @@ def run_arm(adapter, arm: str, *, steps: int = STEPS, log_every: int = LOG_EVERY
     params = adapter.params(arm)
     opt, ospec = adapter.optimizer(arm, params, lr=lr)
     do_clip = ospec.get("clip") is not None
+    # ⭐ A17: every group's PEAK, read off the optimiser as built; the update of step s runs at peak x lr_factor(s)
+    peaks = [float(g["lr"]) for g in opt.param_groups]
     finite = True
     losses = []
     t_steps = time.time()
     for step, idx in enumerate(sched, start=1):
+        fac = lr_factor(step, steps)
+        for g, pk in zip(opt.param_groups, peaks):
+            g["lr"] = pk * fac
         opt.zero_grad(set_to_none=True)
         L = adapter.loss(idx)
         if not bool(torch.isfinite(L).all()):
@@ -370,7 +409,8 @@ def run_arm(adapter, arm: str, *, steps: int = STEPS, log_every: int = LOG_EVERY
             pk, pres = adapter.evaluate()
             row = {"step": step, "loss_mean_since_last": float(np.mean(losses[-log_every:])),
                    **score_packs(pk), "presence": pres,
-                   "s_per_step": (time.time() - t_steps) / step}
+                   "s_per_step": (time.time() - t_steps) / step,
+                   "lr_factor": fac, "group_lrs": [float(g["lr"]) for g in opt.param_groups]}
             if torch.cuda.is_available():
                 row["peak_mem_gb"] = torch.cuda.max_memory_allocated() / 2 ** 30
             row["gpu_shared_with"] = other_gpu_jobs()
@@ -384,6 +424,7 @@ def run_arm(adapter, arm: str, *, steps: int = STEPS, log_every: int = LOG_EVERY
            "n_trainable_tensors": len(params), "n_trainable_params": int(sum(p.numel() for p in params)),
            "wall_s": round(time.time() - t0, 1), "s_per_step": final.get("s_per_step"),
            "peak_mem_gb": final.get("peak_mem_gb"), "optimizer": public_spec(ospec),
+           "lr_schedule": dict(LR_SCHEDULE),
            "controls_step0_packs": packs0}
     adapter.teardown()
     return res
@@ -419,7 +460,8 @@ def one_frame_verdict(rows: list, final_p: float | None, steps: int = ONE_FRAME_
 
 
 def run_one_frame(adapter, arm: str, *, steps: int = ONE_FRAME_STEPS, every: int = ONE_FRAME_EVERY) -> dict:
-    """A14's one-frame test for one arm: the ladder's frame, batch 1, the adapter's (A13) optimiser and clip; the
+    """A14's one-frame test for one arm: the ladder's frame, batch 1, the adapter's (A13) optimiser and clip -- at the
+    CONSTANT peak lrs (A14.1 as registered; A17's decay names the G-BOX-OVERFIT arms only); the
     last layer's assignment captured inside ``box3d_loss_row`` at every logged TRAINING step; the eval rule every
     ``every`` steps."""
     from tanitad.models import agent_slots as _AS
@@ -933,8 +975,8 @@ def main(argv=None) -> int:
            "candidate": a.candidate, "started_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
            "prereg_md5": md5_bytes(prereg), "prereg_md5_ok": md5_bytes(prereg) == PREREG_MD5,
            "frameset_md5": md5_bytes(fs_bytes), "steps": a.steps, "device": a.device,
-           "literals": {"optimizer": OPTIMIZER_RULE, "clip": CLIP_NORM, "batch": BATCH, "seed": SEED, "bars": BARS,
-                        "n_pos": N_POS, "n_ign": N_IGN}}
+           "literals": {"optimizer": OPTIMIZER_RULE, "clip": CLIP_NORM, "lr_schedule": dict(LR_SCHEDULE),
+                        "batch": BATCH, "seed": SEED, "bars": BARS, "n_pos": N_POS, "n_ign": N_IGN}}
     if not rec["prereg_md5_ok"]:
         log(f"⚠ prereg md5 {rec['prereg_md5']} != {PREREG_MD5} (line endings? recorded, not refused)")
     frameset = json.loads(fs_bytes.decode("utf-8"))
