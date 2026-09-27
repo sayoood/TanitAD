@@ -554,7 +554,12 @@ def _c_perception(m, a):
     w_map = float(_a(a, "w_map", 0.0) or 0.0)
     w_b3d = float(_a(a, "w_box3d", 0.0) or 0.0)
     br = getattr(m, "_perception", None)
-    out = _eq("w_map", (w_map > 0.0 or w_b3d > 0.0), br is not None,
+    # refcv7 A6 (SPEC_REFCV7 §11.1): under `--bev-source map_hires_pool` the branch is
+    # the BEV consumers' side (the planner pool + tokens) and is built for them even at
+    # w_box3d 0; the trainer's pin guarantees a consumer exists. Its own lever is
+    # `bev_source` (map_head_hires.dvb_check_bev_source).
+    pool = str(_a(a, "bev_source", "s16_lift") or "s16_lift") == "map_hires_pool"
+    out = _eq("w_map", (w_map > 0.0 or w_b3d > 0.0 or pool), br is not None,
               "model._perception is not None", "a perception head with no live weight, or a "
               "live weight with no head")
     out += _near("w_map", w_map, getattr(m, "_w_map", None), "model._w_map (read by the loss)")

@@ -1060,9 +1060,12 @@ def rebuild_perception_branch(model, config: dict, device: str = "cpu",
         return None
     w_map = float(st.get("w_map", 0.0) or 0.0)
     w_box3d = float(st.get("w_box3d", 0.0) or 0.0)
-    if w_map <= 0.0 and w_box3d <= 0.0:
+    if w_map <= 0.0 and w_box3d <= 0.0 \
+            and str(st.get("bev_source", "s16_lift")) != "map_hires_pool":
         # ⚠️ A stamp with both weights at 0 means the trainer built NOTHING (that is
         # its bit-identity condition), so the rebuilt model is already correct.
+        # (refcv7 A6: a `map_hires_pool` branch is built for its CONSUMERS -- the BEV
+        # tokens / coupling -- even at w_box3d 0, and is rebuilt.)
         return None
     import dataclasses
     from tanitad.models import refcv6_perception_branch as _perc
@@ -1078,12 +1081,14 @@ def rebuild_perception_branch(model, config: dict, device: str = "cpu",
 
     _fields = {f.name for f in dataclasses.fields(_perc.PerceptionBranchConfig)}
     kw = {}
-    for k in ("d_bev", "n_queries", "d_model", "stride"):
+    # ⭐ refcv7 A6: `bev_source` is stamped on every run since A6; its absence -- every
+    # refcv6 stamp -- rebuilds `s16_lift`, as trained. `planner_crop_m` likewise.
+    for k in ("d_bev", "n_queries", "d_model", "stride", "bev_source"):
         if k in st and k in _fields:
             kw[k] = st[k]
     # JSON gives lists; the config wants tuples, and a list would compare unequal
     # in any later provenance check even when the values are identical.
-    for k in ("bev_tokens_hw", "heights_m"):
+    for k in ("bev_tokens_hw", "heights_m", "planner_crop_m"):
         if k in st and k in _fields:
             kw[k] = tuple(st[k])
     pcfg = _perc.PerceptionBranchConfig(w_map=w_map, w_box3d=w_box3d,
@@ -1126,6 +1131,91 @@ def rebuild_perception_branch(model, config: dict, device: str = "cpu",
     out["_lift_bank_note"] = lift_note
     out["_stamped_branch_params"] = st.get("branch_params")
     return out
+
+
+def rebuild_map_hires_branch(model, config: dict, device: str = "cpu", targs=None):
+    """refcv7 NEW-2: rebuild the 10 cm map branch from ``config.json["map_hires"]``.
+
+    ⛔ The same W0 rule as :func:`rebuild_perception_branch`: the trainer attaches
+    the branch to the MODEL (``model._map_hires``) and switches the trunk's stride-8
+    tap on, neither of which lives in ``RefCV3Config``. Without this a map-hires
+    checkpoint is short by exactly the branch in ``param_breakdown.total`` and has
+    ``_map_hires.*`` keys the rebuilt model lacks -- refused, correctly.
+
+    Everything comes from the stamp; the rebuilt branch's parameter count and the
+    tap's stride-8 shape are CHECKED against it (a default that differs from the
+    trained value would otherwise build a different head that still loads nothing).
+    The 0.25 m lift bank is rebuilt from the run's own ``--agent-rig-extrinsics``
+    WITH its ``--equalize-bottom-rows``, as the trainer built it. Returns a record,
+    or ``None`` when the run had no 10 cm branch.
+    """
+    st = config.get("map_hires")
+    if not isinstance(st, dict):
+        return None
+    import dataclasses
+    from tanitad.models import map_head_hires as _mhr
+    from tanitad.models import refcv6_perception_branch as _perc
+    fields = {f.name for f in dataclasses.fields(_mhr.MapHiresConfig)}
+    kw = {k: st[k] for k in ("x_max_m", "y_half_m", "lift_cell_m", "stride",
+                             "d_lift", "d_model", "d_up", "norm_groups", "n_classes",
+                             "grad_ckpt", "class_weights_sha256", "decision_rule")
+          if k in st and k in fields}
+    kw.update({k: tuple(st[k]) for k in ("heights_m", "dilations")
+               if k in st and k in fields})
+    # ⛔ the DERIVED grids (out_hw, lift_grid_hw) are not fields: they follow the
+    # stamped extent, and are CHECKED against the stamp below rather than passed.
+    hcfg = _mhr.MapHiresConfig(w_map_hires=float(st["w_map_hires"]), **kw)
+    # ⭐ the DECISION needs the loss's frozen weights (the prior-corrected rule, SPEC_REFCV7
+    # A4): restored from the stamp's own copy of them (the file may not be on this box).
+    import torch as _torch
+    _cws = st.get("class_weights") or {}
+    model._map_hires_class_weight = (
+        None if not _cws.get("weights") else
+        _torch.tensor([float(v) for v in _cws["weights"]], dtype=_torch.float32).to(device))
+    model._map_hires_class_weight_stamp = _cws or None
+    tap = model.core.encoder.enable_s8_tap()
+    want_tap = st.get("trunk_tap") or {}
+    for k in ("s8_module", "s8_dim", "s8_hw"):
+        if k in want_tap and want_tap[k] != tap[k]:
+            raise SystemExit(f"[refcv3_arm] ⛔ map-hires tap {k}: config.json "
+                             f"{want_tap[k]!r} vs rebuilt {tap[k]!r}")
+    for k, have in (("out_hw", list(hcfg.out_hw)),
+                    ("lift_grid_hw", list(hcfg.lift_grid.shape))):
+        if k in st and list(st[k]) != have:
+            raise SystemExit(f"[refcv3_arm] ⛔ map-hires {k}: config.json {st[k]!r} vs "
+                             f"rebuilt {have!r} (the stamped extent does not produce "
+                             f"the stamped grid)")
+    model._map_hires = _mhr.build_map_hires_branch(model, hcfg).to(device)
+    model._w_map_hires = float(st["w_map_hires"])
+    got = model._map_hires.param_breakdown()
+    want = (st.get("branch_params") or {}).get("total")
+    if want is not None and int(want) != int(got["total"]):
+        raise SystemExit(f"[refcv3_arm] ⛔ map-hires branch params: config.json "
+                         f"{want} vs rebuilt {got['total']}")
+    model._lift_bank_hires, note = None, None
+    extr_path = str(getattr(targs, "agent_rig_extrinsics", "") or "")
+    if extr_path:
+        try:
+            _single, _table = trainer()._read_rig_extrinsics(extr_path)
+            if _table is None:
+                note = "the extrinsics file carries a SINGLE camera"
+            else:
+                model._lift_bank_hires = _mhr.HiresLiftGeometryBank(
+                    _table, frame=_perc.frame_for_model(model), cfg=hcfg,
+                    equalize_bottom_rows=int(
+                        getattr(targs, "equalize_bottom_rows", 0) or 0))
+        except FileNotFoundError:
+            note = f"extrinsics file not on this box: {extr_path}"
+        except Exception as exc:          # noqa: BLE001 -- recorded, never silent
+            note = f"{type(exc).__name__}: {exc}"
+    else:
+        note = "no --agent-rig-extrinsics in the run's argv"
+    out = hcfg.as_dict()
+    out.update(_tap=tap, _branch_params=got,
+               _lift_bank_rebuilt=model._lift_bank_hires is not None,
+               _lift_bank_note=note)
+    return out
+
 
 def cross_check_config(config: dict, cfg, model) -> dict:
     """Every fact ``config.json`` states about the model must hold for the rebuilt
@@ -1203,10 +1293,15 @@ def load_model(ckpt_path: str, config_path: str | None = None,
     # ⛔ W0: the refcv6 perception branch lives on the MODEL, not in the config, so it
     # MUST be rebuilt before the cross-check — otherwise `param_breakdown.total` is
     # short by exactly the branch and every refcv6 checkpoint is refused.
+    # ⛔ refcv7 NEW-2 + A6: the 10 cm branch + the trunk's stride-8 tap, same W0 rule --
+    # rebuilt FIRST, because an A6 perception branch's planner pool reads its encoder
+    # (width and grid) exactly as the trainer built it.
+    map_hires_rebuilt = rebuild_map_hires_branch(model, config, device, targs=targs)
     perception_rebuilt = rebuild_perception_branch(model, config, device,
                                                   targs=targs)
     checks = cross_check_config(config, cfg, model)
     checks["perception_rebuilt"] = perception_rebuilt
+    checks["map_hires_rebuilt"] = map_hires_rebuilt
     try:
         res = model.load_state_dict(ck["model"], strict=False)
     except RuntimeError as ex:
@@ -2195,6 +2290,10 @@ def run_dump(a) -> dict:
             # the batched rows are the CONDITIONS of a single window, so they all
             # belong to the same episode.
             _lb = getattr(model, "_lift_bank", None)
+            if _lb is None and getattr(model, "_map_hires", None) is not None:
+                # ⭐ refcv7 A6: the forward's ONE lift is the 10 cm branch's; its
+                # 0.25 m geometry is THE perception geometry (as in the trainer).
+                _lb = getattr(model, "_lift_bank_hires", None)
             _pg1 = _pv1 = None
             if _lb is not None:
                 # ⛔ `for_episodes` keys on the INTEGER episode id, not the clip string:

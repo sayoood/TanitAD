@@ -258,7 +258,16 @@ def test_GDVB_every_trainer_flag_has_an_entry_and_every_entry_is_well_formed():
     # otherwise sit in the registry while the real flag goes unchecked)
     assert set(dvb.REGISTRY) == {a.dest for a in parser._actions if a.dest != "help"}
     # the tip's 197 dests + the 5 flags of the fixes batch + refcv7 NEW-1's --residual-prior
-    assert len(dvb.REGISTRY) == 204          # + --nav-compliance-tau-file (batch 2, SPEC_REFCV7 §7)
+    # + --nav-compliance-tau-file (batch 2, SPEC_REFCV7 §7)
+    # + refcv7 NEW-2's 9 flags (--map-hires, --w-map-hires, --map-hires-class-weights,
+    # --map-hires-decision-rule, and A6/A7's --map-hires-x-max-m, --map-hires-y-half-m,
+    # --map-hires-grad-ckpt, --bev-source, --bev-planner-crop-m; registered by
+    # map_head_hires.register_dvb_levers)
+    assert len(dvb.REGISTRY) == 213
+    for d in ("map_hires", "w_map_hires", "map_hires_class_weights",
+              "map_hires_decision_rule", "map_hires_x_max_m", "map_hires_y_half_m",
+              "map_hires_grad_ckpt", "bev_source", "bev_planner_crop_m"):
+        assert dvb.REGISTRY[d].kind == ("loss" if d == "w_map_hires" else "built"), d
     for dest, lever in dvb.REGISTRY.items():
         assert lever.kind in dvb.KINDS, dest
         if lever.kind in ("built", "loss"):

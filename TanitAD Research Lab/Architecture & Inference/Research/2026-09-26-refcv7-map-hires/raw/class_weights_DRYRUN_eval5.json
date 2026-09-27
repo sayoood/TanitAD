@@ -1,0 +1,133 @@
+{
+ "schema": "tanitad.map_hires_class_weights/1",
+ "classes": [
+  "seen, no map class",
+  "drivable",
+  "lane / road line",
+  "crosswalk",
+  "arrow / text",
+  "non-drivable edge",
+  "hatched area",
+  "sidewalk / verge"
+ ],
+ "definition": "median-frequency balancing (Eigen & Fergus, ICCV 2015): w_c = median_k(f_k) / f_c, f_c = n_c / S_c, n_c = seen 10 cm cells of class c, S_c = seen cells of the frames in which c is present; clipped to <= 25; codes 0..7, 255 (not seen) never counted",
+ "weights": [
+  0.164420675673138,
+  0.07018048609131157,
+  0.9669811650400413,
+  2.6115803374456736,
+  13.588917392940902,
+  4.578800875889775,
+  1.035353497562506,
+  0.06191662122983063
+ ],
+ "weights_unclipped": [
+  0.164420675673138,
+  0.07018048609131157,
+  0.9669811650400413,
+  2.6115803374456736,
+  13.588917392940902,
+  4.578800875889775,
+  1.035353497562506,
+  0.06191662122983063
+ ],
+ "clip_max": 25.0,
+ "n_clipped": 0,
+ "freq": [
+  0.15831056155528886,
+  0.3708941181063861,
+  0.026918341781803638,
+  0.009966964877126231,
+  0.0019154969262405101,
+  0.005684791761567119,
+  0.025140717212425365,
+  0.4203964780393057
+ ],
+ "median_freq": 0.0260295294971145,
+ "counts": [
+  28026730,
+  65661755,
+  4765526,
+  930848,
+  245281,
+  1006415,
+  1974359,
+  74425474
+ ],
+ "presence_denominator": [
+  177036388,
+  177036388,
+  177036388,
+  93393326,
+  128050845,
+  177036388,
+  78532326,
+  177036388
+ ],
+ "presence_frames": [
+  1004,
+  1004,
+  1004,
+  551,
+  736,
+  1004,
+  473,
+  1004
+ ],
+ "seen_cells": 177036388,
+ "frames": 1004,
+ "frame_stride": 1,
+ "share_of_seen": [
+  0.15831056155528886,
+  0.3708941181063861,
+  0.026918341781803638,
+  0.005257947309679635,
+  0.0013854835312161926,
+  0.005684791761567119,
+  0.011152277914752757,
+  0.4203964780393057
+ ],
+ "reference_simple_freq": [
+  0.15831056155528886,
+  0.3708941181063861,
+  0.026918341781803638,
+  0.005257947309679635,
+  0.0013854835312161926,
+  0.005684791761567119,
+  0.011152277914752757,
+  0.4203964780393057
+ ],
+ "reference_simple_weights": [
+  0.12024030273956327,
+  0.051322760105939905,
+  0.7071501655850791,
+  3.6202930016501083,
+  13.739109429592999,
+  3.3484621155288825,
+  1.706853971339559,
+  0.04527942274173491
+ ],
+ "split": "dry-run-eval",
+ "n_clips_in_cache": 139,
+ "n_clips_selected": 5,
+ "n_clips_used": 5,
+ "n_clips_missing_gt": 0,
+ "coverage": 1.0,
+ "inputs_sha256": "bbb6c62783140aecb1d9e3d38700830fb86f2a3b66877ad870f62737a256a1a6",
+ "inputs_rule": "sha256 of the sorted '<clip sha12>\\t<GT file bytes>' lines",
+ "fine_spec": {
+  "x_max_m": 60.0,
+  "y_half_m": 16.0,
+  "cell_m": 0.1,
+  "shape": [
+   600,
+   320
+  ],
+  "codes": "0-7 class, 255 not seen"
+ },
+ "script_sha256": "b8da8261a1419909e0f83512b5fac9752d4f59b3ed8107d3bf9dc4e17653328c",
+ "created_utc": "2026-09-26T20:01:49+00:00",
+ "elapsed_s": 4.6,
+ "dry_run": true,
+ "dry_run_note": "DRY RUN -- not the launch weights: 5 EVAL clips on the dev box, a code check of compute_map_class_weights.py; the launch weights are computed on Thor's TRAIN GT at launch prep"
+}

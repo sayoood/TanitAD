@@ -43,6 +43,12 @@ PERCEPTION_STAMP_KEYS = {
     "w_map", "w_box3d", "d_bev", "n_queries", "d_model", "bev_tokens_hw",
     "heights_m", "stride", "use_bev_in_box_head", "occ_from_geometry",
     "bev_encoder",
+    # refcv7 A6/A7 (SPEC_REFCV7 §11-12), added DELIBERATELY: WHERE every BEV consumer
+    # reads from (`--bev-source`: the stride-16 lift, or the pooled 0.25 m encoder of
+    # the 10 cm branch) and the planner window cropped before that pooling
+    # (`--bev-planner-crop-m`); the eval loader must rebuild exactly that
+    # (taniteval/tests/test_refcv6_perception_rebuild.py's round trip needs them stamped)
+    "bev_source", "planner_crop_m",
 }
 
 

@@ -3784,13 +3784,20 @@ class RefCModel(nn.Module):
     #: guard checks the list the forward actually uses. D-REFCV6-F3-WHITELIST: an inline tuple
     #: that omitted `layer_u0_hat` / `layer_logits` skipped refcv6's F3 cascade loss for 34,500
     #: steps while config.json stamped F3.
+    #: ⭐ refcv7 NEW-2: `fmap_s8`, the trunk's stride-8 map for the 10 cm map head, is
+    #: routed through THIS tuple too (it is not a decoder output -- the forward takes it
+    #: from the trunk-side dict below), so the one declaration G-DVB reads covers it:
+    #: removing it here removes it from the output, the D-REFCV6-F3-WHITELIST shape exactly.
     DECODER_PASSTHROUGH: tuple[str, ...] = (
         "prefinal_logits", "reach_keep", "layer_u0_hat", "layer_logits",
         # refcv7 NEW-1: the prior this forward composed on. The F3 cascade re-roll READS
         # `residual_prior_ctrl` / `residual_prior_v` (`kinematic_prior.prior_from_out`) and
         # the launch gate's G-LIVE reads `residual_prior_path`. Absent from `dec` on an off
         # build, so the loop below copies nothing there (bit-identity).
-        "residual_prior_ctrl", "residual_prior_v", "residual_prior_path")
+        "residual_prior_ctrl", "residual_prior_v", "residual_prior_path",
+        # refcv7 NEW-2: the trunk's stride-8 map (the trunk-side dict below; None when
+        # the tap is off).
+        "fmap_s8")
 
     def __init__(self, cfg: RefCConfig):
         super().__init__()
@@ -4368,9 +4375,28 @@ class RefCModel(nn.Module):
         # so the seam would have been dead on the path actually taken. Here it
         # is the SAME last-frame reshape `fmap` already gets, one axis wider.
         fmap_s16 = None
+        # ⭐⭐ refcv7 NEW-2 (SPEC_REFCV7 §6.2) -- THE STRIDE-8 PASS-THROUGH. `None`
+        # unless the trunk's tap is ON (`TimmResNetTrunk.enable_s8_tap`, which the
+        # trainer calls behind --map-hires on). With the tap off the branches below
+        # run the tip's exact calls, so a default build is byte-identical.
+        # ⛔ The F3-whitelist class (D-REFCV6-F3-WHITELIST): an output this forward
+        # does not pass through is skipped silently by a consumer that reads
+        # `out.get(...)`. The key is ALWAYS emitted (None when off) and the
+        # trainer REFUSES `--map-hires on` when it arrives None.
+        fmap_s8 = None
         _s16 = hasattr(self.encoder, "forward_features")
+        _s8 = _s16 and bool(getattr(self.encoder, "s8_tap", False))
         if self.cfg.hierarchy:
-            if _s16:
+            if _s8:
+                # the CURRENT frame of the LAST window row of each sample: row
+                # `i * w + (w - 1)` of the flattened b*w batch -- the same instant
+                # `fmap_s16` below is sliced at, and the map label is read at.
+                fmap_s8, s16_all, fmap_all, pooled_all = \
+                    self.encoder.forward_features_s8(
+                        frames.reshape(b * w, *frames.shape[2:]),
+                        torch.arange(b, device=frames.device) * w + (w - 1))
+                fmap_s16 = s16_all.reshape(b, w, *s16_all.shape[1:])[:, -1]
+            elif _s16:
                 s16_all, fmap_all, pooled_all = self.encoder.forward_features(
                     frames.reshape(b * w, *frames.shape[2:]))
                 fmap_s16 = s16_all.reshape(b, w, *s16_all.shape[1:])[:, -1]
@@ -4382,7 +4408,10 @@ class RefCModel(nn.Module):
             fmap = fmap_all.reshape(b, w, *fmap_all.shape[1:])[:, -1]
             ctx = self.strategic(pooled_seq)
         else:                                    # last frame only (same values)
-            if _s16:
+            if _s8:
+                fmap_s8, fmap_s16, fmap, pooled = self.encoder.forward_features_s8(
+                    frames[:, -1], torch.arange(b, device=frames.device))
+            elif _s16:
                 # ONE trunk pass, three outputs. `fmap`/`pooled` are the SAME
                 # tensors `self.encoder(...)` returns -- its `forward` is
                 # literally `forward_features(...)[1:]` -- so this branch is
@@ -4433,7 +4462,11 @@ class RefCModel(nn.Module):
                     "BEV lift would have nothing to sample and the arm would "
                     "read as 'the map adds nothing to behaviours' while never "
                     "having had a map. Build with --trunk timm.")
-            perception_out = bev_hook(fmap_s16)
+            # ⭐ refcv7 A6 (SPEC_REFCV7 §11.1): with the stride-8 tap ON, the hook also
+            # receives `fmap_s8` -- the ONE lift (0.25 m, stride 8) runs inside it and
+            # feeds both the 10 cm map and every BEV consumer. Tap off: the tip's call.
+            perception_out = (bev_hook(fmap_s16) if fmap_s8 is None
+                              else bev_hook(fmap_s16, fmap_s8=fmap_s8))
             if not isinstance(perception_out, dict):
                 raise ValueError(
                     "refcv6: `bev_hook` must return a dict; got "
@@ -4833,6 +4866,8 @@ class RefCModel(nn.Module):
                # covers every tensor that was there before. `None` on the
                # in-repo REF-C trunk and on the hierarchy path.
                "fmap_s16": fmap_s16,
+               # ⭐ refcv7 NEW-2: `fmap_s8` is NOT written here -- it passes through
+               # DECODER_PASSTHROUGH below, so the tuple G-DVB reads is the only route.
                # ⭐⭐ refcv6 PI RULING 2026-09-17 R2. The perception branch's
                # OWN outputs (`map_logits`, `box_slots`, `bev_feats`,
                # `bev_tokens`), produced INSIDE this forward and emitted with
@@ -4887,6 +4922,8 @@ class RefCModel(nn.Module):
             out["u0_hat"] = dec["u0_hat"]        # refcv5 WP-4's x0 loss target
         if "cons_score" in dec:
             out["cons_score"] = dec["cons_score"]
+        # ⭐ refcv7 NEW-2: trunk-side keys that ride the same pass-through declaration.
+        _trunk_passthrough = {"fmap_s8": fmap_s8}
         # ⛔⛔ A16 2026-09-26: refcv6 F3's per-stage outputs MUST pass through. The trainer's
         # per-stage loss reads `layer_u0_hat` / `layer_logits` from THIS dict; the whitelist that
         # omitted them skipped F3's loss for the whole of refcv6-r101-s0 (0 of 668 training rows
@@ -4900,6 +4937,10 @@ class RefCModel(nn.Module):
             # `refc_select.reachability_mask` is a re-export and not a copy.
             if _k in dec:
                 out[_k] = dec[_k]
+            elif _k in _trunk_passthrough:
+                # refcv7 NEW-2: the trunk-side keys (`fmap_s8`; None when the tap is
+                # off, so the key is ALWAYS present on a build whose tuple names it)
+                out[_k] = _trunk_passthrough[_k]
         if ctx is not None:
             out["ctx"] = ctx
         if lat_logits is not None:

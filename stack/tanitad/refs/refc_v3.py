@@ -1858,10 +1858,45 @@ class RefCV3Model(nn.Module):
         branch is attached, which is every arm the tip could run.
         """
         br = getattr(self, "_perception", None)
-        if br is None:
+        # ⭐ refcv7 A6 (SPEC_REFCV7 §11.1): the 10 cm branch (`model._map_hires`, built
+        # behind --map-hires on) owns the ONE lift -- stride 8 at 0.25 m -- and its
+        # encoder, and runs HERE, in the forward: its 0.25 m features are the planner's
+        # BEV (pooled by the perception branch, `bev_source = "map_hires_pool"`) and its
+        # 10 cm logits ride out on `out["perception"]`. The perception geometry the
+        # forward receives is then the 0.25 m bank's. ⛔ With no 10 cm branch this is
+        # the refcv6 hook, byte for byte.
+        mh = getattr(self, "_map_hires", None)
+        if br is None and mh is None:
             return None
+        pool = (br is not None
+                and str(getattr(getattr(br, "cfg", None), "bev_source", "s16_lift"))
+                == "map_hires_pool")
+        if mh is not None and br is not None and not pool:
+            raise ValueError(
+                "[refcv7] ⛔ a 10 cm branch AND a stride-16 perception branch: A6 builds "
+                "ONE lift (SPEC_REFCV7 §11.1) -- the perception branch must be built "
+                "with bev_source 'map_hires_pool'.")
+        if pool and mh is None:
+            raise ValueError(
+                "[refcv7] ⛔ bev_source 'map_hires_pool' but no 10 cm branch is "
+                "attached: the planner's BEV would have no source.")
 
-        def bev_hook(fmap_s16: Tensor) -> dict:
+        def bev_hook(fmap_s16: Tensor, fmap_s8: Tensor | None = None) -> dict:
+            if mh is not None:
+                if grid is None or valid is None:
+                    raise ValueError(
+                        "[refcv7] ⛔ the 10 cm branch is built but no 0.25 m lift "
+                        "geometry reached the forward. Pass `perception_grid=` / "
+                        "`perception_valid=` from the 0.25 m bank "
+                        "(HiresLiftGeometryBank.for_episodes).")
+                hi = mh(fmap_s8, grid, valid)       # refuses a missing fmap_s8
+                pout = {} if br is None else br(fmap_s16, bev_hires=hi["map_hires_bev"])
+                pout = dict(pout)
+                pout["map_hires_logits"] = hi["map_hires_logits"]
+                pout["map_hires_lift_valid"] = hi["map_hires_lift_valid"]
+                # no perception branch = no BEV consumer: the gate then marks the
+                # tokens unfed, or REFUSES a decoder that declared a BEV source
+                return _feed_gate(pout)
             if br.lift is not None and (grid is None or valid is None):
                 raise ValueError(
                     "[refcv6] ⛔ the BEV lift is built but no per-clip lift "
@@ -1872,6 +1907,9 @@ class RefCV3Model(nn.Module):
                     "1.2131-1.6672 m over 554 distinct values in 2,400 clips, "
                     "and every count would still look healthy.")
             pout = br(fmap_s16, grid, valid)
+            return _feed_gate(pout)
+
+        def _feed_gate(pout: dict) -> dict:
             # ⛔⛔ THE FEED GATE, AND IT IS NOT A CONVENIENCE. A perception arm
             # can be built with NO behaviour decoder at all, or with one built
             # `d_bev = 0` (agent-only). The branch still produces BEV tokens —

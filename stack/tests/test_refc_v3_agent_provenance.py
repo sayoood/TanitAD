@@ -515,6 +515,19 @@ def test_P2_every_knob_is_recoverable_from_the_stamp_BY_VALUE(tmp_path):
             "--map-gt-root", "m", "--w-map", "1.0",
             "--agent-rig-camera", "extrinsics",
             "--agent-rig-extrinsics", str(extr)],
+        # ⭐ refcv7 NEW-2 (SPEC_REFCV7 §6.2), the same shape again: `--w-map-hires`
+        # REFUSES unless `--map-hires on` AND every input the 10 cm branch reads is
+        # present (`_pin_map_hires`: the timm trunk, frozen BN, the 0.5 m map's
+        # plumbing via `--w-map > 0` with its extrinsics, and a class-weights file).
+        # ⛔ Each refusal is CORRECT; this row satisfies them rather than weakening one.
+        # refcv7 A6: the 10 cm head is THE map (--w-map stays 0), fed by its own
+        # SAM3 root and the per-clip extrinsics its 0.25 m lift reads
+        "w_map_hires": ["--trunk", "timm", "--trunk-frozen-bn",
+                        "--map-gt-root", "m",
+                        "--agent-rig-camera", "extrinsics",
+                        "--agent-rig-extrinsics", str(extr),
+                        "--map-hires", "on",
+                        "--map-hires-class-weights", "w.json"],
     }
     # Candidates, tried in order: a knob with a DOMAIN (a mount height must be
     # a plausible height) takes the first admissible one. A per-knob table of

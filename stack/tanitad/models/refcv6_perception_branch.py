@@ -68,7 +68,17 @@ from tanitad.models.trunk_shapes import (PERCEPTION_STRIDE,
 
 __all__ = ["PerceptionBranchConfig", "LiftGeometryBank", "PerceptionBranch",
            "build_perception_branch", "grad_reach_report", "FORWARD_EXCLUSIONS",
-           "map_valid_from_lift", "map_loss_row", "box3d_loss_row"]
+           "map_valid_from_lift", "map_loss_row", "box3d_loss_row",
+           "BEV_SOURCES", "PlannerBEVPool"]
+
+#: ⭐⭐ refcv7 A6 (SPEC_REFCV7 §11.1, PI 2026-09-27 option (c)): WHERE every BEV
+#: consumer's features come from -- ``PerceptionBranchConfig.bev_source``, a DECLARED
+#: field (``--bev-source``). ``"s16_lift"`` = refcv6: the stride-16 lift + the 0.5 m
+#: encoder, built behind ``w_map > 0``. ``"map_hires_pool"`` = refcv7: NO stride-16 lift
+#: and NO 0.5 m encoder / map head; the box head, the 30 x 16 BEV tokens and the
+#: planner's BEV coupling read :class:`PlannerBEVPool` over the 10 cm branch's 0.25 m
+#: encoder (``tanitad.models.map_head_hires``). The first entry is the default.
+BEV_SOURCES: tuple[str, ...] = ("s16_lift", "map_hires_pool")
 
 
 # --------------------------------------------------------------------------- #
@@ -177,15 +187,41 @@ class PerceptionBranchConfig:
     #: `config.json` in isolation gets, and an `occ` number whose source is not
     #: in the record is unattributable between the learned and derived paths.
     occ_from_geometry: bool = False
+    #: ⭐⭐ refcv7 A6 (SPEC_REFCV7 §11.1): WHERE the BEV every consumer reads comes
+    #: from (:data:`BEV_SOURCES`, ``--bev-source``). ``"s16_lift"`` (DEFAULT) = the
+    #: refcv6 branch, byte for byte. ``"map_hires_pool"``: no stride-16 lift, no 0.5 m
+    #: encoder, no 0.5 m map head (``w_map`` MUST be 0 -- nothing at 0.5 m is supervised
+    #: as a map); the box memory, the BEV tokens and the coupling read
+    #: :class:`PlannerBEVPool` over the 10 cm branch's 0.25 m encoder. ⛔ STAMPED
+    #: always (the round-trip guard in taniteval/tests/test_refcv6_perception_rebuild.py
+    #: requires every field in the record); a banked refcv6 stamp without it rebuilds
+    #: ``s16_lift``, which is what those runs trained.
+    bev_source: str = "s16_lift"
+    #: ⭐ refcv7 A7 (SPEC_REFCV7 §12 item 2): the planner's window ``(x_max_m, y_half_m)``,
+    #: CROPPED out of the map extent BEFORE the 0.5 m pooling (``--bev-planner-crop-m``).
+    #: ``(60, 16)`` keeps the planner's 120 x 64 grid and its 30 x 16 tokens of 2 x 2 m
+    #: exactly refcv6's; the consumers (tokens, coupling, box memory) are built for that
+    #: grid. Read only under ``map_hires_pool``; stamped always.
+    planner_crop_m: tuple = (60.0, 16.0)
     #: ⛔ NOT a knob the operator sets. It is DERIVED: the box head reads BEV
-    #: tokens only when a supervised BEV branch exists, i.e. when ``w_map > 0``.
+    #: tokens only when a supervised BEV branch exists, i.e. when ``w_map > 0``
+    #: (``s16_lift``) or the 10 cm branch feeds the pool (``map_hires_pool``).
     #: Building the lift + encoder for an unsupervised feature path would put
     #: ~1 M parameters in the optimiser whose only gradient is the box loss's --
     #: legal, but a different experiment, and it must be asked for by name.
     def __post_init__(self) -> None:
+        if str(self.bev_source) not in BEV_SOURCES:
+            raise ValueError(f"bev_source {self.bev_source!r} not in {BEV_SOURCES}")
         if float(self.w_map) < 0.0 or float(self.w_box3d) < 0.0:
             raise ValueError("perception weights must be >= 0")
-        if float(self.w_map) == 0.0 and float(self.w_box3d) == 0.0:
+        if str(self.bev_source) == "map_hires_pool":
+            if float(self.w_map) != 0.0:
+                raise ValueError(
+                    f"PerceptionBranchConfig(bev_source='map_hires_pool') with w_map "
+                    f"{self.w_map}: refcv7 A6 REMOVED the 0.5 m map head and loss "
+                    f"(SPEC_REFCV7 §11.1) -- nothing at 0.5 m is supervised as a map, "
+                    f"and there is no head for the weight to supervise.")
+        elif float(self.w_map) == 0.0 and float(self.w_box3d) == 0.0:
             raise ValueError(
                 "PerceptionBranchConfig with BOTH weights 0.0: the branch "
                 "would add parameters to the optimiser and the checkpoint "
@@ -194,10 +230,23 @@ class PerceptionBranchConfig:
             raise ValueError(
                 f"d_bev {self.d_bev} != bev_cfg.d_in {self.bev_cfg.d_in}: the "
                 f"lift's output width IS the BEV encoder's input width")
+        pc = tuple(float(v) for v in self.planner_crop_m)
+        if len(pc) != 2 or not all(math.isfinite(v) and v > 0.0 for v in pc):
+            raise ValueError(f"planner_crop_m must be (x_max_m, y_half_m) > 0, got "
+                             f"{self.planner_crop_m!r}")
 
     @property
     def use_bev(self) -> bool:
+        if str(self.bev_source) == "map_hires_pool":
+            return True
         return float(self.w_map) > 0.0
+
+    @property
+    def planner_grid(self) -> BEVGrid:
+        """The pooled BEV's grid: the declared crop at the planner's 0.5 m cell."""
+        return BEVGrid(x_fwd_m=float(self.planner_crop_m[0]),
+                       y_half_m=float(self.planner_crop_m[1]),
+                       cell_m=float(GRID_DEFAULT.cell_m))
 
     def as_dict(self) -> dict:
         return {"w_map": float(self.w_map), "w_box3d": float(self.w_box3d),
@@ -210,7 +259,72 @@ class PerceptionBranchConfig:
                 "bev_encoder": {"d_in": int(self.bev_cfg.d_in),
                                 "d_model": int(self.bev_cfg.d_model),
                                 "d_out": int(self.bev_cfg.d_out),
-                                "dilations": list(self.bev_cfg.dilations)}}
+                                "dilations": list(self.bev_cfg.dilations)},
+                "bev_source": str(self.bev_source),
+                "planner_crop_m": [float(v) for v in self.planner_crop_m]}
+
+
+# --------------------------------------------------------------------------- #
+# refcv7 A6: the planner's BEV, pooled from the 0.25 m encoder                 #
+# --------------------------------------------------------------------------- #
+class PlannerBEVPool(nn.Module):
+    """``[B, d_in, X4, Y4]`` (the 10 cm branch's 0.25 m encoder over the map extent)
+    -> ``[B, d_out, 120, 64]`` on the PLANNER's grid (``GRID_DEFAULT``: 60 m x +-16 m
+    at 0.5 m), the tensor every refcv6 consumer read from the stride-16 path.
+
+    1. CROP the planner's window out of the map extent: rows ``0 .. 60 m`` (both grids
+       start at x = 0), columns centred (``(y_half_src - 16) / 0.25`` off each side);
+    2. 2 x 2 AVERAGE-POOL -- exact cell alignment, asserted: the source and the planner
+       grids share cell edges, so every 0.5 m cell is the mean of its four 0.25 m cells;
+    3. a 1x1 projection + GroupNorm to the consumers' width -- the refcv6
+       ``BEVEncoder.out`` recipe (1x1 + GN), so the consumers keep reading
+       GN-normalised ``bev_cfg.d_out``-wide features (the DECLARED learned part:
+       ``d_in * d_out + 2 * d_out`` parameters; 6,336 at 64 -> 96).
+
+    ⛔ Nothing is interpolated: a pool that shifted the grid by half a cell would move
+    every consumer's BEV by 0.25 m and still produce a valid-looking tensor. The
+    planner's grid keeps its 60 m x +-16 m extent (the PI: "unless I tell you
+    otherwise"); a larger MAP extent only widens what the crop discards."""
+
+    def __init__(self, d_in: int, d_out: int, src_grid: BEVGrid,
+                 dst_grid: BEVGrid = GRID_DEFAULT, norm_groups: int = 8):
+        super().__init__()
+        self.d_in, self.d_out = int(d_in), int(d_out)
+        self.src_grid, self.dst_grid = src_grid, dst_grid
+        k = float(dst_grid.cell_m) / float(src_grid.cell_m)
+        if abs(k - round(k)) > 1e-9 or round(k) < 1:
+            raise ValueError(f"planner cell {dst_grid.cell_m} m is not a whole multiple "
+                             f"of the source cell {src_grid.cell_m} m")
+        self.k = int(round(k))
+        if float(dst_grid.x_fwd_m) > float(src_grid.x_fwd_m) + 1e-9 \
+                or float(dst_grid.y_half_m) > float(src_grid.y_half_m) + 1e-9:
+            raise ValueError(f"the planner grid {dst_grid} does not lie inside the map "
+                             f"extent {src_grid}")
+        off = (float(src_grid.y_half_m) - float(dst_grid.y_half_m)) / float(src_grid.cell_m)
+        if abs(off - round(off)) > 1e-9:
+            raise ValueError(f"the planner window is not aligned to the source cells "
+                             f"(column offset {off})")
+        self.col0 = int(round(off))
+        dx, dy = dst_grid.shape
+        self.rows, self.cols = dx * self.k, dy * self.k
+        self.src_hw = tuple(src_grid.shape)
+        self.dst_hw = (int(dx), int(dy))
+        self.proj = nn.Sequential(nn.Conv2d(self.d_in, self.d_out, 1, bias=False),
+                                  nn.GroupNorm(int(norm_groups), self.d_out))
+
+    def forward(self, x: Tensor) -> Tensor:
+        if x.dim() != 4 or int(x.shape[1]) != self.d_in \
+                or tuple(x.shape[2:]) != self.src_hw:
+            raise ValueError(f"[perception] the pool reads [B, {self.d_in}, "
+                             f"{self.src_hw[0]}, {self.src_hw[1]}] (the 0.25 m encoder "
+                             f"over the map extent), got {tuple(x.shape)}")
+        w = x[:, :, :self.rows, self.col0:self.col0 + self.cols]
+        p = torch.nn.functional.avg_pool2d(w, kernel_size=self.k, stride=self.k)
+        out = self.proj(p)
+        if tuple(out.shape[2:]) != self.dst_hw:
+            raise RuntimeError(f"pooled BEV {tuple(out.shape)} is not the planner grid "
+                               f"{self.dst_hw}")
+        return out
 
 
 # --------------------------------------------------------------------------- #
@@ -310,10 +424,17 @@ class LiftGeometryBank:
 # the branch                                                                   #
 # --------------------------------------------------------------------------- #
 class PerceptionBranch(nn.Module):
-    """``fmap_s16`` -> map logits and/or 3-D slots. One forward, one graph."""
+    """``fmap_s16`` -> map logits and/or 3-D slots. One forward, one graph.
+
+    ⭐ refcv7 A6 (``cfg.bev_source == "map_hires_pool"``): no lift and no 0.5 m
+    encoder here; ``forward(..., bev_hires=)`` receives the 10 cm branch's 0.25 m
+    encoder output and :class:`PlannerBEVPool` turns it into the SAME ``bev_feats`` /
+    ``bev_tokens`` / box-memory BEV the refcv6 consumers read. ``d_bev_hires`` and
+    ``hires_grid`` are read off the BUILT 10 cm branch (:func:`build_perception_branch`)."""
 
     def __init__(self, cfg: PerceptionBranchConfig, *, d_image: int,
-                 image_hw: tuple[int, int], n_classes: int = N_CHANNELS):
+                 image_hw: tuple[int, int], n_classes: int = N_CHANNELS,
+                 d_bev_hires: int | None = None, hires_grid: BEVGrid | None = None):
         super().__init__()
         self.cfg = cfg
         self.d_image = int(d_image)
@@ -324,7 +445,17 @@ class PerceptionBranch(nn.Module):
 
         self.lift: BEVLift | None = None
         self.map_branch: BEVMapBranch | None = None
-        if cfg.use_bev:
+        self.bev_pool: PlannerBEVPool | None = None
+        if cfg.bev_source == "map_hires_pool":
+            if d_bev_hires is None or hires_grid is None:
+                raise ValueError(
+                    "[perception] bev_source 'map_hires_pool' needs the 10 cm branch's "
+                    "encoder width and 0.25 m grid (build the map-hires branch first; "
+                    "build_perception_branch reads them off it)")
+            self.bev_pool = PlannerBEVPool(
+                int(d_bev_hires), int(cfg.bev_cfg.d_out), hires_grid,
+                dst_grid=cfg.planner_grid, norm_groups=int(cfg.bev_cfg.norm_groups))
+        elif cfg.use_bev:
             self.lift = BEVLift(d_in=self.d_image, d_out=int(cfg.d_bev),
                                 n_heights=len(cfg.heights_m),
                                 feat_hw=self.image_hw)
@@ -407,17 +538,28 @@ class PerceptionBranch(nn.Module):
     def param_breakdown(self) -> dict:
         def n(m):
             return 0 if m is None else int(sum(p.numel() for p in m.parameters()))
-        return {"lift": n(self.lift), "bev_encoder": n(
-                    None if self.map_branch is None else self.map_branch.encoder),
-                "map_head": n(None if self.map_branch is None
-                              else self.map_branch.head),
-                "box_memory": n(self.box_mem), "box_decoder": n(self.box_dec),
-                "total": n(self)}
+        d = {"lift": n(self.lift), "bev_encoder": n(
+                 None if self.map_branch is None else self.map_branch.encoder),
+             "map_head": n(None if self.map_branch is None
+                           else self.map_branch.head),
+             "box_memory": n(self.box_mem), "box_decoder": n(self.box_dec),
+             "total": n(self)}
+        if self.bev_pool is not None:
+            # refcv7 A6 only: a refcv6 breakdown keeps its key set (stamped, compared)
+            d = {**{k: v for k, v in d.items() if k != "total"},
+                 "bev_pool": n(self.bev_pool), "total": d["total"]}
+        return d
 
     def forward(self, fmap_s16: Tensor, grid: Tensor | None = None,
-                valid: Tensor | None = None) -> dict:
+                valid: Tensor | None = None, *,
+                bev_hires: Tensor | None = None) -> dict:
         """⛔ ONE argument family, all vision. No parameter here can carry a
         label -- the ``AgentSlotDecoder.forward`` audit, extended to the branch.
+
+        ``bev_hires`` (refcv7 A6): the 10 cm branch's 0.25 m encoder output. REQUIRED
+        under ``map_hires_pool`` and REFUSED otherwise (two BEV suppliers); the
+        stride-16 geometry (``grid`` / ``valid``) is REFUSED under the pool -- the
+        forward's only lift geometry is the 0.25 m one, and it is the 10 cm branch's.
         """
         if fmap_s16 is None:
             raise ValueError(
@@ -432,6 +574,24 @@ class PerceptionBranch(nn.Module):
                 f"feature_info at build time)")
         out: dict = {}
         bev_feats = None
+        if self.bev_pool is not None:
+            if bev_hires is None:
+                raise ValueError(
+                    "[perception] ⛔ bev_source 'map_hires_pool' but no 0.25 m BEV "
+                    "reached the branch: every consumer (box3d, the BEV tokens, the "
+                    "coupling) would read nothing (SPEC_REFCV7 §11.1)")
+            if grid is not None or valid is not None:
+                raise ValueError(
+                    "[perception] ⛔ a lift geometry reached a 'map_hires_pool' branch: "
+                    "it has no lift of its own -- a stride-16 geometry here is a "
+                    "consumer still wired to the stride-16 path (A6)")
+            bev_feats = self.bev_pool(bev_hires)
+            out["bev_feats"] = bev_feats
+            out["bev_tokens"] = self.bev_tokens(bev_feats)
+        elif bev_hires is not None:
+            raise ValueError(
+                "[perception] ⛔ a 0.25 m BEV was passed to a 's16_lift' branch: two "
+                "BEV suppliers for one set of consumers")
         if self.lift is not None:
             if grid is None or valid is None:
                 raise ValueError(
@@ -484,6 +644,19 @@ def build_perception_branch(model, cfg: PerceptionBranchConfig) -> PerceptionBra
             f"({type(enc).__name__}). refcv6 perception reads stride 16; the "
             "legacy REF-C ResNetEncoder returns the stride-32 map only. Pass "
             "--trunk timm.")
+    if cfg.bev_source == "map_hires_pool":
+        # refcv7 A6: the pool reads the 10 cm branch's 0.25 m encoder -- its width
+        # and grid are read off the BUILT branch, never typed here.
+        mh = getattr(model, "_map_hires", None)
+        if mh is None:
+            raise SystemExit(
+                "[perception] ⛔ bev_source 'map_hires_pool' but the 10 cm branch is "
+                "not built (model._map_hires is None): build it first -- the "
+                "planner's BEV is pooled from its 0.25 m encoder (SPEC_REFCV7 §11.1)")
+        return PerceptionBranch(cfg, d_image=int(enc.s16_dim),
+                                image_hw=tuple(enc.s16_shape),
+                                d_bev_hires=int(mh.cfg.d_model),
+                                hires_grid=mh.cfg.lift_grid)
     return PerceptionBranch(cfg, d_image=int(enc.s16_dim),
                             image_hw=tuple(enc.s16_shape))
 
@@ -637,7 +810,9 @@ def grad_reach_report(model, branch: PerceptionBranch | None = None) -> dict:
                                       else br.map_branch.encoder),
                       "map_head": (None if br.map_branch is None
                                    else br.map_branch.head),
-                      "box_memory": br.box_mem, "box_decoder": br.box_dec})
+                      "box_memory": br.box_mem, "box_decoder": br.box_dec,
+                      # refcv7 A6: the planner's pooled BEV (None -> no key on refcv6)
+                      "bev_pool": getattr(br, "bev_pool", None)})
     for name, m in parts.items():
         if m is None:
             continue

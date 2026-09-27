@@ -1,0 +1,72 @@
+{
+ "params": {
+  "lift": 131200,
+  "encoder": 409024,
+  "refine": 18824,
+  "total": 559048
+ },
+ "config": {
+  "w_map_hires": 1.0,
+  "lift_cell_m": 0.25,
+  "lift_grid_hw": [
+   240,
+   128
+  ],
+  "stride": 8,
+  "heights_m": [
+   0.0,
+   0.5,
+   1.5,
+   2.5
+  ],
+  "d_lift": 64,
+  "d_model": 64,
+  "dilations": [
+   1,
+   2,
+   4,
+   8,
+   16
+  ],
+  "d_up": 32,
+  "norm_groups": 8,
+  "n_classes": 8,
+  "out_hw": [
+   600,
+   320
+  ],
+  "out_cell_m": 0.1,
+  "grad_ckpt": false,
+  "receptive_field_m": 15.75
+ },
+ "feature_shape": [
+  512,
+  52,
+  128
+ ],
+ "saved_bytes_b1": 459969412,
+ "saved_GiB_b16": 6.854,
+ "cpu_fwd_s_b1": 0.243,
+ "cpu_bwd_s_b1": 0.534,
+ "saved_bytes_b1_grad_ckpt": 24481796,
+ "saved_GiB_b16_grad_ckpt": 0.365,
+ "tap_stage": {
+  "s8_tap": true,
+  "s8_module": "layer2",
+  "s8_dim": 512,
+  "s8_hw": [
+   52,
+   128
+  ],
+  "s8_frame": "newest",
+  "s8_temporal_fusion": null
+ },
+ "tap_saved_bytes_b1_unchunked": 560635392,
+ "tap_saved_GiB_b16_unchunked": 8.354,
+ "tap_output_bytes_b1": 13631488,
+ "tap_note": "with --trunk-chunk-ckpt the tap runs checkpointed like the main pass: only its [b, 512, 52, 128] fp32 output is kept, 208 MiB at b16",
+ "host": {
+  "python": "3.13.5",
+  "torch": "2.11.0+cu128"
+ }
+}

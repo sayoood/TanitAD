@@ -692,6 +692,132 @@ class TimmResNetTrunk(nn.Module):
             self.memory_levers["compile_donated_buffer"] = bool(_fconfig.donated_buffer)
             object.__setattr__(self, "_net_fn", torch.compile(self.net, backend=_be))
             self.memory_levers["compile"] = _be
+        # ⭐ refcv7 NEW-2 (SPEC_REFCV7 §6.2): the STRIDE-8 TAP, OFF until
+        # :meth:`enable_s8_tap` is called. Plain attributes, never config fields or
+        # buffers: with the tap off the module tree, the state_dict, the RNG draw order
+        # and every forward are the tip's, byte for byte.
+        self.s8_tap: bool = False
+        self.s8_dim: int | None = None
+        self.s8_shape: tuple | None = None
+        self.s8_module: str | None = None
+        self.s8_calls: int = 0
+
+    # -- refcv7 NEW-2: the stride-8 tap ------------------------------------ #
+    def s8_stage(self) -> dict:
+        """The backbone's stride-8 stage, READ from timm's ``feature_info`` (the full
+        stage list, not only ``out_indices``): ``{"module", "channels", "reduction"}``.
+        MEASURED 2026-09-26 (timm 1.0.29): resnet101 -> ``layer2``, 512 channels;
+        resnet34 -> ``layer2``, 128. ⛔ Never a literal: a backbone swap moves both."""
+        info = [i for i in self.net.feature_info.info if int(i["reduction"]) == 8]
+        if len(info) != 1:
+            raise ValueError(
+                f"refcv7 map-hires: {self.cfg.model_name!r} has "
+                f"{len(info)} stride-8 stages in feature_info "
+                f"({[(i['module'], i['reduction']) for i in self.net.feature_info.info]}); "
+                f"the tap needs exactly one")
+        names = list(self.net.keys())
+        if info[0]["module"] not in names:
+            raise ValueError(
+                f"refcv7 map-hires: the stride-8 stage {info[0]['module']!r} is not a "
+                f"top-level module of the feature net ({names}); the partial pass "
+                f"walks top-level modules only")
+        return {"module": str(info[0]["module"]), "channels": int(info[0]["num_chs"]),
+                "reduction": 8}
+
+    def enable_s8_tap(self) -> dict:
+        """Switch on :meth:`forward_features_s8`. Returns the stamp.
+
+        ⛔ REQUIRES FROZEN BatchNorm. The tap re-runs the stem -> stride-8 stage on the
+        CURRENT frame of each sample (see :meth:`s8_from_normalised`). With BN frozen
+        that is the SAME function the main pass computes for that frame, so the tap's
+        features and gradients are the trunk's own. With BN training on the batch the
+        tap would normalise with the statistics of a DIFFERENT batch (b images, not the
+        b*w*K the main pass sees) and update the running statistics a second time per
+        step -- a different arm, silently. Refused, not warned.
+        """
+        if not self.memory_levers.get("frozen_bn"):
+            raise ValueError(
+                "refcv7 map-hires: the stride-8 tap needs frozen BatchNorm "
+                "(--trunk-frozen-bn, which --trunk-chunk-ckpt already implies). The "
+                "tap re-runs the stem..stride-8 stage on the current frame; with BN "
+                "training on the batch that is a different function from the main "
+                "pass and a second running-statistics update per step.")
+        st = self.s8_stage()
+        h, w = self.cfg.image_hw
+        if h % 8 or w % 8:                                 # unreachable: 32 | h, w
+            raise ValueError(f"image {h}x{w} is not divisible by 8")
+        self.s8_module = st["module"]
+        self.s8_dim = st["channels"]
+        self.s8_shape = (h // 8, w // 8)
+        self.s8_tap = True
+        return {"s8_tap": True, "s8_module": self.s8_module, "s8_dim": self.s8_dim,
+                "s8_hw": list(self.s8_shape),
+                "s8_frame": ("newest" if (str(self.cfg.mode) == "shared" and self.k > 1)
+                             else "stack"),
+                "s8_temporal_fusion": None}
+
+    def _s8_partial(self, x: Tensor) -> Tensor:
+        """The backbone's top-level modules from the stem THROUGH the stride-8 stage."""
+        for name, mod in self.net.items():
+            x = mod(x)
+            if name == self.s8_module:
+                return x
+        raise RuntimeError(f"stride-8 module {self.s8_module!r} never reached")
+
+    def _s8_backbone(self, x: Tensor) -> Tensor:
+        """:meth:`_s8_partial` under the SAME memory/speed levers :meth:`_backbone`
+        applies (chunked checkpointing, bf16 autocast, channels_last); eager, never
+        compiled -- it runs on ``b`` images, not ``b * w * K``."""
+        ck = int(self.memory_levers.get("chunk_ckpt", 0) or 0)
+        bf = bool(self.memory_levers.get("bf16", False))
+        cl = bool(self.memory_levers.get("channels_last", False))
+
+        def run(t):
+            return [self._s8_partial(t)]
+        if cl:
+            x = x.contiguous(memory_format=torch.channels_last)
+        with torch.autocast(device_type=x.device.type, dtype=torch.bfloat16,
+                            enabled=bf):
+            out = run(x)[0] if ck <= 0 else _chunked_backbone(run, x, ck)[0]
+        return out.float().contiguous()
+
+    def s8_from_normalised(self, x_norm: Tensor, rows) -> Tensor:
+        """``[N, 3K, H, W]`` ALREADY-normalised stacks -> ``[len(rows), C8, H/8, W/8]``.
+
+        ⭐ The CURRENT frame of each selected row: in ``shared`` mode with K > 1 the
+        NEWEST frame (channels ``-3:``, the D-015 order :meth:`forward_features`
+        documents); otherwise the whole stack (``inflate`` / K = 1), which is what the
+        stem sees there. ⚠️ NOT temporally fused: stride 16/32 carry a TemporalFuse,
+        stride 8 carries none -- zero new trunk parameters. At init the fused maps
+        equal the newest frame's too (``fuse_identity_init``)."""
+        if not self.s8_tap:
+            raise ValueError("refcv7 map-hires: the stride-8 tap is OFF -- call "
+                             "enable_s8_tap() (the trainer does, behind --map-hires on)")
+        r = torch.as_tensor(rows, dtype=torch.long, device=x_norm.device).reshape(-1)
+        if r.numel() == 0:
+            raise ValueError("s8_from_normalised: no rows")
+        if int(r.min()) < 0 or int(r.max()) >= int(x_norm.shape[0]):
+            raise IndexError(f"s8 rows outside [0, {int(x_norm.shape[0]) - 1}]")
+        xs = x_norm.index_select(0, r)
+        if str(self.cfg.mode) == "shared" and self.k > 1:
+            xs = xs[:, -3:]
+        self.s8_calls += 1
+        s8 = self._s8_backbone(xs)
+        if int(s8.shape[1]) != int(self.s8_dim) or tuple(s8.shape[2:]) != tuple(self.s8_shape):
+            raise RuntimeError(f"stride-8 map is {tuple(s8.shape[1:])}, the tap was "
+                               f"enabled for ({self.s8_dim}, {self.s8_shape})")
+        return s8
+
+    def forward_features_s8(self, x: Tensor, rows,
+                            already_normalised: bool = False
+                            ) -> tuple[Tensor, Tensor, Tensor, Tensor]:
+        """``(s8[rows], s16, s32, pooled)``. The main pass is :meth:`forward_features`
+        UNCHANGED (called with the one normalisation this method performs), so the
+        s16/s32/pooled it returns are the tap-off tensors bit for bit."""
+        if not already_normalised:
+            x = self.normalise(x)
+        s16, s32, pooled = self.forward_features(x, already_normalised=True)
+        return self.s8_from_normalised(x, rows), s16, s32, pooled
 
     # -- the normalisation, in one place ---------------------------------- #
     def normalise(self, x: Tensor) -> Tensor:
@@ -956,6 +1082,14 @@ class TimmResNetTrunk(nn.Module):
 
     def provenance(self) -> dict:
         """What a ``config.json`` stamp must carry about this trunk."""
+        p = self._provenance_base()
+        if self.s8_tap:
+            # ⭐ refcv7 NEW-2: ONLY when the tap is on, so a tap-off stamp is the tip's.
+            p["s8"] = [self.s8_dim, *self.s8_shape]
+            p["s8_module"] = self.s8_module
+        return p
+
+    def _provenance_base(self) -> dict:
         return {
             "trunk": "timm",
             "model_name": self.cfg.model_name,

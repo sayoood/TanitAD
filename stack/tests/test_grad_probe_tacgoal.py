@@ -198,8 +198,9 @@ def test_probe_sums_ABSOLUTE_GRADIENT_against_an_analytic_target():
 # 3 — THE ROUNDING HOLE, and the mutation that reintroduces it
 # ==========================================================================
 def _round_row(d):
-    """The trainer's own log-row rounding, transcribed. 5 dp, as at
-    ``refc_v3_train.py``'s ``row = {k: round(float(v), 5) ...}``."""
+    """The trainer's own log-row rounding, transcribed. 5 dp, as in
+    ``refc_v3_train._train_row_scalars`` (refcv7 NEW-2 moved the comprehension there; it
+    rounds every key but the 10 cm map's, which stay exact -- see the pin below)."""
     return {k: round(float(v), 5) for k, v in d.items()}
 
 
@@ -235,26 +236,78 @@ def test_a_gradient_below_the_log_rounding_survives_the_probe():
         "gp_unreached_grad_abs_sum"]
 
 
+#: the ONE rounding site of a training log row (refcv7 NEW-2: the comprehension lives in
+#: ``_train_row_scalars``, which keeps the 10 cm map's rare-class signals EXACT -- the same
+#: hazard as this file's: ~1e-7 rounds to the 0.0 that reads as "no signal")
+_ROW_CALL = "row = _train_row_scalars(losses, model)"
+# ⛔ THE EXACT BLOCK, as a literal. A weaker form of this test — searching
+# for the substring ``row.update(_gp_row)`` alone — was MEASURED INERT
+# against a mutation that merely DISABLED the merge (``if _gp_row and
+# False:``): the string is still present, the order is still right, and the
+# probe never reaches metrics.jsonl. The guard condition is pinned too.
+_MERGE_BLOCK = ("            if _gp_row:" + chr(10) +
+                "                row.update(_gp_row)" + chr(10))
+_WRITE = 'log.write(json.dumps(row) + "' + chr(92) + 'n")'
+
+
+def _assert_rounding_then_merge_then_write(s: str) -> None:
+    """(a) the row is built by ONE ``_train_row_scalars`` call, inside ``train()``;
+    (b) the literal merge block, once; (c) rounding < merge < write."""
+    i_train = s.find("def train(args) -> dict:")
+    i_next = s.find(chr(10) + "def ", i_train + 1)
+    assert i_train > 0 and i_next > i_train
+    assert s.count(_ROW_CALL) == 1
+    i_round = s.find(_ROW_CALL)
+    assert i_train < i_round < i_next                    # inside train()
+    assert s.count(_MERGE_BLOCK) == 1
+    i_merge = s.find(_MERGE_BLOCK)
+    i_write = s.find(_WRITE)
+    assert i_round > 0 and i_merge > 0 and i_write > 0
+    assert i_round < i_merge < i_write
+
+
 def test_trainer_merges_the_probe_after_its_rounding_comprehension():
     """The source-order assertion the mutation above stands for. Positive
     controls first, so an unreadable file cannot pass as a satisfied test."""
     s = _source()
     assert s.count("def train(args) -> dict:") == 1       # control: file served
+    _assert_rounding_then_merge_then_write(s)
 
-    # ⛔ THE EXACT BLOCK, as a literal. A weaker form of this test — searching
-    # for the substring ``row.update(_gp_row)`` alone — was MEASURED INERT
-    # against a mutation that merely DISABLED the merge (``if _gp_row and
-    # False:``): the string is still present, the order is still right, and the
-    # probe never reaches metrics.jsonl. The guard condition is pinned too.
-    block = ("            if _gp_row:" + chr(10) +
-             "                row.update(_gp_row)" + chr(10))
-    assert s.count(block) == 1
 
-    i_round = s.find("row = {k: (round(float(v.detach()), 5)")
-    i_merge = s.find(block)
-    i_write = s.find('log.write(json.dumps(row) + "' + chr(92) + 'n")')
-    assert i_round > 0 and i_merge > 0 and i_write > 0
-    assert i_round < i_merge < i_write
+def test_DELIBERATE_REGRESSION_the_merge_moved_before_the_rounding_goes_RED():
+    """⛔ The order defect this file exists for, in the SOURCE: the literal merge block
+    moved to the line BEFORE the ``_train_row_scalars`` call (still once, still
+    literal) must fail the pin -- as must the disabled merge (``if _gp_row and False:``)."""
+    s = _source()
+    moved = s.replace(_MERGE_BLOCK, "", 1)
+    i = moved.find(_ROW_CALL)
+    line0 = moved.rfind(chr(10), 0, i) + 1
+    moved = moved[:line0] + _MERGE_BLOCK + moved[line0:]
+    assert moved.count(_MERGE_BLOCK) == 1 and moved.count(_ROW_CALL) == 1
+    with pytest.raises(AssertionError):
+        _assert_rounding_then_merge_then_write(moved)
+    disabled = s.replace("            if _gp_row:" + chr(10),
+                         "            if _gp_row and False:" + chr(10), 1)
+    with pytest.raises(AssertionError):
+        _assert_rounding_then_merge_then_write(disabled)
+
+
+def test_the_row_rounds_a_loss_to_5dp_and_keeps_a_1e7_map_signal():
+    """(d) BEHAVIOUR, literals only: a non-signal tensor loss is rounded to 5 dp; the
+    10 cm map's loss and a per-class statistic of 1e-7 survive as non-zero (the tip's
+    comprehension would have written 0.0, the hazard above)."""
+    assert round(1e-7, 5) == 0.0                          # the hazard, literal
+    from types import SimpleNamespace
+    tr = _trainer()
+    row = tr._train_row_scalars(
+        {"loss": torch.tensor(1.234567891), "map_hires": torch.tensor(1e-7),
+         "map_hires_lc_lane_0_20": torch.tensor(1e-7), "traj": 0.123456789},
+        SimpleNamespace(_map_hires=None))
+    assert row["loss"] == 1.23457                         # literal, 5 dp
+    assert row["traj"] == 0.12346                         # literal, 5 dp
+    for k in ("map_hires", "map_hires_lc_lane_0_20"):
+        assert row[k] > 0.0                               # not the rounding's 0.0
+        assert row[k] == pytest.approx(1e-7, rel=1e-6)    # literal
 
 
 def test_probe_is_read_after_backward_and_before_the_global_clip():

@@ -1,0 +1,1849 @@
+diff --git a/stack/tanitad/models/timm_trunk.py b/stack/tanitad/models/timm_trunk.py
+index a44e356..0f6cf7d 100644
+--- a/stack/tanitad/models/timm_trunk.py
++++ b/stack/tanitad/models/timm_trunk.py
+@@ -692,6 +692,132 @@ class TimmResNetTrunk(nn.Module):
+             self.memory_levers["compile_donated_buffer"] = bool(_fconfig.donated_buffer)
+             object.__setattr__(self, "_net_fn", torch.compile(self.net, backend=_be))
+             self.memory_levers["compile"] = _be
++        # ⭐ refcv7 NEW-2 (SPEC_REFCV7 §6.2): the STRIDE-8 TAP, OFF until
++        # :meth:`enable_s8_tap` is called. Plain attributes, never config fields or
++        # buffers: with the tap off the module tree, the state_dict, the RNG draw order
++        # and every forward are the tip's, byte for byte.
++        self.s8_tap: bool = False
++        self.s8_dim: int | None = None
++        self.s8_shape: tuple | None = None
++        self.s8_module: str | None = None
++        self.s8_calls: int = 0
++
++    # -- refcv7 NEW-2: the stride-8 tap ------------------------------------ #
++    def s8_stage(self) -> dict:
++        """The backbone's stride-8 stage, READ from timm's ``feature_info`` (the full
++        stage list, not only ``out_indices``): ``{"module", "channels", "reduction"}``.
++        MEASURED 2026-09-26 (timm 1.0.29): resnet101 -> ``layer2``, 512 channels;
++        resnet34 -> ``layer2``, 128. ⛔ Never a literal: a backbone swap moves both."""
++        info = [i for i in self.net.feature_info.info if int(i["reduction"]) == 8]
++        if len(info) != 1:
++            raise ValueError(
++                f"refcv7 map-hires: {self.cfg.model_name!r} has "
++                f"{len(info)} stride-8 stages in feature_info "
++                f"({[(i['module'], i['reduction']) for i in self.net.feature_info.info]}); "
++                f"the tap needs exactly one")
++        names = list(self.net.keys())
++        if info[0]["module"] not in names:
++            raise ValueError(
++                f"refcv7 map-hires: the stride-8 stage {info[0]['module']!r} is not a "
++                f"top-level module of the feature net ({names}); the partial pass "
++                f"walks top-level modules only")
++        return {"module": str(info[0]["module"]), "channels": int(info[0]["num_chs"]),
++                "reduction": 8}
++
++    def enable_s8_tap(self) -> dict:
++        """Switch on :meth:`forward_features_s8`. Returns the stamp.
++
++        ⛔ REQUIRES FROZEN BatchNorm. The tap re-runs the stem -> stride-8 stage on the
++        CURRENT frame of each sample (see :meth:`s8_from_normalised`). With BN frozen
++        that is the SAME function the main pass computes for that frame, so the tap's
++        features and gradients are the trunk's own. With BN training on the batch the
++        tap would normalise with the statistics of a DIFFERENT batch (b images, not the
++        b*w*K the main pass sees) and update the running statistics a second time per
++        step -- a different arm, silently. Refused, not warned.
++        """
++        if not self.memory_levers.get("frozen_bn"):
++            raise ValueError(
++                "refcv7 map-hires: the stride-8 tap needs frozen BatchNorm "
++                "(--trunk-frozen-bn, which --trunk-chunk-ckpt already implies). The "
++                "tap re-runs the stem..stride-8 stage on the current frame; with BN "
++                "training on the batch that is a different function from the main "
++                "pass and a second running-statistics update per step.")
++        st = self.s8_stage()
++        h, w = self.cfg.image_hw
++        if h % 8 or w % 8:                                 # unreachable: 32 | h, w
++            raise ValueError(f"image {h}x{w} is not divisible by 8")
++        self.s8_module = st["module"]
++        self.s8_dim = st["channels"]
++        self.s8_shape = (h // 8, w // 8)
++        self.s8_tap = True
++        return {"s8_tap": True, "s8_module": self.s8_module, "s8_dim": self.s8_dim,
++                "s8_hw": list(self.s8_shape),
++                "s8_frame": ("newest" if (str(self.cfg.mode) == "shared" and self.k > 1)
++                             else "stack"),
++                "s8_temporal_fusion": None}
++
++    def _s8_partial(self, x: Tensor) -> Tensor:
++        """The backbone's top-level modules from the stem THROUGH the stride-8 stage."""
++        for name, mod in self.net.items():
++            x = mod(x)
++            if name == self.s8_module:
++                return x
++        raise RuntimeError(f"stride-8 module {self.s8_module!r} never reached")
++
++    def _s8_backbone(self, x: Tensor) -> Tensor:
++        """:meth:`_s8_partial` under the SAME memory/speed levers :meth:`_backbone`
++        applies (chunked checkpointing, bf16 autocast, channels_last); eager, never
++        compiled -- it runs on ``b`` images, not ``b * w * K``."""
++        ck = int(self.memory_levers.get("chunk_ckpt", 0) or 0)
++        bf = bool(self.memory_levers.get("bf16", False))
++        cl = bool(self.memory_levers.get("channels_last", False))
++
++        def run(t):
++            return [self._s8_partial(t)]
++        if cl:
++            x = x.contiguous(memory_format=torch.channels_last)
++        with torch.autocast(device_type=x.device.type, dtype=torch.bfloat16,
++                            enabled=bf):
++            out = run(x)[0] if ck <= 0 else _chunked_backbone(run, x, ck)[0]
++        return out.float().contiguous()
++
++    def s8_from_normalised(self, x_norm: Tensor, rows) -> Tensor:
++        """``[N, 3K, H, W]`` ALREADY-normalised stacks -> ``[len(rows), C8, H/8, W/8]``.
++
++        ⭐ The CURRENT frame of each selected row: in ``shared`` mode with K > 1 the
++        NEWEST frame (channels ``-3:``, the D-015 order :meth:`forward_features`
++        documents); otherwise the whole stack (``inflate`` / K = 1), which is what the
++        stem sees there. ⚠️ NOT temporally fused: stride 16/32 carry a TemporalFuse,
++        stride 8 carries none -- zero new trunk parameters. At init the fused maps
++        equal the newest frame's too (``fuse_identity_init``)."""
++        if not self.s8_tap:
++            raise ValueError("refcv7 map-hires: the stride-8 tap is OFF -- call "
++                             "enable_s8_tap() (the trainer does, behind --map-hires on)")
++        r = torch.as_tensor(rows, dtype=torch.long, device=x_norm.device).reshape(-1)
++        if r.numel() == 0:
++            raise ValueError("s8_from_normalised: no rows")
++        if int(r.min()) < 0 or int(r.max()) >= int(x_norm.shape[0]):
++            raise IndexError(f"s8 rows outside [0, {int(x_norm.shape[0]) - 1}]")
++        xs = x_norm.index_select(0, r)
++        if str(self.cfg.mode) == "shared" and self.k > 1:
++            xs = xs[:, -3:]
++        self.s8_calls += 1
++        s8 = self._s8_backbone(xs)
++        if int(s8.shape[1]) != int(self.s8_dim) or tuple(s8.shape[2:]) != tuple(self.s8_shape):
++            raise RuntimeError(f"stride-8 map is {tuple(s8.shape[1:])}, the tap was "
++                               f"enabled for ({self.s8_dim}, {self.s8_shape})")
++        return s8
++
++    def forward_features_s8(self, x: Tensor, rows,
++                            already_normalised: bool = False
++                            ) -> tuple[Tensor, Tensor, Tensor, Tensor]:
++        """``(s8[rows], s16, s32, pooled)``. The main pass is :meth:`forward_features`
++        UNCHANGED (called with the one normalisation this method performs), so the
++        s16/s32/pooled it returns are the tap-off tensors bit for bit."""
++        if not already_normalised:
++            x = self.normalise(x)
++        s16, s32, pooled = self.forward_features(x, already_normalised=True)
++        return self.s8_from_normalised(x, rows), s16, s32, pooled
+ 
+     # -- the normalisation, in one place ---------------------------------- #
+     def normalise(self, x: Tensor) -> Tensor:
+@@ -956,6 +1082,14 @@ class TimmResNetTrunk(nn.Module):
+ 
+     def provenance(self) -> dict:
+         """What a ``config.json`` stamp must carry about this trunk."""
++        p = self._provenance_base()
++        if self.s8_tap:
++            # ⭐ refcv7 NEW-2: ONLY when the tap is on, so a tap-off stamp is the tip's.
++            p["s8"] = [self.s8_dim, *self.s8_shape]
++            p["s8_module"] = self.s8_module
++        return p
++
++    def _provenance_base(self) -> dict:
+         return {
+             "trunk": "timm",
+             "model_name": self.cfg.model_name,
+diff --git a/stack/tanitad/refs/refc.py b/stack/tanitad/refs/refc.py
+index ac7ab9d..5eae73a 100644
+--- a/stack/tanitad/refs/refc.py
++++ b/stack/tanitad/refs/refc.py
+@@ -3784,13 +3784,20 @@ class RefCModel(nn.Module):
+     #: guard checks the list the forward actually uses. D-REFCV6-F3-WHITELIST: an inline tuple
+     #: that omitted `layer_u0_hat` / `layer_logits` skipped refcv6's F3 cascade loss for 34,500
+     #: steps while config.json stamped F3.
++    #: ⭐ refcv7 NEW-2: `fmap_s8`, the trunk's stride-8 map for the 10 cm map head, is
++    #: routed through THIS tuple too (it is not a decoder output -- the forward takes it
++    #: from the trunk-side dict below), so the one declaration G-DVB reads covers it:
++    #: removing it here removes it from the output, the D-REFCV6-F3-WHITELIST shape exactly.
+     DECODER_PASSTHROUGH: tuple[str, ...] = (
+         "prefinal_logits", "reach_keep", "layer_u0_hat", "layer_logits",
+         # refcv7 NEW-1: the prior this forward composed on. The F3 cascade re-roll READS
+         # `residual_prior_ctrl` / `residual_prior_v` (`kinematic_prior.prior_from_out`) and
+         # the launch gate's G-LIVE reads `residual_prior_path`. Absent from `dec` on an off
+         # build, so the loop below copies nothing there (bit-identity).
+-        "residual_prior_ctrl", "residual_prior_v", "residual_prior_path")
++        "residual_prior_ctrl", "residual_prior_v", "residual_prior_path",
++        # refcv7 NEW-2: the trunk's stride-8 map (the trunk-side dict below; None when
++        # the tap is off).
++        "fmap_s8")
+ 
+     def __init__(self, cfg: RefCConfig):
+         super().__init__()
+@@ -4368,9 +4375,28 @@ class RefCModel(nn.Module):
+         # so the seam would have been dead on the path actually taken. Here it
+         # is the SAME last-frame reshape `fmap` already gets, one axis wider.
+         fmap_s16 = None
++        # ⭐⭐ refcv7 NEW-2 (SPEC_REFCV7 §6.2) -- THE STRIDE-8 PASS-THROUGH. `None`
++        # unless the trunk's tap is ON (`TimmResNetTrunk.enable_s8_tap`, which the
++        # trainer calls behind --map-hires on). With the tap off the branches below
++        # run the tip's exact calls, so a default build is byte-identical.
++        # ⛔ The F3-whitelist class (D-REFCV6-F3-WHITELIST): an output this forward
++        # does not pass through is skipped silently by a consumer that reads
++        # `out.get(...)`. The key is ALWAYS emitted (None when off) and the
++        # trainer REFUSES `--map-hires on` when it arrives None.
++        fmap_s8 = None
+         _s16 = hasattr(self.encoder, "forward_features")
++        _s8 = _s16 and bool(getattr(self.encoder, "s8_tap", False))
+         if self.cfg.hierarchy:
+-            if _s16:
++            if _s8:
++                # the CURRENT frame of the LAST window row of each sample: row
++                # `i * w + (w - 1)` of the flattened b*w batch -- the same instant
++                # `fmap_s16` below is sliced at, and the map label is read at.
++                fmap_s8, s16_all, fmap_all, pooled_all = \
++                    self.encoder.forward_features_s8(
++                        frames.reshape(b * w, *frames.shape[2:]),
++                        torch.arange(b, device=frames.device) * w + (w - 1))
++                fmap_s16 = s16_all.reshape(b, w, *s16_all.shape[1:])[:, -1]
++            elif _s16:
+                 s16_all, fmap_all, pooled_all = self.encoder.forward_features(
+                     frames.reshape(b * w, *frames.shape[2:]))
+                 fmap_s16 = s16_all.reshape(b, w, *s16_all.shape[1:])[:, -1]
+@@ -4382,7 +4408,10 @@ class RefCModel(nn.Module):
+             fmap = fmap_all.reshape(b, w, *fmap_all.shape[1:])[:, -1]
+             ctx = self.strategic(pooled_seq)
+         else:                                    # last frame only (same values)
+-            if _s16:
++            if _s8:
++                fmap_s8, fmap_s16, fmap, pooled = self.encoder.forward_features_s8(
++                    frames[:, -1], torch.arange(b, device=frames.device))
++            elif _s16:
+                 # ONE trunk pass, three outputs. `fmap`/`pooled` are the SAME
+                 # tensors `self.encoder(...)` returns -- its `forward` is
+                 # literally `forward_features(...)[1:]` -- so this branch is
+@@ -4433,7 +4462,11 @@ class RefCModel(nn.Module):
+                     "BEV lift would have nothing to sample and the arm would "
+                     "read as 'the map adds nothing to behaviours' while never "
+                     "having had a map. Build with --trunk timm.")
+-            perception_out = bev_hook(fmap_s16)
++            # ⭐ refcv7 A6 (SPEC_REFCV7 §11.1): with the stride-8 tap ON, the hook also
++            # receives `fmap_s8` -- the ONE lift (0.25 m, stride 8) runs inside it and
++            # feeds both the 10 cm map and every BEV consumer. Tap off: the tip's call.
++            perception_out = (bev_hook(fmap_s16) if fmap_s8 is None
++                              else bev_hook(fmap_s16, fmap_s8=fmap_s8))
+             if not isinstance(perception_out, dict):
+                 raise ValueError(
+                     "refcv6: `bev_hook` must return a dict; got "
+@@ -4833,6 +4866,8 @@ class RefCModel(nn.Module):
+                # covers every tensor that was there before. `None` on the
+                # in-repo REF-C trunk and on the hierarchy path.
+                "fmap_s16": fmap_s16,
++               # ⭐ refcv7 NEW-2: `fmap_s8` is NOT written here -- it passes through
++               # DECODER_PASSTHROUGH below, so the tuple G-DVB reads is the only route.
+                # ⭐⭐ refcv6 PI RULING 2026-09-17 R2. The perception branch's
+                # OWN outputs (`map_logits`, `box_slots`, `bev_feats`,
+                # `bev_tokens`), produced INSIDE this forward and emitted with
+@@ -4887,6 +4922,8 @@ class RefCModel(nn.Module):
+             out["u0_hat"] = dec["u0_hat"]        # refcv5 WP-4's x0 loss target
+         if "cons_score" in dec:
+             out["cons_score"] = dec["cons_score"]
++        # ⭐ refcv7 NEW-2: trunk-side keys that ride the same pass-through declaration.
++        _trunk_passthrough = {"fmap_s8": fmap_s8}
+         # ⛔⛔ A16 2026-09-26: refcv6 F3's per-stage outputs MUST pass through. The trainer's
+         # per-stage loss reads `layer_u0_hat` / `layer_logits` from THIS dict; the whitelist that
+         # omitted them skipped F3's loss for the whole of refcv6-r101-s0 (0 of 668 training rows
+@@ -4900,6 +4937,10 @@ class RefCModel(nn.Module):
+             # `refc_select.reachability_mask` is a re-export and not a copy.
+             if _k in dec:
+                 out[_k] = dec[_k]
++            elif _k in _trunk_passthrough:
++                # refcv7 NEW-2: the trunk-side keys (`fmap_s8`; None when the tap is
++                # off, so the key is ALWAYS present on a build whose tuple names it)
++                out[_k] = _trunk_passthrough[_k]
+         if ctx is not None:
+             out["ctx"] = ctx
+         if lat_logits is not None:
+diff --git a/stack/tanitad/refs/refc_v3.py b/stack/tanitad/refs/refc_v3.py
+index a357a1b..a5e7156 100644
+--- a/stack/tanitad/refs/refc_v3.py
++++ b/stack/tanitad/refs/refc_v3.py
+@@ -1858,10 +1858,45 @@ class RefCV3Model(nn.Module):
+         branch is attached, which is every arm the tip could run.
+         """
+         br = getattr(self, "_perception", None)
+-        if br is None:
++        # ⭐ refcv7 A6 (SPEC_REFCV7 §11.1): the 10 cm branch (`model._map_hires`, built
++        # behind --map-hires on) owns the ONE lift -- stride 8 at 0.25 m -- and its
++        # encoder, and runs HERE, in the forward: its 0.25 m features are the planner's
++        # BEV (pooled by the perception branch, `bev_source = "map_hires_pool"`) and its
++        # 10 cm logits ride out on `out["perception"]`. The perception geometry the
++        # forward receives is then the 0.25 m bank's. ⛔ With no 10 cm branch this is
++        # the refcv6 hook, byte for byte.
++        mh = getattr(self, "_map_hires", None)
++        if br is None and mh is None:
+             return None
+-
+-        def bev_hook(fmap_s16: Tensor) -> dict:
++        pool = (br is not None
++                and str(getattr(getattr(br, "cfg", None), "bev_source", "s16_lift"))
++                == "map_hires_pool")
++        if mh is not None and br is not None and not pool:
++            raise ValueError(
++                "[refcv7] ⛔ a 10 cm branch AND a stride-16 perception branch: A6 builds "
++                "ONE lift (SPEC_REFCV7 §11.1) -- the perception branch must be built "
++                "with bev_source 'map_hires_pool'.")
++        if pool and mh is None:
++            raise ValueError(
++                "[refcv7] ⛔ bev_source 'map_hires_pool' but no 10 cm branch is "
++                "attached: the planner's BEV would have no source.")
++
++        def bev_hook(fmap_s16: Tensor, fmap_s8: Tensor | None = None) -> dict:
++            if mh is not None:
++                if grid is None or valid is None:
++                    raise ValueError(
++                        "[refcv7] ⛔ the 10 cm branch is built but no 0.25 m lift "
++                        "geometry reached the forward. Pass `perception_grid=` / "
++                        "`perception_valid=` from the 0.25 m bank "
++                        "(HiresLiftGeometryBank.for_episodes).")
++                hi = mh(fmap_s8, grid, valid)       # refuses a missing fmap_s8
++                pout = {} if br is None else br(fmap_s16, bev_hires=hi["map_hires_bev"])
++                pout = dict(pout)
++                pout["map_hires_logits"] = hi["map_hires_logits"]
++                pout["map_hires_lift_valid"] = hi["map_hires_lift_valid"]
++                # no perception branch = no BEV consumer: the gate then marks the
++                # tokens unfed, or REFUSES a decoder that declared a BEV source
++                return _feed_gate(pout)
+             if br.lift is not None and (grid is None or valid is None):
+                 raise ValueError(
+                     "[refcv6] ⛔ the BEV lift is built but no per-clip lift "
+@@ -1872,6 +1907,9 @@ class RefCV3Model(nn.Module):
+                     "1.2131-1.6672 m over 554 distinct values in 2,400 clips, "
+                     "and every count would still look healthy.")
+             pout = br(fmap_s16, grid, valid)
++            return _feed_gate(pout)
++
++        def _feed_gate(pout: dict) -> dict:
+             # ⛔⛔ THE FEED GATE, AND IT IS NOT A CONVENIENCE. A perception arm
+             # can be built with NO behaviour decoder at all, or with one built
+             # `d_bev = 0` (agent-only). The branch still produces BEV tokens —
+diff --git a/stack/scripts/refc_v3_train.py b/stack/scripts/refc_v3_train.py
+index 507b557..7263ede 100644
+--- a/stack/scripts/refc_v3_train.py
++++ b/stack/scripts/refc_v3_train.py
+@@ -140,6 +140,13 @@ from tanitad.data import agent_cuboid_gt as _agent_cuboid  # noqa: E402
+ from tanitad.models import box3d_head as _box3d_head  # noqa: E402
+ from tanitad.models import refcv6_perception_branch as _perc  # noqa: E402
+ from tanitad.models import refc_bev_coupling as _bevc  # noqa: E402
++# --- refcv7 NEW-2 (SPEC_REFCV7 §6.2): the map at 10 cm, same import rule ---- #
++from tanitad.data import semantic_map_gt_fine as _sem_fine  # noqa: E402
++from tanitad.models import map_head_hires as _mhr  # noqa: E402
++# ⛔ G-DVB: NEW-2's five levers enter the registry HERE, where the parser that owns them
++# lives (the registry is pinned two-way against `build_parser`). Never at the module's
++# import: a tree without the flags must not carry their entries.
++_mhr.register_dvb_levers(_dvb.register)
+ import numpy as _np  # noqa: E402
+ 
+ # --- v3-only loss weights (everything shared is imported above) --------------
+@@ -905,7 +912,11 @@ def _pin_refcv6_tactical(cfg, args) -> None:
+         _dbev = int(getattr(args, "tac_decoder_d_bev", 0) or 0)
+         if _dbev > 0:
+             _wmap = float(getattr(args, "w_map", 0.0) or 0.0)
+-            if _wmap <= 0.0:
++            # ⭐ refcv7 A6: the 10 cm branch's pooled 0.25 m BEV is a supervised BEV
++            # too; the tokens then come from `PlannerBEVPool`.
++            _pool = (_map_hires_on(args) and str(getattr(args, "bev_source", "s16_lift"))
++                     == "map_hires_pool")
++            if _wmap <= 0.0 and not _pool:
+                 raise SystemExit(
+                     "[v3] ⛔ --tac-decoder-d-bev %d with --w-map %.6g. The BEV "
+                     "tokens ARE the supervised map branch's features "
+@@ -1276,6 +1287,9 @@ def _pin_refcv5_seams(cfg, args) -> None:
+         # refused: none of them has one.
+         if float(getattr(args, "w_map", 0.0) or 0.0) > 0.0:
+             _cam = "off"
++        # ⭐ refcv7 A6: the 10 cm branch's 0.25 m lift bank reads the same table.
++        if _map_hires_on(args):
++            _cam = "off"
+         if _dead or _cam != "off":
+             raise SystemExit(
+                 "[v3] ⛔ --agents off, but "
+@@ -1373,7 +1387,9 @@ def _pin_refcv5_seams(cfg, args) -> None:
+     # **0 times** on the default path -- one of the three DiffusionDrive
+     # couplings in the SPEC's own diagram was built and never called.
+     if bool(getattr(args, "bev_coupling", False)):
+-        if float(getattr(args, "w_map", 0.0) or 0.0) <= 0.0:
++        _pool = (_map_hires_on(args) and str(getattr(args, "bev_source", "s16_lift"))
++                 == "map_hires_pool")                     # refcv7 A6: the pooled BEV
++        if float(getattr(args, "w_map", 0.0) or 0.0) <= 0.0 and not _pool:
+             raise SystemExit(
+                 "[v3] ⛔ --bev-coupling with --w-map 0. Coupling (1) reads "
+                 "the DENSE `bev_feats` the MAP BRANCH produces; with no map "
+@@ -1394,7 +1410,8 @@ def _pin_refcv5_seams(cfg, args) -> None:
+         core.decoder.bev_coupling_d_bev = int(
+             _perc.PerceptionBranchConfig(
+                 w_map=float(getattr(args, "w_map", 0.0) or 0.0),
+-                w_box3d=float(getattr(args, "w_box3d", 0.0) or 0.0)
++                w_box3d=float(getattr(args, "w_box3d", 0.0) or 0.0),
++                bev_source=str(getattr(args, "bev_source", "s16_lift") or "s16_lift")
+             ).bev_cfg.d_out)
+         print("[v3] refcv6 coupling (1) ON: d_bev=%d learned_offsets=%s "
+               "offset_max_m=%.3g -> %d decoder layers"
+@@ -1403,6 +1420,7 @@ def _pin_refcv5_seams(cfg, args) -> None:
+                  core.decoder.bev_coupling.offset_max_m,
+                  int(core.decoder.layers)), flush=True)
+     _pin_refcv6_perception(cfg, args)
++    _pin_map_hires(cfg, args)
+ 
+ 
+ # ============================================================================
+@@ -1433,9 +1451,12 @@ def _pin_refcv6_perception(cfg, args) -> None:
+     if w_map == 0.0 and w_b3d == 0.0:
+         # The DEFAULT path. Nothing is built; the only thing that can be wrong
+         # is an artifact supplied with no weight to consume it.
+-        _dead = {k: v for k, v in (("--map-gt-root", root),
++        # ⭐ refcv7 A6: under --map-hires on the SAM3 root (and its coverage floor) IS
++        # read -- by the 10 cm head, the only map (`_pin_map_hires` requires it there).
++        _hi = _map_hires_on(args)
++        _dead = {k: v for k, v in (("--map-gt-root", None if _hi else root),
+                                    ("--join3d", j3d)) if v}
+-        if float(getattr(args, "map_min_coverage", None) or 0.0) > 0.0:
++        if float(getattr(args, "map_min_coverage", None) or 0.0) > 0.0 and not _hi:
+             _dead["--map-min-coverage"] = getattr(args, "map_min_coverage")
+         if _dead:
+             raise SystemExit(
+@@ -1491,6 +1512,152 @@ def _pin_refcv6_perception(cfg, args) -> None:
+               flush=True)
+ 
+ 
++def _bev_consumers(args) -> dict:
++    """The BEV CONSUMERS argv builds (refcv7 A6, SPEC_REFCV7 §11.1): the box memory
++    (``--w-box3d > 0``), the tactical decoder's BEV tokens (``--tac-decoder-d-bev >
++    0``) and the planner's BEV coupling (``--bev-coupling``). Only the live ones."""
++    c = {"--w-box3d": float(getattr(args, "w_box3d", 0.0) or 0.0) > 0.0,
++         "--tac-decoder-d-bev": int(getattr(args, "tac_decoder_d_bev", 0) or 0) > 0,
++         "--bev-coupling": bool(getattr(args, "bev_coupling", False))}
++    return {k: v for k, v in c.items() if v}
++
++
++def _map_hires_on(args) -> bool:
++    return str(getattr(args, "map_hires", "off") or "off") == "on"
++
++
++def _pin_map_hires(cfg, args) -> None:
++    """⛔ refcv7 NEW-2 + A6/A7 (SPEC_REFCV7 §6.2, §11, §12): refuse every ``--map-hires``
++    combination that cannot train -- BEFORE config.json is written and before a batch
++    loads.
++
++    ``off`` (the DEFAULT) builds nothing: no trunk tap, no branch, no target, no
++    config.json block beyond a null, and ``--bev-source`` stays ``s16_lift`` (refcv6).
++    The REVERSE refusal applies there: any NEW-2 value supplied to a run that will not
++    read it. ``on`` needs every input the branch reads, each refused by name:
++
++    * ``--w-map-hires > 0``   -- a built branch at weight 0 trains nothing;
++    * ``--trunk timm``        -- the legacy REF-C trunk has no stride-8 map;
++    * ``--trunk-frozen-bn``   -- the tap re-runs stem..stride-8 on the current frame,
++      the same function as the main pass ONLY with BN frozen
++      (``TimmResNetTrunk.enable_s8_tap``); ``--trunk-chunk-ckpt`` already implies it;
++    * ``--map-gt-root``       -- the 10 cm target (``/3`` at the declared extent);
++    * ``--agent-rig-camera extrinsics`` -- the per-clip table the 0.25 m lift reads;
++    * ``--w-map 0``           -- A6 REMOVED the 0.5 m map head and loss;
++    * ``--bev-source map_hires_pool`` whenever a BEV consumer is built (box3d, the
++      tactical BEV tokens, the coupling): ONE lift feeds them all; and never the pool
++      with no consumer (it would train on nothing);
++    * ``--bev-planner-crop-m 60 16`` (unset): the only grid the consumers are built for;
++    * ``--map-hires-class-weights <json>`` -- the pre-registered loss is weighted
++      (median-frequency, TRAIN split, clipped at 25) AT THE DECLARED EXTENT; the
++      loader refuses a DRY RUN and weights counted on another extent.
++    """
++    mode = str(getattr(args, "map_hires", "off") or "off")
++    w = float(getattr(args, "w_map_hires", 0.0) or 0.0)
++    cw = getattr(args, "map_hires_class_weights", None)
++    src = str(getattr(args, "bev_source", _perc.BEV_SOURCES[0]) or _perc.BEV_SOURCES[0])
++    ck = getattr(args, "map_hires_grad_ckpt", None)
++    xm = getattr(args, "map_hires_x_max_m", None)
++    yh = getattr(args, "map_hires_y_half_m", None)
++    crop = getattr(args, "bev_planner_crop_m", None)
++    if mode not in ("off", "on"):
++        raise SystemExit(f"[v3] ⛔ --map-hires {mode!r} not in (off, on)")
++    if src not in _perc.BEV_SOURCES:
++        raise SystemExit(f"[v3] ⛔ --bev-source {src!r} not in {_perc.BEV_SOURCES}")
++    if ck is not None and str(ck) not in ("on", "off"):
++        raise SystemExit(f"[v3] ⛔ --map-hires-grad-ckpt {ck!r} not in (on, off)")
++    if not math.isfinite(w) or w < 0.0:
++        raise SystemExit("[v3] ⛔ --w-map-hires must be a finite value >= 0.")
++    rule = str(getattr(args, "map_hires_decision_rule", _mhr.DECISION_RULES[0])
++               or _mhr.DECISION_RULES[0])
++    if rule not in _mhr.DECISION_RULES:
++        raise SystemExit(f"[v3] ⛔ --map-hires-decision-rule {rule!r} not in "
++                         f"{_mhr.DECISION_RULES}")
++    try:
++        ext = _mhr.declared_extent(args)
++    except ValueError as e:
++        raise SystemExit(f"[v3] ⛔ --map-hires-x-max-m / --map-hires-y-half-m: {e}") \
++            from None
++    if mode == "off":
++        _dead = {k: v for k, v in (("--w-map-hires", w or None),
++                                   ("--map-hires-class-weights", cw),
++                                   ("--map-hires-decision-rule",
++                                    None if rule == _mhr.DECISION_RULES[0] else rule),
++                                   ("--map-hires-x-max-m", xm),
++                                   ("--map-hires-y-half-m", yh),
++                                   ("--map-hires-grad-ckpt", ck),
++                                   ("--bev-planner-crop-m", crop),
++                                   ("--bev-source",
++                                    None if src == _perc.BEV_SOURCES[0] else src))
++                 if v is not None and v != 0.0}
++        if _dead:
++            raise SystemExit(
++                "[v3] ⛔ --map-hires off, but %s is set. Nothing at 10 cm is built "
++                "when the branch is off (and without it there is no 0.25 m encoder to "
++                "pool), so the value would be NAMED in config.json and READ BY NOTHING "
++                "(mm-decisions M18). Pass --map-hires on, or drop it." % _dead)
++        return
++    if w <= 0.0:
++        raise SystemExit(
++            "[v3] ⛔ --map-hires on with --w-map-hires 0: the 10 cm branch would be "
++            "built, put in the optimiser and the checkpoint, and train on nothing.")
++    if str(getattr(args, "trunk", "refc")) != "timm":
++        raise SystemExit(
++            "[v3] ⛔ --map-hires on needs --trunk timm: the legacy REF-C trunk "
++            "exposes no stride-8 map, so `fmap_s8` would be None.")
++    if not bool(getattr(args, "trunk_frozen_bn", False)):
++        raise SystemExit(
++            "[v3] ⛔ --map-hires on needs --trunk-frozen-bn (or --trunk-chunk-ckpt, "
++            "which requires it). The stride-8 tap re-runs the stem..stride-8 stage "
++            "on the current frame; with BatchNorm training on the batch that is a "
++            "different function from the main pass and a second running-statistics "
++            "update per step.")
++    if float(getattr(args, "w_map", 0.0) or 0.0) != 0.0:
++        raise SystemExit(
++            "[v3] ⛔ --map-hires on with --w-map %.6g: SPEC_REFCV7 §11.1 (A6) REMOVED "
++            "the stride-16 lift and the 0.5 m map head and loss -- nothing at 0.5 m is "
++            "supervised as a map, and the 10 cm head is THE map. Pass --w-map 0."
++            % float(getattr(args, "w_map", 0.0) or 0.0))
++    if not getattr(args, "map_gt_root", None):
++        raise SystemExit(
++            "[v3] ⛔ --map-hires on without --map-gt-root has NO LABELS: the 10 cm "
++            "target is the SAM3 GT at the declared extent (%g m x +-%g m, schema "
++            "tanitad.sam3_map_gt/3 beyond the /2 window)." % (ext.x_max_m, ext.y_half_m))
++    if str(getattr(args, "agent_rig_camera", "off")) != "extrinsics" \
++            or not getattr(args, "agent_rig_extrinsics", None):
++        raise SystemExit(
++            "[v3] ⛔ --map-hires on needs --agent-rig-camera extrinsics "
++            "--agent-rig-extrinsics <per-clip table>: the 0.25 m lift back-projects "
++            "through the ROAD PLANE, and one mount pose for a corpus whose MEASURED "
++            "height spans 1.2131-1.6672 m over 554 distinct values in 2,400 clips "
++            "teaches every consumer that geometry as truth.")
++    cons = _bev_consumers(args)
++    if cons and src != "map_hires_pool":
++        raise SystemExit(
++            "[v3] ⛔ --map-hires on with BEV consumers %s but --bev-source %s: A6 "
++            "builds ONE lift (stride 8 at 0.25 m); every consumer reads its pooled "
++            "BEV. Pass --bev-source map_hires_pool." % (sorted(cons), src))
++    if src == "map_hires_pool" and not cons:
++        raise SystemExit(
++            "[v3] ⛔ --bev-source map_hires_pool with NO BEV consumer (--w-box3d 0, "
++            "--tac-decoder-d-bev 0, no --bev-coupling): the pool would be built, put in "
++            "the optimiser and train on nothing. Drop --bev-source.")
++    if crop is not None and tuple(float(v) for v in crop) != _mhr.PLANNER_CROP_DEFAULT:
++        raise SystemExit(
++            "[v3] ⛔ --bev-planner-crop-m %s: the planner window is %s (SPEC_REFCV7 §12 "
++            "item 2) -- the BEV tokens, the coupling and the box memory are built for "
++            "the refcv6 120 x 64 grid, and another crop reaches them SILENTLY. A "
++            "different window is a PI decision." % (list(crop),
++                                                    list(_mhr.PLANNER_CROP_DEFAULT)))
++    if not cw:
++        raise SystemExit(
++            "[v3] ⛔ --map-hires on needs --map-hires-class-weights <json>: the "
++            "registered loss is sqrt(median-frequency) weighted (SPEC_REFCV7 §13, A8: "
++            "`sqrt_mf`) from the TRAIN split's 10 cm GT at the declared extent "
++            "(stack/scripts/compute_map_class_weights.py), frozen and recorded. An "
++            "unweighted run is a different experiment.")
++
++
+ # ============================================================================
+ # ⛔⛔ THE RIG CAMERA — the flag that used to PARSE, STAMP AND DO NOTHING
+ # ============================================================================
+@@ -2069,6 +2236,27 @@ REFC_WEIGHT_GATES: dict[str, dict] = {
+         "mask": None,
+         "already": "_pin_refcv6_perception",
+     },
++    # ---- refcv7 NEW-2 (SPEC_REFCV7 §6.2): the map at 10 cm --------------- #
++    "w_map_hires": {
++        "flag": "--w-map-hires", "term": "refcv7 NEW-2 SAM3 map CE at 10 cm",
++        # SIX conditions, each with its own silent failure: `--map-hires off`
++        # => no branch is built; no `--trunk timm` => no stride-8 map; no frozen
++        # BN => the tap is a different function; no `--map-gt-root` => no labels;
++        # no per-clip extrinsics => no 0.25 m lift geometry; no class weights =>
++        # not the pre-registered loss. (A6: `--w-map` must be 0 -- refused by the pin.)
++        "gate": lambda a: (
++            str(getattr(a, "map_hires", "off")) == "on"
++            and str(getattr(a, "trunk", "refc")) == "timm"
++            and bool(getattr(a, "trunk_frozen_bn", False))
++            and bool(getattr(a, "map_gt_root", None))
++            and str(getattr(a, "agent_rig_camera", "off")) == "extrinsics"
++            and bool(getattr(a, "map_hires_class_weights", None)),
++            "--w-map-hires needs `--map-hires on`, `--trunk timm`, "
++            "`--trunk-frozen-bn`, `--map-gt-root`, `--agent-rig-camera extrinsics` "
++            "(the per-clip 0.25 m lift) AND `--map-hires-class-weights`"),
++        "mask": None,
++        "already": "_pin_map_hires (all six, plus the REVERSE refusal)",
++    },
+     # ---- refcv6 §4: the tactical behaviour decoder ---------------------- #
+     # ⭐⭐ THE ROW THAT MAKES THE HEAD VISIBLE TO THIS AUDIT AT ALL. The
+     # `tac_goal_tok_head` post-mortem is explicit that this instrument
+@@ -2350,6 +2538,11 @@ class V3Dataset(RouteV21Dataset):
+     #: in no metric (``perception_targets.assert_frame_alignment.__doc__``).
+     map_n_stack: int = 0
+     map_stats: dict | None = None
++    #: ⭐ refcv7 NEW-2 -- the 10 cm codes (``semantic_map_gt_fine.FineMapGTStore``),
++    #: set by :meth:`enable_map_hires`. While it is None the batch carries NO
++    #: ``map_fine`` and ``--map-hires on`` REFUSES at loss time.
++    map_fine_store = None
++    map_fine_stats: dict | None = None
+     #: ``agent_cuboid_gt.AgentJoin3D | None`` (refcv6 §6), set by
+     #: :meth:`enable_join3d`. It WIDENS the 2-D agent block with ``cz``/``h``
+     #: and a MASK; with it None the mask is all-False and ``box3d_set_loss``
+@@ -3082,6 +3275,96 @@ class V3Dataset(RouteV21Dataset):
+                 "map_raw_frame": torch.tensor(int(mf.frame_idx[0]),
+                                               dtype=torch.long)}
+ 
++    # ---- refcv7 NEW-2 (SPEC_REFCV7 §6.2, A6/A7): the SAM3 map at 10 cm ---------- #
++    def enable_map_hires(self, store, clip_of_ep: dict | None = None,
++                         n_stack: int | None = None,
++                         min_coverage: float | None = None) -> dict:
++        """Attach the 10 cm codes so ``__getitem__`` emits ``map_fine`` + ``map_ep``.
++
++        ⭐ refcv7 A6: STANDALONE -- the 10 cm head is the only map, so the 0.5 m store
++        is NOT attached (a ``/3`` file past the old window has no ``/2`` twin to read).
++        The window -> clip table and ``n_stack`` are passed here, exactly as
++        :meth:`enable_map_gt` takes them; if a 0.5 m store IS attached, its table is
++        reused and both targets are read at ONE instant, asserted per window.
++        ⛔ Its OWN coverage census, through the FINE reader at the store's DECLARED
++        extent: a file of another extent or schema is INCONCLUSIVE and counts against
++        the run (``FineMapGTStore.extent``, SPEC_REFCV7 §11.2 item 4).
++        """
++        if self.map_store is not None and self.map_clip_of_ep:
++            if clip_of_ep is not None and dict(clip_of_ep) != dict(self.map_clip_of_ep):
++                raise SystemExit("[v3] ⛔ enable_map_hires: a window->clip table that "
++                                 "differs from the 0.5 m map's")
++        else:
++            if clip_of_ep is None or n_stack is None or int(n_stack) < 1:
++                raise SystemExit(
++                    "[v3] ⛔ enable_map_hires needs the window->clip table and the "
++                    "cache's own n_stack (the 0.5 m store is not attached under A6): "
++                    "n_stack converts a stacked-row index into the RAW v2ep frame the "
++                    "labels are indexed by.")
++            self.map_clip_of_ep = dict(clip_of_ep)
++            self.map_n_stack = int(n_stack)
++            miss = [int(self.episodes[e_i].episode_id) for e_i, _ in self.index
++                    if int(self.episodes[e_i].episode_id) not in self.map_clip_of_ep]
++            if miss:
++                raise SystemExit(
++                    f"[v3] ⛔ {len(set(miss))} episodes in this dataset have no "
++                    f"clip_id in the v2 manifest table, so their 10 cm labels cannot "
++                    f"be resolved at all. Refusing rather than counting them as "
++                    f"uncovered.")
++        self.map_fine_store = store
++        w = self.window
++        windows = [(self.map_clip_of_ep[int(self.episodes[e_i].episode_id)],
++                    t + w - 1) for e_i, t in self.index]
++        kw = {} if min_coverage is None else {"min_frac": float(min_coverage)}
++        rep = _perception_targets.require_map_coverage(
++            windows, store, n_stack=self.map_n_stack, **kw)
++        ext = getattr(store, "extent", _sem_fine.EXTENT_V2)
++        self.map_fine_stats = {
++            "root": str(getattr(store, "root", "")),
++            "n_windows": int(rep.get("n_windows", 0)),
++            "n_clips": int(rep.get("n_clips", 0)),
++            "frac_ok": float(rep.get("frac_ok", float("nan"))),
++            "frac_ok_upper": float(rep.get("frac_ok_upper", float("nan"))),
++            "verdict": str(rep.get("verdict", "")),
++            "states": {k[2:]: int(v) for k, v in rep.items()
++                       if k.startswith("n_") and k not in
++                       ("n_windows", "n_clips", "n_stack")},
++            "reasons": dict(rep.get("reasons", {})),
++            "n_stack": int(self.map_n_stack),
++            "extent": ext.as_dict(),
++            "fine_spec": dict(ext.fine_spec)}
++        print("[v3] SAM3 map GT at 10 cm (%g m x +-%g m): frac_ok %.4f of %d windows "
++              "over %d clips (verdict %s)" % (ext.x_max_m, ext.y_half_m,
++                                              self.map_fine_stats["frac_ok"],
++                                              self.map_fine_stats["n_windows"],
++                                              self.map_fine_stats["n_clips"],
++                                              self.map_fine_stats["verdict"]), flush=True)
++        return self.map_fine_stats
++
++    def _map_fine_item(self, ep, win_idx: int, coarse_raw: int = -1) -> dict:
++        """One window's 10 cm target: ``map_fine`` ``[*extent.fine_shape]`` uint8 codes
++        (255 = not seen) and ``map_fine_label``. A window without a file is ALL-255
++        with ``map_fine_label`` False -- zero supervised cells, counted, never a zero
++        map. ⛔ When a 0.5 m target exists too (``coarse_raw >= 0``), the fine raw frame
++        must equal it (ONE conversion of the same window); a mismatch REFUSES."""
++        cid = self.map_clip_of_ep[int(ep.episode_id)]
++        ext = getattr(self.map_fine_store, "extent", _sem_fine.EXTENT_V2)
++        try:
++            fm = self.map_fine_store.frames_for_windows(
++                cid, [int(win_idx)], n_stack=self.map_n_stack)
++        except (FileNotFoundError, IndexError, OSError):
++            return {"map_fine": torch.full(tuple(ext.fine_shape),
++                                           _sem_fine.NOT_SEEN_CODE,
++                                           dtype=torch.uint8),
++                    "map_fine_label": torch.tensor(False)}
++        if int(coarse_raw) >= 0 and int(fm.frame_idx[0]) != int(coarse_raw):
++            raise SystemExit(
++                f"[v3] ⛔ the 10 cm target of window {int(win_idx)} (clip sha12 "
++                f"{_sem_fine.sha12(cid)}) is raw frame {int(fm.frame_idx[0])}, the "
++                f"0.5 m target's is {int(coarse_raw)}: two instants for one window.")
++        return {"map_fine": torch.from_numpy(fm.codes[0].copy()),
++                "map_fine_label": torch.tensor(True)}
++
+     def enable_join3d(self, join3d) -> dict:
+         """Attach the 3-D cuboid join. A census, not a second label path."""
+         self.join3d = join3d
+@@ -3413,6 +3696,13 @@ class V3Dataset(RouteV21Dataset):
+         if self.map_store is not None:
+             item.update(self._map_item(ep, t + w - 1))
+             item["map_ep"] = torch.tensor(int(ep.episode_id), dtype=torch.long)
++        # ⭐ refcv7 NEW-2 / A6: the 10 cm target at the SAME instant. Standalone under
++        # A6 (no 0.5 m store: `map_ep` travels with the 10 cm target, the per-clip
++        # 0.25 m lift needs it); beside a 0.5 m store, asserted against its raw frame.
++        if self.map_fine_store is not None:
++            item.update(self._map_fine_item(
++                ep, t + w - 1, int(item.get("map_raw_frame", -1))))
++            item["map_ep"] = torch.tensor(int(ep.episode_id), dtype=torch.long)
+         return item
+ 
+ 
+@@ -3708,6 +3998,116 @@ def _bn_recalib_finish(model, loader, args, device, out_dir, run_config, step):
+              else " | ⛔ " + rec["staleness_error"]), flush=True)
+ 
+ 
++def _map_hires_loss(model, out: dict, batch: dict, device, extra: dict):
++    """refcv7 NEW-2 + A6 (SPEC_REFCV7 §6.2, §11): the 10 cm map term, WEIGHTED, or None.
++
++    Returns ``None`` when the branch is not built (``--map-hires off``: nothing
++    below runs, nothing is logged, the graph is the tip's). Otherwise every input is
++    REFUSED rather than skipped:
++
++    * ⛔⛔ ``out["fmap_s8"]`` is None -- THE D-REFCV6-F3-WHITELIST CLASS. refcv6's F3
++      cascade loss was skipped for 34,500 steps because the forward did not pass
++      its per-stage outputs through and the consumer read ``out.get(...)``. The
++      stride-8 map is exactly such a pass-through (``refc.py``,
++      ``RefCModel.DECODER_PASSTHROUGH``), so a missing one is a SystemExit here, on
++      the first step, not a branch that trains nothing;
++    * no 10 cm logits on ``out["perception"]``: under A6 the branch runs INSIDE the
++      forward (``refc_v3.RefCV3Model._bev_hook``) -- ONE lift, whose encoder is also
++      every BEV consumer's -- and a forward that did not run it cannot be patched up
++      here by a second, separate pass;
++    * no ``map_fine`` in the batch (the dataset's 10 cm store was never attached).
++    """
++    br = getattr(model, "_map_hires", None)
++    w = float(getattr(model, "_w_map_hires", 0.0) or 0.0)
++    if br is None and w == 0.0:
++        return None
++    if br is None or w <= 0.0:
++        raise SystemExit(
++            "[v3] ⛔ map-hires: the branch and its weight disagree (built=%s, "
++            "w=%.4g) -- a trainer wiring error, not an argv one." % (br is not None, w))
++    if out.get("fmap_s8") is None:
++        raise SystemExit(
++            "[v3] ⛔ --map-hires on but `out['fmap_s8']` is None: the stride-8 map "
++            "did not reach the loss (tap off, or the forward did not pass it "
++            "through). This is the D-REFCV6-F3-WHITELIST class -- refusing rather "
++            "than training a 10 cm head on nothing while config.json stamps it.")
++    pout = out.get("perception") or {}
++    if pout.get("map_hires_logits") is None or pout.get("map_hires_lift_valid") is None:
++        raise SystemExit(
++            "[v3] ⛔ --map-hires on but the forward's perception output carries no "
++            "10 cm logits: the ONE lift did not run in the forward (no BEV hook, or "
++            "no 0.25 m geometry passed as perception_grid/perception_valid).")
++    if "map_fine" not in batch or "map_fine_label" not in batch:
++        raise SystemExit(
++            "[v3] ⛔ --map-hires on but the batch carries no `map_fine`: the "
++            "dataset's 10 cm store was never attached (ds.enable_map_hires).")
++    logits = pout["map_hires_logits"]
++    lab = batch["map_fine_label"].to(device)
++    sel = lab.nonzero(as_tuple=False).flatten()
++    extra["map_hires_n_windows"] = float(lab.shape[0])
++    extra["map_hires_n_labelled"] = float(int(lab.sum()))
++    if not int(lab.sum()):
++        # a COUNTED zero on the branch's own graph, never an absent key
++        term = logits.sum() * 0.0
++        extra["map_hires"] = term
++        extra["n_map_hires_cells"] = 0.0
++        return term
++    lv = (pout["map_hires_lift_valid"].index_select(0, sel)
++          if bool(getattr(model, "_map_lift_valid_mask", True)) else None)
++    row = _mhr.map_hires_loss_row(
++        logits.index_select(0, sel),
++        batch["map_fine"].to(device).index_select(0, sel),
++        class_weight=getattr(model, "_map_hires_class_weight", None),
++        lift_valid_025=lv,
++        # the DECLARED rule, read off the BUILT branch config (G-DVB checks it)
++        decision_rule=str(br.cfg.decision_rule))
++    extra["map_hires"] = row["loss"]
++    for k, v in row.items():
++        if k != "loss":
++            extra[k] = v
++    return w * row["loss"]
++
++
++def _eval_row_from_acc(acc: dict, nb_e: int, model) -> dict:
++    """The in-run eval row: the MEAN over the eval batches of every scalar the loss
++    emitted, rounded to 5 dp as it always was -- EXCEPT the refcv7 NEW-2 per-class
++    10 cm signal (``map_hires_*``), which is kept exact (a rare class's gradient norm
++    is ~1e-6; 5 dp would write the 0.0 that reads as "no signal").
++
++    ⭐ With the 10 cm branch built, the row also carries the POOLED per-class IoU
++    (``mean inter / mean union == sum / sum``) and loss share for ALL 8 classes x
++    EVERY 20 m band of the declared extent (``map_head_hires.derived_per_class``;
++    SPEC_REFCV7 A3 G-DVB logging: drivable-only FAILS; §11.2: every band, never
++    dropped -- 8 x 5 = 40 ``eval_map_hires_iou_*`` keys at the A7 extent).
++    Factored out of ``train`` so the row is testable."""
++    erow = {f"eval_{k}": (v / nb_e if _mhr.is_exact_log_key(k)
++                          else round(v / nb_e, 5))
++            for k, v in acc.items()}
++    if getattr(model, "_map_hires", None) is not None:
++        erow.update(_mhr.derived_per_class(erow, prefix="eval_",
++                                           band_keys=_mhr.band_keys_of(model)))
++    return erow
++
++
++def _train_row_scalars(losses: dict, model) -> dict:
++    """The scalars of one TRAINING log row: every 0-dim tensor / plain number the loss
++    emitted, rounded to 5 dp as it always was -- EXCEPT the refcv7 NEW-2 keys
++    (``map_head_hires.is_exact_log_key``: the 10 cm loss ``map_hires`` and its
++    per-class statistics), which stay exact. With the 10 cm branch built, the row
++    also carries the per-class x band IoU (both rules) and loss shares
++    (``derived_per_class``; never drivable-only). Factored out of ``train`` so the
++    row is testable; with ``--map-hires off`` it is the tip's row, key for key."""
++    def _val(k, v):
++        f = float(v.detach()) if torch.is_tensor(v) else float(v)
++        return f if _mhr.is_exact_log_key(k) else round(f, 5)
++    row = {k: _val(k, v) for k, v in losses.items()
++           if (torch.is_tensor(v) and v.ndim == 0)
++           or isinstance(v, (int, float, bool))}
++    if getattr(model, "_map_hires", None) is not None:
++        row.update(_mhr.derived_per_class(row, band_keys=_mhr.band_keys_of(model)))
++    return row
++
++
+ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
+                       mode: str = "diffusion",
+                       ablate_frames: bool = False) -> dict:
+@@ -3880,6 +4280,16 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
+                 "none — a camera would attach to the wrong clip, silently, "
+                 "with every count still looking healthy.")
+         _pgrid, _pvalid = _bank.for_episodes(batch["map_ep"], device=device)
++    elif getattr(model, "_map_hires", None) is not None:
++        # ⭐ refcv7 A6: the forward's ONE lift is the 10 cm branch's (stride 8 at
++        # 0.25 m over the declared extent); its per-clip geometry is THE perception
++        # geometry, and the perception branch (the planner pool) takes none.
++        _hbank = getattr(model, "_lift_bank_hires", None)
++        if _hbank is None or "map_ep" not in batch:
++            raise SystemExit(
++                "[v3] ⛔ --map-hires on without a 0.25 m lift bank or `map_ep`: the "
++                "one lift would sample the trunk at no camera.")
++        _pgrid, _pvalid = _hbank.for_episodes(batch["map_ep"], device=device)
+     out = model(frames, nav_cmd=nav_cmd, v0=v0, steps=steps, lan=lan,
+                 ego_state=ego_state, nav_args=nav_args,
+                 v_max_ms=v_max_ms, v_max_valid=v_max_valid,
+@@ -4842,6 +5252,14 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
+                 extra["box3d"] = out["fmap_s16"].sum() * 0.0
+                 extra["box3d_n_z"] = 0.0
+ 
++    # ---- refcv7 NEW-2 (SPEC_REFCV7 §6.2, §11): THE map, at 10 cm ------------ #
++    # ⛔ ABSENT from the graph when the branch is not built (`None` -> nothing is
++    # added, nothing logged); with it built every missing input REFUSES. Under A6
++    # there is no 0.5 m map term to sit beside it (`--w-map 0` is pinned).
++    _mh_term = _map_hires_loss(model, out, batch, device, extra)
++    if _mh_term is not None:
++        loss = loss + _mh_term
++
+     # ---- refcv7 (PI 2026-09-19): WTA proposals + the disentangled scorer ----
+     # ⛔ Both terms are ABSENT from the graph at weight 0 (not multiplied by 0),
+     # so a refcv6 run is bit-identical. With a weight they REFUSE rather than
+@@ -6948,6 +7366,8 @@ CONFLICT_PLAN_TERMS = (("traj", lambda m: TRAJ_WEIGHT),)
+ #: detector that silently ignores the head it was built for.
+ CONFLICT_PERCEPTION_TERMS = (
+     ("bev", lambda m: float(getattr(m, "_w_bev_aux", 0.0))),      # WP-D
++    # refcv6 SAM3 0.5 m. ⭐ refcv7 A6: `--map-hires on` REQUIRES `--w-map 0` (the 0.5 m
++    # head and loss are removed), so this term is 0.0 -- absent -- on every refcv7 arm.
+     ("map", lambda m: float(getattr(m, "_w_map", 0.0))),          # refcv6 SAM3
+     ("box3d", lambda m: float(getattr(m, "_w_box3d", 0.0))),      # refcv6 boxes
+     # ⭐⭐ THE FOURTH GRADIENT (PI RULING 2026-09-17 R3). The ruling states the
+@@ -6973,6 +7393,11 @@ CONFLICT_PERCEPTION_TERMS = (
+     # must see them or R3's mitigation silently stops covering the trunk.
+     ("r7_wta", lambda m: float(getattr(m, "_w_r7_wta", 0.0))),    # refcv7 D1
+     ("r7_scorer", lambda m: float(getattr(m, "_w_r7_scorer", 0.0))),  # D2
++    # ⭐ refcv7 NEW-2: the 10 cm map reaches the trunk through the stride-8 tap
++    # (stem..layer2) and, under A6, shapes the shared 0.25 m encoder every BEV
++    # consumer reads, so R3's mitigation must see it. ⚠️ On a map-hires arm the aux
++    # side of every `cd_*` row includes it -- not comparable with refcv6's.
++    ("map_hires", lambda m: float(getattr(m, "_w_map_hires", 0.0))),
+ )
+ 
+ 
+@@ -7086,10 +7511,13 @@ def _logged_after(step: int, log_every: int, steps: int) -> bool:
+ 
+ def _grad_reach_declared(model) -> bool:
+     """Whether the run REPORTS per-head gradient reach (``ga_*``): a perception branch or the
+-    refcv6 tactical decoder is built (PI RULING 2026-09-17 R3). ONE definition, used by the loop
+-    AND by the config.json declaration, so the two cannot drift apart."""
++    refcv6 tactical decoder is built (PI RULING 2026-09-17 R3), or refcv7's 10 cm map branch
++    (NEW-2: its own ``ga_mh_*`` parts -- G-LIVE's "the new decoder gets a non-zero gradient").
++    ONE definition, used by the loop AND by the config.json declaration, so the two cannot
++    drift apart."""
+     return (getattr(model, "_perception", None) is not None
+-            or getattr(model, "tac_decoder_v6", None) is not None)
++            or getattr(model, "tac_decoder_v6", None) is not None
++            or getattr(model, "_map_hires", None) is not None)
+ 
+ 
+ def _grad_reach_declaration(model, args) -> dict:
+@@ -7100,10 +7528,19 @@ def _grad_reach_declaration(model, args) -> dict:
+     on = _grad_reach_declared(model)
+     keys = sorted(k for part in (_perc.grad_reach_report(model) if on else {})
+                   for k in (f"ga_{part}", f"ga_{part}_n"))
++    # ⭐ refcv7 NEW-2: the 10 cm branch's parts, which the loop writes as `ga_mh_<part>`, are
++    # DECLARED too, so the first-row check holds them: `check_logged_rows` looks only for
++    # declared keys, and an undeclared dead 10 cm reach row would pass it.
++    mh_on = bool(on) and getattr(model, "_map_hires", None) is not None
++    if mh_on:
++        keys = sorted(keys + [k for part in _mhr.grad_reach_report_hires(model)
++                              for k in (f"ga_mh_{part}", f"ga_mh_{part}_n")])
+     return {"declared": bool(on), "keys": keys,
+             "cadence": "every metrics row: step % log_every == 0 or step == steps",
+             "log_every": int(args.log_every),
+-            "source": "refcv6_perception_branch.grad_reach_report, read off the BUILT model"}
++            "source": ("refcv6_perception_branch.grad_reach_report"
++                       + (" + map_head_hires.grad_reach_report_hires" if mh_on else "")
++                       + ", read off the BUILT model")}
+ 
+ 
+ def _grad_probe_row(model, names, log_every_hit: bool = True) -> dict:
+@@ -7269,12 +7706,89 @@ def train(args) -> dict:
+     # the expression short-circuited before touching `args`).
+     model._map_lift_valid_mask = bool(getattr(args, "map_lift_valid_mask", True))
+     model._box3d_visible_filter = bool(getattr(args, "box3d_visible_filter", True))
++    # ---- refcv7 NEW-2 + A6/A7 (SPEC_REFCV7 §6.2, §11, §12): THE MAP AT 10 cm -- #
++    # ⛔ BUILT FIRST -- before the perception branch, because under A6 that branch's
++    # planner pool reads THIS branch's 0.25 m encoder (its width and grid are read off
++    # the built branch) -- and before `build_optimizer`. ONLY behind `--map-hires on`:
++    # off => no tap, no module, no parameter, no state_dict key, no RNG draw -- the
++    # tip's model, whose perception branch below is then built exactly as before.
++    model._w_map_hires = 0.0
++    model._map_hires = None
++    model._lift_bank_hires = None
++    model._map_hires_class_weight = None
++    model._map_hires_class_weight_stamp = None
++    map_hires_stamp = None
++    if _map_hires_on(args):
++        _hext = _mhr.declared_extent(args)
++        _s8 = model.core.encoder.enable_s8_tap()
++        # the weights FIRST: their sha256 is a DECLARED field of the branch config
++        # (G-HYG), which G-DVB reads back off the built branch. ⛔ Counted at THIS
++        # extent (class frequencies change with range): another extent is refused.
++        _hcw, _hcws = _mhr.load_class_weights(args.map_hires_class_weights,
++                                              extent=_hext)
++        _hcfg = _mhr.MapHiresConfig(
++            w_map_hires=float(args.w_map_hires),
++            x_max_m=float(_hext.x_max_m), y_half_m=float(_hext.y_half_m),
++            grad_ckpt=bool(_mhr.declared_grad_ckpt(args)),
++            class_weights_sha256=str(_hcws["sha256"]),
++            decision_rule=str(getattr(args, "map_hires_decision_rule",
++                                      _mhr.DECISION_RULES[0])))
++        model._map_hires = _mhr.build_map_hires_branch(model, _hcfg).to(device)
++        model._w_map_hires = float(args.w_map_hires)
++        model._map_hires_class_weight = _hcw.to(device)
++        model._map_hires_class_weight_stamp = _hcws
++        _hpe, _htable = _read_rig_extrinsics(
++            str(getattr(args, "agent_rig_extrinsics", "")))
++        if _htable is None:
++            raise SystemExit(
++                "[v3] ⛔ --map-hires on needs a PER-CLIP extrinsics table (clip_id -> "
++                "pose); this file carries a single camera. One mount pose for the "
++                "whole corpus biases every cell the 0.25 m lift fills -- and, under "
++                "A6, every BEV consumer's input.")
++        model._lift_bank_hires = _mhr.HiresLiftGeometryBank(
++            _htable, frame=_perc.frame_for_model(model), cfg=_hcfg,
++            equalize_bottom_rows=int(getattr(args, "equalize_bottom_rows", 0) or 0))
++        map_hires_stamp = {
++            **_hcfg.as_dict(),
++            # ⛔ SPEC_REFCV7 A3 + A6: the map is predicted, supervised, evaluated and
++            # reported at 10 cm, and nothing at 0.5 m is supervised as a map.
++            "the_map": "map_hires (10 cm, metrics keys map_hires_*); refcv7 A6 "
++                       "removed the stride-16 lift and the 0.5 m map head and loss",
++            "extent": _hext.as_dict(),
++            "bev_source": str(getattr(args, "bev_source", _perc.BEV_SOURCES[0])),
++            "planner_crop_m": [float(v) for v in (
++                getattr(args, "bev_planner_crop_m", None)
++                or _mhr.PLANNER_CROP_DEFAULT)],
++            "trunk_tap": _s8,
++            "branch_params": model._map_hires.param_breakdown(),
++            "class_weights": _hcws,
++            "lift_valid_mask": bool(model._map_lift_valid_mask),
++            "lift_bank_n_clips": len(model._lift_bank_hires),
++            "target": ("SAM3 fine_codes @ 0.1 m over the declared extent "
++                       "(tanitad.sam3_map_gt/2 on 60 m x +-16 m only; "
++                       "tanitad.sam3_map_gt/3 with anchored coordinates otherwise)"),
++            "fine_spec": dict(_hext.fine_spec),
++            "loss": "hard-label CE, 8 classes, ignore_index 255, class-weighted",
++        }
++        print("[v3] refcv7 map-hires: w=%.4g, extent %g m x +-%g m -> %s at 0.1 m, "
++              "grad_ckpt %s, tap %s, params %s, class weights sha256 %s"
++              % (model._w_map_hires, _hext.x_max_m, _hext.y_half_m,
++                 list(_hcfg.out_hw), _hcfg.grad_ckpt, _s8,
++                 model._map_hires.param_breakdown(), _hcws["sha256"][:12]), flush=True)
+     model._perception = None
+     model._lift_bank = None
+     perception_stamp = None
+-    if model._w_map > 0.0 or model._w_box3d > 0.0:
+-        _pcfg = _perc.PerceptionBranchConfig(w_map=model._w_map,
+-                                             w_box3d=model._w_box3d)
++    # ⭐ refcv7 A6: under `map_hires_pool` the branch is the CONSUMER side only (the
++    # planner pool, the BEV tokens, the box head); `_pin_map_hires` has guaranteed a
++    # consumer exists, so it never trains on nothing.
++    _bev_src = str(getattr(args, "bev_source", _perc.BEV_SOURCES[0])
++                   or _perc.BEV_SOURCES[0])
++    if model._w_map > 0.0 or model._w_box3d > 0.0 or _bev_src == "map_hires_pool":
++        _pcfg = _perc.PerceptionBranchConfig(
++            w_map=model._w_map, w_box3d=model._w_box3d, bev_source=_bev_src,
++            planner_crop_m=tuple(float(v) for v in (
++                getattr(args, "bev_planner_crop_m", None)
++                or _mhr.PLANNER_CROP_DEFAULT)))
+         model._perception = _perc.build_perception_branch(model, _pcfg).to(device)
+         _pframe = _perc.frame_for_model(model)
+         if model._w_map > 0.0:
+@@ -7306,11 +7820,15 @@ def train(args) -> dict:
+                                   else len(model._lift_bank)),
+             # ⛔ The PI's constraint, IN THE RUN RECORD: a reader who opens
+             # config.json in isolation learns which corpus was the BEV target.
+-            "bev_map_target": "SAM3 semantic maps (tanitad.sam3_map_gt/2)",
++            "bev_map_target": (
++                "SAM3 semantic maps (tanitad.sam3_map_gt/2)" if _bev_src == "s16_lift"
++                else "none at 0.5 m (refcv7 A6): the pooled BEV is the 10 cm branch's "
++                     "0.25 m encoder, supervised by the 10 cm SAM3 map (config "
++                     "map_hires) and by its consumers' losses"),
+             "lidar_as_training_target": False,
+         }
+-        print("[v3] refcv6 perception: w_map=%.4g w_box3d=%.4g; params %s"
+-              % (model._w_map, model._w_box3d,
++        print("[v3] refcv6 perception: w_map=%.4g w_box3d=%.4g bev_source=%s; params %s"
++              % (model._w_map, model._w_box3d, _bev_src,
+                  model._perception.param_breakdown()), flush=True)
+     # ⛔⛔ refcv6 §6: REFUSE A DETECTOR THAT CAN NEVER READ ANYTHING -- HERE,
+     # before `config.json` is written and before a single batch is loaded.
+@@ -7759,6 +8277,7 @@ def train(args) -> dict:
+     # hold a corpus it is not training on.
+     agent_stats = eval_agent_stats = None
+     map_stats = eval_map_stats = None
++    map_fine_stats = eval_map_fine_stats = None       # refcv7 NEW-2
+     join3d_stats = eval_join3d_stats = None
+     join_digest = _verify_agent_join(args)
+     if getattr(args, "agent_join", None):
+@@ -7800,7 +8319,19 @@ def train(args) -> dict:
+     _clip_of_ep, _cache_nstack = {}, 0
+     if getattr(args, "map_gt_root", None) or getattr(args, "join3d", None):
+         _clip_of_ep, _cache_nstack = _clip_table_for_caches(args.v2_cache)
+-    if getattr(args, "map_gt_root", None):
++    if getattr(args, "map_gt_root", None) and _map_hires_on(args):
++        # ⭐ refcv7 NEW-2 + A6/A7: the 10 cm codes are the ONLY map target -- read
++        # standalone at the DECLARED extent through the fine reader, with their OWN
++        # coverage census (same floor). ⛔ No 0.5 m store: nothing at 0.5 m is a map
++        # target, and a /3 file past the old window has no /2 twin.
++        map_fine_stats = ds.enable_map_hires(
++            _sem_fine.FineMapGTStore(
++                Path(args.map_gt_root),
++                max_open=int(getattr(args, "map_lru", 4) or 4),
++                extent=_mhr.declared_extent(args)),
++            _clip_of_ep, _cache_nstack,
++            min_coverage=getattr(args, "map_min_coverage", None))
++    elif getattr(args, "map_gt_root", None):
+         map_stats = ds.enable_map_gt(
+             _perception_targets.MapGTStore(
+                 Path(args.map_gt_root),
+@@ -8014,7 +8545,16 @@ def train(args) -> dict:
+         if getattr(args, "map_gt_root", None) \
+                 or getattr(args, "join3d", None):
+             _e_clip, _e_ns = _clip_table_for_caches([args.eval_cache])
+-            if getattr(args, "map_gt_root", None):
++            if getattr(args, "map_gt_root", None) and _map_hires_on(args):
++                # refcv7 NEW-2 + A6/A7: the 10 cm target only, standalone
++                eval_map_fine_stats = e_ds.enable_map_hires(
++                    _sem_fine.FineMapGTStore(
++                        Path(args.map_gt_root),
++                        max_open=int(getattr(args, "map_lru", 4) or 4),
++                        extent=_mhr.declared_extent(args)),
++                    _e_clip, _e_ns,
++                    min_coverage=getattr(args, "map_min_coverage", None))
++            elif getattr(args, "map_gt_root", None):
+                 eval_map_stats = e_ds.enable_map_gt(
+                     _perception_targets.MapGTStore(
+                         Path(args.map_gt_root),
+@@ -8393,6 +8933,15 @@ def train(args) -> dict:
+              "map_gt_stats": {"train": map_stats, "eval": eval_map_stats},
+              "join3d_stats": {"train": join3d_stats,
+                               "eval": eval_join3d_stats}}),
++        # ⭐ refcv7 NEW-2 (SPEC_REFCV7 §6.2) -- `None` with --map-hires off (the
++        # absent-as-null rule above). ON, it carries the branch config, the trunk
++        # tap read off the BUILT trunk, the class-weights file's sha256 and the
++        # 10 cm coverage of both splits.
++        "map_hires": (
++            None if map_hires_stamp is None else
++            {**map_hires_stamp,
++             "map_fine_stats": {"train": map_fine_stats,
++                                "eval": eval_map_fine_stats}}),
+         # ⭐⭐ refcv6 §4 — the tactical layer's own block, `None` when the
+         # weight is 0.0 for the same absent-as-null reason as the perception
+         # block above: a default run's config.json must differ from the
+@@ -8643,6 +9192,14 @@ def train(args) -> dict:
+             for _pk, _pv in _perc.grad_reach_report(model).items():
+                 _pr_row[f"ga_{_pk}"] = _pv["grad_abs_sum"]
+                 _pr_row[f"ga_{_pk}_n"] = _pv["n_params_with_grad"]
++            # ⭐ refcv7 NEW-2: the 10 cm branch's own parts, read after the backward
++            # (G-LIVE: "the new decoder gets a non-zero gradient"). `trunk_s8_stage`
++            # also carries the main pass's gradient; the tap's own share is proven
++            # by the detached-seam control in tests/test_map_head_hires.py.
++            if getattr(model, "_map_hires", None) is not None:
++                for _pk, _pv in _mhr.grad_reach_report_hires(model).items():
++                    _pr_row[f"ga_mh_{_pk}"] = _pv["grad_abs_sum"]
++                    _pr_row[f"ga_mh_{_pk}_n"] = _pv["n_params_with_grad"]
+         torch.nn.utils.clip_grad_norm_(model.parameters(), 10.0)
+         opt.step()
+         step += 1
+@@ -8654,11 +9211,11 @@ def train(args) -> dict:
+             # from the CE magnitude (lat 1.22 ~ ln 3 vs lat_tac 2.13 ~ ln 8).
+             # A diagnostic that does not survive to the log is not a
+             # diagnostic. Scalars now pass through as themselves.
+-            row = {k: (round(float(v.detach()), 5) if torch.is_tensor(v)
+-                       else round(float(v), 5))
+-                   for k, v in losses.items()
+-                   if (torch.is_tensor(v) and v.ndim == 0)
+-                   or isinstance(v, (int, float, bool))}
++            # ⭐ refcv7 NEW-2: the 10 cm loss and its per-class signal are NOT rounded
++            # -- a rare class's gradient norm is ~1e-6 and 5 dp would write the exact
++            # 0.0 that reads as "no signal" (the `_gp_row` lesson); see
++            # `_train_row_scalars`.
++            row = _train_row_scalars(losses, model)
+             row.update(step=step, elapsed_s=round(time.time() - t0, 1),
+                        lr=opt.param_groups[0]["lr"],
+                        data_epoch=int(_dpos["epoch"]),
+@@ -8808,7 +9365,7 @@ def train(args) -> dict:
+                       % (step, eval_err.encode("ascii", "backslashreplace")
+                          .decode("ascii")), flush=True)
+             elif nb_e:
+-                erow = {f"eval_{k}": round(v / nb_e, 5) for k, v in acc.items()}
++                erow = _eval_row_from_acc(acc, nb_e, model)
+                 erow.update(step=step, eval_batches=nb_e,
+                             eval_windows=nb_e * args.batch)
+                 log.write(json.dumps(erow) + chr(10))
+@@ -9795,6 +10352,69 @@ def build_parser() -> argparse.ArgumentParser:
+     g6.add_argument("--map-lru", type=int, default=4,
+                     help="how many clips' decompressed `cart_frac` arrays to "
+                          "keep resident (~14 MB each for 201 frames).")
++    # ---- refcv7 NEW-2 (SPEC_REFCV7 §6.2): the SAM3 map at 10 cm ---------- #
++    # ⛔ DEFAULT OFF, and off builds NOTHING: no trunk tap, no branch, no target,
++    # no metrics key, `config.json["map_hires"] = null` -- a default run is the
++    # tip's run. ⚠️ Named `map-hires` on purpose: `--refcv7` / `--w-r7-*` are the
++    # DrivoR-T levers (SPEC_REFCV7 §6.1), which a refcv7 launch keeps OFF.
++    g6.add_argument("--map-hires", choices=("off", "on"), default="off",
++                    help="refcv7 NEW-2 + A6/A7: THE map, at 10 cm -- ONE lift @ 0.25 m on "
++                         "the STRIDE-8 trunk map over the declared extent (default "
++                         "100 m x +-30 m -> 1000 x 600 logits, 8 classes), whose encoder "
++                         "also feeds every BEV consumer (--bev-source map_hires_pool). "
++                         "The 0.5 m map head and loss are REMOVED (--w-map must be 0). "
++                         "Needs --trunk timm, --trunk-frozen-bn, --map-gt-root (/3 GT at "
++                         "the extent), --agent-rig-camera extrinsics and "
++                         "--map-hires-class-weights.")
++    g6.add_argument("--w-map-hires", type=float, default=0.0,
++                    help="weight on the 10 cm map CE (hard labels, ignore 255 = not "
++                         "seen, class-weighted). > 0 exactly when --map-hires on.")
++    g6.add_argument("--map-hires-class-weights", default=None,
++                    help="the median-frequency class-weights JSON "
++                         "(stack/scripts/compute_map_class_weights.py over the TRAIN "
++                         "split's 10 cm GT; clipped at 25). Its sha256 is stamped "
++                         "into config.json; a DRY RUN file is refused.")
++    # ⭐ SPEC_REFCV7 A4 (1), the map-signal audit's D1: under a class-weighted CE the
++    # softmax learns q_c ∝ w_c P(c|x), so the DECISION is declared, never implied.
++    g6.add_argument("--map-hires-decision-rule", choices=("prior_corrected", "raw"),
++                    default="prior_corrected",
++                    help="the 10 cm map's decision rule for the in-run IoU counts and "
++                         "every eval: prior_corrected = argmax(z - log w) with the SAME "
++                         "frozen class weights the loss uses (DEFAULT, the calibrated "
++                         "decision), or raw = argmax(z). The raw rule is always logged "
++                         "beside it as the diagnostic (map_hires_interraw/unionraw_*).")
++    # ⭐⭐ SPEC_REFCV7 §11.2 / §12 (A6, A7): the map EXTENT is a declared parameter.
++    # Unset = the extent the pre-registered census rule selected (A7: 100 m x +-30 m).
++    g6.add_argument("--map-hires-x-max-m", type=float, default=None,
++                    help="the 10 cm map's extent AHEAD, metres (a multiple of 0.5 m, "
++                         ">= 60). Unset = %g (SPEC_REFCV7 §12). The reader refuses GT "
++                         "of any other extent; the lift, the decoder, the bands and the "
++                         "class weights follow it." % _sem_fine.EXTENT_REFCV7.x_max_m)
++    g6.add_argument("--map-hires-y-half-m", type=float, default=None,
++                    help="the 10 cm map's extent to EACH SIDE, metres (a multiple of "
++                         "0.5 m, >= 16). Unset = %g (SPEC_REFCV7 §12)."
++                         % _sem_fine.EXTENT_REFCV7.y_half_m)
++    g6.add_argument("--map-hires-grad-ckpt", choices=("on", "off"), default=None,
++                    help="recompute the 10 cm branch's encoder and decoder in backward. "
++                         "Unset = ON under --map-hires on (SPEC_REFCV7 §12 item 4: the "
++                         "decoder's saved activations at b16 are ~21.4 GB unchecked at "
++                         "the A7 extent, ~1.14 GB checkpointed).")
++    # ⭐⭐ SPEC_REFCV7 §11.1 (A6, PI option (c)): WHERE every BEV consumer's features
++    # come from. DEFAULT s16_lift = refcv6, byte for byte.
++    g6.add_argument("--bev-source", choices=tuple(_perc.BEV_SOURCES),
++                    default=_perc.BEV_SOURCES[0],
++                    help="s16_lift = refcv6 (stride-16 lift + 0.5 m encoder, behind "
++                         "--w-map > 0); map_hires_pool = refcv7 A6: the box head, the "
++                         "30 x 16 BEV tokens and the BEV coupling read the 10 cm "
++                         "branch's 0.25 m encoder, cropped to the planner window and "
++                         "2 x 2 average-pooled to 0.5 m. Required with --map-hires on "
++                         "whenever a BEV consumer is built.")
++    g6.add_argument("--bev-planner-crop-m", type=float, nargs=2, default=None,
++                    metavar=("X_MAX_M", "Y_HALF_M"),
++                    help="the planner window cropped out of the map extent BEFORE the "
++                         "0.5 m pooling (SPEC_REFCV7 §12 item 2). Unset = 60 16: the "
++                         "planner grid (120 x 64) and its 30 x 16 tokens of 2 x 2 m stay "
++                         "refcv6's -- the only value the consumers are built for.")
+     g6.add_argument("--join3d", default=None,
+                     help="the 3-D agent join (`*_agents_3d.jsonl.xz`) whose "
+                          "`cz`/`h` widen the 2-D targets. ⛔ NOTE the field "
+diff --git a/stack/tanitad/models/refcv6_perception_branch.py b/stack/tanitad/models/refcv6_perception_branch.py
+index 65d9f55..6bba17a 100644
+--- a/stack/tanitad/models/refcv6_perception_branch.py
++++ b/stack/tanitad/models/refcv6_perception_branch.py
+@@ -68,7 +68,17 @@ from tanitad.models.trunk_shapes import (PERCEPTION_STRIDE,
+ 
+ __all__ = ["PerceptionBranchConfig", "LiftGeometryBank", "PerceptionBranch",
+            "build_perception_branch", "grad_reach_report", "FORWARD_EXCLUSIONS",
+-           "map_valid_from_lift", "map_loss_row", "box3d_loss_row"]
++           "map_valid_from_lift", "map_loss_row", "box3d_loss_row",
++           "BEV_SOURCES", "PlannerBEVPool"]
++
++#: ⭐⭐ refcv7 A6 (SPEC_REFCV7 §11.1, PI 2026-09-27 option (c)): WHERE every BEV
++#: consumer's features come from -- ``PerceptionBranchConfig.bev_source``, a DECLARED
++#: field (``--bev-source``). ``"s16_lift"`` = refcv6: the stride-16 lift + the 0.5 m
++#: encoder, built behind ``w_map > 0``. ``"map_hires_pool"`` = refcv7: NO stride-16 lift
++#: and NO 0.5 m encoder / map head; the box head, the 30 x 16 BEV tokens and the
++#: planner's BEV coupling read :class:`PlannerBEVPool` over the 10 cm branch's 0.25 m
++#: encoder (``tanitad.models.map_head_hires``). The first entry is the default.
++BEV_SOURCES: tuple[str, ...] = ("s16_lift", "map_hires_pool")
+ 
+ 
+ # --------------------------------------------------------------------------- #
+@@ -177,15 +187,41 @@ class PerceptionBranchConfig:
+     #: `config.json` in isolation gets, and an `occ` number whose source is not
+     #: in the record is unattributable between the learned and derived paths.
+     occ_from_geometry: bool = False
++    #: ⭐⭐ refcv7 A6 (SPEC_REFCV7 §11.1): WHERE the BEV every consumer reads comes
++    #: from (:data:`BEV_SOURCES`, ``--bev-source``). ``"s16_lift"`` (DEFAULT) = the
++    #: refcv6 branch, byte for byte. ``"map_hires_pool"``: no stride-16 lift, no 0.5 m
++    #: encoder, no 0.5 m map head (``w_map`` MUST be 0 -- nothing at 0.5 m is supervised
++    #: as a map); the box memory, the BEV tokens and the coupling read
++    #: :class:`PlannerBEVPool` over the 10 cm branch's 0.25 m encoder. ⛔ STAMPED
++    #: always (the round-trip guard in taniteval/tests/test_refcv6_perception_rebuild.py
++    #: requires every field in the record); a banked refcv6 stamp without it rebuilds
++    #: ``s16_lift``, which is what those runs trained.
++    bev_source: str = "s16_lift"
++    #: ⭐ refcv7 A7 (SPEC_REFCV7 §12 item 2): the planner's window ``(x_max_m, y_half_m)``,
++    #: CROPPED out of the map extent BEFORE the 0.5 m pooling (``--bev-planner-crop-m``).
++    #: ``(60, 16)`` keeps the planner's 120 x 64 grid and its 30 x 16 tokens of 2 x 2 m
++    #: exactly refcv6's; the consumers (tokens, coupling, box memory) are built for that
++    #: grid. Read only under ``map_hires_pool``; stamped always.
++    planner_crop_m: tuple = (60.0, 16.0)
+     #: ⛔ NOT a knob the operator sets. It is DERIVED: the box head reads BEV
+-    #: tokens only when a supervised BEV branch exists, i.e. when ``w_map > 0``.
++    #: tokens only when a supervised BEV branch exists, i.e. when ``w_map > 0``
++    #: (``s16_lift``) or the 10 cm branch feeds the pool (``map_hires_pool``).
+     #: Building the lift + encoder for an unsupervised feature path would put
+     #: ~1 M parameters in the optimiser whose only gradient is the box loss's --
+     #: legal, but a different experiment, and it must be asked for by name.
+     def __post_init__(self) -> None:
++        if str(self.bev_source) not in BEV_SOURCES:
++            raise ValueError(f"bev_source {self.bev_source!r} not in {BEV_SOURCES}")
+         if float(self.w_map) < 0.0 or float(self.w_box3d) < 0.0:
+             raise ValueError("perception weights must be >= 0")
+-        if float(self.w_map) == 0.0 and float(self.w_box3d) == 0.0:
++        if str(self.bev_source) == "map_hires_pool":
++            if float(self.w_map) != 0.0:
++                raise ValueError(
++                    f"PerceptionBranchConfig(bev_source='map_hires_pool') with w_map "
++                    f"{self.w_map}: refcv7 A6 REMOVED the 0.5 m map head and loss "
++                    f"(SPEC_REFCV7 §11.1) -- nothing at 0.5 m is supervised as a map, "
++                    f"and there is no head for the weight to supervise.")
++        elif float(self.w_map) == 0.0 and float(self.w_box3d) == 0.0:
+             raise ValueError(
+                 "PerceptionBranchConfig with BOTH weights 0.0: the branch "
+                 "would add parameters to the optimiser and the checkpoint "
+@@ -194,11 +230,24 @@ class PerceptionBranchConfig:
+             raise ValueError(
+                 f"d_bev {self.d_bev} != bev_cfg.d_in {self.bev_cfg.d_in}: the "
+                 f"lift's output width IS the BEV encoder's input width")
++        pc = tuple(float(v) for v in self.planner_crop_m)
++        if len(pc) != 2 or not all(math.isfinite(v) and v > 0.0 for v in pc):
++            raise ValueError(f"planner_crop_m must be (x_max_m, y_half_m) > 0, got "
++                             f"{self.planner_crop_m!r}")
+ 
+     @property
+     def use_bev(self) -> bool:
++        if str(self.bev_source) == "map_hires_pool":
++            return True
+         return float(self.w_map) > 0.0
+ 
++    @property
++    def planner_grid(self) -> BEVGrid:
++        """The pooled BEV's grid: the declared crop at the planner's 0.5 m cell."""
++        return BEVGrid(x_fwd_m=float(self.planner_crop_m[0]),
++                       y_half_m=float(self.planner_crop_m[1]),
++                       cell_m=float(GRID_DEFAULT.cell_m))
++
+     def as_dict(self) -> dict:
+         return {"w_map": float(self.w_map), "w_box3d": float(self.w_box3d),
+                 "d_bev": int(self.d_bev), "n_queries": int(self.n_queries),
+@@ -210,7 +259,72 @@ class PerceptionBranchConfig:
+                 "bev_encoder": {"d_in": int(self.bev_cfg.d_in),
+                                 "d_model": int(self.bev_cfg.d_model),
+                                 "d_out": int(self.bev_cfg.d_out),
+-                                "dilations": list(self.bev_cfg.dilations)}}
++                                "dilations": list(self.bev_cfg.dilations)},
++                "bev_source": str(self.bev_source),
++                "planner_crop_m": [float(v) for v in self.planner_crop_m]}
++
++
++# --------------------------------------------------------------------------- #
++# refcv7 A6: the planner's BEV, pooled from the 0.25 m encoder                 #
++# --------------------------------------------------------------------------- #
++class PlannerBEVPool(nn.Module):
++    """``[B, d_in, X4, Y4]`` (the 10 cm branch's 0.25 m encoder over the map extent)
++    -> ``[B, d_out, 120, 64]`` on the PLANNER's grid (``GRID_DEFAULT``: 60 m x +-16 m
++    at 0.5 m), the tensor every refcv6 consumer read from the stride-16 path.
++
++    1. CROP the planner's window out of the map extent: rows ``0 .. 60 m`` (both grids
++       start at x = 0), columns centred (``(y_half_src - 16) / 0.25`` off each side);
++    2. 2 x 2 AVERAGE-POOL -- exact cell alignment, asserted: the source and the planner
++       grids share cell edges, so every 0.5 m cell is the mean of its four 0.25 m cells;
++    3. a 1x1 projection + GroupNorm to the consumers' width -- the refcv6
++       ``BEVEncoder.out`` recipe (1x1 + GN), so the consumers keep reading
++       GN-normalised ``bev_cfg.d_out``-wide features (the DECLARED learned part:
++       ``d_in * d_out + 2 * d_out`` parameters; 6,336 at 64 -> 96).
++
++    ⛔ Nothing is interpolated: a pool that shifted the grid by half a cell would move
++    every consumer's BEV by 0.25 m and still produce a valid-looking tensor. The
++    planner's grid keeps its 60 m x +-16 m extent (the PI: "unless I tell you
++    otherwise"); a larger MAP extent only widens what the crop discards."""
++
++    def __init__(self, d_in: int, d_out: int, src_grid: BEVGrid,
++                 dst_grid: BEVGrid = GRID_DEFAULT, norm_groups: int = 8):
++        super().__init__()
++        self.d_in, self.d_out = int(d_in), int(d_out)
++        self.src_grid, self.dst_grid = src_grid, dst_grid
++        k = float(dst_grid.cell_m) / float(src_grid.cell_m)
++        if abs(k - round(k)) > 1e-9 or round(k) < 1:
++            raise ValueError(f"planner cell {dst_grid.cell_m} m is not a whole multiple "
++                             f"of the source cell {src_grid.cell_m} m")
++        self.k = int(round(k))
++        if float(dst_grid.x_fwd_m) > float(src_grid.x_fwd_m) + 1e-9 \
++                or float(dst_grid.y_half_m) > float(src_grid.y_half_m) + 1e-9:
++            raise ValueError(f"the planner grid {dst_grid} does not lie inside the map "
++                             f"extent {src_grid}")
++        off = (float(src_grid.y_half_m) - float(dst_grid.y_half_m)) / float(src_grid.cell_m)
++        if abs(off - round(off)) > 1e-9:
++            raise ValueError(f"the planner window is not aligned to the source cells "
++                             f"(column offset {off})")
++        self.col0 = int(round(off))
++        dx, dy = dst_grid.shape
++        self.rows, self.cols = dx * self.k, dy * self.k
++        self.src_hw = tuple(src_grid.shape)
++        self.dst_hw = (int(dx), int(dy))
++        self.proj = nn.Sequential(nn.Conv2d(self.d_in, self.d_out, 1, bias=False),
++                                  nn.GroupNorm(int(norm_groups), self.d_out))
++
++    def forward(self, x: Tensor) -> Tensor:
++        if x.dim() != 4 or int(x.shape[1]) != self.d_in \
++                or tuple(x.shape[2:]) != self.src_hw:
++            raise ValueError(f"[perception] the pool reads [B, {self.d_in}, "
++                             f"{self.src_hw[0]}, {self.src_hw[1]}] (the 0.25 m encoder "
++                             f"over the map extent), got {tuple(x.shape)}")
++        w = x[:, :, :self.rows, self.col0:self.col0 + self.cols]
++        p = torch.nn.functional.avg_pool2d(w, kernel_size=self.k, stride=self.k)
++        out = self.proj(p)
++        if tuple(out.shape[2:]) != self.dst_hw:
++            raise RuntimeError(f"pooled BEV {tuple(out.shape)} is not the planner grid "
++                               f"{self.dst_hw}")
++        return out
+ 
+ 
+ # --------------------------------------------------------------------------- #
+@@ -310,10 +424,17 @@ class LiftGeometryBank:
+ # the branch                                                                   #
+ # --------------------------------------------------------------------------- #
+ class PerceptionBranch(nn.Module):
+-    """``fmap_s16`` -> map logits and/or 3-D slots. One forward, one graph."""
++    """``fmap_s16`` -> map logits and/or 3-D slots. One forward, one graph.
++
++    ⭐ refcv7 A6 (``cfg.bev_source == "map_hires_pool"``): no lift and no 0.5 m
++    encoder here; ``forward(..., bev_hires=)`` receives the 10 cm branch's 0.25 m
++    encoder output and :class:`PlannerBEVPool` turns it into the SAME ``bev_feats`` /
++    ``bev_tokens`` / box-memory BEV the refcv6 consumers read. ``d_bev_hires`` and
++    ``hires_grid`` are read off the BUILT 10 cm branch (:func:`build_perception_branch`)."""
+ 
+     def __init__(self, cfg: PerceptionBranchConfig, *, d_image: int,
+-                 image_hw: tuple[int, int], n_classes: int = N_CHANNELS):
++                 image_hw: tuple[int, int], n_classes: int = N_CHANNELS,
++                 d_bev_hires: int | None = None, hires_grid: BEVGrid | None = None):
+         super().__init__()
+         self.cfg = cfg
+         self.d_image = int(d_image)
+@@ -324,7 +445,17 @@ class PerceptionBranch(nn.Module):
+ 
+         self.lift: BEVLift | None = None
+         self.map_branch: BEVMapBranch | None = None
+-        if cfg.use_bev:
++        self.bev_pool: PlannerBEVPool | None = None
++        if cfg.bev_source == "map_hires_pool":
++            if d_bev_hires is None or hires_grid is None:
++                raise ValueError(
++                    "[perception] bev_source 'map_hires_pool' needs the 10 cm branch's "
++                    "encoder width and 0.25 m grid (build the map-hires branch first; "
++                    "build_perception_branch reads them off it)")
++            self.bev_pool = PlannerBEVPool(
++                int(d_bev_hires), int(cfg.bev_cfg.d_out), hires_grid,
++                dst_grid=cfg.planner_grid, norm_groups=int(cfg.bev_cfg.norm_groups))
++        elif cfg.use_bev:
+             self.lift = BEVLift(d_in=self.d_image, d_out=int(cfg.d_bev),
+                                 n_heights=len(cfg.heights_m),
+                                 feat_hw=self.image_hw)
+@@ -407,17 +538,28 @@ class PerceptionBranch(nn.Module):
+     def param_breakdown(self) -> dict:
+         def n(m):
+             return 0 if m is None else int(sum(p.numel() for p in m.parameters()))
+-        return {"lift": n(self.lift), "bev_encoder": n(
+-                    None if self.map_branch is None else self.map_branch.encoder),
+-                "map_head": n(None if self.map_branch is None
+-                              else self.map_branch.head),
+-                "box_memory": n(self.box_mem), "box_decoder": n(self.box_dec),
+-                "total": n(self)}
++        d = {"lift": n(self.lift), "bev_encoder": n(
++                 None if self.map_branch is None else self.map_branch.encoder),
++             "map_head": n(None if self.map_branch is None
++                           else self.map_branch.head),
++             "box_memory": n(self.box_mem), "box_decoder": n(self.box_dec),
++             "total": n(self)}
++        if self.bev_pool is not None:
++            # refcv7 A6 only: a refcv6 breakdown keeps its key set (stamped, compared)
++            d = {**{k: v for k, v in d.items() if k != "total"},
++                 "bev_pool": n(self.bev_pool), "total": d["total"]}
++        return d
+ 
+     def forward(self, fmap_s16: Tensor, grid: Tensor | None = None,
+-                valid: Tensor | None = None) -> dict:
++                valid: Tensor | None = None, *,
++                bev_hires: Tensor | None = None) -> dict:
+         """⛔ ONE argument family, all vision. No parameter here can carry a
+         label -- the ``AgentSlotDecoder.forward`` audit, extended to the branch.
++
++        ``bev_hires`` (refcv7 A6): the 10 cm branch's 0.25 m encoder output. REQUIRED
++        under ``map_hires_pool`` and REFUSED otherwise (two BEV suppliers); the
++        stride-16 geometry (``grid`` / ``valid``) is REFUSED under the pool -- the
++        forward's only lift geometry is the 0.25 m one, and it is the 10 cm branch's.
+         """
+         if fmap_s16 is None:
+             raise ValueError(
+@@ -432,6 +574,24 @@ class PerceptionBranch(nn.Module):
+                 f"feature_info at build time)")
+         out: dict = {}
+         bev_feats = None
++        if self.bev_pool is not None:
++            if bev_hires is None:
++                raise ValueError(
++                    "[perception] ⛔ bev_source 'map_hires_pool' but no 0.25 m BEV "
++                    "reached the branch: every consumer (box3d, the BEV tokens, the "
++                    "coupling) would read nothing (SPEC_REFCV7 §11.1)")
++            if grid is not None or valid is not None:
++                raise ValueError(
++                    "[perception] ⛔ a lift geometry reached a 'map_hires_pool' branch: "
++                    "it has no lift of its own -- a stride-16 geometry here is a "
++                    "consumer still wired to the stride-16 path (A6)")
++            bev_feats = self.bev_pool(bev_hires)
++            out["bev_feats"] = bev_feats
++            out["bev_tokens"] = self.bev_tokens(bev_feats)
++        elif bev_hires is not None:
++            raise ValueError(
++                "[perception] ⛔ a 0.25 m BEV was passed to a 's16_lift' branch: two "
++                "BEV suppliers for one set of consumers")
+         if self.lift is not None:
+             if grid is None or valid is None:
+                 raise ValueError(
+@@ -484,6 +644,19 @@ def build_perception_branch(model, cfg: PerceptionBranchConfig) -> PerceptionBra
+             f"({type(enc).__name__}). refcv6 perception reads stride 16; the "
+             "legacy REF-C ResNetEncoder returns the stride-32 map only. Pass "
+             "--trunk timm.")
++    if cfg.bev_source == "map_hires_pool":
++        # refcv7 A6: the pool reads the 10 cm branch's 0.25 m encoder -- its width
++        # and grid are read off the BUILT branch, never typed here.
++        mh = getattr(model, "_map_hires", None)
++        if mh is None:
++            raise SystemExit(
++                "[perception] ⛔ bev_source 'map_hires_pool' but the 10 cm branch is "
++                "not built (model._map_hires is None): build it first -- the "
++                "planner's BEV is pooled from its 0.25 m encoder (SPEC_REFCV7 §11.1)")
++        return PerceptionBranch(cfg, d_image=int(enc.s16_dim),
++                                image_hw=tuple(enc.s16_shape),
++                                d_bev_hires=int(mh.cfg.d_model),
++                                hires_grid=mh.cfg.lift_grid)
+     return PerceptionBranch(cfg, d_image=int(enc.s16_dim),
+                             image_hw=tuple(enc.s16_shape))
+ 
+@@ -637,7 +810,9 @@ def grad_reach_report(model, branch: PerceptionBranch | None = None) -> dict:
+                                       else br.map_branch.encoder),
+                       "map_head": (None if br.map_branch is None
+                                    else br.map_branch.head),
+-                      "box_memory": br.box_mem, "box_decoder": br.box_dec})
++                      "box_memory": br.box_mem, "box_decoder": br.box_dec,
++                      # refcv7 A6: the planner's pooled BEV (None -> no key on refcv6)
++                      "bev_pool": getattr(br, "bev_pool", None)})
+     for name, m in parts.items():
+         if m is None:
+             continue
+diff --git a/stack/tanitad/train/declared_vs_built.py b/stack/tanitad/train/declared_vs_built.py
+index e105750..a0c479e 100644
+--- a/stack/tanitad/train/declared_vs_built.py
++++ b/stack/tanitad/train/declared_vs_built.py
+@@ -554,7 +554,12 @@ def _c_perception(m, a):
+     w_map = float(_a(a, "w_map", 0.0) or 0.0)
+     w_b3d = float(_a(a, "w_box3d", 0.0) or 0.0)
+     br = getattr(m, "_perception", None)
+-    out = _eq("w_map", (w_map > 0.0 or w_b3d > 0.0), br is not None,
++    # refcv7 A6 (SPEC_REFCV7 §11.1): under `--bev-source map_hires_pool` the branch is
++    # the BEV consumers' side (the planner pool + tokens) and is built for them even at
++    # w_box3d 0; the trainer's pin guarantees a consumer exists. Its own lever is
++    # `bev_source` (map_head_hires.dvb_check_bev_source).
++    pool = str(_a(a, "bev_source", "s16_lift") or "s16_lift") == "map_hires_pool"
++    out = _eq("w_map", (w_map > 0.0 or w_b3d > 0.0 or pool), br is not None,
+               "model._perception is not None", "a perception head with no live weight, or a "
+               "live weight with no head")
+     out += _near("w_map", w_map, getattr(m, "_w_map", None), "model._w_map (read by the loss)")
+diff --git a/taniteval/tools/refcv3_arm.py b/taniteval/tools/refcv3_arm.py
+index dcea97e..0573e79 100644
+--- a/taniteval/tools/refcv3_arm.py
++++ b/taniteval/tools/refcv3_arm.py
+@@ -1060,9 +1060,12 @@ def rebuild_perception_branch(model, config: dict, device: str = "cpu",
+         return None
+     w_map = float(st.get("w_map", 0.0) or 0.0)
+     w_box3d = float(st.get("w_box3d", 0.0) or 0.0)
+-    if w_map <= 0.0 and w_box3d <= 0.0:
++    if w_map <= 0.0 and w_box3d <= 0.0 \
++            and str(st.get("bev_source", "s16_lift")) != "map_hires_pool":
+         # ⚠️ A stamp with both weights at 0 means the trainer built NOTHING (that is
+         # its bit-identity condition), so the rebuilt model is already correct.
++        # (refcv7 A6: a `map_hires_pool` branch is built for its CONSUMERS -- the BEV
++        # tokens / coupling -- even at w_box3d 0, and is rebuilt.)
+         return None
+     import dataclasses
+     from tanitad.models import refcv6_perception_branch as _perc
+@@ -1078,12 +1081,14 @@ def rebuild_perception_branch(model, config: dict, device: str = "cpu",
+ 
+     _fields = {f.name for f in dataclasses.fields(_perc.PerceptionBranchConfig)}
+     kw = {}
+-    for k in ("d_bev", "n_queries", "d_model", "stride"):
++    # ⭐ refcv7 A6: `bev_source` is stamped on every run since A6; its absence -- every
++    # refcv6 stamp -- rebuilds `s16_lift`, as trained. `planner_crop_m` likewise.
++    for k in ("d_bev", "n_queries", "d_model", "stride", "bev_source"):
+         if k in st and k in _fields:
+             kw[k] = st[k]
+     # JSON gives lists; the config wants tuples, and a list would compare unequal
+     # in any later provenance check even when the values are identical.
+-    for k in ("bev_tokens_hw", "heights_m"):
++    for k in ("bev_tokens_hw", "heights_m", "planner_crop_m"):
+         if k in st and k in _fields:
+             kw[k] = tuple(st[k])
+     pcfg = _perc.PerceptionBranchConfig(w_map=w_map, w_box3d=w_box3d,
+@@ -1127,6 +1132,91 @@ def rebuild_perception_branch(model, config: dict, device: str = "cpu",
+     out["_stamped_branch_params"] = st.get("branch_params")
+     return out
+ 
++
++def rebuild_map_hires_branch(model, config: dict, device: str = "cpu", targs=None):
++    """refcv7 NEW-2: rebuild the 10 cm map branch from ``config.json["map_hires"]``.
++
++    ⛔ The same W0 rule as :func:`rebuild_perception_branch`: the trainer attaches
++    the branch to the MODEL (``model._map_hires``) and switches the trunk's stride-8
++    tap on, neither of which lives in ``RefCV3Config``. Without this a map-hires
++    checkpoint is short by exactly the branch in ``param_breakdown.total`` and has
++    ``_map_hires.*`` keys the rebuilt model lacks -- refused, correctly.
++
++    Everything comes from the stamp; the rebuilt branch's parameter count and the
++    tap's stride-8 shape are CHECKED against it (a default that differs from the
++    trained value would otherwise build a different head that still loads nothing).
++    The 0.25 m lift bank is rebuilt from the run's own ``--agent-rig-extrinsics``
++    WITH its ``--equalize-bottom-rows``, as the trainer built it. Returns a record,
++    or ``None`` when the run had no 10 cm branch.
++    """
++    st = config.get("map_hires")
++    if not isinstance(st, dict):
++        return None
++    import dataclasses
++    from tanitad.models import map_head_hires as _mhr
++    from tanitad.models import refcv6_perception_branch as _perc
++    fields = {f.name for f in dataclasses.fields(_mhr.MapHiresConfig)}
++    kw = {k: st[k] for k in ("x_max_m", "y_half_m", "lift_cell_m", "stride",
++                             "d_lift", "d_model", "d_up", "norm_groups", "n_classes",
++                             "grad_ckpt", "class_weights_sha256", "decision_rule")
++          if k in st and k in fields}
++    kw.update({k: tuple(st[k]) for k in ("heights_m", "dilations")
++               if k in st and k in fields})
++    # ⛔ the DERIVED grids (out_hw, lift_grid_hw) are not fields: they follow the
++    # stamped extent, and are CHECKED against the stamp below rather than passed.
++    hcfg = _mhr.MapHiresConfig(w_map_hires=float(st["w_map_hires"]), **kw)
++    # ⭐ the DECISION needs the loss's frozen weights (the prior-corrected rule, SPEC_REFCV7
++    # A4): restored from the stamp's own copy of them (the file may not be on this box).
++    import torch as _torch
++    _cws = st.get("class_weights") or {}
++    model._map_hires_class_weight = (
++        None if not _cws.get("weights") else
++        _torch.tensor([float(v) for v in _cws["weights"]], dtype=_torch.float32).to(device))
++    model._map_hires_class_weight_stamp = _cws or None
++    tap = model.core.encoder.enable_s8_tap()
++    want_tap = st.get("trunk_tap") or {}
++    for k in ("s8_module", "s8_dim", "s8_hw"):
++        if k in want_tap and want_tap[k] != tap[k]:
++            raise SystemExit(f"[refcv3_arm] ⛔ map-hires tap {k}: config.json "
++                             f"{want_tap[k]!r} vs rebuilt {tap[k]!r}")
++    for k, have in (("out_hw", list(hcfg.out_hw)),
++                    ("lift_grid_hw", list(hcfg.lift_grid.shape))):
++        if k in st and list(st[k]) != have:
++            raise SystemExit(f"[refcv3_arm] ⛔ map-hires {k}: config.json {st[k]!r} vs "
++                             f"rebuilt {have!r} (the stamped extent does not produce "
++                             f"the stamped grid)")
++    model._map_hires = _mhr.build_map_hires_branch(model, hcfg).to(device)
++    model._w_map_hires = float(st["w_map_hires"])
++    got = model._map_hires.param_breakdown()
++    want = (st.get("branch_params") or {}).get("total")
++    if want is not None and int(want) != int(got["total"]):
++        raise SystemExit(f"[refcv3_arm] ⛔ map-hires branch params: config.json "
++                         f"{want} vs rebuilt {got['total']}")
++    model._lift_bank_hires, note = None, None
++    extr_path = str(getattr(targs, "agent_rig_extrinsics", "") or "")
++    if extr_path:
++        try:
++            _single, _table = trainer()._read_rig_extrinsics(extr_path)
++            if _table is None:
++                note = "the extrinsics file carries a SINGLE camera"
++            else:
++                model._lift_bank_hires = _mhr.HiresLiftGeometryBank(
++                    _table, frame=_perc.frame_for_model(model), cfg=hcfg,
++                    equalize_bottom_rows=int(
++                        getattr(targs, "equalize_bottom_rows", 0) or 0))
++        except FileNotFoundError:
++            note = f"extrinsics file not on this box: {extr_path}"
++        except Exception as exc:          # noqa: BLE001 -- recorded, never silent
++            note = f"{type(exc).__name__}: {exc}"
++    else:
++        note = "no --agent-rig-extrinsics in the run's argv"
++    out = hcfg.as_dict()
++    out.update(_tap=tap, _branch_params=got,
++               _lift_bank_rebuilt=model._lift_bank_hires is not None,
++               _lift_bank_note=note)
++    return out
++
++
+ def cross_check_config(config: dict, cfg, model) -> dict:
+     """Every fact ``config.json`` states about the model must hold for the rebuilt
+     one. A contradiction is a REFUSAL naming BOTH values (the
+@@ -1203,10 +1293,15 @@ def load_model(ckpt_path: str, config_path: str | None = None,
+     # ⛔ W0: the refcv6 perception branch lives on the MODEL, not in the config, so it
+     # MUST be rebuilt before the cross-check — otherwise `param_breakdown.total` is
+     # short by exactly the branch and every refcv6 checkpoint is refused.
++    # ⛔ refcv7 NEW-2 + A6: the 10 cm branch + the trunk's stride-8 tap, same W0 rule --
++    # rebuilt FIRST, because an A6 perception branch's planner pool reads its encoder
++    # (width and grid) exactly as the trainer built it.
++    map_hires_rebuilt = rebuild_map_hires_branch(model, config, device, targs=targs)
+     perception_rebuilt = rebuild_perception_branch(model, config, device,
+                                                   targs=targs)
+     checks = cross_check_config(config, cfg, model)
+     checks["perception_rebuilt"] = perception_rebuilt
++    checks["map_hires_rebuilt"] = map_hires_rebuilt
+     try:
+         res = model.load_state_dict(ck["model"], strict=False)
+     except RuntimeError as ex:
+@@ -2195,6 +2290,10 @@ def run_dump(a) -> dict:
+             # the batched rows are the CONDITIONS of a single window, so they all
+             # belong to the same episode.
+             _lb = getattr(model, "_lift_bank", None)
++            if _lb is None and getattr(model, "_map_hires", None) is not None:
++                # ⭐ refcv7 A6: the forward's ONE lift is the 10 cm branch's; its
++                # 0.25 m geometry is THE perception geometry (as in the trainer).
++                _lb = getattr(model, "_lift_bank_hires", None)
+             _pg1 = _pv1 = None
+             if _lb is not None:
+                 # ⛔ `for_episodes` keys on the INTEGER episode id, not the clip string:
+diff --git a/stack/tests/test_refc_v3_agent_provenance.py b/stack/tests/test_refc_v3_agent_provenance.py
+index b09d9bf..59ddc65 100644
+--- a/stack/tests/test_refc_v3_agent_provenance.py
++++ b/stack/tests/test_refc_v3_agent_provenance.py
+@@ -515,6 +515,19 @@ def test_P2_every_knob_is_recoverable_from_the_stamp_BY_VALUE(tmp_path):
+             "--map-gt-root", "m", "--w-map", "1.0",
+             "--agent-rig-camera", "extrinsics",
+             "--agent-rig-extrinsics", str(extr)],
++        # ⭐ refcv7 NEW-2 (SPEC_REFCV7 §6.2), the same shape again: `--w-map-hires`
++        # REFUSES unless `--map-hires on` AND every input the 10 cm branch reads is
++        # present (`_pin_map_hires`: the timm trunk, frozen BN, the 0.5 m map's
++        # plumbing via `--w-map > 0` with its extrinsics, and a class-weights file).
++        # ⛔ Each refusal is CORRECT; this row satisfies them rather than weakening one.
++        # refcv7 A6: the 10 cm head is THE map (--w-map stays 0), fed by its own
++        # SAM3 root and the per-clip extrinsics its 0.25 m lift reads
++        "w_map_hires": ["--trunk", "timm", "--trunk-frozen-bn",
++                        "--map-gt-root", "m",
++                        "--agent-rig-camera", "extrinsics",
++                        "--agent-rig-extrinsics", str(extr),
++                        "--map-hires", "on",
++                        "--map-hires-class-weights", "w.json"],
+     }
+     # Candidates, tried in order: a knob with a DOMAIN (a mount height must be
+     # a plausible height) takes the first admissible one. A per-knob table of
+diff --git a/stack/tests/test_declared_vs_built.py b/stack/tests/test_declared_vs_built.py
+index 45b6b32..9ebe449 100644
+--- a/stack/tests/test_declared_vs_built.py
++++ b/stack/tests/test_declared_vs_built.py
+@@ -258,7 +258,16 @@ def test_GDVB_every_trainer_flag_has_an_entry_and_every_entry_is_well_formed():
+     # otherwise sit in the registry while the real flag goes unchecked)
+     assert set(dvb.REGISTRY) == {a.dest for a in parser._actions if a.dest != "help"}
+     # the tip's 197 dests + the 5 flags of the fixes batch + refcv7 NEW-1's --residual-prior
+-    assert len(dvb.REGISTRY) == 204          # + --nav-compliance-tau-file (batch 2, SPEC_REFCV7 §7)
++    # + --nav-compliance-tau-file (batch 2, SPEC_REFCV7 §7)
++    # + refcv7 NEW-2's 9 flags (--map-hires, --w-map-hires, --map-hires-class-weights,
++    # --map-hires-decision-rule, and A6/A7's --map-hires-x-max-m, --map-hires-y-half-m,
++    # --map-hires-grad-ckpt, --bev-source, --bev-planner-crop-m; registered by
++    # map_head_hires.register_dvb_levers)
++    assert len(dvb.REGISTRY) == 213
++    for d in ("map_hires", "w_map_hires", "map_hires_class_weights",
++              "map_hires_decision_rule", "map_hires_x_max_m", "map_hires_y_half_m",
++              "map_hires_grad_ckpt", "bev_source", "bev_planner_crop_m"):
++        assert dvb.REGISTRY[d].kind == ("loss" if d == "w_map_hires" else "built"), d
+     for dest, lever in dvb.REGISTRY.items():
+         assert lever.kind in dvb.KINDS, dest
+         if lever.kind in ("built", "loss"):
+diff --git a/stack/tests/test_occ_knob_is_stamped.py b/stack/tests/test_occ_knob_is_stamped.py
+index 85498b5..dc8189e 100644
+--- a/stack/tests/test_occ_knob_is_stamped.py
++++ b/stack/tests/test_occ_knob_is_stamped.py
+@@ -43,6 +43,12 @@ PERCEPTION_STAMP_KEYS = {
+     "w_map", "w_box3d", "d_bev", "n_queries", "d_model", "bev_tokens_hw",
+     "heights_m", "stride", "use_bev_in_box_head", "occ_from_geometry",
+     "bev_encoder",
++    # refcv7 A6/A7 (SPEC_REFCV7 §11-12), added DELIBERATELY: WHERE every BEV consumer
++    # reads from (`--bev-source`: the stride-16 lift, or the pooled 0.25 m encoder of
++    # the 10 cm branch) and the planner window cropped before that pooling
++    # (`--bev-planner-crop-m`); the eval loader must rebuild exactly that
++    # (taniteval/tests/test_refcv6_perception_rebuild.py's round trip needs them stamped)
++    "bev_source", "planner_crop_m",
+ }
+ 
+ 
+diff --git a/stack/tests/test_grad_probe_tacgoal.py b/stack/tests/test_grad_probe_tacgoal.py
+index 0c76af8..236fd4a 100644
+--- a/stack/tests/test_grad_probe_tacgoal.py
++++ b/stack/tests/test_grad_probe_tacgoal.py
+@@ -198,8 +198,9 @@ def test_probe_sums_ABSOLUTE_GRADIENT_against_an_analytic_target():
+ # 3 — THE ROUNDING HOLE, and the mutation that reintroduces it
+ # ==========================================================================
+ def _round_row(d):
+-    """The trainer's own log-row rounding, transcribed. 5 dp, as at
+-    ``refc_v3_train.py``'s ``row = {k: round(float(v), 5) ...}``."""
++    """The trainer's own log-row rounding, transcribed. 5 dp, as in
++    ``refc_v3_train._train_row_scalars`` (refcv7 NEW-2 moved the comprehension there; it
++    rounds every key but the 10 cm map's, which stay exact -- see the pin below)."""
+     return {k: round(float(v), 5) for k, v in d.items()}
+ 
+ 
+@@ -235,26 +236,78 @@ def test_a_gradient_below_the_log_rounding_survives_the_probe():
+         "gp_unreached_grad_abs_sum"]
+ 
+ 
++#: the ONE rounding site of a training log row (refcv7 NEW-2: the comprehension lives in
++#: ``_train_row_scalars``, which keeps the 10 cm map's rare-class signals EXACT -- the same
++#: hazard as this file's: ~1e-7 rounds to the 0.0 that reads as "no signal")
++_ROW_CALL = "row = _train_row_scalars(losses, model)"
++# ⛔ THE EXACT BLOCK, as a literal. A weaker form of this test — searching
++# for the substring ``row.update(_gp_row)`` alone — was MEASURED INERT
++# against a mutation that merely DISABLED the merge (``if _gp_row and
++# False:``): the string is still present, the order is still right, and the
++# probe never reaches metrics.jsonl. The guard condition is pinned too.
++_MERGE_BLOCK = ("            if _gp_row:" + chr(10) +
++                "                row.update(_gp_row)" + chr(10))
++_WRITE = 'log.write(json.dumps(row) + "' + chr(92) + 'n")'
++
++
++def _assert_rounding_then_merge_then_write(s: str) -> None:
++    """(a) the row is built by ONE ``_train_row_scalars`` call, inside ``train()``;
++    (b) the literal merge block, once; (c) rounding < merge < write."""
++    i_train = s.find("def train(args) -> dict:")
++    i_next = s.find(chr(10) + "def ", i_train + 1)
++    assert i_train > 0 and i_next > i_train
++    assert s.count(_ROW_CALL) == 1
++    i_round = s.find(_ROW_CALL)
++    assert i_train < i_round < i_next                    # inside train()
++    assert s.count(_MERGE_BLOCK) == 1
++    i_merge = s.find(_MERGE_BLOCK)
++    i_write = s.find(_WRITE)
++    assert i_round > 0 and i_merge > 0 and i_write > 0
++    assert i_round < i_merge < i_write
++
++
+ def test_trainer_merges_the_probe_after_its_rounding_comprehension():
+     """The source-order assertion the mutation above stands for. Positive
+     controls first, so an unreadable file cannot pass as a satisfied test."""
+     s = _source()
+     assert s.count("def train(args) -> dict:") == 1       # control: file served
++    _assert_rounding_then_merge_then_write(s)
+ 
+-    # ⛔ THE EXACT BLOCK, as a literal. A weaker form of this test — searching
+-    # for the substring ``row.update(_gp_row)`` alone — was MEASURED INERT
+-    # against a mutation that merely DISABLED the merge (``if _gp_row and
+-    # False:``): the string is still present, the order is still right, and the
+-    # probe never reaches metrics.jsonl. The guard condition is pinned too.
+-    block = ("            if _gp_row:" + chr(10) +
+-             "                row.update(_gp_row)" + chr(10))
+-    assert s.count(block) == 1
+-
+-    i_round = s.find("row = {k: (round(float(v.detach()), 5)")
+-    i_merge = s.find(block)
+-    i_write = s.find('log.write(json.dumps(row) + "' + chr(92) + 'n")')
+-    assert i_round > 0 and i_merge > 0 and i_write > 0
+-    assert i_round < i_merge < i_write
++
++def test_DELIBERATE_REGRESSION_the_merge_moved_before_the_rounding_goes_RED():
++    """⛔ The order defect this file exists for, in the SOURCE: the literal merge block
++    moved to the line BEFORE the ``_train_row_scalars`` call (still once, still
++    literal) must fail the pin -- as must the disabled merge (``if _gp_row and False:``)."""
++    s = _source()
++    moved = s.replace(_MERGE_BLOCK, "", 1)
++    i = moved.find(_ROW_CALL)
++    line0 = moved.rfind(chr(10), 0, i) + 1
++    moved = moved[:line0] + _MERGE_BLOCK + moved[line0:]
++    assert moved.count(_MERGE_BLOCK) == 1 and moved.count(_ROW_CALL) == 1
++    with pytest.raises(AssertionError):
++        _assert_rounding_then_merge_then_write(moved)
++    disabled = s.replace("            if _gp_row:" + chr(10),
++                         "            if _gp_row and False:" + chr(10), 1)
++    with pytest.raises(AssertionError):
++        _assert_rounding_then_merge_then_write(disabled)
++
++
++def test_the_row_rounds_a_loss_to_5dp_and_keeps_a_1e7_map_signal():
++    """(d) BEHAVIOUR, literals only: a non-signal tensor loss is rounded to 5 dp; the
++    10 cm map's loss and a per-class statistic of 1e-7 survive as non-zero (the tip's
++    comprehension would have written 0.0, the hazard above)."""
++    assert round(1e-7, 5) == 0.0                          # the hazard, literal
++    from types import SimpleNamespace
++    tr = _trainer()
++    row = tr._train_row_scalars(
++        {"loss": torch.tensor(1.234567891), "map_hires": torch.tensor(1e-7),
++         "map_hires_lc_lane_0_20": torch.tensor(1e-7), "traj": 0.123456789},
++        SimpleNamespace(_map_hires=None))
++    assert row["loss"] == 1.23457                         # literal, 5 dp
++    assert row["traj"] == 0.12346                         # literal, 5 dp
++    for k in ("map_hires", "map_hires_lc_lane_0_20"):
++        assert row[k] > 0.0                               # not the rounding's 0.0
++        assert row[k] == pytest.approx(1e-7, rel=1e-6)    # literal
+ 
+ 
+ def test_probe_is_read_after_backward_and_before_the_global_clip():
