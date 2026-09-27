@@ -108,6 +108,7 @@ from tanitad.models.vocab_v7 import (TACTICAL_GOAL_TOKENS_V7,
                                      TACTICAL_LON_ACTIONS_V7,
                                      GOAL_MIN_N_FOR_METRIC)
 from tanitad.refs.refcv6_max_speed import N_SPEED_MAX_BINS_V6
+from tanitad.train.config_hygiene import strict_fields
 
 __all__ = [
     "N_GOAL_TOKENS", "N_LAT_ACTIONS", "N_LON_ACTIONS", "N_QUERIES",
@@ -269,6 +270,9 @@ def assert_situation_tokens_are_targets_only(
 # config
 # ---------------------------------------------------------------------------
 
+# ⛔ G-HYG (SPEC_REFCV7 §2; batch 3, 2026-09-27): an UNDECLARED attribute RAISES at
+# assignment -- the launch gate's probe found this class accepting one.
+@strict_fields
 @dataclass
 class TacticalDecoderConfig:
     """⭐ The spec's numbers, as a frozen record that travels with the ckpt."""

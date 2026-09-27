@@ -37,8 +37,12 @@ from torch import Tensor, nn
 import torch.nn.functional as F
 
 from .refcv7_oracle import SUBSCORES
+from tanitad.train.config_hygiene import strict_fields
 
 
+# ⛔ G-HYG (SPEC_REFCV7 §2; batch 3, 2026-09-27): an UNDECLARED attribute RAISES at
+# assignment -- the launch gate's probe found this class accepting one.
+@strict_fields
 @dataclass
 class Refcv7HeadConfig:
     d_model: int = 256          # DrivoR: decoders d = 256, FFN x4, 4 layers

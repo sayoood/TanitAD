@@ -1,78 +1,210 @@
-## 2026-09-26 batch 2: declared-vs-built -- D3 (the per-head gradient-reach rows reach metrics.jsonl: one fill rule, a config.json declaration, a first-row refusal, check_logged_rows for the launch smoke) + --nav-compliance-tau-file (SPEC_REFCV7 §7: verified against the float, sha256 stamped in config.json; G-HYG fields, G-DVB entry, registry 204) + the tau script's evidence class derived from the host -- full files at their REPO paths under code/fix2/, REBASED onto NEW-1 (3-way merge against ab436ee)
-# batch 1 LANDED as ab436ee (68/68 blobs verified by the lander). Bases: NEW-1's package blobs where NEW-1 rewrites the file, else ab436eefa89f34eee139e092c595839e785eab7c (40-char asserted). ⛔ NEW-1 lands FIRST; then re-run `code/write_landing_ready_b2.py <NEW-1 commit>` and superset-check.
+## 2026-09-27 batch 3: declared-vs-built -- the refcv7 launch blockers: (a) the three zero-gradient modules (core.decoder.control_head, core.decoder.offset_head, scorer.goal_point) are bypassed BY CONSTRUCTION, so FROZEN and DECLARED (_gradreach, kept built) and held against argv by G-DVB (check/probe_grad_unreachable); (b) G-HYG strict_fields on the six open config classes; (c) SPEC section 10 (A5): check_refcv7_required refuses any residual prior but ha0_ext_pose (argv AND built) and a missing --ego-history -- full files at their REPO paths under code/fix3/
+# base commit b4a59b982dbc3f9f0e63451c1afc796e97eaa356
 # land these at their repo paths. Full files; line endings as each tip blob (EOL column).
-# <package path>  ->  <repo path>     (comment above each: base blob [whose] | new blob = git hash-object --no-filters | EOL)
-# stack/scripts/refc_v3_train.py: base 9cac3dabca2b2fbac29a1d0b625f95215f71d985 [NEW-1 package] | new f1a9c83ebccd040bf934281db970dc25326f6d1f | CRLF
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/code/fix2/stack/scripts/refc_v3_train.py  ->  stack/scripts/refc_v3_train.py
-# stack/tanitad/refs/refc_v3.py: base 774d3a3b1d5f7fa4439362494aae9fdcbb1cda9a [NEW-1 package] | new 0b855f5334d0adcc36111e0872a8d261940d0098 | LF
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/code/fix2/stack/tanitad/refs/refc_v3.py  ->  stack/tanitad/refs/refc_v3.py
-# stack/tanitad/train/declared_vs_built.py: base a50ff690a364966ee21215938b4d34dc0a0a79d8 [NEW-1 package] | new a5fdddc36864abf7ebdd84dd74949be87b2a6388 | LF
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/code/fix2/stack/tanitad/train/declared_vs_built.py  ->  stack/tanitad/train/declared_vs_built.py
-# stack/tests/test_declared_vs_built.py: base 5137fde792a8b5b6a4c51bafdbc876a6ee2ff239 [NEW-1 package] | new 2e9c620ec54295c3adb428afad6e7afffee35039 | LF
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/code/fix2/stack/tests/test_declared_vs_built.py  ->  stack/tests/test_declared_vs_built.py
-# stack/tests/test_grad_reach_logged.py: base NEW [tip ab436ee] | new 2a1bd58181a5a112a584b7c36c519d7e9ce6a462 | LF
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/code/fix2/stack/tests/test_grad_reach_logged.py  ->  stack/tests/test_grad_reach_logged.py
-# stack/tests/test_navc_tau_file.py: base NEW [tip ab436ee] | new e59bc823e49f9358da71ab130bfe25ff3bd051dd | LF
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/code/fix2/stack/tests/test_navc_tau_file.py  ->  stack/tests/test_navc_tau_file.py
-# package files NEW or CHANGED since the tip (blob comparison); LANDING_READY.txt itself:
+# <package path>  ->  <repo path>     (comment above each: base blob | new blob = git hash-object --no-filters | EOL)
+# stack/scripts/refc_v3_train.py: base f1a9c83ebccd040bf934281db970dc25326f6d1f | new 507b5579a60605e8238ade00239eb217330de2ac | CRLF
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/code/fix3/stack/scripts/refc_v3_train.py  ->  stack/scripts/refc_v3_train.py
+# stack/tanitad/models/ego_history.py: base f57adc9624b11bcac125e6ab855bcc1f18fec364 | new 1b8b1114fdceb7b776b17c6cf0812003df64f310 | LF
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/code/fix3/stack/tanitad/models/ego_history.py  ->  stack/tanitad/models/ego_history.py
+# stack/tanitad/models/refcv6_diffusion.py: base c1b8816a2a90fb064b75716257cbda3ca992bf62 | new 48fed0c1bf2edcea8b7a94a48822c770ece19860 | CRLF
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/code/fix3/stack/tanitad/models/refcv6_diffusion.py  ->  stack/tanitad/models/refcv6_diffusion.py
+# stack/tanitad/refs/max_speed_input.py: base 0c32644a0d08ae243acc8692ba9dc3dd59d3fdce | new f3ab9fab1c271907666e977c9b167a5ad264b961 | LF
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/code/fix3/stack/tanitad/refs/max_speed_input.py  ->  stack/tanitad/refs/max_speed_input.py
+# stack/tanitad/refs/refc.py: base 6638d443533fb87e228f6bce7acf3e765ff93bed | new ac7ab9d37843531f345cf1413513e1fb90f850eb | CRLF
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/code/fix3/stack/tanitad/refs/refc.py  ->  stack/tanitad/refs/refc.py
+# stack/tanitad/refs/refc_agents.py: base e647eace00b7a49da7e599b9393d84e190dbc38d | new ce8ac3f43dccf7dfa6f3533e3339ce1d6a12b4d2 | CRLF
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/code/fix3/stack/tanitad/refs/refc_agents.py  ->  stack/tanitad/refs/refc_agents.py
+# stack/tanitad/refs/refc_v3.py: base 0b855f5334d0adcc36111e0872a8d261940d0098 | new a357a1b5540c4a55d994df23b1750892768aec8f | LF
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/code/fix3/stack/tanitad/refs/refc_v3.py  ->  stack/tanitad/refs/refc_v3.py
+# stack/tanitad/refs/refcv6_tactical.py: base afe1d5a59b122987502bca5b5f94ca69eaba773c | new 7499fba08c7c12ef0acfa2413e564714cbf9f231 | LF
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/code/fix3/stack/tanitad/refs/refcv6_tactical.py  ->  stack/tanitad/refs/refcv6_tactical.py
+# stack/tanitad/refs/refcv7_heads.py: base a0206ea2f87d270ea3667148aa16c958ea88214c | new 5eeeb67d29300d6908e9b45bb0e652b9d087939c | LF
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/code/fix3/stack/tanitad/refs/refcv7_heads.py  ->  stack/tanitad/refs/refcv7_heads.py
+# stack/tanitad/train/config_hygiene.py: base e6559a60874f4049b8c40a083ba68b762c83ac22 | new 00c33e550118ea7124e2cc8b5377319b2004075f | LF
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/code/fix3/stack/tanitad/train/config_hygiene.py  ->  stack/tanitad/train/config_hygiene.py
+# stack/tanitad/train/declared_vs_built.py: base a5fdddc36864abf7ebdd84dd74949be87b2a6388 | new e10575048fd3aa60c59879b77a652865eb9e96ea | LF
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/code/fix3/stack/tanitad/train/declared_vs_built.py  ->  stack/tanitad/train/declared_vs_built.py
+# stack/tests/test_config_hygiene.py: base 8022e9777b581b69c5f98224190a04cc225232ae | new af2452d525aae5f1d0b56e849867a277f245aa75 | LF
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/code/fix3/stack/tests/test_config_hygiene.py  ->  stack/tests/test_config_hygiene.py
+# stack/tests/test_declared_vs_built.py: base 2e9c620ec54295c3adb428afad6e7afffee35039 | new 45b6b327e70d19bbf8b0cd90544c9ae2d7bad8ec | LF
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/code/fix3/stack/tests/test_declared_vs_built.py  ->  stack/tests/test_declared_vs_built.py
+# stack/tests/test_grad_unreachable_declared.py: base NEW | new 9fa5084162292b8656eec573765f193e28ae5617 | LF
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/code/fix3/stack/tests/test_grad_unreachable_declared.py  ->  stack/tests/test_grad_unreachable_declared.py
+# package files NEW or CHANGED since the base commit (blob comparison); LANDING_READY.txt itself:
 TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/LANDING_READY.txt
-# CHANGED
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/code/derive_navc_tau.py
 # NEW
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/code/diffs/batch2_stack_scripts_refc_v3_train.py.diff
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/code/b3_tip_control.py
 # NEW
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/code/diffs/batch2_stack_tanitad_refs_refc_v3.py.diff
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/code/diffs/batch3_stack_scripts_refc_v3_train.py.diff
 # NEW
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/code/diffs/batch2_stack_tanitad_train_declared_vs_built.py.diff
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/code/diffs/batch3_stack_tanitad_models_ego_history.py.diff
 # NEW
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/code/diffs/batch2_stack_tests_test_declared_vs_built.py.diff
-# CHANGED
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/code/gated_cmd.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/code/diffs/batch3_stack_tanitad_models_refcv6_diffusion.py.diff
 # NEW
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/code/patch_d3.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/code/diffs/batch3_stack_tanitad_refs_max_speed_input.py.diff
 # NEW
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/code/patch_result_b2.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/code/diffs/batch3_stack_tanitad_refs_refc.py.diff
 # NEW
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/code/patch_result_header2.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/code/diffs/batch3_stack_tanitad_refs_refc_agents.py.diff
 # NEW
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/code/patch_result_pi_ruling.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/code/diffs/batch3_stack_tanitad_refs_refc_v3.py.diff
 # NEW
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/code/rebase_b2.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/code/diffs/batch3_stack_tanitad_refs_refcv6_tactical.py.diff
 # NEW
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/code/run_r34_fix5_tests.py
-# CHANGED
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/code/run_suite_bounded.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/code/diffs/batch3_stack_tanitad_refs_refcv7_heads.py.diff
 # NEW
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/code/watch_gate2.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/code/diffs/batch3_stack_tanitad_train_config_hygiene.py.diff
 # NEW
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/code/write_gate_plan_b2.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/code/diffs/batch3_stack_tanitad_train_declared_vs_built.py.diff
 # NEW
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/code/write_landing_ready_b2.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/code/diffs/batch3_stack_tests_test_config_hygiene.py.diff
 # NEW
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/b2_new_test_files.txt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/code/diffs/batch3_stack_tests_test_declared_vs_built.py.diff
 # NEW
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/b2n1_new_test_files.txt
-# CHANGED
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate/gate_chain_driver.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/code/diffs/batch3_stack_tests_test_grad_unreachable_declared.py.diff
 # NEW
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b2_dev/driver.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/code/hyg_scan_b3.py
 # NEW
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b2_dev/FIX2NEW_stack.jsonl
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/code/patch_b3.py
 # NEW
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b2_dev/FIX2NEW_stack_logs/tests__test_grad_reach_logged.py.junit.xml
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/code/patch_result_b3.py
 # NEW
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b2_dev/FIX2NEW_stack_logs/tests__test_grad_reach_logged.py.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/code/result_superset_check.py
 # NEW
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_plan_batch2.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/code/write_gate_plan_b3.py
 # NEW
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/related_stack_files_B2N1_FIX.txt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/code/write_landing_ready_b3.py
 # NEW
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/related_stack_files_B2N1_TIP.txt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/b3_dev_test_files.txt
 # NEW
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/related_taniteval_files_B2N1.txt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b2n1_dev/driver.log
 # NEW
-TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/stage_fingerprint_checkpoints_sha256.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b2n1_dev/FIX2N1NEW_stack.jsonl
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b2n1_dev/FIX2N1NEW_stack_logs/tests__test_config_hygiene.py.junit.xml
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b2n1_dev/FIX2N1NEW_stack_logs/tests__test_config_hygiene.py.log
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b2n1_dev/FIX2N1NEW_stack_logs/tests__test_declared_vs_built.py.junit.xml
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b2n1_dev/FIX2N1NEW_stack_logs/tests__test_declared_vs_built.py.log
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b2n1_dev/FIX2N1NEW_stack_logs/tests__test_grad_reach_logged.py.junit.xml
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b2n1_dev/FIX2N1NEW_stack_logs/tests__test_grad_reach_logged.py.log
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b2n1_dev/FIX2N1NEW_stack_logs/tests__test_navc_tau_file.py.junit.xml
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b2n1_dev/FIX2N1NEW_stack_logs/tests__test_navc_tau_file.py.log
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b3_dev/driver.log
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b3_dev/driver.log.control
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b3_dev/FIX3_stack.jsonl
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b3_dev/FIX3_stack_logs/tests__test_built_heads_receive_gradient.py.junit.xml
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b3_dev/FIX3_stack_logs/tests__test_built_heads_receive_gradient.py.log
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b3_dev/FIX3_stack_logs/tests__test_config_hygiene.py.junit.xml
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b3_dev/FIX3_stack_logs/tests__test_config_hygiene.py.log
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b3_dev/FIX3_stack_logs/tests__test_ddv2_refc_chain.py.junit.xml
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b3_dev/FIX3_stack_logs/tests__test_ddv2_refc_chain.py.log
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b3_dev/FIX3_stack_logs/tests__test_declared_vs_built.py.junit.xml
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b3_dev/FIX3_stack_logs/tests__test_declared_vs_built.py.log
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b3_dev/FIX3_stack_logs/tests__test_goal_point.py.junit.xml
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b3_dev/FIX3_stack_logs/tests__test_goal_point.py.log
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b3_dev/FIX3_stack_logs/tests__test_grad_reach_logged.py.junit.xml
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b3_dev/FIX3_stack_logs/tests__test_grad_reach_logged.py.log
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b3_dev/FIX3_stack_logs/tests__test_grad_unreachable_declared.py.junit.xml
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b3_dev/FIX3_stack_logs/tests__test_grad_unreachable_declared.py.log
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b3_dev/FIX3_stack_logs/tests__test_max_speed_input.py.junit.xml
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b3_dev/FIX3_stack_logs/tests__test_max_speed_input.py.log
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b3_dev/FIX3_stack_logs/tests__test_navc_tau_file.py.junit.xml
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b3_dev/FIX3_stack_logs/tests__test_navc_tau_file.py.log
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b3_dev/FIX3_stack_logs/tests__test_refc_agents.py.junit.xml
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b3_dev/FIX3_stack_logs/tests__test_refc_agents.py.log
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b3_dev/FIX3_stack_logs/tests__test_refc_sampler.py.junit.xml
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b3_dev/FIX3_stack_logs/tests__test_refc_sampler.py.log
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b3_dev/FIX3_stack_logs/tests__test_refc_v3_agent_provenance.py.junit.xml
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b3_dev/FIX3_stack_logs/tests__test_refc_v3_agent_provenance.py.log
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b3_dev/FIX3_stack_logs/tests__test_refcv6_diffusion.py.junit.xml
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b3_dev/FIX3_stack_logs/tests__test_refcv6_diffusion.py.log
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b3_dev/FIX3_stack_logs/tests__test_refcv6_f3_cascade_reaches_loss.py.junit.xml
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b3_dev/FIX3_stack_logs/tests__test_refcv6_f3_cascade_reaches_loss.py.log
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b3_dev/FIX3_stack_logs/tests__test_refcv6_tactical.py.junit.xml
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b3_dev/FIX3_stack_logs/tests__test_refcv6_tactical.py.log
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b3_dev/FIX3_stack_logs/tests__test_refcv6_tactical_training.py.junit.xml
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b3_dev/FIX3_stack_logs/tests__test_refcv6_tactical_training.py.log
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b3_dev/FIX3_stack_logs/tests__test_refcv7_model.py.junit.xml
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b3_dev/FIX3_stack_logs/tests__test_refcv7_model.py.log
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b3_dev/FIX3_stack_logs/tests__test_refcv7_training.py.junit.xml
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b3_dev/FIX3_stack_logs/tests__test_refcv7_training.py.log
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b3_dev/FIX3_stack_logs/tests__test_residual_prior.py.junit.xml
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b3_dev/FIX3_stack_logs/tests__test_residual_prior.py.log
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b3_dev/FIX3_stack_logs/tests__test_u0_control_head_reachability.py.junit.xml
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b3_dev/FIX3_stack_logs/tests__test_u0_control_head_reachability.py.log
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b3_dev/regressions_FIX3_vs_TIP3.json
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b3_dev/TIP3_control_stack.jsonl
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b3_dev/TIP3_control_stack_logs/tests__test_refcv6_diffusion.py.junit.xml
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b3_dev/TIP3_control_stack_logs/tests__test_refcv6_diffusion.py.log
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_b3_dev/tip_control_files.txt
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_plan_batch3.json
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_r34_ab436ee/r34_fix5.junit.xml
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_r34_ab436ee/r34_fix5.log
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/gate_r34_ab436ee/r34_fix5_summary.json
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/hyg_scan_b3_before.txt
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/patch_b3_run.log
+# NEW
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/r34_fix5_driver.log
 # CHANGED
 TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/RESULT.md
-# HELD BACK -- still being written by a live run (lands with its summary, next batch):
-#   TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/r34_fix5_driver.log

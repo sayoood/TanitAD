@@ -35,7 +35,8 @@ import dataclasses
 from typing import Any, Iterable
 
 __all__ = ["UndeclaredConfigAttribute", "strict_fields", "is_strict",
-           "undeclared_attributes", "assert_config_hygiene"]
+           "undeclared_attributes", "assert_config_hygiene", "config_dataclass_instances",
+           "non_strict_instances"]
 
 
 class UndeclaredConfigAttribute(AttributeError):
@@ -159,3 +160,36 @@ def assert_config_hygiene(root: Any, where: str = "config") -> None:
             f"[G-HYG] ⛔ {where}: {len(bad)} UNDECLARED attribute(s) on config dataclasses. Each "
             f"one is a lever the next rebuild drops while argv and config.json still state it "
             f"(D-REFCV6-EQUALIZE-DROPPED). Declare it as a field or remove it:\n  - {lines}")
+
+
+def config_dataclass_instances(root: Any, path: str = "cfg") -> list[tuple[str, Any]]:
+    """Every ``(path, dataclass instance)`` in the config tree under ``root``, sorted by path --
+    the walk the refcv7 launch gate's G-HYG probe makes (``launch_gate._dataclass_instances``):
+    dataclass instances through ``vars()``, lists, tuples and dicts; cycles cut by identity.
+
+    ⚠️ Batch 3 (2026-09-27): the probe found SIX config classes in the refcv7 tree that
+    accepted an undeclared attribute -- the tree had grown past the twelve batch 1 decorated.
+    A strictness check must enumerate the TREE, never a list of modules.
+    """
+    out: list[tuple[str, Any]] = []
+    seen: set[int] = set()
+    stack: list[tuple[str, Any]] = [(path, root)]
+    while stack:
+        p, obj = stack.pop()
+        if id(obj) in seen:
+            continue
+        seen.add(id(obj))
+        if dataclasses.is_dataclass(obj) and not isinstance(obj, type):
+            out.append((p, obj))
+        for suffix, child in _children(obj):
+            if dataclasses.is_dataclass(child) or isinstance(child, (list, tuple, dict)):
+                stack.append((p + suffix, child))
+    return sorted(out, key=lambda pv: pv[0])
+
+
+def non_strict_instances(root: Any, path: str = "cfg") -> list[tuple[str, str]]:
+    """``(path, module.qualname)`` of every config dataclass instance under ``root`` whose class
+    ACCEPTS an undeclared attribute (neither :func:`strict_fields` nor frozen). ``[]`` == the
+    whole tree refuses the D-REFCV6-EQUALIZE-DROPPED mechanism at assignment."""
+    return [(p, f"{type(o).__module__}.{type(o).__qualname__}")
+            for p, o in config_dataclass_instances(root, path) if not is_strict(o)]

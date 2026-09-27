@@ -8190,6 +8190,8 @@ def train(args) -> dict:
                               "built_checks": sum(1 for _l in _dvb.REGISTRY.values()
                                                   if _l.kind in ("built", "loss")),
                               "mismatches": 0,
+                              # batch 3 (a): the modules this build froze BY DESIGN, and why
+                              "grad_unreachable": _dvb.declared_grad_unreachable(model),
                               "module": "tanitad/train/declared_vs_built.py"},
         # ⛔ D3: what this run declares it LOGS -- held against metrics.jsonl at the first row
         "grad_reach_logging": _grad_reach_declaration(model, args),

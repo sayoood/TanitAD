@@ -421,34 +421,101 @@ def test_REFCV7_REQUIRED_ON_is_the_PI_literal():
                                       "speed_ceiling_filter")
 
 
-def test_REFCV7_all_three_on_and_built_PASSES():
-    assert dvb.check_refcv7_required(_v6_model(**_ALL_ON), _SEL_ARGV) == []
+#: ⛔ SPEC_REFCV7 §10 (A5): a refcv7 build ALSO carries the residual prior `ha0_ext_pose` on the
+#: control-space DDIM sampler (v0-conditioned vocabulary) and the ego history the prior reads.
+#: NEW-1's `_arm` recipe (`test_residual_prior.py`) through the trainer's OWN pin, then the
+#: `_v6_model` tactical setup and the three selection mechanisms on the config.
+_R7_PIN = ["--sampler", "ddim", "--anchor-v0-conditioned", "--anchor-control-units", "alat",
+           "--n-anchors", "20", "--f1-random-t", "--f2-dd-step", "--f3-per-layer", "--f4-adaln",
+           "--f5-focal", "--f5-emitting-conf", "--f6-w-u0-zero"]
+_R7_ARGV = argparse.Namespace(**vars(_SEL_ARGV), residual_prior="ha0_ext_pose", ego_history=True)
+
+
+def _r7_model(residual_prior="ha0_ext_pose", **core_flags):
+    from tanitad.refs import refcv6_tactical as v6tac
+    from tanitad.refs.refc_agents import AgentSeamConfig
+    argv = list(_R7_PIN) + ["--ego-history"]
+    if residual_prior is not None:
+        argv += ["--residual-prior", residual_prior]
+    _a_, cfg = _pin(*argv)
+    cfg.tac_vocab_version = "v7.0"
+    cfg.tac_decoder_v6 = True
+    cfg.max_speed_onehot_v6 = True
+    cfg.core.agents = AgentSeamConfig(enable=True)
+    cfg.core.decoder.cross_agent = True
+    for k, v in {**_ALL_ON, **core_flags}.items():
+        setattr(cfg.core, k, v)
+    cfg.tac_decoder_cfg = v6tac.TacticalDecoderConfig(d_model=64, n_layers=1, n_heads=4,
+                                                      d_bev=0)
+    return v3.RefCV3Model(cfg)
+
+
+@pytest.fixture(scope="module")
+def r7():
+    return _r7_model()
+
+
+def test_REFCV7_all_three_on_and_built_PASSES(r7):
+    assert dvb.check_refcv7_required(r7, _R7_ARGV) == []
 
 
 @pytest.mark.parametrize("missing", ["graft_tac8_prior", "graft_nav_compliance",
                                      "speed_ceiling_filter"])
-def test_REFCV7_RED_an_argv_missing_one_is_REFUSED(missing):
-    args = argparse.Namespace(**{**vars(_SEL_ARGV), missing: False})
-    got = [(x.lever, x.built) for x in dvb.check_refcv7_required(_v6_model(**_ALL_ON), args)]
+def test_REFCV7_RED_an_argv_missing_one_is_REFUSED(r7, missing):
+    args = argparse.Namespace(**{**vars(_R7_ARGV), missing: False})
+    got = [(x.lever, x.built) for x in dvb.check_refcv7_required(r7, args)]
     assert got == [("--" + missing.replace("_", "-"), "OFF in argv")]
 
 
 def test_REFCV7_RED_on_in_argv_but_UNBUILT_is_REFUSED():
-    """refcv6-r101-s0's own build (behaviour set only) under a refcv7 argv."""
+    """refcv6-r101-s0's own build (behaviour set only, no residual prior, no ego history) under a
+    refcv7 argv: FIVE refusals."""
     got = sorted((x.lever, x.built) for x in
-                 dvb.check_refcv7_required(_v6_model(graft_behaviour_sel=True), _SEL_ARGV))
-    assert got == [("--graft-nav-compliance", "not built"), ("--graft-tac8-prior", "not built"),
+                 dvb.check_refcv7_required(_v6_model(graft_behaviour_sel=True), _R7_ARGV))
+    assert got == [("--ego-history", "not built"), ("--graft-nav-compliance", "not built"),
+                   ("--graft-tac8-prior", "not built"), ("--residual-prior", "off"),
                    ("--speed-ceiling-filter", "not built")]
 
 
-def test_REFCV7_tau_must_EQUAL_the_banked_file(tmp_path):
+def test_REFCV7_tau_must_EQUAL_the_banked_file(r7, tmp_path):
     p = tmp_path / "nav_compliance_tau_train.json"
     p.write_text(json.dumps({"tau": 0.08}), encoding="utf-8")
-    m = _v6_model(**_ALL_ON)
-    assert dvb.check_refcv7_required(m, _SEL_ARGV, tau_file=str(p)) == []
-    off = argparse.Namespace(**{**vars(_SEL_ARGV), "nav_compliance_tau_rad": 0.09})
-    assert [x.lever for x in dvb.check_refcv7_required(m, off, tau_file=str(p))] == \
+    assert dvb.check_refcv7_required(r7, _R7_ARGV, tau_file=str(p)) == []
+    off = argparse.Namespace(**{**vars(_R7_ARGV), "nav_compliance_tau_rad": 0.09})
+    assert [x.lever for x in dvb.check_refcv7_required(r7, off, tau_file=str(p))] == \
         ["--nav-compliance-tau-rad"]
+
+
+# ---- SPEC_REFCV7 §10 (A5): "G-DVB refuses any other mode for a refcv7 launch" (batch 3 (c)) - #
+def test_REFCV7_RESIDUAL_PRIOR_is_the_SPEC_literal():
+    assert dvb.REFCV7_RESIDUAL_PRIOR == "ha0_ext_pose"
+
+
+@pytest.mark.parametrize("mode", ["ha0_ext", "cv_yawrate", "off"])
+def test_REFCV7_RED_any_other_residual_prior_in_ARGV_is_REFUSED(r7, mode):
+    args = argparse.Namespace(**{**vars(_R7_ARGV), "residual_prior": mode})
+    got = [(x.lever, x.declared, x.built, x.read_from)
+           for x in dvb.check_refcv7_required(r7, args)]
+    assert got == [("--residual-prior", "ha0_ext_pose", mode, "argv")]
+
+
+@pytest.mark.parametrize("mode", ["ha0_ext", "cv_yawrate", None])
+def test_REFCV7_RED_a_decoder_BUILT_with_any_other_prior_is_REFUSED(mode):
+    """The argv says `ha0_ext_pose`; the BUILT decoder carries another mode (None = off)."""
+    got = [(x.lever, x.declared, x.built, x.read_from)
+           for x in dvb.check_refcv7_required(_r7_model(residual_prior=mode), _R7_ARGV)]
+    assert got == [("--residual-prior", "ha0_ext_pose", mode or "off",
+                    "core.decoder.residual_prior")]
+
+
+def test_REFCV7_RED_ego_history_OFF_in_argv_or_NOT_BUILT_is_REFUSED(r7):
+    args = argparse.Namespace(**{**vars(_R7_ARGV), "ego_history": False})
+    assert [(x.lever, x.built) for x in dvb.check_refcv7_required(r7, args)] == \
+        [("--ego-history", "OFF in argv")]
+    m = _r7_model()
+    m.core.ego_hist = None                      # REGRESSION ARM: lost in the build
+    got = [(x.lever, x.built, x.read_from) for x in dvb.check_refcv7_required(m, _R7_ARGV)]
+    assert got == [("--ego-history", "not built", "core.ego_hist")]
 
 
 def test_GDVB_REFUSES_a_decoder_carrying_the_in_training_ceiling_switch(monkeypatch):

@@ -74,6 +74,8 @@ import torch
 import torch.nn.functional as F
 from torch import Tensor, nn
 
+from tanitad.train.config_hygiene import strict_fields
+
 __all__ = [
     "DiffusionFlags", "focal_cls_loss", "AdaLNModulation", "CascadeHeads",
     "dd_step_pairs", "dd_norm_waypoints", "dd_denorm_waypoints",
@@ -87,6 +89,9 @@ __all__ = [
 # The flag block
 # ============================================================================
 
+# ⛔ G-HYG (SPEC_REFCV7 §2; batch 3, 2026-09-27): an UNDECLARED attribute RAISES at
+# assignment -- the launch gate's probe found this class accepting one.
+@strict_fields
 @dataclass
 class DiffusionFlags:
     """F1…F9. **All nine default to the current behaviour.**

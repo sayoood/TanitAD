@@ -96,6 +96,8 @@ import torch
 import torch.nn.functional as F
 from torch import Tensor, nn
 
+from tanitad.train.config_hygiene import strict_fields
+
 from tanitad.data.bev_raster import ALL_CLASSES, GRID_DEFAULT
 from tanitad.data.rig_projection import RigCamera  # noqa: F401  (re-export)
 from tanitad.models.agent_slots import (
@@ -131,6 +133,9 @@ TOKEN_FEAT_DIM = 15
 # ---------------------------------------------------------------------------
 # Config
 # ---------------------------------------------------------------------------
+# ⛔ G-HYG (SPEC_REFCV7 §2; batch 3, 2026-09-27): an UNDECLARED attribute RAISES at
+# assignment -- the launch gate's probe found this class accepting one.
+@strict_fields
 @dataclass
 class AgentSeamConfig:
     """WP-6 ``E-AGT-HEAD``. Every default is OFF — a build that does not ask

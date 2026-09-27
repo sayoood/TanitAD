@@ -1,0 +1,46 @@
+--- a/stack/tanitad/refs/refc.py (06380de)
++++ b/stack/tanitad/refs/refc.py (batch 3)
+@@ -147,6 +147,7 @@
+ 
+ from tanitad.models.kinematic import rollout_unicycle
+ from tanitad.models import refcv6_diffusion as _rv6
++from tanitad.models import _gradreach as _gr  # batch 3 (a): the declaration
+ from tanitad.refs import feasible_decode as _feas
+ # ⭐ S7 / E15 — the param-free metric-goal-point compatibility. Imported, NEVER
+ # re-derived beside the thing it scores: a guard/score re-implemented next to
+@@ -2079,6 +2080,35 @@
+                 "46) -- a plausible-looking number for a quantity that is not "
+                 "a distance, which is exactly the `metre_sigma_m` divisor trap "
+                 "one field up.")
++        # ---- ⛔⛔ BATCH 3 (a), 2026-09-27: BUILT, BYPASSED BY DESIGN -> FROZEN + DECLARED ----- #
++        # MEASURED by the refcv7 launch gate's G-LIVE smoke (and by NEW-1, its F-2): these heads
++        # receive ZERO gradient on the refcv7 argv. Neither is a wiring defect; each is bypassed
++        # BY CONSTRUCTION:
++        #  * `offset_head` on a SAMPLER build: the classifier pass writes `x = bank + offset`
++        #    (`forward`) and `_sample` then REPLACES `x` -- "the sampler REPLACES this loop, it
++        #    does not wrap it"; `out["offset"]` is read by no loss of `compute_losses_v3`.
++        #  * `control_head` under F3: `_decode_ctrl` returns the CASCADE's last stage whenever
++        #    `self.cascade` is set and calls `control_head(q)` only when it is None; the
++        #    cascade's per-layer heads GENERALISE it (`refcv6_diffusion.CascadeHeads`, DD).
++        # ⭐ DECLARED, NOT DELETED (`tanitad/models/_gradreach.py`): both stay BUILT, so every
++        # banked checkpoint (refcv6@38k, BAR-R7-2's reference) loads STRICTLY -- `requires_grad`
++        # is not serialised. They leave the optimizer and carry their reason, so G-LIVE's "every
++        # declared-trainable group gets a non-zero gradient" holds for the RIGHT reason, and
++        # G-DVB holds the declared set against ARGV (`declared_vs_built.check_grad_unreachable`)
++        # and can MEASURE it (`probe_grad_unreachable`), so a freeze cannot hide a live head.
++        # ⚠️ The CLASSIFIER RL adapters read `out["offset"]` as their policy mean
++        # (`tanitad/rl/refc_adapter.py`, `refcv3_adapter.py`); they are for classifier builds,
++        # where nothing is frozen. The sampler's RL chain binds to `_decode_ctrl`.
++        if self.control_head is not None:
++            _gr.declare_grad_unreachable(
++                self.offset_head,
++                "sampler build: `_sample` REPLACES the classifier-pass fan `bank + offset`; "
++                "out['offset'] is read by no training loss")
++            if self.cascade is not None:
++                _gr.declare_grad_unreachable(
++                    self.control_head,
++                    "F3: `_decode_ctrl` emits the CASCADE's last stage (DD's per-layer heads); "
++                    "control_head(q) runs only when self.cascade is None")
+ 
+     def anchor_control_seq(self, batch: int, dtype: torch.dtype) -> Tensor:
+         """``[B, N, S, 2]`` — the anchor vocabulary as a per-slot control

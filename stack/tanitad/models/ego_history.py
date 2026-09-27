@@ -50,6 +50,8 @@ from dataclasses import dataclass
 import torch
 from torch import Tensor, nn
 
+from tanitad.train.config_hygiene import strict_fields
+
 __all__ = [
     "EgoHistoryConfig", "EgoHistoryEncoder", "ego_channels_from_poses",
     "EGO_CHANNELS",
@@ -99,6 +101,9 @@ def ego_channels_from_poses(poses: Tensor, n_past: int,
     return torch.stack([v, dv, dyaw], dim=-1)             # [B, n, 3]
 
 
+# ⛔ G-HYG (SPEC_REFCV7 §2; batch 3, 2026-09-27): an UNDECLARED attribute RAISES at
+# assignment -- the launch gate's probe found this class accepting one.
+@strict_fields
 @dataclass
 class EgoHistoryConfig:
     """⛔ ``enable=False`` (the DEFAULT) constructs NOTHING."""

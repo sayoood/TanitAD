@@ -27,6 +27,9 @@ from tanitad.refs import refc  # noqa: E402
 from tanitad.refs import refc_v3 as v3  # noqa: E402
 from tanitad.train import config_hygiene as hyg  # noqa: E402
 
+import copy  # noqa: E402
+import importlib  # noqa: E402
+
 #: every config dataclass of the two model modules the trainer pins -- LITERAL, so a new config
 #: class added without the guard fails here by name.
 STRICT = {
@@ -161,3 +164,103 @@ def test_every_pin_assignment_targets_a_DECLARED_field():
                     bad.append(f"{name}: {t.id}.{'.'.join(chain)}")
     assert n >= 80, f"the census saw only {n} assignments -- it is not reading the pins"
     assert bad == [], bad
+
+
+# ============================================================================================ #
+# Batch 3 (2026-09-27): the six config classes the launch gate's G-HYG probe found OPEN          #
+# ============================================================================================ #
+#: MEASURED by the gate's probe on the refcv7 argv (evidence on Thor: `.../G-HYG.json`): each of
+#: these accepted an undeclared attribute. LITERAL -- module and class name.
+STRICT_B3 = {
+    "tanitad.refs.refc_agents": ("AgentSeamConfig",),
+    "tanitad.models.refcv6_diffusion": ("DiffusionFlags",),
+    "tanitad.models.ego_history": ("EgoHistoryConfig",),
+    "tanitad.refs.max_speed_input": ("MaxSpeedConfig",),
+    "tanitad.refs.refcv7_heads": ("Refcv7HeadConfig",),
+    "tanitad.refs.refcv6_tactical": ("TacticalDecoderConfig",),
+}
+#: the OTHER dataclasses of those modules, each with the reason it is not an open config of the
+#: pinned tree -- LITERAL, so a new dataclass there fails BY NAME until it is classified
+NOT_A_TREE_CONFIG = {
+    ("tanitad.refs.refc_agents", "RigCameraBank"): "frozen=True -- strict by construction",
+    ("tanitad.refs.refcv6_tactical", "TacticalLossWeights"):
+        "a per-call loss-weight record (`TacticalLossWeights().to_dict()`); RefCV3Config holds none",
+}
+#: the gate's active-probe attribute (`launch_gate._HYG_PROBE_ATTR`)
+PROBE_ATTR = "_g_hyg_probe_undeclared_attribute"
+#: a refcv7-shaped argv whose pin instantiates ALL SIX without opening a file (the label / join
+#: paths are never opened by the pin: `test_refcv6_tactical_training.py`'s BASE)
+R7_TREE_ARGV = ["--arm", "hier", "--out", "z", "--v7-labels", "labels.jsonl.gz",
+                "--agents", "head", "--w-agent", "1.0", "--agent-join", "join.jsonl.xz",
+                "--agent-join-verify", "off", "--tac-decoder-v6", "--w-tac-v6", "1.0",
+                "--sampler", "ddim", "--anchor-v0-conditioned", "--anchor-control-units", "alat",
+                "--n-anchors", "20", "--ego-history", "--residual-prior", "ha0_ext_pose",
+                "--f1-random-t", "--f2-dd-step", "--f3-per-layer", "--f4-adaln", "--f5-focal",
+                "--f5-emitting-conf", "--f6-w-u0-zero"]
+
+
+def _r7_tree():
+    import refc_v3_train as T
+    args = T.build_parser().parse_args(R7_TREE_ARGV)
+    return T._pin_trainer_cfg(v3.refc_v3_smoke_config(True), args)
+
+
+@pytest.mark.parametrize("modname,name", [(m, n) for m, ns in STRICT_B3.items() for n in ns])
+def test_B3_the_six_classes_the_gate_found_open_are_STRICT(modname, name):
+    cls = getattr(importlib.import_module(modname), name)
+    assert hyg.is_strict(cls), f"{modname}.{name} accepts ad-hoc attributes"
+    obj = cls()                                   # every field has its OFF default
+    with pytest.raises(hyg.UndeclaredConfigAttribute, match=PROBE_ATTR):
+        setattr(obj, PROBE_ATTR, 1)
+    assert PROBE_ATTR not in vars(obj)
+    assert dataclasses.replace(obj) == obj         # replace / __init__ / __post_init__ unchanged
+
+
+def test_B3_no_OTHER_dataclass_in_those_modules_escaped():
+    for modname, names in STRICT_B3.items():
+        mod = importlib.import_module(modname)
+        found = {n for n, o in vars(mod).items()
+                 if isinstance(o, type) and dataclasses.is_dataclass(o) and o.__module__ == modname}
+        assert set(names) <= found, (modname, sorted(set(names) - found))
+        extra = sorted(n for n in found - set(names) if (modname, n) not in NOT_A_TREE_CONFIG)
+        assert extra == [], (modname, extra)
+    for (modname, name), _why in NOT_A_TREE_CONFIG.items():   # the exemptions are not stale
+        assert dataclasses.is_dataclass(getattr(importlib.import_module(modname), name))
+
+
+def test_B3_the_GATE_PROBE_on_a_refcv7_tree_every_config_object_REFUSES():
+    """The launch gate's G-HYG probe, mirrored (`launch_gate.judge_hygiene`): walk EVERY config
+    dataclass instance of the pinned refcv7-shaped tree; every class must be strict, and setting
+    an undeclared attribute on EVERY object (on a deep copy) must raise."""
+    cfg = _r7_tree()
+    inst = hyg.config_dataclass_instances(cfg)
+    classes = {type(o).__qualname__ for _, o in inst}
+    six = {c for ns in STRICT_B3.values() for c in ns}
+    assert six <= classes, ("the walk did not reach all six -- a probe that read less certifies "
+                            "less", sorted(six - classes))
+    assert len(inst) >= 10, len(inst)
+    assert hyg.non_strict_instances(cfg) == []
+    assert hyg.undeclared_attributes(cfg) == []
+    accepted = []
+    for p, o in hyg.config_dataclass_instances(copy.deepcopy(cfg)):
+        try:
+            setattr(o, PROBE_ATTR, 1)
+        except (AttributeError, TypeError, dataclasses.FrozenInstanceError):
+            continue
+        accepted.append(p)
+    assert accepted == [], accepted
+
+
+def test_B3_RED_an_OPEN_class_in_the_tree_is_NAMED_and_ACCEPTS_the_probe():
+    """The deliberate regression: the tree holds an instance of an undecorated class (the state
+    of all six before this batch) -- the walk names it, and the probe's assignment succeeds on
+    it, which is the D-REFCV6-EQUALIZE-DROPPED hole the guard exists to close."""
+    @dataclasses.dataclass
+    class OpenTwin:
+        enable: bool = True
+    cfg = _r7_tree()
+    cfg.core.agents = OpenTwin()                      # a DECLARED field: the assignment is legal
+    assert hyg.non_strict_instances(cfg) == [
+        ("cfg.core.agents", f"{OpenTwin.__module__}.{OpenTwin.__qualname__}")]
+    setattr(cfg.core.agents, PROBE_ATTR, 1)           # accepted: the hole
+    assert vars(cfg.core.agents)[PROBE_ATTR] == 1

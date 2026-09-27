@@ -96,6 +96,7 @@ import torch
 from torch import Tensor, nn
 
 from tanitad.channel_admissibility import ChannelExclusion
+from tanitad.train.config_hygiene import strict_fields
 
 # --- units -------------------------------------------------------------------
 
@@ -400,6 +401,9 @@ def encode_block(v_ms, valid=None, *, mode: str = DEFAULT_MODE,
     return torch.stack([(q / V_SCALE_MS) * ok, over * ok, ok], dim=-1)
 
 
+# ⛔ G-HYG (SPEC_REFCV7 §2; batch 3, 2026-09-27): an UNDECLARED attribute RAISES at
+# assignment -- the launch gate's probe found this class accepting one.
+@strict_fields
 @dataclass
 class MaxSpeedConfig:
     """⚠️ ``enabled`` DEFAULTS FALSE: no banked arm's recipe changes."""

@@ -55,7 +55,9 @@ from tanitad.train.config_hygiene import undeclared_attributes
 
 __all__ = ["Mismatch", "Lever", "REGISTRY", "check", "refuse_on_mismatch", "coverage",
            "register", "KINDS", "DRIVORT_DEFAULTS", "drivort_levers_set",
-           "REFCV7_REQUIRED_ON", "check_refcv7_required"]
+           "REFCV7_REQUIRED_ON", "REFCV7_RESIDUAL_PRIOR", "check_refcv7_required",
+           "check_logged_rows", "GRAD_UNREACHABLE_RULES", "expected_grad_unreachable",
+           "declared_grad_unreachable", "check_grad_unreachable", "probe_grad_unreachable"]
 
 KINDS = ("built", "loss", "elsewhere", "data", "runtime", "record", "drivort")
 
@@ -966,11 +968,20 @@ def coverage(parser) -> list[str]:
 REFCV7_REQUIRED_ON: tuple[str, ...] = ("graft_tac8_prior", "graft_nav_compliance",
                                        "speed_ceiling_filter")
 
+#: ⛔⛔ SPEC_REFCV7 §10 (A5): refcv7's prior is ``ha0_ext_pose`` -- past poses only -- and "G-DVB
+#: refuses any other mode for a refcv7 launch": ``ha0_ext`` reads the recorded STEER at t0 (no PI
+#: ruling on that channel at inference; NavSim has none, so BAR-R7-N1 could not be scored),
+#: ``cv_yawrate`` starts 0.23 m behind the bar it must beat, ``off`` is refcv6. It requires
+#: ``--ego-history``, the window the prior reads. A LITERAL, never read from kinematic_prior.
+REFCV7_RESIDUAL_PRIOR: str = "ha0_ext_pose"
+
 
 def check_refcv7_required(model, args, *, tau_file: str | None = None) -> list[Mismatch]:
     """-> a Mismatch for every REFCV7_REQUIRED_ON lever that is OFF in argv or UNBUILT in the
-    model ([] == all three on and built). With ``tau_file`` (the banked
-    `raw/nav_compliance_tau_train.json`), argv's `--nav-compliance-tau-rad` must equal its `tau`.
+    model, for a residual prior that is not REFCV7_RESIDUAL_PRIOR in argv or on the BUILT
+    decoder, and for an ego history OFF in argv or not built ([] == a refcv7 build). With
+    ``tau_file`` (the banked `raw/nav_compliance_tau_train.json`), argv's
+    `--nav-compliance-tau-rad` must equal its `tau`.
     """
     out: list[Mismatch] = []
     built = _sel_built(model)
@@ -983,6 +994,24 @@ def check_refcv7_required(model, args, *, tau_file: str | None = None) -> list[M
             out.append(Mismatch(_flag(dest), "BUILT", "not built",
                                 f"selection mechanism `{key}` (built)",
                                 "refcv7 requires all three selection mechanisms"))
+    # ---- SPEC_REFCV7 §10 (A5): the prior, in argv AND on the built decoder ---------------- #
+    got = str(_a(args, "residual_prior", "off"))
+    if got != REFCV7_RESIDUAL_PRIOR:
+        out.append(Mismatch("--residual-prior", REFCV7_RESIDUAL_PRIOR, got, "argv",
+                            "SPEC_REFCV7 §10 (A5): a refcv7 launch uses ha0_ext_pose only"))
+    dec = getattr(_core(model), "decoder", None)
+    built = str(getattr(dec, "residual_prior", "<absent>")) if dec is not None else "<absent>"
+    if built != REFCV7_RESIDUAL_PRIOR:
+        out.append(Mismatch("--residual-prior", REFCV7_RESIDUAL_PRIOR, built,
+                            "core.decoder.residual_prior",
+                            "SPEC_REFCV7 §10 (A5): the BUILT prior is the one that trains"))
+    # ...and the observed pose window it reads
+    if not bool(_a(args, "ego_history", False)):
+        out.append(Mismatch("--ego-history", "ON (SPEC_REFCV7 §10)", "OFF in argv", "argv",
+                            "ha0_ext_pose reads the observed pose window"))
+    if getattr(_core(model), "ego_hist", None) is None:
+        out.append(Mismatch("--ego-history", "BUILT", "not built", "core.ego_hist",
+                            "ha0_ext_pose reads the observed pose window"))
     if tau_file is not None:
         import json as _json
         want = float(_json.load(open(tau_file, encoding="utf-8"))["tau"])
@@ -1012,7 +1041,8 @@ def check(model, args, parser=None, *, forbid_kinds: tuple = ()) -> list[Mismatc
 
     ⛔ Order of the report: unregistered flags first (a flag G-DVB cannot see is a hole in the
     guard itself), then every lever's mismatches in registry order, then the selection
-    DECLARATION, then G-HYG on the config tree the model holds.
+    DECLARATION, then the grad-unreachable DECLARATION (batch 3: the frozen modules against
+    argv), then G-HYG on the config tree the model holds.
     """
     out: list[Mismatch] = []
     if parser is not None:
@@ -1035,6 +1065,7 @@ def check(model, args, parser=None, *, forbid_kinds: tuple = ()) -> list[Mismatc
                                 "a DrivoR-T lever on a refcv7 launch (SPEC_REFCV7 §6.1): "
                                 "refcv7 passes none of them"))
     out += _c_selection_declaration(model, args)
+    out += check_grad_unreachable(model, args)
     cfg = getattr(model, "cfg", None)
     if cfg is not None:
         for path, cls, attr in undeclared_attributes(cfg, "model.cfg"):
@@ -1104,3 +1135,151 @@ def check_logged_rows(config: dict, rows) -> list[Mismatch]:
                                     "a key the run did not declare: an OFF arm's schema must "
                                     "equal the pre-instrument trainer's"))
     return out
+
+
+# ============================================================================
+# BATCH 3 (a), 2026-09-27: BUILT, BYPASSED BY DESIGN -- the grad-unreachable declaration
+# ============================================================================
+# MEASURED by the refcv7 launch gate's G-LIVE smoke: three modules take ZERO gradient on the
+# refcv7 argv. Each is bypassed BY CONSTRUCTION, so the model FREEZES and DECLARES it
+# (`tanitad/models/_gradreach.declare_grad_unreachable`, kept built for strict checkpoint
+# loads). A freeze is exactly what could hide a dead group from G-LIVE, so it is held here in
+# BOTH directions against a LITERAL rule table read from ARGV -- never from the config or the
+# model -- and `probe_grad_unreachable` re-opens the frozen tensors for one backward to MEASURE
+# that no loss reaches them.
+
+#: (module path, the argv rule, why) -- the modules a refc_v3 build DECLARES grad-unreachable.
+GRAD_UNREACHABLE_RULES: tuple[tuple[str, str, str], ...] = (
+    ("core.decoder.offset_head", "--sampler ddim",
+     "a sampler build: `_sample` REPLACES the classifier-pass fan bank + offset"),
+    ("core.decoder.control_head", "--sampler ddim --f3-per-layer",
+     "F3: the cascade's per-layer heads emit the fan (refcv6_diffusion.CascadeHeads)"),
+    ("scorer.goal_point", "--arm hier",
+     "E9 always passes the structured goal; the free decode is only out['goal_point_free']"),
+)
+
+#: the attributes the two freeze declarations set (`_gradreach.GRAD_UNREACHABLE_FLAG` and
+#: `v6.FROZEN_EXTERNAL_FLAG`), read BY NAME so this module imports neither torch nor v6
+_GRAD_UNREACHABLE_ATTR = "_tanitad_grad_unreachable"
+_FROZEN_EXTERNAL_ATTR = "_tanitad_frozen_external"
+
+
+def expected_grad_unreachable(args) -> dict[str, str]:
+    """``{module path: why}`` -- the rule column of GRAD_UNREACHABLE_RULES evaluated on argv."""
+    ddim = str(_a(args, "sampler", "none")) == "ddim"
+    on = {"core.decoder.offset_head": ddim,
+          "core.decoder.control_head": ddim and bool(_a(args, "f3_per_layer", False)),
+          "scorer.goal_point": str(_a(args, "arm", "")) == "hier"}
+    return {p: why for p, _rule, why in GRAD_UNREACHABLE_RULES if on[p]}
+
+
+def _freezes(model) -> dict[str, tuple[str, str]]:
+    out: dict[str, tuple[str, str]] = {}
+    for name, mod in model.named_modules():
+        for attr in (_GRAD_UNREACHABLE_ATTR, _FROZEN_EXTERNAL_ATTR):
+            why = getattr(mod, attr, None)
+            if why:
+                out[name] = (attr, str(why))
+    return out
+
+
+def declared_grad_unreachable(model) -> dict[str, str]:
+    """``{module path: reason}`` of every subtree the BUILT model declared grad-unreachable
+    (`config.json` records it: a frozen tensor that cannot say WHY it is frozen is the defect)."""
+    if not callable(getattr(model, "named_modules", None)):
+        return {}
+    return {p: why for p, (attr, why) in sorted(_freezes(model).items())
+            if attr == _GRAD_UNREACHABLE_ATTR}
+
+
+def _under(name: str, prefix: str) -> bool:
+    return prefix == "" or name == prefix or name.startswith(prefix + ".")
+
+
+def check_grad_unreachable(model, args) -> list[Mismatch]:
+    """-> the frozen-by-declaration modules held against argv; ``[]`` == they agree.
+
+    * a module argv says is bypassed and the build did NOT declare (left trainable, it is a
+      dead group G-LIVE refuses);
+    * a declaration argv does NOT justify (a freeze that hides a live head from G-LIVE);
+    * a declared module trainable again (the v6 stage-freeze class: a later pass UNDID the
+      constructor's freeze -- `_gradreach.py`'s own measurement);
+    * ANY frozen parameter outside a declared subtree (grad-unreachable or frozen-external).
+    A hand-built stand-in with no ``named_parameters`` (unit tests) has nothing built and
+    nothing declared, and returns ``[]``.
+    """
+    if not callable(getattr(model, "named_parameters", None)):
+        return []
+    decl = _freezes(model)
+    gr = {p: why for p, (attr, why) in decl.items() if attr == _GRAD_UNREACHABLE_ATTR}
+    want = expected_grad_unreachable(args)
+    out: list[Mismatch] = []
+    for p in sorted(set(want) - set(gr)):
+        out.append(Mismatch(f"grad_unreachable[{p}]", "declared (argv: bypassed by design)",
+                            "not declared", p,
+                            f"{want[p]} -- left trainable it is a dead group G-LIVE refuses"))
+    for p in sorted(set(gr) - set(want)):
+        out.append(Mismatch(f"grad_unreachable[{p}]", "not declared (argv: reached)",
+                            "declared", p,
+                            f"a freeze argv does not justify hides a live head from G-LIVE: "
+                            f"{gr[p]}"))
+    params = list(model.named_parameters())
+    for p in sorted(decl):
+        live = [n for n, t in params if _under(n, p) and t.requires_grad]
+        if live:
+            out.append(Mismatch(f"grad_unreachable[{p}]", "requires_grad False",
+                                f"{len(live)} trainable tensor(s)", p,
+                                f"declared frozen but trainable again: {live[:3]}"))
+    stray = [n for n, t in params if not t.requires_grad and not any(_under(n, p) for p in decl)]
+    if stray:
+        out.append(Mismatch("frozen parameters", "declared (grad-unreachable / frozen-external)",
+                            f"{len(stray)} undeclared", "model.named_parameters()",
+                            f"a freeze nobody declared hides a dead group from G-LIVE: "
+                            f"{stray[:4]}"))
+    return out
+
+
+def probe_grad_unreachable(model, backward: Callable[[], Any]) -> list[Mismatch]:
+    """MEASURE the declaration: re-open every declared grad-unreachable tensor, run
+    ``backward()`` (the caller's forward + loss + ``.backward()``), and require that NONE of them
+    received a gradient -- ``p.grad is None``: never in the graph. ``[]`` == every declaration
+    is TRUE on this batch.
+
+    ⛔ A freeze alone cannot prove a module is unreachable -- it makes the question
+    unanswerable, since no gradient can arrive at a frozen tensor. This re-opens it for ONE
+    backward. A present-but-zero gradient is a module IN the graph (wired, currently zero) and
+    is reported: "unreachable" must mean no loss reaches it at all.
+    ⛔ A POSITIVE CONTROL: some parameter outside the declared subtrees must receive a non-zero
+    gradient, or the closure never ran a real backward and the probe read nothing.
+    Restores ``requires_grad=False`` and ``.grad = None`` on every tensor it re-opened, and
+    clears every gradient before and after (``zero_grad(set_to_none=True)``).
+    """
+    decl = declared_grad_unreachable(model)
+    params = list(model.named_parameters())
+    touched = [(n, t) for n, t in params if any(_under(n, p) for p in decl)]
+    model.zero_grad(set_to_none=True)
+    for _, t in touched:
+        t.requires_grad_(True)
+    try:
+        backward()
+        out: list[Mismatch] = []
+        for p in sorted(decl):
+            hit = [n for n, t in touched if _under(n, p) and t.grad is not None]
+            if hit:
+                out.append(Mismatch(f"grad_unreachable[{p}]", "no gradient (declared unreachable)",
+                                    f"a gradient on {len(hit)} tensor(s)", p,
+                                    f"the declaration is FALSE on this batch -- a loss reaches "
+                                    f"{hit[:3]}: {decl[p]}"))
+        reached = [n for n, t in params if not any(_under(n, p) for p in decl)
+                   and t.grad is not None and bool((t.grad != 0).any())]
+        if not reached:
+            out.append(Mismatch("grad_unreachable probe", "a backward that reached the model",
+                                "no non-zero gradient anywhere", "probe",
+                                "the closure computed no gradient -- a probe that read nothing "
+                                "certifies nothing"))
+        return out
+    finally:
+        for _, t in touched:
+            t.grad = None
+            t.requires_grad_(False)
+        model.zero_grad(set_to_none=True)
