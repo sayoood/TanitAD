@@ -4202,11 +4202,15 @@ def _sentinel_argv(ctx: Ctx, keep_flags: Iterable[str], scratch: Path) -> tuple[
                 s = str(scratch / "__gate_unread__" / f.strip("-"))
                 out.append(s)
                 rec["sentinel"][f] = s
-    if ctx.options.get("cpu_only") and has_flag(out, "--trunk-compile"):
+    # ⛔ The model job is CPU-only on EVERY host (run_job). MEASURED 2026-09-27 on Thor (02ffceb):
+    # keeping --trunk-compile there made Inductor build a CPU kernel with g++ (CppCompileError) and
+    # G-EVAL crashed. The compile is host-only (`_NON_MODEL_FLAGS`): it wraps the backbone CALL and
+    # changes neither the module tree nor the state_dict, so the model job always drops it.
+    if has_flag(out, "--trunk-compile"):
         out = set_flag(out, "--trunk-compile", None)
-        rec["dropped"] = {"--trunk-compile": "no Triton on the CPU host; torch.compile wraps the "
-                                              "backbone CALL only (module tree and state_dict "
-                                              "unchanged) -- the eval loader drops it too"}
+        rec["dropped"] = {"--trunk-compile": "the model job is CPU-only on every host; torch.compile "
+                                              "wraps the backbone CALL only (module tree and "
+                                              "state_dict unchanged) -- the eval loader drops it too"}
     return out, rec
 
 

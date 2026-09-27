@@ -540,6 +540,19 @@ def test_the_MODEL_job_runs_CPU_only_on_every_host_and_the_smoke_does_not(tmp_pa
     assert seen["G-LIVE,G-CKPT"].get("CUDA_VISIBLE_DEVICES") != ""
 
 
+def test_the_MODEL_job_drops_trunk_compile_on_every_host(tmp_path):
+    """MEASURED 2026-09-27 on Thor: a CPU-only model job that kept --trunk-compile crashed G-EVAL in
+    Inductor's CPU C++ build. The drop must not depend on --cpu-only."""
+    ctx = LG.Ctx(profile="refcv7", tree=str(tmp_path), commit="0" * 40,
+                 argv=["--arm", "hier", "--trunk-compile", "--batch", "16"],
+                 out_dir=str(tmp_path), path_map=[], tree_sha256="0" * 64,
+                 argv_sha256="0" * 64, options={}, arm=None)
+    out, rec = LG._sentinel_argv(ctx, (), tmp_path)
+    assert "--trunk-compile" not in out
+    assert out == ["--arm", "hier", "--batch", "16"]
+    assert "--trunk-compile" in rec["dropped"]
+
+
 def test_smoke_runs_with_the_TRAINER_argv_as_the_process_argv():
     """MEASURED 2026-09-27: the trainer stamps config.json['argv'] = sys.argv[1:]; in-process it
     recorded the gate's own 'check --ctx ...' and G-EVAL crashed. The smoke must set sys.argv."""
