@@ -248,7 +248,47 @@ def _ssl():
         pass
 
 
+def _abs_page_meta(aid: str) -> dict:
+    """Title / authors / abstract / date from the arXiv ABSTRACT PAGE's citation_* meta
+    tags. The fallback for :func:`arxiv_meta`: MEASURED 2026-09-27, the export API answered
+    HTTP 406 to this client (with or without a User-Agent), and 17 of 21 papers were banked
+    with an EMPTY title while their PDFs downloaded fine from the same host."""
+    req = urllib.request.Request(f"https://arxiv.org/abs/{aid}",
+                                 headers={"User-Agent": "TanitAD-KB/1"})
+    with urllib.request.urlopen(req, timeout=30) as r:
+        page = r.read().decode("utf-8", "replace")
+    return parse_abs_page(page)
+
+
+def parse_abs_page(page: str) -> dict:
+    """Parse an arXiv abstract page (pure; tested offline)."""
+    import html as _html
+    def meta(name):
+        return [_html.unescape(re.sub(r"\s+", " ", v)).strip() for v in
+                re.findall(rf'<meta name="{name}" content="(.*?)"', page, re.S)]
+    title = (meta("citation_title") or [""])[0]
+    date = (meta("citation_date") or meta("citation_online_date") or [""])[0].replace("/", "-")
+    return {"title": title, "abstract": (meta("citation_abstract") or [""])[0][:900],
+            "authors": meta("citation_author")[:12], "published": date[:10]}
+
+
 def arxiv_meta(aid: str) -> dict:
+    """Title / authors / abstract: the export API first, then the abstract page."""
+    meta = _api_meta(aid)
+    if meta.get("title"):
+        return meta
+    try:
+        alt = _abs_page_meta(aid)
+    except Exception as e:                                   # noqa: BLE001
+        meta["meta_error"] = (meta.get("meta_error", "") + f" | abs page: {type(e).__name__}: {e}").strip(" |")
+        return meta
+    if alt.get("title"):
+        alt["meta_source"] = "abs_page"
+        return alt
+    return meta
+
+
+def _api_meta(aid: str) -> dict:
     """Title / authors / abstract from the arXiv API. Best-effort: a metadata
     failure must never block the BYTES from being banked, because the bytes are
     the thing that stops being available."""
