@@ -397,3 +397,21 @@ Each stays DEFERRED with A9's list and carries its MEASURED support for the next
 - **Mislocalised 2–5 m** (45 % of FPs; presence carries no localisation quality, Spearman −0.016) → R5 plus a quality-aware presence target.
 - **Class tilt** → R8.
 - **M17 re-ruled after VIS-1 on TRAIN** → A9's 300 stays. It is ≥ 2× the pre-VIS-1 maximum of 120; VIS-1 only lowers the count.
+
+### 15.5 A10.1 (2026-09-27 ~04:05 Berlin, BEFORE any G-BOX-OVERFIT number): the pre-registered next lever
+
+**Trigger.** The box-head builder found, INFERRED on a toy only, that with surplus queries a small slot decoder's presence stayed at the base-rate optimum for 4k steps, under focal and BCE alike: the slots did not specialise. If that transfers, G-BOX-OVERFIT's criteria 2 (P and R ≥ 0.90 at σ ≥ 0.5) and 3 (count within ±10 %) are the ones at risk.
+
+Per RULE ZERO the next arm is fixed now, before the data:
+
+| if the MAIN arm… | the next arm (same prereg literals, same frames, same 2,000 steps) |
+|---|---|
+| FAILS criterion 2 or 3 while presence sits near its base rate, i.e. the slots did not specialise | **+R6, denoising queries (training only).** DN-DETR-style for 3-D boxes: noised GT boxes (centre, size, yaw), plus a no-object negative group (contrastive DN), enter as extra queries. They are attention-masked from the matching queries and reconstructed with the box, presence and class losses. Inference is unchanged. PUBLISHED: DN parity at 50 % of the epochs and +1.9 AP (S3); CDN +0.5 AP and fewer duplicates (S4); used by StreamPETR and Sparse4D v3. |
+| FAILS criterion 4 (localisation) while 2 and 3 pass | the box-regression path: its weights and the matching-cost balance (the literature package's `raw/matching_cost_balance.json`). Diagnose first; no pre-picked arm. |
+| passes | nothing; R6 stays deferred as in A9. |
+
+**Fixed with it:**
+- The G-BOX-OVERFIT bars and must-fail arms do NOT change for the next arm. A lever that "passes" only with a relaxed bar has not passed.
+- The +R6 arm needs its own must-fail pair: `memory_zeros` and `presence_w0`, as in the prereg.
+- If +R6 also fails criterion 2 or 3, the next lever is an architecture addition: query selection from a BEV proposal heatmap (DINO-style mixed query selection). That goes to the PI as a named blocker, not a silent build.
+- Every early G-BOX-OVERFIT run is NON-BINDING (stamped `binding: false`). Only the run on the launch commit binds.
