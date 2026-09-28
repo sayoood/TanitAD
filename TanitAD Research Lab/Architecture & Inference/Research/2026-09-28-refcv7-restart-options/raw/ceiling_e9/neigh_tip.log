@@ -1,0 +1,722 @@
+........................................................................ [  2%]
+...............sssss....sssss.....sss................................... [  5%]
+........................................................................ [  8%]
+........................................................................ [ 11%]
+........................................................................ [ 13%]
+........................................................................ [ 16%]
+........................................................................ [ 19%]
+........................................................................ [ 22%]
+........................................F...........................s... [ 24%]
+......s................................................................. [ 27%]
+........................................................................ [ 30%]
+........................................................................ [ 33%]
+........................................................................ [ 36%]
+........................................................................ [ 38%]
+........................................................................ [ 41%]
+........................................................................ [ 44%]
+.......................s................................................ [ 47%]
+........................................................................ [ 49%]
+..s.ss...s......................................s....................... [ 52%]
+........................................................................ [ 55%]
+............F...............................................FF.......... [ 58%]
+.........................................................ssss......F.FF. [ 61%]
+........................................................................ [ 63%]
+......ss...............................................s................ [ 66%]
+........................................................................ [ 69%]
+.................
+
+| # | guard | mutation applied | result |
+|---|---|---|---|
+| 1 | `AnchoredDiffusionDecoder.__init__ (patched)` | graft_nav_compliance on with nav_compliance_tau_rad left at 0.0 | ValueError RAISED (the tolerance is DERIVED per corpus and must be stated) |
+| 2 | `AnchoredDiffusionDecoder.forward` | BOTH the image-only lat3 prior and the tactical 8-wide posterior passed to one decode | ValueError RAISED ('the 8-wide pair REPLACES the 3-wide one') |
+| 3 | `RefCModel.forward (patched)` | a scene_hook supplied while the forward built neither agent nor BEV tokens | ValueError RAISED (the decoder would attend to nothing) |
+| 4 | `RefCModel.forward scene_hook (patched)` | run on the FLAT (hierarchy=False) branch, where hierarchy_hook cannot go | the hook IS called and the agent tokens reach it — the call site is after both branches merge |
+| 5 | `RefCV3Model.__init__` | E16's continuous 8-step channel AND refcv6's 4-way one-hot both on | ValueError RAISED (two ceilings, two stamps, one condition) |
+| 6 | `RefCV3Model.__init__` | tac_decoder_v6 on a FLAT (hier=False) build | ValueError RAISED (it would build and never be called) |
+| 7 | `RefCV3Model.__init__` | tac_decoder_v6 under the kin3 vocabulary | ValueError RAISED (22 logits that could never be supervised) |
+| 8 | `RefCV3Model.__init__` | tac_decoder_v6 with agents OFF and d_bev = 0 | ValueError RAISED (it would attend to nothing) |
+| 9 | `RefCV3Model.__init__` | tac_goal_tok_head AND tac_decoder_v6 both on | ValueError RAISED (a confound, not an ablation) |
+| 10 | `RefCV3Model.forward` | a decoder built d_bev > 0 with NO perception branch attached | ValueError RAISED (it would run agent-only while the record said 'agent and map') |
+| 11 | `RefCV3Model.forward (ego_poses)` | ego_poses passed to a build with no ego-history encoder | ValueError RAISED (it would be silently dropped and read as +ego-history) |
+| 12 | `RefCV3Model.forward (ego_poses)` | ego_poses[:, n_past:] corrupted by +1e4 (a blatant FUTURE read) | the emitted plan is BIT-IDENTICAL — the future index cannot enter |
+| 13 | `RefCV3Model.forward (ego_poses)` | two ego histories 15 m/s apart passed through the WRAPPER on identical frames | the emitted plan differs, and `core._ego_window` stays None — the value went through the signature, not the one-shot workaround |
+| 14 | `SpeedCeilingFilter` | a row whose every candidate exceeds the ceiling | the whole fan is kept and `speed_rows_empty` counts it — the only structural reason obedience can fall below 1.0 |
+| 15 | `TacticalBehaviourDecoder.forward` | BEV tokens of the OTHER backbone's width (resnet34 256 vs resnet101 1024) fed to a declared build | SceneInputRefused RAISED naming both widths |
+| 16 | `TacticalBehaviourDecoder.forward` | a [B, C, X, Y] BEV feature map passed where flat tokens are expected | SceneInputRefused RAISED (pointing at `bev_feats_to_tokens`) |
+| 17 | `TacticalBehaviourDecoder.forward` | a scene tensor passed to a build with that port switched off | SceneInputRefused RAISED (both directions) |
+| 18 | `TacticalBehaviourDecoder.forward` | called with agent_tokens=None AND bev_tokens=None | SceneInputRefused RAISED (would emit the unconditional prior) |
+| 19 | `TacticalLossWeights.assert_within_budget` | weights raised to 0.15 (over the 0.10 budget) | ValueError RAISED |
+| 20 | `_QueryFiLM zero-init` | FiLM projections re-initialised to N(0, 0.5) after the equality check | the two conditions now DIFFER -> the equality test can fail |
+| 21 | `acceptance_panel` | one of the three instruments omitted | overall = INCOMPLETE (a 2-of-3 panel must not read as a pass) |
+| 22 | `assert_scene_only` | 'image' added to the key/value source list | SceneInputRefused RAISED |
+| 23 | `assert_situation_columns_dead` | BehaviourSelectionGate.forward replaced by one that SKIPS the admissibility mask | SituationInputRefused RAISED ('PI 2026-08-03 VIOLATED') |
+| 24 | `assert_situation_columns_dead` | the gate's forward replaced by a constant-zero function | SituationInputRefused RAISED (the positive control catches a dead layer passing the refused-column check vacuously) |
+| 25 | `assert_situation_tokens_are_targets_only` | 'TRAFFIC_LIGHT_REACT_RED probability' added to selection_inputs | SituationInputRefused RAISED |
+| 26 | `assert_situation_tokens_are_targets_only` | 'tac_SIT one-hot' added to inference_inputs_of_goals | SituationInputRefused RAISED |
+| 27 | `assert_situation_tokens_are_targets_only` | the `selection_inputs` key deleted from the declaration | SituationInputRefused RAISED (an absent key is not a pass) |
+| 28 | `assert_speed_max_stamp_v6` | E16's 8-step stamp supplied under the 4-way key | SpeedMaxStampError RAISED (no ladder declared) |
+| 29 | `assert_speed_max_stamp_v6` | channel OFF but config carries the stamp (the MIRROR case) | SpeedMaxStampError RAISED |
+| 30 | `assert_speed_max_stamp_v6` | channel ON, stamp absent from config | SpeedMaxStampError RAISED |
+| 31 | `assert_speed_max_stamp_v6` | each of the 7 required tokens deleted from the stamp, one at a time | SpeedMaxStampError RAISED on every one |
+| 32 | `bev_feats_to_tokens` | a [B, P, C] token sequence passed as a grid | SceneInputRefused RAISED |
+| 33 | `build_condition` | a SOFT (0.25 each) distribution smuggled into the nav / max-speed slots | ValueError RAISED (a richer input than the PI authorised) |
+| 34 | `planned_max_speed` | the waypoint grid mis-declared as 1 tick apart instead of 5 | the reported speed is 5x (50.0 vs 10.0) — why the dt is DERIVED |
+| 35 | `refcv6 selection seams under F3/F4` | the split-loop arms turned on (f3_per_layer=False, f4_adaln=True) on a v0-conditioned ddim build | all three seams still report — they are whole-fan terms outside BOTH layer loops, not per-layer modules |
+| 36 | `refcv6 selection seams under F3/F4` | the split-loop arms turned on (f3_per_layer=True, f4_adaln=False) on a v0-conditioned ddim build | all three seams still report — they are whole-fan terms outside BOTH layer loops, not per-layer modules |
+| 37 | `refcv6 selection seams under F3/F4` | the split-loop arms turned on (f3_per_layer=True, f4_adaln=True) on a v0-conditioned ddim build | all three seams still report — they are whole-fan terms outside BOTH layer loops, not per-layer modules |
+| 38 | `speed_max_bin` | fed NaN (would silently bin to 0 = 30 km/h) | ValueError RAISED |
+| 39 | `tactical_behaviour_losses` | all three weights set to 0.0 (the guarded-term failure mode) | p.grad is a ZEROS tensor on every parameter, never None |
+| 40 | `tactical_behaviour_losses (CE)` | a batch entirely OUTSIDE the ±2 s band; torch's mean-reduction on the same input is NaN | finite 0.0 with n_supervised = 0 reported beside it |
+| 41 | `tflip_verdict` | a block whose MEAN (0.62) clears the 0.50 bar but whose CI lower bound (0.31) does not | FAIL — the verdict reads the lower bound |
+| 42 | `the refcv6 selection seams` | each zero-init gate forced open in turn (navc_gate 5.0, tac8 weights N(0,1), behaviour gate N(0,5)), scored on the CONTINUOUS ranked score and on the argmax | all three move `sel_score`; navc_gate moves traj=False, tac8_lat_to_anchor moves traj=True, behaviour_gate moves traj=True — gated, not dead, and every gate restores bit-identically |
+....................................................... [ 72%]
+........................................................................ [ 74%]
+........................................................................ [ 77%]
+.....................s.............s.................................... [ 80%]
+........................................................................ [ 83%]
+........sssssss......................................................... [ 86%]
+........................................................................ [ 88%]
+........................................................................ [ 91%]
+.....FFF.FFFFFFF................................................s....ss. [ 94%]
+................................s.s............................ss....... [ 97%]
+........................................................................ [ 99%]
+...                                                                      [100%]
+================================== FAILURES ===================================
+______ test_G_SUITE_the_pinned_env_list_is_content_bound_by_the_profile _______
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4412/test_G_SUITE_the_pinned_env_li0')
+
+    def test_G_SUITE_the_pinned_env_list_is_content_bound_by_the_profile(tmp_path):
+        tree = _mini_tree(tmp_path / "t")
+        rel, want = LG.PROFILES["refcv7"]["suite_env_failures"]
+        assert rel == "stack/ops/launch_gate_thor_env_failures.json"
+        assert want == "fc1214e5978383c694af7dbfc6c26f44758fcf8a93c4386700efb792072b4ed4"
+        assert "absent from the tree" in LG.env_failure_pin(LG.PROFILES["refcv7"], tree)[1]
+        f = tree / rel
+        f.parent.mkdir(parents=True, exist_ok=True)
+        f.write_text('{"ids": [], "files": []}', encoding="utf-8")
+        assert "the profile pins" in LG.env_failure_pin(LG.PROFILES["refcv7"], tree)[1]
+        rec, prob = LG.env_failure_pin(LG.PROFILES["refcv7"], ROOT.parent)     # the real file
+>       assert prob is None and rec["n_ids"] == 165 and rec["n_files"] == 33 and rec["n_flaky"] == 1
+E       AssertionError: assert ('the pinned env-failure list stack/ops/launch_gate_thor_env_failures.json has sha256 9b6aa814e5711459, the profile pins fc1214e5978383c6 -- a changed list is a reviewed edit of the profile' is None)
+
+tests\test_launch_gate.py:1701: AssertionError
+______________ test_all_flags_off_is_BIT_IDENTICAL_on_64_windows ______________
+
+    def test_all_flags_off_is_BIT_IDENTICAL_on_64_windows():
+        """\u26d4 CONTROL THAT MUST READ A KNOWN VALUE, and the premise of every other
+        test here. With ``refcv6=None`` the decoder must construct nothing new and
+        emit, for 64 windows, EXACTLY what the pre-refcv6 file emits — same
+        state_dict keys, same tensors, bit for bit."""
+>       old = _pre_refcv6_module()
+              ^^^^^^^^^^^^^^^^^^^^
+
+tests\test_refcv6_diffusion.py:159: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_refcv6_diffusion.py:118: in _pre_refcv6_module
+    src = _git_blob(_BASELINE_REV)
+          ^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+rev = 'cbadba5844a2db70a968172ab0b0bbe3a0140af0'
+
+    def _git_blob(rev: str) -> bytes:
+        """``git show <rev>:refc.py`` -> bytes, or ABORT.
+    
+        \u26d4 Never returns an empty bytestring as if it were content: an empty result
+        from this mount is indistinguishable from a failed query, and a bit-identity
+        test whose baseline is empty would fail for the wrong reason (or, with a
+        lenient comparison, pass). Only a POSITIVE read is admissible.
+        """
+        p = subprocess.run(["git", "show", f"{rev}:{_REL}"], cwd=_ROOT,
+                           capture_output=True)
+        if p.returncode != 0 or not p.stdout:
+            err = (p.stderr or b"").decode("utf-8", errors="replace").strip()
+>           raise AssertionError(
+                f"INVALID: could not read `{rev}:{_REL}` (rc={p.returncode}, "
+                f"{len(p.stdout or b'')} bytes). This test's baseline must be a "
+                f"POSITIVE read; it is not skipped, because a missing baseline "
+                f"means the bit-identity claim was NOT checked. git said: {err}")
+E           AssertionError: INVALID: could not read `cbadba5844a2db70a968172ab0b0bbe3a0140af0:stack/tanitad/refs/refc.py` (rc=128, 0 bytes). This test's baseline must be a POSITIVE read; it is not skipped, because a missing baseline means the bit-identity claim was NOT checked. git said: fatal: not a git repository (or any of the parent directories): .git
+
+tests\test_refcv6_diffusion.py:79: AssertionError
+__________ test_bitidentity_baseline_is_PINNED_and_really_pre_refcv6 __________
+
+    def test_bitidentity_baseline_is_PINNED_and_really_pre_refcv6():
+        """\u26d4\u26d4 THE GUARD ON THE GUARD. ``_pre_refcv6_module`` materialised its
+        baseline from ``HEAD``, whose blob IS the worktree file — so the test
+        compared ``refc.py`` against itself while carrying 83 'refcv6' mentions on
+        both sides. Literals, with a same-breath control that must read a KNOWN
+        value in both blobs."""
+        if not shutil.which("git"):                            # pragma: no cover
+            pytest.skip("git is not on PATH")
+>       base = _git_blob(_BASELINE_REV)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_refcv6_diffusion.py:1102: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+rev = 'cbadba5844a2db70a968172ab0b0bbe3a0140af0'
+
+    def _git_blob(rev: str) -> bytes:
+        """``git show <rev>:refc.py`` -> bytes, or ABORT.
+    
+        \u26d4 Never returns an empty bytestring as if it were content: an empty result
+        from this mount is indistinguishable from a failed query, and a bit-identity
+        test whose baseline is empty would fail for the wrong reason (or, with a
+        lenient comparison, pass). Only a POSITIVE read is admissible.
+        """
+        p = subprocess.run(["git", "show", f"{rev}:{_REL}"], cwd=_ROOT,
+                           capture_output=True)
+        if p.returncode != 0 or not p.stdout:
+            err = (p.stderr or b"").decode("utf-8", errors="replace").strip()
+>           raise AssertionError(
+                f"INVALID: could not read `{rev}:{_REL}` (rc={p.returncode}, "
+                f"{len(p.stdout or b'')} bytes). This test's baseline must be a "
+                f"POSITIVE read; it is not skipped, because a missing baseline "
+                f"means the bit-identity claim was NOT checked. git said: {err}")
+E           AssertionError: INVALID: could not read `cbadba5844a2db70a968172ab0b0bbe3a0140af0:stack/tanitad/refs/refc.py` (rc=128, 0 bytes). This test's baseline must be a POSITIVE read; it is not skipped, because a missing baseline means the bit-identity claim was NOT checked. git said: fatal: not a git repository (or any of the parent directories): .git
+
+tests\test_refcv6_diffusion.py:79: AssertionError
+________ test_bitidentity_baseline_MUTATION_pointing_at_HEAD_goes_RED _________
+
+    def test_bitidentity_baseline_MUTATION_pointing_at_HEAD_goes_RED():
+        """\u26d4 THE DELIBERATE REGRESSION, re-introducing the EXACT historical
+        defect: point the baseline back at ``HEAD``. The guard must ABORT as
+        INVALID rather than quietly comparing the file with itself."""
+        import test_refcv6_diffusion as me
+        old = me._BASELINE_REV
+        try:
+            me._BASELINE_REV = "HEAD"
+>           with pytest.raises(AssertionError, match="INVALID baseline"):
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: Regex pattern did not match.
+E             Expected regex: 'INVALID baseline'
+E             Actual message: "INVALID: could not read `HEAD:stack/tanitad/refs/refc.py` (rc=128, 0 bytes). This test's baseline must be a POSITIVE read; it is not skipped, because a missing baseline means the bit-identity claim was NOT checked. git said: fatal: not a git repository (or any of the parent directories): .git"
+
+tests\test_refcv6_diffusion.py:1127: AssertionError
+_________ test_no_owned_file_carries_a_session_id_or_scratchpad_path __________
+
+    def test_no_owned_file_carries_a_session_id_or_scratchpad_path():
+        """\u26d4 THE GUARD. Markdown prose may name a worktree; executable code may name
+        an absolute path only as an env-var default."""
+        offenders = []
+>       for rel, path in _files():
+                         ^^^^^^^^
+
+tests\test_refcv6_no_session_paths.py:200: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def _files():
+        out = [(rel, REPO / rel) for rel in OWNED]
+        missing = [rel for rel, p in out if not p.is_file()]
+>       assert not missing, f"OWNED lists files that do not exist: {missing}"
+E       AssertionError: OWNED lists files that do not exist: ['integration/refc_wiring.patch', 'integration/APPLY_NOTE.md', 'integration/mkpatch.py', 'integration/verify_patch.py', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-16-refcv6-perception/RESULT.md', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-conflict-detector/code/worked_example.py', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-conflict-detector/RESULT.md', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/RESULT.md', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/code/bitid.sh', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/code/config_diff.py', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/code/grad_reach_bev.py', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/code/geometry_408.py', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/code/mutation_proof.py', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/code/live.sh', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/raw/live_run/config.json', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/raw/live_run/metrics.jsonl', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/raw/live_run/launch_excerpt.txt', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/raw/mutation_proof.json', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/raw/bit_identity.json', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/raw/bitid_config_diff.json', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/raw/grad_reach_bev.json', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/raw/geometry_408.json', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/RESULT.md', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/code/bitid.sh', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/code/bitid_check.py', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/code/grad_reach.py', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/code/label_facts.py', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/code/live.sh', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/code/mutation_proof.py', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/code/redact.py', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/code/refusals.py', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/raw/bit_identity.json', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/raw/grad_reach.json', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/raw/label_facts.json', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/raw/refusals.json', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/raw/live_run/config.json', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/raw/speed_max_window_v6_train.jsonl', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/raw/speed_max_window_v6_eval.jsonl']
+E       assert not ['integration/refc_wiring.patch', 'integration/APPLY_NOTE.md', 'integration/mkpatch.py', 'integration/verify_patch.py'...anitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-conflict-detector/code/worked_example.py', ...]
+
+tests\test_refcv6_no_session_paths.py:170: AssertionError
+_____________ test_MUT_the_guard_would_fire_on_a_real_owned_file ______________
+
+    def test_MUT_the_guard_would_fire_on_a_real_owned_file():
+        """MUTATION: inject the blocking string into a copy of a real owned file and
+        show the same scan the test uses reports it. A scanner proven only on
+        string literals has never been shown to read a file."""
+>       rel, path = _files()[0]
+                    ^^^^^^^^
+
+tests\test_refcv6_no_session_paths.py:249: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def _files():
+        out = [(rel, REPO / rel) for rel in OWNED]
+        missing = [rel for rel, p in out if not p.is_file()]
+>       assert not missing, f"OWNED lists files that do not exist: {missing}"
+E       AssertionError: OWNED lists files that do not exist: ['integration/refc_wiring.patch', 'integration/APPLY_NOTE.md', 'integration/mkpatch.py', 'integration/verify_patch.py', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-16-refcv6-perception/RESULT.md', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-conflict-detector/code/worked_example.py', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-conflict-detector/RESULT.md', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/RESULT.md', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/code/bitid.sh', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/code/config_diff.py', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/code/grad_reach_bev.py', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/code/geometry_408.py', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/code/mutation_proof.py', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/code/live.sh', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/raw/live_run/config.json', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/raw/live_run/metrics.jsonl', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/raw/live_run/launch_excerpt.txt', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/raw/mutation_proof.json', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/raw/bit_identity.json', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/raw/bitid_config_diff.json', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/raw/grad_reach_bev.json', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/raw/geometry_408.json', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/RESULT.md', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/code/bitid.sh', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/code/bitid_check.py', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/code/grad_reach.py', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/code/label_facts.py', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/code/live.sh', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/code/mutation_proof.py', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/code/redact.py', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/code/refusals.py', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/raw/bit_identity.json', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/raw/grad_reach.json', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/raw/label_facts.json', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/raw/refusals.json', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/raw/live_run/config.json', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/raw/speed_max_window_v6_train.jsonl', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/raw/speed_max_window_v6_eval.jsonl']
+E       assert not ['integration/refc_wiring.patch', 'integration/APPLY_NOTE.md', 'integration/mkpatch.py', 'integration/verify_patch.py'...anitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-conflict-detector/code/worked_example.py', ...]
+
+tests\test_refcv6_no_session_paths.py:170: AssertionError
+______________ test_verify_patch_takes_its_paths_from_arguments _______________
+
+    def test_verify_patch_takes_its_paths_from_arguments():
+        """The specific fix: ``integration/verify_patch.py`` must derive the repo
+        root from its own location and accept overrides, with no embedded session
+        path."""
+>       src = (REPO / "integration" / "verify_patch.py").read_text(encoding="utf-8")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_refcv6_no_session_paths.py:263: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\..\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:632: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/Admin/ev7/integration/verify_patch.py'), mode = 'r'
+buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\Admin\\ev7\\integration\\verify_patch.py'
+
+..\..\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+_______________ test_census_artifact_is_readable_and_populated ________________
+
+    def test_census_artifact_is_readable_and_populated():
+>       counts = _counts()
+                 ^^^^^^^^^
+
+tests\test_tactical_goal_underpowered_matches_census.py:124: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_tactical_goal_underpowered_matches_census.py:100: in _counts
+    field = _census()["fields"][FIELD]
+            ^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def _census():
+        """The census artifact, or a hard failure naming the path.
+    
+        Never returns a default.  A census that cannot be read must FAIL this
+        suite, not silently empty the expected set and turn every assertion below
+        into a tautology.
+        """
+>       assert CENSUS_PATH.is_file(), (
+            "census artifact not found at {p}.\n"
+            "This test pins vocab_v7.TACTICAL_GOAL_UNDERPOWERED against it; without "
+            "it there is nothing to pin against and the pin must not be assumed to "
+            "hold. Re-bank it from the DataFlyWheel release "
+            "(incoming/2026-09-01-v8-tacsit-release/raw/vocab_fill_census.json)."
+            .format(p=CENSUS_PATH)
+        )
+E       AssertionError: census artifact not found at C:\Users\Admin\ev7\TanitAD Research Lab\Architecture & Inference\Research\2026-09-07-underpowered-pin\raw\vocab_fill_census.json.
+E         This test pins vocab_v7.TACTICAL_GOAL_UNDERPOWERED against it; without it there is nothing to pin against and the pin must not be assumed to hold. Re-bank it from the DataFlyWheel release (incoming/2026-09-01-v8-tacsit-release/raw/vocab_fill_census.json).
+E       assert False
+E        +  where False = is_file()
+E        +    where is_file = WindowsPath('C:/Users/Admin/ev7/TanitAD Research Lab/Architecture & Inference/Research/2026-09-07-underpowered-pin/raw/vocab_fill_census.json').is_file
+
+tests\test_tactical_goal_underpowered_matches_census.py:87: AssertionError
+____________ test_census_token_set_matches_the_declared_vocabulary ____________
+
+    def test_census_token_set_matches_the_declared_vocabulary():
+        """Pinning against a STALE census would be as bad as the hand-list.
+    
+        If the census predates a vocabulary change, its counts describe tokens that
+        no longer exist (or omit tokens that now do) and the pin silently drifts.
+        """
+        from tanitad.models import vocab_v7
+    
+        declared = set(vocab_v7.TACTICAL_GOAL_TOKENS_V7)
+>       censused = set(_counts())
+                       ^^^^^^^^^
+
+tests\test_tactical_goal_underpowered_matches_census.py:149: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_tactical_goal_underpowered_matches_census.py:100: in _counts
+    field = _census()["fields"][FIELD]
+            ^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def _census():
+        """The census artifact, or a hard failure naming the path.
+    
+        Never returns a default.  A census that cannot be read must FAIL this
+        suite, not silently empty the expected set and turn every assertion below
+        into a tautology.
+        """
+>       assert CENSUS_PATH.is_file(), (
+            "census artifact not found at {p}.\n"
+            "This test pins vocab_v7.TACTICAL_GOAL_UNDERPOWERED against it; without "
+            "it there is nothing to pin against and the pin must not be assumed to "
+            "hold. Re-bank it from the DataFlyWheel release "
+            "(incoming/2026-09-01-v8-tacsit-release/raw/vocab_fill_census.json)."
+            .format(p=CENSUS_PATH)
+        )
+E       AssertionError: census artifact not found at C:\Users\Admin\ev7\TanitAD Research Lab\Architecture & Inference\Research\2026-09-07-underpowered-pin\raw\vocab_fill_census.json.
+E         This test pins vocab_v7.TACTICAL_GOAL_UNDERPOWERED against it; without it there is nothing to pin against and the pin must not be assumed to hold. Re-bank it from the DataFlyWheel release (incoming/2026-09-01-v8-tacsit-release/raw/vocab_fill_census.json).
+E       assert False
+E        +  where False = is_file()
+E        +    where is_file = WindowsPath('C:/Users/Admin/ev7/TanitAD Research Lab/Architecture & Inference/Research/2026-09-07-underpowered-pin/raw/vocab_fill_census.json').is_file
+
+tests\test_tactical_goal_underpowered_matches_census.py:87: AssertionError
+_______ test_underpowered_equals_the_census_set_below_the_metric_floor ________
+
+    def test_underpowered_equals_the_census_set_below_the_metric_floor():
+        """The headline. Names the missing AND the extra tokens, never just fails."""
+        from tanitad.models import vocab_v7
+    
+        threshold = vocab_v7.GOAL_MIN_N_FOR_METRIC
+>       expected = _expected_below(threshold)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_tactical_goal_underpowered_matches_census.py:170: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_tactical_goal_underpowered_matches_census.py:106: in _expected_below
+    return {tok for tok, n in _counts().items() if n < threshold}
+                              ^^^^^^^^^
+tests\test_tactical_goal_underpowered_matches_census.py:100: in _counts
+    field = _census()["fields"][FIELD]
+            ^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def _census():
+        """The census artifact, or a hard failure naming the path.
+    
+        Never returns a default.  A census that cannot be read must FAIL this
+        suite, not silently empty the expected set and turn every assertion below
+        into a tautology.
+        """
+>       assert CENSUS_PATH.is_file(), (
+            "census artifact not found at {p}.\n"
+            "This test pins vocab_v7.TACTICAL_GOAL_UNDERPOWERED against it; without "
+            "it there is nothing to pin against and the pin must not be assumed to "
+            "hold. Re-bank it from the DataFlyWheel release "
+            "(incoming/2026-09-01-v8-tacsit-release/raw/vocab_fill_census.json)."
+            .format(p=CENSUS_PATH)
+        )
+E       AssertionError: census artifact not found at C:\Users\Admin\ev7\TanitAD Research Lab\Architecture & Inference\Research\2026-09-07-underpowered-pin\raw\vocab_fill_census.json.
+E         This test pins vocab_v7.TACTICAL_GOAL_UNDERPOWERED against it; without it there is nothing to pin against and the pin must not be assumed to hold. Re-bank it from the DataFlyWheel release (incoming/2026-09-01-v8-tacsit-release/raw/vocab_fill_census.json).
+E       assert False
+E        +  where False = is_file()
+E        +    where is_file = WindowsPath('C:/Users/Admin/ev7/TanitAD Research Lab/Architecture & Inference/Research/2026-09-07-underpowered-pin/raw/vocab_fill_census.json').is_file
+
+tests\test_tactical_goal_underpowered_matches_census.py:87: AssertionError
+___________ test_the_two_thresholds_are_distinct_and_both_declared ____________
+
+    def test_the_two_thresholds_are_distinct_and_both_declared():
+        """The ambiguity that caused this, kept from silently re-forming.
+    
+        'Too rare to score a metric on' and 'too rare to train a class on' are
+        different questions. One constant serving both is how the set ended up
+        matching neither.
+        """
+        from tanitad.models import vocab_v7
+    
+        metric = vocab_v7.GOAL_MIN_N_FOR_METRIC
+        training = vocab_v7.GOAL_MIN_N_FOR_TRAINING
+        assert training < metric, (
+            "GOAL_MIN_N_FOR_TRAINING ({tr}) is not below GOAL_MIN_N_FOR_METRIC "
+            "({me}). If they have converged, one of them is redundant -- say which "
+            "and delete it, rather than leaving two names for one number."
+            .format(tr=training, me=metric)
+        )
+>       assert _expected_below(training) < _expected_below(metric), (
+               ^^^^^^^^^^^^^^^^^^^^^^^^^
+            "the trainability set is not a strict subset of the scoreability set; "
+            "the two thresholds are no longer separating anything on this corpus"
+        )
+
+tests\test_tactical_goal_underpowered_matches_census.py:244: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_tactical_goal_underpowered_matches_census.py:106: in _expected_below
+    return {tok for tok, n in _counts().items() if n < threshold}
+                              ^^^^^^^^^
+tests\test_tactical_goal_underpowered_matches_census.py:100: in _counts
+    field = _census()["fields"][FIELD]
+            ^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def _census():
+        """The census artifact, or a hard failure naming the path.
+    
+        Never returns a default.  A census that cannot be read must FAIL this
+        suite, not silently empty the expected set and turn every assertion below
+        into a tautology.
+        """
+>       assert CENSUS_PATH.is_file(), (
+            "census artifact not found at {p}.\n"
+            "This test pins vocab_v7.TACTICAL_GOAL_UNDERPOWERED against it; without "
+            "it there is nothing to pin against and the pin must not be assumed to "
+            "hold. Re-bank it from the DataFlyWheel release "
+            "(incoming/2026-09-01-v8-tacsit-release/raw/vocab_fill_census.json)."
+            .format(p=CENSUS_PATH)
+        )
+E       AssertionError: census artifact not found at C:\Users\Admin\ev7\TanitAD Research Lab\Architecture & Inference\Research\2026-09-07-underpowered-pin\raw\vocab_fill_census.json.
+E         This test pins vocab_v7.TACTICAL_GOAL_UNDERPOWERED against it; without it there is nothing to pin against and the pin must not be assumed to hold. Re-bank it from the DataFlyWheel release (incoming/2026-09-01-v8-tacsit-release/raw/vocab_fill_census.json).
+E       assert False
+E        +  where False = is_file()
+E        +    where is_file = WindowsPath('C:/Users/Admin/ev7/TanitAD Research Lab/Architecture & Inference/Research/2026-09-07-underpowered-pin/raw/vocab_fill_census.json').is_file
+
+tests\test_tactical_goal_underpowered_matches_census.py:87: AssertionError
+_____________ test_pinning_on_the_status_field_would_be_circular ______________
+
+    def test_pinning_on_the_status_field_would_be_circular():
+        """Keeps the anti-circularity reasoning falsifiable rather than a comment.
+    
+        vocab_fill_census.py line 78 computes
+            status = "UNDERPOWERED" if t in TACTICAL_GOAL_UNDERPOWERED or n < 30
+        so the status field is a UNION of this frozenset with the n<30 rule. A pin
+        against `status` can therefore never detect an OVER-inclusive frozenset:
+        every extra member marks itself UNDERPOWERED on the next census run.
+        """
+        from tanitad.models import vocab_v7
+    
+>       field = _census()["fields"][FIELD]
+                ^^^^^^^^^
+
+tests\test_tactical_goal_underpowered_matches_census.py:261: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def _census():
+        """The census artifact, or a hard failure naming the path.
+    
+        Never returns a default.  A census that cannot be read must FAIL this
+        suite, not silently empty the expected set and turn every assertion below
+        into a tautology.
+        """
+>       assert CENSUS_PATH.is_file(), (
+            "census artifact not found at {p}.\n"
+            "This test pins vocab_v7.TACTICAL_GOAL_UNDERPOWERED against it; without "
+            "it there is nothing to pin against and the pin must not be assumed to "
+            "hold. Re-bank it from the DataFlyWheel release "
+            "(incoming/2026-09-01-v8-tacsit-release/raw/vocab_fill_census.json)."
+            .format(p=CENSUS_PATH)
+        )
+E       AssertionError: census artifact not found at C:\Users\Admin\ev7\TanitAD Research Lab\Architecture & Inference\Research\2026-09-07-underpowered-pin\raw\vocab_fill_census.json.
+E         This test pins vocab_v7.TACTICAL_GOAL_UNDERPOWERED against it; without it there is nothing to pin against and the pin must not be assumed to hold. Re-bank it from the DataFlyWheel release (incoming/2026-09-01-v8-tacsit-release/raw/vocab_fill_census.json).
+E       assert False
+E        +  where False = is_file()
+E        +    where is_file = WindowsPath('C:/Users/Admin/ev7/TanitAD Research Lab/Architecture & Inference/Research/2026-09-07-underpowered-pin/raw/vocab_fill_census.json').is_file
+
+tests\test_tactical_goal_underpowered_matches_census.py:87: AssertionError
+_____________ test_mutation_a_dropped_token_is_detected_and_named _____________
+
+    def test_mutation_a_dropped_token_is_detected_and_named():
+        """Reintroduce the original defect: remove a member, require it named."""
+>       expected = _expected_below(200)
+                   ^^^^^^^^^^^^^^^^^^^^
+
+tests\test_tactical_goal_underpowered_matches_census.py:299: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_tactical_goal_underpowered_matches_census.py:106: in _expected_below
+    return {tok for tok, n in _counts().items() if n < threshold}
+                              ^^^^^^^^^
+tests\test_tactical_goal_underpowered_matches_census.py:100: in _counts
+    field = _census()["fields"][FIELD]
+            ^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def _census():
+        """The census artifact, or a hard failure naming the path.
+    
+        Never returns a default.  A census that cannot be read must FAIL this
+        suite, not silently empty the expected set and turn every assertion below
+        into a tautology.
+        """
+>       assert CENSUS_PATH.is_file(), (
+            "census artifact not found at {p}.\n"
+            "This test pins vocab_v7.TACTICAL_GOAL_UNDERPOWERED against it; without "
+            "it there is nothing to pin against and the pin must not be assumed to "
+            "hold. Re-bank it from the DataFlyWheel release "
+            "(incoming/2026-09-01-v8-tacsit-release/raw/vocab_fill_census.json)."
+            .format(p=CENSUS_PATH)
+        )
+E       AssertionError: census artifact not found at C:\Users\Admin\ev7\TanitAD Research Lab\Architecture & Inference\Research\2026-09-07-underpowered-pin\raw\vocab_fill_census.json.
+E         This test pins vocab_v7.TACTICAL_GOAL_UNDERPOWERED against it; without it there is nothing to pin against and the pin must not be assumed to hold. Re-bank it from the DataFlyWheel release (incoming/2026-09-01-v8-tacsit-release/raw/vocab_fill_census.json).
+E       assert False
+E        +  where False = is_file()
+E        +    where is_file = WindowsPath('C:/Users/Admin/ev7/TanitAD Research Lab/Architecture & Inference/Research/2026-09-07-underpowered-pin/raw/vocab_fill_census.json').is_file
+
+tests\test_tactical_goal_underpowered_matches_census.py:87: AssertionError
+______________ test_mutation_a_stale_token_is_detected_and_named ______________
+
+    def test_mutation_a_stale_token_is_detected_and_named():
+        """The other direction, using the ACTUAL historical defect string.
+    
+        A length-only or missing-only check would have passed the five-member set
+        forever, because WAIT_FOR_ONCOMING padded the count while covering nothing.
+        """
+>       expected = _expected_below(200)
+                   ^^^^^^^^^^^^^^^^^^^^
+
+tests\test_tactical_goal_underpowered_matches_census.py:318: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_tactical_goal_underpowered_matches_census.py:106: in _expected_below
+    return {tok for tok, n in _counts().items() if n < threshold}
+                              ^^^^^^^^^
+tests\test_tactical_goal_underpowered_matches_census.py:100: in _counts
+    field = _census()["fields"][FIELD]
+            ^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def _census():
+        """The census artifact, or a hard failure naming the path.
+    
+        Never returns a default.  A census that cannot be read must FAIL this
+        suite, not silently empty the expected set and turn every assertion below
+        into a tautology.
+        """
+>       assert CENSUS_PATH.is_file(), (
+            "census artifact not found at {p}.\n"
+            "This test pins vocab_v7.TACTICAL_GOAL_UNDERPOWERED against it; without "
+            "it there is nothing to pin against and the pin must not be assumed to "
+            "hold. Re-bank it from the DataFlyWheel release "
+            "(incoming/2026-09-01-v8-tacsit-release/raw/vocab_fill_census.json)."
+            .format(p=CENSUS_PATH)
+        )
+E       AssertionError: census artifact not found at C:\Users\Admin\ev7\TanitAD Research Lab\Architecture & Inference\Research\2026-09-07-underpowered-pin\raw\vocab_fill_census.json.
+E         This test pins vocab_v7.TACTICAL_GOAL_UNDERPOWERED against it; without it there is nothing to pin against and the pin must not be assumed to hold. Re-bank it from the DataFlyWheel release (incoming/2026-09-01-v8-tacsit-release/raw/vocab_fill_census.json).
+E       assert False
+E        +  where False = is_file()
+E        +    where is_file = WindowsPath('C:/Users/Admin/ev7/TanitAD Research Lab/Architecture & Inference/Research/2026-09-07-underpowered-pin/raw/vocab_fill_census.json').is_file
+
+tests\test_tactical_goal_underpowered_matches_census.py:87: AssertionError
+__________________ test_mutation_the_correct_set_is_accepted __________________
+
+    def test_mutation_the_correct_set_is_accepted():
+        """The discriminating half. Without it, an always-fail check passes both
+        mutations above while being worthless."""
+>       expected = _expected_below(200)
+                   ^^^^^^^^^^^^^^^^^^^^
+
+tests\test_tactical_goal_underpowered_matches_census.py:331: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_tactical_goal_underpowered_matches_census.py:106: in _expected_below
+    return {tok for tok, n in _counts().items() if n < threshold}
+                              ^^^^^^^^^
+tests\test_tactical_goal_underpowered_matches_census.py:100: in _counts
+    field = _census()["fields"][FIELD]
+            ^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def _census():
+        """The census artifact, or a hard failure naming the path.
+    
+        Never returns a default.  A census that cannot be read must FAIL this
+        suite, not silently empty the expected set and turn every assertion below
+        into a tautology.
+        """
+>       assert CENSUS_PATH.is_file(), (
+            "census artifact not found at {p}.\n"
+            "This test pins vocab_v7.TACTICAL_GOAL_UNDERPOWERED against it; without "
+            "it there is nothing to pin against and the pin must not be assumed to "
+            "hold. Re-bank it from the DataFlyWheel release "
+            "(incoming/2026-09-01-v8-tacsit-release/raw/vocab_fill_census.json)."
+            .format(p=CENSUS_PATH)
+        )
+E       AssertionError: census artifact not found at C:\Users\Admin\ev7\TanitAD Research Lab\Architecture & Inference\Research\2026-09-07-underpowered-pin\raw\vocab_fill_census.json.
+E         This test pins vocab_v7.TACTICAL_GOAL_UNDERPOWERED against it; without it there is nothing to pin against and the pin must not be assumed to hold. Re-bank it from the DataFlyWheel release (incoming/2026-09-01-v8-tacsit-release/raw/vocab_fill_census.json).
+E       assert False
+E        +  where False = is_file()
+E        +    where is_file = WindowsPath('C:/Users/Admin/ev7/TanitAD Research Lab/Architecture & Inference/Research/2026-09-07-underpowered-pin/raw/vocab_fill_census.json').is_file
+
+tests\test_tactical_goal_underpowered_matches_census.py:87: AssertionError
+___________ test_mutation_the_comparison_actually_reads_the_counts ____________
+
+    def test_mutation_the_comparison_actually_reads_the_counts():
+        """Proves the expected set is DERIVED, not a hardcoded list wearing a
+        derivation's clothes. If _expected_below ignored its argument, the two
+        thresholds would return identical sets and this would fail."""
+>       lo = _expected_below(30)
+             ^^^^^^^^^^^^^^^^^^^
+
+tests\test_tactical_goal_underpowered_matches_census.py:342: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_tactical_goal_underpowered_matches_census.py:106: in _expected_below
+    return {tok for tok, n in _counts().items() if n < threshold}
+                              ^^^^^^^^^
+tests\test_tactical_goal_underpowered_matches_census.py:100: in _counts
+    field = _census()["fields"][FIELD]
+            ^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def _census():
+        """The census artifact, or a hard failure naming the path.
+    
+        Never returns a default.  A census that cannot be read must FAIL this
+        suite, not silently empty the expected set and turn every assertion below
+        into a tautology.
+        """
+>       assert CENSUS_PATH.is_file(), (
+            "census artifact not found at {p}.\n"
+            "This test pins vocab_v7.TACTICAL_GOAL_UNDERPOWERED against it; without "
+            "it there is nothing to pin against and the pin must not be assumed to "
+            "hold. Re-bank it from the DataFlyWheel release "
+            "(incoming/2026-09-01-v8-tacsit-release/raw/vocab_fill_census.json)."
+            .format(p=CENSUS_PATH)
+        )
+E       AssertionError: census artifact not found at C:\Users\Admin\ev7\TanitAD Research Lab\Architecture & Inference\Research\2026-09-07-underpowered-pin\raw\vocab_fill_census.json.
+E         This test pins vocab_v7.TACTICAL_GOAL_UNDERPOWERED against it; without it there is nothing to pin against and the pin must not be assumed to hold. Re-bank it from the DataFlyWheel release (incoming/2026-09-01-v8-tacsit-release/raw/vocab_fill_census.json).
+E       assert False
+E        +  where False = is_file()
+E        +    where is_file = WindowsPath('C:/Users/Admin/ev7/TanitAD Research Lab/Architecture & Inference/Research/2026-09-07-underpowered-pin/raw/vocab_fill_census.json').is_file
+
+tests\test_tactical_goal_underpowered_matches_census.py:87: AssertionError
+________ test_mutation_a_zero_count_token_would_be_reported_not_hidden ________
+
+    def test_mutation_a_zero_count_token_would_be_reported_not_hidden():
+        """A documented edge, kept honest.
+    
+        n == 0 is 'below the floor' arithmetically, but the census gives such tokens
+        a STRONGER status (UNREACHABLE / NOT_EXTRACTABLE / ZERO_SUPPLY) -- absent is
+        not the same claim as rare. No tactical-goal token is currently zero, so the
+        choice is inert; this asserts that it is inert rather than leaving a silent
+        behaviour to be discovered later.
+        """
+>       counts = _counts()
+                 ^^^^^^^^^
+
+tests\test_tactical_goal_underpowered_matches_census.py:365: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_tactical_goal_underpowered_matches_census.py:100: in _counts
+    field = _census()["fields"][FIELD]
+            ^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def _census():
+        """The census artifact, or a hard failure naming the path.
+    
+        Never returns a default.  A census that cannot be read must FAIL this
+        suite, not silently empty the expected set and turn every assertion below
+        into a tautology.
+        """
+>       assert CENSUS_PATH.is_file(), (
+            "census artifact not found at {p}.\n"
+            "This test pins vocab_v7.TACTICAL_GOAL_UNDERPOWERED against it; without "
+            "it there is nothing to pin against and the pin must not be assumed to "
+            "hold. Re-bank it from the DataFlyWheel release "
+            "(incoming/2026-09-01-v8-tacsit-release/raw/vocab_fill_census.json)."
+            .format(p=CENSUS_PATH)
+        )
+E       AssertionError: census artifact not found at C:\Users\Admin\ev7\TanitAD Research Lab\Architecture & Inference\Research\2026-09-07-underpowered-pin\raw\vocab_fill_census.json.
+E         This test pins vocab_v7.TACTICAL_GOAL_UNDERPOWERED against it; without it there is nothing to pin against and the pin must not be assumed to hold. Re-bank it from the DataFlyWheel release (incoming/2026-09-01-v8-tacsit-release/raw/vocab_fill_census.json).
+E       assert False
+E        +  where False = is_file()
+E        +    where is_file = WindowsPath('C:/Users/Admin/ev7/TanitAD Research Lab/Architecture & Inference/Research/2026-09-07-underpowered-pin/raw/vocab_fill_census.json').is_file
+
+tests\test_tactical_goal_underpowered_matches_census.py:87: AssertionError
+============================== warnings summary ===============================
+tests/test_anchor_tactical.py::test_anchor_loss_finite_backward_and_grad_reach
+  C:\Users\Admin\ev7\stack\tests\test_anchor_tactical.py:176: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+    assert float(loss_wta) >= 0.0 and float(loss_cls) >= 0.0
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_launch_gate.py::test_G_SUITE_the_pinned_env_list_is_content_bound_by_the_profile
+FAILED tests/test_refcv6_diffusion.py::test_all_flags_off_is_BIT_IDENTICAL_on_64_windows
+FAILED tests/test_refcv6_diffusion.py::test_bitidentity_baseline_is_PINNED_and_really_pre_refcv6
+FAILED tests/test_refcv6_diffusion.py::test_bitidentity_baseline_MUTATION_pointing_at_HEAD_goes_RED
+FAILED tests/test_refcv6_no_session_paths.py::test_no_owned_file_carries_a_session_id_or_scratchpad_path
+FAILED tests/test_refcv6_no_session_paths.py::test_MUT_the_guard_would_fire_on_a_real_owned_file
+FAILED tests/test_refcv6_no_session_paths.py::test_verify_patch_takes_its_paths_from_arguments
+FAILED tests/test_tactical_goal_underpowered_matches_census.py::test_census_artifact_is_readable_and_populated
+FAILED tests/test_tactical_goal_underpowered_matches_census.py::test_census_token_set_matches_the_declared_vocabulary
+FAILED tests/test_tactical_goal_underpowered_matches_census.py::test_underpowered_equals_the_census_set_below_the_metric_floor
+FAILED tests/test_tactical_goal_underpowered_matches_census.py::test_the_two_thresholds_are_distinct_and_both_declared
+FAILED tests/test_tactical_goal_underpowered_matches_census.py::test_pinning_on_the_status_field_would_be_circular
+FAILED tests/test_tactical_goal_underpowered_matches_census.py::test_mutation_a_dropped_token_is_detected_and_named
+FAILED tests/test_tactical_goal_underpowered_matches_census.py::test_mutation_a_stale_token_is_detected_and_named
+FAILED tests/test_tactical_goal_underpowered_matches_census.py::test_mutation_the_correct_set_is_accepted
+FAILED tests/test_tactical_goal_underpowered_matches_census.py::test_mutation_the_comparison_actually_reads_the_counts
+FAILED tests/test_tactical_goal_underpowered_matches_census.py::test_mutation_a_zero_count_token_would_be_reported_not_hidden
+17 failed, 2534 passed, 44 skipped, 1 warning in 278.57s (0:04:38)
