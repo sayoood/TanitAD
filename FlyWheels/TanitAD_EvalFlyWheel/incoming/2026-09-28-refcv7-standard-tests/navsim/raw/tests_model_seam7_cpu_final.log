@@ -1,0 +1,25 @@
+.............                                                            [100%]
+=================================== PASSES ====================================
+________________ test_KT7_bridge_feed_equals_compute_losses_v3 ________________
+---------------------------- Captured stdout setup ----------------------------
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1\n[v3] rig camera = PER-CLIP EXTRINSICS from D:\\refcv6_eval_kit\\data\\refcv6_train_eval139_extrinsics.json (4508 clips, z 1.203-1.687 m, pitch -0.0755..+0.0683 rad)\n[v3] \u26a0\ufe0f a rig camera is built but --agent-w-project and --agent-w-ground are both 0: neither monocular term contributes. That is a legal ablation baseline and the stamp records it, but it is not a projection arm.\n[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers\n[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers\n[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers\n[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+---------------------------- Captured stdout call -----------------------------
+[v2] D:\refcv6_eval_kit\data\refcv6-b1-416x1024-eval139: 139 providers (channels 9, 416x1024 px), episode ids from 'episode_uid' [collision-free; the as-built 16-bit ids would give only 139 distinct for 139 clips]
+[v2] 139 providers, 139 distinct episode ids
+[v3] nav_from_v7: follow 88 / left 13 / right 38, missing 0 (of 139 clips; md5=eefc38d1453bd1c73802d44d45affced)
+[v3] max_speed_input_v6 (4-way one-hot): 147/147 sidecar rows carry a ceiling, 23772/23772 windows fed (100.0 %), 1 clips ABOVE the 120 km/h top step (clamped, and on those the fed ceiling is one the ego demonstrably exceeded)
+=========================== short test summary info ===========================
+PASSED tests/test_model_seam7.py::test_KT7_bridge_feed_equals_compute_losses_v3
+PASSED tests/test_model_seam7.py::test_KL_lift_on_real_clips_of_the_models_bank
+PASSED tests/test_model_seam7.py::test_K0_same_seed_is_bit_identical
+PASSED tests/test_model_seam7.py::test_KD_exact_dedup_equals_native
+PASSED tests/test_model_seam7.py::test_KI_every_declared_input_reaches_the_plan[frames]
+PASSED tests/test_model_seam7.py::test_KI_every_declared_input_reaches_the_plan[nav]
+PASSED tests/test_model_seam7.py::test_KI_every_declared_input_reaches_the_plan[v0]
+PASSED tests/test_model_seam7.py::test_KI_every_declared_input_reaches_the_plan[hist]
+PASSED tests/test_model_seam7.py::test_KI_max_speed_reaches_the_tactical_logits
+PASSED tests/test_model_seam7.py::test_KPR_emitted_prior_equals_the_model_free_prior
+PASSED tests/test_model_seam7.py::test_KF_emitted_pick_is_replicated_and_the_filter_never_reaches_it
+PASSED tests/test_model_seam7.py::test_REGRESSION_window_not_ending_at_v0_is_refused
+PASSED tests/test_model_seam7.py::test_REGRESSION_stride16_geometry_is_refused
+13 passed in 539.63s (0:08:59)
