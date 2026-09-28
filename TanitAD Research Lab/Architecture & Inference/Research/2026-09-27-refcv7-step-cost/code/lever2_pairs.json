@@ -1,0 +1,38 @@
+{
+ "base_blob": "203b437f0d0d86e97949cba3a8dedb810dc4d620",
+ "result_blob": "fd874293e6caa9aa5d1182d58a1db33b2da670d0",
+ "pairs": [
+  [
+   "\r\ndef _map_hires_loss(model, out: dict, batch: dict, device, extra: dict):\r\n    \"\"\"refcv7 NEW-2 + A6 (SPEC_REFCV7 §6.2, §11): the 10 cm map term, WEIGHTED, or None.",
+   "\r\ndef _map_hires_loss(model, out: dict, batch: dict, device, extra: dict,\r\n                    with_metrics: bool = True):\r\n    \"\"\"refcv7 NEW-2 + A6 (SPEC_REFCV7 §6.2, §11): the 10 cm map term, WEIGHTED, or None."
+  ],
+  [
+   "        # the DECLARED rule, read off the BUILT branch config (G-DVB checks it)\r\n        decision_rule=str(br.cfg.decision_rule))\r\n    extra[\"map_hires\"] = row[\"loss\"]",
+   "        # the DECLARED rule, read off the BUILT branch config (G-DVB checks it)\r\n        decision_rule=str(br.cfg.decision_rule),\r\n        # ⭐ refcv7 step-cost lever 2 (2026-09-28): the per-class 10 cm signal is PURE\r\n        # (no_grad, no RNG) and only a LOG row reads it -- compute it on logged steps only.\r\n        with_metrics=bool(with_metrics))\r\n    extra[\"map_hires\"] = row[\"loss\"]"
+  ],
+  [
+   "                      mode: str = \"diffusion\",\r\n                      ablate_frames: bool = False) -> dict:\r\n    cfg = model.cfg",
+   "                      mode: str = \"diffusion\",\r\n                      ablate_frames: bool = False,\r\n                      log_metrics: bool = True) -> dict:\r\n    cfg = model.cfg"
+  ],
+  [
+   "                slots_ag[\"presence_logit\"])[\"frac_confident\"]\r\n            if vis_ag is not None:\r\n                # LOGGING_SPEC_BOX §1 (the cheap census) every row; in EVAL mode the pack",
+   "                slots_ag[\"presence_logit\"])[\"frac_confident\"]\r\n            if vis_ag is not None and (bool(log_metrics) or not model.training):\r\n                # LOGGING_SPEC_BOX §1 (the cheap census) every row; in EVAL mode the pack"
+  ],
+  [
+   "                loss = loss + _w_b3d * _brow[\"loss\"]\r\n                if _vis3 is not None:\r\n                    # ⭐ refcv7 A9 P0: LOGGING_SPEC_BOX §1 census every row; the pack itself in",
+   "                loss = loss + _w_b3d * _brow[\"loss\"]\r\n                if _vis3 is not None and (bool(log_metrics) or not model.training):\r\n                    # ⭐ refcv7 A9 P0: LOGGING_SPEC_BOX §1 census every row; the pack itself in"
+  ],
+  [
+   "    # there is no 0.5 m map term to sit beside it (`--w-map 0` is pinned).\r\n    _mh_term = _map_hires_loss(model, out, batch, device, extra)\r\n    if _mh_term is not None:",
+   "    # there is no 0.5 m map term to sit beside it (`--w-map 0` is pinned).\r\n    # ⭐ step-cost lever 2: per-class signal on LOGGED train steps (and always in eval)\r\n    _mh_term = _map_hires_loss(model, out, batch, device, extra,\r\n                               with_metrics=bool(log_metrics) or not model.training)\r\n    if _mh_term is not None:"
+  ],
+  [
+   "            args.withheld_bank if _wb_active else \"fixed\")\r\n        losses = compute_losses_v3(model, batch, device, mode=args.mode,",
+   "            args.withheld_bank if _wb_active else \"fixed\")\r\n        # ⭐ step-cost lever 2: `_logged_after` is the SAME test the log block below uses (the\r\n        # post-increment step), so every row that is written still carries every key.\r\n        losses = compute_losses_v3(model, batch, device, mode=args.mode,"
+  ],
+  [
+   "        losses = compute_losses_v3(model, batch, device, mode=args.mode,\r\n                                   ablate_frames=args.ablate_frames)\r\n        losses[\"withheld_bank_active\"] = float(_wb_active)",
+   "        losses = compute_losses_v3(model, batch, device, mode=args.mode,\r\n                                   ablate_frames=args.ablate_frames,\r\n                                   log_metrics=_logged_after(step, args.log_every, args.steps))\r\n        losses[\"withheld_bank_active\"] = float(_wb_active)"
+  ]
+ ]
+}
