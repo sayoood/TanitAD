@@ -804,3 +804,54 @@ The session transcript's timestamps are the record (UTC; Berlin is UTC+2):
   - File: `work/refcv7/launch/pi_cost_approval.json`, banked with the launch package.
 - **The run length it implies:** 50,400 steps × 9.88 s ≈ 5.8 days.
 - **Follow-up** (not a blocker): profile the +3.5 s/step on the dev box. A speed-up found later is applied at a checkpoint with a NEW gate run and new binding runs on the new argv.
+
+## 26. PI decision (2026-09-28, in chat): restart refcv7 with the R4 bundle AFTER the step-5,000 battery's interim result; and the speed ceiling now reaches the EMITTED plan
+
+**The PI, verbatim (AskUserQuestion answer):** *"R4 after 5k battery (Recommended)"*.
+
+**What that decides.**
+- The conflict-probe cadence goes from every 10 to every 50 steps: ~900 readings over the rest of the run instead of ~4,500. PREREG_REFCV7 and this SPEC carry no criterion on them. Per `PREREG_REFCV6_V2.md` §8, the run's conflict record is reported as TWO segments.
+- The restart happens at the first 500-step save after the step-5,000 battery's interim RESULT (planned ≈ 23:30 Berlin, ≈ step 9,000). Any defect the battery surfaces rides in the same stop.
+- **The bundle**, per `TanitAD Research Lab/Architecture & Inference/Research/2026-09-28-refcv7-restart-options/` (landed `2140ded`):
+  - conflict-every 50;
+  - lever 2 (the per-class map signal and box census on logged steps only);
+  - the model-side freeze of the 10 G-LIVE-admitted modules, plus `refcv7_ckpt_freeze_convert.py`;
+  - the `V2CompressedCache.__getstate__` fix;
+  - the I3 loader fix;
+  - item 26.1 below.
+- **Numerics.** Every bundle item MEASURED bit-identical to the launch code on the real trainer: 12 CPU steps, 0 parameter bytes differ; a positive control diverges.
+- **Speed saving: ESTIMATED 0.76–1.40 s/step, not measured on Thor.** Net ≈ +6 to +13 h at S ≈ 9,000, after ~2.8 h of stopped training for the two binding runs, the Thor gate stage and the relaunch.
+- A new launch-gate PASS token is required. Both binding records bind the argv sha, so G-MAP-OVERFIT and G-BOX-OVERFIT re-run. The runbook is §6 of the package.
+
+### 26.1 The speed ceiling (A2 / PI R1) never reached the emitted plan: MEASURED, fixed for the restart
+
+**MEASURED 2026-09-28 by the EvalFlyWheel NavSim bridge on the step-1,500 checkpoint (VALIDATION ONLY):**
+- ceiling filter ON vs OFF gave **bit-identical plans on 204/204 warmup scenes**, on CPU and CUDA;
+- the ceiling masked at least one candidate in 97 of the 126 scenes that had a finite ceiling;
+- on CUDA, **2 emitted plans exceeded the ceiling**.
+
+**Source (read at the launch blob):**
+- `refc.py`'s decoder applies `SpeedCeilingFilter` to its LOCAL `rank` only, and returns `score` UNMASKED so no `-inf` reaches a cross-entropy.
+- `RefCV3Model`'s E9 goal selection (`refc_v3.py`, after `apply_seam_clamp`) re-ranks the fan from that unmasked score with `reach_keep` only, so the ceiling never reached `out["traj"]`.
+- G-DVB checks the filter is BUILT and G-LIVE that the mask is ACTIVE; neither checked that the EMITTED plan obeys it.
+- The existing `test_speed_ceiling_inference_only.py` pins the DECODER, where the filter does bite. That is why the gap was invisible.
+
+**Fix (inference-only, like the filter; training arithmetic unchanged):**
+- the decoder exports the mask it applied as `ceil_keep`, and it is added to `DECODER_PASSTHROUGH`;
+- E9 ranks through `e9_rank(blended, out)` = reach mask AND ceiling mask;
+- a row with no candidate under both keeps its reach-only ranking and is counted in `e9_ceil_dead_frac`.
+
+**Tests:** `stack/tests/test_speed_ceiling_reaches_emitted_plan.py`:
+- literal `e9_rank` cases;
+- the decoder exports `ceil_keep` at eval and NOTHING in training;
+- on the REAL `RefCV3Model` smoke rig, a ceiling excluding E9's natural pick moves the EMITTED `traj`;
+- a RED arm with the pre-fix E9.
+
+52/52 green together with the inference-only and G-DVB suites.
+
+**CLOSURE-TOUCHING:** `refc.py` and `refc_v3.py` are in both binding closures. The fix therefore stays package-only until the R4 restart, and it rides in that single re-binding.
+
+⚠️ **Consequences for the readings before the restart.**
+- Every refcv7 number from the launch tree, including the step-5,000 battery and NavSim, is read on a model whose EMITTED plan ignores the ceiling. `os` and `os_filteroff` will read identically.
+- Each such number is stamped *"ceiling not applied to the emitted plan (SPEC 26.1)"*.
+- The NavSim package's diagnostic arm `R7_CEILDECL_d` prices the fix with zero training (never a bar arm).
