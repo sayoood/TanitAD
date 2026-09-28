@@ -1,0 +1,207 @@
+F.FF                                                                     [100%]
+================================== FAILURES ===================================
+______________ test_1_a_PRE_A9_record_rebuilds_at_100_100_STRICT ______________
+
+T = <module 'refc_v3_train_i3_rq' from 'C:\\Users\\Admin\\rc7combo\\stack\\scripts\\refc_v3_train.py'>
+L = <module 'tanitad.eval.refcv6_loader' from 'C:\\Users\\Admin\\rc7combo\\stack\\tanitad\\eval\\refcv6_loader.py'>
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4371/test_1_a_PRE_A9_record_rebuild0')
+
+    def test_1_a_PRE_A9_record_rebuilds_at_100_100_STRICT(T, L, tmp_path):
+        config, ck = _record(T, tmp_path / "pre", 100, pre_a9=True)
+>       model, _cfg, _args, rec = L.build_model(config, str(ck), device="cpu", strict=True)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_refcv6_loader_stamped_queries.py:98: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tanitad\eval\refcv6_loader.py:219: in build_model
+    return _build_model(config, ckpt_path, device, remap, strict)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tanitad\eval\refcv6_loader.py:363: in _build_model
+    res = model.load_state_dict(ck["model"], strict=strict)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = RefCV3Model(
+  (core): RefCModel(
+    (encoder): TimmResNetTrunk(
+      (net): FeatureListNet(
+        (conv1): Conv2d...56,), eps=1e-05, elementwise_affine=True)
+      (head): Linear(in_features=256, out_features=23, bias=True)
+    )
+  )
+)
+state_dict = OrderedDict({'goal_gate': tensor(0.), 'core.lat_log_prior': tensor([-1.0986, -1.0986, -1.0986]), 'core.lon_log_prior':...      1.2969e-02, -3.9875e-02, -4.2095e-02, -6.0988e-02,  1.4146e-02,
+        -1.2009e-02,  0.0000e+00,  1.9793e-01])})
+strict = True, assign = False
+
+    def load_state_dict(
+        self, state_dict: Mapping[str, Any], strict: bool = True, assign: bool = False
+    ):
+        r"""Copy parameters and buffers from :attr:`state_dict` into this module and its descendants.
+    
+        If :attr:`strict` is ``True``, then
+        the keys of :attr:`state_dict` must exactly match the keys returned
+        by this module's :meth:`~torch.nn.Module.state_dict` function.
+    
+        .. warning::
+            If :attr:`assign` is ``True`` the optimizer must be created after
+            the call to :attr:`load_state_dict` unless
+            :func:`~torch.__future__.get_swap_module_params_on_conversion` is ``True``.
+    
+        Args:
+            state_dict (dict): a dict containing parameters and
+                persistent buffers.
+            strict (bool, optional): whether to strictly enforce that the keys
+                in :attr:`state_dict` match the keys returned by this module's
+                :meth:`~torch.nn.Module.state_dict` function. Default: ``True``
+            assign (bool, optional): When set to ``False``, the properties of the tensors
+                in the current module are preserved whereas setting it to ``True`` preserves
+                properties of the Tensors in the state dict. The only
+                exception is the ``requires_grad`` field of :class:`~torch.nn.Parameter`
+                for which the value from the module is preserved. Default: ``False``
+    
+        Returns:
+            ``NamedTuple`` with ``missing_keys`` and ``unexpected_keys`` fields:
+                * ``missing_keys`` is a list of str containing any keys that are expected
+                    by this module but missing from the provided ``state_dict``.
+                * ``unexpected_keys`` is a list of str containing the keys that are not
+                    expected by this module but present in the provided ``state_dict``.
+    
+        Note:
+            If a parameter or buffer is registered as ``None`` and its corresponding key
+            exists in :attr:`state_dict`, :meth:`load_state_dict` will raise a
+            ``RuntimeError``.
+        """
+        if not isinstance(state_dict, Mapping):
+            raise TypeError(
+                f"Expected state_dict to be dict-like, got {type(state_dict)}."
+            )
+    
+        missing_keys: list[str] = []
+        unexpected_keys: list[str] = []
+        error_msgs: list[str] = []
+    
+        # copy state_dict so _load_from_state_dict can modify it
+        metadata = getattr(state_dict, "_metadata", None)
+        state_dict = OrderedDict(state_dict)
+        if metadata is not None:
+            # mypy isn't aware that "_metadata" exists in state_dict
+            state_dict._metadata = metadata  # type: ignore[attr-defined]
+    
+        def load(module, local_state_dict, prefix="") -> None:
+            local_metadata = {} if metadata is None else metadata.get(prefix[:-1], {})
+            if assign:
+                local_metadata["assign_to_params_buffers"] = assign
+            module._load_from_state_dict(
+                local_state_dict,
+                prefix,
+                local_metadata,
+                True,
+                missing_keys,
+                unexpected_keys,
+                error_msgs,
+            )
+            for name, child in module._modules.items():
+                if child is not None:
+                    child_prefix = prefix + name + "."
+                    child_state_dict = {
+                        k: v
+                        for k, v in local_state_dict.items()
+                        if k.startswith(child_prefix)
+                    }
+                    load(child, child_state_dict, child_prefix)  # noqa: F821
+    
+            # Note that the hook can modify missing_keys and unexpected_keys.
+            incompatible_keys = _IncompatibleKeys(missing_keys, unexpected_keys)
+            for hook in module._load_state_dict_post_hooks.values():
+                out = hook(module, incompatible_keys)
+                if out is not None:
+                    raise AssertionError(
+                        "Hooks registered with ``register_load_state_dict_post_hook`` are not"
+                        "expected to return new values, if incompatible_keys need to be modified,"
+                        "it should be done inplace."
+                    )
+    
+        load(self, state_dict)
+        del load
+    
+        if strict:
+            if len(unexpected_keys) > 0:
+                error_msgs.insert(
+                    0,
+                    "Unexpected key(s) in state_dict: {}. ".format(
+                        ", ".join(f'"{k}"' for k in unexpected_keys)
+                    ),
+                )
+            if len(missing_keys) > 0:
+                error_msgs.insert(
+                    0,
+                    "Missing key(s) in state_dict: {}. ".format(
+                        ", ".join(f'"{k}"' for k in missing_keys)
+                    ),
+                )
+    
+        if len(error_msgs) > 0:
+>           raise RuntimeError(
+                "Error(s) in loading state_dict for {}:\n\t{}".format(
+                    self.__class__.__name__, "\n\t".join(error_msgs)
+                )
+            )
+E           RuntimeError: Error(s) in loading state_dict for RefCV3Model:
+E           	size mismatch for core.agent_head.queries: copying a param with shape torch.Size([1, 100, 256]) from checkpoint, the shape in current model is torch.Size([1, 300, 256]).
+E           	size mismatch for _perception.box_dec.queries: copying a param with shape torch.Size([1, 100, 256]) from checkpoint, the shape in current model is torch.Size([1, 300, 256]).
+
+..\..\venvs\tanitad\Lib\site-packages\torch\nn\modules\module.py:2639: RuntimeError
+---------------------------- Captured stdout call -----------------------------
+[v3] ⚠️ --w-box3d > 0 with NO --join3d: `zh_mask` is all-False, so `loss_z`/`loss_h` are 0.0 over n=0 items and the total is EXACTLY the 2-D set loss. This is the 2-D rung, not a 3-D arm.
+[v3] ⚠️ --w-box3d > 0 with NO --join3d: `zh_mask` is all-False, so `loss_z`/`loss_h` are 0.0 over n=0 items and the total is EXACTLY the 2-D set loss. This is the 2-D rung, not a 3-D arm.
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+_____ test_3_RED_a_record_whose_box_stamp_LIES_is_refused_on_the_box_head _____
+
+T = <module 'refc_v3_train_i3_rq' from 'C:\\Users\\Admin\\rc7combo\\stack\\scripts\\refc_v3_train.py'>
+L = <module 'tanitad.eval.refcv6_loader' from 'C:\\Users\\Admin\\rc7combo\\stack\\tanitad\\eval\\refcv6_loader.py'>
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4371/test_3_RED_a_record_whose_box_0')
+
+    def test_3_RED_a_record_whose_box_stamp_LIES_is_refused_on_the_box_head(T, L, tmp_path):
+        """The stamp is READ, not bypassed: a 100-query record whose box stamp claims 300 fails on the
+        box table and ONLY there (the agent head still rebuilds from its own stamp)."""
+        config, ck = _record(T, tmp_path / "lie", 100, pre_a9=True)
+        config["refcv6_perception"]["n_queries"] = 300
+        with pytest.raises(RuntimeError) as ei:
+            L.build_model(config, str(ck), device="cpu", strict=True)
+        msg = str(ei.value)
+>       assert "_perception.box_dec.queries" in msg and "core.agent_head.queries" not in msg
+E       AssertionError: assert ('_perception.box_dec.queries' in 'Error(s) in loading state_dict for RefCV3Model:\n\tsize mismatch for core.agent_head.queries: copying a param with sh...a param with shape torch.Size([1, 100, 256]) from checkpoint, the shape in current model is torch.Size([1, 300, 256]).' and 'core.agent_head.queries' not in 'Error(s) in... 300, 256]).'
+E         
+E         'core.agent_head.queries' is contained here:
+E           match for core.agent_head.queries: copying a param with shape torch.Size([1, 100, 256]) from checkpoint, the shape in current model is torch.Size([1, 300, 256]).
+E         ?           +++++++++++++++++++++++
+E           	size mismatch for _perception.box_dec.queries: copying a param with shape torch.Size([1, 100, 256]) from checkpoint, the shape in current model is torch.Size([1, 300, 256]).)
+
+tests\test_refcv6_loader_stamped_queries.py:118: AssertionError
+---------------------------- Captured stdout call -----------------------------
+[v3] ⚠️ --w-box3d > 0 with NO --join3d: `zh_mask` is all-False, so `loss_z`/`loss_h` are 0.0 over n=0 items and the total is EXACTLY the 2-D set loss. This is the 2-D rung, not a 3-D arm.
+[v3] ⚠️ --w-box3d > 0 with NO --join3d: `zh_mask` is all-False, so `loss_z`/`loss_h` are 0.0 over n=0 items and the total is EXACTLY the 2-D set loss. This is the 2-D rung, not a 3-D arm.
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+_______________ test_4_the_vendored_body_still_matches_its_pin ________________
+
+    def test_4_the_vendored_body_still_matches_its_pin():
+        """A11 kept: the vendored body re-hashes to the (re-pinned) harness constant."""
+        spec = importlib.util.spec_from_file_location("g_box_overfit_i3_rq",
+                                                      str(STACK / "scripts" / "g_box_overfit.py"))
+        G = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(G)
+        src = (STACK / "tanitad" / "eval" / "refcv6_loader.py").read_bytes().decode("utf-8")
+>       assert G.vendored_audit_blob(src) == G.AUDIT_LOADER_BLOB == \
+            "4e823c7373d1c31aa6240306196fefcc23d7860e"
+E       AssertionError: assert '11808258cd5c...774b5541e9300' == '4e823c7373d1...fefcc23d7860e'
+E         
+E         - 4e823c7373d1c31aa6240306196fefcc23d7860e
+E         + 11808258cd5c90647fae03f5859774b5541e9300
+
+tests\test_refcv6_loader_stamped_queries.py:128: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_refcv6_loader_stamped_queries.py::test_1_a_PRE_A9_record_rebuilds_at_100_100_STRICT
+FAILED tests/test_refcv6_loader_stamped_queries.py::test_3_RED_a_record_whose_box_stamp_LIES_is_refused_on_the_box_head
+FAILED tests/test_refcv6_loader_stamped_queries.py::test_4_the_vendored_body_still_matches_its_pin
+3 failed, 1 passed in 6.87s

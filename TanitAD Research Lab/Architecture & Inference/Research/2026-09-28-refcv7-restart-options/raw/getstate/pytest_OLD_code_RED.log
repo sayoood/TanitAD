@@ -1,0 +1,133 @@
+FFFFF                                                                    [100%]
+================================== FAILURES ===================================
+______________ test_1_newest_frame_only_TRUE_survives_the_pickle ______________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4369/test_1_newest_frame_only_TRUE_0')
+
+    def test_1_newest_frame_only_TRUE_survives_the_pickle(tmp_path):
+        c = V2CompressedCache(tmp_path, lru_size=3, newest_frame_only=True)
+>       assert _roundtrip(c).newest_frame_only is True
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'V2CompressedCache' object has no attribute 'newest_frame_only'
+
+tests\test_v2_cache_pickle_state.py:57: AttributeError
+_____ test_2_newest_frame_only_FALSE_survives_the_pickle_as_an_ATTRIBUTE ______
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4369/test_2_newest_frame_only_FALSE0')
+
+    def test_2_newest_frame_only_FALSE_survives_the_pickle_as_an_ATTRIBUTE(tmp_path):
+        c2 = _roundtrip(V2CompressedCache(tmp_path, lru_size=3))
+>       assert c2.newest_frame_only is False            # present AND False, not merely absent
+               ^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'V2CompressedCache' object has no attribute 'newest_frame_only'
+
+tests\test_v2_cache_pickle_state.py:62: AttributeError
+___________ test_3_EVERY_constructor_attribute_crosses_the_boundary ___________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4369/test_3_EVERY_constructor_attri0')
+
+    def test_3_EVERY_constructor_attribute_crosses_the_boundary(tmp_path):
+        """The census is a FRESH instance's own __dict__ -- independent of __getstate__. The LRU is
+        the one attribute that is reset by design (a populated cache is never serialised)."""
+        fresh = V2CompressedCache(tmp_path, lru_size=5, allow_lossy=True, newest_frame_only=True)
+        fresh.files = ["a.v2ep.pt", "b.v2ep.pt"]
+        back = _roundtrip(fresh)
+>       assert set(vars(back)) == set(vars(fresh))
+E       AssertionError: assert {'_lru', 'all...', 'lru_size'} == {'_lru', 'all...ru_size', ...}
+E         
+E         Extra items in the right set:
+E         'newest_frame_only'
+E         Use -v to get more diff
+
+tests\test_v2_cache_pickle_state.py:71: AssertionError
+_____________ test_4_an_OLD_pickle_without_the_key_reads_as_False _____________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4369/test_4_an_OLD_pickle_without_t0')
+
+    def test_4_an_OLD_pickle_without_the_key_reads_as_False(tmp_path):
+        """A state dict written by the pre-fix __getstate__ (five keys) still loads."""
+        c = V2CompressedCache.__new__(V2CompressedCache)
+        c.__setstate__({"cache_dir": str(tmp_path), "lru_size": 2, "files": [], "frame": None,
+                        "allow_lossy": False})
+>       assert c.newest_frame_only is False
+               ^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'V2CompressedCache' object has no attribute 'newest_frame_only'
+
+tests\test_v2_cache_pickle_state.py:84: AttributeError
+_______________ test_5_a_SPAWN_worker_decodes_the_newest_frame ________________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4369/test_5_a_SPAWN_worker_decodes_0')
+
+    def test_5_a_SPAWN_worker_decodes_the_newest_frame(tmp_path):
+        """End to end through a real spawn-started DataLoader worker (the Windows / macOS / 3.14
+        default). The old code dies in the worker with AttributeError."""
+        _write_v2ep(tmp_path / f"clip{0:08d}.v2ep.pt", n_raw=12, eid=0, seed=3)
+        frames = build_v2_providers(tmp_path, lru_size=2, verbose=False,
+                                    newest_frame_only=True)[0].frames
+        dl = torch.utils.data.DataLoader(frames, batch_size=None, num_workers=1,
+                                         multiprocessing_context="spawn")
+>       got = [x for _i, x in zip(range(2), dl)]
+                              ^^^^^^^^^^^^^^^^^
+
+tests\test_v2_cache_pickle_state.py:95: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\..\venvs\tanitad\Lib\site-packages\torch\utils\data\dataloader.py:741: in __next__
+    data = self._next_data()
+           ^^^^^^^^^^^^^^^^^
+..\..\venvs\tanitad\Lib\site-packages\torch\utils\data\dataloader.py:1548: in _next_data
+    return self._process_data(data, worker_id)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\venvs\tanitad\Lib\site-packages\torch\utils\data\dataloader.py:1586: in _process_data
+    data.reraise()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <torch._utils.ExceptionWrapper object at 0x0000020F1CCEA270>
+
+    def reraise(self):
+        r"""Reraises the wrapped exception in the current thread"""
+        # Format a message such as: "Caught ValueError in DataLoader worker
+        # process 2. Original Traceback:", followed by the traceback.
+        msg = f"Caught {self.exc_type.__name__} {self.where}.\nOriginal {self.exc_msg}"  # pyrefly: ignore [missing-attribute]
+        if self.exc_type is KeyError:
+            # KeyError calls repr() on its argument (usually a dict key). This
+            # makes stack traces unreadable. It will not be changed in Python
+            # (https://bugs.python.org/issue2651), so we work around it.
+            msg = KeyErrorMessage(msg)
+        elif getattr(self.exc_type, "message", None):
+            # Some exceptions have first argument as non-str but explicitly
+            # have message field
+            # pyrefly: ignore [not-callable]
+            raise self.exc_type(
+                # pyrefly: ignore [unexpected-keyword]
+                message=msg
+            )
+        try:
+            exception = self.exc_type(msg)  # pyrefly: ignore [not-callable]
+        except Exception:
+            # If the exception takes multiple arguments or otherwise can't
+            # be constructed, don't try to instantiate since we don't know how to
+            raise RuntimeError(msg) from None
+>       raise exception
+E       AttributeError: Caught AttributeError in DataLoader worker process 0.
+E       Original Traceback (most recent call last):
+E         File "C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\utils\data\_utils\worker.py", line 358, in _worker_loop
+E           data = fetcher.fetch(index)  # type: ignore[possibly-undefined]
+E         File "C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\utils\data\_utils\fetch.py", line 56, in fetch
+E           data = self.dataset[possibly_batched_index]
+E                  ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+E         File "C:\Users\Admin\rc7combo\stack\tanitad\data\v2_dataset.py", line 199, in __getitem__
+E           return self._cache.decode_stacked_range(self._clip, i, i + 1)[0]
+E                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+E         File "C:\Users\Admin\rc7combo\stack\tanitad\data\v2_dataset.py", line 355, in decode_stacked_range
+E           newest_only=self.newest_frame_only)
+E                       ^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'V2CompressedCache' object has no attribute 'newest_frame_only'
+
+..\..\venvs\tanitad\Lib\site-packages\torch\_utils.py:785: AttributeError
+=========================== short test summary info ===========================
+FAILED tests/test_v2_cache_pickle_state.py::test_1_newest_frame_only_TRUE_survives_the_pickle
+FAILED tests/test_v2_cache_pickle_state.py::test_2_newest_frame_only_FALSE_survives_the_pickle_as_an_ATTRIBUTE
+FAILED tests/test_v2_cache_pickle_state.py::test_3_EVERY_constructor_attribute_crosses_the_boundary
+FAILED tests/test_v2_cache_pickle_state.py::test_4_an_OLD_pickle_without_the_key_reads_as_False
+FAILED tests/test_v2_cache_pickle_state.py::test_5_a_SPAWN_worker_decodes_the_newest_frame
+5 failed in 8.47s

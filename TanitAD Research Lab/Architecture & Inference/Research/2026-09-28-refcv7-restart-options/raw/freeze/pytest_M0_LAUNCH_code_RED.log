@@ -1,0 +1,334 @@
+FFFFFFFFFFFF                                                             [100%]
+================================== FAILURES ===================================
+____ test_1_model_table_argv_table_and_gate_admissions_are_the_literal_ten ____
+
+    def test_1_model_table_argv_table_and_gate_admissions_are_the_literal_ten():
+>       model_tab = {p: f for p, f, _w in v3.BYPASS_DECLARATIONS}
+                                          ^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'tanitad.refs.refc_v3' has no attribute 'BYPASS_DECLARATIONS'
+
+tests\test_refcv7_admitted_freeze.py:118: AttributeError
+____ test_2_the_refcv7_rig_declares_the_LITERAL_thirteen_and_G_DVB_agrees _____
+
+rig = (RefCV3Model(
+  (core): RefCModel(
+    (encoder): TimmResNetTrunk(
+      (net): FeatureListNet(
+        (conv1): Conv2...d_ms': 10.0, 'kappa_cap': 0.3, 'alat_v_floor': 2.0}), ['--arm', 'hier', '--size', 'small', '--smoke', '--device', ...])
+
+    def test_2_the_refcv7_rig_declares_the_LITERAL_thirteen_and_G_DVB_agrees(rig):
+        model, args, _argv = rig
+>       assert set(gr.grad_unreachable_prefixes(model)) == BATCH3 | TEN
+E       AssertionError: assert {'core.decode...r.goal_point'} == {'core.decode...te_head', ...}
+E         
+E         Extra items in the right set:
+E         'str_goal_head'
+E         'core.decoder.ctx_to_cond'
+E         'core.strategic.gru'
+E         'core.strategic.proj'
+E         'nav_to_str'...
+E         
+E         ...Full output truncated (6 lines hidden), use '-vv' to show
+
+tests\test_refcv7_admitted_freeze.py:133: AssertionError
+---------------------------- Captured stdout setup ----------------------------
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.3, alat_v_floor=2.0, schema=tanitad.anchor_artifact/1
+[v3] rig camera = PER-CLIP EXTRINSICS from C:\Users\Admin\AppData\Local\Temp\r7freeze_nxdkz9jx\extr.json (2 clips, z 1.450-1.550 m, pitch -0.0000..+0.0040 rad)
+[v3] ⚠️ a rig camera is built but --agent-w-project and --agent-w-ground are both 0: neither monocular term contributes. That is a legal ablation baseline and the stamp records it, but it is not a projection arm.
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 2 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] ⚠️ agent cls weight: the corpus line could not be DERIVED from --agent-join 'C:\\Users\\Admin\\AppData\\Local\\Temp\\r7freeze_nxdkz9jx\\__unread__/join.jsonl.xz', so the only source is the --agent-cls-weight key. The guard is single-sourced on this arm and cannot catch an artifact/corpus mismatch.
+[v3] agent cls weight: b1 on corpus line v7-b1-physicalai-b1-w120-256x640cyl, population in_field_and_decode_box (weight-key-only (the join is not a line this table names)) (10 classes, imbalance 1298.6:1, digest c9dbc340acf7d27e)
+[v3] refcv7 map-hires: w=1, extent 60 m x +-16 m -> [600, 320] at 0.1 m, grad_ckpt True, near-lift 20 m, near-refine 1, tap {'s8_tap': True, 's8_module': 'layer2', 's8_dim': 128, 's8_hw': [16, 72], 's8_frame': 'newest', 's8_temporal_fusion': None}, params {'lift': 32896, 'encoder': 406912, 'refine': 20936, 'near': 16448, 'near_refine': 18496, 'total': 495688}, class weights sha256 6efc5957e6d2
+[v3] refcv6 perception: w_map=0 w_box3d=1 bev_source=map_hires_pool; params {'lift': 0, 'bev_encoder': 0, 'map_head': 0, 'box_memory': 91136, 'box_decoder': 3505943, 'bev_pool': 6336, 'box_qpos': 131584, 'box_refpts': 600, 'total': 3735599}
+[v3] anchors: loaded (117, 8, 2) from C:\Users\Admin\AppData\Local\Temp\r7freeze_nxdkz9jx\anchors.pt (sha256 fb1193128a15f6eb)
+[v3] anchors: v0-CONDITIONED, controls (117, 2) (accel, lateral accel), units=alat (source: file), rolled per window; withheld rows at 10.0 m/s. straight-ahead control present: True
+[parity] ⚠ NON-PARITY v2 corpus for v3 v2-cache: ['C:\\Users\\Admin\\AppData\\Local\\Temp\\r7freeze_nxdkz9jx\\__unread__/train'] reference no registered parity key. Results off it are NOT cross-arm comparable with the parity arms.
+---------------------------- Captured stderr setup ----------------------------
+W0928 06:00:05.654000 5624 Lib\site-packages\torch\utils\flop_counter.py:29] triton not found; flop counting will not work for triton kernels
+----------------------------- Captured log setup ------------------------------
+WARNING  torch.utils.flop_counter:flop_counter.py:29 triton not found; flop counting will not work for triton kernels
+_____ test_3a_RED_without_no_strategic_argv_no_longer_justifies_the_eight _____
+
+rig = (RefCV3Model(
+  (core): RefCModel(
+    (encoder): TimmResNetTrunk(
+      (net): FeatureListNet(
+        (conv1): Conv2...d_ms': 10.0, 'kappa_cap': 0.3, 'alat_v_floor': 2.0}), ['--arm', 'hier', '--size', 'small', '--smoke', '--device', ...])
+
+    def test_3a_RED_without_no_strategic_argv_no_longer_justifies_the_eight(rig):
+        import argparse
+        model, args, _argv = rig
+        off = argparse.Namespace(**{**vars(args), "no_strategic": False})
+        got = sorted((m.lever, m.declared, m.built) for m in dvb.check_grad_unreachable(model, off))
+>       assert got == sorted((f"grad_unreachable[{p}]", "not declared (argv: reached)", "declared")
+                             for p in TEN_STRATEGIC)
+E       AssertionError: assert [] == [('grad_unrea...clared'), ...]
+E         
+E         Right contains 8 more items, first extra item: ('grad_unreachable[core.decoder.ctx_to_cond]', 'not declared (argv: reached)', 'declared')
+E         Use -v to get more diff
+
+tests\test_refcv7_admitted_freeze.py:148: AssertionError
+____ test_3b_RED_without_graft_tac8_prior_argv_no_longer_justifies_the_two ____
+
+rig = (RefCV3Model(
+  (core): RefCModel(
+    (encoder): TimmResNetTrunk(
+      (net): FeatureListNet(
+        (conv1): Conv2...d_ms': 10.0, 'kappa_cap': 0.3, 'alat_v_floor': 2.0}), ['--arm', 'hier', '--size', 'small', '--smoke', '--device', ...])
+
+    def test_3b_RED_without_graft_tac8_prior_argv_no_longer_justifies_the_two(rig):
+        import argparse
+        model, args, _argv = rig
+        off = argparse.Namespace(**{**vars(args), "graft_tac8_prior": False})
+        got = sorted((m.lever, m.declared, m.built) for m in dvb.check_grad_unreachable(model, off))
+>       assert got == sorted((f"grad_unreachable[{p}]", "not declared (argv: reached)", "declared")
+                             for p in TEN_TAC8)
+E       AssertionError: assert [] == [('grad_unrea..., 'declared')]
+E         
+E         Right contains 2 more items, first extra item: ('grad_unreachable[core.decoder.lat_to_anchor]', 'not declared (argv: reached)', 'declared')
+E         Use -v to get more diff
+
+tests\test_refcv7_admitted_freeze.py:157: AssertionError
+_____________ test_3c_RED_an_UNDECLARED_build_is_named_on_all_ten _____________
+
+rig = (RefCV3Model(
+  (core): RefCModel(
+    (encoder): TimmResNetTrunk(
+      (net): FeatureListNet(
+        (conv1): Conv2...d_ms': 10.0, 'kappa_cap': 0.3, 'alat_v_floor': 2.0}), ['--arm', 'hier', '--size', 'small', '--smoke', '--device', ...])
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002A9C7F04050>
+
+    def test_3c_RED_an_UNDECLARED_build_is_named_on_all_ten(rig, monkeypatch):
+        _model, _args, argv = rig
+>       monkeypatch.setattr(v3, "declare_bypassed_by_flag", lambda model: {})
+E       AttributeError: <module 'tanitad.refs.refc_v3' from 'C:\\Users\\Admin\\rc7restart_work\\m0\\stack\\tanitad\\refs\\refc_v3.py'> has no attribute 'declare_bypassed_by_flag'
+
+tests\test_refcv7_admitted_freeze.py:163: AttributeError
+___________ test_4_the_no_strategic_declarations_are_MEASURED_true ____________
+
+    def test_4_the_no_strategic_declarations_are_MEASURED_true():
+        args, cfg, model = _smoke(R7_CORE + F1_F6 + ["--no-strategic"])
+>       assert set(model._bypass_declared) == set(TEN_STRATEGIC)        # no tac8 graft on this rig
+                   ^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_refcv7_admitted_freeze.py:172: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = RefCV3Model(
+  (core): RefCModel(
+    (encoder): ResNetEncoder(
+      (stem): Sequential(
+        (0): Conv2d(1, 8, ke...2, bias=True)
+  (scorer): GoalDistanceScorer(
+    (goal_point): Linear(in_features=32, out_features=2, bias=True)
+  )
+)
+name = '_bypass_declared'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'RefCV3Model' object has no attribute '_bypass_declared'
+
+..\..\..\venvs\tanitad\Lib\site-packages\torch\nn\modules\module.py:1968: AttributeError
+__________________ test_5a_flags_OFF_the_build_is_untouched ___________________
+
+    def test_5a_flags_OFF_the_build_is_untouched():
+        _a, _c, model = _smoke(R7_CORE + F1_F6)
+>       assert model._bypass_declared == {}
+               ^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_refcv7_admitted_freeze.py:182: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = RefCV3Model(
+  (core): RefCModel(
+    (encoder): ResNetEncoder(
+      (stem): Sequential(
+        (0): Conv2d(1, 8, ke...2, bias=True)
+  (scorer): GoalDistanceScorer(
+    (goal_point): Linear(in_features=32, out_features=2, bias=True)
+  )
+)
+name = '_bypass_declared'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'RefCV3Model' object has no attribute '_bypass_declared'
+
+..\..\..\venvs\tanitad\Lib\site-packages\torch\nn\modules\module.py:1968: AttributeError
+___ test_5b_flags_ON_the_state_dict_equals_an_undeclared_build_BIT_FOR_BIT ____
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002A9C7F06780>
+
+    def test_5b_flags_ON_the_state_dict_equals_an_undeclared_build_BIT_FOR_BIT(monkeypatch):
+        argv = R7_CORE + F1_F6 + ["--no-strategic"]
+        _a1, _c1, frozen = _smoke(argv, seed=3)
+>       monkeypatch.setattr(v3, "declare_bypassed_by_flag", lambda model: {})
+E       AttributeError: <module 'tanitad.refs.refc_v3' from 'C:\\Users\\Admin\\rc7restart_work\\m0\\stack\\tanitad\\refs\\refc_v3.py'> has no attribute 'declare_bypassed_by_flag'
+
+tests\test_refcv7_admitted_freeze.py:189: AttributeError
+_____________ test_6_build_optimizer_excludes_EXACTLY_the_twenty ______________
+
+rig = (RefCV3Model(
+  (core): RefCModel(
+    (encoder): TimmResNetTrunk(
+      (net): FeatureListNet(
+        (conv1): Conv2...d_ms': 10.0, 'kappa_cap': 0.3, 'alat_v_floor': 2.0}), ['--arm', 'hier', '--size', 'small', '--smoke', '--device', ...])
+
+    def test_6_build_optimizer_excludes_EXACTLY_the_twenty(rig):
+        model, args, _argv = rig
+        import argparse
+        a = argparse.Namespace(**{**vars(args), "opt": "dd"})
+        opt = T.build_optimizer(model, a)
+        in_opt = {id(p) for g in opt.param_groups for p in g["params"]}
+        out = sorted(n for n, p in model.named_parameters() if id(p) not in in_opt)
+        ten_out = [n for n in out if _under(n, TEN)]
+>       assert len(ten_out) == N_TEN_TENSORS
+E       assert 0 == 20
+E        +  where 0 = len([])
+
+tests\test_refcv7_admitted_freeze.py:205: AssertionError
+---------------------------- Captured stdout call -----------------------------
+[v3] opt=dd AdamW wd=0.0001 encoder_lr=5.000e-05 (64 tensors) head_lr=1.000e-04 (424 tensors)
+___________ test_7a_a_pre_freeze_state_loads_ONLY_after_conversion ____________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002A9C7C9FE30>
+
+    def test_7a_a_pre_freeze_state_loads_ONLY_after_conversion(monkeypatch):
+        C = _converter()
+        argv = R7_CORE + F1_F6 + ["--no-strategic"]
+>       a, pre, sd = _pre_freeze_opt_state(monkeypatch, argv)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_refcv7_admitted_freeze.py:238: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002A9C7C9FE30>
+argv = ['--arm', 'hier', '--sampler', 'ddim', '--anchor-v0-conditioned', '--anchor-control-units', ...]
+
+    def _pre_freeze_opt_state(monkeypatch, argv):
+        """A pre-freeze build (the declaration removed), two REAL steps of the dd optimiser."""
+        import argparse
+        with monkeypatch.context() as m:
+>           m.setattr(v3, "declare_bypassed_by_flag", lambda model: {})
+E           AttributeError: <module 'tanitad.refs.refc_v3' from 'C:\\Users\\Admin\\rc7restart_work\\m0\\stack\\tanitad\\refs\\refc_v3.py'> has no attribute 'declare_bypassed_by_flag'
+
+tests\test_refcv7_admitted_freeze.py:223: AttributeError
+__________ test_7b_RED_a_dropped_entry_that_CARRIES_state_is_refused __________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002A9C806E030>
+
+    def test_7b_RED_a_dropped_entry_that_CARRIES_state_is_refused(monkeypatch):
+        C = _converter()
+        argv = R7_CORE + F1_F6 + ["--no-strategic"]
+>       _a, _pre, sd = _pre_freeze_opt_state(monkeypatch, argv)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_refcv7_admitted_freeze.py:272: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002A9C806E030>
+argv = ['--arm', 'hier', '--sampler', 'ddim', '--anchor-v0-conditioned', '--anchor-control-units', ...]
+
+    def _pre_freeze_opt_state(monkeypatch, argv):
+        """A pre-freeze build (the declaration removed), two REAL steps of the dd optimiser."""
+        import argparse
+        with monkeypatch.context() as m:
+>           m.setattr(v3, "declare_bypassed_by_flag", lambda model: {})
+E           AttributeError: <module 'tanitad.refs.refc_v3' from 'C:\\Users\\Admin\\rc7restart_work\\m0\\stack\\tanitad\\refs\\refc_v3.py'> has no attribute 'declare_bypassed_by_flag'
+
+tests\test_refcv7_admitted_freeze.py:223: AttributeError
+_________ test_8_a_module_the_build_did_not_construct_is_not_demanded _________
+
+    def test_8_a_module_the_build_did_not_construct_is_not_demanded():
+        """`--goal-point-inject` turns `nav_inject` OFF (PREREG E15), so `nav_to_str` is never built:
+        the argv side must not demand its declaration (a module that does not exist cannot be a dead
+        trainable group) -- and must still demand the other seven."""
+        args, _cfg, model = _smoke(R7_CORE + F1_F6 + ["--no-strategic", "--goal-point-inject"])
+        assert getattr(model, "nav_to_str", None) is None
+>       assert set(model._bypass_declared) == set(TEN_STRATEGIC) - {"nav_to_str"}
+                   ^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_refcv7_admitted_freeze.py:292: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = RefCV3Model(
+  (core): RefCModel(
+    (encoder): ResNetEncoder(
+      (stem): Sequential(
+        (0): Conv2d(1, 8, ke...2, bias=True)
+  (scorer): GoalDistanceScorer(
+    (goal_point): Linear(in_features=32, out_features=2, bias=True)
+  )
+)
+name = '_bypass_declared'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'RefCV3Model' object has no attribute '_bypass_declared'
+
+..\..\..\venvs\tanitad\Lib\site-packages\torch\nn\modules\module.py:1968: AttributeError
+============================== warnings summary ===============================
+tests/test_refcv7_admitted_freeze.py: 14 warnings
+  C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\jit\_script.py:365: DeprecationWarning: `torch.jit.script_method` is deprecated. Please switch to `torch.compile` or `torch.export`.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_refcv7_admitted_freeze.py::test_1_model_table_argv_table_and_gate_admissions_are_the_literal_ten
+FAILED tests/test_refcv7_admitted_freeze.py::test_2_the_refcv7_rig_declares_the_LITERAL_thirteen_and_G_DVB_agrees
+FAILED tests/test_refcv7_admitted_freeze.py::test_3a_RED_without_no_strategic_argv_no_longer_justifies_the_eight
+FAILED tests/test_refcv7_admitted_freeze.py::test_3b_RED_without_graft_tac8_prior_argv_no_longer_justifies_the_two
+FAILED tests/test_refcv7_admitted_freeze.py::test_3c_RED_an_UNDECLARED_build_is_named_on_all_ten
+FAILED tests/test_refcv7_admitted_freeze.py::test_4_the_no_strategic_declarations_are_MEASURED_true
+FAILED tests/test_refcv7_admitted_freeze.py::test_5a_flags_OFF_the_build_is_untouched
+FAILED tests/test_refcv7_admitted_freeze.py::test_5b_flags_ON_the_state_dict_equals_an_undeclared_build_BIT_FOR_BIT
+FAILED tests/test_refcv7_admitted_freeze.py::test_6_build_optimizer_excludes_EXACTLY_the_twenty
+FAILED tests/test_refcv7_admitted_freeze.py::test_7a_a_pre_freeze_state_loads_ONLY_after_conversion
+FAILED tests/test_refcv7_admitted_freeze.py::test_7b_RED_a_dropped_entry_that_CARRIES_state_is_refused
+FAILED tests/test_refcv7_admitted_freeze.py::test_8_a_module_the_build_did_not_construct_is_not_demanded
+12 failed, 14 warnings in 8.64s

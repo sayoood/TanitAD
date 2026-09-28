@@ -1,0 +1,65 @@
+{
+ "declared": {
+  "core.strategic.gru": "--no-strategic: the strategic context is computed only as a diagnostic (out['ctx']); no training loss reads it",
+  "core.strategic.proj": "--no-strategic: the strategic context projection, bypassed with the layer",
+  "nav_to_str": "--no-strategic: nav -> strategic ctx feeds only the diagnostic ctx; nav still reaches tactical (nav_to_tac) and operative (meas_in)",
+  "str_goal_head": "--no-strategic: the strategic goal head; its hindsight loss is dropped with the layer (goal_str_loss_applied False)",
+  "gstr_embed": "--no-strategic (S-BYPASS-2): the strategic goal's FiLM on the tactical latent is skipped",
+  "gstr_film": "--no-strategic (S-BYPASS-2): the strategic goal's FiLM on the tactical latent is skipped",
+  "core.decoder.ctx_to_cond": "--no-strategic (S-BYPASS-1): the decoder receives ctx=None, so ctx_to_cond never runs",
+  "core.route_head": "--no-strategic: the route readout; route_loss_applied is False and the route graft is off",
+  "core.decoder.lat_to_anchor": "--graft-tac8-prior (refcv6 sec. 4): the tactical 8x8 posterior REPLACES the image-only lat3 prior; the call site passes lat_prior=None",
+  "core.decoder.lon_to_anchor": "--graft-tac8-prior (refcv6 sec. 4): the tactical 8x8 posterior REPLACES the image-only lon3 prior; the call site passes lon_prior=None"
+ },
+ "dropped": [
+  "core.strategic.gru.weight_ih_l0",
+  "core.strategic.gru.weight_hh_l0",
+  "core.strategic.gru.bias_ih_l0",
+  "core.strategic.gru.bias_hh_l0",
+  "core.strategic.proj.weight",
+  "core.strategic.proj.bias",
+  "core.decoder.ctx_to_cond.weight",
+  "core.decoder.ctx_to_cond.bias",
+  "core.decoder.lat_to_anchor.weight",
+  "core.decoder.lon_to_anchor.weight",
+  "core.route_head.weight",
+  "core.route_head.bias",
+  "str_goal_head.weight",
+  "str_goal_head.bias",
+  "gstr_embed.weight",
+  "gstr_embed.bias",
+  "gstr_film.weight",
+  "gstr_film.bias",
+  "nav_to_str.weight",
+  "nav_to_str.bias"
+ ],
+ "saved_group_sizes": [
+  316,
+  492
+ ],
+ "old_group_sizes": [
+  316,
+  492
+ ],
+ "new_group_sizes": [
+  316,
+  472
+ ],
+ "n_state_entries": 788,
+ "n_shape_checked": 788,
+ "dropped_with_state": [],
+ "n_state_entries_out": 788,
+ "n_state_dropped": 0,
+ "ckpt_in": "ckpt_step1500.pt",
+ "ckpt_in_sha256": "bb3c33788c0fbec7d0eda38a42a43e682fa189d472da8f95cf79418ec2c0795a",
+ "step": 1500,
+ "tree": "C:/Users/Admin/rc7frozen",
+ "argv_file": "C:/Users/Admin/rc7frozen/stack/ops/runs.d/refcv7-r101-s0.argv.json",
+ "build_dropped_flags": [
+  "--trunk-compile"
+ ],
+ "loaded_into_build_optimizer": true,
+ "utc": "2026-09-28T03:29:58Z",
+ "ckpt_out_sha256": "7bcf7d61477eef4b9b0e0c64ccfccff90cf2a8c8683444b00f114d79376a76ff"
+}
+ZZCONVERT-OK-788-20ZZ
