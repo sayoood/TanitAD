@@ -181,7 +181,7 @@ def test_trunk_compile_is_dropped_for_the_build_and_declared():
 def test_the_vendored_loader_is_the_audit_blob_byte_for_byte():
     """A11: the loader the harness imports is the audit's file with ONLY the provenance block added."""
     src = (ROOT / "tanitad" / "eval" / "refcv6_loader.py").read_bytes().decode("utf-8")
-    assert G.vendored_audit_blob(src) == G.AUDIT_LOADER_BLOB == "11808258cd5c90647fae03f5859774b5541e9300"
+    assert G.vendored_audit_blob(src) == G.AUDIT_LOADER_BLOB == "4e823c7373d1c31aa6240306196fefcc23d7860e"
     # RED arms: one character of the vendored code changed; the provenance block removed
     mut = src.replace("max_horizon=20", "max_horizon=21")
     assert mut != src and G.vendored_audit_blob(mut) != G.AUDIT_LOADER_BLOB

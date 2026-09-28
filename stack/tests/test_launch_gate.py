@@ -2563,7 +2563,9 @@ def test_G_MAP_OVERFIT_refuses_a_record_that_did_not_run_the_A18_protocol(tmp_pa
 #: the Master Mind 2026-09-27: the launch argv LIST is FINAL -- the box A17 argv (150 tokens) with
 #: `--map-hires-near-lift-m 20 --map-hires-near-refine-blocks 1` right after `--map-hires-grad-ckpt
 #: on`. The binding runs bind THIS sha; the file's metadata may change, its list may not.
-_FINAL_ARGV_SHA256 = "6402d33de75b7f1c6dbdeb9aeedd46a00a82e7325eec420fa179f366213bd5cd"
+#: refcv7 RESTART (restart-options package 2026-09-28): the FINAL list with --conflict-every
+#: 10 -> 50 (an instrument cadence; training numerics bit-identical). Launch list: 6402d33d.
+_FINAL_ARGV_SHA256 = "e46ad3eb4099264754ba97846c0f3f5e8447ce61e21124dc980e2eb64464e9c8"
 
 
 @pytest.mark.skipif(not _CANON_ARGV.is_file(), reason="the canonical argv is not in this checkout")

@@ -933,8 +933,113 @@ def refcv6_selection_mechanisms(model) -> list[tuple[str, bool]]:
 
 
 # ============================================================================
+# ⛔⛔ refcv7 RESTART FREEZE -- G-LIVE's ten ADMITTED dead groups, declared model-side
+# ============================================================================
+# At launch (fec3a0d) the launch gate ADMITTED these ten leaf groups by FLAG
+# (`launch_gate.PROFILES["refcv7"]["live_dead_admitted"]`, PI 2026-09-27 ~20:55: "We dont need
+# these modules for refcv7") and owed the model-side declaration at the next restart, because it
+# touches code the binding runs recorded. Each is BYPASSED BY CONSTRUCTION under a flag of the
+# launch argv; none is a wiring defect. MEASURED twice:
+#   * G-LIVE's launch smoke (Thor, 100 steps, b16): exactly these ten of 474 leaf groups took
+#     ZERO gradient (4,256,324 parameters, 20 tensors);
+#   * the live run's own checkpoint at step 1,500 (ckpt.pt md5 c35966f7...): these 20 tensors are
+#     the ONLY 20 of 808 optimiser entries with NO AdamW state -- AdamW creates state on the first
+#     step a parameter has a `.grad`, so they had `.grad is None` on every one of 1,500 steps and
+#     were never moved (not even by the decoupled weight decay, which AdamW applies only to
+#     parameters with a gradient).
+# ⇒ Freezing them leaves every OTHER parameter's trajectory bit-identical: `clip_grad_norm_` and
+# AdamW both skip `.grad is None` tensors, so the frozen and the unfrozen build hand them the SAME
+# tensor lists. What changes is the RECORD: they leave the optimiser and stop being counted as
+# trained (`_gradreach.py`: a dead trainable tensor is a MEASUREMENT DEFECT).
+# ⚠️ DECLARED, NOT DELETED: `requires_grad` is not serialised, so every banked checkpoint loads
+# strictly. A resumed OPTIMISER is a different matter -- its param groups shrink by 20 entries;
+# `…/2026-09-28-refcv7-restart-options/code/freeze/ckpt_freeze_convert.py` remaps a pre-freeze
+# `ckpt.pt['opt']` and REFUSES if any dropped entry carries state.
+# ⛔ The ARGV mirror of this table is `declared_vs_built.GRAD_UNREACHABLE_BYPASS_RULES`, written
+# independently; G-DVB holds the two against each other.
+#: (module path, the CORE-config flag that bypasses it, why)
+BYPASS_DECLARATIONS: tuple[tuple[str, str, str], ...] = (
+    ("core.strategic.gru", "no_strategic",
+     "--no-strategic: the strategic context is computed only as a diagnostic (out['ctx']); "
+     "no training loss reads it"),
+    ("core.strategic.proj", "no_strategic",
+     "--no-strategic: the strategic context projection, bypassed with the layer"),
+    ("nav_to_str", "no_strategic",
+     "--no-strategic: nav -> strategic ctx feeds only the diagnostic ctx; nav still reaches "
+     "tactical (nav_to_tac) and operative (meas_in)"),
+    ("str_goal_head", "no_strategic",
+     "--no-strategic: the strategic goal head; its hindsight loss is dropped with the layer "
+     "(goal_str_loss_applied False)"),
+    ("gstr_embed", "no_strategic",
+     "--no-strategic (S-BYPASS-2): the strategic goal's FiLM on the tactical latent is skipped"),
+    ("gstr_film", "no_strategic",
+     "--no-strategic (S-BYPASS-2): the strategic goal's FiLM on the tactical latent is skipped"),
+    ("core.decoder.ctx_to_cond", "no_strategic",
+     "--no-strategic (S-BYPASS-1): the decoder receives ctx=None, so ctx_to_cond never runs"),
+    ("core.route_head", "no_strategic",
+     "--no-strategic: the route readout; route_loss_applied is False and the route graft is off"),
+    ("core.decoder.lat_to_anchor", "graft_tac8_prior",
+     "--graft-tac8-prior (refcv6 sec. 4): the tactical 8x8 posterior REPLACES the image-only "
+     "lat3 prior; the call site passes lat_prior=None"),
+    ("core.decoder.lon_to_anchor", "graft_tac8_prior",
+     "--graft-tac8-prior (refcv6 sec. 4): the tactical 8x8 posterior REPLACES the image-only "
+     "lon3 prior; the call site passes lon_prior=None"),
+)
+
+
+def _module_at(root: nn.Module, path: str):
+    node = root
+    for part in path.split("."):
+        node = getattr(node, part, None)
+        if node is None:
+            return None
+    return node if isinstance(node, nn.Module) else None
+
+
+def declare_bypassed_by_flag(model: nn.Module) -> dict[str, str]:
+    """Freeze + declare every BYPASS_DECLARATIONS module whose flag is ON in the core config and
+    which this build constructed. -> ``{path: why}`` of what was declared (empty with both flags
+    off: a build without them is untouched, bit for bit)."""
+    from tanitad.models._gradreach import declare_grad_unreachable
+    core_cfg = model.cfg.core
+    done: dict[str, str] = {}
+    for path, flag, why in BYPASS_DECLARATIONS:
+        if not bool(getattr(core_cfg, flag, False)):
+            continue
+        mod = _module_at(model, path)
+        if mod is None:
+            continue
+        declare_grad_unreachable(mod, why)
+        done[path] = why
+    return done
+
+
+# ============================================================================
 # The model
 # ============================================================================
+
+def e9_rank(blended: Tensor, out: dict) -> tuple[Tensor, dict]:
+    """E9's selection mask: the decoder's reach mask AND its speed-ceiling mask.
+
+    ⛔ SPEC_REFCV7 A2 / PI R1: the fed set speed is a HARD cap on the EMITTED plan.
+    `ceil_keep` exists only when the decoder's ceiling filter ran (inference; never in
+    training while `speed_ceiling_in_training` is False), so training is unchanged.
+    A row with no candidate under both masks keeps its reach-only ranking (the decoder's
+    own empty-row rule: an unsatisfiable window is a measurement failure, not a licence
+    to emit nothing) and is COUNTED, so obedience below 1.0 is always explained.
+    """
+    rank = blended
+    tele = {}
+    if "reach_keep" in out:            # post-guard mask (dead rows full)
+        rank = blended.masked_fill(~out["reach_keep"], float("-inf"))
+    ck = out.get("ceil_keep")
+    if ck is not None:
+        both = rank.masked_fill(~ck, float("-inf"))
+        dead = ~torch.isfinite(both).any(dim=1)
+        rank = torch.where(dead[:, None], rank, both)
+        tele["e9_ceil_dead_frac"] = dead.float().mean().detach()
+    return rank, tele
+
 
 class RefCV3Model(nn.Module):
     """Core RefCModel + (gated) goal cascade. With ``hier=False`` this class is
@@ -1353,6 +1458,9 @@ class RefCV3Model(nn.Module):
             self.refcv7_sources = src
             self.refcv7_wta = r7h.WTAProposalDecoder(hc, src, slot_t)
             self.refcv7_scorer = r7h.DisentangledScorer(hc, src, slot_t)
+        # ⛔⛔ refcv7 RESTART FREEZE: LAST, after every module exists (BYPASS_DECLARATIONS).
+        # Consumes no RNG, so every parameter's init is exactly what it was before.
+        self._bypass_declared = declare_bypassed_by_flag(self)
 
     # --- provenance (the PI's admissibility ruling, as data + roles) --------
     def provenance_roles(self) -> dict:
@@ -2287,9 +2395,8 @@ class RefCV3Model(nn.Module):
             fail=self.cfg.seam_fail, fail_frac=self.cfg.seam_fail_frac,
             patience=self.cfg.seam_fail_patience, state=self._seam,
             surface="goal_sel")
-        rank = blended
-        if "reach_keep" in out:            # post-guard mask (dead rows full)
-            rank = blended.masked_fill(~out["reach_keep"], float("-inf"))
+        rank, e9_tele = e9_rank(blended, out)
+        out.update(e9_tele)
         idx = rank.argmax(dim=1)
         traj = fan[torch.arange(b, device=fan.device), idx]
         out.update(cache)

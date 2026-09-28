@@ -57,7 +57,8 @@ __all__ = ["Mismatch", "Lever", "REGISTRY", "check", "refuse_on_mismatch", "cove
            "register", "KINDS", "DRIVORT_DEFAULTS", "drivort_levers_set",
            "REFCV7_REQUIRED_ON", "REFCV7_RESIDUAL_PRIOR", "check_refcv7_required",
            "check_logged_rows", "GRAD_UNREACHABLE_RULES", "expected_grad_unreachable",
-           "declared_grad_unreachable", "check_grad_unreachable", "probe_grad_unreachable"]
+           "declared_grad_unreachable", "check_grad_unreachable", "probe_grad_unreachable",
+           "GRAD_UNREACHABLE_BYPASS_RULES", "expected_bypass_unreachable"]
 
 KINDS = ("built", "loss", "elsewhere", "data", "runtime", "record", "drivort")
 
@@ -1236,6 +1237,27 @@ GRAD_UNREACHABLE_RULES: tuple[tuple[str, str, str], ...] = (
      "E9 always passes the structured goal; the free decode is only out['goal_point_free']"),
 )
 
+#: ⛔⛔ refcv7 RESTART FREEZE (the launch gate's G-LIVE ADMITTED these ten leaf groups by flag at
+#: launch -- `launch_gate.PROFILES["refcv7"]["live_dead_admitted"]` -- and the model-side
+#: declaration was owed at the next restart). MEASURED dead twice: G-LIVE's launch smoke (10 of 474
+#: leaf groups) and the live run's step-1,500 checkpoint (the only 20 of 808 optimiser entries with
+#: no AdamW state). The MODEL side is `refc_v3.BYPASS_DECLARATIONS` (keyed on the CORE config);
+#: this is the ARGV side, written independently. (module path, the argv flag, why)
+#: A row whose module the build did not construct is not demanded (see check_grad_unreachable).
+GRAD_UNREACHABLE_BYPASS_RULES: tuple[tuple[str, str, str], ...] = (
+    ("core.strategic.gru", "--no-strategic", "the strategic ctx is a diagnostic only"),
+    ("core.strategic.proj", "--no-strategic", "the strategic ctx projection"),
+    ("nav_to_str", "--no-strategic", "nav -> strategic ctx (diagnostic only)"),
+    ("str_goal_head", "--no-strategic", "the strategic goal head; its loss is dropped"),
+    ("gstr_embed", "--no-strategic", "S-BYPASS-2: the g_str FiLM is skipped"),
+    ("gstr_film", "--no-strategic", "S-BYPASS-2: the g_str FiLM is skipped"),
+    ("core.decoder.ctx_to_cond", "--no-strategic", "S-BYPASS-1: the decoder gets ctx=None"),
+    ("core.route_head", "--no-strategic", "the route readout; route_loss_applied False"),
+    ("core.decoder.lat_to_anchor", "--graft-tac8-prior", "the 8x8 posterior replaces lat3"),
+    ("core.decoder.lon_to_anchor", "--graft-tac8-prior", "the 8x8 posterior replaces lon3"),
+)
+_BYPASS_ARGV = {"--no-strategic": "no_strategic", "--graft-tac8-prior": "graft_tac8_prior"}
+
 #: the attributes the two freeze declarations set (`_gradreach.GRAD_UNREACHABLE_FLAG` and
 #: `v6.FROZEN_EXTERNAL_FLAG`), read BY NAME so this module imports neither torch nor v6
 _GRAD_UNREACHABLE_ATTR = "_tanitad_grad_unreachable"
@@ -1248,7 +1270,25 @@ def expected_grad_unreachable(args) -> dict[str, str]:
     on = {"core.decoder.offset_head": ddim,
           "core.decoder.control_head": ddim and bool(_a(args, "f3_per_layer", False)),
           "scorer.goal_point": str(_a(args, "arm", "")) == "hier"}
-    return {p: why for p, _rule, why in GRAD_UNREACHABLE_RULES if on[p]}
+    out = {p: why for p, _rule, why in GRAD_UNREACHABLE_RULES if on[p]}
+    out.update(expected_bypass_unreachable(args))
+    return out
+
+
+def expected_bypass_unreachable(args) -> dict[str, str]:
+    """``{module path: why}`` -- GRAD_UNREACHABLE_BYPASS_RULES evaluated on argv (the refcv7
+    restart freeze): a row is ON when its flag is in argv."""
+    return {p: why for p, flag, why in GRAD_UNREACHABLE_BYPASS_RULES
+            if bool(_a(args, _BYPASS_ARGV[flag], False))}
+
+
+def _built_module(model, path: str) -> bool:
+    node = model
+    for part in path.split("."):
+        node = getattr(node, part, None)
+        if node is None:
+            return False
+    return callable(getattr(node, "named_parameters", None))
 
 
 def _freezes(model) -> dict[str, tuple[str, str]]:
@@ -1291,6 +1331,10 @@ def check_grad_unreachable(model, args) -> list[Mismatch]:
     decl = _freezes(model)
     gr = {p: why for p, (attr, why) in decl.items() if attr == _GRAD_UNREACHABLE_ATTR}
     want = expected_grad_unreachable(args)
+    # the refcv7 restart freeze: a bypass row whose module this build did not construct is not
+    # demanded (it cannot be a dead TRAINABLE group); every built one is.
+    _bp = {p for p, _f, _w in GRAD_UNREACHABLE_BYPASS_RULES}
+    want = {p: w for p, w in want.items() if p not in _bp or _built_module(model, p)}
     out: list[Mismatch] = []
     for p in sorted(set(want) - set(gr)):
         out.append(Mismatch(f"grad_unreachable[{p}]", "declared (argv: bypassed by design)",

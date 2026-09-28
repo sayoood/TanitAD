@@ -364,7 +364,7 @@
   "--workers",
   "6",
   "--conflict-every",
-  "10",
+  "50",
   "--save-every",
   "500",
   "--log-every",
@@ -382,5 +382,13 @@
   "/home/nvidia/data/refcv7/vis1_sidecar_refcv6b1_train4369_eval139.npz := the box-head builder's VIS-1 sidecar /home/nvidia/bx_0252/full/vis1_sidecar_refcv6b1_train4369_eval139.npz, placed by the Master Mind 2026-09-27 (sha256 278443b3356bca054c15753e7c08d465d71b0327a2ce564e143d091261349dd4, read on Thor)",
   "G-MAP-OVERFIT and G-BOX-OVERFIT: each BINDING harness run wrapped by `stack/scripts/closure_run.py --binding --out <closure.json> --result <PASS json> --data-root <data dir> ... -- <harness> ... --launch-argv-sha256 <sha256 of THIS argv>` (SPEC_REFCV7 A11); the gate takes the pair (--map-overfit-record + --map-overfit-closure, --box-overfit-record + --box-overfit-closure) and recomputes every closure blob on the launch tree",
   "the refcv7 Training Watch: DECLARED in PROFILES['refcv7']['map_hires']['watch_builder'] (Master Mind 2026-09-27); the gate builds it from the smoke's metrics.jsonl"
+ ],
+ "restart_changes_vs_launch_fec3a0d": [
+  {
+   "flag": "--conflict-every",
+   "launch": "10",
+   "variant": "50",
+   "why": "instrument cadence: 1 grad-conflict reading per 50 steps instead of 10 (observational probe; training numerics bit-identical, tests/test_refcv6_grad_conflict.py)"
+  }
  ]
 }

@@ -560,7 +560,7 @@ def _load_by_path(name: str, path: Path):
 
 #: A11: the audit's loader, VENDORED into stack/ (the closure is verified on Thor's stack/taniteval/tools tree)
 LOADER_MODULE = "tanitad.eval.refcv6_loader"
-AUDIT_LOADER_BLOB = "11808258cd5c90647fae03f5859774b5541e9300"   # 2026-09-26-box-head-audit/code/refcv6_loader.py
+AUDIT_LOADER_BLOB = "4e823c7373d1c31aa6240306196fefcc23d7860e"   # the audit body (11808258) + the I3 stamped-queries patch (refcv7 restart package 2026-09-28)
 VENDOR_END = "== END VENDOR PROVENANCE ==\n"
 ARGV_HASH_FORM = 'sha256(json.dumps(argv, separators=(",", ":")))'
 

@@ -6,9 +6,11 @@
   why         the G-BOX-OVERFIT harness (stack/scripts/g_box_overfit.py) imports this module from stack/: the
               launch tree on Thor is stack/ + taniteval/ + tools/ only, and A11's closure is verified THERE, so a
               code file under the Research Lab tree would read absent at launch and be refused.
-  contract    everything after the END line below is the audit file VERBATIM (this block is the only
-              addition). tests/test_g_box_overfit.py strips the block and re-hashes the rest to the audit blob;
-              the harness records the same digest in every record (`loader.audit_blob`).
+  contract    everything after the END line below is the audit file (blob 11808258) PLUS the I3 stamped-
+              queries patch (refcv7 restart package, 2026-09-28: `_build_model` rebuilds an old record's
+              agent and box heads at the query counts it STAMPED, as refcv3_arm.load_model does).
+              tests/test_g_box_overfit.py strips this block and re-hashes the rest to
+              g_box_overfit.AUDIT_LOADER_BLOB; the harness records the same digest in every record.
 == END VENDOR PROVENANCE ==
 refcv6 LOADER — the model and the held-out eval dataset, built EXACTLY as the trainer builds them.
 
@@ -228,6 +230,21 @@ def _build_model(config: dict, ckpt_path: str, device: str = "cuda", remap: dict
     t0 = time.time()
     args, argv, arec = parse_args(config, remap)
     rec: dict = {"argv_local": argv, "argv_remap": arec, "departures": []}
+    # ⛔ I3 (refcv7 restart package 2026-09-28): the AGENT head at the query count AS TRAINED.
+    # refcv7 A9 R4 moved the parser default 100 -> 300; a record whose argv never passed
+    # --agent-queries (refcv6-r101-s0) would be rebuilt at 300 and fail its strict load. The
+    # trainer's own helper (explicit argv wins, then the seams.agents.queries stamp); a tree whose
+    # trainer predates it keeps its parser default, which IS the pre-A9 100.
+    _aq = getattr(tr, "agent_queries_as_trained", None)
+    if _aq is not None and str(getattr(args, "agents", "off")) != "off":
+        _n_q, _why_q = _aq(config, args)
+        rec["agent_queries"] = {"parser": int(getattr(args, "agent_queries")),
+                                "as_trained": None if _n_q is None else int(_n_q), "why": _why_q}
+        if _n_q is not None and int(_n_q) != int(args.agent_queries):
+            args.agent_queries = int(_n_q)
+            rec["departures"].append(f"--agent-queries: parser default "
+                                     f"{rec['agent_queries']['parser']} -> the record's {int(_n_q)}"
+                                     f" ({_why_q})")
     # train():6714-6720 -- the argument refusals (no data read by any of them)
     tr._check_nav_from_v7_args(args)
     tr._check_max_speed_args(args)
@@ -277,7 +294,13 @@ def _build_model(config: dict, ckpt_path: str, device: str = "cuda", remap: dict
     # train():6819-6832 -- the perception branch + the per-clip lift bank WITH equalize_bottom_rows
     if model._w_map > 0.0 or model._w_box3d > 0.0:
         _perc = tr._perc
-        _pcfg = _perc.PerceptionBranchConfig(w_map=model._w_map, w_box3d=model._w_box3d)
+        # ⛔ I3: the BOX head at the query count the record STAMPED (refcv3_arm's rule); a record
+        # without the stamp keeps the dataclass default (recorded).
+        _nq = (config.get("refcv6_perception") or {}).get("n_queries")
+        _pkw = {} if _nq is None else {"n_queries": int(_nq)}
+        rec["box_queries"] = {"stamp": _nq, "source": "refcv6_perception.n_queries"
+                              if _nq is not None else "dataclass default (no stamp)"}
+        _pcfg = _perc.PerceptionBranchConfig(w_map=model._w_map, w_box3d=model._w_box3d, **_pkw)
         model._perception = _perc.build_perception_branch(model, _pcfg).to(device)
         _pframe = _perc.frame_for_model(model)
         if model._w_map > 0.0:

@@ -301,7 +301,10 @@ class V2CompressedCache:
         return {"cache_dir": self.cache_dir, "lru_size": self.lru_size,
                 "files": self.files,
                 "frame": None if self.frame is None else self.frame.to_dict(),
-                "allow_lossy": self.allow_lossy}
+                "allow_lossy": self.allow_lossy,
+                # ⛔ 2026-09-28: every __init__ attribute but the LRU crosses the pickle
+                # boundary -- a SPAWN worker without it died on its first decode
+                "newest_frame_only": self.newest_frame_only}
 
     def __setstate__(self, s: dict) -> None:
         self.cache_dir = s["cache_dir"]
@@ -310,6 +313,8 @@ class V2CompressedCache:
         fr = s.get("frame")
         self.frame = None if fr is None else CanonicalFrame.from_dict(fr)
         self.allow_lossy = bool(s.get("allow_lossy", False))
+        # an OLD pickle (no key) predates the switch: False is its behaviour
+        self.newest_frame_only = bool(s.get("newest_frame_only", False))
         self._lru = None
 
     def _slice_for(self, d: dict, path: str) -> "tuple[slice, slice] | None":

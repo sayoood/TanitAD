@@ -3576,6 +3576,7 @@ class AnchoredDiffusionDecoder(nn.Module):
         # nothing.
         rank = score
         reach_keep = None
+        ceil_keep = None      # SPEC_REFCV7 A2: exported so E9 applies the same ceiling
         if sel.reach_clamp and v_ms is not None:
             keep = sl.reachability_mask(x, v_ms.to(x.dtype),
                                         accel_max=sel.accel_max,
@@ -3608,6 +3609,7 @@ class AnchoredDiffusionDecoder(nn.Module):
                 horizons=self.anchor_horizons,
                 tick_s=self.anchor_dt)(x, v_limit_ms)
             rank = rank.masked_fill(~_keep, float('-inf'))
+            ceil_keep = _keep
             tele.update(_st)
         idx = rank.argmax(dim=1)                              # [B] (detached)
         # S2b telemetry + THE RUNTIME GUARD. `be2da04` keeps two claims apart:
@@ -3693,6 +3695,13 @@ class AnchoredDiffusionDecoder(nn.Module):
             # ENTROPY normalise over the same support instead of over a fan that
             # is 72-74 % unpickable.
             out["reach_keep"] = reach_keep
+        if ceil_keep is not None:
+            # ⛔ SPEC_REFCV7 A2 / PI R1: the set speed is a HARD cap on the EMITTED plan. The
+            # argmax above is not the emitted plan on a v3 build: RefCV3Model's E9 goal
+            # selection re-ranks the fan from `score`, which is returned UNMASKED. Without
+            # this export the ceiling never reached `out["traj"]` (MEASURED 2026-09-28:
+            # filter ON == OFF on 204/204 NavSim warmup scenes at refcv7 step 1,500).
+            out["ceil_keep"] = ceil_keep
         return out
 
 
@@ -3790,6 +3799,9 @@ class RefCModel(nn.Module):
     #: removing it here removes it from the output, the D-REFCV6-F3-WHITELIST shape exactly.
     DECODER_PASSTHROUGH: tuple[str, ...] = (
         "prefinal_logits", "reach_keep", "layer_u0_hat", "layer_logits",
+        # SPEC_REFCV7 A2 / PI R1: the ceiling mask the decoder's argmax used, so E9 can apply
+        # it to the EMITTED plan. Present only when the filter ran (inference).
+        "ceil_keep",
         # refcv7 NEW-1: the prior this forward composed on. The F3 cascade re-roll READS
         # `residual_prior_ctrl` / `residual_prior_v` (`kinematic_prior.prior_from_out`) and
         # the launch gate's G-LIVE reads `residual_prior_path`. Absent from `dec` on an off
