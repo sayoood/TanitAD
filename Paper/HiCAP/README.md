@@ -1,7 +1,7 @@
 # HiCAP paper (LaTeX)
 
 **HiCAP — Hierarchical Contrastive Action Priors on a Frozen Vision–Language Backbone for Elastic, Imagination-Aware Driving.**
-Design and pre-registration paper, working draft 2026-09-29. **No HiCAP model has been trained.**
+Design and pre-registration paper, working draft 2026-09-29, 34 pages (`hicap.pdf`). **No HiCAP model has been trained.**
 
 ## Build
 ```
@@ -19,4 +19,5 @@ Every number carries a tag: `[M]` measured by us with an artifact in the repo ·
 
 ## Known gaps
 - Bibliography: arXiv is egress-blocked in the build environment; ids were confirmed from earlier repo citation checks and web search, not from the arXiv pages. Re-check `refs.bib` with unrestricted access before submission.
-- §9.4 (toy worlds for hierarchical retrieval, imagination, camera gating) is filled in from the R-B / R-C / R-D streams.
+- Red-team disposition (what was found and how it was resolved): `REDTEAM_DISPOSITION.md`; the review itself is `Research/2026-09-29-hicap/RT_redteam_paper.md`.
+- The toys (retrieval, imagination, camera gating, contrastive bias) prove mechanisms in synthetic worlds only; real-data statements are the kinematic mask, nested-vocabulary coverage and the conformal keep-set check.

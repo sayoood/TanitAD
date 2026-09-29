@@ -19,8 +19,7 @@ $4{,}572$ train and $147$ evaluation clips, corpus id \texttt{a48251e89c7a8603},
 the canonical parity corpus of $2{,}376$ episodes, and arms trained on it are compared only with arms trained on it. Frames are a cylindrical
 projection at $256\times640$ pixels covering a true $120^\circ$ field of view (linear in azimuth, $f_{\text{ref}}=305.577$), with a mandatory
 per-clip vertical crop because two camera rigs differ by about $215$ pixels. Only the front-wide camera is cached; the upstream dataset has seven
-cameras, which matters for \S\ref{sec:elastic}. No corpus the programme uses carries audio\evM{} (36 upstream features, none audio; the shipped mp4 audio track
-is unprobed).
+cameras, which matters for \S\ref{sec:elastic}. None of the 36 upstream features is audio and no label or cache carries it; the audio stream inside the shipped video container is unprobed (UNVERIFIED).
 
 \paragraph{What the labels are, and what they are not.}
 Labels may use privileged quantities (ego future, other agents); inference may not. Table~\ref{tab:inputs} states, for every quantity,
@@ -40,24 +39,24 @@ a programme ruling as a first-class route signal and stamped as such in every ru
 \toprule
 quantity & source & role & note \\ \midrule
 frames (front-wide, 3$\times$100\,ms; further cameras when cached) & sensor & Input & cylindrical $256\times640$, per-clip crop \\
-ego state $e_t$: $v,a_{\text{lon}},\dot\psi,\kappa$ at cycle time & sensor/CAN & Input & legal initial state; dropout with a learned null row \\
+ego state $e_t$: $v,a_{\text{lon}},\dot\psi,\kappa$ at cycle time & sensor/CAN & Input & 2026-09-02 ruling (velocity at cycle time); scope for the other channels pending; null row \\
 navigation command $n_t$ & ego-future & Input (stamped oracle) & controls: nav-zero, nav-shuffled \\
 audio window $u_t$ & microphone & Input (audio arm) & needs an explicit ruling; no corpus \\
 strategic tokens $g_{\text{str}},a_{\text{str}}$ & ego-future geometry & Label & band $[8,30]$\,s; four goals and two actions empty \\
 tactical actions $a_{\text{tac}}^{\text{lat}},a_{\text{tac}}^{\text{lon}}$ & ego-future geometry & Label & band $[2,6]$\,s; factored, never flattened \\
 tactical goals $g_{\text{tac}}$ (22, multi-label) & geometry + Alpamayo text & Label (aux) & 22 exclusive pairs; eight goals with $n<30$ \\
 goal point $g_{\text{tac}}.\text{anchor}$ & ego-future & Label & predicted, never supplied \\
-3-D agent tracks & \texttt{obstacle.offline} join & Label (cost heads) & $96.83\%$ of train clips \\
+3-D agent tracks & \texttt{obstacle.offline} join & Label (cost heads) & $96.83\%$ of train clips; eval-side coverage unstated \\
 \texttt{tac\_SIT}, \texttt{disputed}, \texttt{alpamayo.*} & Alpamayo text & Strat. only & never an input \\
 \texttt{nav\_30s}, \texttt{speed\_max\_input} & ego-future & Label / oracle & not built into any arm here (echo of the ego's realised speed) \\
-situation-classifier output & --- & \textbf{absent} & HiCAP has none; goal path stays disjoint from it \\
+situation-classifier head & --- & \textbf{absent} & no such head; the goal heads share the trunk readout, so disjointness is bounded by control NC6, not assumed \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \paragraph{Information-disjointness of the goal path.}
 Two programme rules bind the design. First, a route or goal input may not carry the output of a situation classifier, otherwise attribution between
-goal and classifier is lost and the classifier is scored through the planner. HiCAP contains no situation classifier; its only route-side input is the
-stamped navigation command, and evaluation-time situation strata (\texttt{tac\_SIT}) never re-enter. Second, the parent's selection restricts the child candidates
-(a hard beam) but is not fed to the child's state readout, so the child level cannot echo the parent's decision as a feature; the control ``flat tactical'' (no parent restriction)
-tests whether the restriction itself matters (\S\ref{sec:protocol}).
+goal and classifier is lost and the classifier is scored through the planner. HiCAP contains no situation-classifier \emph{head}, and its only route-side input is the
+stamped navigation command; evaluation-time situation strata (\texttt{tac\_SIT}) never re-enter. But the tactical cells and the 22-goal head share the readout $\mathbf s_2$ of one trunk, and fourteen of those goals are teacher-text situation-like labels (traffic-light colours, yield, gap, merge). We therefore do not claim disjointness: only geometry-derived goals may act on the decision (rule R4), the teacher-text goals are auxiliary with no path into any decision, and a goal-shuffled control and a strategic-token-null ablation bound what the goal path carries (NC6).
+Second, the parent's selection restricts the child candidates
+(a hard beam) but is not fed to the child's state readout, so the child level cannot echo the parent's decision as a feature; the control ``flat tactical'' (no parent restriction) tests whether the restriction itself matters (\S\ref{sec:protocol}).

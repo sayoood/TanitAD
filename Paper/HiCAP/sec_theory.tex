@@ -3,7 +3,8 @@
 % ---------------------------------------------------------------------------
 This section states what the design guarantees and under which assumptions. Every proposition is
 elementary; the point is to make the assumptions explicit, because several failures observed in
-our own programme (action echo, split-mean bias, uncalibrated imagination) came from unstated ones.
+our own programme (action echo, split-mean bias, uncalibrated imagination) came from unstated ones. A red-team pass over an earlier draft found
+that the InfoNCE statement did not cover the masked loss the design uses, that a conformal claim needed an unavailable conditional coverage, and that a future critic was not identified; each is corrected below.
 
 \subsection{Setting}
 Let $s\in\mathcal S$ be the multimodal state (frames, ego state, optional audio). A decision is a leaf of a
@@ -15,9 +16,9 @@ $f_\ell(s,v)=\tau\langle\mathbf s_\ell(s),\mathbf a_v\rangle$ with temperature $
 The expert (logged) decision is drawn from $p(a\mid s)=\prod_{\ell}p(v_\ell\mid v_{\ell-1},s)$.
 
 \subsection{What contrastive training estimates, and the prior correction}
-\begin{proposition}[Per-node InfoNCE optimum]\label{prop:infonce}
+\begin{proposition}[Per-node InfoNCE optimum, unmasked]\label{prop:infonce}
 Fix a parent $u$ and a state $s$. Draw a positive child $v^+\sim p(\cdot\mid s,u)$ and $K$ negatives
-i.i.d.\ from a proposal $q_u$ on $C(u)$. Among all critics $f$, the InfoNCE loss
+i.i.d.\ from a proposal $q_u$ on $C(u)$ with $\operatorname{supp}p\subseteq\operatorname{supp}q_u$, and remove no candidate from the normaliser. Among all critics $f$, the InfoNCE loss
 $-\mathbb E\log\frac{e^{f(s,v^+)}}{e^{f(s,v^+)}+\sum_{k=1}^{K}e^{f(s,v^-_k)}}$
 is minimised by
 \begin{equation}
@@ -32,39 +33,39 @@ $\frac{p(v_j\mid s,u)/q_u(v_j)}{\sum_i p(v_i\mid s,u)/q_u(v_i)}$, and the softma
 exactly when $f=\log(p/q)+c(s)$, since $c(s)$ cancels in the normalisation. Cross-entropy is minimised
 by the Bayes posterior. This is the noise-contrastive argument of \citet{oord2018cpc} and \citet{poole2019variational}.\qedhere
 \end{proof}
-\begin{corollary}[Selection bias and its correction]\label{cor:bias}
-If $q_u$ is the marginal $\bar p_u(v)=\mathbb E_s\,p(v\mid s,u)$ (in-batch negatives), then
+\noindent\textbf{Remark (masking changes the optimum; corrected).} CLM additionally removes from each row the negatives that share the positive's action. Then the positive is compared only against \emph{different} actions, the candidates are no longer exchangeable (the Bayes posterior gains a factor the critic $f(s,v)$ cannot represent), and $f^\star$ is no longer the pointwise mutual information. We do not derive the masked optimum. A tabular numerical check on the worked example below (\texttt{RT\_masked\_infonce\_check.py}, \evM) recovers the PMI without the mask (centred critic $(-0.237,0.332,-0.095)$ against $(-0.238,0.322,-0.084)$) and shows that with the mask the critic picks the most frequent action in both states, so that the $\beta=1$ correction over-corrects (cruise probability $0.97$ and $0.99$ against the true $0.60$ and $0.80$); no single $\beta$ repairs it. HiCAP's default loss is therefore the \emph{level-wide soft-target softmax} (\S\ref{sec:train}), a classifier whose optimum is $\log p+c(s)$ with no prior term, in which near-positive nodes receive target mass and are \emph{not} removed from the normaliser. Masked InfoNCE, unmasked InfoNCE and the softmax are compared in H-HC4; for the masked variant $\beta$ is empirical.
+
+\begin{corollary}[Selection bias and its correction, unmasked loss]\label{cor:bias}
+If $q_u$ is the marginal $\bar p_u(v)=\mathbb E_{s\mid u}\,p(v\mid s,u)$ (in-batch negatives from batches grouped by parent), then
 $\arg\max_v f^\star(s,v)=\arg\max_v\log\frac{p(v\mid s,u)}{\bar p_u(v)}$, the pointwise-mutual-information
-maximiser, which differs from the likelihood maximiser $\arg\max_v p(v\mid s,u)$ whenever $\bar p_u$ is not uniform. Adding
+maximiser. It \emph{can} differ from the likelihood maximiser $\arg\max_v p(v\mid s,u)$, and only if $\bar p_u$ is not uniform. Adding
 $\beta\log\hat q_u(v)$ with $\beta=1$ recovers $\log p(v\mid s,u)+c(s)$. Because $\hat q$ and the critic are
-estimated, $\beta$ is fitted on held-out episodes rather than fixed.
+estimated, $\beta$ is fitted on held-out training episodes rather than fixed.
 \end{corollary}
 \noindent\textit{Example.} Prior $(0.70,0.20,0.10)$ over \{cruise, follow-lead, lane-change\}, true conditional
 $(0.60,0.30,0.10)$ in a given state: PMI is $(-0.15,+0.41,0)$, so the PMI argmax is ``follow-lead'' while the most
-likely action is ``cruise''. Our corpus is dominated by straight cruising, so the effect is systematic
-(\S\ref{sec:prelim} gives the measured size on a synthetic world).
+likely action is ``cruise''. (Under the prior $(0.5,0.3,0.2)$ a conditional such as $(0.9,0.05,0.05)$ gives the same argmax for both: the effect needs a conditional that is not much more peaked than the prior.)
+Our corpus is dominated by straight cruising, so the effect is plausible; \S\ref{sec:prelim} gives its measured size on a synthetic world.
 
 \begin{proposition}[Tree factorisation]\label{prop:tree}
-Let $\hat p(v\mid u,s)=\operatorname{softmax}_{v'\in C(u)}\big(f_\ell(s,v')+\beta_\ell\log\hat q_u(v')\big)_v$. Then
+Let $\hat p(v\mid u,s)=\operatorname{softmax}_{v'\in K(u)}\big(f_\ell(s,v')+\beta_\ell\log\hat q_u(v')\big)_v$ over a non-empty kept set $K(u)\subseteq C(u)$ (if the rule set empties it, fall back to the top-scoring child). Then
 $\hat p(a\mid s)=\prod_{\ell=1}^{L}\hat p(v_\ell\mid v_{\ell-1},s)$ is a normalised distribution over the
-leaves, and $\log\hat p(a\mid s)$ decomposes into per-level terms that can be trained and calibrated independently.
-By the chain rule the marginal of a node is the product along its path and equals the sum of the leaf
-probabilities beneath it. The unconditional level heads that serve the faster update rates are separate parameters,
-so their agreement with this marginal is trained with a KL term (\S\ref{sec:train}) rather than assumed.
+retained leaves. By the chain rule the marginal of a node is the product along its path and equals the sum of the leaf
+probabilities beneath it. Two distributions coexist in HiCAP: the conditional product $\hat p$, used by the decision rule, and the level-wide marginals $\tilde p_\ell$ used to rank nodes across parents; they are separate parameters, tied by a KL term (\S\ref{sec:train}), not equal, and the conformal keep-sets of rule R6 are calibrated on $\tilde p_\ell$.
 \end{proposition}
 \begin{proof}
-Each factor is a softmax on the children of one node, so it sums to one; the product over a root-to-leaf
-path therefore sums to one over all leaves by induction on depth.\qedhere
+Each factor is a softmax on a non-empty set of children of one node, so it sums to one; the product over a root-to-leaf
+path therefore sums to one over the retained leaves by induction on depth.\qedhere
 \end{proof}
 
 \begin{proposition}[Marginal node score]\label{prop:marginal}
 Fix a level $\ell$ with node set $V_\ell$ and a beam of width $w$. The probability that the beam contains the ancestor of the expert's action is
-$\sum_{v\in\text{beam}}P_\ell(v\mid s)$, where $P_\ell(v\mid s)=\sum_{a\in\mathrm{subtree}(v)}p(a\mid s)$ is the marginal mass of the node. It is maximised over all beams of width $w$ by the $w$ nodes of largest \emph{marginal}, and no node score that is not monotone in the marginal can do better.
+$\sum_{v\in\text{beam}}P_\ell(v\mid s)$, where $P_\ell(v\mid s)=\sum_{a\in\mathrm{subtree}(v)}p(a\mid s)$ is the marginal mass of the node. It is maximised over all beams of width $w$ by the $w$ nodes of largest \emph{marginal}, and no node score that is not monotone in the marginal can do better at that level.
 \end{proposition}
 \begin{proof}
 The expert's action falls in the subtree of exactly one node of the level, so the retention probability of a set of nodes is the sum of their marginal masses; the maximum over sets of size $w$ is attained by the $w$ largest terms.\qedhere
 \end{proof}
-\noindent This is why level critics are trained as marginals with level-wide negatives (\S\ref{sec:train}): a sibling-only softmax leaves a per-(state, parent) offset free, and a mean-pooled child centroid scores the average child, neither of which is monotone in the marginal. (Retaining the ancestor of the single \emph{most likely} leaf would instead call for a max-heap score; the expert's action is a draw from $p$, so the marginal is the right target.)
+\noindent This is why level critics are trained as marginals with level-wide negatives (\S\ref{sec:train}): a sibling-only softmax leaves a per-(state, parent) offset free, and a mean-pooled child centroid scores the average child, neither of which is monotone in the marginal. Two cautions: retaining the ancestor of the single \emph{most likely} leaf would call for a max-heap score instead (the expert's action is a draw from $p$, so the marginal is the right target here), and per-level optimality does not compose across levels (a parent of mass $0.5$ spread over ten children beats a parent of mass $0.4$ on one child at a width of one, yet retains only $0.05$ of the leaf mass against $0.4$); a cascade-optimal score would use the best mass reachable under the downstream widths.
 
 \begin{proposition}[Beam miss under noisy level critics]\label{prop:beam}
 Let a level have $N$ children, let the true ancestor have score margin $m_j$ over competitor $j$, and let node scores carry independent errors of standard deviation $\sigma$. With beam width $w$ the ancestor is lost only if at least $w$ competitors outscore it, and
@@ -83,7 +84,7 @@ The difference of two independent errors is normal with variance $2\sigma^2$, so
 Let level $\ell$ have branching $B_\ell=\max_u|C(u)|$ and beam width $b_\ell$ ($b_0=1$). Flat scoring of
 $N=\prod_\ell B_\ell$ leaves costs $Nd$ multiply-accumulates and streams $N\,d\,w$ bytes of embeddings ($w$ bytes per element)
 per decision. Beam retrieval touches $M=\sum_{\ell}b_{\ell-1}B_\ell$ nodes, i.e.\ $Md$ multiply-accumulates and $Mdw$ bytes.
-For a product vocabulary of $K_P$ paths and $K_V$ profiles ($N=K_PK_V$ composed entries), scoring the factors separately, keeping $(k_P,k_V)$ and composing costs $M=K_P+K_V+k_Pk_V$ rows.
+For a product vocabulary of $K_P$ paths and $K_V$ profiles ($N=K_PK_V$ composed entries), scoring the factors separately, keeping $(k_P,k_V)$ and composing costs $M=K_P+K_V+k_Pk_V$ rows. This selects the best composed entry \emph{exactly} only if the composed score is separable, $f(p,q)=f_P(p)+f_V(q)$; with a bounded pair interaction $|b(p,q)|\le B$, keeping every path within $2B$ of the $k_P$-th path score and every profile within $2B$ of the $k_V$-th profile score makes the composition exact (a threshold-algorithm argument). Because HiCAP's fine stage adds a pair head, the recall of composition is otherwise \emph{measured}, not assumed (H-HC3).
 \end{proposition}
 \noindent For $1{,}024\times256$ entries with $(20,10)$ kept this is $1{,}480$ rows instead of $262{,}144$, a factor of $177$ (Table~\ref{tab:cost}). On an edge device the binding constraint is memory bandwidth, not arithmetic (\S\ref{sec:eff}), and at this size flat scoring is itself affordable ($\approx1$\,ms), so the case for the hierarchy is the small set the backbone can reason over and the level-wise priors, and only beyond a few million entries the speed.
 
@@ -91,9 +92,9 @@ For a product vocabulary of $K_P$ paths and $K_V$ profiles ($N=K_PK_V$ composed 
 Pruning is safe only if it rarely removes the right action. We give two mechanisms.
 \begin{proposition}[Conformal cascade]\label{prop:conformal}
 For level $\ell$ let $\rho_\ell(s,v)$ be any score and $\hat t_\ell$ the $\lceil(1-\alpha_\ell)(n+1)\rceil$-th smallest value of
-$-\rho_\ell(s_i,v_i^\star)$ over $n$ calibration windows, each scored against the children of \emph{its own logged parent}. For a test window let
+$-\rho_\ell(s_i,v_i^\star)$ over $n$ calibration units, each scored against the children of \emph{its own logged parent}. For a test window let
 $K^\star_\ell(s)=\{v\in C(v^\star_{\ell-1}):\,-\rho_\ell(s,v)\le\hat t_\ell\}$ be the keep-set that would be used if the logged parent had been retained.
-If calibration and test windows are exchangeable, then $\Pr\big(v_\ell^\star\in K^\star_\ell(s)\big)\ge 1-\alpha_\ell$ for each level. The cascade retains the logged leaf exactly when
+If calibration and test units are exchangeable, then $\Pr\big(v_\ell^\star\in K^\star_\ell(s)\big)\ge 1-\alpha_\ell$ for each level. The cascade retains the logged leaf exactly when
 $v^\star_\ell\in K^\star_\ell(s)$ at every level, hence
 \begin{equation}
 \Pr\big(\text{logged leaf retained}\big)\;\ge\;1-\sum_{\ell}\alpha_\ell .\label{eq:recall}
@@ -104,62 +105,54 @@ Level-wise coverage is the split-conformal guarantee \citep{angelopoulos2021gent
 If the logged ancestors were all retained, the cascade's candidate set at level $\ell$ is the set of children of the logged parent, thresholded at $\hat t_\ell$, i.e.\ $K^\star_\ell(s)$; so the logged leaf is retained iff no level misses.
 The union bound over the $L$ events $\{v^\star_\ell\notin K^\star_\ell(s)\}$, each of probability at most $\alpha_\ell$, gives \eqref{eq:recall}.\qedhere
 \end{proof}
-\noindent We state the union bound only: a product $\prod_\ell(1-\alpha_\ell)$ would require coverage \emph{conditional on} the parent having been retained, which conditions on an event of the test window and is not covered by exchangeability.
-\noindent Exchangeability holds only across episodes, never across the windows of one episode, so calibration
-and evaluation use episode-disjoint splits and the guarantee is marginal, not conditional on the scene.
+\noindent We state the union bound only: a product $\prod_\ell(1-\alpha_\ell)$ would require coverage \emph{conditional on} the parent having been retained, which conditions on an event of the test window and is not covered by exchangeability. Cascades of conformal sets with a summed miss budget are known \citep{fisch2021cascade}.
+Three cautions follow from the measurements of \S\ref{sec:prelim} and the red-team pass. (a)~\emph{The exchangeable unit is the episode}, not the window: windows within an episode are strongly dependent, so calibrate with one window per episode or with cluster (episode-level) conformal, on episode-disjoint splits. (b)~The guarantee is marginal over calibration draws: conditional on one calibration set, coverage follows a Beta$(k,n{+}1{-}k)$ law whose median is the nominal level, so about half of all draws fall below nominal at any $n$ even with exact exchangeability; a guarantee \emph{per calibration draw} needs the training-conditional (PAC) form, which picks the quantile index $k'$ so that $\mathrm{BetaCDF}(1{-}\alpha;k',n{+}1{-}k')\le\delta$ \citep{vovk2012conditional}. (c)~Marginal coverage hides rare classes, so keep-sets are calibrated per tactical class (Mondrian).
 
-\begin{proposition}[Physics mask]\label{prop:mask}
+\begin{proposition}[Physical mask]\label{prop:mask}
 Let $\mathcal B$ be a set of kinematic limits (longitudinal acceleration and braking, lateral acceleration) and
 $\mathcal K_{\mathcal B}(s)=\{a:\ \text{the implied path satisfies }\mathcal B\text{ given the current speed}\}$. If the logged
-path satisfies $\mathcal B$, the mask retains it with probability one, so the oracle-in-set error is unchanged.
+path satisfies $\mathcal B$, the mask retains the \emph{logged future} with probability one. The oracle-in-set error over the candidate set is unchanged if and only if the oracle-best \emph{candidate} is feasible; a sufficient condition is that the limits are widened by the feasibility functional's Lipschitz constant times the quantisation radius of the vocabulary.
 \end{proposition}
-\noindent This is a statement about the bounds, not about the network, so it is checked empirically rather than proved:
+\noindent That the mask retains the logged future is a statement about the bounds, not about the network, so it is checked empirically rather than proved.
 Section~\ref{sec:prelim} reports that physical limits keep $881/881$ logged 2\,s futures of the validation set
-(one-sided 95\% lower bound $0.05^{1/881}=0.9966$ on the window-level retention rate) while removing
-$78\%$ of a speed-agnostic anchor set. Tight comfort limits ($3/6/4$\,m/s$^2$ for acceleration, braking, lateral) are \emph{not} safe as hard masks
-(they removed $2.4\%$ of logged futures) and are therefore used as costs. The bound treats windows as independent; the 40
-validation episodes make the effective sample smaller, which is why the calibrated conformal mask below, not this bound, is the shipped guarantee.
+(one-sided 95\% lower bound $0.05^{1/881}=0.9966$ on the window-level retention rate if windows were independent) while removing
+$78\%$ of a speed-agnostic anchor set, and that the oracle-in-set error is unchanged to three decimals (the direct evidence for the second claim). Tight comfort limits ($3/6/4$\,m/s$^2$ for acceleration, braking, lateral) are \emph{not} safe as hard masks
+(they removed $2.4\%$ of logged futures) and are therefore used as costs. The accelerations are $0.5$\,s finite differences of four waypoints, which low-pass the peaks: the test is \emph{lenient} (it under-estimates peak acceleration and errs toward retaining), not conservative for feasibility.
+The 40 validation episodes make the effective sample smaller than the window count, which is why the calibrated conformal mask, not this bound, is the shipped guarantee.
 
 \subsection{Predictive imagination that is identifiable}
 A world model trained on expert logs cannot learn what happens under an action the expert never took,
 because in the log the action is a function of the state. We therefore split the outcome into a part the ego cannot
 change over the horizon and a part it controls.
 \begin{proposition}[Identifiable outcome factorisation]\label{prop:ident}
-Let $W_{t+1:t+H}$ be the future scene (other agents, signals) and $e_{t+1:t+H}$ the ego path. If the scene is
-non-reactive over the horizon, $W_{t+1:t+H}\perp a\mid s$, then $p(W_{t+1:t+H}\mid s,a)=p(W_{t+1:t+H}\mid s)$ is identified by the
-observational log, and $e_{t+1:t+H}=\kappa(a,s_{\text{ego}})$ is a known kinematic function. Any interaction cost
-$c(W,e)$ can then be evaluated for every candidate $a$ without a learned counterfactual model.
+Let $W_{t+1:t+H}$ be the future scene (other agents, signals) and $e_{t+1:t+H}$ the planned ego path. If no component of the scene is causally downstream of the ego action over the horizon (non-reactivity), then $p\big(W_{t+1:t+H}\mid s,\mathrm{do}(a)\big)=p(W_{t+1:t+H}\mid s)$, which is identified from the log by marginalising over the logged action; the observational independence $W\perp a\mid s$ is neither required nor implied (an expert acting on cues absent from $s$ can break it without reactivity, and it can hold under reactivity by cancellation). The planned ego path $e=\kappa(a,s_{\text{ego}})$ is a known function; tracking error lies outside the proposition. Any interaction cost $c(W,e)$ can then be evaluated for every candidate $a$ without a learned counterfactual model.
 \end{proposition}
 \begin{proof}
-Conditional independence gives the first equality; the right-hand side involves no intervention on $a$, so it is a
-functional of the joint observational distribution. The ego path is a deterministic function of the candidate and the ego state.\qedhere
+Non-reactivity means the scene is a non-descendant of the action in the causal graph, so intervening on $a$ leaves its conditional law given $s$ unchanged, and $p(W\mid s)$ is a functional of the observational joint distribution obtained by marginalising the logged action. The planned ego path is a deterministic function of the candidate and the ego state.\qedhere
 \end{proof}
 \noindent The assumption fails for reactive agents (a driver yielding to the ego). We do not hide this: reactivity is
 bounded by a learned correction term whose weight is limited and which is reported separately, and imagination is
-never allowed to \emph{raise} confidence unless two independent heads agree (\S\ref{sec:imag}).
+never allowed to \emph{raise} a candidate's standing except through a learned benefit gate and a disagreement veto (\S\ref{sec:imag}).
 
-\begin{proposition}[Contrastive future critic]\label{prop:future}
-Let $g(s,a,s')=\tau\langle\Phi(s,a),\mathbf z(s')\rangle$ be trained with InfoNCE against future embeddings $s'$ of
-other windows as negatives. Its optimum is $g^\star=\log\frac{p(s'\mid s,a)}{p(s')}+c(s,a)$, so the score is a
-pointwise-mutual-information estimate between the candidate and its outcome.
+\begin{proposition}[Outcome critics: what is and is not identified]\label{prop:future}
+Let $g(s,a,x)=\tau\langle\Phi(s,a),\mathbf z(x)\rangle$ be trained with InfoNCE over \emph{outcomes} $x$ (negatives are outcomes of other windows). Its optimum is $g^\star=\log\frac{p(x\mid s,a)}{p(x)}+c(s,a)$, a density ratio of the dynamics, but only up to an arbitrary function $c(s,a)$ of the candidate. Hence $g$ can rank outcomes for a fixed $(s,a)$ but \emph{cannot rank candidates at a fixed state}. A candidate-ranking critic must normalise over candidates for a realised outcome, a softmax over the per-state counterfactual set, whose optimum is $\log\frac{p(a\mid s,x)}{q(a\mid s)}+c(s,x)$, and this requires counterfactual data.
 \end{proposition}
 \begin{proof}
-Identical to Proposition~\ref{prop:infonce} with the positive drawn from $p(s'\mid s,a)$ and negatives from the marginal $p(s')$.\qedhere
+The first statement is Proposition~\ref{prop:infonce} with the positive drawn from $p(x\mid s,a)$ and negatives from the marginal $p(x)$: the softmax normalises over $x$ for fixed $(s,a)$, so any $c(s,a)$ cancels. The second statement is Proposition~\ref{prop:infonce} with the roles of candidate and outcome exchanged.\qedhere
 \end{proof}
-
-\noindent The denominator $p(s')$ of this ratio does not depend on the candidate, so ranking candidates by $g^\star$ carries no prior bias of the kind in Corollary~\ref{cor:bias}; the price is that $g^\star$ is identified only on the data manifold, so on candidates the expert never took it is an extrapolation, which is why the critic is gated and vetoed (\S\ref{sec:imag}). Action selection and outcome prediction are different relations (a PMI over actions against a ratio of dynamics): a state tower can be shared, one objective cannot.
+\noindent Consequently HiCAP never ranks candidates by an outcome-InfoNCE score. Outcome InfoNCE is used only as auxiliary representation shaping, with targets in the current ego frame; candidate costs come from cost heads trained on counterfactual costs where those exist (\S\ref{sec:imag}).
 
 \subsection{Distilling the selector into a small student}
-\begin{proposition}[Decision preservation]\label{prop:distill}
+\begin{proposition}[Decision preservation, single-level argmax]\label{prop:distill}
 Let student embeddings satisfy $\|\hat{\mathbf s}-\mathbf s\|_2\le\delta_s$ and $\|\hat{\mathbf a}-\mathbf a\|_2\le\delta_a$ (unit vectors).
 Then $|\tau\langle\hat{\mathbf s},\hat{\mathbf a}\rangle-\tau\langle\mathbf s,\mathbf a\rangle|\le\tau(\delta_s+\delta_a)$, and the student's
-arg\,max equals the teacher's whenever the teacher's top-1/top-2 score margin exceeds $2\tau(\delta_s+\delta_a)$.
+arg\,max equals the teacher's whenever the teacher's top-1/top-2 score margin exceeds $2\tau(\delta_s+\delta_a)$. With shared action embeddings ($\delta_a=0$) it suffices that the margin to each competitor $v$ exceeds $\tau\,\delta_s\,\|\mathbf a_{\text{top}}-\mathbf a_v\|\le2\tau\delta_s$.
 \end{proposition}
 \begin{proof}
 $\langle\hat{\mathbf s},\hat{\mathbf a}\rangle-\langle\mathbf s,\mathbf a\rangle=\langle\hat{\mathbf s}-\mathbf s,\hat{\mathbf a}\rangle+\langle\mathbf s,\hat{\mathbf a}-\mathbf a\rangle$,
 each term bounded by Cauchy--Schwarz. A rank change between two candidates requires their scores to move toward each other by
-at least the margin, i.e.\ each by at least half of it.\qedhere
+at least the margin, i.e.\ each by at least half of it. With $\delta_a=0$ the change of the gap between two candidates is $\tau\langle\hat{\mathbf s}-\mathbf s,\mathbf a_{\text{top}}-\mathbf a_v\rangle$, bounded by $\tau\delta_s\|\mathbf a_{\text{top}}-\mathbf a_v\|$.\qedhere
 \end{proof}
-\noindent Because the interface between backbone and heads is a fixed-dimension embedding space, the frozen
+\noindent The guarantee covers the single-level dot-product argmax only. For the cascade it must hold at each level's $b$-th/$(b{+}1)$-th boundary and at each conformal threshold, and it does not cover the re-score, the cost heads or imagination. At the CLM temperature cap $\tau=100$ it requires $\delta_s<\text{margin}/200$, so it is close to vacuous unless margins are large; H-HC9 measures the share of real windows that meet it. Because the interface between backbone and heads is a fixed-dimension embedding space, the frozen
 multi-billion-parameter backbone can be replaced by a sub-300\,M student trained to match the cached teacher embeddings and
-candidate scores; Proposition~\ref{prop:distill} converts an embedding-error budget into a decision guarantee.
+candidate scores, and Proposition~\ref{prop:distill} converts an embedding-error budget into a decision statement for that argmax.

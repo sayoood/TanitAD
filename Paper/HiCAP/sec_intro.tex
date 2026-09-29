@@ -23,11 +23,9 @@ decisive cues (a siren) are not visual at all.
 HiCAP is the vision--language arm of TanitAD, a programme building sub-300\,M hierarchical latent world models for driving.
 The programme's newest reference planner line (anchored diffusion, REF-C) exposes the problem this paper addresses. On the parity
 lineage, the best candidate in a 256-anchor fan has an ADE@2\,s of $0.1640$\,m while the candidate the planner selects has
-$0.4714$\,m\evI~(REF-C-XL, 40 validation episodes; registry \S4). On the newest lineage, trained on the v7 corpus, the
-hold-the-current-action control scores $0.2996$\,m and the pre-registered constant-velocity-extended control $0.2874$\,m, against $0.2975$\,m and $0.3079$\,m
-for the two best trained arms\evI~(registry \S4.6--4.8; 4{,}823 windows, 141 episodes, none separated from the controls); the deficit lies
-on the longitudinal axis, which carries $92.2\%$ of the gap between the planner and the hold control\evI. Strategic (route-level) quality
-is reported UNAVAILABLE for two of those arms and $0.7708$ route accuracy against a $0.6742$ majority rate for the third\evI. In short, the
+$0.4714$\,m\evI~(REF-C-XL, 40 validation episodes; registry \S4). On the newest lineage, trained on the v7 corpus, the hold-the-current-action control scores $0.2996$\,m and its extension $0.2874$\,m, against $0.2975$\,m and $0.3079$\,m
+for the two best trained arms\evI~(the PI's Drive copy of the registry, \S4.6--4.8, which is not in this repository; $4{,}823$ windows, $141$ episodes; neither arm is separated from the controls). In the older arm whose gap to the hold control was largest, $92.2\%$ of that gap was along-track\evI, and the newest arm still trails the controls on speed error ($0.2919$ against $0.2540$\,m/s) and along-track error ($0.2655$ against $0.2348$\,m) while beating them on heading, yaw rate and curvature\evI.
+Strategic (route-level) quality is UNAVAILABLE ($n=0$) for the older arms and $0.7708$ route accuracy against a $0.6742$ majority rate for the newest\evI, from a head of $771$ parameters whose attribution is itself uncertain. In short, the
 programme's bottleneck is neither the candidate set nor the lateral path; it is the \emph{decision}, especially the longitudinal one, and it is
 under-supervised at the tactical and strategic levels. HiCAP is our attempt to build the decision maker properly on a backbone that already
 knows the world.

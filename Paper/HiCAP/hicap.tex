@@ -44,17 +44,17 @@ replace generation by a single prefill pass and a similarity search over cached 
 as flat and small, inherit the marginal-frequency bias of their loss, and neither predict outcomes nor budget their sensors.
 We describe \emph{HiCAP}, a design that keeps what made CLM work---a frozen backbone, two small trainable heads, cached action
 embeddings, a calibrated cosine score, a staged curriculum---and adapts it to driving. (i)~The action side is a \emph{tree}
-built from the programme's frozen tactical and strategic token vocabulary, refined by a factored product of geometric paths and speed profiles, so that vocabularies of $10^{5}$--$10^{7}$ entries are scored
+built from the programme's frozen tactical and strategic token vocabulary, refined by a factored product of geometric paths and speed profiles, so that vocabularies of $10^{5}$--$10^{6}$ entries (growth gated on a test) are scored
 coarse-then-compose (a cost proposition, a beam-miss bound and a measured pruning study are given). (ii)~A short chain of prior-encoded rules---kinematic
 feasibility, state-conditioned admissibility, hysteresis, and conformal keep-sets with a stated recall bound---reduces the candidate set
 before any expensive computation, and the survivors are fed back to the backbone for candidate-conditioned re-scoring.
-(iii)~We show that the InfoNCE optimum is a pointwise mutual information whose argmax is biased under a cruise-dominated prior and
-correct it with a fitted log-prior. (iv)~Imagination is confined to what data can identify and is built in three tiers: outcome-aware soft targets at training time, an analytically integrated forecast of a few non-reactive exogenous descriptors, and a gated contrastive critic whose head disagreement is a veto; a controlled toy attributes most of the apparent gain to the target shape.
+(iii)~We show that the unmasked InfoNCE optimum is a pointwise mutual information whose argmax is biased under a cruise-dominated prior, that CLM's same-action mask changes that optimum, and
+correct with a fitted log-prior or a soft-target loss. (iv)~Imagination is confined to what data can identify and is built in three tiers: outcome-aware soft targets at training time, an analytically integrated forecast of a few non-reactive exogenous descriptors, and a gated contrastive critic whose head disagreement is a veto; a controlled toy attributes most of the apparent gain to the target shape.
 (v)~An elastic-sensing controller chooses cameras and visual-token budgets per tick from vision-only cues (ego cues as an ablation), and an audio branch
 enters the backbone's embedding space as a zero-initialised gated residual whose null is bit-exact, with explicit controls. (vi)~A frozen multi-billion-parameter backbone violates the programme's
 sub-300\,M target, so the interface is a fixed-dimension embedding space that a distilled student can occupy, with a decision-preservation
 bound. We report only what exists: closed-form propositions with proofs, a real-data check that a physical-limit mask
-removes $78\%$ of a trajectory set while retaining all $881/881$ logged futures, toy measurements of the prior bias, and a pre-registered
+removes $78\%$ of a speed-agnostic trajectory set ($15\%$ of a speed-normalised one) while retaining all $881/881$ logged futures, toy measurements of the prior bias, and a pre-registered
 protocol with both outcomes committed for every hypothesis. No end-to-end HiCAP model has been trained.
 \end{abstract}
 

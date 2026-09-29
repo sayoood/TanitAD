@@ -84,13 +84,13 @@ def prefill_rows():
 
 # NVIDIA-published Thor rows (TRT-Edge-LLM 0.10.0, batch 1, ViT FP16, LLM NVFP4), as read by stream R-A
 # (RA_vlm_backbones.md sec. 2): (ViT ms per image, prefill ms @292 tokens, prefill ms @2048 tokens).
-THOR_ROWS = {"Qwen3-VL-2B": (11.4, 12.7, 28.0), "Qwen3-VL-4B": (11.6, 22.3, 62.2), "Qwen3-VL-8B": (15.7, 32.1, 104.5)}
+THOR_ROWS = {"Qwen3-VL-2B": (11.4, 12.7, 28.0), "Qwen3-VL-4B": (11.6, 22.3, 62.2), "Qwen3.5-4B": (10.9, 31.6, 95.2), "Qwen3-VL-8B": (15.7, 32.1, 104.5)}
 
 
 def thor_latency_rows():
     """ESTIMATE by linear interpolation of the published rows. ViT time scales with the number of camera images
     (the published ViT row is for one ~265-token image, so our 160-token crops make it an upper bound);
-    prefill is linear in total tokens between the two published points."""
+    prefill is linear in total tokens between the two published points (the one-camera column, n=224 < 292, is an extrapolation)."""
     rows = []
     for model, (vit, pf292, pf2048) in THOR_ROWS.items():
         slope = (pf2048 - pf292) / (2048 - 292)

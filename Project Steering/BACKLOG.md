@@ -75,4 +75,7 @@ Strike items through when done, with the commit.
 | E11 | **E-C3 oracle-camera value by manoeuvre** on a ~30-chunk side-study (front-tele 49 GB first) | CPU/IO + 1 eval | PI spend approval; a null result retires elasticity and ships front-only (H-HC10) |
 | E12 | **E-G1 vision-only gate probe**: frozen-VLM front embedding → 7-way situation, per-class recall + calibration | ~0 | cached embeddings (E3); decides whether the vision-only gate G-V is viable |
 | E13 | **E-R3 / E-R6 / E-R10** (0 GPU): class-conditional episode-blocked conformal survival; survivor-cache age; minted-cell agreement over [2,6] s | 0 | committed val windows + train egomotion |
+| E14 | **147-clip v7-eval contamination screen** against NVIDIA's public training-sample lists (alpamayo-recipes), Wilson interval; read H-HC2 only on clean clips | 0 | none (full clip IDs exist in corpus `a48251e89c7a8603`) |
+| E15 | **Joint lateral × longitudinal census** of the v7 labels (is 35 = 5 × 7 real?) and a pair-admissibility table from it | 0 | label blobs (Drive/HF) |
+| E16 | **Re-run the masked/unmasked InfoNCE comparison on real cached features** (H-HC4) with held-out β and q̂ from the train split | ~0.2 GPU-h | E3 cache |
 

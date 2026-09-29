@@ -4,30 +4,33 @@
 No HiCAP model exists, so these are the only measured statements in the paper. They are deliberately narrow: numpy-only scripts on committed artifacts, each using only quantities available at inference,
 plus toy worlds in which the true answer is known. Each of them tests one \emph{mechanism} the design relies on; none tests the system. Scripts and result files are listed in the repository manifest at the end of this section.
 
-\subsection{The contrastive optimum is biased toward rare actions, and a fitted log-prior repairs it}
+\subsection{The unmasked contrastive optimum is biased toward rare actions, and a held-out log-prior repairs it}
 \label{sec:prelim-pmi}
-Corollary~\ref{cor:bias} predicts that an InfoNCE-trained selector picks the pointwise-mutual-information maximiser, which under-chooses the dominant action. We test this in a synthetic driving-like world with $60$ states, $16$ actions and a cruise-dominated prior
-(true cruise share $0.503$ on average), a dual encoder of width $24$ with L2-normalised embeddings and $1/0.07$ logit scale as in CLM, trained for $4{,}000$ steps at batch $256$ with the false-negative mask; five seeds, each a new world and a new training run.
-The metric is the \emph{hit rate}: the probability that the selected action equals a fresh draw from $p(a\mid s)$ (higher is better; the maximum-likelihood rule is the upper bound for a deterministic pick).
+Corollary~\ref{cor:bias} predicts that an InfoNCE-trained selector without a false-negative mask picks the pointwise-mutual-information maximiser, which under-chooses the dominant action. We test this in a synthetic driving-like world with $60$ states, $16$ actions and a cruise-dominated prior
+(true cruise share $0.503$ on average), a dual encoder of width $24$ with L2-normalised embeddings and $1/0.07$ logit scale as in CLM, trained for $4{,}000$ steps at batch $256$; five seeds, each a new world and a new training run. Both the unmasked bidirectional InfoNCE and CLM's masked variant (same-action negatives removed) are trained.
+The prior $\hat q$ is estimated from training draws, and the log-prior weight $\beta$ is chosen on a \emph{held-out} sample of $20{,}000$ expert actions by empirical top-1 accuracy over a grid that brackets zero ($-1$ to $2$); the metric is the \emph{hit rate}, the probability that the selected action equals a fresh draw from the true $p(a\mid s)$ (the maximum-likelihood rule is the upper bound for a deterministic pick).
 \begin{table}[h]
 \centering\small
-\caption{Toy world (\evM; \texttt{reff\_pmi\_toy.py}). Hit rate and share of states in which the selector picks ``cruise'', mean $\pm$ SD over five seeds. The true cruise share is $0.503$; the maximum-likelihood rule picks it in $61.3\%$ of states.}
+\caption{Toy world (\evM; \texttt{hicap\_pmi\_toy\_v2.py}). Hit rate and share of states in which the selector picks ``cruise'', mean $\pm$ SD over five seeds. The true cruise share is $0.503$.}
 \label{tab:pmi}
 \begin{tabular}{@{}lrr@{}}
 \toprule
 selector & hit rate & cruise selected \\ \midrule
 maximum-likelihood oracle (upper bound) & $0.597\pm0.006$ & $0.613$ \\
-PMI oracle (the InfoNCE optimum) & $0.361\pm0.019$ & $0.000$ \\
+PMI oracle (the optimum of the unmasked loss) & $0.361\pm0.019$ & $0.000$ \\
 prior only (always the most frequent action) & $0.503\pm0.027$ & $1.000$ \\
+soft-target classifier (vocabulary softmax) & $0.589\pm0.006$ & --- \\
 \midrule
-trained InfoNCE, argmax & $0.575\pm0.004$ & $0.450$ \\
-trained InfoNCE $+\log\hat q$ ($\beta=1$) & $0.586\pm0.005$ & $0.730$ \\
-trained InfoNCE $+\beta\log\hat q$, $\beta$ fitted & $0.594\pm0.006$ & $0.607$ \\
-vocabulary softmax (CLM ``Choice'') & $0.592\pm0.008$ & $0.603$ \\
+unmasked InfoNCE, argmax & $0.355\pm0.020$ & $0.000$ \\
+unmasked InfoNCE $+\beta\log\hat q$, $\beta$ fitted ($=1$ in 5/5 seeds) & $0.585\pm0.006$ & $0.597$ \\
+masked InfoNCE (CLM), argmax & $0.571\pm0.008$ & $0.450$ \\
+masked InfoNCE $+\log\hat q$ ($\beta=1$) & $0.582\pm0.003$ & --- \\
+masked InfoNCE $+\beta\log\hat q$, $\beta$ fitted ($0.5$ in 4/5 seeds, $0.75$ in one) & $0.593\pm0.004$ & $0.587$ \\
 \bottomrule
 \end{tabular}
 \end{table}
-The exact PMI critic, scored by argmax, is far worse than always predicting the prior ($0.361$ against $0.503$): the bias is not a small-sample artefact but the optimum itself. The trained InfoNCE selector under-chooses cruise ($45\%$ against $61\%$ for the likelihood rule) and loses $0.022$ hit rate to it. Adding the fitted log-prior recovers to within $0.003$ of the oracle and matches the softmax classifier (paired difference against the classifier $+0.002$, signs mixed over seeds). The fitted $\beta$ was $0.5$ in all five seeds, not the $1$ that the population argument suggests, which is why $\beta$ is fitted on held-out episodes. Corrected minus uncorrected is positive in every seed ($+0.014$ to $+0.027$, mean $+0.019$), but five seeds are five worlds; the pre-registered test is H-HC4 on real data.
+The exact PMI critic scored by argmax is far worse than always predicting the prior ($0.361$ against $0.503$), and the trained unmasked critic reaches that optimum ($0.355$; it never picks cruise): the bias is not a small-sample artefact but the optimum itself. Adding the log-prior with the held-out weight, which comes out at exactly $1$ in every seed as Corollary~\ref{cor:bias} predicts, brings it to $0.585$, within $0.012$ of the maximum-likelihood rule and level with the soft-target classifier ($0.589$).
+CLM's mask changes the picture: the masked critic is nowhere near the PMI optimum (it picks cruise in $45\%$ of states and scores $0.571$), its best held-out $\beta$ is $0.5$--$0.75$, and it reaches $0.593$. A tabular check of the masked loss on the worked example of \S\ref{sec:theory} behaves differently again (it picks the most frequent action), so the masked optimum is settled by neither toy; the unmasked loss and the soft-target softmax are the reference arms of H-HC4, and masked InfoNCE is an ablation whose $\beta$ is empirical. An earlier version of this toy chose $\beta$ by maximising the evaluation metric under the true probabilities and only trained the masked loss; both defects were found in review and are corrected here.
 
 \subsection{Coverage of the trajectory space by a nested vocabulary}
 Using the $256$ farthest-point anchors of the programme's reference planner (selected from $200{,}000$ parity-training windows) and the $881$ windows of the $40$ validation episodes, Table~\ref{tab:cover} gives the ADE@2\,s of the \emph{best} member of nested prefixes, with episode-cluster bootstrap intervals ($B=2000$). The second column rescales each anchor uniformly so that its implied initial speed equals the window's current speed, a crude stand-in for the residual-over-prior parameterisation that uses only the inference-time speed.
@@ -77,21 +80,21 @@ Proposition~\ref{prop:conformal} guarantees marginal coverage under exchangeabil
 The decision unit is a \emph{kinematic proxy} of the tactical cell ($5$ lateral $\times$ $4$ longitudinal classes derived from the window's own future path with thresholds chosen for this check, not the label emitter's; $16$ of $20$ cells occur; the most frequent, keep-lane-and-cruise, holds $48\%$ of windows), and the score is a train-fitted cell frequency, either unconditional or conditioned on a speed bin of the current speed.
 \begin{table}[h]
 \centering\small
-\caption{Split-conformal keep-set for the tactical cell, 500 random episode-disjoint splits (\evM; \texttt{hicap\_conformal\_cells\_measure.py}). Coverage is the share of test windows whose true cell is kept; \emph{below} is the share of splits whose coverage falls under the nominal level.}
+\caption{Split-conformal keep-set for the tactical cell, 500 random episode-disjoint splits (\evM; \texttt{hicap\_conformal\_cells\_measure.py}). Coverage is the share of test windows whose true cell is kept. The last column is the standard deviation that exact exchangeability would give for $\approx264$ calibration and $\approx310$ test windows (Beta law of split-conformal coverage plus binomial test noise, \evE).}
 \label{tab:conformal}
-\begin{tabular}{@{}llrrrrr@{}}
+\begin{tabular}{@{}llrrrrrr@{}}
 \toprule
-score & nominal & coverage mean & SD over splits & below & cells kept (of 20) & pruned \\ \midrule
-prior only & $0.95$ & $0.957$ & $0.046$ & $34\%$ & $13.2$ & $34\%$ \\
-prior only & $0.90$ & $0.915$ & $0.062$ & $37\%$ & $10.7$ & $47\%$ \\
-prior only & $0.80$ & $0.822$ & $0.087$ & $38\%$ & $7.0$ & $65\%$ \\
-speed-conditional & $0.95$ & $0.957$ & $0.051$ & $33\%$ & $15.3$ & $24\%$ \\
-speed-conditional & $0.90$ & $0.912$ & $0.070$ & $41\%$ & $11.5$ & $43\%$ \\
-speed-conditional & $0.80$ & $0.815$ & $0.093$ & $43\%$ & $6.6$ & $67\%$ \\
+score & nominal & mean & SD, splits & 5th pct & cells kept (of 20) & pruned & SD if exchangeable \\ \midrule
+prior only & $0.95$ & $0.957$ & $0.046$ & $0.870$ & $13.2$ & $34\%$ & $0.018$ \\
+prior only & $0.90$ & $0.915$ & $0.062$ & $0.792$ & $10.7$ & $47\%$ & $0.024$ \\
+prior only & $0.80$ & $0.822$ & $0.087$ & $0.663$ & $7.0$ & $65\%$ & $0.033$ \\
+speed-conditional & $0.95$ & $0.957$ & $0.051$ & $0.857$ & $15.3$ & $24\%$ & $0.018$ \\
+speed-conditional & $0.90$ & $0.912$ & $0.070$ & $0.777$ & $11.5$ & $43\%$ & $0.024$ \\
+speed-conditional & $0.80$ & $0.815$ & $0.093$ & $0.646$ & $6.6$ & $67\%$ & $0.033$ \\
 \bottomrule
 \end{tabular}
 \end{table}
-Three readings. (i)~The marginal guarantee holds on average: mean coverage is at or slightly above nominal at all three levels. (ii)~It is a statement about averages over calibration draws. With $12$ calibration episodes the coverage of a single draw has a standard deviation of $0.05$--$0.09$ and $33$--$43\%$ of draws fall below nominal, because windows within an episode are strongly dependent and effectively few. A shipped mask therefore needs a calibration set of hundreds of episodes and a stated share of draws below nominal (this is why H-HC6 reports that share); the training split has $4{,}572$ clips.
+Three readings. (i)~The marginal guarantee holds on average: mean coverage is at or slightly above nominal at all three levels. (ii)~It is a statement about averages over calibration draws, and the spread of a single draw is $2.5$--$2.8$ times what exchangeable windows would give: the standard deviation is $0.05$--$0.09$ against $0.02$--$0.03$, because windows within an episode are strongly dependent and effectively few. (The share of draws below nominal is not informative: under exact exchangeability it is close to one half for every $n$, and a red-team simulation gave $0.43$--$0.50$; the spread and the lower tail are what matter.) The 5th-percentile split covers $87\%$ at nominal $95\%$. A shipped mask therefore needs a calibration set of hundreds of episodes and a stated lower-tail coverage; the training split has $4{,}572$ clips.
 (iii)~At $95\%$ coverage the tactical cell alone is pruned by about a third, and conditioning on speed did \emph{not} help at this sample size (the conditional table of $6$ bins $\times$ $20$ cells is fitted on about $350$ windows and prunes less, $24\%$ against $34\%$), so R2 is not expected to earn its place until it is fitted on the full training split. This is a small val-only check with a proxy label; it tests the mechanism, not the shipped guarantee.
 
 \subsection{Hierarchical retrieval over a product vocabulary (toy world)}
@@ -113,10 +116,13 @@ factored $20\times10$ composed set & --- & $78\times$ & $0.95$ & --- \\
 \bottomrule
 \end{tabular}
 \end{table}
-Beyond the table: (i)~with marginal-consistent critics the beam is not the bottleneck, the critic is; a mean-pooled centroid index loses $5$ points of cell recall at beam $(3,16)$ where a marginal critic loses $0.45$, and sibling-only negatives depress tactical agreement from $0.91$ to $0.62$ (Proposition~\ref{prop:marginal}, \S\ref{sec:train}).
-(ii)~The log-prior correction is mandatory at every size tested: without it the hit rate is $0.47$ of the exact maximum-likelihood rate and the cruise cell is picked in $46\%$ of states against $66\%$ for that rule; with it, $0.83$ and $65\%$. The bias did not grow between $4{,}096$ and $131{,}072$ leaves. A prior estimated from at most $0.023$ expert samples per leaf recovers only $50$--$75\%$ of the true-prior gain, which is why the prior is estimated hierarchically. For a bounded critic $\beta=0.75$ and $\beta=1$ tie on hit rate but differ $2.9\times$ in mean regret, so $\beta$ is chosen by regret and tactical agreement, not hit rate.
-(iii)~A hard comfort mask (nuPlan limits) removes $47.7\%$ of the leaves with $98.3\%$ oracle survival on average, but survival is $99.4\%$ for cruise and $93.3\%$ for stop and $94.3\%$ for turn states; inflating the limits by $0.18$ lifts survival to $99.4\%$ at the price of keeping $58.3\%$ of the vocabulary instead of $52.3\%$. Marginal coverage hides the rare classes, so calibration is class-conditional and episode-blocked; the analytic box test never removed a node containing a feasible leaf ($0$ violations).
-(iv)~A re-ranker after the tree gains almost everything by $K=8$ (hit rate $0.827\to0.940$), then $0.949$ at $K=16$ and $0.953$ at $K=32$, while the oracle error of the candidate set keeps falling. This is a toy world in two dimensions with iid states and no label noise; it does not measure oracle ADE against vocabulary size on real data (that is a CPU experiment on the training split, H-HC5), latency, agents or episode clustering.
+Beyond the table:
+\begin{enumerate}[label=(\roman*),leftmargin=2em]
+\item With marginal-consistent critics the beam is not the bottleneck, the critic is; a mean-pooled centroid index loses $5$ points of cell recall at beam $(3,16)$ where a marginal critic loses $0.45$, and sibling-only negatives depress tactical agreement from $0.91$ to $0.62$ (Proposition~\ref{prop:marginal}, \S\ref{sec:train}).
+\item The log-prior correction is mandatory at every size tested: without it the hit rate is $0.47$ of the exact maximum-likelihood rate and the cruise cell is picked in $46\%$ of states against $66\%$ for that rule; with it, $0.83$ and $65\%$. The bias did not grow between $4{,}096$ and $131{,}072$ leaves. A prior estimated from at most $0.023$ expert samples per leaf recovers only $50$--$75\%$ of the true-prior gain, which is why the prior is estimated hierarchically. For a bounded critic $\beta=0.75$ and $\beta=1$ tie on hit rate but differ $2.9\times$ in mean regret, so $\beta$ is chosen by regret and tactical agreement, not hit rate.
+\item A hard comfort mask (nuPlan limits) removes $47.7\%$ of the leaves with $98.3\%$ oracle survival on average, but survival is $99.4\%$ for cruise and $93.3\%$ for stop and $94.3\%$ for turn states; inflating the limits by $0.18$ lifts survival to $99.4\%$ at the price of keeping $58.3\%$ of the vocabulary instead of $52.3\%$. Marginal coverage hides the rare classes, so calibration is class-conditional and episode-blocked; the analytic box test never removed a node containing a feasible leaf ($0$ violations).
+\item A re-ranker after the tree gains almost everything by $K=8$ (hit rate $0.827\to0.940$), then $0.949$ at $K=16$ and $0.953$ at $K=32$, while the oracle error of the candidate set keeps falling. This is a toy world in two dimensions with iid states and no label noise; it does not measure oracle ADE against vocabulary size on real data (that is a CPU experiment on the training split, H-HC5), latency, agents or episode clustering.
+\end{enumerate}
 
 \subsection{Imagination (toy world)}\label{sec:prelim-imag}
 A one-dimensional driving world with a hidden lead-vehicle braking mode and onset, a noisy cue through a fixed random encoder and an exact simulator scores selectors by regret against the best candidate (\evM, \texttt{rc\_latent\_imagination\_toy.py}; three seeds, paired bootstrap over pooled ticks; signal-to-noise ratio $1$ and $1{,}200$ training ticks unless stated). Some arms, including the risk-sensitive floor and the model-free value, were added after the first sweep and are disclosed as post hoc.
@@ -139,27 +145,32 @@ factorised with the true visible state (reference) & 1.37 \\
 \bottomrule
 \end{tabular}
 \end{table}
-Findings. (i)~Replacing the one-hot label by a soft outcome-aware target removes more than half the regret at zero inference cost (paired $3.57$, $[2.99,4.19]$), and a lookup that never sees the consequence but is risk-sensitive already reaches $2.17$: most of the apparent value of imagination is target shape and risk sensitivity. Any imagination gain must be reported against both.
-(ii)~Only the factorised arm is robust to the absence of counterfactual data ($1.80$); unstructured imagination collapses ($71.8$ with $40\%$ unsafe picks for pure rollouts, $47.0$ for the model-free value, $48.2$ for a distilled arm).
-(iii)~Imagination alone chose an infeasible over-braking candidate in $89.8\%$ of ticks, and an analytic feasibility mask after the learned term brought that to $0\%$.
-(iv)~Heuristic triggers (need-times-trust, margin) were no better than random ($35$--$39\%$ of the gain at $30\%$ of the budget); a learned gate reached $65\%$, and imagination hurt on $13.4\%$ of ticks even when it helped on average.
-(v)~Adding an imagined-cost term flipped the correlation of confidence with regret from $-0.11$ to $+0.19$ in all three seeds (anti-calibration, as measured earlier in the programme).
-(vi)~The disagreement of two heads detected out-of-vocabulary candidates with AUROC $0.877$ (recall $64\%$ at $5\%$ false positives) but not as a benefit trigger.
-(vii)~The echo control worked as intended: the ego-speed $R^2$ was $0.620$ with the real cue and $0.613$ shuffled (the ego part is predictable from the ego), while lead speed fell from $0.387$ to $-0.329$ when the cue was shuffled.
-(viii)~When the cue is clean (signal-to-noise ratio $3$) the factorised arm lost to the risk-sensitive floor ($3.00$ against $2.17$) because of visible-state readout error; its gap to the true-state reference ($3.00$ against $0.46$) is the readout error that E-I0 is designed to measure on real embeddings.
+Findings.
+\begin{enumerate}[label=(\roman*),leftmargin=2em]
+\item Replacing the one-hot label by a soft outcome-aware target removes more than half the regret at zero inference cost (paired $3.57$, $[2.99,4.19]$), and a lookup that never sees the consequence but is risk-sensitive already reaches $2.17$: most of the apparent value of imagination is target shape and risk sensitivity. Any imagination gain must be reported against both.
+\item Only the factorised arm is robust to the absence of counterfactual data ($1.80$); unstructured imagination collapses ($71.8$ with $40\%$ unsafe picks for pure rollouts, $47.0$ for the model-free value, $48.2$ for a distilled arm).
+\item Imagination alone chose an infeasible over-braking candidate in $89.8\%$ of ticks, and an analytic feasibility mask after the learned term brought that to $0\%$.
+\item Heuristic triggers (need-times-trust, margin) were no better than random ($35$--$39\%$ of the gain at $30\%$ of the budget); a learned gate reached $65\%$, and imagination hurt on $13.4\%$ of ticks even when it helped on average.
+\item Adding an imagined-cost term flipped the correlation of confidence with regret from $-0.11$ to $+0.19$ in all three seeds (anti-calibration, as measured earlier in the programme).
+\item The disagreement of two heads detected out-of-vocabulary candidates with AUROC $0.877$ (recall $64\%$ at $5\%$ false positives) but not as a benefit trigger.
+\item The echo control worked as intended: the ego-speed $R^2$ was $0.620$ with the real cue and $0.613$ shuffled (the ego part is predictable from the ego), while lead speed fell from $0.387$ to $-0.329$ when the cue was shuffled.
+\item When the cue is clean (signal-to-noise ratio $3$) the factorised arm lost to the risk-sensitive floor ($3.00$ against $2.17$) because of visible-state readout error; its gap to the true-state reference ($3.00$ against $0.46$) is the readout error that E-I0 is designed to measure on real embeddings.
 Of the five pre-registered readings of the stream, one was supported but confounded (imagination beats the baseline), one was supported (an infeasibility mask is needed) and three were refuted as worded (imagination beats the floor at zero signal, gates by need or margin, and compounding of cost-level disagreement). The exact simulator supplies counterfactuals that a real system does not, there are three seeds, and nothing transfers to VLM scale.
+\end{enumerate}
 
 \subsection{Repository manifest for this section}
 \begin{tabular}{@{}p{4.2cm}p{11.6cm}@{}}
 \toprule
 artifact & path (repository; common prefix \texttt{TanitAD Research Hub/Architecture \& Inference/Research/}) \\ \midrule
-contrastive-bias toy & \texttt{reff\_pmi\_toy.py}, \texttt{reff\_pmi\_toy\_result.json} \\
+contrastive-bias toy, first version (defective) & \texttt{reff\_pmi\_toy.py}, \texttt{reff\_pmi\_toy\_result.json} \\
 nested-vocabulary coverage & \texttt{reff\_v0\_coverage.py}, \texttt{reff\_v0\_coverage\_result.json} \\
 kinematic mask & \texttt{2026-09-29-hicap/hicap\_prior\_mask\_measure.py}, \texttt{hicap\_prior\_mask\_result.json} \\
 conformal keep-set, real windows & \texttt{2026-09-29-hicap/hicap\_conformal\_cells\_measure.py}, \texttt{hicap\_conformal\_cells\_result.json} \\
 imagination toy & \texttt{2026-09-29-hicap/rc\_latent\_imagination\_toy.py}, \texttt{rc\_latent\_imagination\_toy\_result.json} \\
 hierarchical retrieval toy & \texttt{2026-09-29-hicap/rb\_hier\_retrieval\_toy.py}, \texttt{rb\_hier\_retrieval\_toy\_result.json} \\
 camera-gating toy & \texttt{2026-09-29-hicap/rd\_camera\_gating\_toy.py}, \texttt{rd\_camera\_gating\_toy\_result.json} \\
+contrastive-bias toy, corrected & \texttt{2026-09-29-hicap/hicap\_pmi\_toy\_v2.py}, \texttt{hicap\_pmi\_toy\_v2\_result.json} \\
+red-team checks (masked InfoNCE, conformal) & \texttt{2026-09-29-hicap/RT\_masked\_infonce\_check.py}, \texttt{RT\_conformal\_below\_nominal.py} \\
 cost model (arithmetic) & \texttt{2026-09-29-hicap/hicap\_cost\_model.py}, \texttt{hicap\_cost\_model\_result.json} \\
 \bottomrule
 \end{tabular}
