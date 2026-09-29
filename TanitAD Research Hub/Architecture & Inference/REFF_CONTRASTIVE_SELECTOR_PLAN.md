@@ -8,11 +8,15 @@
 
 ## 0. The idea in one page
 
-**What CLM is.** CLM-8B, the Contrastive Language Model (Kwok, Kang, Suresh, Saad-Falcon, Pavone, Ré, Mirhoseini; Stanford + NVIDIA Research; released 2026-09-23; Apache-2.0), is a "System One" decision model. It does not generate. It maps the current state and each candidate action into one 512-d space with two small trainable heads on a frozen Qwen3-8B, and picks the candidate whose embedding best matches the state. Because action embeddings do not depend on the state, they are computed once and cached, so ranking many candidates costs one matrix product. Its headline results:
-- on par with the "Jev" System-1 model on computer use, gaming and tool calling, at up to 9× lower latency;
-- 81.6 % on DeepSWE and 87.6 % on Terminal-Bench 2.1 when used as a best-of-N **verifier** over sampled candidates.
+**What CLM is.** CLM-8B, the Contrastive Language Model (Kwok, Kang, Suresh, Saad-Falcon, Pavone, Ré, Mirhoseini; Stanford + NVIDIA Research; released 2026-09-23; Apache-2.0), is a "System One" decision model. It does not generate. It maps the current state and each candidate action into one 512-d space with two small trainable heads on a frozen Qwen3-8B, and picks the candidate whose embedding best matches the state. Because action embeddings do not depend on the state, they are computed once and cached, so ranking many candidates costs one matrix product. Its headline results, re-read from the primary figures by stream F-R:
+- **As a best-of-N verifier:** 81.6 % on DeepSWE (31/38 tasks, Wilson 95 % [0.666, 0.908]) and 87.6 % on Terminal-Bench 2.1 (30 tasks). That is +7.9 and +3.6 points over a random pick among the same candidates, at 4.1–5.7× the speed of the "Jev" System-1 model.
+- **Zero-shot:** tied with Jev only where n = 5 seeds (T-Rex, Super Mario), and behind where the benchmarks resolve a difference (BFCL v4 −4.0 points, WikiRacing −13.3 points).
+- **Speed-up:** 1.6–9.1×. The 9× is the best case, a tiny cached action set.
+- **No oracle (best-of-N) bar is published.**
 
-All PUBLISHED via the official README; details in §1.
+All PUBLISHED via the official README, code and figures; details in §1.
+
+**The closest published design is CoVer-VLA, by the same authors** (Kwok, …, Mirhoseini, Finn, Pavone; arXiv 2602.12281, Feb 2026; code read by F-R). It is a robot-manipulation verifier: a frozen SigLIP 2, trainable attention pooling over patch tokens, a *numeric* action-chunk tower trained from scratch, and symmetric InfoNCE. It scores 40 generated candidates per step (SIMPLER in-distribution average 41.5 → 57.0 → 65.5; out-of-distribution 29.7 → 61.0). REF-F already follows this design. Its additions (a residual vocabulary, the prior correction, cost heads, the closed-loop controller) are not in CoVer, which makes a CoVer-style arm the natural published comparison.
 
 **Why it fits TanitAD now.** The 2026-09-25 review found the programme's decisive defect is selection, not generation:
 - REF-C's fan holds a candidate at 0.1640 m ADE@2s but picks one at 0.4714 (MEASURED, `taniteval/results/scaleab_refc-base-30k_vs_refc-xl-30k.json`);
@@ -26,7 +30,7 @@ CLM is a published, fast, verifier-grade answer to exactly this problem: score m
 - **State side:** a frozen vision backbone and a small trainable state head produce the state embedding.
 - **Action side:** candidate 2 s trajectories come from a vocabulary built on the train split (cached), plus any open-set candidates such as REF-C's fan. A small action encoder embeds them.
 - **Selection:** a calibrated, prior-corrected cosine score picks one trajectory. A tracking controller turns it into **driving commands** (steer, acceleration) at 10 Hz, and the review's safety envelope filters them.
-- **Cost:** all the trainable parts together are about 15–25 M parameters. They train on cached embeddings in GPU-hours, not GPU-days (ESTIMATED).
+- **Cost:** all the trainable parts together are about 15–25 M parameters (CLM's own two heads are 9.44 M each, 18.89 M together). They train on cached embeddings in GPU-hours, not GPU-days (ESTIMATED).
 
 **The expected advantages.** Each is a pre-registered hypothesis, not a claim:
 - Decisions in microseconds over thousands of candidates.
@@ -54,13 +58,13 @@ CLM is a published, fast, verifier-grade answer to exactly this problem: score m
 | aspect | CLM-8B | source | transfer to REF-F |
 |---|---|---|---|
 | backbone | Qwen3-8B, **frozen**, last-token pooling, 4096-d, shared by state and action encoders | README, `src/clm/heads.py` (PUBLISHED) | frozen **vision** backbone for the state side (§2.2). The action side gets its own small encoder, because trajectories are low-dimensional numbers, not text |
-| heads | two MLPs `hidden → width → … → 512`, GELU, optional LayerNorm/residual, L2-normalised; about 20 M parameters | `heads.py` `make_head(width, depth=2, proj=512, activation="gelu", layernorm=False, residual=False, hidden=4096)` | same form. The state head adds attention pooling over patch tokens and an ego MLP |
+| heads | two MLPs `hidden → width → … → 512`, GELU, optional LayerNorm/residual, L2-normalised; **9.44 M parameters per head, 18.89 M for the pair** (75.55 MB fp32, matching the README's "75 MB") | `heads.py` `make_head(width, depth=2, proj=512, activation="gelu", layernorm=False, residual=False, hidden=4096)`; parameter count MEASURED (F-R arithmetic) | same form. The state head adds attention pooling over patch tokens and an ego MLP |
 | score | `exp(logit_scale) · cos(state_head(s), action_head(a))`; `logit_scale` initialised to log(1/0.07), exp clamped ≤ 100 | `train/finetune.py` | same, plus a log-prior correction and a hysteresis term (§2.5) |
-| loss | bidirectional InfoNCE with in-batch negatives; same-task pairs masked (`same = codes.unsqueeze(0) == codes.unsqueeze(1)`); a "Choice" mode = softmax CE over options with soft targets | `finetune.py` | both. InfoNCE for representation pre-training (masking near-duplicate trajectories); vocabulary softmax with soft targets for selection (§3.2) |
+| loss | bidirectional InfoNCE with in-batch negatives; the mask removes only pairs with the same `(task_id, step_idx)`, i.e. other rollouts of the *same state step*, so every other same-task pair stays a negative. The "Choice" mode defaults to InfoNCE over distinct option texts; soft-target softmax CE (`softce`) is the alternative, and which one trained the released head is UNVERIFIED | `finetune.py` (PUBLISHED, code) | both. InfoNCE for representation pre-training (masking near-duplicate trajectories); vocabulary softmax with soft targets for selection (§3.2) |
 | optimisation | AdamW, `lr = 2e-3·sqrt(1024/width)·sqrt(batch/1024)`, OneCycle 10 % warm-up, batch 2048, 20 epochs, patience 5, weight decay 0, trained on **cached fp16 embeddings** | `finetune.py` | same starting point (§3.4) |
 | curriculum | about 60 M Nemotron QA pairs → about 30 M synthetic hard negatives → about 1 M agent trajectories with 40 % replay; hard negatives from the start "peaks at 62.4 % then overfits" vs 69.2 % with the curriculum | README; Oaklight/krino issue #76 (PUBLISHED, secondary) | the same three stages (§3.3) |
-| inference | `Engine.rank(state, candidates)`; action-embedding arena with LRU; RTX 4090 cold request 58.1 ms, cached state 1.7 → 0.6 ms, p50 28.6–28.8 ms for 3–50 new actions | README | cached vocabulary embeddings, with REF-C's fan embedded on the fly (§2.6) |
-| results | zero-shot on par with Jev at up to 9×; **as a best-of-N verifier: DeepSWE 81.6 %, Terminal-Bench 2.1 87.6 %** (4.1–5.7× faster) | README (PUBLISHED; a secondary summary attributes 81.6 % to the baseline instead, and the README is taken as authoritative) | the verifier role is REF-F's mode 2 (§2.7) |
+| inference | `Engine.rank(state, candidates)`; action-embedding arena with LRU; on an RTX 4090 the 28.0–28.8 ms p50 is a **new state every call** (the 8B encoder runs); 1.7 → 0.6 ms needs a **revisited** state; 58.1 ms is one cold-cache example | README | a driving tick is always a new state, so only candidate scoring is cheap and the state encoder sets the tick (§2.6) |
+| results | verifier: DeepSWE 81.6 % (n = 38) and Terminal-Bench 2.1 87.6 % (n = 30), +7.9 / +3.6 points over a random pick; zero-shot tied with Jev only at n = 5 and behind on BFCL (−4.0) and WikiRacing (−13.3); T-Rex relies on a shield that changed up to 29.2 % of executed actions, with 65.8 % agreement with the harness's best move | README, figures and T-Rex JSON (PUBLISHED; ratios MEASURED by F-R). A third-party summary that swapped the verifier numbers was checked and rejected | the verifier role is REF-F's mode 2 (§2.7). Expected gains are **modest and must be measured against the candidate set's oracle**, which CLM never reports |
 | stated limits | states truncated at 2,048 tokens; no vision yet (a multimodal version is on the roadmap); no System-2 component | README | REF-F adds System-2 re-ranking on demand (§2.8) |
 
 **What does not transfer directly:**
@@ -68,6 +72,16 @@ CLM is a published, fast, verifier-grade answer to exactly this problem: score m
 2. **Continuous actions.** CLM's options are discrete strings. Driving actions are continuous 2 s trajectories, which forces a vocabulary with a coverage/quantisation trade-off (§2.4) and a notion of "near-duplicate" actions that InfoNCE would otherwise push apart (§3.2).
 3. **Sequential control.** CLM decides per request. A car decides every 100 ms, and flicker between near-equal candidates is a closed-loop failure mode (§2.5, hysteresis).
 4. **The action prior.** Agent tasks present a handful of options per question. Driving presents the same vocabulary every tick, and the corpus is about 74 % straight cruising (programme docs). That imbalance changes what the contrastive score means (§2.5).
+5. **A selector's ceiling is its candidate set.** CLM ranks only what it is given. REF-F's best case in verifier mode is REF-C-XL's fan oracle (0.1640 m); in standalone mode it is the vocabulary's coverage (§2.4).
+6. **The recipe rests on code and README, not the paper.** The CLM blog and the Hugging Face card were not readable from this environment (egress-blocked). No GPU-day decision should rest on a CLM-recipe claim until someone has read them.
+
+**Prior art REF-F is positioned against** (stream F-R §2, ids confirmed in search results or code):
+- **Implicit Behavioral Cloning** (arXiv 2109.00137): InfoNCE over sampled counter-example actions. It was unstable in practice, and Diffusion Policy (arXiv 2303.04137) outperformed it. REF-F avoids IBC's sampling-based argmin by scoring an explicit candidate set, and it borrows IBC's near-duplicate masking (`clipped_cd`) for stage-2 negatives.
+- **Contrastive RL** (arXiv 2206.07568): a contrastive critic as a goal-conditioned value, the theory route to REF-F's cost heads.
+- **VINN** (arXiv 2112.01511): nearest-neighbour imitation over frozen features. It becomes REF-F's first gate (E-F0, §4.1).
+- **VADv2, Hydra-MDP, GTRS and DriveSuprim:** vocabulary planning and scoring in driving. Soft targets matter; VADv2 loses heavily without its soft loss, and Hydra's per-family sub-scores beat a scalar (80.2 vs 83.0).
+- **VLA-R** (arXiv 2511.12405): the only contrastive vision–action retrieval paper for driving found, on under 2 h of data.
+- **DriveVLM-Dual and FASIONAD:** the System-1/System-2 precedent for §2.8.
 
 **A second, literal transfer (optional, label-time only).** The released CLM-8B could be used as-is, as an **offline teacher**:
 - render the privileged state as text (ego kinematics plus `obstacle.offline` agent tracks: distances, closing speeds);
@@ -119,13 +133,20 @@ This is admissible, because privileged signals are allowed at label time, and it
 
 - **Backbone slot (frozen).**
   - The default is **F-own**, TanitAD's v1 ViT encoder. It is already trained on this corpus, already TensorRT-optimised on Thor, and costs no new parameters against the sub-300 M budget.
-  - The foundation-encoder arms (F-vid, F-img) test whether broad pretraining carries more decision-relevant content (H-F7). They are named by class, not by product, until the research stream's latency and licence check picks specific checkpoints.
+  - The foundation-encoder arms (F-vid, F-img) test whether broad pretraining carries more decision-relevant content (H-F7). Candidates from stream F-R:
+    - **F-vid:** V-JEPA 2.1 ViT-B (about 80 M, video-native, MIT licence; arXiv 2603.14482).
+    - **F-img:** SigLIP 2 (CoVer's backbone; arXiv 2502.14786), DINOv3 (arXiv 2508.10104; commercial terms UNVERIFIED) or C-RADIOv4 (arXiv 2601.17237; commercial licence).
+
+    **No published Jetson Thor latency exists for any of them**, so each is measured before it is adopted. The exact checkpoints are fixed in a pre-registration amendment before their caches are built.
   - The backbone never trains in REF-F. Partial unfreezing is a separate, later arm (REF-F-ft), never the default. CLM's efficiency and its cached-embedding training depend on the freeze, and the review showed that planner gradients in the trunk degraded the world model (+144 % for v1.6).
 - **What the state head reads:**
   - (i) the 8-step latent window `z[8]` (8 × 2048), the world model's compact state;
   - (ii) the **last stack's patch tokens pooled to 8×8×768**. The review found the 4×4×128 readout carries about 30 effective dimensions and cannot hold agents (R1 §5), so the head must see finer tokens;
   - (iii) ego kinematics.
-- **Ego inputs:** v0, `ax_fd`, an 8-step speed history and yaw rate. These are the measured longitudinal levers (review §4.4). They are admissible for a planner, as v1 and REF-C already consume v0. The PI's vision-only ruling binds the *situation classifier*, and REF-F consumes no situation-classifier output in any form.
+- **Ego inputs:** v0, `ax_fd`, an 8-step speed history and yaw rate, all **derived from poses only** (never from `actions`; §7.1). These are the measured longitudinal levers (review §4.4).
+  - The PI specified "ego state and images as inputs" for REF-F on 2026-09-29, and v1 and REF-C already consume v0.
+  - The 2026-08-03 vision-only ruling binds the *situation classifier*. REF-F consumes no situation-classifier output in any form.
+  - Ego enters the **state tower only**, never the action tower. That keeps action embeddings state-independent and cacheable.
 - **Copycat guard.** Ego history can let a policy copy its own recent motion (the "inertia" failure of behaviour cloning). Guards: ego-history dropout at training time (a learned null row, never zero-fill; zero-fill is the X15 lie); reporting transition windows separately from steady windows; and an image-only control arm (§4.3).
 
 ### 2.3 What an action is
@@ -276,7 +297,7 @@ A selection-based planner can only output a candidate it was offered. That makes
 
 | loss | what | why |
 |---|---|---|
-| `L_nce` | bidirectional InfoNCE between each state and its expert residual trajectory, in-batch negatives; **mask pairs whose expert trajectories are within ε ADE@2s** (e.g. 0.25 m, fixed before training) | CLM's representation objective. The mask generalises CLM's same-task mask: two cruising windows have near-identical futures and must not be pushed apart |
+| `L_nce` | bidirectional InfoNCE between each state and its expert residual trajectory, in-batch negatives, with **soft positives**: targets weighted by trajectory similarity within the batch rather than one-hot. Pairs whose expert trajectories are within ε ADE@2s are also **masked** (e.g. 0.25 m, fixed before training). Measure the in-batch false-negative rate before training | CLM's representation objective. A one-hot positive is a hard-argmin target, the programme's worst selector target (registry §4.1), and VADv2 loses heavily without its soft loss. The mask generalises CLM's step mask: two cruising windows have near-identical futures and must not be pushed apart |
 | `L_voc` | softmax cross-entropy over the vocabulary with **soft targets** q_j ∝ exp(−d(a*, v_j)² / σ²) | estimates p(a\|s) directly, so the PMI issue disappears (§2.5); uses the whole cached vocabulary as negatives. CLM's Choice mode |
 | `L_cost` (stage 3) | per-candidate targets computed **offline with privileged data** (collision and TTC against `obstacle.offline` agent futures, 97.44 % clip coverage; progress; comfort, i.e. jerk and lateral acceleration), predicted by small dot-product query heads | Hydra-MDP-style multi-target distillation (arXiv 2406.06978, PUBLISHED); the review's Δ3. Drivable-area terms are impossible (no map) |
 | `L_ref` (optional) | L1 on a residual offset for the selected entry | escapes vocabulary quantisation, as REF-C's anchor offsets do |
@@ -288,7 +309,7 @@ The total is `L = L_nce + λ_voc·L_voc + λ_cost·L_cost + λ_ref·L_ref`, with
 | stage | CLM | REF-F | data |
 |---|---|---|---|
 | 1. pre-training (broad, easy) | about 60 M QA pairs, in-batch InfoNCE | `L_nce` on (state, expert trajectory) pairs | **parity arm:** the parity train split. **Scale arm (a new arm, never re-selection):** the rest of PhysicalAI-AV's HF *train* split, with an exclusion list registered first (never its val/test splits, never a clip whose NuRec scene is in the closed-loop suite or a challenge). Actions come free from egomotion |
-| 2. mid-training (hard negatives) | about 30 M synthetic hard negatives | per state, kinematically plausible **near-miss perturbations** of the expert residual: lateral ±0.5–1.5 m at 2 s, speed ±10–30 %, braking early or late, a turn in the wrong direction, plus **privileged-rule negatives** (trajectories that intersect `obstacle.offline` agent futures). Introduced only after stage 1 converges, because CLM found hard negatives from the start overfit | generated on the fly from cached trajectories; CPU |
+| 2. mid-training (hard negatives) | about 30 M synthetic hard negatives (52.1 → 69.2 % when introduced after pre-training, vs 62.4 % from the start) | per state, kinematically plausible **near-miss perturbations** of the expert residual, **with the ε-mask extended to them** (IBC's `clipped_cd` precedent): lateral ±0.5–1.5 m at 2 s, speed ±10–30 %, braking early or late, a turn in the wrong direction, plus **privileged-rule negatives** (trajectories that intersect `obstacle.offline` agent futures). Introduced only after stage 1 converges, because CLM found hard negatives from the start overfit | generated on the fly from cached trajectories; CPU |
 | 3. post-training (target task) | about 1 M agent trajectories, 40 % replay | `L_voc` + `L_cost` + `L_ref` on the parity corpus, with 40 % stage-1 replay. Later (Phase 2): closed-loop **DAgger-style** states visited by REF-F in NuRec/AlpaSim, labelled by the logged trajectory near the log and by a privileged rule-based teacher beyond it | parity train; NuRec/AlpaSim rollouts |
 
 ### 3.4 Hyper-parameters (starting point = CLM's defaults)
@@ -320,7 +341,8 @@ The total is `L = L_nce + λ_voc·L_voc + λ_cost·L_cost + λ_ref·L_ref`, with
 |---|---|---|---|
 | **V0** | vocabulary coverage (oracle-in-vocab ADE vs N, residual vs absolute); leak guard (vocabulary provably train-only); the PMI toy check (**done 2026-09-29**, §2.5); an absolute vs speed-normalised coverage preview on REF-C's train anchors (**done 2026-09-29**, §2.4) | 0 | coverage reported; leak guard green |
 | **V1** | unit tests + a CPU smoke run end-to-end on synthetic episodes (`stack/tanitad/data/toy_driving.py`); determinism test | 0 | `pytest -q` green, including the smoke |
-| **V2** | head training on cached features; open loop on **val-40 and val-600**, full-set means, **paired episode-cluster bootstrap**, all **four families**, with every control arm | ≤ 1.5 A40-day | the pre-registered primaries adjudicated (H-F1–H-F4, H-F7) |
+| **V1.5 (E-F0)** | **k-NN pre-gate:** VINN-style k-nearest-neighbour over the frozen cached features (+ v0, `ax_fd`) vs hold-current-speed on the non-steady windows. No training, minutes once the cache exists | cache only | k-NN beats hold-speed (paired CI excludes 0), so the backbone carries decision signal: proceed. Otherwise the frozen backbone is a dead end, as DINOv2/I-JEPA were for odometry: switch backbone before any head training |
+| **V2** | head training on cached features; open loop on **val-40 and val-600**, full-set means, **paired episode-cluster bootstrap**, all **four families**, with every control arm and ablation (E-F2 soft vs one-hot positives; E-F3 flat vs staged curriculum; E-F4 cosine dual encoder vs a 2-layer cross-attention scorer on identical features) | ≤ 1.5 A40-day | the pre-registered primaries adjudicated (H-F1–H-F4, H-F7) |
 | **V3** | Thor: full-tick p50/p95; closed loop on NuRec/AlpaSim, paired vs REF-C-base, n reported (12 scenes are underpowered; grow the suite) | Thor | H-F5, H-F8 adjudicated |
 | **V4** | data-efficiency slope: heads at 1 / 3 / 10 / 30 / 100 % of parity-train hours vs REF-C at the same fractions; exponents only with fit window, R² ≥ 0.80 and n (CLAUDE.md) | ≤ 0.5 A40-day + REF-C runs | H-F6 adjudicated |
 
@@ -332,8 +354,8 @@ Full text, with both outcomes, in `Project Steering/PREREG_REFF_CONTRASTIVE_SELE
 |---|---|---|---|---|
 | H-F1 | REF-F standalone is **non-inferior** to REF-C-base on ADE@2s | paired Δ upper CI bound < +0.02 m on val-600, reported on val-40 too | REF-F becomes the fast System-1 reference arm | the dot-product bottleneck binds; move to retrieve-then-re-rank (REF-F top-k → REF-C-class cross-attention scorer) |
 | H-F2 | the residual vocabulary makes REF-F the first arm **not worse than holding speed** on steady windows while beating it on transients | steady-window speed MAE vs hold-v0 (paired); transient windows separately | the residual/prior parameterisation is adopted programme-wide (review Δ9) | the steady-window loss is not a parameterisation problem; look at the ego inputs and labels |
-| H-F3 | as a **verifier** over REF-C-XL's 256-candidate fan, REF-F recovers ≥ 25 % of the oracle gap | paired pick-ADE vs REF-C's own pick, same windows | adopt REF-F as the v6 selector (D2b) | selection needs early interaction or cost targets; keep the E-GOAL-4 regressor line |
-| H-F4 | InfoNCE-only argmax **over-selects rare manoeuvres**, and either the log-prior correction or the vocabulary softmax removes it | selected-class vs ground-truth-class frequency (KL divergence); ADE on steady windows | the correction is mandatory in any contrastive selector | drop the correction; the corpus prior is not strong enough to matter |
+| H-F3 | as a **verifier** over REF-C-XL's 256-candidate fan, REF-F is **non-inferior to the Δ2 expected-cost regressor** trained on the same train-split fans, and both beat REF-C's own pick | paired pick-ADE, REF-F vs Δ2 vs REF-C's pick, same windows. The ≥ 25 % gap-recovery bar is reported, not required: learned re-scorers have so far recovered ≤ 8.4 % (47 arms, registry §4.1), and the only ≥ 25 % evidence (E-GOAL-4) is out-of-fold within val-600 | adopt the better of REF-F and Δ2 as the v6 selector (D2b); REF-F wins ties on latency | selection needs early interaction or cost targets (E-F4) |
+| H-F4 | InfoNCE-only argmax **over-selects rare manoeuvres**, and either the log-prior correction or the vocabulary softmax removes it. The refuted branch is live: F-R's enumerated toy shows the bias only where conditionals are multimodal with globally rare secondary modes, with zero flips in 4,000/4,000 shift-family scenes | selected-class vs ground-truth-class frequency (KL divergence); ADE on steady windows | the correction is mandatory in any contrastive selector | drop the correction; the corpus prior is not strong enough to matter |
 | H-F5 | the REF-F tick on Thor is ≤ 50 ms p95 with 4,096 cached + 300 open candidates | Thor, bf16, TensorRT backbone | REF-F leaves ≥ 50 ms of the 100 ms budget for System 2 and the envelope | profile; the backbone dominates and must be cached or shrunk |
 | H-F6 | REF-F's data-efficiency curve is **flatter** than REF-C's (a smaller loss at 10 % and 3 % of hours) | four-family panel at each fraction, paired at matched fractions | the first measured evidence for the mission's "far less data" goal | no data-efficiency advantage from frozen backbones; the claim rests on other levers |
 | H-F7 | a frozen **foundation** backbone (F-vid or F-img) beats the frozen v1 encoder (F-own) as REF-F's state substrate once ego kinematics come from the ego channel | H-F1 metric per backbone, paired | frozen foundation encoders are viable for decisions (unlike REF-A for odometry); settles BACKLOG B5 | the programme's own encoder is the better substrate at this scale |
@@ -346,6 +368,9 @@ Full text, with both outcomes, in `Project Steering/PREREG_REFF_CONTRASTIVE_SELE
 - **Image-only REF-F:** no ego history. This measures copycat dependence.
 - **Hold-v0, CV, CTRV** floors on the same windows.
 - **A random-vocabulary control** (entries sampled rather than clustered).
+- **A CoVer-style arm:** symmetric one-hot InfoNCE, no prior correction, no residual vocabulary, no cost heads. This is the published design, so REF-F's additions are each measured against it.
+
+**Every selector panel reports the triple selected / random-pick / oracle-in-set, plus the number of *decidable* windows** (windows whose candidates differ by more than a fixed ADE spread). CLM's harness computes an oracle but its README publishes only selector-vs-random, which hides how much of the gap a selector closes.
 
 ### 4.4 Statistics and reporting rules
 
@@ -457,13 +482,14 @@ Agents, per the review's routing: Sonnet implements, Opus reviews the loss and l
 |---|---|---|---|
 | **M0** (this document) | research, design, pre-registration draft | — | PI approval |
 | **M1** implementation | §7 files + tests + CPU smoke + V0 coverage tool | 2–3 eng-days (agents: Sonnet implements, Opus reviews) | V0, V1 |
-| **M2** first result | cache + stages 1–3 + V2 panel (val-40, val-600, four families, controls) | ≈ 1.5 A40-days | H-F1–H-F4, H-F7 |
+| **M2** first result | cache → **E-F0 k-NN pre-gate** → stages 1–3 → V2 panel (val-40, val-600, four families, controls, CoVer-style arm, E-F2–E-F4 ablations). Verifier mode shares the review's Δ2 train-split fan dumps, so schedule the two together | ≈ 1.5 A40-days | E-F0, then H-F1–H-F4, H-F7 |
 | **M3** deployability | Thor tick; closed-loop panel | Thor time | H-F5, H-F8 |
 | **M4** data efficiency and adoption | slope (V4); verifier mode over REF-C; the decision on v6 (review D2b) | ≤ 1 A40-day | H-F3, H-F6 |
 | **P-T** (optional pilot) | the released CLM-8B as an offline teacher over text-rendered privileged states | one offline 8B pass over a subset | its own pre-registration |
 
 **Decisions for the PI:**
-1. Approve REF-F as a reference arm on the parity corpus.
-2. The default backbone (F-own proposed).
+1. Approve REF-F as a reference arm on the parity corpus, and freeze the pre-registration.
+2. The default backbone (F-own proposed) and which foundation arm to measure first (V-JEPA 2.1 ViT-B proposed: video-native, about 80 M, MIT).
 3. Whether the scale arm may use PhysicalAI-AV's HF train split beyond parity, as a new arm with a registered exclusion list.
 4. Whether pilot P-T runs.
+5. Someone with unblocked egress reads the CLM blog and the Hugging Face card before any GPU-day rests on a CLM-recipe detail (stream F-R §1.6 lists the open items).

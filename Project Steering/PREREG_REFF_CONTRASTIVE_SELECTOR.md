@@ -45,6 +45,7 @@ If any of these fails in the stated way, the panel is void.
 | NC2 | **random vocabulary:** entries sampled, not farthest-point sampled | worse than or equal to the pre-registered vocabulary | the vocabulary construction is doing nothing; report it |
 | NC3 | **kNN retrieval** in the same frozen feature space | reported; REF-F should be separated-better | a tie means the heads add nothing beyond the backbone, and that is the finding |
 | NC4 | **ego-only** (no images) and **image-only** (no ego history) REF-F | ego-only ≈ the no-vision ego-status ceiling (0.5735 on val-40) | a large ego-only score signals copycat risk; report the transition-window split |
+| **E-F0 (pre-gate)** | VINN-style k-NN over the frozen cached features (+ v0, `ax_fd`) vs hold-current-speed, non-steady windows, paired, before any head training | k-NN separated-better than hold-speed | the frozen backbone carries no decision signal: change backbone before training heads |
 
 ---
 
@@ -54,7 +55,7 @@ If any of these fails in the stated way, the panel is void.
 |---|---|---|---|---|---|
 | **H-F1** | paired Δ ADE@2s, REF-F standalone − REF-C-base | upper CI95 bound < +0.02 m | REF-F becomes the fast System-1 reference arm | lower CI95 bound > +0.02 m (separated-worse beyond the margin) | move to retrieve-then-re-rank. Between the two: INCONCLUSIVE, reported as such |
 | **H-F2** | steady-window speed MAE, paired vs hold-v0; transient (brake/accelerate) windows separately | steady: upper CI95 bound of (REF-F − hold) < +0.02 m/s, **and** transient: separated-better than hold-v0 | the residual/prior parameterisation is adopted programme-wide | steady windows separated-worse than hold-v0 | the steady-window loss is not a parameterisation problem |
-| **H-F3** | verifier over REF-C-XL's 256-candidate fan: gap recovery = (pick_REF-C − pick_REF-F) / (pick_REF-C − oracle) | ≥ 0.25, with the paired ADE improvement's lower CI95 bound > 0 | REF-F is the v6 selector candidate (review D2b) | improvement not separated from 0 | selection needs early interaction or cost targets |
+| **H-F3** | verifier over REF-C-XL's 256-candidate fan, paired on the same windows: REF-F vs the Δ2 expected-cost regressor (both trained on train-split fans) vs REF-C's own pick. Gap recovery = (pick_REF-C − pick_X) / (pick_REF-C − oracle) is reported for each | REF-F non-inferior to Δ2 (upper CI95 of REF-F − Δ2 < +0.02 m) **and** separated-better than REF-C's pick | the better of REF-F and Δ2 becomes the v6 selector; REF-F wins ties on latency | REF-F separated-worse than Δ2 | selection needs early interaction or cost targets (E-F4) |
 | **H-F4** | KL(selected-class frequency ‖ ground-truth-class frequency) and steady-window ADE, InfoNCE-only argmax vs corrected (log-prior) vs vocabulary softmax | InfoNCE-only has the larger KL **and** is separated-worse on steady-window ADE than either correction | the correction is mandatory for contrastive selectors in this programme | no separated difference | the corpus prior does not bias selection enough to matter; drop the correction |
 | **H-F5** | full REF-F tick on Jetson Thor (cached backbone, heads, 4,096 + 300 candidates, controller), ≥ 1,000 ticks on held-out windows, bf16 | p95 ≤ 50 ms (within-run; ±13 % drift noted) | ≥ 50 ms of the 100 ms budget remains for System 2 and the envelope | p95 > 50 ms | profile; the backbone must shrink or cache more |
 | **H-F6** | four-family panel at 1 / 3 / 10 / 30 / 100 % of parity-train hours, REF-F vs REF-C at matched fractions (same episode subsets, nested) | REF-F's relative ADE loss at 10 % **and** at 3 % is separated-smaller than REF-C's | first measured evidence toward the mission's data goal | not separated at either fraction | frozen-backbone heads give no data-efficiency edge here |
@@ -64,6 +65,13 @@ If any of these fails in the stated way, the panel is void.
 **Four families.** Every panel reports LONGITUDINAL (target-speed bias and MAE; distance keeping on the LEAD windows), LATERAL (heading, curvature, yaw rate, cross-track), TACTICAL (selected vs executed lateral × longitudinal class, from the factorised vocabulary) and STRATEGIC. STRATEGIC is reported UNAVAILABLE, with reason "no route or goal source in PhysicalAI-AV" and n = 0, until a route-bearing corpus is used.
 
 ---
+
+**Ablations inside V2** (reported, not separately registered; working ids from F-R §3.6):
+- **E-F2:** one-hot vs soft distance-weighted positives. The registry and VADv2 predict soft wins, and one-hot ≥ soft would be escalated.
+- **E-F3:** flat in-batch training vs CLM's staged curriculum.
+- **E-F4:** cosine dual encoder vs a 2-layer cross-attention scorer on identical frozen features and targets. If cross-attention is much better, the dual encoder is used only as stage 1 of a retrieve-then-re-rank.
+
+**Reporting for every selector panel:** selected / random-pick / oracle-in-set, plus the count of decidable windows.
 
 ## 4. Stopping rules
 
