@@ -1,0 +1,73 @@
+% Appendix: the frozen v7 vocabulary with per-field clip counts (INHERITED from the programme's label census; n = clips carrying the token, of 4,719).
+\section{The v7 vocabulary as used by HiCAP}\label{app:vocab}
+Counts are per field over the $4{,}719$ clips of the v7 corpus (label census of the v8 release)\evI; \texttt{g\_tac} is multi-label, so its counts do not sum to $4{,}719$. ``geometry'' tokens derive from the ego's own future path, ``Alpamayo text'' from the teacher's chain-of-causation text (unverified; $49.6\%$ of records carry at least one disputed goal). Empty tokens are masked in the loss and in retrieval.
+Token ids are tuple indices in the frozen vocabulary; \texttt{REDUCE\_TO\_FOLLOW\_ROUTE} is \emph{not} part of it. The $22$ exclusive goal pairs and the goal-to-action admissibility tables are part of the same frozen module.
+\begin{center}\footnotesize
+\begin{longtable}{@{}p{2.6cm}rp{6.3cm}rp{2.6cm}p{1.2cm}@{}}
+\toprule
+field & id & token & $n$ & derivation & note \\ \midrule
+\endhead
+$g_{\text{str}}$ (8) & 0 & \texttt{FOLLOW\_ROUTE} & 3,041 & geometry &  \\
+ & 1 & \texttt{TURN\_LEFT\_FOLLOW\_ROUTE} & 585 & geometry &  \\
+ & 2 & \texttt{TURN\_RIGHT\_FOLLOW\_ROUTE} & 624 & geometry &  \\
+ & 3 & \texttt{STOP\_AT\_FOLLOW\_ROUTE} & 469 & geometry &  \\
+ & 4 & \texttt{EXIT\_LEFT\_FOLLOW\_ROUTE} & 0 & geometry & empty \\
+ & 5 & \texttt{EXIT\_RIGHT\_FOLLOW\_ROUTE} & 0 & geometry & empty \\
+ & 6 & \texttt{LANE\_CHANGE\_L\_FOLLOW\_ROUTE} & 0 & geometry & empty \\
+ & 7 & \texttt{LANE\_CHANGE\_R\_FOLLOW\_ROUTE} & 0 & geometry & empty \\
+\midrule
+$a_{\text{str}}$ (7) & 0 & \texttt{HOLD\_MAIN\_ROAD} & 2,468 & geometry &  \\
+ & 1 & \texttt{PREPARE\_TURN\_L\_FOLLOW\_ROUTE} & 585 & geometry &  \\
+ & 2 & \texttt{PREPARE\_TURN\_R\_FOLLOW\_ROUTE} & 624 & geometry &  \\
+ & 3 & \texttt{PREPARE\_STOP\_FOLLOW\_ROUTE} & 469 & geometry &  \\
+ & 4 & \texttt{PREPARE\_EXIT\_FOLLOW\_ROUTE} & 0 & geometry & empty \\
+ & 5 & \texttt{PREPARE\_LANE\_CHANGE\_FOLLOW\_ROUTE} & 0 & geometry & empty \\
+ & 6 & \texttt{RESUME\_CRUISE\_FOLLOW\_ROUTE} & 573 & geometry &  \\
+\midrule
+$a_{\text{tac}}^{\text{lat}}$ (8) & 0 & \texttt{LANE\_KEEP} & 3,057 & geometry &  \\
+ & 1 & \texttt{LANE\_CHANGE\_L} & 0 & geometry & empty \\
+ & 2 & \texttt{LANE\_CHANGE\_R} & 0 & geometry & empty \\
+ & 3 & \texttt{ABORT\_LC} & 0 & geometry & empty \\
+ & 4 & \texttt{NUDGE\_L} & 502 & geometry &  \\
+ & 5 & \texttt{NUDGE\_R} & 613 & geometry &  \\
+ & 6 & \texttt{TURN\_L} & 280 & geometry &  \\
+ & 7 & \texttt{TURN\_R} & 267 & geometry &  \\
+\midrule
+$a_{\text{tac}}^{\text{lon}}$ (8) & 0 & \texttt{FOLLOW} & 175 & geometry &  \\
+ & 1 & \texttt{CRUISE} & 1,287 & geometry &  \\
+ & 2 & \texttt{YIELD\_MERGE} & 0 & geometry & empty \\
+ & 3 & \texttt{BRAKE\_TO} & 927 & geometry &  \\
+ & 4 & \texttt{CREEP} & 141 & geometry &  \\
+ & 5 & \texttt{HOLD} & 133 & geometry &  \\
+ & 6 & \texttt{ADAPT\_SPEED\_FOR\_CURVE} & 1,018 & geometry &  \\
+ & 7 & \texttt{ACCELERATE} & 1,038 & geometry &  \\
+\midrule
+$g_{\text{tac}}$ (22) & 0 & \texttt{FOLLOW\_LANE} & 3,748 & geometry &  \\
+ & 1 & \texttt{TURN\_L} & 280 & geometry &  \\
+ & 2 & \texttt{TURN\_R} & 267 & geometry &  \\
+ & 3 & \texttt{YIELD\_FOR\_TURN\_L} & 23 & Alpamayo text & $n<30$ \\
+ & 4 & \texttt{YIELD\_FOR\_TURN\_R} & 20 & Alpamayo text & $n<30$ \\
+ & 5 & \texttt{YIELD} & 626 & Alpamayo text &  \\
+ & 6 & \texttt{STOP\_POINT} & 336 & geometry &  \\
+ & 7 & \texttt{SPEED\_BAND} & 4,719 & geometry &  \\
+ & 8 & \texttt{CORRIDOR\_OFFSET} & 885 & Alpamayo text &  \\
+ & 9 & \texttt{EVADE\_IN\_CORRIDOR} & 246 & text $\wedge$ geometry &  \\
+ & 10 & \texttt{OVERTAKE\_VEHICLE} & 21 & Alpamayo text & $n<30$ \\
+ & 11 & \texttt{MERGE} & 84 & Alpamayo text &  \\
+ & 12 & \texttt{GAP\_TARGET} & 382 & Alpamayo text &  \\
+ & 13 & \texttt{REACT\_ON\_ONCOMING} & 344 & Alpamayo text &  \\
+ & 14 & \texttt{TAKE\_EXIT\_L} & 21 & Alpamayo text & $n<30$ \\
+ & 15 & \texttt{TAKE\_EXIT\_R} & 133 & Alpamayo text &  \\
+ & 16 & \texttt{TRAFFIC\_LIGHT\_REACT} & 18 & Alpamayo text & $n<30$ \\
+ & 17 & \texttt{TRAFFIC\_LIGHT\_REACT\_RED} & 384 & Alpamayo text &  \\
+ & 18 & \texttt{TRAFFIC\_LIGHT\_REACT\_YELLOW} & 25 & Alpamayo text & $n<30$ \\
+ & 19 & \texttt{TRAFFIC\_LIGHT\_REACT\_GREEN} & 378 & Alpamayo text &  \\
+ & 20 & \texttt{LANE\_CHANGE\_L} & 23 & Alpamayo text & $n<30$ \\
+ & 21 & \texttt{LANE\_CHANGE\_R} & 16 & Alpamayo text & $n<30$ \\
+\midrule
+\texttt{nav\_command} (3) & 0 & \texttt{NAV\_FOLLOW\_ROAD} & 2,993 & ego-future &  \\
+ & 1 & \texttt{NAV\_TURN\_L} & 824 & ego-future &  \\
+ & 2 & \texttt{NAV\_TURN\_R} & 902 & ego-future &  \\
+\bottomrule
+\end{longtable}
+\end{center}

@@ -1,0 +1,78 @@
+% Architecture overview of HiCAP (TikZ), vertical flow, fixed grid (1 unit = 1 cm), natural width ~18 cm.
+\begin{tikzpicture}[
+  font=\scriptsize, >=Stealth,
+  nd/.style={draw, rounded corners=2pt, align=center, inner sep=2.5pt, minimum height=9mm, minimum width=#1},
+  nd/.default=32mm,
+  inp/.style={nd, fill=gray!10},
+  frz/.style={nd, fill=blue!9, draw=blue!60!black},
+  trn/.style={nd, fill=orange!16, draw=orange!70!black},
+  cch/.style={nd, fill=green!11, draw=green!45!black},
+  msk/.style={nd, fill=red!9, draw=red!55!black},
+  tch/.style={nd, fill=yellow!14, dashed},
+  arr/.style={->, thick},
+  darr/.style={->, thick, dashed, black!55},
+  lab/.style={font=\scriptsize\itshape, text=black!65, fill=white, inner sep=1pt}
+]
+% ---------------- row A: inputs
+\node[inp] (cam) at (1.7,0)  {Cameras: front-wide always;\\other cameras gated};
+\node[inp] (aud) at (5.1,0)  {Audio window\\(optional, dropout)};
+\node[inp] (ego) at (8.5,0)  {Ego state $e_t$:\\$v,a_{\mathrm{lon}},\dot\psi,\kappa$};
+\node[inp] (nav) at (11.9,0) {Nav command\\(stamped oracle)};
+\node[inp] (stk) at (15.3,0) {Frame stack\\3$\times$100\,ms};
+% ---------------- rows B: gate, encoders
+\node[trn] (gate) at (1.7,-1.9) {Camera / token gate\\cheap cues, hysteresis};
+\node[frz] (vlm)  at (1.7,-3.7) {Frozen VLM (2\,Hz)\\cached scene tokens};
+\node[frz] (aenc) at (5.1,-3.7) {Frozen audio encoder\\+ projector};
+\node[trn] (mot)  at (15.3,-3.7) {Motion adapter\\(10\,Hz, $\approx$2\,M)};
+% ---------------- row C: fusion
+\node[trn, minimum width=178mm, minimum height=15mm] (fus) at (8.5,-5.9) {\textbf{Fusion transformer} ($\approx$19\,M, 10\,Hz):\ scene $\oplus$ audio $\oplus$ motion $\oplus$ ego $\oplus$ nav tokens $\oplus$ level queries $q_1,q_2,q_3$ (null embeddings for missing inputs)};
+% ---------------- row D: readouts
+\node[trn, minimum width=48mm] (s1) at (2.8,-8.2)  {$\mathbf s_1$ strategic readout, 2\,Hz};
+\node[trn, minimum width=48mm] (s2) at (8.5,-8.2)  {$\mathbf s_2^{\mathrm{lat}},\mathbf s_2^{\mathrm{lon}}$ tactical readouts, 5\,Hz};
+\node[trn, minimum width=48mm] (s3) at (14.2,-8.2) {$\mathbf s_3$ trajectory readout, 10\,Hz};
+% ---------------- row E: action tree (cached embeddings)
+\node[cch, minimum width=48mm] (a1) at (2.8,-10.3)  {$\mathcal A_1$ strategic actions\\text-embedded (5 usable)};
+\node[cch, minimum width=48mm] (a2) at (8.5,-10.3)  {$\mathcal A_2$ tactical LAT$\times$LON cells\\text + numeric (35 usable)};
+\node[cch, minimum width=48mm] (a3) at (14.2,-10.3) {$\mathcal A_3(v_2)$ residual codes, coarse $\to$ fine\\$10^{3}$--$10^{5}$ per cell, numeric};
+% ---------------- row F: pruning
+\node[msk, minimum width=100mm, minimum height=13mm] (pr) at (11.4,-12.5) {\textbf{Prior-encoded pruning R1--R6}: kinematic feasibility, state admissibility, route,\\goal admissibility, hysteresis, conformal keep-sets (recall $\ge1-\sum\alpha_\ell$)};
+% ---------------- row G: decision and imagination
+\node[nd=52mm, minimum height=13mm] (dec) at (5.6,-14.9) {\textbf{Decision}\\$\arg\min_{v\in K}\ \sum_k w_k\hat c_k-\lambda\log\hat p$\\re-score of survivors; System-2 if uncertain};
+\node[trn, minimum width=58mm, minimum height=13mm] (img) at (13.4,-14.9) {\textbf{Imagination}\\non-reactive scene forecast $\oplus$ kinematic map\\two-head agreement gate (adds cost only)};
+% ---------------- row H: controller
+\node[nd=52mm] (ctl) at (5.6,-16.9) {Controller + safety envelope};
+% ---------------- label-time box
+\node[tch, minimum width=88mm] (tc) at (13.6,-16.9) {Label time only: ego future, 3-D agent tracks,\\Alpamayo teacher text $\Rightarrow$ soft targets, costs};
+% ---------------- legend
+\node[frz, minimum width=18mm, minimum height=5mm] at (1.7,-18.5) {frozen};
+\node[trn, minimum width=18mm, minimum height=5mm] at (4.3,-18.5) {trained};
+\node[cch, minimum width=18mm, minimum height=5mm] at (6.9,-18.5) {cached table};
+\node[msk, minimum width=18mm, minimum height=5mm] at (9.5,-18.5) {rules};
+% ---------------- edges
+\draw[arr] (cam) -- (gate);
+\draw[arr] (gate) -- (vlm);
+\draw[arr] (aud) -- (aenc);
+\draw[arr] (stk) -- (mot);
+\draw[arr] (vlm.south) -- (vlm.south |- fus.north);
+\draw[arr] (aenc.south) -- (aenc.south |- fus.north);
+\draw[arr] (mot.south) -- (mot.south |- fus.north);
+\draw[arr] (ego.south) -- (ego.south |- fus.north);
+\draw[arr] (nav.south) -- (nav.south |- fus.north);
+\draw[arr] (s1.north |- fus.south) -- (s1.north);
+\draw[arr] (s2.north |- fus.south) -- (s2.north);
+\draw[arr] (s3.north |- fus.south) -- (s3.north);
+\draw[arr] (s1) -- (a1);
+\draw[arr] (s2) -- (a2);
+\draw[arr] (s3) -- (a3);
+\draw[arr] (a1) -- (a2);
+\draw[arr] (a2) -- (a3);
+\draw[arr] (a2.south |- pr.north) -- (a2.south);
+\draw[arr] (a3.south |- pr.north) -- (a3.south);
+\draw[arr] (7.5,-13.15) -- node[lab, right] {top-$K$ survivors} (7.5,-14.25);
+\draw[arr] (pr.south -| img.north) -- (img.north);
+\draw[arr] (img.west) -- (dec.east);
+\draw[arr] (dec) -- (ctl);
+\draw[arr, black!60] (dec.west) -- (-1.0,-14.9) -- (-1.0,-1.9) -- (gate.west);
+\node[lab, rotate=90] at (-1.0,-8.4) {previous tactical token, escalation};
+\draw[darr] (tc.north) -- ++(0,0.6) -| (18.3,-10.3) -- (a3.east);
+\end{tikzpicture}

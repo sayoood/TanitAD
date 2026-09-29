@@ -1,0 +1,42 @@
+% ---------------------------------------------------------------------------
+\section{Differentiation from known approaches}\label{sec:diff}
+% ---------------------------------------------------------------------------
+Table~\ref{tab:diff} compares HiCAP's design with the closest published families on nine properties. The table is our reading of each system's main configuration and errs toward crediting others (a partial mark where a
+property is present in weaker form). A cell for HiCAP means \emph{specified in this paper}, not demonstrated: no HiCAP model has been trained.
+\begin{table}[h]
+\centering\footnotesize
+\setlength{\tabcolsep}{3.2pt}
+\caption{Property matrix. \checkmark\ present; $\circ$ partial or weaker form; --- absent; $\cdot$ not applicable (the property concerns a contrastive score, and the system uses a softmax classifier).
+Columns: (1) frozen large backbone; (2) no autoregressive decode at run time; (3) large fixed action vocabulary; (4) hierarchical tree retrieval; (5) correction of the prior bias of the contrastive optimum;
+(6) pruning with a stated recall guarantee; (7) outcome or cost prediction per candidate; (8) elastic choice of sensors or tokens; (9) audio tokenised into the backbone space.}
+\label{tab:diff}
+\begin{tabular}{@{}lccccccccc@{}}
+\toprule
+system & (1) & (2) & (3) & (4) & (5) & (6) & (7) & (8) & (9) \\ \midrule
+EMMA, SimLingo, Alpamayo-R1 \citep{hwang2024emma,renz2025simlingo,nvidia2025alpamayor1} & $\circ$ & --- & --- & --- & $\cdot$ & --- & --- & --- & --- \\
+DriveVLM-Dual, FASIONAD \citep{tian2024drivevlm,qian2024fasionad} & --- & $\circ$ & --- & --- & $\cdot$ & --- & --- & --- & --- \\
+DiffusionDrive \citep{liao2024diffusiondrive} & --- & \checkmark & $\circ$ & --- & $\cdot$ & --- & --- & --- & --- \\
+VADv2 \citep{chen2024vadv2} & --- & \checkmark & \checkmark & --- & $\cdot$ & --- & --- & --- & --- \\
+Hydra-MDP \citep{li2024hydramdp} & --- & \checkmark & \checkmark & --- & $\cdot$ & --- & \checkmark & --- & --- \\
+GTRS, DriveSuprim \citep{li2025gtrs,yao2025drivesuprim} & --- & \checkmark & \checkmark & $\circ$ & $\cdot$ & --- & \checkmark & --- & --- \\
+WoTE, ZTRS \citep{li2025wote,li2025ztrs} & --- & \checkmark & \checkmark & --- & $\cdot$ & --- & \checkmark & --- & --- \\
+IBC \citep{florence2021ibc} & --- & \checkmark & --- & --- & --- & --- & --- & --- & --- \\
+CLM \citep{kwok2026clm} & \checkmark & \checkmark & $\circ$ & --- & --- & --- & --- & --- & --- \\
+CoVer-VLA \citep{kwok2026cover} & \checkmark$^{\dagger}$ & \checkmark & --- & --- & --- & --- & --- & --- & --- \\
+\midrule
+\textbf{HiCAP (this design)} & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark \\
+\bottomrule
+\end{tabular}\\[2pt]
+{\scriptsize $^{\dagger}$ a frozen image encoder, not a full vision--language model.}
+\end{table}
+
+\paragraph{What is new, and what is not.}
+Frozen-backbone contrastive selection (CLM, CoVer-VLA), large fixed vocabularies with per-candidate cost heads (VADv2, Hydra-MDP, GTRS) and coarse-to-fine scoring (DriveSuprim) are prior art; so are latent world models and conformal prediction.
+The claim of this paper is the \emph{composition}, together with four specific points that we could not find in the literature we read (a claim of absence at the depth of our search, not a proof):
+\begin{enumerate}
+\item \textbf{A frozen, versioned, hierarchical token vocabulary as the action side of a contrastive selector}, with text-defined nodes, a two-stage numeric code beneath them, cost and bandwidth that scale with the number of nodes touched rather than leaves (Proposition~\ref{prop:cost}), and factored lateral/longitudinal scoring so that the two decisions remain separately measurable.
+\item \textbf{A pruning cascade with a stated recall bound whose survivors return to the backbone.} Physics, state-conditioned admissibility, hysteresis and conformal keep-sets reduce the set before any expensive step (Proposition~\ref{prop:conformal}, measured mask in \S\ref{sec:prelim}), and the survivors become candidate tokens for late-interaction re-scoring and an optional language verifier. Coarse-to-fine scorers prune with learned scores and no coverage statement.
+\item \textbf{Identifiable imagination.} Restricting imagination to a non-reactive scene forecast, a known kinematic map and a contrastive future critic, with a two-head agreement gate, makes the counterfactual evaluation of a candidate a statement about observational data (Proposition~\ref{prop:ident}); our own earlier measurements showed why an unrestricted learned counterfactual is unsafe in this domain.
+\item \textbf{Elastic sensing and audio under one embedding interface with a distillable state side.} Camera and token budgets are chosen per tick from cheap cues, audio enters the backbone's token space with explicit null and shuffle controls, and because action embeddings never depend on images, a sub-300\,M student can occupy the same interface and reuse the teacher's action table, with a decision-preservation margin (Proposition~\ref{prop:distill}).
+\end{enumerate}
+\paragraph{Where HiCAP is deliberately conservative.} Language never generates: it embeds token definitions and, only in uncertain ticks, verifies. Nothing in the goal path carries a situation-classifier output. Every oracle input is stamped and paired with its ablation. And hypotheses are registered with their refutation consequences, so that a negative outcome (for instance, that a larger vocabulary does not help, H-HC5) redirects the programme instead of being explained away.

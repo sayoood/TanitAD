@@ -1,0 +1,140 @@
+% ---------------------------------------------------------------------------
+\section{Theory}\label{sec:theory}
+% ---------------------------------------------------------------------------
+This section states what the design guarantees and under which assumptions. Every proposition is
+elementary; the point is to make the assumptions explicit, because several failures observed in
+our own programme (action echo, split-mean bias, uncalibrated imagination) came from unstated ones.
+
+\subsection{Setting}
+Let $s\in\mathcal S$ be the multimodal state (frames, ego state, optional audio). A decision is a leaf of a
+rooted tree $\mathcal T$ of depth $L$: $a=(v_1,\dots,v_L)$ with $v_\ell\in C(v_{\ell-1})$, where $C(v)$ is the
+finite set of children of node $v$ and $v_0$ is the root. In HiCAP there are three semantic levels (strategic action, tactical cell, trajectory residual;
+\S\ref{sec:vocab}), and the residual level is itself a two-stage coarse-to-fine code, so retrieval runs over $L=4$ stages. Each node $v$ has a unit-norm embedding $\mathbf a_v\in\mathbb S^{d-1}$
+and each level $\ell$ a unit-norm state readout $\mathbf s_\ell(s)\in\mathbb S^{d-1}$. The critic is
+$f_\ell(s,v)=\tau\langle\mathbf s_\ell(s),\mathbf a_v\rangle$ with temperature $\tau>0$.
+The expert (logged) decision is drawn from $p(a\mid s)=\prod_{\ell}p(v_\ell\mid v_{\ell-1},s)$.
+
+\subsection{What contrastive training estimates, and the prior correction}
+\begin{proposition}[Per-node InfoNCE optimum]\label{prop:infonce}
+Fix a parent $u$ and a state $s$. Draw a positive child $v^+\sim p(\cdot\mid s,u)$ and $K$ negatives
+i.i.d.\ from a proposal $q_u$ on $C(u)$. Among all critics $f$, the InfoNCE loss
+$-\mathbb E\log\frac{e^{f(s,v^+)}}{e^{f(s,v^+)}+\sum_{k=1}^{K}e^{f(s,v^-_k)}}$
+is minimised by
+\begin{equation}
+f^\star(s,v)=\log\frac{p(v\mid s,u)}{q_u(v)}+c(s),\label{eq:pmi}
+\end{equation}
+for any function $c$ of $s$ alone.
+\end{proposition}
+\begin{proof}
+For fixed $s$ the loss is the cross-entropy of a $(K{+}1)$-way classifier that must identify which of
+$K{+}1$ candidates was drawn from $p(\cdot\mid s,u)$ rather than from $q_u$. Its Bayes posterior that candidate $j$ is the positive is
+$\frac{p(v_j\mid s,u)/q_u(v_j)}{\sum_i p(v_i\mid s,u)/q_u(v_i)}$, and the softmax over $f$ reproduces this posterior
+exactly when $f=\log(p/q)+c(s)$, since $c(s)$ cancels in the normalisation. Cross-entropy is minimised
+by the Bayes posterior. This is the noise-contrastive argument of \citet{oord2018cpc} and \citet{poole2019variational}.\qedhere
+\end{proof}
+\begin{corollary}[Selection bias and its correction]\label{cor:bias}
+If $q_u$ is the marginal $\bar p_u(v)=\mathbb E_s\,p(v\mid s,u)$ (in-batch negatives), then
+$\arg\max_v f^\star(s,v)=\arg\max_v\log\frac{p(v\mid s,u)}{\bar p_u(v)}$, the pointwise-mutual-information
+maximiser, which differs from the likelihood maximiser $\arg\max_v p(v\mid s,u)$ whenever $\bar p_u$ is not uniform. Adding
+$\beta\log\hat q_u(v)$ with $\beta=1$ recovers $\log p(v\mid s,u)+c(s)$. Because $\hat q$ and the critic are
+estimated, $\beta$ is fitted on held-out episodes rather than fixed.
+\end{corollary}
+\noindent\textit{Example.} Prior $(0.70,0.20,0.10)$ over \{cruise, follow-lead, lane-change\}, true conditional
+$(0.60,0.30,0.10)$ in a given state: PMI is $(-0.15,+0.41,0)$, so the PMI argmax is ``follow-lead'' while the most
+likely action is ``cruise''. Our corpus is dominated by straight cruising, so the effect is systematic
+(\S\ref{sec:prelim} gives the measured size on a synthetic world).
+
+\begin{proposition}[Tree factorisation]\label{prop:tree}
+Let $\hat p(v\mid u,s)=\operatorname{softmax}_{v'\in C(u)}\big(f_\ell(s,v')+\beta_\ell\log\hat q_u(v')\big)_v$. Then
+$\hat p(a\mid s)=\prod_{\ell=1}^{L}\hat p(v_\ell\mid v_{\ell-1},s)$ is a normalised distribution over the
+leaves, and $\log\hat p(a\mid s)$ decomposes into per-level terms that can be trained and calibrated independently.
+By the chain rule the marginal of a node is the product along its path and equals the sum of the leaf
+probabilities beneath it. The unconditional level heads that serve the faster update rates are separate parameters,
+so their agreement with this marginal is trained with a KL term (\S\ref{sec:train}) rather than assumed.
+\end{proposition}
+\begin{proof}
+Each factor is a softmax on the children of one node, so it sums to one; the product over a root-to-leaf
+path therefore sums to one over all leaves by induction on depth.\qedhere
+\end{proof}
+
+\subsection{Cost and memory of hierarchical retrieval}
+\begin{proposition}[Retrieval cost]\label{prop:cost}
+Let level $\ell$ have branching $B_\ell=\max_u|C(u)|$ and beam width $b_\ell$ ($b_0=1$). Flat scoring of
+$N=\prod_\ell B_\ell$ leaves costs $Nd$ multiply-accumulates and streams $N\,d\,w$ bytes of embeddings ($w$ bytes per element)
+per decision. Beam retrieval touches $M=\sum_{\ell}b_{\ell-1}B_\ell$ nodes, i.e.\ $Md$ multiply-accumulates and $Mdw$ bytes.
+\end{proposition}
+\noindent For the sizes in Table~\ref{tab:vocab} this is the difference between streaming several gigabytes per tick
+and reading a few megabytes; on an edge device the binding constraint is memory bandwidth, not arithmetic
+(\S\ref{sec:eff}).
+
+\subsection{Recall under cascaded pruning}
+Pruning is safe only if it rarely removes the right action. We give two mechanisms.
+\begin{proposition}[Conformal cascade]\label{prop:conformal}
+For level $\ell$ let $\rho_\ell(s,v)$ be any score and $\hat t_\ell$ the $\lceil(1-\alpha_\ell)(n+1)\rceil$-th smallest value of
+$-\rho_\ell(s_i,v_i^\star)$ over $n$ calibration windows whose parent $v_{\ell-1}^\star$ is the logged one. Keep
+$K_\ell(s)=\{v\in C(v_{\ell-1}):\,-\rho_\ell(s,v)\le\hat t_\ell\}$. If calibration and test windows are exchangeable, then
+$\Pr\big(v_\ell^\star\in K_\ell(s)\mid v_{\ell-1}^\star\in K_{\ell-1}(s)\big)\ge 1-\alpha_\ell$, and consequently
+\begin{equation}
+\Pr\big(\text{logged leaf retained}\big)\;\ge\;\prod_{\ell}(1-\alpha_\ell)\;\ge\;1-\sum_{\ell}\alpha_\ell .\label{eq:recall}
+\end{equation}
+\end{proposition}
+\begin{proof}
+Level-wise coverage is the split-conformal guarantee \citep{angelopoulos2021gentle}, applied to the
+sub-population with the logged parent retained. The chain rule gives the product, and $\prod(1-x_\ell)\ge 1-\sum x_\ell$.\qedhere
+\end{proof}
+\noindent Exchangeability holds only across episodes, never across the windows of one episode, so calibration
+and evaluation use episode-disjoint splits and the guarantee is marginal, not conditional on the scene.
+
+\begin{proposition}[Physics mask]\label{prop:mask}
+Let $\mathcal B$ be a set of kinematic limits (longitudinal acceleration and braking, lateral acceleration) and
+$\mathcal K_{\mathcal B}(s)=\{a:\ \text{the implied path satisfies }\mathcal B\text{ given the current speed}\}$. If the logged
+path satisfies $\mathcal B$, the mask retains it with probability one, so the oracle-in-set error is unchanged.
+\end{proposition}
+\noindent This is a statement about the bounds, not about the network, so it is checked empirically rather than proved:
+Section~\ref{sec:prelim} reports that physical limits keep $881/881$ logged 2\,s futures of the validation set
+(one-sided 95\% lower bound $0.05^{1/881}=0.9966$ on the window-level retention rate) while removing
+$78\%$ of a speed-agnostic anchor set. Tight comfort limits ($3/6/4$\,m/s$^2$ for acceleration, braking, lateral) are \emph{not} safe as hard masks
+(they removed $2.4\%$ of logged futures) and are therefore used as costs. The bound treats windows as independent; the 40
+validation episodes make the effective sample smaller, which is why the calibrated conformal mask below, not this bound, is the shipped guarantee.
+
+\subsection{Predictive imagination that is identifiable}
+A world model trained on expert logs cannot learn what happens under an action the expert never took,
+because in the log the action is a function of the state. We therefore split the outcome into a part the ego cannot
+change over the horizon and a part it controls.
+\begin{proposition}[Identifiable outcome factorisation]\label{prop:ident}
+Let $W_{t+1:t+H}$ be the future scene (other agents, signals) and $e_{t+1:t+H}$ the ego path. If the scene is
+non-reactive over the horizon, $W_{t+1:t+H}\perp a\mid s$, then $p(W_{t+1:t+H}\mid s,a)=p(W_{t+1:t+H}\mid s)$ is identified by the
+observational log, and $e_{t+1:t+H}=\kappa(a,s_{\text{ego}})$ is a known kinematic function. Any interaction cost
+$c(W,e)$ can then be evaluated for every candidate $a$ without a learned counterfactual model.
+\end{proposition}
+\begin{proof}
+Conditional independence gives the first equality; the right-hand side involves no intervention on $a$, so it is a
+functional of the joint observational distribution. The ego path is a deterministic function of the candidate and the ego state.\qedhere
+\end{proof}
+\noindent The assumption fails for reactive agents (a driver yielding to the ego). We do not hide this: reactivity is
+bounded by a learned correction term whose weight is limited and which is reported separately, and imagination is
+never allowed to \emph{raise} confidence unless two independent heads agree (\S\ref{sec:imag}).
+
+\begin{proposition}[Contrastive future critic]\label{prop:future}
+Let $g(s,a,s')=\tau\langle\Phi(s,a),\mathbf z(s')\rangle$ be trained with InfoNCE against future embeddings $s'$ of
+other windows as negatives. Its optimum is $g^\star=\log\frac{p(s'\mid s,a)}{p(s')}+c(s,a)$, so the score is a
+pointwise-mutual-information estimate between the candidate and its outcome.
+\end{proposition}
+\begin{proof}
+Identical to Proposition~\ref{prop:infonce} with the positive drawn from $p(s'\mid s,a)$ and negatives from the marginal $p(s')$.\qedhere
+\end{proof}
+
+\subsection{Distilling the selector into a small student}
+\begin{proposition}[Decision preservation]\label{prop:distill}
+Let student embeddings satisfy $\|\hat{\mathbf s}-\mathbf s\|_2\le\delta_s$ and $\|\hat{\mathbf a}-\mathbf a\|_2\le\delta_a$ (unit vectors).
+Then $|\tau\langle\hat{\mathbf s},\hat{\mathbf a}\rangle-\tau\langle\mathbf s,\mathbf a\rangle|\le\tau(\delta_s+\delta_a)$, and the student's
+arg\,max equals the teacher's whenever the teacher's top-1/top-2 score margin exceeds $2\tau(\delta_s+\delta_a)$.
+\end{proposition}
+\begin{proof}
+$\langle\hat{\mathbf s},\hat{\mathbf a}\rangle-\langle\mathbf s,\mathbf a\rangle=\langle\hat{\mathbf s}-\mathbf s,\hat{\mathbf a}\rangle+\langle\mathbf s,\hat{\mathbf a}-\mathbf a\rangle$,
+each term bounded by Cauchy--Schwarz. A rank change between two candidates requires their scores to move toward each other by
+at least the margin, i.e.\ each by at least half of it.\qedhere
+\end{proof}
+\noindent Because the interface between backbone and heads is a fixed-dimension embedding space, the frozen
+multi-billion-parameter backbone can be replaced by a sub-300\,M student trained to match the cached teacher embeddings and
+candidate scores; Proposition~\ref{prop:distill} converts an embedding-error budget into a decision guarantee.

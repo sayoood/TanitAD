@@ -1,0 +1,102 @@
+% ---------------------------------------------------------------------------
+\section{Efficiency: what is cached, what runs when, and the student}\label{sec:eff}
+% ---------------------------------------------------------------------------
+Compute efficiency is a design constraint, not a tuning step. Four mechanisms carry it: multi-rate execution, caching at build time, hierarchical retrieval,
+and pruning before expensive computation (elastic sensing, \S\ref{sec:elastic}, is the fifth). This section states each cost in closed form or from published
+figures and separates that clearly from anything we have timed. \textbf{Nothing in this section is a HiCAP timing}: rows are arithmetic (\evE) or NVIDIA-published
+figures for the backbone alone (\evP).
+
+\subsection{Multi-rate execution}
+The decision levels have different natural rates, and so does the cost. Table~\ref{tab:rates} is the schedule.
+\begin{table}[h]
+\centering\small
+\caption{Multi-rate schedule. The frozen VLM is the only expensive component and runs at the slowest rate; the fast path is small enough that launch overhead, not arithmetic, dominates it.}
+\label{tab:rates}
+\begin{tabularx}{\textwidth}{@{}p{3.3cm}p{1.6cm}Xp{2.6cm}@{}}
+\toprule
+component & rate & recomputed & cost model \\ \midrule
+frozen VLM (ViT + prefill), selected cameras & 2\,Hz & visual tokens at three depths, last-token state; between refreshes tokens are reused with an age embedding & Table~\ref{tab:thor} \\
+motion adapter & 10\,Hz & 16 motion tokens from the 3-frame stack & $\approx2$\,M params \\
+fusion transformer & 10\,Hz & level queries over $\approx160$ tokens & $\approx19$\,M params, $\approx8$\,GFLOP\evE \\
+L1 readout / retrieval & 2\,Hz & strategic scores, keep-set & 5 nodes \\
+L2 readout / retrieval & 5\,Hz & tactical cell scores & $\le35$ nodes per kept parent \\
+L3 readout / retrieval & 10\,Hz & coarse then fine code scores, re-score of survivors, refinement & Table~\ref{tab:cost} \\
+System-2 verifier & only if uncertain & one extra prefill on $\le5$ renderings & one prefill row of Table~\ref{tab:thor} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+The fusion cost of $\approx8$\,GFLOP is $2\times19\text{M}\times200$ tokens, ignoring attention; at the $\approx25$\,TFLOP/s eager-bf16 throughput class of the programme's encoder measurements\evI{} this is well under a millisecond
+of arithmetic, so the fast path is expected to be launch-bound, and the only honest statement is that it must be measured (hypothesis H-HC11).
+
+\subsection{Backbone cost on the target SoC}\label{sec:backbone-cost}
+NVIDIA publishes measured Jetson Thor figures for Qwen3-VL-2B, -4B and -8B (TensorRT Edge-LLM 0.10.0, batch 1, vision tower FP16, language model NVFP4)\evP: for the 4\,B model a ViT pass of $11.6$\,ms and a $292$-token prefill of $22.3$\,ms, and a $2{,}048$-token prefill of $62.2$\,ms.
+Interpolating linearly in token count and scaling the ViT with the number of camera images gives Table~\ref{tab:thor}; the research stream's independent estimate for the recommended Qwen3.5-4B is $\approx31$\,ms for one camera and $\approx61$\,ms for three ($\pm25\%$, \evE). The ViT row is measured on a $\sim$265-token image while our cylindrical crop yields $160$ tokens per camera, so the ViT column is an upper bound.
+\begin{table}[h]
+\centering\small
+\caption{Estimated backbone latency per VLM refresh on Thor from the published rows (linear interpolation; ms). $n$ = total tokens (160 per camera + 64 prompt/query).}
+\label{tab:thor}
+\begin{tabular}{@{}lrrrrrr@{}}
+\toprule
+& \multicolumn{2}{c}{1 camera ($n{=}224$)} & \multicolumn{2}{c}{3 cameras ($n{=}544$)} & \multicolumn{2}{c}{7 cameras ($n{=}1184$)} \\
+model & ViT & total & ViT & total & ViT & total \\ \midrule
+Qwen3-VL-2B & 11.4 & 23.5 & 34.2 & 49.1 & 79.8 & 100.3 \\
+Qwen3-VL-4B & 11.6 & 32.4 & 34.8 & 62.8 & 81.2 & 123.8 \\
+Qwen3-VL-8B & 15.7 & 45.0 & 47.1 & 89.6 & 109.9 & 178.8 \\
+\bottomrule
+\end{tabular}
+\end{table}
+Two conclusions follow, both estimates. First, a single camera at a $2$--$10$\,Hz refresh is cheap (a 4\,B model at $\approx32$\,ms), so the case for a frozen VLM in the loop does not rest on the model being slow. Second, the cost is dominated by the vision tower and is linear in the number of cameras,
+so seven cameras cost $\approx124$\,ms per refresh and cannot run at 10\,Hz; the value of choosing cameras per tick (\S\ref{sec:elastic}) is exactly this slope. An open question is the precision drift between NVFP4 features on the vehicle and the BF16 features a head was trained on; it is registered as a measurement (H-HC11).
+
+The same arithmetic explains why a decode-based VLA behaves differently: Cosmos3-Edge's 4.8\,GB of BF16 weights over $273$\,GB/s give a $57$\,tok/s ceiling and NVIDIA measures $37$--$43$\,tok/s\evP; a trajectory of a few hundred tokens costs seconds, while prefill plus a table lookup costs tens of milliseconds.
+
+\subsection{Retrieval cost of a very large vocabulary}
+With the effective tree ($5$ strategic actions, $35$ tactical cells, coarse-by-fine residual codes) and beams $(2,4,8)$, Table~\ref{tab:cost} compares scoring every distinct leaf embedding (which is generous to flat scoring, since it ignores strategic multiplicity) with beam retrieval, at $d=512$ and $10$\,Hz against the $273$\,GB/s of Thor\evP.
+\begin{table}[h]
+\centering\small
+\caption{Flat versus beam retrieval per decision (\evE, from Proposition~\ref{prop:cost}). Bandwidth share is at 10\,Hz in bf16 against 273\,GB/s.}
+\label{tab:cost}
+\begin{tabular}{@{}rrrrrrr@{}}
+\toprule
+codes per cell & flat leaves & beam nodes & node ratio & flat MB & beam MB & flat share of BW \\ \midrule
+$64\times64$ & $1.4\times10^{5}$ & 2{,}379 & $60\times$ & 147 & 2.4 & 0.5\% \\
+$128\times128$ & $5.7\times10^{5}$ & 4{,}683 & $122\times$ & 587 & 4.8 & 2.2\% \\
+$256\times256$ & $2.3\times10^{6}$ & 9{,}291 & $247\times$ & 2{,}349 & 9.5 & 8.6\% \\
+$512\times512$ & $9.2\times10^{6}$ & 18{,}507 & $496\times$ & 9{,}395 & 19.0 & 34.4\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+The honest reading is a scale argument. At the vocabulary sizes of published scorers (4{,}096--8{,}192 leaves) flat scoring streams a few megabytes and hierarchy buys nothing at inference; the bandwidth argument begins near $10^{6}$ leaves and is decisive near $10^{7}$, where flat scoring would consume a third of the SoC's memory bandwidth before the backbone runs. Training is affected earlier: a flat softmax over $10^6$ leaves at batch $2{,}048$ materialises $\approx4$\,GB of logits per step, whereas the tree softmaxes are over at most a few thousand siblings.
+Whether a larger vocabulary \emph{helps} accuracy is a separate, empirical question (H-HC5): an oracle-in-set curve is necessary but not sufficient, since the programme's own measurements show the selection gap growing with the candidate set for a fixed scorer (oracle-in-fan $0.2213/0.1914/0.1640$\,m for $64/128/256$ anchors while the share of windows in which the pick is at least twice as bad as the best rises $0.3825/0.4109/0.4540$)\evI.
+
+\subsection{Caching at build time}
+Training the heads on cached features is what makes CLM cheap to iterate on. For HiCAP the dominant cache is the VLM tokens: at a $2$\,Hz refresh, $26.2$\,h of video is $188{,}640$ VLM ticks; $128$ tokens of width $2{,}048$ at three depths and one byte per element is $148$\,GB, and $64$ tokens is $74$\,GB (\evE, \texttt{hicap\_cost\_model.py}). A $10$\,Hz refresh would be $742$\,GB at int8 and is therefore not cached. Action embeddings are cached per step as a table and are tiny by comparison.
+Ablations over heads, losses and vocabularies then cost GPU-minutes on cached tensors rather than the $\approx45$\,GPU-hours per arm the programme's reference planner needs ($40{,}284$ steps at $4.0$\,s/step on an A40\evI); the cache is built once per backbone and once per camera set.
+
+\subsection{Backbone choice}\label{sec:backbone-choice}
+The instruction was to start from a VLM with general world knowledge and, ideally, driving knowledge, ``such as Cosmos Drive Nano or something similar''. No model of that name exists in NVIDIA's model tables or repositories (searched: the Cosmos model table, the Alpamayo recipes, the TensorRT Edge-LLM support list)\evM{} (the research stream that did this is included in the repository).
+The closest real objects are the 10\,B Alpamayo~1/1.5 ``Nano'' VLA (a Cosmos-Reason backbone with a driving action expert, too large per tick), Cosmos~3 Nano (16\,B) and Cosmos3-Edge (4\,B, whose 2.4\,B reasoner is a Nemotron-dense language model with a SigLIP\,2 vision tower and no audio tower), and Cosmos-Drive-Dreams, which is a video generator and not an encoder.
+Our reading is that the request means a Cosmos-lineage reasoner with driving knowledge that fits the Thor; no one has published that combination, and NVIDIA's own edge answer is to distil a large teacher into a $0.5$--$2$\,B student\evP.
+\begin{table}[h]
+\centering\small
+\caption{Backbone shortlist, in test order. Thor rows are NVIDIA-published where present\evP; ``paired'' means the two arms differ in driving tuning only.}
+\label{tab:backbones}
+\begin{tabularx}{\textwidth}{@{}p{0.6cm}p{3.6cm}p{2.2cm}p{2.4cm}X@{}}
+\toprule
+rank & backbone & role & audio & why \\ \midrule
+R1 & general Qwen3.5-4B (Apache-2.0) & primary frozen encoder & no & general knowledge, no driving tuning; probably uncontaminated by our validation clips \\
+R2 & driving-aware Qwen-Drive-1.0-4B VLM (Apache-2.0) & paired arm to R1 & no & same architecture as R1, so the driving-knowledge effect is a paired difference; may have seen PhysicalAI labels, so gains need decontamination \\
+R3 & Qwen3-VL-2B (measured Thor row) or Cosmos3-Edge reasoner (2.4\,B) & small/edge arm & no & lowest latency; Cosmos3-Edge has only eager-BF16 rows \\
+--- & Gemma-4-E2B (licence unverified) & audio arm (small) & native & the only small native-audio model with Thor rows \\
+--- & Qwen3-Omni-30B-A3B (Apache-2.0) & audio teacher / tokeniser & native & fits Thor memory, too large per tick \\
+--- & Alpamayo-1.5 (10\,B), Cosmos~3 Nano & teachers & no & driving knowledge; not per-tick encoders \\
+\bottomrule
+\end{tabularx}
+\end{table}
+A third fact is measured, not read: the driving-aware candidates may have seen our validation clips. Matching clip identifiers against NVIDIA's public training-sample list, $13$ of $400$ clips of our clean validation split ($3.25\%$, Wilson 95\% interval $[1.9,5.5]$) and $76$ of $2{,}400$ training clips ($3.17\%$) are in that sample\evM{} (a lower bound; the canonical 40-episode validation set keeps only a four-character clip-id prefix and could not be tested). The rates are equal, so our validation data is not held out from the pool that Alpamayo trains on, and any driving-aware gain on it is uninterpretable until the 40 identifiers are recovered. The general backbone R1 is the cleanest control.
+
+Two further facts from the research stream shape the protocol. (i)~\emph{No published result exists for a never-driving-tuned frozen VLM plus small heads making driving decisions.} Alpamayo's ``frozen backbone'' is frozen after $80$--$115$\,k hours of driving fine-tuning, and Qwen-Drive's planner reads the VLM's key--value caches at eight depths, not one pooled vector. HiCAP on a raw VLM is a bet, not a replication, which is why the pre-registration starts with a gate (H-HC0) rather than with the full system.
+(ii)~Freezing costs little for semantic tasks and a lot for geometric ones (a frozen-VLM BEV head lost $6.34$\,mAP against a control, and unfreezing recovered $10.46$; classical visual odometry beat the best VLMs on ego-motion)\evP{} (one-hop, vendor-reported). This is the reason for the motion adapter and for feeding ego kinematics as numeric tokens at the fusion stage, and for exposing three depths of the backbone rather than the final layer.
+
+\subsection{The student}\label{sec:student}
+Everything in Table~\ref{tab:backbones} is at least eight times the programme's sub-300\,M target. We therefore distinguish \emph{HiCAP-R}, the frozen reference, from \emph{HiCAP-S}, a student of at most $300$\,M parameters that occupies the same interface. Because the action tower depends only on vocabulary strings and residual profiles and never on images, the student \emph{reuses the teacher's cached action embeddings verbatim}; only the state side is distilled. The student is trained on the cached teacher readouts $\mathbf s_\ell$ (cosine and mean-squared error), the per-level distributions (KL) and the cost heads, and may use unlabeled driving video, since the teacher supplies the targets. Distilling per-family sub-scores listwise rather than one scalar follows the Hydra-MDP precedent (five per-family heads $83.0$ against a scalar $80.2$ score in that paper's metric)\evP{} (one-hop). Proposition~\ref{prop:distill} turns an embedding-error budget into a decision guarantee: the student's choice equals the teacher's whenever the teacher's top-two score margin exceeds $2\tau(\delta_s+\delta_a)$, and with shared action embeddings $\delta_a=0$. Whether that margin holds on real windows is measured (H-HC9); if it does not, the honest fallback is a student trained end to end on the same tree, which loses the guarantee but keeps the interface.

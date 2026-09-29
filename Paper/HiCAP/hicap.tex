@@ -1,0 +1,81 @@
+\documentclass[10pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{booktabs,array,tabularx,multirow,longtable}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,calc,fit}
+
+\setlist{nosep,leftmargin=1.4em}
+\setlength{\parskip}{2pt}
+\newtheorem{proposition}{Proposition}
+\newtheorem{corollary}[proposition]{Corollary}
+\bibliographystyle{plainnat}
+
+% Evidence classes (programme standard): every number carries one.
+\newcommand{\ev}[1]{{\scriptsize\textsuperscript{\textcolor{gray}{[#1]}}}}
+\newcommand{\evM}{\ev{M}}   % MEASURED by us, artifact in the repository
+\newcommand{\evP}{\ev{P}}   % PUBLISHED, cited
+\newcommand{\evI}{\ev{I}}   % INHERITED from a programme document, not re-verified
+\newcommand{\evE}{\ev{E}}   % ESTIMATED (closed-form arithmetic, no timing)
+\newcommand{\evH}{\ev{H}}   % HYPOTHESIS, to be tested
+\newcommand{\cell}[1]{\texttt{#1}}
+\newcommand{\Real}{\mathbb R}
+
+\title{\textbf{HiCAP: Hierarchical Contrastive Action Priors on a Frozen Vision--Language Backbone\\
+for Elastic, Imagination-Aware Driving}}
+\author{TanitAD programme \\ \small Design and pre-registration paper \\ \small (working draft, 2026-09-29)}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}\noindent
+Autonomous-driving policies built on vision--language models (VLMs) inherit world knowledge but decode actions
+one token at a time, which is bound by memory bandwidth on an in-vehicle computer. Contrastive selectors (CLM, CoVer-VLA)
+replace generation by a single prefill pass and a similarity search over cached action embeddings, but they treat the action set
+as flat and small, inherit the marginal-frequency bias of their loss, and neither predict outcomes nor budget their sensors.
+We describe \emph{HiCAP}, a design that keeps what made CLM work---a frozen backbone, two small trainable heads, cached action
+embeddings, a calibrated cosine score, a staged curriculum---and adapts it to driving. (i)~The action side is a \emph{tree}
+built from the programme's frozen tactical and strategic token vocabulary, refined by a two-stage code over
+kinematic-prior residuals, so that vocabularies of $10^{5}$--$10^{7}$ leaves are searched by beam retrieval
+(a cost proposition and a measured pruning study are given). (ii)~A short chain of prior-encoded rules---kinematic
+feasibility, state-conditioned admissibility, hysteresis, and conformal keep-sets with a stated recall bound---reduces the candidate set
+before any expensive computation, and the survivors are fed back to the backbone for candidate-conditioned re-scoring.
+(iii)~We show that the InfoNCE optimum is a pointwise mutual information whose argmax is biased under a cruise-dominated prior and
+correct it with a fitted log-prior. (iv)~Imagination is restricted to an \emph{identifiable} factorisation---a non-reactive scene
+forecast, a known kinematic map and a contrastive future critic---gated by two-head agreement.
+(v)~An elastic-sensing controller chooses cameras and visual-token budgets per tick from cheap cues, and an audio branch is tokenised
+into the backbone's embedding space with explicit controls. (vi)~A frozen multi-billion-parameter backbone violates the programme's
+sub-300\,M target, so the interface is a fixed-dimension embedding space that a distilled student can occupy, with a decision-preservation
+bound. We report only what exists: closed-form propositions with proofs, a real-data check that a physical-limit mask
+removes $78\%$ of a trajectory set while retaining all $881/881$ logged futures, toy measurements of the prior bias, and a pre-registered
+protocol with both outcomes committed for every hypothesis. No end-to-end HiCAP model has been trained.
+\end{abstract}
+
+\input{sec_intro}
+\input{sec_related}
+\input{sec_problem}
+\input{sec_method}
+\input{sec_imag}
+\input{sec_elastic}
+\input{sec_theory}
+\input{sec_eff}
+\input{sec_prelim}
+\input{sec_protocol}
+\input{sec_diff}
+\input{sec_limits}
+
+\bibliography{refs}
+
+\appendix
+\input{app_vocab}
+
+\end{document}

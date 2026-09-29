@@ -1,0 +1,30 @@
+% ---------------------------------------------------------------------------
+\section{Imagination that can be trusted}\label{sec:imag}
+% ---------------------------------------------------------------------------
+Prediction structure and imagination are the natural way to give a selector a sense of consequence: rather than asking ``which candidate resembles what the expert did'', ask ``what happens if I do this''.
+The obstacle is identification. A world model trained on expert logs sees each action only in the states where the expert chose it, so its answer for any other action is an extrapolation.
+Our programme measured two consequences of trusting such extrapolations: a rollout can be perfectly self-consistent for a candidate that is implausible, and rollout confidence can rise while rollout fidelity falls\evI.
+HiCAP therefore imagines only what the data can identify (Proposition~\ref{prop:ident}) and uses the result one-sidedly.
+
+\paragraph{Factorised outcome.}
+For a candidate leaf $a$ the outcome is $(W,e_a)$: the future scene $W$ (other agents, over the horizon) and the ego path $e_a=\kappa(a,e_t)$, a \emph{known} function of the leaf and the ego state. Only $W$ needs to be learned, and under the non-reactive assumption of Proposition~\ref{prop:ident} it does not depend on $a$.
+Crucially, $W$ is represented as \emph{agent tracks in the current ego frame}, not as future camera frames: a future frame contains the ego's own motion and would smuggle the action into the target, breaking the very independence the proposition needs.
+
+\paragraph{Components.}
+\begin{enumerate}
+\item \textbf{Scene forecast head.} From the fusion tokens (trainable motion tokens included, because frozen tokens lack metric range) a set decoder predicts $K_W=16$ agent slots (position, velocity, existence, covariance) at $0.5,1,2,4,6$\,s. Labels are the logged 3-D agent tracks (privileged, label side, available for $96.83\%$ of training clips\evI), matched to slots by the Hungarian algorithm. One forecast is computed per tick and shared by all candidates.
+\item \textbf{Interaction cost (analytic).} $c_A(W,e_a)$ combines minimum time-to-collision and minimum clearance between $e_a$ and the forecast tracks, integrating the forecast covariance; it is evaluated only for the pruned survivors ($|K|\le32$).
+\item \textbf{Contrastive future critic.} $g(s,a,s')=\tau\langle\Phi(s,a),\mathbf z(s')\rangle$ with $s'$ an embedding of the realised future \emph{agent set} encoded by a small set encoder, trained with in-batch InfoNCE against other windows' futures; Proposition~\ref{prop:future} says its optimum is a pointwise mutual information between candidate and outcome. Mapped to a cost by isotonic calibration on held-out episodes it gives the second head $c_B$.
+\item \textbf{Reactivity correction.} A bounded term $\Delta_{\text{react}}(s,a)\in[-r_{\max},0]$ lets the cost of a candidate fall when agents would plausibly yield; its weight is limited by $r_{\max}$ and it is reported as a separate row, because the assumption it patches is the one most likely to fail.
+\end{enumerate}
+\begin{equation}
+c_{\text{img}}(s,a)=\gamma(s,a)\,\max\!\Big(0,\ \tfrac12\big(c_A+c_B\big)+\Delta_{\text{react}}\Big),\qquad
+\gamma(s,a)=\mathbb 1\big[\,|c_A-c_B|\le\eta\,\big],
+\end{equation}
+with the agreement tolerance $\eta$ calibrated on held-out training episodes. The decision rule of \S\ref{sec:train} adds $\lambda_{\text{img}}c_{\text{img}}$ to the cost. Two design choices follow directly from the failure modes above: imagination can only \emph{add cost}, never subtract it, so it cannot make a candidate look better than the base score does; and when the two independent heads disagree it has no effect, so a rise in confidence cannot come from a single head extrapolating. The forecast head is also what lets the elastic controller of \S\ref{sec:elastic} read the number and closeness of agents as a cheap cue.
+
+\paragraph{Loss and cost.}
+$\mathcal L^{\text{img}}=\mathcal L^{\text{forecast}}+\mathcal L^{\text{nce}}_{\text{future}}+\mathcal L^{\text{cal}}$ (slot-set loss, InfoNCE and calibration). At run time the added cost is one set decoder per tick and $|K|\times K_W\times5$ closed-form evaluations, which is negligible next to the backbone.
+
+\paragraph{What could go wrong, and how the protocol sees it.}
+(i)~The forecast may be poor because the backbone features lack range; the failure is visible as a low-quality forecast and no longitudinal gain (H-HC8). (ii)~The programme's earlier attempt to train an agent detector jointly with the trunk failed a two-seed capacity gate at $17$\,M parameters and the deranged-join control reproduced the whole degradation\evI; here the head sits on a frozen backbone and does not compete with a trunk for capacity, but that is a hypothesis. (iii)~The non-reactive assumption fails at exactly the interactions that matter (yielding, merging); the one-sided form limits the damage, and the reactivity row and the imagination-shuffled control (NC7) measure it.

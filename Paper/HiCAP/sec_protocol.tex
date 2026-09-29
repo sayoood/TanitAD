@@ -1,0 +1,54 @@
+% ---------------------------------------------------------------------------
+\section{Pre-registered evaluation protocol}\label{sec:protocol}
+% ---------------------------------------------------------------------------
+This protocol is committed before any HiCAP checkpoint exists. It extends the programme's draft pre-registration for the flat contrastive selector (REF-F, hypotheses H-F1--H-F8), which it contains as
+the special case of one level, one backbone and no imagination. The freeze rule is the programme's: the PI approves the document, its hash is recorded before the first checkpoint, and any later change is a dated amendment.
+
+\paragraph{Data, estimator, reference.}
+Training uses the v7 corpus ($4{,}572$ clips); evaluation uses the programme's T1 open-loop panel of $4{,}823$ windows over $141$ episodes. The corpus is non-parity, so results are valid as differences between arms trained on it and never as levels against parity arms.
+Every interval is an episode-cluster bootstrap (B\,=\,2000, cluster = episode) on the full-set mean; two arms on the same windows are compared with the paired version; the deprecated split-mean estimator is refused. Because a zero-lever replicate has been measured to read ``separably worse'' on $5$ of $9$ family metrics in this programme\evI, every arm carries a seed-1 replicate and a bar is met only if the effect is at least $10\%$ relative and at least three times the replicate floor measured in the same panel.
+The reference arm is refcv5-v2 (the newest arm with results; the base configuration of the never-launched refcv6), with the hold-current-action control $\texttt{ha}$, its constant-velocity extension $\texttt{ha0\_ext}$ and $\texttt{ha0}$; any HiCAP arm must beat $\texttt{ha0\_ext}$ and $\texttt{ha}$ separated, not just the trained reference.
+Learning-curve exponents are not used: data-efficiency claims use matched-step ratios only.
+
+\paragraph{Four metric families, per family, never pooled.}
+\emph{Longitudinal}: speed MAE, target-speed accuracy at $0.5$\,m/s, along-track MAE, headway, time-gap and minimum TTC with $n_{\text{closing}}$ and the censored share. \emph{Lateral}: heading, yaw rate, cross-track and \emph{masked} curvature against the straight-line floor. \emph{Tactical}: lateral and longitudinal accuracy and $\kappa$ of the factored decision, cell-selection accuracy, goal-point error and bearing. \emph{Strategic}: route accuracy, $\kappa$ and $n$; reported UNAVAILABLE with the reason where $n=0$ (today five strategic actions are usable, \S\ref{sec:vocab}).
+Rows are stamped: T1 open loop, non-parity, and for every nav-fed row the paired nav-zero row, since the navigation command is an oracle input.
+
+\paragraph{Negative controls, run first; a panel is void if one fails in the stated way.}
+\textbf{NC1} state permutation (embeddings shuffled across windows): ADE must degrade to at least the frequency-prior baseline. \textbf{NC2} random vocabulary instead of farthest-point codes: must not beat the designed vocabulary. \textbf{NC3} $k$-NN retrieval in the same frozen feature space: HiCAP must be separated-better, else the heads add nothing. \textbf{NC4} ego-only and image-only variants: the ego-only score must not approach the full model (copycat risk). \textbf{NC5} nav-zero and nav-shuffled. \textbf{NC6} flat tactical (no parent restriction) and shuffled parent. \textbf{NC7} imagination-shuffled and action-shuffled. \textbf{NC8} random camera/token gate at the matched budget. \textbf{NC9} audio-null and audio-shuffled.
+
+\begingroup\footnotesize\setlength{\tabcolsep}{4pt}\setlength{\LTcapwidth}{\textwidth}
+\begin{longtable}{@{}p{1.3cm}p{3.8cm}p{5.3cm}p{4.9cm}@{}}
+\caption{Hypotheses with both outcomes committed. ``Non-inferior'' means the upper 95\% bound of the paired difference in ADE@2\,s lies below $+0.02$\,m; ``separated'' means the 95\% interval excludes zero. Thresholds are pre-registered proposals that the PI may amend before the freeze. Verdicts are SUCCESS, FAIL, INCONCLUSIVE or MISSING\_DATA; INCONCLUSIVE is not a pass.}\label{tab:hyp}\\
+\toprule
+id & measurement & CONFIRM if $\Rightarrow$ consequence & REFUTE if $\Rightarrow$ consequence \\ \midrule
+\endfirsthead
+\toprule
+id & measurement & CONFIRM if $\Rightarrow$ consequence & REFUTE if $\Rightarrow$ consequence \\ \midrule
+\endhead
+\bottomrule
+\endfoot
+
+H-HC0 gate & $k$-NN over frozen VLM tokens, motion tokens and $v_0$ versus hold-speed, non-steady windows, paired, before any head is trained & $k$-NN separated-better $\Rightarrow$ the frozen features carry decision signal; proceed & not separated $\Rightarrow$ change backbone or adapter before any head training \\
+H-HC1 adapter & paired ADE with the ego channel zeroed, with versus without the motion adapter & with-adapter separated-better by $\ge10\%$ $\Rightarrow$ adapter is needed for metric motion & not separated $\Rightarrow$ drop the adapter (2\,M parameters) \\
+H-HC2 driving knowledge & R2 versus R1 (same heads), paired, all four families; second surface off PhysicalAI & R2 separated-better on $\ge1$ family, non-inferior on the rest, on both surfaces $\Rightarrow$ driving tuning helps & R1 non-inferior $\Rightarrow$ keep the general backbone; a gain only on PhysicalAI is reported as contamination-suspect \\
+H-HC3 tree vs flat & beam-retrieved tree versus flat softmax over the identical leaf set & non-inferior with $\ge10\times$ fewer nodes touched $\Rightarrow$ adopt the tree & lower bound $>+0.02$\,m $\Rightarrow$ factorisation loses accuracy; use flat plus pruning \\
+H-HC4 prior correction & KL of selected-class frequency to ground truth, and steady-window ADE: InfoNCE argmax versus $\beta$-corrected versus soft-target softmax & InfoNCE-only has the larger KL and separated-worse steady ADE $\Rightarrow$ correction mandatory & no separated difference $\Rightarrow$ drop the correction \\
+H-HC5 vocabulary scale & $K_3\in\{4\text{k},16\text{k},64\text{k},256\text{k}\}$ per cell: oracle-in-set, tree-selected and flat-selected ADE & tree-selected non-increasing $4\text{k}\to64\text{k}$ within margin while flat-selected worsens (paired, separated) $\Rightarrow$ scale is usable only with the tree & tree-selected worsens like flat $\Rightarrow$ selection, not retrieval, is the bottleneck; keep $K_3=4\text{k}$ \\
+H-HC6 pruning & R1 retention of logged futures; conformal coverage on episode-disjoint test; share of level-3 nodes removed & retention lower bound $\ge0.99$, coverage $\ge1-\sum\alpha_\ell-0.01$, $\ge50\%$ pruned $\Rightarrow$ rules ship as hard masks & retention $<0.99$ $\Rightarrow$ widen or demote to costs \\
+H-HC7 re-score & candidate-conditioned late-interaction re-score versus dot product only & separated-better on ADE or on the longitudinal family, non-inferior on the rest $\Rightarrow$ keep the block & not separated $\Rightarrow$ the dual encoder suffices; drop it \\
+H-HC8 imagination & gated imagination re-rank versus same model without; headway and TTC on closing windows; reliability of the imagination score by horizon & separated-better longitudinally, NC7 removes $\ge$ half the gain, and the gate switches off when heads disagree $\Rightarrow$ keep & no gain, or NC7 does not degrade $\Rightarrow$ imagination is not used; remove \\
+H-HC9 student & HiCAP-S ($\le300$\,M) versus HiCAP-R: paired ADE, level-2 agreement, share of windows meeting the margin condition & non-inferior, agreement $\ge90\%$, condition met on $\ge80\%$ $\Rightarrow$ sub-300\,M target met with the guarantee & otherwise $\Rightarrow$ end-to-end student, guarantee lost \\
+H-HC10 elastic sensing & requires extra-camera caches: gated versus full camera set; token gate on front-only meanwhile; mean visual tokens & non-inferior at $\le50\%$ of the tokens and separated-better than NC8 $\Rightarrow$ adopt the gate & not separated from random $\Rightarrow$ the cues do not predict value; use a static set. INCOMPLETE until caches exist for cameras \\
+H-HC11 latency and precision & $\ge1{,}000$ ticks on Thor: fast-path p95, VLM refresh p95 at the chosen camera count, NVFP4 versus BF16 feature drift & fast path p95 $\le25$\,ms, refresh p95 $\le50$\,ms (one camera), drift within the margin $\Rightarrow$ fits the 100\,ms tick & otherwise $\Rightarrow$ profile; shrink or cache more \\
+H-HC12 audio & synthetic sirens/horns injected into driving clips: yield/brake decision rate with audio versus audio-null; natural windows unchanged & separated-higher on injected windows, equal within margin on natural windows, NC9 removes the gain $\Rightarrow$ branch is wired and controlled (not a real-world claim) & no gain $\Rightarrow$ audio path not usable on this corpus \\
+H-HC13 data efficiency & four-family panel at $3/10/30/100\%$ of training hours, nested episode subsets, versus the reference at matched fractions & relative ADE loss at $10\%$ and $3\%$ separated-smaller than the reference's $\Rightarrow$ first evidence for the data goal & not separated $\Rightarrow$ no data-efficiency edge here \\
+H-HC14 closed loop & NuRec/AlpaSim, paired against the reference: pass rate, collisions, jerk, $n\ge30$ scenes & pass rate non-inferior, jerk not separated-worse $\Rightarrow$ closed-loop reference & separated-worse $\Rightarrow$ strengthen stage 3. $n<30$ gives INCOMPLETE regardless of the point estimate (the programme's provisioned scene count is currently $1$) \\
+\end{longtable}
+\endgroup
+
+\paragraph{Stopping rules.}
+If NC1 fails, stop and diagnose before reading any other result. If H-HC0 is refuted, no head is trained on that backbone. No arm is tuned on validation; temperature, $\beta$, $\lambda$, $\alpha_\ell$ and the gate thresholds are fitted on held-out training episodes.
+
+\paragraph{What this protocol does not test.}
+It is not a strategic-level result (five usable strategic actions, no route supplier other than the ego's own future, no map); it is not a safety claim (pruning that uses agent states is an oracle-perception simulation until a learned range head exists); and it says nothing about the released CLM-8B model itself.

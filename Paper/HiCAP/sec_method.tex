@@ -1,0 +1,136 @@
+% ---------------------------------------------------------------------------
+\section{Method}\label{sec:method}
+% ---------------------------------------------------------------------------
+Figure~\ref{fig:arch} shows the system. A frozen VLM turns camera frames into semantic tokens at a slow rate; a tiny trainable
+motion adapter supplies what a frozen single-frame model cannot; a small fusion transformer with three level queries produces one unit-norm
+state readout per decision level; and the action side is a tree of cached embeddings searched top-down under a chain of prior-encoded
+pruning rules. Language never generates anything: the language tower embeds token definitions once, and is used at run time only by the
+optional System-2 verifier (\S\ref{sec:prune}).
+
+\begin{figure}[p]
+\centering
+\resizebox{\textwidth}{!}{\input{fig_arch}}
+\caption{HiCAP. Blue: frozen. Orange: trained. Green: cached embedding tables of the action tree. Pink: pruning and admissibility rules. The VLM refreshes at 2\,Hz, the motion adapter and fusion at
+10\,Hz, and the level readouts update at 2/5/10\,Hz. A parent's choice restricts its children (a hard beam) but is not an input to the child's readout. Survivors of the pruning cascade are returned to the fusion transformer as candidate tokens for re-scoring;
+a System-2 verifier runs only when the top-two margin is small or the two imagination heads disagree. The dashed box is label-time supervision, never available at inference.}
+\label{fig:arch}
+\end{figure}
+
+\subsection{Backbone, motion adapter and fusion}\label{sec:backbone}
+\paragraph{Frozen semantic backbone.}
+The backbone $\mathcal V$ is a frozen vision--language model. At the slow rate it reads the selected cameras and a fixed short prompt once (prefill only) and we cache two
+things: the hidden states of the visual tokens at a chosen late layer, pooled to at most $N_v=128$ tokens by fixed adaptive pooling, and the last-token hidden state
+(the CLM readout). The backbone choice is a design decision with pending inputs, treated in \S\ref{sec:backbone-choice}; the interface is fixed regardless of the choice
+(visual tokens of width $d_v$, a text tower, optionally an audio input).
+
+\paragraph{Motion adapter.}
+Frozen image and video encoders were measured to fail at metric ego-motion in this programme (a frozen single-frame encoder scored $2.1675$\,m ADE, REF-A\evI), and even a trained
+driving trunk collapses without the ego channel ($1.1310$\,m against $0.2975$\,m when the ego state is zeroed on refcv4b\evI). The adapter $M_\phi$ ($\approx 2$\,M parameters)
+therefore takes the three-frame stack (100\,ms apart) at $64\times160$, with inter-frame differences, and returns $N_m=16$ motion tokens. It is the only vision component
+that is trained, and it is trained on frame pairs, not on single frames.
+
+\paragraph{Fusion transformer.}
+$F_\theta$ ($d=512$, six layers, eight heads, $\approx19$\,M parameters\evE) reads: the $N_v$ projected VLM tokens (each with a Fourier embedding of its \emph{age}, since VLM tokens are reused
+between refreshes), the $N_m$ motion tokens, one ego token (an MLP over $e_t$ with a learned null row for ego-dropout), one navigation token, optionally $N_a$ audio tokens, and
+three learned level queries $q_1,q_2,q_3$. The state readouts are
+\begin{equation}
+\mathbf s_\ell=\operatorname{norm}\big(H_\ell(F_\theta(\cdot)[q_\ell])\big),\qquad H_\ell:\Real^{512}\!\to\!\Real^{1024}\!\to\!\Real^{512},
+\end{equation}
+with the tactical level split into a lateral and a longitudinal query ($\mathbf s_2^{\text{lat}},\mathbf s_2^{\text{lon}}$), because the programme measured that a single softmax mixing the two
+destroys the longitudinal decision. Readouts are Matryoshka-nested: the sum of the losses is taken at prefix widths $m\in\{128,256,512\}$ so that early levels can be scored at lower width
+(\S\ref{sec:elastic}). The trainable part of the model is $\approx27$\,M parameters\evE (fusion, adapter, three readout heads, three action towers).
+
+\subsection{The action tree and its vocabularies}\label{sec:vocab}
+The PI's instruction was to use the last tactical vocabulary of the programme's dataset as the action space. That vocabulary is the frozen v7 vocabulary (\texttt{vocab\_v7.py}, frozen 2026-08-23): $56$ declared slots
+($8+7+22+8+8+3$), $52$ distinct strings, ids equal to tuple indices, extension only through a new versioned tuple\evI. Table~\ref{tab:vocab} maps it onto the tree; the full token lists with counts are in Appendix~\ref{app:vocab}.
+
+\begin{table}[t]
+\centering\small
+\caption{The action tree. \emph{Declared/populated} counts are per-field over the $4{,}719$ clips of the v7 corpus\evI; a token with $n=0$ is masked in the loss and in retrieval
+(head width stays full). Level~3 is a design vocabulary, not a shipped one: its size $K_3$ is a parameter studied in \S\ref{sec:eff}.}
+\label{tab:vocab}
+\begin{tabularx}{\textwidth}{@{}p{2.1cm}p{2.3cm}p{2.7cm}p{2.1cm}X@{}}
+\toprule
+level & declared / populated & source & band, rate & node embedding \\ \midrule
+L1 strategic action $a_{\text{str}}$ & $7$ / $5$ & ego-future geometry (label) & $[8,30]$\,s, 2\,Hz & frozen text tower on the token definition $\oplus$ arguments (\texttt{within\_m}, \texttt{by\_time\_s}) $\to$ MLP \\
+L2 tactical cell $(a_{\text{tac}}^{\text{lat}},a_{\text{tac}}^{\text{lon}})$ & $8\times8=64$ / $5\times7=35$ & ego-future geometry (label) & $[2,6]$\,s, 5\,Hz & two factored embeddings (lat, lon) from text $\oplus$ arguments (\texttt{v\_target\_ms}, \texttt{within\_m}); pair-admissibility bias $b(c_{\text{lat}},c_{\text{lon}})$ \\
+(side) tactical goals $g_{\text{tac}}$ & $22$ / $22$ (eight with $n<30$) & geometry + Alpamayo text (aux label) & $[2,6]$\,s & multi-label head on $\mathbf s_2$; 22 exclusive pairs; goal point $(x,y,t_{\text{reach}})$ regressed \\
+L3a coarse residual code & $K_c$ per cell & train residuals over the CTRA prior & $[0,6]$\,s, 10\,Hz & numeric MLP on the coarse centre \\
+L3b fine residual code & $K_f$ per coarse code & same, within a coarse cluster & same & numeric MLP on the full residual profile \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{Why these three levels, and their limits.}
+The operative band $[0,2]$\,s has no tokens by design in the programme's vocabulary; it is a continuous quantity, which is what Level~3 encodes. The strategic supply is thin:
+four of eight strategic goals and two of seven strategic actions have zero examples (no map, no time expression in the source text), leaving five usable strategic actions with
+\cell{HOLD\_MAIN\_ROAD} alone at $2{,}468$ of $4{,}719$ clips\evI; lane changes are unreachable as tactical lateral actions because the emitter has no branch for them. So Level~1 is a five-way decision today. We keep the level because it
+is the programme's thesis and the tree admits growth without redesign, but every strategic claim in this paper is conditional on that supply, and the pre-registration reports the strategic family
+with its $n$ and reason (\S\ref{sec:protocol}).
+
+\paragraph{Node embeddings.}
+For Levels 1 and 2 the embedding is $\mathbf a_v=\operatorname{norm}\big(G_\ell([\mathbf t_v;\varphi(\text{args}_v)])\big)$, where $\mathbf t_v$ is the last-token hidden state of the frozen language tower on the token's definition string (computed once and cached) and
+$\varphi$ a Fourier feature map of the numeric arguments. Text embedding gives structured geometry for free (\cell{PREPARE\_TURN\_L} lands near \cell{TURN\_L}) and lets a new versioned token be added with a meaningful initialisation. The tactical cell is scored
+\emph{factored},
+\begin{equation}
+f_2\big(s,(c_{\text{lat}},c_{\text{lon}})\big)=\tau_2\langle\mathbf s_2^{\text{lat}},\mathbf a_{c_{\text{lat}}}\rangle+\tau_2\langle\mathbf s_2^{\text{lon}},\mathbf a_{c_{\text{lon}}}\rangle+b(c_{\text{lat}},c_{\text{lon}}),
+\end{equation}
+with $b=-\infty$ for pairs the programme's goal-admissibility tables forbid and a learned scalar elsewhere, so the lateral and longitudinal decisions remain separately evaluable as the marginals of one distribution.
+
+\paragraph{Trajectory codes: residual over a physical prior.}
+Let $\pi_{\text{prior}}(e_t)$ be the CTRA roll-out of the ego state, and $r=y^\star-\pi_{\text{prior}}(e_t)$ the residual of the logged 6\,s path on the eight slots. For each populated cell $c$ we collect the
+residuals of \emph{training-split} windows assigned to that cell, run farthest-point selection with a time-weighted $L_2$ distance to $K_c$ coarse centres, refine by $k$-means, and repeat inside each coarse cluster to get $K_f$ fine
+centres; a leaf is therefore $(c,i,j)$ and the codebook holds $35K_cK_f$ distinct residual profiles. Cells with fewer than $n_{\min}$ training windows back off to the codebook of their lateral class. The residual parameterisation has two purposes: the prior
+removes the speed-dependent part of the path, so a code means ``brake harder than the prior'' rather than ``end 14\,m ahead'', and the physical prior is exactly what makes the kinematic pruning rules of \S\ref{sec:prune} cheap. The shipped
+label window covers only $\pm2$\,s around each clip's anchor; for other windows the cell is recomputed from the window's own future path with the same threshold rules the label emitter uses (label-side only), which is an integration item
+because the emitter lives on a branch not yet in the repository (\S\ref{sec:limits}).
+
+\subsection{Scoring and training}\label{sec:train}
+\paragraph{Per-level distribution.}
+With kept children $K_\ell(u)\subseteq C(u)$ (\S\ref{sec:prune}), level $\ell$ defines
+\begin{equation}
+\hat p_\ell(v\mid u,s)=\operatorname{softmax}_{v'\in K_\ell(u)}\Big(\tau_\ell\langle\mathbf s_\ell,\mathbf a_{v'}\rangle+\beta_\ell\log\hat q_\ell(v'\mid u)\Big)_v,
+\end{equation}
+with $\tau_\ell=e^{\theta_\ell}$ initialised at $1/0.07$ and clamped at $100$ as in CLM, and $\hat q_\ell(\cdot\mid u)$ the train-split child frequency with additive smoothing. By Corollary~\ref{cor:bias} the InfoNCE-trained critic carries
+$-\log\bar p$, so $\beta_\ell$ is fitted on held-out training episodes (grid $\{0,0.25,0.5,1,2\}$); with the soft-target softmax loss below the prior is already absorbed and $\beta_\ell=0$ is the default.
+
+\paragraph{Losses.} The total loss is
+\begin{equation}
+\mathcal L=\sum_{\ell=1}^{4}\lambda_\ell\mathcal L^{\text{voc}}_\ell+\lambda_{\text{c}}\mathcal L^{\text{cons}}+\lambda_{\text{g}}\mathcal L^{\text{goal}}+\lambda_{\text{k}}\mathcal L^{\text{cost}}+\lambda_{\text{r}}\mathcal L^{\text{ref}}+\lambda_{\text{i}}\mathcal L^{\text{img}}+\lambda_{\text{a}}\mathcal L^{\text{aud}},
+\end{equation}
+where $\mathcal L^{\text{img}}$ and $\mathcal L^{\text{aud}}$ are defined in \S\ref{sec:imag} and \S\ref{sec:elastic}.
+\begin{itemize}
+\item \textbf{Vocabulary loss.} $\mathcal L^{\text{voc}}_\ell=-\sum_{v\in C(u^\star)}y_\ell(v)\log\hat p_\ell(v\mid u^\star,s)$ with the logged parent $u^\star$. Levels 1--2 use the label, masked for empirically absent classes. Levels 3a/3b use soft targets
+$y(v)\propto\exp\!\big(-d_{\text{tw}}(y^\star,\hat y_v)^2/2\sigma^2\big)$ over the children of the logged parent, with $\sigma=0.5$\,m, following VADv2's distance-weighted target \citep{chen2024vadv2}; any candidate within $0.25$\,m of the logged path is never a negative.
+For Level~3 the parent is the sampled (not the logged) one with probability $\rho$, ramped from $0$ to $0.3$, to reduce cascade exposure bias; the soft target is then computed against the sampled parent's children.
+\item \textbf{Contrastive stage-1 variant.} In stage~1 the Level-3 loss can be the bidirectional in-batch InfoNCE of CLM with the same false-negative mask; Corollary~\ref{cor:bias} says what it estimates and the $\beta$ fit repairs it. Which of the two is better is registered as an ablation, not assumed.
+\item \textbf{Goal loss.} A multi-label head on $\mathbf s_2$ over the 22 tactical goals, binary cross-entropy with positive weight capped at $50$, negatives supervised only for goals emitted from geometry or entailed false by an exclusive pair, plus an exclusivity penalty; and a regression of the goal point at $2/4/6$\,s. Goals are \emph{predicted}, never supplied.
+\item \textbf{Consistency.} Unconditional level heads $\tilde p_\ell(v\mid s)=\operatorname{softmax}_{v\in V_\ell}(\tau_\ell\langle\mathbf s_\ell,\mathbf a_v\rangle)$ serve the faster update rates; $\mathcal L^{\text{cons}}=\sum_\ell\mathrm{KL}\big(\operatorname{sg}[\hat p^{\text{cascade}}_\ell]\,\|\,\tilde p_\ell\big)$ ties them to the cascade marginal.
+\item \textbf{Cost heads (Hydra-style).} Per leaf, heads $\hat c_k(s,v)=\mathrm{MLP}_k(\mathbf s_3\odot\mathbf a_v)$ predict privileged costs: minimum time-to-collision proxy and minimum clearance, computed from the logged \emph{agent tracks} replayed non-reactively against each leaf's path (\S\ref{sec:imag}), and progress deficit. Comfort (acceleration and jerk) is computed exactly from $\hat y$ and needs no head. Distilling per-family sub-scores rather than one scalar follows \citet{li2024hydramdp}.
+\item \textbf{Refinement.} $\delta=g(\mathbf s_3,\mathbf a_v)$, $L_1$ to the residual left after the code. It turns the vocabulary into a set of \emph{open} candidates, so the vocabulary bounds the search, not the accuracy.
+\end{itemize}
+
+\paragraph{Curriculum.} Three stages on cached features, as in CLM. Stage~1 trains all levels with sampled sibling negatives and no hard negatives. Stage~2 adds mined near-miss negatives (siblings whose ADE against the logged path lies in $[0.25,1.0]$\,m, plus synthetic speed-scaled copies of the positive) with $40\%$ stage-1 replay; CLM reports that hard negatives from the start overfit
+($62.4\%$ against $69.2\%$)\evP{} (release README, not re-run here). Stage~3 unfreezes fusion and heads jointly and adds cost, refinement, imagination and audio losses, again with replay. Optimisation follows the programme's pre-registration: AdamW, no weight decay,
+$\text{lr}=2\!\times\!10^{-3}\sqrt{1024/\text{width}}\sqrt{\text{batch}/1024}$, one-cycle with $10\%$ warm-up, batch $2{,}048$, three seeds per arm; intervals pool over episodes, never seeds.
+
+\paragraph{Decision rule.}
+\begin{equation}
+a^\star=\arg\min_{v\in K_3}\ \sum_{k}w_k\,\hat c_k(s,v)\;-\;\lambda\log\hat p(v\mid s),\qquad \hat p(v\mid s)=\prod_{\ell}\hat p_\ell(v_\ell\mid v_{\ell-1},s),
+\end{equation}
+with the cost weights $w_k$ fixed \emph{a priori} by the four-metric-family policy and $\lambda$ fitted on held-out training episodes, never on validation data. With $w=0$ this is the maximum-likelihood leaf.
+
+\subsection{Prior-encoded pruning and candidate-conditioned re-scoring}\label{sec:prune}
+The candidate space is reduced by a short, ordered chain of rules, each stated so that its failure mode is measurable. Rules R1--R3 are hard and cheap; R4--R5 are soft; R6 is a calibrated guarantee.
+\begin{description}[leftmargin=2.2em,style=nextline]
+\item[R1 Kinematic feasibility (hard).] Keep leaf paths whose implied longitudinal acceleration, braking and lateral acceleration, given $v_0$, lie inside physical limits $\mathcal B_{\text{phys}}=(6,10,9)$\,m/s$^2$. Measured on real windows in \S\ref{sec:prelim}: it removes $78\%$ of a speed-agnostic anchor set and keeps every logged future.
+\item[R2 State-conditioned admissibility (hard, calibrated).] Bin the ego state; keep tactical cells whose training frequency in that bin exceeds $\epsilon_A$, then calibrate $\epsilon_A$ conformally (R6) so that the logged cell is retained with a stated probability.
+\item[R3 Route consistency (hard in the nav-fed arm only).] With $n_t=$ left, exclude right-turn cells and conversely. The navigation command is oracle-perfect in the corpus, so a hard rule looks better here than it will deploy; the nav-zero arm is the deployment-honest row and the rule is off there.
+\item[R4 Goal admissibility (soft).] The predicted goal set contributes a log-prior bonus to the cells that serve those goals, using the programme's goal-to-action admissibility tables; it is soft because a wrong predicted goal must not delete the right cell.
+\item[R5 Hysteresis (soft).] Leaves within a ball around the time-shifted previous plan receive a prior bonus, and switching requires a margin, to suppress oscillation.
+\item[R6 Conformal keep-sets (guarantee).] Per level, keep the smallest set whose score threshold has calibrated coverage $1-\alpha_\ell$ (Proposition~\ref{prop:conformal}), giving joint recall $\ge1-\sum_\ell\alpha_\ell$ under episode-level exchangeability.
+\end{description}
+\paragraph{Feeding the survivors back to the backbone.}
+The pruned set $K$ (at most $32$ leaves) is not only scored by the dot product. Their embeddings and refined paths are appended to the fusion transformer's input as \emph{candidate tokens} and a two-layer late-interaction block, in which candidates attend to the scene tokens but not to each other, produces a re-score $\tilde f(s,v)$; late interaction over a small set is the standard remedy for the rank cap of a single dot product \citep{weller2025limits,khattab2020colbert}. Cost is two cross-attention layers over $\approx160+|K|$ tokens.
+Optionally, a \emph{System-2 verifier} runs when the top-two margin of $\tilde f$ is below $m_{\min}$ or the imagination heads disagree: the top $K_2\le5$ survivors are rendered as short text (\emph{lat=LANE\_KEEP, lon=BRAKE\_TO, target 6\,m/s}), one extra prefill of the VLM reads the scene and each rendering, and the CLM match score between the prompt's last-token embedding and the candidate text embeddings is added to the re-score.
+The verifier fires only in uncertain ticks and fits inside the slow loop; it is the only place where the language side of the backbone acts at inference.

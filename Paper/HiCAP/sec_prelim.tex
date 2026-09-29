@@ -1,0 +1,87 @@
+% ---------------------------------------------------------------------------
+\section{Preliminary measurements}\label{sec:prelim}
+% ---------------------------------------------------------------------------
+No HiCAP model exists, so these are the only measured statements in the paper. They are deliberately narrow: numpy-only scripts on committed artifacts, each using only quantities available at inference,
+plus toy worlds in which the true answer is known. Each of them tests one \emph{mechanism} the design relies on; none tests the system. Scripts and result files are listed in the repository manifest at the end of this section.
+
+\subsection{The contrastive optimum is biased toward rare actions, and a fitted log-prior repairs it}
+\label{sec:prelim-pmi}
+Corollary~\ref{cor:bias} predicts that an InfoNCE-trained selector picks the pointwise-mutual-information maximiser, which under-chooses the dominant action. We test this in a synthetic driving-like world with $60$ states, $16$ actions and a cruise-dominated prior
+(true cruise share $0.503$ on average), a dual encoder of width $24$ with L2-normalised embeddings and $1/0.07$ logit scale as in CLM, trained for $4{,}000$ steps at batch $256$ with the false-negative mask; five seeds, each a new world and a new training run.
+The metric is the \emph{hit rate}: the probability that the selected action equals a fresh draw from $p(a\mid s)$ (higher is better; the maximum-likelihood rule is the upper bound for a deterministic pick).
+\begin{table}[h]
+\centering\small
+\caption{Toy world (\evM; \texttt{reff\_pmi\_toy.py}). Hit rate and share of states in which the selector picks ``cruise'', mean $\pm$ SD over five seeds. The true cruise share is $0.503$; the maximum-likelihood rule picks it in $61.3\%$ of states.}
+\label{tab:pmi}
+\begin{tabular}{@{}lrr@{}}
+\toprule
+selector & hit rate & cruise selected \\ \midrule
+maximum-likelihood oracle (upper bound) & $0.597\pm0.006$ & $0.613$ \\
+PMI oracle (the InfoNCE optimum) & $0.361\pm0.019$ & $0.000$ \\
+prior only (always the most frequent action) & $0.503\pm0.027$ & $1.000$ \\
+\midrule
+trained InfoNCE, argmax & $0.575\pm0.004$ & $0.450$ \\
+trained InfoNCE $+\log\hat q$ ($\beta=1$) & $0.586\pm0.005$ & $0.730$ \\
+trained InfoNCE $+\beta\log\hat q$, $\beta$ fitted & $0.594\pm0.006$ & $0.607$ \\
+vocabulary softmax (CLM ``Choice'') & $0.592\pm0.008$ & $0.603$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+The exact PMI critic, scored by argmax, is far worse than always predicting the prior ($0.361$ against $0.503$): the bias is not a small-sample artefact but the optimum itself. The trained InfoNCE selector under-chooses cruise ($45\%$ against $61\%$ for the likelihood rule) and loses $0.022$ hit rate to it. Adding the fitted log-prior recovers to within $0.003$ of the oracle and matches the softmax classifier (paired difference against the classifier $+0.002$, signs mixed over seeds). The fitted $\beta$ was $0.5$ in all five seeds, not the $1$ that the population argument suggests, which is why $\beta$ is fitted on held-out episodes. Corrected minus uncorrected is positive in every seed ($+0.014$ to $+0.027$, mean $+0.019$), but five seeds are five worlds; the pre-registered test is H-HC4 on real data.
+
+\subsection{Coverage of the trajectory space by a nested vocabulary}
+Using the $256$ farthest-point anchors of the programme's reference planner (selected from $200{,}000$ parity-training windows) and the $881$ windows of the $40$ validation episodes, Table~\ref{tab:cover} gives the ADE@2\,s of the \emph{best} member of nested prefixes, with episode-cluster bootstrap intervals ($B=2000$). The second column rescales each anchor uniformly so that its implied initial speed equals the window's current speed, a crude stand-in for the residual-over-prior parameterisation that uses only the inference-time speed.
+\begin{table}[h]
+\centering\small
+\caption{Oracle-in-set ADE@2\,s (m), full-set mean with $95\%$ episode-cluster interval; 881 windows, 40 episodes (\evM; \texttt{reff\_v0\_coverage.py}). This is an upper bound on what a selector over the set can achieve, not a driving result.}
+\label{tab:cover}
+\begin{tabular}{@{}rcc@{}}
+\toprule
+set size & absolute anchors & speed-normalised anchors \\ \midrule
+16 & $2.307\ [2.111,\,2.508]$ & $0.468\ [0.389,\,0.554]$ \\
+32 & $1.661\ [1.533,\,1.776]$ & $0.375\ [0.314,\,0.444]$ \\
+64 & $1.148\ [1.090,\,1.211]$ & $0.270\ [0.225,\,0.318]$ \\
+128 & $0.803\ [0.760,\,0.842]$ & $0.221\ [0.188,\,0.259]$ \\
+256 & $0.599\ [0.564,\,0.634]$ & $0.179\ [0.151,\,0.207]$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+Two things follow. Coverage improves steadily with set size and has not saturated at $256$ for the speed-agnostic set, which is the argument for a much larger vocabulary. And removing the speed-dependent part of the path shrinks the oracle-in-set error by $3.4\times$ at $256$ entries (a set of $32$ speed-normalised anchors already beats $256$ absolute ones), which is the argument for the residual parameterisation. Both are properties of the candidate \emph{set}; the programme's own measurements show that a fixed selector does not automatically convert a larger set into a better pick (\S\ref{sec:eff}).
+
+\subsection{A kinematic-feasibility mask on real windows}
+Rule R1 of \S\ref{sec:prune} keeps a candidate only if its implied acceleration, braking and lateral acceleration, given the window's current speed, lie inside limits. Table~\ref{tab:mask} applies three limit settings to the same $256$ anchors and $881$ windows, and reports the share of candidates removed, whether the \emph{logged} 2\,s future itself passes the mask (recall), and the oracle-in-set error before and after. Only four waypoints exist per path, so accelerations are $0.5$\,s finite differences, coarse but conservative.
+On the logged futures the largest observed longitudinal acceleration is $2.81$\,m/s$^2$, the largest braking $3.51$\,m/s$^2$ and the largest lateral acceleration $5.29$\,m/s$^2$ (\texttt{hicap\_prior\_mask\_result.json}).
+\begin{table}[h]
+\centering\small
+\caption{Mask results (\evM; \texttt{hicap\_prior\_mask\_measure.py}). Limits are (acceleration, braking, lateral) in m/s$^2$. \emph{Removed} is the mean share of the $256$ anchors removed per window; \emph{recall} is the share of windows whose logged future passes; oracle ADE@2\,s (m) with the mask versus without.}
+\label{tab:mask}
+\begin{tabular}{@{}llrrrr@{}}
+\toprule
+limits & anchors & removed & recall & oracle, masked & oracle, unmasked \\ \midrule
+physical (6, 10, 9) & absolute & $0.784$ & $1.000$ ($881/881$) & $0.599$ & $0.599$ \\
+comfort-plus (4, 8, 6) & absolute & $0.846$ & $1.000$ & $0.602$ & $0.599$ \\
+tight (3, 6, 4) & absolute & $0.908$ & $0.976$ & $0.629$ & $0.599$ \\
+\midrule
+physical (6, 10, 9) & speed-normalised & $0.146$ & $1.000$ & $0.179$ & $0.179$ \\
+comfort-plus (4, 8, 6) & speed-normalised & $0.219$ & $1.000$ & $0.181$ & $0.179$ \\
+tight (3, 6, 4) & speed-normalised & $0.300$ & $0.976$ & $0.197$ & $0.179$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+Three findings. (i)~The physical limits remove $78\%$ of a speed-agnostic anchor set and lose nothing: every logged future passes and the oracle error is unchanged (episode-cluster intervals identical to three decimals). If windows were independent this would bound the retention rate below by $0.9966$ at $95\%$; with $40$ episodes the effective sample is smaller, which is why the calibrated conformal mask, not this bound, is the shipped guarantee.
+(ii)~Tight comfort limits are unsafe as hard masks: they remove $2.4\%$ of logged futures and raise the oracle error by $0.03$\,m, so comfort belongs in the cost, not the mask. (iii)~The mask is much less powerful on a candidate set that already knows the current speed: on speed-normalised anchors it removes only $15$--$30\%$. This is the honest consequence of building feasibility into the parameterisation, and it means the rule's value is largest for speed-agnostic or very large sets and smallest for the residual codebook, which is what we would predict and will report.
+
+\subsection{Hierarchical retrieval, imagination and camera gating (toy worlds)}
+\label{sec:prelim-toys}
+\textit{[This subsection is completed from the three toy streams as they report; see the repository manifest.]}
+
+\subsection{Repository manifest for this section}
+\begin{tabular}{@{}p{4.2cm}p{11.6cm}@{}}
+\toprule
+artifact & path (repository; common prefix \texttt{TanitAD Research Hub/Architecture \& Inference/Research/}) \\ \midrule
+contrastive-bias toy & \texttt{reff\_pmi\_toy.py}, \texttt{reff\_pmi\_toy\_result.json} \\
+nested-vocabulary coverage & \texttt{reff\_v0\_coverage.py}, \texttt{reff\_v0\_coverage\_result.json} \\
+kinematic mask & \texttt{2026-09-29-hicap/hicap\_prior\_mask\_measure.py}, \texttt{hicap\_prior\_mask\_result.json} \\
+cost model (arithmetic) & \texttt{2026-09-29-hicap/hicap\_cost\_model.py}, \texttt{hicap\_cost\_model\_result.json} \\
+\bottomrule
+\end{tabular}

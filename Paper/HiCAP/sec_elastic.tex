@@ -1,0 +1,43 @@
+% ---------------------------------------------------------------------------
+\section{Elastic sensing and audio}\label{sec:elastic}
+% ---------------------------------------------------------------------------
+Not every camera, token or channel is worth its cost at every instant, and Table~\ref{tab:thor} shows why it matters: the vision tower's cost is linear in the number of cameras, so
+seven cameras cost about seven times the vision-tower time of one at every refresh. HiCAP therefore treats the sensing configuration as a decision.
+
+\subsection{Choosing cameras, tokens and embedding width}
+\paragraph{Configuration and cue set.}
+A sensing configuration is $\mathcal C_t=\{(c,m_c)\}$: for each camera $c$ a token budget $m_c\in\{0,16,64,160\}$, with the front camera always at least at $16$. The controller sees only \emph{cheap cues} that exist before the expensive pass:
+the ego speed and recent lateral acceleration, the navigation command, the entropy of the previous tick's tactical and trajectory distributions, the size of the previous conformal keep-set $|K_3^{t-1}|$, the number and range of forecast agents from the previous tick, and a low-resolution thumbnail statistic of the front frame.
+
+\paragraph{Value-of-information labels and selection.}
+Where the caches exist, the marginal value of camera $c$ at budget $m$ in state $s$ is measured offline against the teacher selector,
+\begin{equation}
+\Delta_c(s,m)=\ell\big(s;\mathcal C\setminus\{(c,m)\}\big)-\ell\big(s;\mathcal C\big),
+\end{equation}
+where $\ell$ is the decision loss (soft-target cross-entropy plus predicted cost) with the camera removed or its tokens pooled to $m$. A small network $\hat\Delta_\phi(\text{cues},c,m)$ is regressed onto these labels with a Huber loss, and at run time the configuration maximises
+$\sum_c\hat\Delta_\phi-\lambda\,\mathrm{cost}(\mathcal C)$ under a per-tick budget by greedy increments. If the value function were monotone submodular, greedy selection under a budget would be within a factor $(1-1/e)$ of optimal \citep{nemhauser1978analysis}; we make no such claim for cameras and
+instead measure the diminishing-returns profile on the data before trusting the greedy rule (H-HC10).
+Three safeguards make the controller safe to run: a \emph{minimum set} (front camera always on); \emph{escalation}, in which a large conformal keep-set, a small top-two margin or an imagination-gate disagreement forces the full configuration on the next refresh; and \emph{hysteresis}, a switching margin that stops flicker.
+Skipped cameras contribute their last tokens with an age embedding for at most $T_{\max}$ milliseconds and a learned null embedding afterwards.
+
+\paragraph{Training for missing inputs.}
+A camera-dropout curriculum (drop probability ramped from $0$ to $0.3$) replaces dropped cameras by null tokens, so the fusion transformer is robust to any subset. This is also the sensor-failure regime, and the controller's random-gate control (NC8) is scored on the same trained model.
+
+\paragraph{Elastic width.}
+Readouts are Matryoshka-nested \citep{kusupati2022matryoshka}: strategic and tactical retrieval use the first $128$ dimensions, and the trajectory levels use $512$. The Level-3 embedding table at $128$ dimensions is a quarter of the memory traffic of Table~\ref{tab:cost}.
+
+\paragraph{What is and is not testable now.}
+Only the front-wide camera is cached, so \emph{camera} selection cannot be evaluated on real cameras until the other cameras of the upstream dataset are decoded and cached with the same projection and per-clip crop rules. The \emph{token} budget and width parts can be tested on the front camera today. Until then H-HC10 is INCOMPLETE for cameras and the toy in \S\ref{sec:prelim} is the only evidence for the value-of-information mechanism.
+
+\subsection{Audio in the shared embedding space}\label{sec:audio}
+Sirens and horns are decisive cues that are not visible until late, and language and vision models are increasingly omni-modal. We add audio as tokens in the same space as language and vision.
+
+\paragraph{Tokenisation.}
+A frozen audio encoder $E_a$ reads a sliding one-second window and produces audio tokens at $12.5$\,Hz; a learned Perceiver-style pooling reduces them to $N_a=8$ tokens per tick and a projector $P_a$ maps them to the fusion width. Two routes reach the same interface. With a natively omni-modal backbone (Qwen3-Omni's audio encoder emits tokens at $12.5$\,Hz\evP{}, one-hop) the audio tokens enter the backbone itself. With a vision--language backbone that has no audio tower (all of R1--R3), the projector is trained by contrastive alignment of the pooled audio embedding with the pooled visual embedding of the co-occurring scene, in the manner of joint embedding spaces \citep{girdhar2023imagebind}, on public audio--visual data, and is then frozen. The sole small model with a native audio tower and published Thor timings is Gemma-4-E2B (licence unverified).
+
+\paragraph{Data and controls.}
+No corpus the programme uses carries audio, so the branch \emph{cannot} be validated on real driving audio. We test only that it is wired and controlled. Siren, horn and tyre-screech waveforms are mixed into driving clips at signal-to-noise ratios from $-5$ to $20$\,dB, with a Doppler profile consistent with an approaching source, an inter-channel level difference for azimuth and a cabin-noise floor; the injected event type, azimuth and onset are known, so the expected decision (yield, slow, hold) is a stated rule, not a human label. The controls are audio-null, audio-shuffled across clips, and modality dropout at training time so that vision-only operation is unchanged (equality on natural windows is part of H-HC12).
+The construct-validity caveat is unavoidable: a network can learn the synthetic artefact rather than the concept, and a positive result licenses only ``the audio path can change decisions in the intended direction'', never ``audio helps on real roads''.
+
+\paragraph{Where audio acts, and its gate.}
+No new token is needed: the frozen vocabulary already carries the relevant actions (\texttt{YIELD}, \texttt{BRAKE\_TO}, \texttt{CREEP}, \texttt{HOLD}, \texttt{NUDGE\_R}); an emergency-vehicle situation term has insufficient support in the source labels. To save the audio encoder's cost, a cheap band-energy detector wakes it only when siren-like modulated energy appears, and otherwise a null token is used; the detector's false-positive rate is measured. The programme's rule that inference is vision-only concerns the situation classifier and ego-derived inputs; whether audio is admissible at inference needs an explicit ruling (\S\ref{sec:limits}).
