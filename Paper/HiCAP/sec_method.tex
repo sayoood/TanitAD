@@ -21,7 +21,7 @@ a System-2 verifier runs only when the top-two margin is small or the two imagin
 The backbone $\mathcal V$ is a frozen vision--language model. At the slow rate it reads the selected cameras and a fixed short prompt once (prefill only) and we cache two
 things: the hidden states of the visual tokens at three depths of the language model (middle, three quarters, final), pooled to at most $N_v=128$ tokens by fixed adaptive pooling, and the last-token hidden state
 (the CLM readout). Recent frozen-backbone work favours a learned aggregator over bare last-token pooling \citep{kwok2026cover} and reading several depths, so the fusion transformer reads the token sets, not one vector.
-The backbone choice is a design decision with pending inputs, treated in \S\ref{sec:backbone-choice}; the interface is fixed regardless of the choice
+The PI has ruled that a VLM is the backbone and that its size is bounded by latency, not by a parameter count; which member of the Cosmos family and its Qwen3-VL relatives is used is decided by measured latency and paired ablations (\S\ref{sec:backbone-choice}, \S\ref{sec:latency}), and the interface is fixed regardless of the choice
 (visual tokens of width $d_v$, a text tower, optionally an audio input).
 
 \paragraph{Motion adapter.}

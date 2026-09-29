@@ -50,10 +50,11 @@ feasibility, state-conditioned admissibility, hysteresis, and conformal keep-set
 before any expensive computation, and the survivors are fed back to the backbone for candidate-conditioned re-scoring.
 (iii)~We show that the unmasked InfoNCE optimum is a pointwise mutual information whose argmax is biased under a cruise-dominated prior, that CLM's same-action mask changes that optimum, and
 correct with a fitted log-prior or a soft-target loss. (iv)~Imagination is confined to what data can identify and is built in three tiers: outcome-aware soft targets at training time, an analytically integrated forecast of a few non-reactive exogenous descriptors, and a gated contrastive critic whose head disagreement is a veto; a controlled toy attributes most of the apparent gain to the target shape.
-(v)~An elastic-sensing controller chooses cameras and visual-token budgets per tick from vision-only cues (ego cues as an ablation), and an audio branch
-enters the backbone's embedding space as a zero-initialised gated residual whose null is bit-exact, with explicit controls. (vi)~A frozen multi-billion-parameter backbone violates the programme's
-sub-300\,M target, so the interface is a fixed-dimension embedding space that a distilled student can occupy, with a decision-preservation
-bound. We report only what exists: closed-form propositions with proofs, a real-data check that a physical-limit mask
+(v)~An elastic-sensing controller chooses cameras and visual-token budgets per tick from vision-only cues (ego cues as an ablation), and an optional audio branch
+enters the backbone's embedding space as a zero-initialised gated residual whose null is bit-exact, with explicit controls. (vi)~The backbone is a VLM chosen from the NVIDIA Cosmos family and its Qwen3-VL relatives, and its size is set by a \emph{latency} criterion,
+not a parameter count: the command path is a small fast network, the VLM is refreshed asynchronously at 2\,Hz off the critical path, and the price of a larger backbone is the age of its cached tokens, not command latency.
+Arithmetic anchored on NVIDIA-published Jetson Thor rows admits an 8\,B-class backbone at three cameras under a stated duty-cycle rule; larger models are brackets outside the measured range and are gated on an on-device measurement.
+A distilled student remains available with a decision-preservation bound but is optional. We report only what exists: closed-form propositions with proofs, a real-data check that a physical-limit mask
 removes $78\%$ of a speed-agnostic trajectory set ($15\%$ of a speed-normalised one) while retaining all $881/881$ logged futures, toy measurements of the prior bias, and a pre-registered
 protocol with both outcomes committed for every hypothesis. No end-to-end HiCAP model has been trained.
 \end{abstract}

@@ -1,7 +1,9 @@
 # HiCAP paper (LaTeX)
 
 **HiCAP — Hierarchical Contrastive Action Priors on a Frozen Vision–Language Backbone for Elastic, Imagination-Aware Driving.**
-Design and pre-registration paper, working draft 2026-09-29, 34 pages (`hicap.pdf`). **No HiCAP model has been trained.**
+Design and pre-registration paper, working draft 2026-09-29 (revision b), 37 pages (`hicap.pdf`). **No HiCAP model has been trained.**
+
+**Revision b (2026-09-29, PI rulings):** a VLM is the preferred backbone (NVIDIA Cosmos family + Qwen3-VL relatives); audio is optional at inference; the sub-300 M cap is replaced by a latency criterion — command latency, token age and refresh duty (`sec_eff.tex` §Latency; `Research/2026-09-29-hicap/hicap_latency_budget.py`, ESTIMATED). New hypotheses H-HC15 (token age), H-HC16 (backbone scale ladder), H-HC17 (partial adaptation); H-HC9 (student) is now conditional; H-HC11 is per tier with a contention test.
 
 ## Build
 ```

@@ -22,7 +22,7 @@ per-clip vertical crop because two camera rigs differ by about $215$ pixels. Onl
 cameras, which matters for \S\ref{sec:elastic}. None of the 36 upstream features is audio and no label or cache carries it; the audio stream inside the shipped video container is unprobed (UNVERIFIED).
 
 \paragraph{What the labels are, and what they are not.}
-Labels may use privileged quantities (ego future, other agents); inference may not. Table~\ref{tab:inputs} states, for every quantity,
+Labels may use privileged quantities (ego future, other agents); inference may not: it sees frames, the ego state admitted by the PI on 2026-09-02, the stamped navigation command and, optionally, the audio channel admitted on 2026-09-29. Table~\ref{tab:inputs} states, for every quantity,
 whether it is a training label, an admissible inference input, or an evaluation stratifier only. The strategic and tactical tokens are derived offline from the
 \emph{ego's own future path} (geometry), so they are legitimate targets and inadmissible inputs. The perception-style tactical goals
 (traffic-light colours, gap targets, oncoming reactions) are teacher signals parsed from Alpamayo's chain-of-causation text; $49.6\%$ of records carry at least one
@@ -41,7 +41,7 @@ quantity & source & role & note \\ \midrule
 frames (front-wide, 3$\times$100\,ms; further cameras when cached) & sensor & Input & cylindrical $256\times640$, per-clip crop \\
 ego state $e_t$: $v,a_{\text{lon}},\dot\psi,\kappa$ at cycle time & sensor/CAN & Input & 2026-09-02 ruling (velocity at cycle time); scope for the other channels pending; null row \\
 navigation command $n_t$ & ego-future & Input (stamped oracle) & controls: nav-zero, nav-shuffled \\
-audio window $u_t$ & microphone & Input (audio arm) & needs an explicit ruling; no corpus \\
+audio window $u_t$ & microphone & Input, optional & admitted at inference by PI ruling 2026-09-29 as an \emph{optional} channel; the model must run bit-identically without it (null row); no corpus carries audio \\
 strategic tokens $g_{\text{str}},a_{\text{str}}$ & ego-future geometry & Label & band $[8,30]$\,s; four goals and two actions empty \\
 tactical actions $a_{\text{tac}}^{\text{lat}},a_{\text{tac}}^{\text{lon}}$ & ego-future geometry & Label & band $[2,6]$\,s; factored, never flattened \\
 tactical goals $g_{\text{tac}}$ (22, multi-label) & geometry + Alpamayo text & Label (aux) & 22 exclusive pairs; eight goals with $n<30$ \\

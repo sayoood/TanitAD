@@ -20,7 +20,7 @@ if it can be searched cheaply. And the input side is not fixed: not every camera
 decisive cues (a siren) are not visual at all.
 
 \paragraph{Programme context.}
-HiCAP is the vision--language arm of TanitAD, a programme building sub-300\,M hierarchical latent world models for driving.
+HiCAP is the vision--language arm of TanitAD, a programme building hierarchical latent world models for driving whose other arms are sub-300\,M. For this arm the PI has lifted the size cap and replaced it by a latency criterion (\S\ref{sec:latency}): the parameter count may be large if the whole system's inference time stays low.
 The programme's newest reference planner line (anchored diffusion, REF-C) exposes the problem this paper addresses. On the parity
 lineage, the best candidate in a 256-anchor fan has an ADE@2\,s of $0.1640$\,m while the candidate the planner selects has
 $0.4714$\,m\evI~(REF-C-XL, 40 validation episodes; registry \S4). On the newest lineage, trained on the v7 corpus, the hold-the-current-action control scores $0.2996$\,m and its extension $0.2874$\,m, against $0.2975$\,m and $0.3079$\,m
@@ -34,8 +34,8 @@ knows the world.
 (2)~show that a CLM-style contrastive selector is prior-biased and give a corrected, per-level objective (\S\ref{sec:train}, Corollary~\ref{cor:bias});
 (3)~specify prior-encoded pruning with a conformal recall bound and a candidate-conditioned re-scoring stage that returns survivors to the backbone (\S\ref{sec:prune});
 (4)~restrict imagination to what data can identify, in three tiers (soft outcome-aware targets, an analytic forecast of exogenous descriptors, a gated critic with a disagreement veto) and show in a toy that most apparent gain is target shape (\S\ref{sec:imag}, Proposition~\ref{prop:ident});
-(5)~add elastic sensing (cameras, tokens, embedding width) and an audio branch tokenised into the backbone's space (\S\ref{sec:elastic});
-(6)~separate a frozen reference model from a distilled sub-300\,M student with a decision-preservation guarantee (\S\ref{sec:eff}, Proposition~\ref{prop:distill});
+(5)~add elastic sensing (cameras, tokens, embedding width) and an optional audio branch tokenised into the backbone's space (\S\ref{sec:elastic});
+(6)~replace the parameter cap by a latency criterion with two clocks, command latency and token age, give the duty-cycle arithmetic that says which backbone sizes it admits on the target SoC, and keep a distilled student, with a decision-preservation guarantee, as an option that is used only if a measured latency tier fails (\S\ref{sec:eff}, Proposition~\ref{prop:distill});
 and (7)~commit a pre-registered protocol, including negative controls and both outcomes for each hypothesis (\S\ref{sec:protocol}).
 
 \paragraph{Scope and evidence convention.}

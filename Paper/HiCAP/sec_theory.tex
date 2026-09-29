@@ -154,5 +154,5 @@ each term bounded by Cauchy--Schwarz. A rank change between two candidates requi
 at least the margin, i.e.\ each by at least half of it. With $\delta_a=0$ the change of the gap between two candidates is $\tau\langle\hat{\mathbf s}-\mathbf s,\mathbf a_{\text{top}}-\mathbf a_v\rangle$, bounded by $\tau\delta_s\|\mathbf a_{\text{top}}-\mathbf a_v\|$.\qedhere
 \end{proof}
 \noindent The guarantee covers the single-level dot-product argmax only. For the cascade it must hold at each level's $b$-th/$(b{+}1)$-th boundary and at each conformal threshold, and it does not cover the re-score, the cost heads or imagination. At the CLM temperature cap $\tau=100$ it requires $\delta_s<\text{margin}/200$, so it is close to vacuous unless margins are large; H-HC9 measures the share of real windows that meet it. Because the interface between backbone and heads is a fixed-dimension embedding space, the frozen
-multi-billion-parameter backbone can be replaced by a sub-300\,M student trained to match the cached teacher embeddings and
-candidate scores, and Proposition~\ref{prop:distill} converts an embedding-error budget into a decision statement for that argmax.
+multi-billion-parameter backbone can, if a latency tier fails, be replaced by a smaller student trained to match the cached teacher embeddings and
+candidate scores, and Proposition~\ref{prop:distill} converts an embedding-error budget into a decision statement for that argmax. Under the size ruling of \S\ref{sec:latency} the student is an option, not a requirement.
