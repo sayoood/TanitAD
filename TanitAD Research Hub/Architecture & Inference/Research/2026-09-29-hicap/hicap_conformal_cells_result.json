@@ -1,0 +1,77 @@
+{
+ "n_windows": 881,
+ "n_episodes": 40,
+ "n_cells_proxy": 20,
+ "populated_cells": 16,
+ "cell_share": {
+  "KEEP|CRUISE": 0.4801,
+  "NUDGE_R|CRUISE": 0.0942,
+  "KEEP|ACCEL": 0.0851,
+  "KEEP|BRAKE": 0.0817,
+  "NUDGE_L|CRUISE": 0.0477,
+  "TURN_L|CRUISE": 0.0386,
+  "KEEP|HOLD": 0.0352,
+  "TURN_L|ACCEL": 0.0352,
+  "TURN_R|CRUISE": 0.0295,
+  "NUDGE_L|ACCEL": 0.025
+ },
+ "splits": 500,
+ "split_sizes_episodes": "fit 14 / calibration 12 / test 14",
+ "note": "kinematic-proxy cells; val-only mechanism check; not a ship-ready guarantee",
+ "results": {
+  "prior_only|alpha=0.05": {
+   "nominal_coverage": 0.95,
+   "coverage_mean": 0.9568,
+   "coverage_sd_over_splits": 0.0458,
+   "coverage_p05_split": 0.8701,
+   "share_of_splits_below_nominal": 0.336,
+   "mean_cells_kept_of_20": 13.22,
+   "mean_prune_fraction": 0.3389
+  },
+  "prior_only|alpha=0.1": {
+   "nominal_coverage": 0.9,
+   "coverage_mean": 0.9151,
+   "coverage_sd_over_splits": 0.0624,
+   "coverage_p05_split": 0.792,
+   "share_of_splits_below_nominal": 0.372,
+   "mean_cells_kept_of_20": 10.66,
+   "mean_prune_fraction": 0.4669
+  },
+  "prior_only|alpha=0.2": {
+   "nominal_coverage": 0.8,
+   "coverage_mean": 0.8222,
+   "coverage_sd_over_splits": 0.0871,
+   "coverage_p05_split": 0.6633,
+   "share_of_splits_below_nominal": 0.382,
+   "mean_cells_kept_of_20": 7.02,
+   "mean_prune_fraction": 0.6488
+  },
+  "speed_conditional|alpha=0.05": {
+   "nominal_coverage": 0.95,
+   "coverage_mean": 0.9567,
+   "coverage_sd_over_splits": 0.0505,
+   "coverage_p05_split": 0.8571,
+   "share_of_splits_below_nominal": 0.33,
+   "mean_cells_kept_of_20": 15.28,
+   "mean_prune_fraction": 0.2358
+  },
+  "speed_conditional|alpha=0.1": {
+   "nominal_coverage": 0.9,
+   "coverage_mean": 0.9116,
+   "coverage_sd_over_splits": 0.0699,
+   "coverage_p05_split": 0.7767,
+   "share_of_splits_below_nominal": 0.408,
+   "mean_cells_kept_of_20": 11.46,
+   "mean_prune_fraction": 0.427
+  },
+  "speed_conditional|alpha=0.2": {
+   "nominal_coverage": 0.8,
+   "coverage_mean": 0.8151,
+   "coverage_sd_over_splits": 0.0934,
+   "coverage_p05_split": 0.646,
+   "share_of_splits_below_nominal": 0.428,
+   "mean_cells_kept_of_20": 6.63,
+   "mean_prune_fraction": 0.6685
+  }
+ }
+}

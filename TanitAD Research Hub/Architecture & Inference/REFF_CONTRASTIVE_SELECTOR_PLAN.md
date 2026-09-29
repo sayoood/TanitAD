@@ -4,6 +4,8 @@
 **Companion documents:** `Project Steering/PREREG_REFF_CONTRASTIVE_SELECTOR.md` (the pre-registration: hypotheses, both outcomes, estimator) · `TanitAD Research Hub/Architecture & Inference/Research/2026-09-29-reff-prior-art-and-theory.md` (research stream) · `Project Steering/Reviews/2026-09-25-programme-review/00_PROGRAMME_REVIEW.md` (why selection is the lever).
 **Evidence classes:** MEASURED · PUBLISHED · INHERITED · ESTIMATED · HYPOTHESIS · UNVERIFIED, as in CLAUDE.md.
 
+> ⚠️ **2026-09-29 (later): PARTLY SUPERSEDED.** The PI asked for a VLM-first, hierarchical, imagination- and audio-aware redesign on the *newest* programme state. That design is `Paper/HiCAP/` (paper) and `Project Steering/PREREG_HICAP.md` (pre-registration, extends this one). **§7 (integration) of this plan was written against `main` and is STALE:** the newest state is the v7 corpus / vocabulary v7 / REF-C line refcv3→refcv6 (Drive + the PI's unpushed branch `agent/arch-inf-20260803`); 3-frame 256×640 cylindrical input, 117/128 anchors × 8 slots × 6 s, eval on 4,823 windows / 141 episodes with controls `ha` / `ha0_ext`. See `Research/2026-09-29-hicap/P1_state_vocab_dataset.md` and `P2_refc_line.md`. The flat-selector content below remains valid as the one-level special case.
+
 ---
 
 ## 0. The idea in one page

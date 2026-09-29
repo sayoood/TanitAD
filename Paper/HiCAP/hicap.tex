@@ -52,8 +52,8 @@ before any expensive computation, and the survivors are fed back to the backbone
 (iii)~We show that the InfoNCE optimum is a pointwise mutual information whose argmax is biased under a cruise-dominated prior and
 correct it with a fitted log-prior. (iv)~Imagination is restricted to an \emph{identifiable} factorisation---a non-reactive scene
 forecast, a known kinematic map and a contrastive future critic---gated by two-head agreement.
-(v)~An elastic-sensing controller chooses cameras and visual-token budgets per tick from cheap cues, and an audio branch is tokenised
-into the backbone's embedding space with explicit controls. (vi)~A frozen multi-billion-parameter backbone violates the programme's
+(v)~An elastic-sensing controller chooses cameras and visual-token budgets per tick from vision-only cues (ego cues as an ablation), and an audio branch
+enters the backbone's embedding space as a zero-initialised gated residual whose null is bit-exact, with explicit controls. (vi)~A frozen multi-billion-parameter backbone violates the programme's
 sub-300\,M target, so the interface is a fixed-dimension embedding space that a distilled student can occupy, with a decision-preservation
 bound. We report only what exists: closed-form propositions with proofs, a real-data check that a physical-limit mask
 removes $78\%$ of a trajectory set while retaining all $881/881$ logged futures, toy measurements of the prior bias, and a pre-registered

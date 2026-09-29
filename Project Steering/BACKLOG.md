@@ -57,3 +57,16 @@ Strike items through when done, with the commit.
 | D3 | **H26 hierarchical cross-alignment proof** (task #15, core goal) |
 | D4 | **Own dataset / lake v0** — ingest at scale + HF push (task #5) |
 | D5 | **flagship-v2 10k gate** mechanism diagnostic (task #28) |
+
+## E. HiCAP (added 2026-09-29; design in `Paper/HiCAP/`, pre-registration `PREREG_HICAP.md`)
+
+| # | item | GPU? | what unblocks it |
+|---|---|---|---|
+| E1 | ⭐ **Push the PI branch `agent/arch-inf-20260803`** (vocab_v7.py, v7_labels.py, refc_v3*.py, s2_geom_emit_v7.py) — the whole REF-C line is on one disk + Drive, main is stale | 0 | PI / the owning stream; nothing HiCAP can be executed from git until it lands |
+| E2 | **Recover the 40 canonical val clip UUIDs** (manifest keeps a 4-char prefix) and rerun the overlap test against NVIDIA's public lists (RA Appendix B) | 0 | the val-40 selection manifest / raw root; gates ANY driving-aware backbone read |
+| E3 | **H-HC0 gate**: k-NN over frozen VLM+motion features vs hold-speed on non-steady windows | ~0.5 GPU-day (feature cache) | E1; a Qwen3.5-4B feature cache of the v7 corpus at 2 Hz (~74–148 GB int8, `hicap_cost_model_result.json`) |
+| E4 | **Decode & cache the other upstream cameras** (cross_left/right, rear, tele) with the same cylindrical projection and per-clip `cy` crop | CPU/IO | unblocks H-HC10 (elastic cameras) |
+| E5 | **Synthetic siren/horn injection pipeline** (SNR, Doppler, azimuth, cabin floor) + audio-null/shuffled controls | 0 | ruling on audio at inference (PI decision 2) |
+| E6 | **Build the per-cell residual codebooks** over the CTRA prior on TRAIN residuals; cell assignment for windows outside the ±2 s label band via the frozen emitter thresholds | 0 (CPU) | E1 (emitter code) |
+| E7 | **Reconcile the two REF-C lineages in the registry** (parity REF-C-base/XL on val-40 vs refcv3→refcv6 on 4,823 windows) and the `--sel-refined` contradiction (registry §4.8 vs REFCV6 review §3.1) | 0 | PI/registry owner |
+| E8 | **ffprobe the shipped `camera/<clip_id>.mp4`** for an audio track (never probed) | 0 | HF access |

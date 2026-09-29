@@ -2,7 +2,7 @@
 
 **Status: DRAFT, written 2026-09-29, before any REF-F code, cache or checkpoint exists.**
 **Freeze rule.** The PI approves the document, and its SHA-1 is written to `PREREG_REFF_CONTRASTIVE_SELECTOR.sha1` before the first REF-F checkpoint is written. Any later change is an amendment with a date and a reason, never an edit.
-**Design:** `TanitAD Research Hub/Architecture & Inference/REFF_CONTRASTIVE_SELECTOR_PLAN.md`. **Statistics:** CLAUDE.md rules. Full-set means; episode-cluster bootstrap B = 2000, **paired** for any two arms, never the deprecated split-mean; four metric families per panel; learning-curve exponents only with window, R² ≥ 0.80 and n.
+**Extended by** `PREREG_HICAP.md` (2026-09-29, hierarchical / VLM-first / imagination / elastic sensing / audio); this document is its one-level special case, and its data section (parity corpus) predates the newest v7 corpus. **Design:** `TanitAD Research Hub/Architecture & Inference/REFF_CONTRASTIVE_SELECTOR_PLAN.md`. **Statistics:** CLAUDE.md rules. Full-set means; episode-cluster bootstrap B = 2000, **paired** for any two arms, never the deprecated split-mean; four metric families per panel; learning-curve exponents only with window, R² ≥ 0.80 and n.
 
 ---
 

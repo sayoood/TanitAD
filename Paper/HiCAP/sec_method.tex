@@ -31,8 +31,8 @@ that is trained, and it is trained on frame pairs, not on single frames.
 
 \paragraph{Fusion transformer.}
 $F_\theta$ ($d=512$, six layers, eight heads, $\approx19$\,M parameters\evE) reads: the $N_v$ projected VLM tokens (each with a Fourier embedding of its \emph{age}, since VLM tokens are reused
-between refreshes), the $N_m$ motion tokens, one ego token (an MLP over $e_t$ with a learned null row for ego-dropout), one navigation token, optionally $N_a$ audio tokens, and
-three learned level queries $q_1,q_2,q_3$. The state readouts are
+between refreshes), the $N_m$ motion tokens, one ego token (an MLP over $e_t$ with a learned null row for ego-dropout), one navigation token, and
+three learned level queries $q_1,q_2,q_3$. Audio is not among the input tokens: the level-query outputs receive it through one zero-initialised gated cross-attention read (\S\ref{sec:audio}), so that the model without audio is exactly the original. The state readouts are
 \begin{equation}
 \mathbf s_\ell=\operatorname{norm}\big(H_\ell(F_\theta(\cdot)[q_\ell])\big),\qquad H_\ell:\Real^{512}\!\to\!\Real^{1024}\!\to\!\Real^{512},
 \end{equation}

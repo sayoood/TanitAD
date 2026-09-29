@@ -71,17 +71,20 @@ and reading a few megabytes; on an edge device the binding constraint is memory 
 Pruning is safe only if it rarely removes the right action. We give two mechanisms.
 \begin{proposition}[Conformal cascade]\label{prop:conformal}
 For level $\ell$ let $\rho_\ell(s,v)$ be any score and $\hat t_\ell$ the $\lceil(1-\alpha_\ell)(n+1)\rceil$-th smallest value of
-$-\rho_\ell(s_i,v_i^\star)$ over $n$ calibration windows whose parent $v_{\ell-1}^\star$ is the logged one. Keep
-$K_\ell(s)=\{v\in C(v_{\ell-1}):\,-\rho_\ell(s,v)\le\hat t_\ell\}$. If calibration and test windows are exchangeable, then
-$\Pr\big(v_\ell^\star\in K_\ell(s)\mid v_{\ell-1}^\star\in K_{\ell-1}(s)\big)\ge 1-\alpha_\ell$, and consequently
+$-\rho_\ell(s_i,v_i^\star)$ over $n$ calibration windows, each scored against the children of \emph{its own logged parent}. For a test window let
+$K^\star_\ell(s)=\{v\in C(v^\star_{\ell-1}):\,-\rho_\ell(s,v)\le\hat t_\ell\}$ be the keep-set that would be used if the logged parent had been retained.
+If calibration and test windows are exchangeable, then $\Pr\big(v_\ell^\star\in K^\star_\ell(s)\big)\ge 1-\alpha_\ell$ for each level. The cascade retains the logged leaf exactly when
+$v^\star_\ell\in K^\star_\ell(s)$ at every level, hence
 \begin{equation}
-\Pr\big(\text{logged leaf retained}\big)\;\ge\;\prod_{\ell}(1-\alpha_\ell)\;\ge\;1-\sum_{\ell}\alpha_\ell .\label{eq:recall}
+\Pr\big(\text{logged leaf retained}\big)\;\ge\;1-\sum_{\ell}\alpha_\ell .\label{eq:recall}
 \end{equation}
 \end{proposition}
 \begin{proof}
-Level-wise coverage is the split-conformal guarantee \citep{angelopoulos2021gentle}, applied to the
-sub-population with the logged parent retained. The chain rule gives the product, and $\prod(1-x_\ell)\ge 1-\sum x_\ell$.\qedhere
+Level-wise coverage is the split-conformal guarantee \citep{angelopoulos2021gentle}: the test nonconformity $-\rho_\ell(s,v^\star_\ell)$ is exchangeable with the calibration values, so it is at most their $\lceil(1-\alpha_\ell)(n+1)\rceil$-th smallest with probability at least $1-\alpha_\ell$.
+If the logged ancestors were all retained, the cascade's candidate set at level $\ell$ is the set of children of the logged parent, thresholded at $\hat t_\ell$, i.e.\ $K^\star_\ell(s)$; so the logged leaf is retained iff no level misses.
+The union bound over the $L$ events $\{v^\star_\ell\notin K^\star_\ell(s)\}$, each of probability at most $\alpha_\ell$, gives \eqref{eq:recall}.\qedhere
 \end{proof}
+\noindent We state the union bound only: a product $\prod_\ell(1-\alpha_\ell)$ would require coverage \emph{conditional on} the parent having been retained, which conditions on an event of the test window and is not covered by exchangeability.
 \noindent Exchangeability holds only across episodes, never across the windows of one episode, so calibration
 and evaluation use episode-disjoint splits and the guarantee is marginal, not conditional on the scene.
 

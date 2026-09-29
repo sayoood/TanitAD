@@ -1,43 +1,88 @@
 % ---------------------------------------------------------------------------
 \section{Elastic sensing and audio}\label{sec:elastic}
 % ---------------------------------------------------------------------------
-Not every camera, token or channel is worth its cost at every instant, and Table~\ref{tab:thor} shows why it matters: the vision tower's cost is linear in the number of cameras, so
-seven cameras cost about seven times the vision-tower time of one at every refresh. HiCAP therefore treats the sensing configuration as a decision.
+Not every camera, token or channel is worth its cost at every instant. Table~\ref{tab:thor} shows why it matters: the vision tower's cost is linear in the number of cameras, so seven cameras cost about seven times the
+vision-tower time of one at every refresh. HiCAP therefore treats the sensing configuration as a decision. This section states the policy, the evidence for and against it, and what it needs from data that does not yet exist.
+The research stream behind it (repository manifest in \S\ref{sec:prelim}) also produced negative results that changed the design, and they are reported as such.
 
-\subsection{Choosing cameras, tokens and embedding width}
-\paragraph{Configuration and cue set.}
-A sensing configuration is $\mathcal C_t=\{(c,m_c)\}$: for each camera $c$ a token budget $m_c\in\{0,16,64,160\}$, with the front camera always at least at $16$. The controller sees only \emph{cheap cues} that exist before the expensive pass:
-the ego speed and recent lateral acceleration, the navigation command, the entropy of the previous tick's tactical and trajectory distributions, the size of the previous conformal keep-set $|K_3^{t-1}|$, the number and range of forecast agents from the previous tick, and a low-resolution thumbnail statistic of the front frame.
+\subsection{Camera and token policy}
+\paragraph{Frames, not cameras, are the first lever.}
+A driving VLA that feeds four cameras with four frames each reads $\approx2{,}600$ visual tokens per tick ($\approx19.5$\,TFLOP for a 1.7\,B language model, \evE). HiCAP feeds \emph{one frame per camera} to the backbone and gives temporal information to the motion adapter at low resolution (\S\ref{sec:backbone}); one to three cameras then cost $1.3$--$3.6$\,TFLOP.
+\paragraph{Tiers.}
+The front-wide camera is always on at $160$ tokens. A tier adds cameras at $64$ tokens each: T1 adds one camera (front-tele for high-speed following and distance keeping; the cross camera on the turn side for junction approach; a rear-side camera for lane-change intent and merges);
+T2 adds two; T3, all seven, is a probe and degraded-gate state, not a steady state. With peripheral cameras at $64$ tokens, all seven fit a $100$\,ms tick on a 2\,B-class stack ($\approx40$\,ms) and marginally on a 4\,B-class one ($\approx68$\,ms), against $\approx120$\,ms for seven cameras at $160$ tokens (\evE, scaled from NVIDIA's published rows, $\pm25\%$).
+The first extra camera's language-model tokens are nearly free because the language stage is weight-streaming-bound at these lengths; its vision-tower pass is not, so savings made \emph{before} the tower (resolution, update rate, on/off) matter more than pruning after it.
+A scheduled \emph{slow lane} encodes the rear and cross cameras at $2$\,Hz with tower and pooler only (no language-model pass) into a small peripheral-risk head, at $\approx19\%$ of the front lane's compute (\evH, untested); it covers what a gate cannot see.
 
-\paragraph{Value-of-information labels and selection.}
-Where the caches exist, the marginal value of camera $c$ at budget $m$ in state $s$ is measured offline against the teacher selector,
+\paragraph{The gate and which cues it may use.}
+A camera gate is a situation classifier in disguise, because it maps a situation to a camera set. The programme's rule that inference is vision-only for scenario classification therefore applies, and the gate is specified in three arms.
+\textbf{G-V} (primary, the only arm admissible under the rule) reads the front-wide pooled embedding, which the decision computes anyway, and the gate's own previous camera set (keep-alive state). \textbf{G-E} adds ego kinematics; it is an ablation until the PI rules on it.
+\textbf{G-T} adds the previous tick's tactical token; it is \emph{not} information-disjoint, because the tactical decision would choose which pixels the next tick's goal path sees, so attribution between goal and gate would be lost and errors could lock in. G-T is admissible only if it beats G-V/G-E by the pre-registered margin and passes a \emph{config-invariance} test (the goal head scored on fixed-camera states must not degrade relative to gated states) and a \emph{gate-shuffle} test.
+Labels may use everything: the relevance of a camera is the nearest dynamic agent in its field of view within a distance or time-to-collision threshold, from the 3-D agent tracks, combined with egomotion-derived manoeuvre intent.
+
+\paragraph{Training.}
+Because every camera can be cached offline, the per-option error $E_j(x)$ of the frozen backbone plus heads is computable for every training frame, and the gate minimises $\sum_jp_j(x)\,[E_j(x)+\lambda\,\mathrm{cost}_j]$ (full-information, cost-sensitive learning), with a calibrated situation head as an auxiliary or ensemble member. Errors are weighted by situation criticality: a wrong camera is nearly free in cruise and costly at a junction.
+The heads are trained with a camera-dropout curriculum (illustratively $40\%$ the situation's oracle camera, $20\%$ oracle plus one random extra, $15\%$ all, $25\%$ front plus a random zero to two) and are \emph{budget-conditioned}: a configuration embedding is appended to the pooled state and the full-camera embedding is a distillation target for reduced configurations,
 \begin{equation}
-\Delta_c(s,m)=\ell\big(s;\mathcal C\setminus\{(c,m)\}\big)-\ell\big(s;\mathcal C\big),
+\mathcal L^{\text{cfg}}=\sum_{c}w_c\sum_{d\in\{64,128,256\}}\mathrm{InfoNCE}\big(f_d(\mathbf e_c),\mathbf a_d\big)+\beta\big(1-\cos(\mathbf e_c,\operatorname{sg}\,\mathbf e_{\text{full}})\big).
 \end{equation}
-where $\ell$ is the decision loss (soft-target cross-entropy plus predicted cost) with the camera removed or its tokens pooled to $m$. A small network $\hat\Delta_\phi(\text{cues},c,m)$ is regressed onto these labels with a Huber loss, and at run time the configuration maximises
-$\sum_c\hat\Delta_\phi-\lambda\,\mathrm{cost}(\mathcal C)$ under a per-tick budget by greedy increments. If the value function were monotone submodular, greedy selection under a budget would be within a factor $(1-1/e)$ of optimal \citep{nemhauser1978analysis}; we make no such claim for cameras and
-instead measure the diminishing-returns profile on the data before trusting the greedy rule (H-HC10).
-Three safeguards make the controller safe to run: a \emph{minimum set} (front camera always on); \emph{escalation}, in which a large conformal keep-set, a small top-two margin or an imagination-gate disagreement forces the full configuration on the next refresh; and \emph{hysteresis}, a switching margin that stops flicker.
-Skipped cameras contribute their last tokens with an age embedding for at most $T_{\max}$ milliseconds and a learned null embedding afterwards.
+The backbone is frozen, so this nesting lives in the trainable pooler and heads.
 
-\paragraph{Training for missing inputs.}
-A camera-dropout curriculum (drop probability ramped from $0$ to $0.3$) replaces dropped cameras by null tokens, so the fusion transformer is robust to any subset. This is also the sensor-failure regime, and the controller's random-gate control (NC8) is scored on the same trained model.
+\paragraph{Dynamics: asymmetric keep-alive, shadow-mode prefetch.}
+The gate escalates in one tick and de-escalates only after three ticks with a margin of $0.10$; it never smooths symmetrically. A newly enabled camera has no temporal cache, so it is switched on in \emph{shadow mode} (encoded, not used) for two ticks before its first use, driven by intent such as the route side.
 
-\paragraph{Elastic width.}
-Readouts are Matryoshka-nested \citep{kusupati2022matryoshka}: strategic and tactical retrieval use the first $128$ dimensions, and the trajectory levels use $512$. The Level-3 embedding table at $128$ dimensions is a quarter of the memory traffic of Table~\ref{tab:cost}.
+\paragraph{What is not done, and why.}
+Confidence-triggered escalation to all cameras and hedging with the runner-up camera are \emph{not} part of the design, because they measured as useless in the toy below. Matryoshka embedding \emph{dimensions} are adopted as a free option and are expected to save nothing: scoring $10^5$ cached candidates at $256$ dimensions is $\approx2.6\times10^7$ multiply-adds, far below a millisecond next to a $17$--$120$\,ms encoder. The nesting that carries compute is over cameras and tokens.
 
-\paragraph{What is and is not testable now.}
-Only the front-wide camera is cached, so \emph{camera} selection cannot be evaluated on real cameras until the other cameras of the upstream dataset are decoded and cached with the same projection and per-clip crop rules. The \emph{token} budget and width parts can be tested on the front camera today. Until then H-HC10 is INCOMPLETE for cameras and the toy in \S\ref{sec:prelim} is the only evidence for the value-of-information mechanism.
+\subsection{Evidence: a toy world, its cliff, and what it does not show}
+A synthetic world with seven cameras, seven sticky situations and exactly one informative camera per situation (\evM{}, \texttt{rd\_camera\_gating\_toy.py}; three seeds, a cost-sensitive gate, closed-loop keep-alive and a cold-start penalty; every constant is a chosen assumption) gives orderings, not levels. Decision accuracy and cost in camera units:
+\begin{table}[h]
+\centering\small
+\caption{Camera-gating toy (mean of three seeds; \evM). Only orderings are evidence; the world scores one binary decision and chooses its own constants.}
+\label{tab:gate}
+\begin{tabular}{@{}lrr@{}}
+\toprule
+policy & cost (camera units) & decision accuracy \\ \midrule
+fixed front-wide only & 1 & 0.732 \\
+fixed all seven & 7 & 0.936 \\
+ceiling: all seven plus true situation given to the head (reference) & 7 & 0.976 \\
+oracle gate, cold start & 1.65 & 0.967 \\
+\textbf{learned gate (ego cues, keep-alive)} & \textbf{1.64} & \textbf{0.951} \\
+vision-only gate & 1.78 & 0.812 \\
+vision-only gate with its own previous choice fed back & 1.72 & 0.804 \\
+\bottomrule
+\end{tabular}
+\end{table}
+Six readings. (i)~A gate can serve $95\%$ of decisions at $1.64$ camera units instead of $7$, but its apparent lead over fixed-all ($+1.4$ to $+1.8$ points, paired, per seed) is a head-routing-difficulty artefact: fixed-all must learn to route from noisy cues. The honest references are the oracle gate ($-1.6$ points) and the ceiling ($-2.5$ points).
+(ii)~There is a \emph{cliff}: accuracy is flat between $1.6$ and $2.0$ units, then falls to $0.915$ at $1.49$ and $0.825$ at $1.25$. (iii)~A wrong camera costs almost nothing in cruise, about $22$ points for the tele case and $42$--$46$ points (chance) whenever the needed cross or rear camera is off; gate errors are \emph{confident}, concentrated on the tele-versus-wide ambiguity.
+(iv)~Cue admissibility decides the design: the vision-only gate reaches only $0.812$, and with its own previous choice fed back it \emph{locks in}, holding a wrong camera set for $\approx49$ ticks ($\approx5$\,s); it matches the ego-cue gate only if the always-on front embedding separates situations about three times better than in the base world, which is an empirical property of the frozen VLM on real frames and the first thing to measure. (v)~Symmetric smoothing halves flicker but costs $0.5$--$0.6$ points against no smoothing; asymmetric keep-alive gains $+1.4$ points for $+6\%$ cost; a cold start costs $0.55$--$0.8$ points and prefetching two ticks ahead recovers $0.45$. (vi)~Confidence escalation buys at most $+0.02$ points for $+28\%$ to $+160\%$ cost.
+The toy cannot say anything about real cameras: one informative camera per situation, uniform camera cost, an ad-hoc cold-start model and a chosen situation-code strength (its conclusion about vision-only gates depends on it).
+
+\paragraph{Extra cameras are a data project.}
+Every cache the programme has is front-wide only. Downloading one more upstream camera for the training set is $321$\,GB (front-tele) to $497$\,GB (cross-right) of transient volume, and all six is $2.55$\,TB (\evE, scaled from measured chunk sizes; $\approx9$\,h of build on a pod). A side-study over $\sim30$ dense chunks costs $49$--$388$\,GB but is not the parity corpus.
+So the \emph{first} experiment is not the gate but the value of an oracle camera by manoeuvre, before any cache is bought: if no stratum shows an oracle camera beating front-only beyond the harm margin, elasticity is retired and front-only is shipped, which is also the cheapest outcome (H-HC10).
 
 \subsection{Audio in the shared embedding space}\label{sec:audio}
-Sirens and horns are decisive cues that are not visible until late, and language and vision models are increasingly omni-modal. We add audio as tokens in the same space as language and vision.
+Sirens and horns are decisive cues that may be invisible until late, and the leading model families are becoming omni-modal. We add audio as tokens in the backbone's own space, under a stricter regime than vision because audio cannot yet be validated as driving skill.
 
-\paragraph{Tokenisation.}
-A frozen audio encoder $E_a$ reads a sliding one-second window and produces audio tokens at $12.5$\,Hz; a learned Perceiver-style pooling reduces them to $N_a=8$ tokens per tick and a projector $P_a$ maps them to the fusion width. Two routes reach the same interface. With a natively omni-modal backbone (Qwen3-Omni's audio encoder emits tokens at $12.5$\,Hz\evP{}, one-hop) the audio tokens enter the backbone itself. With a vision--language backbone that has no audio tower (all of R1--R3), the projector is trained by contrastive alignment of the pooled audio embedding with the pooled visual embedding of the co-occurring scene, in the manner of joint embedding spaces \citep{girdhar2023imagebind}, on public audio--visual data, and is then frozen. The sole small model with a native audio tower and published Thor timings is Gemma-4-E2B (licence unverified).
+\paragraph{Pattern: a gated residual, not audio inside the language model.}
+A frozen audio tower (a BEATs-base-class encoder of $\approx90$\,M parameters, or an ASR-class encoder if the chosen VLM family ships none) reads a two-second window; a two-layer Perceiver pools it to $k=8$ tokens; and the level-query outputs are updated by one gated cross-attention read,
+\begin{equation}
+\mathbf q_\ell'=\mathbf q_\ell+\tanh(g_\ell)\,\mathrm{CrossAttn}\big(\mathbf q_\ell,\ \text{audio tokens}\big),\qquad g_\ell\equiv0\ \text{at initialisation},
+\end{equation}
+so that audio-null is \emph{bit-exactly} the original model. That is the parity property the programme needs (a modality can be added without disturbing any earlier result), and it gives a deterministic test. The audio state is refreshed at $0.5$\,s hops ($\ge2$\,Hz), enough for a siren audible at $70$--$100$\,m and an emergency vehicle closing at $40$--$60$\,m/s ($1.2$--$2.5$\,s of warning, \evE). Soft audio tokens inside the language model ($+25$ tokens, $\approx+6\%$ of a one-camera tick) are the ablation.
+The compute is negligible: $\approx18$\,GFLOP per two-second window for a BEATs-class tower ($\approx0.7$\,ms on Thor, \evE) against $17$--$31$\,ms for the first camera.
 
-\paragraph{Data and controls.}
-No corpus the programme uses carries audio, so the branch \emph{cannot} be validated on real driving audio. We test only that it is wired and controlled. Siren, horn and tyre-screech waveforms are mixed into driving clips at signal-to-noise ratios from $-5$ to $20$\,dB, with a Doppler profile consistent with an approaching source, an inter-channel level difference for azimuth and a cabin-noise floor; the injected event type, azimuth and onset are known, so the expected decision (yield, slow, hold) is a stated rule, not a human label. The controls are audio-null, audio-shuffled across clips, and modality dropout at training time so that vision-only operation is unchanged (equality on natural windows is part of H-HC12).
-The construct-validity caveat is unavoidable: a network can learn the synthetic artefact rather than the concept, and a positive result licenses only ``the audio path can change decisions in the intended direction'', never ``audio helps on real roads''.
+\paragraph{Alignment to language and vision through the frozen text path.}
+The gate parameters are trained so that the audio-conditioned embedding matches the frozen VLM's own embedding of the scene together with a \emph{caption of the sound event},
+$\mathcal L^{\text{aud}}=1-\cos\big(\mathbf e',\ \mathbf e_{\text{teacher}}(\text{image},\ \text{``siren approaching from behind, about 40\,m''})\big)$,
+with the caption produced from the event generator's metadata (class, bearing, distance bin, approaching), \emph{not} from any driving label. Audio is thereby tied to language without audio--text language-model training, and the echo of a label is avoided (below). Optional pre-alignment uses public audio-caption sets. Direction of arrival needs a multi-microphone front end (inter-channel phase and level) before the tower, since mono log-mel features discard it.
 
-\paragraph{Where audio acts, and its gate.}
-No new token is needed: the frozen vocabulary already carries the relevant actions (\texttt{YIELD}, \texttt{BRAKE\_TO}, \texttt{CREEP}, \texttt{HOLD}, \texttt{NUDGE\_R}); an emergency-vehicle situation term has insufficient support in the source labels. To save the audio encoder's cost, a cheap band-energy detector wakes it only when siren-like modulated energy appears, and otherwise a null token is used; the detector's false-positive rate is measured. The programme's rule that inference is vision-only concerns the situation classifier and ego-derived inputs; whether audio is admissible at inference needs an explicit ruling (\S\ref{sec:limits}).
+\paragraph{The label-consistency trap, and what can be tested.}
+A real logged trajectory never yields to a \emph{synthetic} siren, so an audio-augmented clip has no valid driving label unless the expert was already yielding, and then audio is present only where the label is ``yield'': a label echo. Therefore the audio path is trained on \emph{event metadata} only, and its behavioural effect is tested in closed-loop simulation with an acoustic layer computed offline from the simulator's actor poses (the simulator strips audio; the layer is circular, so detection realism must first be validated on real recordings).
+On the current corpus we can test four things: (T1)~parity, audio-null equals the original embedding bit-for-bit; (T2)~event heads for class, bearing and distance on public audio-visual data and injected synthetic events; (T3)~usage controls on injected events, which show that the path \emph{can} read audio when it is the only informative channel, not driving skill; (T4)~no regression, so that noisy or absent audio leaves the four families unchanged (paired).
+The controls are audio-null, audio-shuffle matched on speed bin and noise floor, a \emph{bearing flip} (mirrored channels flip the predicted side), a level dose-response ($0/-10/-20/-30$\,dB, monotone decay), an \emph{onset shift} ($\pm1$--$2$\,s from the label-consistent time), a siren with no visible vehicle and a visible vehicle without siren, and an \emph{audio-only label probe} (an audio-only classifier of the driving label must be at chance on real clips, the vision-only-rule leak test in a new costume). Synthetic events are rendered from world state, taking an actual agent track as the emitter and applying delay, $1/r$ gain, a Doppler shift $f'=f\,c/(c-v_r)$, air absorption, interaural time and level differences over a virtual array, and a speed-dependent ego-noise floor.
+Modality dropout at $p=0.3$ keeps vision-only operation intact.
+
+\paragraph{Evidence and gates.}
+Published siren detectors with roof-mounted microphones report high presence recall with median direction error near $10^\circ$ and median distance error near $9$\,m within $10$--$50$\,m, degrading beyond $\approx70$\,m (arXiv:2109.14797, \evP, one-hop). No driving corpus the programme uses carries audio (PhysicalAI-AV, nuScenes, Waymo, Argoverse~2, comma2k19; the simulator strips it); the one place not yet probed is the audio stream of the shipped video container, a ten-minute check that would overturn this section if it found one. The wake-up gate (a band-energy detector that switches the tower on) has its false-positive rate measured. The programme's rule that inference is vision-only concerns the situation classifier and ego-derived inputs; whether audio is admissible at inference needs an explicit ruling (\S\ref{sec:limits}).

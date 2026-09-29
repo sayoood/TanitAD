@@ -71,6 +71,29 @@ tight (3, 6, 4) & speed-normalised & $0.300$ & $0.976$ & $0.197$ & $0.179$ \\
 Three findings. (i)~The physical limits remove $78\%$ of a speed-agnostic anchor set and lose nothing: every logged future passes and the oracle error is unchanged (episode-cluster intervals identical to three decimals). If windows were independent this would bound the retention rate below by $0.9966$ at $95\%$; with $40$ episodes the effective sample is smaller, which is why the calibrated conformal mask, not this bound, is the shipped guarantee.
 (ii)~Tight comfort limits are unsafe as hard masks: they remove $2.4\%$ of logged futures and raise the oracle error by $0.03$\,m, so comfort belongs in the cost, not the mask. (iii)~The mask is much less powerful on a candidate set that already knows the current speed: on speed-normalised anchors it removes only $15$--$30\%$. This is the honest consequence of building feasibility into the parameterisation, and it means the rule's value is largest for speed-agnostic or very large sets and smallest for the residual codebook, which is what we would predict and will report.
 
+\subsection{Conformal keep-sets on real windows: coverage holds on average, and varies a lot between calibrations}
+\label{sec:prelim-conformal}
+Proposition~\ref{prop:conformal} guarantees marginal coverage under exchangeability. To see what that means with few episodes we ran it on the $881$ validation windows, splitting the $40$ episodes at random $500$ times into fit ($14$), calibration ($12$) and test ($14$) episodes, so that no test episode is ever seen by the fit or the calibration.
+The decision unit is a \emph{kinematic proxy} of the tactical cell ($5$ lateral $\times$ $4$ longitudinal classes derived from the window's own future path with thresholds chosen for this check, not the label emitter's; $16$ of $20$ cells occur; the most frequent, keep-lane-and-cruise, holds $48\%$ of windows), and the score is a train-fitted cell frequency, either unconditional or conditioned on a speed bin of the current speed.
+\begin{table}[h]
+\centering\small
+\caption{Split-conformal keep-set for the tactical cell, 500 random episode-disjoint splits (\evM; \texttt{hicap\_conformal\_cells\_measure.py}). Coverage is the share of test windows whose true cell is kept; \emph{below} is the share of splits whose coverage falls under the nominal level.}
+\label{tab:conformal}
+\begin{tabular}{@{}llrrrrr@{}}
+\toprule
+score & nominal & coverage mean & SD over splits & below & cells kept (of 20) & pruned \\ \midrule
+prior only & $0.95$ & $0.957$ & $0.046$ & $34\%$ & $13.2$ & $34\%$ \\
+prior only & $0.90$ & $0.915$ & $0.062$ & $37\%$ & $10.7$ & $47\%$ \\
+prior only & $0.80$ & $0.822$ & $0.087$ & $38\%$ & $7.0$ & $65\%$ \\
+speed-conditional & $0.95$ & $0.957$ & $0.051$ & $33\%$ & $15.3$ & $24\%$ \\
+speed-conditional & $0.90$ & $0.912$ & $0.070$ & $41\%$ & $11.5$ & $43\%$ \\
+speed-conditional & $0.80$ & $0.815$ & $0.093$ & $43\%$ & $6.6$ & $67\%$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+Three readings. (i)~The marginal guarantee holds on average: mean coverage is at or slightly above nominal at all three levels. (ii)~It is a statement about averages over calibration draws. With $12$ calibration episodes the coverage of a single draw has a standard deviation of $0.05$--$0.09$ and $33$--$43\%$ of draws fall below nominal, because windows within an episode are strongly dependent and effectively few. A shipped mask therefore needs a calibration set of hundreds of episodes and a stated share of draws below nominal (this is why H-HC6 reports that share); the training split has $4{,}572$ clips.
+(iii)~At $95\%$ coverage the tactical cell alone is pruned by about a third, and conditioning on speed did \emph{not} help at this sample size (the conditional table of $6$ bins $\times$ $20$ cells is fitted on about $350$ windows and prunes less, $24\%$ against $34\%$), so R2 is not expected to earn its place until it is fitted on the full training split. This is a small val-only check with a proxy label; it tests the mechanism, not the shipped guarantee.
+
 \subsection{Hierarchical retrieval, imagination and camera gating (toy worlds)}
 \label{sec:prelim-toys}
 \textit{[This subsection is completed from the three toy streams as they report; see the repository manifest.]}
@@ -82,6 +105,7 @@ artifact & path (repository; common prefix \texttt{TanitAD Research Hub/Architec
 contrastive-bias toy & \texttt{reff\_pmi\_toy.py}, \texttt{reff\_pmi\_toy\_result.json} \\
 nested-vocabulary coverage & \texttt{reff\_v0\_coverage.py}, \texttt{reff\_v0\_coverage\_result.json} \\
 kinematic mask & \texttt{2026-09-29-hicap/hicap\_prior\_mask\_measure.py}, \texttt{hicap\_prior\_mask\_result.json} \\
+conformal keep-set, real windows & \texttt{2026-09-29-hicap/hicap\_conformal\_cells\_measure.py}, \texttt{hicap\_conformal\_cells\_result.json} \\
 cost model (arithmetic) & \texttt{2026-09-29-hicap/hicap\_cost\_model.py}, \texttt{hicap\_cost\_model\_result.json} \\
 \bottomrule
 \end{tabular}
