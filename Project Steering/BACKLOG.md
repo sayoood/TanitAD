@@ -70,3 +70,9 @@ Strike items through when done, with the commit.
 | E6 | **Build the per-cell residual codebooks** over the CTRA prior on TRAIN residuals; cell assignment for windows outside the ±2 s label band via the frozen emitter thresholds | 0 (CPU) | E1 (emitter code) |
 | E7 | **Reconcile the two REF-C lineages in the registry** (parity REF-C-base/XL on val-40 vs refcv3→refcv6 on 4,823 windows) and the `--sel-refined` contradiction (registry §4.8 vs REFCV6 review §3.1) | 0 | PI/registry owner |
 | E8 | **ffprobe the shipped `camera/<clip_id>.mp4`** for an audio track (never probed) | 0 | HF access |
+| E9 | **E-R2 (CPU)**: product vocabularies at N = 2¹⁰…2¹⁸ from the TRAIN split, oracle-in-set ADE on val, matched-N ratios | 0 | committed val windows + train egomotion; decides whether 262,144 buys anything (H-HC5) |
+| E10 | **E-I0 probe** (~0.1 GPU-h): does the frozen state carry lead gap / closing speed? (v₀-only baseline, shuffled cue) | ~0.1 GPU-h | cached VLM embeddings (E3); gates ALL imagination work beyond Tier 0 (H-HC8) |
+| E11 | **E-C3 oracle-camera value by manoeuvre** on a ~30-chunk side-study (front-tele 49 GB first) | CPU/IO + 1 eval | PI spend approval; a null result retires elasticity and ships front-only (H-HC10) |
+| E12 | **E-G1 vision-only gate probe**: frozen-VLM front embedding → 7-way situation, per-class recall + calibration | ~0 | cached embeddings (E3); decides whether the vision-only gate G-V is viable |
+| E13 | **E-R3 / E-R6 / E-R10** (0 GPU): class-conditional episode-blocked conformal survival; survivor-cache age; minted-cell agreement over [2,6] s | 0 | committed val windows + train egomotion |
+

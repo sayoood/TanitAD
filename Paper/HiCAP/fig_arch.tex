@@ -27,18 +27,18 @@
 % ---------------- row C: fusion
 \node[trn, minimum width=178mm, minimum height=15mm] (fus) at (8.5,-5.9) {\textbf{Fusion transformer} ($\approx$19\,M, 10\,Hz):\ scene $\oplus$ motion $\oplus$ ego $\oplus$ nav tokens $\oplus$ level queries $q_1,q_2,q_3$; audio enters only as a zero-initialised gated residual (audio-null is exact)};
 % ---------------- row D: readouts
-\node[trn, minimum width=48mm] (s1) at (2.8,-8.2)  {$\mathbf s_1$ strategic readout, 2\,Hz};
-\node[trn, minimum width=48mm] (s2) at (8.5,-8.2)  {$\mathbf s_2^{\mathrm{lat}},\mathbf s_2^{\mathrm{lon}}$ tactical readouts, 5\,Hz};
-\node[trn, minimum width=48mm] (s3) at (14.2,-8.2) {$\mathbf s_3$ trajectory readout, 10\,Hz};
+\node[trn, minimum width=48mm] (s1) at (2.8,-8.2)  {$\mathbf s_1$ strategic readout, every 2\,s};
+\node[trn, minimum width=48mm] (s2) at (8.5,-8.2)  {$\mathbf s_2^{\mathrm{lat}},\mathbf s_2^{\mathrm{lon}}$ tactical readouts, every 0.5\,s};
+\node[trn, minimum width=48mm] (s3) at (14.2,-8.2) {$\mathbf s_3$ trajectory readouts (path, profile), 10\,Hz};
 % ---------------- row E: action tree (cached embeddings)
 \node[cch, minimum width=48mm] (a1) at (2.8,-10.3)  {$\mathcal A_1$ strategic actions\\text-embedded (5 usable)};
 \node[cch, minimum width=48mm] (a2) at (8.5,-10.3)  {$\mathcal A_2$ tactical LAT$\times$LON cells\\text + numeric (35 usable)};
-\node[cch, minimum width=48mm] (a3) at (14.2,-10.3) {$\mathcal A_3(v_2)$ residual codes, coarse $\to$ fine\\$10^{3}$--$10^{5}$ per cell, numeric};
+\node[cch, minimum width=48mm] (a3) at (14.2,-10.3) {$\mathcal A_3$ path $\times$ speed-profile factors\\$1{,}024\times256=262{,}144$, numeric};
 % ---------------- row F: pruning
 \node[msk, minimum width=100mm, minimum height=13mm] (pr) at (11.4,-12.5) {\textbf{Prior-encoded pruning R1--R6}: kinematic feasibility, state admissibility, route,\\goal admissibility, hysteresis, conformal keep-sets (recall $\ge1-\sum\alpha_\ell$)};
 % ---------------- row G: decision and imagination
 \node[nd=52mm, minimum height=13mm] (dec) at (5.6,-14.9) {\textbf{Decision}\\$\arg\min_{v\in K}\ \sum_k w_k\hat c_k-\lambda\log\hat p$\\re-score of survivors; System-2 if uncertain};
-\node[trn, minimum width=58mm, minimum height=13mm] (img) at (13.4,-14.9) {\textbf{Imagination}\\non-reactive scene forecast $\oplus$ kinematic map\\two-head agreement gate (adds cost only)};
+\node[trn, minimum width=58mm, minimum height=13mm] (img) at (13.4,-14.9) {\textbf{Imagination}\\Tier 0 soft targets; Tier 1 exogenous E-head\\$\oplus$ analytic ego; Tier 2 gated critic + veto};
 % ---------------- row H: controller
 \node[nd=52mm] (ctl) at (5.6,-16.9) {Controller + safety envelope};
 % ---------------- label-time box

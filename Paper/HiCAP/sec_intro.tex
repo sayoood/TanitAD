@@ -32,11 +32,10 @@ programme's bottleneck is neither the candidate set nor the lateral path; it is 
 under-supervised at the tactical and strategic levels. HiCAP is our attempt to build the decision maker properly on a backbone that already
 knows the world.
 
-\paragraph{Contributions.} We (1)~define a hierarchical action tree from the programme's frozen tactical/strategic token vocabulary and a two-stage
-residual code, with a retrieval-cost proposition and a real-data pruning study (\S\ref{sec:vocab}, \S\ref{sec:theory}, \S\ref{sec:prelim});
+\paragraph{Contributions.} We (1)~define a hierarchical action tree from the programme's frozen tactical/strategic token vocabulary with a factored path-by-profile trajectory vocabulary beneath it, with a retrieval-cost proposition, a beam-miss bound and a real-data pruning study (\S\ref{sec:vocab}, \S\ref{sec:theory}, \S\ref{sec:prelim});
 (2)~show that a CLM-style contrastive selector is prior-biased and give a corrected, per-level objective (\S\ref{sec:train}, Corollary~\ref{cor:bias});
 (3)~specify prior-encoded pruning with a conformal recall bound and a candidate-conditioned re-scoring stage that returns survivors to the backbone (\S\ref{sec:prune});
-(4)~restrict imagination to an identifiable factorisation and gate it by two-head agreement (\S\ref{sec:imag}, Proposition~\ref{prop:ident});
+(4)~restrict imagination to what data can identify, in three tiers (soft outcome-aware targets, an analytic forecast of exogenous descriptors, a gated critic with a disagreement veto) and show in a toy that most apparent gain is target shape (\S\ref{sec:imag}, Proposition~\ref{prop:ident});
 (5)~add elastic sensing (cameras, tokens, embedding width) and an audio branch tokenised into the backbone's space (\S\ref{sec:elastic});
 (6)~separate a frozen reference model from a distilled sub-300\,M student with a decision-preservation guarantee (\S\ref{sec:eff}, Proposition~\ref{prop:distill});
 and (7)~commit a pre-registered protocol, including negative controls and both outcomes for each hypothesis (\S\ref{sec:protocol}).

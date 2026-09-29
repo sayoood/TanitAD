@@ -18,9 +18,9 @@ component & rate & recomputed & cost model \\ \midrule
 frozen VLM (ViT + prefill), selected cameras & 2\,Hz & visual tokens at three depths, last-token state; between refreshes tokens are reused with an age embedding & Table~\ref{tab:thor} \\
 motion adapter & 10\,Hz & 16 motion tokens from the 3-frame stack & $\approx2$\,M params \\
 fusion transformer & 10\,Hz & level queries over $\approx160$ tokens & $\approx19$\,M params, $\approx8$\,GFLOP\evE \\
-L1 readout / retrieval & 2\,Hz & strategic scores, keep-set & 5 nodes \\
-L2 readout / retrieval & 5\,Hz & tactical cell scores & $\le35$ nodes per kept parent \\
-L3 readout / retrieval & 10\,Hz & coarse then fine code scores, re-score of survivors, refinement & Table~\ref{tab:cost} \\
+L1 readout / retrieval & every 2\,s & strategic scores, keep-set & 5 nodes \\
+L2 readout / retrieval & every 0.5\,s & tactical cell scores, classes then members; survivors cached for five ticks and re-masked each tick & $\le35$ cells; $1{,}280$ factor rows \\
+L3 compose, re-score, refine & every 0.1\,s & compose $\approx200$ entries, late-interaction shortlist, cross-attention re-rank of $K=16$, refinement & $\approx0.34$\,GMAC, Table~\ref{tab:cost} \\
 System-2 verifier & only if uncertain & one extra prefill on $\le5$ renderings & one prefill row of Table~\ref{tab:thor} \\
 \bottomrule
 \end{tabularx}
@@ -51,22 +51,21 @@ so seven cameras cost $\approx124$\,ms per refresh and cannot run at 10\,Hz; the
 The same arithmetic explains why a decode-based VLA behaves differently: Cosmos3-Edge's 4.8\,GB of BF16 weights over $273$\,GB/s give a $57$\,tok/s ceiling and NVIDIA measures $37$--$43$\,tok/s\evP; a trajectory of a few hundred tokens costs seconds, while prefill plus a table lookup costs tens of milliseconds.
 
 \subsection{Retrieval cost of a very large vocabulary}
-With the effective tree ($5$ strategic actions, $35$ tactical cells, coarse-by-fine residual codes) and beams $(2,4,8)$, Table~\ref{tab:cost} compares scoring every distinct leaf embedding (which is generous to flat scoring, since it ignores strategic multiplicity) with beam retrieval, at $d=512$ and $10$\,Hz against the $273$\,GB/s of Thor\evP.
+The trajectory vocabulary is a product of $K_P$ paths and $K_V$ speed profiles, so scoring the two factors separately, keeping $(k_P,k_V)$ and composing costs $K_P+K_V+k_Pk_V$ rows instead of $K_PK_V$ (Proposition~\ref{prop:cost}). Table~\ref{tab:cost} compares this with scoring every composed entry, at $d=512$ against the $273$\,GB/s of Thor\evP; the last column is the time to stream the flat table once at the published peak bandwidth.
 \begin{table}[h]
 \centering\small
-\caption{Flat versus beam retrieval per decision (\evE, from Proposition~\ref{prop:cost}). Bandwidth share is at 10\,Hz in bf16 against 273\,GB/s.}
+\caption{Flat versus factored retrieval per decision (\evE, from Proposition~\ref{prop:cost}); bf16, $d=512$. Flat time is the table read at the published peak bandwidth of 273\,GB/s, a single reader; the backbone competes for the same bandwidth.}
 \label{tab:cost}
 \begin{tabular}{@{}rrrrrrr@{}}
 \toprule
-codes per cell & flat leaves & beam nodes & node ratio & flat MB & beam MB & flat share of BW \\ \midrule
-$64\times64$ & $1.4\times10^{5}$ & 2{,}379 & $60\times$ & 147 & 2.4 & 0.5\% \\
-$128\times128$ & $5.7\times10^{5}$ & 4{,}683 & $122\times$ & 587 & 4.8 & 2.2\% \\
-$256\times256$ & $2.3\times10^{6}$ & 9{,}291 & $247\times$ & 2{,}349 & 9.5 & 8.6\% \\
-$512\times512$ & $9.2\times10^{6}$ & 18{,}507 & $496\times$ & 9{,}395 & 19.0 & 34.4\% \\
+$K_P\times K_V$ & composed $N$ & kept $(k_P,k_V)$ & rows touched & ratio & flat MB (time) & factored MB \\ \midrule
+$1{,}024\times256$ & $2.6\times10^{5}$ & $(20,10)$ & 1{,}480 & $177\times$ & 268 (0.98\,ms) & 1.5 \\
+$2{,}048\times512$ & $1.05\times10^{6}$ & $(32,16)$ & 3{,}072 & $341\times$ & 1{,}074 (3.9\,ms) & 3.1 \\
+$4{,}096\times1{,}024$ & $4.2\times10^{6}$ & $(40,20)$ & 5{,}920 & $709\times$ & 4{,}295 (15.7\,ms) & 6.1 \\
 \bottomrule
 \end{tabular}
 \end{table}
-The honest reading is a scale argument. At the vocabulary sizes of published scorers (4{,}096--8{,}192 leaves) flat scoring streams a few megabytes and hierarchy buys nothing at inference; the bandwidth argument begins near $10^{6}$ leaves and is decisive near $10^{7}$, where flat scoring would consume a third of the SoC's memory bandwidth before the backbone runs. Training is affected earlier: a flat softmax over $10^6$ leaves at batch $2{,}048$ materialises $\approx4$\,GB of logits per step, whereas the tree softmaxes are over at most a few thousand siblings.
+The honest reading is a scale argument. At the vocabulary sizes of published scorers ($4{,}096$--$8{,}192$ entries) and even at $262{,}144$, flat scoring streams a few hundred megabytes in about a millisecond, so the hierarchy buys no speed at inference; the bandwidth argument begins beyond a few million entries, where an approximate index would otherwise be needed (none is a published 10\,Hz edge precedent). The hierarchy earns its place elsewhere: it gives the backbone a \emph{small} set to reason over (the cascade of \S\ref{sec:prune} costs $\approx0.34$\,GMAC per tick at $K=16$, and the cross-attention re-ranker at $K=8/16/32$ is $0.20/0.29/0.48$\,GMAC, \evE), it gives level-wise priors and a native tactical readout, and it estimates priors for entries with almost no data (about $1.5$ training windows per leaf at this size). A failure of the tree is therefore not fatal: flat scoring is the reference arm and the fallback. Training is affected earlier than inference: a flat softmax over $262{,}144$ entries at batch $2{,}048$ materialises $\approx0.5$\,G logits per step, whereas the level softmaxes are over a few thousand nodes.
 Whether a larger vocabulary \emph{helps} accuracy is a separate, empirical question (H-HC5): an oracle-in-set curve is necessary but not sufficient, since the programme's own measurements show the selection gap growing with the candidate set for a fixed scorer (oracle-in-fan $0.2213/0.1914/0.1640$\,m for $64/128/256$ anchors while the share of windows in which the pick is at least twice as bad as the best rises $0.3825/0.4109/0.4540$)\evI.
 
 \subsection{Caching at build time}

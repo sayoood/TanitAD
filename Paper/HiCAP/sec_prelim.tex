@@ -94,9 +94,60 @@ speed-conditional & $0.80$ & $0.815$ & $0.093$ & $43\%$ & $6.6$ & $67\%$ \\
 Three readings. (i)~The marginal guarantee holds on average: mean coverage is at or slightly above nominal at all three levels. (ii)~It is a statement about averages over calibration draws. With $12$ calibration episodes the coverage of a single draw has a standard deviation of $0.05$--$0.09$ and $33$--$43\%$ of draws fall below nominal, because windows within an episode are strongly dependent and effectively few. A shipped mask therefore needs a calibration set of hundreds of episodes and a stated share of draws below nominal (this is why H-HC6 reports that share); the training split has $4{,}572$ clips.
 (iii)~At $95\%$ coverage the tactical cell alone is pruned by about a third, and conditioning on speed did \emph{not} help at this sample size (the conditional table of $6$ bins $\times$ $20$ cells is fitted on about $350$ windows and prunes less, $24\%$ against $34\%$), so R2 is not expected to earn its place until it is fitted on the full training split. This is a small val-only check with a proxy label; it tests the mechanism, not the shipped guarantee.
 
-\subsection{Hierarchical retrieval, imagination and camera gating (toy worlds)}
+\subsection{Hierarchical retrieval over a product vocabulary (toy world)}
 \label{sec:prelim-toys}
-\textit{[This subsection is completed from the three toy streams as they report; see the repository manifest.]}
+A synthetic world with a product action vocabulary ($8$ strategic $\times$ $32$ cell classes $\times$ $256$ members $=65{,}536$ leaves, and a replicate with $131{,}072$ shaped like the v7 tokens) tests the retrieval mechanics with exact critics plus independent noise (\evM, \texttt{rb\_hier\_retrieval\_toy.py}; $400$ test states, noise $\sigma=0.5$). Because the critics are exact by construction, ``tree $\approx$ flat'' is partly built in; what the toy can show is cost, the effect of critic type, and the prior.
+\begin{table}[h]
+\centering\small
+\caption{Beam retrieval versus flat scoring in the toy (\evM; $65{,}536$ leaves; multiply-adds counted, not timed). Agreement is the share of states in which the pick equals the flat pick; recall is the share of states in which the expert's cell is kept.}
+\label{tab:tree}
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+retrieval & MACs per state & reduction & agreement with flat & cell recall \\ \midrule
+flat, all leaves & $3.36\times10^{7}$ & $1\times$ & $1.00$ & --- \\
+tree, beam $(1,4)$ & $5.4\times10^{5}$ & $61.6\times$ & $0.97$ & $0.958$ \\
+tree, beam $(2,8)$ & $1.09\times10^{6}$ & $30.9\times$ & $0.99$ & $0.990$ \\
+adaptive calibrated-margin beam, $\alpha=0.02$ & $3.4\times10^{5}$ & $100\times$ & --- & $0.966$ \\
+adaptive calibrated-margin beam, $\alpha=0.05$ & $2.5\times10^{5}$ & $133\times$ & --- & $0.927$ \\
+factored $20\times10$ composed set & --- & $78\times$ & $0.95$ & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+Beyond the table: (i)~with marginal-consistent critics the beam is not the bottleneck, the critic is; a mean-pooled centroid index loses $5$ points of cell recall at beam $(3,16)$ where a marginal critic loses $0.45$, and sibling-only negatives depress tactical agreement from $0.91$ to $0.62$ (Proposition~\ref{prop:marginal}, \S\ref{sec:train}).
+(ii)~The log-prior correction is mandatory at every size tested: without it the hit rate is $0.47$ of the exact maximum-likelihood rate and the cruise cell is picked in $46\%$ of states against $66\%$ for that rule; with it, $0.83$ and $65\%$. The bias did not grow between $4{,}096$ and $131{,}072$ leaves. A prior estimated from at most $0.023$ expert samples per leaf recovers only $50$--$75\%$ of the true-prior gain, which is why the prior is estimated hierarchically. For a bounded critic $\beta=0.75$ and $\beta=1$ tie on hit rate but differ $2.9\times$ in mean regret, so $\beta$ is chosen by regret and tactical agreement, not hit rate.
+(iii)~A hard comfort mask (nuPlan limits) removes $47.7\%$ of the leaves with $98.3\%$ oracle survival on average, but survival is $99.4\%$ for cruise and $93.3\%$ for stop and $94.3\%$ for turn states; inflating the limits by $0.18$ lifts survival to $99.4\%$ at the price of keeping $58.3\%$ of the vocabulary instead of $52.3\%$. Marginal coverage hides the rare classes, so calibration is class-conditional and episode-blocked; the analytic box test never removed a node containing a feasible leaf ($0$ violations).
+(iv)~A re-ranker after the tree gains almost everything by $K=8$ (hit rate $0.827\to0.940$), then $0.949$ at $K=16$ and $0.953$ at $K=32$, while the oracle error of the candidate set keeps falling. This is a toy world in two dimensions with iid states and no label noise; it does not measure oracle ADE against vocabulary size on real data (that is a CPU experiment on the training split, H-HC5), latency, agents or episode clustering.
+
+\subsection{Imagination (toy world)}\label{sec:prelim-imag}
+A one-dimensional driving world with a hidden lead-vehicle braking mode and onset, a noisy cue through a fixed random encoder and an exact simulator scores selectors by regret against the best candidate (\evM, \texttt{rc\_latent\_imagination\_toy.py}; three seeds, paired bootstrap over pooled ticks; signal-to-noise ratio $1$ and $1{,}200$ training ticks unless stated). Some arms, including the risk-sensitive floor and the model-free value, were added after the first sweep and are disclosed as post hoc.
+\begin{table}[h]
+\centering\small
+\caption{Imagination toy: regret (lower is better; oracle $=0$), mean over three seeds (\evM). The last rows are references, not deployable arms.}
+\label{tab:imag}
+\begin{tabular}{@{}lr@{}}
+\toprule
+selector & regret \\ \midrule
+one-hot expert label, contrastive selector (baseline) & 7.00 \\
+soft outcome-aware target, no imagination (Tier 0) & 3.43 \\
+re-rank of the top four by imagined rollouts & 3.79 \\
+imagined rollouts of all candidates & 2.17 \\
+\textbf{factorised: exogenous E-head plus analytic ego (Tier 1)} & \textbf{1.81} \\
+soft targets plus re-rank (Tier 0 + imagination) & 2.28 \\
+model-free value estimate, same rows & 2.97 \\
+risk-sensitive lookup that never sees the hidden consequence (floor) & 2.17 \\
+factorised with the true visible state (reference) & 1.37 \\
+\bottomrule
+\end{tabular}
+\end{table}
+Findings. (i)~Replacing the one-hot label by a soft outcome-aware target removes more than half the regret at zero inference cost (paired $3.57$, $[2.99,4.19]$), and a lookup that never sees the consequence but is risk-sensitive already reaches $2.17$: most of the apparent value of imagination is target shape and risk sensitivity. Any imagination gain must be reported against both.
+(ii)~Only the factorised arm is robust to the absence of counterfactual data ($1.80$); unstructured imagination collapses ($71.8$ with $40\%$ unsafe picks for pure rollouts, $47.0$ for the model-free value, $48.2$ for a distilled arm).
+(iii)~Imagination alone chose an infeasible over-braking candidate in $89.8\%$ of ticks, and an analytic feasibility mask after the learned term brought that to $0\%$.
+(iv)~Heuristic triggers (need-times-trust, margin) were no better than random ($35$--$39\%$ of the gain at $30\%$ of the budget); a learned gate reached $65\%$, and imagination hurt on $13.4\%$ of ticks even when it helped on average.
+(v)~Adding an imagined-cost term flipped the correlation of confidence with regret from $-0.11$ to $+0.19$ in all three seeds (anti-calibration, as measured earlier in the programme).
+(vi)~The disagreement of two heads detected out-of-vocabulary candidates with AUROC $0.877$ (recall $64\%$ at $5\%$ false positives) but not as a benefit trigger.
+(vii)~The echo control worked as intended: the ego-speed $R^2$ was $0.620$ with the real cue and $0.613$ shuffled (the ego part is predictable from the ego), while lead speed fell from $0.387$ to $-0.329$ when the cue was shuffled.
+(viii)~When the cue is clean (signal-to-noise ratio $3$) the factorised arm lost to the risk-sensitive floor ($3.00$ against $2.17$) because of visible-state readout error; its gap to the true-state reference ($3.00$ against $0.46$) is the readout error that E-I0 is designed to measure on real embeddings.
+Of the five pre-registered readings of the stream, one was supported but confounded (imagination beats the baseline), one was supported (an infeasibility mask is needed) and three were refuted as worded (imagination beats the floor at zero signal, gates by need or margin, and compounding of cost-level disagreement). The exact simulator supplies counterfactuals that a real system does not, there are three seeds, and nothing transfers to VLM scale.
 
 \subsection{Repository manifest for this section}
 \begin{tabular}{@{}p{4.2cm}p{11.6cm}@{}}
@@ -106,6 +157,9 @@ contrastive-bias toy & \texttt{reff\_pmi\_toy.py}, \texttt{reff\_pmi\_toy\_resul
 nested-vocabulary coverage & \texttt{reff\_v0\_coverage.py}, \texttt{reff\_v0\_coverage\_result.json} \\
 kinematic mask & \texttt{2026-09-29-hicap/hicap\_prior\_mask\_measure.py}, \texttt{hicap\_prior\_mask\_result.json} \\
 conformal keep-set, real windows & \texttt{2026-09-29-hicap/hicap\_conformal\_cells\_measure.py}, \texttt{hicap\_conformal\_cells\_result.json} \\
+imagination toy & \texttt{2026-09-29-hicap/rc\_latent\_imagination\_toy.py}, \texttt{rc\_latent\_imagination\_toy\_result.json} \\
+hierarchical retrieval toy & \texttt{2026-09-29-hicap/rb\_hier\_retrieval\_toy.py}, \texttt{rb\_hier\_retrieval\_toy\_result.json} \\
+camera-gating toy & \texttt{2026-09-29-hicap/rd\_camera\_gating\_toy.py}, \texttt{rd\_camera\_gating\_toy\_result.json} \\
 cost model (arithmetic) & \texttt{2026-09-29-hicap/hicap\_cost\_model.py}, \texttt{hicap\_cost\_model\_result.json} \\
 \bottomrule
 \end{tabular}

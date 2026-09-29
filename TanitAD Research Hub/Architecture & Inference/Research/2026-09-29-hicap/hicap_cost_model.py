@@ -48,6 +48,24 @@ def retrieval_rows():
     return rows
 
 
+def factored_rows():
+    """Factored product vocabulary (path factor x speed-profile factor), coarse-then-compose (the SparseDriveV2
+    structure): score K_P paths and K_V profiles separately, keep (k_P, k_V), compose k_P*k_V trajectories.
+    Cost per decision in embedding rows read = K_P + K_V + k_P*k_V (the composed stage also needs a pair head)."""
+    rows = []
+    for kp, kv, kkp, kkv in ((1024, 256, 20, 10), (2048, 512, 32, 16), (4096, 1024, 40, 20)):
+        n = kp * kv
+        touched = kp + kv + kkp * kkv
+        row = {"K_P": kp, "K_V": kv, "keep": [kkp, kkv], "N_composed": n, "rows_touched": touched,
+               "node_ratio": round(n / touched, 1)}
+        for w, tag in ((2, "bf16"), (1, "int8")):
+            row[f"flat_MB_{tag}"] = round(n * D * w / 1e6, 1)
+            row[f"flat_ms_at_273GBps_{tag}"] = round(n * D * w / THOR_BW * 1e3, 2)
+            row[f"factored_MB_{tag}"] = round(touched * D * w / 1e6, 3)
+        rows.append(row)
+    return rows
+
+
 def prefill_rows():
     rows = []
     for name, cams, tok_per_cam, hz in (("all 7 cams x 256 tok @10Hz", 7, 256, 10.0),
@@ -101,6 +119,6 @@ if __name__ == "__main__":
            "d": D, "thor_bw_Bps": THOR_BW, "tick_hz": TICK_HZ,
            "tree": {"strategic": N_STR, "tactical_cells": N_CELL,
                     "beams": {"strategic": BEAM_STR, "cell": BEAM_CELL, "coarse_code": BEAM_CODE}},
-           "retrieval": retrieval_rows(), "prefill": prefill_rows(),
+           "retrieval": retrieval_rows(), "factored_product": factored_rows(), "prefill": prefill_rows(),
            "thor_latency_estimate": thor_latency_rows(), "cache_size": cache_rows()}
     json.dump(out, sys.stdout, indent=1)

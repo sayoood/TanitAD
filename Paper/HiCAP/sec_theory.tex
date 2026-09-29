@@ -8,8 +8,8 @@ our own programme (action echo, split-mean bias, uncalibrated imagination) came 
 \subsection{Setting}
 Let $s\in\mathcal S$ be the multimodal state (frames, ego state, optional audio). A decision is a leaf of a
 rooted tree $\mathcal T$ of depth $L$: $a=(v_1,\dots,v_L)$ with $v_\ell\in C(v_{\ell-1})$, where $C(v)$ is the
-finite set of children of node $v$ and $v_0$ is the root. In HiCAP there are three semantic levels (strategic action, tactical cell, trajectory residual;
-\S\ref{sec:vocab}), and the residual level is itself a two-stage coarse-to-fine code, so retrieval runs over $L=4$ stages. Each node $v$ has a unit-norm embedding $\mathbf a_v\in\mathbb S^{d-1}$
+finite set of children of node $v$ and $v_0$ is the root. In HiCAP $L=3$ (strategic action, tactical cell, trajectory entry;
+\S\ref{sec:vocab}); the trajectory entry is a pair (path, profile) drawn from a product, which is scored coarse-then-compose (below). Each node $v$ has a unit-norm embedding $\mathbf a_v\in\mathbb S^{d-1}$
 and each level $\ell$ a unit-norm state readout $\mathbf s_\ell(s)\in\mathbb S^{d-1}$. The critic is
 $f_\ell(s,v)=\tau\langle\mathbf s_\ell(s),\mathbf a_v\rangle$ with temperature $\tau>0$.
 The expert (logged) decision is drawn from $p(a\mid s)=\prod_{\ell}p(v_\ell\mid v_{\ell-1},s)$.
@@ -57,15 +57,35 @@ Each factor is a softmax on the children of one node, so it sums to one; the pro
 path therefore sums to one over all leaves by induction on depth.\qedhere
 \end{proof}
 
+\begin{proposition}[Marginal node score]\label{prop:marginal}
+Fix a level $\ell$ with node set $V_\ell$ and a beam of width $w$. The probability that the beam contains the ancestor of the expert's action is
+$\sum_{v\in\text{beam}}P_\ell(v\mid s)$, where $P_\ell(v\mid s)=\sum_{a\in\mathrm{subtree}(v)}p(a\mid s)$ is the marginal mass of the node. It is maximised over all beams of width $w$ by the $w$ nodes of largest \emph{marginal}, and no node score that is not monotone in the marginal can do better.
+\end{proposition}
+\begin{proof}
+The expert's action falls in the subtree of exactly one node of the level, so the retention probability of a set of nodes is the sum of their marginal masses; the maximum over sets of size $w$ is attained by the $w$ largest terms.\qedhere
+\end{proof}
+\noindent This is why level critics are trained as marginals with level-wide negatives (\S\ref{sec:train}): a sibling-only softmax leaves a per-(state, parent) offset free, and a mean-pooled child centroid scores the average child, neither of which is monotone in the marginal. (Retaining the ancestor of the single \emph{most likely} leaf would instead call for a max-heap score; the expert's action is a draw from $p$, so the marginal is the right target.)
+
+\begin{proposition}[Beam miss under noisy level critics]\label{prop:beam}
+Let a level have $N$ children, let the true ancestor have score margin $m_j$ over competitor $j$, and let node scores carry independent errors of standard deviation $\sigma$. With beam width $w$ the ancestor is lost only if at least $w$ competitors outscore it, and
+\begin{equation}
+P_{\text{miss}}\;\le\;\frac1w\sum_{j=1}^{N-1}\bar\Phi\!\Big(\frac{m_j}{\sigma\sqrt2}\Big),
+\end{equation}
+with $\bar\Phi$ the standard normal tail. Over $L$ levels the ancestor path survives with probability at least $1-\sum_\ell P_{\text{miss},\ell}$. To keep level $\ell$ at miss $\le\alpha_\ell$ it suffices that $w_\ell\ge(N_\ell-1)\,\bar\Phi\big(m_\ell/(\sigma_\ell\sqrt2)\big)/\alpha_\ell$ when the margins are equal.
+\end{proposition}
+\begin{proof}
+The difference of two independent errors is normal with variance $2\sigma^2$, so competitor $j$ outscores the ancestor with probability $\bar\Phi(m_j/(\sigma\sqrt2))$. The number of outscoring competitors has this expectation summed over $j$, and Markov's inequality gives $\Pr(\text{count}\ge w)\le\mathbb E[\text{count}]/w$. The union bound over levels gives the survival statement.\qedhere
+\end{proof}
+\noindent The width is thus a proxy for critic quality: a critic that delivers margin $m$ at noise $\sigma$ buys a narrower beam, which is the rationale for a beam width that follows a calibrated margin rather than a constant.
+
 \subsection{Cost and memory of hierarchical retrieval}
 \begin{proposition}[Retrieval cost]\label{prop:cost}
 Let level $\ell$ have branching $B_\ell=\max_u|C(u)|$ and beam width $b_\ell$ ($b_0=1$). Flat scoring of
 $N=\prod_\ell B_\ell$ leaves costs $Nd$ multiply-accumulates and streams $N\,d\,w$ bytes of embeddings ($w$ bytes per element)
 per decision. Beam retrieval touches $M=\sum_{\ell}b_{\ell-1}B_\ell$ nodes, i.e.\ $Md$ multiply-accumulates and $Mdw$ bytes.
+For a product vocabulary of $K_P$ paths and $K_V$ profiles ($N=K_PK_V$ composed entries), scoring the factors separately, keeping $(k_P,k_V)$ and composing costs $M=K_P+K_V+k_Pk_V$ rows.
 \end{proposition}
-\noindent For the sizes in Table~\ref{tab:vocab} this is the difference between streaming several gigabytes per tick
-and reading a few megabytes; on an edge device the binding constraint is memory bandwidth, not arithmetic
-(\S\ref{sec:eff}).
+\noindent For $1{,}024\times256$ entries with $(20,10)$ kept this is $1{,}480$ rows instead of $262{,}144$, a factor of $177$ (Table~\ref{tab:cost}). On an edge device the binding constraint is memory bandwidth, not arithmetic (\S\ref{sec:eff}), and at this size flat scoring is itself affordable ($\approx1$\,ms), so the case for the hierarchy is the small set the backbone can reason over and the level-wise priors, and only beyond a few million entries the speed.
 
 \subsection{Recall under cascaded pruning}
 Pruning is safe only if it rarely removes the right action. We give two mechanisms.
@@ -126,6 +146,8 @@ pointwise-mutual-information estimate between the candidate and its outcome.
 \begin{proof}
 Identical to Proposition~\ref{prop:infonce} with the positive drawn from $p(s'\mid s,a)$ and negatives from the marginal $p(s')$.\qedhere
 \end{proof}
+
+\noindent The denominator $p(s')$ of this ratio does not depend on the candidate, so ranking candidates by $g^\star$ carries no prior bias of the kind in Corollary~\ref{cor:bias}; the price is that $g^\star$ is identified only on the data manifold, so on candidates the expert never took it is an extrapolation, which is why the critic is gated and vetoed (\S\ref{sec:imag}). Action selection and outcome prediction are different relations (a PMI over actions against a ratio of dynamics): a state tower can be shared, one objective cannot.
 
 \subsection{Distilling the selector into a small student}
 \begin{proposition}[Decision preservation]\label{prop:distill}
