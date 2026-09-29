@@ -153,7 +153,25 @@ The output matches TanitEval directly (20 waypoints; metrics at 0.5 / 1 / 1.5 / 
 
   Ablations: k-means (density-following); a joint, unfactorised vocabulary with N = 4,096 or 8,192.
 - **Frequency prior** p̂(a_j): the share of train windows assigned to each entry (soft-assigned). It is stored with the vocabulary and used by the prior correction (§2.5).
-- **Coverage gate V0**, before any training (0 GPU): oracle-in-vocabulary ADE@2s on val-40 and val-600, residual vs absolute parameterisation, N ∈ {1k, 2k, 4k, 8k}. There is no pre-set pass bar. The number is reported and it sets the refinement head's job. For scale: REF-C's scene-conditioned 256-candidate fan reaches a 0.1640 m oracle (MEASURED), and a fixed vocabulary is expected to need far more entries for the same coverage (ESTIMATED).
+- **Coverage gate V0**, before any training (0 GPU): oracle-in-vocabulary ADE@2s on val-40 and val-600, residual vs absolute parameterisation, N ∈ {1k, 2k, 4k, 8k}. There is no pre-set pass bar. The number is reported and it sets the refinement head's job.
+- **V0 preview, run 2026-09-29 on committed artifacts** (MEASURED; `Research/reff_v0_coverage.py` → `Research/reff_v0_coverage_result.json`; val-40, 881 windows / 40 episodes, full-set mean with episode-cluster bootstrap CI95, B = 2000).
+  - **Set:** REF-C's 256 farthest-point anchors drawn from 200 k parity-*train* windows (provenance recorded in the file: source `…/physicalai-train-e438721ae894`). Smaller N are nested prefixes of the same order.
+  - **Speed-normalised variant:** each anchor is uniformly rescaled so its implied initial speed equals the window's v0, an inference-time input. This is a crude stand-in for the residual parameterisation.
+
+  | N | absolute oracle ADE@2s | speed-normalised oracle ADE@2s |
+  |---|---|---|
+  | 16 | 2.3074 [2.1111, 2.5083] | 0.4681 [0.3888, 0.5542] |
+  | 64 | 1.1480 [1.0898, 1.2114] | 0.2701 [0.2254, 0.3176] |
+  | 128 | 0.8032 [0.7601, 0.8416] | 0.2214 [0.1877, 0.2586] |
+  | 256 | 0.5992 [0.5636, 0.6337] | **0.1787 [0.1513, 0.2074]** |
+
+  **Reading:**
+  - A fixed *absolute* vocabulary is a poor substrate: even a perfect selector over 256 absolute entries (0.60) could not match REF-C's actual pick (0.47).
+  - Factoring out the current speed changes that. 64 speed-normalised entries cover better than 256 absolute ones, and 256 approach REF-C's per-scene refined fan (0.1640) with no refinement at all.
+
+  This supports the residual-over-prior parameterisation of §2.3 and makes a vocabulary of a few thousand residual entries look ample (ESTIMATED; the real residual vocabulary needs train trajectories and is measured in M1).
+
+  **Limits:** oracle coverage, not achievable selection; val-40 only; uniform rescaling is cruder than CTRA.
 
 ### 2.5 Scoring, and the one thing the transfer must get right
 
@@ -300,7 +318,7 @@ The total is `L = L_nce + λ_voc·L_voc + λ_cost·L_cost + λ_ref·L_ref`, with
 
 | rung | what | GPU | passes when |
 |---|---|---|---|
-| **V0** | vocabulary coverage (oracle-in-vocab ADE vs N, residual vs absolute); leak guard (vocabulary provably train-only); the PMI toy check (**done 2026-09-29**, §2.5) | 0 | coverage reported; leak guard green |
+| **V0** | vocabulary coverage (oracle-in-vocab ADE vs N, residual vs absolute); leak guard (vocabulary provably train-only); the PMI toy check (**done 2026-09-29**, §2.5); an absolute vs speed-normalised coverage preview on REF-C's train anchors (**done 2026-09-29**, §2.4) | 0 | coverage reported; leak guard green |
 | **V1** | unit tests + a CPU smoke run end-to-end on synthetic episodes (`stack/tanitad/data/toy_driving.py`); determinism test | 0 | `pytest -q` green, including the smoke |
 | **V2** | head training on cached features; open loop on **val-40 and val-600**, full-set means, **paired episode-cluster bootstrap**, all **four families**, with every control arm | ≤ 1.5 A40-day | the pre-registered primaries adjudicated (H-F1–H-F4, H-F7) |
 | **V3** | Thor: full-tick p50/p95; closed loop on NuRec/AlpaSim, paired vs REF-C-base, n reported (12 scenes are underpowered; grow the suite) | Thor | H-F5, H-F8 adjudicated |
@@ -379,7 +397,57 @@ These come from CLAUDE.md and are not repeated in full here:
 
 ## 7. Integration into the TanitAD stack (M1)
 
-<!-- F-S survey facts are inserted here -->
+Everything below comes from the integration survey (stream F-S, read-only, 2026-09-29). File:line references are at `main` `467ce8a`. Keys: `R` = `stack/tanitad/refs`, `S` = `stack/scripts`, `D` = `stack/tanitad/data`, `T` = `taniteval/taniteval`.
+
+### 7.1 Facts that shape the implementation
+
+- **Naming.** Only REF-A, REF-B and REF-C exist; there is no REF-D or REF-E. "REF-F" is free.
+- **REF-C's interface**, which REF-F mirrors: `RefCModel.forward(frames[B,8,9,256,256] in [0,1], nav_cmd, v0, …)` (`R/refc.py:1834`). It returns `traj[B,4,2]` at horizons 5/10/15/20, the refined fan `anchor_traj[B,N,4,2]`, `anchor_logits[B,N]` and `sel_idx`. Anchors are farthest-point samples over parity-train ego-frame waypoint targets (`S/build_refc_anchors.py:36-77`), stored as a persistent buffer in the checkpoint.
+- **Windows** come from `EpisodeWindowDataset` (`D/_contract.py:104`) via `FailLoudWindowDataset`/`load_cached_episodes` (`S/refb_train.py:122,233`):
+  - window 8, stride 1, max horizon 20;
+  - items carry `frames`, `future_poses[20,4]`, `pose_last`, `actions[8,2]`, and always `future_frames[20,…]` (about 47 MB per item). REF-F's cache builder must avoid that last payload.
+- ⚠️ **Causality trap.** `actions[:,-1]` is the action *after* `pose_last` (`S/refb_train.py:281`). REF-F must never feed `actions` as an input. It derives its ego inputs from poses only:
+  - `v0 = pose_last[3]`;
+  - yaw rate = wrap(Δyaw)/0.1, as at `stack/tanitad/train/flagship_losses.py:203`;
+  - `ax_fd` = (v_t − v_{t−1})/0.1 from the pose speed channel. Today `ax_fd` exists only in `S/lead_state_gate.py:190`, from the egomotion parquet, and is not in the episode cache.
+- **CTRA does not exist yet.** Only CTRV (`constant_yaw_rate`, `S/driving_diagnostic.py:109`) and `T/ctrv_backfill.py:90` do. REF-F adds a CTRA prior.
+- **Parity refusal is soft by default.** `D/parity.py:467 assert_parity_corpus` only prints NON-PARITY unless `require=True` (the precedent is `S/train_flagship_v4.py:708`). REF-F calls it with `require=True`.
+- **Seeds.** No `seed_everything` exists: trainers call `torch.manual_seed` (`S/refc_train.py:686`) and the DataLoader shuffles with the global RNG (`:920`). REF-F adds its own seeded helper.
+- **Evaluation contract.** An arm's `collect` returns `pred[N,4,2]` (waypoints 5/10/15/20), `gt`, `cv`, `eid`, `speed`, `head_deg`, `wp_steps` and `method` over windows `range(0, T−W−20, 8)` (881 windows / 40 episodes; `T/refc_eval.py:109-194`). For the four families it also needs `ctrv`, `pred_dense`/`gt_dense[N,20,2]`, `dense_steps` and `dt_s` (`T/four_families.py:507`, `T/driving.py:563`), and `maneuver_pred`/`maneuver_gt` for TACTICAL (else UNAVAILABLE, `:317`).
+- **Existing fan dumps.** `taniteval/results/fan_refc-{xl,base}-30k.pt` hold `fan[W,N,4,2]`, `logits`, `sel`, `gt`, `cv`, `eid` and `v0` for val-40 (`T/refc_rerank.py:234`). REF-F's verifier mode can run on these with no new REF-C inference. Their candidates have 4 waypoints, so they are upsampled in time to 20 steps before embedding.
+- **Closest precedent for a learned selector:** `RefCRescorer` (`stack/tanitad/models/refc_rescorer.py:388`, top-K 8) with its cache/train/eval chain `S/refc_v12_{cache,train,eval}.py`. Reusable pieces:
+  - `geom_features` (`refc_rescorer.py:284`);
+  - `reachability_mask` (`R/refc_select.py:177`);
+  - farthest-point sampling (`R/refc.py:159,193,217`);
+  - lateral × longitudinal class labels from poses (`R/refc_tactical.py:234`, `S/refb_labels.py:1294`);
+  - ego-frame helpers (`stack/tanitad/ego_plan.py:86-216`);
+  - controllers (`T/closedloop.py:172 wp_to_control`, `:196 bicycle_integrate`);
+  - the feature-cache precedent `S/dino_precompute.py:96` and its shard/parity pattern in `S/refc_v12_cache.py:136`.
+- **Thor export.** Only the operative predictor has a TensorRT path (`S/build_predictor_trt.py`). REF-F's heads start eager and bf16, and a TensorRT export is an M3 task.
+
+### 7.2 Files M1 adds
+
+| file | contents | reuses |
+|---|---|---|
+| `stack/tanitad/refs/reff.py` | `RefFConfig` (dataclass; presets `reff_smoke_config`, `reff_base_config`); `StateHead` (temporal mixer over `z[8]`, learned-query attention pooling over patch tokens, ego MLP with a learned null row, MLP → 512, L2); `ActionEncoder` (lateral/longitudinal residual profiles + kinematic descriptors → MLP → 512, L2); `RefFModel` with `encode_state`, `encode_actions`, `score(s, A, prior, prev)`, `select`, `refine`; losses `bidirectional_infonce(masked by ε)`, `vocab_soft_ce`, `cost_heads_loss` | CLM head form (`make_head`), in-house tensors only |
+| `stack/tanitad/refs/reff_prior.py` | ego inputs from poses only (`v0`, yaw rate, `ax_fd`, 8-step speed history); **CTRA prior**; residual ↔ absolute conversion (`prior ⊕ residual`); upsampling 4-waypoint candidates to 20 steps | `ego_plan.py`, `flagship_losses.py:203` convention |
+| `stack/tanitad/refs/reff_vocab.py` | farthest-point-sampled 64 × 64 residual vocabulary from the **train split only**; frequency prior; provenance (split key, source hash); `coverage(vocab, gt)`; refuses a non-train key | `R/refc.py` farthest-point sampling |
+| `stack/scripts/reff_embed_cache.py` | one frozen-backbone pass per split: `z[8]` + pooled patch tokens + ego features + future residuals → shards, with `assert_parity_corpus(require=True)`, backbone hash, cache manifest; skips `future_frames` | `refc_v12_cache.py:136` shard pattern |
+| `stack/scripts/reff_train.py` | the 3-stage curriculum on cached shards; seeded; `--smoke --device cpu` path; checkpoint `{state_head, action_head, logit_scale, cfg, vocab_hash, backbone_hash, parity_key}` + `config.json` in the TanitEval shape | `refc_train.py` checkpoint/config conventions |
+| `taniteval/taniteval/reff_eval.py` | `collect` in three modes: standalone vocabulary, verifier over a fan dump, v6-selector hook. Emits `pred`, `pred_dense`, `gt`, `gt_dense`, `cv`, `ctrv`, `eid`, `speed`, `head_deg`, `wp_steps`, `dense_steps`, `dt_s`, and `maneuver_pred`/`maneuver_gt` from the factorised vocabulary | clone of `refc_eval.py:109-194`; `rollout.save_windows` |
+| edits: `T/registry.py`, `T/loaders.py`, `T/runner.py` | registry keys `reff-*`; a loader branch mirroring REF-C's (`loaders.py:129-150`); `direct_head` + dispatch in `runner.py:59,85-99` | — |
+| `stack/tests/test_reff.py` | shapes and L2 norms; InfoNCE equals a hand-computed value on a 3×3 case; the ε-mask removes exactly the near-duplicate pairs; vocabulary softmax soft targets sum to 1; the vocabulary refuses a non-train key; no `actions` tensor reaches the model (named-input allowlist); CTRA with zero acceleration equals CTRV; 4 → 20 upsampling preserves the waypoints; cache round-trip equality; determinism under a fixed seed; **CPU smoke: embed → train 50 steps → select → controller on toy episodes (the `test_refc.py` `_drive_episode` pattern)** | `stack/tests/test_refc.py:45-86,568` |
+| `TanitAD Research Hub/Architecture & Inference/Research/reff_pmi_toy.py` | the V0 toy, already written (§2.5) | — |
+
+### 7.3 Order of work in M1
+
+Agents, per the review's routing: Sonnet implements, Opus reviews the loss and leak code.
+1. `reff_prior.py` + tests (causal inputs, CTRA).
+2. `reff_vocab.py` + the V0 coverage run on the committed val-40 GT (CPU).
+3. `reff.py` + unit tests.
+4. `reff_embed_cache.py` + `reff_train.py` with the CPU smoke.
+5. `reff_eval.py` and the TanitEval wiring, including verifier mode on the committed REF-C-XL fan dump. Verifier mode is the first real number REF-F can produce without new REF-C inference.
+6. `pytest -q` green in an environment that has torch. Cloud sessions currently cannot install it; a pod or the dev box can.
 
 ---
 
