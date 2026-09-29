@@ -1,0 +1,149 @@
+% ---------------------------------------------------------------------------
+\section{Efficiency: what is cached, what runs when, and how large the backbone may be}\label{sec:eff}
+% ---------------------------------------------------------------------------
+Compute efficiency is a design constraint, not a tuning step. Four mechanisms carry it: multi-rate execution, caching at build time, hierarchical retrieval,
+and pruning before expensive computation (elastic sensing, \S\ref{sec:elastic}, is the fifth). This section states each cost in closed form or from published
+figures and separates that clearly from anything we have timed. \textbf{Nothing in this section is a HiCAP timing}: rows are arithmetic (\evE) or NVIDIA-published
+figures for the backbone alone (\evP).
+
+\subsection{Multi-rate execution}
+The decision levels have different natural rates, and so does the cost. Table~\ref{tab:rates} is the schedule.
+\begin{table}[h]
+\centering\small
+\caption{Multi-rate schedule. The frozen VLM is the only expensive component and runs at the slowest rate; the fast path is small enough that launch overhead, not arithmetic, dominates it.}
+\label{tab:rates}
+\begin{tabularx}{\textwidth}{@{}p{3.3cm}p{1.6cm}Xp{2.6cm}@{}}
+\toprule
+component & rate & recomputed & cost model \\ \midrule
+frozen VLM (ViT + prefill), selected cameras & 2\,Hz & visual tokens at three depths, last-token state; between refreshes tokens are reused with an age embedding & Table~\ref{tab:thor} \\
+motion adapter & 10\,Hz & 16 motion tokens from the 3-frame stack & $\approx2$\,M params \\
+fusion transformer & 10\,Hz & level queries over $\approx160$ tokens & $\approx19$\,M params, $\approx8$\,GFLOP\evE \\
+L1 readout / retrieval & every 2\,s & strategic scores, keep-set & 5 nodes \\
+L2 readout / retrieval & every 0.5\,s & tactical cell scores, classes then members; survivors cached for five ticks and re-masked each tick & $\le35$ cells; $1{,}280$ factor rows \\
+L3 compose, re-score, refine & every 0.1\,s & compose $\approx200$ entries, late-interaction shortlist, cross-attention re-rank of $K=16$, refinement & $\approx0.34$\,GMAC, Table~\ref{tab:cost} \\
+System-2 verifier & only if uncertain & one extra prefill on $\le5$ renderings & one prefill row of Table~\ref{tab:thor} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+The fusion cost of $\approx8$\,GFLOP is $2\times19\text{M}\times200$ tokens, ignoring attention; at the $\approx25$\,TFLOP/s eager-bf16 throughput class of the programme's encoder measurements\evI{} this is well under a millisecond
+of arithmetic, so the fast path is expected to be launch-bound, and the only honest statement is that it must be measured (hypothesis H-HC11).
+
+\subsection{Backbone cost on the target SoC}\label{sec:backbone-cost}
+NVIDIA publishes measured Jetson Thor figures for Qwen3-VL-2B, -4B and -8B (TensorRT Edge-LLM 0.10.0, batch 1, vision tower FP16, language model NVFP4)\evP: for the 4\,B model a ViT pass of $11.6$\,ms and a $292$-token prefill of $22.3$\,ms, and a $2{,}048$-token prefill of $62.2$\,ms.
+Interpolating linearly in token count and scaling the ViT with the number of camera images gives Table~\ref{tab:thor}; the research stream, using a reduced vision-tower cost and $160$ tokens per camera, estimates $\approx31$\,ms and $\approx61$\,ms for the Qwen3.5-4B external reference with one and three cameras ($\pm25\%$, \evE); the table's row for it uses the published rows directly and is the more conservative. The ViT row is measured on a $\sim$265-token image while our cylindrical crop yields $160$ tokens per camera, so the ViT column is an upper bound; the one-camera column ($n=224$) lies below the smallest published prefill length ($292$), so it is an extrapolation.
+\begin{table}[h]
+\centering\small
+\caption{Estimated backbone latency per VLM refresh on Thor from the published rows (linear interpolation; ms). $n$ = total tokens (160 per camera + 64 prompt/query).}
+\label{tab:thor}
+\begin{tabular}{@{}lrrrrrr@{}}
+\toprule
+& \multicolumn{2}{c}{1 camera ($n{=}224$)} & \multicolumn{2}{c}{3 cameras ($n{=}544$)} & \multicolumn{2}{c}{7 cameras ($n{=}1184$)} \\
+model & ViT & total & ViT & total & ViT & total \\ \midrule
+Qwen3-VL-2B & 11.4 & 23.5 & 34.2 & 49.1 & 79.8 & 100.3 \\
+Qwen3-VL-4B & 11.6 & 32.4 & 34.8 & 62.8 & 81.2 & 123.8 \\
+Qwen3.5-4B (external reference) & 10.9 & 40.0 & 32.7 & 73.4 & 76.3 & 140.2 \\
+Qwen3-VL-8B & 15.7 & 45.0 & 47.1 & 89.6 & 109.9 & 178.8 \\
+\bottomrule
+\end{tabular}
+\end{table}
+Two conclusions follow, both estimates. First, a single camera at a $2$--$10$\,Hz refresh is cheap (a 4\,B model at $\approx32$--$40$\,ms), so the case for a frozen VLM in the loop does not rest on the model being slow. Second, the cost is dominated by the vision tower and is linear in the number of cameras,
+so seven cameras cost $\approx124$--$140$\,ms per refresh and cannot run at 10\,Hz; the value of choosing cameras per tick (\S\ref{sec:elastic}) is exactly this slope. An open question is the precision drift between NVFP4 features on the vehicle and the BF16 features a head was trained on; it is registered as a measurement (H-HC11).
+
+The same arithmetic explains why a decode-based VLA behaves differently: Cosmos3-Edge's 4.8\,GB of BF16 weights over $273$\,GB/s give a $57$\,tok/s ceiling and NVIDIA measures $37$--$43$\,tok/s\evP; a trajectory of a few hundred tokens costs seconds, while prefill plus a table lookup costs tens of milliseconds.
+
+\subsection{Latency, not parameter count, sets the backbone size}\label{sec:latency}
+The PI ruled on 2026-09-29 that the programme's sub-300\,M cap does not bind this arm if the inference time of the whole system is very low. That turns a size rule into a latency rule, and two clocks have to be told apart because they respond to backbone size in opposite ways.
+\emph{Command latency} $L_{\text{cmd}}$ is the time from the newest camera frame to the emitted command. It runs through the motion adapter, the fusion transformer, retrieval and the heads; the backbone enters only through the cache, so to first order $L_{\text{cmd}}$ does not depend on the backbone's size. \emph{Token age} $A$ is the age of the cached VLM tokens when the fast path reads them; with refresh rate $f_r$, refresh compute time $T_r$ and an overhead $o$ for pooling, hand-off and pre-processing, the worst case is $A=T_r+o+1/f_r$. A larger backbone raises $T_r$, hence $A$ and the refresh duty $D=f_r(T_r+o)$. We register three criteria in advance: $D\le0.5$ (the remainder is for the fast path and the vehicle's other tenants; an assumption), the fast-path p95 $\le25$\,ms \emph{measured while a refresh is running}, and $L_{\text{cmd}}$ p95 $\le100$\,ms, the tick. The synchronous reading, in which the refresh sits inside the tick, is the special case $f_r=10$\,Hz. The size ruling is therefore met by construction only if two things hold that no arithmetic here can show: that the refresh does not inflate the fast path through contention for the SoC's 20 streaming multiprocessors\evI{} and its $273$\,GB/s\evP{} (no preemption is assumed), and that stale tokens do not cost decision quality (H-HC11, H-HC15).
+
+Table~\ref{tab:maxbody} gives, for the dense Qwen3-VL lineage that carries the published rows, the largest body that meets $D\le0.5$ under the pessimistic effective throughput. Inside the measured body range ($1.4$--$7$\,B) the time is interpolated between the three published rows; above it, the eight-billion row's effective rate is assumed to be a lower bound on throughput (monotone in size across the three published points, $65/95/126$\,TFLOP/s at $n=292$ and $206/239/272$ at $n=2{,}048$; not true across families, since the Qwen3.5 hybrid is about $1.5\times$ slower per token). Entries beyond twice the largest measured body ($13.9$\,B) are stated only as ``at least'', with no fitted exponent and no point estimate.
+\begin{table}[h]
+\centering\small
+\caption{Largest dense backbone body (billions of parameters) meeting refresh duty $D=f_r(T_r+15\,\text{ms})\le0.5$ at the pessimistic throughput (\evE, \texttt{hicap\_latency\_budget.py}; anchored on \evP{} Thor rows, ViT and LLM as in Table~\ref{tab:thor}). ``$>13.9$'': the bound lies beyond twice the largest measured body. ``none'': the vision tower alone exceeds the budget. Frames per camera is the number of images the VLM reads per refresh; the motion adapter supplies temporal information, so one frame per camera is the primary setting.}
+\label{tab:maxbody}
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+refresh $f_r$ & 1 camera, 1 frame & 3 cameras, 1 frame & 7 cameras, 1 frame & 3 cameras, 3 frames \\ \midrule
+2\,Hz (asynchronous) & $>13.9$ & $>13.9$ & 12.6 & 7.9 \\
+5\,Hz & $>13.9$ & 5.9 & none & none \\
+10\,Hz (synchronous) & 4.0 & none & none & none \\
+\bottomrule
+\end{tabular}
+\end{table}
+The reading is direct. At $2$\,Hz an 8\,B-class backbone (the estimate from the published Qwen3-VL-8B rows: $223.4$\,ms for three cameras with three frames each, duty $0.48$ with the assumed $15$\,ms overhead) is admitted, and with one frame per camera a body of up to about $30$\,B meets the duty rule at three cameras as a bracket outside the measured range; at $10$\,Hz only a $4$\,B-class model with one camera does, so a 10\,Hz VLM refresh forces a small backbone and the ruling buys nothing there. The price of the large backbone is age: an 8\,B model at three cameras (one frame) has $A\le90+15+500\approx0.6$\,s, which at $15$\,m/s is $9$\,m of travel; the fusion transformer's age embedding and the motion adapter carry the fresh part of the state, but metric quantities such as the lead gap that the imagination tiers read from the cached state are the ones a stale token cannot provide (\S\ref{sec:imag}); the forecast horizon is therefore counted from token capture, an assumption tested by H-HC15.
+
+\begin{table}[h]
+\centering\footnotesize
+\caption{Backbones without a published Thor row, as brackets (optimistic--pessimistic ms per refresh, ViT $+$ prefill, no overhead; \evE). Optimistic $=\max(2P_{\text{body}}n/272\,\text{TFLOP/s},\ \text{weight floor})$; pessimistic scales the 8\,B row by $P_{\text{body}}/6.95$; the MoE row is bounded above by the published $137.7$\,ms $2{,}048$-token row of the text model. The weight floor streams every weight once at $0.7\times273$\,GB/s. Memory is weights only at 4.5 bit (NVFP4), 8 bit and 16 bit; cache is the int8 token cache of \S\ref{sec:eff} at three depths and $128$ tokens for $188{,}640$ refreshes, at the assumed hidden width ($2{,}048$, $5{,}120$ and $2{,}048$ for the three rows); the 32\,B row assumes the Qwen3-VL-32B architecture and a SO400M vision tower (UNVERIFIED).}
+\label{tab:bracket}
+\begin{tabular}{@{}p{3.3cm}rrrrrp{2.3cm}r@{}}
+\toprule
+backbone & 1 cam & 3 cam & 7 cam & 3 cam, 3 fr & floor & weights GB (4.5/8/16 bit) & cache GB \\ \midrule
+Cosmos3-Edge reasoner, 2.4\,B & 28 & 62 & 130 & 165 & 7 & 1.4 / 2.4 / 4.8 & 148 \\
+Cosmos-Reason2-32B & 113--147 & 172--238 & 382--419 & 486--510 & 97 & 18.6 / 33 / 66 & 371 \\
+Qwen3-Omni-30B-A3B, 3.3\,B active & 106--153 & 137--185 & 200--248 & 231--279 & 90 & 17.2 / 30.5 / 61 & 148 \\
+\bottomrule
+\end{tabular}
+\end{table}
+Eight-billion-class models need no bracket: Cosmos-Reason2-8B, the Cosmos~3 Nano reasoner and the Alpamayo~1.5 language model are described as sharing the Qwen3-VL-8B architecture (a model-card statement, inherited, not re-verified), so the published 8\,B row applies to all three if that equivalence holds, and its cache is $297$\,GB at a hidden width of $4{,}096$ (an assumed width). The $32$\,B rows sit at the edge of the $250$\,ms budget at three cameras with one frame ($172$--$238$\,ms plus the $15$\,ms overhead) and exceed it for any further frame or camera, so they are teachers unless the camera set is small; the MoE row is bound by weight streaming, not by its $3.3$\,B active parameters, which is the reason a sparse model is not cheap on a bandwidth-limited SoC. Four caveats bound everything in this subsection: the ViT cost per image is the published one (a conservative upper bound at our $640$-patch crop); all rows exclude engine hand-off and any contention; NVFP4 feature drift against BF16 is unmeasured; and no TensorRT build exists in our hands for any model except through NVIDIA's published rows. The on-device benchmark (\texttt{hicap\_backbone\_latency\_bench.py}, H-HC11) is written, unit-tested with a mock backend, and has not been run.
+
+\paragraph{The scale ladder and the cost of adapting the backbone.}
+Removing the cap changes the experimental design in two ways. First, backbone size becomes a variable: the same heads on Qwen3-VL-2B, 4B and 8B (Cosmos-Reason2 provides 2\,B and 8\,B members of the same architecture, inherited) give a size ladder inside one family, read by matched-step ratios and never by an exponent (H-HC16). Second, the argument for freezing weakens where geometry matters: a frozen-VLM BEV head lost $6.34$\,mAP against its control and unfreezing recovered $10.46$\evP{} (one-hop, vendor-reported). Adapting the backbone (low-rank adapters on the language model and the vision tower) forfeits the cache, which is what makes CLM cheap to iterate on. The arithmetic for one epoch of $188{,}640$ refreshes at $544$ tokens for an 8\,B body is $4P_{\text{body}}n\approx1.5\times10^{13}$\,FLOP per sample for a forward pass plus activation gradients (weight gradients only for the adapters), or $2.8\times10^{18}$\,FLOP per epoch, which is $8$--$13$ GPU-hours at an assumed $60$--$100$\,TFLOP/s effective bf16 on an A40-class part (\evE; activation memory not costed; the full-backward figure is $\approx1.5\times$ that). This is affordable once and not for a grid, so the adapted arm is pre-registered after the frozen ladder (H-HC17), never before H-HC0.
+
+\subsection{Retrieval cost of a very large vocabulary}
+The trajectory vocabulary is a product of $K_P$ paths and $K_V$ speed profiles, so scoring the two factors separately, keeping $(k_P,k_V)$ and composing costs $K_P+K_V+k_Pk_V$ rows instead of $K_PK_V$ (Proposition~\ref{prop:cost}). Table~\ref{tab:cost} compares this with scoring every composed entry, at $d=512$ against the $273$\,GB/s of Thor\evP; the last column is the time to stream the flat table once at the published peak bandwidth.
+\begin{table}[h]
+\centering\small
+\caption{Flat versus factored retrieval per decision (\evE, from Proposition~\ref{prop:cost}); bf16, $d=512$. Flat time is the table read at the published peak bandwidth of 273\,GB/s, a single reader; the backbone competes for the same bandwidth.}
+\label{tab:cost}
+\begin{tabular}{@{}rrrrrrr@{}}
+\toprule
+$K_P\times K_V$ & composed $N$ & kept $(k_P,k_V)$ & rows touched & ratio & flat MB (time) & factored MB \\ \midrule
+$1{,}024\times256$ & $2.6\times10^{5}$ & $(20,10)$ & 1{,}480 & $177\times$ & 268 (0.98\,ms) & 1.5 \\
+$2{,}048\times512$ & $1.05\times10^{6}$ & $(32,16)$ & 3{,}072 & $341\times$ & 1{,}074 (3.9\,ms) & 3.1 \\
+$4{,}096\times1{,}024$ & $4.2\times10^{6}$ & $(40,20)$ & 5{,}920 & $709\times$ & 4{,}295 (15.7\,ms) & 6.1 \\
+\bottomrule
+\end{tabular}
+\end{table}
+The honest reading is a scale argument. At the vocabulary sizes of published scorers ($4{,}096$--$8{,}192$ entries) and even at $262{,}144$, flat scoring streams a few hundred megabytes in about a millisecond, so the hierarchy buys no speed at inference; the bandwidth argument begins beyond a few million entries, where an approximate index would otherwise be needed (none is a published 10\,Hz edge precedent). The hierarchy earns its place elsewhere: it gives the backbone a \emph{small} set to reason over (the cascade of \S\ref{sec:prune} costs $\approx0.34$\,GMAC per tick at $K=16$, and the cross-attention re-ranker at $K=8/16/32$ is $0.20/0.29/0.48$\,GMAC, \evE), it gives level-wise priors and a native tactical readout, and it estimates priors for entries with almost no data (about $1.5$ training windows per leaf at this size). A failure of the tree is therefore not fatal: flat scoring is the reference arm and the fallback. Training is affected earlier than inference: a flat softmax over $262{,}144$ entries at batch $2{,}048$ materialises $\approx0.5$\,G logits per step, whereas the level softmaxes are over a few thousand nodes.
+Whether a larger vocabulary \emph{helps} accuracy is a separate, empirical question (H-HC5): an oracle-in-set curve is necessary but not sufficient, since the programme's own measurements show the selection gap growing with the candidate set for a fixed scorer (REF-C-XL restricted to $64/128/256$ anchors: oracle-in-fan $0.4368/0.2624/0.1640$\,m while the share of windows in which the pick is at least twice as bad as the best rises $0.1771/0.3190/0.4540$; registry \S4)\evI.
+
+\subsection{Caching at build time}
+Training the heads on cached features is what makes CLM cheap to iterate on. For HiCAP the dominant cache is the VLM tokens: at a $2$\,Hz refresh, $26.2$\,h of video is $188{,}640$ VLM ticks; $128$ tokens of width $2{,}048$ (the hidden size of the Edge reasoner, read from its published configuration, and of the 2\,B tier; the 8\,B tier is $4{,}096$ and doubles the figure) at three depths and one byte per element is $148$\,GB, and $64$ tokens is $74$\,GB (\evE, \texttt{hicap\_cost\_model.py}). A $10$\,Hz refresh would be $742$\,GB at int8 and is therefore not cached. Action embeddings are cached per step as a table and are tiny by comparison.
+Ablations over heads, losses and vocabularies then cost GPU-minutes on cached tensors rather than the $\approx45$\,GPU-hours per arm that the programme's reference planner needs by arithmetic on an inherited receipt ($40{,}284$ steps at $4.0$\,s/step on an A40; \evE, \evI); the cache is built once per backbone and once per camera set.
+
+\subsection{Backbone choice}\label{sec:backbone-choice}
+The PI ruled that a VLM is the backbone and named NVIDIA's Cosmos repository as its source. Read as a URL, \texttt{github.com/NVIDIA/Cosmos} resolves (GitHub is case-insensitive) to the repository \texttt{NVIDIA/cosmos}, the home of Cosmos~3: same repository identifier and same head commit under both spellings\evM{} (research note R-E, \S0.1). The earlier Cosmos-Reason repositories sit in another organisation, are marked as no longer under active development and point to it; Alpamayo is in a third. No model called ``Cosmos Drive Nano'', the name in the original request, exists in the model tables of \texttt{NVIDIA/cosmos}, in the twelve repositories of the other organisation or in the five Alpamayo repositories (absence at these locations, not proof). Taken strictly, the ruling selects the Cosmos~3 reasoner towers: Edge (a $4$\,B model whose reasoner is $2.43$\,B), Nano ($16$\,B, reasoner $8.76$\,B) and Super ($64$\,B, the teacher); Cosmos-Reason2 is their predecessor and, unlike them, has published Thor anchors. Whether ``the Cosmos arm'' means the Cosmos~3 towers or also Cosmos-Reason2 is a decision we ask the PI to confirm (\S\ref{sec:limits}); the ladder below includes both and says which is which.
+
+\paragraph{What the models are.}
+The Edge reasoner is a Nemotron-dense $2$\,B language model with a SigLIP2-SO400M vision tower and a $2\times2$ patch merger: $0.49$\,B for tower and merger, $1.41$\,B for the language body and $0.54$\,B for the untied embeddings, $2.43$\,B in all by arithmetic on the framework's published configuration\evM; its patch size is $16$, so a $256\times640$ frame is $160$ tokens, it has no audio tower and it emits text only. The Nano and Super reasoners are Qwen3-VL-8B and -32B in architecture (the framework's configuration names them), and Cosmos-Reason2 (2\,B, 8\,B, 32\,B) and the Alpamayo~1.5 language model are stated to follow the Qwen3-VL architecture; the checkpoint configurations of those last two could not be read (the model hub was unreachable), so their identity with Qwen3-VL, which is what lets NVIDIA's published Qwen3-VL rows stand in for them, is inherited, not verified\evI. The licence of the Cosmos~3 code and weights is OpenMDW-1.1 (repository file); Cosmos-Reason2 weights carry NVIDIA's Open Model License, whose terms we could not read.
+
+\begin{table}[h]
+\centering\footnotesize
+\caption{Backbone ladder under the latency criterion, in test order. Latency is ViT $+$ prefill in ms for 1 camera/1 frame, 3 cameras/1 frame, 3 cameras/3 frames (\evE, estimator of \texttt{RE\_cosmos\_backbones.md}: published Qwen3-VL Thor rows scaled by FLOPs, ViT scaled by patches; error about $\pm35\%$ and biased high in its out-of-sample check on Qwen2.5-VL-7B). The estimator of Table~\ref{tab:maxbody} does not scale the ViT and is the more conservative: for the 8\,B tier at 3 cameras and 3 frames it gives $223$\,ms against $167$\,ms here, so the two bracket the expectation from above.}
+\label{tab:backbones}
+\begin{tabular}{@{}p{0.45cm}p{3.1cm}p{1.8cm}p{3.2cm}p{5.4cm}@{}}
+\toprule
+rank & backbone & role & latency (\evE) & why / risk \\ \midrule
+1 & Cosmos3-Edge reasoner (2.43\,B, OpenMDW-1.1) & primary frozen backbone & FP16 (the precision NVIDIA's CI tests) 41 / 76 / 180; NVFP4 (untested) 22 / 43 / 109 & the only model NVIDIA built and benchmarked for Thor; TensorRT Edge-LLM has a documented reasoner path. \emph{No optimised latency row exists}: NVIDIA's only Thor number is eager BF16, $0.19$\,s for a 911-token image prompt\evP. Not Qwen, so no same-architecture driving-tuned twin \\
+2 & Cosmos-Reason2-2B ($\equiv$ Qwen3-VL-2B) & measured-latency twin, ladder rung & NVFP4 19 / 36 / 85, from published rows by identity & the only 2\,B-class model with real Thor TensorRT anchors; superseded, custom licence; identity unverified; its sample script upscales a $256\times640$ frame to about $286$ tokens unless \texttt{min\_pixels} is lowered \\
+3 & Alpamayo-1.5 language model ($\approx$8\,B) versus its parent Cosmos-Reason2-8B; Cosmos~3 Nano reasoner as a general twin & paired driving-aware arm & NVFP4 39 / 71 / 167; Alpamayo's only TensorRT path is FP16, 135 / 232 / 523 & same architecture, differ by driving post-training: the cleanest test of driving knowledge, but $8$\,B against $8$\,B, not size-matched to rank~1, and presumed contaminated on our validation clips (below). Nano is not in the TensorRT Edge-LLM list (NIM only, a black box with no hidden-state tap) \\
+4 & Qwen3.5-4B, Qwen-Drive-1.0-4B (Apache-2.0) & external references & rows of Table~\ref{tab:thor} & outside the PI's source ruling; the only 4\,B driving-tuned pair with a same-architecture general twin \\
+--- & Cosmos-Reason2-32B, Cosmos~3 Super, Alpamayo-2-Super & teachers, labellers & NVFP4 $\ge142$ even at 1 camera (extrapolated) & never a refresh model; NIM itself calls Super not recommended on Thor \\
+\bottomrule
+\end{tabular}
+\end{table}
+Table~\ref{tab:backbones} settles what the latency rules exclude. The strict synchronous reading (refresh $\le50$\,ms) is met at one camera and one frame only by the $\le2.4$\,B tier in NVFP4; with three cameras nothing passes it, because the vision tower alone costs $21$--$29$\,ms. The asynchronous reading (refresh $\le250$\,ms) is met at three cameras and three frames by the $\le2.4$\,B tier and by the 8\,B tier in NVFP4, and only the small tier reaches seven cameras. Precision is the largest lever, larger than the choice among the shortlisted models, and it is the unmeasured one for the primary (no optimised row, and NVFP4 for the Edge reasoner is not documented by NVIDIA).
+Audio is not part of any Cosmos reasoner: the Edge and Nano reasoners take text, images and video and the Nano reasoner ``does not currently support the audio modality by design'', so the optional audio channel enters through the adapter of \S\ref{sec:audio} or through a native omni backbone.
+
+\paragraph{Taps and runtime.}
+The frozen-tap design reads three depths. For the Qwen3-VL architecture the hidden-state tuple is per layer; for the Edge reasoner it is per \emph{block}, and its $56$ alternating attention and feed-forward blocks give $57$ entries, so ``middle, three quarters, final'' are entries $28$, $42$ and $56$, not $14$, $21$ and $28$; the cache manifest stores the indices and their unit so that features of different backbones are never mixed. TensorRT Edge-LLM already exports multi-layer hidden states for other purposes (speculative-decoding bases and a thinker-to-talker hand-off), so a three-depth engine is a small export change (a hypothesis, untested), but truncating the language model cannot be combined with that export as shipped. The OpenAI-style servers (vLLM, NIM) expose no hidden state, so the design needs an in-process engine. A prefill-only build can drop the language-model head, saving $0.6$--$1.6$\,GB. The cache widths of \S\ref{sec:eff} follow the hidden size: $148$\,GB at $2{,}048$ (Edge, the 2\,B tier), $297$\,GB at $4{,}096$ (8\,B tier), $371$\,GB at $5{,}120$.
+
+\paragraph{Contamination.}
+A driving-tuned backbone may have seen our validation clips, and the evidence needs a precise reading. Matching clip identifiers against the 5,000-clip sample of the PhysicalAI-AV train split that NVIDIA publishes as the calibration set for quantising Alpamayo~1.5, $13$ of $400$ clips of an older clean validation split ($3.25\%$, Wilson 95\% interval $[1.9,5.5]$) and $76$ of $2{,}400$ parity training clips ($3.17\%$) are in that sample\evM{} (a lower bound; the canonical 40-episode validation set keeps only a four-character clip-id prefix and could not be tested). This proves membership of the public train split, not that Alpamayo trained on the clips; but Alpamayo reports training on $80$--$110$\,k hours against the $1.7$\,k hours of the public dataset\evP, so overlap with any clip of ours can be neither excluded nor bounded, and the Cosmos~3 training data is undisclosed, so the Cosmos arms are not a clean control either. HiCAP's evaluation surface, the $147$ evaluation clips of the v7 corpus, has full identifiers, so the screen is feasible today and must be run before H-HC2, which is then read on screened clips only. The least driving-specific candidate is Cosmos-Reason2 (physical common sense, no autonomous-driving claim in its README), which is why it is the parent in the H-HC2 pair.
+
+\medskip
+Two further facts from the research streams shape the protocol. (i)~\emph{No published result exists for a never-driving-tuned frozen VLM plus small heads making driving decisions.} Alpamayo's ``frozen backbone'' is frozen after $80$--$115$\,k hours of driving fine-tuning, and its planner reads the key--value caches of \emph{all} layers of the language model \emph{after} the model has decoded its chain-of-causation text, not a prompt-time state; HiCAP's prompt-time taps on that model therefore measure the driving knowledge that survives in prompt-time states, not the deployed path. HiCAP on a raw VLM is a bet, not a replication, which is why the pre-registration starts with a gate (H-HC0) rather than with the full system.
+(ii)~Freezing costs little for semantic tasks and a lot for geometric ones (a frozen-VLM BEV head lost $6.34$\,mAP against a control, and unfreezing recovered $10.46$; classical visual odometry beat the best VLMs on ego-motion)\evP{} (one-hop, vendor-reported). This is the reason for the motion adapter and for feeding ego kinematics as numeric tokens at the fusion stage, and for exposing three depths of the backbone rather than the final layer.
+
+\subsection{The student, now an option}\label{sec:student}
+Before the size ruling of \S\ref{sec:latency} every backbone in Table~\ref{tab:backbones} was at least $6.7$ times the programme's sub-300\,M target and a student was mandatory. It is now a fallback with three triggers: no backbone tier meets the latency criteria at the camera count the elastic controller needs; the fast path is inflated by refresh contention beyond its p95 budget (H-HC11); or a deployment target smaller than Thor is chosen. We distinguish \emph{HiCAP-R}, the frozen reference, from \emph{HiCAP-S}, a smaller student that occupies the same interface (its size is whatever the failed tier requires, no longer a fixed $300$\,M). Because the action tower depends only on vocabulary strings and residual profiles and never on images, the student \emph{reuses the teacher's cached action embeddings verbatim}; only the state side is distilled. The student is trained on the cached teacher readouts $\mathbf s_\ell$ (cosine and mean-squared error), the per-level distributions (KL) and the cost heads, and may use unlabeled driving video, since the teacher supplies the targets. Distilling per-family sub-scores listwise rather than one scalar follows the Hydra-MDP precedent (five per-family heads $83.0$ against a scalar $80.2$ score in that paper's metric)\evP{} (one-hop). Proposition~\ref{prop:distill} turns an embedding-error budget into a decision guarantee: the student's choice equals the teacher's whenever the teacher's top-two score margin exceeds $2\tau(\delta_s+\delta_a)$, and with shared action embeddings $\delta_a=0$. Whether that margin holds on real windows is measured (H-HC9); if it does not, the honest fallback is a student trained end to end on the same tree, which loses the guarantee but keeps the interface.

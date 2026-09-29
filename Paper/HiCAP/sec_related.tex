@@ -1,0 +1,58 @@
+% ---------------------------------------------------------------------------
+\section{State of the art}\label{sec:related}
+% ---------------------------------------------------------------------------
+\paragraph{Planning heads: from regression to scored candidate sets.}
+End-to-end driving moved from single-trajectory regression \citep{hu2023uniad,jiang2023vad} to multimodal heads
+(anchored diffusion in DiffusionDrive \citep{liao2024diffusiondrive}) and to \emph{scoring} a fixed or generated candidate set.
+VADv2 scores a vocabulary of 4{,}096 trajectories with a learned probability \citep{chen2024vadv2}; Hydra-MDP distils
+rule-based metric teachers into a per-candidate scorer over an 8{,}192-entry vocabulary and reports that per-family
+sub-scores beat one scalar \citep{li2024hydramdp}; GTRS and DriveSuprim score dense vocabularies coarse-to-fine
+\citep{li2025gtrs,yao2025drivesuprim}, and SparseDriveV2 composes $1{,}024$ paths and $256$ speed profiles into $262{,}144$ trajectories scored coarse-then-compose \citep{sun2026sparsedrivev2}; WoTE scores candidates with a BEV world model \citep{li2025wote};
+ZTRS learns the scorer from reward alone \citep{li2025ztrs}; GoalFlow conditions generation on a goal point \citep{xing2025goalflow}.
+The shared lesson is that separating \emph{what can be proposed} from \emph{what is chosen} pays, and that the gap between the two is
+large. In our own reference planner (an anchored-diffusion arm, REF-C, parity lineage, 40 validation episodes) the best candidate in a 256-anchor fan has an ADE@2\,s of $0.1640$\,m while the candidate it selects has
+$0.4714$\,m\evI{} (registry \S4; introduction), so the gap between proposing and choosing is larger than the gap between planners. None of these systems puts a tree over a versioned token vocabulary or chooses its sensors per tick (GTRS, DriveSuprim and SparseDriveV2 are coarse-to-fine).
+
+\paragraph{Vision--language(--action) driving.}
+EMMA \citep{hwang2024emma}, DriveVLM \citep{tian2024drivevlm}, SimLingo \citep{renz2025simlingo} and Alpamayo-R1
+\citep{nvidia2025alpamayor1} decode trajectories or actions autoregressively from a VLM, often with reasoning traces;
+DriveVLM-Dual and FASIONAD pair a slow reasoner with a fast planner \citep{tian2024drivevlm,qian2024fasionad}.
+Autoregressive decode is memory-bandwidth-bound on an edge SoC, which is the regime a vehicle computer lives in
+(\S\ref{sec:eff}). HiCAP keeps the VLM's world knowledge but replaces generation by a single prefill pass and a
+retrieval over cached action embeddings.
+
+\paragraph{Contrastive and energy-based decision models.}
+Contrastive Language Models (CLM) freeze a language model, train two small projection heads with bidirectional InfoNCE
+on cached embeddings, and choose the action whose embedding best matches the state; action embeddings are cached, and as a best-of-$N$ verifier the
+model reaches 81.6\% on DeepSWE and 87.6\% on Terminal-Bench~2.1 at 4.1--5.7$\times$ lower latency than a generative verifier
+\citep{kwok2026clm}. Its closest robotics relative is CoVer-VLA, a frozen SigLIP~2 with attention pooling over patch tokens, a numeric
+action-chunk tower and symmetric InfoNCE that verifies VLA action candidates \citep{kwok2026cover}. Earlier, Implicit Behavioural
+Cloning used an InfoNCE energy over sampled counter-examples \citep{florence2021ibc}, later out-performed by diffusion
+policies \citep{chi2023diffusionpolicy}, and VINN retrieves nearest-neighbour actions \citep{pari2021vinn}. Contrastive RL
+interprets the critic as a discounted future-state occupancy \citep{eysenbach2022contrastiverl,wang2025thousandlayer}.
+On the theory side the InfoNCE optimum is a pointwise mutual information \citep{oord2018cpc,poole2019variational},
+the long-tail prior is removed by logit adjustment \citep{menon2021logit}, and dot-product retrieval has
+provable dimensionality limits \citep{weller2025limits} that motivate late-interaction re-ranking \citep{khattab2020colbert}.
+Prior contrastive selectors treat the action set as flat, text or a small numeric chunk, and none imposes a prior over a hierarchical vocabulary or budgets its sensors (the Contrastive RL critic does predict outcomes in a shared space, but over goals, not over candidate actions).
+Trees of node scorers with beam retrieval are established in language modelling and retrieval, from the hierarchical softmax \citep{morin2005hierarchical} to tree-based deep models and their beam-optimal training \citep{zhu2018tdm,zhuo2020beam}.
+
+\paragraph{Latent world models and imagination.}
+Latent prediction on top of frozen or self-supervised encoders (V-JEPA~2 and its action-conditioned variant
+\citep{assran2025vjepa2}, DINO-WM \citep{zhou2024dinowm}, Dreamer~4 \citep{hafner2025dreamer4}) supports planning without
+pixel decoding, and world modelling as dense supervision amplifies data scaling for driving VLAs \citep{li2025drivevlaw0}.
+Anti-collapse without heuristics is provided by sketched isotropic regularisation \citep{balestriero2025lejepa}. Our own programme
+measured two failure modes that this literature does not foreground: a world model that faithfully rolls out an implausible
+candidate (consistency is not plausibility) and imagination confidence that rises as rollout fidelity decays. HiCAP therefore restricts
+imagination to what data can identify (Proposition~\ref{prop:ident}): outcome-aware soft targets, an analytic cost from a forecast of a few non-reactive exogenous descriptors, and a gated critic with a disagreement veto.
+
+\paragraph{Elastic sensing, token budgets, and audio.}
+Token merging and pruning reduce visual tokens at small accuracy cost \citep{bolya2023tome,chen2024fastv}; Matryoshka
+representations make one embedding usable at several dimensions \citep{kusupati2022matryoshka}.
+Multi-camera driving VLMs fix a camera set; we instead \emph{choose} the set per tick. Audio enters language models either through a frozen speech encoder and projector
+\citep{radford2022whisper} or natively in omni-modal models; joint audio--visual embedding spaces are studied in
+\citep{girdhar2023imagebind}. Driving-relevant sounds (sirens, horns) are absent from standard driving corpora, so
+the audio path must be built and controlled differently (\S\ref{sec:audio}).
+
+\paragraph{Safety layers.}
+Runtime assurance around a learned planner uses control barrier functions \citep{xiao2023barriernet} and distribution-free coverage
+sets \citep{angelopoulos2021gentle}; HiCAP's candidate set is a natural place to apply both before selection.

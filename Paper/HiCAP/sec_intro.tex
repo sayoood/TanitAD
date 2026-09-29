@@ -1,0 +1,46 @@
+% ---------------------------------------------------------------------------
+\section{Introduction}\label{sec:intro}
+% ---------------------------------------------------------------------------
+A driving policy has to do three things that pull in different directions: know a great deal about the world (what a school bus
+implies, what a siren means), reason at several time scales (which road to take, which manoeuvre to start, how to move the
+wheel now), and fit into a fixed power and latency envelope. Large vision--language models supply the first; the field's dominant
+way of using them, autoregressive generation of a plan or trajectory \citep{hwang2024emma,renz2025simlingo,nvidia2025alpamayor1},
+works against the third, because decoding one token requires streaming the model's weights once and is bound by memory bandwidth rather than arithmetic on an edge SoC.
+
+\emph{Contrastive Language Models} (CLM) showed a different way to use a large frozen model \citep{kwok2026clm}: read the model
+once (prefill), map the last hidden state and each candidate action through two small MLP heads into one shared 512-dimensional
+space, and choose the action with the highest cosine score. Action embeddings are computed once and cached, the backbone is never
+updated, and a three-stage curriculum trains the heads on cached features. CoVer-VLA transferred the recipe to robot manipulation with
+a frozen image encoder and numeric action chunks \citep{kwok2026cover}. Both treat the action set as a flat list.
+
+Driving has structure that a flat list wastes. Actions are \emph{hierarchical}: a route-level intent, a manoeuvre (lateral and
+longitudinal, chosen separately), and a continuous trajectory. Actions are \emph{highly prior-structured}: physics, the current
+speed, the last plan and the navigation command exclude most of the space before any learning. The candidate set can be very large
+if it can be searched cheaply. And the input side is not fixed: not every camera or token is worth its cost at every instant, and some
+decisive cues (a siren) are not visual at all.
+
+\paragraph{Programme context.}
+HiCAP is the vision--language arm of TanitAD, a programme building hierarchical latent world models for driving whose other arms are sub-300\,M. For this arm the PI has lifted the size cap and replaced it by a latency criterion (\S\ref{sec:latency}): the parameter count may be large if the whole system's inference time stays low.
+The programme's newest reference planner line (anchored diffusion, REF-C) exposes the problem this paper addresses. On the parity
+lineage, the best candidate in a 256-anchor fan has an ADE@2\,s of $0.1640$\,m while the candidate the planner selects has
+$0.4714$\,m\evI~(REF-C-XL, 40 validation episodes; registry \S4). On the newest lineage, trained on the v7 corpus, the hold-the-current-action control scores $0.2996$\,m and its extension $0.2874$\,m, against $0.2975$\,m and $0.3079$\,m
+for the two best trained arms\evI~(the PI's Drive copy of the registry, \S4.6--4.8, which is not in this repository; $4{,}823$ windows, $141$ episodes; neither arm is separated from the controls). In the older arm whose gap to the hold control was largest, $92.2\%$ of that gap was along-track\evI, and the newest arm still trails the controls on speed error ($0.2919$ against $0.2540$\,m/s) and along-track error ($0.2655$ against $0.2348$\,m) while beating them on heading, yaw rate and curvature\evI.
+Strategic (route-level) quality is UNAVAILABLE ($n=0$) for the older arms and $0.7708$ route accuracy against a $0.6742$ majority rate for the newest\evI, from a head of $771$ parameters whose attribution is itself uncertain. In short, the
+programme's bottleneck is neither the candidate set nor the lateral path; it is the \emph{decision}, especially the longitudinal one, and it is
+under-supervised at the tactical and strategic levels. HiCAP is our attempt to build the decision maker properly on a backbone that already
+knows the world.
+
+\paragraph{Contributions.} We (1)~define a hierarchical action tree from the programme's frozen tactical/strategic token vocabulary with a factored path-by-profile trajectory vocabulary beneath it, with a retrieval-cost proposition, a beam-miss bound and a real-data pruning study (\S\ref{sec:vocab}, \S\ref{sec:theory}, \S\ref{sec:prelim});
+(2)~show that a CLM-style contrastive selector is prior-biased and give a corrected, per-level objective (\S\ref{sec:train}, Corollary~\ref{cor:bias});
+(3)~specify prior-encoded pruning with a conformal recall bound and a candidate-conditioned re-scoring stage that returns survivors to the backbone (\S\ref{sec:prune});
+(4)~restrict imagination to what data can identify, in three tiers (soft outcome-aware targets, an analytic forecast of exogenous descriptors, a gated critic with a disagreement veto) and show in a toy that most apparent gain is target shape (\S\ref{sec:imag}, Proposition~\ref{prop:ident});
+(5)~add elastic sensing (cameras, tokens, embedding width) and an optional audio branch tokenised into the backbone's space (\S\ref{sec:elastic});
+(6)~replace the parameter cap by a latency criterion with two clocks, command latency and token age, give the duty-cycle arithmetic that says which backbone sizes it admits on the target SoC, and keep a distilled student, with a decision-preservation guarantee, as an option that is used only if a measured latency tier fails (\S\ref{sec:eff}, Proposition~\ref{prop:distill});
+and (7)~commit a pre-registered protocol, including negative controls and both outcomes for each hypothesis (\S\ref{sec:protocol}).
+
+\paragraph{Scope and evidence convention.}
+This is a design and pre-registration paper. \textbf{No HiCAP model has been trained.} Everything quantitative is one of: a closed-form
+statement with a proof; a measurement on committed data using only inference-time quantities; a toy simulation; arithmetic; or a number
+inherited from a programme document. Each number carries an evidence tag: \evM{} measured by us with an artifact in the repository,
+\evP{} published and cited, \evI{} inherited from a programme document and not re-verified here, \evE{} closed-form estimate (no timing),
+\evH{} hypothesis. Where two programme documents disagree, the model registry is the tie-breaker and the conflict is reported (\S\ref{sec:limits}).

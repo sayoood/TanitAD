@@ -1,0 +1,62 @@
+% ---------------------------------------------------------------------------
+\section{Problem setting and data interface}\label{sec:prelim-setting}\label{sec:problem}
+% ---------------------------------------------------------------------------
+\paragraph{Decision problem.}
+At each tick $t$ the system receives a state $s_t=(I_t^{\mathcal S_t},\,e_t,\,n_t,\,u_t)$: frames $I_t^{\mathcal S_t}$ from a chosen
+camera subset $\mathcal S_t$ (three frames, 100\,ms apart, per camera); the ego kinematic state $e_t=(v,a_{\text{lon}},\dot\psi,\kappa)$ at the
+cycle time; a navigation command $n_t\in\{\text{follow},\text{left},\text{right}\}$ with optional range and time arguments; and, in the audio arm only,
+a window of microphone samples $u_t$. It outputs a 6\,s ego trajectory $\hat y\in\Real^{8\times2}$ at the slots
+$t_k\in\{0.5,1,1.5,2,3,4,5,6\}$\,s in the ego frame, which is the trajectory contract of the programme's planner line.
+The decision is a \emph{leaf} $a=(v_1,v_2,v_3)$ of the action tree of \S\ref{sec:vocab} plus a small continuous refinement $\delta\in\Real^{8\times 2}$:
+$\hat y=\pi_{\text{prior}}(e_t)+\rho(v_3)+\delta$, where $\pi_{\text{prior}}$ is a constant-turn-rate-and-acceleration (CTRA) roll-out of the ego state and
+$\rho(v_3)$ is the residual profile of the leaf's code.
+
+\paragraph{Data.}
+We build on the newest programme corpus, not on the older parity corpus that the repository's default branch still describes.
+The corpus is the private Hugging Face dataset \texttt{tanitad-v7-training-corpus}: $4{,}719$ clips, $26.2$ hours of front-camera driving,
+$4{,}572$ train and $147$ evaluation clips, corpus id \texttt{a48251e89c7a8603}, label schema \texttt{s2-geom-v7}, released as v7, v7.1, v7.2 and v8.1
+(the vocabulary is identical across releases; releases add fields)\evI. It is deliberately a \emph{new comparability domain}: it does not re-select
+the canonical parity corpus of $2{,}376$ episodes, and arms trained on it are compared only with arms trained on it. Frames are a cylindrical
+projection at $256\times640$ pixels covering a true $120^\circ$ field of view (linear in azimuth, $f_{\text{ref}}=305.577$), with a mandatory
+per-clip vertical crop because two camera rigs differ by about $215$ pixels. Only the front-wide camera is cached; the upstream dataset has seven
+cameras, which matters for \S\ref{sec:elastic}. None of the 36 upstream features is audio and no label or cache carries it; the audio stream inside the shipped video container is unprobed (UNVERIFIED).
+
+\paragraph{What the labels are, and what they are not.}
+Labels may use privileged quantities (ego future, other agents); inference may not: it sees frames, the ego state admitted by the PI on 2026-09-02, the stamped navigation command and, optionally, the audio channel admitted on 2026-09-29. Table~\ref{tab:inputs} states, for every quantity,
+whether it is a training label, an admissible inference input, or an evaluation stratifier only. The strategic and tactical tokens are derived offline from the
+\emph{ego's own future path} (geometry), so they are legitimate targets and inadmissible inputs. The perception-style tactical goals
+(traffic-light colours, gap targets, oncoming reactions) are teacher signals parsed from Alpamayo's chain-of-causation text; $49.6\%$ of records carry at least one
+goal marked disputed and traffic-light colour was never independently verified\evI. They may supervise auxiliary heads but never enter as inputs, and every head on them
+carries an ego-only control.
+
+\begin{table}[t]
+\centering\footnotesize
+\caption{Admissibility of each quantity. \emph{Label} = offline supervision (privileged signals allowed). \emph{Input} = available at inference.
+\emph{Strat.} = evaluation stratifier only. The navigation command is an oracle input by construction (it is the ego's own future turn), admitted under
+a programme ruling as a first-class route signal and stamped as such in every run; the nav-zero and nav-shuffled controls quantify what it buys.}
+\label{tab:inputs}
+\begin{tabular}{@{}p{4.6cm}p{2.5cm}p{2.7cm}p{5.0cm}@{}}
+\toprule
+quantity & source & role & note \\ \midrule
+frames (front-wide, 3$\times$100\,ms; further cameras when cached) & sensor & Input & cylindrical $256\times640$, per-clip crop \\
+ego state $e_t$: $v,a_{\text{lon}},\dot\psi,\kappa$ at cycle time & sensor/CAN & Input & 2026-09-02 ruling (velocity at cycle time); scope for the other channels pending; null row \\
+navigation command $n_t$ & ego-future & Input (stamped oracle) & controls: nav-zero, nav-shuffled \\
+audio window $u_t$ & microphone & Input, optional & admitted at inference by PI ruling 2026-09-29 as an \emph{optional} channel; the model must run bit-identically without it (null row); no corpus carries audio \\
+strategic tokens $g_{\text{str}},a_{\text{str}}$ & ego-future geometry & Label & band $[8,30]$\,s; four goals and two actions empty \\
+tactical actions $a_{\text{tac}}^{\text{lat}},a_{\text{tac}}^{\text{lon}}$ & ego-future geometry & Label & band $[2,6]$\,s; factored, never flattened \\
+tactical goals $g_{\text{tac}}$ (22, multi-label) & geometry + Alpamayo text & Label (aux) & 22 exclusive pairs; eight goals with $n<30$ \\
+goal point $g_{\text{tac}}.\text{anchor}$ & ego-future & Label & predicted, never supplied \\
+3-D agent tracks & \texttt{obstacle.offline} join & Label (cost heads) & $96.83\%$ of train clips; eval-side coverage unstated \\
+\texttt{tac\_SIT}, \texttt{disputed}, \texttt{alpamayo.*} & Alpamayo text & Strat. only & never an input \\
+\texttt{nav\_30s}, \texttt{speed\_max\_input} & ego-future & Label / oracle & not built into any arm here (echo of the ego's realised speed) \\
+situation-classifier head & --- & \textbf{absent} & no such head; the goal heads share the trunk readout, so disjointness is bounded by control NC6, not assumed \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Information-disjointness of the goal path.}
+Two programme rules bind the design. First, a route or goal input may not carry the output of a situation classifier, otherwise attribution between
+goal and classifier is lost and the classifier is scored through the planner. HiCAP contains no situation-classifier \emph{head}, and its only route-side input is the
+stamped navigation command; evaluation-time situation strata (\texttt{tac\_SIT}) never re-enter. But the tactical cells and the 22-goal head share the readout $\mathbf s_2$ of one trunk, and fourteen of those goals are teacher-text situation-like labels (traffic-light colours, yield, gap, merge). We therefore do not claim disjointness: only geometry-derived goals may act on the decision (rule R4), the teacher-text goals are auxiliary with no path into any decision, and a goal-shuffled control and a strategic-token-null ablation bound what the goal path carries (NC6).
+Second, the parent's selection restricts the child candidates
+(a hard beam) but is not fed to the child's state readout, so the child level cannot echo the parent's decision as a feature; the control ``flat tactical'' (no parent restriction) tests whether the restriction itself matters (\S\ref{sec:protocol}).

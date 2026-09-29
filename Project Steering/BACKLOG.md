@@ -57,3 +57,29 @@ Strike items through when done, with the commit.
 | D3 | **H26 hierarchical cross-alignment proof** (task #15, core goal) |
 | D4 | **Own dataset / lake v0** — ingest at scale + HF push (task #5) |
 | D5 | **flagship-v2 10k gate** mechanism diagnostic (task #28) |
+
+## E. HiCAP (added 2026-09-29; design in `Paper/HiCAP/`, pre-registration `PREREG_HICAP.md`)
+
+| # | item | GPU? | what unblocks it |
+|---|---|---|---|
+| E1 | ⭐ **Push the PI branch `agent/arch-inf-20260803`** (vocab_v7.py, v7_labels.py, refc_v3*.py, s2_geom_emit_v7.py) — the whole REF-C line is on one disk + Drive, main is stale | 0 | PI / the owning stream; nothing HiCAP can be executed from git until it lands |
+| E2 | **Recover the 40 canonical val clip UUIDs** (manifest keeps a 4-char prefix) and rerun the overlap test against NVIDIA's public lists (RA Appendix B) | 0 | the val-40 selection manifest / raw root; gates ANY driving-aware backbone read |
+| E3 | **H-HC0 gate**: k-NN over frozen VLM+motion features vs hold-speed on non-steady windows | ~0.5 GPU-day (feature cache) | E1; a Qwen3.5-4B feature cache of the v7 corpus at 2 Hz (~74–148 GB int8, `hicap_cost_model_result.json`) |
+| E4 | **Decode & cache the other upstream cameras** (cross_left/right, rear, tele) with the same cylindrical projection and per-clip `cy` crop | CPU/IO | unblocks H-HC10 (elastic cameras) |
+| E5 | **Synthetic siren/horn injection pipeline** (SNR, Doppler, azimuth, cabin floor) + audio-null/shuffled controls | 0 | ~~ruling on audio at inference~~ RESOLVED 2026-09-29 (optional at inference); needs the audio-off-primary reporting rule of H-HC12 |
+| E6 | **Build the per-cell residual codebooks** over the CTRA prior on TRAIN residuals; cell assignment for windows outside the ±2 s label band via the frozen emitter thresholds | 0 (CPU) | E1 (emitter code) |
+| E7 | **Reconcile the two REF-C lineages in the registry** (parity REF-C-base/XL on val-40 vs refcv3→refcv6 on 4,823 windows) and the `--sel-refined` contradiction (registry §4.8 vs REFCV6 review §3.1) | 0 | PI/registry owner |
+| E8 | **ffprobe the shipped `camera/<clip_id>.mp4`** for an audio track (never probed) | 0 | HF access |
+| E9 | **E-R2 (CPU)**: product vocabularies at N = 2¹⁰…2¹⁸ from the TRAIN split, oracle-in-set ADE on val, matched-N ratios | 0 | committed val windows + train egomotion; decides whether 262,144 buys anything (H-HC5) |
+| E10 | **E-I0 probe** (~0.1 GPU-h): does the frozen state carry lead gap / closing speed? (v₀-only baseline, shuffled cue) | ~0.1 GPU-h | cached VLM embeddings (E3); gates ALL imagination work beyond Tier 0 (H-HC8) |
+| E11 | **E-C3 oracle-camera value by manoeuvre** on a ~30-chunk side-study (front-tele 49 GB first) | CPU/IO + 1 eval | PI spend approval; a null result retires elasticity and ships front-only (H-HC10) |
+| E12 | **E-G1 vision-only gate probe**: frozen-VLM front embedding → 7-way situation, per-class recall + calibration | ~0 | cached embeddings (E3); decides whether the vision-only gate G-V is viable |
+| E13 | **E-R3 / E-R6 / E-R10** (0 GPU): class-conditional episode-blocked conformal survival; survivor-cache age; minted-cell agreement over [2,6] s | 0 | committed val windows + train egomotion |
+| E14 | **147-clip v7-eval contamination screen** against NVIDIA's public training-sample lists (alpamayo-recipes), Wilson interval; read H-HC2 only on clean clips | 0 | none (full clip IDs exist in corpus `a48251e89c7a8603`) |
+| E15 | **Joint lateral × longitudinal census** of the v7 labels (is 35 = 5 × 7 real?) and a pair-admissibility table from it | 0 | label blobs (Drive/HF) |
+| E16 | **Re-run the masked/unmasked InfoNCE comparison on real cached features** (H-HC4) with held-out β and q̂ from the train split | ~0.2 GPU-h | E3 cache |
+
+| E17 | ⭐ **Run the on-Thor backbone benchmark** (`Research/2026-09-29-hicap/hicap_backbone_latency_bench.py`: ViT / prefill / pooling timed separately with CUDA events, fast-path proxy **concurrent** with a refresh, `max_memory_allocated` only) for Qwen3-VL-2B/4B/8B and the Cosmos-Reason2 / Cosmos3-Edge candidates; emit the JSON verdict block of H-HC11 | Thor time | PI access to a Thor; script is written and mock-tested, NOT run on any GPU. Turns every ESTIMATED row of `hicap_latency_budget_result.json` into MEASURED or refutes it |
+| E18 | **Build TensorRT-Edge-LLM NVFP4 engines** for the 8 B-class candidates (Cosmos-Reason2-8B, Qwen3-VL-8B) and the 2.4 B Cosmos3-Edge reasoner; save pooled features from BF16 and NVFP4 on the same real frames for the drift check (`--compare-features`) | Thor + build time | E17; no published TRT row exists for these models |
+| E19 | **Token-age sensitivity (H-HC15)**: fast path on cached tokens aged 0/0.5/1.0/1.5 s, trained with and without age jitter | ~0.3 GPU-h | E3 cache (the same feature cache, read at lagged ticks) |
+| E20 | **Scale-ladder feature caches (H-HC16)**: Qwen3-VL-2B/4B/8B at 2 Hz, one frame per camera, 3 depths × 128 tokens int8 (148 / 148–185 / 297 GB by hidden width — assumed) — watch the per-pod quota with a real `dd` test | GPU-days total, one-off | E3 done for the smallest tier first; gated on H-HC0 pass |
