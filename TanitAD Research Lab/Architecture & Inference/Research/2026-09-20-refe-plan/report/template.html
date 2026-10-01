@@ -307,7 +307,8 @@ a { color: var(--s1); }
   const onp = lastB.scorer_mode === "onpolicy";                           // the fixed bank is retired
   const bankFixed = A.scorer_frames > readNow;
   const chips = [
-    ["s-good", "✓", "Training healthy, " + fmt(P.pace_now, 1) + " s/step now"],
+    P.finished ? ["s-good", "✓", "Training finished " + P.finished_local + " (Berlin): " + int(P.final_steps) + " steps"]
+      : ["s-good", "✓", "Training healthy, " + fmt(P.pace_now, 1) + " s/step now"],
     P.inside_budget ? ["s-good", "✓", "Finish " + berlin(etaDate) + ", " + hm(P.margin_h) + " inside the 7-day line"]
       : accepted ? ["s-good", "✓", "Finish " + berlin(etaDate) + ", " + hm(P.margin_h) + " past the 7-day line: extension accepted by you on Sep 26"]
       : ["s-serious", "!", "Finish " + berlin(etaDate) + " is " + hm(P.past_accepted_h) + " beyond the extension you accepted (" + berlin(acceptedDate) + "): decision needed"],

@@ -238,6 +238,14 @@ REFLAG_H = 1.0
 A4_RESPONSE = {"decided_local": "2026-09-26 20:28", "quote": "do 2 and 3",
                "levers": ["NAVSIM's own comfort label (label version 3)", "selection with NAVSIM v1's own formula (Amendment 5)"]}
 eta_utc = now_utc + timedelta(seconds=remaining * pace_now + b_left * b_over)
+# the trainer own summary.json (done=true) replaces the projection once the run has finished
+_sj = os.path.join(os.environ.get("REFE_FINAL_DIR", "D:/Projects/TanitAD-artifacts/refe-final-2026-10-01"), "summary.json")
+FINISHED = None
+if os.path.exists(_sj):
+    _s = json.load(open(_sj, encoding="utf-8"))
+    if _s.get("done"):
+        FINISHED = datetime.fromisoformat(_s["finished_at"].replace("Z", "+00:00"))
+        eta_utc = FINISHED
 eta_free_utc = now_utc + timedelta(seconds=remaining * pace_paused + b_left * b_over) \
     if np.isfinite(pace_paused) else None
 pace = {"pace_now": round(pace_now, 2), "pace_pre_pipeline": round(pace_pre, 2),
@@ -251,6 +259,8 @@ pace = {"pace_now": round(pace_now, 2), "pace_pre_pipeline": round(pace_pre, 2),
         "days_total": round((eta_utc - launch_utc).total_seconds() / 86400.0, 2),
         "accepted_finish_utc": ACCEPTED_FINISH.astimezone(timezone.utc).isoformat(),
         "reflag_h": REFLAG_H,
+        "finished": bool(FINISHED), "finished_local": FINISHED.astimezone(BERLIN).strftime("%a %d %b %H:%M") if FINISHED else None,
+        "final_steps": int(_s["steps"]) if FINISHED else None,
         "within_accepted": bool(eta_utc <= ACCEPTED_FINISH + timedelta(hours=REFLAG_H)),
         "past_accepted_h": round((eta_utc - ACCEPTED_FINISH).total_seconds() / 3600.0, 2),
         "eta_dump_free_local": eta_free_utc.astimezone(BERLIN).strftime("%Y-%m-%d %H:%M") if eta_free_utc else None,
