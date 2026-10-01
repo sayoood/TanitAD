@@ -24,7 +24,8 @@ import os
 import numpy as np
 
 DATA = "D:/Projects/TanitAD/data/refe_navtest"
-PDM_W = (5.0, 5.0, 4.0)                      # refe/planner.py PDM_W: EP, TTC, comfort over 14
+PDM_W = (5.0, 5.0, 4.0)                      # refe/planner.py PDM_W: EP, TTC, comfort over 14 (rule "v2_shape")
+V1_W = (5.0, 5.0, 2.0)                       # refe/planner.py V1_W: NAVSIM v1, over 12 (rule "navsim_v1")
 COMP = {"NC": 0, "DAC": 1, "EP": 2, "TTC": 3, "C": 4, "DDC": 5}
 
 
@@ -32,9 +33,15 @@ def sigmoid(x):
     return 1.0 / (1.0 + np.exp(-x))
 
 
-def aggregate(logits):
-    """refe/planner.py `aggregate`, transcribed: NC x DAC x DDC x (5 EP + 5 TTC + 4 C) / 14."""
+def aggregate(logits, rule="v2_shape"):
+    """refe/planner.py `aggregate`, transcribed, for the RULE the table's pick was selected with:
+    "v2_shape" NC x DAC x DDC x (5 EP + 5 TTC + 4 C) / 14 (every table before SPEC Amendment 5) or
+    "navsim_v1" NC x DAC x (5 EP + 5 TTC + 2 C) / 12."""
     p = sigmoid(logits.astype(np.float64))
+    if rule == "navsim_v1":
+        w1 = np.asarray(V1_W)
+        return p[..., 0] * p[..., 1] * (p[..., 2] * w1[0] + p[..., 3] * w1[1] + p[..., 4] * w1[2]) / w1.sum()
+    assert rule == "v2_shape", rule
     w = np.asarray(PDM_W)
     return p[..., 0] * p[..., 1] * p[..., 5] * (p[..., 2] * w[0] + p[..., 3] * w[1] + p[..., 4] * w[2]) / w.sum()
 
@@ -127,9 +134,10 @@ def main() -> int:
     logs = [tl[t] for t in tok]
     bt = Boot(logs, a.boot)
     ar = np.arange(N)
-    agg = aggregate(L)
+    rule = str(T["rule"]) if "rule" in T.files else "v2_shape"   # tables before Amendment 5 carry no rule
+    agg = aggregate(L, rule)
     rep = {"name": a.name, "N": N, "M": M, "n_logs": len(set(logs)), "boot": a.boot,
-           "spec": "SPEC_NAVTEST.md E-6 / AMENDMENT 3 (blob 4c5aa5e6)"}
+           "spec": "SPEC_NAVTEST.md E-6 / AMENDMENT 3 (blob 4c5aa5e6)", "rule": rule}
     rep["pick_reproduced_by_transcribed_aggregate"] = float((agg.argmax(1) == pick).mean())
 
     # (a) -----------------------------------------------------------------------------------------

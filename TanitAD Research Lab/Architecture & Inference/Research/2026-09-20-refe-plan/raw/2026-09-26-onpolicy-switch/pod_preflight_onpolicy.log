@@ -1,0 +1,21 @@
+  SPEED: amp=bf16 tf32=True compile=True fused_adam=False workers=2   (DEPARTURE from the paper's FP32)
+  trunk: loaded 366 tensors from /workspace/data/backbones/dinov3-vitl16 (missing 0, unused 0)
+  REFe vitl16 322.07 M total / 18.99 M trainable (5.90 %)  device=cpu
+  WTA reach: at most 4 of 64 proposals updated per step (6.2 %)
+  SCORER: ON-POLICY (PI decision 2026-09-26, B) -- the scorer is trained on the student's own proposals scored by the teacher, from /workspace/data/refe_navtrain/onpolicy/sets; the fixed candidate set is NOT used
+  GROW: bank snapshot 4 files, 4,221,119,603 bytes (the checkpointed epoch snapshot)
+  ON-POLICY scorer bank: 0 complete sets (0 set lines, 0 incomplete, 0 superseded by a newer checkpoint, 0 unparseable lines; NAVSIM drivable area on 0 sets) <- /workspace/data/refe_navtrain/onpolicy/sets   [none yet in this epoch's snapshot: the scorer gets NO loss until the next epoch boundary]
+  targets: 189,888 rows from ['targets_rank0.jsonl', 'targets_rank1.jsonl']  per rank {0: 103037, 1: 86851}
+  images: 189,888/189,888 tuples resolve ALL cameras under /workspace/data/navtrain_pixels  (413,152 loose frames indexed, 0 containers, 1.9 s)
+  calib: 189,888/189,888 tuples carry their own rig (21 distinct rigs) <- /workspace/data/refe_navtrain/train_grow/calib_table.json
+  scenes: 103,037 over 189,888 tuples  (rows per scene: 1 x 16,186, 2 x 86,851)
+  bank: 189,888 tuples in 103,037 scenes   epoch = one pass over 103,037 scenes   batch 4   training
+  schedule from EPOCHS: 25 x 403 optimiser steps/epoch = 10,075 steps  (effective batch 256 = 4 x 64; paper: 25 epochs at batch 256)
+    -> 2,579,200 sample-passes = 25.03 epochs of 103,039 scenes   (must equal --epochs, or the derivation is wrong)  [--grow: sized for --grow-scenes, not the bank now]
+  optimiser: AdamW lr 0.0002 wd 0.01  schedule: cosine -> 0 over 10075 steps
+  score-loss normaliser: 0.0010 covered candidates/sample x batch (CONSTANT, so --accum is exactly equivalent to one large batch)
+  gradient accumulation: 64 micro-batches of 4 = effective batch 256  (paper: 256)
+  RESUMED /workspace/data/refe_runs/vitl16_navtrain10_grow_tau0.3/ckpt_last.pt: step 3,708/10,075  epoch 11  sample 98,400/189,888  (saved 2026-09-26T10:21:56Z)
+  DECLARED RECIPE CHANGE at this resume (--declare-change): --scorer-mode: 'fixed' -> 'onpolicy'
+  PREFLIGHT: checkpoint loads, identity differs ONLY by the declared change(s), cov_norm 0.0010
+PREFLIGHT_OK

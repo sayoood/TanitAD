@@ -1,0 +1,565 @@
+# REFe (Architecture & Inference) -> Master Mind coordinated landing. Paths are repo-relative, staged on D:
+# by explicit path and blob-verified (staged == worktree) when each batch was written. Nothing committed here.
+
+## 2026-09-26 batch 1: REFe E-6 selection diagnosis + on-policy scorer (PI decision B) + NAVSIM drivable area
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/SPEC_NAVTEST.md
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/SPEC_PREREG_HASH.txt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/proposal_table.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/selection_readout.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/selftest_selection_readout.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/write_result_e6.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/refe_navtest_seam.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/eval_checkpoint.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/learning_curve.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/EVAL_VENV.md
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/RESULT_E6_sub200_ep005.md
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/RESULT_E6_sub200_ep008.md
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/RESULT_E6_sub200_ep011.md
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/e6_sub200_ep005/readout.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/e6_sub200_ep005/gates.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/e6_sub200_ep008/readout.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/e6_sub200_ep008/gates.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/e6_sub200_ep011/readout.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/e6_sub200_ep011/gates.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/e6_sub200_ep011/readout.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/model.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/train.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/diag_score_extra.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/diag_onpolicy_train.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/onpolicy_dump.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/onpolicy_label.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/diag_oplabel_diff.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/navsim_dac.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/navsim_pdm/__init__.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/navsim_pdm/LICENSE
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/navsim_pdm/NOTICE.md
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/navsim_pdm/pdm_simulator.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/navsim_pdm/batch_lqr.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/navsim_pdm/batch_lqr_utils.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/navsim_pdm/batch_kinematic_bicycle.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/navsim_pdm/pdm_array_representation.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/navsim_pdm/pdm_enums.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/navsim_pdm/pdm_geometry_utils.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/navsim_pdm/nuplan_transform_utils.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/validate_navsim_dac.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/code/op_env.sh
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/code/op_pipeline.sh
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/code/op_status.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/code/pod_train_v2.sh
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/code/switch_onpolicy.sh
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/code/preflight_onpolicy.sh
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-09-26-navsim-dac/validate_simulated_100pct.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-09-26-navsim-dac/validate_raw_poses_80_84pct.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-09-26-onpolicy-switch/diag_onpolicy_train_full_run1.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-09-26-onpolicy-switch/diag_onpolicy_train_resume_only_run2.txt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-09-26-onpolicy-switch/diag_onpolicy_train_rand_control_run3.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-09-26-onpolicy-switch/pod_preflight_onpolicy.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/score_proposals.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/READINESS.md
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-09-26-routearc/devbox_diag_scorer_ego_view.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-09-26-routearc/devbox_diag_scorer_ego_view.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/code/run_mini_teacher.sh
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/code/run_headline_suite.sh
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/code/arrange_test_early.sh
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/run_image_isolation.sh
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/code/fetch_scenario_cameras.sh
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/code/queue_camera_fetch.sh
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/code/arrange_watcher.sh
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/code/finalize_mini.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/code/stage0_post.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/report/template.html
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/report/build_data.py
+Project Steering/GOALS_AND_CLAIMS.md
+Project Steering/MODEL_REGISTRY.md
+Project Steering/PI_DECISION_QUEUE.md
+
+## 2026-09-26 batch 2: REFe epoch-12 selection readout (E-6), banked learning-curve points, dump-cost A/B, PI budget decision (extension accepted)
+# report/*, PI_DECISION_QUEUE, MODEL_REGISTRY and GOALS_AND_CLAIMS were updated after batch 1; whichever batch is
+# staged first carries their current bytes.
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/RESULT_E6_sub200_ep012.md
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/e6_sub200_ep012/readout.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/e6_sub200_ep012/gates.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/e6_sub200_ep012/readout.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/points/MANIFEST.txt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/points/sub200_ep001.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/points/sub200_ep002.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/points/sub200_ep003.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/points/sub200_ep005.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/points/sub200_ep008.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/points/sub200_ep011.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/points/sub200_ep012.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-09-26-onpolicy-switch/dump_cost_pause_ab.txt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/report/template.html
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/report/build_data.py
+Project Steering/PI_DECISION_QUEUE.md
+Project Steering/MODEL_REGISTRY.md
+Project Steering/GOALS_AND_CLAIMS.md
+
+## 2026-09-26 batch 3: SPEC_NAVTEST Amendment 4 readout (the on-policy scorer's pre-registered test) + its self-test (27/27) + the banked dev-box snapshot-eval runner
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/amendment4_readout.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/selftest_amendment4.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/eval_snapshot.sh
+
+## 2026-09-26 batch 4: REFe report -- learning signals split at the on-policy switch (scorer loss, coverage, candidate distance mean something else after step 3,708) + the training-side on-policy selection charts
+# report/* were also listed in batches 1-2; whichever batch is staged first carries their current bytes.
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/report/template.html
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/report/build_data.py
+
+## 2026-09-26 batch 5: final-navtest readiness (out-of-subset smoke passed, projection, run recipe) + report caveats current + MODEL_REGISTRY §14 declared departures (5) updated / (6) NAVSIM drivable-area labels added
+# report/template.html and MODEL_REGISTRY.md were also listed in earlier batches; the first staged carries current bytes.
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/report/template.html
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/FINAL_NAVTEST_READINESS.md
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/fullsmoke24/fullsmoke24_tokens.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/fullsmoke24/fullsmoke24_ep012.json
+Project Steering/MODEL_REGISTRY.md
+
+## 2026-09-26 batch 6: the final model's evaluation path (runner `final` mode with summary.json sha256 check, Amendment 4 final-name handling + selftest 32/32, report labels 'final' / 'the final model', true epoch count)
+# these paths were also listed in earlier batches; whichever batch is staged first carries their current bytes.
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/report/template.html
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/report/build_data.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/amendment4_readout.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/selftest_amendment4.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/eval_snapshot.sh
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/FINAL_NAVTEST_READINESS.md
+
+## 2026-09-26 batch 7: the snapshot waiter (wakes on snap_epochNNN.pt appearing, launches the eval at once)
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/wait_and_eval.sh
+
+## 2026-09-26 batch 8: PI decision (keep the label pipeline to the end, no stop at step 9,771) + the report's pace card keyed on the accepted finish (it had fallen back to an already-decided prompt when the projection moved inside the line; three regimes rendered)
+# both paths were also listed in earlier batches; whichever batch is staged first carries their current bytes.
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/report/template.html
+Project Steering/PI_DECISION_QUEUE.md
+
+## 2026-09-26 batch 9: SPEC Amendment 4 PRIMARY result (snapshot after epoch 13: FAILURE) + its E-6 readout, the selection-rule mismatch diagnostic (planner v2-shaped vs the v1 harness; RETRACTION_LOG R25), claims register + registry updated, report shows the verdict
+# report/*, GOALS_AND_CLAIMS, MODEL_REGISTRY, MANIFEST were also listed earlier; the first staged carries current bytes.
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/report/template.html
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/report/build_data.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/RESULT_E6_sub200_ep013.md
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/RESULT_A4_sub200_ep013.md
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/e6_sub200_ep013/readout.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/e6_sub200_ep013/gates.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/e6_sub200_ep013/readout.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/e6_sub200_ep013/amendment4.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/points/sub200_ep013.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/points/MANIFEST.txt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/rule_mismatch_diag.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/rule_mismatch_diag.json
+Project Steering/GOALS_AND_CLAIMS.md
+Project Steering/MODEL_REGISTRY.md
+Project Steering/RETRACTION_LOG.md
+
+## 2026-09-26 batch 10: Amendment 4 later reads are 'reported, not gating' after a decision; the self-test writes fixtures only into a temp dir (--doc-dir; 39/39) after it overwrote the real RESULT_A4_sub200_ep013.md twice (restored from the index, blob == staged); the report shows the deciding read
+# these paths were also listed earlier; whichever batch is staged first carries their current bytes.
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/amendment4_readout.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/selftest_amendment4.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/report/template.html
+
+## 2026-09-26 batch 11: PI decision 'do 2 and 3' -- option 2 NAVSIM-faithful comfort labels (vendored pdm_comfort_metrics, 100.00 % vs the harness on 25,600 proposals; label_version 3 in the labeller + backfill; the teacher's comfort was a near-constant) and option 3 SPEC Amendment 5 (v1 selection rule, pre-registered blob 41e25c57 + its readout, preflight reproduces the known +1.54 exactly)
+# GOALS_AND_CLAIMS, MODEL_REGISTRY, PI_DECISION_QUEUE, SPEC_NAVTEST, SPEC_PREREG_HASH were also listed earlier.
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/navsim_dac.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/onpolicy_label.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/navsim_pdm/pdm_comfort_metrics.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/navsim_pdm/NOTICE.md
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/validate_navsim_comfort.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/rule_confirm.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/SPEC_NAVTEST.md
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/SPEC_PREREG_HASH.txt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-09-26-navsim-comfort/validate_navsim_comfort_100pct.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-09-26-navsim-comfort/navsim_comfort_validation.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-09-26-navsim-comfort/pod_smoke_v3_teacher_vs_navsim_comfort.txt
+Project Steering/PI_DECISION_QUEUE.md
+Project Steering/GOALS_AND_CLAIMS.md
+Project Steering/MODEL_REGISTRY.md
+
+## 2026-09-26 batch 12: SPEC Amendment 5 result (NO MEASURABLE DIFFERENCE, +0.78 [-0.30, +1.82] on 923 disjoint tokens) -> the planner selects with NAVSIM v1 (DEFAULT_RULE flipped; planner/seam/E-6 table/readout rule-aware and recording the rule; old tables reproduce byte-identically); earlier picks re-selected with v1 (the epoch-5 peak was the old rule's); registry + claims D-REFE-RULE-1; report shows the rule per point
+# several paths were also listed earlier; whichever batch is staged first carries their current bytes.
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/planner.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/refe_navtest_seam.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/proposal_table.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/selection_readout.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/rule_confirm.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/RESULT_A5_a5confirm_ep013.md
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/a5_confirm/a5_readout.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/a5_confirm/a5confirm_ep013.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/a5_confirm/a5_confirm_tokens.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/a5_confirm/rule_flip_smoke_seam.txt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/a5_confirm/MANIFEST.txt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/rule_mismatch_diag.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/report/template.html
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/report/build_data.py
+Project Steering/MODEL_REGISTRY.md
+Project Steering/GOALS_AND_CLAIMS.md
+
+## 2026-09-26 batch 13: the snapshot waiter v2 (idempotent: an atomic mkdir claim, so two waiters for one snapshot never both launch)
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/wait_and_eval.sh
+
+## 2026-09-27 batch 14: report v17 -- the comfort-label change (label version 3: chip, finding, marker on the on-policy charts, caveats) and a 'Coming up' table (next snapshots, finish, what each tells us); op_status.py counts label versions and teacher-vs-NAVSIM comfort and now runs read-only from stdin (no pod-side file); boundaries projected at the mean epoch (402.5 steps); three findings whose prose had gone stale corrected (AUCs sorted by their 95% intervals, fixed-candidate sentence past tense after the switch, a 'human pace' branch); the rebuild tool banked
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/report/template.html
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/report/build_data.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/code/op_status.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/report/rebuild_report.sh
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-09-26-navsim-comfort/op_status_2026-09-26T2223Z.json
+Project Steering/GOALS_AND_CLAIMS.md
+Project Steering/MODEL_REGISTRY.md
+Project Steering/PI_DECISION_QUEUE.md
+
+## 2026-09-27 batch 15: snapshot 014 -- PDMS 58.91 (first NAVSIM-v1 pick), level with standing still (-3.67 [-9.42, +2.51]); E-6 skill 0.329 [0.233, 0.431] UNDETERMINED; Amendment 4 read reported, not gating; like for like vs 013 +7.97 [+2.07, +14.11] (v1) / +11.38 [+5.63, +17.26] (v2 shape) via the new eval/snapshot_pair_under_rule.py; registry + D-REFE-SEL-1 / OPSWITCH-1 / COMFORT-1; report v20
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/RESULT_E6_sub200_ep014.md
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/RESULT_A4_sub200_ep014.md
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/e6_sub200_ep014/amendment4.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/e6_sub200_ep014/gates.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/e6_sub200_ep014/readout.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/e6_sub200_ep014/readout.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/e6_sub200_ep014/pair_ep013_ep014.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/e6_sub200_ep014/pair_ep012_ep014.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/points/sub200_ep014.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/points/MANIFEST.txt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/snapshot_pair_under_rule.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/report/template.html
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/report/build_data.py
+Project Steering/MODEL_REGISTRY.md
+Project Steering/GOALS_AND_CLAIMS.md
+
+## 2026-09-27 batch 16: snapshot 015 -- PDMS 61.18 [55.75, 66.47], level with standing still (-1.40 [-6.57, +3.77]); the first scorer trained on NAVSIM comfort ranks comfort at within-scene AUC 0.743 [0.676, 0.806] (0.504 at 014; pooled 0.870, no output failing); E-6 skill 0.426 [0.328, 0.522] NOT_SELECTION_BOUND; Amendment 4 read SUCCESS, reported not gating (the test stays FAILED at 013); like for like vs 014 +2.27 [-2.43, +6.56] (v1, not separated); WATCH: best of 64 fell 91.3 -> 84.2 from epoch 12 (-7.14 [-10.79, -4.01]) while the mean of 64 is flat; new eval/record_snapshot.py (records a snapshot in one command) and eval/oracle_trend.py; snapshot_pair_under_rule.py refactored (compare(); reproduces the banked 013->014 pair exactly); report v22
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/RESULT_E6_sub200_ep015.md
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/RESULT_A4_sub200_ep015.md
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/e6_sub200_ep015/amendment4.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/e6_sub200_ep015/gates.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/e6_sub200_ep015/readout.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/e6_sub200_ep015/readout.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/e6_sub200_ep015/pair_ep014_ep015.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/e6_sub200_ep015/oracle_trend.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/points/sub200_ep015.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/points/MANIFEST.txt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/record_snapshot.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/oracle_trend.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/snapshot_pair_under_rule.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/report/template.html
+Project Steering/MODEL_REGISTRY.md
+Project Steering/GOALS_AND_CLAIMS.md
+
+## 2026-09-27 batch 17: why the best of 64 fell -- the proposal set lost its slow end (eval/lost_modes.py; D-REFE-SEL-1 mechanism note); standing still beats the best of 64 on 3/10/16 tokens after epochs 12/14/15
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/lost_modes.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/e6_sub200_ep015/lost_modes_ep012_ep015.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/e6_sub200_ep015/lost_modes_ep014_ep015.json
+Project Steering/GOALS_AND_CLAIMS.md
+
+## 2026-09-27 batch 18: STOP-candidate probe on snapshot 015 (EXPLORATORY, subagent, controls bit-exact): +5.43 [+1.50, +9.44] PDMS but not above the STOP floor and worse driving families; D-REFE-SEL-1 note
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/stop_candidate_probe.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/selftest_stop_candidate_probe.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/e6_sub200_ep015/stop_candidate.json
+Project Steering/GOALS_AND_CLAIMS.md
+
+## 2026-09-27 batch 19: the PI's measures (implement all, use only once proven) -- SPEC_NAVTEST Amendment 6 (test-time slowed copies, registered 11:56 before any slowed-copy result); measure 5 (label_version 4, slowed copies in the on-policy sets, behind --slow-copies, validity 100 % on NAVSIM DAC/comfort, 0.5x excluded for a one-directional teacher-collision error; PREREG_MEASURE5.md registered 13:22); M3 separate clipping, M4a decel-limited slowed-target twins, M4b anchored slow slots (all OFF by default, 65/65 validity checks with mutation arms; patches, not applied); nothing deployed; .gitattributes: *.patch eol=lf
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/measures.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/slow_twins.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/selftest_measures.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/measures_hooks.patch
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/measures_consumers.patch
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/fan_speed_swap_probe.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-09-27-training-measures/selftest_measures.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-09-27-training-measures/selftest_measures.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-09-27-training-measures/fan_length_from_tables.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-09-27-training-measures/slow_twins_navtrain10_r0_dryrun_slowcopy.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-09-27-training-measures/slow_twins_navtrain10_r0_dryrun_decel4.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-09-27-training-measures/fan_speed_swap_smoke_cpu2.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-09-27-training-measures/fan_speed_swap_smoke_cpu2_dump.npz
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/onpolicy_label_v4.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/diag_slow_labels_v4_train.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/validate_slow_labels_v4.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/selftest_nc_at_fault.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/diag_v4_nc_residual.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/code/measure5_v4_hooks.patch
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/PREREG_MEASURE5.md
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/e6_sub200_ep015/v4_label_validity.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/e6_sub200_ep015/v4_label_validity_sets_ncaf.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/e6_sub200_ep015/v4_final_reverify.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/e6_sub200_ep015/nc_at_fault_selftest.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/e6_sub200_ep015/v4_nc_residual.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/.gitattributes
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/SPEC_PREREG_HASH.txt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-09-27-measure5-v4/MANIFEST.txt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-09-27-measure5-v4/diag_slow_labels_v4_train.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-09-27-measure5-v4/diag_slow_labels_v4_train.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-09-27-measure5-v4/mut_nocheck_sets_chunk0.jsonl.gz
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-09-27-measure5-v4/op_status_patch_test.txt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-09-27-measure5-v4/ref_v3_sets_chunk0.jsonl.gz
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-09-27-measure5-v4/ref_v4off_sets_chunk0.jsonl.gz
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-09-27-measure5-v4/v4_sets_sub200_ep015.jsonl.gz
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-09-27-measure5-v4/v4_slowaux_sub200_ep015.jsonl.gz
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-09-27-measure5-v4/v4ncaf_sets_sub200_ep015.jsonl.gz
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-09-27-measure5-v4/v4ncaf_slowaux_sub200_ep015.jsonl.gz
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/SPEC_NAVTEST.md
+Project Steering/GOALS_AND_CLAIMS.md
+
+## 2026-09-27 batch 20: the probe agent's slowed-copies probe + eval-path replay (the eval path is unchanged: 012/013 replay bit-exactly) + shared refe/slow_copies.py; SPEC_NAVTEST Amendment 6 readout (NOT adopted: no variant passed the family guard) + Amendment 7 (last-pose heading repair, registered ~13:50); new claim D-REFE-LASTYAW-1 (the model's own t = 4.0 s heading is corrupted; repair +16.76 [+11.72, +22.13] exploratory)
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/slow_copies.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/selftest_slow_copies.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/slow_copy_probe.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/selftest_slow_copy_probe.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/eval_path_replay.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/e6_sub200_ep015/slow_copies.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/e6_sub200_ep015/eval_path_replay.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/SPEC_NAVTEST.md
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/SPEC_PREREG_HASH.txt
+Project Steering/GOALS_AND_CLAIMS.md
+Project Steering/MODEL_REGISTRY.md
+
+## 2026-09-27 batch 21: SPEC Amendment 7 ADOPTED -- the last-pose heading repair is part of REFe's planner output (refe/planner.py repair_last_heading / executed, REPAIR_LAST_HEADING = True; the seam and the E-6 dump use it and record it; --no-repair-last-heading reproduces earlier evaluations); confirmation +16.20 [+12.83, +19.52] on 923 disjoint tokens; selftest 16/16 with mutation arms; adoption smoke on fullsmoke24; registry row + D-REFE-LASTYAW-1 confirmed
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/planner.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/refe_navtest_seam.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/selftest_repair_last_heading.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/a7_confirm/adoption_smoke.txt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/a7_confirm.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/selftest_a7_confirm.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/RESULT_A7_a7confirm_ep015.md
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/a7_confirm/a7_confirm_ep015.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/a7_confirm/MANIFEST.md
+Project Steering/MODEL_REGISTRY.md
+Project Steering/GOALS_AND_CLAIMS.md
+
+## 2026-09-27 batch 22: training-side measures agent, round 2 -- root cause of the corrupted last-pose heading (the WRAPPED heading L1 cannot see a 2*pi branch shift; an output trapped early never recovers; reproduced with the real trainer on real targets; fix --yaw-loss plain behind a flag, 75/75 validity checks incl. mutation arms); step-0 swap probe updated (not run: the GPU was held by other sessions' jobs 15:47-16:12); proxy manifest (10k frames), read-only pod extraction (not run) and shared cache builders
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/fan_speed_swap_probe.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/proxy_manifest.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/proxy_pod_extract.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/proxy_cache.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/proxy_eval_cache.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/measures.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/measures_hooks.patch
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/measures_consumers.patch
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/selftest_measures.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/slow_twins.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/heading_trap_evidence.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-09-27-training-measures/fan_length_from_tables.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-09-27-training-measures/fan_speed_swap_smoke_cpu2.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-09-27-training-measures/fan_speed_swap_smoke_cpu2_dump.npz
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-09-27-training-measures/m6_heading_trap_evidence.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-09-27-training-measures/m6_tiny_rig_arms.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-09-27-training-measures/m6_tiny_rig_arms_script.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-09-27-training-measures/pod_index.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-09-27-training-measures/proxy_manifest_10k.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-09-27-training-measures/selftest_measures.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-09-27-training-measures/selftest_measures.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-09-27-training-measures/slow_twins_navtrain10_r0_dryrun_decel4.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-09-27-training-measures/slow_twins_navtrain10_r0_dryrun_slowcopy.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-09-27-training-measures/step0_launcher.sh
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-09-27-training-measures/step0_window.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/PREREG_M6_YAWLOSS.md
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/SPEC_PREREG_HASH.txt
+
+## 2026-09-27 batch 23: report v23 -- Amendment 7 on the page (chip, finding, eval-table row, open squares for repaired points, a lead sentence so the first repaired point is not read as training)
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/report/template.html
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/report/build_data.py
+
+## 2026-09-27 batch 24: measure-5 effectiveness run, CPU side done (1,900-sample draw, pod gate 1,900/1,900, 7,600 frames read-only at 8.7 MB/s with the trainer at 62.8-63.0 s/step, forward/label/fine-tune/readout tools with gates) -- GPU part pending; the live M6 switch kit (code/switch_yawloss.sh, rollback_yawloss.sh, pod_train_v3.sh), to run only after PREREG_M6_YAWLOSS ADOPT (PI go 2026-09-27, conditional)
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/m5_samples.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/m5_transfer.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/m5_pod/pod_status.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/m5_forward.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/m5_label.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/m5_finetune_eval.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/m5_effectiveness/frames_verify.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/m5_effectiveness/gate.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/m5_effectiveness/pod_status_1332.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/m5_effectiveness/samples_gated_keys.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/m5_effectiveness/transfer.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/code/switch_yawloss.sh
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/code/rollback_yawloss.sh
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/code/pod_train_v3.sh
+
+## 2026-09-27 batch 25: Colab Pro live as TanitAD compute -- PI-confirmed plan account, colab.ps1 wrapper (shim + UTF-8 for the keep-alive daemon too), ccu_info.py (balance/burn/eligibility), gpu_survey.ps1 + gpu_smoke.py, MEASURED per-GPU price and throughput (G4 RTX PRO 6000 98 GB 8.9 CU/h 391 bf16 TFLOPS; L4 1.54 CU/h 60; T4 1.07 CU/h; A100 eligible but 503), COLAB_PRO.md operating guide; 30 paths, all blob-verified, secret_scan --tree colab clean
+colab/COLAB_PRO.md
+colab/colab.ps1
+colab/ccu_info.py
+colab/gpu_smoke.py
+colab/gpu_survey.ps1
+colab/raw/2026-09-27-gpu-survey/survey-a100.ccu_after_stop.out
+colab/raw/2026-09-27-gpu-survey/survey-a100.ccu_assigned.out
+colab/raw/2026-09-27-gpu-survey/survey-a100.json
+colab/raw/2026-09-27-gpu-survey/survey-a100.new.err
+colab/raw/2026-09-27-gpu-survey/survey-a100.new.out
+colab/raw/2026-09-27-gpu-survey/survey-a100.stop.out
+colab/raw/2026-09-27-gpu-survey/survey-g4.ccu_after_stop.out
+colab/raw/2026-09-27-gpu-survey/survey-g4.ccu_assigned.out
+colab/raw/2026-09-27-gpu-survey/survey-g4.exec.out
+colab/raw/2026-09-27-gpu-survey/survey-g4.json
+colab/raw/2026-09-27-gpu-survey/survey-g4.new.out
+colab/raw/2026-09-27-gpu-survey/survey-g4.stop.out
+colab/raw/2026-09-27-gpu-survey/survey-l4.ccu_after_stop.out
+colab/raw/2026-09-27-gpu-survey/survey-l4.ccu_assigned.out
+colab/raw/2026-09-27-gpu-survey/survey-l4.exec.out
+colab/raw/2026-09-27-gpu-survey/survey-l4.json
+colab/raw/2026-09-27-gpu-survey/survey-l4.new.out
+colab/raw/2026-09-27-gpu-survey/survey-l4.stop.out
+colab/raw/2026-09-27-gpu-survey/survey-t4.ccu_after_stop.out
+colab/raw/2026-09-27-gpu-survey/survey-t4.ccu_assigned.out
+colab/raw/2026-09-27-gpu-survey/survey-t4.exec.out
+colab/raw/2026-09-27-gpu-survey/survey-t4.json
+colab/raw/2026-09-27-gpu-survey/survey-t4.new.out
+colab/raw/2026-09-27-gpu-survey/survey-t4.stop.out
+colab/raw/2026-09-27-gpu-survey/survey.json
+
+## 2026-09-27 batch 26: snapshot 016 recorded -- PDMS 76.52 [71.34, 81.96] on sub200, the FIRST point with the Amendment-7 heading repair; record_snapshot.py now refuses to call a pair that crosses the amendment 'like for like' (pair_text + mutation-checked: 015->016 +15.34 is written as carrying the repair, no separation claimed, the repair's own +16.20 [+12.83, +19.52] quoted); report v24 published; 12 paths blob-verified
+Project Steering/MODEL_REGISTRY.md
+Project Steering/GOALS_AND_CLAIMS.md
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/record_snapshot.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/points/MANIFEST.txt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/points/sub200_ep016.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/RESULT_A4_sub200_ep016.md
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/RESULT_E6_sub200_ep016.md
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/e6_sub200_ep016/amendment4.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/e6_sub200_ep016/gates.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/e6_sub200_ep016/pair_ep015_ep016.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/e6_sub200_ep016/readout.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/e6_sub200_ep016/readout.log
+
+## 2026-09-27 batch 27: Colab Pro registered in the constitution (same hard-ceiling discipline as HF Pro: balance before launch, measured prices, server-side stop check, never buy units or re-auth) + the compute-unit usage log (first rows = the 0.14 CU survey); 2 paths blob-verified
+Project Steering/TANITAD_PROGRAMME.md
+colab/USAGE_LOG.md
+
+## 2026-09-27 batch 28: PI go -- private-HF relay for Colab (Sayood/tanitad-colab-relay, dataset, private; guarded push + md5 pull; first push snap_epoch016.pt 76,052,289 B md5 eacd8e8f in 77.4 s; private 184.599 -> 184.675 GB of 1 TB), Colab MCP server registered at user scope (docs), token-to-VM refused by the permission system (documented, PI route = Colab Secret); 7 paths blob-verified
+colab/COLAB_PRO.md
+colab/MCP_SETUP.md
+colab/hf_relay_push.py
+colab/hf_relay_pull.py
+colab/raw/2026-09-27-hf-relay/hf_quota_check.json
+colab/raw/2026-09-27-hf-relay/quota_stdout.txt
+colab/raw/2026-09-27-hf-relay/push_snap016.txt
+
+## 2026-09-27 batch 29: Colab-Secret route MEASURED -- a CLI-provisioned (headless) session cannot read Colab Secrets (GetSecret: no reply in 30.0 s; the frontend serves them); secret_probe.py (booleans only) + relay_proof.ps1 (finally-stop, server-side idle assert); CPU VM rate 0.08-0.16 CU/h, proof ~0.003 CU; 10 paths blob-verified
+colab/COLAB_PRO.md
+colab/USAGE_LOG.md
+colab/secret_probe.py
+colab/relay_proof.ps1
+colab/raw/2026-09-27-hf-relay/relay-proof.ccu_after_stop.out
+colab/raw/2026-09-27-hf-relay/relay-proof.ccu_assigned.out
+colab/raw/2026-09-27-hf-relay/relay-proof.json
+colab/raw/2026-09-27-hf-relay/relay-proof.new.out
+colab/raw/2026-09-27-hf-relay/relay-proof.probe.out
+colab/raw/2026-09-27-hf-relay/relay-proof.stop.out
+
+## 2026-09-27 batch 30: signed-link route MEASURED WORKING (PI choice) -- headless Colab VMs pull private relay files with NO token on the VM: hf_signed_links.py (dev box, token local, 60-min per-file links, job file outside the repo) + signed_pull.py (VM, bytes+md5) + signed_proof.ps1; snap_epoch016.pt 76,052,289 B md5 eacd8e8f in 7.3 s; ~0.001 CU; 14 paths blob-verified
+colab/COLAB_PRO.md
+colab/USAGE_LOG.md
+colab/hf_signed_links.py
+colab/signed_pull.py
+colab/signed_proof.ps1
+colab/raw/2026-09-27-hf-relay/signed-proof.ccu_after_stop.out
+colab/raw/2026-09-27-hf-relay/signed-proof.ccu_assigned.out
+colab/raw/2026-09-27-hf-relay/signed-proof.json
+colab/raw/2026-09-27-hf-relay/signed-proof.links.err
+colab/raw/2026-09-27-hf-relay/signed-proof.links.out
+colab/raw/2026-09-27-hf-relay/signed-proof.new.out
+colab/raw/2026-09-27-hf-relay/signed-proof.pull.out
+colab/raw/2026-09-27-hf-relay/signed-proof.stop.out
+colab/raw/2026-09-27-hf-relay/signed-proof.upload.out
+
+## 2026-09-27 batch 31: like-for-like 015 -> 016 (both repaired, CPU re-score of epoch 15 native plans, all gates PASS): training -1.41 [-6.45, +3.88] not separated; the +15.34 curve step is the repair (+16.76 [+11.72, +22.13]); best-of-64 98.42 -> 96.23 (-2.19 [-4.90, -0.02], one run: not a training effect); recorded in MODEL_REGISTRY (REFe Status) + GOALS_AND_CLAIMS (D-REFE-LASTYAW-1, D-REFE-SEL-1); 22 paths blob-verified
+Project Steering/MODEL_REGISTRY.md
+Project Steering/GOALS_AND_CLAIMS.md
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/RESULT_like_for_like_016.md
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/like_for_like_016.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/like_for_like_016/MANIFEST.md
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/like_for_like_016/build64_record.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/like_for_like_016/build_record.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/like_for_like_016/harness/refe_lfl016_ep015_repaired/refe_lfl016_ep015_repaired.counts.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/like_for_like_016/harness/refe_lfl016_ep015_repaired/refe_lfl016_ep015_repaired.csv
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/like_for_like_016/harness/refe_lfl016_ep015_repaired/refe_lfl016_ep015_repaired.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/like_for_like_016/harness/refe_lfl016_ep015_unrepaired/refe_lfl016_ep015_unrepaired.counts.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/like_for_like_016/harness/refe_lfl016_ep015_unrepaired/refe_lfl016_ep015_unrepaired.csv
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/like_for_like_016/harness/refe_lfl016_ep015_unrepaired/refe_lfl016_ep015_unrepaired.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/like_for_like_016/like_for_like_016.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/like_for_like_016/like_for_like_016_64.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/like_for_like_016/logs/oracle_trend.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/like_for_like_016/logs/score_repaired.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/like_for_like_016/logs/score_unrepaired.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/like_for_like_016/oracle_trend_ep015rep_ep016.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/like_for_like_016/refe_lfl016_ep015_repaired.npz
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/like_for_like_016/selftest.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/like_for_like_016/table_sub200_ep015_repaired_scores.npz
+
+## 2026-09-27 batch 32: report v25 -- the eval lead states the measured split of the first repaired step (repair +16.8, one epoch of training -1.4 [-6.5, +3.9], not separated) and a finding "One more epoch of training did not move PDMS", both read from eval/raw/like_for_like_016/; 2 paths blob-verified
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/report/template.html
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/report/build_data.py
+
+## 2026-09-27 batch 33: NAVTEST_ON_COLAB_PLAN (measured plan: sub200 per snapshot ~0.70 CU on L4, final full navtest ~7.8 CU / ~53 min on G4; parity gates pre-registered in section f) + its evidence; 123 paths blob-verified (listed in git diff --cached -- colab/raw/2026-09-27-navtest-plan)
+colab/NAVTEST_ON_COLAB_PLAN.md
+colab/raw/2026-09-27-navtest-plan/ (123 files; stage-by-path already done by the agent, all blob-verified)
+
+## ⛔ HOLD (2026-09-27, orchestrator): github.com/sayoood/TanitAD is PUBLIC (MEASURED: unauthenticated API private=false, visibility=public). These 5 staged files hard-code the training pod IP + SSH port and would publish them on landing -- DO NOT LAND them until the PI decides (make the repo private, or scrub the address into a git-ignored config):
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/code/devbox_upload.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/eval_snapshot.sh
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/m5_transfer.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/wait_and_eval.sh
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/report/rebuild_report.sh
+
+## 2026-09-27 batch 34: NAVSIM-on-Colab P0 (0.41 CU): seam gates PASS on snapshot 016 (G-S 0 flips, G-P PDMS 76.5243 exact, G-REP); Linux harness misses its EXACT gates by 1e-13..1e-9 (platform libm) -> route = HYBRID (Colab seam + dev-box harness, PDMS 76.5243, discrete terms equal); code colab/navtest/ + evidence colab/raw/2026-09-27-navtest-p0/ (423 staged paths, blob-verified; list = git diff --cached --name-only -- colab/navtest colab/raw/2026-09-27-navtest-p0) + colab/COLAB_PRO.md + colab/USAGE_LOG.md
+colab/COLAB_PRO.md
+colab/USAGE_LOG.md
+colab/navtest/ (all staged files)
+colab/raw/2026-09-27-navtest-p0/ (all staged files)
+
+## 2026-09-28 batch 35: M6 epoch-1 verdict REFUTED recorded (GOALS_AND_CLAIMS D-REFE-LASTYAW-1); Amendment 1 (6c0baa50) and M6b rev 2 (83e45c83) registered in eval/raw/SPEC_PREREG_HASH.txt before any of their arms ran; snapshot 017 recorded (PDMS 82.63 [78.97, 86.14], like for like vs 016 +6.10 [+0.57, +11.26] NAVSIM v1, both repaired); report v27 (epoch-16 finding retitled)
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/PREREG_M6_YAWLOSS.md
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/PREREG_M6B_TANGENT.md
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/SPEC_PREREG_HASH.txt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/report/template.html
+Project Steering/MODEL_REGISTRY.md
+Project Steering/GOALS_AND_CLAIMS.md
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/points/MANIFEST.txt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/points/sub200_ep017.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/RESULT_A4_sub200_ep017.md
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/RESULT_E6_sub200_ep017.md
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/e6_sub200_ep017/amendment4.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/e6_sub200_ep017/gates.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/e6_sub200_ep017/pair_ep016_ep017.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/e6_sub200_ep017/readout.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/e6_sub200_ep017/readout.log
+
+## 2026-09-28 batch 36 (~02:15): tonight's REFe measure proofs -- M6 epoch 1 REFUTED, Amendment 1 PLATEAU/REFUTED, M6b REFUTED, M5 ADOPT-by-rule but deployment HOLD (post-hoc: the effect vanishes against the A7-repaired truth); far-goal diagnosis (20 tokens, route roadblocks miss the ego; Amendment 8 being drafted); claims rows D-REFE-LASTYAW-1 and D-REFE-SEL-1 updated.
+Project Steering/GOALS_AND_CLAIMS.md
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/ -- ALL staged paths under this package (897 at 02:15; 893 blob-verified; 4 are agent C's LIVE files -- chain.log, logs/REGEN.log, selftest_proxy_eval.json, raw/2026-09-27-training-measures/proxy_manifest_10k.json -- re-staged at its hand-back: LAND THIS BATCH ONLY AFTER that hand-back)
+⚠ Not ours, seen by secret_scan --staged: products/P4-training-pipelines/2026-09-27-v7f-refav1-state/refav1_r1r6/code/fix/stack/tanitad/data/refav1_loader.py is git-IGNORED but staged (git add -f) -- the lander should check with its owner session.
+
+## 2026-09-28 batch 37 (~02:40): SPEC_NAVTEST AMENDMENT 8 REGISTERED (test-time goal sanitisation; SPEC_NAVTEST blob 8ace80cc, previous 71fc61b5 verified) + its draft and evidence (raw/2026-09-28-goal-clamp/, 28 staged files: probe, trace, both route censuses, fresh-set list 422 tokens / 32 logs)
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/SPEC_NAVTEST.md
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/SPEC_PREREG_HASH.txt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-09-28-goal-clamp/ (all staged files)
+
+## 2026-09-28 batch 38 (~07:15): the Colab seam sharder gains a recorded, guarded `--seam-extra` passthrough so the
+Thursday final can run Amendment 8's sanitised arm on Colab with no code edit on the day. seam_shards.py refuses
+(ZZSHARDS_FAIL) when a requested --sanitize-goal does not reach every shard. Tested with a stand-in seam: ON / OFF pass,
+the mutant with the passthrough deleted goes RED. Blob 7b48225c (index == worktree).
+colab/navtest/seam_shards.py
+
+## 2026-09-28 batch 39 (~07:45): REFe snapshot 018 recorded -- PDMS 83.71 [80.52, 86.80] (repaired, rule navsim_v1),
++21.13 [+17.02, +25.06] vs STOP (separated); like for like vs 017 +1.09 [-2.21, +4.50] (NOT separated); E-6 best 99.3 /
+pick 83.7 / random 70.0, skill 0.468 -> NOT_SELECTION_BOUND. Report v28 published (lead now lists every repaired-to-
+repaired step and states the interval answers the episode question only). All 10 paths blob-verified (index == worktree).
+Project Steering/MODEL_REGISTRY.md   (worktree is a strict superset of HEAD: 0 HEAD-only lines)
+Project Steering/GOALS_AND_CLAIMS.md (⚠ NOT only mine: vs HEAD 37645fcc it has 22 HEAD-only lines, ALL another
+   session's worktree edits -- 21 clip-id -> `sha12:` substitutions + 1 glyph fix at HEAD line 9133 (⛛ -> ⛔); no content
+   lost; checked by id-normalised line matching. The lander should confirm the sha12 substitution is sanctioned
+   (PI item 17 said banked ids stay, no redaction) before landing it.)
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/report/template.html
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/RESULT_E6_sub200_ep018.md
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/RESULT_A4_sub200_ep018.md
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/raw/e6_sub200_ep018/ (5 files)
+
+## 2026-09-28 batch 40 (~07:45): EXPLORATORY selection-gap attribution (sub200 E-6 tables 015-018; oracle substitution of
+one head at a time by the true harness sub-score). At epoch 18: EP +6.12, DAC +5.17, TTC +3.60, NC +1.40, C +0.03
+over the shipped 83.71; best 99.27. Route-free progress proxies ELIMINATED (82.3-83.1 at every quantile). Next arm
+(exact route-progress EP, CPU) handed to agent C as a side task; map-based DAC needs a PI ruling (vision-only inference).
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-09-28-ep-attribution/ep_attribution.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-09-28-ep-attribution/ep_attribution.json
+
+## 2026-09-28 batch 41 (~13:55): snapshot 019 recorded (PDMS 81.56 [77.56, 85.49]; vs 018 -2.15 [-5.99, +1.89], not
+separated); SPEC Amendment 8 re-read ADOPT after an instrument fix (R26: fam_direction's "acc" substring matched
+accel_mae) but NOT DEPLOYED under the PI's no-HD-map-geometry ruling; --sanitize-goal threaded through the eval callers
+(never passed); record_snapshot pairs on the untriggered tokens when only one side is sanitised; report v29.
+Project Steering/MODEL_REGISTRY.md, GOALS_AND_CLAIMS.md (new row D-REFE-GOAL-1), RETRACTION_LOG.md (R26)
+eval/: proxy_eval.py, test_fam_direction.py, eval_checkpoint.py, learning_curve.py, proposal_table.py,
+  snapshot_pair_under_rule.py, record_snapshot.py, RESULT_E6/A4_sub200_ep019.md, raw/e6_sub200_ep019/
+raw/2026-09-28-goal-clamp/: RESULT_A8 (+ header), result_a8.json, both *.as_first_read_0908_NOT_PROVEN.* copies
+raw/2026-09-27-m6-proxy/selftest_proxy_eval.json (regenerated by the selftest run, 47/47)
+Also the agents' own staged deliverables: M5r Stage 1 (33 files, RESULT_M5R_STAGE1.md), A8 chain + EP-route (ABANDONED).

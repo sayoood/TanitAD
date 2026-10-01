@@ -7,7 +7,9 @@ from datetime import datetime, timedelta, timezone
 import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-PTS = "D:/Projects/TanitAD/data/refe_navtest/points"
+# the learning-curve points (and the proptable/ beside them); overridable so a fixture can be rendered without
+# touching the live data directory
+PTS = os.environ.get("REFE_REPORT_POINTS", "D:/Projects/TanitAD/data/refe_navtest/points")
 BERLIN = timezone(timedelta(hours=2))
 
 
@@ -15,7 +17,7 @@ def loc(iso):
     return datetime.fromisoformat(iso.replace("Z", "+00:00")).astimezone(BERLIN).strftime("%Y-%m-%d %H:%M")
 
 
-steps, banks, epochs, ckpts = [], [], [], []
+steps, banks, epochs, ckpts, declared, ops = [], [], [], [], [], []
 start_at = None
 for line in open(os.path.join(HERE, "metrics.jsonl"), encoding="utf-8"):
     line = line.strip()
@@ -31,6 +33,10 @@ for line in open(os.path.join(HERE, "metrics.jsonl"), encoding="utf-8"):
         epochs.append(r)
     elif ev == "ckpt":
         ckpts.append(r)
+    elif ev == "declared_change":
+        declared.append(r)
+    elif ev == "onpolicy":
+        ops.append(r)
     elif "step" in r and ev is None:
         steps.append(r)
 
@@ -86,12 +92,59 @@ for i in range(len(S)):
     if ds > 0:
         win_cov[i] = (ncov[i] - ncov[j]) / ds
 
+# ⭐ THE SCORER'S SUPERVISION CHANGED AT A DECLARED STEP (PI decision B; the trainer's own `declared_change` line).
+# Before it, `score` is the fixed-candidate loss and `assign_d` the banked candidate's distance to the nearest
+# proposal. After it, `score` is the LAST micro-batch's on-policy loss -- 0 unless that micro-batch held a labelled
+# set, so it is not a loss curve -- and `assign_d` is the labelled trajectories' drift to the proposals of now.
+# One series across the switch would draw a scorer loss "collapsing" to 0 and a distance "falling" from 4 m to
+# 0.3 m, both artefacts of the change in meaning; every chart and caption reads the two regimes separately.
+switch_step = min((d["step"] for d in declared), default=None)
+post = step > switch_step if switch_step is not None else np.zeros(len(S), dtype=bool)
+sc_fix = np.where(post, np.nan, sc)
+ad_fix = np.where(post, np.nan, ad)
+drift = np.where(post, ad, np.nan)
+
+# the trainer's on-policy windows (one per logged step, sets > 0), pooled into bins weighted by their set counts:
+# the training-side selection skill on the labelled sets (SPEC_NAVTEST Amendment 4, secondary readout)
+opw = {}
+for o in ops:
+    if (o.get("sets") or 0) > 0:
+        opw[o["step"]] = o                     # a replayed step keeps its last record
+
+
+def op_pool(keys):
+    rows = [opw[k] for k in keys]
+    n = sum(x["sets"] for x in rows)
+    if not n:
+        return None
+    pk, rd, bs = (sum(x[f] * x["sets"] for x in rows) / n for f in ("pick", "random", "best"))
+    lags = [(x["lag_steps"], x["sets"]) for x in rows if x.get("lag_steps") is not None]
+    return {"sets": n, "steps": len(rows), "pick": round(pk, 4), "random": round(rd, 4), "best": round(bs, 4),
+            "skill": round((pk - rd) / (bs - rd), 4) if bs - rd > 1e-9 else None,
+            "lag_steps": round(sum(l * s for l, s in lags) / sum(s for _, s in lags), 1) if lags else None}
+
+
+OP_BIN = 25
+op_bins = []
+if opw:
+    ks = sorted(opw)
+    for lo in range(ks[0] - ks[0] % OP_BIN, ks[-1] + 1, OP_BIN):
+        pool = op_pool([k for k in ks if lo <= k < lo + OP_BIN])
+        if pool:
+            # a bin still filling holds fewer sets and is the noisiest point: charts draw complete bins only
+            op_bins.append({"step_lo": lo, "step_hi": lo + OP_BIN - 1,
+                            "complete": bool(lo + OP_BIN - 1 <= int(step[-1])), **pool})
+
 r = lambda a, n=4: [None if (a_ is None or not np.isfinite(a_)) else round(float(a_), n) for a_ in a]
 series = {
     "step": step.tolist(), "elapsed_h": r(el / 3600.0, 4), "traj_L1": r(l1, 4),
     "traj_L1_med": r(rolling_median(l1), 4), "score": r(sc, 5), "score_med": r(rolling_median(sc), 5),
     "winners": win.astype(int).tolist(), "winners_mean": r(rolling_mean(win), 3),
     "assign_d": r(ad, 3), "assign_d_med": r(rolling_median(ad), 3),
+    # the regime-split twins the charts draw (medians never reach across the switch)
+    "score_fixed": r(sc_fix, 5), "score_fixed_med": r(np.where(post, np.nan, rolling_median(sc_fix)), 5),
+    "assign_d_fixed": r(ad_fix, 3), "assign_d_fixed_med": r(np.where(post, np.nan, rolling_median(ad_fix)), 3),
+    "op_drift": r(drift, 3), "op_drift_med": r(np.where(post, rolling_median(drift), np.nan), 3),
     "scorer_cov_cum": r(cov, 4), "scorer_cov_win": r(win_cov, 4), "lr": r(lr, 8),
     "epoch": ep.tolist(), "s_per_step": r(dt, 2), "mem_gb": r(mem, 2),
 }
@@ -103,12 +156,17 @@ for e in sorted(set(ep.tolist())):
     idx = np.where(m)[0]
     dts = dt[m][1:] if m.sum() > 1 else dt[m]
     bank = next((b for b in banks if b["epoch"] == e), None)
+    fixm, opm = m & ~post, m & post
     per_epoch.append({
         "epoch": int(e), "steps": int(m.sum()), "first_step": int(step[idx[0]]), "last_step": int(step[idx[-1]]),
         "traj_L1_median": round(float(np.nanmedian(l1[m])), 4),
-        "score_median": (round(float(np.nanmedian(sc[m][sc[m] > 0])), 5) if np.any(sc[m] > 0) else None),
+        # fixed-candidate steps only: after the switch these fields mean something else (see above)
+        "score_median": (round(float(np.nanmedian(sc[fixm][sc[fixm] > 0])), 5) if np.any(sc[fixm] > 0) else None),
         "winners_mean": round(float(np.nanmean(win[m])), 3),
-        "assign_d_median": (round(float(np.nanmedian(ad[m])), 3) if np.any(np.isfinite(ad[m])) else None),
+        "assign_d_median": (round(float(np.nanmedian(ad[fixm])), 3) if np.any(np.isfinite(ad[fixm])) else None),
+        "scorer_mode": "onpolicy" if post[m].all() else ("switched" if post[m].any() else "fixed"),
+        "op_drift_median": (round(float(np.nanmedian(ad[opm])), 3) if np.any(np.isfinite(ad[opm])) else None),
+        "op": op_pool([k for k in sorted(opw) if k in set(step[m].tolist())]),
         "scorer_cov_window": (round(float((ncov[idx[-1]] - (ncov[idx[0] - 1] if idx[0] > 0 else 0))
                                           / max(smp[idx[-1]] - (smp[idx[0] - 1] if idx[0] > 0 else 0), 1)), 4)),
         "s_per_step_median": round(float(np.nanmedian(dts)), 2),
@@ -117,10 +175,21 @@ for e in sorted(set(ep.tolist())):
         "bank_scorer_frames": bank["scorer_frames"] if bank else None,
     })
 
-bank_events = [{"epoch": b["epoch"], "tuples": b["n_tuples"], "scenes": b["n_scenes"],
-                "rank0": b["per_rank"].get("0"), "rank1": b["per_rank"].get("1", 0),
-                "scorer_frames": b["scorer_frames"], "cov_norm": round(b["cov_norm"], 4),
-                "at_local": loc(b["at"])} for b in banks]
+# ONE ROW PER EPOCH. A restart inside an epoch re-logs its bank (the on-policy switch at step 3,708 did,
+# in epoch 11): keep the epoch's FIRST read -- what most of the epoch trained on -- and record the mode the
+# epoch ended in, so a chart never draws two bars for one epoch and never shows epoch 11 as unsupervised.
+be = {}
+for b in banks:
+    row = {"epoch": b["epoch"], "tuples": b["n_tuples"], "scenes": b["n_scenes"],
+           "rank0": b["per_rank"].get("0"), "rank1": b["per_rank"].get("1", 0),
+           "scorer_frames": b["scorer_frames"], "cov_norm": round(b["cov_norm"], 4),
+           "scorer_mode": b.get("scorer_mode", "fixed"), "onpolicy_sets": b.get("onpolicy_sets"),
+           "onpolicy_navsim_dac_sets": b.get("onpolicy_navsim_dac_sets"), "at_local": loc(b["at"])}
+    if b["epoch"] not in be:
+        be[b["epoch"]] = row
+    else:
+        be[b["epoch"]].update({"restarted_at_local": row["at_local"], "mode_end": row["scorer_mode"]})
+bank_events = [be[e] for e in sorted(be)]
 epoch_events = [{"epoch": e["epoch"], "step": e["step"], "at_local": loc(e["at"])} for e in epochs]
 
 # steady speed: median of per-step times excluding epoch-boundary steps
@@ -133,7 +202,75 @@ remaining = total_steps - 1 - int(step[last_i])
 avg_all = float(el[last_i] / (step[last_i] + 1))
 eta_h = remaining * avg_all / 3600.0
 
-# evaluation points (the NAVSIM v1 learning curve on W3's 200 tokens)
+# ⭐ THE FINISH IS PROJECTED FROM THE PACE NOW, AGAINST THE WALL-CLOCK 7-DAY LINE. The lifetime average
+# hides a pace change: from 09:20Z on 2026-09-26 the pod-local on-policy dump shares the GPU and costs
+# ~4.8 s/step -- MEASURED by pausing it (raw/2026-09-26-onpolicy-switch/dump_cost_pause_ab.txt), which is
+# why the steps of that A/B window are left out of the current pace. `el` also stops across a restart,
+# so the finish is counted from the wall clock now, never from elapsed training time.
+AB_PAUSE = set(range(3736, 3742))            # the dump was SIGSTOPped for these steps
+PRE_PIPE = (3300, 3640)                     # the last 340 steps before the pipeline started (09:17Z)
+stepl = step.tolist()
+reg = [i for i in range(1, len(S)) if step[i] not in bstep and step[i] - 1 not in bstep]
+pace_now = float(np.mean([dt[i] for i in reg if step[i] not in AB_PAUSE][-50:]))
+pace_pre = float(np.median([dt[i] for i in reg if PRE_PIPE[0] <= step[i] < PRE_PIPE[1]] or [np.nan]))
+pace_paused = float(np.mean([dt[i] for i in reg if step[i] in AB_PAUSE] or [np.nan]))
+bsteps = sorted(b for b in bstep if b in stepl)
+over = []                                   # what a boundary adds over the regular pace around it
+for b in bsteps[-5:]:
+    j = stepl.index(b)
+    local = [dt[i] for i in reg if 0 < j - i <= 12]
+    if local:
+        over.append(sum(dt[i] - float(np.median(local)) for i in (j, j + 1) if i < len(S)))
+b_over = float(np.median(over)) if over else 0.0
+spe = int(np.median(np.diff(bsteps[-4:]))) if len(bsteps) >= 4 else 403
+b_left = max(0, (total_steps - 1 - bsteps[-1]) // spe) if bsteps else 0
+now_utc = datetime.now(timezone.utc)
+launch_utc = datetime.fromisoformat(start_at.replace("Z", "+00:00"))
+budget_utc = launch_utc + timedelta(days=7)
+# THE PI'S BUDGET DECISION (Project Steering/PI_DECISION_QUEUE.md, 2026-09-26 ~13:35 Berlin): the ~1 h overrun
+# the dump causes is ACCEPTED -- "I accept the finish time extension". The page flags the budget again only if
+# the projection moves more than REFLAG_H past the finish that was accepted (a monitoring rule, not the PI's).
+ACCEPTED_FINISH = datetime(2026, 10, 1, 2, 19, tzinfo=BERLIN)
+REFLAG_H = 1.0
+# THE PI'S RESPONSE TO THE AMENDMENT 4 FAILURE (PI_DECISION_QUEUE.md, 2026-09-26 ~20:28 Berlin): "do 2 and 3" -- NAVSIM's own
+# comfort label in the on-policy labels (label version 3) and selection with NAVSIM v1's own formula (SPEC Amendment 5,
+# adopted after its harm guard). The test's outcome is not changed by it: it FAILED, and the page keeps saying so.
+A4_RESPONSE = {"decided_local": "2026-09-26 20:28", "quote": "do 2 and 3",
+               "levers": ["NAVSIM's own comfort label (label version 3)", "selection with NAVSIM v1's own formula (Amendment 5)"]}
+eta_utc = now_utc + timedelta(seconds=remaining * pace_now + b_left * b_over)
+eta_free_utc = now_utc + timedelta(seconds=remaining * pace_paused + b_left * b_over) \
+    if np.isfinite(pace_paused) else None
+pace = {"pace_now": round(pace_now, 2), "pace_pre_pipeline": round(pace_pre, 2),
+        "pace_dump_paused": round(pace_paused, 2) if np.isfinite(pace_paused) else None,
+        "boundary_overhead_s": round(b_over, 1), "boundaries_left": int(b_left), "steps_per_epoch": spe,
+        "eta_utc": eta_utc.isoformat(), "eta_local": eta_utc.astimezone(BERLIN).strftime("%Y-%m-%d %H:%M"),
+        "eta_h_now": round((eta_utc - now_utc).total_seconds() / 3600.0, 1),
+        "budget_utc": budget_utc.isoformat(), "budget_local": budget_utc.astimezone(BERLIN).strftime("%Y-%m-%d %H:%M"),
+        "inside_budget": bool(eta_utc <= budget_utc),
+        "margin_h": round((budget_utc - eta_utc).total_seconds() / 3600.0, 2),
+        "days_total": round((eta_utc - launch_utc).total_seconds() / 86400.0, 2),
+        "accepted_finish_utc": ACCEPTED_FINISH.astimezone(timezone.utc).isoformat(),
+        "reflag_h": REFLAG_H,
+        "within_accepted": bool(eta_utc <= ACCEPTED_FINISH + timedelta(hours=REFLAG_H)),
+        "past_accepted_h": round((eta_utc - ACCEPTED_FINISH).total_seconds() / 3600.0, 2),
+        "eta_dump_free_local": eta_free_utc.astimezone(BERLIN).strftime("%Y-%m-%d %H:%M") if eta_free_utc else None,
+        "margin_dump_free_h": round((budget_utc - eta_free_utc).total_seconds() / 3600.0, 2) if eta_free_utc else None}
+
+# evaluation points (the NAVSIM v1 learning curve on W3's 200 tokens). A point is an epoch snapshot `epNNN` -- written
+# at the boundary INTO epoch NNN -- or `final`, the model after the last step; the final model is placed one past the
+# last epoch the trainer read a bank for, and every chart and sentence names it through `label` / `long`.
+FINAL_EPOCH = (max(b["epoch"] for b in banks) + 1) if banks else None
+
+
+def point_id(tag):
+    if tag == "final" and FINAL_EPOCH is not None:
+        return {"epoch": FINAL_EPOCH, "label": "final", "long": "the final model"}
+    if tag.startswith("ep") and tag[2:].isdigit():
+        e = int(tag[2:])
+        return {"epoch": e, "label": f"e{e}", "long": f"after epoch {e}"}
+    return None
+
+
 evals = []
 for name in sorted(os.listdir(PTS)):
     if not (name.startswith("sub200_") and name.endswith(".json")):
@@ -165,8 +302,14 @@ for name in sorted(os.listdir(PTS)):
     prop = (d.get("seam") or {}).get("proposals") or {}
     sm = d["score"]["summary_x100_4dp"]
     tag = name[len("sub200_"):-len(".json")]
+    pid = point_id(tag)
+    if pid is None:
+        continue                      # not a learning-curve point
     evals.append({
-        "point": tag, "epoch": int(tag.replace("ep", "")), "pdms": sm["PDMS"],
+        "point": tag, **pid, "pdms": sm["PDMS"],
+        "rule": (d.get("seam") or {}).get("rule") or "v2_shape",     # the selection rule of this point's pick
+        # SPEC Amendment 7: the executed plan's last-pose heading repaired (absent = before the amendment = False)
+        "repair": bool((d.get("seam") or {}).get("repair_last_heading", False)),
         "subscores": {k: sm[k] for k in ("NC", "DAC", "EP", "TTC", "C", "DDC")},
         "pdms_ci": iv("REFe"), "n_tokens": fl.get("n_tokens"), "n_logs": fl.get("n_logs"),
         "estimator": (fl.get("estimator") or {}).get("name"),
@@ -193,12 +336,53 @@ for name in sorted(os.listdir(PTS)):
 # harness -- one readout per snapshot that has one (eval/proposal_table.py + eval/selection_readout.py)
 selection = []
 PT = os.path.join(os.path.dirname(PTS), "proptable")
+# the earlier picks re-selected with NAVSIM v1's rule from their own E-6 tables (eval/rule_mismatch_diag.py, EXPLORATORY)
+# and SPEC Amendment 5's readout (the harm guard that made v1 the rule)
+_rd = os.path.join(PT, "rule_mismatch_diag.json")
+RULE_DIAG = json.load(open(_rd, encoding="utf-8")) if os.path.exists(_rd) else {}
+# SPEC Amendment 7's confirmation readout (the last-pose heading repair), for the page's chip and finding
+_a7 = os.path.join(os.environ.get("REFE_PKG", "D:/Projects/TanitAD/TanitAD Research Lab/Architecture & "
+                                  "Inference/Research/2026-09-20-refe-plan"), "eval", "raw", "a7_confirm", "a7_confirm_ep015.json")
+A7 = None
+if os.path.exists(_a7):
+    _j = json.load(open(_a7, encoding="utf-8"))
+    A7 = {"decision": _j["decision"], "N": _j["tokens"]["n"], "n_logs": _j["tokens"]["n_logs"],
+          "shipped": _j["statistic"]["shipped_pdms"], "repaired": _j["statistic"]["repaired_pdms"],
+          "delta": _j["statistic"]["delta"], "ci95": _j["statistic"]["ci95"],
+          "helped": _j["statistic"]["helped"], "hurt": _j["statistic"]["hurt"],
+          "sub_delta": _j["reported_not_gating"]["subscore_deltas_x100_repaired_minus_shipped"]}
+# the like-for-like readout of the first repaired step (after epoch 15 -> 16, BOTH repaired; eval/like_for_like_016.py)
+_lfl = os.path.join(os.environ.get("REFE_PKG", "D:/Projects/TanitAD/TanitAD Research Lab/Architecture & "
+                                   "Inference/Research/2026-09-20-refe-plan"), "eval", "raw", "like_for_like_016")
+LFL = None
+if os.path.exists(os.path.join(_lfl, "like_for_like_016.json")):
+    _c = json.load(open(os.path.join(_lfl, "like_for_like_016.json"), encoding="utf-8"))["statistic"]["comparisons"]
+    _t, _r = _c["016_repaired_minus_015_repaired"], _c["015_repaired_minus_015_shipped"]
+    _k = json.load(open(os.path.join(_lfl, "like_for_like_016_64.json"), encoding="utf-8"))["trend"]["result"]["015_repaired:016"]
+    LFL = {"train": {k: _t[k] for k in ("delta", "ci95", "better", "worse", "tied", "separated")},
+           "sub": _t.get("subscore_deltas_x100") or _t.get("sub_deltas_x100") or {},
+           "repair": {k: _r[k] for k in ("delta", "ci95")},
+           "best64": {k: _k["best_of_64"][k] for k in ("a", "b", "b_minus_a", "ci95")}}
+# consecutive snapshots compared under ONE rule, paired on the same tokens (eval/snapshot_pair_under_rule.py, EXPLORATORY):
+# from Amendment 5 the pick's rule changed, so the curve's step from the last v2-picked point mixes model and rule
+import glob as _glob
+PAIRS = [json.load(open(f, encoding="utf-8"))
+         for f in sorted(_glob.glob(os.path.join(os.environ.get("REFE_PKG", "D:/Projects/TanitAD/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan"), "eval", "raw", "e6_sub200_*", "pair_*.json")))]
+_a5 = os.path.join(PT, "a5confirm_ep013", "a5_readout.json")
+A5 = json.load(open(_a5, encoding="utf-8")) if os.path.exists(_a5) else None
 if os.path.isdir(PT):
     for name in sorted(os.listdir(PT)):
         rp, gp = os.path.join(PT, name, "readout.json"), os.path.join(PT, name, "gates.json")
-        if name.startswith("sub200_ep") and os.path.exists(rp) and os.path.exists(gp):
+        pid = point_id(name[len("sub200_"):]) if name.startswith("sub200_") else None
+        if pid is not None and os.path.exists(rp) and os.path.exists(gp):
             r = json.load(open(rp, encoding="utf-8"))
-            r["epoch"] = int(name[len("sub200_ep"):])
+            r.update(pid)
+            # SPEC Amendment 4 (the on-policy scorer's pre-registered test), where it was read
+            a4p = os.path.join(PT, name, "amendment4.json")
+            r["a4"] = json.load(open(a4p, encoding="utf-8")) if os.path.exists(a4p) else None
+            # the selection RULE the pick was made with (tables before SPEC Amendment 5 carry none: the v2 shape)
+            r["rule"] = r.get("rule") or "v2_shape"
+            r["v1"] = (RULE_DIAG.get(name) or {}).get("NAVSIM v1 formula") if r["rule"] == "v2_shape" else None
             r["gates"] = json.load(open(gp, encoding="utf-8")).get("gates")
             # descriptive, from the table itself (not pre-registered): how many proposals would do well
             T = np.load(os.path.join(PT, name, "table.npz"))
@@ -241,15 +425,58 @@ out = {
                  "steady_s_per_step_median": round(float(np.median(steady)), 2),
                  "steady_p10_p90": [round(float(np.percentile(steady, 10)), 2), round(float(np.percentile(steady, 90)), 2)],
                  "eta_h": round(eta_h, 1), "epoch_now": int(ep[last_i]),
+                 # the run's LAST epoch index: grow mode made epochs 0-3 short, so 10,075 steps hold more than the
+                 # 25 full-scene epochs the plan counted; the last one ends part-way at step 10,075
+                 "epoch_last": int(ep[last_i]) + int(b_left),
                  "traj_L1_first": round(float(l1[0]), 3), "traj_L1_med_now": round(float(rolling_median(l1)[last_i]), 4),
                  "score_med_now": round(float(rolling_median(sc)[last_i]), 5),
                  "scorer_cov_cum_now": round(float(cov[last_i]), 4),
                  "scorer_cov_win_now": round(float(win_cov[last_i]), 4) if np.isfinite(win_cov[last_i]) else None,
                  "winners_mean_now": round(float(rolling_mean(win)[last_i]), 3),
-                 "mem_gb_max": round(float(np.nanmax(mem)), 2), "n_ckpts": len(ckpts)},
+                 "mem_gb_max": round(float(np.nanmax(mem)), 2), "n_ckpts": len(ckpts), **pace},
     "series": series, "per_epoch": per_epoch, "bank_events": bank_events, "epoch_events": epoch_events,
-    "evals": evals, "selection": selection,
+    "evals": evals, "selection": selection, "a5": A5, "a4_response": A4_RESPONSE, "pairs": PAIRS, "a7": A7, "lfl": LFL,
+    # the trainer's own on-policy windows since the switch, pooled (training side; the navtest test is E-6/A4)
+    "onpolicy_train": {"switch_step": switch_step, "bin": OP_BIN, "bins": op_bins, "total": op_pool(sorted(opw))},
+    # the on-policy scorer pipeline's status (PI decision B), fetched from the pod beside the logs
+    "onpolicy": (json.load(open(os.path.join(HERE, "onpolicy.json"), encoding="utf-8"))
+                 if os.path.exists(os.path.join(HERE, "onpolicy.json")) else None),
 }
+if out["onpolicy"] and out["onpolicy"].get("switch_at_utc"):
+    out["onpolicy"]["switch_at"] = loc(out["onpolicy"]["switch_at_utc"])     # Berlin, like every time here
+# a full epoch is 402.5 optimiser steps on average (103,037 scenes / 4 per micro-batch = 25,760 micro-batches, / 64 per
+# step), so boundaries alternate 403 / 402 steps apart: project them at the MEAN of the last full epochs, not at `spe`
+# (the integer median, 402), which falls one step further behind every second epoch
+spe_f = float(np.mean(np.diff(bsteps[-9:]))) if len(bsteps) >= 3 else float(spe)
+# ⭐ LABEL VERSION 3 (PI option 2, 2026-09-26): from then on the comfort target is NAVSIM's own ego_is_comfortable.
+# The labeller changed, not the trainer, so no `declared_change` line marks it: training meets the new labels at the
+# first epoch boundary whose bank was read AFTER the first live version-3 label was written (op_status.py).
+OPS_ = out["onpolicy"]
+if OPS_ and OPS_.get("v3_first_live_at"):
+    OPS_["v3_first_live"] = loc(OPS_["v3_first_live_at"])
+    v3_after = sorted(b["epoch"] for b in banks
+                      if b.get("scorer_mode") == "onpolicy" and b.get("at", "") >= OPS_["v3_first_live_at"])
+    OPS_["v3_read"] = bool(v3_after)
+    OPS_["v3_epoch"] = v3_after[0] if v3_after else int(ep[last_i]) + 1
+    OPS_["v3_step"] = next((e["step"] for e in epochs if e["epoch"] == OPS_["v3_epoch"]),
+                           int(bsteps[-1]) + int(math.floor(spe_f + 0.5)))
+
+# ⭐ WHAT COMES NEXT, at the pace now (the page's "Coming up" table): each epoch boundary writes a snapshot that the
+# dev box evaluates as soon as the file appears (eval/wait_and_eval.sh); the final model is written at the last step.
+now_step = int(step[last_i])
+v1_done = any(e.get("rule") == "navsim_v1" for e in out["evals"])
+milestones = []
+for k in range(1, int(b_left) + 1):
+    e_k, s_k = int(ep[last_i]) + k, int(bsteps[-1]) + int(math.floor(k * spe_f + 0.5))
+    milestones.append({
+        "kind": "snapshot", "epoch": e_k, "step": s_k,
+        "at_utc": (now_utc + timedelta(seconds=(s_k - now_step) * pace_now + (k - 1) * b_over)).isoformat(),
+        "first_v1": (not v1_done) and k == 1,
+        "v3_starts": bool(OPS_ and OPS_.get("v3_epoch") == e_k and not OPS_.get("v3_read")),
+        "first_v3_trained": bool(OPS_ and OPS_.get("v3_epoch") is not None and OPS_["v3_epoch"] + 1 == e_k)})
+milestones.append({"kind": "final", "epoch": None, "step": total_steps, "at_utc": eta_utc.isoformat()})
+out["milestones"] = milestones
+out["progress"]["steps_per_epoch_mean"] = round(spe_f, 2)
 json.dump(out, open(os.path.join(HERE, "report_data.json"), "w", encoding="utf-8"))
 p = out["progress"]
 print(json.dumps(p, indent=1))

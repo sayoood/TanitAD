@@ -120,6 +120,10 @@ def main() -> int:
     ap.add_argument("--out", default=None)
     ap.add_argument("--arm", default="REFe")
     ap.add_argument("--select", default="best")
+    ap.add_argument("--rule", default=None, choices=("v2_shape", "navsim_v1"),
+                    help="the selection RULE for --select best (default: planner.py DEFAULT_RULE; SPEC Amendment 5)")
+    ap.add_argument("--no-repair-last-heading", action="store_true",
+                    help="reproduce an evaluation from before SPEC Amendment 7 (2026-09-27): execute the raw last-pose heading")
     ap.add_argument("--device", default="cuda")
     ap.add_argument("--backbone", default="vitl16")
     ap.add_argument("--dump-proposals", default=None,
@@ -146,7 +150,8 @@ def main() -> int:
     from planner import REFePlanner
     from nuplan.planning.simulation.planner.abstract_planner import PlannerInitialization
     planner = REFePlanner(checkpoint=a.ckpt, images_root=a.frames, db_dir=a.db_dir,
-                          backbone=a.backbone, device=a.device, select=a.select)
+                          backbone=a.backbone, device=a.device, select=a.select, rule=a.rule,
+                          repair_last_heading=(False if a.no_repair_last_heading else None))
     print(f"  planner: trained={planner.trained} per_sample_calib={planner.per_sample_calib} "
           f"device={planner.device} select={planner.select}", flush=True)
     rows_tok, rows_fp, rows_pose, misses = [], [], [], []
@@ -171,7 +176,8 @@ def main() -> int:
                 misses.append((tok, f"no frames: {planner.frames.miss_reason}"))
                 continue
             traj, _score, k = planner.infer(ego, img)
-            poses = to_navsim(traj[k].float().cpu().numpy())
+            # the EXECUTED plan -- with SPEC Amendment 7's last-pose heading repair when it is on (planner.executed)
+            poses = to_navsim(planner.executed(traj, k).float().cpu().numpy())
             if not np.isfinite(poses).all():
                 misses.append((tok, "non-finite poses"))
                 continue
@@ -197,7 +203,8 @@ def main() -> int:
             if a.dump_proposals:
                 # SPEC E-6: all M proposals in the SAME to_navsim conversion the seam row used, and
                 # the scorer's raw logits from the SAME forward pass -- never a second model call
-                dump_props.append(np.stack([to_navsim(traj[j].float().cpu().numpy())
+                # any proposal the planner executes gets Amendment 7's repair, so the E-6 table scores them that way
+                dump_props.append(np.stack([to_navsim(planner.executed(traj, j).float().cpu().numpy())
                                             for j in range(traj.shape[0])]).astype(np.float32))
                 dump_logits.append(_score.float().cpu().numpy().astype(np.float32))
                 dump_pick.append(int(k))
@@ -229,7 +236,8 @@ def main() -> int:
              sampling=np.array([NAVSIM_N, NAVSIM_DT]), arm=np.array(a.arm))
     ce = np.array(ctrl_err) if ctrl_err else np.array([np.inf])
     rep = {"tokens_asked": len(toks), "rows": len(rows_tok), "misses": len(misses),
-           "miss_examples": misses[:10], "ckpt": a.ckpt, "select": a.select,
+           "miss_examples": misses[:10], "ckpt": a.ckpt, "select": a.select, "rule": planner.rule,
+           "repair_last_heading": planner.repair_last_heading,
            "frame_control": {"n": n_ctrl, "max_m": float(ce.max()), "median_m": float(np.median(ce)),
                              "bar_m": FRAME_CONTROL_MAX_M,
                              "what": "log future on NAVSIM's 0.5 s grid vs W3 human_future_poses"},
@@ -263,7 +271,8 @@ def main() -> int:
         os.makedirs(os.path.dirname(os.path.abspath(a.dump_proposals)), exist_ok=True)
         np.savez(a.dump_proposals, token=np.array(rows_tok), fingerprint=np.array(rows_fp),
                  proposals=np.stack(dump_props), logits=np.stack(dump_logits),
-                 pick=np.array(dump_pick, dtype=np.int64), select=np.array(a.select),
+                 pick=np.array(dump_pick, dtype=np.int64), select=np.array(a.select), rule=np.array(planner.rule),
+                 repair_last_heading=np.array(planner.repair_last_heading),
                  ckpt=np.array(str(a.ckpt)), sampling=np.array([NAVSIM_N, NAVSIM_DT]))
         rep["proposal_dump"] = os.path.abspath(a.dump_proposals)
     json.dump(rep, open(os.path.splitext(a.out)[0] + ".report.json", "w"), indent=1)

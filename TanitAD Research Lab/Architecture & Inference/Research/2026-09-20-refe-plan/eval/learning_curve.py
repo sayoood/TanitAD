@@ -39,6 +39,8 @@ def main() -> int:
     ap.add_argument("--selection", action="store_true",
                     help="SPEC E-6: also score every proposal of each point and write its selection readout")
     ap.add_argument("--workers", type=int, default=4, help="parallel single-proposal scoring runs (RAM-bound)")
+    ap.add_argument("--sanitize-goal", action="store_true",
+                    help="SPEC Amendment 8 (ADOPTED 2026-09-28): sanitise the goal when the ego lies > 20 m from its route; passed to the seam and recorded in its report (default OFF = the pre-adoption goal path)")
     a = ap.parse_args()
     if a.wait_frames:
         while True:
@@ -58,6 +60,8 @@ def main() -> int:
                    "--name", name, "--tokens", a.tokens]
             if names:
                 cmd += ["--prev"] + names
+            if a.sanitize_goal:
+                cmd += ["--sanitize-goal"]
             print(f"  -> {name}  ({path})", flush=True)
             subprocess.call(cmd, cwd=HERE)
             if point(name) is None:
@@ -66,7 +70,8 @@ def main() -> int:
             print(f"  -> {name}: every proposal scored (SPEC E-6)", flush=True)
             if subprocess.call([sys.executable, os.path.join(HERE, "proposal_table.py"), "--ckpt", path,
                                 "--name", name, "--tokens", a.tokens, "--reuse-dump",
-                                "--workers", str(a.workers)], cwd=HERE) != 0 \
+                                "--workers", str(a.workers)] + (["--sanitize-goal"] if a.sanitize_goal else []),
+                               cwd=HERE) != 0 \
                     or subprocess.call([sys.executable, os.path.join(HERE, "selection_readout.py"),
                                         "--name", name, "--tokens", a.tokens], cwd=HERE) != 0:
                 print(f"ZZCURVE_FAIL {name} selection"); return 1

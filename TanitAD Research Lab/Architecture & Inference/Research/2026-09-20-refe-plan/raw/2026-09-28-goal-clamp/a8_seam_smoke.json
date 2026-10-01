@@ -1,0 +1,201 @@
+{
+ "checks": {
+  "every arm wrote 2 rows": true,
+  "ego vector identical across the 4 arms": true,
+  "frames identical across the 4 arms": true,
+  "covering token: goal identical in all 4 arms": true,
+  "covering token: executed pose identical in all 4 arms": true,
+  "triggered token: goal differs from OFF in on / clamp150 / straight": true,
+  "clamp150: p2 is 150 m on the triggered token": true,
+  "straight: goal is (s/2, 0, s, 0)": 1.0,
+  "ON: goal_diag triggered on the far token, not on the covering one": true,
+  "reports: sanitize_goal False / True / False / False": true
+ },
+ "failed": [],
+ "reports": {
+  "off": {
+   "tokens_asked": 2,
+   "rows": 2,
+   "misses": 0,
+   "miss_examples": [],
+   "ckpt": "D:/Projects/TanitAD/data/refe_runs_eval/snap_epoch015.pt",
+   "select": "best",
+   "rule": "navsim_v1",
+   "repair_last_heading": true,
+   "sanitize_goal": false,
+   "frame_control": {
+    "n": 2,
+    "max_m": 5.551115123125783e-16,
+    "median_m": 3.122502256758253e-16,
+    "bar_m": 0.001,
+    "what": "log future on NAVSIM's 0.5 s grid vs W3 human_future_poses"
+   },
+   "interpolation_residual": {
+    "n": 2,
+    "max_m": 0.007027344924167437,
+    "median_m": 0.005028655105460621,
+    "what": "log future on REFe's 0.2 s grid -> to_navsim, vs W3; reported, not gated"
+   },
+   "seconds": 104.1,
+   "proposals": {
+    "n": 2,
+    "M": 64,
+    "ade_selected_m": 14.5963,
+    "ade_random_m": 13.9977,
+    "ade_oracle_m": 12.4752,
+    "oracle_index_distinct": 2,
+    "oracle_index_top5": [
+     [
+      52,
+      1
+     ],
+     [
+      13,
+      1
+     ]
+    ],
+    "selected_index_distinct": 2,
+    "endpoint_spread_m": 1.657,
+    "what": "open-loop ADE over NAVSIM's 8 poses (0.5 s) vs W3's human future: selected = the planner's pick; random = mean over the M proposals (a random selector's expectation); oracle = best of M; oracle_index_* = how many proposals are ever best (WTA collapse if few); endpoint_spread = mean distance of the M endpoints from their centroid"
+   }
+  },
+  "on": {
+   "tokens_asked": 2,
+   "rows": 2,
+   "misses": 0,
+   "miss_examples": [],
+   "ckpt": "D:/Projects/TanitAD/data/refe_runs_eval/snap_epoch015.pt",
+   "select": "best",
+   "rule": "navsim_v1",
+   "repair_last_heading": true,
+   "sanitize_goal": true,
+   "frame_control": {
+    "n": 2,
+    "max_m": 5.551115123125783e-16,
+    "median_m": 3.122502256758253e-16,
+    "bar_m": 0.001,
+    "what": "log future on NAVSIM's 0.5 s grid vs W3 human_future_poses"
+   },
+   "interpolation_residual": {
+    "n": 2,
+    "max_m": 0.007027344924167437,
+    "median_m": 0.005028655105460621,
+    "what": "log future on REFe's 0.2 s grid -> to_navsim, vs W3; reported, not gated"
+   },
+   "seconds": 119.3,
+   "proposals": {
+    "n": 2,
+    "M": 64,
+    "ade_selected_m": 1.9833,
+    "ade_random_m": 1.6587,
+    "ade_oracle_m": 0.1769,
+    "oracle_index_distinct": 2,
+    "oracle_index_top5": [
+     [
+      52,
+      1
+     ],
+     [
+      27,
+      1
+     ]
+    ],
+    "selected_index_distinct": 2,
+    "endpoint_spread_m": 2.331,
+    "what": "open-loop ADE over NAVSIM's 8 poses (0.5 s) vs W3's human future: selected = the planner's pick; random = mean over the M proposals (a random selector's expectation); oracle = best of M; oracle_index_* = how many proposals are ever best (WTA collapse if few); endpoint_spread = mean distance of the M endpoints from their centroid"
+   }
+  },
+  "clamp150": {
+   "tokens_asked": 2,
+   "rows": 2,
+   "misses": 0,
+   "miss_examples": [],
+   "ckpt": "D:/Projects/TanitAD/data/refe_runs_eval/snap_epoch015.pt",
+   "select": "best",
+   "rule": "navsim_v1",
+   "repair_last_heading": true,
+   "sanitize_goal": false,
+   "frame_control": {
+    "n": 2,
+    "max_m": 5.551115123125783e-16,
+    "median_m": 3.122502256758253e-16,
+    "bar_m": 0.001,
+    "what": "log future on NAVSIM's 0.5 s grid vs W3 human_future_poses"
+   },
+   "interpolation_residual": {
+    "n": 2,
+    "max_m": 0.007027344924167437,
+    "median_m": 0.005028655105460621,
+    "what": "log future on REFe's 0.2 s grid -> to_navsim, vs W3; reported, not gated"
+   },
+   "seconds": 215.0,
+   "proposals": {
+    "n": 2,
+    "M": 64,
+    "ade_selected_m": 2.892,
+    "ade_random_m": 2.8172,
+    "ade_oracle_m": 0.5295,
+    "oracle_index_distinct": 2,
+    "oracle_index_top5": [
+     [
+      52,
+      1
+     ],
+     [
+      13,
+      1
+     ]
+    ],
+    "selected_index_distinct": 2,
+    "endpoint_spread_m": 2.318,
+    "what": "open-loop ADE over NAVSIM's 8 poses (0.5 s) vs W3's human future: selected = the planner's pick; random = mean over the M proposals (a random selector's expectation); oracle = best of M; oracle_index_* = how many proposals are ever best (WTA collapse if few); endpoint_spread = mean distance of the M endpoints from their centroid"
+   }
+  },
+  "straight": {
+   "tokens_asked": 2,
+   "rows": 2,
+   "misses": 0,
+   "miss_examples": [],
+   "ckpt": "D:/Projects/TanitAD/data/refe_runs_eval/snap_epoch015.pt",
+   "select": "best",
+   "rule": "navsim_v1",
+   "repair_last_heading": true,
+   "sanitize_goal": false,
+   "frame_control": {
+    "n": 2,
+    "max_m": 5.551115123125783e-16,
+    "median_m": 3.122502256758253e-16,
+    "bar_m": 0.001,
+    "what": "log future on NAVSIM's 0.5 s grid vs W3 human_future_poses"
+   },
+   "interpolation_residual": {
+    "n": 2,
+    "max_m": 0.007027344924167437,
+    "median_m": 0.005028655105460621,
+    "what": "log future on REFe's 0.2 s grid -> to_navsim, vs W3; reported, not gated"
+   },
+   "seconds": 103.9,
+   "proposals": {
+    "n": 2,
+    "M": 64,
+    "ade_selected_m": 1.9311,
+    "ade_random_m": 1.6467,
+    "ade_oracle_m": 0.1747,
+    "oracle_index_distinct": 2,
+    "oracle_index_top5": [
+     [
+      52,
+      1
+     ],
+     [
+      23,
+      1
+     ]
+    ],
+    "selected_index_distinct": 2,
+    "endpoint_spread_m": 2.326,
+    "what": "open-loop ADE over NAVSIM's 8 poses (0.5 s) vs W3's human future: selected = the planner's pick; random = mean over the M proposals (a random selector's expectation); oracle = best of M; oracle_index_* = how many proposals are ever best (WTA collapse if few); endpoint_spread = mean distance of the M endpoints from their centroid"
+   }
+  }
+ }
+}

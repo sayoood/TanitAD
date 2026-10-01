@@ -3,14 +3,17 @@
 #   1 proposal dump (GPU, nice 19) + W0 rank-0 and W1 rank-1 labellers (CPU, nice 19, 1 thread each)
 # Restarts a dead child every 60 s. ⛔ MEMORY GUARD: the container's cgroup limit is 50 GB and the
 # kernel OOM killer would take the LARGEST process -- the live trainer. Above MEM_HIGH the supervisor
-# stops the newest labeller and starts none until memory is back under MEM_LOW.
+# stops the newest labeller and starts none until memory is back under MEM_LOW. The guard reads the
+# NON-RECLAIMABLE memory (anon + shmem + kernel from memory.stat), NOT memory.current: MEASURED
+# 2026-09-26, 15.5 GiB of a 42.8 GB memory.current was inactive page cache the kernel reclaims before
+# any OOM kill, and the first guard (on memory.current) paused a labeller at 44 GB while 21 GiB were free.
 # Stop everything: touch $ROOT/STOP. Launch: setsid nohup bash op_pipeline.sh > $ROOT/logs/sup.out 2>&1 &
 set -u
 source /workspace/refe-op/code/op_env.sh
 ROOT=/workspace/data/refe_navtrain/onpolicy
 RUN=/workspace/data/refe_runs/vitl16_navtrain10_grow_tau0.3
 W0=${W0:-2}; W1=${W1:-2}
-MEM_HIGH=${MEM_HIGH:-44000000000}; MEM_LOW=${MEM_LOW:-40000000000}
+MEM_HIGH=${MEM_HIGH:-38654705664}; MEM_LOW=${MEM_LOW:-35433480192}   # 36 / 33 GiB non-reclaimable
 mkdir -p "$OP_QUEUE" "$OP_OUT" "$ROOT/logs" "$ROOT/pids"
 say() { echo "$(date -u +%FT%TZ) $*" >> "$ROOT/logs/supervisor.log"; }
 alive() { [ -f "$1" ] && kill -0 "$(cat "$1")" 2>/dev/null; }
@@ -29,7 +32,7 @@ start_lab() {
 say "supervisor up (pid $$): W0=$W0 W1=$W1 MEM_HIGH=$MEM_HIGH"
 held=0
 while [ ! -f "$ROOT/STOP" ]; do
-  mem=$(cat /sys/fs/cgroup/memory.current)
+  mem=$(awk '$1=="anon"||$1=="shmem"||$1=="kernel" {s+=$2} END {printf "%d", s}' /sys/fs/cgroup/memory.stat)
   if [ "$mem" -gt "$MEM_HIGH" ]; then
     for p in $(ls -t "$ROOT"/pids/label_*.pid 2>/dev/null | head -1); do
       alive "$p" && { kill "$(cat "$p")"; say "MEMORY GUARD: $mem > $MEM_HIGH, stopped $(basename "$p")"; }

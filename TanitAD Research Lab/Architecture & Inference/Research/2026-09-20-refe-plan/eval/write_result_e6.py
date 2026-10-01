@@ -98,20 +98,26 @@ def main() -> int:
     L.append(f"- the pick leaves the drivable area on **{100 * dsc['pick_dac_fail']:.1f} %** of tokens; {100 * dsc['dac_any']:.1f} % "
              f"of tokens have at least one proposal that stays inside it\n")
     L.append("## Reading\n")
-    L.append(f"The proposal head is not the problem: in a typical scene a quarter to a third of the {M} proposals score "
-             f"80 or more, and the best one averages {A['oracle']['mean']:.1f} PDMS. The scorer is: its pick is indistinguishable from "
-             f"a random proposal (skill {sk['value']:.3f}), it believes {100 * C['DAC']['mean_pred_prob']:.0f} % of proposals stay "
-             f"on the road when {100 * C['DAC']['true_rate']:.0f} % do, and within a scene its drivable-area, driving-direction "
-             f"and comfort outputs rank proposals at chance (within-token AUC {C['DAC']['within_token_auc']['mean']:.2f} / "
-             f"{C['DDC']['within_token_auc']['mean']:.2f} / {C['C']['within_token_auc']['mean']:.2f}), while its progress output "
-             f"follows path length (within-token Spearman {Dl['within_token_spearman_predEP_vs_length']['mean']:.2f}) although "
-             f"the true PDMS does not ({Dl['within_token_spearman_truePDMS_vs_length']['mean']:.2f}). Pooled AUCs look better "
-             f"than within-token ones because whole scenes differ in difficulty; choosing needs the within-token skill. "
-             f"MECHANISM (consistent with every number here, not yet shown causal): `refe/train.py` supervises the scorer with "
-             f"8-9 FIXED candidates per frame, each attached to its NEAREST proposal a few metres away (`assign_d` 2.5-5.7 m on "
-             f"the latest micro-batches), so the labels a proposal's scorer output learns are the scores of a different path, "
-             f"and drivable area / comfort change within one metre -- a declared departure from DriveZero, which scores the "
-             f"student's OWN proposals. The fix is a recipe decision for the PI.\n")
+    # ⛔ EVERY CLAUSE BELOW IS DERIVED FROM THIS SNAPSHOT'S NUMBERS. The first version hard-coded the
+    # epoch-11 reading ("indistinguishable from a random proposal", "at chance") and printed it for
+    # epoch 5, whose skill is 0.46 -- a true-looking sentence stating the opposite of its own table.
+    def auc_word(v):
+        return "at chance" if abs(v - 0.5) < 0.05 else ("INVERTED" if v < 0.5 else "better than chance")
+    wt = {k: C[k]["within_token_auc"]["mean"] for k in ("NC", "DAC", "DDC", "TTC", "C") if C[k].get("within_token_auc")}
+    comp_txt = ", ".join(f"{k} {v:.2f} ({auc_word(v)})" for k, v in wt.items())
+    lo, hi = sk["ci95"]
+    sel_txt = ("indistinguishable from a random proposal" if lo <= 0.0 <= hi else
+               "better than a random proposal" if lo > 0 else "WORSE than a random proposal")
+    L.append(f"In a typical scene {100 * dsc['good_median'] / M:.0f} % (median) to {100 * dsc['good_mean'] / M:.0f} % (mean) "
+             f"of the {M} proposals score 80 or more, and the best one averages {A['oracle']['mean']:.1f} PDMS. The planner's "
+             f"pick is {sel_txt}: it realises {100 * sk['value']:.0f} % of the gain over a random pick "
+             f"({100 * lo:.0f} % to {100 * hi:.0f} %). The scorer believes {100 * C['DAC']['mean_pred_prob']:.0f} % of "
+             f"proposals stay on the road when {100 * C['DAC']['true_rate']:.0f} % do. Within a scene, AUC per output: "
+             f"{comp_txt}. Its progress output's within-token rank correlation with path length is "
+             f"{Dl['within_token_spearman_predEP_vs_length']['mean']:.2f} (+1 = longer paths predicted to progress more, "
+             f"-1 = the reverse); the true PDMS's correlation with path length is "
+             f"{Dl['within_token_spearman_truePDMS_vs_length']['mean']:.2f}. Pooled AUCs mix in between-scene difficulty; "
+             f"choosing needs the within-token skill.\n")
     L.append("## Verdict (rule fixed before the table was read)\n")
     L.append(f"**{V['outcome']}**; failing scorer outputs: **{', '.join(V['failing_scorer_outputs']) or 'none'}**. "
              f"Rule: {V['rule']}. Amendment 3's original clause (unused, reported): {V['original_clause_amendment3']}.\n")

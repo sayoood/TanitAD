@@ -1,0 +1,25 @@
+# measures_consumers.patch -- ckpt_io.load_for_inference installs M4b from a checkpoint's meta (planner, on-policy dump, probes)
+# Apply from the refe/ directory:  git apply -p1 <this patch>   (or: patch -p1 < <this patch>)
+# BASE the hunks were cut against (verify before applying to a pod copy -- a pod runs its own):
+#   ckpt_io.py  git-blob 40593436183db6b6ddbf1a3a38669b3e228c5ab8  sha256 c876e2d3c1defd5ccac6919296a1ba0947c3fd1332ee79af97f5cbcbc2566f05
+--- a/ckpt_io.py
++++ b/ckpt_io.py
+@@ -140,6 +140,18 @@
+             raise ValueError(f"trunk load for a partial snapshot failed: loaded={len(loaded)} "
+                              f"missing={len(missing)} unused={len(unused)} from {wdir}")
+         load_partial(model, sd["model_partial"], meta.get("frozen_sha256"))
++        _install_measures(model, sd)
+         return FORMAT_PARTIAL
+     model.load_state_dict(sd["model"] if isinstance(sd, dict) and "model" in sd else sd)
++    _install_measures(model, sd)
+     return FORMAT_FULL
++
++
++def _install_measures(model, sd) -> None:
++    """measures.py M4b: a checkpoint trained with anchored slow slots must be RUN with them -- its
++    reserved slots' raw outputs were never trained as trajectories. The checkpoint's meta says which;
++    absent (every run without the measure) this is a no-op."""
++    meta = sd.get("meta") if isinstance(sd, dict) else None
++    if isinstance(meta, dict) and meta.get("measures"):
++        import measures
++        measures.install_from_meta(model, meta)

@@ -120,5 +120,240 @@ chord SAGITTA R(1 - cos(w dt / 2)) + 1e-9 m (dt = 0.2 s).
 > component rule, the gates, the medoid comparison and everything else in Amendment 3 are unchanged; the old clause's
 > result is still reported, labelled unused.
 
+> **AMENDMENT 4 -- 2026-09-26 ~12:15 Berlin, BEFORE the live switch and before any snapshot trained with it.** The PI chose
+> option B, the paper's version (the scorer supervised by the student's OWN proposals, labelled by the teacher's scorer),
+> plus a NAVSIM-faithful drivable-area label (`refe/navsim_dac.py`, 100.00 % agreement with NAVSIM on the 25,600 E-6
+> proposals). Context already seen: selection skill 0.460 [0.376, 0.537] after epoch 5 (untrained head, an accidental
+> preference for short plans) and 0.013 [-0.089, 0.121] after epoch 11 (fixed-candidate supervision).
+> **Primary readout:** E-6 (Amendments 3 + 3a, unchanged) at the FIRST snapshot whose whole epoch trained with on-policy
+> sets in its bank (the snapshot after the first epoch that STARTS after the switch). **SUCCESS** iff the selection
+> skill's 95 % lower bound exceeds **0.25**; **FAILURE** iff its upper bound is below 0.25; otherwise UNDETERMINED and the
+> next snapshot decides. **Secondary (reported, not gating):** the within-scene AUC of the drivable-area output (must
+> rise above 0.60 to call the NAVSIM label learned), the pick's PDMS against the same tokens' STOP (62.6) and the
+> pre-switch snapshots, and the training-side on-policy skill the trainer logs. A FAILURE goes to the PI with the table;
+> nothing in the recipe changes again without the PI.
+
+> **AMENDMENT 5 -- 2026-09-26 ~21:45 Berlin, BEFORE any selection on the confirmation tokens was computed.** The PI
+> chose (in chat, after the Amendment 4 FAILURE) to match REFe's selection rule to the benchmark. Seen so far, on W3's
+> 200 tokens only: `refe/planner.py:aggregate` selects with NAVSIM **v2**'s EPDMS shape (NC x DAC x DDC x (5 EP + 5 TTC
+> + 4 C)/14) while this harness scores NAVSIM **v1** PDMS (NC x DAC x (5 EP + 5 TTC + 2 C)/12, driving direction at
+> weight 0; `pdm_scorer.py:38-42`; RETRACTION_LOG R25). Re-selecting on the same stored logits with the v1 formula moved
+> the pick by +4.79 / +0.04 / +1.54 PDMS after epochs 11 / 12 / 13 (`eval/rule_mismatch_diag.py`, EXPLORATORY).
+> **Rule under test (ONE, fixed now):** the v1 formula over the scorer's sigmoids, `NC x DAC x (5 EP + 5 TTC + 2 C)/12`,
+> argmax over the 64 proposals; ties broken by the lowest index, as the shipped rule.
+> **Confirmation tokens:** navtest tokens from the 43 logs that W3's `A1_sub200_tokens.json` does NOT touch (its 200
+> tokens span 93 logs); per log the first 24 tokens in sorted-token order (all of them where a log has fewer). None of
+> these tokens has had a v1-rule pick computed. **Snapshot:** after epoch 13 (`snap_epoch013.pt`, md5
+> `b59c688a4c3005a55fad0769098abb91`). **Measurement:** the unchanged pipeline (`eval/eval_checkpoint.py`) scores the
+> shipped pick and dumps all 64 proposals with their logits; the v1-rule picks are written as their own seam from that
+> dump and scored by the unchanged harness. **Statistic:** per-token PDMS(v1 pick) - PDMS(shipped pick), mean over the
+> tokens, paired log-cluster bootstrap over the confirmation logs (10,000 resamples, 95 %).
+> **Decision, both outcomes committed now:** the v1 formula IS the harness's own rule, so the switch is a correctness fix
+> and this test guards against HARM. **REFUTED** iff the upper bound is below 0 -> keep the shipped rule and return to
+> the PI. Otherwise the v1 rule becomes REFe's selection rule for every evaluation from this amendment on (a declared
+> test-time change in `refe/planner.py`, recorded in MODEL_REGISTRY §14): **CONFIRMED GAIN** iff the lower bound is above
+> 0, **NO MEASURABLE DIFFERENCE** iff the interval straddles 0. Earlier learning-curve points keep their shipped-rule
+> values, with the v1-rule values beside them wherever an E-6 table allows. **Reported, not gating:** the same Delta
+> for the v1 formula WITHOUT comfort (exploratory -- it compensates for the inverted comfort head that SPEC option 2,
+> NAVSIM-faithful comfort labels, is meant to fix).
+
+> **AMENDMENT 6 -- 2026-09-27 11:57 Berlin (time from `date`), BEFORE any slowed-copy result exists, exploratory or
+> confirmatory.** The PI (in chat, 2026-09-27): implement every proposed measure, but use one only once its effectiveness
+> and validity are proven. This amendment is the proof rule for the TEST-TIME measure. Seen so far, EXPLORATORY, on W3's
+> 200 tokens only (`eval/raw/e6_sub200_ep015/`): the best of 64 fell 91.3 -> 84.2 from snapshot 012 to 015 because the
+> whole proposal fan got faster (every slot ~4.3 m longer over 4 s at the first on-policy epoch); a STOP candidate lifted
+> the pick +5.43 [+1.50, +9.44] but not above the STOP floor and at the cost of the longitudinal family (speed MAE
+> 1.17 -> 2.52 m/s, progress 1.09 -> 0.76 of the human's), i.e. by stopping. **Measure under test:** time-rescaled copies
+> of REFe's OWN proposals (same path, slower speed profile; ONE construction, `refe/slow_copies.py`) added to the candidate
+> set and scored by REFe's own scorer, picked by the shipped v1 aggregate.
+> **Variant (fixed by a rule stated now, before its inputs exist):** among the variants the exploratory probe on the 200
+> tokens reports (scoring route: the 64 keep their shipped scores [masked] or the full set; the factor sets it runs), the
+> one with the largest exploratory PDMS gain over the shipped pick AMONG THOSE THAT PASS THE FAMILY GUARD below on those
+> 200 tokens. If none passes the guard, no confirmation is run and the measure is NOT adopted.
+> **Family guard (fixed now; per-arm blocks from `families6.py` against the logged human future, variant vs shipped on
+> the same tokens):** longitudinal -- mean progress ratio >= 0.90 AND speed MAE up by at most 0.30 m/s; lateral -- cross-
+> track MAE up by at most 0.10 m AND heading MAE up by at most 0.5 deg; tactical -- goal-point error up by at most 1.0 m;
+> strategic -- unavailable in NAVSIM (reported as such).
+> **Confirmation tokens:** Amendment 5's 923 tokens (43 logs, none of them in W3's 200; `eval/raw/a5_confirm/
+> a5_confirm_tokens.json`, md5 3098d178...). **Snapshot:** after epoch 15 (`snap_epoch015.pt`, md5
+> `d7c59f4f2fbcbde3e2dec8f67d63a7e7`), the snapshot the exploration used. **Measurement:** the unchanged pipeline dumps
+> all 64 proposals with their logits; the copies are built by `refe/slow_copies.py` and scored by REFe's own scorer on
+> the chosen route; the variant's picks are written as their own seam and scored by the unchanged harness, beside the
+> shipped seam. **Validity gates, all must pass before the statistic is read:** (a) the shipped pick is reproduced from
+> the dump on every token and its seam score equals the pipeline's; (b) a factor-1.0 copy reproduces its original
+> proposal bit-exactly and its harness score exactly; (c) tokens whose variant pick equals the shipped pick score
+> identically (max |diff| 0.0); (d) every harness run PASSes with every token valid. **Statistic:** per-token PDMS(variant
+> pick) - PDMS(shipped pick), mean over the tokens, paired log-cluster bootstrap over the 43 logs (10,000 resamples, 95 %,
+> seed 20260927). It answers "another draw of episodes" only: one checkpoint, one deterministic forward.
+> **Decision, both outcomes committed now:** **ADOPT (effectiveness and validity proven)** iff the lower bound is above 0
+> AND the family guard holds on the confirmation tokens -> the variant becomes REFe's selection procedure for every
+> evaluation from then on, the final full navtest included (a declared test-time change behind a flag in
+> `refe/planner.py`, recorded in MODEL_REGISTRY §14.1; earlier points keep their values). **REFUTED** iff the upper bound
+> is below 0. Otherwise **NOT PROVEN** -> not adopted. **Reported, not gating:** the same comparison on the latest
+> snapshot's 200 tokens; how many picks switch to a copy and at which factor; the STOP floor on the confirmation tokens.
+
+> **AMENDMENT 6 READOUT -- 2026-09-27 ~13:50 Berlin (applied as written).** The exploratory probe (`eval/raw/e6_sub200_ep015/slow_copies.json`) reported 16 scorer-selected variants; NONE passes the family guard on the 200 tokens (every 0.75x arm fails the heading bound, +0.52 to +0.66 deg; the 0.5x and mixed arms also fail progress or speed). By the rule: no confirmation is run and the measure is NOT adopted. The same probe found why the copies scored well: REFe's own heading at t = 4.0 s is corrupted (next amendment), and a copy with factor <= 0.95 never reaches that pose. Per-variant failures: masked_top16_075: fails heading<=+0.5; masked_top16_050: fails speedMAE<=+0.30, cross<=+0.10, heading<=+0.5, goal<=+1.0; masked_top16_both: fails speedMAE<=+0.30, cross<=+0.10, heading<=+0.5, goal<=+1.0; masked_top16_both_stop: fails progress>=0.90, speedMAE<=+0.30, cross<=+0.10, heading<=+0.5, goal<=+1.0; plain_top16_075: fails heading<=+0.5; plain_top16_050: fails progress>=0.90, speedMAE<=+0.30, cross<=+0.10, heading<=+0.5, goal<=+1.0; plain_top16_both: fails progress>=0.90, speedMAE<=+0.30, cross<=+0.10, heading<=+0.5, goal<=+1.0; plain_top16_both_stop: fails progress>=0.90, speedMAE<=+0.30, cross<=+0.10, heading<=+0.5, goal<=+1.0; masked_all_075: fails heading<=+0.5; masked_all_050: fails progress>=0.90, speedMAE<=+0.30, cross<=+0.10, heading<=+0.5, goal<=+1.0; masked_all_both: fails progress>=0.90, speedMAE<=+0.30, cross<=+0.10, heading<=+0.5, goal<=+1.0; masked_all_both_stop: fails progress>=0.90, speedMAE<=+0.30, cross<=+0.10, heading<=+0.5, goal<=+1.0; plain_all_075: fails heading<=+0.5; plain_all_050: fails progress>=0.90, speedMAE<=+0.30, cross<=+0.10, heading<=+0.5, goal<=+1.0; plain_all_both: fails progress>=0.90, speedMAE<=+0.30, cross<=+0.10, heading<=+0.5, goal<=+1.0; plain_all_both_stop: fails progress>=0.90, speedMAE<=+0.30, cross<=+0.10, heading<=+0.5, goal<=+1.0.
+
+> **AMENDMENT 7 -- 2026-09-27 ~13:50 Berlin (time from `date`), BEFORE any confirmation-token result of the repair
+> exists.** Seen so far, EXPLORATORY, on W3's 200 tokens only: REFe's OWN heading at the last pose (t = 4.0 s, native
+> index 19) is corrupted in every evaluated snapshot (005..015): median |wrap(heading - path tangent)| 1.08-1.12 rad at
+> that pose against 0.02-0.06 rad at the other 19; |heading| > pi on ~60 % of proposals; its raw value tracks the final
+> x (correlation -0.94), while the pod's training targets are clean there (0.003 rad). Replacing ONLY that heading by
+> the t = 3.8 s heading (positions and speed unchanged) lifted the shipped pick 61.18 -> 77.94 PDMS, +16.76
+> [+11.72, +22.13] (`eval/raw/e6_sub200_ep015/slow_copies.json`, `repair_last_heading_shipped_pick`).
+> **Repair under test (ONE, fixed now):** on the planner's native [20, 3] output, heading[19] := heading[18] for the
+> executed plan, before the NAVSIM conversion; nothing else changes. **Confirmation tokens:** Amendment 5's 923 tokens
+> (43 logs, none in W3's 200). **Snapshot:** after epoch 15 (md5 `d7c59f4f2fbcbde3e2dec8f67d63a7e7`). **Measurement:**
+> the unchanged pipeline dumps the shipped picks; the repaired picks are written as their own seam and scored by the
+> unchanged harness beside the shipped seam. **Validity gates, all must pass before the statistic is read:** (a) every
+> repaired pose's x and y are bit-identical to the shipped seam's and only the t = 4.0 s heading differs; (b) the shipped
+> seam reproduces the pipeline's pick and score on every token; (c) every harness run PASSes with every token valid.
+> **Statistic:** per-token PDMS(repaired) - PDMS(shipped), mean over the tokens, paired log-cluster bootstrap over the
+> 43 logs (10,000 resamples, 95 %, seed 20260927); it answers "another draw of episodes" only.
+> **Decision, both outcomes committed now:** **ADOPT (effectiveness and validity proven)** iff the lower bound is above
+> 0 -> the repair becomes part of REFe's planner output for every evaluation from then on, the final full navtest
+> included (a declared test-time change in `refe/planner.py`, recorded in MODEL_REGISTRY §14.1; earlier learning-curve
+> points keep their values, with repaired values beside them where an E-6 table allows). **REFUTED** iff the upper bound
+> is below 0. Otherwise **NOT PROVEN** -> not adopted. The four metric families are identical by construction (the
+> NAVSIM family adapter reads positions only) and are reported as such. **Reported, not gating:** the NAVSIM sub-score
+> deltas; the repair with the path-tangent heading instead; the same repair on the latest snapshot's 200 tokens. The
+> model-side cause of the corrupted heading is a SEPARATE question: any training change for it needs its own proof.
+
+> **AMENDMENT 8 -- 2026-09-28 06:32 Berlin (time from `date`), BEFORE any model output on the confirmation tokens exists.**
+> **Seen so far, EXPLORATORY, on the 1,123 proxy tokens (W3's 200 + Amendment 5's 923; the defect was FOUND on them,
+> so none of it is admissible for adoption):**
+> - The planner's goal input (`refe/planner.py:449-474` `_goal_for` -> `code/augment_routes.py:46-70`
+>   `_route_with_lane_rank` -> DriveRL `goal_position_utils.py:512` `route_goal_positions`) has NO guard for a route
+>   that does not reach the ego.
+>   - On two logs the scenario's own `route_roadblock_ids` do not contain the ego's roadblock; the nearest route
+>     roadblock is 373.5 m / 421.1 m ahead (`raw/2026-09-28-goal-clamp/goal_trace.json`).
+>   - `_route_start_index` (`driverl_runtime_map_features.py:881`) takes the nearest roadblock at any distance.
+>   - The projection (`goal_position_utils.py:555-566`) clamps to the route's first point at any distance, so the goal
+>     becomes "route start + 30 / + 60 m", 349-480 m ahead. The re-derivation reproduces the cached goals exactly.
+> - Census of the ego's distance to its own route polyline over the 1,123 (`route_cover_census.json`, CPU, no model):
+>   median 0.29 m, p90 1.54 m; > 5 m: 60 tokens, > 10 m: 58, > 20 m: 53 (9 logs), > 50 m: 45, > 100 m: 27, > 300 m: 19.
+> - PDMS of the live recipe (snapshot 015 + Amendment 7's repair) falls with that distance:
+>
+>   | ego-to-route distance | tokens | PDMS |
+>   |---|---|---|
+>   | < 2 m | 1,035 | 79.6 |
+>   | 2-10 m | 30 | 65.6 |
+>   | 10-20 m | 5 | 79.5 |
+>   | 20-50 m | 8 | 56.4 |
+>   | 50-100 m | 18 | 58.9 |
+>   | 100-300 m | 8 | 41.2 |
+>   | >= 300 m | 19 | 2.2 |
+>
+> - On the 20 tokens with goal p2 > 300 m, the WHOLE fan drives 57.6 m in 4 s against a GT of 12.6 m.
+>   - The executed plan scores 2.08 PDMS with the repair ON, and 0-14 under every M6 / M6b arm.
+>   - These tokens cost the 1,123-token mean 1.2-1.5 PDMS in every condition (`garbage_tokens_pdms.json`).
+> - A CPU re-decode of those 20 tokens with the goal replaced (`goal_clamp_probe.json`; the untouched-goal control
+>   reproduces the GPU picks 20/20) scored:
+>
+>   | goal on the 20 tokens | PDMS |
+>   |---|---|
+>   | untouched (control) | 2.08 |
+>   | clamped to 219 m | 27.85 |
+>   | clamped to 150 m | 35.35 |
+>   | straight-route goal from the ego, max(v0, 5 m/s) x 12 s | 88.38 |
+>
+> - The training side carries the same defect at negligible frequency: the live bank has 9 of 33,704 r0 rows with goal
+>   p2 > 300 m.
+>
+> **Sanitisation under test (ONE, fixed now; its threshold was read off the 1,123-token census above, before any
+> confirmation token was read):**
+> - **Trigger:** the ego's distance to the route polyline `_goal_for` builds (the 100-point polyline, segment
+>   distance) exceeds **D = 20 m**.
+>   - Why 20 m: about five lane widths, so unambiguously off the route.
+>   - Tokens at 10-20 m score like on-route tokens (79.5, n = 5).
+>   - The 2-10 m band (65.6, n = 30) is a DIFFERENT question (lane choice on a covering route) and is left alone.
+> - **Below D:** nothing changes, bit for bit.
+> - **Above D:** the goal is re-derived by the SAME `route_goal_positions` (horizon 12 s, min speed 5 m/s, 2 points),
+>   on a **fallback route built from the ego's OWN lane** instead of the scenario route:
+>   1. Candidates: the lanes and lane connectors within 10 m of the ego (`map_api.get_proximal_map_objects`).
+>   2. The start is the candidate with the best `_route_edge_anchor_score` (distance + 5 x heading error).
+>   3. The route extends through `outgoing_edges` until it is >= 150 m long. At each fork it takes the successor whose
+>      exit heading change is the most counter-clockwise for command LEFT, the most clockwise for RIGHT, and the
+>      smallest in magnitude for STRAIGHT and UNKNOWN.
+>   4. It is resampled with `_fit_route_polyline`.
+> - If no lane lies within 10 m (off-map), the fallback is the straight-route goal along the ego heading:
+>   p2 = max(v0, 5) x 12 s, p1 = p2 / 2.
+> - **Inputs, all admissible at inference:** the map, the ego pose, v0 at t0, and the benchmark's driving command,
+>   which NAVSIM gives every agent. Never GT, never future ego.
+> - **Why it is not optimistic by construction on turns:**
+>   - The fallback follows the MAP's lane geometry and the COMMAND. It does not follow the logged future.
+>   - On a turn it produces the turn only if the lane graph and the command say so.
+>   - A wrong command or an ambiguous fork gives a WRONG goal, and that cost is in the statistic.
+>   - The exploratory straight-route result (88.38) is the special case where all 20 tokens were STRAIGHT on straight
+>     roads. It is NOT the number this amendment tests.
+>
+> **Confirmation tokens (FRESH):** every navtest token OUTSIDE the 1,123 on which the trigger fires, by the CPU census
+> over the full 12,146 (`route_cover_census_navtest_full.json`, computed with no model output): **422 tokens in
+> 32 logs** (commands L/S/R/U: 112 / 266 / 44 / 0).
+> - The full census triggers on 475 of the 12,146 tokens; 53 of those are the selection tokens, which are excluded. The list is banked in `amendment8_fresh_set.json`.
+> - The same census over the 1,123 reproduces the first census exactly (0 of 1,123 differ).
+> - Distance bands of the fresh set: 122 at 20-50 m, 103 at 50-100 m, 171 at 100-300 m, 26 at > 300 m.
+> - The fresh set contains 156 LEFT or RIGHT tokens, so the lane-following fallback is tested on turns, not only on the straight roads it was found on.
+> - **Why a second, stricter read.** The defect is a property of a log's route, so 6 of the 32 logs also hold selection tokens; only 279 fresh tokens sit in the 26 logs that hold NO selection token.
+> - **Estimator:** the paired log-cluster bootstrap (10,000 resamples, percentile 95 %, seed 20260927). It is computed TWICE, both committed now:
+>   - **PRIMARY:** over all 422 tokens, clustered by their 32 logs;
+>   - **FRESH-LOG:** over the 279 tokens of the 26 selection-free logs.
+> - 32 and 26 clusters are enough for this estimator; the M6 / M6b analyses used 136. No smaller design is needed. If a harness run drops tokens, the design stays as written and the valid-token count is reported; fewer than 20 logs in either read is NOT PROVEN.
+>
+> **Snapshot:** after epoch 15 (md5 `d7c59f4f2fbcbde3e2dec8f67d63a7e7`), Amendment 7's repair ON, rule v1, in both arms.
+>
+> **Measurement:** the unchanged pipeline (`eval/refe_navtest_seam.py`, planner forward on GPU when the PI allows it)
+> writes two seams on the confirmation tokens: goal as today (OFF) and goal sanitised (ON). Both are scored by the
+> unchanged harness.
+>
+> **Validity gates, all must pass before the statistic is read:**
+> - (a) on every confirmation token the trigger fires (census re-checked in the run);
+> - (b) a unit test with a mutation arm:
+>   - a covering route leaves the goal bit-identical;
+>   - the recorded 373.5 m case is replaced;
+>   - LEFT and RIGHT forks pick opposite successors on a synthetic Y junction;
+>   - deleting the trigger check must go RED;
+> - (c) the OFF seam reproduces the pipeline's own pick and score on every token;
+> - (d) every harness run PASSes with every token valid;
+> - (e) nothing but the goal differs between the arms' inputs.
+>
+> **Statistic:** per token PDMS(ON) - PDMS(OFF), mean over the confirmation tokens, with the estimator and CI named in
+> the design paragraph. It answers "another draw of episodes" only.
+>
+> **Decision, both outcomes committed now:**
+> - **ADOPT** iff BOTH reads' CI lower bounds are > 0 (PRIMARY and FRESH-LOG) AND no longitudinal or lateral family component separates adversely (a
+>   named interval entirely on the worse side).
+>   - The sanitisation then becomes part of REFe's planner goal path for every evaluation from then on: a declared
+>     test-time change in `refe/planner.py`, recorded in MODEL_REGISTRY §14.1.
+>   - Earlier points keep their values; sanitised values are reported beside them where a seam allows.
+> - **REFUTED** iff the PRIMARY upper bound is < 0.
+> - Otherwise **NOT PROVEN**, and nothing is adopted.
+> - The four metric families (families6; strategic UNAVAILABLE in NAVSIM by design) are reported for both arms. Unlike
+>   Amendment 7 they CAN differ here, because the goal changes positions.
+>
+> **Reported, not gating:**
+> - the 150 m clamp;
+> - the straight-route-only fallback;
+> - the sanitised seam on the 53 triggered tokens of the 1,123 (exploratory, selection tokens);
+> - the NAVSIM sub-score deltas.
+>
+> **The final full navtest (Thursday):**
+> - The score of record uses the pipeline as it stands at the moment the run starts.
+>   - If this amendment has read ADOPT by then, the final score uses the sanitised goal and ALSO reports the
+>     unsanitised score beside it on the same run.
+>   - If it has not been read, or reads NOT PROVEN / REFUTED, the final score uses today's goal path, and the sanitised
+>     score is reported beside it as a non-gating readout.
+> - The triggered tokens are named in the final report in either case.
+> - ⛔ D, the fallback rule and the 10 m lane radius are NOT tuned after any confirmation token is read.
+>
+> **Training side (next model version, NOT a live change):** the same guard belongs in the bank builder
+> (`build_targets.py`'s goal path).
+> - A row whose ego lies > D from its route gets the SAME fallback goal. Today 9 of 33,704 r0 rows have p2 > 300 m.
+> - It is a declared recipe change: a `--declare-change` identity key, a G-DVB entry in `launch_gate.py`, and the
+>   launch-gate PASS token.
+> - It keeps train and test goal definitions identical. Without it the model would still see ~0.03 % of rows with a
+>   far goal at train time and none at test time: harmless at that frequency, but not symmetric.
+> - The live run is not touched.
+
 **Subset first:** W3's `A1_sub200_tokens.json` (200 tokens) for E-0..E-2, then the full 12,146.
 **Tier stamp:** NAVSIM v1 PDMS = ego pseudo-simulation of an open-loop plan against logged agents, as W3 stamps it.

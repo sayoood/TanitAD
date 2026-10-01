@@ -1,0 +1,57 @@
+{
+ "_label": "CODE-PATH SELF-TEST ONLY -- not a result. The whole CPU side of the M5 pipeline run end to end on the dry forward's 64 navtrain samples (CPU fp32 cache, scratch/cache_dry) and ONE navtest token, 2026-09-27 20:06-20:27 Berlin, before the GPU window. Every number below measures the PIPELINE, never the measure.",
+ "data_root": "D:/Projects/TanitAD/data/refe_m5/scratch/m5test",
+ "cache_root": "D:/Projects/TanitAD/data/refe_m5/scratch/cache_dry",
+ "labeller": {
+  "driver": "eval/m5_label.py --workers 4 --splits train",
+  "workers": 4,
+  "seconds": 625.2,
+  "written": 64,
+  "skipped_ndiff": 0,
+  "failed": 0,
+  "selfcheck_failed": 0,
+  "slow_sets": 64,
+  "slow_copies": 576,
+  "rate_sets_per_min_per_worker": 1.54
+ },
+ "data_stage": "train: {'cached': 64, 'usable': 64, 'carrying_at_frac_0.5': 31, 'excluded': {'no_set': 0, 'no_aux': 0, 'no_props': 0, 'bad_spec': 0, 'kept_mismatch': 0}}",
+ "finetune_cpu": {
+  "device": "cpu fp32, 8 threads, arms V3,V4,V4all in lockstep",
+  "steps_per_seed": 16,
+  "seconds_per_seed": [
+   217.1,
+   207.8,
+   208.6
+  ],
+  "seconds_per_lockstep_step": 13.57,
+  "note": "seeds 1 and 2 ran CONCURRENTLY (2 x 8 threads), so their times are contended",
+  "projection_full_run_cpu_h": 4.52
+ },
+ "eval_gates": {
+  "copies_equal_harness_scored_max_abs": 0.00030517578125,
+  "harness_missing": 0,
+  "A0_pure_vs_table_logits_max_abs": 0.00036847591400146484,
+  "A0_pick_equals_table": 1,
+  "masked_64_vs_pure_max_abs": 1.9073486328125e-06
+ },
+ "eval_gate_reading": "copies_equal_harness_scored = 3.05e-4 and A0 vs table 3.68e-4 because this dry navtest cache was made by a CPU fp32 forward while the E-6 table / STOP dump / harness-scored copies come from the GPU: the registered gates (copy == 0.0 exactly) therefore REQUIRE the navtest forward on the GPU. They caught the device difference, as a gate should.",
+ "readout": {
+  "verdict_string": "NO READOUT: gates failed copies_equal_harness_scored",
+  "estimator_selftest": {
+   "reference_ci": [
+    -2.43,
+    6.56
+   ],
+   "ours": [
+    -2.43,
+    6.56
+   ],
+   "identical": true
+  }
+ },
+ "families": {
+  "control_A0_pick_vs_landed_seam_max_abs_m": 0.0,
+  "blocks_ok": 20,
+  "blocks_total": 20
+ }
+}

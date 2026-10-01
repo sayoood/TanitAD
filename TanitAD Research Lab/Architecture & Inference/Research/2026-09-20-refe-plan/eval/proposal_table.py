@@ -70,6 +70,8 @@ def main() -> int:
     ap.add_argument("--reuse-dump", action="store_true",
                     help="the dump was written by the landed eval's own seam run (eval_checkpoint.py); "
                          "skip the re-run -- G1 then checks the dump against that seam")
+    ap.add_argument("--sanitize-goal", action="store_true",
+                    help="SPEC Amendment 8 (ADOPTED 2026-09-28): sanitise the goal when the ego lies > 20 m from its route; passed to the seam and recorded in its report (default OFF = the pre-adoption goal path)")
     a = ap.parse_args()
     assert tuple(SUB_SHORT[c] for c in SUB) == HEAD_ORDER
     t0 = time.time()
@@ -87,7 +89,8 @@ def main() -> int:
                           and "ZZSEAM_OK" in open(dlog, encoding="utf-8", errors="replace").read()):
         rc, txt = EC.run([EC.DRIVERL_PY, "refe_navtest_seam.py", "--ckpt", a.ckpt, "--frames", a.frames,
                           "--tokens", a.tokens, "--out", rerun_seam, "--arm", f"REFe_{a.name}_dumprun",
-                          "--dump-proposals", dump], HERE, EC.env_driverl(), dlog)
+                          "--dump-proposals", dump] + (["--sanitize-goal"] if a.sanitize_goal else []),
+                         HERE, EC.env_driverl(), dlog)
         if "ZZSEAM_OK" not in txt or not os.path.exists(dump):
             print(f"ZZPROPTABLE_FAIL {a.name} dump (see {dlog})"); return 1
     D = np.load(dump)
@@ -179,7 +182,8 @@ def main() -> int:
         gates["G2"] = {"pass": None, "note": "no landed csv or no G1"}
     print(f"  G2 {gates['G2']}", flush=True)
     np.savez(os.path.join(wd, "table.npz"), token=np.array(tok), pdms=pdms, sub=sub, valid=valid,
-             logits=L, proposals=P, pick=pick, sub_names=np.array(SUB), head_order=np.array(HEAD_ORDER))
+             logits=L, proposals=P, pick=pick, sub_names=np.array(SUB), head_order=np.array(HEAD_ORDER),
+             rule=np.array(str(D["rule"]) if "rule" in D.files else "v2_shape"))   # the pick's selection rule
     json.dump({"name": a.name, "ckpt": a.ckpt, "tokens": a.tokens, "N": N, "M": M, "gates": gates,
                "seconds": round(time.time() - t0, 1)}, open(os.path.join(wd, "gates.json"), "w"), indent=1)
     ok = all(g.get("pass") is not False for g in (gates["G1"], gates["G2"])) and gates["G3"]["ok"]

@@ -210,12 +210,15 @@ def _scorer_files(path) -> list:
 # at that boundary and stored in the checkpoint: a resume inside the epoch rebuilds the identical
 # bank, and rows appended after the snapshot simply belong to a later epoch. The bank files are
 # append-only (code/grow_assemble.py), which is what makes a byte length a complete description.
-def bank_snapshot(targets_dir: str, scorer_path) -> dict:
+def bank_snapshot(targets_dir: str, scorer_path, onpolicy_path=None) -> dict:
     snap = {}
     for q in sorted(Path(targets_dir).glob("targets_rank*.jsonl")):
         snap["t:" + q.name] = q.stat().st_size
     for q in _scorer_files(scorer_path):
         snap["s:" + os.path.basename(q)] = os.path.getsize(q)
+    # on-policy mode only (None in fixed mode, so a fixed run's snapshot is byte-for-byte unchanged)
+    for q in _onpolicy_files(onpolicy_path):
+        snap["o:" + os.path.basename(q)] = os.path.getsize(q)
     return snap
 
 
@@ -382,12 +385,121 @@ class ScorerBank:
         return e["traj"], e["tgt"], e["name"]
 
 
+def _onpolicy_files(path) -> list:
+    """The on-policy bank's files: every `onpolicy_*.jsonl` of a directory. ⛔ The name must NOT match
+    `scorer_targets*.jsonl`: a fixed-mode trainer globs that pattern in its scorer dir and would take
+    these rows as extra fixed candidates -- silently changing a live run's recipe."""
+    if not path or not os.path.isdir(path):
+        return []
+    return sorted(glob.glob(os.path.join(path, "onpolicy_*.jsonl")))
+
+
+class OnPolicyBank:
+    """The student's OWN proposals, scored by the teacher's simulator -- the paper's scorer supervision.
+
+    ⭐ PI DECISION 2026-09-26 (option B, "the paper version"), after SPEC_NAVTEST E-6 measured the
+    fixed-candidate scorer at ~0 selection skill (best of 64 91.2 PDMS, pick 43.8, random 43.2).
+    `onpolicy_dump.py` (pod GPU) writes a recent checkpoint's 64 proposals per training sample;
+    `onpolicy_label.py` (pod CPUs, low priority) scores each with the SAME calculators, stride,
+    logged context, per-row route and teacher-relative EP as `build_scorer_targets.py`. The trainer
+    feeds a sample's labelled SET through the scoring decoder (`REFe.forward(score_extra=...)`), so
+    every label meets the exact trajectory it was computed for: no nearest-proposal assignment and
+    no drift. Declared residual departures: labels come from a checkpoint up to a few hours old, and
+    only for the samples labelled so far.
+
+    ONE LINE PER SAMPLE (`kind: onpolicy_set`): all n_prop trajectories [M][T][2] + yaws [M][T] and
+    their M raw target dicts, turned into the six components by `ScorerBank.components` -- the same
+    function the fixed bank uses, so the two modes cannot disagree on what a target means. A line is
+    all-or-nothing: the scoring decoder's self-attention spans the SET, so a partial set would be
+    scored in the wrong context. A key keeps the newest `ckpt_step`. Arrays are float32 numpy: as
+    Python lists a full-scale bank would cost GBs in every DataLoader worker.
+    """
+
+    def __init__(self, path: str, n_prop: int, horizon: int, sizes: dict | None = None):
+        self.by: dict = {}
+        self.n_rows = self.n_incomplete = self.n_superseded = self.n_bad_lines = self.n_navsim_dac = 0
+        files = _onpolicy_files(path)
+        if sizes is not None:
+            files = [f for f in files if "o:" + os.path.basename(f) in sizes]
+        self.files = files
+        for fpath in files:
+            with open(fpath, encoding="utf-8") as fh:
+                src = (read_upto(fpath, sizes["o:" + os.path.basename(fpath)]) if sizes is not None
+                       else fh)
+                for line in src:
+                    # ⛔ a labeller killed mid-write can leave ONE torn line; the labeller terminates
+                    # it on restart. It must cost that sample, never the run at an epoch boundary.
+                    try:
+                        r = json.loads(line)
+                    except json.JSONDecodeError:
+                        self.n_bad_lines += 1
+                        continue
+                    if r.get("kind") != "onpolicy_set":
+                        continue
+                    self.n_rows += 1
+                    try:
+                        xy = np.asarray(r["traj"], np.float32)
+                        yw = np.asarray(r["yaw"], np.float32)
+                        tg = np.asarray([ScorerBank.components(t) for t in r["targets"]], np.float32)
+                    except (KeyError, ValueError, TypeError):
+                        self.n_incomplete += 1
+                        continue
+                    if (xy.shape != (n_prop, horizon, 2) or yw.shape != (n_prop, horizon)
+                            or tg.shape != (n_prop, 6) or not np.isfinite(xy).all()):
+                        self.n_incomplete += 1
+                        continue
+                    # ⭐ NAVSIM-FAITHFUL DRIVABLE AREA (PI decision 2026-09-26). The teacher's
+                    # `dac.violation` is DriveRL's CURB-CROSSING detector: MEASURED 0-1 % on paths
+                    # shifted 2-4 m, 12 % on a path aimed through a curb, 0 of 1,024 of the model's
+                    # own proposals -- against NAVSIM's footprint-in-drivable-polygons check, which
+                    # fails 33 % of them. A set whose EVERY proposal carries `navsim_dac.violation`
+                    # (label_version >= 2) takes that as its drivable-area component instead.
+                    has_nd = all(isinstance(t, dict) and "navsim_dac.violation" in t for t in r["targets"])
+                    if has_nd:
+                        tg[:, 1] = 1.0 - np.clip(np.asarray(
+                            [float(t["navsim_dac.violation"]) for t in r["targets"]], np.float32), 0.0, 1.0)
+                    k = (r["log_name"], r.get("token", ""), int(r["step"]), int(r.get("rank", 0)))
+                    # newest checkpoint first, then the newest label version (a relabelled set with
+                    # the NAVSIM drivable area supersedes the same proposals' teacher-only labels)
+                    rank_key = (int(r["ckpt_step"]), int(r.get("label_version", 1)))
+                    prev = self.by.get(k)
+                    if prev is not None:
+                        self.n_superseded += 1
+                        if prev[3] >= rank_key:
+                            continue
+                    self.by[k] = (rank_key[0], np.concatenate([xy, yw[..., None]], -1), tg, rank_key, has_nd)
+        self.n_navsim_dac = sum(1 for e in self.by.values() if e[4])
+
+    def get(self, log_name: str, token: str, step: int, rank: int = 0):
+        e = self.by.get((log_name, token, int(step), int(rank)))
+        return None if e is None else (e[1], e[2], e[0])
+
+
+def _pdm_aggregate(p):
+    """planner.py `aggregate` on [..., 6] probabilities OR labels (component order NC, DAC, EP, TTC,
+    C, DDC = ScorerBank.COMPONENTS): NC x DAC x DDC x (5 EP + 5 TTC + 4 C) / 14."""
+    return p[..., 0] * p[..., 1] * p[..., 5] * (5.0 * p[..., 2] + 5.0 * p[..., 3] + 4.0 * p[..., 4]) / 14.0
+
+
+def onpolicy_cov_norm(ds, op_bank, n_prop: int) -> float:
+    """Mean labelled trajectories per SAMPLE over the dataset actually served (the fixed mode's
+    `cov_norm`, same role: a constant denominator so --accum equals one large batch). Counted over
+    the dataset's own rows, so a set whose sample is not in this epoch's bank adds nothing."""
+    if not len(ds):
+        return 1.0
+    n = sum(1 for r in ds.rows if (r.get("log_name", ""), r.get("token", ""), int(r.get("step", 0)),
+                                   int(r.get("rank", 0))) in op_bank.by)
+    return max(n * n_prop / float(len(ds)), 1e-3)
+
+
 class TargetBank(Dataset):
     def __init__(self, target_dir: str, images_root: str | None, cfg: REFeConfig,
                  synthetic: bool = False, limit: int | None = None, spread: bool = False, scorer=None,
                  max_missing_frac: float = 0.001, calib: str | None = None,
-                 sizes: dict | None = None):
+                 sizes: dict | None = None, onpolicy=None):
         self.scorer = scorer
+        # ⭐ on-policy mode (PI decision B): the paper's supervision REPLACES the fixed candidates
+        self.onpolicy = onpolicy
         self.rows = []
         loaded = sorted(Path(target_dir).glob("targets_rank*.jsonl"))
         if sizes is not None:                   # --grow: exactly the epoch snapshot's files + bytes
@@ -550,26 +662,48 @@ class TargetBank(Dataset):
                 im = cv2.resize(im, (c.img_w, c.img_h))[:, :, ::-1].astype(np.float32) / 255.0
                 frames.append(torch.from_numpy(np.ascontiguousarray(im.transpose(2, 0, 1))))
             img = torch.stack(frames) if len(frames) > 1 else frames[0]
+        if self.onpolicy is not None:
+            # ⭐ ON-POLICY (PI decision B): the sample's labelled SET -- all n_proposals trajectories
+            # [M, T, 3] (x, y, yaw) with their six targets -- or an all-zero mask when this sample has
+            # no complete set yet. The fixed candidates are NOT used in this mode (the paper's
+            # version). Same tuple layout as the fixed path; the loop branches on the mode.
+            M = c.n_proposals
+            ot = torch.zeros(M, c.horizon_steps, 3, dtype=torch.float32)
+            og = torch.zeros(M, 6, dtype=torch.float32)
+            om = torch.zeros(M, dtype=torch.float32)
+            oi = torch.full((M,), -1, dtype=torch.long)
+            got = self.onpolicy.get(r.get("log_name", ""), r.get("token", ""), r.get("step", -1),
+                                    int(r.get("rank", 0)))
+            if got is not None:
+                tr3, tg, cstep = got
+                ot.copy_(torch.from_numpy(tr3))
+                og.copy_(torch.from_numpy(tg))
+                om.fill_(1.0)
+                oi.fill_(int(cstep))              # which checkpoint's proposals: the lag, per sample
+            ct, cg, cm, ci = ot, og, om, oi
+        else:
+            ct = cg = cm = ci = None
         # the per-frame candidate set, PADDED to KMAX with a mask. A frame with no scorer targets
         # returns an all-zero mask and contributes NOTHING to the scorer loss -- which is why the
         # loop prints coverage: a silently empty bank would just look like a small loss.
-        ct = torch.zeros(KMAX, c.horizon_steps, 2, dtype=torch.float32)
-        cg = torch.zeros(KMAX, 6, dtype=torch.float32)
-        cm = torch.zeros(KMAX, dtype=torch.float32)
-        ci = torch.full((KMAX,), -1, dtype=torch.long)
-        got = (self.scorer.get(r.get("log_name", ""), r.get("token", ""), r.get("step", -1),
-                               int(r.get("rank", 0)))
-               if self.scorer else None)
-        if got is not None:
-            trs, tgs, nms = got
-            for j, (tr, tg, nm) in enumerate(zip(trs, tgs, nms)):
-                if j >= KMAX:
-                    break
-                ci[j] = CAND_INDEX.get(nm, -1)
-                a = torch.tensor(tr, dtype=torch.float32)[:c.horizon_steps, :2]
-                ct[j, :a.shape[0]] = a
-                cg[j] = torch.tensor(tg, dtype=torch.float32)
-                cm[j] = 1.0
+        if self.onpolicy is None:
+            ct = torch.zeros(KMAX, c.horizon_steps, 2, dtype=torch.float32)
+            cg = torch.zeros(KMAX, 6, dtype=torch.float32)
+            cm = torch.zeros(KMAX, dtype=torch.float32)
+            ci = torch.full((KMAX,), -1, dtype=torch.long)
+            got = (self.scorer.get(r.get("log_name", ""), r.get("token", ""), r.get("step", -1),
+                                   int(r.get("rank", 0)))
+                   if self.scorer else None)
+            if got is not None:
+                trs, tgs, nms = got
+                for j, (tr, tg, nm) in enumerate(zip(trs, tgs, nms)):
+                    if j >= KMAX:
+                        break
+                    ci[j] = CAND_INDEX.get(nm, -1)
+                    a = torch.tensor(tr, dtype=torch.float32)[:c.horizon_steps, :2]
+                    ct[j, :a.shape[0]] = a
+                    cg[j] = torch.tensor(tg, dtype=torch.float32)
+                    cm[j] = 1.0
         # ⛔ REFUSE A BANK WHOSE EGO WIDTH IS NOT THE MODEL'S, AND SAY WHICH BANK.
         # `goal` two lines below has always been SLICED to the config, so a goal mismatch passed
         # silently; `ego` was neither sliced nor checked, so an `ego_dim` move showed up as
@@ -678,7 +812,10 @@ class SceneEpochSampler(torch.utils.data.Sampler):
 IDENTITY_ARGS = ("backbone", "synthetic", "n_cameras", "undistort", "detach_scorer_context",
                  "batch", "accum", "lr", "weight_decay", "cosine", "epochs", "steps", "score_w",
                  "seed", "spread", "overfit", "overfit_n", "epoch_unit", "amp", "tf32",
-                 "fused_adam", "compile", "grow", "grow_scenes")
+                 "fused_adam", "compile", "grow", "grow_scenes", "scorer_mode")
+# ⭐ an identity key ADDED after runs began: an OLD checkpoint lacks it and must read as the value
+# those runs actually used, or every pre-existing run would refuse its own resume
+IDENTITY_DEFAULTS = {"scorer_mode": "fixed"}
 # what a GROWING bank changes by design; each epoch's own snapshot is in the checkpoint instead
 GROW_EXEMPT = ("n_tuples", "n_scenes", "per_rank", "targets_sha256", "scorer_sha256")
 
@@ -711,11 +848,20 @@ def run_identity(a, ds, scorer_bank, frozen_sha256) -> dict:
             "frozen_sha256": frozen_sha256}
 
 
-def _identity_diff(old: dict, new: dict) -> list:
+def _identity_diff(old: dict, new: dict, declared=(), accepted: list | None = None) -> list:
+    """Every way `new` differs from the checkpoint's identity. A key named in `declared` (--declare-
+    change) is a DELIBERATE mid-run recipe change: it is moved to `accepted`, never silently dropped."""
     out = []
+    changed_declared = set()
     for k in IDENTITY_ARGS:
-        if old["args"].get(k) != new["args"].get(k):
-            out.append(f"--{k.replace('_', '-')}: {old['args'].get(k)!r} -> {new['args'].get(k)!r}")
+        ov = old["args"].get(k, IDENTITY_DEFAULTS.get(k))
+        if ov != new["args"].get(k):
+            msg = f"--{k.replace('_', '-')}: {ov!r} -> {new['args'].get(k)!r}"
+            if k in declared and accepted is not None:
+                accepted.append(msg)
+                changed_declared.add(k)
+                continue
+            out.append(msg)
     grow = bool(new["args"].get("grow")) and bool(old["args"].get("grow"))
     for k in ("n_tuples", "n_scenes", "per_rank", "targets_sha256", "scorer_sha256",
               "calib_sha256", "frozen_sha256"):
@@ -725,6 +871,13 @@ def _identity_diff(old: dict, new: dict) -> list:
             ov, nv = old.get(k), new.get(k)
             if isinstance(ov, str) and len(ov) == 64:
                 ov, nv = ov[:12], (nv or "")[:12]
+            # ⭐ the scorer bank's digest FOLLOWS a declared --scorer-mode change by definition: the
+            # on-policy mode reads a different bank (MEASURED in diag_onpolicy_train: a non-grow resume
+            # refused on scorer_sha256 while the declared mode change itself was accepted). It is
+            # accepted AND named, never skipped silently; every other digest still refuses.
+            if k == "scorer_sha256" and "scorer_mode" in changed_declared and accepted is not None:
+                accepted.append(f"{k}: {ov!r} -> {nv!r} (follows the declared --scorer-mode change)")
+                continue
             out.append(f"{k}: {ov!r} -> {nv!r}")
     return out
 
@@ -843,6 +996,16 @@ def run(a) -> int:
         print("  *** SYNTHETIC IMAGES: this run validates the LOOP MECHANICS ONLY.")
         print("  *** Its loss says nothing about driving and must not be quoted as a result.")
 
+    OP = None
+    if a.scorer_mode == "onpolicy":
+        if not a.onpolicy_targets:
+            print("  REFUSING: --scorer-mode onpolicy needs --onpolicy-targets (the directory the "
+                  "labeller writes onpolicy_*.jsonl into).")
+            return 4
+        OP = a.onpolicy_targets
+        print(f"  SCORER: ON-POLICY (PI decision 2026-09-26, B) -- the scorer is trained on the "
+              f"student's own proposals scored by the teacher, from {OP}; the fixed candidate set "
+              f"is NOT used")
     grow_snap = None
     if a.grow:
         if a.epochs and not a.grow_scenes:
@@ -859,10 +1022,22 @@ def run(a) -> int:
                 grow_snap = None
         src_ck = grow_snap is not None
         if grow_snap is None:
-            grow_snap = bank_snapshot(a.targets, a.scorer_targets)
+            grow_snap = bank_snapshot(a.targets, a.scorer_targets, OP)
         print(f"  GROW: bank snapshot {len(grow_snap)} files, {sum(grow_snap.values()):,} bytes"
               f"{' (the checkpointed epoch snapshot)' if src_ck else ' (taken now)'}")
-    scorer_bank = ScorerBank(a.scorer_targets, sizes=grow_snap)
+    # ⭐ ON-POLICY MODE (PI decision 2026-09-26, B): the fixed candidate bank is NOT loaded -- the
+    # paper supervises the scorer with the student's own proposals only, and at full scale the fixed
+    # bank costs GBs of Python lists in every DataLoader worker for rows this mode never reads.
+    scorer_bank = ScorerBank(a.scorer_targets if not OP else None, sizes=grow_snap)
+    op_bank = None
+    if OP:
+        op_bank = OnPolicyBank(OP, cfg.n_proposals, cfg.horizon_steps, sizes=grow_snap)
+        print(f"  ON-POLICY scorer bank: {len(op_bank.by):,} complete sets ({op_bank.n_rows:,} set lines, "
+              f"{op_bank.n_incomplete} incomplete, {op_bank.n_superseded} superseded by a newer "
+              f"checkpoint, {op_bank.n_bad_lines} unparseable lines; NAVSIM drivable area on "
+              f"{op_bank.n_navsim_dac:,} sets) <- {OP}"
+              + ("   [none yet in this epoch's snapshot: the scorer gets NO loss until the next "
+                 "epoch boundary]" if not op_bank.by else ""))
     if scorer_bank.n_rows:
         print(f"  scorer bank: {scorer_bank.n_rows:,} rows over "
               f"{len(scorer_bank.by):,} frames  <- {a.scorer_targets}")
@@ -876,13 +1051,14 @@ def run(a) -> int:
         for name, mean, sd, frac, inert in scorer_bank.variance_report():
             flag = "  *** CANNOT RANK: constant within every frame" if inert else ""
             print(f"      {name:14s} {mean:6.3f} {sd:10.3f} {100*frac:9.1f} %{flag}")
-    else:
+    elif not OP:
         print("  scorer bank: NONE -- the scorer falls back to the zero PLACEHOLDER and "
               "proposal selection stays arbitrary")
     ds = TargetBank(a.targets, a.images, cfg, synthetic=a.synthetic,
                     limit=a.overfit_n if a.overfit else None, spread=a.spread,
                     scorer=scorer_bank if scorer_bank.n_rows else None,
-                    max_missing_frac=a.max_missing_images, calib=a.calib, sizes=grow_snap)
+                    max_missing_frac=a.max_missing_images, calib=a.calib, sizes=grow_snap,
+                    onpolicy=op_bank)
     if not a.calib:
         print("  *** NO --calib: every tuple is lifted with the ONE baked rig (pre-R22 behaviour). "
               "An ABLATION -- PETR, the paper's cited embedding, uses each sample's own. ***")
@@ -958,6 +1134,9 @@ def run(a) -> int:
     per_cand_late = [[0.0, 0] for _ in CAND_NAMES]
     late_from = int(a.steps * 0.75)
     n_uncovered = 0
+    # on-policy selection window (pick / random / best label aggregate, n sets, summed label lag),
+    # reported and reset at every log line -- a diagnostic, not resume state
+    op_win = [0.0, 0.0, 0.0, 0, 0.0]
     micro = 0
     # ⭐ THE CONSTANT SCORE NORMALISER, derived from the BANK rather than from any micro-batch, so
     # gradient accumulation is exactly equivalent to one large batch (see the note at `l_score`).
@@ -968,6 +1147,8 @@ def run(a) -> int:
         # the bank keys COVERED frames; dividing the total banked candidates by the FULL dataset
         # size is exactly the mean covered candidates per sample, which is what the loss needs.
         cov_norm = max(sum(len(e["traj"]) for e in scorer_bank.by.values()) / float(len(ds)), 1e-3)
+    if op_bank is not None:
+        cov_norm = onpolicy_cov_norm(ds, op_bank, cfg.n_proposals)
     print(f"  score-loss normaliser: {cov_norm:.4f} covered candidates/sample x batch "
           f"(CONSTANT, so --accum is exactly equivalent to one large batch)")
     opt.zero_grad(set_to_none=True)          # the window is opened here, then after every step
@@ -1013,7 +1194,9 @@ def run(a) -> int:
             return 4
         if a.resume and ck_path.exists():
             st = torch.load(ck_path, map_location="cpu", weights_only=False)
-            diff = _identity_diff(st["identity"], ident)
+            accepted: list = []
+            diff = _identity_diff(st["identity"], ident, declared=tuple(a.declare_change or ()),
+                                  accepted=accepted)
             if diff:
                 print("  REFUSING TO RESUME -- the run's identity changed:")
                 for d_ in diff:
@@ -1031,12 +1214,28 @@ def run(a) -> int:
             _set_rng_state(st["rng"])
             print(f"  RESUMED {ck_path}: step {step:,}/{a.steps:,}  epoch {epoch}  sample "
                   f"{pos:,}/{len(ds):,}  (saved {st.get('saved_at', '?')})")
+            for d_ in accepted:
+                print(f"  DECLARED RECIPE CHANGE at this resume (--declare-change): {d_}")
+            if a.preflight:
+                # READ-ONLY: nothing is appended to a live run's metrics.jsonl or checkpoint
+                print(f"  PREFLIGHT: checkpoint loads, identity {'matches' if not accepted else 'differs ONLY by the declared change(s)'}, "
+                      f"cov_norm {cov_norm:.4f}")
+                print("PREFLIGHT_OK")
+                return 0
             _append_jsonl(run_dir / "metrics.jsonl",
                           {"event": "resume", "step": step, "epoch": epoch, "pos": pos,
                            "at": _now()})
+            if accepted:
+                _append_jsonl(run_dir / "metrics.jsonl",
+                              {"event": "declared_change", "changes": accepted, "step": step,
+                               "epoch": epoch, "at": _now()})
         else:
             if a.resume:
                 print(f"  --resume: no {ck_path.name} yet -- starting fresh")
+            if a.preflight:
+                print(f"  PREFLIGHT: fresh start, cov_norm {cov_norm:.4f}; nothing written")
+                print("PREFLIGHT_OK")
+                return 0
 
             def _src(f):
                 q = Path(__file__).resolve().parent / f
@@ -1065,19 +1264,27 @@ def run(a) -> int:
         pr: dict = {}
         for r_ in ds.rows:
             pr[str(int(r_.get("rank", 0)))] = pr.get(str(int(r_.get("rank", 0))), 0) + 1
-        return {"event": "bank", "epoch": epoch, "n_tuples": len(ds),
-                "n_scenes": len(ds.scene_groups), "per_rank": pr,
-                "scorer_frames": len(getattr(scorer_bank, "by", {}) or {}),
-                "cov_norm": cov_norm, "snapshot_bytes": sum(grow_snap.values()) if grow_snap else None,
-                "at": _now()}
+        ev = {"event": "bank", "epoch": epoch, "n_tuples": len(ds),
+              "n_scenes": len(ds.scene_groups), "per_rank": pr,
+              "scorer_frames": len(getattr(scorer_bank, "by", {}) or {}),
+              "cov_norm": cov_norm, "snapshot_bytes": sum(grow_snap.values()) if grow_snap else None,
+              "at": _now()}
+        if op_bank is not None:              # on-policy mode only: a fixed run's rows are unchanged
+            ev.update({"scorer_mode": "onpolicy", "onpolicy_sets": len(op_bank.by),
+                       "onpolicy_navsim_dac_sets": op_bank.n_navsim_dac,
+                       "onpolicy_incomplete": op_bank.n_incomplete,
+                       "onpolicy_superseded": op_bank.n_superseded})
+        return ev
 
     def _rebuild(snap):
         """--grow: the next epoch's bank, from a fresh snapshot (same construction as above)."""
-        sb = ScorerBank(a.scorer_targets, sizes=snap)
+        sb = ScorerBank(a.scorer_targets if not OP else None, sizes=snap)
+        ob = OnPolicyBank(OP, cfg.n_proposals, cfg.horizon_steps, sizes=snap) if OP else None
         d = TargetBank(a.targets, a.images, cfg, synthetic=a.synthetic,
                        limit=a.overfit_n if a.overfit else None, spread=a.spread,
                        scorer=sb if sb.n_rows else None,
-                       max_missing_frac=a.max_missing_images, calib=a.calib, sizes=snap)
+                       max_missing_frac=a.max_missing_images, calib=a.calib, sizes=snap,
+                       onpolicy=ob)
         smp = (SceneEpochSampler(d.scene_groups, a.seed, shuffle=not a.overfit)
                if a.epoch_unit == "scenes" else EpochSampler(len(d), a.seed, shuffle=not a.overfit))
         ld = DataLoader(d, batch_size=a.batch, sampler=smp, num_workers=a.workers,
@@ -1086,7 +1293,9 @@ def run(a) -> int:
         cn = 1.0
         if getattr(sb, "by", None) and len(d) > 0:
             cn = max(sum(len(e["traj"]) for e in sb.by.values()) / float(len(d)), 1e-3)
-        return sb, d, smp, ld, cn
+        if ob is not None:
+            cn = onpolicy_cov_norm(d, ob, cfg.n_proposals)
+        return sb, d, smp, ld, cn, ob
 
     def _save_ckpt():
         nbytes = ckpt_io.atomic_save(
@@ -1110,13 +1319,51 @@ def run(a) -> int:
                 x.to(dev, non_blocking=True)
                 for x in (img, ego, goal, tgt, cand_xy, cand_tg, cand_m, cand_id))
             # the rig stays on the CPU in float64: the model uses it as a cache key, not a tensor op
+            op_live = OP is not None and float(cand_m.sum()) > 0
             with torch.autocast("cuda", dtype=torch.bfloat16,
                                 enabled=(a.amp == "bf16" and dev == "cuda")):
-                traj, score = model(img, ego, goal, calib=cal if cal.numel() else None)
+                if op_live:
+                    # the labelled sets ride along: scored by the SAME decoder, as their own sets
+                    traj, score, sx = model(img, ego, goal, calib=cal if cal.numel() else None,
+                                            score_extra=cand_xy)
+                else:
+                    traj, score = model(img, ego, goal, calib=cal if cal.numel() else None)
             traj, score = traj.float(), score.float()      # every loss and assignment in FP32
             l_traj, idx = wta_loss(traj, tgt)
             n_cand = float(cand_m.sum())
-            if n_cand > 0:
+            if OP is not None:
+                if op_live:
+                    # ⭐ THE PAPER'S SUPERVISION: every labelled trajectory's six predicted components
+                    # against the teacher simulator's verdict on THAT trajectory -- no assignment.
+                    sx = sx.float()
+                    per = F.binary_cross_entropy_with_logits(sx, cand_tg, reduction="none").mean(-1)
+                    # the same CONSTANT denominator as the fixed path (see the note there)
+                    denom = max(cov_norm * float(img.shape[0]), 1.0)
+                    l_score = (per * cand_m).sum() / denom * a.score_w
+                    with torch.no_grad():
+                        # op_drift: labelled trajectory -> nearest CURRENT proposal. It no longer
+                        # bounds the supervision (each label meets its own path); it says how far the
+                        # labelling checkpoint's proposals are from what the model proposes now.
+                        d = ((traj[:, :, :, :2].unsqueeze(1) - cand_xy[:, :, :, :2].unsqueeze(2)) ** 2) \
+                            .sum(-1).mean(-1)                                           # [B, M, M]
+                        dmin = d.min(-1).values.clamp(min=0).sqrt()                     # [B, M]
+                        assign_d = float((dmin * cand_m).sum() / cand_m.sum().clamp(min=1.0))
+                        # selection on the labelled sets, the training-side twin of SPEC E-6
+                        has = cand_m[:, 0] > 0
+                        pa = _pdm_aggregate(torch.sigmoid(sx[has]))                     # [b, M]
+                        ta = _pdm_aggregate(cand_tg[has])                               # [b, M]
+                        pick = ta.gather(1, pa.argmax(1, keepdim=True)).squeeze(1)
+                        op_win[0] += float(pick.sum())
+                        op_win[1] += float(ta.mean(1).sum())
+                        op_win[2] += float(ta.max(1).values.sum())
+                        op_win[3] += int(has.sum())
+                        op_win[4] += float((step - cand_id[has, 0].float()).sum())      # label lag
+                    n_cov += int((cand_m.sum(1) > 0).sum())
+                else:
+                    l_score = score.sum() * 0.0      # keeps the graph, contributes no gradient
+                    n_uncovered += 1
+                    assign_d = float("nan")
+            elif n_cand > 0:
                 # assign each banked candidate to the NEAREST model proposal and supervise THAT
                 # proposal's six components. `assign_d` is printed because it BOUNDS the
                 # approximation: a large distance means the scorer is being taught about
@@ -1201,6 +1448,22 @@ def run(a) -> int:
                         "samples": n_seen,
                         "cuda_max_mem_gb": (torch.cuda.max_memory_allocated() / 2**30
                                             if dev == "cuda" else None)})
+                if OP is not None:
+                    # selection skill on the labelled sets since the last log line: the share of the
+                    # gain over a random pick that the scorer's argmax realises (SPEC E-6's measure)
+                    n_w = op_win[3]
+                    pk, rd, bs = ((op_win[0] / n_w, op_win[1] / n_w, op_win[2] / n_w) if n_w
+                                  else (float("nan"),) * 3)
+                    sk = (pk - rd) / (bs - rd) if n_w and bs - rd > 1e-9 else float("nan")
+                    lag = op_win[4] / n_w if n_w else float("nan")
+                    print(f"      on-policy: sets {n_w:4d}  pick {pk:.3f}  random {rd:.3f}  best {bs:.3f}"
+                          f"  skill {sk:6.3f}  drift {assign_d:5.2f} m  label lag {lag:7.1f} steps")
+                    if run_dir is not None:
+                        _append_jsonl(run_dir / "metrics.jsonl", {
+                            "step": step, "event": "onpolicy", "sets": n_w, "pick": pk,
+                            "random": rd, "best": bs, "skill": sk, "drift_m": assign_d,
+                            "lag_steps": lag, "cov_norm": cov_norm})
+                    op_win = [0.0, 0.0, 0.0, 0, 0.0]
             step += 1
             # checkpoint only HERE, right after an optimiser step: every consumed sample is then
             # in the weights, so (epoch, pos) is exact and no half-filled window is lost or doubled
@@ -1228,10 +1491,13 @@ def run(a) -> int:
                               {"event": "epoch", "epoch": epoch, "step": step, "at": _now()})
             if a.grow and step < a.steps:
                 # the next epoch reads the bank AS IT IS NOW -- a new snapshot, a new sampler
-                grow_snap = bank_snapshot(a.targets, a.scorer_targets)
-                scorer_bank, ds, sampler, dl, cov_norm = _rebuild(grow_snap)
+                grow_snap = bank_snapshot(a.targets, a.scorer_targets, OP)
+                scorer_bank, ds, sampler, dl, cov_norm, op_bank = _rebuild(grow_snap)
                 print(f"  GROW epoch {epoch}: {len(ds):,} tuples in {len(ds.scene_groups):,} scenes, "
-                      f"scorer frames {len(scorer_bank.by):,}, cov_norm {cov_norm:.4f}")
+                      f"scorer frames {len(scorer_bank.by):,}, cov_norm {cov_norm:.4f}"
+                      + (f", ON-POLICY sets {len(op_bank.by):,} ({op_bank.n_incomplete} incomplete, "
+                         f"{op_bank.n_superseded} superseded, NAVSIM drivable area on {op_bank.n_navsim_dac:,})"
+                         if op_bank is not None else ""))
                 if run_dir is not None:
                     _append_jsonl(run_dir / "metrics.jsonl", _bank_event())
             continue
@@ -1390,6 +1656,18 @@ def main():
     ap.add_argument("--halt-after-steps", type=int, default=0,
                     help="TEST ONLY: exit right after the checkpoint at this step, to prove that "
                          "halt + --resume is bit-identical to an uninterrupted run")
+    ap.add_argument("--scorer-mode", choices=("fixed", "onpolicy"), default="fixed",
+                    help="fixed = the banked candidate set attached to the nearest proposal (the "
+                         "declared departure); onpolicy = the paper's supervision, the student's OWN "
+                         "proposals scored by the teacher (PI decision 2026-09-26, B)")
+    ap.add_argument("--onpolicy-targets", default=None,
+                    help="directory of onpolicy_*.jsonl written by onpolicy_label.py (onpolicy mode)")
+    ap.add_argument("--declare-change", action="append", default=[], metavar="ARG",
+                    help="an identity argument (e.g. scorer_mode) allowed to DIFFER on --resume: a "
+                         "deliberate mid-run recipe change, printed and logged as an event")
+    ap.add_argument("--preflight", action="store_true",
+                    help="build banks + model, load and check the checkpoint, then exit WITHOUT "
+                         "writing anything (safe against a live run directory); prints PREFLIGHT_OK")
     sys.exit(run(ap.parse_args()))
 
 

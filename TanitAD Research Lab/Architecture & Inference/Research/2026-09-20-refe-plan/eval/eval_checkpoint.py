@@ -82,6 +82,8 @@ def main() -> int:
                     help="earlier points to PAIR against, as <name> (their score CSV is found by "
                          "label refe_<name> on the same tokens): the learning curve is read as "
                          "paired deltas, not as independent points")
+    ap.add_argument("--sanitize-goal", action="store_true",
+                    help="SPEC Amendment 8 (ADOPTED 2026-09-28): sanitise the goal when the ego lies > 20 m from its route; passed to the seam and recorded in its report (default OFF = the pre-adoption goal path)")
     a = ap.parse_args()
     t0 = time.time()
     pdir = os.path.join(DATA, "points", a.name)
@@ -93,7 +95,8 @@ def main() -> int:
     # selection diagnosis (eval/proposal_table.py --reuse-dump) needs no second inference
     rc, txt = run([DRIVERL_PY, "refe_navtest_seam.py", "--ckpt", a.ckpt, "--frames", a.frames,
                    "--tokens", a.tokens, "--out", seam, "--arm", f"REFe_{a.name}",
-                   "--dump-proposals", os.path.join(DATA, "proptable", a.name, "proposals.npz")],
+                   "--dump-proposals", os.path.join(DATA, "proptable", a.name, "proposals.npz")]
+                  + (["--sanitize-goal"] if a.sanitize_goal else []),
                   HERE, env_driverl(), os.path.join(pdir, "1_seam.log"))
     m = re.search(r"ZZSEAM_OK (\d+) ([0-9.]+)", txt)
     if not m:

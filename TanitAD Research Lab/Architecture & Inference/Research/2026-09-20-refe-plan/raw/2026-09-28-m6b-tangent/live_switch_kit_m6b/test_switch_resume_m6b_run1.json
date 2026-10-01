@@ -1,0 +1,74 @@
+{
+ "checks": {
+  "0 the unpatched side IS the pod's live bytes; the patched side IS the shipped kit (md5)": true,
+  "A1 pod trainer start halts (rc 7)": true,
+  "A2 pod on-policy switch replayed (rc 7, scorer_mode onpolicy in the checkpoint)": true,
+  "A3 KIT preflight OK; ONLY the declared yaw_loss differs (no tan_w line); nothing written": true,
+  "A4 KIT without --declare-change yaw_loss: REFUSED (rc 4), no new declared change": true,
+  "A5 KIT switch resumes (rc 7), MEASURE M6 names plain_tangent, the new declared change is ONLY yaw_loss": true,
+  "A5 the switched checkpoint: meta measures.yaw_loss plain_tangent, identity tan_w 0.1": true,
+  "A6 MUTATION: an undeclared --tan-w 0.2 is REFUSED (rc 4) and writes nothing": true,
+  "A7 resume again needs no declare, completes (rc 0), final meta plain_tangent": true,
+  "B1-B3 pod start, on-policy replay, M6 plain switch (rc 7 each; checkpoint yaw_loss plain)": true,
+  "B4 KIT from a v3 (plain) checkpoint: rc 7, the new declared change is exactly plain -> plain_tangent": true,
+  "B5 resume again completes (rc 0), final meta plain_tangent": true
+ },
+ "rc": {
+  "A1": 7,
+  "A2": 7,
+  "A3": 0,
+  "A4": 4,
+  "A5": 7,
+  "A6": 4,
+  "A7": 0,
+  "B1": 7,
+  "B2": 7,
+  "B3": 7,
+  "B4": 7,
+  "B5": 0
+ },
+ "declared_A": [
+  [
+   "--scorer-mode: 'fixed' -> 'onpolicy'"
+  ],
+  [
+   "--yaw-loss: 'wrapped' -> 'plain_tangent'"
+  ]
+ ],
+ "declared_B": [
+  [
+   "--scorer-mode: 'fixed' -> 'onpolicy'"
+  ],
+  [
+   "--yaw-loss: 'wrapped' -> 'plain'"
+  ],
+  [
+   "--yaw-loss: 'plain' -> 'plain_tangent'"
+  ]
+ ],
+ "md5": {
+  "pod": {
+   "train.py": "47dd5b7ae37921bc4e301f75d9389fb8",
+   "model.py": "719e98b54e9b50dc206dc0121f1da8e1"
+  },
+  "kit": {
+   "train.py": "b986a5c70f4b1e0b2a44c8bce5a16bba",
+   "model.py": "c7c602b783bc989e13b4843a8fba8d54",
+   "measures.py": "27564fe06595181973b1a34761aa489b"
+  },
+  "m6kit": {
+   "train.py": "e963dd12e99105f219a5547bef639166",
+   "model.py": "c7c602b783bc989e13b4843a8fba8d54",
+   "measures.py": "d41a4b48cf0738a241f42417b4154644"
+  }
+ },
+ "tested_sha256": {
+  "kit/train.py": "c766743b3ec682da660c77d096bb03698cb27a053d82bfac359ceb1e01c0a40d",
+  "kit/model.py": "6d1ff60bbbe30559d2a3531725a47297b3e47e777938e837314ccbdfee2998dc",
+  "pod/train.py": "99a7ae549c5b49e70ec8e6bd07e07cf1c9be858e0866819ada35c6e3cbb4ef0c",
+  "pod/model.py": "79a80a2012aae570481366e4ff4dbd180f9457a901023d21d48e4d11294d58c3",
+  "kit/measures.py": "da8be1d2f5694026c0da1d6000e0e5dafeda939bac2a6c7617b4313932784cf3",
+  "selftest_measures.py": "53bfb340fa2aa8ea9fc5373400700dbd28fba54ea9120b65940289c5184cc013"
+ },
+ "failed": []
+}

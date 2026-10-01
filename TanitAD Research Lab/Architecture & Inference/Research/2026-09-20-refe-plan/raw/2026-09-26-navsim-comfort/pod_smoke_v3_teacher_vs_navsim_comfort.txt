@@ -1,0 +1,14 @@
+label_version 3 pod smoke -- 2026-09-26 ~20:42 Berlin (18:42Z), pod growing_orange_anaconda, read-only on the sets
+(refe-op staging_v3/smoke_v3.py, 24 label_version-2 sets of rank 0, the model's OWN proposals; one simulation per set)
+
+  24 sets, 1536 proposals in 11 s
+  teacher comfort: mean 0.375, values seen [0.375, 0.5]
+  NAVSIM comfortable 58.5 %; teacher >= 0.5 0.2 %
+  both comfortable 3 | both not 637 | teacher yes, NAVSIM no 0 | teacher no, NAVSIM yes 896 -> agreement 41.7 %
+ZZSMOKE_V3 100.00 24 1536
+
+Reading: the recomputed drivable area equals the stored label_version-2 `navsim_dac.violation` on 1,536/1,536
+proposals (same simulation, as it must). The teacher's `comfort.Comfort.reward` takes only 0.375 and 0.5 on the
+student's proposals -- 99.8 % at 0.375 -- so it carries no information about WHICH proposal is comfortable; NAVSIM's
+own comfort verdict varies (58.5 % comfortable). The scorer trained on the teacher's value predicted ~0.386 for every
+proposal after epoch 13 (E-6 mean_pred_prob), and its within-scene ranking fell to AUC 0.39: noise, not a signal.

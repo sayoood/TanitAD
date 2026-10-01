@@ -1,0 +1,74 @@
+{
+ "what": "accumulated unclipped gradients of every trainable tensor, one real 256-sample optimiser batch, CPU fp32, refe/proxy_train.py via --dump-grads-after-accum",
+ "bar_max_rel_per_tensor": 1e-05,
+ "clean_32x8_vs_64x4": {
+  "tensors": 159,
+  "max_rel_per_tensor": 2.751525744745511e-06,
+  "worst_tensor": "dec.1.cross.in_proj_weight",
+  "max_rel_scorer_tensors": 2.3900677781044205e-06,
+  "global_rel_l2": 2.092702992423803e-07
+ },
+ "clean_invariant": true,
+ "mutation_per_microbatch_norm_32x8_vs_64x4": {
+  "tensors": 159,
+  "max_rel_per_tensor": 1.0494055566118023,
+  "worst_tensor": "score_dec.1.n2.weight",
+  "max_rel_scorer_tensors": 1.0494055566118023,
+  "global_rel_l2": 0.0008422660922513451
+ },
+ "mutation_goes_red": true,
+ "mutation_vs_clean_at_32x8": {
+  "tensors": 159,
+  "max_rel_per_tensor": 1.6191071297268336,
+  "worst_tensor": "score_dec.1.n2.bias",
+  "max_rel_scorer_tensors": 1.6191071297268336,
+  "global_rel_l2": 0.001016467306326504
+ },
+ "covered_per_micro_batch": {
+  "clean_32x8": [
+   4,
+   4,
+   5,
+   7,
+   8,
+   3,
+   4,
+   4
+  ],
+  "clean_64x4": [
+   8,
+   12,
+   11,
+   8
+  ],
+  "mut_32x8": [
+   4,
+   4,
+   5,
+   7,
+   8,
+   3,
+   4,
+   4
+  ],
+  "mut_64x4": [
+   8,
+   12,
+   11,
+   8
+  ]
+ },
+ "covered_total": {
+  "clean_32x8": 39,
+  "clean_64x4": 39,
+  "mut_32x8": 39,
+  "mut_64x4": 39
+ },
+ "cov_norm_global_constant": 9.180873180873181,
+ "sub_cache_frames": 256,
+ "sub_cache_rows": 481,
+ "tested_sha256": {
+  "proxy_train.py": "d4ecc28c75a94a683cf18882555be726cd0cb6aba39f79d3ad3bc40dc909e25f",
+  "check_microbatch_invariance.py": "18d267dfc0a47fc1e8ef5acb25d2eb9e2a6690a4ed419b4de415460e74588d27"
+ }
+}

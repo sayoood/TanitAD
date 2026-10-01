@@ -156,6 +156,17 @@ class FrameResolver:
 TRAJ_DT_S = 0.2   # the policy's own query cadence; matches score_proposals.TRAJ_DT
 
 
+def repair_last_heading(traj):
+    """SPEC_NAVTEST Amendment 7 (ADOPTED 2026-09-27, eval/RESULT_A7_a7confirm_ep015.md): the model's OWN heading at
+    the last native pose (index -1, t = 4.0 s) is corrupted in every evaluated snapshot (median ~1.1 rad off the
+    path, |heading| > pi on ~60 %; GOALS_AND_CLAIMS D-REFE-LASTYAW-1), so the executed plan takes the previous pose's
+    heading there. Positions, speed and every other heading are untouched. [..., T, 3] numpy or torch in -> a COPY of
+    the same type and dtype out; confirmed +16.20 [+12.83, +19.52] PDMS on 923 tokens disjoint from W3's subset."""
+    out = traj.clone() if isinstance(traj, torch.Tensor) else np.array(traj, copy=True)
+    out[..., -1, 2] = out[..., -2, 2]
+    return out
+
+
 class REFePlanner(AbstractPlanner):
     # ⛔ WAS False, WHICH MADE THE PLANNER STRUCTURALLY UNABLE TO SEE A LOG NAME. MEASURED by the
     # 2026-09-20 conformance review: `PlannerInitialization` carries only
@@ -170,7 +181,16 @@ class REFePlanner(AbstractPlanner):
     def __init__(self, checkpoint: str | None = None, images_root: str = "",
                  db_dir: str = "D:/Projects/TanitAD/data/nuplan/dblinks/driverl_val14",
                  backbone: str = "vitl16", device: str = "cuda", select: str = "best",
-                 horizon_s: float = 12.0, min_speed_mps: float = 5.0, scenario=None):
+                 horizon_s: float = 12.0, min_speed_mps: float = 5.0, scenario=None, rule: str | None = None,
+                 repair_last_heading: bool | None = None):
+        # the selection RULE is named and recorded, never implicit (SPEC_NAVTEST Amendment 5, RETRACTION_LOG R25)
+        self.rule = rule or self.DEFAULT_RULE
+        if self.rule not in self.RULES:
+            raise ValueError(f"unknown selection rule {self.rule!r}; one of {self.RULES}")
+        # the last-pose heading repair is named and recorded too (SPEC_NAVTEST Amendment 7); False reproduces every
+        # evaluation before 2026-09-27 ~14:30 Berlin
+        self.repair_last_heading = (self.REPAIR_LAST_HEADING if repair_last_heading is None
+                                    else bool(repair_last_heading))
         self.cfg = REFeConfig.for_backbone(backbone)
         self.device = device if torch.cuda.is_available() else "cpu"
         self.model = REFe(self.cfg).to(self.device).eval()
@@ -247,7 +267,14 @@ class REFePlanner(AbstractPlanner):
             return self._hold(ego)
         self._consec_holds = 0
         traj, _score, k = self.infer(ego, img)
-        return self._to_trajectory(ego, traj[k].cpu().numpy())
+        return self._to_trajectory(ego, self.executed(traj, k).cpu().numpy())
+
+    def executed(self, traj, k: int):
+        """The plan this planner EXECUTES: proposal `k` of `traj` [M, T, 3], with the Amendment-7 repair when it is
+        on. Every consumer (the nuPlan loop above, the NAVSIM seam) takes the executed plan from here, so the repair
+        cannot be applied in one path and forgotten in another."""
+        p = traj[k]
+        return repair_last_heading(p) if self.repair_last_heading else p
 
     # ---- internals -----------------------------------------------------------------
     def _ego_vec(self, ego) -> torch.Tensor:
@@ -321,7 +348,20 @@ class REFePlanner(AbstractPlanner):
     # ⛔ A REFe number aggregated this way is NOT an EPDMS and must not be reported as one. It is
     # the paper's six components combined with the benchmark's STRUCTURE, which is the most faithful
     # thing available while the head emits six.
-    PDM_W = (5.0, 5.0, 4.0)          # progress, time-to-collision, comfort(=LK+HC), sum 14
+    PDM_W = (5.0, 5.0, 4.0)          # progress, time-to-collision, comfort(=LK+HC), sum 14 (rule "v2_shape")
+    # ⭐ SPEC_NAVTEST AMENDMENT 5 (PI option 3, 2026-09-26): the harness REFe is scored on is NAVSIM **v1** PDMS --
+    # NC x DAC x (5 EP + 5 TTC + 2 C) / 12, driving direction at weight 0 (navsim @ 3e8291b `pdm_scorer.py:38-42`).
+    # "v2_shape" above is NAVSIM v2's EPDMS shape, which every point before Amendment 5 was selected with
+    # (RETRACTION_LOG R25). Both stay selectable BY NAME so every earlier point remains reproducible.
+    V1_W = (5.0, 5.0, 2.0)           # progress, time-to-collision, comfort, sum 12 (rule "navsim_v1")
+    RULES = ("v2_shape", "navsim_v1")
+    # ⭐ FLIPPED 2026-09-26 21:23 Berlin by SPEC Amendment 5's verdict (eval/RESULT_A5_a5confirm_ep013.md): NO MEASURABLE
+    # DIFFERENCE, +0.78 [-0.30, +1.82] PDMS on 923 tokens from the 43 logs outside W3's subset -- not harmful, so the
+    # benchmark's own formula becomes the selection rule for every evaluation from then on (the pre-registered branch).
+    DEFAULT_RULE = "navsim_v1"
+    # ⭐ ON from 2026-09-27 ~14:30 Berlin by SPEC Amendment 7's verdict (eval/RESULT_A7_a7confirm_ep015.md): ADOPT,
+    # 60.76 -> 76.96 PDMS, +16.20 [+12.83, +19.52] on the 923 confirmation tokens (43 logs outside W3's subset).
+    REPAIR_LAST_HEADING = True
 
     def aggregate(self, score: torch.Tensor) -> torch.Tensor:
         """The BENCHMARK SCORING RULE, over probabilities, not a sum of logits.
@@ -338,6 +378,11 @@ class REFePlanner(AbstractPlanner):
             3 time to collision (TTC) · 4 comfort (C) · 5 driving direction (DDC)
         """
         p = score.sigmoid()
+        if self.rule == "navsim_v1":
+            # NAVSIM v1 PDMS: NC x DAC x (5 EP + 5 TTC + 2 C) / 12 -- driving direction does not enter
+            w1 = torch.tensor(self.V1_W, device=p.device, dtype=p.dtype)
+            return p[..., 0] * p[..., 1] * (p[..., 2] * w1[0] + p[..., 3] * w1[1] + p[..., 4] * w1[2]) / w1.sum()
+        # rule "v2_shape" (every point before Amendment 5):
         # multiplicative group: NAVSIM has FOUR -- NC, DAC, DDC, TLC. We emit three; traffic-light
         # compliance has no component in the paper's six, so it enters as an EXPLICIT constant 1.0
         # rather than by being quietly omitted. Replace `tlc` the day a seventh component exists.
@@ -475,4 +520,5 @@ class REFePlanner(AbstractPlanner):
     def report(self) -> dict:
         return {"steps": self.n_steps, "steps_without_a_frame": self.n_no_frame,
                 "frame_resolver_misses": self.frames.misses, "trained": self.trained,
-                "select": self.select, "backbone": self.cfg.backbone}
+                "select": self.select, "backbone": self.cfg.backbone, "rule": self.rule,
+                "repair_last_heading": self.repair_last_heading}

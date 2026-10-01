@@ -1,0 +1,13 @@
+# diag_onpolicy_train.py --resume-only (2026-09-26 ~12:28 Berlin), after the _identity_diff fix
+# (a declared --scorer-mode change carries scorer_sha256 with it, accepted and named). Verbatim result lines:
+  O-REFUSE    rc 4: refused, naming the change
+  O-PREFLIGHT rc 0: OK and the run dir is byte-identical
+  O-DECLARE   rc 0: declared events 1, on-policy lines 4, TRAIN_DONE
+  G-REFUSE    rc 4: refused, naming the change
+  G-PREFLIGHT rc 0: OK and the run dir is byte-identical
+  G-DECLARE   rc 0: declared events 1, on-policy lines 4, TRAIN_DONE, epoch-boundary line with ON-POLICY sets: True
+  results: {'O-REFUSE': True, 'O-PREFLIGHT': True, 'O-DECLARE': True, 'G-REFUSE': True, 'G-PREFLIGHT': True, 'G-DECLARE': True}
+ZZOPTRAIN_OK
+# Run 1 (full) had F-EXACT IDENTICAL (415 tensors) and O-LEARN AUC 0.998; O-SHUF 0.715 vs the UNTRAINED
+# scorer 0.423 (same init, same new trajectories): within-set shuffling keeps each set's violation COUNT,
+# which leaks the rule through the set-level decoder -- not information-free; an i.i.d.-label control follows.

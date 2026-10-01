@@ -37,12 +37,31 @@ import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "code"))
+import navsim_dac as ND  # noqa: E402  (NAVSIM's drivable-area verdict, label_version 2)
 
 # what the trainer reads (ScorerBank.components) + the EP numerator; the rest of the ~40 signals
 # stays out of the bank to keep the epoch-boundary parse cheap
 KEEP = ("collision.NuPlanCollision.info", "dac.violation", "off_road.OffRoad.info", "progress.ep",
         "progress.advance_m", "ttc.NuPlanTTC.ttc_reward", "comfort.Comfort.reward", "ddc.violation")
 BASE_GOAL_HORIZON_S = 12.0          # build_scorer_targets.py / build_teacher_rollouts.build_planner
+# label_version 3 (PI decision 2026-09-26, option 2): NAVSIM's own drivable area (v2) AND NAVSIM's own comfort
+LABEL_VERSION = 3
+
+
+def apply_navsim(d: dict, dac_viol: float, comfortable: float) -> dict:
+    """One proposal's target dict -> label_version 3.
+
+    ⭐ NAVSIM'S COMFORT GOES INTO THE KEY THE TRAINER READS (`comfort.Comfort.reward`, train.ScorerBank.components),
+    so the RUNNING trainer learns it at its next epoch boundary with no restart. The teacher's own value is kept, once,
+    under `teacher_comfort.Comfort.reward` -- idempotent, so re-applying never overwrites the teacher's copy with
+    NAVSIM's. MEASURED after epoch 13: trained on the teacher's comfort the scorer's comfort output ranked proposals
+    BACKWARDS against NAVSIM's (within-scene AUC 0.39), the drivable-area failure mode again."""
+    d["navsim_dac.violation"] = float(dac_viol)
+    if "teacher_comfort.Comfort.reward" not in d:
+        d["teacher_comfort.Comfort.reward"] = d.get("comfort.Comfort.reward")
+    d["comfort.Comfort.reward"] = float(comfortable)
+    d["navsim_comfort"] = float(comfortable)
+    return d
 
 
 class Scorer:
@@ -210,6 +229,78 @@ def _done_keys(path: str) -> set:
     return done
 
 
+def backfill(a) -> int:
+    """Sets below LABEL_VERSION -> version-3 lines carrying NAVSIM's drivable area AND NAVSIM's comfort.
+
+    Reads every `onpolicy_r<rank>_*.jsonl` in --out except its own output, takes for each sample the HIGHEST
+    label_version it already has as the source, and appends it -- unchanged except `apply_navsim` per
+    proposal and `label_version: 3` -- to `onpolicy_r<rank>_backfill3.jsonl`. The trainer keeps the highest
+    (ckpt_step, label_version) per sample, so the upgraded copy supersedes every earlier one. No teacher
+    scoring: scenario + map + ONE simulation per set.
+    (Version 2 was the drivable-area backfill into `onpolicy_r<rank>_backfill.jsonl`, 2026-09-26.)
+    """
+    import navtrain_scenarios as NS
+    dbs = NS.index_dbs()
+    out_path = os.path.join(a.out, f"onpolicy_r{a.rank}_backfill3.jsonl")
+    done = _done_keys(out_path)
+    best: dict = {}
+    for f in sorted(glob.glob(os.path.join(a.out, f"onpolicy_r{a.rank}_*.jsonl"))):
+        if os.path.abspath(f) == os.path.abspath(out_path):
+            continue
+        with open(f, encoding="utf-8") as fh_:
+            for line in fh_:
+                try:
+                    r = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if r.get("kind") != "onpolicy_set":
+                    continue
+                key = (r["log_name"], r["token"], int(r["step"]), int(r["rank"]), int(r["ckpt_step"]))
+                v = int(r.get("label_version", 1))
+                if key not in best or v > int(best[key].get("label_version", 1)):
+                    best[key] = r
+    todo = [r for k, r in best.items() if k not in done and int(r.get("label_version", 1)) < LABEL_VERSION]
+    print(f"  backfill rank {a.rank}: {len(todo):,} sets below version {LABEL_VERSION} to upgrade, "
+          f"{len(done):,} done before, {len(best):,} samples seen", flush=True)
+    by_log: dict = {}
+    for r in todo:
+        by_log.setdefault(r["log_name"], []).append(r)
+    n = nf = 0
+    t0 = time.time()
+    with open(out_path, "a", encoding="utf-8") as fh:
+        for lg, rs in by_log.items():
+            try:
+                scs = {sc.scenario_name: sc for sc in NS.build_scenarios_for_log(dbs[lg], sorted({r["token"] for r in rs}))}
+            except Exception as exc:
+                nf += len(rs)
+                print(f"    {lg[:34]}: scenario build FAILED {type(exc).__name__}", flush=True)
+                continue
+            for r in rs:
+                sc = scs.get(r["token"])
+                if sc is None:
+                    nf += 1
+                    continue
+                P = np.concatenate([np.asarray(r["traj"], dtype=float), np.asarray(r["yaw"], dtype=float)[..., None]], -1)
+                try:
+                    ndv, ncf = ND.navsim_dac_and_comfort(P, sc.get_ego_state_at_iteration(int(r["step"])), sc.map_api,
+                                                         grid="refe20")
+                except Exception as exc:
+                    nf += 1
+                    print(f"    {r['token']}: navsim labels FAILED {type(exc).__name__}: {str(exc)[:80]}", flush=True)
+                    continue
+                for k, t in enumerate(r["targets"]):
+                    apply_navsim(t, ndv[k], ncf[k])
+                r["label_version"] = LABEL_VERSION
+                r["comfort_source"] = "navsim"
+                r["backfilled"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+                fh.write(json.dumps(r) + "\n")
+                fh.flush()
+                n += 1
+            print(f"    {lg[:34]}: {n:,} upgraded, {nf} failed, {time.time() - t0:.0f} s", flush=True)
+    print(f"ZZOPLABEL_BACKFILL_DONE rank {a.rank} upgraded {n} failed {nf}")
+    return 0
+
+
 def worker(a) -> int:
     S = Scorer(a.rank, a.stride)
     os.makedirs(a.out, exist_ok=True)
@@ -283,13 +374,28 @@ def worker(a) -> int:
                     done.add(key)
                     continue
                 M = P.shape[0]
+                # ⭐ NAVSIM'S OWN DRIVABLE-AREA VERDICT (PI decision 2026-09-26) AND, from label_version 3,
+                # NAVSIM'S OWN COMFORT (option 2), from ONE simulation of the proposals exactly as NAVSIM's
+                # scorer runs it (refe/navsim_dac.py; validated by eval/validate_navsim_dac.py and
+                # eval/validate_navsim_comfort.py). The teacher's own values are kept beside them.
+                t2 = time.time()
+                try:
+                    ndv, ncf = ND.navsim_dac_and_comfort(P, sc.get_ego_state_at_iteration(int(r["step"])),
+                                                         sc.map_api, grid="refe20")
+                except Exception as exc:
+                    st["failed"] += 1
+                    print(f"    {r['token']}: navsim labels FAILED {type(exc).__name__}: {str(exc)[:80]}", flush=True)
+                    continue
+                st["sec_navsim_dac"] = st.get("sec_navsim_dac", 0.0) + time.time() - t2
+                targets = [apply_navsim({kk: got[k].get(kk) for kk in KEEP}, ndv[k], ncf[k]) for k in range(M)]
                 line = json.dumps({
-                    "kind": "onpolicy_set", "log_name": r["log_name"], "token": r["token"],
+                    "kind": "onpolicy_set", "label_version": LABEL_VERSION, "comfort_source": "navsim",
+                    "log_name": r["log_name"], "token": r["token"],
                     "step": int(r["step"]), "rank": int(r["rank"]), "ckpt_step": int(r["ckpt_step"]),
                     "aug": r.get("aug"), "ndiff": int(nd), "stride": S.stride,
                     "traj": [[[round(float(x), 5), round(float(y), 5)] for x, y in P[k, :, :2]] for k in range(M)],
                     "yaw": [[round(float(v), 6) for v in P[k, :, 2]] for k in range(M)],
-                    "targets": [{kk: got[k].get(kk) for kk in KEEP} for k in range(M)],
+                    "targets": targets,
                     "teacher_targets": {kk: got["teacher"].get(kk) for kk in KEEP},
                     "labeller": a.worker, "sec": round(time.time() - t1, 2),
                     "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}) + "\n"
@@ -326,9 +432,16 @@ def main() -> int:
     ap.add_argument("--max-chunks", type=int, default=0)
     ap.add_argument("--selftest-bank", default=None)
     ap.add_argument("--n", type=int, default=6)
+    ap.add_argument("--backfill", action="store_true",
+                    help="upgrade this rank's sets below label_version 3 in --out with NAVSIM's drivable area + comfort")
     a = ap.parse_args()
     if a.selftest_bank:
         return selftest(a)
+    if a.backfill:
+        if not a.out:
+            print("  --backfill needs --out")
+            return 2
+        return backfill(a)
     if not (a.queue and a.out):
         print("  --queue and --out are required for a worker")
         return 2
