@@ -17876,3 +17876,12 @@ component name, so the formula read as the benchmark's own.
 **Consequence:** none for the protocol. Each amendment still precedes its arm's first number, and SPEC_REFCV7 carries the correction as §23.1.
 
 **Rule:** the time of a PI decision in a register is read from the transcript or the landing commit, never written from memory.
+### R26 (2026-09-28) - an adverse-separation check read a LOWER error as worse, because "acc" matched "accel"
+
+**Claimed:** SPEC Amendment 8 NOT PROVEN -- `longitudinal.accel_mae_mps2` separated adversely (ON [0.60, 0.78] against OFF [1.13, 2.54]).
+
+**True:** ON's acceleration error is LOWER (0.686 vs 1.746 m/s^2), i.e. better. `eval/proxy_eval.py::fam_direction` classified a metric as higher-is-better on the SUBSTRING `"acc"` (meant for `accuracy`), so `accel_mae_mps2` got the wrong direction. Re-read with the fix: 0 of 21 components adverse -> ADOPT by the registered rule (the PDMS statistic and every gate unchanged). Audit: M6 (both epochs) and M6b carry no accel flag, and both stay REFUTED; M5r does not use the function. A second defect in the same function: `FAM_SKIP` held bare names while components arrive dotted, so it never skipped (harmless: those are properties of the human future, identical across arms).
+
+**Fixed:** match the word `accuracy`; skip on the dotted leaf. Pinned by `eval/test_fam_direction.py` -- literal expectations for all 21 components the families instrument emits, plus a mutant carrying the historical rule that must go RED (it does). The first readout is kept beside the corrected one.
+
+**Class:** a keyword classifier whose keyword is a PREFIX of a different field (`acc` < `accel`) -- the check shares the defect it guards against in the `grep`/regex costume. It survived because the fixture test exercised the verdict branches, not the direction table. Caught only because the flagged interval visibly held the OTHER arm's value.
