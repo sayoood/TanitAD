@@ -167,6 +167,145 @@ def repair_last_heading(traj):
     return out
 
 
+# ---- SPEC_NAVTEST Amendment 8 (registered 2026-09-28 06:32 Berlin, SPEC blob 8ace80cc): test-time GOAL SANITISATION.
+# DEFAULT OFF (REFePlanner.SANITIZE_GOAL) until the amendment reads ADOPT; OFF, `_goal_for` is bit-identical to before.
+# The defect (raw/2026-09-28-goal-clamp/goal_trace.json): when a scenario's route_roadblock_ids do not contain the ego's
+# roadblock, `_route_start_index` takes the nearest route roadblock at ANY distance and `route_goal_positions` clamps
+# the ego's projection to the route's FIRST point at any distance -- the goal lands 349-480 m ahead. ON: if the ego is
+# farther than GOAL_SANITIZE_D_M from the route polyline `_goal_for` builds, the goal is re-derived by the SAME
+# `route_goal_positions` on a fallback route that starts on the ego's OWN lane and follows the driving command at forks;
+# with no lane within GOAL_FALLBACK_LANE_RADIUS_M, the straight-route goal along the ego heading. Inputs: the map, the
+# ego pose, v0 at t0 and NAVSIM's driving command -- never GT, never future ego. D, the radius and the fork rule were
+# fixed in the registered amendment BEFORE any confirmation token was read; they are NOT tuned.
+GOAL_SANITIZE_D_M = 20.0
+GOAL_FALLBACK_LANE_RADIUS_M = 10.0
+GOAL_FALLBACK_MIN_LEN_M = 150.0
+GOAL_FALLBACK_MAX_EDGES = 64          # a loop guard only
+# NAVSIM's driving_command one-hot order; MEASURED on the 1,123 selection tokens (2026-09-28): index 0 -> mean GT heading
+# at 4 s +0.656 rad (left), 1 -> -0.001, 2 -> -0.602 (right), 3 never set
+DRIVING_COMMANDS = ("LEFT", "STRAIGHT", "RIGHT", "UNKNOWN")
+
+
+def ego_to_polyline_m(poly) -> float:
+    """distance from the ego -- the origin of the route's anchor frame -- to the polyline's SEGMENTS (Amendment 8's
+    trigger quantity; `raw/2026-09-28-goal-clamp/route_cover_census.py` computes the same)"""
+    P = np.asarray(poly, dtype=np.float64)
+    a, b = P[:-1], P[1:]
+    ab = b - a
+    t = np.clip(-(a * ab).sum(1) / np.maximum((ab * ab).sum(1), 1e-9), 0.0, 1.0)
+    return float(np.linalg.norm(a + t[:, None] * ab, axis=1).min())
+
+
+def _polyline_len(coords) -> float:
+    c = np.asarray(coords, dtype=np.float64)
+    return float(np.linalg.norm(np.diff(c, axis=0), axis=1).sum()) if len(c) > 1 else 0.0
+
+
+def _exit_heading(coords) -> float:
+    (x0, y0), (x1, y1) = coords[-2], coords[-1]
+    return math.atan2(y1 - y0, x1 - x0)
+
+
+def choose_successor(prev_coords, succs, command: str, coords_of):
+    """Amendment 8's fork rule: among `succs`, the one whose exit heading change (its own exit heading minus the
+    previous edge's exit heading, wrapped) is the MOST counter-clockwise for LEFT, the MOST clockwise for RIGHT, and
+    the smallest in magnitude for STRAIGHT / UNKNOWN. Ties break on the edge id, so the choice is deterministic."""
+    h0 = _exit_heading(prev_coords)
+
+    def dh(e):
+        return float((_exit_heading(coords_of(e)) - h0 + math.pi) % (2.0 * math.pi) - math.pi)
+    if command == "LEFT":
+        return max(succs, key=lambda e: (dh(e), str(getattr(e, "id", ""))))
+    if command == "RIGHT":
+        return min(succs, key=lambda e: (dh(e), str(getattr(e, "id", ""))))
+    return min(succs, key=lambda e: (abs(dh(e)), str(getattr(e, "id", ""))))
+
+
+def fallback_route(map_api, anchor, command: str, M):
+    """(polyline in the anchor frame | None, diag). Candidates: lanes + lane connectors within the radius; the start is
+    the best `_route_edge_anchor_score` (distance + 5 x heading error); extended through `outgoing_edges` by
+    `choose_successor` until the stitched route is >= GOAL_FALLBACK_MIN_LEN_M; resampled by `_fit_route_polyline`."""
+    from nuplan.common.actor_state.state_representation import Point2D
+    from nuplan.common.maps.abstract_map import SemanticMapLayer
+    near = map_api.get_proximal_map_objects(Point2D(anchor.x, anchor.y), GOAL_FALLBACK_LANE_RADIUS_M,
+                                            [SemanticMapLayer.LANE, SemanticMapLayer.LANE_CONNECTOR])
+    cands = [o for lay in near.values() for o in lay if len(M._edge_centerline_coords(o)) >= 2]
+    if not cands:
+        return None, {"fallback": "straight", "n_candidates": 0}
+    start = min(cands, key=lambda e: (M._route_edge_anchor_score(e, anchor), str(getattr(e, "id", ""))))
+    edges = [start]
+    length = _polyline_len(M._edge_centerline_coords(start))
+    while length < GOAL_FALLBACK_MIN_LEN_M and len(edges) < GOAL_FALLBACK_MAX_EDGES:
+        succ = [e for e in (getattr(edges[-1], "outgoing_edges", []) or []) if len(M._edge_centerline_coords(e)) >= 2]
+        if not succ:
+            break
+        nxt = choose_successor(M._edge_centerline_coords(edges[-1]), succ, command, M._edge_centerline_coords)
+        edges.append(nxt)
+        length += _polyline_len(M._edge_centerline_coords(nxt))
+    coords = M._stitch_route_edge_coords(edges)
+    local = np.asarray([M._global_to_anchor_xy(x, y, anchor) for x, y in coords], dtype=np.float32)
+    return M._fit_route_polyline(local, M.ROUTE_POINTS), {
+        "fallback": "lane", "n_candidates": len(cands), "start_edge": str(getattr(start, "id", "")),
+        "edges": [str(getattr(e, "id", "")) for e in edges], "route_len_m": round(length, 2)}
+
+
+# ---- 2026-10-04 GOAL FIX candidates (SPEC_NAVTEST Amendment 9 draft; DEFAULT None = `_goal_for` bit-identical).
+# The PI (2026-10-01): "no lane geometry for the model driving; nav commands and the related nav goals can of course be
+# used" and "use the output of the privileged planner". Three candidates, each named and recorded:
+#   "pdm_route"        the ROUTE is corrected exactly as NAVSIM's privileged planner corrects it at iteration 0
+#                      (pdm_route_correction.route_roadblock_correction, vendored verbatim from navsim 3e8291b) and the
+#                      goal is then derived by the UNCHANGED path. It is the route NAVSIM's scorer measures EP and DDC
+#                      against (the metric cache's `centerline`). Nothing new reaches the model: only the nav goal moves.
+#   "navgoal_straight" / "navgoal_arc"   MAP-FREE: a trigger that reads only the nav goal and v0 -- the goal is
+#                      impossible when |p2| > NAVGOAL_KAPPA * max(|v0|, v_min) * horizon (a route goal is an arc-length
+#                      point at exactly max(|v0|, v_min) * horizon, so its chord cannot exceed it) -- and on a trigger the
+#                      goal is re-placed at the same arc lengths along the ego heading, or along the constant-curvature
+#                      arc omega / max(|v0|, 1 m/s) (omega = the ego's yaw rate).
+# NAVGOAL_KAPPA was chosen on the 1,123 selection tokens ONLY and frozen before any held-out token was read
+# (raw/2026-10-01-goal-trigger/goal_trigger_analysis.json: selection F1 0.951; held-out F1 0.914 vs Amendment 8's trigger).
+GOAL_FIXES = ("pdm_route", "navgoal_straight", "navgoal_arc")
+NAVGOAL_KAPPA = 1.2
+
+
+def pdm_corrected_route_ids(map_api, rear_axle, ids):
+    """(ids after NAVSIM's PDM route correction, diag). Builds the route dict the way PDM-Closed's `_load_route_dicts`
+    does (ROADBLOCK, else ROADBLOCK_CONNECTOR); an id that resolves to neither is dropped and counted."""
+    from nuplan.common.maps.abstract_map import SemanticMapLayer
+    import pdm_route_correction as PRC
+    rd, n_unres = {}, 0
+    for i in ids:
+        b = map_api.get_map_object(i, SemanticMapLayer.ROADBLOCK) or \
+            map_api.get_map_object(i, SemanticMapLayer.ROADBLOCK_CONNECTOR)
+        if b is None:
+            n_unres += 1
+            continue
+        rd[b.id] = b
+    if not rd:
+        return list(ids), {"route_fix": "pdm_route", "changed": False, "n_unresolved": n_unres, "empty": True}
+    new = list(PRC.route_roadblock_correction(rear_axle, map_api, rd))
+    return new, {"route_fix": "pdm_route", "changed": new != list(ids), "n_before": len(ids), "n_after": len(new),
+                 "n_prepended": next((k for k, x in enumerate(new) if x in rd), len(new)), "n_unresolved": n_unres}
+
+
+def navgoal_fallback(g, v_xy, omega, mode, horizon_s, min_speed_mps, kappa=NAVGOAL_KAPPA):
+    """(goal, diag): the map-free trigger + fallback. `g` is the [.., 2n] goal (ego frame), returned UNCHANGED (the same
+    tensor) below the trigger."""
+    flat = g.reshape(-1)
+    n = flat.numel() // 2
+    s = max(math.hypot(*v_xy), min_speed_mps) * horizon_s
+    ratio = float(torch.linalg.norm(flat[2 * n - 2:2 * n])) / s
+    diag = {"goal_fix": mode, "navgoal_ratio": round(ratio, 4), "triggered": ratio > kappa}
+    if ratio <= kappa:
+        return g, diag
+    k = (float(omega) / max(math.hypot(*v_xy), 1.0)) if mode == "navgoal_arc" else 0.0
+    pts = []
+    for j in range(1, n + 1):
+        L = s * j / n
+        pts += [L, 0.0] if abs(k) < 1e-6 else [math.sin(k * L) / k, (1.0 - math.cos(k * L)) / k]
+    diag["curvature"] = round(k, 6)
+    return torch.tensor(pts, dtype=g.dtype).reshape(g.shape), diag
+
+
 class REFePlanner(AbstractPlanner):
     # ⛔ WAS False, WHICH MADE THE PLANNER STRUCTURALLY UNABLE TO SEE A LOG NAME. MEASURED by the
     # 2026-09-20 conformance review: `PlannerInitialization` carries only
@@ -182,7 +321,8 @@ class REFePlanner(AbstractPlanner):
                  db_dir: str = "D:/Projects/TanitAD/data/nuplan/dblinks/driverl_val14",
                  backbone: str = "vitl16", device: str = "cuda", select: str = "best",
                  horizon_s: float = 12.0, min_speed_mps: float = 5.0, scenario=None, rule: str | None = None,
-                 repair_last_heading: bool | None = None):
+                 repair_last_heading: bool | None = None, sanitize_goal: bool | None = None,
+                 goal_fix: str | None = None):
         # the selection RULE is named and recorded, never implicit (SPEC_NAVTEST Amendment 5, RETRACTION_LOG R25)
         self.rule = rule or self.DEFAULT_RULE
         if self.rule not in self.RULES:
@@ -191,6 +331,18 @@ class REFePlanner(AbstractPlanner):
         # evaluation before 2026-09-27 ~14:30 Berlin
         self.repair_last_heading = (self.REPAIR_LAST_HEADING if repair_last_heading is None
                                     else bool(repair_last_heading))
+        # the goal sanitisation is named and recorded too (SPEC_NAVTEST Amendment 8); OFF (the default until ADOPT)
+        # reproduces every evaluation before it bit for bit. `driving_command` is NAVSIM's one-hot, set by the runner
+        # per scenario (read only when the sanitisation is ON); `goal_diag` records what the last goal did.
+        self.sanitize_goal = self.SANITIZE_GOAL if sanitize_goal is None else bool(sanitize_goal)
+        # the 2026-10-04 goal-fix candidates, named and recorded; None (the default) is bit-identical to before
+        self.goal_fix = self.GOAL_FIX if goal_fix is None else goal_fix
+        if self.goal_fix is not None and self.goal_fix not in GOAL_FIXES:
+            raise ValueError(f"unknown goal_fix {self.goal_fix!r}; one of {GOAL_FIXES}")
+        if self.goal_fix is not None and self.sanitize_goal:
+            raise ValueError("goal_fix and sanitize_goal (Amendment 8) are exclusive")
+        self.driving_command = None
+        self.goal_diag = None
         self.cfg = REFeConfig.for_backbone(backbone)
         self.device = device if torch.cuda.is_available() else "cpu"
         self.model = REFe(self.cfg).to(self.device).eval()
@@ -215,6 +367,7 @@ class REFePlanner(AbstractPlanner):
         self.select, self.horizon_s, self.min_speed_mps = select, horizon_s, min_speed_mps
         self._init = None
         self._route_poly = None
+        self._route_fix_diag = None
         self._scenario = scenario
         self._log_hint = None
         self._log_hint_source = "unset"
@@ -234,6 +387,7 @@ class REFePlanner(AbstractPlanner):
     def initialize(self, initialization) -> None:
         self._init = initialization
         self._route_poly = None
+        self._route_fix_diag = None
         # the scenario arrives either on the initialization or via the constructor, depending on
         # how the runner is wired; take whichever is present and RECORD which, so a later reader
         # does not have to guess where the name came from.
@@ -305,6 +459,7 @@ class REFePlanner(AbstractPlanner):
         """
         ego_vec = self._ego_vec(ego)
         goal = self._goal_for(ego).to(self.device)
+        self.last_inputs = (ego_vec, goal)             # recorded only (Amendment 8's gate (e)); changes nothing
         calib = self._calib_for(self._log_hint) if self.per_sample_calib else None
         with torch.no_grad():
             traj, score = self.model(img.to(self.device), ego_vec, goal, calib=calib)
@@ -362,6 +517,10 @@ class REFePlanner(AbstractPlanner):
     # ⭐ ON from 2026-09-27 ~14:30 Berlin by SPEC Amendment 7's verdict (eval/RESULT_A7_a7confirm_ep015.md): ADOPT,
     # 60.76 -> 76.96 PDMS, +16.20 [+12.83, +19.52] on the 923 confirmation tokens (43 logs outside W3's subset).
     REPAIR_LAST_HEADING = True
+    # SPEC_NAVTEST Amendment 8 (registered 2026-09-28): the goal sanitisation. OFF until the amendment reads ADOPT.
+    SANITIZE_GOAL = False
+    # 2026-10-04 goal-fix candidates (GOAL_FIXES above). None until a pre-registered confirmation reads ADOPT.
+    GOAL_FIX = None
 
     def aggregate(self, score: torch.Tensor) -> torch.Tensor:
         """The BENCHMARK SCORING RULE, over probabilities, not a sum of logits.
@@ -459,6 +618,8 @@ class REFePlanner(AbstractPlanner):
             import augment_routes as A
             from nuplan.planning.script import driverl_runtime_map_features as M  # noqa: F401
             ids = list(getattr(self._init, "route_roadblock_ids", []) or [])
+            if self.goal_fix == "pdm_route" and ids:   # the privileged planner's route, once per scenario (as PDM)
+                ids, self._route_fix_diag = pdm_corrected_route_ids(self._init.map_api, ego.rear_axle, ids)
             poly, _ = A._route_with_lane_rank(self._init.map_api, ids, A._anchor_from_ego(ego), 0)
             self._route_poly = poly
         if self._route_poly is None:
@@ -471,7 +632,47 @@ class REFePlanner(AbstractPlanner):
                                  rp, mask, horizon_s=self.horizon_s,
                                  min_speed_mps=self.min_speed_mps,
                                  num_goal_positions=self.cfg.n_goal_points)
+        if self.sanitize_goal:                         # SPEC_NAVTEST Amendment 8 -- OFF by default (nothing changes)
+            g = self._sanitized_goal(ego, g, v, A, M, route_goal_positions)
+        if self.goal_fix == "pdm_route":
+            self.goal_diag = dict(self._route_fix_diag or {}, goal=[round(float(x), 4) for x in g.reshape(-1).tolist()])
+        elif self.goal_fix in ("navgoal_straight", "navgoal_arc"):
+            g, diag = navgoal_fallback(g, (float(v.x), float(v.y)), ego.dynamic_car_state.angular_velocity,
+                                       self.goal_fix, self.horizon_s, self.min_speed_mps)
+            diag["goal"] = [round(float(x), 4) for x in g.reshape(-1).tolist()]
+            self.goal_diag = diag
         return g.reshape(1, -1)
+
+    def _command_name(self) -> str:
+        c = self.driving_command
+        if c is None:
+            return "UNKNOWN"
+        c = np.asarray(c, dtype=np.float64).reshape(-1)
+        return DRIVING_COMMANDS[int(np.argmax(c))] if c.size == len(DRIVING_COMMANDS) and c.max() > 0 else "UNKNOWN"
+
+    def _sanitized_goal(self, ego, g, v, A, M, route_goal_positions):
+        """Amendment 8: below the trigger the goal is returned UNCHANGED (the same tensor); above it, re-derived."""
+        d = ego_to_polyline_m(self._route_poly)
+        triggered = d > GOAL_SANITIZE_D_M
+        diag = {"ego_to_route_m": d, "triggered": bool(triggered), "command": self._command_name(), "fallback": None}
+        if triggered:
+            anchor = A._anchor_from_ego(ego)
+            poly, fd = fallback_route(self._init.map_api, anchor, diag["command"], M)
+            diag.update(fd)
+            n = self.cfg.n_goal_points
+            if poly is None:
+                s = max(math.hypot(float(v.x), float(v.y)), self.min_speed_mps) * self.horizon_s
+                g = torch.tensor([[[c for k in range(1, n + 1) for c in (s * k / n, 0.0)]]], dtype=g.dtype)
+            else:
+                rp = torch.as_tensor(poly[None], dtype=torch.float32)
+                mask = torch.as_tensor((np.abs(poly).sum(-1) > 0)[None])
+                g = route_goal_positions(torch.zeros(1, 1, 2),
+                                         torch.tensor([[[float(v.x), float(v.y)]]], dtype=torch.float32),
+                                         rp, mask, horizon_s=self.horizon_s, min_speed_mps=self.min_speed_mps,
+                                         num_goal_positions=n)
+            diag["goal"] = [round(float(x), 4) for x in g.reshape(-1).tolist()]
+        self.goal_diag = diag
+        return g
 
     def _to_trajectory(self, ego, xyyaw: np.ndarray):
         """Ego-frame (x, y, yaw) samples at 5 Hz -> a nuPlan InterpolatedTrajectory."""

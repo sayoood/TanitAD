@@ -124,6 +124,19 @@ def main() -> int:
                     help="the selection RULE for --select best (default: planner.py DEFAULT_RULE; SPEC Amendment 5)")
     ap.add_argument("--no-repair-last-heading", action="store_true",
                     help="reproduce an evaluation from before SPEC Amendment 7 (2026-09-27): execute the raw last-pose heading")
+    ap.add_argument("--sanitize-goal", action="store_true",
+                    help="SPEC Amendment 8 (registered 2026-09-28): the test-time goal sanitisation -- OFF by default")
+    ap.add_argument("--record-inputs", default=None,
+                    help="REPORT ONLY (Amendment 8 gate (e)): write each token's ego vector, goal, frame paths and "
+                         "goal diagnostics to this .json. The seam itself is unchanged.")
+    ap.add_argument("--goal-variant", default=None, choices=("clamp150", "straight"),
+                    help="REPORT ONLY (Amendment 8, 'reported, not gating'): on a token whose ego lies > 20 m from its "
+                         "route, the goal is replaced by the 150 m clamp along its own bearing (both points scaled by "
+                         "min(1, 150 / |p2|)) or by the straight-route goal max(v0, 5) x 12 s along the ego heading. "
+                         "Never together with --sanitize-goal.")
+    ap.add_argument("--goal-fix", default=None, choices=("pdm_route", "navgoal_straight", "navgoal_arc"),
+                    help="2026-10-04 goal-fix candidates (planner.GOAL_FIXES; Amendment 9 draft) -- OFF by default. "
+                         "Never together with --sanitize-goal or --goal-variant.")
     ap.add_argument("--device", default="cuda")
     ap.add_argument("--backbone", default="vitl16")
     ap.add_argument("--dump-proposals", default=None,
@@ -151,9 +164,32 @@ def main() -> int:
     from nuplan.planning.simulation.planner.abstract_planner import PlannerInitialization
     planner = REFePlanner(checkpoint=a.ckpt, images_root=a.frames, db_dir=a.db_dir,
                           backbone=a.backbone, device=a.device, select=a.select, rule=a.rule,
-                          repair_last_heading=(False if a.no_repair_last_heading else None))
+                          repair_last_heading=(False if a.no_repair_last_heading else None),
+                          sanitize_goal=(True if a.sanitize_goal else None), goal_fix=a.goal_fix)
+    rec_inputs: dict = {}
     print(f"  planner: trained={planner.trained} per_sample_calib={planner.per_sample_calib} "
           f"device={planner.device} select={planner.select}", flush=True)
+    if a.goal_variant:
+        if a.sanitize_goal or a.goal_fix:
+            print("  --goal-variant and --sanitize-goal are exclusive"); return 2
+        import torch
+        import planner as PLM
+        _orig_goal = planner._goal_for
+
+        def _variant_goal(ego):                        # Amendment 8's reported-not-gating variants (report only)
+            g = _orig_goal(ego)
+            if planner._route_poly is None or PLM.ego_to_polyline_m(planner._route_poly) <= PLM.GOAL_SANITIZE_D_M:
+                return g
+            g2 = g.reshape(-1).clone()
+            n = g2.numel() // 2
+            if a.goal_variant == "clamp150":
+                g2 = g2 * min(1.0, 150.0 / max(float(torch.linalg.norm(g2[2 * n - 2:2 * n])), 1e-9))
+            else:
+                v = ego.dynamic_car_state.rear_axle_velocity_2d
+                s = max(math.hypot(float(v.x), float(v.y)), planner.min_speed_mps) * planner.horizon_s
+                g2 = torch.tensor([c for k in range(1, n + 1) for c in (s * k / n, 0.0)], dtype=g2.dtype)
+            return g2.reshape(1, -1)
+        planner._goal_for = _variant_goal
     rows_tok, rows_fp, rows_pose, misses = [], [], [], []
     ctrl_err, n_ctrl, interp_err = [], 0, []
     prop_diag: list = []
@@ -175,7 +211,17 @@ def main() -> int:
             if img is None:
                 misses.append((tok, f"no frames: {planner.frames.miss_reason}"))
                 continue
+            if planner.sanitize_goal:                  # Amendment 8: NAVSIM's own command (an agent input)
+                planner.driving_command = exp[tok]["ego_statuses"][-1]["driving_command"]
+                planner.goal_diag = None
             traj, _score, k = planner.infer(ego, img)
+            if a.record_inputs:
+                ev, gl = planner.last_inputs
+                rec_inputs[tok] = {"ego": [float(x) for x in ev.reshape(-1).tolist()],
+                                   "goal": [float(x) for x in gl.reshape(-1).tolist()],
+                                   "frames": list(planner.frames.resolve(planner._log_hint,
+                                                                         int(ego.time_point.time_us)) or []),
+                                   "goal_diag": planner.goal_diag, "pick": int(k)}
             # the EXECUTED plan -- with SPEC Amendment 7's last-pose heading repair when it is on (planner.executed)
             poses = to_navsim(planner.executed(traj, k).float().cpu().numpy())
             if not np.isfinite(poses).all():
@@ -238,6 +284,7 @@ def main() -> int:
     rep = {"tokens_asked": len(toks), "rows": len(rows_tok), "misses": len(misses),
            "miss_examples": misses[:10], "ckpt": a.ckpt, "select": a.select, "rule": planner.rule,
            "repair_last_heading": planner.repair_last_heading,
+           "sanitize_goal": planner.sanitize_goal, "goal_fix": planner.goal_fix,
            "frame_control": {"n": n_ctrl, "max_m": float(ce.max()), "median_m": float(np.median(ce)),
                              "bar_m": FRAME_CONTROL_MAX_M,
                              "what": "log future on NAVSIM's 0.5 s grid vs W3 human_future_poses"},
@@ -276,6 +323,8 @@ def main() -> int:
                  ckpt=np.array(str(a.ckpt)), sampling=np.array([NAVSIM_N, NAVSIM_DT]))
         rep["proposal_dump"] = os.path.abspath(a.dump_proposals)
     json.dump(rep, open(os.path.splitext(a.out)[0] + ".report.json", "w"), indent=1)
+    if a.record_inputs:
+        json.dump(rec_inputs, open(a.record_inputs, "w", encoding="utf-8"), indent=0)
     print(json.dumps({k: v for k, v in rep.items() if k != "miss_examples"}, indent=1))
     ok = (len(rows_tok) == len(toks) and n_ctrl > 0 and float(ce.max()) <= FRAME_CONTROL_MAX_M)
     print(f"ZZSEAM_{'OK' if ok else 'FAIL'} {len(rows_tok)} {float(ce.max()):.4f}")
