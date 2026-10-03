@@ -1,0 +1,356 @@
+{
+ "label": "r7s5000_R7_A1",
+ "script": "pdm_score",
+ "module": "navsim.planning.script.run_pdm_score",
+ "overrides": [
+  "train_test_split=navtest",
+  "metric_cache_path=D:/Archive/devbox-C/navsim/exp/w3_navtest_v1/metric_cache_navtest",
+  "worker=sequential",
+  "experiment_name=w3_r7s5000_R7_A1",
+  "output_dir=D:/Archive/devbox-C/navsim/exp/w3_navtest_v1/runs/r7s5000_R7_A1",
+  "agent=constant_velocity_agent",
+  "agent._target_=w3_agents_v1.SeamAgentV1",
+  "+agent.seam_file=D:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_navtest/seam_R7_A1.npz",
+  "+agent.call_log=D:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navtest/r7s5000_R7_A1/r7s5000_R7_A1.calls.jsonl"
+ ],
+ "argv": [
+  "D:\\Projects\\TanitAD\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-v1-navtest\\code\\navsim_v1_win.py",
+  "--script",
+  "pdm_score",
+  "--label",
+  "r7s5000_R7_A1",
+  "--out-dir",
+  "D:\\Projects\\TanitAD\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-28-refcv7-standard-tests\\navsim\\raw\\milestones\\step5000\\scores_navtest\\r7s5000_R7_A1",
+  "--patch-loader",
+  "--record-poses",
+  "--",
+  "train_test_split=navtest",
+  "metric_cache_path=D:/Archive/devbox-C/navsim/exp/w3_navtest_v1/metric_cache_navtest",
+  "worker=sequential",
+  "experiment_name=w3_r7s5000_R7_A1",
+  "output_dir=D:/Archive/devbox-C/navsim/exp/w3_navtest_v1/runs/r7s5000_R7_A1",
+  "agent=constant_velocity_agent",
+  "agent._target_=w3_agents_v1.SeamAgentV1",
+  "+agent.seam_file=D:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_navtest/seam_R7_A1.npz",
+  "+agent.call_log=D:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navtest/r7s5000_R7_A1/r7s5000_R7_A1.calls.jsonl"
+ ],
+ "python": "3.9.25 (main, Oct 31 2025, 22:56:13) [MSC v.1929 64 bit (AMD64)]",
+ "executable": "C:\\Users\\Admin\\navsim-crun\\venv\\Scripts\\python.exe",
+ "cwd": "D:\\Archive\\devbox-C\\navsim\\exp\\w3_navtest_v1",
+ "PYTHONPATH": "D:/Archive/devbox-C/navsim/navsim-3e8291bfa89ff247231e0227778840cd0a036896;D:\\Projects\\TanitAD\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-v1-navtest\\code",
+ "PYTHONHASHSEED": "1",
+ "priority": "BELOW_NORMAL",
+ "env": {
+  "NUPLAN_MAP_VERSION": "nuplan-maps-v1.0",
+  "NUPLAN_MAPS_ROOT": "D:/Archive/devbox-C/navsim/data/maps",
+  "NAVSIM_EXP_ROOT": "D:/Archive/devbox-C/navsim/exp/w3_navtest_v1",
+  "NAVSIM_DEVKIT_ROOT": "D:/Archive/devbox-C/navsim/navsim-3e8291bfa89ff247231e0227778840cd0a036896",
+  "OPENSCENE_DATA_ROOT": "D:/Archive/devbox-C/navsim/data/openscene"
+ },
+ "env_defaults_applied_by_wrapper": {},
+ "navsim_v11_tree": "D:/Archive/devbox-C/navsim/navsim-3e8291bfa89ff247231e0227778840cd0a036896",
+ "navsim_v11_sha": "3e8291bfa89ff247231e0227778840cd0a036896",
+ "nuplan_tree": "C:/Users/Admin/navsim-crun/nuplan-devkit",
+ "nuplan_sha_expected": "ce3c323af01c0d7ec5672f7832ef53f9c679aab0",
+ "nuplan_sha_measured": null,
+ "nuplan_source_checkout": "D:/Archive/devbox-C/navsim/nuplan-devkit",
+ "nuplan_source_sha_measured": "ce3c323af01c0d7ec5672f7832ef53f9c679aab0",
+ "nuplan_copy_verification": "E1 raw/devkit_copy_verify.json: repos.nuplan-devkit n_blobs 1324, n_match 1321, 3 diffs explained (setup.py packaging, docs/make.bat eol, nuboard html)",
+ "e1_wrapper": "D:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-warmup-reference-epdms/code/navsim_win.py",
+ "imported_from": {
+  "navsim": "D:\\Archive\\devbox-C\\navsim\\navsim-3e8291bfa89ff247231e0227778840cd0a036896\\navsim\\__init__.py",
+  "nuplan": "C:\\Users\\Admin\\navsim-crun\\nuplan-devkit\\nuplan\\__init__.py",
+  "script": "D:\\Archive\\devbox-C\\navsim\\navsim-3e8291bfa89ff247231e0227778840cd0a036896\\navsim\\planning\\script\\run_pdm_score.py",
+  "fcntl": "C:\\Users\\Admin\\navsim-crun\\venv\\lib\\site-packages\\fcntl.py"
+ },
+ "patches": [
+  {
+   "name": "MetricCacheLoader._load_metric_cache_paths: token = re.split(r'[\\\\/]', p)[-2]",
+   "target": "navsim/common/dataloader.py:170-181 (v1.1 @ 3e8291b)",
+   "replacement": "D:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-warmup-reference-epdms/code/navsim_win.py::_load_metric_cache_paths_patched (E1, imported)",
+   "original_source_sha16": "9dd27c9e1cfdee0a",
+   "patched_source_sha16": "e6f60f85ea15ed16",
+   "why": "save_cache_metadata writes str(WindowsPath) (backslashes); the original split('/')[-2] raises IndexError on Windows (control C7)"
+  }
+ ],
+ "hooks": [
+  "navsim.planning.script.run_pdm_score.pdm_score (observation only)"
+ ],
+ "started_local": "2026-09-28 19:13:42",
+ "rows_jsonl": "D:\\Projects\\TanitAD\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-28-refcv7-standard-tests\\navsim\\raw\\milestones\\step5000\\scores_navtest\\r7s5000_R7_A1\\r7s5000_R7_A1_rows.jsonl",
+ "status": "OK",
+ "ended_local": "2026-09-28 19:32:45",
+ "resources": {
+  "wall_s": 1143.22,
+  "peak_rss_mb": 2256.8,
+  "peak_process_tree_rss_mb": 2256.8,
+  "min_system_available_mb": 4852.8,
+  "n_samples": 515,
+  "n_samples_below_floor": 0,
+  "sample_interval_s": 2.0,
+  "ram_floor_mb": 3000.0,
+  "abort_policy": "available<3000MB for 60 consecutive samples, or <2000MB once",
+  "trace_every_10th_sample__t_rss_avail": [
+   [
+    0.0,
+    20.0,
+    8641.2
+   ],
+   [
+    20.2,
+    720.7,
+    8397.6
+   ],
+   [
+    40.6,
+    2013.0,
+    5213.9
+   ],
+   [
+    62.3,
+    2200.6,
+    4852.8
+   ],
+   [
+    83.4,
+    2201.3,
+    12831.6
+   ],
+   [
+    105.8,
+    2201.9,
+    12460.9
+   ],
+   [
+    127.0,
+    2203.8,
+    10373.3
+   ],
+   [
+    149.3,
+    2205.5,
+    8595.4
+   ],
+   [
+    171.3,
+    2205.5,
+    8594.8
+   ],
+   [
+    194.9,
+    2206.5,
+    8592.7
+   ],
+   [
+    217.1,
+    2212.2,
+    8580.0
+   ],
+   [
+    239.0,
+    2213.3,
+    8583.5
+   ],
+   [
+    263.4,
+    2216.7,
+    8584.1
+   ],
+   [
+    285.5,
+    2218.0,
+    8544.7
+   ],
+   [
+    307.1,
+    2219.3,
+    8544.4
+   ],
+   [
+    329.6,
+    2220.9,
+    8558.5
+   ],
+   [
+    354.4,
+    2221.4,
+    8528.9
+   ],
+   [
+    376.5,
+    2222.9,
+    8532.3
+   ],
+   [
+    397.7,
+    2222.9,
+    8524.1
+   ],
+   [
+    420.2,
+    2224.3,
+    8507.4
+   ],
+   [
+    441.5,
+    2224.9,
+    8480.9
+   ],
+   [
+    464.8,
+    2225.9,
+    8499.5
+   ],
+   [
+    485.8,
+    2226.9,
+    8479.4
+   ],
+   [
+    506.3,
+    2228.1,
+    8468.5
+   ],
+   [
+    527.5,
+    2228.3,
+    8485.0
+   ],
+   [
+    549.6,
+    2230.8,
+    8487.2
+   ],
+   [
+    572.3,
+    2230.9,
+    8484.1
+   ],
+   [
+    593.1,
+    2232.0,
+    8452.0
+   ],
+   [
+    613.6,
+    2232.9,
+    8452.1
+   ],
+   [
+    635.2,
+    2233.2,
+    8451.7
+   ],
+   [
+    657.3,
+    2235.9,
+    8403.7
+   ],
+   [
+    681.6,
+    2235.9,
+    8407.1
+   ],
+   [
+    706.1,
+    2236.4,
+    8394.4
+   ],
+   [
+    728.0,
+    2238.7,
+    8402.5
+   ],
+   [
+    749.8,
+    2238.7,
+    8390.1
+   ],
+   [
+    771.6,
+    2240.2,
+    8354.3
+   ],
+   [
+    795.3,
+    2241.1,
+    8361.9
+   ],
+   [
+    817.1,
+    2241.4,
+    8369.5
+   ],
+   [
+    840.3,
+    2243.3,
+    8322.0
+   ],
+   [
+    864.2,
+    2244.8,
+    8305.4
+   ],
+   [
+    887.4,
+    2246.6,
+    8311.3
+   ],
+   [
+    908.7,
+    2247.1,
+    8318.0
+   ],
+   [
+    931.7,
+    2247.6,
+    8289.6
+   ],
+   [
+    954.8,
+    2247.9,
+    8307.7
+   ],
+   [
+    977.2,
+    2248.9,
+    8288.1
+   ],
+   [
+    999.2,
+    2249.2,
+    8265.0
+   ],
+   [
+    1022.8,
+    2252.2,
+    8229.2
+   ],
+   [
+    1044.8,
+    2252.4,
+    8190.2
+   ],
+   [
+    1067.5,
+    2252.2,
+    8208.6
+   ],
+   [
+    1089.5,
+    2253.4,
+    8202.9
+   ],
+   [
+    1110.6,
+    2255.6,
+    8203.4
+   ],
+   [
+    1134.4,
+    2255.9,
+    8163.3
+   ]
+  ]
+ }
+}

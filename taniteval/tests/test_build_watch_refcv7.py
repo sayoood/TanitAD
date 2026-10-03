@@ -758,5 +758,19 @@ def test_the_EvalFlyWheel_defaults_are_the_Master_Minds_ruling(monkeypatch):
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     assert mod.EVAL_PKG == (r"D:\Projects\TanitAD\FlyWheels\TanitAD_EvalFlyWheel\incoming"
-                            r"\2026-09-27-refcv7-standard-tests")
+                            r"\2026-09-28-refcv7-standard-tests")
     assert mod.NAVSIM_ARM == "R7_A1" and mod.EVAL_LIVE is None
+
+
+def test_the_default_eval_package_EXISTS_in_the_repo(monkeypatch):
+    """MEASURED 2026-10-04: the default named a 2026-09-27 folder that never existed, and the test above
+    pinned the same wrong literal -- a check sharing the defect it checks. The page then showed no NavSim
+    section for six days while the step-5,000 milestone was banked. This check is derived INDEPENDENTLY of
+    the literal: the default's package folder must be a real package in this repo (its NavSim SPEC)."""
+    for k in ("REFCV7_EVAL_PKG", "REFCV7_EVAL_LIVE", "REFCV7_NAVSIM_ARM"):
+        monkeypatch.delenv(k, raising=False)
+    spec = importlib.util.spec_from_file_location("build_watch_refcv7_pkg_exists", BUILDER)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    tail = mod.EVAL_PKG.replace("\\", "/").split("/Projects/TanitAD/", 1)[1]
+    assert (ROOT / tail / "navsim" / "SPEC.md").is_file(), tail

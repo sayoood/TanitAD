@@ -64,3 +64,60 @@
 | D10 | the step-5,000 waiter was RE-ARMED at 06:35 Berlin (the 05:52 instance killed by PID while it was still waiting for the checkpoint): its battery-release condition now reads the LOCK only (a lock-less python on the card is logged, not waited on) and it gains a 10 h timeout | a lock-less `uv` python 3.11 GPU process from another session was on the card at 06:34; under the first rule it could have held the waiter forever |
 | D11 | the waiter was RE-ARMED again at 06:46 Berlin (Windows PID 33704): the battery is identified by a lock job naming the milestone step (`refcv7-…-5000`), the Research Lab's lock on the SAME file is logged (`LOCK_SEEN_OTHER`) and waited out, foreign lock fields are tolerated, and a lock that is not ours is never removed (`gpu_lock.release` deletes only a lock carrying our token) | Master Mind 06:45 Berlin: the Research Lab now takes the same lock (GPU runs ~08:00-12:30, a REFe snapshot eval ≈ 13:25 for 50-70 min); a Research Lab release must never be read as the battery's |
 | D12 | the waiter was re-armed a third time at 07:42 Berlin (Windows PID 25012): the battery tag match also accepts `5k` / `5,000` in the lock's job name | the battery's job names seen so far (`refcv7-g0-1500`, `refcv7-smoke-1500`, `refcv6-38k-perc-dump`) show the step is not always spelled the same way; a missed match only delays NavSim to the 4 h grace fallback, never lets it jump the battery while the lock is held |
+
+## ⭐ Escalations added 2026-10-04 (EvalFlyWheel NavSim operator; each also in the report headline)
+
+5. ⛔ **THE STEP-30,000 MILESTONE WAS KILLED TWICE, AND NEITHER DEATH WAS VISIBLE IN ITS OWN LOGS.**
+   MEASURED from the Windows System log and the artifacts' mtimes (the runner logs are silent on
+   both): **(a)** 2026-10-02 12:46–12:50 Berlin, a burst of USB-storage resets on the external drive
+   then lettered D: (`UASPStor` 129 ×14, `disk` 153 ×5, disk 1). The navtest MAIN bridge (CPU fp32)
+   died at 12:50 at R7_A1 row **11,074 / 12,146** with **no traceback** — its log lived on the drive
+   that was resetting. `run_navsim_refcv7.py` does not read a bridge's exit status (it reads seams), so
+   it logged `SEAMS navtest … NO_SEAM` and **never launched a navtest main scorer**. **(b)** 2026-10-02
+   16:55:03 Berlin, a **user-initiated restart from the Start menu** (`User32` 1074,
+   `StartMenuExperienceHost` on behalf of `FREEDOM2035\Admin`; boot 16:55:31). Every D: artifact
+   stops at 16:55:06; the navhard PRIOR_ha0p scorer was at stage-2 scenario 4,281 / 5,462. The drive
+   came back as **E:**; the Master Mind's `subst D: E:\` restores the paths **for this logon session
+   only** (a reboot or another logon loses it again). ⇒ **Owner: Master Mind / PI** — a restart of the
+   dev box kills every detached NavSim job; the external drive is a single point of failure for every
+   banked artifact of this suite (it holds the only copy of the 30k rows and scores).
+   **Fix shipped here:** `code/complete_milestone7.py` completes a dead milestone with zero
+   re-computation (resumes rows, never rewrites a seam, mirrors its log to local disk). **Fix NOT
+   shipped (owner: this stream, next):** the runner should log each bridge's exit code and mirror
+   `runner.log` to local disk.
+6. ⛔ **MY ERROR — THE STEP-50,400 WARMUP SPLIT RUNS ON CPU BECAUSE I LAUNCHED THE RUNNER FROM A C: WORKING
+   DIRECTORY.** `run_navsim_refcv7.py` decides K0/KD from the literal pytest line
+   `PASSED tests/test_model_seam7.py::test_K0…`. Launched via WMI with cwd `C:\Users\Admin`, pytest took
+   the cwd as rootdir, could not express the D: test path relative to it, and printed
+   `PASSED ::test_K0_same_seed_is_bit_identical` — **K0 PASSED and the runner read it as FAILED**
+   (`CUDA controls warmup: K0=False KD=False` → `CUDA REFUSED for warmup` → CPU fp32;
+   `raw/milestones/step50400/cuda_controls_warmup.log`). A kill-and-relaunch of the runner was
+   **refused by the session's permission classifier**, so the runner continues: warmup on CPU fp32 (one
+   device per split holds; it is the same device as step 30,000's warmup, not step 5,000's).
+   **Fix shipped:** `pytest.ini` at the package root pins rootdir to the package — MEASURED from cwd
+   `C:\Users\Admin`: `--collect-only` now prints `tests/test_model_seam7.py::test_K0_…`, so the live
+   runner's navtest and navhard K0 checks read correctly. Same family as the CLAUDE.md "check that shares
+   the defect it checks for": a pass decided by a string whose shape depends on the caller's cwd.
+7. ⚠️ **RAM is the throttle tonight.** At 00:30 Berlin the box had **4.9 GB available** (31.8 GB total;
+   commit free 3.3 GB) with other sessions' REFe scoring and a Research Lab census running. Both NavSim
+   pipelines gate on it (CPU bridge ≥ 6 GB sustained; scorers ≥ 8 GB on two samples) and **wait, never
+   override** — so the completion times below are lower bounds.
+
+## Decisions made in this stream, 2026-10-04 (reversible)
+
+| # | decision | why |
+|---|---|---|
+| D13 | step 30,000's navtest is completed on **CPU fp32**, resuming the 11,074 banked R7_A1 rows; R7_A1_s1 (0 rows) also runs on CPU | the banked rows are CPU fp32 and `run_bridge7` refuses a mixed-device arm; one device per split (A3) keeps the seed replicate on the same device as the arm it floors. Re-running the split on CUDA (≈ 2.6 GPU-h, faster) would re-compute 11,074 banked rows — the brief forbids it |
+| D14 | the completion driver never rewrites an existing seam | `np.savez` stamps zip times: a rewrite changes the bytes and orphans the `seam_sha256` recorded by the PASS score beside it |
+| D15 | the step-50,400 runner gets `--gpu-wait-s 43200` (12 h) instead of the per-split defaults (900 s warmup / 10,800 s others) | at step 30,000 the 3 h default sent navtest to CPU (≈ 12 h CPU bridge, then lost to the USB resets); the brief asks for CUDA bridges. A scheduling knob only: arms, splits, inputs, estimators and every other argument are identical to steps 5,000 / 30,000 |
+| D16 | `pytest.ini` (no options) added at the package root | escalation 6 |
+
+8. ⚠️ **Collision with the battery stream at 00:32–00:33 Berlin, probably mine.** I launched the step-50,400
+   runner (00:32:43) and the step-30,000 completion (00:33:01) when commit headroom read **3.3 GB free**
+   (`Win32_OperatingSystem.FreeVirtualMemory`, 00:32). The battery's first `g0_diag_r7.py` attempt took
+   the GPU lock at 00:32:47 and died with **`MemoryError`** while hashing the checkpoint at 00:33
+   (`D:/refcv7_eval_kit/battery/g0diag_step5000/diag_attempt1_memoryerror.log`). Attribution to my two
+   launches is **UNVERIFIED** (other sessions were also running), but the timing fits. The battery
+   stream recovered on its own (a commit gate, `wait_commit.json`; lock re-taken 01:10:32). Since then
+   that job holds **~15.3 GB private**, which aborted this stream's navhard PRIOR_ha0p re-score twice
+   through E1's RAM guard (01:09, 01:26) — retried automatically, no data lost, only time.

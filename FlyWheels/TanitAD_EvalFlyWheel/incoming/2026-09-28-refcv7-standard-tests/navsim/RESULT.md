@@ -144,3 +144,110 @@ nothing about refcv7.
   (then `code/bars7.py --milestone raw/milestones/step5000`). For 15k / 30k: `milestone_waiter7.py 15000`
   etc.; the FINAL has no waiter yet (the trainer's final `ckpt.pt` needs a done-marker rule, as refcv6's
   `--fetch-final` had).
+
+## 5. Step 5,000 — the first RESULT milestone (section written 2026-10-04 from the banked artifacts; the milestone finished 2026-09-28 20:53 Berlin)
+
+`ckpt_5000.pt` md5 `06eb9dfde9f3783a782cebef22259ce4`; **all three splits CUDA bf16, native trunk path**
+(K0 PASS, KD FAIL → exact dedup dropped; `MILESTONE_SUMMARY.json`). Stamps: NavSim open-loop benchmark
+(T1-family), ⛔ never closed loop, zero-shot, non-parity; model trained from the launch tree, on which the
+speed ceiling does **not** reach the emitted plan (SPEC amendment A1; SPEC_REFCV7 §26.1 — INHERITED from
+the brief). Estimator for every interval: paired log-cluster bootstrap (`navsim_ci`, B 2000, seed 0) —
+it answers *"another draw of LOGS?"* only; inference variance = the R7_A1_s1 floor; training variance
+UNTESTED (one run). All numbers MEASURED: `raw/milestones/step5000/{BARS,summary_*}.json`.
+
+| bar (SPEC §5) | values | margin | interval | inference-seed floor | verdict |
+|---|---|---|---|---|---|
+| **BAR-R7-N1** navtest PDMS ×100, 12,146 tokens | R7_A1 **65.5976** · STOP 61.8202 · CV 20.6517 · HUMAN 94.5514 | **+3.7774** | A1 − STOP **[+1.58, +5.86]**, separated (log_name AND nuplan_drive) | \|A1 − A1_s1\| 0.0849 | **PASS** |
+| BAR-R7-NW1 warmup S2-EPDMS-u, 204 tokens | R7_A1 0.4487 · STOP 0.5212 · CV 0.3971 · ECHO 0.4287 | −0.0726 | none (7 logs < 8) | 0.0084 | **FAILED** |
+| BAR-R7-NH1 navhard official two-stage EPDMS | R7_A1 0.1624 · STOP 0.2985 · CV 0.1148 · ECHO 0.1429 | −0.1361 | A1 − STOP [−0.1713, −0.1027] | 0.0055 | **FAILED** |
+
+Beside the navtest bar, never instead of it: A1 − PRIOR_ha0p **+6.9364** [+5.01, +8.75] (what the learned
+residual adds over its own kinematic prior); A1 − CV +44.946; **R7_CEILDECL_d − A1 +0.07** [−0.00, +0.14],
+not separated (the declared ceiling, applied at the E9 argmax, is worth < 0.1 PDMS here); stop fraction
+0.87 % (4 s endpoint < 1 m), median 4 s distance 20.13 m. 200-token diagnostics: VMAXOFF − A1 +0.42
+[−0.01, +1.14] n.s.; FILTOFF ≡ A1 (bit-identical, amendment A1); VMAXORACLE − A1 +0.09 n.s. navhard:
+A1 − PRIOR +0.0324 [+0.0019, +0.0627] (log_name interval excludes 0; the SPEC conjunction does not
+separate), CEILDECL − A1 +0.0009 n.s. ⚠️ The navtest PASS is a 1-training-seed result (SPEC §4).
+
+## 6. Step 30,000 — the runner was killed part-way; completion RUNNING (status 2026-10-04 ~01:30 Berlin)
+
+`ckpt_30000.pt` md5 `ac4e4fab87e35b20de24d8d94910d910`; config md5 `e6512a01…` (unchanged).
+
+**6.1 What killed it — two deaths, neither visible in its own logs (MEASURED: Windows System log, artifact mtimes).**
+* **2026-10-02 12:46–12:50 Berlin — USB-storage resets** on the external drive then lettered D:
+  (`UASPStor` 129 ×14, `disk` 153 ×5). The **navtest MAIN bridge died at 12:50** at R7_A1 row
+  **11,074 / 12,146**, with no traceback (its log was on the resetting drive); its rate had already
+  fallen from 2.58 s/scene (cumulative, row 9,400) to 3.93 (row 11,050) ≈ 11.6 s/scene over the last
+  1,650 rows. R7_A1_s1 never started.
+* **2026-10-02 16:55:03 Berlin — a user-initiated restart** from the Start menu (`User32` 1074; boot
+  16:55:31). Every D: artifact stops at 16:55:06; the navhard PRIOR_ha0p scorer was at stage-2
+  scenario 4,281 / 5,462. The drive came back as **E:** (`subst D: E:\` since, per the Master Mind).
+
+**6.2 `NO_SEAM`, and whether it affects validity.** The navtest bridge ran on **CPU fp32** because the
+GPU lock was held by `refe-final-navtest-full` for > 3 h (`GPU lock NOT acquired within 10800 s for
+navtest -> CPU fp32 for the whole split`) — the runner's designed fallback (one device per split, A3),
+not a defect. **`NO_SEAM` means no seam file existed**: `run_bridge7` writes an arm's seam only after its
+loop finishes, and the loop was killed — so **no partial seam was ever scored, and no navtest main arm
+was ever scored** (the log has no `SCORE navtest:r7s30000_R7_A1` line; the 4 main arms R7_A1,
+R7_A1_s1, R7_CEILDECL_d, PRIOR_ha0p have no score directory). The banked rows are clean: **11,074
+distinct tokens, all CPU fp32, KPR max 0.0 m, the E9 re-derivation reproduced `sel_idx` on 11,074 /
+11,074, last line complete** (MEASURED 2026-10-04). Resuming is valid: a row is a deterministic function
+of (checkpoint, arm seed, token) on one device (K0). ⚠️ **What it does change:** the 5k → 30k comparison
+straddles devices on navtest and warmup (5k CUDA bf16 native; 30k CPU fp32) → read against the
+precision floor KP (step 1,500: same selection 88.2 %, 4 s endpoint median 0.40 m), never as a pure
+training effect; `step_compare7.py` flags it.
+
+**6.3 Banked and final now.** warmup — all 9 arms scored PASS (CPU fp32), post-processed 2026-10-04
+00:33 Berlin. navhard (CUDA bf16 native) — R7_A1, R7_A1_s1, R7_CEILDECL_d scored PASS on 2026-10-02.
+navtest 200-token diagnostics (CPU) — scored PASS.
+
+| warmup, step 30,000, CPU fp32 (S2-EPDMS-u, 204 stage-2 tokens; no interval) | value | vs R7_A1 (W/T/L) |
+|---|---|---|
+| **R7_A1** | **0.5224** | stop fraction 0.029; median 4 s distance 15.59 m |
+| R7_A1_s1 (inference seed 1) | 0.5293 | seed floor \|Δ\| **0.0069** (48/94/62) |
+| PRIOR_ha0p | 0.4586 | A1 − PRIOR **+0.0638** (99/62/43) |
+| STOP / CV / ECHO | 0.5212 / 0.3971 / 0.4287 | A1 − STOP **+0.0011** (113/32/59) · − CV +0.1252 · − ECHO +0.0936 |
+| R7_BLIND / R7_NAVOFF / R7_VMAXOFF / R7_A1NT | 0.2193 / 0.5190 / 0.5265 / 0.5211 | +0.3030 / +0.0034 / −0.0041 / +0.0013 |
+| R7_FILTOFF / R7_CEILDECL_d | 0.5224 / 0.5224 | 0/204/0 both — FILTOFF bit-identical (A1); the declared ceiling binds in 90 scenes and changes **no** pick on CPU |
+
+**BAR-R7-NW1 at 30k: NOT PROVEN** — margin +0.0011 over STOP, inside 2 × the seed floor (0.0139)
+(read by `bars7.warmup_bar` on `summary_warmup.json`; `BARS.json` is written with the full milestone).
+5k → 30k: R7_A1 0.4487 → 0.5224 (+0.0737) **across a device change** — the formal comparison lands as
+`raw/milestones/step30000/compare_vs_step5000_warmup.json`.
+
+**6.4 Completion (RUNNING, detached, its own log).** `code/complete_milestone7.py` (new): imports the
+runner's own functions; never rewrites an OK seam (an `np.savez` rewrite would orphan the `seam_sha256`
+of the PASS score beside it); re-bridges navtest on **CPU fp32** (the banked rows' device, read from the
+rows AND the runner's own line) — R7_A1 `--derived` first (1,072 rows left, then the R7_CEILDECL_d and
+PRIOR_ha0p seams), then R7_A1_s1 (12,146 rows); RAM-gated (≥ 6 GB sustained 60 s), relaunched up to 3×
+if a stage exits without its seams; scores every unscored seam through the runner's ScorePool; post-
+processes each split as soon as it is complete; rebuilds `MILESTONE_SUMMARY.json` from the seam
+manifests (stamped `reconstructed`); runs `bars7.py` and `step_compare7.py` vs step 5,000 on all three
+splits. Log `raw/milestones/step30000/complete.log` (mirror `C:/Users/Admin/qland/work/refcv7/complete_step30000.log`);
+terminal marker `ZZCOMPLETE7DONEZZ`.
+
+## 7. Step 50,400 — the FINAL checkpoint: suite launched 2026-10-04 00:32 Berlin
+
+`ckpt_50400.pt` md5 `b418d0fc4a92a6848c246a6a7c50207b` (model-only, extracted from the final rolling
+`ckpt_50400_full.pt`, md5 `d5f104ee…` = Thor's `ckpt.pt`; INHERITED from the Master Mind, md5 re-verified
+by the runner at START). Arms, splits and arguments identical to steps 5,000 / 30,000 except
+`--gpu-wait-s 43200` (COMMS D15). Log `raw/milestones/step50400/runner.log`.
+⚠️ **The warmup split runs on CPU fp32, by my error** (COMMS escalation 6): launched from a C: working
+directory, pytest printed `PASSED ::test_K0…` and the runner read K0 as failed. `pytest.ini` now pins the
+rootdir (MEASURED: node ids carry `tests/` from a C: cwd), so navtest and navhard read K0 correctly.
+
+**Status at hand-over (2026-10-04 ~01:35 Berlin; every line read from the logs named above).**
+* **step 30,000** — the navtest R7_A1 resume started 01:07:37 Berlin (RAM gate 6.0 GB; CPU fp32; bridge
+  pid 11988) and read 11,474 / 12,146 at ~01:32 (≈ 3.6–3.8 s/scene under contention). The navhard
+  PRIOR_ha0p re-score was aborted twice by E1's RAM guard (01:09, 01:26 Berlin) while another stream's
+  job held ~15 GB; the pool retries it (≤ 8 tries) once ≥ 8 GB is free. ESTIMATED: R7_A1 + derived seams
+  ≈ 02:30 Berlin; R7_A1_s1 (12,146 CPU rows) ≈ 12–13 h more → ≈ 15:00 Berlin; then the 4 navtest
+  scorers and `BARS.json` ≈ 16:00 Berlin at the earliest (RAM gates make these lower bounds).
+* **step 50,400** — warmup seams complete 01:30:33 Berlin (9/9 OK, KPR PASS max 0.0 on every bridged
+  arm; CPU fp32). The runner now waits for the GPU lock, held since 01:10:32 Berlin by the battery's
+  `refcv7-g0diag-5000` (21 arms at ~305 s each → ESTIMATED release ≈ 03:00 Berlin). Then navtest on CUDA
+  (≈ 3.1 h at step 5,000's measured rate), navhard on CUDA (≈ 1 h), then the scorers (warmup 9, navtest
+  4 + 3 diagnostics, navhard 4; ≈ 1.5–2 h if RAM allows). ESTIMATED: `BARS.json` ≈ 09:00–10:00 Berlin.
+  ⚠️ **Not yet observed live:** `CUDA controls navtest: K0=True` — the first line to check in
+  `raw/milestones/step50400/runner.log` once the lock is acquired (the `pytest.ini` fix is MEASURED by
+  `--collect-only` only).

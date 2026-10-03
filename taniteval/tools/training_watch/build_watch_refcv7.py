@@ -125,8 +125,12 @@ BOX_REF_SRC = ("refcv6@38k, box-head audit RESULT.md (landed 35e8207): 556 clipg
 #: The EvalFlyWheel's refcv7 package (the Master Mind's ruling 2026-09-27; created at the first
 #: milestone -- until then the section reads "nothing is shown rather than a guess"). The live lane is
 #: not named: without $REFCV7_EVAL_LIVE an unbanked split reads "not banked", never "not run".
+#: ⛔ CORRECTED 2026-10-04: the default named a "2026-09-27-…" folder that never existed; the package was
+#: created as "2026-09-28-…". Every page built without $REFCV7_EVAL_PKG showed NO NavSim section for six
+#: days while the step-5,000 milestone sat banked: the "nothing rather than a guess" rule made the wrong
+#: path silent. The test now asserts that the default's package EXISTS in the repo.
 EVAL_PKG_DEFAULT = (r"D:\Projects\TanitAD\FlyWheels\TanitAD_EvalFlyWheel\incoming"
-                    r"\2026-09-27-refcv7-standard-tests")
+                    r"\2026-09-28-refcv7-standard-tests")
 EVAL_PKG = os.environ.get("REFCV7_EVAL_PKG", EVAL_PKG_DEFAULT)
 EVAL_LIVE = os.environ.get("REFCV7_EVAL_LIVE")
 #: the arm id the EvalFlyWheel banks refcv7 under (the Master Mind's ruling 2026-09-27). A wrong id reads
