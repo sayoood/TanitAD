@@ -210,6 +210,21 @@ a { color: var(--s1); }
     </figure>
   </section>
 
+  <section id="navtest-full" hidden>
+    <div class="sec-head"><h2>The final model on the full NAVSIM navtest</h2>
+      <p class="lead" id="nt-lead"></p></div>
+    <div class="grid2">
+      <figure>
+        <div class="fh"><h3>Against the reference arms, same 12,146 tokens</h3><p>Paired log-cluster bootstrap over 136 logs; PDMS × 100.</p></div>
+        <div class="tbl" id="t-nt-pairs"></div>
+      </figure>
+      <figure>
+        <div class="fh"><h3>Where the points go</h3><p>Slices of the same per-token scores, each with its own log-cluster interval.</p></div>
+        <div class="tbl" id="t-nt-slices"></div>
+      </figure>
+    </div>
+  </section>
+
   <section id="eval">
     <div class="sec-head"><h2>NAVSIM evaluation: the learning curve</h2>
       <p class="lead" id="eval-lead"></p></div>
@@ -307,6 +322,7 @@ a { color: var(--s1); }
   const onp = lastB.scorer_mode === "onpolicy";                           // the fixed bank is retired
   const bankFixed = A.scorer_frames > readNow;
   const chips = [
+    ...(D.navtest_full ? [["s-good", "✓", "Full navtest: PDMS " + fmt(D.navtest_full.all.PDMS, 2) + " [" + fmt(D.navtest_full.all.ci95_log_cluster[0], 2) + ", " + fmt(D.navtest_full.all.ci95_log_cluster[1], 2) + "] on " + int(D.navtest_full.all.n) + " tokens"]] : []),
     P.finished ? ["s-good", "✓", "Training finished " + P.finished_local + " (Berlin): " + int(P.final_steps) + " steps"]
       : ["s-good", "✓", "Training healthy, " + fmt(P.pace_now, 1) + " s/step now"],
     P.inside_budget ? ["s-good", "✓", "Finish " + berlin(etaDate) + ", " + hm(P.margin_h) + " inside the 7-day line"]
@@ -546,6 +562,25 @@ a { color: var(--s1); }
     head.forEach(h => tr.append(el("th", { scope: "col" }, h))); thead.append(tr); t.append(thead);
     const tb = el("tbody"); rows.forEach(r => { const row = el("tr"); r.forEach(c => row.append(el("td", {}, c))); tb.append(row); }); t.append(tb);
     $(id).replaceChildren(t);
+  }
+
+  // ---------- the full navtest of the final model ----------
+  if (D.navtest_full) {
+    const N = D.navtest_full, a = N.all, iv = x => "[" + fmt(x[0], 2) + ", " + fmt(x[1], 2) + "]";
+    $("navtest-full").hidden = false;
+    $("nt-lead").textContent = "The final model scores PDMS " + fmt(a.PDMS, 2) + " " + iv(a.ci95_log_cluster) + " on all " + int(a.n) +
+      " navtest tokens (" + int(a.n_logs) + " logs; NAVSIM v1.1, open loop; heading repair on, goal sanitisation off; scored " + N.scored + "). " +
+      "Sub-scores: NC " + fmt(a.NC, 1) + ", DAC " + fmt(a.DAC, 1) + ", EP " + fmt(a.EP, 1) + ", TTC " + fmt(a.TTC, 1) + ", C " + fmt(a.C, 1) + ". " +
+      int(N.zero.n) + " picks (" + (100 * N.zero.share).toFixed(1) + " %) score exactly 0, mostly by leaving the drivable area (" + int(N.zero.by_failing_term.DAC || 0) +
+      "); they are the largest lever. The 475 tokens whose scenario route skips the ego's road score " + fmt(N.off_route.PDMS, 1) + " and cost the mean " + fmt(N.off_cost, 2) + " points.";
+    const nm = { STOP: "standing still", CV: "constant velocity", HUMAN: "the human (log replay)", refcv4b_A1: "refcv4b (earlier programme model)" };
+    table("t-nt-pairs", ["REFe minus", "their PDMS", "difference [95% CI]", "wins / ties / losses"],
+      ["STOP", "CV", "refcv4b_A1", "HUMAN"].map(k => { const p = N.pairs[k];
+        return [nm[k], fmt(N.floors[k], 2), (p.d >= 0 ? "+" : "") + fmt(p.d, 2) + " [" + fmt(p.lo, 2) + ", " + fmt(p.hi, 2) + "]", p.wtl.map(int).join(" / ")]; }));
+    const sl = [["all tokens", a], ["frame-control clean", N.clean], ["on-route", N.on_route], ["off-route (route skips the ego's road)", N.off_route],
+                ...Object.entries(N.by_command).map(([k, v]) => ["command " + k, v])];
+    table("t-nt-slices", ["slice", "tokens", "PDMS [95% CI]", "picks scoring 0"],
+      sl.map(([n, v]) => [n, int(v.n), fmt(v.PDMS, 2) + " " + iv(v.ci95_log_cluster), int(v.n_pdms_zero)]));
   }
 
   // ---------- timeline ----------

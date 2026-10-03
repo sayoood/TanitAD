@@ -487,6 +487,26 @@ for k in range(1, int(b_left) + 1):
 milestones.append({"kind": "final", "epoch": None, "step": total_steps, "at_utc": eta_utc.isoformat()})
 out["milestones"] = milestones
 out["progress"]["steps_per_epoch_mean"] = round(spe_f, 2)
+# ⭐ THE FULL NAVTEST of the final model (12,146 tokens), once its point and readout are banked (2026-10-04)
+_pkg = os.environ.get("REFE_PKG", "D:/Projects/TanitAD/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan")
+_ntp, _ntr = os.path.join(PTS, "navtest_final.json"), os.path.join(_pkg, "raw", "2026-10-04-navtest-final", "navtest_final_readout.json")
+out["navtest_full"] = None
+if os.path.exists(_ntp) and os.path.exists(_ntr):
+    _p, _r = json.load(open(_ntp, encoding="utf-8")), json.load(open(_ntr, encoding="utf-8"))
+    _pairs = (_p.get("floors") or {}).get("pairs", {})
+
+    def _pair(k):           # parse_navtest6: delta_x100 + interval {lo, hi} as fractions + wins / ties / losses
+        x = next((v for kk, v in _pairs.items() if kk.endswith("__minus__" + k)), None) or {}
+        iv = x.get("interval") or {}
+        return {"d": x.get("delta_x100"), "lo": None if iv.get("lo") is None else round(100 * iv["lo"], 2),
+                "hi": None if iv.get("hi") is None else round(100 * iv["hi"], 2),
+                "wtl": [x.get("wins"), x.get("ties"), x.get("losses")]}
+    out["navtest_full"] = {
+        "all": _r["all_12146"], "clean": _r["frame_control_clean_12110"], "on_route": _r["on_route"],
+        "off_route": _r["off_route_gt20m"], "by_command": _r["by_command"], "zero": _r["pdms_zero"],
+        "scorer": _r.get("scorer_on_pick"), "off_cost": _r["off_route_cost_to_full_mean"],
+        "floors": {k: (_p["floors"]["arms"].get(k) or {}).get("PDMS") for k in ("STOP", "CV", "HUMAN", "refcv4b_A1")},
+        "pairs": {k: _pair(k) for k in ("STOP", "CV", "HUMAN", "refcv4b_A1")}, "scored": _p.get("rescored")}
 json.dump(out, open(os.path.join(HERE, "report_data.json"), "w", encoding="utf-8"))
 p = out["progress"]
 print(json.dumps(p, indent=1))
