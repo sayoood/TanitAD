@@ -78,4 +78,23 @@ agreement with the route-distance trigger is F1 0.914 (TP 368, FP 15, FN 54).
 
 ## 5. Token sets (filled from `goal_fix_census.json` before any GPU forward)
 
-(see the census summary appended below)
+| arm | goal changes (census) | of which selection | of which frame-fail | **confirmation** | logs | FRESH-LOG tokens / logs | L / S / R |
+|---|---|---|---|---|---|---|---|
+| pdm_route | 3386 | 316 | 25 | **3045** | 82 | 578 / 37 | 997 / 1493 / 555 |
+| navgoal_straight | 433 | 50 | 0 | **383** | 26 | 244 / 20 | 117 / 236 / 30 |
+| navgoal_arc | 433 | 50 | 0 | **383** | 26 | 244 / 20 | 117 / 236 / 30 |
+| a8_lane | 475 | 53 | 0 | **422** | 32 | 279 / 26 | 112 / 266 / 44 |
+
+- Census (`goal_fix_census.json`, all 12,146 tokens, 0 errors after a retry of one log that hit a transient sqlite disk I/O error):
+  - regression `goal_fix=None` vs the pre-patch goals: n 12146, max |Δ| 0.0;
+  - pdm_route changes the route ids on 3455 tokens and the goal on 3386 (958 by > 1 m).
+    NAVSIM's correction also relinks unlinked route roadblocks (Fix 2) and cuts loops (Fix 3), so it is NOT confined to the 475 off-route tokens.
+    The > 1 m stratum is reported beside the PRIMARY read (not gating).
+- **Correction BEFORE any confirmation output (2026-10-04 ~01:25):**
+  - §3's FRESH-LOG read ('tokens in logs that hold no selection token') is EMPTY by construction, because the 1,123 selection tokens touch all 136 navtest logs.
+  - It is replaced by Amendment 8's own definition: the logs that hold no selection token **the arm changes** (where the defect was never seen during exploration).
+  - Check: for the a8_lane arm this reproduces Amendment 8's registered FRESH-LOG set exactly (279 tokens / 26 logs).
+- **Disclosed:** the OFF arm's AGGREGATE PDMS on the 475 off-route tokens (55.45) was read before registration (navtest readout). No arm's per-token score had been read.
+
+
+REGISTERED 2026-10-04 01:25:16 -- before any Amendment 9 GPU forward exists.

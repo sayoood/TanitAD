@@ -31,12 +31,16 @@ def main():
         else:
             changed = set(G["summary"][arm]["changed_tokens"])
         conf = sorted(changed - sel - fc_bad)
+        # FRESH-LOG (as Amendment 8): the logs where this arm's defect was never SEEN during exploration, i.e. that hold no
+        # selection token the arm changes. ("no selection token at all" is empty: the 1,123 touch all 136 navtest logs.)
+        seen_logs = {E[t]["log_name"] for t in changed & sel}
         pool = sorted(t for t in E if t not in changed and t not in sel and t not in fc_bad)
         ctrl = sorted(random.Random(20260927).sample(pool, 24))
         toks = conf + ctrl
         json.dump({"rule": f"Amendment 9 arm {arm}: confirmation tokens (goal changes under the arm, census) minus the 1,123 "
                            f"selection tokens minus the 36 frame-control failures, + 24 unchanged controls (seed 20260927)",
-                   "tokens": toks, "token_log": {t: E[t]["log_name"] for t in toks}, "confirm": conf, "controls": ctrl},
+                   "tokens": toks, "token_log": {t: E[t]["log_name"] for t in toks}, "confirm": conf, "controls": ctrl,
+                   "seen_logs": sorted(seen_logs)},
                   open(HERE / "a9" / f"tokens_{arm}.json", "w", encoding="utf-8", newline="\n"), indent=0)
         cmd = {}
         for t in conf:
@@ -45,8 +49,8 @@ def main():
         summ["arms"][arm] = {"changed_all": len(changed), "changed_in_selection": len(changed & sel),
                              "changed_frame_fail": len(changed & fc_bad), "confirm": len(conf),
                              "confirm_logs": len({E[t]["log_name"] for t in conf}),
-                             "fresh_log_tokens": sum(E[t]["log_name"] not in sel_logs for t in conf),
-                             "fresh_logs": len({E[t]["log_name"] for t in conf} - sel_logs), "commands_LSRU": cmd}
+                             "fresh_log_tokens": sum(E[t]["log_name"] not in seen_logs for t in conf),
+                             "fresh_logs": len({E[t]["log_name"] for t in conf} - seen_logs), "commands_LSRU": cmd}
     json.dump(summ, open(HERE / "a9" / "token_sets_summary.json", "w", encoding="utf-8", newline="\n"), indent=1)
     print(json.dumps(summ, indent=1))
 

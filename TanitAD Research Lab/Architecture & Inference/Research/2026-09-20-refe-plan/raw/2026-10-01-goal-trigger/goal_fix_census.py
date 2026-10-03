@@ -62,6 +62,14 @@ def main() -> int:
         return p
     planners = {m: bare(m) for m in MODES}
     rows = {}
+    if len(sys.argv) > 1 and sys.argv[1] == "--retry-errors":
+        # re-run ONLY the logs whose rows errored (e.g. a transient sqlite 'disk I/O error' on the external drive), keep the rest
+        rows = json.load(open(out_p, encoding="utf-8"))["rows"]
+        bad_logs = {r["log"] for r in rows.values() if "error" in r}
+        print(f"  retrying {len(bad_logs)} log(s): {sorted(bad_logs)}", flush=True)
+        for t in [t for t, r in rows.items() if r["log"] in bad_logs]:
+            del rows[t]
+        by_log = {k: v for k, v in by_log.items() if k in bad_logs}
     for li, (lg, ts) in enumerate(sorted(by_log.items())):
         try:
             for sc in NS.build_scenarios_for_log(os.path.join(SEAM.TEST_DB_DIR, f"{lg}.db"), ts, history_rows=1, future_rows=80):

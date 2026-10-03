@@ -104,7 +104,8 @@ def main() -> int:
             gates["e_crosscheck_reported"] = gsum.get("crosscheck_pdm_route_vs_metric_cache_centerline")
         ok = all(v["ok"] for k, v in gates.items() if isinstance(v, dict) and "ok" in v)
         reads = {}
-        for name, sel in (("PRIMARY", conf), ("FRESH-LOG", [t for t in conf if tl[t] not in sel_logs])):
+        seen = set(ts["seen_logs"])                    # logs where the arm's defect was seen in exploration (as A8)
+        for name, sel in (("PRIMARY", conf), ("FRESH-LOG", [t for t in conf if tl[t] not in seen])):
             sel = [t for t in sel if t in sc and t in off_sc]
             D = {t: sc[t] - off_sc[t] for t in sel}
             mu, lo, hi = PE.boot(D, tl) if D else (float("nan"),) * 3
