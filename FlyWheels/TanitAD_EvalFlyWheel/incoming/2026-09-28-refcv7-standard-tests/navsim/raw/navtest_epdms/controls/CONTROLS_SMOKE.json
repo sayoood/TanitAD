@@ -1,0 +1,136 @@
+{
+ "schema": "navtest-epdms7/1/controls",
+ "stamp": "VALIDATION ONLY -- smoke subsets, never a result",
+ "utc": "2026-10-04T00:20:21Z",
+ "addendum": {
+  "current": "c6a57112cc06652ea9f212cfa8ea4545c30d633b126c937f47529c037c467047",
+  "recorded": [
+   "52fa812cf64f715a046a82ae562f24369c5e86414c06a78afea49e73773049dd",
+   "a6c81b8ea919d6e179f8583e2a1b264f5f8aed101acfa3753dd75a4e8e9d7348",
+   "c6a57112cc06652ea9f212cfa8ea4545c30d633b126c937f47529c037c467047"
+  ],
+  "last_recorded": "c6a57112cc06652ea9f212cfa8ea4545c30d633b126c937f47529c037c467047",
+  "ok": true
+ },
+ "controls": {
+  "KE2_known_value_W8_STOP_218": {
+   "what": "STOP scored through THIS driver on W8's 218 whole-log tokens against the FULL v2 cache == W8's banked per-token rows",
+   "banked": "raw/navtest_epdms/controls/W8_smoke218_STOP.csv",
+   "banked_sha256": "8e0e776f7e56a2d8299bf10ded5672c357e7a881c73f7839b516081795925325",
+   "banked_headline_literal": 0.579805532200227,
+   "this_driver_headline": 0.579805532200227,
+   "compare": {
+    "n_a": 218,
+    "n_b": 218,
+    "same_token_set": true,
+    "tol": 1e-09,
+    "max_abs": {
+     "score": 0.0,
+     "no_at_fault_collisions": 0.0,
+     "drivable_area_compliance": 0.0,
+     "driving_direction_compliance": 0.0,
+     "traffic_light_compliance": 0.0,
+     "ego_progress": 0.0,
+     "time_to_collision_within_bound": 0.0,
+     "lane_keeping": 0.0,
+     "history_comfort": 0.0,
+     "two_frame_extended_comfort": 0.0
+    },
+    "max_abs_all": 0.0,
+    "identical": true
+   },
+   "pass": true
+  },
+  "KE3_determinism_R7_A1_step5000_43tokens": {
+   "csv_sha256_a": "bb561359d6627a401dd9ab8e19b4886a6b4c83ad4cc3f117ec9c4e50a672c5bf",
+   "csv_sha256_b": "bb561359d6627a401dd9ab8e19b4886a6b4c83ad4cc3f117ec9c4e50a672c5bf",
+   "compare": {
+    "n_a": 43,
+    "n_b": 43,
+    "same_token_set": true,
+    "tol": 1e-09,
+    "max_abs": {
+     "score": 0.0,
+     "no_at_fault_collisions": 0.0,
+     "drivable_area_compliance": 0.0,
+     "driving_direction_compliance": 0.0,
+     "traffic_light_compliance": 0.0,
+     "ego_progress": 0.0,
+     "time_to_collision_within_bound": 0.0,
+     "lane_keeping": 0.0,
+     "history_comfort": 0.0,
+     "two_frame_extended_comfort": 0.0
+    },
+    "max_abs_all": 0.0,
+    "identical": true
+   },
+   "pass": true
+  },
+  "KE5_human_analytic_43tokens": {
+   "n": 43,
+   "exceptions": 0,
+   "pass": true
+  },
+  "KE7_plan_identity_DAC_v2_vs_v1.1": {
+   "R7_A1_step5000": {
+    "n_common": 43,
+    "equal": 43,
+    "v2_gt_v1": 0,
+    "v2_lt_v1": 0,
+    "expected_v2_lt_v1": 0
+   },
+   "HUMAN": {
+    "n_common": 43,
+    "equal": 43,
+    "v2_gt_v1": 0,
+    "v2_lt_v1": 0,
+    "expected_v2_lt_v1": 0
+   },
+   "CV": {
+    "n_common": 43,
+    "equal": 43,
+    "v2_gt_v1": 0,
+    "v2_lt_v1": 0,
+    "expected_v2_lt_v1": 0
+   }
+  }
+ },
+ "measured_cost": {
+  "ke3a/R7_A1": {
+   "n_tokens": 43,
+   "scorer_wall_s": 48.6,
+   "peak_rss_mb": 491.2,
+   "min_system_available_mb": 3884.5,
+   "headline_x100_VALIDATION_ONLY": 89.0375
+  },
+  "ke3b/R7_A1": {
+   "n_tokens": 43,
+   "scorer_wall_s": 28.2,
+   "peak_rss_mb": 494.1,
+   "min_system_available_mb": 3927.4,
+   "headline_x100_VALIDATION_ONLY": 89.0375
+  },
+  "ke5_HUMAN/HUMAN": {
+   "n_tokens": 43,
+   "scorer_wall_s": 26.5,
+   "peak_rss_mb": 485.2,
+   "min_system_available_mb": 4011.1,
+   "headline_x100_VALIDATION_ONLY": 94.9321
+  },
+  "ke5_CV/CV": {
+   "n_tokens": 43,
+   "scorer_wall_s": 27.1,
+   "peak_rss_mb": 455.7,
+   "min_system_available_mb": 4204.3,
+   "headline_x100_VALIDATION_ONLY": 34.32
+  },
+  "ke2/STOP": {
+   "n_tokens": 218,
+   "scorer_wall_s": 74.4,
+   "peak_rss_mb": 518.4,
+   "min_system_available_mb": 3883.9,
+   "headline_x100_VALIDATION_ONLY": 57.9806
+  }
+ },
+ "all_pass": true
+}
