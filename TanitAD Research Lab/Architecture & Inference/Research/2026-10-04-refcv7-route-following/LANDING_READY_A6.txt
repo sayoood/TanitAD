@@ -1,0 +1,43 @@
+LANDING_READY_A6 -- SPEC_ADDENDUM_A6 (+ A7): deployable time-localised nav on a dense capture (Architecture & Inference, 2026-10-04)
+Hand-over: NOTHING staged or committed by this agent (no git add / commit / push). The Master Mind lands these paths, BY PATH.
+Prefix every path below with:  TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv7-route-following/
+STATE: A6 STOPPED at G1 (stage 1, history kept in RESULT_A6.md Part B); A7's G1' PASSED; the dense capture and the scoring RAN. T3a CLEARS, T3a-c FAILS.
+
+## A6-A7-NAV-ANN  (stage 1 files updated, stage 2 files added)
+RESULT_A6.md                          ab21a3d2f6a9e73aa74907104e71732f  Part A = the run after A7 (controls, capture, bar, four families, post-hoc, limits); Part B = the stop at G1, unchanged. RESULT.md / RESULT_A5.md NOT edited.
+code/announced_a6.py                  b937f2ad5012f4ba73a2d2445890fee4  announced() CALLS the builder's nav_command()/is_turn(); stages g1 | g1prime | table. PYTHONPATH="D:/Projects/TanitAD/stack" (never combine with the ev7 taniteval process); refuses to run if a module is imported from G:
+code/test_announced_a6.py             9dda25605eedc3bd4f4f1f7944eb0bca  10 literal tests (2 eval records with turn_suppression, a 'curve, not a turn' record, a curve-first record, builder boundaries, suppression mutation, G1 numbers pinned)
+code/a6_g1_consequences.py            d94b8747e5fce027e22a4479f3eeeff2  stage-1 WINDOW COUNTS on A5's grid (no dADE)
+code/nav_ann_a6.py                    ea8b4beab1bf2d3ae191042fbff127ef  A6 scoring (T3a, T3, T2a, T3a-c, B1t, ORACLE; controls first; reading rule coded before scoring). PYTHONPATH="C:/Users/Admin/ev7/stack;C:/Users/Admin/ev7/taniteval"; ~2 min; deterministic
+code/test_nav_ann_a6.py               0ce80eabdd24a05af8a1f1073709683b  5 literal tests (announced-only skipping, donor series, reading-rule truth table, subset view)
+code/make_tables_a6.py                853edd2a15fd2e8f6fa0119b27604c94  tables from raw/a6_dense_score.json -> raw/TABLES_a6_generated.md
+code/run_route_a6.py                  e215d0f8fae17c51c46ce0e05e1a03cc  the capture: run_route.py (md5 3e36a379) with ONLY the window-set section changed (split a6_dense) + two progress prints; == the Thor working copy
+raw/a7_g1prime.json                   c4b9cc2d08c945fb278d3491475e9f98  G1' : 4,719/4,719 ; 1,799/1,799 ; suppression-named 68/68 ; PASS
+raw/a6_g1.json                        074776fa71af3363f39769f5f1408573  stage 1: the registered G1 (97.01 %, FAIL) with its decomposition
+raw/a6_announced_table.json           1f953867a481d1e1d0bfc0931e79874c  per-entry announced flags for the 147 eval records (sha12 keys) + census
+raw/a6_g1_consequences.json           ff9ab9d4e0d7631b5bb3feeea9b56366  stage-1 window counts
+raw/a6_window_list.json               dab103869a503e463f2440f812cb7a5f  the 4,634 dense windows (sha12, t, turn|rest), class totals, selection seed (140 KB)
+raw/a6_window_list.gt.npz             45abb94f515088b9d8e9db49b34a7928  selection-time GT slots + validity of those windows (269 KB, sha12-free arrays) -- needed to re-run the selection control
+raw/run_a6_s0.json                    1681681a5e27bcb8d7dbec89273edcc5  per-pass record (digest, gates, identity, compute) -- sampler seed 0
+raw/run_a6_s1.json                    ebf337b6fb60ffdd5f6579bfa5c2ec6c  per-pass record -- sampler seed 1
+raw/a6_dense_score.json               5198e423a3eaead1f1537254e774f04d  every arm, both draws, subset, four families, controls, B1t fraction, reading rule, POSTHOC (420 KB)
+raw/TABLES_a6_generated.md            5ce88d9bc6fbf05b7b4f7a2889f9e5ed  the tables RESULT_A6.md quotes
+SPEC_ADDENDUM_A7.md                   a7cb645299c93382ec8155b68f8e45b5  the Master Mind's G1' pre-registration (sha256 8e846a84...), NOT authored or changed by this agent
+SPEC_ADDENDUM_A6.md                   a0a13bf1cc8c70491fdfb0a8668f4217  likewise (sha256 b4099578...)
+LANDING_READY_A6.txt                  (this file)
+
+raw/MD5SUMS.txt and raw/SPEC_SHA256.txt were NOT edited; the register (GOALS_AND_CLAIMS / RETRACTION_LOG) was NOT touched.
+Builder read (not copied): D:/Projects/TanitAD/stack/scripts/s2_geom_emit_v7.py, md5 9a537ee210d38303d73ef35f0aac0718.
+Tests: 29 passed (test_nav_ann_a6 5 + test_nav_tl_a5 17 + test_route_metrics 7) in the plain venv; 10/10 test_announced_a6 with PYTHONPATH=D:/Projects/TanitAD/stack.
+
+## NOT-for-git (binary evidence, 285 MB, ONE copy on D: + the Thor originals)
+D:/refcv7_route_bin/2026-10-04/a6/  a6_s0.npz 2dfe1ffda3b4f835058e948bd7a7c4a8 (88.5 MB) ; a6_s0.packs.pkl 66e0bcc35091a2ce078ed81dc7a5917f (56.2 MB) ;
+                                    a6_s1.npz 19d770b2ffbff1902b00802651e76618 (88.5 MB) ; a6_s1.packs.pkl 66e0bcc35091a2ce078ed81dc7a5917f (56.2 MB) ;
+                                    a6_s0.json / a6_s1.json (== raw/run_a6_*.json) ; a6_window_list.* ; MD5SUMS.txt ; thor_md5_s0.txt / thor_md5_s1.txt (md5 on Thor == md5 on D:, 6/6).
+Contents carry sha12 only (UUID regex over the text deliverables = 0 hits).
+Scratch (safe to delete): the session scratchpad logs / patch scripts / a6_debug.json (a MECHANICS-DEBUG run with seed 0 standing in for the replicate; discarded, never quoted).
+
+## Thor-only state
+Originals + code copy + logs: /home/nvidia/refcv7_post/route_a6/{out,logs,code,status}/  (277 MB in total; code == run_route_a6.py e215d0f8, route_metrics.py, chain_a6.sh).
+The capture job (chain_a6.sh, one setsid nohup job, GPU lock held 10:48:46 -> 11:57:46 UTC) has EXITED; the lock was released at exit. At ~11:58 UTC `ps` on Thor showed no python / flock / chain process of this agent
+(the processes then alive belong to other streams: a ddv2_rl census and R1's r1_capture.py, which took the lock). The Thor PI-cleanup refuses while ANY python of user nvidia is alive; none is mine.

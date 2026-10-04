@@ -1,0 +1,54 @@
+WP-RL -- DiffusionDriveV2 RL post-training of refcv7-r101-s0 (step 50,400)
+LANDING_READY for the Master Mind (single committer). Nothing here is git-added by the WP-RL agent.
+Updated: 2026-10-04 ~14:15Z (end of stage 2: port + controls + gate inputs; NO RL training has run;
+stage 3 waits for the launch-gate PASS token).
+
+PACKAGE  TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv7-ddv2-rl-posttrain/
+  SPEC_RL.md              pre-registration v1 + A-0 (DAC rule) + A-0 RESULT + A-1 (cost) + A-1 measured;
+                          every version's sha256 + UTC time in raw/SPEC_SHA256.txt (6 entries)
+  RESULT_STAGE2.md        stage-2 report (port, deviations, binding parity, reward known values, gate smoke, cost)
+  GATE_INPUTS.md          what the launch gate must check for the RL arms, evidence per check, argv sha256s
+  REGISTER_ROWS.md        rows for GOALS_AND_CLAIMS (H-WPRL-1/2/3 pre-registered; D-WPRL-DAC-A0,
+                          D-WPRL-BIND-1, D-WPRL-CLAMP-RATE, D-WPRL-LOCK-POLL measured)
+  LANDING_READY_WPRL.txt  this file
+  raw/                    diagnose_train.json, diag_eval_cpu.json, census_eval40.json, census_train300.json,
+                          smoke/ (smoke_report.json + per-run run.json / metrics.jsonl / check.json /
+                          identity.json / segments.jsonl), dry_yield/ (lock-yield test), argv/ (4 canonical
+                          arm argv + ARGV_AUDIT.json), SPEC_SHA256.txt
+                          -- sha12 ids only; scanned: 0 UUID-shaped strings
+  code/stack/...          the 3 NEW repo files below (byte-identical to the Thor tree)
+  code/thor/*             Thor scripts: wprl_env.sh, wprl_windows.sh, wprl_smoke.sh, wprl_smoke2.sh,
+                          wprl_dry_train.sh, wprl_yield_test.sh, wprl_t1_cpu.sh, wprl_arm.sh, wprl_queue.sh,
+                          wprl_t1.sh, wprl_argv.py, wprl_check.py, wprl_smoke_report.py, wprl_t1_panel.py
+
+NEW REPO FILES (land at these stack paths; none exists at 50efa52; NO existing file is modified):
+  code/stack/tanitad/rl/ddv2_refcv7.py   -> stack/tanitad/rl/ddv2_refcv7.py    md5 701638df39c958d5d1b8580b4c0aef14
+  code/stack/scripts/ddv2_rl_refcv7.py   -> stack/scripts/ddv2_rl_refcv7.py    md5 b46d4014128a608b3abaa56c720dc2c1
+  code/stack/tests/test_ddv2_refcv7.py   -> stack/tests/test_ddv2_refcv7.py    md5 b049a992bf5c90aacc3b5e232eb013d7
+  tests: 36 passed (dev box CPU, Thor CPU). The existing test_ddv2_rl / _il / _refc_chain / pdm_proxy suites
+  pass unchanged; on Thor 3 pdm_proxy savgol tests fail for want of scipy (pinned Thor ENV failures).
+  All three files are ASCII-only (cp1252-safe on the dev box).
+
+NOT TOUCHED: stack/scripts/refc_v3_train.py, stack/tanitad/refs/*, stack/tanitad/eval/*,
+  stack/tanitad/rl/{ddv2_rl,ddv2_refc_chain,ddv2_il,pdm_proxy}.py.
+
+WHERE THINGS LIVE ON THOR (not landable):
+  /home/nvidia/refcv7_post/rl/tree           COPY of /home/nvidia/refcv7_run/fec3a0dccf + the 3 files + the
+                                             banked B1 eval lead block (md5 33a48e15...) at its repo path
+  /home/nvidia/refcv7_post/rl/ckpt_50400.pt  model-only cold start, md5 b418d0fc4a92a6848c246a6a7c50207b
+  /home/nvidia/refcv7_post/rl/out/windows_{train,eval}.json   (episode index + t; digests 2e53c5d8... / 3b90928f...)
+  /home/nvidia/refcv7_post/rl/gate/ARGV_*.json                 the 4 arm argv (the token must list their sha256)
+  /home/nvidia/refcv7_post/rl/{smoke,census,dry,battery_cpu}/  stage-2 artifacts (copies banked in raw/)
+  /home/nvidia/refcv7_post/rl/battery_code, battery_win/       the refcv7 battery code + S2 windows (RAW clip ids:
+                                                               Thor only, never banked)
+  QUEUED (started by wprl_smoke2.sh, will run when the shared lock frees): two T0 heldout reads at 1-in-40 eval
+  windows (cold start vs the identity export) -> smoke/heldout_{base,identity}_s0_stride40.json; each holds the
+  GPU ~4 min. Stop them by explicit PID if unwanted (ps ... | grep "ddv2_rl_refcv7.py heldout").
+
+SPAWNED (out of scope, chip for the PI/MM): fix the unreachable half of Ctx.__init__ in
+  stack/scripts/ddv2_rl_refcv5.py (D9's map_for was inserted mid-constructor at the tip) -- task_2e84aa8d.
+
+THOR DISK (2026-10-04 14:20Z): 38 GB free (96 % used by all streams). WP-RL holds 1.2 GB: the cold start 0.4,
+the tree 0.4, and smoke/identity/export.pt 0.4 (kept for the queued forward-identity read). Every other
+smoke/dry checkpoint was removed after its results were banked. Stage 3 adds <= 0.2 GB per arm (one rolling
+ckpt_latest.pt) + 0.4 GB per export.

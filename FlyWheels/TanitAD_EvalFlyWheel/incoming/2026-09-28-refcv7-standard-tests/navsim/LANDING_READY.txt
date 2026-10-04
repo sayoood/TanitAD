@@ -1,0 +1,1132 @@
+## 2026-09-28 REFCV7-NAVSIM
+# EvalFlyWheel NavSim stream: the refcv7 NavSim suite (SPEC + amendment A1, code, tests,
+# harness known values, step-1,500 VALIDATION ONLY run, the armed milestone waiter).
+# Every refcv7 number in this package below step 5,000 is VALIDATION ONLY (SPEC §6).
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/COMMS.md
+#   blob 27c73b69229e8b4769f05679862d14e2538415c4  8244 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/PLAN.md
+#   blob dfee7b11ef98afaf2e82177aa876d89ef5c4eb6b  1615 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/RESULT.md
+#   blob 80b28b87991ac6e21e5ce2b9aaaf6737dbcbf97c  13556 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/SPEC.md
+#   blob 7b871b4fb4aff1796905f31b6d8feb81c34f7554  21416 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/code/bars7.py
+#   blob 01173c1acf7aa723aeb919321e1a37d0c430ee15  8042 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/code/boot7.py
+#   blob b415d5e1ffb80346ffc65f91e9455bb39aa0f465  2973 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/code/check_harness_repro7.py
+#   blob eddaef7fb76cdfb9ae8ac25c34df11be12629f59  7768 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/code/check_kh_navtest7.py
+#   blob d43195136b77f6e8911b845c67aa21189c9639e2  4204 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/code/decompose7.py
+#   blob aa0ebccc1dd63d8be950f8d6ff83da283611b238  12762 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/code/families7.py
+#   blob 17dad6ff96383860ce9d838da67197bcf8a75120  5493 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/code/gpu_lock.py
+#   blob a13fcb704d32fbd67e5acc4bdd06f885244e8ba3  6046 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/code/harness7.py
+#   blob b4bfa2b7e696f1bc0b632a01c915e1e160f457f4  7124 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/code/import_floors7.py
+#   blob 05373a36f6453d67c7d54df5be90c956c874843d  6863 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/code/kp7.py
+#   blob cd47c75b11eb19cfc0de7acbb62f1241813153a5  3409 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/code/landing7.py
+#   blob d8c653d51b435d7ccbebbfb5000cd2cb72eec3fc  3736 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/code/lock_run.py
+#   blob 524c1ae33772782d1c5658c76f49bd26794185d0  2122 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/code/milestone_waiter7.py
+#   blob 1ed7d8e4416e26a6e599d50f6a453f2f3f286653  8965 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/code/model_stamp7.py
+#   blob 76be7f90fa9c976f178d3a05261647e29e91f9e8  2121 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/code/parse7.py
+#   blob 9a3468d05dea2c1379a736aca82307f28e63159d  16400 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/code/parse_navtest7.py
+#   blob fb1a66beabec54a7283da1a94e4333147da74041  11207 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/code/plan_deltas7.py
+#   blob c1b9c523572d7910a21f856baf76be261f9d518e  4770 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/code/port_from_refcv6.py
+#   blob 37161e656537c47f2d82a565d6f34452cadd5137  6718 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/code/refcv7_bridge.py
+#   blob 5aa8dbeb2c66cb8b835ecdb2c450618533d1746e  25771 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/code/run_bridge7.py
+#   blob e64ee4bfae03be2032aca14f691b9f5c043afb4b  21640 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/code/run_harness7.sh
+#   blob 08aac01ee8fc549a7994307191b1b4fc534ce063  3274 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/code/run_navsim_refcv7.py
+#   blob 49481040ae59792344018317430e01b7e4e7c00c  22547 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/code/score_arm7.py
+#   blob 3c04b482544c2d69841b47f720a2f1c90397d45d  12531 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/code/score_navtest7.py
+#   blob 3f27bc17b3039cf7b19df27e7a09abbe21afb693  3430 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/code/score_queue7.sh
+#   blob 20de03ab5b98102f671d0452917108bc69a01501  3031 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/code/step_compare7.py
+#   blob ad7edd6f685e66dad183225fafc297c0dd1c05c5  10065 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/HARNESS_REPRO.json
+#   blob 367b48e007c6a8d5f043a1da5d7fc27bbd76213f  5510 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/PORT_MANIFEST.json
+#   blob fbbd66ec46a104fd7a0fe5dd2a3873e21af62b70  7152 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/SPEC_PREREG_HASH.txt
+#   blob 3cf5aad2be03c7e8b83fce0ee89d5d664e19bb60  606 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/harness7_navtest.driver.txt
+#   blob 222317b257a9a9b95f6f2261bc09fb12d1f38c08  739 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/harness7_warmup.driver.txt
+#   blob df5055561aae757e0f936a2ce09f938728864bd3  3255 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/harness_navhard.log
+#   blob 5e2c64525dab36614bd948768c9a91205a9adc34  35 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/harness_navtest.driver.txt
+#   blob ef2b733761ff2bb060778765aa791719f377d697  3280 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/harness_warmup_navtest.log
+#   blob da745d26565e6fefd7985ebcc0a33e3f3f0cd3ac  42 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/tests_model_seam7_cpu.log
+#   blob fd0972828e1c10e6a8768640278b65aec47a7a13  3868 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/tests_model_seam7_cpu_KF.log
+#   blob 22c7391ed921165d13544c1f18d78a6d6ba80546  1582 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/tests_model_seam7_cpu_final.log
+#   blob d7f3962fd2dd30c10259d70408ac9b609b2d7055  3163 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/controls/KD_exact_dedup_cpu.json
+#   blob fcde285cd9076753b2d61d9c40cf9f7fab310c15  134 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/controls/KD_exact_dedup_cuda.json
+#   blob d89b429bf070b0eb0e643d52447a7422ab1a9b83  153 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/controls/KF_filter_reach_cpu.json
+#   blob 678beaa735ed4173d258a95abcd4424143c6d194  827 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/controls/KH_ECHO_warmup.json
+#   blob 6fcf6d1c2ce69992ba212d5435860096d9839879  3007 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/controls/KH_navtest_STOP.json
+#   blob 0959d5baf34ab1d99880718400d786afedc7d07f  896 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/controls/KT7_trainer_feed.json
+#   blob 07da39439ff3c27f2c1ca9530cd31eacd4ffa661  838 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/floors/warmup_two_stage/FLOORS_PROVENANCE.json
+#   blob a3d37608d90736ebbba9b285cb1ab0806a22d22d  1451 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/floors/warmup_two_stage/score_CV_official.csv
+#   blob 422c894086fbc2919e1f58e38dd2b9def9445853  21363 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/floors/warmup_two_stage/score_ECHO_ha0_ext.csv
+#   blob 3482ddb0523ad6d79d7ac436f0f8a9ef4ac996e1  21870 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/floors/warmup_two_stage/score_STOP_zero.csv
+#   blob d0854bf436606b794f01f060c3ac30474e209426  23234 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/floors/warmup_two_stage/score_CV_official_wrapper/CV_official_final_scores_frame.csv
+#   blob d4c680fd9e0ea3325e4fd83311623959dece83aa  53646 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/floors/warmup_two_stage/score_ECHO_ha0_ext_wrapper/ECHO_ha0_ext_final_scores_frame.csv
+#   blob 331517050e5e5460dba7d04ed62e92f81044520e  54629 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/floors/warmup_two_stage/score_STOP_zero_wrapper/STOP_zero_final_scores_frame.csv
+#   blob ffed7a339f3aeb9d681d40131234bc63608f21bf  56695 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/harness_navtest/r7kh_STOP/r7kh_STOP.counts.json
+#   blob c921598c281828d0566201ee8c9237c437af3441  1935 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/harness_navtest/r7kh_STOP/r7kh_STOP.csv
+#   blob cc6629edbc88dbfdaa3daa72dfbb86fefaefa379  992715 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/harness_navtest/r7kh_STOP/r7kh_STOP_hooks.json
+#   blob 7eeb71c4947420375d7db2d5f3bccc32157db98a  7588623 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/harness_navtest/r7kh_STOP/r7kh_STOP_manifest.json
+#   blob a5a1dda0fafbbb27e0c8e22dcf1f9db5fcf15c29  9428 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/harness_navtest/r7kh_STOP/r7kh_STOP_rows.jsonl
+#   blob 76650c449e71cb4b49695e94f8564167864a9f59  5730244 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/harness_repro/CV_official.driver.txt
+#   blob 69fe84d34e2aaba420b4ac77cb82b398fd3787d1  188 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/harness_repro/ECHO_ha0_ext.driver.txt
+#   blob 933fb61f603f5b5bb2f61ee3cf112a7289c11c74  235 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/harness_repro/STOP_zero.driver.txt
+#   blob 82ea9e6564c8e25d07c30d3f93e60364634bfedc  232 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/harness_repro/score_CV_official.counts.json
+#   blob bb8c2029dadda30234a1c21ff68fb792e3c44fed  2480 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/harness_repro/score_CV_official.csv
+#   blob 422c894086fbc2919e1f58e38dd2b9def9445853  21363 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/harness_repro/score_ECHO_ha0_ext.calls.jsonl
+#   blob 9f0250449344d6ff86ff87c15aad2764b844b1f7  19560 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/harness_repro/score_ECHO_ha0_ext.counts.json
+#   blob 2e4c5fbf4981baec085b176ad073da120496ad6a  3106 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/harness_repro/score_ECHO_ha0_ext.csv
+#   blob 3482ddb0523ad6d79d7ac436f0f8a9ef4ac996e1  21870 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/harness_repro/score_STOP_zero.calls.jsonl
+#   blob bf305e6f5a2e7590947817d08281dd19311b1ace  19558 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/harness_repro/score_STOP_zero.counts.json
+#   blob e4f5fb5d0d911661fc14cc07670a60f473d585b0  3064 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/harness_repro/score_STOP_zero.csv
+#   blob d0854bf436606b794f01f060c3ac30474e209426  23234 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/harness_repro/score_queue.log
+#   blob 1e1e9b6c4d6236b27bb14d7864befe1343516e43  386 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/harness_repro/score_CV_official_wrapper/CV_official_final_scores_frame.csv
+#   blob d4c680fd9e0ea3325e4fd83311623959dece83aa  53646 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/harness_repro/score_CV_official_wrapper/CV_official_final_scores_frame_PRE_AGGREGATION.csv
+#   blob 3730a3ca6c0456c4fdd0824d4169a01815fcefce  59281 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/harness_repro/score_CV_official_wrapper/CV_official_manifest.json
+#   blob 2401d017470d9040166377876d75de21cda5bae5  4968 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/harness_repro/score_ECHO_ha0_ext_wrapper/ECHO_ha0_ext_final_scores_frame.csv
+#   blob 331517050e5e5460dba7d04ed62e92f81044520e  54629 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/harness_repro/score_ECHO_ha0_ext_wrapper/ECHO_ha0_ext_final_scores_frame_PRE_AGGREGATION.csv
+#   blob 3923286a6bc397b013e3e129a2eeb470fe34cfc3  60354 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/harness_repro/score_ECHO_ha0_ext_wrapper/ECHO_ha0_ext_manifest.json
+#   blob a4c3933af017e3a177f49a1c7c1f0b68acb9b084  5720 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/harness_repro/score_STOP_zero_wrapper/STOP_zero_final_scores_frame.csv
+#   blob ffed7a339f3aeb9d681d40131234bc63608f21bf  56695 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/harness_repro/score_STOP_zero_wrapper/STOP_zero_final_scores_frame_PRE_AGGREGATION.csv
+#   blob d59e3042bd4b7b8e07a54fe8e99f70a1c9df7c63  63153 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/harness_repro/score_STOP_zero_wrapper/STOP_zero_manifest.json
+#   blob 0bb3d63074a22957aa5b192bfe23a8d812473b12  5620 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/inputs/speed_limits_navtest.PROVENANCE.json
+#   blob 4f031ab39e3fb7813f2a4774c2e5657b367311e2  426 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/KP_step1500_warmup_plans.json
+#   blob 897522bc8198ada3649c724b0d2b08e4950c7936  593 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/KP_step1500_warmup_plans_s1.json
+#   blob 699ef8ccce0e1f91b491bbfe91130c5af692df5b  595 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/BARS.json
+#   blob 01feffe5c6ebf220c905cf1f092b6589f7359e55  1315 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/MILESTONE_SUMMARY.json
+#   blob a941d904e95183d138cb9ead3156dabd974a8de0  1225 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/bars.log
+#   blob d7aff021d00f8520034f62780133adced890d8ed  1621 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/bridge_warmup.log
+#   blob 921e77546d765a9ed7472fe8450a6b7d963a7d53  6045 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/cuda_controls_warmup.log
+#   blob 84f02bdd65832c6a9a950fd4d8d0b56602d09778  3889 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/decompose_warmup.log
+#   blob 2560cc4ffd8308d1f28d7f2a722aacc732521717  1406 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/decomposition_warmup.json
+#   blob 97cb7354b8f0e85189c5c5c61f3706d4a3693a9e  29496 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/parse_warmup.log
+#   blob 95bc4f2023ab0d68ab04f1a590989002885e72ea  2832 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/plan_deltas_warmup.json
+#   blob 443daffa60209c90f819271b99086a86e6af01c7  2419 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/plan_deltas_warmup.log
+#   blob 754fbce2b8581315fb28a7363fa5476dab7aa0ed  1009 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/runner.log
+#   blob e2dc2d245a6ddb8ecb92f26c71b4fe83a4332a78  2775 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/summary_warmup.json
+#   blob a8eaf0b77c9e6d0bb2500480233d849c61fba02c  26642 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/_superseded_pre_A1/SUPERSEDED.txt
+#   blob 90da8f21508a0df04271cadce5c2bdf6cf857dba  284 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/_superseded_pre_A1/bridge_warmup.log
+#   blob 52900b211b33c620d5be575793b41d74e854a0c5  4505 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/_superseded_pre_A1/bridge_warmup.log.lockrun.json
+#   blob 0fbde8d88b8c28d5fb9025f2c7707f840e31920b  1646 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/_superseded_pre_A1/bridge_warmup/rows_PRIOR_ha0p.jsonl
+#   blob 226c02609abbc492f271d331a80777c98d729941  217015 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/_superseded_pre_A1/bridge_warmup/rows_R7_A1.jsonl
+#   blob 1f610ce7e3a02c254f859899533b5c1eb9589d8b  957284 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/_superseded_pre_A1/bridge_warmup/rows_R7_A1NT.jsonl
+#   blob 4cec498296bc527832691b375a5a6879b5f59083  960476 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/_superseded_pre_A1/bridge_warmup/rows_R7_A1_s1.jsonl
+#   blob 0c88666d0555d569528dd6338aed15d885567c3e  959667 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/_superseded_pre_A1/bridge_warmup/rows_R7_BLIND.jsonl
+#   blob ff48085c19624a47122f758e149b823dec0fd95e  1036851 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/_superseded_pre_A1/bridge_warmup/rows_R7_FILTOFF.jsonl
+#   blob 8eb6ee459c13930155f133ac655c49c089d7d4c8  959256 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/_superseded_pre_A1/bridge_warmup/rows_R7_NAVOFF.jsonl
+#   blob adb6f71f91562ca35ba038c9c8e5dc54c0caaad8  946535 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/_superseded_pre_A1/bridge_warmup/rows_R7_VMAXOFF.jsonl
+#   blob d22b5056f7f44e77ba90805817e027e5480b6baa  952957 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/_superseded_pre_A1/bridge_warmup/seam_PRIOR_ha0p.manifest.json
+#   blob ca87501e459c74ead73c4f915b78d74fe30caf68  8576 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/_superseded_pre_A1/bridge_warmup/seam_PRIOR_ha0p.npz
+#   blob 215867dc407c511f7f6c59fdb46a784b0e66005c  96828 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/_superseded_pre_A1/bridge_warmup/seam_R7_A1.manifest.json
+#   blob d14d808060c45a582f58a7b4f7e992f9d7329c54  9294 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/_superseded_pre_A1/bridge_warmup/seam_R7_A1.npz
+#   blob 3b6031a8342d38de5ecdc9405ea8172c32a062bd  96808 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/_superseded_pre_A1/bridge_warmup/seam_R7_A1NT.manifest.json
+#   blob 82cc548aa1e2a5bd2655d99f06502bb905cfbeeb  9299 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/_superseded_pre_A1/bridge_warmup/seam_R7_A1NT.npz
+#   blob a5beb53b43fb32b0a6dd6670e8ce2e94067113b3  96816 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/_superseded_pre_A1/bridge_warmup/seam_R7_A1_s1.manifest.json
+#   blob 6a64603f0150237712c1c90c7c1338d9ac4c2f8e  9294 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/_superseded_pre_A1/bridge_warmup/seam_R7_A1_s1.npz
+#   blob ab21743ab7d3c394d7d3a3b47f508c84cc5c6292  96820 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/_superseded_pre_A1/bridge_warmup/seam_R7_BLIND.manifest.json
+#   blob 442da4b164d6d9f5c39301765cb69ba4e6ce17c5  9309 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/_superseded_pre_A1/bridge_warmup/seam_R7_BLIND.npz
+#   blob ec3d48011b80570995718bccbb8396562030426b  96820 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/_superseded_pre_A1/bridge_warmup/seam_R7_FILTOFF.manifest.json
+#   blob 41c8551d76e07c519fa4c85e64bdcad7e9c2ea47  9311 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/_superseded_pre_A1/bridge_warmup/seam_R7_FILTOFF.npz
+#   blob 3309f00e7c98205c9526fe3e2be701e4dcd9c495  96828 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/_superseded_pre_A1/bridge_warmup/seam_R7_FILTOFF_d.manifest.json
+#   blob 53e0083262bd81907ee03a2c8dbc9b60f15eef69  8545 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/_superseded_pre_A1/bridge_warmup/seam_R7_FILTOFF_d.npz
+#   blob e07e1cba484b913b924180d9fb2fd13f5325477a  94676 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/_superseded_pre_A1/bridge_warmup/seam_R7_NAVOFF.manifest.json
+#   blob 2ad5f0711adbd955a7def0330aea6da6565df994  9300 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/_superseded_pre_A1/bridge_warmup/seam_R7_NAVOFF.npz
+#   blob 88d84cf147ada156484b7604703ba60f1a9ab87c  96824 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/_superseded_pre_A1/bridge_warmup/seam_R7_VMAXOFF.manifest.json
+#   blob 4cd5032d969565edb104d4af15d10ff2a999e687  9310 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/_superseded_pre_A1/bridge_warmup/seam_R7_VMAXOFF.npz
+#   blob 143e8f9662377248bb59a1b161d6c670b38b438c  96828 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/bridge_warmup/rows_PRIOR_ha0p.jsonl
+#   blob 226c02609abbc492f271d331a80777c98d729941  217015 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/bridge_warmup/rows_R7_A1.jsonl
+#   blob 166fb12251759163d24538314974ec4217010930  983193 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/bridge_warmup/rows_R7_A1NT.jsonl
+#   blob 4774441d6964d3e1a6d80fba1a8e78e46c1090e3  984363 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/bridge_warmup/rows_R7_A1_s1.jsonl
+#   blob 3b0eb23c195c67260b98180293eb39de31b2f0dd  985067 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/bridge_warmup/rows_R7_BLIND.jsonl
+#   blob cd244d05ba7cc686d962ef8f71b8611232a9c8ec  1061326 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/bridge_warmup/rows_R7_FILTOFF.jsonl
+#   blob 04d630acf1984145c95939a92331a6f1ac4e5a28  800962 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/bridge_warmup/rows_R7_NAVOFF.jsonl
+#   blob 14445de2295483a5521ca0275c120311bb80aed9  971392 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/bridge_warmup/rows_R7_VMAXOFF.jsonl
+#   blob 2138a43df543bff94af0862e425339164723d38f  977275 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/bridge_warmup/seam_PRIOR_ha0p.manifest.json
+#   blob 653c87d5d6538f01e873084f67b1efc14d47dacd  8593 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/bridge_warmup/seam_PRIOR_ha0p.npz
+#   blob 215867dc407c511f7f6c59fdb46a784b0e66005c  96828 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/bridge_warmup/seam_R7_A1.manifest.json
+#   blob ea01130e4248f5b1b3ee414f86e3085faab34c74  9200 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/bridge_warmup/seam_R7_A1.npz
+#   blob e8ee5cf62e20e5f3aefd3b193865753bd6bd6eb8  96808 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/bridge_warmup/seam_R7_A1NT.manifest.json
+#   blob b4645a052575d03b34c8a3806325a2885135591e  9205 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/bridge_warmup/seam_R7_A1NT.npz
+#   blob 94cf920c335399abf0c70af7e67420ea2be0b8ea  96816 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/bridge_warmup/seam_R7_A1_s1.manifest.json
+#   blob a50be17d6dd9fd0dfbf568b9eceb0f26213ca1d8  9200 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/bridge_warmup/seam_R7_A1_s1.npz
+#   blob 4c6a0e1b679ee83a96664985f1961994793db6eb  96820 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/bridge_warmup/seam_R7_BLIND.manifest.json
+#   blob e3855e0a884c011a3ea9efd2a5f93c6730936bf6  9215 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/bridge_warmup/seam_R7_BLIND.npz
+#   blob cb0e1dca282d9e6fa96eb44234a418e086d95d2d  96820 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/bridge_warmup/seam_R7_CEILDECL_d.manifest.json
+#   blob 4929a3e72566958a4b6e8ba511c683ba7b0b0827  8672 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/bridge_warmup/seam_R7_CEILDECL_d.npz
+#   blob c6a703b15d62684ffa816c3384de18650cb51efd  96840 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/bridge_warmup/seam_R7_FILTOFF.manifest.json
+#   blob 6d50809d9369837062164644ab69ae34274e6cb0  9217 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/bridge_warmup/seam_R7_FILTOFF.npz
+#   blob 5144863c6a50ef6a60518fd769ee71d933130825  96828 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/bridge_warmup/seam_R7_NAVOFF.manifest.json
+#   blob 9f1c1d83e48a60344296e18c4d03ed6aa32d4e10  9206 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/bridge_warmup/seam_R7_NAVOFF.npz
+#   blob f6aa97c7ea24fc1463ed4000a0f236709518d619  96824 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/bridge_warmup/seam_R7_VMAXOFF.manifest.json
+#   blob 992c1ce864230f7ff80230c4a09eee0f2e085e63  9216 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/bridge_warmup/seam_R7_VMAXOFF.npz
+#   blob f28b86930cdbbba9c6d9595dd3e2bb23c3e24a0a  96828 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/PRIOR_ha0p.driver.txt
+#   blob df8b4abd89edd361299293d3a14eeb2ce7b6dda0  778 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/R7_A1.driver.txt
+#   blob 89c67d0863712b9b3b19b6e50af401f0fc756611  764 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/R7_A1NT.driver.txt
+#   blob 92bae4450e7c29d73bbc2236e6d952321cef4f7a  770 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/R7_A1_s1.driver.txt
+#   blob 1d118b3006b6a51dfc9215f35e206f18ac2101a4  773 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/R7_BLIND.driver.txt
+#   blob d0d1b7f17769cc4e7c5672dd57d4752df8793ff8  772 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/R7_CEILDECL_d.driver.txt
+#   blob 7c5dadb597ab8cc3f9a835ae567fa5a693710454  788 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/R7_FILTOFF.driver.txt
+#   blob 59666dfad1ce5ab18ce9982e80f1ee9ea28c40f0  779 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/R7_NAVOFF.driver.txt
+#   blob 448c2acc9e666c54919b84c1d0df94bf6acf2b4f  776 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/R7_VMAXOFF.driver.txt
+#   blob 905c852ca634d2f39301809b86103ea29a24e319  779 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_PRIOR_ha0p.calls.jsonl
+#   blob cfbe584d70a632ab6539f84581e6902a1387562b  19594 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_PRIOR_ha0p.counts.json
+#   blob e1d7325247d91e7ea227d2ac6265b7adb1581ac1  3259 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_PRIOR_ha0p.csv
+#   blob f829784a0e5e0409f23aa7c78185278da9116a42  21936 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_R7_A1.calls.jsonl
+#   blob 0a23e37079637e4296fd77b2ce88187604252bdd  19678 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_R7_A1.counts.json
+#   blob a0a6b189db20a9107a1fdbeff78f5b5ef16ef547  3190 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_R7_A1.csv
+#   blob a7ff35323cf4972b15c535c0280126e77a55206c  21800 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_R7_A1NT.calls.jsonl
+#   blob f4c6278b9eddd033713f3bfa6c82dea575d5a07b  19684 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_R7_A1NT.counts.json
+#   blob efca17ec2f4790542336f29262fa73c89b9f6205  3218 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_R7_A1NT.csv
+#   blob 23b2ebc265b710893512b1ed5e46c55484adbe88  21811 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_R7_A1_s1.calls.jsonl
+#   blob 001b88ab2ad7c32f6a905f23b9abfceda0031869  19681 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_R7_A1_s1.counts.json
+#   blob 3a6daf0bd4a0ef0f08db63699dae8f60d01ad965  3232 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_R7_A1_s1.csv
+#   blob 6251e5f12d8e300955d90eb33725266110452333  21797 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_R7_BLIND.calls.jsonl
+#   blob eb4ae3a3834f9a8ec17f3bd5437d5c5401352db5  19584 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_R7_BLIND.counts.json
+#   blob a5126c4727ee03b0c0435da8f86b628e627ab47a  3231 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_R7_BLIND.csv
+#   blob 0c5519caad8a5e2b756e519a538279188440ce54  21699 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_R7_CEILDECL_d.calls.jsonl
+#   blob 468d64ba2c11b76511b5cf362fe4c1f022fc425a  19694 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_R7_CEILDECL_d.counts.json
+#   blob 87697f716390ba5c3df3f5dd4f028cdae7c05d56  3302 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_R7_CEILDECL_d.csv
+#   blob a7ff35323cf4972b15c535c0280126e77a55206c  21800 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_R7_FILTOFF.calls.jsonl
+#   blob 3e2c95f694ecd03dfcf979605b6627d5a0d5a2fd  19688 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_R7_FILTOFF.counts.json
+#   blob 2c8e658de5898ad44acc915e0526ccd59b0d6754  3260 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_R7_FILTOFF.csv
+#   blob a7ff35323cf4972b15c535c0280126e77a55206c  21800 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_R7_NAVOFF.calls.jsonl
+#   blob ea983c30d9be75697a98479df6e99d8e9a22143f  19697 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_R7_NAVOFF.counts.json
+#   blob 9a7d992cb43e78ab6f1673a6dd0304f43762ca28  3246 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_R7_NAVOFF.csv
+#   blob e767a2c48b85ba7564b15122e8e2bec30f23f58c  21868 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_R7_VMAXOFF.calls.jsonl
+#   blob 3d1319d06dc03cf49be2b15f150c39d6091f193d  19694 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_R7_VMAXOFF.counts.json
+#   blob 68bb563339f5cf76f65ed7d4cbb4187755b3966e  3260 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_R7_VMAXOFF.csv
+#   blob a7ff35323cf4972b15c535c0280126e77a55206c  21800 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_PRIOR_ha0p_wrapper/PRIOR_ha0p_final_scores_frame.csv
+#   blob e3fed14b1aa498fe97424fc44fa1a458d4294ada  54587 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_PRIOR_ha0p_wrapper/PRIOR_ha0p_final_scores_frame_PRE_AGGREGATION.csv
+#   blob 04796d40a9535e6a00ad74ff0ce1d128d3816929  60326 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_PRIOR_ha0p_wrapper/PRIOR_ha0p_manifest.json
+#   blob 73fba2a9588763f8c31d42a814fee1178de2ce36  5905 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_R7_A1NT_wrapper/R7_A1NT_final_scores_frame.csv
+#   blob 2f33207f210daa06a5da9116bfa4a4af53b3d1a6  54352 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_R7_A1NT_wrapper/R7_A1NT_final_scores_frame_PRE_AGGREGATION.csv
+#   blob 78a633ce094fce6629660321e7bffd806148905e  60140 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_R7_A1NT_wrapper/R7_A1NT_manifest.json
+#   blob 0601386b032dfe1ad2e4cc45250dd83804ca2508  5853 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_R7_A1_s1_wrapper/R7_A1_s1_final_scores_frame.csv
+#   blob 7bfaae71552ee12fe836fe439746cca2ba5bcd51  54280 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_R7_A1_s1_wrapper/R7_A1_s1_final_scores_frame_PRE_AGGREGATION.csv
+#   blob e9058692e1c0e1826f2d9c985c18f97beb264c68  59985 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_R7_A1_s1_wrapper/R7_A1_s1_manifest.json
+#   blob 9d51750e64ca4ce4fa4e4ecb36b6ef8044e87297  5969 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_R7_A1_wrapper/R7_A1_final_scores_frame.csv
+#   blob 92327689df547856ea0a42feb961ba22d1de7fb7  54335 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_R7_A1_wrapper/R7_A1_final_scores_frame_PRE_AGGREGATION.csv
+#   blob b53137fb852a51cf2cc1138e2bdbf89f79f18965  60108 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_R7_A1_wrapper/R7_A1_manifest.json
+#   blob 74183a3d8c03121ce2845f2695af6d21268390b2  5918 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_R7_BLIND_wrapper/R7_BLIND_final_scores_frame.csv
+#   blob 3d7776442a3f22c8e00a8a7cf24b0a2146dba1b9  54043 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_R7_BLIND_wrapper/R7_BLIND_final_scores_frame_PRE_AGGREGATION.csv
+#   blob 368b83264473605acaeaa05df4e180530c5b6c71  60012 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_R7_BLIND_wrapper/R7_BLIND_manifest.json
+#   blob a7d46cc6c348fdc130383968b87cdabf8d16275d  5916 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_R7_CEILDECL_d_wrapper/R7_CEILDECL_d_final_scores_frame.csv
+#   blob 92327689df547856ea0a42feb961ba22d1de7fb7  54335 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_R7_CEILDECL_d_wrapper/R7_CEILDECL_d_final_scores_frame_PRE_AGGREGATION.csv
+#   blob b53137fb852a51cf2cc1138e2bdbf89f79f18965  60108 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_R7_CEILDECL_d_wrapper/R7_CEILDECL_d_manifest.json
+#   blob 8c965ac7f6400b0089eaa19dedd5c49cd384b9af  5958 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_R7_FILTOFF_wrapper/R7_FILTOFF_final_scores_frame.csv
+#   blob 92327689df547856ea0a42feb961ba22d1de7fb7  54335 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_R7_FILTOFF_wrapper/R7_FILTOFF_final_scores_frame_PRE_AGGREGATION.csv
+#   blob b53137fb852a51cf2cc1138e2bdbf89f79f18965  60108 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_R7_FILTOFF_wrapper/R7_FILTOFF_manifest.json
+#   blob dbe0761ff6406e9d198a45c41ffbe531fc8a8ee2  6000 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_R7_NAVOFF_wrapper/R7_NAVOFF_final_scores_frame.csv
+#   blob fbf926e69f37777d4a2826652383aeebde0c8265  54447 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_R7_NAVOFF_wrapper/R7_NAVOFF_final_scores_frame_PRE_AGGREGATION.csv
+#   blob 2ddc2aeffe02e02f6212d89ab95b399f53702486  60228 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_R7_NAVOFF_wrapper/R7_NAVOFF_manifest.json
+#   blob 08086071947bc73d722c50373a65183dcd3ae710  5890 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_R7_VMAXOFF_wrapper/R7_VMAXOFF_final_scores_frame.csv
+#   blob 92327689df547856ea0a42feb961ba22d1de7fb7  54335 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_R7_VMAXOFF_wrapper/R7_VMAXOFF_final_scores_frame_PRE_AGGREGATION.csv
+#   blob b53137fb852a51cf2cc1138e2bdbf89f79f18965  60108 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_R7_VMAXOFF_wrapper/R7_VMAXOFF_manifest.json
+#   blob b4ee74d291770cee92bbd341d4bb1049fd87f350  5949 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500_cuda/cuda_controls_warmup.log
+#   blob a1edc054a65b1f1f055319cacfa1194485596efd  3899 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500_cuda/run.log
+#   blob 81f9550148d491d3f6b5bb92e675573d6bb81c15  7541 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500_cuda/run.log.lockrun.json
+#   blob 49c5fa6fb1e5cd3650fd015ca7f3a037c77d353f  440 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500_cuda/run_cuda_validation.sh
+#   blob 8ba6ca3be323b53c364262dcc2b35a1f7c381a6f  2366 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500_cuda/runner.log
+#   blob b3079e027cfc631b71f1857437a623f096b6f7de  666 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500_cuda/bridge_warmup/rows_PRIOR_ha0p.jsonl
+#   blob 226c02609abbc492f271d331a80777c98d729941  217015 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500_cuda/bridge_warmup/rows_R7_A1.jsonl
+#   blob 6a10709eaf8314cf2bc7eb9f060ecfa0f81f4380  986067 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500_cuda/bridge_warmup/rows_R7_A1NT.jsonl
+#   blob 7be22fea3dfa1abaf5763ec383c1124220d907b5  987410 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500_cuda/bridge_warmup/rows_R7_A1_s1.jsonl
+#   blob d885c0c7bcfce7defa4beb8518413d1c0c00950b  985996 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500_cuda/bridge_warmup/rows_R7_BLIND.jsonl
+#   blob b28f5efc61146d74bc0f50a95833c24c0c48f54d  1064535 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500_cuda/bridge_warmup/rows_R7_FILTOFF.jsonl
+#   blob 01f42aaa1e037c05ae6603fd5957e1325f00b58a  803450 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500_cuda/bridge_warmup/rows_R7_NAVOFF.jsonl
+#   blob 4bc8e776602af394294b4752f512e7f26d93b842  973831 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500_cuda/bridge_warmup/rows_R7_VMAXOFF.jsonl
+#   blob acc5c83a5727677d7348158b1e7d6932a07718e8  980135 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500_cuda/bridge_warmup/seam_PRIOR_ha0p.manifest.json
+#   blob bb1372a716fc680aa4aa8cf040caa13da26e3b5a  8691 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500_cuda/bridge_warmup/seam_PRIOR_ha0p.npz
+#   blob 215867dc407c511f7f6c59fdb46a784b0e66005c  96828 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500_cuda/bridge_warmup/seam_R7_A1.manifest.json
+#   blob 88f16acd0d0a1345792aa66b72a7b6c5be3b9cb8  9324 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500_cuda/bridge_warmup/seam_R7_A1.npz
+#   blob b7ca0f416b8044102d95c0b44e7f4217714bf30a  96808 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500_cuda/bridge_warmup/seam_R7_A1NT.manifest.json
+#   blob 2100159f285a02e7abc8d84f1c1de9286d351295  9330 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500_cuda/bridge_warmup/seam_R7_A1NT.npz
+#   blob e6610ae28177bea5f494009689fa0614bb382468  96816 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500_cuda/bridge_warmup/seam_R7_A1_s1.manifest.json
+#   blob b8e553a00095b4bd477b17cf63e36d0ea885c122  9324 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500_cuda/bridge_warmup/seam_R7_A1_s1.npz
+#   blob c67536835337681102e19f8859303ecd332575ba  96820 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500_cuda/bridge_warmup/seam_R7_BLIND.manifest.json
+#   blob 8c392d8b37d2f3cec19a53480af0aaee4ee10e59  9340 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500_cuda/bridge_warmup/seam_R7_BLIND.npz
+#   blob 4546807b4e3a71c8a998521f570aa23dead0cf99  96820 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500_cuda/bridge_warmup/seam_R7_CEILDECL_d.manifest.json
+#   blob 8c2545d59578658832b60b9279313ac5d2e06a79  8777 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500_cuda/bridge_warmup/seam_R7_CEILDECL_d.npz
+#   blob b7625ddcaa671a0241f73a6adb3ca531766f0c5b  96840 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500_cuda/bridge_warmup/seam_R7_FILTOFF.manifest.json
+#   blob 88524978e389d57fd66f6d94cdf221f0f202ff84  9341 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500_cuda/bridge_warmup/seam_R7_FILTOFF.npz
+#   blob 08e3051158cab2e3275ca88b45af351025191686  96828 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500_cuda/bridge_warmup/seam_R7_NAVOFF.manifest.json
+#   blob 8524ab8a16544f5f8a177ca22e414915b26dd010  9330 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500_cuda/bridge_warmup/seam_R7_NAVOFF.npz
+#   blob c9d03876d8e91c527e3c81a4f7d0ef64a28720cd  96824 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500_cuda/bridge_warmup/seam_R7_VMAXOFF.manifest.json
+#   blob eaec5c269e5494221b50dfcfe4826aef814ab831  9340 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500_cuda/bridge_warmup/seam_R7_VMAXOFF.npz
+#   blob 284896dbecfb98962afd95580205ef1c6fe6f9bc  96828 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500_cuda/smoke_navhard/rows_PRIOR_ha0p.jsonl
+#   blob 4a3518d0231cffd239937d779d20d29d1967fab2  21320 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500_cuda/smoke_navhard/rows_R7_A1.jsonl
+#   blob 38cd961a1c2f71392944412fe37400ec01f41d29  105194 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500_cuda/smoke_navhard/seam_PRIOR_ha0p.manifest.json
+#   blob c80cad571b730badda31be8717682520a81a6c9b  8796 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500_cuda/smoke_navhard/seam_PRIOR_ha0p.npz
+#   blob f5aaeb6d8893a38adbbd5013f5fa6e45ffc6371b  11292 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500_cuda/smoke_navhard/seam_R7_A1.manifest.json
+#   blob 7fe4821b39cc67737f592cf96677e4edf5b84723  9428 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500_cuda/smoke_navhard/seam_R7_A1.npz
+#   blob b3c1dab86cdd6ff16abba13d933c27034d75ea00  11272 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500_cuda/smoke_navhard/seam_R7_CEILDECL_d.manifest.json
+#   blob 1e7ba2142d4f2a557ea6bf18c5f10fadc0d2f7f3  8880 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500_cuda/smoke_navhard/seam_R7_CEILDECL_d.npz
+#   blob e176872b20c66dec2f640039f6572f5924dd6756  11304 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500_cuda/smoke_navtest/rows_PRIOR_ha0p.jsonl
+#   blob cc9f556f6856de86ffada4ce5a353ea3ab2a352f  11973 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500_cuda/smoke_navtest/rows_R7_A1.jsonl
+#   blob 18897962a2b6063e5103bb7dae52282ab21708f2  57459 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500_cuda/smoke_navtest/rows_R7_VMAXORACLE.jsonl
+#   blob d085c34b9d351d98690ab050d85e763a62a6b4d4  59060 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500_cuda/smoke_navtest/seam_PRIOR_ha0p.manifest.json
+#   blob 402737ec392f2cb36acfdee7dd437521a58dd419  8828 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500_cuda/smoke_navtest/seam_PRIOR_ha0p.npz
+#   blob 966eecb34404b25e5e5fcf2a277fc734c98a6fd4  6924 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500_cuda/smoke_navtest/seam_R7_A1.manifest.json
+#   blob e48ce59f120f4cfa19b9835edf25f88570c467c4  9460 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500_cuda/smoke_navtest/seam_R7_A1.npz
+#   blob e816d73fe7f44251b1178bde233bc079ee782dcc  6904 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500_cuda/smoke_navtest/seam_R7_CEILDECL_d.manifest.json
+#   blob 2b4d5ab167ca64c1bfce8691cf04636665aef85b  8912 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500_cuda/smoke_navtest/seam_R7_CEILDECL_d.npz
+#   blob 3ae68dba5411af37cb9ac4ea08c878ca68f7abaf  6936 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500_cuda/smoke_navtest/seam_R7_VMAXORACLE.manifest.json
+#   blob 40c15b2efd7f4f22f91a32d36cd4ed598b1f97e5  9563 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500_cuda/smoke_navtest/seam_R7_VMAXORACLE.npz
+#   blob 1fc6e72524413d7950a1c4d8cfd20bdec951a9ab  6936 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_gpu_lock7.py
+#   blob f84dc656675b2304d7c3cf77d431e7b58dc6ad72  2157 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_inputs7.py
+#   blob ff36f8f8f5f8551b140229c783370bba0f373d32  18565 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_model_seam7.py
+#   blob 7a8a41c01c10895a0ac73eb5c3770f90a0b02939  16398 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_mutation7.py
+#   blob 44900a7443916424a58925ce61dcf7e8de74e3c8  2648 B
+# REFUSED (canonical UUID in the text): FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/harness_navtest/r7kh_STOP/r7kh_STOP.log
+# REFUSED (canonical UUID in the text): FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/harness_repro/score_CV_official.log
+# REFUSED (canonical UUID in the text): FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/harness_repro/score_ECHO_ha0_ext.log
+# REFUSED (canonical UUID in the text): FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/harness_repro/score_STOP_zero.log
+# REFUSED (canonical UUID in the text): FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_PRIOR_ha0p.log
+# REFUSED (canonical UUID in the text): FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_R7_A1.log
+# REFUSED (canonical UUID in the text): FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_R7_A1NT.log
+# REFUSED (canonical UUID in the text): FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_R7_A1_s1.log
+# REFUSED (canonical UUID in the text): FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_R7_BLIND.log
+# REFUSED (canonical UUID in the text): FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_R7_CEILDECL_d.log
+# REFUSED (canonical UUID in the text): FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_R7_FILTOFF.log
+# REFUSED (canonical UUID in the text): FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_R7_NAVOFF.log
+# REFUSED (canonical UUID in the text): FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/validation/step1500/scores_warmup/score_R7_VMAXOFF.log
+# NOT IN THIS BATCH (live at hand-over): raw/harness_repro_navhard/ + raw/floors/navhard_two_stage/ (the navhard KH, running), raw/harness7.log, raw/milestones/ (the armed step-5,000 waiter and, later, its outputs)
+
+## 2026-10-04 REFCV7-NAVSIM -- milestone recovery (step 30,000), FINAL launch (step 50,400), step 5,000 outputs
+# EvalFlyWheel NavSim operator, 2026-10-04 ~01:30 Berlin. Landing-ready below: the completion
+# driver, pytest.ini (rootdir pin), the updated RESULT/COMMS/PLAN, and the FINISHED step-5,000
+# milestone (it was live at the 2026-09-28 hand-over).
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/code/complete_milestone7.py
+#   blob 4d5c42aa91bc826f432c7dfa8bdbc8cb31eec78c  25437 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/pytest.ini
+#   blob ee8537341c88e610dc8ae4d7a75198cd64bfbc57  817 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/RESULT.md
+#   blob 08e4297d4b942cb246a95207f943f184eb7b5fd6  22928 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/COMMS.md
+#   blob c8e553857a200a41547c73ac4f1bf20b5cec2fc2  13879 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/PLAN.md
+#   blob e02c6ca633af94e82d0f2cc89a96469b225a46ff  2889 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/runner_5000.out.txt
+#   blob 007a5a19841ef0753818c100cf373cc3ee533963  5635 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/waiter_5000.json
+#   blob 3d307b9f1653530d7cff125bcdc8df1bb40b5dbf  1268 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/waiter_5000.log
+#   blob 8c1177100298c69cec0f8147f2ca348344cb0785  806 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/BARS.json
+#   blob b9185a1ee2cdde8acaf411b63f90d852c9426be5  15819 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/MILESTONE_SUMMARY.json
+#   blob 8fc4fb270d6d1fd7b5521940e148b8e97252f2a8  3203 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bars.log
+#   blob bee62fd9381e0c322e530126b1d4d5c321ee689d  3369 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_navhard.log
+#   blob 47a94d3727faeab79fc832eed573ec979051477f  24418 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_navtest.log
+#   blob d5de75f1ef0efd2d3091de962953040e5cb12b93  48866 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_navtest_sub200.log
+#   blob ea81b3e39c95047ff98ae48e7798a4321c7192a2  3963 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_warmup.log
+#   blob d6b4e7844490f713f3ef3c7fe3d3fb2784a58713  5604 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/cuda_controls_navhard.log
+#   blob df8fd3783c6f64a2bc5f5089b202b9934cea3e63  3888 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/cuda_controls_navtest.log
+#   blob b9a1f709ff30506f0b41cb2b71623c0837d6d612  3888 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/cuda_controls_warmup.log
+#   blob b141520e657b2b57622e5cd80eb5fe78aecd6c30  3889 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/decompose_navhard.log
+#   blob 72ffd42b5254732245b6dd1337009f6b616b4acc  1406 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/decompose_navtest.log
+#   blob e673ca580341605ffc6c4f6370053478dab8b168  808 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/decompose_warmup.log
+#   blob 2516fe4b9c1627069f87dc9a33ac8e9d68c3f7a9  1388 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/decomposition_navhard.json
+#   blob 7502cfca5953b3182f9adf243d76a3d82b50e953  67722 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/decomposition_navtest.json
+#   blob 68a11d09a81d8374bd56c5b7aad058eccb7270d0  5793 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/decomposition_warmup.json
+#   blob 30f1d81ba9fd621e0bead5ae6c87264dfce239c9  29442 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/families_navhard.log
+#   blob d1d421ad694eeeb9323bd70573924763c9c60998  1855 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/families_navhard_PRIOR_ha0p.json
+#   blob 4bd35195f56d4b141658c2b97adb8a38b152f828  90729 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/families_navhard_R7_A1.json
+#   blob d2d3e23ab771192b99b5c5e38f980d62d8485179  90698 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/families_navtest.log
+#   blob c501846e703f9a76fa131ba2d7e82589b54cf7a4  1819 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/families_navtest_PRIOR_ha0p.json
+#   blob 8e342e78dce27ab11f19ddc6b786f3dbd7793138  91237 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/families_navtest_R7_A1.json
+#   blob 6d216f284ca3acdb9c33d07d58a776a575363fc2  91214 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/parse_navhard.log
+#   blob 8a57af5835803627ed787f174638dca20b7e6462  2216 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/parse_navtest.log
+#   blob 5c55da194027aba080bb50f22d8fc4bf7182317d  4497 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/parse_navtest_sub200.log
+#   blob ecca136273fe488823b0f30ca9a21a27c6940f14  4819 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/parse_warmup.log
+#   blob d8077a32c54aa9a19f389a21a0ebc9426bd2c80e  2803 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/plan_deltas_navhard.json
+#   blob 92d4d62d5e7e82ac7b9742a0f0f6d0afd06de7dd  582 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/plan_deltas_navhard.log
+#   blob 84faa69c07269c6e9a866d21c986896ac4715785  576 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/plan_deltas_navtest.json
+#   blob f7262c8f0c6b796edec666fc375ed4e7bbd4b350  589 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/plan_deltas_navtest.log
+#   blob 8f0884e7ff0283bed7d978e8d2c8647ffaa146d7  577 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/plan_deltas_warmup.json
+#   blob 7fab6d34a07e8ae7b8873445017db0d754d35728  2471 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/plan_deltas_warmup.log
+#   blob 507164fbf1166f27e7a9870bd50f55d65c2ea6b9  990 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/runner.log
+#   blob 007a5a19841ef0753818c100cf373cc3ee533963  5635 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/summary_navhard.json
+#   blob 23b9cfd4d1346202896cfedebf651d91c2445392  81040 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/summary_navtest.json
+#   blob 72ccf193bf12b8935f40290401fc641d5575c793  77725 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/summary_navtest_sub200.json
+#   blob 48795e14613baf8799e6e99ded0899e17ef7e412  84385 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/summary_warmup.json
+#   blob f209e87da0749651ea9c9933a37bbaeeafbe72ce  26750 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_navhard/rows_PRIOR_ha0p.jsonl
+#   blob f2adca6bec0363ec7f27fa9caa4de9dc86fe685a  5768130 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_navhard/seam_PRIOR_ha0p.manifest.json
+#   blob 40b04e39ed598be024808f978a3990443fe64821  8590 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_navhard/seam_PRIOR_ha0p.npz
+#   blob d6027fd7898852e84210706c5403b4ef21fe4bcc  2555772 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_navhard/seam_R7_A1.manifest.json
+#   blob 5b29932a41cddafe544276782a799fad9daac8f1  9220 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_navhard/seam_R7_A1.npz
+#   blob 023081d68d9f2d5a90627232e433f735efaecf14  2555752 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_navhard/seam_R7_A1_s1.manifest.json
+#   blob 7c711974f0756296023f26c394e17ebb75aeeff2  9220 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_navhard/seam_R7_A1_s1.npz
+#   blob 1e40a88f02bf5908024517478006e8d20262b40e  2555764 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_navhard/seam_R7_CEILDECL_d.manifest.json
+#   blob 31df11151271157770742fb9d95770e4a7cd5664  8681 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_navhard/seam_R7_CEILDECL_d.npz
+#   blob 16f101e89f4a3425f6050fd2de261ed1ee2f13ad  2555784 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_navtest/rows_PRIOR_ha0p.jsonl
+#   blob 646d1b3437f232378edfb250b0c0e254d7cabe06  12067606 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_navtest/seam_PRIOR_ha0p.manifest.json
+#   blob 3a6898cca2a74d4c94bf565fa6e656e43bcae461  8483 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_navtest/seam_PRIOR_ha0p.npz
+#   blob b8b3764ddf99000b211ea0a0722c3b35b0525f05  5200276 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_navtest/seam_R7_A1.manifest.json
+#   blob c41554d3666bfc4083baa44645292413c6acc516  9114 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_navtest/seam_R7_A1.npz
+#   blob 2dad55c81aedd5a2c4dca0fa57ecacd4e10b6328  5200256 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_navtest/seam_R7_A1_s1.manifest.json
+#   blob 76030283cca8db7b02d95ef36e1273e6dd416508  9114 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_navtest/seam_R7_A1_s1.npz
+#   blob a2c15ab533febd5bb9060003567345227154602e  5200268 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_navtest/seam_R7_CEILDECL_d.manifest.json
+#   blob 937ce4418678fcf7e04cb16a91c494528a147641  8574 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_navtest/seam_R7_CEILDECL_d.npz
+#   blob 16fe79f7c2e4140666b594a4715c8754dbf98892  5200288 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_navtest_sub200/rows_R7_FILTOFF.jsonl
+#   blob 6645b90762317bb2f42932f7ca08090cbcd47c7d  782225 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_navtest_sub200/rows_R7_VMAXOFF.jsonl
+#   blob e57bd5cfaa79a0170f38ac4b42c320378c723618  957976 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_navtest_sub200/rows_R7_VMAXORACLE.jsonl
+#   blob 6da476b6ade76515e5d9c31ac3a83f828ff0ff92  983341 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_navtest_sub200/seam_R7_FILTOFF.manifest.json
+#   blob 1c3ae03cfdf934e812a5c275310ba0a311f378a1  9274 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_navtest_sub200/seam_R7_FILTOFF.npz
+#   blob e3c4fa411e72b414c42f44bea9c450ba39ea60fb  87388 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_navtest_sub200/seam_R7_VMAXOFF.manifest.json
+#   blob 588369788976bcf5fa20e3c0135dca25ae24919e  9273 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_navtest_sub200/seam_R7_VMAXOFF.npz
+#   blob e4e0f3e636d85cc56c95e7b044238c5f1de9cd7d  87388 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_navtest_sub200/seam_R7_VMAXORACLE.manifest.json
+#   blob 3436c51697c53fd9a35b5d38e36f428dd57a7840  9361 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_navtest_sub200/seam_R7_VMAXORACLE.npz
+#   blob 3fe11c491ed9058f1dbc964422bd0d9e60fd27f5  87400 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_warmup/rows_PRIOR_ha0p.jsonl
+#   blob 226c02609abbc492f271d331a80777c98d729941  217015 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_warmup/rows_R7_A1.jsonl
+#   blob 09ec85d84c67da408221721d3b42db3219a15d5d  987964 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_warmup/rows_R7_A1NT.jsonl
+#   blob 021121b9a954acf4450e8ea80ff4153db3edda50  989643 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_warmup/rows_R7_A1_s1.jsonl
+#   blob 5fd212cbb23d01a6632ddc1efa937b68cb1591da  990694 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_warmup/rows_R7_BLIND.jsonl
+#   blob 6dc40670ec5d338254b425517480f85706bd9f79  1057465 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_warmup/rows_R7_FILTOFF.jsonl
+#   blob 4ef097a871c089cee938804f42e9625bd10f43d2  804076 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_warmup/rows_R7_NAVOFF.jsonl
+#   blob 577b421582ee1e577bbfdcbcd3a4de9651caceb0  977596 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_warmup/rows_R7_VMAXOFF.jsonl
+#   blob 3ac34ba9a682abf73cc442f3ed1a1b3f4ee2b1f0  981289 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_warmup/seam_PRIOR_ha0p.manifest.json
+#   blob 90e47ac08fa92b9bc1d2e7bddb910c2330a41772  8558 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_warmup/seam_PRIOR_ha0p.npz
+#   blob 215867dc407c511f7f6c59fdb46a784b0e66005c  96828 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_warmup/seam_R7_A1.manifest.json
+#   blob 4f8e027a3b9e0613221f49fd57ff3c2c0bbbe6af  9186 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_warmup/seam_R7_A1.npz
+#   blob 567bdb0e55dca1752d30a91ef619d3608b064a0f  96808 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_warmup/seam_R7_A1NT.manifest.json
+#   blob beb27c4f57bee9dbf7500713bf3469abfd956ddd  9191 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_warmup/seam_R7_A1NT.npz
+#   blob be963b02ebf2a02ca7caebeee73776ae3d2d920e  96816 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_warmup/seam_R7_A1_s1.manifest.json
+#   blob 4b0cdc0656248d1c0035e3d7b5bb7ba35d53e9e4  9186 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_warmup/seam_R7_A1_s1.npz
+#   blob f4383785ded150ad72190edff73446c3e07c4dea  96820 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_warmup/seam_R7_BLIND.manifest.json
+#   blob 91b74b64ebb53253e24e5e5431ad3c6a55ff4f61  9201 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_warmup/seam_R7_BLIND.npz
+#   blob 84683de0a88f8e3bd3e96daa3fc16586f47d2259  96820 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_warmup/seam_R7_CEILDECL_d.manifest.json
+#   blob 7c62426f3b841976c504d65dbdc8b19dca1d278a  8645 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_warmup/seam_R7_CEILDECL_d.npz
+#   blob 5e0e77e02040dcbe8675f9a10c4d5a4a7d877004  96840 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_warmup/seam_R7_FILTOFF.manifest.json
+#   blob cf968e364c64534af1f798914afd0d0bb5511984  9203 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_warmup/seam_R7_FILTOFF.npz
+#   blob b2949516e61de824be366b983785a4d48c27922d  96828 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_warmup/seam_R7_NAVOFF.manifest.json
+#   blob 76191e0d66d150148b737fc6127fb106a0a46bf7  9192 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_warmup/seam_R7_NAVOFF.npz
+#   blob 836166c35d507febe341bc6f5f75ad7d3b674dfc  96824 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_warmup/seam_R7_VMAXOFF.manifest.json
+#   blob 64cf1af2b8285d62f2b16fda9fe35f184dc75c8c  9202 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_warmup/seam_R7_VMAXOFF.npz
+#   blob b02ac7d36b034a37481a39317644d426097af0cc  96828 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navhard/PRIOR_ha0p.driver.txt
+#   blob 5cab754fcf33f01f023b26b23251c0eaa357e317  786 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navhard/R7_A1.driver.txt
+#   blob 564ce1afebffffdbca2a3647a451acec66dfec67  771 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navhard/R7_A1_s1.driver.txt
+#   blob 8101d9b7e4d4c9ab1d6606330ee8016c9278c79a  780 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navhard/R7_CEILDECL_d.driver.txt
+#   blob d360b92e2eb86c19507426731992c47acbc63a26  795 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navhard/score_PRIOR_ha0p__navhard_two_stage.calls.jsonl
+#   blob fda20329bf1d9d5f1e6d31d5944db1e27a073c7b  519412 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navhard/score_PRIOR_ha0p__navhard_two_stage.counts.json
+#   blob 7db0ac7d8e61d23d125cf764faaed624397ffda7  3459 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navhard/score_PRIOR_ha0p__navhard_two_stage.csv
+#   blob 624cc03f7459f8d292d769e86e19ce48a987bea0  541810 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navhard/score_R7_A1__navhard_two_stage.calls.jsonl
+#   blob 5f078a3592fdd17ff50be9e1da673a04ecb2ebcb  519421 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navhard/score_R7_A1__navhard_two_stage.counts.json
+#   blob 45b6ff79a16e8914a8436e02965d883717cc798e  3389 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navhard/score_R7_A1__navhard_two_stage.csv
+#   blob b3b1a64a1e07fc2f6bc062233c6fab49a98e081f  545061 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navhard/score_R7_A1_s1__navhard_two_stage.calls.jsonl
+#   blob 34a471390eff9dd9af956b4885f2ad857c18cf47  519444 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navhard/score_R7_A1_s1__navhard_two_stage.counts.json
+#   blob d6687481891a9b4bd4c068bf22e0d7939d7cf039  3431 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navhard/score_R7_A1_s1__navhard_two_stage.csv
+#   blob 3515a35336a8c01d02cfdcee9813b08bec55f5c0  544599 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navhard/score_R7_CEILDECL_d__navhard_two_stage.calls.jsonl
+#   blob 588e7f0e1ec1b5594c00d9c705b2271b3723e060  519454 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navhard/score_R7_CEILDECL_d__navhard_two_stage.counts.json
+#   blob 2b275dffd41fe2535ed4b043235f1121f2ffbf9d  3501 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navhard/score_R7_CEILDECL_d__navhard_two_stage.csv
+#   blob b891bb895e6a6b29dd1e81de0a86015c9313f5c2  545087 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navhard/score_PRIOR_ha0p__navhard_two_stage_wrapper/PRIOR_ha0p__navhard_two_stage_final_scores_frame.csv
+#   blob 4164334ad933b433c8b4fa94231358ebc965af16  1424584 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navhard/score_PRIOR_ha0p__navhard_two_stage_wrapper/PRIOR_ha0p__navhard_two_stage_final_scores_frame_PRE_AGGREGATION.csv
+#   blob c0f47e8c71188285d23c0aeb18235c68928c0f58  1575707 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navhard/score_PRIOR_ha0p__navhard_two_stage_wrapper/PRIOR_ha0p__navhard_two_stage_manifest.json
+#   blob b179ec4d9412fbe39d4de4a04c17fcd1f2997192  17277 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navhard/score_R7_A1__navhard_two_stage_wrapper/R7_A1__navhard_two_stage_final_scores_frame.csv
+#   blob 77b727ac6a70481e0941c91af31d5de72e93f218  1431579 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navhard/score_R7_A1__navhard_two_stage_wrapper/R7_A1__navhard_two_stage_final_scores_frame_PRE_AGGREGATION.csv
+#   blob 5c54e04ce3304f5ca23460b3d96ba0029842f6c5  1578796 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navhard/score_R7_A1__navhard_two_stage_wrapper/R7_A1__navhard_two_stage_manifest.json
+#   blob 134720674891ead2817aa2eb20488dd6ad48c338  17336 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navhard/score_R7_A1_s1__navhard_two_stage_wrapper/R7_A1_s1__navhard_two_stage_final_scores_frame.csv
+#   blob 7c832178ca79e201697e008a8f7425f148525024  1430398 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navhard/score_R7_A1_s1__navhard_two_stage_wrapper/R7_A1_s1__navhard_two_stage_final_scores_frame_PRE_AGGREGATION.csv
+#   blob 7b2d2de72c5d1a1c43b688e993842c8352ba9823  1576972 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navhard/score_R7_A1_s1__navhard_two_stage_wrapper/R7_A1_s1__navhard_two_stage_manifest.json
+#   blob cb5f83457cde170fa88bed2458d5381578fa6b05  17335 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navhard/score_R7_CEILDECL_d__navhard_two_stage_wrapper/R7_CEILDECL_d__navhard_two_stage_final_scores_frame.csv
+#   blob 3880281888d1e7d94a56cf9fa579f24f30eec0f8  1431979 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navhard/score_R7_CEILDECL_d__navhard_two_stage_wrapper/R7_CEILDECL_d__navhard_two_stage_final_scores_frame_PRE_AGGREGATION.csv
+#   blob 5fd83ce8f4b4169cc9e1446631f5771eba7d6849  1578973 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navhard/score_R7_CEILDECL_d__navhard_two_stage_wrapper/R7_CEILDECL_d__navhard_two_stage_manifest.json
+#   blob b9647a45a816fdab0005cf303ec73435b9f9357e  17380 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navtest/r7s5000_PRIOR_ha0p.driver.txt
+#   blob a996aa16068f8676a8667b7a025f5650957c90fc  822 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navtest/r7s5000_R7_A1.driver.txt
+#   blob 738e6ef98aaecd50dc628f973abed56412f0a346  806 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navtest/r7s5000_R7_A1_s1.driver.txt
+#   blob ab81c7beb949b46ae70d8c473990781f19dfd1bc  817 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navtest/r7s5000_R7_CEILDECL_d.driver.txt
+#   blob f2b5f8c229d10372e51740d1a8428e37b36c0444  830 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navtest/r7s5000_R7_FILTOFF_sub.driver.txt
+#   blob 1233d0852e0fdbfb03effe2caf56786fb93d2aeb  945 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navtest/r7s5000_R7_VMAXOFF_sub.driver.txt
+#   blob 114491adc331b88adb9b95b68eff3c7c25bb956b  944 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navtest/r7s5000_R7_VMAXORACLE_sub.driver.txt
+#   blob 0dc0218213bf84f962e3af3ca99b9bc9e690d4bd  953 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navtest/r7s5000_PRIOR_ha0p/r7s5000_PRIOR_ha0p.calls.jsonl
+#   blob 57e2e6c4681ae36ca1082c58bd9638259482fc80  1055678 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navtest/r7s5000_PRIOR_ha0p/r7s5000_PRIOR_ha0p.counts.json
+#   blob f582e60d8b187e99593aa9087dba79d0bcdbda59  2203 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navtest/r7s5000_PRIOR_ha0p/r7s5000_PRIOR_ha0p.csv
+#   blob e738a5dae55da6a94bcb18d243a0c674388d87f4  846747 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navtest/r7s5000_PRIOR_ha0p/r7s5000_PRIOR_ha0p_manifest.json
+#   blob f30c0a2b00f93385e07357371a87521361a03581  7968 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navtest/r7s5000_PRIOR_ha0p/r7s5000_PRIOR_ha0p_rows.jsonl
+#   blob c8c259f289cfdb17d49efbcc53dbb7cca5d495ba  5583825 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navtest/r7s5000_R7_A1/r7s5000_R7_A1.calls.jsonl
+#   blob fba6a763d16a179c3dee11f6ce69a8f2e33fe5d5  1055539 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navtest/r7s5000_R7_A1/r7s5000_R7_A1.counts.json
+#   blob e6612b0f32af27b231ba11cdc4b2c38f50053a28  2177 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navtest/r7s5000_R7_A1/r7s5000_R7_A1.csv
+#   blob 83966c2d78fbf4a3659f883a39e339a700c3d767  860938 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navtest/r7s5000_R7_A1/r7s5000_R7_A1_manifest.json
+#   blob 47b84cf55399a9e333247ebae2bb3ffa21c4a50b  8149 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navtest/r7s5000_R7_A1/r7s5000_R7_A1_rows.jsonl
+#   blob 3ce3d2e9ae41b909c6b6eb661f05c3469196e03b  5597624 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navtest/r7s5000_R7_A1_s1/r7s5000_R7_A1_s1.calls.jsonl
+#   blob d57530aa0aaeff1344594269073d36764a385320  1055684 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navtest/r7s5000_R7_A1_s1/r7s5000_R7_A1_s1.counts.json
+#   blob 8bf7e21c73bae53b74cd5c8ab1fa668345913f0f  2212 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navtest/r7s5000_R7_A1_s1/r7s5000_R7_A1_s1.csv
+#   blob eaa30b231b3656ea118b0d688bba79eda0e9d077  860994 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navtest/r7s5000_R7_A1_s1/r7s5000_R7_A1_s1_manifest.json
+#   blob bcc2f4a91da494b13b4372cff22c66a8c5b94321  8144 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navtest/r7s5000_R7_A1_s1/r7s5000_R7_A1_s1_rows.jsonl
+#   blob c8bc1cf16949d4dc5fa6a3d5e97cabd7f8c91b88  5597862 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navtest/r7s5000_R7_CEILDECL_d/r7s5000_R7_CEILDECL_d.calls.jsonl
+#   blob d1c8e433c131207ec9d8ae4a65f780c7201b28d8  1055553 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navtest/r7s5000_R7_CEILDECL_d/r7s5000_R7_CEILDECL_d.counts.json
+#   blob 4069b8cde74ba8c4c077a149d551170db4525ed3  2236 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navtest/r7s5000_R7_CEILDECL_d/r7s5000_R7_CEILDECL_d.csv
+#   blob d02c594b569ea9cfc4ecdc2c58759f6fcc919420  862812 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navtest/r7s5000_R7_CEILDECL_d/r7s5000_R7_CEILDECL_d_manifest.json
+#   blob 0ac8bf667d983070f3cc864a249c32a10e9a975c  8065 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navtest/r7s5000_R7_CEILDECL_d/r7s5000_R7_CEILDECL_d_rows.jsonl
+#   blob 96955d989e958fe07c6de9884152fd2f6394fd57  5599615 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navtest/r7s5000_R7_FILTOFF_sub/r7s5000_R7_FILTOFF_sub.calls.jsonl
+#   blob 7cdc9e3bc85a4640d8492e3fb7525605dd38f701  17646 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navtest/r7s5000_R7_FILTOFF_sub/r7s5000_R7_FILTOFF_sub.counts.json
+#   blob ef1b0176cad489f767ef3b68ae6d3a755555b512  2129 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navtest/r7s5000_R7_FILTOFF_sub/r7s5000_R7_FILTOFF_sub.csv
+#   blob ca7b2fcfab23fcbd353528658ab834aa4e3ff719  14358 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navtest/r7s5000_R7_FILTOFF_sub/r7s5000_R7_FILTOFF_sub_manifest.json
+#   blob 829be23b0976dd969ffb83adbdb5cff09f50834b  21194 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navtest/r7s5000_R7_FILTOFF_sub/r7s5000_R7_FILTOFF_sub_rows.jsonl
+#   blob 3a89900ad0f87681ccbf8838af2ef3e016970e69  92451 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navtest/r7s5000_R7_VMAXOFF_sub/r7s5000_R7_VMAXOFF_sub.calls.jsonl
+#   blob 8910fbe38ad35c9b639093e7c0964b9a1780804b  17640 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navtest/r7s5000_R7_VMAXOFF_sub/r7s5000_R7_VMAXOFF_sub.counts.json
+#   blob 827fe1fad042bd2aaea6cc670453d94391155ebb  2130 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navtest/r7s5000_R7_VMAXOFF_sub/r7s5000_R7_VMAXOFF_sub.csv
+#   blob 7e3458e764d5b0e5b8e249f4d2406c910fdd2c08  14406 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navtest/r7s5000_R7_VMAXOFF_sub/r7s5000_R7_VMAXOFF_sub_manifest.json
+#   blob 4e39d96384830772db878555d646452b7e564c67  21194 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navtest/r7s5000_R7_VMAXOFF_sub/r7s5000_R7_VMAXOFF_sub_rows.jsonl
+#   blob 7355e0f28b7ae18e6503fbc8945f48804b131911  92518 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navtest/r7s5000_R7_VMAXORACLE_sub/r7s5000_R7_VMAXORACLE_sub.calls.jsonl
+#   blob b0a78d091735926c66010a30b0ea9fef2a718889  17639 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navtest/r7s5000_R7_VMAXORACLE_sub/r7s5000_R7_VMAXORACLE_sub.counts.json
+#   blob ddc3cca6d4b488101baf6afa84043d6dfa5f5ea4  2144 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navtest/r7s5000_R7_VMAXORACLE_sub/r7s5000_R7_VMAXORACLE_sub.csv
+#   blob aa07abcc7680130ea7c8895b696843d459f7f3c4  14375 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navtest/r7s5000_R7_VMAXORACLE_sub/r7s5000_R7_VMAXORACLE_sub_manifest.json
+#   blob 854436ed59f47cab50b7667e4605307eaf4a55da  21239 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navtest/r7s5000_R7_VMAXORACLE_sub/r7s5000_R7_VMAXORACLE_sub_rows.jsonl
+#   blob b5c2998791a160e092eb166f0c89f1720c5bde3b  92465 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/PRIOR_ha0p.driver.txt
+#   blob cb5cb6766def174e0de42f669f127f16ee2ff67d  778 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/R7_A1.driver.txt
+#   blob 74886e8c604874380eb0391387055c1f571619e2  764 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/R7_A1NT.driver.txt
+#   blob f4ea43b7e2a36609be5a97c25c24207e84f56317  770 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/R7_A1_s1.driver.txt
+#   blob ea650c144b72cce625ca84d20e22bd60929cba48  773 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/R7_BLIND.driver.txt
+#   blob dc0f4a2bd2349a3886d684854a8929ff77d196d0  772 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/R7_CEILDECL_d.driver.txt
+#   blob f8a29d482e267e5e0529609921a0ae2c90a67c48  788 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/R7_FILTOFF.driver.txt
+#   blob c843efbef48db47599a7e300ca85c6375410b184  779 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/R7_NAVOFF.driver.txt
+#   blob 52eaeaed67844cc10067d1c90a0748c49d6b19cb  776 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/R7_VMAXOFF.driver.txt
+#   blob 88669b99fd6497fbb2e013c2361864330d17de4f  779 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_PRIOR_ha0p.calls.jsonl
+#   blob cd5d04b8b6c3559686cb791c752dadd25d6558db  19592 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_PRIOR_ha0p.counts.json
+#   blob dc38d54acdb500e3c89c7ea5c9027228d419709e  3289 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_PRIOR_ha0p.csv
+#   blob f829784a0e5e0409f23aa7c78185278da9116a42  21936 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_R7_A1.calls.jsonl
+#   blob c60cddbe7ab4a7796ff5b0088f52214e03f60174  19671 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_R7_A1.counts.json
+#   blob c8e0f478ff7b477b8d17dd544a30ed59301850c2  3220 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_R7_A1.csv
+#   blob 42171550a8bc40693b8fd800be85e0f7e4158a71  21556 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_R7_A1NT.calls.jsonl
+#   blob c2c0152a6a6e182819cf1d139d7798c37cb1d699  19679 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_R7_A1NT.counts.json
+#   blob 894ddf387c3713b504c0c4bb3a9c5667c063e07c  3248 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_R7_A1NT.csv
+#   blob 1f8830734ba7a189e18a60e33169fa29e1794e8e  21607 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_R7_A1_s1.calls.jsonl
+#   blob 28665e74397c652fa817cb28b21d348e572e5099  19684 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_R7_A1_s1.counts.json
+#   blob 83dd35f2b7ebbd005a5a01464d183217cf7ca3b5  3262 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_R7_A1_s1.csv
+#   blob 36fab74525da822bbdbd7abe1a023745f66e0acd  21556 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_R7_BLIND.calls.jsonl
+#   blob 13ac5b0164d4c91c2e38325d9d1d02e5d11f07d6  19586 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_R7_BLIND.counts.json
+#   blob facb0978d5ef63dd6b0cfffe35dcf80825979117  3261 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_R7_BLIND.csv
+#   blob 5abf3a4fa2fd3cff134808a3c39d3ae9844e6548  21066 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_R7_CEILDECL_d.calls.jsonl
+#   blob 86f7af551201cd5be1afb9fe55a54007d2bfa2e6  19698 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_R7_CEILDECL_d.counts.json
+#   blob 283c29ad13adf3559d0bcd3b66aefd0246896736  3332 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_R7_CEILDECL_d.csv
+#   blob 42171550a8bc40693b8fd800be85e0f7e4158a71  21556 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_R7_FILTOFF.calls.jsonl
+#   blob cdc6b7539590a959a963f680d5d543758a9449fc  19683 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_R7_FILTOFF.counts.json
+#   blob 48bfaff09c62a1279942af954ee4b8fc6ac78b1e  3290 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_R7_FILTOFF.csv
+#   blob 42171550a8bc40693b8fd800be85e0f7e4158a71  21556 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_R7_NAVOFF.calls.jsonl
+#   blob 841e6bce0583bef5fd8ee8c4b30e709b52a48185  19684 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_R7_NAVOFF.counts.json
+#   blob 77e25e316b5c444904d7d53f54d68608bc4aa890  3276 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_R7_NAVOFF.csv
+#   blob d34b1abe2527a50fab28127cd75520f8ccbe5c09  21582 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_R7_VMAXOFF.calls.jsonl
+#   blob 10e9c1342e647b87735cfa16579e3b9552d5bd87  19688 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_R7_VMAXOFF.counts.json
+#   blob 3966dd1ef3e5458c235ab0ad02d08e2ae1471e4e  3290 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_R7_VMAXOFF.csv
+#   blob 6bc4f7f3c02e7e868c4ec5d8e5dea7c19bead816  21452 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_PRIOR_ha0p_wrapper/PRIOR_ha0p_final_scores_frame.csv
+#   blob e3fed14b1aa498fe97424fc44fa1a458d4294ada  54587 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_PRIOR_ha0p_wrapper/PRIOR_ha0p_final_scores_frame_PRE_AGGREGATION.csv
+#   blob 04796d40a9535e6a00ad74ff0ce1d128d3816929  60326 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_PRIOR_ha0p_wrapper/PRIOR_ha0p_manifest.json
+#   blob dfd64a0783441bdbdfa9783b7c2eb2778d107c42  5868 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_R7_A1NT_wrapper/R7_A1NT_final_scores_frame.csv
+#   blob 5a22219c7ad0fe0e6ef9a68ad4ee9bb020bf81cc  54004 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_R7_A1NT_wrapper/R7_A1NT_final_scores_frame_PRE_AGGREGATION.csv
+#   blob 4935c45a1d90c086a84fa5364e6684ae336dd3d4  59781 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_R7_A1NT_wrapper/R7_A1NT_manifest.json
+#   blob 3c4373bcc1b460344692bdf772b146a0ff34701f  5819 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_R7_A1_s1_wrapper/R7_A1_s1_final_scores_frame.csv
+#   blob 17fcd75fd6435d5e9845b3de5ad4eaa378a4995b  53932 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_R7_A1_s1_wrapper/R7_A1_s1_final_scores_frame_PRE_AGGREGATION.csv
+#   blob 75e2d093b048fbb8f74da99555b5090e17b31296  59525 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_R7_A1_s1_wrapper/R7_A1_s1_manifest.json
+#   blob 37f12a2f32abe962137b51df5655b3b792ab432d  5843 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_R7_A1_wrapper/R7_A1_final_scores_frame.csv
+#   blob a23dc21adc301a41f0131a4d85e88aa386b87cd1  53965 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_R7_A1_wrapper/R7_A1_final_scores_frame_PRE_AGGREGATION.csv
+#   blob 57ff8d0a848c2b2a52f50e75522479422837db06  59630 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_R7_A1_wrapper/R7_A1_manifest.json
+#   blob 6452d8a6fe3461e517bf96e33d8c6a42def16825  5792 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_R7_BLIND_wrapper/R7_BLIND_final_scores_frame.csv
+#   blob c4528e7045b0d6f0d6dacac1e44932bb452b4dfe  52706 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_R7_BLIND_wrapper/R7_BLIND_final_scores_frame_PRE_AGGREGATION.csv
+#   blob 9f3416906d78de615d24e42c29e6e5788951e7cc  59278 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_R7_BLIND_wrapper/R7_BLIND_manifest.json
+#   blob 7139171d64acd8c56bb4df80e22336dcf8c849a1  5842 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_R7_CEILDECL_d_wrapper/R7_CEILDECL_d_final_scores_frame.csv
+#   blob a23dc21adc301a41f0131a4d85e88aa386b87cd1  53965 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_R7_CEILDECL_d_wrapper/R7_CEILDECL_d_final_scores_frame_PRE_AGGREGATION.csv
+#   blob 57ff8d0a848c2b2a52f50e75522479422837db06  59630 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_R7_CEILDECL_d_wrapper/R7_CEILDECL_d_manifest.json
+#   blob 56bfc41c2a08d9ef5c536ada8f0c3a544de052b4  5919 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_R7_FILTOFF_wrapper/R7_FILTOFF_final_scores_frame.csv
+#   blob a23dc21adc301a41f0131a4d85e88aa386b87cd1  53965 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_R7_FILTOFF_wrapper/R7_FILTOFF_final_scores_frame_PRE_AGGREGATION.csv
+#   blob 57ff8d0a848c2b2a52f50e75522479422837db06  59630 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_R7_FILTOFF_wrapper/R7_FILTOFF_manifest.json
+#   blob 7870034dc6ec218a62dd17e6e7e84438290098f7  5877 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_R7_NAVOFF_wrapper/R7_NAVOFF_final_scores_frame.csv
+#   blob f7f1cbd72e524cecdeca0cc93dfe6e2dae11317e  53996 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_R7_NAVOFF_wrapper/R7_NAVOFF_final_scores_frame_PRE_AGGREGATION.csv
+#   blob 0b0c541b158beb95946e6fa7685657080367037c  59634 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_R7_NAVOFF_wrapper/R7_NAVOFF_manifest.json
+#   blob 41b5cad602362ff66fb67d7829bf0b334484b171  5852 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_R7_VMAXOFF_wrapper/R7_VMAXOFF_final_scores_frame.csv
+#   blob 657ec7327e9f0555e5a3b439d1f32c2e6d9da381  53817 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_R7_VMAXOFF_wrapper/R7_VMAXOFF_final_scores_frame_PRE_AGGREGATION.csv
+#   blob 58950446b951a8fb89d6b900c587350f9b85767e  59363 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_R7_VMAXOFF_wrapper/R7_VMAXOFF_manifest.json
+#   blob 713dce3da0a4d04c3f93399238aea262396d9dbb  5876 B
+# REFUSED (> 20 MB, 28402529 B; D: only): FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_navhard/rows_R7_A1.jsonl
+# REFUSED (> 20 MB, 28439866 B; D: only): FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_navhard/rows_R7_A1_s1.jsonl
+# REFUSED (> 20 MB, 58516972 B; D: only): FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_navtest/rows_R7_A1.jsonl
+# REFUSED (> 20 MB, 58592407 B; D: only): FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/bridge_navtest/rows_R7_A1_s1.jsonl
+# REFUSED (canonical UUID in the text): FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navhard/score_PRIOR_ha0p__navhard_two_stage.log
+# REFUSED (canonical UUID in the text): FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navhard/score_R7_A1__navhard_two_stage.log
+# REFUSED (canonical UUID in the text): FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navhard/score_R7_A1_s1__navhard_two_stage.log
+# REFUSED (canonical UUID in the text): FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navhard/score_R7_CEILDECL_d__navhard_two_stage.log
+# REFUSED (canonical UUID in the text): FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navtest/r7s5000_PRIOR_ha0p/r7s5000_PRIOR_ha0p.log
+# REFUSED (canonical UUID in the text): FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navtest/r7s5000_R7_A1/r7s5000_R7_A1.log
+# REFUSED (canonical UUID in the text): FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navtest/r7s5000_R7_A1_s1/r7s5000_R7_A1_s1.log
+# REFUSED (canonical UUID in the text): FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navtest/r7s5000_R7_CEILDECL_d/r7s5000_R7_CEILDECL_d.log
+# REFUSED (canonical UUID in the text): FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navtest/r7s5000_R7_FILTOFF_sub/r7s5000_R7_FILTOFF_sub.log
+# REFUSED (canonical UUID in the text): FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navtest/r7s5000_R7_VMAXOFF_sub/r7s5000_R7_VMAXOFF_sub.log
+# REFUSED (canonical UUID in the text): FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_navtest/r7s5000_R7_VMAXORACLE_sub/r7s5000_R7_VMAXORACLE_sub.log
+# REFUSED (canonical UUID in the text): FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_PRIOR_ha0p.log
+# REFUSED (canonical UUID in the text): FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_R7_A1.log
+# REFUSED (canonical UUID in the text): FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_R7_A1NT.log
+# REFUSED (canonical UUID in the text): FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_R7_A1_s1.log
+# REFUSED (canonical UUID in the text): FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_R7_BLIND.log
+# REFUSED (canonical UUID in the text): FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_R7_CEILDECL_d.log
+# REFUSED (canonical UUID in the text): FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_R7_FILTOFF.log
+# REFUSED (canonical UUID in the text): FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_R7_NAVOFF.log
+# REFUSED (canonical UUID in the text): FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step5000/scores_warmup/score_R7_VMAXOFF.log
+# NOT IN THIS BATCH (LIVE at hand-over; they exist ONLY on the external drive D: = E:): raw/milestones/step30000/ (completion running: code/complete_milestone7.py), raw/milestones/step50400/ (the FINAL suite running), raw/milestones/waiter_30000.{json,log} (annotated DIED_HOST_RESTART), raw/milestones/runner_30000.out.txt, raw/milestones/runner_50400.out.txt, raw/milestones/complete_30000.out.txt
+
+## 2026-10-04 NAVTEST-EPDMS
+# EvalFlyWheel NavSim stream, 2026-10-04 ~02:30 Berlin: NAVSIM v2 EPDMS on navtest (ONE stage) for refcv7, by RE-SCORING the banked
+# navtest plans (no forward pass, no new metric cache: the v2 navtest cache + the banked seams already exist). SECONDARY READ, NO BAR;
+# BAR-R7-N1 (v1.1 PDMS) is untouched. Pre-registration: SPEC_ADDENDUM_NAVTEST_EPDMS.md; hash chain raw/SPEC_ADDENDUM_NAVTEST_EPDMS_SHA256.txt
+# (4 entries: original + clerical A1, A2 + implementation record A3; the LAST line is the version the tooling pins).
+# Everything under raw/navtest_epdms/smoke/ and raw/navtest_epdms/controls/ is VALIDATION ONLY (<= 218-token subsets), never a result.
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/SPEC_ADDENDUM_NAVTEST_EPDMS.md
+#   blob 77bcb38b6df988551807932f3ef2e077dfb3e211  21786 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/SPEC_ADDENDUM_NAVTEST_EPDMS_SHA256.txt
+#   blob 2402a7d97c4855287b823b7327a91381a0b84ed9  1413 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/code/score_navtest_epdms7.py
+#   blob 8f125ee8d468b39e0f12c28f1816611edf8f3b4a  52288 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/code/epdms_waiter7.py
+#   blob d5097f03521ff084130ac0c5bbfb8268d487fe27  17240 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_score_navtest_epdms7.py
+#   blob f93cc335ab04c71b6810399422b48c14b7cd1ec3  36621 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/navtest_epdms/controls/CONTROLS_SMOKE.json
+#   blob fd6532692f73382f22fcd9d35a5d1c09a2c64c15  3697 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/navtest_epdms/controls/W8_smoke218_STOP.csv
+#   blob f6f2cfe58b31e6323af52d3bcc78c808f4adfcea  20441 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/navtest_epdms/controls/tokens_wholelog1_43.json
+#   blob ebc55af445dd1fdef3d53ceedd4275064f2e49f0  1212 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/navtest_epdms/controls/tokens_wholelog218_W8.json
+#   blob 5b576a0d9806fa5f542faa488049e488a4bf1ea9  5589 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/navtest_epdms/inputs/token_meta.json
+#   blob 71fa667997e69ff011cda50932ed412112f0ac42  2349136 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/navtest_epdms/smoke/ke2/STOP/ARM_DONE.json
+#   blob 3e869e10a92865a405bfa73de7ae0a5b579daa95  13050 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/navtest_epdms/smoke/ke2/STOP/ARM_LAST_ATTEMPT.json
+#   blob 9816210ad7730d2d6856ab3616da34978f4a6a0b  266 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/navtest_epdms/smoke/ke2/STOP/STOP.counts.json
+#   blob 784290c6755ce599eb678185aca78fbb5f736fbe  8875 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/navtest_epdms/smoke/ke2/STOP/STOP.devkit.csv
+#   blob b538d6c23140bed96c3d522e478adb567182eeb2  20441 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/navtest_epdms/smoke/ke2/STOP/STOP.score.log
+#   blob cf7c4a1a055e9ae382808397216ba0f21edbdf5f  48564 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/navtest_epdms/smoke/ke2/STOP/STOP.wrapper_manifest.json
+#   blob 21c590b64d5703068f2050ec3a98eda15fe7cc50  14766 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/navtest_epdms/smoke/ke3a/R7_A1/ARM_DONE.json
+#   blob ccbb3e840e8792733f8d7840c83177899ca43644  10440 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/navtest_epdms/smoke/ke3a/R7_A1/ARM_LAST_ATTEMPT.json
+#   blob b1f01258f741c80856951391d634ce1a21b84f28  269 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/navtest_epdms/smoke/ke3a/R7_A1/R7_A1.counts.json
+#   blob d15531c88114bb3f13bbc0b829478ef1bfee51f9  5509 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/navtest_epdms/smoke/ke3a/R7_A1/R7_A1.devkit.csv
+#   blob 761f64286ce4a49899c52fe488d04ae1fd640b01  3953 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/navtest_epdms/smoke/ke3a/R7_A1/R7_A1.score.log
+#   blob dbc08a4787389c4bd8ba2692996044912e4f06b4  12490 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/navtest_epdms/smoke/ke3a/R7_A1/R7_A1.wrapper_manifest.json
+#   blob cf0928a55a22a3225631e5b63d838e1cb1483528  7981 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/navtest_epdms/smoke/ke3b/R7_A1/ARM_DONE.json
+#   blob f6d4ad68f691b339ffe9f3208075eba6e386df04  10399 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/navtest_epdms/smoke/ke3b/R7_A1/ARM_LAST_ATTEMPT.json
+#   blob 2808f6154431bd5c6f2cf61a8ee864188389dff3  269 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/navtest_epdms/smoke/ke3b/R7_A1/R7_A1.counts.json
+#   blob 87ffcb7ed7bb852ccf33f6c6ccc6177cb79bcc78  5509 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/navtest_epdms/smoke/ke3b/R7_A1/R7_A1.devkit.csv
+#   blob 761f64286ce4a49899c52fe488d04ae1fd640b01  3953 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/navtest_epdms/smoke/ke3b/R7_A1/R7_A1.score.log
+#   blob 623d7d6bbe69469a801b943b5618ca3e3bd030cc  12410 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/navtest_epdms/smoke/ke3b/R7_A1/R7_A1.wrapper_manifest.json
+#   blob 8b2401784203ed1f839aad8123764869a478378b  7938 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/navtest_epdms/smoke/ke5_CV/CV/ARM_DONE.json
+#   blob 69c1a0327cd4b20f5b43831ca900a75d6b262ec9  8971 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/navtest_epdms/smoke/ke5_CV/CV/ARM_LAST_ATTEMPT.json
+#   blob acecb281241c18137029f6daca09149b771a1e5f  267 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/navtest_epdms/smoke/ke5_CV/CV/CV.counts.json
+#   blob 10609c26945ab56f9ad71b2a053c5e870e50a636  5136 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/navtest_epdms/smoke/ke5_CV/CV/CV.devkit.csv
+#   blob 9dc2e25b1bd708287fae01cbde95f01b3a27a5d7  3691 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/navtest_epdms/smoke/ke5_CV/CV/CV.score.log
+#   blob 258e3e9cb719eb80f3faed9099d44996afb090ea  12110 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/navtest_epdms/smoke/ke5_CV/CV/CV.wrapper_manifest.json
+#   blob 4da7e49bc953cf5c4d2cad3ad417ef26ed612b3c  7311 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/navtest_epdms/smoke/ke5_HUMAN/HUMAN/ARM_DONE.json
+#   blob f61cd98d9c7723c18c9a51b49d83e31c6b1fd69c  9114 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/navtest_epdms/smoke/ke5_HUMAN/HUMAN/ARM_LAST_ATTEMPT.json
+#   blob cac32690890b01758d84da67995a81cbafdf77f9  274 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/navtest_epdms/smoke/ke5_HUMAN/HUMAN/HUMAN.counts.json
+#   blob 6636d23ffcf05e570f3bd26af025fa14ef5e5823  5226 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/navtest_epdms/smoke/ke5_HUMAN/HUMAN/HUMAN.devkit.csv
+#   blob 22ff03b6a4076a82af1183648923a47caa45a31e  3904 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/navtest_epdms/smoke/ke5_HUMAN/HUMAN/HUMAN.score.log
+#   blob 1cb1111e86a30cf3be1c7abf562cde067e70648f  12182 B
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/navtest_epdms/smoke/ke5_HUMAN/HUMAN/HUMAN.wrapper_manifest.json
+#   blob 3130cd03c123c97fbcdb04d97160b3c2ce503652  7425 B
+# NOT IN THIS BATCH (LIVE at hand-over; they exist ONLY on the external drive D: = E:): raw/milestones/epdms_waiter.{json,log,nohup.txt}, raw/milestones/epdms_waiter.superseded_0025.{json,log}, raw/milestones/epdms_waiter_child.out.txt (the detached waiter), and, as it completes arms, raw/navtest_epdms/floors/ + raw/navtest_epdms/step{5000,30000,50400}/ (per arm: ARM_DONE.json, <ARM>.devkit.csv, ...; per step: summary_navtest_epdms.json/.txt). Re-run the landing sweep when raw/milestones/epdms_waiter.json reads status DONE.

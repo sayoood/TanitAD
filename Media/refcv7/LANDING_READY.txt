@@ -1,0 +1,30 @@
+LANDING_READY -- refcv7-r101-s0 FINAL (step 50,400) frame-by-frame reel
+Prepared 2026-10-04 by the render subagent. NOTHING here is staged, committed or pushed: the Master Mind lands it.
+
+== Repo paths to land (git-trackable) ==
+taniteval/tools/render_refcv7_video.py        md5 abca55c91c7408644483554b9f282787  (the renderer; the RENDER blob)
+taniteval/tools/RENDER_REFCV7_VIDEO.md         the doc: clip rule fixed before rendering, sources, controls, results (sec. 7)
+taniteval/tests/test_render_refcv7_video.py    md5 710ee290b1c5712e1061daa6b8bc7c9b  (16 tests, literal known values + a lateral-mirror mutation arm; 16/16 green on the dev box)
+Media/refcv7/render_record.json                md5 3977e2c9f4420faf062ec61c05300a23  (provenance, md5s, identity checks, per-clip summaries, compute)
+Media/refcv7/clip_selection.json               md5 6714daaec937e2be764ecc885fcac4e0  (sha12s + counts only; no raw clip ids -- grep for a UUID pattern reads 0)
+Media/refcv7/LANDING_READY.txt                 this file
+
+== Binaries (gitignored by .gitignore line 24 `*.mp4`; NOT landable in git) ==
+Media/refcv7/refcv7_final_50400_reel.mp4       155,934,453 B  md5 9ce0ca03335fa0e4dd4116d8b406e47d  1920x1080 H.264 10 fps, 2,579 frames, 257.9 s
+Media/refcv7/refcv7_final_50400_preview.mp4     12,952,054 B  md5 70bdf9f8c5ff8d57415f580d40731ca1  1280x720, same 2,579 frames
+  Second copy of both: Thor /home/nvidia/refcv7_post/video/out/final/ (md5-verified equal at pull time).
+  OWED (Master Mind's call): a Media/MEDIA_MANIFEST.json row per Media/README.md rule 3 (the README asks for
+  Media/<YYYY-MM-DD>-<slug>/; the brief named Media/refcv7/ and that path was used), and an off-device copy
+  (e.g. the private HF repo) if a third copy is wanted.
+
+== Thor-only working state (not for git) ==
+/home/nvidia/refcv7_post/video/bank/final/   1.3 GB: per-window npz (camera bytes, 10 cm pred/GT/lift mask), rows.jsonl,
+                                             forward_record.json, clip_selection.json, FORWARD_DONE. SINGLE COPY;
+                                             re-derivable with --stage forward (27 min on Thor, 793 s of GPU).
+/home/nvidia/refcv7_post/video/out/final/keyframes/  26 PNG keyframes (verification aid). SINGLE COPY; re-derivable.
+/home/nvidia/refcv7_post/video/code/render_refcv7_video.forward_version.py  md5 189fffcd5a134a199d638ef09aa2f422
+    the blob the FORWARD ran with; AST-compared to the repo blob: only render_frame/title_card differ.
+/home/nvidia/refcv7_post/video/{fwd_final.log, render_final.log, fwd_smoke.log, render_smoke.log}
+
+Nothing in the run dir /home/nvidia/refcv7_run/runs/refcv7-r101-s0 was modified (read-only use of ckpt.pt,
+config.json, summary.json, metrics.jsonl).
