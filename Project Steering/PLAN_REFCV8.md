@@ -63,6 +63,28 @@ conditioning before the trainer change. A from-scratch run (~6 days) only if the
 | X9 | One training seed everywhere; the bootstrap answers "another draw of episodes" only (H-ESTIM-SEED-1) | a second seed of the refcv8 run if compute allows; otherwise every lever claim is read against the v7-tiny replicate floor | replicate arm |
 | X10 | Poses lead the image by 0–34 ms (mean 0.19 m, D3); day/night is a clock label (D3); left turns on eval rest on 13 clips (D3) | interpolate poses to the camera timestamp; stratify night by brightness; report left-turn n | — |
 
+### 0.3 WP-RL — DiffusionDriveV2 RL post-training of refcv7 as a parallel extension (PI, 2026-10-04 afternoon)
+
+*PI: "At parallel we should plan a post training with RL exactly as stated in the DiffusionDrive paper 2 as extension
+to see the effect. Run it on the Thor and evaluate the results."* Package:
+`TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv7-ddv2-rl-posttrain/`.
+
+* **Object:** refcv7-r101-s0 at 50,400. **Method:** the paper-exact spec already banked (arXiv 2512.07745 + released
+  code, `…/2026-09-15-ddv2-rl-prep/SPEC_DDV2_RL_PAPER.md`): truncated-diffusion policy, η = 1 / 0, multiplicative
+  exploration noise, intra-anchor GRPO + inter-anchor truncation, L_RL + 0.1·L_IL, AdamW 2e-4, reward = PDMS
+  (NC × DAC × (5·EP + 5·TTC + 2·C)/12). Every deviation our setting forces (117 anchors, PhysicalAI, DAC from SAM3
+  drivable area, one Thor) is tabulated.
+* **Why it can work now when it did not before:** the programme's earlier ports FAILED / HARMED (H-DDV2RL-1,
+  H-DDV2RL-2: ADE 0.2994 → 0.5502 at T1), and the attribution showed the RL-OFF control moving as much as RL. The
+  reward was broken: no DAC (no map on PhysicalAI) and a saturating ego-progress term. SAM3 maps now cover all 4,369
+  train clips (D3), which unblocks the DAC term — the condition the repaired-reward pre-registration (H-DDV2RL-3)
+  was waiting for.
+* **Arms:** RL (seed 0), RL-s1 (replicate, if the budget allows), **RLOFF** (same steps, RL weight 0 — the control that
+  decided H-DDV2RL-2), BASE, RL-SHUF (rewards shuffled — must not beat RLOFF). Primary endpoint T1 on held-out eval139,
+  four families, RL vs RLOFF (the RL effect) and RL vs BASE; secondary: route set, NavSim navtest / navhard zero-shot.
+* **Compute:** Thor, ≤ ~24 GPU-h for the RL arm, checkpointed every ~45 min and stoppable/resumable, so the refcv8
+  critical path (A7 capture, R1, v7-tiny ladder) takes Thor's GPU in short slots; launch gate binding before training.
+
 ---
 
 ## 1. The answer to "why does the replay say *GT goals: not labelled at this instant*?"
