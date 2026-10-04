@@ -61,3 +61,13 @@ Each arm is compared with the DEPLOYED system: the base scorer under navsim_v1.
 - **The fan:** the trajectory teacher leaves NAVSIM's drivable area on 4.97 % [1.30, 10.31] of held-out samples where the human does 0.00 %, and the model's hypotheses fail it 60 % of the time on those samples, against 24 % overall (`teacher_check_heldout_summary.json`). The proposal-head lever is to drop or replace those targets. That is a trajectory-head fine-tune, outside this scorer-only registration.
 
 The interval answers *another draw of logs* only: one fine-tune seed, deterministic inference.
+
+## Status (added 2026-10-04 ~11:50 local, before any SFT-2 step)
+
+**NOT LAUNCHED — the PI chose the paper-pure labels** (*"let's do the paper pure way"*).
+- The pod chain was disarmed by explicit PID.
+- The NAVSIM direction and lane labels already written stay as the EVALUATION yardstick: oncoming and lane-centre pick shares on the held-out sets. They are not training labels.
+
+The paper-pure replacement has two parts:
+1. the teacher simulator's own lane signals (`refe/onpolicy_relabel_teacher_lane.py`), validated on the held-out sets before any training;
+2. SFT-3 (`eval/PREREG_SFT3.md`), the expected-score objective on the existing teacher labels.

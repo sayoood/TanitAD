@@ -65,6 +65,15 @@ class ScorerCopy(nn.Module):
         return REFe.score_trajectories(self, trajs, sctx)
 
 
+def expected_reward_loss(sx, tg, tau_s):
+    """-E_{i ~ pi}[R_i], pi = softmax(log agg_v1(sigmoid(sx)) / tau_s) over each set, R_i = agg_v1(labels) (the true score
+    of hypothesis i). A one-step choice whose outcome is KNOWN for every action: this is the policy-gradient objective in
+    closed form -- no sampled action, so no sampling variance. As tau_s -> 0, pi -> the planner's argmax."""
+    s = torch.log(agg_v1(torch.sigmoid(sx)).clamp_min(1e-6))
+    pi = torch.softmax(s / tau_s, dim=1)
+    return -(pi * agg_v1(tg)).sum(1).mean()
+
+
 def key(r):
     return (r.get("log_name", ""), r.get("token", ""), int(r.get("step", 0)), int(r.get("rank", 0)))
 
@@ -119,9 +128,11 @@ def main() -> int:
     # SFT-2 (LANE-1 follow-on); all default OFF = SFT-1 exactly
     ap.add_argument("--lane-labels-train", default="", help="side files of onpolicy_relabel_lane.py for --onpolicy")
     ap.add_argument("--lane-labels-heldout", default="", help="side files of onpolicy_relabel_lane.py for --heldout")
-    ap.add_argument("--b-mode", default="listnet", choices=("listnet", "compw"),
+    ap.add_argument("--b-mode", default="listnet", choices=("listnet", "compw", "expreward"),
                     help="arm B: BCE + lam*ListNet (SFT-1) or per-component weighted BCE (--b-compw)")
     ap.add_argument("--b-compw", default="1,1,1,1,1,1", help="arm B component weights NC,DAC,EP,TTC,C,DDC (b-mode compw)")
+    ap.add_argument("--tau-s", type=float, default=0.1,
+                    help="b-mode expreward: temperature of the selection policy softmax(log agg_v1(p) / tau_s)")
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
     dev = "cuda"
@@ -206,6 +217,9 @@ def main() -> int:
             w = compw.view(1, 1, 6)
             bceBw = (F.binary_cross_entropy_with_logits(sxB, tg, reduction="none") * w).sum(-1).mean() / w.sum()
             return bceA, bceBw, torch.zeros((), device=sxB.device)
+        if a.b_mode == "expreward":                          # SFT-3: the selection's EXPECTED true score, all 64 outcomes known
+            bceB = F.binary_cross_entropy_with_logits(sxB, tg)
+            return bceA, bceB + lam * expected_reward_loss(sxB, tg, a.tau_s), expected_reward_loss(sxB, tg, a.tau_s)
         bceB = F.binary_cross_entropy_with_logits(sxB, tg)
         s = torch.log(agg_v1(torch.sigmoid(sxB)).clamp_min(1e-6))
         q = torch.softmax(agg_v1(tg) / a.tau_t, dim=1)
