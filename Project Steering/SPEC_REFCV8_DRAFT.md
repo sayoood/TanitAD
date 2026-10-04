@@ -1026,6 +1026,30 @@ R8-6; 5 by E2′ (RC-A50, conditional on 11); 7 by §10.3.
 * **Q11 — confirmed.** RC-OFF ≥ 0.90 / ≥ 0.60 stays: it is the bar that protects the leaderboard-legal case (no route
   checkpoint at inference). Calibration disclosure in §14 stands.
 * **Q12 — B3 OUT** unless WP-D registers a probe for it before SPEC_REFCV8 registration.
+* **R8-4 (iii) tag definition (ruled 2026-10-04 ~23:20, MEASURED basis WP-B `raw/turn_disagreement_{train,eval139}.json`).**
+  Consistency uses the PLAN tag over [0, 6] s, the tag the fan's candidates carry. It is scored ONLY on plan-observable
+  rows:
+  - TURN rows count when the v9 turn segment lies inside [0, 6] s;
+  - LANE_KEEP rows count when v9 curve = 0.
+
+  The unrestricted label↔tag gap (TURN_L 0.65 / TURN_R 0.60) is a window mechanism, not a label defect. 80 % of v9 TURN
+  segments are not fully inside [0, 6] s: 86 % of the disagreement is turns that start inside the window and end after
+  6 s. Reference agreement on the restricted rows, train / eval139: TURN 0.9285 / 0.936, LANE_KEEP 0.965 / 0.972. The
+  [2, 6] s overlap tag is not used.
+* **Selection evidence for X1 (D6 P1', MEASURED, refcv7 step 50,400 navhard, `…/D6_navsim_failure_anatomy/raw/d6_p1x.json`,
+  controls K1–K6 incl. K4s PASS).**
+  - DAC-zero scenes with a clean reference (n 1,140): the fan holds a FULL-clean candidate on 0.890 [0.862, 0.917]. The
+    scorer's pick is clean on 0.065; a random fan member on 0.320. The best clean candidate's median rank is 5, top-5
+    0.509.
+  - NC-zero (n 914): a clean candidate exists on 0.720, and 0.930 of those are slower than the pick.
+  - Registered reading: generation is not the defect; DAC needs a drivable-aware re-ranking; NC is a speed commit.
+
+  X1 as built scores candidates by GT imitation only, with no drivable term (WP-B). Next levers:
+  - **D6 P4** (registered `SPEC_P4_DRIVABLE_GATE.md`, sha256 `f613a150…`): a zero-training drivable gate from refcv7's
+    own map head;
+  - a trained `drivable` sub-score critic (SAM3 drivable GT target, own-map-head feature at inference, zero-init; WP-B,
+    ~1 day), entering through ladder arm V-R8-DRV at R ≥ 2;
+  - the NC speed commit is addressed by X3 + `--r8-speed-enc8` + v9 longitudinal constraints (P8).
 
 ---
 
