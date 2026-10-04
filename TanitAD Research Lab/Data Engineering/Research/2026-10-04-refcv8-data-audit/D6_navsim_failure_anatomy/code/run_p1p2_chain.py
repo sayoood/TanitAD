@@ -39,6 +39,11 @@ COMMON = ["--split", "navhard_two_stage",
           "--bank2", f"{BANKS}/navhard_s2", "--bank1", f"{BANKS}/navhard_s1"]
 
 
+CKPT_X = "D:/refcv7_eval_kit/ckpt/ckpt_50400.pt"
+MD5_X = "b418d0fc4a92a6848c246a6a7c50207b"                       # SPEC_P1P2_A2_P1PRIME s1
+COMMON_X = [(MD5_X if x == MD5 else CKPT_X if x == CKPT else x) for x in COMMON]
+
+
 def lock_pid() -> int:
     """The pid the lock records, IF the lock names this job AND that pid is an ANCESTOR of this process (the with_gpu_lock wrapper); else -1.
     (A venv python.exe is a launcher that spawns the real interpreter, so `os.getppid()` is NOT the wrapper -- walk the ancestors.)"""
@@ -78,28 +83,42 @@ def rows_done(out: str, arm: str, n: int) -> bool:
     return k >= n
 
 
-def stage(name: str, arms: str, tokname: str, out: str, export: str, log) -> dict:
+def stage(name: str, arms: str, tokname: str, out: str, export: str, log, common=None) -> dict:
+    common = COMMON if common is None else common
     tf, n = tokens_json(tokname)
     arm_list = arms.split(",")
     if os.environ.get("D6_CHAIN_DRYRUN"):
         cmd = [PY, os.path.join(HERE, "bridge_fix", "run_bridge7.py"), "--arms", arms, "--tokens-file", tf, "--out", out,
-               "--gpu-lock-job", JOB, "--gpu-lock-pid", str(lock_pid())] + COMMON + (["--export-fan", export] if export else [])
+               "--gpu-lock-job", JOB, "--gpu-lock-pid", str(lock_pid())] + common + (["--export-fan", export] if export else [])
         log("DRYRUN " + " ".join(cmd))
         return {"name": name, "dryrun": True, "n_tokens": n}
     if all(rows_done(out, a, n) for a in arm_list) and (not export or rows_done(out, arm_list[0], n)):
         log(f"stage {name}: rows complete -> skipped")
         return {"name": name, "skipped": True}
     cmd = [PY, os.path.join(HERE, "bridge_fix", "run_bridge7.py"), "--arms", arms, "--tokens-file", tf, "--out", out,
-           "--gpu-lock-job", JOB, "--gpu-lock-pid", str(lock_pid())] + COMMON
+           "--gpu-lock-job", JOB, "--gpu-lock-pid", str(lock_pid())] + common
     if export:
         cmd += ["--export-fan", export]
     env = dict(os.environ)
     env.update({"PYTHONPATH": f"{TREE}/stack;{TREE}/taniteval", "TANITAD_REPO": TREE, "OMP_NUM_THREADS": "6", "PYTHONIOENCODING": "utf-8"})
     t0 = time.time()
-    with open(os.path.join(RAW, f"chain_{name}.log"), "a", encoding="utf-8") as fh:
-        fh.write("CMD: " + " ".join(cmd) + "\n")
-        fh.flush()
-        rc = subprocess.run(cmd, stdout=fh, stderr=subprocess.STDOUT, env=env).returncode
+    logp = os.path.join(RAW, f"chain_{name}.log")
+    tries = 0
+    while True:
+        tries += 1
+        with open(logp, "a", encoding="utf-8") as fh:
+            fh.write(f"CMD (try {tries}): " + " ".join(cmd) + "\n")
+            fh.flush()
+            rc = subprocess.run(cmd, stdout=fh, stderr=subprocess.STDOUT, env=env).returncode
+        if rc == 0 or tries >= 90 or not lock_is_ours():
+            break
+        # RERUN FIX (disclosed; no P2/K7 number existed): the bridge refuses to start while ANOTHER python compute app is on the card -- a foreign
+        # process that appeared under our lock killed the first P2/K7 attempt after 2 s. That is the guard working, not a bridge defect: wait and retry.
+        tail = open(logp, encoding="utf-8", errors="replace").read()[-3000:]
+        if "other python compute app" not in tail:
+            break
+        log(f"stage {name}: foreign python compute app on the card (try {tries}); waiting 60 s")
+        time.sleep(60)
     return {"name": name, "rc": rc, "wall_s": round(time.time() - t0, 1),
             "rows": {a: rows_done(out, a, n) for a in arm_list}, "n_expected": n}
 
@@ -113,17 +132,24 @@ def main() -> int:
         return 3
     log(f"START under the lock job={JOB} wrapper_pid={lock_pid()}")
     res = []
-    res.append(stage("P1", "R7_A1", "P1_all", os.path.join(RAW, "p1_bridge"), os.path.join(RAW, "p1_fan"), log))
-    if not lock_is_ours():
-        log("lock lost after P1 -> stop")
-        json.dump(res, open(os.path.join(RAW, "p1p2_gpu_done.json"), "w"), indent=1)
-        return 4
-    res.append(stage("P2", "R7_NAVOFF,R7_NAVFOLLOW,R7_NAVFLIP", "P2_all", os.path.join(RAW, "p2_bridge"), "", log))
-    res.append(stage("K7", "R7_A1", "P2_K1", os.path.join(RAW, "p2_bridge_k7"), "", log))
+    stages = os.environ.get("D6_STAGES", "P1,P2,K7").split(",")
+    done_name = os.environ.get("D6_DONE", "p1p2_gpu_done.json")
+    if "P1" in stages:
+        res.append(stage("P1", "R7_A1", "P1_all", os.path.join(RAW, "p1_bridge"), os.path.join(RAW, "p1_fan"), log))
+        if not lock_is_ours():
+            log("lock lost after P1 -> stop")
+            json.dump(res, open(os.path.join(RAW, done_name), "w"), indent=1)
+            return 4
+    if "P1X" in stages:      # SPEC_P1P2_A2_P1PRIME: step-50,400 export for ALL 5,912 navhard scenes
+        res.append(stage("P1X", "R7_A1", "P1X_all", os.path.join(RAW, "p1x_bridge"), os.path.join(RAW, "p1x_fan"), log, common=COMMON_X))
+    if "P2" in stages:
+        res.append(stage("P2", "R7_NAVOFF,R7_NAVFOLLOW,R7_NAVFLIP", "P2_all", os.path.join(RAW, "p2_bridge"), "", log))
+    if "K7" in stages:
+        res.append(stage("K7", "R7_A1", "P2_K1", os.path.join(RAW, "p2_bridge_k7"), "", log))
     if os.environ.get("D6_CHAIN_DRYRUN"):
         log("DRYRUN DONE (no done-marker written) " + json.dumps(res))
         return 0
-    json.dump(res, open(os.path.join(RAW, "p1p2_gpu_done.json"), "w"), indent=1)
+    json.dump(res, open(os.path.join(RAW, done_name), "w"), indent=1)
     log("DONE " + json.dumps(res))
     return 0
 

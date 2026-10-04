@@ -61,6 +61,7 @@ def main():
     ap.add_argument("--k5", type=int, default=0)
     ap.add_argument("--exact-ids", default="")
     ap.add_argument("--only-tokens", default="", help="score only the scenes listed in this file")
+    ap.add_argument("--shift-states", type=float, default=0.0, help="POST-HOC diagnostic K4b: translate the SIMULATED ego states laterally (m) after the tracker, before scoring")
     a = ap.parse_args()
     k, n = (int(x) for x in a.shard.split("/"))
     exact_ids = set(l.strip() for l in open(a.exact_ids) if l.strip()) if a.exact_ids else set()
@@ -106,6 +107,13 @@ def main():
                 allp = np.concatenate([poses, np.zeros((1, 8, 3), np.float32)], axis=0)      # + STOP as the last candidate
                 arrs = np.stack([traj_arr(p, ini, ps) for p in allp], axis=0)
                 sim = simulator.simulate_proposals(arrs, ini)
+                if a.shift_states:                      # K4b (post-hoc): a mutation the LQR tracker cannot damp -- shift the simulated states themselves
+                    import math
+                    from navsim.planning.simulation.planner.pdm_planner.utils.pdm_enums import StateIndex as _SI
+                    h0 = ini.rear_axle.heading
+                    sim = sim.copy()
+                    sim[:, :, _SI.X] += -math.sin(h0) * a.shift_states
+                    sim[:, :, _SI.Y] += math.cos(h0) * a.shift_states
                 pick_idx = fr["sel_idx"]
                 pick_sim = sim[pick_idx] if not a.lateral_shift else sim[pick_idx]
                 env = policy.simulate_environment(pick_sim, mc)

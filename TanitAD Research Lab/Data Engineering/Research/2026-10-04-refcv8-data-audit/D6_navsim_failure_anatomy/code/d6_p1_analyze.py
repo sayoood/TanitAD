@@ -31,8 +31,11 @@ def dec(b64, n):
     return None if b64 is None else np.frombuffer(base64.b64decode(b64), dtype=np.float32)[:n].copy()
 
 
+_SETS_DIR = [RAWD]
+
+
 def tokset(name):
-    return [l.strip() for l in open(os.path.join(RAWD, f"spec_tokens_{name}.txt")) if l.strip()]
+    return [l.strip() for l in open(os.path.join(_SETS_DIR[0], f"spec_tokens_{name}.txt")) if l.strip()]
 
 
 def boot_ratio(df, num, den, logcol="log", B=2000, seed=0):
@@ -59,24 +62,44 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--dir", default=RAWD)
     ap.add_argument("--synthetic", action="store_true")
+    ap.add_argument("--p1x", action="store_true", help="SPEC_P1P2_A2_P1PRIME: step-50,400 inputs / outputs, K4s (state-shift, bar 0.10), sets by rule")
+    ap.add_argument("--hooks", default="", help="override the banked-hooks path (tests only)")
+    ap.add_argument("--sets-dir", default=RAWD, help="where spec_tokens_p1x_*.txt and spec_p1x_token_sets.json live (default raw/)")
     a = ap.parse_args()
     tag = "SYNTHETIC-TEST (not a result)" if a.synthetic else "MEASURED"
+    global W_CPASS
+    if a.p1x:
+        pfx, fan_dir, scored_glob, k4_file, k4_thr, k4_key = "p1x", "p1x_fan", "p1x_scored_s*.jsonl", "p1x_scored_K4s.jsonl", 0.10, "K4s_state_shift_plus30m_F_DAC"
+        bridge_dir = "p1x_bridge"
+        setfile = {"S1_dac_cleanpath": "p1x_S1", "S1b_dac_ref_fails": "p1x_S1b", "S2_nc": "p1x_S2", "Cpass": "p1x_Cpass", "P1_K1_fail": "p1x_K1fail"}
+        hooks_p = ("D:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step50400/scores_navhard/"
+                   "score_R7_A1__navhard_two_stage_wrapper/R7_A1__navhard_two_stage_hooks.json")
+        W_CPASS = json.load(open(os.path.join(a.sets_dir, "spec_p1x_token_sets.json"), encoding="utf-8"))["N_pass"] / 200.0
+        out_name, withheld_name = "d6_p1x.json", "d6_p1x_WITHHELD_controls_failed.json"
+    else:
+        pfx, fan_dir, scored_glob, k4_file, k4_thr, k4_key = "p1", "p1_fan", "p1_scored_s*.jsonl", "p1_scored_K4.jsonl", 0.05, "K4_mutation_plus30m_F_DAC"
+        bridge_dir = "p1_bridge"
+        setfile = {k: k for k in ("S1_dac_cleanpath", "S1b_dac_ref_fails", "S2_nc", "Cpass", "P1_K1_fail")}
+        hooks_p = None
+        out_name, withheld_name = "d6_p1.json", "d6_p1_WITHHELD_controls_failed.json"
     inp, mapping = C.load_inputs()
     G = pd.read_csv(os.path.join(RAWD, "d6_scene_geometry_step30000.csv")).set_index("token")
     T = pd.read_csv(os.path.join(RAWD, "d6_scene_table_step30000.csv")).set_index("token")
     stop = C.load_floor("STOP_zero")
-    A1h = {c["token"]: c for c in json.load(open(
+    hooks_p = a.hooks or hooks_p
+    A1h = {c["token"]: c for c in json.load(open(hooks_p if hooks_p else
         f"{C.milestone_dir(30000)}/scores_navhard/score_R7_A1__navhard_two_stage_wrapper/R7_A1__navhard_two_stage_hooks.json", encoding="utf-8"))["pdm_score_calls"]}
-    sets = {k: set(tokset(k)) for k in ("S1_dac_cleanpath", "S1b_dac_ref_fails", "S2_nc", "Cpass", "P1_K1_fail")}
+    _SETS_DIR[0] = a.sets_dir if a.p1x else RAWD
+    sets = {k: set(tokset(setfile[k])) for k in ("S1_dac_cleanpath", "S1b_dac_ref_fails", "S2_nc", "Cpass", "P1_K1_fail")}
     fan = {}
-    for ln in open(os.path.join(a.dir, "p1_fan", "fan_R7_A1.jsonl"), encoding="utf-8"):
+    for ln in open(os.path.join(a.dir, fan_dir, "fan_R7_A1.jsonl"), encoding="utf-8"):
         try:
             r = json.loads(ln)
         except Exception:                                           # noqa: BLE001
             continue
         fan[r["token"]] = r
     sc = {}
-    for p in sorted(glob.glob(os.path.join(a.dir, "p1_scored_s*.jsonl"))):
+    for p in sorted(glob.glob(os.path.join(a.dir, scored_glob))):
         for ln in open(p, encoding="utf-8"):
             try:
                 r = json.loads(ln)
@@ -133,7 +156,7 @@ def main():
     R = pd.DataFrame(rows).set_index("token")
     for k in ("S1_dac_cleanpath", "S1b_dac_ref_fails", "S2_nc", "Cpass"):
         R[f"in_{k}"] = R.index.isin(sets[k])
-    R["cls"] = G.loc[R.index, "cls"]
+    R["cls"] = G.loc[R.index, "cls"] if not a.p1x else np.where(G.loc[R.index, "route_turn"], "route-turns-in-horizon", "route-straight-in-horizon")
     R["vmax_known"] = G.loc[R.index, "vmax_known"] if "vmax_known" in G.columns else np.nan
     R["cmd"] = G.loc[R.index, "cmd"]
     out["n_analysed_scenes"] = int(len(R))
@@ -213,16 +236,16 @@ def main():
         ctl["K2_F_FULL_Cpass"] = float(R.loc[cp, "has_FULL"].mean())
         ctl["K2_F_DAC_Cpass"] = float(R.loc[cp, "has_DAC"].mean())
     k4 = {}
-    for ln in open(os.path.join(a.dir, "p1_scored_K4.jsonl"), encoding="utf-8") if os.path.exists(os.path.join(a.dir, "p1_scored_K4.jsonl")) else []:
+    for ln in open(os.path.join(a.dir, k4_file), encoding="utf-8") if os.path.exists(os.path.join(a.dir, k4_file)) else []:
         r = json.loads(ln)
         if r["status"] == "OK":
             n = r["n_cands"]
             k4[r["token"]] = int(any((r["dac"][i] == 1 and r["ddc"][i] == 1) for i in range(n)))
-    ctl["K4_mutation_plus30m_F_DAC"] = {"n": len(k4), "F": float(np.mean(list(k4.values()))) if k4 else None}
+    ctl[k4_key] = {"n": len(k4), "F": float(np.mean(list(k4.values()))) if k4 else None}
     k5 = [r["k5"] for r in sc.values() if r.get("k5")]
     ctl["K5_batch_vs_single"] = {"n": len(k5), "all_equal": bool(all(x["single_dac"] == x["batch_dac"] and x["single_ddc"] == x["batch_ddc"] for x in k5)) if k5 else None}
     ctl["K6_sel_idx_in_first_117_share"] = float((R.sel_idx < N_FAN).mean())
-    rows_p = os.path.join(a.dir, "p1_bridge", "rows_R7_A1.jsonl")
+    rows_p = os.path.join(a.dir, bridge_dir, "rows_R7_A1.jsonl")
     if os.path.exists(rows_p):
         dk = [json.loads(l)["diag"]["derived_ok"] for l in open(rows_p, encoding="utf-8") if l.strip() and json.loads(l).get("diag")]
         ctl["K6_derived_ok_share"] = float(np.mean(dk)) if dk else None
@@ -231,7 +254,7 @@ def main():
         "K1": ctl["K1_pick_member_equals_emitted_le_1e-4_share"] >= 0.99 and (ctl["K1_exact_pick_equals_banked_row"]["ok"] == ctl["K1_exact_pick_equals_banked_row"]["n"]),
         "K2": bool(ctl.get("K2_F_FULL_Cpass", 0) == 1.0 and ctl.get("K2_first_Cpass_token_has_clean_full", False)),
         "K3": (ctl["K3_STOP_batch_DAC_DDC_TLC_equal_banked_stage2"] or 0) >= 0.999 and ctl["K3_exact_STOP_equals_banked_STOP_row"]["ok"] == ctl["K3_exact_STOP_equals_banked_STOP_row"]["n"],
-        "K4": (ctl["K4_mutation_plus30m_F_DAC"]["F"] is not None and ctl["K4_mutation_plus30m_F_DAC"]["F"] <= 0.05),
+        "K4": (ctl[k4_key]["F"] is not None and ctl[k4_key]["F"] <= k4_thr),
         "K5": bool(ctl["K5_batch_vs_single"]["all_equal"]),
         "K6": ctl["K6_sel_idx_in_first_117_share"] == 1.0 and (ctl.get("K6_derived_ok_share") or 0) >= 0.995}
     out["control_verdicts"] = ctl_pass
@@ -257,7 +280,17 @@ def main():
                                                                            "evasive / perception (box, lateral generation)" if (sl is not None and sl < 0.50) else "both"),
                        "R4": s2["r4_FULL"]["value"]}
     out["pre_registered_reading"] = rd
-    json.dump(out, open(os.path.join(a.dir, "d6_p1.json"), "w", encoding="utf-8"), indent=1, default=lambda o: o.item() if hasattr(o, "item") else str(o))
+    dflt = lambda o: o.item() if hasattr(o, "item") else str(o)
+    if not out["ALL_CONTROLS_PASS"]:
+        # SPEC s4: "any control failing -> the affected read is INCONCLUSIVE". The numbers are kept apart and the headline file carries NO reading.
+        failed = [k for k, v in ctl_pass.items() if not v]
+        json.dump({"WITHHELD_controls_failed": failed, "reads": out.pop("reads"), "population_PTI": out.pop("population_PTI"), "pre_registered_reading": out.pop("pre_registered_reading")},
+                  open(os.path.join(a.dir, withheld_name), "w", encoding="utf-8"), indent=1, default=dflt)
+        out["pre_registered_reading"] = {"status": "INCONCLUSIVE (SPEC s4): controls failed " + ",".join(failed), "numbers": "raw/" + withheld_name + " (not quotable)"}
+        json.dump(out, open(os.path.join(a.dir, out_name), "w", encoding="utf-8"), indent=1, default=dflt)
+        print(json.dumps({"tag": tag, "controls": ctl_pass, "reading": out["pre_registered_reading"]}, indent=1))
+        return
+    json.dump(out, open(os.path.join(a.dir, out_name), "w", encoding="utf-8"), indent=1, default=dflt)
     print(json.dumps({"tag": tag, "controls": ctl_pass, "reading": rd}, indent=1, default=str)[:3000])
 
 

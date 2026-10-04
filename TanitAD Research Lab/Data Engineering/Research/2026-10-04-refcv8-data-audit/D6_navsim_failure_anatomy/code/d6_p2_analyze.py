@@ -149,13 +149,29 @@ def main():
         rd["R7_NAVOFF_S_turn_DAC0"] = {"delta_pp": m["delta_pp"], "RESOLVED": m["RESOLVED"], "reading": ("O3: the command helps the turn; residual under-turn = execution deficit (L1)" if (m["RESOLVED"] and m["delta_pp"] > 0) else "not resolved")}
     k8 = out.get("K8")
     rd["K8"] = k8
-    if k8 is not None and not k8["PASS"]:
+    o1_fired = any(isinstance(v, dict) and v.get("RESOLVED") and "O1" in str(v.get("reading", "")) for v in rd.values())
+    if k8 is not None and not k8["PASS"] and o1_fired:
+        # POST-NUMBER DISCLOSURE: SPEC_P1P2 s6 does not say which row wins when K8 fails AND a resolved O1 drop exists; the table's two rows then CONTRADICT
+        # (O4: "premature turn and under-turn CANNOT be attributed to nav" vs O1: "the premature turn is caused by the command"). The script reports the conflict, names no branch.
+        rd["overall"] = ("REGISTERED RULES CONFLICT: K8 failed (O4: the nav input is not used on this surface -> no nav attribution) AND O1 fired (a resolved DAC0 drop on S_prem under NAVOFF/NAVFOLLOW -> "
+                         "premature turn nav-caused). Both are reported; no single branch is named; the ruling belongs to the registrar.")
+    elif k8 is not None and not k8["PASS"]:
         rd["overall"] = "O4: the nav input is not used on this surface (NAVFLIP does not flip the turn) -> the pathway is the defect; no nav attribution of premature/under-turn"
     else:
         flags = [v for k, v in rd.items() if isinstance(v, dict) and v.get("RESOLVED")]
         rd["overall"] = "see per-arm readings" if flags else "none resolved: negative for L2 on NavSim; keep L1 / L3"
     out["pre_registered_reading"] = rd
-    json.dump(out, open(os.path.join(a.dir, "d6_p2.json"), "w", encoding="utf-8"), indent=1, default=lambda o: o.item() if hasattr(o, "item") else str(o))
+    dflt = lambda o: o.item() if hasattr(o, "item") else str(o)
+    k7 = out.get("K7")
+    if k7 is None or k7["exact_subscore_reproduction_share"] < 0.99:
+        # SPEC s5: K7 (A1 re-run reproduces the banked sub-scores on >= 99 %) gates every P2 read; a failing / missing control -> INCONCLUSIVE, numbers withheld.
+        json.dump({"WITHHELD_K7": k7, "arms": out.pop("arms"), "pre_registered_reading": out.pop("pre_registered_reading")},
+                  open(os.path.join(a.dir, "d6_p2_WITHHELD_controls_failed.json"), "w", encoding="utf-8"), indent=1, default=dflt)
+        out["pre_registered_reading"] = {"status": "INCONCLUSIVE (SPEC s5): K7 failed or missing", "K7": k7}
+        json.dump(out, open(os.path.join(a.dir, "d6_p2.json"), "w", encoding="utf-8"), indent=1, default=dflt)
+        print(json.dumps(out["pre_registered_reading"], indent=1, default=str))
+        return
+    json.dump(out, open(os.path.join(a.dir, "d6_p2.json"), "w", encoding="utf-8"), indent=1, default=dflt)
     print(json.dumps({"tag": tag, "K7": out.get("K7"), "K8": out.get("K8"), "reading": rd}, indent=1, default=str)[:3000])
 
 

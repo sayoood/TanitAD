@@ -23,7 +23,8 @@ TPY = "C:/Users/Admin/venvs/tanitad/Scripts/python.exe"
 M = "D:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step30000"
 A1H = f"{M}/scores_navhard/score_R7_A1__navhard_two_stage_wrapper/R7_A1__navhard_two_stage_hooks.json"
 ENV = dict(os.environ, PYTHONPATH="C:/Users/Admin/navsim-crun/devkit;C:/Users/Admin/navsim-crun/nuplan-devkit", OMP_NUM_THREADS="2", PYTHONIOENCODING="utf-8")
-GATE_GB = 3.0
+GATE_GB = float(os.environ.get('D6_GATE_GB', '6.0'))      # 2026-10-04 evening ruling: do not push free commit below 6 GB while the battery roll runs
+MAX_PAR = int(os.environ.get('D6_MAX_PAR', '2'))            # <= 2 GB resident
 
 
 def free_gb() -> float:
@@ -42,7 +43,8 @@ def log(msg):
         fh.write(time.strftime("%Y-%m-%dT%H:%M:%S ") + msg + "\n")
 
 
-def run_pool(jobs, max_par=3):
+def run_pool(jobs, max_par=None):
+    max_par = MAX_PAR if max_par is None else max_par
     """jobs: list of (name, cmd). Launch while RAM allows; wait for all."""
     live, q = [], list(jobs)
     while q or live:
@@ -65,12 +67,24 @@ def split_tokens(path, k):
 
 
 def main() -> int:
-    done_f = os.path.join(RAW, "p1p2_gpu_done.json")
+    cstages = os.environ.get("D6_CPU_STAGES", "P1,P2").split(",")
+    done_f = os.path.join(RAW, os.environ.get("D6_WAIT", "p1p2_gpu_done.json"))
+    cpu_done = os.environ.get("D6_CPU_DONE", "p1p2_cpu_done.json")
     log("waiting for the GPU chain")
     while not os.path.exists(done_f):
         time.sleep(60)
     log("GPU chain done: " + open(done_f).read().replace("\n", " ")[:300])
     # ---- P1
+    if "P1" in cstages:
+        _p1()
+    if "P2" in cstages:
+        _p2()
+    json.dump({"done": time.strftime("%Y-%m-%dT%H:%M:%S")}, open(os.path.join(RAW, cpu_done), "w"))
+    log("CPU stage DONE")
+    return 0
+
+
+def _p1():
     fan = os.path.join(RAW, "p1_fan", "fan_R7_A1.jsonl")
     ctrl = os.path.join(RAW, "spec_tokens_P1_K1ctrl.txt")
     cp = [l.strip() for l in open(os.path.join(RAW, "spec_tokens_Cpass.txt")) if l.strip()]
@@ -83,7 +97,9 @@ def main() -> int:
     jobs.append(("p1_K4", [NPY, os.path.join(HERE, "d6_fan_score.py"), "--fan", fan, "--hooks", A1H, "--out", os.path.join(RAW, "p1_scored_K4.jsonl"),
                            "--only-tokens", os.path.join(RAW, "spec_tokens_Cpass.txt"), "--lateral-shift", "30.0", "--no-tierc"]))
     run_pool(jobs)
-    # ---- P2
+
+
+def _p2():
     arms = [("R7_NAVOFF", "p2_bridge", "P2_all"), ("R7_NAVFOLLOW", "p2_bridge", "P2_all"), ("R7_NAVFLIP", "p2_bridge", "P2_all"), ("R7_A1", "p2_bridge_k7", "P2_K1")]
     jobs = []
     for arm, d, tokname in arms:
@@ -95,9 +111,6 @@ def main() -> int:
             open(tf, "w").write("\n".join(t for i, t in enumerate(toks) if i % 3 == k) + "\n")
             jobs.append((f"p2_{arm}_s{k}", [NPY, os.path.join(HERE, "d6_rescore.py"), "--hooks", hk, "--tokens", tf, "--out", os.path.join(RAW, f"p2_rescore_{arm}_s{k}.jsonl")]))
     run_pool(jobs)
-    json.dump({"done": time.strftime("%Y-%m-%dT%H:%M:%S")}, open(os.path.join(RAW, "p1p2_cpu_done.json"), "w"))
-    log("CPU stage DONE")
-    return 0
 
 
 if __name__ == "__main__":

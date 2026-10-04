@@ -16509,3 +16509,20 @@ behind R1 and no arm number exists yet.
 | **WPB-V9-JOIN** | The v9 release joins the trainer's own windows on eval139: 23,772 / 23,772, clock residual 0.0 s (through the trainer's path; independently re-measures WP-A's V11). Release contract census at load: 0 violations on all seven checks for both releases (train 869,278 rows, eval139 27,664 rows). | MEASURED |
 | **WPB-MASK-XCHECK** | WP-C's ego-box frame list equals WP-A's corpus-manifest mask exactly: 693 / 693 frames, 18 / 18 clips. | MEASURED |
 | **WPB-GATE** | Landing gate: the Master Mind's Thor run (every test file importing refc_v3_train) found ONE regression — five ungated `w_r8_*` weight flags (the exhaustiveness contract `test_REFC_WEIGHT_GATES_covers_every_weight_flag_the_parser_accepts`); fixed (defaults 0.0, gates + G-LIVE rows); re-gated: identical failure sets on tip and candidate (WP-B's dev-box run 11 / 11, the Master Mind's Thor recheck 7 / 7 on the affected files), the new refcv8 tests 180 passed, taniteval tactical-conditioning 56 passed. ⚠️ A refcv8 launch must now state `--w-r8-cons 0.05` (and `--w-r8-alloc-l1 1.0` with allocation) explicitly. | MEASURED |
+
+<!-- REFCV8-2026-10-04-D6-P2 -->
+### 2026-10-04: D6 P2 (nav ablation on refcv7-30k navhard) — the registered reading is INCONCLUSIVE (its rules conflict); the measured effects, descriptive
+
+`TanitAD Research Lab/Data Engineering/Research/2026-10-04-refcv8-data-audit/D6_navsim_failure_anatomy/RESULT.md` §13.3 +
+Appendix C. Arms R7_NAVOFF / R7_NAVFOLLOW / R7_NAVFLIP on 2,312 LEFT/RIGHT-command navhard scenes (S_prem 724 with a
+straight route inside the horizon; S_turn 1,588), exact devkit re-score of 7,236 plans; K7 PASS (300 / 300 sub-scores equal
+the banked, max abs 0.0); **K8 FAIL** (NAVFLIP flips the 4-s yaw sign on 31.5 % of S_turn vs the registered ≥ 50 %).
+
+| id | record | status |
+|---|---|---|
+| **NS-P2-NAV** | The registered reading table conflicts for this outcome (row O1 "resolved DAC0 drop on S_prem ⇒ nav-caused premature turn" vs the K8-fail row "nav input unused ⇒ O4") ⇒ **INCONCLUSIVE as registered** (Master Mind ruling); no lever attributed by rule. DESCRIPTIVE (not a branch reading): DAC0 on S_prem (A1 30.7 %) falls under every arm — NAVOFF −5.25 pp [−8.33, −1.81], NAVFOLLOW −4.14 [−7.49, −0.27], NAVFLIP −4.14 [−7.93, −0.13] (the S_prem seed floor is exactly 0, so the 2× floor test is vacuous there); on S_turn only NAVOFF resolves (−3.34 pp); NC0 moves < 1 pp. The command IS used: compliance falls 15–35 pp without / with a flipped command and WRONG-SIDE on S_turn rises 3.0 % → 26.7 % under NAVFLIP — K8's 50 % line was a mis-specified proxy for "used" (post hoc; lesson for future SPECs). L2 stays in refcv8 on A6's PASS. | MEASURED; INCONCLUSIVE (rule conflict) |
+
+<!-- REFCV8-2026-10-04-WPD-PGRAD -->
+| id | record | status |
+|---|---|---|
+| **WPD-PGRAD** | Per-term trunk gradient census on refcv7-50,400 (64 seeded TRAIN-DIAG windows, train mode, fp32, TF32 off; controls: linearity 6.6e-6 ≤ 1e-4, zero-control exactly 0, aux share 0.9956 vs the in-run 0.992–0.995; `…/2026-10-04-refcv8-perception-architecture/raw/pgrad.json`). Projection share of the whole-trunk update at all loss weights 1.0: **agent 50.1 %, box3d 35.7 %, planner auxiliaries 14.2 %, traj 0.02 %, map_hires 0.01 %, tac_v6 −0.05 %**. In the shared 0.25 m BEV encoder box3d carries 76 % of the norm and 97 % of the update, the map 5 % / −0.4 %. ⇒ the planner, tactical and map objectives have essentially NO trunk-gradient budget; the agent head (the largest trunk driver) is invisible to the in-run conflict detector (`CONFLICT_*_TERMS`). A first TF32 run was VOID (linearity control failed) and is banked as such. | MEASURED (pre-registered PREREG_WPD_PROBES) |

@@ -354,6 +354,14 @@ RESULT.md, PERCEPTION_DESIGN.md, PREREG_WPD_PROBES.md sha256 `c054190b…`). MEA
   10 cm decoding on 0–40 m only + a placement-tolerant line target; B4 camera-ray embedding + LiDAR depth as an auxiliary
   target (two-sided published evidence). Probes P-GRAD → P-BOX → P-MAP decide which enter SPEC_REFCV8.
 
+**P-GRAD (WP-D, 2026-10-04 evening, MEASURED, controls pass):** the projection share of the whole-trunk update at all
+loss weights 1.0 is agent 50.1 %, box3d 35.7 %, planner auxiliaries 14.2 %, **trajectory 0.02 %, map 0.01 %, tactical
+−0.05 %**; inside the shared BEV encoder box3d carries 97 % of the update. ⇒ in refcv7 the planner, tactical and map
+objectives taught the trunk essentially nothing — the loss-budget item (X4, decision 7) becomes a measured lever: the
+v7-tiny ladder (WP-B §7) carries arms that raise the tactical/planner and map trunk shares by stated factors (map ×4 is
+WP-D's estimate to reach box3d's scale), each read on route following AND on box/map, plus the conflict-detector fix
+(the agent head is in neither conflict side today).
+
 **WP-C status (2026-10-04 ~15:30): DONE** — all six fixes as opt-in modules with defaults bit-identical: F4b NMS
 reproduced (box3d AP@2 m 0.2483 → 0.3494, agent 0.1314 → 0.2996, boxes per object 2.12 → 1.07 / 2.60 → 1.01); F1 / F4
 reproduced with 0.0 difference + a TRAIN re-fit tool for any checkpoint; ego-box mask (693 → 0 footprint boxes);

@@ -142,7 +142,9 @@ def main(argv=None) -> int:
     env = dict(os.environ)
     env.update(ENV)
     env["PYTHONPATH"] = e2c + os.pathsep + env.get("PYTHONPATH", "")
-    hook_dir = os.path.join(a.out, f"score_{tag}_wrapper")
+    # ABSOLUTE: the wrapper runs with cwd=NAVSIM, so a relative --out made it write hooks/frames under
+    # C:/Users/Admin/navsim/raw/... while this script's own csv/counts landed in the package (2026-10-04, step 50,400 navhard)
+    hook_dir = os.path.abspath(os.path.join(a.out, f"score_{tag}_wrapper"))
     os.makedirs(hook_dir, exist_ok=True)
     out_dir = f"{NAVSIM}/exp/{a.exp_tag}/{a.split}_{a.arm}"
     ov.append(f"output_dir={out_dir}")
