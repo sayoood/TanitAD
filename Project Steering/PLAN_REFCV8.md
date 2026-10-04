@@ -44,7 +44,13 @@ the minority of turns that fall inside that 4-s band.
 | K8 | Lateral classes: LANE_KEEP 65 %, NUDGE 24 %, TURN 12 % of records | MEASURED | turns are rare AND mostly outside the band |
 | K9 | No map topology, lane graph, posted speed limit or traffic-light state exists in the published PhysicalAI-AV corpus; our only route and speed-limit suppliers are the ego's own future | PUBLISHED (dataset card) + programme record | nav and max-speed inputs are optimistic by construction; say so on every result |
 
-**Verdict so far:** the images, poses and boxes are not yet audited (D3). The **labels are used wrongly in time**: per-clip
+| K14 | **Raw data is sound (D3)**: 897 k pose rows with 0 non-finite and no physically implausible yaw-rate / lateral-acceleration rows; 0 black / frozen / over-exposed frames in 88 k decoded; 27.6 M boxes all carry z and h; the ego's next-6-s path is road-like on 99.92 % of the SAM3 map GT; train/eval balance within ~1 pp on turns, stops, speed, night. **The GT boxes do NOT carry duplicates** (0.34 % of boxes) — the reel's ~2.1 boxes per object is prediction-side | MEASURED (D3, controls read known values) | no raw-data blocker for refcv8 |
+| K15 | **Split leakage across recordings**: no shared clip id, but 3 (image-confirmed) to 5 eval clips share a ~140 s source recording with a train clip; 135 train recording groups cover 296 clips (6.8 %); 2 train pairs are the same video under two ids. **The ego appears as an agent box in 18 train clips (693 frames)** | MEASURED (D3) | eval mildly optimistic on ~2–4 % of clips; fix both in the refcv8 corpus manifest |
+| K16 | **Eval caveats**: left-turn route following rests on **13** eval clips (eval nav mix skewed, p = 0.0062); day/night is a clock label (only ~8 % of clips are actually dark vs 46 % "night"); box z is reliable near-field only; 13.4 % of train clips have no lane line (real, by country) | MEASURED (D3) | report left turns with that n; cut night by brightness; no z claims beyond ~30 m |
+
+| K17 | **Usage audit (D4)** — three channels WRONG, each with a measured cost: nav (one token per clip; the nav-compliance graft's own training signal is right on only **35.7 %** of informative windows, which is why its gate stuck at 0.163), tactical labels (23.4 % of windows supervised; left/right-nav records carry LANE_KEEP on 49–52 %; all v7-label tactical terms together are **0.29 % of the loss**, no class weights), max speed (future oracle; the "unknown" row NavSim feeds on 45 % of navtest tokens was never trained). SUBOPTIMAL: the residual prior (14 of 17 wrong-direction turn picks follow its side), goal-token negatives (the PI's 2026-09-16 caption-absence ruling never reached the run — the sidecar is bound to another label blob), ego dropout 0.5 withholds the speed input on half of training, the box store's x ≤ 61 m scope excludes 84 % of joined agents (distance keeping) | MEASURED, label-level (D4; controls: eval grid rebuilt bit-exactly, A5 reproduced, label file's leak 75.3 % vs 75.4 %, analytic tracks, two mutations red) | the design in `REFCV8_LABEL_DESIGN.md`: L1 labelled windows **23.4 % → 88.9 %**, turn windows 36 → 107 / 107; L2 wrongly commanded straight windows **193 → 14 / 588**, graft signal 35.7 % → 80.0 % right |
+
+**Verdict so far:** the images, poses, boxes and maps are sound (K14) apart from two small defects (K15). The **labels are used wrongly in time**: per-clip
 records are applied **too narrowly** for tactical supervision (±2 s) and **too broadly** for the nav and speed inputs
 (the whole 20 s clip). This is consistent with, and explains, the route-following diagnosis: the 117-candidate fan holds
 a correct turn on 100 % of turn windows, but the pick turns the right way on only 84 %, and its heading is within 15° on
@@ -138,6 +144,15 @@ the leaderboard is examined with the PI (PI 2026-10-04).
    snapped UP to the 8-step road-law ladder {20, 30, 50, 70, 80, 100, 120, 130} km/h (already in the v8 file), with
    the leak (OOF R² of the 6-s future max from v0 vs from bin + v0) and a shuffled-input arm reported beside every
    speed result. Default: this; alternative: the 4-s per-window max (stronger signal, larger leak).
+   **⇒ SUPERSEDED by D4's measurement (2026-10-04 ~13:00):** ANY value derived from the ego's future is an oracle — a
+   per-window realised max leaks **57.0 %** of the future-speed information v0 lacks (71.7 % on [NOW+2, NOW+6]). D4
+   measured NON-oracle options that read only PAST ego speed (admissible at inference: the car knows its own history):
+   **N2** past-20-s max snapped up to the road-law ladder with a 50 km/h urban floor — leak **3.5 %**, the human
+   exceeds it on 6.5 % of windows; **N3** coarse urban / rural / motorway — leak 1.9 %, exceeded 4.4 %; no input — 0 %.
+   **New default: N2**, trained with an "unknown" row on a share of windows (NavSim feeds the never-trained all-zero
+   "unknown" row on **45 %** of navtest tokens — a train/deploy mismatch refcv7 carries), and every speed result
+   reported beside the input-REMOVED and input-SHUFFLED arms. The PI's 2026-09-16 future-ego authorisation is then not
+   needed; R1 (input + cap) is satisfied by a past-only limit.
 3. **Nav L2** is a supplied route ("turn left in X m"), optimistic on PhysicalAI because it comes from the ego's own
    future — the same caveat as today's token, now time-correct. Default: adopt.
 4. **Trunk changes** (map F3 stride-4 tap; anything that needs R4′): defer to after refcv8-b unless R1 forces a full run.
