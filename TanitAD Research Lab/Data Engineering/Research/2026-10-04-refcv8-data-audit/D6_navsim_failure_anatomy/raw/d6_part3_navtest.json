@@ -1,0 +1,703 @@
+{
+ "controls": {
+  "PDMS_x100_A1": 71.8848871686471,
+  "PDMS_x100_A1s1": 71.63654650119415,
+  "PDMS_x100_PRIOR": 58.661280048257225,
+  "PDMS_x100_STOP": 61.82022971791109,
+  "PDMS_x100_A1k5": 65.59764439111125,
+  "PDMS_x100_PRIORk5": 58.661280048257225,
+  "pdms_formula_max_abs_diff_A1": 3.3306690738754696e-16,
+  "expected": {
+   "A1_30k_PDMS_x100": 71.8849,
+   "STOP_PDMS_x100": 61.82023,
+   "A1_5k_PDMS_x100": 65.5976
+  },
+  "PASS_A1_30k": true,
+  "PASS_STOP": true,
+  "PASS_A1_5k": true,
+  "human_vs_itself_classes": {
+   "ON-HUMAN": 11920,
+   "STOP-LIKE": 226
+  },
+  "human_vs_itself_only_ON_HUMAN_or_STOP": true,
+  "command_order_human_median_yaw4": {
+   "LEFT": 0.6225892054733801,
+   "STRAIGHT": 0.0009963795116452179,
+   "RIGHT": -0.5706733771404604
+  },
+  "PASS_left_gt_straight_gt_right": true
+ },
+ "DAC_anatomy": {
+  "A1_30k": {
+   "n_DACzero": 1460,
+   "rate": 0.1202041824468961,
+   "class_mix": {
+    "ON-HUMAN": {
+     "n": 599,
+     "share": 0.41027397260273973
+    },
+    "ROUTE-FOLLOWING": {
+     "n": 291,
+     "share": 0.19931506849315067
+    },
+    "OVER-STEER": {
+     "n": 285,
+     "share": 0.1952054794520548
+    },
+    "LATERAL-DRIFT": {
+     "n": 229,
+     "share": 0.15684931506849314
+    },
+    "SPEED": {
+     "n": 46,
+     "share": 0.031506849315068496
+    },
+    "WRONG-SIDE": {
+     "n": 10,
+     "share": 0.00684931506849315
+    }
+   },
+   "rate_by_class": {
+    "LATERAL-DRIFT": {
+     "n": 912,
+     "DAC0_rate": 0.25109649122807015
+    },
+    "ON-HUMAN": {
+     "n": 7814,
+     "DAC0_rate": 0.07665728180189403
+    },
+    "OVER-STEER": {
+     "n": 1090,
+     "DAC0_rate": 0.26146788990825687
+    },
+    "ROUTE-FOLLOWING": {
+     "n": 1068,
+     "DAC0_rate": 0.27247191011235955
+    },
+    "SPEED": {
+     "n": 879,
+     "DAC0_rate": 0.05233219567690557
+    },
+    "STOP-LIKE": {
+     "n": 354,
+     "DAC0_rate": 0.0
+    },
+    "WRONG-SIDE": {
+     "n": 29,
+     "DAC0_rate": 0.3448275862068966
+    }
+   }
+  },
+  "A1_5k": {
+   "n_DACzero": 1876,
+   "rate": 0.1544541412810802,
+   "class_mix": {
+    "ON-HUMAN": {
+     "n": 639,
+     "share": 0.3406183368869936
+    },
+    "ROUTE-FOLLOWING": {
+     "n": 501,
+     "share": 0.26705756929637525
+    },
+    "OVER-STEER": {
+     "n": 359,
+     "share": 0.19136460554371001
+    },
+    "LATERAL-DRIFT": {
+     "n": 263,
+     "share": 0.14019189765458423
+    },
+    "SPEED": {
+     "n": 75,
+     "share": 0.03997867803837953
+    },
+    "WRONG-SIDE": {
+     "n": 39,
+     "share": 0.020788912579957356
+    }
+   },
+   "rate_by_class": {
+    "LATERAL-DRIFT": {
+     "n": 1055,
+     "DAC0_rate": 0.24928909952606634
+    },
+    "ON-HUMAN": {
+     "n": 7349,
+     "DAC0_rate": 0.08695060552456116
+    },
+    "OVER-STEER": {
+     "n": 961,
+     "DAC0_rate": 0.37356919875130074
+    },
+    "ROUTE-FOLLOWING": {
+     "n": 1427,
+     "DAC0_rate": 0.3510861948142957
+    },
+    "SPEED": {
+     "n": 1128,
+     "DAC0_rate": 0.06648936170212766
+    },
+    "STOP-LIKE": {
+     "n": 106,
+     "DAC0_rate": 0.0
+    },
+    "WRONG-SIDE": {
+     "n": 120,
+     "DAC0_rate": 0.325
+    }
+   }
+  },
+  "PRIOR_30k": {
+   "n_DACzero": 3152,
+   "rate": 0.2595093034743949,
+   "class_mix": {
+    "LATERAL-DRIFT": {
+     "n": 1230,
+     "share": 0.3902284263959391
+    },
+    "ON-HUMAN": {
+     "n": 657,
+     "share": 0.20843908629441624
+    },
+    "ROUTE-FOLLOWING": {
+     "n": 615,
+     "share": 0.19511421319796954
+    },
+    "OVER-STEER": {
+     "n": 556,
+     "share": 0.17639593908629442
+    },
+    "WRONG-SIDE": {
+     "n": 61,
+     "share": 0.019352791878172588
+    },
+    "SPEED": {
+     "n": 33,
+     "share": 0.010469543147208122
+    }
+   },
+   "rate_by_class": {
+    "LATERAL-DRIFT": {
+     "n": 1929,
+     "DAC0_rate": 0.6376360808709176
+    },
+    "ON-HUMAN": {
+     "n": 6455,
+     "DAC0_rate": 0.10178156467854377
+    },
+    "OVER-STEER": {
+     "n": 858,
+     "DAC0_rate": 0.6480186480186481
+    },
+    "ROUTE-FOLLOWING": {
+     "n": 1599,
+     "DAC0_rate": 0.38461538461538464
+    },
+    "SPEED": {
+     "n": 497,
+     "DAC0_rate": 0.06639839034205232
+    },
+    "STOP-LIKE": {
+     "n": 734,
+     "DAC0_rate": 0.0
+    },
+    "WRONG-SIDE": {
+     "n": 74,
+     "DAC0_rate": 0.8243243243243243
+    }
+   }
+  }
+ },
+ "DAC_cross_arm": {
+  "n": 1460,
+  "STOP_also_zero": 219,
+  "STOP_passes": 1241,
+  "PRIOR_also_zero": 895,
+  "A1s1_also_zero": 1247,
+  "A1_5k_also_zero": 880,
+  "STOP_and_PRIOR_pass": 502,
+  "seed_jaccard": 0.7374334713187463
+ },
+ "NC_cross_arm": {
+  "n": 1008,
+  "rate": 0.08299028486744607,
+  "STOP_also_zero": 23,
+  "PRIOR_also_zero": 434,
+  "A1s1_also_zero": 885,
+  "A1_5k_also_zero": 680,
+  "also_DAC_zero": 77,
+  "seed_jaccard": 0.7564102564102564
+ },
+ "NC_class_mix": {
+  "A1_30k": {
+   "SPEED": {
+    "n": 464,
+    "share": 0.4603174603174603
+   },
+   "ON-HUMAN": {
+    "n": 312,
+    "share": 0.30952380952380953
+   },
+   "LATERAL-DRIFT": {
+    "n": 125,
+    "share": 0.12400793650793651
+   },
+   "OVER-STEER": {
+    "n": 71,
+    "share": 0.07043650793650794
+   },
+   "ROUTE-FOLLOWING": {
+    "n": 28,
+    "share": 0.027777777777777776
+   },
+   "STOP-LIKE": {
+    "n": 6,
+    "share": 0.005952380952380952
+   },
+   "WRONG-SIDE": {
+    "n": 2,
+    "share": 0.001984126984126984
+   }
+  },
+  "rate_by_class": {
+   "LATERAL-DRIFT": {
+    "n": 912,
+    "NC0_rate": 0.13706140350877194,
+    "STOP_NC0_rate": 0.017543859649122806
+   },
+   "ON-HUMAN": {
+    "n": 7814,
+    "NC0_rate": 0.0399283337599181,
+    "STOP_NC0_rate": 0.02700281545943179
+   },
+   "OVER-STEER": {
+    "n": 1090,
+    "NC0_rate": 0.06513761467889909,
+    "STOP_NC0_rate": 0.029357798165137616
+   },
+   "ROUTE-FOLLOWING": {
+    "n": 1068,
+    "NC0_rate": 0.026217228464419477,
+    "STOP_NC0_rate": 0.02902621722846442
+   },
+   "SPEED": {
+    "n": 879,
+    "NC0_rate": 0.5278725824800911,
+    "STOP_NC0_rate": 0.01820250284414107
+   },
+   "STOP-LIKE": {
+    "n": 354,
+    "NC0_rate": 0.01694915254237288,
+    "STOP_NC0_rate": 0.01694915254237288
+   },
+   "WRONG-SIDE": {
+    "n": 29,
+    "NC0_rate": 0.06896551724137931,
+    "STOP_NC0_rate": 0.034482758620689655
+   }
+  }
+ },
+ "NC_by_v0_band": {
+  "0-2": {
+   "n": 2539,
+   "A1_NC0": 0.08507286333202048,
+   "STOP_NC0": 0.07562032296179598,
+   "PRIOR_NC0": 0.08152816069318629
+  },
+  "2-5": {
+   "n": 3458,
+   "A1_NC0": 0.12203585887796414,
+   "STOP_NC0": 0.011856564488143435,
+   "PRIOR_NC0": 0.08386350491613649
+  },
+  "5-8": {
+   "n": 3560,
+   "A1_NC0": 0.0848314606741573,
+   "STOP_NC0": 0.011797752808988765,
+   "PRIOR_NC0": 0.14634831460674158
+  },
+  "8-12": {
+   "n": 2282,
+   "A1_NC0": 0.02716914986853637,
+   "STOP_NC0": 0.015337423312883436,
+   "PRIOR_NC0": 0.08106923751095531
+  },
+  ">=12": {
+   "n": 307,
+   "A1_NC0": 0.019543973941368076,
+   "STOP_NC0": 0.009771986970684038,
+   "PRIOR_NC0": 0.05863192182410423
+  }
+ },
+ "NC_plan_vs_human_distance": {
+  "NC_zero_median_ratio": 1.5213910110001747,
+  "all_median_ratio": 1.0652234566606824,
+  "NC_zero_plan_faster_than_human_by_4m_share": 0.5704365079365079,
+  "all_plan_faster_than_human_by_4m_share": 0.17199077885723696
+ },
+ "command_split": {
+  "LEFT": {
+   "n": 2501,
+   "gt_turn_in_4s": {
+    "L": 1891,
+    "S": 606,
+    "R": 4
+   },
+   "A1_DAC0": 0.21551379448220712,
+   "STOP_DAC0": 0.07197121151539385,
+   "PRIOR_DAC0": 0.37744902039184325,
+   "A1_NC0": 0.06477409036385445,
+   "STOP_NC0": 0.030387844862055178,
+   "plan_complied": 0.8724510195921631,
+   "gt_L": {
+    "n": 1891,
+    "A1_DAC0": 0.222104706504495,
+    "STOP_DAC0": 0.06927551560021153,
+    "plan_complied": 0.9333685880486515,
+    "A1_DAC0_if_complied": 0.23342776203966006,
+    "n_complied": 1765,
+    "A1_DAC0_if_not": 0.06349206349206349,
+    "n_not": 126
+   },
+   "gt_R": {
+    "n": 4,
+    "A1_DAC0": 0.5,
+    "STOP_DAC0": 0.25,
+    "plan_complied": 0.25,
+    "A1_DAC0_if_complied": 1.0,
+    "n_complied": 1,
+    "A1_DAC0_if_not": 0.3333333333333333,
+    "n_not": 3
+   },
+   "gt_S": {
+    "n": 606,
+    "A1_DAC0": 0.19306930693069307,
+    "STOP_DAC0": 0.07920792079207921,
+    "plan_complied": 0.6864686468646864,
+    "A1_DAC0_if_complied": 0.24759615384615385,
+    "n_complied": 416,
+    "A1_DAC0_if_not": 0.07368421052631578,
+    "n_not": 190
+   }
+  },
+  "RIGHT": {
+   "n": 1575,
+   "gt_turn_in_4s": {
+    "R": 1070,
+    "S": 503,
+    "L": 2
+   },
+   "A1_DAC0": 0.20761904761904762,
+   "STOP_DAC0": 0.05904761904761905,
+   "PRIOR_DAC0": 0.42984126984126986,
+   "A1_NC0": 0.05206349206349206,
+   "STOP_NC0": 0.029206349206349208,
+   "plan_complied": 0.7453968253968254,
+   "gt_L": {
+    "n": 2,
+    "A1_DAC0": 0.5,
+    "STOP_DAC0": 0.0,
+    "plan_complied": 1.0,
+    "A1_DAC0_if_complied": 0.5,
+    "n_complied": 2,
+    "A1_DAC0_if_not": null,
+    "n_not": 0
+   },
+   "gt_R": {
+    "n": 1070,
+    "A1_DAC0": 0.2261682242990654,
+    "STOP_DAC0": 0.06261682242990654,
+    "plan_complied": 0.8551401869158879,
+    "A1_DAC0_if_complied": 0.2502732240437158,
+    "n_complied": 915,
+    "A1_DAC0_if_not": 0.08387096774193549,
+    "n_not": 155
+   },
+   "gt_S": {
+    "n": 503,
+    "A1_DAC0": 0.16699801192842942,
+    "STOP_DAC0": 0.05168986083499006,
+    "plan_complied": 0.510934393638171,
+    "A1_DAC0_if_complied": 0.21011673151750973,
+    "n_complied": 257,
+    "A1_DAC0_if_not": 0.12195121951219512,
+    "n_not": 246
+   }
+  },
+  "STRAIGHT": {
+   "n": 8070,
+   "gt_turn_in_4s": {
+    "S": 7889,
+    "R": 103,
+    "L": 78
+   },
+   "A1_DAC0": 0.07360594795539034,
+   "STOP_DAC0": 0.018463444857496902,
+   "PRIOR_DAC0": 0.18971499380421314,
+   "A1_NC0": 0.09467162329615861,
+   "STOP_NC0": 0.023667905824039652,
+   "plan_complied": 0.9757125154894671,
+   "gt_L": {
+    "n": 78,
+    "A1_DAC0": 0.20512820512820512,
+    "STOP_DAC0": 0.01282051282051282,
+    "plan_complied": 0.5641025641025641,
+    "A1_DAC0_if_complied": 0.18181818181818182,
+    "n_complied": 44,
+    "A1_DAC0_if_not": 0.23529411764705882,
+    "n_not": 34
+   },
+   "gt_R": {
+    "n": 103,
+    "A1_DAC0": 0.39805825242718446,
+    "STOP_DAC0": 0.04854368932038835,
+    "plan_complied": 0.47572815533980584,
+    "A1_DAC0_if_complied": 0.5306122448979592,
+    "n_complied": 49,
+    "A1_DAC0_if_not": 0.2777777777777778,
+    "n_not": 54
+   },
+   "gt_S": {
+    "n": 7889,
+    "A1_DAC0": 0.06806946381036887,
+    "STOP_DAC0": 0.018126505260489287,
+    "plan_complied": 0.986310051971099,
+    "A1_DAC0_if_complied": 0.06387353810564195,
+    "n_complied": 7781,
+    "A1_DAC0_if_not": 0.37037037037037035,
+    "n_not": 108
+   }
+  }
+ },
+ "class_x_command": {
+  "ROUTE-FOLLOWING": {
+   "n_DACzero": 291,
+   "n_all": 1068,
+   "DACzero_by_command": {
+    "LEFT": 140,
+    "RIGHT": 114,
+    "STRAIGHT": 37
+   },
+   "all_by_command": {
+    "LEFT": 539,
+    "RIGHT": 434,
+    "STRAIGHT": 95
+   }
+  },
+  "WRONG-SIDE": {
+   "n_DACzero": 10,
+   "n_all": 29,
+   "DACzero_by_command": {
+    "STRAIGHT": 5,
+    "RIGHT": 4,
+    "LEFT": 1
+   },
+   "all_by_command": {
+    "RIGHT": 13,
+    "STRAIGHT": 9,
+    "LEFT": 7
+   }
+  },
+  "OVER-STEER": {
+   "n_DACzero": 285,
+   "n_all": 1090,
+   "DACzero_by_command": {
+    "LEFT": 181,
+    "RIGHT": 99,
+    "STRAIGHT": 5
+   },
+   "all_by_command": {
+    "LEFT": 707,
+    "RIGHT": 353,
+    "STRAIGHT": 30
+   }
+  },
+  "LATERAL-DRIFT": {
+   "n_DACzero": 229,
+   "n_all": 912,
+   "DACzero_by_command": {
+    "STRAIGHT": 110,
+    "LEFT": 69,
+    "RIGHT": 50
+   },
+   "all_by_command": {
+    "STRAIGHT": 495,
+    "LEFT": 257,
+    "RIGHT": 160
+   }
+  },
+  "SPEED": {
+   "n_DACzero": 46,
+   "n_all": 879,
+   "DACzero_by_command": {
+    "STRAIGHT": 39,
+    "RIGHT": 5,
+    "LEFT": 2
+   },
+   "all_by_command": {
+    "STRAIGHT": 785,
+    "LEFT": 55,
+    "RIGHT": 39
+   }
+  },
+  "ON-HUMAN": {
+   "n_DACzero": 599,
+   "n_all": 7814,
+   "DACzero_by_command": {
+    "STRAIGHT": 398,
+    "LEFT": 146,
+    "RIGHT": 55
+   },
+   "all_by_command": {
+    "STRAIGHT": 6382,
+    "LEFT": 898,
+    "RIGHT": 534
+   }
+  },
+  "STOP-LIKE": {
+   "n_DACzero": 0,
+   "n_all": 354,
+   "DACzero_by_command": {},
+   "all_by_command": {
+    "STRAIGHT": 274,
+    "RIGHT": 42,
+    "LEFT": 38
+   }
+  }
+ },
+ "vmax_split_navtest": {
+  "unknown": {
+   "n": 5488,
+   "share_of_scenes": 0.4518359953894286,
+   "A1_DAC0": 0.13629737609329445,
+   "A1_NC0": 0.06924198250728864,
+   "STOP_DAC0": 0.030247813411078718,
+   "STOP_NC0": 0.022776967930029153,
+   "PRIOR_DAC0": 0.28152332361516036,
+   "PRIOR_NC0": 0.10641399416909621,
+   "A1k5_DAC0": 0.1782069970845481,
+   "A1k5_NC0": 0.11698250728862973,
+   "share_of_A1_DAC0": 0.5123287671232877,
+   "share_of_A1_NC0": 0.376984126984127,
+   "PDMS_x100_A1": 70.4835721847571,
+   "PDMS_x100_STOP": 62.38363021575961,
+   "PDMS_x100_PRIOR": 55.4106844604157,
+   "A1_minus_STOP_DAC0": 0.10604956268221574,
+   "A1_minus_STOP_NC0": 0.04646501457725948
+  },
+  "known": {
+   "n": 6658,
+   "share_of_scenes": 0.5481640046105714,
+   "A1_DAC0": 0.10693902072694503,
+   "A1_NC0": 0.09432261940522679,
+   "STOP_DAC0": 0.03844998498047462,
+   "STOP_NC0": 0.028236707720036048,
+   "PRIOR_DAC0": 0.2413637729047762,
+   "PRIOR_NC0": 0.09567437668969661,
+   "A1k5_DAC0": 0.1348753379393211,
+   "A1k5_NC0": 0.10693902072694503,
+   "share_of_A1_DAC0": 0.4876712328767123,
+   "share_of_A1_NC0": 0.623015873015873,
+   "PDMS_x100_A1": 73.03995124668678,
+   "PDMS_x100_STOP": 61.35583471457785,
+   "PDMS_x100_PRIOR": 61.3406535216838,
+   "A1_minus_STOP_DAC0": 0.06848903574647042,
+   "A1_minus_STOP_NC0": 0.06608591168519075
+  }
+ },
+ "vmax_strata_composition_navtest": {
+  "unknown": {
+   "cmd": {
+    "STRAIGHT": 0.6840379008746356,
+    "LEFT": 0.16818513119533526,
+    "RIGHT": 0.14777696793002915
+   },
+   "v0_band": {
+    "5-8": 0.33618804664723034,
+    "2-5": 0.30685131195335275,
+    "0-2": 0.19387755102040816,
+    "8-12": 0.16071428571428573,
+    ">=12": 0.0023688046647230322
+   },
+   "median_v0": 4.985180616378784
+  },
+  "known": {
+   "cmd": {
+    "STRAIGHT": 0.6482427155301892,
+    "LEFT": 0.23700811054370682,
+    "RIGHT": 0.11474917392610394
+   },
+   "v0_band": {
+    "2-5": 0.2664463802943827,
+    "5-8": 0.25758486031841393,
+    "0-2": 0.22153799939921898,
+    "8-12": 0.21027335536197056,
+    ">=12": 0.044157404626013814
+   },
+   "median_v0": 5.117108106613159
+  }
+ },
+ "vmax_standardised_diff_unknown_minus_known_navtest": {
+  "A1_DAC0": 0.04061508187800268,
+  "STOP_DAC0": -0.0056261766291153354,
+  "PRIOR_DAC0": 0.04439268434762329,
+  "A1_NC0": -0.036544801589033504,
+  "STOP_NC0": -0.0023099313615462923,
+  "PRIOR_NC0": 0.0035600658243383275
+ },
+ "vmax_x_class_DACzero_navtest": {
+  "unknown": {
+   "ON-HUMAN": {
+    "n": 361,
+    "share": 0.48262032085561496
+   },
+   "OVER-STEER": {
+    "n": 152,
+    "share": 0.20320855614973263
+   },
+   "LATERAL-DRIFT": {
+    "n": 123,
+    "share": 0.16443850267379678
+   },
+   "ROUTE-FOLLOWING": {
+    "n": 83,
+    "share": 0.11096256684491979
+   },
+   "SPEED": {
+    "n": 22,
+    "share": 0.029411764705882353
+   },
+   "WRONG-SIDE": {
+    "n": 7,
+    "share": 0.009358288770053475
+   }
+  },
+  "known": {
+   "ON-HUMAN": {
+    "n": 238,
+    "share": 0.3342696629213483
+   },
+   "ROUTE-FOLLOWING": {
+    "n": 208,
+    "share": 0.29213483146067415
+   },
+   "OVER-STEER": {
+    "n": 133,
+    "share": 0.18679775280898878
+   },
+   "LATERAL-DRIFT": {
+    "n": 106,
+    "share": 0.14887640449438203
+   },
+   "SPEED": {
+    "n": 24,
+    "share": 0.033707865168539325
+   },
+   "WRONG-SIDE": {
+    "n": 3,
+    "share": 0.004213483146067416
+   }
+  }
+ }
+}

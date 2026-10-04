@@ -16347,3 +16347,19 @@ windows per split vs full `ds[i]` 0 mismatches; dev-box vs Thor eval tables bit-
 |---|---|---|
 | **H-R1-TRUNK-CARRIES-ROUTE** | Retraining ONLY the planner-side heads of refcv7-50,400 (20.15 M trainable: tactical behaviour decoder, z_tac heads, the anchored-diffusion decoder incl. its DDIM sampler, selection grafts, E9) on frozen trunk features, with dense labels / announced time-localised nav / a listwise selector / a tactical action condition, clears the route gate (turn direction-correct ≥ 0.95 with a separated gain, heading-within-15° ≥ 0.70, straight ΔADE ≤ +0.05 m) on both sampler seeds. Arms H0, H1, H2, H2s (deliberate regression), H3, H4, H5, H5c (controllability control), H6 (blocked on v9), H0n; first clearing arm replicated with training seed 1; H5 controllability bar ≥ 0.95 per forced class. Registered `…/Research/2026-10-04-refcv8-r1-head-only/SPEC_R1.md` sha256 `e9873e12…`, 2026-10-04T11:15:41Z, before any arm. | PRE-REGISTERED; RUNNING |
 | **WP-RL-COMMISSIONED** | PI 2026-10-04: RL post-training of refcv7-50,400 "exactly as stated in the DiffusionDrive paper 2" (arXiv 2512.07745) on Thor, evaluated. Arms RL / RL-s1 / RLOFF / BASE / RL-SHUF; T1 primary on eval139, four families; the earlier ports FAILED / HARMED with a broken reward (no DAC, saturating EP) — SAM3 maps now supply DAC. Launch gate binding. `Project Steering/PLAN_REFCV8.md` §0.3; package `…/Research/2026-10-04-refcv7-ddv2-rl-posttrain/`. | COMMISSIONED |
+
+<!-- REFCV8-2026-10-04-D6 -->
+### 2026-10-04: refcv7 NavSim failure anatomy (D6) — the navhard failures are the plan's, and the collisions are longitudinal
+
+`TanitAD Research Lab/Data Engineering/Research/2026-10-04-refcv8-data-audit/D6_navsim_failure_anatomy/RESULT.md`;
+navhard step 30,000, all 5,912 tokens; the 2,678 failing + control plans re-scored exactly in the local metric cache
+(max abs diff 0.0 on all 8 sub-scores); 17/17 independent re-derivations incl. a mutation control; log-cluster
+intervals (another draw of LOGS only). NavSim open-loop benchmark, zero-shot, one training seed.
+
+| id | record | status |
+|---|---|---|
+| **NS-DAC-ANATOMY** | DAC-zero on 1,563 scenes (145 stage-1, 1,418 stage-2): a clean path exists in 1,136 = 72.7 % [68.2, 77.4] (the PDM-Closed reference is clean); 0 violate at t = 0 (median first violation 1.8 s); the second inference seed is DAC-clean on only 121 (7.7 %). Classes: LATERAL-DRIFT 483 (30.9 %), ROUTE-FOLLOWING under-turn 363 (23.2 %), ON-ROUTE 287 (18.4 %, threshold-sensitive 4–38 %), OVER-STEER 203 (13.0 %), SPEED 147 (9.4 %), NO-RECOVERY 42, WRONG-SIDE 34, STOP-LIKE 4. Step 5k → 30k: 2,113 → 1,563; drift 804 → 483, route-following 626 → 363, SPEED 67 → 147. | MEASURED |
+| **NS-NC-LONGITUDINAL** | NC-zero on 889 scenes: 843 = 94.8 % are front collisions into a vehicle ahead (into a slower moving vehicle 504 = 56.7 % [48.5, 65.1]; stopped track 307 = 34.5 %; front VRU 24); the plan's 4-s speed minus the reference is median +3.87 m/s in NC-zero scenes vs −0.48 overall; the learned planner does not beat its own prior on NC (15.6 % vs 16.3 %). | MEASURED |
+| **NS-PREMATURE-TURN** | On 724 scenes with a LEFT/RIGHT command but a straight route inside the horizon, the plan turns anyway in ~59 %; DAC fails 37.9 % / 43.2 % when it turned vs 8.9 % / 25.0 % when it did not. | MEASURED (association, not cause; P2 NAVOFF tests it) |
+| **NS-VMAX-UNKNOWN** | The max-speed "unknown" row the bridge feeds on ~45 % of tokens (navhard 2,697 / 5,912; navtest 5,488 / 12,146) is NOT a disproportionate failure source: navhard DiD vs STOP −1.7 pp [−5.7, +1.7]; the navtest excess (+3.8 pp) is matched by the input-free PRIOR (+4.4 pp standardised) ⇒ a scene property. | MEASURED (no navhard VMAXOFF arm; causal reading rests on the PRIOR control) |
+| **NS-EPDMS-CEILING** | If A1 matched STOP's DAC wherever STOP is DAC-clean, official navhard EPDMS would go 0.2269 → 0.3504 (vs STOP 0.2985). | ESTIMATED (upper bound) |

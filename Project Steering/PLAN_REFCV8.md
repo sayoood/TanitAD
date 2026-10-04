@@ -63,6 +63,26 @@ conditioning before the trainer change. A from-scratch run (~6 days) only if the
 | X9 | One training seed everywhere; the bootstrap answers "another draw of episodes" only (H-ESTIM-SEED-1) | a second seed of the refcv8 run if compute allows; otherwise every lever claim is read against the v7-tiny replicate floor | replicate arm |
 | X10 | Poses lead the image by 0–34 ms (mean 0.19 m, D3); day/night is a clock label (D3); left turns on eval rest on 13 clips (D3) | interpolate poses to the camera timestamp; stratify night by brightness; report left-turn n | — |
 
+**X6 answered by D6 (NavSim failure anatomy, 2026-10-04, `…/2026-10-04-refcv8-data-audit/D6_navsim_failure_anatomy/RESULT.md`;
+navhard step 30,000, all 5,912 tokens, failing plans re-scored exactly in the local metric cache, max diff 0.0):**
+* **DAC-zero 1,563 scenes — the plan's failure, not the scene's:** a clean path exists (PDM-Closed reference clean) in
+  **1,136 = 72.7 % [68.2, 77.4]**; 0 leave the drivable area at t = 0; the second inference seed is clean on only 7.7 %.
+  Classes: LATERAL-DRIFT 30.9 %, ROUTE-FOLLOWING (under-turn) 23.2 %, ON-ROUTE-still-fails 18.4 %, OVER-STEER 13.0 %,
+  SPEED 9.4 %, NO-RECOVERY 2.7 %, WRONG-SIDE 2.2 %. 5k → 30k: drift and route-following shrank, SPEED doubled (67 → 147).
+* **NC-zero 889 scenes — LONGITUDINAL:** **843 = 94.8 %** are front collisions into a vehicle ahead (moving 56.7 %,
+  stopped 34.5 %); the plan's speed at 4 s exceeds the reference by a median **+3.87 m/s** in those scenes (−0.48
+  overall); the learned planner does not beat its own prior on NC (15.6 % vs 16.3 %). ⇒ distance keeping / braking for a
+  lead is a refcv8 lever in its own right: selector speed (X1), dense longitudinal labels with FOLLOW / BRAKE_TO / HOLD
+  and lead constraints (R8-1), lead perception (WP-C/WP-D), and the distance-keeping metric (X7).
+* **Premature turns (association):** on 724 scenes with a LEFT/RIGHT command but a straight route inside the horizon the
+  plan turns anyway in ~59 % — NavSim's command carries no distance; refcv8's nav carries distance/time (R8-2) and the
+  NavSim bridge must derive the same announced turn + route checkpoint from the scene's route (EvalFlyWheel).
+* The max-speed "unknown" row (45 % of tokens) is NOT a disproportionate failure source (navhard DiD vs STOP −1.7 pp
+  [−5.7, +1.7]); no cheap train/deploy fix is indicated there.
+* Counterfactual (ESTIMATED upper bound): matching STOP's DAC where STOP is clean lifts official EPDMS 0.2269 → 0.3504
+  (above STOP's 0.2985). Next: P1 (does the 117-fan hold a clean candidate on these tokens, and does the pick take it?)
+  and P2 (NAVOFF on the premature-turn scenes) — pre-registered, queued behind the battery on the dev-box GPU.
+
 ### 0.3 WP-RL — DiffusionDriveV2 RL post-training of refcv7 as a parallel extension (PI, 2026-10-04 afternoon)
 
 *PI: "At parallel we should plan a post training with RL exactly as stated in the DiffusionDrive paper 2 as extension
