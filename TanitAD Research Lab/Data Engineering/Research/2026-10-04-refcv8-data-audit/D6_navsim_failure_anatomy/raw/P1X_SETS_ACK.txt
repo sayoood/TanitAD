@@ -1,0 +1,24 @@
+P1' token sets RECEIVED and INDEPENDENTLY RE-DERIVED by the Master Mind -- 2026-10-04 ~21:10 Europe/Berlin (19:10Z)
+
+Source frame: step50400/scores_navhard/score_R7_A1__navhard_two_stage_wrapper/R7_A1__navhard_two_stage_final_scores_frame.csv
+  sha256 e21fc90976f20bd8...  (= source_frame_sha256 in spec_p1x_token_sets.json); 5,912 token rows, 5,912 unique;
+  counts.json status PASS, csv_token_rows 5912.
+  Provenance note: the scorer wrote this frame (and the hooks) under C:/Users/Admin/navsim/raw/... because score_arm7.py
+  passed a RELATIVE --out-dir to a wrapper running with cwd=C:/Users/Admin/navsim. The Master Mind copied the R7_A1 and
+  R7_A1_s1 wrapper outputs into the package (md5 equal on all 8 files) and made the path absolute in score_arm7.py.
+
+Re-derivation (own code, from the frame, per SPEC_P1P2_A2_P1PRIME.md s2; not the builder's code):
+  DAC==0 1,562 = S1' (1,140) + S1b' (422), disjoint, union == DAC0 set      OK
+  S2' == NC==0 set (914)                                                    OK
+  N_pass' (NC=DAC=DDC=TLC=1) = 3,057                                        OK
+  Cpass' = default_rng(20261004).choice(sorted(pop), 200) reproduces        OK
+  K1fail' = default_rng(20261005).choice(sorted(S1'), 100) reproduces       OK
+  P1'_all = union = 2,436                                                   OK
+  sha256 of every spec_tokens_p1x_{S1,S1b,S2,Cpass,K1fail,all}.txt equals spec_p1x_token_sets.json   OK
+
+DISCLOSURE (case collision, no effect on any P1' reading): on this case-insensitive filesystem the CPU stage's
+raw/spec_tokens_p1x_all.txt (2,436 tokens) OVERWROTE the GPU stage's input list raw/spec_tokens_P1X_all.txt (5,912
+tokens, 111,876 B, 17:14). The GPU export is complete and its scope is recorded independently: raw/_tokens_P1X_all.json
+and raw/p1x_fan/fan_R7_A1.jsonl (5,912 rows). The name spec_tokens_p1x_all.txt now means P1'_all.
+
+ACK: fan scoring may start.
