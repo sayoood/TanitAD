@@ -17953,3 +17953,33 @@ changed; its power check ran at 5,000, where no low-support cell crossed 0.02; a
 exhibited the defect was banked at 13:19 and went unread before the 50,400 G0 started at 13:20. Same family as "a check
 that shares the defect it checks for" (CLAUDE.md 2026-09-07). ⇒ **Every "unchanged" clause in an amendment gets an
 inheritance test that runs the NEW label through the OLD rule.**
+
+### R32 (2026-10-04) - "the SFT-4 smoke can run beside SFT-1 on the pod's spare CPUs and memory": it OOM-killed SFT-1 at update 2,550 of 2,733
+
+**Claimed (implicitly, by launching it):**
+- a launch-gate smoke that loads the full 177,836-set on-policy bank can run next to the live SFT-1 fine-tune and 28 CPU
+  relabel workers;
+- "16 workers on the pod's CPUs" is affordable because `nproc` reads 96.
+
+**True (MEASURED on the pod, 2026-10-04 15:03 UTC):**
+- **Memory.** The cgroup limit is 50 GB (`memory.max` 49,999,998,976). Each scorer fine-tune holds the bank in its main
+  process **and** in 3 forked DataLoader workers. The smoke pushed `anon` past the limit; `memory.events` oom_kill went
+  2 -> 4. The kernel killed SFT-1, the largest process (`ZZEXIT 137` at 14:50:43), and the smoke died too. SFT-1's
+  registered final read and its final checkpoints were never written (`eval/RESULT_SFT1.md`).
+- **CPU.** The CPU quota is **7.65 CPUs** (`cpu.max 765000 100000`; `nr_throttled` 1.28 M of 7.39 M periods). The 28
+  relabel workers were sized against the host's 96 and oversubscribe the quota about 4x.
+
+**Fixed (same hour):**
+- every relabel process now has `oom_score_adj` 1000 (fine-tune 669 vs workers 1,334), so the OOM killer takes relabel
+  workers or a smoke before any training run; lowering the trainer's own adj is not permitted in the container;
+- relabel autogroups run at nice 19;
+- the smoke was rebuilt to load a label-carrying subset bank (`refe/smoke_bank_subset.py`: 2,965 keys, 4,846 lines,
+  280 MB) with one DataLoader worker, adj 1000, launching only when the cgroup has >= 14 GB of headroom
+  (`refe/sft4_smoke2.sh`).
+
+**Class:** the `df` / `free` / cgroup scope family once more. `nproc` reports the host, not the pod's quota. A memory
+budget was never computed for a second process loading the same bank beside a live run. ⇒ **Before launching anything
+beside a live training run:**
+- price its peak anon memory, counting forked workers;
+- read `cpu.max` and `memory.max`, never `nproc` / `free`;
+- set the newcomer's `oom_score_adj` above the trainer's.
