@@ -515,6 +515,42 @@ if os.path.exists(_ntp) and os.path.exists(_ntr):
                                          "logs": v["reads"]["PRIMARY"]["n_logs"], "d": v["reads"]["PRIMARY"]["D_mean"],
                                          "ci": v["reads"]["PRIMARY"]["ci95"], "full": v["full_navtest"]["delta_full_navtest_pdms"]}
                                      for a, v in _a9.items() if "reads" in v}
+# ⭐ SFT-1, the scorer-only fine-tune (eval/PREREG_SFT1.md): the pod's sft.jsonl, pulled next to this script
+_sft = os.environ.get("REFE_SFT_JSONL", os.path.join(HERE, "sft.jsonl"))
+out["sft1"] = None
+if os.path.exists(_sft):
+    _tr, _ev, _meta = [], [], {}
+    for _ln in open(_sft, encoding="utf-8"):
+        try:
+            _r = json.loads(_ln)
+        except json.JSONDecodeError:
+            continue
+        _e = _r.get("event")
+        if _e == "train":
+            _tr.append({k: _r.get(k) for k in ("update", "of", "bceA", "lossB", "listnet", "s_per_update", "at")})
+        elif _e == "eval":
+            _ev.append(_r)
+        elif _e in ("data", "start", "done"):
+            _meta[_e] = _r
+    out["sft1"] = {"train": _tr, "evals": _ev, "meta": _meta}
+# ⭐ LANE-1, lane discipline (raw/2026-10-04-lane-discipline/PREREG_LANE1.md): the registered analysis, when it exists
+_ld = os.path.join(_pkg, "raw", "2026-10-04-lane-discipline")
+out["lane1"] = None
+for _nm in ("lane_result.json", "lane_result_partial.json"):
+    if os.path.exists(os.path.join(_ld, _nm)):
+        out["lane1"] = json.load(open(os.path.join(_ld, _nm), encoding="utf-8"))
+        break
+if out["lane1"] is not None and os.path.exists(os.path.join(_ld, "lane2_result.json")):
+    out["lane1"]["lane2"] = json.load(open(os.path.join(_ld, "lane2_result.json"), encoding="utf-8"))
+for _k, _nm in (("teacher_check", "teacher_check_heldout_summary.json"), ("teacher_ddc", "teacher_vs_navsim_ddc_heldout.json"),
+                ("ddc_valid", "validate_navsim_ddc.json"), ("label_census", "teacher_label_census.json")):
+    if out["lane1"] is not None and os.path.exists(os.path.join(_ld, _nm)):
+        out["lane1"][_k] = json.load(open(os.path.join(_ld, _nm), encoding="utf-8"))
+_scene = os.path.join(_ld, "scene_01949_02501_plans20-25_dir.png")
+out["lane_scene"] = None
+if out["lane1"] is not None and os.path.exists(_scene):
+    import base64
+    out["lane_scene"] = "data:image/png;base64," + base64.b64encode(open(_scene, "rb").read()).decode("ascii")
 json.dump(out, open(os.path.join(HERE, "report_data.json"), "w", encoding="utf-8"))
 p = out["progress"]
 print(json.dumps(p, indent=1))

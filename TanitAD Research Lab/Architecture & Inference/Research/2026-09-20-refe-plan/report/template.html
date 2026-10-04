@@ -225,6 +225,50 @@ a { color: var(--s1); }
     </div>
   </section>
 
+  <section id="sft1" hidden>
+    <div class="sec-head"><h2>Scorer fine-tune (SFT-1): teaching the scorer to rank</h2>
+      <p class="lead" id="sft-lead"></p></div>
+    <figure>
+      <div class="fh"><h3>Held-out reads (3,137 sets from 24 logs the fine-tune never sees)</h3><p>Pick = true navsim_v1 score of the selected hypothesis × 100. "vs base" is the paired difference against the frozen original scorer, log-cluster bootstrap over the 24 logs (10,000 resamples). Arm A continues the original per-component loss; arm B adds a ranking loss over each set of 64. The 64 proposals are identical in all three; only the choice moves.</p></div>
+      <div class="tbl" id="t-sft-evals"></div>
+    </figure>
+    <figure>
+      <div class="fh"><h3>Training progress</h3><p>Mean losses over the last 25 updates (8 × 8 sets each).</p></div>
+      <div class="tbl" id="t-sft-train"></div>
+    </figure>
+  </section>
+
+  <section id="lane1" hidden>
+    <div class="sec-head"><h2>Lane discipline: what the video shows, measured</h2>
+      <p class="lead" id="lane-lead"></p></div>
+    <figure>
+      <div class="fh"><h3>The drive from the video, on the map (plans #20 to #25)</h3><p>Lanes blue = on the route, red = oncoming (left-hand traffic, Singapore). Black = the human's future, green = the selected plan, the fan coloured by predicted score. The map is drawn for inspection only; it is never a model input.</p></div>
+      <img id="lane-scene" alt="Map view of six consecutive plans: the fan and the selected plan cut the inside of a right-hand bend toward the oncoming lane while the human holds the lane." style="width:100%;height:auto;border-radius:6px">
+    </figure>
+    <div class="grid2">
+      <figure>
+        <div class="fh"><h3>How often each trajectory violates</h3><p>Share of tokens; human and PDM-Closed are the floors (legal lane changes and turns trip these measures too). Tokens the route fix leaves unchanged, so the table is the adopted model exactly.</p></div>
+        <div class="tbl" id="t-lane-rates"></div>
+      </figure>
+      <figure>
+        <div class="fh"><h3>Fan or selection?</h3><p>On tokens where the human is clean. Fan effect: at least half of the 64 hypotheses violate. Selection effect: the pick violates although a clean hypothesis with at least the same true PDMS existed.</p></div>
+        <div class="tbl" id="t-lane-effects"></div>
+      </figure>
+    </div>
+    <figure>
+      <div class="fh"><h3>Selection rules on the same proposals</h3><p>PDMS reproduced exactly as the harness scores a submission (checked against the harness CSV on every token). L1 is pre-registered; L2 is reported only; ORACLE rows use the map and are upper bounds, not deployable.</p></div>
+      <div class="tbl" id="t-lane-rules"></div>
+    </figure>
+    <figure>
+      <div class="fh"><h3>What the teacher and the benchmark can see</h3><p>Which lane-related signals exist in the scorer's training labels, the selection rule and NAVSIM v1.1's PDMS.</p></div>
+      <div class="tbl" id="t-lane-teacher"></div>
+    </figure>
+    <figure id="lane-trajteacher-wrap" hidden>
+      <div class="fh"><h3>The trajectory teacher itself (its rollouts are the targets the proposal head learns)</h3><p>3,137 held-out navtrain samples (24 logs): the DriveRL teacher's rollout, the human's logged future and the model's 64 proposals, each judged by the same NAVSIM-faithful rules on NAVSIM's own simulation. Log-cluster bootstrap. 96 of the teacher's 156 drivable-area failures come from a single log.</p></div>
+      <div class="tbl" id="t-lane-trajteacher"></div>
+    </figure>
+  </section>
+
   <section id="eval">
     <div class="sec-head"><h2>NAVSIM evaluation: the learning curve</h2>
       <p class="lead" id="eval-lead"></p></div>
@@ -586,6 +630,73 @@ a { color: var(--s1); }
     table("t-nt-slices", ["slice", "tokens", "PDMS [95% CI]", "picks scoring 0"],
       sl.map(([n, v]) => [n, int(v.n), fmt(v.PDMS, 2) + " " + iv(v.ci95_log_cluster), int(v.n_pdms_zero)]));
   }
+
+  // ---------- SFT-1: the scorer-only fine-tune ----------
+  if (D.sft1 && D.sft1.evals && D.sft1.evals.length) {
+    const S = D.sft1, tr = S.train, last = tr.length ? tr[tr.length - 1] : null, ev = S.evals, le = ev[ev.length - 1];
+    const sgn = v => (v >= 0 ? "+" : "") + fmt(v, 2);
+    const dci = a => a && a.pick_minus_base ? sgn(a.pick_minus_base.mean) + " [" + sgn(a.pick_minus_base.ci95[0]) + ", " + sgn(a.pick_minus_base.ci95[1]) + "]" : "–";
+    $("sft1").hidden = false;
+    const done = S.meta.done;
+    const left = last ? (last.of - last.update) * last.s_per_update / 3600 : null;
+    $("sft-lead").textContent = (done ? "Finished: " + int(done.updates) + " updates in " + fmt(done.hours, 1) + " h. " :
+      "Running on the A40: update " + int(last ? last.update : 0) + " of " + int(last ? last.of : 0) + " (" + fmt(last ? last.s_per_update : null, 1) + " s each, about " + fmt(left, 1) + " h left). ") +
+      "Latest held-out read (" + le.tag + "): original scorer " + fmt(le.base.pick, 2) + "; arm A " + dci(le.A) + "; arm B " + dci(le.B) +
+      ". Picks scoring 0: base " + int(le.base.zero_picks) + ", A " + int(le.A.zero_picks) + ", B " + int(le.B.zero_picks) + " of " + int(le.n) +
+      ". A variant goes to navtest only if its lower bound clears zero at the final update (pre-registered, eval/PREREG_SFT1.md).";
+    const rows = [];
+    ev.forEach(e => ["base", "A", "B"].forEach(k => { const a = e[k]; rows.push([e.tag, k === "base" ? "original" : "arm " + k, fmt(a.pick, 2), k === "base" ? "–" : dci(a),
+      int(a.zero_picks), fmt(a.auc_nc, 3), fmt(a.auc_dac, 3), fmt(a.skill, 3)]); }));
+    table("t-sft-evals", ["read", "scorer", "pick", "vs base [95% CI]", "picks = 0", "AUC NC", "AUC DAC", "skill"], rows);
+    const keep = tr.filter((r, i) => i === tr.length - 1 || r.update % 250 === 0 || i === 0);
+    table("t-sft-train", ["update", "arm A loss (BCE)", "arm B loss (BCE + 0.3 ListNet)", "ListNet", "s / update"],
+      keep.map(r => [int(r.update), fmt(r.bceA, 4), fmt(r.lossB, 4), fmt(r.listnet, 3), fmt(r.s_per_update, 2)]));
+  }
+
+  // ---------- LANE-1: lane discipline ----------
+  if (D.lane1 && D.lane1.unchanged_by_routefix) {
+    const L1 = D.lane1, P = L1.unchanged_by_routefix, L2 = L1.lane2 ? L1.lane2.unchanged_by_routefix : null;
+    const ci = b => b ? pct(b.est) + " [" + pct(b.lo) + ", " + pct(b.hi) + "]" : "–";
+    const cx = b => b ? (b.est >= 0 ? "+" : "") + fmt(b.est, 2) + " [" + fmt(b.lo, 2) + ", " + fmt(b.hi, 2) + "]" : "–";
+    const cpp = b => b ? (b.est >= 0 ? "+" : "") + (100 * b.est).toFixed(2) + " pp [" + (100 * b.lo).toFixed(2) + ", " + (100 * b.hi).toFixed(2) + "]" : "–";
+    $("lane1").hidden = false;
+    if (D.lane_scene) $("lane-scene").src = D.lane_scene; else $("lane-scene").hidden = true;
+    const on = P.violation_rates.onc, eo = P.effects_human_clean.onc, l1 = P.selection_rules.L1_x_pddc;
+    const lk = L2 ? L2.violation_rates.lk10 : null, ek = L2 ? L2.effects_human_clean.lk10 : null;
+    $("lane-lead").textContent = (L1.partial ? "PARTIAL read (" + int(L1.rows) + " of 12,146 tokens). " : "") +
+      "NAVSIM v1.1 gives driving direction a weight of 0 and counts the oncoming carriageway as drivable, and our scorer's labels contain no lane-keeping signal, so nothing in training or in the benchmark penalised these effects. " +
+      "Entering an oncoming or off-route lane (≥ 2 m within 1 s): human " + pct(on.human.est) + ", selected plan " + pct(on.pick.est) + "; when the pick does it, a clean hypothesis with at least the same PDMS existed in " + pct(eo.of_violating_picks_share_with_free_clean_alt.est) + " of cases, so this is mostly a SELECTION failure. " +
+      (lk ? "Off the lane centre by > 1 m for ≥ 1 s: human " + pct(lk.human.est) + ", PDM-Closed " + pct(lk.pdm_closed.est) + ", selected plan " + pct(lk.pick.est) + ". " : "") +
+      "Pre-registered L1 (multiply in the scorer's own direction head): PDMS " + cx(l1.paired_delta_x100) + ", oncoming picks " + cpp(l1.onc_rate_delta) + ": " + (P.L1_verdict.ADOPT ? "ADOPT." : "not adopted by its registered rule.");
+    const rr = (nm, b) => [nm, ci(b.human), ci(b.pdm_closed), ci(b.fan_mean), ci(b.pick)];
+    const rateRows = [rr("enters an oncoming / off-route lane (NAVSIM DDC < 1)", on), rr("leaves the drivable area (DAC)", P.violation_rates.dac)];
+    if (lk) { rateRows.push(rr("off the lane centre > 1 m for ≥ 1 s", lk)); rateRows.push(rr("off the lane centre > 1.5 m for ≥ 1 s", L2.violation_rates.lk15)); }
+    table("t-lane-rates", ["violation", "human", "PDM-Closed", "fan (mean of 64)", "selected plan"], rateRows);
+    const er = (nm, e) => [nm, int(e.human_clean_tokens), ci(e.FAN_effect), ci(e.SELECTION_effect_free_clean_alt), ci(e.of_violating_picks_share_with_free_clean_alt)];
+    const effRows = [er("oncoming / off-route lane", eo)];
+    if (ek) effRows.push(er("off the lane centre > 1 m, ≥ 1 s", ek));
+    table("t-lane-effects", ["violation", "tokens (human clean)", "fan effect", "selection effect", "violating picks with a free clean alternative"], effRows);
+    const names = { navsim_v1: "current rule (navsim_v1)", L1_x_pddc: "L1: × direction head (registered)", "L2_gate_pddc_0.5": "L2: gate direction head ≥ 0.5",
+      ORACLE_mask_onc: "ORACLE: drop oncoming hypotheses", ORACLE_mask_lane: "ORACLE: drop lane-straddling hypotheses", ORACLE_best_pdms: "ORACLE: best true PDMS" };
+    table("t-lane-rules", ["rule", "PDMS", "vs current [95% CI]", "picks changed", "oncoming", "drivable area fail"],
+      Object.entries(P.selection_rules).map(([k, v]) => [names[k] || k, fmt(v.pdms_x100.est, 2), k === "navsim_v1" ? "–" : cx(v.paired_delta_x100), int(v.changed_picks), pct(v.onc_rate.est, 2), pct(v.dac_rate.est, 2)]));
+    const TD = L1.teacher_ddc, DV = L1.ddc_valid;
+    table("t-lane-teacher", ["signal", "scorer training labels", "selection rule", "NAVSIM v1.1 PDMS"], [
+      ["drivable area", "yes: NAVSIM-faithful, 100.00 % agreement on 25,600 proposals", "yes (multiplies)", "yes (multiplies)"],
+      ["driving direction (oncoming)", TD ? "DriveRL's wrong-way flag: catches " + pct(TD.recall_teacher_of_navsim) + " of NAVSIM's violations; " + pct(TD.precision_teacher_vs_navsim) + " of its flags are real (" + int(TD.proposals) + " held-out proposals)" : "DriveRL's wrong-way definition", "no: the head is trained, never used", "computed, weight 0"],
+      ["solid-line crossing", "category exists, fires 0 times in 200,768 proposals", "no", "no"],
+      ["lane keeping (centre / lane change)", "absent", "no", "no"],
+      ["fix in progress (SFT-2)", DV ? "NAVSIM-faithful direction label: " + fmt(DV.agree_pct_cache_lanes, 2) + " % agreement on " + int(DV.trajectories) + " navtest trajectories" : "NAVSIM-faithful direction label", "L1: × direction head", "–"]]);
+    const TC = L1.teacher_check;
+    if (TC) {
+      const r3 = (nm, k) => [nm, ci3(TC.teacher[k]), ci3(TC.human[k]), ci3(TC.model_64_mean[k]), cd3(TC.teacher_minus_human[k])];
+      table("t-lane-trajteacher", ["NAVSIM-faithful check", "trajectory teacher", "human (log)", "model, mean of 64", "teacher − human"], [
+        r3("leaves the drivable area", "DAC_fail"), r3("enters an oncoming lane (DDC < 1)", "DDC_lt1_oncoming"), r3("off the lane centre > 1 m for ≥ 1 s", "lane_keep_lk10")]);
+      $("lane-trajteacher-wrap").hidden = false;
+    }
+  }
+  function ci3(a) { return a ? (100 * a[0]).toFixed(2) + " % [" + (100 * a[1]).toFixed(2) + ", " + (100 * a[2]).toFixed(2) + "]" : "–"; }
+  function cd3(a) { return a ? (a[0] >= 0 ? "+" : "") + (100 * a[0]).toFixed(2) + " pp [" + (100 * a[1]).toFixed(2) + ", " + (100 * a[2]).toFixed(2) + "]" : "–"; }
 
   // ---------- timeline ----------
   const TL = [
