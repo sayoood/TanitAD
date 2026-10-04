@@ -1,0 +1,58 @@
+{
+ "tokens_asked": 61,
+ "rows": 61,
+ "misses": 0,
+ "miss_examples": [],
+ "ckpt": "/content/relay/snap_epoch016.pt",
+ "select": "best",
+ "rule": "navsim_v1",
+ "repair_last_heading": true,
+ "frame_control": {
+  "n": 61,
+  "max_m": 1.687538997430238e-14,
+  "median_m": 1.7763568394002505e-15,
+  "bar_m": 0.001,
+  "what": "log future on NAVSIM's 0.5 s grid vs W3 human_future_poses"
+ },
+ "interpolation_residual": {
+  "n": 61,
+  "max_m": 0.0619043091877286,
+  "median_m": 0.006860938486883243,
+  "what": "log future on REFe's 0.2 s grid -> to_navsim, vs W3; reported, not gated"
+ },
+ "seconds": 198.9,
+ "proposals": {
+  "n": 61,
+  "M": 64,
+  "ade_selected_m": 1.742,
+  "ade_random_m": 1.8265,
+  "ade_oracle_m": 0.3357,
+  "oracle_index_distinct": 32,
+  "oracle_index_top5": [
+   [
+    6,
+    6
+   ],
+   [
+    32,
+    6
+   ],
+   [
+    56,
+    5
+   ],
+   [
+    43,
+    4
+   ],
+   [
+    24,
+    3
+   ]
+  ],
+  "selected_index_distinct": 21,
+  "endpoint_spread_m": 2.868,
+  "what": "open-loop ADE over NAVSIM's 8 poses (0.5 s) vs W3's human future: selected = the planner's pick; random = mean over the M proposals (a random selector's expectation); oracle = best of M; oracle_index_* = how many proposals are ever best (WTA collapse if few); endpoint_spread = mean distance of the M endpoints from their centroid"
+ },
+ "proposal_dump": "/content/p0/out/rep/shard2_props.npz"
+}

@@ -1,0 +1,9 @@
+MEASURED 2026-09-27: the runner ended 17:13:24Z and p0_session.ps1's finally ran -- but its stop and its ccu readout
+never started (stop_rc null, 10_stop.* empty): the finally deleted $Tmp, which held the empty stdin file every
+Invoke-Logged redirects from. The record then read my_endpoint_still_assigned=False because the failed readout was a
+placeholder list. The server said otherwise:
+17:14:0xZ ZZCCU ... "consumptionRateHourly": 1.62, "assignmentsCount": 2, assignments: gpu-l4-s-kkb-usw4c0-3t0nwuzisqi9y (L4), m-s-kkb-usw4b2-cxz4dioazq5u (CPU, session A, running)
+manual `colab --config sessions_navtest.json stop -s navtest-p0-l4` -> "Session terminated."
+17:14:29Z ZZCCU ... "consumptionRateHourly": 0.08, "assignmentsCount": 1, assignments: m-s-kkb-usw4b2-cxz4dioazq5u (CPU, session A) only
+=> the L4 was assigned ~17:01:27Z (new took 14.6 s before 17:01:41Z) to ~17:14:25Z = ~778 s; ~33 s of it after the runner ended.
+Fixed in p0_session.ps1 (stdin file kept until after the server check; an unreadable server state is UNKNOWN, not False).
