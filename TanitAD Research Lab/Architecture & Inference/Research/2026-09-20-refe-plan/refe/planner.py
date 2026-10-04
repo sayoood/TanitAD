@@ -336,11 +336,13 @@ class REFePlanner(AbstractPlanner):
         # per scenario (read only when the sanitisation is ON); `goal_diag` records what the last goal did.
         self.sanitize_goal = self.SANITIZE_GOAL if sanitize_goal is None else bool(sanitize_goal)
         # the 2026-10-04 goal-fix candidates, named and recorded; None (the default) is bit-identical to before
-        self.goal_fix = self.GOAL_FIX if goal_fix is None else goal_fix
+        self.goal_fix = self.GOAL_FIX if goal_fix is None else (None if goal_fix == "off" else goal_fix)
         if self.goal_fix is not None and self.goal_fix not in GOAL_FIXES:
             raise ValueError(f"unknown goal_fix {self.goal_fix!r}; one of {GOAL_FIXES}")
         if self.goal_fix is not None and self.sanitize_goal:
-            raise ValueError("goal_fix and sanitize_goal (Amendment 8) are exclusive")
+            if goal_fix is not None:
+                raise ValueError("goal_fix and sanitize_goal (Amendment 8) are exclusive")
+            self.goal_fix = None        # Amendment 8 asked for explicitly: the DEFAULT goal fix steps aside (reproducible)
         self.driving_command = None
         self.goal_diag = None
         self.cfg = REFeConfig.for_backbone(backbone)
@@ -519,8 +521,11 @@ class REFePlanner(AbstractPlanner):
     REPAIR_LAST_HEADING = True
     # SPEC_NAVTEST Amendment 8 (registered 2026-09-28): the goal sanitisation. OFF until the amendment reads ADOPT.
     SANITIZE_GOAL = False
-    # 2026-10-04 goal-fix candidates (GOAL_FIXES above). None until a pre-registered confirmation reads ADOPT.
-    GOAL_FIX = None
+    # ⭐ ON from 2026-10-04 by SPEC_NAVTEST Amendment 9's verdict (raw/2026-10-01-goal-trigger/RESULT_A9_GOAL_FIX.md): ADOPT,
+    # +4.17 [+1.98, +7.21] PDMS on 3,045 confirmation tokens / 82 logs (fresh-log +12.05 [+4.03, +21.67]), and the PI's
+    # admissibility ruling ("adopt the route fix", 2026-10-04): the route is repaired exactly as NAVSIM's privileged planner
+    # repairs it; only the nav goal moves. goal_fix="off" reproduces every evaluation before the adoption bit for bit.
+    GOAL_FIX = "pdm_route"
 
     def aggregate(self, score: torch.Tensor) -> torch.Tensor:
         """The BENCHMARK SCORING RULE, over probabilities, not a sum of logits.

@@ -134,8 +134,9 @@ def main() -> int:
                          "route, the goal is replaced by the 150 m clamp along its own bearing (both points scaled by "
                          "min(1, 150 / |p2|)) or by the straight-route goal max(v0, 5) x 12 s along the ego heading. "
                          "Never together with --sanitize-goal.")
-    ap.add_argument("--goal-fix", default=None, choices=("pdm_route", "navgoal_straight", "navgoal_arc"),
-                    help="2026-10-04 goal-fix candidates (planner.GOAL_FIXES; Amendment 9 draft) -- OFF by default. "
+    ap.add_argument("--goal-fix", default=None, choices=("pdm_route", "navgoal_straight", "navgoal_arc", "off"),
+                    help="the goal fix (planner.GOAL_FIXES). Default = planner.GOAL_FIX, which is 'pdm_route' since SPEC "
+                         "Amendment 9's adoption (2026-10-04); 'off' reproduces every evaluation before it. "
                          "Never together with --sanitize-goal or --goal-variant.")
     ap.add_argument("--device", default="cuda")
     ap.add_argument("--backbone", default="vitl16")
@@ -165,7 +166,9 @@ def main() -> int:
     planner = REFePlanner(checkpoint=a.ckpt, images_root=a.frames, db_dir=a.db_dir,
                           backbone=a.backbone, device=a.device, select=a.select, rule=a.rule,
                           repair_last_heading=(False if a.no_repair_last_heading else None),
-                          sanitize_goal=(True if a.sanitize_goal else None), goal_fix=a.goal_fix)
+                          sanitize_goal=(True if a.sanitize_goal else None),
+                          # Amendment 8's report-only goal variants wrap the pre-adoption goal path: the default fix steps aside
+                          goal_fix=(a.goal_fix or ("off" if a.goal_variant else None)))
     rec_inputs: dict = {}
     print(f"  planner: trained={planner.trained} per_sample_calib={planner.per_sample_calib} "
           f"device={planner.device} select={planner.select}", flush=True)
