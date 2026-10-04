@@ -305,6 +305,24 @@ and the conditioning implementation (WP-B) are the critical path.
 10. (new, WP-D P-TEMP) **Temporal BEV fusion** warps past BEV features with the ego's PAST motion. refcv7 already feeds
     the observed window's ego track (`--ego-history`, PI ruling 2026-09-02 on measured state at cycle time). Default:
     treat past ego-motion for warping as admissible under the same ruling; the probe stays deferred until the PI confirms.
+11. (new, WP-A Stage 2) **Route checkpoint and road geometry.** MEASURED (eval139 + a 600-clip train sample,
+    `FlyWheels/TanitAD_DataFlyWheel/incoming/2026-10-04-v9-labels/RESULT.md` §S2): a trivial planner that only aims at
+    the checkpoint already beats refcv7 on direction (RC-B 0.972, RC-A50 0.916 vs 0.841) and heading-within-15°
+    (RC-A50 0.654 vs 0.514); every variant leaks future-speed information beyond NAV under a nonlinear model (trees
+    +0.052…+0.131 vs the 0.03 bar; the linear model passes at +0.006…+0.010; the trees are not yet certified), and the
+    leak is ROAD CURVATURE AHEAD — a heavily smoothed route with no lane-level detail carries 80–90 % of RC-A50's
+    increment. **Master Mind's provisional ruling:** road-geometry speed information is admissible inside a route input
+    (a deployed navigation system supplies the route over a map); lane-level ego choice is not. ⇒ tentatively RC-A50
+    with a noised training input + ≥ 0.3 dropout, the leak re-measured against the heavy route (E2′ ≤ 0.01 under a
+    certified instrument, pre-registered). **The PI confirms or overrules** (if overruled: no route checkpoint; nav
+    token + spatial args stay the route input). On NavSim the legal row carries no route either way.
+
+**WP-A status (2026-10-04 ~16:15): v9 release BUILT and VALIDATED** (R8-1/R8-2/R8-3; `FlyWheels/TanitAD_DataFlyWheel/
+incoming/2026-10-04-v9-labels/`): per-frame tactical labels on **95.09 %** of train windows (refcv7 23.22 %; eval 94.57 %,
+FAIL as registered by 0.4 pp); TURN side 0.980 / 0.988, STOP 0.991 / 0.994 against an independent derivation; realised
+announced turns get the matching per-frame nav token on 99.6 %; the route checkpoint RC-A50 with training noise passes
+the registered leak test against a road-level route (conditional on the PI confirming decision 11); lane change ships
+never-positive (SAM3 lane lines could not measure it against the VLM text, 14 / 101). Reader + INTEGRATION.md → WP-B.
 
 **WP-D status (2026-10-04 ~14:30): design DONE, probes REGISTERED** (`…/2026-10-04-refcv8-perception-architecture/`
 RESULT.md, PERCEPTION_DESIGN.md, PREREG_WPD_PROBES.md sha256 `c054190b…`). MEASURED from refcv7's own log + PROBE-0:

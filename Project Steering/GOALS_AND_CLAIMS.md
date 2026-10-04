@@ -16443,3 +16443,22 @@ official STOP frame (8e-17), the identity snap stays DAC-zero on 1,563/1,563, th
 |---|---|---|
 | **NS-P3-SPEED-CEILING** | A perfect speed fix (best of 0.8 / 0.6 / 0.4 × the planned speed on the same path) clears **46.0 % [40.4, 51.2]** of navhard NC-zero (409 / 889; 200 scenes are unfixable because STOP also collides) — official EPDMS ceiling 0.2269 → 0.2880, still below STOP 0.2985 — and **93.7 %** of navtest NC-zero (944 / 1,008; PDMS ceiling 71.88 → 78.82). The cleared plans still travel a median 13.2 m (PDM-Closed reference 11.3 m; banked NC-zero plans 21.3 m): the fix is not "stop". | MEASURED (oracle ceiling) |
 | **NS-P3-ROUTE-CEILING** | A route-follow oracle (the plan's own progress laid on the route centreline) clears **51.4 % [46.4, 57.4]** of navhard DAC-zero (803 / 1,563; 795 of the 1,136 clean-path scenes) — official EPDMS ceiling +0.1134 → **0.3403, above STOP** — and 85.6 % on navtest (PDMS 76.95). A bounded lateral shift ≤ 1.5 m clears only 17.3 % ⇒ gross route errors, not boundary errors. Ranking on navhard: the route / lateral lever exceeds the whole deficit to STOP; speed alone does not. | MEASURED (oracle ceiling) |
+
+<!-- REFCV8-2026-10-04-WPA-V9 -->
+### 2026-10-04: refcv8 WP-A — the v9 label release (per-frame tactical goals/actions over [NOW+2, NOW+8] s with constraints, per-frame nav, the route checkpoint) built and validated
+
+`FlyWheels/TanitAD_DataFlyWheel/incoming/2026-10-04-v9-labels/` (SPEC + addenda S2A1/S2A2, RESULT.md §S2–S4,
+INTEGRATION.md, V9_SCHEMA.md, raw/). The independent check derives heading from the position path, distance from
+integrated speed and radius from the provider's curvature, importing nothing from the builder. Release (not for git):
+`v9_labels_{train,eval139}.npz`, md5 train `f63ece41…`, eval139 `6b5c7f20…`, three byte-identical copies.
+
+| id | record | status |
+|---|---|---|
+| **H-V9-COV** | Tactical labels on **95.09 %** of 746,946 train windows (refcv7: 23.22 %) — PASS; eval139 94.57 % — FAIL as registered (95.58 % on the 136 tactically scored clips); 881 / 113,946 train and 125 / 3,332 eval turn windows unlabelled ("every turn window labelled" FAIL as worded). | MEASURED (train PASS, eval FAIL) |
+| **H-V9-GEOM** | TURN side recall / precision 0.980 / 0.988 (train) PASS; eval 0.943 / 0.966 FAIL as registered, 0.992 / 0.982 excluding 3 forward↔reverse-cusp clips (POST-HOC; a reversing mask was added — v9 has no reverse class). STOP 0.991 / 0.994 and 0.999 / 0.998 PASS; turn timing, heading change, radius, stop time and distance within tolerance on 0.90–1.00. | MEASURED |
+| **H-V9-NAV** | Realised announced turns get the matching per-frame token on 99.55 % (train) / 99.34 % (eval) — PASS; R8-2's "no turn within 6 s ≤ 5 %" reads 22.2 % / 30.4 % — FAIL as written (the spatial token announces decelerating approaches early, by design; refcv7: 74.3 %); nav distance within ±2 m 0.759 / 0.804 — FAIL (relative median 0.09 %). | MEASURED |
+| **H-V9-LC** | Lane change from SAM3 lane lines vs the Alpamayo lane-change text: side correct 14 / 101 — FAIL ⇒ lane change ships never-positive. | MEASURED (FAIL) |
+| **H-RC-ECHO** | A trivial planner aiming at the route checkpoint at constant v0 is turn-direction-correct on 0.89–0.97 and heading-within-15° on 0.48–0.65 of GT-turn windows (refcv7's pick 0.841 / 0.514); driven at the TRUE speed profile the same arc reaches all-window ADE 0.66 m vs refcv7 1.97 m. | MEASURED (the echo floor refcv8 must beat) |
+| **H-RC-SPEEDLEAK** | Against NAV the checkpoint leaks future-speed information under trees (+0.05…+0.13; FAIL), linear fits pass; the leak is ROAD CURVATURE AHEAD (a heavy σ 25 m route carries 80–90 %). Under the Master Mind's PROVISIONAL ruling (road geometry admissible in a route input; PI to confirm), the registered E2′ on a CERTIFIED instrument (scrambled −0.0045, target 0.997; 35,133 windows / 4,150 clips): RC-A50 noised vs the road-level route −0.035 (≤ 0.01) — PASS; the clean point +0.021 would FAIL (the noise is load-bearing). | MEASURED; PASS conditional on the PI ruling |
+| **H-RC-LATLEAK** | E3 as registered FAIL (p90 3.0–5.6 m; the reference cuts corners on curves); E3′ straight-road p90 0.32 / 0.34 m and lane-change-scale median 0.14 / 0.16 m — PASS. | MEASURED |
+| **D-GOAL-STATE-LEAK** (fix) | The v7_labels module-state defect is fixed (base `86f0c46e` → `abb1f64c`): the goal-negative policy travels on `V7Label` / `LabelManifest`; 6 tests, red on the unfixed module with exactly D1's LANE_CHANGE_L weight 0 → 1. | FIXED (landed after the Master Mind's gate) |
