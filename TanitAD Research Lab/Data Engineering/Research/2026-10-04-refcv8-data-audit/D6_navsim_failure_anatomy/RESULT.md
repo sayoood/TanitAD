@@ -192,6 +192,8 @@ Counterfactual weight (ESTIMATED, T1): DAC (where STOP is clean) +0.1235 officia
 
 ## 9. Cheapest next probes for what remains unattributed
 
+> UPDATE: P3 below was RUN (section 12, Appendix B); P1 and P2 are REGISTERED as `SPEC_P1P2.md` + `SPEC_P1P2_A1.md` (the fan is 117 anchors; no WTA heads in this checkpoint) and queued behind the GPU lock. The text of this section is the plan as first written; the registered SPEC governs.
+
 * **P1 -- candidate-fan probe (D_core analogue for DAC and NC): for every DAC-zero / NC-zero token, does the 117-anchor fan (+ 64 WTA proposals) hold a clean candidate, and does the pick take it?** Decides SELECTION (SEL-1) vs GENERATION vs MAP for the 790 clean-path LATERAL / ON-ROUTE / OVER-STEER / NO-RECOVERY scenes (50.5 % of all DAC-zero) and the 843 front-collision NC scenes.
   Needs: a ~5-line change in `refcv7_bridge.py` to export `out["anchor_traj"]` ([B,117,S,2], `refc_v3.py:2247`) and the `r7_*` WTA proposals, headings from the bridge's own pose builder. GPU (BLOCKED by the lock held by the NavSim 50,400 job): CUDA native path 0.35-0.42 s/scene (MEASURED on warmup, package RESULT s3) x 1,563 DAC-zero tokens
   = ~11 min + 4.3 s model load (seam manifest) ; with the 889 NC tokens ~16 min. CPU: scoring 117 candidates per token measured at **1.0-1.3 s/token** (`raw/d6_fanbench.json`: build 0.17 + simulate 0.14 + score 0.54-0.90 s; synthetic candidates, timing only) = ~30-35 min for the DAC-zero set, one process.
@@ -222,6 +224,39 @@ C:/Users/Admin/venvs/tanitad/Scripts/python.exe code/d6_part1_table.py        # 
 #   d6_rescore.py --geom-only ... --out raw/geom_all.jsonl ; d6_rescore.py --human --hooks <A1 30k hooks> --tokens raw/tokens_rescore_{A,B}*.txt --out raw/rescore_{A,B}*.jsonl ; d6_fanbench.py
 C:/Users/Admin/venvs/tanitad/Scripts/python.exe code/d6_part2_anatomy.py ; d6_part3_navtest.py ; d6_part4_intervals.py ; d6_part5_sensitivity.py ; d6_part2b_vmax_speed.py ; d6_part6_merge.py ; d6_make_tables.py
 ```
+
+## 12. Continuation after acceptance (Rule Zero): P3 oracles run, P1/P2 registered and queued
+
+**12.1 Status (2026-10-04, local Berlin time).**
+* **P3 done** (CPU only; tables in Appendix B). All three oracles were validated on known values first: the identity plan reproduces the banked sub-scores exactly (40 scenes, max abs 0.0), the speed-scale-0 plan reproduces the OFFICIAL STOP frame (max abs 8.3e-17), the identity snap stays DAC-zero on 1,563 of 1,563, and on navtest the v1.1 re-score reproduces the banked row on 2,491 of 2,491.
+* **SPEC_P1P2.md REGISTERED** by the Master Mind (sha256 `4eaf655f8e000f5ae06a4b0ba93ff05be04a037064d1c16d108e7c11c1f5f4bd`, 2026-10-04T12:00:42Z) and **amendment A1 REGISTERED** (`SPEC_P1P2_A1.md`, sha256 `def9b4c24222d47dc49de0174690279c4819a7da1dc896954d7c6b582f1392bb`,
+  12:09:57Z), both before any P1/P2 number existed (`raw/SPEC_SHA256.txt`). **A1 corrects a defect in my own SPEC found before launch:** refcv7-r101-s0 as launched has no WTA decoder and no refcv7 scorer (launch argv carries no `--refcv7`,
+  `w_r7_wta = w_r7_scorer = 0.0`, no r7 group in `param_breakdown`), so the candidate universe is the 117 fan, and the "free lever" is "emit the decoder's own pick (E9 graft off)", not `refcv7_select`.
+* **Bridge export built** in `code/bridge_fix/` (insert-only copy of `run_bridge7.py` / `refcv7_bridge.py`; `boot7.py`, `gpu_lock.py` byte-identical; base blobs in `BASE_BLOBS.txt`; `test_default_identical.py` 23/23 incl. a mutation control). The live `navsim/code/` files were not touched.
+* **Queue state (read from the launch artifacts, not exit codes):** `raw/gate.log` shows the gate found `raw/SPEC_A1_REGISTERED.txt` at 14:10:21 and started the battery's `with_gpu_lock.py` (pid 34564); `raw/gpu_wait.log` shows the repeated
+  `[gpu_lock] WAIT job=refcv8-d6-p1p2 holder={'job': 'refcv7-milestone-step50400', ...}`; `raw/gpu_rec.json` does not exist yet; the lock file still names the battery. **No P1/P2 number exists.** The CPU stage (`run_p1p2_cpu.py`) waits for the GPU chain's done-marker.
+
+**12.2 What the P3 ceilings say (upper bounds on what a PERFECT fix of each kind would clear; Appendix B has n, CIs and the method).**
+
+| lever kind | navhard (A1 30k) | navtest (A1 30k) |
+|---|---|---|
+| **selector speed** (the same path at 0.6 / 0.4 / best-of-three x the planned speed), share of NC-zero cleared | 30.6 % [26.0, 35.1] / 45.9 % [40.3, 51.0] / **46.0 % [40.4, 51.2]** (409 of 889); **200 (22.5 %) are not fixable by ANY speed** (STOP also collides); of the 689 scenes where STOP passes, 58.6 %; official EPDMS ceiling 0.2269 -> 0.2880 (+0.0611; still below STOP 0.2985) | 81.2 % / 93.4 % / **93.7 % (944 of 1,008)**; PDMS ceiling 71.88 -> 78.82 (+6.94) |
+| **lateral fix, boundary-level** (shift toward the route centreline by <= 0.75 m / <= 1.5 m), share of DAC-zero cleared | 13.1 % [10.6, 15.9] / 17.3 % [14.5, 20.3]; EPDMS +0.0307 / +0.0369 | 24.0 % / 27.5 % |
+| **lateral fix, route-follow oracle** (every point on the centreline at the plan's own along-route progress) | **51.4 % [46.4, 57.4] (803 of 1,563; 795 of the 1,136 clean-path scenes = 70.0 %, 8 of the 427 reference-also-fails)**; EPDMS ceiling +0.1134 -> 0.3403 (above STOP 0.2985) | **85.6 % (1,250 of 1,460)**; PDMS ceiling 71.88 -> 76.95 (+5.07) |
+| **speed only, DAC** (0.6 / 0.4 x) | 27.2 % / 38.0 %; EPDMS +0.0674 (0.6 x) | 54.5 % / 67.1 % |
+| union (FULL snap or 0.6 x or 0.4 x) | 59.8 % (934 of 1,563) | n/a |
+
+Readings:
+* **The DAC failures are gross route errors, not boundary errors.** A bounded shift of up to 1.5 m clears only 17 % of the DAC-zero scenes on navhard (27 % on navtest); putting the plan on the route (keeping its own progress) clears 70 % of the clean-path scenes. By geometry class (FULL snap cleared / n): LATERAL-DRIFT 264/483, ROUTE-FOLLOWING 153/363, ON-ROUTE 190/287,
+  OVER-STEER 121/203, WRONG-SIDE 23/34, NO-RECOVERY 21/42, SPEED 31/147 -- the SPEED class is the one a route oracle cannot fix. So the lateral lever's size on navhard is **up to +0.113 EPDMS (more than the +0.0716 deficit to STOP)**, while a perfect speed/obedience lever alone reaches +0.061 (not enough by itself).
+* **NC is a speed-commit failure on navtest (93.7 % cleared by slowing, 97.9 % front collisions) and a mixed one on navhard**: 46.0 % cleared by slowing, 22.5 % unfixable at the scene level, the rest need a different path (evasive / lateral) or are lateral-after-departure. The 0.6 x plans that clear travel a median 13.2 m against the PDM-Closed reference's 11.3 m (the banked NC-zero plans travel 21.3 m): 251 of the 272 cleared plans keep >= half the reference distance, so the fix is not "stop".
+* **Timing:** the first non-drivable instant on navtest DAC-zero scenes is late (3-4 s: 697 of 1,460 = 47.7 %; 2-3 s 429; 1-2 s 271; 0-1 s 63; none at t = 0; a clean path exists in 99.3 %, reference also fails in 10 scenes) -- the same shape as navhard stage 1, unlike navhard stage 2 (35 % of its DAC-zero scenes fail within the first second), a difference consistent with -- not proof of -- the perturbed synthetic start.
+* What these numbers do NOT say: an oracle that edits the emitted plan is not a candidate the selector could have chosen. Whether such plans exist in the model's own fan is exactly P1 (registered); until it runs, the lever (selection vs generation) stays NONE-YET for the 790 clean-path lateral/on-route/over-steer/no-recovery scenes and for the front-collision NC scenes.
+
+**12.3 P3 caveats.** Oracle magnitudes are literals fixed before reading (speed scales 0.8 / 0.6 / 0.4; bounds 0.75 / 1.5 m). Slowing is a constant-fraction re-sampling of the polyline (no smooth profile); the devkit's LQR tracker, not the plan, sets the first 0.5 s. The centreline is the cached PDM-Closed route centreline. Counterfactual EPDMS / PDMS rows hold the un-edited sub-scores
+(including EC and the stage-2 weights, which in truth depend on the stage-1 endpoint) fixed -- ESTIMATED upper bounds, never results. EP is normalised inside the devkit against the compliant proposals, so a slowed plan's EP reads 1.0 whenever it is the only compliant proposal; the cost of slowing is therefore stated as travelled distance, not EP. Intervals are log-cluster bootstraps (navhard 76 logs, navtest 136 logs, B = 2000, seed 0).
+
+**12.4 Files added in this continuation.** `SPEC_P1P2.md`, `SPEC_P1P2_A1.md`, `raw/SPEC_SHA256.txt`, `raw/SPEC_A1_SHA256.txt`, `raw/spec_tokens_*.txt` + `raw/spec_token_sets.json`, `code/bridge_fix/` (+ `BASE_BLOBS.txt`, `test_default_identical.{py,json}`), `code/d6_p3_oracles.py`, `d6_p3_navtest.py`, `d6_geomutil.py`, `d6_p3_analyze.py`, `d6_p3_analyze_navtest.py`, `d6_make_p3_tables.py`, `d6_fan_score.py`, `d6_make_synth_fan.py`, `d6_make_arm_hooks.py`, `d6_p1_analyze.py`, `d6_p2_analyze.py`, `run_p1p2_gate.py`, `run_p1p2_chain.py`, `run_p1p2_cpu.py`, `launch_p1p2.ps1`, `raw/d6_p3_navhard.json`, `raw/d6_p3_navtest.json`, `raw/d6_p3_tables.md`.
 
 # Appendix A -- generated tables (`raw/d6_tables.md`, produced by `code/d6_make_tables.py`; do not hand-edit)
 
@@ -467,3 +502,84 @@ navtest command split:
 | NO-RECOVERY | 2.7 % | 0.8 % | 12.4 % |
 | WRONG-SIDE | 2.2 % | 1.8 % | 3.5 % |
 | STOP-LIKE | 0.3 % | 0.3 % | 0.3 % |
+
+# Appendix B -- P3 perfect-fix oracles (generated by `code/d6_make_p3_tables.py` from `raw/d6_p3_navhard.json`, `raw/d6_p3_navtest.json`; do not hand-edit)
+
+### P3-a SPEED oracle on navhard NC-zero scenes (n scored 889 of 889; the same geometric path driven at s x the planned speed; exact reactive devkit re-score)
+
+| speed scale | NC cleared n (share [95 % log CI]) | cleared and DAC not worse | median 4-s distance m: cleared plans / all scaled plans (banked plans / PDM-closed reference) | cleared plans that still travel >= half the reference distance |
+|---|---|---|---|---|
+| x0.8 | 139 of 889 (15.6 % [12.6, 18.9]) | 138 | 17.3 / 17.0 (21.3 / 11.3) | 135 |
+| x0.6 | 272 of 889 (30.6 % [26.0, 35.1]) | 269 | 13.2 / 12.9 (21.3 / 11.3) | 251 |
+| x0.4 | 408 of 889 (45.9 % [40.3, 51.0]) | 402 | 8.6 / 8.7 (21.3 / 11.3) | 303 |
+| any of the three (oracle) | 409 of 889 (46.0 % [40.4, 51.2]) | | | |
+
+Not fixable by any speed (STOP also NC-zero: the initial-overlap scenes): 200; among the scenes where STOP passes, the oracle clears 404 of 689 (58.6 %).
+
+By NC class (from the re-score of RESULT s5):
+
+| class | n | cleared by any scale | x0.8 | x0.6 | x0.4 |
+|---|---|---|---|---|---|
+| ACTIVE-FRONT-VEHICLE | 504 | 240 | 82 | 168 | 239 |
+| STOPPED-TRACK-VEHICLE/OBJECT | 307 | 137 | 50 | 87 | 137 |
+| LATERAL-AFTER-LANE-DEPARTURE | 27 | 13 | 3 | 6 | 13 |
+| ACTIVE-FRONT-VRU | 24 | 14 | 3 | 7 | 14 |
+| INITIAL-OVERLAP | 19 | 0 | 0 | 0 | 0 |
+| STOPPED-TRACK-VRU | 8 | 5 | 1 | 4 | 5 |
+
+Official two-stage EPDMS if the per-token best of {banked, x0.8, x0.6, x0.4} were taken on the NC-zero scenes: 0.2269 -> 0.2880 (delta +0.0611; ESTIMATED upper bound, EC and stage-2 weights held; 889 scenes edited).
+
+### P3-b LATERAL / SPEED oracle on navhard DAC-zero scenes (n scored 1563 of 1563; map-only DAC test of the edited plan; centreline = the cached PDM-Closed route centreline)
+
+| fix | what it does | DAC cleared n (share [95 % log CI]) | in clean-path scenes | in reference-also-fails scenes | stage 1 | stage 2 | cleared and DDC ok |
+|---|---|---|---|---|---|---|---|
+| B075 | shift toward the centreline by <= 0.75 m | 204 of 1563 (13.1 % [10.6, 15.9]) | 195 of 1136 | 9 of 427 | 27 of 145 | 177 of 1418 | 149 |
+| B150 | shift toward the centreline by <= 1.5 m | 270 of 1563 (17.3 % [14.5, 20.3]) | 267 of 1136 | 3 of 427 | 32 of 145 | 238 of 1418 | 197 |
+| FULL | put every point ON the centreline at the plan's own along-route progress (route-follow oracle) | 803 of 1563 (51.4 % [46.4, 57.4]) | 795 of 1136 | 8 of 427 | 115 of 145 | 688 of 1418 | 746 |
+| V80 | same path at 0.8 x speed | 231 of 1563 (14.8 % [13.2, 16.8]) | 219 of 1136 | 12 of 427 | 41 of 145 | 190 of 1418 | 189 |
+| V60 | same path at 0.6 x speed | 425 of 1563 (27.2 % [24.2, 31.0]) | 405 of 1136 | 20 of 427 | 77 of 145 | 348 of 1418 | 370 |
+| V40 | same path at 0.4 x speed | 594 of 1563 (38.0 % [34.2, 42.8]) | 559 of 1136 | 35 of 427 | 99 of 145 | 495 of 1418 | 536 |
+
+Union (FULL snap or x0.6 or x0.4 speed): 934 of 1563 (59.8 %). Control: the identity plan stays DAC-zero on all scenes: True.
+
+Official two-stage EPDMS if DAC were set to 1 on the scenes a fix clears (other sub-scores and weights held; ESTIMATED upper bound):
+
+| fix | official EPDMS | delta vs A1 0.2269 |
+|---|---|---|
+| B075 | 0.2576 | +0.0307 |
+| B150 | 0.2639 | +0.0369 |
+| FULL | 0.3403 | +0.1134 |
+| V60 | 0.2943 | +0.0674 |
+
+### P3-c NAVTEST on the navsim-1.1 devkit (n scored 2491 of the DAC-zero 1460 + NC-zero 1008 + controls)
+
+Controls: exact re-score reproduces the banked row on 100.0 % of scenes (max abs 0); the identity snap reproduces the banked DAC on 100.0 %; PASS = True.
+
+DAC-zero first non-drivable instant (s): (3,4]: 697, (2,3]: 429, (1,2]: 271, (0,1]: 63; t = 0 violations 0; clean path exists (reference passes) 99.3 %; reference also fails 10.
+
+NC-zero first at-fault event classes:
+
+| class | n | share |
+|---|---|---|
+| STOPPED-TRACK-VEHICLE/OBJECT | 597 | 59.2 % |
+| ACTIVE-FRONT-VEHICLE | 371 | 36.8 % |
+| LATERAL-AFTER-LANE-DEPARTURE | 21 | 2.1 % |
+| ACTIVE-FRONT-VRU | 12 | 1.2 % |
+| STOPPED-TRACK-VRU | 7 | 0.7 % |
+
+Front collisions (active-front + stopped-track): 97.9 % of NC-zero.
+
+| oracle | clears | share [95 % log CI] |
+|---|---|---|
+| speed S0.8 on NC-zero | 517 of 1008 | 51.3 % [46.1, 56.9] |
+| speed S0.6 on NC-zero | 819 of 1008 | 81.2 % [76.9, 85.7] |
+| speed S0.4 on NC-zero | 941 of 1008 | 93.4 % [91.4, 95.4] |
+| speed any of the three on NC-zero | 944 of 1008 | 93.7 % [91.8, 95.6] |
+| B075 on DAC-zero | 350 of 1460 | 24.0 % [20.8, 27.3] |
+| B150 on DAC-zero | 402 of 1460 | 27.5 % [24.2, 31.0] |
+| FULL on DAC-zero | 1250 of 1460 | 85.6 % [81.0, 89.9] |
+| V80 on DAC-zero | 463 of 1460 | 31.7 % [29.0, 34.5] |
+| V60 on DAC-zero | 795 of 1460 | 54.5 % [50.8, 58.3] |
+| V40 on DAC-zero | 980 of 1460 | 67.1 % [63.3, 70.9] |
+
+PDMS x100 (ESTIMATED upper bounds; banked A1 71.88, STOP 61.82): oracle speed on NC-zero 78.82; DAC := 1 where the FULL snap clears 76.95.

@@ -16396,3 +16396,50 @@ restricted to ANNOUNCED turns (the nav_command rule incl. the PI 2026-08-29 supp
 | id | record | status |
 |---|---|---|
 | **H-NAV-ANNOUNCED-A6** (verdict) | **PASSED as registered** (SPEC_ADDENDUM_A6 sha256 `b4099578…` + A7 `8e846a84…`; G1′ PASS: builder rule on `seq[0]` 4,719/4,719, `announced(entries[0])` 1,799/1,799, suppression-named 68/68). Dense capture: 4,634 windows over all 139 episodes per sampler seed = every GT-turn window at stride 1 (2,317; 849 L / 1,468 R; 43 episodes) + 2,317 seeded others. Reported arm **T3a** (nav-compliance ×10 with announced nav, H = 6 s): turn ΔADE **−0.131 [−0.207, −0.062]**, turn direction **+0.064 [+0.034, +0.104]**, straight **+0.002 [−0.008, +0.012]**, all-window **−0.076 [−0.116, −0.036]**; seed 1 turn **−0.127 [−0.203, −0.057]**, direction +0.065 [+0.032, +0.107] — all four criteria. Control **T3a-c FAILED as required** (turn −0.011 [−0.085, +0.045]; paired T3a − T3a-c on turns −0.120 [−0.230, −0.008]). Foils: T3 (all entries) −0.159 [−0.254, −0.080]; T2a (hard filter) −0.241 [−0.461, −0.031] (A5's T2 failure was power, not absence). Controls: 214 windows overlapping A5's capture identical (0.0, 0 pick mismatches), K1 5.0e-5 s, K2 11/11. ⚠️ Scope: same held-out episodes as A5 (denser windows, not new episodes); captures 0.270 of the B1t bound; re-weighted to natural window frequency the all-window gain is only **−0.015 [−0.026, −0.005] m** (post hoc); 56 % of turn windows carry no nav signal. Reading rule: ships as an OPT-IN inference rule; L2 (announced time-localised nav) enters refcv8. | MEASURED; PASSED |
+
+<!-- REFCV8-2026-10-04-WPC -->
+### 2026-10-04: refcv8 WP-C — every identified map + box fix built as an opt-in, reproduced, and mutation-tested
+
+`TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-fixes/` (INTEGRATION_WPC.md, raw/),
+code landed at its repo paths. Open-loop perception diagnostics on refcv7-r101-s0 @ 50,400, one checkpoint, one seed.
+86 new tests; 29 / 29 reintroduced source-level defects turned a test red (the one survivor of run 1 was fixed);
+defaults bit-identical when off; the planner never imports the NMS (AST scan).
+
+| id | record | status |
+|---|---|---|
+| **F4B-NMS** | Centre-distance NMS at inference (`stack/tanitad/eval/detection_nms.py`, `refcv7_det_nms_train.json`: box3d 2.5 m / gate 0.2145, agent 3.0 m / gate 0.1809), reproduced from the banked route packs: box3d AP@2 m 0.2483 → **0.3494**, boxes per object 2.1198 → 1.0673; agent 0.1314 → **0.2996**, 2.596 → 1.0123; F1 0.3034 → 0.3922 / 0.2069 → 0.3677. Radius and gate are ONE operating point: at the old gate 0.2589 conf_ratio falls out of band (0.4304 / 0.0873). | MEASURED (reproduction) |
+| **F1-F4-REFIT** | F1 map thresholds and F4 presence gates load and reproduce the diagnostics with 0.0 difference (lane 0.1643, edge ≈ 0.042; box3d conf_ratio 0.973, agent 0.995); `stack/scripts/refit_perception_thresholds.py` re-fits F1/F4/F4b on TRAIN for ANY checkpoint and reproduces the shipped values bit for bit. | MEASURED |
+| **JOIN-HYGIENE** | Opt-in reader masks: the ego-as-agent-box frames (693 frames, 18 clips → 0 footprint boxes, 0 alignment violations) and track-id-switch rate targets (6,227 events = 6,410 jump frames − 853 pose glitches; max \|v_rel\| of rate rows 764.1 → 77.9 m/s on the 40 worst clips). | MEASURED |
+| **ZH-RANGE** | z/h metrics by range bin with a low-trust flag beyond the 30 m near field (from D3's base-height table); acceptance synthetic — a real effect size needs one Thor forward with `with_zh_range=True`. | BUILT (synthetic acceptance) |
+| **EVAL-MAP-MASK** | The 2 eval clips without map GT (342 windows, 1.44 %) are already masked at three layers; no code change. | MEASURED (confirmed) |
+
+<!-- REFCV8-2026-10-04-WPD -->
+### 2026-10-04: refcv8 WP-D — the refcv7 perception heads' training dynamics and the design that follows
+
+`TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/` (RESULT.md,
+PERCEPTION_DESIGN.md, raw/td_*.json, raw/box_probe0b.json, raw/geom_bound.json); probes registered
+`PREREG_WPD_PROBES.md` sha256 `c054190b…` (2026-10-04T12:31:35Z). Open-loop perception diagnostics on the run's own log
+and EVAL-DIAG packs (1,061 decision-grade windows), one training seed; literature banked and every cited number read.
+
+| id | record | status |
+|---|---|---|
+| **WPD-BOX-SCHEDULE-LIMITED** | The box heads had NOT plateaued: the cosine schedule took both LR groups to ~0 at 50,400 (~1.08 epochs) while every band still rose — box3d AP@2 m 0.199 → 0.248 (+0.050 [+0.041, +0.058]) from 30k to 50.4k, AP@1 m +0.046 [+0.037, +0.056] (+55 % relative), agent AP@2 m +0.043 [+0.034, +0.054]. The in-run "AP@4 m saturated" read was a class-mean small-set artefact. | SUPPORTED |
+| **WPD-MAP-IMAGE-BOUND** | The 10 cm map plateaued (lane ≤ +0.004 IoU per 10k late; crosswalk ~0 since ~17.5k) and beyond ~40 m it is IMAGE-bound: ANALYTIC (cylindrical, f 488.9, h 1.45 m) 40–100 m comes from ~1.3 stride-8 feature rows; at 80–100 m one row explains 903 label rows and a 0.15 m line is 0.8 px; measured edge recall within 1 m 0.60 → 0.23 → 0.11 → 0.03 → 0.01 by range while precision stays 0.72 → 0.69. Near range (0–20 m) is a representation / target problem, not resolution. | SUPPORTED |
+| **WPD-ANCHORS-FROZEN** | The box head's 300 "learned" reference points never moved (median displacement 0.031 m over 50,400 steps; 91 of 300 at \|y\| > 12 m); only 125 of 300 queries ever produce a true positive; 16.5 % of true positives sit at the tanh offset limit. | MEASURED (new) |
+| **WPD-SCORE-PLACEMENT-BLIND** | The top-scored slot on an object is the nearest slot only 34.5 % (box3d) / 23.0 % (agent); re-ranking each object's own slots by placement + NMS r 2 m (ORACLE) lifts box3d AP@1 m 0.130 → 0.263 (AP@2 m → 0.349); localisation error is longitudinal (median \|Δx\| 0.96 / 1.56 m vs \|Δy\| 0.38 / 0.46 m at 0–20 / 20–40 m). | MEASURED (new; oracle) |
+| **WPD-PLANNER-WEAKER-DETECTOR** | The planner reads the agent head (AP@2 m 0.131), not the better box3d head (0.248). | MEASURED (new) |
+| **WPD-STARVE-REFUTED** | REFUTED: "the planner starves the perception trunk" — box3d + map + tactical carry 99.2–99.5 % of the trunk gradient norm against the trajectory loss (cosine ≈ 0); layer4 is the only stage the trajectory loss dominates. | MEASURED (refutation) |
+| **WPD-EXEMPT-ELIMINATED** | ELIMINATED: "the IGNORE-radius presence exemption causes the duplicates" — objects next to an IGNORE row have FEWER duplicates (1.22 vs 1.99); exempt slots are 3.8 % of false positives. | MEASURED (elimination) |
+
+<!-- REFCV8-2026-10-04-D6-P3 -->
+### 2026-10-04: D6 P3 — lever ceilings for refcv7's NavSim failures (exact devkit re-score of EDITED plans)
+
+`TanitAD Research Lab/Data Engineering/Research/2026-10-04-refcv8-data-audit/D6_navsim_failure_anatomy/RESULT.md` §12 +
+Appendix B. CPU only; controls: identity plans reproduce the banked sub-scores (max abs 0), speed-scale 0 reproduces the
+official STOP frame (8e-17), the identity snap stays DAC-zero on 1,563/1,563, the navtest v1.1 re-score reproduces 2,491
+/ 2,491. ⚠️ ORACLES that edit the emitted plan — upper bounds, not candidates the selector could choose (P1 measures that).
+
+| id | record | status |
+|---|---|---|
+| **NS-P3-SPEED-CEILING** | A perfect speed fix (best of 0.8 / 0.6 / 0.4 × the planned speed on the same path) clears **46.0 % [40.4, 51.2]** of navhard NC-zero (409 / 889; 200 scenes are unfixable because STOP also collides) — official EPDMS ceiling 0.2269 → 0.2880, still below STOP 0.2985 — and **93.7 %** of navtest NC-zero (944 / 1,008; PDMS ceiling 71.88 → 78.82). The cleared plans still travel a median 13.2 m (PDM-Closed reference 11.3 m; banked NC-zero plans 21.3 m): the fix is not "stop". | MEASURED (oracle ceiling) |
+| **NS-P3-ROUTE-CEILING** | A route-follow oracle (the plan's own progress laid on the route centreline) clears **51.4 % [46.4, 57.4]** of navhard DAC-zero (803 / 1,563; 795 of the 1,136 clean-path scenes) — official EPDMS ceiling +0.1134 → **0.3403, above STOP** — and 85.6 % on navtest (PDMS 76.95). A bounded lateral shift ≤ 1.5 m clears only 17.3 % ⇒ gross route errors, not boundary errors. Ranking on navhard: the route / lateral lever exceeds the whole deficit to STOP; speed alone does not. | MEASURED (oracle ceiling) |

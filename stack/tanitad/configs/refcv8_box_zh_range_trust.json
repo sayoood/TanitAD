@@ -1,0 +1,44 @@
+{
+ "schema": "tanitad.det_zh_trust/1",
+ "definition": "D3 base_face_by_range: |cz - h/2| (the GT box's base height above the ground plane, metres) for ground-standing classes, by BEV range of the box. A range bin is LOW-TRUST when more than low_trust_frac of its boxes have |base height| > 1.5 m; near_field_m (derived by the loader) is the lowest lower edge of a low-trust bin. A z / h error measured against a GT whose own base face floats by > 1.5 m measures the label, not the head.",
+ "low_trust_frac": 0.05,
+ "label_base_height_error": {
+  "near<30": {
+   "lo_m": 0.0,
+   "hi_m": 30.0,
+   "n": 6960414,
+   "frac_abs_gt_1.5": 0.009060236934182363,
+   "frac_abs_gt_0.5": 0.1378676613201456,
+   "q05": -0.5999999999999996,
+   "q50": 0.0,
+   "q95": 0.6000000000000005
+  },
+  "mid30-100": {
+   "lo_m": 30.0,
+   "hi_m": 100.0,
+   "n": 16794979,
+   "frac_abs_gt_1.5": 0.116997586004722,
+   "frac_abs_gt_0.5": 0.4801521931048559,
+   "q05": -1.5999999999999996,
+   "q50": 0.0,
+   "q95": 1.6000000000000005
+  },
+  "far>100": {
+   "lo_m": 100.0,
+   "hi_m": null,
+   "n": 4516925,
+   "frac_abs_gt_1.5": 0.2594109930981807,
+   "frac_abs_gt_0.5": 0.6615876951687265,
+   "q05": -2.3,
+   "q50": 0.0,
+   "q95": 2.5
+  }
+ },
+ "provenance": {
+  "source_file": "TanitAD Research Lab/Data Engineering/Research/2026-10-04-refcv8-data-audit/D3_raw_plausibility/raw/c3b_agents_detail.json",
+  "source_md5": "353e934d8450e5d9144a345de58e2694",
+  "source_key": "base_face_by_range",
+  "stream": "refcv8 data audit D3 (RESULT.md: 'treat z as near-field only')",
+  "low_trust_frac_note": "0.05 is this file's tolerance, chosen between D3's 0.0091 (near) and 0.117 (mid); both sides are >= 4x away from it"
+ }
+}

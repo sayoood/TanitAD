@@ -731,3 +731,15 @@ own records** before either could be quoted.
 | **DZ-10 / sweep** | ⚠️ **Not touched by the retraction** — `starting_left_turn`, which carries the score decline, has **0 % stalled steps in BOTH protocols**. But the whole sweep was non-reactive, so a **reactive N-sweep (8/16/32/64) is RUNNING** (launched 13:14:59) and will be scored before the braking-bias claim is quoted anywhere. |
 | **DZ-10 / §9** | ⚠️ **Loses its tie-breaker.** "The critic is flat below 2 m/s" used this scenario to rule out "low-speed states here mostly have no better action". That argument is gone; the measurement stands, the interpretation reverts to the confound. |
 | **RE-0 / reactive** | ✅ `val14_r` DONE: suite **97.21** (8/8, 0 failed) vs 97.19 non-reactive. Worst scenario under reactive is **`following_lane_with_lead`** at a 0.783 path ratio, not `changing_lane_to_left` (0.934). ⇒ **a per-scenario census is a statement about a PROTOCOL.** |
+
+<!-- MM-2026-10-04-P11-CORRECTION -->
+### Correction to P-11 (Master Mind, 2026-10-04, from refcv8 WP-D)
+
+P-11's closing read says SparseOcc++ needs *"LiDAR-projected depth; PhysicalAI-AV has neither"*. ⚠️ **Scope that
+correctly:** no projected depth TARGET exists in our data, but the published corpus DOES ship raw LiDAR
+(`lidar_top_360fov`), so a projected depth target CAN be built (ESTIMATED ~342 MB of streaming per clip, ≈ 1.5 TB over
+the 4,369 refcv training clips — a Data FlyWheel job and a PI download decision). The dense per-voxel semantic
+occupancy GT is still absent, so P-11's CLOSED verdict for SparseOcc++ stands; what changes is that LiDAR depth as an
+AUXILIARY target (BEVDepth-style) is buildable — refcv8 WP-D lever B4 / probe P-DEPTH
+(`TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md`),
+parked behind `Project Steering/PLAN_REFCV8.md` §8 decision 9.

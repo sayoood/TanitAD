@@ -1,0 +1,131 @@
+{
+ "schema": "tanitad.det_nms/1",
+ "definition": "score-ordered greedy centre-distance NMS (all classes together) on slots with sigmoid(logit) >= p_floor; radius_m = TRAIN-AP@2m argmax (tie -> smaller); gate = TRAIN P = R re-fitted AFTER the NMS (detection_metrics.pr_equal_gate). Radius and gate are ONE operating point.",
+ "heads": {
+  "box3d": {
+   "radius_m": 2.5,
+   "gate": 0.21447688341140747,
+   "p_floor": 0.05
+  },
+  "agent": {
+   "radius_m": 3.0,
+   "gate": 0.1808718591928482,
+   "p_floor": 0.05
+  }
+ },
+ "provenance": {
+  "run": "refcv7-r101-s0",
+  "checkpoint_step": 50400,
+  "checkpoint_md5": "d5f104ee54ba6b2861e38030b4f6fcf1",
+  "fit_split": "TRAIN",
+  "fit_set": "TRAIN-DIAG: 139 TRAIN episodes x 8 windows (route package train_s0 pass), 1,074 windows carry VIS-1 labels",
+  "tool": "stack/scripts/refit_perception_thresholds.py",
+  "tool_sha256": "bd928cb1ee60bb4fcbc3a0efdc014bd003579fb98579cc6679a3fe60b2ec761a",
+  "n_windows": 1074,
+  "source_file": "train_s0.packs.pkl",
+  "source_md5": "32edd65a09428d4ecb951c0ebefba7fa",
+  "train_grid": {
+   "box3d": {
+    "none": {
+     "radius_m": null,
+     "train_ap2m": 0.25623080817484917,
+     "train_pr_gate": 0.2567453384399414,
+     "train_prec_at_gate": 0.3116308470290771
+    },
+    "0.5": {
+     "radius_m": 0.5,
+     "train_ap2m": 0.2589518998887045,
+     "train_pr_gate": 0.25606316328048706,
+     "train_prec_at_gate": 0.31352718078381797
+    },
+    "1": {
+     "radius_m": 1.0,
+     "train_ap2m": 0.28108611689047086,
+     "train_pr_gate": 0.24931327998638153,
+     "train_prec_at_gate": 0.33375474083438683
+    },
+    "1.5": {
+     "radius_m": 1.5,
+     "train_ap2m": 0.32051177407246406,
+     "train_pr_gate": 0.23642197251319885,
+     "train_prec_at_gate": 0.36030341340075855
+    },
+    "2": {
+     "radius_m": 2.0,
+     "train_ap2m": 0.34839864637581935,
+     "train_pr_gate": 0.22448238730430603,
+     "train_prec_at_gate": 0.3811630847029077
+    },
+    "2.5": {
+     "radius_m": 2.5,
+     "train_ap2m": 0.3518926266520624,
+     "train_pr_gate": 0.21447688341140747,
+     "train_prec_at_gate": 0.390960809102402
+    },
+    "3": {
+     "radius_m": 3.0,
+     "train_ap2m": 0.34777755693046053,
+     "train_pr_gate": 0.20564444363117218,
+     "train_prec_at_gate": 0.39285714285714285
+    },
+    "4": {
+     "radius_m": 4.0,
+     "train_ap2m": 0.30682648828876946,
+     "train_pr_gate": 0.19172325730323792,
+     "train_prec_at_gate": 0.3697850821744627
+    }
+   },
+   "agent": {
+    "none": {
+     "radius_m": null,
+     "train_ap2m": 0.13282515567529246,
+     "train_pr_gate": 0.23066957294940948,
+     "train_prec_at_gate": 0.2054361567635904
+    },
+    "0.5": {
+     "radius_m": 0.5,
+     "train_ap2m": 0.14190041192276606,
+     "train_pr_gate": 0.22817645967006683,
+     "train_prec_at_gate": 0.21618204804045513
+    },
+    "1": {
+     "radius_m": 1.0,
+     "train_ap2m": 0.19498450951483792,
+     "train_pr_gate": 0.21583256125450134,
+     "train_prec_at_gate": 0.2664348925410872
+    },
+    "1.5": {
+     "radius_m": 1.5,
+     "train_ap2m": 0.2544039831054608,
+     "train_pr_gate": 0.204038605093956,
+     "train_prec_at_gate": 0.322692793931732
+    },
+    "2": {
+     "radius_m": 2.0,
+     "train_ap2m": 0.2901683369437429,
+     "train_pr_gate": 0.1953819990158081,
+     "train_prec_at_gate": 0.3479772439949431
+    },
+    "2.5": {
+     "radius_m": 2.5,
+     "train_ap2m": 0.3066701130925591,
+     "train_pr_gate": 0.18732203543186188,
+     "train_prec_at_gate": 0.36441213653603033
+    },
+    "3": {
+     "radius_m": 3.0,
+     "train_ap2m": 0.31071371449371804,
+     "train_pr_gate": 0.1808718591928482,
+     "train_prec_at_gate": 0.3688369152970923
+    },
+    "4": {
+     "radius_m": 4.0,
+     "train_ap2m": 0.2715819164788218,
+     "train_pr_gate": 0.17137829959392548,
+     "train_prec_at_gate": 0.35176991150442477
+    }
+   }
+  },
+  "caveat": "fitted on ONE checkpoint of ONE run; NEVER fed to the planner (raw presence is its input)"
+ }
+}

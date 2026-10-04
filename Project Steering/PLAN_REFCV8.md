@@ -80,7 +80,16 @@ navhard step 30,000, all 5,912 tokens, failing plans re-scored exactly in the lo
 * The max-speed "unknown" row (45 % of tokens) is NOT a disproportionate failure source (navhard DiD vs STOP −1.7 pp
   [−5.7, +1.7]); no cheap train/deploy fix is indicated there.
 * Counterfactual (ESTIMATED upper bound): matching STOP's DAC where STOP is clean lifts official EPDMS 0.2269 → 0.3504
-  (above STOP's 0.2985). Next: P1 (does the 117-fan hold a clean candidate on these tokens, and does the pick take it?)
+  (above STOP's 0.2985).
+* **P3 lever ceilings (MEASURED, exact devkit re-score of EDITED plans — upper bounds, not selectable candidates; controls
+  reproduce the banked scores exactly):** a perfect SPEED fix (best of 0.8 / 0.6 / 0.4 × the planned speed) clears
+  **46.0 % [40.4, 51.2]** of navhard NC-zero (official EPDMS ceiling 0.2269 → 0.2880, still below STOP) and **93.7 %** of
+  navtest NC-zero (PDMS ceiling 71.88 → 78.82); the cleared plans still travel 13.2 m (reference 11.3 m) — not "stop".
+  A ROUTE-FOLLOW oracle (the plan's own progress laid on the route centreline) clears **51.4 % [46.4, 57.4]** of navhard
+  DAC-zero (official EPDMS ceiling **0.3403, above STOP**) and 85.6 % on navtest (PDMS 76.95); a bounded ≤ 1.5 m lateral
+  shift clears only 17.3 % ⇒ the errors are gross route errors, not boundary errors. **Ranking on navhard: the route /
+  lateral lever (+0.113) exceeds the whole deficit to STOP (−0.072); speed alone (+0.061) does not.** On navtest the
+  collisions are almost purely a speed-commitment failure. Next: P1 (does the 117-fan hold a clean candidate on these tokens, and does the pick take it?)
   and P2 (NAVOFF on the premature-turn scenes) — pre-registered, queued behind the battery on the dev-box GPU.
 
 **R0b CLOSED (A6 under A7, 2026-10-04 ~14:10):** the DEPLOYABLE time-localised nav (announced turns only, soft rule
@@ -282,3 +291,47 @@ and the conditioning implementation (WP-B) are the critical path.
    — recommended; from scratch only if the warm start is shown to block a fix.
 7. (new) **Tactical loss budget**: refcv7 pinned it at 0.1 (0.29 % of the realised loss, D4). Default: size it from
    measured gradient shares on the v7-tiny ladder.
+8. (new, from WP-C/D3) **Train corpus re-selection.** Dropping the 6 train clips that share a recording with eval clips
+   and one clip of each of the 2 duplicate-video pairs RE-SELECTS episodes (the programme's parity invariant; refcv7's
+   own corpus is not the parity corpus, but the rule is general). Default: **keep the refcv7 train corpus unchanged**
+   (comparability with refcv7), mask only the 693 ego-as-agent-box frames (a label fix, not a re-selection), and report
+   every eval139 number also on the 134 clips that share no recording with train (a leak-free sensitivity row).
+   Alternative: drop the 8 clips (≈ 0.2 % of train). PI's call.
+9. (new, WP-D B4) **LiDAR depth target.** PhysicalAI-AV ships `lidar_top_360fov`, but no projected depth target exists;
+   building one streams ~342 MB per clip (≈ 1.5 TB over 4,369 clips, ESTIMATED) — a Data FlyWheel job and a download
+   decision. Published evidence is two-sided (BEVDepth +2.2 mAP, MapTRv2 +5.1; DualPathOcc −0.96 mIoU with a hard depth
+   target). Default: defer to after refcv8's first result unless P-BOX/P-MAP show a longitudinal-placement ceiling the
+   other levers cannot move.
+10. (new, WP-D P-TEMP) **Temporal BEV fusion** warps past BEV features with the ego's PAST motion. refcv7 already feeds
+    the observed window's ego track (`--ego-history`, PI ruling 2026-09-02 on measured state at cycle time). Default:
+    treat past ego-motion for warping as admissible under the same ruling; the probe stays deferred until the PI confirms.
+
+**WP-D status (2026-10-04 ~14:30): design DONE, probes REGISTERED** (`…/2026-10-04-refcv8-perception-architecture/`
+RESULT.md, PERCEPTION_DESIGN.md, PREREG_WPD_PROBES.md sha256 `c054190b…`). MEASURED from refcv7's own log + PROBE-0:
+* **The box heads were schedule-limited, not plateaued**: cosine took the LR to ~0 at 50,400 (~1.08 epochs) while every
+  band still rose — box3d AP@2 m 0.199 → 0.248 (+0.050 [+0.041, +0.058]) from 30k to 50.4k, AP@1 m +55 % relative.
+* **The 300 "learned" query reference points NEVER MOVED** (median 0.031 m over 50,400 steps; 91 of 300 at |y| > 12 m;
+  only 125 ever produce a true positive). **The score is placement-blind** (the top-scored slot on an object is the
+  nearest one only 34.5 % / 23.0 %); re-ranking each object's own slots by placement + NMS (ORACLE) lifts box3d AP@1 m
+  0.130 → 0.263. Localisation error is longitudinal (median |Δx| 0.96 m vs |Δy| 0.38 m at 0–20 m).
+* **The planner reads the WEAKER detector** (agent AP@2 m 0.131 vs box3d 0.248).
+* **The map is image-bound beyond ~40 m** (ANALYTIC: at 80–100 m one stride-8 feature row explains 903 label rows; a
+  0.15 m line is 0.8 px) — **R8-6's "edge IoU 0.003 at 80–100 m" is a resolution bound, not a head defect**; the R8-6
+  measure is AMENDED to a range-adaptive metric beyond 40 m (M5) and the IoU bars apply to 0–40 m. Near range (0–20 m,
+  edge recall within 1 m 0.60) is a representation / target problem.
+* **REFUTED: "the planner starves the perception trunk"** — box3d + map + tactical carry 99.2–99.5 % of the trunk
+  gradient norm vs the trajectory loss.
+* **"Do we need an initialization of the heads?" — not for the biases** (the focal prior washed out); **YES for the
+  query anchors and memory positions** (per-layer anchor refinement + a zero-initialised camera-ray embedding); the most
+  valuable initialisation is refcv7's own heads, which were still learning.
+* **Design, ranked:** B1 keep training the heads (warm start, re-warmed LR, EMA; ESTIMATED +0.03…+0.07 AP@2 m over 30k);
+  B2 modern set prediction (hybrid one-to-many groups, contrastive denoising, quality-aware presence target, per-layer
+  anchor refinement); B3 one detector for the planner (box3d → AgentTokenEmbed, zero-gated); M1 stride-4 near lift +
+  10 cm decoding on 0–40 m only + a placement-tolerant line target; B4 camera-ray embedding + LiDAR depth as an auxiliary
+  target (two-sided published evidence). Probes P-GRAD → P-BOX → P-MAP decide which enter SPEC_REFCV8.
+
+**WP-C status (2026-10-04 ~15:30): DONE** — all six fixes as opt-in modules with defaults bit-identical: F4b NMS
+reproduced (box3d AP@2 m 0.2483 → 0.3494, agent 0.1314 → 0.2996, boxes per object 2.12 → 1.07 / 2.60 → 1.01); F1 / F4
+reproduced with 0.0 difference + a TRAIN re-fit tool for any checkpoint; ego-box mask (693 → 0 footprint boxes);
+track-id-switch rate masking (6,227 events; max |v_rel| 764 → 78 m/s); z/h by range with a low-trust flag; eval map
+masking of the 2 clips without GT confirmed. 86 tests; 29/29 reintroduced defects caught. Trainer wiring (I1–I4) → WP-B.

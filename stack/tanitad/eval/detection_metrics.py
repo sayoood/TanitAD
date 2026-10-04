@@ -113,13 +113,18 @@ def auroc(scores, labels) -> float:
 @torch.no_grad()
 def window_packs(pred: dict, tgt_real: dict, vis: dict, *, presence_cost: str = "focal",
                  match: dict | None = None, episode_ids=None, cls_weight=None,
-                 with_match: bool = True) -> list:
+                 with_match: bool = True, with_zh_range: bool = False) -> list:
     """One pack per batch element: the LAST layer's slots, the VIS-1 labels, the Hungarian matched set.
 
     ``tgt_real``: the target block, ``valid`` = every REAL row; ``vis`` = ``{"n_full", "n_vis", "known"}``.
     ``match``: the head's own last-layer training match on the POSITIVES (reused), else recomputed with
     ``presence_cost``. ``cls_weight`` [C]: the STAMPED class weights, for the INFORMATIVE prior-corrected argmax
-    ``argmax(logit - ln w_c)`` (A10 §15.3); ``None`` -> the raw argmax twice."""
+    ``argmax(logit - ln w_c)`` (A10 §15.3); ``None`` -> the raw argmax twice.
+
+    ``with_zh_range`` (refcv8 WP-C fix 5, OPT-IN, default False = the pack is exactly as before): also emit, aligned
+    with ``pair_z_err``, ``pair_zh_range`` (the matched GT's BEV range, metres) and ``pair_h_err`` (|h_pred - h_gt|), so
+    :mod:`tanitad.eval.detection_zh` can report z / h by range and flag the beyond-30-m bins as low-trust (D3: the
+    GT's base height is off the ground plane by > 1.5 m for 0.9 % of boxes < 30 m but 11.7 % at 30-100 m)."""
     from tanitad.data.vis1 import vis1_split
     from tanitad.models.agent_slots import match_slots
     from tanitad.models.slot_presence import ignore_presence_weight
@@ -152,6 +157,7 @@ def window_packs(pred: dict, tgt_real: dict, vis: dict, *, presence_cost: str = 
         matched = np.zeros(N, dtype=bool)
         r, c = match["rows"][b], match["cols"][b]
         err = size_err = z_err = np.zeros(0)
+        z_rng = h_err = np.zeros(0)
         if r.numel():
             matched[r.cpu().numpy()] = True
             rr, cc = r.to(box.device), c.to(gt_box.device)
@@ -162,9 +168,16 @@ def window_packs(pred: dict, tgt_real: dict, vis: dict, *, presence_cost: str = 
                 zm = tgt_real["zh_mask"][b][cc].bool()
                 dz = (pred["cz"].detach().float()[b][rr] - tgt_real["cz"].float()[b][cc]).abs()
                 z_err = dz[zm].cpu().numpy().astype(np.float64)
+                if with_zh_range:
+                    z_rng = gt_box[b][cc][:, :2].norm(dim=-1)[zm].cpu().numpy().astype(np.float64)
+                    if "h" in pred and tgt_real.get("h") is not None:
+                        dh = (pred["h"].detach().float()[b][rr] - tgt_real["h"].float()[b][cc]).abs()
+                        h_err = dh[zm].cpu().numpy().astype(np.float64)
+                    else:
+                        h_err = np.full(z_err.shape, np.nan)
         exempt = (exempt_w[b].cpu().numpy() == 0) & ~matched
         v = tgt_real["valid"][b].cpu().numpy().astype(bool)
-        out.append({"ep": eps[b], "logit": logit[b].cpu().numpy().astype(np.float32),
+        pk_b = {"ep": eps[b], "logit": logit[b].cpu().numpy().astype(np.float32),
                     "xy": box[b, :, :2].cpu().numpy().astype(np.float32),
                     "cls": cls[b].cpu().numpy().astype(np.int16),
                     "cls_corr": cls_corr[b].cpu().numpy().astype(np.int16),
@@ -173,7 +186,11 @@ def window_packs(pred: dict, tgt_real: dict, vis: dict, *, presence_cost: str = 
                     "gt_xy": gt_box[b][v][:, :2].cpu().numpy().astype(np.float32),
                     "gt_cls": gt_cls[b][v].cpu().numpy().astype(np.int16),
                     "pos": pos[b][v].cpu().numpy().astype(bool), "ign": ign[b][v].cpu().numpy().astype(bool),
-                    "hidden": hidden[b][v].cpu().numpy().astype(bool)})
+                    "hidden": hidden[b][v].cpu().numpy().astype(bool)}
+        if with_zh_range:
+            pk_b["pair_zh_range"] = z_rng
+            pk_b["pair_h_err"] = h_err
+        out.append(pk_b)
     return out
 
 

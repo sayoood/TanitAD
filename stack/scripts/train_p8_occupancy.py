@@ -254,7 +254,8 @@ class JoinFileReader:
     """
 
     def __init__(self, path: str | os.PathLike, *, episode_ids=None,
-                 with_rates: bool = False, with_track_ids: bool = False):
+                 with_rates: bool = False, with_track_ids: bool = False,
+                 defect_masks=None):
         """``episode_ids`` / ``with_rates`` are the E-AGT-HEAD additions
         (2026-09-05); both default to the historical behaviour exactly.
 
@@ -283,6 +284,15 @@ class JoinFileReader:
         otherwise. A silently mis-ordered file would yield rates that look
         entirely plausible and are differences between unrelated frames.
 
+        ``defect_masks`` (refcv8 WP-C fixes 3 + 4, OPT-IN) -- a
+        ``tanitad.data.join_label_hygiene.JoinDefectMasks``. With it, (a) the
+        EGO-as-agent rows D3 found in 18 TRAIN clips are removed from the listed
+        frames BEFORE anything is derived from the record, so the 2-D rows, the
+        classes, the track ids, the rates and the raster all lose the SAME row,
+        and (b) the rate row of a track at a track-id SWITCH is MASKED (and
+        zeroed) at the two records the jump contaminates. ``None`` (the default)
+        is the pre-change reader, byte for byte.
+
         ``path`` may be ``.xz``; it is streamed, never expanded to disk.
         """
         self.path = str(path)
@@ -290,6 +300,7 @@ class JoinFileReader:
                             else {int(x) for x in episode_ids})
         self.with_rates = bool(with_rates)
         self.with_track_ids = bool(with_track_ids)
+        self.defect_masks = defect_masks
         self._by_clip: dict[tuple[str, int], np.ndarray] = {}
         self._cls_by_clip: dict[tuple[str, int], np.ndarray] = {}
         self._tid_by_clip: dict[tuple[str, int], np.ndarray] = {}
@@ -328,6 +339,10 @@ class JoinFileReader:
 
         def _emit_rates(prev_rec, rec, next_rec) -> None:
             rt, rm = track_rates_from_join(prev_rec, rec, next_rec)
+            if self.defect_masks is not None:
+                rt, rm = self.defect_masks.apply_rate_mask(
+                    str(rec["clip_id"]), int(rec["frame_idx"]),
+                    rec.get("agents") or [], rt, rm)
             self._rates_by_clip[(str(rec["clip_id"]),
                                  int(rec["frame_idx"]))] = (
                 np.asarray(rt, dtype=np.float32), np.asarray(rm, dtype=bool))
@@ -358,6 +373,10 @@ class JoinFileReader:
                     if not _wanted(cid):
                         self.n_records_filtered_out += 1
                         continue
+                    if (self.defect_masks is not None
+                            and isinstance(rec.get("agents"), list)):
+                        rec["agents"], _ = self.defect_masks.strip_ego_boxes(
+                            cid, fi, rec["agents"])
                     ag = agents_to_array(rec["agents"])
                 except (KeyError, TypeError, ValueError) as ex:
                     raise ValueError(f"{self.path}:{ln}: bad join record "
@@ -432,6 +451,10 @@ class JoinFileReader:
                    f" for the {len(self.episode_ids)} requested episode ids "
                    f"({self.n_records_filtered_out} filtered out) -- that is "
                    f"the WRONG JOIN for this corpus, not an empty file"))
+
+    def defect_stats(self) -> dict | None:
+        """The ``defect_masks`` counters (rows removed / masked) for config.json, or ``None`` when no mask was given."""
+        return None if self.defect_masks is None else self.defect_masks.stats()
 
     def lookup_rates(self, episode_id: int, frame_idx: int):
         """``(rates [A, 3] float32, mask [A] bool)`` aligned with
