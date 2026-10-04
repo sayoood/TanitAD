@@ -1,0 +1,34 @@
+## REFCV7-REPLAY
+LANDING_READY -- refcv7-r101-s0 FINAL (step 50,400): interactive REPLAY TOOL + TACTICAL video
+Prepared 2026-10-04 by the replay subagent. NOTHING here is staged, committed or pushed: the Master Mind lands it.
+
+== Repo paths to land (git-trackable) ==
+taniteval/tools/render_refcv7_replay.py        md5 55f1d4c7a6f4fe9c8e74454711c144ae  (capture / assets / video stages; imports render_refcv7_video.py for its pure helpers)
+taniteval/tools/RENDER_REFCV7_REPLAY.md         md5 51279121577cecba1cc24e7f86eb4c68  (the doc: colour rule, what the capture adds, tool, video, derived chips + control, results sec. 8)
+taniteval/tools/refcv7_replay/index.html        md5 9378b918669a5c29de59b7bf2061dd3e  (the static page; copied verbatim into the tool folder)
+taniteval/tools/refcv7_replay/replay.css        md5 b304316c1fa5d8cc42aa14699c680a31
+taniteval/tools/refcv7_replay/replay.js         md5 e609a987eec642302da427db3709ec7b  (JS projection port, box matcher, NMS, layers, strip, self-test)
+taniteval/tests/test_render_refcv7_replay.py    md5 e8e64ca5d2fa24863cad7a2ce7f5457f  (literal known values, mirror-mutation arms, JS wiring checks; green with the reel's tests: 64 passed)
+Media/2026-10-04-refcv7-replay/REPLAY_CAPTURE_RECORD.json   md5 ccf73246f601e3e5ec4ab417d4b172b4  (provenance, md5s, identity checks, reproduction of the reel; no raw clip ids -- UUID scan reads 0)
+Media/2026-10-04-refcv7-replay/REPLAY_ASSETS_RECORD.json    md5 95ef1598916d92401edfa70db1189f45
+Media/2026-10-04-refcv7-replay/video_record.json            md5 994bc027462151d51c2cd6abde9a3da1  (per-clip summaries, gt-path control, encode record)
+Media/2026-10-04-refcv7-replay/LANDING_READY.txt            this file
+
+== NOT for git (size / gitignore) -- on disk in Media/2026-10-04-refcv7-replay/ ==
+index.html replay.css replay.js          byte-identical copies of the three tool sources above (open index.html by double-click: file://, no server)
+data/manifest.js (4,132 B) data/clip_01..12.js (156.3 MB) data/cam/cNN/wMMMM.jpg (2,059 files, 103.7 MB)   the tool's data; re-derivable with --stage assets from the Thor bank in ~40 s
+refcv7_final_50400_tactical.mp4          120,570,003 B  md5 6fced5ae9ea4c68ecdff281ab67b23a0  1920x1080 H.264 10 fps, 2,519 frames, 251.9 s
+refcv7_final_50400_tactical_preview720p.mp4  13,372,586 B  md5 e9ac2c1388e2a3ca2720867760a63b66  1280x720, 2,519 frames  (<= 15 MB)
+refcv7_final_50400_tactical_540p.mp4      4,256,946 B  md5 2d7880c87befe74d710ba13d22dd9bc2  960x540, 2,519 frames   (<= 5 MB)
+tool_screenshot_clip03_w109.png          810,348 B  md5 f7110211894aff040250020a0e3676ee  the layout screenshot (headless Edge over file://, 1920x1500)
+keyframes/ (50 PNG) verify_frames/ (6 PNG)   verification aids
+Tool + data total 260.1 MB apparent (folder incl. videos 439 MB). ON-DISK on D: (exFAT, 1 MiB clusters) the folder allocates ~2.4 GB because of the 2,059 small JPEGs.
+OWED (Master Mind's call): a Media/MEDIA_MANIFEST.json row per Media/README.md rule 3; an off-device copy of the mp4s if wanted.
+
+== Thor-only working state (not for git) ==
+/home/nvidia/refcv7_post/replay/bank/final/       1.3 GB: per-window npz (camera bytes, 10 cm pred/GT/lift mask), rows.jsonl (103 MB, the full capture incl. all 117 candidates and scores),
+                                                  capture_record.json, CAPTURE_DONE.  SINGLE COPY; re-derivable with --stage capture (27 min, 792 s GPU).
+/home/nvidia/refcv7_post/replay/out/final/{tool,video}/   second copy of the tool and the videos (the mp4 md5 equals the D: copy).
+/home/nvidia/refcv7_post/replay/code/             render_refcv7_replay.py (md5 55f1d4c7...), render_refcv7_video.py, refcv7_replay/; run_capture_chain.sh, run_post.sh; logs.
+Nothing in the run dir /home/nvidia/refcv7_run/runs/refcv7-r101-s0 was modified (read-only use of ckpt.pt, config.json, summary.json, metrics.jsonl).
+The capture ran with module md5 82f250f8914957af9d39483eac8026e5; assets and video with 55f1d4c7... (difference: see RENDER_REFCV7_REPLAY.md sec. 8).

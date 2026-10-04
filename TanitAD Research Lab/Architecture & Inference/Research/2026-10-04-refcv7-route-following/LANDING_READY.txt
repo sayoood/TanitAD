@@ -1,0 +1,44 @@
+LANDING_READY -- refcv7-r101-s0 route following, fan, boxes (Architecture & Inference, 2026-10-04)
+Hand-over: NOTHING staged or committed by this agent (no git add / commit / push). The Master Mind lands these paths, BY PATH.
+Prefix every path below with:  TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv7-route-following/
+
+SPEC.md                              pre-registration (sha256 30bc14dd..., 07:27:16 UTC, before any number)
+SPEC_ADDENDUM_A1.md                  post-hoc levers W1-W4, hashed before computed
+SPEC_ADDENDUM_A2.md                  linear re-scorer, hashed before computed
+SPEC_ADDENDUM_A3.md                  gradient-boosted re-scorer, hashed before computed
+SPEC_ADDENDUM_A4.md                  label-side attribution bounds, hashed before computed
+RESULT.md                            the result (chain table + break, levers + bar, four families, bounds, fan, boxes, register rows)
+LANDING_READY.txt                    this file
+raw/SPEC_SHA256.txt                  hash + UTC time of SPEC and each addendum
+raw/route_analysis.json              chain / decision / confusion / navc / E9 / levers (SPEC 5, A1, A4) / fan / reel / controls
+raw/a2_rescorer.json                 A2 fits (CV), EVAL seed 0 + seed 1, bar
+raw/a3_rescorer.json                 A3 fits (CV), EVAL seed 0 + seed 1, bar
+raw/box_nms.json                     duplicates, NMS TRAIN fit grid, EVAL rows + paired CIs, controls
+raw/run_eval_s0.json                 per-pass records (window digest, gates, identity controls, compute)
+raw/run_train_s0.json
+raw/run_reel_s0.json
+raw/run_eval_s1.json
+raw/run_eval_s0g.json
+raw/TABLES_generated.md              make_tables.py output (inspection)
+raw/TABLES_compact_generated.md      make_tables.py compact output (the RESULT tables)
+raw/MD5SUMS.txt                      md5 of every raw/ file
+code/run_route.py                    the capture (read-only hooks; one pass); md5 3e36a379 == Thor working copy
+code/run_chain.sh                    the Thor chain (eval_s0, train_s0, reel_s0, eval_s1; per-pass GPU flock)
+code/run_chain2b.sh                  eval_s0g (the g_tac re-run)
+code/run_smoke.sh                    3-window smoke
+code/route_metrics.py                pure numpy metrics (geometry, bootstrap, rotated BEV IoU, NMS)
+code/test_route_metrics.py           analytic controls C3 / C8 (7 tests, pass)
+code/analyze_route.py                chain, decision rule, levers (SPEC 5 + A1 + A4), fan, reel, prior diagnostic
+code/rescorer_a2.py                  A2
+code/rescorer_a3.py                  A3
+code/analyze_box_nms.py              box duplicates + NMS
+code/make_tables.py                  table generator for RESULT.md
+
+NOT for landing (binary evidence, 10 files, 205 MB; TWO copies, neither in the repo; md5-verified D: vs Thor 10/10):
+  Thor  /home/nvidia/refcv7_post/route/out/{eval_s0,train_s0,reel_s0,eval_s1,eval_s0g}.{npz,packs.pkl,json}   (originals)
+  D:    D:/refcv7_route_bin/2026-10-04/  (*.npz, *.packs.pkl) + MD5SUMS.txt + thor_md5.txt
+  Contents carry sha12 only (packs: per-clip integer id removed at capture); UUID regex over all 10 binaries = 0.
+  Thor logs: /home/nvidia/refcv7_post/route/logs/ ; Thor code working copy: /home/nvidia/refcv7_post/route/code/
+
+The run dir /home/nvidia/refcv7_run/runs/refcv7-r101-s0 was READ ONLY (never written).
+Register rows: proposed in RESULT.md section 6 (the Master Mind owns GOALS_AND_CLAIMS.md / RETRACTION_LOG.md).
