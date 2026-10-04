@@ -51,6 +51,7 @@ def _true_scores():
 
 
 TRUE = _true_scores()
+TITLE = "REFe final model  |  NAVSIM navtest  |  plan fixed in the world, camera advancing"
 
 
 def yaw_of(q):
@@ -174,7 +175,7 @@ def plans_provider(mode, exp):
     return mock
 
 
-def render_run(writer, log, toks, exp, get_plan, run_idx, n_runs, flow, still_at=None):
+def render_run(writer, log, toks, exp, get_plan, run_idx, n_runs, flow, still_at=None, frame_cb=None):
     lc = LogCache(log)
     frames = [lc.by_token[t] for t in toks]
     poses = [Pose(f) for f in frames]
@@ -296,13 +297,15 @@ def render_run(writer, log, toks, exp, get_plan, run_idx, n_runs, flow, still_at
             R.text(canvas, f"run {run_idx + 1}/{n_runs}", (ix + 14, iy + 340), 0.55, (230, 230, 235))
             cv2.rectangle(canvas, (14, 1050), (1426, 1062), (60, 60, 66), 1)
             cv2.rectangle(canvas, (14, 1050), (14 + int(1412 * (k + a) / (len(toks) - 1)), 1062), (90, 255, 90), -1)
-            R.text(canvas, "REFe final model  |  NAVSIM navtest  |  plan fixed in the world, camera advancing", (14, 1030), 0.55, (200, 200, 205), 1, False)
+            R.text(canvas, TITLE, (14, 1030), 0.55, (200, 200, 205), 1, False)
             if still_at is not None:
                 sink.append(canvas)
                 if len(sink) > still_at:
                     return sink[still_at]
             else:
                 writer.stdin.write(canvas.tobytes())
+                if frame_cb is not None and m == 0:          # one still per 0.5 s token step: the continuous image sequence
+                    frame_cb(k, toks[k], canvas)
     return None
 
 
@@ -316,9 +319,31 @@ def main():
     ap.add_argument("--still", type=int, default=None)
     ap.add_argument("--still-out", default="sync_still.png")
     ap.add_argument("--test-run-len", type=int, default=12)
+    ap.add_argument("--min-len", type=int, default=40, help="shortest consecutive run (tokens at 2 Hz) to consider")
+    ap.add_argument("--exclude-tokens", default=None,
+                    help="json list of tokens to keep OUT of every run (runs are split at them), e.g. the tokens whose plan "
+                         "a later fix changes, so every frame shows exactly the adopted model")
+    ap.add_argument("--title", default="REFe final model  |  NAVSIM navtest  |  plan fixed in the world, camera advancing")
+    ap.add_argument("--frames-dir", default=None, help="also write one PNG per token step + a contact sheet per run here")
     a = ap.parse_args()
+    global TITLE
+    TITLE = a.title
     exp = json.load(gzip.open(EXPORT, "rt", encoding="utf-8"))["tokens"]
-    runs = find_runs(exp)
+    runs = find_runs(exp, min_len=a.min_len)
+    if a.exclude_tokens:
+        ex = set(json.load(open(a.exclude_tokens, encoding="utf-8")))
+        split = []
+        for log, ts in runs:
+            cur = []
+            for t in ts + [None]:
+                if t is None or t in ex:
+                    if len(cur) >= a.min_len:
+                        split.append((log, cur))
+                    cur = []
+                else:
+                    cur.append(t)
+        print(f"runs after excluding {len(ex)} tokens: {len(split)} (from {len(runs)})", flush=True)
+        runs = split
     scored = sorted(((run_score(exp, t)[0], log, t) for log, t in runs), key=lambda x: -x[0])
     chosen, seen = [], set()
     for s, log, t in scored:
@@ -345,7 +370,23 @@ def main():
            "-c:v", "libx264", "-preset", "medium", "-crf", "24", "-pix_fmt", "yuv420p", "-movflags", "+faststart", a.out]
     writer = subprocess.Popen(cmd, stdin=subprocess.PIPE)
     for i, (log, toks) in enumerate(chosen):
-        render_run(writer, log, toks, exp, get, i, len(chosen), flow)
+        cb, stills = None, []
+        if a.frames_dir:
+            rd = os.path.join(a.frames_dir, f"run{i + 1:02d}_{log}")
+            os.makedirs(rd, exist_ok=True)
+
+            def cb(k, tok, canvas, rd=rd):
+                fp = os.path.join(rd, f"{k:03d}_{tok}.jpg")
+                cv2.imwrite(fp, canvas, [cv2.IMWRITE_JPEG_QUALITY, 92])
+                stills.append(canvas[::4, ::4].copy())     # 480x270 thumbnails for the contact sheet
+        render_run(writer, log, toks, exp, get, i, len(chosen), flow, frame_cb=cb)
+        if a.frames_dir and stills:
+            cols = 6
+            pick = stills[::max(1, len(stills) // 24)][:24]
+            rows_ = [np.hstack(pick[r:r + cols] + [np.zeros_like(pick[0])] * (cols - len(pick[r:r + cols])))
+                     for r in range(0, len(pick), cols)]
+            cv2.imwrite(os.path.join(a.frames_dir, f"run{i + 1:02d}_contact_sheet.jpg"), np.vstack(rows_),
+                        [cv2.IMWRITE_JPEG_QUALITY, 88])
         print(f"run {i + 1}/{len(chosen)} done: {log} ({len(toks)} tokens)", flush=True)
     writer.stdin.close()
     writer.wait()
