@@ -810,11 +810,12 @@ def build_eval_dataset(model, cfg, args, config: dict, *, with_perception_target
         if getattr(args, "nav_args", False):
             raise SystemExit(f"[{LOADER}] --nav-args needs the TRAIN normaliser; not in this run")
     # refcv8 WP-B: the v9 EVAL release (inputs + targets), attached exactly as train() attaches it
-    if bool(getattr(args, "refcv8", False)) and getattr(args, "r8_v9_labels_eval", None):
+    _r8on = bool(getattr(args, "refcv8", False))
+    if (_r8on or getattr(args, "r8_speed_input", None)) and getattr(args, "r8_v9_labels_eval", None):
         _j8e = tr.r8train.load_v9_join(args.r8_v9_labels_eval, expect_md5=args.r8_v9_eval_md5,
                                        rc_variant=args.r8_rc_variant, lat_variant=args.r8_v9_lat_variant)
         e_ds.r8_nav_from_v9 = bool(getattr(args, "r8_nav_from_v9", False))
-        _c8e = e_ds.enable_r8_v9(_j8e, targets=True)
+        _c8e = e_ds.enable_r8_v9(_j8e, targets=_r8on)          # a speed-only arm joins the input column alone
         e_ds.r8_v9_cons = float(getattr(args, "w_r8_v9_cons", 0.0) or 0.0) > 0.0     # MM ruling Q2 targets
         rec["r8_v9"] = dict(_j8e.manifest, join={k: v for k, v in _c8e.items() if k != "rows"})
     # train():8783-8797

@@ -1925,7 +1925,7 @@ class RefCV3Model(nn.Module):
                 # must be INERT there, so the limit is +inf rather than 30 km/h.
                 v_lim = torch.where(vmax_1h.sum(dim=-1) > 0.5, v_lim,
                                     torch.full_like(v_lim, float("inf")))
-                if getattr(self, "r8_enabled", False) and str(getattr(self.cfg.refcv8, "speed_input", "") or ""):
+                if str(getattr(self.cfg.refcv8, "speed_input", "") or ""):      # also a speed-only arm (V0)
                     # ⭐ refcv8 X3: with the PAST-ONLY proxy the ceiling is never BELOW the fed value. N2 = 130 km/h
                     # (the ego went above 120 in the last 20 s; 1.98 % of train rows) bins to the 4-way top step,
                     # and the inherited rule would cap the plan at 120 km/h -- below a speed the ego just drove.

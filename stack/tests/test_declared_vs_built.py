@@ -281,7 +281,8 @@ def test_GDVB_every_trainer_flag_has_an_entry_and_every_entry_is_well_formed():
     # + MM ruling Q1: --r8-alloc-emit-start ("built": cfg.refcv8.emit_start) (-> 267)
     # + refcv8 (B): --r8-speed-enc8 ("built": cfg.refcv8.speed_enc8 + the seam) (-> 268)
     # + the drivable critic: --r8-critic-drivable ("built") and --w-r8-drivable ("loss") (-> 270)
-    assert len(dvb.REGISTRY) == 270
+    # + WP-B L3: --smoke-seed-ego-frames ("runtime": the full-size VIS-1 re-key smoke) (-> 271)
+    assert len(dvb.REGISTRY) == 271
     assert dvb.REGISTRY["r8_speed_enc8"].kind == "built"
     assert dvb.REGISTRY["r8_alloc_emit_start"].kind == "built"
     assert dvb.REGISTRY["w_r8_v9_cons"].kind == "loss"

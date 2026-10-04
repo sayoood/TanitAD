@@ -777,16 +777,50 @@ def _pin_refcv8(cfg, args) -> None:
         raise SystemExit(f"[refcv8] --grad-share-every {_gse} must be 0 or a positive multiple of --log-every "
                          f"{getattr(args, 'log_every', 50)}: a reading taken on a step that is not logged is "
                          f"computed and thrown away")
+    if bool(getattr(args, "smoke_seed_ego_frames", False)) and int(getattr(args, "steps", 0) or 0) > 100:
+        raise SystemExit("[v3] --smoke-seed-ego-frames is a SMOKE flag (it adds an extra, hand-picked batch): "
+                         "refused above --steps 100")
     if not bool(getattr(args, "refcv8", False)):
+        # SPEC_WPB_LADDER sec. 1 (registered): EVERY arm, V0 included, feeds the past-only N2 with the trained unknown
+        # row. Without --refcv8 that is a SPEED-ONLY mode: the v9 release is joined for its input column alone (the
+        # arm's own labels stay its targets); every other refcv8 flag stays a dead flag.
+        _so = getattr(args, "r8_speed_input", None)
+        _spd_ok = (("r8_speed_input", "r8_speed_unknown_p", "r8_roll_speed_input", "r8_v9_labels",
+                    "r8_v9_labels_eval") if _so else ())
         for k in ("r8_n_alloc", "w_r8_listwise", "w_r8_sat", "w_r8_subscore", "w_r8_cons", "w_r8_alloc_l1",
                   "r8_prior_free_group",
                   "r8_lat_prior_dropout", "r8_v9_labels", "r8_v9_labels_eval", "r8_nav_from_v9",
                   "r8_no_rc", "r8_derange_feed", "r8_rc_roll", "r8_roll_targets",
                   "r8_speed_input", "r8_speed_unknown_p", "r8_roll_speed_input", "w_r8_v9_cons",
                   "r8_alloc_emit_start", "r8_speed_enc8", "r8_critic_drivable", "w_r8_drivable"):
+            if k in _spd_ok:
+                continue
             v = getattr(args, k, None)
             if v not in (None, False, 0, 0.0):
                 raise SystemExit(f"[refcv8] --{k.replace('_', '-')} without --refcv8: a dead flag (refused)")
+        if _so:
+            _side = [f for f in ("speed_max_sidecar_v6", "speed_max_sidecar_v6_eval") if getattr(args, f, None)]
+            if _side:
+                raise SystemExit("[refcv8] ⛔ X3: --r8-speed-input with the v8 FUTURE-MAX sidecar (--%s): one channel, "
+                                 "one source, and the sidecar is the oracle (D4 LEAK 0.238)"
+                                 % " / --".join(f.replace("_", "-") for f in _side))
+            if not bool(getattr(args, "max_speed_input_v6", False)):
+                raise SystemExit("[refcv8] --r8-speed-input names the SOURCE of the 4-way set-speed channel; the "
+                                 "channel itself is --max-speed-input-v6 (pass both)")
+            if not getattr(args, "r8_v9_labels", None):
+                raise SystemExit("[refcv8] --r8-speed-input reads the v9 release's past-only column: pass "
+                                 "--r8-v9-labels")
+            if getattr(args, "eval_cache", None) and not getattr(args, "r8_v9_labels_eval", None):
+                raise SystemExit("[refcv8] --r8-speed-input with an --eval-cache but no --r8-v9-labels-eval: the eval "
+                                 "split would have no past-only speed source")
+            _sp = getattr(args, "r8_speed_unknown_p", None)
+            if _sp is not None and not 0.0 < float(_sp) < 1.0:
+                raise SystemExit(f"[refcv8] --r8-speed-unknown-p {_sp} must be in (0, 1): the unknown row is a "
+                                 f"TRAINED input (X3) and a known row must exist")
+            if bool(getattr(args, "r8_roll_speed_input", False)) and int(getattr(args, "batch", 0) or 0) < 2:
+                raise SystemExit("[refcv8] --r8-roll-speed-input needs --batch >= 2 (a roll over one row is the "
+                                 "identity)")
+            cfg.refcv8.speed_input = str(_so)
         return
     if args.arm != "hier" or not bool(getattr(args, "tac_decoder_v6", False)):
         raise SystemExit("[refcv8] --refcv8 needs --arm hier and --tac-decoder-v6 (the conditioning reads the "
@@ -2967,6 +3001,60 @@ def _check_goal_point_args(args) -> None:
             f"two different horizons and still trains.") from e
 
 
+def smoke_seed_windows(ds, k: int) -> list:
+    """The first ``k`` window indices (dataset order) whose NOW frame is a LISTED ego-footprint frame of the train
+    reader's ``--join-defect-masks`` -- the frames whose rows the VIS-1 re-key must handle."""
+    dm = getattr(getattr(ds, "agent_join", None), "defect_masks", None)
+    s12 = getattr(ds, "_vis1_sha12", None) or {}
+    if dm is None or not s12 or getattr(ds, "vis1_sidecar", None) is None:
+        raise SystemExit("[v3] --smoke-seed-ego-frames needs --join-defect-masks AND --vis1-sidecar (nothing to seed)")
+    ego = getattr(dm, "ego_frames", {}) or {}
+    out = []
+    for i, (e_i, t) in enumerate(ds.index):
+        eid = int(ds.episodes[e_i].episode_id)
+        fr = ego.get(s12.get(eid))
+        if fr and int(t + ds.window - 1) in fr:
+            out.append(i)
+            if len(out) >= int(k):
+                break
+    if not out:
+        raise SystemExit("[v3] --smoke-seed-ego-frames: no window of this split has a listed ego frame at NOW")
+    return out
+
+
+def smoke_seed_batch(ds, dl, k: int) -> dict:
+    """The seeded FIRST batch, collated by the train loader's own collate_fn, in this process."""
+    idx = smoke_seed_windows(ds, k)
+    return dl.collate_fn([ds[i] for i in idx])
+
+
+def vis1_rows_by_track(sidecar, sha12: str, f: int, track_ids) -> "_np.ndarray":
+    """The ORIGINAL join row of every dataset row of ONE frame, recovered by TRACK ID from the VIS-1 sidecar.
+
+    Needed only where a read-time mask REMOVED rows (refcv8 WP-C I3's ego-footprint strip): the sidecar is keyed by
+    the join's row positions, which the strip shifts. A row whose track the sidecar does not hold gets a unique
+    NEGATIVE index (-1 - j), which matches no stored row -- so an in-scope labelled row that really is absent is still
+    REFUSED by ``vis1_block_for_rows``, exactly as before. Nothing is guessed: the track and the float32 centre are
+    re-checked there."""
+    tids = list(track_ids)
+    out = _np.array([-1 - j for j in range(len(tids))], dtype=_np.int64)
+    sl = sidecar.frame(str(sha12), int(f))
+    if sl is None:
+        return out
+    lo, hi = sl
+    a = sidecar.a
+    t2r = {}
+    for t, r in zip(a["track"][lo:hi].tolist(), a["row"][lo:hi].tolist()):
+        if int(t) in t2r:
+            raise SystemExit(f"[v3] ⛔ VIS-1: track {int(t)} twice in one sidecar frame -- the re-key is ambiguous")
+        t2r[int(t)] = int(r)
+    for j, t in enumerate(tids):
+        st = str(t)
+        if st.isdigit() and int(st) in t2r:
+            out[j] = t2r[int(st)]
+    return out
+
+
 class V3Dataset(RouteV21Dataset):
     #: ⭐ refcv8 X4 (D1 F2): the v7 negative policy of THIS split, snapshotted right after its labels load
     #: (`r8train.V7PolicyScope`) and applied around every target computation -- so a worker computes the train
@@ -3974,19 +4062,34 @@ class V3Dataset(RouteV21Dataset):
         nv = _np.zeros(int(pad), dtype=_np.int32)
         kn = _np.zeros(int(pad), dtype=bool)
         n = int(item["agent_valid"].sum())
+        rekeyed = 0
         if bool(item["agent_label"]) and n > 0:
             tids = self.agent_join.lookup_track_ids(int(eid), int(f))
             if tids is None:
                 raise SystemExit("[v3] ⛔ VIS-1: the 2-D join carries no track ids")
             tids = _np.asarray(list(tids), dtype=object)
+            s12 = self._vis1_sha12[int(eid)]
+            src = None
+            dm = getattr(self.agent_join, "defect_masks", None)
+            if dm is not None and int(f) in (getattr(dm, "ego_frames", {}).get(s12) or ()):
+                # refcv8 WP-C I3 x VIS-1 (MEASURED 2026-10-05, the Thor L1 smoke): the ego-footprint rows of this
+                # LISTED frame were removed at read time, so the dataset's row positions are no longer the join's --
+                # and the sidecar is keyed by the join's. Re-key by TRACK ID (unique per frame); the sidecar's own
+                # track + float32-centre checks still refuse any row that is not the same box.
+                src = vis1_rows_by_track(self.vis1_sidecar, s12, int(f), tids)
+                rekeyed = 1
             if order is not None:
                 tids = tids[order]
+            rows_ = order if src is None else (src if order is None else src[_np.asarray(order, dtype=_np.int64)])
             nf, nv, kn = _vis1.vis1_block_for_rows(
-                self.vis1_sidecar, self._vis1_sha12[int(eid)], int(f),
+                self.vis1_sidecar, s12, int(f),
                 box=item["agent_box"][:n].numpy(), track_ids=list(tids[:n]),
-                zh_mask=item["agent_zh_mask"][:n].numpy(), pad=int(pad), order=order)
+                zh_mask=item["agent_zh_mask"][:n].numpy(), pad=int(pad), order=rows_)
         return {"agent_vis_full": torch.from_numpy(nf), "agent_vis_px": torch.from_numpy(nv),
-                "agent_vis_known": torch.from_numpy(kn)}
+                "agent_vis_known": torch.from_numpy(kn),
+                # refcv8 WP-B: 1 iff this window's rows were RE-KEYED (an ego-stripped frame); logged per step as
+                # `vis1_rekeyed` so the re-key path is read on the real run, not only in the unit test
+                "vis1_rekeyed": torch.tensor(int(rekeyed), dtype=torch.int64)}
 
     # ======================================================================= #
     # ⭐⭐ A16 2026-09-26 -- THE LABEL CLOCK (`tanitad/data/clip_clock.py`).     #
@@ -5086,6 +5189,9 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
     # refcv8: the r8 inputs ride a wrapper, so the refcv7 call below -- and the pinned mutation anchor of
     # test_refc_v3_agent_gt_reaches_forward -- is byte-for-byte the tip's. None -> the model itself.
     # X3: `fwd` may carry the TREATED v_max_ms / v_max_valid (dropout / roll / legal row); they REPLACE the batch's.
+    # X3 speed-only (no refcv8 seams; SPEC_WPB_LADDER's V0): the same treatment on a model-level generator
+    if _r8_prep is None and str(getattr(cfg.refcv8, "speed_input", "") or "") and "v_max_ms" in batch:
+        _r8_prep = {"fwd": r8train.speed_only_fwd(model, batch, device), "speed_only": True}
     _fwd = model if _r8_prep is None else (lambda *_a, **_k: model(*_a, **{**_k, **_r8_prep["fwd"]}))
     out = _fwd(frames, nav_cmd=nav_cmd, v0=v0, steps=steps, lan=lan,
                 ego_state=ego_state, nav_args=nav_args,
@@ -6231,7 +6337,12 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
                 extra["r7_sel_oracle_random"] = float(_agg.mean())
 
     # ---- refcv8 WP-B losses (constraint heads, allocated matched L1, L_sat, listwise, sub-scores) --------------- #
-    if _r8_prep is not None:
+    if _r8_prep is not None and "v_max_ms" in _r8_prep["fwd"] and log_metrics:
+        # X3: the FED speed channel's bytes, per logged step -- two arms' channels are compared off their logs
+        extra["r8_spd_crc"] = float(r8train.speed_crc(_r8_prep["fwd"]["v_max_ms"], _r8_prep["fwd"]["v_max_valid"]))
+    if log_metrics and "vis1_rekeyed" in batch:
+        extra["vis1_rekeyed"] = float(batch["vis1_rekeyed"].sum())
+    if _r8_prep is not None and not _r8_prep.get("speed_only"):
         _l8, _t8 = r8train.r8_losses(model, out, _r8_prep, traj_tgt, slot_valid)
         loss = loss + _l8
         extra["r8_total"] = _l8.detach()
@@ -9193,7 +9304,7 @@ def train(args) -> dict:
         _j8 = r8train.load_v9_join(args.r8_v9_labels, expect_md5=args.r8_v9_md5,
                                    rc_variant=args.r8_rc_variant, lat_variant=args.r8_v9_lat_variant)
         ds.r8_nav_from_v9 = bool(getattr(args, "r8_nav_from_v9", False))
-        _c8 = ds.enable_r8_v9(_j8, targets=True)
+        _c8 = ds.enable_r8_v9(_j8, targets=bool(getattr(args, "refcv8", False)))
         ds.r8_v9_cons = float(getattr(args, "w_r8_v9_cons", 0.0) or 0.0) > 0.0     # MM ruling Q2
         r8_v9_stats = {"train": dict(_j8.manifest, join={_k: _v for _k, _v in _c8.items() if _k != "rows"})}
         if getattr(args, "r8_speed_input", None):
@@ -9201,7 +9312,7 @@ def train(args) -> dict:
         print("[v3] refcv8 v9 release %s (md5 %s): %d windows joined over %d clips, census %s"
               % (_j8.manifest["split"], _j8.manifest["md5"][:8], _c8["n_joined"], _c8["n_clips"],
                  _j8.manifest["census"]["violations"]), flush=True)
-        if ds.tac_goal_targets:
+        if ds.tac_goal_targets and ds.r8_v9_targets:
             # ⛔ the goal pos_weight / class mask are re-derived FROM THE v9 TRAIN WINDOWS (never the v7.2
             # per-clip census): the BCE is now over v9's per-frame cells.
             _cen8 = r8train.v9_goal_census(_j8, _c8["rows"])
@@ -9482,7 +9593,7 @@ def train(args) -> dict:
                 _j8e = r8train.load_v9_join(args.r8_v9_labels_eval, expect_md5=args.r8_v9_eval_md5,
                                             rc_variant=args.r8_rc_variant, lat_variant=args.r8_v9_lat_variant)
                 e_ds.r8_nav_from_v9 = bool(getattr(args, "r8_nav_from_v9", False))
-                _c8e = e_ds.enable_r8_v9(_j8e, targets=True)
+                _c8e = e_ds.enable_r8_v9(_j8e, targets=bool(getattr(args, "refcv8", False)))
                 e_ds.r8_v9_cons = float(getattr(args, "w_r8_v9_cons", 0.0) or 0.0) > 0.0
                 r8_v9_stats["eval"] = dict(_j8e.manifest,
                                            join={_k: _v for _k, _v in _c8e.items() if _k != "rows"})
@@ -10121,8 +10232,16 @@ def train(args) -> dict:
     it = iter(dl)
     _bev_parity_checked = False        # WP-D: the E-DEC-18b gate fires once
     _d3_checked = False                # D3: declared-vs-LOGGED, held at the first log row
+    _seed_batch = None
+    if bool(getattr(args, "smoke_seed_ego_frames", False)) and step == 0:
+        _seed_batch = smoke_seed_batch(ds, dl, int(args.batch))
+        print(f"[v3] SMOKE: the first batch is {int(_seed_batch['vis1_rekeyed'].numel())} ego-stripped windows "
+              f"(re-keyed {int(_seed_batch['vis1_rekeyed'].sum())})", flush=True)
     while step < args.steps:
-        it, batch = next_train_batch(it, dl, _train_sampler, _dpos)
+        if _seed_batch is not None:
+            batch, _seed_batch = _seed_batch, None       # an EXTRA batch: `_dpos` and the iterator are untouched
+        else:
+            it, batch = next_train_batch(it, dl, _train_sampler, _dpos)
         # ⛔⛔ SCALE EACH GROUP FROM ITS OWN `initial_lr`, NEVER FROM `args.lr`.
         # MEASURED 2026-09-22: this loop wrote `args.lr * sched(step)` into EVERY
         # group, so `build_optimizer`'s encoder group -- correctly built at
@@ -10155,10 +10274,11 @@ def train(args) -> dict:
             model._r8_derange_train = bool(getattr(args, "r8_derange_feed", False))
             model._r8_rc_roll_train = bool(getattr(args, "r8_rc_roll", False))
             model._r8_roll_targets = getattr(args, "r8_roll_targets", None)
+            r8train.apply_emit_schedule(model, step)        # MM ruling Q1: extras emitted only from emit_start
+        if getattr(args, "r8_speed_input", None):
             model._r8_speed_unknown_p = float(r8train.R8_SPEED_UNKNOWN_P if getattr(args, "r8_speed_unknown_p", None)
                                               is None else args.r8_speed_unknown_p)
             model._r8_roll_speed_train = bool(getattr(args, "r8_roll_speed_input", False))
-            r8train.apply_emit_schedule(model, step)        # MM ruling Q1: extras emitted only from emit_start
         losses = compute_losses_v3(model, batch, device, mode=args.mode,
                                    ablate_frames=args.ablate_frames,
                                    log_metrics=_logged_after(step, args.log_every, args.steps))
@@ -10795,6 +10915,10 @@ def build_parser() -> argparse.ArgumentParser:
                          "presence identifies the rig (0.899 decodable on eval-139); the "
                          "rest carry none. N = 43 (the measured corpus MAX) makes the "
                          "region constant. 0 = off, bit-identical.")
+    ap.add_argument("--smoke-seed-ego-frames", action="store_true",
+                    help="SMOKE ONLY (refused above 100 steps): the FIRST batch is built from windows whose NOW frame "
+                         "is a --join-defect-masks ego-footprint frame, so the VIS-1 re-key path runs at full size "
+                         "(read: `vis1_rekeyed` > 0 at step 1). An EXTRA batch: the data order after it is untouched.")
     ap.add_argument("--allow-eval-clips-in-train", action="store_true",
                     help="⛔ DELIBERATE, NAMED OVERRIDE. Permit v7.2 EVAL clips in "
                          "--v2-cache. Refused by default because training on them voids "

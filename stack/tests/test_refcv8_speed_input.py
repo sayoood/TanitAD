@@ -431,3 +431,146 @@ def test_the_stamp_declares_the_source_and_refuses_both_directions():
             v6ms.assert_speed_max_stamp_v6({"speed_max_derivation_v6": RT.R8_SPEED_DERIVATION[mode]}, True)
         with pytest.raises(SystemExit, match="does not declare"):
             RT.assert_r8_speed_stamp({"r8_speed_derivation": v6ms.SPEED_MAX_DERIVATION_V6}, mode)
+
+
+# =========================================================================== #
+# 9. SPEED-ONLY: an arm WITHOUT --refcv8 feeds N2 too (SPEC_WPB_LADDER V0)       #
+# =========================================================================== #
+V0_ARGV = ["--arm", "hier", "--out", "X", "--max-speed-input-v6", "--r8-speed-input", "n2", "--r8-v9-labels", "v9.npz"]
+
+
+def _pin0(argv):
+    tr = R.trainer()
+    args = tr.build_parser().parse_args(argv)
+    cfg = __import__("types").SimpleNamespace(refcv8=C.R8Config())
+    tr._pin_refcv8(cfg, args)
+    return cfg.refcv8
+
+
+def test_SPEED_ONLY_pins_the_source_without_the_refcv8_seams():
+    r = _pin0(V0_ARGV)
+    assert r.speed_input == "n2" and r.enable is False
+    assert _pin0(V0_ARGV + ["--r8-speed-unknown-p", "0.45", "--r8-roll-speed-input", "--batch", "4"]).speed_input == "n2"
+    assert _pin0(["--arm", "hier", "--out", "X"]).speed_input == ""            # refcv7 argv: unchanged
+
+
+@pytest.mark.parametrize("argv,needle", [
+    (V0_ARGV + ["--speed-max-sidecar-v6", "S.jsonl"], "FUTURE-MAX sidecar"),
+    (["--arm", "hier", "--out", "X", "--r8-speed-input", "n2", "--r8-v9-labels", "v9.npz"], "--max-speed-input-v6"),
+    (["--arm", "hier", "--out", "X", "--max-speed-input-v6", "--r8-speed-input", "n2"], "pass --r8-v9-labels"),
+    (V0_ARGV + ["--eval-cache", "E"], "no --r8-v9-labels-eval"),
+    (V0_ARGV + ["--r8-speed-unknown-p", "1.0"], "(0, 1)"),
+    (V0_ARGV + ["--r8-roll-speed-input", "--batch", "1"], "--batch >= 2"),
+    (V0_ARGV + ["--r8-nav-from-v9"], "without --refcv8"),                        # every OTHER refcv8 flag stays dead
+    (V0_ARGV + ["--r8-speed-enc8"], "without --refcv8"),
+    (["--arm", "hier", "--out", "X", "--r8-v9-labels", "v9.npz"], "without --refcv8"),   # v9 without a speed source
+])
+def test_SPEED_ONLY_refusals(argv, needle):
+    with pytest.raises(SystemExit) as e:
+        _pin0(argv)
+    assert needle in str(e.value), str(e.value)
+
+
+def test_SPEED_ONLY_the_treatment_runs_on_a_model_level_generator():
+    m = types_ns = __import__("types").SimpleNamespace(cfg=__import__("types").SimpleNamespace(refcv8=C.R8Config()),
+                                                     training=True)
+    m._r8_speed_unknown_p = 0.45
+    vm, vv = _vm(20_000)
+    st = torch.get_rng_state()
+    f = RT.speed_only_fwd(m, {"v_max_ms": vm, "v_max_valid": vv}, "cpu")
+    assert torch.equal(torch.get_rng_state(), st) and isinstance(m._r8_speed_gen, C.R8Generator)
+    assert abs(float((f["v_max_valid"] == 0).float().mean()) - 0.45) < 0.015
+    m.training = False
+    e = RT.speed_only_fwd(m, {"v_max_ms": vm, "v_max_valid": vv}, "cpu")
+    assert torch.equal(e["v_max_ms"], vm) and torch.equal(e["v_max_valid"], vv)
+    del types_ns
+
+
+def test_SPEED_ONLY_compute_losses_feeds_the_treated_value_and_skips_the_refcv8_losses():
+    import inspect
+    src = inspect.getsource(R.trainer().compute_losses_v3)
+    assert "_r8_prep = {\"fwd\": r8train.speed_only_fwd(model, batch, device), \"speed_only\": True}" in src
+    assert "if _r8_prep is not None and not _r8_prep.get(\"speed_only\"):" in src
+
+
+def test_SPEED_ONLY_the_ceiling_rule_holds_without_the_seams(monkeypatch):
+    pytest.importorskip("timm")
+    T = R.trainer()
+    cfg, m = R.build(T, False, vmax=True)
+    m.cfg.refcv8.speed_input = "n2"
+    lim = _limits(monkeypatch, cfg, m, [50, 70, 130, 50], [1.0, 1.0, 1.0, 0.0])
+    assert lim[:3].tolist() == pytest.approx([50 / 3.6, 100 / 3.6, 130 / 3.6], abs=1e-5) and math.isinf(float(lim[3]))
+
+
+def test_SPEED_ONLY_the_join_feeds_the_input_and_leaves_the_targets(tmp_path):
+    T, ds, j = _dataset(tmp_path)
+    ds.enable_r8_v9(j, targets=False)
+    ds.enable_r8_speed("n2")
+    it = ds[0]
+    assert ds.r8_v9_targets is False and "lat_allowed_v7" not in it and "tac_goal_y" not in it
+    assert float(it["v_max_valid"]) == 1.0
+
+
+def test_SPEED_ONLY_G_DVB_reads_the_model_config():
+    from tanitad.train import declared_vs_built as dvb
+    chk = dvb.REGISTRY["r8_speed_input"].check
+    m = __import__("types").SimpleNamespace(cfg=__import__("types").SimpleNamespace(refcv8=C.R8Config(speed_input="n2")))
+    ok = __import__("types").SimpleNamespace(r8_speed_input="n2", refcv8=False)
+    bad = __import__("types").SimpleNamespace(r8_speed_input="n3", refcv8=False)
+    assert chk(m, ok) == [] and len(chk(m, bad)) == 1
+
+
+# =========================================================================== #
+# 10. MM I-0 assertion 2: V0 and V-R8 feed a BYTE-IDENTICAL speed channel        #
+# =========================================================================== #
+def test_the_refcv8_and_speed_only_paths_feed_byte_identical_channels(rig8):
+    import types as _t
+    cfg8, m8, bt, b, traj = rig8
+    v = torch.tensor([50 / 3.6, 70 / 3.6, 130 / 3.6][:b])
+    batch = {"v_max_ms": v, "v_max_valid": torch.ones(b)}
+    m8.train()
+    m8._r8_rc_dropout, m8._r8_rc_noise, m8._r8_nav_args_dropout, m8._r8_speed_unknown_p = 0.3, (2.0, 0.75), 0.5, 0.45
+    crcs8, crcs0 = [], []
+    m8._r8_speed_gen = None                                                     # fresh, seeded cfg.refcv8.seed
+    m0 = _t.SimpleNamespace(cfg=_t.SimpleNamespace(refcv8=C.R8Config(speed_input="n2", seed=m8.cfg.refcv8.seed)),
+                            training=True, _r8_speed_unknown_p=0.45)
+    for _ in range(20):                                                         # 20 steps of the same batches
+        f8 = W9._prep(m8, bt, b, traj, batch)["fwd"]
+        f0 = RT.speed_only_fwd(m0, batch, "cpu")
+        crcs8.append(RT.speed_crc(f8["v_max_ms"], f8["v_max_valid"]))
+        crcs0.append(RT.speed_crc(f0["v_max_ms"], f0["v_max_valid"]))
+    assert crcs8 == crcs0 and len(set(crcs8)) > 1                             # identical AND not constant
+
+
+def test_the_speed_draw_never_touches_the_decoders_r8_generator(rig8):
+    cfg8, m8, bt, b, traj = rig8
+    m8.train()
+    m8._r8_rc_dropout, m8._r8_rc_noise, m8._r8_nav_args_dropout = 0.3, (2.0, 0.75), 0.5
+    batch = {"v_max_ms": torch.full((b,), 50 / 3.6), "v_max_valid": torch.ones(b)}
+    m8.core.decoder.r8_gen = C.R8Generator(9)
+    W9._prep(m8, bt, b, traj, {})
+    s_without = m8.core.decoder.r8_gen.get("cpu").get_state()
+    m8.core.decoder.r8_gen = C.R8Generator(9)
+    W9._prep(m8, bt, b, traj, batch)
+    assert torch.equal(m8.core.decoder.r8_gen.get("cpu").get_state(), s_without)
+
+
+def test_the_crc_is_the_bytes():
+    import zlib
+    v, k = torch.tensor([1.0, 2.0]), torch.tensor([1.0, 0.0])
+    want = zlib.crc32(k.numpy().tobytes(), zlib.crc32(v.numpy().tobytes()))
+    assert RT.speed_crc(v, k) == want and RT.speed_crc(v, k) != RT.speed_crc(v + 1e-6, k)
+
+
+def test_the_RC_shuffled_eval_row(rig8):
+    cfg8, m8, bt, b, traj = rig8
+    raw = {"r8_rc_raw": torch.tensor([[10.0, 1.0, 0.0], [20.0, -2.0, 30.0], [30.0, 3.0, -30.0]][:b]),
+           "r8_rc_valid": torch.ones(b, dtype=torch.bool)}
+    m8.eval()
+    plain = W9._prep(m8, bt, b, traj, raw)["fwd"]["r8_rc"]
+    m8._r8_rc_eval = "shuf"
+    try:
+        sh = W9._prep(m8, bt, b, traj, raw)["fwd"]["r8_rc"]
+        assert torch.equal(sh, torch.roll(plain, 1, 0))
+    finally:
+        m8._r8_rc_eval = None

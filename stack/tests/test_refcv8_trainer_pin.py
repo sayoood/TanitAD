@@ -95,7 +95,8 @@ def test_GREEN_X3_the_past_only_speed_input_pins_through():
     (ON + ["--r8-speed-unknown-p", "0.45"], "dead flag"),
     (ON + ["--r8-roll-speed-input", "--batch", "4"], "dead flag"),
     (ON + X3 + ["--r8-roll-speed-input", "--batch", "1"], "--batch >= 2"),
-    (BASE + ["--r8-speed-input", "n2"], "without --refcv8"),
+    # a SPEED-ONLY arm (no --refcv8; SPEC_WPB_LADDER V0) is VALID, so the refusal is now the missing channel
+    (BASE + ["--r8-speed-input", "n2"], "--max-speed-input-v6"),
     (BASE + ["--r8-roll-speed-input"], "without --refcv8"),
 ])
 def test_X3_every_oracle_dead_or_unsafe_speed_argv_refuses(argv, needle):

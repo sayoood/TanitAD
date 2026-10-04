@@ -36,7 +36,8 @@ print(' '.join(a))")
 [ -n "$ARGV" ] || { echo "[r8-smoke-L1] could not build the argv -- stopping"; exit 1; }
 cd $T
 flock $LOCK timeout 2400 $PY stack/scripts/refc_v3_train.py $ARGV >> $R/logs/smoke_L1_train.log 2>&1 < /dev/null 200>&-
-echo "[r8-smoke-L1] $(date -u +%H:%M:%S) trainer exit $? (the artifact decides)"
+rc=$?   # captured BEFORE any $(...): the old line read $? AFTER $(date) and logged "exit 0" for a crashed trainer
+echo "[r8-smoke-L1] $(date -u +%H:%M:%S) trainer exit $rc (the artifact decides)"
 $PY $R/code/r8_smoke_summary.py --run $OUT --init /home/nvidia/refcv7_run/runs/refcv7-r101-s0/ckpt.pt \
     > $R/logs/smoke_L1_summary.log 2>&1 < /dev/null
 $PY $R/code/p7_smoke_check.py --run $OUT --stack $T/stack > $R/logs/smoke_L1_p7check.log 2>&1 < /dev/null

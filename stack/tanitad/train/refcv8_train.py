@@ -41,7 +41,7 @@ __all__ = ["r8_before_forward", "r8_losses", "V7PolicyScope", "R8LabelJoin", "tf
            "navsim_legal_nav_cmd", "v7_policy_travels", "load_v9_join", "R8_SPEED_UNKNOWN_P", "R8_SPEED_DERIVATION",
            "assert_r8_speed_stamp", "speed_kmh_of", "speed_input_census", "speed_input_treatment", "tactical_rows", "I2_LITERALS", "emit_live",
            "apply_emit_schedule", "emits_at_step0", "checkpoint_r8_step", "i2_identity_row",
-           "speed_derivation", "R8_SPEED_ENC8_NOTE"]
+           "speed_derivation", "R8_SPEED_ENC8_NOTE", "speed_gen", "speed_crc", "speed_only_fwd"]
 
 #: MM binding 2026-10-04 (i): route-checkpoint dropout >= 0.3
 RC_DROPOUT_MIN = 0.3
@@ -357,6 +357,41 @@ def i2_identity_row(rows, *, emit_at_step0: bool) -> dict:
             "emit_at_step0": bool(emit_at_step0)}
 
 
+def speed_gen(model):
+    """X3's OWN dedicated generator (seeded ``cfg.refcv8.seed``), on the MODEL -- used by BOTH the refcv8 path
+    (r8_before_forward) and the speed-only path (V0), so two arms on the same batches draw the SAME unknown rows:
+    the fed speed channel is byte-identical across them (SPEC_WPB_LADDER sec. 1; MM I-0 assertion 2). Never the
+    global stream, never the decoder's r8_gen (whose other draws would desynchronise it)."""
+    g = getattr(model, "_r8_speed_gen", None)
+    if g is None:
+        g = r8c.R8Generator(int(model.cfg.refcv8.seed))
+        model._r8_speed_gen = g
+    return g
+
+
+def speed_crc(v_ms: Tensor, valid: Tensor) -> int:
+    """CRC32 of the FED speed channel's exact bytes (float32 value, float32 valid): logged per step as
+    `r8_spd_crc`, so two runs' channels are compared BYTE FOR BYTE off their own logs."""
+    import zlib
+    a = v_ms.detach().to(torch.float32).cpu().contiguous().numpy().tobytes()
+    b = valid.detach().to(torch.float32).cpu().contiguous().numpy().tobytes()
+    return int(zlib.crc32(b, zlib.crc32(a)))
+
+
+def speed_only_fwd(model, batch: Mapping[str, Tensor], device) -> dict:
+    """X3 SPEED-ONLY (a model WITHOUT the refcv8 seams; SPEC_WPB_LADDER's V0 feeds N2 too): the same
+    `speed_input_treatment` as r8_before_forward, on a MODEL-level dedicated generator (created on first use from
+    ``cfg.refcv8.seed``; the global stream is never consumed). Returns the forward overrides."""
+    gen = speed_gen(model)
+    legal = (not model.training) and bool(getattr(model, "_r8_legal_row", False))
+    vm, vv = speed_input_treatment(
+        batch["v_max_ms"].to(device), batch["v_max_valid"].to(device), gen, training=bool(model.training),
+        unknown_p=float(getattr(model, "_r8_speed_unknown_p", R8_SPEED_UNKNOWN_P)),
+        roll=bool(getattr(model, "_r8_roll_speed_train", False)),
+        eval_intervention=getattr(model, "_r8_speed_eval", None), legal=legal)
+    return {"v_max_ms": vm, "v_max_valid": vv}
+
+
 def tactical_rows(lat: Tensor, lat_allowed: Tensor, lon: Tensor, lon_allowed: Tensor) -> float:
     """R8-1-REACH's per-batch reading (SPEC_REFCV8 sec. 4.1; MM item 4): the share of windows whose lateral AND
     longitudinal target is supervised -- an exact class (>= 0) or a partial label with at least one allowed class.
@@ -427,6 +462,10 @@ def r8_before_forward(model, batch: Mapping[str, Tensor], device, traj_tgt: Tens
             rc = rc_training_noise(rc, valid, gen, sigma_along_m=float(sa), sigma_lat_m=float(sl))
             if bool(getattr(model, "_r8_rc_roll_train", False)) and b > 1:
                 rc, valid = torch.roll(rc, 1, 0), torch.roll(valid, 1, 0)       # another window's checkpoint
+        elif getattr(model, "_r8_rc_eval", None) == "shuf":       # the RC-SHUFFLED eval row (SPEC_WPB_LADDER sec. 2)
+            if b < 2:
+                raise ValueError("[refcv8] RC-shuffled on a batch of one: a roll is the identity")
+            rc, valid = torch.roll(rc, 1, 0), torch.roll(valid, 1, 0)
         if legal:
             valid = torch.zeros_like(valid)
         fwd["r8_rc"] = scale_rc(rc, valid)
@@ -435,7 +474,8 @@ def r8_before_forward(model, batch: Mapping[str, Tensor], device, traj_tgt: Tens
     # forward (compute_losses_v3 merges `fwd` over its own kwargs). ----
     if str(getattr(cfg, "speed_input", "") or "") and "v_max_ms" in batch:
         fwd["v_max_ms"], fwd["v_max_valid"] = speed_input_treatment(
-            batch["v_max_ms"].to(device), batch["v_max_valid"].to(device), gen, training=bool(model.training),
+            batch["v_max_ms"].to(device), batch["v_max_valid"].to(device), speed_gen(model),
+            training=bool(model.training),
             unknown_p=float(getattr(model, "_r8_speed_unknown_p", R8_SPEED_UNKNOWN_P)),
             roll=bool(getattr(model, "_r8_roll_speed_train", False)),
             eval_intervention=getattr(model, "_r8_speed_eval", None), legal=legal)
@@ -1006,13 +1046,23 @@ def _register_gdvb() -> None:
         "the in-run gradient-share instrument's cadence (tanitad/train/grad_share.py, P-GRAD's statistic): "
         "autograd.grad on LOGGED steps only, never .grad, no parameter, no RNG; 0 = off; refused unless a multiple "
         "of --log-every (a reading on an unlogged step would be computed and discarded)"))
-    dvb.register("r8_speed_input", "built", _field("r8_speed_input", "speed_input", lambda v: str(v or ""), ""))
+    def _c_speed(m, a):
+        """X3: the BUILT model's source (`model.cfg.refcv8.speed_input`) equals the argv -- also on a SPEED-ONLY arm
+        without the refcv8 seams (SPEC_WPB_LADDER V0), so it reads the model config, not the decoder's r8_cfg."""
+        want = str(dvb._a(a, "r8_speed_input", None) or "")
+        got = str(getattr(getattr(getattr(m, "cfg", None), "refcv8", None), "speed_input", "") or "")
+        return dvb._eq("r8_speed_input", want, got, "model.cfg.refcv8.speed_input")
+
+    dvb.register("r8_speed_input", "built", _c_speed)
     dvb.register("r8_speed_unknown_p", "runtime", reason=(
         "X3's trained unknown-row rate: `model._r8_speed_unknown_p`, read by r8_before_forward -> "
         "speed_input_treatment on TRAINING rows only (the dedicated generator); refused outside (0, 1); None = 0.45"))
     dvb.register("r8_roll_speed_input", "runtime", reason=(
         "`model._r8_roll_speed_train`, read by speed_input_treatment in TRAINING only (each row takes another "
         "window's speed input); SPEC_WPB_LADDER L4's deliberate-regression arm V-VSHUF"))
+    dvb.register("smoke_seed_ego_frames", "runtime", reason=(
+        "SMOKE ONLY (refused above --steps 100): the first batch is built by `smoke_seed_batch` from windows whose NOW "
+        "frame is a --join-defect-masks ego frame, so the VIS-1 re-key runs at full size; read as `vis1_rekeyed`"))
     dvb.register("r8_no_rc", "runtime", reason=(
         "`model._r8_no_rc`: r8_before_forward never feeds the route checkpoint (the MM's switch-off while the RC "
         "ruling awaits PI confirmation); the model then sees an explicitly invalid row"))
