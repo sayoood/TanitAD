@@ -184,6 +184,8 @@ def _feas_with_origin(x: Tensor) -> Tensor:
     z = torch.zeros(*x.shape[:-2], 1, 2, dtype=x.dtype, device=x.device)
     return torch.cat([z, x], dim=-2)
 from tanitad.refs import refc_select as sl
+# refcv8 WP-B: the tactical-conditioning seams (pure module; no circular import -- it imports torch only)
+from tanitad.refs import refcv8_conditioning as r8c
 from tanitad.refs import refc_tactical as tac
 # ⛔⛔ G-HYG (SPEC_REFCV7 §2, 2026-09-26): every config dataclass below REFUSES an undeclared
 # attribute at assignment. D-REFCV6-EQUALIZE-DROPPED was the THIRD time an ad-hoc attribute on
@@ -2059,6 +2061,19 @@ class AnchoredDiffusionDecoder(nn.Module):
         self._last_layer_du: list[Tensor] = []
         self._rv6_layer_u0: list[Tensor] = []
         self._rv6_layer_conf: list[Tensor] = []
+        # ⭐ refcv8 WP-B (DESIGN.md sec. 3): the tactical-conditioning seams. NOTHING is built here --
+        # `attach_refcv8` builds them LAST (RNG order) -- and while `r8_cfg` is None every refcv8 branch below is
+        # dead code, so a refcv7 build is bit-identical. `_r8_phi` / `_r8_last_q` are PLAIN attributes holding the
+        # current forward's per-candidate features (never state_dict entries).
+        self.r8_cfg = None
+        self.r8_mod: nn.Module | None = None
+        self.r8_sel: nn.Module | None = None
+        self.r8_sub: nn.Module | None = None
+        self.r8_rc_to_cond: nn.Linear | None = None
+        self.r8_rc_gate: nn.Parameter | None = None
+        self.r8_gen = None
+        self._r8_phi: Tensor | None = None
+        self._r8_last_q: Tensor | None = None
         if self.rv6.any_on and self.control_head is None:
             raise ValueError(
                 "refcv6 §3: F1..F9 describe the DIFFUSION decoder, and this "
@@ -2323,6 +2338,13 @@ class AnchoredDiffusionDecoder(nn.Module):
             return torch.zeros_like(a0), torch.zeros_like(k0), v
         v = self._prior_speed(v_ms, ego_keep, withheld_speed)
         a0, k0 = _kp.withhold(a0, k0, ego_keep)
+        # ⭐ refcv8 X2a (DESIGN sec. 3.4): LATERAL prior dropout -- in TRAINING, kappa0 -> 0 on a row with
+        # probability p (a0 and v kept), so 'the smallest lateral residual' is not a free winner. Drawn from the
+        # DEDICATED generator (the refcv7 stream is untouched); never at eval.
+        if (self.r8_cfg is not None and self.training
+                and float(self.r8_cfg.lat_prior_dropout) > 0.0):
+            _drop = self.r8_gen.rand(tuple(k0.shape), k0.device) < float(self.r8_cfg.lat_prior_dropout)
+            k0 = torch.where(_drop, torch.zeros_like(k0), k0)
         return a0, k0, v
 
     def _roll_residual_bank(self, prior, batch: int,
@@ -2415,6 +2437,138 @@ class AnchoredDiffusionDecoder(nn.Module):
         return torch.cat([pre, x[..., k:, :] + shift], dim=-2)
 
     # ---- refcv5 WP-B: the waypoint index (DD coupling (2), C5) ------------- #
+    def attach_refcv8(self, r8cfg, d_rc: int = 4) -> int:
+        """Build the refcv8 WP-B seams (DESIGN.md sec. 3). Called LAST by `RefCV3Model.__init__`, so every refcv7
+        parameter's init is unchanged. Every new tensor is ZERO-INIT or reaches the plan only through a zero-init
+        gate: a warm start from refcv7 reproduces its emitted plan at step 0 (`test_refcv8_warm_start.py`).
+        Returns the parameter count."""
+        if self.control_head is None:
+            raise ValueError('[refcv8] the tactical conditioning acts on the DDIM sampler; this build has none')
+        if (int(getattr(self.cfg, 'sampler_groups', 1)) > 1 or int(self.rv6.f7_samples_per_anchor) > 1):
+            raise ValueError('[refcv8] refcv8 extends the candidate set itself (allocation / prior-free group); '
+                             'combining it with F7 groups would make two index maps -- refused')
+        if bool(self.sel.anchor_prefilter):
+            raise ValueError('[refcv8] the S2b pre-decode prefilter decodes a SUBSET; per-candidate features would '
+                             'not line up -- refused')
+        if float(self.sel.seam_clamp) > 0.0:
+            raise ValueError('[refcv8] the decoder seam clamp normalises over the WHOLE candidate row; appending '
+                             'candidates would move the base scores -- refused (E9 handles its own clamp on the base)')
+        r8c.assert_no_situation_feed()
+        d = self.cfg.d
+        self.r8_cfg = r8cfg
+        self.r8_mod = r8c.PerCandidateModulation(len(self.layers), d)
+        self.r8_sel = r8c.FactorizedSelection()
+        self.r8_rc_to_cond = nn.Linear(int(d_rc), d)
+        nn.init.zeros_(self.r8_rc_to_cond.weight)
+        nn.init.zeros_(self.r8_rc_to_cond.bias)
+        self.r8_rc_gate = nn.Parameter(torch.zeros(()))
+        if float(r8cfg.w_subscore) > 0.0:
+            self.r8_sub = r8c.SubScoreHeads(d, hidden=int(r8cfg.subscore_hidden))
+        self.r8_gen = r8c.R8Generator(int(r8cfg.seed))
+        mods = [self.r8_mod, self.r8_sel, self.r8_rc_to_cond] + ([self.r8_sub] if self.r8_sub is not None else [])
+        return int(sum(p.numel() for m in mods for p in m.parameters())) + 1
+
+    def _r8_extend(self, bank: Tensor, v_ms: Tensor | None, r8: dict, prior, dtype) -> dict:
+        """refcv8 WP-B: tag the base fan, append the ALLOCATED candidates (top-k hypotheses, proportional to p)
+        and the X2b PRIOR-FREE group, and build phi. Returns the extended bank and every per-candidate tensor.
+        Candidates are ordered [base N | allocated M | prior-free N]; `src` maps each to its source anchor."""
+        cfg = self.r8_cfg
+        b, nb, s = bank.shape[0], bank.shape[1], bank.shape[2]
+        dev = bank.device
+        v_tag = (v_ms.reshape(-1).to(torch.float32) if v_ms is not None
+                 else torch.full((b,), self.anchor_ref_speed, device=dev))
+        if prior is not None:
+            v_tag = prior[2].reshape(-1).to(torch.float32)
+        slot_t = [float(h) * self.anchor_dt for h in self.anchor_horizons]
+        lp_l = r8['logp_lat3'].to(torch.float32)
+        lp_o = r8['logp_lon6'].to(torch.float32)
+        c8l, c8o = r8['cons_lat8'], r8['cons_lon8']
+        lat_b, lon_b = r8c.tag_paths(bank, v_tag, slot_t)
+        ar = torch.arange(nb, device=dev)[None].expand(b, nb)
+        cons_b = r8c.candidate_constraints(c8l, c8o, lat_b, lon_b)
+        srcs, kinds, lats, lons, banks, offs, allocs = [ar], [torch.zeros(nb, dtype=torch.long, device=dev)], \
+            [lat_b], [lon_b], [bank], [None], [torch.zeros(b, nb, dtype=torch.bool, device=dev)]
+        cons_sel = [cons_b]
+        cons_phi = [cons_b if cfg.base_constraints else None]
+        hyp = None
+        if int(cfg.n_alloc) > 0:
+            m = int(cfg.n_alloc)
+            joint = (lp_l[:, :, None] + lp_o[:, None, :]).reshape(b, -1)
+            force = r8.get('force_hyp')
+            hyp = r8c.allocate(joint, m, int(cfg.alloc_top_k), int(cfg.alloc_min_each), force=force,
+                               force_min=int(r8.get('force_min', 4)))
+            src_a, lvl = r8c.select_source_anchors(lat_b, lon_b, hyp, self.r8_gen)
+            hl, ho = r8c.split_joint(hyp)
+            cons_a = r8c.candidate_constraints(c8l, c8o, hl, ho)
+            cons_ag = cons_a
+            fc = r8.get('force_cons')
+            if fc is not None and force is not None:
+                use = (hyp == force[:, None]) & r8['force_tf'].to(torch.bool)[:, None]
+                cons_ag = torch.where(use[..., None], fc.to(cons_a.dtype)[:, None, :], cons_a)
+            srcs.append(src_a)
+            kinds.append(torch.ones(m, dtype=torch.long, device=dev))
+            lats.append(hl)
+            lons.append(ho)
+            banks.append(bank.gather(1, src_a[:, :, None, None].expand(b, m, s, 2)))
+            offs.append(None)
+            allocs.append(torch.ones(b, m, dtype=torch.bool, device=dev))
+            cons_sel.append(cons_a)
+            cons_phi.append(cons_ag)
+            self._r8_alloc_lvl = lvl
+        if bool(cfg.prior_free_group):
+            if prior is None:
+                raise ValueError('[refcv8] the X2b prior-free group cancels the RESIDUAL prior; this build has none')
+            norm = bank.new_tensor(tuple(self.cfg.control_norm)).to(torch.float32)
+            off = r8c.prior_free_lateral_offset(prior[1], prior[2], nb, s, float(norm[1]),
+                                                self.anchor_alat_v_floor)
+            x0n = self.anchor_control_seq(b, torch.float32) / norm + off
+            bank_p = self._roll_state(x0n * norm, prior[2], False, prior).to(bank.dtype)
+            lat_p, lon_p = r8c.tag_paths(bank_p, v_tag, slot_t)
+            cons_p = r8c.candidate_constraints(c8l, c8o, lat_p, lon_p)
+            srcs.append(ar)
+            kinds.append(torch.full((nb,), 2, dtype=torch.long, device=dev))
+            lats.append(lat_p)
+            lons.append(lon_p)
+            banks.append(bank_p)
+            offs.append(off)
+            allocs.append(torch.zeros(b, nb, dtype=torch.bool, device=dev))
+            cons_sel.append(cons_p)
+            cons_phi.append(cons_p if cfg.base_constraints else None)
+        src = torch.cat(srcs, 1)
+        kind = torch.cat(kinds, 0)
+        lat3, lon6 = torch.cat(lats, 1), torch.cat(lons, 1)
+        bank_x = torch.cat(banks, 1)
+        n = bank_x.shape[1]
+        x0_off = None
+        if any(o is not None for o in offs):
+            x0_off = torch.cat([o if o is not None else bank_x.new_zeros(b, sr.shape[1], s, 2).float()
+                                for o, sr in zip(offs, srcs)], 1)
+        alloc = torch.cat(allocs, 1)
+        cs = torch.cat(cons_sel, 1)
+        cp_list, cv_list = [], []
+        for c, sr in zip(cons_phi, srcs):
+            if c is None:
+                cp_list.append(cs.new_zeros(b, sr.shape[1], cs.shape[-1]))
+                cv_list.append(cs.new_zeros(b, sr.shape[1]))
+            else:
+                cp_list.append(c.to(cs.dtype))
+                cv_list.append(cs.new_ones(b, sr.shape[1]))
+        phi = r8c.build_phi(lat3, lon6, lp_l, lp_o, torch.cat(cp_list, 1), torch.cat(cv_list, 1), alloc)
+        if not bool(cfg.modulate_base):
+            phi = phi * alloc.to(phi.dtype)[..., None]
+        if self.training and float(cfg.cond_dropout) > 0.0:
+            keep = (self.r8_gen.rand((b,), dev) >= float(cfg.cond_dropout)).to(phi.dtype)
+            phi = phi * keep[:, None, None]
+        emit = (kind == 0)
+        if bool(cfg.alloc_emit):
+            emit = emit | (kind == 1)
+        if bool(cfg.prior_free_emit):
+            emit = emit | (kind == 2)
+        return {'bank': bank_x, 'n': n, 'n_base': nb, 'src': src, 'kind': kind, 'lat3': lat3, 'lon6': lon6,
+                'x0_offset': x0_off, 'alloc': alloc, 'phi': phi, 'hyp': hyp,
+                'cons_raw': r8c.denorm_cons(cs), 'cons_valid': cs.new_ones(b, n),
+                'emit': emit[None].expand(b, n)}
+
     def attach_wp_index(self, cfg) -> int:
         """Build WP-B's per-layer bias heads. Returns the parameter count.
 
@@ -2563,12 +2717,14 @@ class AnchoredDiffusionDecoder(nn.Module):
         q = self.traj_proj(x_est.reshape(b, n, -1))           # [B, N, d]
         q = q + self.time_embed.weight[t_idx][None, None]     # timestep bias
         index = self._agent_index(x_est, agent_pos)
-        for layer in self.layers:
+        for _li, layer in enumerate(self.layers):
             # `x_est` IS the metric fan this pass is refining, so it is the
             # address for BOTH couplings -- the agent slots (WP-B / coupling
             # (2), through `index`) and the BEV map (coupling (1), through
             # `waypoints`).
             q = layer(q, kv, cond, agents, agent_pad, index, bev, x_est)
+            if self._r8_phi is not None:          # refcv8 WP-B: zero-init per-candidate modulation
+                q = self.r8_mod(_li, q, self._r8_phi)
         conf = self.conf_head(q).squeeze(-1)                  # [B, N]
         offset = self.offset_head(q).reshape(b, n, self.n_steps, 2)
         return conf, offset
@@ -2607,8 +2763,12 @@ class AnchoredDiffusionDecoder(nn.Module):
         # ⛔ With both flags off this loop is the ONE LINE it always was — no
         # extra module call, no extra tensor, no branch inside the layer.
         if self.cascade is None and self.adaln is None:
-            for layer in self.layers:
+            for _li, layer in enumerate(self.layers):
                 q = layer(q, kv, cond, agents, agent_pad, index, bev, x_path)
+                if self._r8_phi is not None:      # refcv8 WP-B
+                    q = self.r8_mod(_li, q, self._r8_phi)
+            if self.r8_cfg is not None:
+                self._r8_last_q = q
             conf = self.conf_head(q).squeeze(-1)              # [B, N]
             du = self.control_head(q).reshape(b, n, self.n_steps, 2)
             return conf, du
@@ -2617,6 +2777,8 @@ class AnchoredDiffusionDecoder(nn.Module):
         dus: list[Tensor] = []
         for i, layer in enumerate(self.layers):
             q = layer(q, kv, cond, agents, agent_pad, index, bev, x_path)
+            if self._r8_phi is not None:          # refcv8 WP-B: before F4's time AdaLN (DESIGN sec. 3.1)
+                q = self.r8_mod(i, q, self._r8_phi)
             # F4 — DD modulates AFTER the layer's FFN (`:335-337`), never
             # before the attention. Order matters: the scale/shift is applied
             # to the layer's OUTPUT, which is what makes it a per-stage
@@ -2624,6 +2786,8 @@ class AnchoredDiffusionDecoder(nn.Module):
             # conditioning of the input.
             if self.adaln is not None:
                 q = self.adaln[i](q, te3)
+            if self.r8_cfg is not None and i == len(self.layers) - 1:
+                self._r8_last_q = q                # refcv8 X1h: the emitting pass's per-candidate query
             if self.cascade is not None:
                 c_i, du_i = self.cascade.emit(i, q)
                 confs.append(c_i)
@@ -2696,7 +2860,9 @@ class AnchoredDiffusionDecoder(nn.Module):
                 agent_pad: Tensor | None = None,
                 agent_pos: Tensor | None = None,
                 bev: Tensor | None = None,
-                prior: "tuple | None" = None
+                prior: "tuple | None" = None,
+                cand_src: Tensor | None = None,
+                x0_offset: Tensor | None = None
                 ) -> tuple[Tensor, Tensor, Tensor, dict]:
         """The truncated-diffusion sampler. -> (fan, u0_hat, conf, telemetry).
 
@@ -2744,6 +2910,14 @@ class AnchoredDiffusionDecoder(nn.Module):
         else:
             norm = bank.new_tensor(tuple(cfg.control_norm))
             x0_n = self.anchor_control_seq(b, dtype) / norm
+            # ---- refcv8 WP-B: the extended candidate set (allocated + prior-free) --------------------- #
+            # Each candidate's anchored-Gaussian centre is its SOURCE anchor's control sequence (+ the X2b
+            # offset, normalised units). Done BEFORE the F7 shape check, which then sees matching widths.
+            if cand_src is not None:
+                x0_n = x0_n.gather(1, cand_src[:, :, None, None].expand(b, cand_src.shape[1],
+                                                                       x0_n.shape[2], 2))
+                if x0_offset is not None:
+                    x0_n = x0_n + x0_offset.to(x0_n.dtype)
             # ---- refcv6 F7: the CONTROL state must be tiled with the bank -- #
             # `roll_bank`'s output was widened to [B, G*N, S, 2] in `forward`;
             # `anchor_control_seq` still emits [B, N, S, 2]. Tiling here, in
@@ -2799,7 +2973,16 @@ class AnchoredDiffusionDecoder(nn.Module):
         train_t = None
         if rv6.f1_random_t and self.training:
             train_t = rs.draw_train_timesteps(b, int(rv6.f1_t_max), dev)
-        eps = torch.randn_like(x0_n)
+        if cand_src is None:
+            eps = torch.randn_like(x0_n)
+        else:
+            # ⛔ refcv8: the BASE candidates draw from the global stream exactly as refcv7 did (same count, same
+            # order); the EXTRA candidates draw from the dedicated generator -- so appending candidates never
+            # shifts a base candidate's noise.
+            _nb = int(self.anchors.shape[0])
+            eps_b = torch.randn((b, _nb) + tuple(x0_n.shape[2:]), device=dev, dtype=x0_n.dtype)
+            eps_x = self.r8_gen.randn((b, x0_n.shape[1] - _nb) + tuple(x0_n.shape[2:]), dev, x0_n.dtype)
+            eps = torch.cat([eps_b, eps_x], 1)
         t_noise = (train_t if train_t is not None
                    else torch.tensor(t0, device=dev))
         x_n = self.sched.add_noise(x0_n, eps, t_noise)
@@ -3027,7 +3210,8 @@ class AnchoredDiffusionDecoder(nn.Module):
                 behaviour_term: Tensor | None = None,
                 nav_cmd_sel: Tensor | None = None,
                 v_limit_ms: Tensor | None = None,
-                residual_prior: "tuple | None" = None) -> dict:
+                residual_prior: "tuple | None" = None,
+                r8: dict | None = None) -> dict:
         """D-SEL adds five OPTIONAL ranking inputs; with all flags off the
         emitted ``traj`` / ``sel_idx`` are bit-identical to pre-D-SEL REF-C.
 
@@ -3175,6 +3359,12 @@ class AnchoredDiffusionDecoder(nn.Module):
             cond = cond + self.ego_to_cond(ego_hist.to(cond.dtype))
         if self.tgt_film is not None and target_latent is not None:
             cond = self.tgt_film(cond, self.tgt_proj(target_latent))
+        # ⭐ refcv8 WP-B R8-3: the route checkpoint reaches the operative condition (zero-init, additive).
+        if r8 is not None and self.r8_cfg is None:
+            raise ValueError('[refcv8] r8 inputs reached a decoder built without the refcv8 seams -- they would be '
+                             'SILENTLY DROPPED (the WP-6 rule). Build with refcv8.enable or stop passing them.')
+        if self.r8_rc_to_cond is not None and r8 is not None and r8.get('rc') is not None:
+            cond = cond + self.r8_rc_to_cond(r8['rc'].to(cond.dtype))
 
         anchors = self.anchors.to(fmap.dtype)                 # [N, S, 2]
         n = anchors.shape[0]
@@ -3200,6 +3390,13 @@ class AnchoredDiffusionDecoder(nn.Module):
         if _groups > 1:
             bank = bank.repeat(1, _groups, 1, 1)               # [B, G*N, S, 2]
             n = n * _groups
+        # ---- refcv8 WP-B: tags, allocation, the prior-free group, phi (DESIGN sec. 3.1) ---------------- #
+        _r8x = None
+        if self.r8_cfg is not None and r8 is not None:
+            _r8x = self._r8_extend(bank, v_ms, r8, _rp, fmap.dtype)
+            bank = _r8x['bank']
+            n = int(_r8x['n'])
+            self._r8_phi = _r8x['phi']
         x0 = bank
         prior_bank = bank if self.anchor_v0_cond else None
 
@@ -3267,6 +3464,9 @@ class AnchoredDiffusionDecoder(nn.Module):
         # bit-identical off the F7 arm.
         _tile = ((lambda z: _rv6.tile_anchor_prior(z, _groups))
                  if _groups > 1 else (lambda z: z))
+        if _r8x is not None:              # refcv8: every [B, N_anchor] prior follows the candidate's SOURCE anchor
+            _src = _r8x['src']
+            _tile = (lambda z: z.gather(1, _src))
         terms: list[Tensor] = []
         # H19: maneuver prior reweights the anchor confidences (log-space).
         if self.maneuver_to_anchor is not None and maneuver_logits is not None:
@@ -3390,6 +3590,8 @@ class AnchoredDiffusionDecoder(nn.Module):
             # NEW-1 on every refcv6 build, and a wrapper that cannot carry the
             # prior fails LOUDLY (TypeError) on a residual build.
             _smp_kw = {} if _rp is None else {"prior": _rp}
+            if _r8x is not None:
+                _smp_kw.update(cand_src=_r8x['src'], x0_offset=_r8x['x0_offset'])
             x, u0_hat, s_conf, smp_tele = self._sample(
                 kv, cond, bank, v_ms, steps, agent_tokens, agent_pad,
                 agent_pos, bev, **_smp_kw)
@@ -3541,6 +3743,8 @@ class AnchoredDiffusionDecoder(nn.Module):
         # mutation at build time — PI 2026-08-03). It is passed as a TENSOR so
         # this file owns no copy of the admissibility mask: one mask, one
         # owner, no drift.
+        if _r8x is not None and behaviour_term is not None:
+            behaviour_term = behaviour_term.gather(1, _r8x['src'])
         if self.graft_behaviour_sel and behaviour_term is not None:
             if behaviour_term.shape != base.shape:
                 raise ValueError(
@@ -3563,6 +3767,27 @@ class AnchoredDiffusionDecoder(nn.Module):
             tele['navc_gate'] = round(float(self.navc_gate.detach()), 6)
             tele['navc_frac_complying'] = round(
                 float(_nc.detach().mean()), 4)
+        # ⭐⭐ refcv8 WP-B (DESIGN sec. 3.2): the factorised tactical selection term -- beta * log p(h_k) of the
+        # candidate's OWN hypothesis + gamma * constraint satisfaction -- the route-checkpoint bearing term, and the
+        # X1h sub-score critics. Every scalar is ZERO-INIT: the ranked score is unchanged at a warm start.
+        _r8_sub_logits = None
+        if _r8x is not None:
+            _r8t = self.r8_sel(_r8x['lat3'], _r8x['lon6'], r8['logp_lat3'].to(x.dtype),
+                               r8['logp_lon6'].to(x.dtype), x, _r8x['cons_raw'], _r8x['cons_valid'])
+            if r8.get('rc') is not None:
+                _rc = r8['rc'].to(x.dtype)
+                _ang = torch.atan2(_rc[:, 1], _rc[:, 0])
+                _rcd = torch.stack([torch.cos(_ang), torch.sin(_ang), _rc[:, 3]], -1)
+                _r8t = _r8t + self.r8_rc_gate * self._lan_anchor_prior(_rcd, x)
+            if self.r8_sub is not None and self._r8_last_q is not None:
+                _r8_sub_logits, _comb = self.r8_sub(self._r8_last_q, _r8x['phi'], x)
+                _r8t = _r8t + _comb.to(_r8t.dtype)
+            r_terms.append(_r8t.to(base.dtype))
+            tele['r8_beta_lat'] = round(float(self.r8_sel.beta_lat.detach()), 6)
+            tele['r8_beta_lon'] = round(float(self.r8_sel.beta_lon.detach()), 6)
+            tele['r8_gamma_prog'] = round(float(self.r8_sel.gamma_prog.detach()), 6)
+            tele['r8_gamma_head'] = round(float(self.r8_sel.gamma_head.detach()), 6)
+            tele['r8_rc_gate'] = round(float(self.r8_rc_gate.detach()), 6)
         score, r_tele = self._apply_grafts(base, r_terms, self._seam_rank,
                                            "rank", sel.seam_fail_patience)
         if self.grounded:
@@ -3611,6 +3836,14 @@ class AnchoredDiffusionDecoder(nn.Module):
             rank = rank.masked_fill(~_keep, float('-inf'))
             ceil_keep = _keep
             tele.update(_st)
+        if _r8x is not None:
+            # refcv8: a candidate that may not be EMITTED (an allocated or prior-free one before its emission
+            # flag) stays in `score` -- the selection loss trains it -- but never wins the argmax. A row whose
+            # emittable survivors are all masked falls back to the emittable set alone.
+            _ek = _r8x['emit']
+            _r2 = rank.masked_fill(~_ek, float('-inf'))
+            _dead = ~torch.isfinite(_r2).any(dim=1)
+            rank = torch.where(_dead[:, None], score.masked_fill(~_ek, float('-inf')), _r2)
         idx = rank.argmax(dim=1)                              # [B] (detached)
         # S2b telemetry + THE RUNTIME GUARD. `be2da04` keeps two claims apart:
         # the VARIABLE-width policy is structurally exact, while a FIXED budget
@@ -3674,6 +3907,25 @@ class AnchoredDiffusionDecoder(nn.Module):
         if self.cascade is not None and self._rv6_layer_u0:
             out["layer_u0_hat"] = self._rv6_layer_u0
             out["layer_logits"] = self._rv6_layer_conf
+        if _r8x is not None:
+            # ⭐ refcv8: the anchor-ID-indexed outputs stay BASE-ONLY, so every refcv7 loss term (focal anchor CE vs
+            # `a_star` on the bank, the cascade CE, `anchor_acc`) is computed exactly as refcv7 computed it; the
+            # extended fan travels in `anchor_traj` / `sel_score` / `refined_logits` / `reach_keep` and the r8 keys.
+            _nb = int(_r8x['n_base'])
+            out['anchor_logits'] = conf[:, :_nb]
+            out['anchor_bank'] = bank[:, :_nb]
+            if 'layer_logits' in out:
+                out['layer_logits'] = [c[:, :_nb] for c in out['layer_logits']]
+            out.update(r8_cand_src=_r8x['src'], r8_kind=_r8x['kind'], r8_lat3=_r8x['lat3'],
+                       r8_lon6=_r8x['lon6'], r8_alloc=_r8x['alloc'], r8_emit_keep=_r8x['emit'],
+                       r8_cons_raw=_r8x['cons_raw'], r8_cons_valid=_r8x['cons_valid'],
+                       r8_n_base=_nb, r8_phi=_r8x['phi'])
+            if _r8x['hyp'] is not None:
+                out['r8_hyp_alloc'] = _r8x['hyp']
+            if _r8_sub_logits is not None:
+                out['r8_sub_logits'] = _r8_sub_logits
+        self._r8_phi = None
+        self._r8_last_q = None
         if u0_hat is not None:
             # [B, N, S, 2] in the VOCABULARY's control units -- `alat` (m/s^2)
             # or `kappa` (1/m) per `anchor_control_units`. ⛔ The x0 loss MUST
@@ -4748,6 +5000,7 @@ class RefCModel(nn.Module):
         # ⛔ With `scene_hook=None` this block is untouched dead code and the
         # forward is byte-identical to the pre-refcv6 file.
         tac_lat_prior = tac_lon_prior = behaviour_term = v_limit_ms = None
+        r8_in = None                      # refcv8 WP-B: the tactical-conditioning feeds (scene hook)
         if scene_hook is not None:
             if agent_tokens is None and bev_tokens is None:
                 raise ValueError(
@@ -4762,6 +5015,7 @@ class RefCModel(nn.Module):
             tac_lon_prior = sk.get('lon_prior')
             behaviour_term = sk.get('behaviour_term')
             v_limit_ms = sk.get('v_limit_ms')
+            r8_in = sk.get('r8')
         # ⛔ THE 8-WIDE PRIOR REPLACES THE 3-WIDE ONE, AT THE CALL SITE TOO.
         # The decoder refuses the pair; suppressing them here is what makes
         # that refusal reachable rather than a permanent exception.
@@ -4864,7 +5118,8 @@ class RefCModel(nn.Module):
                            behaviour_term=behaviour_term,
                            nav_cmd_sel=(nav_cmd if nav_cmd_given else None),
                            v_limit_ms=v_limit_ms,
-                           residual_prior=_rp_in)
+                           residual_prior=_rp_in,
+                           **({} if r8_in is None else {"r8": r8_in}))
         traj = dec["traj"]
         law_pred = self.law_head(torch.cat([pooled, traj.reshape(b, -1)],
                                            dim=-1))
@@ -4934,6 +5189,9 @@ class RefCModel(nn.Module):
             out["u0_hat"] = dec["u0_hat"]        # refcv5 WP-4's x0 loss target
         if "cons_score" in dec:
             out["cons_score"] = dec["cons_score"]
+        for _k in dec:                    # refcv8 WP-B: every `r8_*` decoder output, verbatim
+            if _k.startswith("r8_"):
+                out[_k] = dec[_k]
         # ⭐ refcv7 NEW-2: trunk-side keys that ride the same pass-through declaration.
         _trunk_passthrough = {"fmap_s8": fmap_s8}
         # ⛔⛔ A16 2026-09-26: refcv6 F3's per-stage outputs MUST pass through. The trainer's

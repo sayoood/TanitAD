@@ -96,6 +96,8 @@ from tanitad.refs import tac_goal_head as _tac_goal_head  # noqa: E402
 # `t1_eval.py` trap: both arms, 40 episodes, 6,844 windows each, then a dead
 # `from taniteval import selgap` in `analyze()`).
 from tanitad.refs import refcv6_tactical as v6tac  # noqa: E402
+from tanitad.refs import refcv8_conditioning as r8c  # noqa: E402  refcv8 WP-B
+from tanitad.train import refcv8_train as r8train  # noqa: E402  refcv8 WP-B (trainer side)
 # ⛔⛔ refcv7's two modules are NOT ON THIS BRANCH (MEASURED 2026-09-23 on a clean
 # `git archive` of the tip: `refcv7_heads.py` / `refcv7_oracle.py` / `refcv7_toad.py`
 # absent). Its trainer integration arrived in d014414, swept in from a worktree that
@@ -131,6 +133,9 @@ from tanitad.models import agent_slots as _agent_slots  # noqa: E402
 from tanitad.models import slot_presence as _slot_presence  # noqa: E402  (refcv7 A9)
 from tanitad.data import vis1 as _vis1  # noqa: E402  (refcv7 A9 R3)
 from tanitad.eval import detection_metrics as _det_metrics  # noqa: E402  (refcv7 A9 P0)
+from tanitad.eval import detection_nms as _det_nms  # noqa: E402  (refcv8 WP-C I1/F4b; scripts/ ONLY, never planner-side)
+from tanitad.eval import detection_zh as _det_zh  # noqa: E402  (refcv8 WP-C I2/fix 5)
+from tanitad.data import join_label_hygiene as _jlh  # noqa: E402  (refcv8 WP-C I3/fixes 3+4)
 # --- refcv6 §2/§6: the perception branch (map + 3-D boxes) ------------------ #
 # ⛔ IMPORTED UNCONDITIONALLY, USED ONLY BEHIND A POSITIVE WEIGHT. An
 # analysis-time import that fails AFTER the rollout destroys a run whose
@@ -756,11 +761,89 @@ def _pin_trainer_cfg(cfg: v3.RefCV3Config, args) -> v3.RefCV3Config:
         cfg.tac_goal_tok_head = True
     _pin_refcv6_tactical(cfg, args)
     _pin_refcv7(cfg, args)
+    _pin_refcv8(cfg, args)
     # ⛔⛔ G-HYG: the strict config classes refuse an undeclared attribute AT ASSIGNMENT; this
     # walk catches the two routes that bypass `__setattr__` (a `__dict__` write, and a config
     # class of another module that is not decorated) before any model is built from it.
     _hyg.assert_config_hygiene(cfg, where="_pin_trainer_cfg")
     return cfg
+
+
+def _pin_refcv8(cfg, args) -> None:
+    """refcv8 WP-B (DESIGN.md sec. 3) -- argv -> cfg.refcv8, with refusals that fire before config.json."""
+    if not bool(getattr(args, "refcv8", False)):
+        for k in ("r8_n_alloc", "w_r8_listwise", "w_r8_sat", "w_r8_subscore", "w_r8_cons", "w_r8_alloc_l1",
+                  "r8_prior_free_group",
+                  "r8_lat_prior_dropout", "r8_v9_labels", "r8_v9_labels_eval", "r8_nav_from_v9",
+                  "r8_no_rc"):
+            v = getattr(args, k, None)
+            if v not in (None, False, 0, 0.0):
+                raise SystemExit(f"[refcv8] --{k.replace('_', '-')} without --refcv8: a dead flag (refused)")
+        return
+    if args.arm != "hier" or not bool(getattr(args, "tac_decoder_v6", False)):
+        raise SystemExit("[refcv8] --refcv8 needs --arm hier and --tac-decoder-v6 (the conditioning reads the "
+                         "behaviour decoder)")
+    if str(getattr(args, "sampler", "none")) != "ddim":
+        raise SystemExit("[refcv8] --refcv8 conditions the DDIM sampler; pass --sampler ddim")
+    if bool(getattr(args, "refcv7", False)):
+        raise SystemExit("[refcv8] --refcv8 with --refcv7 (WTA + scorer): two re-rankers, not attributable")
+    if float(args.r8_rc_dropout) < r8train.RC_DROPOUT_MIN:
+        raise SystemExit(f"[refcv8] --r8-rc-dropout {args.r8_rc_dropout} < {r8train.RC_DROPOUT_MIN} "
+                         f"(MM binding 2026-10-04)")
+    if not (0.0 < float(args.r8_nav_args_dropout) < 1.0):
+        raise SystemExit("[refcv8] --r8-nav-args-dropout must be in (0, 1): NavSim-legal agents get the bare "
+                         "command only, so the model must train with 'unknown distance/time' rows")
+    # ---- the v9 release (WP-A INTEGRATION.md; MM binding 2026-10-04 items 1-6) ----------------------------- #
+    if getattr(args, "r8_v9_labels", None) or getattr(args, "r8_v9_labels_eval", None):
+        r8train._v9()                     # the reader must be in this tree (SystemExit names it otherwise)
+    if getattr(args, "r8_v9_labels_eval", None) and not getattr(args, "r8_v9_labels", None):
+        raise SystemExit("[refcv8] ⛔ --r8-v9-labels-eval without --r8-v9-labels: the eval would score v9 "
+                         "targets the model was never trained on")
+    if (getattr(args, "r8_v9_labels", None) and getattr(args, "eval_cache", None)
+            and not getattr(args, "r8_v9_labels_eval", None)):
+        raise SystemExit("[refcv8] ⛔ --r8-v9-labels with an --eval-cache but no --r8-v9-labels-eval: train and "
+                         "eval would be supervised by two different label releases (v9 vs v7.2)")
+    if bool(getattr(args, "r8_nav_from_v9", False)) and not getattr(args, "r8_v9_labels", None):
+        raise SystemExit("[refcv8] ⛔ --r8-nav-from-v9 without --r8-v9-labels: there is no v9 nav token to feed")
+    if (float(args.r8_rc_noise_along_m) < r8train.RC_NOISE_ALONG_M
+            or float(args.r8_rc_noise_lat_m) < r8train.RC_NOISE_LAT_M):
+        raise SystemExit(f"[refcv8] ⛔ route-checkpoint training noise ({args.r8_rc_noise_along_m}, "
+                         f"{args.r8_rc_noise_lat_m}) m is below the E2'-CERTIFIED ({r8train.RC_NOISE_ALONG_M}, "
+                         f"{r8train.RC_NOISE_LAT_M}) m: the CLEAN checkpoint carries future speed (WP-A INTEGRATION "
+                         f"sec. 4)")
+    if getattr(args, "agent_join", None) and not getattr(args, "join_defect_masks", None):
+        # MM binding 2026-10-04 item 6: the 693-box ego-footprint mask is APPLIED on refcv8 (the 8-clip drop list
+        # is NOT -- PI decision 8 is open, the default is keep). WP-C's list reproduces D3's 693 boxes / 18 clips.
+        raise SystemExit("[refcv8] ⛔ --refcv8 with --agent-join needs --join-defect-masks "
+                         "(stack/tanitad/configs/refcv8_join_label_defects.json): the ego-as-agent boxes must be "
+                         "masked on refcv8 (MM binding 2026-10-04)")
+    r = cfg.refcv8
+    r.enable = True
+    r.modulate_base = not bool(args.r8_no_modulate_base)
+    r.base_constraints = bool(args.r8_base_constraints)
+    r.n_alloc = int(args.r8_n_alloc)
+    r.alloc_top_k = int(args.r8_alloc_top_k)
+    r.alloc_emit = bool(args.r8_alloc_emit)
+    r.prior_free_group = bool(args.r8_prior_free_group)
+    r.prior_free_emit = bool(args.r8_prior_free_emit)
+    r.lat_prior_dropout = float(args.r8_lat_prior_dropout)
+    r.cond_dropout = float(args.r8_cond_dropout)
+    r.tf_start, r.tf_end = float(args.r8_tf_start), float(args.r8_tf_end)
+    r.w_cons = float(args.w_r8_cons)
+    r.w_sat = float(args.w_r8_sat)
+    r.w_alloc_l1 = float(args.w_r8_alloc_l1)
+    r.w_listwise = float(args.w_r8_listwise)
+    r.w_subscore = float(args.w_r8_subscore)
+    r.seed = int(args.r8_seed)
+    if r.w_sat > 0.0 and r.n_alloc <= 0:
+        raise SystemExit("[refcv8] --w-r8-sat > 0 with no allocated candidates: L_sat acts on the allocated set "
+                         "only (never the base fan) -- it would train nothing")
+    if r.w_cons <= 0.0:
+        raise SystemExit("[refcv8] --w-r8-cons 0: the constraint heads would be built and never supervised "
+                         "(pass it explicitly; SPEC_WPB uses 0.05 -- the default is 0.0 by the weight invariant)")
+    if r.n_alloc > 0 and r.w_alloc_l1 <= 0.0:
+        raise SystemExit("[refcv8] --r8-n-alloc > 0 with --w-r8-alloc-l1 0: the allocated candidates would be "
+                         "generated and never matched to GT (SPEC_WPB T2 uses 1.0)")
 
 
 def _pin_refcv7(cfg, args) -> None:
@@ -1461,6 +1544,65 @@ def _slot_refine_active(args) -> bool:
             or bool(getattr(args, "vis1_sidecar", None)))
 
 
+def _pin_wpc_fixes(args) -> None:
+    """refcv8 WP-C I1-I3 (``INTEGRATION_WPC.md``; wired by WP-B, 2026-10-04): the three OPT-IN perception-fix flags.
+
+    Each ABSENT is the pre-change code path (no key, no read, no RNG). Each PRESENT is refused here -- before
+    config.json -- when its file is invalid or would be read by nothing (mm-decisions M18):
+
+    * ``--det-nms`` (I1): the centre-distance NMS census of the in-run eval; needs ``--slot-vis1`` (the packs).
+    * ``--det-zh-trust`` (I2): z / h by range of the box3d eval packs; needs ``--slot-vis1``, ``--w-box3d > 0`` and
+      ``--join3d`` (the z / h labels exist only with the 3-D join).
+    * ``--join-defect-masks`` (I3): the ego-box + id-switch masks of the TRAIN join reader; needs ``--agent-join``.
+
+    None of the three reaches the model, the planner or a loss input other than I3's TRAIN labels."""
+    if getattr(args, "det_nms", None):
+        if not bool(getattr(args, "slot_vis1", False)):
+            raise SystemExit(
+                "[v3] ⛔--det-nms without --slot-vis1: the detection packs the NMS census reads exist only "
+                "with VIS-1 targets; the file would be named in config.json and read by nothing (M18).")
+        try:
+            _det_nms.load_head_nms(args.det_nms)
+        except (ValueError, OSError, KeyError, TypeError) as e:
+            raise SystemExit("[v3] ⛔--det-nms %r: %s" % (str(args.det_nms), e)) from None
+    if getattr(args, "det_zh_trust", None):
+        _miss = [n for n, ok in (("--slot-vis1", bool(getattr(args, "slot_vis1", False))),
+                                 ("--w-box3d > 0", float(getattr(args, "w_box3d", 0.0) or 0.0) > 0.0),
+                                 ("--join3d", bool(getattr(args, "join3d", None)))) if not ok]
+        if _miss:
+            raise SystemExit(
+                "[v3] ⛔--det-zh-trust without %s: z / h labels and the matched box3d pairs exist only with "
+                "VIS-1, a box head and the 3-D join; the report would be all-NaN and the file read by nothing "
+                "(M18)." % " / ".join(_miss))
+        try:
+            _det_zh.load_zh_trust(args.det_zh_trust)
+        except (ValueError, OSError, KeyError, TypeError) as e:
+            raise SystemExit("[v3] ⛔--det-zh-trust %r: %s" % (str(args.det_zh_trust), e)) from None
+    if getattr(args, "join_defect_masks", None):
+        if not getattr(args, "agent_join", None):
+            raise SystemExit(
+                "[v3] ⛔--join-defect-masks without --agent-join: the masks act on the agent join's TRAIN "
+                "reader; without it the file would be named in config.json and read by nothing (M18).")
+        try:
+            _jlh.JoinDefectMasks.load(args.join_defect_masks)
+        except (ValueError, OSError, KeyError, TypeError) as e:
+            raise SystemExit("[v3] ⛔--join-defect-masks %r: %s"
+                             % (str(args.join_defect_masks), e)) from None
+
+
+def _wpc_eval_keys(packs, head: str, det_nms_cfg=None, det_zh_cfg=None) -> dict:
+    """refcv8 WP-C I1 + I2: the NEW eval-row keys of one detection head, pooled over the eval packs.
+
+    ``det_nms_cfg`` (``--det-nms``) -> the 13 ``eval_<head>_nms_*`` keys, read at the file's OWN gate (radius and gate
+    are one operating point); ``det_zh_cfg`` (``--det-zh-trust``) -> the ``eval_box3d_zh_*`` keys, box3d only (the
+    agent head has no ``cz`` / ``h``). Both ``None`` -> ``{}``: a default run adds no key and computes nothing. Never
+    touches a declared key and never mutates ``packs``."""
+    out = dict(_det_nms.nms_census_keys(packs, head, det_nms_cfg))
+    if head == "box3d" and det_zh_cfg is not None:
+        out.update(_det_zh.zh_range_keys(packs, "box3d", det_zh_cfg))
+    return out
+
+
 def _pin_slot_refine(cfg, args) -> None:
     """⛔ refcv7 A9: refuse every --slot-* / --vis1-sidecar combination that cannot train.
 
@@ -1492,6 +1634,7 @@ def _pin_slot_refine(cfg, args) -> None:
         except (ValueError, OSError) as e:
             raise SystemExit("[v3] ⛔ --det-presence-gates %r: %s"
                              % (str(args.det_presence_gates), e)) from None
+    _pin_wpc_fixes(args)                 # refcv8 WP-C I1-I3 (OPT-IN; absent = the pre-change path)
     if not _slot_refine_active(args):
         return
     k = _slot_refine_kwargs(args)
@@ -2530,6 +2673,59 @@ REFC_WEIGHT_GATES: dict[str, dict] = {
         "mask": None,
         "already": "_pin_refcv7",
     },
+    # ---- refcv8 WP-B (2026-10-04): the tactical conditioning ----------------------------------------- #
+    # ⛔ ALL FIVE DEFAULT TO 0.0 -- the zero-default invariant `refc_weight_specs` states. `classify` sets
+    # NO_GRAPH on `effective > 0 and gate shut` WITHOUT consulting explicitness, so a non-zero default here would
+    # refuse every run that does not pass --refcv8 (the r7 sub-weight lesson, test_v6_effective_weights). A
+    # refcv8 launch therefore states its weights; `_pin_refcv8` refuses the CONVERSE (seams built, weight 0).
+    "w_r8_cons": {
+        "flag": "--w-r8-cons",
+        "term": "refcv8 constraint heads (masked smooth-L1 on the GT-active lat / lon action query)",
+        # the heads (`cons_lat` / `cons_lon`) are attached to the behaviour decoder by `enable_refcv8`, which
+        # runs only with --refcv8; the decoder exists only with --tac-decoder-v6. Targets: the window's future.
+        "gate": lambda a: (bool(getattr(a, "refcv8", False)) and bool(getattr(a, "tac_decoder_v6", False)),
+                           "--w-r8-cons needs --refcv8 AND --tac-decoder-v6 (no seams => no `r8_cons_lat` in "
+                           "`out`, the term is skipped)"),
+        "mask": None,
+        "already": "_pin_refcv8 (dead flag without --refcv8; --refcv8 with --w-r8-cons 0 refused)",
+    },
+    "w_r8_alloc_l1": {
+        "flag": "--w-r8-alloc-l1",
+        "term": "refcv8 matched L1 on the best allocated candidate of the GT hypothesis",
+        # `r8_losses` returns before this term when `r8_alloc` is absent, i.e. with --r8-n-alloc 0.
+        "gate": lambda a: (bool(getattr(a, "refcv8", False)) and int(getattr(a, "r8_n_alloc", 0) or 0) > 0,
+                           "--w-r8-alloc-l1 needs --refcv8 AND --r8-n-alloc > 0 (no allocated candidates => no "
+                           "`r8_alloc` in `out`, the term is skipped)"),
+        "mask": None,
+        "already": "_pin_refcv8 (dead flag without --refcv8; --r8-n-alloc > 0 with weight 0 refused)",
+    },
+    "w_r8_sat": {
+        "flag": "--w-r8-sat",
+        "term": "refcv8 constraint-satisfaction loss L_sat (allocated candidates only)",
+        "gate": lambda a: (bool(getattr(a, "refcv8", False)) and int(getattr(a, "r8_n_alloc", 0) or 0) > 0,
+                           "--w-r8-sat needs --refcv8 AND --r8-n-alloc > 0 (L_sat acts on the allocated set "
+                           "only, never the base fan)"),
+        "mask": None,
+        "already": "_pin_refcv8 (dead flag without --refcv8; w_sat > 0 with no allocation refused)",
+    },
+    "w_r8_listwise": {
+        "flag": "--w-r8-listwise",
+        "term": "refcv8 listwise soft-target selection CE over the reach survivors (X1; replaces SEL CE)",
+        "gate": lambda a: (bool(getattr(a, "refcv8", False)) and str(getattr(a, "sampler", "none")) == "ddim",
+                           "--w-r8-listwise needs --refcv8 AND --sampler ddim (the r8 selection path rides the "
+                           "DDIM fan)"),
+        "mask": None,
+        "already": "_pin_refcv8 (dead flag without --refcv8; --refcv8 needs --sampler ddim)",
+    },
+    "w_r8_subscore": {
+        "flag": "--w-r8-subscore",
+        "term": "refcv8 Hydra-style per-candidate sub-score critics (X1h BCE)",
+        # the critic heads are built IFF --refcv8 and w_subscore > 0 (G-DVB `_c_sub` reads it off the model)
+        "gate": lambda a: (bool(getattr(a, "refcv8", False)),
+                           "--w-r8-subscore needs --refcv8 (no seams => no `r8_sub_logits`)"),
+        "mask": None,
+        "already": "_pin_refcv8 (dead flag without --refcv8) + G-DVB `w_r8_subscore` (head built iff weight)",
+    },
 }
 
 
@@ -2661,6 +2857,16 @@ def _check_goal_point_args(args) -> None:
 
 
 class V3Dataset(RouteV21Dataset):
+    #: ⭐ refcv8 X4 (D1 F2): the v7 negative policy of THIS split, snapshotted right after its labels load
+    #: (`r8train.V7PolicyScope`) and applied around every target computation -- so a worker computes the train
+    #: targets under the TRAIN policy whatever was loaded last. None = the legacy (module-state) behaviour.
+    _v7_scope = None
+    #: ⭐ refcv8 WP-B: the v9 per-frame join (`r8train.R8LabelJoin`), keyed (sid, k = t + w - 1 + raw offset).
+    r8_join = None
+    #: feed the v9 per-frame announced nav token as `nav_cmd` (R8-2), instead of the per-clip v7 token
+    r8_nav_from_v9 = False
+    #: the v9 release SUPERVISES lat / lon (partial labels) and the 22 goals instead of v7.2 (set by enable_r8_v9)
+    r8_v9_targets = False
     #: clip-stable-id -> V7Label, or None for the kin3 path. Set by the trainer
     #: rather than passed through the ctor, because the base class owns the
     #: signature and widening it would touch every RouteV21 consumer.
@@ -3803,6 +4009,26 @@ class V3Dataset(RouteV21Dataset):
         g0, dt, _src = self._clock_for(ep)
         return float(g0) + (r + self._raw_offset(ep)) * float(dt)
 
+    def enable_r8_v9(self, join, *, targets: bool = True) -> dict:
+        """Attach the v9 join (refcv8 WP-B) and JOIN EVERY WINDOW NOW, through the reader's own refusing lookup
+        (``row_for_now``: unknown clip, frame outside the clip, or |release now_s - trainer now_s| > 1e-6 s), so a
+        bad join fails at launch and never mid-run. Returns the census config.json stamps; ``rows`` (the joined
+        release rows, one per window) is what the goal census counts over."""
+        import numpy as _npx
+        w = int(self.window)
+        rows = _npx.empty(len(self.index), dtype=_npx.int64)
+        sids = set()
+        for i, (e_i, t) in enumerate(self.index):
+            ep = self.episodes[e_i]
+            sid = int(ep.episode_id)
+            sids.add(sid)
+            rows[i] = join.row(sid, int(t) + w - 1 + self._raw_offset(ep), self._now_s(ep, t))
+        self.r8_join = join
+        self.r8_v9_targets = bool(targets)
+        return {"n_windows": int(len(rows)), "n_joined": int(len(rows)), "n_clips": len(sids),
+                "n_tactical_excluded_clips": len(sids & set(self.tactical_excluded_sids)),
+                "key": "(sid, k = t + w - 1 + raw_offset), now_s checked to 1e-6 s", "rows": rows}
+
     def enable_clip_clock(self, sidecar_path: str | None = None) -> dict:
         """Resolve every episode's clock ONCE and return the census config.json stamps.
 
@@ -3885,11 +4111,13 @@ class V3Dataset(RouteV21Dataset):
             lab = self.v7_by_sid.get(int(ep.episode_id))
             if int(ep.episode_id) in self.tactical_excluded_sids:
                 lab = None            # G3 eval mode: no measured clock -> tactical EXCLUDED
+            _scope = self._v7_scope.applied() if self._v7_scope is not None else _nullctx()
             if lab is None:
                 lat_v7 = lon_v7 = v7l.IGNORE_ID       # clip has no record
             else:
-                lat_v7, lon_v7 = v7l.tactical_class_ids(
-                    lab, self._now_s(ep, t))
+                with _scope:
+                    lat_v7, lon_v7 = v7l.tactical_class_ids(
+                        lab, self._now_s(ep, t))
             item["lat_v7"] = torch.tensor(lat_v7, dtype=torch.long)
             item["lon_v7"] = torch.tensor(lon_v7, dtype=torch.long)
             # ---- --w-tac-goal: the 22-token goal SET target ---------------
@@ -3908,10 +4136,11 @@ class V3Dataset(RouteV21Dataset):
                     _tg_y = (0.0,) * _n_tg
                     _tg_w = (v7l.IGNORE_W,) * _n_tg
                 else:
-                    _tg_y, _tg_w = v7l.tactical_goal_targets(
-                        lab, self._now_s(ep, t),
-                        negatives=self.tac_goal_negatives,
-                        sidecar=self.cot_negative_sidecar)
+                    with (self._v7_scope.applied() if self._v7_scope is not None else _nullctx()):
+                        _tg_y, _tg_w = v7l.tactical_goal_targets(
+                            lab, self._now_s(ep, t),
+                            negatives=self.tac_goal_negatives,
+                            sidecar=self.cot_negative_sidecar)
                 item["tac_goal_y"] = torch.tensor(_tg_y, dtype=torch.float32)
                 item["tac_goal_w"] = torch.tensor(_tg_w, dtype=torch.float32)
         # ---- --nav-from-v7: the nav INPUT from the clip's v7.2 token -------
@@ -3987,7 +4216,38 @@ class V3Dataset(RouteV21Dataset):
             item.update(self._map_fine_item(
                 ep, t + w - 1, int(item.get("map_raw_frame", -1))))
             item["map_ep"] = torch.tensor(int(ep.episode_id), dtype=torch.long)
+        # ---- refcv8 WP-B: the v9 per-frame nav + route checkpoint (v9 SPEC sec. 2.1 key) -----------
+        if self.r8_join is not None:
+            _j8 = self.r8_join.item(int(ep.episode_id), int(t) + int(w) - 1 + self._raw_offset(ep),
+                                    self._now_s(ep, t))
+            item.update({_k: _v for _k, _v in _j8.items() if not _k.startswith("v9_")})
+            _tok8 = int(item.pop("r8_nav_token"))
+            if self.r8_nav_from_v9:
+                item["nav_cmd"] = torch.tensor(R8_V9_NAV_TO_NAV_CMD[_tok8], dtype=torch.long)
+                item["nav_valid"] = torch.tensor(True)
+            if self.r8_v9_targets:
+                # the v9 TARGETS replace v7.2's (frozen v7 ids, D-WPA-2); a G3-excluded clip stays IGNORED, as above
+                _x8 = int(ep.episode_id) in self.tactical_excluded_sids
+                _ig = torch.tensor(v7l.IGNORE_ID, dtype=torch.long)
+                item["lat_v7"] = _ig if _x8 else _j8["v9_lat"]
+                item["lon_v7"] = _ig if _x8 else _j8["v9_lon"]
+                item["lat_allowed_v7"] = _j8["v9_lat_allowed"] & (not _x8)
+                item["lon_allowed_v7"] = _j8["v9_lon_allowed"] & (not _x8)
+                if self.tac_goal_targets:
+                    item["tac_goal_y"] = _j8["v9_goal_y"]
+                    item["tac_goal_w"] = _j8["v9_goal_w"] * (0.0 if _x8 else 1.0)
         return item
+
+
+#: refcv8: v9 `nav_token` {FOLLOW 0, TURN_L 1, TURN_R 2} (v9 SPEC sec. 5.2 order) -> refc.NAV_COMMANDS index
+#: {follow 0, left 1, right 2} -- WP-A INTEGRATION.md sec. 3.2 ("the same 3-way index the trainer's nav one-hot
+#: already reads"); pinned by tests/test_refcv8_v9_wiring.py against refc.NAV_COMMANDS.
+R8_V9_NAV_TO_NAV_CMD = {0: 0, 1: 1, 2: 2}
+
+
+def _nullctx():
+    import contextlib
+    return contextlib.nullcontext()
 
 
 def _synth_episodes(n: int, cfg: refc.RefCConfig, seed: int = 0,
@@ -4582,7 +4842,18 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
                 "[v3] ⛔ --map-hires on without a 0.25 m lift bank or `map_ep`: the "
                 "one lift would sample the trunk at no camera.")
         _pgrid, _pvalid = _hbank.for_episodes(batch["map_ep"], device=device)
-    out = model(frames, nav_cmd=nav_cmd, v0=v0, steps=steps, lan=lan,
+    # ⭐ refcv8 WP-B: the GT hypothesis + constraint targets + the scheduled-sampling teacher (one-shot on the model)
+    # and the nav-argument / route-checkpoint inputs with their TRAINING dropouts -- all BEFORE the forward.
+    _r8_prep = None
+    if bool(getattr(model, "r8_enabled", False)):
+        _tt = refb_labels.waypoint_targets(pose_last, fut_ext, core.trajectory.horizons)
+        _svv = torch.stack([fut_valid[:, h - 1] for h in core.trajectory.horizons], dim=1)
+        _r8_prep = r8train.r8_before_forward(model, batch, device, _tt, _svv, pose_last, fut_ext,
+                                             fut_valid, v0)
+    # refcv8: the r8 inputs ride a wrapper, so the refcv7 call below -- and the pinned mutation anchor of
+    # test_refc_v3_agent_gt_reaches_forward -- is byte-for-byte the tip's. None -> the model itself.
+    _fwd = model if _r8_prep is None else (lambda *_a, **_k: model(*_a, **_k, **_r8_prep["fwd"]))
+    out = _fwd(frames, nav_cmd=nav_cmd, v0=v0, steps=steps, lan=lan,
                 ego_state=ego_state, nav_args=nav_args,
                 v_max_ms=v_max_ms, v_max_valid=v_max_valid,
                 agent_gt=agent_gt,
@@ -4810,7 +5081,10 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
                    / sv.sum(-1, keepdim=True).clamp_min(1.0))     # [B, N]
         loss_sel = v3.selection_ce(out["sel_score_v3"], fan_err.detach(),
                                    out.get("reach_keep"))
-        loss = loss + SEL_V3_WEIGHT * loss_sel
+        # ⭐ refcv8 X1: with `w_listwise > 0` the listwise soft-target term (r8train.r8_losses) REPLACES this
+        # single-winner CE -- multiplied by 0, never guarded, so its graph and telemetry stay identical.
+        _r8_lw = (_r8_prep is not None and float(cfg.refcv8.w_listwise) > 0.0)
+        loss = loss + (0.0 if _r8_lw else SEL_V3_WEIGHT) * loss_sel
         extra["sel_v3"] = loss_sel
         extra["goal_gate"] = model.goal_gate.detach()
         # ⭐ CAVEAT-B (PI 2026-09-02): the gate value alone cannot distinguish
@@ -5329,6 +5603,15 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
             goal_pos_weight=getattr(model, "_tac_goal_pos_weight", None),
             goal_class_mask=getattr(model, "_tac_goal_class_mask", None),
             ignore_index=v7l.IGNORE_ID)
+        if "lat_allowed_v7" in batch:
+            # refcv8 v9: partial labels (-log sum_allowed p). An exact row's mask is its one bit (censused at load),
+            # so the combined mean over exact + partial rows REPLACES the exact-only CE inside the same weight.
+            _pc8, _pt8 = r8train.v9_partial_correction(
+                out["tacv6_lat_logits"], out["tacv6_lon_logits"], batch["lat_v7"].to(device),
+                batch["lon_v7"].to(device), batch["lat_allowed_v7"].to(device), batch["lon_allowed_v7"].to(device),
+                v6tac.TacticalLossWeights(), ignore_index=v7l.IGNORE_ID)
+            _t6_loss = _t6_loss + _pc8
+            extra.update(_pt8)
         loss = loss + _w_t6 * _t6_loss
         # ⭐⭐ THE TACTICAL TERM, EXPOSED TO THE GRADIENT-CONFLICT DETECTOR.
         # PI RULING 2026-09-17 R3 names the detector as the mitigation for a
@@ -5580,7 +5863,10 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
                             0, _sel3.to(batch["agent_ep"].device))
                             if "agent_ep" in batch else None),
                         cls_weight=getattr(model, "_cls_class_weight", None),
-                        with_match=not model.training)
+                        with_match=not model.training,
+                        # refcv8 WP-C I2: EVAL packs only, and only with --det-zh-trust (default: the tip's pack)
+                        with_zh_range=(bool(getattr(model, "_det_zh_range", False))
+                                       and not model.training))
                     extra.update(_det_metrics.train_row_keys(_pk_b3, "box3d"))
                     if not model.training:
                         extra["_det_pack_box3d"] = _pk_b3
@@ -5706,6 +5992,12 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
                 extra["r7_sel_oracle_best"] = float(_agg.max(dim=1).values.mean())
                 extra["r7_sel_oracle_random"] = float(_agg.mean())
 
+    # ---- refcv8 WP-B losses (constraint heads, allocated matched L1, L_sat, listwise, sub-scores) --------------- #
+    if _r8_prep is not None:
+        _l8, _t8 = r8train.r8_losses(model, out, _r8_prep, traj_tgt, slot_valid)
+        loss = loss + _l8
+        extra["r8_total"] = _l8.detach()
+        extra.update(_t8)
     return {"loss": loss, "traj": loss_traj, "cls": loss_cls, "law": loss_law,
             "route": loss_route, "lat": loss_lat, "lon": loss_lon,
             "lat_tac": loss_lat_tac, "lon_tac": loss_lon_tac,
@@ -8051,6 +8343,8 @@ def train(args) -> dict:
     # ⭐⭐ refcv7 A9 R3: VIS-1 travels ON THE MODEL for the same reason -- the loss-time
     # batch block (`_vis1_batch_block`) has no `args`. G-DVB reads it back.
     model._vis1 = bool(getattr(args, "slot_vis1", False))
+    # refcv8 WP-C I2 (OPT-IN): the box3d EVAL packs also carry pair_zh_range / pair_h_err (refcv7_loader mirrors this)
+    model._det_zh_range = bool(getattr(args, "det_zh_trust", None))
     # ---- refcv7 NEW-2 + A6/A7 (SPEC_REFCV7 §6.2, §11, §12): THE MAP AT 10 cm -- #
     # ⛔ BUILT FIRST -- before the perception branch, because under A6 that branch's
     # planner pool reads THIS branch's 0.25 m encoder (its width and grid are read off
@@ -8463,6 +8757,8 @@ def train(args) -> dict:
                                               allow_oracle_nav=True)
         by_sid = {stable_episode_id(l.clip_id): l for l in labels}
         ds.v7_by_sid = by_sid
+        # ⭐ refcv8 X4: snapshot THIS split's v7 policy NOW, before the eval load overwrites the module state.
+        ds._v7_scope = r8train.v7_scope_for(v7l)     # None when the policy travels on the labels (WP-A fix)
         ds.v7_dt = 0.1
         # ⭐⭐ A16 2026-09-26: the label clock (tanitad/data/clip_clock.py), resolved ONCE.
         clip_clock_stats = ds.enable_clip_clock(getattr(args, "clip_clock_sidecar", None))
@@ -8637,6 +8933,38 @@ def train(args) -> dict:
             # split — and handed down to the eval dataset unchanged.
             if getattr(args, "nav_args", False):
                 nav_args_stats = ds.enable_nav_args()
+    # ---- refcv8 WP-B: the v9 release (WP-A INTEGRATION.md) -- inputs + targets, joined on the trainer's clock -- #
+    r8_v9_stats = None
+    if getattr(args, "r8_v9_labels", None):
+        _j8 = r8train.load_v9_join(args.r8_v9_labels, expect_md5=args.r8_v9_md5,
+                                   rc_variant=args.r8_rc_variant, lat_variant=args.r8_v9_lat_variant)
+        ds.r8_nav_from_v9 = bool(getattr(args, "r8_nav_from_v9", False))
+        _c8 = ds.enable_r8_v9(_j8, targets=True)
+        r8_v9_stats = {"train": dict(_j8.manifest, join={_k: _v for _k, _v in _c8.items() if _k != "rows"})}
+        print("[v3] refcv8 v9 release %s (md5 %s): %d windows joined over %d clips, census %s"
+              % (_j8.manifest["split"], _j8.manifest["md5"][:8], _c8["n_joined"], _c8["n_clips"],
+                 _j8.manifest["census"]["violations"]), flush=True)
+        if ds.tac_goal_targets:
+            # ⛔ the goal pos_weight / class mask are re-derived FROM THE v9 TRAIN WINDOWS (never the v7.2
+            # per-clip census): the BCE is now over v9's per-frame cells.
+            _cen8 = r8train.v9_goal_census(_j8, _c8["rows"])
+            _msk8 = _tac_goal_head.mask_report(_cen8)
+            _cap8 = float(_inspect.signature(v7l.goal_pos_weight).parameters["cap"].default)
+            _pw8 = r8train.v9_goal_pos_weight(_cen8, v7l.TAC_GOAL_TOKENS, _cap8)
+            model._tac_goal_pos_weight = torch.tensor(_pw8, dtype=torch.float32)
+            model._tac_goal_class_mask = torch.tensor(_msk8["mask"], dtype=torch.float32)
+            tac_goal_stats = {"source": "v9", "release_md5": _j8.manifest["md5"],
+                              "n_trainable": int(_msk8["n_trainable"]), "n_total": int(_msk8["n_total"]),
+                              "trainable": list(_msk8["trainable"]), "masked_why": _msk8["masked_why"],
+                              "pos_weight": [float(x) for x in _pw8], "census": _cen8,
+                              "pos_weight_cap": _cap8,
+                              "n_on_pos_weight_cap": int(sum(1 for x in _pw8 if x >= _cap8 - 1e-6)),
+                              "n_under_scoreability_floor": int(sum(
+                                  1 for _t in vocab_v7.TACTICAL_GOAL_TOKENS_V7
+                                  if int(_cen8.get(_t, {}).get("pos", 0)) < vocab_v7.GOAL_MIN_N_FOR_METRIC)),
+                              "scoreability_floor_n": int(vocab_v7.GOAL_MIN_N_FOR_METRIC)}
+            if tac_goal_stats["n_trainable"] == 0:
+                raise SystemExit("[refcv8] ⛔ the v9 goal census leaves ZERO trainable goal classes")
     # ---- refcv5 WP-6: the obstacle.offline join (E-AGT-HEAD labels) -------
     # ⛔ The reader is RESTRICTED to this corpus's episode ids. The full train
     # join is 433,040 records / 12.1 M boxes and costs ~2.1 GB RSS (MEASURED
@@ -8648,6 +8976,8 @@ def train(args) -> dict:
     join3d_stats = eval_join3d_stats = None
     vis1_stamp = vis1_stats = eval_vis1_stats = _vis1_sc = None     # refcv7 A9 R3
     det_gates = None                     # refcv7 diagnostics F4: per-head gates (OPT-IN)
+    det_nms_cfg = None                   # refcv8 WP-C I1: per-head NMS radius + gate (OPT-IN)
+    det_zh_cfg = None                    # refcv8 WP-C I2: z / h range trust table (OPT-IN)
     calib_dl = calib_stamp = None        # refcv7 A10 §15.3: the INFORMATIVE TRAIN P = R gate
     join_digest = _verify_agent_join(args)
     if getattr(args, "agent_join", None):
@@ -8660,7 +8990,11 @@ def train(args) -> dict:
             # refcv6 §6: the 3-D join is keyed BY TRACK, so the 2-D rows must
             # carry their track ids or `cz`/`h` could only be aligned by
             # position. Paid for ONLY when --join3d is actually passed.
-            with_track_ids=bool(getattr(args, "join3d", None)))
+            with_track_ids=bool(getattr(args, "join3d", None)),
+            # refcv8 WP-C I3 (OPT-IN): the ego-as-agent rows removed and the id-switch rate rows MASKED, at
+            # read time, TRAIN reader only (the eval reader below is deliberately unmasked). None = the tip reader.
+            defect_masks=(_jlh.JoinDefectMasks.load(args.join_defect_masks)
+                          if getattr(args, "join_defect_masks", None) else None))
         print(f"[v3] agent join loaded: {_rd.n_records} records / "
               f"{_rd.n_clips} clips (filtered out "
               f"{_rd.n_records_filtered_out}) in {time.time() - _t_join:.1f} s")
@@ -8677,6 +9011,9 @@ def train(args) -> dict:
             _rd, pad=int(getattr(args, "agent_pad", 0)),
             allow_legacy_ids=bool(getattr(
                 args, "agent_join_allow_legacy_ids", False)))
+        if _rd.defect_masks is not None:         # refcv8 WP-C I3: the counts + the list's sha256 (absent by default)
+            agent_stats["defect_masks"] = _rd.defect_stats()
+            print("[v3] WP-C join defect masks: %s" % (agent_stats["defect_masks"],), flush=True)
     # ---- refcv6 §2/§6: the SAM3 map GT and the 3-D cuboid join ------------ #
     # ⛔ AFTER `enable_agent_join`, because `_agent_item` is what widens to 3-D
     # and the coverage census below walks the same window index.
@@ -8772,6 +9109,16 @@ def train(args) -> dict:
             calib_stamp["presence_gates"] = _dg_stamp        # absent for a default run
             print("[v3] refcv7 per-head detection gates %s (file sha256 %s)"
                   % (det_gates, _dg_stamp["sha256"][:12]), flush=True)
+        if getattr(args, "det_nms", None):          # refcv8 WP-C I1 (OPT-IN)
+            det_nms_cfg, _dn_stamp = _det_nms.load_head_nms(args.det_nms)
+            calib_stamp["det_nms"] = _dn_stamp            # absent for a default run
+            print("[v3] WP-C per-head NMS %s (file sha256 %s)"
+                  % (det_nms_cfg, _dn_stamp["sha256"][:12]), flush=True)
+        if getattr(args, "det_zh_trust", None):     # refcv8 WP-C I2 (OPT-IN)
+            det_zh_cfg, _dz_stamp = _det_zh.load_zh_trust(args.det_zh_trust)
+            calib_stamp["det_zh_trust"] = _dz_stamp       # absent for a default run
+            print("[v3] WP-C z/h range trust: near field %.1f m (file sha256 %s)"
+                  % (det_zh_cfg["near_field_m"], _dz_stamp["sha256"][:12]), flush=True)
         if _cal_pos:
             calib_dl = torch.utils.data.DataLoader(
                 torch.utils.data.Subset(ds, _cal_pos), batch_size=args.batch,
@@ -8811,6 +9158,7 @@ def train(args) -> dict:
             e_lab, e_man = v7l.load_v7_labels(args.eval_labels,
                                               allow_oracle_nav=True)
             e_ds.v7_by_sid = {stable_episode_id(l.clip_id): l for l in e_lab}
+            e_ds._v7_scope = r8train.v7_scope_for(v7l)        # refcv8 X4: the EVAL split's own policy
             e_ds.v7_dt = 0.1
             eval_clip_clock_stats = e_ds.enable_clip_clock(
                 getattr(args, "clip_clock_sidecar", None))
@@ -8870,6 +9218,14 @@ def train(args) -> dict:
                 e_ds.tac_goal_targets = True
                 e_ds.tac_goal_negatives = str(getattr(
                     args, "tac_goal_negatives", "measured"))
+            # ---- refcv8 WP-B: the v9 EVAL release, joined + censused exactly like the train one ------------- #
+            if getattr(args, "r8_v9_labels_eval", None):
+                _j8e = r8train.load_v9_join(args.r8_v9_labels_eval, expect_md5=args.r8_v9_eval_md5,
+                                            rc_variant=args.r8_rc_variant, lat_variant=args.r8_v9_lat_variant)
+                e_ds.r8_nav_from_v9 = bool(getattr(args, "r8_nav_from_v9", False))
+                _c8e = e_ds.enable_r8_v9(_j8e, targets=True)
+                r8_v9_stats["eval"] = dict(_j8e.manifest,
+                                           join={_k: _v for _k, _v in _c8e.items() if _k != "rows"})
             # ⭐ E16 — the eval dataset is fed the SAME ceiling channel.
             # ⚠️ No normaliser is handed down and none is fitted: the ladder
             # is PINNED road law, not a statistic of the split, which is
@@ -9359,6 +9715,14 @@ def train(args) -> dict:
         # ⛔ Its scene sources are read off the BUILT decoder -- this block
         # once hard-coded AGENT-ONLY and would have mislabelled every R2 arm.
         "refcv6_tactical": _refcv6_tactical_block(args, model, tac_goal_stats),
+        # ⭐ refcv8 WP-B: every switch + the dedicated seed + the new-parameter count (None on a refcv7 arm)
+        "refcv8": (dict(model.cfg.refcv8.to_dict(), n_params=int(getattr(model, "r8_n_params", 0)),
+                         rc_dropout=float(args.r8_rc_dropout), nav_args_dropout=float(args.r8_nav_args_dropout),
+                         v7_policy_scope=(ds._v7_scope.to_dict() if getattr(ds, "_v7_scope", None) else None),
+                         v7_policy_travels=bool(r8train.v7_policy_travels(v7l)),
+                         rc_noise_m=[float(args.r8_rc_noise_along_m), float(args.r8_rc_noise_lat_m)],
+                         no_rc=bool(getattr(args, "r8_no_rc", False)), v9=r8_v9_stats)
+                    if bool(getattr(model, "r8_enabled", False)) else None),
         # ⭐⭐ refcv6 §5 — the 4-way one-hot set-speed census.
         # ⭐⭐ A16 2026-09-26: WHICH clock read the labels, and how many clips fell back.
         "label_clock": ({"train": clip_clock_stats, "eval": eval_clip_clock_stats}
@@ -9487,6 +9851,13 @@ def train(args) -> dict:
             args.withheld_bank if _wb_active else "fixed")
         # ⭐ step-cost lever 2: `_logged_after` is the SAME test the log block below uses (the
         # post-increment step), so every row that is written still carries every key.
+        if bool(getattr(model, "r8_enabled", False)):
+            _r8c = model.cfg.refcv8
+            model._r8_tf_ratio = r8train.tf_ratio(step, args.steps, _r8c.tf_start, _r8c.tf_end)
+            model._r8_rc_dropout = float(args.r8_rc_dropout)
+            model._r8_nav_args_dropout = float(args.r8_nav_args_dropout)
+            model._r8_rc_noise = (float(args.r8_rc_noise_along_m), float(args.r8_rc_noise_lat_m))
+            model._r8_no_rc = bool(getattr(args, "r8_no_rc", False))
         losses = compute_losses_v3(model, batch, device, mode=args.mode,
                                    ablate_frames=args.ablate_frames,
                                    log_metrics=_logged_after(step, args.log_every, args.steps))
@@ -9789,6 +10160,12 @@ def train(args) -> dict:
                     # ⭐ refcv7 diagnostics F4: the census AT the per-head gate, NEW keys only
                     # (`{}` unless --det-presence-gates; never read by the planner)
                     for _dk, _dv in _det_metrics.gated_census_keys(_pk, _hd, det_gates).items():
+                        erow[_dk] = (None if (isinstance(_dv, float) and _dv != _dv)
+                                     else round(float(_dv), 5))
+                    # ⭐ refcv8 WP-C I1 + I2: the census AFTER centre-distance NMS (eval_<head>_nms_*) and box3d
+                    # z / h BY RANGE (eval_box3d_zh_*), NEW keys only -- `{}` for a default run; never read by the
+                    # planner or a loss. ONLY the eval_box3d_zh_nearfield_* z / h keys are quotable.
+                    for _dk, _dv in _wpc_eval_keys(_pk, _hd, det_nms_cfg, det_zh_cfg).items():
                         erow[_dk] = (None if (isinstance(_dv, float) and _dv != _dv)
                                      else round(float(_dv), 5))
                     if erow.get(f"eval_{_hd}_conf_ratio_alarm") == 1.0:
@@ -10409,6 +10786,13 @@ def build_parser() -> argparse.ArgumentParser:
                          "joins/train2400_agents.jsonl.xz (2,308 clips, "
                          "433,040 frames, md5 "
                          "24cbdca8c3b23aafc2fb17e6bf99cf76).")
+    g5.add_argument("--join-defect-masks", default=None,
+                    help="refcv8 WP-C I3 / fixes 3+4 (OPT-IN): the join label-defect list "
+                         "(tanitad.join_label_defects/1, sha12-keyed; "
+                         "stack/tanitad/configs/refcv8_join_label_defects.json, mined from the train2400 join). "
+                         "The TRAIN join reader drops the ego-as-agent boxes and MASKS the id-switch rate rows; "
+                         "the EVAL reader is unmasked (eval comparability with refcv7). Counts + sha256 in "
+                         "config.json[agent_join_stats][train][defect_masks]. Needs --agent-join.")
     g5.add_argument("--agent-pad", type=int, default=0,
                     help="targets per window in the padded block. 0 = the "
                          "join's own MEASURED max, so nothing is truncated "
@@ -10475,6 +10859,19 @@ def build_parser() -> argparse.ArgumentParser:
                          "at those gates under NEW keys eval_<head>_gated_* (conf_ratio, its A10 "
                          "alarm, precision/recall/F1); the declared 0.5-gate keys keep their "
                          "meaning. Never reaches the planner. Needs --slot-vis1.")
+    g5.add_argument("--det-nms", default=None,
+                    help="refcv8 WP-C I1 / F4b (OPT-IN): the per-head centre-distance NMS JSON "
+                         "(tanitad.det_nms/1: radius_m + gate + p_floor per head; "
+                         "stack/tanitad/configs/refcv7_det_nms_train.json is bound to refcv7-r101-s0 @ 50,400 -- a "
+                         "refcv8 checkpoint needs its own, INTEGRATION_WPC I4). The in-run eval ALSO reports the "
+                         "census after NMS at the file's own gate under NEW keys eval_<head>_nms_*; the declared "
+                         "keys keep their meaning. Never reaches the planner or a loss. Needs --slot-vis1.")
+    g5.add_argument("--det-zh-trust", default=None,
+                    help="refcv8 WP-C I2 / fix 5 (OPT-IN): the z / h range-trust JSON (tanitad.det_zh_trust/1, "
+                         "stack/tanitad/configs/refcv8_box_zh_range_trust.json). The in-run eval ALSO reports box3d "
+                         "z / h error BY RANGE under NEW keys eval_box3d_zh_*; bins beyond the derived near field "
+                         "(30 m) are flagged low-trust and ONLY the eval_box3d_zh_nearfield_* keys may be quoted. "
+                         "Needs --slot-vis1, --w-box3d > 0 and --join3d.")
     g5.add_argument("--agent-presence-hard", action="store_true",
                     help="hard-mask sub-threshold slots instead of soft "
                          "scaling. Soft is the default BECAUSE a hard mask has "
@@ -11047,6 +11444,55 @@ def build_parser() -> argparse.ArgumentParser:
     # ---- refcv7 (PI 2026-09-19): DrivoR's proven planning heads ---------- #
     # `Project Steering/SPEC_REFCV7.md`. ⛔ A run that passes none of these is
     # BIT-IDENTICAL to refcv6 (`test_refcv7_model.py`).
+    # ---- refcv8 WP-B (PI 2026-10-04 R8-3 / R8-4): tactical conditioning -------------------------------- #
+    # `TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/DESIGN.md`.
+    # ⛔ A run that passes none of these is BIT-IDENTICAL to refcv7 (`test_refcv8_warm_start.py`).
+    g8 = ap.add_argument_group("refcv8 WP-B (tactical conditioning)")
+    g8.add_argument("--refcv8", action="store_true",
+                    help="build the refcv8 seams (zero-init): per-candidate hypothesis modulation, constraint heads, "
+                         "factorised selection, route-checkpoint + nav-args conditioning")
+    g8.add_argument("--r8-n-alloc", type=int, default=0, help="M allocated candidates over the top-k hypotheses")
+    g8.add_argument("--r8-alloc-top-k", type=int, default=4)
+    g8.add_argument("--r8-alloc-emit", action="store_true", help="allow the allocated candidates to be EMITTED")
+    g8.add_argument("--r8-prior-free-group", action="store_true", help="X2b: + a prior-free duplicate of every anchor")
+    g8.add_argument("--r8-prior-free-emit", action="store_true")
+    g8.add_argument("--r8-lat-prior-dropout", type=float, default=0.0, help="X2a: P(kappa0 -> 0) per training row")
+    g8.add_argument("--r8-cond-dropout", type=float, default=0.15, help="p_uncond on phi (CFG 2207.12598)")
+    g8.add_argument("--r8-tf-start", type=float, default=1.0)
+    g8.add_argument("--r8-tf-end", type=float, default=0.25)
+    g8.add_argument("--w-r8-cons", type=float, default=0.0,
+                    help="constraint-head weight; REQUIRED > 0 with --refcv8 (SPEC_WPB: 0.05). Default 0.0 = the "
+                         "REFC_WEIGHT_GATES zero-default invariant")
+    g8.add_argument("--w-r8-sat", type=float, default=0.0)
+    g8.add_argument("--w-r8-alloc-l1", type=float, default=0.0,
+                    help="matched L1 on the allocated candidates; REQUIRED > 0 with --r8-n-alloc > 0 (SPEC_WPB: "
+                         "1.0). Default 0.0 = the zero-default invariant")
+    g8.add_argument("--w-r8-listwise", type=float, default=0.0,
+                    help="X1: > 0 REPLACES the E9 single-winner CE by the listwise soft-target CE")
+    g8.add_argument("--w-r8-subscore", type=float, default=0.0, help="X1h: Hydra-style per-candidate critics")
+    g8.add_argument("--r8-base-constraints", action="store_true")
+    g8.add_argument("--r8-no-modulate-base", action="store_true")
+    g8.add_argument("--r8-rc-dropout", type=float, default=0.3, help="route-checkpoint dropout (>= 0.3, MM binding)")
+    g8.add_argument("--r8-nav-args-dropout", type=float, default=0.5,
+                    help="nav-argument dropout (token kept, args 'unknown'); NavSim-legal agents get no distance")
+    g8.add_argument("--r8-v9-labels", default=None,
+                    help="the WP-A v9 release npz (train): nav + route-checkpoint INPUTS and the lat / lon / goal "
+                         "TARGETS (replacing v7.2's), joined on the trainer's clock")
+    g8.add_argument("--r8-v9-labels-eval", default=None, help="the v9 release npz (eval139)")
+    g8.add_argument("--r8-v9-md5", default=r8train.V9_RELEASE_MD5["train"],
+                    help="the md5 the train release must have (refused otherwise)")
+    g8.add_argument("--r8-v9-eval-md5", default=r8train.V9_RELEASE_MD5["eval139"])
+    g8.add_argument("--r8-v9-lat-variant", default="a", choices=("a", "b"),
+                    help="v9 lateral variant: a junction (default, D-WPA-1), b heading (the pre-registered arm)")
+    g8.add_argument("--r8-rc-variant", default="A50", choices=("A30", "A50", "A80", "B"))
+    g8.add_argument("--r8-rc-noise-along-m", type=float, default=2.0,
+                    help="training noise on a kept route checkpoint, along-track sigma (>= 2.0, WP-A E2')")
+    g8.add_argument("--r8-rc-noise-lat-m", type=float, default=0.75,
+                    help="training noise, lateral sigma in the route-tangent frame (>= 0.75)")
+    g8.add_argument("--r8-no-rc", action="store_true",
+                    help="never feed the route checkpoint (the switch-off while the RC ruling awaits the PI)")
+    g8.add_argument("--r8-nav-from-v9", action="store_true", help="R8-2: the per-frame announced nav token")
+    g8.add_argument("--r8-seed", type=int, default=20261004, help="the DEDICATED generator's seed")
     g7 = ap.add_argument_group("refcv7 (DrivoR heads on refcv6)")
     g7.add_argument("--refcv7", action="store_true",
                     help="build the WTA proposal decoder (64 learned queries, one "

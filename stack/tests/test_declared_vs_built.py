@@ -265,7 +265,24 @@ def test_GDVB_every_trainer_flag_has_an_entry_and_every_entry_is_well_formed():
     # map_head_hires.register_dvb_levers)
     # + NEW-2 R2's --map-hires-near-lift-m (SPEC_REFCV7 A12, the 0.1 m near-range lift)
     # + NEW-2 R3's --map-hires-near-refine-blocks (SPEC_REFCV7 §20, A15, the decoder lever)
-    assert len(dvb.REGISTRY) == 223
+    # refcv8 WP-C I1-I3 (INTEGRATION_WPC, wired by WP-B 2026-10-04): +3 = --det-nms, --det-zh-trust,
+    # --join-defect-masks, all "data", registered in declared_vs_built itself (223 -> 226)
+    # refcv8 WP-B (2026-10-04): +30 = --refcv8 and its 29 --r8-* / --w-r8-* flags (incl. the v9 wiring's
+    # --r8-v9-md5, --r8-v9-eval-md5, --r8-v9-lat-variant, --r8-rc-noise-along-m, --r8-rc-noise-lat-m,
+    # --r8-no-rc), registered by `tanitad.train.refcv8_train._register_gdvb` (226 -> 256)
+    assert len(dvb.REGISTRY) == 256
+    for d in ("r8_v9_md5", "r8_v9_eval_md5", "r8_v9_lat_variant"):
+        assert dvb.REGISTRY[d].kind == "data", d
+    for d in ("r8_rc_noise_along_m", "r8_rc_noise_lat_m", "r8_no_rc"):
+        assert dvb.REGISTRY[d].kind == "runtime", d
+    for d in ("det_nms", "det_zh_trust", "join_defect_masks"):
+        assert dvb.REGISTRY[d].kind == "data", d
+    for d in ("refcv8", "r8_n_alloc", "r8_prior_free_group", "r8_lat_prior_dropout", "r8_seed"):
+        assert dvb.REGISTRY[d].kind == "built", d
+    for d in ("w_r8_cons", "w_r8_sat", "w_r8_listwise", "w_r8_subscore"):
+        assert dvb.REGISTRY[d].kind == "loss", d
+    assert dvb.REGISTRY["r8_rc_dropout"].kind == "runtime"
+    assert dvb.REGISTRY["r8_v9_labels"].kind == "data"
     # refcv7 diagnostics F1/F2/F4 (2026-10-04): +2 = --map-hires-class-thresholds ("built",
     # _c_map_hires_class_thresholds) and --det-presence-gates ("data"), both OPT-IN (221 -> 223)
     # refcv7 A14 (HQS): +1 = --slot-query-select (220 -> 221)

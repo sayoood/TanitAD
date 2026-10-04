@@ -456,6 +456,27 @@ class TacticalBehaviourDecoder(nn.Module):
         self.tokens = tuple(TACTICAL_GOAL_TOKENS_V7)
         self.lat_actions = tuple(TACTICAL_LAT_ACTIONS_V7)
         self.lon_actions = tuple(TACTICAL_LON_ACTIONS_V7)
+        # ⭐ refcv8 WP-B: built by `attach_refcv8_heads` (called LAST by RefCV3Model), None otherwise -- a refcv7
+        # build is bit-identical.
+        self.r8_cons_lat: nn.Linear | None = None
+        self.r8_cons_lon: nn.Linear | None = None
+        self.r8_film: nn.ModuleList | None = None
+        self.r8_cond_extra_dims = 0
+
+    def attach_refcv8_heads(self, cond_extra_dims: int, c_lat: int = 2, c_lon: int = 2) -> int:
+        """refcv8 WP-B (DESIGN sec. 3.1 / 3.3): (1) per-QUERY constraint heads -- the query IS the action, so the
+        constraint 'if this action' is that query's readout (lat: psi_term/pi, t_onset/6; lon: log1p(P6)/log1p(120),
+        v_end/30); (2) a SEPARATE zero-init FiLM per layer for the extra condition [nav args, route checkpoint],
+        applied before each layer's own FiLM -- no existing tensor changes shape, so refcv7 loads strictly and the
+        decoder is the identity on it at step 0. Returns the parameter count."""
+        d = self.cfg.d_model
+        self.r8_cons_lat = nn.Linear(d, int(c_lat))
+        self.r8_cons_lon = nn.Linear(d, int(c_lon))
+        self.r8_cond_extra_dims = int(cond_extra_dims)
+        self.r8_film = nn.ModuleList(_QueryFiLM(d, cond_dims=int(cond_extra_dims))
+                                     for _ in range(self.cfg.n_layers))
+        return int(sum(p.numel() for m in (self.r8_cons_lat, self.r8_cons_lon, self.r8_film)
+                       for p in m.parameters()))
 
     # -- introspection ------------------------------------------------------
     @property
@@ -501,7 +522,8 @@ class TacticalBehaviourDecoder(nn.Module):
                 agent_tokens: Tensor | None = None,
                 agent_pad: Tensor | None = None,
                 bev_tokens: Tensor | None = None,
-                bev_pad: Tensor | None = None) -> dict[str, Tensor]:
+                bev_pad: Tensor | None = None,
+                cond_extra: Tensor | None = None) -> dict[str, Tensor]:
         if cond.dim() != 2 or cond.shape[-1] != COND_DIMS:
             raise ValueError(
                 f"[refcv6-tac] cond must be [B, {COND_DIMS}] = "
@@ -564,15 +586,23 @@ class TacticalBehaviourDecoder(nn.Module):
                 "learned nothing', which is a wiring gap, not a result.")
         kv = self.kv_norm(torch.cat(kv_parts, dim=1))            # [B, K, d]
         kv_pad = torch.cat(pad_parts, dim=1)                     # [B, K]
+        if cond_extra is not None and self.r8_film is None:
+            raise ValueError('[refcv8-tac] cond_extra supplied but the refcv8 FiLM is not built -- it would be '
+                             'SILENTLY DROPPED. attach_refcv8_heads() or stop passing it.')
+        if cond_extra is not None and cond_extra.shape[-1] != self.r8_cond_extra_dims:
+            raise ValueError(f'[refcv8-tac] cond_extra must be [B, {self.r8_cond_extra_dims}], got '
+                             f'{tuple(cond_extra.shape)}')
         q = self.queries.weight.unsqueeze(0).expand(b, -1, -1).contiguous()
         attn = None
-        for lyr in self.layers:
+        for _li, lyr in enumerate(self.layers):
+            if cond_extra is not None:
+                q = self.r8_film[_li](q, cond_extra)          # zero-init: identity at step 0
             q, attn = lyr(q, kv, kv_pad, cond)
         q = self.out_norm(q)
         g = q[:, :N_GOAL_TOKENS]
         la = q[:, N_GOAL_TOKENS:N_GOAL_TOKENS + N_LAT_ACTIONS]
         lo = q[:, N_GOAL_TOKENS + N_LAT_ACTIONS:]
-        return {
+        out = {
             "goal_logits": self.validity_head(g).squeeze(-1),     # [B, 22]
             "goal_conf": self.conf_head(g).squeeze(-1),           # [B, 22]
             "lat_logits": self.lat_head(la).squeeze(-1),          # [B, 8]
@@ -580,6 +610,10 @@ class TacticalBehaviourDecoder(nn.Module):
             "attn": attn,
             "n_scene": (~kv_pad).sum(dim=-1),
         }
+        if self.r8_cons_lat is not None:
+            out["cons_lat"] = self.r8_cons_lat(la)                # [B, 8, 2] (normalised, refcv8)
+            out["cons_lon"] = self.r8_cons_lon(lo)                # [B, 8, 2]
+        return out
 
 
 # ---------------------------------------------------------------------------

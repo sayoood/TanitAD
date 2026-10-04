@@ -463,6 +463,11 @@ def test_P2_every_knob_is_recoverable_from_the_stamp_BY_VALUE(tmp_path):
     # to come second, and a reordering would change what the test asserts
     # without changing what it reports.
     TACV6_ON = TACV6 + ["--w-tac-v6", "1.0"]
+    # `--refcv8` with `--agent-join` (in `base`) also REFUSES without the ego-box mask (MM binding item 6), and the
+    # mask file is READ at the pin -- so the REAL shipped list, never a placeholder.
+    R8_ON = ["--refcv8", "--sampler", "ddim", "--anchor-v0-conditioned", "--anchor-control-units", "alat",
+             "--w-u0", "0.5", "--join-defect-masks",
+             str(Path(t.__file__).resolve().parents[1] / "tanitad" / "configs" / "refcv8_join_label_defects.json")]
     seam = {
         "w_map": ["--trunk", "timm", "--map-gt-root", "m",
                   "--agent-rig-camera", "extrinsics",
@@ -528,6 +533,19 @@ def test_P2_every_knob_is_recoverable_from_the_stamp_BY_VALUE(tmp_path):
                         "--agent-rig-extrinsics", str(extr),
                         "--map-hires", "on",
                         "--map-hires-class-weights", "w.json"],
+        # ⭐ refcv8 WP-B (2026-10-04), the same shape once more: every `--w-r8-*` weight REFUSES without
+        # `--refcv8` (a dead flag), and `--refcv8` refuses without `--arm hier` (in `base`), `--tac-decoder-v6`
+        # (TACV6_ON) and `--sampler ddim`; the DDIM sampler in turn refuses without a v0-conditioned vocabulary
+        # and without `--w-u0 > 0` (its own prediction must be supervised). `--w-r8-sat` additionally refuses with
+        # no allocated candidates (L_sat acts on the allocated set only). ⛔ Each refusal is CORRECT; these rows
+        # satisfy them rather than weakening one.
+        # every --w-r8-* defaults to 0.0 (the zero-default invariant) and `--refcv8` refuses --w-r8-cons 0, so each
+        # row but `w_r8_cons`'s own supplies it; allocation (n_alloc > 0) refuses --w-r8-alloc-l1 0 likewise.
+        # ⛔ never the knob under test twice on one row (argparse keeps the LAST occurrence).
+        "w_r8_cons": TACV6_ON + R8_ON,
+        **{k: TACV6_ON + R8_ON + ["--w-r8-cons", "0.05"] for k in ("w_r8_listwise", "w_r8_subscore")},
+        "w_r8_alloc_l1": TACV6_ON + R8_ON + ["--w-r8-cons", "0.05", "--r8-n-alloc", "8"],
+        "w_r8_sat": TACV6_ON + R8_ON + ["--w-r8-cons", "0.05", "--r8-n-alloc", "8", "--w-r8-alloc-l1", "1.0"],
     }
     # Candidates, tried in order: a knob with a DOMAIN (a mount height must be
     # a plausible height) takes the first admissible one. A per-knob table of

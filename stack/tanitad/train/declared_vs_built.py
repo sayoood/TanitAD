@@ -999,6 +999,22 @@ register("det_presence_gates", "data", reason=(
     "(`detection_metrics.gated_census_keys`, new `eval_<head>_gated_*` keys) -- never by the model or the planner. "
     "`_pin_slot_refine` refuses a missing / invalid file or one without --slot-vis1 before config.json, and its "
     "sha256 is stamped in config.json[vis1][calib][presence_gates]"))
+register("det_nms", "data", reason=(
+    "the per-head NMS radius + gate JSON (refcv8 WP-C F4b / INTEGRATION_WPC I1, OPT-IN); read ONLY by the in-run eval "
+    "census (`detection_nms.nms_census_keys`, new `eval_<head>_nms_*` keys) -- never by the model or the planner. "
+    "`_pin_wpc_fixes` refuses a missing / invalid file or one without --slot-vis1 before config.json, and its sha256 "
+    "is stamped in config.json[vis1][calib][det_nms]"))
+register("det_zh_trust", "data", reason=(
+    "the box3d z / h range-trust JSON (refcv8 WP-C fix 5 / INTEGRATION_WPC I2, OPT-IN); read ONLY by the in-run eval "
+    "(`detection_zh.zh_range_keys`, new `eval_box3d_zh_*` keys; the packs gain pair_zh_range / pair_h_err in EVAL mode "
+    "only, via model._det_zh_range) -- never by the model, the planner or a loss. `_pin_wpc_fixes` refuses a missing / "
+    "invalid file or one without --slot-vis1 / --w-box3d > 0 / --join3d before config.json; sha256 stamped in "
+    "config.json[vis1][calib][det_zh_trust]"))
+register("join_defect_masks", "data", reason=(
+    "the agent-join label-defect list (refcv8 WP-C fixes 3+4 / INTEGRATION_WPC I3, OPT-IN): the TRAIN join reader "
+    "(`JoinFileReader(defect_masks=)`) drops the ego-as-agent boxes and MASKS the id-switch rate rows; the eval reader "
+    "is deliberately unmasked. `_pin_wpc_fixes` refuses it without --agent-join or with an invalid file before "
+    "config.json; counts + sha256 land in config.json[agent_join_stats][train][defect_masks]"))
 _b("w_map", _c_perception)
 register("w_box3d", "elsewhere", reason="checked with --w-map against model._perception (G-DVB)")
 _b("map_lift_valid_mask", _c_attr("map_lift_valid_mask", "_map_lift_valid_mask",

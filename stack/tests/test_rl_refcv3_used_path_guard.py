@@ -117,8 +117,13 @@ def test_the_two_adapters_bind_DIFFERENT_CLASSES():
     assert a - b == {"maneuver_logits", "target_latent", "hierarchy_hook",
                      "ego_keep", "bev", "scene_hook", "bev_tokens", "bev_pad",
                      "bev_hook"}
+    # ⭐ MOVED A FOURTH TIME 2026-10-04 (refcv8 WP-B, PI R8-3 + the MM's tactical-conditioning brief), v3-only:
+    # `r8_nav` (the announced manoeuvre's distance / time arguments) and `r8_rc` (the ROUTE CHECKPOINT, a new
+    # inference input). The core receives them through the scene hook (`sk['r8']`), so they land in `b - a`.
+    # Both are declared `FORWARD_EXCLUSIONS` in `refcv8_conditioning` (TEMPORARY): the RL adapter does not
+    # forward them until a refcv8 checkpoint exists to post-train.
     assert b - a == {"ego_state", "nav_args", "v_max_ms", "v_max_valid",
-                     "perception_grid", "perception_valid"}
+                     "perception_grid", "perception_valid", "r8_nav", "r8_rc"}
 
 
 def test_the_configs_NEST_differently_which_is_what_breaks_a_copied_contract():

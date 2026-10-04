@@ -429,6 +429,113 @@ New parameters ≈ 0.2 M (modulation 68 k, sub-score heads ≈ 0.1 M, constraint
 refcv7's 100,468,987 ⇒ ≈ 100.7 M, far under the 300 M ceiling. Compute: +27 % sampler candidates with allocation
 (+100 % for X2b if it doubles instead of splits).
 
+### 3.9 As implemented (stage 4, `code/fix/`, base tip `49a0655`) — every deviation from §3.1–3.8
+
+The text above is the stage-1 design. The code differs in the points below. Where they disagree, the code and the registered
+`SPEC_WPB.md` (sha256 `c952d4b4…`) win, and this section says why.
+
+1. **Hypothesis vocabulary in frozen v7 ids. v9 has not landed.** lat3 = (LANE_KEEP, TURN_L, TURN_R) → v7 (0, 6, 7). lon6 =
+   (FOLLOW, CRUISE, BRAKE_TO, CREEP, HOLD, ACCELERATE) → v7 (0, 1, 3, 4, 5, 7). That gives 18 joint hypotheses. The masked
+   v7 classes are lat {1–5} (NUDGE / LANE_CHANGE) and lon {2, 6}. The posteriors are masked BEFORE the softmax, detached,
+   and floored at log 1e-4.
+2. **φ_k has 17 dims, not ≈ 21:** [lat3 one-hot 3 | lon6 one-hot 6 | log p lat | log p lon | c (4) | c-valid | allocated-bit].
+   The 4 constraint numbers are lat (ψ_term/π, t_onset/6 s at a 10° onset) and lon (log1p(P₆)/log1p(120 m), v(6 s)/30 m/s).
+   They are regressed by `cons_lat` / `cons_lon` [B, 8, 2] on the action queries. Their targets come from the window's own
+   future (`constraint_targets`).
+   * **NOT built:** κ_max, d_stop / t_stop, d_lead / time gap, v_target / t_reach. Each needs the v9 constraint fields, and
+     D0 sized only progress (σ) and heading.
+3. **Base-fan candidates get tag + log p, but NO constraint (`base_constraints` False).** A base candidate's tag is usually
+   not the GT hypothesis, so its constraint input would always be a predicted constraint of a non-GT class. That is exactly
+   the case §3.1 calls unsupervisable. Constraints therefore enter only the allocated and forced candidates. SPEC_WPB's T1
+   row registers "tag + log p, no constraint". `--r8-base-constraints` exists as an arm, not as a default.
+4. **The tagger is the R1 / v9 turn bar applied to the candidate's [0, 6] s plan** (`tag_paths`):
+   * lateral: 30° heading excursion, paths under 5 m are LANE_KEEP;
+   * longitudinal: speed literals 0.5 / 2.0 / 1.5 m/s.
+
+   ⚠ **Window mismatch:** v9 labels are banded [NOW+2, NOW+8] s, but the plan, the tags and the constraint targets live on
+   [0, 6] s. Before v9 labels supervise the heads, the label↔tag agreement on the overlap [2, 6] s must be measured (an
+   item for the §7 v7-tiny registration). Consistency and controllability score only plan-observable hypotheses (§4).
+5. **Allocation.**
+   * Counts: largest remainder, top-4, ≥ 2 each.
+   * Source anchors are chosen by tag-match level: 2 = lat + lon, 1 = lat, 0 = any.
+   * x0 is gathered by source anchor.
+   * Noise: base ε comes from the global stream; extra candidates' ε comes from the dedicated r8 generator. The refcv7 RNG
+     stream is therefore untouched (pinned).
+   * ⚠ Because sources are selected by tag, an allocated TURN candidate's own direction share is 1.0 BY CONSTRUCTION. The
+     controllability reading is therefore the PICK under forced classes and the forced-condition passes, never that share
+     alone.
+6. **Selection.**
+   * The factorised terms (β_lat, β_lon, γ_prog, γ_head, ρ) are zero-init scalars, as designed.
+   * Listwise soft-target CE REPLACES the single-winner selection CE when `w_listwise > 0` (the SEL CE is multiplied by 0),
+     as in R1-H4.
+   * The η·navc term is not duplicated: refcv7's `navc_gate` already carries it.
+7. **The extended fan and floating point:**
+   * `traj`, `sel_idx` and the base fan are bit-identical.
+   * Base-candidate SCORES move by ≤ 1e-5 (MEASURED 9.5e-7 on the CPU rig). The cause is a GEMM over 149 rows instead of
+     117, and SPEC I-W states this.
+   * E9's clamp scale is computed over the base candidates only.
+   * The DECODER seam clamp normalises over the whole row, so `attach_refcv8` REFUSES `seam_clamp > 0`.
+8. **Route checkpoint (RC) as built:**
+   * tactical `cond_extra` = [nav args (6, incl. known) | RC (4)], through per-layer zero-init `_QueryFiLM` modules;
+   * operative `r8_rc_to_cond` = Linear(4 → d), zero-init and gated;
+   * selection bearing ρ, lateral only;
+   * training dropouts: RC ≥ 0.3 (the pin refuses lower values); nav args 0.5, with the token kept and the
+     "unknown distance/time" flag set.
+
+   **Information flow.** The RC is built from the route input only. `assert_no_situation_feed` and
+   `test_the_route_checkpoint_path_carries_nothing_from_the_tactical_layer` pin that no situation-classifier or tactical
+   output enters it: the RC tensor reaching `rc_to_cond` is bit-identical under a forced tactical posterior. The tactical
+   layer's OWN posteriors conditioning the planner is the hierarchy the PI asked for, and it is a separate path.
+9. **Label-state isolation (trainer side).** A `V7PolicyScope` snapshot is taken right after each label load. Each dataset
+   carries its own snapshot, pickles with it, and applies it around `tactical_class_ids` / `tactical_goal_targets`. The
+   module-level fix belongs to WP-A. `test_refcv8_label_scope.py` pins this on the real v8 blobs: it reproduces the
+   LANE_CHANGE_L flip, and a late-snapshot mutation goes RED.
+10. **The v9 release is wired** (WP-A `INTEGRATION.md`; MM binding 2026-10-04, items 1–6). The flags are
+    `--r8-v9-labels` / `--r8-v9-labels-eval` (md5-pinned by `--r8-v9-md5` / `--r8-v9-eval-md5`), `--r8-v9-lat-variant`
+    and `--r8-nav-from-v9`.
+    * **Join.** Keyed by (sid, k = t + w − 1 + raw offset). Every window is joined at launch through the reader's own
+      refusing `row_for_now` (clock tolerance 1e-6 s). MEASURED on eval139 through the trainer's path: 23,772 / 23,772
+      windows, clock residual 0.0 s (`raw/v9_join_eval139.json`).
+    * **Targets.** lat / lon (frozen v7 ids, partial labels) and the 22 goals REPLACE v7.2's. The goal pos_weight and
+      class mask are re-derived from the v9 TRAIN windows. Partial labels enter as `−log Σ_allowed p` inside the SAME
+      tactical weights (`v9_partial_correction`).
+    * **Inputs.** nav args (log-scaled distances, Δψ/90, side, known) and RC-A50 (x/50, y/50, ψ/90, valid).
+    * **Training treatment.** RC dropout ≥ 0.3. Registered RC noise of σ 2.0 m along-track and 0.75 m lateral in the
+      route-tangent frame; smaller values are refused, because the clean point leaks (E2′). Nav-args dropout 0.5 with
+      the token kept.
+    * **Switches.** `--r8-no-rc` turns the RC path off, since the RC ruling awaits the PI. `model._r8_legal_row` gives
+      the NavSim-legal row: known 0, RC invalid, token kept. `navsim_legal_nav_cmd` maps left/forward/right/unknown to
+      1/0/2/0.
+    * **Contract census at load (refused on any violation).** It checks: no exact LANE_CHANGE action; reversing rows
+      carry no action label and no geometry goal; no absence class or absence goal on a band shorter than 8 s (a
+      TURN_x negative that is entailed by the other side's positive is exempt); exact masks equal their one bit;
+      SPEED_BAND is never supervised. Both real releases read 0 on all seven counts.
+    * **Corpus.** `--refcv8 --agent-join` REFUSES without `--join-defect-masks`, which is the 693-box ego mask. WP-C's
+      list equals WP-A's manifest mask frame for frame at k = frame_idx + 2: 693 / 693 frames, 18 / 18 clips
+      (`raw/mask_crosscheck.json`). The 8-clip drop list is NOT applied (PI decision 8 is open).
+    * **v7 policy.** With WP-A's fixed `v7_labels` the policy travels on the labels, so no scope is installed.
+      `V7PolicyScope` remains only as the fallback for an unfixed module.
+    * **Not consumed yet:** v9's constraint vectors (`lat_c`, `lon_c`, `speed_goal`, on the [2, 8] s band). The constraint
+      heads still regress the plan-derived [0, 6] s quantities that the generator conditions on. Supervising the v9 set
+      is an item for the §7 v7-tiny SPEC.
+11. **WP-C I1–I3 are wired** (opt-in; `INTEGRATION_WPC.md`): `--det-nms`, `--det-zh-trust` (the `model._det_zh_range`
+    carrier, also set in `refcv7_loader`) and `--join-defect-masks` (TRAIN reader only). The G-DVB registry holds 223 + 3 +
+    30 = 256 entries: 24 from refcv8 stage 4, plus 6 from the v9 wiring.
+12. **The five `--w-r8-*` weights default to 0.0 and are gated.** They are registered in `REFC_WEIGHT_GATES` (the
+    effective-weight audit's exhaustiveness contract) and in `launch_gate.LIVE_WEIGHT_RULES` (G-LIVE's). A non-zero
+    default would be refused as NO_GRAPH on every run that does not pass `--refcv8`, because the audit does not
+    consult explicitness. A refcv8 launch therefore STATES its weights, at the SPEC values:
+    * `--w-r8-cons 0.05` always;
+    * `--w-r8-alloc-l1 1.0` with allocation;
+    * `--w-r8-sat` / `--w-r8-listwise` / `--w-r8-subscore` per arm.
+
+    `_pin_refcv8` refuses the converse cases: `--refcv8` with `--w-r8-cons 0`, and allocation with `--w-r8-alloc-l1 0`.
+    The harness path (`wpb_arms.py`) builds `R8Config` directly and is unaffected.
+13. **Not built yet (named):**
+    * yaw augmentation (§3.3, a v7-tiny lever);
+    * the X4 `grad_share` instrument;
+    * classifier-free guidance (an optional arm).
+
 ---
 
 ## 4. The R8-4 measures (stage 2 — what will be built in `taniteval`, no model change needed)

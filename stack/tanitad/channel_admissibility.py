@@ -186,6 +186,10 @@ SEAM_MODULES: tuple[str, ...] = (
     # section 10 (A5) excludes: the recorded steer at t0 is unruled at inference.
     # ⚠️ TEMPORARY and NOT a label -- the route back is in the declaration.
     "tanitad.models.kinematic_prior",            # ego_actions
+    # ⭐ refcv8 WP-B (2026-10-04): the route-checkpoint and nav-argument inputs `r8_rc` / `r8_nav` (PI R8-2 / R8-3).
+    # ⚠️ TEMPORARY and NOT labels -- supplied-route inputs no RL adapter can compute from a rollout yet; the
+    # route back is in the declaration.
+    "tanitad.refs.refcv8_conditioning",          # r8_nav / r8_rc
 )
 
 

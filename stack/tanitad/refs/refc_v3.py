@@ -108,6 +108,7 @@ from tanitad.refs import refc_tactical as tac
 from tanitad.refs import refcv6_max_speed as v6ms
 from tanitad.refs import refcv6_selection as v6sel
 from tanitad.refs import refcv6_tactical as v6tac
+from tanitad.refs import refcv8_conditioning as r8c
 # ⭐ refcv7 (PI 2026-09-19): DrivoR's proven planning heads on the refcv6 build.
 # Module scope for the same reason as the three above.
 from tanitad.refs import refcv7_heads as r7h
@@ -640,6 +641,9 @@ class RefCV3Config:
     # DECLARED (G-HYG): the pin sets the path, `train()` the sha256 after reading the file.
     nav_compliance_tau_file: str | None = None
     nav_compliance_tau_sha256: str | None = None
+    # ⭐ refcv8 WP-B (DESIGN.md sec. 3): the tactical-conditioning switches. `enable=False` (the default) builds
+    # nothing -- a refcv7 config is unchanged, field for field, in everything it builds.
+    refcv8: "r8c.R8Config" = field(default_factory=lambda: r8c.R8Config())
 
     @property
     def n_goal_taus(self) -> int:
@@ -1038,7 +1042,22 @@ def e9_rank(blended: Tensor, out: dict) -> tuple[Tensor, dict]:
         dead = ~torch.isfinite(both).any(dim=1)
         rank = torch.where(dead[:, None], rank, both)
         tele["e9_ceil_dead_frac"] = dead.float().mean().detach()
+    # ⭐ refcv8 WP-B: a candidate not yet allowed to be EMITTED (allocated / prior-free before its flag) never wins;
+    # with every candidate emittable the mask is all-True and this is a no-op (bit-identity).
+    ek = out.get("r8_emit_keep")
+    if ek is not None:
+        r2 = rank.masked_fill(~ek, float("-inf"))
+        dead = ~torch.isfinite(r2).any(dim=1)
+        rank = torch.where(dead[:, None], blended.masked_fill(~ek, float("-inf")), r2)
     return rank, tele
+
+
+#: refcv8 WP-B input widths, scaled by `refcv8_train.scale_nav` / `scale_rc` from the v9 release (WP-A INTEGRATION
+#: sec. 3.2): nav args = (log1p(d_next/50), log1p(d_end/50), dyaw_next/90 deg, side +-1, log1p(lookahead/50), known)
+#: and the route checkpoint = (x/50, y/50, psi/90 deg, valid) in the NOW vehicle frame. The validity bit is RE-APPLIED
+#: in the model (the X15 rule): an invalid row is exactly zeros next to a 0.
+R8_NAV_DIMS: int = 6
+R8_RC_DIMS: int = 4
 
 
 class RefCV3Model(nn.Module):
@@ -1458,6 +1477,16 @@ class RefCV3Model(nn.Module):
             self.refcv7_sources = src
             self.refcv7_wta = r7h.WTAProposalDecoder(hc, src, slot_t)
             self.refcv7_scorer = r7h.DisentangledScorer(hc, src, slot_t)
+        # ⭐ refcv8 WP-B -- built AFTER every refcv7 module (RNG order: an OFF build is byte-identical), BEFORE the
+        # freeze declaration (which reads the finished module tree). Plain one-shot attributes, never state.
+        self._r8_teacher = None
+        self._r8_force = None
+        self._r8_derange_feed = False      # DIAGNOSTIC (deliberate-regression arm): roll the planner feed by one row
+        self.r8_enabled = False
+        self.r8_n_params = 0
+        _r8 = getattr(cfg, "refcv8", None)
+        if _r8 is not None and _r8.enable:
+            self.enable_refcv8(_r8)
         # ⛔⛔ refcv7 RESTART FREEZE: LAST, after every module exists (BYPASS_DECLARATIONS).
         # Consumes no RNG, so every parameter's init is exactly what it was before.
         self._bypass_declared = declare_bypassed_by_flag(self)
@@ -1828,7 +1857,9 @@ class RefCV3Model(nn.Module):
     def _scene_hook(self, cache: dict, nav_cmd: Tensor | None = None,
                     ego_state: Tensor | None = None,
                     v_max_ms: Tensor | None = None,
-                    v_max_valid: Tensor | None = None):
+                    v_max_valid: Tensor | None = None,
+                    r8_nav: Tensor | None = None,
+                    r8_rc: Tensor | None = None):
         """A SECOND in-forward supplier, for the layer that needs the SCENE.
 
         ⛔⛔ WHY A SECOND HOOK AND NOT THE EXISTING ONE. ``hierarchy_hook`` is
@@ -1913,9 +1944,20 @@ class RefCV3Model(nn.Module):
                 cache.update(r7_cond=cond, r7_agent_tokens=agent_tokens,
                              r7_agent_pad=agent_pad, r7_bev_tokens=bev_tokens,
                              r7_bev_pad=bev_pad, r7_v_lim=v_lim)
+            _ce = None
+            if self.r8_enabled:
+                # ⭐ refcv8 R8-2/R8-3: nav args + route checkpoint into the tactical condition. Missing = an
+                # explicitly INVALID row (zeros, valid 0), never a fabricated value.
+                def _gated(x, k):
+                    if x is None:
+                        return torch.zeros(b, k, device=dev, dtype=torch.float32)
+                    x = x.to(torch.float32).reshape(b, k)
+                    return torch.cat([x[:, :k - 1] * x[:, k - 1:], x[:, k - 1:]], -1)
+                _ce = torch.cat([_gated(r8_nav, R8_NAV_DIMS), _gated(r8_rc, R8_RC_DIMS)], -1)
             out = self.tac_decoder_v6(cond, agent_tokens=agent_tokens,
                                       agent_pad=agent_pad,
-                                      bev_tokens=bev_tokens, bev_pad=bev_pad)
+                                      bev_tokens=bev_tokens, bev_pad=bev_pad,
+                                      **({} if _ce is None else {"cond_extra": _ce}))
             # ⛔ THE RAW LOGITS GO IN THE CACHE, ATTACHED, because that is what
             # the LOSS reads. Only the PLANNER feeds below are detached.
             cache.update(tacv6_goal_logits=out["goal_logits"],
@@ -1924,6 +1966,29 @@ class RefCV3Model(nn.Module):
                          tacv6_lon_logits=out["lon_logits"],
                          tacv6_n_scene=out["n_scene"],
                          tacv6_injected=True)
+            r8_feed = None
+            if self.r8_enabled:
+                # the constraint heads' raw outputs, ATTACHED, for the constraint loss (the trainer)
+                cache.update(r8_cons_lat=out["cons_lat"], r8_cons_lon=out["cons_lon"])
+                out, r8_force = self._r8_apply_force(out, b, dev)
+                lp_l, lp_o = r8c.hypothesis_posteriors(out["lat_logits"], out["lon_logits"])
+                r8_feed = {"logp_lat3": lp_l, "logp_lon6": lp_o,
+                           "cons_lat8": out["cons_lat"].detach().to(torch.float32),
+                           "cons_lon8": out["cons_lon"].detach().to(torch.float32),
+                           "rc": (None if r8_rc is None else _ce[:, R8_NAV_DIMS:])}
+                if self._r8_derange_feed and b > 1:
+                    # ⛔ DIAGNOSTIC ONLY: the planner sees ANOTHER window's tactical output (the T1d regression arm);
+                    # the tactical LOSS (cache above) still trains on this window's own outputs.
+                    for _k in ("logp_lat3", "logp_lon6", "cons_lat8", "cons_lon8"):
+                        r8_feed[_k] = torch.roll(r8_feed[_k], 1, 0)
+                tch = r8_force if r8_force is not None else self._r8_teacher
+                self._r8_teacher = None
+                if tch is not None and self._r8_derange_feed and b > 1 and r8_force is None:
+                    tch = {k: (torch.roll(v, 1, 0) if torch.is_tensor(v) else v) for k, v in tch.items()}
+                if tch is not None:
+                    r8_feed.update(force_hyp=tch["hyp"], force_cons=tch["cons"], force_tf=tch["tf"],
+                                   force_min=int(tch.get("min", 4)))
+                cache.update(r8_logp_lat3=lp_l, r8_logp_lon6=lp_o)
             feeds = v6tac.planner_feeds(
                 out, valid_threshold=cfg.tac_decoder_valid_threshold)
             cache["tacv6_valid_frac"] = float(
@@ -1934,9 +1999,90 @@ class RefCV3Model(nn.Module):
                 "behaviour_term": self.tac_behaviour_gate_v6(
                     feeds["valid_behaviour"]),
                 "v_limit_ms": v_lim,
+                **({} if r8_feed is None else {"r8": r8_feed}),
             }
 
         return scene_hook
+
+    # ------------------------------------------------------------------
+    # refcv8 WP-B: one-shot teacher / force channels (the `set_ego_window` pattern)
+    # ------------------------------------------------------------------
+    def enable_refcv8(self, r8cfg) -> int:
+        """Build the refcv8 seams on THIS model -- at construction (`cfg.refcv8.enable`) or POST HOC on a model
+        already loaded from a refcv7 checkpoint (the warm start: every new tensor is zero-init or gated, so the
+        loaded model's forward is unchanged). Returns the new-parameter count. The new modules are created on
+        the CPU; the caller moves the model."""
+        if self.r8_enabled:
+            raise ValueError("[refcv8] seams already built")
+        if self.tac_decoder_v6 is None:
+            raise ValueError("[refcv8] the tactical conditioning reads the refcv6 behaviour decoder "
+                             "(`tac_decoder_v6`); this build has none")
+        if self.refcv7_wta is not None:
+            raise ValueError("[refcv8] refcv8 WP-B and the refcv7 WTA/scorer heads both re-rank the fan; "
+                             "combining them is not attributable -- refused")
+        self.cfg.refcv8 = r8cfg
+        r8cfg.enable = True
+        self.r8_n_params = (self.tac_decoder_v6.attach_refcv8_heads(R8_NAV_DIMS + R8_RC_DIMS)
+                            + self.core.decoder.attach_refcv8(r8cfg, d_rc=R8_RC_DIMS))
+        self.r8_enabled = True
+        return self.r8_n_params
+
+    def set_r8_teacher(self, hyp: Tensor, cons: Tensor, tf: Tensor) -> None:
+        """TRAINING: the window's GT hypothesis (joint id, -1 = none) [B], its normalised constraint [B, 4] and the
+        scheduled-sampling coin [B] (True = teacher-force the GT constraint). Consumed by the next forward."""
+        if not self.r8_enabled:
+            raise ValueError("[refcv8] set_r8_teacher on a build without the refcv8 seams")
+        self._r8_teacher = {"hyp": hyp, "cons": cons, "tf": tf.to(torch.bool),
+                            "min": int(self.cfg.refcv8.alloc_min_each) * 2}
+
+    def set_r8_force(self, lat3: int | None = None, lon6: int | None = None,
+                     cons: Tensor | None = None, min_alloc: int | None = None) -> None:
+        """EVAL interventions (R8-4 ii): force the tactical decision on the same scene. ``lat3`` / ``lon6`` are
+        hypothesis indices; ``cons`` [B, 4] (normalised) forces the constraint of the forced hypothesis (e.g.
+        STOP at d: lon BRAKE_TO with prog6 = d, v_end = 0). The forced posterior reaches EVERY planner feed of
+        the tactical layer (tac8 prior, phi, allocation, the factorised score). Consumed by the next forward."""
+        if not self.r8_enabled:
+            raise ValueError("[refcv8] set_r8_force on a build without the refcv8 seams")
+        if self.training:
+            raise ValueError("[refcv8] forcing is an EVAL intervention; refused in training")
+        self._r8_force = {"lat3": lat3, "lon6": lon6, "cons": cons,
+                          "min": int(self.cfg.refcv8.n_alloc if min_alloc is None else min_alloc)}
+
+    def _r8_apply_force(self, out: dict, b: int, dev) -> tuple[dict, dict | None]:
+        fz, self._r8_force = self._r8_force, None
+        if fz is None:
+            return out, None
+        out = dict(out)
+        big = 20.0
+        if fz["lat3"] is not None:
+            lat = torch.full_like(out["lat_logits"], -big)
+            lat[:, r8c.LAT3_V7_IDS[int(fz["lat3"])]] = big
+            out["lat_logits"] = lat
+        if fz["lon6"] is not None:
+            lon = torch.full_like(out["lon_logits"], -big)
+            lon[:, r8c.LON6_V7_IDS[int(fz["lon6"])]] = big
+            out["lon_logits"] = lon
+        lp_l, lp_o = r8c.hypothesis_posteriors(out["lat_logits"], out["lon_logits"])
+        hl = lp_l.argmax(-1)
+        ho = lp_o.argmax(-1)
+        cl = out["cons_lat"].detach().clone()
+        co = out["cons_lon"].detach().clone()
+        ar = torch.arange(b, device=dev)
+        rl = torch.as_tensor(r8c.LAT3_V7_IDS, device=dev)[hl]
+        ro = torch.as_tensor(r8c.LON6_V7_IDS, device=dev)[ho]
+        if fz["cons"] is not None:
+            # a NaN entry keeps the head's own prediction (e.g. STOP-at-d forces progress and v_end only)
+            c = fz["cons"].to(cl.dtype)
+            cl[ar, rl] = torch.where(torch.isfinite(c[:, :r8c.C_LAT]), c[:, :r8c.C_LAT], cl[ar, rl])
+            co[ar, ro] = torch.where(torch.isfinite(c[:, r8c.C_LAT:]), c[:, r8c.C_LAT:], co[ar, ro])
+        out["cons_lat"], out["cons_lon"] = cl, co
+        if fz["cons"] is None:
+            # a CLASS-only force: the one-hot posterior alone drives allocation (top-k inside the forced class)
+            # and the factorised score; no single joint hypothesis is imposed.
+            return out, None
+        cons = torch.cat([cl[ar, rl], co[ar, ro]], -1)
+        return out, {"hyp": r8c.joint_id(hl, ho), "cons": cons,
+                     "tf": torch.ones(b, dtype=torch.bool, device=dev), "min": fz["min"]}
 
     # ------------------------------------------------------------------
     # refcv6 §4 — the BEV hook (PI RULING 2026-09-17 R2/R3)
@@ -2084,7 +2230,9 @@ class RefCV3Model(nn.Module):
                 ego_n_past: int | None = None,
                 perception_grid: Tensor | None = None,
                 perception_valid: Tensor | None = None,
-                ego_actions: Tensor | None = None) -> dict:
+                ego_actions: Tensor | None = None,
+                r8_nav: Tensor | None = None,
+                r8_rc: Tensor | None = None) -> dict:
         """``ego_state`` is the v4 block ``[B, 5]`` from :func:`ego_state_at_t0`
         — (v0, a_long, yaw_rate, curvature, keep) at the LAST OBSERVED frame.
 
@@ -2287,6 +2435,10 @@ class RefCV3Model(nn.Module):
                              ego_poses=ego_poses, ego_n_past=ego_n_past,
                              ego_actions=ego_actions)
         cache: dict = {}
+        # ⛔ refcv8: the same silent-drop refusal as every input above.
+        if (r8_nav is not None or r8_rc is not None) and not getattr(self, "r8_enabled", False):
+            raise ValueError("[refcv8] r8_nav / r8_rc supplied but this build has no refcv8 seams -- they would be "
+                             "SILENTLY DROPPED. Build with refcv8.enable or stop passing them.")
         # ⭐ refcv6 §4/§5. `_scene_hook` returns None when the behaviour decoder
         # is not built, and `refc.py` skips every seam on a None — so an arm
         # without `--tac-decoder-v6` calls the core with exactly the pre-refcv6
@@ -2295,7 +2447,7 @@ class RefCV3Model(nn.Module):
         # instead of silently running refcv5 while the config says refcv6.
         _core_kw = {}
         _sh = self._scene_hook(cache, nav_cmd, ego_state, v_max_ms,
-                               v_max_valid)
+                               v_max_valid, r8_nav, r8_rc)
         if _sh is not None:
             _core_kw["scene_hook"] = _sh
         # ⭐⭐ refcv6 §4 / PI RULING 2026-09-17 R2. The BEV encoder now runs
@@ -2358,8 +2510,18 @@ class RefCV3Model(nn.Module):
         # DETACHED into selection (the winner's-curse firewall: selection can
         # never train the goal toward the fan).
         g2 = cache["g_tac"][:, self._tau_slot_2s(), :2].detach()  # [B, 2]
-        sc = self.scorer(fan[:, :, SEAM_SLOT:SEAM_SLOT + 1],
-                         cache["z_tac"].detach(), goal_point=g2)
+        _nb8 = out.get("r8_n_base")
+        if _nb8 is not None and fan.shape[1] != int(_nb8):
+            # ⭐ refcv8: the extended fan -- the SAME rule, each candidate carrying its SOURCE anchor's bias.
+            sc = dict(self.scorer(fan[:, :int(_nb8), SEAM_SLOT:SEAM_SLOT + 1],
+                                  cache["z_tac"].detach(), goal_point=g2))
+            _d = (fan[:, :, SEAM_SLOT] - g2[:, None]).norm(dim=-1)
+            _tau = self.scorer.log_tau.exp().clamp_min(1e-3).to(_d.dtype)
+            sc["score"] = -_d / _tau + self.scorer.cand_bias.to(_d.dtype)[out["r8_cand_src"]]
+            sc["goal_dist"] = _d
+        else:
+            sc = self.scorer(fan[:, :, SEAM_SLOT:SEAM_SLOT + 1],
+                             cache["z_tac"].detach(), goal_point=g2)
         # ⭐ CAVEAT-B INSTRUMENTATION (PI 2026-09-02). The gate is zero-init and
         # must LEARN to open; if it never does, E9 contributed exactly nothing
         # and the run cannot claim goal-selection. It is NOT structurally
@@ -2390,11 +2552,28 @@ class RefCV3Model(nn.Module):
         # is itself the train/eval asymmetry made visible in the log.
         if ego_keep is not None:
             out["ego_keep_frac"] = ego_keep.detach().float().mean()
-        blended, tele = sl.apply_seam_clamp(
-            out["sel_score"], graft, clamp=self.cfg.seam_clamp,
-            fail=self.cfg.seam_fail, fail_frac=self.cfg.seam_fail_frac,
-            patience=self.cfg.seam_fail_patience, state=self._seam,
-            surface="goal_sel")
+        if _nb8 is not None and fan.shape[1] != int(_nb8):
+            # ⭐ refcv8: the clamp's per-row NORMS are taken over the BASE candidates only, and the same scale is
+            # applied to the extra ones -- so appending candidates cannot move a base candidate's blended score.
+            _nb = int(_nb8)
+            _bb, tele = sl.apply_seam_clamp(
+                out["sel_score"][:, :_nb], graft[:, :_nb], clamp=self.cfg.seam_clamp,
+                fail=self.cfg.seam_fail, fail_frac=self.cfg.seam_fail_frac,
+                patience=self.cfg.seam_fail_patience, state=self._seam,
+                surface="goal_sel")
+            if float(self.cfg.seam_clamp) > 0.0:
+                _r = (graft[:, :_nb].norm(dim=-1)
+                      / out["sel_score"][:, :_nb].norm(dim=-1).clamp_min(1e-9))
+                _sc = float(self.cfg.seam_clamp) / _r.clamp_min(float(self.cfg.seam_clamp))
+            else:
+                _sc = torch.ones_like(graft[:, 0])
+            blended = torch.cat([_bb, out["sel_score"][:, _nb:] + graft[:, _nb:] * _sc[:, None]], 1)
+        else:
+            blended, tele = sl.apply_seam_clamp(
+                out["sel_score"], graft, clamp=self.cfg.seam_clamp,
+                fail=self.cfg.seam_fail, fail_frac=self.cfg.seam_fail_frac,
+                patience=self.cfg.seam_fail_patience, state=self._seam,
+                surface="goal_sel")
         rank, e9_tele = e9_rank(blended, out)
         out.update(e9_tele)
         idx = rank.argmax(dim=1)

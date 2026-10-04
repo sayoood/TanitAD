@@ -406,6 +406,8 @@ def _build_model(config: dict, ckpt_path: str, device: str = "cuda", remap: dict
     model._box3d_visible_filter = bool(getattr(args, "box3d_visible_filter", True))
     # ---- train():7998 -- refcv7 A9 R3: VIS-1 on the model (refcv6 loader: ABSENT) -------- #
     model._vis1 = bool(getattr(args, "slot_vis1", False))
+    # ---- train(): refcv8 WP-C I2 (OPT-IN) -- the box3d EVAL packs carry pair_zh_range / pair_h_err ---------- #
+    model._det_zh_range = bool(getattr(args, "det_zh_trust", None))
     # ---- train():8005-8069 -- refcv7 NEW-2 + A6/A7: THE MAP AT 10 cm (refcv6 loader: ABSENT).
     # BUILT FIRST -- before the perception branch, whose A6 planner pool reads this branch's
     # 0.25 m encoder (its width and grid are read off the BUILT branch). Off => nothing. ----- #

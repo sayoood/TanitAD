@@ -2274,6 +2274,20 @@ LIVE_WEIGHT_RULES: dict[str, tuple[Callable, tuple[str, ...], float, str]] = {
     "w_map_hires": (lambda a: _w(a, "w_map_hires") > 0
                     and str(getattr(a, "map_hires", "off")) == "on", ("map_hires",), 1.0,
                     "NEW-2: the 10 cm map head's hard-label CE"),
+    # refcv8 WP-B (2026-10-04): the keys are `refcv8_train.r8_losses`' telemetry; each is emitted on EVERY
+    # training step once its term is reached (an all-unlabelled batch still writes the attached zero).
+    "w_r8_cons": (lambda a: bool(getattr(a, "refcv8", False)) and _w(a, "w_r8_cons") > 0, ("r8_cons",), 1.0,
+                  "refcv8 constraint heads"),
+    "w_r8_alloc_l1": (lambda a: bool(getattr(a, "refcv8", False)) and _w(a, "w_r8_alloc_l1") > 0
+                      and int(getattr(a, "r8_n_alloc", 0) or 0) > 0, ("r8_alloc_l1",), 1.0,
+                      "refcv8 matched L1 on the allocated candidates"),
+    "w_r8_sat": (lambda a: bool(getattr(a, "refcv8", False)) and _w(a, "w_r8_sat") > 0
+                 and int(getattr(a, "r8_n_alloc", 0) or 0) > 0, ("r8_sat",), 1.0,
+                 "refcv8 constraint-satisfaction loss"),
+    "w_r8_listwise": (lambda a: bool(getattr(a, "refcv8", False)) and _w(a, "w_r8_listwise") > 0,
+                      ("r8_listwise",), 1.0, "refcv8 listwise selection CE (X1)"),
+    "w_r8_subscore": (lambda a: bool(getattr(a, "refcv8", False)) and _w(a, "w_r8_subscore") > 0,
+                      ("r8_subscore",), 1.0, "refcv8 sub-score critics (X1h)"),
 }
 #: every field of `refcv6_diffusion.DiffusionFlags` -> the loss keys it declares ( () = none,
 #: with the reason). ⛔ EXHAUSTIVE for the same reason.

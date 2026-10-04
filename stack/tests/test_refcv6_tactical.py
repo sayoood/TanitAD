@@ -299,8 +299,10 @@ def test_decoder_has_NO_image_token_port():
     import inspect
     params = set(inspect.signature(
         v6tac.TacticalBehaviourDecoder.forward).parameters)
+    # ⭐ refcv8 WP-B adds `cond_extra` -- the [nav args, route checkpoint] CONDITION (a FiLM input, like `cond`),
+    # not a key/value source: the exclusion this test pins (no image-token port) is unchanged.
     assert params == {"self", "cond", "agent_tokens", "agent_pad",
-                      "bev_tokens", "bev_pad"}
+                      "bev_tokens", "bev_pad", "cond_extra"}
     assert not any("image" in p or "fmap" in p or "pooled" in p
                    for p in params)
 
