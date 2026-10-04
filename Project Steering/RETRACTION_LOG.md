@@ -17885,3 +17885,21 @@ component name, so the formula read as the benchmark's own.
 **Fixed:** match the word `accuracy`; skip on the dotted leaf. Pinned by `eval/test_fam_direction.py` -- literal expectations for all 21 components the families instrument emits, plus a mutant carrying the historical rule that must go RED (it does). The first readout is kept beside the corrected one.
 
 **Class:** a keyword classifier whose keyword is a PREFIX of a different field (`acc` < `accel`) -- the check shares the defect it guards against in the `grep`/regex costume. It survived because the fixture test exercised the verdict branches, not the direction table. Caught only because the flagged interval visibly held the OTHER arm's value.
+
+### R27 (2026-10-04) - "refcv7's 10 cm thin classes collapsed from step 5,000": they were never predicted at all; the alarm measured the DECISION RULE
+
+**Claimed:** (Master Mind, to the PI and in agent briefs, 2026-10-01..04) the map thin-class alarm, "red since step 5,000", meant the thin classes collapsed at 5,000; three map diagnostics were proposed on that reading.
+
+**True:** under the declared `prior_corrected` rule, edge IoU never exceeded 0.0008 in any of the 101 in-run eval rows, starting at step 500; hatched read 0.000 at every row. The raw-argmax edge IoU rose to 0.025-0.031, and on 1,112 eval windows AUROC, raw IoU and best-threshold IoU are all HIGHER at 50,400 than at 5,000. The alarm went red at 5,000 because that is the step it ARMS at (LOGGING_SPEC_MAP10 5.3), not because anything changed in the model. MEASURED, `TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv7-map-box-diagnostics/RESULT.md` §1.1, §1.6.
+
+**Fixed:** opt-in F1 decision rule and F2 monitor keys (b60cba6). The monitor now also reports thresholded and 0.2 m-tolerant IoU, so it can see the head and not only the rule.
+
+**Class:** a monitor read as a model state. The step at which an alarm ARMS was read as an event in the model. Same family as "the log went stale" read as "the run died".
+
+### R28 (2026-10-04) - "the step-30,000 NavSim runner died when the drive letter changed": a USB reset and a user restart killed it
+
+**Claimed:** (Master Mind, to the PI, 2026-10-04 ~00:30) the runner died when the external drive came back as E: instead of D:.
+
+**True:** the Windows System log shows USB-storage resets on the drive 2026-10-02 12:46-12:50 Berlin (UASPStor 129 x14) that killed the navtest CPU bridge at row 11,074/12,146, then a user-initiated restart at 16:55 (User32 1074, Kernel-Power 109) that killed everything else. The letter change was a CONSEQUENCE of the restart. Corrected to the PI the same night. MEASURED by the NavSim agent; `waiter_30000.json` annotated `DIED_HOST_RESTART`.
+
+**Class:** a co-occurring symptom read as the cause. The letter change was the visible anomaly at the time of reading, and the System log, the tool that owns the fact, was not read first.
