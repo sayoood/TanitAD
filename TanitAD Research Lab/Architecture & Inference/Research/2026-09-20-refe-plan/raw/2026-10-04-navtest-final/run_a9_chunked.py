@@ -20,7 +20,10 @@ A9 = R.OUT
 
 
 def run_chunk(arm, tag, toks, tl, env):
-    tj = f"{A9}/tokens_{arm}_{tag}.json"
+    # ⛔ ".chunk.json", NOT "tokens_{arm}_{tag}.json": for arm "adopted" / tag "rest" that name IS the registered token file
+    # (rule / rest / controls), and writing {tokens, token_log} over it made compose_full_seam.py fail on KeyError 'rest'
+    # (MEASURED 2026-10-04 13:05; restored from git, blob 461cd84c).
+    tj = f"{A9}/tokens_{arm}_{tag}.chunk.json"
     json.dump({"tokens": toks, "token_log": {t: tl[t] for t in toks}}, open(tj, "w", encoding="utf-8"), indent=0)
     cmd = [R.EC.DRIVERL_PY, "refe_navtest_seam.py", "--ckpt", R.CKPT, "--frames", f"{R.D}/frames",
            "--db-dir", "E:/Projects/TanitAD/data/nuplan/nuplan-v1.1/splits/test",

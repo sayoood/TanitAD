@@ -17913,3 +17913,14 @@ component name, so the formula read as the benchmark's own.
 **Fixed:** navgoal_arc is VOID in Amendment 9's readout (`…/refe-plan/raw/2026-10-01-goal-trigger/RESULT_A9_GOAL_FIX.md`; reported, not gating, so no verdict moves). A working arm needs omega from the scenario's past ego states; not re-run (the weakest estimator on CPU).
 
 **Class:** "built, tested, and unreachable from its caller" in the INPUT costume -- the mechanism ran, on a field the data never fills. The census printed the evidence (433 triggered, identical max goal change for both arms) and nothing asserted that the two arms' goals DIFFER. ⇒ an arm whose purpose is to differ from a sibling arm needs a same-breath count of tokens where they differ (> 0) before GPU time is spent.
+
+
+### R30 (2026-10-04) - "paper-pure scorer labels = the teacher simulator's own reward components": the paper supervises its scorer with PDM targets
+
+**Claimed:** `PAPER_CONFORMANCE_REVIEW.md` §2.4 maps the paper's six scorer components onto DriveRL's calculators, and I repeated that to the PI on 2026-10-04 (~11:30): *"for driving direction, the paper-pure label is the one the scorer already has. The paper's scorer predicts six components scored by the teacher's simulator."* On that basis the PI chose *"the paper pure way"*, the NAVSIM-label SFT-2 was not launched, and SFT-3 was pre-registered and armed on teacher labels.
+
+**True:** DriveZero (2609.06055, banked), Sec. 3: *"These components are supervised by their corresponding PDM targets [17]"*; Fig. 2: *"the proposal-scoring branch is trained against PDM targets"*; [17] = PDM (2306.07962, banked). Only the candidate trajectories are detached (*"Candidate trajectories are detached before entering the scoring branch"*); our scorer also detaches the visual context (`refe/model.py:751`).
+
+**Fixed:** found by the independent review `…/refe-plan/REVIEW_7_GAP_TO_PAPER.md`, verified by me against the banked PDF text the same day; the PI was told the same day, and SFT-3's label source was put back to the PI before it launched.
+
+**Class:** a reproduction document's MAPPING TABLE quoted as the paper. Which calculator "stands for" which PDM component was our interpretation, and it became the cited source for what the paper does. Nobody re-read the paper's sentence before a training run was armed on it. This is INHERITED evidence deciding a GPU-day. ⇒ when a decision rests on *what the paper does*, quote the paper's own sentence (with page) in the decision, never our conformance table.
