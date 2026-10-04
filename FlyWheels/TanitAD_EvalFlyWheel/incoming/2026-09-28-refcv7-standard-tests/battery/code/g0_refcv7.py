@@ -822,6 +822,9 @@ def tol_ok(cls: str, k: str, x: float, y: float) -> tuple[bool, float, str]:
 #: moves the metric by more than any fixed tolerance: the step-1,500 G0's only OUT term was an AP on
 #: n_pos = 1); at or above it the tolerance is max(0.02, 2/n) -- "two discrete events".
 A2_MIN_SUPPORT = 30
+#: every amendment whose registered text keeps A2's low-support rule (A5 item 2, A6 item 7) -- pinned by
+#: test_g0_a6_lowsupport.py so a new amendment cannot silently drop it again
+A2_LOWSUPPORT_AMENDS = ("A2", "A5", "A6", "A7")
 _BANDS = r"(all|0_20|20_40|40_60)"
 
 
@@ -964,7 +967,10 @@ def judge(inrun, by_seed, rec, amend: str | None = None):
             if spread > 1e-5 and c in ("COUNT", "DETECTION", "MAP10_COUNTS", "MAP10_IOU", "MATCHED"):
                 r["note"] = "seed spread > 1e-5 in a deterministic class: judged on the seed mean"
             ok, dev, tol = tol_ok(c, k, x, mean)
-            sup = detection_support(k, inrun) if (amend in ("A2", "A5") and c == "DETECTION") else None
+            # A6 item 7 (registered 2026-10-04T08:17:13+02:00) keeps "A2's low-support rule" UNCHANGED; this
+            # tuple omitted "A6" until 2026-10-04 ~17:30 (G0 50,400 diagnosis, raw/g0diag_step50400/): the judge
+            # gated every low-support DETECTION cell at abs 0.02 under A6, against the registered text.
+            sup = detection_support(k, inrun) if (amend in A2_LOWSUPPORT_AMENDS and c == "DETECTION") else None
             if sup is not None:
                 r["support_n"] = sup
                 if sup < A2_MIN_SUPPORT:

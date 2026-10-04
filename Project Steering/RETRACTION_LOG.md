@@ -17924,3 +17924,32 @@ component name, so the formula read as the benchmark's own.
 **Fixed:** found by the independent review `…/refe-plan/REVIEW_7_GAP_TO_PAPER.md`, verified by me against the banked PDF text the same day; the PI was told the same day, and SFT-3's label source was put back to the PI before it launched.
 
 **Class:** a reproduction document's MAPPING TABLE quoted as the paper. Which calculator "stands for" which PDM component was our interpretation, and it became the cited source for what the paper does. Nobody re-read the paper's sentence before a training run was armed on it. This is INHERITED evidence deciding a GPU-day. ⇒ when a decision rests on *what the paper does*, quote the paper's own sentence (with page) in the decision, never our conformance table.
+
+### R31 (2026-10-04) - "refcv7's G0 failed at step 50,400 (and A6 failed at 30,000)": the JUDGE CODE did not implement the registered A6 text; under the text both PASS
+
+**What was asserted.** The step-50,400 battery chain stopped on `ZZG050400ZZ FAIL` (13 of 1,109 terms, all rare-class per-band
+DETECTION AP cells), and the register recorded "no four-family number exists for refcv7-50,400" (REFCV7-G0-50400). The
+step-30,000 post-hoc A6 re-judge also read FAIL (8 cells).
+
+**What is true (MEASURED, `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/battery/raw/g0diag_step50400/`).**
+The registered A6 (SPEC.md, registered 2026-10-04T08:17:13+02:00, before any 50,400 number) says in item 7: *"Unchanged:
+every other class and tolerance, A2's low-support rule, …"*. The judge `code/g0_refcv7.py:967` applied A2's low-support
+rule only `if amend in ("A2", "A5")`, so under `amend="A6"` all 238 low-support DETECTION cells (support n_pos < 30) were
+gated at abs 0.02. Every one of the 13 (50,400) and 8 (30,000) failing cells is such a cell (n_pos 1–3; AP on n = 1 is
+1/rank, so one flipped decision moves it by ≥ 0.03). Re-read under the registered text (A2's rule applied, nothing else;
+two controls reproduce the banked A6 and A5 judgements exactly): **50,400 PASS** (0 reasons; M1 detected on 5 SMOOTH terms,
+M2 62, M4 2) and **30,000 PASS**. The in-run deviation on those cells tracks the numerics-only `fp32_s0` arm (Spearman 0.49 /
+0.64) — trunk compile vs eager, batch-16 vs micro-batch partition under bf16, and the GPU: replay-path numerics on
+tiny-n discrete cells, not the model.
+
+**Ruling (Master Mind).** The registered TEXT is the record; the code is the instrument that was meant to implement it.
+Both readings are kept: "as registered (text) PASS — computed by the corrected judge after the coded verdict was read;
+criterion unchanged" and "as coded FAIL — judge defect". Fix: `A2_LOWSUPPORT_AMENDS = ("A2", "A5", "A6", "A7")`, pinned by
+`code/test_g0_a6_lowsupport.py` (its two strict-xfail tests now pass; the four G0 suites 24 passed).
+
+**Class: an amendment's "unchanged" clause is a CODE PATH, not a sentence.** The judge dispatched an inherited rule by an
+explicit amendment-label tuple, so adding the label A6 silently dropped A2's rule. A6's own tests covered only what A6
+changed; its power check ran at 5,000, where no low-support cell crossed 0.02; and the 30,000 post-hoc A6 FAIL that
+exhibited the defect was banked at 13:19 and went unread before the 50,400 G0 started at 13:20. Same family as "a check
+that shares the defect it checks for" (CLAUDE.md 2026-09-07). ⇒ **Every "unchanged" clause in an amendment gets an
+inheritance test that runs the NEW label through the OLD rule.**
