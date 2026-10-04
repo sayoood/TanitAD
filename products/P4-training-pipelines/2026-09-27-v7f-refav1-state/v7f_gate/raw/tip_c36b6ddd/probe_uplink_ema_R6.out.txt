@@ -1,0 +1,5 @@
+STATUS FAIL
+  - R6: 3 layer_str parameter(s) CHANGED over the smoke (['ema_adapter_str.module.0.bias', 'ema_adapter_str.module.0.weight', 'ema_adapter_str.module.2.weight']; mechanism ['EMA']) -- the strategic layer must receive NO update in any v7F phase
+  - R6: the smoke's own ckpt.pt carries 3 layer_str tensor(s) different from their value at optimizer construction
+R6 {"n_layer_str_tensors": 60, "moved_in_memory": ["ema_adapter_str.module.0.bias", "ema_adapter_str.module.0.weight", "ema_adapter_str.module.2.weight"], "differs_in_saved_ckpt": ["ema_adapter_str.module.0.bias", "ema_adapter_str.module.0.weight", "ema_adapter_str.module.2.weight"], "grad_populated_tensors": 0, "grad_populated_nonzero": 0, "grad_populated_sample": [], "_read": "(a) decisive: bit-identity at optimizer construction vs end of smoke and vs the smoke's own ckpt.pt; (b) reported: .grad populated (not gated)"}
+FROZEN {"moved": [], "ema_teacher_moved_reported": [], "extra_frozen_by_flag": []}

@@ -1,0 +1,4 @@
+# v7f_r3: keep each diff byte-exact (its content lines carry the TARGET blob's EOL:
+# train_v6_staged.py blob = LF, test_v6_effective_weights.py blob = CRLF), so `git apply`
+# onto c36b6ddd keeps working through core.autocrlf=true. Scoped to this folder only.
+*.diff -text

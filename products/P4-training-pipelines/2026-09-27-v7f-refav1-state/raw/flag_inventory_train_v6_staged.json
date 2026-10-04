@@ -1,0 +1,4010 @@
+{
+ "trainer": "C:\\Users\\Admin\\tipsnap\\b3f7ea6f\\stack\\scripts\\train_v6_staged.py",
+ "stack": "C:\\Users\\Admin\\tipsnap\\b3f7ea6f\\stack",
+ "n_stack_files_scanned": 1126,
+ "n_flags": 232,
+ "flags": [
+  {
+   "options": [
+    "--stage"
+   ],
+   "dest": "stage",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": "<expr> STAGES",
+   "action": null,
+   "help": null,
+   "lineno": 9101,
+   "reads_in_trainer": 71,
+   "reads_elsewhere_in_stack": 59,
+   "status": "READ",
+   "proposed_class": "RUNTIME"
+  },
+  {
+   "options": [
+    "--out"
+   ],
+   "dest": "out",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9102,
+   "reads_in_trainer": 5,
+   "reads_elsewhere_in_stack": 702,
+   "status": "READ",
+   "proposed_class": "RUNTIME"
+  },
+  {
+   "options": [
+    "--prev-gate"
+   ],
+   "dest": "prev_gate",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": null,
+   "help": "path to the PREVIOUS stage's stage_gate.json (X5)",
+   "lineno": 9104,
+   "reads_in_trainer": 3,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--allow-inconclusive-gate"
+   ],
+   "dest": "allow_inconclusive_gate",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": "store_true",
+   "help": "proceed on an INCONCLUSIVE (never a FAILED) previous gate; requires --gate-off-reason",
+   "lineno": 9106,
+   "reads_in_trainer": 3,
+   "reads_elsewhere_in_stack": 3,
+   "status": "READ",
+   "proposed_class": "RUNTIME"
+  },
+  {
+   "options": [
+    "--gate-off-reason"
+   ],
+   "dest": "gate_off_reason",
+   "dynamic": false,
+   "default": "",
+   "type": null,
+   "choices": null,
+   "action": null,
+   "help": "why the inconclusive gate is being overridden \u2014 recorded in config.json and printed as a banner",
+   "lineno": 9109,
+   "reads_in_trainer": 3,
+   "reads_elsewhere_in_stack": 3,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--resume"
+   ],
+   "dest": "resume",
+   "dynamic": false,
+   "default": "auto",
+   "type": null,
+   "choices": [
+    "auto",
+    "off"
+   ],
+   "action": null,
+   "help": "auto = continue from <out>/ckpt.pt when present (a supervisor replays its captured command, so a relaunch MUST NOT restart at step 0)",
+   "lineno": 9112,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 5,
+   "status": "READ",
+   "proposed_class": "RUNTIME"
+  },
+  {
+   "options": [
+    "--force-rerun"
+   ],
+   "dest": "force_rerun",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": "store_true",
+   "help": "\u26d4 discard a DONE run or overwrite a live ckpt.pt. The done-marker is the remote off-switch; this is the only way past it.",
+   "lineno": 9116,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--init-from"
+   ],
+   "dest": "init_from",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": null,
+   "help": "previous stage's ckpt.pt \u2014 S-T/S-S/S-J MUST start from the stage below, or the ladder is four unrelated models with a gate between them",
+   "lineno": 9120,
+   "reads_in_trainer": 8,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--init-encoder-from",
+    "--enc-init-from"
+   ],
+   "dest": "init_encoder_from",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": null,
+   "help": "ENCODER-ONLY seed built by stack/scripts/dinov3_seed_checkpoint.py (the PI's 'DINO as init'). \u26d4 Refuses without a provenance stamp, on a geo",
+   "lineno": 9125,
+   "reads_in_trainer": 6,
+   "reads_elsewhere_in_stack": 2,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--trunk-lr-scale"
+   ],
+   "dest": "trunk_lr_scale",
+   "dynamic": false,
+   "default": 1.0,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": "multiply the TRUNK group's LR by this (V6Stack.group_of == 'encoder'; the readout keeps the full LR). \u26d4 1.0 = today: ONE flat AdamW group, n",
+   "lineno": 9135,
+   "reads_in_trainer": 3,
+   "reads_elsewhere_in_stack": 1,
+   "status": "READ",
+   "proposed_class": "OPTIM"
+  },
+  {
+   "options": [
+    "--trunk-lr-warmup-steps"
+   ],
+   "dest": "trunk_lr_warmup_steps",
+   "dynamic": false,
+   "default": 0,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": "steps during which the trunk LR is EXACTLY 0, so the heads learn against a stationary trunk first (PREREG_V7F D7: 2000). A hard gate, not a ",
+   "lineno": 9142,
+   "reads_in_trainer": 3,
+   "reads_elsewhere_in_stack": 1,
+   "status": "READ",
+   "proposed_class": "OPTIM"
+  },
+  {
+   "options": [
+    "--w-trunk-anchor"
+   ],
+   "dest": "w_trunk_anchor",
+   "dynamic": false,
+   "default": 0.0,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": "\u2b50 WIRED (D-V7-TRUNK-ANCHOR). L2 (MSE) pull of the LIVE trunk's per-patch tokens toward a FROZEN copy of the SEED's own weights, on the NEWES",
+   "lineno": 9148,
+   "reads_in_trainer": 2,
+   "reads_elsewhere_in_stack": 2,
+   "status": "READ",
+   "proposed_class": "LOSS"
+  },
+  {
+   "options": [
+    "--trunk-anchor-model"
+   ],
+   "dest": "trunk_anchor_model",
+   "dynamic": false,
+   "default": "facebook/dinov3-vitb16-pretrain-lvd1689m",
+   "type": "str",
+   "choices": null,
+   "action": null,
+   "help": "\u2b50 NO LONGER INERT \u2014 CROSS-CHECKED against the seed's own provenance stamp and REFUSES on disagreement. The teacher IS the seed (a frozen cop",
+   "lineno": 9159,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--obs-monitor-every"
+   ],
+   "dest": "obs_monitor_every",
+   "dynamic": false,
+   "default": 0,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": "read the Observer-Effect probe every N steps (0 = OFF = today, byte-identical). A LINEAR ridge on the trunk's patch tokens against DYNAMIC t",
+   "lineno": 9168,
+   "reads_in_trainer": 2,
+   "reads_elsewhere_in_stack": 1,
+   "status": "READ",
+   "proposed_class": "RUNTIME"
+  },
+  {
+   "options": [
+    "--obs-monitor-window"
+   ],
+   "dest": "obs_monitor_window",
+   "dynamic": false,
+   "default": 256,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": "rows of the monitor's ring buffer. The read needs n >= 4*d or it emits UNDERPOWERED rather than a number (n << d is the 2026-08-22 failure #",
+   "lineno": 9177,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "DATA"
+  },
+  {
+   "options": [
+    "--obs-monitor-dims"
+   ],
+   "dest": "obs_monitor_dims",
+   "dynamic": false,
+   "default": 32,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": "dimension of the FIXED seeded random projection the probe fits in. Fixed at construction so readings are comparable across steps AND across ",
+   "lineno": 9181,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--gate-probes"
+   ],
+   "dest": "gate_probes",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": null,
+   "help": "JSON of externally-run battery probes to fold into this stage's gate",
+   "lineno": 9185,
+   "reads_in_trainer": 5,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--in-channels"
+   ],
+   "dest": "in_channels",
+   "dynamic": false,
+   "default": 9,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9189,
+   "reads_in_trainer": 6,
+   "reads_elsewhere_in_stack": 183,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--i-know-this-arm-predates-nav"
+   ],
+   "dest": "predates_nav",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": "store_true",
+   "help": "reproduce a PRE-DIRECTIVE arm without nav; the choice is RECORDED in config.json rather than left silent",
+   "lineno": 9196,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 1,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--no-step-ckpts"
+   ],
+   "dest": "no_step_ckpts",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": "store_true",
+   "help": "do NOT keep ckpt_step<N>.pt copies (default: keep). Only for disk-constrained hosts \u2014 the trajectory is unrecoverable afterwards.",
+   "lineno": 9203,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 1,
+   "status": "READ",
+   "proposed_class": "RUNTIME"
+  },
+  {
+   "options": [
+    "--nav-cond"
+   ],
+   "dest": "nav_cond",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": "store_true",
+   "help": "condition all three layers on the nav command token (PI directive 2026-08-30). MANDATORY for v7-line arms; the preflight REFUSES a v7 stage ",
+   "lineno": 9207,
+   "reads_in_trainer": 2,
+   "reads_elsewhere_in_stack": 2,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--newest-frame-only"
+   ],
+   "dest": "newest_frame_only",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": "store_true",
+   "help": null,
+   "lineno": 9211,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 2,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--frame-h"
+   ],
+   "dest": "frame_h",
+   "dynamic": false,
+   "default": 256,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9213,
+   "reads_in_trainer": 5,
+   "reads_elsewhere_in_stack": 10,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--frame-w"
+   ],
+   "dest": "frame_w",
+   "dynamic": false,
+   "default": 640,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9214,
+   "reads_in_trainer": 5,
+   "reads_elsewhere_in_stack": 8,
+   "status": "READ",
+   "proposed_class": "LOSS"
+  },
+  {
+   "options": [
+    "--patch"
+   ],
+   "dest": "patch",
+   "dynamic": false,
+   "default": 16,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9215,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 15,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--enc-dim"
+   ],
+   "dest": "enc_dim",
+   "dynamic": false,
+   "default": 384,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9216,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 1,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--enc-depth"
+   ],
+   "dest": "enc_depth",
+   "dynamic": false,
+   "default": 8,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9217,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 1,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--enc-heads"
+   ],
+   "dest": "enc_heads",
+   "dynamic": false,
+   "default": 6,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9218,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 1,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--grad-checkpoint"
+   ],
+   "dest": "grad_checkpoint",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": "store_true",
+   "help": "master switch: checkpoint the ENCODER blocks and (unless --rollout-grad-checkpoint overrides) the k-step rollout",
+   "lineno": 9219,
+   "reads_in_trainer": 2,
+   "reads_elsewhere_in_stack": 19,
+   "status": "READ",
+   "proposed_class": "OPTIM"
+  },
+  {
+   "options": [
+    "--enc-grad-checkpoint"
+   ],
+   "dest": "enc_grad_checkpoint",
+   "dynamic": false,
+   "default": "auto",
+   "type": null,
+   "choices": [
+    "auto",
+    "on",
+    "off"
+   ],
+   "action": null,
+   "help": "override checkpointing for the ENCODER only",
+   "lineno": 9229,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 5,
+   "status": "READ",
+   "proposed_class": "OPTIM"
+  },
+  {
+   "options": [
+    "--rollout-grad-checkpoint"
+   ],
+   "dest": "rollout_grad_checkpoint",
+   "dynamic": false,
+   "default": "auto",
+   "type": null,
+   "choices": [
+    "auto",
+    "on",
+    "off"
+   ],
+   "action": null,
+   "help": "override checkpointing for the k-step ROLLOUT only; turning this off at k=60 restores a measured OOM",
+   "lineno": 9232,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 4,
+   "status": "READ",
+   "proposed_class": "OPTIM"
+  },
+  {
+   "options": [
+    "--bptt-truncate"
+   ],
+   "dest": "bptt_truncate",
+   "dynamic": false,
+   "default": 0,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": "truncated-BPTT depth for the k-step ROLLOUT (metric_dynamics.rollout_transitions): detach the CARRIED latent window every N steps so the bac",
+   "lineno": 9237,
+   "reads_in_trainer": 3,
+   "reads_elsewhere_in_stack": 11,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--readout-grid"
+   ],
+   "dest": "readout_grid",
+   "dynamic": false,
+   "default": 4,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9254,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 4,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--readout-grid-w"
+   ],
+   "dest": "readout_grid_w",
+   "dynamic": false,
+   "default": null,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9255,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "LOSS"
+  },
+  {
+   "options": [
+    "--readout-dim"
+   ],
+   "dest": "readout_dim",
+   "dynamic": false,
+   "default": 128,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9256,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--pred-modern"
+   ],
+   "dest": "pred_modern",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": "store_true",
+   "help": "ViT-5-recipe predictor blocks (RMSNorm + QK-Norm + LayerScale + bias-free attention). CHANGES THE STATE-DICT KEYS: a declared arm; strict lo",
+   "lineno": 9257,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--pred-dim"
+   ],
+   "dest": "pred_dim",
+   "dynamic": false,
+   "default": 768,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9262,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--pred-depth"
+   ],
+   "dest": "pred_depth",
+   "dynamic": false,
+   "default": 6,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9263,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--pred-heads"
+   ],
+   "dest": "pred_heads",
+   "dynamic": false,
+   "default": 12,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9264,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--window"
+   ],
+   "dest": "window",
+   "dynamic": false,
+   "default": 6,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9265,
+   "reads_in_trainer": 26,
+   "reads_elsewhere_in_stack": 439,
+   "status": "READ",
+   "proposed_class": "DATA"
+  },
+  {
+   "options": [
+    "--horizons"
+   ],
+   "dest": "horizons",
+   "dynamic": false,
+   "default": [
+    1,
+    2,
+    4
+   ],
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9266,
+   "reads_in_trainer": 3,
+   "reads_elsewhere_in_stack": 165,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--d-tac"
+   ],
+   "dest": "d_tac",
+   "dynamic": false,
+   "default": 512,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9267,
+   "reads_in_trainer": 3,
+   "reads_elsewhere_in_stack": 65,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--d-str"
+   ],
+   "dest": "d_str",
+   "dynamic": false,
+   "default": 256,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9268,
+   "reads_in_trainer": 4,
+   "reads_elsewhere_in_stack": 38,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--d-goal-embed"
+   ],
+   "dest": "d_goal_embed",
+   "dynamic": false,
+   "default": 128,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9269,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 58,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--adapter-hidden"
+   ],
+   "dest": "adapter_hidden",
+   "dynamic": false,
+   "default": 512,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9270,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 9,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--n-candidates"
+   ],
+   "dest": "n_candidates",
+   "dynamic": false,
+   "default": 8,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9271,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 34,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--param-budget"
+   ],
+   "dest": "param_budget",
+   "dynamic": false,
+   "default": 300000000,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9272,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 3,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--selector"
+   ],
+   "dest": "selector",
+   "dynamic": false,
+   "default": "none",
+   "type": null,
+   "choices": [
+    "none",
+    "goal",
+    "mlp"
+   ],
+   "action": null,
+   "help": "'none' (default) builds NO scorer and leaves the state_dict byte-identical. 'goal' builds the +267 GoalDistanceScorer \u2014 the mechanism E-WC m",
+   "lineno": 9274,
+   "reads_in_trainer": 12,
+   "reads_elsewhere_in_stack": 31,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--selector-tau-m"
+   ],
+   "dest": "selector_tau_m",
+   "dynamic": false,
+   "default": 1.0,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": "selection temperature in metres (goal scorer only)",
+   "lineno": 9283,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 6,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--selector-mlp-hidden"
+   ],
+   "dest": "selector_mlp_hidden",
+   "dynamic": false,
+   "default": 256,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": "hidden width of the 'mlp' capacity control (ignored for every other --selector)",
+   "lineno": 9285,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 6,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--plan-wta-eps"
+   ],
+   "dest": "plan_wta_eps",
+   "dynamic": false,
+   "default": 0.0,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": "epsilon-relaxed WTA: weight on the LOSING candidates' mean error. 0.0 (default) is the incumbent pure WTA, under which N-1 candidates get ZE",
+   "lineno": 9288,
+   "reads_in_trainer": 3,
+   "reads_elsewhere_in_stack": 6,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--proposals"
+   ],
+   "dest": "proposals",
+   "dynamic": false,
+   "default": "query",
+   "type": null,
+   "choices": [
+    "query",
+    "diffusion"
+   ],
+   "action": null,
+   "help": "\u2b50 candidate-fan GENERATOR. 'diffusion' = F-15: diffuse the full 6 s CONTROL sequence (60 x (a,\u03ba)) with temporally correlated OU noise, trunc",
+   "lineno": 9298,
+   "reads_in_trainer": 3,
+   "reads_elsewhere_in_stack": 5,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--diffusion-steps"
+   ],
+   "dest": "diffusion_steps",
+   "dynamic": false,
+   "default": 4,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": "truncated denoise steps (DiffusionDrive's regime)",
+   "lineno": 9309,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 27,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--diffusion-noise-rho"
+   ],
+   "dest": "diffusion_noise_rho",
+   "dynamic": false,
+   "default": 0.9,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": "lag-1 autocorrelation of the OU control-noise. The DRAWN noise's autocorrelation is MEASURED per forward and logged (prop_noise_lag1_autocor",
+   "lineno": 9311,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 5,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--diffusion-hidden"
+   ],
+   "dest": "diffusion_hidden",
+   "dynamic": false,
+   "default": 256,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9316,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 2,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--diffusion-sigma-a"
+   ],
+   "dest": "diffusion_sigma_a",
+   "dynamic": false,
+   "default": 2.0,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": "raw-space noise scale, accel channel (a_max 4.0)",
+   "lineno": 9317,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 2,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--diffusion-sigma-k"
+   ],
+   "dest": "diffusion_sigma_k",
+   "dynamic": false,
+   "default": 0.1,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": "raw-space noise scale, kappa channel (kappa_max 0.2)",
+   "lineno": 9319,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 2,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--mpc-refine"
+   ],
+   "dest": "mpc_refine",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": "store_true",
+   "help": "\u2b50 MPC top-K refinement (selection cell, per the D-1 re-read): the trained selector's scores warm-start the top-K, cost descent refines the C",
+   "lineno": 9321,
+   "reads_in_trainer": 2,
+   "reads_elsewhere_in_stack": 5,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--mpc-topk"
+   ],
+   "dest": "mpc_topk",
+   "dynamic": false,
+   "default": 2,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9334,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 4,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--mpc-steps"
+   ],
+   "dest": "mpc_steps",
+   "dynamic": false,
+   "default": 3,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": "cost-descent iterations (CEM is a possible later arm)",
+   "lineno": 9335,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 3,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--mpc-lr"
+   ],
+   "dest": "mpc_lr",
+   "dynamic": false,
+   "default": 0.05,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9337,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 3,
+   "status": "READ",
+   "proposed_class": "OPTIM"
+  },
+  {
+   "options": [
+    "--mpc-roll-k"
+   ],
+   "dest": "mpc_roll_k",
+   "dynamic": false,
+   "default": 0,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": "P_O roll depth for the imagined-consistency REGULARIZER; 0 = no roll (and --mpc-w-consist must be 0)",
+   "lineno": 9338,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 7,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--mpc-w-goal"
+   ],
+   "dest": "mpc_w_goal",
+   "dynamic": false,
+   "default": 1.0,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": "PRIMARY term weight; must stay > 0 \u2014 a regularizer-led refinement is the refuted roll-cost rule wearing MPC's name",
+   "lineno": 9342,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 4,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--mpc-w-kin"
+   ],
+   "dest": "mpc_w_kin",
+   "dynamic": false,
+   "default": 0.1,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": "kinematic smoothness REGULARIZER (the \u00a71.14 tie-breaker); zero-weight ablation always available",
+   "lineno": 9346,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 3,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--mpc-w-consist"
+   ],
+   "dest": "mpc_w_consist",
+   "dynamic": false,
+   "default": 0.0,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": "imagined-consistency REGULARIZER \u2014 the ONE place roll-consistency may enter a cost, never the primary and never the re-score",
+   "lineno": 9349,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 8,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--fallback-trigger"
+   ],
+   "dest": "fallback_trigger",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": "store_true",
+   "help": "\u2b50 context-brain fallback cell (F-17): fan spread + roll-cost VARIANCE -> P7-calibrated uncertainty; fires when the band is exceeded; fallbac",
+   "lineno": 9353,
+   "reads_in_trainer": 3,
+   "reads_elsewhere_in_stack": 3,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--fallback-roll-k"
+   ],
+   "dest": "fallback_roll_k",
+   "dynamic": false,
+   "default": 10,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": "P_O roll depth for the roll-cost-variance half of the signal; 0 = spread-only (logged as such)",
+   "lineno": 9363,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 5,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--fallback-calibration"
+   ],
+   "dest": "fallback_calibration",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": null,
+   "help": "P7 calibration artifact (JSON: spearman_rho, rho_ci, slope, intercept, threshold, w_spread, w_rollvar). load_calibration REFUSES rho < 0.3 o",
+   "lineno": 9366,
+   "reads_in_trainer": 8,
+   "reads_elsewhere_in_stack": 1,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--agent-slots"
+   ],
+   "dest": "agent_slots",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": "store_true",
+   "help": "\u2b50 build the DETR-style perception agent-slot decoder (F-18, DIAGRAM_CONFORMANCE.md \u00a74.2 \u2014 the LAST unbuilt PERCEPTION cell): bbox cx,cy,yaw,",
+   "lineno": 9374,
+   "reads_in_trainer": 4,
+   "reads_elsewhere_in_stack": 13,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--n-slot-queries"
+   ],
+   "dest": "n_slot_queries",
+   "dynamic": false,
+   "default": "<expr> N_QUERIES_DEFAULT",
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": "slot count. \u2b50 RULED 100 (mm-decisions M17), MEASURED on the 2,308-clip train join: mean 4.39, p99 30, MAX 94 per frame over 433,040 frames /",
+   "lineno": 9385,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 8,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--slot-hidden"
+   ],
+   "dest": "slot_hidden",
+   "dynamic": false,
+   "default": 256,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9398,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 4,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--slot-depth"
+   ],
+   "dest": "slot_depth",
+   "dynamic": false,
+   "default": 3,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9399,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 2,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--slot-heads"
+   ],
+   "dest": "slot_heads",
+   "dynamic": false,
+   "default": 8,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9400,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 4,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--slot-src"
+   ],
+   "dest": "slot_src",
+   "dynamic": false,
+   "default": "cells",
+   "type": null,
+   "choices": [
+    "cells",
+    "tokens"
+   ],
+   "action": null,
+   "help": "the memory the slots cross-attend into. 'cells' = the readout's spatial latent (the surface whose content is the open question, RC1); 'token",
+   "lineno": 9401,
+   "reads_in_trainer": 3,
+   "reads_elsewhere_in_stack": 6,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--no-isolate-interp"
+   ],
+   "dest": "no_isolate_interp",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": "store_true",
+   "help": "\u26d4 THE DELIBERATELY MIS-WIRED ARM. Lets the slot decoder's PERCEPTION-LABEL gradient reach the encoder \u2014 which the diagram's header row forbi",
+   "lineno": 9408,
+   "reads_in_trainer": 3,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--goal-factored"
+   ],
+   "dest": "goal_factored",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": "store_true",
+   "help": "factor g_tac LAT x LON (the same factoring a_tac already carries). The MIXED head is KEPT and still emitted -- it is this arm's CONTROL. +47",
+   "lineno": 9420,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 4,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--goal-multilabel"
+   ],
+   "dest": "goal_multilabel",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": "store_true",
+   "help": "independent per-token gates on the UN-factored head (0 params, 0 keys). The factored pair is the structured form of the same fix and is stri",
+   "lineno": 9425,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 3,
+   "status": "READ",
+   "proposed_class": "DATA"
+  },
+  {
+   "options": [
+    "--goal-cat-args"
+   ],
+   "dest": "goal_cat_args",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": "store_true",
+   "help": "the TYPED categorical arg channel. Without it 7 of the 9 g_tac tokens are inexpressible even given perfect labels. REQUIRED by --anchor-goal",
+   "lineno": 9430,
+   "reads_in_trainer": 2,
+   "reads_elsewhere_in_stack": 5,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--tac-goal-cond"
+   ],
+   "dest": "tac_goal_cond",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": "store_true",
+   "help": "\u2b50 build the g_str->P_T conditioning port (F-1, DIAGRAM_CONFORMANCE.md 2026-08-16): a ZERO-INIT cond_tac_dyn Linear whose output is added to ",
+   "lineno": 9434,
+   "reads_in_trainer": 2,
+   "reads_elsewhere_in_stack": 17,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--anchor-goal"
+   ],
+   "dest": "anchor_goal",
+   "dynamic": false,
+   "default": "none",
+   "type": null,
+   "choices": [
+    "none",
+    "snap_lat",
+    "snap_xy",
+    "onehot"
+   ],
+   "action": null,
+   "help": "'none' (default) builds NO anchor head and leaves the state_dict byte-identical. 'snap_lat' is the FACTORED regress-then-snap default the me",
+   "lineno": 9450,
+   "reads_in_trainer": 3,
+   "reads_elsewhere_in_stack": 7,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--anchor-table"
+   ],
+   "dest": "anchor_table",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": null,
+   "help": "a build_refc_anchors.py .pt. \u26d4 REQUIRED by --anchor-goal: the head refuses to run without one, because a zero table would snap every goal to",
+   "lineno": 9460,
+   "reads_in_trainer": 4,
+   "reads_elsewhere_in_stack": 1,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--n-anchors"
+   ],
+   "dest": "n_anchors",
+   "dynamic": false,
+   "default": 256,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": "K of the anchor vocabulary (the shipped refc_anchors_full_REBUILD.pt is 256)",
+   "lineno": 9468,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 47,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--n-lat-bins"
+   ],
+   "dest": "n_lat_bins",
+   "dynamic": false,
+   "default": 16,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": "resolution of the FACTORED lateral sub-vocabulary ('snap_lat' only)",
+   "lineno": 9471,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 8,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--n-agent-slots"
+   ],
+   "dest": "n_agent_slots",
+   "dynamic": false,
+   "default": 8,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9474,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 5,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--w-anchor"
+   ],
+   "dest": "w_anchor",
+   "dynamic": false,
+   "default": 0.0,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": "weight on the ANCHOR_GOAL objective. 0.0 = the term is absent. \u26a0\ufe0f in METRES for metric/softanchor (NATS for the ce control) while the other ",
+   "lineno": 9475,
+   "reads_in_trainer": 5,
+   "reads_elsewhere_in_stack": 19,
+   "status": "READ",
+   "proposed_class": "LOSS"
+  },
+  {
+   "options": [
+    "--anchor-objective"
+   ],
+   "dest": "anchor_objective",
+   "dynamic": false,
+   "default": "metric",
+   "type": null,
+   "choices": "<expr> tuple(ANCHOR_OBJECTIVES)",
+   "action": null,
+   "help": "'metric' (DEFAULT) = endpoint distance on the straight-through emitted point -- the half E-AG2 EXONERATED (snap is NOT separated from the ri",
+   "lineno": 9480,
+   "reads_in_trainer": 3,
+   "reads_elsewhere_in_stack": 2,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--anchor-axis-w"
+   ],
+   "dest": "anchor_axis_w",
+   "dynamic": false,
+   "default": "<expr> list(ANCHOR_AXIS_W_DEFAULT)",
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": "per-axis weights. Default 1 1 = RAW METRES, which is the EVIDENCE-weighted choice, not the symmetric one: the residual is 97.4 % longitudina",
+   "lineno": 9490,
+   "reads_in_trainer": 4,
+   "reads_elsewhere_in_stack": 2,
+   "status": "READ",
+   "proposed_class": "LOSS"
+  },
+  {
+   "options": [
+    "--w-select"
+   ],
+   "dest": "w_select",
+   "dynamic": false,
+   "default": 0.0,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": "weight on the softade selection loss. 0.0 = the term is absent. \u26a0\ufe0f in METRES while the other terms are not \u2014 a declared decision, never a de",
+   "lineno": 9499,
+   "reads_in_trainer": 8,
+   "reads_elsewhere_in_stack": 7,
+   "status": "READ",
+   "proposed_class": "LOSS"
+  },
+  {
+   "options": [
+    "--t2-contrastive"
+   ],
+   "dest": "t2_contrastive",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": "store_true",
+   "help": "build the T2 manoeuvre-contrastive projector on z_tac (+164,225 params / +5 keys at d_tac=512, MEASURED). Introduced in S-T; OFF = the incum",
+   "lineno": 9504,
+   "reads_in_trainer": 4,
+   "reads_elsewhere_in_stack": 2,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--d-t2-proj"
+   ],
+   "dest": "d_t2_proj",
+   "dynamic": false,
+   "default": 128,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9509,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 3,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--d-t2-hidden"
+   ],
+   "dest": "d_t2_hidden",
+   "dynamic": false,
+   "default": 256,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9510,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 4,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--t2-tau"
+   ],
+   "dest": "t2_tau",
+   "dynamic": false,
+   "default": 0.1,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": "InfoNCE temperature at init (learnable thereafter)",
+   "lineno": 9511,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 1,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--w-t2-contrast"
+   ],
+   "dest": "w_t2_contrast",
+   "dynamic": false,
+   "default": 0.0,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": "weight on the T2 contrastive loss. 0.0 = the term is absent. \u26a0\ufe0f in NATS \u2014 not commensurate with --w-select/--w-anchor's metres.",
+   "lineno": 9513,
+   "reads_in_trainer": 4,
+   "reads_elsewhere_in_stack": 1,
+   "status": "READ",
+   "proposed_class": "LOSS"
+  },
+  {
+   "options": [
+    "--t2-positive"
+   ],
+   "dest": "t2_positive",
+   "dynamic": false,
+   "default": "photometric",
+   "type": null,
+   "choices": "<expr> sorted(T2_MANOEUVRE_PRESERVING)",
+   "action": null,
+   "help": "the manoeuvre-PRESERVING view. \u26a0\ufe0f DECLARED ASSUMPTION: the catalog names only the negatives and a contrastive loss needs a positive.",
+   "lineno": 9517,
+   "reads_in_trainer": 2,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--t2-negative"
+   ],
+   "dest": "t2_negative",
+   "dynamic": false,
+   "default": "lane_mirror",
+   "type": null,
+   "choices": "<expr> sorted(T2_MANOEUVRE_REVERSING)",
+   "action": null,
+   "help": "the manoeuvre-REVERSING HARD negative. \u26a0\ufe0f 'time_reverse' is NOT the catalog's manoeuvre reversal on this architecture \u2014 z_tac reads the LAST",
+   "lineno": 9522,
+   "reads_in_trainer": 2,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--w-t5-consist"
+   ],
+   "dest": "w_t5_consist",
+   "dynamic": false,
+   "default": 0.0,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": "weight on the T5 temporal-consistency loss. 0.0 = absent. ZERO new parameters. \u26d4 REFUSED with --lambda-plan 0: a flat plan scores exactly 0.",
+   "lineno": 9530,
+   "reads_in_trainer": 6,
+   "reads_elsewhere_in_stack": 1,
+   "status": "READ",
+   "proposed_class": "LOSS"
+  },
+  {
+   "options": [
+    "--t5-pairs"
+   ],
+   "dest": "t5_pairs",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": "store_true",
+   "help": "draw CONSECUTIVE-WINDOW pairs (the second half of each batch is the same episode's window --t5-lag steps later). Required by --w-t5-consist;",
+   "lineno": 9534,
+   "reads_in_trainer": 4,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--t5-lag"
+   ],
+   "dest": "t5_lag",
+   "dynamic": false,
+   "default": 0,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": "pair offset in OPERATIVE steps; 0 = cfg.stride_tac (5 = 0.5 s at the default clocks)",
+   "lineno": 9539,
+   "reads_in_trainer": 3,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--t5-w-kappa"
+   ],
+   "dest": "t5_w_kappa",
+   "dynamic": false,
+   "default": 1.0,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": "relative weight of the curvature half vs accel",
+   "lineno": 9542,
+   "reads_in_trainer": 2,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--w-s1-multi"
+   ],
+   "dest": "w_s1_multi",
+   "dynamic": false,
+   "default": 0.0,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": "weight on the F-11 multi-tick strategic rollout. 0.0 = absent. ZERO new parameters (it re-rolls predictor_str/act_head_str, both already lay",
+   "lineno": 9545,
+   "reads_in_trainer": 9,
+   "reads_elsewhere_in_stack": 6,
+   "status": "READ",
+   "proposed_class": "LOSS"
+  },
+  {
+   "options": [
+    "--s1-multi-k"
+   ],
+   "dest": "s1_multi_k",
+   "dynamic": false,
+   "default": 2,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": "strategic ticks to roll (K). K=1 IS `--w-s1` and is REFUSED. A K-tick roll needs max_horizon = K*stride_str, so windows/episode is frames-wi",
+   "lineno": 9550,
+   "reads_in_trainer": 8,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--allow-discarded-weights"
+   ],
+   "dest": "allow_discarded_weights",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": "store_true",
+   "help": "acknowledge that an EXPLICITLY PASSED weight is zeroed by `V6LossWeights.for_stage(stage)` and run anyway. \u26d4 The refusal ships WITH this fla",
+   "lineno": 9566,
+   "reads_in_trainer": 2,
+   "reads_elsewhere_in_stack": 2,
+   "status": "READ",
+   "proposed_class": "RUNTIME"
+  },
+  {
+   "options": [
+    "--t3-scores"
+   ],
+   "dest": "t3_scores",
+   "dynamic": false,
+   "default": "",
+   "type": "str",
+   "choices": null,
+   "action": null,
+   "help": "path to the per-window T3 score artifact (a torch .pt holding {'scores': [n_windows], 'provenance': {...}}), produced by scoring the corpus ",
+   "lineno": 9577,
+   "reads_in_trainer": 3,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--t3-alpha-start"
+   ],
+   "dest": "t3_alpha_start",
+   "dynamic": false,
+   "default": -1.0,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": "curriculum exponent at step 0. NEGATIVE = biased towards FREE FLOW, which is what 'free-flow -> dense' means; 0 = uniform.",
+   "lineno": 9586,
+   "reads_in_trainer": 4,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--t3-alpha-end"
+   ],
+   "dest": "t3_alpha_end",
+   "dynamic": false,
+   "default": 1.0,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": "curriculum exponent after warmup (biased towards dense interaction). Must be >= --t3-alpha-start.",
+   "lineno": 9590,
+   "reads_in_trainer": 4,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--t3-warmup-frac"
+   ],
+   "dest": "t3_warmup_frac",
+   "dynamic": false,
+   "default": 0.5,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": "fraction of training over which alpha ramps start -> end; held at end afterwards",
+   "lineno": 9593,
+   "reads_in_trainer": 2,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "OPTIM"
+  },
+  {
+   "options": [
+    "--t3-floor"
+   ],
+   "dest": "t3_floor",
+   "dynamic": false,
+   "default": 0.25,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": "weight floor; MUST be > 0 (a negative exponent on a zero floor is infinite, and floor>0 is what keeps every window reachable = the parity in",
+   "lineno": 9596,
+   "reads_in_trainer": 3,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--domain-strata"
+   ],
+   "dest": "domain_strata",
+   "dynamic": false,
+   "default": "",
+   "type": "str",
+   "choices": null,
+   "action": null,
+   "help": "<expr> f'path to the per-EPISODE {DOMAIN_STRATA_SCHEMA} artifact (JSON: schema/provenan",
+   "lineno": 9601,
+   "reads_in_trainer": 3,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--domain-tau"
+   ],
+   "dest": "domain_tau",
+   "dynamic": false,
+   "default": 1.0,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": "mix temperature. 0 = PROPORTIONAL (every episode equally likely \u2014 the matched control, same code path and same RNG as a live mix); 1 = BALAN",
+   "lineno": 9616,
+   "reads_in_trainer": 4,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--domain-max-amp"
+   ],
+   "dest": "domain_max_amp",
+   "dynamic": false,
+   "default": "<expr> DOMAIN_MIX_MAX_AMPLIFICATION",
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": "\u26d4 ceiling on how much more often the MOST up-weighted episode may be drawn than under a uniform draw. MEASURED at N=2376: a fully balanced 6",
+   "lineno": 9622,
+   "reads_in_trainer": 2,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--domain-min-stratum"
+   ],
+   "dest": "domain_min_stratum",
+   "dynamic": false,
+   "default": "<expr> DOMAIN_MIX_MIN_STRATUM_EPISODES",
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": "\u26d4 refuse a stratum holding fewer episodes than this: at tau=1 it still receives 1/S of EVERY batch, which turns it into a memorisation targe",
+   "lineno": 9630,
+   "reads_in_trainer": 2,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--f-hidden-tac"
+   ],
+   "dest": "f_hidden_tac",
+   "dynamic": false,
+   "default": 512,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": "FTac residual-MLP hidden width, tactical layer",
+   "lineno": 9636,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 3,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--f-hidden-str"
+   ],
+   "dest": "f_hidden_str",
+   "dynamic": false,
+   "default": 512,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": "FTac residual-MLP hidden width, strategic layer",
+   "lineno": 9638,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 2,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--f-blocks"
+   ],
+   "dest": "f_blocks",
+   "dynamic": false,
+   "default": 3,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": "FTac residual blocks per layer predictor",
+   "lineno": 9640,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 6,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--vit5-encoder"
+   ],
+   "dest": "vit5_encoder",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": "store_true",
+   "help": "ViT-5 recipe encoder (arXiv 2602.08071): RMSNorm + LayerScale + QK-Norm + register tokens + joint APE/2D-axial-RoPE, GeLU MLP (ViT-5 REJECTS",
+   "lineno": 9642,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 1,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--n-registers"
+   ],
+   "dest": "n_registers",
+   "dynamic": false,
+   "default": 4,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": "register tokens; consumed internally and STRIPPED before the readout (they are not at a place in the image)",
+   "lineno": 9648,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 9,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--per-layer-encoders"
+   ],
+   "dest": "per_layer_encoders",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": "store_true",
+   "help": "E-ENC arm (b): per-layer encoders instead of one common encoder + adapters. Decide at MATCHED TOTAL PARAMS; a tie goes to the common encoder",
+   "lineno": 9652,
+   "reads_in_trainer": 2,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--plan-steps"
+   ],
+   "dest": "plan_steps",
+   "dynamic": false,
+   "default": "<expr> PLAN_STEPS",
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9657,
+   "reads_in_trainer": 11,
+   "reads_elsewhere_in_stack": 85,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--dt"
+   ],
+   "dest": "dt",
+   "dynamic": false,
+   "default": 0.1,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9658,
+   "reads_in_trainer": 8,
+   "reads_elsewhere_in_stack": 140,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--a-max"
+   ],
+   "dest": "a_max",
+   "dynamic": false,
+   "default": "<expr> A_MAX",
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9659,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 24,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--kappa-max"
+   ],
+   "dest": "kappa_max",
+   "dynamic": false,
+   "default": "<expr> KAPPA_MAX",
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9660,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 36,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--no-isolate-planner"
+   ],
+   "dest": "no_isolate_planner",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": "store_true",
+   "help": "\u26d4 MIS-WIRED ARM: let planner/goal heads backprop into the encoder. Pre-registered control only.",
+   "lineno": 9662,
+   "reads_in_trainer": 4,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--no-isolate-uplink"
+   ],
+   "dest": "no_isolate_uplink",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": "store_true",
+   "help": "\u26d4 co-trained control arm: no stop-grad on the higher->lower latent path",
+   "lineno": 9665,
+   "reads_in_trainer": 3,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--uplink"
+   ],
+   "dest": "uplink",
+   "dynamic": false,
+   "default": "stopgrad",
+   "type": null,
+   "choices": [
+    "stopgrad",
+    "ema"
+   ],
+   "action": null,
+   "help": null,
+   "lineno": 9668,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 9,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--ema-decay"
+   ],
+   "dest": "ema_decay",
+   "dynamic": false,
+   "default": 0.996,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9669,
+   "reads_in_trainer": 8,
+   "reads_elsewhere_in_stack": 11,
+   "status": "READ",
+   "proposed_class": "OPTIM"
+  },
+  {
+   "options": [
+    "--ema-decay-ramp"
+   ],
+   "dest": "ema_decay_ramp",
+   "dynamic": false,
+   "default": "off",
+   "type": null,
+   "choices": [
+    "off",
+    "cosine"
+   ],
+   "action": null,
+   "help": "tau schedule for the O5-EMA TEACHER only (--o5-target ema). off = the incumbent FIXED --ema-decay, bit-identical. cosine = BYOL's ramp (2006",
+   "lineno": 9670,
+   "reads_in_trainer": 5,
+   "reads_elsewhere_in_stack": 1,
+   "status": "READ",
+   "proposed_class": "OPTIM"
+  },
+  {
+   "options": [
+    "--ema-decay-start"
+   ],
+   "dest": "ema_decay_start",
+   "dynamic": false,
+   "default": 0.99,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": "tau at step 0 of the ramp (BYOL's tau_base). Read only when --ema-decay-ramp is not off.",
+   "lineno": 9673,
+   "reads_in_trainer": 4,
+   "reads_elsewhere_in_stack": 1,
+   "status": "READ",
+   "proposed_class": "OPTIM"
+  },
+  {
+   "options": [
+    "--ema-decay-end"
+   ],
+   "dest": "ema_decay_end",
+   "dynamic": false,
+   "default": null,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": "tau the ramp ENDS at, at --steps. Default = --ema-decay, so the ramp LANDS exactly where the fixed arm sat for its whole run \u2014 which is what",
+   "lineno": 9675,
+   "reads_in_trainer": 4,
+   "reads_elsewhere_in_stack": 5,
+   "status": "READ",
+   "proposed_class": "OPTIM"
+  },
+  {
+   "options": [
+    "--o5-target"
+   ],
+   "dest": "o5_target",
+   "dynamic": false,
+   "default": "live",
+   "type": null,
+   "choices": [
+    "live",
+    "ema",
+    "frozen"
+   ],
+   "action": null,
+   "help": "O5's target-latent source. live = the incumbent (stop-grad only). ema = EMA-slow encoder+readout copies (the Drive-JEPA teacher core; P0 bak",
+   "lineno": 9677,
+   "reads_in_trainer": 2,
+   "reads_elsewhere_in_stack": 2,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--o5-target-crop"
+   ],
+   "dest": "o5_target_crop",
+   "dynamic": false,
+   "default": 0.0,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": "MM-E4 L4 (PREREG_DRIFT_ATTACK_LADDER Amendment A): crop the O5 TARGET frames only to a random contiguous azimuthal window of this fraction o",
+   "lineno": 9680,
+   "reads_in_trainer": 3,
+   "reads_elsewhere_in_stack": 2,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--o1-k"
+   ],
+   "dest": "o1_k",
+   "dynamic": false,
+   "default": 10,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": "O1/L_ctrl roll horizon (the W3 probe's k)",
+   "lineno": 9683,
+   "reads_in_trainer": 5,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--w-o1-ctrl"
+   ],
+   "dest": "w_o1_ctrl",
+   "dynamic": false,
+   "default": 1.0,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9685,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "LOSS"
+  },
+  {
+   "options": [
+    "--w-o1-fact"
+   ],
+   "dest": "w_o1_fact",
+   "dynamic": false,
+   "default": 1.0,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9686,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "LOSS"
+  },
+  {
+   "options": [
+    "--w-o1-scene"
+   ],
+   "dest": "w_o1_scene",
+   "dynamic": false,
+   "default": 0.3,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9687,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "LOSS"
+  },
+  {
+   "options": [
+    "--w-o7-distill"
+   ],
+   "dest": "w_o7_distill",
+   "dynamic": false,
+   "default": 0.0,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": "weight for O7 frozen-teacher distillation (E-DEC-9); 0 disables it entirely",
+   "lineno": 9690,
+   "reads_in_trainer": 4,
+   "reads_elsewhere_in_stack": 1,
+   "status": "READ",
+   "proposed_class": "LOSS"
+  },
+  {
+   "options": [
+    "--o7-model"
+   ],
+   "dest": "o7_model",
+   "dynamic": false,
+   "default": "<expr> O7_DEFAULT_MODEL",
+   "type": "str",
+   "choices": null,
+   "action": null,
+   "help": "frozen teacher for O7",
+   "lineno": 9693,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--w-o9-ema"
+   ],
+   "dest": "w_o9_ema",
+   "dynamic": false,
+   "default": 0.0,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": "weight for O9 EMA-target masked-latent (E-DEC-13)",
+   "lineno": 9698,
+   "reads_in_trainer": 4,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "LOSS"
+  },
+  {
+   "options": [
+    "--o9-momentum"
+   ],
+   "dest": "o9_momentum",
+   "dynamic": false,
+   "default": 0.996,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9700,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--o9-mask-frac"
+   ],
+   "dest": "o9_mask_frac",
+   "dynamic": false,
+   "default": 0.5,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9701,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--o9-neighbour-k"
+   ],
+   "dest": "o9_neighbour_k",
+   "dynamic": false,
+   "default": 0,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": "DMT-JEPA neighbour-aggregated targets; 0 = own cell",
+   "lineno": 9702,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--w-o10-psg"
+   ],
+   "dest": "w_o10_psg",
+   "dynamic": false,
+   "default": 0.0,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": "O10 PSG (E-DEC-18): a SHARED physical-state head on the ENCODED and the PREDICTED latent, supervised by our own banked 3D cuboids. Training-",
+   "lineno": 9704,
+   "reads_in_trainer": 5,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "LOSS"
+  },
+  {
+   "options": [
+    "--psg-labels"
+   ],
+   "dest": "psg_labels",
+   "dynamic": false,
+   "default": null,
+   "type": "str",
+   "choices": null,
+   "action": null,
+   "help": "jsonl of per-frame ego-frame cuboids (obstacle.offline).",
+   "lineno": 9709,
+   "reads_in_trainer": 4,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "DATA"
+  },
+  {
+   "options": [
+    "--freeze-readout"
+   ],
+   "dest": "freeze_readout",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": "store_true",
+   "help": "E-DEC-20c: freeze the readout too, so the PREDICTOR is the only trainable party. Separates which module goes degenerate on a frozen feature ",
+   "lineno": 9711,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--psg-enc-only"
+   ],
+   "dest": "psg_enc_only",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": "store_true",
+   "help": "E-DEC-18c: apply PSG to the ENCODED latent ONLY, so no gradient reaches the predictor. PhyLatent's mechanism IS the shared head on BOTH bran",
+   "lineno": 9715,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--psg-eval-every"
+   ],
+   "dest": "psg_eval_every",
+   "dynamic": false,
+   "default": 3,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": "\u26d4 LEAK GUARD: every Nth sorted clip is HELD OUT of PSG supervision. The PSG target DETERMINES n_agents and lead_gap_m, so an arm supervised ",
+   "lineno": 9721,
+   "reads_in_trainer": 3,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "RUNTIME"
+  },
+  {
+   "options": [
+    "--w-o8-pixel"
+   ],
+   "dest": "w_o8_pixel",
+   "dynamic": false,
+   "default": 0.0,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": "weight for O8 raw-pixel distillation (E-DEC-10); 0 disables it entirely",
+   "lineno": 9727,
+   "reads_in_trainer": 4,
+   "reads_elsewhere_in_stack": 1,
+   "status": "READ",
+   "proposed_class": "LOSS"
+  },
+  {
+   "options": [
+    "--o1-stopgrad-factual"
+   ],
+   "dest": "o1_stopgrad_factual",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": "store_true",
+   "help": "LIT-3: treat the factual prediction as a stop-gradient reference in O1's separation term",
+   "lineno": 9736,
+   "reads_in_trainer": 3,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "OPTIM"
+  },
+  {
+   "options": [
+    "--freeze-encoder"
+   ],
+   "dest": "freeze_encoder",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": "store_true",
+   "help": "freeze the encoder; train readout+predictor only (E-DEC-14 split-encoder probe)",
+   "lineno": 9739,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--refuse-unreached"
+   ],
+   "dest": "refuse_unreached",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": "store_true",
+   "help": "REFUSE the launch if any parameter in the optimizer receives no gradient at this run's loss weights. Default OFF: the census is written to c",
+   "lineno": 9745,
+   "reads_in_trainer": 2,
+   "reads_elsewhere_in_stack": 2,
+   "status": "READ",
+   "proposed_class": "RUNTIME"
+  },
+  {
+   "options": [
+    "--allow-unreached"
+   ],
+   "dest": "allow_unreached",
+   "dynamic": false,
+   "default": [],
+   "type": null,
+   "choices": null,
+   "action": null,
+   "help": "module prefixes this run KNOWINGLY leaves at initialisation (e.g. step_readout_op masked_cells). Only meaningful with --refuse-unreached; re",
+   "lineno": 9757,
+   "reads_in_trainer": 2,
+   "reads_elsewhere_in_stack": 2,
+   "status": "READ",
+   "proposed_class": "RUNTIME"
+  },
+  {
+   "options": [
+    "--expect-n-trainable"
+   ],
+   "dest": "expect_n_trainable",
+   "dynamic": false,
+   "default": null,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": "REFUSE the launch unless the post-freeze trainable parameter count equals this exactly. Checked by assert_declared_freezes_hold before step ",
+   "lineno": 9767,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--o1-detach-encoder"
+   ],
+   "dest": "o1_detach_encoder",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": "store_true",
+   "help": "confine O1 to the predictor: detach encoder states for the O1 term only (H-RANK-22)",
+   "lineno": 9775,
+   "reads_in_trainer": 3,
+   "reads_elsewhere_in_stack": 1,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--dkappa"
+   ],
+   "dest": "dkappa",
+   "dynamic": false,
+   "default": "<expr> DKAPPA_DEFAULT",
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9778,
+   "reads_in_trainer": 2,
+   "reads_elsewhere_in_stack": 10,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--daccel"
+   ],
+   "dest": "daccel",
+   "dynamic": false,
+   "default": "<expr> DACCEL_DEFAULT",
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9779,
+   "reads_in_trainer": 2,
+   "reads_elsewhere_in_stack": 10,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--rand-dkappa-max"
+   ],
+   "dest": "rand_dkappa_max",
+   "dynamic": false,
+   "default": 0.05,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9780,
+   "reads_in_trainer": 2,
+   "reads_elsewhere_in_stack": 2,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--rand-daccel-max"
+   ],
+   "dest": "rand_daccel_max",
+   "dynamic": false,
+   "default": 3.0,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9781,
+   "reads_in_trainer": 2,
+   "reads_elsewhere_in_stack": 2,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--w-o2"
+   ],
+   "dest": "w_o2",
+   "dynamic": false,
+   "default": 1.0,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9782,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "LOSS"
+  },
+  {
+   "options": [
+    "--o2-tau-s"
+   ],
+   "dest": "o2_tau_s",
+   "dynamic": false,
+   "default": 2.0,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": "O2 time-to-reach decay constant, SECONDS (never metres \u2014 HIERARCHY_VOCABULARY \u00a72)",
+   "lineno": 9783,
+   "reads_in_trainer": 2,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--w-o3"
+   ],
+   "dest": "w_o3",
+   "dynamic": false,
+   "default": 1.0,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9786,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "LOSS"
+  },
+  {
+   "options": [
+    "--o3-mode"
+   ],
+   "dest": "o3_mode",
+   "dynamic": false,
+   "default": "action",
+   "type": null,
+   "choices": [
+    "action",
+    "static"
+   ],
+   "action": null,
+   "help": null,
+   "lineno": 9787,
+   "reads_in_trainer": 2,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--o3-blocks"
+   ],
+   "dest": "o3_blocks",
+   "dynamic": false,
+   "default": 2,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9788,
+   "reads_in_trainer": 2,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--o3-block-h"
+   ],
+   "dest": "o3_block_h",
+   "dynamic": false,
+   "default": 2,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9789,
+   "reads_in_trainer": 2,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--o3-block-w"
+   ],
+   "dest": "o3_block_w",
+   "dynamic": false,
+   "default": 2,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9790,
+   "reads_in_trainer": 2,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "LOSS"
+  },
+  {
+   "options": [
+    "--o3-band-rows"
+   ],
+   "dest": "o3_band_rows",
+   "dynamic": false,
+   "default": 0,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": "also mask the bottom N near-field readout rows",
+   "lineno": 9791,
+   "reads_in_trainer": 2,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--o4-alpha"
+   ],
+   "dest": "o4_alpha",
+   "dynamic": false,
+   "default": 1.0,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": "O4 saliency exponent; 0 = uniform (control arm)",
+   "lineno": 9793,
+   "reads_in_trainer": 6,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--o4-floor"
+   ],
+   "dest": "o4_floor",
+   "dynamic": false,
+   "default": 0.25,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9795,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--w-o5"
+   ],
+   "dest": "w_o5",
+   "dynamic": false,
+   "default": 1.0,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9796,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 3,
+   "status": "READ",
+   "proposed_class": "LOSS"
+  },
+  {
+   "options": [
+    "--cond-param"
+   ],
+   "dest": "cond_param",
+   "dynamic": false,
+   "default": "<expr> COND_INCUMBENT",
+   "type": "str",
+   "choices": "<expr> [COND_INCUMBENT, COND_EGO_STATE]",
+   "action": null,
+   "help": "conditioning parameterisation. DEFAULT is the incumbent [atan(L*kappa), a_long, v]. 'omega_accel_v' feeds the MEASURED EGO STATE [yaw_rate, ",
+   "lineno": 9798,
+   "reads_in_trainer": 2,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--w-o13-ego"
+   ],
+   "dest": "w_o13_ego",
+   "dynamic": false,
+   "default": 0.0,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": "O13-EGO: predict delta(speed, yaw) at t+k from the PREDICTED LATENT ALONE, through a FROZEN random readout. The action is NOT an input to th",
+   "lineno": 9810,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "LOSS"
+  },
+  {
+   "options": [
+    "--o13-k"
+   ],
+   "dest": "o13_k",
+   "dynamic": false,
+   "default": 4,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": "O13 horizon in operative steps (default 4 = the horizon at which E-DEC-50 measured the action's effect on ego dynamics: dv t 2.56, dyaw t 4.",
+   "lineno": 9818,
+   "reads_in_trainer": 2,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--o13-seed"
+   ],
+   "dest": "o13_seed",
+   "dynamic": false,
+   "default": 1300,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": "seed for O13's FROZEN readout. Changing it changes the target direction -- never compare o13_loss across different seeds.",
+   "lineno": 9822,
+   "reads_in_trainer": 2,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "RUNTIME"
+  },
+  {
+   "options": [
+    "--tac-vocab-version"
+   ],
+   "dest": "tac_vocab_version",
+   "dynamic": false,
+   "default": "v7.0",
+   "type": null,
+   "choices": null,
+   "action": null,
+   "help": "vocabulary version for ALL six surfaces (v7.0 = the frozen FlyWheel vocabulary, MANDATORY default for new runs; recorded-args resumes of old",
+   "lineno": 9826,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 39,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--w-o14"
+   ],
+   "dest": "w_o14",
+   "dynamic": false,
+   "default": 0.0,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": "O14 future-observation aux (PREREG_O14_FUTURE_OBS; R2, PI-approved 2026-08-27). 0 = bit-identical trainer.",
+   "lineno": 9828,
+   "reads_in_trainer": 3,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "LOSS"
+  },
+  {
+   "options": [
+    "--o14-mode"
+   ],
+   "dest": "o14_mode",
+   "dynamic": false,
+   "default": "fut",
+   "type": null,
+   "choices": [
+    "fut",
+    "rec",
+    "fut_diff"
+   ],
+   "action": null,
+   "help": "fut: grey pixels at t+k. rec: at t (the R1 contrast). fut_diff: pix(t+k)-pix(t).",
+   "lineno": 9830,
+   "reads_in_trainer": 2,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--o14-k"
+   ],
+   "dest": "o14_k",
+   "dynamic": false,
+   "default": 4,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": "horizon of the pixel target, in ticks (E-DEC-63 measured at k=4).",
+   "lineno": 9833,
+   "reads_in_trainer": 2,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--o14-shuffle-targets"
+   ],
+   "dest": "o14_shuffle_targets",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": "store_true",
+   "help": "DELIBERATE-REGRESSION arm: cyclic-shift the targets across the batch (a derangement \u2014 randperm fixes points, the o11 lesson). The absorption",
+   "lineno": 9835,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--w-o11-cf"
+   ],
+   "dest": "w_o11_cf",
+   "dynamic": false,
+   "default": 0.0,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": "O11-CF counterfactual action contrastive (E-DEC-30). 0.0 => incumbent loss bit-identical. ADDS to O5, never replaces it: O11 alone is minimi",
+   "lineno": 9837,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "LOSS"
+  },
+  {
+   "options": [
+    "--o11-k"
+   ],
+   "dest": "o11_k",
+   "dynamic": false,
+   "default": 6,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": "rollout step the contrastive is taken at (clamped to --o5-k). Short is deliberate: the action's influence on the scene is largest early and ",
+   "lineno": 9843,
+   "reads_in_trainer": 2,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--o11-tau"
+   ],
+   "dest": "o11_tau",
+   "dynamic": false,
+   "default": 1.0,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": "InfoNCE temperature over squared latent distance.",
+   "lineno": 9848,
+   "reads_in_trainer": 2,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--o11-negs"
+   ],
+   "dest": "o11_negs",
+   "dynamic": false,
+   "default": 1,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": "counterfactual action sequences per window. The no-information floor is ln(1+n) EXACTLY, so this changes the floor -- never compare o11_loss",
+   "lineno": 9850,
+   "reads_in_trainer": 2,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--o5-k"
+   ],
+   "dest": "o5_k",
+   "dynamic": false,
+   "default": 20,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": "O5 rollout length in 10 Hz steps (60 = the \u00a74b 6 s horizon; needs a cache with max_horizon >= 60)",
+   "lineno": 9855,
+   "reads_in_trainer": 9,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--sigreg-accum"
+   ],
+   "dest": "sigreg_accum",
+   "dynamic": false,
+   "default": 1,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9864,
+   "reads_in_trainer": 5,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "OPTIM"
+  },
+  {
+   "options": [
+    "--sigreg-subspaces"
+   ],
+   "dest": "sigreg_subspaces",
+   "dynamic": false,
+   "default": 1,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9866,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 1,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--o5-form"
+   ],
+   "dest": "o5_form",
+   "dynamic": false,
+   "default": "l1",
+   "type": null,
+   "choices": [
+    "l1",
+    "mse"
+   ],
+   "action": null,
+   "help": null,
+   "lineno": 9867,
+   "reads_in_trainer": 2,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--o5-mode"
+   ],
+   "dest": "o5_mode",
+   "dynamic": false,
+   "default": "uniform",
+   "type": null,
+   "choices": [
+    "uniform",
+    "linear-decay",
+    "endpoint"
+   ],
+   "action": null,
+   "help": null,
+   "lineno": 9868,
+   "reads_in_trainer": 2,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--w-o6"
+   ],
+   "dest": "w_o6",
+   "dynamic": false,
+   "default": 0.1,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9871,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "LOSS"
+  },
+  {
+   "options": [
+    "--o6-innovation"
+   ],
+   "dest": "o6_innovation",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": "store_true",
+   "help": "MM-E4 L1 (PREREG_DRIFT_ATTACK_LADDER): O6's sketched test runs on the dynamics INNOVATIONS dz - g(z_t) instead of the states. g = per-batch ",
+   "lineno": 9872,
+   "reads_in_trainer": 2,
+   "reads_elsewhere_in_stack": 3,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--o6-innovation-shuffle"
+   ],
+   "dest": "o6_innovation_shuffle",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": "store_true",
+   "help": "deliberate-regression arm OF --o6-innovation (instrument validity, prereg-committed): permute z_t across rows before fitting g, so g carries",
+   "lineno": 9874,
+   "reads_in_trainer": 2,
+   "reads_elsewhere_in_stack": 3,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--sigreg-slices"
+   ],
+   "dest": "sigreg_slices",
+   "dynamic": false,
+   "default": 512,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9876,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 4,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--sigreg-free-dims"
+   ],
+   "dest": "sigreg_free_dims",
+   "dynamic": false,
+   "default": 0,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9877,
+   "reads_in_trainer": 2,
+   "reads_elsewhere_in_stack": 4,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--spectrum-every"
+   ],
+   "dest": "spectrum_every",
+   "dynamic": false,
+   "default": 200,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9878,
+   "reads_in_trainer": 3,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "RUNTIME"
+  },
+  {
+   "options": [
+    "--spectrum-accum"
+   ],
+   "dest": "spectrum_accum",
+   "dynamic": false,
+   "default": 1,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": "pool this many CONSECUTIVE steps into the O6 spectrum reading (1 = off, the incumbent path)",
+   "lineno": 9886,
+   "reads_in_trainer": 6,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "OPTIM"
+  },
+  {
+   "options": [
+    "--spectrum-ci-reps"
+   ],
+   "dest": "spectrum_ci_reps",
+   "dynamic": false,
+   "default": 0,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": "0 = no interval. >0 emits the cluster JACKKNIFE interval on effective_rank plus this many bootstrap reps as a diagnostic; blocks are --windo",
+   "lineno": 9896,
+   "reads_in_trainer": 6,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--x4-spectrum-layers"
+   ],
+   "dest": "x4_spectrum_layers",
+   "dynamic": false,
+   "default": "tac,str",
+   "type": null,
+   "choices": null,
+   "action": null,
+   "help": "comma list from {tac,str} for the X4 per-layer spectrum records, or 'none' to disable. 'op' is refused: the O6 z_op monitor is the incumbent",
+   "lineno": 9909,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 1,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--w-t1"
+   ],
+   "dest": "w_t1",
+   "dynamic": false,
+   "default": 1.0,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9914,
+   "reads_in_trainer": 2,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "LOSS"
+  },
+  {
+   "options": [
+    "--w-s1"
+   ],
+   "dest": "w_s1",
+   "dynamic": false,
+   "default": 1.0,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 9915,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "LOSS"
+  },
+  {
+   "options": [
+    "--w-s2-goal"
+   ],
+   "dest": "w_s2_goal",
+   "dynamic": false,
+   "default": 0.0,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": "weight on the S2 strategic-goal supervision (CE on g_str/a_str + masked arg L1 vs s2-strategic-v1 labels). 0.0 = the term is absent and the ",
+   "lineno": 9917,
+   "reads_in_trainer": 8,
+   "reads_elsewhere_in_stack": 7,
+   "status": "READ",
+   "proposed_class": "LOSS"
+  },
+  {
+   "options": [
+    "--nav-labels"
+   ],
+   "dest": "nav_labels",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": null,
+   "help": "v7 label blob (s2-geom-v7) supplying the NAV COMMAND per clip. \u2b50 PI 2026-08-31: the nav command combines Alpamayo CoT and ego data and is PI",
+   "lineno": 9924,
+   "reads_in_trainer": 6,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "DATA"
+  },
+  {
+   "options": [
+    "--nav-semantics"
+   ],
+   "dest": "nav_semantics",
+   "dynamic": false,
+   "default": "t0_constant",
+   "type": null,
+   "choices": [
+    "t0_constant",
+    "decremented"
+   ],
+   "action": null,
+   "help": "how nav args age across a clip. 't0_constant': every window carries the t0 values (simple; the window 15 s later still says 'turn right in 1",
+   "lineno": 9934,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--s2-labels"
+   ],
+   "dest": "s2_labels",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": null,
+   "help": "<expr> f\"strategic/tactical label artifact \u2014 TWO schemas, SNIFFED from the FIRST RECORD",
+   "lineno": 9943,
+   "reads_in_trainer": 9,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "DATA"
+  },
+  {
+   "options": [
+    "--allow-any-labels"
+   ],
+   "dest": "allow_any_labels",
+   "dynamic": false,
+   "default": false,
+   "type": null,
+   "choices": null,
+   "action": "store_true",
+   "help": "waive the v7.2 md5 pin on --s2-labels (the two canonical blobs are intrain_eval.V72). The md5 is printed and recorded EITHER way; a non-cano",
+   "lineno": 9971,
+   "reads_in_trainer": 3,
+   "reads_elsewhere_in_stack": 2,
+   "status": "READ",
+   "proposed_class": "DATA"
+  },
+  {
+   "options": [
+    "--dump-seam-plan"
+   ],
+   "dest": "dump_seam_plan",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": null,
+   "help": "DIR to bank the emitted 60-step plan into, one seam_<step>.pt per checkpoint save, for taniteval/tools/seam_probe.py. Unset = nothing is ban",
+   "lineno": 9981,
+   "reads_in_trainer": 4,
+   "reads_elsewhere_in_stack": 3,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--dump-seam-plan-degenerate"
+   ],
+   "dest": "dump_seam_plan_degenerate",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": "store_true",
+   "help": "bank the plan even when every control is exactly zero (the S-W zero-init case). Only for keeping the degenerate artifact deliberately \u2014 a du",
+   "lineno": 9991,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--lambda-plan"
+   ],
+   "dest": "lambda_plan",
+   "dynamic": false,
+   "default": null,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": "<expr> f'planner gradient scale; unset = the STAGE default ({STAGE_LAMBDA_PLAN}). 0 in ",
+   "lineno": 9996,
+   "reads_in_trainer": 9,
+   "reads_elsewhere_in_stack": 6,
+   "status": "READ",
+   "proposed_class": "LOSS"
+  },
+  {
+   "options": [
+    "--v2-cache"
+   ],
+   "dest": "v2_cache",
+   "dynamic": false,
+   "default": [],
+   "type": null,
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 10000,
+   "reads_in_trainer": 8,
+   "reads_elsewhere_in_stack": 42,
+   "status": "READ",
+   "proposed_class": "DATA"
+  },
+  {
+   "options": [
+    "--exclude-eval-clips"
+   ],
+   "dest": "exclude_eval_clips",
+   "dynamic": false,
+   "default": "auto",
+   "type": null,
+   "choices": null,
+   "action": null,
+   "help": "\u26d4 D-V7-EVAL-EXCLUSION (BACKLOG R8). Drop the v7.2 EVAL split's clips from the TRAINING corpus before the dataset is built. 'auto' (DEFAULT) ",
+   "lineno": 10001,
+   "reads_in_trainer": 2,
+   "reads_elsewhere_in_stack": 1,
+   "status": "READ",
+   "proposed_class": "OPTIM"
+  },
+  {
+   "options": [
+    "--allow-eval-clips-in-train"
+   ],
+   "dest": "allow_eval_clips_in_train",
+   "dynamic": false,
+   "default": false,
+   "type": null,
+   "choices": null,
+   "action": "store_true",
+   "help": "\u26d4 THE STAMPED OVERRIDE: keep the v7.2 EVAL clips IN the training set. Printed as a banner and recorded in config.json under `eval_exclusion`",
+   "lineno": 10024,
+   "reads_in_trainer": 2,
+   "reads_elsewhere_in_stack": 4,
+   "status": "READ",
+   "proposed_class": "OPTIM"
+  },
+  {
+   "options": [
+    "--v2-val-cache"
+   ],
+   "dest": "v2_val_cache",
+   "dynamic": false,
+   "default": [],
+   "type": null,
+   "choices": null,
+   "action": null,
+   "help": "\u26d4 NOT SUPPORTED in v6 \u2014 refused at startup. Use train_flagship_v4.py for a held-out gate.",
+   "lineno": 10035,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 20,
+   "status": "READ",
+   "proposed_class": "DATA"
+  },
+  {
+   "options": [
+    "--v2-lru"
+   ],
+   "dest": "v2_lru",
+   "dynamic": false,
+   "default": 64,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 10038,
+   "reads_in_trainer": 0,
+   "reads_elsewhere_in_stack": 20,
+   "status": "READ",
+   "proposed_class": "DATA"
+  },
+  {
+   "options": [
+    "--v2-subframe"
+   ],
+   "dest": "v2_subframe",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 10039,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 9,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--frame-hfov"
+   ],
+   "dest": "frame_hfov",
+   "dynamic": false,
+   "default": 120.0,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 10040,
+   "reads_in_trainer": 0,
+   "reads_elsewhere_in_stack": 8,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--projection"
+   ],
+   "dest": "projection",
+   "dynamic": false,
+   "default": "cylindrical",
+   "type": null,
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 10041,
+   "reads_in_trainer": 0,
+   "reads_elsewhere_in_stack": 80,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--require-parity"
+   ],
+   "dest": "require_parity",
+   "dynamic": false,
+   "default": true,
+   "type": null,
+   "choices": null,
+   "action": "store_true",
+   "help": null,
+   "lineno": 10042,
+   "reads_in_trainer": 0,
+   "reads_elsewhere_in_stack": 19,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--no-require-parity"
+   ],
+   "dest": "require_parity",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": "store_false",
+   "help": null,
+   "lineno": 10043,
+   "reads_in_trainer": 0,
+   "reads_elsewhere_in_stack": 19,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--eps-per-batch"
+   ],
+   "dest": "eps_per_batch",
+   "dynamic": false,
+   "default": 4,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 10045,
+   "reads_in_trainer": 4,
+   "reads_elsewhere_in_stack": 8,
+   "status": "READ",
+   "proposed_class": "OPTIM"
+  },
+  {
+   "options": [
+    "--max-horizon"
+   ],
+   "dest": "max_horizon",
+   "dynamic": false,
+   "default": null,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": "future steps each window carries. Unset = derived from the stage's own needs (o1_k, o5_k, stride_tac, stride_str, plan_steps). \u26a0\ufe0f NOT inheri",
+   "lineno": 10046,
+   "reads_in_trainer": 3,
+   "reads_elsewhere_in_stack": 80,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--steps"
+   ],
+   "dest": "steps",
+   "dynamic": false,
+   "default": 30000,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 10053,
+   "reads_in_trainer": 14,
+   "reads_elsewhere_in_stack": 153,
+   "status": "READ",
+   "proposed_class": "OPTIM"
+  },
+  {
+   "options": [
+    "--batch"
+   ],
+   "dest": "batch",
+   "dynamic": false,
+   "default": 16,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 10054,
+   "reads_in_trainer": 9,
+   "reads_elsewhere_in_stack": 167,
+   "status": "READ",
+   "proposed_class": "OPTIM"
+  },
+  {
+   "options": [
+    "--lr"
+   ],
+   "dest": "lr",
+   "dynamic": false,
+   "default": 0.0001,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 10055,
+   "reads_in_trainer": 4,
+   "reads_elsewhere_in_stack": 76,
+   "status": "READ",
+   "proposed_class": "OPTIM"
+  },
+  {
+   "options": [
+    "--wd"
+   ],
+   "dest": "wd",
+   "dynamic": false,
+   "default": 0.05,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 10056,
+   "reads_in_trainer": 2,
+   "reads_elsewhere_in_stack": 7,
+   "status": "READ",
+   "proposed_class": "OPTIM"
+  },
+  {
+   "options": [
+    "--clip"
+   ],
+   "dest": "clip",
+   "dynamic": false,
+   "default": 1.0,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 10057,
+   "reads_in_trainer": 2,
+   "reads_elsewhere_in_stack": 125,
+   "status": "READ",
+   "proposed_class": "OPTIM"
+  },
+  {
+   "options": [
+    "--log-every"
+   ],
+   "dest": "log_every",
+   "dynamic": false,
+   "default": 50,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 10058,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 34,
+   "status": "READ",
+   "proposed_class": "RUNTIME"
+  },
+  {
+   "options": [
+    "--save-every"
+   ],
+   "dest": "save_every",
+   "dynamic": false,
+   "default": 1000,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 10059,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 32,
+   "status": "READ",
+   "proposed_class": "RUNTIME"
+  },
+  {
+   "options": [
+    "--device"
+   ],
+   "dest": "device",
+   "dynamic": false,
+   "default": "cuda",
+   "type": null,
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 10060,
+   "reads_in_trainer": 28,
+   "reads_elsewhere_in_stack": 658,
+   "status": "READ",
+   "proposed_class": "RUNTIME"
+  },
+  {
+   "options": [
+    "--no-amp"
+   ],
+   "dest": "no_amp",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": "store_true",
+   "help": null,
+   "lineno": 10061,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 18,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--seed"
+   ],
+   "dest": "seed",
+   "dynamic": false,
+   "default": 0,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 10062,
+   "reads_in_trainer": 13,
+   "reads_elsewhere_in_stack": 213,
+   "status": "READ",
+   "proposed_class": "RUNTIME"
+  },
+  {
+   "options": [
+    "--dry-run"
+   ],
+   "dest": "dry_run",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": "store_true",
+   "help": "build everything, run --dry-steps synthetic CPU steps, write config.json + dry_run.json, exit",
+   "lineno": 10064,
+   "reads_in_trainer": 8,
+   "reads_elsewhere_in_stack": 11,
+   "status": "READ",
+   "proposed_class": "RUNTIME"
+  },
+  {
+   "options": [
+    "--dry-steps"
+   ],
+   "dest": "dry_steps",
+   "dynamic": false,
+   "default": 2,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 10067,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 1,
+   "status": "READ",
+   "proposed_class": "RUNTIME"
+  },
+  {
+   "options": [
+    "--dry-batch"
+   ],
+   "dest": "dry_batch",
+   "dynamic": false,
+   "default": 2,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 10068,
+   "reads_in_trainer": 4,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "OPTIM"
+  },
+  {
+   "options": [
+    "--dry-k"
+   ],
+   "dest": "dry_k",
+   "dynamic": false,
+   "default": 12,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 10069,
+   "reads_in_trainer": 3,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "RUNTIME"
+  },
+  {
+   "options": [
+    "--print-launch"
+   ],
+   "dest": "print_launch",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": "store_true",
+   "help": "print the PYTHONPATH-correct pod launch line and exit",
+   "lineno": 10070,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 1,
+   "status": "READ",
+   "proposed_class": "RUNTIME"
+  },
+  {
+   "options": [
+    "--i-know-this-is-the-control-arm"
+   ],
+   "dest": "control_arm_ack",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": "store_true",
+   "help": "<expr> argparse.SUPPRESS",
+   "lineno": 11026,
+   "reads_in_trainer": 2,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  }
+ ]
+}

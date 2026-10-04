@@ -1,0 +1,5626 @@
+{
+ "dvb_findings_from_rehearsal": {},
+ "n_option_rows": 240,
+ "n_dests": 239,
+ "n_tip_inventory_rows": 232,
+ "status_census": {
+  "COVERED-CPU (named guard)": 62,
+  "NON-LEVER (runtime)": 44,
+  "NOT-COVERABLE-ON-CPU (data)": 24,
+  "NON-LEVER (record)": 8,
+  "COVERED-CPU": 94,
+  "GUARD-NOT-EXERCISED-ON-CPU": 7,
+  "REFUSED-BY-TRAINER": 1
+ },
+ "rows": [
+  {
+   "options": [
+    "--stage"
+   ],
+   "dest": "stage",
+   "default": null,
+   "inventory_class": "RUNTIME",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "the STAGE: the per-group trainability after the trainer's freeze is checked against the gate's LITERAL stage table (the v7f G-DVB probe), and the loss terms in force by G-LIVE",
+   "static_read_functions": [
+    "T:_declared_freeze_preflight",
+    "T:_preflight_effective_weights",
+    "T:_preflight_r1_r4",
+    "T:_preflight_tac_label_all",
+    "T:_run_config",
+    "T:_warn_rank_gate_unrulable",
+    "T:dry_run",
+    "T:effective_weights_stamp",
+    "T:preflight",
+    "T:resolve_lambda_plan",
+    "T:train",
+    "T:v6_weight_specs"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:_declared_freeze_preflight",
+    "train_v6_staged.py:_preflight_effective_weights",
+    "train_v6_staged.py:_preflight_r1_r4",
+    "train_v6_staged.py:_preflight_tac_label_all",
+    "train_v6_staged.py:_run_config",
+    "train_v6_staged.py:_warn_rank_gate_unrulable",
+    "train_v6_staged.py:dry_run",
+    "train_v6_staged.py:effective_weights_stamp",
+    "train_v6_staged.py:preflight",
+    "train_v6_staged.py:resolve_lambda_plan",
+    "train_v6_staged.py:train",
+    "train_v6_staged.py:v6_weight_specs"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--out"
+   ],
+   "dest": "out",
+   "default": null,
+   "inventory_class": "RUNTIME",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "runtime",
+   "runs_in": "gate-time (check_all)",
+   "reason": "the run directory",
+   "static_read_functions": [
+    "T:dry_run",
+    "T:preflight",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:dry_run",
+    "train_v6_staged.py:preflight",
+    "train_v6_staged.py:train"
+   ],
+   "status": "NON-LEVER (runtime)",
+   "note": "not a model lever; the registry names its role"
+  },
+  {
+   "options": [
+    "--prev-gate"
+   ],
+   "dest": "prev_gate",
+   "default": null,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "data",
+   "runs_in": "gate-time (check_all)",
+   "reason": "the predecessor's stage_gate.json (assert_stage_precondition)",
+   "static_read_functions": [
+    "T:dry_run",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:dry_run",
+    "train_v6_staged.py:train"
+   ],
+   "status": "NOT-COVERABLE-ON-CPU (data)",
+   "note": "a host path: content-bound in the token's data manifest on the launch host (Thor)"
+  },
+  {
+   "options": [
+    "--allow-inconclusive-gate"
+   ],
+   "dest": "allow_inconclusive_gate",
+   "default": false,
+   "inventory_class": "RUNTIME",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "record",
+   "runs_in": "gate-time (check_all)",
+   "reason": "an operator override of an INCONCLUSIVE predecessor gate, recorded with --gate-off-reason",
+   "static_read_functions": [
+    "T:dry_run",
+    "T:preflight",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:preflight",
+    "train_v6_staged.py:train"
+   ],
+   "status": "NON-LEVER (record)",
+   "note": "not a model lever; the registry names its role"
+  },
+  {
+   "options": [
+    "--gate-off-reason"
+   ],
+   "dest": "gate_off_reason",
+   "default": "",
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "record",
+   "runs_in": "gate-time (check_all)",
+   "reason": "the recorded reason for the override",
+   "static_read_functions": [
+    "T:dry_run",
+    "T:preflight",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:preflight",
+    "train_v6_staged.py:train"
+   ],
+   "status": "NON-LEVER (record)",
+   "note": "not a model lever; the registry names its role"
+  },
+  {
+   "options": [
+    "--resume"
+   ],
+   "dest": "resume",
+   "default": "auto",
+   "inventory_class": "RUNTIME",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "runtime",
+   "runs_in": "gate-time (check_all)",
+   "reason": "auto/off resume policy (resume_guard)",
+   "static_read_functions": [
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:train"
+   ],
+   "status": "NON-LEVER (runtime)",
+   "note": "not a model lever; the registry names its role"
+  },
+  {
+   "options": [
+    "--force-rerun"
+   ],
+   "dest": "force_rerun",
+   "default": false,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "runtime",
+   "runs_in": "gate-time (check_all)",
+   "reason": "the done-marker override (resume_guard)",
+   "static_read_functions": [
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:train"
+   ],
+   "status": "NON-LEVER (runtime)",
+   "note": "not a model lever; the registry names its role"
+  },
+  {
+   "options": [
+    "--init-from"
+   ],
+   "dest": "init_from",
+   "default": null,
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "data",
+   "runs_in": "gate-time (check_all)",
+   "reason": "the predecessor checkpoint (load_stage_init: strict, STAGE_MAY_INTRODUCE-adjudicated, trunk md5 stamped)",
+   "static_read_functions": [
+    "T:apply_encoder_seed",
+    "T:dry_run",
+    "T:preflight",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:dry_run",
+    "train_v6_staged.py:preflight",
+    "train_v6_staged.py:train"
+   ],
+   "status": "NOT-COVERABLE-ON-CPU (data)",
+   "note": "a host path: content-bound in the token's data manifest on the launch host (Thor)"
+  },
+  {
+   "options": [
+    "--init-encoder-from",
+    "--enc-init-from"
+   ],
+   "dest": "init_encoder_from",
+   "default": null,
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "data",
+   "runs_in": "gate-time (check_all)",
+   "reason": "the encoder-only seed (apply_encoder_seed: provenance stamp + geometry refusal)",
+   "static_read_functions": [
+    "T:apply_encoder_seed",
+    "T:assert_trunk_anchor_preflight"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:apply_encoder_seed"
+   ],
+   "status": "NOT-COVERABLE-ON-CPU (data)",
+   "note": "a host path: content-bound in the token's data manifest on the launch host (Thor)"
+  },
+  {
+   "options": [
+    "--trunk-lr-scale"
+   ],
+   "dest": "trunk_lr_scale",
+   "default": 1.0,
+   "inventory_class": "OPTIM",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "runtime",
+   "runs_in": "gate-time (check_all)",
+   "reason": "the trunk param group's LR factor (build_trunk_optimizer; recorded as trunk_optimizer in config.json)",
+   "static_read_functions": [
+    "T:build_trunk_optimizer",
+    "T:trunk_lr_factor",
+    "T:trunk_lr_split_active"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:trunk_lr_split_active"
+   ],
+   "status": "NON-LEVER (runtime)",
+   "note": "not a model lever; the registry names its role"
+  },
+  {
+   "options": [
+    "--trunk-lr-warmup-steps"
+   ],
+   "dest": "trunk_lr_warmup_steps",
+   "default": 0,
+   "inventory_class": "OPTIM",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "runtime",
+   "runs_in": "gate-time (check_all)",
+   "reason": "the trunk LR hard gate (trunk_lr_factor)",
+   "static_read_functions": [
+    "T:build_trunk_optimizer",
+    "T:trunk_lr_factor",
+    "T:trunk_lr_split_active"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:trunk_lr_split_active"
+   ],
+   "status": "NON-LEVER (runtime)",
+   "note": "not a model lever; the registry names its role"
+  },
+  {
+   "options": [
+    "--w-trunk-anchor"
+   ],
+   "dest": "w_trunk_anchor",
+   "default": 0.0,
+   "inventory_class": "LOSS",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "built INSIDE train() (TrunkAnchor, not a V6Stack module) only when the weight is > 0 and added to L['loss'] after v6_loss_step: its log keys are G-LIVE's term check",
+   "static_read_functions": [
+    "T:assert_trunk_anchor_preflight",
+    "T:build_trunk_anchor"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:assert_trunk_anchor_preflight",
+    "train_v6_staged.py:build_trunk_anchor"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--trunk-anchor-model"
+   ],
+   "dest": "trunk_anchor_model",
+   "default": "facebook/dinov3-vitb16-pretrain-lvd1689m",
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "data",
+   "runs_in": "gate-time (check_all)",
+   "reason": "cross-checked against the seed's provenance stamp (build_trunk_anchor)",
+   "static_read_functions": [
+    "T:build_trunk_anchor"
+   ],
+   "dynamic_consumers": [],
+   "status": "NOT-COVERABLE-ON-CPU (data)",
+   "note": "a host path: content-bound in the token's data manifest on the launch host (Thor)"
+  },
+  {
+   "options": [
+    "--obs-monitor-every"
+   ],
+   "dest": "obs_monitor_every",
+   "default": 0,
+   "inventory_class": "RUNTIME",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "runtime",
+   "runs_in": "gate-time (check_all)",
+   "reason": "the Observer-Effect monitor cadence (an instrument)",
+   "static_read_functions": [
+    "T:assert_trunk_anchor_preflight",
+    "T:build_observer_monitor"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_observer_monitor"
+   ],
+   "status": "NON-LEVER (runtime)",
+   "note": "not a model lever; the registry names its role"
+  },
+  {
+   "options": [
+    "--obs-monitor-window"
+   ],
+   "dest": "obs_monitor_window",
+   "default": 256,
+   "inventory_class": "DATA",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "runtime",
+   "runs_in": "gate-time (check_all)",
+   "reason": "the Observer-Effect monitor buffer",
+   "static_read_functions": [
+    "T:build_observer_monitor"
+   ],
+   "dynamic_consumers": [],
+   "status": "NON-LEVER (runtime)",
+   "note": "not a model lever; the registry names its role"
+  },
+  {
+   "options": [
+    "--obs-monitor-dims"
+   ],
+   "dest": "obs_monitor_dims",
+   "default": 32,
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "runtime",
+   "runs_in": "gate-time (check_all)",
+   "reason": "the Observer-Effect projection width",
+   "static_read_functions": [
+    "T:build_observer_monitor"
+   ],
+   "dynamic_consumers": [],
+   "status": "NON-LEVER (runtime)",
+   "note": "not a model lever; the registry names its role"
+  },
+  {
+   "options": [
+    "--gate-probes"
+   ],
+   "dest": "gate_probes",
+   "default": null,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "data",
+   "runs_in": "gate-time (check_all)",
+   "reason": "externally run battery probes folded into the stage gate",
+   "static_read_functions": [
+    "T:dry_run",
+    "T:preflight",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:dry_run",
+    "train_v6_staged.py:preflight",
+    "train_v6_staged.py:train"
+   ],
+   "status": "NOT-COVERABLE-ON-CPU (data)",
+   "note": "a host path: content-bound in the token's data manifest on the launch host (Thor)"
+  },
+  {
+   "options": [
+    "--in-channels"
+   ],
+   "dest": "in_channels",
+   "default": 9,
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--i-know-this-arm-predates-nav"
+   ],
+   "dest": "predates_nav",
+   "default": false,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "record",
+   "runs_in": "gate-time (check_all)",
+   "reason": "an ACKNOWLEDGEMENT (reproduce a pre-nav arm), recorded; the v7f launch-gate profile REFUSES it (R2)",
+   "static_read_functions": [
+    "T:preflight"
+   ],
+   "dynamic_consumers": [],
+   "status": "NON-LEVER (record)",
+   "note": "not a model lever; the registry names its role"
+  },
+  {
+   "options": [
+    "--no-step-ckpts"
+   ],
+   "dest": "no_step_ckpts",
+   "default": false,
+   "inventory_class": "RUNTIME",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "runtime",
+   "runs_in": "gate-time (check_all)",
+   "reason": "keep/skip ckpt_step<N>.pt copies",
+   "static_read_functions": [
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:train"
+   ],
+   "status": "NON-LEVER (runtime)",
+   "note": "not a model lever; the registry names its role"
+  },
+  {
+   "options": [
+    "--nav-cond"
+   ],
+   "dest": "nav_cond",
+   "default": false,
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args",
+    "T:preflight"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args",
+    "train_v6_staged.py:preflight"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build | HISTORY: FINDING: DECLARED-NOT-BUILT at c36b6ddd and on the first v7F merge (never mapped into V6Config); FIXED in the merge 2026-09-27 -- now BUILT and fed on the rehearsal. Its OPERATIVE channel then trained nothing in S-W (F7, a G-LIVE finding); FIXED in the merge too (_NavBoundPredictor) -- the S-W G-LIVE now reaches every nav leaf"
+  },
+  {
+   "options": [
+    "--newest-frame-only"
+   ],
+   "dest": "newest_frame_only",
+   "default": false,
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args",
+    "train_v58f_unicycle_head:build_train_episodes"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--frame-h"
+   ],
+   "dest": "frame_h",
+   "default": 256,
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:_preflight_subframe",
+    "T:build_stack_from_args",
+    "T:subframe_desync",
+    "geometry:frame_from_args"
+   ],
+   "dynamic_consumers": [
+    "geometry.py:frame_from_args",
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--frame-w"
+   ],
+   "dest": "frame_w",
+   "default": 640,
+   "inventory_class": "LOSS",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:_preflight_subframe",
+    "T:build_stack_from_args",
+    "T:subframe_desync",
+    "geometry:frame_from_args"
+   ],
+   "dynamic_consumers": [
+    "geometry.py:frame_from_args",
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--patch"
+   ],
+   "dest": "patch",
+   "default": 16,
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--enc-dim"
+   ],
+   "dest": "enc_dim",
+   "default": 384,
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--enc-depth"
+   ],
+   "dest": "enc_depth",
+   "default": 8,
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--enc-heads"
+   ],
+   "dest": "enc_heads",
+   "default": 6,
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--grad-checkpoint"
+   ],
+   "dest": "grad_checkpoint",
+   "default": false,
+   "inventory_class": "OPTIM",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "the MASTER switch: resolved into --enc-grad-checkpoint (built: stack.cfg.encoder.grad_checkpoint) and --rollout-grad-checkpoint (a v6_loss_step argument, the gate's G-LIVE loss-knob capture)",
+   "static_read_functions": [
+    "T:resolve_gc"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:resolve_gc"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--enc-grad-checkpoint"
+   ],
+   "dest": "enc_grad_checkpoint",
+   "default": "auto",
+   "inventory_class": "OPTIM",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:resolve_gc"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--rollout-grad-checkpoint"
+   ],
+   "dest": "rollout_grad_checkpoint",
+   "default": "auto",
+   "inventory_class": "OPTIM",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "a v6_loss_step ARGUMENT (no module): the launch gate's G-LIVE records the arguments of every training call and compares them with argv (the 'dry-run passed a knob the train path did not' class)",
+   "static_read_functions": [
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:resolve_gc"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--bptt-truncate"
+   ],
+   "dest": "bptt_truncate",
+   "default": 0,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "a v6_loss_step ARGUMENT (no module): the launch gate's G-LIVE records the arguments of every training call and compares them with argv (the 'dry-run passed a knob the train path did not' class)",
+   "static_read_functions": [
+    "T:dry_run",
+    "T:preflight",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:dry_run",
+    "train_v6_staged.py:preflight",
+    "train_v6_staged.py:train"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--readout-grid"
+   ],
+   "dest": "readout_grid",
+   "default": 4,
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--readout-grid-w"
+   ],
+   "dest": "readout_grid_w",
+   "default": null,
+   "inventory_class": "LOSS",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--readout-dim"
+   ],
+   "dest": "readout_dim",
+   "default": 128,
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--pred-modern"
+   ],
+   "dest": "pred_modern",
+   "default": false,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--pred-dim"
+   ],
+   "dest": "pred_dim",
+   "default": 768,
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--pred-depth"
+   ],
+   "dest": "pred_depth",
+   "default": 6,
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--pred-heads"
+   ],
+   "dest": "pred_heads",
+   "default": 12,
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--window"
+   ],
+   "dest": "window",
+   "default": 6,
+   "inventory_class": "DATA",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--horizons"
+   ],
+   "dest": "horizons",
+   "default": [
+    1,
+    2,
+    4
+   ],
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args",
+    "T:preflight"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args",
+    "train_v6_staged.py:preflight"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--d-tac"
+   ],
+   "dest": "d_tac",
+   "default": 512,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--d-str"
+   ],
+   "dest": "d_str",
+   "default": 256,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--d-goal-embed"
+   ],
+   "dest": "d_goal_embed",
+   "default": 128,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--adapter-hidden"
+   ],
+   "dest": "adapter_hidden",
+   "default": 512,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--n-candidates"
+   ],
+   "dest": "n_candidates",
+   "default": 8,
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--param-budget"
+   ],
+   "dest": "param_budget",
+   "default": 300000000,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--selector"
+   ],
+   "dest": "selector",
+   "default": "none",
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:_term_precondition",
+    "T:build_stack_from_args",
+    "T:preflight"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:_term_precondition",
+    "train_v6_staged.py:build_stack_from_args",
+    "train_v6_staged.py:preflight"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--selector-tau-m"
+   ],
+   "dest": "selector_tau_m",
+   "default": 1.0,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--selector-mlp-hidden"
+   ],
+   "dest": "selector_mlp_hidden",
+   "default": 256,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--plan-wta-eps"
+   ],
+   "dest": "plan_wta_eps",
+   "default": 0.0,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--proposals"
+   ],
+   "dest": "proposals",
+   "default": "query",
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args",
+    "T:preflight"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args",
+    "train_v6_staged.py:preflight"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--diffusion-steps"
+   ],
+   "dest": "diffusion_steps",
+   "default": 4,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--diffusion-noise-rho"
+   ],
+   "dest": "diffusion_noise_rho",
+   "default": 0.9,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--diffusion-hidden"
+   ],
+   "dest": "diffusion_hidden",
+   "default": 256,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--diffusion-sigma-a"
+   ],
+   "dest": "diffusion_sigma_a",
+   "default": 2.0,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--diffusion-sigma-k"
+   ],
+   "dest": "diffusion_sigma_k",
+   "default": 0.1,
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--mpc-refine"
+   ],
+   "dest": "mpc_refine",
+   "default": false,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args",
+    "T:preflight"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args",
+    "train_v6_staged.py:preflight"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--mpc-topk"
+   ],
+   "dest": "mpc_topk",
+   "default": 2,
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--mpc-steps"
+   ],
+   "dest": "mpc_steps",
+   "default": 3,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--mpc-lr"
+   ],
+   "dest": "mpc_lr",
+   "default": 0.05,
+   "inventory_class": "OPTIM",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--mpc-roll-k"
+   ],
+   "dest": "mpc_roll_k",
+   "default": 0,
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--mpc-w-goal"
+   ],
+   "dest": "mpc_w_goal",
+   "default": 1.0,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--mpc-w-kin"
+   ],
+   "dest": "mpc_w_kin",
+   "default": 0.1,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--mpc-w-consist"
+   ],
+   "dest": "mpc_w_consist",
+   "default": 0.0,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--fallback-trigger"
+   ],
+   "dest": "fallback_trigger",
+   "default": false,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args",
+    "T:preflight"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args",
+    "train_v6_staged.py:preflight"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--fallback-roll-k"
+   ],
+   "dest": "fallback_roll_k",
+   "default": 10,
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--fallback-calibration"
+   ],
+   "dest": "fallback_calibration",
+   "default": null,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args",
+    "T:preflight"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args",
+    "train_v6_staged.py:preflight"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--agent-slots"
+   ],
+   "dest": "agent_slots",
+   "default": false,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args",
+    "T:preflight"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args",
+    "train_v6_staged.py:preflight"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--n-slot-queries"
+   ],
+   "dest": "n_slot_queries",
+   "default": 100,
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--slot-hidden"
+   ],
+   "dest": "slot_hidden",
+   "default": 256,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--slot-depth"
+   ],
+   "dest": "slot_depth",
+   "default": 3,
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--slot-heads"
+   ],
+   "dest": "slot_heads",
+   "default": 8,
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--slot-src"
+   ],
+   "dest": "slot_src",
+   "default": "cells",
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args",
+    "T:preflight"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args",
+    "train_v6_staged.py:preflight"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--no-isolate-interp"
+   ],
+   "dest": "no_isolate_interp",
+   "default": false,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args",
+    "T:preflight"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args",
+    "train_v6_staged.py:preflight"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--goal-factored"
+   ],
+   "dest": "goal_factored",
+   "default": false,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:_preflight_tac_label_all",
+    "T:_term_precondition",
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:_preflight_tac_label_all",
+    "train_v6_staged.py:_term_precondition",
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--goal-multilabel"
+   ],
+   "dest": "goal_multilabel",
+   "default": false,
+   "inventory_class": "DATA",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:_preflight_tac_label_all",
+    "T:_term_precondition",
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:_preflight_tac_label_all",
+    "train_v6_staged.py:_term_precondition",
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--goal-cat-args"
+   ],
+   "dest": "goal_cat_args",
+   "default": false,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args",
+    "T:preflight"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--strategic-off"
+   ],
+   "dest": "strategic_off",
+   "default": false,
+   "inventory_class": null,
+   "inventory_status": null,
+   "in_tip_inventory": false,
+   "merge_new": true,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--tac-goal-cond"
+   ],
+   "dest": "tac_goal_cond",
+   "default": false,
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args",
+    "T:preflight"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args",
+    "train_v6_staged.py:preflight"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--tac-op-cond"
+   ],
+   "dest": "tac_op_cond",
+   "default": "off",
+   "inventory_class": null,
+   "inventory_status": null,
+   "in_tip_inventory": false,
+   "merge_new": true,
+   "dvb_kind": "built",
+   "runs_in": "trainer (build: check; R3 path: check_v6) + gate (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:_preflight_r1_r4",
+    "T:build_stack_from_args",
+    "T:r1r4_config_block"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:_preflight_r1_r4",
+    "train_v6_staged.py:build_stack_from_args",
+    "train_v6_staged.py:r1r4_config_block"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--max-speed-input-v6"
+   ],
+   "dest": "max_speed_input_v6",
+   "default": false,
+   "inventory_class": null,
+   "inventory_status": null,
+   "in_tip_inventory": false,
+   "merge_new": true,
+   "dvb_kind": "built",
+   "runs_in": "trainer (build: check; R3 path: check_v6) + gate (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:_preflight_r1_r4",
+    "T:assert_r1r4_record",
+    "T:build_stack_from_args",
+    "T:r1r4_config_block",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:_preflight_r1_r4",
+    "train_v6_staged.py:assert_r1r4_record",
+    "train_v6_staged.py:build_stack_from_args",
+    "train_v6_staged.py:r1r4_config_block"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--speed-max-sidecar-v6"
+   ],
+   "dest": "speed_max_sidecar_v6",
+   "default": null,
+   "inventory_class": null,
+   "inventory_status": null,
+   "in_tip_inventory": false,
+   "merge_new": true,
+   "dvb_kind": "data",
+   "runs_in": "trainer (build: check; R3 path: check_v6) + gate (check_all)",
+   "reason": "the refcv6 max-speed sidecar (RAW SPEED_BAND.v_hi_ms per clip, keyed by stable id): read by train_v6_staged.build_vmax_join; refused by _preflight_r1_r4 when no lever consumes it or when a lever needs",
+   "static_read_functions": [
+    "T:_preflight_r1_r4",
+    "T:dry_run",
+    "T:r1r4_config_block",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:_preflight_r1_r4",
+    "train_v6_staged.py:dry_run",
+    "train_v6_staged.py:r1r4_config_block",
+    "train_v6_staged.py:train"
+   ],
+   "status": "NOT-COVERABLE-ON-CPU (data)",
+   "note": "a host path: content-bound in the token's data manifest on the launch host (Thor)"
+  },
+  {
+   "options": [
+    "--plan-vmax-cap"
+   ],
+   "dest": "plan_vmax_cap",
+   "default": false,
+   "inventory_class": null,
+   "inventory_status": null,
+   "in_tip_inventory": false,
+   "merge_new": true,
+   "dvb_kind": "built",
+   "runs_in": "trainer (build: check; R3 path: check_v6) + gate (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:_preflight_r1_r4",
+    "T:assert_r1r4_record",
+    "T:build_stack_from_args",
+    "T:dry_run",
+    "T:r1r4_config_block",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:_preflight_r1_r4",
+    "train_v6_staged.py:assert_r1r4_record",
+    "train_v6_staged.py:build_stack_from_args",
+    "train_v6_staged.py:dry_run",
+    "train_v6_staged.py:r1r4_config_block"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--anchor-goal"
+   ],
+   "dest": "anchor_goal",
+   "default": "none",
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:_term_precondition",
+    "T:build_stack_from_args",
+    "T:preflight"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:_term_precondition",
+    "train_v6_staged.py:build_stack_from_args",
+    "train_v6_staged.py:preflight"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--anchor-table"
+   ],
+   "dest": "anchor_table",
+   "default": null,
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args",
+    "T:preflight"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--n-anchors"
+   ],
+   "dest": "n_anchors",
+   "default": 256,
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--n-lat-bins"
+   ],
+   "dest": "n_lat_bins",
+   "default": 16,
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--n-agent-slots"
+   ],
+   "dest": "n_agent_slots",
+   "default": 8,
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--w-anchor"
+   ],
+   "dest": "w_anchor",
+   "default": 0.0,
+   "inventory_class": "LOSS",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "loss",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:_preflight_r1_r4",
+    "T:_weights_from_args",
+    "T:preflight"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:_preflight_r1_r4",
+    "train_v6_staged.py:_weights_from_args",
+    "train_v6_staged.py:preflight"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--anchor-objective"
+   ],
+   "dest": "anchor_objective",
+   "default": "metric",
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "a v6_loss_step ARGUMENT (no module): the launch gate's G-LIVE records the arguments of every training call and compares them with argv (the 'dry-run passed a knob the train path did not' class)",
+   "static_read_functions": [
+    "T:dry_run",
+    "T:preflight",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:dry_run",
+    "train_v6_staged.py:preflight",
+    "train_v6_staged.py:train"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--anchor-axis-w"
+   ],
+   "dest": "anchor_axis_w",
+   "default": [
+    1.0,
+    1.0
+   ],
+   "inventory_class": "LOSS",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "a v6_loss_step ARGUMENT (no module): the launch gate's G-LIVE records the arguments of every training call and compares them with argv (the 'dry-run passed a knob the train path did not' class)",
+   "static_read_functions": [
+    "T:dry_run",
+    "T:preflight",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:dry_run",
+    "train_v6_staged.py:preflight",
+    "train_v6_staged.py:train"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--w-select"
+   ],
+   "dest": "w_select",
+   "default": 0.0,
+   "inventory_class": "LOSS",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "loss",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:_weights_from_args",
+    "T:preflight"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:_weights_from_args",
+    "train_v6_staged.py:preflight"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--t2-contrastive"
+   ],
+   "dest": "t2_contrastive",
+   "default": false,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:_term_precondition",
+    "T:build_stack_from_args",
+    "T:preflight"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:_term_precondition",
+    "train_v6_staged.py:build_stack_from_args",
+    "train_v6_staged.py:preflight"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--d-t2-proj"
+   ],
+   "dest": "d_t2_proj",
+   "default": 128,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--d-t2-hidden"
+   ],
+   "dest": "d_t2_hidden",
+   "default": 256,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--t2-tau"
+   ],
+   "dest": "t2_tau",
+   "default": 0.1,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--w-t2-contrast"
+   ],
+   "dest": "w_t2_contrast",
+   "default": 0.0,
+   "inventory_class": "LOSS",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "loss",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:_weights_from_args",
+    "T:preflight"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:_weights_from_args",
+    "train_v6_staged.py:preflight"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--t2-positive"
+   ],
+   "dest": "t2_positive",
+   "default": "photometric",
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "a v6_loss_step ARGUMENT (no module): the launch gate's G-LIVE records the arguments of every training call and compares them with argv (the 'dry-run passed a knob the train path did not' class)",
+   "static_read_functions": [
+    "T:dry_run",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:dry_run",
+    "train_v6_staged.py:train"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--t2-negative"
+   ],
+   "dest": "t2_negative",
+   "default": "lane_mirror",
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "a v6_loss_step ARGUMENT (no module): the launch gate's G-LIVE records the arguments of every training call and compares them with argv (the 'dry-run passed a knob the train path did not' class)",
+   "static_read_functions": [
+    "T:dry_run",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:dry_run",
+    "train_v6_staged.py:train"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--w-t5-consist"
+   ],
+   "dest": "w_t5_consist",
+   "default": 0.0,
+   "inventory_class": "LOSS",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "a V6LossWeights field (term `t5` of v6_loss_step): its head is ALWAYS built, so the declared-vs-live question is G-LIVE's -- the term must be present, finite and reach a trainable parameter on every t",
+   "static_read_functions": [
+    "T:_weights_from_args",
+    "T:preflight"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:_weights_from_args",
+    "train_v6_staged.py:preflight"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--t5-pairs"
+   ],
+   "dest": "t5_pairs",
+   "default": false,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "the consecutive-window pair sampler (batch['t5_pairs']); T5's term is G-LIVE's",
+   "static_read_functions": [
+    "T:_term_precondition",
+    "T:preflight",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:_term_precondition",
+    "train_v6_staged.py:train"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--t5-lag"
+   ],
+   "dest": "t5_lag",
+   "default": 0,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "the T5 partner offset (batch['t5_lag']); refused without --t5-pairs by preflight",
+   "static_read_functions": [
+    "T:preflight",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:preflight",
+    "train_v6_staged.py:train"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--t5-w-kappa"
+   ],
+   "dest": "t5_w_kappa",
+   "default": 1.0,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "a v6_loss_step ARGUMENT (no module): the launch gate's G-LIVE records the arguments of every training call and compares them with argv (the 'dry-run passed a knob the train path did not' class)",
+   "static_read_functions": [
+    "T:dry_run",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:dry_run",
+    "train_v6_staged.py:train"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--w-s1-multi"
+   ],
+   "dest": "w_s1_multi",
+   "default": 0.0,
+   "inventory_class": "LOSS",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "a V6LossWeights field (term `s1_multi` of v6_loss_step): its head is ALWAYS built, so the declared-vs-live question is G-LIVE's -- the term must be present, finite and reach a trainable parameter on e",
+   "static_read_functions": [
+    "T:_weights_from_args",
+    "T:preflight"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:_weights_from_args",
+    "train_v6_staged.py:preflight"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--s1-multi-k"
+   ],
+   "dest": "s1_multi_k",
+   "default": 2,
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "the F-11 roll depth (z_str_multi_target, a batch key); refused as unreachable by train(); its term is G-LIVE's",
+   "static_read_functions": [
+    "T:dry_run",
+    "T:preflight",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:preflight"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--allow-discarded-weights"
+   ],
+   "dest": "allow_discarded_weights",
+   "default": false,
+   "inventory_class": "RUNTIME",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "record",
+   "runs_in": "gate-time (check_all)",
+   "reason": "an ACKNOWLEDGEMENT of weights the effective-weight audit reports as discarded (stamped)",
+   "static_read_functions": [
+    "T:_preflight_effective_weights",
+    "T:effective_weights_stamp"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:_preflight_effective_weights",
+    "train_v6_staged.py:effective_weights_stamp"
+   ],
+   "status": "NON-LEVER (record)",
+   "note": "not a model lever; the registry names its role"
+  },
+  {
+   "options": [
+    "--t3-scores"
+   ],
+   "dest": "t3_scores",
+   "default": "",
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "data",
+   "runs_in": "gate-time (check_all)",
+   "reason": "T3 per-window scores",
+   "static_read_functions": [
+    "T:preflight",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:preflight",
+    "train_v6_staged.py:train"
+   ],
+   "status": "NOT-COVERABLE-ON-CPU (data)",
+   "note": "a host path: content-bound in the token's data manifest on the launch host (Thor)"
+  },
+  {
+   "options": [
+    "--t3-alpha-start"
+   ],
+   "dest": "t3_alpha_start",
+   "default": -1.0,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "runtime",
+   "runs_in": "gate-time (check_all)",
+   "reason": "T3 curriculum schedule (sampling)",
+   "static_read_functions": [
+    "T:preflight",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:preflight"
+   ],
+   "status": "NON-LEVER (runtime)",
+   "note": "not a model lever; the registry names its role"
+  },
+  {
+   "options": [
+    "--t3-alpha-end"
+   ],
+   "dest": "t3_alpha_end",
+   "default": 1.0,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "runtime",
+   "runs_in": "gate-time (check_all)",
+   "reason": "T3 curriculum schedule (sampling)",
+   "static_read_functions": [
+    "T:preflight",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:preflight"
+   ],
+   "status": "NON-LEVER (runtime)",
+   "note": "not a model lever; the registry names its role"
+  },
+  {
+   "options": [
+    "--t3-warmup-frac"
+   ],
+   "dest": "t3_warmup_frac",
+   "default": 0.5,
+   "inventory_class": "OPTIM",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "runtime",
+   "runs_in": "gate-time (check_all)",
+   "reason": "T3 curriculum schedule (sampling)",
+   "static_read_functions": [
+    "T:preflight",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:preflight"
+   ],
+   "status": "NON-LEVER (runtime)",
+   "note": "not a model lever; the registry names its role"
+  },
+  {
+   "options": [
+    "--t3-floor"
+   ],
+   "dest": "t3_floor",
+   "default": 0.25,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "runtime",
+   "runs_in": "gate-time (check_all)",
+   "reason": "T3 curriculum floor (sampling)",
+   "static_read_functions": [
+    "T:preflight",
+    "T:train"
+   ],
+   "dynamic_consumers": [],
+   "status": "NON-LEVER (runtime)",
+   "note": "not a model lever; the registry names its role"
+  },
+  {
+   "options": [
+    "--domain-strata"
+   ],
+   "dest": "domain_strata",
+   "default": "",
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "data",
+   "runs_in": "gate-time (check_all)",
+   "reason": "F-10 strata",
+   "static_read_functions": [
+    "T:preflight",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:preflight",
+    "train_v6_staged.py:train"
+   ],
+   "status": "NOT-COVERABLE-ON-CPU (data)",
+   "note": "a host path: content-bound in the token's data manifest on the launch host (Thor)"
+  },
+  {
+   "options": [
+    "--domain-tau"
+   ],
+   "dest": "domain_tau",
+   "default": 1.0,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "runtime",
+   "runs_in": "gate-time (check_all)",
+   "reason": "F-10 domain mix temperature (sampling)",
+   "static_read_functions": [
+    "T:preflight",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:preflight"
+   ],
+   "status": "NON-LEVER (runtime)",
+   "note": "not a model lever; the registry names its role"
+  },
+  {
+   "options": [
+    "--domain-max-amp"
+   ],
+   "dest": "domain_max_amp",
+   "default": 20.0,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "runtime",
+   "runs_in": "gate-time (check_all)",
+   "reason": "F-10 domain mix cap (sampling)",
+   "static_read_functions": [
+    "T:preflight",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:preflight"
+   ],
+   "status": "NON-LEVER (runtime)",
+   "note": "not a model lever; the registry names its role"
+  },
+  {
+   "options": [
+    "--domain-min-stratum"
+   ],
+   "dest": "domain_min_stratum",
+   "default": 8,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "runtime",
+   "runs_in": "gate-time (check_all)",
+   "reason": "F-10 domain mix minimum stratum (sampling)",
+   "static_read_functions": [
+    "T:preflight",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:preflight"
+   ],
+   "status": "NON-LEVER (runtime)",
+   "note": "not a model lever; the registry names its role"
+  },
+  {
+   "options": [
+    "--f-hidden-tac"
+   ],
+   "dest": "f_hidden_tac",
+   "default": 512,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--f-hidden-str"
+   ],
+   "dest": "f_hidden_str",
+   "default": 512,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--f-blocks"
+   ],
+   "dest": "f_blocks",
+   "default": 3,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--vit5-encoder"
+   ],
+   "dest": "vit5_encoder",
+   "default": false,
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--n-registers"
+   ],
+   "dest": "n_registers",
+   "default": 4,
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--per-layer-encoders"
+   ],
+   "dest": "per_layer_encoders",
+   "default": false,
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args",
+    "T:preflight"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--plan-steps"
+   ],
+   "dest": "plan_steps",
+   "default": 60,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args",
+    "T:preflight"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args",
+    "train_v6_staged.py:preflight"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--dt"
+   ],
+   "dest": "dt",
+   "default": 0.1,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args",
+    "T:preflight",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args",
+    "train_v6_staged.py:train"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--a-max"
+   ],
+   "dest": "a_max",
+   "default": 4.0,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--kappa-max"
+   ],
+   "dest": "kappa_max",
+   "default": 0.2,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--no-isolate-planner"
+   ],
+   "dest": "no_isolate_planner",
+   "default": false,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:_preflight_tac_label_all",
+    "T:build_stack_from_args",
+    "T:preflight"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:_preflight_tac_label_all",
+    "train_v6_staged.py:build_stack_from_args",
+    "train_v6_staged.py:preflight"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--no-isolate-uplink"
+   ],
+   "dest": "no_isolate_uplink",
+   "default": false,
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args",
+    "T:preflight"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args",
+    "train_v6_staged.py:preflight"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--uplink"
+   ],
+   "dest": "uplink",
+   "default": "stopgrad",
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--ema-decay"
+   ],
+   "dest": "ema_decay",
+   "default": 0.996,
+   "inventory_class": "OPTIM",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:_ema_tau_record",
+    "T:build_stack_from_args",
+    "T:dry_run",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--ema-decay-ramp"
+   ],
+   "dest": "ema_decay_ramp",
+   "default": "off",
+   "inventory_class": "OPTIM",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "runtime",
+   "runs_in": "gate-time (check_all)",
+   "reason": "the O5-EMA teacher's per-step tau schedule (ema_tau_at, validated at build); stamped in the log rows by _ema_tau_record -- a schedule, not a module",
+   "static_read_functions": [
+    "T:_ema_tau_record",
+    "T:build_stack_from_args",
+    "T:dry_run",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "NON-LEVER (runtime)",
+   "note": "not a model lever; the registry names its role"
+  },
+  {
+   "options": [
+    "--ema-decay-start"
+   ],
+   "dest": "ema_decay_start",
+   "default": 0.99,
+   "inventory_class": "OPTIM",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "runtime",
+   "runs_in": "gate-time (check_all)",
+   "reason": "the O5-EMA teacher's per-step tau schedule (ema_tau_at, validated at build); stamped in the log rows by _ema_tau_record -- a schedule, not a module",
+   "static_read_functions": [
+    "T:_ema_tau_record",
+    "T:build_stack_from_args",
+    "T:dry_run",
+    "T:train"
+   ],
+   "dynamic_consumers": [],
+   "status": "NON-LEVER (runtime)",
+   "note": "not a model lever; the registry names its role"
+  },
+  {
+   "options": [
+    "--ema-decay-end"
+   ],
+   "dest": "ema_decay_end",
+   "default": null,
+   "inventory_class": "OPTIM",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "runtime",
+   "runs_in": "gate-time (check_all)",
+   "reason": "the O5-EMA teacher's per-step tau schedule (ema_tau_at, validated at build); stamped in the log rows by _ema_tau_record -- a schedule, not a module",
+   "static_read_functions": [
+    "T:_ema_tau_record",
+    "T:build_stack_from_args",
+    "T:dry_run",
+    "T:train"
+   ],
+   "dynamic_consumers": [],
+   "status": "NON-LEVER (runtime)",
+   "note": "not a model lever; the registry names its role"
+  },
+  {
+   "options": [
+    "--o5-target"
+   ],
+   "dest": "o5_target",
+   "default": "live",
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--o5-target-crop"
+   ],
+   "dest": "o5_target_crop",
+   "default": 0.0,
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "refused outside (0, 1) by build_stack_from_args; applied to the O5 TARGET frames in train() (azimuthal_target_crop) -- the target side only, no module",
+   "static_read_functions": [
+    "T:build_stack_from_args",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args",
+    "train_v6_staged.py:train"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--o1-k"
+   ],
+   "dest": "o1_k",
+   "default": 10,
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "a v6_loss_step ARGUMENT (no module): the launch gate's G-LIVE records the arguments of every training call and compares them with argv (the 'dry-run passed a knob the train path did not' class)",
+   "static_read_functions": [
+    "T:dry_run",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:dry_run",
+    "train_v6_staged.py:train"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--w-o1-ctrl"
+   ],
+   "dest": "w_o1_ctrl",
+   "default": 1.0,
+   "inventory_class": "LOSS",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "a V6LossWeights field (term `o1` of v6_loss_step): its head is ALWAYS built, so the declared-vs-live question is G-LIVE's -- the term must be present, finite and reach a trainable parameter on every t",
+   "static_read_functions": [
+    "T:_weights_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:_weights_from_args"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--w-o1-fact"
+   ],
+   "dest": "w_o1_fact",
+   "default": 1.0,
+   "inventory_class": "LOSS",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "a V6LossWeights field (term `o1` of v6_loss_step): its head is ALWAYS built, so the declared-vs-live question is G-LIVE's -- the term must be present, finite and reach a trainable parameter on every t",
+   "static_read_functions": [
+    "T:_weights_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:_weights_from_args"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--w-o1-scene"
+   ],
+   "dest": "w_o1_scene",
+   "default": 0.3,
+   "inventory_class": "LOSS",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "a V6LossWeights field (term `o1` of v6_loss_step): its head is ALWAYS built, so the declared-vs-live question is G-LIVE's -- the term must be present, finite and reach a trainable parameter on every t",
+   "static_read_functions": [
+    "T:_weights_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:_weights_from_args"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--w-o7-distill"
+   ],
+   "dest": "w_o7_distill",
+   "default": 0.0,
+   "inventory_class": "LOSS",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "built INSIDE train() (O7Distill, not a V6Stack module) only when the weight is > 0 and added to L['loss'] after v6_loss_step: its log keys are G-LIVE's term check",
+   "static_read_functions": [
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:train"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--o7-model"
+   ],
+   "dest": "o7_model",
+   "default": "facebook/dinov3-vitl16-pretrain-lvd1689m",
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "a knob of an O7/O9/O10 module built INSIDE train() only when its weight is > 0 (G-LIVE's term check covers it)",
+   "static_read_functions": [
+    "T:train"
+   ],
+   "dynamic_consumers": [],
+   "status": "GUARD-NOT-EXERCISED-ON-CPU",
+   "note": "its branch is off in the rehearsal (the guard runs when the lever is set)"
+  },
+  {
+   "options": [
+    "--w-o9-ema"
+   ],
+   "dest": "w_o9_ema",
+   "default": 0.0,
+   "inventory_class": "LOSS",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "built INSIDE train() (O9EmaMasked, not a V6Stack module) only when the weight is > 0 and added to L['loss'] after v6_loss_step: its log keys are G-LIVE's term check",
+   "static_read_functions": [
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:train"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--o9-momentum"
+   ],
+   "dest": "o9_momentum",
+   "default": 0.996,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "a knob of an O7/O9/O10 module built INSIDE train() only when its weight is > 0 (G-LIVE's term check covers it)",
+   "static_read_functions": [
+    "T:train"
+   ],
+   "dynamic_consumers": [],
+   "status": "GUARD-NOT-EXERCISED-ON-CPU",
+   "note": "its branch is off in the rehearsal (the guard runs when the lever is set)"
+  },
+  {
+   "options": [
+    "--o9-mask-frac"
+   ],
+   "dest": "o9_mask_frac",
+   "default": 0.5,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "a knob of an O7/O9/O10 module built INSIDE train() only when its weight is > 0 (G-LIVE's term check covers it)",
+   "static_read_functions": [
+    "T:train"
+   ],
+   "dynamic_consumers": [],
+   "status": "GUARD-NOT-EXERCISED-ON-CPU",
+   "note": "its branch is off in the rehearsal (the guard runs when the lever is set)"
+  },
+  {
+   "options": [
+    "--o9-neighbour-k"
+   ],
+   "dest": "o9_neighbour_k",
+   "default": 0,
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "a knob of an O7/O9/O10 module built INSIDE train() only when its weight is > 0 (G-LIVE's term check covers it)",
+   "static_read_functions": [
+    "T:train"
+   ],
+   "dynamic_consumers": [],
+   "status": "GUARD-NOT-EXERCISED-ON-CPU",
+   "note": "its branch is off in the rehearsal (the guard runs when the lever is set)"
+  },
+  {
+   "options": [
+    "--w-o10-psg"
+   ],
+   "dest": "w_o10_psg",
+   "default": 0.0,
+   "inventory_class": "LOSS",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "built INSIDE train() (O10PSG, not a V6Stack module) only when the weight is > 0 and added to L['loss'] after v6_loss_step: its log keys are G-LIVE's term check",
+   "static_read_functions": [
+    "T:train",
+    "T:v6_weight_specs"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:train",
+    "train_v6_staged.py:v6_weight_specs"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--psg-labels"
+   ],
+   "dest": "psg_labels",
+   "default": null,
+   "inventory_class": "DATA",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "data",
+   "runs_in": "gate-time (check_all)",
+   "reason": "the O10 PSG targets",
+   "static_read_functions": [
+    "T:train",
+    "T:v6_weight_specs"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:v6_weight_specs"
+   ],
+   "status": "NOT-COVERABLE-ON-CPU (data)",
+   "note": "a host path: content-bound in the token's data manifest on the launch host (Thor)"
+  },
+  {
+   "options": [
+    "--freeze-readout"
+   ],
+   "dest": "freeze_readout",
+   "default": false,
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "an EXTRA freeze of the `readout` group applied inside train() AFTER the corpus build, i.e. after the point a build-only capture sees: G-LIVE's frozen-group check holds every `readout` parameter bit-id",
+   "static_read_functions": [
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:train"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--psg-enc-only"
+   ],
+   "dest": "psg_enc_only",
+   "default": false,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "a knob of an O7/O9/O10 module built INSIDE train() only when its weight is > 0 (G-LIVE's term check covers it)",
+   "static_read_functions": [
+    "T:train"
+   ],
+   "dynamic_consumers": [],
+   "status": "GUARD-NOT-EXERCISED-ON-CPU",
+   "note": "its branch is off in the rehearsal (the guard runs when the lever is set)"
+  },
+  {
+   "options": [
+    "--psg-eval-every"
+   ],
+   "dest": "psg_eval_every",
+   "default": 3,
+   "inventory_class": "RUNTIME",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "a knob of an O7/O9/O10 module built INSIDE train() only when its weight is > 0 (G-LIVE's term check covers it)",
+   "static_read_functions": [
+    "T:train"
+   ],
+   "dynamic_consumers": [],
+   "status": "GUARD-NOT-EXERCISED-ON-CPU",
+   "note": "its branch is off in the rehearsal (the guard runs when the lever is set)"
+  },
+  {
+   "options": [
+    "--w-o8-pixel"
+   ],
+   "dest": "w_o8_pixel",
+   "default": 0.0,
+   "inventory_class": "LOSS",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "built INSIDE train() (O8Pixel, not a V6Stack module) only when the weight is > 0 and added to L['loss'] after v6_loss_step: its log keys are G-LIVE's term check",
+   "static_read_functions": [
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:train"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--o1-stopgrad-factual"
+   ],
+   "dest": "o1_stopgrad_factual",
+   "default": false,
+   "inventory_class": "OPTIM",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "a V6LossWeights switch of the O1 term (G-LIVE: O1's log row echoes it as o1_detach_encoder / o1_stopgrad_factual)",
+   "static_read_functions": [
+    "T:_weights_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:_weights_from_args"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--freeze-encoder"
+   ],
+   "dest": "freeze_encoder",
+   "default": false,
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "an EXTRA freeze of the `encoder` group applied inside train() AFTER the corpus build, i.e. after the point a build-only capture sees: G-LIVE's frozen-group check holds every `encoder` parameter bit-id",
+   "static_read_functions": [
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:train"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--refuse-unreached"
+   ],
+   "dest": "refuse_unreached",
+   "default": false,
+   "inventory_class": "RUNTIME",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "runtime",
+   "runs_in": "gate-time (check_all)",
+   "reason": "promote the grad-reach census to a refusal",
+   "static_read_functions": [
+    "T:dry_run",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:dry_run",
+    "train_v6_staged.py:train"
+   ],
+   "status": "NON-LEVER (runtime)",
+   "note": "not a model lever; the registry names its role"
+  },
+  {
+   "options": [
+    "--allow-unreached"
+   ],
+   "dest": "allow_unreached",
+   "default": [],
+   "inventory_class": "RUNTIME",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "record",
+   "runs_in": "gate-time (check_all)",
+   "reason": "the on-the-record list of modules a run knowingly leaves at init (grad-reach census; the gate's G-LIVE honours it)",
+   "static_read_functions": [
+    "T:dry_run",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:dry_run",
+    "train_v6_staged.py:train"
+   ],
+   "status": "NON-LEVER (record)",
+   "note": "not a model lever; the registry names its role"
+  },
+  {
+   "options": [
+    "--expect-n-trainable"
+   ],
+   "dest": "expect_n_trainable",
+   "default": null,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "record",
+   "runs_in": "gate-time (check_all)",
+   "reason": "an optional runbook assertion on the trainable budget (_declared_freeze_preflight)",
+   "static_read_functions": [
+    "T:_declared_freeze_preflight"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:_declared_freeze_preflight"
+   ],
+   "status": "NON-LEVER (record)",
+   "note": "not a model lever; the registry names its role"
+  },
+  {
+   "options": [
+    "--o1-detach-encoder"
+   ],
+   "dest": "o1_detach_encoder",
+   "default": false,
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "a V6LossWeights switch of the O1 term (G-LIVE: O1's log row echoes it as o1_detach_encoder / o1_stopgrad_factual)",
+   "static_read_functions": [
+    "T:_weights_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:_weights_from_args"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--dkappa"
+   ],
+   "dest": "dkappa",
+   "default": 0.02,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "a v6_loss_step ARGUMENT (no module): the launch gate's G-LIVE records the arguments of every training call and compares them with argv (the 'dry-run passed a knob the train path did not' class)",
+   "static_read_functions": [
+    "T:dry_run",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:dry_run",
+    "train_v6_staged.py:train"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--daccel"
+   ],
+   "dest": "daccel",
+   "default": 2.0,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "a v6_loss_step ARGUMENT (no module): the launch gate's G-LIVE records the arguments of every training call and compares them with argv (the 'dry-run passed a knob the train path did not' class)",
+   "static_read_functions": [
+    "T:dry_run",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:dry_run",
+    "train_v6_staged.py:train"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--rand-dkappa-max"
+   ],
+   "dest": "rand_dkappa_max",
+   "default": 0.05,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "the O1 random-counterfactual draw (sample_random_deltas) at the batch-build site; O1 is G-LIVE's term",
+   "static_read_functions": [
+    "T:dry_run",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:dry_run",
+    "train_v6_staged.py:train"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--rand-daccel-max"
+   ],
+   "dest": "rand_daccel_max",
+   "default": 3.0,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "the O1 random-counterfactual draw (sample_random_deltas) at the batch-build site; O1 is G-LIVE's term",
+   "static_read_functions": [
+    "T:dry_run",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:dry_run",
+    "train_v6_staged.py:train"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--w-o2"
+   ],
+   "dest": "w_o2",
+   "default": 1.0,
+   "inventory_class": "LOSS",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "a V6LossWeights field (term `o2` of v6_loss_step): its head is ALWAYS built, so the declared-vs-live question is G-LIVE's -- the term must be present, finite and reach a trainable parameter on every t",
+   "static_read_functions": [
+    "T:_weights_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:_weights_from_args"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--o2-tau-s"
+   ],
+   "dest": "o2_tau_s",
+   "default": 2.0,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "a v6_loss_step ARGUMENT (no module): the launch gate's G-LIVE records the arguments of every training call and compares them with argv (the 'dry-run passed a knob the train path did not' class)",
+   "static_read_functions": [
+    "T:dry_run",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:dry_run",
+    "train_v6_staged.py:train"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--w-o3"
+   ],
+   "dest": "w_o3",
+   "default": 1.0,
+   "inventory_class": "LOSS",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "a V6LossWeights field (term `o3` of v6_loss_step): its head is ALWAYS built, so the declared-vs-live question is G-LIVE's -- the term must be present, finite and reach a trainable parameter on every t",
+   "static_read_functions": [
+    "T:_weights_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:_weights_from_args"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--o3-mode"
+   ],
+   "dest": "o3_mode",
+   "default": "action",
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "a v6_loss_step ARGUMENT (no module): the launch gate's G-LIVE records the arguments of every training call and compares them with argv (the 'dry-run passed a knob the train path did not' class)",
+   "static_read_functions": [
+    "T:dry_run",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:dry_run",
+    "train_v6_staged.py:train"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--o3-blocks"
+   ],
+   "dest": "o3_blocks",
+   "default": 2,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "a v6_loss_step ARGUMENT (no module): the launch gate's G-LIVE records the arguments of every training call and compares them with argv (the 'dry-run passed a knob the train path did not' class)",
+   "static_read_functions": [
+    "T:dry_run",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:dry_run",
+    "train_v6_staged.py:train"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--o3-block-h"
+   ],
+   "dest": "o3_block_h",
+   "default": 2,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "a v6_loss_step ARGUMENT (no module): the launch gate's G-LIVE records the arguments of every training call and compares them with argv (the 'dry-run passed a knob the train path did not' class)",
+   "static_read_functions": [
+    "T:dry_run",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:dry_run",
+    "train_v6_staged.py:train"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--o3-block-w"
+   ],
+   "dest": "o3_block_w",
+   "default": 2,
+   "inventory_class": "LOSS",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "a v6_loss_step ARGUMENT (no module): the launch gate's G-LIVE records the arguments of every training call and compares them with argv (the 'dry-run passed a knob the train path did not' class)",
+   "static_read_functions": [
+    "T:dry_run",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:dry_run",
+    "train_v6_staged.py:train"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--o3-band-rows"
+   ],
+   "dest": "o3_band_rows",
+   "default": 0,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "a v6_loss_step ARGUMENT (no module): the launch gate's G-LIVE records the arguments of every training call and compares them with argv (the 'dry-run passed a knob the train path did not' class)",
+   "static_read_functions": [
+    "T:dry_run",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:dry_run",
+    "train_v6_staged.py:train"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--o4-alpha"
+   ],
+   "dest": "o4_alpha",
+   "default": 1.0,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "runtime",
+   "runs_in": "gate-time (check_all)",
+   "reason": "O4 interaction-weighted SAMPLING",
+   "static_read_functions": [
+    "T:preflight",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:train"
+   ],
+   "status": "NON-LEVER (runtime)",
+   "note": "not a model lever; the registry names its role"
+  },
+  {
+   "options": [
+    "--o4-floor"
+   ],
+   "dest": "o4_floor",
+   "default": 0.25,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "runtime",
+   "runs_in": "gate-time (check_all)",
+   "reason": "O4 sampling floor",
+   "static_read_functions": [
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:train"
+   ],
+   "status": "NON-LEVER (runtime)",
+   "note": "not a model lever; the registry names its role"
+  },
+  {
+   "options": [
+    "--w-o5"
+   ],
+   "dest": "w_o5",
+   "default": 1.0,
+   "inventory_class": "LOSS",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "a V6LossWeights field (term `o5` of v6_loss_step): its head is ALWAYS built, so the declared-vs-live question is G-LIVE's -- the term must be present, finite and reach a trainable parameter on every t",
+   "static_read_functions": [
+    "T:_weights_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:_weights_from_args"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--cond-param"
+   ],
+   "dest": "cond_param",
+   "default": "steer_accel_v",
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "a v6_loss_step ARGUMENT (no module): the launch gate's G-LIVE records the arguments of every training call and compares them with argv (the 'dry-run passed a knob the train path did not' class)",
+   "static_read_functions": [
+    "T:dry_run",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:dry_run",
+    "train_v6_staged.py:train"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--w-o13-ego"
+   ],
+   "dest": "w_o13_ego",
+   "default": 0.0,
+   "inventory_class": "LOSS",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "a V6LossWeights field (term `o13` of v6_loss_step): its head is ALWAYS built, so the declared-vs-live question is G-LIVE's -- the term must be present, finite and reach a trainable parameter on every ",
+   "static_read_functions": [
+    "T:_weights_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:_weights_from_args"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--o13-k"
+   ],
+   "dest": "o13_k",
+   "default": 4,
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "a v6_loss_step ARGUMENT (no module): the launch gate's G-LIVE records the arguments of every training call and compares them with argv (the 'dry-run passed a knob the train path did not' class)",
+   "static_read_functions": [
+    "T:dry_run",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:dry_run",
+    "train_v6_staged.py:train"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--o13-seed"
+   ],
+   "dest": "o13_seed",
+   "default": 1300,
+   "inventory_class": "RUNTIME",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "a v6_loss_step ARGUMENT (no module): the launch gate's G-LIVE records the arguments of every training call and compares them with argv (the 'dry-run passed a knob the train path did not' class)",
+   "static_read_functions": [
+    "T:dry_run",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:dry_run",
+    "train_v6_staged.py:train"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--tac-vocab-version"
+   ],
+   "dest": "tac_vocab_version",
+   "default": "v7.0",
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:_preflight_tac_label_all",
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:_preflight_tac_label_all",
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--w-o14"
+   ],
+   "dest": "w_o14",
+   "default": 0.0,
+   "inventory_class": "LOSS",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "loss",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:_weights_from_args",
+    "T:build_stack_from_args",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:_weights_from_args",
+    "train_v6_staged.py:build_stack_from_args",
+    "train_v6_staged.py:train"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--o14-mode"
+   ],
+   "dest": "o14_mode",
+   "default": "fut",
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "the O14 TARGET construction at the batch-build site (_o14_pixel_target); G-LIVE checks the o14 term when --w-o14 > 0",
+   "static_read_functions": [
+    "T:dry_run",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:dry_run"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--o14-k"
+   ],
+   "dest": "o14_k",
+   "default": 4,
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "the O14 TARGET construction at the batch-build site (_o14_pixel_target); G-LIVE checks the o14 term when --w-o14 > 0",
+   "static_read_functions": [
+    "T:dry_run",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:dry_run"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--o14-shuffle-targets"
+   ],
+   "dest": "o14_shuffle_targets",
+   "default": false,
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "the O14 TARGET construction at the batch-build site (_o14_pixel_target); G-LIVE checks the o14 term when --w-o14 > 0",
+   "static_read_functions": [
+    "T:train"
+   ],
+   "dynamic_consumers": [],
+   "status": "GUARD-NOT-EXERCISED-ON-CPU",
+   "note": "its branch is off in the rehearsal (the guard runs when the lever is set)"
+  },
+  {
+   "options": [
+    "--w-o11-cf"
+   ],
+   "dest": "w_o11_cf",
+   "default": 0.0,
+   "inventory_class": "LOSS",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "a V6LossWeights field (term `o11` of v6_loss_step): its head is ALWAYS built, so the declared-vs-live question is G-LIVE's -- the term must be present, finite and reach a trainable parameter on every ",
+   "static_read_functions": [
+    "T:_weights_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:_weights_from_args"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--o11-k"
+   ],
+   "dest": "o11_k",
+   "default": 6,
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "a v6_loss_step ARGUMENT (no module): the launch gate's G-LIVE records the arguments of every training call and compares them with argv (the 'dry-run passed a knob the train path did not' class)",
+   "static_read_functions": [
+    "T:dry_run",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:dry_run",
+    "train_v6_staged.py:train"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--o11-tau"
+   ],
+   "dest": "o11_tau",
+   "default": 1.0,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "a v6_loss_step ARGUMENT (no module): the launch gate's G-LIVE records the arguments of every training call and compares them with argv (the 'dry-run passed a knob the train path did not' class)",
+   "static_read_functions": [
+    "T:dry_run",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:dry_run",
+    "train_v6_staged.py:train"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--o11-negs"
+   ],
+   "dest": "o11_negs",
+   "default": 1,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "a v6_loss_step ARGUMENT (no module): the launch gate's G-LIVE records the arguments of every training call and compares them with argv (the 'dry-run passed a knob the train path did not' class)",
+   "static_read_functions": [
+    "T:dry_run",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:dry_run",
+    "train_v6_staged.py:train"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--o5-k"
+   ],
+   "dest": "o5_k",
+   "default": 20,
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "a v6_loss_step ARGUMENT (no module): the launch gate's G-LIVE records the arguments of every training call and compares them with argv (the 'dry-run passed a knob the train path did not' class)",
+   "static_read_functions": [
+    "T:dry_run",
+    "T:preflight",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:dry_run",
+    "train_v6_staged.py:preflight",
+    "train_v6_staged.py:train"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--sigreg-accum"
+   ],
+   "dest": "sigreg_accum",
+   "default": 1,
+   "inventory_class": "OPTIM",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "a v6_loss_step ARGUMENT (no module): the launch gate's G-LIVE records the arguments of every training call and compares them with argv (the 'dry-run passed a knob the train path did not' class)",
+   "static_read_functions": [
+    "T:dry_run",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:dry_run",
+    "train_v6_staged.py:train"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--sigreg-subspaces"
+   ],
+   "dest": "sigreg_subspaces",
+   "default": 1,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--o5-form"
+   ],
+   "dest": "o5_form",
+   "default": "l1",
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "a v6_loss_step ARGUMENT (no module): the launch gate's G-LIVE records the arguments of every training call and compares them with argv (the 'dry-run passed a knob the train path did not' class)",
+   "static_read_functions": [
+    "T:dry_run",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:dry_run",
+    "train_v6_staged.py:train"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--o5-mode"
+   ],
+   "dest": "o5_mode",
+   "default": "uniform",
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "a v6_loss_step ARGUMENT (no module): the launch gate's G-LIVE records the arguments of every training call and compares them with argv (the 'dry-run passed a knob the train path did not' class)",
+   "static_read_functions": [
+    "T:dry_run",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:dry_run",
+    "train_v6_staged.py:train"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--w-o6"
+   ],
+   "dest": "w_o6",
+   "default": 0.1,
+   "inventory_class": "LOSS",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "a V6LossWeights field (term `o6` of v6_loss_step): its head is ALWAYS built, so the declared-vs-live question is G-LIVE's -- the term must be present, finite and reach a trainable parameter on every t",
+   "static_read_functions": [
+    "T:_weights_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:_weights_from_args"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--o6-innovation"
+   ],
+   "dest": "o6_innovation",
+   "default": false,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "a v6_loss_step ARGUMENT (no module): the launch gate's G-LIVE records the arguments of every training call and compares them with argv (the 'dry-run passed a knob the train path did not' class)",
+   "static_read_functions": [
+    "T:dry_run",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:dry_run",
+    "train_v6_staged.py:train"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--o6-innovation-shuffle"
+   ],
+   "dest": "o6_innovation_shuffle",
+   "default": false,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "a v6_loss_step ARGUMENT (no module): the launch gate's G-LIVE records the arguments of every training call and compares them with argv (the 'dry-run passed a knob the train path did not' class)",
+   "static_read_functions": [
+    "T:dry_run",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:dry_run",
+    "train_v6_staged.py:train"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--sigreg-slices"
+   ],
+   "dest": "sigreg_slices",
+   "default": 512,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--sigreg-free-dims"
+   ],
+   "dest": "sigreg_free_dims",
+   "default": 0,
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "built",
+   "runs_in": "gate-time (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:build_stack_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_stack_from_args"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--spectrum-every"
+   ],
+   "dest": "spectrum_every",
+   "default": 200,
+   "inventory_class": "RUNTIME",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "runtime",
+   "runs_in": "gate-time (check_all)",
+   "reason": "O6 spectrum monitor cadence",
+   "static_read_functions": [
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:train"
+   ],
+   "status": "NON-LEVER (runtime)",
+   "note": "not a model lever; the registry names its role"
+  },
+  {
+   "options": [
+    "--spectrum-accum"
+   ],
+   "dest": "spectrum_accum",
+   "default": 1,
+   "inventory_class": "OPTIM",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "runtime",
+   "runs_in": "gate-time (check_all)",
+   "reason": "O6 spectrum pooling (a monitor)",
+   "static_read_functions": [
+    "T:_warn_rank_gate_unrulable",
+    "T:train",
+    "T:x4_monitor_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:_warn_rank_gate_unrulable",
+    "train_v6_staged.py:train",
+    "train_v6_staged.py:x4_monitor_from_args"
+   ],
+   "status": "NON-LEVER (runtime)",
+   "note": "not a model lever; the registry names its role"
+  },
+  {
+   "options": [
+    "--spectrum-ci-reps"
+   ],
+   "dest": "spectrum_ci_reps",
+   "default": 0,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "runtime",
+   "runs_in": "gate-time (check_all)",
+   "reason": "O6 spectrum bootstrap CI (a monitor)",
+   "static_read_functions": [
+    "T:train",
+    "T:x4_monitor_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:train",
+    "train_v6_staged.py:x4_monitor_from_args"
+   ],
+   "status": "NON-LEVER (runtime)",
+   "note": "not a model lever; the registry names its role"
+  },
+  {
+   "options": [
+    "--x4-spectrum-layers"
+   ],
+   "dest": "x4_spectrum_layers",
+   "default": "tac,str",
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "runtime",
+   "runs_in": "gate-time (check_all)",
+   "reason": "the X4 per-layer spectrum monitor",
+   "static_read_functions": [
+    "T:x4_monitor_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:x4_monitor_from_args"
+   ],
+   "status": "NON-LEVER (runtime)",
+   "note": "not a model lever; the registry names its role"
+  },
+  {
+   "options": [
+    "--w-t1"
+   ],
+   "dest": "w_t1",
+   "default": 1.0,
+   "inventory_class": "LOSS",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "a V6LossWeights field (term `t1` of v6_loss_step): its head is ALWAYS built, so the declared-vs-live question is G-LIVE's -- the term must be present, finite and reach a trainable parameter on every t",
+   "static_read_functions": [
+    "T:_weights_from_args",
+    "T:preflight"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:_weights_from_args"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--w-s1"
+   ],
+   "dest": "w_s1",
+   "default": 1.0,
+   "inventory_class": "LOSS",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "a V6LossWeights field (term `s1` of v6_loss_step): its head is ALWAYS built, so the declared-vs-live question is G-LIVE's -- the term must be present, finite and reach a trainable parameter on every t",
+   "static_read_functions": [
+    "T:_weights_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:_weights_from_args"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--w-s2-goal"
+   ],
+   "dest": "w_s2_goal",
+   "default": 0.0,
+   "inventory_class": "LOSS",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "a V6LossWeights field (term `s2` of v6_loss_step): its head is ALWAYS built, so the declared-vs-live question is G-LIVE's -- the term must be present, finite and reach a trainable parameter on every t",
+   "static_read_functions": [
+    "T:_weights_from_args",
+    "T:preflight"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:_weights_from_args",
+    "train_v6_staged.py:preflight"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--nav-labels"
+   ],
+   "dest": "nav_labels",
+   "default": null,
+   "inventory_class": "DATA",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "data",
+   "runs_in": "gate-time (check_all)",
+   "reason": "the nav command source (the NavEmitter join)",
+   "static_read_functions": [
+    "T:_eval_excl_key",
+    "T:eval_exclusion_roots",
+    "T:label_blob_md5_for_vmax",
+    "T:preflight",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:_eval_excl_key",
+    "train_v6_staged.py:eval_exclusion_roots",
+    "train_v6_staged.py:preflight",
+    "train_v6_staged.py:train"
+   ],
+   "status": "NOT-COVERABLE-ON-CPU (data)",
+   "note": "a host path: content-bound in the token's data manifest on the launch host (Thor)"
+  },
+  {
+   "options": [
+    "--nav-semantics"
+   ],
+   "dest": "nav_semantics",
+   "default": "t0_constant",
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "runtime",
+   "runs_in": "gate-time (check_all)",
+   "reason": "NavEmitter's arg semantics (t0_constant/decremented) -- the nav INPUT's time rule; its CLOCK is G-CLOCK's",
+   "static_read_functions": [
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:train"
+   ],
+   "status": "NON-LEVER (runtime)",
+   "note": "not a model lever; the registry names its role"
+  },
+  {
+   "options": [
+    "--s2-labels"
+   ],
+   "dest": "s2_labels",
+   "default": null,
+   "inventory_class": "DATA",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "data",
+   "runs_in": "gate-time (check_all)",
+   "reason": "the S2/v7.2 label blob (the S2 join; R3's tactical labels)",
+   "static_read_functions": [
+    "T:_eval_excl_key",
+    "T:_term_precondition",
+    "T:dry_run",
+    "T:eval_exclusion_roots",
+    "T:label_blob_md5_for_vmax",
+    "T:preflight",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:_eval_excl_key",
+    "train_v6_staged.py:_term_precondition",
+    "train_v6_staged.py:dry_run",
+    "train_v6_staged.py:eval_exclusion_roots",
+    "train_v6_staged.py:preflight",
+    "train_v6_staged.py:train"
+   ],
+   "status": "NOT-COVERABLE-ON-CPU (data)",
+   "note": "a host path: content-bound in the token's data manifest on the launch host (Thor)"
+  },
+  {
+   "options": [
+    "--allow-any-labels"
+   ],
+   "dest": "allow_any_labels",
+   "default": false,
+   "inventory_class": "DATA",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "data",
+   "runs_in": "gate-time (check_all)",
+   "reason": "a label-version override (stamped)",
+   "static_read_functions": [
+    "T:dry_run",
+    "T:preflight",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:preflight"
+   ],
+   "status": "NOT-COVERABLE-ON-CPU (data)",
+   "note": "a host path: content-bound in the token's data manifest on the launch host (Thor)"
+  },
+  {
+   "options": [
+    "--w-tac-label-all"
+   ],
+   "dest": "w_tac_label_all",
+   "default": 0.0,
+   "inventory_class": null,
+   "inventory_status": null,
+   "in_tip_inventory": false,
+   "merge_new": true,
+   "dvb_kind": "loss",
+   "runs_in": "trainer (build: check; R3 path: check_v6) + gate (check_all)",
+   "reason": "",
+   "static_read_functions": [
+    "T:_weights_from_args",
+    "T:preflight"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:_weights_from_args",
+    "train_v6_staged.py:preflight"
+   ],
+   "status": "COVERED-CPU",
+   "note": "reader on the BUILT stack ran in G-DVB (check_all) on the CPU rehearsal build"
+  },
+  {
+   "options": [
+    "--tac-goal-negatives"
+   ],
+   "dest": "tac_goal_negatives",
+   "default": "measured",
+   "inventory_class": null,
+   "inventory_status": null,
+   "in_tip_inventory": false,
+   "merge_new": true,
+   "dvb_kind": "data",
+   "runs_in": "trainer (build: check; R3 path: check_v6) + gate (check_all)",
+   "reason": "the label NEGATIVE policy (v7_labels.tactical_goal_targets); computed on the LOADED split by train_v6_staged.tac_label_policy and recorded as config.json['tac_label_all']['negatives']; refused as iner",
+   "static_read_functions": [
+    "T:_preflight_tac_label_all",
+    "T:tac_label_policy"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:_preflight_tac_label_all"
+   ],
+   "status": "NOT-COVERABLE-ON-CPU (data)",
+   "note": "a host path: content-bound in the token's data manifest on the launch host (Thor)"
+  },
+  {
+   "options": [
+    "--cot-negative-sidecar"
+   ],
+   "dest": "cot_negative_sidecar",
+   "default": null,
+   "inventory_class": null,
+   "inventory_status": null,
+   "in_tip_inventory": false,
+   "merge_new": true,
+   "dvb_kind": "data",
+   "runs_in": "trainer (build: check; R3 path: check_v6) + gate (check_all)",
+   "reason": "the PI 2026-09-16 absence-as-negative permission token; v7_labels.load_cot_negative_sidecar refuses one built over another blob md5, and its stamp is recorded as config.json['tac_label_all']['cot_abse",
+   "static_read_functions": [
+    "T:_preflight_tac_label_all",
+    "T:tac_label_policy"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:_preflight_tac_label_all"
+   ],
+   "status": "NOT-COVERABLE-ON-CPU (data)",
+   "note": "a host path: content-bound in the token's data manifest on the launch host (Thor)"
+  },
+  {
+   "options": [
+    "--dump-seam-plan"
+   ],
+   "dest": "dump_seam_plan",
+   "default": null,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "data",
+   "runs_in": "gate-time (check_all)",
+   "reason": "an output path (the X2 seam dump)",
+   "static_read_functions": [
+    "T:_preflight_seam_dump",
+    "T:seam_dump_import_error",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:seam_dump_import_error",
+    "train_v6_staged.py:train"
+   ],
+   "status": "NOT-COVERABLE-ON-CPU (data)",
+   "note": "a host path: content-bound in the token's data manifest on the launch host (Thor)"
+  },
+  {
+   "options": [
+    "--dump-seam-plan-degenerate"
+   ],
+   "dest": "dump_seam_plan_degenerate",
+   "default": false,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "record",
+   "runs_in": "gate-time (check_all)",
+   "reason": "allow banking a degenerate seam dump (recorded)",
+   "static_read_functions": [
+    "T:train"
+   ],
+   "dynamic_consumers": [],
+   "status": "NON-LEVER (record)",
+   "note": "not a model lever; the registry names its role"
+  },
+  {
+   "options": [
+    "--lambda-plan"
+   ],
+   "dest": "lambda_plan",
+   "default": null,
+   "inventory_class": "LOSS",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "elsewhere",
+   "runs_in": "gate-time (check_all)",
+   "reason": "a V6LossWeights field (term `plan` of v6_loss_step): its head is ALWAYS built, so the declared-vs-live question is G-LIVE's -- the term must be present, finite and reach a trainable parameter on every",
+   "static_read_functions": [
+    "T:preflight",
+    "T:resolve_lambda_plan",
+    "T:v6_weight_specs"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:resolve_lambda_plan",
+    "train_v6_staged.py:v6_weight_specs"
+   ],
+   "status": "COVERED-CPU (named guard)",
+   "note": "its guard ran on the CPU rehearsal (G-LIVE term/knob capture or a trainer guard)"
+  },
+  {
+   "options": [
+    "--v2-cache"
+   ],
+   "dest": "v2_cache",
+   "default": [],
+   "inventory_class": "DATA",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "data",
+   "runs_in": "gate-time (check_all)",
+   "reason": "the corpus (parity-guarded by build_train_episodes)",
+   "static_read_functions": [
+    "T:_eval_excl_key",
+    "T:_preflight_eval_exclusion",
+    "T:_resolve_eval_exclusion",
+    "T:apply_eval_exclusion",
+    "T:eval_exclusion_roots",
+    "T:preflight",
+    "T:train",
+    "train_v58f_unicycle_head:build_train_episodes"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:_eval_excl_key",
+    "train_v6_staged.py:_preflight_eval_exclusion",
+    "train_v6_staged.py:_resolve_eval_exclusion",
+    "train_v6_staged.py:eval_exclusion_roots",
+    "train_v6_staged.py:preflight",
+    "train_v6_staged.py:train"
+   ],
+   "status": "NOT-COVERABLE-ON-CPU (data)",
+   "note": "a host path: content-bound in the token's data manifest on the launch host (Thor)"
+  },
+  {
+   "options": [
+    "--exclude-eval-clips"
+   ],
+   "dest": "exclude_eval_clips",
+   "default": "auto",
+   "inventory_class": "OPTIM",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "data",
+   "runs_in": "gate-time (check_all)",
+   "reason": "the v7.2 EVAL-split exclusion source",
+   "static_read_functions": [
+    "T:_eval_excl_key",
+    "T:_resolve_eval_exclusion"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:_eval_excl_key",
+    "train_v6_staged.py:_resolve_eval_exclusion"
+   ],
+   "status": "NOT-COVERABLE-ON-CPU (data)",
+   "note": "a host path: content-bound in the token's data manifest on the launch host (Thor)"
+  },
+  {
+   "options": [
+    "--allow-eval-clips-in-train"
+   ],
+   "dest": "allow_eval_clips_in_train",
+   "default": false,
+   "inventory_class": "OPTIM",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "data",
+   "runs_in": "gate-time (check_all)",
+   "reason": "an eval-exclusion override (stamped)",
+   "static_read_functions": [
+    "T:_eval_excl_key",
+    "T:_resolve_eval_exclusion"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:_eval_excl_key",
+    "train_v6_staged.py:_resolve_eval_exclusion"
+   ],
+   "status": "NOT-COVERABLE-ON-CPU (data)",
+   "note": "a host path: content-bound in the token's data manifest on the launch host (Thor)"
+  },
+  {
+   "options": [
+    "--v2-val-cache"
+   ],
+   "dest": "v2_val_cache",
+   "default": [],
+   "inventory_class": "DATA",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "data",
+   "runs_in": "gate-time (check_all)",
+   "reason": "\u26d4 REFUSED by train() (P4-5): not wired in this trainer",
+   "static_read_functions": [
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:train"
+   ],
+   "status": "REFUSED-BY-TRAINER",
+   "note": "train() raises if set (P4-5): dead by design, refused rather than inert"
+  },
+  {
+   "options": [
+    "--v2-lru"
+   ],
+   "dest": "v2_lru",
+   "default": 64,
+   "inventory_class": "DATA",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "data",
+   "runs_in": "gate-time (check_all)",
+   "reason": "a cache size",
+   "static_read_functions": [
+    "train_v58f_unicycle_head:build_train_episodes"
+   ],
+   "dynamic_consumers": [],
+   "status": "NOT-COVERABLE-ON-CPU (data)",
+   "note": "a host path: content-bound in the token's data manifest on the launch host (Thor)"
+  },
+  {
+   "options": [
+    "--v2-subframe"
+   ],
+   "dest": "v2_subframe",
+   "default": null,
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "data",
+   "runs_in": "gate-time (check_all)",
+   "reason": "the model sub-frame of the cache (the E2 frame lock in train() compares it with the encoder)",
+   "static_read_functions": [
+    "T:subframe_desync",
+    "train_flagship_v4:resolve_v2_frames"
+   ],
+   "dynamic_consumers": [
+    "train_flagship_v4.py:resolve_v2_frames",
+    "train_v6_staged.py:subframe_desync"
+   ],
+   "status": "NOT-COVERABLE-ON-CPU (data)",
+   "note": "a host path: content-bound in the token's data manifest on the launch host (Thor)"
+  },
+  {
+   "options": [
+    "--frame-hfov"
+   ],
+   "dest": "frame_hfov",
+   "default": 120.0,
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "data",
+   "runs_in": "gate-time (check_all)",
+   "reason": "the cache frame's HFOV (resolve_v2_frames / the parity geometry binding)",
+   "static_read_functions": [
+    "geometry:frame_from_args"
+   ],
+   "dynamic_consumers": [
+    "geometry.py:frame_from_args"
+   ],
+   "status": "NOT-COVERABLE-ON-CPU (data)",
+   "note": "a host path: content-bound in the token's data manifest on the launch host (Thor)"
+  },
+  {
+   "options": [
+    "--projection"
+   ],
+   "dest": "projection",
+   "default": "cylindrical",
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "data",
+   "runs_in": "gate-time (check_all)",
+   "reason": "the cache frame's projection (resolve_v2_frames / the parity geometry binding)",
+   "static_read_functions": [
+    "geometry:frame_from_args"
+   ],
+   "dynamic_consumers": [
+    "geometry.py:frame_from_args"
+   ],
+   "status": "NOT-COVERABLE-ON-CPU (data)",
+   "note": "a host path: content-bound in the token's data manifest on the launch host (Thor)"
+  },
+  {
+   "options": [
+    "--require-parity"
+   ],
+   "dest": "require_parity",
+   "default": true,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "data",
+   "runs_in": "gate-time (check_all)",
+   "reason": "the corpus-parity refusal",
+   "static_read_functions": [
+    "train_v58f_unicycle_head:build_train_episodes"
+   ],
+   "dynamic_consumers": [],
+   "status": "NOT-COVERABLE-ON-CPU (data)",
+   "note": "a host path: content-bound in the token's data manifest on the launch host (Thor)"
+  },
+  {
+   "options": [
+    "--no-require-parity"
+   ],
+   "dest": "require_parity",
+   "default": true,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "data",
+   "runs_in": "gate-time (check_all)",
+   "reason": "the corpus-parity refusal",
+   "static_read_functions": [
+    "train_v58f_unicycle_head:build_train_episodes"
+   ],
+   "dynamic_consumers": [],
+   "status": "NOT-COVERABLE-ON-CPU (data)",
+   "note": "a host path: content-bound in the token's data manifest on the launch host (Thor)"
+  },
+  {
+   "options": [
+    "--eps-per-batch"
+   ],
+   "dest": "eps_per_batch",
+   "default": 4,
+   "inventory_class": "OPTIM",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "runtime",
+   "runs_in": "gate-time (check_all)",
+   "reason": "episodes per batch (the sampler)",
+   "static_read_functions": [
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:train"
+   ],
+   "status": "NON-LEVER (runtime)",
+   "note": "not a model lever; the registry names its role"
+  },
+  {
+   "options": [
+    "--max-horizon"
+   ],
+   "dest": "max_horizon",
+   "default": null,
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "runtime",
+   "runs_in": "gate-time (check_all)",
+   "reason": "the WINDOWING horizon (refused below what the stage needs)",
+   "static_read_functions": [
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:train"
+   ],
+   "status": "NON-LEVER (runtime)",
+   "note": "not a model lever; the registry names its role"
+  },
+  {
+   "options": [
+    "--steps"
+   ],
+   "dest": "steps",
+   "default": 30000,
+   "inventory_class": "OPTIM",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "runtime",
+   "runs_in": "gate-time (check_all)",
+   "reason": "the run length (and the LR schedule's horizon)",
+   "static_read_functions": [
+    "T:_ema_tau_record",
+    "T:build_lr_scheduler",
+    "T:build_stack_from_args",
+    "T:dry_run",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_lr_scheduler",
+    "train_v6_staged.py:train"
+   ],
+   "status": "NON-LEVER (runtime)",
+   "note": "not a model lever; the registry names its role"
+  },
+  {
+   "options": [
+    "--batch"
+   ],
+   "dest": "batch",
+   "default": 16,
+   "inventory_class": "OPTIM",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "runtime",
+   "runs_in": "gate-time (check_all)",
+   "reason": "the batch size",
+   "static_read_functions": [
+    "T:_warn_rank_gate_unrulable",
+    "T:train",
+    "T:x4_monitor_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:_warn_rank_gate_unrulable",
+    "train_v6_staged.py:train",
+    "train_v6_staged.py:x4_monitor_from_args"
+   ],
+   "status": "NON-LEVER (runtime)",
+   "note": "not a model lever; the registry names its role"
+  },
+  {
+   "options": [
+    "--lr"
+   ],
+   "dest": "lr",
+   "default": 0.0001,
+   "inventory_class": "OPTIM",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "runtime",
+   "runs_in": "gate-time (check_all)",
+   "reason": "the AdamW learning rate (build_trunk_optimizer)",
+   "static_read_functions": [
+    "T:build_trunk_optimizer"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_trunk_optimizer"
+   ],
+   "status": "NON-LEVER (runtime)",
+   "note": "not a model lever; the registry names its role"
+  },
+  {
+   "options": [
+    "--wd"
+   ],
+   "dest": "wd",
+   "default": 0.05,
+   "inventory_class": "OPTIM",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "runtime",
+   "runs_in": "gate-time (check_all)",
+   "reason": "AdamW weight decay (build_trunk_optimizer)",
+   "static_read_functions": [
+    "T:build_trunk_optimizer"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:build_trunk_optimizer"
+   ],
+   "status": "NON-LEVER (runtime)",
+   "note": "not a model lever; the registry names its role"
+  },
+  {
+   "options": [
+    "--clip"
+   ],
+   "dest": "clip",
+   "default": 1.0,
+   "inventory_class": "OPTIM",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "runtime",
+   "runs_in": "gate-time (check_all)",
+   "reason": "the grad-norm clip (clip_grad_norm_ in the loop)",
+   "static_read_functions": [
+    "T:dry_run",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:dry_run",
+    "train_v6_staged.py:train"
+   ],
+   "status": "NON-LEVER (runtime)",
+   "note": "not a model lever; the registry names its role"
+  },
+  {
+   "options": [
+    "--log-every"
+   ],
+   "dest": "log_every",
+   "default": 50,
+   "inventory_class": "RUNTIME",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "runtime",
+   "runs_in": "gate-time (check_all)",
+   "reason": "logging cadence",
+   "static_read_functions": [
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:train"
+   ],
+   "status": "NON-LEVER (runtime)",
+   "note": "not a model lever; the registry names its role"
+  },
+  {
+   "options": [
+    "--save-every"
+   ],
+   "dest": "save_every",
+   "default": 1000,
+   "inventory_class": "RUNTIME",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "runtime",
+   "runs_in": "gate-time (check_all)",
+   "reason": "checkpoint cadence",
+   "static_read_functions": [
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:train"
+   ],
+   "status": "NON-LEVER (runtime)",
+   "note": "not a model lever; the registry names its role"
+  },
+  {
+   "options": [
+    "--device"
+   ],
+   "dest": "device",
+   "default": "cuda",
+   "inventory_class": "RUNTIME",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "runtime",
+   "runs_in": "gate-time (check_all)",
+   "reason": "the device",
+   "static_read_functions": [
+    "T:_run_config",
+    "T:train"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:_run_config",
+    "train_v6_staged.py:train"
+   ],
+   "status": "NON-LEVER (runtime)",
+   "note": "not a model lever; the registry names its role"
+  },
+  {
+   "options": [
+    "--no-amp"
+   ],
+   "dest": "no_amp",
+   "default": false,
+   "inventory_class": "UNCLASSIFIED",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "runtime",
+   "runs_in": "gate-time (check_all)",
+   "reason": "autocast off (resolve_amp_dtype, recorded)",
+   "static_read_functions": [
+    "T:train"
+   ],
+   "dynamic_consumers": [],
+   "status": "NON-LEVER (runtime)",
+   "note": "not a model lever; the registry names its role"
+  },
+  {
+   "options": [
+    "--seed"
+   ],
+   "dest": "seed",
+   "default": 0,
+   "inventory_class": "RUNTIME",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "runtime",
+   "runs_in": "gate-time (check_all)",
+   "reason": "the RNG seed: torch/random/the sampler generator are seeded from it at EVERY launch -- the launch gate's G-CKPT measures what that does to a resume",
+   "static_read_functions": [
+    "T:build_observer_monitor",
+    "T:dry_run",
+    "T:train",
+    "T:x4_monitor_from_args"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:dry_run",
+    "train_v6_staged.py:train"
+   ],
+   "status": "NON-LEVER (runtime)",
+   "note": "not a model lever; the registry names its role"
+  },
+  {
+   "options": [
+    "--dry-run"
+   ],
+   "dest": "dry_run",
+   "default": false,
+   "inventory_class": "RUNTIME",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "runtime",
+   "runs_in": "gate-time (check_all)",
+   "reason": "the --dry-run mode switch",
+   "static_read_functions": [
+    "T:_preflight_eval_exclusion",
+    "T:_preflight_r1_r4",
+    "T:_preflight_tac_label_all",
+    "T:_term_precondition",
+    "T:main",
+    "T:preflight",
+    "T:v6_weight_specs"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:_preflight_eval_exclusion",
+    "train_v6_staged.py:_preflight_r1_r4",
+    "train_v6_staged.py:_preflight_tac_label_all",
+    "train_v6_staged.py:_term_precondition",
+    "train_v6_staged.py:main",
+    "train_v6_staged.py:preflight",
+    "train_v6_staged.py:v6_weight_specs"
+   ],
+   "status": "NON-LEVER (runtime)",
+   "note": "not a model lever; the registry names its role"
+  },
+  {
+   "options": [
+    "--dry-steps"
+   ],
+   "dest": "dry_steps",
+   "default": 2,
+   "inventory_class": "RUNTIME",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "runtime",
+   "runs_in": "gate-time (check_all)",
+   "reason": "dry-run length",
+   "static_read_functions": [
+    "T:dry_run"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:dry_run"
+   ],
+   "status": "NON-LEVER (runtime)",
+   "note": "not a model lever; the registry names its role"
+  },
+  {
+   "options": [
+    "--dry-batch"
+   ],
+   "dest": "dry_batch",
+   "default": 2,
+   "inventory_class": "OPTIM",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "runtime",
+   "runs_in": "gate-time (check_all)",
+   "reason": "dry-run batch",
+   "static_read_functions": [
+    "T:dry_run"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:dry_run"
+   ],
+   "status": "NON-LEVER (runtime)",
+   "note": "not a model lever; the registry names its role"
+  },
+  {
+   "options": [
+    "--dry-k"
+   ],
+   "dest": "dry_k",
+   "default": 12,
+   "inventory_class": "RUNTIME",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "runtime",
+   "runs_in": "gate-time (check_all)",
+   "reason": "dry-run future depth",
+   "static_read_functions": [
+    "T:dry_run"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:dry_run"
+   ],
+   "status": "NON-LEVER (runtime)",
+   "note": "not a model lever; the registry names its role"
+  },
+  {
+   "options": [
+    "--print-launch"
+   ],
+   "dest": "print_launch",
+   "default": false,
+   "inventory_class": "RUNTIME",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "runtime",
+   "runs_in": "gate-time (check_all)",
+   "reason": "print the launch line and exit",
+   "static_read_functions": [
+    "T:main"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:main"
+   ],
+   "status": "NON-LEVER (runtime)",
+   "note": "not a model lever; the registry names its role"
+  },
+  {
+   "options": [
+    "--i-know-this-is-the-control-arm"
+   ],
+   "dest": "control_arm_ack",
+   "default": false,
+   "inventory_class": "MODEL",
+   "inventory_status": "READ",
+   "in_tip_inventory": true,
+   "merge_new": false,
+   "dvb_kind": "record",
+   "runs_in": "gate-time (check_all)",
+   "reason": "an ACKNOWLEDGEMENT (the isolation control arm); the v7f profile REFUSES it",
+   "static_read_functions": [
+    "T:_preflight_r1_r4",
+    "T:main",
+    "T:preflight"
+   ],
+   "dynamic_consumers": [
+    "train_v6_staged.py:_preflight_r1_r4",
+    "train_v6_staged.py:main",
+    "train_v6_staged.py:preflight"
+   ],
+   "status": "NON-LEVER (record)",
+   "note": "not a model lever; the registry names its role"
+  }
+ ],
+ "_method": "kind = declared_vs_built_v6.REGISTRY_V6 (tree_m); static = AST args-object reads in the trainer + the helpers it hands the namespace to; dynamic = argparse.Namespace attribute reads on the CPU rehearsal (S-W/S-T gate jobs + both dry-runs), argparse internals, effective_weights.explicit_dests (a whole-namespace re-parse) and the gate's own reads excluded"
+}

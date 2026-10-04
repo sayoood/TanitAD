@@ -1,0 +1,25 @@
+........................................................................ [ 57%]
+..............................F.......................                   [100%]
+================================== FAILURES ===================================
+______ test_G_SUITE_the_pinned_env_list_is_content_bound_by_the_profile _______
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4154/test_G_SUITE_the_pinned_env_li0')
+
+    def test_G_SUITE_the_pinned_env_list_is_content_bound_by_the_profile(tmp_path):
+        tree = _mini_tree(tmp_path / "t")
+        rel, want = LG.PROFILES["refcv7"]["suite_env_failures"]
+        assert rel == "stack/ops/launch_gate_thor_env_failures.json"
+        assert want == "fc1214e5978383c694af7dbfc6c26f44758fcf8a93c4386700efb792072b4ed4"
+        assert "absent from the tree" in LG.env_failure_pin(LG.PROFILES["refcv7"], tree)[1]
+        f = tree / rel
+        f.parent.mkdir(parents=True, exist_ok=True)
+        f.write_text('{"ids": [], "files": []}', encoding="utf-8")
+        assert "the profile pins" in LG.env_failure_pin(LG.PROFILES["refcv7"], tree)[1]
+        rec, prob = LG.env_failure_pin(LG.PROFILES["refcv7"], ROOT.parent)     # the real file
+>       assert prob is None and rec["n_ids"] == 165 and rec["n_files"] == 33 and rec["n_flaky"] == 1
+E       AssertionError: assert ('the pinned env-failure list stack/ops/launch_gate_thor_env_failures.json has sha256 9b6aa814e5711459, the profile pins fc1214e5978383c6 -- a changed list is a reviewed edit of the profile' is None)
+
+tests\test_launch_gate.py:1563: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_launch_gate.py::test_G_SUITE_the_pinned_env_list_is_content_bound_by_the_profile
+1 failed, 125 passed in 31.85s

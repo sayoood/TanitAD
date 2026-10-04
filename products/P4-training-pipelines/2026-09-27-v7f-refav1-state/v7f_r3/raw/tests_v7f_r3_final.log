@@ -1,0 +1,538 @@
+........................................................................ [  3%]
+...........................s............................................ [  7%]
+........................................................................ [ 10%]
+.............................FEEEEEEE.FFFFEEE........................... [ 14%]
+........................................................................ [ 17%]
+........F............................................................... [ 21%]
+.................................................F...................... [ 24%]
+...............................sssss.................................... [ 28%]
+........................................................................ [ 31%]
+........................................................................ [ 35%]
+...........................................................s.s.s........ [ 38%]
+.................s...................................................... [ 42%]
+.................................................................s.ss... [ 45%]
+s....................................................................... [ 49%]
+................................................sssssss..sss............ [ 52%]
+........................................................................ [ 56%]
+..................................ss.................................... [ 59%]
+............ss....................................s.s................... [ 63%]
+.........ss............................................................s [ 66%]
+........................................................................ [ 70%]
+........................................................................ [ 73%]
+.....................................sss................................ [ 77%]
+................................................................ssss.... [ 80%]
+........................ss.sss.......................................... [ 84%]
+..F..................................................................... [ 87%]
+........................................................................ [ 91%]
+........................................................................ [ 94%]
+........................................................................ [ 98%]
+....................................s                                    [100%]
+=================================== ERRORS ====================================
+___________ ERROR at setup of test_a_tampered_digest_set_is_refused ___________
+
+    @pytest.fixture(scope="module")
+    def contaminated() -> list[str]:
+>       ids = _lines(EXCLUSION_LIST, "the Alpamayo/parity-train exclusion list")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_eval_contamination.py:96: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = 'C:\\Users\\Admin\\v7f_r3\\TanitAD Research Lab\\Architecture & Inference\\Implementation\\incoming\\2026-08-17-thor-concurrency-pilot\\alpamayo_IN_parity_train_EXCLUDE_FROM_EVAL.txt'
+what = 'the Alpamayo/parity-train exclusion list'
+
+    def _lines(path: str, what: str) -> list[str]:
+        if not os.path.exists(path):
+>           pytest.fail(
+                f"{what} is MISSING at {path}. It is banked evidence for a LIVE "
+                f"eval leak (RETRACTION_LOG C112); without it this suite cannot "
+                f"tell a working exclusion from an absent one, which is exactly "
+                f"the state the retraction is about.")
+E           Failed: the Alpamayo/parity-train exclusion list is MISSING at C:\Users\Admin\v7f_r3\TanitAD Research Lab\Architecture & Inference\Implementation\incoming\2026-08-17-thor-concurrency-pilot\alpamayo_IN_parity_train_EXCLUDE_FROM_EVAL.txt. It is banked evidence for a LIVE eval leak (RETRACTION_LOG C112); without it this suite cannot tell a working exclusion from an absent one, which is exactly the state the retraction is about.
+
+tests\test_eval_contamination.py:78: Failed
+______________ ERROR at setup of test_a_clean_eval_split_passes _______________
+
+    @pytest.fixture(scope="module")
+    def alpamayo() -> list[str]:
+>       ids = _lines(ALPAMAYO_IDS, "the Alpamayo clip-id list")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_eval_contamination.py:103: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = 'C:\\Users\\Admin\\v7f_r3\\TanitAD Research Lab\\Architecture & Inference\\Implementation\\incoming\\2026-08-17-thor-concurrency-pilot\\alpamayo_clip_ids.txt'
+what = 'the Alpamayo clip-id list'
+
+    def _lines(path: str, what: str) -> list[str]:
+        if not os.path.exists(path):
+>           pytest.fail(
+                f"{what} is MISSING at {path}. It is banked evidence for a LIVE "
+                f"eval leak (RETRACTION_LOG C112); without it this suite cannot "
+                f"tell a working exclusion from an absent one, which is exactly "
+                f"the state the retraction is about.")
+E           Failed: the Alpamayo clip-id list is MISSING at C:\Users\Admin\v7f_r3\TanitAD Research Lab\Architecture & Inference\Implementation\incoming\2026-08-17-thor-concurrency-pilot\alpamayo_clip_ids.txt. It is banked evidence for a LIVE eval leak (RETRACTION_LOG C112); without it this suite cannot tell a working exclusion from an absent one, which is exactly the state the retraction is about.
+
+tests\test_eval_contamination.py:78: Failed
+__ ERROR at setup of test_one_contaminated_clip_refuses_the_whole_eval_split __
+
+    @pytest.fixture(scope="module")
+    def alpamayo() -> list[str]:
+>       ids = _lines(ALPAMAYO_IDS, "the Alpamayo clip-id list")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_eval_contamination.py:103: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = 'C:\\Users\\Admin\\v7f_r3\\TanitAD Research Lab\\Architecture & Inference\\Implementation\\incoming\\2026-08-17-thor-concurrency-pilot\\alpamayo_clip_ids.txt'
+what = 'the Alpamayo clip-id list'
+
+    def _lines(path: str, what: str) -> list[str]:
+        if not os.path.exists(path):
+>           pytest.fail(
+                f"{what} is MISSING at {path}. It is banked evidence for a LIVE "
+                f"eval leak (RETRACTION_LOG C112); without it this suite cannot "
+                f"tell a working exclusion from an absent one, which is exactly "
+                f"the state the retraction is about.")
+E           Failed: the Alpamayo clip-id list is MISSING at C:\Users\Admin\v7f_r3\TanitAD Research Lab\Architecture & Inference\Implementation\incoming\2026-08-17-thor-concurrency-pilot\alpamayo_clip_ids.txt. It is banked evidence for a LIVE eval leak (RETRACTION_LOG C112); without it this suite cannot tell a working exclusion from an absent one, which is exactly the state the retraction is about.
+
+tests\test_eval_contamination.py:78: Failed
+__________ ERROR at setup of test_the_refusal_never_prints_a_clip_id __________
+
+    @pytest.fixture(scope="module")
+    def alpamayo() -> list[str]:
+>       ids = _lines(ALPAMAYO_IDS, "the Alpamayo clip-id list")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_eval_contamination.py:103: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = 'C:\\Users\\Admin\\v7f_r3\\TanitAD Research Lab\\Architecture & Inference\\Implementation\\incoming\\2026-08-17-thor-concurrency-pilot\\alpamayo_clip_ids.txt'
+what = 'the Alpamayo clip-id list'
+
+    def _lines(path: str, what: str) -> list[str]:
+        if not os.path.exists(path):
+>           pytest.fail(
+                f"{what} is MISSING at {path}. It is banked evidence for a LIVE "
+                f"eval leak (RETRACTION_LOG C112); without it this suite cannot "
+                f"tell a working exclusion from an absent one, which is exactly "
+                f"the state the retraction is about.")
+E           Failed: the Alpamayo clip-id list is MISSING at C:\Users\Admin\v7f_r3\TanitAD Research Lab\Architecture & Inference\Implementation\incoming\2026-08-17-thor-concurrency-pilot\alpamayo_clip_ids.txt. It is banked evidence for a LIVE eval leak (RETRACTION_LOG C112); without it this suite cannot tell a working exclusion from an absent one, which is exactly the state the retraction is about.
+
+tests\test_eval_contamination.py:78: Failed
+_ ERROR at setup of test_a_sanctioned_audit_passes_but_is_stamped_not_decision_grade _
+
+    @pytest.fixture(scope="module")
+    def contaminated() -> list[str]:
+>       ids = _lines(EXCLUSION_LIST, "the Alpamayo/parity-train exclusion list")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_eval_contamination.py:96: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = 'C:\\Users\\Admin\\v7f_r3\\TanitAD Research Lab\\Architecture & Inference\\Implementation\\incoming\\2026-08-17-thor-concurrency-pilot\\alpamayo_IN_parity_train_EXCLUDE_FROM_EVAL.txt'
+what = 'the Alpamayo/parity-train exclusion list'
+
+    def _lines(path: str, what: str) -> list[str]:
+        if not os.path.exists(path):
+>           pytest.fail(
+                f"{what} is MISSING at {path}. It is banked evidence for a LIVE "
+                f"eval leak (RETRACTION_LOG C112); without it this suite cannot "
+                f"tell a working exclusion from an absent one, which is exactly "
+                f"the state the retraction is about.")
+E           Failed: the Alpamayo/parity-train exclusion list is MISSING at C:\Users\Admin\v7f_r3\TanitAD Research Lab\Architecture & Inference\Implementation\incoming\2026-08-17-thor-concurrency-pilot\alpamayo_IN_parity_train_EXCLUDE_FROM_EVAL.txt. It is banked evidence for a LIVE eval leak (RETRACTION_LOG C112); without it this suite cannot tell a working exclusion from an absent one, which is exactly the state the retraction is about.
+
+tests\test_eval_contamination.py:78: Failed
+____ ERROR at setup of test_filter_removes_exactly_the_contaminated_clips _____
+
+    @pytest.fixture(scope="module")
+    def alpamayo() -> list[str]:
+>       ids = _lines(ALPAMAYO_IDS, "the Alpamayo clip-id list")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_eval_contamination.py:103: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = 'C:\\Users\\Admin\\v7f_r3\\TanitAD Research Lab\\Architecture & Inference\\Implementation\\incoming\\2026-08-17-thor-concurrency-pilot\\alpamayo_clip_ids.txt'
+what = 'the Alpamayo clip-id list'
+
+    def _lines(path: str, what: str) -> list[str]:
+        if not os.path.exists(path):
+>           pytest.fail(
+                f"{what} is MISSING at {path}. It is banked evidence for a LIVE "
+                f"eval leak (RETRACTION_LOG C112); without it this suite cannot "
+                f"tell a working exclusion from an absent one, which is exactly "
+                f"the state the retraction is about.")
+E           Failed: the Alpamayo clip-id list is MISSING at C:\Users\Admin\v7f_r3\TanitAD Research Lab\Architecture & Inference\Implementation\incoming\2026-08-17-thor-concurrency-pilot\alpamayo_clip_ids.txt. It is banked evidence for a LIVE eval leak (RETRACTION_LOG C112); without it this suite cannot tell a working exclusion from an absent one, which is exactly the state the retraction is about.
+
+tests\test_eval_contamination.py:78: Failed
+_ ERROR at setup of test_the_201_are_derived_from_ids_not_read_from_the_banked_list _
+
+    @pytest.fixture(scope="module")
+    def alpamayo() -> list[str]:
+>       ids = _lines(ALPAMAYO_IDS, "the Alpamayo clip-id list")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_eval_contamination.py:103: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = 'C:\\Users\\Admin\\v7f_r3\\TanitAD Research Lab\\Architecture & Inference\\Implementation\\incoming\\2026-08-17-thor-concurrency-pilot\\alpamayo_clip_ids.txt'
+what = 'the Alpamayo clip-id list'
+
+    def _lines(path: str, what: str) -> list[str]:
+        if not os.path.exists(path):
+>           pytest.fail(
+                f"{what} is MISSING at {path}. It is banked evidence for a LIVE "
+                f"eval leak (RETRACTION_LOG C112); without it this suite cannot "
+                f"tell a working exclusion from an absent one, which is exactly "
+                f"the state the retraction is about.")
+E           Failed: the Alpamayo clip-id list is MISSING at C:\Users\Admin\v7f_r3\TanitAD Research Lab\Architecture & Inference\Implementation\incoming\2026-08-17-thor-concurrency-pilot\alpamayo_clip_ids.txt. It is banked evidence for a LIVE eval leak (RETRACTION_LOG C112); without it this suite cannot tell a working exclusion from an absent one, which is exactly the state the retraction is about.
+
+tests\test_eval_contamination.py:78: Failed
+_ ERROR at setup of test_the_alpamayo_corpus_swallows_6_of_the_40_deployed_val_episodes _
+
+    @pytest.fixture(scope="module")
+    def alpamayo() -> list[str]:
+>       ids = _lines(ALPAMAYO_IDS, "the Alpamayo clip-id list")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_eval_contamination.py:103: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = 'C:\\Users\\Admin\\v7f_r3\\TanitAD Research Lab\\Architecture & Inference\\Implementation\\incoming\\2026-08-17-thor-concurrency-pilot\\alpamayo_clip_ids.txt'
+what = 'the Alpamayo clip-id list'
+
+    def _lines(path: str, what: str) -> list[str]:
+        if not os.path.exists(path):
+>           pytest.fail(
+                f"{what} is MISSING at {path}. It is banked evidence for a LIVE "
+                f"eval leak (RETRACTION_LOG C112); without it this suite cannot "
+                f"tell a working exclusion from an absent one, which is exactly "
+                f"the state the retraction is about.")
+E           Failed: the Alpamayo clip-id list is MISSING at C:\Users\Admin\v7f_r3\TanitAD Research Lab\Architecture & Inference\Implementation\incoming\2026-08-17-thor-concurrency-pilot\alpamayo_clip_ids.txt. It is banked evidence for a LIVE eval leak (RETRACTION_LOG C112); without it this suite cannot tell a working exclusion from an absent one, which is exactly the state the retraction is about.
+
+tests\test_eval_contamination.py:78: Failed
+_______ ERROR at setup of test_a_train_corpus_with_no_val_clips_passes ________
+
+    @pytest.fixture(scope="module")
+    def alpamayo() -> list[str]:
+>       ids = _lines(ALPAMAYO_IDS, "the Alpamayo clip-id list")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_eval_contamination.py:103: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = 'C:\\Users\\Admin\\v7f_r3\\TanitAD Research Lab\\Architecture & Inference\\Implementation\\incoming\\2026-08-17-thor-concurrency-pilot\\alpamayo_clip_ids.txt'
+what = 'the Alpamayo clip-id list'
+
+    def _lines(path: str, what: str) -> list[str]:
+        if not os.path.exists(path):
+>           pytest.fail(
+                f"{what} is MISSING at {path}. It is banked evidence for a LIVE "
+                f"eval leak (RETRACTION_LOG C112); without it this suite cannot "
+                f"tell a working exclusion from an absent one, which is exactly "
+                f"the state the retraction is about.")
+E           Failed: the Alpamayo clip-id list is MISSING at C:\Users\Admin\v7f_r3\TanitAD Research Lab\Architecture & Inference\Implementation\incoming\2026-08-17-thor-concurrency-pilot\alpamayo_clip_ids.txt. It is banked evidence for a LIVE eval leak (RETRACTION_LOG C112); without it this suite cannot tell a working exclusion from an absent one, which is exactly the state the retraction is about.
+
+tests\test_eval_contamination.py:78: Failed
+_ ERROR at setup of test_the_mint_refuses_a_clip_set_that_is_not_the_parity_split _
+
+    @pytest.fixture(scope="module")
+    def alpamayo() -> list[str]:
+>       ids = _lines(ALPAMAYO_IDS, "the Alpamayo clip-id list")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_eval_contamination.py:103: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = 'C:\\Users\\Admin\\v7f_r3\\TanitAD Research Lab\\Architecture & Inference\\Implementation\\incoming\\2026-08-17-thor-concurrency-pilot\\alpamayo_clip_ids.txt'
+what = 'the Alpamayo clip-id list'
+
+    def _lines(path: str, what: str) -> list[str]:
+        if not os.path.exists(path):
+>           pytest.fail(
+                f"{what} is MISSING at {path}. It is banked evidence for a LIVE "
+                f"eval leak (RETRACTION_LOG C112); without it this suite cannot "
+                f"tell a working exclusion from an absent one, which is exactly "
+                f"the state the retraction is about.")
+E           Failed: the Alpamayo clip-id list is MISSING at C:\Users\Admin\v7f_r3\TanitAD Research Lab\Architecture & Inference\Implementation\incoming\2026-08-17-thor-concurrency-pilot\alpamayo_clip_ids.txt. It is banked evidence for a LIVE eval leak (RETRACTION_LOG C112); without it this suite cannot tell a working exclusion from an absent one, which is exactly the state the retraction is about.
+
+tests\test_eval_contamination.py:78: Failed
+================================== FAILURES ===================================
+____ test_the_digest_set_reproduces_the_committed_manifest_clip_membership ____
+
+    def test_the_digest_set_reproduces_the_committed_manifest_clip_membership():
+        """⭐ THE PROVENANCE CHAIN, end to end and inside the repo.
+    
+        ``parity_ls.txt`` (a banked listing of the built parity cache) -> its sorted
+        clip-id sha256 == the manifest's ``clip_membership.clip_id_sha256_sorted``
+        -> the per-clip digests of those same ids == the committed digest file.
+    
+        Without this the digest file is an unverifiable list that DECIDES WHICH
+        CLIPS ARE EXCLUDED — the C112 shape one level up: enforcement whose input
+        nobody checked."""
+>       names = _lines(PARITY_LS, "the parity-cache listing")
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_eval_contamination.py:130: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = 'C:\\Users\\Admin\\v7f_r3\\TanitAD Research Lab\\Architecture & Inference\\Implementation\\incoming\\2026-08-17-thor-concurrency-pilot\\parity_ls.txt'
+what = 'the parity-cache listing'
+
+    def _lines(path: str, what: str) -> list[str]:
+        if not os.path.exists(path):
+>           pytest.fail(
+                f"{what} is MISSING at {path}. It is banked evidence for a LIVE "
+                f"eval leak (RETRACTION_LOG C112); without it this suite cannot "
+                f"tell a working exclusion from an absent one, which is exactly "
+                f"the state the retraction is about.")
+E           Failed: the parity-cache listing is MISSING at C:\Users\Admin\v7f_r3\TanitAD Research Lab\Architecture & Inference\Implementation\incoming\2026-08-17-thor-concurrency-pilot\parity_ls.txt. It is banked evidence for a LIVE eval leak (RETRACTION_LOG C112); without it this suite cannot tell a working exclusion from an absent one, which is exactly the state the retraction is about.
+
+tests\test_eval_contamination.py:78: Failed
+_____ test_the_aug120_label_leg_is_entirely_inside_the_parity_train_split _____
+
+    def test_the_aug120_label_leg_is_entirely_inside_the_parity_train_split():
+        """⛔ THE FACT, in executable form, because prose did not hold it.
+    
+        ``label_split`` is a PROVENANCE TAG, not a partition. ``aug120`` reads like
+        an independent augmentation corpus and is **201 of 201 inside the corpus the
+        flagship trains on**; ``w120val`` is 0 of 600. That is correct as TRAIN
+        supervision and catastrophic as a held-out set, and nothing in the name, the
+        file or the schema distinguishes the two — which is why it is asserted here
+        rather than described somewhere."""
+>       idx = _json(os.path.join(S2_LABELS, "clip_index.json"),
+                    "the canonical S2 clip index")
+
+tests\test_eval_contamination.py:266: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = 'C:\\Users\\Admin\\v7f_r3\\TanitAD Research Lab\\Data Engineering\\Implementation\\incoming\\2026-08-16-s2-v1-labels\\review\\labels_v2\\clip_index.json'
+what = 'the canonical S2 clip index'
+
+    def _json(path: str, what: str) -> dict:
+        if not os.path.exists(path):
+>           pytest.fail(f"{what} is MISSING at {path}.")
+E           Failed: the canonical S2 clip index is MISSING at C:\Users\Admin\v7f_r3\TanitAD Research Lab\Data Engineering\Implementation\incoming\2026-08-16-s2-v1-labels\review\labels_v2\clip_index.json.
+
+tests\test_eval_contamination.py:89: Failed
+_____ test_s2_labels_report_discloses_contamination_into_every_run_config _____
+
+    def test_s2_labels_report_discloses_contamination_into_every_run_config():
+        """The disclosure that cannot be forgotten: it rides in ``report()``, which
+        ``train_v6_staged`` writes into every run's ``config.json``. A fact nobody
+        asked for is exactly the fact that goes unnoticed."""
+        pytest.importorskip("torch")
+        from s2_labels import load_s2_labels
+>       rep = load_s2_labels(S2_LABELS).report()
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_eval_contamination.py:292: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = 'C:\\Users\\Admin\\v7f_r3\\TanitAD Research Lab\\Data Engineering\\Implementation\\incoming\\2026-08-16-s2-v1-labels\\review\\labels_v2'
+role = 'train'
+
+    def load_s2_labels(path, *, role: str = "train") -> S2LabelSet:
+        """Load + validate `s2-strategic-v1` labels and their join index.
+    
+        ``path`` is either the labels DIRECTORY (containing ``clip_index.json``
+        and one or more ``s2_labels_*.jsonl``) or ONE ``.jsonl`` file (the index
+        must sit beside it). Every refusal names the record and the rule; a label
+        artifact that half-loads is worse than one that refuses whole.
+    
+        ``role`` (2026-08-18, C112) declares what the labels are FOR:
+    
+        * ``'train'`` — the incumbent, byte-identical behaviour. The parity-train
+          contamination census still rides in :meth:`S2LabelSet.report` and lands in
+          the run's ``config.json``, because a fact nobody asked for is exactly the
+          fact that goes unnoticed.
+        * ``'eval'`` — every loaded leg must be DISJOINT from the parity TRAIN
+          corpus, or this refuses. ⛔ MEASURED: the ``aug120`` leg is **201 of 201**
+          inside ``physicalai-train-e438721ae894``, so loading the canonical label
+          directory under ``role='eval'`` refuses — which is the correct outcome and
+          the reason the argument exists.
+    
+        ⚠️ ``role='eval'`` refuses when the parity oracle cannot be consulted at all.
+        An unverifiable holdout is not a holdout; assuming one is C112 verbatim.
+        """
+        if role not in LABEL_ROLES:
+            raise S2LabelError(f"[s2] ⛔ role={role!r} — expected one of "
+                               f"{LABEL_ROLES}")
+        p = Path(path)
+        if not p.exists():
+>           raise S2LabelError(f"[s2] ⛔ --s2-labels {p} does not exist")
+E           s2_labels.S2LabelError: [s2] ⛔ --s2-labels C:\Users\Admin\v7f_r3\TanitAD Research Lab\Data Engineering\Implementation\incoming\2026-08-16-s2-v1-labels\review\labels_v2 does not exist
+
+scripts\s2_labels.py:564: S2LabelError
+______________ test_loading_the_labels_as_an_EVAL_set_is_refused ______________
+
+    def test_loading_the_labels_as_an_EVAL_set_is_refused():
+        """⭐ END TO END THROUGH THE REAL LOADER, ON THE REAL CANONICAL ARTIFACT.
+        ``role='train'`` (the incumbent) still loads; ``role='eval'`` refuses and
+        names the leg. Both halves are asserted — a loader that refused everything
+        would pass the second half alone."""
+        pytest.importorskip("torch")
+        from s2_labels import load_s2_labels, S2LabelError
+>       assert len(load_s2_labels(S2_LABELS)) > 0            # role='train' unchanged
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_eval_contamination.py:307: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = 'C:\\Users\\Admin\\v7f_r3\\TanitAD Research Lab\\Data Engineering\\Implementation\\incoming\\2026-08-16-s2-v1-labels\\review\\labels_v2'
+role = 'train'
+
+    def load_s2_labels(path, *, role: str = "train") -> S2LabelSet:
+        """Load + validate `s2-strategic-v1` labels and their join index.
+    
+        ``path`` is either the labels DIRECTORY (containing ``clip_index.json``
+        and one or more ``s2_labels_*.jsonl``) or ONE ``.jsonl`` file (the index
+        must sit beside it). Every refusal names the record and the rule; a label
+        artifact that half-loads is worse than one that refuses whole.
+    
+        ``role`` (2026-08-18, C112) declares what the labels are FOR:
+    
+        * ``'train'`` — the incumbent, byte-identical behaviour. The parity-train
+          contamination census still rides in :meth:`S2LabelSet.report` and lands in
+          the run's ``config.json``, because a fact nobody asked for is exactly the
+          fact that goes unnoticed.
+        * ``'eval'`` — every loaded leg must be DISJOINT from the parity TRAIN
+          corpus, or this refuses. ⛔ MEASURED: the ``aug120`` leg is **201 of 201**
+          inside ``physicalai-train-e438721ae894``, so loading the canonical label
+          directory under ``role='eval'`` refuses — which is the correct outcome and
+          the reason the argument exists.
+    
+        ⚠️ ``role='eval'`` refuses when the parity oracle cannot be consulted at all.
+        An unverifiable holdout is not a holdout; assuming one is C112 verbatim.
+        """
+        if role not in LABEL_ROLES:
+            raise S2LabelError(f"[s2] ⛔ role={role!r} — expected one of "
+                               f"{LABEL_ROLES}")
+        p = Path(path)
+        if not p.exists():
+>           raise S2LabelError(f"[s2] ⛔ --s2-labels {p} does not exist")
+E           s2_labels.S2LabelError: [s2] ⛔ --s2-labels C:\Users\Admin\v7f_r3\TanitAD Research Lab\Data Engineering\Implementation\incoming\2026-08-16-s2-v1-labels\review\labels_v2 does not exist
+
+scripts\s2_labels.py:564: S2LabelError
+____ test_the_deployed_val_digest_set_is_cross_checked_by_a_second_source _____
+
+    def test_the_deployed_val_digest_set_is_cross_checked_by_a_second_source():
+        """A 40-of-600 deployment cannot reproduce the corpus digest, so its proof
+        is a SECOND artifact: every episode's independently banked ``clip_sha8``
+        equals ``sha256(clip_id)[:8]``. Re-derived here so the weaker proof is
+        verified rather than trusted."""
+>       full = _json(VAL40_IDS, "the val40 lead index (with clip ids)")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_eval_contamination.py:323: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = 'C:\\Users\\Admin\\v7f_r3\\TanitAD Research Lab\\Architecture & Inference\\Implementation\\incoming\\2026-08-18-thor-stranded-rescue\\rescued_beyond_a11\\leadwork\\val40_lead_index.json'
+what = 'the val40 lead index (with clip ids)'
+
+    def _json(path: str, what: str) -> dict:
+        if not os.path.exists(path):
+>           pytest.fail(f"{what} is MISSING at {path}.")
+E           Failed: the val40 lead index (with clip ids) is MISSING at C:\Users\Admin\v7f_r3\TanitAD Research Lab\Architecture & Inference\Implementation\incoming\2026-08-18-thor-stranded-rescue\rescued_beyond_a11\leadwork\val40_lead_index.json.
+
+tests\test_eval_contamination.py:89: Failed
+________ test_launch_sources_exist_or_the_whole_audit_silently_narrows ________
+
+    def test_launch_sources_exist_or_the_whole_audit_silently_narrows():
+        """⛔ The one remaining hand-list is of launch SOURCES. It must be real.
+    
+        A moved runbook makes the derivation return fewer entry points, the closure
+        return fewer files, and the audit report DRIFT=0 for a reason that has
+        nothing to do with the box. That is the failure this tool exists to kill,
+        reappearing as its own input.
+        """
+        repo = Path(__file__).resolve().parents[2]
+        for rel in LCA.DEFAULT_LAUNCH_SOURCES:
+>           assert (repo / rel).is_file(), (
+                f"launch source moved: {rel}. Repoint DEFAULT_LAUNCH_SOURCES — do "
+                "NOT let the derivation quietly shrink.")
+E           AssertionError: launch source moved: Project Steering/GATE_PROTOCOL.md. Repoint DEFAULT_LAUNCH_SOURCES — do NOT let the derivation quietly shrink.
+E           assert False
+E            +  where False = is_file()
+E            +    where is_file = (WindowsPath('C:/Users/Admin/v7f_r3') / 'Project Steering/GATE_PROTOCOL.md').is_file
+
+tests\test_launch_closure_audit.py:243: AssertionError
+______ test_G_SUITE_the_pinned_env_list_is_content_bound_by_the_profile _______
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4034/test_G_SUITE_the_pinned_env_li0')
+
+    def test_G_SUITE_the_pinned_env_list_is_content_bound_by_the_profile(tmp_path):
+        tree = _mini_tree(tmp_path / "t")
+        rel, want = LG.PROFILES["refcv7"]["suite_env_failures"]
+        assert rel == "stack/ops/launch_gate_thor_env_failures.json"
+        assert want == "fc1214e5978383c694af7dbfc6c26f44758fcf8a93c4386700efb792072b4ed4"
+        assert "absent from the tree" in LG.env_failure_pin(LG.PROFILES["refcv7"], tree)[1]
+        f = tree / rel
+        f.parent.mkdir(parents=True, exist_ok=True)
+        f.write_text('{"ids": [], "files": []}', encoding="utf-8")
+        assert "the profile pins" in LG.env_failure_pin(LG.PROFILES["refcv7"], tree)[1]
+        rec, prob = LG.env_failure_pin(LG.PROFILES["refcv7"], ROOT.parent)     # the real file
+>       assert prob is None and rec["n_ids"] == 165 and rec["n_files"] == 33 and rec["n_flaky"] == 1
+E       AssertionError: assert ('the pinned env-failure list stack/ops/launch_gate_thor_env_failures.json has sha256 9b6aa814e5711459, the profile pins fc1214e5978383c6 -- a changed list is a reviewed edit of the profile' is None)
+
+tests\test_launch_gate.py:1563: AssertionError
+______________ test_E4_the_resolution_is_banked_with_its_reasons ______________
+
+    def test_E4_the_resolution_is_banked_with_its_reasons():
+        """The fix is only as good as the record of WHY it went this way."""
+        doc = (_REPO / "TanitAD Research Lab" / "Architecture & Inference"
+               / "Implementation" / "incoming" / "2026-08-17-e4-selector-resolution"
+               / "E4_SELECTOR_RESOLUTION.md")
+>       assert doc.exists(), doc
+E       AssertionError: WindowsPath('C:/Users/Admin/v7f_r3/TanitAD Research Lab/Architecture & Inference/Implementation/incoming/2026-08-17-e4-selector-resolution/E4_SELECTOR_RESOLUTION.md')
+E       assert False
+E        +  where False = exists()
+E        +    where exists = WindowsPath('C:/Users/Admin/v7f_r3/TanitAD Research Lab/Architecture & Inference/Implementation/incoming/2026-08-17-e4-selector-resolution/E4_SELECTOR_RESOLUTION.md').exists
+
+tests\test_v6_st_launch_fixes.py:497: AssertionError
+============================== warnings summary ===============================
+tests/test_map_head_hires.py::test_loss_edge_cases_and_the_weight_denominator
+  C:\Users\Admin\v7f_r3\stack\tests\test_map_head_hires.py:274: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+    assert float(r["loss"]) == 0.0 and r["n_cells"] == 0
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+SKIPPED [1] tests\test_metric_decode_refusal.py:54: INCONCLUSIVE, never passing: tanitad.models.v6 exports none of UntrainedMetricReadout / assert_metric_readout_trained / metric_readout_status. The metric-decode refusal guard is UNIMPLEMENTED on this branch (pickaxe over v6.py finds it was never added). Restore the guard, or retire this file — do not read this skip as a pass.
+SKIPPED [1] tests\test_cot_negative_policy.py:445: blob or sidecar not on this box
+SKIPPED [1] tests\test_loss_determinism.py:521: git could not produce a pre-generator sigreg revision
+SKIPPED [4] tests\test_loss_determinism.py:557: git could not produce a pre-sigreg_generator trainer
+SKIPPED [1] tests\test_o1_stopgrad_factual.py:210: git could not produce a pre-stopgrad_factual module
+SKIPPED [1] tests\test_o1_stopgrad_factual.py:278: git could not produce a pre-stopgrad_factual module
+SKIPPED [1] tests\test_o1_stopgrad_factual.py:317: git could not produce a pre-stopgrad_factual module
+SKIPPED [1] tests\test_o6_spectrum_power.py:383: git could not supply a pre-change v6.py revision
+SKIPPED [4] tests\test_refc_v3_u8_batches.py:330: no CUDA on this box
+SKIPPED [2] tests\test_speed_band_derivation_blocker.py:127: banked admissibility artifact absent: C:\Users\Admin\v7f_r3\TanitAD Research Lab\Architecture & Inference\Implementation\incoming\2026-08-04-target-speed\raw\vt_admissibility.json
+SKIPPED [1] tests\test_speed_band_derivation_blocker.py:163: banked four-family panel absent: C:\Users\Admin\v7f_r3\TanitAD Research Lab\Architecture & Inference\Implementation\incoming\2026-08-04-target-speed\raw\vt_four_families.json
+SKIPPED [1] tests\test_speed_band_derivation_blocker.py:185: banked four-family panel absent
+SKIPPED [1] tests\test_speed_band_derivation_blocker.py:208: C:\Users\Admin\v7f_r3\TanitAD Research Lab\Architecture & Inference\Implementation\incoming\2026-08-04-target-speed\code\vt_band_from_vision.py absent
+SKIPPED [1] tests\test_speed_band_derivation_blocker.py:218: C:\Users\Admin\v7f_r3\TanitAD Research Lab\Architecture & Inference\Implementation\incoming\2026-08-04-target-speed\code\vt_band_from_vision.py absent
+SKIPPED [1] tests\test_speed_band_derivation_blocker.py:239: target-speed raw dir absent
+SKIPPED [1] tests\test_step_time_guard.py:117: banked live log absent
+SKIPPED [1] tests\test_step_time_guard.py:134: banked live log absent
+SKIPPED [1] tests\test_step_time_guard.py:165: banked live log absent
+SKIPPED [2] tests\test_trunk_anchor.py:258: git could not produce a pre-anchor trainer revision
+SKIPPED [1] tests\test_v6_agent_slots.py:262: git could not produce a pre-change revision of v6.py
+SKIPPED [1] tests\test_v6_agent_slots.py:290: git could not produce a pre-change revision of v6.py
+SKIPPED [1] tests\test_v6_anchor_loss.py:224: git could not produce a pre-change revision of v6.py
+SKIPPED [1] tests\test_v6_anchor_loss.py:286: git could not produce a pre-w_anchor trainer revision
+SKIPPED [1] tests\test_v6_anchor_loss.py:759: banked artifact not on this box: TanitAD Research Lab/Data Engineering/Implementation/incoming/2026-08-04-instrument-durability/refc_anchors_full_REBUILD.pt
+SKIPPED [1] tests\test_v6_anchor_loss.py:759: banked artifact not on this box: TanitAD Research Lab/Architecture & Inference/Implementation/incoming/2026-07-27-percandidate-labels/raw/anchors_dev256.pt
+SKIPPED [1] tests\test_v6_diffusion_mpc_fallback.py:170: git could not produce a pre-change revision of v6.py
+SKIPPED [1] tests\test_v6_gstr_port.py:239: git could not produce a pre-change revision of v6.py
+SKIPPED [1] tests\test_v6_gstr_port.py:265: git could not produce a pre-change revision of v6.py
+SKIPPED [1] tests\test_v6_gstr_port.py:283: git could not produce a pre-change revision of v6.py
+SKIPPED [4] tests\test_v6_s2_loss.py:169: git could not produce a pre-S2 trainer revision
+SKIPPED [1] tests\test_v6_s2_loss.py:802: the S2 label delivery is not present in this checkout
+SKIPPED [1] tests\test_v6_s2_loss.py:827: the S2 v1 label delivery is not present in this checkout
+SKIPPED [1] tests\test_v6_s2_loss.py:867: the S2 v1 label delivery is not present in this checkout
+SKIPPED [1] tests\test_v6_s2_loss.py:894: the S2 label delivery is not present in this checkout
+SKIPPED [1] tests\test_v6_s2_loss.py:920: the S2 label delivery is not present in this checkout
+SKIPPED [1] tests\test_x4_layer_spectrum.py:468: no pre-X4 v6.py revision could be LOADED (git history walk or module exec failed) — note this skip previously fired for a loader bug, not a git one; the C132 repair is pinned by test_o6_verdict_rules_on_participation.py
+8 failed, 1989 passed, 47 skipped, 1 warning, 10 errors in 594.10s (0:09:54)

@@ -1,0 +1,20 @@
+== --check on the MERGE copy (read-only)
+[apply_v7f_chain] --check: every anchor matched exactly once; would write <V7F_MERGE>\stack\scripts\v6_chain.py (CRLF) sha256 b1bf626b5f0b466354ebf551cad95827802f294f77d2c8486a335d772f5a434a (LF-normalised 657358f14304e4b5fcc7e42a652a798195804cbcebc0ee6803364045e344505a)
+rc=0
+== apply on a FRESH CRLF copy of the merge file
+[apply_v7f_chain] patched <SCRATCH>\fresh\stack\scripts\v6_chain.py (CRLF) sha256 b1bf626b5f0b466354ebf551cad95827802f294f77d2c8486a335d772f5a434a (LF-normalised 657358f14304e4b5fcc7e42a652a798195804cbcebc0ee6803364045e344505a)
+[apply_v7f_chain] installed <SCRATCH>\fresh\stack\tests\test_v6_chain_v7f.py (CRLF) sha256 4114e2ec078c3ae0dc8a79a3f9d5094d9333e2f692296e04cea50840c4b95846 (LF-normalised d84c963178ab003443317df64ec838e5992293555b27e7edc96c53162f1cea9a)
+rc=0
+== apply on the D: HEAD tip blob (LF)
+[apply_v7f_chain] patched <SCRATCH>\freshlf\stack\scripts\v6_chain.py (LF) sha256 657358f14304e4b5fcc7e42a652a798195804cbcebc0ee6803364045e344505a (LF-normalised 657358f14304e4b5fcc7e42a652a798195804cbcebc0ee6803364045e344505a)
+[apply_v7f_chain] installed <SCRATCH>\freshlf\stack\tests\test_v6_chain_v7f.py (LF) sha256 d84c963178ab003443317df64ec838e5992293555b27e7edc96c53162f1cea9a (LF-normalised d84c963178ab003443317df64ec838e5992293555b27e7edc96c53162f1cea9a)
+rc=0
+== second apply must REFUSE (base no longer the merge's)
+[apply_v7f_chain] REFUSED: <SCRATCH>\fresh\stack\scripts\v6_chain.py sha256 b1bf626b5f0b4663 (LF-normalised 657358f14304e4b5) is not the v7F merge's v6_chain.py (918859e75df9c343 / LF db2e599dbbe9dd8c); refusing to patch a different base.
+rc=1
+== byte comparison vs the working copy
+CRLF v6_chain.py BYTE-IDENTICAL to working copy
+CRLF test file BYTE-IDENTICAL to working copy
+LF result crlf-count 0 | LF result == working copy LF-normalised: True
+LF test crlf-count 0 | == working test LF-normalised: True
+918859e75df9c343bf42fc9c3f1ccbf65465d354e055f638db8545b4a4791cc7 */c/Users/Admin/v7f_merge/stack/scripts/v6_chain.py

@@ -1,0 +1,63 @@
+{
+ "trainer": "C:\\Users\\Admin\\v7f_ckpt\\stack\\scripts\\train_v6_staged.py",
+ "sha256_before": "fa5ef2ba23d5f714f13478853e831c54676f75b49e09c952a4ec29f6b10c9b38",
+ "mutations": {
+  "M1_restore_call_deleted": {
+   "anchor": "_rl = apply_resume_state(resume_state, device=device, rng=rng, gen=gen,",
+   "replacement": "_rl = (lambda *_a, **_k: {'t3_alpha_applied': None, 't3_prog_applied': None, 'monitors': {}, 'applied': []})(resume_state, device=device, rng=rng, gen=gen,",
+   "pytest_exit": 1,
+   "summary": [
+    "7 failed, 1 passed, 12 deselected, 7 warnings in 21.63s"
+   ],
+   "failed_tests": [
+    "FAILED tests/test_v6_exact_resume.py::test_POSITIVE_v7f_path_resume_equals_uninterrupted_draws_losses_and_bit_identical_state",
+    "FAILED tests/test_v6_exact_resume.py::test_POSITIVE_every_stream_and_buffer_config_resumes_exactly[nonav_default_path-extra0-literal0]",
+    "FAILED tests/test_v6_exact_resume.py::test_POSITIVE_every_stream_and_buffer_config_resumes_exactly[uniform_sampler_python_rng-extra1-literal1]",
+    "FAILED tests/test_v6_exact_resume.py::test_POSITIVE_every_stream_and_buffer_config_resumes_exactly[sigreg_row_bank-extra2-literal2]",
+    "FAILED tests/test_v6_exact_resume.py::test_POSITIVE_every_stream_and_buffer_config_resumes_exactly[spectrum_monitors-extra3-literal3]",
+    "FAILED tests/test_v6_exact_resume.py::test_POSITIVE_every_stream_and_buffer_config_resumes_exactly[t3_curriculum-extra4-None]",
+    "FAILED tests/test_v6_exact_resume.py::test_POSITIVE_every_stream_and_buffer_config_resumes_exactly[all_monitors_together-extra5-literal5]"
+   ],
+   "RED": true
+  },
+  "M2_lr_reset_deleted": {
+   "anchor": "            g[\"lr\"] = g[\"initial_lr\"]",
+   "replacement": "            pass  # MUTATION: the F3b reset deleted",
+   "pytest_exit": 1,
+   "summary": [
+    "7 failed, 1 passed, 12 deselected, 7 warnings in 23.91s"
+   ],
+   "failed_tests": [
+    "FAILED tests/test_v6_exact_resume.py::test_POSITIVE_v7f_path_resume_equals_uninterrupted_draws_losses_and_bit_identical_state",
+    "FAILED tests/test_v6_exact_resume.py::test_POSITIVE_every_stream_and_buffer_config_resumes_exactly[nonav_default_path-extra0-literal0]",
+    "FAILED tests/test_v6_exact_resume.py::test_POSITIVE_every_stream_and_buffer_config_resumes_exactly[uniform_sampler_python_rng-extra1-literal1]",
+    "FAILED tests/test_v6_exact_resume.py::test_POSITIVE_every_stream_and_buffer_config_resumes_exactly[sigreg_row_bank-extra2-literal2]",
+    "FAILED tests/test_v6_exact_resume.py::test_POSITIVE_every_stream_and_buffer_config_resumes_exactly[spectrum_monitors-extra3-literal3]",
+    "FAILED tests/test_v6_exact_resume.py::test_POSITIVE_every_stream_and_buffer_config_resumes_exactly[t3_curriculum-extra4-None]",
+    "FAILED tests/test_v6_exact_resume.py::test_POSITIVE_every_stream_and_buffer_config_resumes_exactly[all_monitors_together-extra5-literal5]"
+   ],
+   "RED": true
+  },
+  "M3_capture_not_saved": {
+   "anchor": "                       extra=resume_payload)",
+   "replacement": "                       extra=None)  # MUTATION: the F3 payload is not saved",
+   "pytest_exit": 1,
+   "summary": [
+    "8 failed, 12 deselected, 7 warnings in 22.87s"
+   ],
+   "failed_tests": [
+    "FAILED tests/test_v6_exact_resume.py::test_POSITIVE_v7f_path_resume_equals_uninterrupted_draws_losses_and_bit_identical_state",
+    "FAILED tests/test_v6_exact_resume.py::test_POSITIVE_the_checkpoint_carries_every_stream_and_the_data_position",
+    "FAILED tests/test_v6_exact_resume.py::test_POSITIVE_every_stream_and_buffer_config_resumes_exactly[nonav_default_path-extra0-literal0]",
+    "FAILED tests/test_v6_exact_resume.py::test_POSITIVE_every_stream_and_buffer_config_resumes_exactly[uniform_sampler_python_rng-extra1-literal1]",
+    "FAILED tests/test_v6_exact_resume.py::test_POSITIVE_every_stream_and_buffer_config_resumes_exactly[sigreg_row_bank-extra2-literal2]",
+    "FAILED tests/test_v6_exact_resume.py::test_POSITIVE_every_stream_and_buffer_config_resumes_exactly[spectrum_monitors-extra3-literal3]",
+    "FAILED tests/test_v6_exact_resume.py::test_POSITIVE_every_stream_and_buffer_config_resumes_exactly[t3_curriculum-extra4-None]",
+    "FAILED tests/test_v6_exact_resume.py::test_POSITIVE_every_stream_and_buffer_config_resumes_exactly[all_monitors_together-extra5-literal5]"
+   ],
+   "RED": true
+  }
+ },
+ "sha256_after_restore": "fa5ef2ba23d5f714f13478853e831c54676f75b49e09c952a4ec29f6b10c9b38",
+ "restored_byte_identical": true
+}

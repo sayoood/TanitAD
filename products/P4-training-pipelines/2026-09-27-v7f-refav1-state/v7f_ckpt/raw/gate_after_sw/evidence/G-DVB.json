@@ -1,0 +1,453 @@
+{
+ "schema": "tanitad.launch_gate/1",
+ "kind": "evidence",
+ "check": "G-DVB",
+ "status": "PASS",
+ "reasons": [],
+ "binding": {
+  "profile": "v7f",
+  "commit": "7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f",
+  "tree_sha256": "97d223082760b3e863f41fa34d3f3afb96f539db0a9c9dba4f4b1d798fc93d90",
+  "argv_sha256": "1f3c344ac167b6526cf7b70f72103c5c7d6b1cb32dd00735138a03a1a1ae3b07"
+ },
+ "inputs_read": {
+  "gate:rehearsal": {
+   "kind": "rehearsal",
+   "why": "tiny config + synthetic corpus (CPU host)"
+  }
+ },
+ "host": {
+  "node": "FREEDOM2035",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "python": "3.13.5",
+  "torch": "2.11.0+cu128",
+  "cuda": false
+ },
+ "arm": null,
+ "gate_sha256": "b232aeadaf977bd76c665937cac2e2b1cdf2e14b94c14104800bbff32abbe908",
+ "started_utc": "2026-09-27T16:18:10Z",
+ "details": {
+  "argv_local": {
+   "kept": {
+    "--v2-cache": "/home/nvidia/data/physicalai-train-e438721ae894-w120-256x640cyl",
+    "--nav-labels": "/home/nvidia/data/v72/nav.jsonl.gz"
+   },
+   "sentinel": {},
+   "rehearsal": {
+    "overlay": {
+     "--frame-h": {
+      "launch": [
+       "256"
+      ],
+      "rehearsal": [
+       "64"
+      ]
+     },
+     "--frame-w": {
+      "launch": [
+       "640"
+      ],
+      "rehearsal": [
+       "128"
+      ]
+     },
+     "--patch": {
+      "launch": null,
+      "rehearsal": [
+       "16"
+      ]
+     },
+     "--enc-dim": {
+      "launch": [
+       "768"
+      ],
+      "rehearsal": [
+       "32"
+      ]
+     },
+     "--enc-depth": {
+      "launch": [
+       "12"
+      ],
+      "rehearsal": [
+       "1"
+      ]
+     },
+     "--enc-heads": {
+      "launch": [
+       "12"
+      ],
+      "rehearsal": [
+       "2"
+      ]
+     },
+     "--pred-dim": {
+      "launch": null,
+      "rehearsal": [
+       "32"
+      ]
+     },
+     "--pred-depth": {
+      "launch": null,
+      "rehearsal": [
+       "1"
+      ]
+     },
+     "--pred-heads": {
+      "launch": null,
+      "rehearsal": [
+       "2"
+      ]
+     },
+     "--readout-dim": {
+      "launch": null,
+      "rehearsal": [
+       "8"
+      ]
+     },
+     "--d-tac": {
+      "launch": null,
+      "rehearsal": [
+       "32"
+      ]
+     },
+     "--d-str": {
+      "launch": null,
+      "rehearsal": [
+       "16"
+      ]
+     },
+     "--d-goal-embed": {
+      "launch": null,
+      "rehearsal": [
+       "16"
+      ]
+     },
+     "--adapter-hidden": {
+      "launch": null,
+      "rehearsal": [
+       "32"
+      ]
+     },
+     "--f-hidden-tac": {
+      "launch": null,
+      "rehearsal": [
+       "32"
+      ]
+     },
+     "--f-hidden-str": {
+      "launch": null,
+      "rehearsal": [
+       "32"
+      ]
+     },
+     "--window": {
+      "launch": null,
+      "rehearsal": [
+       "3"
+      ]
+     },
+     "--batch": {
+      "launch": [
+       "8"
+      ],
+      "rehearsal": [
+       "2"
+      ]
+     },
+     "--eps-per-batch": {
+      "launch": null,
+      "rehearsal": [
+       "1"
+      ]
+     },
+     "--device": {
+      "launch": null,
+      "rehearsal": [
+       "cpu"
+      ]
+     },
+     "--v2-cache": {
+      "launch": [
+       "/home/nvidia/data/physicalai-train-e438721ae894-w120-256x640cyl"
+      ],
+      "rehearsal": [
+       "C:\\Users\\Admin\\v7f_ckpt_gate\\runs\\after_sw\\rehearsal_EMPTY_v2cache"
+      ],
+      "why": "an EMPTY dir: the preflight requires the flag; the corpus comes from the synthetic seam"
+     }
+    },
+    "dropped": {
+     "--v2-cache": [
+      "/home/nvidia/data/physicalai-train-e438721ae894-w120-256x640cyl"
+     ],
+     "--require-parity": [],
+     "--nav-labels": [
+      "/home/nvidia/data/v72/nav.jsonl.gz"
+     ]
+    },
+    "note": "REHEARSAL: tiny geometry + synthetic corpus on a CPU host. Evidence produced under it NEVER counts toward a token (finalize refuses it by name)."
+   },
+   "rehearsal_preflight_expected": []
+  },
+  "build_s": 0.1,
+  "stage": "S-W",
+  "model_params": 2358459,
+  "freeze": {
+   "trainable_groups": [
+    "aux",
+    "encoder",
+    "predictor_op",
+    "readout"
+   ],
+   "n_trainable": 1786292,
+   "n_frozen": 572167
+  },
+  "profile_rules": [],
+  "mismatches": [],
+  "coverage_uncovered": [],
+  "registry_size": 239,
+  "kinds_census": {
+   "built": 89,
+   "data": 24,
+   "record": 8,
+   "elsewhere": 69,
+   "runtime": 44,
+   "loss": 5
+  },
+  "positive_control": {
+   "control_widen_cand_queries_n_mismatches": 1,
+   "baseline": 0,
+   "control_width": 9,
+   "control_seen": [
+    "--n-candidates: declared 8 but BUILT 9 (read from stack.cand_queries.weight[0]) -- the emitted fan width"
+   ]
+  },
+  "trainability_probe": {
+   "stage": "S-W",
+   "literal_table": [
+    "aux",
+    "encoder",
+    "predictor_op",
+    "readout"
+   ],
+   "trainable_groups_built": [
+    "aux",
+    "encoder",
+    "predictor_op",
+    "readout"
+   ],
+   "per_group": {
+    "encoder": {
+     "trainable": 38400,
+     "frozen": 0
+    },
+    "readout": {
+     "trainable": 264,
+     "frozen": 0
+    },
+    "layer_str": {
+     "trainable": 0,
+     "frozen": 165344
+    },
+    "layer_tac": {
+     "trainable": 0,
+     "frozen": 266095
+    },
+    "predictor_op": {
+     "trainable": 159396,
+     "frozen": 4128
+    },
+    "planner": {
+     "trainable": 0,
+     "frozen": 136600
+    },
+    "aux": {
+     "trainable": 1588232,
+     "frozen": 0
+    }
+   },
+   "grad_unreachable_subtrees": [
+    "predictor_op.out_proj"
+   ]
+  },
+  "behaviour_probe": {
+   "synthetic_batch_keys": [
+    "actions",
+    "frames",
+    "nav_args",
+    "nav_token",
+    "v0"
+   ],
+   "forward": "ran",
+   "plan_waypoints_shape": [
+    1,
+    8,
+    60,
+    2
+   ],
+   "forward_without_nav_token": "NavTokenMissing: [v6] \u26d4 nav_cond=True but this batch carries no nav token. The nav command is a MANDATORY input to all three layers (PI directive 2026-08-30) and is never defaul"
+  },
+  "child": {
+   "tanitad": "c:\\users\\admin\\v7f_ckpt\\stack\\tanitad\\__init__.py",
+   "torch": "2.11.0+cu128",
+   "cuda": false
+  }
+ },
+ "rehearsal": {
+  "overlay": {
+   "--frame-h": {
+    "launch": [
+     "256"
+    ],
+    "rehearsal": [
+     "64"
+    ]
+   },
+   "--frame-w": {
+    "launch": [
+     "640"
+    ],
+    "rehearsal": [
+     "128"
+    ]
+   },
+   "--patch": {
+    "launch": null,
+    "rehearsal": [
+     "16"
+    ]
+   },
+   "--enc-dim": {
+    "launch": [
+     "768"
+    ],
+    "rehearsal": [
+     "32"
+    ]
+   },
+   "--enc-depth": {
+    "launch": [
+     "12"
+    ],
+    "rehearsal": [
+     "1"
+    ]
+   },
+   "--enc-heads": {
+    "launch": [
+     "12"
+    ],
+    "rehearsal": [
+     "2"
+    ]
+   },
+   "--pred-dim": {
+    "launch": null,
+    "rehearsal": [
+     "32"
+    ]
+   },
+   "--pred-depth": {
+    "launch": null,
+    "rehearsal": [
+     "1"
+    ]
+   },
+   "--pred-heads": {
+    "launch": null,
+    "rehearsal": [
+     "2"
+    ]
+   },
+   "--readout-dim": {
+    "launch": null,
+    "rehearsal": [
+     "8"
+    ]
+   },
+   "--d-tac": {
+    "launch": null,
+    "rehearsal": [
+     "32"
+    ]
+   },
+   "--d-str": {
+    "launch": null,
+    "rehearsal": [
+     "16"
+    ]
+   },
+   "--d-goal-embed": {
+    "launch": null,
+    "rehearsal": [
+     "16"
+    ]
+   },
+   "--adapter-hidden": {
+    "launch": null,
+    "rehearsal": [
+     "32"
+    ]
+   },
+   "--f-hidden-tac": {
+    "launch": null,
+    "rehearsal": [
+     "32"
+    ]
+   },
+   "--f-hidden-str": {
+    "launch": null,
+    "rehearsal": [
+     "32"
+    ]
+   },
+   "--window": {
+    "launch": null,
+    "rehearsal": [
+     "3"
+    ]
+   },
+   "--batch": {
+    "launch": [
+     "8"
+    ],
+    "rehearsal": [
+     "2"
+    ]
+   },
+   "--eps-per-batch": {
+    "launch": null,
+    "rehearsal": [
+     "1"
+    ]
+   },
+   "--device": {
+    "launch": null,
+    "rehearsal": [
+     "cpu"
+    ]
+   },
+   "--v2-cache": {
+    "launch": [
+     "/home/nvidia/data/physicalai-train-e438721ae894-w120-256x640cyl"
+    ],
+    "rehearsal": [
+     "C:\\Users\\Admin\\v7f_ckpt_gate\\runs\\after_sw\\rehearsal_EMPTY_v2cache"
+    ],
+    "why": "an EMPTY dir: the preflight requires the flag; the corpus comes from the synthetic seam"
+   }
+  },
+  "dropped": {
+   "--v2-cache": [
+    "/home/nvidia/data/physicalai-train-e438721ae894-w120-256x640cyl"
+   ],
+   "--require-parity": [],
+   "--nav-labels": [
+    "/home/nvidia/data/v72/nav.jsonl.gz"
+   ]
+  },
+  "note": "REHEARSAL: tiny geometry + synthetic corpus on a CPU host. Evidence produced under it NEVER counts toward a token (finalize refuses it by name)."
+ },
+ "finished_utc": "2026-09-27T16:18:12Z"
+}

@@ -1,0 +1,694 @@
+{
+ "trainer": "C:\\Users\\Admin\\tipsnap\\b3f7ea6f\\stack\\scripts\\refa_v1_train.py",
+ "stack": "C:\\Users\\Admin\\tipsnap\\b3f7ea6f\\stack",
+ "n_stack_files_scanned": 1126,
+ "n_flags": 40,
+ "flags": [
+  {
+   "options": [
+    "--cache"
+   ],
+   "dest": "cache",
+   "dynamic": false,
+   "default": null,
+   "type": "Path",
+   "choices": null,
+   "action": null,
+   "help": "stage-1 DINOv3 feature cache (0.2 s grid)",
+   "lineno": 321,
+   "reads_in_trainer": 6,
+   "reads_elsewhere_in_stack": 58,
+   "status": "READ",
+   "proposed_class": "DATA"
+  },
+  {
+   "options": [
+    "--episodes"
+   ],
+   "dest": "episodes",
+   "dynamic": false,
+   "default": null,
+   "type": "Path",
+   "choices": null,
+   "action": null,
+   "help": "the v2ep episode dir (actions/poses at 10 Hz)",
+   "lineno": 323,
+   "reads_in_trainer": 2,
+   "reads_elsewhere_in_stack": 215,
+   "status": "READ",
+   "proposed_class": "DATA"
+  },
+  {
+   "options": [
+    "--lru"
+   ],
+   "dest": "lru",
+   "dynamic": false,
+   "default": 32,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": "episodes held in RAM (each ~130 MB fp16 fields)",
+   "lineno": 325,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 16,
+   "status": "READ",
+   "proposed_class": "OPTIM"
+  },
+  {
+   "options": [
+    "--labels"
+   ],
+   "dest": "labels",
+   "dynamic": false,
+   "default": null,
+   "type": "Path",
+   "choices": null,
+   "action": null,
+   "help": "v7.2 s2 labels .jsonl.gz \u2014 supervises the tactical and strategic heads. REQUIRED with a real --cache; out-of-band windows emit -100 and the ",
+   "lineno": 331,
+   "reads_in_trainer": 3,
+   "reads_elsewhere_in_stack": 50,
+   "status": "READ",
+   "proposed_class": "DATA"
+  },
+  {
+   "options": [
+    "--nav"
+   ],
+   "dest": "nav",
+   "dynamic": false,
+   "default": null,
+   "type": "Path",
+   "choices": null,
+   "action": null,
+   "help": "nav/route source joined on clip_id, fed to all three layers. \u26d4 must NOT carry the situation classifier's output in any form (PI 2026-08-03)",
+   "lineno": 336,
+   "reads_in_trainer": 3,
+   "reads_elsewhere_in_stack": 13,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--allow-unlabelled"
+   ],
+   "dest": "allow_unlabelled",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": "store_true",
+   "help": "\u26d4 deliberate: run a real --cache WITHOUT --labels. Only for a diagnostic that does not touch the tactical/strategic heads \u2014 never for a regi",
+   "lineno": 340,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "DATA"
+  },
+  {
+   "options": [
+    "--out"
+   ],
+   "dest": "out",
+   "dynamic": false,
+   "default": "<expr> Path('./refa_v1_run')",
+   "type": "Path",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 344,
+   "reads_in_trainer": 6,
+   "reads_elsewhere_in_stack": 701,
+   "status": "READ",
+   "proposed_class": "RUNTIME"
+  },
+  {
+   "options": [
+    "--steps"
+   ],
+   "dest": "steps",
+   "dynamic": false,
+   "default": 30000,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 345,
+   "reads_in_trainer": 4,
+   "reads_elsewhere_in_stack": 163,
+   "status": "READ",
+   "proposed_class": "OPTIM"
+  },
+  {
+   "options": [
+    "--bs"
+   ],
+   "dest": "bs",
+   "dynamic": false,
+   "default": 8,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 346,
+   "reads_in_trainer": 4,
+   "reads_elsewhere_in_stack": 27,
+   "status": "READ",
+   "proposed_class": "OPTIM"
+  },
+  {
+   "options": [
+    "--lr"
+   ],
+   "dest": "lr",
+   "dynamic": false,
+   "default": 0.0003,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 347,
+   "reads_in_trainer": 2,
+   "reads_elsewhere_in_stack": 78,
+   "status": "READ",
+   "proposed_class": "OPTIM"
+  },
+  {
+   "options": [
+    "--adapter-lr-mult"
+   ],
+   "dest": "adapter_lr_mult",
+   "dynamic": false,
+   "default": 0.1,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": "REF-A stability item 4: the adapter warms up SLOWER than the predictor (10x longer warmup == 0.1x LR).",
+   "lineno": 348,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 3,
+   "status": "READ",
+   "proposed_class": "OPTIM"
+  },
+  {
+   "options": [
+    "--log-every"
+   ],
+   "dest": "log_every",
+   "dynamic": false,
+   "default": 50,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 351,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 34,
+   "status": "READ",
+   "proposed_class": "RUNTIME"
+  },
+  {
+   "options": [
+    "--save-every"
+   ],
+   "dest": "save_every",
+   "dynamic": false,
+   "default": 1000,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 352,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 32,
+   "status": "READ",
+   "proposed_class": "RUNTIME"
+  },
+  {
+   "options": [
+    "--no-hierarchy"
+   ],
+   "dest": "no_hierarchy",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": "store_true",
+   "help": "ablation arm: drop both brains (they are a matched set) \u2014 the change-#7 control",
+   "lineno": 353,
+   "reads_in_trainer": 3,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--w-cf"
+   ],
+   "dest": "w_cf",
+   "dynamic": false,
+   "default": 0.0,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": "weight on the counterfactual-action InfoNCE (change #10). 0 = off. Its no-information floor is ln(1+cf_negs), so cf_excess > 0 PROVES the pr",
+   "lineno": 361,
+   "reads_in_trainer": 2,
+   "reads_elsewhere_in_stack": 9,
+   "status": "READ",
+   "proposed_class": "LOSS"
+  },
+  {
+   "options": [
+    "--cf-negs"
+   ],
+   "dest": "cf_negs",
+   "dynamic": false,
+   "default": 3,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 366,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 3,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--cf-at-step"
+   ],
+   "dest": "cf_at_step",
+   "dynamic": false,
+   "default": 4,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 367,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 3,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--motion-inject"
+   ],
+   "dest": "motion_inject",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": "store_true",
+   "help": "add a CROSS-CHANNEL projection of z_t - z_(t-1) to the initial rollout state. Default history path is the adapter's DEPTHWISE temporal conv ",
+   "lineno": 369,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 2,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--detach-aux-targets"
+   ],
+   "dest": "detach_aux",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": "store_true",
+   "help": "stop-gradient on the tactical/strategic targets (SimSiam 2011.10566). DEFAULT ON; --no-detach-aux-targets is the deliberate-regression contr",
+   "lineno": 379,
+   "reads_in_trainer": 2,
+   "reads_elsewhere_in_stack": 2,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--no-detach-aux-targets"
+   ],
+   "dest": "detach_aux",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": "store_false",
+   "help": null,
+   "lineno": 384,
+   "reads_in_trainer": 2,
+   "reads_elsewhere_in_stack": 2,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--w-sigreg"
+   ],
+   "dest": "w_sigreg",
+   "dynamic": false,
+   "default": 0.0,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": "SigReg weight on the adapter output (v6/v7 line). 0 = off. MEASURED discriminating: 0.477 random vs 2.61 collapsed. \u26d4 DO NOT COPY v6's 0.1: ",
+   "lineno": 386,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 3,
+   "status": "READ",
+   "proposed_class": "LOSS"
+  },
+  {
+   "options": [
+    "--var-floor"
+   ],
+   "dest": "var_floor",
+   "dynamic": false,
+   "default": 0.0,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": "VICReg (2105.04906) per-dim std hinge on the adapter output. 0 = off. Punishes std BELOW the floor only",
+   "lineno": 394,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 2,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--min-participation"
+   ],
+   "dest": "min_participation",
+   "dynamic": false,
+   "default": 0.0,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": "refuse if participation falls below this (RankMe 2210.02885 / G-RANK). 0 = MONITOR ONLY, always logged. Reference floor 8.56; rank-1 collaps",
+   "lineno": 397,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 4,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--bptt-truncate"
+   ],
+   "dest": "bptt_truncate",
+   "dynamic": false,
+   "default": 15,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": "detach the carried rollout state every N steps. 0 = FULL CHAIN (the deliberate-regression control). 15 = DreamerV3's imagination horizon AND",
+   "lineno": 401,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 13,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--speed-channel"
+   ],
+   "dest": "speed_channel",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": "store_true",
+   "help": "third predictor input channel v_k/30 with v_k INTEGRATED from the loader's measured anchor speed v0 and the action sequence (v_k = v0 + sum_",
+   "lineno": 410,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 5,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--tmix-groups"
+   ],
+   "dest": "tmix_groups",
+   "dynamic": false,
+   "default": null,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": "WideAdapter.tmix conv groups: default None = d_state (depthwise, the shipped form); 1 = full cross-channel temporal mixing (next-run arm)",
+   "lineno": 418,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 6,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--ema-targets"
+   ],
+   "dest": "ema_targets",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": "store_true",
+   "help": "tactical/strategic targets from an EMA copy of the target path behind a stop-gradient (BYOL 2006.07733, I-JEPA 2301.08243). SPEC E-ARCH-TSC-",
+   "lineno": 422,
+   "reads_in_trainer": 2,
+   "reads_elsewhere_in_stack": 2,
+   "status": "READ",
+   "proposed_class": "OPTIM"
+  },
+  {
+   "options": [
+    "--ema-decay"
+   ],
+   "dest": "ema_decay",
+   "dynamic": false,
+   "default": 0.996,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": "EMA decay at step 0 (BYOL/I-JEPA 0.996)",
+   "lineno": 430,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 18,
+   "status": "READ",
+   "proposed_class": "OPTIM"
+  },
+  {
+   "options": [
+    "--ema-decay-end"
+   ],
+   "dest": "ema_decay_end",
+   "dynamic": false,
+   "default": 0.999,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": "EMA decay at the last step (linear schedule; I-JEPA ends at 1.0, pinned at 0.999 so the teacher never fully freezes)",
+   "lineno": 432,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 8,
+   "status": "READ",
+   "proposed_class": "OPTIM"
+  },
+  {
+   "options": [
+    "--target-space"
+   ],
+   "dest": "target_space",
+   "dynamic": false,
+   "default": "frozen",
+   "type": null,
+   "choices": [
+    "adapter",
+    "frozen"
+   ],
+   "action": null,
+   "help": "'adapter' = original form, whose primary loss has a COLLAPSE MINIMUM (the target passes the trained adapter); 'frozen' = predict std(DINOv3)",
+   "lineno": 436,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 7,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--clip"
+   ],
+   "dest": "clip",
+   "dynamic": false,
+   "default": 1.0,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": "grad-norm clip. \u26a0\ufe0f MM-E19 MEASURED a 60-step full-chain rollout diverging (gnorm 2.1e9) at the loose default and surviving at 0.5. v1 rolls ",
+   "lineno": 443,
+   "reads_in_trainer": 2,
+   "reads_elsewhere_in_stack": 125,
+   "status": "READ",
+   "proposed_class": "OPTIM"
+  },
+  {
+   "options": [
+    "--skip-nonfinite"
+   ],
+   "dest": "skip_nonfinite",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": "store_true",
+   "help": "skip the optimizer step (and count it) when the pre-clip gradient norm is non-finite; the batch is dropped instead of applied. GradScaler se",
+   "lineno": 457,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 0,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--w-aux-head"
+   ],
+   "dest": "w_aux_head",
+   "dynamic": false,
+   "default": 0.0,
+   "type": "float",
+   "choices": null,
+   "action": null,
+   "help": "imitation weight on the proposal head (WTA over proposal-k modes vs the demonstrated (a, kappa)). SEEDS the planner only -- behaviour stays ",
+   "lineno": 463,
+   "reads_in_trainer": 3,
+   "reads_elsewhere_in_stack": 3,
+   "status": "READ",
+   "proposed_class": "LOSS"
+  },
+  {
+   "options": [
+    "--proposal-k"
+   ],
+   "dest": "proposal_k",
+   "dynamic": false,
+   "default": 1,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": "number of proposal modes (Drive-JEPA proposal-set idea); >1 adds a score head, and at plan() time all modes join the iCEM seed pool",
+   "lineno": 467,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 11,
+   "status": "READ",
+   "proposed_class": "MODEL"
+  },
+  {
+   "options": [
+    "--seed"
+   ],
+   "dest": "seed",
+   "dynamic": false,
+   "default": 0,
+   "type": "int",
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 471,
+   "reads_in_trainer": 2,
+   "reads_elsewhere_in_stack": 224,
+   "status": "READ",
+   "proposed_class": "RUNTIME"
+  },
+  {
+   "options": [
+    "--resume"
+   ],
+   "dest": "resume",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": "store_true",
+   "help": "continue from <out>/ckpt.pt if present",
+   "lineno": 472,
+   "reads_in_trainer": 1,
+   "reads_elsewhere_in_stack": 5,
+   "status": "READ",
+   "proposed_class": "RUNTIME"
+  },
+  {
+   "options": [
+    "--smoke"
+   ],
+   "dest": "smoke",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": "store_true",
+   "help": null,
+   "lineno": 474,
+   "reads_in_trainer": 4,
+   "reads_elsewhere_in_stack": 28,
+   "status": "READ",
+   "proposed_class": "UNCLASSIFIED"
+  },
+  {
+   "options": [
+    "--device"
+   ],
+   "dest": "device",
+   "dynamic": false,
+   "default": "<expr> 'cuda' if torch.cuda.is_available() else 'cpu'",
+   "type": null,
+   "choices": null,
+   "action": null,
+   "help": null,
+   "lineno": 475,
+   "reads_in_trainer": 12,
+   "reads_elsewhere_in_stack": 674,
+   "status": "READ",
+   "proposed_class": "RUNTIME"
+  },
+  {
+   "options": [
+    "--precision"
+   ],
+   "dest": "precision",
+   "dynamic": false,
+   "default": "fp32",
+   "type": null,
+   "choices": [
+    "fp32",
+    "bf16"
+   ],
+   "action": null,
+   "help": "bf16 = torch.autocast(bfloat16) around the FORWARD + LOSS only; backward, clip, optimizer and EMA stay on the fp32 master weights, no GradSc",
+   "lineno": 478,
+   "reads_in_trainer": 3,
+   "reads_elsewhere_in_stack": 16,
+   "status": "READ",
+   "proposed_class": "RUNTIME"
+  },
+  {
+   "options": [
+    "--tf32"
+   ],
+   "dest": "tf32",
+   "dynamic": false,
+   "default": null,
+   "type": null,
+   "choices": null,
+   "action": "store_true",
+   "help": "allow TF32 tensor-core matmuls/convs (sets torch.backends.cuda.matmul.allow_tf32 AND torch.backends.cudnn.allow_tf32 True before the model i",
+   "lineno": 487,
+   "reads_in_trainer": 2,
+   "reads_elsewhere_in_stack": 2,
+   "status": "READ",
+   "proposed_class": "RUNTIME"
+  }
+ ]
+}

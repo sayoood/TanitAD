@@ -1,0 +1,56 @@
+{
+ "_read": "a SUMMARY of a dev-box REHEARSAL token (the token itself is NOT banked: tokens stay in the agent's scratch copy). Signed with a throwaway test key, fake commit 7f7f..., never verifiable. Re-run 2026-09-27 on the merge WITH the nav mapping (nav kept end to end).",
+ "verdict": "INCOMPLETE",
+ "profile": null,
+ "checks_in_token": {
+  "G-HYG": "MISSING",
+  "G-DVB": "MISSING",
+  "G-LIVE": "MISSING",
+  "G-CLOCK": "MISSING",
+  "G-EVAL": "MISSING",
+  "G-CKPT": "MISSING",
+  "G-SUITE": "MISSING"
+ },
+ "token_reasons": [
+  "no usable evidence yet for: ['G-HYG', 'G-DVB', 'G-LIVE', 'G-CLOCK', 'G-EVAL', 'G-CKPT', 'G-SUITE']"
+ ],
+ "rehearsal": {
+  "notes": [
+   "data input --init-from (/home/nvidia/experiments/v7f-sw/ckpt.pt) is missing on this host",
+   "data input --nav-labels (/home/nvidia/data/v72/nav.jsonl.gz) is missing on this host",
+   "data input --prev-gate (/home/nvidia/experiments/v7f-sw/stage_gate.json) is missing on this host",
+   "data input --s2-labels (/home/nvidia/data/v72/labels/s2_labels_v7.2_train.jsonl.gz) is missing on this host",
+   "data input --speed-max-sidecar-v6 (/home/nvidia/data/refcv6_speed_max_v8_train.jsonl) is missing on this host",
+   "FIX-5: /home/nvidia/data/refcv6_speed_max_v8_train.jsonl.meta.json is ABSENT -- `read_speed_max_sidecar_v6` refuses a sidecar without its meta (it is the only record of which label blob the sidecar was built over)",
+   "data input --v2-cache (/home/nvidia/data/physicalai-train-e438721ae894-w120-256x640cyl) is missing on this host"
+  ],
+  "checks": {
+   "G-CKPT": {
+    "status": "FAIL",
+    "reasons": [
+     "resume: the batches drawn after the resume are NOT the ones an uninterrupted run draws at the same steps -- they are the uninterrupted run's FIRST batches: the sampler/RNG stream restarts at every launch (train() re-seeds torch, random and the sampler generator from --seed -- c36b6ddd:6475-6478 -- and _save_ckpt's payload is {stack, opt, step, config}: no RNG state, no data position)",
+     "resumed_final_vs_uninterrupted_final: key sets or tensors differ (101 differ, 0/0 one-sided)"
+    ]
+   },
+   "G-DVB": {
+    "status": "PASS",
+    "reasons": []
+   },
+   "G-EVAL": {
+    "status": "PASS",
+    "reasons": []
+   },
+   "G-HYG": {
+    "status": "FAIL",
+    "reasons": [
+     "4 config dataclass(es) do NOT refuse undeclared attributes at assignment: tanitad.config.EncoderConfig, tanitad.config.PredictorConfig, tanitad.config.ReadoutConfig, tanitad.models.v6.V6Config",
+     "setting an undeclared attribute SUCCEEDED on 4 config object(s) (the D-REFCV6-EQUALIZE-DROPPED mechanism): ['cfg (V6Config)', 'cfg.encoder (EncoderConfig)', 'cfg.predictor (PredictorConfig)', 'cfg.readout (ReadoutConfig)']"
+    ]
+   },
+   "G-LIVE": {
+    "status": "PASS",
+    "reasons": []
+   }
+  }
+ }
+}

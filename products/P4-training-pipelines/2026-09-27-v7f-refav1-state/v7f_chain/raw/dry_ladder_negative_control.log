@@ -1,0 +1,73 @@
+
+=== S-W (S-W) -> <SCRATCH>/dry_neg/v7f-SW-30k ===
+[chain] may-launch OK · precondition=n/a · init_from=None
+    [predictor] RESIDUAL_HEAD_INIT_SCALE=0.001  (identity-scale start)
+    [v6] ⛔ O6 RANK GATE CANNOT RULE AT THESE SETTINGS — it will report INCONCLUSIVE no matter what the representation does.
+    [v6]    --spectrum-accum 1 x 32 rows/call -> rank_ceiling 31, but the criterion needs 1024.
+    [v6]    USE --spectrum-accum 33 (cost: ~1 MB of CPU ring buffer).
+    [v6]    MEASURED 2026-08-22: v6F@20k effective rank 5.86 vs an absolute_floor of 64 — a COLLAPSED representation that this gate would have failed, had it been able to see.
+    [v6] params 8.71 M / budget 300 M · arm shared-encoder+adapters · per-group {'encoder': 0.04, 'readout': 0.0, 'predictor_op': 0.16, 'layer_tac': 3.45, 'layer_str': 3.33, 'planner': 0.13, 'aux': 1.59, 'interp': 0.0}
+    [v6] X3 isolation pass=True violations={'planner_to_encoder': 0, 'tactical_to_below': 0, 'strategic_to_below': 0}
+    [v6] declared-freeze preflight OK (dry-run): 0 frozen-external + 1 grad-unreachable subtree(s); directions A/A'/B checked
+    [gradreach] all 86 optimizer tensors received a gradient (1.79 M params, 100.0 % of the declared trainable budget)
+    [v6 dry 1] {"stage": "S-W", "o1_detach_encoder": false, "o1_stopgrad_factual": false, "o1_ctrl": 0.21464183926582336, "o1_fact": 0.8577980995178223, "o1_scene": 1.3885325193405151, "o1_factual_ade": 1.353791356086731, "o1_basis_dims": 8, "o1_arms": ["left", "right", "brake", "throttle", "random"], "o5_loss": 0.9352338314056396, "o5_k": 12, "o5_form": "l1", "o5_step1": 0.8998780250549316, "o5_stepK": 0.8735037446022034, "o5_growth": 0.9706912636756897, "o5_mode": "uniform", "o2_loss": 0.9396718144416809, "o2_w_min": 0.14552262425422668, "o2_w_max": 2.4681448936462402, "o2_unweighted": 0.9706783890724182, "o2_tau_s": 2.0, "o2_at_step": 10, "o3_loss": 0.9212864637374878, "o3_mask_rate": 0.3125, "o3_n_masked": 10, "o3_visible_err": 0.8461858630180359, "o3_mode": "action", "o6_rows": 8, "o6_row_renorm": 1.0, "o6_sigreg": 0.5867735743522644, "loss": 4.343869209289551, "terms": ["o1", "o2", "o3", "o5", "o6"], "step": 1, "gnorm": 24.2548}
+    [v6 dry 2] {"stage": "S-W", "o1_detach_encoder": false, "o1_stopgrad_factual": false, "o1_ctrl": 0.5685871839523315, "o1_fact": 1.5508724451065063, "o1_scene": 1.2722090482711792, "o1_factual_ade": 2.4511172771453857, "o1_basis_dims": 8, "o1_arms": ["left", "right", "brake", "throttle", "random"], "o5_loss": 0.9109309315681458, "o5_k": 12, "o5_form": "l1", "o5_step1": 0.9924637079238892, "o5_stepK": 0.8543874025344849, "o5_growth": 0.8608751893043518, "o5_mode": "uniform", "o2_loss": 0.9359248280525208, "o2_w_min": 0.13903561234474182, "o2_w_max": 1.6884146928787231, "o2_unweighted": 0.9241401553153992, "o2_tau_s": 2.0, "o2_at_step": 10, "o3_loss": 0.860448956489563, "o3_mask_rate": 0.3125, "o3_n_masked": 10, "o3_visible_err": 0.7880920767784119, "o3_mode": "action", "o6_rows": 8, "o6_row_renorm": 1.0, "o6_sigreg": 0.9734257459640503, "loss": 5.305769443511963, "terms": ["o1", "o2", "o3", "o5", "o6"], "step": 2, "gnorm": 38.4554}
+    [v6] EFFECTIVE WEIGHTS (--stage S-W) -- default -> layer -> effective -> builds a graph?
+    [v6] term             flag                          default  asked  effective  src   graph  status          layer/mask/missing                                                                                                                                                       
+    [v6] ---------------  ----------------------------  -------  -----  ---------  ----  -----  --------------  -------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    [v6] o1_ctrl          --w-o1-ctrl                   1        1      1          dflt  yes    TRAINS                                                                                                                                                                                   
+    [v6] o1_fact          --w-o1-fact                   1        1      1          dflt  yes    TRAINS                                                                                                                                                                                   
+    [v6] o1_scene         --w-o1-scene                  0.3      0.3    0.3        dflt  yes    TRAINS                                                                                                                                                                                   
+    [v6] o2_nearfield     --w-o2                        1        1      1          dflt  yes    TRAINS                                                                                                                                                                                   
+    [v6] o3_masked        --w-o3                        1        1      1          dflt  yes    TRAINS                                                                                                                                                                                   
+    [v6] o5_rollout       --w-o5                        1        1      1          dflt  yes    TRAINS                                                                                                                                                                                   
+    [v6] o6_sigreg        --w-o6                        0.1      0.1    0.1        dflt  yes    TRAINS                                                                                                                                                                                   
+    [v6] o11_cf           --w-o11-cf                    0        0      0          dflt  no     OFF_BY_DEFAULT                                                                                                                                                                           
+    [v6] o13_ego          --w-o13-ego                   0        0      0          dflt  no     OFF_BY_DEFAULT                                                                                                                                                                           
+    [v6] o14_fut          --w-o14                       0        0      0          dflt  no     OFF_BY_DEFAULT                                                                                                                                                                           
+    [v6] t1_latent        --w-t1                        1        1      0          dflt  no     OFF_BY_LAYER    layer=for_stage('S-W')                                                                                                                                                   
+    [v6] s1_latent        --w-s1                        1        1      0          dflt  no     OFF_BY_LAYER    layer=for_stage('S-W')                                                                                                                                                   
+    [v6] lambda_plan      --lambda-plan                 0        0      0          dflt  no     OFF_BY_DEFAULT  layer=for_stage('S-W')                                                                                                                                                   
+    [v6] seam_op          (no flag: dataclass default)  1        1      0          dflt  no     OFF_BY_LAYER    layer=for_stage('S-W')                                                                                                                                                   
+    [v6] w_select         --w-select                    0        0      0          dflt  no     OFF_BY_DEFAULT  layer=for_stage('S-W'); missing=--selector none: there is no scorer to train                                                                                             
+    [v6] w_anchor         --w-anchor                    0        0      0          dflt  no     OFF_BY_DEFAULT  layer=for_stage('S-W'); missing=--anchor-goal none: there is no anchor objective                                                                                         
+    [v6] w_s2_goal        --w-s2-goal                   0        0      0          dflt  no     OFF_BY_DEFAULT  layer=for_stage('S-W'); mask=s2_valid (+ g_str_valid/a_str_valid; v7.2 arg L1 is ALL-ZERO masked by V72_ARGS_SUPERVISED=False)                                           
+    [v6] w_t2_contrast    --w-t2-contrast               0        0      0          dflt  no     OFF_BY_DEFAULT  layer=for_stage('S-W'); missing=no --t2-contrastive: the projector is never built                                                                                        
+    [v6] w_t5_consist     --w-t5-consist                0        0      0          dflt  no     OFF_BY_DEFAULT  layer=for_stage('S-W'); missing=no --t5-pairs: windows are drawn INDEPENDENTLY, so the consistency term would compare unrelated episodes                                 
+    [v6] w_s1_multi       --w-s1-multi                  0        0      0          dflt  no     OFF_BY_DEFAULT  layer=for_stage('S-W')                                                                                                                                                   
+    [v6] w_tac_label_all  --w-tac-label-all             0        0      0          dflt  no     OFF_BY_DEFAULT  layer=for_stage('S-W'); mask=tac_valid (the record's tactical band) + per-cell tac_goal_w (negatives policy x class mask) + tac_goal_arg_mask (SPEED_BAND v_lo/v_hi only)
+    [v6] o10_psg          --w-o10-psg                   0        0      0          dflt  no     OFF_BY_DEFAULT  mask=psg_valid (per-clip: 1.0 only for clips in the train join)                                                                                                          
+    [v6] 7/22 terms build a graph. A term with graph=no contributes EXACTLY zero gradient; 'p.grad is None' is the sound check, never the weight value.
+    [v6] stage gate INCONCLUSIVE -> <SCRATCH>\dry_neg\v7f-SW-30k\stage_gate.json
+    [v6] dry-run OK -> <SCRATCH>\dry_neg\v7f-SW-30k/dry_run.json + config.json + stage_gate.json (INCONCLUSIVE, _dry_run)
+[chain] S-W gate INCONCLUSIVE (_dry_run)
+[predictor] RESIDUAL_HEAD_INIT_SCALE=0.001  (identity-scale start)
+[v6] ⛔ O6 RANK GATE CANNOT RULE AT THESE SETTINGS — it will report INCONCLUSIVE no matter what the representation does.
+[v6]    --spectrum-accum 1 x 32 rows/call -> rank_ceiling 31, but the criterion needs 1024.
+[v6]    USE --spectrum-accum 33 (cost: ~1 MB of CPU ring buffer).
+[v6]    MEASURED 2026-08-22: v6F@20k effective rank 5.86 vs an absolute_floor of 64 — a COLLAPSED representation that this gate would have failed, had it been able to see.
+[v6] params 8.71 M / budget 300 M · arm shared-encoder+adapters · per-group {'encoder': 0.04, 'readout': 0.0, 'predictor_op': 0.16, 'layer_tac': 3.45, 'layer_str': 3.33, 'planner': 0.13, 'aux': 1.59, 'interp': 0.0}
+[v6] X3 isolation pass=True violations={'planner_to_encoder': 0, 'tactical_to_below': 0, 'strategic_to_below': 0}
+[chain] dry ancestor -> <SCRATCH>\dry_neg\v7f-SW-30k\dry_ckpt.pt
+
+=== S-T (S-T) -> <SCRATCH>/dry_neg/v7f-ST-10k ===
+[chain] may-launch OK · precondition=INCONCLUSIVE · init_from=<SCRATCH>/dry_neg/v7f-SW-30k/dry_ckpt.pt
+    [predictor] RESIDUAL_HEAD_INIT_SCALE=0.001  (identity-scale start)
+    [v6] ⛔ O6 RANK GATE CANNOT RULE AT THESE SETTINGS — it will report INCONCLUSIVE no matter what the representation does.
+    [v6]    --spectrum-accum 1 x 32 rows/call -> rank_ceiling 31, but the criterion needs 1024.
+    [v6]    USE --spectrum-accum 33 (cost: ~1 MB of CPU ring buffer).
+    [v6]    MEASURED 2026-08-22: v6F@20k effective rank 5.86 vs an absolute_floor of 64 — a COLLAPSED representation that this gate would have failed, had it been able to see.
+    [v6] params 8.71 M / budget 300 M · arm shared-encoder+adapters · per-group {'encoder': 0.04, 'readout': 0.0, 'predictor_op': 0.16, 'layer_tac': 3.45, 'layer_str': 3.33, 'planner': 0.14, 'aux': 1.59, 'interp': 0.0}
+    [v6] X3 isolation pass=True violations={'planner_to_encoder': 0, 'tactical_to_below': 0, 'strategic_to_below': 0}
+    [v6 dry] precondition OK · {"stage": "S-T", "precondition": "S-W", "ok": true, "prev_verdict": "INCONCLUSIVE", "override": "allow-inconclusive-gate", "off_reason": "CPU DRY LADDER \u2014 no corpus, no battery, synthetic tensors. Every dry gate is INCONCLUSIVE by construction because no frozen-battery probe ran; advancing through the RECORDED override is the honest path and is what makes this an end-to-end execution of the real gate machinery.", "prev_gate": "<SCRATCH>\\dry_neg\\v7f-SW-30k\\stage_gate.json", "prev_not_applicable": [], "exercised": true}
+    [v6 dry] init-from OK · introduced=['tac_op_port.bias', 'tac_op_port.weight', 'vmax_tac.bias', 'vmax_tac.weight'] · trunk_md5=bc7ef6e2f1a2
+    [v6] declared-freeze preflight OK (dry-run): 0 frozen-external + 1 grad-unreachable subtree(s); directions A/A'/B checked
+    [v6] s2-labels v7.2: <SCRATCH>\v7fdata\labels\s2_labels_v7.2_train.jsonl.gz md5=0ff902130ce76886b8a925eceed9e3a5 records=4572 schema=s2-geom-v7 vocab=v7 side=train allow_oracle_nav=True
+    [v6] ⚠ s2-labels v7.2: no clip index resolved beside <SCRATCH>\v7fdata\labels\s2_labels_v7.2_train.jsonl.gz; the join is by stable_episode_id(clip_id) (the same function the index records) and the index cross-check was NOT performed.
+    [v6] ⚠ s2-labels v7.2: mask/presence mismatch (recorded, not refused — v7_labels.effective_mask is the trainer-safe mask): [v7_labels] ⛔ mask/presence mismatch:
+      tac_lat: ABSENT BUT UNMASKED ['LANE_CHANGE_L', 'LANE_CHANGE_R'] — dead logits that degrade calibration; mask them
+    [v6 dry] s2-labels OK · 4572 records · g_str census {'FOLLOW_ROUTE': 2948, 'STOP_AT_FOLLOW_ROUTE': 454, 'TURN_LEFT_FOLLOW_ROUTE': 574, 'TURN_RIGHT_FOLLOW_ROUTE': 596}
+[chain] ⛔ S-T FAILED (rc=1)
+    ! [refcv6-vmax] ⛔ the sidecar was built over label blob md5 'fa89ea55dfce68403eb30300e57852ab' but this run loaded '0ff902130ce76886b8a925eceed9e3a5'. The join would SUCCEED and feed ceilings derived from a different release on whatever fraction of clips moved between them — a silent, per-clip wrong input. Rebuild the sidecar against the blob this run uses.
+
+[chain] 2 step(s), 1 failure(s), 9.95 s
