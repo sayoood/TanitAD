@@ -1,0 +1,116 @@
+{
+ "tag": "eval_s5000",
+ "split": "eval_diag",
+ "ckpt": "/home/nvidia/refcv7_run/runs/refcv7-r101-s0/ckpt_5000.pt",
+ "step": 5000,
+ "n_windows": 1112,
+ "n_windows_done": 1112,
+ "n_batches_done": 139,
+ "batch": 8,
+ "n_episodes": 139,
+ "window_sha12_t_sha256": "92e36a1a74b8b699b69c799fba469376cafbcadd796e9a0737746f115ee92a1e",
+ "decisions": {
+  "pc": [
+   "argmax",
+   [
+    1.9589046239852905,
+    1.5800600051879883,
+    0.062495484948158264,
+    -0.07143783569335938,
+    -1.0842341184616089,
+    -0.4518289566040039,
+    -0.7668453454971313,
+    1.802188754081726
+   ]
+  ],
+  "raw": [
+   "argmax",
+   [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  ]
+ },
+ "fit": null,
+ "control_C1": {
+  "max_abs_diff": 0.0,
+  "n_batches": 137,
+  "n_compared": 21920
+ },
+ "n_packs": {
+  "box3d": 1061,
+  "agent": 1061
+ },
+ "loader_departures": [
+  "argv --trunk-compile REMOVED: no Triton on Windows; torch.compile wraps the backbone CALL only -- module tree and state_dict identical (LAUNCH_READINESS_FIXES.md sec. 10b)",
+  "Thor data paths REMAPPED to the eval kit /home/nvidia for ['--agent-join', '--agent-rig-extrinsics', '--anchors', '--clip-clock-sidecar', '--eval-cache', '--eval-labels', '--join3d', '--map-gt-root', '--map-hires-class-weights', '--nav-compliance-tau-file', '--speed-max-sidecar-v6-eval', '--vis1-sidecar'] (per flag, basename-checked; recorded in argv_remap)",
+  "tactical-goal pos_weight / class mask from config.json tac_goal_stats (the TRAIN split's own constants; train():8483-8497 derives them from the loaded split)"
+ ],
+ "dvb": {
+  "mismatches": [],
+  "registry_entries": 221
+ },
+ "state_dict": {
+  "strict": true,
+  "missing": [],
+  "unexpected": [],
+  "step": 5000
+ },
+ "dataset": {
+  "n_episodes": 139,
+  "n_windows": 23772,
+  "map_fine": {
+   "root": "/home/nvidia/data/sam3_gt_v3",
+   "n_windows": 23772,
+   "n_clips": 139,
+   "frac_ok": 0.9856133266027259,
+   "frac_ok_upper": 0.9856133266027259,
+   "verdict": "PASS",
+   "states": {
+    "ok": 23430,
+    "no_file": 342,
+    "frame_out_of_range": 0,
+    "inconclusive": 0
+   },
+   "reasons": {
+    "081b986f8888": "FileNotFoundError errno 2",
+    "2aa810802777": "FileNotFoundError errno 2"
+   },
+   "n_stack": 3,
+   "extent": {
+    "x_max_m": 100.0,
+    "y_half_m": 30.0,
+    "fine_shape": [
+     1000,
+     600
+    ],
+    "band_keys": [
+     "0_20",
+     "20_40",
+     "40_60",
+     "60_80",
+     "80_100"
+    ]
+   },
+   "fine_spec": {
+    "x_max_m": 100.0,
+    "y_half_m": 30.0,
+    "cell_m": 0.1,
+    "shape": [
+     1000,
+     600
+    ],
+    "codes": "0-7 class, 255 not seen"
+   }
+  }
+ },
+ "cuda_max_mem_gb": 8.109763584,
+ "wall_s": 554.4461920261383,
+ "loop_s": 421.2721517086029
+}

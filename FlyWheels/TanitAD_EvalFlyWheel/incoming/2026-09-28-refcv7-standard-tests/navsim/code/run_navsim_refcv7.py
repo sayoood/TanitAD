@@ -36,6 +36,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 PKG = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
 import gpu_lock  # noqa: E402
+from pytest_control7 import control_passed  # noqa: E402
 
 PY = "C:/Users/Admin/venvs/tanitad/Scripts/python.exe"
 NPY = "C:/Users/Admin/navsim-crun/venv/Scripts/python.exe"
@@ -281,8 +282,10 @@ def main(argv=None) -> int:
                           os.path.join(PKG, "tests", "test_model_seam7.py"), "-k", "K0 or KD"],
                          ce, clog)
                 txt = open(clog, encoding="utf-8", errors="replace").read().replace("\\", "/")
-                k0 = "PASSED tests/test_model_seam7.py::test_K0" in txt
-                kd = "PASSED tests/test_model_seam7.py::test_KD" in txt
+                # prefix-agnostic (pytest_control7.py): the literal "PASSED tests/..." match read a PASSED
+                # K0 as FAILED at step 50,400 and refused CUDA on two splits (MEASURED 2026-10-04)
+                k0 = control_passed(txt, "test_K0")
+                kd = control_passed(txt, "test_KD")
                 rec["cuda_controls"] = {"pytest_rc": rc, "K0_pass": k0, "KD_pass": kd,
                                         "KD": jget(os.path.join(PKG, "raw", "controls",
                                                                 "KD_exact_dedup_cuda.json"))}

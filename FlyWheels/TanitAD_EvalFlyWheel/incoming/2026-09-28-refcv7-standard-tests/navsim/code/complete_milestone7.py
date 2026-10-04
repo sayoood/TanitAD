@@ -255,8 +255,8 @@ def split_record(out: str, sk: str, notes: dict) -> dict:
         txt = open(clog, encoding="utf-8", errors="replace").read().replace("\\", "/")
         rec["cuda_controls"] = {"pytest_rc": None,
                                 "pytest_rc_note": "not recorded (the runner died before writing it)",
-                                "K0_pass": "PASSED tests/test_model_seam7.py::test_K0" in txt,
-                                "KD_pass": "PASSED tests/test_model_seam7.py::test_KD" in txt,
+                                "K0_pass": R.control_passed(txt, "test_K0"),   # prefix-agnostic
+                                "KD_pass": R.control_passed(txt, "test_KD"),   # (pytest_control7.py)
                                 "KD": R.jget(os.path.join(PKG, "raw", "controls",
                                                           "KD_exact_dedup_cuda.json"))}
         rec["reconstructed_from"].append(os.path.relpath(clog, PKG))
