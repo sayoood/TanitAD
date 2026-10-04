@@ -1,0 +1,12196 @@
+"""v6 — the STAGED trainer (S-W → S-T → S-S → optional S-J).
+
+WHY STAGED, AND WHY IT IS NOT A PREFERENCE (JEPA_PHYSICS_SURVEY.md §4,
+PUBLISHED + our own gate history):
+  * Drive-JEPA (arXiv 2601.22032): stage 1 = V-JEPA representation pretraining
+    with NO planner in the loop; stage 2 = a proposal-centric planner on top.
+    NAVSIM v1 93.7 PDMS / v2 87.8 EPDMS / Bench2Drive 64.52 — SOTA.
+  * V-JEPA 2 → 2-AC (arXiv 2506.09985): SSL first, action-conditioning
+    post-trained on 62 h of UNLABELED interaction video.
+  * DINO-WM (arXiv 2411.04983): dynamics learned on FROZEN patch features.
+  * ⇒ *"Nobody at the frontier co-trains the planning gradient into the encoder
+    from step 0."* MEASURED on our own ladder: every STAGED component passed
+    its gates (W4 emission retrofit PASS; stage-A predictor-only repair ALL
+    PASS, gain 0.27 → 0.97), while the co-trained path produced the muffled
+    action interface, three selector failures and the missing lead-distance
+    variable.
+
+WHAT THIS TRAINER IS. The per-stage loop for :class:`tanitad.models.v6.V6Stack`,
+with the ``V6_TRAINING_MEASURES.md`` catalog wired as flagged loss terms, each
+DEFAULTING TO THE CATALOG'S SETTING:
+
+  O1  action-conditioned latent prediction with **L_ctrl in RESPONSE FORM FROM
+      STEP 0** — not a post-hoc repair. IMPORTED from ``train_stage_a.py``
+      (``stage_a_losses`` / ``build_cf_actions`` / ``sample_random_deltas``):
+      the same counterfactual arms, the same physical envelope clamp, the same
+      response form the W3 gain gate measures. ⚠️ ONE deliberate difference
+      from stage A: there the encoder was FROZEN and ``states`` arrived
+      detached; in S-W the encoder TRAINS, so states carry gradient. Same loss,
+      different stage — said out loud because a silent detach here would make
+      S-W a predictor-only run wearing a world-stage name.
+  O2  near-field latent loss weighted by **TIME-TO-REACH**, not by a fixed 40 m
+      band (HIERARCHY_VOCABULARY §2, PI correction: *"a fixed 40 m band cannot
+      cover a 6 s horizon (180 m at 30 m/s)"*). Speed-adaptive by construction.
+  O3  masked SPATIAL-latent prediction over the readout grid (I-JEPA adapted to
+      cell tokens): contiguous blocks + near-field bands, predicted from
+      context AND action (the rolled latent is the context in ``--o3-mode
+      action``).
+  O4  **interaction-weighted sampling** from ACTIONS ONLY — |jerk|, |decel|,
+      steering reversals. Label-free (= LF1). Reweights the draw; never removes
+      a window, so parity holds.
+  O5  multi-step **rollout consistency to 6 s** — error at EVERY step, not
+      endpoint-only (the P5 compounding lesson trained in).
+  O6  SIGReg (LeJEPA, λ=0.1, 512 slices) + a standing **spectrum monitor**
+      (participation ratio, effective rank, top-k share) every ``--spectrum-every``
+      steps, so O6's "rank retention ≥ 0.8× across any curriculum phase" is a
+      SERIES and not a single reading.
+  T1/S1  the tactical and strategic layers' own goal-conditioned latent
+      prediction, each against its layer's stop-grad/EMA target.
+
+⛔ GATES, AND WHAT "GATED" MEANS HERE (X5: *"each stage gated by the frozen
+battery BEFORE the next begins — a failed stage never propagates upward"*).
+``--gate`` writes ``<out>/stage_gate.json``. Launching stage N+1 runs
+:func:`assert_stage_precondition`, which reads stage N's gate and REFUSES on
+``pass: false``. A gate whose required probes could not be run is
+``pass: null`` = **INCONCLUSIVE, which is NOT a pass** and also refuses; it can
+be overridden only by ``--allow-inconclusive-gate`` WITH ``--gate-off-reason``,
+and the reason is stamped into the run config and printed as a banner (the
+``train_flagship_v4`` off-reason pattern — an override with no stated reason is
+how a skipped gate becomes an unremembered decision).
+
+⛔ EVIDENCE / TIER DISCIPLINE. Every number this trainer logs is a TRAINING
+number. ⚠️ *"v1.6 is best-in-program" was a trainer log, ~10 % optimistic vs
+``eval_*.py``* — trainer val watches a curve; only eval output is quotable.
+Capability claims come from **T1** (``taniteval/tools/t1_eval.py``) with the
+**four metric families** (LONGITUDINAL / LATERAL / TACTICAL / STRATEGIC —
+Sayed 2026-08-02, binding) and the **paired episode-cluster bootstrap**
+(``taniteval/ci.py``). An ADE-only table is an INCOMPLETE eval, not a result.
+
+⚠️ POD TRAPS THIS TRAINER IS BUILT AROUND (CLAUDE.md, each has cost hours):
+  * ``PYTHONPATH=/workspace/TanitAD/stack`` is REQUIRED or it dies with
+    ``ModuleNotFound: tanitad``. ``--print-launch`` emits the full line.
+  * ``step_s`` in the log is ACCUMULATED over ``--log-every``; this trainer logs
+    ``step_s`` ALREADY DIVIDED and names the divisor, so nobody re-derives a
+    "430 s/step" alarm.
+  * A completed run writes its DONE-MARKER (``summary.json`` with
+    ``"done": true``) in the SAME turn it finishes — a supervised run without
+    one gets RESURRECTED the moment whatever broke its relaunches is fixed.
+  * ``OMP_NUM_THREADS`` is set defensively (torch spawns ~113 threads/process;
+    7 concurrent arms sat at 0–6 % sm for 50 minutes).
+
+USAGE — the copy-pasteable pod lines are in ``V6_TRAINER_DESIGN.md`` §3. The
+shortest useful one needs no corpus and no GPU:
+
+  PYTHONPATH=/workspace/TanitAD/stack python3 scripts/train_v6_staged.py \\
+      --stage S-W --dry-run --out /workspace/experiments/v6-dryrun
+"""
+from __future__ import annotations
+
+import argparse
+import importlib
+import json
+import math
+import os
+import random
+import sys
+import time
+from collections import deque
+from dataclasses import asdict, dataclass, fields, replace
+from pathlib import Path
+
+# ⛔ P4-9 — THIS MUST PRECEDE `import torch`. torch reads OMP_NUM_THREADS when it
+# initialises its thread pool AT IMPORT; setting it afterwards changes the
+# environment and nothing else. It previously ran inside main(), ~7,700 lines
+# below the import, so the "113 threads per process" guard it documents was
+# INERT — the pool had already been sized. MEASURED 2026-07-27: 7 concurrent
+# arms sat at GPU sm 0-6 % for 50 minutes with zero progress; the same arm with
+# OMP_NUM_THREADS=6 finished in 232 s.
+# ``setdefault`` so an explicit value from the launcher still wins; the resolved
+# value is recorded in `run_provenance` so it can never be a silent difference
+# between two "identical" arms.
+os.environ.setdefault("OMP_NUM_THREADS", "6")
+
+import torch
+from torch import Tensor
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))          # scripts/
+sys.path.insert(1, str(Path(__file__).resolve().parents[1]))      # stack root
+
+from tanitad.config import EncoderConfig, PredictorConfig, ReadoutConfig  # noqa: E402
+from tanitad.models.predictor import RESIDUAL_HEAD_INIT_SCALE
+# ⛔ ONE SPELLING OF THE SLOT-QUERY COUNT. This trainer used to carry TWO
+# hardcoded 16s — the argparse default and the build-time getattr fallback —
+# and NEITHER read the constant, so correcting N_QUERIES_DEFAULT alone would
+# have left the v6 trainer at 16 while every audit reported the new value.
+# That is the `advect` precedent: two implementations of one number. Pinned by
+# tests/test_v6_agent_slots.py::test_the_slot_query_default_has_exactly_one_spelling
+from tanitad.models.agent_slots import N_QUERIES_DEFAULT  # noqa: E402
+from tanitad.models.v6 import (  # noqa: E402
+    GOAL_ARG_SLOTS, HORIZON_S, MODULE_GROUPS, O6_ADMISSIBLE_CEILING,
+    PLAN_STEPS, STAGES,
+    STRATEGIC_ACTION_TOKENS, STRATEGIC_GOAL_TOKENS, InteractionSampler,
+    LayerSpectrumMonitor, V6Config, V6Stack, apply_stage_freeze,
+    # ⛔ the declared-freeze preflight. `assert_frozen_external` was built,
+    # quantified its own trap at 86,580,480 params — and was called by NOTHING
+    # outside its own test file, so the trap happened for real on native
+    # modules (the O5 EMA teacher). This import is the wiring.
+    assert_declared_freezes_hold,
+    kinematic_saliency,
+    near_field_band_mask, sample_cell_block_mask, saliency_weights,
+    SpectrumAccumulator, o6_rank_verdict, sigreg_trend_verdict,
+    spectrum_report,
+    # F-7 / catalog T2 — the augmentations + the manoeuvre-preserving /
+    # -reversing partition the loss REFUSES to have swapped
+    T2_AUGMENTATIONS, T2_MANOEUVRE_PRESERVING, T2_MANOEUVRE_REVERSING,
+    # F-9 / catalog T3 — the interaction CURRICULUM (zero parameters)
+    T3Curriculum, T3_CONTROL_MIN_N, multi_agent_kinematic_entropy,
+    t3_rank_control,
+    # F-10 / catalog S3 — the DOMAIN-STRATIFIED MIX (zero parameters).
+    # ⛔ It acts on the EPISODE draw, NOT on InteractionSampler's per-window
+    # weights: those are consulted only INSIDE an already-chosen episode, so a
+    # domain weight expressed there is EXACTLY a no-op (MEASURED).
+    DomainMix, StratifiedEpisodeSampler, domain_mix_control,
+    DOMAIN_MIX_CONTROL_MIN_N, DOMAIN_MIX_MAX_AMPLIFICATION,
+    DOMAIN_MIX_MIN_STRATUM_EPISODES,
+    stage_trainable_groups, time_to_reach_weights)
+from tanitad.models.sigreg import position_relaxed  # noqa: E402
+from tanitad import effective_weights as _ew  # noqa: E402
+
+# O1 — IMPORTED, never re-implemented: the response-form L_ctrl and its
+# counterfactual machinery are the stage-A artifacts that PASSED the W3 gate.
+from train_stage_a import (TRAIN_ARMS, sample_random_deltas,  # noqa: E402
+                           stage_a_losses)
+from train_v58f_unicycle_head import A_MAX, KAPPA_MAX  # noqa: E402
+from stage_a_probes import DACCEL_DEFAULT, DKAPPA_DEFAULT  # noqa: E402
+
+#: The canonical `s2-strategic-v1` label artifact, for `--s2-labels`' help.
+#: ⛔ A LITERAL, NOT `from s2_labels import S2_CANONICAL_LABELS_REL`. MEASURED
+#: 2026-08-16: the module-level import added `s2_labels` to this trainer's
+#: IMPORT-TIME CLOSURE, which `tests/test_runbook_commands.py` pins because the
+#: closure is exactly the set of files that must be FILE-SHIPPED to a pod
+#: (pods have no git credentials). Importing a module to print a help string
+#: would have made `s2_labels` mandatory for EVERY launch and given a pod
+#: missing it a `ModuleNotFound` at startup — a real operational cost for a
+#: cosmetic gain. `s2_labels` stays a LAZY import on the paths that use it.
+#: ⚠️ The two copies cannot drift: `test_v6_s2_loss.py` asserts this string
+#: equals `s2_labels.S2_CANONICAL_LABELS_REL` (C81 — audit the copies against
+#: each other where a fact is written twice).
+S2_CANONICAL_LABELS_REL = (
+    "TanitAD Research Lab/Data Engineering/Implementation/incoming/"
+    "2026-08-16-s2-v1-labels/review/labels_v2")
+
+#: ⭐ PI DIRECTIVE 2026-08-26 — the conditioning parameterisation.
+#: ``"steer_accel_v"``  the INCUMBENT: [atan(L*kappa), a_long, v/SPEED_SCALE].
+#: ``"omega_accel_v"``  the MEASURED EGO STATE: [yaw_rate, a_long, v/SPEED_SCALE].
+#: ⛔ Selected by ``--cond-param``; the incumbent stays the DEFAULT because the
+#: parameterisation changes the predictor's input distribution, so every existing
+#: checkpoint and every cross-arm comparison depends on it not moving silently.
+COND_EGO_STATE = "omega_accel_v"
+COND_INCUMBENT = "steer_accel_v"
+#: the LEGACY constant `physicalai.py` uses for every clip in the default regime.
+#: ⚠️ It CANCELS in the conversion below — see the docstring — so this value does
+#: not enter the result. It is named only because the inverse must use the SAME
+#: wheelbase the forward transform used.
+_COND_WHEELBASE_M = 2.9
+
+
+__all__ = [
+    "V6LossWeights", "STAGE_PRECONDITION", "STAGE_GATE_SPEC",
+    "STAGE_INVALIDATES", "STAGE_INVALIDATION_MECHANISM",
+    "STAGE_MAY_INTRODUCE", "RESUME_CONTRACT",
+    # E4 — the arm-conditional gate layer
+    "GATE_APPLICABILITY", "UNMEASURED_BY_CONSTRUCTION", "SEL_GAP_TIER_NOTE",
+    "probe_applies", "arm_record",
+    "o2_near_field_loss", "o3_masked_cell_loss", "o5_rollout_consistency_loss",
+    "o6_sigreg_loss", "o6_innovation_rows", "O6_INNOVATION_RIDGE_REL",
+    "azimuthal_target_crop", "ema_tau_at",
+    "rollout_step_weights", "build_o4_weights",
+    "o11_counterfactual_action_loss",
+    "o13_ego_dynamics_loss",
+    "ANCHOR_OBJECTIVES", "ANCHOR_OBJ_MODES", "ANCHOR_AXIS_W_DEFAULT",
+    "anchor_goal_loss",
+    "S2_IGNORE_ID", "s2_goal_loss", "synthetic_s2_batch",
+    "v6_loss_step", "stage_gate_dict", "write_stage_gate",
+    "assert_stage_precondition", "GatePreconditionError",
+    "in_spectrum_window",
+    "x4_monitor_from_args", "x4_trend_record",
+    "X4_TREND_BASELINE_STEPS", "X4_TREND_CURRENT_STEPS",
+    "ResumeLineageError", "read_ckpt_provenance", "assert_resume_lineage",
+    "resume_guard", "load_resume", "load_stage_init",
+    "supersede_init_on_resume",
+    "build_stack_from_args", "synthetic_train_batch", "dry_run",
+    "build_parser", "main",
+]
+
+# ============================================================================
+# catalog defaults (V6_TRAINING_MEASURES.md §1–§3)
+# ============================================================================
+
+
+@dataclass
+class V6LossWeights:
+    """Per-measure weights. Defaults ARE the catalog's settings.
+
+    ``lambda_plan`` is the ``--lambda-plan 0`` instrument of §0 Q2: in S-W the
+    planner is ABSENT (the goal/emission heads exist but contribute exactly
+    zero loss and are frozen), which is what makes S-W attributable as a pure
+    world stage.
+    """
+    # layer O
+    o1_ctrl: float = 1.0        # response-form L_ctrl, FROM STEP 0
+    o1_fact: float = 1.0        # factual roll anchored to true waypoints
+    o1_scene: float = 0.3       # ego/scene factorisation (P6's subspace)
+    o2_nearfield: float = 1.0
+    #: H-RANK-22 (2026-08-23). MEASURED: O1 is the term that simultaneously
+    #: BUYS action-sensitivity and CAUSES the rank collapse -- adding it to the
+    #: collapse-free two-term recipe restored divergence 0.000 -> 516.6 while
+    #: participation fell 4.43 -> 2.94, i.e. exactly back to the six-term arm
+    #: (`h_rank18_readout.json`). The mechanism hypothesis is that O1's gradient
+    #: reaches the ENCODER and buys action-predictability by spending scene
+    #: variance. This flag confines O1 to the PREDICTOR (encoder states are
+    #: detached for the O1 term ONLY), which -- if the hypothesis holds --
+    #: gives action-conditioning at no cost in rank.
+    #: DEFAULT False => the incumbent loss is bit-identical.
+    o1_detach_encoder: bool = False
+    #: LIT-3 (PhyLatent CASC): treat the factual prediction as a STOP-GRADIENT
+    #: reference in O1's separation term, so it cannot corrupt what it is
+    #: separating around. DEFAULT False => incumbent loss bit-identical.
+    o1_stopgrad_factual: bool = False
+    o3_masked: float = 1.0
+    o5_rollout: float = 1.0
+    #: O11-CF (E-DEC-30). 0.0 => the incumbent loss is
+    #: bit-identical; nothing rolls and no RNG is drawn.
+    o11_cf: float = 0.0
+    o13_ego: float = 0.0
+    o14_fut: float = 0.0
+    o6_sigreg: float = 0.1      # LeJEPA's ONE validated knob — keep it fixed
+    # layers T / S
+    t1_latent: float = 1.0      # goal-conditioned tactical latent prediction
+    s1_latent: float = 1.0      # long-horizon strategic latent prediction
+    # planner
+    lambda_plan: float = 0.0    # ≡ 0 in S-W by construction
+    # ⛔ THE g_tac->OPERATIVE SEAM LOSS (added 2026-08-13, PI question). In S-T
+    # the trunk is frozen, so the ONLY way this term can fall is for the goal
+    # embedding to carry usable information about the future through
+    # intent_proj — which is precisely "the operative predictor learns to be
+    # actioned by the tactical goals". Zero in S-W (no goals flow) and S-S.
+    seam_op: float = 1.0
+    #: SELECTION (V6F_PLANNER_DESIGN.md). ⛔ DEFAULT 0.0 = OFF everywhere, so the
+    #: incumbent loss is bit-identical. Needs ``cfg.selector != "none"``.
+    #: The objective is E-OBJ-1's ``softade``: the EXPECTED fan error under the
+    #: scorer's own softmax — METRIC-AWARE with a hard optimum. That decomposition
+    #: is MEASURED, not chosen: swapping a fitted ranker's objective from the
+    #: one-hot CE to ``softade`` recovered −0.0974 m (base) / −0.1670 m (XL),
+    #: separated, and the recovery was LONGITUDINAL — while SOFTENING the CE
+    #: target was separated WORSE (+0.0909 m) at every tau. Metric-awareness
+    #: helps; target-softness hurts. ⚠️ Units: this term is in METRES while every
+    #: other term is not, so its weight is a declared decision, never a default.
+    w_select: float = 0.0
+    #: THE ``ANCHOR_GOAL`` OBJECTIVE (2026-08-16). DEFAULT 0.0 = OFF everywhere,
+    #: so the incumbent loss is bit-identical and the live v6F S-W resume is
+    #: untouched. Needs ``cfg.anchor_goal != "none"`` AND an anchor table AT THE
+    #: PLAN HORIZON -- and no such table exists (every banked vocabulary stops
+    #: at 2.0 s), which is why this ships OFF and REFUSING rather than merely
+    #: unused. The objective is :data:`ANCHOR_OBJECTIVES`: the DEFAULT is
+    #: METRIC-AWARE and the one-hot CE is reachable only as the named,
+    #: acknowledged CONTROL, because E-AG2 measured that CE +4.7502
+    #: [+3.0514, +6.3981] WORSE than a ridge that was ALREADY refused.
+    #: Units: METRES for ``metric``/``softanchor`` (as for ``w_select``), NATS
+    #: for ``ce`` -- one more reason the two are not interchangeable and the
+    #: weight is a declared decision, never a default.
+    w_anchor: float = 0.0
+    #: S2 — STRATEGIC GOAL SUPERVISION (2026-08-16). DEFAULT 0.0 = OFF
+    #: everywhere, so the incumbent loss is bit-identical and the live resume
+    #: is untouched. CE on ``g_str``/``a_str`` logits + masked L1 on their
+    #: args against `s2-strategic-v1` labels (S2_STRATEGIC_GAP.md §1.2,
+    #: produced by the 2026-08-16 label build), joined per clip and masked to
+    #: the ``s2_valid`` band. ⛔ GOAL HEADS ONLY, NEVER A TRUNK LOSS (the
+    #: binding diagram rule): the term reads the heads' emitted logits/args,
+    #: whose input ``z_str_p`` is detached under the planner cut — gradient
+    #: reach is MEASURED in tests/test_v6_s2_loss.py as exactly
+    #: goal_head_str.* + act_head_str.* and nothing else (the vocab tables
+    #: are NOT touched: the heads' logits/args come from their own
+    #: trunk/type_head/arg_head, and ``vocab_str.encode`` sits only on the
+    #: downstream conditioning path this loss never reads). In force only in
+    #: S-S/S-J — the stages that train ``layer_str``; zeroed elsewhere so the
+    #: launch line cannot advertise a term that trains nothing.
+    w_s2_goal: float = 0.0
+    #: ⭐ F-7 / catalog T2 — MANOEUVRE CONTRASTIVES. DEFAULT 0.0 = OFF
+    #: everywhere, so the incumbent loss is bit-identical and the live v6F S-W
+    #: resume is untouched. Needs ``cfg.t2_contrastive=True`` (the projector).
+    #: Spec: ``V6_TRAINING_MEASURES.md:65`` + ``DIAGRAM_CONFORMANCE.md:56``.
+    #: In force in S-T/S-J only — the stages that train ``layer_tac``, which is
+    #: the group the projector belongs to; zeroed elsewhere so a launch line
+    #: cannot advertise a term that trains nothing.
+    #: Units: NATS (a cross-entropy), so it is NOT commensurate with
+    #: ``w_select``/``w_anchor``'s metres and the weight is a declared decision.
+    w_t2_contrast: float = 0.0
+    #: ⭐ F-8 / catalog T5 — TEMPORAL-CONSISTENCY SELECTION LOSS. DEFAULT 0.0 =
+    #: OFF everywhere. ZERO NEW PARAMETERS (like ``MpcRefiner``), so it needs no
+    #: ``STAGE_MAY_INTRODUCE`` entry and changes no state_dict key at all.
+    #: Needs the OPT-IN consecutive-window pair batch (``t5_pairs``/``t5_lag``).
+    #: Spec: ``V6_TRAINING_MEASURES.md:68`` + ``DIAGRAM_CONFORMANCE.md:58``.
+    #: ⛔ REFUSED when ``lambda_plan == 0`` — see :func:`t5_consistency_loss`;
+    #: a flat plan scores EXACTLY ZERO on this term, so alone it is a
+    #: degenerate objective and the guard is wired, not documented.
+    #: Units: m/s^2 and 1/m (a control-space MAE), one more reason it is not
+    #: interchangeable with any other weight.
+    w_t5_consist: float = 0.0
+    #: ⭐ F-11 / catalog S1 — MULTI-TICK STRATEGIC ROLLOUT. DEFAULT 0.0 = OFF.
+    #: ZERO NEW PARAMETERS: it re-rolls ``predictor_str``/``act_head_str``,
+    #: both already ``layer_str``, so it changes no state_dict key and needs no
+    #: ``STAGE_MAY_INTRODUCE`` entry. In force in S-S/S-J only (the stages that
+    #: train ``layer_str``), for the same reason ``s1_latent`` is.
+    #: Spec: ``V6_TRAINING_MEASURES.md:79`` + ``DIAGRAM_CONFORMANCE.md:70,101``.
+    #: ⛔ Its horizon is CORPUS-LIMITED and the limit is hard — see
+    #: :func:`reachable_strategic_ticks`. Units: same as ``s1_latent`` (latent
+    #: L1), so the two ARE commensurate — deliberately, since ``s1_multi`` at
+    #: K=1 is ``s1_latent`` exactly (pinned).
+    w_s1_multi: float = 0.0
+    #: ⭐ R3 (PI 2026-09-27, BINDING) — ALL TACTICAL LABELS TRAIN THE TACTICAL
+    #: LAYER. DEFAULT 0.0 = OFF everywhere, so the incumbent loss is
+    #: bit-identical. One weight on the sum of four label terms read off the
+    #: shared forward (:func:`tac_label_all_loss`): CE on ``a_lat`` and on
+    #: ``a_lon`` (``a_tac.lat``/``.lon``), weighted multi-label BCE on the
+    #: 22-token goal SET of ``g_tac`` (every traffic-light colour included —
+    #: D-TLIGHT-1), and a masked L1 on SPEED_BAND's (v_lo, v_hi) args (the one
+    #: goal present on every record, so its information is ONLY in its args).
+    #: HEADS ONLY: every head reads ``z_tac_p``, detached by the planner cut.
+    #: In force in S-T/S-J only — the stages that train ``layer_tac``; zeroed
+    #: in S-W/S-S so a launch line cannot advertise a term that trains nothing.
+    #: Units: nats (CE/BCE) + SPEED_SCALE-normalised m/s (the arg L1).
+    w_tac_label_all: float = 0.0
+
+    def for_stage(self, stage: str) -> "V6LossWeights":
+        """The weights actually in force for ``stage``.
+
+        S-W zeroes every planner term AND every higher-layer term: a loss whose
+        module is frozen still builds a graph, still costs compute, and — the
+        part that bites — still appears in the log as if it were training
+        something. Zeroing them here keeps the log honest about what moved.
+        """
+        if stage == "S-W":
+            # w_t2_contrast / w_t5_consist join the list for the same reason as
+            # every other higher-layer term: S-W builds no t2 projector, and
+            # T5 reads a plan the S-W stage does not emit.
+            return replace(self, t1_latent=0.0, s1_latent=0.0,
+                           lambda_plan=0.0, seam_op=0.0, w_select=0.0,
+                           w_anchor=0.0, w_s2_goal=0.0,
+                           w_t2_contrast=0.0, w_t5_consist=0.0,
+                           w_s1_multi=0.0,
+                           # R3: layer_tac is FROZEN in S-W (world stage)
+                           w_tac_label_all=0.0)
+        if stage == "S-T":
+            # w_s2_goal is zeroed here for the layer_str reason w_anchor is
+            # zeroed in S-S: the strategic goal heads are FROZEN in S-T
+            # (STAGE_GROUPS["S-T"] has no layer_str), so an S2 term in force
+            # would be advertised in the launch line and train nothing.
+            return replace(self, o1_ctrl=0.0, o1_fact=0.0, o1_scene=0.0,
+                           o2_nearfield=0.0, o3_masked=0.0, o5_rollout=0.0,
+                           o6_sigreg=0.0, s1_latent=0.0, w_s2_goal=0.0,
+                           # F-11 rides s1_latent exactly: layer_str is frozen
+                           # in S-T, so a multi-tick strategic roll here would
+                           # be advertised in the launch line and train nothing.
+                           w_s1_multi=0.0)
+        if stage == "S-S":
+            # w_anchor joins w_select here for the SAME reason: the anchor head
+            # is planner-group (v6.py MODULE_GROUPS: ("anchor_head.",
+            # "planner")) and S-S trains ``layer_str`` ONLY, so an anchor loss
+            # in force here would be a term advertised in the launch line that
+            # trains nothing.
+            return replace(self, o1_ctrl=0.0, o1_fact=0.0, o1_scene=0.0,
+                           o2_nearfield=0.0, o3_masked=0.0, o5_rollout=0.0,
+                           o6_sigreg=0.0, t1_latent=0.0, lambda_plan=0.0,
+                           seam_op=0.0, w_select=0.0, w_anchor=0.0,
+                           # T2's projector is `layer_tac` and T5 needs
+                           # lambda_plan, both FROZEN/zero in S-S: in force
+                           # here they would be advertised and train nothing.
+                           w_t2_contrast=0.0, w_t5_consist=0.0,
+                           # R3: the tactical heads are `layer_tac` — FROZEN
+                           # in S-S, for the same reason as T2 above.
+                           w_tac_label_all=0.0)
+        if stage == "S-J":
+            return self
+        raise ValueError(f"unknown stage {stage!r}; expected one of {STAGES}")
+
+
+#: X5's ordering, as data. ``None`` = no precondition (S-W starts the ladder).
+STAGE_PRECONDITION: dict[str, str | None] = {
+    "S-W": None, "S-T": "S-W", "S-S": "S-T", "S-J": "S-S",
+}
+
+#: ⛔ THE ONLY MODULES A STAGE MAY INTRODUCE on top of the stage below it.
+#:
+#: MEASURED 2026-08-16, and it would have killed the S-T launch on its first
+#: command: :func:`load_stage_init` loaded with ``strict=True``, so a stage that
+#: legitimately ADDS a module was refused —
+#:
+#:     S-T selector="goal" -> RuntimeError: Missing key(s): cand_score.cand_bias,
+#:                            cand_score.log_tau, cand_score.goal_point.weight...
+#:     S-T selector="mlp"  -> RuntimeError: Missing key(s): cand_score.fc1.weight...
+#:
+#: The guard was right in spirit and blind in practice: it could not tell "the
+#: TRUNK is missing" (fatal — the stage would train on a random encoder while
+#: its log looked healthy, exactly what the docstring warns about) from "the
+#: PLANNER'S NEW HEAD is missing" (expected — S-T is where the selector is
+#: built). ⇒ the allowance is an EXPLICIT, per-stage ALLOWLIST rather than a
+#: relaxed ``strict``, because ``strict=False`` would also wave through a
+#: missing ``emission.*`` and silently random-init the whole emission head.
+#:
+#: ⚠️ An allowed prefix must be WHOLLY absent from the checkpoint. A PARTIALLY
+#: present module is a geometry mismatch, not an introduction, and stays fatal.
+STAGE_MAY_INTRODUCE: dict[str, tuple[str, ...]] = {
+    # S-W starts the ladder; the ONE thing it may introduce is the O14 head
+    # (PREREG_O14_FUTURE_OBS): a NEW module gated on --w-o14, absent from every
+    # pre-O14 checkpoint (distill_init.pt included). Its fresh init feeds only
+    # its own L1 term, so the introduction changes no other loss at step 0.
+    # ⛔ Found the hard way 2026-08-27: the ladder's arm 2 (o14fut01) refused
+    # its init because this tuple was () — the module landed without its
+    # introduction permission.
+    "S-W": ("o14_head.", "ema_o5_enc.", "ema_o5_ro.",
+            # MM-E4 L2 (PREREG_DRIFT_ATTACK_LADDER): the frozen-teacher
+            # copies — introduced by the drift-ladder arms over the
+            # o14fut10-line init, exactly like the EMA pair above.
+            "frozen_o5_enc.", "frozen_o5_ro."),
+    # S-T introduces, by design: the selector (when an arm is opted into), and
+    # the g_str->P_T conditioning port `cond_tac_dyn.` (F-1,
+    # DIAGRAM_CONFORMANCE.md 2026-08-16 — the diagram/§5-spec'd tactical-
+    # dynamics downlink the code never built; zero-init, so the introduction is
+    # loss-continuous). Both are NEW MODULES rather than widened shapes, on
+    # purpose: this allowance adjudicates KEYS, and a shape change bypasses it
+    # entirely (`load_state_dict(strict=False)` still RAISES on shapes —
+    # measured, see `trainer_argv`'s --n-candidates note).
+    # ⭐ 2026-08-16, the diffusion/MPC/fallback build: S-T may also introduce
+    # the diffusion proposal generator (`prop_diffusion.`, +437,954 params
+    # MEASURED at production geometry — a declared fan-generator ARM) and the
+    # fallback trigger's calibration buffers (`fallback.`, 8 keys, 0 params —
+    # the P7 band ships with the checkpoint like the anchor table). The MPC
+    # refiner needs NO entry: it holds no parameters and no buffers, so
+    # flipping it changes no state_dict key at all.
+    # ⭐ 2026-08-16, F-18: S-T may also introduce the PERCEPTION AGENT-SLOT
+    # DECODER (`agent_slots.`, +3,207,445 params MEASURED at the §6 production
+    # geometry — d_model 256 x depth 3 x 16 queries over the 16 readout cells,
+    # inside the pre-registered 2-4 M band).
+    # ⚠️ IT IS AN INTRODUCTION-ONLY ENTRY, AND THAT DISTINCTION MATTERS: no
+    # ladder stage TRAINS it. The v6 batch carries frames/actions/poses/future_*
+    # and no agent labels (see the `interp` note on STAGE_GROUPS in v6.py), so
+    # this allowance exists so a run can CARRY the interpretation head forward
+    # from an S-W checkpoint that never had it, while a frozen-trunk probe in
+    # the P8 idiom is what optimises it. An entry here has never MEANT "this
+    # stage optimises the module" — `fallback.` (0 trainable params) was
+    # already the counter-example.
+    # ⚠️ CARRY RULE, recorded HERE because it is NOT chain-enforced: if an S-T
+    # run is ever launched WITH `--agent-slots`, its checkpoint carries
+    # `agent_slots.*` and S-S/S-J must be launched with the flag too, or those
+    # keys become UNEXPECTED and `load_stage_init` is fatal — exactly the
+    # `--selector` / `--tac-goal-cond` failure `v6_chain.assert_geometry_carry`
+    # catches from a JSON read BEFORE the corpus mounts. It does NOT catch this
+    # one: that check enumerates its levers first-class and there is no
+    # `Step.agent_slots`, because no chain step sets the flag (no ladder stage
+    # trains the head). ⇒ plumbing it into the chain is the follow-on the moment
+    # a chain step wants the head; until then `load_stage_init` still refuses
+    # correctly, only later and with a less specific message.
+    # ⭐ 2026-08-18, F-7: S-T may also introduce the MANOEUVRE-CONTRASTIVE
+    # projector (`t2_head.`, +164,225 params / +5 keys MEASURED at the default
+    # geometry d_tac=512 -> hidden 256 -> proj 128, plus the learnable
+    # `log_tau`). Unlike `agent_slots.` this IS trained by the stage that
+    # introduces it: `t2_head.` is grouped `layer_tac` and S-T trains
+    # `layer_tac`, so the entry means the ordinary thing.
+    # ⚠️ CARRY RULE, the same one `agent_slots.` records and for the same
+    # reason: an S-T run launched WITH `--t2-contrastive` writes `t2_head.*`
+    # into its checkpoint, so S-S/S-J must be launched with the flag too or
+    # those keys are UNEXPECTED and `load_stage_init` is fatal.
+    # ⛔ F-8 (T5 temporal consistency) deliberately has NO ENTRY HERE: it holds
+    # no parameters and no buffers, so like `MpcRefiner` it changes no
+    # state_dict key and there is nothing for this allowlist to adjudicate.
+    # ⭐ 2026-09-27, R1/R4 (PI directive for v7F): S-T may also introduce the
+    # tactical-decision -> plan port (`tac_op_port.`, --tac-op-cond, planner
+    # group) and the max-speed INPUT port (`vmax_tac.`, --max-speed-input-v6,
+    # layer_tac group). Both ZERO-INIT, so the introduction is loss-continuous;
+    # both are trained by the stage that introduces them. ⚠️ CARRY RULE, as
+    # for `t2_head.`: an S-T ckpt with them needs the flags on S-S/S-J, or the
+    # keys are UNEXPECTED and `load_stage_init` is fatal (not chain-enforced).
+    "S-T": ("cand_score.", "cond_tac_dyn.", "prop_diffusion.", "fallback.",
+            "agent_slots.", "t2_head.", "tac_op_port.", "vmax_tac."),
+    "S-S": (),                  # trains layer_str, which S-T already carried
+    "S-J": (),                  # joint polish introduces nothing
+}
+
+#: ⛔ THE LADDER RUNS BACKWARDS TOO. :data:`STAGE_PRECONDITION` is the FORWARD
+#: check — "the stage below passed". It cannot see the other direction: a stage
+#: that trains an UPPER layer can invalidate the certificate a LOWER layer
+#: already earned, because the lower layer is frozen while its INPUT moves.
+#:
+#: This is registry §1.14's consumer-invalidation one level up, and it lives
+#: inside the ladder where it is easy to miss: S-T's gate certifies ``sel_gap``
+#: and the TACTICAL family, then S-S changes the very thing they were measured
+#: on and no gate re-checks them. Without this, an S-S gate could read PASS on
+#: ``STRATEGIC_family`` alone and S-J would launch on an uncertified selector.
+#:
+#: Each entry names the stage whose certificate is invalidated and the exact
+#: seam that does it, so the mechanism cannot be lost the way the "please merge"
+#: requests were. ``()`` = trains nothing that any frozen consumer reads.
+STAGE_INVALIDATES: dict[str, tuple[str, ...]] = {
+    "S-W": (),      # starts the ladder; nothing below it exists yet
+    "S-T": (),      # trains layer_tac + planner on a FROZEN S-W trunk; the
+                    # trunk's inputs (pixels) are unmoved, so S-W's certificate
+                    # still applies verbatim
+    "S-S": ("S-T",),
+    "S-J": (),      # everything trains jointly and the S-J gate's own `no_harm`
+                    # probe IS the revalidation (battery FLAT across the phase)
+}
+
+#: ⛔ WHAT A ``--resume auto`` REQUIRES OF THE CHECKPOINT IT FINDS, as data.
+#:
+#: MEASURED 2026-08-16 by EXECUTING the transition, not by reading it. Before
+#: this, ``load_resume`` did a strict state-dict load and adopted ``ck["step"]``
+#: with **no stage check at all** — every stage saves the WHOLE stack, so a
+#: checkpoint written by S-T is key-for-key loadable into an S-S run.
+#:
+#: Cross-stage resume was stopped only INCIDENTALLY, by ``torch.optim``'s
+#: param-group size check, and only because the per-stage trainable-TENSOR
+#: counts happen to be distinct (MEASURED at the production geometry:
+#: S-W 240 · S-T 80 · S-S 54 · S-J 374).
+#: ⛔ THE DAY THAT ACCIDENT WAS PREDICTED TO END HAS ARRIVED (2026-09-06). The
+#: grad-unreachable declaration removes tensors from S-W and S-J only, so the
+#: counts MOVED: at ``tests/test_v6_ladder_edges.py``'s tiny geometry S-W fell
+#: 84 -> 80 and now COLLIDES with S-T (MEASURED), i.e. the accidental barrier
+#: no longer separates that pair at all; at ``PREREG_V7F.md`` §9's production
+#: geometry they are still distinct (MEASURED: S-W 286 · S-T 76 · S-S 54 ·
+#: S-J 416 — a DIFFERENT config from the four numbers above, which is why
+#: those are left as recorded rather than overwritten). ⇒ nothing about the
+#: ladder's safety changed, because the barrier was never the guard —
+#: :func:`assert_resume_lineage` is, it is called at the run path (:6285), and
+#: ``test_the_old_accidental_barrier_HAS_now_collided_and_the_real_guard_holds``
+#: now EXECUTES it on the colliding pair instead of pinning the coincidence.
+#: That guard is worthless as a guard:
+#:
+#:   * it names nothing — the operator sees ``ValueError: loaded state dict
+#:     contains a parameter group that doesn't match the size of optimizer's
+#:     group``, which points at the optimiser, not at the ladder;
+#:   * it is one :data:`~tanitad.models.v6.STAGE_GROUPS` edit away from two
+#:     stages sharing a count, at which point it passes SILENTLY; and
+#:   * ⛔ it is skipped entirely when the checkpoint carries no ``opt`` key —
+#:     which is exactly the shape of ``ops/ckpt_fp16_snapshot.py``, the
+#:     documented pod-handover artifact.
+#:
+#: A wrong-stage resume is a multi-GPU-day error that surfaces as "the model
+#: got worse": the run adopts the OTHER stage's step (so the cosine schedule is
+#: replayed to the wrong point), and if the counts ever collide it adopts the
+#: other stage's optimiser moments — S-T's ``exp_avg`` for ``layer_tac`` landing
+#: on ``layer_str`` by list position. ⇒ an EXPLICIT refusal, checked BEFORE the
+#: corpus build rather than 130 lines later where ``load_resume`` sits.
+RESUME_CONTRACT: dict[str, str] = {
+    "same_stage": "the checkpoint's `config.stage` must EQUAL the stage being "
+                  "launched. Every stage saves the whole V6Stack, so the "
+                  "state_dict load cannot tell them apart — the stage label is "
+                  "the only thing that can, and `_save_ckpt` has always "
+                  "written it (`_run_config`: 'stage': a.stage).",
+    "labelled": "an UNLABELLED checkpoint is one whose lineage cannot be "
+                "verified. Every checkpoint this trainer writes carries its "
+                "stage; one that does not came from somewhere else, and "
+                "resuming it is an assumption wearing a resume's clothes. Use "
+                "--init-from, which needs no label because it starts a NEW run "
+                "at step 0 instead of inheriting a step and a schedule.",
+    "has_optimiser": "a resume without optimiser moments is not a resume — it "
+                     "is an --init-from that also silently inherits a step. "
+                     "`ops/ckpt_fp16_snapshot.py` drops `opt` BY DESIGN (2/3 "
+                     "of the bytes) and says so; it is an --init-from artifact "
+                     "and must be refused here rather than half-honoured.",
+}
+
+#: The seam behind each :data:`STAGE_INVALIDATES` entry, quoted from source so
+#: an override is a conscious act rather than a shrug at an unexplained key.
+STAGE_INVALIDATION_MECHANISM: dict[str, str] = {
+    "S-S": ("S-S trains `layer_str` ONLY (v6.py:995). Its output flows "
+            "`goal_head_str -> e_g_str -> goal_head_tac(cond=e_g_str) -> "
+            "e_g_tac` (v6.py:1520-1528), and `e_g_tac` is the SELECTOR'S ONLY "
+            "INPUT (v6.py:655; score_i = -||endpoint_i - g_hat||/tau + b_i "
+            "with g_hat = W.e_g_tac + c, v6.py:619). `goal_head_tac` and the "
+            "selector are FROZEN in S-S — but their input distribution moves. "
+            "S-T certified `sel_gap` against the S-T-era e_g_tac; that "
+            "certificate does not survive S-S. Re-measure, do not assume."),
+}
+
+#: Per-stage ``λ_plan`` default, resolved when ``--lambda-plan`` is not given.
+#: S-W is 0 BY CONSTRUCTION (the planner is absent — that is what makes the
+#: world stage attributable); S-T is where the planner is post-trained on the
+#: frozen S-W trunk (the Drive-JEPA shape); S-S trains the strategic layer only
+#: and leaves the planner frozen; S-J polishes everything with isolation ON.
+STAGE_LAMBDA_PLAN: dict[str, float] = {
+    "S-W": 0.0, "S-T": 1.0, "S-S": 0.0, "S-J": 1.0,
+}
+
+#: The frozen-battery probes each stage's gate REQUIRES, and the entry point
+#: that owns each. ``V6_TRAINING_MEASURES`` names the battery (P1–P9, I4) as
+#: THE single yardstick from v5f to v6 — the point of naming the owner here is
+#: that a probe reported as "n/a" must name what could not be imported, never
+#: silently vanish (rule 2: absence at one location is not absence).
+STAGE_GATE_SPEC: dict[str, dict] = {
+    "S-W": {
+        "required": ("P1", "P3", "P6"),
+        # X4_spectrum_layers is REPORTED, not required: the per-layer records
+        # exist from step 0 but their verdicts are INCONCLUSIVE until pooled
+        # (per-layer clause 1), and a required probe that is structurally
+        # INCONCLUSIVE at the incumbent flags would be noise wearing a gate.
+        "reported": ("P2", "P5", "P8", "O6_spectrum", "X4_spectrum_layers"),
+        "owners": {"P1": "scripts/probe_latent_state.py",
+                   "P2": "scripts/probe_latent_state.py",
+                   "P3": "scripts/stage_a_probes.py",
+                   "P6": "scripts/stage_a_probes.py",
+                   "P5": "taniteval/tools/t1_eval.py",
+                   "P8": "scripts/train_p8_occupancy.py",
+                   "O6_spectrum": "tanitad.models.v6.spectrum_report",
+                   "X4_spectrum_layers":
+                       "tanitad.models.v6.LayerSpectrumMonitor"},
+        "criteria": {
+            "P1_retention": ">= 0.85x R2(z) at k=10 per driving target",
+            "P3_sign": ">= 0.95 per channel, BOTH lat and lon",
+            "P3_gain": "median gain in [0.5, 2.0], WITHOUT post-training",
+            "P6_dims": "action-subspace dims (80 % var) <= 32",
+            # ⛔ RE-DERIVED 2026-08-16 (SIGREG_GATE_POWER.md). The old text was
+            # ">= 0.8x effective rank across phases" and named no estimator, no
+            # n and no interval. MEASURED at the live run's n=48 it fires when
+            # NOTHING changed between 9 % (model null) and 38 % (the run's own
+            # banked spread), with power 0.11 against a 1.43x true collapse —
+            # a guard that goes off when nothing happened. The replacement is
+            # owned by tanitad.models.v6.o6_rank_verdict and can say
+            # INCONCLUSIVE, which the old one could not.
+            # ⛔⛔ C132 REPAIR 2026-09-06: the ruling statistic is
+            # participation_ratio (p ~ sigma^2, ENERGY), NOT effective_rank
+            # (p ~ sigma, AMPLITUDE). The two INVERT: a representation with
+            # 55 % of its energy in ONE direction reads effective_rank 769 (vs
+            # a genuinely healthier arm's 660) and PASSED the old floor of 64.
+            # effective_rank is still reported, as a labelled diagnostic.
+            "O6_rank_retention":
+                "o6_rank_verdict: (1) ADMISSIBLE only at rank_ceiling >= 1024 "
+                "-- a single 48-row batch is INCONCLUSIVE by construction, "
+                "pool with --spectrum-accum; (2) RETENTION fails only when the "
+                "cluster-JACKKNIFE interval on PR_cur/PR_ref (participation "
+                "ratio) lies WHOLLY below 0.8x, passes only when it lies "
+                "wholly at/above, else INCONCLUSIVE -- needs "
+                "--spectrum-ci-reps > 0 on BOTH readings; (3) FLOOR: absolute, "
+                "REPORTED NOT RULING by default -- O6_PARTICIPATION_FLOOR=8.56 "
+                "is reproduced by no live instrument and is corpus/d-specific, "
+                "and O6_RANK_FLOOR=64 sits on the inverting statistic. It "
+                "fires only when the caller passes participation_floor AND a "
+                "named participation_reference. PI DECISION PENDING.",
+            # X4 (2026-08-16): the SAME three clauses per layer, under EACH
+            # LAYER'S measured (ceiling_min, floor) — tac 256/32, str 128/32
+            # (x4_layer_power.json; z_op's 1024/64 re-derived as the anchor).
+            # ⚠️ at 8 rows/step, --spectrum-accum 32 reaches ceiling 255 — ONE
+            # ROW short of tac's 256; 33 is the accum that makes all three
+            # layers adjudicable. REPORTED, never required (see above).
+            "X4_rank_retention":
+                "x4_rank_verdict per layer {tac, str}: clause 1 at the "
+                "LAYER'S ceiling_min (tac 256, str 128 -- NOT z_op's 1024, "
+                "which d_str=256 can never reach), clause 2 identical, "
+                "clause 3 at the layer's measured floor (32). "
+                "--spectrum-accum 33 recommended (32 leaves tac one row "
+                "short); INCONCLUSIVE is not a pass"},
+    },
+    "S-T": {
+        "required": ("TACTICAL_family", "sel_gap"),
+        # ⚠️ ALL FOUR families are listed, not two. The binding diagram's S-T
+        # gate row is "four families at 0-2 s AND 0-6 s, T1 tier"
+        # (HIERARCHY_VOCABULARY §4b eval consequence + the 2026-08-02 binding
+        # rule: an eval missing a family is INCOMPLETE). LONGITUDINAL is the
+        # family S-T's own thesis moves — the tactical layer OWNS target speed
+        # — so omitting it here was an audited gap (DIAGRAM_CONFORMANCE.md,
+        # 2026-08-16). Reported-not-required: `reported` probes are stubbed and
+        # never adjudicated, so this is visibility, not a new refusal.
+        "reported": ("P7", "LATERAL_family", "LONGITUDINAL_family",
+                     "STRATEGIC_family", "X2_seam"),
+        "owners": {"TACTICAL_family": "taniteval/tools/eval_four_families.py",
+                   "LATERAL_family": "taniteval/tools/eval_four_families.py",
+                   "LONGITUDINAL_family":
+                       "taniteval/tools/eval_four_families.py",
+                   "STRATEGIC_family": "taniteval/tools/eval_four_families.py",
+                   "sel_gap": "tanitad.models.tactical.sel_gap_tac",
+                   "P7": "scripts/w7_roll_rerank.py",
+                   # ⭐ 2026-08-16 (F-16): the owner was a bare estimator name,
+                   # which is not an owner — the instrument did not exist. It
+                   # does now: taniteval/tools/seam_probe.py (+ taniteval.seam),
+                   # which delegates its intervals to ci.py's PAIRED bootstrap.
+                   "X2_seam": "taniteval/tools/seam_probe.py "
+                              "(taniteval.seam; PAIRED bootstrap from "
+                              "taniteval/ci.py only)"},
+        "criteria": {
+            "sel_gap": "<= 0.5x the fan oracle at T1 tier",
+            # X2 is "seam metrics VERIFY, never repair" (the binding diagram).
+            # A seam finding is a REPORT, never a licence for a repair term.
+            "X2_seam":
+                "no CONFIRMED seam row at the 2 s band edge (boundary 20) on "
+                "the emitted winner: the paired episode-cluster CI on the "
+                "seam-vs-within-band excess must NOT lie wholly above the "
+                "materiality floor (1x the within-band step) under BOTH the "
+                "global and the local null. A null counts only when it is "
+                "WELL-POWERED (MDE@80% <= the floor, >= 8 episode clusters); "
+                "otherwise the probe returns INCONCLUSIVE, which is not a "
+                "pass. VERIFY, NEVER REPAIR",
+            "TACTICAL_family": "confusion improves on E4.1-derived strata",
+            "four_families_horizons":
+                "every family reported at BOTH 0-2 s AND 0-6 s "
+                "(HIERARCHY_VOCABULARY §4b: 'four families + oracle/selected "
+                "reported at BOTH 0-2 s and 0-6 s'). A family that cannot be "
+                "computed is declared per family with the reason and the n — "
+                "never silently dropped (PI 2026-08-02, binding)",
+            "P7_rho": ">= 0.3 with CI excluding 0, per stratum"},
+    },
+    "S-S": {
+        # ⛔ THE LAST TWO ARE REVALIDATIONS, NOT NEW MEASURES. See
+        # :data:`STAGE_INVALIDATES` — S-S retrains the goal that S-T's FROZEN
+        # selector consumes, so S-T's certificate stops applying the moment
+        # S-S starts. They are ``required`` (not ``reported``) because an S-S
+        # gate that omits them must read INCONCLUSIVE, never PASS.
+        "required": ("STRATEGIC_family",
+                     "sel_gap_revalidated", "TACTICAL_revalidated"),
+        # ⚠️ `goal_provenance` is the BINDING diagram's second S-S gate element
+        # ("gate: STRATEGIC family + goal-provenance audit"). Reported-not-
+        # required for now: S2 (g_str supervision) is deliberately not wired
+        # (V6_TRAINER_DESIGN §"S2 is not wired here and must not be faked"), so
+        # pre-S2 the audit has nothing to audit and a required probe would be
+        # vacuous. The moment S2 lands, promote it to `required` — the audited
+        # gap and the promotion trigger are recorded in DIAGRAM_CONFORMANCE.md.
+        "reported": ("S1_ade_8_30s", "X2_seam", "goal_provenance"),
+        "owners": {"STRATEGIC_family": "taniteval/tools/eval_four_families.py",
+                   "S1_ade_8_30s": "taniteval/tools/t1_eval.py",
+                   "X2_seam": "taniteval/tools/seam_probe.py "
+                              "(taniteval.seam; PAIRED bootstrap from "
+                              "taniteval/ci.py only) — F-16, 2026-08-16",
+                   "goal_provenance":
+                       "config-audit over the S-S run config + S2 label "
+                       "artifacts (instrument to build — see "
+                       "DIAGRAM_CONFORMANCE.md, 2026-08-16)",
+                   "sel_gap_revalidated": "tanitad.models.tactical.sel_gap_tac "
+                                          "(RE-RUN under the post-S-S g_tac)",
+                   "TACTICAL_revalidated":
+                       "taniteval/tools/eval_four_families.py "
+                       "(RE-RUN under the post-S-S g_tac)"},
+        "criteria": {
+            "STRATEGIC_family": "computable at all (measured vs n/a today)",
+            "S1_ade_8_30s": "beats CV/corridor baselines at T1",
+            "sel_gap_revalidated":
+                "still <= 0.5x the fan oracle AFTER S-S moved e_g_tac — the "
+                "same bar S-T passed, re-measured on the new input "
+                "distribution. PAIRED bootstrap vs the S-T reading.",
+            "TACTICAL_revalidated":
+                "TACTICAL family does not regress vs its S-T reading "
+                "(paired episode-cluster bootstrap, same windows)"},
+    },
+    "S-J": {
+        "required": ("X3_isolation", "no_harm"),
+        "reported": ("P1", "P3", "P6", "four_families"),
+        "owners": {"X3_isolation": "V6Stack.assert_isolation",
+                   "no_harm": "the frozen battery, before vs after S-J"},
+        "criteria": {
+            "X3_isolation": "zero live forbidden edges",
+            "no_harm": "battery FLAT across the joint phase (H-COTRAIN rule)"},
+    },
+}
+
+#: ⛔ E4 — THE CRITERIA THAT ONLY EXIST ON AN ARM THAT HAS A SCORER, as data.
+#:
+#: **The defect this closes (E4, `ST_LAUNCH_READINESS.md` §5.2).**
+#: ``STAGE_GATE_SPEC["S-T"]["required"]`` contains ``sel_gap``; the default S-T
+#: arm is ``--selector none`` because SEL-1 fired REFUSED; and on that arm
+#: :class:`~tanitad.models.v6.V6Stack` emits **no ``sel_*`` key at all**
+#: (``v6.py:3968`` — the whole block is under ``if self.cand_score is not
+#: None``). So there is no ``sel_idx``, ``tactical.sel_gap_tac`` has no
+#: argument, and ``taniteval.selgap`` has nothing to score. The verdict was
+#: **INCONCLUSIVE by construction** — a criterion decided by the build, not by
+#: the model. Same class as the three vacuous gates found that week (K3 pinned
+#: at 0.5; the pre-S2 goal-provenance audit; ``_grad_census``'s zero-parameter
+#: group), except this one could not *pass* rather than could not *fail*.
+#:
+#: ⚠️ **AND THE MECHANISM AS FIRST REPORTED WAS MISATTRIBUTED — see
+#: :data:`SEL_GAP_TIER_NOTE`.** The fix is NOT "turn ``--w-select`` on".
+#:
+#: ⭐ **WHY THIS IS A STRENGTHENING AND NOT A LOOPHOLE.** The criterion is not
+#: deleted and not demoted: it stays in ``required`` verbatim, and it stays
+#: BINDING on every arm that has a scorer — which is the only arm it was ever
+#: written for. What changes is that an arm which CANNOT produce the quantity
+#: says so, with its reason, instead of reporting INCONCLUSIVE forever. Before
+#: this, a selector arm and a no-selector arm produced the *same* verdict, so
+#: the gate was equally uninformative about both; now the selector arm is the
+#: only one that can be certified, and it cannot escape certification.
+#:
+#: ⛔ **AND "NOT APPLICABLE" IS NEVER "PASS".** A stage whose ``sel_gap`` did
+#: not apply carries :data:`UNMEASURED_BY_CONSTRUCTION`'s standing record in its
+#: own certificate, naming the artifact and the pre-registered threshold that
+#: would make it applicable. The four-families rule, applied verbatim: *a family
+#: that cannot be computed is declared per family with the reason and the n,
+#: never silently dropped* (PI 2026-08-02, binding).
+#:
+#: Keyed ``stage -> {probe: predicate-name}``. The only predicate today is
+#: ``has_scorer``, resolved from the BUILT STACK (``stack.cand_score is not
+#: None``), never from the flag — a ``--selector goal`` that failed to build a
+#: scorer must not be certified as though it had one.
+GATE_APPLICABILITY: dict[str, dict[str, str]] = {
+    "S-W": {},
+    "S-T": {"sel_gap": "has_scorer"},
+    # the revalidation inherits the dependency exactly: S-S re-measures the
+    # SAME quantity under the post-S-S ``e_g_tac``, so it exists on exactly the
+    # same arms. ⚠️ ``w_select`` is 0 at S-S (``for_stage("S-S")`` zeroes it and
+    # the trainer refuses the flag) — that is irrelevant here, because the gate
+    # probe is an EVAL-time T1 instrument, not the train-time log key. The
+    # FROZEN scorer still runs in the forward pass and still emits ``sel_idx``.
+    "S-S": {"sel_gap_revalidated": "has_scorer"},
+    "S-J": {},
+}
+
+#: ⚠️ **A CORRECTION TO THE TWO REPORTS THAT FOUND E4, kept beside the fix.**
+#:
+#: `ST_LAUNCH_READINESS.md` §5.2 and `ST_LAUNCH_FIXES.md` §6 both name
+#: ``train_v6_staged.py``'s ``if w.w_select:`` block as the reason the S-T gate
+#: cannot read ``sel_gap``. That line is real, and it is **not the emitter the
+#: gate consumes**. MEASURED by reading :func:`run_stage_gate`: the gate's
+#: probes come from exactly four places — ``--gate-probes`` (an external JSON),
+#: ``X3_isolation`` (computed in place), ``spectrum`` and ``x4_spectra``. **No
+#: training-loop log key ever becomes a gate probe.**
+#:
+#: The two same-named quantities live at two tiers and only one is quotable:
+#:
+#:   * the LOG key ``sel_gap`` — a **T0 train-time monitor**, per
+#:     ``tactical.sel_gap_tac``'s own docstring (*"this function is the cheap
+#:     train-time monitor only"*), on the training batch, no interval;
+#:   * the GATE probe ``sel_gap`` — owner ``tanitad.models.tactical.sel_gap_tac``
+#:     re-run at **T1 tier** through ``taniteval.selgap`` (episode-cluster
+#:     bootstrap, per-level never pooled), criterion *"<= 0.5x the fan oracle at
+#:     T1 tier"*, delivered via ``--gate-probes``.
+#:
+#: ⇒ **Turning on ``--selector goal --w-select 1.0`` would make the LOG key
+#: appear and would leave the GATE exactly as INCONCLUSIVE as before.** The
+#: readable-gate requirement is two things, not one: the arm must HAVE a scorer
+#: (so ``sel_idx`` exists at eval time) AND the T1 battery must be run and
+#: folded in with ``--gate-probes``, like every other required probe.
+#:
+#: **Root-cause class: a probe read at the wrong SCOPE** — the ``df``-on-a-pod /
+#: Thor-``free`` / cgroup-``usage_in_bytes`` family, here as two identically
+#: named quantities at two eval tiers, the T0 one read as the T1 one. It is also
+#: the EVAL_DOCTRINE rule biting inside our own source: *a number without its
+#: tier stamp is incomplete*.
+SEL_GAP_TIER_NOTE: str = (
+    "the gate probe `sel_gap` is the T1 instrument (taniteval.selgap, "
+    "episode-cluster bootstrap) supplied through --gate-probes — NOT the T0 "
+    "train-time log key of the same name emitted under `if w.w_select:`. "
+    "Enabling --w-select alone makes the LOG key appear and leaves the GATE "
+    "unchanged; the gate needs an arm that HAS a scorer AND the T1 battery.")
+
+#: ⛔ WHAT A NOT-APPLICABLE CRITERION LEAVES UNMEASURED, and exactly what would
+#: measure it. Stamped into every gate artifact that skips one, so the gap is a
+#: standing, visible work item inside the certificate rather than a silence.
+UNMEASURED_BY_CONSTRUCTION: dict[str, dict[str, str]] = {
+    "has_scorer": {
+        "question": "TACTICAL SELECTION — does the tactical level pick a good "
+                    "candidate out of the fan it proposed? (sel_gap = selected "
+                    "- oracle separates 'the fan cannot propose it' from 'the "
+                    "selector cannot find it'.)",
+        "why_not_measured": "this arm was built with --selector none, so "
+                            "V6Stack emits no sel_* key (v6.py: the block is "
+                            "under `if self.cand_score is not None`). There is "
+                            "no sel_idx and therefore no sel_gap to measure — "
+                            "it is UNCOMPUTABLE on this arm, not merely "
+                            "not-yet-run. No battery run can produce it.",
+        "why_this_arm": "SEL-1 fired REFUSED 2026-08-16 (E-WC2: sigma/ADE "
+                        "9.9915 [7.4492, 13.5119] against a refusal line of "
+                        "3.0 pre-registered with both outcomes committed in "
+                        "advance). v6_chain.assert_selector_admissible REFUSES "
+                        "to launch any selector arm while that stands.",
+        "what_would_make_it_applicable":
+            "the E-WC2-SW measurement at the S-W -> S-T boundary "
+            "(~10-25 GPU-min): dump the FROZEN S-W latents, run "
+            "scripts/e_wc2_sigma_star.py, write <sw_dir>/ewc2_sw_latents.json. "
+            "PRE-REGISTERED 2026-08-16 BEFORE the dump was taken: sigma(2 s) "
+            "<= 0.80 m FUNDED (the arm launches with --selector goal and this "
+            "criterion binds) · 0.80 < sigma <= 1.41 INCONCLUSIVE (REFUSED "
+            "stands) · sigma > 1.41 REFUSED stands. The 0.80 m line is not a "
+            "round number: GoalDistanceScorer's requirement curve measured the "
+            "goal rule BETTER than the trained selector at sigma 0.5 m "
+            "(-0.1591 [-0.2300, -0.0894]) and WORSE at sigma 1.0 m (+0.0943 "
+            "[+0.0241, +0.1650]), both separated.",
+        "_read": "NOT a pass, NOT a failure of the model, and NOT a criterion "
+                 "that was dropped: a question this arm is structurally unable "
+                 "to answer. It stays required on every arm that CAN.",
+    },
+}
+
+
+def probe_applies(stage: str, probe: str, arm: dict | None) -> dict | None:
+    """Is ``probe`` measurable on this arm? ``None`` == yes (the strict default).
+
+    Returns a **reason dict** when the probe is NOT applicable, so a caller can
+    never reduce the answer to a bare boolean and lose the explanation — the
+    thing that made the three vacuous gates possible.
+
+    ``arm`` is the run's own build record, ``{"has_scorer": bool, ...}``, taken
+    from the BUILT STACK. ⛔ ``arm=None`` means *no record was supplied* and
+    resolves to **APPLICABLE** — the strict reading — so no caller can weaken a
+    criterion by forgetting to describe its arm.
+    """
+    pred = GATE_APPLICABILITY.get(stage, {}).get(probe)
+    if pred is None or arm is None:
+        return None
+    if pred == "has_scorer":
+        if arm.get("has_scorer"):
+            return None
+        return {"probe": probe, "predicate": pred,
+                "applicable": False,
+                "selector": arm.get("selector", "none"),
+                **UNMEASURED_BY_CONSTRUCTION["has_scorer"]}
+    raise KeyError(                                          # pragma: no cover
+        f"GATE_APPLICABILITY[{stage!r}][{probe!r}] names predicate {pred!r}, "
+        f"which probe_applies does not implement. A predicate that cannot be "
+        f"resolved must raise, never default to applicable-or-not: both "
+        f"silent answers are wrong verdicts wearing a gate.")
+
+
+def arm_record(stack) -> dict:
+    """The build facts a gate needs, read from the STACK, never from the args.
+
+    ⭐ ``--selector goal`` is an intention; ``stack.cand_score is not None`` is
+    what actually happened. A gate that adjudicated on the flag would certify a
+    selector that failed to build — the ``intent_proj`` defect (a path present
+    in the declaration and absent from the object) in a gate's costume.
+    """
+    scorer = getattr(stack, "cand_score", None)
+    return {
+        "has_scorer": scorer is not None,
+        "scorer_class": type(scorer).__name__ if scorer is not None else None,
+        "selector": getattr(getattr(stack, "cfg", None), "selector", "none"),
+        "_source": "the BUILT stack (stack.cand_score), not the --selector flag",
+    }
+
+
+class GatePreconditionError(SystemExit):
+    """A stage refused to start because the stage below it did not pass."""
+
+
+class ResumeLineageError(SystemExit):
+    """``--resume auto`` found a checkpoint that is not this run's own.
+
+    Its own subclass so a chain script can tell "the ladder is mis-wired"
+    (recoverable: point ``--out`` elsewhere, or use ``--init-from``) apart from
+    the generic ``SystemExit`` every other refusal in this file raises.
+    """
+
+
+# ============================================================================
+# the measure losses — PURE, CPU-testable (no dataset, no checkpoint)
+# ============================================================================
+
+# ---------------------------------------------------------------------------
+# O7 — distillation into a FROZEN EXTERNAL encoder (E-DEC-9)
+# ---------------------------------------------------------------------------
+#: ⛔ THE TERM EXISTS BECAUSE EVERY OTHER TERM HAS A SELF-GENERATED TARGET.
+#: O5 predicts our own next latent; O3 predicts our own masked readout cells;
+#: O6 asks only for isotropy; O1 asks only for per-action difference. The model
+#: therefore picks BOTH what to represent and what to predict, and
+#: "ego motion + noise" satisfies all of it with ZERO scene content -- which is
+#: exactly what was measured (every arm BELOW a constant predictor on agent
+#: count, while frozen DINOv3 reads +0.2754 on data it never trained on).
+#: O7's target is produced by a frozen network. The model cannot choose it.
+O7_DEFAULT_MODEL = "facebook/dinov3-vitl16-pretrain-lvd1689m"
+
+
+class O7Distill(torch.nn.Module):
+    """Frozen-teacher distillation head: readout cells -> teacher cell features.
+
+    Holds the frozen teacher (eval, bf16, requires_grad=False) OUT of the module
+    registry so it is never saved into our checkpoint and never optimised, and a
+    small trainable head that IS registered.
+    """
+
+    def __init__(self, d_readout: int, n_cells: int, grid_hw: tuple[int, int],
+                 model_id: str = O7_DEFAULT_MODEL, hidden: int = 512):
+        super().__init__()
+        self.n_cells, self.grid_hw, self.model_id = int(n_cells), tuple(grid_hw), model_id
+        self.head = torch.nn.Sequential(
+            torch.nn.Linear(int(d_readout), hidden), torch.nn.GELU(),
+            torch.nn.Linear(hidden, 1024))
+        self._teacher = None            # lazy; leading underscore => not a submodule
+
+    def _load(self, dev):
+        if self._teacher is None:
+            import truststore
+            truststore.inject_into_ssl()
+            from transformers import DINOv3ViTModel
+            m = DINOv3ViTModel.from_pretrained(
+                self.model_id, dtype=torch.bfloat16, local_files_only=True).to(dev).eval()
+            for p in m.parameters():
+                p.requires_grad_(False)
+            object.__setattr__(self, "_teacher", m)
+        return self._teacher
+
+    @torch.no_grad()
+    def target(self, rgb: Tensor) -> Tensor:
+        """rgb [B, 3, H, W] in [0,1] -> teacher cells [B, n_cells, 1024]."""
+        m = self._load(rgb.device)
+        b, _c, h, w = rgb.shape
+        rows, cols = h // 16, w // 16
+        gh, gw = self.grid_hw
+        # ImageNet normalisation, matching the processor the bank was built with
+        mean = torch.tensor([0.485, 0.456, 0.406], device=rgb.device).view(1, 3, 1, 1)
+        std = torch.tensor([0.229, 0.224, 0.225], device=rgb.device).view(1, 3, 1, 1)
+        x = ((rgb - mean) / std).to(torch.bfloat16)
+        tok = m(pixel_values=x).last_hidden_state[:, -(rows * cols):].float()
+        d = tok.shape[-1]
+        t = tok.reshape(b, gh, rows // gh, gw, cols // gw, d).mean(dim=(2, 4))
+        return t.reshape(b, gh * gw, d)
+
+    def forward(self, z_op_last: Tensor, rgb: Tensor) -> Tensor:
+        b = z_op_last.shape[0]
+        cells = z_op_last.reshape(b, self.n_cells, -1)
+        pred = self.head(cells)
+        tgt = self.target(rgb)
+        if not torch.isfinite(tgt).all():
+            # the silent DINOv3 NaN mode -- refuse rather than train on garbage
+            raise RuntimeError("O7: teacher produced non-finite features")
+        return torch.nn.functional.mse_loss(pred, tgt.to(pred.dtype))
+
+class O8Pixel(torch.nn.Module):
+    """O8 — distillation into RAW PIXELS (E-DEC-10). External, teacher-free.
+
+    Same shape as :class:`O7Distill` so the two are a matched pair: readout
+    cells -> a per-cell target. The difference is only the target's origin --
+    O7's comes from a frozen network trained on external data, O8's comes from
+    the input image itself, so O8 keeps the pipeline self-contained.
+
+    ⚠️ The target is the cell region downsampled to ``ph x pw`` RGB, NOT its mean
+    colour: a mean is trivially predictable and would let the term be satisfied
+    without representing layout, which is the same degeneracy E-DEC-7 describes.
+    """
+
+    def __init__(self, d_readout: int, n_cells: int, grid_hw: tuple[int, int],
+                 ph: int = 8, pw: int = 10, hidden: int = 512):
+        super().__init__()
+        self.n_cells, self.grid_hw = int(n_cells), tuple(grid_hw)
+        self.ph, self.pw = int(ph), int(pw)
+        self.out_dim = 3 * self.ph * self.pw
+        self.head = torch.nn.Sequential(
+            torch.nn.Linear(int(d_readout), hidden), torch.nn.GELU(),
+            torch.nn.Linear(hidden, self.out_dim))
+
+    @torch.no_grad()
+    def target(self, rgb: Tensor) -> Tensor:
+        """rgb [B, 3, H, W] in [0,1] -> [B, n_cells, 3*ph*pw]."""
+        gh, gw = self.grid_hw
+        b = rgb.shape[0]
+        # one adaptive pool to the FULL cell-grid x per-cell patch resolution,
+        # then split -- so every cell gets the same treatment with no rounding.
+        z = torch.nn.functional.adaptive_avg_pool2d(rgb, (gh * self.ph, gw * self.pw))
+        z = z.reshape(b, 3, gh, self.ph, gw, self.pw).permute(0, 2, 4, 1, 3, 5)
+        return z.reshape(b, gh * gw, self.out_dim)
+
+    def forward(self, z_op_last: Tensor, rgb: Tensor) -> Tensor:
+        b = z_op_last.shape[0]
+        cells = z_op_last.reshape(b, self.n_cells, -1)
+        pred = self.head(cells)
+        tgt = self.target(rgb)
+        return torch.nn.functional.mse_loss(pred, tgt.to(pred.dtype))
+
+class O9EmaMasked(torch.nn.Module):
+    """O9 — masked-latent prediction against an EMA TARGET ENCODER (E-DEC-13).
+
+    ⛔ WHY O3 FAILED AND THIS IS DIFFERENT. O3 predicted the ONLINE network's own
+    readout cells: the model optimises BOTH the prediction and the target, so the
+    degeneracy of E-DEC-7 applies and "make the target easy" is a valid solution.
+    MEASURED (E-DEC-5b): O3 drove ego BELOW the constant control while moving the
+    environment not at all.
+
+    I-JEPA / V-JEPA solve this with a SEPARATE TARGET ENCODER updated by EMA. The
+    target is then produced by weights the optimiser cannot move at this step --
+    externality (E-DEC-8's working ingredient) WITHOUT an external model, which is
+    the PI's stated requirement ("clear preference without pretrained labels").
+
+    ⚠️ DMT-JEPA (banked 2405.17995) warns the naive form is still weak: masked
+    modelling in embedding space has "insufficient understanding of local
+    semantics... reduction of discriminative power". Its remedy aggregates each
+    masked target from SEMANTICALLY SIMILAR NEIGHBOURING patches. `neighbour_k > 0`
+    enables that: the target for a masked cell becomes the similarity-weighted mean
+    of its k nearest EMA cells rather than its own EMA cell.
+
+    The EMA encoder is held OUT of the module registry (leading underscore) so it
+    is never written into our checkpoint and never optimised.
+    """
+
+    def __init__(self, encoder, d_cell: int, n_cells: int, momentum: float = 0.996,
+                 mask_frac: float = 0.5, neighbour_k: int = 0, hidden: int = 256):
+        super().__init__()
+        import copy
+        self.momentum = float(momentum)
+        self.mask_frac = float(mask_frac)
+        self.neighbour_k = int(neighbour_k)
+        self.n_cells = int(n_cells)
+        tgt = copy.deepcopy(encoder).eval()
+        for q in tgt.parameters():
+            q.requires_grad_(False)
+        object.__setattr__(self, "_ema", tgt)
+        self.head = torch.nn.Sequential(
+            torch.nn.Linear(int(d_cell), hidden), torch.nn.GELU(),
+            torch.nn.Linear(hidden, int(d_cell)))
+        self.mask_token = torch.nn.Parameter(torch.zeros(1, 1, int(d_cell)))
+        torch.nn.init.trunc_normal_(self.mask_token, std=0.02)
+
+    @torch.no_grad()
+    def update_ema(self, encoder) -> None:
+        m = self.momentum
+        for pt, po in zip(self._ema.parameters(), encoder.parameters()):
+            pt.mul_(m).add_(po.detach(), alpha=1.0 - m)
+        for bt, bo in zip(self._ema.buffers(), encoder.buffers()):
+            bt.copy_(bo)
+
+    @torch.no_grad()
+    def _neighbour_targets(self, t: Tensor) -> Tensor:
+        """DMT-JEPA: replace each target by a similarity-weighted mean of its k
+        most similar cells, so the target carries LOCAL SEMANTICS rather than a
+        single cell's embedding."""
+        if self.neighbour_k <= 0:
+            return t
+        n = torch.nn.functional.normalize(t, dim=-1)
+        sim = n @ n.transpose(1, 2)                       # [B, C, C]
+        k = min(self.neighbour_k + 1, sim.shape[-1])
+        w, idx = sim.topk(k, dim=-1)
+        w = torch.softmax(w, dim=-1).unsqueeze(-1)        # [B, C, k, 1]
+        gathered = torch.gather(
+            t.unsqueeze(1).expand(-1, t.shape[1], -1, -1), 2,
+            idx.unsqueeze(-1).expand(-1, -1, -1, t.shape[-1]))
+        return (w * gathered).sum(2)
+
+    def forward(self, online_cells: Tensor, ema_cells: Tensor,
+                generator=None) -> Tensor:
+        b, c, _d = online_cells.shape
+        n_mask = max(1, int(round(self.mask_frac * c)))
+        # ⛔ the shared `generator` is a CPU generator; torch.rand with a CUDA
+        # device demands a CUDA one. Draw on the shared CPU stream and MOVE,
+        # so the mask stays reproducible from the run's own seed.
+        noise = torch.rand(b, c, generator=generator).to(online_cells.device)
+        mask = noise.argsort(dim=1) < n_mask               # [B, C] bool
+        with torch.no_grad():
+            tgt = self._neighbour_targets(ema_cells)
+        x = torch.where(mask.unsqueeze(-1),
+                        self.mask_token.to(online_cells.dtype).expand_as(online_cells),
+                        online_cells)
+        pred = self.head(x)
+        m = mask.unsqueeze(-1)
+        return (((pred - tgt.to(pred.dtype)) ** 2) * m).sum() / m.sum().clamp_min(1) / pred.shape[-1]
+
+
+class O10PSG(torch.nn.Module):
+    """O10 — PHYSICAL-STATE GROUNDING, supervised by OUR OWN banked 3D cuboids.
+
+    PhyLatent (ICLR 2025, banked ``2608.05720``) states the programme's root
+    cause almost verbatim — *"preventing global latent collapse does not ensure
+    that a representation preserves physical states and action consequences"* —
+    and its remedy is PSG: **one SHARED state head applied to BOTH the encoded
+    and the predicted trajectory**, "used only during training and not required
+    by the planner".
+
+    ⭐ WHY THIS IS NOT ANOTHER O1/O3/O9. Every objective that has failed here
+    (E-DEC-7) had a **self-generated target**: the model could satisfy it by
+    moving the target. O7 fixed that with a frozen DINOv3 teacher and worked;
+    O8 (pixels) and O9 (an EMA of our own encoder) were teacher-free and did
+    not. PSG's target is **external AND has content**: it comes from
+    ``obstacle.offline``, is not produced by any network, and cannot be moved by
+    the optimiser at all. It is the first teacher-free target in the programme
+    with those two properties together.
+
+    ⭐ THE SHARED HEAD IS THE MECHANISM, NOT A DETAIL. Supervising only the
+    encoded latent would be a plain auxiliary task and would say nothing about
+    the predictor. Because ``head`` is the same module on both branches, a
+    prediction is only cheap if it lands where the encoder's own physical state
+    would land — so the term prices ACTION CONSEQUENCES, which is what the
+    programme has never managed to make the predictor learn.
+
+    ⛔ INFERENCE IS VISION-ONLY (PI, binding). This head is a training-time
+    consumer of labels; it is never on the inference path and the planner never
+    calls it. ⛔ AND IT LEAKS BY CONSTRUCTION IF MIS-SPLIT: the target
+    determines both scored environment metrics, so the caller MUST supervise on
+    a clip-disjoint train split and score on the held-out clips
+    (``tanitad.data.psg_targets.clip_split``). ``valid`` is that mask.
+    """
+
+    def __init__(self, d_cell: int, grid_hw: tuple[int, int], n_cols: int = 8,
+                 ch: int = 2, hidden: int = 256):
+        super().__init__()
+        gh, gw = int(grid_hw[0]), int(grid_hw[1])
+        if gw != int(n_cols):
+            raise ValueError(
+                f"PSG targets are per-AZIMUTH-COLUMN over {n_cols} columns and "
+                f"the readout has {gw}. They must match, or every agent is "
+                "supervised into the wrong column (the registration IS the "
+                "term). Use --readout-grid-w 8.")
+        self.gh, self.gw, self.ch = gh, gw, int(ch)
+        self.head = torch.nn.Sequential(
+            torch.nn.Linear(int(d_cell) * gh, hidden), torch.nn.GELU(),
+            torch.nn.Linear(hidden, int(ch)))
+
+    def _columns(self, cells: Tensor) -> Tensor:
+        """[B, n_cells, d] -> [B, gw, gh*d], pooling each column's rows.
+
+        Rows are CONCATENATED rather than averaged: a mean over the 4 rows would
+        discard elevation, and "is the vehicle near the horizon or filling the
+        frame" is exactly the range cue channel 1 asks for.
+        """
+        b, c, d = cells.shape
+        x = cells.reshape(b, self.gh, self.gw, d).permute(0, 2, 1, 3)
+        return x.reshape(b, self.gw, self.gh * d)
+
+    def forward(self, enc_cells: Tensor, pred_cells: Tensor, tgt_now: Tensor,
+                tgt_next: Tensor, valid: Tensor, enc_only: bool = False):
+        p_enc = self.head(self._columns(enc_cells))
+        w = valid.reshape(-1, 1, 1).to(p_enc.dtype)
+        denom = w.sum().clamp_min(1.0) * self.gw * self.ch
+        l_enc = (w * (p_enc - tgt_now.to(p_enc.dtype)) ** 2).sum() / denom
+        if enc_only:
+            # E-DEC-18c. MEASURED: PSG zeroes the predictor at w = 0.03, 0.1, 1
+            # and 3 -- and at 0.03 it costs ego NOTHING (speed t -0.26), so the
+            # damage is not competition for capacity, it is specific. The two
+            # candidate mechanisms are (a) the shared head on the PREDICTED
+            # branch, which is PhyLatent's actual proposal, and (b) merely adding
+            # a supervised loss anywhere. Dropping the predicted branch separates
+            # them: the predictor then receives NO PSG gradient at all.
+            return l_enc, {"psg_enc": float(l_enc.detach()),
+                           "psg_pred": 0.0, "psg_enc_only": True,
+                           "psg_n_supervised": int(valid.sum())}
+        p_pred = self.head(self._columns(pred_cells))
+        l_pred = (w * (p_pred - tgt_next.to(p_pred.dtype)) ** 2).sum() / denom
+        return l_enc + l_pred, {"psg_enc": float(l_enc.detach()),
+                                "psg_pred": float(l_pred.detach()),
+                                "psg_enc_only": False,
+                                "psg_n_supervised": int(valid.sum())}
+
+
+def o2_near_field_loss(pred_cells: Tensor, true_cells: Tensor,
+                       cell_ranges_m: Tensor, v_ego: Tensor, *,
+                       tau_s: float = 2.0, horizon_s: float = HORIZON_S,
+                       v_floor: float = 1.0) -> tuple[Tensor, dict]:
+    """O2 — per-cell latent L1 weighted by TIME-TO-REACH.
+
+    ``pred_cells`` / ``true_cells`` ``[B, C, d_r]`` readout CELL tokens (the
+    DINO-WM lesson: *pooling is where geometry goes to die*, so O2 acts on
+    cells and never on the pooled state); ``cell_ranges_m`` ``[C]``;
+    ``v_ego`` ``[B]`` m/s.
+
+    The weighting is TIME-scaled (HIERARCHY_VOCABULARY §2), so at 30 m/s the
+    same time band covers ~180 m while at 5 m/s it covers ~30 m — one rule, no
+    speed-dependent constant. Weights are mean-1 normalised over cells, so this
+    RE-ALLOCATES the loss instead of rescaling it (a weighting that also
+    changes the gradient magnitude is a learning-rate change in disguise).
+    """
+    if pred_cells.shape != true_cells.shape or pred_cells.ndim != 3:
+        raise ValueError(f"cells must match and be [B, C, d_r], got "
+                         f"{tuple(pred_cells.shape)} vs "
+                         f"{tuple(true_cells.shape)}")
+    c = pred_cells.shape[1]
+    if cell_ranges_m.reshape(-1).numel() != c:
+        raise ValueError(f"cell_ranges_m must have {c} entries, got "
+                         f"{cell_ranges_m.reshape(-1).numel()}")
+    dist = cell_ranges_m.reshape(1, c).to(pred_cells.device).float()
+    w = time_to_reach_weights(dist.expand(pred_cells.shape[0], c),
+                              v_ego.to(pred_cells.device), tau_s=tau_s,
+                              horizon_s=horizon_s, v_floor=v_floor)
+    err = (pred_cells.float() - true_cells.float()).abs().mean(dim=-1)  # [B,C]
+    loss = (w * err).mean()
+    return loss, {"o2_loss": float(loss.detach()),
+                  "o2_w_min": float(w.min()), "o2_w_max": float(w.max()),
+                  "o2_unweighted": float(err.mean().detach()),
+                  "o2_tau_s": tau_s}
+
+
+def o3_masked_cell_loss(masked_predictor, ctx_cells: Tensor,
+                        true_cells: Tensor, mask: Tensor
+                        ) -> tuple[Tensor, dict]:
+    """O3 — masked SPATIAL-latent prediction over the readout grid.
+
+    ``ctx_cells`` is what the model may look at (in ``--o3-mode action`` it is
+    the ACTION-CONDITIONED rolled latent's cells, so the task is "predict the
+    occluded block given the context AND the action" — O3's own wording);
+    ``true_cells`` is the target; ``mask`` ``[B, C]`` bool, True == masked.
+
+    Scored on the MASKED cells ONLY. Scoring visible cells too would let the
+    model win by copying, which is exactly how a masking objective silently
+    becomes an autoencoder.
+    """
+    if mask.dtype != torch.bool:
+        raise ValueError(f"mask must be bool, got {mask.dtype}")
+    if mask.shape != true_cells.shape[:2]:
+        raise ValueError(f"mask {tuple(mask.shape)} must be [B, C] matching "
+                         f"cells {tuple(true_cells.shape)}")
+    n_masked = int(mask.sum())
+    pred = masked_predictor(ctx_cells, mask)
+    if n_masked == 0:
+        z = pred.sum() * 0.0                 # in the graph, contributes nothing
+        return z, {"o3_loss": 0.0, "o3_mask_rate": 0.0, "o3_n_masked": 0}
+    err = (pred.float() - true_cells.float()).abs().mean(dim=-1)        # [B,C]
+    loss = err[mask].mean()
+    return loss, {"o3_loss": float(loss.detach()),
+                  "o3_mask_rate": float(mask.float().mean()),
+                  "o3_n_masked": n_masked,
+                  "o3_visible_err": float(err[~mask].mean().detach())
+                  if bool((~mask).any()) else None}
+
+
+def rollout_step_weights(k: int, mode: str = "uniform", *,
+                         device=None, dtype=torch.float32) -> Tensor:
+    """Per-step weights for O5. ``uniform`` (the catalog's "error at every step,
+    not endpoint-only") or ``linear-decay`` (down-weights late steps where the
+    target itself is noisier). ``endpoint`` exists ONLY as the ablation control
+    that reproduces the defect O5 fixes — it is never a default."""
+    if k < 1:
+        raise ValueError(f"k must be >= 1, got {k}")
+    if mode == "uniform":
+        w = torch.ones(k, dtype=dtype, device=device)
+    elif mode == "linear-decay":
+        w = torch.linspace(1.0, 0.25, k, dtype=dtype, device=device)
+    elif mode == "endpoint":
+        w = torch.zeros(k, dtype=dtype, device=device)
+        w[-1] = 1.0
+    else:
+        raise ValueError(f"mode must be uniform|linear-decay|endpoint, got "
+                         f"{mode!r}")
+    return w / w.mean().clamp_min(1e-8)
+
+
+def o5_rollout_consistency_loss(zhat_steps, z_true_steps, weights: Tensor,
+                                form: str = "l1") -> tuple[Tensor, dict]:
+    """O5 — multi-step rollout consistency, error at EVERY step.
+
+    ``zhat_steps`` / ``z_true_steps``: sequences of ``[B, S]`` latents of equal
+    length (the rolled prediction and the ENCODED true future). ``weights``
+    ``[k]`` from :func:`rollout_step_weights`.
+
+    This is the P5 lesson (*compounding-error boundedness*) trained IN rather
+    than measured after: an endpoint-only loss is minimisable by a trajectory
+    that is wrong throughout and right at the end, and that is precisely the
+    shape T1 rollouts fail with.
+
+    ``form`` selects the per-step error: ``"l1"`` (this programme's incumbent)
+    or ``"mse"``. ⭐ WHY THIS IS A KNOB. LeWM (arXiv 2603.19312, banked) trains
+    a stable end-to-end JEPA with exactly TWO terms -- an MSE next-embedding
+    loss plus SIGReg -- and attributes JEPA fragility to "complex multi-term
+    losses" with "under-specified anti-collapse regularization". MEASURED
+    2026-08-22 on v7-tiny: running o5+o6 ALONE lifted latent participation
+    2.94 -> 4.43 and was the ONLY arm whose effective rank rose at all, while a
+    1000x sweep of the SIGReg weight did nothing. Our O5 is L1 over a k-step
+    rollout; LeWM's is MSE on the next embedding. That deviation is the next
+    thing to test, so it is a flag rather than a fork.
+    """
+    if len(zhat_steps) != len(z_true_steps):
+        raise ValueError(f"rollout length mismatch: {len(zhat_steps)} vs "
+                         f"{len(z_true_steps)}")
+    k = len(zhat_steps)
+    if weights.numel() != k:
+        raise ValueError(f"weights must be [k={k}], got {weights.numel()}")
+    if form not in ("l1", "mse"):
+        raise ValueError(f"o5 form must be 'l1' or 'mse', got {form!r}")
+    d = [(zhat_steps[j].float() - z_true_steps[j].float()) for j in range(k)]
+    per = torch.stack([(x.abs().mean() if form == "l1" else x.pow(2).mean())
+                       for x in d])                                    # [k]
+    loss = (weights.to(per.device).float() * per).mean()
+    return loss, {"o5_loss": float(loss.detach()),
+                  "o5_k": k, "o5_form": form,
+                  "o5_step1": float(per[0].detach()),
+                  "o5_stepK": float(per[-1].detach()),
+                  "o5_growth": float((per[-1] / per[0].clamp_min(1e-8))
+                                     .detach())}
+
+
+O11_NO_INFO_LOSS = None          # set per-call: ln(1 + n_neg), the EXACT floor
+
+
+def o11_counterfactual_action_loss(zhat_pos, zhat_negs, z_true,
+                                   tau: float = 1.0) -> tuple[Tensor, dict]:
+    """O11-CF — an objective that CANNOT be minimised by ignoring the actions.
+
+    ⛔ THE DEFECT THIS EXISTS TO FIX (E-DEC-30, MEASURED 2026-08-24, 444 windows,
+    3 arms, positive control passing on all three). Replacing the ENTIRE action
+    tensor with one drawn from a random other time — a **251 % change to the
+    input** — moves `rdw8p30k`'s prediction by **1.5 %**, while a **10 % nudge to
+    the latent** moves it by 17.7 %. Flipping a hard left into a hard right moves
+    it 1.1 %. `nrmse` — the number five arms and the whole Gate-B/Gate-C census
+    are ranked on — is unchanged to four decimals under the same shuffle
+    (0.7845 → 0.7845). The predictor is a temporal extrapolator, not an
+    action-conditioned world model.
+
+    ⭐ WHY O5 PRODUCES THAT, WHICH IS WHY A BIGGER PREDICTOR WOULD NOT FIX IT.
+    O5 trains ẑ_{t+k} ≈ z_{t+k}. Over a 0.6 s horizon the scene at t+k is
+    overwhelmingly determined by the scene at t and only marginally by the ego's
+    commanded action, so **the loss-minimising solution is to ignore the action**
+    — it is a low-variance nuisance input and extrapolation captures most of the
+    variance. The predictor is doing exactly what it was asked to do. The fix is
+    therefore an OBJECTIVE, not capacity or steps.
+
+    THE TERM. Roll the identical states with the TRUE future actions and with
+    ``n_neg`` COUNTERFACTUAL future action sequences taken from other batch
+    elements, then require the true-action rollout to be the one that matches the
+    observed future, as an InfoNCE over actions:
+
+        logits_i = -||ẑ(a_i) - z_true||² / τ ,  target = the true-action index
+
+    ⭐⭐ THE PROPERTY THAT MAKES IT THE RIGHT INSTRUMENT: **an action-independent
+    predictor scores EXACTLY ln(1 + n_neg) and cannot do better.** If ẑ does not
+    depend on a, every logit is identical, the softmax is uniform, and the loss
+    sits precisely at the no-information value. So this objective carries its own
+    constant-predictor floor *inside the loss* — the C149 control, built in rather
+    than bolted on. `o11_excess` below is the loss MINUS that floor; it is ≤ 0
+    only for an action-blind predictor and is the number to watch.
+
+    ⚠️ WHY IT IS ADDED TO O5 AND MUST NEVER REPLACE IT. O11 alone is trivially
+    minimised by ẑ = f(z) + λa for large λ — perfect action-separation, useless
+    prediction. O5 keeps the prediction accurate; O11 forces the accuracy to be
+    action-dependent. A run that improves O11 while O5 degrades is the degenerate
+    solution, and both are logged so it is visible rather than inferred.
+
+    ⚠️ ONLY THE **FUTURE** ACTIONS ARE SWAPPED, never the observed window: the
+    window's actions are part of *what happened* and are legitimately shared
+    across the comparison, while the future actions are the counterfactual
+    *what if I do this instead*. Swapping the window would make the negatives
+    differ in their conditioning history too and the term would no longer isolate
+    action-conditioning.
+
+    ``zhat_pos`` ``[B, S]``; ``zhat_negs`` a list of ``n_neg`` ``[B, S]``;
+    ``z_true`` ``[B, S]``.
+    """
+    if not zhat_negs:
+        raise ValueError("o11 needs at least one counterfactual rollout")
+    n_neg = len(zhat_negs)
+    zt = z_true.float()
+
+    def _d(x):
+        return (x.float() - zt).pow(2).mean(dim=-1)                     # [B]
+
+    d_pos = _d(zhat_pos)
+    d_neg = torch.stack([_d(x) for x in zhat_negs], dim=1)              # [B,n]
+    logits = torch.cat([-d_pos[:, None], -d_neg], dim=1) / max(tau, 1e-6)
+    tgt = torch.zeros(logits.shape[0], dtype=torch.long, device=logits.device)
+    loss = torch.nn.functional.cross_entropy(logits, tgt)
+    floor = float(math.log(1 + n_neg))
+    with torch.no_grad():
+        # ⭐ the separation actually achieved, in the units of the distance
+        # itself — readable without reference to tau, so a tau change cannot be
+        # mistaken for a change in action-conditioning.
+        sep = float((d_neg.mean() - d_pos.mean()).detach())
+        rel = sep / max(float(d_pos.mean().detach()), 1e-12)
+        # ⛔ TIES MUST BE CREDITED AT CHANCE, NOT TO THE TARGET. A plain
+        # `logits.argmax() == tgt` reads **1.0000 for a completely action-blind
+        # predictor**, because an action-independent ẑ makes every logit
+        # bit-identical and argmax then returns index 0 — which IS the target.
+        # That is the C149 shape (a diagnostic whose best-looking value is the
+        # no-information case) inside the very term written to prevent it, and
+        # it was caught by `test_an_action_blind_predictor_scores_EXACTLY_the_
+        # no_information_floor` demanding the control read chance EXACTLY.
+        # Comparing DISTANCES rather than logits also makes this reading
+        # independent of tau.
+        dall = torch.cat([d_pos[:, None], d_neg], dim=1)            # [B, 1+n]
+        mn = dall.min(dim=1, keepdim=True).values
+        tied = torch.isclose(dall, mn, rtol=1e-9, atol=1e-12).float()
+        acc = float((tied[:, 0] / tied.sum(dim=1).clamp_min(1.0))
+                    .mean().detach())
+    return loss, {"o11_loss": float(loss.detach()),
+                  "o11_n_neg": n_neg, "o11_tau": float(tau),
+                  "o11_no_info_floor": round(floor, 4),
+                  # ⛔ THE READING: > 0 means the true action is identifiable
+                  # from the prediction. <= 0 means action-blind, and no amount
+                  # of o5 progress changes that.
+                  "o11_excess": round(floor - float(loss.detach()), 6),
+                  "o11_sep_abs": sep, "o11_sep_rel": rel,
+                  "o11_pick_acc": acc,
+                  "o11_chance_acc": round(1.0 / (1 + n_neg), 4)}
+
+
+O14_PIX_H, O14_PIX_W = 32, 80
+
+
+def _o14_pixel_target(frames, future_frames, *, mode: str, k: int,
+                      shuffle: bool = False):
+    """[B, H*W] grey 32x80 target for O14, from the batch's own frame tensors.
+
+    Channel layout: frames are [B, W, C, H, W'] with C = 3*n_stack and the
+    NEWEST frame's RGB in the LAST 3 channels (the encode-window stack order).
+    Slicing [-3:] is layout-generic: it is also correct for C=3
+    (--newest-frame-only).
+
+    ``shuffle`` is the DELIBERATE-REGRESSION arm: a CYCLIC SHIFT across the
+    batch — a derangement by construction. ``randperm`` fixes points with
+    probability ~1/B, silently making that row's "shuffled" target the TRUE
+    one (the o11 counterfactual lesson, same words).
+    """
+    import torch.nn.functional as _F
+    if mode not in ("fut", "rec", "fut_diff"):
+        raise ValueError(f"unknown o14 mode {mode!r}")
+
+    def _grey(x):                                      # [B, C, H, W'] -> [B, H*W]
+        g = x[:, -3:].float().mean(dim=1, keepdim=True)
+        g = _F.adaptive_avg_pool2d(g, (O14_PIX_H, O14_PIX_W))
+        return g.reshape(g.shape[0], -1)
+
+    if mode in ("fut", "fut_diff"):
+        kk = future_frames.shape[1]
+        if k > kk:
+            raise ValueError(f"o14_k={k} needs future_frames horizon >= {k}, "
+                             f"got {kk} — rebuild the cache or lower o14-k")
+        tgt = _grey(future_frames[:, k - 1])
+        if mode == "fut_diff":
+            tgt = tgt - _grey(frames[:, -1])
+    else:
+        tgt = _grey(frames[:, -1])
+    if shuffle:
+        tgt = torch.roll(tgt, shifts=1, dims=0)
+    return tgt
+
+
+def o13_ego_dynamics_loss(zhat_k, dv_true, dyaw_true, z_t=None,
+                          seed: int = 1300) -> tuple[Tensor, dict]:
+    """O13-EGO — action-conditioning aimed at the ONE target the action actually
+    determines, through a readout the action CANNOT reach.
+
+    ⭐⭐⭐ WHY THIS TARGET AND NOT THE SCENE (E-DEC-48b + E-DEC-50, both held-out,
+    both with passing positive controls). Nine objective terms — O1, O2, O3, O7,
+    O8, O9, O10, O11, PSG — all asked the action to move the 2048-d SCENE latent.
+    E-DEC-48b measured, against a positive control at t 8.5-14.3, that the action's
+    MARGINAL contribution to predicting the future scene is ZERO OR NEGATIVE
+    (-0.1678, t -3.50 on `n_agents`). **They asked the model to extract information
+    observational driving data does not contain.** In real traffic the causal arrow
+    runs SCENE -> ACTION: other agents evolve independently of what we do.
+
+    E-DEC-50 then measured what the action DOES determine — the EGO's own dynamics:
+    delta-speed **t 2.56**, delta-yaw **t 4.57**, against an IDENTITY control
+    (action -> accel) reading **+0.9337, t 23.74**. And the encoder already carries
+    the ego LEVELS (speed 2.07, yaw-rate 2.76, accel 3.10) while carrying neither
+    CHANGE. ⇒ **The substrate exists, the information exists, and no objective has
+    ever connected them.**
+
+    ⛔⛔ WHY THE HEAD IS FORBIDDEN THE ACTION — THIS IS THE WHOLE DESIGN, AND IT
+    COMES FROM AN ORACLE THAT REFUSED THE OBVIOUS VERSION (E-DEC-51). The natural
+    form is a head on ``(z_t, action_t)`` -> delta(speed, yaw). Measured before
+    spending the ~8 GPU-hours: the latent adds **-0.0065 (t -0.06)** to delta-speed
+    and **-0.0153 (t -0.12)** to delta-yaw over the action ALONE. ⇒ **such a head
+    would learn to read the two action scalars and ignore the 2048-d latent
+    entirely** — the loss would fall, the metric would look excellent, and the world
+    model would have learned NOTHING. That is O11's degeneracy in a new costume.
+
+    ⇒ **The readout sees ONLY ``zhat_k``.** Not the action, not ``z_t``. The
+    action's only path to this loss is THROUGH THE PREDICTOR, so the gradient can
+    only be reduced by making the PREDICTED LATENT carry the ego's future dynamics
+    — which is exactly the missing property. Excluding ``z_t`` additionally forbids
+    the passthrough solution (predicting the future from the present without using
+    the action at all).
+
+    ⭐ THE PROJECTION IS FROZEN AND PARAMETER-FREE — regenerated from a fixed seed
+    every call, so it has no state, no optimizer interaction, and CANNOT ADAPT to
+    make itself easy to hit. This is ActSWM's frozen-readout guard (arXiv
+    2607.26712) applied to a target with measured information behind it, rather
+    than to a separation score that can be manufactured.
+
+    ⭐⭐ THE FLOOR IS EXACTLY 1.0 AND IS A KNOWN VALUE. Targets are standardised
+    per batch, so a zero prediction scores ``mean(y_std**2) == 1.0`` exactly, and
+    any CONSTANT prediction ``c`` scores ``1 + c**2 >= 1``. The no-information value
+    is therefore not estimated, not inherited, and not an arm property — it is
+    arithmetic. ``o13_excess = 1.0 - loss`` is the number to watch: > 0 means the
+    predicted latent carries real ego dynamics.
+
+    ⚠️ THE DENOMINATOR IS A DATA PROPERTY, NOT AN ARM PROPERTY. C137 (and its
+    reintroduction as C157) came from normalising by something the arm itself
+    controls, which makes arms incomparable. Here the standardisation uses the
+    BATCH'S TRUE delta(speed, yaw) — identical across arms on the same data and
+    seed.
+
+    ⚠️ THE delta-YAW RELATION IS LARGELY KINEMATIC (steer = atan(L*curvature),
+    yaw-rate ~ v*curvature), so its r +0.56 is NOT an empirical discovery. That is
+    the POINT: it is the closed-form driving physics the programme is trying to
+    learn — a deterministic function of quantities the encoder already carries,
+    that the transition still fails to compute.
+
+    Logged controls, every step and free:
+      ``o13_shuffled``  the same loss with the TARGETS permuted across the batch.
+                        MUST sit near 1.0. If it does not, the term is fitting
+                        something other than the pairing and the run is suspect.
+      ``o13_on_z_t``    the same frozen readout applied to the TRUE ``z_t``
+                        (detached, no gradient) — the PASSTHROUGH diagnostic. If
+                        ``zhat`` never beats it, this term is not doing its job,
+                        and that is visible LIVE rather than at eval.
+
+    ``zhat_k`` ``[B, S]``; ``dv_true``/``dyaw_true`` ``[B]``; ``z_t`` optional
+    ``[B, S]`` for the diagnostic only.
+    """
+    y = torch.stack([dv_true.reshape(-1).float(),
+                     dyaw_true.reshape(-1).float()], dim=1)             # [B,2]
+    if y.shape[0] < 2:
+        raise ValueError("o13 needs batch >= 2 to standardise its targets")
+    mu = y.mean(dim=0, keepdim=True).detach()
+    sd = y.std(dim=0, unbiased=False, keepdim=True).detach().clamp_min(1e-6)
+    ys = (y - mu) / sd                                                  # [B,2]
+    d = int(zhat_k.shape[-1])
+    g = torch.Generator(device="cpu").manual_seed(int(seed))
+    P = (torch.randn(d, 2, generator=g) / math.sqrt(d)).to(
+        device=zhat_k.device, dtype=torch.float32)
+    pred = zhat_k.float().reshape(-1, d) @ P                            # [B,2]
+    loss = (pred - ys).pow(2).mean()
+    floor = 1.0
+    with torch.no_grad():
+        idx = torch.randperm(ys.shape[0], device=ys.device)
+        shuf = float((pred - ys[idx]).pow(2).mean().detach())
+        onz = None
+        if z_t is not None:
+            pz = z_t.detach().float().reshape(-1, d) @ P
+            onz = float((pz - ys).pow(2).mean().detach())
+    out = {"o13_loss": float(loss.detach()),
+           "o13_no_info_floor": floor,
+           # ⛔ THE READING: > 0 means the PREDICTED latent carries real ego
+           # dynamics. <= 0 means it does not, and no o5 progress changes that.
+           "o13_excess": round(floor - float(loss.detach()), 6),
+           # ⭐ the per-step positive control; must sit near 1.0
+           "o13_shuffled": round(shuf, 6),
+           "o13_seed": int(seed)}
+    if onz is not None:
+        out["o13_on_z_t"] = round(onz, 6)
+        # > 0 means zhat beats the PRESENT latent -- the term is earning its place
+        out["o13_beats_passthrough"] = round(onz - float(loss.detach()), 6)
+    return loss, out
+
+
+class SigRegRowBank:
+    """A detached ring of past operative latents, so SIGReg can ESTIMATE its
+    distribution from many rows while the gradient still flows only through the
+    current batch.
+
+    ⛔ THE DEFECT THIS FIXES. S-W feeds O6 ``states.reshape(-1, d)`` =
+    ``[B*W, d]``. On the v7-tiny geometry that is **24 rows in 2048 dimensions**,
+    and SIGReg then runs an Epps-Pulley normality test per random projection on
+    those 24 samples. The sample covariance of 24 points in 2048-d has rank
+    <= 24, so "isotropic in 2048-d" is UNREACHABLE BY CONSTRUCTION and most of
+    the gradient is sampling noise.
+
+    ⭐ We already knew this number. The O6 rank GATE refuses to rule at exactly
+    this n -- *"rank_ceiling 23 < 1024: a centred covariance from n=24 rows
+    cannot resolve rank"* -- and correctly reports INCONCLUSIVE. The LOSS has the
+    identical power problem and fails SILENTLY instead.
+
+    MEASURED 2026-08-22 on v7-tiny (participation / effective rank of z_op,
+    1440 held-out rows): all six terms 2.94/5.84; a 1000x sweep of the SIGReg
+    WEIGHT does nothing (3.34/5.36); dropping to LeWM's two terms 4.43/7.10;
+    6k steps 5.00/7.40 -- against frozen DINOv3's 8.56/17.25 on the same
+    frames. Weight is not the lever, so estimator POWER is the next candidate.
+
+    ⚠️ Only the current rows carry gradient; history is detached. This changes
+    the ESTIMATE, not the objective.
+    """
+
+    __slots__ = ("capacity", "_buf")
+
+    def __init__(self, capacity: int = 1):
+        if capacity < 1:
+            raise ValueError(f"capacity must be >= 1, got {capacity}")
+        self.capacity = int(capacity)
+        self._buf: list[Tensor] = []
+
+    def rows(self, z: Tensor) -> Tensor:
+        """-> the rows SIGReg should see: history (detached) ++ ``z`` (live)."""
+        out = (torch.cat([*self._buf, z], dim=0) if self._buf else z)
+        self._buf.append(z.detach())
+        if len(self._buf) >= self.capacity:
+            self._buf = self._buf[-(self.capacity - 1):] if self.capacity > 1                 else []
+        return out
+
+    def n_rows(self, per_step: int) -> int:
+        return per_step * self.capacity
+
+
+def o6_sigreg_loss(sigreg, z: Tensor, free_dims: int = 0, *,
+                   generator: torch.Generator | None = None) -> Tensor:
+    """O6 — SIGReg (full_relaxed), KEPT per the PI's 2026-08-11 call.
+
+    Delegates to :func:`tanitad.models.sigreg.position_relaxed`, which exempts
+    a fixed ego-motion subspace so anti-collapse and metric-position structure
+    stop cancelling. ⚠️ Never divide the Epps-Pulley statistic by n — that was
+    the ALPS-4B bug that silently disabled the loss, and it is guarded inside
+    ``sigreg.py``; this wrapper exists so nobody re-implements the call.
+
+    ``generator=None`` (the default, and the live v6F path) draws the slice
+    directions from the GLOBAL RNG exactly as before. See
+    ``v6_loss_step``'s ``sigreg_generator``."""
+    return position_relaxed(sigreg, z, free_dims, generator=generator)
+
+
+#: MM-E4 L1 — the FIXED ridge for the per-batch innovation fit
+#: (PREREG_DRIFT_ATTACK_LADDER: "lambda fixed, document the value").
+#: Applied as lam = REL * mean(diag(K)) of the FIT half's centred dual Gram,
+#: i.e. 1e-2 of the mean squared centred-feature norm. RELATIVE on purpose:
+#: an ABSOLUTE lambda would shrink (relatively) as latent norms grow — the
+#: very drift under study — coupling the constraint's strength to the thing
+#: being measured. Never tuned on anything the term is evaluated on (the
+#: 2026-08-22 probe rules); changing it is a prereg amendment, not a sweep.
+O6_INNOVATION_RIDGE_REL: float = 1e-2
+
+
+def o6_innovation_rows(states: Tensor, *, shuffle: bool = False,
+                       generator: torch.Generator | None = None,
+                       ridge_rel: float = O6_INNOVATION_RIDGE_REL) -> Tensor:
+    """MM-E4 L1 — O6's input becomes the dynamics INNOVATIONS dz - g(z_t).
+
+    ``states`` ``[B, W, d]`` -> ``[B*(W-1), d]`` innovation rows, batch-major.
+    g is a closed-form ridge z_t -> dz = z_{t+1} - z_t WITH intercept (centred
+    on the fit half's means), computed UNDER no_grad on one half of the batch
+    and applied to the OTHER half — cross-fitted both ways, so no row is ever
+    scored under a g that saw it (the 2026-08-22 tuned-on-scored rules). Both
+    halves enter the returned tensor with equal row weight, so the single
+    Epps-Pulley statistic downstream averages them symmetrically — ONE sigreg
+    call at (W-1)/W of the incumbent row count, which keeps the validated
+    no-divide-by-n operating point as close as one variable allows and leaves
+    every downstream piece (row bank, renorm, slice draw, weight) untouched.
+
+    Gradient flows through the LIVE z_t / z_{t+1} of the scored rows only; g
+    (map and means) is a per-batch CONSTANT. The ridge is solved in the DUAL
+    (an n_fit x n_fit Gram): n_fit = (B//2)*(W-1) << d always holds here.
+
+    ``shuffle=True`` is the deliberate-regression arm: z_t rows are permuted
+    against dz BEFORE the fit, so g carries no dynamics and the constraint
+    degenerates to ~plain SIGReg on centred dz. The permutation draws from
+    ``generator`` — the O6 stream (``sigreg_generator`` at the loss site);
+    ``None`` = the global RNG, exactly the incumbent O6 draw behaviour.
+
+    Analytic anchor (test-pinned): z_{t+1} == z_t makes dz == 0, the fit
+    intercept 0, hence rows == 0 EXACTLY — a point mass the sketched test
+    penalises hard (~0.163*n per slice) where plain SIGReg on the same
+    states reads near-null. That inversion is the cell's whole point.
+    """
+    if states.is_cuda:
+        # mirror SigReg.forward: the dual solve and Gram must not run bf16
+        # under autocast — same reason the Epps-Pulley statistic is fp32.
+        with torch.autocast("cuda", enabled=False):
+            return _o6_innovation_rows_fp32(states, shuffle, generator,
+                                            ridge_rel)
+    return _o6_innovation_rows_fp32(states, shuffle, generator, ridge_rel)
+
+
+def _o6_innovation_rows_fp32(states: Tensor, shuffle: bool,
+                             generator: "torch.Generator | None",
+                             ridge_rel: float) -> Tensor:
+    if states.ndim != 3:
+        raise ValueError(f"o6_innovation_rows wants [B, W, d], got "
+                         f"{tuple(states.shape)}")
+    B, W, d = states.shape
+    if B < 2 or W < 2:
+        raise ValueError(
+            f"o6_innovation_rows needs batch >= 2 (cross-fit halves) and "
+            f"window >= 2 (a dz must exist), got B={B}, W={W}")
+    z_t = states[:, :-1]                      # [B, W-1, d]
+    dz = states[:, 1:] - states[:, :-1]      # [B, W-1, d]
+    half = B // 2
+    halves = ((slice(0, half), slice(half, B)),
+              (slice(half, B), slice(0, half)))
+    scored: dict[int, Tensor] = {}
+    for fit_sl, score_sl in halves:
+        with torch.no_grad():
+            Xf = z_t[fit_sl].reshape(-1, d).float()
+            Yf = dz[fit_sl].reshape(-1, d).float()
+            if shuffle:
+                n = Xf.shape[0]
+                if generator is None:
+                    perm = torch.randperm(n, device=Xf.device)
+                elif generator.device.type == Xf.device.type:
+                    perm = torch.randperm(n, device=Xf.device,
+                                          generator=generator)
+                else:
+                    perm = torch.randperm(n, device=generator.device,
+                                          generator=generator).to(Xf.device)
+                Xf = Xf[perm]
+            mu_x = Xf.mean(dim=0)
+            mu_y = Yf.mean(dim=0)
+            Xc = Xf - mu_x
+            Yc = Yf - mu_y
+            n_fit = Xc.shape[0]
+            gram = Xc @ Xc.t()                       # [n_fit, n_fit]
+            lam = (float(ridge_rel)
+                   * float(gram.diagonal().mean().clamp_min(0.0)) + 1e-8)
+            A = torch.linalg.solve(
+                gram + lam * torch.eye(n_fit, device=gram.device,
+                                       dtype=gram.dtype), Yc)
+            M = Xc.t() @ A                           # [d, d] — a CONSTANT map
+        zs = z_t[score_sl].reshape(-1, d)            # LIVE: gradient flows here
+        pred = (zs.float() - mu_x) @ M + mu_y
+        r = dz[score_sl].reshape(-1, d).float() - pred
+        scored[int(score_sl.start)] = r.reshape(dz[score_sl].shape)
+    out = torch.cat([scored[0], scored[half]], dim=0)     # batch-major order
+    return out.reshape(-1, d).to(states.dtype)
+
+
+def azimuthal_target_crop(ff: Tensor, frac: float, *,
+                          generator: torch.Generator | None = None) -> Tensor:
+    """MM-E4 L4 — a random contiguous AZIMUTHAL window on TARGET frames only.
+
+    ``ff`` ``[B, k, ..., H, W]``: per SAMPLE one uniform offset selects a
+    contiguous ``round(frac*W)``-column window — the SAME window across that
+    sample's k future frames — then the window is resized back to full width
+    (bilinear, antialias). Height untouched; the caller leaves the INPUT path
+    untouched, so the view change lives entirely on O5's teacher side.
+
+    ⚠️ Geometrically clean ONLY because our 256x640 corpus is CYLINDRICAL:
+    column is LINEAR in azimuth (az_max = (W/2)/f_ref — the measured
+    2026-08-21 finding), so a horizontal crop is a pure FOV restriction. On a
+    pinhole projection the same crop would warp the view nonlinearly; the
+    prereg (Amendment A #2) records this scope condition — quoting the trick
+    outside a cylindrical projection is the FOV-formula scope trap again.
+
+    Offsets draw from ``generator`` (the trainer passes its step RNG, so a
+    seeded run replays its crops; ``None`` = global RNG). Refuses (by name)
+    any ``frac`` outside (0, 1) or one that ROUNDS to full width — that arm
+    would be a silent no-op wearing a crop cell's config.
+    """
+    if ff.ndim < 4:
+        raise ValueError(f"azimuthal_target_crop wants [B, k, ..., H, W], "
+                         f"got {tuple(ff.shape)}")
+    frac = float(frac)
+    if not (0.0 < frac < 1.0):
+        raise ValueError(f"--o5-target-crop must be in (0, 1), got {frac}")
+    B, k = int(ff.shape[0]), int(ff.shape[1])
+    H, Wf = int(ff.shape[-2]), int(ff.shape[-1])
+    cw = int(round(frac * Wf))
+    if cw >= Wf or cw < 2:
+        raise ValueError(
+            f"--o5-target-crop {frac} rounds to a {cw}-column window on "
+            f"width {Wf} — not a genuine crop (needs 2 <= cw < W)")
+    if generator is None:
+        offs = torch.randint(0, Wf - cw + 1, (B,))
+    else:
+        offs = torch.randint(0, Wf - cw + 1, (B,), generator=generator,
+                             device=generator.device).cpu()
+    out = torch.empty_like(ff)
+    for bi in range(B):
+        o = int(offs[bi])
+        crop = ff[bi, ..., o:o + cw]                     # [k, ..., H, cw]
+        flat = crop.reshape(k, -1, H, cw)
+        res = torch.nn.functional.interpolate(
+            flat.float(), size=(H, Wf), mode="bilinear",
+            align_corners=False, antialias=True)
+        out[bi] = res.to(ff.dtype).reshape(crop.shape[:-1] + (Wf,))
+    return out
+
+
+def ema_tau_at(step: int, total_steps: int, *, ramp: str = "off",
+               fixed: float, start: float = 0.99,
+               end: float | None = None) -> float:
+    """The O5-EMA teacher's tau AT THIS STEP (``--ema-decay-ramp``).
+
+    ``ramp="off"`` returns ``fixed`` unchanged — the incumbent constant
+    ``--ema-decay``, BIT-IDENTICAL, and the default.
+
+    ``ramp="cosine"`` follows **BYOL** — a banked PRIMARY, Library key
+    ``2006.07733``, sha256 ``873e7b74d58e1e17`` (first 16; the full hash is
+    in ``library.json`` and re-verifiable with ``kb_add.py --verify``) —
+    which states it verbatim on p5 of that file:
+    *"the exponential moving average parameter tau starts from tau_base = 0.996
+    and is increased to one during training. Specifically, we set
+    tau := 1 - (1 - tau_base) * (cos(pi*k/K) + 1)/2 with k the current training
+    step"*. Generalising BYOL's two endpoints (tau_base -> ``start``,
+    1 -> ``end``) gives exactly what this implements::
+
+        tau(step) = end - (end - start) * (cos(pi * step / total_steps) + 1)/2
+
+    ⚠️ **BYOL is the ONLY one of the three banked EMA-teacher primaries that
+    ramps on a COSINE, so the schedule is cited to BYOL ALONE.** MEASURED by
+    reading the banked PDFs (Library keys ``2202.03555`` and ``2301.08243``,
+    both tagged ``ema-teacher``): data2vec (2202.03555 p4) *"use[s] a schedule for
+    tau that linearly increases this parameter from tau_0 to the target value
+    tau_e over the first tau_n updates"*, and I-JEPA (2301.08243 p12) *"use[s] a
+    momentum value of 0.996, and linearly increase[s] this"* — both LINEAR.
+    Calling this "the BYOL/data2vec/I-JEPA cosine schedule" would be a
+    PUBLISHED claim two of the three sources do not support.
+
+    ⚠️ **One deliberate deviation from BYOL: ``end`` defaults to the run's
+    fixed ``--ema-decay`` (0.996), not BYOL's 1.0.** BYOL ends at a frozen
+    teacher; we end where the FIXED arm (`emao14_30k`) sat for its entire run,
+    so the ramped arm differs from it in the SHAPE of the tau trajectory and in
+    nothing else at the endpoint. Ending at 1.0 would confound "ramped" with
+    "frozen at the end" and make the matched pair unreadable.
+
+    Why ``--ema-decay-start`` defaults to 0.99 rather than something lower:
+    BYOL's own constant-tau ablation (p8, same banked file) reports that tau=0
+    "destabilizes training" and tau=1 "prevents iterative improvement", while
+    "all values of the decay rate between 0.9 and 0.999 yield performance above
+    68.4%". 0.99 sits inside that measured plateau, so the ramp opens in a
+    region the primary shows to be safe rather than in one it shows to be
+    degenerate. PUBLISHED, not tuned by us — and not tunable on the arm it is
+    about to be measured on.
+
+    Convention check — this is the half of an EMA that silently inverts:
+    ``_EmaCopy.update`` computes ``teacher = d*teacher + (1-d)*student``, so
+    tau is the RETENTION weight ON THE TEACHER. That is BYOL's own convention
+    (its pseudo-code, p35: ``target = target + (1 - tau) * (online - target)``).
+    Higher tau = slower teacher in both. No flip.
+
+    ``step`` is the trainer's ABSOLUTE step, which is what makes a strict
+    resume CONTINUE the ramp instead of restarting it — a restarted ramp drops
+    tau back to ``start`` mid-run and re-randomises the teacher while the log
+    looks healthy. The train loop is 1-based (``range(start_step + 1,
+    steps + 1)``), so the LAST update lands exactly on ``end``; ``step=0`` is
+    the analytic left endpoint and returns ``start`` exactly.
+
+    Refuses (by name) a non-increasing or out-of-range pair rather than running
+    a ramp that quietly walks tau DOWNWARD. ``end`` may be exactly 1.0 (BYOL's
+    own endpoint); ``start`` may not, because a run-long tau of 1.0 is
+    ``--o5-target frozen`` in a ramp's costume.
+    """
+    if ramp == "off":
+        return float(fixed)
+    if ramp != "cosine":
+        raise ValueError(f"unknown --ema-decay-ramp {ramp!r} "
+                         f"(expected 'off' or 'cosine')")
+    start_v, end_v = float(start), float(fixed if end is None else end)
+    # ⚠️ ASYMMETRIC ON PURPOSE, and the asymmetry is BYOL's.
+    # `end` may be EXACTLY 1.0 — that is the primary's own endpoint ("increased
+    # to one during training"), and refusing it would leave this unable to
+    # express the schedule it cites. tau = 1.0 is reached only at the FINAL
+    # step, where a teacher that stops moving for one update changes nothing.
+    # `start` stays in the OPEN interval: a start of 1.0 is a teacher frozen
+    # for the WHOLE run, which is `--o5-target frozen`'s cell, and would be a
+    # silent duplicate arm wearing a ramp's config.
+    if not 0.0 < start_v < 1.0:
+        raise ValueError(f"--ema-decay-start must be in (0, 1), got {start_v} "
+                         f"(1.0 for the whole run is --o5-target frozen)")
+    if not 0.0 < end_v <= 1.0:
+        raise ValueError(f"--ema-decay-end must be in (0, 1], got {end_v}")
+    if start_v > end_v:
+        raise ValueError(
+            f"--ema-decay-ramp cosine needs --ema-decay-start ({start_v}) <= "
+            f"--ema-decay-end ({end_v}): the ramp must be MONOTONE "
+            f"NON-DECREASING. A teacher that gets FASTER as the student "
+            f"converges is the inverse of every published recipe, and would "
+            f"read as a ramp arm in the config while being its own control.")
+    if int(total_steps) <= 0:
+        raise ValueError(f"total_steps must be >= 1, got {total_steps}")
+    prog = min(1.0, max(0.0, float(step) / float(int(total_steps))))
+    return end_v - (end_v - start_v) * (math.cos(math.pi * prog) + 1.0) / 2.0
+
+
+def _ema_tau_record(a, tau: float) -> dict:
+    """The auditable trace of ``--ema-decay-ramp``: the tau ACTUALLY USED at
+    this step, plus what produced it.
+
+    Returns an EMPTY dict when the ramp is off, so an unramped run's log rows
+    are byte-identical to the incumbent's — the log is part of the bit-identity
+    contract, not an exception to it. Recorded rather than left to be
+    re-derived from the flags after the fact: a schedule inferred later cannot
+    show what the run ACTUALLY did, and a derived constant that changes with
+    its input is exactly how a "reproduction" becomes a different experiment.
+    """
+    if str(getattr(a, "ema_decay_ramp", "off")) == "off":
+        return {}
+    end = getattr(a, "ema_decay_end", None)
+    end = float(a.ema_decay if end is None else end)
+    return {
+        "ema_tau": round(float(tau), 8),
+        "ema_tau_note": (
+            f"the O5-EMA teacher's decay ACTUALLY USED at this step: "
+            f"{a.ema_decay_ramp} ramp "
+            f"{float(getattr(a, 'ema_decay_start', 0.99))} -> {end} over "
+            f"{int(a.steps)} steps, on the ABSOLUTE step so a resume continues "
+            f"it (BYOL 2006.07733 form; see ema_tau_at). "
+            f"⚠️ SCOPE: the O5 teacher ONLY — the adapter EMAs "
+            f"(stack.ema_update) are NOT ramped and keep the fixed "
+            f"--ema-decay {float(a.ema_decay)}."),
+    }
+
+
+def build_o4_weights(actions_per_window, *, dt: float = 0.1,
+                     alpha: float = 1.0, floor: float = 0.25,
+                     w_jerk: float = 1.0, w_decel: float = 1.0,
+                     w_reversal: float = 1.0) -> tuple[Tensor, dict]:
+    """O4 — per-window sampling weights from ACTIONS ONLY.
+
+    ``actions_per_window`` ``[N, T, >=2]``. Returns ``(weights [N], log)``.
+    ``alpha=0`` reproduces uniform sampling exactly (the attributability
+    control). The log carries the saliency quantiles so a run can SAY how
+    skewed its draw was rather than assert that it oversampled interaction.
+    """
+    s = kinematic_saliency(actions_per_window, dt=dt, w_jerk=w_jerk,
+                           w_decel=w_decel, w_reversal=w_reversal)
+    w = saliency_weights(s, alpha=alpha, floor=floor)
+    q = torch.tensor([0.0, 0.5, 0.9, 0.99, 1.0])
+    return w, {"o4_n": int(s.numel()), "o4_alpha": alpha, "o4_floor": floor,
+               "o4_saliency_quantiles": [round(float(v), 5) for v in
+                                         torch.quantile(s.float(), q)],
+               "o4_weight_max_over_min":
+                   float(w.max() / w.min().clamp_min(1e-12))}
+
+
+# ============================================================================
+# THE ``ANCHOR_GOAL`` OBJECTIVE -- metric-aware by DEFAULT, CE as the CONTROL
+# ============================================================================
+
+#: The three objectives that can train :class:`~tanitad.models.v6.AnchorGoalHead`,
+#: with the measurement that put each where it is. INHERITED from
+#: `.../incoming/2026-08-16-anchor-goal-supervision/ANCHOR_GOAL_SUPERVISION.md`
+#: (881 windows / 40 episodes, LOEO, paired episode-cluster bootstrap) and
+#: `E-OBJ-1`; re-quoted with its stamp, never re-derived here.
+#:
+#: WHY A DEFAULT AND A CONTROL, RATHER THAN A CHOICE. E-AG2 held the ESTIMATOR
+#: fixed and varied only the ESTIMAND: ``snap`` -- the same ridge, rounded to
+#: the nearest anchor -- is NOT separated from the free ridge
+#: (-0.0002 [-0.1031, +0.0703] at K=256; +0.0383 [-0.2125, +0.2338] in the much
+#: stronger ``v0`` regime), while a K-way one-hot CLASSIFIER on the same
+#: features costs +4.7502 [+3.0514, +6.3981] WORSE, separated at every K from 8
+#: to 256, under BOTH vocabulary constructions, and replicating on REF-C-base
+#: (+5.4570 [+3.8345, +7.1073]).
+#: => QUANTISATION IS FREE; THE ONE-HOT TARGET IS WHAT COSTS +4.75 m.
+#: A ``--anchor-objective ce`` DEFAULT would therefore ship a refuted objective;
+#: it is reachable only behind ``--i-know-this-is-the-control-arm``, exactly as
+#: ``--no-isolate-planner`` is.
+ANCHOR_OBJECTIVES: dict[str, str] = {
+    "metric": (
+        "DEFAULT. Endpoint distance ||g_hat - g*|| in METRES on the EMITTED "
+        "goal point. The emission is straight-through "
+        "(`raw + (snapped - raw).detach()`), so the estimand is quantised "
+        "while the gradient reaches the CONTINUOUS regression -- which is the "
+        "half E-AG2 EXONERATED. This is 'regress-then-snap' as a TRAINED "
+        "object rather than a post-hoc rounding."),
+    "softanchor": (
+        "The metric-aware DISTANCE-WEIGHTED target over anchors, for the K-way "
+        "head: L = sum_k p_k * d_k with d_k = ||anchor_k - g*|| and p the "
+        "head's own softmax. It is E-OBJ-1's `softade` one level up -- the "
+        "EXPECTED anchor error under the model's own distribution, whose "
+        "optimum is still all mass on the nearest anchor. "
+        "Chosen over a SOFTENED CE target on evidence, not taste: E-OBJ-1 "
+        "measured metric-awareness recovering -0.0974 m (base) / -0.1670 m "
+        "(XL) separated, while SOFTENING the CE target was separated WORSE "
+        "(+0.0909 m) at EVERY tau. Metric-awareness helps; target-softness "
+        "hurts, so the softened-CE form is deliberately NOT offered."),
+    "ce": (
+        "CONTROL ONLY -- the pre-registered, MEASURED-REFUTED arm. One-hot "
+        "cross-entropy on argmin_k ||anchor_k - g*||: metric-BLIND by "
+        "construction (it scores 'picked the adjacent anchor' and 'picked one "
+        "40 m away' identically), which is the property being controlled for. "
+        "E-AG2: +4.7502 [+3.0514, +6.3981] WORSE than an already-refused "
+        "ridge. Requires an explicit control-arm acknowledgement."),
+}
+
+#: Which :class:`~tanitad.models.v6.AnchorGoalHead` MODES each objective can
+#: train, and it is a HARD coupling rather than a hint. Both directions of the
+#: mismatch produce a NUMBER instead of an error, which is the failure class
+#: this programme keeps paying for:
+#:   * ``metric`` on ``"onehot"`` -- that head's emitted point is a HARD table
+#:     lookup carrying NO gradient at all (by design, v6.py: "no straight-
+#:     through path is offered"). The loss would fall to a constant and the
+#:     optimiser would train NOTHING while the log showed a metre-scale term.
+#:   * ``softanchor`` / ``ce`` on a snap mode -- there are no ``cls_logits``,
+#:     so there is nothing to put a distribution on.
+ANCHOR_OBJ_MODES: dict[str, tuple[str, ...]] = {
+    "metric": ("snap_lat", "snap_xy"),
+    "softanchor": ("onehot",),
+    "ce": ("onehot",),
+}
+
+#: (LONGITUDINAL, LATERAL) axis weights. THE DEFAULT IS RAW METRES, AND THAT IS
+#: THE EVIDENCE-WEIGHTED CHOICE RATHER THAN THE SYMMETRIC ONE.
+#:
+#: MEASURED (INHERITED, ANCHOR_GOAL_SUPERVISION.md 6.4, 2 s, 881 windows):
+#: the goal's corpus variance is 98.8 % LONGITUDINAL (sigma_long 19.0578 vs
+#: sigma_lat 2.0723 -- 9.2x in sigma, 84x in variance); every arm's RESIDUAL is
+#: longitudinal too (ridge 6.6132 / 1.0667, i.e. 97.4 % of squared error), and
+#: the HEADROOM is where the loss should spend: the classifier sits 1.96x above
+#: the floor laterally (1.3310 vs 0.6802) against 14.9x longitudinally
+#: (13.3502 vs 0.8954).
+#:
+#: A raw-metre loss is therefore ALREADY strongly anisotropic in effect -- it
+#: allocates ~97 % of its squared-error gradient longitudinally, purely because
+#: that is where the metres are. WHITENING (dividing each axis by its corpus
+#: sigma) would UNDO exactly that, spending half the gradient on the axis
+#: carrying 1.2 % of the variance -- which is 6.4's own diagnosis of what the
+#: isotropic FPS vocabulary does wrong, repeated in the objective. Raw metres is
+#: also METRIC-CONSISTENT WITH THE EVAL: ADE and the four families are scored in
+#: metres, not in corpus sigmas.
+#:
+#: EVIDENCE CLASS of the weights themselves: DECLARED. They are exposed as two
+#: floats so an arm can vary them, and the realised per-axis split is LOGGED
+#: EVERY STEP (`anchor_err_lon_m` / `anchor_err_lat_m`, never pooled -- the
+#: four-metric-families rule) so the allocation is MEASURED at run time instead
+#: of assumed from a 2 s corpus statistic that has no 6 s counterpart.
+ANCHOR_AXIS_W_DEFAULT: tuple[float, float] = (1.0, 1.0)
+
+
+def anchor_goal_loss(head_out: dict, target_xy: Tensor, anchors: Tensor, *,
+                     objective: str = "metric",
+                     axis_w: tuple[float, float] = ANCHOR_AXIS_W_DEFAULT
+                     ) -> tuple[Tensor, dict]:
+    """The ``ANCHOR_GOAL`` supervision. Returns ``(loss, log)``.
+
+    ``head_out``  the ``AnchorGoalHead.forward`` dict (UNPREFIXED keys);
+    ``target_xy`` ``[B, 2]`` the TRUE ego-frame displacement at the plan
+                  horizon, x forward / y left, metres -- the same convention
+                  ``tanitad.data.anchor_goal`` and ``driving_diagnostic.
+                  gt_ego_waypoints`` use, and the same endpoint the v6f
+                  selector scores;
+    ``anchors``   ``[K, 2]`` the FROZEN table (``AnchorGoalHead.anchors``).
+
+    ADMISSIBILITY (PI 2026-08-03). ``target_xy`` is a LABEL built from FUTURE
+    ego poses -- labels may use ego, inference may not. Nothing here enters the
+    head: its only input is ``e_g_tac``, which is vision-derived
+    (``goal_head_tac(z_tac_p, cond=e_g_str)``). The goal path stays
+    information-disjoint from the situation classifier -- this function reads
+    no situation, no ego state and no ``v0``, and ``d_k`` depends only on a
+    frozen buffer and the label, so it is a CONSTANT w.r.t. every parameter
+    (which is why, unlike ``w_select``'s ``err.detach()``, no detach is needed
+    to keep the gradient where it is intended).
+
+    THE LOG IS PER-AXIS, NEVER POOLED. LONGITUDINAL and LATERAL are separate
+    families (PI 2026-08-02) and 98.8 % of this quantity's variance is
+    longitudinal, so a single scalar would hide the axis that IS the problem.
+    """
+    if objective not in ANCHOR_OBJECTIVES:
+        raise ValueError(
+            f"anchor objective must be one of {tuple(ANCHOR_OBJECTIVES)}, got "
+            f"{objective!r}. 'metric' is the DEFAULT the measurement "
+            f"prescribes; 'ce' is the CONTROL E-AG2 measured +4.7502 "
+            f"[+3.0514, +6.3981] WORSE.")
+    mode = head_out.get("mode")
+    if mode is not None and mode not in ANCHOR_OBJ_MODES[objective]:
+        raise ValueError(
+            f"objective {objective!r} needs an anchor_goal mode in "
+            f"{ANCHOR_OBJ_MODES[objective]}, got {mode!r}. "
+            f"{ANCHOR_OBJECTIVES[objective]}")
+    if target_xy.ndim != 2 or target_xy.shape[-1] != 2:
+        raise ValueError(f"target_xy must be [B, 2], got "
+                         f"{tuple(target_xy.shape)}")
+    if anchors.ndim != 2 or anchors.shape[-1] != 2:
+        raise ValueError(f"anchors must be [K, 2], got {tuple(anchors.shape)}")
+    tgt = target_xy.float()
+    w = torch.as_tensor(axis_w, dtype=torch.float32,
+                        device=tgt.device).reshape(1, 2)
+    if float(w.min()) < 0.0:
+        raise ValueError(f"axis_w must be non-negative, got {tuple(axis_w)}")
+    log: dict = {"anchor_objective": objective, "anchor_mode": mode,
+                 "anchor_axis_w": [float(x) for x in axis_w]}
+
+    # the label side, shared by all three objectives: the nearest anchor under
+    # the SAME axis weighting the loss uses, so the CONTROL and the DEFAULT are
+    # scored against one geometry rather than two.
+    d_k = ((anchors.float()[None] - tgt[:, None]) * w[None]).norm(dim=-1)
+    k_star = d_k.argmin(dim=-1)                                       # [B]
+
+    if objective == "metric":
+        g = head_out["goal_point"].float()                            # [B, 2]
+        resid = (g - tgt) * w
+        loss = resid.norm(dim=-1).mean()
+        raw = head_out.get("goal_point_raw")
+        if raw is not None:
+            # the QUANTISATION COST, readable rather than inferred: E-AG2 says
+            # it should be ~free, and an arm that finds otherwise has said
+            # something.
+            log["anchor_free_err_m"] = float(
+                ((raw.float() - tgt) * w).norm(dim=-1).mean().detach())
+    else:
+        logits = head_out.get("cls_logits")
+        if logits is None:
+            raise ValueError(
+                f"objective {objective!r} needs `cls_logits`, which only the "
+                f"'onehot' mode emits. A distribution over anchors cannot be "
+                f"put on a head that emits none.")
+        logits = logits.float()
+        if logits.shape[-1] != anchors.shape[0]:
+            raise ValueError(f"cls_logits K={logits.shape[-1]} != anchor table "
+                             f"K={anchors.shape[0]}")
+        if objective == "softanchor":
+            loss = (logits.softmax(dim=-1) * d_k).sum(dim=-1).mean()
+        else:                                     # the refuted CE control
+            loss = torch.nn.functional.cross_entropy(logits, k_star)
+        p = logits.detach().softmax(dim=-1)
+        top1 = logits.detach().argmax(dim=-1)
+        log |= {"anchor_top1_acc": float((top1 == k_star).float().mean()),
+                "anchor_chance": 1.0 / float(anchors.shape[0]),
+                # what the emitted point actually costs, in METRES, whatever
+                # the objective's units -- so the CE control is comparable with
+                # the default on the quantity that matters.
+                "anchor_expected_err_m": float((p * d_k).sum(dim=-1).mean()),
+                "anchor_argmax_err_m": float(
+                    d_k.gather(1, top1[:, None])[:, 0].mean())}
+
+    # per-family, on the EMITTED point, for every objective.
+    emitted = head_out.get("goal_point")
+    if emitted is not None:
+        e = (emitted.float() - tgt).abs().detach()
+        log |= {"anchor_err_lon_m": float(e[:, 0].mean()),
+                "anchor_err_lat_m": float(e[:, 1].mean()),
+                # the realised allocation of squared error between the axes --
+                # the number that says whether the DECLARED axis weights put the
+                # gradient where the 98.8 %-longitudinal measurement says it
+                # belongs, MEASURED per step instead of assumed.
+                "anchor_lon_share_sq": float(
+                    (e[:, 0] * w[0, 0]).pow(2).sum()
+                    / ((e * w).pow(2).sum() + 1e-12))}
+    log |= {"anchor_floor_m": float(d_k.gather(1, k_star[:, None])[:, 0]
+                                    .mean()),
+            "anchor_loss": float(loss.detach())}
+    return loss, log
+
+
+# ============================================================================
+# S2 — strategic goal supervision (GOAL HEADS ONLY, never a trunk loss)
+# ============================================================================
+
+#: The ``ignore_index`` the S2 CE uses. A window outside the label's validity
+#: band — or in a clip no label joined — contributes NOTHING: same IGNORE
+#: discipline as the arg mask, one level up.
+S2_IGNORE_ID = -100
+_S2_ROUTE_TO_ID = STRATEGIC_GOAL_TOKENS.index("ROUTE_TO")
+_S2_BATCH_KEYS = ("g_str_id", "g_str_args", "g_str_arg_mask",
+                  "a_str_id", "a_str_args", "a_str_arg_mask", "s2_valid")
+#: OPTIONAL per-family abstention masks (`s2_labels.S2WindowSupervision.batch`
+#: emits them only for a label set that contains an abstaining record).
+#: ⛔ WHY THEY EXIST. `a_str`'s vocabulary is six POSITIVE manoeuvres — there is
+#: no `NONE_ABSTAIN` in `STRATEGIC_ACTION_TOKENS` (MEASURED, v6.py:157), so a
+#: builder that removes a wrong action label has nowhere to put "unknown" and
+#: the row falls through to `HOLD_CORRIDOR`/`REDUCE_TO` — MEASURED on the
+#: v1→v2 relabel: 80 removed `PREPARE_LANE_CHANGE` became 71 + 9 of those two.
+#: Deleting a wrong label MANUFACTURED a different confident label. The mask is
+#: the honest alternative; an abstain TOKEN was refused because `GoalVocabulary`
+#: sizes its embedding from the tuple and the live S-W run resumes tensor-level.
+#: ABSENT => the family's validity is exactly `s2_valid` (the incumbent), so
+#: every pre-abstain artifact keeps a bit-identical loss.
+_S2_FAMILY_MASK_KEYS = ("g_str_valid", "a_str_valid")
+
+
+def _s2_family(head_out: dict, ids: Tensor, args: Tensor, mask: Tensor,
+               valid: Tensor, tokens: tuple, where: str
+               ) -> tuple[Tensor, Tensor, dict]:
+    """One family (g_str or a_str): ``(ce, arg_l1, log)`` on VALID windows.
+
+    CE via ``ignore_index`` (invalid rows carry :data:`S2_IGNORE_ID`); the arg
+    L1 is ``|pred − label| · arg_mask`` averaged over SET slots of VALID
+    windows only — a slot the label leaves unconstrained sends exactly zero
+    gradient (the §1.2 IGNORE discipline), and so does a window outside the
+    band. The log is PER FAMILY and carries per-token counts, never a pooled
+    scalar (the four-metric-families rule applied to the term's own
+    telemetry)."""
+    logits = head_out["logits"].float()                        # [B, V]
+    pred_args = head_out["args"].float()                       # [B, 8]
+    b, v = logits.shape
+    if len(tokens) != v:
+        raise ValueError(
+            f"{where}_str head width {v} != {len(tokens)} token names — the "
+            f"log would name ids through the WRONG vocabulary (v6 and v7 are "
+            f"restructures of different widths). Pass the head's own tokens.")
+    if ids.shape != (b,) or ids.dtype != torch.long:
+        raise ValueError(f"{where}_id must be [{b}] long, got "
+                         f"{tuple(ids.shape)} {ids.dtype}")
+    if args.shape != (b, GOAL_ARG_SLOTS) or mask.shape != (b, GOAL_ARG_SLOTS):
+        raise ValueError(f"{where}_args/{where}_arg_mask must be "
+                         f"[{b}, {GOAL_ARG_SLOTS}], got {tuple(args.shape)} / "
+                         f"{tuple(mask.shape)}")
+    tgt = torch.where(valid, ids, torch.full_like(ids, S2_IGNORE_ID))
+    on = tgt[valid]
+    if on.numel() and (int(on.min()) < 0 or int(on.max()) >= v):
+        raise ValueError(f"{where}_id out of range [0, {v}) on a valid "
+                         f"window — the labels and the head disagree on the "
+                         f"vocabulary size")
+    n_valid = int(valid.sum())
+    if n_valid == 0:
+        # in the graph, contributes nothing (the o3 n_masked==0 idiom) — so a
+        # batch that happens to sample no in-band window neither crashes nor
+        # drops the term from the log.
+        z = logits.sum() * 0.0 + pred_args.sum() * 0.0
+        return z, z, {f"s2_{where}_ce": None, f"s2_{where}_acc": None,
+                      f"s2_{where}_n_valid": 0,
+                      f"s2_{where}_arg_l1": None, f"s2_{where}_arg_slots": 0,
+                      f"s2_{where}_tok_counts": {}}
+    ce = torch.nn.functional.cross_entropy(logits, tgt,
+                                           ignore_index=S2_IGNORE_ID)
+    m = mask.float() * valid.float()[:, None]                  # [B, 8]
+    n_slots = m.sum()
+    arg_l1 = ((pred_args - args.float()).abs() * m).sum() \
+        / n_slots.clamp_min(1.0)
+    top1 = logits.detach().argmax(dim=-1)
+    counts: dict[str, int] = {}
+    for t in on.tolist():
+        counts[tokens[t]] = counts.get(tokens[t], 0) + 1
+    return ce, arg_l1, {
+        f"s2_{where}_ce": float(ce.detach()),
+        f"s2_{where}_n_valid": n_valid,
+        f"s2_{where}_acc": float((top1[valid] == on).float().mean()),
+        f"s2_{where}_arg_l1": (float(arg_l1.detach()) if float(n_slots) > 0
+                               else None),
+        f"s2_{where}_arg_slots": int(n_slots),
+        f"s2_{where}_tok_counts": dict(sorted(counts.items()))}
+
+
+def _s2_family_valid(batch: dict, key: str, valid: Tensor) -> Tensor:
+    """``s2_valid & batch[key]`` when the optional per-family mask is present.
+
+    ⛔ ABSENT IS THE DEFAULT AND IT RETURNS ``valid`` ITSELF — not a copy, not
+    an all-True AND — so a batch built by any pre-abstain producer takes a code
+    path identical to the incumbent one. The mask can only ever REMOVE
+    supervision (it is ANDed, never ORed): a label file cannot use it to
+    supervise a window the band excluded."""
+    m = batch.get(key)
+    if m is None:
+        return valid
+    if m.shape != valid.shape:
+        raise ValueError(
+            f"{key} must be {tuple(valid.shape)} like s2_valid, got "
+            f"{tuple(m.shape)} — a per-family abstention mask that does not "
+            f"align with the window axis would silently mask the wrong rows.")
+    return valid & m.bool()
+
+
+def s2_goal_loss(g_out: dict, a_out: dict, batch: dict, *,
+                 g_tokens: tuple = STRATEGIC_GOAL_TOKENS,
+                 a_tokens: tuple = STRATEGIC_ACTION_TOKENS
+                 ) -> tuple[Tensor, dict]:
+    """The S2 term (S2_STRATEGIC_GAP.md §1.2)::
+
+    ``g_tokens`` / ``a_tokens`` (D-V7-WIRING, 2026-09-03) are the HEADS' OWN
+    vocabularies — `v6_loss_step` passes ``stack.vocab_str.tokens`` /
+    ``stack.vocab_a_str.tokens``. The defaults are the v6 tuples, so every
+    direct caller keeps today's behaviour byte-identically. ⚠️ MEASURED on the
+    first v7.2 dry-run: with the v6 tuples hardcoded, a v7 head's id 3 was
+    logged as ``EXIT_LEFT`` when it meant ``STOP_AT_FOLLOW_ROUTE`` — right
+    numbers, wrong names, in every log row — and the ROUTE_TO gate compared a
+    v7 id against a v6 index (7 = ``LANE_CHANGE_R_FOLLOW_ROUTE`` on v7). Both
+    now follow the vocabulary that is actually on the head; a head whose width
+    disagrees with its names is refused rather than mislabelled.
+
+        L_s2 = CE(g_str.logits, g_str_id) + CE(a_str.logits, a_str_id)
+             + |g_str.args − g_str_args|·g_str_arg_mask   (mean over set slots)
+             + |a_str.args − a_str_args|·a_str_arg_mask
+
+    all masked by ``s2_valid``, and — where the label set abstains — by the
+    OPTIONAL per-family masks ``g_str_valid`` / ``a_str_valid``
+    (:data:`_S2_FAMILY_MASK_KEYS`). ``g_out``/``a_out`` are the forward's
+    ``out["g_str"]`` / ``out["a_str"]`` dicts; the batch keys are the
+    ``s2_labels.S2WindowSupervision.batch`` contract.
+
+    ⛔ ADMISSIBILITY. The labels are hindsight ego geometry (labels may use
+    ego); at inference the heads consume only ``z_str`` — vision-derived,
+    ``d_cond=0``, no situation channel (`v6.py` GoalHead). The gradient of
+    this loss reaches ONLY the two heads' own parameters because their input
+    ``z_str_p`` enters DETACHED under the planner cut — which is why
+    ``v6_loss_step`` REFUSES this term when that cut is off: without it the
+    label loss would be a TRUNK loss, and "labels supervise GOAL/
+    INTERPRETATION HEADS only, never any WM trunk loss" is BINDING
+    (HIERARCHY_VOCABULARY §2), with no control arm.
+
+    ⛔ ROUTE_TO is refused HERE too (defence in depth behind the loader's
+    mirror of ``s2_schema.validate()``): a hand-built batch cannot smuggle
+    the gated token to the head."""
+    missing = [k for k in _S2_BATCH_KEYS if k not in batch]
+    if missing:
+        raise ValueError(
+            f"w_s2_goal > 0 but the batch is missing {missing} — an S2 term "
+            f"without its labels is how a supervision weight silently "
+            f"becomes 0. Pass --s2-labels (the loader builds these keys).")
+    valid = batch["s2_valid"].bool()
+    g_valid = _s2_family_valid(batch, "g_str_valid", valid)
+    a_valid = _s2_family_valid(batch, "a_str_valid", valid)
+    # ⛔ the gate follows the VOCABULARY on the head: ROUTE_TO exists in v6
+    # (index 7) and not in v7, where index 7 is a different token entirely.
+    g_tokens, a_tokens = tuple(g_tokens), tuple(a_tokens)
+    route_to = g_tokens.index("ROUTE_TO") if "ROUTE_TO" in g_tokens else None
+    if route_to is not None and g_valid.any() and bool(
+            (batch["g_str_id"][g_valid] == route_to).any()):
+        raise ValueError(
+            "a valid S2 window carries g_str_id == ROUTE_TO, which is GATED "
+            "(G1 CLOSED 0/31; no categorical arg channel on vocab_str). The "
+            "loader refuses it at load; refusing here too so a hand-built "
+            "batch cannot reach the head with it.")
+    g_ce, g_l1, g_log = _s2_family(
+        g_out, batch["g_str_id"], batch["g_str_args"], batch["g_str_arg_mask"],
+        g_valid, g_tokens, "g")
+    a_ce, a_l1, a_log = _s2_family(
+        a_out, batch["a_str_id"], batch["a_str_args"], batch["a_str_arg_mask"],
+        a_valid, a_tokens, "a")
+    loss = g_ce + a_ce + g_l1 + a_l1
+    log = {"s2_n_valid": int(valid.sum()), "s2_n_windows": int(valid.numel()),
+           # ⚠️ PER FAMILY. `s2_n_valid` is the WINDOW count; these are the
+           # windows that were in band and whose record still DECLINED that
+           # family. Both 0 on every artifact without abstention, so the
+           # incumbent log reads exactly as before plus two zeros.
+           "s2_g_n_abstained": int((valid & ~g_valid).sum()),
+           "s2_a_n_abstained": int((valid & ~a_valid).sum()),
+           **g_log, **a_log,
+           "s2_loss": float(loss.detach())}
+    return loss, log
+
+
+# ============================================================================
+# THE S2 LABEL DOOR — ONE flag (`--s2-labels`), TWO schemas, sniffed from the
+# RECORD (SPEC_V7_LABEL_TRAINER_WIRING.md §2; register D-V72-WIRING → D-V7-WIRING)
+# ============================================================================
+#: ⛔ Dispatch is on the first record's `schema_version` (+ `vocab`), NEVER on
+#: the filename: a name is a claim about a file, the field is the file. The
+#: path-based `s2_labels._refuse_if_superseded` stays as a SECOND guard on the
+#: v1 route, not as a substitute (spec §2).
+S2_SCHEMA_V1 = "s2-strategic-v1"
+S2_SCHEMA_V72 = "s2-geom-v7"
+S2_VOCAB_V72 = "v7"
+#: ⛔ The v7.2 route supervises the strategic TOKENS only (CE), never the args.
+#: `v7_labels.V7Label` — the ONE B1 consumer module — does not surface
+#: `a_str.args` / `g_str.args`, and on the 4,572-record blob those are NAMED
+#: dicts (`within_m`, `by_time_s`, `hold_for_s`, `v_target_ms`; MEASURED
+#: 2026-09-03) rather than the v1 [8] slot vector (`GOAL_ARG_NAMES` = arg0..3 +
+#: the constraint slots). Mapping names onto slots needs the explicit encoder
+#: spec §3.2 assigns to the DataFlyWheel. Until it lands the arg L1 receives an
+#: ALL-ZERO mask — exactly zero gradient — and config.json says so
+#: (`args_supervised: false`) instead of fabricating slot positions.
+V72_ARGS_SUPERVISED = False
+#: The factored tactical keys the v7.2 join ADDS to the batch. ⛔ lat and lon
+#: stay SEPARATE (the lat+lon-mixing 5-way softmax is the programme's largest
+#: known defect). No loss term reads them yet — landing the tensors is this
+#: change; a tactical CE on `out["a_lat"]` / `out["a_lon"]` is a pre-registered
+#: follow-up, not a silent addition here.
+V72_TACTICAL_BATCH_KEYS = ("tac_lat_id", "tac_lon_id", "tac_valid")
+
+
+def _sniff_label_schema(path) -> dict:
+    """Read the FIRST record of a label artifact -> its schema facts.
+
+    Accepts the shapes both loaders accept: a directory (first
+    ``s2_labels_*.jsonl[.gz]`` inside it), a ``.jsonl`` or a ``.jsonl.gz``.
+    Returns ``{"file", "schema_version", "vocab", "keys"}``. Refuses
+    (``SystemExit``) an artifact with no readable record: a door that cannot
+    tell what it is holding must not guess."""
+    import gzip
+    p = Path(path)
+    if not p.exists():
+        raise SystemExit(f"[v6] ⛔ --s2-labels {p} does not exist")
+    if p.is_dir():
+        files = sorted(list(p.glob("s2_labels_*.jsonl"))
+                       + list(p.glob("s2_labels_*.jsonl.gz")))
+        if not files:
+            raise SystemExit(
+                f"[v6] ⛔ --s2-labels {p} holds no s2_labels_*.jsonl[.gz] — "
+                f"nothing to sniff a schema from, nothing to supervise with.")
+        f = files[0]
+    else:
+        f = p
+    opener = gzip.open if f.suffix == ".gz" else open
+    first = None
+    with opener(f, "rt", encoding="utf-8") as fh:
+        for line in fh:
+            if line.strip():
+                first = json.loads(line)
+                break
+    if not isinstance(first, dict):
+        raise SystemExit(f"[v6] ⛔ --s2-labels {f}: no JSON record to sniff "
+                         f"the schema from.")
+    return {"file": str(f), "schema_version": first.get("schema_version"),
+            "vocab": first.get("vocab"), "keys": sorted(first.keys())}
+
+
+def s2_label_route(path) -> str:
+    """``"v1"`` | ``"v72"`` from the sniff; anything else is refused BY NAME."""
+    s = _sniff_label_schema(path)
+    if s["schema_version"] == S2_SCHEMA_V1:
+        return "v1"
+    if s["schema_version"] == S2_SCHEMA_V72 and s["vocab"] == S2_VOCAB_V72:
+        return "v72"
+    raise SystemExit(
+        f"[v6] ⛔ --s2-labels {s['file']}: schema_version="
+        f"{s['schema_version']!r} vocab={s['vocab']!r} is neither "
+        f"{S2_SCHEMA_V1!r} (s2_labels.load_s2_labels) nor {S2_SCHEMA_V72!r}/"
+        f"vocab {S2_VOCAB_V72!r} (tanitad.data.v7_labels.load_v7_labels). A "
+        f"blob with another schema is a different experiment — refusing "
+        f"rather than coercing. First-record keys: {s['keys']}")
+
+
+_V72_CLASSES: dict = {}
+
+
+def _v72_classes() -> dict:
+    """The v7.2 adapter classes, built ONCE on first use.
+
+    ⛔ Defined inside a function, not at module level, because they subclass
+    `s2_labels.S2LabelSet` / `S2WindowSupervision` and `s2_labels` must stay a
+    LAZY import — the import-time closure is pinned by
+    `tests/test_runbook_commands.py` (see `S2_CANONICAL_LABELS_REL` above).
+
+    ⭐ "REUSE THE MACHINERY, REPLACE ONLY THE ROWS" (spec §3): the stable-id
+    lookup, the legacy-16-bit-id refusal, the `n_stack` frame offset, the
+    per-token window census and the seven-key batch are the incumbent's,
+    untouched. The adapter changes what a ROW contains (v7 ids, per-record
+    strategic band) and ADDS the factored tactical keys — nothing else."""
+    if _V72_CLASSES:
+        return _V72_CLASSES
+    from s2_labels import (IGNORE_ID, NO_LABEL, S2LabelSet,  # noqa: PLC0415
+                           S2WindowSupervision)
+    from tanitad.data.v7_labels import (  # noqa: PLC0415
+        IGNORE_ID as V7_IGNORE_ID, tactical_class_ids)
+    from tanitad.models.vocab_v7 import NOT_YET_EXTRACTABLE  # noqa: PLC0415
+    if int(IGNORE_ID) != int(V7_IGNORE_ID):
+        raise RuntimeError(f"s2_labels.IGNORE_ID {IGNORE_ID} != "
+                           f"v7_labels.IGNORE_ID {V7_IGNORE_ID}")
+
+    class V72LabelSet(S2LabelSet):
+        """`S2LabelSet` whose rows were built from `v7_labels.V7Label`s."""
+
+        def __init__(self, rows_by_stable, *, v7_by_stable, manifest,
+                     t0_s, band, source, v72):
+            super().__init__(rows_by_stable, {}, t0_s, band, source)
+            self.v7_by_stable = dict(v7_by_stable)
+            self.manifest = manifest
+            self.v72 = v72
+
+        def report(self) -> dict:
+            base = super().report()
+            # NOT `s2-strategic-v1`: the parent hardcodes its own schema
+            base["schema_version"] = self.manifest.schema_version
+            base["join"] = ("stable_episode_id (blake2b>>1) from the record's "
+                            "clip_id; per-FAMILY bands — strategic: "
+                            "|t_now-t0| <= (hi-lo)/2 of bands.strategic_s; "
+                            "tactical: v7_labels.tactical_class_ids "
+                            "(bands.tactical_s). Legacy ids: none.")
+            base["disjointness"] = (
+                "v7.2 records carry NO per-record disjointness stamp (spec "
+                "§3.3: 0 of 4,719) and none is INVENTED here; the goal payload "
+                "is geometry/CoT tokens and the situation classifier is not "
+                "an input to the extractor (D-LABEL-GT).")
+            base["v72"] = self.v72
+            return base
+
+        def supervision(self, episodes, *, window: int, dt: float, index):
+            return V72WindowSupervision(self, episodes, window=window, dt=dt,
+                                        index=index)
+
+    class V72WindowSupervision(S2WindowSupervision):
+        """The incumbent join (seven keys, strategic) + the FACTORED tactical
+        keys, each family on ITS OWN band (spec §3.1)."""
+
+        TAC_KEYS = V72_TACTICAL_BATCH_KEYS
+
+        def __init__(self, labels, episodes, *, window: int, dt: float,
+                     index):
+            super().__init__(labels, episodes, window=window, dt=dt,
+                             index=index)
+            self._v7 = [labels.v7_by_stable.get(int(ep.episode_id))
+                        for ep in episodes]
+            self.n_windows_in_band_tac = 0
+            self.n_windows_supervised["tac_lat"] = 0
+            self.n_windows_supervised["tac_lon"] = 0
+            lat_w: dict[str, int] = {}
+            lon_w: dict[str, int] = {}
+            for e_i, t in self._index:
+                lab = self._v7[e_i]
+                if lab is None:
+                    continue
+                lat, lon, ok = self._tac_ids(lab, e_i, int(t))
+                if not ok:
+                    continue
+                self.n_windows_in_band_tac += 1
+                self.n_windows_supervised["tac_lat"] += int(lat != IGNORE_ID)
+                self.n_windows_supervised["tac_lon"] += int(lon != IGNORE_ID)
+                lk = lab.tac_lat if lat != IGNORE_ID else NO_LABEL
+                nk = lab.tac_lon if lon != IGNORE_ID else NO_LABEL
+                lat_w[lk] = lat_w.get(lk, 0) + 1
+                lon_w[nk] = lon_w.get(nk, 0) + 1
+            # PER FAMILY, never pooled (spec §7.2)
+            self.window_token_census["tac_lat"] = dict(sorted(lat_w.items()))
+            self.window_token_census["tac_lon"] = dict(sorted(lon_w.items()))
+
+        def _t_now_s(self, e_i: int, t: int) -> float:
+            # the SAME expression as S2WindowSupervision._in_band: the window's
+            # NOW on the RAW clip timeline (provider index + n_stack-1)
+            return (int(t) + self._window - 1 + self._offs[e_i]) * self._dt
+
+        def _tac_ids(self, lab, e_i: int, t: int) -> tuple[int, int, bool]:
+            """``(lat_id, lon_id, in_tactical_band)``. The MASK is applied to
+            the loss: a NOT_YET_EXTRACTABLE token is an ABSENT target, so that
+            axis gets IGNORE while the other axis keeps its label."""
+            lat, lon = tactical_class_ids(lab, self._t_now_s(e_i, t))
+            if lat == V7_IGNORE_ID:
+                return IGNORE_ID, IGNORE_ID, False
+            if lab.tac_lat in NOT_YET_EXTRACTABLE:
+                lat = IGNORE_ID
+            if lab.tac_lon in NOT_YET_EXTRACTABLE:
+                lon = IGNORE_ID
+            return int(lat), int(lon), True
+
+        def enable_tac_label_targets(self, *, negatives: str, sidecar,
+                                     class_mask, pos_weight) -> dict:
+            """⭐ R3: also emit the goal-SET + SPEED_BAND-arg targets.
+
+            ⛔ NOT CALLED ON THE DEFAULT PATH: until it is, ``batch()`` emits
+            exactly the incumbent keys (the flag-off batch is byte-identical).
+
+            Each record's in-band ``(y, w)`` is built ONCE, here, by the ONE
+            rule (``v7_labels.tactical_goal_targets``) — it depends on the
+            window only through the band test, which ``batch()`` applies with
+            the SAME ``_tac_ids`` call the action ids use, so the goal targets
+            and the action ids can never describe different windows. ⚠️ Doing
+            it now also pins the ``measured`` policy to the blob loaded HERE:
+            ``v7_labels`` keeps that policy in MODULE STATE, and a later
+            ``load_v7_labels`` (``--nav-labels``) would silently re-point it.
+            ``class_mask`` / ``pos_weight`` are ``tac_goal_head.mask_report`` /
+            ``v7_labels.goal_pos_weight`` over the LOADED SPLIT (the caller's
+            job, exactly as in the refcv3 consumer)."""
+            from tanitad.data.v7_labels import (  # noqa: PLC0415
+                TAC_GOAL_TOKENS, tactical_goal_targets)
+            n_tok = len(TAC_GOAL_TOKENS)
+            if len(class_mask) != n_tok or len(pos_weight) != n_tok:
+                raise ValueError(
+                    f"[R3] class_mask/pos_weight must have {n_tok} entries "
+                    f"(the goal vocabulary), got {len(class_mask)}/"
+                    f"{len(pos_weight)}")
+            tg: list = []
+            n_rec = n_speed = 0
+            for lab in self._v7:
+                if lab is None:
+                    tg.append(None)
+                    continue
+                # t0 is in band by construction (|t0 - t0| = 0)
+                yy, ww = tactical_goal_targets(lab, lab.t0_s,
+                                               negatives=negatives,
+                                               sidecar=sidecar)
+                ar = torch.zeros(GOAL_ARG_SLOTS)
+                am = torch.zeros(GOAL_ARG_SLOTS)
+                for tok, pairs in TAC_GOAL_ARG_SLOTS_V7.items():
+                    meta = (lab.tac_goal_meta or {}).get(tok)
+                    if tok not in (lab.tac_goals or ()) or \
+                            not isinstance(meta, dict):
+                        continue
+                    for name, slot in pairs:
+                        v = meta.get(name)
+                        if v is None or not math.isfinite(float(v)):
+                            continue
+                        ar[slot] = float(v)
+                        am[slot] = 1.0
+                n_rec += 1
+                n_speed += int(bool(am.sum() > 0))
+                tg.append((torch.tensor(yy, dtype=torch.float32),
+                           torch.tensor(ww, dtype=torch.float32), ar, am))
+            self._tg = tg
+            self._tg_class_mask = torch.tensor([float(x) for x in class_mask],
+                                               dtype=torch.float32)
+            self._tg_pos_weight = torch.tensor([float(x) for x in pos_weight],
+                                               dtype=torch.float32)
+            self._tg_report = {
+                "negatives": str(negatives),
+                "n_joined_records": n_rec,
+                "n_joined_records_with_speed_band_args": n_speed,
+                "arg_slots": {k: dict(v) for k, v in
+                              TAC_GOAL_ARG_SLOTS_V7.items()},
+                "keys": list(TAC_LABEL_BATCH_KEYS)}
+            return dict(self._tg_report)
+
+        def report(self) -> dict:
+            rep = super().report() | {
+                "n_windows_in_band_tac": self.n_windows_in_band_tac,
+                "bands": ("PER FAMILY: strategic keys on the record's "
+                          "strategic_s half-width, tactical keys on its "
+                          "tactical_s half-width (v7_labels.window_in_band "
+                          "derivation) — never one band for all families"),
+                "tactical_keys": list(self.TAC_KEYS),
+                "tactical_consumer": ("NONE — the keys land in the batch; no "
+                                      "loss term reads them yet (pre-registered "
+                                      "follow-up, not a silent addition)"),
+            }
+            if getattr(self, "_tg", None) is not None:
+                # R3 in force: the consumer EXISTS, and the report says which
+                rep["tactical_consumer"] = (
+                    "v6_loss_step term 'tac_label_all' (--w-tac-label-all): "
+                    "CE a_lat/a_lon + goal-set BCE + SPEED_BAND arg L1")
+                rep["tac_label_targets"] = dict(self._tg_report)
+            return rep
+
+        def batch(self, idx) -> dict[str, Tensor]:
+            out = super().batch(idx)
+            n = len(idx)
+            out["tac_lat_id"] = torch.full((n,), IGNORE_ID, dtype=torch.long)
+            out["tac_lon_id"] = torch.full((n,), IGNORE_ID, dtype=torch.long)
+            out["tac_valid"] = torch.zeros(n, dtype=torch.bool)
+            tg = getattr(self, "_tg", None)
+            if tg is not None:                  # R3 only; absent by default
+                k = int(self._tg_class_mask.numel())
+                out["tac_goal_y"] = torch.zeros(n, k)
+                out["tac_goal_w"] = torch.zeros(n, k)
+                out["tac_goal_pos_weight"] = self._tg_pos_weight.clone()
+                out["tac_goal_class_mask"] = self._tg_class_mask.clone()
+                out["tac_goal_args"] = torch.zeros(n, GOAL_ARG_SLOTS)
+                out["tac_goal_arg_mask"] = torch.zeros(n, GOAL_ARG_SLOTS)
+            for j, i in enumerate(idx):
+                e_i, t = self._index[int(i)]
+                lab = self._v7[e_i]
+                if lab is None:
+                    continue
+                lat, lon, ok = self._tac_ids(lab, e_i, int(t))
+                if not ok:
+                    continue
+                out["tac_valid"][j] = True
+                out["tac_lat_id"][j] = lat
+                out["tac_lon_id"][j] = lon
+                if tg is not None and tg[e_i] is not None:
+                    yy, ww, ar, am = tg[e_i]
+                    out["tac_goal_y"][j] = yy
+                    out["tac_goal_w"][j] = ww
+                    out["tac_goal_args"][j] = ar
+                    out["tac_goal_arg_mask"][j] = am
+            return out
+
+    _V72_CLASSES.update({"V72LabelSet": V72LabelSet,
+                         "V72WindowSupervision": V72WindowSupervision})
+    return _V72_CLASSES
+
+
+def load_v72_labels_for_trainer(path, *, allow_any_labels: bool = False,
+                                stack=None, allow_oracle_nav: bool = True):
+    """A v7.2 (`s2-geom-v7`) blob -> `V72LabelSet` for the S2 join.
+
+    The route, in order, each step a refusal before the next:
+      1. `v7_labels.load_v7_labels(..., allow_oracle_nav)` — the ONE consumer
+         module validates schema/vocab and returns the blob's md5 in the
+         manifest (the STAMP, written into config.json verbatim; the nav path
+         at `--nav-labels` loads the same blob with the same stamp, so one run
+         cannot carry two contradictory stamps for one file);
+      2. the md5 must be one of `intrain_eval.V72`'s two canonical pins
+         (train 4,572 / eval 147) unless `allow_any_labels` — printed either
+         way, because six copies exist under three roots with differing md5s;
+      3. `intrain_eval.resolve_v72` resolves the blob AND its clip index BY
+         CONTENT beside it; the index's recorded `episode_id_stable` is
+         cross-checked against `stable_episode_id` (the s2_labels drift
+         guard) — a drift is a silent zero-match and is refused;
+      4. the built stack's four vocabularies must BE the v7 `HEADS` tuples: a
+         v6-vocab head fed v7 ids trains a plausible wrong class silently
+         (v7 is a RESTRUCTURE of v6, not an append);
+      5. rows: strategic ids = `HEADS[...].index(token)`; NOT_YET_EXTRACTABLE
+         tokens make that family UNSUPERVISED for the record (mask on the
+         loss); args all-zero + all-zero mask (`V72_ARGS_SUPERVISED`); the
+         strategic band = ±(hi-lo)/2 of the record's own `bands.strategic_s`.
+    """
+    import hashlib  # noqa: PLC0415  (md5 is the identity — steps 2 and 3)
+    from collections import Counter  # noqa: PLC0415
+    from s2_labels import IGNORE_ID, NO_LABEL, S2Row, stable_episode_id  # noqa: PLC0415
+    from tanitad.data.v7_labels import (  # noqa: PLC0415
+        HEADS, assert_mask_matches_presence, effective_mask, load_v7_labels)
+    from tanitad.models.vocab_v7 import NOT_YET_EXTRACTABLE  # noqa: PLC0415
+    from tanitad.train.intrain_eval import (  # noqa: PLC0415
+        V72, V72_INDEX, EvalSplitError, resolve_v72)
+    cls = _v72_classes()
+    f = Path(_sniff_label_schema(path)["file"])
+
+    # ---- 1. the STAMP -------------------------------------------------------
+    labels, manifest = load_v7_labels(f, allow_oracle_nav=allow_oracle_nav)
+    md5 = manifest.md5
+    side = next((s for s, spec in V72.items() if spec["md5"] == md5), None)
+    print(f"[v6] s2-labels v7.2: {f} md5={md5} records={manifest.n_records} "
+          f"schema={manifest.schema_version} vocab={manifest.vocab} "
+          f"side={side or 'NON-CANONICAL'} allow_oracle_nav="
+          f"{manifest.allow_oracle_nav}", flush=True)
+
+    # ---- 2. the md5 pin -----------------------------------------------------
+    if side is None and not allow_any_labels:
+        raise SystemExit(
+            f"[v6] ⛔ --s2-labels {f} has md5 {md5}, which is NEITHER canonical "
+            f"v7.2 blob: train {V72['train']['md5']} ({V72['train']['n']} "
+            f"records) / eval {V72['eval']['md5']} ({V72['eval']['n']}). Six "
+            f"copies of this blob exist under three roots with differing md5s "
+            f"and the pre-schema-fix ones open cleanly — refusing rather than "
+            f"guessing. If this is a deliberate experiment on another blob, "
+            f"say so with --allow-any-labels (the md5 is recorded either way).")
+    if side is not None and manifest.n_records != int(V72[side]["n"]):
+        raise SystemExit(
+            f"[v6] ⛔ --s2-labels {f}: md5 {md5} is the canonical {side} blob "
+            f"but it holds {manifest.n_records} records, not "
+            f"{V72[side]['n']} — the intrain_eval pin and the file disagree; "
+            f"one of them is stale.")
+
+    # ---- 3. resolve BY CONTENT beside the blob + index cross-check ----------
+    roots = [str(f.parent)]
+    if f.parent.parent != f.parent:
+        roots.append(str(f.parent.parent))
+    resolved: dict = {"labels": None, "index": None, "index_mode": None,
+                      "mode": "by content (intrain_eval.resolve_v72)"}
+    idx_path = None
+    if side is not None:
+        try:
+            resolved["labels"] = resolve_v72(side, roots)
+            ip = resolve_v72(f"{side}_index", roots)
+        except EvalSplitError as e:
+            raise SystemExit(f"[v6] ⛔ intrain_eval.resolve_v72 refused the "
+                             f"v7.2 artifacts beside {f}: {e}") from None
+        if ip:
+            idx_path = Path(ip)
+            resolved["index_mode"] = "by content (intrain_eval.resolve_v72)"
+    if idx_path is None:
+        # ⚠️ MEASURED 2026-09-03: the local build names the TRAIN index
+        # `clip_index.json`, which is not among intrain_eval's aliases, so
+        # resolve_v72 returns None beside a perfectly canonical blob. The md5
+        # is the identity and the name only a hint (that module's own rule):
+        # a candidate beside the blob whose md5 IS the V72_INDEX pin is the
+        # index; a lone unpinned candidate is used for the REFUSAL-ONLY
+        # cross-check and said so; anything else means no index.
+        want_idx = V72_INDEX[f"{side}_index"]["md5"] if side else None
+        cands = sorted(f.parent.glob("clip_index*.json"))
+        by_md5 = {hashlib.md5(c.read_bytes()).hexdigest(): c for c in cands}
+        if want_idx and want_idx in by_md5:
+            idx_path = by_md5[want_idx]
+            resolved["index_mode"] = ("by content (md5 == V72_INDEX pin; "
+                                      "local alias name)")
+        elif len(cands) == 1:
+            idx_path = cands[0]
+            resolved["index_mode"] = ("BY NAME (md5 is not a V72_INDEX pin; "
+                                      "used for the refusal-only cross-check)")
+    resolved["index"] = str(idx_path) if idx_path else None
+    if side is None:
+        resolved["mode"] = "non-canonical blob (--allow-any-labels); unverified"
+    index_report: dict = {"path": None, "checked": False, "n_index_clips": 0,
+                          "n_clips_without_episode": None, "n_excluded": 0,
+                          "stable_id_drift": None}
+    if idx_path is not None:
+        idx = json.loads(Path(idx_path).read_text(encoding="utf-8"))
+        clips = idx.get("clips") or {}
+        if not isinstance(clips, dict) or not clips:
+            raise SystemExit(f"[v6] ⛔ {idx_path} has no 'clips' map — not a "
+                             f"clip index")
+        n_missing = sum(1 for x in labels if x.clip_id not in clips)
+        if n_missing:
+            raise SystemExit(
+                f"[v6] ⛔ {n_missing} of {len(labels)} label records are not "
+                f"in {idx_path} — an unjoinable label is a label that silently "
+                f"never fires, refused instead (clip ids withheld — gated).")
+        drift = 0
+        for x in labels:
+            st_rec = (clips.get(x.clip_id) or {}).get("episode_id_stable")
+            if st_rec is not None and int(st_rec) != stable_episode_id(x.clip_id):
+                drift += 1
+        if drift:
+            raise SystemExit(
+                f"[v6] ⛔ {idx_path}: episode_id_stable disagrees with "
+                f"stable_episode_id on {drift} clip(s). The index and the code "
+                f"drifted; a join under a drifted hash is a silent zero-match. "
+                f"Rebuild the index or fix the drift.")
+        index_report = {
+            "path": str(idx_path), "checked": True,
+            "n_index_clips": len(clips),
+            "n_clips_without_episode": len(idx.get("_clips_without_episode")
+                                           or []),
+            "n_excluded": sum(bool(e.get("excluded")) for e in clips.values()),
+            "stable_id_drift": 0,
+            "_t0_s": idx.get("_t0_s"), "_valid_window_s": idx.get("_valid_window_s"),
+            "_note": ("_valid_window_s is the v1 loader's ONE-band default; "
+                      "the v7.2 join ignores it and reads each record's own "
+                      "per-family bands (spec §3.1)"),
+        }
+    else:
+        print(f"[v6] ⚠ s2-labels v7.2: no clip index resolved beside {f}; the "
+              f"join is by stable_episode_id(clip_id) (the same function the "
+              f"index records) and the index cross-check was NOT performed.",
+              flush=True)
+
+    # ---- 4. the heads must BE the v7 vocabulary ----------------------------
+    vocab_check = "NOT checked (no stack supplied)"
+    if stack is not None:
+        want = {"vocab_str": HEADS["str_goal"], "vocab_a_str": HEADS["str_action"],
+                "vocab_a_lat": HEADS["tac_lat"], "vocab_a_lon": HEADS["tac_lon"]}
+        bad = []
+        for attr, toks in want.items():
+            have = tuple(getattr(getattr(stack, attr, None), "tokens", ()))
+            if have != tuple(toks):
+                bad.append(f"{attr}: stack {len(have)} tokens {have[:3]}… vs "
+                           f"v7.2 labels {len(toks)} tokens {tuple(toks)[:3]}…")
+        if bad:
+            raise SystemExit(
+                "[v6] ⛔ v7.2 labels against a NON-v7 head:\n      "
+                + "\n      ".join(bad)
+                + "\n      v7 is a RESTRUCTURE of v6, not an append — index "
+                  "meaning changes, so a v6-shaped head fed v7 ids trains a "
+                  "plausible wrong class silently. Build the stack with "
+                  "tac_vocab_version v7.0 (the default for new builds).")
+        vocab_check = "stack.vocab_{str,a_str,a_lat,a_lon}.tokens == v7 HEADS"
+
+    # ---- 5. rows ------------------------------------------------------------
+    rows: dict = {}
+    v7_by_stable: dict = {}
+    masked: dict = {"str_goal": {}, "str_action": {}}
+    unknown: list = []
+    bands = Counter()
+    zeros = torch.zeros(GOAL_ARG_SLOTS)
+    for x in labels:
+        st = stable_episode_id(x.clip_id)
+        if st in rows:
+            raise SystemExit(f"[v6] ⛔ stable-id collision inside {f} — "
+                             f"refusing the join.")
+        if x.str_goal not in HEADS["str_goal"] or \
+                x.str_action not in HEADS["str_action"]:
+            unknown.append((x.str_goal, x.str_action))
+            continue
+        try:
+            lo, hi = x.bands["strategic_s"]
+            hw = (float(hi) - float(lo)) / 2.0
+        except (KeyError, TypeError, ValueError):
+            raise SystemExit(f"[v6] ⛔ a v7.2 record carries no usable "
+                             f"bands.strategic_s ({x.bands!r}) — the strategic "
+                             f"band is the record's, never a default.") from None
+        bands[(tuple(x.bands.get("tactical_s", ())), (float(lo), float(hi)))] += 1
+        g_sup = x.str_goal not in NOT_YET_EXTRACTABLE
+        a_sup = x.str_action not in NOT_YET_EXTRACTABLE
+        if not g_sup:
+            masked["str_goal"][x.str_goal] = masked["str_goal"].get(x.str_goal, 0) + 1
+        if not a_sup:
+            masked["str_action"][x.str_action] = \
+                masked["str_action"].get(x.str_action, 0) + 1
+        rows[st] = S2Row(
+            clip_id=x.clip_id, split=f"v7.2_{side or 'noncanonical'}",
+            g_id=HEADS["str_goal"].index(x.str_goal) if g_sup else IGNORE_ID,
+            g_args=zeros.clone(), g_mask=zeros.clone(),
+            a_id=HEADS["str_action"].index(x.str_action) if a_sup else IGNORE_ID,
+            a_args=zeros.clone(), a_mask=zeros.clone(),
+            t0_s=float(x.t0_s), band=(-hw, hw),
+            g_token=x.str_goal if g_sup else NO_LABEL,
+            a_token=x.str_action if a_sup else NO_LABEL,
+            g_provenance="v7.2 geometry/CoT (per-record provenance is not "
+                         "surfaced by V7Label)",
+            a_provenance="v7.2 geometry/CoT (per-record provenance is not "
+                         "surfaced by V7Label)",
+            g_sup=g_sup, a_sup=a_sup)
+        v7_by_stable[st] = x
+    if unknown:
+        raise SystemExit(
+            f"[v6] ⛔ {len(unknown)} of {len(labels)} records carry a strategic "
+            f"token outside the FROZEN v7 vocabulary (e.g. {unknown[:3]}) — a "
+            f"blob with another vocabulary is a different experiment.")
+    if not rows:
+        raise SystemExit(f"[v6] ⛔ {f}: zero usable records")
+    masks = {}
+    for head in HEADS:
+        m, prov = effective_mask(labels, head)
+        masks[head] = {"trainable": list(m), "masked": prov}
+    try:
+        mask_presence = {"ok": True,
+                         "report": assert_mask_matches_presence(labels)}
+    except AssertionError as e:                             # expected on the
+        mask_presence = {"ok": False, "error": str(e)}      # canonical blob
+        print(f"[v6] ⚠ s2-labels v7.2: mask/presence mismatch (recorded, not "
+              f"refused — v7_labels.effective_mask is the trainer-safe mask):"
+              f" {str(e)[:300]}", flush=True)
+    t0 = Counter(float(x.t0_s) for x in labels).most_common(1)[0][0]
+    (_, (b_lo, b_hi)), _n = bands.most_common(1)[0]
+    hw0 = (b_hi - b_lo) / 2.0
+    v72 = {
+        "manifest": manifest.to_dict(),
+        "md5": md5, "side": side, "canonical": side is not None,
+        "allow_any_labels": bool(allow_any_labels),
+        "canonical_md5s": {s: spec["md5"] for s, spec in V72.items()},
+        "resolved": resolved, "clip_index": index_report,
+        "vocab_check": vocab_check,
+        "args_supervised": V72_ARGS_SUPERVISED,
+        "args_note": ("strategic args are a NAMED dict in v7.2 and V7Label "
+                      "does not surface them; the arg L1 mask is all-zero "
+                      "(exactly zero gradient) until the slot encoder of "
+                      "spec §3.2 lands"),
+        "strategic_band_rule": ("|t_now - t0| <= (hi - lo)/2 of the record's "
+                                "bands.strategic_s (v7_labels.window_in_band's "
+                                "derivation applied to the strategic family)"),
+        "bands_census": {f"tactical_s={k[0]} strategic_s={k[1]}": v
+                         for k, v in bands.items()},
+        "masks": masks, "mask_presence": mask_presence,
+        "masked_records": masked,
+        "tactical_batch_keys": list(V72_TACTICAL_BATCH_KEYS),
+        "_evidence_class": "MEASURED (ours; this load)",
+    }
+    return cls["V72LabelSet"](
+        rows, v7_by_stable=v7_by_stable, manifest=manifest, t0_s=t0,
+        band=(-hw0, hw0),
+        source={"labels_files": [str(f)], "clip_index": index_report["path"],
+                "n_index_clips": index_report["n_index_clips"],
+                "n_index_excluded": index_report.get("n_excluded", 0),
+                "role": "train"},
+        v72=v72)
+
+
+def load_s2_labels_any(path, *, allow_any_labels: bool = False, stack=None):
+    """THE `--s2-labels` door: sniff the record, dispatch.
+
+    ``"v1"`` -> ``s2_labels.load_s2_labels(path)`` — the incumbent call,
+    byte-identical (its own path-based SUPERSEDED guard still runs inside).
+    ``"v72"`` -> :func:`load_v72_labels_for_trainer`."""
+    route = s2_label_route(path)
+    if route == "v1":
+        from s2_labels import load_s2_labels  # noqa: PLC0415
+        return load_s2_labels(path)
+    return load_v72_labels_for_trainer(path, allow_any_labels=allow_any_labels,
+                                       stack=stack)
+
+
+# ============================================================================
+# R3 — ALL TACTICAL LABELS -> the TACTICAL layer's loss (PI 2026-09-27)
+# ============================================================================
+#: ⭐ PI, BINDING (2026-09-27): *"All our tactical labels must be used to train
+#: the tactical layer to estimate and choose the right tactical behaviors and
+#: goals which MUST condition the operative planning."*
+#:
+#: ⛔ THE DEFECT THIS CLOSES, MEASURED AT c36b6ddd (v7f_r3/AUDIT.md): NO
+#: tactical label family reached ANY loss of this trainer. `tac_lat_id` /
+#: `tac_lon_id` rode the batch unread, and only on the S-S/S-J path — in S-T,
+#: the one stage that trains `layer_tac`, the label file was never even LOADED
+#: (`w_s2_goal` gated the load and S-T zeroes it). The 22-token goal SET —
+#: every traffic-light COLOUR included (RED 376 / GREEN 363 / YELLOW 22 /
+#: colourless 18 of 4,572; D-TLIGHT-1) — was never projected into the batch.
+#:
+#: The keys the R3 join ADDS beside `V72_TACTICAL_BATCH_KEYS`. They are emitted
+#: ONLY when the term is in force, so a flag-off batch is byte-identical.
+TAC_LABEL_BATCH_KEYS = ("tac_goal_y", "tac_goal_w", "tac_goal_pos_weight",
+                        "tac_goal_class_mask", "tac_goal_args",
+                        "tac_goal_arg_mask")
+#: ⚠️ A PROPOSED SLOT MAPPING, for the ONE goal whose TOKEN carries nothing.
+#: SPEED_BAND is present on 4,572/4,572 records (MEASURED), so its BCE cell has
+#: no negative and `mask_report` masks it under EVERY negatives policy: its
+#: information is ONLY in its args — the target speed interval (PI 2026-08-27).
+#: `g_tac["args"]` is the head's 8-slot PHYSICAL-UNIT vector (`GOAL_ARG_NAMES`:
+#: arg0..arg3 token-specific + the four constraint slots) and it enters
+#: `e_g_tac` through `vocab_tac.arg_proj`, i.e. it conditions the operative
+#: planner. SPEED_BAND takes the two token-specific slots arg0/arg1; it is
+#: ALWAYS present, so no other token can collide there — which is why this
+#: mapping, and no other, is proposed here. ⛔ The GENERAL name->slot encoder is
+#: the DataFlyWheel's (SPEC_V7_LABEL_TRAINER_WIRING §3.2); every other per-goal
+#: and per-action arg stays UNSUPERVISED until it lands, and config.json says so.
+TAC_GOAL_ARG_SLOTS_V7: dict[str, tuple[tuple[str, int], ...]] = {
+    "SPEED_BAND": (("v_lo_ms", 0), ("v_hi_ms", 1)),
+}
+
+
+def _tac_axis_ce(head_out: dict, ids: Tensor, valid: Tensor, tokens: tuple,
+                 where: str) -> tuple[Tensor, dict]:
+    """CE of one factored tactical ACTION axis (``lat`` or ``lon``).
+
+    ⛔ An all-ignored batch returns an IN-GRAPH zero (``logits.sum() * 0``), not
+    a NaN and not a skip: a bare ``cross_entropy`` over zero valid rows is 0/0,
+    and a skipped term leaves ``p.grad is None`` — which reads exactly like a
+    head that was never wired (the `tac_goal_head` rule)."""
+    logits = head_out["logits"].float()
+    b, v = logits.shape
+    if len(tokens) != v:
+        raise ValueError(f"tac_{where} head width {v} != {len(tokens)} token "
+                         f"names — the ids and the head disagree on the "
+                         f"vocabulary")
+    if ids.shape != (b,) or ids.dtype != torch.long:
+        raise ValueError(f"tac_{where}_id must be [{b}] long, got "
+                         f"{tuple(ids.shape)} {ids.dtype}")
+    tgt = torch.where(valid, ids, torch.full_like(ids, S2_IGNORE_ID))
+    on = tgt != S2_IGNORE_ID
+    n = int(on.sum())
+    if n == 0:
+        return logits.sum() * 0.0, {
+            f"tac_{where}_ce": None, f"tac_{where}_acc": None,
+            f"tac_{where}_n_valid": 0, f"tac_{where}_tok_counts": {}}
+    sel = tgt[on]
+    if int(sel.min()) < 0 or int(sel.max()) >= v:
+        raise ValueError(f"tac_{where}_id out of range [0, {v}) on a valid "
+                         f"window — the labels and the head disagree")
+    ce = torch.nn.functional.cross_entropy(logits, tgt,
+                                           ignore_index=S2_IGNORE_ID)
+    top1 = logits.detach().argmax(dim=-1)
+    counts: dict[str, int] = {}
+    for t in sel.tolist():
+        counts[tokens[t]] = counts.get(tokens[t], 0) + 1
+    return ce, {f"tac_{where}_ce": float(ce.detach()),
+                f"tac_{where}_acc": float((top1[on] == sel).float().mean()),
+                f"tac_{where}_n_valid": n,
+                f"tac_{where}_tok_counts": dict(sorted(counts.items()))}
+
+
+def tac_label_all_loss(out: dict, batch: dict, *, lat_tokens: tuple,
+                       lon_tokens: tuple, goal_tokens: tuple
+                       ) -> tuple[Tensor, dict]:
+    """R3's term — EVERY tactical label family against the tactical heads::
+
+        L = CE(a_lat.logits, tac_lat_id) + CE(a_lon.logits, tac_lon_id)
+          + BCE_w(g_tac.logits, tac_goal_y; tac_goal_w, pos_weight, class_mask)
+          + |g_tac.args - tac_goal_args| . tac_goal_arg_mask / SPEED_SCALE
+
+    on windows inside the record's TACTICAL band (``tac_valid`` — the ONE
+    window rule, ``v7_labels.window_in_band``). The goal BCE is
+    ``tanitad.refs.tac_goal_head.tac_goal_loss`` — the SAME function the refcv3
+    consumer uses (D-TACGOAL-1), reused rather than re-implemented, so the two
+    trainers cannot disagree about what "supervised" means.
+
+    ⛔ ADMISSIBILITY — HEADS ONLY. ``a_lat``/``a_lon``/``g_tac`` all read
+    ``z_tac_p``, detached under the planner cut, so the labels reach the heads
+    and never the trunk (``v6_loss_step`` refuses the term with the cut off).
+    ⚠️ ``g_tac`` also reads the strategic goal ``e_g_str`` (goals flow DOWN):
+    in S-J this term therefore also trains ``goal_head_str``/``vocab_str`` —
+    goal heads, not trunk; in S-T they are frozen (MEASURED in the tests)."""
+    from tanitad.data.v7_labels import HEADS, TAC_GOAL_TOKENS  # noqa: PLC0415
+    from tanitad.refs.tac_goal_head import tac_goal_loss  # noqa: PLC0415
+    from train_v58f_unicycle_head import SPEED_SCALE  # noqa: PLC0415
+    missing = [k for k in V72_TACTICAL_BATCH_KEYS + TAC_LABEL_BATCH_KEYS
+               if k not in batch]
+    if missing:
+        raise ValueError(
+            f"w_tac_label_all > 0 but the batch is missing {missing} — a "
+            f"label term without its labels is how a supervision weight "
+            f"silently becomes 0. Pass --s2-labels <the v7.2 blob> (the R3 join "
+            f"builds these keys).")
+    # ⛔ v7 is a RESTRUCTURE of v6: an id is only meaningful against the
+    # vocabulary it was minted in, so the heads must BE the label vocabularies.
+    for nm, have, want in (("a_lat", lat_tokens, HEADS["tac_lat"]),
+                           ("a_lon", lon_tokens, HEADS["tac_lon"]),
+                           ("g_tac", goal_tokens, TAC_GOAL_TOKENS)):
+        if tuple(have) != tuple(want):
+            raise ValueError(
+                f"R3: the {nm} head's vocabulary is not the v7.2 label "
+                f"vocabulary ({len(have)} vs {len(want)} tokens) — a v6-shaped "
+                f"head fed v7 ids trains a plausible WRONG class silently. "
+                f"Build the stack with --tac-vocab-version v7.0.")
+    if any(not nm.endswith("_ms")
+           for pairs in TAC_GOAL_ARG_SLOTS_V7.values() for nm, _ in pairs):
+        raise ValueError("TAC_GOAL_ARG_SLOTS_V7 maps a non-speed arg, but the "
+                         "arg L1 is normalised by SPEED_SCALE (m/s)")
+    valid = batch["tac_valid"].bool()
+    l_lat, lg_lat = _tac_axis_ce(out["a_lat"], batch["tac_lat_id"], valid,
+                                 tuple(lat_tokens), "lat")
+    l_lon, lg_lon = _tac_axis_ce(out["a_lon"], batch["tac_lon_id"], valid,
+                                 tuple(lon_tokens), "lon")
+    # ---- the 22-token goal SET (multi-label BCE) -------------------------
+    g = out["g_tac"]
+    gl = g["logits"].float()
+    y = batch["tac_goal_y"].to(gl.dtype)
+    wc = batch["tac_goal_w"].to(gl.dtype)
+    if y.shape != gl.shape or wc.shape != gl.shape:
+        raise ValueError(f"tac_goal_y/tac_goal_w must be {tuple(gl.shape)} like "
+                         f"g_tac.logits, got {tuple(y.shape)} / "
+                         f"{tuple(wc.shape)}")
+    if bool(((wc > 0).any(dim=-1) & ~valid).any()):
+        raise ValueError("tac_goal_w carries evidence on a window OUTSIDE the "
+                         "tactical band (tac_valid False) — the goal targets "
+                         "and the action ids were built by different joins")
+    cm = batch["tac_goal_class_mask"].to(gl.dtype)
+    l_goal, n_sup = tac_goal_loss(gl, y, wc,
+                                  pos_weight=batch["tac_goal_pos_weight"],
+                                  class_mask=cm)
+    eff = (wc > 0) & (cm > 0)[None, :]
+    pos = eff & (y > 0.5)
+    pos_counts = {goal_tokens[i]: int(c) for i, c in
+                  enumerate(pos.sum(dim=0).tolist()) if int(c)}
+    # ---- SPEED_BAND (v_lo, v_hi): the args of the constant goal -----------
+    ga = g["args"].float()
+    ta = batch["tac_goal_args"].to(ga.dtype)
+    am = batch["tac_goal_arg_mask"].to(ga.dtype)
+    if ta.shape != ga.shape or am.shape != ga.shape:
+        raise ValueError(f"tac_goal_args/tac_goal_arg_mask must be "
+                         f"{tuple(ga.shape)} like g_tac.args, got "
+                         f"{tuple(ta.shape)} / {tuple(am.shape)}")
+    if bool(((am > 0).any(dim=-1) & ~valid).any()):
+        raise ValueError("tac_goal_arg_mask sets a slot on a window OUTSIDE "
+                         "the tactical band")
+    n_slots = am.sum()
+    l1_ms = ((ga - ta).abs() * am).sum() / n_slots.clamp_min(1.0)
+    l_args = l1_ms / float(SPEED_SCALE)
+    loss = l_lat + l_lon + l_goal + l_args
+    return loss, {
+        "tac_label_loss": float(loss.detach()),
+        "tac_n_valid": int(valid.sum()), "tac_n_windows": int(valid.numel()),
+        **lg_lat, **lg_lon,
+        # ⛔ None, never 0.0, when nothing was supervised: a bare 0.0 reads as
+        # "supervised, and perfect" (test_tac_loss_logging.py's rule).
+        "tac_goal_bce": float(l_goal.detach()) if n_sup else None,
+        "tac_goal_n_supervised": int(n_sup),
+        "tac_goal_n_pos": int(pos.sum()),
+        "tac_goal_pos_counts": dict(sorted(pos_counts.items())),
+        "tac_speedband_l1_ms": (float(l1_ms.detach()) if float(n_slots) > 0
+                                else None),
+        "tac_speedband_n_slots": int(n_slots)}
+
+
+def tac_label_policy(a, s2_set, stack) -> dict:
+    """R3's LABEL SIDE, computed from the LOADED SPLIT — never from a literal.
+
+    The refcv3 recipe (`refc_v3_train.py`, D-TACGOAL), reused verbatim:
+    ``v7_labels.goal_supervision_census`` -> ``tac_goal_head.mask_report``
+    (a class with positives and NO supervised negative is switched off — its
+    logit could only be pushed to 1) and ``v7_labels.goal_pos_weight``
+    (n_neg/n_pos, capped). ``--tac-goal-negatives`` picks the policy; the PI's
+    2026-09-16 absence-as-negative ruling needs its SIDECAR, whose md5 binding
+    to THIS blob ``load_cot_negative_sidecar`` enforces.
+
+    Returns ``{"negatives", "sidecar", "class_mask", "pos_weight", "report"}``;
+    the report goes into config.json / dry_run.json verbatim."""
+    import inspect as _inspect  # noqa: PLC0415
+    from tanitad.data import v7_labels as v7l  # noqa: PLC0415
+    from tanitad.models import vocab_v7  # noqa: PLC0415
+    from tanitad.refs.tac_goal_head import mask_report  # noqa: PLC0415
+    if not hasattr(s2_set, "v7_by_stable"):
+        raise SystemExit(
+            "[v6] ⛔ --w-tac-label-all needs the v7.2 (s2-geom-v7) label blob "
+            "on --s2-labels: the s2-strategic-v1 artifact carries NO tactical "
+            "labels, so the term would have nothing to supervise.")
+    if tuple(stack.vocab_tac.tokens) != tuple(v7l.TAC_GOAL_TOKENS):
+        raise SystemExit(
+            f"[v6] ⛔ --w-tac-label-all: the built goal head carries "
+            f"{len(stack.vocab_tac.tokens)} tokens, not the 22-token v7 goal "
+            f"vocabulary the labels are minted in. --tac-vocab-version v7.0.")
+    labels = list(s2_set.v7_by_stable.values())
+    # ⛔ the `measured` negative policy lives in v7_labels' MODULE STATE; it
+    # must be THIS blob's, measured now — refuse if something re-pointed it.
+    here = frozenset({t for lb in labels
+                      for t, m in (lb.tac_goal_meta or {}).items()
+                      if isinstance(m, dict) and m.get("provenance") == "vlm-cot"}
+                     & set(v7l.TAC_GOAL_TOKENS))
+    if here != frozenset(v7l.cot_backed_tokens()):
+        raise SystemExit(
+            f"[v6] ⛔ --w-tac-label-all: v7_labels' measured CoT-token set "
+            f"{sorted(v7l.cot_backed_tokens())} is not THIS blob's "
+            f"{sorted(here)} — another load_v7_labels call re-pointed the "
+            f"negative policy. Refusing rather than supervising with another "
+            f"blob's negatives.")
+    neg = str(getattr(a, "tac_goal_negatives", "measured") or "measured")
+    scp = getattr(a, "cot_negative_sidecar", None)
+    sidecar, stamp = None, None
+    if neg == "cot-absence-negative":
+        if not scp:
+            raise SystemExit("[v6] ⛔ --tac-goal-negatives cot-absence-negative "
+                             "needs --cot-negative-sidecar (the PI's "
+                             "2026-09-16 ruling, as a file).")
+        sidecar, stamped = v7l.load_cot_negative_sidecar(scp, s2_set.manifest)
+        v7l.assert_sidecar_matches_presence(labels, sidecar)
+        stamp = stamped.cot_absence_negative
+    elif scp:
+        raise SystemExit(f"[v6] ⛔ --cot-negative-sidecar with "
+                         f"--tac-goal-negatives {neg}: the sidecar would be "
+                         f"IGNORED while the record carried it.")
+    census = v7l.goal_supervision_census(labels, negatives=neg, sidecar=sidecar)
+    mr = mask_report(census)
+    pw = v7l.goal_pos_weight(labels, negatives=neg, sidecar=sidecar)
+    cap = float(_inspect.signature(
+        v7l.goal_pos_weight).parameters["cap"].default)
+    report = {
+        "negatives": neg, "cot_absence_negative": stamp,
+        "n_label_records": len(labels),
+        "n_trainable": int(mr["n_trainable"]), "n_total": int(mr["n_total"]),
+        "trainable": list(mr["trainable"]), "masked_why": mr["masked_why"],
+        "pos_weight": [float(x) for x in pw], "pos_weight_cap": cap,
+        "n_on_pos_weight_cap": sum(1 for x in pw if float(x) >= cap - 1e-6),
+        "n_under_scoreability_floor": sum(
+            1 for t in v7l.TAC_GOAL_TOKENS
+            if int((census.get(t) or {}).get("pos", 0) or 0)
+            < vocab_v7.GOAL_MIN_N_FOR_METRIC),
+        "scoreability_floor_n": int(vocab_v7.GOAL_MIN_N_FOR_METRIC),
+        "census": census,
+        "action_ce": "unweighted CE on a_lat/a_lon over tac_valid windows "
+                     "(the refcv3 z_tac convention); NOT_YET_EXTRACTABLE "
+                     "targets are IGNORE (the join's `_tac_ids`)",
+        "arg_slots_PROPOSED": {k: dict(v) for k, v in
+                               TAC_GOAL_ARG_SLOTS_V7.items()},
+        "args_unsupervised": ("every per-goal arg except SPEED_BAND v_lo/v_hi, "
+                              "every a_tac arg, and g_tac.anchor — the general "
+                              "slot encoder is the DataFlyWheel's (§3.2)"),
+        "_evidence_class": "MEASURED (ours; this load)"}
+    return {"negatives": neg, "sidecar": sidecar, "class_mask": mr["mask"],
+            "pos_weight": pw, "report": report}
+
+
+def build_tac_label_targets(a, s2_set, s2_sup, stack) -> dict:
+    """R3 in ``train()``: the policy (:func:`tac_label_policy`) + the join.
+
+    Refuses a join with ZERO in-band tactical windows — the term would be
+    advertised in every log row and never fire."""
+    pol = tac_label_policy(a, s2_set, stack)
+    join = s2_sup.enable_tac_label_targets(
+        negatives=pol["negatives"], sidecar=pol["sidecar"],
+        class_mask=pol["class_mask"], pos_weight=pol["pos_weight"])
+    n_tac = int(getattr(s2_sup, "n_windows_in_band_tac", 0))
+    if n_tac == 0:
+        raise SystemExit(
+            "[v6] ⛔ --w-tac-label-all: the v7.2 join has ZERO windows inside "
+            "any record's tactical band (|t_now - t0| <= (hi-lo)/2) — the term "
+            "would never fire. Check --window / --max-horizon against t0.")
+    return pol["report"] | {
+        "join": join | {"n_windows": int(getattr(s2_sup, "n_windows", 0)),
+                        "n_windows_in_band_tac": n_tac,
+                        "n_matched_episodes": int(getattr(
+                            s2_sup, "n_matched_episodes", 0))}}
+
+
+# ============================================================================
+# D-V7-EVAL-EXCLUSION — the EVAL split's pixels may not enter the TRAIN set
+# ============================================================================
+#: ⛔ THE HAZARD (BACKLOG R8; a v7f LAUNCH BLOCKER). The B1 cache
+#: `physicalai-b1-w120-256x640cyl` holds 4,713 clips, and the v7.2 EVAL split is
+#: 147 label records of which **141 HAVE THEIR PIXELS IN THAT SAME CACHE** — the
+#: cache is union(v7.2 train 4,572, v7.2 eval 147) minus the 6 deployed-val40
+#: clips (`parity_manifest.json` → corpora[B1].provenance). `--v2-cache` carried
+#: no exclusion list, so a v7f run would train its world-model objectives on the
+#: evaluation split and every later T1 number would be contaminated. Nothing
+#: crashes; the numbers are plausible and wrong. refav1/refcv3 are NOT affected
+#: (their 4,572-clip caches exclude the 141 by construction,
+#: D-REFAV1-CACHE-COMPLETE).
+#:
+#: ⛔⛔ AND IT IS NOT A FILTER — IT IS A JOIN. Two places map `ep_idx → clip_id`
+#: BY SORTED CACHE ORDER and verify BY COUNT: the PSG/O10 join and the NAV join.
+#: Dropping clips from the dataset and NOT from those lists (or the reverse)
+#: either refuses at startup or — far worse — SHIFTS EVERY LABEL BY N CLIPS
+#: while training happily, which no loss curve would show. ⇒ there is exactly
+#: ONE canonical exclusion, :func:`eval_exclusion`, resolved once per run, and
+#: all three consumers read it: :func:`apply_eval_exclusion` filters the
+#: providers, and :func:`join_clip_ids` is what BOTH joins glob through.
+#:
+#: ⭐ THE COUNT CHECKS ARE STRENGTHENED, NOT WEAKENED. The equality that
+#: actually PROVES the join is the PRE-FILTER one — `len(all cache clips) ==
+#: len(all providers)` — and :func:`apply_eval_exclusion` asserts it before it
+#: drops anything, then filters both sides in lockstep from the same list. Each
+#: join keeps its own POST-filter refusal (:func:`assert_cache_join`), which now
+#: also fires if a caller hands it a list built under a different exclusion.
+#:
+#: ⭐ THE DEFAULT IS EXCLUSION, NOT A WARNING. `--exclude-eval-clips auto` is on
+#: unless someone types `--exclude-eval-clips none` (which then REFUSES on an
+#: overlap) or the stamped `--allow-eval-clips-in-train`. A default that must be
+#: remembered is the defect this closes: the flag that has to be added is the
+#: one that gets forgotten under launch pressure.
+#:
+#: 🔒 CONFIDENTIALITY. Clip ids are gated PhysicalAI-AV content. Every printed
+#: line and every key written into `config.json` is COUNTS ONLY — the ids live
+#: under `_excluded` and are stripped by :func:`eval_exclusion_record`.
+
+#: `--exclude-eval-clips auto` consults this env var FIRST, so a host that keeps
+#: the v7.2 release somewhere unusual says so once instead of on every launch.
+V72_ROOT_ENV = "TANITAD_V72_ROOT"
+
+#: ⛔ THE LITERALS ARE DELIBERATE, and pinned against `parity` below.
+#: The first draft of this change replaced every `".v2ep.pt"` in this module
+#: with `parity.V2_SUFFIX` — tidier, and it silently REMOVED train_v6_staged.py
+#: from `tests/test_build_parity_guard.py`'s corpus-writer DERIVATION, whose
+#: population is keyed on that literal appearing as a string constant. The
+#: suite went one entry greener for a refactor that changed no behaviour: the
+#: C110 failure exactly ("a shorter population is NOT a cleaner codebase — it is
+#: an instrument whose own filter produced the undercount"). ⚠️ An instrument's
+#: population must never move as a SIDE EFFECT; keeping the literal keeps this
+#: module in view, and :func:`_assert_v2ep_naming` keeps it TRUE.
+V2EP_SUFFIX = ".v2ep.pt"
+V2EP_GLOB = "*.v2ep.pt"
+
+
+def _assert_v2ep_naming() -> None:
+    """The joins glob by NAME; if ``parity`` ever renames the v2 episode file
+    these constants would match NOTHING and every count check would compare two
+    empty lists — a guard that passes because it sees nothing."""
+    from tanitad.data import parity                        # noqa: PLC0415
+    if (V2EP_SUFFIX, V2EP_GLOB) != (parity.V2_SUFFIX, parity.V2_EPISODE_GLOB):
+        raise SystemExit(
+            f"[v6] ⛔ the v2 episode naming moved: this module pins "
+            f"({V2EP_SUFFIX!r}, {V2EP_GLOB!r}) but tanitad.data.parity says "
+            f"({parity.V2_SUFFIX!r}, {parity.V2_EPISODE_GLOB!r}). Every "
+            f"ep_idx->clip_id join here globs by name and would silently "
+            f"match nothing.")
+
+#: resolved ONCE per (cache, flags) tuple — the joins and the provider filter
+#: must see the same object or the whole point is lost.
+_EVAL_EXCL_CACHE: dict[tuple, dict] = {}
+
+
+def _eval_excl_key(a) -> tuple:
+    return (tuple(str(x) for x in (getattr(a, "v2_cache", None) or ())),
+            str(getattr(a, "exclude_eval_clips", "auto")),
+            bool(getattr(a, "allow_eval_clips_in_train", False)),
+            str(getattr(a, "s2_labels", None)),
+            str(getattr(a, "nav_labels", None)),
+            os.environ.get(V72_ROOT_ENV, ""))
+
+
+def eval_exclusion_roots(a) -> list[str]:
+    """Where ``--exclude-eval-clips auto`` looks for the v7.2 EVAL blob.
+
+    The label flags first (a run that already names the release knows where it
+    is), then the cache dirs and their parents (on Thor the release and the
+    cache are siblings under ``/home/nvidia/data``, so a run that passes NO
+    label flag at all still resolves — which is the case that matters, because
+    an S-W world-stage arm needs no labels and is exactly the arm that would
+    otherwise train on eval pixels)."""
+    roots: list[str] = []
+    env = os.environ.get(V72_ROOT_ENV)
+    if env:
+        roots.append(env)
+    for p in (getattr(a, "s2_labels", None), getattr(a, "nav_labels", None)):
+        if p:
+            q = Path(p)
+            q = q if q.is_dir() else q.parent
+            roots += [str(q), str(q.parent)]
+    for d in (getattr(a, "v2_cache", None) or ()):
+        q = Path(d)
+        roots += [str(q), str(q.parent)]
+    out: list[str] = []
+    for r in roots:                                   # dedupe, order preserved
+        if r not in out and Path(r).is_dir():
+            out.append(r)
+    return out
+
+
+def eval_clip_ids_from(path) -> tuple[frozenset[str], dict]:
+    """The EVAL split's clip ids READ FROM THE ARTIFACT — never hard-coded.
+
+    Accepts the v7.2 label blob (``*.jsonl.gz`` / ``*.jsonl``: one record per
+    line carrying ``clip_id``) or the clip index beside it (``*.json`` with a
+    ``{"clips": {...}}`` map, or a bare list of ids). The md5 is computed and
+    matched against ``intrain_eval.V72`` so the stamp says WHICH blob this was;
+    the count of records comes out of the file, so the 141-with-pixels figure is
+    an INTERSECTION this code derives and never a literal."""
+    import gzip                                            # noqa: PLC0415
+    import hashlib                                         # noqa: PLC0415
+    from tanitad.train.intrain_eval import (               # noqa: PLC0415
+        V72, V72_INDEX)
+    p = Path(path)
+    raw = p.read_bytes()
+    md5 = hashlib.md5(raw).hexdigest()
+    ids: set[str] = set()
+    n_records = 0
+    if p.suffix == ".json":
+        doc = json.loads(raw.decode("utf-8"))
+        if isinstance(doc, dict) and isinstance(doc.get("clips"), dict):
+            ids = {str(c) for c in doc["clips"]}
+            kind = "v7.2 clip index"
+        elif isinstance(doc, list):
+            ids = {str(c) for c in doc}
+            kind = "clip-id list"
+        else:
+            raise SystemExit(
+                f"[v6] ⛔ --exclude-eval-clips {p}: a .json source must be a "
+                f"clip index ({{'clips': {{...}}}}) or a bare list of clip "
+                f"ids; this is neither.")
+        n_records = len(ids)
+    else:
+        text = gzip.decompress(raw) if raw[:2] == b"\x1f\x8b" else raw
+        for line in text.decode("utf-8").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            n_records += 1
+            cid = json.loads(line).get("clip_id")
+            if not cid:
+                raise SystemExit(
+                    f"[v6] ⛔ --exclude-eval-clips {p}: record {n_records} has "
+                    f"no `clip_id`. An exclusion source that cannot name its "
+                    f"clips excludes nothing, silently.")
+            ids.add(str(cid))
+        kind = "v7.2 label blob"
+    if not ids:
+        raise SystemExit(
+            f"[v6] ⛔ --exclude-eval-clips {p} yielded ZERO clip ids. An empty "
+            f"exclusion is indistinguishable from no exclusion at all, and "
+            f"that is the failure this flag exists to prevent.")
+    #: the md5 IS the identity, and a canonical eval CLIP INDEX is as
+    #: legitimate a source as the eval BLOB — recognising only the blob would
+    #: silently switch the cross-check below off on the index route.
+    side = next((k for k, spec in {**V72, **V72_INDEX}.items()
+                 if spec["md5"] == md5), None)
+    return frozenset(ids), {
+        "path": str(p), "md5": md5, "kind": kind, "v72_side": side,
+        "n_records": n_records, "n_clips": len(ids),
+        "canonical_eval_md5": V72["eval"]["md5"],
+    }
+
+
+def registered_eval_overlap(cache_dirs, clip_ids) -> dict:
+    """What ``parity_manifest.json`` already RECORDS about eval pixels here.
+
+    The corpus is identified by the DIGEST OF ITS CLIP IDS (exact; it cannot be
+    fooled by a renamed directory) and falls back to
+    :func:`parity.corpus_key_of` — the established substring rule — so a cache
+    that is mid-build or partially synced still resolves to a key. Counts only.
+    This is the SECOND probe: it is what lets the run refuse on a cache that is
+    known to hold eval pixels even when no label blob can be resolved at all."""
+    import hashlib                                         # noqa: PLC0415
+    from tanitad.data import parity                        # noqa: PLC0415
+    ids = sorted({str(c) for c in clip_ids})
+    digest = hashlib.sha256("\n".join(ids).encode("utf-8")).hexdigest()
+    try:
+        man = parity.load_manifest()
+    except SystemExit:                              # firewall direction
+        return {"corpus_key": None, "matched_by": None,
+                "clip_id_sha256_sorted": digest,
+                "registered_eval_md5": None, "registered_n_with_pixels": None}
+    corpora = man.get("corpora") or {}
+    key, how = None, None
+    for k, ent in corpora.items():
+        cm = ent.get("clip_membership") or {}
+        if cm.get("clip_id_sha256_sorted") == digest:
+            key, how = k, "clip-id digest (exact)"
+            break
+    if key is None:
+        for d in (cache_dirs if not isinstance(cache_dirs, (str, Path))
+                  else [cache_dirs]):
+            key = parity.corpus_key_of(d)
+            if key:
+                how = "path (parity.corpus_key_of)"
+                break
+    lab = (((corpora.get(key) or {}).get("provenance") or {})
+           .get("labels") or {}).get("eval") or {}
+    n_px = lab.get("n_with_pixels_in_this_cache")
+    return {"corpus_key": key, "matched_by": how,
+            "clip_id_sha256_sorted": digest,
+            "registered_eval_md5": lab.get("md5"),
+            "registered_n_with_pixels": (int(n_px) if n_px is not None
+                                         else None)}
+
+
+def _resolve_eval_exclusion(a) -> dict:
+    """The decision, taken ONCE. See :func:`eval_exclusion`."""
+    from tanitad.data import parity                        # noqa: PLC0415
+    from tanitad.train.intrain_eval import (               # noqa: PLC0415
+        V72, EvalSplitError, resolve_v72)
+    flag = str(getattr(a, "exclude_eval_clips", "auto") or "auto")
+    override = bool(getattr(a, "allow_eval_clips_in_train", False))
+    dirs = [str(x) for x in (getattr(a, "v2_cache", None) or ())]
+    rec: dict = {
+        "flag": "--exclude-eval-clips", "flag_value": flag,
+        "override_flag": "--allow-eval-clips-in-train",
+        "allow_eval_clips_in_train": override,
+        "mode": "not-applicable", "why": None,
+        "source": None, "source_md5": None, "source_kind": None,
+        "v72_side": None, "canonical_eval_md5": V72["eval"]["md5"],
+        "digest_set": None, "roots_searched": [],
+        "n_cache_clips": 0, "n_eval_labels": 0, "n_eval_clips": 0,
+        "n_overlap": 0, "n_removed": 0, "n_episodes_after": None,
+        "registered": None,
+        "_excluded": frozenset(),
+        "_read": "COUNTS ONLY — clip ids are gated-confidential and are never "
+                 "printed nor written into config.json",
+        "_evidence_class": "MEASURED (ours; this run's own cache + eval split)",
+    }
+    if not dirs:
+        rec["why"] = "no --v2-cache (a dry run or a synthetic smoke)"
+        return rec
+    _assert_v2ep_naming()
+    cache_ids = parity.v2_clip_ids(dirs)          # refuses cross-dir duplicates
+    rec["n_cache_clips"] = len(cache_ids)
+    rec["registered"] = registered_eval_overlap(dirs, cache_ids)
+
+    # ---- 1. the PRIMARY source: the v7.2 EVAL label blob -------------------
+    ids: frozenset[str] | None = None
+    if flag not in ("auto", "none"):
+        p = Path(flag)
+        if not p.exists():
+            rec["mode"] = "UNRESOLVED"
+            rec["why"] = f"--exclude-eval-clips {flag} does not exist"
+            return rec
+        ids, stamp = eval_clip_ids_from(p)
+    elif flag == "auto":
+        # ⚠️ ONE ROOT AT A TIME, stopping at the first hit. `resolve_v72`
+        # globs `<root>/**` recursively, so handing it every root at once makes
+        # a launch pay for walking the LARGEST of them even when the answer sat
+        # in the first. On a pod whose --v2-cache parent is a whole MooseFS
+        # volume that is the difference between milliseconds and minutes.
+        # ⇒ set $TANITAD_V72_ROOT to make this O(1); the ambiguity refusal is
+        # unchanged, it just applies per root (which is also the priority order).
+        roots = eval_exclusion_roots(a)
+        rec["roots_searched"] = roots
+        src = None
+        for r in roots:
+            try:
+                src = resolve_v72("eval", [r])
+            except EvalSplitError as e:
+                rec["mode"] = "UNRESOLVED"
+                rec["why"] = f"intrain_eval.resolve_v72 refused under {r}: {e}"
+                return rec
+            if src:
+                rec["resolved_under"] = r
+                break
+        ids, stamp = eval_clip_ids_from(src) if src else (None, None)
+    if ids is not None:
+        rec |= {"source": stamp["path"], "source_md5": stamp["md5"],
+                "source_kind": stamp["kind"], "v72_side": stamp["v72_side"],
+                "n_eval_labels": stamp["n_records"],
+                "n_eval_clips": stamp["n_clips"]}
+
+    # ---- 2. the committed digest set: the FALLBACK *and* the cross-check ---
+    # ⭐ Two oracles rather than one, because the blob is gated release content
+    # that does not live in the repo: on a host without it the question "does
+    # this cache overlap the eval split?" would be UNANSWERABLE, and
+    # unanswerable is exactly the state in which a provenance assumption gets
+    # made instead (parity.py §10's own lesson, C112).
+    digs: frozenset[str] | None = None
+    try:
+        digs = parity.v72_eval_clip_digests()
+        rec["digest_set"] = {"path": str(parity.V72_EVAL_DIGESTS_PATH),
+                             "n_clips": len(digs), "agrees_with_blob": None}
+    #: ⛔ `ParityViolation` is a `SystemExit` SUBCLASS, so a bare `except
+    #: Exception` does NOT catch a missing or self-inconsistent digest file and
+    #: the "cannot resolve" branch below would be unreachable. Caught by NAME,
+    #: never by catching SystemExit broadly — that would swallow every other
+    #: refusal in this module.
+    except (parity.ParityViolation, OSError, ValueError) as e:
+        rec["digest_set"] = {"path": str(parity.V72_EVAL_DIGESTS_PATH),
+                             "n_clips": None,
+                             "error": f"{type(e).__name__}: "
+                                      f"{(str(e).strip().splitlines() or [''])[0]}"}
+    if ids is not None and digs is not None:
+        agrees = {parity.clip_digest(c) for c in ids} == set(digs)
+        rec["digest_set"]["agrees_with_blob"] = agrees
+        if not agrees and rec["v72_side"] in ("eval", "eval_index"):
+            rec["mode"] = "UNRESOLVED"
+            rec["why"] = (
+                f"the CANONICAL v7.2 eval blob (md5 {rec['source_md5']}) and "
+                f"the committed digest set {parity.V72_EVAL_DIGESTS_PATH} "
+                f"disagree on the membership of the eval split. Two oracles "
+                f"that must agree do not; refusing rather than picking one. "
+                f"Re-mint the digest set from the blob.")
+            return rec
+
+    # ---- 3. the overlap, MEASURED (never a literal) ------------------------
+    if ids is not None:
+        overlap = frozenset(c for c in cache_ids if c in ids)
+    elif digs is not None:
+        overlap = frozenset(parity.clips_in_v72_eval(cache_ids))
+        rec |= {"source": str(parity.V72_EVAL_DIGESTS_PATH),
+                "source_kind": "committed per-clip digest set (FALLBACK — the "
+                               "v7.2 EVAL blob did not resolve)",
+                "n_eval_labels": len(digs), "n_eval_clips": len(digs)}
+    else:
+        rec["mode"] = "UNRESOLVED"
+        rec["why"] = ("neither the v7.2 EVAL label blob nor the committed "
+                      "digest set could be read")
+        return rec
+    rec["n_overlap"] = len(overlap)
+
+    # ---- 4. what actually happens ------------------------------------------
+    if override:
+        rec["mode"] = "OVERRIDE"
+        rec["why"] = ("--allow-eval-clips-in-train: the eval split STAYS in "
+                      "training by explicit, stamped choice")
+    elif flag == "none":
+        rec["mode"] = "not-excluded"
+        rec["why"] = "--exclude-eval-clips none: the operator asked for none"
+    elif overlap:
+        rec["mode"] = "excluded"
+        rec["_excluded"] = overlap
+        rec["n_removed"] = len(overlap)
+    else:
+        rec["mode"] = "clean"
+        rec["why"] = "the cache and the v7.2 EVAL split are disjoint"
+    return rec
+
+
+def eval_exclusion(a) -> dict:
+    """THE canonical eval-exclusion decision for this run, resolved once.
+
+    ⛔ Every consumer reads THIS — :func:`apply_eval_exclusion` (the providers),
+    :func:`join_clip_ids` (both `ep_idx → clip_id` joins) and
+    :func:`_preflight_eval_exclusion` (the refusal). A second, independently
+    computed exclusion would be the off-by-N hazard wearing a fix's name."""
+    k = _eval_excl_key(a)
+    if k not in _EVAL_EXCL_CACHE:
+        _EVAL_EXCL_CACHE[k] = _resolve_eval_exclusion(a)
+    return _EVAL_EXCL_CACHE[k]
+
+
+def eval_exclusion_record(rec: dict) -> dict:
+    """The `config.json`-safe view: 🔒 the clip ids are stripped."""
+    return {k: (sorted(v) if isinstance(v, (set, frozenset)) else v)
+            for k, v in rec.items()
+            if not (k.startswith("_") and k not in ("_read",
+                                                    "_evidence_class"))}
+
+
+def cache_clip_ids_in_provider_order(cache_dirs) -> list[str]:
+    """The clip ids in EXACTLY the order ``build_v2_providers`` emits them.
+
+    Per dir, `load_or_build_manifest` → `_list_clips` → ``sorted(basename)``,
+    and the dirs are concatenated in the order given. Sorting by basename and
+    sorting by stem are the same order because the suffix is constant, so this
+    is also the order the two joins' own `sorted(...glob(...))` produces."""
+    _assert_v2ep_naming()
+    if isinstance(cache_dirs, (str, Path)):
+        cache_dirs = [cache_dirs]
+    out: list[str] = []
+    for cd in cache_dirs:
+        out += sorted(q.name[:-len(V2EP_SUFFIX)]
+                      for q in Path(cd).glob(V2EP_GLOB))
+    return out
+
+
+def join_clip_ids(a, cache_dir) -> list[str]:
+    """The clip ids an ``ep_idx → clip_id`` join indexes, WITH this run's
+    exclusion applied — the same list :func:`apply_eval_exclusion` filtered the
+    providers by, so the two cannot desynchronise."""
+    ids = sorted(q.name[:-len(V2EP_SUFFIX)]
+                 for q in Path(cache_dir).glob(V2EP_GLOB))
+    excl = eval_exclusion(a)["_excluded"]
+    return [c for c in ids if c not in excl] if excl else ids
+
+
+def assert_cache_join(clip_ids, n_ep: int, *, who: str,
+                      excluded: int = 0) -> None:
+    """⛔ The ``ep_idx → clip_id`` join is BY SORTED CACHE ORDER and is verified
+    by COUNT — a silent length mismatch would shift every label by one clip,
+    which no loss curve would show (C146's lesson: an aggregate over the wrong
+    set is a confident answer to a question never asked).
+
+    Extracted from the two inline joins so the check is ONE piece of code with
+    ONE negative control, and so the exclusion can say so in the message."""
+    if len(clip_ids) == n_ep:
+        return
+    head = "PSG:" if who == "PSG" else "[nav] ⛔"
+    tail = ("the ep_idx->clip_id join would be off-by-N." if who == "PSG" else
+            "the ep_idx->clip_id join would be off-by-N and every window "
+            "would get another clip's route.")
+    extra = (f" ⚠️ {excluded} clip(s) were removed by --exclude-eval-clips; "
+             f"the dataset and this list must be filtered by the SAME "
+             f"exclusion (train_v6_staged.eval_exclusion) — a list built "
+             f"under a different one is precisely the off-by-N."
+             if excluded else "")
+    raise SystemExit(f"{head} cache lists {len(clip_ids)} clips but the "
+                     f"dataset holds {n_ep} episodes; {tail}{extra}")
+
+
+def _print_eval_exclusion(rec: dict) -> None:
+    """The ONE line — cache count, eval-label count, intersection removed,
+    resulting episode count. 🔒 counts only."""
+    src = rec.get("source") or "—"
+    md5 = rec.get("source_md5")
+    print(f"[v6] eval-exclusion {rec['mode']}: cache {rec['n_cache_clips']} "
+          f"clips · v7.2 EVAL {rec['n_eval_labels']} label records · overlap "
+          f"{rec['n_overlap']} · REMOVED {rec['n_removed']} · "
+          f"{rec['n_episodes_after']} training episodes remain "
+          f"[{rec['flag']} {rec['flag_value']} · source {src}"
+          f"{f' md5={md5}' if md5 else ''}]", flush=True)
+    if rec["mode"] == "OVERRIDE":
+        print("=" * 72, flush=True)
+        print(f"[v6] ⚠️  --allow-eval-clips-in-train IN FORCE — "
+              f"{rec['n_overlap']} v7.2 EVAL clip(s) are IN THIS TRAINING SET. "
+              f"NOTHING this arm produces on the v7.2 eval split is a held-out "
+              f"number; it is a measurement on training data. The choice is "
+              f"stamped in config.json.", flush=True)
+        print("=" * 72, flush=True)
+
+
+def apply_eval_exclusion(a, train_eps):
+    """Drop the v7.2 EVAL clips from the provider list — the ONE place it
+    happens, and the place the ``ep_idx → clip_id`` join is PROVEN.
+
+    ⭐ The pre-filter equality below is the assertion that actually proves the
+    join; the two post-filter checks in the PSG and NAV joins prove that their
+    lists came through the SAME exclusion. With nothing to exclude this function
+    returns the provider list UNTOUCHED and asserts nothing new, so every arm on
+    a cache that does not overlap the eval split is byte-identical to before."""
+    rec = dict(eval_exclusion(a))
+    excl = rec["_excluded"]
+    if not excl:
+        rec["n_episodes_after"] = len(train_eps)
+        _print_eval_exclusion(rec)
+        return list(train_eps), rec
+    ordered = cache_clip_ids_in_provider_order(
+        [str(x) for x in (getattr(a, "v2_cache", None) or ())])
+    if len(ordered) != len(train_eps):
+        raise SystemExit(
+            f"[v6] ⛔ eval-exclusion: the cache lists {len(ordered)} clips but "
+            f"build_v2_providers returned {len(train_eps)} providers. The "
+            f"ep_idx->clip_id join is BY SORTED CACHE ORDER, so filtering "
+            f"under a length mismatch would drop the WRONG episodes and shift "
+            f"every downstream label. Refusing before anything is dropped.")
+    keep = [i for i, c in enumerate(ordered) if c not in excl]
+    out = [train_eps[i] for i in keep]
+    if len(train_eps) - len(out) != len(excl):
+        raise SystemExit(
+            f"[v6] ⛔ eval-exclusion: asked to remove {len(excl)} clip(s) but "
+            f"{len(train_eps) - len(out)} providers were dropped. The cache "
+            f"order and the exclusion disagree; refusing.")
+    rec["n_episodes_after"] = len(out)
+    _print_eval_exclusion(rec)
+    return out, rec
+
+
+def _preflight_eval_exclusion(a) -> list[str]:
+    """⛔ REFUSE rather than contaminate — in milliseconds, at startup.
+
+    Two refusals, and both are about the run being unable to PROVE it is not
+    training on the evaluation split:
+      * the exclusion could not be resolved at all (no blob, no digest set, or
+        two oracles that disagree) — and the cache is not provably clean;
+      * the operator said `--exclude-eval-clips none` on a cache that DOES
+        overlap, without the stamped `--allow-eval-clips-in-train`.
+    A dry run trains nothing and mounts no corpus, so neither applies there."""
+    if bool(getattr(a, "dry_run", False)):
+        return []
+    if not (getattr(a, "v2_cache", None) or ()):
+        return []
+    rec = eval_exclusion(a)
+    flag, ovr = rec["flag"], rec["override_flag"]
+    if rec["mode"] == "UNRESOLVED":
+        reg = rec.get("registered") or {}
+        n_reg = reg.get("registered_n_with_pixels")
+        known = (f"⛔ AND parity_manifest.json RECORDS {n_reg} v7.2 eval "
+                 f"clip(s) with pixels in {reg.get('corpus_key')!r} (matched "
+                 f"by {reg.get('matched_by')}) — this cache is KNOWN to hold "
+                 f"the evaluation split."
+                 if n_reg else
+                 "The manifest records no eval overlap for this cache, but "
+                 "absence of a record is not proof of disjointness.")
+        return [
+            f"the v7.2 EVAL split could not be resolved, so this run CANNOT "
+            f"PROVE it is not training on the evaluation split's pixels: "
+            f"{rec['why']}.\n"
+            f"     {known}\n"
+            f"     Roots searched: {rec['roots_searched'] or '(none)'}\n"
+            f"     ⇒ point {flag} at the v7.2 EVAL blob (md5 "
+            f"{rec['canonical_eval_md5']}, 147 records) or its clip index, or "
+            f"set ${V72_ROOT_ENV} to the release root. If training ON the "
+            f"eval split is the deliberate experiment, say so with {ovr} — it "
+            f"is printed as a banner and stamped into config.json."]
+    if (rec["n_overlap"] and rec["n_removed"] == 0
+            and not rec["allow_eval_clips_in_train"]):
+        return [
+            f"--v2-cache OVERLAPS THE v7.2 EVAL SPLIT ON {rec['n_overlap']} "
+            f"OF {rec['n_cache_clips']} CLIP(S) and {flag} "
+            f"{rec['flag_value']} switches the exclusion OFF. Training the "
+            f"world-model objectives on those pixels contaminates every later "
+            f"T1 number and NOTHING CRASHES — the numbers come out plausible "
+            f"and wrong (the REF-A I-JEPA class).\n"
+            f"     ⇒ drop the flag (the default {flag} auto excludes them), "
+            f"or, if training on them IS the experiment, say so with {ovr} — "
+            f"it is printed as a banner and stamped into config.json."]
+    return []
+
+
+# ============================================================================
+# F-7 / catalog T2 — MANOEUVRE CONTRASTIVES
+# ============================================================================
+
+def t2_contrastive_loss(stack: V6Stack, z_tac: Tensor, frames: Tensor,
+                        actions2: Tensor, *, positive: str = "photometric",
+                        negative: str = "lane_mirror",
+                        generator: torch.Generator | None = None
+                        ) -> tuple[Tensor, dict]:
+    """Catalog T2: label-free manoeuvre contrastives on ``z_tac``.
+
+    ``V6_TRAINING_MEASURES.md:65`` — *"time-reversal and lane-mirror
+    augmentations as HARD NEGATIVES for the tactical predictor … a lane change
+    mirrored is the OPPOSITE manoeuvre — the predictor must not be invariant to
+    it"*. ``DIAGRAM_CONFORMANCE.md:56`` — *"label-free augmentations of the
+    window + a contrastive head on ``z_tac``"*.
+
+    THE OBJECTIVE, an ordinary InfoNCE with one extra column. For anchor *i*:
+
+      * column *i* — ``positive``, a manoeuvre-PRESERVING view of window *i*.
+      * columns *j != i* — the other windows' positive views (EASY negatives).
+      * column *B* — ``negative``, the manoeuvre-REVERSING view of window *i*
+        itself. This is the catalog's HARD negative and it is the only column
+        that makes the term about manoeuvre identity rather than window
+        identity.
+
+    ⚠️ THE POSITIVE IS AN ASSUMPTION, DECLARED. The catalog names only the
+    negatives, and a contrastive loss cannot be written without a positive; the
+    narrowest choice that keeps the manoeuvre fixed is a photometric one. See
+    the T2 block in ``v6.py`` for why the free-looking alternative
+    (``z_tac_target``) is DEGENERATE under the default ``uplink="stopgrad"``.
+
+    Returns ``(loss_nats, log)``. ``t2_margin`` = ``pos_sim - hard_sim`` is the
+    quantity the spec is actually about: it is > 0 exactly when the tactical
+    latent is NOT invariant to mirroring.
+    """
+    head = getattr(stack, "t2_head", None)
+    if head is None:
+        raise ValueError(
+            "w_t2_contrast > 0 with cfg.t2_contrastive=False — a contrastive "
+            "loss with no projector is how a T2 term silently never trains. "
+            "Build the stack with --t2-contrastive.")
+    if not stack.cfg.shared_encoder:
+        # the E-ENC arm (b) feeds each layer its OWN encoded frames; augmenting
+        # the shared window would leave `own_frames_tac` un-augmented and the
+        # "view" would be half-original. REFUSE rather than train on a
+        # half-augmented pair — that is a confound, not an arm.
+        raise ValueError(
+            "T2 needs shared_encoder=True: under the E-ENC arm (b) the "
+            "tactical layer reads its own frames, which this augmentation "
+            "does not produce, so the contrastive pair would be half-original.")
+    if positive not in T2_MANOEUVRE_PRESERVING:
+        raise ValueError(
+            f"T2 positive must be manoeuvre-PRESERVING, got {positive!r}; "
+            f"legal: {sorted(T2_MANOEUVRE_PRESERVING)}. A manoeuvre-reversing "
+            f"positive would train the model to call a mirrored lane change "
+            f"the SAME manoeuvre — the exact inversion of the catalog row.")
+    if negative not in T2_MANOEUVRE_REVERSING:
+        raise ValueError(
+            f"T2 hard negative must be manoeuvre-REVERSING, got {negative!r}; "
+            f"legal: {sorted(T2_MANOEUVRE_REVERSING)}.")
+
+    def _view(name: str) -> Tensor:
+        aug = T2_AUGMENTATIONS[name]
+        kw = {"generator": generator} if name == "photometric" else {}
+        f_a, _a_a = aug(frames, actions2, **kw)
+        z_op = stack.encode_window(f_a)[:, -1]
+        z, _tgt = stack.uplink_tac(z_op)
+        return head(z)
+
+    q = head(z_tac)                                   # [B, P] unit-norm
+    k_pos = _view(positive)
+    k_neg = _view(negative)
+    tau = head.tau.clamp_min(1e-4)
+    sim = q @ k_pos.t()                               # [B, B]
+    hard = (q * k_neg).sum(dim=-1, keepdim=True)      # [B, 1]
+    logits = torch.cat([sim, hard], dim=-1) / tau     # [B, B+1]
+    tgt = torch.arange(q.shape[0], device=q.device)
+    loss = torch.nn.functional.cross_entropy(logits, tgt)
+
+    with torch.no_grad():
+        b = q.shape[0]
+        eye = torch.eye(b, dtype=torch.bool, device=q.device)
+        pos_sim = sim.diagonal().mean()
+        easy_sim = sim[~eye].mean() if b > 1 else sim.new_zeros(())
+        hard_sim = hard.mean()
+        log = {"t2_loss": float(loss.detach()),
+               "t2_pos_sim": float(pos_sim),
+               "t2_easy_sim": float(easy_sim),
+               "t2_hard_sim": float(hard_sim),
+               # ⭐ THE PRIMARY DIAGNOSTIC. > 0 == the tactical latent is not
+               # invariant to the manoeuvre flip, which is the whole claim.
+               "t2_margin": float(pos_sim - hard_sim),
+               # the failure rate the loss is driving down: how often the
+               # model's OWN mirrored window looks more like it than its
+               # manoeuvre-preserving view does.
+               "t2_hard_beats_pos": float(
+                   (hard.squeeze(-1) > sim.diagonal()).float().mean()),
+               "t2_tau": float(tau.detach()),
+               "t2_positive": positive, "t2_negative": negative}
+    return loss, log
+
+
+#: ⛔ THE CONTROL'S OWN SAMPLE FLOOR. MEASURED 2026-08-18 at random init (where
+#: the true ratio IS 1 by construction — the projector knows nothing), 5 seeds
+#: per cell, uncorrelated frames:
+#:
+#:     n/side     4  -> ratio 0.397 .. 3.361
+#:     n/side    16  -> ratio 0.595 .. 1.471
+#:     n/side    64  -> ratio 0.949 .. 1.281
+#:     n/side   256  -> ratio 0.829 .. 1.036
+#:
+#: A verdict from n=4 is noise wearing a number's clothes, and this control
+#: SHIPPED one until the test caught it. Below this floor it returns
+#: INCONCLUSIVE rather than a ratio-based verdict.
+T2_CONTROL_MIN_N = 32
+
+
+def t2_flip_detection_control(stack: V6Stack, frames: Tensor,
+                              actions2: Tensor, *,
+                              negative: str = "lane_mirror",
+                              quantile: float = 0.5,
+                              min_n: int = T2_CONTROL_MIN_N) -> dict:
+    """⛔ THE TRIVIAL-PROXY CONTROL for T2, and it is not optional.
+
+    A projector can separate a window from its mirror WITHOUT learning anything
+    about manoeuvres — a horizontal flip leaves detectable image evidence (an
+    asymmetric bonnet, vignette or rig offset), and "detect the flip operator"
+    is a far easier function than "identify the manoeuvre". A rising
+    ``t2_margin`` is therefore NOT by itself evidence that T2 did its job. This
+    is the C92 class exactly: a headline that turned out to be a readout
+    echoing ego speed.
+
+    THE DISCRIMINATOR. Mirroring a STRAIGHT window is manoeuvre-PRESERVING (a
+    straight road mirrored is still going straight); mirroring a TURNING window
+    is manoeuvre-REVERSING. So:
+
+      * a genuine manoeuvre discriminator separates TURNING windows from their
+        mirrors much more than STRAIGHT ones -> ``ratio`` >> 1;
+      * a flip detector separates both equally -> ``ratio`` ~ 1.
+
+    Windows are split at the median (``quantile``) of mean ``|steer|`` taken
+    from ``actions2``, which is a MODEL INPUT, not a label — the control stays
+    label-free like the loss it audits.
+
+    Returns the two separations, their ratio, and the n of each side.
+    """
+    head = getattr(stack, "t2_head", None)
+    if head is None:
+        raise ValueError("t2_flip_detection_control needs cfg.t2_contrastive")
+    with torch.no_grad():
+        aug = T2_AUGMENTATIONS[negative]
+        f_a, _ = aug(frames, actions2)
+        q = head(stack.uplink_tac(stack.encode_window(frames)[:, -1])[0])
+        k = head(stack.uplink_tac(stack.encode_window(f_a)[:, -1])[0])
+        sep = 1.0 - (q * k).sum(dim=-1)               # [B] in [0, 2]
+        turn = actions2[..., 0].abs().mean(dim=-1)    # [B] mean |steer|
+        thr = torch.quantile(turn.float(), float(quantile))
+        hi, lo = turn > thr, turn <= thr
+        n_hi, n_lo = int(hi.sum()), int(lo.sum())
+
+        def _m_sem(x):
+            if x.numel() == 0:
+                return float("nan"), float("nan")
+            m = float(x.mean())
+            s = (float(x.std(unbiased=True)) / (x.numel() ** 0.5)
+                 if x.numel() > 1 else float("nan"))
+            return m, s
+
+        s_hi, e_hi = _m_sem(sep[hi])
+        s_lo, e_lo = _m_sem(sep[lo])
+        ratio = (s_hi / s_lo) if (s_lo == s_lo and s_lo != 0.0) \
+            else float("nan")
+    # ⛔ THE VERDICT IS GATED ON n, NOT ONLY ON THE RATIO. See
+    # T2_CONTROL_MIN_N: at n=4 per side the null ratio spans 0.40-3.36.
+    if n_hi < min_n or n_lo < min_n:
+        verdict = (f"INCONCLUSIVE (n_turning={n_hi}, n_straight={n_lo}; "
+                   f"need >= {min_n} per side — below that the NULL ratio "
+                   f"itself spans roughly 0.4-3.4 and any verdict is noise)")
+    elif ratio != ratio:
+        verdict = "INCONCLUSIVE (a side is empty or degenerate)"
+    elif ratio < 1.2:
+        verdict = ("FLIP-DETECTOR (ratio ~ 1): the separation is NOT about "
+                   "manoeuvre — T2's margin is not evidence of manoeuvre "
+                   "identity")
+    else:
+        verdict = "manoeuvre-sensitive (ratio > 1.2)"
+    return {"t2_sep_turning": s_hi, "t2_sep_straight": s_lo,
+            "t2_sep_turning_sem": e_hi, "t2_sep_straight_sem": e_lo,
+            "t2_sep_ratio": ratio, "n_turning": n_hi, "n_straight": n_lo,
+            "turn_threshold": float(thr), "min_n": int(min_n),
+            "verdict": verdict}
+
+
+# ============================================================================
+# F-8 / catalog T5 — MOMENTUM-AWARE TEMPORAL CONSISTENCY
+# ============================================================================
+#: ⛔ WHY THIS TERM IS IN CONTROL SPACE AND NOT IN POSITION SPACE — MEASURED,
+#: and it is this programme's own measurement, not a preference.
+#:
+#: ``…/2026-08-06-v1-defect-triage/results/TEMPORAL_STABILITY_RESULT.md`` (40
+#: OOD-val episodes, 6,794 consecutive pairs, stride-1) reports for flagship v1:
+#:
+#:   | replan shift, mean           | 0.0947 m     | GT floor 0.0     |
+#:   | replan ACCEL JUMP, mean      | 1.1021 m/s^2 | GT floor 0.0001  |
+#:
+#: and concludes verbatim that *"a small position shift hides a large
+#: acceleration change"* — the commanded acceleration at the SAME ABSOLUTE
+#: INSTANT is revised by more than the human's entire acceleration RMS
+#: (0.8048 m/s^2) every 0.1 s. A position-space consistency term is blind to
+#: the defect that actually exists.
+#:
+#: ⭐ AND CONTROLS ARE FRAME-INVARIANT, which is what makes this term cheap and
+#: exact: acceleration and curvature do not depend on which ego frame they are
+#: expressed in, so comparing plan(t) with plan(t+lag) needs NO pose transform,
+#: NO relative-pose label, and introduces no alignment approximation. The GT
+#: floor is EXACTLY zero by construction — the human's controls from t+lag are
+#: a suffix of the human's controls from t.
+
+
+def t5_consistency_loss(a_ctl: Tensor, kappa: Tensor, sel_p: Tensor | None,
+                        pairs: Tensor, lag: int, *, w_kappa: float = 1.0,
+                        v0: Tensor | None = None) -> tuple[Tensor, dict]:
+    """Catalog T5: penalise plan flip-flop across CONSECUTIVE windows.
+
+    ``a_ctl`` / ``kappa`` ``[B, N, K]`` — the fan's control sequences.
+    ``sel_p`` ``[B, N]`` — the selector's softmax, so the term is *"at
+    selection level"* (``V6_TRAINING_MEASURES.md:68``'s gate row) and is
+    differentiable into the scorer. ``None`` = uniform over the fan, the
+    no-selector control arm.
+    ``pairs`` ``[P, 2]`` long — row indices ``(i, j)`` where window ``j``
+    starts ``lag`` operative steps after window ``i`` IN THE SAME EPISODE.
+    ``lag`` — that offset in steps (``cfg.stride_tac`` = 5 = 0.5 s by default).
+
+    The two plans are compared where they describe THE SAME ABSOLUTE INSTANTS:
+    ``plan_i[lag:]`` against ``plan_j[:K-lag]``.
+
+    ⛔ THIS TERM IS DEGENERATE ALONE, and the guard is in the caller, not in a
+    comment: a CONSTANT control plan satisfies it EXACTLY (loss 0), so
+    minimising it without a plan objective in force optimises toward a model
+    that ignores the road. :func:`v6_loss_step` refuses ``w_t5_consist > 0``
+    with ``lambda_plan == 0``, and
+    ``tests/test_v6_t5_consistency.py::test_a_flat_plan_scores_exactly_zero``
+    pins the degeneracy so the guard can never be quietly dropped as paranoia.
+    """
+    if a_ctl.ndim != 3 or kappa.shape != a_ctl.shape:
+        raise ValueError(f"a_ctl and kappa must both be [B, N, K]; got "
+                         f"{tuple(a_ctl.shape)} and {tuple(kappa.shape)}")
+    k = a_ctl.shape[-1]
+    if not (1 <= lag < k):
+        raise ValueError(f"lag must satisfy 1 <= lag < K={k}, got {lag} — a "
+                         f"lag at or beyond the horizon leaves NO overlapping "
+                         f"instants and the term would silently be empty")
+    if pairs.ndim != 2 or pairs.shape[-1] != 2:
+        raise ValueError(f"pairs must be [P, 2], got {tuple(pairs.shape)}")
+    if pairs.shape[0] == 0:
+        raise ValueError("pairs is EMPTY — w_t5_consist > 0 with no "
+                         "consecutive-window pairs is a term that trains "
+                         "nothing; launch with --t5-pairs or set the weight 0")
+    if sel_p is None:
+        sel_p = a_ctl.new_full(a_ctl.shape[:2], 1.0 / a_ctl.shape[1])
+    p = sel_p.unsqueeze(-1)                                   # [B, N, 1]
+    a_bar = (p * a_ctl.float()).sum(dim=1)                    # [B, K]
+    k_bar = (p * kappa.float()).sum(dim=1)                    # [B, K]
+    i, j = pairs[:, 0], pairs[:, 1]
+    da = (a_bar[i][:, lag:] - a_bar[j][:, :k - lag]).abs()
+    dk = (k_bar[i][:, lag:] - k_bar[j][:, :k - lag]).abs()
+    l_a, l_k = da.mean(), dk.mean()
+    loss = l_a + w_kappa * l_k
+    log = {"t5_loss": float(loss.detach()),
+           # the two families the gate row names, reported SEPARATELY (a pooled
+           # number cannot show which axis moved)
+           "t5_accel_jump_mae": float(l_a.detach()),
+           "t5_curvature_mae": float(l_k.detach()),
+           "t5_n_pairs": int(pairs.shape[0]), "t5_lag": int(lag),
+           "t5_overlap_steps": int(k - lag)}
+    if v0 is not None:
+        # LATERAL family asks for YAW-RATE too: yaw_rate = v * kappa.
+        with torch.no_grad():
+            vv = v0.float()[i][:, None]
+            log["t5_yawrate_mae"] = float(
+                (vv * (k_bar[i][:, lag:] - k_bar[j][:, :k - lag])).abs().mean())
+    return loss, log
+
+
+def t5_plan_switch_rate(a_lat_logits: Tensor, a_lon_logits: Tensor,
+                        pairs: Tensor) -> dict:
+    """The *"plan-switch rate reported"* half of T5's gate row.
+
+    The direct successor of ``TEMPORAL_STABILITY_RESULT.md``'s **manoeuvre
+    toggle rate 0.1759 / mean dwell 5.5336 windows (0.55 s)** — measured there
+    on flagship v1's MIXED 5-way head, reported here per AXIS because the
+    factored LAT x LON pair is what replaced it.
+    """
+    with torch.no_grad():
+        i, j = pairs[:, 0], pairs[:, 1]
+        lat = a_lat_logits.argmax(dim=-1)
+        lon = a_lon_logits.argmax(dim=-1)
+        s_lat = (lat[i] != lat[j]).float().mean()
+        s_lon = (lon[i] != lon[j]).float().mean()
+        both = ((lat[i] != lat[j]) | (lon[i] != lon[j])).float().mean()
+    return {"t5_switch_rate_lat": float(s_lat),
+            "t5_switch_rate_lon": float(s_lon),
+            "t5_switch_rate_any": float(both),
+            "t5_switch_n_pairs": int(pairs.shape[0])}
+
+
+def load_t3_scores(path, *, n_windows: int) -> tuple[Tensor, dict]:
+    """Load and VALIDATE F-9's per-window T3 score artifact.
+
+    The artifact is a torch ``.pt`` holding ``{"scores": [n_windows],
+    "provenance": {...}}``, produced by scoring the corpus with the P8
+    occupancy readout (``multi_agent_kinematic_entropy`` over
+    ``sigmoid(decode(ẑ_{t+k}))``).
+
+    ⛔ **THE PROVENANCE STAMP IS MANDATORY, and that is an ADMISSIBILITY rule,
+    not tidiness.** T3's score descends from a decoder trained on the obstacle
+    join — a LABEL path — while O4's own docstring states that *"the obstacle
+    join and the VLM fields are frozen-probe/eval-strata material, never a
+    training-time selector"*. The resolution is the F-10 precedent
+    (``DIAGRAM_CONFORMANCE.md:57``): a label-derived SAMPLER input is admissible
+    **because it is a data mix and not a model input**, but *"must be
+    declared"*. Refusing an undeclared artifact here is what makes the
+    declaration real instead of aspirational — and the stamp is written into
+    ``config.json``, so it survives the console.
+
+    ⚠️ The score file is aligned 1:1 with ``ds_train.index``, whose length
+    depends on ``max_horizon`` — which is derived from the stage's live loss
+    terms. **A score file built for one stage does not transfer to another**,
+    and the length check is what catches that rather than reweighting the wrong
+    windows silently.
+    """
+    blob = torch.load(path, map_location="cpu", weights_only=False)
+    if not isinstance(blob, dict) or "scores" not in blob:
+        raise SystemExit(
+            f"[v6] ⛔ --t3-scores {path} is not a T3 score artifact (expected a "
+            f"dict with a 'scores' key).")
+    prov = blob.get("provenance")
+    if not isinstance(prov, dict) or not prov:
+        raise SystemExit(
+            f"[v6] ⛔ --t3-scores {path} carries NO 'provenance' stamp. T3's "
+            f"score is derived from the P8 occupancy readout, which trains on "
+            f"the obstacle join — a LABEL path. A label-derived SAMPLER input "
+            f"is admissible (it is a data mix, not a model input) ONLY as a "
+            f"DECLARED one (DIAGRAM_CONFORMANCE.md:57, the F-10 precedent). An "
+            f"undeclared one is refused here rather than discovered in an "
+            f"audit months later.")
+    scores = torch.as_tensor(blob["scores"]).float().flatten()
+    if scores.numel() != int(n_windows):
+        raise SystemExit(
+            f"[v6] ⛔ --t3-scores has {scores.numel()} scores for {n_windows} "
+            f"windows. The artifact is aligned 1:1 with the dataset index, and "
+            f"a mismatched one would reweight the WRONG windows silently. "
+            f"⚠️ the window count depends on max_horizon (= this stage's live "
+            f"loss terms), so a score file built for another stage does not "
+            f"transfer.")
+    if not torch.isfinite(scores).all():
+        raise SystemExit(
+            f"[v6] ⛔ --t3-scores {path} contains non-finite scores. A NaN in "
+            f"the weight vector makes `torch.multinomial` draw arbitrarily, "
+            f"which is a corpus re-selection nobody declared.")
+    if float(scores.min()) < 0:
+        raise SystemExit(
+            f"[v6] ⛔ --t3-scores {path} has NEGATIVE scores (min "
+            f"{float(scores.min()):.4g}). `multi_agent_kinematic_entropy` "
+            f"returns [0, 1]; a negative value means this file did not come "
+            f"from it, and with a fractional exponent it would produce NaN "
+            f"weights.")
+    if float(scores.max()) <= 0:
+        raise SystemExit(
+            f"[v6] ⛔ every T3 score in {path} is 0 — the curriculum would be "
+            f"uniform at every alpha and the run would advertise a curriculum "
+            f"it does not have. This is the empty-rollout case "
+            f"`multi_agent_kinematic_entropy` documents: check the occupancy "
+            f"rollout was non-degenerate before scoring.")
+    return scores, prov
+
+
+#: F-10's artifact schema tag. A file without it is refused: an untagged blob
+#: cannot be checked for the join key it was built against.
+DOMAIN_STRATA_SCHEMA = "domain-strata-v1"
+
+
+def load_domain_strata(path, *, episodes) -> tuple[list, dict]:
+    """Load and VALIDATE F-10's per-EPISODE domain stratum artifact.
+
+    The artifact is a JSON holding
+    ``{"schema": "domain-strata-v1", "provenance": {...},
+    "strata": {"<stable_episode_id>": "<label>", ...}}`` and is joined to the
+    live corpus by ``tanitad.data.v2_dataset.stable_episode_id``.
+
+    Returns ``(labels_aligned_to_episodes, provenance)``.
+
+    ⛔ **THE PROVENANCE STAMP IS MANDATORY — an ADMISSIBILITY rule, not
+    tidiness.** S3's strata come from the VLM/scena pipeline, i.e. a LABEL
+    path, and ``DIAGRAM_CONFORMANCE.md:69`` admits it for exactly one reason:
+    *"which is admissible for the data MIX (it is not a model input) but must
+    be declared"*. Refusing an undeclared artifact is what makes that
+    declaration real instead of aspirational; the stamp is written into
+    ``config.json`` so it survives the console.
+
+    ⛔ **THE JOIN IS STABLE-ID ONLY.** The legacy 16-bit ``episode_id`` (first 4
+    characters of the clip UUID) COLLIDES on **69 of 2400 train clips**
+    (``s2_labels.py:740``), and a silent wrong-clip join would put an episode in
+    another scene's domain — which is worse than no mix at all, because the
+    resulting stratum shares would look correct. Same refusal S2 makes.
+
+    ⛔ **AN UNLABELLED EPISODE IS REFUSED, NEVER DROPPED.** Dropping it is a
+    corpus RE-SELECTION, which parity forbids (canonical train
+    ``physicalai-train-e438721ae894``, skip-hash ``f09e44db``). ⚠️ This is the
+    difference between F-10 and a naive "stratified sampler": the naive one
+    silently trains on the labelled subset and reports a beautiful mix.
+    """
+    p = Path(path)
+    try:
+        blob = json.loads(p.read_text(encoding="utf-8"))
+    except Exception as exc:                              # noqa: BLE001
+        raise SystemExit(
+            f"[v6] ⛔ --domain-strata {path} is not readable JSON: {exc}")
+    if not isinstance(blob, dict) or blob.get("schema") != DOMAIN_STRATA_SCHEMA:
+        raise SystemExit(
+            f"[v6] ⛔ --domain-strata {path} is not a "
+            f"{DOMAIN_STRATA_SCHEMA} artifact (got schema "
+            f"{blob.get('schema') if isinstance(blob, dict) else type(blob)!r}). "
+            f"An untagged blob cannot be checked for the join key it was built "
+            f"against, and the join key is the whole safety of this cell.")
+    prov = blob.get("provenance")
+    if not isinstance(prov, dict) or not prov:
+        raise SystemExit(
+            f"[v6] ⛔ --domain-strata {path} carries NO 'provenance' stamp. "
+            f"S3's strata are derived from the VLM/scena pipeline — a LABEL "
+            f"path. A label-derived SAMPLER input is admissible (it is a data "
+            f"MIX, not a model input) ONLY as a DECLARED one "
+            f"(DIAGRAM_CONFORMANCE.md:69). An undeclared one is refused here "
+            f"rather than discovered in an audit months later.")
+    table = blob.get("strata")
+    if not isinstance(table, dict) or not table:
+        raise SystemExit(
+            f"[v6] ⛔ --domain-strata {path} has no non-empty 'strata' map.")
+    try:
+        by_id = {int(k): v for k, v in table.items()}
+    except (TypeError, ValueError) as exc:
+        raise SystemExit(
+            f"[v6] ⛔ --domain-strata {path} has a non-integer key: {exc}. "
+            f"Keys are stable_episode_id values.")
+    legacy = [k for k in by_id if k < (1 << 32)]
+    if legacy:
+        raise SystemExit(
+            f"[v6] ⛔ --domain-strata {path} has {len(legacy)} key(s) below "
+            f"2**32 (first {legacy[0]}) — these are LEGACY 16-bit episode ids. "
+            f"The legacy id collides on 69 of 2400 train clips, so a join "
+            f"through it would put episodes in ANOTHER SCENE'S DOMAIN while "
+            f"the stratum shares still looked correct. Rebuild the artifact "
+            f"against tanitad.data.v2_dataset.stable_episode_id.")
+    out, missing = [], []
+    for e_i, ep in enumerate(episodes):
+        eid = int(ep.episode_id)
+        if eid < (1 << 32):
+            raise SystemExit(
+                f"[v6] ⛔ episode {e_i} carries a LEGACY 16-bit id ({eid}); "
+                f"the trainer path builds providers with stable_ids=True. "
+                f"Rebuild the cache manifest "
+                f"(load_or_build_manifest(rebuild=True)) instead of joining "
+                f"through the legacy id.")
+        lab = by_id.get(eid)
+        if lab is None:
+            missing.append((e_i, eid))
+        out.append(lab)
+    if missing:
+        raise SystemExit(
+            f"[v6] ⛔ --domain-strata {path} labels "
+            f"{len(episodes) - len(missing)} of {len(episodes)} training "
+            f"episodes; {len(missing)} are UNLABELLED (first: episode "
+            f"{missing[0][0]}, id {missing[0][1]}). ⛔ They are NOT dropped: "
+            f"dropping an episode RE-SELECTS the corpus, which parity forbids "
+            f"(physicalai-train-e438721ae894, skip-hash f09e44db) and which a "
+            f"stratum-share report would not show. Either complete the "
+            f"artifact (an explicit OTHER stratum is a legitimate label) or "
+            f"run without --domain-strata.")
+    return out, prov
+
+
+# ============================================================================
+# F-11 / catalog S1 — MULTI-TICK STRATEGIC ROLLOUT
+#
+# Spec, two independent locations (established BEFORE a line was written):
+#   * `…/2026-08-07-hierarchical-wm-redesign/V6_TRAINING_MEASURES.md:79` —
+#     *"S1 | long-horizon latent prediction (own predictor, Δt ≈ 1 s ticks) on
+#     the T-layer's latent sequence | strategic dynamics = evolution of
+#     manoeuvre context, not pixels | ADE(8-30 s) vs CV/corridor baselines at
+#     T1"*
+#   * `…/2026-08-16-diagram-conformance/DIAGRAM_CONFORMANCE.md:70` — *"training
+#     target is ONE strategic tick ahead (stride_str = 20 steps = 2.0 s …) — a
+#     1-tick loss; the 8-30 s capability appears only as gate-reported
+#     `S1_ade_8_30s`… Multi-tick strategic rollout training is not built.
+#     Fix F-11"*, and `:216` — *"F-11 | P3 | S1 multi-tick strategic rollout
+#     (8-30 s = 4-15 strategic ticks) — currently 1-tick; the gate reports
+#     `S1_ade_8_30s` against a capability the loss never exercises."*
+#
+# ⭐ WHERE THE TEMPORAL STRUCTURE ACTUALLY LIVES — the C115 question, answered
+# before implementing. C115 (MEASURED 2026-08-17) established that `z_tac` — and
+# therefore `z_str`, which is uplinked from it — is a function of the LAST FRAME
+# ALONE: `encode_window` flattens [B, W] into the batch axis, so no frame sees
+# another. **A cell that assumed the strategic LATENT integrates a window would
+# be inexpressible.** This one does not assume that. The temporal structure F-11
+# needs lives in `predictor_str`, which is a genuine map z(t) -> z(t + stride),
+# and a multi-tick rollout is that map composed with itself — exactly the shape
+# `o5_rollout` already uses one layer down. The latents it compares against are
+# per-frame encodes of frames 2 s apart, which is what `s1_latent` already does
+# at k=1. ⇒ **F-11 IS expressible.** Its problem is the CORPUS, not the
+# architecture — see :func:`reachable_strategic_ticks`.
+#
+# ⭐ ZERO NEW PARAMETERS: `predictor_str` and `act_head_str` are both `layer_str`
+# already (v6.py `_GROUP_PREFIXES`). No new key, no `STAGE_MAY_INTRODUCE` entry,
+# no `MODULE_GROUPS` edit — so the `06b8782` class cannot apply.
+# ============================================================================
+
+#: ⛔ Below this many windows :func:`s1_persistence_control` REFUSES a verdict.
+#: Same discipline as ``T2_CONTROL_MIN_N`` / ``T3_CONTROL_MIN_N``.
+S1_CONTROL_MIN_N = 32
+
+
+def reachable_strategic_ticks(episode_frames: int, *, window: int,
+                              stride_str: int) -> dict:
+    """⛔ **How many strategic ticks the CORPUS can actually supply — and it is
+    the binding constraint on F-11, not the architecture.**
+
+    ``EpisodeWindowDataset`` windows as ``t_max = frames - window -
+    max_horizon`` (``tanitad/data/_contract.py:120``) and keeps ``range(t_max)``,
+    so an episode shorter than ``window + max_horizon`` contributes **ZERO**
+    windows. A K-tick strategic roll needs ``max_horizon = K * stride_str``.
+
+    Returns ``max_k`` (the largest K yielding >= 1 window per episode) and the
+    per-K window count, so a launch can be refused with the numbers in hand.
+
+    ⛔⛔ **THE WORKED EXAMPLE BELOW WAS WRONG FOR ~3 WEEKS, AND IT WAS WRONG IN
+    THE DIRECTION THAT KILLS WORK. CORRECTED 2026-09-02.** It was built on a
+    **120-frame** episode, read out of the cache name
+    ``physicalai-train-e438721ae894-w120-256x640cyl``. ⭐ **`w120` IS THE
+    120-DEGREE FIELD OF VIEW, NOT A FRAME COUNT** — ``parity.py:222`` spells the
+    path out as ``…/physicalai-train-e438721ae894/**wide120**/…``, the rig is
+    ``camera_front_wide_120fov``, and the tag sits beside ``256x640cyl``, its
+    fellow *geometry* marker. Episodes are **~199 frames** (MEASURED two ways:
+    the banked ``o4_n`` counts differ by exactly 40 x 2,400 across
+    ``max_horizon`` 20 -> 60, giving mean T = 198.92; and the Research Lab
+    measured ``max_k = 9`` directly).
+
+    At the live geometry — ``window=6``, ``stride_str=20`` — windows per episode
+    are ``(T - 6) - 20K``, i.e. **``193 - 20K``**, not ``114 - 20K``:
+
+    ======  =========  ====================  ==========================
+    K       horizon    windows per episode   vs the 1-tick baseline 173
+    ======  =========  ====================  ==========================
+    1        2 s       173                    --
+    2        4 s       153                    -12 %
+    3        6 s       133                    -23 %
+    4        8 s       113                    -35 %
+    5       10 s        93                    -46 %
+    6       12 s        73                    -58 %
+    7       14 s        53                    -69 %
+    8       16 s        33                    -81 %
+    9       18 s        13                    -92 %
+    10      20 s         0                    **exhausted**
+    ======  =========  ====================  ==========================
+
+    The catalog asks for **8-30 s = 4-15 ticks**. ⇒ **K = 4 through K = 9 (8-18 s)
+    are reachable with every episode contributing**, and the corpus straddles
+    MM-E15's **12.5 s** median manoeuvre start. The superseded table said *"K >= 6
+    yields no windows at all"* and *"the corpus is exhausted"* at 12 s — which
+    would have retired the strategic band on a misread filename. 30 s remains out
+    of reach (an episode is ~19.9 s), and that part stands.
+
+    ⛔ **THE LESSON IS THE EVIDENCE CLASS, AND THIS DOCSTRING ALREADY KNEW IT.**
+    The paragraph below correctly labelled 120 as **INHERITED** — from a design
+    doc and a cache NAME — and the table drew a hard *"the corpus is exhausted"*
+    conclusion from it anyway. That is exactly what the operating standard
+    forbids: **a claim that decides a GPU-day must be MEASURED or PUBLISHED,
+    never INHERITED.** Stating the class is not the safeguard; refusing to
+    conclude from a weak class is.
+
+    ⚠️ The FUNCTION was never wrong — it is parameterised on ``episode_frames``
+    and computes the true table for whatever corpus it is handed. Only this
+    worked example was, which is its own warning: a correct implementation can
+    ship a wrong conclusion in its documentation, and the documentation is what
+    gets quoted. Historical note: the *"MEASURED 94 windows/episode at
+    ``max_horizon=20``"* in ``PI_DECISIONS_2026-08-12.md`` §D4 is consistent with
+    T=120 and should be re-derived before it is cited again.
+
+    ⛔ **AND THE WINDOW LOSS IS NOT A PARITY BREAK ONLY BECAUSE IT STOPS SHORT
+    OF ONE.** PI decision D4 settled that ``max_horizon`` is a windowing choice
+    inside episodes parity already selected. But that reasoning holds *while
+    every episode still contributes*. Past ``max_k`` an episode contributes
+    zero windows, and a corpus of unequal-length episodes would drop its short
+    ones **silently** — an effective re-selection. That is why this returns
+    ``max_k`` per the SHORTEST episode at the call site, and why the trainer
+    reports the drop-out count rather than inferring it.
+    """
+    if window < 1 or stride_str < 1 or episode_frames < 1:
+        raise ValueError(f"episode_frames={episode_frames}, window={window}, "
+                         f"stride_str={stride_str} must all be >= 1")
+    room = episode_frames - window
+    per_k = {k: max(0, room - k * stride_str)
+             for k in range(1, max(2, room // stride_str + 2))}
+    reachable = [k for k, n in per_k.items() if n > 0]
+    return {
+        "episode_frames": int(episode_frames), "window": int(window),
+        "stride_str": int(stride_str),
+        "max_k": int(max(reachable)) if reachable else 0,
+        "windows_per_episode": per_k,
+        "horizon_s_at_max_k": (max(reachable) * stride_str * 0.1
+                               if reachable else 0.0),
+    }
+
+
+def s1_rollout_loss(stack: V6Stack, z_str: Tensor, targets: Tensor
+                    ) -> tuple[Tensor, dict]:
+    """Catalog S1's multi-tick roll: compose ``predictor_str`` with itself K
+    times and score each tick against the encoded strategic latent at that tick.
+
+    ``z_str`` ``[B, d_str]`` — the window's strategic latent (WM-side, exactly
+    the tensor ``forward`` rolls at k=1).
+    ``targets`` ``[B, K, d_str]`` — the encoded strategic latent at
+    ``t + k*stride_str``, one row per tick.
+
+    ⭐ **THE ACTION AT TICK k>1 IS THE MODEL'S OWN.** ``forward`` derives
+    ``e_a_str`` from ``act_head_str(z_str_p)``; there is no ground-truth
+    strategic action anywhere in the batch (``STRATEGIC_ACTION_TOKENS`` is an
+    invented vocabulary with no label source — the S2 pipeline that would
+    supply one is ``NOT BUILT`` by recorded decision). So each tick re-derives
+    its action from the tick's own predicted latent, **through the same planner
+    cut** ``forward`` applies. That makes this a genuine closed rollout and not
+    a teacher-forced one, which matters under EVAL_DOCTRINE: a teacher-forced
+    strategic roll would be a T0 diagnostic, not a capability.
+
+    ⛔ **UNIFORM WEIGHTING ACROSS TICKS, DECLARED.** Late ticks have larger
+    error and therefore dominate a uniform mean. That is the intended reading of
+    *"long-horizon latent prediction"* — the point of the term is the far tick —
+    but it is a choice, so the per-tick losses are returned in the log and a run
+    can see the degradation curve instead of one pooled number.
+
+    ⛔ **REFUSES K < 2.** At K=1 this term IS ``s1_latent`` (pinned by
+    ``test_k1_is_exactly_s1_latent``); a "multi-tick" term with no multi is a
+    weight advertised in the launch line for a loss that already exists.
+    """
+    if z_str.dim() != 2:
+        raise ValueError(f"z_str must be [B, d_str], got {tuple(z_str.shape)}")
+    if targets.dim() != 3:
+        raise ValueError(
+            f"targets must be [B, K, d_str], got {tuple(targets.shape)}")
+    if targets.shape[0] != z_str.shape[0] or targets.shape[2] != z_str.shape[1]:
+        raise ValueError(f"targets {tuple(targets.shape)} does not match z_str "
+                         f"{tuple(z_str.shape)} on B or d_str")
+    k = int(targets.shape[1])
+    if k < 2:
+        raise ValueError(
+            f"⛔ s1_rollout_loss needs K >= 2 ticks, got K={k}. At K=1 this is "
+            f"exactly `s1_latent`, which already exists — a multi-tick term "
+            f"with one tick is a duplicate weight, not a new capability.")
+    cut = stack.cfg.isolate_planner_from_encoder
+    z = z_str
+    per_k: list[Tensor] = []
+    for j in range(k):
+        a = stack.act_head_str(stack._cut(z, cut))
+        e_a = stack.vocab_a_str.encode(a["probs"], a["args"])
+        z = stack.predictor_str(z, e_a)
+        per_k.append((z.float() - targets[:, j].float()).abs().mean())
+    loss = torch.stack(per_k).mean()
+    log = {"s1_multi": float(loss.detach()), "s1_multi_k": k}
+    log |= {f"s1_multi_k{j + 1}": float(v.detach())
+            for j, v in enumerate(per_k)}
+    return loss, log
+
+
+def s1_persistence_control(stack: V6Stack, z_str: Tensor, targets: Tensor, *,
+                           min_n: int = S1_CONTROL_MIN_N) -> dict:
+    """⛔ **The trivial-proxy control for F-11: does the roll beat HOLDING?**
+
+    The degenerate solution to a multi-tick latent rollout is the identity —
+    emit the current latent and never move. If the strategic latent drifts
+    slowly (2 s per tick on a per-frame encode), holding can score well while
+    the predictor has learned nothing about strategic dynamics.
+
+    Returns the model's rollout loss, the HOLD rollout's loss
+    (``ẑ_k := z_str`` for every k), and ``ratio = model / hold``.
+    **ratio >= 1 means the term is being won by doing nothing** and no S1 claim
+    is admissible from that run.
+
+    ⭐ Same idiom as ``train_p8_occupancy.py``'s ``--hold-action-control`` and
+    the §1.12 hold-action measurement that turned open-loop lateral skill into
+    an ACTION ECHO. ⛔ Refuses below ``min_n`` windows: a ratio without its n is
+    not a verdict (MEASURED for the sibling T2 control — at n=4 the null ratio
+    spanned 0.397-3.361).
+    """
+    n = int(z_str.shape[0])
+    out = {"n": n, "min_n": int(min_n)}
+    if n < min_n:
+        out["verdict"] = "REFUSED_TOO_FEW"
+        out["_note"] = (f"⛔ need >= {min_n} windows, have {n}. A hold/model "
+                        f"ratio from a handful of windows is noise.")
+        return out
+    with torch.no_grad():
+        model, _ = s1_rollout_loss(stack, z_str, targets)
+        hold = (z_str.float().unsqueeze(1) - targets.float()).abs().mean()
+    m, h = float(model), float(hold)
+    out |= {"loss_model": m, "loss_hold": h,
+            "ratio": m / h if h > 0 else float("inf")}
+    if h <= 0:
+        out["verdict"] = "DEGENERATE_TARGETS_EQUAL_Z"
+        out["_note"] = ("⛔ the HOLD rollout scores exactly 0 — the strategic "
+                        "targets ARE the current latent. The term has no "
+                        "dynamics to learn on this batch.")
+    elif out["ratio"] >= 1.0:
+        out["verdict"] = "NO_BETTER_THAN_HOLD"
+        out["_note"] = ("⛔ the rolled prediction is no better than holding "
+                        "z_str. No strategic-dynamics claim is admissible.")
+    else:
+        out["verdict"] = "OK"
+    return out
+
+
+# ============================================================================
+# the per-batch loss assembly
+# ============================================================================
+
+class _NavBoundPredictor:
+    """⭐ R2 / F7 (2026-09-27): the operative predictor WITH the nav conditioning bound, for the SHARED world-model loss
+    helpers (``train_stage_a.stage_a_losses``, ``metric_dynamics.rollout_transitions``), which call
+    ``predictor(window, actions)`` and know nothing of nav. MEASURED by the v7f gate: without it the operative nav
+    tensors received NO gradient in S-W (and S-T freezes their group), so the operative layer never learned from the
+    nav command. Delegates every other attribute (``parameters()``, ``training`` ...) to the wrapped predictor. Each
+    helper rolls arms SEPARATELY on the same batch, so the per-row nav tensor always matches the batch."""
+
+    def __init__(self, predictor, nav_cond):
+        self._p, self._nav = predictor, nav_cond
+
+    def __call__(self, *args, **kwargs):
+        kwargs.setdefault("nav_cond", self._nav)
+        return self._p(*args, **kwargs)
+
+    def __getattr__(self, name):
+        return getattr(self._p, name)
+
+
+def v6_loss_step(stack: V6Stack, batch: dict, *, stage: str,
+                 weights: V6LossWeights, o1_k: int = 10, o5_k: int = 20,
+                 o5_mode: str = "uniform", o5_form: str = "l1",
+                 sigreg_bank: "SigRegRowBank | None" = None,
+                 o3_mode: str = "action",
+                 o3_blocks: int = 2, o3_block_hw: tuple[int, int] = (2, 2),
+                 o3_band_rows: int = 0, o2_tau_s: float = 2.0,
+                 dkappa: float = DKAPPA_DEFAULT,
+                 daccel: float = DACCEL_DEFAULT,
+                 rand_dk: Tensor | None = None,
+                 rand_da: Tensor | None = None,
+                 generator: torch.Generator | None = None,
+                 sigreg_generator: torch.Generator | None = None,
+                 o6_innovation: bool = False,
+                 o6_innovation_shuffle: bool = False,
+                 rollout_grad_checkpoint: bool | None = None,
+                 bptt_truncate: int = 0,
+                 anchor_objective: str = "metric",
+                 anchor_axis_w: tuple[float, float] = ANCHOR_AXIS_W_DEFAULT,
+                 t2_positive: str = "photometric",
+                 t2_negative: str = "lane_mirror",
+                 t5_w_kappa: float = 1.0,
+                 o11_k: int = 6, o11_tau: float = 1.0,
+                 o11_negs: int = 1,
+                 o13_k: int = 4, o13_seed: int = 1300,
+                 o14_mode: str = "fut", o14_k: int = 4,
+                 cond_param: str = COND_INCUMBENT
+                 ) -> dict:
+    """One batch of the v6 staged objective.
+
+    BATCH CONTRACT (all tensors on one device):
+      ``frames``          [B, W, C, H, W']   the causal window
+      ``actions2``        [B, W, 2]          recorded (steer, accel)
+      ``future_actions2`` [B, H, 2]          H >= max(o1_k, o5_k) - 1
+      ``v0``              [B]                m/s — the INTEGRATION constant
+      ``gt_wp``           [B, o1_k, 2]       true future ego waypoints
+      ``z_true_steps``    list[k] of [B, d_op] ENCODED true future latents
+                          (k >= max(o1_k, o5_k)), detached by the caller
+      ``own_frames_tac`` / ``own_frames_str``  E-ENC arm (b) only
+      ``g_str_id``/``g_str_args``/``g_str_arg_mask`` · ``a_str_id``/
+      ``a_str_args``/``a_str_arg_mask`` · ``s2_valid``
+                          S2 label keys (``s2_labels.S2WindowSupervision.
+                          batch``) — REQUIRED iff ``w_s2_goal`` is in force,
+                          ignored otherwise
+      ``g_str_valid`` / ``a_str_valid``   [B] bool — OPTIONAL per-family
+                          abstention masks; absent = the incumbent behaviour
+                          (both families follow ``s2_valid``)
+      ``t5_pairs``        [P, 2] long — row indices ``(i, j)`` where window
+                          ``j`` starts ``t5_lag`` operative steps after window
+                          ``i`` IN THE SAME EPISODE. REQUIRED iff
+                          ``w_t5_consist`` is in force, ignored otherwise
+      ``t5_lag``          int — that offset; absent defaults to
+                          ``cfg.stride_tac``
+      ``tac_lat_id``/``tac_lon_id``/``tac_valid`` + ``TAC_LABEL_BATCH_KEYS``
+                          the R3 tactical-label keys (the v7.2 join, after
+                          ``enable_tac_label_targets``) — REQUIRED iff
+                          ``w_tac_label_all`` is in force, ignored otherwise
+
+    Returns ``{"loss": Tensor, **components, "log": dict}``. Terms whose weight
+    is 0 for this stage are SKIPPED, not multiplied by zero — a skipped term
+    costs no compute and, more importantly, cannot appear in the log looking
+    like it trained something.
+
+    ⛔ ``sigreg_generator`` — REPRODUCIBILITY OF ``o6``, OPT-IN (2026-08-16).
+    ``SigReg`` draws its M slice directions freshly per call, and until today it
+    drew them from the GLOBAL RNG, which ``generator`` does not cover. MEASURED
+    (``LOSS_DETERMINISM.md``): two identical calls with the same ``generator``
+    returned S-W 3.9301 vs 3.9227 — the WHOLE discrepancy in ``o6`` (0.046874 vs
+    0.039470, 18.7 %), every other term bit-identical. A globally-seeded full
+    training run is unaffected; every IN-PROCESS A/B was noise-dominated, so no
+    ablation of any term was attributable.
+
+    ``None`` (default) keeps the incumbent global draw BIT-FOR-BIT — v6F S-W is
+    training from this code and its loss values must not move. Pass a generator
+    to make ``o6`` reproducible.
+
+    ⚠️ **Use a SEPARATE generator from ``generator``, not the same object.**
+    ``generator`` also feeds ``sample_random_deltas`` (O1) and
+    ``sample_cell_block_mask`` (O3), so sharing one stream re-couples the terms:
+    switching O3 off changes how many draws precede O6 and ``o6`` then moves for
+    a reason that has nothing to do with the ablation — which is the confound
+    this parameter exists to remove.
+    """
+    if stage not in STAGES:
+        raise ValueError(f"unknown stage {stage!r}")
+    if o6_innovation_shuffle and not o6_innovation:
+        raise ValueError(
+            "--o6-innovation-shuffle is the deliberate-regression arm OF "
+            "--o6-innovation and is meaningless without it — refusing "
+            "loudly rather than running a silently-plain arm")
+    w = weights.for_stage(stage)
+    cfg = stack.cfg
+    dev = batch["frames"].device
+    log: dict = {"stage": stage}
+    terms: dict[str, Tensor] = {}
+
+    # ---- the shared forward ------------------------------------------------
+    # ⭐ R2 / F7: the operative predictor the WM-loss helpers roll -- nav-bound when the stack has nav, else the
+    # SAME object (byte-identical). Not detached: in S-W these losses are what trains the operative nav path.
+    _pred_op = stack.predictor_op
+    if getattr(stack, "nav", None) is not None and batch.get("nav_token") is not None:
+        _pred_op = _NavBoundPredictor(stack.predictor_op,
+                                      stack.nav(batch["nav_token"], batch["nav_args"], "operative"))
+    out = stack.forward(frames=batch["frames"], actions=_lift3(
+        batch["actions2"], batch["v0"], cond_param), v0=batch["v0"],
+        own_frames_tac=batch.get("own_frames_tac"),
+        own_frames_str=batch.get("own_frames_str"),
+        # ⭐ NAV (PI directive 2026-08-30). `.get` matches this dict's own
+        # degrade-not-crash discipline; MANDATORY-ness is enforced by the
+        # PREFLIGHT refusal, not here — a refusal is auditable and lands in
+        # config.json, a silent default is invisible. If nav_cond is on and
+        # these are absent, V6Stack.forward raises NavTokenMissing by name.
+        nav_token=batch.get("nav_token"), nav_args=batch.get("nav_args"),
+        # ⭐ R1a (PI 2026-09-27): the clip's max speed, the TACTICAL input.
+        # `.get` for the same reason as nav: MANDATORY-ness is the stack's own
+        # named refusal (SpeedMaxInputMissing) plus the preflight. ⛔ The plan
+        # CAP is deliberately NOT passed here: the training plan is uncapped.
+        v_max_ms=batch.get("v_max_ms"), v_max_valid=batch.get("v_max_valid"))
+    states = out["z_op_win"]                                   # [B, W, d_op]
+    z_true = batch["z_true_steps"]
+
+    # ---- O1: response-form L_ctrl (IMPORTED from stage A) ------------------
+    if w.o1_ctrl or w.o1_fact or w.o1_scene:
+        if len(z_true) < o1_k:
+            raise ValueError(f"O1 needs z_true_steps >= o1_k={o1_k}, got "
+                             f"{len(z_true)}")
+        if batch["gt_wp"].shape[1] != o1_k:
+            raise ValueError(f"gt_wp horizon {batch['gt_wp'].shape[1]} != "
+                             f"o1_k={o1_k}")
+        if rand_dk is None or rand_da is None:
+            # the "random" counterfactual arm needs a per-window (Δκ, Δa) draw;
+            # drawing it here (deterministic under ``generator``) means a
+            # caller cannot accidentally run O1 with four arms instead of five.
+            rand_dk, rand_da = sample_random_deltas(
+                batch["v0"].shape[0],
+                generator or torch.Generator().manual_seed(0),
+                0.05, 3.0)
+            rand_dk = rand_dk.to(dev)
+            rand_da = rand_da.to(dev)
+        # H-RANK-22: confine O1's gradient to the predictor when asked. `states`
+        # is the ENCODER's window output, so detaching it here (and ONLY here --
+        # every other term still trains the encoder) removes the path by which
+        # O1 can reshape the representation itself.
+        o1_states = states.detach() if w.o1_detach_encoder else states
+        L1 = stage_a_losses(
+            _pred_op, stack.step_readout_op, o1_states,
+            batch["actions2"], batch["future_actions2"], batch["v0"],
+            batch["gt_wp"], z_true[o1_k - 1], o1_k, dkappa=dkappa,
+            daccel=daccel, rand_dk=rand_dk, rand_da=rand_da,
+            w_ctrl=w.o1_ctrl, w_fact=w.o1_fact, w_scene=w.o1_scene,
+            ctrl_form="response",
+            stopgrad_factual=bool(w.o1_stopgrad_factual))
+        terms["o1"] = L1["loss"]
+        log |= {"o1_detach_encoder": bool(w.o1_detach_encoder),
+                "o1_stopgrad_factual": bool(w.o1_stopgrad_factual),
+                "o1_ctrl": float(L1["l_ctrl"].detach()),
+                "o1_fact": float(L1["l_fact"].detach()),
+                "o1_scene": float(L1["l_scene"].detach()),
+                "o1_factual_ade": float(L1["factual_ade"]),
+                "o1_basis_dims": L1["basis_dims"],
+                "o1_arms": list(TRAIN_ARMS)}
+
+    # ---- O14: future-observation prediction (R2, PREREG_O14_FUTURE_OBS) ----
+    # Reads the ENCODER window state, never zhat — the hypothesis is about what
+    # the REPRESENTATION retains (E-DEC-63: pixel-predictive content displaced
+    # by token structure), so the gradient must reach the encoder (INERT is a
+    # pre-registered outcome and this is the line an INERT read audits first).
+    if w.o14_fut:
+        if not hasattr(stack, "o14_head"):
+            raise RuntimeError("w_o14 > 0 but stack has no o14_head — "
+                               "build_stack_from_args gates its construction "
+                               "on --w-o14; the weight and the module must "
+                               "travel together")
+        if "o14_tgt" not in batch:
+            raise KeyError("o14_tgt missing from batch — the batch dict is a "
+                           "WHITELIST, NOT A VIEW (4th instance): the target "
+                           "is computed at the batch-build site and must be "
+                           "forwarded explicitly")
+        a3_last = _lift3(batch["actions2"], batch["v0"], cond_param)[:, -1]
+        o14_in = torch.cat([states[:, -1].float(), a3_last.float()], dim=-1)
+        o14_pred = stack.o14_head(o14_in)
+        l14 = torch.nn.functional.l1_loss(o14_pred,
+                                          batch["o14_tgt"].float())
+        terms["o14"] = w.o14_fut * l14
+        # ⚠️ the raw value is UNINFORMATIVE BY CONSTRUCTION (future pixels are
+        # partly unpredictable; the head regresses toward blur). Logged for
+        # liveness only; the RESULT is the E-DEC-63 absorption probe, never
+        # this curve. The prereg says so; this comment is where the rule lives
+        # next to the number it governs.
+        log |= {"o14": float(l14.detach()), "o14_mode": o14_mode,
+                "o14_k": int(o14_k)}
+
+    # ---- the factual rollout, computed ONCE for O2 / O3 / O5 ---------------
+    need_roll = bool(w.o2_nearfield or w.o3_masked or w.o5_rollout or w.o11_cf
+                     or w.o13_ego)
+    if need_roll:
+        from tanitad.models.metric_dynamics import rollout_transitions
+        k_roll = max(o5_k, 1)
+        if len(z_true) < k_roll:
+            raise ValueError(f"rollout needs z_true_steps >= o5_k={o5_k}, "
+                             f"got {len(z_true)}")
+        aw3, fa3 = (_lift3(batch["actions2"], batch["v0"], cond_param),
+                    _lift3(batch["future_actions2"], batch["v0"], cond_param))
+        # ⛔ The rollout's checkpointing is NOT the encoder's. It used to read
+        # `cfg.encoder.grad_checkpoint`, which coupled two unrelated decisions
+        # to one flag: the k=60 roll NEEDS checkpointing (it fixed a MEASURED
+        # 37.97/44 GiB OOM), while the encoder's is a pure speed/memory trade
+        # that costs ~2x the ViT forward and may be unaffordable to keep when
+        # the GPU has headroom. MEASURED 2026-08-14: S-W ran at 42.8 % mean GPU
+        # util with 20 GB free — i.e. paying recompute it did not need to.
+        # Default preserves the old behaviour exactly when unset.
+        rgc = (cfg.encoder.grad_checkpoint if rollout_grad_checkpoint is None
+               else bool(rollout_grad_checkpoint))
+        # ⛔ `bptt_truncate` (D-V7-WIRING, 2026-09-03): default 0 = the full
+        # chain, byte-identical. N > 0 detaches the CARRIED window every N
+        # steps inside `rollout_transitions` — forward unchanged, gradient
+        # path bounded (the refav1 `bptt_truncate=15` fix; k=60 diverged at
+        # gnorm 2.1e9 without it). Passed to BOTH rolls below: a fix applied
+        # to one of two loops is half a fix (test_refa_v1_bptt_truncation).
+        # ⚠️ SCOPE, measured: the O1 response-form rolls (stage_a_losses,
+        # k = o1_k, 6 of the 8 rolls per step) live in train_stage_a.py and
+        # are NOT governed by this flag — named in --help and in the register
+        # row rather than silently left out.
+        trans = rollout_transitions(_pred_op, states, aw3, fa3,
+                                    k_roll, grad_checkpoint=rgc,
+                                    bptt_truncate=int(bptt_truncate))
+        zhat_steps = [t[1] for t in trans]
+        if bptt_truncate:
+            # logged ONLY when in force, so the default log row is unchanged
+            log["bptt_truncate"] = int(bptt_truncate)
+        # PSG (E-DEC-18) needs the PREDICTED latent as well as the encoded one --
+        # PhyLatent's whole point is that the SAME state head sees both, so the
+        # predictor is pulled into the same physical-state space rather than into
+        # whatever self-consistent space O5 alone admits. The rollout is computed
+        # here and nowhere else, so it is exported rather than recomputed: a
+        # second rollout at the call site would double the cost AND could silently
+        # use different actions. Adding a key changes no loss, no RNG draw and no
+        # state_dict; nothing reads it unless a term asks.
+        out["zhat_steps"] = zhat_steps
+
+        # ---- O5: error at EVERY step --------------------------------------
+        if w.o5_rollout:
+            sw = rollout_step_weights(k_roll, o5_mode, device=dev)
+            l5, lg5 = o5_rollout_consistency_loss(zhat_steps,
+                                                  z_true[:k_roll], sw,
+                                                  form=o5_form)
+            terms["o5"] = w.o5_rollout * l5
+            log |= lg5 | {"o5_mode": o5_mode}
+
+        # ---- O11-CF: the action must be IDENTIFIABLE from the prediction ----
+        if w.o11_cf:
+            jc = min(max(o11_k, 1), k_roll) - 1
+            B = fa3.shape[0]
+            if B < 2:
+                raise ValueError("o11 needs batch >= 2 for counterfactuals")
+            negs = []
+            for q in range(max(o11_negs, 1)):
+                # ⛔ a CYCLIC SHIFT by a non-zero offset is a DERANGEMENT by
+                # construction — no element keeps its own action sequence.
+                # `randperm` is not: it fixes points with probability ~1/B, and
+                # a fixed point silently makes that row's "counterfactual" the
+                # TRUE action, pulling the loss toward the floor and reading as
+                # action-blindness that is not there.
+                off = 1 + (q % (B - 1))
+                fa_neg = torch.roll(fa3, shifts=off, dims=0)
+                tn = rollout_transitions(_pred_op, states, aw3,
+                                         fa_neg, jc + 1, grad_checkpoint=rgc,
+                                         bptt_truncate=int(bptt_truncate))
+                negs.append(tn[jc][1])
+            l11, lg11 = o11_counterfactual_action_loss(
+                zhat_steps[jc], negs, z_true[jc], tau=o11_tau)
+            terms["o11"] = w.o11_cf * l11
+            log |= lg11 | {"o11_at_step": jc + 1}
+        if w.o13_ego:
+            # ⭐ the readout sees ONLY the PREDICTED latent -- never the action
+            # (which would let it echo, E-DEC-51) and never z_t (which would let
+            # it pass through). The action reaches this loss ONLY through the
+            # predictor, which is the entire point of the term.
+            jd = min(max(o13_k, 1), k_roll) - 1
+            fp = batch.get("future_poses")
+            pl = batch.get("pose_last")
+            if fp is None or pl is None:
+                raise ValueError(
+                    "o13 needs `future_poses` [B,H,4] and `pose_last` [B,4] "
+                    "in the batch; both are already part of the v6 contract")
+            if fp.shape[1] <= jd:
+                raise ValueError(
+                    f"o13_k={o13_k} needs future_poses horizon > {jd}, "
+                    f"got {fp.shape[1]}")
+            dv = fp[:, jd, 3].float() - pl[:, 3].float()
+            dyw = fp[:, jd, 2].float() - pl[:, 2].float()
+            dyw = torch.atan2(torch.sin(dyw), torch.cos(dyw))   # wrap to (-pi,pi]
+            l13, lg13 = o13_ego_dynamics_loss(
+                zhat_steps[jd], dv, dyw, z_t=states[:, -1],
+                seed=o13_seed)
+            terms["o13"] = w.o13_ego * l13
+            log |= lg13 | {"o13_at_step": jd + 1}
+
+        # ---- O2: time-to-reach weighted near field ------------------------
+        if w.o2_nearfield:
+            j = min(o1_k, k_roll) - 1
+            l2, lg2 = o2_near_field_loss(
+                stack.cells(zhat_steps[j]), stack.cells(z_true[j]),
+                stack.cell_ranges_m, batch["v0"], tau_s=o2_tau_s,
+                horizon_s=cfg.horizon_s)
+            terms["o2"] = w.o2_nearfield * l2
+            log |= lg2 | {"o2_at_step": j + 1}
+
+        # ---- O3: masked spatial-latent prediction -------------------------
+        if w.o3_masked:
+            b = states.shape[0]
+            gh, gw = cfg.grid_shape
+            m = sample_cell_block_mask(gh, gw, n_blocks=o3_blocks,
+                                       block_h=o3_block_hw[0],
+                                       block_w=o3_block_hw[1], batch=b,
+                                       generator=generator)
+            if o3_band_rows:
+                m = m | near_field_band_mask(gh, gw, rows=o3_band_rows,
+                                             batch=b)
+            m = m.to(dev)
+            j = min(o1_k, k_roll) - 1
+            ctx = (stack.cells(zhat_steps[j]) if o3_mode == "action"
+                   else stack.cells(states[:, -1]))
+            l3, lg3 = o3_masked_cell_loss(stack.masked_cells, ctx,
+                                          stack.cells(z_true[j]), m)
+            terms["o3"] = w.o3_masked * l3
+            log |= lg3 | {"o3_mode": o3_mode}
+
+    # ---- O6: SIGReg on the operative latent --------------------------------
+    if w.o6_sigreg:
+        if o6_innovation:
+            # MM-E4 L1: the sketched test's INPUT becomes the innovations
+            # dz - g(z_t) (cross-fitted per batch; see o6_innovation_rows).
+            # Everything downstream — row bank, renorm, slice draw, weight
+            # — is the incumbent machinery, so the input tensor is the ONE
+            # variable of this cell. The shuffle permutation rides the O6
+            # stream (sigreg_generator; None = global, the incumbent draw).
+            z6 = o6_innovation_rows(states, shuffle=o6_innovation_shuffle,
+                                    generator=sigreg_generator)
+            log["o6_input"] = ("innovation_shuffled"
+                               if o6_innovation_shuffle else "innovation")
+        else:
+            z6 = states.reshape(-1, states.shape[-1])
+        base_rows = z6.shape[0]
+        if sigreg_bank is not None:
+            z6 = sigreg_bank.rows(z6)
+        l6 = o6_sigreg_loss(stack.sigreg, z6, cfg.sigreg_free_dims,
+                            generator=sigreg_generator)
+        # ⛔ HOLD THE OPERATING POINT WHEN n CHANGES. The Epps-Pulley statistic
+        # is deliberately NOT normalised by n — its batch scale is part of the
+        # validated (lambda=0.1, slices=512) point. So pooling rows silently
+        # MULTIPLIES the effective lambda by ~n/base. MEASURED 2026-08-22:
+        # 24 rows -> o6_sigreg 3.10; 192 rows -> 46.3, a ~15x inflation, and
+        # the arms read WORSE (participation 4.43 -> 2.92) for that reason and
+        # not for lack of estimator power. Rescaling by base/n keeps the weight
+        # fixed so the row count is the ONLY variable.
+        # ⚠️ This is NOT the ALPS-4B bug (dividing by n at the INCUMBENT n,
+        # which destroyed the validated scale); it restores that exact scale.
+        if sigreg_bank is not None and z6.shape[0] > base_rows:
+            l6 = l6 * (base_rows / float(z6.shape[0]))
+        log["o6_rows"] = int(z6.shape[0])
+        log["o6_row_renorm"] = round(base_rows / float(z6.shape[0]), 6)
+        terms["o6"] = w.o6_sigreg * l6
+        log["o6_sigreg"] = float(l6.detach())
+
+    # ---- the g_tac->operative SEAM (S-T / S-J) ------------------------------
+    if w.seam_op:
+        if not z_true:
+            raise ValueError(
+                "seam_op > 0 needs at least one encoded future latent "
+                "(z_true_steps) — the S-T batch must run the future encode "
+                "with need_k >= 1, not skip it")
+        seam = out["zhat_op_seam"]
+        k1 = min(int(kk) for kk in seam)          # the 1-step head
+        lseam = (seam[k1].float() - z_true[k1 - 1].float()).abs().mean()
+        terms["seam"] = w.seam_op * lseam
+        log["seam_op"] = float(lseam.detach())
+
+    # ---- T1: goal-conditioned tactical latent prediction --------------------
+    if w.t1_latent:
+        tgt = batch.get("z_tac_next_target")
+        if tgt is None:
+            tgt = out["z_tac_target"]        # 1-step identity target fallback
+            log["t1_target"] = "self (no z_tac_next_target in batch)"
+        lt = (out["zhat_tac"].float() - tgt.float()).abs().mean()
+        terms["t1"] = w.t1_latent * lt
+        log["t1_latent"] = float(lt.detach())
+
+    # ---- T2: manoeuvre contrastives (w_t2_contrast, default 0.0 == absent) --
+    # NOT nested under t1: the contrastive term shapes `z_tac` itself and is
+    # attributable on its own, exactly as `w_anchor` is not nested under
+    # `lambda_plan`.
+    if w.w_t2_contrast:
+        lt2, lg2 = t2_contrastive_loss(
+            stack, out["z_tac"], batch["frames"], batch["actions2"],
+            positive=t2_positive, negative=t2_negative, generator=generator)
+        terms["t2"] = w.w_t2_contrast * lt2
+        log |= lg2
+
+    # ---- S1: long-horizon strategic latent prediction -----------------------
+    if w.s1_latent:
+        tgt = batch.get("z_str_next_target", out["z_str_target"])
+        ls = (out["zhat_str"].float() - tgt.float()).abs().mean()
+        terms["s1"] = w.s1_latent * ls
+        log["s1_latent"] = float(ls.detach())
+
+    # ---- F-11 / S1: MULTI-TICK strategic rollout ----------------------------
+    # NOT nested under s1_latent: the two are separable arms (K=1 vs K>1) and
+    # nesting would make the multi-tick result unattributable — the `--v2`
+    # conflation failure. `w_s1_multi` alone is a legal, attributable launch.
+    if w.w_s1_multi:
+        tgt = batch.get("z_str_multi_target")
+        if tgt is None:
+            raise ValueError(
+                "⛔ w_s1_multi > 0 needs batch['z_str_multi_target'] "
+                "[B, K, d_str] — the encoded strategic latent at each of the K "
+                "ticks. Without it the multi-tick roll has nothing to score "
+                "against, and a term that cannot fire is worse than an absent "
+                "one because the launch line advertises it.")
+        lsm, lgm = s1_rollout_loss(stack, out["z_str"], tgt)
+        terms["s1_multi"] = w.w_s1_multi * lsm
+        log |= lgm
+
+    # ---- planner (λ_plan) ---------------------------------------------------
+    if w.lambda_plan:
+        tgt = batch.get("plan_target")       # [B, plan_steps, 2] ego waypoints
+        if tgt is None:
+            raise ValueError("lambda_plan > 0 needs batch['plan_target'] "
+                             "[B, plan_steps, 2] — a planner loss without a "
+                             "target is how λ_plan silently becomes 0")
+        fan = out["plan"]["waypoints"].float()                # [B, N, 60, 2]
+        err = (fan - tgt.float()[:, None]).norm(dim=-1).mean(dim=-1)
+        winner = err.argmin(dim=1)
+        ar = torch.arange(fan.shape[0], device=fan.device)
+        lp = err[ar, winner].mean()
+        # ⚠️ epsilon-RELAXED WTA (default 0.0 == the incumbent PURE WTA, and the
+        # term below is not even constructed then, so the graph is unchanged).
+        # Under pure WTA the N−1 LOSING candidates receive EXACTLY ZERO gradient
+        # and nothing bounds the fan's MEAN. MEASURED on the banked REF-C-XL fan
+        # 2026-08-15: oracle 0.1639 m against a fan mean of 13.9564 m — 85x —
+        # and that is the regime in which a cost's argmin is a coin flip.
+        # Bounding the losers is the cheapest structural defence available, and
+        # it costs zero parameters.
+        if cfg.plan_wta_eps > 0.0:
+            n = err.shape[1]
+            if n > 1:
+                loser = (err.sum(dim=1) - err[ar, winner]) / (n - 1)
+                lp = lp + cfg.plan_wta_eps * loser.mean()
+                log["plan_loser_mean"] = float(loser.mean().detach())
+        terms["plan"] = w.lambda_plan * lp
+        log["fan_mean_ade"] = float(err.mean().detach())
+        log["fan_oracle_ade"] = float(err.min(dim=1).values.mean().detach())
+        # §4b: report the bands SEPARATELY. A pooled 0–6 s number cannot show
+        # the 2 s seam, and the seam is what X2 exists to verify.
+        op_b, tac_b = cfg.split_bands(fan[ar, winner].detach(), dim=-2)
+        t_op, t_tac = cfg.split_bands(tgt.float(), dim=-2)
+        log |= {"plan_wta": float(lp.detach()),
+                "plan_ade_0_2s": float((op_b - t_op).norm(dim=-1).mean()),
+                "plan_ade_2_6s": float((tac_b - t_tac).norm(dim=-1).mean())}
+
+        # ---- SELECTION (w_select, default 0.0 == absent) --------------------
+        if w.w_select:
+            if "sel_score" not in out["plan"]:
+                raise ValueError(
+                    "w_select > 0 with cfg.selector='none' — a selection loss "
+                    "with no scorer is how a selector silently never trains. "
+                    "Build the stack with --selector goal.")
+            score = out["plan"]["sel_score"].float()          # [B, N]
+            # E-OBJ-1 `softade`: EXPECTED fan error under the scorer's own
+            # softmax. Metric-aware (a loser that misses by a centimetre is not
+            # punished like one that misses by ten metres — the defect that made
+            # EVERY fitted ranker in E-S1-0 separated WORSE than the incumbent),
+            # and its optimum is still a sharp distribution on the low-error
+            # candidate, so it optimises the LOWER TAIL that governs argmax.
+            p = score.softmax(dim=-1)
+            lsel = (p * err.detach()).sum(dim=-1).mean()
+            terms["select"] = w.w_select * lsel
+            sel_idx = score.argmax(dim=-1)
+            rank = err.argsort(dim=1).argsort(dim=1)
+            log |= {"sel_softade": float(lsel.detach()),
+                    "sel_ade": float(err[ar, sel_idx].mean().detach()),
+                    # ⭐ THE PRIMARY ENDPOINT for a ranking claim (W7-PROG's
+                    # precedent). 0 = always the true best, 0.5 = a coin flip.
+                    "sel_norm_err_rank": float(
+                        rank[ar, sel_idx].float().mean().detach()
+                        / max(err.shape[1] - 1, 1)),
+                    "sel_gap": float((err[ar, sel_idx]
+                                      - err.min(dim=1).values).mean().detach())}
+
+    # ---- ANCHOR_GOAL supervision (w_anchor, default 0.0 == absent) ----------
+    # NOT nested under lambda_plan: the goal head is trainable with the planner
+    # loss OFF (that is the attributable arm -- a goal that moves must be
+    # attributable to its OWN objective, not to a WTA fan gradient arriving
+    # through the same seam), so this reads ``plan_target`` directly.
+    if w.w_anchor:
+        if stack.anchor_head is None:
+            raise ValueError(
+                "w_anchor > 0 with cfg.anchor_goal='none' -- an anchor loss "
+                "with no anchor head is how a head silently never trains. "
+                "Build the stack with --anchor-goal snap_lat (and its table).")
+        tgt = batch.get("plan_target")
+        if tgt is None:
+            raise ValueError(
+                "w_anchor > 0 needs batch['plan_target'] [B, plan_steps, 2] -- "
+                "the ANCHOR_GOAL label is the TRUE ego-frame displacement at "
+                "the plan horizon, and a goal objective with no goal is how "
+                "w_anchor silently becomes 0")
+        head_out = {k[len("anchor_"):]: v for k, v in out["plan"].items()
+                    if k.startswith("anchor_")}
+        la, lga = anchor_goal_loss(
+            head_out, tgt.float()[:, -1], stack.anchor_head.anchors,
+            objective=anchor_objective, axis_w=anchor_axis_w)
+        terms["anchor"] = w.w_anchor * la
+        log |= lga
+
+    # ---- T5: temporal consistency (w_t5_consist, default 0.0 == absent) -----
+    # ⛔ THE DEGENERACY GUARD IS HERE, NOT IN A DOCSTRING. A constant control
+    # plan scores EXACTLY 0 on this term (pinned in tests), so on its own it
+    # optimises toward a model that ignores the road. It is admissible only
+    # alongside a plan objective that makes a flat plan expensive.
+    if w.w_t5_consist and not w.lambda_plan:
+        raise ValueError(
+            f"w_t5_consist={w.w_t5_consist} with lambda_plan=0: the T5 "
+            f"temporal-consistency term is DEGENERATE ALONE — a constant "
+            f"control plan satisfies it exactly (loss 0), so minimising it "
+            f"without a plan objective in force trains the fan toward a flat "
+            f"plan. Launch with --lambda-plan > 0, or set --w-t5-consist 0.")
+    if w.w_t5_consist:
+        pairs = batch.get("t5_pairs")
+        if pairs is None:
+            raise ValueError(
+                "w_t5_consist > 0 needs batch['t5_pairs'] [P, 2] — the row "
+                "indices of CONSECUTIVE-WINDOW pairs. The default sampler "
+                "draws windows independently (DIAGRAM_CONFORMANCE.md:58), so "
+                "without --t5-pairs there are no consecutive windows in the "
+                "batch and a cross-window consistency term would be comparing "
+                "unrelated episodes. Launch with --t5-pairs.")
+        lag = int(batch.get("t5_lag", cfg.stride_tac))
+        plan = out["plan"]
+        sel_p = (plan["sel_score"].float().softmax(dim=-1)
+                 if "sel_score" in plan else None)
+        lt5, lg5 = t5_consistency_loss(
+            plan["a"], plan["kappa"], sel_p, pairs, lag,
+            w_kappa=t5_w_kappa, v0=batch["v0"])
+        terms["t5"] = w.w_t5_consist * lt5
+        log |= lg5
+        log["t5_selection_level"] = sel_p is not None
+        # the gate row's *"plan-switch rate reported"* half
+        if out.get("a_lat") is not None and out.get("a_lon") is not None:
+            log |= t5_plan_switch_rate(
+                out["a_lat"]["logits"], out["a_lon"]["logits"], pairs)
+
+    # ---- S2: strategic goal supervision (w_s2_goal, default 0.0 == absent) --
+    # In force only where for_stage keeps it (S-S / S-J — the stages that
+    # train layer_str). Reads the heads' emitted logits/args straight off the
+    # shared forward: no second head pass, no RNG, no new module.
+    if w.w_s2_goal:
+        if not cfg.isolate_planner_from_encoder:
+            raise ValueError(
+                "w_s2_goal > 0 with isolate_planner_from_encoder=False: the "
+                "S2 CE/L1 reads g_str/a_str, whose input z_str_p is detached "
+                "ONLY by the planner cut (v6.py `_cut`) — without it the "
+                "label loss reaches adapters/encoder and becomes a TRUNK "
+                "loss. 'Labels supervise GOAL/INTERPRETATION HEADS only, "
+                "never any WM trunk loss' is BINDING (HIERARCHY_VOCABULARY "
+                "§2); unlike --no-isolate-planner's other consumers there is "
+                "NO control arm for a binding rule.")
+        ls2, lg_s2 = s2_goal_loss(out["g_str"], out["a_str"], batch,
+                                  g_tokens=tuple(stack.vocab_str.tokens),
+                                  a_tokens=tuple(stack.vocab_a_str.tokens))
+        terms["s2"] = w.w_s2_goal * ls2
+        log |= lg_s2
+
+    # ---- R3: ALL tactical labels (w_tac_label_all, default 0.0 == absent) --
+    # In force only where for_stage keeps it (S-T / S-J — the stages that
+    # train layer_tac). Reads the tactical heads straight off the shared
+    # forward: no second head pass, no RNG, no new module.
+    if w.w_tac_label_all:
+        if not cfg.isolate_planner_from_encoder:
+            raise ValueError(
+                "w_tac_label_all > 0 with isolate_planner_from_encoder=False: "
+                "a_lat/a_lon/g_tac read z_tac_p, which is detached ONLY by the "
+                "planner cut — without it the tactical LABEL loss reaches the "
+                "adapter and the encoder and becomes a TRUNK loss. 'Labels "
+                "supervise GOAL/INTERPRETATION HEADS only, never any WM trunk "
+                "loss' is BINDING (HIERARCHY_VOCABULARY §2).")
+        # ⛔ R3's second half: the supervised goal must be the one that
+        # CONDITIONS the operative planning. `e_g_tac` (-> predictor_op intent,
+        # -> the 6 s emission) is built from the factored pair when it exists,
+        # and from `gates` only under goal_multilabel — otherwise from a
+        # SOFTMAX of the logits this BCE trains as independent sigmoids.
+        if stack.goal_head_tac_lat is not None:
+            raise ValueError(
+                "w_tac_label_all > 0 on a --goal-factored stack: e_g_tac is "
+                "built from the FACTORED pair, so supervising the mixed g_tac "
+                "would train a head that conditions nothing — and under v7.0 "
+                "the pair is not a LAT/LON split of the v7 goal set (LAT = the "
+                "unversioned v6 partition, 2 of its 4 classes absent from v7; "
+                "LON = all 22 v7 tokens). Build without --goal-factored.")
+        if not getattr(stack.goal_head_tac, "multilabel", False):
+            raise ValueError(
+                "w_tac_label_all > 0 without goal_multilabel: the goal-set BCE "
+                "trains INDEPENDENT sigmoid gates, but without "
+                "--goal-multilabel e_g_tac reads softmax(logits) — the "
+                "supervised quantity would not be what conditions the "
+                "operative planner. Build with --goal-multilabel.")
+        ltl, lg_tl = tac_label_all_loss(
+            out, batch, lat_tokens=tuple(stack.vocab_a_lat.tokens),
+            lon_tokens=tuple(stack.vocab_a_lon.tokens),
+            goal_tokens=tuple(stack.vocab_tac.tokens))
+        terms["tac_label_all"] = w.w_tac_label_all * ltl
+        log |= lg_tl
+
+    if not terms:
+        raise RuntimeError(f"stage {stage} produced NO loss terms — every "
+                           f"weight is zero, which would train nothing while "
+                           f"looking like a run")
+    total = torch.stack([t.float() for t in terms.values()]).sum()
+    log["loss"] = float(total.detach())
+    log["terms"] = sorted(terms)
+    return {"loss": total, "log": log, "out": out,
+            **{k: v for k, v in terms.items()}}
+
+
+def _lift3(a2: Tensor, v0: Tensor, cond_param: str = COND_INCUMBENT) -> Tensor:
+    """2-channel (steer, accel) -> the 3-channel format the predictor trains with.
+
+    ⭐⭐ WHY A SECOND PARAMETERISATION EXISTS (PI, 2026-08-26): *"why are you using
+    curvature, use just the values: yaw rate, long acc and v0 as measured state not
+    an action."* Two defects in the incumbent, both real:
+
+    1. ``steer = atan(L*kappa)`` is a BICYCLE-MODEL STEERING PROXY, and ``L`` is a
+       LEGACY CONSTANT 2.9 m applied to every clip in the default regime — a fake
+       per-clip constant baked into a quantity that only ever needed to be a
+       rotation rate.
+    2. ⛔ **``steer`` CONTAINS NO SPEED.** The geometrically meaningful quantity —
+       the one that determines how the image moves — is the YAW RATE
+       ``omega = v*kappa``. The incumbent forces the predictor to reconstruct that
+       PRODUCT from two separate channels through a FiLM bottleneck.
+
+    ⭐ THE CONVERSION IS EXACT AND THE WHEELBASE CANCELS:
+
+        steer = atan(L*kappa)  =>  tan(steer) = L*kappa
+        =>  v * tan(steer) / L  =  v * kappa  =  omega          [L cancels]
+
+    so no data-pipeline change, no re-cache, and **no parity break** — the same
+    stored ``actions`` tensor yields the measured yaw rate identically. MEASURED
+    against the independent quaternion-derived yaw rate: **r = 0.9988**
+    (`kinematic_identity.json`).
+
+    ⚠️ ``a_long`` and ``v`` are passed through unchanged; only channel 0 moves.
+    ⚠️ These are MEASURED EGO STATE, not commands. Nothing here claims otherwise,
+    and E-DEC-57 retracted the claims that did.
+    """
+    from tanitad.models.flagship_v15 import SPEED_SCALE
+    v = (v0.to(a2.dtype) / SPEED_SCALE)[:, None, None]
+    if cond_param == COND_EGO_STATE:
+        # channel 0: steer -> omega = v * tan(steer) / L  (L cancels the forward
+        # transform exactly). v0 is in m/s here, NOT the SPEED_SCALE-normalised v.
+        omega = (v0.to(a2.dtype)[:, None] * torch.tan(a2[..., 0])
+                 / _COND_WHEELBASE_M)[..., None]
+        a2 = torch.cat([omega, a2[..., 1:]], dim=-1)
+    elif cond_param != COND_INCUMBENT:
+        raise ValueError(f"unknown --cond-param {cond_param!r}; expected "
+                         f"{COND_INCUMBENT!r} or {COND_EGO_STATE!r}")
+    return torch.cat([a2, v.expand(-1, a2.shape[1], -1)], dim=-1)
+
+
+# ============================================================================
+# X5 — the per-stage gate
+# ============================================================================
+
+def stage_gate_dict(stage: str, probes: dict, *, run: dict | None = None,
+                    arm: dict | None = None) -> dict:
+    """Assemble ``stage_gate.json`` from whatever probes actually ran.
+
+    ``probes`` maps probe name -> ``{"pass": bool|None, ...}``. A required probe
+    that is ABSENT or reports ``pass: None`` makes the whole gate
+    **INCONCLUSIVE** (``"pass": null``), never a pass. That distinction is the
+    whole mechanism: a gate that quietly reads a missing probe as satisfied is
+    not a gate, and X5's rule — *a failed stage never propagates upward* — is
+    only enforceable if "did not run" and "ran and passed" stay different
+    words.
+
+    ⭐ **E4 — ``arm`` makes a criterion ARM-CONDITIONAL, and only downward.**
+    ``arm`` is :func:`arm_record`'s build facts. A required probe that
+    :func:`probe_applies` declares NOT APPLICABLE on this arm is excluded from
+    the verdict and listed in ``not_applicable_required`` **with its reason and
+    with what would make it applicable** — it is never silently dropped and
+    never counted as a pass. ⛔ ``arm=None`` (no record supplied) adjudicates
+    EVERY criterion as applicable, which is the strict reading and today's
+    behaviour byte-for-byte: forgetting to describe the arm can only make the
+    gate harder to pass, never easier.
+
+    ⛔ **The one thing this must never do is manufacture a PASS.** A stage whose
+    entire required set became not-applicable would "pass" while measuring
+    nothing, so that case is refused outright: ``required_effective`` empty ⇒
+    **INCONCLUSIVE**, with ``vacuous_gate`` naming it. A gate with nothing left
+    to check is decoration, and this programme has already found three of those.
+
+    ⛔ **AND A SUPPLIED VERDICT ALWAYS WINS OVER THE PREDICATE.** Applicability
+    answers *"can this arm produce the quantity?"* — it does **not** license
+    discarding a quantity somebody actually supplied. MEASURED 2026-08-17: the
+    first version of this function excluded a not-applicable probe
+    unconditionally, and the incumbent
+    ``test_the_whole_ladder_hands_off_through_the_WRITTEN_files`` caught it — a
+    planted ``sel_gap {"pass": false}`` was silently dropped and the gate read
+    **PASS on a rung that had FAILED**. That is the erasure of a FAIL, the worst
+    thing a gate can do, arriving through the very mechanism meant to stop
+    vacuous verdicts. ⇒ a probe present with a non-``None`` ``pass`` is
+    adjudicated **regardless** of the predicate, and the contradiction between
+    *"this arm cannot produce it"* and *"here is a value for it"* is surfaced in
+    ``applicability_conflicts`` rather than resolved silently in either
+    direction.
+    """
+    spec = STAGE_GATE_SPEC[stage]
+    req = spec["required"]
+    supplied = {p for p in req
+                if p in probes and probes[p].get("pass") is not None}
+    skipped: dict[str, dict] = {}
+    conflicts: list[dict] = []
+    for p in req:
+        r = probe_applies(stage, p, arm)
+        if r is None:
+            continue
+        if p in supplied:
+            conflicts.append({
+                "probe": p, "supplied_pass": probes[p].get("pass"),
+                "predicate": r.get("predicate"),
+                "_read": "this arm was recorded as UNABLE to produce this "
+                         "criterion, yet a verdict was supplied for it. The "
+                         "SUPPLIED verdict is adjudicated — a predicate never "
+                         "discards a measurement — but one of the two is "
+                         "wrong: either the arm record or the probe's "
+                         "provenance. Establish which before quoting this "
+                         "gate."})
+            continue
+        skipped[p] = r
+    eff = [p for p in req if p not in skipped]
+    missing = [p for p in eff if p not in probes]
+    inconclusive = [p for p in eff
+                    if p in probes and probes[p].get("pass") is None]
+    failed = [p for p in eff
+              if p in probes and probes[p].get("pass") is False]
+    vacuous = bool(req) and not eff
+    if failed:
+        verdict: bool | None = False
+    elif missing or inconclusive or vacuous:
+        verdict = None
+    else:
+        verdict = True
+    return {
+        "stage": stage,
+        "pass": verdict,
+        "verdict": ("PASS" if verdict is True else
+                    "FAIL" if verdict is False else "INCONCLUSIVE"),
+        # ⛔ the SPEC, verbatim and unedited — a criterion is never deleted from
+        # the record because one arm could not produce it.
+        "required": list(req),
+        "required_effective": eff,
+        "not_applicable_required": list(skipped.values()),
+        # ⛔ never empty-and-silent: a supplied verdict for a criterion the arm
+        # cannot produce is adjudicated, AND reported as the contradiction it is.
+        "applicability_conflicts": conflicts,
+        "arm": arm if arm is not None else {
+            "_read": "no arm record was supplied, so EVERY criterion was "
+                     "adjudicated as APPLICABLE (the strict default). A real "
+                     "trainer-written gate always carries one — see "
+                     "run_stage_gate."},
+        "vacuous_gate": ({
+            "refused": True,
+            "_read": "every required criterion was NOT APPLICABLE on this arm, "
+                     "so a PASS here would certify nothing. Forced to "
+                     "INCONCLUSIVE."} if vacuous else None),
+        "sel_gap_tier": SEL_GAP_TIER_NOTE,
+        "reported_only": list(spec["reported"]),
+        "criteria": spec["criteria"],
+        "owners": spec["owners"],
+        "probes": probes,
+        "missing_required": missing,
+        "inconclusive_required": inconclusive,
+        "failed_required": failed,
+        "next_stage": next((s for s, p in STAGE_PRECONDITION.items()
+                            if p == stage), None),
+        "revalidates": {
+            "stages": list(STAGE_INVALIDATES.get(stage, ())),
+            "mechanism": STAGE_INVALIDATION_MECHANISM.get(stage),
+            "note": "certificates this stage INVALIDATES by construction. The "
+                    "re-measurements are in `required` above, so omitting them "
+                    "reads INCONCLUSIVE, never PASS.",
+        } if STAGE_INVALIDATES.get(stage) else None,
+        "bound_outcomes": {
+            "PASS": f"{stage} propagates upward; the next stage may launch",
+            "FAIL": "the next stage MUST NOT launch (X5). Diagnose at THIS "
+                    "layer; a failed stage never propagates upward.",
+            "INCONCLUSIVE": "treated as NOT-PASS. Run the missing probes, or "
+                            "override with --allow-inconclusive-gate AND "
+                            "--gate-off-reason (the reason is recorded).",
+            # ⛔ the fourth reading, and it is NOT one of the three verdicts:
+            # a criterion this arm cannot produce. It never contributes a pass.
+            "NOT_APPLICABLE": "a required criterion this ARM cannot produce "
+                              "(see not_applicable_required). It is excluded "
+                              "from the verdict and its question stays "
+                              "UNMEASURED — never counted as satisfied. A "
+                              "PASS here certifies required_effective ONLY.",
+        },
+        "tier": "gate assembled from frozen-battery probes (T0/T1 per probe)",
+        "_evidence_class": "MEASURED (ours) for probes present; probes listed "
+                           "in missing_required were NOT RUN; probes listed in "
+                           "not_applicable_required are UNMEASURABLE on this "
+                           "arm and each names what would change that",
+    }
+
+
+def write_stage_gate(out_dir, gate: dict) -> Path:
+    p = Path(out_dir) / "stage_gate.json"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps(gate, indent=1))
+    return p
+
+
+def assert_stage_precondition(stage: str, prev_gate_path=None, *,
+                              allow_inconclusive: bool = False,
+                              off_reason: str = "",
+                              dry_run: bool = False) -> dict:
+    """REFUSE to start ``stage`` unless the stage below it PASSED (X5).
+
+    Returns the precondition report on success; raises
+    :class:`GatePreconditionError` otherwise. Four refusals, all deliberate:
+      * the previous gate file is MISSING -> refuse (a stage that never ran a
+        gate did not pass one);
+      * ``pass: false`` -> refuse, and no flag overrides it. A FAIL is a
+        finding about the layer below; propagating it upward is how a defect
+        gets attributed to the wrong layer three stages later;
+      * ``pass: null`` (INCONCLUSIVE) -> refuse UNLESS
+        ``allow_inconclusive`` AND a non-empty ``off_reason``;
+      * ⛔ the gate was written by a ``--dry-run`` -> refuse a REAL launch. A
+        dry-run's gate is a SMOKE artifact: no battery ran, its numbers come
+        from synthetic tensors, and it exists only so the chain's own advance
+        logic can be executed end-to-end on CPU. ``dry_run=True`` (set by
+        :func:`dry_run`) is the only thing that accepts one, so a dry ladder
+        can never license a real launch — the default is the strict one.
+
+    ⭐ **E4: a PASS is reported WITH ITS SCOPE.** When the predecessor's
+    certificate skipped a required criterion as NOT APPLICABLE, this is the
+    moment an operator can still act on it, so the report carries
+    ``prev_not_applicable`` and the refusal-free path still PRINTS what the
+    certificate did not cover. A PASS that quietly means "everything except the
+    question you care about" is how a scope error becomes a claim three stages
+    later — the ``heldout``-vs-``full_set`` family, in a gate.
+    """
+    prev = STAGE_PRECONDITION.get(stage)
+    if prev is None:
+        return {"stage": stage, "precondition": None,
+                "ok": True, "reason": "S-W starts the ladder"}
+    if prev_gate_path is None:
+        raise GatePreconditionError(
+            f"[v6] ⛔ stage {stage} requires {prev}'s gate, but no "
+            f"--prev-gate was given. X5: a stage is gated by the frozen "
+            f"battery BEFORE the next begins.")
+    p = Path(prev_gate_path)
+    if not p.exists():
+        raise GatePreconditionError(
+            f"[v6] ⛔ stage {stage} requires {prev}'s gate at {p} — the file "
+            f"does not exist. A stage that never ran a gate did not pass one.")
+    gate = json.loads(p.read_text())
+    if gate.get("stage") != prev:
+        raise GatePreconditionError(
+            f"[v6] ⛔ {p} is the gate for stage {gate.get('stage')!r}, but "
+            f"{stage} requires {prev!r}. Pointing a stage at the wrong gate "
+            f"file is not a pass.")
+    if gate.get("_dry_run") and not dry_run:
+        raise GatePreconditionError(
+            f"[v6] ⛔ {p} was written by a --dry-run (\"_dry_run\": true) and "
+            f"this is a REAL launch. A dry-run's gate is a smoke artifact: no "
+            f"frozen-battery probe ran, and every number behind it came from "
+            f"synthetic tensors. Re-run stage {prev} for real, or point "
+            f"--prev-gate at the real run's stage_gate.json.")
+    # ⭐ E4 — the predecessor's UNMEASURED questions, surfaced at the only
+    # moment an operator can still act on them. Never a refusal: the criterion
+    # was genuinely unproducible on that arm, and blocking here would re-create
+    # the INCONCLUSIVE-by-construction deadlock one stage higher.
+    na = list(gate.get("not_applicable_required") or [])
+    if na:
+        print(f"[v6] ⚠️ {prev}'s certificate does NOT cover "
+              f"{[x.get('probe') for x in na]} — not applicable on that arm. "
+              + " | ".join(f"{x.get('probe')}: {x.get('why_not_measured','')} "
+                           f"⇒ {x.get('what_would_make_it_applicable','')}"
+                           for x in na), flush=True)
+    verdict = gate.get("pass")
+    if verdict is False:
+        raise GatePreconditionError(
+            f"[v6] ⛔ stage {prev} FAILED its gate "
+            f"(failed_required={gate.get('failed_required')}) — {stage} MUST "
+            f"NOT launch. X5: a failed stage never propagates upward. There "
+            f"is no override for a FAIL; fix the layer below.")
+    if verdict is None:
+        if not (allow_inconclusive and off_reason.strip()):
+            raise GatePreconditionError(
+                f"[v6] ⛔ stage {prev}'s gate is INCONCLUSIVE "
+                f"(missing={gate.get('missing_required')}, "
+                f"inconclusive={gate.get('inconclusive_required')}). "
+                f"INCONCLUSIVE IS NOT A PASS. Run the missing probes, or pass "
+                f"--allow-inconclusive-gate --gate-off-reason '<why>'.")
+        return {"stage": stage, "precondition": prev, "ok": True,
+                "prev_verdict": "INCONCLUSIVE",
+                "override": "allow-inconclusive-gate",
+                "off_reason": off_reason, "prev_gate": str(p),
+                "prev_not_applicable": na}
+    return {"stage": stage, "precondition": prev, "ok": True,
+            "prev_verdict": "PASS", "prev_gate": str(p),
+            "prev_not_applicable": na,
+            "prev_pass_scope": (
+                f"{prev} PASSED on {gate.get('required_effective', gate.get('required'))}"
+                + (f"; it did NOT cover "
+                   f"{[x.get('probe') for x in na]} (not applicable on that "
+                   f"arm — see the predecessor's stage_gate.json)"
+                   if na else ""))}
+
+
+def in_spectrum_window(step: int, every: int, accum: int) -> bool:
+    """Is ``step`` inside the ``accum``-step block that ENDS at the next
+    emission?
+
+    Extracted from the loop so the arithmetic is testable: the block is the
+    ``accum-1`` steps preceding an emission PLUS the emission step itself, i.e.
+    ``step % every`` in ``{every-accum+1, …, every-1, 0}``. Off-by-one here
+    silently changes what the pooled spectrum is measured over, and the record
+    would still look well-formed.
+
+    ``accum <= 1`` is the incumbent path and never pools.
+    """
+    if accum <= 1 or every <= 0:
+        return False
+    r = step % every
+    return r == 0 or r > every - accum
+
+
+# ============================================================================
+# X4 — per-layer spectrum monitoring (tac / str) + the o6 loss-trend guard
+# ============================================================================
+
+#: The o6 TREND baseline is the first N per-step ``o6_sigreg`` values of THIS
+#: process (2 spectrum intervals at the default --spectrum-every 200), and the
+#: comparison window is the most recent N. Robust medians over hundreds of
+#: points, so single-step spikes cannot fire the guard. Same resume caveat as
+#: the spectrum reference: a restarted process re-baselines from its restart.
+X4_TREND_BASELINE_STEPS = 400
+X4_TREND_CURRENT_STEPS = 100
+
+#: The layers ``--x4-spectrum-layers`` may name. ``op`` is deliberately NOT
+#: acceptable: z_op's monitor is the incumbent O6 block, is not governed by
+#: the X4 flag, and cannot be turned off.
+X4_ALLOWED_LAYERS = ("tac", "str")
+
+
+def x4_monitor_from_args(a, cfg) -> "LayerSpectrumMonitor | None":
+    """Build the per-layer monitor from the CLI, or ``None`` when disabled.
+
+    ⚠️ RNG ISOLATION: the monitor gets its OWN generator (seed+11), not the
+    O6 path's ``spec_gen`` — sharing one stream would shift the z_op bootstrap
+    DIAGNOSTIC sequence whenever X4 runs first, i.e. a monitoring addition
+    changing another monitor's numbers under identical flags.
+    """
+    raw = [s.strip() for s in str(getattr(a, "x4_spectrum_layers", "")
+                                  ).split(",") if s.strip()]
+    if not raw or raw == ["none"]:
+        return None
+    bad = [s for s in raw if s not in X4_ALLOWED_LAYERS]
+    if bad:
+        raise SystemExit(
+            f"[v6] ⛔ --x4-spectrum-layers {bad}: only {X4_ALLOWED_LAYERS} "
+            f"are X4 layers ('op' is the incumbent O6 monitor and cannot be "
+            f"moved under this flag; 'none' disables)")
+    dims = {"tac": cfg.d_tac, "str": cfg.d_str}
+    return LayerSpectrumMonitor(
+        {k: dims[k] for k in raw},
+        accum=a.spectrum_accum,
+        # z_tac/z_str contribute one row per WINDOW, i.e. --batch rows/step
+        rows_per_step={k: int(a.batch) for k in raw},
+        ci_reps=a.spectrum_ci_reps,
+        generator=(torch.Generator().manual_seed(a.seed + 11)
+                   if a.spectrum_ci_reps else None))
+
+
+def x4_trend_record(o6_baseline: "list[float]",
+                    o6_current: "list[float]") -> dict:
+    """The per-layer SIGReg trend block for the X4 record.
+
+    ``op`` carries the real verdict (:func:`sigreg_trend_verdict` over the
+    per-step ``o6_sigreg`` series). ``tac`` / ``str`` carry an EXPLICIT
+    not-applicable: **no per-layer SIGReg loss exists** — ``v6_loss_step``
+    applies ``stack.sigreg`` to z_op only, so X4's "per-layer SIGReg" half is
+    unimplemented in this trainer, and a trend guard without a loss series
+    would be an invented instrument (stated per the four-families rule:
+    a missing metric is declared with its reason, never silently dropped).
+    """
+    na = {"applicable": False,
+          "reason": "no per-layer SIGReg loss exists: v6_loss_step applies "
+                    "SigReg to z_op only (X4's per-layer-SIGReg half is "
+                    "unimplemented in the trainer). A trend guard without a "
+                    "loss series would be an invented instrument."}
+    if not o6_baseline and not o6_current:
+        op = {"applicable": False,
+              "reason": "no o6_sigreg values this stage (w_o6 == 0 or the "
+                        "term is skipped) — nothing to baseline"}
+    else:
+        op = dict(sigreg_trend_verdict(o6_baseline, o6_current),
+                  applicable=True,
+                  scope="REPORTED monitor only; gate promotion is a PI "
+                        "decision (O6_ABLATION_AND_MASK_PROBE.md esc. 2)")
+    return {"op": op, "tac": dict(na), "str": dict(na)}
+
+
+def run_stage_gate(stack: V6Stack, stage: str, *, out_dir,
+                   spectrum: dict | None = None,
+                   x4_spectra: dict | None = None,
+                   extra_probes: dict | None = None,
+                   dry_run: bool = False) -> dict:
+    """Run whatever frozen-battery entry points are IMPORTABLE here, assemble
+    the gate, and write it.
+
+    ⚠️ Rule 2 (*absence found at ONE location is not absence*) applied to the
+    battery: a probe that cannot be imported is recorded with the ImportError
+    text and the owning path from :data:`STAGE_GATE_SPEC`, so "n/a" always says
+    WHAT was not reachable and WHERE it lives. It is never silently dropped,
+    and it never counts as a pass.
+
+    ⭐ **E4: the arm record is read off the BUILT STACK here** (:func:`arm_record`)
+    and handed to :func:`stage_gate_dict`, so every trainer-written certificate
+    says which criteria its own build could produce. ⛔ This is also the one
+    place that can tell "not run" from "UNRUNNABLE": a not-applicable criterion
+    gets that status rather than the ``not-run`` boilerplate, which otherwise
+    tells an operator to go and run a battery that cannot produce the number.
+    """
+    probes: dict[str, dict] = dict(extra_probes or {})
+    spec = STAGE_GATE_SPEC[stage]
+    arm = arm_record(stack)
+    for name in tuple(spec["required"]) + tuple(spec["reported"]):
+        if name in probes:
+            continue
+        owner = spec["owners"].get(name, "?")
+        na = probe_applies(stage, name, arm)
+        if na is not None:
+            probes[name] = {"pass": None, "status": "not-applicable",
+                            "owner": owner, **na}
+            continue
+        probes[name] = {"pass": None, "status": "not-run",
+                        "owner": owner,
+                        "reason": "no artifact supplied to --gate-probes and "
+                                  "this trainer does not run the battery "
+                                  "in-loop (it is a separate, frozen "
+                                  "instrument by design)",
+                        "tier_note": (SEL_GAP_TIER_NOTE
+                                      if name.startswith("sel_gap") else None)}
+    # X3 is the one gate this module CAN measure on its own, always.
+    try:
+        iso = stack.assert_isolation(batch_size=1, strict=False)
+        probes["X3_isolation"] = {"pass": bool(iso["pass"]), "status": "run",
+                                  "owner": "V6Stack.assert_isolation",
+                                  "n_violations": iso["n_violations"],
+                                  "violations": iso["violations"]}
+    except Exception as exc:                                # pragma: no cover
+        probes["X3_isolation"] = {"pass": None, "status": "error",
+                                  "reason": f"{type(exc).__name__}: {exc}"}
+    if spectrum is not None:
+        # ⛔ The verdict travels WITH the reading, so a gate artifact can never
+        # again carry an effective_rank without the ceiling that bounds it.
+        # ``o6_rank_verdict`` returns INCONCLUSIVE for any reading below
+        # O6_ADMISSIBLE_CEILING, which every single-batch reading is.
+        probes["O6_spectrum"] = {"pass": None, "status": "reported",
+                                 "owner": "tanitad.models.v6.spectrum_report",
+                                 **spectrum,
+                                 "verdict": o6_rank_verdict(spectrum),
+                                 "reason": "rank RETENTION needs a series AND "
+                                           "an admissible rank ceiling; see "
+                                           "SIGREG_GATE_POWER.md — at n=48 the "
+                                           "reading is bounded by 47 and the "
+                                           ">= 0.8x criterion fires on noise "
+                                           "9-38 % of the time"}
+    if x4_spectra is not None:
+        # X4: the per-layer records travel with THEIR OWN verdicts (already
+        # embedded per layer by LayerSpectrumMonitor.emit), each under the
+        # layer's measured ceiling/floor — never z_op's. Reported, never
+        # adjudicated; INCONCLUSIVE is the expected reading until pooled.
+        probes["X4_spectrum_layers"] = {
+            "pass": None, "status": "reported",
+            "owner": "tanitad.models.v6.LayerSpectrumMonitor",
+            "layers": x4_spectra,
+            "reason": "per-layer rank retention (tac ceiling_min 256 / "
+                      "floor 32, str 128 / 32 — x4_layer_power.json); "
+                      "verdicts are INCONCLUSIVE until pooled to the "
+                      "layer's own ceiling (--spectrum-accum 33 recommended: "
+                      "32 leaves tac ONE ROW short at 8 rows/step)"}
+    gate = stage_gate_dict(stage, probes, arm=arm)
+    gate["param_report"] = stack.param_report()
+    if dry_run:
+        # ⛔ STAMPED, so it can never be mistaken for — or used as — a real
+        # certificate. `assert_stage_precondition` refuses it for a real launch.
+        gate["_dry_run"] = True
+        gate["_read"] = ("SMOKE ARTIFACT. Written by --dry-run over SYNTHETIC "
+                         "tensors: no corpus, no frozen-battery probe, no "
+                         "eval. It exists so a chain's advance logic can be "
+                         "EXECUTED end-to-end on CPU. No number here is "
+                         "quotable and it licenses no real launch.")
+    path = write_stage_gate(out_dir, gate)
+    print(f"[v6] stage gate {gate['verdict']} -> {path}", flush=True)
+    return gate
+
+
+# ============================================================================
+# building the stack from args
+# ============================================================================
+
+def resolve_gc(a, field: str) -> bool:
+    """Resolve a per-site grad-checkpoint override against the master flag.
+
+    ``auto`` (the default) follows ``--grad-checkpoint``, so every launch
+    command written before the split behaves byte-identically. ``on``/``off``
+    decide that one site independently.
+    """
+    v = getattr(a, field, "auto")
+    if v in (None, "auto"):
+        return bool(getattr(a, "grad_checkpoint", False))
+    return v == "on"
+
+
+def _read_anchor_table(path) -> tuple[Tensor, list | None]:
+    """Read a ``build_refc_anchors.py`` artifact -> ``(anchors, horizons)``.
+
+    The shipped format is ``{"anchors": [K, S, 2], "horizons": [...], ...}``
+    (``build_refc_anchors.main``); a bare ``[K, S, 2]`` / ``[K, 2]`` tensor is
+    also accepted. ``horizons`` is returned UNCHANGED, including ``None`` --
+    :meth:`AnchorGoalHead.load_anchor_table` REFUSES a ``[K, S, 2]`` table with
+    no horizons rather than reading ``anchors[:, -1]``, because that index
+    silently means "2.0 s" for both a 4-point and a 20-point vocabulary.
+    """
+    p = Path(path)
+    if not p.exists():
+        raise SystemExit(f"[v6] anchor table {p} does not exist")
+    obj = torch.load(p, map_location="cpu", weights_only=False)
+    if isinstance(obj, dict):
+        if "anchors" not in obj:
+            raise SystemExit(
+                f"[v6] {p} has no 'anchors' key (found {sorted(obj)[:8]}) -- "
+                f"this is not a build_refc_anchors.py artifact")
+        return torch.as_tensor(obj["anchors"]).float(), obj.get("horizons")
+    # A BARE [K, S, 2] tensor carries no horizons, and INVENTING them (1..S) is
+    # exactly the "a number rather than an error" failure the refusal exists to
+    # prevent -- the two real shipped shapes are [5,10,15,20] and [1..20], and
+    # guessing between them mislabels the whole corpus. ``horizons=None`` is
+    # passed through so ``load_anchor_table`` refuses it by name.
+    return torch.as_tensor(obj).float(), None
+
+
+def build_stack_from_args(a) -> V6Stack:
+    """Instantiate :class:`V6Stack` from the CLI, enforcing the sub-300M
+    invariant AND the X3 matrix BEFORE any GPU time is spent. Both refusals are
+    pre-launch on purpose: an over-budget or mis-wired model discovered at hour
+    six of a run is a wasted GPU-day."""
+    if getattr(a, "newest_frame_only", False) and int(a.in_channels) != 3:
+        raise SystemExit("[v6] --newest-frame-only feeds 3-channel frames; pass "
+                         f"--in-channels 3 (got {a.in_channels}). Refusing to "
+                         "build a 9-channel encoder for 3-channel input.")
+    enc = EncoderConfig(in_channels=a.in_channels, image_size=a.frame_h,
+                        image_width=a.frame_w, patch_size=a.patch,
+                        d_model=a.enc_dim, depth=a.enc_depth,
+                        n_heads=a.enc_heads,
+                        grad_checkpoint=resolve_gc(a, "enc_grad_checkpoint"))
+    ro = ReadoutConfig(grid=a.readout_grid, d_readout=a.readout_dim,
+                       grid_w=a.readout_grid_w)
+    pr = PredictorConfig(d_model=a.pred_dim, depth=a.pred_depth,
+                         n_heads=a.pred_heads, window=a.window,
+                         horizons=tuple(a.horizons), action_dim=3,
+                         residual=True, modern=bool(a.pred_modern))
+    cfg = V6Config(
+        encoder=enc, readout=ro, predictor=pr,
+        d_tac=a.d_tac, d_str=a.d_str, d_goal_embed=a.d_goal_embed,
+        shared_encoder=not a.per_layer_encoders,
+        adapter_hidden=a.adapter_hidden,
+        plan_steps=a.plan_steps, dt=a.dt, n_candidates=a.n_candidates,
+        a_max=a.a_max, kappa_max=a.kappa_max,
+        isolate_planner_from_encoder=not a.no_isolate_planner,
+        isolate_uplink=not a.no_isolate_uplink, uplink=a.uplink,
+        ema_decay=a.ema_decay, sigreg_slices=a.sigreg_slices,
+        sigreg_subspaces=getattr(a, "sigreg_subspaces", 1),
+        sigreg_free_dims=a.sigreg_free_dims, param_budget=a.param_budget,
+        f_hidden_tac=a.f_hidden_tac, f_hidden_str=a.f_hidden_str,
+        f_blocks=a.f_blocks,
+        selector=a.selector, selector_tau_m=a.selector_tau_m,
+        selector_mlp_hidden=getattr(a, "selector_mlp_hidden", 256),
+        plan_wta_eps=a.plan_wta_eps,
+        # ---- GOAL-HEAD STRUCTURE, ALL DEFAULT-OFF ---------------------------
+        # These V6Config levers existed with NO CLI path to them, which is the
+        # `intent_proj` defect in the launch surface: a lever present in the
+        # architecture and absent from every command that can build it. Every
+        # default below reproduces the incumbent build EXACTLY -- proved per
+        # tensor against the pre-change revision of v6.py in
+        # tests/test_v6_anchor_loss.py, not by reading these lines.
+        goal_factored=bool(getattr(a, "goal_factored", False)),
+        goal_multilabel=bool(getattr(a, "goal_multilabel", False)),
+        goal_cat_args=bool(getattr(a, "goal_cat_args", False)),
+        # F-1: the g_str->P_T port. Default False = the incumbent build,
+        # byte-identical; the chain's S-T command surface turns it on.
+        tac_goal_cond=bool(getattr(a, "tac_goal_cond", False)),
+        # ⭐ R6 (PI 2026-09-27): zero strategic conditioning into the tactical goal
+        # heads. Default False = byte-identical; an older recorded namespace lacks
+        # the key and rebuilds exactly what it trained.
+        strategic_off=bool(getattr(a, "strategic_off", False)),
+        # ⛔⛔ R2 (PI 2026-09-27): THE NAV CONDITIONER. MEASURED 2026-09-27 by the v7f launch-gate
+        # profile (G-DVB): `--nav-cond` was REQUIRED by preflight for every v7-line run and then
+        # NEVER mapped here, so every such launch built a stack with NO nav conditioner -- a
+        # declared lever the built model did not have (the D-REFCV6-CONFIG-BUILD class). The
+        # nav fixes pinned by tests/test_v7f_r2_nav_fixes.py were tested on configs built
+        # directly and so never reached a real launch. Default False = byte-identical.
+        nav_cond=bool(getattr(a, "nav_cond", False)),
+        # ⭐ R4 / R1a / R1b (PI 2026-09-27, v7F). Defaults ("off"/False/False)
+        # = the incumbent build, byte-identical (tests/test_v7f_r1r4.py). A
+        # RECORDED-args namespace from an older run lacks the keys and so
+        # rebuilds exactly what it trained (the getattr fallbacks).
+        tac_op_cond=str(getattr(a, "tac_op_cond", "off") or "off"),
+        max_speed_input_v6=bool(getattr(a, "max_speed_input_v6", False)),
+        plan_vmax_cap=bool(getattr(a, "plan_vmax_cap", False)),
+        # F-7 / T2: the manoeuvre-contrastive projector. Default False = the
+        # incumbent build, 87,893,449 params / 405 keys (MEASURED); ON adds
+        # +164,225 params / +5 keys at the default d_tac (also MEASURED, in
+        # tests/test_v6_t2_contrastive.py — never estimated).
+        t2_contrastive=bool(getattr(a, "t2_contrastive", False)),
+        d_t2_proj=int(getattr(a, "d_t2_proj", 128)),
+        d_t2_hidden=int(getattr(a, "d_t2_hidden", 256)),
+        t2_tau=float(getattr(a, "t2_tau", 0.1)),
+        anchor_goal=getattr(a, "anchor_goal", "none"),
+        n_anchors=int(getattr(a, "n_anchors", 256)),
+        n_lat_bins=int(getattr(a, "n_lat_bins", 16)),
+        n_agent_slots=int(getattr(a, "n_agent_slots", 8)),
+        # ---- PROPOSALS / MPC / FALLBACK (2026-08-16), ALL DEFAULT-OFF -------
+        # Every default reproduces the incumbent build EXACTLY (per-tensor
+        # C75 proof in tests/test_v6_diffusion_mpc_fallback.py). The MPC path
+        # is additionally gated by V6Config itself: it refuses to build
+        # without selector='goal', so it stays INERT while SEL-1 is refused
+        # (assert_selector_admissible gates every selector launch).
+        proposals=getattr(a, "proposals", "query"),
+        diffusion_steps=int(getattr(a, "diffusion_steps", 4)),
+        diffusion_noise_rho=float(getattr(a, "diffusion_noise_rho", 0.9)),
+        diffusion_hidden=int(getattr(a, "diffusion_hidden", 256)),
+        diffusion_sigma_a=float(getattr(a, "diffusion_sigma_a", 2.0)),
+        diffusion_sigma_k=float(getattr(a, "diffusion_sigma_k", 0.1)),
+        mpc_refine=bool(getattr(a, "mpc_refine", False)),
+        mpc_topk=int(getattr(a, "mpc_topk", 2)),
+        mpc_steps=int(getattr(a, "mpc_steps", 3)),
+        mpc_lr=float(getattr(a, "mpc_lr", 0.05)),
+        mpc_roll_k=int(getattr(a, "mpc_roll_k", 0)),
+        mpc_w_goal=float(getattr(a, "mpc_w_goal", 1.0)),
+        mpc_w_kin=float(getattr(a, "mpc_w_kin", 0.1)),
+        mpc_w_consist=float(getattr(a, "mpc_w_consist", 0.0)),
+        fallback_trigger=bool(getattr(a, "fallback_trigger", False)),
+        fallback_roll_k=int(getattr(a, "fallback_roll_k", 10)),
+        # ---- F-18 PERCEPTION AGENT SLOTS, DEFAULT-OFF ----------------------
+        # Default False reproduces the incumbent build EXACTLY (per-tensor
+        # C75 proof in tests/test_v6_agent_slots.py). ⛔ The head trains in NO
+        # ladder stage; the flag exists so a checkpoint can CARRY it and a
+        # frozen-trunk probe can read it.
+        agent_slots=bool(getattr(a, "agent_slots", False)),
+        n_slot_queries=int(getattr(a, "n_slot_queries", N_QUERIES_DEFAULT)),
+        slot_hidden=int(getattr(a, "slot_hidden", 256)),
+        slot_depth=int(getattr(a, "slot_depth", 3)),
+        slot_heads=int(getattr(a, "slot_heads", 8)),
+        slot_src=getattr(a, "slot_src", "cells"),
+        isolate_interp_from_encoder=not bool(
+            getattr(a, "no_isolate_interp", False)),
+        vit5_encoder=bool(a.vit5_encoder), n_registers=a.n_registers)
+    # ⭐ the vocabulary version rides the ARGS round-trip (PI mandate
+    # 2026-08-27): a NEW launch records --tac-vocab-version (default v7.0);
+    # a RECORDED-args namespace from an old run lacks the key and MUST mean
+    # v6.0 — that is what keeps every existing checkpoint loadable.
+    cfg.tac_vocab_version = str(getattr(a, "tac_vocab_version", "v6.0"))
+    stack = V6Stack(cfg)
+    # ⭐ R1/R4 G-DVB (2026-09-27): argv vs the BUILT stack for the levers this
+    # change adds, refused before anything else runs. (The binding launch gate
+    # has no train_v6_staged profile yet -- declared_vs_built_v6's docstring.)
+    from tanitad.train.declared_vs_built_v6 import refuse_on_mismatch as _dvb6
+    _dvb6(stack, a)
+    if str(getattr(a, "o5_target", "live")) == "ema":
+        from tanitad.models.v6 import _EmaCopy
+        # ⚠️ these deepcopy whatever the modules hold NOW (random init);
+        # `_resync_ema_o5` MUST run after any --init-from load or the teacher
+        # is a frozen random net. Both load sites call it.
+        stack.ema_o5_enc = _EmaCopy(stack.encoder, float(a.ema_decay))
+        stack.ema_o5_ro = _EmaCopy(stack.readout, float(a.ema_decay))
+    elif str(getattr(a, "o5_target", "live")) == "frozen":
+        from tanitad.models.v6 import _EmaCopy
+        # MM-E4 L2 (PREREG_DRIFT_ATTACK_LADDER): the FIXED distill-init
+        # teacher. Same construction as the EMA pair, but NO update is ever
+        # wired — the per-step update sites key on `ema_o5_enc`, which frozen
+        # mode deliberately does not set — so after the post-init-load resync
+        # these weights never move again. Same config by construction (a
+        # deepcopy), hence NO projection head; the shape walk below is the
+        # guard that keeps that true if construction ever diverges.
+        stack.frozen_o5_enc = _EmaCopy(stack.encoder, 1.0)
+        stack.frozen_o5_ro = _EmaCopy(stack.readout, 1.0)
+        for _dst, _src in ((stack.frozen_o5_enc.module, stack.encoder),
+                           (stack.frozen_o5_ro.module, stack.readout)):
+            _ds = [tuple(p.shape) for p in _dst.parameters()]
+            _ss = [tuple(p.shape) for p in _src.parameters()]
+            assert _ds == _ss, ("frozen O5 teacher shape mismatch "
+                                "(same-config contract broken)", _ds, _ss)
+    _crop = float(getattr(a, "o5_target_crop", 0.0) or 0.0)
+    if _crop and not (0.0 < _crop < 1.0):
+        raise SystemExit(f"[v6] ⛔ --o5-target-crop {_crop} must be in (0, 1)"
+                         f" — 1.0 (or more) would be a silent no-op arm")
+    _ramp = str(getattr(a, "ema_decay_ramp", "off"))
+    if _ramp != "off":
+        # ⛔ FAIL AT LAUNCH, NOT AT STEP 1. Same lesson as the analysis-time
+        # import that died AFTER the rollout: a config error that only
+        # surfaces once the corpus is built has already spent the expensive
+        # part of the run. One evaluation of the schedule costs microseconds.
+        try:
+            ema_tau_at(0, int(getattr(a, "steps", 1) or 1), ramp=_ramp,
+                       fixed=float(a.ema_decay),
+                       start=float(getattr(a, "ema_decay_start", 0.99)),
+                       end=getattr(a, "ema_decay_end", None))
+        except ValueError as _e:
+            raise SystemExit(f"[v6] ⛔ {_e}") from _e
+        if not hasattr(stack, "ema_o5_enc"):
+            # NOT a refusal: the ramp is legitimately inert on non-EMA arms
+            # (a chain may carry the flag across a panel). It is announced,
+            # because a flag that silently does nothing is how a "ramped arm"
+            # gets banked that never ramped.
+            print("[v6] ⚠️ --ema-decay-ramp is set but --o5-target is not "
+                  "'ema': there is no O5 teacher to ramp, so the flag is "
+                  "INERT for this arm. The adapter EMAs keep --ema-decay.",
+                  flush=True)
+    if float(getattr(a, "w_o14", 0.0)) > 0:
+        # O14 head: bottleneck MLP so the aux stays small (~0.6 M at d_op 2048
+        # vs 5.2 M for a direct linear — a 27 % param bump on v7-tiny would
+        # confound every capacity-matched comparison). Input = [z_t, a3_last].
+        d_op = int(cfg.d_op)
+        stack.o14_head = torch.nn.Sequential(
+            torch.nn.Linear(d_op + 3, 128), torch.nn.GELU(),
+            torch.nn.Linear(128, O14_PIX_H * O14_PIX_W))
+    # ---- the P7 fallback calibration, installed BEFORE the first forward ----
+    # Same discipline as the anchor table below: the comparator refuses to
+    # fire uncalibrated, and an inadmissible band (rho below P7's gate) must
+    # cost milliseconds, not a GPU-day. load_calibration REFUSES rho < 0.3 or
+    # a CI including 0.
+    if getattr(a, "fallback_calibration", None):
+        with open(a.fallback_calibration, encoding="utf-8") as fh:
+            calib = json.load(fh)
+        prov = stack.fallback.load_calibration(calib)
+        print(f"[v6] fallback calibration {a.fallback_calibration} -> "
+              f"{json.dumps(prov)}", flush=True)
+    # ---- the anchor table, installed BEFORE the first forward ---------------
+    # The head REFUSES to run without one (a zero table would snap every goal
+    # to the origin and still return a number), so this must land before
+    # ``assert_isolation`` below -- and it must land at BUILD time, not at
+    # first-batch time, so a wrong-horizon vocabulary costs milliseconds
+    # instead of a GPU-day. Same discipline as the --gate-probes preflight.
+    if getattr(a, "anchor_table", None):
+        prov = stack.anchor_head.load_anchor_table(
+            *_read_anchor_table(a.anchor_table), dt=cfg.dt)
+        print(f"[v6] anchor table {a.anchor_table} -> {json.dumps(prov)}",
+              flush=True)
+    from tanitad.models.predictor import residual_init_scale_banner
+    print(residual_init_scale_banner(), flush=True)
+    _warn_rank_gate_unrulable(a, stack)
+    rep = stack.assert_param_budget()
+    print(f"[v6] params {rep['total']/1e6:.2f} M / budget "
+          f"{rep['budget']/1e6:.0f} M · arm {rep['arm']} · per-group "
+          f"{ {k: round(v/1e6, 2) for k, v in rep['per_group'].items()} }",
+          flush=True)
+    iso = stack.assert_isolation(batch_size=1,
+                                 strict=not a.no_isolate_planner
+                                 and not a.no_isolate_uplink
+                                 # F-18's mis-wired arm belongs on the SAME
+                                 # list: a declared control must be buildable,
+                                 # or it is not a control.
+                                 and not bool(getattr(a, "no_isolate_interp",
+                                                      False)))
+    print(f"[v6] X3 isolation pass={iso['pass']} "
+          f"violations={iso['n_violations']}", flush=True)
+    return stack
+
+
+# ============================================================================
+# ⛔ P1 — THE PER-PARAMETER GRADIENT-REACH CENSUS
+# ============================================================================
+#: ⛔ WHAT THIS EXISTS TO CATCH, MEASURED 2026-09-06 on SEVEN v7-tiny 30k
+#: checkpoints (the at-init set is the IDENTICAL 25 names on all seven, so it
+#: is a property of the RECIPE, not of one run): **25 of 39 one-dimensional
+#: `.weight` tensors sat BIT-EXACTLY at 1.0 after 30,000 AdamW steps**, and
+#: **5 of those 25 were in the optimizer the whole time** —
+#: `step_readout_op.net.0` (`predictor_op`) and the four `masked_cells`
+#: norms (`aux`). Both groups are TRAINABLE at stage S-W. Nothing was frozen
+#: and nothing was excluded from the optimizer; their only objectives (O1 for
+#: `step_readout_op`, O3 for `masked_cells`) were weighted **0.0**, and
+#: `v6_loss_step` GUARDS those terms (`if w.o1_ctrl or w.o1_fact or
+#: w.o1_scene:`), so the modules never enter the autograd graph at all.
+#:
+#: ⭐ **WHY BIT-EXACT AND NOT MERELY SMALL — the fact that makes this
+#: invisible.** `torch.optim.AdamW._init_group` appends a parameter only
+#: `if p.grad is not None`, so a `None`-grad parameter is skipped ENTIRELY,
+#: **decoupled weight decay included**. With this trainer's
+#: `opt.zero_grad(set_to_none=True)` a never-touched parameter therefore never
+#: decays. MEASURED at the runs' own `lr=1e-4, wd=0.05`: a parameter carrying
+#: an ALLOCATED ZERO grad decays to `(1-lr*wd)**30000 = 0.860708`, while a
+#: `None`-grad parameter reads exactly 1.0.
+#: ⇒ ⛔ **"bit-exact after N steps" is NOT evidence that a parameter is outside
+#: the optimizer.** That inference was made from this checkpoint family and is
+#: wrong; the sound discriminator is `p.grad is None`, which is what this
+#: census reads.
+#:
+#: ⚠️ **WHY THE EXISTING GUARD CANNOT SEE IT** (`test_v6_ladder_edges.py`'s
+#: `_grad_census`): that one is a GROUP roll-up asserted with
+#: `any(census[g]["grad"] for g in trainable_here)` — one reached parameter
+#: anywhere in a group satisfies it — and it runs at DEFAULT `V6LossWeights()`,
+#: never at the run's own zero-weighted set. Two independent reasons it is
+#: structurally blind to a dead module inside a live group. This census is
+#: PER-PARAMETER and runs at the run's OWN weights, on a REAL backward.
+#:
+#: ⭐ IT RECORDS, IT DOES NOT REFUSE. A zero-weighted objective is a legitimate
+#: configuration (S-W is the world stage by design), so the default must not
+#: break every honest arm. `--refuse-unreached` promotes it to a refusal for a
+#: launch that intends every optimizer parameter to train.
+def grad_reach_census(stack: "V6Stack", trainable) -> dict:
+    """Which OPTIMIZER parameters got no gradient from a REAL backward.
+
+    Call immediately after ``loss.backward()`` and BEFORE ``opt.step()`` —
+    ``opt.step()`` does not clear ``.grad``, but ``zero_grad(set_to_none=True)``
+    at the top of the next iteration does, and reading it there would report
+    every parameter as unreached.
+    """
+    opt_ids = {id(p) for p in trainable}
+    trainable_numel = int(sum(int(p.numel()) for p in trainable))
+    unreached, reached, frozen = [], 0, 0
+    unreached_numel = 0
+    by_module: dict[str, dict] = {}
+    for n, p in stack.named_parameters():
+        if id(p) not in opt_ids:
+            frozen += 1
+            continue
+        if p.grad is None:
+            unreached.append(n)
+            unreached_numel += int(p.numel())
+            mod = n.rsplit(".", 1)[0]
+            e = by_module.setdefault(mod, {"tensors": 0, "numel": 0,
+                                           "group": stack.group_of(n)})
+            e["tensors"] += 1
+            e["numel"] += int(p.numel())
+        else:
+            reached += 1
+    return {
+        "n_in_optimizer": len(opt_ids),
+        "n_reached": reached,
+        "n_unreached": len(unreached),
+        "unreached_numel": unreached_numel,
+        "n_not_in_optimizer": frozen,
+        # ⭐ THE BUDGET, IN THE SAME DICT AS THE DEFECT. A consumer that has to
+        # divide `unreached_numel` by a number it fetches from somewhere ELSE
+        # will eventually divide by the wrong one — that is exactly how a
+        # 26.9 % appeared twice from two different fractions. The denominator
+        # ships beside the numerator or the percentage is not quotable.
+        "trainable_numel": trainable_numel,
+        "effective_trainable_numel": trainable_numel - unreached_numel,
+        "unreached_frac_of_trainable": (unreached_numel / trainable_numel
+                                        if trainable_numel else 0.0),
+        "unreached_modules": dict(sorted(by_module.items())),
+        "unreached_tensors": sorted(unreached),
+        "_read": "parameters IN the optimizer whose .grad is None after a real "
+                 "backward at THIS run's own loss weights. AdamW skips them "
+                 "entirely (decoupled weight decay included), so they stay "
+                 "BIT-EXACTLY at initialisation for the whole run.",
+        "_budget_read": "trainable_numel is what the freeze map DECLARED; "
+                        "effective_trainable_numel is what a gradient can "
+                        "actually reach at these weights. Quote the second "
+                        "when reporting what a run trained.",
+    }
+
+
+#: ⛔ UNREACHED MODULES THAT ARE NEVERTHELESS **READ AT EVAL** — as data,
+#: because the difference between "untrained" and "untrained AND quoted" is the
+#: difference between wasted parameters and a retracted result.
+#:
+#: MEASURED 2026-09-06: at the v7-tiny recipe (O1 = 0) and at ``PREREG_V7F.md``
+#: §9's launch line (also O1 = 0), ``step_readout_op`` receives NO gradient and
+#: therefore stays BIT-EXACTLY at initialisation. Its consumers do not know
+#: that and cannot find out from the checkpoint.
+GRADREACH_EVAL_HAZARDS: dict[str, str] = {
+    "step_readout_op": (
+        "this is the METRIC TRAJECTORY READOUT (latent transition -> per-step "
+        "Δpose). It is reached ONLY by O1 (`v6_loss_step` guards the block on "
+        "`if w.o1_ctrl or w.o1_fact or w.o1_scene`), so at O1 = 0 it stays at "
+        "RANDOM INIT for the whole run — while FIVE production sites decode "
+        "through the checkpoint's OWN copy of it: `V6Stack.roll_consistency`, "
+        "`tanitad/eval/v6_probe_trunk.py::V6Grounding.step['op']`, and "
+        "through THAT seam `taniteval/tools/t1_eval.py --grounding-readout` "
+        "and `scripts/stage_a_probes.py`, plus `scripts/probe_saliency_p9.py` "
+        "directly. (MEASURED 2026-09-06 by tracing every caller; the earlier "
+        "list of three missed t1_eval and stage_a_probes, which are exactly "
+        "the two that PUBLISHED numbers — 7 banked T1 JSONs record "
+        "`decoder = grounding.step['op']`.) Any metric decode from this run "
+        "is a random projection, not a readout. ⭐ SINCE 2026-09-06 THOSE "
+        "SITES REFUSE rather than emitting plausible metres "
+        "(`models/v6.py::assert_metric_readout_trained`), and the opt-in "
+        "`--allow-untrained-readout` records the verdict in the artifact. "
+        "Either switch O1 on, or fit a readout at eval time and SAY SO, or do "
+        "not report a metric decode from this arm."),
+    "masked_cells": (
+        "O3's masked-cell predictor. Untrained it is inert rather than "
+        "hazardous (no eval consumer), but it is counted in the parameter "
+        "budget and shipped in every checkpoint."),
+}
+
+
+def report_grad_reach(census: dict, *, refuse: bool = False,
+                      allow=()) -> None:
+    """Print the census as a banner; optionally REFUSE the launch.
+
+    ⭐ ``allow`` IS WHAT MAKES ``--refuse-unreached`` USABLE ON AN HONEST RUN,
+    AND IT IS THE WHOLE POINT OF THE FLAG PAIR. A bare refusal cannot be
+    switched on for v7f: ``PREREG_V7F.md`` §9 sets ``--w-o1-* 0 --w-o3 0`` for
+    MEASURED reasons, so ``step_readout_op`` and ``masked_cells`` are starved
+    BY DESIGN and the launch would refuse every time — and a flag that always
+    refuses gets removed from the launch line, which is how this defect stayed
+    invisible in the first place.
+    ⇒ the operator NAMES the modules they knowingly accept. A module on that
+    list is acknowledged and recorded in ``config.json``; a module that is NOT
+    on it still refuses. So the flag pair catches the case that actually
+    matters: a NEW dead subtree nobody decided about.
+    ⚠️ Matching is on PATH SEGMENTS (``step_readout_op`` covers
+    ``step_readout_op.net.1`` but never ``step_readout_op_v2``).
+    """
+    allow = tuple(allow or ())
+    n = census["n_unreached"]
+    tn = census.get("trainable_numel", 0)
+    if not n:
+        print(f"[gradreach] all {census['n_in_optimizer']} optimizer tensors "
+              f"received a gradient ({tn/1e6:.2f} M params, 100.0 % of the "
+              f"declared trainable budget)", flush=True)
+        return
+    mods = census["unreached_modules"]
+    print(f"[gradreach] WARNING {n} of {census['n_in_optimizer']} OPTIMIZER "
+          f"tensors got NO gradient ({census['unreached_numel']/1e3:.1f} k "
+          f"params). "
+          f"AdamW skips them, so they stay BIT-EXACTLY at init for the whole "
+          f"run:", flush=True)
+    # ⭐ THE HEADLINE IS THE BUDGET, NOT THE TENSOR COUNT. "42 tensors" reads
+    # like a rounding error; "52.2 % of the declared trainable budget" is the
+    # number that would have stopped v7-tiny being quoted as a 10.17 M-param
+    # arm. Print it FIRST-CLASS, not as something a reader must divide out.
+    print(f"[gradreach] EFFECTIVE trainable budget "
+          f"{census.get('effective_trainable_numel', 0)/1e6:.2f} M of "
+          f"{tn/1e6:.2f} M DECLARED "
+          f"({100.0*(1.0-census.get('unreached_frac_of_trainable', 0.0)):.1f} "
+          f"%) — quote the EFFECTIVE number for what this run trained",
+          flush=True)
+    for m, e in mods.items():
+        print(f"[gradreach]   {m} (group {e['group']}): {e['tensors']} tensors,"
+              f" {e['numel']} params", flush=True)
+    # ⛔⛔ NOT EVERY UNREACHED MODULE IS MERELY UNTRAINED. SOME ARE READ AT EVAL,
+    # AND AN UNTRAINED MODULE THAT IS READ EMITS INITIALISATION NOISE THAT LOOKS
+    # LIKE A MEASUREMENT. That is the `heads.2`/`heads.4` lesson in a second
+    # costume: those produced a retracted action-divergence result (MM-E10 ->
+    # MM-E14) and a false "the model only imagines 0.1 s" alarm, and the cost
+    # was never the wasted FLOPs. `step_readout_op` is the worse case, because
+    # it is the METRIC decode: at O1 = 0 it stays at random init for the whole
+    # run, and every consumer below reads a random projection as if it were the
+    # checkpoint's own trajectory readout.
+    for mod, why in GRADREACH_EVAL_HAZARDS.items():
+        if any(m == mod or m.startswith(mod + ".") for m in mods):
+            print(f"[gradreach] ⛔ HAZARD {mod}: {why}", flush=True)
+    if not refuse:
+        return
+    unacknowledged = sorted(
+        m for m in mods
+        if not any(m == a or m.startswith(a + ".") for a in allow))
+    if allow:
+        print(f"[gradreach] ACKNOWLEDGED and recorded: {list(allow)}",
+              flush=True)
+    if not unacknowledged:
+        return
+    raise SystemExit(
+        f"[v6] REFUSED --refuse-unreached: {len(unacknowledged)} unreached "
+        f"module(s) at this run's loss weights are NOT on --allow-unreached: "
+        f"{unacknowledged}. Either switch on the objective that reaches them, "
+        f"or declare them grad-unreachable (models/_gradreach.py) so they "
+        f"leave the optimizer and the trainable count, or name them in "
+        f"--allow-unreached to say ON THE RECORD that this run knowingly "
+        f"leaves them at initialisation. Training them is a no-op that the "
+        f"checkpoint will record as 'at initialisation'.")
+
+
+# ============================================================================
+# --dry-run: build everything, 2 synthetic CPU steps, write the config
+# ============================================================================
+
+def synthetic_train_batch(stack: V6Stack, *, batch: int = 2, k: int = 12,
+                          seed: int = 0, device=None,
+                          s1_multi_k: int = 0) -> dict:
+    """A fully-shaped random batch — the ``--dry-run`` corpus stand-in.
+
+    Everything the real loader supplies is here with the real shapes, so a
+    dry-run exercises the SAME code path the pod will: the same forward, the
+    same losses, the same optimiser step. A smoke that skips the loss assembly
+    proves the model imports, not that the run will start.
+    """
+    cfg = stack.cfg
+    g = torch.Generator().manual_seed(seed)
+    c = cfg.encoder.in_channels
+    h, w = cfg.encoder.image_hw()
+    b = int(batch)
+    out = {
+        "frames": torch.randn(b, cfg.predictor.window, c, h, w, generator=g),
+        "actions2": torch.randn(b, cfg.predictor.window, 2, generator=g) * 0.1,
+        "future_actions2": torch.randn(b, max(k, 2), 2, generator=g) * 0.1,
+        "v0": torch.rand(b, generator=g) * 20.0 + 1.0,
+        "z_true_steps": [torch.randn(b, cfg.d_op, generator=g)
+                         for _ in range(k)],
+        "plan_target": torch.randn(b, cfg.plan_steps, 2, generator=g),
+        "z_tac_next_target": torch.randn(b, cfg.d_tac, generator=g),
+        "z_str_next_target": torch.randn(b, cfg.d_str, generator=g),
+    }
+    # ⭐ F-11: present ONLY when the run asks for it, so a --dry-run of an S-S
+    # launch with --w-s1-multi exercises the SAME loss path the pod will, and a
+    # run WITHOUT the flag never carries a key that would mask the refusal in
+    # `v6_loss_step` (a target that is always there cannot prove a guard fires).
+    if int(s1_multi_k) > 0:
+        out["z_str_multi_target"] = torch.randn(
+            b, int(s1_multi_k), cfg.d_str, generator=g)
+    if not cfg.shared_encoder:
+        out["own_frames_tac"] = torch.randn(b, c, h, w, generator=g)
+        out["own_frames_str"] = torch.randn(b, c, h, w, generator=g)
+    # ⭐ R1a: present ONLY when the stack built the max-speed port (the F-11
+    # rule above: a key that is always there cannot prove the refusal fires).
+    # RAW v_hi in m/s spanning every bin incl. the > 120 km/h clamp; the last
+    # row INVALID, so the dry-run exercises the all-zero one-hot too.
+    if getattr(stack, "vmax_tac", None) is not None:
+        out["v_max_ms"] = torch.rand(b, generator=g) * 35.0 + 3.0
+        out["v_max_valid"] = torch.ones(b)
+        if b >= 2:
+            out["v_max_valid"][-1] = 0.0
+    # ⭐ R2 / F8 (2026-09-27): a nav stack REQUIRES the nav channel in forward, and this batch carried none, so the
+    # trainer's own --dry-run died with NavTokenMissing on every nav launch (MEASURED by the v7f gate). Drawn LAST and
+    # only when the conditioner exists, so every pre-existing batch is byte-identical.
+    if getattr(stack, "nav", None) is not None:
+        out["nav_token"] = torch.randint(0, len(stack.nav.tokens), (b,), generator=g)
+        out["nav_args"] = torch.rand(b, 2, generator=g)
+    if device is not None:
+        out = {kk: ([t.to(device) for t in v] if isinstance(v, list)
+                    else v.to(device)) for kk, v in out.items()}
+    return out
+
+
+def synthetic_s2_batch(batch: int = 2, *, seed: int = 0,
+                       valid_frac: float = 0.75, device=None,
+                       n_goal: int | None = None,
+                       n_action: int | None = None) -> dict:
+    """Synthetic S2 label keys — the ``--dry-run`` stand-in for the real join.
+
+    Shapes and dtypes are EXACTLY ``s2_labels.S2WindowSupervision.batch``'s,
+    including invalid rows (id ``S2_IGNORE_ID``, zero args/mask), so a dry-run
+    of an S-S launch with ``--w-s2-goal`` exercises the same loss path the pod
+    will — masking included. Draws only VALID token ids and never ROUTE_TO
+    (the gated token would trip the loss's own refusal, correctly)."""
+    g = torch.Generator().manual_seed(seed)
+    b = int(batch)
+    # ⚠️ sizes must come from the BUILT stack when versions can differ
+    # (the v7 mandate): module constants are v6.0 and a v7-shaped head
+    # fed v6-ranged ids trips the range guard — measured 2026-08-28.
+    n_g = int(n_goal) if n_goal else len(STRATEGIC_GOAL_TOKENS)
+    n_a = int(n_action) if n_action else len(STRATEGIC_ACTION_TOKENS)
+    valid = torch.rand(b, generator=g) < float(valid_frac)
+    if b and not bool(valid.any()):
+        valid[0] = True                    # a dry step should exercise n>0
+    g_id = torch.randint(n_g - 1, (b,), generator=g)
+    g_id = g_id + (g_id >= _S2_ROUTE_TO_ID).long()      # skip the gated token
+    g_mask = (torch.rand(b, GOAL_ARG_SLOTS, generator=g) < 0.25).float() \
+        * valid[:, None]
+    a_mask = (torch.rand(b, GOAL_ARG_SLOTS, generator=g) < 0.25).float() \
+        * valid[:, None]
+    out = {
+        "g_str_id": torch.where(valid, g_id,
+                                torch.full_like(g_id, S2_IGNORE_ID)),
+        # unset slots carry 0.0 — the loader-enforced record convention, kept
+        # here so the stand-in matches the real contract byte for byte.
+        "g_str_args": torch.randn(b, GOAL_ARG_SLOTS, generator=g) * g_mask,
+        "g_str_arg_mask": g_mask,
+        "a_str_id": torch.where(valid,
+                                torch.randint(n_a, (b,), generator=g),
+                                torch.full((b,), S2_IGNORE_ID,
+                                           dtype=torch.long)),
+        "a_str_args": torch.randn(b, GOAL_ARG_SLOTS, generator=g) * a_mask,
+        "a_str_arg_mask": a_mask,
+        "s2_valid": valid,
+    }
+    if device is not None:
+        out = {k: v.to(device) for k, v in out.items()}
+    return out
+
+
+def synthetic_tac_label_batch(stack: V6Stack, batch: int = 2, *, seed: int = 0,
+                              valid_frac: float = 0.75, device=None) -> dict:
+    """Synthetic R3 keys — the ``--dry-run`` stand-in for the tactical join.
+
+    Shapes and dtypes are EXACTLY the v7.2 join's (``V72WindowSupervision.
+    batch`` after ``enable_tac_label_targets``), widths read from the BUILT
+    heads, including out-of-band rows (ids IGNORE, zero goal weight, zero arg
+    mask), so a dry-run exercises the same loss path — masking included. Uses
+    its OWN generator: switching the term on must not move any other draw."""
+    g = torch.Generator().manual_seed(seed)
+    b = int(batch)
+    n_lat = int(stack.vocab_a_lat.n_tokens)
+    n_lon = int(stack.vocab_a_lon.n_tokens)
+    n_goal = int(stack.vocab_tac.n_tokens)
+    valid = torch.rand(b, generator=g) < float(valid_frac)
+    if b and not bool(valid.any()):
+        valid[0] = True                    # a dry step should exercise n>0
+    ign = torch.full((b,), S2_IGNORE_ID, dtype=torch.long)
+    v = valid.float()[:, None]
+    ar = torch.zeros(b, GOAL_ARG_SLOTS)
+    am = torch.zeros(b, GOAL_ARG_SLOTS)
+    lo = torch.rand(b, generator=g) * 20.0
+    for _tok, pairs in TAC_GOAL_ARG_SLOTS_V7.items():
+        for nm, slot in pairs:
+            ar[:, slot] = lo + (torch.rand(b, generator=g) * 5.0
+                                if nm.startswith("v_hi") else 0.0)
+            am[:, slot] = 1.0
+    out = {
+        "tac_lat_id": torch.where(valid, torch.randint(n_lat, (b,),
+                                                        generator=g), ign),
+        "tac_lon_id": torch.where(valid, torch.randint(n_lon, (b,),
+                                                        generator=g), ign),
+        "tac_valid": valid,
+        "tac_goal_y": (torch.rand(b, n_goal, generator=g) < 0.3).float() * v,
+        "tac_goal_w": v.expand(b, n_goal).clone(),
+        "tac_goal_pos_weight": torch.ones(n_goal),
+        "tac_goal_class_mask": torch.ones(n_goal),
+        "tac_goal_args": ar * v, "tac_goal_arg_mask": am * v,
+    }
+    if device is not None:
+        out = {k: t.to(device) for k, t in out.items()}
+    return out
+
+
+def _declared_freeze_preflight(a_stack, a, where: str) -> dict:
+    """⛔ RUN EVERY FREEZE DECLARATION AGAINST WHAT THE FREEZE ACTUALLY DID.
+
+    Called immediately after ``apply_stage_freeze`` on BOTH paths (dry-run and
+    train), because a preflight that skips the real launch is the failure class
+    it exists to prevent.
+
+    ⭐ WHY THIS IS UNCONDITIONAL AND NOT BEHIND A FLAG. MEASURED 2026-09-06
+    before wiring, on both REAL launch lines — v7-tiny's own 30 k args and
+    ``PREREG_V7F.md`` §9 — the guard PASSES (n_trainable 9,185,411 and
+    143,949,315). The ``--refuse-unreached`` precedent is that *a flag that
+    always refuses gets deleted*; the converse holds too, so a guard that
+    passes every honest launch should not be opt-in.
+
+    ⛔ PROVEN BY MUTATION, not by inspection (`guards-need-mutation-not-
+    inspection`). Reintroducing the pre-2026-09-06 group-map-alone freeze makes
+    it raise :class:`GradUnreachableViolation` naming **90,960,000 params in
+    157 tensors** at v7f's geometry and **2,557,504 in 49** at v7-tiny's — and
+    11,742,915 is exactly what ``v7tiny_emao14_30k``'s own banked
+    ``config.json`` recorded as ``n_trainable``, so the guard reproduces the
+    historical overstatement rather than merely asserting against it.
+    Artifacts: ``…/2026-09-06-ema-teacher-forensics/raw/p2_mutation.json``.
+
+    ``--expect-n-trainable`` is optional and defaults to OFF. When a runbook
+    supplies it, an arm whose trainable budget is not the budget it claims
+    refuses before step 1 — the ⛔ A GATE ROW CARRIES ITS ARM rule, enforced by
+    the launcher instead of by a number retyped into a report.
+    """
+    audit = assert_declared_freezes_hold(
+        a_stack, a.stage,
+        expect_n_trainable=getattr(a, "expect_n_trainable", None))
+    print("[v6] declared-freeze preflight OK (%s): %d frozen-external + "
+          "%d grad-unreachable subtree(s); directions A/A'/B checked"
+          % (where, audit["frozen_external"]["n_declared_subtrees"],
+             audit["n_grad_unreachable_subtrees"]), flush=True)
+    return audit
+
+
+def dry_run(a, stack: V6Stack | None = None) -> dict:
+    """Build everything, run ``--dry-steps`` (default 2) synthetic CPU steps,
+    write ``config.json`` + ``dry_run.json``.
+
+    THE POINT: verify the pod launch BEFORE the corpus is mounted. On a pod the
+    checkout drifts, ``git fetch`` HANGS (no credentials), and a launch from a
+    stale ``stack/`` resurrects fixed bugs — so the runbook step is *ship the
+    files, then run this, then launch*, and this must exercise the real loss
+    assembly, not just an import.
+
+    ⛔ AND IT MUST EXERCISE THE LADDER SEAMS, WHICH IT DID NOT. Until
+    2026-08-16 this function ignored ``--prev-gate`` and ``--init-from``
+    entirely: a dry-run of S-T printed "dry-run OK" while the real launch of the
+    same command died on ``Missing key(s): cand_score.*`` (the init-from launch
+    blocker). A pre-launch verifier that skips the two flags the staged protocol
+    is MADE of is structurally incapable of catching the class of failure it
+    exists to catch — C13, in the instrument that is supposed to be the guard.
+    Now, when either flag is supplied it is REALLY exercised: the X5
+    precondition is adjudicated by :func:`assert_stage_precondition` and the
+    predecessor is REALLY loaded by :func:`load_stage_init`. When a flag is
+    absent, ``dry_run.json`` says so in its own report rather than leaving the
+    reader to assume it was checked.
+    """
+    stack = stack or build_stack_from_args(a)
+    out_dir = Path(a.out)
+    # ⛔ A dry-run must never share a directory with a real run: it writes
+    # config.json and a stage_gate.json, and clobbering a live run's records
+    # with synthetic ones is the shared---out defect in miniature.
+    if (out_dir / "ckpt.pt").exists():
+        raise SystemExit(
+            f"[v6] ⛔ --dry-run --out {out_dir} already contains ckpt.pt, i.e. "
+            f"a REAL run lives there. A dry-run writes config.json and a "
+            f"stage_gate.json and would overwrite that run's records with "
+            f"synthetic ones. Point --out at a scratch directory.")
+    out_dir.mkdir(parents=True, exist_ok=True)
+    # ---- the ladder seams, REALLY exercised ---------------------------------
+    pre = {"exercised": False,
+           "_read": "--prev-gate was NOT supplied, so the X5 precondition was "
+                    "NOT exercised by this dry-run."}
+    if getattr(a, "prev_gate", None):
+        pre = assert_stage_precondition(
+            a.stage, a.prev_gate,
+            allow_inconclusive=bool(getattr(a, "allow_inconclusive_gate",
+                                            False)),
+            off_reason=getattr(a, "gate_off_reason", "") or "",
+            dry_run=True)
+        pre["exercised"] = True
+        print(f"[v6 dry] precondition OK · {json.dumps(pre)}", flush=True)
+    device = "cpu"
+    stack = stack.to(device)
+    init_report = {"exercised": False,
+                   "_read": "--init-from was NOT supplied, so this dry-run "
+                            "stepped RANDOM weights. It proves the launch "
+                            "assembles; it proves nothing about the lineage."}
+    if getattr(a, "init_from", None):
+        init_report = load_stage_init(stack, a.init_from, stage=a.stage)
+        _resync_ema_o5(stack)
+        _resync_ema_o5(stack)
+        init_report["exercised"] = True
+        print(f"[v6 dry] init-from OK · introduced="
+              f"{init_report['introduced_keys']} · trunk_md5="
+              f"{init_report['trunk_md5_after_load'][:12]}", flush=True)
+    # ⛔ D-V7-DINO-SEED: the dry-run EXERCISES the seed for the same reason it
+    # exercises --init-from and --s2-labels — "a pre-launch verifier that skips
+    # a flag the launch carries is structurally incapable of catching that
+    # flag's failure class".
+    enc_seed_report = apply_encoder_seed(a, stack)
+    if enc_seed_report.get("init_encoder_from"):
+        _resync_ema_o5(stack)
+        _resync_ema_o5(stack)
+        enc_seed_report["exercised"] = True
+    assert_trunk_anchor_preflight(a)
+    freeze = apply_stage_freeze(stack, a.stage)
+    decl_audit = _declared_freeze_preflight(stack, a, "dry-run")
+    weights = _weights_from_args(a)
+    w_stage_dry = weights.for_stage(a.stage)
+    # ---- the S2 label artifact, REALLY exercised when supplied --------------
+    # Same rule as --prev-gate/--init-from above: a pre-launch verifier that
+    # skips a flag the launch carries is structurally incapable of catching
+    # that flag's failure class. The join needs a corpus and is NOT exercised
+    # here — dry_run.json says so instead of leaving it to be assumed.
+    s2_report = {"exercised": False,
+                 "_read": "--s2-labels was NOT supplied; the S2 loss path "
+                          "runs on synthetic keys when w_s2_goal is in "
+                          "force, and the loader was NOT exercised."}
+    _s2_set = None
+    if getattr(a, "s2_labels", None):
+        # ONE door, TWO schemas — the RECORD decides (spec §2). The v1 route
+        # is the incumbent `load_s2_labels` call, unchanged.
+        _s2_set = load_s2_labels_any(
+            a.s2_labels,
+            allow_any_labels=bool(getattr(a, "allow_any_labels", False)),
+            stack=stack)
+        s2_report = _s2_set.report() | {
+            "exercised": True,
+            "join": "NOT exercised (dry-run has no corpus) — load + "
+                    "validation only"}
+        print(f"[v6 dry] s2-labels OK · {s2_report['n_records']} records · "
+              f"g_str census {s2_report['token_census_records']['g_str']}",
+              flush=True)
+    # ⭐ R1: the max-speed sidecar, REALLY read when supplied (same rule as
+    # --s2-labels above); the per-window JOIN needs a corpus and is NOT
+    # exercised -- the synthetic batch carries v_max keys instead, and
+    # dry_run.json says which of the two happened.
+    r1_report: dict = {"exercised": False,
+                       "_read": "--speed-max-sidecar-v6 NOT supplied; the "
+                                "tactical input (if on) ran on synthetic "
+                                "v_max keys"}
+    if getattr(a, "speed_max_sidecar_v6", None):
+        from tanitad.refs import refcv6_max_speed as _v6ms
+        _bys, _rep = _v6ms.read_speed_max_sidecar_v6(
+            str(a.speed_max_sidecar_v6), label_md5=label_blob_md5_for_vmax(a))
+        r1_report = _rep | {"exercised": True,
+                            "join": "NOT exercised (dry-run has no corpus)"}
+    # ---- R3: the tactical-label term, REALLY exercised when in force -------
+    # Same rule as --s2-labels above: G-DVB (v6) on the BUILT stack, and the
+    # label policy (census / class mask / pos_weight) on the REAL blob when one
+    # is supplied. The window join needs a corpus and is NOT exercised here.
+    tac_label_report = None
+    if w_stage_dry.w_tac_label_all:
+        from tanitad.train.declared_vs_built_v6 import (  # noqa: PLC0415
+            refuse_on_mismatch_v6)
+        refuse_on_mismatch_v6(stack, a, weights_in_force=w_stage_dry,
+                              parser=getattr(a, "_ew_parser", None),
+                              where="dry-run")
+        tac_label_report = {
+            "exercised": False, "gdvb_v6": "PASS (refuse_on_mismatch_v6)",
+            "_read": "--s2-labels was NOT supplied: the R3 loss path runs on "
+                     "synthetic keys; the label policy was NOT exercised."}
+        if _s2_set is not None:
+            tac_label_report = tac_label_policy(a, _s2_set, stack)["report"] | {
+                "exercised": True, "gdvb_v6": "PASS (refuse_on_mismatch_v6)",
+                "join": "NOT exercised (dry-run has no corpus) — policy on the "
+                        "loaded split only"}
+            print(f"[v6 dry] R3 tac-label-all OK · negatives "
+                  f"{tac_label_report['negatives']} · goal classes trainable "
+                  f"{tac_label_report['n_trainable']}/"
+                  f"{tac_label_report['n_total']}", flush=True)
+    o1_k = min(a.o1_k, a.dry_k)
+    o5_k = min(a.o5_k, a.dry_k)
+    trainable = [p for p in stack.parameters() if p.requires_grad]
+    # ⛔ D-V7-TRUNK-ANCHOR is EXERCISED here for the same reason --init-from and
+    # the seed are: a pre-launch verifier that skips a flag the launch carries
+    # is structurally incapable of catching that flag's failure class.
+    anchor = build_trunk_anchor(a, stack, enc_seed_report)
+    obs_mon = build_observer_monitor(a, stack)
+    tap = (EncoderTokenTap(stack.encoder)
+           if (anchor is not None or obs_mon is not None) else None)
+    # D-V7-DINO-SEED: identical to the previous line at the flag defaults.
+    trunk_opt_report = {"trunk_lr_split": False, "n_groups": 0}
+    opt = None
+    if trainable:
+        opt, trunk_opt_report = build_trunk_optimizer(a, stack, trainable)
+    gen = torch.Generator().manual_seed(a.seed)
+    rows: list[dict] = []
+    grad_reach: dict | None = None
+    t0 = time.time()
+    sigreg_bank = (SigRegRowBank(a.sigreg_accum)
+                   if getattr(a, "sigreg_accum", 1) > 1 else None)
+    for step in range(1, int(a.dry_steps) + 1):
+        b = synthetic_train_batch(
+            stack, batch=a.dry_batch, k=a.dry_k, seed=a.seed + step,
+            device=device,
+            s1_multi_k=int(a.s1_multi_k) if w_stage_dry.w_s1_multi else 0)
+        b["gt_wp"] = torch.randn(a.dry_batch, o1_k, 2, generator=gen)
+        if w_stage_dry.w_s2_goal:
+            b |= synthetic_s2_batch(
+                a.dry_batch, seed=a.seed + step, device=device,
+                n_goal=stack.vocab_str.table.weight.shape[0],
+                n_action=stack.vocab_a_str.table.weight.shape[0])
+        if w_stage_dry.w_tac_label_all:
+            b |= synthetic_tac_label_batch(stack, a.dry_batch,
+                                           seed=a.seed + step, device=device)
+        dk, da = sample_random_deltas(a.dry_batch, gen, a.rand_dkappa_max,
+                                      a.rand_daccel_max)
+        if tap is not None:
+            tap.arm()
+        L = v6_loss_step(stack, b, stage=a.stage, weights=weights, o1_k=o1_k,
+                         o5_k=o5_k, o5_mode=a.o5_mode, o5_form=getattr(a, "o5_form", "l1"),
+                         sigreg_bank=sigreg_bank,
+                         bptt_truncate=int(getattr(a, "bptt_truncate", 0)),
+                         o6_innovation=bool(
+                             getattr(a, "o6_innovation", False)),
+                         o6_innovation_shuffle=bool(
+                             getattr(a, "o6_innovation_shuffle", False)),
+                         # ⛔ THE DRY-RUN MUST PASS THE SAME KNOBS AS THE TRAINING
+                         # CALL SITE. Adding them only there left this path on the
+                         # signature DEFAULTS, so `--o11-negs 3 --o11-k 4` silently
+                         # dry-ran as n_neg=1, k=6 — MEASURED 2026-08-24, caught
+                         # only because the log prints both back. A dry-run whose
+                         # hyper-parameters differ from the run it exists to
+                         # de-risk is worse than no dry-run: it certifies a
+                         # configuration nobody is going to train. Same wrong-scope
+                         # family as reading `df` on a pod.
+                         o11_k=int(getattr(a, "o11_k", 6)),
+                         o11_tau=float(getattr(a, "o11_tau", 1.0)),
+                         o11_negs=int(getattr(a, "o11_negs", 1)),
+                         o13_k=int(getattr(a, "o13_k", 4)),
+                         o13_seed=int(getattr(a, "o13_seed", 1300)),
+                         o14_mode=str(getattr(a, "o14_mode", "fut")),
+                         o14_k=int(getattr(a, "o14_k", 4)),
+                         cond_param=str(getattr(a, "cond_param", COND_INCUMBENT)),
+                         o3_mode=a.o3_mode,
+                         o3_blocks=a.o3_blocks,
+                         o3_block_hw=(a.o3_block_h, a.o3_block_w),
+                         o3_band_rows=a.o3_band_rows, o2_tau_s=a.o2_tau_s,
+                         dkappa=a.dkappa, daccel=a.daccel, rand_dk=dk,
+                         rand_da=da, generator=gen,
+                         anchor_objective=getattr(a, "anchor_objective",
+                                                  "metric"),
+                         anchor_axis_w=tuple(getattr(
+                             a, "anchor_axis_w", ANCHOR_AXIS_W_DEFAULT)),
+                         t2_positive=getattr(a, "t2_positive", "photometric"),
+                         t2_negative=getattr(a, "t2_negative", "lane_mirror"),
+                         t5_w_kappa=float(getattr(a, "t5_w_kappa", 1.0)))
+        if tap is not None:
+            tap.disarm()
+            anchor_and_monitor_step(anchor, obs_mon, tap, L, b, step)
+        if opt is not None:
+            opt.zero_grad(set_to_none=True)
+            L["loss"].backward()
+            # ⛔ P1: read the census HERE — after the backward, before the next
+            # iteration's `zero_grad(set_to_none=True)` erases the evidence.
+            if grad_reach is None:
+                grad_reach = grad_reach_census(stack, trainable)
+                report_grad_reach(grad_reach, refuse=bool(
+                    getattr(a, "refuse_unreached", False)),
+                    allow=tuple(getattr(a, "allow_unreached", ()) or ()))
+            gn = float(torch.nn.utils.clip_grad_norm_(trainable, a.clip))
+            opt.step()
+            if hasattr(stack, "ema_o5_enc"):
+                # ⚠️ THE DRY-RUN RAMPS ON THE REAL RUN'S `--steps`, NOT ON
+                # --dry-steps. A dry-run whose schedule differs from the run it
+                # exists to de-risk certifies a configuration nobody is going
+                # to train (the o11/o13 pass-through above exists for exactly
+                # this). With the real total it exercises the ramp's OPENING —
+                # the part a launch can actually get wrong.
+                ema_tau = ema_tau_at(
+                    step, int(a.steps),
+                    ramp=str(getattr(a, "ema_decay_ramp", "off")),
+                    fixed=float(a.ema_decay),
+                    start=float(getattr(a, "ema_decay_start", 0.99)),
+                    end=getattr(a, "ema_decay_end", None))
+                stack.ema_o5_enc.update(stack.encoder, ema_tau)
+                stack.ema_o5_ro.update(stack.readout, ema_tau)
+                L["log"] |= _ema_tau_record(a, ema_tau)
+            stack.ema_update()
+        else:
+            gn = 0.0
+        row = L["log"] | {"step": step, "gnorm": round(gn, 4)}
+        rows.append(row)
+        print(f"[v6 dry {step}] {json.dumps(row)}", flush=True)
+    spec = spectrum_report(torch.randn(64, min(stack.cfg.d_op, 64)))
+    iso = stack.assert_isolation(batch_size=1, strict=False)
+    # ⭐ R1b: the cap exercised through the REAL eval-mode forward (the
+    # training steps above are uncapped by design); absent when the flag is.
+    if getattr(a, "plan_vmax_cap", False):
+        r1_report["vmax_cap_smoke"] = vmax_cap_smoke(
+            stack, batch=max(int(a.dry_batch), 4), seed=int(a.seed))
+        print(f"[v6 dry] R1 cap smoke · "
+              f"{json.dumps(r1_report['vmax_cap_smoke'])}", flush=True)
+    cfg_json = _run_config(a, stack, freeze, decl_audit)
+    if init_report.get("exercised"):
+        cfg_json["init"] = init_report
+    # ⛔ P1: the census rides config.json, because config.json is the artifact
+    # a later audit actually opens. A run whose checkpoint shows tensors "at
+    # initialisation" can now be explained from its own record instead of
+    # being re-derived from the trainer's source months later.
+    if grad_reach is not None:
+        cfg_json["grad_reach"] = grad_reach
+    (out_dir / "config.json").write_text(json.dumps(cfg_json, indent=1))
+    # The gate this dry stage hands to the next one. It is assembled by the
+    # REAL `run_stage_gate`, so it comes out INCONCLUSIVE exactly as a real
+    # gate would with no battery artifact — the dry ladder therefore advances
+    # only through the RECORDED --allow-inconclusive-gate override, never
+    # through a fabricated PASS.
+    gate = run_stage_gate(stack, a.stage, out_dir=out_dir, spectrum=spec,
+                          extra_probes=_load_gate_probes(
+                              getattr(a, "gate_probes", None)),
+                          dry_run=True)
+    result = {
+        "mode": "dry-run", "device": device, "steps": rows,
+        "elapsed_s": round(time.time() - t0, 2),
+        "freeze": freeze, "declared_freeze_preflight": decl_audit,
+        "isolation": iso, "spectrum_smoke": spec,
+        "param_report": stack.param_report(),
+        "n_trainable_tensors": len(trainable),
+        "precondition": pre,
+        "init": init_report,
+        "encoder_seed": enc_seed_report,          # D-V7-DINO-SEED
+        "trunk_optimizer": trunk_opt_report,      # D-V7-DINO-SEED
+        "trunk_anchor": (anchor.report() if anchor is not None else
+                         {"w_trunk_anchor": 0.0,
+                          "_read": "--w-trunk-anchor 0 — nothing constructed, "
+                                   "no hook registered, byte-identical to "
+                                   "every pre-D-V7-TRUNK-ANCHOR arm"}),
+        "observer_monitor": ({"every": obs_mon.every, "window": obs_mon.window,
+                              "d": obs_mon.dims,
+                              "threshold": obs_mon.threshold,
+                              "targets": list(obs_mon.TARGETS),
+                              "caveat": TRUNK_ANCHOR_CAVEAT,
+                              "floor": OBS_MONITOR_FLOOR}
+                             if obs_mon is not None else
+                             {"every": 0, "_read": "--obs-monitor-every 0"}),
+        "s2_labels": s2_report,
+        # ⭐ R1/R4 (PI 2026-09-27): present only when a lever is on, so the
+        # default dry_run.json is untouched.
+        **({"r1_r4": r1_report | {"config": r1r4_config_block(a, stack)}}
+           if (r1_report.get("exercised") or "vmax_cap_smoke" in r1_report
+               or r1r4_config_block(a, stack)) else {}),
+        # R3: present ONLY when the term is in force (a flag-off dry_run.json
+        # keeps the incumbent key set)
+        **({"tac_label_all": tac_label_report}
+           if tac_label_report is not None else {}),
+        "gate_verdict": gate["verdict"],
+        "_read": "synthetic tensors — NO corpus. This proves the launch "
+                 "assembles and steps, and (when --prev-gate/--init-from were "
+                 "supplied) that the ladder seams adjudicate and load; it "
+                 "proves NOTHING about driving. No number here is quotable.",
+        "_evidence_class": "MEASURED (ours; synthetic smoke)",
+    }
+    (out_dir / "dry_run.json").write_text(json.dumps(result, indent=1))
+    print(f"[v6] dry-run OK -> {out_dir}/dry_run.json + config.json "
+          f"+ stage_gate.json ({gate['verdict']}, _dry_run)", flush=True)
+    return result
+
+
+def resolve_lambda_plan(a) -> float:
+    """``--lambda-plan`` if given, else the stage default. Explicit beats
+    implicit, and the resolved value is written into ``config.json`` so a run
+    row never has to guess which λ_plan was in force."""
+    return (STAGE_LAMBDA_PLAN[a.stage] if a.lambda_plan is None
+            else float(a.lambda_plan))
+
+
+def _weights_from_args(a) -> V6LossWeights:
+    return V6LossWeights(
+        o1_ctrl=a.w_o1_ctrl, o1_fact=a.w_o1_fact, o1_scene=a.w_o1_scene,
+        o1_detach_encoder=bool(getattr(a, "o1_detach_encoder", False)),
+        o1_stopgrad_factual=bool(getattr(a, "o1_stopgrad_factual", False)),
+        o2_nearfield=a.w_o2, o3_masked=a.w_o3, o5_rollout=a.w_o5,
+        o11_cf=float(getattr(a, 'w_o11_cf', 0.0)),
+        o13_ego=float(getattr(a, 'w_o13_ego', 0.0)),
+        o14_fut=float(getattr(a, 'w_o14', 0.0)),
+        o6_sigreg=a.w_o6, t1_latent=a.w_t1, s1_latent=a.w_s1,
+        w_select=a.w_select, w_anchor=float(getattr(a, "w_anchor", 0.0)),
+        w_s2_goal=float(getattr(a, "w_s2_goal", 0.0)),
+        w_t2_contrast=float(getattr(a, "w_t2_contrast", 0.0)),
+        w_t5_consist=float(getattr(a, "w_t5_consist", 0.0)),
+        w_s1_multi=float(getattr(a, "w_s1_multi", 0.0)),
+        w_tac_label_all=float(getattr(a, "w_tac_label_all", 0.0) or 0.0),
+        lambda_plan=resolve_lambda_plan(a))
+
+
+def rank_gate_capacity(batch: int, window: int,
+                       ceiling_min: int = O6_ADMISSIBLE_CEILING) -> dict:
+    """Can the O6 RANK criterion rule at these settings? -> a verdict dict.
+
+    ⛔ WHY THIS EXISTS — THE MOST EXPENSIVE SILENT FAILURE FOUND SO FAR.
+    `O6_rank_retention` carries `absolute_floor` 64. MEASURED 2026-08-22, v6F at
+    step 20,000 reads an effective rank of **5.86** on 1,440 held-out rows, and
+    its mean-pooled ENCODER tokens read **1.03** with 99.7 % of the variance in a
+    single direction -- a dimensionally COLLAPSED representation, against frozen
+    DINOv3's 8.56 / 17.25 on the identical frames. The gate would have FAILED it.
+
+    It never got the chance. One spectrum call sees only `batch * window` rows,
+    so `rank_ceiling` was 23 and the verdict came back INCONCLUSIVE with an
+    entirely correct explanation of its own blindness:
+
+        "rank_ceiling 23 < 1024: a centred covariance from n=24 rows cannot
+         resolve rank. Pool more steps (SpectrumAccumulator) before asking."
+
+    `--spectrum-accum` defaults to 1 (off). So EVERY run reports INCONCLUSIVE on
+    the one criterion that would have caught the collapse, and INCONCLUSIVE is
+    treated as NOT-PASS but does not stop anything -- a nine-day run proceeded on
+    a gate that could not see. ⇒ A criterion that CANNOT RULE at the configured
+    settings is worse than no criterion, because the gate report looks populated.
+    This makes the blindness LOUD at startup instead of discoverable in a
+    post-mortem.
+    """
+    rows_per_call = max(1, int(batch) * int(window))
+    need = -(-(ceiling_min + 1) // rows_per_call)      # ceil division
+    return {"rows_per_call": rows_per_call, "ceiling_min": int(ceiling_min),
+            "required_spectrum_accum": int(need)}
+
+
+def o6_is_required(stage: str | None) -> bool:
+    """Is ``O6_spectrum`` a REQUIRED criterion for this stage's gate?
+
+    ⭐ The distinction decides whether an unrulable rank gate is a warning or a
+    refusal (P4-1). Read from ``STAGE_GATE_SPEC`` rather than hardcoded, so
+    promoting O6 from `reported` to `required` automatically arms the abort —
+    a constant copied here would silently keep warning after the promotion,
+    which is the failure this whole guard exists to prevent, one level up.
+    """
+    return "O6_spectrum" in tuple(
+        STAGE_GATE_SPEC.get(stage or "", {}).get("required", ()))
+
+
+def _warn_rank_gate_unrulable(a, stack: V6Stack) -> None:
+    """Banner when O6's rank criterion cannot rule — REFUSING if O6 is required.
+
+    ⛔ P4-1: warn-only was not enough. INCONCLUSIVE counts as NOT-PASS, so when
+    O6 is REQUIRED an unrulable rank gate blocks the ladder for an INSTRUMENT
+    reason while looking like a scientific verdict. Printing a banner and
+    proceeding spends the GPU-days anyway and discovers it at the gate.
+
+    ⇒ Required  -> ``SystemExit`` at startup, before any compute.
+       Reported -> the banner, unchanged: a reported criterion cannot block
+                   anything, so refusing would be the opposite error.
+
+    ⚠️ As of today ``O6_spectrum`` is REPORTED at every stage, so the abort
+    branch does not fire on any current launch line. That is deliberate: this
+    arms the guard **for the promotion**, which is exactly when a stale copy of
+    the policy would fail silently. Both branches are pinned by tests.
+    """
+    w = int(stack.cfg.predictor.window)
+    info = rank_gate_capacity(int(a.batch), w)
+    have = int(getattr(a, "spectrum_accum", 1) or 1)
+    reach = have * info["rows_per_call"] - 1
+    if have >= info["required_spectrum_accum"]:
+        print(f"[v6] O6 rank gate CAN rule: --spectrum-accum {have} x "
+              f"{info['rows_per_call']} rows/call -> ceiling {reach} "
+              f">= {info['ceiling_min']}", flush=True)
+        return
+    print(
+        f"[v6] ⛔ O6 RANK GATE CANNOT RULE AT THESE SETTINGS — it will report "
+        f"INCONCLUSIVE no matter what the representation does.\n"
+        f"[v6]    --spectrum-accum {have} x {info['rows_per_call']} rows/call "
+        f"-> rank_ceiling {reach}, but the criterion needs "
+        f"{info['ceiling_min']}.\n"
+        f"[v6]    USE --spectrum-accum {info['required_spectrum_accum']} "
+        f"(cost: ~{info['required_spectrum_accum'] * info['rows_per_call'] * stack.cfg.d_op * 4 / 1e6:.0f} MB "
+        f"of CPU ring buffer).\n"
+        f"[v6]    MEASURED 2026-08-22: v6F@20k effective rank 5.86 vs an "
+        f"absolute_floor of 64 — a COLLAPSED representation that this gate "
+        f"would have failed, had it been able to see.", flush=True)
+    if o6_is_required(getattr(a, "stage", None)):
+        raise SystemExit(
+            "[v6] ⛔ REFUSING TO LAUNCH: O6_spectrum is a REQUIRED "
+            f"criterion for stage {getattr(a, 'stage', None)!r}, and it "
+            "CANNOT RULE at these settings.\n"
+            "     A required criterion that is structurally INCONCLUSIVE "
+            "counts as NOT-PASS, so this run would burn its full compute and "
+            "then block the ladder for an INSTRUMENT reason.\n"
+            f"     ⇒ relaunch with --spectrum-accum "
+            f"{info['required_spectrum_accum']} (see the banner above), or "
+            "move O6_spectrum to `reported` in STAGE_GATE_SPEC if it is not "
+            "meant to gate this stage. (P4-1)")
+
+
+def resolve_amp_dtype(dev_type: str, want_amp: bool) -> dict:
+    """Resolve the autocast dtype by PROBING, never by assumption (P4-8).
+
+    ``torch.bfloat16`` was hardcoded with no capability check. bf16 autocast
+    needs Ampere or newer; on anything older the run either errors or silently
+    degrades, and nothing in the artifacts said which dtype was in force.
+
+    ⛔ WHY THE FALLBACK IS fp32 AND NOT fp16. fp16 autocast REQUIRES a
+    ``GradScaler`` -- without one, gradients underflow to zero and training
+    quietly produces a worse model rather than failing. Adding an
+    fp16+GradScaler path here would be a branch that NEVER RUNS on any machine
+    we own (A40, RTX 4060 and Thor are all bf16-capable), i.e. an unexercised
+    code path in the step loop, which is precisely the dead-flag defect P4-5
+    just removed. Falling back to fp32 is slower and CORRECT. If a non-bf16
+    target ever matters, implement fp16+GradScaler as its own change, with a
+    test that actually exercises it.
+
+    Returns a record, not a bare dtype: the resolved choice and the REASON go
+    into `config.json`, so two runs on two machines can never differ silently
+    in numerical precision.
+    """
+    if not want_amp or dev_type != "cuda":
+        return {"dtype": None, "name": "fp32", "autocast": False,
+                "bf16_supported": None,
+                "reason": ("AMP disabled by --no-amp" if not want_amp
+                           else f"device is {dev_type!r}, not cuda")}
+    try:
+        ok = bool(torch.cuda.is_bf16_supported())
+    except Exception as exc:                                    # noqa: BLE001
+        ok = False
+        probe = f"probe failed ({type(exc).__name__}), assuming NO bf16"
+    else:
+        probe = "torch.cuda.is_bf16_supported()"
+    if ok:
+        return {"dtype": torch.bfloat16, "name": "bf16", "autocast": True,
+                "bf16_supported": True, "reason": probe}
+    return {"dtype": None, "name": "fp32", "autocast": False,
+            "bf16_supported": False,
+            "reason": (f"{probe} -> False; falling back to fp32. fp16 is NOT "
+                       "used because it needs a GradScaler this trainer does "
+                       "not have (see P4-8).")}
+
+
+def run_provenance(device=None) -> dict:
+    """WHO/WHERE/WHAT-CODE produced this run. Never raises (P4-4).
+
+    ⛔ WHY THIS EXISTS: two runs on two machines could produce byte-identical
+    `config.json` files. The config records what was ASKED FOR; nothing recorded
+    what actually executed, so a result could not be tied to a code state, a
+    machine, or a driver.
+
+    ⭐ THE LOAD-BEARING FIELD IS ``trainer_md5``, not ``git_sha``. Pods have no
+    git credentials -- a pod checkout's HEAD sits weeks behind while its working
+    tree is fully current, because every fix arrives by md5-verified FILE-SHIP.
+    On such a machine the git SHA is actively MISLEADING and the hash of the
+    executing file is the only true identity. Both are recorded; read the md5.
+
+    ⚠️ EVERY probe is individually guarded and records its own failure string
+    instead of raising. Provenance must never be the reason a training run dies
+    -- that would be an observability tool causing the outage it exists to
+    explain. A field reading "unavailable: ..." is the honest answer, and it is
+    distinguishable from a field that was never collected.
+    """
+    import datetime
+    import hashlib
+    import platform
+    import subprocess
+
+    def _safe(fn, default_prefix="unavailable"):
+        try:
+            return fn()
+        except Exception as exc:                       # noqa: BLE001
+            return f"{default_prefix}: {type(exc).__name__}: {exc}"
+
+    def _git(*args):
+        # ⛔ LOCAL-ONLY porcelain with a hard timeout. Never `fetch`/`pull` here:
+        # on a credential-less pod a network git command HANGS rather than
+        # failing, which would stall every launch at startup.
+        # ⚠️ encoding= is MANDATORY (pinned by test_text_encoding_is_explicit):
+        # text mode without it decodes with the LOCALE codec — cp1252 on this dev
+        # box — so a branch name or commit subject carrying any non-Latin-1 glyph
+        # raises UnicodeDecodeError. Here `_safe` would swallow that into
+        # "unavailable: UnicodeDecodeError", i.e. the run would SILENTLY LOSE its
+        # git identity rather than crash — a degradation, which is worse to
+        # diagnose than a failure. errors="replace" guarantees a string even for
+        # bytes that are not valid UTF-8 either.
+        return subprocess.run(("git", *args), capture_output=True, text=True,
+                              encoding="utf-8", errors="replace",
+                              timeout=10, cwd=str(Path(__file__).resolve().parent)
+                              ).stdout.strip()
+
+    def _trainer_md5():
+        return hashlib.md5(Path(__file__).resolve().read_bytes()).hexdigest()
+
+    prov = {
+        "trainer_file": str(Path(__file__).resolve()),
+        "trainer_md5": _safe(_trainer_md5),
+        "git_sha": _safe(lambda: _git("rev-parse", "HEAD") or "unavailable: empty"),
+        "git_dirty": _safe(lambda: bool(_git("status", "--porcelain"))),
+        "git_branch": _safe(lambda: _git("rev-parse", "--abbrev-ref", "HEAD")),
+        "hostname": _safe(platform.node),
+        "platform": _safe(lambda: f"{platform.system()} {platform.release()}"),
+        "python": _safe(platform.python_version),
+        "torch": _safe(lambda: torch.__version__),
+        "cuda_runtime": _safe(lambda: torch.version.cuda or "cpu-build"),
+        "cudnn": _safe(lambda: str(torch.backends.cudnn.version())),
+        "gpu_name": _safe(lambda: torch.cuda.get_device_name(0)
+                          if torch.cuda.is_available() else "no CUDA device"),
+        "gpu_capability": _safe(lambda: str(torch.cuda.get_device_capability(0))
+                                if torch.cuda.is_available() else "n/a"),
+        "device_resolved": str(device) if device is not None else "unset",
+        # ⭐ P4-9 — the RESOLVED thread settings. OMP_NUM_THREADS is read by
+        # torch AT IMPORT, so its value is a run fact that cannot be recovered
+        # afterwards from the launch line if a launcher set it.
+        "omp_num_threads": os.environ.get("OMP_NUM_THREADS", "<unset>"),
+        "torch_num_threads": _safe(lambda: torch.get_num_threads()),
+        "bf16_supported": _safe(lambda: bool(torch.cuda.is_bf16_supported())
+                                if torch.cuda.is_available() else None),
+        # ⚠️ TIMEZONE-AWARE ON PURPOSE. Pods and logs run UTC while the PI reads
+        # Europe/Berlin; a naive timestamp has been read as a broken clock more
+        # than once. ``astimezone()`` on a UTC-aware stamp yields the LOCAL zone
+        # with its offset, so the frame travels with the number.
+        "started_at": _safe(lambda: datetime.datetime.now(
+            datetime.timezone.utc).astimezone().isoformat()),
+        "started_at_utc": _safe(lambda: datetime.datetime.now(
+            datetime.timezone.utc).isoformat()),
+        "_read": "trainer_md5 is the identity on a file-shipped machine; "
+                 "git_sha may be stale there (pods have no git credentials).",
+        "_evidence_class": "MEASURED (ours; this process)",
+    }
+    return prov
+
+
+# ============================================================================
+# ⭐ R1 / R4 (PI directive 2026-09-27, v7F) — max speed + tactical -> operative
+# ============================================================================
+# PI, verbatim: *"both of them should get the max speed, which it must not be
+# exceeded ... All our tactical labels must be used to train the tactical layer
+# to estimate and choose the right tactical behaviors and goals which MUST
+# condition the operative planning."* The model side lives in `V6Stack`
+# (`tac_op_port`, `vmax_tac`, `emit(v_max=...)`) and
+# `tanitad/models/plan_speed_cap.py`; this block is the TRAINER side: the
+# sidecar join, the batch keys, the config stamp, the dry-run cap smoke and the
+# preflight refusals. Every default is OFF and byte-identical.
+
+def label_blob_md5_for_vmax(a) -> str | None:
+    """The md5 of the label blob this run loaded (``--nav-labels``, else
+    ``--s2-labels``) — what the refcv6 sidecar's ``source_md5`` must equal.
+    ``None`` when the run loads no label blob: the reader then cannot cross-
+    check the sidecar's provenance, and the join report SAYS so."""
+    import hashlib
+    for p in (getattr(a, "nav_labels", None), getattr(a, "s2_labels", None)):
+        if p and os.path.isfile(str(p)):
+            h = hashlib.md5()
+            with open(str(p), "rb") as fh:
+                for chunk in iter(lambda: fh.read(1 << 20), b""):
+                    h.update(chunk)
+            return h.hexdigest()
+    return None
+
+
+def build_vmax_join(sidecar_path, episodes, index, *,
+                    label_md5: str | None = None) -> dict:
+    """The refcv6 max-speed sidecar -> per-EPISODE ``(raw v_hi m/s, valid)``.
+
+    ⛔ The SAME reader and join key as refcv6 (``read_speed_max_sidecar_v6``,
+    ``sid = stable_episode_id(clip_id)`` = ``episode.episode_id`` here, the key
+    the S2 join already uses): the sidecar ships the RAW ``v_hi_ms`` and the
+    ladder is applied ONCE, on the model side. REFUSES when not one of this
+    split's windows joins to a valid ceiling — a constant all-zero channel
+    would be measured as noise while config.json stamps it ON.
+    """
+    from tanitad.refs import refcv6_max_speed as v6ms
+    by_sid, report = v6ms.read_speed_max_sidecar_v6(str(sidecar_path),
+                                                     label_md5=label_md5)
+    n_ep = len(episodes)
+    v = torch.zeros(n_ep)
+    ok = torch.zeros(n_ep)
+    for e_i, ep in enumerate(episodes):
+        r = by_sid.get(int(ep.episode_id))
+        if r is not None and float(r[1]) > 0.5:
+            v[e_i], ok[e_i] = float(r[0]), 1.0
+    n_win = len(index)
+    n_fed = int(sum(int(ok[int(e_i)] > 0.5) for e_i, _t in index))
+    if n_win and n_fed == 0:
+        raise SystemExit(
+            f"[v6] ⛔ --speed-max-sidecar-v6: NOT ONE of this split's {n_win} "
+            f"windows joins to a sidecar row with a ceiling ({report['n_valid']} "
+            f"valid rows in the sidecar) — a JOIN failure, most likely a sidecar "
+            f"built over a different split. Refusing rather than feeding a "
+            f"constant all-zero channel.")
+    return {"v": v, "ok": ok, "report": {
+        **report, "label_md5": label_md5,
+        "label_md5_note": (None if label_md5 else
+                           "⚠️ no --nav-labels/--s2-labels blob: the sidecar's "
+                           "source_md5 was NOT cross-checked"),
+        "n_episodes": n_ep, "n_episodes_fed": int(ok.sum()),
+        "n_windows": n_win, "n_windows_fed": n_fed,
+        "window_ceiling_frac": round(n_fed / max(n_win, 1), 6)}}
+
+
+def vmax_batch(join: dict, idx, index, device) -> dict:
+    """The per-WINDOW batch keys: ``v_max_ms`` (RAW v_hi, 0.0 where unknown)
+    and ``v_max_valid`` — joined through ``index[i] = (episode, t)``, the same
+    route the S2 join rides. The batch dict is a WHITELIST: these are added
+    explicitly at the build site, or they stop there."""
+    e = torch.tensor([int(index[int(i)][0]) for i in idx], dtype=torch.long)
+    return {"v_max_ms": join["v"][e].to(device),
+            "v_max_valid": join["ok"][e].to(device)}
+
+
+def r1r4_config_block(a, stack: V6Stack) -> dict:
+    """What config.json records for R1/R4 — EMPTY when every lever is off, so
+    a default run's record is untouched. Each block names what the lever
+    reads, where it enters, and whether the BUILT stack carries it."""
+    out: dict = {}
+    toc = str(getattr(a, "tac_op_cond", "off") or "off")
+    side = getattr(a, "speed_max_sidecar_v6", None)
+    if toc != "off":
+        out["tac_op_cond"] = {
+            "mode": toc, "port": "tac_op_port (planner group, zero-init)",
+            "built": getattr(stack, "tac_op_port", None) is not None,
+            "reads": ("e_a_tac = [vocab_a_lat.encode(act_head_lat(z_tac_p)), "
+                      "vocab_a_lon.encode(act_head_lon(z_tac_p))] -- the LAT x "
+                      "LON behaviour posteriors"),
+            "adds_to": "e_g_tac -> V6Stack.emit (fan, anchor head, selector)",
+            "gradient": ("plan loss -> port only (behaviour heads NOT trained "
+                         "through it)" if toc == "detached" else
+                         "plan loss -> port AND behaviour heads (e2e)"),
+            "disjointness": ("computed from the vision-derived tactical latent "
+                             "z_tac_p (+ the declared max-speed input when "
+                             "--max-speed-input-v6); no situation-classifier "
+                             "output in any form (PI 2026-08-03)")}
+    if bool(getattr(a, "max_speed_input_v6", False)):
+        from tanitad.refs import refcv6_max_speed as v6ms
+        out["speed_max_derivation_v6"] = v6ms.SPEED_MAX_DERIVATION_V6
+        out["max_speed_input_v6"] = {
+            "port": "vmax_tac (layer_tac group, zero-init Linear(4 -> d_tac))",
+            "built": getattr(stack, "vmax_tac", None) is not None,
+            "adds_to": ("z_tac_p, the planner-side tactical latent every "
+                        "tactical decision head reads; the WM-side z_tac is "
+                        "untouched"),
+            "sidecar": str(side) if side else None}
+    if bool(getattr(a, "plan_vmax_cap", False)):
+        from tanitad.models.plan_speed_cap import CAP_SEMANTICS
+        out["plan_vmax_cap"] = {
+            "semantics": CAP_SEMANTICS,
+            "limit_source": ("refcv6 sidecar RAW SPEED_BAND.v_hi_ms (oracle, "
+                             "ego-future, PI-authorised 2026-09-16) -> "
+                             "plan_speed_cap.plan_limit_from_vhi"),
+            "sidecar": str(side) if side else None,
+            "applies": ("INFERENCE: every eval-mode V6Stack.emit/forward MUST "
+                        "be given plan_v_max_ms (it refuses otherwise); the "
+                        "training forward and its plan loss are UNCAPPED")}
+    return out
+
+
+def assert_r1r4_record(cfg_json: dict, a) -> None:
+    """⛔ The R1 declarations are PRECONDITIONS, not fields — refused in BOTH
+    directions, before config.json is written: the refcv6 4-way stamp via its
+    own guard (``assert_speed_max_stamp_v6``: a channel with no stamp, and a
+    control that carries one), and the cap block likewise."""
+    from tanitad.refs import refcv6_max_speed as v6ms
+    v6ms.assert_speed_max_stamp_v6(
+        cfg_json, bool(getattr(a, "max_speed_input_v6", False)))
+    cap_on = bool(getattr(a, "plan_vmax_cap", False))
+    blk = cfg_json.get("plan_vmax_cap")
+    if cap_on and not (isinstance(blk, dict) and blk.get("limit_source")
+                       and "ego-future" in str(blk.get("limit_source"))):
+        raise SystemExit(
+            "[v6] ⛔ --plan-vmax-cap is ON but config.json would not declare "
+            "the cap's limit source (an ego-future oracle). Refusing rather "
+            "than banking an arm whose record cannot say what capped it.")
+    if blk is not None and not cap_on:
+        raise SystemExit(
+            "[v6] ⛔ config.json carries a `plan_vmax_cap` block but the cap is "
+            "OFF — a control stamped as capped. Drop the block or turn the "
+            "cap on.")
+
+
+def vmax_cap_smoke(stack: V6Stack, *, batch: int = 4, seed: int = 0) -> dict:
+    """⭐ R1b through the REAL inference path: ONE eval-mode ``forward`` with a
+    per-row limit from the ladder (``plan_limit_from_vhi``), no gradient.
+    Counts, per the refav1 evaluator's split: plans over the limit where t0
+    was UNDER it (must be 0), t0 speeds already over it (an INPUT property),
+    candidates the cap bound. Synthetic tensors: nothing here is quotable."""
+    from tanitad.models.plan_speed_cap import plan_limit_from_vhi
+    was = stack.training
+    stack.eval()
+    try:
+        b = stack.synthetic_batch(batch, seed=seed)
+        # FOUR deterministic regimes, tiled over the batch, so the smoke says
+        # something whatever the (random / near-CV) weights emit:
+        #   v0 12.0 · v_hi  5.0 -> limit  8.33 m/s: t0 ABOVE the limit (brake)
+        #   v0  8.0 · v_hi  8.0 -> limit  8.33 m/s: 0.33 m/s headroom
+        #   v0 20.0 · v_hi 30.0 -> limit 33.33 m/s: generous (non-binding)
+        #   v0  5.0 · invalid   -> +inf           : no limit known
+        pat_v0 = torch.tensor([12.0, 8.0, 20.0, 5.0])
+        pat_hi = torch.tensor([5.0, 8.0, 30.0, 0.0])
+        pat_ok = torch.tensor([1.0, 1.0, 1.0, 0.0])
+        rep = (batch + 3) // 4
+        b["v0"] = pat_v0.repeat(rep)[:batch].to(b["v0"].dtype)
+        v_hi = pat_hi.repeat(rep)[:batch]
+        valid = pat_ok.repeat(rep)[:batch]
+        b["plan_v_max_ms"] = plan_limit_from_vhi(v_hi, valid)
+        if "v_max_ms" in b:
+            b["v_max_ms"], b["v_max_valid"] = v_hi, valid
+        with torch.no_grad():
+            p = stack.forward(**b)["plan"]
+        over0 = p["vmax_v0_over_limit"]
+        ex = p["vmax_plan_excess_ms"]
+        ok_rows = ~over0
+        lim = b["plan_v_max_ms"]
+        return {
+            "n_rows": int(batch), "limits_ms": [round(float(x), 4) for x in lim],
+            "n_v0_over_limit": int(over0.sum()),
+            "n_candidates": int(ex.numel()),
+            "n_candidates_binding": int(p["vmax_binding"].sum()),
+            "n_plan_over_limit": int((ex[ok_rows] > 1e-4).sum()),
+            "max_plan_excess_ms_t0_under_limit": (
+                float(ex[ok_rows].max()) if bool(ok_rows.any()) else None),
+            "max_uncapped_speed_minus_limit_ms": float(
+                (p["vmax_plan_max_speed_uncapped"]
+                 - lim[:, None]).masked_fill(~torch.isfinite(lim)[:, None],
+                                             float("-inf")).max()),
+            "_read": "synthetic smoke through the eval-mode forward; proves "
+                     "the cap reaches the emitted plan, NOT a driving number"}
+    finally:
+        stack.train(was)
+
+
+def _preflight_r1_r4(a) -> list[str]:
+    """R1/R4 refusals — milliseconds, before any corpus or GPU."""
+    probs: list[str] = []
+    toc = str(getattr(a, "tac_op_cond", "off") or "off")
+    msi = bool(getattr(a, "max_speed_input_v6", False))
+    cap = bool(getattr(a, "plan_vmax_cap", False))
+    side = getattr(a, "speed_max_sidecar_v6", None)
+    dry = bool(getattr(a, "dry_run", False))
+    ack = bool(getattr(a, "control_arm_ack", False)
+               or getattr(a, "i_know_this_is_the_control_arm", False))
+    if a.stage == "S-W":
+        for flag, on, grp in (("--tac-op-cond", toc != "off", "planner"),
+                              ("--max-speed-input-v6", msi, "layer_tac")):
+            if on:
+                probs.append(
+                    f"--stage S-W with {flag}: the {grp} group is FROZEN in "
+                    f"S-W, so the zero-init port would be untrainable dead "
+                    f"weight AND would add keys to the state_dict — which "
+                    f"breaks a strict resume of an S-W run. It is an S-T lever "
+                    f"(STAGE_MAY_INTRODUCE['S-T']).")
+        if cap:
+            probs.append(
+                "--stage S-W with --plan-vmax-cap: S-W emits no trained plan "
+                "(λ_plan ≡ 0, the emission is at its zero init), so the cap "
+                "would be advertised on an arm with nothing to cap.")
+    if (msi or cap) and not side and not dry:
+        probs.append(
+            f"{'--max-speed-input-v6' if msi else '--plan-vmax-cap'} without "
+            f"--speed-max-sidecar-v6: nothing would supply the clip's max "
+            f"speed (R1, PI 2026-09-27). Build it with "
+            f"`scripts/build_refcv6_speed_max_window.py` (the refcv6 sidecar "
+            f"over the SAME label blob as --nav-labels).")
+    if side and not (msi or cap):
+        probs.append(
+            "--speed-max-sidecar-v6 without --max-speed-input-v6 or "
+            "--plan-vmax-cap: the sidecar would be read by nothing — an "
+            "advertised-but-inert input.")
+    if side and not os.path.isfile(str(side)):
+        probs.append(f"--speed-max-sidecar-v6 {side} does not exist.")
+    if toc != "off" and "planner" in stage_trainable_groups(a.stage) \
+            and not ack:
+        lp = resolve_lambda_plan(a)
+        wa = float(getattr(a, "w_anchor", 0.0) or 0.0)
+        if not lp and not wa:
+            probs.append(
+                f"--tac-op-cond {toc} with no planner loss in force in stage "
+                f"{a.stage} (λ_plan 0, --w-anchor 0): the plan losses are the "
+                f"port's ONLY gradient source, so it would be built and never "
+                f"trained — the intent_proj dead-weight defect. If an "
+                f"inert-port control is what you want, say so with "
+                f"--i-know-this-is-the-control-arm.")
+    return probs
+
+
+def _run_config(a, stack: V6Stack, freeze: dict,
+                decl_audit: dict | None = None) -> dict:
+    cfg_json = {
+        "run": f"v6-staged-{a.stage}",
+        "stage": a.stage,
+        "trainable_groups": list(stage_trainable_groups(a.stage)),
+        "module_groups": list(MODULE_GROUPS),
+        "v6_config": stack.cfg.to_dict(),
+        "loss_weights": asdict(_weights_from_args(a)),
+        "loss_weights_in_force": asdict(_weights_from_args(a)
+                                        .for_stage(a.stage)),
+        # ⛔ A RUN RECORD THAT DOES NOT CARRY ITS EFFECTIVE WEIGHTS
+        # CANNOT BE AUDITED AFTERWARDS, and three arm-substitutions have
+        # already been found in this programme. `loss_weights` above is
+        # what was ASKED FOR and `loss_weights_in_force` what survived --
+        # neither says which of them the OPERATOR typed, nor whether the
+        # term builds an autograd graph at all. This does.
+        "effective_weights": effective_weights_stamp(a, echo=True),
+        "freeze": freeze,
+        # the preflight's own audit, so config.json records that the
+        # declarations were CHECKED and not merely made (2026-09-06).
+        "declared_freeze_preflight": decl_audit,
+        "param_report": stack.param_report(),
+        #: ⛔ THE INIT REGIME IS NOT IN `args` — it arrives through the
+        #: TANITAD_RESIDUAL_INIT_SCALE environment variable, so a run's own
+        #: artifacts recorded NOTHING about it. MEASURED 2026-08-22: the
+        #: v7-tiny `fixed` and `regress` arms differ ONLY in this value and
+        #: their config.json files were byte-identical on it — the one
+        #: variable of a two-arm ablation was invisible in the record and had
+        #: to be reconstructed from the launch script. An env-var input that
+        #: changes the model is a RUN FACT and belongs beside the run.
+        "residual_head_init_scale": float(RESIDUAL_HEAD_INIT_SCALE),
+        # ⛔ `_ew_*` ARE CARRIERS, NOT ARGS, AND ONE OF THEM IS AN
+        # ArgumentParser. `main` attaches the parser and the argv to the
+        # namespace so the effective-weight audit can answer "did the
+        # operator ASK for this weight?" from argv rather than from the
+        # value. Both must be stripped here: `json.dumps` raises
+        # `TypeError: Object of type ArgumentParser is not JSON
+        # serializable`, which would kill the run AT THE config.json
+        # WRITE -- after the model is built and the corpus is mounted.
+        # The argv itself is not lost: `provenance` records the command.
+        "args": {k: (list(v) if isinstance(v, tuple) else v)
+                 for k, v in vars(a).items()
+                 if not k.startswith("_ew_")},
+        "horizon_spec": {
+            "plan_steps": stack.cfg.plan_steps, "dt": stack.cfg.dt,
+            "horizon_s": stack.cfg.horizon_s,
+            "op_band_s": list(stack.cfg.op_band_s),
+            "tac_band_s": list(stack.cfg.tac_band_s),
+            "_binding": "HIERARCHY_VOCABULARY.md §4b — ONE 60-step (a, κ)@10 Hz "
+                        "unicycle rollout 0→6 s; bands are SLICES of it"},
+        "gate_spec": STAGE_GATE_SPEC[a.stage],
+        "tier": "training-side config; capability claims are T1 only "
+                "(EVAL_DOCTRINE.md)",
+        # ⭐ P4-4 — what actually executed, not what was asked for.
+        "provenance": run_provenance(getattr(a, "device", None)),
+        "_evidence_class": "MEASURED (ours; this run's own configuration)",
+    }
+    # ⭐ R1/R4 (PI 2026-09-27): EMPTY with every lever off (the default record
+    # is untouched); the R1 declarations are then REFUSED in both directions
+    # BEFORE any caller writes config.json (both callers write right after).
+    cfg_json |= r1r4_config_block(a, stack)
+    assert_r1r4_record(cfg_json, a)
+    return cfg_json
+
+
+# ============================================================================
+# the real training path (pod-side: GPU + the canonical v2 corpora)
+# ============================================================================
+
+def train(a) -> dict:
+    """The real staged loop. POD-SIDE: needs the v2 caches and a GPU.
+
+    Data seams are the PROVEN ones, imported not re-derived:
+    ``train_v58f_unicycle_head.build_train_episodes`` (parity guard + geometry
+    binding), ``eval_flagship_v4.build_v2_val_episodes``/``resolve_eval_frames``,
+    ``train_flagship4b.FlagshipWindowDataset``. Parity is sacred: anything that
+    re-selects episodes breaks cross-arm comparability and is refused by
+    ``assert_v2_parity_cache``.
+    """
+    from torch.utils.data import default_collate
+
+    from eval_flagship_v4 import _eval_cfg, _plan, resolve_eval_frames
+    from train_flagship4b import FlagshipWindowDataset
+    from train_flagship_v4 import _to_device
+    from train_v58f_unicycle_head import build_train_episodes
+    from tanitad.models.metric_dynamics import gt_ego_waypoints
+
+    out_dir = Path(a.out)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    device = a.device
+    if device == "cuda" and not torch.cuda.is_available():
+        print("[v6] WARNING: cuda unavailable, falling back to cpu",
+              flush=True)
+        device = "cpu"
+    amp_on = (device == "cuda") and not a.no_amp
+    # (P4-8) resolve the autocast dtype ONCE, by probe, and announce it.
+    amp_spec = resolve_amp_dtype("cuda" if device == "cuda" else "cpu", amp_on)
+    print(f"[v6] autocast: {amp_spec['name']} "
+          f"(autocast={amp_spec['autocast']}) — {amp_spec['reason']}", flush=True)
+
+    # ---- X5 precondition BEFORE anything expensive -------------------------
+    pre = assert_stage_precondition(
+        a.stage, a.prev_gate, allow_inconclusive=a.allow_inconclusive_gate,
+        off_reason=a.gate_off_reason)
+    print(f"[v6] precondition OK: {json.dumps(pre)}", flush=True)
+    if pre.get("override"):
+        print("=" * 72, flush=True)
+        print(f"[v6] ⚠️  GATE OVERRIDE IN FORCE — previous stage verdict "
+              f"{pre['prev_verdict']}; reason: {pre['off_reason']}",
+              flush=True)
+        print("=" * 72, flush=True)
+
+    # ---- resume / done-marker discipline BEFORE anything expensive --------
+    rg = resume_guard(out_dir, resume=a.resume, force_rerun=a.force_rerun)
+    # ⛔ ...and the LINEAGE of whatever it found, also before anything
+    # expensive. `load_resume` sits after episode selection, dataset windowing
+    # and the O4 saliency pass over every window in the corpus; a wrong-stage
+    # resume discovered there has already paid for all of it.
+    if rg["mode"] == "resume":
+        rg["ckpt"] = assert_resume_lineage(rg["from"], stage=a.stage)
+    print(f"[v6] launch mode: {json.dumps(rg)}", flush=True)
+
+    # ---- ⛔ --v2-val-cache IS NOT WIRED IN THIS TRAINER (P4-5) --------------
+    # It built a `ds_val` that was printed and then never read: no loss, no
+    # probe and no gate consumed it. A flag that mounts and windows a whole val
+    # corpus while nothing validates is worse than an absent one, because the
+    # launch line reads as though validation is happening.
+    #
+    # ⚠️ THE REASON IT SURVIVED: the SAME flag name IS fully wired in
+    # `train_flagship_v4.py` (the held-out gate) and in `eval_flagship_v4.py` /
+    # `probe_latent_state.py`. An operator who knows those semantics reads a v6
+    # launch line and correctly believes validation happens — the flag is
+    # meaningful *somewhere*, which is exactly why nobody noticed it is dead
+    # *here*. Same family as the `df`/`step_s` scope traps: a true fact quoted
+    # outside its scope reads like an answer.
+    #
+    # Refusing rather than warning is deliberate — a warning on a long launch
+    # scrolls past. ⭐ Verified before refusing: NO v6 launch line passes this
+    # flag (`stack/ops/runs.d/*.env` -> only the v5f env, which targets
+    # train_flagship_v4.py; pbattery_watcher passes it to probe_latent_state).
+    if a.v2_val_cache:
+        raise SystemExit(
+            "[v6] ⛔ --v2-val-cache is NOT SUPPORTED by train_v6_staged.py.\n"
+            "     It was accepted and silently ignored: the dataset was built, "
+            "printed, and never read by any loss, probe or gate.\n"
+            "     ⇒ Drop the flag. For a held-out gate use "
+            "train_flagship_v4.py, where this flag IS wired; for latent "
+            "probing use probe_latent_state.py --v2-val-cache.\n"
+            "     (P4-5. If you are wiring validation into v6, remove this "
+            "refusal in the SAME change that adds the consumer — never "
+            "before.)")
+
+    torch.manual_seed(a.seed)
+    random.seed(a.seed)
+    rng = random.Random(a.seed)
+    gen = torch.Generator().manual_seed(a.seed + 1)
+
+    stack = build_stack_from_args(a)
+    init_report: dict = {"init_from": None}
+    if a.init_from:
+        init_report = load_stage_init(stack, a.init_from, stage=a.stage)
+        _resync_ema_o5(stack)
+        _resync_ema_o5(stack)
+        print(f"[v6] initialised from {json.dumps(init_report)}", flush=True)
+    # ---- D-V7-DINO-SEED: the encoder-only seed (mutually exclusive above) ---
+    enc_seed_report = apply_encoder_seed(a, stack)
+    if enc_seed_report.get("init_encoder_from"):
+        # the O5 EMA/frozen teachers are COPIES of the encoder — resyncing here
+        # is the same reason `--init-from` does it: a teacher left at random
+        # init while the student is seeded is a silent two-model run.
+        _resync_ema_o5(stack)
+        _resync_ema_o5(stack)
+    assert_trunk_anchor_preflight(a)
+    stack = stack.to(device)
+    freeze = apply_stage_freeze(stack, a.stage)
+    decl_audit = _declared_freeze_preflight(stack, a, "train")
+    print(f"[v6] stage {a.stage}: trainable "
+          f"{freeze['n_trainable']/1e6:.2f} M / frozen "
+          f"{freeze['n_frozen']/1e6:.2f} M · groups "
+          f"{freeze['trainable_groups']}", flush=True)
+
+    cfg_eval = _eval_cfg()
+    cache_frame, model_frame = resolve_eval_frames(a, cfg_eval,
+                                                   label="train_v6_staged")
+    # ⛔ E2, second lock — on the REAL objects, and still BEFORE the corpus.
+    # `_preflight_subframe` answers this from args alone in milliseconds; this
+    # compares the frame the DATA will actually be delivered at against the
+    # frame the ENCODER was actually built for. Two locks because the two are
+    # different objects in this trainer (see `subframe_desync`) and the failure
+    # they prevent otherwise surfaces at the first forward, i.e. after the
+    # corpus has mounted and the O4 saliency pass has run.
+    enc_hw = tuple(int(x) for x in stack.cfg.encoder.image_hw())
+    got_hw = (int(model_frame.height), int(model_frame.width))
+    if got_hw != enc_hw:
+        raise SystemExit(
+            f"[v6] ⛔ the DATA frame {got_hw[0]}x{got_hw[1]} and the ENCODER "
+            f"frame {enc_hw[0]}x{enc_hw[1]} disagree. In this trainer "
+            f"--v2-subframe moves the data (it is applied to the flagship-v4 "
+            f"EVAL config) while the encoder was sized from --frame-h/"
+            f"--frame-w by build_stack_from_args — so the first forward would "
+            f"raise `encoder input is {got_hw} but the config declares "
+            f"{enc_hw}`. ⇒ drop --v2-subframe, or declare --frame-h "
+            f"{got_hw[0]} --frame-w {got_hw[1]} (a DIFFERENT model, which "
+            f"cannot --init-from a {enc_hw[0]}x{enc_hw[1]} checkpoint).")
+    plan = _plan(cfg_eval)
+    weights = _weights_from_args(a)
+    w_stage = weights.for_stage(a.stage)
+    # each layer's TARGET lives one of ITS OWN ticks ahead (stride_tac = 5,
+    # stride_str = 20 at the default clocks) — predicting one operative tick
+    # ahead and calling it a tactical prediction is an identity map wearing a
+    # hierarchy's name, so the corpus window has to actually carry those steps.
+    # ⚠️ only the stages that actually run an O-layer term need the encoded
+    # future latents, and encoding them is the single largest per-step cost.
+    # S-T/S-S would otherwise pay max(o1_k, o5_k) = 20 extra encoder passes per
+    # sample for tensors no live loss reads.
+    needs_ztrue = bool(w_stage.o1_ctrl or w_stage.o1_fact or w_stage.o1_scene
+                       or w_stage.o2_nearfield or w_stage.o3_masked
+                       or w_stage.o5_rollout)
+    need_k = max(a.o1_k, a.o5_k) if needs_ztrue else 0
+    # the seam loss needs exactly ONE encoded future latent — the cheapest
+    # possible future encode, and only in the stages where the seam trains
+    if w_stage.seam_op and need_k < 1:
+        need_k = 1
+    need = max(need_k,
+               stack.cfg.stride_tac if w_stage.t1_latent else 0,
+               stack.cfg.stride_str if w_stage.s1_latent else 0,
+               # ⛔ F-11: a K-tick strategic roll needs K*stride_str
+               # future steps. This is the single largest horizon any
+               # term can ask for, and it is what makes the catalog's
+               # 8-30 s band corpus-limited — see
+               # `reachable_strategic_ticks` and the refusal below.
+               (stack.cfg.stride_str * int(a.s1_multi_k)
+                if w_stage.w_s1_multi else 0),
+               stack.cfg.plan_steps if w_stage.lambda_plan else 0,
+               1)
+    # ⚠️ ``plan.max_horizon`` is the FLAGSHIP-v4 loss's horizon (MEASURED 20 at
+    # the current config) — it is NOT a property of the cache. ``max_horizon``
+    # is a WINDOWING parameter (data/_contract.py:118-121:
+    # ``t_max = frames - window - max_horizon``), so v6 sets its OWN. Inheriting
+    # v4's 20 would make §4b's 6 s horizon structurally untrainable while
+    # looking like a corpus limitation.
+    max_h = int(a.max_horizon) if a.max_horizon else max(need,
+                                                         plan.maneuver_h)
+    if max_h < need:
+        raise SystemExit(
+            f"[v6] ⛔ --max-horizon {max_h} < the {need} future steps stage "
+            f"{a.stage} needs (o1_k={a.o1_k}, o5_k={a.o5_k}, stride_tac="
+            f"{stack.cfg.stride_tac}, stride_str={stack.cfg.stride_str}, "
+            f"plan_steps={stack.cfg.plan_steps}). A silently shortened horizon "
+            f"is not the same experiment.")
+    if max_h < plan.maneuver_h:
+        raise SystemExit(f"[v6] ⛔ --max-horizon {max_h} < maneuver_h "
+                         f"{plan.maneuver_h} (the dataset asserts this)")
+    print(f"[v6] windowing: window {stack.cfg.predictor.window} + "
+          f"max_horizon {max_h} (v4's plan says {plan.max_horizon}; v6 sets "
+          f"its own). ⚠️ a LONGER horizon yields FEWER windows per episode — "
+          f"episode selection (parity) is untouched, the window count is not.",
+          flush=True)
+
+    train_eps, _tp = build_train_episodes(a, cache_frame=cache_frame,
+                                          train_frame=model_frame)
+    # ⛔ D-V7-EVAL-EXCLUSION — BEFORE the dataset is constructed, so no window
+    # of an evaluation clip can exist at all. This call is also where the
+    # ep_idx -> clip_id join is PROVEN (the pre-filter count), which is what
+    # lets the PSG and NAV joins below keep their own post-filter checks.
+    train_eps, excl_rec = apply_eval_exclusion(a, train_eps)
+    ds_train = FlagshipWindowDataset(
+        train_eps, window=stack.cfg.predictor.window, max_horizon=max_h,
+        maneuver_h=plan.maneuver_h,
+        channels=stack.cfg.encoder.in_channels)
+    print(f"[v6] train {len(train_eps)} eps / {len(ds_train)} windows",
+          flush=True)
+    if not len(ds_train):
+        raise SystemExit(
+            f"[v6] ⛔ 0 training windows at window "
+            f"{stack.cfg.predictor.window} + max_horizon {max_h} — the "
+            f"episodes are shorter than {stack.cfg.predictor.window + max_h} "
+            f"frames. Lower the horizons or rebuild the cache with longer "
+            f"episodes.")
+
+    # ---- F-11: is the requested strategic roll REACHABLE on this corpus? ----
+    # ⚠️ MOST OF THE CATALOG'S 8-30 s BAND *IS* REACHABLE — this comment used to
+    # say it was not, on a 120-FRAME cache that never existed (`w120` is the
+    # 120-DEGREE FOV; episodes are ~199 frames, max_k = 9 = 18 s). Corrected
+    # 2026-09-02. The guard below is unaffected and was always right, because it
+    # reads the REALISED episode lengths rather than assuming one — which is
+    # exactly why it survived the error that took out the prose around it. And
+    # the failure without this guard is SILENT-ish: `max_h = K*stride_str` walks
+    # `t_max = frames - window - max_horizon` towards zero, so episodes drop out
+    # ONE AT A TIME as K rises. A corpus of unequal-length episodes would
+    # therefore lose its SHORT episodes first — an effective RE-SELECTION of the
+    # corpus, which is the one thing parity forbids (CLAUDE.md invariants; PI
+    # decision D4 permits a horizon change only *because* every episode still
+    # contributes). So this refuses on the SHORTEST episode, not the mean, and
+    # reports the drop-out census rather than inferring it.
+    if w_stage.w_s1_multi:
+        ep_lens = [int(e.frames.shape[0]) for e in train_eps]
+        reach = reachable_strategic_ticks(
+            min(ep_lens), window=stack.cfg.predictor.window,
+            stride_str=stack.cfg.stride_str)
+        n_drop = sum(1 for L in ep_lens
+                     if L - stack.cfg.predictor.window - max_h <= 0)
+        reach |= {"n_episodes": len(ep_lens), "n_episodes_dropped": n_drop,
+                  "requested_k": int(a.s1_multi_k),
+                  "shortest_episode_frames": min(ep_lens),
+                  "longest_episode_frames": max(ep_lens)}
+        print(f"[v6] F-11 reachability {json.dumps(reach)}", flush=True)
+        if int(a.s1_multi_k) > reach["max_k"]:
+            raise SystemExit(
+                f"[v6] ⛔ --s1-multi-k {a.s1_multi_k} is NOT REACHABLE on this "
+                f"corpus. The shortest episode is {min(ep_lens)} frames; with "
+                f"window {stack.cfg.predictor.window} and stride_str "
+                f"{stack.cfg.stride_str} the largest K yielding any window is "
+                f"{reach['max_k']} ({reach['horizon_s_at_max_k']:.1f} s). "
+                f"⚠️ The catalog asks for 8-30 s = 4-15 ticks; that band is a "
+                f"CORPUS limit, not a trainer limit, and it needs a longer "
+                f"re-extraction of the SAME 2376 episodes (admissible per PI "
+                f"decision D4) — never a re-pick of which episodes enter.")
+        if n_drop:
+            raise SystemExit(
+                f"[v6] ⛔ --s1-multi-k {a.s1_multi_k} drops {n_drop} of "
+                f"{len(ep_lens)} episodes to ZERO windows (they are shorter "
+                f"than window {stack.cfg.predictor.window} + max_horizon "
+                f"{max_h}). Training on the surviving episodes is an "
+                f"EFFECTIVE RE-SELECTION of the corpus and breaks cross-arm "
+                f"comparability. Lower K, or re-extract longer clips from the "
+                f"same episode list.")
+    # (P4-5) The dead `ds_val` construction lived here. `--v2-val-cache` is
+    # refused at argument-validation time above, so this branch was
+    # unreachable-by-contract as well as unread.
+
+    # ---- S2: the strategic-goal label join (S-S/S-J; default absent) --------
+    # Loaded AFTER the corpus so the join is over the REAL episode ids, and
+    # BEFORE the optimiser so a dead join refuses in seconds, not after the
+    # O4 pass over every window. The report lands in config.json — it is the
+    # raw material of the S-S gate's goal-provenance audit (label provenance
+    # census + the disjointness verdict, per this run's own load).
+    s2_sup = None
+    s2_cfg: dict | None = None
+    # ⭐ R3: the tactical label term is the SECOND consumer of this join, and
+    # the one that lives in S-T — where w_s2_goal is zeroed. `or` keeps the
+    # incumbent condition byte-for-byte when w_tac_label_all is 0 (the default).
+    if a.s2_labels and (w_stage.w_s2_goal or w_stage.w_tac_label_all):
+        # ONE door, TWO schemas — sniffed from the RECORD (spec §2). v1 is the
+        # incumbent `load_s2_labels` call unchanged; v7.2 goes through
+        # `tanitad.data.v7_labels.load_v7_labels` (the STAMP), lands its
+        # strategic ids on the v7 heads and adds the factored tactical keys.
+        s2_set = load_s2_labels_any(
+            a.s2_labels,
+            allow_any_labels=bool(getattr(a, "allow_any_labels", False)),
+            stack=stack)
+        s2_sup = s2_set.supervision(train_eps,
+                                    window=stack.cfg.predictor.window,
+                                    dt=a.dt, index=ds_train.index)
+        s2_cfg = {"labels": s2_set.report(), "join": s2_sup.report(),
+                  "w_s2_goal_in_force": w_stage.w_s2_goal}
+        print(f"[v6] S2 {json.dumps(s2_cfg['join'])}", flush=True)
+        if s2_sup.n_matched_episodes == 0:
+            raise SystemExit(
+                f"[v6] ⛔ --s2-labels {a.s2_labels} joined ZERO of "
+                f"{s2_sup.n_episodes} training episodes — with --w-s2-goal "
+                f"{w_stage.w_s2_goal} the term would be advertised in every "
+                f"log row and never fire (the exact silent-never-fires "
+                f"failure the clip index exists to prevent). Wrong corpus "
+                f"for these labels, or a stale manifest without stable ids.")
+        if s2_sup.n_windows_in_band == 0:
+            raise SystemExit(
+                f"[v6] ⛔ --s2-labels joined {s2_sup.n_matched_episodes} "
+                f"episodes but ZERO windows fall inside the validity band "
+                f"(t0={s2_set.t0_s}s ± {s2_set.band}) — the windowing "
+                f"(window={stack.cfg.predictor.window}, max_horizon={max_h}) "
+                f"never reaches the label's decision time. The term would "
+                f"never fire; refusing instead.")
+    # ---- R3: ALL tactical labels -> the tactical layer (S-T/S-J) ------------
+    # ⛔ default absent: with w_tac_label_all 0 nothing below runs, and the
+    # join above emits exactly the incumbent keys.
+    tac_label_cfg: dict | None = None
+    if w_stage.w_tac_label_all:
+        from tanitad.train.declared_vs_built_v6 import (  # noqa: PLC0415
+            refuse_on_mismatch_v6)
+        refuse_on_mismatch_v6(stack, a, weights_in_force=w_stage,
+                              parser=getattr(a, "_ew_parser", None),
+                              where="train")
+        if s2_sup is None:
+            raise SystemExit(
+                "[v6] ⛔ --w-tac-label-all without --s2-labels: the tactical "
+                "label term has no labels (preflight refuses this on a real "
+                "run; reaching here means it was bypassed).")
+        tac_label_cfg = build_tac_label_targets(a, s2_set, s2_sup, stack)
+        # ⛔ RE-READ the join's report: `s2_cfg` snapshotted it BEFORE the R3
+        # targets were enabled, so config.json said "tactical_consumer: NONE"
+        # while the term was in force — MEASURED on the first real-train()
+        # smoke (v7f_r3 raw/train_smoke_ST_summary.txt). A record that
+        # contradicts the loss is the declared-vs-built defect in the log.
+        if s2_cfg is not None:
+            s2_cfg["join"] = s2_sup.report()
+        print(f"[v6] R3 tac-label-all: negatives={tac_label_cfg['negatives']} "
+              f"· goal classes trainable {tac_label_cfg['n_trainable']}/"
+              f"{tac_label_cfg['n_total']} (masked: "
+              f"{sorted(tac_label_cfg['masked_why'])}) · "
+              f"{tac_label_cfg['n_on_pos_weight_cap']} ON the pos_weight cap "
+              f"{tac_label_cfg['pos_weight_cap']:g} · in-band tactical windows "
+              f"{tac_label_cfg['join']['n_windows_in_band_tac']}/"
+              f"{tac_label_cfg['join']['n_windows']} — report PER CLASS, "
+              f"never pooled", flush=True)
+
+    # ---- O4: interaction-weighted sampling (ACTIONS ONLY) ------------------
+    if a.o4_alpha > 0:
+        print(f"[v6] O4: scoring {len(ds_train)} windows by ego-kinematic "
+              f"saliency (label-free, ACTIONS ONLY) ...", flush=True)
+        # ⚠️ read the ACTION arrays straight off the episode providers
+        # (``ep.actions[t : t+W+H]`` — the ``EpisodeWindowDataset`` slicing at
+        # data/_contract.py:132-135). Going through ``ds_train[i]`` would DECODE
+        # EVERY FRAME OF THE CORPUS to compute a scalar over two action
+        # channels: hundreds of thousands of window payload loads on MooseFS
+        # before step 1. The saliency needs no pixels by construction, and that
+        # is exactly what makes O4 label-free in the first place.
+        w_win = stack.cfg.predictor.window
+        span = w_win + need
+        acts = []
+        for e_i, t in ds_train.index:
+            arr = ds_train.episodes[e_i].actions[t:t + span]
+            acts.append(torch.as_tensor(arr[:, :2]).float())
+        # episodes near their end yield short slices — pad by edge-repeat so the
+        # stack is rectangular. Edge-repeat adds ZERO jerk and ZERO reversals,
+        # so a truncated window is scored on what it actually contains and is
+        # never inflated by the padding.
+        n_max = max(x.shape[0] for x in acts)
+        acts = [x if x.shape[0] == n_max else
+                torch.cat([x, x[-1:].expand(n_max - x.shape[0], 2)], dim=0)
+                for x in acts]
+        w4, o4log = build_o4_weights(torch.stack(acts), dt=stack.cfg.dt,
+                                     alpha=a.o4_alpha, floor=a.o4_floor)
+        o4log["o4_span_steps"] = int(n_max)
+        print(f"[v6] O4 {json.dumps(o4log)}", flush=True)
+        sample = InteractionSampler(ds_train.index, w4,
+                                    eps_per_batch=a.eps_per_batch,
+                                    generator=gen)
+    else:
+        from train_v58f_unicycle_head import make_sampler
+        sample = make_sampler(ds_train, a.eps_per_batch, rng)
+        o4log = {"o4_alpha": 0.0, "_note": "uniform sampling (O4 control arm)"}
+
+    # ---- F-9 / catalog T3: the INTERACTION CURRICULUM ----------------------
+    # DIAGRAM_CONFORMANCE.md:59 — *"O4 is the ego-kinematic version only; T3's
+    # multi-agent extension needs the P8 occupancy readout in the loop."*
+    # It is not in the loop and it must not be: scoring the corpus from
+    # predicted occupancy means an encode + a predictor roll + an occupancy
+    # decode PER WINDOW, which is a full forward pass over the corpus before
+    # step 1 — the very cost O4's docstring exists to avoid. So T3's SCORE is a
+    # precomputed artifact and T3's CURRICULUM is what lives here. The split is
+    # also what makes the P8 gating tractable: the schedule half is not gated
+    # on P8 at all, and can be exercised against any per-window score.
+    t3_curr = t3_scores = None
+    t3log: dict = {"t3": "absent"}
+    if a.t3_scores:
+        if a.o4_alpha > 0:
+            raise SystemExit(
+                "[v6] ⛔ --t3-scores with --o4-alpha > 0 puts TWO saliency "
+                "levers on ONE sampling axis, and the resulting arm is not "
+                "attributable to either (the `--v2` conflation failure). O4 is "
+                "EGO-kinematic saliency, T3 is MULTI-AGENT interaction; they "
+                "are different signals and must be run as different arms. "
+                "⚠️ --o4-alpha DEFAULTS TO 1.0, so a T3 run must pass "
+                "--o4-alpha 0 explicitly — which is the declaration.")
+        t3_scores, prov = load_t3_scores(a.t3_scores,
+                                         n_windows=len(ds_train.index))
+        t3_curr = T3Curriculum(alpha_start=a.t3_alpha_start,
+                               alpha_end=a.t3_alpha_end,
+                               warmup_frac=a.t3_warmup_frac,
+                               floor=a.t3_floor)
+        sample = InteractionSampler(ds_train.index,
+                                    t3_curr.weights_at(t3_scores, 0.0),
+                                    eps_per_batch=a.eps_per_batch,
+                                    generator=gen)
+        t3log = {"t3": "active", "provenance": prov,
+                 "alpha_start": t3_curr.alpha_start,
+                 "alpha_end": t3_curr.alpha_end,
+                 "warmup_frac": t3_curr.warmup_frac, "floor": t3_curr.floor,
+                 "n_windows": int(t3_scores.numel()),
+                 "score_mean": float(t3_scores.mean()),
+                 "score_max": float(t3_scores.max()),
+                 "score_frac_zero": float((t3_scores <= 0).float().mean())}
+        print(f"[v6] T3 {json.dumps(t3log)}", flush=True)
+
+    # ---- F-10 / catalog S3: the DOMAIN-STRATIFIED MIX ----------------------
+    # DIAGRAM_CONFORMANCE.md:69 — *"no domain-stratified sampling in `train()`
+    # (episode draw is uniform / O4-weighted only). Needs the VLM/scena strata
+    # as a SAMPLER input — which is admissible for the data MIX (it is not a
+    # model input) but must be declared."*
+    #
+    # ⛔ IT REPLACES THE EPISODE DRAW, AND IT HAS TO. `InteractionSampler`
+    # draws episodes UNIFORMLY (its own docstring: *"Episodes are drawn
+    # uniformly so no episode is starved"*) and consults `weights` only inside
+    # the drawn episode. A domain label is an EPISODE property, hence constant
+    # within an episode, and a constant through `torch.multinomial` is exactly
+    # uniform. MEASURED: a domain-balanced per-window weight and an all-ones
+    # weight give the BIT-IDENTICAL draw sequence over 4,000 draws, and the
+    # achieved domain share stays at the corpus proportion. Writing F-10 into
+    # `sample.weights` would have been a term over an invariant — a no-op
+    # wearing the name of the lever (the C115 class).
+    #
+    # ⭐ AND IT COMPOSES RATHER THAN CONFLICTS. O4/T3 weight WINDOWS inside an
+    # episode; F-10 weights EPISODES. Different axes, so unlike --t3-scores
+    # against --o4-alpha this is NOT two levers on one axis and is NOT refused
+    # alongside them — the window weights are carried into the stratified
+    # sampler untouched.
+    dmix = None
+    dmixlog: dict = {"domain_mix": "absent"}
+    if a.domain_strata:
+        strata, dprov = load_domain_strata(a.domain_strata, episodes=train_eps)
+        dmix = DomainMix(tau=a.domain_tau,
+                         max_amplification=a.domain_max_amp,
+                         min_stratum_episodes=a.domain_min_stratum)
+        try:
+            ep_w = dmix.episode_weights(strata)
+            rep = dmix.report(strata)
+        except ValueError as exc:
+            raise SystemExit(f"[v6] ⛔ --domain-strata: {exc}")
+        # ds_train.index carries the POSITIONAL episode index, so the weight
+        # map is keyed the same way the sampler groups.
+        ep_weight_map = {i: float(w) for i, w in enumerate(ep_w.tolist())}
+        # ⚠️ `make_sampler` (the --o4-alpha 0 control arm) returns a plain
+        # CLOSURE with no `.weights` attribute — reading it unguarded would
+        # AttributeError on exactly the arm most likely to be run first.
+        # Uniform ones reproduce that closure's within-episode draw.
+        win_w = getattr(sample, "weights", None)
+        if win_w is None:
+            win_w = torch.ones(len(ds_train.index))
+        sample = StratifiedEpisodeSampler(ds_train.index, win_w,
+                                          ep_weight_map,
+                                          eps_per_batch=a.eps_per_batch,
+                                          generator=gen)
+        dmixlog = {"domain_mix": "active", "provenance": dprov, **rep}
+        print(f"[v6] F-10 {json.dumps(dmixlog)}", flush=True)
+        if a.domain_tau == 0.0:
+            # ⚠️ It must be VISIBLE that this is the control, because tau=0 is
+            # INDISTINGUISHABLE from a live mix in every stratum-share report:
+            # both show the drawn share, and at tau=0 it simply equals the
+            # corpus share. The n_eff_frac == 1.0 above is the tell.
+            print("[v6] ⚠️ F-10 CONTROL ARM: --domain-tau 0 is PROPORTIONAL — "
+                  "every episode equally likely, i.e. distributionally the "
+                  "incumbent uniform draw. It is NOT stream-identical to "
+                  "omitting --domain-strata (multinomial vs randint), so the "
+                  "run row must say which control this arm used.", flush=True)
+        # ⚠️ THE VOLUME SIDE OF THE TRADE, PRINTED — never left to be inferred.
+        if rep["n_eff_frac"] < 0.5:
+            print(f"[v6] ⚠️ F-10: tau={a.domain_tau} costs "
+                  f"{100 * (1 - rep['n_eff_frac']):.1f}% of the EFFECTIVE "
+                  f"corpus (n_eff {rep['n_eff_episodes']} of "
+                  f"{rep['n_episodes']} episodes). The catalog row claims "
+                  f"'diversity beats volume'; this is the volume.", flush=True)
+
+    # ---- F-8 / T5: the CONSECUTIVE-WINDOW PAIR index -----------------------
+    # DIAGRAM_CONFORMANCE.md:58 — *"Needs consecutive-window batches (the
+    # current sampler draws windows independently)"*. This is that change, and
+    # it is OPT-IN: with --t5-pairs off, NOTHING below runs, the sampler object
+    # is untouched and the RNG stream `gen` is consumed exactly as before —
+    # which matters because `gen` is SHARED with sample_random_deltas and
+    # v6_loss_step, so any extra draw would move every other term bit-for-bit.
+    # Precedent: train_tactical_stage0.py:685-694 builds the same partner map.
+    # ⛔ PARITY IS UNTOUCHED: this re-selects no EPISODE. It pairs windows
+    # WITHIN episodes the parity key already chose, and the tail windows it
+    # excludes are excluded from the ANCHOR draw only — every window remains
+    # reachable as a partner.
+    t5_partner: dict[int, int] = {}
+    t5_lag_steps = int(a.t5_lag) or int(stack.cfg.stride_tac)
+    if a.t5_pairs:
+        pos = {et: i for i, et in enumerate(ds_train.index)}
+        t5_partner = {i: pos[(e, t + t5_lag_steps)]
+                      for i, (e, t) in enumerate(ds_train.index)
+                      if (e, t + t5_lag_steps) in pos}
+        if not t5_partner:
+            raise SystemExit(
+                f"[v6] ⛔ --t5-pairs found NO window with a +{t5_lag_steps}"
+                f"-step same-episode partner over {len(ds_train.index)} "
+                f"windows. A pair loss with no pairs trains nothing.")
+        if a.o4_alpha:
+            # zero the O4 weight of unpartnered (tail) windows so the anchor
+            # draw cannot pick one. Least-invasive form: it leaves
+            # InteractionSampler.__call__ (a SHARED module) untouched.
+            keep = torch.zeros(len(ds_train.index), dtype=torch.bool)
+            keep[list(t5_partner)] = True
+            sample.weights = sample.weights * keep.to(sample.weights.dtype)
+        print(f"[v6] T5 pairs: {len(t5_partner)}/{len(ds_train.index)} windows "
+              f"have a +{t5_lag_steps}-step partner "
+              f"({len(ds_train.index) - len(t5_partner)} tail windows excluded "
+              f"from the ANCHOR draw only)", flush=True)
+
+    if bool(getattr(a, "freeze_encoder", False)):
+        n_f = 0
+        for _n, _p in stack.encoder.named_parameters():
+            _p.requires_grad_(False)
+            n_f += _p.numel()
+        print(f"[freeze] encoder FROZEN: {n_f/1e6:.2f} M params; readout + "
+              f"predictor remain trainable (E-DEC-14)", flush=True)
+    if bool(getattr(a, "freeze_readout", False)):
+        # E-DEC-20c. On a frozen encoder the CONTENT holds to 10k (n_agents
+        # +0.4035 -> +0.4156) while the predictor goes from ~a constant to ~5x
+        # MISCALIBRATED (nrmse 4.83, mean-fraction 0.8174) and its h=1 head GROWS
+        # 2.676x. The encoder provably did not move (max|delta| = 0 over 41
+        # tensors), so the degeneracy lives in the two parties that CAN move --
+        # and they moved comparably (predictor_op 0.1784, readout 0.1644), so the
+        # weight norms cannot attribute it. Freezing the readout as well leaves
+        # the PREDICTOR as the only trainable party and separates them.
+        n_r = 0
+        for _n, _p in stack.readout.named_parameters():
+            _p.requires_grad_(False)
+            n_r += _p.numel()
+        print(f"[freeze] readout FROZEN: {n_r/1e3:.2f} k params (E-DEC-20c)",
+              flush=True)
+    trainable = [p for p in stack.parameters() if p.requires_grad]
+    if not trainable:
+        raise SystemExit(f"[v6] ⛔ stage {a.stage} has NO trainable parameters "
+                         f"— the freeze map and the stage disagree")
+    # ---- D-V7-TRUNK-ANCHOR: the anchor, the monitor, and the token tap ------
+    # ⛔ At the defaults ALL THREE are None: nothing is constructed, no forward
+    # hook is registered, and `trainable` is not touched — so the loss, the RNG
+    # stream, the state_dict and the optimizer groups stay bit-identical to
+    # every arm trained before this change. ⚠️ The teacher is deliberately NOT
+    # appended to `trainable` (unlike o7/o8/o9/o10, which contribute learnable
+    # heads): it is FROZEN, and a frozen teacher inside the optimizer is the
+    # failure this design is written against.
+    anchor = build_trunk_anchor(a, stack, enc_seed_report)
+    obs_mon = build_observer_monitor(a, stack)
+    tap = (EncoderTokenTap(stack.encoder)
+           if (anchor is not None or obs_mon is not None) else None)
+    # E-DEC-9: O7 frozen-teacher distillation. Built ONLY when the weight is
+    # non-zero, so with the flag off nothing is constructed, nothing enters the
+    # optimiser, and the loss / RNG stream / state_dict stay bit-identical.
+    o7 = None
+    if float(getattr(a, "w_o7_distill", 0.0)) > 0:
+        # ⛔ n_cells / grid_shape live on V6Config, NOT on V6Stack (which has a
+        # `cells(z_op)` METHOD). The first wiring read stack.n_cells and died.
+        o7 = O7Distill(d_readout=int(stack.cfg.readout.d_readout),
+                       n_cells=int(stack.cfg.n_cells), grid_hw=stack.cfg.grid_shape,
+                       model_id=str(getattr(a, "o7_model", O7_DEFAULT_MODEL))).to(device)
+        trainable = trainable + [q for q in o7.parameters() if q.requires_grad]
+        print(f"[o7] distillation ON  w={float(a.w_o7_distill):g} "
+              f"teacher={o7.model_id} cells={o7.n_cells} grid={o7.grid_hw}", flush=True)
+    o9 = None
+    if float(getattr(a, "w_o9_ema", 0.0)) > 0:
+        o9 = O9EmaMasked(stack.encoder, d_cell=int(stack.cfg.readout.d_readout),
+                         n_cells=int(stack.cfg.n_cells),
+                         momentum=float(getattr(a, "o9_momentum", 0.996)),
+                         mask_frac=float(getattr(a, "o9_mask_frac", 0.5)),
+                         neighbour_k=int(getattr(a, "o9_neighbour_k", 0))).to(device)
+        trainable = trainable + [q for q in o9.parameters() if q.requires_grad]
+        print(f"[o9] EMA-target masked latent ON  w={float(a.w_o9_ema):g} "
+              f"momentum={o9.momentum} mask={o9.mask_frac} "
+              f"neighbour_k={o9.neighbour_k} (TEACHER-FREE)", flush=True)
+    o8 = None
+    if float(getattr(a, "w_o8_pixel", 0.0)) > 0:
+        o8 = O8Pixel(d_readout=int(stack.cfg.readout.d_readout),
+                     n_cells=int(stack.cfg.n_cells),
+                     grid_hw=stack.cfg.grid_shape).to(device)
+        trainable = trainable + [q for q in o8.parameters() if q.requires_grad]
+        print(f"[o8] raw-pixel target ON  w={float(a.w_o8_pixel):g} "
+              f"cells={o8.n_cells} patch={o8.ph}x{o8.pw}", flush=True)
+    o10 = None
+    psg_bank = psg_valid = None
+    if float(getattr(a, "w_o10_psg", 0.0)) > 0:
+        from tanitad.data.psg_targets import (PSG_CHANNELS, PSG_N_COLS,
+                                              clip_split, load_targets)
+        if not getattr(a, "psg_labels", None):
+            raise SystemExit("--w-o10-psg needs --psg-labels")
+        # The episode order IS the cache's sorted `<clip_id>.v2ep.pt` order --
+        # the same order `ep_idx` indexes. ⛔ Verified by COUNT rather than
+        # assumed: a silent length mismatch would shift every label by one clip,
+        # which no loss curve would show (C146's lesson -- an aggregate over the
+        # wrong set is a confident answer to a question never asked).
+        # ⛔ D-V7-EVAL-EXCLUSION: `join_clip_ids` applies THIS RUN'S exclusion to
+        # that same sorted order, so this list is the one `apply_eval_exclusion`
+        # filtered the providers by. Building it any other way is the off-by-N.
+        cache_dir = Path(a.v2_cache[0])
+        clip_ids = join_clip_ids(a, cache_dir)
+        n_ep = len(ds_train.episodes)
+        assert_cache_join(clip_ids, n_ep, who="PSG",
+                          excluded=len(eval_exclusion(a)["_excluded"]))
+        tgt = load_targets(a.psg_labels)
+        missing = [c for c in clip_ids if c not in tgt]
+        if missing:
+            raise SystemExit(f"PSG: {len(missing)} clips have no labels, "
+                             f"e.g. {missing[:3]}")
+        t_max = max(int(tgt[c].shape[0]) for c in clip_ids)
+        bank = torch.zeros(n_ep, t_max, PSG_N_COLS, PSG_CHANNELS)
+        for i, c in enumerate(clip_ids):
+            v = torch.from_numpy(tgt[c])
+            bank[i, :v.shape[0]] = v
+        tr_ids, ho_ids = clip_split(clip_ids, int(getattr(a, "psg_eval_every", 3)))
+        tr = set(tr_ids)
+        psg_bank = bank.to(device)
+        psg_valid = torch.tensor([1.0 if c in tr else 0.0 for c in clip_ids],
+                                 device=device)
+        o10 = O10PSG(d_cell=int(stack.cfg.readout.d_readout),
+                     grid_hw=stack.cfg.grid_shape,
+                     n_cols=PSG_N_COLS, ch=PSG_CHANNELS).to(device)
+        trainable = trainable + [q for q in o10.parameters() if q.requires_grad]
+        print(f"[o10] PSG ON  w={float(a.w_o10_psg):g} labels={a.psg_labels} "
+              f"clips={n_ep} supervised={len(tr_ids)} HELD-OUT={len(ho_ids)} "
+              f"(every {int(getattr(a, 'psg_eval_every', 3))}th) "
+              f"cols={PSG_N_COLS} ch={PSG_CHANNELS} T_max={t_max} "
+              f"(TEACHER-FREE: our own cuboids)", flush=True)
+        (out_dir / "psg_split.json").write_text(json.dumps(
+            {"supervised_clips": tr_ids, "held_out_clips": ho_ids,
+             "eval_every": int(getattr(a, "psg_eval_every", 3)),
+             "_why": "the PSG target determines n_agents and lead_gap_m; those "
+                     "may only be scored on held_out_clips"}, indent=1))
+    # ---- NAV CONDITIONING: the per-clip -> per-window join (PI 2026-08-30) ----
+    # ⭐ PI DECISION 2026-08-31, RECORDED: the nav command was generated from a
+    # combination of Alpamayo CoT and ego data and was reviewed by the PI, who
+    # directed that it be used. The record carries both halves — `cot_source` /
+    # `cot_tokens` hold the Alpamayo chain-of-causation, and `nav_command` carries
+    # its own `provenance: "ego-future"` stamp with `_provenance.nav_command`
+    # reading "ORACLE (ego-future) — training input only".
+    #
+    # ⛔ `allow_oracle_nav=True` IS THEREFORE NOT AN OVERRIDE — IT IS THE MECHANISM
+    # THAT RECORDS THE DECISION. `NavEmitter` can only reach an arg through
+    # `oracle_nav()`, which checks the MANIFEST, so the flag lands in config.json
+    # and no eval can quote a nav-conditioned arm without the stamp being visible.
+    # The gate is the only code path to the value, not a convention to remember.
+    nav_emitter = None
+    if getattr(a, "nav_labels", None):
+        from tanitad.data.v7_labels import NavEmitter, load_v7_labels
+        # ⛔ THE JOIN IS BY CACHE ORDER, AND IS VERIFIED BY COUNT — the O10/PSG
+        # precedent above, for the same reason its comment gives: "a silent length
+        # mismatch would shift every label by one clip, which no loss curve would
+        # show". A wrong-clip nav is worse than a crash: the model would train on
+        # a plausible route for the wrong scene.
+        # ⛔ D-V7-EVAL-EXCLUSION: the SAME filtered list the providers were
+        # built from (`join_clip_ids` -> `eval_exclusion`), never a second glob.
+        _cache = Path(a.v2_cache[0])
+        _clip_ids = join_clip_ids(a, _cache)
+        _n_ep = len(ds_train.episodes)
+        assert_cache_join(_clip_ids, _n_ep, who="nav",
+                          excluded=len(eval_exclusion(a)["_excluded"]))
+        _labels, _manifest = load_v7_labels(a.nav_labels, allow_oracle_nav=True)
+        _by_clip = {x.clip_id for x in _labels}
+        _missing = [c for c in _clip_ids if c not in _by_clip]
+        if _missing:
+            raise SystemExit(
+                f"[nav] ⛔ {len(_missing)} of {len(_clip_ids)} cache clips have no "
+                f"v7 label (e.g. {_missing[:3]}). NavEmitter raises per-window on "
+                f"an unmapped episode; refusing now is the same failure seconds "
+                f"earlier and with the whole list.")
+        nav_emitter = NavEmitter(_labels, _manifest,
+                                 {i: c for i, c in enumerate(_clip_ids)},
+                                 semantics=str(getattr(a, "nav_semantics",
+                                                       "t0_constant")))
+        print(f"[nav] ON · labels={a.nav_labels} md5={_manifest.md5} "
+              f"records={_manifest.n_records} clips_joined={len(_clip_ids)} "
+              f"semantics={nav_emitter.semantics} "
+              f"allow_oracle_nav={_manifest.allow_oracle_nav} "
+              f"(PI-reviewed: Alpamayo CoT + ego)", flush=True)
+
+    # ---- ⭐ R1 (PI 2026-09-27): the per-clip MAX SPEED join -----------------
+    # The refcv6 sidecar (RAW SPEED_BAND.v_hi_ms per clip) joined on the stable
+    # episode id, per EPISODE, then per WINDOW at the batch-build site. Built
+    # when the tactical INPUT or the inference CAP asks for it; the training
+    # forward receives only the INPUT (the plan stays uncapped in training).
+    vmax_join = None
+    if getattr(a, "speed_max_sidecar_v6", None) and (
+            getattr(a, "max_speed_input_v6", False)
+            or getattr(a, "plan_vmax_cap", False)):
+        vmax_join = build_vmax_join(a.speed_max_sidecar_v6, ds_train.episodes,
+                                    ds_train.index,
+                                    label_md5=label_blob_md5_for_vmax(a))
+        print(f"[v6] R1 max speed · {json.dumps(vmax_join['report'])}",
+              flush=True)
+
+    # ⛔ D-V7-DINO-SEED: at the flag defaults this IS the previous one-liner
+    # (one flat group + CosineAnnealingLR); see build_trunk_optimizer().
+    opt, trunk_opt_report = build_trunk_optimizer(a, stack, trainable)
+    sched = build_lr_scheduler(a, opt)
+    start_step = 0
+    if rg["mode"] == "resume":
+        start_step = load_resume(stack, opt, rg["from"], stage=a.stage)
+        for _ in range(start_step):
+            sched.step()                       # replay the LR schedule
+        # ⛔ A RESUME OVERWRITES EVERY WEIGHT --init-from JUST LOADED, and both
+        # flags are legal together — `supervise_run.sh` replays the command it
+        # captured at startup, so the relaunch that RESUMES still carries the
+        # --init-from that seeded the run. MEASURED 2026-08-16: config.json
+        # recorded `init.trunk_md5_after_load = fbce009a…` while the trunk
+        # actually in the model was `326034884…`, and nothing warned. That is a
+        # run row naming an ancestor the run is not standing on — the exact
+        # failure MODEL_REGISTRY.md exists to prevent. The init report is
+        # therefore SUPERSEDED here, in place, with the truth.
+        if init_report.get("init_from"):
+            print(f"[v6] ⚠️  --init-from {init_report['init_from']} was "
+                  f"SUPERSEDED by the resume — every weight it loaded has been "
+                  f"overwritten from {rg['from']}. The lineage of this run is "
+                  f"the checkpoint, not the init.", flush=True)
+        init_report = supersede_init_on_resume(init_report, rg["from"])
+        print(f"[v6] RESUMED at step {start_step} from {rg['from']} — "
+              f"{a.steps - start_step} steps remain", flush=True)
+        if start_step >= a.steps:
+            raise SystemExit(
+                f"[v6] ⛔ the checkpoint is already at step {start_step} >= "
+                f"--steps {a.steps}. Nothing to do. If this run finished, its "
+                f"summary.json should say so; write it or raise --steps.")
+
+    cfg_json = _run_config(a, stack, freeze, decl_audit) | {"o4": o4log,
+                                                "precondition": pre,
+                                                "init": init_report,
+                                                # D-V7-DINO-SEED: the trunk's
+                                                # provenance and its schedule
+                                                # travel INTO the run row, not
+                                                # only into a console line.
+                                                "encoder_seed": enc_seed_report,
+                                                "trunk_optimizer":
+                                                    trunk_opt_report,
+                                                "max_horizon": max_h,
+                                                "launch_mode": rg}
+    # ⭐ F-9's provenance stamp travels INTO THE RUN ROW, not just the log.
+    # A label-derived sampler input is admissible only as a DECLARED data mix;
+    # a declaration that lives in a console line nobody re-reads is the
+    # "please merge in a README" failure in a different costume.
+    cfg_json["t3"] = t3log
+    # ⭐ F-10's provenance stamp AND its price, for the same reason. The mix
+    # report carries `n_eff_episodes` deliberately: a run row that records only
+    # the stratum shares records the diversity and hides the volume it cost,
+    # and the catalog row's whole claim is that the first is worth the second.
+    cfg_json["domain_mix"] = dmixlog
+    # ⭐ D-V7-EVAL-EXCLUSION: the four numbers travel with the RUN ROW, not just
+    # the console — cache clips, v7.2 EVAL label records, the intersection
+    # actually removed, and the resulting episode count. A later reader must be
+    # able to see that this arm did not train on the evaluation split's pixels
+    # without having the launch log. 🔒 counts only; the ids are stripped.
+    cfg_json["eval_exclusion"] = eval_exclusion_record(excl_rec)
+    # ⭐ F-11's reachability census likewise: the window count per episode is
+    # what a later reader needs to know this arm was not silently truncated.
+    if w_stage.w_s1_multi:
+        cfg_json["s1_multi"] = reach
+    if s2_cfg is not None:
+        cfg_json["s2"] = s2_cfg
+    # ⭐ R1: the join's coverage travels with the run row (window fraction fed
+    # is the number the model actually experiences, the refcv6 precedent).
+    if vmax_join is not None:
+        cfg_json["r1_max_speed_join"] = vmax_join["report"]
+    if tac_label_cfg is not None:
+        # R3: what the tactical heads were ACTUALLY supervised with (policy,
+        # class mask, pos_weight, census, the join) — absent when off.
+        cfg_json["tac_label_all"] = tac_label_cfg
+    # D-V7-TRUNK-ANCHOR: what the anchor and the monitor ACTUALLY are for this
+    # run, beside the flags that asked for them. ⚠️ The caveat rides in the
+    # RECORD, not only in a doc — a reading quoted out of this file carries the
+    # sentence that makes it quotable.
+    cfg_json["trunk_anchor"] = (
+        anchor.report() if anchor is not None else
+        {"w_trunk_anchor": 0.0,
+         "_read": "--w-trunk-anchor 0 — nothing constructed, no hook "
+                  "registered, byte-identical to every pre-D-V7-TRUNK-ANCHOR "
+                  "arm"})
+    cfg_json["observer_monitor"] = (
+        {"every": obs_mon.every, "window": obs_mon.window, "d": obs_mon.dims,
+         "threshold": obs_mon.threshold, "targets": list(obs_mon.TARGETS),
+         "caveat": TRUNK_ANCHOR_CAVEAT, "floor": OBS_MONITOR_FLOOR}
+        if obs_mon is not None else
+        {"every": 0, "_read": "--obs-monitor-every 0 (OFF)"})
+    (out_dir / "config.json").write_text(json.dumps(cfg_json, indent=1))
+    log_path = out_dir / "train_log.jsonl"
+    fh = open(log_path, "a")
+    fh.write(json.dumps({"run_start": cfg_json}) + "\n")
+    fh.flush()
+
+    history: list[dict] = []
+    spectrum_last: dict | None = None
+    #: ⛔ the POOLED reading, which is what the O6 RANK criterion needs.
+    #: Before 2026-08-22 the pooled spectrum was computed and written to
+    #: the LOG while `run_stage_gate` was handed the SINGLE-BATCH one, so
+    #: --spectrum-accum improved the log and never the gate: every run in
+    #: this programme reported INCONCLUSIVE ("rank_ceiling 23 < 1024")
+    #: no matter what the flag said. MEASURED on Thor's `lewm` arm, which
+    #: ran with --spectrum-accum 43 and still gated on n=24.
+    spectrum_pooled_last: dict | None = None
+    spectrum_ref: dict | None = None
+    # ⚠️ OPT-IN, and deliberately so: --spectrum-accum defaults to 1, which
+    # leaves ``spec_acc`` None and the emission path exactly what it was. The
+    # live v6F S-W run resumes from an argv that carries neither flag.
+    spec_acc = (SpectrumAccumulator(capacity=a.spectrum_accum,
+                                    block=stack.cfg.predictor.window)
+                if a.spectrum_accum > 1 else None)
+    # ⭐ O6's ESTIMATOR power, distinct from the gate's. Default 1 = off, so the
+    # incumbent path is byte-identical.
+    sigreg_bank = (SigRegRowBank(getattr(a, "sigreg_accum", 1))
+                   if getattr(a, "sigreg_accum", 1) > 1 else None)
+    if sigreg_bank is not None:
+        print(f"[v6] SIGReg row bank: {a.sigreg_accum} x "
+              f"{a.batch * stack.cfg.predictor.window} = "
+              f"{sigreg_bank.n_rows(a.batch * stack.cfg.predictor.window)} rows "
+              f"(was {a.batch * stack.cfg.predictor.window})", flush=True)
+    # A DEDICATED generator for the bootstrap, so switching the CI on cannot
+    # consume the global stream and move the run's loss (the exact failure the
+    # loss-determinism stream just fixed on the SigReg side).
+    spec_gen = (torch.Generator().manual_seed(a.seed + 7)
+                if a.spectrum_ci_reps else None)
+    # ---- X4: per-layer (tac/str) spectrum monitor + the o6 trend series ----
+    # ADDITIVE ONLY: new record keys in train_log.jsonl; no tensor, no loss,
+    # no state_dict, no RNG on the default path (its generator exists only
+    # when the CI is on, and is its OWN stream — see x4_monitor_from_args).
+    # z_op's O6 block below is untouched and not governed by the X4 flag.
+    x4_mon = x4_monitor_from_args(a, stack.cfg)
+    x4_last: dict | None = None
+    o6_trend_base: list[float] = []
+    o6_trend_cur: deque = deque(maxlen=X4_TREND_CURRENT_STEPS)
+    t0 = time.time()
+    # ⛔ C112: ``step_s`` (below) is a CUMULATIVE MEAN since process start, and a
+    # +5 % abort criterion built on it is STRUCTURALLY UNABLE TO FIRE — at the
+    # 27.7 s/step trip point the mean NEVER reaches 28.0 at any duration, and
+    # even a catastrophic 40 s/step needs 9 hours. These two carry the MARGINAL
+    # rate since the previous logged row, which is the quantity a monitor needs.
+    # ADDITIVE ONLY: ``step_s`` keeps its exact meaning and value (banked logs
+    # and the ~5.3-day ETA arithmetic depend on it).
+    last_log_t = t0
+    last_log_step = start_step
+    steps_g = tuple(range(1, a.o1_k + 1))
+    dev_type = "cuda" if device == "cuda" else "cpu"
+    t3_alpha_applied = None
+    grad_reach: dict | None = None
+    for step in range(start_step + 1, a.steps + 1):
+        # ⛔ F-9's curriculum refresh comes BEFORE the draw, not after. With it
+        # after, every step samples under the PREVIOUS step's exponent and the
+        # final update is never used at all — an off-by-one that would have
+        # been invisible in the logs, because the alpha printed and the alpha
+        # drawn under would still both be "correct" one step apart.
+        # ⭐ Recompute only when the exponent actually MOVES (3 dp): the ramp is
+        # continuous but the weights are a power over every window in the
+        # corpus, so a per-step refresh would recompute an unchanged vector.
+        # `progress` runs over the WHOLE run, not the resumed remainder, so a
+        # resumed run re-enters the curriculum where it left off.
+        if t3_curr is not None:
+            prog = min(1.0, max(0.0, step / max(1, a.steps)))
+            al = round(t3_curr.alpha_at(prog), 3)
+            if al != t3_alpha_applied:
+                sample.weights = t3_curr.weights_at(t3_scores, prog)
+                t3_alpha_applied = al
+        if t5_partner:
+            # HALF the batch is anchors, half their +lag partners, so total
+            # compute and --batch are unchanged; what halves is the number of
+            # INDEPENDENT anchors, which is the honest cost of a pair loss.
+            # ⚠️ THE O4 MASK IS NOT SUFFICIENT ON ITS OWN. `InteractionSampler.
+            # __call__` falls back to UNIFORM weights when an episode's weights
+            # sum to zero (v6.py: `if float(w.sum()) <= 0: w = ones_like(w)`),
+            # so an episode ALL of whose windows are unpartnered (any episode
+            # with <= t5_lag windows) can still yield an unpartnered anchor —
+            # which would be a bare KeyError deep in the step loop. Filter with
+            # a BOUNDED retry, then refuse BY NAME.
+            need = a.batch // 2
+            anchors: list[int] = []
+            for _ in range(8):
+                if len(anchors) >= need:
+                    break
+                anchors += [i for i in sample(need) if i in t5_partner]
+            if len(anchors) < need:
+                raise SystemExit(
+                    f"[v6] ⛔ --t5-pairs could not fill a batch: only "
+                    f"{len(anchors)}/{need} partnered anchors in 8 draws. "
+                    f"{len(t5_partner)}/{len(ds_train.index)} windows have a "
+                    f"+{t5_lag_steps}-step partner — the corpus is too short "
+                    f"for this lag.")
+            anchors = anchors[:need]
+            idx = list(anchors) + [t5_partner[i] for i in anchors]
+        else:
+            idx = sample(a.batch)
+        b = _to_device(default_collate([ds_train[i] for i in idx]), device)
+        aw2 = b["actions"][..., :2].float()
+        fa2 = b["future_actions"][..., :2].float()
+        v0 = b["pose_last"][:, 3].float()
+        z_true: list = []
+        if need_k:
+            with torch.no_grad():
+                # ONE encoder pass over all need_k future frames, not need_k
+                # passes — the future-frame encode is the single largest
+                # per-step cost in S-W (26 frames/sample at the defaults vs
+                # v1's ~8), and a Python loop over it wastes the batch
+                # dimension the GPU is built for.
+                ff = b["future_frames"][:, :need_k]
+                if float(getattr(a, "o5_target_crop", 0.0)) > 0.0:
+                    # MM-E4 L4: TARGET frames only — the input path is
+                    # untouched, so the view change lives entirely on the
+                    # teacher side of O5. One window per sample, shared
+                    # across its k futures; offsets ride the step RNG so a
+                    # seeded run replays its crops. Composable with any
+                    # --o5-target (the crop precedes every teacher branch).
+                    ff = azimuthal_target_crop(
+                        ff, float(a.o5_target_crop), generator=gen)
+                fb, fk = ff.shape[:2]
+                if hasattr(stack, "ema_o5_enc"):
+                    # O5-EMA teacher: the TARGET comes from the slow copies —
+                    # the student cannot chase a target it moves itself.
+                    z_flat = stack.ema_o5_ro.module(stack.ema_o5_enc.module(
+                        ff.reshape(fb * fk, *ff.shape[2:]))).reshape(fb, fk, -1)
+                elif hasattr(stack, "frozen_o5_enc"):
+                    # MM-E4 L2: the FIXED distill-init teacher — the movable
+                    # target removed entirely (resynced after --init-from,
+                    # never updated afterwards).
+                    z_flat = stack.frozen_o5_ro.module(
+                        stack.frozen_o5_enc.module(
+                            ff.reshape(fb * fk, *ff.shape[2:]))
+                    ).reshape(fb, fk, -1)
+                else:
+                    z_flat = stack.readout(stack.encoder(
+                        ff.reshape(fb * fk, *ff.shape[2:]))).reshape(fb, fk, -1)
+                z_true = [z_flat[:, j].detach() for j in range(need_k)]
+        o14_tgt = None
+        if float(getattr(a, "w_o14", 0.0)) > 0:
+            o14_tgt = _o14_pixel_target(
+                b["frames"], b["future_frames"],
+                mode=str(getattr(a, "o14_mode", "fut")),
+                k=int(getattr(a, "o14_k", 4)),
+                shuffle=bool(getattr(a, "o14_shuffle_targets", False)))
+        dk, da = sample_random_deltas(aw2.shape[0], gen, a.rand_dkappa_max,
+                                      a.rand_daccel_max)
+        batch = {
+            "frames": b["frames"], "actions2": aw2, "future_actions2": fa2,
+            "v0": v0, "z_true_steps": z_true,
+            # O14: the pixel target, computed above — forwarded EXPLICITLY
+            # because this dict is a whitelist (see the block comment below).
+            **({"o14_tgt": o14_tgt} if o14_tgt is not None else {}),
+            # ⚠️ THIS DICT IS A WHITELIST, NOT A VIEW OF `b`. A key added to the
+            # dataset reaches `b` and stops here -- which is exactly how PSG's
+            # first smoke test died with KeyError('ep_idx') while the dataset,
+            # the mirror sync and the import were all correct. Frame identity is
+            # forwarded unconditionally: it is two int64 columns, it changes no
+            # loss, and a term that needs it must not have to edit this line.
+            #
+            # ⛔ BUT IT IS FORWARDED WITH `.get`, NOT `[...]`, AND THAT IS THE
+            # POINT. MEASURED 2026-08-24: shipping this trainer to Thor while its
+            # `train_flagship4b.py` was still the pre-frame-identity version
+            # (0 occurrences of `ep_idx`) made the O11 launch die instantly with
+            # `KeyError: 'ep_idx'` — a HARD CRASH caused by a field that no active
+            # loss even reads. The grep-verify before launch confirmed the O11
+            # marker was present and said nothing about its DEPENDENCY, because a
+            # one-file ship cannot be verified by grepping that one file.
+            # ⇒ An OPTIONAL diagnostic field must DEGRADE, never crash: a term
+            # that genuinely needs frame identity should fail with its own clear
+            # message, not take down every run on a tree that is merely one file
+            # behind. Same family as the analysis-time import that destroyed a
+            # completed rollout — make the optional thing optional.
+            "ep_idx": b.get("ep_idx"), "t_last": b.get("t_last"),
+            # ⭐ O13-EGO needs the ego's OWN future — the one target the
+            # action demonstrably determines (E-DEC-50: dv t 2.56, dyaw
+            # t 4.57). Forwarded with `.get` for exactly the reason the
+            # note above gives: a tree one file behind must DEGRADE into
+            # o13's own named error, not a bare KeyError that takes down
+            # every run. ⚠️ This line is the fix for a smoke failure that
+            # is THIS COMMENT'S OWN WARNING, repeated: the O13 call site
+            # read `batch["future_poses"]` assuming the dict was a view
+            # of `b`. It is not. The 12-step smoke caught it in two
+            # minutes; a 30,000-step launch would have died at step 1.
+            "future_poses": b.get("future_poses"),
+            "pose_last": b.get("pose_last"),
+            # ⭐ NAV, forwarded with `.get` for the reason this block already
+            # gives twice: a tree one file behind must DEGRADE into a named
+            # error, never a bare KeyError that takes down every run. The
+            # channel is MANDATORY when --nav-cond is set, and that is enforced
+            # at PREFLIGHT (auditable, recorded in config.json) plus a named
+            # NavTokenMissing from V6Stack.forward — not by a crash here.
+            "nav_token": b.get("nav_token"), "nav_args": b.get("nav_args"),
+            # ⛔ R2 FIX (2026-09-27): the NavEmitter splat MUST come AFTER the `.get`
+            # forwarding above. In a dict literal the LATER key wins, and this
+            # splat used to sit ABOVE it, so every emitted token was overwritten
+            # by `b.get("nav_token")` = None and a real `--nav-cond --nav-labels`
+            # run died with NavTokenMissing at step 1 (MEASURED statically by the
+            # R1/R4 stream). Pinned by `tests/test_v7f_r2_nav_fixes.py`.
+            # ⭐ NAV (LAST), joined here because this dict is a WHITELIST (see above) and
+            # a key added upstream would stop at this line. Emitted only when
+            # --nav-labels was given; otherwise absent, and `V6Stack.forward`
+            # raises NavTokenMissing by name if --nav-cond was also passed.
+            # ⛔ NOT `.get`-defaulted to None on failure: NavEmitter RAISES on an
+            # unmapped episode, and that is deliberate — a default would silently
+            # feed one clip's route to another clip's windows, which trains a
+            # plausible wrong signal instead of stopping.
+            **({} if nav_emitter is None or b.get("ep_idx") is None else
+               dict(zip(("nav_token", "nav_args"),
+                        nav_emitter(b["ep_idx"], b.get("t_last"),
+                                    dt=float(getattr(a, "dt", 0.1)))))),
+        }
+        if t5_partner:
+            # rows [0, n) are the anchors and rows [n, 2n) their +lag partners,
+            # by construction of `idx` above — so the pair index is the
+            # identity shift and needs no lookup.
+            n_pair = len(idx) // 2
+            batch["t5_pairs"] = torch.stack(
+                [torch.arange(n_pair, device=device),
+                 torch.arange(n_pair, 2 * n_pair, device=device)], dim=-1)
+            batch["t5_lag"] = t5_lag_steps
+        if needs_ztrue:
+            batch["gt_wp"] = gt_ego_waypoints(b["pose_last"].float(),
+                                              b["future_poses"].float(),
+                                              steps_g)
+        if not stack.cfg.shared_encoder:
+            # E-ENC arm (b): each layer encodes the CURRENT frame with its own
+            # encoder. ⚠️ The clock difference lives in the TARGETS (each layer
+            # predicts one of ITS OWN ticks ahead), not in which frame each
+            # encoder sees now — "now" is the same instant for all three
+            # layers, and pretending otherwise would silently shift the
+            # layers' observation times relative to each other.
+            batch["own_frames_tac"] = b["frames"][:, -1]
+            batch["own_frames_str"] = b["frames"][:, -1]
+        # each higher layer's target sits ONE OF ITS OWN TICKS ahead
+        if w_stage.t1_latent or w_stage.s1_latent:
+            shared = stack.cfg.shared_encoder
+            with torch.no_grad():
+                for key, stride, want in (
+                        ("z_tac_next_target", stack.cfg.stride_tac,
+                         w_stage.t1_latent),
+                        ("z_str_next_target", stack.cfg.stride_str,
+                         w_stage.s1_latent)):
+                    if not want:
+                        continue
+                    fut = b["future_frames"][:, stride - 1]
+                    zf = stack.readout(stack.encoder(fut))
+                    o_t = None if shared else stack.readout_tac(
+                        stack.encoder_tac(fut))
+                    o_s = None if shared else stack.readout_str(
+                        stack.encoder_str(fut))
+                    tgt = stack.layer_targets(zf, o_t, o_s)
+                    batch[key] = tgt["z_tac" if key.startswith("z_tac")
+                                     else "z_str"]
+        # ---- F-11 / S1: the MULTI-TICK strategic targets --------------
+        # One encoded strategic latent per tick, at t + k*stride_str. Built in
+        # ONE encoder pass over the K future frames (the same batching
+        # discipline the `need_k` block above uses — a Python loop over K
+        # encodes would waste the batch dimension the GPU exists for).
+        # ⛔ Under no_grad and via `layer_targets`, exactly like the k=1
+        # target: the strategic TARGET is never a gradient path, or the loss
+        # would train the encoder to make its own target easy.
+        if w_stage.w_s1_multi:
+            kk = int(a.s1_multi_k)
+            stride = stack.cfg.stride_str
+            with torch.no_grad():
+                idx_k = [k * stride - 1 for k in range(1, kk + 1)]
+                ffk = b["future_frames"][:, idx_k]
+                fb, fk = ffk.shape[:2]
+                flat = ffk.reshape(fb * fk, *ffk.shape[2:])
+                zf = stack.readout(stack.encoder(flat))
+                o_t = None if stack.cfg.shared_encoder else                     stack.readout_tac(stack.encoder_tac(flat))
+                o_s = None if stack.cfg.shared_encoder else                     stack.readout_str(stack.encoder_str(flat))
+                zs = stack.layer_targets(zf, o_t, o_s)["z_str"]
+                batch["z_str_multi_target"] = zs.reshape(fb, fk, -1)
+        # ⛔ `or w_stage.w_anchor`: the ANCHOR_GOAL label is the SAME tensor's
+        # endpoint, and the anchor objective is deliberately runnable with
+        # λ_plan OFF (that is the attributable arm). Without this the target
+        # would be absent exactly when the anchor loss is the only planner
+        # term, and `v6_loss_step` would refuse mid-run instead of training.
+        if w_stage.lambda_plan or w_stage.w_anchor:
+            batch["plan_target"] = gt_ego_waypoints(
+                b["pose_last"].float(), b["future_poses"].float(),
+                tuple(range(1, stack.cfg.plan_steps + 1)))
+        if s2_sup is not None:
+            # the S2 label keys ride the SAME sampled indices as the frames —
+            # the join was precomputed per episode, so this is O(batch).
+            batch |= {kk: v.to(device)
+                      for kk, v in s2_sup.batch(idx).items()}
+        # ⭐ R1a: the clip's max speed rides the SAME sampled indices (this
+        # dict is a WHITELIST -- added here or it never reaches the stack).
+        # Only when the tactical INPUT is on: the cap is an inference lever.
+        if vmax_join is not None and getattr(a, "max_speed_input_v6", False):
+            batch |= vmax_batch(vmax_join, idx, ds_train.index, device)
+        if tap is not None:
+            tap.arm()
+        with torch.autocast(dev_type,
+                            dtype=amp_spec["dtype"] or torch.float32,
+                            enabled=bool(amp_spec["autocast"])):
+            L = v6_loss_step(stack, batch, stage=a.stage, weights=weights,
+                             o1_k=a.o1_k, o5_k=a.o5_k, o5_mode=a.o5_mode,
+                             o5_form=getattr(a, "o5_form", "l1"), sigreg_bank=sigreg_bank,
+                             o6_innovation=bool(
+                                 getattr(a, 'o6_innovation', False)),
+                             o6_innovation_shuffle=bool(
+                                 getattr(a, 'o6_innovation_shuffle', False)),
+                             o11_k=int(getattr(a, 'o11_k', 6)),
+                             o11_tau=float(getattr(a, 'o11_tau', 1.0)),
+                             o11_negs=int(getattr(a, 'o11_negs', 1)),
+                             o13_k=int(getattr(a, 'o13_k', 4)),
+                             o13_seed=int(getattr(a, 'o13_seed', 1300)),
+                             cond_param=str(getattr(a, 'cond_param', COND_INCUMBENT)),
+                             o3_mode=a.o3_mode, o3_blocks=a.o3_blocks,
+                             o3_block_hw=(a.o3_block_h, a.o3_block_w),
+                             o3_band_rows=a.o3_band_rows,
+                             o2_tau_s=a.o2_tau_s, dkappa=a.dkappa,
+                             daccel=a.daccel, rand_dk=dk.to(device),
+                             rand_da=da.to(device), generator=gen,
+                             rollout_grad_checkpoint=resolve_gc(
+                                 a, "rollout_grad_checkpoint"),
+                             bptt_truncate=int(getattr(a, "bptt_truncate", 0)),
+                             anchor_objective=getattr(a, "anchor_objective",
+                                                      "metric"),
+                             anchor_axis_w=tuple(getattr(
+                                 a, "anchor_axis_w", ANCHOR_AXIS_W_DEFAULT)),
+                             t2_positive=getattr(a, "t2_positive",
+                                                 "photometric"),
+                             t2_negative=getattr(a, "t2_negative",
+                                                 "lane_mirror"),
+                             t5_w_kappa=float(getattr(a, "t5_w_kappa", 1.0)))
+            # ---- D-V7-TRUNK-ANCHOR: the anchor term + the SS6.2b monitor ----
+            if tap is not None:
+                tap.disarm()
+                anchor_and_monitor_step(anchor, obs_mon, tap, L, batch, step)
+            # ---- O7: distil the readout cells into a FROZEN teacher ---------
+            # The teacher sees the NEWEST RGB frame: the 9-channel stack is
+            # [f_{t-2}, f_{t-1}, f_t], so the last three channels are frame t.
+            if o7 is not None:
+                _zl = L["out"]["z_op_win"][:, -1]
+                _rgb = batch["frames"][:, -1, -3:].float()
+                _l7 = o7(_zl, _rgb)
+                L["loss"] = L["loss"] + float(a.w_o7_distill) * _l7
+                L["log"]["o7_distill"] = float(_l7.detach())
+                L["log"]["o7_w"] = float(a.w_o7_distill)
+            if o9 is not None:
+                # ⚠️ DESIGN CHOICE, STATED: the EMA copy is of the ENCODER, and the
+                # target cells are produced by running it through the CURRENT
+                # readout under no_grad. I-JEPA EMAs the encoder and keeps the
+                # predictor online; here the readout is shared but DETACHED, so no
+                # gradient reaches the target at this step -- which is the property
+                # that matters (E-DEC-7: the failure is the model optimising BOTH
+                # sides). A fully-EMA'd readout is the stricter variant and is not
+                # what this arm tests.
+                o9.update_ema(stack.encoder)
+                _zl9 = L["out"]["z_op_win"][:, -1]
+                _b9 = _zl9.shape[0]
+                _on = _zl9.reshape(_b9, int(stack.cfg.n_cells), -1)
+                with torch.no_grad():
+                    _tok9 = o9._ema(batch["frames"][:, -1])
+                    _em = stack.readout(_tok9).reshape(_b9, int(stack.cfg.n_cells), -1)
+                _l9 = o9(_on, _em, generator=gen)
+                L["loss"] = L["loss"] + float(a.w_o9_ema) * _l9
+                L["log"]["o9_ema"] = float(_l9.detach())
+                L["log"]["o9_w"] = float(a.w_o9_ema)
+            if o8 is not None:
+                _zl8 = L["out"]["z_op_win"][:, -1]
+                _rgb8 = batch["frames"][:, -1, -3:].float()
+                _l8 = o8(_zl8, _rgb8)
+                L["loss"] = L["loss"] + float(a.w_o8_pixel) * _l8
+                L["log"]["o8_pixel"] = float(_l8.detach())
+                L["log"]["o8_w"] = float(a.w_o8_pixel)
+            if o10 is not None:
+                _zh = L["out"].get("zhat_steps")
+                if not _zh:
+                    raise RuntimeError(
+                        "PSG needs the predicted latent and the rollout did not "
+                        "run: --w-o10-psg requires --w-o5 > 0 (the shared head on "
+                        "BOTH branches IS the mechanism; supervising only the "
+                        "encoder would be a plain auxiliary task).")
+                _e10 = L["out"]["z_op_win"][:, -1]
+                _b10 = _e10.shape[0]
+                _nc = int(stack.cfg.n_cells)
+                _ei = batch["ep_idx"].long()
+                _tl = batch["t_last"].long().clamp_max(psg_bank.shape[1] - 1)
+                _tn = (batch["t_last"].long() + 1).clamp_max(psg_bank.shape[1] - 1)
+                _l10, _lg10 = o10(_e10.reshape(_b10, _nc, -1),
+                                  _zh[0].reshape(_b10, _nc, -1),
+                                  psg_bank[_ei, _tl], psg_bank[_ei, _tn],
+                                  psg_valid[_ei],
+                                  enc_only=bool(getattr(a, "psg_enc_only", False)))
+                L["loss"] = L["loss"] + float(a.w_o10_psg) * _l10
+                L["log"] |= _lg10 | {"o10_w": float(a.w_o10_psg)}
+            # ---- PREDICTOR-HEALTH MONITOR (C149 / E-DEC-21) -----------------
+            # ⭐ WHY THIS EXISTS. The census of 30 finished arms found that 11 of
+            # them emit deltas 1.07x to 32x the size of the true one, and 16 more
+            # sit exactly at a constant predictor -- and NONE of that was visible
+            # from the training log, because the loss was falling the whole time.
+            # Every one of those runs cost GPU-days before a read-out said so.
+            #
+            # Two batch statistics, both cheap and both self-contained:
+            #   pred_rel_scale = ||d_hat|| / ||t||
+            #     ⛔ 1.0 IS NOT THE HEALTHY VALUE -- I assumed it was and it is
+            #     wrong. MEASURED on held-out windows (relscale.json), the bands
+            #     are set by real arms:
+            #        ~0.01        predicting essentially no magnitude (= constant)
+            #        0.28 - 0.52  the THREE arms that beat the constant floor
+            #                     (champ30k 0.2760, scale1 0.4206, rdw8p30k 0.5162)
+            #        4.7 - 22.7   catastrophically miscalibrated (splitfrz10k,
+            #                     the O1 family, the PSG family)
+            #     A good predictor here UNDER-predicts: it emits the confident
+            #     part of the delta and shrinks the rest, which is what minimising
+            #     an L1/L2 error should do. The alarm is "<<0.1 or >>1", not "!= 1".
+            #     ⚠️ AND THE TRAINER-SIDE VALUE IS NOT DIRECTLY COMPARABLE TO THAT
+            #     TABLE: this is computed on TRAINING batches under autocast, the
+            #     table on held-out clips in fp32. MEASURED gap: a 400-step
+            #     two-term arm reads 0.22-0.42 here while o5k4 at 2,000 steps reads
+            #     0.0119 there. Use this for the TRAJECTORY within one run; use
+            #     relscale.json / meanpred.py for cross-arm bands.
+            #   pred_mean_frac = ||mean_B(d_hat)|| / rms(d_hat)  -- how much of
+            #     the batch's prediction is one SHARED offset. In the census this
+            #     ordered the three classes almost perfectly: 0.07-0.18 for arms
+            #     that beat a constant, 0.34-0.82 for arms at it, 0.73-0.87 for
+            #     arms below it.
+            # ⚠️ STATED LIMIT: these are BATCH statistics, not the dataset-level
+            # `nrmse` verdict. An in-batch mean control would be optimistically
+            # strong (it fits the very batch it is scored on), so NO verdict is
+            # emitted here -- `meanpred.py` on held-out clips remains the
+            # admissible test. This is an EARLY WARNING, not a floor.
+            _zhh = L["out"].get("zhat_steps")
+            if _zhh and z_true:
+                with torch.no_grad():
+                    _dh = (_zhh[0].reshape(_zhh[0].shape[0], -1)
+                           - L["out"]["z_op_win"][:, -1].reshape(_zhh[0].shape[0], -1))
+                    _tt = (z_true[0].reshape(_dh.shape[0], -1)
+                           - L["out"]["z_op_win"][:, -1].reshape(_dh.shape[0], -1))
+                    _tn = _tt.norm().clamp_min(1e-12)
+                    L["log"]["pred_rel_scale"] = float(_dh.norm() / _tn)
+                    _rms = _dh.pow(2).mean().sqrt().clamp_min(1e-12)
+                    _b = _dh.shape[0]
+                    _mf = float(_dh.mean(0).norm()
+                                / (_rms * _dh.shape[1] ** 0.5))
+                    # ⛔ RAW mean-fraction HAS A BATCH-DEPENDENT FLOOR and is
+                    # therefore NOT comparable across runs: for B independent
+                    # zero-mean predictions it reads 1/sqrt(B) by construction
+                    # (0.707 at batch 2, 0.354 at batch 8), so a small-batch run
+                    # would look collapsed purely from its batch size. MEASURED
+                    # in the first smoke of this very monitor: 0.9988 at batch 2.
+                    # Shipping it raw would have repeated C149 -- a statistic
+                    # whose floor was never computed -- inside the instrument
+                    # written to prevent C149. The EXCESS form divides it out:
+                    #   1.0  = indistinguishable from independent predictions
+                    #   >1.0 = a genuinely SHARED offset across the batch
+                    #   >1.0 = a genuinely SHARED offset across the batch
+                    # ⚠️ ITS FLOOR IS BATCH-INVARIANT; ITS CEILING IS NOT.
+                    # Total collapse (every prediction identical) gives raw
+                    # mean_frac = 1 and therefore excess = sqrt(B). MEASURED at
+                    # step 2 with the near-identity residual init: 1.41 at
+                    # batch 2 and 2.82 at batch 8 -- the SAME condition reading
+                    # different magnitudes. ⇒ across batch sizes this statistic
+                    # is comparable for "is it above 1", NOT for how far above.
+                    L["log"]["pred_mean_frac"] = _mf
+                    L["log"]["pred_mean_frac_excess"] = _mf * (_b ** 0.5)
+                    L["log"]["pred_batch"] = int(_b)
+                    L["log"]["pred_health_note"] = (
+                        "BATCH statistics, NOT the dataset floor verdict. "
+                        "pred_rel_scale: MEASURED bands on held-out windows "
+                        "are ~0.01 = predicting no magnitude, 0.28-0.52 = the "
+                        "three arms that beat the constant floor, 4.7-22.7 = "
+                        "miscalibrated. 1.0 is NOT the healthy value. This "
+                        "trainer-side value is on TRAINING batches under "
+                        "autocast and is NOT directly comparable to those "
+                        "bands -- use it for the trajectory within one run. "
+                        "pred_mean_frac_excess: 1.0 = independent "
+                        "predictions, >1 = one shared offset across the batch, "
+                        "which is the failure mode. Its FLOOR is batch-"
+                        "invariant, its CEILING is sqrt(batch), so across batch "
+                        "sizes compare ABOVE-1-OR-NOT, never the magnitude. RAW "
+                        "pred_mean_frac has a 1/sqrt(batch) floor and may NOT be "
+                        "compared across batch sizes at all. The admissible test "
+                        "remains meanpred.py on held-out clips (C149).")
+        opt.zero_grad(set_to_none=True)
+        L["loss"].backward()
+        # ⛔ P1: read + BANK the census on the first real backward. It must be
+        # here, between backward and the next zero_grad(set_to_none=True).
+        if grad_reach is None:
+            grad_reach = grad_reach_census(stack, trainable)
+            report_grad_reach(grad_reach, refuse=bool(
+                getattr(a, "refuse_unreached", False)),
+                allow=tuple(getattr(a, "allow_unreached", ()) or ()))
+            try:
+                (Path(a.out) / "grad_reach.json").write_text(
+                    json.dumps(grad_reach, indent=1))
+            except OSError as e:                       # never kill a live run
+                print(f"[gradreach] could not write grad_reach.json: {e}",
+                      flush=True)
+        gn = torch.nn.utils.clip_grad_norm_(trainable, a.clip)
+        opt.step()
+        if hasattr(stack, "ema_o5_enc"):
+            # ⛔ `step` IS THE ABSOLUTE STEP (the loop is
+            # `range(start_step + 1, a.steps + 1)`), so a strict resume
+            # CONTINUES the ramp. Using a process-local counter here
+            # (`n_proc`, `step - start_step`) would drop tau back to
+            # --ema-decay-start after every restart and re-randomise the
+            # teacher mid-run, with a perfectly healthy-looking log.
+            ema_tau = ema_tau_at(
+                step, int(a.steps),
+                ramp=str(getattr(a, "ema_decay_ramp", "off")),
+                fixed=float(a.ema_decay),
+                start=float(getattr(a, "ema_decay_start", 0.99)),
+                end=getattr(a, "ema_decay_end", None))
+            stack.ema_o5_enc.update(stack.encoder, ema_tau)
+            stack.ema_o5_ro.update(stack.readout, ema_tau)
+            # rides `L["log"]`, so it reaches BOTH the per-`--log-every` row
+            # and any other consumer of that dict — and is absent entirely
+            # when the ramp is off (bit-identical logs).
+            L["log"] |= _ema_tau_record(a, ema_tau)
+        sched.step()
+        stack.ema_update()
+
+        # ---- O6's standing spectrum monitor ---------------------------------
+        # ⛔ THE PER-BATCH READING CANNOT RESOLVE RANK, and the record now says
+        # so itself. The tensor is [B*W, d_op] = 48 x 2048 on the live run, so
+        # a centred covariance built from it has rank <= 47: "15 of 2048" is
+        # 15 of 47. MEASURED (SIGREG_GATE_POWER.md): at n=48 an isotropic
+        # d=2048 population reads 46.86 and a 7.3x-collapsed one still reads
+        # 22.6, and the >= 0.8x criterion fires on NOTHING between 9 % and 38 %
+        # of the time. --spectrum-accum pools consecutive steps to lift the
+        # ceiling; it defaults to 1, which is byte-for-byte the incumbent path.
+        if spec_acc is not None and in_spectrum_window(
+                step, a.spectrum_every, a.spectrum_accum):
+            spec_acc.push(L["out"]["z_op_win"])
+        # ---- X4: the SAME pooling window, per layer -------------------------
+        # o6 trend series: two bounded float lists, appended per step — the
+        # loss value is already computed, so the guard costs one append.
+        _o6v = L["log"].get("o6_sigreg")
+        if _o6v is not None:
+            if len(o6_trend_base) < X4_TREND_BASELINE_STEPS:
+                o6_trend_base.append(float(_o6v))
+            o6_trend_cur.append(float(_o6v))
+        if x4_mon is not None and in_spectrum_window(
+                step, a.spectrum_every, a.spectrum_accum):
+            x4_mon.push({"tac": L["out"]["z_tac"],
+                         "str": L["out"]["z_str"]})
+        if step % a.spectrum_every == 0:
+            zw = L["out"]["z_op_win"].detach().float()
+            spectrum_last = spectrum_report(
+                zw.reshape(-1, zw.shape[-1]), ci_reps=a.spectrum_ci_reps,
+                block=(stack.cfg.predictor.window if a.spectrum_ci_reps else 1),
+                generator=spec_gen)
+            rec_s = {"step": step, "spectrum": spectrum_last}
+            if spec_acc is not None and len(spec_acc):
+                rec_s["spectrum_pooled"] = spec_acc.report(
+                    ci_reps=a.spectrum_ci_reps, generator=spec_gen)
+                spectrum_pooled_last = rec_s["spectrum_pooled"]
+                rec_s["o6_verdict"] = o6_rank_verdict(
+                    rec_s["spectrum_pooled"], spectrum_ref)
+                if spectrum_ref is None and rec_s["spectrum_pooled"][
+                        "rank_admissible"]:
+                    # the phase-start reference for clause 2, taken at the
+                    # first ADMISSIBLE pooled reading of the phase.
+                    # ⚠️ NOT carried across a resume: a restarted process takes
+                    # a fresh reference, so its retention is measured from the
+                    # restart, not from the phase start. The verdict says which
+                    # step the reference came from via the record it embeds —
+                    # read it, do not assume the phase start.
+                    spectrum_ref = dict(rec_s["spectrum_pooled"],
+                                        ref_step=step)
+            # ---- X4: per-layer records + the o6 trend guard -----------------
+            # ADDITIVE KEY ("x4") in the same emission record. Each layer's
+            # verdict runs under ITS OWN measured ceiling/floor (tac 256/32,
+            # str 128/32) — z_op's 1024/64 stays on the incumbent keys above.
+            if x4_mon is not None:
+                x4_last = x4_mon.emit({"tac": L["out"]["z_tac"],
+                                       "str": L["out"]["z_str"]}, step=step)
+                rec_s["x4"] = {"layers": x4_last,
+                               "sigreg_trend": x4_trend_record(
+                                   o6_trend_base, list(o6_trend_cur))}
+            fh.write(json.dumps(rec_s) + "\n")
+        if step % a.log_every == 0:
+            # ONE clock read for both fields, so first-differencing `step_s`
+            # reconciles EXACTLY with `step_s_interval` instead of drifting by
+            # the microseconds between two `time.time()` calls.
+            now = time.time()
+            n_proc = step - start_step
+            d_step = step - last_log_step
+            rec = L["log"] | {
+                "step": step, "gnorm": round(float(gn), 3),
+                "lr": sched.get_last_lr()[0],
+                # ⚠️ ALREADY DIVIDED by --log-every. The trap this avoids:
+                # trainer logs that accumulate step_s over the log interval and
+                # get read as a per-step time (the false "430 s/step" alarm).
+                # ⛔ BUT IT IS A CUMULATIVE MEAN — see `step_s_interval` below.
+                # UNCHANGED ON PURPOSE: banked logs and the ETA arithmetic key
+                # off this field, so it is never redefined, only supplemented.
+                "step_s": round((now - t0) / max(n_proc, 1), 4),
+                "step_s_note": f"elapsed/step over the "
+                               f"{n_proc} steps THIS process ran "
+                               f"(NOT accumulated over --log-every, and NOT "
+                               f"divided by the resumed step number). ⛔ This "
+                               f"is a CUMULATIVE MEAN since process start and "
+                               f"CANNOT be used as a live monitor — it is "
+                               f"strictly converging, so it cannot rise to "
+                               f"meet a threshold. Use step_s_interval.",
+                # ⛔ THE MONITORABLE ONE (C112). Marginal s/step over just the
+                # last `d_step` steps. A +5 % check on THIS fires; the same
+                # check on `step_s` above cannot fire at any duration.
+                # ⚠️ The FIRST row of a process has no previous row, so its
+                # interval is measured from t0 and equals `step_s` — and it
+                # carries the warm-up. MEASURED on the live v6F log: the first
+                # ~900 steps after a resume run +3.229 % over steady state for
+                # 17 CONSECUTIVE logged rows, so a persistence rule does not
+                # exclude it and any guard tighter than +3.23 % fires on every
+                # resume. (Steady variation itself reaches +2.589 %, so +5 % is
+                # the defensible tolerance.) `steps_this_process` is what lets a
+                # reader detect the restart and exclude that window.
+                "step_s_interval": (round((now - last_log_t) / d_step, 4)
+                                    if d_step > 0 else None),
+                "step_s_interval_note": f"marginal elapsed/step over the last "
+                                        f"{d_step} steps only (this row minus "
+                                        f"the previous logged row). THIS is "
+                                        f"the live-monitor field; guard: "
+                                        f"stack/scripts/step_time_guard.py",
+                # First-class, so a reader never has to regex it out of the
+                # prose above. It RESETS on every process restart, which is
+                # exactly how a segment boundary is detected.
+                "steps_this_process": n_proc,
+                # ⛔ THE ONLY ADMISSIBLE MEMORY PROBE ON THE JETSON THOR.
+                # MEASURED 2026-08-03: on unified memory `mem_get_info` read
+                # 3.4 GB free with 60 GB allocated AND written, `free` /
+                # `tegrastats` showed 106 GB "used" on an idle box, and
+                # VmRSS read 0.62 GB against 24 GB — wrong in BOTH directions.
+                # An in-process counter is the only one that answers the
+                # question, so the trainer logs it rather than leaving an
+                # operator to reach for a probe that reports the wrong scope.
+                "cuda_max_mem_gb": (
+                    round(torch.cuda.max_memory_allocated() / 2 ** 30, 3)
+                    if dev_type == "cuda" else None),
+                "cuda_max_mem_note":
+                    "torch.cuda.max_memory_allocated(), peak since process "
+                    "start. ⛔ On Thor do NOT cross-check it against "
+                    "mem_get_info/free/tegrastats/VmRSS — all four misreport "
+                    "on unified memory (CLAUDE.md, MEASURED 2026-08-03)"}
+            history.append(rec)
+            fh.write(json.dumps(rec) + "\n")
+            fh.flush()
+            print(f"[{step}] {json.dumps(rec)}", flush=True)
+            # advance the interval window ONLY after a successful emission, so
+            # a skipped/failed row widens the next interval rather than
+            # silently losing the time it covered.
+            last_log_t, last_log_step = now, step
+        if step % a.save_every == 0 or step == a.steps:
+            # ⛔ X2 SEAM DUMP — DEFAULT-OFF, and the ONLY thing that banks the
+            # 60-step plan. F-16's probe (taniteval/tools/seam_probe.py) is
+            # built, self-tested and has produced ZERO real-arm numbers
+            # because `emit()`'s output lived only inside the forward.
+            # ⚠️ ZERO EXTRA GPU: `L["out"]["plan"]` is ALREADY COMPUTED for
+            # this step's loss — this copies it to CPU at the checkpoint
+            # boundary, never per step, and never re-runs the emission.
+            # ⚠️ S-W BANKS NOTHING: the emission head is at its zero-init, so
+            # the plan is all-zero and the probe would (correctly) return
+            # DEGENERATE. `seam_dump_from_plan` refuses it by default, which
+            # is why this is a NOTE and not a crash — the dump is for S-T and
+            # later. The live v6F S-W run is exactly the refused case.
+            if getattr(a, "dump_seam_plan", None):
+                # ⛔ THE IMPORT MUST NOT LIVE INSIDE THE `try` WHOSE `except`
+                # NAMES ITS SYMBOL. Found 2026-08-18 by the Thor closure audit.
+                # If `from taniteval.seam_dump import SeamDumpError, …` raises
+                # ImportError, Python then EVALUATES `except SeamDumpError` —
+                # which is unbound — and the resulting UnboundLocalError
+                # PROPAGATES OUT OF THE WHOLE `try` STATEMENT. The broad
+                # `except Exception` below is NEVER REACHED. Measured: the
+                # exception escapes as `UnboundLocalError: cannot access local
+                # variable 'SeamDumpError'`.
+                # ⇒ This block sits immediately before `_save_ckpt`, so the
+                # failure KILLS THE TRAINER AT A CHECKPOINT BOUNDARY — and it
+                # fires exactly when `taniteval` is off PYTHONPATH, which is the
+                # live run's own configuration. S-W is unaffected only because
+                # the chain emits `--dump-seam-plan` on S-T/S-S/S-J and not on
+                # S-W; S-T would have hit it.
+                # ⇒ The import is now its own guarded step, so a missing
+                # optional module degrades to a printed note, which is what the
+                # comment below always claimed the code did.
+                try:
+                    from taniteval.seam_dump import (
+                        SeamDumpError, save_seam_dump, seam_dump_from_plan)
+                except Exception as e:                        # noqa: BLE001
+                    print(f"[v6 seam] unavailable at {step} "
+                          f"({type(e).__name__}: {e}) — training continues",
+                          flush=True)
+                    SeamDumpError = seam_dump_from_plan = None  # noqa: N806
+                if seam_dump_from_plan is not None:
+                  try:
+                    d = seam_dump_from_plan(
+                        L["out"]["plan"],
+                        eids=b["episode_id"] if "episode_id" in b
+                        else range(len(v0)),
+                        tier="T1", arm=f"{out_dir.name}@{step}",
+                        gt=batch.get("plan_target"),
+                        dt=1.0 / float(getattr(a, "fps", 10) or 10),
+                        allow_degenerate=bool(
+                            getattr(a, "dump_seam_plan_degenerate", False)))
+                    p = save_seam_dump(
+                        d, Path(a.dump_seam_plan) / f"seam_{step:06d}.pt")
+                    print(f"[v6 seam] banked {p}", flush=True)
+                  except SeamDumpError as e:
+                    print(f"[v6 seam] NOT banked at {step}: {e}", flush=True)
+                  except Exception as e:                      # noqa: BLE001
+                    # ⛔ A DIAGNOSTIC MUST NEVER KILL A RUN. This is the
+                    # analysis-time-refusal trap inverted: there, an optional
+                    # import destroyed a finished run's output; here the whole
+                    # block is optional and the training is the thing that
+                    # matters. It says so loudly and continues.
+                    print(f"[v6 seam] dump FAILED at {step} "
+                          f"({type(e).__name__}: {e}) — continuing",
+                          flush=True)
+            _save_ckpt(out_dir / "ckpt.pt", stack=stack, opt=opt, step=step,
+                       cfg_json=cfg_json,
+                       keep_step=not bool(getattr(a, "no_step_ckpts", False)))
+            (out_dir / "metrics.json").write_text(json.dumps(
+                {"history": history, "stage": a.stage,
+                 "_read": "TRAINING numbers. Only eval output is quotable "
+                          "(the v1.6 retraction); capability claims are T1.",
+                 "_evidence_class": "MEASURED (ours; this run's log)"},
+                indent=1))
+    fh.close()
+
+    # ⭐ pooled first: a criterion that cannot RULE at the configured settings
+    # is worse than no criterion, because the gate report looks populated.
+    gate = run_stage_gate(stack, a.stage, out_dir=out_dir,
+                          spectrum=(spectrum_pooled_last or spectrum_last),
+                          x4_spectra=x4_last,
+                          extra_probes=_load_gate_probes(a.gate_probes))
+    # ⛔ DONE-MARKER, written in the SAME turn the run finishes. A supervised
+    # run whose summary.json never appeared kept being RESURRECTED for two
+    # days; writing this IS the correct remote off-switch.
+    summary = {
+        "done": True, "run": f"v6-staged-{a.stage}", "stage": a.stage,
+        "steps": a.steps, "resumed_from_step": start_step,
+        "out": str(out_dir),
+        "gate_verdict": gate["verdict"], "gate": "stage_gate.json",
+        "elapsed_s": round(time.time() - t0, 1),
+        "param_report": stack.param_report(),
+        "residual_head_init_scale": float(RESIDUAL_HEAD_INIT_SCALE),
+        # ⭐ P4-4 — recorded on the DONE-MARKER too, not only in config.json: a
+        # summary is what gets quoted, and a quoted number should carry the
+        # identity of the code that produced it without a second lookup.
+        "provenance": run_provenance(getattr(a, "device", None)),
+        "next": (f"stage {gate['next_stage']} may launch with --prev-gate "
+                 f"{out_dir}/stage_gate.json"
+                 if gate["pass"] is True and gate["next_stage"]
+                 else "NEXT STAGE BLOCKED — see stage_gate.json"),
+        "_evidence_class": "MEASURED (ours)",
+    }
+    (out_dir / "summary.json").write_text(json.dumps(summary, indent=1))
+    print(f"[v6] DONE · {json.dumps(summary)}", flush=True)
+    return summary
+
+
+def _load_gate_probes(path) -> dict:
+    if not path:
+        return {}
+    p = Path(path)
+    if not p.exists():
+        raise SystemExit(f"[v6] --gate-probes {p} does not exist")
+    return json.loads(p.read_text())
+
+
+def _save_ckpt(path: Path, *, stack, opt, step: int, cfg_json: dict,
+               keep_step: bool = True) -> None:
+    """Write the checkpoint ATOMICALLY, and keep a STEP-STAMPED copy.
+
+    ⛔ THE DEFECT THIS FIXES. `--save-every` wrote only ``ckpt.pt`` and
+    OVERWROTE it, so a 30k run left ONE file, overwritten 12 times. MEASURED
+    across all three banked 30k arms (postrain30k, emao14_30k, o14fut30k): each
+    directory contains exactly one checkpoint. ⇒ a val curve can prove step
+    12,300 was the best model in the run and THAT MODEL NO LONGER EXISTS.
+    Selection needs ARTIFACTS, not just a signal — and every after-the-fact
+    trajectory question ("when did it become action-deaf?") was unanswerable for
+    every arm we have ever trained.
+
+    ⭐ ATOMIC BY RENAME, and this is a real fix rather than a mitigation. A
+    mid-write copy yields a TORN CHECKPOINT THAT LOADS AND IS WRONG — worse than
+    a missing one. Polling for a stable file size only narrows the window;
+    writing to a temp path and ``os.replace``-ing closes it, because rename is
+    atomic within a filesystem and no reader can ever observe a partial file.
+
+    ⚠️ ``keep_step`` DEFAULTS TRUE, and the asymmetry with ``nav_cond`` (which
+    defaults False) is deliberate, not drift: a default that changes ARTIFACTS is
+    not a default that changes ARCHITECTURE. Step-stamped copies alter no model,
+    no loss, no RNG draw and no comparability — they only add files (~143 MB x
+    12 = ~1.7 GB on a 30k run). The cost of NOT having them is unrecoverable;
+    the cost of having them is disk.
+    """
+    payload = {"stack": stack.state_dict(), "opt": opt.state_dict(),
+               "step": step, "config": cfg_json}
+    tmp = Path(str(path) + ".tmp")
+    torch.save(payload, tmp)
+    os.replace(tmp, path)                       # atomic; no torn file is visible
+    if keep_step:
+        stamped = Path(path).with_name(f"ckpt_step{int(step)}.pt")
+        tmp2 = Path(str(stamped) + ".tmp")
+        torch.save(payload, tmp2)
+        os.replace(tmp2, stamped)
+
+
+def resume_guard(out_dir, *, resume: str, force_rerun: bool) -> dict:
+    """Decide whether this launch RESUMES, STARTS FRESH, or is REFUSED.
+
+    ⛔ Two refusals, and both come straight from measured incidents:
+
+    1. **A finished run must not be relaunched.** MEASURED 2026-08-09/11: the
+       v5f run completed but never wrote its done-marker; its supervisor kept
+       relaunching for two days, and the moment the crash-cause was fixed a
+       relaunch SUCCEEDED, resumed from a stale ``ckpt.pt``, and began
+       overwriting ``config.json``/``metrics.json``/``ckpt.pt`` in the
+       canonical run directory while burning GPU next to a live eval. This
+       trainer writes ``summary.json {"done": true}`` in the same turn it
+       finishes, and refuses to start where one already exists. **That file is
+       the off-switch**; ``--force-rerun`` is the only way past it.
+    2. **A fresh start must not silently overwrite a live checkpoint.**
+       ``supervise_run.sh`` replays the ``TRAIN_CMD`` it captured at supervisor
+       startup, so a relaunch runs the SAME command — with ``--resume off``
+       that would restart at step 0 on top of an existing ``ckpt.pt``. Refused
+       unless ``--force-rerun`` says so out loud.
+    """
+    out = Path(out_dir)
+    ck, done = out / "ckpt.pt", out / "summary.json"
+    if done.exists() and not force_rerun:
+        try:
+            marker = json.loads(done.read_text())
+        except Exception:
+            marker = {}
+        if marker.get("done") is True:
+            raise SystemExit(
+                f"[v6] ⛔ {done} says this run is DONE "
+                f"(stage {marker.get('stage')}, {marker.get('steps')} steps, "
+                f"gate {marker.get('gate_verdict')}). Refusing to relaunch: a "
+                f"finished run that gets relaunched resumes from a stale "
+                f"ckpt.pt and overwrites the canonical run directory. Pass "
+                f"--force-rerun ONLY if you mean to discard that run, or point "
+                f"--out somewhere else.")
+    if resume == "auto" and ck.exists():
+        return {"mode": "resume", "from": str(ck)}
+    if resume == "off" and ck.exists() and not force_rerun:
+        raise SystemExit(
+            f"[v6] ⛔ --resume off with an existing {ck}. A supervisor replays "
+            f"the command it captured at startup, so this would restart at "
+            f"step 0 ON TOP of a live checkpoint. Use --resume auto, point "
+            f"--out elsewhere, or say --force-rerun.")
+    return {"mode": "fresh", "from": None}
+
+
+def read_ckpt_provenance(ckpt_path) -> dict:
+    """Read a checkpoint's LINEAGE without materialising its tensors.
+
+    ``mmap=True`` maps the storages instead of reading them, so this costs
+    milliseconds on a 3.5 GB ``ckpt.pt`` (MEASURED: 0.005 s vs 0.024 s on a
+    52 MB file, and the difference is the tensor bytes, which are never
+    touched). That matters because this runs on pod2, which is RAM-bound
+    (~54/55 GB cgroup) — a metadata read that transiently allocates the whole
+    checkpoint would be a memory-pressure event to answer a one-word question.
+
+    Never raises on a bad file: an unreadable checkpoint is REPORTED as such
+    (``readable: False``) so the caller can refuse with a diagnosis instead of
+    an opaque pickle traceback.
+    """
+    p = Path(ckpt_path)
+    out = {"path": str(p), "readable": False, "stage": None, "step": None,
+           "has_opt": False, "weights_only_snapshot": False, "error": None}
+    if not p.exists():
+        out["error"] = "does not exist"
+        return out
+    try:
+        try:
+            ck = torch.load(p, map_location="cpu", weights_only=False,
+                            mmap=True)
+        except (RuntimeError, ValueError, TypeError):
+            # legacy (non-zip) serialisation cannot be mmapped
+            ck = torch.load(p, map_location="cpu", weights_only=False)
+    except Exception as e:                       # corrupt, truncated, not a ckpt
+        out["error"] = f"{type(e).__name__}: {e}"
+        return out
+    if not isinstance(ck, dict):
+        out["error"] = f"top level is {type(ck).__name__}, not a dict"
+        return out
+    # ⚠️ the fp16 snapshot is a DIFFERENT shape: {"model", "_meta",
+    # "_fp16_weights_only"} — its state lives under "model" and its step/config
+    # under "_meta". Reading it as a ckpt.pt is how `--init-from <snapshot>`
+    # came back as "not a valid predecessor: geometry mismatch", blaming the
+    # architecture for a container it simply did not unwrap.
+    snap = bool(ck.get("_fp16_weights_only")) or (
+        "model" in ck and "stack" not in ck and "_meta" in ck)
+    meta = (ck.get("_meta") or {}) if snap else ck
+    cfg = meta.get("config") or {}
+    out.update(readable=True, weights_only_snapshot=snap,
+               has_opt=("opt" in ck),
+               stage=(cfg.get("stage") if isinstance(cfg, dict) else None),
+               step=(int(meta["step"]) if isinstance(meta.get("step"), int)
+                     else None))
+    return out
+
+
+def assert_resume_lineage(ckpt_path, *, stage: str) -> dict:
+    """⛔ Refuse a ``--resume auto`` onto a checkpoint that is not this run's.
+
+    The three requirements are :data:`RESUME_CONTRACT`; each refusal quotes the
+    one it violates, so the message explains the ladder rather than the
+    optimiser. Runs BEFORE the corpus build — a wrong-stage resume used to die
+    at ``load_resume``, which sits after episode selection, dataset windowing
+    and the O4 saliency pass over every window in the corpus.
+    """
+    prov = read_ckpt_provenance(ckpt_path)
+    if not prov["readable"]:
+        raise ResumeLineageError(
+            f"[v6] ⛔ --resume auto found {prov['path']} but could not read it "
+            f"({prov['error']}). Refusing to resume from a checkpoint whose "
+            f"lineage cannot be established. Move it aside, or point --out "
+            f"somewhere else.")
+    if prov["weights_only_snapshot"] or not prov["has_opt"]:
+        raise ResumeLineageError(
+            f"[v6] ⛔ --resume auto found {prov['path']}, which carries NO "
+            f"optimiser state"
+            + (" (it is an fp16 weights-only snapshot)"
+               if prov["weights_only_snapshot"] else "")
+            + f".\n  {RESUME_CONTRACT['has_optimiser']}\n"
+            f"  ⇒ launch this as a FRESH run with --init-from {prov['path']} "
+            f"(and --out somewhere without a ckpt.pt), which starts at step 0 "
+            f"on purpose instead of inheriting a step this file cannot back.")
+    if prov["stage"] is None:
+        raise ResumeLineageError(
+            f"[v6] ⛔ --resume auto found {prov['path']} with no stage label "
+            f"(config.stage is absent).\n  {RESUME_CONTRACT['labelled']}")
+    if prov["stage"] != stage:
+        raise ResumeLineageError(
+            f"[v6] ⛔ --resume auto found {prov['path']} written by stage "
+            f"{prov['stage']!r} at step {prov['step']}, but this run is stage "
+            f"{stage!r}.\n  {RESUME_CONTRACT['same_stage']}\n"
+            f"  ⚠️ Nothing downstream would have caught this reliably: the "
+            f"state_dict load SUCCEEDS across the ladder (every stage saves "
+            f"the whole stack), and the only accidental barrier — the "
+            f"optimiser's param-group size — holds solely because the stages "
+            f"happen to train different numbers of tensors "
+            f"(S-W 240 · S-T 80 · S-S 54 · S-J 374, MEASURED). The run would "
+            f"have adopted step {prov['step']} and replayed the LR schedule to "
+            f"the wrong point.\n"
+            f"  ⇒ this is an --init-from, not a resume. Point --out at a "
+            f"fresh directory and pass --init-from {prov['path']}.")
+    return prov | {"stage_checked": stage,
+                   "_evidence_class": "MEASURED (ours; the ckpt's own config)"}
+
+
+def load_resume(stack: V6Stack, opt, ckpt_path, *, stage: str | None = None
+                ) -> int:
+    """Restore stack + optimiser + step from ``ckpt.pt``. Returns the step to
+    continue FROM (0 if nothing to resume).
+
+    ``stage`` is DEFENCE IN DEPTH — :func:`assert_resume_lineage` is the early
+    gate and ``train`` calls it first, but this function is importable and a
+    caller that names its stage gets the same refusal here. A caller that does
+    NOT name one gets the old, unchecked behaviour, exactly as
+    :func:`load_stage_init` treats its allowance: a check must be asked for,
+    never inherited by default and never assumed to have run elsewhere.
+    """
+    if stage is not None:
+        assert_resume_lineage(ckpt_path, stage=stage)
+    ck = torch.load(Path(ckpt_path), map_location="cpu", weights_only=False)
+    if "stack" not in ck:
+        raise ResumeLineageError(
+            f"[v6] ⛔ {ckpt_path} has no 'stack' key (found {sorted(ck)[:6]}). "
+            f"A weights-only fp16 snapshot stores its state under 'model' and "
+            f"is an --init-from artifact, not a resume point — see "
+            f"ops/ckpt_fp16_snapshot.py. {RESUME_CONTRACT['has_optimiser']}")
+    stack.load_state_dict(ck["stack"], strict=True)
+    if opt is not None and "opt" in ck:
+        # ⛔ A PRE-2026-09-06 CHECKPOINT HAS MORE OPTIMIZER TENSORS THAN THIS
+        # BUILD DOES, AND torch's OWN ERROR NAMES NEITHER THE CAUSE NOR THE FIX.
+        # The grad-unreachable declaration (`models/_gradreach.py`) withholds
+        # the O5 EMA teacher, `predictor_op.out_proj` and the untrained horizon
+        # heads from the optimizer — at v7f's geometry 90,960,000 params over
+        # 157 tensors — so an `opt` state saved BEFORE that change has a param
+        # group of the old size. `opt.load_state_dict` then raises
+        # "loaded state dict contains a parameter group that doesn't match the
+        # size of optimizer's group", which points at the optimiser and reads
+        # like corruption. The STATE_DICT of the model still loads strictly
+        # (the line above); it is only the moment state that cannot map.
+        # ⚠️ Diagnose, do not auto-repair: silently dropping the extra moments
+        # would resume a run whose Adam state no longer corresponds to its
+        # parameters, position by position — the same "adopt the other stage's
+        # exp_avg by list index" failure RESUME_CONTRACT exists to refuse.
+        want = sum(len(g["params"]) for g in opt.state_dict()["param_groups"])
+        have = sum(len(g["params"]) for g in ck["opt"].get("param_groups", []))
+        if want != have:
+            raise ResumeLineageError(
+                f"[v6] ⛔ optimizer state has {have} parameter slots, this "
+                f"build has {want}. If the checkpoint predates 2026-09-06 this "
+                f"is the GRAD-UNREACHABLE declaration: the O5 EMA teacher, "
+                f"predictor_op.out_proj and any horizon head != 1 are no "
+                f"longer put in the optimizer, because no loss reaches them "
+                f"(they were never trained — AdamW skips a None-grad "
+                f"parameter entirely). The MODEL loaded strictly; only the "
+                f"Adam moments cannot be mapped. Resume the run WEIGHTS-ONLY "
+                f"with --init-from instead of --resume, or continue on the "
+                f"pre-change code. Do NOT force this: an Adam moment landing "
+                f"on a different parameter by list position is the exact "
+                f"failure RESUME_CONTRACT refuses.")
+        opt.load_state_dict(ck["opt"])
+    return int(ck.get("step", 0))
+
+
+def supersede_init_on_resume(init_report: dict, resumed_from) -> dict:
+    """The run's recorded lineage after a resume overrode an ``--init-from``.
+
+    ⛔ MEASURED 2026-08-16, and it was SILENT. ``train`` runs
+    :func:`load_stage_init` first and :func:`load_resume` afterwards, so when
+    both flags are present the resume overwrites every weight the init loaded —
+    while ``config.json`` still carried the init's ``trunk_md5_after_load``.
+    The two hashes measured ``fbce009a…`` (recorded) vs ``326034884…``
+    (actually in the model): the run row named an ancestor the run was not
+    standing on, which is the failure ``MODEL_REGISTRY.md`` exists to prevent.
+
+    ⚠️ Refusing the COMBINATION would be the wrong fix. ``supervise_run.sh``
+    replays the ``TRAIN_CMD`` it captured at supervisor startup, so the
+    relaunch that resumes necessarily still carries the ``--init-from`` that
+    seeded the run. The flag pair is normal operation; the lying record was the
+    defect. ⇒ keep the init report, but demote it to what it is.
+    """
+    if not init_report.get("init_from"):
+        return init_report
+    return {
+        "init_from": None,
+        "superseded_by_resume": init_report | {
+            "_status": "OVERWRITTEN — these weights are NOT in the model; "
+                       "--resume auto ran after --init-from and replaced "
+                       "every one of them. The md5 below describes the INIT, "
+                       "not this run."},
+        "resumed_from": str(resumed_from),
+        "_evidence_class": "MEASURED (ours; this run's launch order)",
+    }
+
+
+def _resync_ema_o5(stack) -> None:
+    """Copy the LIVE encoder/readout into the O5 teacher(s) — required after
+    any weight load, because the copies were taken at construction time.
+
+    Covers BOTH teacher kinds: the EMA pair (``--o5-target ema``) and the
+    FROZEN pair (``--o5-target frozen``, MM-E4 L2). For the frozen teacher
+    this resync IS "taken at init": after it nothing updates those weights
+    again (no per-step update is wired for the frozen prefixes). Runs after
+    ``--init-from`` only — a strict RESUME instead restores the teacher from
+    the checkpoint, keeping its trajectory (EMA) / its freeze (frozen)."""
+    pairs = []
+    if hasattr(stack, "ema_o5_enc"):
+        pairs += [(stack.ema_o5_enc.module, stack.encoder),
+                  (stack.ema_o5_ro.module, stack.readout)]
+    if hasattr(stack, "frozen_o5_enc"):
+        pairs += [(stack.frozen_o5_enc.module, stack.encoder),
+                  (stack.frozen_o5_ro.module, stack.readout)]
+    with torch.no_grad():
+        for dst_m, src_m in pairs:
+            for pd, ps in zip(dst_m.parameters(), src_m.parameters()):
+                pd.copy_(ps)
+            for bd, bs in zip(dst_m.buffers(), src_m.buffers()):
+                bd.copy_(bs)
+
+
+def load_stage_init(stack: V6Stack, ckpt_path, *, strict: bool = True,
+                    stage: str | None = None) -> dict:
+    """Initialise stage N+1 from stage N's checkpoint — the OTHER half of X5.
+
+    A gate that says "S-W passed" is worthless if S-T then starts from random
+    weights: the staged protocol's whole claim is that each layer trains ON the
+    one below. This loads the full ``V6Stack`` state_dict (every stage saves the
+    WHOLE stack, so the ladder is one lineage, not four unrelated models).
+
+    ``strict=True`` by default. A key mismatch means the two stages were built
+    with DIFFERENT geometry — silently allowing that is how a stage ends up
+    training on a randomly-initialised trunk while its log looks healthy. The
+    returned report carries the md5 of the loaded trunk so the run row can name
+    exactly which S-W it stands on.
+    """
+    p = Path(ckpt_path)
+    if not p.exists():
+        raise SystemExit(f"[v6] ⛔ --init-from {p} does not exist")
+    ck = torch.load(p, map_location="cpu", weights_only=False)
+
+    # ⛔ UNWRAP THE fp16 SNAPSHOT. ``ops/ckpt_fp16_snapshot.py`` writes
+    # ``{"model", "_meta", "_fp16_weights_only"}`` and its docstring states the
+    # snapshot "is enough for the P-battery, any eval, and --init-from". It was
+    # NOT: this function looked only for ``"stack"``, fell through to the
+    # wrapper dict, and refused with *"not a valid predecessor ... missing:
+    # act_head_lat.arg_head.bias, ..."* — 400+ keys blamed on a GEOMETRY
+    # MISMATCH when the real cause was an unopened container. MEASURED
+    # 2026-08-16. That message is worse than a crash: it accuses the
+    # architecture, which is where an operator would then go looking.
+    # ⚠️ The snapshot is the artifact that makes a pod handover survivable
+    # (the 3.53 GB ckpt.pt never once pushed to HF), so this is the path a
+    # rebuilt pod actually takes.
+    snap = bool(ck.get("_fp16_weights_only")) or (
+        "model" in ck and "stack" not in ck and "_meta" in ck)
+    meta = (ck.get("_meta") or {}) if snap else ck
+    sd = ck["model"] if snap else ck.get("stack", ck)
+
+    # ⚠️ ALWAYS load non-strict, then adjudicate. Under torch's ``strict=True``
+    # a mismatch RAISES, so the ``missing_keys`` / ``unexpected_keys`` this
+    # function reported could only ever be empty — the report was structurally
+    # incapable of describing the thing it was named for.
+    allowed = STAGE_MAY_INTRODUCE.get(stage, ()) if stage else ()
+    missing, unexpected = stack.load_state_dict(sd, strict=False)
+    introduced = [k for k in missing
+                  if any(k.startswith(a) for a in allowed)]
+    fatal = [k for k in missing if k not in set(introduced)]
+
+    # ⛔ An introduction must be WHOLE. If the checkpoint already carries part
+    # of an allowed module, the rest going missing is a geometry mismatch
+    # wearing an allowance's clothes.
+    for a in allowed:
+        if any(k.startswith(a) for k in introduced) and \
+                any(k.startswith(a) for k in sd):
+            fatal += [k for k in introduced if k.startswith(a)]
+            introduced = [k for k in introduced if not k.startswith(a)]
+
+    if strict and (fatal or unexpected):
+        raise SystemExit(
+            f"[v6] ⛔ --init-from {p} is not a valid predecessor for stage "
+            f"{stage!r}.\n"
+            f"  missing (NOT introducible at this stage): {sorted(fatal)[:8]}\n"
+            f"  unexpected (the ckpt has keys this stack does not): "
+            f"{sorted(unexpected)[:8]}\n"
+            f"  A stage may introduce only {allowed or '()'} — anything else "
+            f"missing means the two stages were built with DIFFERENT geometry, "
+            f"and loading anyway is how a stage ends up training on a "
+            f"randomly-initialised trunk while its log looks healthy.")
+
+    import hashlib
+    h = hashlib.md5()
+    for n, prm in sorted(stack.named_parameters()):
+        if stack.group_of(n) in ("encoder", "readout", "predictor_op"):
+            h.update(n.encode())
+            h.update(prm.detach().cpu().numpy().tobytes())
+    return {"init_from": str(p), "init_step": int(meta.get("step", -1)),
+            "missing_keys": sorted(fatal), "unexpected_keys": sorted(unexpected),
+            # ⭐ named separately so a run row can never confuse "this stage
+            # BUILT a new head" with "this stage failed to load one".
+            "introduced_keys": sorted(introduced),
+            "introduced_allowance": list(allowed),
+            "trunk_md5_after_load": h.hexdigest(),
+            "prev_stage": (meta.get("config") or {}).get("stage"),
+            # ⚠️ STATED, never hidden: an fp16 snapshot round-trips the weights
+            # through half precision, so this trunk md5 CANNOT equal the fp32
+            # source's. A run row that does not say which it stands on would
+            # look like a lineage break the next time the md5s are compared.
+            "init_source": "fp16_weights_only_snapshot" if snap else "ckpt",
+            "init_precision": "fp16->fp32 (lossy)" if snap else "fp32",
+            "_evidence_class": "MEASURED (ours; md5 over the loaded trunk)"}
+
+
+# ============================================================================
+# D-V7-DINO-SEED — the ENCODER-ONLY seed path (--init-encoder-from)
+# ============================================================================
+#: ⛔ WHY A SECOND DOOR RATHER THAN A LOOSER `--init-from`. `load_stage_init`
+#: above exists to REFUSE a partial checkpoint: a stage that silently starts on
+#: a randomly-initialised trunk "while its log looks healthy" is the failure its
+#: whole message is written against. A DINOv3 seed IS partial by construction
+#: (it carries the encoder subtree and nothing else), so relaxing `--init-from`
+#: to accept it would delete that refusal for every caller — including the
+#: staged ladder, where it is load-bearing.
+#:
+#: ⇒ `--init-encoder-from` is a SEPARATE flag with its OWN, STRICTER contract,
+#: and the `--init-from` path above is left byte-identical.
+#:
+#: NAME (the brief asked for a justification): `--init-encoder-from` reads as a
+#: sibling of `--init-from` — same verb, narrower object — and argparse lists
+#: the two together. The pre-registration's draft spelling `--enc-init-from` is
+#: kept as an ALIAS so `PREREG_V7F.md` §9's launch line runs verbatim, but it is
+#: NOT the canonical name: every other `--enc-*` flag in this parser
+#: (`--enc-dim`, `--enc-depth`, `--enc-heads`) is a GEOMETRY knob, and a fourth
+#: `--enc-*` that is really a checkpoint path would read as a fifth geometry
+#: knob at the exact moment an operator is scanning a launch line for geometry.
+ENCODER_SEED_MARKER = "_tanitad_encoder_seed"
+ENCODER_SEED_FORMAT = "tanitad-encoder-seed"
+
+
+def _encoder_modules(stack: V6Stack) -> list[tuple[str, torch.nn.Module]]:
+    """Every encoder module present on the stack, in a stable order.
+
+    Under `shared_encoder` (the default, and v7f's setting) this is exactly
+    ``[("encoder", ...)]``; arm (b) adds the per-layer trunks. ⛔ Seeding only
+    ``stack.encoder`` while `encoder_tac`/`encoder_str` stayed random would be
+    the partial seed with a different shape, so all of them are seeded and the
+    list of what was seeded is RECORDED."""
+    out = []
+    for name in ("encoder", "encoder_tac", "encoder_str"):
+        m = getattr(stack, name, None)
+        if m is not None:
+            out.append((name, m))
+    return out
+
+
+def load_encoder_seed(stack: V6Stack, seed_path, *, strict: bool = True) -> dict:
+    """Load an ENCODER-ONLY seed (``stack/scripts/dinov3_seed_checkpoint.py``).
+
+    ⛔⛔ THE FAILURE THIS GUARDS IS A SILENT PARTIAL SEED — a load that puts most
+    of the trunk in place and leaves the rest at random init, which then looks
+    EXACTLY like a successful init in every artifact the run writes. So:
+
+      * a seed with **no provenance stamp is REFUSED** (an unstamped tensor bag
+        cannot be audited later, and "it loaded" is not evidence it was DINOv3);
+      * a **geometry disagreement** with the live encoder is REFUSED, field by
+        field;
+      * a **class disagreement** is REFUSED (a `ViTEncoder` seed must not be
+        poured into a `ViT5Encoder` — that is PREREG_V7F D1 option B, which the
+        pre-registration rejects as lossy and unauditable);
+      * **`unexpected` keys** are REFUSED;
+      * **`missing` keys must equal the stamp's `left_at_init_keys` EXACTLY** —
+        not "be a subset of". A seed that quietly dropped a tensor would
+        otherwise pass as a seed that never carried it.
+    """
+    p = Path(seed_path)
+    if not p.exists():
+        raise SystemExit(f"[v6] ⛔ --init-encoder-from {p} does not exist")
+    ck = torch.load(p, map_location="cpu", weights_only=False)
+    if not isinstance(ck, dict) or ENCODER_SEED_MARKER not in ck \
+            or "encoder" not in ck:
+        raise SystemExit(
+            f"[v6] ⛔ --init-encoder-from {p} is not an encoder seed "
+            f"(no {ENCODER_SEED_MARKER!r} / 'encoder' entry). Build one with "
+            f"stack/scripts/dinov3_seed_checkpoint.py. ⚠️ A WHOLE-STACK "
+            f"checkpoint goes through --init-from, not this flag.")
+    prov = ck.get("_provenance")
+    if not isinstance(prov, dict) or not prov.get("format"):
+        raise SystemExit(
+            f"[v6] ⛔ --init-encoder-from {p} carries NO PROVENANCE STAMP. "
+            f"Refusing: an unstamped seed cannot be audited, so a run row "
+            f"could name DINOv3 while standing on anything at all. Rebuild it "
+            f"with stack/scripts/dinov3_seed_checkpoint.py.")
+    if prov.get("format") != ENCODER_SEED_FORMAT:
+        raise SystemExit(
+            f"[v6] ⛔ --init-encoder-from {p}: stamp format "
+            f"{prov.get('format')!r} != {ENCODER_SEED_FORMAT!r}")
+
+    mods = _encoder_modules(stack)
+    if not mods:
+        raise SystemExit("[v6] ⛔ the stack has no encoder module to seed")
+    live_cls = type(mods[0][1]).__name__
+    want_cls = (prov.get("target_geometry") or {}).get("class")
+    if want_cls != live_cls:
+        raise SystemExit(
+            f"[v6] ⛔ --init-encoder-from {p} was built for {want_cls!r} but "
+            f"this run's encoder is {live_cls!r}. ⚠️ If you passed "
+            f"--vit5-encoder: a DINOv3 port onto ViT5Encoder must DROP the "
+            f"LayerNorm biases and the q/v biases (RMSNorm + bias-free qkv), "
+            f"which is PREREG_V7F.md §10 D1 option B — rejected there as "
+            f"'lossy and unauditable'. Drop --vit5-encoder, or build a seed "
+            f"for the encoder you are actually running.")
+
+    ec = stack.cfg.encoder
+    tg = prov.get("target_geometry") or {}
+    # ⚠️ RESOLVED geometry on BOTH sides. `image_width=None` and
+    # `image_width == image_size` are the SAME geometry by EncoderConfig's own
+    # `image_hw()` contract, and comparing the RAW field refuses two identical
+    # configs (measured: the converter's square cfg carries None while
+    # `build_stack_from_args` carries the width).
+    ih, iw = ec.image_hw()
+    live = {"d_model": int(ec.d_model), "depth": int(ec.depth),
+            "n_heads": int(ec.n_heads), "patch_size": int(ec.patch_size),
+            "in_channels": int(ec.in_channels), "image_size": int(ih),
+            "image_width": int(iw),
+            "n_tokens": int(mods[0][1].n_tokens)}
+    bad = [(k, tg.get(k), v) for k, v in live.items()
+           if k in tg and tg.get(k) != v]
+    if bad:
+        raise SystemExit(
+            "[v6] ⛔ --init-encoder-from geometry disagrees with this run:\n"
+            + "\n".join(f"    {k}: seed says {s}, run builds {r}"
+                        for k, s, r in bad)
+            + "\n  A seed loaded across a geometry mismatch is the "
+              "silent-partial failure both this loader and the converter "
+              "exist to refuse.")
+
+    sd = {k: v for k, v in ck["encoder"].items()}
+    declared_init = sorted(prov.get("left_at_init_keys") or [])
+    per_module = []
+    for name, mod in mods:
+        missing, unexpected = mod.load_state_dict(sd, strict=False)
+        missing, unexpected = sorted(missing), sorted(unexpected)
+        if strict and unexpected:
+            raise SystemExit(
+                f"[v6] ⛔ --init-encoder-from {p}: the seed carries "
+                f"{len(unexpected)} tensor(s) {name} does not have: "
+                f"{unexpected[:8]}")
+        if strict and missing != declared_init:
+            raise SystemExit(
+                f"[v6] ⛔ --init-encoder-from {p}: {name} would be left at "
+                f"RANDOM INIT on {missing} but the stamp declares "
+                f"{declared_init}. ⛔ These must match EXACTLY — a seed that "
+                f"quietly dropped a tensor is indistinguishable from a seed "
+                f"that never carried one, and that is the whole failure "
+                f"class.")
+        per_module.append({"module": name, "n_loaded": len(sd),
+                           "left_at_init": missing, "unexpected": unexpected})
+
+    import hashlib
+    h = hashlib.md5()
+    for n, prm in sorted(stack.named_parameters()):
+        if stack.group_of(n) == "encoder":
+            h.update(n.encode())
+            h.update(prm.detach().cpu().numpy().tobytes())
+    return {
+        "init_encoder_from": str(p),
+        "seeded_modules": [m["module"] for m in per_module],
+        "per_module": per_module,
+        "n_tensors_in_seed": len(sd),
+        "left_at_init": declared_init,
+        "dinov3_model_id": prov.get("dinov3_model_id"),
+        "dinov3_variant": prov.get("dinov3_variant"),
+        "source_sha256": prov.get("source_sha256"),
+        "seed_sha256": prov.get("seed_sha256"),
+        "layer_scale_folded": prov.get("layer_scale_folded"),
+        "declared_losses": prov.get("declared_losses"),
+        "n_mapped": prov.get("n_mapped"),
+        "n_skipped_allowlist": prov.get("n_skipped_allowlist"),
+        "n_left_at_init": prov.get("n_left_at_init"),
+        "encoder_md5_after_seed": h.hexdigest(),
+        "_evidence_class": "MEASURED (ours; md5 over the seeded encoder)",
+    }
+
+
+def apply_encoder_seed(a, stack: V6Stack) -> dict:
+    """Call site shared by the real run and by ``--dry-run``.
+
+    ⚠️ The dry-run wires this DELIBERATELY: *"a pre-launch verifier that skips a
+    flag the launch carries is structurally incapable of catching that flag's
+    failure class"* — the reason `--init-from` and `--s2-labels` are already
+    exercised there."""
+    path = getattr(a, "init_encoder_from", None)
+    if not path:
+        return {"init_encoder_from": None,
+                "_read": "--init-encoder-from was NOT supplied; the trunk is "
+                         "at its own init (or at whatever --init-from loaded)."}
+    if getattr(a, "init_from", None):
+        raise SystemExit(
+            "[v6] ⛔ --init-from and --init-encoder-from together are AMBIGUOUS "
+            "— the whole-stack checkpoint also carries an encoder, so which "
+            "trunk the run stands on would depend on load order. Pass exactly "
+            "one. (The same class as the resume/--init-from collision this "
+            "file already supersedes in place.)")
+    rep = load_encoder_seed(stack, path)
+    print(f"[v6] ⭐ trunk SEEDED from {rep['dinov3_model_id']} "
+          f"({rep['dinov3_variant']}) · modules={rep['seeded_modules']} · "
+          f"mapped={rep['n_mapped']} skipped={rep['n_skipped_allowlist']} "
+          f"left_at_init={rep['left_at_init']} · "
+          f"layer_scale_folded={rep['layer_scale_folded']} · "
+          f"encoder_md5={rep['encoder_md5_after_seed'][:12]}", flush=True)
+    for line in (rep.get("declared_losses") or []):
+        print(f"[v6]   ⚠️ {line}", flush=True)
+    return rep
+
+
+# ============================================================================
+# D-V7-DINO-SEED — the restrained unfreeze: trunk LR group + warmup
+# ============================================================================
+#: ⛔ DEFAULTS PRESERVE TODAY'S BEHAVIOUR *EXACTLY*, and "exactly" here means
+#: ONE param group, not two equal ones. Two groups with identical `lr` compute
+#: the same update, but they change `opt.state_dict()['param_groups']` — and
+#: `load_resume` calls `opt.load_state_dict`, which REFUSES a different group
+#: count. Splitting unconditionally would therefore have made every existing
+#: checkpoint unresumable while every arithmetic test still passed.
+#:
+#: Precedent for the split itself: `stack/scripts/refa_v1_train.py:549-551`
+#: (`adapter_lr_mult`), which builds AdamW from two `{"params", "lr"}` groups.
+TRUNK_GROUP = "encoder"          # V6Stack.group_of(); readouts keep the full LR
+
+
+def trunk_lr_split_active(a) -> bool:
+    """True iff either trunk flag departs from its behaviour-preserving default."""
+    return (float(getattr(a, "trunk_lr_scale", 1.0)) != 1.0
+            or int(getattr(a, "trunk_lr_warmup_steps", 0)) > 0)
+
+
+def build_trunk_optimizer(a, stack: V6Stack, trainable: list) -> tuple:
+    """``(optimizer, report)``. At the defaults this IS today's one-liner.
+
+    The trunk group is exactly ``V6Stack.group_of(name) == "encoder"`` — the
+    DINOv3-seeded ViT and nothing else. ⚠️ The READOUT deliberately stays in the
+    full-LR group: it is fresh at v7f, was never seeded, and `encoder_parameters`
+    (which bundles the two) exists for a different purpose — X3's planner
+    firewall, not a learning-rate policy.
+
+    Auxiliary modules built later in `train()` (O7/O8/O9/O10 heads) are already
+    inside ``trainable`` and are NOT stack parameters; the split is by ``id``,
+    so they land in the non-trunk group, which is where they belong."""
+    if not trunk_lr_split_active(a):
+        opt = torch.optim.AdamW(trainable, lr=a.lr, weight_decay=a.wd)
+        return opt, {"trunk_lr_split": False, "n_groups": 1,
+                     "n_params": len(trainable),
+                     "_read": "defaults: ONE flat AdamW group, byte-identical "
+                              "to every arm trained before D-V7-DINO-SEED"}
+    trunk_ids = {id(p) for n, p in stack.named_parameters()
+                 if stack.group_of(n) == TRUNK_GROUP}
+    trunk_p = [p for p in trainable if id(p) in trunk_ids]
+    rest_p = [p for p in trainable if id(p) not in trunk_ids]
+    if not trunk_p:
+        raise SystemExit(
+            f"[v6] ⛔ --trunk-lr-scale/--trunk-lr-warmup-steps were set but the "
+            f"'{TRUNK_GROUP}' group has NO trainable parameter — the stage "
+            f"freeze or --freeze-encoder already froze it. A trunk schedule on "
+            f"a frozen trunk is a flag that does nothing, which is worse than "
+            f"an error because the run row would record the schedule.")
+    assert len(trunk_p) + len(rest_p) == len(trainable), (
+        "the trunk split lost or duplicated a parameter")
+    # ⚠️ BOTH groups are created at `a.lr`. The trunk's multiplier lives in the
+    # SCHEDULER's lambda, not in `initial_lr` — otherwise the two would compose
+    # and the trunk would run at `scale**2`.
+    opt = torch.optim.AdamW(
+        [{"params": trunk_p, "lr": a.lr, "tanitad_group": TRUNK_GROUP},
+         {"params": rest_p, "lr": a.lr, "tanitad_group": "rest"}],
+        lr=a.lr, weight_decay=a.wd)
+    rep = {"trunk_lr_split": True, "n_groups": 2,
+           "n_trunk_params": len(trunk_p), "n_rest_params": len(rest_p),
+           "n_trunk_numel": int(sum(p.numel() for p in trunk_p)),
+           "trunk_lr_scale": float(getattr(a, "trunk_lr_scale", 1.0)),
+           "trunk_lr_warmup_steps": int(getattr(a, "trunk_lr_warmup_steps", 0)),
+           "group_definition": f"V6Stack.group_of(name) == {TRUNK_GROUP!r}"}
+    print(f"[trunk] discriminative LR ON · scale={rep['trunk_lr_scale']:g} "
+          f"warmup={rep['trunk_lr_warmup_steps']} steps · "
+          f"{rep['n_trunk_params']} trunk tensors "
+          f"({rep['n_trunk_numel'] / 1e6:.2f} M) vs {rep['n_rest_params']} "
+          f"others", flush=True)
+    return opt, rep
+
+
+def trunk_lr_factor(step: int, a) -> float:
+    """The trunk group's multiplier at ``step`` — 0 during warmup, else scale.
+
+    ⚠️ A HARD GATE, NOT A RAMP. `PREREG_V7F.md` §10 D7 asks for *"a 2,000-step
+    warmup during which the trunk LR is 0"* so the heads learn against a
+    STATIONARY trunk first; a linear ramp would make "stationary" untrue from
+    step 1 and is deliberately not implemented."""
+    warm = int(getattr(a, "trunk_lr_warmup_steps", 0))
+    if warm > 0 and step < warm:
+        return 0.0
+    return float(getattr(a, "trunk_lr_scale", 1.0))
+
+
+def build_lr_scheduler(a, opt):
+    """Today's `CosineAnnealingLR`, or its closed form plus the trunk factor.
+
+    ⛔ WHY NOT "COSINE, THEN OVERWRITE THE TRUNK GROUP'S `lr`":
+    `CosineAnnealingLR.get_lr()` is RECURSIVE — it derives the next value from
+    the group's CURRENT `lr` (that is what makes it chainable). Mutating
+    `group['lr']` between steps therefore does not apply a factor, it CORRUPTS
+    the schedule from that step on, silently and only for the trunk. The
+    closed form `(1 + cos(pi*e/T))/2` is what `CosineAnnealingLR(eta_min=0)`
+    computes, so at `trunk_factor == 1` the two agree to float rounding
+    (pinned by stack/tests/test_dinov3_seed.py).
+
+    ⇒ At the defaults this returns the incumbent `CosineAnnealingLR` object
+    itself, so nothing about the default path is even re-derived."""
+    if not trunk_lr_split_active(a):
+        return torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=a.steps)
+    import math as _math
+    t_max = max(1, int(a.steps))
+
+    def _cos(e: int) -> float:
+        return (1.0 + _math.cos(_math.pi * min(e, t_max) / t_max)) / 2.0
+
+    return torch.optim.lr_scheduler.LambdaLR(
+        opt, [lambda e: trunk_lr_factor(int(e), a) * _cos(int(e)),
+              lambda e: _cos(int(e))])
+
+
+# ============================================================================
+# D-V7-TRUNK-ANCHOR — the anchor is WIRED, and the monitor rides beside it
+# ============================================================================
+#: `--w-trunk-anchor` was DECLARED-BUT-NOT-WIRED (D-V7-DINO-SEED) and refused at
+#: any non-zero value, so `PREREG_V7F.md` rung R3's `anchored` arm could not run.
+#: Both halves that refusal named are supplied here.
+#:
+#:   1. **THE SECOND FROZEN FORWARD.** The teacher is a `deepcopy` of the LIVE
+#:      encoder taken after `apply_encoder_seed` and before the first step — the
+#:      SEED'S OWN weights, same class, same geometry. That is the only
+#:      construction under which the word *anchor* is literally true. O7's
+#:      teacher is not reusable, for three independent reasons each sufficient:
+#:      it is `dinov3-vitl16` (1024-d, a DIFFERENT network); its `target()`
+#:      returns pooled READOUT CELLS, not per-patch trunk tokens; and it is
+#:      constructed only under `--w-o7-distill > 0`, which every v7f arm sets to
+#:      0. ⇒ `--w-trunk-anchor > 0` REFUSES without `--init-encoder-from`: a
+#:      "frozen copy" of a randomly-initialised trunk is a random-feature
+#:      regulariser wearing an anchor's name.
+#:      ⭐ `--trunk-anchor-model` STOPS BEING INERT: it is CROSS-CHECKED against
+#:      the seed's own provenance stamp and refuses on disagreement. A teacher
+#:      pulled separately from HF could silently be a different network, which
+#:      is failure reason (a) above; a checked one cannot be.
+#:
+#:   2. **THE LIVE TRUNK'S PATCH TOKENS AT THE LOSS SITE.** `stage_a_losses`
+#:      returns `z_op_win` / `z_tac` / `z_str` / `plan` and no tokens, so they
+#:      are taken with a forward hook on `stack.encoder`, armed ONLY around the
+#:      `v6_loss_step` call. `tanitad/models/v6.py:5163` is the ONE
+#:      `self.encoder(...)` call in the whole class, so the capture count is
+#:      ASSERTED at exactly 1 and a second call REFUSES rather than anchoring
+#:      the wrong tensor. The hook yields the EXACT `(input, output)` pair, so
+#:      the teacher is fed the identical tensor the live trunk saw — no
+#:      reconstruction of the input from `batch["frames"]`, which is where O7's
+#:      hard-coded `[:, -1, -3:]` slice would have to be re-derived per
+#:      `--in-channels`.
+#:      ⛔ THE TWO ALTERNATIVES AND WHY NOT:
+#:        * change `V6Stack.forward`'s return contract to emit `tok_win` — a
+#:          route exists that does not, so `v6.py` stays untouched;
+#:        * a second LIVE forward on the newest frame — correct, and NOT free.
+#:          MEASURED (SPEC.md §3): the tap costs ONE teacher forward (`B` images
+#:          under `no_grad`); the second-live-forward route costs that PLUS a
+#:          `B`-image forward AND backward through the trunk.
+TRUNK_ANCHOR_CAVEAT = (
+    "OBSERVER-EFFECT CAVEAT (BINDING, D-V7-DINO-SEED): this monitor's step-0 "
+    "control does NOT measure the published DINOv3. The seed cannot transfer "
+    "positional information -- DINOv3 is RoPE-only and ViTEncoder is "
+    "learned-APE-only, so `pos` is left at its own init -- and the CLS / "
+    "register / mask tokens are dropped. No reading here may be quoted beside "
+    "the published rho 0.91 without this sentence.")
+
+#: The floor set, stated with every reading. `rho_constant` is EXACTLY 0.0 by
+#: construction (a constant predictor carries no information and its Pearson
+#: rho is defined to 0 here), which is the control that must read a known value.
+OBS_MONITOR_FLOOR = (
+    "FLOORS: rho_constant is the constant-only control and reads EXACTLY 0.0 "
+    "by construction; rho_pixel is the raw-pixel floor (a representation that "
+    "does not beat raw input has added nothing); rho_shuffled is the "
+    "time-shuffled no-information control and must sit at the constant floor. "
+    "n and d are printed. ridge lambda is FIXED, never selected -- a "
+    "hyper-parameter chosen on the scored split is the 2026-08-22 failure "
+    "class. This is an IN-TRAINING SENTINEL: the gate read of PREREG_V7F "
+    "SS6.2b (frozen-at-checkpoint trunk, FIT/val split, static contrast, "
+    "episode-cluster bootstrap) is the offline instrument, not this.")
+
+
+class EncoderTokenTap:
+    """Capture the EXACT ``(input, output)`` of the trunk's window forward.
+
+    Zero extra live compute: the tokens are already computed by
+    ``V6Stack.encode_window`` and already retained by autograd for the readout's
+    backward, so holding a reference to them costs nothing but the reference.
+
+    ⛔ ARMED NARROWLY ON PURPOSE. ``train()`` calls ``stack.encoder`` three more
+    times per step under ``no_grad`` (the O5/T1/S1 future targets, lines
+    ~6892/6997/7021). Arming around ``v6_loss_step`` alone excludes them, and
+    the capture count is then asserted at 1 — a second capture REFUSES instead
+    of silently anchoring whichever tensor happened to land last.
+    """
+
+    def __init__(self, encoder):
+        self.encoder = encoder
+        self._h = None
+        self.captures: list = []
+
+    def _hook(self, _mod, args, out):
+        self.captures.append((args[0] if args else None, out))
+
+    def arm(self):
+        self.disarm()
+        self.captures = []
+        self._h = self.encoder.register_forward_hook(self._hook)
+        return self
+
+    def disarm(self):
+        if self._h is not None:
+            self._h.remove()
+            self._h = None
+
+    def one(self):
+        if len(self.captures) != 1:
+            raise RuntimeError(
+                f"[v6] ⛔ the trunk tap captured {len(self.captures)} encoder "
+                f"forward(s), expected exactly 1. `V6Stack.encode_window` is "
+                f"the only caller of `self.encoder(...)` in v6.py; if that "
+                f"changed, the anchor/monitor would be reading an unknown "
+                f"tensor and this refuses rather than guessing which.")
+        return self.captures[0]
+
+    def clear(self):
+        self.captures = []
+
+
+def trunk_anchor_loss(live_tok: Tensor, teacher_tok: Tensor) -> Tensor:
+    """L2 (MSE) between the live trunk's patch tokens and the frozen teacher's.
+
+    ⭐ **L2, NOT COSINE — the justification, in two sentences.** The teacher is
+    the SAME architecture at the SAME initialisation, so the two token fields
+    live in ONE coordinate frame and an MSE is a well-posed pull back toward the
+    exact starting point — an anchor, which is precisely what `PREREG_V7F.md`
+    §10 D7 specifies (*"an MSE anchor from the live trunk's patch tokens to a
+    frozen copy of the same DINOv3 weights"*). ⚠️ **What cosine would change:**
+    cosine constrains DIRECTION only and leaves the token norms free, so the
+    trunk could rescale its features by any factor — a change the readout
+    absorbs at no loss cost — and still read as fully anchored; cosine would be
+    the right choice only if a global re-normalisation of the trunk were
+    something we wanted to permit, and §6.2b's whole premise is that the FROZEN
+    features' linear decodability is what has to survive.
+    """
+    return torch.nn.functional.mse_loss(live_tok.float(), teacher_tok.float())
+
+
+class TrunkAnchor:
+    """A FROZEN copy of the seed's own trunk, plus the L2 pull toward it.
+
+    ⛔ DELIBERATELY **NOT** AN ``nn.Module`` REGISTERED ON THE STACK.
+    ``trainable`` is built as ``[p for p in stack.parameters() if
+    p.requires_grad]``; a teacher registered as a submodule would be swept into
+    that list by construction, leaving ``requires_grad_(False)`` as the only
+    thing between the teacher and the optimizer. Two guards beat one: the
+    teacher is a free-standing object **and** every parameter is
+    ``requires_grad=False``. Both are pinned in
+    ``stack/tests/test_trunk_anchor.py``.
+
+    ⚠️ **Newest frame only.** The pull is applied to the newest frame of each
+    window, the same ``[:, -1]`` slice O7/O8/O9 already take. Anchoring all
+    ``W`` frames would multiply the TEACHER forward by ``W`` (6 at v7f) for a
+    sample of the same distribution; that is a cost decision, it is stated here
+    and it is recorded in ``config.json`` as ``frames="newest"``.
+
+    ⚠️ **AT STEP 0 THE TERM IS 0 UP TO FLOATING-POINT BATCH-SHAPE NOISE, NOT
+    BIT-EXACTLY 0** — stated because a control that "must read a known value"
+    has to say which value, to what precision, and why. The live trunk runs on
+    ``B*W`` images and the teacher on ``B``; a different batch extent selects a
+    different GEMM blocking, so identical weights on identical pixels differ in
+    the last bits. MEASURED on the tiny CPU rig: MSE **1.5e-14**, relative
+    drift **<1e-5** — six or more orders below anything the anchor has to
+    resolve. Making it bit-exact would mean running the teacher over all ``W``
+    frames, i.e. paying ``W`` teacher forwards to remove 1e-14.
+    """
+
+    def __init__(self, encoder, *, w: float, model_id: str, seed_path: str,
+                 source_sha256: str | None = None):
+        import copy
+        self.teacher = copy.deepcopy(encoder)
+        self.teacher.eval()
+        for p in self.teacher.parameters():
+            p.requires_grad_(False)
+        self.w = float(w)
+        self.model_id = model_id
+        self.seed_path = seed_path
+        self.source_sha256 = source_sha256
+        self.n_params = int(sum(p.numel() for p in self.teacher.parameters()))
+
+    def parameters(self):
+        return list(self.teacher.parameters())
+
+    def report(self) -> dict:
+        return {"w_trunk_anchor": self.w, "form": "l2_mse_per_patch_token",
+                "frames": "newest",
+                "teacher": "deepcopy of the SEEDED live encoder",
+                "teacher_model_id": self.model_id,
+                "teacher_seed_path": self.seed_path,
+                "teacher_source_sha256": self.source_sha256,
+                "teacher_n_params": self.n_params,
+                "teacher_requires_grad": any(
+                    p.requires_grad for p in self.teacher.parameters()),
+                "_evidence_class": "MEASURED (ours; this run's own objects)"}
+
+    def loss(self, enc_in: Tensor, live_tok: Tensor, *, b: int, w: int):
+        """``(term, log)`` from the tap's ``[B*W, ...]`` input/output pair."""
+        if enc_in is None:
+            raise RuntimeError(
+                "[v6] ⛔ the trunk tap captured no ENCODER INPUT — the anchor "
+                "must feed the teacher the identical tensor the live trunk "
+                "saw, and reconstructing it from batch['frames'] is the "
+                "wrong-scope class this tap exists to avoid.")
+        x = enc_in.reshape(b, w, *enc_in.shape[1:])[:, -1]
+        z_live = live_tok.reshape(b, w, *live_tok.shape[1:])[:, -1]
+        with torch.no_grad():
+            z_ref = self.teacher(x)
+        term = trunk_anchor_loss(z_live, z_ref)
+        with torch.no_grad():
+            drift = float((z_live.float() - z_ref.float()).norm()
+                          / z_ref.float().norm().clamp_min(1e-12))
+        return term, {"trunk_anchor": float(term.detach()),
+                      "trunk_anchor_w": self.w,
+                      "trunk_anchor_rel_drift": drift,
+                      "trunk_anchor_form": "l2_mse_per_patch_token"}
+
+
+def _pearson(x: Tensor, y: Tensor) -> float:
+    """Pearson rho, with the CONSTANT case defined to 0.0.
+
+    ⛔ A constant prediction has zero variance, so rho is 0/0. Defining it to
+    0.0 is what makes the constant-only control read a KNOWN value exactly —
+    the control that caught three of the four 2026-08-22 probe failures."""
+    x = x.double() - x.double().mean()
+    y = y.double() - y.double().mean()
+    nx, ny = float(x.norm()), float(y.norm())
+    if nx < 1e-12 or ny < 1e-12:
+        return 0.0
+    return float((x @ y) / (nx * ny))
+
+
+class ObserverEffectMonitor:
+    """`PREREG_V7F.md` §6.2b's linear probe, read WHILE the corruption happens.
+
+    ⭐ WHY IT IS IN THE TRAINER AT ALL. §6.2b's threshold refuses the RUN, not
+    the checkpoint — *"a trunk that has lost its dynamic content cannot be
+    recovered by more steps"*. A monitor that is only ever read offline reports
+    the loss after the GPU is spent; this one reports it while it is happening.
+
+    ⚠️ WHAT IT IS NOT. This is a SENTINEL, not the gate read. The gate read
+    freezes the trunk at a step-stamped checkpoint, fits on the FIT split,
+    scores on val, carries the STATIC-target contrast and an episode-cluster
+    bootstrap. This reads the training stream. Both facts ride in every record
+    (:data:`OBS_MONITOR_FLOOR`), and so does :data:`TRUNK_ANCHOR_CAVEAT`.
+
+    The four controls §6.2b requires that are affordable in-loop are all here:
+    a constant-only control that reads EXACTLY 0.0, a raw-pixel floor, a
+    time-shuffled no-information control, and `n`/`d` printed. The ridge lambda
+    is FIXED and never selected, which removes the lambda-selection failure
+    class rather than guarding against it.
+    """
+
+    TARGETS = ("speed", "steer", "accel")     # all DYNAMIC — the corrupted kind
+
+    def __init__(self, *, d_model: int, dims: int = 32, window: int = 256,
+                 every: int = 250, seed: int = 0, threshold: float = 0.70,
+                 ridge: float = 1.0):
+        g = torch.Generator().manual_seed(int(seed))
+        # ⚠️ FIXED at construction and never redrawn: two readings are only
+        # comparable across steps (and across ARMS, which is what R3 needs) if
+        # the feature basis is the same one.
+        self.R = torch.randn(int(d_model), int(dims), generator=g) \
+            / float(d_model) ** 0.5
+        self.Rpix = None
+        self.dims, self.every = int(dims), int(every)
+        self.window = int(window)
+        self.threshold, self.ridge, self.seed = float(threshold), float(ridge), int(seed)
+        self._f: deque = deque(maxlen=self.window)
+        self._p: deque = deque(maxlen=self.window)
+        self._t: deque = deque(maxlen=self.window)
+        self.rho0 = None
+        self.rho0_step = None
+        self.consecutive_fails = 0
+
+    # -- ingest ------------------------------------------------------------ #
+    @torch.no_grad()
+    def observe(self, tok: Tensor, frames: Tensor, targ: Tensor) -> None:
+        """``tok`` [B, n_tok, d] · ``frames`` [B, C, H, W] · ``targ`` [B, T]."""
+        f = tok.detach().float().mean(dim=1) @ self.R.to(tok.device)
+        pix = torch.nn.functional.adaptive_avg_pool2d(
+            frames.detach().float(), (8, 8)).reshape(frames.shape[0], -1)
+        if self.Rpix is None or self.Rpix.shape[0] != pix.shape[1]:
+            g = torch.Generator().manual_seed(self.seed + 1)
+            self.Rpix = torch.randn(pix.shape[1], self.dims, generator=g) \
+                / float(pix.shape[1]) ** 0.5
+        p = pix @ self.Rpix.to(pix.device)
+        t = targ.detach().float()
+        for i in range(f.shape[0]):
+            self._f.append(f[i].cpu())
+            self._p.append(p[i].cpu())
+            self._t.append(t[i].cpu())
+
+    # -- probe -------------------------------------------------------------- #
+    def _probe(self, F: Tensor, T: Tensor) -> list:
+        """Ridge on the EVEN rows, scored on the ODD rows.
+
+        ⛔ AN ALTERNATING SPLIT, NOT A CONTIGUOUS ONE. The buffer spans many
+        steps and the trunk moves across them, so a first-half/second-half split
+        would fit an OLD trunk and score a NEW one, confounding drift with
+        corruption. Alternating rows put both halves on the same steps."""
+        n = F.shape[0]
+        i_fit = torch.arange(0, n, 2)
+        i_sc = torch.arange(1, n, 2)
+        m = min(len(i_fit), len(i_sc))
+        i_fit, i_sc = i_fit[:m], i_sc[:m]
+        A, B = F[i_fit].double(), F[i_sc].double()
+        mu = A.mean(0, keepdim=True)
+        sd = A.std(0, keepdim=True).clamp_min(1e-6)
+        A, B = (A - mu) / sd, (B - mu) / sd
+        A = torch.cat([A, torch.ones(A.shape[0], 1, dtype=A.dtype)], 1)
+        B = torch.cat([B, torch.ones(B.shape[0], 1, dtype=B.dtype)], 1)
+        Y = T[i_fit].double()
+        lam = self.ridge * torch.eye(A.shape[1], dtype=A.dtype)
+        lam[-1, -1] = 0.0                     # never shrink the intercept
+        W = torch.linalg.solve(A.T @ A + lam, A.T @ Y)
+        pred = B @ W
+        truth = T[i_sc].double()
+        return [_pearson(pred[:, j], truth[:, j]) for j in range(T.shape[1])]
+
+    def read(self, step: int) -> dict:
+        n = len(self._f)
+        need = 4 * self.dims
+        base = {"obs_n": n, "obs_d": self.dims,
+                "obs_caveat": TRUNK_ANCHOR_CAVEAT, "obs_floor": OBS_MONITOR_FLOOR}
+        if n < need:
+            return base | {"observer_effect": "UNDERPOWERED",
+                           "obs_n_needed": need,
+                           "obs_read": f"n={n} < 4*d={need}. n << d is the "
+                                       f"2026-08-22 failure #4 — the fit "
+                                       f"correctly chooses maximal shrinkage "
+                                       f"and EVERY arm reads the floor. No "
+                                       f"reading is emitted."}
+        F = torch.stack(list(self._f))
+        P = torch.stack(list(self._p))
+        T = torch.stack(list(self._t))
+        rho_t = self._probe(F, T)
+        rho_p = self._probe(P, T)
+        g = torch.Generator().manual_seed(self.seed + 7)
+        rho_s = self._probe(F, T[torch.randperm(T.shape[0], generator=g)])
+        dyn = sum(rho_t) / len(rho_t)
+        if self.rho0 is None:
+            self.rho0 = dyn
+            self.rho0_step = int(step)
+        ratio = (dyn / self.rho0) if abs(self.rho0) > 1e-9 else float("nan")
+        trips = bool(ratio == ratio and ratio < self.threshold)
+        self.consecutive_fails = self.consecutive_fails + 1 if trips else 0
+        return base | {
+            "observer_effect": "TRIPPED" if trips else "OK",
+            "obs_rho_dynamic": dyn,
+            "obs_rho_per_target": dict(zip(self.TARGETS, rho_t)),
+            "obs_rho_pixel": sum(rho_p) / len(rho_p),
+            "obs_rho_shuffled": sum(rho_s) / len(rho_s),
+            "obs_rho_constant": 0.0,
+            "obs_rho_step0": self.rho0,
+            "obs_step0_step": self.rho0_step,
+            "obs_ratio_to_step0": ratio,
+            "obs_threshold": self.threshold,
+            "obs_consecutive_fails": self.consecutive_fails,
+            "obs_beats_pixel_floor": bool(dyn > sum(rho_p) / len(rho_p)),
+            "obs_ridge_lambda": self.ridge,
+            "_evidence_class": "MEASURED (ours; in-training sentinel, "
+                               "NOT the SS6.2b gate read)"}
+
+
+# ---------------------------------------------------------------------------- #
+# construction + preflight                                                      #
+# ---------------------------------------------------------------------------- #
+
+def assert_trunk_anchor_preflight(a) -> float:
+    """Args-only refusals for ``--w-trunk-anchor``, before any object exists.
+
+    The stack-dependent checks (a trainable trunk, the teacher's identity
+    against the seed stamp) live in :func:`build_trunk_anchor`; these three need
+    nothing but the namespace, so they fire in milliseconds and before the
+    corpus mounts."""
+    w = float(getattr(a, "w_trunk_anchor", 0.0))
+    if w < 0:
+        raise SystemExit(f"[v6] ⛔ --w-trunk-anchor {w:g} is negative — a "
+                         f"NEGATIVE anchor pushes the trunk AWAY from its "
+                         f"init, which is the deliberate-regression arm of a "
+                         f"different experiment, not this one.")
+    if not w:
+        return w
+    if not getattr(a, "init_encoder_from", None):
+        raise SystemExit(
+            "[v6] ⛔ --w-trunk-anchor > 0 REQUIRES --init-encoder-from.\n"
+            "  The anchor's teacher is a FROZEN COPY OF THE SEED'S OWN "
+            "WEIGHTS. Without a seed the copy would be of a RANDOMLY-"
+            "INITIALISED trunk, and pulling the encoder toward random features "
+            "is a random-feature regulariser wearing an anchor's name — it "
+            "would train, log a falling `trunk_anchor`, and mean nothing.\n"
+            "  Pass --init-encoder-from <seed built by "
+            "stack/scripts/dinov3_seed_checkpoint.py>, or --w-trunk-anchor 0 "
+            "(PREREG_V7F R3's `full` regression arm).")
+    if int(getattr(a, "obs_monitor_every", 0)) <= 0:
+        raise SystemExit(
+            "[v6] ⛔ --w-trunk-anchor > 0 REQUIRES --obs-monitor-every > 0.\n"
+            "  PREREG_V7F.md SS6.2b: the Observer-Effect monitor is what makes "
+            "a trainable trunk DEFENSIBLE — an anchor running with nothing "
+            "watching the corruption it exists to prevent is a weight, not a "
+            "defence, and rung R3's `anchored` arm is scored on the monitor, "
+            "not on the term.\n"
+            "  Pass --obs-monitor-every 250 (the monitor is usable ALONE, "
+            "which is how R3's `full` and `frozen` arms carry it).")
+    return w
+
+
+def build_trunk_anchor(a, stack: V6Stack, enc_seed_report: dict | None = None):
+    """``TrunkAnchor`` when the weight is non-zero, else ``None``.
+
+    ⛔ Nothing is constructed at the default, so the loss, the RNG stream, the
+    state_dict and the optimizer groups stay bit-identical to every arm trained
+    before this change."""
+    w = float(getattr(a, "w_trunk_anchor", 0.0))
+    if not w:
+        return None
+    rep = enc_seed_report or {}
+    if not rep.get("init_encoder_from"):
+        raise SystemExit(
+            "[v6] ⛔ --w-trunk-anchor > 0 but no encoder seed was loaded — see "
+            "assert_trunk_anchor_preflight(). Refusing to deepcopy a trunk "
+            "whose provenance is unknown.")
+    want = str(getattr(a, "trunk_anchor_model", "") or "")
+    got = str(rep.get("dinov3_model_id") or "")
+    if want and got and want != got:
+        raise SystemExit(
+            f"[v6] ⛔ --trunk-anchor-model {want!r} disagrees with the SEED's "
+            f"own provenance stamp {got!r}.\n"
+            f"  The teacher IS the seed (a frozen copy of these very weights), "
+            f"so this flag is now a CROSS-CHECK, not a second download. A "
+            f"disagreement means the run row would name one network while the "
+            f"anchor pulled toward another — reason (a) of the three that made "
+            f"O7's teacher unusable, reintroduced.\n"
+            f"  Pass --trunk-anchor-model {got} or rebuild the seed.")
+    n_trunk = sum(1 for n, p in stack.named_parameters()
+                  if stack.group_of(n) == TRUNK_GROUP and p.requires_grad)
+    if not n_trunk:
+        raise SystemExit(
+            "[v6] ⛔ --w-trunk-anchor > 0 but the trunk has NO trainable "
+            "parameter — the stage freeze or --freeze-encoder already froze "
+            "it. An anchor on a frozen trunk is a constant added to the loss, "
+            "and the run row would record a distillation anchor that could not "
+            "move anything. (Same refusal as --trunk-lr-scale on a frozen "
+            "trunk; PREREG_V7F R3's `frozen` arm carries --w-trunk-anchor 0.)")
+    anch = TrunkAnchor(stack.encoder, w=w, model_id=got or want,
+                       seed_path=str(rep.get("init_encoder_from")),
+                       source_sha256=rep.get("source_sha256"))
+    print(f"[anchor] trunk anchor ON  w={w:g} form=l2_mse_per_patch_token "
+          f"frames=newest teacher={anch.model_id or '<seed>'} "
+          f"({anch.n_params/1e6:.2f} M, FROZEN, outside every optimizer group)",
+          flush=True)
+    print(f"[anchor] {TRUNK_ANCHOR_CAVEAT}", flush=True)
+    return anch
+
+
+def build_observer_monitor(a, stack: V6Stack):
+    """``ObserverEffectMonitor`` when ``--obs-monitor-every > 0``, else ``None``."""
+    every = int(getattr(a, "obs_monitor_every", 0))
+    if every <= 0:
+        return None
+    mon = ObserverEffectMonitor(
+        d_model=int(stack.cfg.encoder.d_model),
+        dims=int(getattr(a, "obs_monitor_dims", 32)),
+        window=int(getattr(a, "obs_monitor_window", 256)),
+        every=every, seed=int(getattr(a, "seed", 0)))
+    print(f"[obs] Observer-Effect monitor ON  every={every} "
+          f"window={mon.window} d={mon.dims} threshold={mon.threshold:g} "
+          f"targets={list(mon.TARGETS)}", flush=True)
+    print(f"[obs] {TRUNK_ANCHOR_CAVEAT}", flush=True)
+    print(f"[obs] {OBS_MONITOR_FLOOR}", flush=True)
+    return mon
+
+
+def observer_targets(batch: dict) -> Tensor:
+    """The DYNAMIC targets §6.2b names, taken from the batch as it stands.
+
+    speed (`v0`), steer and accel at the window's last tick — the time-varying
+    invariants the paper reports as the ones a full fine-tune destroys (rho 0.94
+    -> -0.03), while static ones are spared. ⚠️ The STATIC contrast (`n_agents`)
+    is NOT available in this batch and belongs to the offline instrument; the
+    record says so rather than leaving it to be assumed."""
+    a2 = batch["actions2"]
+    return torch.stack([batch["v0"].float(),
+                        a2[:, -1, 0].float(), a2[:, -1, 1].float()], dim=1)
+
+
+def anchor_and_monitor_step(anchor, monitor, tap, L: dict, batch: dict,
+                            step: int) -> None:
+    """Fold the anchor term into ``L["loss"]`` and feed/read the monitor.
+
+    One call site shape for BOTH the real loop and ``--dry-run``: a pre-launch
+    verifier that skips a flag the launch carries is structurally incapable of
+    catching that flag's failure class."""
+    if anchor is None and monitor is None:
+        return
+    enc_in, live_tok = tap.one()
+    b, wnd = batch["frames"].shape[:2]
+    if anchor is not None:
+        term, lg = anchor.loss(enc_in, live_tok, b=b, w=wnd)
+        L["loss"] = L["loss"] + anchor.w * term
+        L["log"] |= lg
+    if monitor is not None:
+        monitor.observe(
+            live_tok.reshape(b, wnd, *live_tok.shape[1:])[:, -1],
+            batch["frames"][:, -1], observer_targets(batch))
+        if int(step) % monitor.every == 0:
+            L["log"] |= monitor.read(int(step))
+    tap.clear()
+
+
+# ============================================================================
+# CLI
+# ============================================================================
+
+def build_parser() -> argparse.ArgumentParser:
+    ap = argparse.ArgumentParser(
+        description="v6 staged trainer (S-W -> S-T -> S-S -> optional S-J)")
+    ap.add_argument("--stage", choices=STAGES, required=True)
+    ap.add_argument("--out", required=True)
+    # ---- staging / gates ---------------------------------------------------
+    ap.add_argument("--prev-gate", default=None,
+                    help="path to the PREVIOUS stage's stage_gate.json (X5)")
+    ap.add_argument("--allow-inconclusive-gate", action="store_true",
+                    help="proceed on an INCONCLUSIVE (never a FAILED) previous "
+                         "gate; requires --gate-off-reason")
+    ap.add_argument("--gate-off-reason", default="",
+                    help="why the inconclusive gate is being overridden — "
+                         "recorded in config.json and printed as a banner")
+    ap.add_argument("--resume", choices=("auto", "off"), default="auto",
+                    help="auto = continue from <out>/ckpt.pt when present "
+                         "(a supervisor replays its captured command, so a "
+                         "relaunch MUST NOT restart at step 0)")
+    ap.add_argument("--force-rerun", action="store_true",
+                    help="⛔ discard a DONE run or overwrite a live ckpt.pt. "
+                         "The done-marker is the remote off-switch; this is "
+                         "the only way past it.")
+    ap.add_argument("--init-from", default=None,
+                    help="previous stage's ckpt.pt — S-T/S-S/S-J MUST start "
+                         "from the stage below, or the ladder is four "
+                         "unrelated models with a gate between them")
+    # ---- D-V7-DINO-SEED: the trunk arrives from OUTSIDE the ladder ----------
+    ap.add_argument("--init-encoder-from", "--enc-init-from",
+                    dest="init_encoder_from", default=None,
+                    help="ENCODER-ONLY seed built by "
+                         "stack/scripts/dinov3_seed_checkpoint.py (the PI's "
+                         "'DINO as init'). ⛔ Refuses without a provenance "
+                         "stamp, on a geometry disagreement, or if any tensor "
+                         "would be left at random init that the stamp does not "
+                         "declare. Mutually exclusive with --init-from. "
+                         "(--enc-init-from is an alias so PREREG_V7F §9's "
+                         "launch line runs verbatim.)")
+    ap.add_argument("--trunk-lr-scale", type=float, default=1.0,
+                    help="multiply the TRUNK group's LR by this "
+                         "(V6Stack.group_of == 'encoder'; the readout keeps "
+                         "the full LR). ⛔ 1.0 = today: ONE flat AdamW group, "
+                         "not two equal ones — a second group would break "
+                         "--resume against every existing checkpoint. "
+                         "PREREG_V7F D7 recommends 0.1")
+    ap.add_argument("--trunk-lr-warmup-steps", type=int, default=0,
+                    help="steps during which the trunk LR is EXACTLY 0, so the "
+                         "heads learn against a stationary trunk first "
+                         "(PREREG_V7F D7: 2000). A hard gate, not a ramp — a "
+                         "ramp would make 'stationary' untrue from step 1. "
+                         "0 = today's behaviour")
+    ap.add_argument("--w-trunk-anchor", type=float, default=0.0,
+                    help="⭐ WIRED (D-V7-TRUNK-ANCHOR). L2 (MSE) pull of the "
+                         "LIVE trunk's per-patch tokens toward a FROZEN copy "
+                         "of the SEED's own weights, on the NEWEST frame of "
+                         "each window. 0.0 = today, byte-identical: nothing is "
+                         "constructed and no hook is registered. ⛔ >0 REQUIRES "
+                         "--init-encoder-from (a frozen copy of a RANDOM trunk "
+                         "is not an anchor) and --obs-monitor-every > 0 "
+                         "(PREREG_V7F SS6.2b: the monitor is what makes a "
+                         "trainable trunk defensible). PREREG_V7F D7 "
+                         "recommends 1.0")
+    ap.add_argument("--trunk-anchor-model", type=str,
+                    default="facebook/dinov3-vitb16-pretrain-lvd1689m",
+                    help="⭐ NO LONGER INERT — CROSS-CHECKED against the "
+                         "seed's own provenance stamp and REFUSES on "
+                         "disagreement. The teacher IS the seed (a frozen copy "
+                         "of those weights), never a second download, so this "
+                         "flag is the guard that the run row and the anchor "
+                         "name the same network")
+    # ---- D-V7-TRUNK-ANCHOR: the Observer-Effect monitor (PREREG_V7F SS6.2b) --
+    ap.add_argument("--obs-monitor-every", type=int, default=0,
+                    help="read the Observer-Effect probe every N steps "
+                         "(0 = OFF = today, byte-identical). A LINEAR ridge on "
+                         "the trunk's patch tokens against DYNAMIC targets "
+                         "(speed/steer/accel), with a constant-only control "
+                         "that reads EXACTLY 0.0, a raw-pixel floor, a "
+                         "time-shuffled control and n/d printed. Usable ALONE, "
+                         "which is how R3's `full` and `frozen` arms carry it. "
+                         "⚠️ An IN-TRAINING SENTINEL, not SS6.2b's gate read")
+    ap.add_argument("--obs-monitor-window", type=int, default=256,
+                    help="rows of the monitor's ring buffer. The read needs "
+                         "n >= 4*d or it emits UNDERPOWERED rather than a "
+                         "number (n << d is the 2026-08-22 failure #4)")
+    ap.add_argument("--obs-monitor-dims", type=int, default=32,
+                    help="dimension of the FIXED seeded random projection the "
+                         "probe fits in. Fixed at construction so readings are "
+                         "comparable across steps AND across arms")
+    ap.add_argument("--gate-probes", default=None,
+                    help="JSON of externally-run battery probes to fold into "
+                         "this stage's gate")
+    # ---- model geometry ----------------------------------------------------
+    ap.add_argument("--in-channels", type=int, default=9)
+    #: H-RANK-8 — feed ONLY the newest frame of each 3-frame stack (3 channels).
+    #: Consecutive latents then share NO input frames; the hypothesis is that
+    #: the 2/3-shared stack makes dz noise-like (lag-1 autocorr measured -0.075).
+    #: Implies --in-channels 3; the trainer enforces that coupling below.
+    # ⭐ NAV CONDITIONING (PI directive 2026-08-30): mandatory for every future
+    # arm, enforced by the preflight refusal below rather than by a default flip.
+    ap.add_argument("--i-know-this-arm-predates-nav", action="store_true",
+                    dest="predates_nav",
+                    help="reproduce a PRE-DIRECTIVE arm without nav; the choice "
+                         "is RECORDED in config.json rather than left silent")
+    # ⛔ OPT-OUT, not opt-in: see _save_ckpt's docstring. Every arm trained
+    # before today has an UNRECOVERABLE checkpoint trajectory because this was
+    # not the default.
+    ap.add_argument("--no-step-ckpts", dest="no_step_ckpts", action="store_true",
+                    help="do NOT keep ckpt_step<N>.pt copies (default: keep). "
+                         "Only for disk-constrained hosts — the trajectory is "
+                         "unrecoverable afterwards.")
+    ap.add_argument("--nav-cond", dest="nav_cond", action="store_true",
+                    help="condition all three layers on the nav command token "
+                         "(PI directive 2026-08-30). MANDATORY for v7-line arms; "
+                         "the preflight REFUSES a v7 stage without it.")
+    ap.add_argument("--newest-frame-only", dest="newest_frame_only",
+                    action="store_true")
+    ap.add_argument("--frame-h", type=int, default=256)
+    ap.add_argument("--frame-w", type=int, default=640)
+    ap.add_argument("--patch", type=int, default=16)
+    ap.add_argument("--enc-dim", type=int, default=384)
+    ap.add_argument("--enc-depth", type=int, default=8)
+    ap.add_argument("--enc-heads", type=int, default=6)
+    ap.add_argument("--grad-checkpoint", action="store_true",
+                    help="master switch: checkpoint the ENCODER blocks and "
+                         "(unless --rollout-grad-checkpoint overrides) the "
+                         "k-step rollout")
+    # ⛔ These two used to be ONE flag, which coupled unrelated decisions. The
+    # k=60 rollout NEEDS checkpointing (it fixed a MEASURED 37.97/44 GiB OOM);
+    # the encoder's is a pure speed/memory trade costing ~2x the ViT forward.
+    # MEASURED 2026-08-14: S-W sat at 42.8 % mean GPU util with 20 GB free —
+    # paying recompute it did not need. `auto` = follow --grad-checkpoint, so
+    # every existing launch command behaves byte-identically.
+    ap.add_argument("--enc-grad-checkpoint", choices=("auto", "on", "off"),
+                    default="auto",
+                    help="override checkpointing for the ENCODER only")
+    ap.add_argument("--rollout-grad-checkpoint", choices=("auto", "on", "off"),
+                    default="auto",
+                    help="override checkpointing for the k-step ROLLOUT only; "
+                         "turning this off at k=60 restores a measured OOM")
+    # ---- truncated BPTT on the k-step rollout — DEFAULT OFF (D-V7-WIRING) --
+    ap.add_argument("--bptt-truncate", type=int, default=0,
+                    help="truncated-BPTT depth for the k-step ROLLOUT "
+                         "(metric_dynamics.rollout_transitions): detach the "
+                         "CARRIED latent window every N steps so the "
+                         "back-prop chain through the shared predictor is at "
+                         "most N deep. 0 = today's full chain (byte-"
+                         "identical). The FORWARD pass is unchanged; only the "
+                         "gradient path is bounded. MEASURED without it: the "
+                         "k=60 rollout diverged (gnorm 2.1e9). refav1 ships "
+                         "15 (DreamerV3's horizon = Looped-WM's ceil(mu_rec/2) "
+                         "at K=30). N >= --o5-k never cuts and is REFUSED as "
+                         "an advertised-but-inert flag. SCOPE: the O5 factual "
+                         "roll (k = --o5-k) and the O11 counterfactual rolls "
+                         "made by v6_loss_step. ⚠️ NOT the O1 response-form "
+                         "rolls in train_stage_a.stage_a_losses (k = --o1-k; "
+                         "a file this change does not own) — MEASURED: 6 of 8 "
+                         "rolls per step at the default weights are O1's.")
+    ap.add_argument("--readout-grid", type=int, default=4)
+    ap.add_argument("--readout-grid-w", type=int, default=None)
+    ap.add_argument("--readout-dim", type=int, default=128)
+    ap.add_argument("--pred-modern", action="store_true",
+                    help="ViT-5-recipe predictor blocks (RMSNorm + QK-Norm + "
+                         "LayerScale + bias-free attention). CHANGES THE "
+                         "STATE-DICT KEYS: a declared arm; strict load refuses "
+                         "legacy checkpoints rather than silently mis-mapping.")
+    ap.add_argument("--pred-dim", type=int, default=768)
+    ap.add_argument("--pred-depth", type=int, default=6)
+    ap.add_argument("--pred-heads", type=int, default=12)
+    ap.add_argument("--window", type=int, default=6)
+    ap.add_argument("--horizons", type=int, nargs="+", default=[1, 2, 4])
+    ap.add_argument("--d-tac", type=int, default=512)
+    ap.add_argument("--d-str", type=int, default=256)
+    ap.add_argument("--d-goal-embed", type=int, default=128)
+    ap.add_argument("--adapter-hidden", type=int, default=512)
+    ap.add_argument("--n-candidates", type=int, default=8)
+    ap.add_argument("--param-budget", type=int, default=300_000_000)
+    # ---- SELECTION (V6F_PLANNER_DESIGN.md) — ALL DEFAULT-OFF ---------------
+    ap.add_argument("--selector", choices=("none", "goal", "mlp"),
+                    default="none",
+                    help="'none' (default) builds NO scorer and leaves the "
+                         "state_dict byte-identical. 'goal' builds the +267 "
+                         "GoalDistanceScorer — the mechanism E-WC measured. "
+                         "'mlp' builds the CAPACITY CONTROL: identical inputs, "
+                         "no distance prior, ~127x the parameters. Judging a "
+                         "'goal' arm without it cannot separate mechanism from "
+                         "capacity (V6F_PLANNER_DESIGN.md §5.3).")
+    ap.add_argument("--selector-tau-m", type=float, default=1.0,
+                    help="selection temperature in metres (goal scorer only)")
+    ap.add_argument("--selector-mlp-hidden", type=int, default=256,
+                    help="hidden width of the 'mlp' capacity control "
+                         "(ignored for every other --selector)")
+    ap.add_argument("--plan-wta-eps", type=float, default=0.0,
+                    help="epsilon-relaxed WTA: weight on the LOSING candidates' "
+                         "mean error. 0.0 (default) is the incumbent pure WTA, "
+                         "under which N-1 candidates get ZERO gradient and "
+                         "nothing bounds the fan mean.")
+    # ---- PROPOSALS / MPC / FALLBACK (2026-08-16) — ALL DEFAULT-OFF ---------
+    # The three remaining diagram cells on the planner surface
+    # (DIAGRAM_CONFORMANCE.md F-15 / §3-D-1 / F-17). Defaults reproduce the
+    # incumbent state_dict EXACTLY (per-tensor C75 proof in
+    # tests/test_v6_diffusion_mpc_fallback.py).
+    ap.add_argument("--proposals", choices=("query", "diffusion"),
+                    default="query",
+                    help="⭐ candidate-fan GENERATOR. 'diffusion' = F-15: "
+                         "diffuse the full 6 s CONTROL sequence (60 x (a,κ)) "
+                         "with temporally correlated OU noise, truncated-DDIM "
+                         "denoised; +437,954 params MEASURED at production "
+                         "geometry; the query/CV fan is still emitted beside "
+                         "it (qfan_*) as the paired on-window reference. New "
+                         "keys => S-T may INTRODUCE it (STAGE_MAY_INTRODUCE); "
+                         "⛔ REFUSED in S-W (planner frozen + strict-resume "
+                         "break, exactly like --selector).")
+    ap.add_argument("--diffusion-steps", type=int, default=4,
+                    help="truncated denoise steps (DiffusionDrive's regime)")
+    ap.add_argument("--diffusion-noise-rho", type=float, default=0.9,
+                    help="lag-1 autocorrelation of the OU control-noise. The "
+                         "DRAWN noise's autocorrelation is MEASURED per "
+                         "forward and logged (prop_noise_lag1_autocorr) — "
+                         "never asserted from this flag.")
+    ap.add_argument("--diffusion-hidden", type=int, default=256)
+    ap.add_argument("--diffusion-sigma-a", type=float, default=2.0,
+                    help="raw-space noise scale, accel channel (a_max 4.0)")
+    ap.add_argument("--diffusion-sigma-k", type=float, default=0.1,
+                    help="raw-space noise scale, kappa channel (kappa_max 0.2)")
+    ap.add_argument("--mpc-refine", action="store_true",
+                    help="⭐ MPC top-K refinement (selection cell, per the D-1 "
+                         "re-read): the trained selector's scores warm-start "
+                         "the top-K, cost descent refines the CONTROLS on a "
+                         "COMPOSED cost — goal-conditioned PRIMARY + "
+                         "kinematic/imagined-consistency REGULARIZERS — and "
+                         "the re-score is GOAL DISTANCE ONLY (roll-cost argmin "
+                         "REFUTED +5.9787 m; refined-readout rescoring "
+                         "2.8-2.95x worse, E-S1-0). 0 params, 0 keys. "
+                         "⛔ REQUIRES --selector goal (V6Config refuses "
+                         "otherwise), so it is INERT while SEL-1 stands "
+                         "REFUSED — assert_selector_admissible gates every "
+                         "selector launch.")
+    ap.add_argument("--mpc-topk", type=int, default=2)
+    ap.add_argument("--mpc-steps", type=int, default=3,
+                    help="cost-descent iterations (CEM is a possible later arm)")
+    ap.add_argument("--mpc-lr", type=float, default=0.05)
+    ap.add_argument("--mpc-roll-k", type=int, default=0,
+                    help="P_O roll depth for the imagined-consistency "
+                         "REGULARIZER; 0 = no roll (and --mpc-w-consist must "
+                         "be 0)")
+    ap.add_argument("--mpc-w-goal", type=float, default=1.0,
+                    help="PRIMARY term weight; must stay > 0 — a "
+                         "regularizer-led refinement is the refuted roll-cost "
+                         "rule wearing MPC's name")
+    ap.add_argument("--mpc-w-kin", type=float, default=0.1,
+                    help="kinematic smoothness REGULARIZER (the §1.14 "
+                         "tie-breaker); zero-weight ablation always available")
+    ap.add_argument("--mpc-w-consist", type=float, default=0.0,
+                    help="imagined-consistency REGULARIZER — the ONE place "
+                         "roll-consistency may enter a cost, never the "
+                         "primary and never the re-score")
+    ap.add_argument("--fallback-trigger", action="store_true",
+                    help="⭐ context-brain fallback cell (F-17): fan spread + "
+                         "roll-cost VARIANCE -> P7-calibrated uncertainty; "
+                         "fires when the band is exceeded; fallback action = "
+                         "hold-v0/CV emission. The roll-cost here is the "
+                         "UNCERTAINTY signal (P7 rho 0.7164, its validated "
+                         "use), NEVER a selector — the module is permutation-"
+                         "invariant over candidates by construction. 0 "
+                         "params, 8 buffer keys => S-T may INTRODUCE it; "
+                         "⛔ REFUSED in S-W (strict-resume break).")
+    ap.add_argument("--fallback-roll-k", type=int, default=10,
+                    help="P_O roll depth for the roll-cost-variance half of "
+                         "the signal; 0 = spread-only (logged as such)")
+    ap.add_argument("--fallback-calibration", default=None,
+                    help="P7 calibration artifact (JSON: spearman_rho, "
+                         "rho_ci, slope, intercept, threshold, w_spread, "
+                         "w_rollvar). load_calibration REFUSES rho < 0.3 or "
+                         "a CI including 0 (P7's pre-registered gate). "
+                         "Without it the comparator emits fired=None and "
+                         "says why — it never invents a boolean.")
+    # ---- F-18 — THE PERCEPTION AGENT-SLOT DECODER, DEFAULT-OFF -------------
+    ap.add_argument("--agent-slots", action="store_true",
+                    help="⭐ build the DETR-style perception agent-slot "
+                         "decoder (F-18, DIAGRAM_CONFORMANCE.md §4.2 — the "
+                         "LAST unbuilt PERCEPTION cell): bbox cx,cy,yaw,l,w · "
+                         "state v_rel,yaw-rate,occluded · class, over the "
+                         "spatial tokens. +3,207,445 params MEASURED at the "
+                         "§6 2-4 M band. ⛔ VISION-ONLY at inference (its "
+                         "forward takes ONE tensor). ⛔ NO ladder stage "
+                         "trains it — the v6 batch has no agent labels; a "
+                         "frozen-trunk probe does. S-T may INTRODUCE it; "
+                         "⛔ REFUSED in S-W (strict-resume break).")
+    ap.add_argument("--n-slot-queries", type=int, default=N_QUERIES_DEFAULT,
+                    help="slot count. ⭐ RULED 100 (mm-decisions M17), "
+                         "MEASURED on the 2,308-clip train join: mean 4.39, "
+                         "p99 30, MAX 94 per frame over 433,040 frames / "
+                         "12,122,129 boxes, so the zero-drop floor is 94 and "
+                         "100 is headroom over a max-over-a-sample. ⛔ 16 is "
+                         "REFUTED: it drops 212,224 boxes (11.17 pct) across "
+                         "23,103 frames, and match_slots keeps the NEAREST N, "
+                         "so the nearest SACRIFICED target sits at 7.3 m, "
+                         "inside the braking envelope. Over-full frames drop "
+                         "their FARTHEST targets and COUNT the drop. ⛔ The "
+                         "default is the imported N_QUERIES_DEFAULT, never a "
+                         "literal: two spellings do not move together.")
+    ap.add_argument("--slot-hidden", type=int, default=256)
+    ap.add_argument("--slot-depth", type=int, default=3)
+    ap.add_argument("--slot-heads", type=int, default=8)
+    ap.add_argument("--slot-src", choices=("cells", "tokens"), default="cells",
+                    help="the memory the slots cross-attend into. 'cells' = "
+                         "the readout's spatial latent (the surface whose "
+                         "content is the open question, RC1); 'tokens' = the "
+                         "encoder's raw patches, the INFORMATION CONTROL that "
+                         "separates 'the encoder cannot see agents' from 'the "
+                         "readout grid cannot carry them'.")
+    ap.add_argument("--no-isolate-interp", action="store_true",
+                    help="⛔ THE DELIBERATELY MIS-WIRED ARM. Lets the slot "
+                         "decoder's PERCEPTION-LABEL gradient reach the "
+                         "encoder — which the diagram's header row forbids in "
+                         "any trunk loss, and which also destroys the head's "
+                         "own meaning (a readout that trained its input can no "
+                         "longer say what the latent already carried). It "
+                         "exists so assert_isolation's perception_to_trunk "
+                         "edge can FAIL, i.e. so it is a check.")
+    # ---- GOAL-HEAD STRUCTURE + ANCHOR_GOAL — ALL DEFAULT-OFF ---------------
+    # These V6Config levers shipped with NO command that could build them.
+    # Every default here reproduces the incumbent state_dict EXACTLY.
+    ap.add_argument("--goal-factored", action="store_true",
+                    help="factor g_tac LAT x LON (the same factoring a_tac "
+                         "already carries). The MIXED head is KEPT and still "
+                         "emitted -- it is this arm's CONTROL. +470,939 params "
+                         "MEASURED at the production geometry.")
+    ap.add_argument("--goal-multilabel", action="store_true",
+                    help="independent per-token gates on the UN-factored head "
+                         "(0 params, 0 keys). The factored pair is the "
+                         "structured form of the same fix and is strictly "
+                         "better attributable.")
+    ap.add_argument("--goal-cat-args", action="store_true",
+                    help="the TYPED categorical arg channel. Without it 7 of "
+                         "the 9 g_tac tokens are inexpressible even given "
+                         "perfect labels. REQUIRED by --anchor-goal.")
+    ap.add_argument("--strategic-off", action="store_true",
+                    help="⭐ R6 (PI 2026-09-27): the strategic layer is OFF -- the tactical "
+                         "goal heads receive a ZERO strategic conditioning instead of the "
+                         "untrained strategic head's embedding, so the tactical goal is "
+                         "independent of layer_str and no gradient reaches it. Refused "
+                         "with --tac-goal-cond. Default OFF = byte-identical.")
+    ap.add_argument("--tac-goal-cond", action="store_true",
+                    help="⭐ build the g_str->P_T conditioning port (F-1, "
+                         "DIAGRAM_CONFORMANCE.md 2026-08-16): a ZERO-INIT "
+                         "cond_tac_dyn Linear whose output is added to the "
+                         "tactical action-pair conditioning, so the strategic "
+                         "goal conditions the tactical DYNAMICS — "
+                         "P_T(z_tac, a_tac | g_str), which the diagram, "
+                         "HIERARCHY_VOCABULARY §5 and V6Stack's own docstring "
+                         "spec and the code did not build. Default OFF = "
+                         "byte-identical state_dict (the live S-W resume). "
+                         "An S-T stage may INTRODUCE it "
+                         "(STAGE_MAY_INTRODUCE); S-S/S-J must CARRY it "
+                         "forward once S-T trained with it, exactly like "
+                         "--selector. ⛔ REFUSED in S-W: layer_tac is frozen "
+                         "there and the new keys would break the live run's "
+                         "strict resume.")
+    # ---- R4 / R1 (PI directive 2026-09-27, v7F) -- ALL DEFAULT OFF --------
+    ap.add_argument("--tac-op-cond", choices=("off", "detached", "e2e"),
+                    default="off",
+                    help="⭐ R4 (PI 2026-09-27): the tactical layer's chosen "
+                         "BEHAVIOURS condition the operative plan. MEASURED at "
+                         "the tip: the tactical GOAL already reaches the "
+                         "emission, the LAT x LON behaviour posteriors do not. "
+                         "ON builds a ZERO-INIT tac_op_port (planner group) "
+                         "that projects e_a_tac and ADDS it to e_g_tac before "
+                         "V6Stack.emit. 'detached' = the plan loss trains the "
+                         "port, never the behaviour heads (F-1 rule); 'e2e' = "
+                         "it trains them too. Default off = byte-identical. "
+                         "⛔ REFUSED in S-W; S-T may INTRODUCE it.")
+    ap.add_argument("--max-speed-input-v6", action="store_true",
+                    help="⭐ R1a (PI 2026-09-27): the clip's MAX SPEED as a "
+                         "TACTICAL INPUT -- the refcv6 4-way one-hot {30, 50, "
+                         "100, 120} km/h (containing window, invalid row = "
+                         "all-zero) through a ZERO-INIT vmax_tac port (layer_tac) "
+                         "added to the tactical decision latent. ⛔ EGO-FUTURE "
+                         "derived (SPEED_BAND.v_hi_ms), stamped as "
+                         "`speed_max_derivation_v6` in config.json (refused "
+                         "without it, and the mirror). Needs "
+                         "--speed-max-sidecar-v6. ⛔ REFUSED in S-W.")
+    ap.add_argument("--speed-max-sidecar-v6", default=None,
+                    help="the refcv6 sidecar (`scripts/build_refcv6_speed_max_"
+                         "window.py`): RAW v_hi_ms per clip keyed by `sid` = "
+                         "stable_episode_id(clip_id). Its source_md5 must equal "
+                         "the md5 of --nav-labels (else --s2-labels) -- two "
+                         "quantizations of one corpus is two experiments.")
+    ap.add_argument("--plan-vmax-cap", action="store_true",
+                    help="⭐ R1b (PI 2026-09-27: the max speed \"must not be "
+                         "exceeded\"): the emitted plan is HARD-CAPPED at "
+                         "INFERENCE (refav1 _cap_speed semantics; every "
+                         "candidate, before selection). Recorded in the model "
+                         "config: an eval-mode forward REFUSES without a per-row "
+                         "limit. The TRAINING forward stays uncapped (the label "
+                         "exceeds its own bin on decelerating / >120 km/h "
+                         "clips). --dry-run exercises it through the eval-mode "
+                         "forward. Needs --speed-max-sidecar-v6 for a real run.")
+    ap.add_argument("--anchor-goal",
+                    choices=("none", "snap_lat", "snap_xy", "onehot"),
+                    default="none",
+                    help="'none' (default) builds NO anchor head and leaves "
+                         "the state_dict byte-identical. 'snap_lat' is the "
+                         "FACTORED regress-then-snap default the measurement "
+                         "prescribes (quantise LATERAL only; 98.8 % of the "
+                         "variance is LONGITUDINAL). 'snap_xy' is the arm "
+                         "E-AG2 measured FREE. ⛔ 'onehot' is the metric-blind "
+                         "CONTROL, MEASURED +4.7502 [+3.0514, +6.3981] WORSE.")
+    ap.add_argument("--anchor-table", default=None,
+                    help="a build_refc_anchors.py .pt. ⛔ REQUIRED by "
+                         "--anchor-goal: the head refuses to run without one, "
+                         "because a zero table would snap every goal to the "
+                         "origin and still return a number. ⚠️ It must be AT "
+                         "THE PLAN HORIZON and no such vocabulary exists -- "
+                         "all five banked tables stop at 2.0 s against "
+                         "PLAN_STEPS=60, and load_anchor_table refuses them.")
+    ap.add_argument("--n-anchors", type=int, default=256,
+                    help="K of the anchor vocabulary (the shipped "
+                         "refc_anchors_full_REBUILD.pt is 256)")
+    ap.add_argument("--n-lat-bins", type=int, default=16,
+                    help="resolution of the FACTORED lateral sub-vocabulary "
+                         "('snap_lat' only)")
+    ap.add_argument("--n-agent-slots", type=int, default=8)
+    ap.add_argument("--w-anchor", type=float, default=0.0,
+                    help="weight on the ANCHOR_GOAL objective. 0.0 = the term "
+                         "is absent. ⚠️ in METRES for metric/softanchor (NATS "
+                         "for the ce control) while the other terms are not, "
+                         "so it is a declared decision, never a default.")
+    ap.add_argument("--anchor-objective",
+                    choices=tuple(ANCHOR_OBJECTIVES), default="metric",
+                    help="'metric' (DEFAULT) = endpoint distance on the "
+                         "straight-through emitted point -- the half E-AG2 "
+                         "EXONERATED (snap is NOT separated from the ridge: "
+                         "-0.0002 [-0.1031, +0.0703]). 'softanchor' = the "
+                         "distance-weighted target over anchors (E-OBJ-1's "
+                         "softade one level up). ⛔ 'ce' is the REFUTED "
+                         "one-hot control and needs "
+                         "--i-know-this-is-the-control-arm.")
+    ap.add_argument("--anchor-axis-w", type=float, nargs=2,
+                    metavar=("LON", "LAT"),
+                    default=list(ANCHOR_AXIS_W_DEFAULT),
+                    help="per-axis weights. Default 1 1 = RAW METRES, which is "
+                         "the EVIDENCE-weighted choice, not the symmetric one: "
+                         "the residual is 97.4 % longitudinal in squared error, "
+                         "so raw metres already spend the gradient there, while "
+                         "whitening would move half of it onto the axis "
+                         "carrying 1.2 % of the variance.")
+    ap.add_argument("--w-select", type=float, default=0.0,
+                    help="weight on the softade selection loss. 0.0 = the term "
+                         "is absent. ⚠️ in METRES while the other terms are "
+                         "not — a declared decision, never a default.")
+    # ---- F-7 / catalog T2 — MANOEUVRE CONTRASTIVES -------------------------
+    ap.add_argument("--t2-contrastive", action="store_true",
+                    help="build the T2 manoeuvre-contrastive projector on "
+                         "z_tac (+164,225 params / +5 keys at d_tac=512, "
+                         "MEASURED). Introduced in S-T; OFF = the incumbent "
+                         "build, 87,893,449/405.")
+    ap.add_argument("--d-t2-proj", type=int, default=128)
+    ap.add_argument("--d-t2-hidden", type=int, default=256)
+    ap.add_argument("--t2-tau", type=float, default=0.1,
+                    help="InfoNCE temperature at init (learnable thereafter)")
+    ap.add_argument("--w-t2-contrast", type=float, default=0.0,
+                    help="weight on the T2 contrastive loss. 0.0 = the term is "
+                         "absent. ⚠️ in NATS — not commensurate with "
+                         "--w-select/--w-anchor's metres.")
+    ap.add_argument("--t2-positive", default="photometric",
+                    choices=sorted(T2_MANOEUVRE_PRESERVING),
+                    help="the manoeuvre-PRESERVING view. ⚠️ DECLARED "
+                         "ASSUMPTION: the catalog names only the negatives and "
+                         "a contrastive loss needs a positive.")
+    ap.add_argument("--t2-negative", default="lane_mirror",
+                    choices=sorted(T2_MANOEUVRE_REVERSING),
+                    help="the manoeuvre-REVERSING HARD negative. ⚠️ "
+                         "'time_reverse' is NOT the catalog's manoeuvre "
+                         "reversal on this architecture — z_tac reads the LAST "
+                         "FRAME ONLY, so it is 'an earlier frame' and it "
+                         "OPPOSES T5. See v6.time_reverse_window.")
+    # ---- F-8 / catalog T5 — TEMPORAL CONSISTENCY ---------------------------
+    ap.add_argument("--w-t5-consist", type=float, default=0.0,
+                    help="weight on the T5 temporal-consistency loss. 0.0 = "
+                         "absent. ZERO new parameters. ⛔ REFUSED with "
+                         "--lambda-plan 0: a flat plan scores exactly 0.")
+    ap.add_argument("--t5-pairs", action="store_true",
+                    help="draw CONSECUTIVE-WINDOW pairs (the second half of "
+                         "each batch is the same episode's window --t5-lag "
+                         "steps later). Required by --w-t5-consist; the "
+                         "default sampler draws windows independently.")
+    ap.add_argument("--t5-lag", type=int, default=0,
+                    help="pair offset in OPERATIVE steps; 0 = cfg.stride_tac "
+                         "(5 = 0.5 s at the default clocks)")
+    ap.add_argument("--t5-w-kappa", type=float, default=1.0,
+                    help="relative weight of the curvature half vs accel")
+    # ---- F-11 / catalog S1 — MULTI-TICK STRATEGIC ROLLOUT ------------------
+    ap.add_argument("--w-s1-multi", type=float, default=0.0,
+                    help="weight on the F-11 multi-tick strategic rollout. "
+                         "0.0 = absent. ZERO new parameters (it re-rolls "
+                         "predictor_str/act_head_str, both already layer_str). "
+                         "In force in S-S/S-J only.")
+    ap.add_argument("--s1-multi-k", type=int, default=2,
+                    help="strategic ticks to roll (K). K=1 IS `--w-s1` and is "
+                         "REFUSED. A K-tick roll needs max_horizon = "
+                         "K*stride_str, so windows/episode is "
+                         "frames-window-K*stride_str. ⭐ On the REAL corpus "
+                         "(~199-frame episodes, MEASURED 2026-09-02) that is "
+                         "193-20K: K=4..9 (8-18 s) are all reachable, K=9 at "
+                         "13 windows/episode. ⚠️ The help text used to say "
+                         "'114-20K, K<=5, the 8-30 s band is NOT reachable' — "
+                         "that read `w120` in the cache name as 120 FRAMES "
+                         "when it is the 120-DEGREE FOV. Only 30 s remains out "
+                         "of reach (an episode is ~19.9 s). The authoritative "
+                         "check is corpus-side: `reachable_strategic_ticks` on "
+                         "the SHORTEST episode, which also refuses any K that "
+                         "would drop an episode to zero windows.")
+    # ---- the effective-weight audit ------------------------------------
+    ap.add_argument("--allow-discarded-weights", action="store_true",
+                    help="acknowledge that an EXPLICITLY PASSED weight is "
+                         "zeroed by `V6LossWeights.for_stage(stage)` and run "
+                         "anyway. \u26d4 The refusal ships WITH this flag on "
+                         "purpose: `--refuse-unreached` taught us that a bare "
+                         "refusal firing on honest launches gets deleted. The "
+                         "override does NOT hide the finding -- it is stamped "
+                         "into config.json as acknowledged_discarded: true, so "
+                         "a run that overrode the guard says so in its own "
+                         "artifacts.")
+    # ---- F-9 / catalog T3 — THE INTERACTION CURRICULUM ---------------------
+    ap.add_argument("--t3-scores", type=str, default="",
+                    help="path to the per-window T3 score artifact (a torch "
+                         ".pt holding {'scores': [n_windows], 'provenance': "
+                         "{...}}), produced by scoring the corpus with the P8 "
+                         "occupancy readout. ⛔ The provenance stamp is "
+                         "MANDATORY: the score is label-derived (the P8 "
+                         "decoder trains on the obstacle join), and a "
+                         "label-derived SAMPLER input is admissible only as a "
+                         "DECLARED data mix.")
+    ap.add_argument("--t3-alpha-start", type=float, default=-1.0,
+                    help="curriculum exponent at step 0. NEGATIVE = biased "
+                         "towards FREE FLOW, which is what 'free-flow -> "
+                         "dense' means; 0 = uniform.")
+    ap.add_argument("--t3-alpha-end", type=float, default=1.0,
+                    help="curriculum exponent after warmup (biased towards "
+                         "dense interaction). Must be >= --t3-alpha-start.")
+    ap.add_argument("--t3-warmup-frac", type=float, default=0.5,
+                    help="fraction of training over which alpha ramps "
+                         "start -> end; held at end afterwards")
+    ap.add_argument("--t3-floor", type=float, default=0.25,
+                    help="weight floor; MUST be > 0 (a negative exponent on a "
+                         "zero floor is infinite, and floor>0 is what keeps "
+                         "every window reachable = the parity invariant)")
+    # ---- F-10 / catalog S3: the DOMAIN-STRATIFIED MIX (DEFAULT OFF) --------
+    ap.add_argument("--domain-strata", type=str, default="",
+                    help=f"path to the per-EPISODE {DOMAIN_STRATA_SCHEMA} "
+                         "artifact (JSON: schema/provenance/strata, keyed by "
+                         "tanitad.data.v2_dataset.stable_episode_id). Unset = "
+                         "the incumbent uniform episode draw, byte-identical. "
+                         "⛔ The provenance stamp is MANDATORY: the strata are "
+                         "label-derived (VLM/scena), and a label-derived "
+                         "SAMPLER input is admissible only as a DECLARED data "
+                         "MIX (DIAGRAM_CONFORMANCE.md:69). ⛔ The join is "
+                         "STABLE-ID ONLY — the legacy 16-bit id collides on "
+                         "69/2400 train clips. ⛔ An UNLABELLED episode is "
+                         "REFUSED, never dropped: dropping re-selects the "
+                         "corpus. ⚠️ This acts on the EPISODE draw; O4/T3 act "
+                         "on WINDOWS inside an episode, so they compose "
+                         "rather than conflate.")
+    ap.add_argument("--domain-tau", type=float, default=1.0,
+                    help="mix temperature. 0 = PROPORTIONAL (every episode "
+                         "equally likely — the matched control, same code "
+                         "path and same RNG as a live mix); 1 = BALANCED "
+                         "(every stratum an equal share of the draw). Stratum "
+                         "mass goes as n_k**(1-tau).")
+    ap.add_argument("--domain-max-amp", type=float,
+                    default=DOMAIN_MIX_MAX_AMPLIFICATION,
+                    help="⛔ ceiling on how much more often the MOST "
+                         "up-weighted episode may be drawn than under a "
+                         "uniform draw. MEASURED at N=2376: a fully balanced "
+                         "6-stratum mix amplifies 11.0x and costs 73% of the "
+                         "effective corpus. Raising this is a DECLARED "
+                         "decision, not a convenience.")
+    ap.add_argument("--domain-min-stratum", type=int,
+                    default=DOMAIN_MIX_MIN_STRATUM_EPISODES,
+                    help="⛔ refuse a stratum holding fewer episodes than "
+                         "this: at tau=1 it still receives 1/S of EVERY "
+                         "batch, which turns it into a memorisation target.")
+    # ---- E-ENC arm (§0 Q1) -------------------------------------------------
+    ap.add_argument("--f-hidden-tac", type=int, default=512,
+                    help="FTac residual-MLP hidden width, tactical layer")
+    ap.add_argument("--f-hidden-str", type=int, default=512,
+                    help="FTac residual-MLP hidden width, strategic layer")
+    ap.add_argument("--f-blocks", type=int, default=3,
+                    help="FTac residual blocks per layer predictor")
+    ap.add_argument("--vit5-encoder", action="store_true",
+                    help="ViT-5 recipe encoder (arXiv 2602.08071): RMSNorm + "
+                         "LayerScale + QK-Norm + register tokens + joint "
+                         "APE/2D-axial-RoPE, GeLU MLP (ViT-5 REJECTS SwiGLU). "
+                         "CHANGES THE PARAMETER COUNT -- a declared arm, never "
+                         "a silent upgrade.")
+    ap.add_argument("--n-registers", type=int, default=4,
+                    help="register tokens; consumed internally and STRIPPED "
+                         "before the readout (they are not at a place in the "
+                         "image)")
+    ap.add_argument("--per-layer-encoders", action="store_true",
+                    help="E-ENC arm (b): per-layer encoders instead of one "
+                         "common encoder + adapters. Decide at MATCHED TOTAL "
+                         "PARAMS; a tie goes to the common encoder.")
+    # ---- §4b horizon -------------------------------------------------------
+    ap.add_argument("--plan-steps", type=int, default=PLAN_STEPS)
+    ap.add_argument("--dt", type=float, default=0.1)
+    ap.add_argument("--a-max", type=float, default=A_MAX)
+    ap.add_argument("--kappa-max", type=float, default=KAPPA_MAX)
+    # ---- X3 isolation ------------------------------------------------------
+    ap.add_argument("--no-isolate-planner", action="store_true",
+                    help="⛔ MIS-WIRED ARM: let planner/goal heads backprop "
+                         "into the encoder. Pre-registered control only.")
+    ap.add_argument("--no-isolate-uplink", action="store_true",
+                    help="⛔ co-trained control arm: no stop-grad on the "
+                         "higher->lower latent path")
+    ap.add_argument("--uplink", choices=("stopgrad", "ema"), default="stopgrad")
+    ap.add_argument("--ema-decay", type=float, default=0.996)
+    ap.add_argument("--ema-decay-ramp", choices=("off", "cosine"),
+                    default="off",
+                    help="tau schedule for the O5-EMA TEACHER only (--o5-target ema). off = the incumbent FIXED --ema-decay, bit-identical. cosine = BYOL's ramp (2006.07733, banked): tau rises from --ema-decay-start to --ema-decay-end over --steps, so the teacher is FAST (close to the student) early instead of random-dominated, and slow late. D-EMA-ADOPT's PI condition for shipping v7f with the EMA teacher. INERT without an EMA teacher, and it never touches the adapter EMAs.")
+    ap.add_argument("--ema-decay-start", type=float, default=0.99,
+                    help="tau at step 0 of the ramp (BYOL's tau_base). Read only when --ema-decay-ramp is not off.")
+    ap.add_argument("--ema-decay-end", type=float, default=None,
+                    help="tau the ramp ENDS at, at --steps. Default = --ema-decay, so the ramp LANDS exactly where the fixed arm sat for its whole run — which is what makes the ramped/fixed pair a one-variable comparison. ⚠️ BYOL ends at 1.0; we deliberately do NOT, because ending at a frozen teacher would confound 'ramped' with 'frozen at the end'. May be exactly 1.0 (BYOL's own endpoint) if an arm wants the literal recipe.")
+    ap.add_argument("--o5-target", choices=("live", "ema", "frozen"),
+                    default="live",
+                    help="O5's target-latent source. live = the incumbent (stop-grad only). ema = EMA-slow encoder+readout copies (the Drive-JEPA teacher core; P0 bake-off, PI-approved 2026-08-27). Decay = --ema-decay. frozen = a FIXED copy of encoder+readout taken at init (after --init-from, via the resync) and NEVER updated — the movable-target-removed cell (MM-E4 L2, PREREG_DRIFT_ATTACK_LADDER).")
+    ap.add_argument("--o5-target-crop", type=float, default=0.0,
+                    help="MM-E4 L4 (PREREG_DRIFT_ATTACK_LADDER Amendment A): crop the O5 TARGET frames only to a random contiguous azimuthal window of this fraction of full width (uniform offset per sample, SAME window across that sample's k future frames), resized back to full width with antialias BEFORE the target encoder. The input path is untouched, vertical is untouched. Geometrically clean ONLY on our CYLINDRICAL frames (column linear in azimuth, so a horizontal crop is a pure FOV restriction). 0 = off (bit-identical); composable with any --o5-target.")
+    # ---- measures ----------------------------------------------------------
+    ap.add_argument("--o1-k", type=int, default=10,
+                    help="O1/L_ctrl roll horizon (the W3 probe's k)")
+    ap.add_argument("--w-o1-ctrl", type=float, default=1.0)
+    ap.add_argument("--w-o1-fact", type=float, default=1.0)
+    ap.add_argument("--w-o1-scene", type=float, default=0.3)
+    # E-DEC-9: distillation into a FROZEN EXTERNAL encoder. DEFAULT 0.0 => the
+    # head is never built, the loss is bit-identical, the state_dict is unchanged.
+    ap.add_argument("--w-o7-distill", type=float, default=0.0,
+                    help="weight for O7 frozen-teacher distillation (E-DEC-9); "
+                         "0 disables it entirely")
+    ap.add_argument("--o7-model", type=str, default=O7_DEFAULT_MODEL,
+                    help="frozen teacher for O7")
+    # E-DEC-10: RAW-PIXEL external target — the teacher-free counterpart of O7.
+    # E-DEC-13: masked-latent prediction against an EMA TARGET ENCODER.
+    # TEACHER-FREE (our own slow copy). Default 0.0 => nothing is constructed.
+    ap.add_argument("--w-o9-ema", type=float, default=0.0,
+                    help="weight for O9 EMA-target masked-latent (E-DEC-13)")
+    ap.add_argument("--o9-momentum", type=float, default=0.996)
+    ap.add_argument("--o9-mask-frac", type=float, default=0.5)
+    ap.add_argument("--o9-neighbour-k", type=int, default=0,
+                    help="DMT-JEPA neighbour-aggregated targets; 0 = own cell")
+    ap.add_argument("--w-o10-psg", type=float, default=0.0,
+                    help="O10 PSG (E-DEC-18): a SHARED physical-state head on the "
+                         "ENCODED and the PREDICTED latent, supervised by our own "
+                         "banked 3D cuboids. Training-time only; the planner never "
+                         "calls it (inference stays VISION-ONLY).")
+    ap.add_argument("--psg-labels", type=str, default=None,
+                    help="jsonl of per-frame ego-frame cuboids (obstacle.offline).")
+    ap.add_argument("--freeze-readout", action="store_true",
+                    help="E-DEC-20c: freeze the readout too, so the PREDICTOR is "
+                         "the only trainable party. Separates which module goes "
+                         "degenerate on a frozen feature field.")
+    ap.add_argument("--psg-enc-only", action="store_true",
+                    help="E-DEC-18c: apply PSG to the ENCODED latent ONLY, so no "
+                         "gradient reaches the predictor. PhyLatent's mechanism IS "
+                         "the shared head on BOTH branches, so this is the "
+                         "diagnostic that says whether the predictor damage comes "
+                         "from that mechanism or merely from adding a loss.")
+    ap.add_argument("--psg-eval-every", type=int, default=3,
+                    help="⛔ LEAK GUARD: every Nth sorted clip is HELD OUT of PSG "
+                         "supervision. The PSG target DETERMINES n_agents and "
+                         "lead_gap_m, so an arm supervised on all clips cannot be "
+                         "scored on either. Environment decodability is read on the "
+                         "held-out clips only.")
+    ap.add_argument("--w-o8-pixel", type=float, default=0.0,
+                    help="weight for O8 raw-pixel distillation (E-DEC-10); "
+                         "0 disables it entirely")
+    # E-DEC-14 (PI's split-encoder idea): freeze the ENCODER only, leaving the
+    # readout and predictor trainable. E-DEC-12 measured that self-supervised
+    # post-training ERODES distilled content (+0.3274 -> +0.1327 over 2k steps);
+    # freezing makes erosion IN THE ENCODER structurally impossible, so if the
+    # content still decays the erosion is happening in the READOUT — which is
+    # exactly what this flag isolates. Default off => nothing changes.
+    ap.add_argument("--o1-stopgrad-factual", action="store_true",
+                    help="LIT-3: treat the factual prediction as a "
+                         "stop-gradient reference in O1's separation term")
+    ap.add_argument("--freeze-encoder", action="store_true",
+                    help="freeze the encoder; train readout+predictor only "
+                         "(E-DEC-14 split-encoder probe)")
+    # ⛔ P1 (2026-09-06): the gradient-reach census RECORDS by default and
+    # refuses only when asked. Default OFF keeps every banked arm launchable
+    # bit-identically -- S-W legitimately runs with O1/O2/O3 at 0.0.
+    ap.add_argument("--refuse-unreached", action="store_true",
+                    help="REFUSE the launch if any parameter in the optimizer "
+                         "receives no gradient at this run's loss weights. "
+                         "Default OFF: the census is written to config.json / "
+                         "grad_reach.json either way (see grad_reach_census)")
+    # ⭐ THE COMPANION THAT MAKES THE REFUSAL ADOPTABLE. Without it,
+    # --refuse-unreached cannot go into PREREG_V7F.md §9's launch line at all:
+    # that line sets --w-o1-* 0 --w-o3 0 for measured reasons, so
+    # step_readout_op and masked_cells are starved BY DESIGN and the run would
+    # refuse every time. A flag that always refuses is a flag that gets
+    # deleted. Naming the accepted modules turns a silent default into a
+    # RECORDED decision, and still refuses for anything nobody decided about.
+    ap.add_argument("--allow-unreached", nargs="*", default=[], metavar="MODULE",
+                    help="module prefixes this run KNOWINGLY leaves at "
+                         "initialisation (e.g. step_readout_op masked_cells). "
+                         "Only meaningful with --refuse-unreached; recorded in "
+                         "config.json. Matching is on path segments.")
+    # ⛔ A GATE ROW CARRIES ITS ARM. Three arm-substitutions have been found in
+    # v7-land (an L1 "no collapse" pass, the 39/25/14 signature, the champ30k
+    # mislabel). This makes the runbook's exact-count assertion a LAUNCH
+    # PRECONDITION instead of a number retyped into a report afterwards.
+    # Default None = OFF, so no existing launch line changes behaviour.
+    ap.add_argument("--expect-n-trainable", type=int, default=None,
+                    help="REFUSE the launch unless the post-freeze trainable "
+                         "parameter count equals this exactly. Checked by "
+                         "assert_declared_freezes_hold before step 1. "
+                         "v7f at PREREG_V7F.md 9: 143949315.")
+    # H-RANK-22: O1 is the term that both buys action-sensitivity and collapses
+    # the rank. This confines its gradient to the PREDICTOR (encoder detached for
+    # the O1 term only). Default OFF => incumbent loss bit-identical.
+    ap.add_argument("--o1-detach-encoder", action="store_true",
+                    help="confine O1 to the predictor: detach encoder states for "
+                         "the O1 term only (H-RANK-22)")
+    ap.add_argument("--dkappa", type=float, default=DKAPPA_DEFAULT)
+    ap.add_argument("--daccel", type=float, default=DACCEL_DEFAULT)
+    ap.add_argument("--rand-dkappa-max", type=float, default=0.05)
+    ap.add_argument("--rand-daccel-max", type=float, default=3.0)
+    ap.add_argument("--w-o2", type=float, default=1.0)
+    ap.add_argument("--o2-tau-s", type=float, default=2.0,
+                    help="O2 time-to-reach decay constant, SECONDS (never "
+                         "metres — HIERARCHY_VOCABULARY §2)")
+    ap.add_argument("--w-o3", type=float, default=1.0)
+    ap.add_argument("--o3-mode", choices=("action", "static"), default="action")
+    ap.add_argument("--o3-blocks", type=int, default=2)
+    ap.add_argument("--o3-block-h", type=int, default=2)
+    ap.add_argument("--o3-block-w", type=int, default=2)
+    ap.add_argument("--o3-band-rows", type=int, default=0,
+                    help="also mask the bottom N near-field readout rows")
+    ap.add_argument("--o4-alpha", type=float, default=1.0,
+                    help="O4 saliency exponent; 0 = uniform (control arm)")
+    ap.add_argument("--o4-floor", type=float, default=0.25)
+    ap.add_argument("--w-o5", type=float, default=1.0)
+    # ---- O11-CF: the objective that CANNOT be minimised action-blind -------
+    ap.add_argument("--cond-param", type=str, default=COND_INCUMBENT,
+                    choices=[COND_INCUMBENT, COND_EGO_STATE],
+                    help="conditioning parameterisation. DEFAULT is the incumbent "
+                         "[atan(L*kappa), a_long, v]. 'omega_accel_v' feeds the "
+                         "MEASURED EGO STATE [yaw_rate, a_long, v] instead (PI "
+                         "directive 2026-08-26): steer is a bicycle-model proxy "
+                         "with a LEGACY 2.9 m wheelbase and carries NO SPEED, "
+                         "while omega = v*kappa is what actually determines how "
+                         "the image moves. The conversion is EXACT (the wheelbase "
+                         "cancels), so no re-cache and no parity break. "
+                         "⛔ It DOES change the predictor's input distribution -- "
+                         "never compare arms across this flag.")
+    ap.add_argument("--w-o13-ego", type=float, default=0.0,
+                    help="O13-EGO: predict delta(speed, yaw) at t+k from the "
+                         "PREDICTED LATENT ALONE, through a FROZEN random "
+                         "readout. The action is NOT an input to the readout "
+                         "(E-DEC-51 measured that a head given both learns to "
+                         "read the action and ignore the latent), so the "
+                         "action's only path to this loss is through the "
+                         "predictor. Floor is EXACTLY 1.0; watch o13_excess.")
+    ap.add_argument("--o13-k", type=int, default=4,
+                    help="O13 horizon in operative steps (default 4 = the "
+                         "horizon at which E-DEC-50 measured the action's "
+                         "effect on ego dynamics: dv t 2.56, dyaw t 4.57).")
+    ap.add_argument("--o13-seed", type=int, default=1300,
+                    help="seed for O13's FROZEN readout. Changing it changes "
+                         "the target direction -- never compare o13_loss "
+                         "across different seeds.")
+    ap.add_argument("--tac-vocab-version", default="v7.0",
+                    help="vocabulary version for ALL six surfaces (v7.0 = the frozen FlyWheel vocabulary, MANDATORY default for new runs; recorded-args resumes of old runs resolve v6.0).")
+    ap.add_argument("--w-o14", type=float, default=0.0,
+                    help="O14 future-observation aux (PREREG_O14_FUTURE_OBS; R2, PI-approved 2026-08-27). 0 = bit-identical trainer.")
+    ap.add_argument("--o14-mode", choices=("fut", "rec", "fut_diff"),
+                    default="fut",
+                    help="fut: grey pixels at t+k. rec: at t (the R1 contrast). fut_diff: pix(t+k)-pix(t).")
+    ap.add_argument("--o14-k", type=int, default=4,
+                    help="horizon of the pixel target, in ticks (E-DEC-63 measured at k=4).")
+    ap.add_argument("--o14-shuffle-targets", action="store_true",
+                    help="DELIBERATE-REGRESSION arm: cyclic-shift the targets across the batch (a derangement — randperm fixes points, the o11 lesson). The absorption gate MUST NOT move under this flag.")
+    ap.add_argument("--w-o11-cf", type=float, default=0.0,
+                    help="O11-CF counterfactual action contrastive (E-DEC-30). "
+                         "0.0 => incumbent loss bit-identical. ADDS to O5, "
+                         "never replaces it: O11 alone is minimised by "
+                         "zhat = f(z) + lambda*a, which separates actions "
+                         "perfectly and predicts nothing.")
+    ap.add_argument("--o11-k", type=int, default=6,
+                    help="rollout step the contrastive is taken at (clamped to "
+                         "--o5-k). Short is deliberate: the action's influence "
+                         "on the scene is largest early and is swamped by "
+                         "autocorrelation later.")
+    ap.add_argument("--o11-tau", type=float, default=1.0,
+                    help="InfoNCE temperature over squared latent distance.")
+    ap.add_argument("--o11-negs", type=int, default=1,
+                    help="counterfactual action sequences per window. The "
+                         "no-information floor is ln(1+n) EXACTLY, so this "
+                         "changes the floor -- never compare o11_loss across "
+                         "different values, compare o11_excess.")
+    ap.add_argument("--o5-k", type=int, default=20,
+                    help="O5 rollout length in 10 Hz steps (60 = the §4b 6 s "
+                         "horizon; needs a cache with max_horizon >= 60)")
+    #: ⭐ LeWM (banked) uses MSE on the next embedding; this programme's
+    #: incumbent is L1 over a k-step rollout. MEASURED 2026-08-22: the
+    #: two-term o5+o6 arm was the only one to raise effective rank, so the
+    #: remaining deviation from LeWM is worth a flag, not a fork.
+    #: ⭐ rows SIGReg ESTIMATES from = --sigreg-accum x (batch*window).
+    #: 1 = off (incumbent, 24 rows at batch 4 / window 6).
+    ap.add_argument("--sigreg-accum", type=int, default=1)
+    #: ⭐ Sub-JEPA subspace count K (1 = off = LeWM full-space).
+    ap.add_argument("--sigreg-subspaces", type=int, default=1)
+    ap.add_argument("--o5-form", choices=("l1", "mse"), default="l1")
+    ap.add_argument("--o5-mode",
+                    choices=("uniform", "linear-decay", "endpoint"),
+                    default="uniform")
+    ap.add_argument("--w-o6", type=float, default=0.1)
+    ap.add_argument("--o6-innovation", action="store_true",
+                    help="MM-E4 L1 (PREREG_DRIFT_ATTACK_LADDER): O6's sketched test runs on the dynamics INNOVATIONS dz - g(z_t) instead of the states. g = per-batch closed-form ridge, fit under no_grad on the OPPOSITE half-batch (cross-fitted both ways — never fit and scored on the same rows; lambda fixed at O6_INNOVATION_RIDGE_REL). Off = bit-identical incumbent O6.")
+    ap.add_argument("--o6-innovation-shuffle", action="store_true",
+                    help="deliberate-regression arm OF --o6-innovation (instrument validity, prereg-committed): permute z_t across rows before fitting g, so g carries no dynamics and the constraint must degenerate to ~plain SIGReg on centred dz. Requires --o6-innovation.")
+    ap.add_argument("--sigreg-slices", type=int, default=512)
+    ap.add_argument("--sigreg-free-dims", type=int, default=0)
+    ap.add_argument("--spectrum-every", type=int, default=200)
+    # ⛔ THE POWER FIX (SIGREG_GATE_POWER.md, 2026-08-16). One batch is 48 rows
+    # over 4 episodes, so rank_ceiling = 47 and the >= 0.8x criterion fires on
+    # noise 9-38 % of the time with power 0.11 against a 1.43x true collapse.
+    # Pooling N CONSECUTIVE steps raises the ceiling to min(N*48-1, d_op) AND
+    # the cluster count to ~4N. 32 is the recommended setting: ceiling 1535,
+    # ~14 min of Thor wall-clock, ~12.6 MB of CPU ring buffer.
+    # DEFAULT 1 = no accumulator, byte-for-byte the incumbent emission.
+    ap.add_argument("--spectrum-accum", type=int, default=1,
+                    help="pool this many CONSECUTIVE steps into the O6 "
+                         "spectrum reading (1 = off, the incumbent path)")
+    # >0 turns ON the interval: a leave-one-CLUSTER-out jackknife (the only
+    # candidate MEASURED to cover — 0.85/0.867 vs the bootstrap's 0.25/0.00),
+    # plus this many bootstrap reps kept as a labelled diagnostic. A verdict
+    # REFUSES to fire without an interval, so this is required for a real gate.
+    # ⚠️ COST, MEASURED on the dev box (6 threads, may differ on Thor's CPU):
+    # 1536 rows x 2048 -> plain 0.291 s, with interval 28.28 s = 0.54 % of a
+    # 200-step interval at 26.35 s/step. 384 rows -> 0.39 s (0.007 %).
+    ap.add_argument("--spectrum-ci-reps", type=int, default=0,
+                    help="0 = no interval. >0 emits the cluster JACKKNIFE "
+                         "interval on effective_rank plus this many bootstrap "
+                         "reps as a diagnostic; blocks are --window rows")
+    # ---- X4: per-layer spectrum records (2026-08-16) -----------------------
+    # ⚠️ z_tac/z_str contribute ONE row per window (the uplink reads only the
+    # window's last frame), so their per-batch ceiling is B-1 = 7 on the live
+    # geometry and their verdicts are INCONCLUSIVE until pooled to the
+    # LAYER'S OWN ceiling (tac 256, str 128 — x4_layer_power.json; NOT z_op's
+    # 1024, which d_str=256 can never reach). --spectrum-accum 33 is the
+    # smallest accum that makes ALL layers adjudicable (32 leaves tac ONE ROW
+    # short: 32*8-1 = 255 < 256). ADDITIVE: a new "x4" key in the emission
+    # record; the z_op/O6 path is not governed by this flag.
+    ap.add_argument("--x4-spectrum-layers", default="tac,str",
+                    help="comma list from {tac,str} for the X4 per-layer "
+                         "spectrum records, or 'none' to disable. 'op' is "
+                         "refused: the O6 z_op monitor is the incumbent "
+                         "block and cannot be moved under this flag.")
+    ap.add_argument("--w-t1", type=float, default=1.0)
+    ap.add_argument("--w-s1", type=float, default=1.0)
+    # ---- S2: strategic goal supervision (S-S/S-J) — DEFAULT OFF ------------
+    ap.add_argument("--w-s2-goal", type=float, default=0.0,
+                    help="weight on the S2 strategic-goal supervision (CE on "
+                         "g_str/a_str + masked arg L1 vs s2-strategic-v1 "
+                         "labels). 0.0 = the term is absent and the loss is "
+                         "bit-identical. GOAL HEADS ONLY, never a trunk loss "
+                         "(binding); in force only in S-S/S-J, where "
+                         "layer_str trains. Needs --s2-labels.")
+    ap.add_argument("--nav-labels", default=None,
+                    help="v7 label blob (s2-geom-v7) supplying the NAV COMMAND "
+                         "per clip. ⭐ PI 2026-08-31: the nav command combines "
+                         "Alpamayo CoT and ego data and is PI-reviewed; the "
+                         "record's own `provenance: ego-future` stamp means the "
+                         "loader needs allow_oracle_nav, which this path sets and "
+                         "RECORDS in the manifest (config.json) — the stamp is how "
+                         "the decision travels with the arm, not a way around it. "
+                         "Joined to episodes by the cache's sorted *.v2ep.pt order, "
+                         "verified by count.")
+    ap.add_argument("--nav-semantics", default="t0_constant",
+                    choices=["t0_constant", "decremented"],
+                    help="how nav args age across a clip. 't0_constant': every "
+                         "window carries the t0 values (simple; the window 15 s "
+                         "later still says 'turn right in 106.5 m'). "
+                         "'decremented': subtract travelled distance/time — what a "
+                         "real nav system does, ⚠️ but it makes the args a FUNCTION "
+                         "OF EGO STATE and must clear the goal/situation "
+                         "information-disjointness rule first (PI 2026-08-03).")
+    ap.add_argument("--s2-labels", default=None,
+                    help="strategic/tactical label artifact — TWO schemas, "
+                         "SNIFFED from the FIRST RECORD, never from the name "
+                         "(SPEC_V7_LABEL_TRAINER_WIRING.md §2). "
+                         "(a) s2-geom-v7 = the v7.2 blob "
+                         "(labels/s2_labels_v7.2_{train,eval}.jsonl.gz, loaded "
+                         "through tanitad.data.v7_labels.load_v7_labels — the "
+                         "STAMP): its md5 must be one of intrain_eval.V72's two "
+                         "canonical pins unless --allow-any-labels; the clip "
+                         "index beside it is resolved BY CONTENT "
+                         "(intrain_eval.resolve_v72) and cross-checked; the "
+                         "strategic ids land on the v7 heads; the FACTORED "
+                         "tac_lat_id/tac_lon_id/tac_valid keys ride along "
+                         "(no loss reads them yet); args are NOT supervised "
+                         "(named dict, no slot encoder). "
+                         "(b) s2-strategic-v1 label artifact: the labels DIR "
+                         "(clip_index.json + s2_labels_*.jsonl) or one "
+                         ".jsonl with clip_index.json beside it. ⛔ THE "
+                         "CANONICAL SET IS s2_labels.S2_CANONICAL_LABELS_REL "
+                         f"({S2_CANONICAL_LABELS_REL}) — the ORIGINAL "
+                         "…/2026-08-16-s2-v1-labels/labels/ delivery is "
+                         "SUPERSEDED (the PI adjudicated its lane-change rows "
+                         "~78% wrong, 06b8782) and the loader REFUSES it by "
+                         "its SUPERSEDED.json marker. The join is by "
+                         "tanitad.data.v2_dataset.stable_episode_id ONLY "
+                         "— the legacy 16-bit id collides (69/2400 + 7/600) "
+                         "and is refused. ROUTE_TO records are refused "
+                         "(G1 gated), mirroring s2_schema.validate().")
+    ap.add_argument("--allow-any-labels", action="store_true", default=False,
+                    help="waive the v7.2 md5 pin on --s2-labels (the two "
+                         "canonical blobs are intrain_eval.V72). The md5 is "
+                         "printed and recorded EITHER way; a non-canonical "
+                         "blob is stamped canonical=false in config.json. Six "
+                         "copies of that blob exist under three roots with "
+                         "differing md5s — this flag is for a deliberate "
+                         "experiment on another one, never a convenience. "
+                         "Refused without --s2-labels (inert flag).")
+    # ---- R3: ALL tactical labels -> the tactical layer — DEFAULT OFF -------
+    ap.add_argument("--w-tac-label-all", type=float, default=0.0,
+                    help="⭐ R3 (PI 2026-09-27, BINDING): weight on the "
+                         "ALL-TACTICAL-LABELS term — CE on a_lat/a_lon "
+                         "(a_tac.lat/.lon) + multi-label BCE on the 22-token "
+                         "g_tac goal SET (every traffic-light colour: "
+                         "D-TLIGHT-1) + masked L1 on SPEED_BAND's (v_lo, v_hi) "
+                         "args (PROPOSED slots arg0/arg1). 0.0 = the term is "
+                         "absent and the loss is bit-identical. HEADS ONLY "
+                         "(the planner cut). In force only in S-T/S-J, where "
+                         "layer_tac trains. Needs --s2-labels <the v7.2 blob> "
+                         "and --goal-multilabel (so the supervised gates are "
+                         "what conditions the operative planner); refused "
+                         "with --goal-factored.")
+    ap.add_argument("--tac-goal-negatives", default="measured",
+                    choices=("measured", "geometry", "all",
+                             "cot-absence-negative"),
+                    help="the goal-SET NEGATIVE policy for --w-tac-label-all "
+                         "(v7_labels.tactical_goal_targets; the refcv3 flag, "
+                         "same name). 'measured' (DEFAULT) supervises "
+                         "absence only for tokens the blob emits from "
+                         "geometry (17/22 classes trainable on the v7.2 train "
+                         "blob, MEASURED); 'cot-absence-negative' is the PI's "
+                         "2026-09-16 ruling and needs --cot-negative-sidecar; "
+                         "'all' is the comparison arm. Refused as inert "
+                         "without --w-tac-label-all.")
+    ap.add_argument("--cot-negative-sidecar", default=None,
+                    help="the PI 2026-09-16 absence-as-negative SIDECAR "
+                         "(tanitad.cot_absence_negative/1) — the permission "
+                         "token for --tac-goal-negatives cot-absence-negative. "
+                         "⛔ v7_labels.load_cot_negative_sidecar refuses a "
+                         "sidecar built over another blob md5.")
+    # ---- X2 seam dump: bank the 60-step plan — DEFAULT OFF ----------------
+    ap.add_argument("--dump-seam-plan", default=None,
+                    help="DIR to bank the emitted 60-step plan into, one "
+                         "seam_<step>.pt per checkpoint save, for "
+                         "taniteval/tools/seam_probe.py. Unset = nothing is "
+                         "banked and the module is never imported. ZERO extra "
+                         "GPU: the plan is already computed for the step's "
+                         "loss. ⚠️ S-W BANKS NOTHING — the emission head is "
+                         "zero-init there, so the plan is all-zero and the "
+                         "probe correctly returns DEGENERATE; this is an S-T"
+                         "-and-later instrument.")
+    ap.add_argument("--dump-seam-plan-degenerate", action="store_true",
+                    help="bank the plan even when every control is exactly "
+                         "zero (the S-W zero-init case). Only for keeping the "
+                         "degenerate artifact deliberately — a dump banked "
+                         "this way CANNOT answer the seam question.")
+    ap.add_argument("--lambda-plan", type=float, default=None,
+                    help="planner gradient scale; unset = the STAGE default "
+                         f"({STAGE_LAMBDA_PLAN}). 0 in S-W BY CONSTRUCTION.")
+    # ---- data --------------------------------------------------------------
+    ap.add_argument("--v2-cache", nargs="+", default=[])
+    ap.add_argument("--exclude-eval-clips", default="auto",
+                    metavar="auto|none|PATH",
+                    help="⛔ D-V7-EVAL-EXCLUSION (BACKLOG R8). Drop the v7.2 "
+                         "EVAL split's clips from the TRAINING corpus before "
+                         "the dataset is built. 'auto' (DEFAULT) resolves the "
+                         "canonical v7.2 EVAL blob BY CONTENT (md5 "
+                         "aa12c948f062181c3297265b51526ec5, 147 records; "
+                         "intrain_eval.V72) beside --s2-labels/--nav-labels, "
+                         "beside the cache, or under $TANITAD_V72_ROOT, and "
+                         "falls back to the committed digest set "
+                         "tanitad/data/v72_eval_clip_digests.json when the "
+                         "blob is not on this host — the two are CROSS-CHECKED "
+                         "whenever both resolve. A PATH names the blob or its "
+                         "clip index explicitly. 'none' switches the exclusion "
+                         "OFF and then REFUSES on an overlap unless "
+                         "--allow-eval-clips-in-train is also given. "
+                         "⛔ WHY THE DEFAULT IS ON: 141 of the 147 v7.2 EVAL "
+                         "records have their pixels inside the 4,713-clip B1 "
+                         "cache, so a v7f run on it would train its world-model "
+                         "objectives on the evaluation split and nothing would "
+                         "crash. The exclusion is a no-op on a cache that does "
+                         "not overlap (refav1/refcv3), so the default costs "
+                         "those arms nothing.")
+    ap.add_argument("--allow-eval-clips-in-train", action="store_true",
+                    default=False,
+                    help="⛔ THE STAMPED OVERRIDE: keep the v7.2 EVAL clips IN "
+                         "the training set. Printed as a banner and recorded in "
+                         "config.json under `eval_exclusion`, so no eval number "
+                         "from this arm can ever be quoted as held-out without "
+                         "the stamp being visible. For a deliberate experiment "
+                         "(e.g. measuring the contamination itself), never a "
+                         "convenience.")
+    # ⛔ accepted only so the launch fails with an EXPLANATION rather than
+    # argparse's bare "unrecognized arguments" (P4-5). It is refused in main().
+    ap.add_argument("--v2-val-cache", nargs="+", default=[],
+                    help="⛔ NOT SUPPORTED in v6 — refused at startup. Use "
+                         "train_flagship_v4.py for a held-out gate.")
+    ap.add_argument("--v2-lru", type=int, default=64)
+    ap.add_argument("--v2-subframe", default=None, metavar="HxW")
+    ap.add_argument("--frame-hfov", type=float, default=120.0)
+    ap.add_argument("--projection", default="cylindrical")
+    ap.add_argument("--require-parity", action="store_true", default=True)
+    ap.add_argument("--no-require-parity", dest="require_parity",
+                    action="store_false")
+    ap.add_argument("--eps-per-batch", type=int, default=4)
+    ap.add_argument("--max-horizon", type=int, default=None,
+                    help="future steps each window carries. Unset = derived "
+                         "from the stage's own needs (o1_k, o5_k, stride_tac, "
+                         "stride_str, plan_steps). ⚠️ NOT inherited from the "
+                         "v4 horizon plan, which is 20 and would make §4b's "
+                         "6 s horizon structurally untrainable.")
+    # ---- optimisation ------------------------------------------------------
+    ap.add_argument("--steps", type=int, default=30000)
+    ap.add_argument("--batch", type=int, default=16)
+    ap.add_argument("--lr", type=float, default=1e-4)
+    ap.add_argument("--wd", type=float, default=0.05)
+    ap.add_argument("--clip", type=float, default=1.0)
+    ap.add_argument("--log-every", type=int, default=50)
+    ap.add_argument("--save-every", type=int, default=1000)
+    ap.add_argument("--device", default="cuda")
+    ap.add_argument("--no-amp", action="store_true")
+    ap.add_argument("--seed", type=int, default=0)
+    # ---- dry run -----------------------------------------------------------
+    ap.add_argument("--dry-run", action="store_true",
+                    help="build everything, run --dry-steps synthetic CPU "
+                         "steps, write config.json + dry_run.json, exit")
+    ap.add_argument("--dry-steps", type=int, default=2)
+    ap.add_argument("--dry-batch", type=int, default=2)
+    ap.add_argument("--dry-k", type=int, default=12)
+    ap.add_argument("--print-launch", action="store_true",
+                    help="print the PYTHONPATH-correct pod launch line "
+                         "and exit")
+    return ap
+
+
+def _launch_line(a) -> str:
+    argv = " ".join(sys.argv[1:]).replace(" --print-launch", "")
+    return ("PYTHONPATH=/workspace/TanitAD/stack OMP_NUM_THREADS=6 "
+            f"python3 scripts/train_v6_staged.py {argv}")
+
+
+# ============================================================================
+# ⛔⛔ THE EFFECTIVE WEIGHT IS NOT THE ARGPARSE DEFAULT (2026-09-06)
+# ============================================================================
+#
+# `V6LossWeights.for_stage(stage)` REWRITES the argparse defaults per stage, so
+# `--stage S-T --w-o5 1.0` TRAINS NOTHING ON O5 while stamping `w_o5: 1.0` into
+# config.json. ⭐ That is the mechanism behind the already-measured v7f defect:
+# 42 of 138 optimizer tensors received no gradient (5,305,667 params = 52.2 % of
+# a declared trainable budget), because a zero-weighted term is GUARDED OUT of
+# the loss (`if w.seam_op:`) and its modules never enter the autograd graph.
+#
+# ⚠ The hand-written guards below already cover FIVE (stage, term) pairs
+# (w_t2_contrast, w_t5_consist, w_s1_multi, w_select, w_anchor). This is the
+# same judgement made GENERAL and, crucially, made NON-STALING: the zeroing
+# table is DERIVED from `for_stage` itself, so editing `for_stage` moves the
+# guard with it. A hand-copied list is a second source of truth that rots.
+
+#: Every FLOAT term of :class:`V6LossWeights`, discovered from the dataclass so
+#: a term cannot be added to the loss without appearing in the audit.
+_W_FLOAT_TERMS: tuple[str, ...] = tuple(
+    f.name for f in fields(V6LossWeights)
+    if isinstance(getattr(V6LossWeights(), f.name), float))
+
+
+def stage_zeroed_terms(stage: str) -> frozenset[str]:
+    """⭐ The terms ``for_stage`` zeroes — DERIVED FROM ``for_stage`` ITSELF.
+
+    A probe whose every float term is 1.0 goes through the real
+    :meth:`V6LossWeights.for_stage`; whatever comes back 0.0 was zeroed by the
+    stage. ⛔ This is deliberately not a hand-maintained table: a copied list
+    is a second source of truth, and the one thing this programme has measured
+    repeatedly is that the copy goes stale (the "2 of 36 features" count rotted
+    four times, inside the very rule warning about stale counts).
+    """
+    probe = V6LossWeights(**{n: 1.0 for n in _W_FLOAT_TERMS})
+    after = probe.for_stage(stage)
+    return frozenset(n for n in _W_FLOAT_TERMS
+                     if float(getattr(after, n)) == 0.0)
+
+
+#: term -> (operator-facing flag, argparse dest).
+#: ⚠ ``seam_op`` has NO FLAG: ``_weights_from_args`` never sets it, so it is
+#: always the dataclass 1.0 and then zeroed in S-W/S-S. It is listed with a
+#: ``None`` dest rather than omitted, because a term absent from the table
+#: reads as a term that does not exist — and the whole point of the table is
+#: that nothing is invisible. Pinned by tests/test_v6_effective_weights.py.
+W_TERM_FLAGS: dict[str, tuple[str, str | None]] = {
+    "o1_ctrl": ("--w-o1-ctrl", "w_o1_ctrl"),
+    "o1_fact": ("--w-o1-fact", "w_o1_fact"),
+    "o1_scene": ("--w-o1-scene", "w_o1_scene"),
+    "o2_nearfield": ("--w-o2", "w_o2"),
+    "o3_masked": ("--w-o3", "w_o3"),
+    "o5_rollout": ("--w-o5", "w_o5"),
+    "o6_sigreg": ("--w-o6", "w_o6"),
+    "o11_cf": ("--w-o11-cf", "w_o11_cf"),
+    "o13_ego": ("--w-o13-ego", "w_o13_ego"),
+    "o14_fut": ("--w-o14", "w_o14"),
+    "t1_latent": ("--w-t1", "w_t1"),
+    "s1_latent": ("--w-s1", "w_s1"),
+    "lambda_plan": ("--lambda-plan", "lambda_plan"),
+    "seam_op": ("(no flag: dataclass default)", None),
+    "w_select": ("--w-select", "w_select"),
+    "w_anchor": ("--w-anchor", "w_anchor"),
+    "w_s2_goal": ("--w-s2-goal", "w_s2_goal"),
+    "w_t2_contrast": ("--w-t2-contrast", "w_t2_contrast"),
+    "w_t5_consist": ("--w-t5-consist", "w_t5_consist"),
+    "w_s1_multi": ("--w-s1-multi", "w_s1_multi"),
+    "w_tac_label_all": ("--w-tac-label-all", "w_tac_label_all"),
+}
+
+
+def _term_precondition(term: str, a) -> tuple[bool, str] | None:
+    """A STRUCTURAL precondition, as ``(met, what-is-missing)``.
+
+    ⛔ This is the "stamped but untrainable" axis, and it is a DIFFERENT
+    question from the weight: ``--goal-point-inject --goal-point-w 0`` builds a
+    head and supervises it with nothing, while ``--w-select 1 --selector none``
+    supervises a scorer that was never built. Both end at zero gradient and
+    neither is visible in the weight.
+    """
+    if term == "w_select":
+        ok = str(getattr(a, "selector", "none")) != "none"
+        return (ok, "--selector none: there is no scorer to train")
+    if term == "w_anchor":
+        ok = str(getattr(a, "anchor_goal", "none")) != "none"
+        return (ok, "--anchor-goal none: there is no anchor objective")
+    if term == "w_t2_contrast":
+        ok = bool(getattr(a, "t2_contrastive", False))
+        return (ok, "no --t2-contrastive: the projector is never built")
+    if term == "w_t5_consist":
+        ok = bool(getattr(a, "t5_pairs", False))
+        return (ok, "no --t5-pairs: windows are drawn INDEPENDENTLY, so the "
+                    "consistency term would compare unrelated episodes")
+    # ⛔⛔ A LABEL PRECONDITION IS EXEMPT UNDER `--dry-run`, AND LEARNING
+    # THAT COST A FALSE REFUSAL. MEASURED 2026-09-06: this function first
+    # refused `--w-s2-goal 1` with no `--s2-labels` unconditionally, which broke
+    # `test_v6_s2_loss.py::test_preflight_refuses_weight_without_labels_on_a_
+    # REAL_run` -- a test whose second half asserts the OPPOSITE for a dry run,
+    # because "a dry-run may smoke the loss on synthetic keys without labels".
+    # ⚠ The distinction is real and not a test quirk: a MODULE precondition
+    # (`--selector none`, no `--t2-contrastive`) is a structural absence in every
+    # mode, while a LABEL precondition is only binding on a run that trains.
+    # ⭐ This is the failure the flag-design rule warns about -- a guard
+    # firing on an honest launch -- caught by an existing test rather than in
+    # production, which is what the suite is for.
+    _dry = bool(getattr(a, "dry_run", False))
+    if term == "w_s2_goal":
+        if _dry:
+            return None
+        ok = bool(getattr(a, "s2_labels", None))
+        return (ok, "no --s2-labels: the CE/L1 has no target")
+    if term == "w_tac_label_all":
+        # MODULE preconditions first (binding in every mode), then the LABEL
+        # one (exempt under --dry-run, the w_s2_goal rule above)
+        if not bool(getattr(a, "goal_multilabel", False)):
+            return (False, "no --goal-multilabel: the supervised sigmoid gates "
+                           "are not what conditions the operative planner")
+        if bool(getattr(a, "goal_factored", False)):
+            return (False, "--goal-factored: e_g_tac comes from the factored "
+                           "pair, not the supervised mixed head")
+        if _dry:
+            return None
+        ok = bool(getattr(a, "s2_labels", None))
+        return (ok, "no --s2-labels: the tactical CE/BCE/L1 has no target")
+    return None
+
+
+#: Terms whose loss rides a PER-BATCH VALIDITY MASK.
+#: ⚠⚠ THIS COLUMN IS WHAT STOPS THE TABLE MANUFACTURING FALSE ALARMS.
+#: MEASURED this week: the route head's apparent zero gradient was a validity
+#: mask, NOT a dead head — forcing ``route_valid=True`` moved the loss
+#: 0.0 -> 0.687 and produced gradient. A zero loss can come from a weight, a
+#: stage override, a missing precondition, OR an all-invalid batch, and a table
+#: that cannot tell them apart is worse than the silence it replaces.
+W_TERM_MASKS: dict[str, str] = {
+    # `s2_valid`, plus the per-family `g_str_valid`/`a_str_valid`. And on the
+    # v7.2 schema the ARG L1 is masked ALL-ZERO by construction
+    # (`V72_ARGS_SUPERVISED = False`) -- exactly zero gradient on that half,
+    # which config.json already records as `args_supervised: false`.
+    "w_s2_goal": "s2_valid (+ g_str_valid/a_str_valid; v7.2 arg L1 is "
+                 "ALL-ZERO masked by V72_ARGS_SUPERVISED=False)",
+    # R3: the record's TACTICAL band (+-2 s around t0 at the shipped bands),
+    # then per-cell goal weights (negatives policy x mask_report class mask)
+    "w_tac_label_all": "tac_valid (the record's tactical band) + per-cell "
+                       "tac_goal_w (negatives policy x class mask) + "
+                       "tac_goal_arg_mask (SPEED_BAND v_lo/v_hi only)",
+}
+
+
+def v6_weight_specs(a) -> list[_ew.TermSpec]:
+    """Every weighted term: argparse default -> later layers -> effective."""
+    declared = V6LossWeights()
+    requested = _weights_from_args(a)
+    in_force = requested.for_stage(a.stage)
+    zeroed = stage_zeroed_terms(a.stage)
+    specs: list[_ew.TermSpec] = []
+    for term, (flag, dest) in W_TERM_FLAGS.items():
+        req = float(getattr(requested, term))
+        eff = float(getattr(in_force, term))
+        if term == "lambda_plan":
+            # ⚠ lambda_plan has THREE layers, not two: argparse default is
+            # None, `resolve_lambda_plan` substitutes STAGE_LAMBDA_PLAN[stage],
+            # and only then does `for_stage` run. The table names whichever
+            # layer actually moved the number.
+            layer = (f"for_stage({a.stage!r})" if term in zeroed
+                     else (None if getattr(a, "lambda_plan", None) is not None
+                           else f"STAGE_LAMBDA_PLAN[{a.stage!r}]"))
+            dec = float(STAGE_LAMBDA_PLAN[a.stage])
+        else:
+            layer = f"for_stage({a.stage!r})" if term in zeroed else None
+            dec = float(getattr(declared, term))
+        specs.append(_ew.TermSpec(
+            term=term, flag=flag, dest=dest or f"__noflag__{term}",
+            declared=dec, requested=req, effective=eff, layer=layer,
+            needs=_term_precondition(term, a), mask=W_TERM_MASKS.get(term)))
+    # O10-PSG is NOT a `V6LossWeights` field -- it is its own argparse weight
+    # with its own label precondition and its own per-clip validity mask. It
+    # belongs in the audit for exactly the reason the audit exists.
+    w_psg = float(getattr(a, "w_o10_psg", 0.0))
+    specs.append(_ew.TermSpec(
+        term="o10_psg", flag="--w-o10-psg", dest="w_o10_psg",
+        declared=0.0, requested=w_psg, effective=w_psg, layer=None,
+        # same label-vs-module distinction as `_term_precondition`: a dry run
+        # smokes the head on synthetic keys, so the label is not binding there.
+        needs=(bool(getattr(a, "psg_labels", None))
+               or bool(getattr(a, "dry_run", False)),
+               "no --psg-labels: the physical-state head has no target"),
+        mask="psg_valid (per-clip: 1.0 only for clips in the train join)"))
+    return specs
+
+
+def effective_weight_rows(a) -> tuple[list[_ew.WeightRow], str]:
+    """The audit rows + how 'did the operator ask for this?' was answered.
+
+    ⛔ The explicit/default distinction is drawn from ARGV, never from the
+    value: an operator may legitimately pass the default, and a default that is
+    0.0 is FINE (the zero defaults exist so that adding a seam to the code
+    cannot change a run that does not ask for it). What must be refused is a
+    value the operator ASKED FOR being silently discarded.
+    """
+    explicit = _ew.explicit_dests(getattr(a, "_ew_parser", None),
+                                  getattr(a, "_ew_argv", None))
+    src = _ew.SRC_ARGV if explicit is not None else _ew.SRC_UNAVAILABLE
+    return _ew.classify_all(v6_weight_specs(a), explicit), src
+
+
+def _preflight_effective_weights(a) -> list[str]:
+    """⛔ REFUSE a launch whose operator-supplied weight the stage discards."""
+    rows, _src = effective_weight_rows(a)
+    if bool(getattr(a, "allow_discarded_weights", False)):
+        rows = [r for r in rows if r.status != _ew.DISCARDED]
+    return _ew.refusals(rows, where=f"--stage {getattr(a, 'stage', '?')}")
+
+
+def effective_weights_stamp(a, *, echo: bool = False) -> dict:
+    """The ``config.json`` block; ``echo`` also prints the table at launch.
+
+    Called from :func:`_run_config`, which is the ONE builder both the dry-run
+    and the real training path use — so the table and the stamp cannot be
+    present on one path and missing on the other. That is deliberate: a guard
+    written, working when called, and called from one launch path of two is a
+    failure this programme has already measured.
+    """
+    rows, src = effective_weight_rows(a)
+    where = f"--stage {getattr(a, 'stage', '?')}"
+    if echo:
+        warn = _ew.unknown_explicitness_warning(rows)
+        if warn:
+            print(f"[v6] WARNING: {warn}", flush=True)
+        print(_ew.render_table(rows, where=where, tag="v6"), flush=True)
+    return _ew.stamp(rows, where=where, explicit_source=src,
+                     acknowledged=bool(getattr(a, "allow_discarded_weights",
+                                               False)))
+
+
+def _preflight_tac_label_all(a, w_tl: float, s2p) -> list[str]:
+    """R3's refusals — every one fires in MILLISECONDS, before the corpus.
+
+    ⛔ Each is a way the term could be ADVERTISED in the launch line and train
+    nothing (or train the wrong head): the w_s2_goal / w_t2_contrast family."""
+    problems: list[str] = []
+    neg = str(getattr(a, "tac_goal_negatives", "measured") or "measured")
+    scp = getattr(a, "cot_negative_sidecar", None)
+    stage = getattr(a, "stage", "?")
+    if w_tl < 0.0:
+        problems.append(f"--w-tac-label-all must be non-negative, got {w_tl}")
+    if not w_tl:
+        # the two policy flags are INERT without the term
+        if neg != "measured":
+            problems.append(
+                f"--tac-goal-negatives {neg} without --w-tac-label-all: a "
+                f"negatives policy for a goal loss that is not in force is an "
+                f"inert flag on the launch line.")
+        if scp:
+            problems.append(
+                f"--cot-negative-sidecar {scp} without --w-tac-label-all: the "
+                f"permission token for a loss that is not in force.")
+        return problems
+    if stage in ("S-W", "S-S"):
+        problems.append(
+            f"--w-tac-label-all {w_tl} in {stage}: the tactical heads "
+            f"(a_lat/a_lon/g_tac) are `layer_tac`, which {stage} FREEZES, and "
+            f"`V6LossWeights.for_stage({stage!r})` zeroes the weight — the "
+            f"launch line would advertise a supervision that trains nothing. "
+            f"R3 is an S-T (or S-J) measure.")
+    if not s2p and not bool(getattr(a, "dry_run", False)):
+        problems.append(
+            f"--w-tac-label-all {w_tl} without --s2-labels: the tactical label "
+            f"term has no labels. Point --s2-labels at the v7.2 blob "
+            f"(s2_labels_v7.2_train.jsonl.gz).")
+    if s2p and Path(s2p).exists():
+        try:
+            route = s2_label_route(s2p)
+        except SystemExit as e:              # an unknown schema, named
+            route = f"refused ({e})"
+        if route != "v72":
+            problems.append(
+                f"--w-tac-label-all with --s2-labels {s2p} (route {route}): "
+                f"only the v7.2 (s2-geom-v7) blob carries tactical labels; the "
+                f"s2-strategic-v1 artifact has none.")
+    if not bool(getattr(a, "goal_multilabel", False)):
+        problems.append(
+            "--w-tac-label-all without --goal-multilabel: the goal-set BCE "
+            "trains INDEPENDENT sigmoid gates, but without --goal-multilabel "
+            "e_g_tac (the operative planner's goal conditioning) reads "
+            "softmax(logits) — the supervised quantity would not be what "
+            "conditions the operative planning (R3). Pass --goal-multilabel "
+            "(0 params, 0 keys).")
+    if bool(getattr(a, "goal_factored", False)):
+        problems.append(
+            "--w-tac-label-all with --goal-factored: e_g_tac is then built "
+            "from the FACTORED pair, so the supervised mixed g_tac would "
+            "condition nothing — and under v7.0 that pair is not a LAT/LON "
+            "split of the v7 goal set: its LAT vocabulary is the unversioned "
+            "v6 partition (ANCHOR_GOAL/CORRIDOR_OFFSET/EVADE_IN_CORRIDOR/"
+            "LAT_UNCONSTRAINED; ANCHOR_GOAL and LAT_UNCONSTRAINED are not v7 "
+            "tokens) and its LON vocabulary is all 22 v7 tokens. A v7 "
+            "LAT/LON partition is an open decision; drop --goal-factored.")
+    vv = str(getattr(a, "tac_vocab_version", "v7.0"))
+    if vv != "v7.0":
+        problems.append(
+            f"--w-tac-label-all with --tac-vocab-version {vv}: the v7.2 labels "
+            f"are minted in the v7.0 vocabulary (a RESTRUCTURE of v6, not an "
+            f"append) — a {vv} head fed v7 ids trains a plausible wrong class.")
+    if bool(getattr(a, "no_isolate_planner", False)):
+        problems.append(
+            f"--w-tac-label-all {w_tl} with --no-isolate-planner: the "
+            f"tactical heads read z_tac_p, detached ONLY by the planner cut — "
+            f"without it the LABEL loss becomes a TRUNK loss. 'Labels "
+            f"supervise GOAL/INTERPRETATION HEADS only' is BINDING "
+            f"(HIERARCHY_VOCABULARY §2); there is no acknowledgement flag.")
+    if neg == "cot-absence-negative" and not scp:
+        problems.append(
+            "--tac-goal-negatives cot-absence-negative without "
+            "--cot-negative-sidecar: the PI's 2026-09-16 ruling is applied "
+            "only through its sidecar (the permission token that binds it to "
+            "THIS blob's md5).")
+    if scp and neg != "cot-absence-negative":
+        problems.append(
+            f"--cot-negative-sidecar {scp} with --tac-goal-negatives {neg}: the "
+            f"sidecar would be IGNORED while the record carried it.")
+    if scp and not Path(scp).exists():
+        problems.append(f"--cot-negative-sidecar {scp} does not exist.")
+    return problems
+
+
+def preflight(a) -> list[str]:
+    """Refusals that must fire BEFORE a GPU-day is spent."""
+    problems: list[str] = []
+    # ---- NAV IS MANDATORY, AND THIS IS WHERE THAT IS ENFORCED ---------------
+    # ⛔ Deliberately a REFUSAL, not a flipped default. A refusal is AUDITABLE —
+    # it names the missing flag and the flag lands in config.json — whereas a
+    # default is INVISIBLE and would silently change the construction of every
+    # existing arm, the comparability break the PI ruled against. Same idiom as
+    # the parity gate refusing without --exclude-parity-overlap.
+    # ⚠️ The opt-out is HONOURED here, not merely advertised. The first version
+    # of this block named --i-know-this-arm-predates-nav in its message and
+    # refused anyway — an escape hatch that does not open, which is the same
+    # defect family as a flag that validates itself without being wired.
+    # ⛔ SCOPE: this refusal broke the DRY LADDER when I first wrote it, because I
+    # refused EVERY v6 arm while the decision was to refuse a v7-LINE arm.
+    # MEASURED: `v6_chain.run_chain` breaks out of its loop on a non-zero return
+    # code (v6_chain.py:2061) BEFORE it writes `dry_ckpt` (:2071), so a preflight
+    # that refuses a dry step silently truncates the ladder transcript — the
+    # failure surfaced three modules away as `KeyError('dry_ckpt')`.
+    # ⇒ A dry run trains nothing and produces no comparable arm, so nav cannot
+    # make it incomparable and there is nothing for the refusal to protect.
+    if (not bool(getattr(a, "nav_cond", False))
+            and not bool(getattr(a, "predates_nav", False))
+            and not bool(getattr(a, "dry_run", False))):
+        problems.append(
+            "--nav-cond is REQUIRED (PI directive 2026-08-30): the nav command "
+            "token is a mandatory input to the operative, tactical and "
+            "strategic layers for every arm trained from now on. Pass "
+            "--nav-cond.\n"
+            "     ⚠️ An arm without it is ARCHITECTURALLY DIFFERENT "
+            "from every arm after it and cannot be compared with them.\n"
+            "     If you are deliberately reproducing a PRE-DIRECTIVE arm, pass "
+            "--i-know-this-arm-predates-nav to record that choice in the run "
+            "config rather than leaving it unrecorded.")
+    if a.stage == "S-W" and resolve_lambda_plan(a):
+        problems.append(
+            f"--stage S-W with --lambda-plan {a.lambda_plan}: S-W is the WORLD "
+            f"stage and its planner is ABSENT (λ_plan ≡ 0). A planner "
+            f"gradient here destroys the stage's attributability — the exact "
+            f"co-training defect the staging exists to avoid.")
+    if a.stage == "S-W" and a.selector != "none":
+        problems.append(
+            f"--stage S-W with --selector {a.selector}: the planner group is "
+            f"FROZEN in S-W, so a scorer built here would be untrainable dead "
+            f"weight AND would change the state_dict — which breaks a strict "
+            f"resume of the live S-W run. Selection is an S-T lever.")
+    tgc = bool(getattr(a, "tac_goal_cond", False))
+    if a.stage == "S-W" and tgc:
+        problems.append(
+            "--stage S-W with --tac-goal-cond: layer_tac is FROZEN in S-W, so "
+            "the g_str->P_T port would be untrainable dead weight AND would "
+            "add cond_tac_dyn.* keys to the state_dict — which breaks a "
+            "strict resume of the LIVE S-W run. The port is an S-T lever "
+            "(F-1): S-T may INTRODUCE it (STAGE_MAY_INTRODUCE['S-T']) over an "
+            "S-W checkpoint that never carried it.")
+    # ---- PROPOSALS / MPC / FALLBACK (2026-08-16) ---------------------------
+    if a.stage == "S-W" and getattr(a, "proposals", "query") != "query":
+        problems.append(
+            f"--stage S-W with --proposals {a.proposals}: the planner group "
+            f"is FROZEN in S-W, so the diffusion generator would be "
+            f"untrainable dead weight AND would add prop_diffusion.* keys to "
+            f"the state_dict — which breaks a strict resume of the live S-W "
+            f"run. The fan generator is an S-T lever "
+            f"(STAGE_MAY_INTRODUCE['S-T']).")
+    if a.stage == "S-W" and bool(getattr(a, "fallback_trigger", False)):
+        problems.append(
+            "--stage S-W with --fallback-trigger: the trigger's calibration "
+            "buffers add fallback.* keys to the state_dict — which breaks a "
+            "strict resume of the LIVE S-W run. It is introducible at S-T "
+            "(STAGE_MAY_INTRODUCE['S-T']) and holds no trainable parameter "
+            "in any stage.")
+    # ---- F-18 PERCEPTION AGENT SLOTS ---------------------------------------
+    if a.stage == "S-W" and bool(getattr(a, "agent_slots", False)):
+        problems.append(
+            "--stage S-W with --agent-slots: the slot decoder adds "
+            "agent_slots.* keys to the state_dict — which breaks a strict "
+            "resume of the LIVE S-W run. It is introducible at S-T "
+            "(STAGE_MAY_INTRODUCE['S-T']). ⚠️ And note what the introduction "
+            "does NOT mean: no ladder stage TRAINS this head — the v6 batch "
+            "carries no agent labels — so it is carried, and a frozen-trunk "
+            "probe (the P8 idiom) is what optimises it.")
+    if bool(getattr(a, "no_isolate_interp", False)) \
+            and not bool(getattr(a, "agent_slots", False)):
+        problems.append(
+            "--no-isolate-interp without --agent-slots: a mis-wiring flag for "
+            "a module that is not built is a lever that silently does nothing "
+            "(the --fallback-calibration lesson). ⚠️ And when it IS built the "
+            "flag is the DELIBERATELY MIS-WIRED control arm: it lets a "
+            "PERCEPTION LABEL train the encoder, which the binding diagram "
+            "header forbids in any trunk loss, and assert_isolation's "
+            "perception_to_trunk edge then FAILS by construction — which is "
+            "the point of it, not a bug.")
+    if getattr(a, "slot_src", "cells") != "cells" \
+            and not bool(getattr(a, "agent_slots", False)):
+        problems.append(
+            f"--slot-src {a.slot_src} without --agent-slots: the memory arm of "
+            f"a decoder that is not built reaches nothing.")
+    if bool(getattr(a, "mpc_refine", False)) and a.selector != "goal":
+        problems.append(
+            f"--mpc-refine with --selector {a.selector}: the refinement's "
+            f"PRIMARY cost is the distance to the selector's candidate-"
+            f"INDEPENDENT goal point (W7-PROG: any selection cost NEEDS a "
+            f"goal-conditioned component). 'none' has no selector and 'mlp' "
+            f"emits no goal point — descending on its score would be "
+            f"candidate-DEPENDENT, the REFUTED roll-cost family (+5.9787 m, "
+            f"error-rank RISING with N). The MPC path stays INERT unless a "
+            f"selector is admissible.")
+    if getattr(a, "fallback_calibration", None) \
+            and not bool(getattr(a, "fallback_trigger", False)):
+        problems.append(
+            f"--fallback-calibration {a.fallback_calibration} without "
+            f"--fallback-trigger: a calibration that reaches no comparator "
+            f"is an input that silently does nothing.")
+    if getattr(a, "fallback_calibration", None) \
+            and not Path(a.fallback_calibration).exists():
+        problems.append(
+            f"--fallback-calibration {a.fallback_calibration} does not "
+            f"exist. Fail in milliseconds, not after the run — the "
+            f"--gate-probes lesson.")
+    if a.w_select and a.selector == "none":
+        problems.append(
+            f"--w-select {a.w_select} with --selector none: a selection loss "
+            f"with no scorer is how a selector silently never trains.")
+    # ---- F-7 / T2 -----------------------------------------------------------
+    _wt2 = float(getattr(a, "w_t2_contrast", 0.0))
+    if _wt2 and not getattr(a, "t2_contrastive", False):
+        problems.append(
+            f"--w-t2-contrast {_wt2} without --t2-contrastive: a contrastive "
+            f"loss with no projector is how a T2 term silently never trains.")
+    if _wt2 and a.stage in ("S-W", "S-S"):
+        problems.append(
+            f"--w-t2-contrast {_wt2} in {a.stage}: `t2_head` is grouped "
+            f"`layer_tac`, which {a.stage} FREEZES, and "
+            f"`V6LossWeights.for_stage({a.stage!r})` zeroes the weight — the "
+            f"launch line would advertise a term that trains nothing. T2 is an "
+            f"S-T (or S-J) measure.")
+    # ⚠️ the namespace attribute is `per_layer_encoders` (the E-ENC arm (b)
+    # flag); `shared_encoder` is the CONFIG field, derived at
+    # build_stack_from_args as `not a.per_layer_encoders`. Reading the config
+    # name off the namespace AttributeErrors at launch — caught by
+    # tests/test_v6_t5_consistency.py::
+    # test_preflight_refuses_T2_without_its_projector_and_in_the_wrong_stage.
+    if getattr(a, "t2_contrastive", False) \
+            and getattr(a, "per_layer_encoders", False):
+        problems.append(
+            "--t2-contrastive with the E-ENC arm (b) (--per-layer-encoders): "
+            "the augmentation produces only the SHARED window, so the "
+            "tactical layer's own frames would stay un-augmented and the "
+            "contrastive pair would be half-original — a confound, not an arm.")
+    # ---- F-8 / T5 -----------------------------------------------------------
+    _wt5 = float(getattr(a, "w_t5_consist", 0.0))
+    if _wt5 and not getattr(a, "t5_pairs", False):
+        problems.append(
+            f"--w-t5-consist {_wt5} without --t5-pairs: the default sampler "
+            f"draws windows INDEPENDENTLY (DIAGRAM_CONFORMANCE.md:58), so a "
+            f"cross-window consistency term would compare unrelated episodes.")
+    if _wt5 and not resolve_lambda_plan(a):
+        problems.append(
+            f"--w-t5-consist {_wt5} with lambda_plan 0: T5 is DEGENERATE "
+            f"ALONE — a constant control plan scores EXACTLY 0 (MEASURED: the "
+            f"emission is zero at init, so the term starts at its global "
+            f"minimum). It needs a plan objective that makes a flat plan "
+            f"expensive.")
+    if _wt5 and a.stage in ("S-W", "S-S"):
+        problems.append(
+            f"--w-t5-consist {_wt5} in {a.stage}: `for_stage({a.stage!r})` "
+            f"zeroes both it and lambda_plan — T5 is an S-T (or S-J) measure.")
+    _t5lag = int(getattr(a, "t5_lag", 0))
+    if _t5lag < 0:
+        problems.append(f"--t5-lag {_t5lag} must be >= 0 (0 = stride_tac)")
+    # ---- F-11 / S1 multi-tick strategic rollout ----------------------------
+    _ws1m = float(getattr(a, "w_s1_multi", 0.0))
+    _k = int(getattr(a, "s1_multi_k", 2))
+    if _ws1m and _k < 2:
+        problems.append(
+            f"--w-s1-multi {_ws1m} with --s1-multi-k {_k}: at K=1 the "
+            f"multi-tick roll IS `--w-s1` (s1_latent) exactly — a second "
+            f"weight on an existing loss, advertised as a new capability. "
+            f"K >= 2 or use --w-s1.")
+    if _ws1m and a.stage in ("S-W", "S-T"):
+        problems.append(
+            f"--w-s1-multi {_ws1m} in {a.stage}: `for_stage({a.stage!r})` "
+            f"zeroes it because layer_str (predictor_str / act_head_str) is "
+            f"FROZEN there — the launch line would advertise a term that "
+            f"trains nothing. F-11 is an S-S (or S-J) measure.")
+    # ⛔⛔ THE `_k >= 6` REFUSAL THAT USED TO LIVE HERE WAS WRONG, AND IT WAS
+    # BLOCKING REAL WORK. REMOVED 2026-09-02.
+    #
+    # It refused any K >= 6 with: "at the live geometry (window 6, stride_str 20,
+    # 120-frame cache) windows/episode is 114-20K, so K>=6 yields ZERO windows".
+    # The arithmetic was right and the corpus was not: **`w120` in the cache name
+    # is the 120-DEGREE FIELD OF VIEW, not a frame count** (`parity.py:222`
+    # spells the path `.../wide120/...`; the rig is `camera_front_wide_120fov`).
+    # Episodes are ~199 frames, so K=6 gives 199-6-120 = **73** windows/episode,
+    # not zero, and max_k is **9 (18 s)**. This guard was retiring the 12-18 s
+    # strategic band -- the programme's own thesis -- on a misread filename.
+    #
+    # ⭐ WHY NOTHING REPLACES IT, rather than a corrected constant. A preflight
+    # runs BEFORE the corpus mounts, so it cannot know the episode lengths; any
+    # constant it uses is an assumption. The corpus-side F-11 guard above
+    # (`if w_stage.w_s1_multi:`) already does this check STRICTLY BETTER -- it
+    # calls `reachable_strategic_ticks(min(ep_lens), ...)` on the SHORTEST
+    # episode, refuses above the realised `max_k`, AND separately refuses if any
+    # episode would drop to zero windows, which is the parity protection a mean
+    # or an assumed length cannot give. Duplicating an authoritative check with a
+    # guessed constant buys a slightly earlier failure and costs a wrong verdict.
+    #
+    # ⇒ **Do not refuse on an assumption when an authoritative check exists
+    # downstream.** Fast-fail is worth having, but not at the price of failing on
+    # something that is not true. If a genuinely corpus-free bound is ever wanted
+    # here, it must be justified against the SHORTEST episode, which is currently
+    # UNMEASURED (backlog L-12) -- and that is precisely why this refuses nothing.
+    # ---- F-9 / T3 interaction curriculum -----------------------------------
+    _t3 = str(getattr(a, "t3_scores", "") or "")
+    _t3_declared = (float(getattr(a, "t3_alpha_start", -1.0)) != -1.0
+                    or float(getattr(a, "t3_alpha_end", 1.0)) != 1.0
+                    or float(getattr(a, "t3_warmup_frac", 0.5)) != 0.5)
+    if _t3_declared and not _t3:
+        problems.append(
+            "--t3-alpha-*/--t3-warmup-frac given without --t3-scores: the "
+            "curriculum has nothing to rank, so the launch line would "
+            "advertise a curriculum the run does not have.")
+    if _t3 and float(getattr(a, "t3_floor", 0.25)) <= 0:
+        problems.append(
+            f"--t3-floor {a.t3_floor} must be > 0: a negative curriculum "
+            f"exponent on a zero floor makes a zero-score window infinitely "
+            f"likely, and floor>0 is what keeps every window reachable — "
+            f"re-selecting the corpus is the one thing parity forbids.")
+    if _t3 and float(getattr(a, "t3_alpha_end", 1.0)) < float(
+            getattr(a, "t3_alpha_start", -1.0)):
+        problems.append(
+            f"--t3-alpha-end {a.t3_alpha_end} < --t3-alpha-start "
+            f"{a.t3_alpha_start}: that is the catalog row REVERSED (dense -> "
+            f"free flow). If that arm is wanted it must be declared as such, "
+            f"not reached by swapping two numbers.")
+    if _t3 and float(getattr(a, "o4_alpha", 0.0)) > 0:
+        problems.append(
+            f"--t3-scores with --o4-alpha {a.o4_alpha}: two saliency levers on "
+            f"one sampling axis is not attributable to either. O4 is EGO "
+            f"kinematics, T3 is MULTI-AGENT interaction. ⚠️ --o4-alpha "
+            f"DEFAULTS TO 1.0 — a T3 arm must pass --o4-alpha 0 explicitly.")
+    # ---- F-10 / S3 domain-stratified mix -----------------------------------
+    # ⛔ EVERY REFUSAL HERE IS REACHABLE WITHOUT MOUNTING THE CORPUS. The
+    # artifact-shaped ones (join key, unlabelled episodes, stratum sizes,
+    # amplification) can only fire in `train()` because they need the realised
+    # episode list; these are the ones that do not.
+    _dstrata = str(getattr(a, "domain_strata", "") or "")
+    _dtau = float(getattr(a, "domain_tau", 1.0))
+    _dmax = float(getattr(a, "domain_max_amp", DOMAIN_MIX_MAX_AMPLIFICATION))
+    _dmin = int(getattr(a, "domain_min_stratum",
+                        DOMAIN_MIX_MIN_STRATUM_EPISODES))
+    _d_declared = (_dtau != 1.0 or _dmax != DOMAIN_MIX_MAX_AMPLIFICATION
+                   or _dmin != DOMAIN_MIX_MIN_STRATUM_EPISODES)
+    if _d_declared and not _dstrata:
+        problems.append(
+            "--domain-tau/--domain-max-amp/--domain-min-stratum given without "
+            "--domain-strata: there is nothing to stratify, so the launch line "
+            "would advertise a domain mix the run does not have.")
+    if _dstrata and not (0.0 <= _dtau <= 1.0):
+        problems.append(
+            f"--domain-tau {_dtau} must be in [0, 1]. Below 0 the mix "
+            f"ANTI-balances (it concentrates on the LARGEST stratum — the "
+            f"catalog row reversed); above 1 a small stratum is drawn more in "
+            f"TOTAL than a large one, which is an inversion, not a mix. "
+            f"Either arm must be declared, not reached by passing a number "
+            f"out of range.")
+    # ⚠️ tau == 0 is NOT refused: it is the matched CONTROL arm and a legitimate
+    # launch. The notice that it IS one is printed in `train()` beside the other
+    # F-10 rows — `preflight` returns problems and holds no side effects.
+    if _dstrata and _dmax < 1.0:
+        problems.append(
+            f"--domain-max-amp {_dmax} must be >= 1: below 1 no balancing at "
+            f"all is expressible and the lever is inert by construction.")
+    if _dstrata and _dmin < 1:
+        problems.append(f"--domain-min-stratum {_dmin} must be >= 1.")
+    if _dstrata and not Path(_dstrata).exists():
+        problems.append(
+            f"--domain-strata {_dstrata} does not exist. ⚠️ NO SCORE PRODUCER "
+            f"SHIPS WITH F-10: the artifact contract, its validation, the mix "
+            f"and its control are built, but the script that assigns a domain "
+            f"to each of the 2,376 parity-train episodes is a separate work "
+            f"item (it needs VLM/scena strata joined to the TRAIN corpus).")
+    # ⛔ THE ACK FLAG'S DEST. ``--i-know-this-is-the-control-arm`` is registered
+    # in ``main`` with ``dest="control_arm_ack"``, so the namespace NEVER has an
+    # attribute named ``i_know_this_is_the_control_arm`` — the original getattr
+    # here could only ever return False. MEASURED 2026-08-16: passing the flag
+    # the refusal below NAMES did not clear that refusal, so the pre-registered
+    # inert-scorer control arm (V6F_PLANNER_DESIGN §4.1) was unlaunchable. Both
+    # spellings are accepted so a hand-built namespace still works.
+    ack = bool(getattr(a, "control_arm_ack", False)
+               or getattr(a, "i_know_this_is_the_control_arm", False))
+    # ⛔ AND THE REFUSAL WAS STAGE-BLIND. "the scorer never receives a gradient"
+    # is a defect only where the planner group TRAINS. In S-S the planner is
+    # frozen BY DESIGN (STAGE_GROUPS["S-S"] == ("layer_str",)) and
+    # ``V6LossWeights.for_stage("S-S")`` zeroes ``w_select`` regardless — yet
+    # S-S MUST still carry ``--selector <the S-T arm>`` forward, because the
+    # S-T checkpoint contains ``cand_score.*`` and a selector-less S-S stack
+    # makes those UNEXPECTED keys, which ``load_stage_init`` correctly treats as
+    # fatal. MEASURED 2026-08-16: every available S-S command was refused —
+    # ``--selector goal`` here, ``--selector none`` at the init load, and
+    # ``--w-select 1.0`` only got through by advertising a weight that is not in
+    # force. Same family as the ``strict=True`` init blocker: right in spirit,
+    # blind in practice.
+    planner_trains = "planner" in stage_trainable_groups(a.stage)
+    if a.selector != "none" and not a.w_select and planner_trains and not ack:
+        problems.append(
+            f"--selector {a.selector} with --w-select 0 in stage {a.stage}, "
+            f"which TRAINS the planner group: the scorer would be built, "
+            f"consume its parameters and never receive a gradient. If an "
+            f"inert-scorer control is what you want, say so explicitly by "
+            f"passing --w-select 0 AND --i-know-this-is-the-control-arm.")
+    # ⛔ THE SAME INERT-MODULE FAMILY, for the g_str->P_T port: its ONLY
+    # gradient source is t1 through zh_tac (v6_loss_step wires no other loss
+    # through the tactical prediction), so building it in a stage that TRAINS
+    # layer_tac while --w-t1 is 0 advertises a port that never trains — the
+    # `intent_proj` dead-weight defect, re-created by launch line. S-S is
+    # deliberately NOT refused: layer_tac is frozen there and the flag must be
+    # CARRIED for geometry, exactly like --selector (a flagless S-S against an
+    # S-T ckpt that trained the port dies on unexpected cond_tac_dyn.* keys).
+    if tgc and "layer_tac" in stage_trainable_groups(a.stage) \
+            and not a.w_t1 and not ack:
+        problems.append(
+            f"--tac-goal-cond with --w-t1 0 in stage {a.stage}, which TRAINS "
+            f"layer_tac: t1 is the ONLY loss that flows through the "
+            f"g_str-conditioned tactical prediction, so the port would be "
+            f"built, consume its parameters and never receive a gradient — "
+            f"the intent_proj dead-weight defect F-1 exists to close. If an "
+            f"inert-port control is what you want, say so with "
+            f"--i-know-this-is-the-control-arm.")
+    # ---- ANCHOR_GOAL: every refusal fires in MILLISECONDS, not after a run --
+    anchor_goal = getattr(a, "anchor_goal", "none")
+    w_anchor = float(getattr(a, "w_anchor", 0.0))
+    anchor_obj = getattr(a, "anchor_objective", "metric")
+    if a.stage == "S-W" and anchor_goal != "none":
+        problems.append(
+            f"--stage S-W with --anchor-goal {anchor_goal}: the planner group "
+            f"is FROZEN in S-W, so the anchor head would be untrainable dead "
+            f"weight AND would change the state_dict -- which breaks a strict "
+            f"resume of the LIVE S-W run. ANCHOR_GOAL is an S-T lever.")
+    if w_anchor and anchor_goal == "none":
+        problems.append(
+            f"--w-anchor {w_anchor} with --anchor-goal none: an anchor "
+            f"objective with no anchor head is how a head silently never "
+            f"trains -- the same defect --w-select/--selector already guards.")
+    if anchor_goal != "none" and not getattr(a, "anchor_table", None):
+        problems.append(
+            f"--anchor-goal {anchor_goal} without --anchor-table: the head "
+            f"REFUSES to run without one (a zero table snaps every goal to the "
+            f"origin and still returns a number). ⛔ AND NO ADMISSIBLE TABLE "
+            f"EXISTS TODAY: all five banked vocabularies stop at step 20 = "
+            f"2.0 s while --plan-steps is {a.plan_steps} "
+            f"({a.plan_steps * a.dt:g} s), and load_anchor_table refuses the "
+            f"mismatch. Build one first: build_refc_anchors.py --horizons "
+            f"5,10,...,{a.plan_steps} (CPU-only, needs the TRAIN epcache).")
+    if anchor_goal != "none" and not getattr(a, "goal_cat_args", False):
+        problems.append(
+            f"--anchor-goal {anchor_goal} without --goal-cat-args: V6Config "
+            f"refuses this pairing (an emitted id that reaches nothing "
+            f"downstream is a head wearing an emission's name). Pass "
+            f"--goal-cat-args.")
+    if w_anchor and anchor_goal not in ("none",) \
+            and anchor_goal not in ANCHOR_OBJ_MODES.get(anchor_obj, ()):
+        problems.append(
+            f"--anchor-objective {anchor_obj} needs --anchor-goal in "
+            f"{ANCHOR_OBJ_MODES[anchor_obj]}, got {anchor_goal}. "
+            f"{ANCHOR_OBJECTIVES[anchor_obj]}")
+    # ⛔ THE CONTROL GATE. `ce` is the objective E-AG2 MEASURED +4.7502
+    # [+3.0514, +6.3981] WORSE than a ridge that was ALREADY refused, and
+    # E-OBJ-1 measured the same axis independently. It stays BUILDABLE because
+    # a comparison with no control is unattributable (C6) -- and it stays
+    # behind the same acknowledgement `--no-isolate-planner` uses, so a refuted
+    # objective can never arrive by defaulting into it.
+    if w_anchor and anchor_obj == "ce" and not ack:
+        problems.append(
+            "--anchor-objective ce is the pre-registered, MEASURED-REFUTED "
+            "CONTROL: a one-hot anchor_id target is metric-BLIND and E-AG2 "
+            "measured it +4.7502 [+3.0514, +6.3981] WORSE than the free ridge "
+            "(separated at every K from 8 to 256, under both vocabulary "
+            "constructions, replicated on REF-C-base at +5.4570). The DEFAULT "
+            "is --anchor-objective metric. If the control arm is what you "
+            "want, say so with --i-know-this-is-the-control-arm.")
+    if w_anchor and a.stage == "S-S":
+        problems.append(
+            f"--w-anchor {w_anchor} in S-S: the planner is FROZEN here and "
+            f"`V6LossWeights.for_stage('S-S')` zeroes w_anchor, so the launch "
+            f"line would advertise an objective that is not in force. Keep "
+            f"--anchor-goal {anchor_goal} for the GEOMETRY and pass "
+            f"--w-anchor 0.")
+    if any(float(x) < 0.0 for x in getattr(a, "anchor_axis_w",
+                                           ANCHOR_AXIS_W_DEFAULT)):
+        problems.append(f"--anchor-axis-w must be non-negative, got "
+                        f"{list(a.anchor_axis_w)}")
+    if a.stage == "S-S" and a.w_select:
+        problems.append(
+            f"--w-select {a.w_select} in S-S: the planner is FROZEN here and "
+            f"`V6LossWeights.for_stage('S-S')` zeroes w_select, so the launch "
+            f"line would advertise a selection loss that is not in force — a "
+            f"run row that lies about what moved. Pass --w-select 0 and keep "
+            f"--selector {a.selector} for the GEOMETRY: S-S must carry the "
+            f"S-T arm's scorer forward or --init-from fails on unexpected "
+            f"cand_score.* keys.")
+    # ---- NAV: --nav-cond without a nav SOURCE is an advertised-but-inert term
+    # ⛔ Until 2026-08-31 nothing produced `nav_token`, so `--nav-cond` could only
+    # ever hard-fail at step 0 with NavTokenMissing. Now that `--nav-labels`
+    # supplies it, the two flags must travel together or the failure moves from
+    # "loud at step 0" to "loud at step 0 for a reason the launch line does not
+    # explain". Refusing here names the missing flag in milliseconds instead.
+    # ⚠️ The reverse is NOT refused: --nav-labels without --nav-cond is a
+    # legitimate dry-run/diagnostic combination (build the join, train nothing on
+    # it), and refusing it would block checking the join before spending a GPU.
+    if bool(getattr(a, "nav_cond", False)) and not getattr(a, "nav_labels", None):
+        problems.append(
+            "--nav-cond without --nav-labels: nothing would produce `nav_token`, "
+            "so V6Stack.forward would raise NavTokenMissing at step 0. Pass "
+            "--nav-labels <v7 label blob> (the PI-reviewed Alpamayo-CoT + ego nav "
+            "command). ⚠️ That path loads with allow_oracle_nav=True and STAMPS "
+            "the manifest, so the arm carries its own provenance.")
+
+    # ---- HORIZONS: refuse a horizon no loss can train ----------------------
+    # ⛔⛔ MEASURED 2026-08-31 on `o1ctrl30k`, all 8 snapshots, steps 5,000-22,500:
+    #     |W1| 3.7283 -> 7.7516   moving
+    #     |W2| 0.026154 CONSTANT  delta EXACTLY 0.000e+00 at every snapshot
+    #     |W4| 0.026113 CONSTANT  delta EXACTLY 0.000e+00 at every snapshot
+    # Bit-identical over 17,500 steps, with `--w-o1-ctrl 1.0` in force.
+    #
+    # WHY, and it is BY DESIGN rather than a bug: `rollout_transitions` reaches
+    # long horizons by applying the 1-step head AUTOREGRESSIVELY --
+    # `predictor(ws, wa)[1]`, k times, full-chain gradient BY DEFAULT (since
+    # 2026-09-03 `--bptt-truncate N` bounds the gradient path to N steps
+    # WITHOUT changing the forward, D-V7-WIRING; the heads argument below is
+    # unaffected) -- and O5 supervises the error at EVERY step. So the
+    # horizon is set by `--o5-k` (= o5_k * dt seconds), and heads for k != 1 are
+    # allocated, computed in `forward`, and consumed by NO loss.
+    #
+    # ⚠️ THE DAMAGE WAS NEVER WASTED FLOPS, IT WAS MEASUREMENT. Untrained heads
+    # emit initialisation noise that reads as a number: MM-E10 published h2/h4
+    # action-divergence ratios of ~1e-5 as if meaningful, MM-E14 retracted them,
+    # and the same heads then produced a false "the model only imagines 0.1 s"
+    # alarm. A silently dead parameter is a measurement hazard.
+    # ⛔⛔ RESUMING IS NOT AUTHORING EITHER — and this guard nearly bricked a live
+    # 24 h arm. `k60p30k` (MM-E19) runs `--horizons 1 2 4` DELIBERATELY: it is a
+    # matched control against a banked incumbent, and its dead heads are proven
+    # inert. A preflight that fires on RESUME would refuse that arm's own restart
+    # after any crash, making 22 h unrecoverable — the guard destroying the work
+    # it was written to protect.
+    # This is the same distinction the constructor already makes for loading a
+    # checkpoint, one level up: reading old work, and CONTINUING old work, are
+    # both records of a decision already taken. Only a FRESH run is a new
+    # decision, and only a new decision can be refused.
+    _resuming = (Path(getattr(a, "out", "") or ".") / "ckpt.pt").exists()
+    hz = tuple(int(h) for h in (getattr(a, "horizons", None) or (1,)))
+    dead = [h for h in hz if h != 1]
+    if dead and _resuming:
+        print(f"[v6] ⚠️ horizons {hz} declare {dead}, which no loss trains — "
+              f"ALLOWED because this is a RESUME (ckpt.pt present in {a.out}). "
+              f"A run already under way is not a new design decision.", flush=True)
+    elif dead:
+        problems.append(
+            f"--horizons {hz} declares {dead}, which NO loss consumes. The O5 "
+            f"rollout applies head '1' autoregressively "
+            f"(metric_dynamics.rollout_transitions), so heads {dead} would take "
+            f"EXACTLY zero gradient and then feed initialisation noise to every "
+            f"probe that reads them — this has already produced two retracted "
+            f"findings. ⇒ pass --horizons 1 and set the HORIZON with --o5-k: it "
+            f"is o5_k x dt seconds, and the BINDING target is 6.0 s = --o5-k 60 "
+            f"(§4b, 'every planned trajectory spans up to 6 s'; v6.py PLAN_STEPS "
+            f"= 60, HORIZON_S = 6.0). Current --o5-k {getattr(a, 'o5_k', '?')} = "
+            f"{float(getattr(a, 'o5_k', 0)) * float(getattr(a, 'dt', 0.1)):.1f} s. "
+            f"⚠️ Loading an OLD checkpoint built with (1,2,4) is unaffected — "
+            f"this refuses CONFIGURING a new arm, never reading a banked one.")
+
+    # ---- S2: every incoherent combination refused in MILLISECONDS ----------
+    w_s2 = float(getattr(a, "w_s2_goal", 0.0))
+    s2p = getattr(a, "s2_labels", None)
+    # R3's weight, read here because the S2 "labels with no consumer" refusal
+    # below must know the tactical term is a consumer too (0.0 by default)
+    w_tl = float(getattr(a, "w_tac_label_all", 0.0) or 0.0)
+    if w_s2 < 0.0:
+        problems.append(f"--w-s2-goal must be non-negative, got {w_s2}")
+    # ---- D-V7-WIRING flags: neither may sit INERT on a launch line ----------
+    if bool(getattr(a, "allow_any_labels", False)) and not s2p:
+        problems.append(
+            "--allow-any-labels without --s2-labels: the flag waives the v7.2 "
+            "md5 pin and there is nothing to waive it on — an inert flag on "
+            "the launch line (the --w-s2-goal-without-labels family).")
+    _bt = int(getattr(a, "bptt_truncate", 0) or 0)
+    _o5k = int(getattr(a, "o5_k", 0) or 0)
+    if _bt < 0:
+        problems.append(f"--bptt-truncate must be >= 0, got {_bt}")
+    elif _bt and _bt >= _o5k:
+        problems.append(
+            f"--bptt-truncate {_bt} >= --o5-k {_o5k}: the rollout is only "
+            f"o5_k steps deep, so a cut every {_bt} steps NEVER fires — an "
+            f"advertised-but-inert flag (the --w-select/--w-anchor-in-S-S "
+            f"family). Lower it below o5_k, or drop it.")
+    if w_s2 and a.stage in ("S-W", "S-T"):
+        problems.append(
+            f"--w-s2-goal {w_s2} in {a.stage}: the strategic goal heads "
+            f"(layer_str) are FROZEN here and `V6LossWeights.for_stage"
+            f"('{a.stage}')` zeroes w_s2_goal, so the launch line would "
+            f"advertise a supervision that is not in force — the same "
+            f"advertised-but-inert lie --w-select/--w-anchor already refuse "
+            f"in S-S. S2 is an S-S/S-J lever (the stages that train "
+            f"layer_str). It adds NO state_dict key, so unlike --selector "
+            f"there is no geometry to carry: just drop the flag.")
+    if w_s2 and not s2p and not a.dry_run:
+        problems.append(
+            f"--w-s2-goal {w_s2} without --s2-labels: an S2 term with no "
+            f"labels is how a supervision weight silently becomes 0 — the "
+            f"loss would refuse at step 1 anyway (missing batch keys), but "
+            f"that is after the corpus build; this fails in milliseconds. "
+            f"Point --s2-labels at the s2-strategic-v1 artifact "
+            f"(labels dir with clip_index.json).")
+    if s2p and not w_s2 and not w_tl and not ack:
+        problems.append(
+            f"--s2-labels {s2p} with --w-s2-goal 0: the labels would be "
+            f"loaded and joined for a term that is not in force — a launch "
+            f"line advertising supervision that trains nothing (the inert-"
+            f"module family). If a load-only rehearsal is what you want, say "
+            f"so with --i-know-this-is-the-control-arm.")
+    if s2p and not Path(s2p).exists():
+        problems.append(
+            f"--s2-labels {s2p} does not exist. Same class as the "
+            f"--gate-probes refusal: fail before the corpus build, not "
+            f"after it.")
+    if w_s2 and a.no_isolate_planner:
+        problems.append(
+            f"--w-s2-goal {w_s2} with --no-isolate-planner: the S2 CE/L1 "
+            f"reads g_str/a_str, whose input z_str_p is detached ONLY by the "
+            f"planner cut — without it the label loss reaches the adapters "
+            f"and encoder and becomes a TRUNK loss. 'Labels supervise "
+            f"GOAL/INTERPRETATION HEADS only, never any WM trunk loss' is "
+            f"BINDING (HIERARCHY_VOCABULARY §2): there is NO control arm and "
+            f"no acknowledgement flag for a binding rule — run the isolation "
+            f"control without S2, or S2 without the control.")
+    # ---- R3: ALL tactical labels — every incoherent combination refused ---
+    problems += _preflight_tac_label_all(a, w_tl, s2p)
+    # ⛔ AN ANALYSIS-TIME REFUSAL AFTER THE COMPUTE IS PAID FOR. MEASURED
+    # 2026-08-16: `--gate-probes <missing file>` is only read by
+    # `_load_gate_probes` at the very END of `train()` — the whole run executes,
+    # then dies with "does not exist" before writing `stage_gate.json` AND
+    # before writing `summary.json`, which is the done-marker. On a 10,000-step
+    # S-T that is ~3.1 GPU-days paid for, no gate produced, and a supervisor
+    # left with no done-marker — the exact resurrection trap. Same class as
+    # `t1_eval.py` rolling both arms and then dying on an import in `analyze()`.
+    # ⇒ preflight the optional input at startup, so it fails in milliseconds.
+    if a.gate_probes and not Path(a.gate_probes).exists():
+        problems.append(
+            f"--gate-probes {a.gate_probes} does not exist. It is not read "
+            f"until AFTER the training loop, so without this refusal the run "
+            f"would spend its entire budget and then die before writing "
+            f"stage_gate.json or summary.json — leaving a supervisor with no "
+            f"done-marker to stop on. Create the probe artifact first, or drop "
+            f"the flag and supply the probes on a re-gate.")
+    if a.allow_inconclusive_gate and not a.gate_off_reason.strip():
+        problems.append("--allow-inconclusive-gate needs --gate-off-reason "
+                        "(an override with no stated reason is an "
+                        "unremembered decision)")
+    if a.no_isolate_planner or a.no_isolate_uplink:
+        problems.append(
+            "⚠️ ISOLATION DISABLED — this is a pre-registered CONTROL arm, not "
+            "a default. If that is intended, re-run with "
+            "--i-know-this-is-the-control-arm.")
+    if not a.dry_run and not a.v2_cache:
+        problems.append("--v2-cache is required for a real run (the canonical "
+                        "corpus physicalai-train-e438721ae894; parity is "
+                        "sacred)")
+    if a.o5_k > a.plan_steps:
+        problems.append(f"--o5-k {a.o5_k} exceeds --plan-steps {a.plan_steps}")
+    if (not a.dry_run and STAGE_PRECONDITION.get(a.stage)
+            and not a.init_from):
+        problems.append(
+            f"--stage {a.stage} without --init-from: it must start from "
+            f"{STAGE_PRECONDITION[a.stage]}'s ckpt.pt. A gate saying the stage "
+            f"below passed is worthless if this stage then trains on a "
+            f"randomly-initialised trunk — that is not the staged protocol, "
+            f"it is four unrelated models with a gate between them.")
+    problems += _preflight_eval_exclusion(a)
+    problems += _preflight_subframe(a)
+    problems += _preflight_seam_dump(a)
+    problems += _preflight_effective_weights(a)
+    problems += _preflight_r1_r4(a)           # R1/R4, PI 2026-09-27
+    return problems
+
+
+# ---------------------------------------------------------------------------
+# ⛔ E2 — `--v2-subframe` MOVES THE DATA, NOT THE MODEL, **IN THIS TRAINER**
+# ---------------------------------------------------------------------------
+
+def subframe_desync(a) -> tuple[int, int] | None:
+    """The sub-frame this run would train the DATA at, when it disagrees with
+    the frame the ENCODER is built for. ``None`` = consistent.
+
+    ⛔ WHY THIS IS NOT THE SAME FUNCTION AS ``train_flagship_v4``'s.
+    ``resolve_v2_frames``'s docstring says *"The frame is applied to ``cfg``
+    too, so the ENCODER is sized for what it will be fed."* That is TRUE for
+    ``train_flagship_v4``, whose ``cfg`` **is** the model config, and FALSE
+    here: this trainer calls ``resolve_eval_frames(a, cfg_eval)`` where
+    ``cfg_eval`` is a **flagship-v4 eval config** used for the plan and the eval
+    seam, while :func:`build_stack_from_args` has ALREADY sized the encoder from
+    ``a.frame_h``/``a.frame_w``. The two are different objects, so a sub-frame
+    moves one and not the other.
+
+    ⚠️ MEASURED 2026-08-17 on the built production encoder
+    (`…/2026-08-17-st-launch-readiness/raw/subframe_desync.json`): with
+    ``--frame-h 256 --frame-w 640 --v2-subframe 176x624`` the encoder's
+    ``pos`` is ``[1, 640, 768]`` and the first forward raises
+    ``ValueError: encoder input is (176, 624) but the config declares
+    (256, 640)``.
+
+    ⛔ AND THE DANGEROUS PART IS THE **ORDER**. ``--init-from`` SUCCEEDS
+    (checkpoint and stack are both 256x640) and ``assert_v2_geometry_matches``
+    PASSES (it compares the providers against ``model_frame``, which *is*
+    176x624) — so the refusal arrives at the FIRST FORWARD, after the corpus
+    has mounted and the O4 saliency pass has run. A guard existed and it was in
+    the wrong place. This one is args-only, so it fires in milliseconds at
+    startup.
+    """
+    from train_flagship_v4 import parse_subframe
+    hw = parse_subframe(getattr(a, "v2_subframe", None))
+    if hw is None:
+        return None
+    if (int(hw[0]), int(hw[1])) == (int(a.frame_h), int(a.frame_w)):
+        return None                      # a no-op sub-frame is consistent
+    return (int(hw[0]), int(hw[1]))
+
+
+def _preflight_subframe(a) -> list[str]:
+    hw = subframe_desync(a)
+    if hw is None:
+        return []
+    return [f"--v2-subframe {hw[0]}x{hw[1]} with --frame-h {a.frame_h} "
+            f"--frame-w {a.frame_w}: in THIS trainer the sub-frame moves the "
+            f"DATA and NOT the MODEL. build_stack_from_args sizes the encoder "
+            f"from --frame-h/--frame-w; resolve_eval_frames applies the "
+            f"sub-frame to a flagship-v4 EVAL config. So --init-from would "
+            f"succeed, parity would pass, the corpus would mount — and the "
+            f"first forward would raise `encoder input is ({hw[0]}, {hw[1]}) "
+            f"but the config declares ({a.frame_h}, {a.frame_w})`, after the "
+            f"compute is paid for.\n"
+            f"     ⇒ drop --v2-subframe (train at the declared frame), or "
+            f"declare --frame-h {hw[0]} --frame-w {hw[1]} so the encoder is "
+            f"built for what it is fed. ⚠️ The second is a DIFFERENT MODEL and "
+            f"cannot --init-from a {a.frame_h}x{a.frame_w} checkpoint."]
+
+
+# ---------------------------------------------------------------------------
+# ⛔ E5 — the seam dump's import, at STARTUP instead of 1.8 h in
+# ---------------------------------------------------------------------------
+
+def seam_dump_import_error(a) -> str:
+    """``""`` when ``--dump-seam-plan``'s module imports, else the error.
+
+    ⛔ THE ANALYSIS-TIME-IMPORT FAMILY, IN ITS MILDEST COSTUME AND ITS MOST
+    PERSISTENT ONE. ``--dump-seam-plan`` is wired into the training loop at the
+    ``--save-every`` boundary, and its ``except Exception`` prints *"training
+    continues"* — correct for a diagnostic, and it means a `ModuleNotFoundError`
+    banks NOTHING while the run looks healthy. The first attempt is at
+    ``step % save_every == 0``, i.e. **~1.8 h in at --save-every 250**.
+
+    ⚠️ MEASURED 2026-08-17 on Thor **and** the dev box: under the launch's own
+    ``PYTHONPATH=<stack>``, ``import taniteval`` is a `ModuleNotFoundError` —
+    ``taniteval`` is a **SIBLING of ``stack/``** (``TanitAD/taniteval/
+    taniteval/``), not a member of it. F-16's probe has produced zero real-arm
+    numbers three times running, and this is why.
+
+    ⇒ The operator ASKED for the dump, so a dump that cannot happen is a
+    REFUSAL, in 2 seconds, not a log line 1.8 h later. (The in-loop catch stays
+    non-fatal: a diagnostic must never kill a 3-day run mid-flight. This makes
+    that path near-unreachable rather than removing it.)
+    """
+    if not getattr(a, "dump_seam_plan", None):
+        return ""
+    try:
+        importlib.import_module("taniteval.seam_dump")
+        return ""
+    except BaseException as e:                                # noqa: BLE001
+        return f"{type(e).__name__}: {e}"
+
+
+def _preflight_seam_dump(a) -> list[str]:
+    err = seam_dump_import_error(a)
+    if not err:
+        return []
+    return [f"--dump-seam-plan {a.dump_seam_plan} but `import "
+            f"taniteval.seam_dump` FAILS: {err}\n"
+            f"     `taniteval` is a SIBLING of stack/, not a member of it, so "
+            f"a launch line whose PYTHONPATH is only <repo>/stack cannot see "
+            f"it. Without this refusal the run would bank NOTHING while "
+            f"printing '[v6 seam] dump FAILED … — training continues' at every "
+            f"save boundary, the first one ~1.8 h in.\n"
+            f"     ⇒ PYTHONPATH=<repo>/stack:<repo>/taniteval  (v6_chain's "
+            f"launch_line and manifest_text now emit both), or drop "
+            f"--dump-seam-plan and accept that X2_seam reads 'not-run'."]
+
+
+def _print_refusal(problem: str) -> None:
+    """⛔⛔ A REFUSAL THAT CANNOT BE PRINTED HAS REFUSED NOTHING.
+
+    MEASURED 2026-09-06 on the cp1252 dev box: every preflight refusal died in
+    its own `print` --
+
+        UnicodeEncodeError: 'charmap' codec can't encode character '\u26d4'
+
+    -- so the process exited **1 with a traceback** instead of **2 with the
+    reason**, and the operator saw a codec error where the diagnosis should
+    have been. It is why `test_v6_chain`'s ladder stops at its first refusing
+    stage. ⚠ Confirmed PRE-EXISTING by running the same argv through the
+    pre-change trainer: byte-identical failure, so this is not a regression --
+    but it makes every refusal in this file, the new effective-weight one
+    included, invisible exactly where an operator would meet it.
+
+    ⚠ FIXING THE MARKER ALONE WAS NOT ENOUGH, AND THAT IS THE LESSON.
+    With the leading glyph made conditional the very next run died on
+    `'\u21d2'` at position 322 -- inside the PROBLEM TEXT, written by some
+    other guard. The messages in this file are full of arrows and warning
+    signs, so the fix cannot be to sanitise content one glyph at a time; it has
+    to be at the WRITE. This degrades to backslash escapes rather than raising:
+    the reason always reaches the operator, and the exit code stays 2.
+    """
+    enc = (getattr(sys.stdout, "encoding", None) or "").lower()
+    mark = "⛔" if "utf" in enc else "REFUSED:"
+    line = f"[v6] {mark} {problem}"
+    try:
+        print(line, flush=True)
+    except UnicodeEncodeError:
+        raw = line.encode(getattr(sys.stdout, "encoding", None) or "utf-8",
+                          "backslashreplace")
+        sys.stdout.buffer.write(raw + b"\n")
+        sys.stdout.flush()
+
+
+def main(argv=None) -> int:
+    ap = build_parser()
+    ap.add_argument("--i-know-this-is-the-control-arm", action="store_true",
+                    dest="control_arm_ack", help=argparse.SUPPRESS)
+    a = ap.parse_args(argv)
+    # ⛔ THE EFFECTIVE-WEIGHT AUDIT NEEDS THE COMMAND LINE, NOT THE
+    # NAMESPACE. 'did the operator ask for this weight?' cannot be read
+    # off a value -- an operator may legitimately pass the default -- so
+    # the parser and the argv are carried to `preflight`, which re-parses
+    # them against sentinel defaults. Absent them the audit reports
+    # explicit_source: unavailable rather than guessing.
+    a._ew_parser = ap
+    a._ew_argv = list(sys.argv[1:] if argv is None else argv)
+    # (P4-9) OMP_NUM_THREADS moved to the module header, BEFORE `import torch`.
+    # Setting it here was too late to size torch's thread pool.
+    if a.print_launch:
+        print(_launch_line(a))
+        return 0
+    problems = preflight(a)
+    if a.control_arm_ack:
+        problems = [p for p in problems if not p.startswith("⚠️ ISOLATION")]
+    if problems:
+        for p in problems:
+            _print_refusal(p)
+        return 2
+    if a.dry_run:
+        dry_run(a)
+        return 0
+    train(a)
+    return 0
+
+
+if __name__ == "__main__":                                # pragma: no cover
+    raise SystemExit(main())
