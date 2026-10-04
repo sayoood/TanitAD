@@ -1,0 +1,59 @@
+[train] LATERAL A: indep over the record's own band [t0+2,t0+6]  n=4369  strict-agree 3149/4369 = 0.721 (95% Wilson [0.7073, 0.7339]); side-agree 745/827
+                         LANE_KEEP    BEND_L    BEND_R   NUDGE_L   NUDGE_R   SHIFT_L   SHIFT_R    TURN_L    TURN_R   | n
+LANE_KEEP                     2447        64        76         4         2        64        58        55        54   | 2824
+NUDGE_L                        331        31         8         2         6        46        17        23         0   | 464
+NUDGE_R                        386        22        32         2         4        23        64         0        31   | 564
+TURN_L                           1        29         0         0         0         4         1       235         0   | 270
+TURN_R                           0         0        32         0         0         3         1         0       211   | 247
+
+[train] LATERAL B(fast-turn 30deg/3s): [t0+2,t0+6]  n=4369  strict-agree 3164/4369 = 0.724 (95% Wilson [0.7107, 0.7372]); side-agree 745/827
+                         LANE_KEEP    BEND_L    BEND_R   NUDGE_L   NUDGE_R   SHIFT_L   SHIFT_R    TURN_L    TURN_R   | n
+LANE_KEEP                     2447        77        85         4         2        63        58        42        46   | 2824
+NUDGE_L                        331        31         8         2         6        47        17        22         0   | 464
+NUDGE_R                        386        22        33         2         4        23        64         0        30   | 564
+TURN_L                           1        29         0         0         0         5         1       234         0   | 270
+TURN_R                           0         0        39         0         0         3         1         0       204   | 247
+
+[train] LATERAL A: indep over [t0,t0+6] (builder's actual plan span)  n=4369  strict-agree 3017/4369 = 0.691 (95% Wilson [0.6767, 0.7041]); side-agree 1021/1189
+                         LANE_KEEP    BEND_L    BEND_R   NUDGE_L   NUDGE_R   SHIFT_L   SHIFT_R    TURN_L    TURN_R   | n
+LANE_KEEP                     2180        42        45        20        18       121        95       149       154   | 2824
+NUDGE_L                        171        83         1         1         9       123        51        25         0   | 464
+NUDGE_R                        185         8       107        11         0        63       160         0        30   | 564
+TURN_L                           0        15         0         0         0         1         4       238        12   | 270
+TURN_R                           0         0        10         0         0         3         0         6       228   | 247
+
+[train] LATERAL A0 FIRST-RUN rule (superseded): [t0+2,t0+6]  n=4369  strict-agree 2748/4369 = 0.629 (95% Wilson [0.6145, 0.6432]); side-agree 979/1254
+                         LANE_KEEP    BEND_L    BEND_R   NUDGE_L   NUDGE_R   SHIFT_L   SHIFT_R    TURN_L    TURN_R   | n
+LANE_KEEP                     1861         0         0         4         2       393       455        55        54   | 2824
+NUDGE_L                        132         0         0         2         6       192       109        23         0   | 464
+NUDGE_R                        157         0         0         2         4       127       243         0        31   | 564
+TURN_L                           1         0         0         0         0        19        15       235         0   | 270
+TURN_R                           1         0         0         0         0        16        19         0       211   | 247
+
+[train] LONGITUDINAL indep over band [t0+2,t0+6]  n=4369  speed-defined classes agree 2744/3419 = 0.803 (excl. FOLLOW 2617/3262)
+                           HOLD  CREEP CRUISE  ACCEL  BRAKE   | n
+HOLD                         99      0      0      0      2   | 101
+CREEP                         0     81     31      2      5   | 119
+CRUISE                        0      0   1172     10     15   | 1197
+ACCELERATE                    0      0    396    574      4   | 974
+BRAKE_TO                      0      0    160     20    691   | 871
+FOLLOW                        0      0    120     30      7   | 157
+ADAPT_SPEED_FOR_CURVE         0      0    360    462    128   | 950
+
+[train] LONGITUDINAL indep over [t0,t0+6] (builder's actual plan span)  n=4369  speed-defined classes agree 3060/3419 = 0.895 (excl. FOLLOW 2903/3262)
+                           HOLD  CREEP CRUISE  ACCEL  BRAKE   | n
+HOLD                         45     37      2      0     17   | 101
+CREEP                         0     28     31      7     53   | 119
+CRUISE                        0      0   1197      0      0   | 1197
+ACCELERATE                    0      0    178    795      1   | 974
+BRAKE_TO                      0      0     33      0    838   | 871
+FOLLOW                        0      0    157      0      0   | 157
+ADAPT_SPEED_FOR_CURVE         0      0    272    486    192   | 950
+
+[train] LATERAL as-trained windows (|NOW-t0|<=2 s, indep A on each window's own [NOW+2,NOW+6]) n=173409
+                         LANE_KEEP    BEND_L    BEND_R   NUDGE_L   NUDGE_R   SHIFT_L   SHIFT_R    TURN_L    TURN_R   | n
+LANE_KEEP                    97136      2913      2905       143       101      1693      1698      2604      2899   | 112092
+NUDGE_L                      13193      1291       383        71        78      1772       716       857        48   | 18409
+NUDGE_R                      15081       509      1667        66        61       916      2556       289      1232   | 22377
+TURN_L                         459      1204        75        10         0       498       297      8053       120   | 10716
+TURN_R                         503        30      1483         0         2       149       364        58      7226   | 9815
