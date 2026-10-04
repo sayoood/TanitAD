@@ -97,6 +97,17 @@ def main():
                       for m, d in md.items())
           + f"; wrapper clause {g0.get('wrapper_clause')}; reasons: {(g0.get('reasons') or [])[:5]}"
           + (" ⛔ M1 moved 0 terms → G0 is VOID" if (md.get('m1') or {}).get('n_terms_out') == 0 else ""),
+          *([f"* **G0-A5 (24 seeds; reported beside the A6 gate): {g0.get('G0_A5')}**"
+             f"{' — ' + '; '.join((g0.get('reasons_A5') or [])[:3]) if g0.get('reasons_A5') else ''}"]
+            if g0.get("amendment") == "A6" and g0.get("G0_A5") is not None else []),
+          *([f"* **G0-A6 ({'REGISTERED' if (g0.get('a6_registration') or {}).get('registered') else 'DRAFT -- reported, NOT the gate'}"
+             f"; measured numerics floor): {g0.get('G0_A6')}**"
+             f"{' — ' + '; '.join((g0.get('reasons_A6') or [])[:3]) if g0.get('reasons_A6') else ''}"
+             f"; floor-rescued terms: {[r.get('term') for r in (g0.get('a6_rescued') or [])]}"
+             f"; threshold-target terms: "
+             + "; ".join(f"{k} in-run {v.get('inrun')} interval [{v.get('a6_lo')}, {v.get('a6_hi')}] "
+                         f"{v.get('verdict')}" for k, v in (g0.get('a6_threshold_terms') or {}).items())]
+            if g0.get("G0_A6") is not None else []),
           f"* **Tier:** {res['tier']}. **Estimator:** {res['estimator']}.",
           f"* **Inference-seed floor:** {(res['inference_seed_replicate'] or {}).get('floor_m')} m ADE "
           f"(training-seed floor NOT measured).", ""]

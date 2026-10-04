@@ -1,0 +1,203 @@
+{
+ "tool": "result_r7.py",
+ "tag": "step30000",
+ "written": "2026-10-04T06:58:23+0200",
+ "ckpt": "D:/refcv7_eval_kit/ckpt/ckpt_30000.pt",
+ "ckpt_md5": "ac4e4fab87e35b20de24d8d94910d910",
+ "step": 30000,
+ "spec_sha256": "5582f0923c014f3a749c4f9079d5d4b9c58f92dff42e9cfdc86f81fd7d8c8d7a",
+ "is_milestone": true,
+ "tier": "T1 self-action OPEN LOOP (status UNRULED for an action-free model); never closed loop, never driving performance",
+ "estimator": "FULL-SET point estimate; paired episode-cluster bootstrap, n_boot 2000, seed 0",
+ "g0": {
+  "G0": "FAIL",
+  "amendment": "A5",
+  "G0_as_registered": "FAIL",
+  "G0_A2": "FAIL",
+  "reasons_A2": [
+   "eval_tacv6_goal_conf_bce [SMOOTH] in-run 0.15189 vs seeds mean 0.1542 (sd 0)"
+  ],
+  "n_seeds": 24,
+  "reasons_as_registered": [
+   "eval_agent_det_ap2_bus_40_60 [DETECTION] in-run 0.1 vs seeds mean 0.125 (sd 0)",
+   "eval_box3d_det_ap2_bus_20_40 [DETECTION] in-run 0.25 vs seeds mean 0.33333 (sd 0)",
+   "eval_box3d_det_ap2_stroller_0_20 [DETECTION] in-run 0.16667 vs seeds mean 0.14286 (sd 0)",
+   "eval_box3d_det_ap4_bus_20_40 [DETECTION] in-run 0.25 vs seeds mean 0.33333 (sd 0)",
+   "eval_box3d_det_ap4_bus_all [DETECTION] in-run 0.08687 vs seeds mean 0.10714 (sd 0)",
+   "eval_box3d_det_ap4_stroller_0_20 [DETECTION] in-run 0.33333 vs seeds mean 0.5 (sd 0)",
+   "eval_box3d_det_ap4_stroller_all [DETECTION] in-run 0.16667 vs seeds mean 0.25 (sd 0)",
+   "eval_box3d_det_map4_0_20 [DETECTION] in-run 0.12879 vs seeds mean 0.14886 (sd 0)",
+   "eval_tacv6_goal_conf_bce [SMOOTH] in-run 0.15189 vs seeds mean 0.1542 (sd 0)"
+  ],
+  "reasons": [
+   "eval_tacv6_goal_conf_bce [SMOOTH] in-run 0.15189 vs seeds mean 0.1542 (sd 0)"
+  ],
+  "by_class_counts": {
+   "DETECTION": 100,
+   "EXCLUDED": 11,
+   "MATCHED": 29,
+   "UNDEFINED": 94,
+   "DERIVED": 2,
+   "DETECTION_LOWSUPPORT": 238,
+   "COUNT": 210,
+   "SMOOTH": 179,
+   "STOCHASTIC": 6,
+   "MAP10_COUNTS": 160,
+   "MAP10_IOU": 80
+  },
+  "medians": {
+   "SMOOTH": 0.0016353997371261232,
+   "MATCHED": 0.0019028455195642744,
+   "MAP10_COUNTS": 5.456571137517449e-05,
+   "DETECTION_abs01": 0.0006299999999999977
+  },
+  "mutation_detection": {
+   "m1": {
+    "detected": true,
+    "n_terms_out": 7,
+    "how": null
+   },
+   "m2": {
+    "detected": true,
+    "n_terms_out": 59,
+    "how": null
+   },
+   "m4": {
+    "detected": true,
+    "n_terms_out": 2,
+    "how": null
+   }
+  },
+  "blind_spots_named": [],
+  "wrapper_clause": "PASS",
+  "requires_grad_control": {
+   "batch": 2,
+   "ddim_eps": "zeros",
+   "n_terms": 444,
+   "n_differ": 23,
+   "differ_first20": {
+    "loss": [
+     50.095924377441406,
+     50.09592056274414
+    ],
+    "traj": [
+     0.3388671875,
+     0.3388671576976776
+    ],
+    "cls": [
+     0.0005470542819239199,
+     0.0005470538744702935
+    ],
+    "sel_v3": [
+     0.4728996157646179,
+     0.47289949655532837
+    ],
+    "goal_score_absmean": [
+     6.785965919494629,
+     6.7859649658203125
+    ],
+    "agent_cls": [
+     0.13233058154582977,
+     0.1323304921388626
+    ],
+    "agent_centre": [
+     0.6211461424827576,
+     0.6211456060409546
+    ],
+    "agent_size": [
+     1.3498835563659668,
+     1.3498833179473877
+    ],
+    "agent_layer0": [
+     5.813535690307617,
+     5.813536167144775
+    ],
+    "agent_presence_layer0": [
+     0.47385644912719727,
+     0.4738564193248749
+    ],
+    "agent_layer1": [
+     5.911835670471191,
+     5.911832332611084
+    ],
+    "agent_presence_layer1": [
+     0.4612794816493988,
+     0.46127960085868835
+    ],
+    "agent_layer2": [
+     5.638246536254883,
+     5.638244152069092
+    ],
+    "box3d_cls": [
+     0.770574152469635,
+     0.7705739736557007
+    ],
+    "box3d_centre": [
+     1.1477338075637817,
+     1.1477344036102295
+    ],
+    "box3d_size": [
+     1.702549934387207,
+     1.7025501728057861
+    ],
+    "box3d_yaw": [
+     0.2692854404449463,
+     0.2692854106426239
+    ],
+    "box3d_rates": [
+     5.097124099731445,
+     5.097121715545654
+    ],
+    "box3d_z": [
+     0.12602442502975464,
+     0.12602439522743225
+    ],
+    "box3d_h": [
+     0.27638667821884155,
+     0.27638664841651917
+    ]
+   },
+   "max_rel_all": 8.636321894141148e-07,
+   "differ_all_rel": {
+    "loss": 7.614785659774727e-08,
+    "traj": 8.794691102305475e-08,
+    "cls": 7.448138875018208e-07,
+    "sel_v3": 2.5208159528325087e-07,
+    "goal_score_absmean": 1.405362667187213e-07,
+    "agent_cls": 6.756334485851391e-07,
+    "agent_centre": 8.636321894141148e-07,
+    "agent_size": 1.7662158930464434e-07,
+    "agent_layer0": 8.202188540755198e-08,
+    "agent_presence_layer0": 6.289314504970571e-08,
+    "agent_layer1": 5.646063749867115e-07,
+    "agent_presence_layer1": 2.5843180608104253e-07,
+    "agent_layer2": 4.2285944321251396e-07,
+    "box3d_cls": 2.3205285792819033e-07,
+    "box3d_centre": 5.193246411544629e-07,
+    "box3d_size": 1.40036174144505e-07,
+    "box3d_yaw": 1.106718667687799e-07,
+    "box3d_rates": 4.6775117583290583e-07,
+    "box3d_z": 2.3648052653808116e-07,
+    "box3d_h": 1.0782836054094469e-07,
+    "box3d_layer0": 1.172759563062624e-07,
+    "box3d_layer1": 5.963138383034203e-08,
+    "box3d_layer2": 6.131937213868479e-08
+   }
+  },
+  "json": "D:\\refcv7_eval_kit\\battery\\step30000\\g0.json"
+ },
+ "bars_planner": null,
+ "inference_seed_replicate": null,
+ "baselines_missing": null,
+ "strategic": {
+  "status": "NOT APPLICABLE",
+  "n": 0,
+  "reason": "strategic layer OFF"
+ },
+ "families": {
+  "0": "NOT RUN",
+  "1": "NOT RUN"
+ },
+ "bars_map": "NOT RUN (no perc_score.json)",
+ "bars_box": "NOT RUN (no perc_score.json)"
+}

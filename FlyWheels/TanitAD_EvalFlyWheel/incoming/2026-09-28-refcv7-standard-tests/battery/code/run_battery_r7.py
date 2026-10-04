@@ -296,7 +296,16 @@ def _run(a, summary, root, bank):
                                    for m, d in v["mutation_detection"].items()},
             "blind_spots_named": v.get("blind_spots_named"),
             "wrapper_clause": (g0.get("wrapper_control") or {}).get("clause"),
-            "requires_grad_control": g0.get("requires_grad_control"), "json": str(g0_json)}
+            "requires_grad_control": g0.get("requires_grad_control"), "json": str(g0_json),
+            # SPEC A6 (DRAFT until registered): always reported beside A5; gates only if registered
+            "G0_A5": (g0.get("verdict_A5") or {}).get("G0"),
+            "reasons_A5": ((g0.get("verdict_A5") or {}).get("reasons") or [])[:20],
+            "G0_A6": (g0.get("verdict_A6") or {}).get("G0"),
+            "reasons_A6": ((g0.get("verdict_A6") or {}).get("reasons") or [])[:20],
+            "a6_registration": (g0.get("verdict_A6") or {}).get("registration"),
+            "a6_rescued": (g0.get("verdict_A6") or {}).get("a6_rescued"),
+            "a6_threshold_terms": (g0.get("verdict_A6") or {}).get("a6_threshold_terms"),
+            "a6_medians": (g0.get("verdict_A6") or {}).get("medians")}
         bank()
         if v["G0"] != "PASS":
             raise SystemExit(f"[battery] G0 = {v['G0']} -- STOP (SPEC §2)")
