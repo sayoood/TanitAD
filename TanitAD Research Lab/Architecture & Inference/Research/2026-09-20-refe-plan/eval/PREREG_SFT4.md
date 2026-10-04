@@ -113,6 +113,11 @@ pause (1.2 % of training). Chain v2 (`refe/sft4_chain2.sh`) inserts a window aft
 **7,000 lane sets OR 150 min, whichever comes first**. Then it runs the unchanged gate → G9 mutation → run.
 - v1 was stopped by explicit PID while it slept; `chain.log` records the swap.
 - The count at launch is logged; the design is otherwise unchanged.
+- **Operational note, ~19:50 UTC:** the OOM killer took both lane relabel MAIN processes. As designed, they rank as
+  victims ahead of any training run; SFT-3's process tree had grown to about 30 GB. Their paused workers were orphans
+  and were killed by explicit PID. The 2,109 rows already written are intact.
+  `refe/lane_restart.sh` restarts the relabel at `ZZPDM_TRAIN_EXIT`; it resumes by (key, ckpt_step), so nothing is
+  redone. It stops the relabel by PID when the window closes, so SFT-4 gets the pod's memory.
 
 ## Stage 1: held-out (pod, label-only; the 3,137 sets of 24 logs that carry PDM targets)
 
