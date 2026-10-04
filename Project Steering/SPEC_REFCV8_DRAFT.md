@@ -1017,6 +1017,12 @@ R8-6; 5 by E2′ (RC-A50, conditional on 11); 7 by §10.3.
   known-value test (a synthetic constant-velocity track must shift by exactly v·Δt). Assigned to the Data FlyWheel. If
   it is not built and validated before registration, X10 reads DEFERRED with the build named as the next arm, and the
   0–34 ms lead stays a stated bias on every ADE number.
+  **RESOLVED 2026-10-04 ~22:20: built and validated** (`FlyWheels/TanitAD_DataFlyWheel/incoming/2026-10-04-x10-pose-timing/`):
+  one shift per window (the NOW row's own delta) applied to the cached 10 Hz track. Per-row interpolation was rejected:
+  MEASURED, it adds 0.109 m mean jitter at 0–2 s, ~11× the defect itself. Measured offset 16.5 ms mean, max 35.4 ms;
+  targets move 0.0093 m at 0–2 s and 0.060 m at 6 s (mean, eval139); 27 tests, 7 / 7 mutations caught. **ENABLED for
+  refcv8** (`--pose-sync-sidecar`, sidecar md5 `ce00a130…` on Thor). The trainer hook lands through WP-B's tree. The
+  standalone eval kit stays on the uncorrected clock for refcv7 comparability.
 * **Q11 — confirmed.** RC-OFF ≥ 0.90 / ≥ 0.60 stays: it is the bar that protects the leaderboard-legal case (no route
   checkpoint at inference). Calibration disclosure in §14 stands.
 * **Q12 — B3 OUT** unless WP-D registers a probe for it before SPEC_REFCV8 registration.

@@ -1,0 +1,44 @@
+[
+ {
+  "mutation": "M1 sign flipped inside shift_for (the correction goes the wrong way)",
+  "returncode": 1,
+  "result": "RED (caught)",
+  "tail": "1 failed in 5.09s"
+ },
+ {
+  "mutation": "M2 per-row shift instead of the window shift (the literal reading)",
+  "returncode": 1,
+  "result": "RED (caught)",
+  "tail": "1 failed, 6 passed in 6.22s"
+ },
+ {
+  "mutation": "M3 integer rows no longer returned bit-exactly (zero-offset identity lost)",
+  "returncode": 1,
+  "result": "RED (caught)",
+  "tail": "1 failed, 4 passed in 3.62s"
+ },
+ {
+  "mutation": "M4 trainer hook drops the future poses (targets stay unshifted)",
+  "returncode": 1,
+  "result": "RED (caught)",
+  "tail": "1 failed, 17 passed in 7.43s"
+ },
+ {
+  "mutation": "M5 trainer hook shifts a DIFFERENT row (NOW-1) than the one the image belongs to",
+  "returncode": 1,
+  "result": "RED (caught)",
+  "tail": "1 failed, 18 passed in 8.29s"
+ },
+ {
+  "mutation": "M6 yaw interpolated linearly across the +-pi seam (no shortest arc)",
+  "returncode": 1,
+  "result": "RED (caught)",
+  "tail": "1 failed, 3 passed in 5.36s"
+ },
+ {
+  "mutation": "M7 negative deltas accepted (the sign/unit guard removed)",
+  "returncode": 1,
+  "result": "RED (caught)",
+  "tail": "1 failed, 9 passed in 5.42s"
+ }
+]
