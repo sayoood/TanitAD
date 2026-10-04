@@ -121,6 +121,19 @@ def main(argv=None) -> int:
     tag = a.arm if a.split == "warmup_two_stage" else f"{a.arm}__{a.split}"
     exp_name = f"{a.exp_tag}_{a.split}_{a.arm}"
     call_log = os.path.join(a.out, f"score_{tag}.calls.jsonl")
+    # idempotence (2026-10-04): a duplicate launch (the runner re-queues without re-reading counts) must not
+    # truncate a banked PASS -- exit 0 BEFORE the call log is removed. R7_FORCE_RESCORE=1 disables it.
+    if a.seam and os.path.exists(a.seam):
+        import atexit
+        import ram_governor7 as _RG0
+        _jl = _RG0.JobLock(f"{a.split}_{tag}")        # one live driver per job: a duplicate WAITS here
+        _jl.acquire()
+        atexit.register(_jl.release)
+        _why = _RG0.already_scored(os.path.join(a.out, f"score_{tag}.counts.json"), a.seam,
+                                   os.path.join(a.out, f"score_{tag}.csv"), seam_sha=sha256_file(a.seam))
+        if _why:
+            print(json.dumps({"arm": a.arm, "split": a.split, "status": "PASS", "skipped": _why}), flush=True)
+            return 0
     if os.path.exists(call_log):
         os.remove(call_log)
     ov = [f"train_test_split={a.split}", f"experiment_name={exp_name}",
@@ -154,13 +167,21 @@ def main(argv=None) -> int:
     wrap_sha = sha256_file(WRAP)
     agent_sha = sha256_file(os.path.join(e2c, "tanitad_seam_agent.py"))
     log_path = os.path.join(a.out, f"score_{tag}.log")
-    t0 = time.time()
-    with open(log_path, "w", encoding="utf-8") as fh:
-        fh.write("CMD: " + " ".join(cmd) + "\n")
-        fh.flush()
-        rc = subprocess.run(cmd, stdout=fh, stderr=subprocess.STDOUT, env=env,
-                            cwd=NAVSIM).returncode
-    wall = time.time() - t0
+    # 2026-10-04 (step 50,400): the scorer's OWN RAM guard (hard floor = ONE 2 s sample < 2,000 MB) killed
+    # it 17x although it held only ~0.85 GB -- other jobs swing the box 1-10 GB in seconds. The governor
+    # waits for a slot + RAM window, then PAUSES (suspends + trims) this scorer's process tree below
+    # 3,500 MB instead of letting the guard abort it. The guard itself is unchanged (still the last
+    # resort). ``R7_GOVERNOR=0`` restores the old behaviour. See code/ram_governor7.py.
+    import ram_governor7 as RG
+    with RG.governed(tag, a.out, est_rss_mb=900.0) as gov:      # MEASURED peak RSS 840-846 MB (navhard)
+        t0 = time.time()                                        # wall excludes the slot / window wait
+        with open(log_path, "w", encoding="utf-8") as fh:
+            fh.write("CMD: " + " ".join(cmd) + "\n")
+            fh.flush()
+            rc = subprocess.run(cmd, stdout=fh, stderr=subprocess.STDOUT, env=env,
+                                cwd=NAVSIM).returncode
+        wall = time.time() - t0
+    governor = gov.summary()
     text = open(log_path, encoding="utf-8", errors="replace").read()
     m_ok = re.findall(r"Number of successful scenarios:\s*(\d+)", text)
     m_bad = re.findall(r"Number of failed scenarios:\s*(\d+)", text)
@@ -220,7 +241,7 @@ def main(argv=None) -> int:
            "seam": os.path.abspath(a.seam) if a.seam else None, "seam_sha256": seam_sha,
            "seam_agent_dir": e2c, "seam_agent_sha256": agent_sha,
            "mirror": CR, "exp_output_dir": out_dir,
-           "status": "FAIL" if fails else "PASS", "failures": fails}
+           "status": "FAIL" if fails else "PASS", "failures": fails, "governor": governor}
     with open(os.path.join(a.out, f"score_{tag}.counts.json"), "w", encoding="utf-8") as fh:
         json.dump(rep, fh, indent=1)
     print(json.dumps({k: rep[k] for k in ("arm", "split", "status", "log_successful",

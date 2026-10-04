@@ -53,7 +53,35 @@ def main(argv=None) -> int:
     ns = types.SimpleNamespace(label=a.label, arm=arm,
                                tokens=a.tokens, cache_name="navtest", worker="sequential",
                                hashseed="1", record_poses=True, patch_loader=True)
-    return w3.cmd_score(ns)
+    # 2026-10-04 (step 50,400): the scorer's OWN RAM guard (hard floor = ONE 2 s sample < 2,000 MB) killed
+    # navtest scorers 11x although each held only ~2.2 GB -- other jobs swing the box 1-10 GB in seconds.
+    # The governor waits for a slot + RAM window, then PAUSES (suspends + trims) this scorer's process
+    # tree below 3,500 MB instead of letting the guard abort it. The guard itself is unchanged (still the
+    # last resort). ``R7_GOVERNOR=0`` restores the old behaviour. See code/ram_governor7.py.
+    import json
+    import ram_governor7 as RG
+    # idempotence (2026-10-04): never rescore (= truncate) a banked PASS; R7_FORCE_RESCORE=1 disables it
+    odir0 = os.path.join(os.path.abspath(a.out), a.label)
+    if a.seam:
+        import atexit
+        _jl = RG.JobLock(f"navtest_{a.label}")        # one live driver per job: a duplicate WAITS here
+        _jl.acquire()
+        atexit.register(_jl.release)
+        why = RG.already_scored(os.path.join(odir0, f"{a.label}.counts.json"), a.seam,
+                                os.path.join(odir0, f"{a.label}.csv"))
+        if why:
+            print(json.dumps({"label": a.label, "status": "PASS", "skipped": why}), flush=True)
+            return 0
+    est = 700.0 if a.tokens else 2300.0               # MEASURED peak RSS: 630 MB (200 tokens) / 2,222 MB (full)
+    odir = os.path.join(os.path.abspath(a.out), a.label)
+    with RG.governed(a.label, odir, est_rss_mb=est) as gov:
+        rc = w3.cmd_score(ns)
+    try:
+        with open(os.path.join(odir, f"{a.label}.governor.json"), "w", encoding="utf-8") as fh:
+            json.dump(gov.summary(), fh, indent=1)
+    except OSError:
+        pass
+    return rc
 
 
 if __name__ == "__main__":
