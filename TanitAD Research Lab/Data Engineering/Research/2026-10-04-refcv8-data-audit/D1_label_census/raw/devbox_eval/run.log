@@ -1,0 +1,19 @@
+[d1     0.0s] tanitad from C:\Users/Admin/ev7/stack\tanitad\__init__.py
+[d1     1.5s] blobs {"stack/scripts/refc_v3_train.py": {"git_blob_raw_bytes": "203b437f0d0d86e97949cba3a8dedb810dc4d620", "git_blob_lf_normalised": "c34198e1c9b79c97bacdddbdadf098cd6adb8da3", "n_crlf": 11372, "bytes": 712810}, "stack/tanitad/data/v7_labels.py": {"git_blob_raw_bytes": "1317370d61aaeab6b71a87a5cb311a98c51d62d1", "git_blob_lf_normalised": "86f0c46ed63eaa9f07a303e0c61d9aec5bbdf076", "n_crlf": 1338, "bytes": 70109}, "stack/tanitad/data/v2_dataset.py": {"git_blob_raw_bytes": "3fea73f44d8b88f202bdc6b7e11387c054df4edd", "git_blob_lf_normalised": "ee61ea938f2a7ec249513e28d0029fe8ab2d6d5d", "n_crlf": 590, "bytes": 30666}}
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] rig camera = PER-CLIP EXTRINSICS from D:\refcv6_eval_kit\data\refcv6_train_eval139_extrinsics.json (4508 clips, z 1.203-1.687 m, pitch -0.0755..+0.0683 rad)
+[v3] ⚠️ a rig camera is built but --agent-w-project and --agent-w-ground are both 0: neither monocular term contributes. That is a legal ablation baseline and the stamp records it, but it is not a projection arm.
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[d1     3.7s] raw label records read: 147; turn entries 73, follow-road pseudo entries 93, turn entries with a missing field 0
+[v2] D:\refcv6_eval_kit\data\refcv6-b1-416x1024-eval139: 139 providers (channels 9, 416x1024 px), episode ids from 'episode_uid' [collision-free; the as-built 16-bit ids would give only 139 distinct for 139 clips]
+[v2] 139 providers, 139 distinct episode ids
+[v3] nav_from_v7: follow 88 / left 13 / right 38, missing 0 (of 139 clips; md5=eefc38d1453bd1c73802d44d45affced)
+[v3] max_speed_input_v6 (4-way one-hot): 147/147 sidecar rows carry a ceiling, 23772/23772 windows fed (100.0 %), 1 clips ABOVE the 120 km/h top step (clamped, and on those the fed ceiling is one the ego demonstrably exceeded)
+[v3] agent join: 139/139 episodes (stable-63bit), 22663/23772 windows labelled (95.3 %), 776801 prefilter target boxes, pad 397
+[v3] SAM3 map GT at 10 cm (100 m x +-30 m): frac_ok 0.9856 of 23772 windows over 139 clips (verdict PASS)
+[d1   183.6s] dataset built: 139 clips, 23772 windows in 179.9s
+[d1   183.6s] census over 23772 windows, 139 clips, window 8
+[d1   184.5s] census done 0.9s
+[d1   192.0s] C2 {"n_windows": 22, "n_clips": 6, "n_in_band": 10, "pass": true} mismatches: []
+[d1   192.0s] pose_controls {"n_ratio_clips": 137, "speed_over_finite_diff_median": 1.0000027806721172, "speed_over_finite_diff_p05_p95": [0.9995968337175195, 1.0003510720594342], "n_entries_inside_pose_range": 22, "label_token_L_has_positive_dyaw_deg": 1.0, "label_token_R_has_negative_dyaw_deg": 1.0, "n_big": 22, "sign_agree_big": 1.0, "median_abs_diff_deg": 0.5776736820059831, "p90_abs_diff_deg": 0.6421731585640885, "pearson_r": 0.999989762400671, "mean_pose_dyaw_deg_by_token": {"L": 62.49921677628695, "R": -53.313649356122795}}
+[d1   192.1s] wrote D:\Projects\TanitAD\TanitAD Research Lab\Data Engineering\Research\2026-10-04-refcv8-data-audit\D1_label_census\raw\devbox_eval wall 192.1

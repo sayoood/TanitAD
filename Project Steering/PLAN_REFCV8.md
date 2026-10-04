@@ -1,12 +1,67 @@
 # PLAN_REFCV8 — understand every effect, measure it, validate the fix cheaply, then retrain once
 
-*Master Mind, 2026-10-04. Status: **DRAFT for the PI** — Phase A is running; Phases B–E need the decisions in §8.*
+*Master Mind, 2026-10-04. Status: **DRAFT v2 for the PI** — Phase A (the data audit, D1–D5) is DONE; the PI's binding
+requirements R8-1…R8-7 (§0) are added and their work packages WP-A…WP-D are RUNNING; the open decisions are in §8.*
 *PI, 2026-10-04: "I need a big plan for refcv8, I need to understand all effects define measures and validate them to
 retrain without loosing a lot of time. ... is our training data ok? are any thing missing or uplausible, are we using
 them wrongly? Why the video is saying, no gt label in this frame?"*
 
 Every number below carries its evidence class. Planner numbers are open-loop on held-out eval139 from the launch tree
 `fec3a0d` (one training seed), where the speed ceiling does not reach the emitted plan (SPEC_REFCV7 §26.1).
+
+---
+
+## 0. ⭐ BINDING PI REQUIREMENTS FOR refcv8 (PI, 2026-10-04 afternoon) and the work packages that deliver them
+
+*PI, verbatim (abridged): "the refcv8 plan should contain highly quality proven measures to finally boost the results
+of refc to frontier, this includes: the correction of our labels — each camera frame should have corresponding
+tactical goals and actions in the future time frame (2 to 8 seconds from the current reference frame) with
+corresponding constraints like distance and time (not only one per clip); each frame should have a corresponding nav
+command; ... a route checkpoint extracted from the ego trajectory defining the next reference route point in the
+vehicle coordinate system — not a label, the route waypoint goal as training and inference waypoint in addition to
+the nav command, simulating the nav system of the car. You can assign this job to the data fly wheel agent. — We
+should assure and validate that the tactical layer is learning tactical goals, actions and their constraints like
+distance and time, and validate that they are constraining the trajectory planner and that the planner and its fan
+are consistent to the different tactical labels. We should condition the fan generation and trajectory selection
+with the tactical goals/actions, so the most probable actions are influencing the planning process. — We should
+implement all your identified fixes for map and boxes. — We should optimize architecture, training workflow to
+dramatically improve the map and box heads (do we need an initialization of the heads? or other tricks?) — Any other
+fixes for identified problems of refcv7 from you?"*
+
+| req | requirement | work package · owner | the measure that proves it (bars committed in SPEC_REFCV8 before any refcv8 number) |
+|---|---|---|---|
+| **R8-1** | **Per-frame tactical goals + actions over [NOW+2 s, NOW+8 s]** with constraints (distance, time, target speed, …), not one record per clip | **WP-A · Data FlyWheel** (`FlyWheels/TanitAD_DataFlyWheel/incoming/2026-10-04-v9-labels/`) | coverage ≥ 95 % of windows (refcv7: **23.22 %**, D1, n = 746,946); every turn window labelled (refcv7: 35.1 % of 88,238); agreement with an independently written geometry derivation ≥ 0.95 on TURN / STOP, with analytic controls + a mutation that must go red; constraint error (distance, time) vs the 100 Hz egomotion ≤ stated tolerance |
+| **R8-2** | **Per-frame nav command** (announced junction turns, time-localised, with distance/time to the turn) | WP-A | nav says turn but no turn starts within 6 s: refcv7 **74.3 % of L/R windows** (205,292, D1) → target ≤ 5 %; realised turns fed a matching command: refcv7 61.0 % → target ≥ 90 % within the announcement horizon |
+| **R8-3** | **Route checkpoint INPUT**: the next reference route point in the vehicle frame, from the ego trajectory, at training AND inference, beside the nav command (simulates the car's navigation system) | WP-A (data) + WP-B (model input) + EvalFlyWheel (NavSim bridge derives the same point from the scene's route) | ECHO controls: a trivial planner that drives to the checkpoint at v0 sets a floor the model must beat; a shuffled-checkpoint arm must lose the gain; the checkpoint must carry no speed information (R² of future speed from checkpoint ≈ from v0); lateral leak quantified (the ego's within-lane offset at the checkpoint vs a smoothed route). ⚠️ Optimistic on PhysicalAI by construction (ego-future-derived), exactly like nav — stated on every result |
+| **R8-4** | **The tactical layer learns goals, actions and constraints; it CONDITIONS fan generation AND trajectory selection; planner + fan are consistent with the tactical decision** | **WP-B · Architecture & Inference** (`TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/`) | (i) tactical accuracy on per-frame labels: lat/lon macro-F1, goal AP vs prevalence, constraint MAE (distance, time, target speed) vs a prior/constant control; (ii) **controllability**: forcing the tactical condition to TURN_L / TURN_R / LANE_KEEP / STOP-at-d on the same scene must move the fan and the pick accordingly (direction-consistent ≥ 0.95; stop within tolerance of d); a shuffled-condition arm must lose it; (iii) **consistency**: share of fan candidates and of the pick consistent with the conditioning action; (iv) route following: turn direction-correct pick ≥ 0.95, heading within 15° ≥ 0.70 (refcv7 0.84 / 0.51) |
+| **R8-5** | **All identified map + box fixes** | **WP-C · Perception fixes** | F1 per-class map thresholds (lane 0.068 → 0.164, edge 0.000 → 0.042, MEASURED); F4 presence gates (conf_ratio 0.97 / 1.00 in band); **F4b centre-distance NMS** (AP@2 m 0.248 → 0.349, agent 0.131 → 0.300; boxes per object 2.12 → ~1.1) with the re-fitted gates; mask the ego as an agent box (18 clips, D3); clip track-id-switch rate targets (6,410 frames, D3); z/h claims near-field only; drop duplicate videos + recording-shared clips (D3) |
+| **R8-6** | **Architecture + training workflow that DRAMATICALLY improves map and box** (head initialisation? other tricks?) | **WP-D · Perception architecture** (literature banked + frozen-BEV-feature probes + v7-tiny) | per-class AP@{0.5, 1, 2} m by range bin, boxes per object, conf_ratio; map IoU per class × range with 0.2 m tolerance; each trick pre-registered with a regression arm; the remaining localisation × range ceiling (edge IoU 0.062 at 0–20 m → 0.003 at 80–100 m) is the target |
+| **R8-7** | **Every other refcv7 fix the Master Mind identified** | WP-B / WP-C / WP-E (Master Mind) | listed in §0.2 with its own measure |
+
+### 0.1 What changed in the strategy because of R8-1…R8-6
+
+R8-3 adds an INPUT, R8-4 changes the decoder (conditioning) and R8-6 may change the lift and the heads. A head-only
+branch from 50,400 can no longer carry all of it. **New default: a WARM-STARTED full run** — every module whose shape
+is unchanged starts from refcv7 step 50,400 (trunk, lift, BEV, existing heads), every NEW path (route checkpoint
+token, tactical conditioning, new head parts) starts zero-gated so step 0 reproduces refcv7, then ~30k steps on the
+v9 labels (≈ 3.5–4 days at ~10–11 s/step on Thor). R1 (head-only on a frozen trunk, building now) still runs first:
+it measures how much of R8-4 the existing trunk already supports, and it is the fastest place to debug the
+conditioning before the trainer change. A from-scratch run (~6 days) only if the warm start is shown to block a fix.
+
+### 0.2 R8-7 — the Master Mind's additional fixes (each with its measure)
+
+| # | defect (evidence) | fix | measure |
+|---|---|---|---|
+| X1 | The pick loses the turn the fan contains (fan 1.00 → pick 0.84; heading-15 0.76 → 0.51) and speed-profile choice is the largest planner lever (B3 −0.606 m) | the selector is TRAINED on the emitted fan with a listwise target over direction + speed-profile error (not only the decoder score) | pick regret vs oracle and random on the same windows; B3 bound captured |
+| X2 | Residual prior: 14 of 17 wrong-direction turn picks follow its side (post hoc, route package) | residual-prior dropout + conditioning the prior on nav/route | wrong-direction picks that follow the prior |
+| X3 | The speed ceiling never reached the emitted plan (SPEC_REFCV7 §26.1); max-speed input was a future oracle (R² 0.988 in band) and its "unknown" row was never trained, while NavSim feeds "unknown" on 45 % of navtest tokens | past-only max-speed input N2 (leak 3.5 %) + a trained "unknown" row + the ceiling applied to the EMITTED plan | input-removed / input-shuffled arms; plan > fed ceiling (refcv7 110 / 2,059 reel windows) |
+| X4 | Tactical loss is 0.29 % of the total loss (D4); `LANE_CHANGE_L` was trained as a negative on 100 % of tactical windows because the eval label load overwrote module state the DataLoader workers read (D1, new) | a loss budget sized from measured gradient shares; label-state isolation (no module-level state across loads) + a test that pins it | per-family gradient share logged; the declared-vs-built census equals what the workers see |
+| X5 | NUDGE labels curves (10–12 % agree, D2); 3 of 8 lateral and 1 of 8 longitudinal classes have ZERO windows (D1) | the v9 vocabulary drops dead classes and redefines NUDGE (or the 3-way lateral head) | per-class support printed with every tactical number |
+| X6 | NavSim navhard FAILS (EPDMS 0.227 vs STOP 0.299 at 30k; DAC-zero 26.0 %, NC-zero 15.6 %); cause unattributed | D6 failure anatomy (running) maps each failure class to a lever; the NavSim bridge feeds announced junction turns + the route checkpoint from the scene route | navhard EPDMS vs STOP, DAC/NC-zero rates, per failure class |
+| X7 | No distance-keeping metric anywhere (G3); the box store's x ≤ 61 m scope excludes 84 % of joined agents (D4) | extend the agent store range; implement headway / time-gap / TTC on the lead | the longitudinal family complete |
+| X8 | The four-family battery has produced no number for any refcv7 checkpoint (G0 estimator issues, G4) | A5/A6 battery amendments carried; the 50,400 battery runs before refcv8 launches | four families present for refcv7-50.4k as the baseline row |
+| X9 | One training seed everywhere; the bootstrap answers "another draw of episodes" only (H-ESTIM-SEED-1) | a second seed of the refcv8 run if compute allows; otherwise every lever claim is read against the v7-tiny replicate floor | replicate arm |
+| X10 | Poses lead the image by 0–34 ms (mean 0.19 m, D3); day/night is a clock label (D3); left turns on eval rest on 13 clips (D3) | interpolate poses to the camera timestamp; stratify night by brightness; report left-turn n | — |
 
 ---
 
@@ -133,6 +188,20 @@ instead of assuming it for six days.
 ≈ **5 days to a refcv8 result**. The full-run path (R4′) adds ~4.5 days. NavSim leaderboard submission stays OFF until
 the leaderboard is examined with the PI (PI 2026-10-04).
 
+**⇒ REVISED for the PI's R8-1…R8-7 (§0), ESTIMATED:**
+
+| when | what |
+|---|---|
+| Sun 10-04 (running since ~14:00) | WP-A v9 label SPEC; WP-B design (tactical conditioning, route checkpoint, selector, X1–X4); WP-C perception fixes; WP-D perception design + literature; R1 harness + identity; A7 nav capture; D6 NavSim failure anatomy |
+| Mon 10-05 | WP-A eval139 build + echo/leak study → train build; R1 head-only arms incl. tactical conditioning H5 (hours); WP-D frozen-BEV probes; WP-C fixes landed |
+| Tue 10-06 | WP-B implementation + warm-start identity test; v7-tiny ladder for every new path with its regression arm (~17 min/arm on Thor); the refcv7-50,400 four-family battery as the baseline row |
+| Wed 10-07 | SPEC_REFCV8 registered (every bar of §0 and §5); launch gate; **PI go** → refcv8 launch (warm-started from 50,400) |
+| Wed 10-07 → Sun 10-11 | refcv8 run, ~30k steps (~3.5–4 days); Training Watch live |
+| Mon 10-12 | evals: §5 metric set + the R8-4 controllability/consistency suite + NavSim + replay/tactical video |
+
+≈ **8 days to a refcv8 result** under the wider scope; ~10 if the warm start has to be dropped. The label build (WP-A)
+and the conditioning implementation (WP-B) are the critical path.
+
 ## 8. Decisions for the PI
 
 1. **Branch-first** (fine-tune from 50,400, full run only on R1 evidence) — recommended.
@@ -156,3 +225,11 @@ the leaderboard is examined with the PI (PI 2026-10-04).
 3. **Nav L2** is a supplied route ("turn left in X m"), optimistic on PhysicalAI because it comes from the ego's own
    future — the same caveat as today's token, now time-correct. Default: adopt.
 4. **Trunk changes** (map F3 stride-4 tap; anything that needs R4′): defer to after refcv8-b unless R1 forces a full run.
+   **⇒ SUPERSEDED by R8-6 (PI 2026-10-04):** perception architecture changes are IN scope; WP-D ranks them by banked
+   evidence and probes; those that fit a warm start (zero-gated new paths) go into refcv8.
+5. (new, R8-3) **Route-checkpoint variant** — fixed arc-length lookahead (RC-A, L ∈ {30, 50, 80} m) vs next decision
+   point (RC-B): WP-A's echo/leak study recommends; the PI confirms before SPEC_REFCV8.
+6. (new, §0.1) **Warm-started full run** (~30k steps from 50,400, new paths zero-gated) instead of a head-only branch
+   — recommended; from scratch only if the warm start is shown to block a fix.
+7. (new) **Tactical loss budget**: refcv7 pinned it at 0.1 (0.29 % of the realised loss, D4). Default: size it from
+   measured gradient shares on the v7-tiny ladder.
