@@ -507,6 +507,17 @@ if os.path.exists(_ntp) and os.path.exists(_ntr):
         "scorer": _r.get("scorer_on_pick"), "off_cost": _r["off_route_cost_to_full_mean"],
         "floors": {k: (_p["floors"]["arms"].get(k) or {}).get("PDMS") for k in ("STOP", "CV", "HUMAN", "refcv4b_A1")},
         "pairs": {k: _pair(k) for k in ("STOP", "CV", "HUMAN", "refcv4b_A1")}, "scored": _p.get("rescored")}
+    # the EXACT full-navtest read of the adopted route fix (raw/2026-10-04-navtest-final/routefix_full/3_parse.json)
+    _rf = os.path.join(_pkg, "raw", "2026-10-04-navtest-final", "routefix_full", "3_parse.json")
+    if os.path.exists(_rf):
+        _q = json.load(open(_rf, encoding="utf-8"))
+        _a, _iv = _q["arms"]["R6_A1"], _q["arms"]["R6_A1"]["interval"]
+        _pp = _q["pairs"]["R6_A1__minus__R6_final_off"]
+        out["navtest_full"]["routefix"] = {
+            "PDMS": _a["PDMS"], "lo": round(100 * _iv["lo"], 2), "hi": round(100 * _iv["hi"], 2),
+            "d": _pp["delta_x100"], "d_lo": round(100 * _pp["interval"]["lo"], 2), "d_hi": round(100 * _pp["interval"]["hi"], 2),
+            "wtl": [_pp["wins"], _pp["ties"], _pp["losses"]], "zero": _a["zeroed_by_NC_or_DAC"],
+            "sub": {k: _a[k] for k in ("NC", "DAC", "EP", "TTC", "C", "DDC")}}
     # SPEC_NAVTEST Amendment 9 (the off-route nav goal), when its registered analysis exists
     _a9p = os.path.join(_pkg, "raw", "2026-10-01-goal-trigger", "a9", "result_a9.json")
     if os.path.exists(_a9p):
