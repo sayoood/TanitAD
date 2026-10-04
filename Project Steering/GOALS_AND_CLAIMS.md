@@ -16531,3 +16531,20 @@ the banked, max abs 0.0); **K8 FAIL** (NAVFLIP flips the 4-s yaw sign on 31.5 % 
 | id | record | status |
 |---|---|---|
 | **V9-HF-RELEASE** | The corrected corpus label layer (v9: per-frame tactical actions/goals over [NOW+2, NOW+8] s with constraints, per-frame nav, the route checkpoint inputs) is published to the PRIVATE HF dataset `Sayood/tanitad-refcv8-v9-labels`, revision `130c0b94` (2026-10-04T19:07:29Z): `release/v9_labels_train.npz` md5 `f63ece41…`, `release/v9_labels_eval139.npz` md5 `6b5c7f20…`, the input tables (`lc_*`, `lead_*`), the six spec/result docs, the corpus manifest + join-defect list, and a dataset card. Post-upload check: 18 / 18 local files present remotely, the 6 LFS files sha256-equal to the local bytes, the 12 small files size-equal; `private: true` asserted before upload and re-read after. The images/poses are unchanged, so the release is the label layer only. Provenance: `FlyWheels/TanitAD_DataFlyWheel/incoming/2026-10-04-v9-labels/raw/hf_push_v9_result.txt`, `code/hf_push_v9_thor2.py`, `HF_DATASET_CARD.md`. The first attempt (xet storage path, Thor wifi) died on a CAS network error and wrote nothing verifiable; the classic LFS path (`HF_HUB_DISABLE_XET=1`) succeeded on its first try. | MEASURED (published, private) |
+
+<!-- REFCV8-2026-10-04-WPB-LADDER -->
+### 2026-10-04: refcv8 tiny-rung ladder REGISTERED (SPEC_WPB_LADDER.md sha256 `e1b6aff7…`, 19:44:49Z) — four lever hypotheses, no arm run yet
+
+`TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/SPEC_WPB_LADDER.md`
+(rig: `refc_v3_train.py --size tiny`, resnet34 ImageNet, refcv7's B1 416×1024 corpus; 12 training arms incl. a
+deliberate-regression arm and a training-seed replicate per rung; every arm feeds the past-only N2 speed input).
+Floor F = the larger of the rung's two replicate differences, per metric; headline R = E / F. Master Mind amendment §10.1:
+the OPTIONAL levers (L2, L3) need R ≥ 2 — a null passes R > 1 with probability 0.167 and R ≥ 2 with 0.064 under this
+floor (MEASURED by simulation, iid-normal model).
+
+| id | record | status |
+|---|---|---|
+| **H-R8-RECIPE-1** | With the trunk training, the refcv8 recipe (v9 labels + tactical-conditioned generation/selection + route checkpoint + nav args) beats the refcv7 recipe on turn direction-correct and heading-15 at both sampler seeds (separated, R > 1), straight ΔADE ≤ +0.05 m, and the gain is lost when the planner reads another window's tactical output (V-R8d). | REGISTERED; untested |
+| **H-R8-BUDGET-1** | Raising the tactical decoder's trunk-update share to ≥ 1 % in-run (`--w-tac-v6` × k, k from the committed algebraic rule on V-R8's own readings; ESTIMATED ≈ 51 on P-GRAD's numbers, the share is negative below ≈ 37 because cos(agent, tac) = −0.30) improves route following (R ≥ 2) without costing box / agent AP or map IoU beyond F and 0.02. A share below 1 % is PREMISE-UNMET, never a lever negative. | REGISTERED; untested |
+| **H-R8-MAPW-1** | ×4 on the 10 cm map's loss gives the map a positive share of its own 0.25 m encoder (ESTIMATED +3.6 %) and improves drivable + lane IoU at 0–20 and 20–40 m (R ≥ 2) at no box / route cost beyond F. | REGISTERED; untested |
+| **H-R8-X3-1** | The past-only N2 speed input carries usable speed information: speed MAE 2–6 s of V-R8 beats the arm whose N2 is rolled by one row in training (separated, R > 1, both sampler seeds). | REGISTERED; untested (N2 build in progress) |
