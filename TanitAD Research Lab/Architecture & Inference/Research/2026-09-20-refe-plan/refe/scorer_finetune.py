@@ -180,7 +180,8 @@ def main() -> int:
             "heldout_sets": len(ho_idx), "heldout_in_bank": len(ho.by), "heldout_logs": len(ho_logs),
             "train_rows_in_heldout_logs": sum(1 for i in tr_idx if ds.rows[i].get("log_name") in ho_logs),
             "ckpt_format": fmt, "per_sample_calib": meta.get("per_sample_calib"),
-            "lane_labels": {"train_sets": op.n_lane, "train_stale": op.n_lane_stale, "heldout_sets": ho.n_lane,
+            "lane_labels": {"train_sets": op.n_lane, "train_stale": op.n_lane_stale, "train_superseded": op.n_lane_superseded,
+                            "heldout_sets": ho.n_lane,
                             "heldout_stale": ho.n_lane_stale}, "b_mode": a.b_mode, "b_compw": a.b_compw}
     log(info)
     g = torch.Generator().manual_seed(a.seed)
@@ -259,9 +260,15 @@ def main() -> int:
             dx = {t: 100 * (res[k]["pick_x"][i] - res["base"]["pick"][i]) for i, t in enumerate(toks)}
             mu, lo, hi = boot_logs(dx, tl)
             out[k]["x_ddc"]["pick_minus_base_v1"] = {"mean": mu, "ci95": [lo, hi]}
+            do = {t: 100 * (res[k]["onc_x"][i] - res["base"]["onc"][i]) for i, t in enumerate(toks)}
+            mu, lo, hi = boot_logs(do, tl)
+            out[k]["x_ddc"]["onc_pp_minus_base_v1"] = {"mean": mu, "ci95": [lo, hi]}
         dx = {t: 100 * (res["base"]["pick_x"][i] - res["base"]["pick"][i]) for i, t in enumerate(toks)}
         mu, lo, hi = boot_logs(dx, tl)
         out["base"]["x_ddc"]["pick_minus_base_v1"] = {"mean": mu, "ci95": [lo, hi]}
+        do = {t: 100 * (res["base"]["onc_x"][i] - res["base"]["onc"][i]) for i, t in enumerate(toks)}
+        mu, lo, hi = boot_logs(do, tl)
+        out["base"]["x_ddc"]["onc_pp_minus_base_v1"] = {"mean": mu, "ci95": [lo, hi]}
         log(out)
         return out
 
@@ -314,8 +321,8 @@ def main() -> int:
         if a.lane_labels_train or a.lane_labels_heldout:      # G8: the NAVSIM direction labels really are in the banks
             def has_half(bank):
                 return sum(1 for e in bank.by.values() if np.any(np.abs(e[2][:, 5] - 0.5) < 1e-6))
-            g8 = {"train_lane_sets": op.n_lane, "train_stale": op.n_lane_stale, "heldout_lane_sets": ho.n_lane,
-                  "heldout_stale": ho.n_lane_stale, "train_sets_with_ddc_0.5": has_half(op), "heldout_sets_with_ddc_0.5": has_half(ho)}
+            g8 = {"train_lane_sets": op.n_lane, "train_stale": op.n_lane_stale, "train_superseded": op.n_lane_superseded,
+                  "heldout_lane_sets": ho.n_lane, "heldout_stale": ho.n_lane_stale, "train_sets_with_ddc_0.5": has_half(op), "heldout_sets_with_ddc_0.5": has_half(ho)}
             g8["ok"] = all([(not a.lane_labels_train) or (op.n_lane > 0 and op.n_lane_stale <= 0.05 * max(op.n_lane, 1)
                                                           and g8["train_sets_with_ddc_0.5"] > 0),
                             (not a.lane_labels_heldout) or (ho.n_lane > 0 and ho.n_lane_stale <= 0.05 * max(ho.n_lane, 1)

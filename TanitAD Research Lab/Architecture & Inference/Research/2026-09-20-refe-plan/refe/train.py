@@ -469,7 +469,7 @@ class OnPolicyBank:
                             continue
                     self.by[k] = (rank_key[0], np.concatenate([xy, yw[..., None]], -1), tg, rank_key, has_nd)
         self.n_navsim_dac = sum(1 for e in self.by.values() if e[4])
-        self.n_lane = self.n_lane_stale = 0
+        self.n_lane = self.n_lane_stale = self.n_lane_superseded = 0
         self.lane_keep: dict = {}
         if lane_labels:
             self._apply_lane_labels(lane_labels, n_prop)
@@ -495,7 +495,12 @@ class OnPolicyBank:
                     if e is None:
                         continue
                     if int(d.get("ckpt_step", -1)) != int(e[0]) or len(d.get("navsim_ddc", ())) != n_prop:
-                        self.n_lane_stale += 1
+                        # a label of an OLDER checkpoint's proposals for this key is expected (the bank keeps the newest
+                        # set); anything else does not belong to the set the bank serves
+                        if len(d.get("navsim_ddc", ())) == n_prop and int(d.get("ckpt_step", -1)) < int(e[0]):
+                            self.n_lane_superseded += 1
+                        else:
+                            self.n_lane_stale += 1
                         continue
                     e[2][:, 5] = np.clip(np.asarray(d["navsim_ddc"], np.float32), 0.0, 1.0)
                     self.lane_keep[k] = np.asarray(d.get("lane_keep", [0.0] * n_prop), np.float32)
