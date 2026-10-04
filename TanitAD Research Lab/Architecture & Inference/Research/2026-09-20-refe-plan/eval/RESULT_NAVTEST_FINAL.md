@@ -55,6 +55,10 @@ seam reproduces 84.1843 exactly.
   - On the 11,023 held-out tokens it reads +0.07 [−0.11, +0.32] (fires on 1.2 %).
   - A constant-velocity fallback never helps.
   - ⇒ the lever is a better choice **among** the 64 hypotheses: a scorer fine-tune on on-policy hard negatives, whose data are banked.
+- **The zero picks are selection failures, not proposal failures (MEASURED on W3's 200 tokens, where all 64 hypotheses are harness-scored, `proptable/sub200_final/table.npz`).**
+  - **14 of the 15 zero picks had a hypothesis scoring ≥ 80**, and usually many: 15 / 4 / 14 / 2 / 33 / 48 / 50 / 5 / 41 / 7 / 62 / 42 / 56 / 6 of 64.
+  - Only 1 of 15 had all 64 hypotheses score 0. The still `raw/2026-10-01-final-video/sync_still_full.png` happens to show that rare kind.
+  - The zero picks carry 49 % of the best-minus-pick gap (pick 84.18, best of 64 98.27).
 - **The off-route goal:** `raw/2026-10-01-goal-trigger/` (why it happens, NAVSIM's own route correction, Amendment 9 pre-registration).
 
 ## Declared departure — the frame/time control

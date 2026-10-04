@@ -1,0 +1,59 @@
+{
+ "tokens_asked": 641,
+ "rows": 641,
+ "misses": 0,
+ "miss_examples": [],
+ "ckpt": "E:/Projects/TanitAD/data/refe_runs_eval/model_final.pt",
+ "select": "best",
+ "rule": "navsim_v1",
+ "repair_last_heading": true,
+ "sanitize_goal": false,
+ "goal_fix": "pdm_route",
+ "frame_control": {
+  "n": 641,
+  "max_m": 7.160723346098895e-15,
+  "median_m": 8.881784197001252e-16,
+  "bar_m": 0.001,
+  "what": "log future on NAVSIM's 0.5 s grid vs W3 human_future_poses"
+ },
+ "interpolation_residual": {
+  "n": 641,
+  "max_m": 0.08829902205537267,
+  "median_m": 0.007425638946839518,
+  "what": "log future on REFe's 0.2 s grid -> to_navsim, vs W3; reported, not gated"
+ },
+ "seconds": 1108.5,
+ "proposals": {
+  "n": 641,
+  "M": 64,
+  "ade_selected_m": 1.5075,
+  "ade_random_m": 1.553,
+  "ade_oracle_m": 0.3957,
+  "oracle_index_distinct": 64,
+  "oracle_index_top5": [
+   [
+    12,
+    86
+   ],
+   [
+    6,
+    28
+   ],
+   [
+    56,
+    26
+   ],
+   [
+    47,
+    24
+   ],
+   [
+    26,
+    23
+   ]
+  ],
+  "selected_index_distinct": 61,
+  "endpoint_spread_m": 2.003,
+  "what": "open-loop ADE over NAVSIM's 8 poses (0.5 s) vs W3's human future: selected = the planner's pick; random = mean over the M proposals (a random selector's expectation); oracle = best of M; oracle_index_* = how many proposals are ever best (WTA collapse if few); endpoint_spread = mean distance of the M endpoints from their centroid"
+ }
+}

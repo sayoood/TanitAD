@@ -28,7 +28,8 @@ OFF_CSV = DATA / "score" / "refe_navtest_final" / "refe_navtest_final.csv"
 EXPORT = f"{DRV}/Archive/devbox-C/navsim/exp/w3_navtest_v1/inputs/navtest_inputs.json.gz"
 SEL = HERE.parent / "2026-09-28-m6b-tangent" / "tokens_1123.json"
 TANITAD_PY = "C:/Users/Admin/venvs/tanitad/Scripts/python.exe"
-EV6 = ("C:/Users/Admin/ev6/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/code")
+EV6 = os.environ.get("REFE_EV6", "C:/Users/Admin/ev6/FlyWheels/TanitAD_EvalFlyWheel/incoming/"
+                     "2026-09-23-refcv6-standard-tests/navsim/code")   # REFE_EV6: a drive-repointed copy while E: is not D:
 GATING = ("pdm_route", "navgoal_straight")
 ARMS = ("pdm_route", "navgoal_straight", "navgoal_arc", "a8_lane")
 N_NAVTEST = 12146
@@ -64,7 +65,10 @@ def main() -> int:
     G = jl(HERE / "goal_fix_census.json")
     gsum = G["summary"]
     off_seam = np.load(OFF_SEAM)
-    off_pose = {str(t): off_seam["poses"][i] for i, t in enumerate(off_seam["token"])}
+    # load each npz member ONCE: NpzFile re-reads the whole array on every [] and a row view pins its parent, so the
+    # in-loop form held 12,146 copies (~13.5 GB) alive (2026-10-04: MemoryError on a 1.1 MB allocation)
+    _op, _ot = off_seam["poses"], off_seam["token"]
+    off_pose = {str(t): _op[i].copy() for i, t in enumerate(_ot)}
     off_sc = {t: 100.0 * float(r["score"]) for t, r in PE.read_csv(OFF_CSV).items()}
     res = {"amendment": "SPEC_NAVTEST Amendment 9 (PREREG_AMENDMENT_9.md)", "off_seam": str(OFF_SEAM),
            "off_csv": str(OFF_CSV), "off_csv_rows": len(off_sc),
@@ -79,7 +83,8 @@ def main() -> int:
             continue
         conf, ctrl = ts["confirm"], ts["controls"]
         z = np.load(seam_p)
-        pose = {str(t): z["poses"][i] for i, t in enumerate(z["token"])}
+        _zp, _zt = z["poses"], z["token"]
+        pose = {str(t): _zp[i].copy() for i, t in enumerate(_zt)}
         rec = jl(A9 / f"inputs_{arm}.json") or {}
         sc = {t: 100.0 * float(r["score"]) for t, r in PE.read_csv(csv_p).items()}
         rep = jl(seam_p.with_suffix(".report.json")) or {}

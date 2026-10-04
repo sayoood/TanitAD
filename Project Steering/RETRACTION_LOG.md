@@ -17903,3 +17903,13 @@ component name, so the formula read as the benchmark's own.
 **True:** the Windows System log shows USB-storage resets on the drive 2026-10-02 12:46-12:50 Berlin (UASPStor 129 x14) that killed the navtest CPU bridge at row 11,074/12,146, then a user-initiated restart at 16:55 (User32 1074, Kernel-Power 109) that killed everything else. The letter change was a CONSEQUENCE of the restart. Corrected to the PI the same night. MEASURED by the NavSim agent; `waiter_30000.json` annotated `DIED_HOST_RESTART`.
 
 **Class:** a co-occurring symptom read as the cause. The letter change was the visible anomaly at the time of reading, and the System log, the tool that owns the fact, was not read first.
+
+### R29 (2026-10-04) - "the constant-curvature (arc) goal fallback was tested on the GPU": it never curved -- identical to the straight arm on 407/407 tokens
+
+**Claimed (implicitly, by launching it as its own SPEC_NAVTEST Amendment 9 arm):** `goal_fix="navgoal_arc"` places REFe's fallback nav goal on the arc of curvature omega / max(|v0|, 1 m/s), so its PDMS reads the arc estimator.
+
+**True:** the planner reads omega from `ego.dynamic_car_state.angular_velocity`, which is **0.0 on every nuPlan ego state at iteration 0** of the navtest scenarios. Curvature was exactly 0 on all 383 triggered confirmation tokens (and on all 433 triggered tokens of the CPU census), so the arc arm emitted the straight arm's goals bit for bit: identical goals on 407/407 tokens, identical PDMS 71.8604 and identical sub-scores. The CPU probe that ranked the arc estimator derived omega from NAVSIM's ego_statuses heading HISTORY -- a different source -- so probe and arm never measured the same thing.
+
+**Fixed:** navgoal_arc is VOID in Amendment 9's readout (`…/refe-plan/raw/2026-10-01-goal-trigger/RESULT_A9_GOAL_FIX.md`; reported, not gating, so no verdict moves). A working arm needs omega from the scenario's past ego states; not re-run (the weakest estimator on CPU).
+
+**Class:** "built, tested, and unreachable from its caller" in the INPUT costume -- the mechanism ran, on a field the data never fills. The census printed the evidence (433 triggered, identical max goal change for both arms) and nothing asserted that the two arms' goals DIFFER. ⇒ an arm whose purpose is to differ from a sibling arm needs a same-breath count of tokens where they differ (> 0) before GPU time is spent.
