@@ -1,0 +1,217 @@
+--- /dev/null
++++ b/stack/tanitad/train/declared_vs_built_v6.py
+@@ -0,0 +1,214 @@
++"""G-DVB for the v6-STAGED trainer (v7F) — argv levers vs the BUILT ``V6Stack``.
++
++⛔⛔ WHY A SEPARATE REGISTRY. ``tanitad.train.declared_vs_built`` (SPEC_REFCV7 §2) is keyed on
++``refc_v3_train.py``'s argparse dests and reads ``RefCV3Model`` internals, and its ``check()``
++runs EVERY registered lever against the model it is handed — so a v6 lever registered there would
++be run against a RefCV3Model (and two of this trainer's new dests, ``tac_goal_negatives`` and
++``cot_negative_sidecar``, already name refcv3 entries with the same meaning). ``train_v6_staged.py``
++had NO G-DVB coverage at all at c36b6ddd, and the launch gate has no v6/v7F profile
++(``launch_gate.PROFILES`` = refc / refcv6 / refcv7, all ``refc_v3_train.py``). This module is the
++v6 registry, with the SAME ``Lever`` / ``Mismatch`` types and the SAME rules:
++
++* a ``loss`` lever: the weight the LOSS actually reads (here ``V6LossWeights.for_stage(stage)``, the
++  object ``v6_loss_step`` is handed) must equal argv, and the heads it supervises must be BUILT the
++  way the loss needs them;
++* ``data`` / ``runtime`` / ``record`` levers carry a reason a reader can verify;
++* ⛔ EXPECTATIONS ARE LITERALS — written here from ``args`` and from the FROZEN v7 vocabulary
++  (``vocab_v7``, frozen by the PI 2026-08-23 and pinned by ``test_vocab_v7_frozen``), never by calling
++  the trainer function under test.
++
++THE API (the trainer calls it; a future launch-gate v7F profile imports it)::
++
++    from tanitad.train import declared_vs_built_v6 as dvb6
++    dvb6.check_v6(stack, args, weights_in_force=w_stage, parser=None)  # -> list[Mismatch]; [] == clean
++    dvb6.refuse_on_mismatch_v6(stack, args, weights_in_force=w_stage, parser=None, where="train")
++    dvb6.coverage_v6(parser)   # -> the NEW_V6_DESTS missing from the parser or from the registry
++
++⚠️ SCOPE, stated so it is not over-read: this registry covers the levers ADDED BY R3
++(``NEW_V6_DESTS``). The ~230 pre-existing v6 flags have no entry here; ``uncovered_v6(parser)`` counts
++them. A v7F launch-gate profile must register those before a token can mean "every flag is covered".
++"""
++from __future__ import annotations
++
++from typing import Callable
++
++from tanitad.train.declared_vs_built import KINDS, Lever, Mismatch
++
++__all__ = ["REGISTRY_V6", "NEW_V6_DESTS", "register_v6", "check_v6", "refuse_on_mismatch_v6",
++           "coverage_v6", "uncovered_v6", "V7_GOAL_WIDTH", "V7_LAT_WIDTH", "V7_LON_WIDTH",
++           "SPEED_BAND_ARG_SLOTS"]
++
++#: the dests R3 adds to ``train_v6_staged.build_parser()`` -- each MUST have an entry below
++NEW_V6_DESTS: tuple[str, ...] = ("w_tac_label_all", "tac_goal_negatives", "cot_negative_sidecar")
++
++#: ⛔ LITERALS: the widths of the FROZEN v7 vocabularies (vocab_v7 TACTICAL_GOAL_TOKENS_V7 /
++#: TACTICAL_LAT_ACTIONS_V7 / TACTICAL_LON_ACTIONS_V7). `_frozen_v7()` cross-checks them against the
++#: tuples, so a vocabulary edit fails HERE by name instead of passing a stale literal.
++V7_GOAL_WIDTH = 22
++V7_LAT_WIDTH = 8
++V7_LON_WIDTH = 8
++#: the two g_tac arg slots R3's PROPOSED mapping gives SPEED_BAND (v_lo_ms, v_hi_ms)
++SPEED_BAND_ARG_SLOTS: tuple[int, ...] = (0, 1)
++
++REGISTRY_V6: dict[str, Lever] = {}
++
++
++def register_v6(dest: str, kind: str, check: Callable | None = None, reason: str = "") -> None:
++    """Add (or replace) the v6 entry for one argparse ``dest`` -- the ``declared_vs_built.register``
++    rules: ``built``/``loss`` need a ``check(stack, args, weights_in_force) -> list[Mismatch]``;
++    the other kinds need a ``reason`` a reader can verify. ``drivort`` is refcv3-only."""
++    if kind not in KINDS or kind == "drivort":
++        raise ValueError(f"G-DVB(v6) kind {kind!r} not in {tuple(k for k in KINDS if k != 'drivort')}")
++    if kind in ("built", "loss") and check is None:
++        raise ValueError(f"G-DVB(v6) `{dest}` is a {kind} lever and has no check")
++    if kind not in ("built", "loss") and not reason:
++        raise ValueError(f"G-DVB(v6) `{dest}` ({kind}) needs a reason a reader can verify")
++    REGISTRY_V6[dest] = Lever(dest, kind, check, reason)
++
++
++def _flag(o: str) -> str:
++    return "--" + o.replace("_", "-")
++
++
++def _frozen_v7() -> tuple[tuple, tuple, tuple]:
++    from tanitad.models import vocab_v7 as V  # noqa: PLC0415
++    goal, lat, lon = (tuple(V.TACTICAL_GOAL_TOKENS_V7), tuple(V.TACTICAL_LAT_ACTIONS_V7),
++                      tuple(V.TACTICAL_LON_ACTIONS_V7))
++    if (len(goal), len(lat), len(lon)) != (V7_GOAL_WIDTH, V7_LAT_WIDTH, V7_LON_WIDTH):
++        raise RuntimeError(
++            f"G-DVB(v6): the frozen v7 vocabulary widths moved ({len(goal)}/{len(lat)}/"
++            f"{len(lon)} vs the literals {V7_GOAL_WIDTH}/{V7_LAT_WIDTH}/{V7_LON_WIDTH}) -- a "
++            f"vocabulary change is a versioned change (vocab_v7.assert_frozen); update both.")
++    return goal, lat, lon
++
++
++def _width(head) -> int | None:
++    th = getattr(head, "type_head", None)
++    return None if th is None else int(getattr(th, "out_features", -1))
++
++
++def _c_w_tac_label_all(stack, args, weights_in_force) -> list[Mismatch]:
++    """R3's weight: in force as declared, and the heads it supervises built as the loss needs.
++
++    OFF (argv 0.0): the weight the loss reads must be 0.0 too (a hand-built weights object that
++    switches the term on behind argv's back is the D-REFCV6-CONFIG-BUILD class). R3 builds NO module,
++    so there is nothing else to be built-or-not.
++    ON: every check below reads the BUILT stack; every expectation is a literal."""
++    w = float(getattr(args, "w_tac_label_all", 0.0) or 0.0)
++    got = float(getattr(weights_in_force, "w_tac_label_all", float("nan")))
++    out: list[Mismatch] = []
++    if abs(got - w) > 1e-12:
++        out.append(Mismatch(
++            "--w-tac-label-all", w, got, "weights_in_force.w_tac_label_all (read by v6_loss_step)",
++            "the weight the LOSS reads is not the declared one -- V6LossWeights.for_stage zeroes it "
++            "where layer_tac is frozen (S-W/S-S): R3 is an S-T/S-J lever"))
++    if w <= 0.0:
++        return out
++    goal, lat, lon = _frozen_v7()
++    for attr, head_attr, want_toks, want_w in (
++            ("vocab_tac", "goal_head_tac", goal, V7_GOAL_WIDTH),
++            ("vocab_a_lat", "act_head_lat", lat, V7_LAT_WIDTH),
++            ("vocab_a_lon", "act_head_lon", lon, V7_LON_WIDTH)):
++        have = tuple(getattr(getattr(stack, attr, None), "tokens", ()) or ())
++        if have != want_toks:
++            out.append(Mismatch("--w-tac-label-all", f"stack.{attr}.tokens == the frozen v7 tuple "
++                                f"({len(want_toks)})", f"{len(have)} tokens", f"stack.{attr}.tokens",
++                                "the v7.2 ids are minted in the v7.0 vocabulary"))
++        width = _width(getattr(stack, head_attr, None))
++        if width != want_w:
++            out.append(Mismatch("--w-tac-label-all", want_w, width,
++                                f"stack.{head_attr}.type_head.out_features",
++                                "the supervised head must be as wide as the label vocabulary"))
++    gh = getattr(stack, "goal_head_tac", None)
++    if not bool(getattr(gh, "multilabel", False)):
++        out.append(Mismatch("--w-tac-label-all", "stack.goal_head_tac.multilabel True",
++                            getattr(gh, "multilabel", None), "stack.goal_head_tac.multilabel",
++                            "without the gates, e_g_tac (the operative planner's goal) reads "
++                            "softmax(logits), not the BCE-supervised sigmoid gates (R3)"))
++    for fa in ("goal_head_tac_lat", "goal_head_tac_lon"):
++        if getattr(stack, fa, None) is not None:
++            out.append(Mismatch("--w-tac-label-all", f"stack.{fa} is None", "built", f"stack.{fa}",
++                                "a factored stack builds e_g_tac from the factored pair, so the "
++                                "supervised mixed g_tac would condition nothing"))
++    iso = getattr(getattr(stack, "cfg", None), "isolate_planner_from_encoder", None)
++    if iso is not True:
++        out.append(Mismatch("--w-tac-label-all", True, iso,
++                            "stack.cfg.isolate_planner_from_encoder",
++                            "the forward's planner cut reads it; without the cut the tactical "
++                            "LABEL loss is a TRUNK loss"))
++    n_args = int(getattr(getattr(gh, "arg_head", None), "out_features", -1))
++    if n_args <= max(SPEED_BAND_ARG_SLOTS):
++        out.append(Mismatch("--w-tac-label-all", f"> {max(SPEED_BAND_ARG_SLOTS)} arg slots", n_args,
++                            "stack.goal_head_tac.arg_head.out_features",
++                            "SPEED_BAND's (v_lo, v_hi) have no slot to land in"))
++    return out
++
++
++# ============================================================================
++# THE REGISTRY -- one entry per NEW dest (coverage is tested)
++# ============================================================================
++register_v6("w_tac_label_all", "loss", _c_w_tac_label_all)
++register_v6("tac_goal_negatives", "data", reason=(
++    "the label NEGATIVE policy (v7_labels.tactical_goal_targets); computed on the LOADED split by "
++    "train_v6_staged.tac_label_policy and recorded as config.json['tac_label_all']['negatives']; "
++    "refused as inert without --w-tac-label-all (preflight)"))
++register_v6("cot_negative_sidecar", "data", reason=(
++    "the PI 2026-09-16 absence-as-negative permission token; v7_labels.load_cot_negative_sidecar "
++    "refuses one built over another blob md5, and its stamp is recorded as "
++    "config.json['tac_label_all']['cot_absence_negative']"))
++
++
++# ============================================================================
++# the API
++# ============================================================================
++
++def _dests(parser) -> set[str]:
++    return {x.dest for x in getattr(parser, "_actions", []) if x.dest != "help"}
++
++
++def coverage_v6(parser, dests: tuple[str, ...] = NEW_V6_DESTS) -> list[str]:
++    """The ``dests`` absent from ``parser`` OR from REGISTRY_V6 (``[]`` == covered).
++
++    Both directions, because both are holes: a registered lever the parser dropped is a check that
++    guards nothing, and a parser flag with no entry is the SPEC_REFCV7 §2 refusal."""
++    have = _dests(parser)
++    return sorted(d for d in dests if d not in have or d not in REGISTRY_V6)
++
++
++def uncovered_v6(parser) -> list[str]:
++    """Every dest of the v6 parser with NO v6 entry -- the size of the gap a v7F launch-gate profile
++    must close (MEASURED, never assumed)."""
++    return sorted(d for d in _dests(parser) if d not in REGISTRY_V6)
++
++
++def check_v6(stack, args, *, weights_in_force, parser=None) -> list[Mismatch]:
++    """-> every declared-vs-built mismatch for the v6 levers; ``[]`` == clean.
++
++    ``weights_in_force`` is the ``V6LossWeights`` object ``v6_loss_step`` will be handed (the stage's
++    ``for_stage`` result) -- the loss side of a ``loss`` lever. A reader that cannot read is a FAIL."""
++    out: list[Mismatch] = []
++    if parser is not None:
++        for d in coverage_v6(parser):
++            out.append(Mismatch(_flag(d), "a trainer flag WITH a G-DVB(v6) entry",
++                                "missing from the parser or the registry",
++                                "tanitad.train.declared_vs_built_v6.REGISTRY_V6",
++                                "a new v6 lever without a declared-vs-built entry is refused"))
++    for lever in list(REGISTRY_V6.values()):
++        if lever.kind in ("built", "loss") and lever.check is not None:
++            try:
++                out += list(lever.check(stack, args, weights_in_force) or [])
++            except Exception as e:                      # a reader that cannot read is a FAIL
++                out.append(Mismatch(_flag(lever.dest), "readable", f"{type(e).__name__}: {e}",
++                                    "G-DVB(v6) reader", "the built value could not be read"))
++    return out
++
++
++def refuse_on_mismatch_v6(stack, args, *, weights_in_force, parser=None,
++                          where: str = "train") -> None:
++    """``SystemExit`` naming EVERY mismatch, or ``None`` when the build is clean."""
++    bad = check_v6(stack, args, weights_in_force=weights_in_force, parser=parser)
++    if bad:
++        raise SystemExit(
++            f"[G-DVB v6] ⛔⛔ {where}: {len(bad)} lever(s) DECLARED in argv are NOT what the stack "
++            f"BUILT / the loss reads. Refusing before the first step:\n  - "
++            + "\n  - ".join(str(b) for b in bad))

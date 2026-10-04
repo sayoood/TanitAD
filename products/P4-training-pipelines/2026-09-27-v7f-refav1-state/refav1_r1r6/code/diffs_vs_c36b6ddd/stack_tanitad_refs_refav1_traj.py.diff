@@ -1,0 +1,351 @@
+--- /dev/null
++++ b/stack/tanitad/refs/refav1_traj.py (R1-R6)
+@@ -0,0 +1,348 @@
++"""refav1 R5 -- ONE combined tactical+operative trajectory to 6 s, as a RESIDUAL over a
++model-free kinematic prior -- ``kdx`` by default, ``damp50`` / ``cv`` selectable
++(``TRAJ_PRIORS``) -- (PI directive 2026-09-27, requirements R1 / R4 / R5).
++
++WHY THIS EXISTS, MEASURED (``TanitAD Research Lab/Architecture & Inference/Research/
++2026-09-27-refav1-fullgrid-loncomb3/RESULT.md``): on the full 141-episode grid the iCEM
++planner adds nothing over t0 kinematics on either axis, the world model's lateral cost share is
++1.63e-10, and the proposal head was never trained. A model-free damped kinematic path, ``kd_x``,
++is the strongest do-nothing floor measured (``kd_x - ha0_ext`` ADE -0.2282 on 282 windows,
++-0.2638 on the 2,399-window stride-4 grid). The trunk probe
++(``.../2026-09-27-refav1-trunk-probe/RESULT.md``) found that a LINEAR readout of the
++mean-pooled trunk carries nothing beyond kinematics, and that a LEARNED kinematic readout beats
++``kd_x`` by -0.0558 on held-out episodes. So the head starts AT ``kd_x`` (zero-initialised
++output layer) and learns a residual from 4 x 10 REGION pooling of the token field + the t0
++kinematics + nav + max speed + the tactical decision.
++
++⭐ WHAT ``kd_x`` IS, EXACTLY (the definition this module reproduces, from
++``.../raw/analysis/explore/build_explore.py::retime`` and ``probe.py::kdx``):
++
++    ha0      = unicycle(controls (0, 0),        v0)            # constant speed, straight
++    ha0_ext  = unicycle(controls (a0, kappa0),  v0)            # the measured t0 state held
++    damp     = 0.5 * ha0 + 0.5 * ha0_ext                       # positions, float32
++    kd_x     = retime(damp, ha0_ext)   # damp's GEOMETRY at ha0_ext's travelled arclength
++
++with the programme's ONE integrator (``refa_v1_plan.unicycle_paths`` ->
++``kinematic.rollout_unicycle``: position advances on the speed at the START of the step, v is
++updated last and clamped at 0), at ``dt`` = 0.2 s, positions at k = 1..K. ``retime`` runs in
++float64 and returns float32 (as the reference does). At K = 30 this is the trunk probe's 6 s
++base (``kdx(ha0_6, ha0_ext_6)``); the banked 2 s ``kd_x`` is the K = 10 case.
++
++⛔ ADMISSIBILITY (PI 2026-09-02: the measured ego state at cycle time is a legal initial state;
++future dynamic information is not). Every input of the prior is a t0 measurement:
++  * ``v0``     = ``poses[2t, 3]`` -- the measured speed at the anchor frame;
++  * ``a0``     = ``(v[2t] - v[2t-2]) / 0.2`` -- a BACKWARD difference of two past speeds;
++  * ``kappa0`` = ``actions[2t, 0]`` -- the recorded curvature channel AT t0 (the egomotion
++    ``curvature`` signal stored as ``atan(2.9 * kappa)``), exactly what ``ha0_ext`` holds
++    (``taniteval/tools/refav1_arm.py::hold_ext_controls``). Every index is <= 2t.
++⚠️ UNITS, STATED BECAUSE THEY MATTER: the banked ``kd_x`` floor was measured with
++``--action-units kappa`` (the arm's default), i.e. ``kappa0`` -- a road-wheel angle ~2.9x the
++geometric curvature -- was integrated AS a curvature. ``units="kappa"`` (default) reproduces THAT
++floor bit-for-bit; ``units="steer"`` converts with ``kappa = tan(steer)/2.9`` first. Damping
++halves the lateral term, so the shipped floor effectively holds ~1.45x the geometric curvature.
++The residual head can learn the correction either way; which prior is the right BAR is a
++choice the result must name.
++"""
++from __future__ import annotations
++
++import torch
++import torch.nn as nn
++import torch.nn.functional as F
++from torch import Tensor
++
++from tanitad.refs.refa_v1_plan import unicycle_paths
++
++__all__ = ["TRAJ_PRIORS", "PRIOR_INPUTS", "kinematic_floor_paths", "retime_paths",
++           "kd_x_prior", "kinematic_prior", "region_pool", "kin_features",
++           "TrajResidualHead", "cap_path_speed", "path_speeds", "traj_loss", "N_KIN_FEATS"]
++
++#: ⭐ THE PRIORS THE HEAD MAY START FROM (coordinator 2026-09-27: "make its kinematic PRIOR a
++#: selectable flag, not hard-wired to kd_x"). Each is a model-free path from past measurements
++#: only, and each keeps the zero-init known-value control (the head's output at init IS it):
++#:   * ``kdx``    -- ``retime(damp50, ha0_ext)``: damp50's geometry at ha0_ext's timing. The
++#:     strongest 2 s floor measured (``kd_x - ha0_ext`` ADE -0.2282 on 282 windows).
++#:   * ``damp50`` -- ``0.5 * ha0 + 0.5 * ha0_ext`` (position average). EXPLORATORY, 6 s, 2,399
++#:     windows / 141 clusters (`C:/Users/Admin/refav1_probe/floors_6s_exploratory.json`):
++#:     ADE@6s 3.454 m vs kdx 3.558 (n.s.), FDE@6s 10.15 vs 11.22 m (kdx - damp50 FDE +1.066
++#:     [+0.617, +1.534], separated) -- the better 6 s prior on that read.
++#:   * ``cv``     -- ``ha0``: constant speed, straight (v0 only).
++#: ⛔ ``ha0_ext`` itself is NOT offered: holding (a0, kappa0) for 6 s reads ADE 5.36 / FDE 15.39.
++TRAJ_PRIORS = ("kdx", "damp50", "cv")
++#: what each prior is computed from (the admissibility statement travels with the name)
++PRIOR_INPUTS = {"kdx": ("v0", "a0", "kappa0"), "damp50": ("v0", "a0", "kappa0"),
++                "cv": ("v0",)}
++
++#: ``retime``'s own thresholds, copied as LITERALS from ``build_explore.py`` (a second copy of
++#: a threshold is a second convention, so they are named once here and pinned by the tests)
++_SEG_EPS = 1e-9
++_DEGENERATE_S = 1e-6
++_DIV_FLOOR = 1e-12
++
++
++def kinematic_floor_paths(v0: Tensor, a0: Tensor, kappa0: Tensor, steps: int, dt: float,
++                          units: str = "kappa") -> tuple[Tensor, Tensor]:
++    """``(ha0, ha0_ext)`` ``[B, steps, 2]`` float32 through the programme's ONE integrator.
++
++    ``ha0`` holds (0, 0) from ``v0``; ``ha0_ext`` holds the measured ``(a0, kappa0)``. Both are
++    exactly the arm's ``paths_from_controls`` rows (``hold_v0_controls`` / ``hold_ext_controls``
++    expanded over ``steps``), batched."""
++    v0 = torch.as_tensor(v0, dtype=torch.float32).reshape(-1)
++    a0 = torch.as_tensor(a0, dtype=torch.float32, device=v0.device).reshape(-1)
++    k0 = torch.as_tensor(kappa0, dtype=torch.float32, device=v0.device).reshape(-1)
++    if not (v0.shape == a0.shape == k0.shape):
++        raise ValueError(f"v0/a0/kappa0 must share one batch shape, got {tuple(v0.shape)} "
++                         f"{tuple(a0.shape)} {tuple(k0.shape)}")
++    b = v0.shape[0]
++    zero = torch.zeros(b, int(steps), 2, dtype=torch.float32, device=v0.device)
++    ext = torch.stack([a0, k0], dim=-1)[:, None, :].expand(b, int(steps), 2)
++    ha0 = unicycle_paths(zero, v0, float(dt))
++    ha0_ext = unicycle_paths(ext.contiguous(), v0, float(dt), action_units=units)
++    return ha0, ha0_ext
++
++
++def _arclen(p: Tensor):
++    """``p`` [B, K, 2] positions at k=1..K (origin implicit) -> (P [B,K+1,2], seg, L, S)."""
++    b = p.shape[0]
++    P = torch.cat([torch.zeros(b, 1, 2, dtype=p.dtype, device=p.device), p], dim=1)
++    seg = P[:, 1:] - P[:, :-1]
++    # np.linalg.norm(seg, axis=-1) == sqrt(x*x + y*y) for two components -- written out so the
++    # float64 result is the reference's to the bit
++    L = torch.sqrt(seg[..., 0] * seg[..., 0] + seg[..., 1] * seg[..., 1])
++    S = torch.cat([torch.zeros(b, 1, dtype=p.dtype, device=p.device),
++                   torch.cumsum(L, dim=1)], dim=1)
++    return P, seg, L, S
++
++
++def _gather(x: Tensor, idx: Tensor) -> Tensor:
++    """x [B, M] or [B, M, 2]; idx [B, K] -> [B, K] or [B, K, 2]."""
++    if x.dim() == 2:
++        return torch.gather(x, 1, idx)
++    return torch.gather(x, 1, idx[..., None].expand(*idx.shape, x.shape[-1]))
++
++
++def retime_paths(path: Tensor, lon_src: Tensor) -> Tensor:
++    """Batched, float64 ``build_explore.retime``: ``path``'s GEOMETRY at ``lon_src``'s own
++    travelled arclength, step by step. ``[B, K, 2]`` x2 -> ``[B, K, 2]`` float32.
++
++    Branches, exactly as the reference (per sample, per step):
++      * degenerate damped path (total length < 1e-6, or no segment > 1e-9): ``(s, 0)``;
++      * ``s <= S[-1]``: the segment ``j = clip(searchsorted(S, s, right) - 1)``, moved FORWARD
++        past zero-length segments, then ``P[j] + (s - S[j]) / max(L[j], 1e-12) * seg[j]``
++        (``P[j]`` when that segment is itself zero-length);
++      * ``s > S[-1]``: extrapolate along the LAST non-zero segment,
++        ``P[-1] + (s - S[-1]) * seg[jj] / L[jj]``.
++    The association order of every expression is the reference's, so float64 intermediates
++    agree to the bit."""
++    if path.shape != lon_src.shape or path.dim() != 3 or path.shape[-1] != 2:
++        raise ValueError(f"retime_paths needs two [B, K, 2] tensors, got {tuple(path.shape)} "
++                         f"and {tuple(lon_src.shape)}")
++    P, seg, L, S = _arclen(path.to(torch.float64))
++    s_src = _arclen(lon_src.to(torch.float64))[3][:, 1:]                 # [B, K]
++    b, k = L.shape
++    idx = torch.arange(k, device=L.device).expand(b, k)
++    nz = L > _SEG_EPS
++    # the reference's `while L[j] <= 1e-9 and j + 1 < len(L): j += 1`: the first index >= j with
++    # a non-zero segment, or the LAST index when none follows
++    cand = torch.where(nz, idx, torch.full_like(idx, k))
++    nxt = torch.flip(torch.cummin(torch.flip(cand, [1]), dim=1).values, [1])
++    nxt = torch.where(nxt >= k, torch.full_like(nxt, k - 1), nxt)
++    j0 = torch.searchsorted(S.contiguous(), s_src.contiguous(), right=True) - 1
++    j0 = j0.clamp(0, k - 1)
++    j = torch.gather(nxt, 1, j0)
++    Pj, Sj, Lj, segj = _gather(P, j), _gather(S, j), _gather(L, j), _gather(seg, j)
++    inner = torch.where((Lj > _SEG_EPS)[..., None],
++                        Pj + ((s_src - Sj) / Lj.clamp_min(_DIV_FLOOR))[..., None] * segj, Pj)
++    # extrapolation along the last non-zero segment
++    jj = torch.where(nz, idx, torch.full_like(idx, -1)).max(dim=1).values          # [B]
++    jj_c = jj.clamp_min(0)
++    seg_last = seg[torch.arange(b, device=L.device), jj_c]                          # [B, 2]
++    L_last = L[torch.arange(b, device=L.device), jj_c]                              # [B]
++    S_end, P_end = S[:, -1], P[:, -1]
++    extra = P_end[:, None, :] + ((s_src - S_end[:, None])[..., None] * seg_last[:, None, :]
++                                 ) / L_last.clamp_min(_DIV_FLOOR)[:, None, None]
++    out = torch.where((s_src <= S_end[:, None])[..., None], inner, extra)
++    degenerate = (S_end < _DEGENERATE_S) | (jj < 0)
++    straight = torch.stack([s_src, torch.zeros_like(s_src)], dim=-1)
++    out = torch.where(degenerate[:, None, None], straight, out)
++    return out.to(torch.float32)
++
++
++def kd_x_prior(v0: Tensor, a0: Tensor, kappa0: Tensor, *, steps: int = 30, dt: float = 0.2,
++               units: str = "kappa") -> dict:
++    """The ``kd_x`` floor ``[B, steps, 2]`` plus the two paths it is built from."""
++    ha0, ha0_ext = kinematic_floor_paths(v0, a0, kappa0, steps, dt, units)
++    damp = 0.5 * ha0 + 0.5 * ha0_ext
++    return {"kd_x": retime_paths(damp, ha0_ext), "ha0": ha0, "ha0_ext": ha0_ext,
++            "damp50": damp}
++
++
++def kinematic_prior(name: str, v0: Tensor, a0: Tensor, kappa0: Tensor, *, steps: int = 30,
++                    dt: float = 0.2, units: str = "kappa") -> Tensor:
++    """The named prior (``TRAJ_PRIORS``) ``[B, steps, 2]`` float32.
++
++    ``kdx`` / ``damp50`` are built from the SAME two integrated paths (``kd_x_prior``), so a
++    prior switch changes the combination and nothing upstream of it; ``cv`` is ``ha0``, whose
++    integration reads ``v0`` alone (``a0`` / ``kappa0`` still shape-checked, never used)."""
++    if name not in TRAJ_PRIORS:
++        raise ValueError(f"unknown R5 prior {name!r}; valid: {TRAJ_PRIORS}")
++    parts = kd_x_prior(v0, a0, kappa0, steps=steps, dt=dt, units=units)
++    return {"kdx": parts["kd_x"], "damp50": parts["damp50"], "cv": parts["ha0"]}[name]
++
++
++def region_pool(field: Tensor, grid: tuple[int, int], regions: tuple[int, int]) -> Tensor:
++    """``[B, N, d]`` row-major token field -> ``[B, R, d]`` region means.
++
++    At the shipped geometry (16 x 40 grid, 4 x 10 regions) each region is the mean of 4 x 4
++    tokens, exactly the trunk probe's ``x.reshape(4, 4, 10, 4, -1).mean(dim=(1, 3))`` (region
++    (a, e) = rows 4a..4a+3, columns 4e..4e+3), region index ``a * 10 + e``.
++    ⛔ NOT the global mean: the probe MEASURED that the mean-pooled state carries nothing
++    beyond kinematics."""
++    gh, gw = (int(x) for x in grid)
++    rh, rw = (int(x) for x in regions)
++    b, n, d = field.shape
++    if n != gh * gw:
++        raise ValueError(f"region_pool: {n} tokens is not a {gh} x {gw} grid")
++    if gh % rh or gw % rw:
++        raise ValueError(f"region_pool: {rh} x {rw} regions do not tile a {gh} x {gw} grid")
++    return field.reshape(b, rh, gh // rh, rw, gw // rw, d).mean(dim=(2, 4)).reshape(b, rh * rw, d)
++
++
++#: the trunk probe's kinematic design, (v, a, k, v^2, v a, v k, v^2 k, a k) -- here on FIXED
++#: scales (v/30 m/s, a/4 m/s^2, k/0.2), never on statistics of a split
++N_KIN_FEATS = 8
++_KIN_SCALE = (30.0, 4.0, 0.2)
++
++
++def kin_features(v0: Tensor, a0: Tensor, kappa0: Tensor) -> Tensor:
++    v = v0.reshape(-1).to(torch.float32) / _KIN_SCALE[0]
++    a = a0.reshape(-1).to(torch.float32) / _KIN_SCALE[1]
++    k = kappa0.reshape(-1).to(torch.float32) / _KIN_SCALE[2]
++    return torch.stack([v, a, k, v * v, v * a, v * k, v * v * k, a * k], dim=-1)
++
++
++class TrajResidualHead(nn.Module):
++    """``regions [B, R, d_state]`` + ``cond [B, d_cond]`` -> residual ``[B, steps, 2]`` (m).
++
++    ⭐ THE OUTPUT LAYER IS ZERO-INITIALISED, weight AND bias, so at step 0 the residual is
++    EXACTLY 0.0 and the head's trajectory IS the prior (the known-value control). ⚠️ The price,
++    stated: with ``out.weight == 0`` the gradient into every layer BELOW ``out`` is exactly zero
++    at the first step (``dL/dh = W^T dL/dy``); ``out`` itself receives ``dL/dW = dL/dy h^T != 0``,
++    so from the second optimizer step the gradient reaches the body and the region projection
++    (pinned by ``tests/test_refav1_r5_traj_head.py``). ReZero / zero-init residual branches pay
++    the same one-step delay; the refav1 predictors avoid it with a down-scaled init because
++    there the delta is added to a field that must move from step 0 -- here the prior is the
++    answer at step 0 by design."""
++
++    def __init__(self, d_state: int, n_regions: int, d_region: int, hidden: int, steps: int,
++                 d_cond: int):
++        super().__init__()
++        self.steps, self.n_regions, self.d_cond = int(steps), int(n_regions), int(d_cond)
++        self.reg_norm = nn.LayerNorm(d_state)
++        self.reg_proj = nn.Linear(d_state, d_region)
++        self.reg_pos = nn.Parameter(torch.zeros(1, n_regions, d_region))
++        nn.init.trunc_normal_(self.reg_pos, std=0.02)
++        self.mlp = nn.Sequential(nn.Linear(n_regions * d_region + d_cond, hidden), nn.GELU(),
++                                 nn.Linear(hidden, hidden), nn.GELU())
++        self.out = nn.Linear(hidden, self.steps * 2)
++        nn.init.zeros_(self.out.weight)
++        nn.init.zeros_(self.out.bias)
++
++    def forward(self, regions: Tensor, cond: Tensor) -> Tensor:
++        if regions.shape[1] != self.n_regions:
++            raise ValueError(f"TrajResidualHead: {regions.shape[1]} regions, built for "
++                             f"{self.n_regions}")
++        if cond.shape[-1] != self.d_cond:
++            raise ValueError(f"TrajResidualHead: cond width {cond.shape[-1]}, built for "
++                             f"{self.d_cond}")
++        r = self.reg_proj(self.reg_norm(regions)) + self.reg_pos
++        h = self.mlp(torch.cat([r.flatten(1), cond.to(r.dtype)], dim=-1))
++        return self.out(h).reshape(-1, self.steps, 2)
++
++
++def path_speeds(path: Tensor, dt: float) -> Tensor:
++    """``[B, K, 2]`` -> ``[B, K]`` the speed each SEGMENT implies (segment k = p_{k-1} -> p_k,
++    origin prepended). Under the unicycle this is the speed at the START of step k."""
++    P = torch.cat([torch.zeros_like(path[:, :1]), path], dim=1)
++    d = P[:, 1:] - P[:, :-1]
++    return torch.sqrt(d[..., 0] * d[..., 0] + d[..., 1] * d[..., 1]) / float(dt)
++
++
++@torch.no_grad()
++def cap_path_speed(path: Tensor, v_max: Tensor, dt: float, *, v0: Tensor | None = None,
++                   a_max: float = 4.0) -> tuple[Tensor, dict]:
++    """R1 on an emitted PATH: re-time it along its own geometry so no segment is driven faster
++    than the allowance, never getting AHEAD of the original path.
++
++    allowance of segment k (k = 1..K): ``u_k = v_max``, or -- when ``v0`` is given --
++    ``max(v_max, v0 - a_max * (k - 1) * dt)``: a car measured ABOVE the limit may only shed
++    speed at ``a_max`` (``refa_v1_plan._cap_speed``'s convention). The capped arclength is
++    ``s'_k = min(S_k, s'_{k-1} + u_k dt)`` and the point is the original polyline at ``s'_k``.
++    ⭐ NON-BINDING IS THE IDENTITY: wherever ``s'_k == S_k`` the ORIGINAL point is returned
++    (``torch.where``, not a re-interpolation), so a path that respects the limit is returned
++    bit-for-bit. Returns ``(capped, record)``; ``record`` counts capped steps and the residual
++    excess (> 0 only where ``v0`` itself exceeded the limit)."""
++    v_max = torch.as_tensor(v_max, dtype=torch.float64, device=path.device).reshape(-1)
++    b, k, _ = path.shape
++    if v_max.numel() == 1 and b > 1:
++        v_max = v_max.expand(b)
++    P, seg, L, S = _arclen(path.to(torch.float64))
++    steps = torch.arange(k, dtype=torch.float64, device=path.device)            # k-1 = 0..K-1
++    if v0 is None:
++        allow = v_max[:, None].expand(b, k)
++    else:
++        v0d = torch.as_tensor(v0, dtype=torch.float64, device=path.device).reshape(-1)
++        allow = torch.maximum(v_max[:, None], v0d[:, None] - float(a_max) * steps * float(dt))
++    s_cap = torch.zeros(b, k, dtype=torch.float64, device=path.device)
++    prev = torch.zeros(b, dtype=torch.float64, device=path.device)
++    for i in range(k):
++        prev = torch.minimum(S[:, i + 1], prev + allow[:, i] * float(dt))
++        s_cap[:, i] = prev
++    binding = s_cap < S[:, 1:]
++    # the capped arclength never exceeds S[-1], so only the interpolation branch is reachable
++    idx = torch.arange(k, device=path.device).expand(b, k)
++    nz = L > _SEG_EPS
++    cand = torch.where(nz, idx, torch.full_like(idx, k))
++    nxt = torch.flip(torch.cummin(torch.flip(cand, [1]), dim=1).values, [1])
++    nxt = torch.where(nxt >= k, torch.full_like(nxt, k - 1), nxt)
++    j0 = (torch.searchsorted(S.contiguous(), s_cap.contiguous(), right=True) - 1).clamp(0, k - 1)
++    j = torch.gather(nxt, 1, j0)
++    Pj, Sj, Lj, segj = _gather(P, j), _gather(S, j), _gather(L, j), _gather(seg, j)
++    interp = torch.where((Lj > _SEG_EPS)[..., None],
++                         Pj + ((s_cap - Sj) / Lj.clamp_min(_DIV_FLOOR))[..., None] * segj, Pj)
++    capped = torch.where(binding[..., None], interp.to(path.dtype), path)
++    sp = path_speeds(capped.to(torch.float64), dt)
++    excess = (sp - v_max[:, None]).clamp_min(0.0).max(dim=1).values             # [B]
++    if v0 is None:
++        over = torch.zeros(b, dtype=torch.bool, device=path.device)
++    else:
++        over = (torch.as_tensor(v0, dtype=torch.float64).reshape(-1).to(path.device)
++                > v_max + 1e-6)
++    ok_rows, bad_rows = excess[~over], excess[over]
++    # ⛔ R1 is a HARD constraint: on a row whose MEASURED v0 is within the limit the emitted
++    # path must never exceed it (`n_rows_over_limit` MUST be 0); a row that STARTS above the
++    # limit is a property of the input state and is counted apart, never hidden.
++    return capped, {"n_capped_steps": int(binding.sum()),
++                    "n_rows_capped": int(binding.any(dim=1).sum()),
++                    "n_rows_over_limit": int((ok_rows > 1e-4).sum()),
++                    "max_excess_mps": float(ok_rows.max()) if ok_rows.numel() else 0.0,
++                    "n_rows_v0_over_limit": int(over.sum()),
++                    "max_excess_mps_v0_over_limit": (float(bad_rows.max())
++                                                     if bad_rows.numel() else None)}
++
++
++def traj_loss(pred: Tensor, gt: Tensor, mask: Tensor, *, beta: float = 1.0
++              ) -> tuple[Tensor, int]:
++    """Masked Smooth-L1 (Huber, ``beta`` in metres) on the (x, y) waypoints, summed over the
++    two coordinates and averaged over the VALID steps. ``(loss, n_valid_steps)``.
++
++    ⛔ NaN-SAFE BY CONSTRUCTION: a masked GT step may be NaN (no recorded future) and
++    ``NaN * 0`` is NaN, so the masked cells are removed with ``torch.where`` BEFORE the sum.
++    ⛔ NO ``if n_valid:`` GUARD: an all-masked batch returns a REAL 0.0 that stays in the graph
++    (every parameter still receives a zeros gradient), and the caller reports ``n_valid``
++    beside it -- a bare 0.0 would read as "supervised, and perfect"."""
++    m = mask.to(torch.bool)
++    g = torch.where(m[..., None], gt, torch.zeros_like(gt))
++    per = F.smooth_l1_loss(pred, g.to(pred.dtype), reduction="none", beta=float(beta)).sum(-1)
++    per = torch.where(m, per, torch.zeros_like(per))
++    n = m.sum()
++    return per.sum() / n.clamp_min(1).to(per.dtype), int(n.detach())

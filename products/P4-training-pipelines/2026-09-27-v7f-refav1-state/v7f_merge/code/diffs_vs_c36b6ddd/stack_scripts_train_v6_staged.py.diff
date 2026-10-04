@@ -1,0 +1,1530 @@
+diff --git a/stack/scripts/train_v6_staged.py b/stack/scripts/train_v6_staged.py
+index 91b675a..bdc3250 100644
+--- a/stack/scripts/train_v6_staged.py
++++ b/stack/scripts/train_v6_staged.py
+@@ -347,6 +347,19 @@ class V6LossWeights:
+     #: L1), so the two ARE commensurate — deliberately, since ``s1_multi`` at
+     #: K=1 is ``s1_latent`` exactly (pinned).
+     w_s1_multi: float = 0.0
++    #: ⭐ R3 (PI 2026-09-27, BINDING) — ALL TACTICAL LABELS TRAIN THE TACTICAL
++    #: LAYER. DEFAULT 0.0 = OFF everywhere, so the incumbent loss is
++    #: bit-identical. One weight on the sum of four label terms read off the
++    #: shared forward (:func:`tac_label_all_loss`): CE on ``a_lat`` and on
++    #: ``a_lon`` (``a_tac.lat``/``.lon``), weighted multi-label BCE on the
++    #: 22-token goal SET of ``g_tac`` (every traffic-light colour included —
++    #: D-TLIGHT-1), and a masked L1 on SPEED_BAND's (v_lo, v_hi) args (the one
++    #: goal present on every record, so its information is ONLY in its args).
++    #: HEADS ONLY: every head reads ``z_tac_p``, detached by the planner cut.
++    #: In force in S-T/S-J only — the stages that train ``layer_tac``; zeroed
++    #: in S-W/S-S so a launch line cannot advertise a term that trains nothing.
++    #: Units: nats (CE/BCE) + SPEED_SCALE-normalised m/s (the arg L1).
++    w_tac_label_all: float = 0.0
+ 
+     def for_stage(self, stage: str) -> "V6LossWeights":
+         """The weights actually in force for ``stage``.
+@@ -364,7 +377,9 @@ class V6LossWeights:
+                            lambda_plan=0.0, seam_op=0.0, w_select=0.0,
+                            w_anchor=0.0, w_s2_goal=0.0,
+                            w_t2_contrast=0.0, w_t5_consist=0.0,
+-                           w_s1_multi=0.0)
++                           w_s1_multi=0.0,
++                           # R3: layer_tac is FROZEN in S-W (world stage)
++                           w_tac_label_all=0.0)
+         if stage == "S-T":
+             # w_s2_goal is zeroed here for the layer_str reason w_anchor is
+             # zeroed in S-S: the strategic goal heads are FROZEN in S-T
+@@ -390,7 +405,10 @@ class V6LossWeights:
+                            # T2's projector is `layer_tac` and T5 needs
+                            # lambda_plan, both FROZEN/zero in S-S: in force
+                            # here they would be advertised and train nothing.
+-                           w_t2_contrast=0.0, w_t5_consist=0.0)
++                           w_t2_contrast=0.0, w_t5_consist=0.0,
++                           # R3: the tactical heads are `layer_tac` — FROZEN
++                           # in S-S, for the same reason as T2 above.
++                           w_tac_label_all=0.0)
+         if stage == "S-J":
+             return self
+         raise ValueError(f"unknown stage {stage!r}; expected one of {STAGES}")
+@@ -485,8 +503,15 @@ STAGE_MAY_INTRODUCE: dict[str, tuple[str, ...]] = {
+     # ⛔ F-8 (T5 temporal consistency) deliberately has NO ENTRY HERE: it holds
+     # no parameters and no buffers, so like `MpcRefiner` it changes no
+     # state_dict key and there is nothing for this allowlist to adjudicate.
++    # ⭐ 2026-09-27, R1/R4 (PI directive for v7F): S-T may also introduce the
++    # tactical-decision -> plan port (`tac_op_port.`, --tac-op-cond, planner
++    # group) and the max-speed INPUT port (`vmax_tac.`, --max-speed-input-v6,
++    # layer_tac group). Both ZERO-INIT, so the introduction is loss-continuous;
++    # both are trained by the stage that introduces them. ⚠️ CARRY RULE, as
++    # for `t2_head.`: an S-T ckpt with them needs the flags on S-S/S-J, or the
++    # keys are UNEXPECTED and `load_stage_init` is fatal (not chain-enforced).
+     "S-T": ("cand_score.", "cond_tac_dyn.", "prop_diffusion.", "fallback.",
+-            "agent_slots.", "t2_head."),
++            "agent_slots.", "t2_head.", "tac_op_port.", "vmax_tac."),
+     "S-S": (),                  # trains layer_str, which S-T already carried
+     "S-J": (),                  # joint polish introduces nothing
+ }
+@@ -2578,8 +2603,75 @@ def _v72_classes() -> dict:
+                 lon = IGNORE_ID
+             return int(lat), int(lon), True
+ 
++        def enable_tac_label_targets(self, *, negatives: str, sidecar,
++                                     class_mask, pos_weight) -> dict:
++            """⭐ R3: also emit the goal-SET + SPEED_BAND-arg targets.
++
++            ⛔ NOT CALLED ON THE DEFAULT PATH: until it is, ``batch()`` emits
++            exactly the incumbent keys (the flag-off batch is byte-identical).
++
++            Each record's in-band ``(y, w)`` is built ONCE, here, by the ONE
++            rule (``v7_labels.tactical_goal_targets``) — it depends on the
++            window only through the band test, which ``batch()`` applies with
++            the SAME ``_tac_ids`` call the action ids use, so the goal targets
++            and the action ids can never describe different windows. ⚠️ Doing
++            it now also pins the ``measured`` policy to the blob loaded HERE:
++            ``v7_labels`` keeps that policy in MODULE STATE, and a later
++            ``load_v7_labels`` (``--nav-labels``) would silently re-point it.
++            ``class_mask`` / ``pos_weight`` are ``tac_goal_head.mask_report`` /
++            ``v7_labels.goal_pos_weight`` over the LOADED SPLIT (the caller's
++            job, exactly as in the refcv3 consumer)."""
++            from tanitad.data.v7_labels import (  # noqa: PLC0415
++                TAC_GOAL_TOKENS, tactical_goal_targets)
++            n_tok = len(TAC_GOAL_TOKENS)
++            if len(class_mask) != n_tok or len(pos_weight) != n_tok:
++                raise ValueError(
++                    f"[R3] class_mask/pos_weight must have {n_tok} entries "
++                    f"(the goal vocabulary), got {len(class_mask)}/"
++                    f"{len(pos_weight)}")
++            tg: list = []
++            n_rec = n_speed = 0
++            for lab in self._v7:
++                if lab is None:
++                    tg.append(None)
++                    continue
++                # t0 is in band by construction (|t0 - t0| = 0)
++                yy, ww = tactical_goal_targets(lab, lab.t0_s,
++                                               negatives=negatives,
++                                               sidecar=sidecar)
++                ar = torch.zeros(GOAL_ARG_SLOTS)
++                am = torch.zeros(GOAL_ARG_SLOTS)
++                for tok, pairs in TAC_GOAL_ARG_SLOTS_V7.items():
++                    meta = (lab.tac_goal_meta or {}).get(tok)
++                    if tok not in (lab.tac_goals or ()) or \
++                            not isinstance(meta, dict):
++                        continue
++                    for name, slot in pairs:
++                        v = meta.get(name)
++                        if v is None or not math.isfinite(float(v)):
++                            continue
++                        ar[slot] = float(v)
++                        am[slot] = 1.0
++                n_rec += 1
++                n_speed += int(bool(am.sum() > 0))
++                tg.append((torch.tensor(yy, dtype=torch.float32),
++                           torch.tensor(ww, dtype=torch.float32), ar, am))
++            self._tg = tg
++            self._tg_class_mask = torch.tensor([float(x) for x in class_mask],
++                                               dtype=torch.float32)
++            self._tg_pos_weight = torch.tensor([float(x) for x in pos_weight],
++                                               dtype=torch.float32)
++            self._tg_report = {
++                "negatives": str(negatives),
++                "n_joined_records": n_rec,
++                "n_joined_records_with_speed_band_args": n_speed,
++                "arg_slots": {k: dict(v) for k, v in
++                              TAC_GOAL_ARG_SLOTS_V7.items()},
++                "keys": list(TAC_LABEL_BATCH_KEYS)}
++            return dict(self._tg_report)
++
+         def report(self) -> dict:
+-            return super().report() | {
++            rep = super().report() | {
+                 "n_windows_in_band_tac": self.n_windows_in_band_tac,
+                 "bands": ("PER FAMILY: strategic keys on the record's "
+                           "strategic_s half-width, tactical keys on its "
+@@ -2590,6 +2682,13 @@ def _v72_classes() -> dict:
+                                       "loss term reads them yet (pre-registered "
+                                       "follow-up, not a silent addition)"),
+             }
++            if getattr(self, "_tg", None) is not None:
++                # R3 in force: the consumer EXISTS, and the report says which
++                rep["tactical_consumer"] = (
++                    "v6_loss_step term 'tac_label_all' (--w-tac-label-all): "
++                    "CE a_lat/a_lon + goal-set BCE + SPEED_BAND arg L1")
++                rep["tac_label_targets"] = dict(self._tg_report)
++            return rep
+ 
+         def batch(self, idx) -> dict[str, Tensor]:
+             out = super().batch(idx)
+@@ -2597,6 +2696,15 @@ def _v72_classes() -> dict:
+             out["tac_lat_id"] = torch.full((n,), IGNORE_ID, dtype=torch.long)
+             out["tac_lon_id"] = torch.full((n,), IGNORE_ID, dtype=torch.long)
+             out["tac_valid"] = torch.zeros(n, dtype=torch.bool)
++            tg = getattr(self, "_tg", None)
++            if tg is not None:                  # R3 only; absent by default
++                k = int(self._tg_class_mask.numel())
++                out["tac_goal_y"] = torch.zeros(n, k)
++                out["tac_goal_w"] = torch.zeros(n, k)
++                out["tac_goal_pos_weight"] = self._tg_pos_weight.clone()
++                out["tac_goal_class_mask"] = self._tg_class_mask.clone()
++                out["tac_goal_args"] = torch.zeros(n, GOAL_ARG_SLOTS)
++                out["tac_goal_arg_mask"] = torch.zeros(n, GOAL_ARG_SLOTS)
+             for j, i in enumerate(idx):
+                 e_i, t = self._index[int(i)]
+                 lab = self._v7[e_i]
+@@ -2608,6 +2716,12 @@ def _v72_classes() -> dict:
+                 out["tac_valid"][j] = True
+                 out["tac_lat_id"][j] = lat
+                 out["tac_lon_id"][j] = lon
++                if tg is not None and tg[e_i] is not None:
++                    yy, ww, ar, am = tg[e_i]
++                    out["tac_goal_y"][j] = yy
++                    out["tac_goal_w"][j] = ww
++                    out["tac_goal_args"][j] = ar
++                    out["tac_goal_arg_mask"][j] = am
+             return out
+ 
+     _V72_CLASSES.update({"V72LabelSet": V72LabelSet,
+@@ -2895,6 +3009,295 @@ def load_s2_labels_any(path, *, allow_any_labels: bool = False, stack=None):
+                                        stack=stack)
+ 
+ 
++# ============================================================================
++# R3 — ALL TACTICAL LABELS -> the TACTICAL layer's loss (PI 2026-09-27)
++# ============================================================================
++#: ⭐ PI, BINDING (2026-09-27): *"All our tactical labels must be used to train
++#: the tactical layer to estimate and choose the right tactical behaviors and
++#: goals which MUST condition the operative planning."*
++#:
++#: ⛔ THE DEFECT THIS CLOSES, MEASURED AT c36b6ddd (v7f_r3/AUDIT.md): NO
++#: tactical label family reached ANY loss of this trainer. `tac_lat_id` /
++#: `tac_lon_id` rode the batch unread, and only on the S-S/S-J path — in S-T,
++#: the one stage that trains `layer_tac`, the label file was never even LOADED
++#: (`w_s2_goal` gated the load and S-T zeroes it). The 22-token goal SET —
++#: every traffic-light COLOUR included (RED 376 / GREEN 363 / YELLOW 22 /
++#: colourless 18 of 4,572; D-TLIGHT-1) — was never projected into the batch.
++#:
++#: The keys the R3 join ADDS beside `V72_TACTICAL_BATCH_KEYS`. They are emitted
++#: ONLY when the term is in force, so a flag-off batch is byte-identical.
++TAC_LABEL_BATCH_KEYS = ("tac_goal_y", "tac_goal_w", "tac_goal_pos_weight",
++                        "tac_goal_class_mask", "tac_goal_args",
++                        "tac_goal_arg_mask")
++#: ⚠️ A PROPOSED SLOT MAPPING, for the ONE goal whose TOKEN carries nothing.
++#: SPEED_BAND is present on 4,572/4,572 records (MEASURED), so its BCE cell has
++#: no negative and `mask_report` masks it under EVERY negatives policy: its
++#: information is ONLY in its args — the target speed interval (PI 2026-08-27).
++#: `g_tac["args"]` is the head's 8-slot PHYSICAL-UNIT vector (`GOAL_ARG_NAMES`:
++#: arg0..arg3 token-specific + the four constraint slots) and it enters
++#: `e_g_tac` through `vocab_tac.arg_proj`, i.e. it conditions the operative
++#: planner. SPEED_BAND takes the two token-specific slots arg0/arg1; it is
++#: ALWAYS present, so no other token can collide there — which is why this
++#: mapping, and no other, is proposed here. ⛔ The GENERAL name->slot encoder is
++#: the DataFlyWheel's (SPEC_V7_LABEL_TRAINER_WIRING §3.2); every other per-goal
++#: and per-action arg stays UNSUPERVISED until it lands, and config.json says so.
++TAC_GOAL_ARG_SLOTS_V7: dict[str, tuple[tuple[str, int], ...]] = {
++    "SPEED_BAND": (("v_lo_ms", 0), ("v_hi_ms", 1)),
++}
++
++
++def _tac_axis_ce(head_out: dict, ids: Tensor, valid: Tensor, tokens: tuple,
++                 where: str) -> tuple[Tensor, dict]:
++    """CE of one factored tactical ACTION axis (``lat`` or ``lon``).
++
++    ⛔ An all-ignored batch returns an IN-GRAPH zero (``logits.sum() * 0``), not
++    a NaN and not a skip: a bare ``cross_entropy`` over zero valid rows is 0/0,
++    and a skipped term leaves ``p.grad is None`` — which reads exactly like a
++    head that was never wired (the `tac_goal_head` rule)."""
++    logits = head_out["logits"].float()
++    b, v = logits.shape
++    if len(tokens) != v:
++        raise ValueError(f"tac_{where} head width {v} != {len(tokens)} token "
++                         f"names — the ids and the head disagree on the "
++                         f"vocabulary")
++    if ids.shape != (b,) or ids.dtype != torch.long:
++        raise ValueError(f"tac_{where}_id must be [{b}] long, got "
++                         f"{tuple(ids.shape)} {ids.dtype}")
++    tgt = torch.where(valid, ids, torch.full_like(ids, S2_IGNORE_ID))
++    on = tgt != S2_IGNORE_ID
++    n = int(on.sum())
++    if n == 0:
++        return logits.sum() * 0.0, {
++            f"tac_{where}_ce": None, f"tac_{where}_acc": None,
++            f"tac_{where}_n_valid": 0, f"tac_{where}_tok_counts": {}}
++    sel = tgt[on]
++    if int(sel.min()) < 0 or int(sel.max()) >= v:
++        raise ValueError(f"tac_{where}_id out of range [0, {v}) on a valid "
++                         f"window — the labels and the head disagree")
++    ce = torch.nn.functional.cross_entropy(logits, tgt,
++                                           ignore_index=S2_IGNORE_ID)
++    top1 = logits.detach().argmax(dim=-1)
++    counts: dict[str, int] = {}
++    for t in sel.tolist():
++        counts[tokens[t]] = counts.get(tokens[t], 0) + 1
++    return ce, {f"tac_{where}_ce": float(ce.detach()),
++                f"tac_{where}_acc": float((top1[on] == sel).float().mean()),
++                f"tac_{where}_n_valid": n,
++                f"tac_{where}_tok_counts": dict(sorted(counts.items()))}
++
++
++def tac_label_all_loss(out: dict, batch: dict, *, lat_tokens: tuple,
++                       lon_tokens: tuple, goal_tokens: tuple
++                       ) -> tuple[Tensor, dict]:
++    """R3's term — EVERY tactical label family against the tactical heads::
++
++        L = CE(a_lat.logits, tac_lat_id) + CE(a_lon.logits, tac_lon_id)
++          + BCE_w(g_tac.logits, tac_goal_y; tac_goal_w, pos_weight, class_mask)
++          + |g_tac.args - tac_goal_args| . tac_goal_arg_mask / SPEED_SCALE
++
++    on windows inside the record's TACTICAL band (``tac_valid`` — the ONE
++    window rule, ``v7_labels.window_in_band``). The goal BCE is
++    ``tanitad.refs.tac_goal_head.tac_goal_loss`` — the SAME function the refcv3
++    consumer uses (D-TACGOAL-1), reused rather than re-implemented, so the two
++    trainers cannot disagree about what "supervised" means.
++
++    ⛔ ADMISSIBILITY — HEADS ONLY. ``a_lat``/``a_lon``/``g_tac`` all read
++    ``z_tac_p``, detached under the planner cut, so the labels reach the heads
++    and never the trunk (``v6_loss_step`` refuses the term with the cut off).
++    ⚠️ ``g_tac`` also reads the strategic goal ``e_g_str`` (goals flow DOWN):
++    in S-J this term therefore also trains ``goal_head_str``/``vocab_str`` —
++    goal heads, not trunk; in S-T they are frozen (MEASURED in the tests)."""
++    from tanitad.data.v7_labels import HEADS, TAC_GOAL_TOKENS  # noqa: PLC0415
++    from tanitad.refs.tac_goal_head import tac_goal_loss  # noqa: PLC0415
++    from train_v58f_unicycle_head import SPEED_SCALE  # noqa: PLC0415
++    missing = [k for k in V72_TACTICAL_BATCH_KEYS + TAC_LABEL_BATCH_KEYS
++               if k not in batch]
++    if missing:
++        raise ValueError(
++            f"w_tac_label_all > 0 but the batch is missing {missing} — a "
++            f"label term without its labels is how a supervision weight "
++            f"silently becomes 0. Pass --s2-labels <the v7.2 blob> (the R3 join "
++            f"builds these keys).")
++    # ⛔ v7 is a RESTRUCTURE of v6: an id is only meaningful against the
++    # vocabulary it was minted in, so the heads must BE the label vocabularies.
++    for nm, have, want in (("a_lat", lat_tokens, HEADS["tac_lat"]),
++                           ("a_lon", lon_tokens, HEADS["tac_lon"]),
++                           ("g_tac", goal_tokens, TAC_GOAL_TOKENS)):
++        if tuple(have) != tuple(want):
++            raise ValueError(
++                f"R3: the {nm} head's vocabulary is not the v7.2 label "
++                f"vocabulary ({len(have)} vs {len(want)} tokens) — a v6-shaped "
++                f"head fed v7 ids trains a plausible WRONG class silently. "
++                f"Build the stack with --tac-vocab-version v7.0.")
++    if any(not nm.endswith("_ms")
++           for pairs in TAC_GOAL_ARG_SLOTS_V7.values() for nm, _ in pairs):
++        raise ValueError("TAC_GOAL_ARG_SLOTS_V7 maps a non-speed arg, but the "
++                         "arg L1 is normalised by SPEED_SCALE (m/s)")
++    valid = batch["tac_valid"].bool()
++    l_lat, lg_lat = _tac_axis_ce(out["a_lat"], batch["tac_lat_id"], valid,
++                                 tuple(lat_tokens), "lat")
++    l_lon, lg_lon = _tac_axis_ce(out["a_lon"], batch["tac_lon_id"], valid,
++                                 tuple(lon_tokens), "lon")
++    # ---- the 22-token goal SET (multi-label BCE) -------------------------
++    g = out["g_tac"]
++    gl = g["logits"].float()
++    y = batch["tac_goal_y"].to(gl.dtype)
++    wc = batch["tac_goal_w"].to(gl.dtype)
++    if y.shape != gl.shape or wc.shape != gl.shape:
++        raise ValueError(f"tac_goal_y/tac_goal_w must be {tuple(gl.shape)} like "
++                         f"g_tac.logits, got {tuple(y.shape)} / "
++                         f"{tuple(wc.shape)}")
++    if bool(((wc > 0).any(dim=-1) & ~valid).any()):
++        raise ValueError("tac_goal_w carries evidence on a window OUTSIDE the "
++                         "tactical band (tac_valid False) — the goal targets "
++                         "and the action ids were built by different joins")
++    cm = batch["tac_goal_class_mask"].to(gl.dtype)
++    l_goal, n_sup = tac_goal_loss(gl, y, wc,
++                                  pos_weight=batch["tac_goal_pos_weight"],
++                                  class_mask=cm)
++    eff = (wc > 0) & (cm > 0)[None, :]
++    pos = eff & (y > 0.5)
++    pos_counts = {goal_tokens[i]: int(c) for i, c in
++                  enumerate(pos.sum(dim=0).tolist()) if int(c)}
++    # ---- SPEED_BAND (v_lo, v_hi): the args of the constant goal -----------
++    ga = g["args"].float()
++    ta = batch["tac_goal_args"].to(ga.dtype)
++    am = batch["tac_goal_arg_mask"].to(ga.dtype)
++    if ta.shape != ga.shape or am.shape != ga.shape:
++        raise ValueError(f"tac_goal_args/tac_goal_arg_mask must be "
++                         f"{tuple(ga.shape)} like g_tac.args, got "
++                         f"{tuple(ta.shape)} / {tuple(am.shape)}")
++    if bool(((am > 0).any(dim=-1) & ~valid).any()):
++        raise ValueError("tac_goal_arg_mask sets a slot on a window OUTSIDE "
++                         "the tactical band")
++    n_slots = am.sum()
++    l1_ms = ((ga - ta).abs() * am).sum() / n_slots.clamp_min(1.0)
++    l_args = l1_ms / float(SPEED_SCALE)
++    loss = l_lat + l_lon + l_goal + l_args
++    return loss, {
++        "tac_label_loss": float(loss.detach()),
++        "tac_n_valid": int(valid.sum()), "tac_n_windows": int(valid.numel()),
++        **lg_lat, **lg_lon,
++        # ⛔ None, never 0.0, when nothing was supervised: a bare 0.0 reads as
++        # "supervised, and perfect" (test_tac_loss_logging.py's rule).
++        "tac_goal_bce": float(l_goal.detach()) if n_sup else None,
++        "tac_goal_n_supervised": int(n_sup),
++        "tac_goal_n_pos": int(pos.sum()),
++        "tac_goal_pos_counts": dict(sorted(pos_counts.items())),
++        "tac_speedband_l1_ms": (float(l1_ms.detach()) if float(n_slots) > 0
++                                else None),
++        "tac_speedband_n_slots": int(n_slots)}
++
++
++def tac_label_policy(a, s2_set, stack) -> dict:
++    """R3's LABEL SIDE, computed from the LOADED SPLIT — never from a literal.
++
++    The refcv3 recipe (`refc_v3_train.py`, D-TACGOAL), reused verbatim:
++    ``v7_labels.goal_supervision_census`` -> ``tac_goal_head.mask_report``
++    (a class with positives and NO supervised negative is switched off — its
++    logit could only be pushed to 1) and ``v7_labels.goal_pos_weight``
++    (n_neg/n_pos, capped). ``--tac-goal-negatives`` picks the policy; the PI's
++    2026-09-16 absence-as-negative ruling needs its SIDECAR, whose md5 binding
++    to THIS blob ``load_cot_negative_sidecar`` enforces.
++
++    Returns ``{"negatives", "sidecar", "class_mask", "pos_weight", "report"}``;
++    the report goes into config.json / dry_run.json verbatim."""
++    import inspect as _inspect  # noqa: PLC0415
++    from tanitad.data import v7_labels as v7l  # noqa: PLC0415
++    from tanitad.models import vocab_v7  # noqa: PLC0415
++    from tanitad.refs.tac_goal_head import mask_report  # noqa: PLC0415
++    if not hasattr(s2_set, "v7_by_stable"):
++        raise SystemExit(
++            "[v6] ⛔ --w-tac-label-all needs the v7.2 (s2-geom-v7) label blob "
++            "on --s2-labels: the s2-strategic-v1 artifact carries NO tactical "
++            "labels, so the term would have nothing to supervise.")
++    if tuple(stack.vocab_tac.tokens) != tuple(v7l.TAC_GOAL_TOKENS):
++        raise SystemExit(
++            f"[v6] ⛔ --w-tac-label-all: the built goal head carries "
++            f"{len(stack.vocab_tac.tokens)} tokens, not the 22-token v7 goal "
++            f"vocabulary the labels are minted in. --tac-vocab-version v7.0.")
++    labels = list(s2_set.v7_by_stable.values())
++    # ⛔ the `measured` negative policy lives in v7_labels' MODULE STATE; it
++    # must be THIS blob's, measured now — refuse if something re-pointed it.
++    here = frozenset({t for lb in labels
++                      for t, m in (lb.tac_goal_meta or {}).items()
++                      if isinstance(m, dict) and m.get("provenance") == "vlm-cot"}
++                     & set(v7l.TAC_GOAL_TOKENS))
++    if here != frozenset(v7l.cot_backed_tokens()):
++        raise SystemExit(
++            f"[v6] ⛔ --w-tac-label-all: v7_labels' measured CoT-token set "
++            f"{sorted(v7l.cot_backed_tokens())} is not THIS blob's "
++            f"{sorted(here)} — another load_v7_labels call re-pointed the "
++            f"negative policy. Refusing rather than supervising with another "
++            f"blob's negatives.")
++    neg = str(getattr(a, "tac_goal_negatives", "measured") or "measured")
++    scp = getattr(a, "cot_negative_sidecar", None)
++    sidecar, stamp = None, None
++    if neg == "cot-absence-negative":
++        if not scp:
++            raise SystemExit("[v6] ⛔ --tac-goal-negatives cot-absence-negative "
++                             "needs --cot-negative-sidecar (the PI's "
++                             "2026-09-16 ruling, as a file).")
++        sidecar, stamped = v7l.load_cot_negative_sidecar(scp, s2_set.manifest)
++        v7l.assert_sidecar_matches_presence(labels, sidecar)
++        stamp = stamped.cot_absence_negative
++    elif scp:
++        raise SystemExit(f"[v6] ⛔ --cot-negative-sidecar with "
++                         f"--tac-goal-negatives {neg}: the sidecar would be "
++                         f"IGNORED while the record carried it.")
++    census = v7l.goal_supervision_census(labels, negatives=neg, sidecar=sidecar)
++    mr = mask_report(census)
++    pw = v7l.goal_pos_weight(labels, negatives=neg, sidecar=sidecar)
++    cap = float(_inspect.signature(
++        v7l.goal_pos_weight).parameters["cap"].default)
++    report = {
++        "negatives": neg, "cot_absence_negative": stamp,
++        "n_label_records": len(labels),
++        "n_trainable": int(mr["n_trainable"]), "n_total": int(mr["n_total"]),
++        "trainable": list(mr["trainable"]), "masked_why": mr["masked_why"],
++        "pos_weight": [float(x) for x in pw], "pos_weight_cap": cap,
++        "n_on_pos_weight_cap": sum(1 for x in pw if float(x) >= cap - 1e-6),
++        "n_under_scoreability_floor": sum(
++            1 for t in v7l.TAC_GOAL_TOKENS
++            if int((census.get(t) or {}).get("pos", 0) or 0)
++            < vocab_v7.GOAL_MIN_N_FOR_METRIC),
++        "scoreability_floor_n": int(vocab_v7.GOAL_MIN_N_FOR_METRIC),
++        "census": census,
++        "action_ce": "unweighted CE on a_lat/a_lon over tac_valid windows "
++                     "(the refcv3 z_tac convention); NOT_YET_EXTRACTABLE "
++                     "targets are IGNORE (the join's `_tac_ids`)",
++        "arg_slots_PROPOSED": {k: dict(v) for k, v in
++                               TAC_GOAL_ARG_SLOTS_V7.items()},
++        "args_unsupervised": ("every per-goal arg except SPEED_BAND v_lo/v_hi, "
++                              "every a_tac arg, and g_tac.anchor — the general "
++                              "slot encoder is the DataFlyWheel's (§3.2)"),
++        "_evidence_class": "MEASURED (ours; this load)"}
++    return {"negatives": neg, "sidecar": sidecar, "class_mask": mr["mask"],
++            "pos_weight": pw, "report": report}
++
++
++def build_tac_label_targets(a, s2_set, s2_sup, stack) -> dict:
++    """R3 in ``train()``: the policy (:func:`tac_label_policy`) + the join.
++
++    Refuses a join with ZERO in-band tactical windows — the term would be
++    advertised in every log row and never fire."""
++    pol = tac_label_policy(a, s2_set, stack)
++    join = s2_sup.enable_tac_label_targets(
++        negatives=pol["negatives"], sidecar=pol["sidecar"],
++        class_mask=pol["class_mask"], pos_weight=pol["pos_weight"])
++    n_tac = int(getattr(s2_sup, "n_windows_in_band_tac", 0))
++    if n_tac == 0:
++        raise SystemExit(
++            "[v6] ⛔ --w-tac-label-all: the v7.2 join has ZERO windows inside "
++            "any record's tactical band (|t_now - t0| <= (hi-lo)/2) — the term "
++            "would never fire. Check --window / --max-horizon against t0.")
++    return pol["report"] | {
++        "join": join | {"n_windows": int(getattr(s2_sup, "n_windows", 0)),
++                        "n_windows_in_band_tac": n_tac,
++                        "n_matched_episodes": int(getattr(
++                            s2_sup, "n_matched_episodes", 0))}}
++
++
+ # ============================================================================
+ # D-V7-EVAL-EXCLUSION — the EVAL split's pixels may not enter the TRAIN set
+ # ============================================================================
+@@ -4157,6 +4560,25 @@ def s1_persistence_control(stack: V6Stack, z_str: Tensor, targets: Tensor, *,
+ # the per-batch loss assembly
+ # ============================================================================
+ 
++class _NavBoundPredictor:
++    """⭐ R2 / F7 (2026-09-27): the operative predictor WITH the nav conditioning bound, for the SHARED world-model loss
++    helpers (``train_stage_a.stage_a_losses``, ``metric_dynamics.rollout_transitions``), which call
++    ``predictor(window, actions)`` and know nothing of nav. MEASURED by the v7f gate: without it the operative nav
++    tensors received NO gradient in S-W (and S-T freezes their group), so the operative layer never learned from the
++    nav command. Delegates every other attribute (``parameters()``, ``training`` ...) to the wrapped predictor. Each
++    helper rolls arms SEPARATELY on the same batch, so the per-row nav tensor always matches the batch."""
++
++    def __init__(self, predictor, nav_cond):
++        self._p, self._nav = predictor, nav_cond
++
++    def __call__(self, *args, **kwargs):
++        kwargs.setdefault("nav_cond", self._nav)
++        return self._p(*args, **kwargs)
++
++    def __getattr__(self, name):
++        return getattr(self._p, name)
++
++
+ def v6_loss_step(stack: V6Stack, batch: dict, *, stage: str,
+                  weights: V6LossWeights, o1_k: int = 10, o5_k: int = 20,
+                  o5_mode: str = "uniform", o5_form: str = "l1",
+@@ -4210,6 +4632,10 @@ def v6_loss_step(stack: V6Stack, batch: dict, *, stage: str,
+                           ``w_t5_consist`` is in force, ignored otherwise
+       ``t5_lag``          int — that offset; absent defaults to
+                           ``cfg.stride_tac``
++      ``tac_lat_id``/``tac_lon_id``/``tac_valid`` + ``TAC_LABEL_BATCH_KEYS``
++                          the R3 tactical-label keys (the v7.2 join, after
++                          ``enable_tac_label_targets``) — REQUIRED iff
++                          ``w_tac_label_all`` is in force, ignored otherwise
+ 
+     Returns ``{"loss": Tensor, **components, "log": dict}``. Terms whose weight
+     is 0 for this stage are SKIPPED, not multiplied by zero — a skipped term
+@@ -4250,6 +4676,12 @@ def v6_loss_step(stack: V6Stack, batch: dict, *, stage: str,
+     terms: dict[str, Tensor] = {}
+ 
+     # ---- the shared forward ------------------------------------------------
++    # ⭐ R2 / F7: the operative predictor the WM-loss helpers roll -- nav-bound when the stack has nav, else the
++    # SAME object (byte-identical). Not detached: in S-W these losses are what trains the operative nav path.
++    _pred_op = stack.predictor_op
++    if getattr(stack, "nav", None) is not None and batch.get("nav_token") is not None:
++        _pred_op = _NavBoundPredictor(stack.predictor_op,
++                                      stack.nav(batch["nav_token"], batch["nav_args"], "operative"))
+     out = stack.forward(frames=batch["frames"], actions=_lift3(
+         batch["actions2"], batch["v0"], cond_param), v0=batch["v0"],
+         own_frames_tac=batch.get("own_frames_tac"),
+@@ -4259,7 +4691,12 @@ def v6_loss_step(stack: V6Stack, batch: dict, *, stage: str,
+         # PREFLIGHT refusal, not here — a refusal is auditable and lands in
+         # config.json, a silent default is invisible. If nav_cond is on and
+         # these are absent, V6Stack.forward raises NavTokenMissing by name.
+-        nav_token=batch.get("nav_token"), nav_args=batch.get("nav_args"))
++        nav_token=batch.get("nav_token"), nav_args=batch.get("nav_args"),
++        # ⭐ R1a (PI 2026-09-27): the clip's max speed, the TACTICAL input.
++        # `.get` for the same reason as nav: MANDATORY-ness is the stack's own
++        # named refusal (SpeedMaxInputMissing) plus the preflight. ⛔ The plan
++        # CAP is deliberately NOT passed here: the training plan is uncapped.
++        v_max_ms=batch.get("v_max_ms"), v_max_valid=batch.get("v_max_valid"))
+     states = out["z_op_win"]                                   # [B, W, d_op]
+     z_true = batch["z_true_steps"]
+ 
+@@ -4287,7 +4724,7 @@ def v6_loss_step(stack: V6Stack, batch: dict, *, stage: str,
+         # O1 can reshape the representation itself.
+         o1_states = states.detach() if w.o1_detach_encoder else states
+         L1 = stage_a_losses(
+-            stack.predictor_op, stack.step_readout_op, o1_states,
++            _pred_op, stack.step_readout_op, o1_states,
+             batch["actions2"], batch["future_actions2"], batch["v0"],
+             batch["gt_wp"], z_true[o1_k - 1], o1_k, dkappa=dkappa,
+             daccel=daccel, rand_dk=rand_dk, rand_da=rand_da,
+@@ -4365,7 +4802,7 @@ def v6_loss_step(stack: V6Stack, batch: dict, *, stage: str,
+         # k = o1_k, 6 of the 8 rolls per step) live in train_stage_a.py and
+         # are NOT governed by this flag — named in --help and in the register
+         # row rather than silently left out.
+-        trans = rollout_transitions(stack.predictor_op, states, aw3, fa3,
++        trans = rollout_transitions(_pred_op, states, aw3, fa3,
+                                     k_roll, grad_checkpoint=rgc,
+                                     bptt_truncate=int(bptt_truncate))
+         zhat_steps = [t[1] for t in trans]
+@@ -4407,7 +4844,7 @@ def v6_loss_step(stack: V6Stack, batch: dict, *, stage: str,
+                 # action-blindness that is not there.
+                 off = 1 + (q % (B - 1))
+                 fa_neg = torch.roll(fa3, shifts=off, dims=0)
+-                tn = rollout_transitions(stack.predictor_op, states, aw3,
++                tn = rollout_transitions(_pred_op, states, aw3,
+                                          fa_neg, jc + 1, grad_checkpoint=rgc,
+                                          bptt_truncate=int(bptt_truncate))
+                 negs.append(tn[jc][1])
+@@ -4715,6 +5152,46 @@ def v6_loss_step(stack: V6Stack, batch: dict, *, stage: str,
+         terms["s2"] = w.w_s2_goal * ls2
+         log |= lg_s2
+ 
++    # ---- R3: ALL tactical labels (w_tac_label_all, default 0.0 == absent) --
++    # In force only where for_stage keeps it (S-T / S-J — the stages that
++    # train layer_tac). Reads the tactical heads straight off the shared
++    # forward: no second head pass, no RNG, no new module.
++    if w.w_tac_label_all:
++        if not cfg.isolate_planner_from_encoder:
++            raise ValueError(
++                "w_tac_label_all > 0 with isolate_planner_from_encoder=False: "
++                "a_lat/a_lon/g_tac read z_tac_p, which is detached ONLY by the "
++                "planner cut — without it the tactical LABEL loss reaches the "
++                "adapter and the encoder and becomes a TRUNK loss. 'Labels "
++                "supervise GOAL/INTERPRETATION HEADS only, never any WM trunk "
++                "loss' is BINDING (HIERARCHY_VOCABULARY §2).")
++        # ⛔ R3's second half: the supervised goal must be the one that
++        # CONDITIONS the operative planning. `e_g_tac` (-> predictor_op intent,
++        # -> the 6 s emission) is built from the factored pair when it exists,
++        # and from `gates` only under goal_multilabel — otherwise from a
++        # SOFTMAX of the logits this BCE trains as independent sigmoids.
++        if stack.goal_head_tac_lat is not None:
++            raise ValueError(
++                "w_tac_label_all > 0 on a --goal-factored stack: e_g_tac is "
++                "built from the FACTORED pair, so supervising the mixed g_tac "
++                "would train a head that conditions nothing — and under v7.0 "
++                "the pair is not a LAT/LON split of the v7 goal set (LAT = the "
++                "unversioned v6 partition, 2 of its 4 classes absent from v7; "
++                "LON = all 22 v7 tokens). Build without --goal-factored.")
++        if not getattr(stack.goal_head_tac, "multilabel", False):
++            raise ValueError(
++                "w_tac_label_all > 0 without goal_multilabel: the goal-set BCE "
++                "trains INDEPENDENT sigmoid gates, but without "
++                "--goal-multilabel e_g_tac reads softmax(logits) — the "
++                "supervised quantity would not be what conditions the "
++                "operative planner. Build with --goal-multilabel.")
++        ltl, lg_tl = tac_label_all_loss(
++            out, batch, lat_tokens=tuple(stack.vocab_a_lat.tokens),
++            lon_tokens=tuple(stack.vocab_a_lon.tokens),
++            goal_tokens=tuple(stack.vocab_tac.tokens))
++        terms["tac_label_all"] = w.w_tac_label_all * ltl
++        log |= lg_tl
++
+     if not terms:
+         raise RuntimeError(f"stage {stage} produced NO loss terms — every "
+                            f"weight is zero, which would train nothing while "
+@@ -5307,6 +5784,24 @@ def build_stack_from_args(a) -> V6Stack:
+         # F-1: the g_str->P_T port. Default False = the incumbent build,
+         # byte-identical; the chain's S-T command surface turns it on.
+         tac_goal_cond=bool(getattr(a, "tac_goal_cond", False)),
++        # ⭐ R6 (PI 2026-09-27): zero strategic conditioning into the tactical goal
++        # heads. Default False = byte-identical; an older recorded namespace lacks
++        # the key and rebuilds exactly what it trained.
++        strategic_off=bool(getattr(a, "strategic_off", False)),
++        # ⛔⛔ R2 (PI 2026-09-27): THE NAV CONDITIONER. MEASURED 2026-09-27 by the v7f launch-gate
++        # profile (G-DVB): `--nav-cond` was REQUIRED by preflight for every v7-line run and then
++        # NEVER mapped here, so every such launch built a stack with NO nav conditioner -- a
++        # declared lever the built model did not have (the D-REFCV6-CONFIG-BUILD class). The
++        # nav fixes pinned by tests/test_v7f_r2_nav_fixes.py were tested on configs built
++        # directly and so never reached a real launch. Default False = byte-identical.
++        nav_cond=bool(getattr(a, "nav_cond", False)),
++        # ⭐ R4 / R1a / R1b (PI 2026-09-27, v7F). Defaults ("off"/False/False)
++        # = the incumbent build, byte-identical (tests/test_v7f_r1r4.py). A
++        # RECORDED-args namespace from an older run lacks the keys and so
++        # rebuilds exactly what it trained (the getattr fallbacks).
++        tac_op_cond=str(getattr(a, "tac_op_cond", "off") or "off"),
++        max_speed_input_v6=bool(getattr(a, "max_speed_input_v6", False)),
++        plan_vmax_cap=bool(getattr(a, "plan_vmax_cap", False)),
+         # F-7 / T2: the manoeuvre-contrastive projector. Default False = the
+         # incumbent build, 87,893,449 params / 405 keys (MEASURED); ON adds
+         # +164,225 params / +5 keys at the default d_tac (also MEASURED, in
+@@ -5361,6 +5856,11 @@ def build_stack_from_args(a) -> V6Stack:
+     # v6.0 — that is what keeps every existing checkpoint loadable.
+     cfg.tac_vocab_version = str(getattr(a, "tac_vocab_version", "v6.0"))
+     stack = V6Stack(cfg)
++    # ⭐ R1/R4 G-DVB (2026-09-27): argv vs the BUILT stack for the levers this
++    # change adds, refused before anything else runs. (The binding launch gate
++    # has no train_v6_staged profile yet -- declared_vs_built_v6's docstring.)
++    from tanitad.train.declared_vs_built_v6 import refuse_on_mismatch as _dvb6
++    _dvb6(stack, a)
+     if str(getattr(a, "o5_target", "live")) == "ema":
+         from tanitad.models.v6 import _EmaCopy
+         # ⚠️ these deepcopy whatever the modules hold NOW (random init);
+@@ -5710,6 +6210,21 @@ def synthetic_train_batch(stack: V6Stack, *, batch: int = 2, k: int = 12,
+     if not cfg.shared_encoder:
+         out["own_frames_tac"] = torch.randn(b, c, h, w, generator=g)
+         out["own_frames_str"] = torch.randn(b, c, h, w, generator=g)
++    # ⭐ R1a: present ONLY when the stack built the max-speed port (the F-11
++    # rule above: a key that is always there cannot prove the refusal fires).
++    # RAW v_hi in m/s spanning every bin incl. the > 120 km/h clamp; the last
++    # row INVALID, so the dry-run exercises the all-zero one-hot too.
++    if getattr(stack, "vmax_tac", None) is not None:
++        out["v_max_ms"] = torch.rand(b, generator=g) * 35.0 + 3.0
++        out["v_max_valid"] = torch.ones(b)
++        if b >= 2:
++            out["v_max_valid"][-1] = 0.0
++    # ⭐ R2 / F8 (2026-09-27): a nav stack REQUIRES the nav channel in forward, and this batch carried none, so the
++    # trainer's own --dry-run died with NavTokenMissing on every nav launch (MEASURED by the v7f gate). Drawn LAST and
++    # only when the conditioner exists, so every pre-existing batch is byte-identical.
++    if getattr(stack, "nav", None) is not None:
++        out["nav_token"] = torch.randint(0, len(stack.nav.tokens), (b,), generator=g)
++        out["nav_args"] = torch.rand(b, 2, generator=g)
+     if device is not None:
+         out = {kk: ([t.to(device) for t in v] if isinstance(v, list)
+                     else v.to(device)) for kk, v in out.items()}
+@@ -5763,6 +6278,50 @@ def synthetic_s2_batch(batch: int = 2, *, seed: int = 0,
+     return out
+ 
+ 
++def synthetic_tac_label_batch(stack: V6Stack, batch: int = 2, *, seed: int = 0,
++                              valid_frac: float = 0.75, device=None) -> dict:
++    """Synthetic R3 keys — the ``--dry-run`` stand-in for the tactical join.
++
++    Shapes and dtypes are EXACTLY the v7.2 join's (``V72WindowSupervision.
++    batch`` after ``enable_tac_label_targets``), widths read from the BUILT
++    heads, including out-of-band rows (ids IGNORE, zero goal weight, zero arg
++    mask), so a dry-run exercises the same loss path — masking included. Uses
++    its OWN generator: switching the term on must not move any other draw."""
++    g = torch.Generator().manual_seed(seed)
++    b = int(batch)
++    n_lat = int(stack.vocab_a_lat.n_tokens)
++    n_lon = int(stack.vocab_a_lon.n_tokens)
++    n_goal = int(stack.vocab_tac.n_tokens)
++    valid = torch.rand(b, generator=g) < float(valid_frac)
++    if b and not bool(valid.any()):
++        valid[0] = True                    # a dry step should exercise n>0
++    ign = torch.full((b,), S2_IGNORE_ID, dtype=torch.long)
++    v = valid.float()[:, None]
++    ar = torch.zeros(b, GOAL_ARG_SLOTS)
++    am = torch.zeros(b, GOAL_ARG_SLOTS)
++    lo = torch.rand(b, generator=g) * 20.0
++    for _tok, pairs in TAC_GOAL_ARG_SLOTS_V7.items():
++        for nm, slot in pairs:
++            ar[:, slot] = lo + (torch.rand(b, generator=g) * 5.0
++                                if nm.startswith("v_hi") else 0.0)
++            am[:, slot] = 1.0
++    out = {
++        "tac_lat_id": torch.where(valid, torch.randint(n_lat, (b,),
++                                                        generator=g), ign),
++        "tac_lon_id": torch.where(valid, torch.randint(n_lon, (b,),
++                                                        generator=g), ign),
++        "tac_valid": valid,
++        "tac_goal_y": (torch.rand(b, n_goal, generator=g) < 0.3).float() * v,
++        "tac_goal_w": v.expand(b, n_goal).clone(),
++        "tac_goal_pos_weight": torch.ones(n_goal),
++        "tac_goal_class_mask": torch.ones(n_goal),
++        "tac_goal_args": ar * v, "tac_goal_arg_mask": am * v,
++    }
++    if device is not None:
++        out = {k: t.to(device) for k, t in out.items()}
++    return out
++
++
+ def _declared_freeze_preflight(a_stack, a, where: str) -> dict:
+     """⛔ RUN EVERY FREEZE DECLARATION AGAINST WHAT THE FREEZE ACTUALLY DID.
+ 
+@@ -5886,19 +6445,59 @@ def dry_run(a, stack: V6Stack | None = None) -> dict:
+                  "_read": "--s2-labels was NOT supplied; the S2 loss path "
+                           "runs on synthetic keys when w_s2_goal is in "
+                           "force, and the loader was NOT exercised."}
++    _s2_set = None
+     if getattr(a, "s2_labels", None):
+         # ONE door, TWO schemas — the RECORD decides (spec §2). The v1 route
+         # is the incumbent `load_s2_labels` call, unchanged.
+-        s2_report = load_s2_labels_any(
++        _s2_set = load_s2_labels_any(
+             a.s2_labels,
+             allow_any_labels=bool(getattr(a, "allow_any_labels", False)),
+-            stack=stack).report() | {
++            stack=stack)
++        s2_report = _s2_set.report() | {
+             "exercised": True,
+             "join": "NOT exercised (dry-run has no corpus) — load + "
+                     "validation only"}
+         print(f"[v6 dry] s2-labels OK · {s2_report['n_records']} records · "
+               f"g_str census {s2_report['token_census_records']['g_str']}",
+               flush=True)
++    # ⭐ R1: the max-speed sidecar, REALLY read when supplied (same rule as
++    # --s2-labels above); the per-window JOIN needs a corpus and is NOT
++    # exercised -- the synthetic batch carries v_max keys instead, and
++    # dry_run.json says which of the two happened.
++    r1_report: dict = {"exercised": False,
++                       "_read": "--speed-max-sidecar-v6 NOT supplied; the "
++                                "tactical input (if on) ran on synthetic "
++                                "v_max keys"}
++    if getattr(a, "speed_max_sidecar_v6", None):
++        from tanitad.refs import refcv6_max_speed as _v6ms
++        _bys, _rep = _v6ms.read_speed_max_sidecar_v6(
++            str(a.speed_max_sidecar_v6), label_md5=label_blob_md5_for_vmax(a))
++        r1_report = _rep | {"exercised": True,
++                            "join": "NOT exercised (dry-run has no corpus)"}
++    # ---- R3: the tactical-label term, REALLY exercised when in force -------
++    # Same rule as --s2-labels above: G-DVB (v6) on the BUILT stack, and the
++    # label policy (census / class mask / pos_weight) on the REAL blob when one
++    # is supplied. The window join needs a corpus and is NOT exercised here.
++    tac_label_report = None
++    if w_stage_dry.w_tac_label_all:
++        from tanitad.train.declared_vs_built_v6 import (  # noqa: PLC0415
++            refuse_on_mismatch_v6)
++        refuse_on_mismatch_v6(stack, a, weights_in_force=w_stage_dry,
++                              parser=getattr(a, "_ew_parser", None),
++                              where="dry-run")
++        tac_label_report = {
++            "exercised": False, "gdvb_v6": "PASS (refuse_on_mismatch_v6)",
++            "_read": "--s2-labels was NOT supplied: the R3 loss path runs on "
++                     "synthetic keys; the label policy was NOT exercised."}
++        if _s2_set is not None:
++            tac_label_report = tac_label_policy(a, _s2_set, stack)["report"] | {
++                "exercised": True, "gdvb_v6": "PASS (refuse_on_mismatch_v6)",
++                "join": "NOT exercised (dry-run has no corpus) — policy on the "
++                        "loaded split only"}
++            print(f"[v6 dry] R3 tac-label-all OK · negatives "
++                  f"{tac_label_report['negatives']} · goal classes trainable "
++                  f"{tac_label_report['n_trainable']}/"
++                  f"{tac_label_report['n_total']}", flush=True)
+     o1_k = min(a.o1_k, a.dry_k)
+     o5_k = min(a.o5_k, a.dry_k)
+     trainable = [p for p in stack.parameters() if p.requires_grad]
+@@ -5931,6 +6530,9 @@ def dry_run(a, stack: V6Stack | None = None) -> dict:
+                 a.dry_batch, seed=a.seed + step, device=device,
+                 n_goal=stack.vocab_str.table.weight.shape[0],
+                 n_action=stack.vocab_a_str.table.weight.shape[0])
++        if w_stage_dry.w_tac_label_all:
++            b |= synthetic_tac_label_batch(stack, a.dry_batch,
++                                           seed=a.seed + step, device=device)
+         dk, da = sample_random_deltas(a.dry_batch, gen, a.rand_dkappa_max,
+                                       a.rand_daccel_max)
+         if tap is not None:
+@@ -6012,6 +6614,13 @@ def dry_run(a, stack: V6Stack | None = None) -> dict:
+         print(f"[v6 dry {step}] {json.dumps(row)}", flush=True)
+     spec = spectrum_report(torch.randn(64, min(stack.cfg.d_op, 64)))
+     iso = stack.assert_isolation(batch_size=1, strict=False)
++    # ⭐ R1b: the cap exercised through the REAL eval-mode forward (the
++    # training steps above are uncapped by design); absent when the flag is.
++    if getattr(a, "plan_vmax_cap", False):
++        r1_report["vmax_cap_smoke"] = vmax_cap_smoke(
++            stack, batch=max(int(a.dry_batch), 4), seed=int(a.seed))
++        print(f"[v6 dry] R1 cap smoke · "
++              f"{json.dumps(r1_report['vmax_cap_smoke'])}", flush=True)
+     cfg_json = _run_config(a, stack, freeze, decl_audit)
+     if init_report.get("exercised"):
+         cfg_json["init"] = init_report
+@@ -6056,6 +6665,15 @@ def dry_run(a, stack: V6Stack | None = None) -> dict:
+                              if obs_mon is not None else
+                              {"every": 0, "_read": "--obs-monitor-every 0"}),
+         "s2_labels": s2_report,
++        # ⭐ R1/R4 (PI 2026-09-27): present only when a lever is on, so the
++        # default dry_run.json is untouched.
++        **({"r1_r4": r1_report | {"config": r1r4_config_block(a, stack)}}
++           if (r1_report.get("exercised") or "vmax_cap_smoke" in r1_report
++               or r1r4_config_block(a, stack)) else {}),
++        # R3: present ONLY when the term is in force (a flag-off dry_run.json
++        # keeps the incumbent key set)
++        **({"tac_label_all": tac_label_report}
++           if tac_label_report is not None else {}),
+         "gate_verdict": gate["verdict"],
+         "_read": "synthetic tensors — NO corpus. This proves the launch "
+                  "assembles and steps, and (when --prev-gate/--init-from were "
+@@ -6092,6 +6710,7 @@ def _weights_from_args(a) -> V6LossWeights:
+         w_t2_contrast=float(getattr(a, "w_t2_contrast", 0.0)),
+         w_t5_consist=float(getattr(a, "w_t5_consist", 0.0)),
+         w_s1_multi=float(getattr(a, "w_s1_multi", 0.0)),
++        w_tac_label_all=float(getattr(a, "w_tac_label_all", 0.0) or 0.0),
+         lambda_plan=resolve_lambda_plan(a))
+ 
+ 
+@@ -6325,9 +6944,261 @@ def run_provenance(device=None) -> dict:
+     return prov
+ 
+ 
++# ============================================================================
++# ⭐ R1 / R4 (PI directive 2026-09-27, v7F) — max speed + tactical -> operative
++# ============================================================================
++# PI, verbatim: *"both of them should get the max speed, which it must not be
++# exceeded ... All our tactical labels must be used to train the tactical layer
++# to estimate and choose the right tactical behaviors and goals which MUST
++# condition the operative planning."* The model side lives in `V6Stack`
++# (`tac_op_port`, `vmax_tac`, `emit(v_max=...)`) and
++# `tanitad/models/plan_speed_cap.py`; this block is the TRAINER side: the
++# sidecar join, the batch keys, the config stamp, the dry-run cap smoke and the
++# preflight refusals. Every default is OFF and byte-identical.
++
++def label_blob_md5_for_vmax(a) -> str | None:
++    """The md5 of the label blob this run loaded (``--nav-labels``, else
++    ``--s2-labels``) — what the refcv6 sidecar's ``source_md5`` must equal.
++    ``None`` when the run loads no label blob: the reader then cannot cross-
++    check the sidecar's provenance, and the join report SAYS so."""
++    import hashlib
++    for p in (getattr(a, "nav_labels", None), getattr(a, "s2_labels", None)):
++        if p and os.path.isfile(str(p)):
++            h = hashlib.md5()
++            with open(str(p), "rb") as fh:
++                for chunk in iter(lambda: fh.read(1 << 20), b""):
++                    h.update(chunk)
++            return h.hexdigest()
++    return None
++
++
++def build_vmax_join(sidecar_path, episodes, index, *,
++                    label_md5: str | None = None) -> dict:
++    """The refcv6 max-speed sidecar -> per-EPISODE ``(raw v_hi m/s, valid)``.
++
++    ⛔ The SAME reader and join key as refcv6 (``read_speed_max_sidecar_v6``,
++    ``sid = stable_episode_id(clip_id)`` = ``episode.episode_id`` here, the key
++    the S2 join already uses): the sidecar ships the RAW ``v_hi_ms`` and the
++    ladder is applied ONCE, on the model side. REFUSES when not one of this
++    split's windows joins to a valid ceiling — a constant all-zero channel
++    would be measured as noise while config.json stamps it ON.
++    """
++    from tanitad.refs import refcv6_max_speed as v6ms
++    by_sid, report = v6ms.read_speed_max_sidecar_v6(str(sidecar_path),
++                                                     label_md5=label_md5)
++    n_ep = len(episodes)
++    v = torch.zeros(n_ep)
++    ok = torch.zeros(n_ep)
++    for e_i, ep in enumerate(episodes):
++        r = by_sid.get(int(ep.episode_id))
++        if r is not None and float(r[1]) > 0.5:
++            v[e_i], ok[e_i] = float(r[0]), 1.0
++    n_win = len(index)
++    n_fed = int(sum(int(ok[int(e_i)] > 0.5) for e_i, _t in index))
++    if n_win and n_fed == 0:
++        raise SystemExit(
++            f"[v6] ⛔ --speed-max-sidecar-v6: NOT ONE of this split's {n_win} "
++            f"windows joins to a sidecar row with a ceiling ({report['n_valid']} "
++            f"valid rows in the sidecar) — a JOIN failure, most likely a sidecar "
++            f"built over a different split. Refusing rather than feeding a "
++            f"constant all-zero channel.")
++    return {"v": v, "ok": ok, "report": {
++        **report, "label_md5": label_md5,
++        "label_md5_note": (None if label_md5 else
++                           "⚠️ no --nav-labels/--s2-labels blob: the sidecar's "
++                           "source_md5 was NOT cross-checked"),
++        "n_episodes": n_ep, "n_episodes_fed": int(ok.sum()),
++        "n_windows": n_win, "n_windows_fed": n_fed,
++        "window_ceiling_frac": round(n_fed / max(n_win, 1), 6)}}
++
++
++def vmax_batch(join: dict, idx, index, device) -> dict:
++    """The per-WINDOW batch keys: ``v_max_ms`` (RAW v_hi, 0.0 where unknown)
++    and ``v_max_valid`` — joined through ``index[i] = (episode, t)``, the same
++    route the S2 join rides. The batch dict is a WHITELIST: these are added
++    explicitly at the build site, or they stop there."""
++    e = torch.tensor([int(index[int(i)][0]) for i in idx], dtype=torch.long)
++    return {"v_max_ms": join["v"][e].to(device),
++            "v_max_valid": join["ok"][e].to(device)}
++
++
++def r1r4_config_block(a, stack: V6Stack) -> dict:
++    """What config.json records for R1/R4 — EMPTY when every lever is off, so
++    a default run's record is untouched. Each block names what the lever
++    reads, where it enters, and whether the BUILT stack carries it."""
++    out: dict = {}
++    toc = str(getattr(a, "tac_op_cond", "off") or "off")
++    side = getattr(a, "speed_max_sidecar_v6", None)
++    if toc != "off":
++        out["tac_op_cond"] = {
++            "mode": toc, "port": "tac_op_port (planner group, zero-init)",
++            "built": getattr(stack, "tac_op_port", None) is not None,
++            "reads": ("e_a_tac = [vocab_a_lat.encode(act_head_lat(z_tac_p)), "
++                      "vocab_a_lon.encode(act_head_lon(z_tac_p))] -- the LAT x "
++                      "LON behaviour posteriors"),
++            "adds_to": "e_g_tac -> V6Stack.emit (fan, anchor head, selector)",
++            "gradient": ("plan loss -> port only (behaviour heads NOT trained "
++                         "through it)" if toc == "detached" else
++                         "plan loss -> port AND behaviour heads (e2e)"),
++            "disjointness": ("computed from the vision-derived tactical latent "
++                             "z_tac_p (+ the declared max-speed input when "
++                             "--max-speed-input-v6); no situation-classifier "
++                             "output in any form (PI 2026-08-03)")}
++    if bool(getattr(a, "max_speed_input_v6", False)):
++        from tanitad.refs import refcv6_max_speed as v6ms
++        out["speed_max_derivation_v6"] = v6ms.SPEED_MAX_DERIVATION_V6
++        out["max_speed_input_v6"] = {
++            "port": "vmax_tac (layer_tac group, zero-init Linear(4 -> d_tac))",
++            "built": getattr(stack, "vmax_tac", None) is not None,
++            "adds_to": ("z_tac_p, the planner-side tactical latent every "
++                        "tactical decision head reads; the WM-side z_tac is "
++                        "untouched"),
++            "sidecar": str(side) if side else None}
++    if bool(getattr(a, "plan_vmax_cap", False)):
++        from tanitad.models.plan_speed_cap import CAP_SEMANTICS
++        out["plan_vmax_cap"] = {
++            "semantics": CAP_SEMANTICS,
++            "limit_source": ("refcv6 sidecar RAW SPEED_BAND.v_hi_ms (oracle, "
++                             "ego-future, PI-authorised 2026-09-16) -> "
++                             "plan_speed_cap.plan_limit_from_vhi"),
++            "sidecar": str(side) if side else None,
++            "applies": ("INFERENCE: every eval-mode V6Stack.emit/forward MUST "
++                        "be given plan_v_max_ms (it refuses otherwise); the "
++                        "training forward and its plan loss are UNCAPPED")}
++    return out
++
++
++def assert_r1r4_record(cfg_json: dict, a) -> None:
++    """⛔ The R1 declarations are PRECONDITIONS, not fields — refused in BOTH
++    directions, before config.json is written: the refcv6 4-way stamp via its
++    own guard (``assert_speed_max_stamp_v6``: a channel with no stamp, and a
++    control that carries one), and the cap block likewise."""
++    from tanitad.refs import refcv6_max_speed as v6ms
++    v6ms.assert_speed_max_stamp_v6(
++        cfg_json, bool(getattr(a, "max_speed_input_v6", False)))
++    cap_on = bool(getattr(a, "plan_vmax_cap", False))
++    blk = cfg_json.get("plan_vmax_cap")
++    if cap_on and not (isinstance(blk, dict) and blk.get("limit_source")
++                       and "ego-future" in str(blk.get("limit_source"))):
++        raise SystemExit(
++            "[v6] ⛔ --plan-vmax-cap is ON but config.json would not declare "
++            "the cap's limit source (an ego-future oracle). Refusing rather "
++            "than banking an arm whose record cannot say what capped it.")
++    if blk is not None and not cap_on:
++        raise SystemExit(
++            "[v6] ⛔ config.json carries a `plan_vmax_cap` block but the cap is "
++            "OFF — a control stamped as capped. Drop the block or turn the "
++            "cap on.")
++
++
++def vmax_cap_smoke(stack: V6Stack, *, batch: int = 4, seed: int = 0) -> dict:
++    """⭐ R1b through the REAL inference path: ONE eval-mode ``forward`` with a
++    per-row limit from the ladder (``plan_limit_from_vhi``), no gradient.
++    Counts, per the refav1 evaluator's split: plans over the limit where t0
++    was UNDER it (must be 0), t0 speeds already over it (an INPUT property),
++    candidates the cap bound. Synthetic tensors: nothing here is quotable."""
++    from tanitad.models.plan_speed_cap import plan_limit_from_vhi
++    was = stack.training
++    stack.eval()
++    try:
++        b = stack.synthetic_batch(batch, seed=seed)
++        # FOUR deterministic regimes, tiled over the batch, so the smoke says
++        # something whatever the (random / near-CV) weights emit:
++        #   v0 12.0 · v_hi  5.0 -> limit  8.33 m/s: t0 ABOVE the limit (brake)
++        #   v0  8.0 · v_hi  8.0 -> limit  8.33 m/s: 0.33 m/s headroom
++        #   v0 20.0 · v_hi 30.0 -> limit 33.33 m/s: generous (non-binding)
++        #   v0  5.0 · invalid   -> +inf           : no limit known
++        pat_v0 = torch.tensor([12.0, 8.0, 20.0, 5.0])
++        pat_hi = torch.tensor([5.0, 8.0, 30.0, 0.0])
++        pat_ok = torch.tensor([1.0, 1.0, 1.0, 0.0])
++        rep = (batch + 3) // 4
++        b["v0"] = pat_v0.repeat(rep)[:batch].to(b["v0"].dtype)
++        v_hi = pat_hi.repeat(rep)[:batch]
++        valid = pat_ok.repeat(rep)[:batch]
++        b["plan_v_max_ms"] = plan_limit_from_vhi(v_hi, valid)
++        if "v_max_ms" in b:
++            b["v_max_ms"], b["v_max_valid"] = v_hi, valid
++        with torch.no_grad():
++            p = stack.forward(**b)["plan"]
++        over0 = p["vmax_v0_over_limit"]
++        ex = p["vmax_plan_excess_ms"]
++        ok_rows = ~over0
++        lim = b["plan_v_max_ms"]
++        return {
++            "n_rows": int(batch), "limits_ms": [round(float(x), 4) for x in lim],
++            "n_v0_over_limit": int(over0.sum()),
++            "n_candidates": int(ex.numel()),
++            "n_candidates_binding": int(p["vmax_binding"].sum()),
++            "n_plan_over_limit": int((ex[ok_rows] > 1e-4).sum()),
++            "max_plan_excess_ms_t0_under_limit": (
++                float(ex[ok_rows].max()) if bool(ok_rows.any()) else None),
++            "max_uncapped_speed_minus_limit_ms": float(
++                (p["vmax_plan_max_speed_uncapped"]
++                 - lim[:, None]).masked_fill(~torch.isfinite(lim)[:, None],
++                                             float("-inf")).max()),
++            "_read": "synthetic smoke through the eval-mode forward; proves "
++                     "the cap reaches the emitted plan, NOT a driving number"}
++    finally:
++        stack.train(was)
++
++
++def _preflight_r1_r4(a) -> list[str]:
++    """R1/R4 refusals — milliseconds, before any corpus or GPU."""
++    probs: list[str] = []
++    toc = str(getattr(a, "tac_op_cond", "off") or "off")
++    msi = bool(getattr(a, "max_speed_input_v6", False))
++    cap = bool(getattr(a, "plan_vmax_cap", False))
++    side = getattr(a, "speed_max_sidecar_v6", None)
++    dry = bool(getattr(a, "dry_run", False))
++    ack = bool(getattr(a, "control_arm_ack", False)
++               or getattr(a, "i_know_this_is_the_control_arm", False))
++    if a.stage == "S-W":
++        for flag, on, grp in (("--tac-op-cond", toc != "off", "planner"),
++                              ("--max-speed-input-v6", msi, "layer_tac")):
++            if on:
++                probs.append(
++                    f"--stage S-W with {flag}: the {grp} group is FROZEN in "
++                    f"S-W, so the zero-init port would be untrainable dead "
++                    f"weight AND would add keys to the state_dict — which "
++                    f"breaks a strict resume of an S-W run. It is an S-T lever "
++                    f"(STAGE_MAY_INTRODUCE['S-T']).")
++        if cap:
++            probs.append(
++                "--stage S-W with --plan-vmax-cap: S-W emits no trained plan "
++                "(λ_plan ≡ 0, the emission is at its zero init), so the cap "
++                "would be advertised on an arm with nothing to cap.")
++    if (msi or cap) and not side and not dry:
++        probs.append(
++            f"{'--max-speed-input-v6' if msi else '--plan-vmax-cap'} without "
++            f"--speed-max-sidecar-v6: nothing would supply the clip's max "
++            f"speed (R1, PI 2026-09-27). Build it with "
++            f"`scripts/build_refcv6_speed_max_window.py` (the refcv6 sidecar "
++            f"over the SAME label blob as --nav-labels).")
++    if side and not (msi or cap):
++        probs.append(
++            "--speed-max-sidecar-v6 without --max-speed-input-v6 or "
++            "--plan-vmax-cap: the sidecar would be read by nothing — an "
++            "advertised-but-inert input.")
++    if side and not os.path.isfile(str(side)):
++        probs.append(f"--speed-max-sidecar-v6 {side} does not exist.")
++    if toc != "off" and "planner" in stage_trainable_groups(a.stage) \
++            and not ack:
++        lp = resolve_lambda_plan(a)
++        wa = float(getattr(a, "w_anchor", 0.0) or 0.0)
++        if not lp and not wa:
++            probs.append(
++                f"--tac-op-cond {toc} with no planner loss in force in stage "
++                f"{a.stage} (λ_plan 0, --w-anchor 0): the plan losses are the "
++                f"port's ONLY gradient source, so it would be built and never "
++                f"trained — the intent_proj dead-weight defect. If an "
++                f"inert-port control is what you want, say so with "
++                f"--i-know-this-is-the-control-arm.")
++    return probs
++
++
+ def _run_config(a, stack: V6Stack, freeze: dict,
+                 decl_audit: dict | None = None) -> dict:
+-    return {
++    cfg_json = {
+         "run": f"v6-staged-{a.stage}",
+         "stage": a.stage,
+         "trainable_groups": list(stage_trainable_groups(a.stage)),
+@@ -6383,6 +7254,12 @@ def _run_config(a, stack: V6Stack, freeze: dict,
+         "provenance": run_provenance(getattr(a, "device", None)),
+         "_evidence_class": "MEASURED (ours; this run's own configuration)",
+     }
++    # ⭐ R1/R4 (PI 2026-09-27): EMPTY with every lever off (the default record
++    # is untouched); the R1 declarations are then REFUSED in both directions
++    # BEFORE any caller writes config.json (both callers write right after).
++    cfg_json |= r1r4_config_block(a, stack)
++    assert_r1r4_record(cfg_json, a)
++    return cfg_json
+ 
+ 
+ # ============================================================================
+@@ -6659,7 +7536,10 @@ def train(a) -> dict:
+     # census + the disjointness verdict, per this run's own load).
+     s2_sup = None
+     s2_cfg: dict | None = None
+-    if a.s2_labels and w_stage.w_s2_goal:
++    # ⭐ R3: the tactical label term is the SECOND consumer of this join, and
++    # the one that lives in S-T — where w_s2_goal is zeroed. `or` keeps the
++    # incumbent condition byte-for-byte when w_tac_label_all is 0 (the default).
++    if a.s2_labels and (w_stage.w_s2_goal or w_stage.w_tac_label_all):
+         # ONE door, TWO schemas — sniffed from the RECORD (spec §2). v1 is the
+         # incumbent `load_s2_labels` call unchanged; v7.2 goes through
+         # `tanitad.data.v7_labels.load_v7_labels` (the STAMP), lands its
+@@ -6690,6 +7570,38 @@ def train(a) -> dict:
+                 f"(window={stack.cfg.predictor.window}, max_horizon={max_h}) "
+                 f"never reaches the label's decision time. The term would "
+                 f"never fire; refusing instead.")
++    # ---- R3: ALL tactical labels -> the tactical layer (S-T/S-J) ------------
++    # ⛔ default absent: with w_tac_label_all 0 nothing below runs, and the
++    # join above emits exactly the incumbent keys.
++    tac_label_cfg: dict | None = None
++    if w_stage.w_tac_label_all:
++        from tanitad.train.declared_vs_built_v6 import (  # noqa: PLC0415
++            refuse_on_mismatch_v6)
++        refuse_on_mismatch_v6(stack, a, weights_in_force=w_stage,
++                              parser=getattr(a, "_ew_parser", None),
++                              where="train")
++        if s2_sup is None:
++            raise SystemExit(
++                "[v6] ⛔ --w-tac-label-all without --s2-labels: the tactical "
++                "label term has no labels (preflight refuses this on a real "
++                "run; reaching here means it was bypassed).")
++        tac_label_cfg = build_tac_label_targets(a, s2_set, s2_sup, stack)
++        # ⛔ RE-READ the join's report: `s2_cfg` snapshotted it BEFORE the R3
++        # targets were enabled, so config.json said "tactical_consumer: NONE"
++        # while the term was in force — MEASURED on the first real-train()
++        # smoke (v7f_r3 raw/train_smoke_ST_summary.txt). A record that
++        # contradicts the loss is the declared-vs-built defect in the log.
++        if s2_cfg is not None:
++            s2_cfg["join"] = s2_sup.report()
++        print(f"[v6] R3 tac-label-all: negatives={tac_label_cfg['negatives']} "
++              f"· goal classes trainable {tac_label_cfg['n_trainable']}/"
++              f"{tac_label_cfg['n_total']} (masked: "
++              f"{sorted(tac_label_cfg['masked_why'])}) · "
++              f"{tac_label_cfg['n_on_pos_weight_cap']} ON the pos_weight cap "
++              f"{tac_label_cfg['pos_weight_cap']:g} · in-band tactical windows "
++              f"{tac_label_cfg['join']['n_windows_in_band_tac']}/"
++              f"{tac_label_cfg['join']['n_windows']} — report PER CLASS, "
++              f"never pooled", flush=True)
+ 
+     # ---- O4: interaction-weighted sampling (ACTIONS ONLY) ------------------
+     if a.o4_alpha > 0:
+@@ -7040,6 +7952,21 @@ def train(a) -> dict:
+               f"allow_oracle_nav={_manifest.allow_oracle_nav} "
+               f"(PI-reviewed: Alpamayo CoT + ego)", flush=True)
+ 
++    # ---- ⭐ R1 (PI 2026-09-27): the per-clip MAX SPEED join -----------------
++    # The refcv6 sidecar (RAW SPEED_BAND.v_hi_ms per clip) joined on the stable
++    # episode id, per EPISODE, then per WINDOW at the batch-build site. Built
++    # when the tactical INPUT or the inference CAP asks for it; the training
++    # forward receives only the INPUT (the plan stays uncapped in training).
++    vmax_join = None
++    if getattr(a, "speed_max_sidecar_v6", None) and (
++            getattr(a, "max_speed_input_v6", False)
++            or getattr(a, "plan_vmax_cap", False)):
++        vmax_join = build_vmax_join(a.speed_max_sidecar_v6, ds_train.episodes,
++                                    ds_train.index,
++                                    label_md5=label_blob_md5_for_vmax(a))
++        print(f"[v6] R1 max speed · {json.dumps(vmax_join['report'])}",
++              flush=True)
++
+     # ⛔ D-V7-DINO-SEED: at the flag defaults this IS the previous one-liner
+     # (one flat group + CosineAnnealingLR); see build_trunk_optimizer().
+     opt, trunk_opt_report = build_trunk_optimizer(a, stack, trainable)
+@@ -7106,6 +8033,14 @@ def train(a) -> dict:
+         cfg_json["s1_multi"] = reach
+     if s2_cfg is not None:
+         cfg_json["s2"] = s2_cfg
++    # ⭐ R1: the join's coverage travels with the run row (window fraction fed
++    # is the number the model actually experiences, the refcv6 precedent).
++    if vmax_join is not None:
++        cfg_json["r1_max_speed_join"] = vmax_join["report"]
++    if tac_label_cfg is not None:
++        # R3: what the tactical heads were ACTUALLY supervised with (policy,
++        # class mask, pos_weight, census, the join) — absent when off.
++        cfg_json["tac_label_all"] = tac_label_cfg
+     # D-V7-TRUNK-ANCHOR: what the anchor and the monitor ACTUALLY are for this
+     # run, beside the flags that asked for them. ⚠️ The caveat rides in the
+     # RECORD, not only in a doc — a reading quoted out of this file carries the
+@@ -7303,18 +8238,6 @@ def train(a) -> dict:
+             # behind. Same family as the analysis-time import that destroyed a
+             # completed rollout — make the optional thing optional.
+             "ep_idx": b.get("ep_idx"), "t_last": b.get("t_last"),
+-            # ⭐ NAV, joined here because this dict is a WHITELIST (see above) and
+-            # a key added upstream would stop at this line. Emitted only when
+-            # --nav-labels was given; otherwise absent, and `V6Stack.forward`
+-            # raises NavTokenMissing by name if --nav-cond was also passed.
+-            # ⛔ NOT `.get`-defaulted to None on failure: NavEmitter RAISES on an
+-            # unmapped episode, and that is deliberate — a default would silently
+-            # feed one clip's route to another clip's windows, which trains a
+-            # plausible wrong signal instead of stopping.
+-            **({} if nav_emitter is None or b.get("ep_idx") is None else
+-               dict(zip(("nav_token", "nav_args"),
+-                        nav_emitter(b["ep_idx"], b.get("t_last"),
+-                                    dt=float(getattr(a, "dt", 0.1)))))),
+             # ⭐ O13-EGO needs the ego's OWN future — the one target the
+             # action demonstrably determines (E-DEC-50: dv t 2.56, dyaw
+             # t 4.57). Forwarded with `.get` for exactly the reason the
+@@ -7334,6 +8257,24 @@ def train(a) -> dict:
+             # at PREFLIGHT (auditable, recorded in config.json) plus a named
+             # NavTokenMissing from V6Stack.forward — not by a crash here.
+             "nav_token": b.get("nav_token"), "nav_args": b.get("nav_args"),
++            # ⛔ R2 FIX (2026-09-27): the NavEmitter splat MUST come AFTER the `.get`
++            # forwarding above. In a dict literal the LATER key wins, and this
++            # splat used to sit ABOVE it, so every emitted token was overwritten
++            # by `b.get("nav_token")` = None and a real `--nav-cond --nav-labels`
++            # run died with NavTokenMissing at step 1 (MEASURED statically by the
++            # R1/R4 stream). Pinned by `tests/test_v7f_r2_nav_fixes.py`.
++            # ⭐ NAV (LAST), joined here because this dict is a WHITELIST (see above) and
++            # a key added upstream would stop at this line. Emitted only when
++            # --nav-labels was given; otherwise absent, and `V6Stack.forward`
++            # raises NavTokenMissing by name if --nav-cond was also passed.
++            # ⛔ NOT `.get`-defaulted to None on failure: NavEmitter RAISES on an
++            # unmapped episode, and that is deliberate — a default would silently
++            # feed one clip's route to another clip's windows, which trains a
++            # plausible wrong signal instead of stopping.
++            **({} if nav_emitter is None or b.get("ep_idx") is None else
++               dict(zip(("nav_token", "nav_args"),
++                        nav_emitter(b["ep_idx"], b.get("t_last"),
++                                    dt=float(getattr(a, "dt", 0.1)))))),
+         }
+         if t5_partner:
+             # rows [0, n) are the anchors and rows [n, 2n) their +lag partners,
+@@ -7412,6 +8353,11 @@ def train(a) -> dict:
+             # the join was precomputed per episode, so this is O(batch).
+             batch |= {kk: v.to(device)
+                       for kk, v in s2_sup.batch(idx).items()}
++        # ⭐ R1a: the clip's max speed rides the SAME sampled indices (this
++        # dict is a WHITELIST -- added here or it never reaches the stack).
++        # Only when the tactical INPUT is on: the cap is an inference lever.
++        if vmax_join is not None and getattr(a, "max_speed_input_v6", False):
++            batch |= vmax_batch(vmax_join, idx, ds_train.index, device)
+         if tap is not None:
+             tap.arm()
+         with torch.autocast(dev_type,
+@@ -9431,6 +10377,12 @@ def build_parser() -> argparse.ArgumentParser:
+                     help="the TYPED categorical arg channel. Without it 7 of "
+                          "the 9 g_tac tokens are inexpressible even given "
+                          "perfect labels. REQUIRED by --anchor-goal.")
++    ap.add_argument("--strategic-off", action="store_true",
++                    help="⭐ R6 (PI 2026-09-27): the strategic layer is OFF -- the tactical "
++                         "goal heads receive a ZERO strategic conditioning instead of the "
++                         "untrained strategic head's embedding, so the tactical goal is "
++                         "independent of layer_str and no gradient reaches it. Refused "
++                         "with --tac-goal-cond. Default OFF = byte-identical.")
+     ap.add_argument("--tac-goal-cond", action="store_true",
+                     help="⭐ build the g_str->P_T conditioning port (F-1, "
+                          "DIAGRAM_CONFORMANCE.md 2026-08-16): a ZERO-INIT "
+@@ -9447,6 +10399,45 @@ def build_parser() -> argparse.ArgumentParser:
+                          "--selector. ⛔ REFUSED in S-W: layer_tac is frozen "
+                          "there and the new keys would break the live run's "
+                          "strict resume.")
++    # ---- R4 / R1 (PI directive 2026-09-27, v7F) -- ALL DEFAULT OFF --------
++    ap.add_argument("--tac-op-cond", choices=("off", "detached", "e2e"),
++                    default="off",
++                    help="⭐ R4 (PI 2026-09-27): the tactical layer's chosen "
++                         "BEHAVIOURS condition the operative plan. MEASURED at "
++                         "the tip: the tactical GOAL already reaches the "
++                         "emission, the LAT x LON behaviour posteriors do not. "
++                         "ON builds a ZERO-INIT tac_op_port (planner group) "
++                         "that projects e_a_tac and ADDS it to e_g_tac before "
++                         "V6Stack.emit. 'detached' = the plan loss trains the "
++                         "port, never the behaviour heads (F-1 rule); 'e2e' = "
++                         "it trains them too. Default off = byte-identical. "
++                         "⛔ REFUSED in S-W; S-T may INTRODUCE it.")
++    ap.add_argument("--max-speed-input-v6", action="store_true",
++                    help="⭐ R1a (PI 2026-09-27): the clip's MAX SPEED as a "
++                         "TACTICAL INPUT -- the refcv6 4-way one-hot {30, 50, "
++                         "100, 120} km/h (containing window, invalid row = "
++                         "all-zero) through a ZERO-INIT vmax_tac port (layer_tac) "
++                         "added to the tactical decision latent. ⛔ EGO-FUTURE "
++                         "derived (SPEED_BAND.v_hi_ms), stamped as "
++                         "`speed_max_derivation_v6` in config.json (refused "
++                         "without it, and the mirror). Needs "
++                         "--speed-max-sidecar-v6. ⛔ REFUSED in S-W.")
++    ap.add_argument("--speed-max-sidecar-v6", default=None,
++                    help="the refcv6 sidecar (`scripts/build_refcv6_speed_max_"
++                         "window.py`): RAW v_hi_ms per clip keyed by `sid` = "
++                         "stable_episode_id(clip_id). Its source_md5 must equal "
++                         "the md5 of --nav-labels (else --s2-labels) -- two "
++                         "quantizations of one corpus is two experiments.")
++    ap.add_argument("--plan-vmax-cap", action="store_true",
++                    help="⭐ R1b (PI 2026-09-27: the max speed \"must not be "
++                         "exceeded\"): the emitted plan is HARD-CAPPED at "
++                         "INFERENCE (refav1 _cap_speed semantics; every "
++                         "candidate, before selection). Recorded in the model "
++                         "config: an eval-mode forward REFUSES without a per-row "
++                         "limit. The TRAINING forward stays uncapped (the label "
++                         "exceeds its own bin on decelerating / >120 km/h "
++                         "clips). --dry-run exercises it through the eval-mode "
++                         "forward. Needs --speed-max-sidecar-v6 for a real run.")
+     ap.add_argument("--anchor-goal",
+                     choices=("none", "snap_lat", "snap_xy", "onehot"),
+                     default="none",
+@@ -9977,6 +10968,38 @@ def build_parser() -> argparse.ArgumentParser:
+                          "differing md5s — this flag is for a deliberate "
+                          "experiment on another one, never a convenience. "
+                          "Refused without --s2-labels (inert flag).")
++    # ---- R3: ALL tactical labels -> the tactical layer — DEFAULT OFF -------
++    ap.add_argument("--w-tac-label-all", type=float, default=0.0,
++                    help="⭐ R3 (PI 2026-09-27, BINDING): weight on the "
++                         "ALL-TACTICAL-LABELS term — CE on a_lat/a_lon "
++                         "(a_tac.lat/.lon) + multi-label BCE on the 22-token "
++                         "g_tac goal SET (every traffic-light colour: "
++                         "D-TLIGHT-1) + masked L1 on SPEED_BAND's (v_lo, v_hi) "
++                         "args (PROPOSED slots arg0/arg1). 0.0 = the term is "
++                         "absent and the loss is bit-identical. HEADS ONLY "
++                         "(the planner cut). In force only in S-T/S-J, where "
++                         "layer_tac trains. Needs --s2-labels <the v7.2 blob> "
++                         "and --goal-multilabel (so the supervised gates are "
++                         "what conditions the operative planner); refused "
++                         "with --goal-factored.")
++    ap.add_argument("--tac-goal-negatives", default="measured",
++                    choices=("measured", "geometry", "all",
++                             "cot-absence-negative"),
++                    help="the goal-SET NEGATIVE policy for --w-tac-label-all "
++                         "(v7_labels.tactical_goal_targets; the refcv3 flag, "
++                         "same name). 'measured' (DEFAULT) supervises "
++                         "absence only for tokens the blob emits from "
++                         "geometry (17/22 classes trainable on the v7.2 train "
++                         "blob, MEASURED); 'cot-absence-negative' is the PI's "
++                         "2026-09-16 ruling and needs --cot-negative-sidecar; "
++                         "'all' is the comparison arm. Refused as inert "
++                         "without --w-tac-label-all.")
++    ap.add_argument("--cot-negative-sidecar", default=None,
++                    help="the PI 2026-09-16 absence-as-negative SIDECAR "
++                         "(tanitad.cot_absence_negative/1) — the permission "
++                         "token for --tac-goal-negatives cot-absence-negative. "
++                         "⛔ v7_labels.load_cot_negative_sidecar refuses a "
++                         "sidecar built over another blob md5.")
+     # ---- X2 seam dump: bank the 60-step plan — DEFAULT OFF ----------------
+     ap.add_argument("--dump-seam-plan", default=None,
+                     help="DIR to bank the emitted 60-step plan into, one "
+@@ -10146,6 +11169,7 @@ W_TERM_FLAGS: dict[str, tuple[str, str | None]] = {
+     "w_t2_contrast": ("--w-t2-contrast", "w_t2_contrast"),
+     "w_t5_consist": ("--w-t5-consist", "w_t5_consist"),
+     "w_s1_multi": ("--w-s1-multi", "w_s1_multi"),
++    "w_tac_label_all": ("--w-tac-label-all", "w_tac_label_all"),
+ }
+ 
+ 
+@@ -10189,6 +11213,19 @@ def _term_precondition(term: str, a) -> tuple[bool, str] | None:
+             return None
+         ok = bool(getattr(a, "s2_labels", None))
+         return (ok, "no --s2-labels: the CE/L1 has no target")
++    if term == "w_tac_label_all":
++        # MODULE preconditions first (binding in every mode), then the LABEL
++        # one (exempt under --dry-run, the w_s2_goal rule above)
++        if not bool(getattr(a, "goal_multilabel", False)):
++            return (False, "no --goal-multilabel: the supervised sigmoid gates "
++                           "are not what conditions the operative planner")
++        if bool(getattr(a, "goal_factored", False)):
++            return (False, "--goal-factored: e_g_tac comes from the factored "
++                           "pair, not the supervised mixed head")
++        if _dry:
++            return None
++        ok = bool(getattr(a, "s2_labels", None))
++        return (ok, "no --s2-labels: the tactical CE/BCE/L1 has no target")
+     return None
+ 
+ 
+@@ -10206,6 +11243,11 @@ W_TERM_MASKS: dict[str, str] = {
+     # which config.json already records as `args_supervised: false`.
+     "w_s2_goal": "s2_valid (+ g_str_valid/a_str_valid; v7.2 arg L1 is "
+                  "ALL-ZERO masked by V72_ARGS_SUPERVISED=False)",
++    # R3: the record's TACTICAL band (+-2 s around t0 at the shipped bands),
++    # then per-cell goal weights (negatives policy x mask_report class mask)
++    "w_tac_label_all": "tac_valid (the record's tactical band) + per-cell "
++                       "tac_goal_w (negatives policy x class mask) + "
++                       "tac_goal_arg_mask (SPEED_BAND v_lo/v_hi only)",
+ }
+ 
+ 
+@@ -10295,6 +11337,97 @@ def effective_weights_stamp(a, *, echo: bool = False) -> dict:
+                                                False)))
+ 
+ 
++def _preflight_tac_label_all(a, w_tl: float, s2p) -> list[str]:
++    """R3's refusals — every one fires in MILLISECONDS, before the corpus.
++
++    ⛔ Each is a way the term could be ADVERTISED in the launch line and train
++    nothing (or train the wrong head): the w_s2_goal / w_t2_contrast family."""
++    problems: list[str] = []
++    neg = str(getattr(a, "tac_goal_negatives", "measured") or "measured")
++    scp = getattr(a, "cot_negative_sidecar", None)
++    stage = getattr(a, "stage", "?")
++    if w_tl < 0.0:
++        problems.append(f"--w-tac-label-all must be non-negative, got {w_tl}")
++    if not w_tl:
++        # the two policy flags are INERT without the term
++        if neg != "measured":
++            problems.append(
++                f"--tac-goal-negatives {neg} without --w-tac-label-all: a "
++                f"negatives policy for a goal loss that is not in force is an "
++                f"inert flag on the launch line.")
++        if scp:
++            problems.append(
++                f"--cot-negative-sidecar {scp} without --w-tac-label-all: the "
++                f"permission token for a loss that is not in force.")
++        return problems
++    if stage in ("S-W", "S-S"):
++        problems.append(
++            f"--w-tac-label-all {w_tl} in {stage}: the tactical heads "
++            f"(a_lat/a_lon/g_tac) are `layer_tac`, which {stage} FREEZES, and "
++            f"`V6LossWeights.for_stage({stage!r})` zeroes the weight — the "
++            f"launch line would advertise a supervision that trains nothing. "
++            f"R3 is an S-T (or S-J) measure.")
++    if not s2p and not bool(getattr(a, "dry_run", False)):
++        problems.append(
++            f"--w-tac-label-all {w_tl} without --s2-labels: the tactical label "
++            f"term has no labels. Point --s2-labels at the v7.2 blob "
++            f"(s2_labels_v7.2_train.jsonl.gz).")
++    if s2p and Path(s2p).exists():
++        try:
++            route = s2_label_route(s2p)
++        except SystemExit as e:              # an unknown schema, named
++            route = f"refused ({e})"
++        if route != "v72":
++            problems.append(
++                f"--w-tac-label-all with --s2-labels {s2p} (route {route}): "
++                f"only the v7.2 (s2-geom-v7) blob carries tactical labels; the "
++                f"s2-strategic-v1 artifact has none.")
++    if not bool(getattr(a, "goal_multilabel", False)):
++        problems.append(
++            "--w-tac-label-all without --goal-multilabel: the goal-set BCE "
++            "trains INDEPENDENT sigmoid gates, but without --goal-multilabel "
++            "e_g_tac (the operative planner's goal conditioning) reads "
++            "softmax(logits) — the supervised quantity would not be what "
++            "conditions the operative planning (R3). Pass --goal-multilabel "
++            "(0 params, 0 keys).")
++    if bool(getattr(a, "goal_factored", False)):
++        problems.append(
++            "--w-tac-label-all with --goal-factored: e_g_tac is then built "
++            "from the FACTORED pair, so the supervised mixed g_tac would "
++            "condition nothing — and under v7.0 that pair is not a LAT/LON "
++            "split of the v7 goal set: its LAT vocabulary is the unversioned "
++            "v6 partition (ANCHOR_GOAL/CORRIDOR_OFFSET/EVADE_IN_CORRIDOR/"
++            "LAT_UNCONSTRAINED; ANCHOR_GOAL and LAT_UNCONSTRAINED are not v7 "
++            "tokens) and its LON vocabulary is all 22 v7 tokens. A v7 "
++            "LAT/LON partition is an open decision; drop --goal-factored.")
++    vv = str(getattr(a, "tac_vocab_version", "v7.0"))
++    if vv != "v7.0":
++        problems.append(
++            f"--w-tac-label-all with --tac-vocab-version {vv}: the v7.2 labels "
++            f"are minted in the v7.0 vocabulary (a RESTRUCTURE of v6, not an "
++            f"append) — a {vv} head fed v7 ids trains a plausible wrong class.")
++    if bool(getattr(a, "no_isolate_planner", False)):
++        problems.append(
++            f"--w-tac-label-all {w_tl} with --no-isolate-planner: the "
++            f"tactical heads read z_tac_p, detached ONLY by the planner cut — "
++            f"without it the LABEL loss becomes a TRUNK loss. 'Labels "
++            f"supervise GOAL/INTERPRETATION HEADS only' is BINDING "
++            f"(HIERARCHY_VOCABULARY §2); there is no acknowledgement flag.")
++    if neg == "cot-absence-negative" and not scp:
++        problems.append(
++            "--tac-goal-negatives cot-absence-negative without "
++            "--cot-negative-sidecar: the PI's 2026-09-16 ruling is applied "
++            "only through its sidecar (the permission token that binds it to "
++            "THIS blob's md5).")
++    if scp and neg != "cot-absence-negative":
++        problems.append(
++            f"--cot-negative-sidecar {scp} with --tac-goal-negatives {neg}: the "
++            f"sidecar would be IGNORED while the record carried it.")
++    if scp and not Path(scp).exists():
++        problems.append(f"--cot-negative-sidecar {scp} does not exist.")
++    return problems
++
++
+ def preflight(a) -> list[str]:
+     """Refusals that must fire BEFORE a GPU-day is spent."""
+     problems: list[str] = []
+@@ -10769,6 +11902,9 @@ def preflight(a) -> list[str]:
+     # ---- S2: every incoherent combination refused in MILLISECONDS ----------
+     w_s2 = float(getattr(a, "w_s2_goal", 0.0))
+     s2p = getattr(a, "s2_labels", None)
++    # R3's weight, read here because the S2 "labels with no consumer" refusal
++    # below must know the tactical term is a consumer too (0.0 by default)
++    w_tl = float(getattr(a, "w_tac_label_all", 0.0) or 0.0)
+     if w_s2 < 0.0:
+         problems.append(f"--w-s2-goal must be non-negative, got {w_s2}")
+     # ---- D-V7-WIRING flags: neither may sit INERT on a launch line ----------
+@@ -10805,7 +11941,7 @@ def preflight(a) -> list[str]:
+             f"that is after the corpus build; this fails in milliseconds. "
+             f"Point --s2-labels at the s2-strategic-v1 artifact "
+             f"(labels dir with clip_index.json).")
+-    if s2p and not w_s2 and not ack:
++    if s2p and not w_s2 and not w_tl and not ack:
+         problems.append(
+             f"--s2-labels {s2p} with --w-s2-goal 0: the labels would be "
+             f"loaded and joined for a term that is not in force — a launch "
+@@ -10827,6 +11963,8 @@ def preflight(a) -> list[str]:
+             f"BINDING (HIERARCHY_VOCABULARY §2): there is NO control arm and "
+             f"no acknowledgement flag for a binding rule — run the isolation "
+             f"control without S2, or S2 without the control.")
++    # ---- R3: ALL tactical labels — every incoherent combination refused ---
++    problems += _preflight_tac_label_all(a, w_tl, s2p)
+     # ⛔ AN ANALYSIS-TIME REFUSAL AFTER THE COMPUTE IS PAID FOR. MEASURED
+     # 2026-08-16: `--gate-probes <missing file>` is only read by
+     # `_load_gate_probes` at the very END of `train()` — the whole run executes,
+@@ -10871,6 +12009,7 @@ def preflight(a) -> list[str]:
+     problems += _preflight_subframe(a)
+     problems += _preflight_seam_dump(a)
+     problems += _preflight_effective_weights(a)
++    problems += _preflight_r1_r4(a)           # R1/R4, PI 2026-09-27
+     return problems
+ 
+ 

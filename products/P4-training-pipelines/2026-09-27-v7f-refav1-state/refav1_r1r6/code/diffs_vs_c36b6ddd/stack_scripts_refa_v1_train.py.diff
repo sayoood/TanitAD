@@ -1,0 +1,487 @@
+--- a/stack/scripts/refa_v1_train.py (c36b6ddd)
++++ b/stack/scripts/refa_v1_train.py (R1-R6)
+@@ -40,6 +40,35 @@
+ 
+ from tanitad.config import StrategicPolicyConfig, TacticalPolicyConfig
+ from tanitad.refs.refa_v1 import DINOV3_GEOMETRY, RefAV1, RefAV1Config
++
++
++def r1r6_cfg_kwargs(args) -> dict:
++    """The PI 2026-09-27 levers (R1/R3/R5/R6) as RefAV1Config kwargs.
++
++    ⛔ EMPTY when every new flag is at its default, so the OFF path builds the
++    config through EXACTLY the pre-directive call (and `getattr` keeps a caller
++    that hands `build_model` a pre-directive Namespace working). With
++    `--strategic-off` the three strategic loss weights are written as 0.0 into
++    the config -- the record then says the strategic terms are OFF instead of
++    advertising weights on terms that no longer exist (`sanity()` refuses the
++    other combination)."""
++    kw: dict = {}
++    if getattr(args, "strategic_off", False):
++        kw.update(strategic_off=True, w_feat_str=0.0, w_feat_str_ext=0.0,
++                  w_str_label=0.0)
++    if getattr(args, "vmax_input", False):
++        kw["vmax_input"] = True
++    for dest in ("w_goal", "w_speed_band", "w_traj"):
++        v = float(getattr(args, dest, 0.0) or 0.0)
++        if v:
++            kw[dest] = v
++    prior = getattr(args, "r5_prior", "kdx")
++    if prior != "kdx":
++        kw["traj_prior"] = prior
++    ksrc = getattr(args, "r5_kappa_source", "steer_t0")
++    if ksrc != "steer_t0":
++        kw["traj_kappa_source"] = ksrc
++    return kw
+ 
+ 
+ def build_model(args) -> RefAV1:
+@@ -58,6 +87,7 @@
+         speed_channel=args.speed_channel, tmix_groups=args.tmix_groups,
+         **({} if args.detach_aux is None
+            else {"detach_aux_targets": args.detach_aux}),
++        **r1r6_cfg_kwargs(args),
+     )
+     if args.smoke:
+         cfg.d_enc, cfg.n_tokens, cfg.d_state = 32, 8, 32
+@@ -69,6 +99,10 @@
+                                                       d_cmd=8)
+             cfg.tactical_cfg = TacticalPolicyConfig(d_model=32, depth=1,
+                                                     n_heads=2, d_intent=16)
++        if cfg.w_traj:
++            # the smoke's 8 tokens as a 2 x 4 grid, 2 regions of 2 x 2 tokens
++            # (the real geometry is pinned at 16 x 40 / 4 x 10 by the tests)
++            cfg.traj_grid, cfg.traj_regions = (2, 4), (1, 2)
+     return RefAV1(cfg)
+ 
+ 
+@@ -164,20 +198,176 @@
+     return repr(o)
+ 
+ 
+-def write_config(out: Path, args, cfg, precision: dict) -> Path:
++def write_config(out: Path, args, cfg, precision: dict,
++                 extra: dict | None = None) -> Path:
+     """``<out>/config.json`` — the launch line, the resolved model config and
+     the resolved numerics, so a run's precision is READABLE from its directory
+     (the trainer wrote no config record at all before 2026-09-02; the ckpt
+     carries ``cfg`` only, and precision is a trainer-side property that is
+-    deliberately NOT in the model config — a checkpoint loads under either)."""
++    deliberately NOT in the model config — a checkpoint loads under either).
++
++    ``extra`` (PI 2026-09-27): the R1/R3/R5/R6 record -- the max-speed oracle
++    stamp, the goal head's split-fitted constants, the prior. ``None`` (every
++    new flag off) writes exactly the pre-directive record."""
+     rec = {"args": dict(vars(args)), "cfg": dict(vars(cfg)), **precision,
+            "torch": torch.__version__,
+            "written_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
++    if extra:
++        rec.update(extra)
+     p = out / "config.json"
+     p.write_text(json.dumps(rec, indent=1, default=_jsonable), encoding="utf-8")
+     return p
+ 
+ 
++def r1r6_loader_kwargs(a, cfg) -> dict:
++    """The loader options the PI 2026-09-27 levers need -- EMPTY with every
++    flag off, so the loader is built through exactly the pre-directive call."""
++    kw: dict = {}
++    if cfg.w_goal:
++        kw.update(goal_targets=True, goal_negatives=a.goal_negatives,
++                  cot_negative_sidecar=a.cot_negative_sidecar)
++    if cfg.w_speed_band:
++        kw["speed_band"] = True
++    if cfg.vmax_input:
++        kw["speed_max"] = True
++    if cfg.w_traj:
++        kw["traj_steps"] = int(cfg.traj_steps)
++        if cfg.traj_kappa_source != "steer_t0":
++            kw["traj_kappa_source"] = cfg.traj_kappa_source
++    return kw
++
++
++def r1r6_after_data(model, a, data) -> dict:
++    """After the data exists: fit the R3 goal head's constants FROM THE
++    LOADED SPLIT and assemble the config.json record of every new lever.
++    ``{}`` (no rewrite, no new key anywhere) with every flag off."""
++    cfg = model.cfg
++    rec: dict = {}
++    if cfg.w_goal:
++        from tanitad.data import v7_labels as v7l
++        n_tok = len(v7l.TAC_GOAL_TOKENS)
++        if a.smoke:
++            model.set_goal_supervision(torch.ones(n_tok), torch.ones(n_tok))
++            rec["goal_head"] = {"SMOKE": "pos_weight = 1 and class mask = 1 on "
++                                         "SYNTHETIC targets -- never a real run"}
++        else:
++            from tanitad.refs import tac_goal_head as tgh
++            labels = data.v7_labels
++            neg = {"negatives": a.goal_negatives, "sidecar": data._goal_sidecar}
++            census = v7l.goal_supervision_census(labels, **neg)
++            mask = tgh.mask_report(census)
++            pw = v7l.goal_pos_weight(labels, **neg)
++            if mask["n_trainable"] == 0:
++                raise SystemExit(
++                    "⛔ --w-goal: NO goal class is trainable on this split "
++                    f"({mask['masked_why']}) -- the head would be advertised "
++                    "and teach nothing")
++            model.set_goal_supervision(pw, mask["mask"])
++            rec["goal_head"] = {
++                "negatives": a.goal_negatives,
++                "cot_absence_negative": (data._goal_sidecar.to_dict()
++                                         if data._goal_sidecar else None),
++                "n_clips": len(labels), "n_trainable": mask["n_trainable"],
++                "n_total": mask["n_total"], "trainable": mask["trainable"],
++                "masked_why": mask["masked_why"],
++                "pos_weight": [float(x) for x in pw],
++                "census": {t: {k: census[t][k] for k in ("pos", "neg", "ignored")}
++                           for t in census},
++                "note": "PER CLASS, never pooled; classes masked for want of a "
++                        "negative carry NO gradient (R3 'all' needs the PI "
++                        "2026-09-16 cot-absence policy for them)"}
++        print(f"[refav1] R3 goal head: {rec['goal_head'].get('n_trainable', 'SMOKE')}"
++              f"/{n_tok} classes trainable, negatives="
++              f"{getattr(a, 'goal_negatives', 'measured')}", flush=True)
++    if cfg.w_speed_band:
++        rec["speed_band_head"] = {
++            "target": "g_tac.goals.SPEED_BAND.(v_lo_ms, v_hi_ms) / 30 m/s, "
++                      "Smooth-L1 (beta 1 m/s), in-band windows only",
++            "echo_warning": ("v_hi also sources the R1 input one-hot: score a "
++                             "v_hi readout against the bin-only control"
++                             if cfg.vmax_input else None)}
++    if cfg.vmax_input:
++        from tanitad.refs.refa_v1 import SPEED_MAX_DERIVATION_REFAV1
++        rec["speed_max_derivation_v6"] = SPEED_MAX_DERIVATION_REFAV1
++        if not a.smoke:
++            from tanitad.refs.refcv6_max_speed import ladder_census
++            vh = [b[1] for b in (data._speed_band_of(x) for x in data.v7_labels)
++                  if b is not None]
++            rec["speed_max_census"] = ladder_census(vh) if vh else None
++    if cfg.w_traj:
++        from tanitad.refs.refav1_traj import PRIOR_INPUTS
++        rec["traj_head"] = {
++            "prior": cfg.traj_prior, "prior_inputs": list(PRIOR_INPUTS[cfg.traj_prior]),
++            "prior_units": cfg.traj_prior_units, "steps": cfg.traj_steps,
++            "kappa_source": cfg.traj_kappa_source,
++            "dt_s": cfg.op_dt, "grid": list(cfg.traj_grid),
++            "regions": list(cfg.traj_regions),
++            "admissibility": "v0 = poses[2t,3]; a0 = (v[2t]-v[2t-2])/0.2 "
++                             "(backward difference of past speeds); kappa0 = "
++                             + ("actions[2t,0] (recorded curvature channel at "
++                                "t0; SPEC_REFCV7 §10: 'unruled at inference')"
++                                if cfg.traj_kappa_source == "steer_t0" else
++                                "wrap(yaw[2t]-yaw[2t-2])/0.2 / max(v0,2), +-0.3 "
++                                "(past poses only, refcv7 ha0_ext_pose)")
++                             + "; every index <= 2t (PI 2026-09-02)",
++            "target": "recorded future ego path, frames 2(t+1)..2(t+K), ego "
++                      "frame at 2t (metric_dynamics.gt_ego_waypoints)"}
++    if cfg.strategic_off:
++        rec["strategic_off"] = {
++            "built": {"strategic_policy": model.strategic_policy is not None,
++                      "strategic_subspace": model.strategic is not None},
++            "tactical_film_cond": "nav" + (" + max speed" if cfg.vmax_input else ""),
++            "loader_str_ext_steps": 0}
++    return rec
++
++
++def r1r6_refusals(a) -> None:
++    """⛔ The PI 2026-09-27 flags refuse every combination that would be
++    advertised in the launch line and inert (or silently narrower) in the run.
++    Called before anything touches the disk; a no-op with every flag off."""
++    on = {"--strategic-off": bool(getattr(a, "strategic_off", False)),
++          "--vmax-input": bool(getattr(a, "vmax_input", False)),
++          "--w-goal": float(getattr(a, "w_goal", 0.0) or 0.0) > 0.0,
++          "--w-speed-band": float(getattr(a, "w_speed_band", 0.0) or 0.0) > 0.0,
++          "--w-traj": float(getattr(a, "w_traj", 0.0) or 0.0) > 0.0}
++    for f, dest in (("--w-goal", "w_goal"), ("--w-speed-band", "w_speed_band"),
++                    ("--w-traj", "w_traj")):
++        if float(getattr(a, dest, 0.0) or 0.0) < 0.0:
++            raise SystemExit(f"⛔ {f} must be >= 0")
++    if a.no_hierarchy and any(on.values()):
++        raise SystemExit(
++            f"⛔ {sorted(k for k, v in on.items() if v)} with --no-hierarchy: "
++            "every PI 2026-09-27 lever acts on or through the TACTICAL layer, "
++            "which --no-hierarchy removes (R6's strategic-off arm is "
++            "--strategic-off, which KEEPS the tactical layer and nav)")
++    real = a.cache is not None
++    if real and not a.labels and (on["--vmax-input"] or on["--w-goal"]
++                                  or on["--w-speed-band"]):
++        raise SystemExit(
++            "⛔ --vmax-input / --w-goal / --w-speed-band read label fields "
++            "(SPEED_BAND, the goal set): they need --labels")
++    if real and on["--strategic-off"] and not a.nav:
++        raise SystemExit(
++            "⛔ --strategic-off without --nav: R6 keeps nav in the tactical "
++            "and operative layers, and with no nav source nav reaches NO layer")
++    neg = getattr(a, "goal_negatives", "measured")
++    side = getattr(a, "cot_negative_sidecar", None)
++    if neg != "measured" and not on["--w-goal"]:
++        raise SystemExit(f"⛔ --goal-negatives {neg} without --w-goal > 0: the "
++                         "policy would be stamped and inert")
++    if (side is not None) != (neg == "cot-absence-negative"):
++        raise SystemExit(
++            "⛔ --cot-negative-sidecar and --goal-negatives cot-absence-negative "
++            "are ONE decision (the PI 2026-09-16 ruling travels as the file "
++            "built over THIS blob): pass both or neither")
++    if getattr(a, "r5_prior", "kdx") != "kdx" and not on["--w-traj"]:
++        raise SystemExit(f"⛔ --r5-prior {a.r5_prior} without --w-traj > 0: the "
++                         "prior would be stamped and inert")
++    if getattr(a, "r5_kappa_source", "steer_t0") != "steer_t0" and not on["--w-traj"]:
++        raise SystemExit(f"⛔ --r5-kappa-source {a.r5_kappa_source} without "
++                         "--w-traj > 0: the source would be stamped and inert")
++
++
+ class SmokeData:
+     """Random fields with the right shapes — proves the loop, never a number.
+ 
+@@ -190,12 +380,33 @@
+ 
+     def batch(self, bs: int | None = None) -> dict:
+         c, bs = self.cfg, (self.bs if bs is None else int(bs))
+-        return {"feats": torch.randn(bs, c.op_window, c.n_tokens, c.d_enc),
+-                "actions": torch.randn(bs, c.op_steps, c.a_dim) * 0.1,
+-                "future_feats": torch.randn(bs, c.op_steps, c.n_tokens,
+-                                            c.d_enc),
+-                # a "measured" anchor speed in m/s — the loader's `v0` role
+-                "v0": torch.rand(bs) * 20.0}
++        out = {"feats": torch.randn(bs, c.op_window, c.n_tokens, c.d_enc),
++               "actions": torch.randn(bs, c.op_steps, c.a_dim) * 0.1,
++               "future_feats": torch.randn(bs, c.op_steps, c.n_tokens,
++                                           c.d_enc),
++               # a "measured" anchor speed in m/s — the loader's `v0` role
++               "v0": torch.rand(bs) * 20.0}
++        # ⭐ PI 2026-09-27: the loader's new keys, SHAPE-faithful and drawn
++        # AFTER every pre-directive draw, and only when their flag is on -- so
++        # the OFF smoke consumes exactly the pre-directive random stream.
++        if getattr(c, "vmax_input", False):
++            out["speed_max_ms"] = 5.0 + torch.rand(bs) * 30.0
++            out["speed_max_valid"] = torch.ones(bs, dtype=torch.bool)
++        if getattr(c, "w_goal", 0.0):
++            out["goal_y"] = (torch.rand(bs, 22) < 0.3).float()
++            out["goal_w"] = torch.ones(bs, 22)
++        if getattr(c, "w_speed_band", 0.0):
++            lo = torch.rand(bs) * 15.0
++            out["speed_band"] = torch.stack([lo, lo + torch.rand(bs) * 3.0], -1)
++            out["speed_band_mask"] = torch.ones(bs, dtype=torch.bool)
++        if getattr(c, "w_traj", 0.0):
++            k = int(c.traj_steps)
++            out["traj_gt"] = torch.cumsum(
++                torch.rand(bs, k, 2) * torch.tensor([3.0, 0.2]), dim=1)
++            out["traj_mask"] = torch.ones(bs, k, dtype=torch.bool)
++            out["a0"] = torch.randn(bs) * 0.5
++            out["kappa0"] = torch.randn(bs) * 0.01
++        return out
+ 
+ 
+ # --------------------------------------------------------------------------- #
+@@ -316,7 +527,11 @@
+                                "optimizer after resume")
+ 
+ 
+-def main(argv=None) -> int:
++def build_parser() -> argparse.ArgumentParser:
++    """The trainer's argparse, as a function (PI 2026-09-27 item 4): the
++    refav1 G-DVB coverage check (`declared_vs_built_refav1.coverage`) reads
++    every ``dest`` of THIS parser, so a flag cannot land without an entry.
++    Pure code motion out of ``main`` -- no flag, default or help changed."""
+     ap = argparse.ArgumentParser()
+     ap.add_argument("--cache", type=Path,
+                     help="stage-1 DINOv3 feature cache (0.2 s grid)")
+@@ -468,6 +683,75 @@
+                     help="number of proposal modes (Drive-JEPA proposal-set "
+                          "idea); >1 adds a score head, and at plan() time all "
+                          "modes join the iCEM seed pool")
++    # --- ⭐ PI DIRECTIVE 2026-09-27 (BINDING): R1 / R3 / R5 / R6 ------------ #
++    # EVERY flag DEFAULT OFF; off builds nothing and draws nothing, so the
++    # trainer is bit-identical to the pre-directive one (package raw/bitident).
++    ap.add_argument("--strategic-off", action="store_true",
++                    help="R6: the strategic layer OFF (no StrategicPolicy, no "
++                         "strategic subspace predictor, no route/str loss) with "
++                         "the TACTICAL layer, the operative layer and nav KEPT "
++                         "(nav + max speed become the tactical FiLM cond). "
++                         "Unlike --no-hierarchy, which drops the tactical brain "
++                         "and breaks nav. The loader then carries no str-ext "
++                         "targets")
++    ap.add_argument("--vmax-input", action="store_true",
++                    help="R1: the clip's MAX SPEED as a TACTICAL INPUT -- the "
++                         "refcv6 4-way containing-window one-hot over {30, 50, "
++                         "100, 120} km/h of g_tac.goals.SPEED_BAND.v_hi_ms, into "
++                         "the tactical FiLM cond, the intent and the R5 head. "
++                         "⛔ an ORACLE input (ego-future, PI-authorised "
++                         "2026-09-16): config.json carries the stamp. Needs "
++                         "--labels")
++    ap.add_argument("--w-goal", type=float, default=0.0,
++                    help="R3: weight of the 22-token v7.2 tactical GOAL-SET "
++                         "loss on the tactical intent (multi-label BCE, "
++                         "per-cell evidence weights, pos_weight + class mask "
++                         "fitted from the loaded split). 0 = no head. Needs "
++                         "--labels")
++    ap.add_argument("--goal-negatives", choices=("measured",
++                                                 "cot-absence-negative"),
++                    default="measured",
++                    help="R3: the goal head's negative policy. 'measured' "
++                         "(default) supervises absence only for geometry "
++                         "tokens + entailed negatives (5/22 classes then carry "
++                         "no negative and are MASKED); 'cot-absence-negative' "
++                         "is the PI 2026-09-16 ruling (caption absence = "
++                         "negative) and needs --cot-negative-sidecar")
++    ap.add_argument("--cot-negative-sidecar", type=Path, default=None,
++                    help="the cot-absence sidecar built over THIS label blob "
++                         "(stack/scripts/build_cot_negative_sidecar.py); only "
++                         "with --goal-negatives cot-absence-negative")
++    ap.add_argument("--w-speed-band", type=float, default=0.0,
++                    help="R3: weight of SPEED_BAND's (v_lo, v_hi) regression "
++                         "from the tactical intent (in-band windows). 0 = no "
++                         "head. ⚠️ with --vmax-input, v_hi also sources the "
++                         "input one-hot: score it against the bin-only control")
++    ap.add_argument("--w-traj", type=float, default=0.0,
++                    help="R5: weight of the ONE combined 6 s trajectory (30 x "
++                         "0.2 s): a RESIDUAL over the --r5-prior kinematic "
++                         "prior from 4x10 REGION pooling + t0 kinematics (v0, "
++                         "a0, kappa0 as ha0_ext measures them) + nav + max "
++                         "speed + the tactical decision; zero-init output (it "
++                         "starts AT the prior); imitation (Smooth-L1) against "
++                         "the recorded future ego path. 0 = no head")
++    ap.add_argument("--r5-prior", choices=("kdx", "damp50", "cv"),
++                    default="kdx",
++                    help="R5: the prior the residual sits on. 'kdx' = damp50 "
++                         "re-timed to ha0_ext's travelled distance (the "
++                         "strongest 2 s floor); 'damp50' = 0.5*ha0 + "
++                         "0.5*ha0_ext (the better 6 s FDE, EXPLORATORY); 'cv' "
++                         "= constant speed (v0 only). All past measurements "
++                         "only; needs --w-traj")
++    ap.add_argument("--r5-kappa-source", choices=("steer_t0", "pose_past"),
++                    default="steer_t0",
++                    help="R5: where kappa0 (prior + head input) comes from. "
++                         "'steer_t0' = the recorded curvature channel at t0, "
++                         "exactly what ha0_ext holds (the banked kd_x floor); "
++                         "'pose_past' = refcv7's ha0_ext_pose curvature from "
++                         "the two PAST poses (omega0/max(v0,2), +-0.3). "
++                         "SPEC_REFCV7 §10 records the steer channel at t0 as "
++                         "'unruled at inference' -- a PI decision. Needs "
++                         "--w-traj")
+     ap.add_argument("--seed", type=int, default=0)
+     ap.add_argument("--resume", action="store_true",
+                     help="continue from <out>/ckpt.pt if present")
+@@ -491,6 +775,11 @@
+                          "model is built; off touches nothing). MEASURED "
+                          "1.54x on the rollout forward. Inert on CPU; the "
+                          "read-back flags are stamped into config.json")
++    return ap
++
++
++def main(argv=None) -> int:
++    ap = build_parser()
+     a = ap.parse_args(argv)
+ 
+     if not a.smoke and (a.cache is None or a.episodes is None):
+@@ -510,6 +799,8 @@
+             "healthy. Pass --labels <s2_labels_v7.2_*.jsonl.gz> (and --nav), "
+             "or --allow-unlabelled if this is a diagnostic that deliberately "
+             "does not touch those heads.")
++    # ⛔ PI 2026-09-27 (R1/R3/R5/R6): refused BEFORE the disk, like --labels
++    r1r6_refusals(a)
+     if a.cache is not None and not a.nav:
+         print("⚠️ [refav1] no --nav: the nav command reaches no layer. "
+               "Admissible only for an arm that does not claim route "
+@@ -532,6 +823,11 @@
+     # a 30k-step arm could have run to completion on a config the model itself
+     # would have rejected.
+     cfg.sanity()
++    # ⛔ G-DVB, refav1 profile (PI 2026-09-27 item 4): EVERY trainer flag has a
++    # declared-vs-built entry, and every lever argv declares is read back off
++    # the BUILT model -- refused before the first step, never discovered after.
++    from tanitad.train import declared_vs_built_refav1 as _dvb1
++    _dvb1.refuse_on_mismatch(model, a, parser=ap, where="refa_v1_train")
+     a.out.mkdir(parents=True, exist_ok=True)
+     print(f"[refav1] config -> {write_config(a.out, a, cfg, precision)} "
+           f"(precision={precision['precision']} tf32={precision['tf32']})",
+@@ -571,15 +867,29 @@
+         from tanitad.data.refav1_loader import RefAV1Windows
+         data = RefAV1Windows(a.cache, a.episodes, op_window=cfg.op_window,
+                              op_steps=cfg.op_steps, str_dt=cfg.str_dt,
+-                             str_ext_steps=cfg.str_ext_steps,
++                             str_ext_steps=(0 if cfg.strategic_off
++                                            else cfg.str_ext_steps),
+                              lru=a.lru, seed=a.seed,
+-                             labels_path=a.labels, nav_path=a.nav)
++                             labels_path=a.labels, nav_path=a.nav,
++                             **r1r6_loader_kwargs(a, cfg))
+         print(f"loader: {len(data)} windows over {len(data.names)} episodes")
+         print(f"loader: labels={a.labels or 'NONE'} nav={a.nav or 'NONE'}",
+               flush=True)
+         with torch.no_grad():
+             fit = data.batch(max(a.bs, 8))["feats"]
+             model.std.fit(fit.reshape(-1, cfg.d_enc).to(a.device))
++
++    # ⭐ PI 2026-09-27: fit the goal head's constants FROM THE LOADED SPLIT and
++    # stamp every new lever into config.json (a no-op with every flag off).
++    r1r6_rec = r1r6_after_data(model, a, data)
++    if r1r6_rec:
++        write_config(a.out, a, cfg, precision, extra=r1r6_rec)
++        from tanitad.refs.refcv6_max_speed import assert_speed_max_stamp_v6
++        _rec = json.loads((a.out / "config.json").read_text(encoding="utf-8"))
++        # ⛔ the stamp is checked on the file AS WRITTEN, in both directions
++        assert_speed_max_stamp_v6(_rec, on=bool(cfg.vmax_input))
++        print(f"[refav1] PI 2026-09-27 levers stamped -> {a.out / 'config.json'}"
++              f" ({sorted(r1r6_rec)})", flush=True)
+ 
+     # ⛔ THE AUXILIARY HEAD IS ADVERTISED AND INERT — REFUSED RATHER THAN FAKED.
+     # The loop read `out["loss"] + cfg.w_aux_head * torch.zeros(())`: the
+@@ -644,6 +954,15 @@
+               if k in _FWD_PARAMS
+               and k not in ("feats", "actions", "future_feats")
+               and v is not None}
++        if cfg.strategic_off and "route_label" in kw:
++            # ⭐ R6: the route label supervises the STRATEGIC policy's route
++            # head, which is not built -- dropped HERE, by name, and printed
++            # once below (the model refuses it, so a silent drop is impossible)
++            kw.pop("route_label")
++            if step == start_step + 1:
++                print("[refav1] R6 strategic-off: route_label DROPPED (it "
++                      "supervises the strategic route head, which is not "
++                      "built)", flush=True)
+         if step == start_step + 1:
+             dropped = sorted(set(b) - _FWD_PARAMS
+                              - {"feats", "actions", "future_feats"})
+@@ -739,7 +1058,9 @@
+                    "precision": a.precision, "tf32": bool(a.tf32),
+                    "loss_feat_op": float(out["loss_feat_op"].detach()),
+                    "loss_feat_tac": float(out["loss_feat_tac"].detach()),
+-                   "loss_feat_str": float(out["loss_feat_str"].detach()),
++                   # None (never 0.0) under --strategic-off (R6): no term
++                   "loss_feat_str": (float(out["loss_feat_str"].detach())
++                                     if "loss_feat_str" in out else None),
+                    # ⭐ the tactical/strategic LABEL terms and their weighted
+                    # share of this row's `loss` -- None (never 0.0) when the
+                    # model did not emit them. See the block above.
+@@ -786,6 +1107,29 @@
+                 row.update(cf_loss=float(out["cf_loss"].detach()),
+                            cf_no_info_floor=out["cf_no_info_floor"],
+                            cf_excess=out["cf_excess"])
++            # ⭐ PI 2026-09-27 (R1/R3/R5): keys exist ONLY when their flag is
++            # on (the OFF row is key-for-key the pre-directive row), and each
++            # loss sits beside its supervised COUNT, so a 0.0 can never read
++            # as "supervised and perfect" when nothing was in band.
++            if cfg.w_goal:
++                row.update(loss_goal=float(out["loss_goal"].detach()),
++                           n_goal_sup=out["n_goal_sup"])
++            if cfg.w_speed_band:
++                row.update(loss_speed_band=float(
++                    out["loss_speed_band"].detach()),
++                    n_speed_band=out["n_speed_band"])
++            if cfg.w_traj:
++                # traj_prior_ade_m is the KNOWN-VALUE control: equal to
++                # traj_ade_m at the zero-init step, by construction
++                row.update(loss_traj=float(out["loss_traj"].detach()),
++                           n_traj_steps=out["n_traj_steps"],
++                           traj_ade_m=out["traj_ade_m"],
++                           traj_prior_ade_m=out["traj_prior_ade_m"],
++                           traj_prior=cfg.traj_prior)
++            if cfg.vmax_input:
++                sv = b.get("speed_max_valid")
++                row["speed_max_valid_frac"] = (
++                    None if sv is None else float(sv.float().mean()))
+             log.write(json.dumps(row) + "\n")
+             log.flush()
+             print(json.dumps(row))

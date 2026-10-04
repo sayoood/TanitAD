@@ -1,0 +1,121 @@
+diff --git a/stack/tests/test_launch_gate_v7f.py b/stack/tests/test_launch_gate_v7f.py
+--- a/stack/tests/test_launch_gate_v7f.py
++++ b/stack/tests/test_launch_gate_v7f.py
+@@ -10,12 +10,13 @@
+ `…/2026-09-27-v7f-refav1-state/v7f_merge/`) -- each is a DEFECT the gate exists to catch; when one is
+ fixed its test must be updated IN THE SAME CHANGE:
+   * G-HYG FAILS: EncoderConfig / PredictorConfig / ReadoutConfig / V6Config are not strict;
+-  * G-CKPT FAILS: a resume replays the sampler/RNG stream from --seed (no RNG state in ckpt.pt);
+-  * G-LIVE FAILS on S-W (merge only; visible once nav is built AND fed): R2's operative nav channel
+-    trains nothing -- no S-W loss reads the nav-conditioned operative prediction.
+-FIXED in the merge (2026-09-27) and flipped here in the same change: `--nav-cond` was declared but NOT
+-BUILT (build_stack_from_args never mapped it) -- G-DVB now PASSES on the compliant S-T and S-W
+-rehearsals, and the arm `v6_nav_not_mapped` re-installs the unmapped build and must FAIL.
++  * G-CKPT FAILS: a resume replays the sampler/RNG stream from --seed (no RNG state in ckpt.pt).
++FIXED in the merge (2026-09-27) and flipped here in the same change, each with an arm that must FAIL:
++  * `--nav-cond` was declared but NOT BUILT (build_stack_from_args never mapped it) -- G-DVB now PASSES
++    on the compliant S-T and S-W rehearsals; arm `v6_nav_not_mapped` + a source mutation;
++  * F7: R2's operative nav channel trained nothing (no S-W loss read the nav-conditioned operative
++    prediction) -- the S-W G-LIVE now PASSES with every operative nav leaf reached; arm
++    `v6_nav_unbound_wm` + a source mutation of the three WM-loss call sites.
+ The rehearsal feeds nav through the trainer's own path (assert_cache_join -> NavEmitter -> batch) from a
+ synthetic nav label source (`launch_gate.v6_corpus_seam`); the S-W predecessor carries `--nav-cond`.
+ """
+@@ -506,39 +507,69 @@
+                          "nav.layer_proj.operative.weight"]
+ 
+ 
+-def test_MERGE_FINDING_S_W_the_operative_nav_channel_trains_nothing_and_G_LIVE_FAILS(tmp_path):
+-    """MEASURED 2026-09-27 on the merge, once nav is BUILT and FED (the fix + this rehearsal's nav seam):
+-    no S-W loss reads the nav-conditioned operative prediction -- O1 (`stage_a_losses`) and O2/O3/O5
+-    (`rollout_transitions`) call `predictor_op` WITHOUT `nav_cond`; only `forward`'s `zhat_op` carries
+-    it and no S-W term reads it. So the six `predictor_op` nav tensors get NO gradient in S-W, and S-T
+-    freezes the group: `nav.layer_proj.operative` (zero-init) stays EXACTLY 0 through S-W -> S-T and the
+-    operative layer never receives the nav command. Two instruments agree (the gate's per-step grads
+-    and the trainer's own grad_reach.json). When the merge fixes it, flip this test in the same change."""
++def test_positive_S_W_G_LIVE_PASSES_and_the_operative_nav_leaves_TRAIN(tmp_path):
++    """Was F7 (MEASURED 2026-09-27, flipped in the same change as the merge's fix): no S-W loss read the
++    nav-conditioned operative prediction, so the six `predictor_op` nav tensors got NO gradient in S-W
++    and S-T froze them. The merge's `_NavBoundPredictor` binds `stack.nav(..., "operative")` to the
++    predictor the WM-loss helpers roll: the compliant S-W smoke is GREEN with NO acknowledgement, every
++    operative nav leaf gets a gradient, and the trainer's own grad_reach.json agrees (nothing unreached)."""
+     ctx = _ctx(tmp_path, SW_ARGV)
++    assert "--allow-unreached" not in ctx.argv
+     ev = LG.job_smoke_v6(ctx, ["G-LIVE"])["G-LIVE"]
++    assert ev["status"] == "PASS", _reasons(ev)
++    d = ev["details"]
++    g = d["grads"]
++    assert g["dead_leaves"] == [] and g["acknowledged_by_allow_unreached"] == []
++    for leaf in NAV_OPERATIVE_LEAVES:                          # every operative nav leaf TRAINS
++        live, n = g["leaf_live"][leaf]
++        assert n > 0 and live == n, (leaf, live, n)
++    ctl = d["control_trainer_grad_reach"]
++    assert ctl["trainer_unreached"] == [] and ctl["gate_never_reached"] == []
++    assert d["r6"]["n_layer_str_tensors"] > 0 and d["r6"]["moved_in_memory"] == []
++    assert {t["key"] for t in d["terms"]} >= {"o5", "o6"}
++    assert d["strategic_terms_seen"] == []
++    # nav is BUILT and consumed by the forward (the G-DVB twin)
++    dv = LG.job_model_v6(ctx, ["G-DVB"])["G-DVB"]
++    assert dv["status"] == "PASS", _reasons(dv)
++    assert dv["details"]["behaviour_probe"]["forward_without_nav_token"].startswith("NavTokenMissing")
++
++
++def _assert_F7_named(ev: dict) -> None:
+     r = _reasons(ev)
+     assert ev["status"] == "FAIL" and len(ev["reasons"]) == 1, r
+     assert "received ZERO gradient" in r and str(NAV_OPERATIVE_LEAVES) in r
+     d = ev["details"]
+     assert d["grads"]["dead_leaves"] == NAV_OPERATIVE_LEAVES
+-    ctl = d["control_trainer_grad_reach"]
++    for leaf in NAV_OPERATIVE_LEAVES:
++        assert d["grads"]["leaf_live"][leaf][0] == 0, leaf
++    ctl = d["control_trainer_grad_reach"]                       # the trainer's own census agrees
+     assert ctl["trainer_unreached"] == ctl["gate_never_reached"] == NAV_OPERATIVE_TENSORS
+-    assert d["r6"]["n_layer_str_tensors"] > 0 and d["r6"]["moved_in_memory"] == []
+-    assert d["strategic_terms_seen"] == []
+-    # nav IS built and consumed by the forward -- it is the LOSS that never reads the operative term
+-    dv = LG.job_model_v6(ctx, ["G-DVB"])["G-DVB"]
+-    assert dv["status"] == "PASS", _reasons(dv)
+-    assert dv["details"]["behaviour_probe"]["forward_without_nav_token"].startswith("NavTokenMissing")
+-
+-
+-def test_S_W_rehearsal_G_LIVE_passes_once_the_nav_leaves_are_ACKNOWLEDGED(tmp_path):
+-    """Everything else in the S-W smoke is green: acknowledging the finding with the argv's own
+-    `--allow-unreached nav` (recorded in config.json) is the only change needed for a PASS."""
+-    ctx = _ctx(tmp_path, LG.set_flag(SW_ARGV, "--allow-unreached", ["nav"]))
+-    ev = LG.job_smoke_v6(ctx, ["G-LIVE"])["G-LIVE"]
+-    assert ev["status"] == "PASS", _reasons(ev)
+-    d = ev["details"]
+-    assert d["grads"]["acknowledged_by_allow_unreached"] == NAV_OPERATIVE_LEAVES
+-    assert d["r6"]["n_layer_str_tensors"] > 0 and d["r6"]["moved_in_memory"] == []
+-    assert {t["key"] for t in d["terms"]} >= {"o5", "o6"}
+-    assert d["strategic_terms_seen"] == []
++
++
++def test_ARM_v6_nav_unbound_wm_reintroduces_F7_and_FAILS_G_LIVE_naming_the_operative_nav_leaves(tmp_path):
++    """The gate's arm swaps `train_v6_staged._NavBoundPredictor` for the bare predictor (the pre-fix
++    call sites): the operative nav leaves go dead again and G-LIVE names exactly them."""
++    ev = LG.job_smoke_v6(_ctx(tmp_path, SW_ARGV, arm="v6_nav_unbound_wm"), ["G-LIVE"])["G-LIVE"]
++    _assert_F7_named(ev)
++    assert "v6_nav_unbound_wm" in (ev["details"].get("arm") or {})
++
++
++#: the merge's F7 fix at its three WM-loss call sites (train_v6_staged.v6_loss_step)
++F7_CALL_SITES = (("_pred_op, stack.step_readout_op", "stack.predictor_op, stack.step_readout_op", 1),
++                 ("rollout_transitions(_pred_op,", "rollout_transitions(stack.predictor_op,", 2))
++
++
++def test_ARM_SOURCE_unbinding_the_three_WM_loss_call_sites_FAILS_G_LIVE(tmp_path, monkeypatch):
++    """Mutation, not inspection: the three call sites handed the BARE `stack.predictor_op` again in the
++    trainer SOURCE (compiled under its own path) -- G-LIVE must FAIL naming the operative nav leaves."""
++    import types
++    src_path = TREE / LG.PROFILES["v7f"]["trainer"]
++    src = src_path.read_text(encoding="utf-8")
++    for old, new, n in F7_CALL_SITES:
++        assert src.count(old) == n, old                        # the fix is present, exactly as expected
++        src = src.replace(old, new)
++    mod = types.ModuleType(LG._TRAINER_MOD_V6)
++    mod.__file__ = str(src_path)
++    monkeypatch.setitem(sys.modules, LG._TRAINER_MOD_V6, mod)  # the gate's loader returns it
++    exec(compile(src, str(src_path), "exec"), mod.__dict__)
++    _assert_F7_named(LG.job_smoke_v6(_ctx(tmp_path, SW_ARGV), ["G-LIVE"])["G-LIVE"])
