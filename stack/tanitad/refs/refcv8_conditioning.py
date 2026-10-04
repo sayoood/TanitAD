@@ -135,6 +135,10 @@ class R8Config:
     #: MM (B), 2026-10-04: the FULL N2 ladder (8 steps + unknown) through a zero-init FiLM seam beside the inherited
     #: 4-way channel (the 4-way bins merge 70 / 80 into 100 on 20.8 % of rows); the ceiling is then the N2 value
     speed_enc8: bool = False
+    #: MM 2026-10-04 (D6 P1': navhard DAC-zero is a SELECTION failure): a drivable-area sub-score critic, its
+    #: feature read DETACHED from the model's own 10 cm map head, its score term zero-init
+    critic_drivable: bool = False
+    w_drivable: float = 0.0
 
     def to_dict(self) -> dict:
         return {k: getattr(self, k) for k in self.__dataclass_fields__}
@@ -571,6 +575,121 @@ def speed_enc8(v_ms: Tensor, valid: Tensor | None) -> Tensor:
     idx = torch.where(ge.any(-1), ge.to(torch.long).argmax(-1), torch.full_like(v, len(steps) - 1, dtype=torch.long))
     oh = F.one_hot(idx, len(steps)).to(torch.float32) * ok[:, None]
     return torch.cat([oh, ok[:, None]], -1)
+
+
+# ================================================================================================================= #
+# the DRIVABLE-AREA critic (`--r8-critic-drivable`; MM 2026-10-04 after D6 P1')                                     #
+# ================================================================================================================= #
+#: the SAM3 10 cm codes a vehicle may stand on (`semantic_map_gt_fine.FINE_CLASSES` order: 0 nocls, 1 drivable, 2 lane,
+#: 3 crosswalk, 4 arrow, 5 edge, 6 hatched, 7 sidewalk). Road MARKINGS lie on the road surface; the road edge, the
+#: sidewalk and no-class do not -- a footprint corner on them is what NavSim's DAC fails. 255 = not seen (no evidence).
+DRIVABLE_CODES: tuple[int, ...] = (1, 2, 3, 4, 6)
+DRV_NOT_SEEN = 255
+DRV_CELL_M = 0.1
+#: (min P(drivable) over the in-range footprint points, their mean, the share of points in range)
+DRV_FEATS = 3
+
+
+def plan_headings(paths: Tensor) -> Tensor:
+    """[..., S, 2] -> [..., S] the heading of the segment ENDING at each slot (origin -> slot 1 first); a stalled
+    segment (< 5 cm) keeps the previous heading (the first falls back to 0 = straight ahead)."""
+    p = paths.to(torch.float32)
+    q = torch.cat([p.new_zeros(*p.shape[:-2], 1, 2), p], dim=-2)
+    d = q[..., 1:, :] - q[..., :-1, :]
+    th = torch.atan2(d[..., 1], d[..., 0])
+    ok = torch.linalg.vector_norm(d, dim=-1) >= TAG_STALL_M
+    out = []
+    prev = torch.zeros_like(th[..., 0])
+    for j in range(th.shape[-1]):
+        prev = torch.where(ok[..., j], th[..., j], prev)
+        out.append(prev)
+    return torch.stack(out, -1)
+
+
+def footprint_corners(paths: Tensor) -> Tensor:
+    """[..., S, 2] plan (REAR-AXLE points, NavSim's convention) -> [..., S, 4, 2] corners of the ego box, the geometry
+    of `tanitad.rl.pdm_proxy` (nuPlan's 5.176 x 2.297 m box, centre 1.461 m ahead of the rear axle)."""
+    from tanitad.rl import pdm_proxy as _pp
+    p = paths.to(torch.float32)
+    yaw = plan_headings(p)
+    cx = p[..., 0] + _pp.PROXY.rear_axle_to_center * torch.cos(yaw)
+    cy = p[..., 1] + _pp.PROXY.rear_axle_to_center * torch.sin(yaw)
+    return _pp.box_corners(cx, cy, yaw, _pp.PROXY.ego_length, _pp.PROXY.ego_width)
+
+
+def _drv_cells(pts: Tensor, h: int, w: int) -> tuple[Tensor, Tensor, Tensor]:
+    """Points [..., 2] (x fwd, y LEFT) on the 10 cm grid [h rows along x from 0, w cols along y from -w*0.1/2 =
+    RIGHT] -> (row, col) clamped + the in-range mask (the `semantic_map_gt_fine` row-0 / col-0 convention)."""
+    y_half = w * DRV_CELL_M / 2.0
+    ix = torch.floor(pts[..., 0] / DRV_CELL_M).long()
+    iy = torch.floor((pts[..., 1] + y_half) / DRV_CELL_M).long()
+    inside = (ix >= 0) & (ix < h) & (iy >= 0) & (iy < w)
+    return ix.clamp(0, h - 1), iy.clamp(0, w - 1), inside
+
+
+@torch.no_grad()
+def drivable_target(paths: Tensor, codes: Tensor, has_map: Tensor | None = None) -> tuple[Tensor, Tensor]:
+    """The critic's LABEL from the SAM3 10 cm target (training only; labels may use the map, PI 2026-08-03).
+    ``paths`` [B, N, S, 2], ``codes`` [B, H, W] uint8 -> (y [B, N], w [B, N]): y = 1 iff NO in-range, SEEN footprint
+    corner lies on a non-drivable code; w = 1 iff at least one corner is in range and seen (and the window has a map)."""
+    b, n, s, _ = paths.shape
+    h, wd = int(codes.shape[-2]), int(codes.shape[-1])
+    pts = footprint_corners(paths).reshape(b, n * s * 4, 2)
+    ix, iy, inside = _drv_cells(pts, h, wd)
+    c = codes.long()[torch.arange(b, device=codes.device)[:, None], ix, iy]                  # [B, P]
+    seen = inside & (c != DRV_NOT_SEEN)
+    drv = torch.zeros_like(seen)
+    for k in DRIVABLE_CODES:
+        drv |= c == k
+    bad = (seen & ~drv).reshape(b, n, -1).any(-1)
+    w = seen.reshape(b, n, -1).any(-1)
+    if has_map is not None:
+        w = w & has_map.reshape(b, 1).to(torch.bool)
+    return (~bad).to(torch.float32), w.to(torch.float32)
+
+
+@torch.no_grad()
+def drivable_feature(paths: Tensor, map_logits: Tensor) -> Tensor:
+    """The critic's INPUT from the model's OWN 10 cm map head (vision only -> NavSim-legal), DETACHED: ``map_logits``
+    [B, 8, H, W] -> [B, N, 3] = (min, mean P(drivable) over the in-range footprint corners, share in range); a
+    candidate with no corner in range reads (1, 1, 0) -- no evidence against it."""
+    b, n, s, _ = paths.shape
+    h, wd = int(map_logits.shape[-2]), int(map_logits.shape[-1])
+    pts = footprint_corners(paths.detach()).reshape(b, n * s * 4, 2)
+    ix, iy, inside = _drv_cells(pts, h, wd)
+    lg = map_logits.detach().permute(0, 2, 3, 1)[torch.arange(b, device=map_logits.device)[:, None], ix, iy]
+    pr = torch.softmax(lg.to(torch.float32), dim=-1)                                       # [B, P, 8]
+    p_drv = pr[..., list(DRIVABLE_CODES)].sum(-1).reshape(b, n, -1)
+    ins = inside.reshape(b, n, -1)
+    pmin = torch.where(ins, p_drv, torch.ones_like(p_drv)).amin(-1)
+    cnt = ins.to(torch.float32).sum(-1)
+    pmean = torch.where(cnt > 0, (p_drv * ins).sum(-1) / cnt.clamp_min(1.0), torch.ones_like(cnt))
+    return torch.stack([pmin, pmean, cnt / float(ins.shape[-1])], -1)
+
+
+class DrivableCritic(nn.Module):
+    """A per-candidate drivable-area critic on [the map-head feature (3) | the path geometry (8)] -> one logit; its
+    selection term ``w * logsigmoid(logit)`` with ``w`` ZERO-INIT (step 0 is unchanged). The logit is trained by BCE
+    against `drivable_target`; ``w`` by the selection losses."""
+
+    def __init__(self, hidden: int = 32):
+        super().__init__()
+        self.mlp = nn.Sequential(nn.Linear(DRV_FEATS + 8, hidden), nn.GELU(), nn.Linear(hidden, 1))
+        self.w = nn.Parameter(torch.zeros(()))
+
+    def forward(self, feat: Tensor, paths: Tensor) -> tuple[Tensor, Tensor]:
+        x = torch.cat([feat.to(torch.float32), SubScoreHeads.geometry(paths.detach())], -1)
+        logit = self.mlp(x).squeeze(-1)                                                       # [B, N]
+        return logit, self.w * F.logsigmoid(logit)
+
+
+def drivable_bce(logit: Tensor, y: Tensor, w: Tensor) -> tuple[Tensor, dict]:
+    """BCE over the candidates with a label; none -> an ATTACHED zero (never guarded)."""
+    k = float(w.sum().item())
+    if k <= 0:
+        return logit.sum() * 0.0, {"n_drv": 0}
+    bce = F.binary_cross_entropy_with_logits(logit.float(), y.to(logit.device).float(), reduction="none")
+    return (bce * w).sum() / k, {"n_drv": int(k), "r8_drv_pos": float((y * w).sum().item() / k)}
 
 
 # ================================================================================================================= #

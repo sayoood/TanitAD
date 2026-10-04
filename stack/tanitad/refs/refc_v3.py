@@ -1483,6 +1483,8 @@ class RefCV3Model(nn.Module):
         self._r8_force = None
         self._r8_derange_feed = False      # DIAGNOSTIC (deliberate-regression arm): roll the planner feed by one row
         self.r8_enabled = False
+        #: refcv8: the drivable-area critic (`--r8-critic-drivable`), built by enable_refcv8 iff asked
+        self.r8_drv = None
         self.r8_n_params = 0
         _r8 = getattr(cfg, "refcv8", None)
         if _r8 is not None and _r8.enable:
@@ -2049,8 +2051,11 @@ class RefCV3Model(nn.Module):
         _v9d = ((r8c.V9_LAT_DIMS, r8c.V9_LON_DIMS, r8c.V9_SPEED_DIMS) if bool(getattr(r8cfg, "v9_cons", False))
                 else None)
         _e8 = r8c.SPEED_ENC8_DIMS if bool(getattr(r8cfg, "speed_enc8", False)) else 0
+        if bool(getattr(r8cfg, "critic_drivable", False)):
+            self.r8_drv = r8c.DrivableCritic()
         self.r8_n_params = (self.tac_decoder_v6.attach_refcv8_heads(R8_NAV_DIMS + R8_RC_DIMS, v9_dims=_v9d,
                                                                     speed_enc8_dims=_e8)
+                            + (0 if self.r8_drv is None else sum(p.numel() for p in self.r8_drv.parameters()))
                             + self.core.decoder.attach_refcv8(r8cfg, d_rc=R8_RC_DIMS))
         self.r8_enabled = True
         return self.r8_n_params
@@ -2602,6 +2607,17 @@ class RefCV3Model(nn.Module):
                 fail=self.cfg.seam_fail, fail_frac=self.cfg.seam_fail_frac,
                 patience=self.cfg.seam_fail_patience, state=self._seam,
                 surface="goal_sel")
+        if getattr(self, "r8_drv", None) is not None:
+            # refcv8 drivable critic: the feature from the model's OWN 10 cm map head, DETACHED (vision only); the
+            # term w * logsigmoid(logit) with w zero-init -- step 0 is unchanged
+            _pl = (out.get("perception") or {}).get("map_hires_logits")
+            if _pl is None:
+                raise ValueError("[refcv8] the drivable critic is built but no 10 cm map logits reached E9 "
+                                 "(--map-hires on is required)")
+            _dfeat = r8c.drivable_feature(fan, _pl)
+            _dlog, _dterm = self.r8_drv(_dfeat, fan)
+            blended = blended + _dterm
+            out["r8_drv_logit"], out["r8_drv_feat"] = _dlog, _dfeat
         rank, e9_tele = e9_rank(blended, out)
         out.update(e9_tele)
         idx = rank.argmax(dim=1)

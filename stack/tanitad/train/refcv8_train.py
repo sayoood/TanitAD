@@ -447,6 +447,11 @@ def r8_before_forward(model, batch: Mapping[str, Tensor], device, traj_tgt: Tens
                                         batch["lon_v7"].to(device))
     # ---- MM item 4 (Q8): R8-1-REACH's in-run key -- the share of the batch's windows whose lateral AND longitudinal
     # tactical target is supervised (an exact class or a non-empty partial mask), as the workers produced them ----
+    # ---- the drivable critic's LABEL source: the batch's 10 cm SAM3 target (rolled with the map family) ----
+    drv_map = None
+    if bool(getattr(cfg, "critic_drivable", False)) and "map_fine" in batch:
+        drv_map = (batch["map_fine"].to(device), batch["map_fine_label"].to(device) if "map_fine_label" in batch
+                   else None)
     tac_rows = None
     if all(k in batch for k in ("lat_v7", "lon_v7", "lat_allowed_v7", "lon_allowed_v7")):
         tac_rows = tactical_rows(batch["lat_v7"], batch["lat_allowed_v7"], batch["lon_v7"], batch["lon_allowed_v7"])
@@ -456,7 +461,7 @@ def r8_before_forward(model, batch: Mapping[str, Tensor], device, traj_tgt: Tens
                         torch.full_like(go, -100))
     return {"fwd": fwd, "gt_lat3": gl, "gt_lon6": go, "gt_hyp": hyp, "gt_lat_v7": gl_v7, "gt_lon_v7": go_v7,
             "cons_t": ct, "lat_t": lat_t, "lat_v": lat_v, "lon_t": lon_t, "lon_v": lon_v, "tf": tf, "v9c": v9c,
-            "tac_rows": tac_rows}
+            "tac_rows": tac_rows, "drv_map": drv_map}
 
 
 def r8_losses(model, out: Mapping[str, Tensor], prep: Mapping[str, Any], traj_tgt: Tensor,
@@ -483,6 +488,18 @@ def r8_losses(model, out: Mapping[str, Tensor], prep: Mapping[str, Any], traj_tg
             lv, vt = r8c.v9_constraint_loss(out["r8_v9_lat_c"], out["r8_v9_lon_c"], out["r8_v9_speed"], prep["v9c"])
             total = total + float(cfg.w_v9_cons) * lv
             tele.update(r8_v9_cons=lv.detach(), **vt)
+    # (1c) the drivable critic: BCE against the SAM3 10 cm label of each EMITTED-fan candidate's footprint
+    if "r8_drv_logit" in out:
+        if prep.get("drv_map") is None:
+            if model.training:
+                raise SystemExit("[refcv8] the drivable critic is built but the batch carries no 10 cm map target "
+                                 "(map_fine): its BCE would train nothing")
+        else:
+            _codes, _has = prep["drv_map"]
+            _y, _w = r8c.drivable_target(out["anchor_traj"].detach(), _codes, _has)
+            ld, dtel = r8c.drivable_bce(out["r8_drv_logit"], _y, _w)
+            total = total + float(cfg.w_drivable) * ld
+            tele.update(r8_drv=ld.detach(), **dtel)
     if "r8_cons_lat" in out:
         lc, ltel = r8c.constraint_head_loss(out["r8_cons_lat"], out["r8_cons_lon"], prep["gt_lat_v7"],
                                             prep["gt_lon_v7"], prep["lat_t"], prep["lat_v"], prep["lon_t"],
@@ -951,6 +968,16 @@ def _register_gdvb() -> None:
                                          "model.tac_decoder_v6.r8_speed_film is not None")
 
     dvb.register("r8_speed_enc8", "built", _c_e8)
+    _drv_field = _field("r8_critic_drivable", "critic_drivable", bool, False)
+
+    def _c_drv(m, a):
+        """the drivable critic exists IFF --r8-critic-drivable (and the flag agrees with the config)."""
+        want = bool(dvb._a(a, "refcv8", False)) and bool(dvb._a(a, "r8_critic_drivable", False))
+        return _drv_field(m, a) + dvb._eq("r8_critic_drivable", want, getattr(m, "r8_drv", None) is not None,
+                                          "model.r8_drv is not None")
+
+    dvb.register("r8_critic_drivable", "built", _c_drv)
+    dvb.register("w_r8_drivable", "loss", _field("w_r8_drivable", "w_drivable", float, 0.0))
     dvb.register("r8_alloc_emit_start", "built",
                  _field("r8_alloc_emit_start", "emit_start", lambda v: int(v or 0), 0))
     dvb.register("r8_rc_dropout", "runtime", reason=(

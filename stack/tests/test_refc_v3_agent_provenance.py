@@ -549,6 +549,12 @@ def test_P2_every_knob_is_recoverable_from_the_stamp_BY_VALUE(tmp_path):
         # MM ruling Q2: the v9 constraint heads need the v9 release (the pin refuses the weight without it)
         "w_r8_v9_cons": TACV6_ON + R8_ON + ["--w-r8-cons", "0.05", "--r8-v9-labels", "v9.npz",
                                             "--r8-v9-labels-eval", "v9e.npz"],
+        # the drivable critic reads the 10 cm map head (the pin refuses the weight without the critic and --map-hires on)
+        "w_r8_drivable": TACV6_ON + R8_ON + ["--w-r8-cons", "0.05", "--trunk", "timm", "--trunk-frozen-bn",
+                                             "--map-gt-root", "m", "--agent-rig-camera", "extrinsics",
+                                             "--agent-rig-extrinsics", str(extr), "--map-hires", "on",
+                                             "--map-hires-class-weights", "w.json", "--w-map-hires", "1.0",
+                                             "--r8-critic-drivable"],
     }
     # Candidates, tried in order: a knob with a DOMAIN (a mount height must be
     # a plausible height) takes the first admissible one. A per-knob table of

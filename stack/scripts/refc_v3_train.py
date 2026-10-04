@@ -783,7 +783,7 @@ def _pin_refcv8(cfg, args) -> None:
                   "r8_lat_prior_dropout", "r8_v9_labels", "r8_v9_labels_eval", "r8_nav_from_v9",
                   "r8_no_rc", "r8_derange_feed", "r8_rc_roll", "r8_roll_targets",
                   "r8_speed_input", "r8_speed_unknown_p", "r8_roll_speed_input", "w_r8_v9_cons",
-                  "r8_alloc_emit_start", "r8_speed_enc8"):
+                  "r8_alloc_emit_start", "r8_speed_enc8", "r8_critic_drivable", "w_r8_drivable"):
             v = getattr(args, k, None)
             if v not in (None, False, 0, 0.0):
                 raise SystemExit(f"[refcv8] --{k.replace('_', '-')} without --refcv8: a dead flag (refused)")
@@ -916,6 +916,17 @@ def _pin_refcv8(cfg, args) -> None:
             raise SystemExit("[refcv8] --r8-alloc-emit-start without --r8-alloc-emit / --r8-prior-free-emit: a start "
                              "for an emission that is never switched on (a dead flag)")
     r.emit_start = int(_es or 0)
+    # ---- the drivable-area critic (MM 2026-10-04, D6 P1'): opt-in, zero-init score term, map-head feature ------- #
+    r.critic_drivable = bool(getattr(args, "r8_critic_drivable", False))
+    r.w_drivable = float(getattr(args, "w_r8_drivable", 0.0) or 0.0)
+    if r.critic_drivable and str(getattr(args, "map_hires", "off") or "off") != "on":
+        raise SystemExit("[refcv8] --r8-critic-drivable reads the model's OWN 10 cm map head at inference and its "
+                         "SAM3 target in training: pass --map-hires on")
+    if r.critic_drivable and r.w_drivable <= 0.0:
+        raise SystemExit("[refcv8] --r8-critic-drivable with --w-r8-drivable 0: the critic would be built and never "
+                         "supervised")
+    if r.w_drivable > 0.0 and not r.critic_drivable:
+        raise SystemExit("[refcv8] --w-r8-drivable > 0 without --r8-critic-drivable: a weight with no critic")
     if getattr(args, "init_from", None) and r8train.emits_at_step0(r):
         raise SystemExit("[refcv8] ⛔ a WARM-STARTED run (--init-from) that emits extra candidates from step 0 "
                          "breaks step-0 identity of the emitted plan (I-2, MM ruling Q1): pass --r8-alloc-emit-start "
@@ -2803,6 +2814,16 @@ REFC_WEIGHT_GATES: dict[str, dict] = {
                            "--w-r8-subscore needs --refcv8 (no seams => no `r8_sub_logits`)"),
         "mask": None,
         "already": "_pin_refcv8 (dead flag without --refcv8) + G-DVB `w_r8_subscore` (head built iff weight)",
+    },
+    "w_r8_drivable": {
+        "flag": "--w-r8-drivable",
+        "term": "refcv8 drivable-area critic BCE (SAM3 10 cm label of each candidate's footprint)",
+        "gate": lambda a: (bool(getattr(a, "refcv8", False)) and bool(getattr(a, "r8_critic_drivable", False))
+                           and str(getattr(a, "map_hires", "off") or "off") == "on",
+                           "--w-r8-drivable needs --refcv8, --r8-critic-drivable AND --map-hires on (no critic => no "
+                           "`r8_drv_logit` in `out`)"),
+        "mask": None,
+        "already": "_pin_refcv8 (dead without --refcv8; critic <-> weight both ways) + G-DVB `r8_critic_drivable`",
     },
     "w_r8_v9_cons": {
         "flag": "--w-r8-v9-cons",
@@ -11766,6 +11787,11 @@ def build_parser() -> argparse.ArgumentParser:
     g8.add_argument("--w-r8-listwise", type=float, default=0.0,
                     help="X1: > 0 REPLACES the E9 single-winner CE by the listwise soft-target CE")
     g8.add_argument("--w-r8-subscore", type=float, default=0.0, help="X1h: Hydra-style per-candidate critics")
+    g8.add_argument("--r8-critic-drivable", action="store_true",
+                    help="MM 2026-10-04 (D6 P1'): a per-candidate DRIVABLE-AREA critic -- its feature read DETACHED "
+                         "from the model's own 10 cm map head (vision only), trained by BCE on the SAM3 label of the "
+                         "candidate's NavSim-DAC footprint; its selection term zero-init. Needs --map-hires on.")
+    g8.add_argument("--w-r8-drivable", type=float, default=0.0, help="the drivable critic's BCE weight")
     g8.add_argument("--w-r8-v9-cons", type=float, default=0.0,
                     help="MM ruling Q2: supervise the v9 CONSTRAINT vectors (lat_c 12 / lon_c 10 / speed_goal 4) with heads "
                          "on the behaviour decoder's action queries (Huber on the GT-active query; masked where the "

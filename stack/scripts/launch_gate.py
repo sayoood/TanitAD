@@ -2376,6 +2376,10 @@ LIVE_WEIGHT_RULES: dict[str, tuple[Callable, tuple[str, ...], float, str]] = {
                       ("r8_listwise",), 1.0, "refcv8 listwise selection CE (X1)"),
     "w_r8_subscore": (lambda a: bool(getattr(a, "refcv8", False)) and _w(a, "w_r8_subscore") > 0,
                       ("r8_subscore",), 1.0, "refcv8 sub-score critics (X1h)"),
+    "w_r8_drivable": (lambda a: bool(getattr(a, "refcv8", False)) and _w(a, "w_r8_drivable") > 0
+                      and bool(getattr(a, "r8_critic_drivable", False))
+                      and str(getattr(a, "map_hires", "off")) == "on", ("r8_drv",), 1.0,
+                      "refcv8 drivable-area critic BCE"),
     "w_r8_v9_cons": (lambda a: bool(getattr(a, "refcv8", False)) and _w(a, "w_r8_v9_cons") > 0
                      and bool(getattr(a, "r8_v9_labels", None)), ("r8_v9_cons",), 1.0,
                      "refcv8 v9 constraint vectors (MM ruling Q2)"),
