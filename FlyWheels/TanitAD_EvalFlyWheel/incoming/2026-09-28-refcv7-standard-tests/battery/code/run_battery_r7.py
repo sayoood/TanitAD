@@ -269,6 +269,30 @@ def main():
         bank()
 
 
+def a7_stage_summary(g0: dict) -> dict:
+    """The SPEC A7 keys of the battery summary's G0 stage, copied from the G0 artifact (nothing recomputed):
+    the A7 verdict, the A7.2 population guard (n members, N_in, N_num, bound), the M5 probe, and the REPORTED-NEVER-
+    GATING A7.3 pack banking and A7.4 seed-draw reports. Absent in a pre-A7 artifact -> every value None."""
+    v7 = g0.get("verdict_A7") or {}
+    gd, m5, a7 = v7.get("a7_lowsupport") or {}, v7.get("m5") or {}, g0.get("a7") or {}
+    return {"G0_A7": v7.get("G0"),
+            "reasons_A7": (v7.get("reasons") or [])[:20],
+            "a7_registration": v7.get("registration"),
+            "a7_lowsupport": {k: gd.get(k) for k in ("status", "n_members", "N_in", "N_num", "bound", "why")},
+            "a7_m5": {k: m5.get(k) for k in ("status", "detected", "N_M5", "N_num", "bound", "blind_spot",
+                                             "restoration_bit_exact", "n_gating_detection_out")},
+            "a7_reports": {"packs": (a7.get("packs") or {}).get("status"),
+                           "seed_group": (a7.get("seed_group") or {}).get("VERDICT")
+                           or (a7.get("seed_group") or {}).get("status"),
+                           "seed_group_F": ((a7.get("seed_group") or {}).get("test_full") or {}).get("F"),
+                           "seed_group_p": ((a7.get("seed_group") or {}).get("test_full") or {}).get("p_one_sided"),
+                           "seed_draw_correlation": [
+                               {"earlier_step": p.get("earlier_step"), "n_cells": p.get("n_cells"),
+                                "r_cell": p.get("r_cell")}
+                               for p in ((a7.get("seed_draw_correlation") or {}).get("pairs") or [])]
+                           or (a7.get("seed_draw_correlation") or {}).get("status")}}
+
+
 def g0_text_override(a, g0: dict, ckpt_md5: str) -> dict:
     """Master Mind ruling 2026-10-04: a coded G0-A6 FAIL proceeds ONLY on a corrected-judge verdict of the
     REGISTERED A6 text for the SAME checkpoint. Everything is re-verified here on CONTENT -- the text file's
@@ -364,7 +388,10 @@ def _run(a, summary, root, bank):
             "a6_registration": (g0.get("verdict_A6") or {}).get("registration"),
             "a6_rescued": (g0.get("verdict_A6") or {}).get("a6_rescued"),
             "a6_threshold_terms": (g0.get("verdict_A6") or {}).get("a6_threshold_terms"),
-            "a6_medians": (g0.get("verdict_A6") or {}).get("medians")}
+            "a6_medians": (g0.get("verdict_A6") or {}).get("medians"),
+            # SPEC A7 (registered 2026-10-04T17:11:57+02:00): reported AFTER A6; it is the gate for a G0 that started
+            # after the registration file was written (g0["verdict"] is then the A7 verdict)
+            **a7_stage_summary(g0)}
         bank()
         if v["G0"] != "PASS":
             if not a.g0_text_verdict:

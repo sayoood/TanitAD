@@ -1,0 +1,244 @@
+{
+ "tflip": {
+  "test": "T-FLIP",
+  "bars": {
+   "follows_FED_command": 0.5,
+   "paired_true_minus_shuffled": 0.38
+  },
+  "today_refcv5_v2": {
+   "follows_FED_command": 0.205,
+   "paired_true_minus_shuffled": 0.099
+  },
+  "verdict": "NOT_RUN",
+  "reason": "the block carries no `flipped` sub-block: the arm was rolled without --with-navflip (taniteval/tools/refcv3_arm.py:1888-1898). T-FLIP has NEVER been run on any REF-C arm \u2014 this is an absence of data, not a failing model.",
+  "nav_compliance_status": "UNAVAILABLE",
+  "nav_compliance_reason": "the time base could not be TESTED: fewer than 4 clips in this dump carry a commanded turn (relative n=1, absolute n=1). This says NOTHING about the join \u2014 run more episodes."
+ },
+ "obedience": {
+  "test": "speed obedience",
+  "forced_limit_kmh": 30.0,
+  "population": "windows whose GT max speed exceeds 40.0 km/h",
+  "n_windows": 0,
+  "n_episodes": 0,
+  "bar_obeys_fraction": 0.99,
+  "tol_ms": 0.0,
+  "rows_with_no_compliant_candidate": 0,
+  "verdict": "UNPOWERED",
+  "reason": "0 windows / 0 episodes < 30 / 5"
+ },
+ "tzero": {
+  "test": "T-ZERO (non-turn diagnostic)",
+  "classes": {
+   "FOLLOW_LANE": {
+    "n": 0,
+    "recall_nav_true": null,
+    "recall_nav_zero": null,
+    "retained_fraction": null,
+    "is_turn_class": false,
+    "powered": false,
+    "_note": "n = 0 < 30: reported with its n, excluded from the summary"
+   },
+   "TURN_L": {
+    "n": 0,
+    "recall_nav_true": null,
+    "recall_nav_zero": null,
+    "retained_fraction": null,
+    "is_turn_class": true,
+    "powered": false,
+    "_note": "EXCLUDED from the summary. Deriving the turn command from nav is BY DESIGN (PI 2026-09-16); 42.7 % of the TURN label's entropy is already in the nav token, so a collapse here is PERMITTED and uninformative about learning. \u26d4 Do not read a low retained fraction on a turn class as a defect."
+   },
+   "TURN_R": {
+    "n": 0,
+    "recall_nav_true": null,
+    "recall_nav_zero": null,
+    "retained_fraction": null,
+    "is_turn_class": true,
+    "powered": false,
+    "_note": "EXCLUDED from the summary. Deriving the turn command from nav is BY DESIGN (PI 2026-09-16); 42.7 % of the TURN label's entropy is already in the nav token, so a collapse here is PERMITTED and uninformative about learning. \u26d4 Do not read a low retained fraction on a turn class as a defect."
+   },
+   "YIELD_FOR_TURN_L": {
+    "n": 0,
+    "recall_nav_true": null,
+    "recall_nav_zero": null,
+    "retained_fraction": null,
+    "is_turn_class": false,
+    "powered": false,
+    "_note": "n = 0 < 30: reported with its n, excluded from the summary"
+   },
+   "YIELD_FOR_TURN_R": {
+    "n": 0,
+    "recall_nav_true": null,
+    "recall_nav_zero": null,
+    "retained_fraction": null,
+    "is_turn_class": false,
+    "powered": false,
+    "_note": "n = 0 < 30: reported with its n, excluded from the summary"
+   },
+   "YIELD": {
+    "n": 0,
+    "recall_nav_true": null,
+    "recall_nav_zero": null,
+    "retained_fraction": null,
+    "is_turn_class": false,
+    "powered": false,
+    "_note": "n = 0 < 30: reported with its n, excluded from the summary"
+   },
+   "STOP_POINT": {
+    "n": 0,
+    "recall_nav_true": null,
+    "recall_nav_zero": null,
+    "retained_fraction": null,
+    "is_turn_class": false,
+    "powered": false,
+    "_note": "n = 0 < 30: reported with its n, excluded from the summary"
+   },
+   "SPEED_BAND": {
+    "n": 0,
+    "recall_nav_true": null,
+    "recall_nav_zero": null,
+    "retained_fraction": null,
+    "is_turn_class": false,
+    "powered": false,
+    "_note": "n = 0 < 30: reported with its n, excluded from the summary"
+   },
+   "CORRIDOR_OFFSET": {
+    "n": 0,
+    "recall_nav_true": null,
+    "recall_nav_zero": null,
+    "retained_fraction": null,
+    "is_turn_class": false,
+    "powered": false,
+    "_note": "n = 0 < 30: reported with its n, excluded from the summary"
+   },
+   "EVADE_IN_CORRIDOR": {
+    "n": 0,
+    "recall_nav_true": null,
+    "recall_nav_zero": null,
+    "retained_fraction": null,
+    "is_turn_class": false,
+    "powered": false,
+    "_note": "n = 0 < 30: reported with its n, excluded from the summary"
+   },
+   "OVERTAKE_VEHICLE": {
+    "n": 0,
+    "recall_nav_true": null,
+    "recall_nav_zero": null,
+    "retained_fraction": null,
+    "is_turn_class": false,
+    "powered": false,
+    "_note": "n = 0 < 30: reported with its n, excluded from the summary"
+   },
+   "MERGE": {
+    "n": 0,
+    "recall_nav_true": null,
+    "recall_nav_zero": null,
+    "retained_fraction": null,
+    "is_turn_class": false,
+    "powered": false,
+    "_note": "n = 0 < 30: reported with its n, excluded from the summary"
+   },
+   "GAP_TARGET": {
+    "n": 0,
+    "recall_nav_true": null,
+    "recall_nav_zero": null,
+    "retained_fraction": null,
+    "is_turn_class": false,
+    "powered": false,
+    "_note": "n = 0 < 30: reported with its n, excluded from the summary"
+   },
+   "REACT_ON_ONCOMING": {
+    "n": 0,
+    "recall_nav_true": null,
+    "recall_nav_zero": null,
+    "retained_fraction": null,
+    "is_turn_class": false,
+    "powered": false,
+    "_note": "n = 0 < 30: reported with its n, excluded from the summary"
+   },
+   "TAKE_EXIT_L": {
+    "n": 0,
+    "recall_nav_true": null,
+    "recall_nav_zero": null,
+    "retained_fraction": null,
+    "is_turn_class": false,
+    "powered": false,
+    "_note": "n = 0 < 30: reported with its n, excluded from the summary"
+   },
+   "TAKE_EXIT_R": {
+    "n": 0,
+    "recall_nav_true": null,
+    "recall_nav_zero": null,
+    "retained_fraction": null,
+    "is_turn_class": false,
+    "powered": false,
+    "_note": "n = 0 < 30: reported with its n, excluded from the summary"
+   },
+   "TRAFFIC_LIGHT_REACT": {
+    "n": 0,
+    "recall_nav_true": null,
+    "recall_nav_zero": null,
+    "retained_fraction": null,
+    "is_turn_class": false,
+    "powered": false,
+    "_note": "n = 0 < 30: reported with its n, excluded from the summary"
+   },
+   "TRAFFIC_LIGHT_REACT_RED": {
+    "n": 0,
+    "recall_nav_true": null,
+    "recall_nav_zero": null,
+    "retained_fraction": null,
+    "is_turn_class": false,
+    "powered": false,
+    "_note": "n = 0 < 30: reported with its n, excluded from the summary"
+   },
+   "TRAFFIC_LIGHT_REACT_YELLOW": {
+    "n": 0,
+    "recall_nav_true": null,
+    "recall_nav_zero": null,
+    "retained_fraction": null,
+    "is_turn_class": false,
+    "powered": false,
+    "_note": "n = 0 < 30: reported with its n, excluded from the summary"
+   },
+   "TRAFFIC_LIGHT_REACT_GREEN": {
+    "n": 0,
+    "recall_nav_true": null,
+    "recall_nav_zero": null,
+    "retained_fraction": null,
+    "is_turn_class": false,
+    "powered": false,
+    "_note": "n = 0 < 30: reported with its n, excluded from the summary"
+   },
+   "LANE_CHANGE_L": {
+    "n": 0,
+    "recall_nav_true": null,
+    "recall_nav_zero": null,
+    "retained_fraction": null,
+    "is_turn_class": false,
+    "powered": false,
+    "_note": "n = 0 < 30: reported with its n, excluded from the summary"
+   },
+   "LANE_CHANGE_R": {
+    "n": 0,
+    "recall_nav_true": null,
+    "recall_nav_zero": null,
+    "retained_fraction": null,
+    "is_turn_class": false,
+    "powered": false,
+    "_note": "n = 0 < 30: reported with its n, excluded from the summary"
+   }
+  },
+  "summary": {
+   "n_classes_summarised": 0,
+   "median_retained_fraction": null,
+   "min_retained_fraction": null,
+   "_reads": "retained ~ 0 on the NON-TURN classes means the tactical layer learned nothing from the scene on the behaviours nav cannot explain (longitudinal 5.2 %, speed bucket 5.5 %, lane keeping / nudges / yielding / gap targets). retained ~ 1 means the behaviour is read from the scene. \u26d4 TURN classes are excluded: deriving them from nav is BY DESIGN (PI 2026-09-16), so their collapse is permitted. \u26d4 This is a DIAGNOSTIC: there is no pass/fail bar, because a high retained fraction on a class the model never fires is not a success."
+  },
+  "turn_classes_excluded": [
+   "TURN_L",
+   "TURN_R"
+  ],
+  "min_n": 30
+ },
+ "note": "refcv6's FROZEN acceptance instruments read on refcv7 as INFORMATIVE (no refcv7 bar)"
+}

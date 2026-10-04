@@ -87,28 +87,62 @@ def main():
         L += ["> ⛔ **PIPELINE VALIDATION ONLY — not a result** (SPEC §6). No bar is evaluated.", ""]
     g0 = res["g0"] or {}
     md = g0.get("mutation_detection") or {}
+    gate = g0.get("amendment") or "A2"
+    gate_line = (f"* **G0-{gate} (THE GATE, SPEC {gate}; "
+                 f"{g0.get('n_seeds') or 8} inference seeds): {g0.get('G0')}**; mutation terms moved: "
+                 + ", ".join(f"{m.upper()} {d.get('n_terms_out')} "
+                             f"({'detected' if d.get('detected') else ('NOT evaluable' if d.get('detected') is None else 'NOT detected')})"
+                             for m, d in md.items())
+                 + f"; wrapper clause {g0.get('wrapper_clause')}; reasons: {(g0.get('reasons') or [])[:5]}"
+                 + (" ⛔ M1 moved 0 terms → G0 is VOID" if (md.get('m1') or {}).get('n_terms_out') == 0 else ""))
+    a5_line = ([f"* **G0-A5 (24 seeds; reported beside the {gate} gate): {g0.get('G0_A5')}**"
+                f"{' — ' + '; '.join((g0.get('reasons_A5') or [])[:3]) if g0.get('reasons_A5') else ''}"]
+               if gate in ("A6", "A7") and g0.get("G0_A5") is not None else [])
+    a6_line = ([f"* **G0-A6 ({'REGISTERED' if (g0.get('a6_registration') or {}).get('registered') else 'DRAFT -- reported, NOT the gate'}"
+                f"; measured numerics floor): {g0.get('G0_A6')}**"
+                f"{' — ' + '; '.join((g0.get('reasons_A6') or [])[:3]) if g0.get('reasons_A6') else ''}"
+                f"; floor-rescued terms: {[r.get('term') for r in (g0.get('a6_rescued') or [])]}"
+                f"; threshold-target terms: "
+                + "; ".join(f"{k} in-run {v.get('inrun')} interval [{v.get('a6_lo')}, {v.get('a6_hi')}] "
+                            f"{v.get('verdict')}" for k, v in (g0.get('a6_threshold_terms') or {}).items())]
+               if g0.get("G0_A6") is not None else [])
+    # SPEC A7 (registered 2026-10-04T17:11:57+02:00), reported AFTER A6. A7.3 / A7.4 are reported, never gating.
+    a7 = g0.get("a7_lowsupport") or {}
+    m5 = g0.get("a7_m5") or {}
+    rp = g0.get("a7_reports") or {}
+
+    def _n(x, f):
+        return "—" if not isinstance(x, (int, float)) else format(x, f)
+    a7_detail = (f"A7.2 guard {a7.get('status')}: N_in {a7.get('N_in')} vs 2·N_num+5 = {a7.get('bound')} "
+                 f"(N_num {a7.get('N_num')}, {a7.get('n_members')} low-support members); "
+                 f"M5 (bus↔heavy_truck class-logit swap, both slot heads; reported, never gating): {m5.get('status')}"
+                 f" (N_M5 {m5.get('N_M5')} vs {m5.get('bound')}, gating DETECTION terms moved "
+                 f"{m5.get('n_gating_detection_out')}"
+                 f"{'; BLIND SPOT: ' + str(m5.get('blind_spot')) if m5.get('blind_spot') else ''})")
+    a7_verdict = ([f"* **G0-A7 ({'REGISTERED' if (g0.get('a7_registration') or {}).get('registered') else 'DRAFT -- reported, NOT the gate'}"
+                   f"; A6 + the DISCRETE-SMALL-N population guard): {g0.get('G0_A7')}**"
+                   f"{' — ' + '; '.join((g0.get('reasons_A7') or [])[:3]) if g0.get('reasons_A7') else ''}; {a7_detail}"]
+                  if g0.get("G0_A7") is not None and gate != "A7" else [])
+    a7_gate_detail = [f"* G0-A7 detail: {a7_detail}"] if gate == "A7" else []
+    a7_reports = ([f"* G0-A7 reports (diagnostic, never gating): A7.3 detection packs {rp.get('packs')}; "
+                   f"A7.4 seed-group (seeds 0–7 vs 8–23, eval_traj) {rp.get('seed_group')} "
+                   f"(F {_n(rp.get('seed_group_F'), '.2f')}, one-sided p {_n(rp.get('seed_group_p'), '.4f')}); "
+                   f"seed-draw correlation with earlier G0s: {rp.get('seed_draw_correlation')}. The inference-seed floor "
+                   f"(seeds 0 and 1) is ONE draw of the DDIM noise, reused at every checkpoint."]
+                  if g0.get("G0_A7") is not None else [])
     L += [f"* **G0 as registered: {g0.get('G0_as_registered')}**"
           f"{' — ' + '; '.join((g0.get('reasons_as_registered') or [])[:3]) if g0.get('reasons_as_registered') else ''}",
           *([f"* **G0-A2 (seeds 0..7): {g0.get('G0_A2')}**"
              f"{' — ' + '; '.join((g0.get('reasons_A2') or [])[:3]) if g0.get('reasons_A2') else ''}"]
             if g0.get("G0_A2") is not None else []),
-          f"* **G0-{g0.get('amendment') or 'A2'} (THE GATE, SPEC {g0.get('amendment') or 'A2'}; "
-          f"{g0.get('n_seeds') or 8} inference seeds): {g0.get('G0')}**; mutation terms moved: "
-          + ", ".join(f"{m.upper()} {d.get('n_terms_out')} ({'detected' if d.get('detected') else 'NOT detected'})"
-                      for m, d in md.items())
-          + f"; wrapper clause {g0.get('wrapper_clause')}; reasons: {(g0.get('reasons') or [])[:5]}"
-          + (" ⛔ M1 moved 0 terms → G0 is VOID" if (md.get('m1') or {}).get('n_terms_out') == 0 else ""),
-          *([f"* **G0-A5 (24 seeds; reported beside the A6 gate): {g0.get('G0_A5')}**"
-             f"{' — ' + '; '.join((g0.get('reasons_A5') or [])[:3]) if g0.get('reasons_A5') else ''}"]
-            if g0.get("amendment") == "A6" and g0.get("G0_A5") is not None else []),
-          *([f"* **G0-A6 ({'REGISTERED' if (g0.get('a6_registration') or {}).get('registered') else 'DRAFT -- reported, NOT the gate'}"
-             f"; measured numerics floor): {g0.get('G0_A6')}**"
-             f"{' — ' + '; '.join((g0.get('reasons_A6') or [])[:3]) if g0.get('reasons_A6') else ''}"
-             f"; floor-rescued terms: {[r.get('term') for r in (g0.get('a6_rescued') or [])]}"
-             f"; threshold-target terms: "
-             + "; ".join(f"{k} in-run {v.get('inrun')} interval [{v.get('a6_lo')}, {v.get('a6_hi')}] "
-                         f"{v.get('verdict')}" for k, v in (g0.get('a6_threshold_terms') or {}).items())]
-            if g0.get("G0_A6") is not None else []),
+          # pre-A7 gates keep their order (the gate line first); under A7: registered -> A2 -> A5 -> A6 -> A7 (the gate)
+          *([] if gate == "A7" else [gate_line]),
+          *a5_line,
+          *a6_line,
+          *a7_verdict,
+          *([gate_line] if gate == "A7" else []),
+          *a7_gate_detail,
+          *a7_reports,
           # Master Mind ruling 2026-10-04: BOTH records, whenever the gate rests on the registered A6 text
           *([f"* ⭐ **G0 RECORD (gate source: {(g0.get('text_override') or {}).get('gate_source')}):** "
              + " · ".join(f"**{x}**" for x in ((g0.get('text_override') or {}).get('record_lines') or []))

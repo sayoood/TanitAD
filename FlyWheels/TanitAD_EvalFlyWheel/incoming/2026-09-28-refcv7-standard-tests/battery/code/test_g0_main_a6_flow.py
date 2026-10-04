@@ -115,6 +115,10 @@ def harness(tmp_path, monkeypatch):
     met = tmp_path / "metrics.jsonl"
     met.write_text(json.dumps({"step": 100, "eval_loss": 1.0, **inrun}) + "\n", encoding="utf-8")
     monkeypatch.setattr(G, "A6_REGISTRATION", tmp_path / "SPEC_SHA256_AMENDMENT_A6.txt")
+    # SPEC A7 is REGISTERED in the real package (raw/SPEC_SHA256_AMENDMENT_A7.txt): without this stub the real file
+    # leaks into every run below and A7, not A6, becomes the gate -- the registration file is test isolation, exactly
+    # like A6's above (added with the A7.2-A7.4 implementation; no assertion of this module changed)
+    monkeypatch.setattr(G, "A7_REGISTRATION", tmp_path / "SPEC_SHA256_AMENDMENT_A7.txt")
     return G, tmp_path, ck, cfg, met
 
 

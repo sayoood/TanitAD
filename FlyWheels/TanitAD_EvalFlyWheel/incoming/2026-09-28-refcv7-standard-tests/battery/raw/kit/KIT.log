@@ -1,0 +1,13 @@
+[kit] 2026-09-28 ~05:11-05:20 Berlin  refcv7 eval kit, built by the EvalFlyWheel (refcv7 milestone battery)
+[kit] run      refcv7-r101-s0 (Thor /home/nvidia/refcv7_run/runs/refcv7-r101-s0), launch fec3a0dccfda7eeaf34b537337370f1659fd2429
+[kit] config   ckpt/config.json md5 e6512a01b9c70f0e4a4dac581621984a (== Thor, read-only scp)
+[kit] data     NOT copied: the loader's KIT default D:/refcv6_eval_kit/data is used. 290/290 eval-side inputs the run's argv names
+[kit]          are md5-identical to Thor's /home/nvidia/data (kit_checks/eval_inputs_md5_compare.json):
+[kit]          eval139 cache 141 files, s2_labels_v8_eval, refcv6_speed_max_v8_eval + meta, extrinsics, clip-clock sidecar, anchors,
+[kit]          2-D + 3-D joins, refcv7/{vis1 sidecar, nav tau, map class weights + provenance}, sam3_gt_v3 (the 137 eval-clip files).
+[kit] ckpt     ckpt/ckpt_1500.pt  md5 c35966f799b1c724515ba1281736fd48 (ROLLING ckpt.pt at step 1500; Thor before == after == local; step key 1500) -- PIPELINE VALIDATION ONLY
+[kit] milestone ckpt/ckpt_5000.pt -- pulled by the armed waiter (pull_ckpt.py): Thor's ckpt_5000.pt (MILESTONES, never rotated), rolling ckpt.pt fallback
+[kit] prior    prior/ : 300 TRAIN /3 GT files (smallest sha12, eval excluded; md5 Thor == local) -> prior_train300.npz (PositionalPrior)
+[kit] windows  windows/s2_windows.json (RAW clip ids: dev box only, never landed) + .sha12.json twin
+[kit] layout   thor_reads/ (read-only copies of metrics.jsonl etc.), kit_checks/, chain/ (waiter + chain logs), battery/<tag>/ (WORK dirs),
+[kit]          baseline_refcv6_38k/ (refcv6@38k rolls + perception dump), perc/<tag>/ (perception pass)

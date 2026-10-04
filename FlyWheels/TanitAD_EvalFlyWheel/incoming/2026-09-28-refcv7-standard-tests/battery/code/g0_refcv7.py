@@ -91,6 +91,455 @@ def a6_registration(started: str | None = None) -> dict:
             "text": p.read_text(encoding="utf-8", errors="replace")[:500]}
 
 
+# --------------------------------------------------------------------------------------- #
+# SPEC AMENDMENT A7 -- REGISTERED by the Master Mind 2026-10-04T17:11:57+02:00 (SPEC.md "AMENDMENT A7";   #
+# sha256 in `raw/SPEC_SHA256_AMENDMENT_A7.txt`). It binds only a G0 that STARTS after that file was      #
+# written. A7.1 (A2's low-support rule under every amendment) is `A2_LOWSUPPORT_AMENDS`, below.          #
+#   A7.2  the DISCRETE-SMALL-N population guard (`a7_lowsupport_guard`, called by `judge`) and the      #
+#         M5 power probe (`ClassColumnSwap` here, judged by `a7_m5_probe`);                              #
+#   A7.3  the detection packs of inference seed 0 and fp32_s0, banked (`bank_detection_packs`);          #
+#   A7.4  the inference-seed draw reported as ONE draw (`seed_group_report`, `seed_draw_correlation`).   #
+# A7.3 and A7.4 are REPORTED, NEVER GATING; M5 is reported and never VOIDs G0.                           #
+# --------------------------------------------------------------------------------------- #
+A7_REGISTRATION = HERE.parent / "raw" / "SPEC_SHA256_AMENDMENT_A7.txt"
+#: A7 inherits A6 items 1-6 and 8 UNCHANGED (SPEC A7 "Unchanged"): the A6 floor machinery (phi, the
+#: THRESHOLD_TARGET interval, the fp32_s0 arm) is in force under A7 as well
+A6_AMENDS = ("A6", "A7")
+#: A7.2 item 2: a member "moved" iff |delta| > 0.02 (A2's DETECTION tolerance); the class FAILS iff
+#: N_in > FACTOR * N_num + SLACK. Constants chosen with the 30,000 / 50,400 counts visible (A7 "Calibration
+#: disclosure"); they bind only checkpoints whose data did not exist at registration.
+A7_MOVE_TOL = 0.02
+A7_GUARD_FACTOR = 2
+A7_GUARD_SLACK = 5
+#: A7.2 item 3: the two classes whose logit columns M5 swaps, and the blind spot an undetected M5 NAMES
+M5_CLASSES = ("bus", "heavy_truck")
+M5_BLIND_SPOT = "a rare-class index swap is invisible to G0"
+#: A7.3: the sibling file the packs are banked into (`<g0 stem>.packs.npz`)
+A7_PACKS_SUFFIX = ".packs.npz"
+A7_PACK_FIELDS = ("logit", "xy", "cls", "gt_xy", "gt_cls", "gt_pos", "gt_ign")
+
+
+def a7_registration(started: str | None = None) -> dict:
+    """Is A7 REGISTERED for a G0 that started at `started` (ISO, local)? Mirrors `a6_registration`: registered iff
+    the registration file exists AND was written before the G0 started (its mtime, recorded). In addition A6 must
+    itself be registered for that G0: A7 inherits A6 items 1-6 and 8 unchanged, so it can never gate on rules A6
+    has not yet put in force."""
+    p = A7_REGISTRATION
+    if not p.exists():
+        return {"registered": False, "why": f"{p.name} absent: A7 is not registered (reported, never the gate)"}
+    mt = time.strftime("%FT%T", time.localtime(p.stat().st_mtime))
+    if started is not None and mt > started[:19]:
+        return {"registered": False, "file_mtime": mt, "g0_started": started,
+                "why": "registered AFTER this G0 started: A7 is POST HOC for this checkpoint"}
+    r6 = a6_registration(started)
+    if not r6["registered"]:
+        return {"registered": False, "file_mtime": mt, "g0_started": started,
+                "why": f"A6 is not registered for this G0 ({r6.get('why')}): A7 inherits A6 items 1-6 and 8 "
+                       f"and cannot gate before them"}
+    return {"registered": True, "file_mtime": mt, "g0_started": started,
+            "text": p.read_text(encoding="utf-8", errors="replace")[:500]}
+
+
+# ----------------------------------------------------------------------------------- #
+# A7.2 item 3 -- the M5 power probe: a rare-class INDEX SWAP in both slot heads         #
+# ----------------------------------------------------------------------------------- #
+def m5_class_indices(classes=None) -> dict:
+    """{class name: column} for M5's two classes, DERIVED from the vocabulary the slot heads' class channels and the
+    GT labels share: `agent_slots.AGENT_CLASSES` (== `bev_raster.ALL_CLASSES`, imported never re-listed;
+    `targets_from_join` indexes the GT class as `enumerate(AGENT_CLASSES)` and `detection_metrics` keys its
+    per-class cells by the same tuple). Never a hand-written index: this is the one place a wrong guess would make
+    the probe swap two columns that are not bus and heavy_truck. `classes` overrides the vocabulary (tests)."""
+    if classes is None:
+        from tanitad.models import agent_slots as _as
+        classes = _as.AGENT_CLASSES
+    classes = tuple(classes)
+    if len(set(classes)) != len(classes):
+        raise ValueError(f"M5: the class vocabulary has duplicates: {classes}")
+    gone = [c for c in M5_CLASSES if c not in classes]
+    if gone:
+        raise ValueError(f"M5: {gone} not in the class vocabulary {classes}")
+    return {c: classes.index(c) for c in M5_CLASSES}
+
+
+def m5_cls_slice() -> slice:
+    """The `cls` channel slice of the slot head's output row (`agent_slots.SLOT_SLICES["cls"]`), checked to be
+    exactly as wide as the vocabulary: the class-logit column of class c is `slice.start + index(c)`."""
+    from tanitad.models import agent_slots as _as
+    sl = _as.SLOT_SLICES["cls"]
+    if sl.stop - sl.start != len(_as.AGENT_CLASSES):
+        raise ValueError(f"M5: the cls slice {sl} is not as wide as the {len(_as.AGENT_CLASSES)}-class vocabulary")
+    return sl
+
+
+class ClassColumnSwap:
+    """SPEC A7.2 item 3 (M5): swap the `bus` and `heavy_truck` class-logit columns in BOTH slot heads, then RESTORE.
+
+    The class logits of `AgentSlotDecoder` / `Box3DSlotDecoder` (the agent head `model.core.agent_head`, the box3d
+    head `model._perception.box_dec`; the trainer's own accessors, `refc_v3_train._slot_refine_block`) are
+    `raw[..., SLOT_SLICES['cls']]` of ONE `nn.Linear` named `head` that every decoder layer's output goes through, so
+    exchanging the two output ROWS of its weight and bias exchanges those two logit columns at every layer and leaves
+    every class-agnostic channel (presence, box, yaw, rates, occlusion) and every other class column bit-identical.
+    That is the effect of a vocabulary-order loader defect: right weights, wrong class index.
+
+    `apply()` snapshots both heads' weight and bias first; `restore()` swaps back (a row exchange is its own
+    inverse) and ASSERTS bit-exactness against the snapshot -- if it is not exact the snapshot is copied back, so no
+    later arm can run on a damaged model, and `restore()` returns False (the caller records it; the judge then reads
+    M5 as NOT EVALUABLE, never as detected). A head reachable under two names is swapped ONCE."""
+
+    def __init__(self, heads: dict, columns: dict, cls_start: int):
+        if set(columns) != set(M5_CLASSES):
+            raise ValueError(f"M5 columns must name exactly {M5_CLASSES}, got {sorted(columns)}")
+        self.columns = {c: int(columns[c]) for c in M5_CLASSES}
+        self.cls_start = int(cls_start)
+        self.heads = dict(heads)
+        self._unique, seen = [], set()
+        for name, h in self.heads.items():
+            if id(h) not in seen:
+                seen.add(id(h))
+                self._unique.append((name, h))
+        self.same_module = len(self._unique) != len(self.heads)
+        self._snap = None
+        self.took_effect = False
+
+    @staticmethod
+    def find_heads(model) -> dict:
+        """{'agent': core.agent_head, 'box3d': _perception.box_dec} -- BOTH must exist (the trainer's accessors)."""
+        agent = getattr(getattr(model, "core", model), "agent_head", None)
+        br = getattr(model, "_perception", None)
+        box = getattr(br, "box_dec", None) if br is not None else None
+        heads = {"agent": agent, "box3d": box}
+        gone = [n for n, h in heads.items() if h is None]
+        if gone:
+            raise ValueError(f"M5 swaps BOTH slot heads; this model has no {gone}")
+        return heads
+
+    @classmethod
+    def for_model(cls, model, classes=None) -> "ClassColumnSwap":
+        return cls(cls.find_heads(model), m5_class_indices(classes), m5_cls_slice().start)
+
+    def _rows(self) -> tuple:
+        return (self.cls_start + self.columns["bus"], self.cls_start + self.columns["heavy_truck"])
+
+    def _check(self):
+        a, b = self._rows()
+        for name, h in self._unique:
+            lin = getattr(h, "head", None)
+            if not isinstance(lin, torch.nn.Linear) or lin.bias is None:
+                raise ValueError(f"M5: slot head {name!r} has no nn.Linear `.head` with a bias")
+            if lin.weight.shape[0] <= max(a, b):
+                raise ValueError(f"M5: slot head {name!r} has {lin.weight.shape[0]} output rows, rows {a},{b} asked")
+
+    def _swap(self):
+        a, b = self._rows()
+        with torch.no_grad():
+            for _name, h in self._unique:
+                for t in (h.head.weight, h.head.bias):
+                    t[[a, b]] = t[[b, a]]          # the right-hand side is evaluated (copied) first
+
+    def _put_back(self):
+        with torch.no_grad():
+            for name, h in self._unique:
+                w0, b0 = self._snap[name]
+                h.head.weight.copy_(w0)
+                h.head.bias.copy_(b0)
+
+    def apply(self) -> "ClassColumnSwap":
+        if self._snap is not None:
+            raise RuntimeError("M5: apply() twice without restore()")
+        self._check()
+        self._snap = {name: (h.head.weight.detach().clone(), h.head.bias.detach().clone())
+                      for name, h in self._unique}
+        try:
+            self._swap()
+        except Exception:
+            self._put_back()
+            self._snap = None
+            raise
+        a, b = self._rows()
+        ok = a != b
+        for name, h in self._unique:
+            w0, b0 = self._snap[name]
+            w1, b1 = h.head.weight.detach(), h.head.bias.detach()
+            ok = ok and bool(torch.equal(w1[a], w0[b]) and torch.equal(w1[b], w0[a])
+                             and torch.equal(b1[a], b0[b]) and torch.equal(b1[b], b0[a]))
+        self.took_effect = bool(ok)
+        return self
+
+    def restore(self) -> bool:
+        """-> True iff the heads are BIT-IDENTICAL to the snapshot after swapping back (else forced back by copy)."""
+        if self._snap is None:
+            raise RuntimeError("M5: restore() before apply()")
+        self._swap()
+        exact = all(torch.equal(h.head.weight.detach(), self._snap[n][0])
+                    and torch.equal(h.head.bias.detach(), self._snap[n][1]) for n, h in self._unique)
+        if not exact:
+            self._put_back()
+        self._snap = None
+        self.took_effect = False
+        return bool(exact)
+
+    def describe(self) -> dict:
+        a, b = self._rows()
+        return {"classes": dict(self.columns), "cls_start": self.cls_start, "param_rows": [a, b],
+                "same_module_under_two_names": self.same_module,
+                "heads": {n: {"type": type(h).__name__, "weight_shape": list(h.head.weight.shape),
+                              "rows_swapped": [a, b]} for n, h in self._unique}}
+
+
+# ----------------------------------------------------------------------------------- #
+# A7.3 -- the detection packs banked (reported, never gating)                           #
+# ----------------------------------------------------------------------------------- #
+def pack_arrays(packs: list, prefix: str) -> dict:
+    """The registered fields of a list of `detection_metrics.window_packs` packs as npz arrays under `prefix__*`:
+    per slot the presence `logit` [W, N], `xy` [W, N, 2] and the class argmax `cls` [W, N]; the GT `gt_xy`, `gt_cls`,
+    `gt_pos`, `gt_ign` concatenated over windows with the offsets `gt_off` [W + 1]; and the window keys `batch`
+    (the eval batch the pack came from) and `ep_sha12` (sha12 of the pack's `ep` field -- the trainer's stable
+    episode id; the raw value is NEVER stored; '' if the pack carries none). The row order is the pack order
+    (batch-major), which is the window order whenever every window has an agent label."""
+    n = len(packs)
+    f32, i16 = np.float32, np.int16
+    gt_n = [int(len(np.asarray(p["gt_cls"]))) for p in packs]
+    off = np.concatenate([[0], np.cumsum(gt_n)]).astype(np.int64)
+
+    def cat(field, dtype, tail=()):
+        parts = [np.asarray(p[field], dtype).reshape((-1, *tail)) for p in packs]
+        return np.concatenate(parts) if parts else np.zeros((0, *tail), dtype)
+
+    ep = [("" if p.get("ep") is None else L.sha12(str(p["ep"]))) for p in packs]
+    return {f"{prefix}__logit": np.stack([np.asarray(p["logit"], f32) for p in packs]),
+            f"{prefix}__xy": np.stack([np.asarray(p["xy"], f32) for p in packs]),
+            f"{prefix}__cls": np.stack([np.asarray(p["cls"], i16) for p in packs]),
+            f"{prefix}__gt_off": off,
+            f"{prefix}__gt_xy": cat("gt_xy", f32, (2,)),
+            f"{prefix}__gt_cls": cat("gt_cls", i16),
+            f"{prefix}__gt_pos": cat("pos", bool),
+            f"{prefix}__gt_ign": cat("ign", bool),
+            f"{prefix}__batch": np.asarray([int(p.get("_batch", -1)) for p in packs], np.int32),
+            f"{prefix}__ep_sha12": np.asarray(ep, dtype="U12") if n else np.zeros(0, "U12")}
+
+
+def unpack_detection_packs(path, arm: str, head: str) -> list:
+    """Read one (arm, head) back from a banked `.npz` -> a list of dicts with the registered fields."""
+    with np.load(str(path), allow_pickle=False) as z:
+        pre = f"{arm}__{head}"
+        off = z[f"{pre}__gt_off"]
+        out = []
+        for i in range(len(off) - 1):
+            lo, hi = int(off[i]), int(off[i + 1])
+            out.append({"logit": z[f"{pre}__logit"][i], "xy": z[f"{pre}__xy"][i], "cls": z[f"{pre}__cls"][i],
+                        "gt_xy": z[f"{pre}__gt_xy"][lo:hi], "gt_cls": z[f"{pre}__gt_cls"][lo:hi],
+                        "gt_pos": z[f"{pre}__gt_pos"][lo:hi], "gt_ign": z[f"{pre}__gt_ign"][lo:hi],
+                        "batch": int(z[f"{pre}__batch"][i]), "ep_sha12": str(z[f"{pre}__ep_sha12"][i])})
+        return out
+
+
+def bank_detection_packs(arms: dict, inrun: dict, heads, path, not_run: dict | None = None) -> dict:
+    """SPEC A7.3: bank the per-window detection packs of inference seed 0 (`s0`) and of `fp32_s0`, both slot heads,
+    into the sibling `.npz` at `path`. REPORTED, NEVER GATING -- and NEVER SILENT: every (arm, head) cell is named
+    in the report with its status. `BANKED` = packs written and their count equals the in-run row's own
+    `eval_{head}_n_windows`; `COUNT_MISMATCH` = written, but the count differs (both numbers printed); `MISSING` =
+    the arm did not run (`not_run[arm]` says why) or ran and produced no pack for that head; `ERROR` = building the
+    arrays raised. `gaps` lists every cell that is not BANKED."""
+    rep = {"path": str(path), "heads": list(heads), "arms": {}, "gaps": [], "npz": None, "status": None,
+           "gating": False}
+    if not heads:
+        rep["status"] = "NO DETECTION HEADS (nothing to bank)"
+        return rep
+    arrays = {}
+    for arm in ("s0", "fp32_s0"):
+        for hd in heads:
+            packs = list((arms.get(arm) or {}).get(hd) or [])
+            exp = inrun.get(f"eval_{hd}_n_windows")
+            cell = {"n_packs": len(packs), "expected_n_windows_in_run_row": exp}
+            if (not_run or {}).get(arm):
+                cell.update(status="MISSING", why=str(not_run[arm]))
+            elif not packs:
+                cell.update(status="MISSING", why="the arm ran but produced no detection pack for this head")
+            else:
+                try:
+                    arrays.update(pack_arrays(packs, f"{arm}__{hd}"))
+                    cell["status"] = "BANKED"
+                    if not _isnull(exp) and exp is not None and int(round(float(exp))) != len(packs):
+                        cell.update(status="COUNT_MISMATCH",
+                                    why=f"{len(packs)} packs banked, the in-run row counts {exp} windows")
+                except Exception as exc:                    # noqa: BLE001 -- reported, never silent
+                    cell.update(status="ERROR", why=f"{type(exc).__name__}: {str(exc)[:200]}")
+            rep["arms"][f"{arm}.{hd}"] = cell
+            if cell["status"] != "BANKED":
+                rep["gaps"].append({"cell": f"{arm}.{hd}", "status": cell["status"], "why": cell.get("why")})
+    if arrays:
+        meta = {"schema": "g0-a7-packs/1", "fields": list(A7_PACK_FIELDS), "arms": ["s0", "fp32_s0"],
+                "heads": list(heads), "spec": "SPEC.md AMENDMENT A7.3",
+                "ep_sha12": "sha12 of str(pack['ep']) (the trainer's stable episode id); no raw clip id is stored",
+                "cells": {k: v["n_packs"] for k, v in rep["arms"].items()}}
+        try:
+            p = Path(path)
+            p.parent.mkdir(parents=True, exist_ok=True)
+            tmp = p.with_name(p.name + ".part")
+            with open(tmp, "wb") as fh:
+                np.savez_compressed(fh, meta=np.asarray(json.dumps(meta)), **arrays)
+            tmp.replace(p)
+            rep["npz"] = {"path": str(p), "bytes": p.stat().st_size, "sha256": L.sha256_file(p),
+                          "keys": len(arrays) + 1}
+        except Exception as exc:                            # noqa: BLE001 -- reported, never silent
+            rep["npz"] = {"error": f"{type(exc).__name__}: {str(exc)[:200]}"}
+    rep["status"] = ("ALL BANKED" if (not rep["gaps"] and rep["npz"] and "error" not in rep["npz"])
+                     else "GAPS: " + ", ".join(f"{g['cell']}={g['status']}" for g in rep["gaps"])
+                     + ("; npz NOT WRITTEN" if not rep["npz"] or "error" in rep["npz"] else ""))
+    return rep
+
+
+# ----------------------------------------------------------------------------------- #
+# A7.4 -- the inference-seed draw, reported as ONE draw (diagnostic, never gating)      #
+# ----------------------------------------------------------------------------------- #
+def seed_group_report(by_seed: dict) -> dict:
+    """The seed-group F test, seeds 0-7 vs 8-23, on `eval_traj` -- `seed_group_check.py`'s own test, unchanged (the
+    form of `PREREG_SEED_GROUP_CHECK_50400.md`): the row mean over the 8 batches of each seed's per-batch `traj`
+    (full precision, with the 5-dp `eval_traj` as a rounding control), the one-sided F test var(8-23)/var(0-7) at
+    df (15, 7), and Levene (median-centred). Verdict A / B / INCONCLUSIVE as the prereg defines them. Needs seeds
+    0..23. It never changes a G0 verdict."""
+    out = {"term": "eval_traj", "prereg": "raw/PREREG_SEED_GROUP_CHECK_50400.md", "gating": False}
+    seeds = sorted(int(s) for s in by_seed)
+    if seeds != list(range(24)):
+        return {**out, "status": "NOT COMPUTED", "why": f"needs inference seeds 0..23, this run has {len(seeds)}"}
+    try:
+        import seed_group_check as SGC
+        bs = {str(int(k)): v for k, v in by_seed.items()}
+        rm = SGC._row_means_g0({"by_seed": bs}, seeds)
+        tf = SGC.test([rm[s]["row_mean_full"] for s in range(8)], [rm[s]["row_mean_full"] for s in range(8, 24)])
+        t5 = SGC.test([rm[s]["row_5dp"] for s in range(8)], [rm[s]["row_5dp"] for s in range(8, 24)])
+    except ZeroDivisionError:
+        return {**out, "status": "NOT COMPUTABLE", "why": "zero variance among the seeds 0-7 row means"}
+    except Exception as exc:                                # noqa: BLE001 -- a diagnostic never breaks G0
+        return {**out, "status": "ERROR", "why": f"{type(exc).__name__}: {str(exc)[:200]}"}
+    verdict = tf["verdict"] if tf["verdict"] == t5["verdict"] else f"DISAGREE full={tf['verdict']} 5dp={t5['verdict']}"
+    return {**out, "status": "COMPUTED", "VERDICT": verdict, "test_full": tf, "test_5dp": t5,
+            "rounding_control_max_abs": max(abs(v["row_mean_full"] - v["row_5dp"]) for v in rm.values())}
+
+
+def traj_cells(by_seed: dict) -> dict:
+    """{seed: [per-batch `traj`, full precision]} from a G0 artifact's (or run's) `by_seed`."""
+    out = {}
+    for s, v in by_seed.items():
+        vals = [b.get("traj") for b in (v.get("per_batch") or [])]
+        if vals and all(isinstance(x, (int, float)) for x in vals):
+            out[int(s)] = [float(x) for x in vals]
+    return out
+
+
+def traj_cells_from_diag(diag: dict) -> dict:
+    """{seed: per-batch traj} from a `g0_diag_r7.py` artifact (arms `seed{s}`, key `per_batch_traj`)."""
+    out = {}
+    for name, a in (diag.get("arms") or {}).items():
+        if name.startswith("seed") and name[4:].isdigit() and a.get("per_batch_traj"):
+            out[int(name[4:])] = [float(x) for x in a["per_batch_traj"]]
+    return out
+
+
+def _nan_none(x):
+    return None if (x is None or (isinstance(x, float) and x != x)) else float(x)
+
+
+def seed_draw_correlation(cur: dict, earlier: dict) -> dict:
+    """A7.4: the per-(seed, batch) correlation of `eval_traj` DEVIATIONS between two G0 artifacts on the same
+    windows. Deviation = the cell's `traj` minus the mean over that artifact's OWN seeds at the same batch (the
+    batch/window effect removed, the DDIM draw left). Pearson r over every (seed, batch) cell both artifacts hold
+    (n = common seeds x batches; 24 x 8 = 192 for two 24-seed artifacts), plus r over the per-seed row means. A
+    high r says the draw is a function of the seed VALUE and is reused at every checkpoint."""
+    from scipy import stats
+
+    def dev(c):
+        nbs = {len(v) for v in c.values()}
+        if len(nbs) != 1:
+            raise ValueError("seeds with unequal batch counts")
+        nb = nbs.pop()
+        mb = [statistics.fmean(c[s][b] for s in c) for b in range(nb)]
+        return {s: [c[s][b] - mb[b] for b in range(nb)] for s in c}, nb
+    dc, nbc = dev(cur)
+    de, nbe = dev(earlier)
+    if nbc != nbe:
+        return {"status": "NOT COMPARABLE", "why": f"{nbc} vs {nbe} batches per seed"}
+    common = sorted(set(dc) & set(de))
+    if len(common) < 3:
+        return {"status": "NOT COMPUTABLE", "why": f"only {len(common)} common inference seeds"}
+    x = [dc[s][b] for s in common for b in range(nbc)]
+    y = [de[s][b] for s in common for b in range(nbc)]
+    import warnings
+    with warnings.catch_warnings():                      # a constant array is a NULL correlation, reported as None
+        warnings.simplefilter("ignore")
+        r, p = stats.pearsonr(x, y)
+        rs, ps = stats.pearsonr([statistics.fmean(cur[s]) for s in common],
+                                [statistics.fmean(earlier[s]) for s in common])
+    return {"status": "COMPUTED", "n_cells": len(x), "n_seeds_common": len(common), "n_batches": nbc,
+            "r_cell": _nan_none(r), "p_cell": _nan_none(p), "r_seed_row_mean": _nan_none(rs),
+            "p_seed_row_mean": _nan_none(ps),
+            "deviation": "traj(seed, batch) - mean over the artifact's own seeds at that batch"}
+
+
+def seed_draw_reports(rec: dict, by_seed: dict, earlier_arg: str | None = None, root=None) -> dict:
+    """A7.4 item 2: the correlation against every EARLIER G0 artifact that exists. Default discovery:
+    `raw/step*/g0.json` of this package; an artifact is used only if it is on the SAME 128 windows
+    (`perm_sha256`) and is not this checkpoint (`ckpt_md5`); every skipped artifact is listed with the reason.
+    `earlier_arg` (comma-separated paths) replaces the discovery. None found -> status NO EARLIER G0 (not an error)."""
+    out = {"gating": False, "pairs": [], "skipped": []}
+    if earlier_arg:
+        paths = [Path(p.strip()) for p in earlier_arg.split(",") if p.strip()]
+    else:
+        paths = sorted((Path(root) if root else HERE.parent / "raw").glob("step*/g0.json"))
+    cur = traj_cells(by_seed)
+    for p in paths:
+        try:
+            g = json.load(open(p, encoding="utf-8"))
+            if g.get("ckpt_md5") == rec.get("ckpt_md5"):
+                out["skipped"].append({"path": str(p), "why": "the same checkpoint"})
+                continue
+            if g.get("perm_sha256") != rec.get("perm_sha256"):
+                out["skipped"].append({"path": str(p), "why": "not the same 128 windows (perm_sha256 differs)"})
+                continue
+            res = seed_draw_correlation(cur, traj_cells(g.get("by_seed") or {}))
+            out["pairs"].append({"earlier": str(p), "earlier_step": g.get("step"),
+                                 "earlier_ckpt_md5": g.get("ckpt_md5"), **res})
+        except Exception as exc:                            # noqa: BLE001 -- a diagnostic never breaks G0
+            out["skipped"].append({"path": str(p), "why": f"{type(exc).__name__}: {str(exc)[:200]}"})
+    out["status"] = "COMPUTED" if out["pairs"] else "NO EARLIER G0 (comparable) FOUND"
+    return out
+
+
+def a7_reports(rec, by_seed, inrun, tr, seeds, packs_s0, packs_fp32, out_p, earlier_arg, no_a6) -> dict:
+    """SPEC A7.3 + A7.4 for one G0 run: the packs, the seed-group test, the cross-checkpoint draw correlation.
+    Every part is REPORTED, never gating, and a failure inside any part is recorded in the artifact instead of
+    raised (a diagnostic can never cost the G0 its artifact)."""
+    rep = {"gating": False,
+           "inference_seed_floor": "the battery's inference-seed floor (seeds 0 and 1) is ONE draw of the DDIM noise, "
+                                   "reused at every checkpoint (SPEC A7.4): quote it as one draw"}
+    heads = tuple(getattr(getattr(tr, "_det_metrics", None), "HEADS", ()) or ())
+    not_run = {}
+    if 0 not in [int(s) for s in seeds]:
+        not_run["s0"] = "inference seed 0 was not run (--seeds)"
+    arm = (rec.get("a6") or {}).get(A6_ARM) or {}
+    if no_a6:
+        not_run["fp32_s0"] = "--no-a6: the fp32_s0 arm did not run"
+    elif not arm.get("row"):
+        not_run["fp32_s0"] = f"the fp32_s0 arm did not complete: {str(arm.get('raised'))[:200]}"
+    try:
+        rep["packs"] = bank_detection_packs({"s0": packs_s0, "fp32_s0": packs_fp32}, inrun, heads,
+                                            Path(out_p).with_suffix(A7_PACKS_SUFFIX), not_run)
+    except Exception as exc:                                # noqa: BLE001
+        rep["packs"] = {"status": f"ERROR {type(exc).__name__}: {str(exc)[:200]}", "gating": False}
+    print(f"[g0] A7.3 detection packs: {rep['packs'].get('status')}", flush=True)
+    rep["seed_group"] = seed_group_report(by_seed)
+    sg = rep["seed_group"]
+    print(f"[g0] A7.4 seed-group (seeds 0-7 vs 8-23, eval_traj): {sg.get('status')} "
+          f"{sg.get('VERDICT') or sg.get('why') or ''}", flush=True)
+    try:
+        rep["seed_draw_correlation"] = seed_draw_reports(rec, by_seed, earlier_arg)
+    except Exception as exc:                                # noqa: BLE001
+        rep["seed_draw_correlation"] = {"status": f"ERROR {type(exc).__name__}: {str(exc)[:200]}", "gating": False}
+    print(f"[g0] A7.4 seed-draw correlation: {rep['seed_draw_correlation'].get('status')}", flush=True)
+    return rep
+
+
+
 class TacCellCapture:
     """Records, per `compute_losses_v3` call, exactly what `tactical_behaviour_losses` received:
     validity logits, confidence logits, goal_y, goal_w, the class mask (A6's per-cell evidence).
@@ -444,8 +893,12 @@ def scalar_items(el: dict) -> dict:
     return out
 
 
-def run_eval(tr, model, batches, device, mode, abl, seed, batch_size):
-    """refc_v3_train.py:9658-9747 with the RNG seeded per inference seed."""
+def run_eval(tr, model, batches, device, mode, abl, seed, batch_size, packs_out=None):
+    """refc_v3_train.py:9658-9747 with the RNG seeded per inference seed.
+
+    `packs_out` (SPEC A7.3, optional): a dict that is filled with {head: [pack, ...]} -- shallow copies of the
+    `detection_metrics.window_packs` output with the batch index added as `_batch`. The pooled `det_packs` the
+    row is summarised from are the ORIGINAL objects, untouched, so capturing cannot change a number."""
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
     acc, nb, per_batch, det_packs = {}, 0, [], {}
@@ -463,6 +916,9 @@ def run_eval(tr, model, batches, device, mode, abl, seed, batch_size):
             for hd in tr._det_metrics.HEADS:
                 if el.get(f"_det_pack_{hd}"):
                     det_packs.setdefault(hd, []).extend(el[f"_det_pack_{hd}"])
+                    if packs_out is not None:
+                        packs_out.setdefault(hd, []).extend(
+                            {**pk, "_batch": nb} for pk in el[f"_det_pack_{hd}"])
             per_batch.append(row)
             nb += 1
             del el
@@ -482,7 +938,13 @@ def main():
     ap.add_argument("--step", type=int, default=None)
     ap.add_argument("--seeds", default="0,1,2,3,4,5,6,7")
     ap.add_argument("--micro", default="2,2,3,3,3,3")
-    ap.add_argument("--mutations", default="m1,m2,m4")
+    ap.add_argument("--mutations", default="m1,m2,m4,m5",
+                    help="m1 (must be detected, else VOID), m2 / m4 / m5 power probes. m5 = SPEC A7.2: swap the bus "
+                         "and heavy_truck class-logit columns in BOTH slot heads at inference seed 0, then restore")
+    ap.add_argument("--earlier-g0", default=None,
+                    help="SPEC A7.4 (diagnostic, never gating): comma-separated EARLIER G0 artifacts whose per-(seed, "
+                         "batch) eval_traj deviations are correlated with this run's. Default: every raw/step*/g0.json "
+                         "of this package on the SAME 128 windows (perm_sha256) with another checkpoint md5")
     ap.add_argument("--diagnostic-arms", default="eps0",
                     help="REPORTED, never judged (2026-10-04 diagnosis): 'eps0' = seed-0 replay with the "
                          "DDIM draw zeroed -- tells whether the in-run row sits at the noise-free decode")
@@ -613,12 +1075,14 @@ def main():
     seeds = [int(s) for s in a.seeds.split(",") if s.strip() != ""]
     by_seed = {}
     rec["a6"] = {"status": "skipped (--no-a6)"} if a.no_a6 else {"cells": {}}
+    packs_s0, packs_fp32 = {}, {}            # SPEC A7.3: the detection packs of inference seed 0 / fp32_s0
     for s in seeds:
         t_s = time.time()
         # SPEC A6 (draft): seed 0 also records the tactical conf term's per-cell inputs (read-only hook)
         cap = TacCellCapture(tr).install() if (s == 0 and not a.no_a6) else None
         try:
-            erow, pb, npk = run_eval(tr, model, batches, device, mode, abl, s, B)
+            erow, pb, npk = run_eval(tr, model, batches, device, mode, abl, s, B,
+                                     packs_out=(packs_s0 if s == 0 else None))
         finally:
             if cap is not None:
                 cap.remove()
@@ -672,6 +1136,20 @@ def main():
                     erow_m, pb_m, _ = run_eval(tr, model, batches, device, mode, abl, 0, B)
                 finally:
                     dec.residual_prior = old
+            elif m == "m5":
+                # SPEC A7.2 item 3: a rare-class INDEX SWAP (bus <-> heavy_truck) in BOTH slot heads at eval, then
+                # restored. The columns are derived from the vocabulary, never written by hand (m5_class_indices).
+                sw = ClassColumnSwap.for_model(model).apply()
+                info = {"what": "bus <-> heavy_truck class-logit columns swapped in BOTH slot heads (SPEC A7.2 M5; "
+                                "a vocabulary-order loader defect)", "swap": sw.describe(),
+                        "swap_took_effect": bool(sw.took_effect)}
+                try:
+                    erow_m, pb_m, _ = run_eval(tr, model, batches, device, mode, abl, 0, B)
+                finally:
+                    info["restoration_bit_exact"] = sw.restore()
+                    if not info["restoration_bit_exact"]:
+                        print("[g0] M5: THE SLOT HEADS WERE NOT RESTORED BIT-EXACTLY by the swap-back (forced back from "
+                              "the snapshot); M5 will read NOT EVALUABLE", flush=True)
             else:
                 raise SystemExit(f"unknown mutation {m}")
             info.update(seed=0, row=erow_m, wall_s=round(time.time() - t_m, 1))
@@ -719,7 +1197,7 @@ def main():
             import wrapper_probe_r7 as W
             W._set_condition(W.CONDITIONS["P3_fp32_det"], trunk)
             cap.install()
-            erow_a, pb_a, _ = run_eval(tr, model, batches, device, mode, abl, 0, B)
+            erow_a, pb_a, _ = run_eval(tr, model, batches, device, mode, abl, 0, B, packs_out=packs_fp32)
             rec["a6"][A6_ARM] = {"what": "seed 0, trunk fp32 + NCHW, cuDNN TF32 off, deterministic "
                                          "(wrapper P3); SPEC A6's numerics floor",
                                  "row": erow_a, "per_batch": pb_a, "wall_s": round(time.time() - t_a, 1)}
@@ -770,6 +1248,22 @@ def main():
         rec["verdict_A6"]["registration"] = reg6
         if reg6["registered"]:
             rec["verdict"] = rec["verdict_A6"]
+    # SPEC AMENDMENT A7 (REGISTERED 2026-10-04T17:11:57+02:00): A6 + the DISCRETE-SMALL-N population guard + the M5
+    # probe. Computed on every 24-seed G0 and REPORTED; it is THE GATE only for a G0 that STARTED after
+    # `raw/SPEC_SHA256_AMENDMENT_A7.txt` was written (a7_registration). A7 fails CLOSED: a registered A7 whose
+    # judge raised, or whose numerics arm is missing, is not a PASS.
+    if len(by_seed) >= A5_MIN_SEEDS:
+        reg7 = a7_registration(rec["started"])
+        try:
+            rec["verdict_A7"] = judge(inrun, by_seed, rec, amend="A7")
+        except Exception as exc:                        # noqa: BLE001 -- never lose the G0 artifact
+            rec["verdict_A7"] = {"G0": "ERROR", "amendment": "A7", "n_terms": 0, "by_class_counts": {},
+                                 "medians": {}, "mutation_detection": {},
+                                 "reasons": [f"A7 judge raised {type(exc).__name__}: {str(exc)[:300]}"]}
+        rec["verdict_A7"]["registration"] = reg7
+        if reg7["registered"]:
+            rec["verdict"] = rec["verdict_A7"]
+    rec["a7"] = a7_reports(rec, by_seed, inrun, tr, seeds, packs_s0, packs_fp32, out_p, a.earlier_g0, a.no_a6)
     rec["wall_s"] = round(time.time() - t_all, 1)
     rec["finished"] = time.strftime("%FT%T")
     json.dump(rec, open(out_p, "w", encoding="utf-8"), indent=1, default=str)
@@ -886,12 +1380,142 @@ def a6_context(rec, by_seed) -> dict:
     return out
 
 
+def _a7_moved(a, b) -> bool:
+    """SPEC A7.2 item 2: 'moved' = |a - b| > 0.02. The difference is rounded to 9 dp first, so floating-point noise
+    in a subtraction of two 5-dp row values cannot decide a boundary (0.5 - 0.48 is 0.020000000000000018 in float
+    arithmetic and exactly 0.02 as written; the registered rule is the written one)."""
+    return round(abs(float(a) - float(b)), 9) > A7_MOVE_TOL
+
+
+def a7_lowsupport_guard(res: dict, by_seed: dict, rec: dict) -> dict:
+    """SPEC A7.2 items 1-2: the DISCRETE-SMALL-N population guard.
+
+    Members = exactly A2's low-support DETECTION keys (support n < 30, n read from the in-run row's own
+    `*_det_npos_*` / `*_npos_*` keys): the terms `judge` classed DETECTION_LOWSUPPORT. Each member is REPORTED with
+    its n, in-run value, replay mean, seed-0 value and `fp32_s0` value, and is never gated on its own. The
+    population gates:
+        N_in  = members with |in-run - replay mean| > 0.02
+        N_num = members with |fp32_s0 - seed 0|     > 0.02      (fp32_s0 = the A6 numerics arm)
+        the class FAILS iff  N_in > 2 * N_num + 5.
+    The guard is FAIL-CLOSED: a missing `fp32_s0` row (or one lacking a member key, or a missing seed-0 row) makes
+    the class NOT EVALUABLE, and a NOT EVALUABLE class FAILS. (An `fp32_s0` value that is null where seed 0's is
+    not counts as a move: a definedness flip is a numerics effect.)"""
+    members = sorted(k for k, r in res.items() if r.get("cls") == "DETECTION_LOWSUPPORT")
+    s0 = (by_seed.get(0) or by_seed.get("0") or {}).get("row")
+    arm = ((rec.get("a6") or {}).get(A6_ARM) or {}).get("row")
+    recs, n_in = [], 0
+    for k in members:
+        r = res[k]
+        mv = _a7_moved(r["inrun"], r["mean"])
+        n_in += bool(mv)
+        v0 = None if (not s0 or _isnull(s0.get(k))) else float(s0[k])
+        recs.append({"key": k, "n": r.get("support_n"), "inrun": float(r["inrun"]), "replay_mean": float(r["mean"]),
+                     "seed0": v0, "fp32_s0": None, "dev_inrun": abs(float(r["inrun"]) - float(r["mean"])),
+                     "dev_numerics": None, "moved_in": bool(mv), "moved_numerics": None})
+    why = None
+    if not arm:
+        why = "the fp32_s0 row is missing (the A6 numerics arm did not run, or did not complete)"
+    elif s0 is None:
+        why = "the seed-0 row is missing"
+    else:
+        absent = [m["key"] for m in recs if m["key"] not in arm]
+        no_s0 = [m["key"] for m in recs if m["seed0"] is None]
+        if absent:
+            why = f"the fp32_s0 row lacks {len(absent)} of the {len(recs)} members (e.g. {absent[:3]})"
+        elif no_s0:
+            why = f"the seed-0 row lacks {len(no_s0)} of the {len(recs)} members (e.g. {no_s0[:3]})"
+    out = {"rule": f"FAIL iff N_in > {A7_GUARD_FACTOR} * N_num + {A7_GUARD_SLACK}; moved = |delta| > {A7_MOVE_TOL}",
+           "tol": A7_MOVE_TOL, "factor": A7_GUARD_FACTOR, "slack": A7_GUARD_SLACK,
+           "n_members": len(recs), "N_in": n_in, "N_num": None, "bound": None, "why": why, "members": recs}
+    if why is not None:
+        out["status"] = "NOT EVALUABLE"
+        return out
+    n_num = 0
+    for m in recs:
+        f = arm[m["key"]]
+        fp = None if _isnull(f) else float(f)
+        mv = True if fp is None else _a7_moved(fp, m["seed0"])
+        m["fp32_s0"] = fp
+        m["dev_numerics"] = None if fp is None else abs(fp - m["seed0"])
+        m["moved_numerics"] = bool(mv)
+        n_num += bool(mv)
+    out["N_num"] = n_num
+    out["bound"] = A7_GUARD_FACTOR * n_num + A7_GUARD_SLACK
+    out["status"] = "FAIL" if n_in > out["bound"] else "PASS"
+    return out
+
+
+def a7_m5_probe(info, guard: dict, res: dict, moved) -> dict:
+    """SPEC A7.2 item 3: the M5 power probe, judged. REPORTED, NEVER GATING, NEVER VOID.
+
+    `info` = rec['mutations']['m5']: the seed-0 row with the bus / heavy_truck class-logit columns swapped in both
+    slot heads (and whether the restoration was bit-exact). DETECTED iff
+        N_M5 > 2 * N_num + 5            (N_M5 = low-support members with |M5 row - seed 0| > 0.02; the same
+                                         members and the same N_num as the guard)
+        OR any gating DETECTION term (n >= 30, or pooled) moves outside its tolerance.
+    UNDETECTED => the blind spot is NAMED: 'a rare-class index swap is invisible to G0'. If M5 did not run, raised,
+    was not restored bit-exactly, or the numerics arm needed for N_num is missing, it is NOT RUN / NOT EVALUABLE
+    (a gap that is reported -- never read as detected)."""
+    base = {"never_gates": True, "never_voids": True,
+            "rule": f"DETECTED iff N_M5 > {A7_GUARD_FACTOR} * N_num + {A7_GUARD_SLACK} OR any gating DETECTION term "
+                    f"moves outside its tolerance",
+            "N_M5": None, "N_num": guard.get("N_num"), "bound": guard.get("bound"), "detected": None,
+            "blind_spot": None}
+    if not info:
+        return {**base, "status": "NOT RUN", "why": "no m5 mutation record (the arm was not run)"}
+    base.update(swap=info.get("swap"), swap_took_effect=info.get("swap_took_effect"),
+                restoration_bit_exact=info.get("restoration_bit_exact"))
+    if info.get("raised"):
+        return {**base, "status": "NOT EVALUABLE", "why": f"M5 raised: {str(info['raised'])[:300]}"}
+    if info.get("restoration_bit_exact") is not True:
+        return {**base, "status": "NOT EVALUABLE",
+                "why": "the restoration of the slot heads was not shown bit-exact"}
+    row = info.get("row") or {}
+    members = guard.get("members") or []
+    if any(m["seed0"] is None for m in members):
+        return {**base, "status": "NOT EVALUABLE", "why": "a member has no seed-0 value to compare the M5 row with"}
+    n_m5, moved_keys, absent = 0, [], 0
+    for m in members:
+        y = row.get(m["key"], "__MISSING__")
+        if y == "__MISSING__":
+            absent += 1                       # not produced: cannot be claimed as a move
+            continue
+        mv = True if _isnull(y) else _a7_moved(y, m["seed0"])
+        if mv:
+            n_m5 += 1
+            moved_keys.append(m["key"])
+    gating_out, other_out = [], 0
+    for k, r in res.items():
+        v = moved(k, r, row.get(k))
+        if not v:
+            continue
+        if r.get("cls") == "DETECTION":
+            gating_out.append({"term": k, "inrun": r["inrun"], "m5": row.get(k)})
+        else:
+            other_out += 1
+    n_num, bound = guard.get("N_num"), guard.get("bound")
+    clause_pop = None if bound is None else n_m5 > bound
+    clause_gate = bool(gating_out)
+    out = {**base, "N_M5": n_m5, "n_members": len(members), "n_members_absent_from_m5_row": absent,
+           "members_moved_first40": moved_keys[:40], "clause_population": clause_pop,
+           "clause_gating_detection": clause_gate, "gating_detection_out": gating_out[:20],
+           "n_gating_detection_out": len(gating_out), "n_other_terms_out_informational": other_out}
+    if clause_pop or clause_gate:
+        out.update(status="DETECTED", detected=True)
+    elif clause_pop is None:
+        out.update(status="NOT EVALUABLE", detected=None,
+                   why="the population clause needs N_num (the fp32_s0 numerics arm), which is missing")
+    else:
+        out.update(status="UNDETECTED", detected=False, blind_spot=M5_BLIND_SPOT)
+    return out
+
+
 def judge(inrun, by_seed, rec, amend: str | None = None):
     seeds = sorted(by_seed)
     K = len(seeds)
     terms = sorted(k for k in inrun if k.startswith("eval_"))
     res, reasons, cls_count = {}, [], {}
-    a6 = a6_context(rec, by_seed) if amend == "A6" else None
+    a6 = a6_context(rec, by_seed) if amend in A6_AMENDS else None      # A7 inherits A6 items 1-6, 8 UNCHANGED
     if a6 is not None and a6.get("error"):
         reasons.append(f"A6 NOT EVALUABLE: {a6['error']}")
         a6 = {"phi": {}, "interval_error": a6["error"]}
@@ -1048,38 +1672,55 @@ def judge(inrun, by_seed, rec, amend: str | None = None):
         reasons.append("wrapper control not run")
     elif wc.get("clause") != "PASS":
         reasons.append(f"wrapper clause {wc.get('clause')}: {wc.get('reasons')}")
+    # SPEC A7.2 -- the DISCRETE-SMALL-N population guard (gates ONLY under A7). It is a function looked up
+    # through the module namespace on purpose: the test suite's deliberate-regression arm replaces it.
+    a7g = None
+    if amend == "A7":
+        a7g = a7_lowsupport_guard(res, by_seed, rec)
+        if a7g["status"] == "FAIL":
+            reasons.append(f"A7.2 DISCRETE-SMALL-N guard: N_in={a7g['N_in']} > 2*N_num+{A7_GUARD_SLACK}="
+                           f"{a7g['bound']} (N_num={a7g['N_num']}, {a7g['n_members']} low-support members)")
+        elif a7g["status"] != "PASS":
+            reasons.append(f"A7.2 DISCRETE-SMALL-N guard NOT EVALUABLE (fails closed): {a7g['why']}")
     # mutation detection: >= 1 non-COUNT term outside its class tolerance vs the IN-RUN value
+    def _mutation_bad(k, r, y):
+        """None = the term is not eligible for mutation detection; else True iff the MUTATED value `y` lies outside
+        the term's tolerance. This is the per-term rule the loop below has always applied (SPEC A2 item 2, A6
+        item 5); it is a function so that SPEC A7's M5 clause "any gating DETECTION term moves outside its
+        tolerance" reads the SAME rule rather than a re-implementation of it."""
+        c = r.get("cls", "")
+        # ⭐ a term already OUT under the unmutated reproduction cannot be MOVED outside by a
+        # mutation (SPEC §2's "move ... outside"); counting it inflated M1 (corrected 2026-09-28,
+        # recorded in SPEC AMENDMENT A2)
+        if c in ("COUNT",) or r.get("verdict") != "OK" or c.endswith("/UNDEFINED"):
+            return None
+        x = r["inrun"]
+        if _isnull(y) or _isnull(x):
+            return None
+        if c == "STOCHASTIC":
+            return not (r["pi_lo"] <= float(y) <= r["pi_hi"])
+        if c == "THRESHOLD_TARGET":                 # SPEC A6: outside the flip interval
+            return not (r["a6_lo"] <= float(y) <= r["a6_hi"])
+        if r.get("support_n") is not None:
+            return abs(float(y) - float(x)) > max(0.02, 2.0 / float(r["support_n"]))
+        bad = not tol_ok(c, k, float(x), float(y))[0]
+        if bad and a6 is not None and c == "SMOOTH" and r.get("a6_phi") is not None:
+            # SPEC A6 item 5: the SAME per-term tolerance, max(registered, k * phi)
+            bad = abs(float(y) - float(x)) > A6_K * float(r["a6_phi"])
+        return bad
+
     det = {}
     for m, info in (rec.get("mutations") or {}).items():
+        if m == "m5":
+            continue                      # SPEC A7.2 power probe: judged by its own rule, only under A7 (below)
         if info.get("raised"):
             det[m] = {"detected": True, "how": "raised", "n_terms_out": None}
             continue
         row = info.get("row") or {}
         outs = []
         for k, r in res.items():
-            c = r.get("cls", "")
-            # ⭐ a term already OUT under the unmutated reproduction cannot be MOVED outside by a
-            # mutation (SPEC §2's "move ... outside"); counting it inflated M1 (corrected 2026-09-28,
-            # recorded in SPEC AMENDMENT A2)
-            if c in ("COUNT",) or r.get("verdict") != "OK" or c.endswith("/UNDEFINED"):
-                continue
-            y = row.get(k)
-            x = r["inrun"]
-            if _isnull(y) or _isnull(x):
-                continue
-            if c == "STOCHASTIC":
-                bad = not (r["pi_lo"] <= float(y) <= r["pi_hi"])
-            elif c == "THRESHOLD_TARGET":           # SPEC A6: outside the flip interval
-                bad = not (r["a6_lo"] <= float(y) <= r["a6_hi"])
-            elif r.get("support_n") is not None:
-                bad = abs(float(y) - float(x)) > max(0.02, 2.0 / float(r["support_n"]))
-            else:
-                bad = not tol_ok(c, k, float(x), float(y))[0]
-                if bad and a6 is not None and c == "SMOOTH" and r.get("a6_phi") is not None:
-                    # SPEC A6 item 5: the SAME per-term tolerance, max(registered, k * phi)
-                    bad = abs(float(y) - float(x)) > A6_K * float(r["a6_phi"])
-            if bad:
-                outs.append({"term": k, "class": c, "inrun": x, "mutated": y})
+            if _mutation_bad(k, r, row.get(k)):
+                outs.append({"term": k, "class": r.get("cls", ""), "inrun": r["inrun"], "mutated": row.get(k)})
         det[m] = {"detected": bool(outs), "n_terms_out": len(outs), "first10": outs[:10]}
     m1 = det.get("m1")
     if m1 is None:
@@ -1089,6 +1730,12 @@ def judge(inrun, by_seed, rec, amend: str | None = None):
     if only_m1:
         reasons.append("M1 (trunk equalisation dropped) stayed inside every tolerance: the gate "
                        "has no power -> VOID")
+    m5 = None
+    if amend == "A7":
+        # SPEC A7.2 item 3: REPORTED, never a reason, never VOID. It is added to `det` AFTER `blind` / `only_m1`
+        # are computed, so no M1 / VOID logic can read it.
+        m5 = a7_m5_probe((rec.get("mutations") or {}).get("m5"), a7g, res, _mutation_bad)
+        det["m5"] = {"detected": m5["detected"], "n_terms_out": m5.get("N_M5"), "how": m5["status"]}
     g0 = "PASS" if not reasons else "FAIL"
     if only_m1 and all(r.startswith("M1") for r in reasons):
         g0 = "VOID"
@@ -1098,6 +1745,11 @@ def judge(inrun, by_seed, rec, amend: str | None = None):
            "blind_spots_named": [f"{m}: not detected by G0 (a wiring defect this gate cannot see)"
                                  for m in blind if m != "m1"],
            "terms": res}
+    if amend == "A7":
+        out["a7_lowsupport"] = a7g
+        out["m5"] = m5
+        if m5["status"] == "UNDETECTED":
+            out["blind_spots_named"].append(f"m5: {M5_BLIND_SPOT}")
     if a6 is not None:
         # SPEC A6 item 6: every term the floor rescued is NAMED with its numbers -- never silent
         out["a6_rescued"] = [{"term": k, "inrun": r["inrun"], "replay": r.get("mean"),
