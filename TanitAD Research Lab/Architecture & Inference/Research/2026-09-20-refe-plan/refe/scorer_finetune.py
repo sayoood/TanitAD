@@ -116,6 +116,12 @@ def main() -> int:
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--preflight", action="store_true")
     ap.add_argument("--max-updates", type=int, default=0)
+    # SFT-2 (LANE-1 follow-on); all default OFF = SFT-1 exactly
+    ap.add_argument("--lane-labels-train", default="", help="side files of onpolicy_relabel_lane.py for --onpolicy")
+    ap.add_argument("--lane-labels-heldout", default="", help="side files of onpolicy_relabel_lane.py for --heldout")
+    ap.add_argument("--b-mode", default="listnet", choices=("listnet", "compw"),
+                    help="arm B: BCE + lam*ListNet (SFT-1) or per-component weighted BCE (--b-compw)")
+    ap.add_argument("--b-compw", default="1,1,1,1,1,1", help="arm B component weights NC,DAC,EP,TTC,C,DDC (b-mode compw)")
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
     dev = "cuda"
@@ -155,8 +161,10 @@ def main() -> int:
     model.score_dec[0].register_forward_pre_hook(lambda mod, args: cap.__setitem__("sctx", args[1]))
 
     # ---------------- data: train.py's own banks
-    op = T.OnPolicyBank(a.onpolicy, cfg.n_proposals, cfg.horizon_steps)
-    ho = T.OnPolicyBank(a.heldout, cfg.n_proposals, cfg.horizon_steps)
+    op = T.OnPolicyBank(a.onpolicy, cfg.n_proposals, cfg.horizon_steps, lane_labels=a.lane_labels_train or None)
+    ho = T.OnPolicyBank(a.heldout, cfg.n_proposals, cfg.horizon_steps, lane_labels=a.lane_labels_heldout or None)
+    compw = torch.tensor([float(x) for x in a.b_compw.split(",")], device=dev)
+    assert compw.numel() == 6 and (compw > 0).all(), "--b-compw needs 6 positive weights"
     ds = T.TargetBank(a.targets, a.images, cfg, calib=a.calib, onpolicy=op)
     ho_logs = set(open(a.heldout_logs, encoding="utf-8").read().split())
     tr_idx = [i for i, r in enumerate(ds.rows) if key(r) in op.by and r.get("log_name") not in ho_logs]
@@ -171,7 +179,9 @@ def main() -> int:
             "train_label_versions": lv, "navsim_dac_sets": op.n_navsim_dac,
             "heldout_sets": len(ho_idx), "heldout_in_bank": len(ho.by), "heldout_logs": len(ho_logs),
             "train_rows_in_heldout_logs": sum(1 for i in tr_idx if ds.rows[i].get("log_name") in ho_logs),
-            "ckpt_format": fmt, "per_sample_calib": meta.get("per_sample_calib")}
+            "ckpt_format": fmt, "per_sample_calib": meta.get("per_sample_calib"),
+            "lane_labels": {"train_sets": op.n_lane, "train_stale": op.n_lane_stale, "heldout_sets": ho.n_lane,
+                            "heldout_stale": ho.n_lane_stale}, "b_mode": a.b_mode, "b_compw": a.b_compw}
     log(info)
     g = torch.Generator().manual_seed(a.seed)
     dl = DataLoader(Subset(ds, tr_idx), batch_size=a.batch, shuffle=True, generator=g, num_workers=a.workers,
@@ -191,6 +201,10 @@ def main() -> int:
 
     def losses(sxA, sxB, tg, lam):
         bceA = F.binary_cross_entropy_with_logits(sxA, tg)
+        if a.b_mode == "compw":                              # SFT-2: weighted per-component BCE, no ranking term
+            w = compw.view(1, 1, 6)
+            bceBw = (F.binary_cross_entropy_with_logits(sxB, tg, reduction="none") * w).sum(-1).mean() / w.sum()
+            return bceA, bceBw, torch.zeros((), device=sxB.device)
         bceB = F.binary_cross_entropy_with_logits(sxB, tg)
         s = torch.log(agg_v1(torch.sigmoid(sxB)).clamp_min(1e-6))
         q = torch.softmax(agg_v1(tg) / a.tau_t, dim=1)
@@ -201,7 +215,8 @@ def main() -> int:
     def evaluate(tag, limit=None):
         idx = ho_idx[:limit] if limit else ho_idx
         dlh = DataLoader(Subset(ds_ho, idx), batch_size=16, shuffle=False, num_workers=2)
-        res = {k: {"pick": [], "rand": [], "best": [], "zero": [], "auc_nc": [], "auc_dac": []} for k in ("base", "A", "B")}
+        res = {k: {"pick": [], "rand": [], "best": [], "zero": [], "auc_nc": [], "auc_dac": [], "auc_ddc": [],
+                   "onc": [], "pick_x": [], "onc_x": [], "zero_x": []} for k in ("base", "A", "B")}
         toks, logs_ = [], []
         j = 0
         for batch in dlh:
@@ -209,11 +224,17 @@ def main() -> int:
             ta = agg_v1(tg)                                                      # [b, M] true navsim_v1
             for k, sx in (("base", sx0), ("A", sxA), ("B", sxB)):
                 p = torch.sigmoid(sx)
-                pick = ta.gather(1, agg_v1(p).argmax(1, keepdim=True)).squeeze(1)
+                ix = agg_v1(p).argmax(1, keepdim=True)
+                pick = ta.gather(1, ix).squeeze(1)
                 res[k]["pick"] += pick.tolist(); res[k]["rand"] += ta.mean(1).tolist()
                 res[k]["best"] += ta.max(1).values.tolist(); res[k]["zero"] += (pick == 0).float().tolist()
+                res[k]["onc"] += (tg[..., 5].gather(1, ix).squeeze(1) < 1).float().tolist()
+                ixx = (agg_v1(p) * p[..., 5]).argmax(1, keepdim=True)          # LANE-1's L1: x the direction head
+                pkx = ta.gather(1, ixx).squeeze(1)
+                res[k]["pick_x"] += pkx.tolist(); res[k]["zero_x"] += (pkx == 0).float().tolist()
+                res[k]["onc_x"] += (tg[..., 5].gather(1, ixx).squeeze(1) < 1).float().tolist()
                 for bi in range(p.shape[0]):
-                    for comp, nm in ((0, "auc_nc"), (1, "auc_dac")):
+                    for comp, nm in ((0, "auc_nc"), (1, "auc_dac"), (5, "auc_ddc")):
                         v = set_auc(p[bi, :, comp].cpu(), tg[bi, :, comp].cpu())
                         if v is not None:
                             res[k][nm].append(v)
@@ -225,12 +246,22 @@ def main() -> int:
             pk, rd, bs = np.mean(v["pick"]), np.mean(v["rand"]), np.mean(v["best"])
             out[k] = {"pick": 100 * pk, "random": 100 * rd, "best": 100 * bs, "skill": (pk - rd) / max(bs - rd, 1e-9),
                       "zero_picks": int(sum(v["zero"])), "auc_nc": float(np.mean(v["auc_nc"])) if v["auc_nc"] else None,
-                      "auc_dac": float(np.mean(v["auc_dac"])) if v["auc_dac"] else None}
+                      "auc_dac": float(np.mean(v["auc_dac"])) if v["auc_dac"] else None,
+                      "auc_ddc": float(np.mean(v["auc_ddc"])) if v["auc_ddc"] else None,
+                      "onc_picks": int(sum(v["onc"])),
+                      "x_ddc": {"pick": 100 * float(np.mean(v["pick_x"])), "zero_picks": int(sum(v["zero_x"])),
+                                "onc_picks": int(sum(v["onc_x"]))}}
         tl = dict(zip(toks, logs_))
         for k in ("A", "B"):
             d = {t: 100 * (res[k]["pick"][i] - res["base"]["pick"][i]) for i, t in enumerate(toks)}
             mu, lo, hi = boot_logs(d, tl)
             out[k]["pick_minus_base"] = {"mean": mu, "ci95": [lo, hi], "estimator": "log-cluster bootstrap over the held-out logs, 10,000, seed 20260927"}
+            dx = {t: 100 * (res[k]["pick_x"][i] - res["base"]["pick"][i]) for i, t in enumerate(toks)}
+            mu, lo, hi = boot_logs(dx, tl)
+            out[k]["x_ddc"]["pick_minus_base_v1"] = {"mean": mu, "ci95": [lo, hi]}
+        dx = {t: 100 * (res["base"]["pick_x"][i] - res["base"]["pick"][i]) for i, t in enumerate(toks)}
+        mu, lo, hi = boot_logs(dx, tl)
+        out["base"]["x_ddc"]["pick_minus_base_v1"] = {"mean": mu, "ci95": [lo, hi]}
         log(out)
         return out
 
@@ -265,10 +296,31 @@ def main() -> int:
         sx0, sxA, sxB, tg = fwd(batch)
         gates["G3_copies_equal_model_at_step0"] = {"ok": float((sx0 - sxA).abs().max()) == 0.0 and float((sxB - sxA).abs().max()) == 0.0,
                                                    "max_base_vs_A": float((sx0 - sxA).abs().max()), "max_B_vs_A": float((sxB - sxA).abs().max())}
-        bA, bB0, _ = losses(sxA, sxB, tg, 0.0)
-        bA2, bB, ln = losses(sxA, sxB, tg, a.lam)
-        gates["G4_listnet_identity_and_live"] = {"ok": float(bA) == float(bB0) and float(bB) != float(bA) and math.isfinite(float(ln)),
-                                                 "bceA": float(bA), "lossB_lam0": float(bB0), "lossB": float(bB), "listnet": float(ln)}
+        if a.b_mode == "compw":                              # SFT-2: unit weights must reproduce A; the declared ones must not
+            keep_w = compw.clone()
+            compw.fill_(1.0)
+            bA, bB0, _ = losses(sxA, sxB, tg, 0.0)
+            compw.copy_(keep_w)
+            bA2, bB, ln = losses(sxA, sxB, tg, 0.0)
+            differs = bool((keep_w != 1).any())
+            gates["G4_compw_identity_and_live"] = {"ok": math.isclose(float(bA), float(bB0), rel_tol=1e-5) and
+                                                   (float(bB) != float(bA) if differs else True) and math.isfinite(float(bB)),
+                                                   "bceA": float(bA), "lossB_unit_w": float(bB0), "lossB": float(bB), "compw": keep_w.tolist()}
+        else:
+            bA, bB0, _ = losses(sxA, sxB, tg, 0.0)
+            bA2, bB, ln = losses(sxA, sxB, tg, a.lam)
+            gates["G4_listnet_identity_and_live"] = {"ok": float(bA) == float(bB0) and float(bB) != float(bA) and math.isfinite(float(ln)),
+                                                     "bceA": float(bA), "lossB_lam0": float(bB0), "lossB": float(bB), "listnet": float(ln)}
+        if a.lane_labels_train or a.lane_labels_heldout:      # G8: the NAVSIM direction labels really are in the banks
+            def has_half(bank):
+                return sum(1 for e in bank.by.values() if np.any(np.abs(e[2][:, 5] - 0.5) < 1e-6))
+            g8 = {"train_lane_sets": op.n_lane, "train_stale": op.n_lane_stale, "heldout_lane_sets": ho.n_lane,
+                  "heldout_stale": ho.n_lane_stale, "train_sets_with_ddc_0.5": has_half(op), "heldout_sets_with_ddc_0.5": has_half(ho)}
+            g8["ok"] = all([(not a.lane_labels_train) or (op.n_lane > 0 and op.n_lane_stale <= 0.05 * max(op.n_lane, 1)
+                                                          and g8["train_sets_with_ddc_0.5"] > 0),
+                            (not a.lane_labels_heldout) or (ho.n_lane > 0 and ho.n_lane_stale <= 0.05 * max(ho.n_lane, 1)
+                                                            and g8["heldout_sets_with_ddc_0.5"] > 0)])
+            gates["G8_lane_labels_in_bank"] = g8
         (bA2 + bB).backward()
         live = {}
         for m in SCORER:

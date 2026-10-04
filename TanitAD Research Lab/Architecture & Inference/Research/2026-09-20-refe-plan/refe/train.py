@@ -415,7 +415,7 @@ class OnPolicyBank:
     Python lists a full-scale bank would cost GBs in every DataLoader worker.
     """
 
-    def __init__(self, path: str, n_prop: int, horizon: int, sizes: dict | None = None):
+    def __init__(self, path: str, n_prop: int, horizon: int, sizes: dict | None = None, lane_labels: str | None = None):
         self.by: dict = {}
         self.n_rows = self.n_incomplete = self.n_superseded = self.n_bad_lines = self.n_navsim_dac = 0
         files = _onpolicy_files(path)
@@ -469,6 +469,37 @@ class OnPolicyBank:
                             continue
                     self.by[k] = (rank_key[0], np.concatenate([xy, yw[..., None]], -1), tg, rank_key, has_nd)
         self.n_navsim_dac = sum(1 for e in self.by.values() if e[4])
+        self.n_lane = self.n_lane_stale = 0
+        self.lane_keep: dict = {}
+        if lane_labels:
+            self._apply_lane_labels(lane_labels, n_prop)
+
+    def _apply_lane_labels(self, path: str, n_prop: int):
+        """SFT-2 (LANE-1 follow-on): side files from onpolicy_relabel_lane.py. A label replaces the DDC component ONLY
+        for the set it was computed on -- same (log, token, step, rank) AND the same ckpt_step, i.e. the same proposals;
+        any other match is counted as stale and ignored. DDC becomes NAVSIM's own verdict (1.0 / 0.5 / 0.0; validated
+        100.00 % on 13,000 navtest trajectories) instead of DriveRL's wrong-way category. `lane_keep` is kept beside it."""
+        import glob as _glob
+        for fp in sorted(_glob.glob(os.path.join(path, "lane_*.jsonl"))):
+            with open(fp, encoding="utf-8") as fh:
+                for line in fh:
+                    try:
+                        d = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue
+                    k = tuple(d.get("key", ()))
+                    if len(k) != 4:
+                        continue
+                    k = (k[0], k[1], int(k[2]), int(k[3]))
+                    e = self.by.get(k)
+                    if e is None:
+                        continue
+                    if int(d.get("ckpt_step", -1)) != int(e[0]) or len(d.get("navsim_ddc", ())) != n_prop:
+                        self.n_lane_stale += 1
+                        continue
+                    e[2][:, 5] = np.clip(np.asarray(d["navsim_ddc"], np.float32), 0.0, 1.0)
+                    self.lane_keep[k] = np.asarray(d.get("lane_keep", [0.0] * n_prop), np.float32)
+                    self.n_lane += 1
 
     def get(self, log_name: str, token: str, step: int, rank: int = 0):
         e = self.by.get((log_name, token, int(step), int(rank)))

@@ -57,3 +57,21 @@ Reported with paired log-cluster bootstrap CIs (10,000 resamples, seed 20260927)
 **If L1 fails, or V_lane is the larger effect:** the next lever is SFT-2. The pod labeller emits NAVSIM-faithful DDC and a lane-keeping label from the same map query `navsim_dac.py` already makes. The scorer is fine-tuned on them, and the selection rule multiplies them in.
 
 The interval answers *another draw of logs* only: one checkpoint, deterministic inference.
+
+## Departure (added 2026-10-04 ~09:30 local, after the first 1,180 census rows; the L1 rule and its bar are unchanged)
+
+The registered lane proxy **V_lane failed its control**. NAVSIM's MULTIPLE_LANES footprint test, held for at least 1 s outside junctions, fires on:
+- the **human 25.3 %**;
+- **PDM-Closed 36.9 %**.
+
+A 2.3 m-wide footprint in a ~3 m nuPlan lane polygon straddles under normal driving. V_lane is therefore reported as registered, but it is **not used to conclude anything**.
+
+The distance to the metric cache's single route centreline was tried next and failed too: PDM-Closed reads more than 1 m on 15 % of drives even where the human keeps that lane.
+
+The declared replacement is **`lane_census2.py`**. It measures distance from the vehicle centre to the centreline of the lane that contains it (nuPlan map), on non-junction lane steps:
+- **lk10:** more than 1.0 m for at least 1.0 s;
+- **lk15:** more than 1.5 m for at least 1.0 s.
+
+These thresholds were fixed in the script before any hypothesis-level lk number was read, with the human and PDM-Closed as reported floors. It is analysed by `lane_analyze2.py` with the same effect definitions and estimator.
+
+**ORACLE_mask_lk10** (drop violating hypotheses using the map) is an upper bound on what a lane-keeping label could buy, not a deployable rule.
