@@ -222,6 +222,13 @@ def main():
     ap.add_argument("--yield-log", default="D:/refcv7_eval_kit/chain/gpu_yields.jsonl")
     ap.add_argument("--max-clips", type=int, default=0, help="SMOKE ONLY: restrict S2 to N clips")
     ap.add_argument("--max-windows-per-clip", type=int, default=0, help="SMOKE ONLY")
+    # Master Mind ruling 2026-10-04 (G0-50,400): the REGISTERED A6 text is the record; the coded A6 judge
+    # omitted A6 from the A2 low-support tuple. A coded A6 FAIL may be overridden ONLY by a corrected-judge
+    # text verdict for the SAME checkpoint, re-verified here; both records are stamped on every output.
+    ap.add_argument("--g0-text-verdict", default=None,
+                    help="g0_A6_text.json (code/g0_rejudge_a6_text.py) for THIS checkpoint; STAMPED, verified")
+    ap.add_argument("--g0-text-ruling", default=None, help="the ruling text the override rests on (required "
+                                                            "with --g0-text-verdict)")
     a = ap.parse_args()
     ck = torch.load(a.ckpt, map_location="cpu", weights_only=False, mmap=True)
     step = int(ck.get("step"))
@@ -260,6 +267,58 @@ def main():
         summary["parent_cuda_initialized"] = bool(torch.cuda.is_initialized())
         summary["finished"] = time.strftime("%Y-%m-%dT%H:%M:%S")
         bank()
+
+
+def g0_text_override(a, g0: dict, ckpt_md5: str) -> dict:
+    """Master Mind ruling 2026-10-04: a coded G0-A6 FAIL proceeds ONLY on a corrected-judge verdict of the
+    REGISTERED A6 text for the SAME checkpoint. Everything is re-verified here on CONTENT -- the text file's
+    own claims are not trusted: the corrected judge in use is re-run on the banked G0 artifact and must
+    reproduce the file's PASS and its (empty) reason list. Any gap -> SystemExit (fail closed)."""
+    if not a.g0_text_ruling:
+        raise SystemExit("[battery] --g0-text-verdict needs --g0-text-ruling (the ruling it rests on)")
+    p = Path(a.g0_text_verdict)
+    if not p.exists():
+        raise SystemExit(f"[battery] text verdict {p} does not exist -- STOP (SPEC §2)")
+    t = json.load(open(p, encoding="utf-8"))
+    v6t = t.get("verdict_A6_text") or {}
+    bad = []
+    if t.get("REFUSED"):
+        bad.append(f"the text re-judge REFUSED: {t['REFUSED']}")
+    if t.get("ckpt_md5") != ckpt_md5 or int(t.get("step", -1)) != int(g0.get("step", -2)):
+        bad.append("text verdict is for another checkpoint / step")
+    if (g0.get("verdict") or {}).get("amendment") != "A6":
+        bad.append("the coded gate is not A6: the text override covers ONLY the A6-item-7 judge defect")
+    if v6t.get("G0") != "PASS" or v6t.get("reasons"):
+        bad.append(f"text verdict is {v6t.get('G0')} with reasons {str(v6t.get('reasons'))[:200]}")
+    ctl = t.get("controls_other_verdicts_unchanged") or {}
+    if not ctl or any(c.get("ok") is not True for c in ctl.values()):
+        bad.append(f"the corrected judge's controls did not all reproduce the banked verdicts: {ctl}")
+    if not (t.get("compare_with_readonly_reconstruction") or {}).get("agree"):
+        bad.append("the text verdict does not agree with the read-only reconstruction")
+    if not ((v6t.get("mutation_detection") or {}).get("m1") or {}).get("detected"):
+        bad.append("M1 not detected under the text verdict")
+    import g0_refcv7 as G                               # the CURRENT judge, re-run on the banked artifact
+    if "A6" not in getattr(G, "A2_LOWSUPPORT_AMENDS", ()):
+        bad.append("the judge in use does not carry the A6-item-7 fix")
+    else:
+        inrun = {k: r.get("inrun") for k, r in (g0["verdict"].get("terms") or {}).items()}
+        by_seed = {int(s): {"row": v["row"], "buffers_unchanged": v.get("buffers_unchanged", True)}
+                   for s, v in g0["by_seed"].items()}
+        v_now = G.judge(inrun, by_seed, g0, amend="A6")
+        if v_now["G0"] != "PASS" or v_now["reasons"] != v6t.get("reasons"):
+            bad.append(f"the judge in use re-reads {v_now['G0']} ({v_now['reasons'][:3]}), not the file's PASS")
+        mut_now = {m: d["n_terms_out"] for m, d in v_now["mutation_detection"].items()}
+        mut_t = {m: d.get("n_terms_out") for m, d in (v6t.get("mutation_detection") or {}).items()}
+        if mut_now != mut_t:
+            bad.append(f"mutation counts differ: now {mut_now} vs file {mut_t}")
+    if bad:
+        raise SystemExit(f"[battery] G0 text override REFUSED: {bad}")
+    return {"gate_source": "REGISTERED A6 TEXT, corrected judge (Master Mind ruling 2026-10-04)",
+            "ruling": a.g0_text_ruling, "text_verdict_file": str(p), "text_verdict_sha256": sha256(p),
+            "record_lines": t.get("record_lines"), "G0_A6_text": v6t.get("G0"),
+            "mutation_detection_text": {m: d.get("n_terms_out") for m, d in
+                                        (v6t.get("mutation_detection") or {}).items()},
+            "re_verified_by_judge_in_use": True}
 
 
 def _run(a, summary, root, bank):
@@ -308,7 +367,14 @@ def _run(a, summary, root, bank):
             "a6_medians": (g0.get("verdict_A6") or {}).get("medians")}
         bank()
         if v["G0"] != "PASS":
-            raise SystemExit(f"[battery] G0 = {v['G0']} -- STOP (SPEC §2)")
+            if not a.g0_text_verdict:
+                raise SystemExit(f"[battery] G0 = {v['G0']} -- STOP (SPEC §2)")
+            ov = g0_text_override(a, g0, summary["ckpt_md5"])      # raises unless fully re-verified
+            summary["stages"]["g0"]["text_override"] = ov
+            summary["G0_RECORD"] = ov["record_lines"]
+            print("[battery] G0 coded FAIL overridden by the REGISTERED A6 text verdict: "
+                  + " | ".join(ov["record_lines"] or []), flush=True)
+            bank()
     else:
         summary["stages"]["g0"] = {"G0": "SKIPPED (--no-g0)"}
         bank()

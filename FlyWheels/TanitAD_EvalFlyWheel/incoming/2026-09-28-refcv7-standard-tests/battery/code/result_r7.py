@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import time
 from pathlib import Path
 
@@ -108,6 +109,12 @@ def main():
              + "; ".join(f"{k} in-run {v.get('inrun')} interval [{v.get('a6_lo')}, {v.get('a6_hi')}] "
                          f"{v.get('verdict')}" for k, v in (g0.get('a6_threshold_terms') or {}).items())]
             if g0.get("G0_A6") is not None else []),
+          # Master Mind ruling 2026-10-04: BOTH records, whenever the gate rests on the registered A6 text
+          *([f"* ⭐ **G0 RECORD (gate source: {(g0.get('text_override') or {}).get('gate_source')}):** "
+             + " · ".join(f"**{x}**" for x in ((g0.get('text_override') or {}).get('record_lines') or []))
+             + f" (`{os.path.basename(str((g0.get('text_override') or {}).get('text_verdict_file')))}`, sha256 "
+             f"{str((g0.get('text_override') or {}).get('text_verdict_sha256'))[:12]}…; re-verified by the judge in use)"]
+            if g0.get("text_override") else []),
           f"* **Tier:** {res['tier']}. **Estimator:** {res['estimator']}.",
           f"* **Inference-seed floor:** {(res['inference_seed_replicate'] or {}).get('floor_m')} m ADE "
           f"(training-seed floor NOT measured).", ""]
