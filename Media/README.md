@@ -5,16 +5,16 @@ Consolidated 2026-08-28 on the PI's instruction ("put the mp4s in a central fold
 
 | | |
 |---|---|
-| Unique assets (deduped by sha256) | **132** |
-| Total size | **597.4 MB** |
-| Campaigns | **25** |
+| Unique assets (deduped by sha256) | **135** |
+| Total size | **770.8 MB** |
+| Campaigns | **26** |
 | Tracked in git | 45 |
-| Untracked (gitignored `*.mp4`) | 87 |
+| Untracked (gitignored `*.mp4`) | 90 |
 | Sole-copy (existed in exactly one place before consolidation) | **0** |
 | Had no local-backup copy (G:-mount only) | 17 |
 | Unreadable / UNVERIFIED | 0 |
 | On a pushed remote ref | 45 |
-| **Has an off-device copy (local disk OR pushed)** | **132 / 132** |
+| **Has an off-device copy (local disk OR pushed)** | **135 / 135** |
 | **Single-device risk (would die with the G: mount)** | **0** |
 
 ## How to trust this folder

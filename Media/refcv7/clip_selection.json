@@ -1,0 +1,208 @@
+{
+ "rule": "candidates = eval139 clips whose EVERY eval window has a 10 cm SAM3 GT frame (perception_targets.require_map_coverage, n_ok == n_windows) and a v7 nav token; per nav token (left, right, follow) the pool is split at its median clip-mean measured speed (v0 at each window's NOW) into LOW (<) and HIGH (>=); in each half pick (1) the clip with the most VRU windows (a GT person/rider/stroller within 30 m inside the 120 deg field at NOW), then (2) of the rest the clip with the most lead-vehicle windows (a GT vehicle-class box 0 < x <= 60 m, |y| <= 1.75 m at NOW); ties and an all-zero criterion -> smallest sha12. 12 clips; every eval window of each, in time order. Uses GT/labels only, fixed before any model output is read.",
+ "n_eval_clips": 139,
+ "n_full_coverage": 137,
+ "n_by_nav_full": {
+  "left": 12,
+  "right": 37,
+  "follow": 88
+ },
+ "not_full": [
+  {
+   "sha12": "081b986f8888",
+   "n_windows": 171,
+   "n_map_ok": 0
+  },
+  {
+   "sha12": "2aa810802777",
+   "n_windows": 171,
+   "n_map_ok": 0
+  }
+ ],
+ "token_split": {
+  "left": {
+   "n_pool": 12,
+   "v_mean_median_ms": 7.4948
+  },
+  "right": {
+   "n_pool": 37,
+   "v_mean_median_ms": 7.3712
+  },
+  "follow": {
+   "n_pool": 88,
+   "v_mean_median_ms": 11.8847
+  }
+ },
+ "chosen": [
+  {
+   "sha12": "693335b810c3",
+   "nav": "left",
+   "n_windows": 171,
+   "n_map_ok": 171,
+   "v_mean": 5.97,
+   "v_min": 4.3323,
+   "v_max": 6.8244,
+   "n_agent_labelled_win": 171,
+   "n_vru_win": 133,
+   "n_lead_win": 11,
+   "slot": "left/low/vru",
+   "why": "nav LEFT, low speed (v_mean < token median 7.5 m/s): most VRU windows (133)"
+  },
+  {
+   "sha12": "a78bf2711918",
+   "nav": "left",
+   "n_windows": 171,
+   "n_map_ok": 171,
+   "v_mean": 4.9009,
+   "v_min": 0.0,
+   "v_max": 12.1052,
+   "n_agent_labelled_win": 171,
+   "n_vru_win": 76,
+   "n_lead_win": 123,
+   "slot": "left/low/lead",
+   "why": "nav LEFT, low speed (v_mean < token median 7.5 m/s): most LEAD windows (123)"
+  },
+  {
+   "sha12": "f6cfd0a20340",
+   "nav": "left",
+   "n_windows": 177,
+   "n_map_ok": 177,
+   "v_mean": 7.6247,
+   "v_min": 0.5644,
+   "v_max": 10.3248,
+   "n_agent_labelled_win": 177,
+   "n_vru_win": 79,
+   "n_lead_win": 142,
+   "slot": "left/high/vru",
+   "why": "nav LEFT, high speed (v_mean >= token median 7.5 m/s): most VRU windows (79)"
+  },
+  {
+   "sha12": "9855363e1ac1",
+   "nav": "left",
+   "n_windows": 171,
+   "n_map_ok": 171,
+   "v_mean": 9.888,
+   "v_min": 0.0,
+   "v_max": 16.1932,
+   "n_agent_labelled_win": 171,
+   "n_vru_win": 0,
+   "n_lead_win": 148,
+   "slot": "left/high/lead",
+   "why": "nav LEFT, high speed (v_mean >= token median 7.5 m/s): most LEAD windows (148)"
+  },
+  {
+   "sha12": "0191487845ef",
+   "nav": "right",
+   "n_windows": 171,
+   "n_map_ok": 171,
+   "v_mean": 5.3438,
+   "v_min": 0.1606,
+   "v_max": 9.3275,
+   "n_agent_labelled_win": 171,
+   "n_vru_win": 171,
+   "n_lead_win": 171,
+   "slot": "right/low/vru",
+   "why": "nav RIGHT, low speed (v_mean < token median 7.4 m/s): most VRU windows (171)"
+  },
+  {
+   "sha12": "9f8bedcfb9de",
+   "nav": "right",
+   "n_windows": 171,
+   "n_map_ok": 171,
+   "v_mean": 2.6661,
+   "v_min": 0.0,
+   "v_max": 6.8173,
+   "n_agent_labelled_win": 171,
+   "n_vru_win": 171,
+   "n_lead_win": 171,
+   "slot": "right/low/lead",
+   "why": "nav RIGHT, low speed (v_mean < token median 7.4 m/s): most LEAD windows (171)"
+  },
+  {
+   "sha12": "751cdd67811f",
+   "nav": "right",
+   "n_windows": 171,
+   "n_map_ok": 171,
+   "v_mean": 8.7331,
+   "v_min": 5.4668,
+   "v_max": 14.8302,
+   "n_agent_labelled_win": 171,
+   "n_vru_win": 150,
+   "n_lead_win": 41,
+   "slot": "right/high/vru",
+   "why": "nav RIGHT, high speed (v_mean >= token median 7.4 m/s): most VRU windows (150)"
+  },
+  {
+   "sha12": "49f68312b36e",
+   "nav": "right",
+   "n_windows": 171,
+   "n_map_ok": 171,
+   "v_mean": 7.6041,
+   "v_min": 6.606,
+   "v_max": 8.3163,
+   "n_agent_labelled_win": 171,
+   "n_vru_win": 39,
+   "n_lead_win": 116,
+   "slot": "right/high/lead",
+   "why": "nav RIGHT, high speed (v_mean >= token median 7.4 m/s): most LEAD windows (116)"
+  },
+  {
+   "sha12": "7f6670448ef6",
+   "nav": "follow",
+   "n_windows": 172,
+   "n_map_ok": 172,
+   "v_mean": 6.5804,
+   "v_min": 5.9613,
+   "v_max": 7.966,
+   "n_agent_labelled_win": 172,
+   "n_vru_win": 172,
+   "n_lead_win": 172,
+   "slot": "follow/low/vru",
+   "why": "nav FOLLOW, low speed (v_mean < token median 11.9 m/s): most VRU windows (172)"
+  },
+  {
+   "sha12": "198bb4517e28",
+   "nav": "follow",
+   "n_windows": 171,
+   "n_map_ok": 171,
+   "v_mean": 7.9055,
+   "v_min": 0.0,
+   "v_max": 12.9718,
+   "n_agent_labelled_win": 171,
+   "n_vru_win": 84,
+   "n_lead_win": 171,
+   "slot": "follow/low/lead",
+   "why": "nav FOLLOW, low speed (v_mean < token median 11.9 m/s): most LEAD windows (171)"
+  },
+  {
+   "sha12": "e01bd05b8e43",
+   "nav": "follow",
+   "n_windows": 171,
+   "n_map_ok": 171,
+   "v_mean": 12.1527,
+   "v_min": 10.893,
+   "v_max": 12.9022,
+   "n_agent_labelled_win": 171,
+   "n_vru_win": 104,
+   "n_lead_win": 56,
+   "slot": "follow/high/vru",
+   "why": "nav FOLLOW, high speed (v_mean >= token median 11.9 m/s): most VRU windows (104)"
+  },
+  {
+   "sha12": "37616735658b",
+   "nav": "follow",
+   "n_windows": 171,
+   "n_map_ok": 171,
+   "v_mean": 21.7426,
+   "v_min": 16.3161,
+   "v_max": 25.259,
+   "n_agent_labelled_win": 171,
+   "n_vru_win": 0,
+   "n_lead_win": 171,
+   "slot": "follow/high/lead",
+   "why": "nav FOLLOW, high speed (v_mean >= token median 11.9 m/s): most LEAD windows (171)"
+  }
+ ],
+ "selection_s": 7.3,
+ "window": 8
+}
