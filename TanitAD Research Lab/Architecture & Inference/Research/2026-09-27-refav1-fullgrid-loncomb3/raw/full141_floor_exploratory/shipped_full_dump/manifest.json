@@ -1,0 +1,1232 @@
+{
+ "tool": "taniteval/tools/refav1_arm.py",
+ "model": {
+  "ckpt": "/home/nvidia/experiments/refav1-b1-v72-ep3-speed/ckpt.pt",
+  "step": 21109,
+  "config_source": "/home/nvidia/experiments/refav1-b1-v72-ep3-speed/config.json",
+  "state_dict_load": {
+   "missing_keys": [],
+   "unexpected_keys": []
+  },
+  "eval_time_cfg_overrides": {},
+  "cfg": {
+   "tac_vocab_version": "v7.0",
+   "d_enc": 1024,
+   "n_tokens": 640,
+   "d_state": 1024,
+   "op_dt": 0.2,
+   "op_steps": 30,
+   "op_layers": 6,
+   "op_heads": 8,
+   "op_window": 4,
+   "tac_dt": 0.6,
+   "tac_steps": 10,
+   "tac_queries": 64,
+   "tac_layers": 4,
+   "str_dt": 3.0,
+   "str_steps": 2,
+   "str_dim": 256,
+   "str_layers": 2,
+   "str_horizon_s": 12.0,
+   "w_feat_str_ext": 0.25,
+   "a_dim": 2,
+   "speed_channel": true,
+   "tmix_groups": null,
+   "plan_horizon_s": 2.0,
+   "goal_times_s": [
+    2.0,
+    4.0,
+    6.0
+   ],
+   "plan_level": "tactical",
+   "verify_on_operative": true,
+   "tactical_cfg": {
+    "d_model": 512,
+    "depth": 6,
+    "n_heads": 8,
+    "n_maneuvers": 5,
+    "waypoint_horizons": [
+     5,
+     10,
+     15,
+     20
+    ],
+    "d_intent": 256,
+    "cadence": 5
+   },
+   "strategic_cfg": {
+    "n_commands": 4,
+    "d_cmd": 128,
+    "d_model": 384,
+    "depth": 4,
+    "n_heads": 6,
+    "d_ctx": 256,
+    "n_route": 3,
+    "cadence": 20
+   },
+   "w_feat_op": 1.0,
+   "w_feat_tac": 0.5,
+   "w_feat_str": 0.25,
+   "w_aux_head": 0.0,
+   "proposal_k": 1,
+   "w_cf": 0.0,
+   "cf_negs": 3,
+   "cf_tau": 1.0,
+   "cf_at_step": 4,
+   "motion_inject": false,
+   "w_tac_label": 0.1,
+   "w_str_label": 0.1,
+   "nav_inject": true,
+   "target_space": "frozen",
+   "detach_aux_targets": true,
+   "ema_targets": true,
+   "ema_decay": 0.996,
+   "ema_decay_end": 0.999,
+   "w_sigreg": 0.0,
+   "sigreg_slices": 512,
+   "var_floor": 0.0,
+   "min_participation": 0.0,
+   "bptt_truncate": 15
+  },
+  "trainable_parameters": 0,
+  "a_dim": 2,
+  "target_space": "frozen",
+  "tac_vocab_version": "v7.0"
+ },
+ "grid": {
+  "dt_s": 0.2,
+  "horizon_k": 10,
+  "wm_k": 30,
+  "window": 4,
+  "window_stride": 40,
+  "n_windows": 282,
+  "n_episodes": 141,
+  "n_episodes_available": 141
+ },
+ "arms": [
+  "cl",
+  "ha",
+  "ha0",
+  "ol"
+ ],
+ "tiers": {
+  "cl": "T1",
+  "ha": "T1",
+  "ha0": "T1",
+  "ol": "T0"
+ },
+ "arm_meaning": {
+  "cl": "T1 \u2014 plan() at t0, TRUE nav; predictor consumes the planner's own actions; trajectory = unicycle(controls, measured v0)",
+  "ha": "T1 \u2014 hold the last OBSERVED (a, kappa) (closes at t0) for K steps; consumes no recorded future",
+  "ha0": "T1 \u2014 CONSTANT VELOCITY: a = 0, kappa = 0 at the measured v0, i.e. a straight line at constant speed. The STRONGEST TRIVIAL BASELINE and the echo test's real bar; consumes strictly less than ha (not even the last observed action)",
+  "ol": "T0 \u2014 the RECORDED future (a, kappa) integrated from v0: the kinematic-contract control (must reproduce GT), NOT a WM diagnostic"
+ },
+ "plan_cfg": {
+  "n_samples": 300,
+  "n_iters": 30,
+  "n_elites": 30,
+  "init_var": 1.0,
+  "horizon": 10,
+  "dt": 0.2,
+  "a_max": 4.0,
+  "kappa_max": 0.2,
+  "beta": 2.5,
+  "decay": 1.25,
+  "min_samples": 32,
+  "elite_memory": 0.3,
+  "shift_init": true,
+  "alpha": 0.1,
+  "inject_baselines": true,
+  "seed": 0
+ },
+ "plan_source_names": [
+  "cem",
+  "baseline:cv",
+  "baseline:hold_v0",
+  "baseline:proposal",
+  "baseline:decel_1.5"
+ ],
+ "nav_shuffle": {
+  "seed": 0,
+  "n_windows": 282,
+  "n_valid": 282,
+  "n_changed": 153,
+  "changed_frac": 0.5426,
+  "rule": "permutation among nav_valid windows; invalid rows keep nav_cmd=0 / nav_valid=False and are EXCLUDED from route accuracy"
+ },
+ "speed_channel": {
+  "enabled": true,
+  "rule": "derived by RefAV1.augment_actions in forward() AND plan(): v_k = v0 + sum_{j<k} a_j dt, scaled by SPEED_SCALE_MPS; this adapter passes 2-wide (a, kappa) + measured v0 and never widens actions (the model refuses a 3-wide input)"
+ },
+ "hold_action_rule": "The last OBSERVED action \u2014 the (a, kappa) that CLOSES at t0.\n\n    ``loader._kin_actions(v, kap, t-1, 1)`` reads ``v[2t-2]``, ``v[2t]`` and\n    ``kap[2t-2]``: every frame is <= 2t, so NOTHING recorded after t0 enters.\n    (The action OPENING at t would need ``v[2t+2]`` \u2014 a future value \u2014 which is\n    why it is not the one held.)\n    ",
+ "hold_v0_rule": "\u2b50 THE STRONGEST TRIVIAL BASELINE: ``a = 0, kappa = 0`` for K steps.\n\n    Integrated from the measured ``v0`` this is a CONSTANT-VELOCITY STRAIGHT LINE \u2014 the\n    control C101 measured our CEM planner 35.8 % worse than, and the one the echo test\n    must actually be run against.\n\n    \u26d4 WHY IT EXISTS (MEASURED 2026-09-03, and it voided a read): at step 1,000 the\n    closed-loop arm ``cl`` was a straight constant-speed line on **140/140** windows, so\n    the whole \"lateral planning beats holding\" reading was a straight line beating the\n    hold-action control's held, NOISY kappa (which drifts 0.12 m even where the human\n    drives straight). Against ``ha`` alone that reads as lateral SKILL. Against ``ha0``\n    it reads as what it is: nothing. ``ha`` is NOT the trivial floor \u2014 it is a control\n    that can be WORSE than trivial, and comparing only to it manufactures a win.\n\n    Consumes strictly less than ``hold_action_controls``: no recorded action at all,\n    only the measured ``v0`` the PI ruling of 2026-09-02 admits.\n    ",
+ "action_units": {
+  "recorded": "kappa",
+  "planner_search": "kappa",
+  "planner_to_model": "kappa",
+  "L_enc_m": 2.9,
+  "rule": "v2ep actions[:,0] is a road-wheel angle (physicalai.signals_at: steer = arctan(L_enc*curvature), L_enc MEASURED = 2.9 exactly). 'kappa' = the LEGACY reading (integrate it unconverted, hand it to the model unconverted); 'steer' = the repaired contract (kappa = tan(steer)/L_enc before any integration, steer = arctan(L_enc*kappa) at the model boundary). The two are NOT comparable."
+ },
+ "goal": {
+  "source_names": [
+   "none",
+   "supplied",
+   "tactical_imagined"
+  ],
+  "space": [
+   "tactical_query_field"
+  ],
+  "rule": "per window from PlanResult.goal_source / goal_space / goal_action (refa_v1.plan, e609a98): goal_source_<arm> indexes source_names, goal_{lat,lon}_<arm> index the tac vocabulary (-1 = no decoded action). An absent attribute reads 'none' \u2014 never inferred."
+ },
+ "corpus": {
+  "cache": "/home/nvidia/data/refav1-fp8-eval",
+  "episodes": "/home/nvidia/data/physicalai-b1-w120-256x640cyl",
+  "labels": "/home/nvidia/data/v72/labels/s2_labels_v7.2_eval.jsonl.gz",
+  "nav": "/home/nvidia/data/v72/labels/s2_labels_v7.2_eval.jsonl.gz",
+  "cache_index": {
+   "grid": "0.2s (every 2nd frame)",
+   "dtype": "float8_e4m3fn",
+   "geometry": {
+    "n_tokens": 640,
+    "d_enc": 1024,
+    "hfov_deg": 120.0
+   },
+   "model": "facebook/dinov3-vitl16-pretrain-lvd1689m",
+   "special_dropped": 5,
+   "gate": "fp8_l2_gate.json PASS 2026-09-01",
+   "n_episodes_in_index": 4713
+  },
+  "join_report": {
+   "rule": "in-band iff |t_now - t0| <= (tac_hi - tac_lo)/2; t_now = t * 0.2 s (RAW timeline, no n_stack offset \u2014 see module docstring)",
+   "labels": {
+    "n_episodes": 141,
+    "n_labeled": 141,
+    "n_missing": 0,
+    "missing_episodes": [],
+    "n_windows": 9443,
+    "n_windows_in_band": 2961,
+    "band_tol_s": [
+     2.0
+    ],
+    "tac_vocab_version": "v7.0",
+    "path": "/home/nvidia/data/v72/labels/s2_labels_v7.2_eval.jsonl.gz",
+    "md5": "aa12c948f062181c3297265b51526ec5",
+    "n_records": 147,
+    "schema_version": "s2-geom-v7",
+    "vocab": "v7",
+    "allow_oracle_nav": true,
+    "divergences": [],
+    "_read": "md5 is the identity \u2014 six copies of this blob exist under three roots and their md5s differ."
+   },
+   "nav": {
+    "n_episodes": 141,
+    "n_labeled": 141,
+    "n_missing": 0,
+    "missing_episodes": [],
+    "unlabeled_default": "nav_cmd=0 ('follow', refb.py:60) + nav_valid=False",
+    "nav_arg_semantics": "t0_constant",
+    "n_clips_mapped": 141,
+    "n_label_records": 147,
+    "path": "/home/nvidia/data/v72/labels/s2_labels_v7.2_eval.jsonl.gz",
+    "md5": "aa12c948f062181c3297265b51526ec5",
+    "n_records": 147,
+    "schema_version": "s2-geom-v7",
+    "vocab": "v7",
+    "allow_oracle_nav": true,
+    "divergences": [],
+    "_read": "md5 is the identity \u2014 six copies of this blob exist under three roots and their md5s differ."
+   }
+  }
+ },
+ "episodes": [
+  {
+   "file_index": 0,
+   "episode_index": 0,
+   "name": "0dfe63214bc2",
+   "clip_id": "0dfe63214bc2",
+   "n_windows": 2
+  },
+  {
+   "file_index": 1,
+   "episode_index": 1,
+   "name": "c64f0103aece",
+   "clip_id": "c64f0103aece",
+   "n_windows": 2
+  },
+  {
+   "file_index": 2,
+   "episode_index": 2,
+   "name": "54e3dc4b3ae4",
+   "clip_id": "54e3dc4b3ae4",
+   "n_windows": 2
+  },
+  {
+   "file_index": 3,
+   "episode_index": 3,
+   "name": "d0c6db065fa0",
+   "clip_id": "d0c6db065fa0",
+   "n_windows": 2
+  },
+  {
+   "file_index": 4,
+   "episode_index": 4,
+   "name": "c8831556989f",
+   "clip_id": "c8831556989f",
+   "n_windows": 2
+  },
+  {
+   "file_index": 5,
+   "episode_index": 5,
+   "name": "bfc3a203bd06",
+   "clip_id": "bfc3a203bd06",
+   "n_windows": 2
+  },
+  {
+   "file_index": 6,
+   "episode_index": 6,
+   "name": "b435685d40c8",
+   "clip_id": "b435685d40c8",
+   "n_windows": 2
+  },
+  {
+   "file_index": 7,
+   "episode_index": 7,
+   "name": "47f22ccd6fbb",
+   "clip_id": "47f22ccd6fbb",
+   "n_windows": 2
+  },
+  {
+   "file_index": 8,
+   "episode_index": 8,
+   "name": "ea6d261f6c62",
+   "clip_id": "ea6d261f6c62",
+   "n_windows": 2
+  },
+  {
+   "file_index": 9,
+   "episode_index": 9,
+   "name": "42cc086733d8",
+   "clip_id": "42cc086733d8",
+   "n_windows": 2
+  },
+  {
+   "file_index": 10,
+   "episode_index": 10,
+   "name": "d4c144f52747",
+   "clip_id": "d4c144f52747",
+   "n_windows": 2
+  },
+  {
+   "file_index": 11,
+   "episode_index": 11,
+   "name": "7f6670448ef6",
+   "clip_id": "7f6670448ef6",
+   "n_windows": 2
+  },
+  {
+   "file_index": 12,
+   "episode_index": 12,
+   "name": "7e5dc4ad4e52",
+   "clip_id": "7e5dc4ad4e52",
+   "n_windows": 2
+  },
+  {
+   "file_index": 13,
+   "episode_index": 13,
+   "name": "d75f38babcda",
+   "clip_id": "d75f38babcda",
+   "n_windows": 2
+  },
+  {
+   "file_index": 14,
+   "episode_index": 14,
+   "name": "bb62d9b15ef0",
+   "clip_id": "bb62d9b15ef0",
+   "n_windows": 2
+  },
+  {
+   "file_index": 15,
+   "episode_index": 15,
+   "name": "93489c4af0ab",
+   "clip_id": "93489c4af0ab",
+   "n_windows": 2
+  },
+  {
+   "file_index": 16,
+   "episode_index": 16,
+   "name": "37616735658b",
+   "clip_id": "37616735658b",
+   "n_windows": 2
+  },
+  {
+   "file_index": 17,
+   "episode_index": 17,
+   "name": "c45d6a86ff06",
+   "clip_id": "c45d6a86ff06",
+   "n_windows": 2
+  },
+  {
+   "file_index": 18,
+   "episode_index": 18,
+   "name": "5a393f328725",
+   "clip_id": "5a393f328725",
+   "n_windows": 2
+  },
+  {
+   "file_index": 19,
+   "episode_index": 19,
+   "name": "c167e6ce11a3",
+   "clip_id": "c167e6ce11a3",
+   "n_windows": 2
+  },
+  {
+   "file_index": 20,
+   "episode_index": 20,
+   "name": "af59c57f6c77",
+   "clip_id": "af59c57f6c77",
+   "n_windows": 2
+  },
+  {
+   "file_index": 21,
+   "episode_index": 21,
+   "name": "e01bd05b8e43",
+   "clip_id": "e01bd05b8e43",
+   "n_windows": 2
+  },
+  {
+   "file_index": 22,
+   "episode_index": 22,
+   "name": "209199ce8280",
+   "clip_id": "209199ce8280",
+   "n_windows": 2
+  },
+  {
+   "file_index": 23,
+   "episode_index": 23,
+   "name": "f81131bdf928",
+   "clip_id": "f81131bdf928",
+   "n_windows": 2
+  },
+  {
+   "file_index": 24,
+   "episode_index": 24,
+   "name": "ac6745ace7ec",
+   "clip_id": "ac6745ace7ec",
+   "n_windows": 2
+  },
+  {
+   "file_index": 25,
+   "episode_index": 25,
+   "name": "6ad168dc58db",
+   "clip_id": "6ad168dc58db",
+   "n_windows": 2
+  },
+  {
+   "file_index": 26,
+   "episode_index": 26,
+   "name": "418a12591a39",
+   "clip_id": "418a12591a39",
+   "n_windows": 2
+  },
+  {
+   "file_index": 27,
+   "episode_index": 27,
+   "name": "2ccc9a947611",
+   "clip_id": "2ccc9a947611",
+   "n_windows": 2
+  },
+  {
+   "file_index": 28,
+   "episode_index": 28,
+   "name": "09f53befdab2",
+   "clip_id": "09f53befdab2",
+   "n_windows": 2
+  },
+  {
+   "file_index": 29,
+   "episode_index": 29,
+   "name": "34765c024267",
+   "clip_id": "34765c024267",
+   "n_windows": 2
+  },
+  {
+   "file_index": 30,
+   "episode_index": 30,
+   "name": "843e4ee8d5d2",
+   "clip_id": "843e4ee8d5d2",
+   "n_windows": 2
+  },
+  {
+   "file_index": 31,
+   "episode_index": 31,
+   "name": "50da1e13e4db",
+   "clip_id": "50da1e13e4db",
+   "n_windows": 2
+  },
+  {
+   "file_index": 32,
+   "episode_index": 32,
+   "name": "fcc9209b8e83",
+   "clip_id": "fcc9209b8e83",
+   "n_windows": 2
+  },
+  {
+   "file_index": 33,
+   "episode_index": 33,
+   "name": "f2c6a9c84795",
+   "clip_id": "f2c6a9c84795",
+   "n_windows": 2
+  },
+  {
+   "file_index": 34,
+   "episode_index": 34,
+   "name": "9d92cb2360a4",
+   "clip_id": "9d92cb2360a4",
+   "n_windows": 2
+  },
+  {
+   "file_index": 35,
+   "episode_index": 35,
+   "name": "67e3568c2eda",
+   "clip_id": "67e3568c2eda",
+   "n_windows": 2
+  },
+  {
+   "file_index": 36,
+   "episode_index": 36,
+   "name": "53dea87e5f81",
+   "clip_id": "53dea87e5f81",
+   "n_windows": 2
+  },
+  {
+   "file_index": 37,
+   "episode_index": 37,
+   "name": "4888dcd27dc8",
+   "clip_id": "4888dcd27dc8",
+   "n_windows": 2
+  },
+  {
+   "file_index": 38,
+   "episode_index": 38,
+   "name": "e0f97cf3262a",
+   "clip_id": "e0f97cf3262a",
+   "n_windows": 2
+  },
+  {
+   "file_index": 39,
+   "episode_index": 39,
+   "name": "59d98b34ae8b",
+   "clip_id": "59d98b34ae8b",
+   "n_windows": 2
+  },
+  {
+   "file_index": 40,
+   "episode_index": 40,
+   "name": "062d0d6e9791",
+   "clip_id": "062d0d6e9791",
+   "n_windows": 2
+  },
+  {
+   "file_index": 41,
+   "episode_index": 41,
+   "name": "6adc10f58460",
+   "clip_id": "6adc10f58460",
+   "n_windows": 2
+  },
+  {
+   "file_index": 42,
+   "episode_index": 42,
+   "name": "9546f6d574e2",
+   "clip_id": "9546f6d574e2",
+   "n_windows": 2
+  },
+  {
+   "file_index": 43,
+   "episode_index": 43,
+   "name": "6b0744922620",
+   "clip_id": "6b0744922620",
+   "n_windows": 2
+  },
+  {
+   "file_index": 44,
+   "episode_index": 44,
+   "name": "c8cb0ad57519",
+   "clip_id": "c8cb0ad57519",
+   "n_windows": 2
+  },
+  {
+   "file_index": 45,
+   "episode_index": 45,
+   "name": "c5bb9c2618da",
+   "clip_id": "c5bb9c2618da",
+   "n_windows": 2
+  },
+  {
+   "file_index": 46,
+   "episode_index": 46,
+   "name": "98f1cf98cc38",
+   "clip_id": "98f1cf98cc38",
+   "n_windows": 2
+  },
+  {
+   "file_index": 47,
+   "episode_index": 47,
+   "name": "dd55afb71c3d",
+   "clip_id": "dd55afb71c3d",
+   "n_windows": 2
+  },
+  {
+   "file_index": 48,
+   "episode_index": 48,
+   "name": "f732a885f432",
+   "clip_id": "f732a885f432",
+   "n_windows": 2
+  },
+  {
+   "file_index": 49,
+   "episode_index": 49,
+   "name": "76fc5c466b2d",
+   "clip_id": "76fc5c466b2d",
+   "n_windows": 2
+  },
+  {
+   "file_index": 50,
+   "episode_index": 50,
+   "name": "feccf3ba3479",
+   "clip_id": "feccf3ba3479",
+   "n_windows": 2
+  },
+  {
+   "file_index": 51,
+   "episode_index": 51,
+   "name": "2efcfdb9c913",
+   "clip_id": "2efcfdb9c913",
+   "n_windows": 2
+  },
+  {
+   "file_index": 52,
+   "episode_index": 52,
+   "name": "a4741056ff38",
+   "clip_id": "a4741056ff38",
+   "n_windows": 2
+  },
+  {
+   "file_index": 53,
+   "episode_index": 53,
+   "name": "356568701781",
+   "clip_id": "356568701781",
+   "n_windows": 2
+  },
+  {
+   "file_index": 54,
+   "episode_index": 54,
+   "name": "a699b49d4563",
+   "clip_id": "a699b49d4563",
+   "n_windows": 2
+  },
+  {
+   "file_index": 55,
+   "episode_index": 55,
+   "name": "c0bb04e203cf",
+   "clip_id": "c0bb04e203cf",
+   "n_windows": 2
+  },
+  {
+   "file_index": 56,
+   "episode_index": 56,
+   "name": "198bb4517e28",
+   "clip_id": "198bb4517e28",
+   "n_windows": 2
+  },
+  {
+   "file_index": 57,
+   "episode_index": 57,
+   "name": "d36583cfa3d6",
+   "clip_id": "d36583cfa3d6",
+   "n_windows": 2
+  },
+  {
+   "file_index": 58,
+   "episode_index": 58,
+   "name": "c7e31db0a5c5",
+   "clip_id": "c7e31db0a5c5",
+   "n_windows": 2
+  },
+  {
+   "file_index": 59,
+   "episode_index": 59,
+   "name": "49f68312b36e",
+   "clip_id": "49f68312b36e",
+   "n_windows": 2
+  },
+  {
+   "file_index": 60,
+   "episode_index": 60,
+   "name": "22ecc807b84c",
+   "clip_id": "22ecc807b84c",
+   "n_windows": 2
+  },
+  {
+   "file_index": 61,
+   "episode_index": 61,
+   "name": "2dc00f2fb95d",
+   "clip_id": "2dc00f2fb95d",
+   "n_windows": 2
+  },
+  {
+   "file_index": 62,
+   "episode_index": 62,
+   "name": "b2ee18d21dff",
+   "clip_id": "b2ee18d21dff",
+   "n_windows": 2
+  },
+  {
+   "file_index": 63,
+   "episode_index": 63,
+   "name": "439646d62f3a",
+   "clip_id": "439646d62f3a",
+   "n_windows": 2
+  },
+  {
+   "file_index": 64,
+   "episode_index": 64,
+   "name": "a21feba2f8b1",
+   "clip_id": "a21feba2f8b1",
+   "n_windows": 2
+  },
+  {
+   "file_index": 65,
+   "episode_index": 65,
+   "name": "c448fac4e230",
+   "clip_id": "c448fac4e230",
+   "n_windows": 2
+  },
+  {
+   "file_index": 66,
+   "episode_index": 66,
+   "name": "68b999cbd670",
+   "clip_id": "68b999cbd670",
+   "n_windows": 2
+  },
+  {
+   "file_index": 67,
+   "episode_index": 67,
+   "name": "04ed850dca64",
+   "clip_id": "04ed850dca64",
+   "n_windows": 2
+  },
+  {
+   "file_index": 68,
+   "episode_index": 68,
+   "name": "9f8bedcfb9de",
+   "clip_id": "9f8bedcfb9de",
+   "n_windows": 2
+  },
+  {
+   "file_index": 69,
+   "episode_index": 69,
+   "name": "43ac3253c6a3",
+   "clip_id": "43ac3253c6a3",
+   "n_windows": 2
+  },
+  {
+   "file_index": 70,
+   "episode_index": 70,
+   "name": "b6ba8d3b06f3",
+   "clip_id": "b6ba8d3b06f3",
+   "n_windows": 2
+  },
+  {
+   "file_index": 71,
+   "episode_index": 71,
+   "name": "5c1eb051b96f",
+   "clip_id": "5c1eb051b96f",
+   "n_windows": 2
+  },
+  {
+   "file_index": 72,
+   "episode_index": 72,
+   "name": "2b568af29b7d",
+   "clip_id": "2b568af29b7d",
+   "n_windows": 2
+  },
+  {
+   "file_index": 73,
+   "episode_index": 73,
+   "name": "3c1ab43d104a",
+   "clip_id": "3c1ab43d104a",
+   "n_windows": 2
+  },
+  {
+   "file_index": 74,
+   "episode_index": 74,
+   "name": "58f07fdb342a",
+   "clip_id": "58f07fdb342a",
+   "n_windows": 2
+  },
+  {
+   "file_index": 75,
+   "episode_index": 75,
+   "name": "b9622e49a9ec",
+   "clip_id": "b9622e49a9ec",
+   "n_windows": 2
+  },
+  {
+   "file_index": 76,
+   "episode_index": 76,
+   "name": "b88f64c81aec",
+   "clip_id": "b88f64c81aec",
+   "n_windows": 2
+  },
+  {
+   "file_index": 77,
+   "episode_index": 77,
+   "name": "e1777e69be55",
+   "clip_id": "e1777e69be55",
+   "n_windows": 2
+  },
+  {
+   "file_index": 78,
+   "episode_index": 78,
+   "name": "60f8d13ff2e2",
+   "clip_id": "60f8d13ff2e2",
+   "n_windows": 2
+  },
+  {
+   "file_index": 79,
+   "episode_index": 79,
+   "name": "5b74d23ac873",
+   "clip_id": "5b74d23ac873",
+   "n_windows": 2
+  },
+  {
+   "file_index": 80,
+   "episode_index": 80,
+   "name": "e902aba7fb9a",
+   "clip_id": "e902aba7fb9a",
+   "n_windows": 2
+  },
+  {
+   "file_index": 81,
+   "episode_index": 81,
+   "name": "029d8d52075c",
+   "clip_id": "029d8d52075c",
+   "n_windows": 2
+  },
+  {
+   "file_index": 82,
+   "episode_index": 82,
+   "name": "b5f66e3e7af0",
+   "clip_id": "b5f66e3e7af0",
+   "n_windows": 2
+  },
+  {
+   "file_index": 83,
+   "episode_index": 83,
+   "name": "43e797856f84",
+   "clip_id": "43e797856f84",
+   "n_windows": 2
+  },
+  {
+   "file_index": 84,
+   "episode_index": 84,
+   "name": "22d47ae7e052",
+   "clip_id": "22d47ae7e052",
+   "n_windows": 2
+  },
+  {
+   "file_index": 85,
+   "episode_index": 85,
+   "name": "28b54692a103",
+   "clip_id": "28b54692a103",
+   "n_windows": 2
+  },
+  {
+   "file_index": 86,
+   "episode_index": 86,
+   "name": "9855363e1ac1",
+   "clip_id": "9855363e1ac1",
+   "n_windows": 2
+  },
+  {
+   "file_index": 87,
+   "episode_index": 87,
+   "name": "c16543c621dc",
+   "clip_id": "c16543c621dc",
+   "n_windows": 2
+  },
+  {
+   "file_index": 88,
+   "episode_index": 88,
+   "name": "071957186302",
+   "clip_id": "071957186302",
+   "n_windows": 2
+  },
+  {
+   "file_index": 89,
+   "episode_index": 89,
+   "name": "6d3b8ff6b7b2",
+   "clip_id": "6d3b8ff6b7b2",
+   "n_windows": 2
+  },
+  {
+   "file_index": 90,
+   "episode_index": 90,
+   "name": "c23873899e31",
+   "clip_id": "c23873899e31",
+   "n_windows": 2
+  },
+  {
+   "file_index": 91,
+   "episode_index": 91,
+   "name": "3fc7f2025d61",
+   "clip_id": "3fc7f2025d61",
+   "n_windows": 2
+  },
+  {
+   "file_index": 92,
+   "episode_index": 92,
+   "name": "4de594141ae4",
+   "clip_id": "4de594141ae4",
+   "n_windows": 2
+  },
+  {
+   "file_index": 93,
+   "episode_index": 93,
+   "name": "94aae24f02bf",
+   "clip_id": "94aae24f02bf",
+   "n_windows": 2
+  },
+  {
+   "file_index": 94,
+   "episode_index": 94,
+   "name": "081b986f8888",
+   "clip_id": "081b986f8888",
+   "n_windows": 2
+  },
+  {
+   "file_index": 95,
+   "episode_index": 95,
+   "name": "729b5d29fa89",
+   "clip_id": "729b5d29fa89",
+   "n_windows": 2
+  },
+  {
+   "file_index": 96,
+   "episode_index": 96,
+   "name": "39cd356553d5",
+   "clip_id": "39cd356553d5",
+   "n_windows": 2
+  },
+  {
+   "file_index": 97,
+   "episode_index": 97,
+   "name": "6c5a21de8993",
+   "clip_id": "6c5a21de8993",
+   "n_windows": 2
+  },
+  {
+   "file_index": 98,
+   "episode_index": 98,
+   "name": "c0d4ac1d8f62",
+   "clip_id": "c0d4ac1d8f62",
+   "n_windows": 2
+  },
+  {
+   "file_index": 99,
+   "episode_index": 99,
+   "name": "ff9d2a66d2a2",
+   "clip_id": "ff9d2a66d2a2",
+   "n_windows": 2
+  },
+  {
+   "file_index": 100,
+   "episode_index": 100,
+   "name": "83df0bab7763",
+   "clip_id": "83df0bab7763",
+   "n_windows": 2
+  },
+  {
+   "file_index": 101,
+   "episode_index": 101,
+   "name": "252bc8e77e06",
+   "clip_id": "252bc8e77e06",
+   "n_windows": 2
+  },
+  {
+   "file_index": 102,
+   "episode_index": 102,
+   "name": "a78bf2711918",
+   "clip_id": "a78bf2711918",
+   "n_windows": 2
+  },
+  {
+   "file_index": 103,
+   "episode_index": 103,
+   "name": "732422c717f1",
+   "clip_id": "732422c717f1",
+   "n_windows": 2
+  },
+  {
+   "file_index": 104,
+   "episode_index": 104,
+   "name": "77d93cd24266",
+   "clip_id": "77d93cd24266",
+   "n_windows": 2
+  },
+  {
+   "file_index": 105,
+   "episode_index": 105,
+   "name": "28f6781136b1",
+   "clip_id": "28f6781136b1",
+   "n_windows": 2
+  },
+  {
+   "file_index": 106,
+   "episode_index": 106,
+   "name": "f6cfd0a20340",
+   "clip_id": "f6cfd0a20340",
+   "n_windows": 2
+  },
+  {
+   "file_index": 107,
+   "episode_index": 107,
+   "name": "356cc45b0224",
+   "clip_id": "356cc45b0224",
+   "n_windows": 2
+  },
+  {
+   "file_index": 108,
+   "episode_index": 108,
+   "name": "c4f46701b8ae",
+   "clip_id": "c4f46701b8ae",
+   "n_windows": 2
+  },
+  {
+   "file_index": 109,
+   "episode_index": 109,
+   "name": "101ef2cf05dc",
+   "clip_id": "101ef2cf05dc",
+   "n_windows": 2
+  },
+  {
+   "file_index": 110,
+   "episode_index": 110,
+   "name": "03cb55890588",
+   "clip_id": "03cb55890588",
+   "n_windows": 2
+  },
+  {
+   "file_index": 111,
+   "episode_index": 111,
+   "name": "c8c6aa11d792",
+   "clip_id": "c8c6aa11d792",
+   "n_windows": 2
+  },
+  {
+   "file_index": 112,
+   "episode_index": 112,
+   "name": "751cdd67811f",
+   "clip_id": "751cdd67811f",
+   "n_windows": 2
+  },
+  {
+   "file_index": 113,
+   "episode_index": 113,
+   "name": "4b5c891e90e6",
+   "clip_id": "4b5c891e90e6",
+   "n_windows": 2
+  },
+  {
+   "file_index": 114,
+   "episode_index": 114,
+   "name": "00213e99adca",
+   "clip_id": "00213e99adca",
+   "n_windows": 2
+  },
+  {
+   "file_index": 115,
+   "episode_index": 115,
+   "name": "3db625a5f941",
+   "clip_id": "3db625a5f941",
+   "n_windows": 2
+  },
+  {
+   "file_index": 116,
+   "episode_index": 116,
+   "name": "85ee873a6f81",
+   "clip_id": "85ee873a6f81",
+   "n_windows": 2
+  },
+  {
+   "file_index": 117,
+   "episode_index": 117,
+   "name": "7695875eaea9",
+   "clip_id": "7695875eaea9",
+   "n_windows": 2
+  },
+  {
+   "file_index": 118,
+   "episode_index": 118,
+   "name": "0191487845ef",
+   "clip_id": "0191487845ef",
+   "n_windows": 2
+  },
+  {
+   "file_index": 119,
+   "episode_index": 119,
+   "name": "264a78e8fad1",
+   "clip_id": "264a78e8fad1",
+   "n_windows": 2
+  },
+  {
+   "file_index": 120,
+   "episode_index": 120,
+   "name": "d5a67435ec19",
+   "clip_id": "d5a67435ec19",
+   "n_windows": 2
+  },
+  {
+   "file_index": 121,
+   "episode_index": 121,
+   "name": "eaf5c5ae236c",
+   "clip_id": "eaf5c5ae236c",
+   "n_windows": 2
+  },
+  {
+   "file_index": 122,
+   "episode_index": 122,
+   "name": "1655838298f8",
+   "clip_id": "1655838298f8",
+   "n_windows": 2
+  },
+  {
+   "file_index": 123,
+   "episode_index": 123,
+   "name": "bbd162dfe0eb",
+   "clip_id": "bbd162dfe0eb",
+   "n_windows": 2
+  },
+  {
+   "file_index": 124,
+   "episode_index": 124,
+   "name": "d32340bd0ad0",
+   "clip_id": "d32340bd0ad0",
+   "n_windows": 2
+  },
+  {
+   "file_index": 125,
+   "episode_index": 125,
+   "name": "cd79a917d8c4",
+   "clip_id": "cd79a917d8c4",
+   "n_windows": 2
+  },
+  {
+   "file_index": 126,
+   "episode_index": 126,
+   "name": "547d1d68c1bd",
+   "clip_id": "547d1d68c1bd",
+   "n_windows": 2
+  },
+  {
+   "file_index": 127,
+   "episode_index": 127,
+   "name": "e81566637c0e",
+   "clip_id": "e81566637c0e",
+   "n_windows": 2
+  },
+  {
+   "file_index": 128,
+   "episode_index": 128,
+   "name": "1721df8c70b6",
+   "clip_id": "1721df8c70b6",
+   "n_windows": 2
+  },
+  {
+   "file_index": 129,
+   "episode_index": 129,
+   "name": "693335b810c3",
+   "clip_id": "693335b810c3",
+   "n_windows": 2
+  },
+  {
+   "file_index": 130,
+   "episode_index": 130,
+   "name": "cf8839a4e491",
+   "clip_id": "cf8839a4e491",
+   "n_windows": 2
+  },
+  {
+   "file_index": 131,
+   "episode_index": 131,
+   "name": "b0d17a91f120",
+   "clip_id": "b0d17a91f120",
+   "n_windows": 2
+  },
+  {
+   "file_index": 132,
+   "episode_index": 132,
+   "name": "4a7515667297",
+   "clip_id": "4a7515667297",
+   "n_windows": 2
+  },
+  {
+   "file_index": 133,
+   "episode_index": 133,
+   "name": "07fac416bccf",
+   "clip_id": "07fac416bccf",
+   "n_windows": 2
+  },
+  {
+   "file_index": 134,
+   "episode_index": 134,
+   "name": "7be92e6870d8",
+   "clip_id": "7be92e6870d8",
+   "n_windows": 2
+  },
+  {
+   "file_index": 135,
+   "episode_index": 135,
+   "name": "8323b0dfdd3b",
+   "clip_id": "8323b0dfdd3b",
+   "n_windows": 2
+  },
+  {
+   "file_index": 136,
+   "episode_index": 136,
+   "name": "8d2cdffe0da7",
+   "clip_id": "8d2cdffe0da7",
+   "n_windows": 2
+  },
+  {
+   "file_index": 137,
+   "episode_index": 137,
+   "name": "8bc0a83f65f9",
+   "clip_id": "8bc0a83f65f9",
+   "n_windows": 2
+  },
+  {
+   "file_index": 138,
+   "episode_index": 138,
+   "name": "2aa810802777",
+   "clip_id": "2aa810802777",
+   "n_windows": 2
+  },
+  {
+   "file_index": 139,
+   "episode_index": 139,
+   "name": "570b47ad7408",
+   "clip_id": "570b47ad7408",
+   "n_windows": 2
+  },
+  {
+   "file_index": 140,
+   "episode_index": 140,
+   "name": "fb5c61fbd0d2",
+   "clip_id": "fb5c61fbd0d2",
+   "n_windows": 2
+  }
+ ],
+ "wallclock_s": 10898.2,
+ "first_plan_s": 36.556278467178345
+}
