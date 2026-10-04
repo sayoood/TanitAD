@@ -547,6 +547,30 @@ if os.path.exists(_sft):
     _sv = os.path.join(_pkg, "raw", "2026-10-04-sft1", "verdict.json")   # the registered verdict, once there is one
     if os.path.exists(_sv):
         out["sft1"]["verdict"] = json.load(open(_sv, encoding="utf-8"))
+# SFT-3 / SFT-4 (eval/PREREG_SFT3.md, PREREG_SFT4.md): the pod's sft.log of each run, pulled next to this script
+def _sft_events(path):
+    if not os.path.exists(path):
+        return None
+    tr, ev, meta = [], [], {}
+    for ln in open(path, encoding="utf-8", errors="replace"):
+        if not ln.startswith("{"):
+            continue
+        try:
+            r = json.loads(ln)
+        except json.JSONDecodeError:
+            continue
+        e = r.get("event")
+        if e == "train":
+            tr.append({k: r.get(k) for k in ("update", "of", "bceA", "lossB", "listnet", "s_per_update", "at")})
+        elif e == "eval":
+            ev.append(r)
+        elif e in ("data", "start", "done"):
+            meta[e] = r
+    return {"train": tr, "evals": ev, "meta": meta}
+
+
+out["sft3"] = _sft_events(os.environ.get("REFE_SFT3_LOG", os.path.join(HERE, "sft3.log")))
+out["sft4"] = _sft_events(os.environ.get("REFE_SFT4_LOG", os.path.join(HERE, "sft4.log")))
 # ⭐ LANE-1, lane discipline (raw/2026-10-04-lane-discipline/PREREG_LANE1.md): the registered analysis, when it exists
 _ld = os.path.join(_pkg, "raw", "2026-10-04-lane-discipline")
 out["lane1"] = None

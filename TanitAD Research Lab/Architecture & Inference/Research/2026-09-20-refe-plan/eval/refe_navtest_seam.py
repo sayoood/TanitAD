@@ -120,8 +120,9 @@ def main() -> int:
     ap.add_argument("--out", default=None)
     ap.add_argument("--arm", default="REFe")
     ap.add_argument("--select", default="best")
-    ap.add_argument("--rule", default=None, choices=("v2_shape", "navsim_v1"),
-                    help="the selection RULE for --select best (default: planner.py DEFAULT_RULE; SPEC Amendment 5)")
+    ap.add_argument("--rule", default=None, choices=("v2_shape", "navsim_v1", "navsim_v1_lane"),
+                    help="the selection RULE for --select best (default: planner.py DEFAULT_RULE; SPEC Amendment 5); "
+                         "navsim_v1_lane = SFT-4's rule, 7-output checkpoints only (eval/PREREG_SFT4.md)")
     ap.add_argument("--no-repair-last-heading", action="store_true",
                     help="reproduce an evaluation from before SPEC Amendment 7 (2026-09-27): execute the raw last-pose heading")
     ap.add_argument("--sanitize-goal", action="store_true",

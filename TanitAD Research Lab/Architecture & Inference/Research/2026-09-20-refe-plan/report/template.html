@@ -238,6 +238,15 @@ a { color: var(--s1); }
     </figure>
   </section>
 
+  <section id="sftn" hidden>
+    <div class="sec-head"><h2>Scorer fine-tunes after SFT-1: SFT-3 and SFT-4</h2>
+      <p class="lead" id="sftn-lead"></p></div>
+    <figure>
+      <div class="fh"><h3>Held-out reads (3,137 sets from 24 logs the fine-tunes never see)</h3><p>Pick = true navsim_v1 score of the selected hypothesis × 100 under each run's own truth labels. "vs base" is the paired difference against the frozen original scorer, log-cluster bootstrap over the 24 logs (10,000 resamples). SFT-3: arm A = the training loss (BCE), arm B = BCE + the expected-score objective, both on the teacher's labels. SFT-4: the paper's NAVSIM PDM targets plus a 7th lane output; its read uses the lane rule (navsim_v1 × p(lane)).</p></div>
+      <div class="tbl" id="t-sftn-evals"></div>
+    </figure>
+  </section>
+
   <section id="lane1" hidden>
     <div class="sec-head"><h2>Lane discipline: what the video shows, measured</h2>
       <p class="lead" id="lane-lead"></p></div>
@@ -660,6 +669,34 @@ a { color: var(--s1); }
     const keep = tr.filter((r, i) => i === tr.length - 1 || r.update % 250 === 0 || i === 0);
     table("t-sft-train", ["update", "arm A loss (BCE)", "arm B loss (BCE + 0.3 ListNet)", "ListNet", "s / update"],
       keep.map(r => [int(r.update), fmt(r.bceA, 4), fmt(r.lossB, 4), fmt(r.listnet, 3), fmt(r.s_per_update, 2)]));
+  }
+
+  // ---------- SFT-3 / SFT-4: the follow-on scorer fine-tunes ----------
+  {
+    const runs = [["SFT-3", D.sft3, "eval/PREREG_SFT3.md"], ["SFT-4", D.sft4, "eval/PREREG_SFT4.md"]].filter(r => r[1] && r[1].meta && (r[1].meta.start || r[1].evals.length));
+    if (runs.length) {
+      $("sftn").hidden = false;
+      const sgn = v => (v >= 0 ? "+" : "") + fmt(v, 2);
+      const ci = d => d ? sgn(d.mean) + " [" + sgn(d.ci95[0]) + ", " + sgn(d.ci95[1]) + "]" : "–";
+      const lead = [], rows = [];
+      runs.forEach(([nm, S, pre]) => {
+        const tr = S.train, last = tr.length ? tr[tr.length - 1] : null, ev = S.evals, le = ev.length ? ev[ev.length - 1] : null;
+        const done = S.meta.done;
+        const left = last ? (last.of - last.update) * last.s_per_update / 3600 : null;
+        const pickOf = a => a.x_lane ? a.x_lane : a;
+        const dOf = a => a.x_lane ? a.x_lane.pick_minus_base_v1 : a.pick_minus_base;
+        lead.push(nm + ": " + (done ? "finished, " + int(done.updates) + " updates in " + fmt(done.hours, 1) + " h" :
+          (last ? "update " + int(last.update) + " of " + int(last.of) + " (" + fmt(last.s_per_update, 1) + " s each, about " + fmt(left, 1) + " h left)" : "started, held-out read at step 0 pending")) +
+          (le ? "; latest read (" + le.tag + "): arm A " + ci(dOf(le.A)) + ", arm B " + ci(dOf(le.B)) + " vs the original scorer's " + fmt(le.base.pick, 2) : "") +
+          ". An arm passes only if its lower bound clears zero at the final update (" + pre + ").");
+        ev.forEach(e => ["base", "A", "B"].forEach(k => { const a = e[k]; if (!a) return;
+          const p = k === "base" ? a : pickOf(a);
+          rows.push([nm, e.tag, k === "base" ? "original" : "arm " + k, fmt(p.pick, 2), k === "base" ? "–" : ci(dOf(a)),
+            int(p.zero_picks), fmt(a.auc_nc, 3), fmt(a.auc_dac, 3)]); }));
+      });
+      $("sftn-lead").textContent = lead.join(" ");
+      table("t-sftn-evals", ["run", "read", "scorer", "pick", "vs base [95% CI]", "picks = 0", "AUC NC", "AUC DAC"], rows);
+    }
   }
 
   // ---------- LANE-1: lane discipline ----------

@@ -102,6 +102,18 @@ automatically (`refe/lane_pause.sh`, log `/workspace/data/refe_sft2/lane_pause.l
 - The run's design is unchanged.
 - The lane subset at launch will be smaller; it is logged in the `data` event and G10, as already declared above.
 
+### Amendment 3 (2026-10-04 16:07 UTC, before any SFT-4 training step): a bounded lane catch-up window
+
+Measured timing:
+- SFT-3 runs at 10.7 s per update, so it should finish around 01:30 UTC.
+- The PDM relabel, with the CPU to itself (Amendment 2), runs at about 258 sets/min and finishes around 02:00 UTC.
+
+Chain v1 would therefore launch the moment the lane relabel resumes, with only the ~2,100 lane sets written before the
+pause (1.2 % of training). Chain v2 (`refe/sft4_chain2.sh`) inserts a window after `ZZPDM_TRAIN_EXIT`: it waits until
+**7,000 lane sets OR 150 min, whichever comes first**. Then it runs the unchanged gate → G9 mutation → run.
+- v1 was stopped by explicit PID while it slept; `chain.log` records the swap.
+- The count at launch is logged; the design is otherwise unchanged.
+
 ## Stage 1: held-out (pod, label-only; the 3,137 sets of 24 logs that carry PDM targets)
 
 Truth = the PDM-target navsim_v1 score of the chosen plan (the harness score of executing it). Comparisons are against the deployed system: the base scorer under navsim_v1.
