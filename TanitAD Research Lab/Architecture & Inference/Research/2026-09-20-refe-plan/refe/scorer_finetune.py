@@ -65,13 +65,14 @@ class ScorerCopy(nn.Module):
         return REFe.score_trajectories(self, trajs, sctx)
 
 
-def expected_reward_loss(sx, tg, tau_s):
+def expected_reward_loss(sx, tg, tau_s, sel=None):
     """-E_{i ~ pi}[R_i], pi = softmax(log agg_v1(sigmoid(sx)) / tau_s) over each set, R_i = agg_v1(labels) (the true score
     of hypothesis i). A one-step choice whose outcome is KNOWN for every action: this is the policy-gradient objective in
     closed form -- no sampled action, so no sampling variance. As tau_s -> 0, pi -> the planner's argmax."""
-    s = torch.log(agg_v1(torch.sigmoid(sx)).clamp_min(1e-6))
+    p = torch.sigmoid(sx)
+    s = torch.log((agg_v1(p) if sel is None else sel(p)).clamp_min(1e-6))
     pi = torch.softmax(s / tau_s, dim=1)
-    return -(pi * agg_v1(tg)).sum(1).mean()
+    return -(pi * agg_v1(tg[..., :6])).sum(1).mean()
 
 
 def key(r):
@@ -131,6 +132,14 @@ def main() -> int:
     ap.add_argument("--b-mode", default="listnet", choices=("listnet", "compw", "expreward"),
                     help="arm B: BCE + lam*ListNet (SFT-1) or per-component weighted BCE (--b-compw)")
     ap.add_argument("--b-compw", default="1,1,1,1,1,1", help="arm B component weights NC,DAC,EP,TTC,C,DDC (b-mode compw)")
+    # SFT-4 (eval/PREREG_SFT4.md): the paper's PDM targets + the teacher's centre-line distance as a 7th output; default OFF
+    ap.add_argument("--pdm-labels-train", default="", help="side files of onpolicy_relabel_pdm.py for --onpolicy")
+    ap.add_argument("--pdm-labels-heldout", default="", help="side files of onpolicy_relabel_pdm.py for --heldout")
+    ap.add_argument("--require-pdm", action="store_true", help="train and evaluate ONLY on sets that carry PDM targets")
+    ap.add_argument("--teacher-lane-train", default="", help="side files of onpolicy_relabel_teacher_lane.py (train)")
+    ap.add_argument("--teacher-lane-heldout", default="", help="side files of onpolicy_relabel_teacher_lane.py (held-out)")
+    ap.add_argument("--lane-head", action="store_true", help="a 7th scorer output trained on the teacher lane label")
+    ap.add_argument("--lane-weight", type=float, default=1.0)
     ap.add_argument("--tau-s", type=float, default=0.1,
                     help="b-mode expreward: temperature of the selection policy softmax(log agg_v1(p) / tau_s)")
     a = ap.parse_args()
@@ -165,6 +174,16 @@ def main() -> int:
     base = ScorerCopy(model).to(dev)
     for p in base.parameters():
         p.requires_grad_(False)
+    if a.lane_head:
+        old = model.score_head
+        new = nn.Linear(old.in_features, 7).to(dev)
+        with torch.no_grad():
+            new.weight.zero_(); new.bias.zero_()
+            new.weight[:6].copy_(old.weight); new.bias[:6].copy_(old.bias)
+            new.bias[6] = 1.5                                   # ~0.82: the mean of the soft lane target on held-out
+        model.score_head = new
+        for p in model.score_head.parameters():
+            p.requires_grad_(True)
     armB = ScorerCopy(model).to(dev)
     for p in armB.parameters():
         p.requires_grad_(True)
@@ -172,16 +191,21 @@ def main() -> int:
     model.score_dec[0].register_forward_pre_hook(lambda mod, args: cap.__setitem__("sctx", args[1]))
 
     # ---------------- data: train.py's own banks
-    op = T.OnPolicyBank(a.onpolicy, cfg.n_proposals, cfg.horizon_steps, lane_labels=a.lane_labels_train or None)
-    ho = T.OnPolicyBank(a.heldout, cfg.n_proposals, cfg.horizon_steps, lane_labels=a.lane_labels_heldout or None)
+    op = T.OnPolicyBank(a.onpolicy, cfg.n_proposals, cfg.horizon_steps, lane_labels=a.lane_labels_train or None,
+                        pdm_labels=a.pdm_labels_train or None, teacher_lane_labels=a.teacher_lane_train or None)
+    ho = T.OnPolicyBank(a.heldout, cfg.n_proposals, cfg.horizon_steps, lane_labels=a.lane_labels_heldout or None,
+                        pdm_labels=a.pdm_labels_heldout or None, teacher_lane_labels=a.teacher_lane_heldout or None)
+    if a.lane_head and (op.n_cols != 7 or ho.n_cols != 7):
+        print("REFUSED: --lane-head needs --teacher-lane-train AND --teacher-lane-heldout"); return 4
     compw = torch.tensor([float(x) for x in a.b_compw.split(",")], device=dev)
     assert compw.numel() == 6 and (compw > 0).all(), "--b-compw needs 6 positive weights"
     ds = T.TargetBank(a.targets, a.images, cfg, calib=a.calib, onpolicy=op)
     ho_logs = set(open(a.heldout_logs, encoding="utf-8").read().split())
-    tr_idx = [i for i, r in enumerate(ds.rows) if key(r) in op.by and r.get("log_name") not in ho_logs]
+    tr_idx = [i for i, r in enumerate(ds.rows) if key(r) in op.by and r.get("log_name") not in ho_logs
+              and (not a.require_pdm or key(r) in op.pdm_keys)]
     ds_ho = copy.copy(ds)
     ds_ho.onpolicy = ho
-    ho_idx = [i for i, r in enumerate(ds.rows) if key(r) in ho.by]
+    ho_idx = [i for i, r in enumerate(ds.rows) if key(r) in ho.by and (not a.require_pdm or key(r) in ho.pdm_keys)]
     lv: dict = {}
     for k_ in (key(ds.rows[i]) for i in tr_idx):
         v = op.by[k_][3][1]
@@ -193,6 +217,8 @@ def main() -> int:
             "ckpt_format": fmt, "per_sample_calib": meta.get("per_sample_calib"),
             "lane_labels": {"train_sets": op.n_lane, "train_stale": op.n_lane_stale, "train_superseded": op.n_lane_superseded,
                             "heldout_sets": ho.n_lane,
+                            "pdm_train": op.n_pdm, "pdm_train_stale": op.n_pdm_stale, "pdm_train_superseded": op.n_pdm_superseded,
+                            "pdm_heldout": ho.n_pdm, "teacher_lane_train": op.n_tlane, "teacher_lane_heldout": ho.n_tlane,
                             "heldout_stale": ho.n_lane_stale}, "b_mode": a.b_mode, "b_compw": a.b_compw}
     log(info)
     g = torch.Generator().manual_seed(a.seed)
@@ -211,7 +237,27 @@ def main() -> int:
                 sx0 = base(cxy, sctx)
         return sx0.float(), sxA.float(), sxB.float(), ctg.float()
 
+    def lane_bce(sx, tg):
+        if not a.lane_head:
+            return torch.zeros((), device=sx.device)
+        m = tg[..., 6] >= 0
+        if not bool(m.any()):
+            return torch.zeros((), device=sx.device)
+        return F.binary_cross_entropy_with_logits(sx[..., 6][m], tg[..., 6][m])
+
+    def sel_score(p):
+        """the selection score: navsim_v1 over the six components, x the lane output when there is one"""
+        return agg_v1(p[..., :6]) * (p[..., 6] if (a.lane_head and p.shape[-1] == 7) else 1.0)
+
     def losses(sxA, sxB, tg, lam):
+        if a.lane_head or tg.shape[-1] == 7:
+            la, lb = a.lane_weight * lane_bce(sxA, tg), a.lane_weight * lane_bce(sxB, tg)
+            sxA6, sxB6, tg6 = sxA[..., :6], sxB[..., :6], tg[..., :6]
+            bA, bB, ln = losses6(sxA6, sxB6, tg6, lam, sxB)
+            return bA + la, bB + lb, ln
+        return losses6(sxA, sxB, tg, lam, sxB)
+
+    def losses6(sxA, sxB, tg, lam, sxB_full):
         bceA = F.binary_cross_entropy_with_logits(sxA, tg)
         if a.b_mode == "compw":                              # SFT-2: weighted per-component BCE, no ranking term
             w = compw.view(1, 1, 6)
@@ -219,7 +265,8 @@ def main() -> int:
             return bceA, bceBw, torch.zeros((), device=sxB.device)
         if a.b_mode == "expreward":                          # SFT-3: the selection's EXPECTED true score, all 64 outcomes known
             bceB = F.binary_cross_entropy_with_logits(sxB, tg)
-            return bceA, bceB + lam * expected_reward_loss(sxB, tg, a.tau_s), expected_reward_loss(sxB, tg, a.tau_s)
+            er = expected_reward_loss(sxB_full, tg, a.tau_s, sel=sel_score)
+            return bceA, bceB + lam * er, er
         bceB = F.binary_cross_entropy_with_logits(sxB, tg)
         s = torch.log(agg_v1(torch.sigmoid(sxB)).clamp_min(1e-6))
         q = torch.softmax(agg_v1(tg) / a.tau_t, dim=1)
@@ -231,12 +278,17 @@ def main() -> int:
         idx = ho_idx[:limit] if limit else ho_idx
         dlh = DataLoader(Subset(ds_ho, idx), batch_size=16, shuffle=False, num_workers=2)
         res = {k: {"pick": [], "rand": [], "best": [], "zero": [], "auc_nc": [], "auc_dac": [], "auc_ddc": [],
-                   "onc": [], "pick_x": [], "onc_x": [], "zero_x": []} for k in ("base", "A", "B")}
+                   "onc": [], "pick_x": [], "onc_x": [], "zero_x": [], "lk": [], "pick_l": [], "zero_l": [], "onc_l": [],
+                   "lk_l": [], "auc_lane": []} for k in ("base", "A", "B")}
+        lk_rows = [ho.lane_keep.get(key(ds.rows[i])) for i in idx]       # NAVSIM lk10 yardstick (only with --lane-labels-heldout)
         toks, logs_ = [], []
         j = 0
         for batch in dlh:
             sx0, sxA, sxB, tg = fwd(batch)
+            tlane = tg[..., 6] if tg.shape[-1] == 7 else None                    # teacher lane target (-1 = none)
+            tg = tg[..., :6]
             ta = agg_v1(tg)                                                      # [b, M] true navsim_v1
+            lkb = [lk_rows[j + bi] for bi in range(tg.shape[0])]
             for k, sx in (("base", sx0), ("A", sxA), ("B", sxB)):
                 p = torch.sigmoid(sx)
                 ix = agg_v1(p).argmax(1, keepdim=True)
@@ -248,6 +300,22 @@ def main() -> int:
                 pkx = ta.gather(1, ixx).squeeze(1)
                 res[k]["pick_x"] += pkx.tolist(); res[k]["zero_x"] += (pkx == 0).float().tolist()
                 res[k]["onc_x"] += (tg[..., 5].gather(1, ixx).squeeze(1) < 1).float().tolist()
+                def lk_of(ixs):
+                    return [float(lkb[bi][int(ixs[bi])]) if lkb[bi] is not None else float("nan") for bi in range(len(lkb))]
+                res[k]["lk"] += lk_of(ix.squeeze(1).tolist())
+                if p.shape[-1] == 7:                                             # the lane rule: navsim_v1 x p_lane
+                    ixl = (agg_v1(p) * p[..., 6]).argmax(1, keepdim=True)
+                    pkl = ta.gather(1, ixl).squeeze(1)
+                    res[k]["pick_l"] += pkl.tolist()
+                    res[k]["zero_l"] += (pkl == 0).float().tolist()
+                    res[k]["onc_l"] += (tg[..., 5].gather(1, ixl).squeeze(1) < 1).float().tolist()
+                    res[k]["lk_l"] += lk_of(ixl.squeeze(1).tolist())
+                    if tlane is not None:
+                        for bi in range(p.shape[0]):
+                            if bool((tlane[bi] >= 0).all()):
+                                v = set_auc(p[bi, :, 6].cpu(), tlane[bi].cpu())
+                                if v is not None:
+                                    res[k]["auc_lane"].append(v)
                 for bi in range(p.shape[0]):
                     for comp, nm in ((0, "auc_nc"), (1, "auc_dac"), (5, "auc_ddc")):
                         v = set_auc(p[bi, :, comp].cpu(), tg[bi, :, comp].cpu())
@@ -265,8 +333,14 @@ def main() -> int:
                       "auc_ddc": float(np.mean(v["auc_ddc"])) if v["auc_ddc"] else None,
                       "onc_picks": int(sum(v["onc"])),
                       "x_ddc": {"pick": 100 * float(np.mean(v["pick_x"])), "zero_picks": int(sum(v["zero_x"])),
-                                "onc_picks": int(sum(v["onc_x"]))}}
-        tl = dict(zip(toks, logs_))
+                                "onc_picks": int(sum(v["onc_x"]))},
+                      "lk10_picks": int(np.nansum(v["lk"])) if any(x == x for x in v["lk"]) else None}
+            if v["pick_l"]:
+                out[k]["x_lane"] = {"pick": 100 * float(np.mean(v["pick_l"])), "zero_picks": int(sum(v["zero_l"])),
+                                    "onc_picks": int(sum(v["onc_l"])),
+                                    "lk10_picks": int(np.nansum(v["lk_l"])) if any(x == x for x in v["lk_l"]) else None,
+                                    "auc_lane_vs_teacher": float(np.mean(v["auc_lane"])) if v["auc_lane"] else None}
+        tl = tl_map = dict(zip(toks, logs_))
         for k in ("A", "B"):
             d = {t: 100 * (res[k]["pick"][i] - res["base"]["pick"][i]) for i, t in enumerate(toks)}
             mu, lo, hi = boot_logs(d, tl)
@@ -277,6 +351,15 @@ def main() -> int:
             do = {t: 100 * (res[k]["onc_x"][i] - res["base"]["onc"][i]) for i, t in enumerate(toks)}
             mu, lo, hi = boot_logs(do, tl)
             out[k]["x_ddc"]["onc_pp_minus_base_v1"] = {"mean": mu, "ci95": [lo, hi]}
+        for k in ("A", "B"):
+            if res[k]["pick_l"]:
+                dl_ = {t: 100 * (res[k]["pick_l"][i] - res["base"]["pick"][i]) for i, t in enumerate(toks)}
+                mu, lo, hi = boot_logs(dl_, tl_map)
+                out[k]["x_lane"]["pick_minus_base_v1"] = {"mean": mu, "ci95": [lo, hi]}
+                if all(x == x for x in res[k]["lk_l"]) and all(x == x for x in res["base"]["lk"]):
+                    dk = {t: 100 * (res[k]["lk_l"][i] - res["base"]["lk"][i]) for i, t in enumerate(toks)}
+                    mu, lo, hi = boot_logs(dk, tl_map)
+                    out[k]["x_lane"]["lk10_pp_minus_base_v1"] = {"mean": mu, "ci95": [lo, hi]}
         dx = {t: 100 * (res["base"]["pick_x"][i] - res["base"]["pick"][i]) for i, t in enumerate(toks)}
         mu, lo, hi = boot_logs(dx, tl)
         out["base"]["x_ddc"]["pick_minus_base_v1"] = {"mean": mu, "ci95": [lo, hi]}
@@ -294,12 +377,15 @@ def main() -> int:
             for k_, v in getattr(mods, m).state_dict().items():
                 new[f"{m}.{k_}"] = v.detach().to("cpu", copy=True)
         assert set(new) <= set(state), "scorer keys missing from the checkpoint"
+        n_out = int(new["score_head.weight"].shape[0])
         for k_, v in new.items():
-            assert state[k_].shape == v.shape
+            if not (n_out == 7 and k_.startswith("score_head.")):
+                assert state[k_].shape == v.shape
             state[k_] = v.to(state[k_].dtype)
-        out = {"format": ckpt_io.FORMAT_FULL, "model": state,
-               "meta": dict(sd.get("meta", {}) if isinstance(sd, dict) else {},
-                            scorer_finetune={"arm": arm_name, "base_ckpt": a.ckpt, "args": vars(a)})}
+        meta = dict(sd.get("meta", {}) if isinstance(sd, dict) else {},
+                    scorer_finetune={"arm": arm_name, "base_ckpt": a.ckpt, "args": vars(a)})
+        meta["n_score_components"] = n_out                    # the planner sizes its score head from this (ckpt_io)
+        out = {"format": ckpt_io.FORMAT_FULL, "model": state, "meta": meta}
         p = os.path.join(a.out, f"model_sft_{arm_name}.pt")
         ckpt_io.atomic_save(out, p)
         return p
@@ -315,8 +401,9 @@ def main() -> int:
                                         "heldout_sets": len(ho_idx), "train_rows_in_heldout_logs": info["train_rows_in_heldout_logs"]}
         batch = next(iter(DataLoader(Subset(ds, tr_idx[:a.batch]), batch_size=a.batch)))
         sx0, sxA, sxB, tg = fwd(batch)
-        gates["G3_copies_equal_model_at_step0"] = {"ok": float((sx0 - sxA).abs().max()) == 0.0 and float((sxB - sxA).abs().max()) == 0.0,
-                                                   "max_base_vs_A": float((sx0 - sxA).abs().max()), "max_B_vs_A": float((sxB - sxA).abs().max())}
+        d0A, dBA = float((sx0 - sxA[..., :6]).abs().max()), float((sxB - sxA).abs().max())
+        gates["G3_copies_equal_model_at_step0"] = {"ok": d0A == 0.0 and dBA == 0.0, "max_base_vs_A": d0A, "max_B_vs_A": dBA,
+                                                   "n_out": int(sxA.shape[-1])}
         if a.b_mode == "compw":                              # SFT-2: unit weights must reproduce A; the declared ones must not
             keep_w = compw.clone()
             compw.fill_(1.0)
@@ -342,6 +429,21 @@ def main() -> int:
                             (not a.lane_labels_heldout) or (ho.n_lane > 0 and ho.n_lane_stale <= 0.05 * max(ho.n_lane, 1)
                                                             and g8["heldout_sets_with_ddc_0.5"] > 0)])
             gates["G8_lane_labels_in_bank"] = g8
+        if a.pdm_labels_train or a.pdm_labels_heldout:      # G9: the paper's PDM targets really are what is served
+            def has_soft_ep(bank):                          # PDM EP is pairwise-normalised: values strictly inside (0, 1)
+                return sum(1 for kk in bank.pdm_keys if np.any((bank.by[kk][2][:, 2] > 0.01) & (bank.by[kk][2][:, 2] < 0.99)))
+            g9 = {"train_pdm": op.n_pdm, "train_stale": op.n_pdm_stale, "heldout_pdm": ho.n_pdm, "heldout_stale": ho.n_pdm_stale,
+                  "train_sets_served": len(tr_idx), "heldout_sets_served": len(ho_idx),
+                  "train_with_soft_ep": has_soft_ep(op), "heldout_with_soft_ep": has_soft_ep(ho), "require_pdm": a.require_pdm}
+            g9["ok"] = (op.n_pdm > 0 and ho.n_pdm > 0 and op.n_pdm_stale <= 0.05 * max(op.n_pdm, 1)
+                        and g9["train_with_soft_ep"] > 0 and (not a.require_pdm or (len(tr_idx) > 0 and len(ho_idx) > 0)))
+            gates["G9_pdm_targets_in_bank"] = g9
+        if a.lane_head:                                      # G10: the teacher lane label really reaches the 7th output
+            soft = sum(1 for v in op.teacher_lane.values() if np.any((v > 0.01) & (v < 0.99)))
+            g10 = {"train_lane_sets": op.n_tlane, "heldout_lane_sets": ho.n_tlane, "train_sets_with_soft_target": soft,
+                   "batch_lane_labelled": int((tg[..., 6] >= 0).sum()) if tg.shape[-1] == 7 else 0}
+            g10["ok"] = op.n_tlane > 0 and ho.n_tlane > 0 and soft > 0
+            gates["G10_teacher_lane_in_bank"] = g10
         (bA2 + bB).backward()
         live = {}
         for m in SCORER:
@@ -360,7 +462,7 @@ def main() -> int:
             for p in (p for m in SCORER for p in getattr(model, m).parameters()):
                 p.add_(1e-2 * torch.randn(p.shape, device=dev, generator=gen))
         pth = save_full("A_preflight", model)
-        m2 = REFe(cfg).to(dev)
+        m2 = REFe(ckpt_io.config_for_checkpoint(cfg, pth)).to(dev)
         ckpt_io.load_for_inference(m2, pth, map_location=dev, backbone=a.backbone)
         m2.eval()
         cap2: dict = {}
@@ -369,7 +471,8 @@ def main() -> int:
             _, _, s_reload = m2(img.to(dev), ego.to(dev), goal.to(dev), calib=cal if cal.numel() else None, score_extra=cxy.to(dev))
             _, _, s_orig = model(img.to(dev), ego.to(dev), goal.to(dev), calib=cal if cal.numel() else None, score_extra=cxy.to(dev))
             s_base = base(cxy.to(dev), cap["sctx"])
-        d_rt, d_base = float((s_reload.float() - s_orig.float()).abs().max()), float((s_orig.float() - s_base.float()).abs().max())
+        d_rt = float((s_reload.float() - s_orig.float()).abs().max())
+        d_base = float((s_orig.float()[..., :6] - s_base.float()).abs().max())
         gates["G5_ckpt_roundtrip_planner_loader"] = {"ok": d_rt == 0.0 and d_base > 0.0, "max_abs_reload_vs_saved": d_rt,
                                                      "max_abs_saved_vs_base": d_base}
         os.remove(pth)
@@ -379,7 +482,14 @@ def main() -> int:
         with torch.no_grad():
             for n, p in model.named_parameters():
                 if n.split(".")[0] in SCORER:
-                    p.copy_(st0[n].to(dev))
+                    if n.startswith("score_head.") and a.lane_head:
+                        p[:6].copy_(st0[n].to(dev))
+                        if n.endswith("weight"):
+                            p[6].zero_()
+                        else:
+                            p[6] = 1.5
+                    else:
+                        p.copy_(st0[n].to(dev))
         del sd0, st0
         # speed: 3 timed micro-batches (fwd + both backwards)
         t0 = time.time()

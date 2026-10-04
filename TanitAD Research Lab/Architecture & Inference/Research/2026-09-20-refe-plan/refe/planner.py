@@ -346,6 +346,10 @@ class REFePlanner(AbstractPlanner):
         self.driving_command = None
         self.goal_diag = None
         self.cfg = REFeConfig.for_backbone(backbone)
+        if checkpoint:
+            import ckpt_io
+            # SFT-4: a checkpoint may declare a 7-output scorer (the teacher lane label); absent = 6, exactly as before
+            self.cfg = ckpt_io.config_for_checkpoint(self.cfg, checkpoint)
         self.device = device if torch.cuda.is_available() else "cpu"
         self.model = REFe(self.cfg).to(self.device).eval()
         if checkpoint:
@@ -511,7 +515,7 @@ class REFePlanner(AbstractPlanner):
     # "v2_shape" above is NAVSIM v2's EPDMS shape, which every point before Amendment 5 was selected with
     # (RETRACTION_LOG R25). Both stay selectable BY NAME so every earlier point remains reproducible.
     V1_W = (5.0, 5.0, 2.0)           # progress, time-to-collision, comfort, sum 12 (rule "navsim_v1")
-    RULES = ("v2_shape", "navsim_v1")
+    RULES = ("v2_shape", "navsim_v1", "navsim_v1_lane")   # navsim_v1_lane: SFT-4's rule, navsim_v1 x p(lane), 7-output models only
     # ⭐ FLIPPED 2026-09-26 21:23 Berlin by SPEC Amendment 5's verdict (eval/RESULT_A5_a5confirm_ep013.md): NO MEASURABLE
     # DIFFERENCE, +0.78 [-0.30, +1.82] PDMS on 923 tokens from the 43 logs outside W3's subset -- not harmful, so the
     # benchmark's own formula becomes the selection rule for every evaluation from then on (the pre-registered branch).
@@ -542,6 +546,12 @@ class REFePlanner(AbstractPlanner):
             3 time to collision (TTC) · 4 comfort (C) · 5 driving direction (DDC)
         """
         p = score.sigmoid()
+        if self.rule == "navsim_v1_lane":
+            # SFT-4 (eval/PREREG_SFT4.md): the paper's rule times the 7th output, the teacher-lane compliance
+            if p.shape[-1] < 7:
+                raise ValueError("rule navsim_v1_lane needs a 7-output scorer (an SFT-4 checkpoint)")
+            w1 = torch.tensor(self.V1_W, device=p.device, dtype=p.dtype)
+            return p[..., 0] * p[..., 1] * (p[..., 2] * w1[0] + p[..., 3] * w1[1] + p[..., 4] * w1[2]) / w1.sum() * p[..., 6]
         if self.rule == "navsim_v1":
             # NAVSIM v1 PDMS: NC x DAC x (5 EP + 5 TTC + 2 C) / 12 -- driving direction does not enter
             w1 = torch.tensor(self.V1_W, device=p.device, dtype=p.dtype)

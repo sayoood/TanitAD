@@ -415,7 +415,8 @@ class OnPolicyBank:
     Python lists a full-scale bank would cost GBs in every DataLoader worker.
     """
 
-    def __init__(self, path: str, n_prop: int, horizon: int, sizes: dict | None = None, lane_labels: str | None = None):
+    def __init__(self, path: str, n_prop: int, horizon: int, sizes: dict | None = None, lane_labels: str | None = None,
+                 pdm_labels: str | None = None, teacher_lane_labels: str | None = None):
         self.by: dict = {}
         self.n_rows = self.n_incomplete = self.n_superseded = self.n_bad_lines = self.n_navsim_dac = 0
         files = _onpolicy_files(path)
@@ -473,6 +474,85 @@ class OnPolicyBank:
         self.lane_keep: dict = {}
         if lane_labels:
             self._apply_lane_labels(lane_labels, n_prop)
+        self.n_pdm = self.n_pdm_stale = self.n_pdm_superseded = 0
+        self.pdm_keys: set = set()
+        if pdm_labels:
+            self._apply_pdm_labels(pdm_labels, n_prop)
+        self.n_tlane = self.n_tlane_stale = 0
+        self.teacher_lane: dict = {}
+        # 6 columns (the six components) unless a 7th, the teacher lane label, is loaded: then EVERY set serves 7, the
+        # 7th = the soft lane target or -1 (no label -> masked by the loss). The default path stays exactly [M, 6].
+        self.n_cols = 6
+        if teacher_lane_labels:
+            self._apply_teacher_lane(teacher_lane_labels, n_prop)
+            self.n_cols = 7
+
+    PDM_ORDER = ("nc", "dac", "ep", "ttc", "c", "ddc")      # = COMPONENTS order NC, DAC, EP, TTC, C, DDC
+
+    def _apply_pdm_labels(self, path: str, n_prop: int):
+        """SFT-4: the paper's scorer labels -- NAVSIM v1.1 PDM targets of the EXECUTED plans (onpolicy_relabel_pdm.py) --
+        replace ALL SIX components of the set they were computed on (same key AND ckpt_step). DriveZero Sec. 3: "supervised
+        by their corresponding PDM targets [17]" (RETRACTION_LOG R30). `pdm_keys` lists the sets that carry them, so a
+        trainer can serve ONLY those (no set mixes label sources)."""
+        import glob as _glob
+        for fp in sorted(_glob.glob(os.path.join(path, "pdm_*.jsonl"))):
+            with open(fp, encoding="utf-8") as fh:
+                for line in fh:
+                    try:
+                        d = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue
+                    k = tuple(d.get("key", ()))
+                    if len(k) != 4:
+                        continue
+                    k = (k[0], k[1], int(k[2]), int(k[3]))
+                    e = self.by.get(k)
+                    if e is None:
+                        continue
+                    ok_len = all(len(d.get(c, ())) == n_prop for c in self.PDM_ORDER)
+                    if int(d.get("ckpt_step", -1)) != int(e[0]) or not ok_len:
+                        if ok_len and int(d.get("ckpt_step", -1)) < int(e[0]):
+                            self.n_pdm_superseded += 1
+                        else:
+                            self.n_pdm_stale += 1
+                        continue
+                    e[2][:, :] = np.clip(np.stack([np.asarray(d[c], np.float32) for c in self.PDM_ORDER], -1), 0.0, 1.0)
+                    self.pdm_keys.add(k)
+                    self.n_pdm += 1
+
+    LANE_D0, LANE_D1 = 0.5, 2.0     # teacher centre-line distance (m): <= D0 -> 1.0, >= D1 -> 0.0, linear between
+
+    def _apply_teacher_lane(self, path: str, n_prop: int):
+        """SFT-4's 7th label: the TEACHER SIMULATOR's own centre-line distance (center_line.CenterLine.info, max over the
+        horizon; onpolicy_relabel_teacher_lane.py), MEASURED to rank NAVSIM-clean plans above violating ones at within-set
+        AUC 0.904 (oncoming) / 0.856 (lane keeping) on the 3,137 held-out sets. Mapped to a soft target
+        clip(1 - (d - LANE_D0) / (LANE_D1 - LANE_D0), 0, 1). Kept per set in `teacher_lane` (absent = masked)."""
+        import glob as _glob
+        for fp in sorted(_glob.glob(os.path.join(path, "teacher_lane_r*.jsonl"))):
+            with open(fp, encoding="utf-8") as fh:
+                for line in fh:
+                    try:
+                        d = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue
+                    k = tuple(d.get("key", ()))
+                    if len(k) != 4:
+                        continue
+                    k = (k[0], k[1], int(k[2]), int(k[3]))
+                    e = self.by.get(k)
+                    props = d.get("props") or []
+                    if e is None:
+                        continue
+                    if int(d.get("ckpt_step", -1)) != int(e[0]) or len(props) != n_prop:
+                        self.n_tlane_stale += 1
+                        continue
+                    dist = np.asarray([np.nan if p.get("center_line.CenterLine.info") is None
+                                       else float(p["center_line.CenterLine.info"]) for p in props], np.float32)
+                    if not np.isfinite(dist).all():
+                        self.n_tlane_stale += 1
+                        continue
+                    self.teacher_lane[k] = np.clip(1.0 - (dist - self.LANE_D0) / (self.LANE_D1 - self.LANE_D0), 0.0, 1.0)
+                    self.n_tlane += 1
 
     def _apply_lane_labels(self, path: str, n_prop: int):
         """SFT-2 (LANE-1 follow-on): side files from onpolicy_relabel_lane.py. A label replaces the DDC component ONLY
@@ -507,8 +587,15 @@ class OnPolicyBank:
                     self.n_lane += 1
 
     def get(self, log_name: str, token: str, step: int, rank: int = 0):
-        e = self.by.get((log_name, token, int(step), int(rank)))
-        return None if e is None else (e[1], e[2], e[0])
+        k = (log_name, token, int(step), int(rank))
+        e = self.by.get(k)
+        if e is None:
+            return None
+        if self.n_cols == 7:
+            lane = self.teacher_lane.get(k)
+            col = lane if lane is not None else np.full(e[2].shape[0], -1.0, np.float32)
+            return e[1], np.concatenate([e[2], col[:, None].astype(np.float32)], -1), e[0]
+        return e[1], e[2], e[0]
 
 
 def _pdm_aggregate(p):
@@ -705,7 +792,7 @@ class TargetBank(Dataset):
             # version). Same tuple layout as the fixed path; the loop branches on the mode.
             M = c.n_proposals
             ot = torch.zeros(M, c.horizon_steps, 3, dtype=torch.float32)
-            og = torch.zeros(M, 6, dtype=torch.float32)
+            og = torch.zeros(M, getattr(self.onpolicy, "n_cols", 6), dtype=torch.float32)
             om = torch.zeros(M, dtype=torch.float32)
             oi = torch.full((M,), -1, dtype=torch.long)
             got = self.onpolicy.get(r.get("log_name", ""), r.get("token", ""), r.get("step", -1),

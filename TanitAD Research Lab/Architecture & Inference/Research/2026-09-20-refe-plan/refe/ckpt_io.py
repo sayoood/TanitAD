@@ -113,6 +113,23 @@ def sha256_file(path, chunk: int = 1 << 22) -> str:
     return h.hexdigest()
 
 
+def config_for_checkpoint(cfg, path: str):
+    """A COPY of `cfg` whose score head is sized as the checkpoint declares (`meta["n_score_components"]`, written by
+    scorer_finetune.save_full; absent = the config's own value, i.e. every checkpoint before SFT-4 loads exactly as before).
+    SFT-4's 7th output is the teacher lane label (eval/PREREG_SFT4.md)."""
+    import copy
+    try:                                                # memory-mapped: only the meta is touched (the dev box is RAM-bound)
+        sd = torch.load(path, map_location="cpu", weights_only=False, mmap=True)
+    except (TypeError, RuntimeError):
+        sd = torch.load(path, map_location="cpu", weights_only=False)
+    meta = (sd.get("meta") or {}) if isinstance(sd, dict) else {}
+    n = int(meta.get("n_score_components", cfg.n_score_components))
+    c = copy.deepcopy(cfg)
+    if n != c.n_score_components:
+        c.n_score_components = n
+    return c
+
+
 def load_for_inference(model, path: str, map_location="cpu", backbone: str | None = None,
                        meta_out: dict | None = None) -> str:
     """Load EITHER format into `model` (built by REFe(cfg)). Returns the format name.
