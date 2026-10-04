@@ -100,6 +100,10 @@ __all__ = [
     "dvb_check_bev_source", "dvb_check_grad_ckpt", "dvb_check_planner_crop",
     "declared_grad_ckpt", "PLANNER_CROP_DEFAULT",
     "register_dvb_levers", "DECISION_RULES", "decide",
+    # 2026-10-04 refcv7 inference-time fixes F1/F2 (OPT-IN; the default path is untouched)
+    "CLASS_THRESHOLD_SCHEMA", "class_posterior_logits", "decide_masks",
+    "load_class_thresholds", "dilate_chebyshev", "tolerant_iou_from_counts",
+    "MONITOR_TOL_CELLS", "PER_CLASS_STATS_THR",
     # NEW-2 R2 (A12): the 0.1 m near-range lift
     "NearLiftSkip", "derive_near_geometry", "NEAR_LIFT_STEP_M", "declared_near_lift_m",
     "dvb_check_near_lift",
@@ -115,7 +119,21 @@ CLASS_WEIGHT_CLIP_MAX = 25.0
 #: the lift's cell (SPEC_REFCV7 §6.2) and the ratio to the 10 cm label cell.
 LIFT_CELL_M = 0.25
 #: the declared decision rules (``MapHiresConfig.decision_rule``); the first is the default.
-DECISION_RULES: tuple[str, ...] = ("prior_corrected", "raw")
+#: ``class_threshold`` (refcv7 diagnostics F1, 2026-10-04) is OPT-IN and needs a thresholds
+#: file (``--map-hires-class-thresholds``): see :func:`decide_masks`. Appending it leaves
+#: ``DECISION_RULES[0]`` -- the default every caller reads -- exactly as it was.
+DECISION_RULES: tuple[str, ...] = ("prior_corrected", "raw", "class_threshold")
+#: the schema of the per-class thresholds JSON (:func:`load_class_thresholds`).
+CLASS_THRESHOLD_SCHEMA = "tanitad.map_hires_class_thresholds/1"
+#: F2: the boundary tolerance of the monitor's tolerant IoU, in 10 cm cells (2 cells = 0.2 m).
+MONITOR_TOL_CELLS = 2
+#: F2: the extra per-class x band statistics a row carries when thresholds are configured
+#: (``interthr`` / ``unionthr`` / ``predthr`` under the THRESHOLDED rule; ``tppthr2`` /
+#: ``tpgthr2`` = predicted cells with a GT cell within 2 cells / GT cells with a predicted
+#: cell within 2 cells). New keys only: ``PER_CLASS_STATS`` is unchanged.
+PER_CLASS_STATS_THR: tuple[str, ...] = ("interthr", "unionthr", "predthr",
+                                        "tppthr%d" % MONITOR_TOL_CELLS,
+                                        "tpgthr%d" % MONITOR_TOL_CELLS)
 #: NEW-2 R2 (A12): the near lift's extent is a multiple of this, so it tiles the 0.25 m lift
 #: grid, the 0.1 m label grid and the 0.5 m planner grid exactly.
 NEAR_LIFT_STEP_M = 0.5
@@ -123,14 +141,23 @@ NEAR_LIFT_STEP_M = 0.5
 NEAR_REFINE_MAX_BLOCKS = 4
 
 
-def decide(logits: Tensor, rule: str, class_weight: Tensor | None = None) -> Tensor:
+def decide(logits: Tensor, rule: str, class_weight: Tensor | None = None,
+           class_thresholds=None) -> Tensor:
     """``[B, 8, H, W]`` logits -> ``[B, H, W]`` class codes under a DECLARED rule.
 
     * ``"raw"``             -- ``argmax_c z_c``;
     * ``"prior_corrected"`` -- ``argmax_c (z_c - log w_c)``, ``w`` the loss's frozen
       class weights. ⛔ REFUSES ``class_weight=None``: correcting by "no weights"
       would silently BE the raw rule on a weighted model. Pass ``torch.ones(8)`` to
-      state uniform weights (then the two rules are bit-identical, control C3).
+      state uniform weights (then the two rules are bit-identical, control C3);
+    * ``"class_threshold"`` (OPT-IN, refcv7 diagnostics F1) -- the rule itself is
+      MULTI-LABEL (:func:`decide_masks`: cell in class ``c`` iff ``p_hat_c >= tau_c``);
+      this returns ONE code per cell for the consumers that need a partition (a
+      renderer, an argmax-style caller): ``argmax_c (logit(p_hat_c) - tau_c)`` -- the
+      class that clears its own threshold by the widest margin, or, where none clears
+      it, the one closest to clearing. The IoU the monitor logs is computed on the
+      multi-label masks, NOT on this partition. ⛔ REFUSES ``class_weight=None`` and
+      ``class_thresholds=None``.
 
     ⛔ A class with weight 0 is NEVER decided (its score is ``-inf``): it was never
     supervised, so its logit carries no calibrated evidence. The naive formula would
@@ -140,6 +167,10 @@ def decide(logits: Tensor, rule: str, class_weight: Tensor | None = None) -> Ten
         raise ValueError(f"decision rule {rule!r} not in {DECISION_RULES}")
     if rule == "raw":
         return logits.argmax(dim=1)
+    if rule == "class_threshold":
+        tau = _check_class_thresholds(class_thresholds, logits.device)
+        s = logits.float() - _decision_logw(class_weight, logits).view(1, -1, 1, 1)
+        return (class_posterior_logits(s) - tau).argmax(dim=1)
     if class_weight is None:
         raise ValueError("the prior-corrected rule needs the loss's class weights "
                          "(torch.ones(8) for uniform); None would silently be `raw`")
@@ -152,6 +183,144 @@ def decide(logits: Tensor, rule: str, class_weight: Tensor | None = None) -> Ten
     logw = torch.where(pos, torch.log(torch.where(pos, w, torch.ones_like(w))),
                        torch.full_like(w, float("inf")))
     return (logits.float() - logw.view(1, -1, 1, 1)).argmax(dim=1)
+
+
+def _decision_logw(class_weight, logits: Tensor) -> Tensor:
+    """``[8]`` ``log w`` for the calibrated posterior; ``+inf`` for a weight of 0 (that
+    class was never supervised and is NEVER decided, :func:`decide`'s rule). Refuses
+    ``None`` / wrong shape / negative / non-finite weights."""
+    if class_weight is None:
+        raise ValueError("the class-threshold rule needs the loss's class weights "
+                         "(torch.ones(8) for uniform): p_hat = softmax(z - log w)")
+    w = torch.as_tensor(class_weight).detach().to(device=logits.device, dtype=torch.float32)
+    if tuple(w.shape) != (logits.shape[1],):
+        raise ValueError(f"class_weight {tuple(w.shape)} vs {logits.shape[1]} classes")
+    if not bool(torch.isfinite(w).all()) or bool((w < 0).any()):
+        raise ValueError(f"class weights must be finite and >= 0, got {w.tolist()}")
+    pos = w > 0
+    if not bool(pos.any()):
+        raise ValueError("all class weights are 0: no class can be decided")
+    return torch.where(pos, torch.log(torch.where(pos, w, torch.ones_like(w))),
+                       torch.full_like(w, float("inf")))
+
+
+def _check_class_thresholds(class_thresholds, device) -> Tensor:
+    """``[1, 8, 1, 1]`` float32 logit thresholds, or a loud refusal."""
+    if class_thresholds is None:
+        raise ValueError("decision rule 'class_threshold' needs the per-class thresholds "
+                         "(--map-hires-class-thresholds <json>, load_class_thresholds): "
+                         "without them there is no rule")
+    t = torch.as_tensor(class_thresholds, dtype=torch.float32).detach().to(device).reshape(-1)
+    if tuple(t.shape) != (N_FINE_CLASSES,) or not bool(torch.isfinite(t).all()):
+        raise ValueError(f"class thresholds must be {N_FINE_CLASSES} finite logit values, "
+                         f"got {t.tolist()}")
+    return t.view(1, -1, 1, 1)
+
+
+def class_posterior_logits(s: Tensor) -> Tensor:
+    """``[B, C, H, W]`` scores -> ``logit(softmax(s)_c) = s_c - logsumexp_{j != c} s_j``
+    per class, exact and stable (the diagnostics' ``diag_metrics.class_logits``,
+    verbatim)."""
+    outs = []
+    for c in range(s.shape[1]):
+        so = s.clone()
+        so[:, c] = float("-inf")
+        outs.append(s[:, c] - torch.logsumexp(so, dim=1))
+    return torch.stack(outs, dim=1)
+
+
+def decide_masks(logits: Tensor, class_weight, class_thresholds,
+                 sup: Tensor | None = None) -> Tensor:
+    """THE ``class_threshold`` RULE (refcv7 diagnostics F1, ``2026-10-04-refcv7-map-box-
+    diagnostics`` RESULT sec. 1.2 / 3): ``[B, C, H, W]`` bool, one-vs-rest and
+    MULTI-LABEL -- cell ``i`` is in class ``c`` iff the calibrated posterior
+    ``p_hat_c = softmax(z - log w)_c`` is ``>= tau_c``, i.e. ``logit(p_hat_c) >= tau_c``
+    in logit space (the space the thresholds were fitted in). A cell can be in several
+    classes or in none: the diagnostics' ``thr_phat`` decision did not resolve either
+    (``diag_metrics.decision_masks``), and the measured IoUs (lane 0.164, edge 0.042,
+    hatched 0.062 ...) are of THESE masks. ``sup`` ``[B, H, W]`` bool restricts to the
+    supervised cells, as the metric does."""
+    tau = _check_class_thresholds(class_thresholds, logits.device)
+    s = logits.float() - _decision_logw(class_weight, logits).view(1, -1, 1, 1)
+    m = class_posterior_logits(s) >= tau
+    return m if sup is None else (m & sup[:, None])
+
+
+def dilate_chebyshev(mask: Tensor, k: int) -> Tensor:
+    """``[B, C, H, W]`` bool -> Chebyshev dilation by ``k`` cells (the square
+    ``(2k+1)^2``), as two separable max-pools -- the diagnostics' ``dilate``, verbatim
+    (0/1 values, so fp16 on CUDA and fp32 on CPU give identical results)."""
+    if k == 0:
+        return mask
+    x = mask.to(torch.float16) if mask.is_cuda else mask.to(torch.float32)
+    B, C, H, W = x.shape
+    x = x.reshape(B * C, 1, H, W)
+    x = F.max_pool2d(x, kernel_size=(2 * k + 1, 1), stride=1, padding=(k, 0))
+    x = F.max_pool2d(x, kernel_size=(1, 2 * k + 1), stride=1, padding=(0, k))
+    return x.reshape(B, C, H, W) > 0.5
+
+
+def tolerant_iou_from_counts(pred, gt, tpp, tpg):
+    """The diagnostics' boundary-tolerant IoU from POOLED counts (``tolerant_summary``,
+    verbatim): ``P_k = tpp / pred``, ``R_k = tpg / gt``, ``F_k = 2 P R / (P + R)``,
+    ``IoU_k = F_k / (2 - F_k)`` (at k = 0 this is exactly the IoU). ``None`` when both
+    ``pred`` and ``gt`` are 0; 0.0 when exactly one is."""
+    P, G = float(pred), float(gt)
+    prec = float(tpp) / P if P > 0 else None
+    rec = float(tpg) / G if G > 0 else None
+    if prec is None or rec is None:
+        f = None if (P == 0 and G == 0) else (0.0 if (P == 0 or G == 0) else None)
+    else:
+        f = 2 * prec * rec / (prec + rec) if (prec + rec) > 0 else 0.0
+    return None if f is None else f / (2.0 - f)
+
+
+def load_class_thresholds(path, *, class_weight=None) -> tuple[Tensor, dict]:
+    """Read the per-class thresholds JSON -> ``([8] float32 LOGIT thresholds, stamp)``.
+
+    The file (``stack/tanitad/configs/refcv7_map_hires_class_thresholds_train.json``)
+    carries ``tau_phat_logit`` (what the rule thresholds -- ``logit(p_hat_c) >= tau``),
+    ``tau_phat_prob`` (= sigmoid of it, a cross-check), ``classes`` (= :data:`CLASS_KEYS`) and its provenance (source file,
+    fit split, n windows, checkpoint step).
+
+    ⛔ REFUSES: a different schema, a class order that is not ``CLASS_KEYS``, not 8
+    finite values, a probability that is not the sigmoid of its logit (1e-9), and --
+    when the file declares ``class_weight_values`` and ``class_weight`` is given --
+    thresholds fitted under OTHER class weights: ``p_hat = softmax(z - log w)`` is a
+    function of ``w``, so a threshold carried to another ``w`` means nothing. The stamp
+    carries the file's sha256 (the trainer writes it to config.json)."""
+    p = Path(path)
+    if not p.is_file():
+        raise ValueError(f"class thresholds file {str(p)!r} does not exist")
+    raw = p.read_bytes()
+    d = json.loads(raw.decode("utf-8"))
+    if d.get("schema") != CLASS_THRESHOLD_SCHEMA:
+        raise ValueError(f"{p.name}: schema {d.get('schema')!r} != {CLASS_THRESHOLD_SCHEMA!r}")
+    if tuple(d.get("classes") or ()) != tuple(CLASS_KEYS):
+        raise ValueError(f"{p.name}: class order {d.get('classes')!r} != {CLASS_KEYS}")
+    lg = [float(v) for v in d.get("tau_phat_logit") or ()]
+    if len(lg) != N_FINE_CLASSES or any(not math.isfinite(v) for v in lg):
+        raise ValueError(f"{p.name}: need {N_FINE_CLASSES} finite tau_phat_logit values, got {lg}")
+    pr = d.get("tau_phat_prob")
+    if pr is not None:
+        pr = [float(v) for v in pr]
+        if len(pr) != N_FINE_CLASSES or any(
+                abs(1.0 / (1.0 + math.exp(-a)) - b) > 1e-9 for a, b in zip(lg, pr)):
+            raise ValueError(f"{p.name}: tau_phat_prob is not the sigmoid of tau_phat_logit")
+    cwv = d.get("class_weight_values")
+    if cwv is not None and class_weight is not None:
+        have = torch.as_tensor(class_weight).detach().to("cpu", torch.float32).reshape(-1)
+        want = torch.tensor([float(v) for v in cwv], dtype=torch.float32)
+        if tuple(have.shape) != tuple(want.shape) or not bool(
+                torch.allclose(have, want, rtol=1e-6, atol=0.0)):
+            raise ValueError(
+                f"{p.name}: these thresholds were fitted under class weights "
+                f"{want.tolist()}, the model's frozen weights are {have.tolist()}: "
+                f"p_hat = softmax(z - log w) depends on w, so they do not transfer")
+    stamp = {"path": str(p), "sha256": hashlib.sha256(raw).hexdigest(),
+             "schema": CLASS_THRESHOLD_SCHEMA, "tau_phat_logit": lg,
+             "provenance": d.get("provenance")}
+    return torch.tensor(lg, dtype=torch.float32), stamp
 
 
 class MapHiresMissingInput(ValueError):
@@ -785,7 +954,8 @@ def hires_map_ce(logits: Tensor, codes: Tensor, *, class_weight: Tensor | None =
 def map_hires_loss_row(logits: Tensor, codes: Tensor, *, class_weight=None,
                        lift_valid_025: Tensor | None = None,
                        with_metrics: bool = True,
-                       decision_rule: str = "raw") -> dict:
+                       decision_rule: str = "raw",
+                       class_thresholds=None) -> dict:
     """:func:`hires_map_ce` + the counts and the PER-CLASS signal a log row carries.
 
     ⭐ Both counts, always (``n_map_hires_cells`` supervised, ``..._seen`` before
@@ -797,7 +967,14 @@ def map_hires_loss_row(logits: Tensor, codes: Tensor, *, class_weight=None,
     the gradient norm on its logit channel and the argmax intersection / union
     (:func:`per_class_signal`, keys :func:`per_class_key`), on the SAME cells as the
     loss. :func:`derived_per_class` turns a row -- or an eval mean of rows -- into
-    pooled IoUs and loss shares."""
+    pooled IoUs and loss shares.
+
+    ``class_thresholds`` (OPT-IN, refcv7 diagnostics F1/F2; ``None`` = the row is
+    byte-for-byte what it was): the ``[8]`` logit thresholds of :func:`decide_masks`. Given,
+    the row ALSO carries the ``PER_CLASS_STATS_THR`` keys -- the thresholded rule's
+    intersection / union / prediction counts and the 2-cell (0.2 m) boundary-tolerant
+    counts -- and ``decision_rule="class_threshold"`` becomes legal. No existing key or
+    value changes."""
     lv = (None if lift_valid_025 is None
           else lift_valid_to_fine(lift_valid_025, tuple(logits.shape[2:])))
     r = hires_map_ce(logits, codes, class_weight=class_weight, lift_valid=lv)
@@ -808,7 +985,8 @@ def map_hires_loss_row(logits: Tensor, codes: Tensor, *, class_weight=None,
         cw = (class_weight if class_weight is not None or decision_rule == "raw"
               else torch.ones(N_FINE_CLASSES))
         sig = per_class_signal(logits, codes, class_weight=cw, lift_valid=lv,
-                               decision_rule=decision_rule)
+                               decision_rule=decision_rule,
+                               class_thresholds=class_thresholds)
         row.update(per_class_log_values(sig))
     return row
 
@@ -872,7 +1050,7 @@ def is_exact_log_key(key: str) -> bool:
 
 def per_class_signal(logits: Tensor, codes: Tensor, *, class_weight=None,
                      lift_valid: Tensor | None = None,
-                     decision_rule: str = "raw") -> dict:
+                     decision_rule: str = "raw", class_thresholds=None) -> dict:
     """PER CLASS x PER BAND signal of the 10 cm loss on one batch. PURE: no autograd.
 
     For the loss ``L = sum_i w_{y_i} CE_i / W`` (``W = sum_i w_{y_i}`` over
@@ -894,7 +1072,17 @@ def per_class_signal(logits: Tensor, codes: Tensor, *, class_weight=None,
 
     plus ``loss`` (= ``L``), ``W`` and ``n_supervised``. ``lift_valid`` ``[B, H, W]``
     narrows the supervised cells exactly as the loss does. ⚠️ ``decision_rule
-    "prior_corrected"`` with ``class_weight=None`` is REFUSED (:func:`decide`)."""
+    "prior_corrected"`` with ``class_weight=None`` is REFUSED (:func:`decide`).
+
+    ``class_thresholds`` (OPT-IN; ``None`` = nothing below changes): the ``[8]`` logit
+    thresholds of the ``class_threshold`` rule (:func:`decide_masks`, MULTI-LABEL).
+    ``decision_rule="class_threshold"`` REQUIRES them (and ``class_weight``) -- a loud
+    ValueError otherwise -- and then ``inter`` / ``union`` are of that rule's masks. Given
+    with ANY rule, the signal also carries ``[8, n_bands]`` ``interthr`` / ``unionthr`` /
+    ``predthr`` and the 2-cell tolerant ``tppthr2`` / ``tpgthr2`` of the thresholded
+    masks (:data:`PER_CLASS_STATS_THR`): ``tpp`` = predicted cells with a GT cell within
+    2 cells (Chebyshev), ``tpg`` = GT cells with a predicted cell within 2 cells, both on
+    the supervised cells, exactly the diagnostics' ``tolerant_counts``."""
     with torch.no_grad():
         lg = logits.detach().float()
         B, C, Hh, Ww = lg.shape
@@ -930,8 +1118,17 @@ def per_class_signal(logits: Tensor, codes: Tensor, *, class_weight=None,
             return F.one_hot(codes_hw, C).permute(0, 3, 1, 2).float() \
                 * sup[:, None].float()
         pred_raw = onehot_pred(lg.argmax(dim=1))
-        pred = (pred_raw if decision_rule == "raw" else
-                onehot_pred(decide(lg, decision_rule, class_weight)))
+        thr_mask = None
+        if decision_rule == "class_threshold" and class_thresholds is None:
+            raise ValueError("decision_rule 'class_threshold' needs class_thresholds "
+                             "(--map-hires-class-thresholds): there is no rule without them")
+        if class_thresholds is not None:
+            thr_mask = decide_masks(lg, class_weight, class_thresholds, sup)    # bool, sup-only
+        if decision_rule == "class_threshold":
+            pred = thr_mask.float()                      # MULTI-LABEL, as the diagnostics scored it
+        else:
+            pred = (pred_raw if decision_rule == "raw" else
+                    onehot_pred(decide(lg, decision_rule, class_weight)))
         out = {"n": bands(onehot),
                "lc": bands(onehot * (wi * ce)[:, None]) / Wd,
                "gn": bands(g * g).sqrt(),
@@ -941,6 +1138,14 @@ def per_class_signal(logits: Tensor, codes: Tensor, *, class_weight=None,
                "interraw": bands(onehot * pred_raw),
                "unionraw": bands(((onehot + pred_raw) > 0).float()),
                "ce": bands(onehot * ce[:, None])}
+        if thr_mask is not None:                         # F1/F2: the thresholded rule's counts
+            gt_m = onehot > 0.5
+            k_tol = MONITOR_TOL_CELLS
+            out["interthr"] = bands((thr_mask & gt_m).float())
+            out["unionthr"] = bands((thr_mask | gt_m).float())
+            out["predthr"] = bands(thr_mask.float())
+            out["tppthr%d" % k_tol] = bands((thr_mask & dilate_chebyshev(gt_m, k_tol)).float())
+            out["tpgthr%d" % k_tol] = bands((gt_m & dilate_chebyshev(thr_mask, k_tol)).float())
         out = {k: v.double() for k, v in out.items()}
         out["loss"] = float((wi * ce).sum() / Wd) if float(W) > 0 else 0.0
         out["W"] = float(W)
@@ -953,9 +1158,11 @@ def per_class_log_values(sig: dict, prefix: str = "") -> dict:
     """The ``[8, n_bands]`` statistics as flat ``{key: float}`` -- ONE device->host
     copy. The band keys are the signal's own (the logits' grid)."""
     keys = tuple(sig.get("band_keys") or BAND_KEYS)
-    flat = torch.stack([sig[s] for s in PER_CLASS_STATS]).cpu().tolist()
+    # F1/F2: the thresholded-rule statistics ride along ONLY when the signal carries them
+    stats = PER_CLASS_STATS + (PER_CLASS_STATS_THR if PER_CLASS_STATS_THR[0] in sig else ())
+    flat = torch.stack([sig[s] for s in stats]).cpu().tolist()
     out = {}
-    for si, s in enumerate(PER_CLASS_STATS):
+    for si, s in enumerate(stats):
         for c in range(N_FINE_CLASSES):
             for b, bk in enumerate(keys):
                 out[per_class_key(s, c, bk, prefix)] = float(flat[si][c][b])
@@ -993,6 +1200,18 @@ def derived_per_class(row: dict, prefix: str = "", band_keys=BAND_KEYS) -> dict:
             lc = lcs[(c, bk)]
             out[per_class_key("lshare", c, bk, prefix)] = (
                 float(lc) / float(tot) if (lc is not None and tot > 0) else None)
+            # F1/F2: ``iouthr`` = the thresholded rule's pooled IoU, ``iou2thr`` = its
+            # boundary-tolerant IoU at MONITOR_TOL_CELLS cells -- only when the row carries
+            # the thresholded counts (a default row emits exactly the keys it always did)
+            if per_class_key(PER_CLASS_STATS_THR[0], c, bk, prefix) in row:
+                g = lambda st: row.get(per_class_key(st, c, bk, prefix))     # noqa: E731
+                u, i = g("unionthr"), g("interthr")
+                out[per_class_key("iouthr", c, bk, prefix)] = (
+                    float(i) / float(u) if (u is not None and i is not None and u > 0)
+                    else None)
+                vals = [g("predthr"), g("n"), g(PER_CLASS_STATS_THR[3]), g(PER_CLASS_STATS_THR[4])]
+                out[per_class_key("iou%dthr" % MONITOR_TOL_CELLS, c, bk, prefix)] = (
+                    None if any(v is None for v in vals) else tolerant_iou_from_counts(*vals))
     return out
 
 

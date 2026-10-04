@@ -963,6 +963,42 @@ _b("slot_query_select", _c_slot_query_select)
 register("vis1_sidecar", "data", reason=(
     "the VIS-1 visibility sidecar (refcv7 A9 R3); its sha256 is stamped in config.json[vis1] "
     "and the dataset REFUSES a missing clip, frame, row or a mismatched track/centre"))
+
+
+def _c_map_hires_class_thresholds(m, a):
+    """refcv7 diagnostics F1/F2 (2026-10-04, OPT-IN): the thresholds the loss row and the monitor read
+    (``model._map_hires_class_thresholds``) ARE the file argv names -- by sha256 on the stamp the trainer wrote, and
+    value by value on the tensor (the expectation parsed from the file here, never from the loader under test) -- and an
+    argv with no file builds none."""
+    import hashlib
+    import json
+    from pathlib import Path
+    path = _a(a, "map_hires_class_thresholds", None)
+    t = getattr(m, "_map_hires_class_thresholds", None)
+    st = getattr(m, "_map_hires_class_thresholds_stamp", None)
+    where = "model._map_hires_class_thresholds (read by the 10 cm loss row and the monitor)"
+    if bool(path) != (t is not None):
+        return [Mismatch(_flag("map_hires_class_thresholds"), path, None if t is None else "a tensor", where,
+                         "the thresholded monitor would run on no declared file (or the declared file be ignored)")]
+    if not path:
+        return []
+    raw = Path(path).read_bytes()
+    out = _eq("map_hires_class_thresholds", hashlib.sha256(raw).hexdigest()[:12],
+              str((st or {}).get("sha256", ""))[:12],
+              "model._map_hires_class_thresholds_stamp['sha256'] vs sha256(argv file)")
+    want = [float(v) for v in json.loads(raw.decode("utf-8")).get("tau_phat_logit") or ()]
+    got = [float(v) for v in t.detach().cpu().reshape(-1).tolist()]
+    if len(want) != len(got) or any(abs(x - y) > 1e-6 for x, y in zip(want, got)):
+        out.append(Mismatch(_flag("map_hires_class_thresholds"), want, got, where))
+    return out
+
+
+_b("map_hires_class_thresholds", _c_map_hires_class_thresholds)
+register("det_presence_gates", "data", reason=(
+    "the per-head detection-gate JSON (refcv7 diagnostics F4, OPT-IN); read ONLY by the in-run eval census "
+    "(`detection_metrics.gated_census_keys`, new `eval_<head>_gated_*` keys) -- never by the model or the planner. "
+    "`_pin_slot_refine` refuses a missing / invalid file or one without --slot-vis1 before config.json, and its "
+    "sha256 is stamped in config.json[vis1][calib][presence_gates]"))
 _b("w_map", _c_perception)
 register("w_box3d", "elsewhere", reason="checked with --w-map against model._perception (G-DVB)")
 _b("map_lift_valid_mask", _c_attr("map_lift_valid_mask", "_map_lift_valid_mask",

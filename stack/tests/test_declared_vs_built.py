@@ -265,7 +265,9 @@ def test_GDVB_every_trainer_flag_has_an_entry_and_every_entry_is_well_formed():
     # map_head_hires.register_dvb_levers)
     # + NEW-2 R2's --map-hires-near-lift-m (SPEC_REFCV7 A12, the 0.1 m near-range lift)
     # + NEW-2 R3's --map-hires-near-refine-blocks (SPEC_REFCV7 §20, A15, the decoder lever)
-    assert len(dvb.REGISTRY) == 221
+    assert len(dvb.REGISTRY) == 223
+    # refcv7 diagnostics F1/F2/F4 (2026-10-04): +2 = --map-hires-class-thresholds ("built",
+    # _c_map_hires_class_thresholds) and --det-presence-gates ("data"), both OPT-IN (221 -> 223)
     # refcv7 A14 (HQS): +1 = --slot-query-select (220 -> 221)
     # refcv7 A9 (box head): +5 = --slot-presence-loss, --slot-presence-prior,
     # --slot-deep-supervision, --slot-vis1, --vis1-sidecar (215 -> 220)
@@ -274,6 +276,8 @@ def test_GDVB_every_trainer_flag_has_an_entry_and_every_entry_is_well_formed():
               "map_hires_grad_ckpt", "bev_source", "bev_planner_crop_m",
               "map_hires_near_lift_m", "map_hires_near_refine_blocks"):
         assert dvb.REGISTRY[d].kind == ("loss" if d == "w_map_hires" else "built"), d
+    assert dvb.REGISTRY["map_hires_class_thresholds"].kind == "built"
+    assert dvb.REGISTRY["det_presence_gates"].kind == "data"
     for dest, lever in dvb.REGISTRY.items():
         assert lever.kind in dvb.KINDS, dest
         if lever.kind in ("built", "loss"):

@@ -1479,6 +1479,19 @@ def _pin_slot_refine(cfg, args) -> None:
             and not float(getattr(args, "w_box3d", 0.0) or 0.0) > 0.0:
         raise SystemExit("[v3] ⛔ --slot-query-select learned_ref with --w-box3d 0: the anchors belong to the "
                          "BOX head; with no box head they would be stamped and train nothing (M18).")
+    if getattr(args, "det_presence_gates", None):
+        # ⭐ refcv7 diagnostics F4 (2026-10-04): the per-head detection gate. The detection metrics
+        # exist only with VIS-1; a gates file with them off would be NAMED and READ BY NOTHING (M18).
+        if not bool(getattr(args, "slot_vis1", False)):
+            raise SystemExit(
+                "[v3] ⛔ --det-presence-gates without --slot-vis1: the P0 detection metrics (and "
+                "so the census the gates are read at) exist only with VIS-1 targets; the file would "
+                "be named in config.json and read by nothing (mm-decisions M18).")
+        try:
+            _det_metrics.load_head_gates(args.det_presence_gates)
+        except (ValueError, OSError) as e:
+            raise SystemExit("[v3] ⛔ --det-presence-gates %r: %s"
+                             % (str(args.det_presence_gates), e)) from None
     if not _slot_refine_active(args):
         return
     k = _slot_refine_kwargs(args)
@@ -1672,6 +1685,21 @@ def _map_hires_on(args) -> bool:
     return str(getattr(args, "map_hires", "off") or "off") == "on"
 
 
+def _map_hires_class_thresholds(args, class_weight):
+    """refcv7 diagnostics F1/F2 (OPT-IN): ``--map-hires-class-thresholds`` -> ``(logit
+    thresholds [8], stamp)``, or ``(None, None)`` when unset (a default run: nothing is read,
+    nothing is stamped). The file is BOUND to ``class_weight`` -- the frozen weights the loss
+    and the decision use (``p_hat = softmax(z - log w)`` depends on them), so thresholds fitted
+    under other weights are REFUSED here, at build time, with the file named."""
+    path = getattr(args, "map_hires_class_thresholds", None)
+    if not path:
+        return None, None
+    try:
+        return _mhr.load_class_thresholds(path, class_weight=class_weight)
+    except (ValueError, OSError) as e:
+        raise SystemExit("[v3] ⛔ --map-hires-class-thresholds %r: %s" % (str(path), e)) from None
+
+
 def _pin_map_hires(cfg, args) -> None:
     """⛔ refcv7 NEW-2 + A6/A7 (SPEC_REFCV7 §6.2, §11, §12): refuse every ``--map-hires``
     combination that cannot train -- BEFORE config.json is written and before a batch
@@ -1708,6 +1736,7 @@ def _pin_map_hires(cfg, args) -> None:
     crop = getattr(args, "bev_planner_crop_m", None)
     nl = getattr(args, "map_hires_near_lift_m", None)       # NEW-2 R2 (A12)
     nrb = getattr(args, "map_hires_near_refine_blocks", None)   # NEW-2 R3 (A15)
+    cth = getattr(args, "map_hires_class_thresholds", None)     # refcv7 diagnostics F1/F2 (2026-10-04)
     if mode not in ("off", "on"):
         raise SystemExit(f"[v3] ⛔ --map-hires {mode!r} not in (off, on)")
     if src not in _perc.BEV_SOURCES:
@@ -1736,6 +1765,7 @@ def _pin_map_hires(cfg, args) -> None:
                                    ("--map-hires-grad-ckpt", ck),
                                    ("--map-hires-near-lift-m", nl),
                                    ("--map-hires-near-refine-blocks", nrb),
+                                   ("--map-hires-class-thresholds", cth),
                                    ("--bev-planner-crop-m", crop),
                                    ("--bev-source",
                                     None if src == _perc.BEV_SOURCES[0] else src))
@@ -1747,6 +1777,21 @@ def _pin_map_hires(cfg, args) -> None:
                 "pool), so the value would be NAMED in config.json and READ BY NOTHING "
                 "(mm-decisions M18). Pass --map-hires on, or drop it." % _dead)
         return
+    # ⭐ refcv7 diagnostics F1/F2 (2026-10-04): the per-class thresholds. OPT-IN. The rule
+    # `class_threshold` IS those thresholds, so it cannot exist without the file; the file
+    # alone (rule unchanged) switches on the thresholded + 0.2 m-tolerant MONITOR keys.
+    if rule == "class_threshold" and not cth:
+        raise SystemExit(
+            "[v3] ⛔ --map-hires-decision-rule class_threshold without "
+            "--map-hires-class-thresholds <json>: the rule is `cell is class c iff p_hat_c >= "
+            "tau_c`, and without the per-class tau there is no rule. Pass the TRAIN-fitted file "
+            "(stack/tanitad/configs/refcv7_map_hires_class_thresholds_train.json), or keep "
+            "--map-hires-decision-rule prior_corrected.")
+    if cth:
+        try:
+            _mhr.load_class_thresholds(cth)
+        except (ValueError, OSError) as e:
+            raise SystemExit("[v3] ⛔ --map-hires-class-thresholds %r: %s" % (str(cth), e)) from None
     if w <= 0.0:
         raise SystemExit(
             "[v3] ⛔ --map-hires on with --w-map-hires 0: the 10 cm branch would be "
@@ -4301,6 +4346,9 @@ def _map_hires_loss(model, out: dict, batch: dict, device, extra: dict,
         lift_valid_025=lv,
         # the DECLARED rule, read off the BUILT branch config (G-DVB checks it)
         decision_rule=str(br.cfg.decision_rule),
+        # ⭐ refcv7 diagnostics F1/F2: None unless --map-hires-class-thresholds (then the row also
+        # carries the thresholded + 2-cell-tolerant keys; no existing key changes)
+        class_thresholds=getattr(model, "_map_hires_class_thresholds", None),
         # ⭐ refcv7 step-cost lever 2 (2026-09-28): the per-class 10 cm signal is PURE
         # (no_grad, no RNG) and only a LOG row reads it -- compute it on logged steps only.
         with_metrics=bool(with_metrics))
@@ -8014,6 +8062,8 @@ def train(args) -> dict:
     model._lift_bank_hires = None
     model._map_hires_class_weight = None
     model._map_hires_class_weight_stamp = None
+    model._map_hires_class_thresholds = None             # refcv7 diagnostics F1/F2: None = off
+    model._map_hires_class_thresholds_stamp = None
     map_hires_stamp = None
     if _map_hires_on(args):
         _hext = _mhr.declared_extent(args)
@@ -8023,6 +8073,9 @@ def train(args) -> dict:
         # extent (class frequencies change with range): another extent is refused.
         _hcw, _hcws = _mhr.load_class_weights(args.map_hires_class_weights,
                                               extent=_hext)
+        # ⭐ refcv7 diagnostics F1/F2: the per-class thresholds (OPT-IN), BOUND to these weights
+        # (p_hat = softmax(z - log w): thresholds fitted under other weights mean nothing).
+        _hct, _hcts = _map_hires_class_thresholds(args, _hcw)
         _hcfg = _mhr.MapHiresConfig(
             w_map_hires=float(args.w_map_hires),
             x_max_m=float(_hext.x_max_m), y_half_m=float(_hext.y_half_m),
@@ -8036,6 +8089,8 @@ def train(args) -> dict:
         model._w_map_hires = float(args.w_map_hires)
         model._map_hires_class_weight = _hcw.to(device)
         model._map_hires_class_weight_stamp = _hcws
+        model._map_hires_class_thresholds = None if _hct is None else _hct.to(device)
+        model._map_hires_class_thresholds_stamp = _hcts
         _hpe, _htable = _read_rig_extrinsics(
             str(getattr(args, "agent_rig_extrinsics", "")))
         if _htable is None:
@@ -8069,6 +8124,13 @@ def train(args) -> dict:
             "fine_spec": dict(_hext.fine_spec),
             "loss": "hard-label CE, 8 classes, ignore_index 255, class-weighted",
         }
+        if _hcts is not None:                 # absent (not null) for a default run: config.json unchanged
+            map_hires_stamp["class_thresholds"] = {
+                k: _hcts[k] for k in ("path", "sha256", "schema", "tau_phat_logit", "provenance")}
+            map_hires_stamp["monitor_tolerance_cells"] = int(_mhr.MONITOR_TOL_CELLS)
+            print("[v3] refcv7 map-hires class thresholds: rule %s, file sha256 %s, tolerance %d cells"
+                  % (str(_hcfg.decision_rule), _hcts["sha256"][:12], int(_mhr.MONITOR_TOL_CELLS)),
+                  flush=True)
         print("[v3] refcv7 map-hires: w=%.4g, extent %g m x +-%g m -> %s at 0.1 m, "
               "grad_ckpt %s, near-lift %g m, near-refine %d, tap %s, params %s, class "
               "weights sha256 %s"
@@ -8585,6 +8647,7 @@ def train(args) -> dict:
     map_fine_stats = eval_map_fine_stats = None       # refcv7 NEW-2
     join3d_stats = eval_join3d_stats = None
     vis1_stamp = vis1_stats = eval_vis1_stats = _vis1_sc = None     # refcv7 A9 R3
+    det_gates = None                     # refcv7 diagnostics F4: per-head gates (OPT-IN)
     calib_dl = calib_stamp = None        # refcv7 A10 §15.3: the INFORMATIVE TRAIN P = R gate
     join_digest = _verify_agent_join(args)
     if getattr(args, "agent_join", None):
@@ -8704,6 +8767,11 @@ def train(args) -> dict:
                        "windows_sha256": _det_metrics.load_calib_windows()["windows_sha256"],
                        "n_listed": len(_cal_pos) + int(_cal_miss), "n_found": len(_cal_pos),
                        "role": "INFORMATIVE P = R gate only (A10 §15.3)"}
+        if getattr(args, "det_presence_gates", None):
+            det_gates, _dg_stamp = _det_metrics.load_head_gates(args.det_presence_gates)
+            calib_stamp["presence_gates"] = _dg_stamp        # absent for a default run
+            print("[v3] refcv7 per-head detection gates %s (file sha256 %s)"
+                  % (det_gates, _dg_stamp["sha256"][:12]), flush=True)
         if _cal_pos:
             calib_dl = torch.utils.data.DataLoader(
                 torch.utils.data.Subset(ds, _cal_pos), batch_size=args.batch,
@@ -9718,6 +9786,11 @@ def train(args) -> dict:
                     for _dk, _dv in _det_metrics.summarise(_pk, _hd).items():
                         erow[_dk] = (None if (isinstance(_dv, float) and _dv != _dv)
                                      else round(float(_dv), 5))
+                    # ⭐ refcv7 diagnostics F4: the census AT the per-head gate, NEW keys only
+                    # (`{}` unless --det-presence-gates; never read by the planner)
+                    for _dk, _dv in _det_metrics.gated_census_keys(_pk, _hd, det_gates).items():
+                        erow[_dk] = (None if (isinstance(_dv, float) and _dv != _dv)
+                                     else round(float(_dv), 5))
                     if erow.get(f"eval_{_hd}_conf_ratio_alarm") == 1.0:
                         print("[v3:eval] ALARM %s conf_ratio %s outside [0.5, 1.5] (A10 "
                               "§15.3, a Watch alarm, not a stop)"
@@ -10395,6 +10468,13 @@ def build_parser() -> argparse.ArgumentParser:
                     help="refcv7 A9 R3: the VIS-1 sidecar (.npz) from "
                          "scripts/precompute_vis1_sidecar.py, covering EVERY clip of the train "
                          "and eval caches; its sha256 is stamped in config.json[vis1].")
+    g5.add_argument("--det-presence-gates", default=None,
+                    help="refcv7 diagnostics F4 (OPT-IN): the per-head detection gate JSON "
+                         "(stack/tanitad/configs/refcv7_det_presence_gates_train.json: the TRAIN "
+                         "P = R gate of box3d and agent). The in-run eval ALSO reports the census "
+                         "at those gates under NEW keys eval_<head>_gated_* (conf_ratio, its A10 "
+                         "alarm, precision/recall/F1); the declared 0.5-gate keys keep their "
+                         "meaning. Never reaches the planner. Needs --slot-vis1.")
     g5.add_argument("--agent-presence-hard", action="store_true",
                     help="hard-mask sub-threshold slots instead of soft "
                          "scaling. Soft is the default BECAUSE a hard mask has "
@@ -10790,13 +10870,23 @@ def build_parser() -> argparse.ArgumentParser:
                          "into config.json; a DRY RUN file is refused.")
     # ⭐ SPEC_REFCV7 A4 (1), the map-signal audit's D1: under a class-weighted CE the
     # softmax learns q_c ∝ w_c P(c|x), so the DECISION is declared, never implied.
-    g6.add_argument("--map-hires-decision-rule", choices=("prior_corrected", "raw"),
+    g6.add_argument("--map-hires-decision-rule", choices=tuple(_mhr.DECISION_RULES),
                     default="prior_corrected",
                     help="the 10 cm map's decision rule for the in-run IoU counts and "
                          "every eval: prior_corrected = argmax(z - log w) with the SAME "
                          "frozen class weights the loss uses (DEFAULT, the calibrated "
-                         "decision), or raw = argmax(z). The raw rule is always logged "
+                         "decision), or raw = argmax(z), or class_threshold = the "
+                         "MULTI-LABEL per-class rule `p_hat_c >= tau_c` (needs "
+                         "--map-hires-class-thresholds). The raw rule is always logged "
                          "beside it as the diagnostic (map_hires_interraw/unionraw_*).")
+    g6.add_argument("--map-hires-class-thresholds", default=None,
+                    help="refcv7 diagnostics F1/F2 (OPT-IN): the per-class threshold JSON "
+                         "(stack/tanitad/configs/refcv7_map_hires_class_thresholds_train.json, "
+                         "TRAIN-fitted on logit(p_hat_c), bound to the frozen class weights). "
+                         "Required by --map-hires-decision-rule class_threshold; with any "
+                         "rule it ALSO adds the thresholded IoU (map_hires_iouthr_*) and the "
+                         "0.2 m boundary-tolerant IoU (map_hires_iou2thr_*) per class x band "
+                         "to the in-run rows. Unset = no new key, no extra compute.")
     # ⭐⭐ SPEC_REFCV7 §11.2 / §12 (A6, A7): the map EXTENT is a declared parameter.
     # Unset = the extent the pre-registered census rule selected (A7: 100 m x +-30 m).
     g6.add_argument("--map-hires-x-max-m", type=float, default=None,

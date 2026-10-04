@@ -576,6 +576,8 @@ def build_map_hires_block(tr, model, args, device) -> dict | None:
     model._lift_bank_hires = None
     model._map_hires_class_weight = None
     model._map_hires_class_weight_stamp = None
+    model._map_hires_class_thresholds = None              # refcv7 diagnostics F1/F2 (OPT-IN)
+    model._map_hires_class_thresholds_stamp = None
     if not tr._map_hires_on(args):                                      # train():8011
         return None
     _hext = _mhr.declared_extent(args)                                  # train():8012
@@ -588,6 +590,10 @@ def build_map_hires_block(tr, model, args, device) -> dict | None:
     model._w_map_hires = float(args.w_map_hires)                        # train():8029
     model._map_hires_class_weight = _hcw.to(device)                     # train():8030
     model._map_hires_class_weight_stamp = _hcws                         # train():8031
+    if getattr(args, "map_hires_class_thresholds", None):               # train(): F1/F2, OPT-IN
+        _hct, model._map_hires_class_thresholds_stamp = _mhr.load_class_thresholds(
+            args.map_hires_class_thresholds, class_weight=_hcw)
+        model._map_hires_class_thresholds = _hct.to(device)
     # train():8032-8042 -- the PER-CLIP 0.25 m lift bank, with the C26 rows
     _hpe, _htable = tr._read_rig_extrinsics(str(getattr(args, "agent_rig_extrinsics", "")))
     if _htable is None:

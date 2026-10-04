@@ -35,6 +35,15 @@ KEYS (the Watch contract, :func:`metric_keys` / :func:`train_row_keys`):
   ``eval_{h}_calib_rec``, ``eval_{h}_calib_n_pos``, ``eval_{h}_calib_n_windows``;
   train row -- ``{h}_n_pos``, ``{h}_n_ignore``, ``{h}_n_dropped_hidden``, ``{h}_n_ignore_masked_slots``,
   ``{h}_n_conf``, ``{h}_conf_ratio``, ``{h}_tp@gate``.
+
+⭐ THE PER-HEAD GATE (refcv7 diagnostics F4, 2026-10-04; OPT-IN, default = everything above, unchanged). Under the
+focal presence loss (alpha 0.25) the declared 0.5 gate means "match belief >= 0.75" and refcv7's final checkpoint
+read conf_ratio 0.008 (box3d) / 0.000 (agent) at it, while the TRAIN P = R gate (box3d 0.2567, agent 0.2307) reads
+0.973 / 0.995 on EVAL. :func:`load_head_gates` reads those gates from a small JSON, :func:`gated_census_keys` emits
+the census (``n_conf``, ``tp``, precision / recall / F1, ``conf_ratio`` and its A10 alarm) AT them under NEW keys
+``eval_{h}_gated_*`` -- the declared ``eval_{h}_conf_ratio`` and its alarm keep their meaning. This module only READS
+packs: what the PLANNER consumes (``sigmoid(presence_logit)`` as a feature and a soft scale,
+``refc_agents.AgentTokenEmbed``) never passes through it.
 """
 from __future__ import annotations
 
@@ -46,7 +55,8 @@ import torch
 __all__ = ["DIST_THRESHOLDS_M", "THR_KEY", "BANDS_X_M", "HEADS", "CONF_RATIO_BAND", "window_packs", "greedy_rows",
            "summarise", "metric_keys", "train_row_keys", "train_row_key_names", "calib_keys", "calib_key_names",
            "pr_equal_gate", "auroc", "OBJECTNESS_RADIUS_M", "PR_DIST_M", "CALIB_WINDOWS_FILE",
-           "load_calib_windows", "calib_indices"]
+           "load_calib_windows", "calib_indices",
+           "GATES_SCHEMA", "GATED_KEYS", "load_head_gates", "resolve_gate", "gated_census_keys", "gated_key_names"]
 
 DIST_THRESHOLDS_M: tuple[float, ...] = (0.5, 1.0, 2.0, 4.0)
 THR_KEY: dict = {0.5: "0p5", 1.0: "1", 2.0: "2", 4.0: "4"}
@@ -58,6 +68,12 @@ PR_DIST_M: float = 2.0
 #: A10 §15.3: the Watch alarm band on confident / VIS-1 positives (the audit's G-LIVE-GATE, tightened).
 CONF_RATIO_BAND: tuple[float, float] = (0.5, 1.5)
 _NAN = float("nan")
+
+
+#: the schema of the per-head gates JSON (:func:`load_head_gates`).
+GATES_SCHEMA = "tanitad.det_presence_gates/1"
+#: the suffixes of the gated census keys, ``eval_{h}_gated_<suffix>`` (:func:`gated_census_keys`).
+GATED_KEYS: tuple[str, ...] = ("gate", "n_conf", "tp", "n_pos", "prec", "rec", "f1", "conf_ratio", "conf_ratio_alarm")
 
 
 def _classes():
@@ -348,6 +364,79 @@ def summarise(packs: list, head: str, *, gate: float | None = None) -> dict:
     else:
         out[f"eval_{head}_auroc_matched"] = out[f"eval_{head}_auroc_objectness"] = _NAN
     return out
+
+
+# --------------------------------------------------------------------------------------------------------- #
+# the per-head gate (refcv7 diagnostics F4) -- OPT-IN                                                       #
+# --------------------------------------------------------------------------------------------------------- #
+def load_head_gates(path) -> tuple[dict, dict]:
+    """Read the per-head gates JSON -> ``({head: gate}, stamp)``.
+
+    The file (``stack/tanitad/configs/refcv7_det_presence_gates_train.json``) holds one gate per head in
+    ``gates`` -- each a probability in (0, 1) on ``sigmoid(presence_logit)`` -- plus its provenance. ⛔ REFUSES a
+    different schema, a head missing from ``gates`` (every head of ``HEADS`` must have one: a half-configured
+    pair would silently fall back to 0.5 for one head), an unknown head, and a gate outside (0, 1). The stamp
+    carries the file's sha256 (the trainer writes it to config.json)."""
+    import hashlib
+    import json
+    import pathlib
+    p = pathlib.Path(path)
+    if not p.is_file():
+        raise ValueError(f"detection gates file {str(p)!r} does not exist")
+    raw = p.read_bytes()
+    d = json.loads(raw.decode("utf-8"))
+    if d.get("schema") != GATES_SCHEMA:
+        raise ValueError(f"{p.name}: schema {d.get('schema')!r} != {GATES_SCHEMA!r}")
+    g = d.get("gates")
+    if not isinstance(g, dict):
+        raise ValueError(f"{p.name}: no `gates` object")
+    if set(g) != set(HEADS):
+        raise ValueError(f"{p.name}: gates for {sorted(g)} but the heads are {sorted(HEADS)} -- one gate per "
+                         f"head, no silent fallback to {_gate()} for the missing one")
+    out = {}
+    for h in HEADS:
+        v = float(g[h])
+        if not (math.isfinite(v) and 0.0 < v < 1.0):
+            raise ValueError(f"{p.name}: gate {h} = {g[h]!r} must be a probability in (0, 1)")
+        out[h] = v
+    return out, {"path": str(p), "sha256": hashlib.sha256(raw).hexdigest(), "schema": GATES_SCHEMA,
+                 "gates": dict(out), "provenance": d.get("provenance")}
+
+
+def resolve_gate(head: str, gates: dict | None = None) -> float:
+    """The gate a head's census is read at: ``gates[head]`` when a per-head gate dict is given, else the declared
+    ``slot_presence.DETECTION_GATE`` (0.5) -- ``gates=None`` is the pre-F4 behaviour, exactly."""
+    if head not in HEADS:
+        raise ValueError(f"head {head!r} not in {HEADS}")
+    if gates is None:
+        return _gate()
+    if head not in gates:
+        raise ValueError(f"no gate for head {head!r} in {sorted(gates)}")
+    return float(gates[head])
+
+
+def gated_key_names(head: str) -> list:
+    return [f"eval_{head}_gated_{k}" for k in GATED_KEYS]
+
+
+def gated_census_keys(packs: list, head: str, gates: dict | None = None) -> dict:
+    """The census of ``head`` at its per-head gate, under NEW keys ``eval_{head}_gated_*`` (:data:`GATED_KEYS`):
+    ``n_conf`` / ``tp`` / ``n_pos`` (the SAME greedy 2 m rows, DontCare excluded, as ``_census``), precision,
+    recall, F1, ``conf_ratio`` and ``conf_ratio_alarm`` (1.0 outside :data:`CONF_RATIO_BAND`, the A10 rule).
+    ``gates=None`` returns ``{}`` -- a default run emits no new key. NaN = undefined, never 0."""
+    if gates is None:
+        return {}
+    g = resolve_gate(head, gates)
+    c, _rows = _census(packs, head, "eval_", g)
+    tp, n_conf, n_pos = c[f"eval_{head}_tp@gate"], c[f"eval_{head}_n_conf"], c[f"eval_{head}_n_pos"]
+    prec, rec = _div(tp, n_conf), _div(tp, n_pos)
+    f1 = 2 * prec * rec / (prec + rec) if (prec == prec and rec == rec and (prec + rec) > 0) else _NAN
+    cr = c[f"eval_{head}_conf_ratio"]
+    lo, hi = CONF_RATIO_BAND
+    alarm = _NAN if cr != cr else (0.0 if lo <= cr <= hi else 1.0)
+    vals = {"gate": g, "n_conf": n_conf, "tp": tp, "n_pos": n_pos, "prec": prec, "rec": rec, "f1": f1,
+            "conf_ratio": cr, "conf_ratio_alarm": alarm}
+    return {f"eval_{head}_gated_{k}": vals[k] for k in GATED_KEYS}
 
 
 # --------------------------------------------------------------------------------------------------------- #
