@@ -1,0 +1,83 @@
+{
+ "builder": "D:\\Projects\\TanitAD\\stack\\scripts\\s2_geom_emit_v7.py",
+ "builder_md5": "9a537ee210d38303d73ef35f0aac0718",
+ "thresholds_read_from_builder": {
+  "TURN_MIN_DYAW_DEG": 15.0,
+  "TURN_MAX_ARC_R_M": 140.0,
+  "TURN_MAX_VMIN_MS": 8.0
+ },
+ "criteria": {
+  "all_records_min": 0.99,
+  "suppression_named_min": 1.0
+ },
+ "n_records": {
+  "all": 4719,
+  "train": 4572,
+  "eval": 147
+ },
+ "G1_literal_entries0": {
+  "n_match": 4578,
+  "rate": 0.9701207883026065,
+  "train": {
+   "n_match": 4438,
+   "n": 4572,
+   "rate": 0.9706911636045494
+  },
+  "eval": {
+   "n_match": 140,
+   "n": 147,
+   "rate": 0.9523809523809523
+  },
+  "PASS_all_records_ge_99pct": false
+ },
+ "G1_suppression_named_records": {
+  "n": 68,
+  "n_match": 68,
+  "rate": 1.0,
+  "PASS": true
+ },
+ "G1_PASS": false,
+ "mismatch_decomposition": {
+  "n_mismatch": 141,
+  "by_kind": {
+   "turn_beyond_nav_30s_horizon: nav_command TURN with time_s > 30 > 30.0 (no nav_30s entry)": 71,
+   "curve_first: nav_command looked at seq[0] (a road curve) -> FOLLOW; entries[0] is a LATER real turn": 70
+  },
+  "examples_sha12_(first_6_each)": {
+   "turn_beyond_nav_30s_horizon: nav_command TURN with time_s > 30 > 30.0 (no nav_30s entry)": [
+    "41257700ce38",
+    "bcf02642fc2f",
+    "c645e672b0b4",
+    "c46629418960",
+    "187a1a560485",
+    "7cc1cf465afd"
+   ],
+   "curve_first: nav_command looked at seq[0] (a road curve) -> FOLLOW; entries[0] is a LATER real turn": [
+    "e8390faa0cf5",
+    "e4ee552c5509",
+    "917a0af2c236",
+    "e0d53b941fe2",
+    "c5393511a712",
+    "a2ca1d1d599f"
+   ]
+  }
+ },
+ "diagnostics_NOT_the_registered_control": {
+  "builder_rule_on_seq0_reproduces_shipped_nav_command": {
+   "n_match": 4719,
+   "n": 4719,
+   "rate": 1.0
+  },
+  "builder_is_turn_on_every_manoeuvre_sequence_element_equals_the_stored_is_turn_flag_mismatches": 0,
+  "variant_entry_announced_only_if_also_seq0_literal_entries0_rate": 0.984954439499894
+ },
+ "inputs_md5": {
+  "s2_labels_v8_train.jsonl.gz": "b45377a1f25263b5c0f3d318c126b1ac",
+  "s2_labels_v8_eval.jsonl.gz": "eefc38d1453bd1c73802d44d45affced"
+ },
+ "spec": {
+  "file": "SPEC_ADDENDUM_A6.md",
+  "sha256_expected": "b409957816248d333886ad694c5e3061cc26c9a29d115b246de4c91b1c5fd736",
+  "sha256_on_disk": "b409957816248d333886ad694c5e3061cc26c9a29d115b246de4c91b1c5fd736"
+ }
+}

@@ -83,6 +83,13 @@ navhard step 30,000, all 5,912 tokens, failing plans re-scored exactly in the lo
   (above STOP's 0.2985). Next: P1 (does the 117-fan hold a clean candidate on these tokens, and does the pick take it?)
   and P2 (NAVOFF on the premature-turn scenes) — pre-registered, queued behind the battery on the dev-box GPU.
 
+**R0b CLOSED (A6 under A7, 2026-10-04 ~14:10):** the DEPLOYABLE time-localised nav (announced turns only, soft rule
+T3a) **PASSED all four criteria** on a dense capture of the 139 held-out episodes (4,634 windows per sampler seed):
+turn ΔADE −0.131 [−0.207, −0.062], direction +0.064, straight +0.002, replicated on seed 1 (−0.127); the derangement
+control failed as required. It is SMALL — 0.270 of the perfectly-timed-nav bound, −0.015 m all-window at natural
+window frequency — and 56 % of turn windows carry no nav signal. ⇒ it ships as an opt-in inference rule for refcv7, and
+L2 is confirmed for refcv8; the bigger levers stay the tactical constraints (D0: progress −0.484 m) and the selector.
+
 ### 0.3 WP-RL — DiffusionDriveV2 RL post-training of refcv7 as a parallel extension (PI, 2026-10-04 afternoon)
 
 *PI: "At parallel we should plan a post training with RL exactly as stated in the DiffusionDrive paper 2 as extension
