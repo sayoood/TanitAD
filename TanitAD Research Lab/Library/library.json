@@ -527,10 +527,11 @@
     "input-pipeline",
     "nuscenes",
     "nuscenes-openloop-planning",
+    "refcv8-tactical-conditioning",
     "resnet-trunk",
     "rl-posttrain"
    ],
-   "note": "DiffusionDrive: truncated diffusion policy over ANCHORED trajectory priors, ResNet/BEV encoder + diffusion planner. THE paper REF-C is derived from (D-030: 'REF-C redesigned to a DiffusionDrive anchored decoder'). Was UNBANKED until 2026-08-21 despite being REF-C's origin. | DiffusionDrive: three cropped forward cams concatenated as a 1024x256 image, ResNet-34, 88.1 PDMS NAVSIM | DDv2 analysis 2026-09-05: v1 counterparts read at 9b52ed0 (norm_odo, 2-layer cascade, forward_train) | REF-C vs DiffusionDrive v1/v2 implementation audit (2026-09-05): decoder is an unrolled residual refiner, not a diffusion model; selection never sees the refined fan | RL post-training design for refcv4b/refcv5 (2026-09-05): DDv2's released RL stage explores a TWO-SCALAR (a_lon,a_lat) scale family, additive DDPM term multiplied by zero, so a deterministic fan needs no sampler to be post-trained faithfully | resnet-trunk review 2026-09-15: DD v1 image trunk = timm ResNet-34 ImageNet-init (supp. A), LiDAR ResNet-34 scratch, E2E 100 ep bs512 lr6e-4, 1024x256 single frame, 60M/45FPS (Tab.2) | resnet-trunk review 2026-09-15 (verified vs released code): image_encoder lr_mult 0.5 -> 3e-4, 3-ep warm-up + cosine (transfuser_config.py:123-127, transfuser_agent.py:170-175); ToTensor [0,1] with NO ImageNet mean/std (transfuser_features.py:73); single frame (cameras[-1], GPT asserts seq_len==1); learned pos_emb in fusion GPT + _keyval_embedding on planner KV; paper 4.2 'from scratch' = single-stage training, image trunk still ImageNet-init (supp. A) | nuScenes open-loop planning row re-read from the banked PDF for the W6 harness (protocol-tagged external comparability only; H-EVAL-6) | refcv6 diffusion review 2026-09-22: F2's t->t-1 reproduces from the RELEASED code (set_timesteps(1000) => prev_t = t-1), residual retained 0.9475 vs 0.2828 MEASURED; focal gamma2.0/alpha0.25 reduction mean ports exactly; DD clamps INSIDE the test loop (:519) and our F8 clamps once outside",
+   "note": "DiffusionDrive: truncated diffusion policy over ANCHORED trajectory priors, ResNet/BEV encoder + diffusion planner. THE paper REF-C is derived from (D-030: 'REF-C redesigned to a DiffusionDrive anchored decoder'). Was UNBANKED until 2026-08-21 despite being REF-C's origin. | DiffusionDrive: three cropped forward cams concatenated as a 1024x256 image, ResNet-34, 88.1 PDMS NAVSIM | DDv2 analysis 2026-09-05: v1 counterparts read at 9b52ed0 (norm_odo, 2-layer cascade, forward_train) | REF-C vs DiffusionDrive v1/v2 implementation audit (2026-09-05): decoder is an unrolled residual refiner, not a diffusion model; selection never sees the refined fan | RL post-training design for refcv4b/refcv5 (2026-09-05): DDv2's released RL stage explores a TWO-SCALAR (a_lon,a_lat) scale family, additive DDPM term multiplied by zero, so a deterministic fan needs no sampler to be post-trained faithfully | resnet-trunk review 2026-09-15: DD v1 image trunk = timm ResNet-34 ImageNet-init (supp. A), LiDAR ResNet-34 scratch, E2E 100 ep bs512 lr6e-4, 1024x256 single frame, 60M/45FPS (Tab.2) | resnet-trunk review 2026-09-15 (verified vs released code): image_encoder lr_mult 0.5 -> 3e-4, 3-ep warm-up + cosine (transfuser_config.py:123-127, transfuser_agent.py:170-175); ToTensor [0,1] with NO ImageNet mean/std (transfuser_features.py:73); single frame (cameras[-1], GPT asserts seq_len==1); learned pos_emb in fusion GPT + _keyval_embedding on planner KV; paper 4.2 'from scratch' = single-stage training, image trunk still ImageNet-init (supp. A) | nuScenes open-loop planning row re-read from the banked PDF for the W6 harness (protocol-tagged external comparability only; H-EVAL-6) | refcv6 diffusion review 2026-09-22: F2's t->t-1 reproduces from the RELEASED code (set_timesteps(1000) => prev_t = t-1), residual retained 0.9475 vs 0.2828 MEASURED; focal gamma2.0/alpha0.25 reduction mean ports exactly; DD clamps INSIDE the test loop (:519) and our F8 clamps once outside | DiffusionDrive p5-7: 20 anchors, trunc 50/1000, 2 steps, positive=closest anchor to GT, L1+BCE; 88.1 PDMS; text states no driving-command input",
    "cited_by": [
     "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-nuscenes-planning-harness/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-21-refcv3-review/REFCV3_REVIEW.md",
@@ -539,7 +540,8 @@
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-refc-vs-diffusiondrive-audit/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-rl-posttrain-refcv4b-refcv5/RESULT.md",
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-22-refcv6-review/DIFFUSION_PAPER_REVIEW.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-22-refcv6-review/DIFFUSION_PAPER_REVIEW.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/DESIGN.md"
    ]
   },
   "2603.14482": {
@@ -1281,11 +1283,13 @@
    "banked": "2026-08-23",
    "tags": [
     "imitation-ad",
-    "input-pipeline"
+    "input-pipeline",
+    "refcv8-tactical-conditioning"
    ],
-   "note": "ChauffeurNet: BC + synthesized perturbations & auxiliary losses | ChauffeurNet: trajectory perturbation + past-motion dropout; without them the policy cannot recover from drift (ablation M0-M4)",
+   "note": "ChauffeurNet: BC + synthesized perturbations & auxiliary losses | ChauffeurNet: trajectory perturbation + past-motion dropout; without them the policy cannot recover from drift (ablation M0-M4) | ChauffeurNet p8,12-13: past-motion dropout p=0.5 (keep only current pose); imitation dropout p=0.5; no isolated ablation of past dropout",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/DESIGN.md",
     "products/P4-training-pipelines/METHOD_LIBRARY.md"
    ]
   },
@@ -2340,12 +2344,14 @@
     "benchmarks",
     "ego-input",
     "input-pipeline",
+    "refcv8-tactical-conditioning",
     "resnet-trunk"
    ],
-   "note": "Hydra-MDP++: origin of EPDMS sub-metrics TLC and LK adopted by NAVSIM v2 | Hydra-MDP++: default 256x1024; ResNet-34 PDMS 86.6 vs V2-99 91.0 at the SAME resolution - backbone, not resolution, is the lever | resnet-trunk review 2026-09-15: Hydra-MDP++ camera-only, 'classic pretrained vision encoders'; ResNet-34 86.6 -> V2-99 91.0 (Tab.1); 2 frames Temporal SE; no augmentation",
+   "note": "Hydra-MDP++: origin of EPDMS sub-metrics TLC and LK adopted by NAVSIM v2 | Hydra-MDP++: default 256x1024; ResNet-34 PDMS 86.6 vs V2-99 91.0 at the SAME resolution - backbone, not resolution, is the lever | resnet-trunk review 2026-09-15: Hydra-MDP++ camera-only, 'classic pretrained vision encoders'; ResNet-34 86.6 -> V2-99 91.0 (Tab.1); 2 frames Temporal SE; no augmentation | Hydra-MDP++ p4-7: same vocab/losses; ego status ADDED to vocab queries (Eq3) and driving command in input (4.2); weighted-confidence inference 85.0->86.5 PDMS (Table 3)",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/DESIGN.md",
     "products/P7-TanitEval/benchmarks/NAVSIM_PROTOCOL.md"
    ]
   },
@@ -2563,12 +2569,14 @@
     "benchmarks",
     "ego-input",
     "input-pipeline",
+    "refcv8-tactical-conditioning",
     "resnet-trunk"
    ],
-   "note": "Hydra-MDP: 2024 NAVSIM challenge winner; NavFormer planning head | Hydra-MDP: NAVSIM default input 256x1024 (front + cropped front-left/right concatenated); no matched resolution pair - V2-99@512x2048 scores 90.3 vs ViT-L@256x1024 91.0 | resnet-trunk review 2026-09-15: Hydra-MDP ResNet-34 256x1024 -> 86.5; V2-99 (DD3D-init) at 512x2048 -> 90.3; 91.0 is a 3-model ensemble (Tab.2)",
+   "note": "Hydra-MDP: 2024 NAVSIM challenge winner; NavFormer planning head | Hydra-MDP: NAVSIM default input 256x1024 (front + cropped front-left/right concatenated); no matched resolution pair - V2-99@512x2048 scores 90.3 vs ViT-L@256x1024 91.0 | resnet-trunk review 2026-09-15: Hydra-MDP ResNet-34 256x1024 -> 86.5; V2-99 (DD3D-init) at 512x2048 -> 90.3; 91.0 is a 3-model ensemble (Tab.2) | Hydra-MDP p3-4: 4096/8192 K-means vocab, imitation softmax-CE + per-candidate BCE sub-score distillation; V8192 83.0 vs VADv2-V8192 80.9; -W-EP 86.5",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/DESIGN.md",
     "products/P7-TanitEval/benchmarks/NAVSIM_PROTOCOL.md"
    ]
   },
@@ -2623,12 +2631,14 @@
    "tags": [
     "benchmarks",
     "diffusiondrive",
-    "ego-input"
+    "ego-input",
+    "refcv8-tactical-conditioning"
    ],
-   "note": "DriveSuprim: navtest PDMS and navtest-EPDMS single-stage tables | DDv2 analysis 2026-09-05: released code read at 1cd12a1 - see the report",
+   "note": "DriveSuprim: navtest PDMS and navtest-EPDMS single-stage tables | DDv2 analysis 2026-09-05: released code read at 1cd12a1 - see the report | DriveSuprim p3-8: coarse-to-fine 8192->256, per-metric BCE (no listwise/pairwise loss), soft-label self-distillation clip 0.15; oracle top-256 98.7 vs top-1 91.9 (Table 1)",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-diffusiondrive-v2-analysis/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/DESIGN.md",
     "products/P7-TanitEval/benchmarks/NAVSIM_PROTOCOL.md"
    ]
   },
@@ -2655,10 +2665,12 @@
    "banked": "2026-08-23",
    "tags": [
     "benchmarks",
-    "flow-matching"
+    "flow-matching",
+    "refcv8-tactical-conditioning"
    ],
-   "note": "GoalFlow: navtest PDMS; the dagger row uses a GT-endpoint goal (privileged) | GoalFlow: goal-point-conditioned flow matching, PDMS 90.3, single denoising step - the one-step shape our latency budget needs",
+   "note": "GoalFlow: navtest PDMS; the dagger row uses a GT-endpoint goal (privileged) | GoalFlow: goal-point-conditioned flow matching, PDMS 90.3, single denoising step - the one-step shape our latency budget needs | GoalFlow: goal-point vocabulary + scoring conditions flow matching (verify in PDF) | GoalFlow p4-8: goal vocab = clustered endpoints N=4096/8192; goal scorer dis+DAC; GT-endpoint goal 92.1 vs predicted 90.3 PDMS (Table 1); no-goal M0 85.6 (Table 2)",
    "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/DESIGN.md",
     "TanitAD Research Lab/Frontier Scan/Daily/2026-08-31/RESULT.md",
     "products/P7-TanitEval/benchmarks/NAVSIM_PROTOCOL.md"
    ]
@@ -2746,12 +2758,14 @@
     "benchmarks",
     "ego-input",
     "input-pipeline",
+    "refcv8-tactical-conditioning",
     "resnet-trunk"
    ],
-   "note": "TransFuser PAMI: the NAVSIM baseline and its LTF camera-only variant | TransFuser: RGB input 704x160 (4.4:1 wide-thin, 3 cams cropped 320x160); camera-FOV ablation MEASURED 132deg DS 49.49 vs 120deg DS 42.18 on Longest6 | resnet-trunk review 2026-09-15: TransFuser RegNetY-3.2GF image ImageNet-pretrained + LiDAR scratch (§4.7); aux-loss ablation Tab.7 (none: RC 92.28->78.17); backbone highest impact Tab.8",
+   "note": "TransFuser PAMI: the NAVSIM baseline and its LTF camera-only variant | TransFuser: RGB input 704x160 (4.4:1 wide-thin, 3 cams cropped 320x160); camera-FOV ablation MEASURED 132deg DS 49.49 vs 120deg DS 42.18 on Longest6 | resnet-trunk review 2026-09-15: TransFuser RegNetY-3.2GF image ImageNet-pretrained + LiDAR scratch (§4.7); aux-loss ablation Tab.7 (none: RC 92.28->78.17); backbone highest impact Tab.8 | TransFuser p3-5,14: goal location rasterised into BEV channel AND fed to waypoint GRU; removing the raster channel: DS 54.80 vs 49.49-56.68 seed range (Table 9)",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/DESIGN.md",
     "products/P7-TanitEval/benchmarks/NAVSIM_PROTOCOL.md"
    ]
   },
@@ -2786,16 +2800,18 @@
     "nuscenes",
     "nuscenes-openloop-planning",
     "open-loop-eval",
+    "refcv8-tactical-conditioning",
     "sota-2026-09-03",
     "sota-2026-09-03-decodability"
    ],
-   "note": "BEV-Planner Is Ego Status All You Need: quantifies the nuScenes ego shortcut; proposes CCR | BEV-Planner: nuScenes too simple -> ego-status dominates planning; open-loop metrics do not comprehensively assess planning quality | BEV-Planner: ego status dominates open-loop nuScenes planning; open-loop L2 is a misleading metric, and ego-state shortcut inflates it | Is Ego Status All You Need: an ego-status-only MLP matches full E2E planners on nuScenes open-loop; the deployment-input ablation that exposes it | 73.9% of nuScenes is straight driving; a model that loses its input adopts a straight policy and WINS the pooled average - the mix-artefact hypothesis this stratification tested and refuted on our corpus | nuScenes open-loop planning row re-read from the banked PDF for the W6 harness (protocol-tagged external comparability only; H-EVAL-6)",
+   "note": "BEV-Planner Is Ego Status All You Need: quantifies the nuScenes ego shortcut; proposes CCR | BEV-Planner: nuScenes too simple -> ego-status dominates planning; open-loop metrics do not comprehensively assess planning quality | BEV-Planner: ego status dominates open-loop nuScenes planning; open-loop L2 is a misleading metric, and ego-state shortcut inflates it | Is Ego Status All You Need: an ego-status-only MLP matches full E2E planners on nuScenes open-loop; the deployment-input ablation that exposes it | 73.9% of nuScenes is straight driving; a model that loses its input adopts a straight policy and WINS the pooled average - the mix-artefact hypothesis this stratification tested and refuted on our corpus | nuScenes open-loop planning row re-read from the banked PDF for the W6 harness (protocol-tagged external comparability only; H-EVAL-6) | Ego Status p2-5: Ego-MLP (v,a,yaw,cmd) L2 0.35 m on par with UniAD/VAD; VAD blank images L2 0.46 vs 0.37, v x0.0 -> 6.16 m (Table 2)",
    "cited_by": [
     "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-nuscenes-planning-harness/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-data-efficiency-thesis/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-decodability/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/DESIGN.md",
     "TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-29-benchmark-portfolio/RESULT.md",
     "TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-30-anti-echo-control-precedent/RESULT.md",
     "TanitAD Research Lab/Opponent Analysis/Research/2026-08-30-anti-echo-control-precedent/RESULT.md",
@@ -4444,11 +4460,13 @@
    "sha256": "3c2954f711175dffcd7594cc82f80a3a3e5eda6d890f6fdcbdd7c788e6ea8c91",
    "banked": "2026-08-30",
    "tags": [
-    "input-pipeline"
+    "input-pipeline",
+    "perception"
    ],
-   "note": "BEVDet4D: ego-motion alignment of the previous BEV feature before temporal fusion; removing ego-motion cuts mAVE 1.544->1.186 (-23.2%) and mATE -5.4% | input-pipeline design review: FOV/camera-count and temporal-context axes",
+   "note": "BEVDet4D: ego-motion alignment of the previous BEV feature before temporal fusion; removing ego-motion cuts mAVE 1.544->1.186 (-23.2%) and mATE -5.4% | input-pipeline design review: FOV/camera-count and temporal-context axes | re-cited by WP-D refcv8 perception design",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
    ]
   },
   "2005.10420": {
@@ -4498,11 +4516,13 @@
    "banked": "2026-08-30",
    "tags": [
     "input-pipeline",
+    "perception",
     "resnet-trunk"
    ],
-   "note": "input-pipeline design review: FOV/camera-count and temporal-context axes | resnet-trunk review 2026-09-15: BEVFormer R101-DCN init from FCOS3D, V2-99 from DD3D (§4.2); nuScenes 1000 scenes x ~20 s (§4.1)",
+   "note": "input-pipeline design review: FOV/camera-count and temporal-context axes | resnet-trunk review 2026-09-15: BEVFormer R101-DCN init from FCOS3D, V2-99 from DD3D (§4.2); nuScenes 1000 scenes x ~20 s (§4.1) | re-cited by WP-D refcv8 perception design",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
    ]
   },
   "2104.10133": {
@@ -4592,13 +4612,15 @@
    "tags": [
     "closed-loop-wm",
     "input-pipeline",
-    "refc-ego"
+    "refc-ego",
+    "refcv8-tactical-conditioning"
    ],
-   "note": "Copycat problem: longer observation histories make behavioural cloning WORSE; adversarial removal of prev-action nuisance info fixes it | Copycat: target-conditioned adversary + IB; the ACTION-PREDICTABILITY PROBE is the transferable echo detector",
+   "note": "Copycat problem: longer observation histories make behavioural cloning WORSE; adversarial removal of prev-action nuisance info fixes it | Copycat: target-conditioned adversary + IB; the ACTION-PREDICTABILITY PROBE is the transferable echo detector | Copycat p4-7: copycat shortcut = predicting previous action; input Dropout-BC on history performed uniformly poorly (Table 2); fix = target-conditioned adversary + IB",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-t1-floor-action-sensitivity/RESULT.md",
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-refc-ego-inputs-and-anti-echo/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-refc-ego-inputs-and-anti-echo/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/DESIGN.md"
    ]
   },
   "1604.07316": {
@@ -6883,12 +6905,17 @@
    "banked": "2026-08-30",
    "tags": [
     "ego-input",
-    "input-pipeline"
+    "input-pipeline",
+    "refcv8-tactical-conditioning",
+    "route-checkpoint",
+    "target-point-shortcut"
    ],
-   "note": "Hidden Biases of End-to-End Driving Models (TransFuser++): dataset-size and design ablations on CARLA driving score",
+   "note": "Hidden Biases of End-to-End Driving Models (TransFuser++): dataset-size and design ablations on CARLA driving score | Hidden Biases p1-5: TP conditioned vs NC conditioned RC 84 vs 56 (Table 1); TP shortcut = extrapolating waypoints to nearest TP; fixes: attention pooling + shift/rotation aug, not TP placement | WP-A v9 SPEC: TP-conditioned TransFuser RC 84+-7 vs NC 56+-12 (Table 1); TP shortcut = waypoints extrapolated to the nearest TP, cuts corners when the TP lies behind a turn (3.1, Fig 3); attention pooling RC 93+-3 (Table 2); TPs ~30 m apart (up to 50 m); path sampled at fixed distances keeps speed out (3.3)",
    "cited_by": [
+    "FlyWheels/TanitAD_DataFlyWheel/incoming/2026-10-04-v9-labels/SPEC.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/DESIGN.md"
    ]
   },
   "2504.04338": {
@@ -7824,11 +7851,13 @@
    "sha256": "dc236d9391285805bb8c66e4839eb4d72f6453b235ee12a7aee71ec99eca4227",
    "banked": "2026-08-31",
    "tags": [
+    "refcv8-tactical-conditioning",
     "v7-gate"
    ],
-   "note": "",
+   "note": "CIL p3-7: branched 88%/64% vs command-input 78%/52% success Town1/Town2 (Table 1); goal-vector controller 24%/30%, veers off road shortcutting to goal",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-31-command-conditioning-and-l3/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-31-command-conditioning-and-l3/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/DESIGN.md"
    ]
   },
   "2605.25313": {
@@ -9998,11 +10027,13 @@
    "sha256": "e72930c1f875396f16955748e5af9f2b14c9365c50c1e055cbc36612f326a726",
    "banked": "2026-09-03",
    "tags": [
+    "refcv8-tactical-conditioning",
     "v7-loss-balance"
    ],
-   "note": "GradNorm: balances a multi-term objective by equalising per-task GRADIENT NORMS at a shared layer, not by loss magnitude - the instrument for asking whether a distillation term dominates an SSL term (to verify in full)",
+   "note": "GradNorm: balances a multi-term objective by equalising per-task GRADIENT NORMS at a shared layer, not by loss magnitude - the instrument for asking whether a distillation term dominates an SSL term (to verify in full) | GradNorm: per-task gradient norms on the last SHARED layer as the balancing quantity (X4 instrument)",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-v7-issue-audit/LIT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-v7-issue-audit/LIT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/DESIGN.md"
    ]
   },
   "2407.03475": {
@@ -11753,12 +11784,14 @@
    "sha256": "0e32a78aa6b9961a94eb4bb3acc902e47cfbe0277daf0665d9f0a5d06d044084",
    "banked": "2026-09-05",
    "tags": [
+    "refcv8-tactical-conditioning",
     "vla",
     "vla-frontier-2026-09-05"
    ],
-   "note": "DiffVLA: VLM-guided diffusion planner, NAVSIM v2",
+   "note": "DiffVLA: VLM-guided diffusion planner, NAVSIM v2 | DiffVLA: VLM-guided diffusion planning on NAVSIM v2 challenge (verify conditioning claim in PDF) | DiffVLA p2-3: VLM-predicted lateral/longitudinal decisions one-hot + nav command -> command encoder conditions truncated diffusion (32 anchors); no ablation of the guidance reported",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-extension-frontier/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-extension-frontier/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/DESIGN.md"
    ]
   },
   "2502.14917": {
@@ -13350,11 +13383,13 @@
    "sha256": "ccbdf2da65903ed579d35240165aba2d0e9ad6f015ade81af6e30823eb0a7f24",
    "banked": "2026-09-06",
    "tags": [
-    "cfg-guidance"
+    "cfg-guidance",
+    "refcv8-tactical-conditioning"
    ],
-   "note": "Classifier-free diffusion guidance: the original dual-pass conditional minus unconditional formulation",
+   "note": "Classifier-free diffusion guidance: the original dual-pass conditional minus unconditional formulation | CFG p4-8: Alg1 drops c with p_uncond; p_uncond 0.1/0.2 equal, 0.5 worse (4.2); guided eps=(1+w)eps(z,c)-w eps(z) Eq6",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-design-dialogue/LIT_COT_INFLUENCE_CONSISTENCY.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-design-dialogue/LIT_COT_INFLUENCE_CONSISTENCY.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/DESIGN.md"
    ]
   },
   "2211.15657": {
@@ -14983,10 +15018,12 @@
    "sha256": "4474ccc973b02dfcdbfd6acc648c331cc81332f24b361f2998131776bfc97310",
    "banked": "2026-09-20",
    "tags": [
-    "frontier-2026-09-20"
+    "frontier-2026-09-20",
+    "perception"
    ],
-   "note": "frontier scan 2026-09-20",
+   "note": "frontier scan 2026-09-20 | re-read by WP-D: one-hot depth 35.96 vs none 36.92 mIoU (Table 4) - hard depth targets can hurt",
    "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md",
     "TanitAD Research Lab/Frontier Scan/Daily/2026-09-20/RESULT.md"
    ]
   },
@@ -15098,11 +15135,13 @@
    "sha256": "ba1c6a9403c4f0511ca19442ed2c042cc82141622caf6a9dcd15e45128b123f5",
    "banked": "2026-09-20",
    "tags": [
+    "perception",
     "refe-sizing"
    ],
-   "note": "PETR: 3D position embedding = MLP (1x1 conv, 192->4C->C) over ANALYTIC camera-frustum 3D coords, not a learned per-token table; Table 3: 3D PE alone 0.305 mAP vs 2D learned PE 0.069",
+   "note": "PETR: 3D position embedding = MLP (1x1 conv, 192->4C->C) over ANALYTIC camera-frustum 3D coords, not a learned per-token table; Table 3: 3D PE alone 0.305 mAP vs 2D learned PE 0.069 | re-cited by WP-D refcv8 perception design",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/MODULE_SIZING_STUDY.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/MODULE_SIZING_STUDY.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
    ]
   },
   "2206.01256": {
@@ -15522,11 +15561,13 @@
    "sha256": "d4b846bd44896e1d21527f48eddc422c263c9a4f8a3fa4be249750956882698d",
    "banked": "2026-09-20",
    "tags": [
+    "perception",
     "refe-sizing"
    ],
-   "note": "DETR: 6-layer decoder at width 256 with 8 heads and 100 queries; AP improves after every decoder layer (+8.2 AP first to last); the CLASSIFICATION head is a single linear layer while the box head is a 3-layer MLP",
+   "note": "DETR: 6-layer decoder at width 256 with 8 heads and 100 queries; AP improves after every decoder layer (+8.2 AP first to last); the CLASSIFICATION head is a single linear layer while the box head is a 3-layer MLP | DETR: set prediction with Hungarian matching; backbone lr 10x lower; NMS helps early decoder layers only, later layers deduplicate via self-attention",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/MODULE_SIZING_STUDY.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/MODULE_SIZING_STUDY.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
    ]
   },
   "1706.03762": {
@@ -15720,11 +15761,13 @@
    "sha256": "9bbba0cd4474e8e5e936187be81c93b938d2ce567bed38aee0ac262dc97dd7e2",
    "banked": "2026-09-27",
    "tags": [
-    "box-head"
+    "box-head",
+    "perception"
    ],
-   "note": "Deformable DETR: sigmoid focal classification + multi-scale deformable attention; two-stage query selection",
+   "note": "Deformable DETR: sigmoid focal classification + multi-scale deformable attention; two-stage query selection | re-cited by WP-D refcv8 perception design",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-box-head-literature/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-box-head-literature/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
    ]
   },
   "2110.06922": {
@@ -15747,11 +15790,13 @@
    "sha256": "23fa1174fdd2a2cc1a821f7a68171dd9e1dd66c9f384ef38a5fd2b973ee3b0a5",
    "banked": "2026-09-27",
    "tags": [
-    "box-head"
+    "box-head",
+    "perception"
    ],
-   "note": "DETR3D: camera 3-D DETR head, focal presence (alpha 0.25, gamma 2, weight 2.0) normalised by #GT; 900 queries",
+   "note": "DETR3D: camera 3-D DETR head, focal presence (alpha 0.25, gamma 2, weight 2.0) normalised by #GT; 900 queries | re-cited by WP-D refcv8 perception design",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-box-head-literature/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-box-head-literature/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
    ]
   },
   "1708.02002": {
@@ -15773,11 +15818,13 @@
    "sha256": "2e6f45b97007009f32b82a3c19f35638d8da7022d8d4e4416b9078de91339f71",
    "banked": "2026-09-27",
    "tags": [
-    "box-head"
+    "box-head",
+    "perception"
    ],
-   "note": "Focal loss / RetinaNet: FL = -alpha (1-p)^gamma log p; classification bias prior init 0.01 (refcv7 A9 R1)",
+   "note": "Focal loss / RetinaNet: FL = -alpha (1-p)^gamma log p; classification bias prior init 0.01 (refcv7 A9 R1) | re-cited by WP-D refcv8 perception design",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-box-head-literature/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-box-head-literature/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
    ]
   },
   "2012.05780": {
@@ -15853,11 +15900,13 @@
    "sha256": "a7a8d77ac73006be77ee70dfefd36a65e3871c4361e2292792ebda01b67c62d1",
    "banked": "2026-09-27",
    "tags": [
-    "box-head"
+    "box-head",
+    "perception"
    ],
-   "note": "MonoDLE: discarding distant / hard samples improves monocular 3-D detection training",
+   "note": "MonoDLE: discarding distant / hard samples improves monocular 3-D detection training | Delving into Localization Errors for Monocular 3D Object Detection: depth/localisation error dominates monocular 3D AP; distant objects hurt training",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-box-head-literature/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-box-head-literature/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
    ]
   },
   "2203.13310": {
@@ -15884,11 +15933,13 @@
    "sha256": "467e684d6c0a23fc548f53eb173edb74d4fac0bbf3792cd705e914f6eb6a9545",
    "banked": "2026-09-27",
    "tags": [
-    "box-head"
+    "box-head",
+    "perception"
    ],
-   "note": "MonoDETR: depth-guided DETR for monocular 3-D detection",
+   "note": "MonoDETR: depth-guided DETR for monocular 3-D detection | re-cited by WP-D refcv8 perception design",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-box-head-literature/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-box-head-literature/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
    ]
   },
   "2203.01305": {
@@ -15911,11 +15962,13 @@
    "sha256": "e9c16677c743efab3cd5987f3eeb970feb7769c33175f59b49f4f94cec41b796",
    "banked": "2026-09-27",
    "tags": [
-    "box-head"
+    "box-head",
+    "perception"
    ],
-   "note": "DN-DETR: denoising training accelerates DETR convergence (parity at ~50 % of the epochs, +1.9 AP); refcv7 A10.1 R6",
+   "note": "DN-DETR: denoising training accelerates DETR convergence (parity at ~50 % of the epochs, +1.9 AP); refcv7 A10.1 R6 | re-cited by WP-D refcv8 perception design",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-box-head-literature/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-box-head-literature/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
    ]
   },
   "2203.03605": {
@@ -15940,11 +15993,13 @@
    "sha256": "2cda48e74a49e3552aedbf61bc6436767ed3867cb710bbd2b79e48624fd66126",
    "banked": "2026-09-27",
    "tags": [
-    "box-head"
+    "box-head",
+    "perception"
    ],
-   "note": "DINO: contrastive denoising + mixed query selection + look-forward-twice; the query-selection lever",
+   "note": "DINO: contrastive denoising + mixed query selection + look-forward-twice; the query-selection lever | re-cited by WP-D refcv8 perception design",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-box-head-literature/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-box-head-literature/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
    ]
   },
   "2303.11926": {
@@ -15966,11 +16021,13 @@
    "sha256": "9c943273ca3fc730f7b9df9e57a7dc7250c91df10733eee917b4bb6d8db335e1",
    "banked": "2026-09-27",
    "tags": [
-    "box-head"
+    "box-head",
+    "perception"
    ],
-   "note": "StreamPETR: temporal query propagation in a camera 3-D head; focal + DN recipe",
+   "note": "StreamPETR: temporal query propagation in a camera 3-D head; focal + DN recipe | StreamPETR: object-centric temporal propagation of queries across frames at near-zero cost",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-box-head-literature/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-box-head-literature/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
    ]
   },
   "2311.11722": {
@@ -15992,11 +16049,13 @@
    "sha256": "99270cfa250c6216a77e03ad0a047bc572e2b7e5c0a1bc22d2c7713a1446696b",
    "banked": "2026-09-27",
    "tags": [
-    "box-head"
+    "box-head",
+    "perception"
    ],
-   "note": "Sparse4D v3: temporal instance denoising + quality estimation; geometry-grounded feature access",
+   "note": "Sparse4D v3: temporal instance denoising + quality estimation; geometry-grounded feature access | re-cited by WP-D refcv8 perception design",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-box-head-literature/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-box-head-literature/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
    ]
   },
   "2211.10581": {
@@ -16043,11 +16102,13 @@
    "sha256": "01528288c515b75f05a30b0dd75165a031228624e2c3a25dbf62a674831cc773",
    "banked": "2026-09-27",
    "tags": [
-    "box-head"
+    "box-head",
+    "perception"
    ],
-   "note": "FCOS3D: fully-convolutional monocular 3-D detector baseline",
+   "note": "FCOS3D: fully-convolutional monocular 3-D detector baseline | re-cited by WP-D refcv8 perception design",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-box-head-literature/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-box-head-literature/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
    ]
   },
   "2006.11275": {
@@ -16067,11 +16128,13 @@
    "sha256": "991f7c6177ce22a595bff1d12f999559b36ebfa0963157f033a21029fc95ca52",
    "banked": "2026-09-27",
    "tags": [
-    "box-head"
+    "box-head",
+    "perception"
    ],
-   "note": "CenterPoint: centre-heatmap 3-D detection; heatmap proposals as queries",
+   "note": "CenterPoint: centre-heatmap 3-D detection; heatmap proposals as queries | CenterPoint: BEV centre-heatmap head + regression; anchor-free dense head for 3D detection",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-box-head-literature/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-box-head-literature/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
    ]
   },
   "2206.07705": {
@@ -16198,11 +16261,13 @@
    "sha256": "118f2490ee8bed64f6bacae72189b417705a10b8e093009a73733aa8b50ef754",
    "banked": "2026-09-27",
    "tags": [
-    "box-head"
+    "box-head",
+    "perception"
    ],
-   "note": "Focal-loss calibration (Mukhoti et al.): focal loss improves calibration of deep classifiers",
+   "note": "Focal-loss calibration (Mukhoti et al.): focal loss improves calibration of deep classifiers | re-cited by WP-D refcv8 perception design",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-box-head-literature/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-box-head-literature/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
    ]
   },
   "1405.0312": {
@@ -16234,6 +16299,874 @@
    "note": "COCO: the benchmark and its AP definitions",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-box-head-literature/RESULT.md"
+   ]
+  },
+  "2212.09748": {
+   "key": "2212.09748",
+   "kind": "arxiv",
+   "title": "Scalable Diffusion Models with Transformers",
+   "authors": [
+    "William Peebles",
+    "Saining Xie"
+   ],
+   "published": "2022-12-19",
+   "abstract": "We explore a new class of diffusion models based on the transformer architecture. We train latent diffusion models of images, replacing the commonly-used U-Net backbone with a transformer that operates on latent patches. We analyze the scalability of our Diffusion Transformers (DiTs) through the lens of forward pass complexity as measured by Gflops. We find that DiTs with higher Gflops -- through increased transformer depth/width or increased number of input tokens -- consistently have lower FID. In addition to possessing good scalability properties, our largest DiT-XL/2 models outperform all prior diffusion models on the class-conditional ImageNet 512x512 and 256x256 benchmarks, achieving a state-of-the-art FID of 2.27 on the latter.",
+   "url": "https://arxiv.org/abs/2212.09748",
+   "path": "TanitAD Research Lab/Library/papers/2212.09748_Scalable-Diffusion-Models-with-Transformers.pdf",
+   "bytes": 43824062,
+   "sha256": "5fbb0ec35e3ae76826240171ca63ed4c27de6cb43180367453019e9d28a8b076",
+   "banked": "2026-10-04",
+   "tags": [
+    "refcv8-tactical-conditioning"
+   ],
+   "note": "DiT adaLN-Zero: zero-init gating makes each block identity at init; FID ablation vs adaLN/cross-attn (verify table in PDF) | DiT p6: adaLN-Zero zero-inits alpha so block = identity; beats cross-attn/in-context/adaLN in FID (Fig 5 plot only, no table)",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/DESIGN.md"
+   ]
+  },
+  "2302.05543": {
+   "key": "2302.05543",
+   "kind": "arxiv",
+   "title": "Adding Conditional Control to Text-to-Image Diffusion Models",
+   "authors": [
+    "Lvmin Zhang",
+    "Anyi Rao",
+    "Maneesh Agrawala"
+   ],
+   "published": "2023-02-10",
+   "abstract": "We present ControlNet, a neural network architecture to add spatial conditioning controls to large, pretrained text-to-image diffusion models. ControlNet locks the production-ready large diffusion models, and reuses their deep and robust encoding layers pretrained with billions of images as a strong backbone to learn a diverse set of conditional controls. The neural architecture is connected with \"zero convolutions\" (zero-initialized convolution layers) that progressively grow the parameters from zero and ensure that no harmful noise could affect the finetuning. We test various conditioning controls, eg, edges, depth, segmentation, human pose, etc, with Stable Diffusion, using single or multiple conditions, with or without prompts. We show that the training of ControlNets is robust with small (&lt;50k) and large (&gt;1m) datasets. Extensive results show that ControlNet may facilitate wid",
+   "url": "https://arxiv.org/abs/2302.05543",
+   "path": "TanitAD Research Lab/Library/papers/2302.05543_Adding-Conditional-Control-to-Text-to-Image-Diffusion-Models.pdf",
+   "bytes": 16345157,
+   "sha256": "1539c841018cea52b7f0d4a108e6e698d2a5ba2a26c0a665df81d5da79f88170",
+   "banked": "2026-10-04",
+   "tags": [
+    "refcv8-tactical-conditioning"
+   ],
+   "note": "ControlNet zero convolution: added branch has no effect at init, trainable copy + zero-conv (verify in PDF) | ControlNet p4-5: zero conv (weight+bias=0) so y_c=y at first step (Eq 3); 50% prompt dropout; sudden convergence <10K steps",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/DESIGN.md"
+   ]
+  },
+  "1506.03099": {
+   "key": "1506.03099",
+   "kind": "arxiv",
+   "title": "Scheduled Sampling for Sequence Prediction with Recurrent Neural Networks",
+   "authors": [
+    "Samy Bengio",
+    "Oriol Vinyals",
+    "Navdeep Jaitly",
+    "Noam Shazeer"
+   ],
+   "published": "2015-06-09",
+   "abstract": "Recurrent Neural Networks can be trained to produce sequences of tokens given some input, as exemplified by recent results in machine translation and image captioning. The current approach to training them consists of maximizing the likelihood of each token in the sequence given the current (recurrent) state and the previous token. At inference, the unknown previous token is then replaced by a token generated by the model itself. This discrepancy between training and inference can yield errors that can accumulate quickly along the generated sequence. We propose a curriculum learning strategy to gently change the training process from a fully guided scheme using the true previous token, towards a less guided scheme which mostly uses the generated token instead. Experiments on several sequence prediction tasks show that this approach yields significant improvements. Moreover, it was used s",
+   "url": "https://arxiv.org/abs/1506.03099",
+   "path": "TanitAD Research Lab/Library/papers/1506.03099_Scheduled-Sampling-for-Sequence-Prediction-with-Recurrent-Ne.pdf",
+   "bytes": 283137,
+   "sha256": "9769df7150c7686237a2e709fa4fc004bfa03636a8329c9c1fd5c60163cfb00c",
+   "banked": "2026-10-04",
+   "tags": [
+    "refcv8-tactical-conditioning"
+   ],
+   "note": "Scheduled Sampling: curriculum feeding model own predictions in training, train/inference mismatch (verify in PDF) | Scheduled Sampling p3-6: coin flip per token with eps_i; linear/exp/inverse-sigmoid decay; per-sequence flip much worse; Always Sampling BLEU-4 11.2 vs 28.8 baseline vs 30.6 SS",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/DESIGN.md"
+   ]
+  },
+  "1910.05449": {
+   "key": "1910.05449",
+   "kind": "arxiv",
+   "title": "MultiPath: Multiple Probabilistic Anchor Trajectory Hypotheses for Behavior Prediction",
+   "authors": [
+    "Yuning Chai",
+    "Benjamin Sapp",
+    "Mayank Bansal",
+    "Dragomir Anguelov"
+   ],
+   "published": "2019-10-12",
+   "abstract": "Predicting human behavior is a difficult and crucial task required for motion planning. It is challenging in large part due to the highly uncertain and multi-modal set of possible outcomes in real-world domains such as autonomous driving. Beyond single MAP trajectory prediction, obtaining an accurate probability distribution of the future is an area of active interest. We present MultiPath, which leverages a fixed set of future state-sequence anchors that correspond to modes of the trajectory distribution. At inference, our model predicts a discrete distribution over the anchors and, for each anchor, regresses offsets from anchor waypoints along with uncertainties, yielding a Gaussian mixture at each time step. Our model is efficient, requiring only one forward inference pass to obtain multi-modal future distributions, and the output is parametric, allowing compact communication and anal",
+   "url": "https://arxiv.org/abs/1910.05449",
+   "path": "TanitAD Research Lab/Library/papers/1910.05449_MultiPath-Multiple-Probabilistic-Anchor-Trajectory-Hypothese.pdf",
+   "bytes": 7483976,
+   "sha256": "10b537f34c3c1a79d7ab5ebf9217740560c2dd299c8cd7131193f2df72254cb6",
+   "banked": "2026-10-04",
+   "tags": [
+    "refcv8-tactical-conditioning"
+   ],
+   "note": "MultiPath: fixed anchor trajectories + per-anchor softmax mode prob + offsets (verify in PDF) | MultiPath p3-4: K anchors via k-means, softmax pi(a|x) + Gaussian offsets, hard assignment to closest anchor (Eq 3)",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/DESIGN.md"
+   ]
+  },
+  "2209.13508": {
+   "key": "2209.13508",
+   "kind": "arxiv",
+   "title": "Motion Transformer with Global Intention Localization and Local Movement Refinement",
+   "authors": [
+    "Shaoshuai Shi",
+    "Li Jiang",
+    "Dengxin Dai",
+    "Bernt Schiele"
+   ],
+   "published": "2022-09-27",
+   "abstract": "Predicting multimodal future behavior of traffic participants is essential for robotic vehicles to make safe decisions. Existing works explore to directly predict future trajectories based on latent features or utilize dense goal candidates to identify agent's destinations, where the former strategy converges slowly since all motion modes are derived from the same feature while the latter strategy has efficiency issue since its performance highly relies on the density of goal candidates. In this paper, we propose Motion TRansformer (MTR) framework that models motion prediction as the joint optimization of global intention localization and local movement refinement. Instead of using goal candidates, MTR incorporates spatial intention priors by adopting a small set of learnable motion query pairs. Each motion query pair takes charge of trajectory prediction and refinement for a specific mo",
+   "url": "https://arxiv.org/abs/2209.13508",
+   "path": "TanitAD Research Lab/Library/papers/2209.13508_Motion-Transformer-with-Global-Intention-Localization-and-Lo.pdf",
+   "bytes": 3425966,
+   "sha256": "64d949d1e6e323530042f173d094ee86f1f74f976c47ecc15904e828fb70b203",
+   "banked": "2026-10-04",
+   "tags": [
+    "refcv8-tactical-conditioning"
+   ],
+   "note": "MTR: intention queries + classification over modes, hard assignment of GT to closest intention (verify in PDF) | MTR p5-6,9: 64 k-means intention points from GT endpoints, hard-assign closest intention to GT endpoint, CE on positive component; static-intention assignment beats prediction-based assignment as queries grow",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/DESIGN.md"
+   ]
+  },
+  "2008.08294": {
+   "key": "2008.08294",
+   "kind": "arxiv",
+   "title": "TNT: Target-driveN Trajectory Prediction",
+   "authors": [
+    "Hang Zhao",
+    "Jiyang Gao",
+    "Tian Lan",
+    "Chen Sun",
+    "Benjamin Sapp",
+    "Balakrishnan Varadarajan",
+    "Yue Shen",
+    "Yi Shen",
+    "Yuning Chai",
+    "Cordelia Schmid",
+    "Congcong Li",
+    "Dragomir Anguelov"
+   ],
+   "published": "2020-08-19",
+   "abstract": "Predicting the future behavior of moving agents is essential for real world applications. It is challenging as the intent of the agent and the corresponding behavior is unknown and intrinsically multimodal. Our key insight is that for prediction within a moderate time horizon, the future modes can be effectively captured by a set of target states. This leads to our target-driven trajectory prediction (TNT) framework. TNT has three stages which are trained end-to-end. It first predicts an agent's potential target states $T$ steps into the future, by encoding its interactions with the environment and the other agents. TNT then generates trajectory state sequences conditioned on targets. A final stage estimates trajectory likelihoods and a final compact set of trajectory predictions is selected. This is in contrast to previous work which models agent intents as latent variables, and relies ",
+   "url": "https://arxiv.org/abs/2008.08294",
+   "path": "TanitAD Research Lab/Library/papers/2008.08294_TNT-Target-driveN-Trajectory-Prediction.pdf",
+   "bytes": 1532577,
+   "sha256": "9069f92257dba7b1011727cec5481b22a9d10f83988246d4e4e9525df81345d7",
+   "banked": "2026-10-04",
+   "tags": [
+    "refcv8-tactical-conditioning"
+   ],
+   "note": "TNT: target sampling -> target-conditioned trajectory -> scoring (verify in PDF) | TNT p4-7: scoring = softmax CE vs softmax(-D/alpha) target; teacher-forced GT target in S2; K=6 miss rate 0.216 (S1+S2) -> 0.093 (scored+NMS) Table 1",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/DESIGN.md"
+   ]
+  },
+  "2512.12302": {
+   "key": "2512.12302",
+   "kind": "arxiv",
+   "title": "From Human Intention to Action Prediction: Intention-Driven End-to-End Autonomous Driving",
+   "authors": [
+    "Huan Zheng",
+    "Yucheng Zhou",
+    "Tianyi Yan",
+    "Jiayi Su",
+    "Hongjun Chen",
+    "Dubing Chen",
+    "Xingtai Gui",
+    "Wencheng Han",
+    "Runzhou Tao",
+    "Zhongying Qiu",
+    "Jianfei Yang",
+    "Jianbing Shen"
+   ],
+   "published": "2025-12-13",
+   "abstract": "While end-to-end autonomous driving has achieved remarkable progress in geometric control, current systems remain constrained by a command-following paradigm that relies on simple navigational instructions. Transitioning to genuinely intelligent agents requires the capability to interpret and fulfill high-level, abstract human intentions. However, this advancement is hindered by the lack of dedicated benchmarks and semantic-aware evaluation metrics. In this paper, we formally define the task of Intention-Driven End-to-End Autonomous Driving and present Intention-Drive, a comprehensive benchmark designed to bridge this gap. We construct a large-scale dataset featuring complex natural language intentions paired with high-fidelity sensor data. To overcome the limitations of conventional trajectory-based metrics, we introduce the Imagined Future Alignment (IFA), a novel evaluation protocol l",
+   "url": "https://arxiv.org/abs/2512.12302",
+   "path": "TanitAD Research Lab/Library/papers/2512.12302_From-Human-Intention-to-Action-Prediction-Intention-Driven-E.pdf",
+   "bytes": 10997466,
+   "sha256": "bcf9baa6410a4dbd70bc64ff86c19e27c92ea9ff459b8729df6704de35eea315",
+   "banked": "2026-10-04",
+   "tags": [
+    "refcv8-tactical-conditioning"
+   ],
+   "note": "Intention-driven E2E driving candidate (verify claim in PDF) | CORRECTION: NL human-intention benchmark (intention is an INPUT), NOT a predicted-behaviour-conditioned planner; not evidence for tactical conditioning",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/DESIGN.md"
+   ]
+  },
+  "1909.06722": {
+   "key": "1909.06722",
+   "kind": "arxiv",
+   "title": "Plackett-Luce model for learning-to-rank task",
+   "authors": [
+    "Tian Xia",
+    "Shaodan Zhai",
+    "Shaojun Wang"
+   ],
+   "published": "2019-09-15",
+   "abstract": "List-wise based learning to rank methods are generally supposed to have better performance than point- and pair-wise based. However, in real-world applications, state-of-the-art systems are not from list-wise based camp. In this paper, we propose a new non-linear algorithm in the list-wise based framework called ListMLE, which uses the Plackett-Luce (PL) loss. Our experiments are conducted on the two largest publicly available real-world datasets, Yahoo challenge 2010 and Microsoft 30K. This is the first time in the single model level for a list-wise based system to match or overpass state-of-the-art systems in real-world datasets.",
+   "url": "https://arxiv.org/abs/1909.06722",
+   "path": "TanitAD Research Lab/Library/papers/1909.06722_Plackett-Luce-model-for-learning-to-rank-task.pdf",
+   "bytes": 494046,
+   "sha256": "9c92860f9ed22464d7dee8f2d34e7f792faf0b20ab23bf98bf33c28f26dd26fd",
+   "banked": "2026-10-04",
+   "tags": [
+    "refcv8-tactical-conditioning"
+   ],
+   "note": "Plackett-Luce / ListMLE-style listwise L2R primary (verify claim in PDF) | ListMLE/Plackett-Luce L2R primary (Xia 2019); notes ListNet (Cao) uses PL with KL between model and GT distributions (p2); ListMLE reported unstable on small feature counts",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/DESIGN.md"
+   ]
+  },
+  "2206.10092": {
+   "key": "2206.10092",
+   "kind": "arxiv",
+   "title": "BEVDepth: Acquisition of Reliable Depth for Multi-view 3D Object Detection",
+   "authors": [
+    "Yinhao Li",
+    "Zheng Ge",
+    "Guanyi Yu",
+    "Jinrong Yang",
+    "Zengran Wang",
+    "Yukang Shi",
+    "Jianjian Sun",
+    "Zeming Li"
+   ],
+   "published": "2022-06-21",
+   "abstract": "In this research, we propose a new 3D object detector with a trustworthy depth estimation, dubbed BEVDepth, for camera-based Bird's-Eye-View (BEV) 3D object detection. Our work is based on a key observation -- depth estimation in recent approaches is surprisingly inadequate given the fact that depth is essential to camera 3D detection. Our BEVDepth resolves this by leveraging explicit depth supervision. A camera-awareness depth estimation module is also introduced to facilitate the depth predicting capability. Besides, we design a novel Depth Refinement Module to counter the side effects carried by imprecise feature unprojection. Aided by customized Efficient Voxel Pooling and multi-frame mechanism, BEVDepth achieves the new state-of-the-art 60.9% NDS on the challenging nuScenes test set while maintaining high efficiency. For the first time, the NDS score of a camera model reaches 60%.",
+   "url": "https://arxiv.org/abs/2206.10092",
+   "path": "TanitAD Research Lab/Library/papers/2206.10092_BEVDepth-Acquisition-of-Reliable-Depth-for-Multi-view-3D-Obj.pdf",
+   "bytes": 3205271,
+   "sha256": "a92b446a45a05764d18f79ca6f3347624db3c3ec78101c6345c91af6b0e0ecc7",
+   "banked": "2026-10-04",
+   "tags": [
+    "perception"
+   ],
+   "note": "BEVDepth: explicit LiDAR-projected depth supervision of the LSS view transform + camera-aware depth; depth quality is the bottleneck of camera 3D detection",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
+   ]
+  },
+  "2206.07959": {
+   "key": "2206.07959",
+   "kind": "arxiv",
+   "title": "Simple-BEV: What Really Matters for Multi-Sensor BEV Perception?",
+   "authors": [
+    "Adam W. Harley",
+    "Zhaoyuan Fang",
+    "Jie Li",
+    "Rares Ambrus",
+    "Katerina Fragkiadaki"
+   ],
+   "published": "2022-06-16",
+   "abstract": "Building 3D perception systems for autonomous vehicles that do not rely on high-density LiDAR is a critical research problem because of the expense of LiDAR systems compared to cameras and other sensors. Recent research has developed a variety of camera-only methods, where features are differentiably \"lifted\" from the multi-camera images onto the 2D ground plane, yielding a \"bird's eye view\" (BEV) feature representation of the 3D space around the vehicle. This line of work has produced a variety of novel \"lifting\" methods, but we observe that other details in the training setups have shifted at the same time, making it unclear what really matters in top-performing methods. We also observe that using cameras alone is not a real-world constraint, considering that additional sensors like radar have been integrated into real vehicles for years already. In this paper, we first of all attempt ",
+   "url": "https://arxiv.org/abs/2206.07959",
+   "path": "TanitAD Research Lab/Library/papers/2206.07959_Simple-BEV-What-Really-Matters-for-Multi-Sensor-BEV-Percepti.pdf",
+   "bytes": 2899899,
+   "sha256": "81a635343ff997a74190fc19a808edf4e46877c6d7be89226ccdc646409b3b20",
+   "banked": "2026-10-04",
+   "tags": [
+    "perception"
+   ],
+   "note": "Simple-BEV: parameter-free bilinear multi-height sampling lift matches depth-based lifts; input resolution and batch size are the dominant levers; ResNet-101 layer3 upsampled+concat layer2 at stride 8",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
+   ]
+  },
+  "2008.13367": {
+   "key": "2008.13367",
+   "kind": "arxiv",
+   "title": "VarifocalNet: An IoU-aware Dense Object Detector",
+   "authors": [
+    "Haoyang Zhang",
+    "Ying Wang",
+    "Feras Dayoub",
+    "Niko Sünderhauf"
+   ],
+   "published": "2020-08-31",
+   "abstract": "Accurately ranking the vast number of candidate detections is crucial for dense object detectors to achieve high performance. Prior work uses the classification score or a combination of classification and predicted localization scores to rank candidates. However, neither option results in a reliable ranking, thus degrading detection performance. In this paper, we propose to learn an Iou-aware Classification Score (IACS) as a joint representation of object presence confidence and localization accuracy. We show that dense object detectors can achieve a more accurate ranking of candidate detections based on the IACS. We design a new loss function, named Varifocal Loss, to train a dense object detector to predict the IACS, and propose a new star-shaped bounding box feature representation for IACS prediction and bounding box refinement. Combining these two new components and a bounding box r",
+   "url": "https://arxiv.org/abs/2008.13367",
+   "path": "TanitAD Research Lab/Library/papers/2008.13367_VarifocalNet-An-IoU-aware-Dense-Object-Detector.pdf",
+   "bytes": 9465120,
+   "sha256": "5161ac062d48b7687108c89062b7d0a4140020775fdf633f6b89a1a91025aefc",
+   "banked": "2026-10-04",
+   "tags": [
+    "perception"
+   ],
+   "note": "VarifocalNet: IoU-aware classification score (varifocal loss) - the score is trained to equal the localisation quality, which fixes ranking and AP",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
+   ]
+  },
+  "2006.04388": {
+   "key": "2006.04388",
+   "kind": "arxiv",
+   "title": "Generalized Focal Loss: Learning Qualified and Distributed Bounding Boxes for Dense Object Detection",
+   "authors": [
+    "Xiang Li",
+    "Wenhai Wang",
+    "Lijun Wu",
+    "Shuo Chen",
+    "Xiaolin Hu",
+    "Jun Li",
+    "Jinhui Tang",
+    "Jian Yang"
+   ],
+   "published": "2020-06-08",
+   "abstract": "One-stage detector basically formulates object detection as dense classification and localization. The classification is usually optimized by Focal Loss and the box location is commonly learned under Dirac delta distribution. A recent trend for one-stage detectors is to introduce an individual prediction branch to estimate the quality of localization, where the predicted quality facilitates the classification to improve detection performance. This paper delves into the representations of the above three fundamental elements: quality estimation, classification and localization. Two problems are discovered in existing practices, including (1) the inconsistent usage of the quality estimation and classification between training and inference and (2) the inflexible Dirac delta distribution for localization when there is ambiguity and uncertainty in complex scenes. To address the problems, we ",
+   "url": "https://arxiv.org/abs/2006.04388",
+   "path": "TanitAD Research Lab/Library/papers/2006.04388_Generalized-Focal-Loss-Learning-Qualified-and-Distributed-Bo.pdf",
+   "bytes": 2882899,
+   "sha256": "04a56cf0bd1c144ff940ad12a4134b75090843994bbfc22b84a04c1e5ed68a54",
+   "banked": "2026-10-04",
+   "tags": [
+    "perception"
+   ],
+   "note": "Generalized Focal Loss: quality focal loss joins classification and localisation-quality into one score",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
+   ]
+  },
+  "2207.13080": {
+   "key": "2207.13080",
+   "kind": "arxiv",
+   "title": "DETRs with Hybrid Matching",
+   "authors": [
+    "Ding Jia",
+    "Yuhui Yuan",
+    "Haodi He",
+    "Xiaopei Wu",
+    "Haojun Yu",
+    "Weihong Lin",
+    "Lei Sun",
+    "Chao Zhang",
+    "Han Hu"
+   ],
+   "published": "2022-07-26",
+   "abstract": "One-to-one set matching is a key design for DETR to establish its end-to-end capability, so that object detection does not require a hand-crafted NMS (non-maximum suppression) to remove duplicate detections. This end-to-end signature is important for the versatility of DETR, and it has been generalized to broader vision tasks. However, we note that there are few queries assigned as positive samples and the one-to-one set matching significantly reduces the training efficacy of positive samples. We propose a simple yet effective method based on a hybrid matching scheme that combines the original one-to-one matching branch with an auxiliary one-to-many matching branch during training. Our hybrid strategy has been shown to significantly improve accuracy. In inference, only the original one-to-one match branch is used, thus maintaining the end-to-end merit and the same inference efficiency of",
+   "url": "https://arxiv.org/abs/2207.13080",
+   "path": "TanitAD Research Lab/Library/papers/2207.13080_DETRs-with-Hybrid-Matching.pdf",
+   "bytes": 942612,
+   "sha256": "a6448a01e5b5a76a0ec9fc7a3940ee8b1e3ba419006f0c33ce841a226b16993b",
+   "banked": "2026-10-04",
+   "tags": [
+    "perception"
+   ],
+   "note": "H-DETR: hybrid matching - an auxiliary one-to-many query branch during training only, one-to-one at inference; faster convergence and higher AP",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
+   ]
+  },
+  "2207.13085": {
+   "key": "2207.13085",
+   "kind": "arxiv",
+   "title": "Group DETR: Fast DETR Training with Group-Wise One-to-Many Assignment",
+   "authors": [
+    "Qiang Chen",
+    "Xiaokang Chen",
+    "Jian Wang",
+    "Shan Zhang",
+    "Kun Yao",
+    "Haocheng Feng",
+    "Junyu Han",
+    "Errui Ding",
+    "Gang Zeng",
+    "Jingdong Wang"
+   ],
+   "published": "2022-07-26",
+   "abstract": "Detection transformer (DETR) relies on one-to-one assignment, assigning one ground-truth object to one prediction, for end-to-end detection without NMS post-processing. It is known that one-to-many assignment, assigning one ground-truth object to multiple predictions, succeeds in detection methods such as Faster R-CNN and FCOS. While the naive one-to-many assignment does not work for DETR, and it remains challenging to apply one-to-many assignment for DETR training. In this paper, we introduce Group DETR, a simple yet efficient DETR training approach that introduces a group-wise way for one-to-many assignment. This approach involves using multiple groups of object queries, conducting one-to-one assignment within each group, and performing decoder self-attention separately. It resembles data augmentation with automatically-learned object query augmentation. It is also equivalent to simult",
+   "url": "https://arxiv.org/abs/2207.13085",
+   "path": "TanitAD Research Lab/Library/papers/2207.13085_Group-DETR-Fast-DETR-Training-with-Group-Wise-One-to-Many-As.pdf",
+   "bytes": 5041004,
+   "sha256": "a5aa05728ac8c780743828e80181fe81bd16216dd36ca605ee0252753f941e1c",
+   "banked": "2026-10-04",
+   "tags": [
+    "perception"
+   ],
+   "note": "Group DETR: K query groups each one-to-one matched during training only; more positive supervision per object",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
+   ]
+  },
+  "2211.12860": {
+   "key": "2211.12860",
+   "kind": "arxiv",
+   "title": "DETRs with Collaborative Hybrid Assignments Training",
+   "authors": [
+    "Zhuofan Zong",
+    "Guanglu Song",
+    "Yu Liu"
+   ],
+   "published": "2022-11-22",
+   "abstract": "In this paper, we provide the observation that too few queries assigned as positive samples in DETR with one-to-one set matching leads to sparse supervision on the encoder's output which considerably hurt the discriminative feature learning of the encoder and vice visa for attention learning in the decoder. To alleviate this, we present a novel collaborative hybrid assignments training scheme, namely $\\mathcal{C}$o-DETR, to learn more efficient and effective DETR-based detectors from versatile label assignment manners. This new training scheme can easily enhance the encoder's learning ability in end-to-end detectors by training the multiple parallel auxiliary heads supervised by one-to-many label assignments such as ATSS and Faster RCNN. In addition, we conduct extra customized positive queries by extracting the positive coordinates from these auxiliary heads to improve the training effi",
+   "url": "https://arxiv.org/abs/2211.12860",
+   "path": "TanitAD Research Lab/Library/papers/2211.12860_DETRs-with-Collaborative-Hybrid-Assignments-Training.pdf",
+   "bytes": 2293444,
+   "sha256": "3bc890264c088d8c278fac87d55d60655a95e8486ab4a9c1bbe7e13d49dcd257",
+   "banked": "2026-10-04",
+   "tags": [
+    "perception"
+   ],
+   "note": "Co-DETR: collaborative hybrid assignments with auxiliary one-to-many heads to train the encoder and decoder",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
+   ]
+  },
+  "2201.12329": {
+   "key": "2201.12329",
+   "kind": "arxiv",
+   "title": "DAB-DETR: Dynamic Anchor Boxes are Better Queries for DETR",
+   "authors": [
+    "Shilong Liu",
+    "Feng Li",
+    "Hao Zhang",
+    "Xiao Yang",
+    "Xianbiao Qi",
+    "Hang Su",
+    "Jun Zhu",
+    "Lei Zhang"
+   ],
+   "published": "2022-01-28",
+   "abstract": "We present in this paper a novel query formulation using dynamic anchor boxes for DETR (DEtection TRansformer) and offer a deeper understanding of the role of queries in DETR. This new formulation directly uses box coordinates as queries in Transformer decoders and dynamically updates them layer-by-layer. Using box coordinates not only helps using explicit positional priors to improve the query-to-feature similarity and eliminate the slow training convergence issue in DETR, but also allows us to modulate the positional attention map using the box width and height information. Such a design makes it clear that queries in DETR can be implemented as performing soft ROI pooling layer-by-layer in a cascade manner. As a result, it leads to the best performance on MS-COCO benchmark among the DETR-like detection models under the same setting, e.g., AP 45.7\\% using ResNet50-DC5 as backbone traine",
+   "url": "https://arxiv.org/abs/2201.12329",
+   "path": "TanitAD Research Lab/Library/papers/2201.12329_DAB-DETR-Dynamic-Anchor-Boxes-are-Better-Queries-for-DETR.pdf",
+   "bytes": 1736092,
+   "sha256": "65b00851b503763c15dd58e54b7424563ed70bdd06afa5b10b5d5a121ccb3232",
+   "banked": "2026-10-04",
+   "tags": [
+    "perception"
+   ],
+   "note": "DAB-DETR: queries as dynamic 4D anchor boxes updated layer by layer; anchor positional query",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
+   ]
+  },
+  "2208.14437": {
+   "key": "2208.14437",
+   "kind": "arxiv",
+   "title": "MapTR: Structured Modeling and Learning for Online Vectorized HD Map Construction",
+   "authors": [
+    "Bencheng Liao",
+    "Shaoyu Chen",
+    "Xinggang Wang",
+    "Tianheng Cheng",
+    "Qian Zhang",
+    "Wenyu Liu",
+    "Chang Huang"
+   ],
+   "published": "2022-08-30",
+   "abstract": "High-definition (HD) map provides abundant and precise environmental information of the driving scene, serving as a fundamental and indispensable component for planning in autonomous driving system. We present MapTR, a structured end-to-end Transformer for efficient online vectorized HD map construction. We propose a unified permutation-equivalent modeling approach, i.e., modeling map element as a point set with a group of equivalent permutations, which accurately describes the shape of map element and stabilizes the learning process. We design a hierarchical query embedding scheme to flexibly encode structured map information and perform hierarchical bipartite matching for map element learning. MapTR achieves the best performance and efficiency with only camera input among existing vectorized map construction approaches on nuScenes dataset. In particular, MapTR-nano runs at real-time in",
+   "url": "https://arxiv.org/abs/2208.14437",
+   "path": "TanitAD Research Lab/Library/papers/2208.14437_MapTR-Structured-Modeling-and-Learning-for-Online-Vectorized.pdf",
+   "bytes": 3261101,
+   "sha256": "919e4ce3de7a8046867086730ed7bc12aeb55550ae9a4d8242f742dd2b93c1b9",
+   "banked": "2026-10-04",
+   "tags": [
+    "perception"
+   ],
+   "note": "MapTR: vectorised HD-map construction as permutation-equivalent point sets with hierarchical bipartite matching",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
+   ]
+  },
+  "2308.05736": {
+   "key": "2308.05736",
+   "kind": "arxiv",
+   "title": "MapTRv2: An End-to-End Framework for Online Vectorized HD Map Construction",
+   "authors": [
+    "Bencheng Liao",
+    "Shaoyu Chen",
+    "Yunchi Zhang",
+    "Bo Jiang",
+    "Qian Zhang",
+    "Wenyu Liu",
+    "Chang Huang",
+    "Xinggang Wang"
+   ],
+   "published": "2023-08-10",
+   "abstract": "High-definition (HD) map provides abundant and precise static environmental information of the driving scene, serving as a fundamental and indispensable component for planning in autonomous driving system. In this paper, we present \\textbf{Map} \\textbf{TR}ansformer, an end-to-end framework for online vectorized HD map construction. We propose a unified permutation-equivalent modeling approach, \\ie, modeling map element as a point set with a group of equivalent permutations, which accurately describes the shape of map element and stabilizes the learning process. We design a hierarchical query embedding scheme to flexibly encode structured map information and perform hierarchical bipartite matching for map element learning. To speed up convergence, we further introduce auxiliary one-to-many matching and dense supervision. The proposed method well copes with various map elements with arbitr",
+   "url": "https://arxiv.org/abs/2308.05736",
+   "path": "TanitAD Research Lab/Library/papers/2308.05736_MapTRv2-An-End-to-End-Framework-for-Online-Vectorized-HD-Map.pdf",
+   "bytes": 6901250,
+   "sha256": "fda81a85db6c7e534d7a34d4c268d6a970aeaadb9e8a4637210e9148b08c0f8a",
+   "banked": "2026-10-04",
+   "tags": [
+    "perception"
+   ],
+   "note": "MapTRv2: auxiliary dense supervision (BEV/PV segmentation, depth) and one-to-many matching improve vectorised map heads",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
+   ]
+  },
+  "2107.06307": {
+   "key": "2107.06307",
+   "kind": "arxiv",
+   "title": "HDMapNet: An Online HD Map Construction and Evaluation Framework",
+   "authors": [
+    "Qi Li",
+    "Yue Wang",
+    "Yilun Wang",
+    "Hang Zhao"
+   ],
+   "published": "2021-07-13",
+   "abstract": "Constructing HD semantic maps is a central component of autonomous driving. However, traditional pipelines require a vast amount of human efforts and resources in annotating and maintaining the semantics in the map, which limits its scalability. In this paper, we introduce the problem of HD semantic map learning, which dynamically constructs the local semantics based on onboard sensor observations. Meanwhile, we introduce a semantic map learning method, dubbed HDMapNet. HDMapNet encodes image features from surrounding cameras and/or point clouds from LiDAR, and predicts vectorized map elements in the bird's-eye view. We benchmark HDMapNet on nuScenes dataset and show that in all settings, it performs better than baseline methods. Of note, our camera-LiDAR fusion-based HDMapNet outperforms existing methods by more than 50% in all metrics. In addition, we develop semantic-level and instanc",
+   "url": "https://arxiv.org/abs/2107.06307",
+   "path": "TanitAD Research Lab/Library/papers/2107.06307_HDMapNet-An-Online-HD-Map-Construction-and-Evaluation-Framew.pdf",
+   "bytes": 13630989,
+   "sha256": "5f521e3749ec7b193bf6216a9d931b999a1307f0d848e17dc9a121c85588d2cb",
+   "banked": "2026-10-04",
+   "tags": [
+    "perception"
+   ],
+   "note": "HDMapNet: raster semantic map + instance embedding + direction heads, vectorised by post-processing",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
+   ]
+  },
+  "2210.02443": {
+   "key": "2210.02443",
+   "kind": "arxiv",
+   "title": "Time Will Tell: New Outlooks and A Baseline for Temporal Multi-View 3D Object Detection",
+   "authors": [
+    "Jinhyung Park",
+    "Chenfeng Xu",
+    "Shijia Yang",
+    "Kurt Keutzer",
+    "Kris Kitani",
+    "Masayoshi Tomizuka",
+    "Wei Zhan"
+   ],
+   "published": "2022-10-05",
+   "abstract": "While recent camera-only 3D detection methods leverage multiple timesteps, the limited history they use significantly hampers the extent to which temporal fusion can improve object perception. Observing that existing works' fusion of multi-frame images are instances of temporal stereo matching, we find that performance is hindered by the interplay between 1) the low granularity of matching resolution and 2) the sub-optimal multi-view setup produced by limited history usage. Our theoretical and empirical analysis demonstrates that the optimal temporal difference between views varies significantly for different pixels and depths, making it necessary to fuse many timesteps over long-term history. Building on our investigation, we propose to generate a cost volume from a long history of image observations, compensating for the coarse but efficient matching resolution with a more optimal mult",
+   "url": "https://arxiv.org/abs/2210.02443",
+   "path": "TanitAD Research Lab/Library/papers/2210.02443_Time-Will-Tell-New-Outlooks-and-A-Baseline-for-Temporal-Mult.pdf",
+   "bytes": 5279945,
+   "sha256": "fc1035cdaafc26f50a976793585baaa990b24a962ce1182213b510520af69d0b",
+   "banked": "2026-10-04",
+   "tags": [
+    "perception"
+   ],
+   "note": "SOLOFusion: long-term temporal stereo + short-term fusion; temporal history improves camera 3D detection localisation",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
+   ]
+  },
+  "2108.06417": {
+   "key": "2108.06417",
+   "kind": "arxiv",
+   "title": "Is Pseudo-Lidar needed for Monocular 3D Object detection?",
+   "authors": [
+    "Dennis Park",
+    "Rares Ambrus",
+    "Vitor Guizilini",
+    "Jie Li",
+    "Adrien Gaidon"
+   ],
+   "published": "2021-08-13",
+   "abstract": "Recent progress in 3D object detection from single images leverages monocular depth estimation as a way to produce 3D pointclouds, turning cameras into pseudo-lidar sensors. These two-stage detectors improve with the accuracy of the intermediate depth estimation network, which can itself be improved without manual labels via large-scale self-supervised learning. However, they tend to suffer from overfitting more than end-to-end methods, are more complex, and the gap with similar lidar-based detectors remains significant. In this work, we propose an end-to-end, single stage, monocular 3D object detector, DD3D, that can benefit from depth pre-training like pseudo-lidar methods, but without their limitations. Our architecture is designed for effective information transfer between depth estimation and 3D detection, allowing us to scale with the amount of unlabeled pre-training data. Our meth",
+   "url": "https://arxiv.org/abs/2108.06417",
+   "path": "TanitAD Research Lab/Library/papers/2108.06417_Is-Pseudo-Lidar-needed-for-Monocular-3D-Object-detection.pdf",
+   "bytes": 7388622,
+   "sha256": "715e14870edf1aa94ad6cf00b8058d259e9d86107a425d38d14686c517b3487e",
+   "banked": "2026-10-04",
+   "tags": [
+    "perception"
+   ],
+   "note": "DD3D: large-scale depth pretraining of the image backbone improves monocular 3D detection",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
+   ]
+  },
+  "2304.04742": {
+   "key": "2304.04742",
+   "kind": "arxiv",
+   "title": "Detection Transformer with Stable Matching",
+   "authors": [
+    "Shilong Liu",
+    "Tianhe Ren",
+    "Jiayu Chen",
+    "Zhaoyang Zeng",
+    "Hao Zhang",
+    "Feng Li",
+    "Hongyang Li",
+    "Jun Huang",
+    "Hang Su",
+    "Jun Zhu",
+    "Lei Zhang"
+   ],
+   "published": "2023-04-10",
+   "abstract": "This paper is concerned with the matching stability problem across different decoder layers in DEtection TRansformers (DETR). We point out that the unstable matching in DETR is caused by a multi-optimization path problem, which is highlighted by the one-to-one matching design in DETR. To address this problem, we show that the most important design is to use and only use positional metrics (like IOU) to supervise classification scores of positive examples. Under the principle, we propose two simple yet effective modifications by integrating positional metrics to DETR's classification loss and matching cost, named position-supervised loss and position-modulated cost. We verify our methods on several DETR variants. Our methods show consistent improvements over baselines. By integrating our methods with DINO, we achieve 50.4 and 51.5 AP on the COCO detection benchmark using ResNet-50 backbon",
+   "url": "https://arxiv.org/abs/2304.04742",
+   "path": "TanitAD Research Lab/Library/papers/2304.04742_Detection-Transformer-with-Stable-Matching.pdf",
+   "bytes": 4211199,
+   "sha256": "36f21b5cb2b7186e042842396adf9e8cf7ffbc803bb70f0e74c2e6c97138928d",
+   "banked": "2026-10-04",
+   "tags": [
+    "perception"
+   ],
+   "note": "Stable-DINO: matching instability in DETR; position-supervised classification target aligns score with localisation",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
+   ]
+  },
+  "2304.07527": {
+   "key": "2304.07527",
+   "kind": "arxiv",
+   "title": "Align-DETR: Enhancing End-to-end Object Detection with Aligned Loss",
+   "authors": [
+    "Zhi Cai",
+    "Songtao Liu",
+    "Guodong Wang",
+    "Zheng Ge",
+    "Xiangyu Zhang",
+    "Di Huang"
+   ],
+   "published": "2023-04-15",
+   "abstract": "DETR has set up a simple end-to-end pipeline for object detection by formulating this task as a set prediction problem, showing promising potential. Despite its notable advancements, this paper identifies two key forms of misalignment within the model: classification-regression misalignment and cross-layer target misalignment. Both issues impede DETR's convergence and degrade its overall performance. To tackle both issues simultaneously, we introduce a novel loss function, termed as Align Loss, designed to resolve the discrepancy between the two tasks. Align Loss guides the optimization of DETR through a joint quality metric, strengthening the connection between classification and regression. Furthermore, it incorporates an exponential down-weighting term to facilitate a smooth transition from positive to negative samples. Align-DETR also employs many-to-one matching for supervision of i",
+   "url": "https://arxiv.org/abs/2304.07527",
+   "path": "TanitAD Research Lab/Library/papers/2304.07527_Align-DETR-Enhancing-End-to-end-Object-Detection-with-Aligne.pdf",
+   "bytes": 1309478,
+   "sha256": "7c4c03adcaa630333ea4f96102d7b73e3b77686384b9640e54868901e9994b02",
+   "banked": "2026-10-04",
+   "tags": [
+    "perception"
+   ],
+   "note": "Align-DETR: IoU-aware BCE target for DETR classification plus mixed matching; fixes score/localisation misalignment",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
+   ]
+  },
+  "2003.07311": {
+   "key": "2003.07311",
+   "kind": "arxiv",
+   "title": "clDice -- A Novel Topology-Preserving Loss Function for Tubular Structure Segmentation",
+   "authors": [
+    "Suprosanna Shit",
+    "Johannes C. Paetzold",
+    "Anjany Sekuboyina",
+    "Ivan Ezhov",
+    "Alexander Unger",
+    "Andrey Zhylka",
+    "Josien P. W. Pluim",
+    "Ulrich Bauer",
+    "Bjoern H. Menze"
+   ],
+   "published": "2020-03-16",
+   "abstract": "Accurate segmentation of tubular, network-like structures, such as vessels, neurons, or roads, is relevant to many fields of research. For such structures, the topology is their most important characteristic; particularly preserving connectedness: in the case of vascular networks, missing a connected vessel entirely alters the blood-flow dynamics. We introduce a novel similarity measure termed centerlineDice (short clDice), which is calculated on the intersection of the segmentation masks and their (morphological) skeleta. We theoretically prove that clDice guarantees topology preservation up to homotopy equivalence for binary 2D and 3D segmentation. Extending this, we propose a computationally efficient, differentiable loss function (soft-clDice) for training arbitrary neural segmentation networks. We benchmark the soft-clDice loss on five public datasets, including vessels, roads and n",
+   "url": "https://arxiv.org/abs/2003.07311",
+   "path": "TanitAD Research Lab/Library/papers/2003.07311_clDice-A-Novel-Topology-Preserving-Loss-Function-for-Tubular.pdf",
+   "bytes": 6744504,
+   "sha256": "2e952692e01cb534b8851712e27846ab5d0dc06dfd170c9c64daf4e70d7f3170",
+   "banked": "2026-10-04",
+   "tags": [
+    "perception"
+   ],
+   "note": "clDice: topology-preserving loss for thin tubular structures (soft skeleton)",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
+   ]
+  },
+  "1812.07032": {
+   "key": "1812.07032",
+   "kind": "arxiv",
+   "title": "Boundary loss for highly unbalanced segmentation",
+   "authors": [
+    "Hoel Kervadec",
+    "Jihene Bouchtiba",
+    "Christian Desrosiers",
+    "Eric Granger",
+    "Jose Dolz",
+    "Ismail Ben Ayed"
+   ],
+   "published": "2018-12-17",
+   "abstract": "Widely used loss functions for CNN segmentation, e.g., Dice or cross-entropy, are based on integrals over the segmentation regions. Unfortunately, for highly unbalanced segmentations, such regional summations have values that differ by several orders of magnitude across classes, which affects training performance and stability. We propose a boundary loss, which takes the form of a distance metric on the space of contours, not regions. This can mitigate the difficulties of highly unbalanced problems because it uses integrals over the interface between regions instead of unbalanced integrals over the regions. Furthermore, a boundary loss complements regional information. Inspired by graph-based optimization techniques for computing active-contour flows, we express a non-symmetric $L_2$ distance on the space of contours as a regional integral, which avoids completely local differential comp",
+   "url": "https://arxiv.org/abs/1812.07032",
+   "path": "TanitAD Research Lab/Library/papers/1812.07032_Boundary-loss-for-highly-unbalanced-segmentation.pdf",
+   "bytes": 4157319,
+   "sha256": "9746e5741c759ba10e05d9b18245f4d7f580f58ae8eb4812bfc73992dde1bf40",
+   "banked": "2026-10-04",
+   "tags": [
+    "perception"
+   ],
+   "note": "Boundary loss: distance-transform based loss for highly unbalanced segmentation",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
+   ]
+  },
+  "1705.08790": {
+   "key": "1705.08790",
+   "kind": "arxiv",
+   "title": "The Lovász-Softmax loss: A tractable surrogate for the optimization of the intersection-over-union measure in neural networks",
+   "authors": [
+    "Maxim Berman",
+    "Amal Rannen Triki",
+    "Matthew B. Blaschko"
+   ],
+   "published": "2017-05-24",
+   "abstract": "The Jaccard index, also referred to as the intersection-over-union score, is commonly employed in the evaluation of image segmentation results given its perceptual qualities, scale invariance - which lends appropriate relevance to small objects, and appropriate counting of false negatives, in comparison to per-pixel losses. We present a method for direct optimization of the mean intersection-over-union loss in neural networks, in the context of semantic image segmentation, based on the convex Lovász extension of submodular losses. The loss is shown to perform better with respect to the Jaccard index measure than the traditionally used cross-entropy loss. We show quantitative and qualitative differences between optimizing the Jaccard index per image versus optimizing the Jaccard index taken over an entire dataset. We evaluate the impact of our method in a semantic segmentation pipeline an",
+   "url": "https://arxiv.org/abs/1705.08790",
+   "path": "TanitAD Research Lab/Library/papers/1705.08790_The-Lov-sz-Softmax-loss-A-tractable-surrogate-for-the-optimi.pdf",
+   "bytes": 4169265,
+   "sha256": "82bdd01cacbab500abab94c78d6c27e2c1f2a7fafee16c9b302f8d1225c38b1e",
+   "banked": "2026-10-04",
+   "tags": [
+    "perception"
+   ],
+   "note": "Lovasz-Softmax: tractable convex surrogate for direct IoU optimisation in segmentation",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
+   ]
+  },
+  "2308.02236": {
+   "key": "2308.02236",
+   "kind": "arxiv",
+   "title": "FB-BEV: BEV Representation from Forward-Backward View Transformations",
+   "authors": [
+    "Zhiqi Li",
+    "Zhiding Yu",
+    "Wenhai Wang",
+    "Anima Anandkumar",
+    "Tong Lu",
+    "Jose M. Alvarez"
+   ],
+   "published": "2023-08-04",
+   "abstract": "View Transformation Module (VTM), where transformations happen between multi-view image features and Bird-Eye-View (BEV) representation, is a crucial step in camera-based BEV perception systems. Currently, the two most prominent VTM paradigms are forward projection and backward projection. Forward projection, represented by Lift-Splat-Shoot, leads to sparsely projected BEV features without post-processing. Backward projection, with BEVFormer being an example, tends to generate false-positive BEV features from incorrect projections due to the lack of utilization on depth. To address the above limitations, we propose a novel forward-backward view transformation module. Our approach compensates for the deficiencies in both existing methods, allowing them to enhance each other to obtain higher quality BEV representations mutually. We instantiate the proposed module with FB-BEV, which achieve",
+   "url": "https://arxiv.org/abs/2308.02236",
+   "path": "TanitAD Research Lab/Library/papers/2308.02236_FB-BEV-BEV-Representation-from-Forward-Backward-View-Transfo.pdf",
+   "bytes": 8538287,
+   "sha256": "758dc5cd0bcc07b69723deea9ba83cfcb411bb9333f64195f9f9aa439a6733e2",
+   "banked": "2026-10-04",
+   "tags": [
+    "perception"
+   ],
+   "note": "FB-BEV: forward-backward projection; depth-aware backward projection fixes the ray-smearing of sampling lifts",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
+   ]
+  },
+  "2008.05711": {
+   "key": "2008.05711",
+   "kind": "arxiv",
+   "title": "Lift, Splat, Shoot: Encoding Images From Arbitrary Camera Rigs by Implicitly Unprojecting to 3D",
+   "authors": [
+    "Jonah Philion",
+    "Sanja Fidler"
+   ],
+   "published": "2020-08-13",
+   "abstract": "The goal of perception for autonomous vehicles is to extract semantic representations from multiple sensors and fuse these representations into a single \"bird's-eye-view\" coordinate frame for consumption by motion planning. We propose a new end-to-end architecture that directly extracts a bird's-eye-view representation of a scene given image data from an arbitrary number of cameras. The core idea behind our approach is to \"lift\" each image individually into a frustum of features for each camera, then \"splat\" all frustums into a rasterized bird's-eye-view grid. By training on the entire camera rig, we provide evidence that our model is able to learn not only how to represent images but how to fuse predictions from all cameras into a single cohesive representation of the scene while being robust to calibration error. On standard bird's-eye-view tasks such as object segmentation and map seg",
+   "url": "https://arxiv.org/abs/2008.05711",
+   "path": "TanitAD Research Lab/Library/papers/2008.05711_Lift-Splat-Shoot-Encoding-Images-From-Arbitrary-Camera-Rigs.pdf",
+   "bytes": 5319285,
+   "sha256": "b853e73904c1a61fdbfd843190dcff6c5b3a594ee947fab4939a68ff1617cd67",
+   "banked": "2026-10-04",
+   "tags": [
+    "perception"
+   ],
+   "note": "Lift-Splat-Shoot: categorical depth distribution lift of image features into BEV",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
+   ]
+  },
+  "2203.11089": {
+   "key": "2203.11089",
+   "kind": "arxiv",
+   "title": "PersFormer: 3D Lane Detection via Perspective Transformer and the OpenLane Benchmark",
+   "authors": [
+    "Li Chen",
+    "Chonghao Sima",
+    "Yang Li",
+    "Zehan Zheng",
+    "Jiajie Xu",
+    "Xiangwei Geng",
+    "Hongyang Li",
+    "Conghui He",
+    "Jianping Shi",
+    "Yu Qiao",
+    "Junchi Yan"
+   ],
+   "published": "2022-03-21",
+   "abstract": "Methods for 3D lane detection have been recently proposed to address the issue of inaccurate lane layouts in many autonomous driving scenarios (uphill/downhill, bump, etc.). Previous work struggled in complex cases due to their simple designs of the spatial transformation between front view and bird's eye view (BEV) and the lack of a realistic dataset. Towards these issues, we present PersFormer: an end-to-end monocular 3D lane detector with a novel Transformer-based spatial feature transformation module. Our model generates BEV features by attending to related front-view local regions with camera parameters as a reference. PersFormer adopts a unified 2D/3D anchor design and an auxiliary task to detect 2D/3D lanes simultaneously, enhancing the feature consistency and sharing the benefits of multi-task learning. Moreover, we release one of the first large-scale real-world 3D lane datasets",
+   "url": "https://arxiv.org/abs/2203.11089",
+   "path": "TanitAD Research Lab/Library/papers/2203.11089_PersFormer-3D-Lane-Detection-via-Perspective-Transformer-and.pdf",
+   "bytes": 29876594,
+   "sha256": "1fe626123f884d95bc3deb0bdeb85c92f5c04e05878e13ce6ff22f783b55c1df",
+   "banked": "2026-10-04",
+   "tags": [
+    "perception"
+   ],
+   "note": "PersFormer: perspective transformer for 3D lane detection from a front camera",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
+   ]
+  },
+  "2411.18704": {
+   "key": "2411.18704",
+   "kind": "arxiv",
+   "title": "Exponential Moving Average of Weights in Deep Learning: Dynamics and Benefits",
+   "authors": [
+    "Daniel Morales-Brotons",
+    "Thijs Vogels",
+    "Hadrien Hendrikx"
+   ],
+   "published": "2024-11-27",
+   "abstract": "Weight averaging of Stochastic Gradient Descent (SGD) iterates is a popular method for training deep learning models. While it is often used as part of complex training pipelines to improve generalization or serve as a `teacher' model, weight averaging lacks proper evaluation on its own. In this work, we present a systematic study of the Exponential Moving Average (EMA) of weights. We first explore the training dynamics of EMA, give guidelines for hyperparameter tuning, and highlight its good early performance, partly explaining its success as a teacher. We also observe that EMA requires less learning rate decay compared to SGD since averaging naturally reduces noise, introducing a form of implicit regularization. Through extensive experiments, we show that EMA solutions differ from last-iterate solutions. EMA models not only generalize better but also exhibit improved i) robustness to n",
+   "url": "https://arxiv.org/abs/2411.18704",
+   "path": "TanitAD Research Lab/Library/papers/2411.18704_Exponential-Moving-Average-of-Weights-in-Deep-Learning-Dynam.pdf",
+   "bytes": 3657754,
+   "sha256": "133ecc4d73d2928566e13d8a30b851be611a09a90ec66273e8d9d16f7026076c",
+   "banked": "2026-10-04",
+   "tags": [
+    "perception"
+   ],
+   "note": "EMA of weights: dynamics and benefits - EMA improves generalisation, robustness and calibration, reduces the need for LR decay",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
+   ]
+  },
+  "2211.13858": {
+   "key": "2211.13858",
+   "kind": "arxiv",
+   "title": "Far3Det: Towards Far-Field 3D Detection",
+   "authors": [
+    "Shubham Gupta",
+    "Jeet Kanjani",
+    "Mengtian Li",
+    "Francesco Ferroni",
+    "James Hays",
+    "Deva Ramanan",
+    "Shu Kong"
+   ],
+   "published": "2022-11-25",
+   "abstract": "We focus on the task of far-field 3D detection (Far3Det) of objects beyond a certain distance from an observer, e.g., $&gt;$50m. Far3Det is particularly important for autonomous vehicles (AVs) operating at highway speeds, which require detections of far-field obstacles to ensure sufficient braking distances. However, contemporary AV benchmarks such as nuScenes underemphasize this problem because they evaluate performance only up to a certain distance (50m). One reason is that obtaining far-field 3D annotations is difficult, particularly for lidar sensors that produce very few point returns for far-away objects. Indeed, we find that almost 50% of far-field objects (beyond 50m) contain zero lidar points. Secondly, current metrics for 3D detection employ a \"one-size-fits-all\" philosophy, using the same tolerance thresholds for near and far objects, inconsistent with tolerances for both huma",
+   "url": "https://arxiv.org/abs/2211.13858",
+   "path": "TanitAD Research Lab/Library/papers/2211.13858_Far3Det-Towards-Far-Field-3D-Detection.pdf",
+   "bytes": 14271355,
+   "sha256": "b36f807ab0e0cce3bd9dc9d62ca5a2dd86da6de7823712a9b4ef3179330adb15",
+   "banked": "2026-10-04",
+   "tags": [
+    "perception"
+   ],
+   "note": "Far3Det: far-field 3D detection; standard metrics and detectors degrade sharply with range",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
+   ]
+  },
+  "1412.6980": {
+   "key": "1412.6980",
+   "kind": "arxiv",
+   "title": "Adam: A Method for Stochastic Optimization",
+   "authors": [
+    "Diederik P. Kingma",
+    "Jimmy Ba"
+   ],
+   "published": "2014-12-22",
+   "abstract": "We introduce Adam, an algorithm for first-order gradient-based optimization of stochastic objective functions, based on adaptive estimates of lower-order moments. The method is straightforward to implement, is computationally efficient, has little memory requirements, is invariant to diagonal rescaling of the gradients, and is well suited for problems that are large in terms of data and/or parameters. The method is also appropriate for non-stationary objectives and problems with very noisy and/or sparse gradients. The hyper-parameters have intuitive interpretations and typically require little tuning. Some connections to related algorithms, on which Adam was inspired, are discussed. We also analyze the theoretical convergence properties of the algorithm and provide a regret bound on the convergence rate that is comparable to the best known results under the online convex optimization fra",
+   "url": "https://arxiv.org/abs/1412.6980",
+   "path": "TanitAD Research Lab/Library/papers/1412.6980_Adam-A-Method-for-Stochastic-Optimization.pdf",
+   "bytes": 584641,
+   "sha256": "eab9c73ae2ceda884b94830bda99312254bac4806f6c9f045cbab90721ecda31",
+   "banked": "2026-10-04",
+   "tags": [
+    "refcv8-tactical-conditioning"
+   ],
+   "note": "Adam: effective step is invariant to rescaling of the gradient (sec 2.1) -- a loss weight on a parameter group fed by ONE loss barely changes its update; loss budgets matter on SHARED parameters",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/DESIGN.md"
    ]
   }
  }
