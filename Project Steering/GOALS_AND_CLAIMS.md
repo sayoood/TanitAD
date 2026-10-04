@@ -16573,3 +16573,9 @@ floor (MEASURED by simulation, iid-normal model).
 | **P8-V9-CONS** | The v9 constraint vectors are supervised (`--w-r8-v9-cons`, Huber, PARTIAL/absent/NaN masked): analytic control held-out R² 0.9994 (MAE 0.36 m); shuffled-target arm R² −0.0035. Reach key `r8v9_tac_rows`. | MEASURED (built, gated) |
 | **P9-EMIT** | `--r8-alloc-emit-start` (S_emit 2000); a warm start emitting at step 0 is refused. The REGISTERED SPEC_WPB I-W re-ran on the Thor GPU on the split-decode tree and PASSED: 218 windows, 0 differing on traj / sel_idx / base fan, max |Δ base score| 0.0 (`raw/I_W.json`; the first run FAILED on the GEMM shape, `raw/I_W.FAILED_unsplit.json`). | MEASURED (PASS) |
 | **INC-THOR-OOM-1004** | A full-size refcv8 CPU smoke on Thor (16.4 GB RSS) triggered a global kernel OOM at 22:57:19: desktop daemons and the registered pre-P7 GPU smoke's DataLoader worker were killed (R1, WP-D P-BOX, WP-RL survived). Rule: no CPU full-size forward on Thor. | MEASURED (incident) |
+
+<!-- REFCV8-2026-10-04-WPB-LADDER-A1 -->
+| id | record | status |
+|---|---|---|
+| **H-R8-ENC8-1** | The 8-step past-only N2 encoding (`--r8-speed-enc8`) beats the 4-way bins on speed MAE 2–6 s (separated, R ≥ 2, both sampler seeds), costs no family beyond F, and its N2-rolled arm does not gain. SPEC_WPB_LADDER_A1.md sha256 `cbd64fa2…`, 2026-10-04T21:52:09Z. | REGISTERED; untested |
+| **H-R8-DRV-1** | A trained drivable sub-score critic (SAM3 `map_fine` label on NavSim-DAC footprints; the model's own map head detached at inference) lowers the emitted plan's off-drivable rate (separated, R ≥ 2, both seeds) without costing turn direction or heading-15 beyond F; its map-rolled arm does not gain. Motivated by NS-P1X-SELECT. Same SPEC. | REGISTERED; untested |
