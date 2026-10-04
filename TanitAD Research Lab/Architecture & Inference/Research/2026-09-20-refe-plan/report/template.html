@@ -572,7 +572,11 @@ a { color: var(--s1); }
       " navtest tokens (" + int(a.n_logs) + " logs; NAVSIM v1.1, open loop; heading repair on, goal sanitisation off; scored " + N.scored + "). " +
       "Sub-scores: NC " + fmt(a.NC, 1) + ", DAC " + fmt(a.DAC, 1) + ", EP " + fmt(a.EP, 1) + ", TTC " + fmt(a.TTC, 1) + ", C " + fmt(a.C, 1) + ". " +
       int(N.zero.n) + " picks (" + (100 * N.zero.share).toFixed(1) + " %) score exactly 0, mostly by leaving the drivable area (" + int(N.zero.by_failing_term.DAC || 0) +
-      "); they are the largest lever. The 475 tokens whose scenario route skips the ego's road score " + fmt(N.off_route.PDMS, 1) + " and cost the mean " + fmt(N.off_cost, 2) + " points.";
+      "); they are the largest lever. The 475 tokens whose scenario route skips the ego's road score " + fmt(N.off_route.PDMS, 1) + " and cost the mean " + fmt(N.off_cost, 2) + " points." +
+      (N.a9 && N.a9.pdm_route ? " Pre-registered fix (SPEC Amendment 9): repairing the route the way NAVSIM's own reference planner does adds " +
+        (N.a9.pdm_route.d >= 0 ? "+" : "") + fmt(N.a9.pdm_route.d, 2) + " [" + fmt(N.a9.pdm_route.ci[0], 2) + ", " + fmt(N.a9.pdm_route.ci[1], 2) + "] on the " +
+        int(N.a9.pdm_route.n) + " tokens it changes (" + N.a9.pdm_route.verdict + "; about +" + fmt(N.a9.pdm_route.full, 2) + " on the full mean), not deployed until you rule on it." +
+        (N.a9.navgoal_straight ? " The map-free fallback reads " + (N.a9.navgoal_straight.d >= 0 ? "+" : "") + fmt(N.a9.navgoal_straight.d, 2) + " [" + fmt(N.a9.navgoal_straight.ci[0], 2) + ", " + fmt(N.a9.navgoal_straight.ci[1], 2) + "] (" + N.a9.navgoal_straight.verdict + ")." : "") : "");
     const nm = { STOP: "standing still", CV: "constant velocity", HUMAN: "the human (log replay)", refcv4b_A1: "refcv4b (earlier programme model)" };
     table("t-nt-pairs", ["REFe minus", "their PDMS", "difference [95% CI]", "wins / ties / losses"],
       ["STOP", "CV", "refcv4b_A1", "HUMAN"].map(k => { const p = N.pairs[k];

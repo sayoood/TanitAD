@@ -507,6 +507,14 @@ if os.path.exists(_ntp) and os.path.exists(_ntr):
         "scorer": _r.get("scorer_on_pick"), "off_cost": _r["off_route_cost_to_full_mean"],
         "floors": {k: (_p["floors"]["arms"].get(k) or {}).get("PDMS") for k in ("STOP", "CV", "HUMAN", "refcv4b_A1")},
         "pairs": {k: _pair(k) for k in ("STOP", "CV", "HUMAN", "refcv4b_A1")}, "scored": _p.get("rescored")}
+    # SPEC_NAVTEST Amendment 9 (the off-route nav goal), when its registered analysis exists
+    _a9p = os.path.join(_pkg, "raw", "2026-10-01-goal-trigger", "a9", "result_a9.json")
+    if os.path.exists(_a9p):
+        _a9 = json.load(open(_a9p, encoding="utf-8"))["arms"]
+        out["navtest_full"]["a9"] = {a: {"verdict": v.get("verdict"), "n": v["reads"]["PRIMARY"]["n_tokens"],
+                                         "logs": v["reads"]["PRIMARY"]["n_logs"], "d": v["reads"]["PRIMARY"]["D_mean"],
+                                         "ci": v["reads"]["PRIMARY"]["ci95"], "full": v["full_navtest"]["delta_full_navtest_pdms"]}
+                                     for a, v in _a9.items() if "reads" in v}
 json.dump(out, open(os.path.join(HERE, "report_data.json"), "w", encoding="utf-8"))
 p = out["progress"]
 print(json.dumps(p, indent=1))
