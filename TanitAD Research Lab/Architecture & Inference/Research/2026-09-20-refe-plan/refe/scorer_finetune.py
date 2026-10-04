@@ -181,6 +181,8 @@ def main() -> int:
             new.weight.zero_(); new.bias.zero_()
             new.weight[:6].copy_(old.weight); new.bias[:6].copy_(old.bias)
             new.bias[6] = 1.5                                   # ~0.82: the mean of the soft lane target on held-out
+            if os.environ.get("REFE_SFT4_MUTATE_G3") == "1":   # deliberate regression: a mis-copied row 0-5 must turn G3 RED
+                new.weight[2, 0] += 1e-3
         model.score_head = new
         for p in model.score_head.parameters():
             p.requires_grad_(True)
@@ -400,10 +402,61 @@ def main() -> int:
         gates["G7_heldout_disjoint"] = {"ok": info["train_rows_in_heldout_logs"] == 0 and len(ho_idx) > 0,
                                         "heldout_sets": len(ho_idx), "train_rows_in_heldout_logs": info["train_rows_in_heldout_logs"]}
         batch = next(iter(DataLoader(Subset(ds, tr_idx[:a.batch]), batch_size=a.batch)))
+        hk: dict = {}                                        # score-head input/output of each copy (last call = the scored set)
+        hooks = [mod.score_head.register_forward_hook(lambda m_, i_, o_, nm=nm: hk.__setitem__(nm, (i_[0].detach(), o_.detach())))
+                 for nm, mod in (("A", model), ("B", armB), ("base", base))]
         sx0, sxA, sxB, tg = fwd(batch)
+        for h_ in hooks:
+            h_.remove()
         d0A, dBA = float((sx0 - sxA[..., :6]).abs().max()), float((sxB - sxA).abs().max())
-        gates["G3_copies_equal_model_at_step0"] = {"ok": d0A == 0.0 and dBA == 0.0, "max_base_vs_A": d0A, "max_B_vs_A": dBA,
-                                                   "n_out": int(sxA.shape[-1])}
+        g3 = {"max_base_vs_A": d0A, "max_B_vs_A": dBA, "n_out": int(sxA.shape[-1])}
+        if a.lane_head:
+            # ⛔ A 7-row head is a different GEMM shape from the base's 6-row one, so under bf16 the shared outputs can differ by
+            # one bf16 rounding step (MEASURED in the 2026-10-04 smoke: 0.0625 = 1 ulp at |logit| 8..16). "Identical at step
+            # 0" is therefore asserted EXACTLY where it is exact by construction: the head's INPUT (same unchanged modules),
+            # the copied parameters, and rows 0-5 applied as a 6-row GEMM, which is the base's own computation bit for bit.
+            # The full-head residual must stay within 1 bf16 ulp. REFE_SFT4_MUTATE_G3=1 (a mis-copied row) must turn this RED.
+            hA, h0, hB = hk["A"][0], hk["base"][0], hk["B"][0]
+            W, bvec = model.score_head.weight, model.score_head.bias
+            with torch.no_grad(), torch.autocast("cuda", dtype=torch.bfloat16):
+                o6 = F.linear(hA, W[:6], bvec[:6])
+            # bf16 residual of the full head (reported): the bias is added AFTER the GEMM's bf16 rounding, so an output near 0
+            # carries rounding at the PRE-BIAS magnitude (MEASURED: 89 output-ulps at |diff| 0.0625). Scaled to the larger of
+            # the output and the pre-bias product it is the real rounding step.
+            W0, b0 = base.score_head.weight, base.score_head.bias
+            pre = F.linear(h0.float(), W0.float()).abs()
+            mag = torch.maximum(torch.maximum(sx0.abs(), sxA[..., :6].abs()), pre).clamp_min(2.0 ** -100)
+            ulp = torch.exp2(torch.floor(torch.log2(mag)) - 7)          # bf16: 8 significand bits -> ulp = 2^(e - 7)
+            # GATING residual, in fp32 on the identical captured input: two summation orders of the same dot products differ
+            # by at most 2 * K * eps32 * sum_k |h_k w_k| (the standard forward-error bound gamma_K for ANY order), plus the
+            # bias add. A real copy defect has no such bound (and is caught exactly by rows0to5_params_equal_base anyway).
+            h32 = hA.float()
+            tf32_was = torch.backends.cuda.matmul.allow_tf32
+            torch.backends.cuda.matmul.allow_tf32 = False          # the bound is for strict fp32, not TF32's 10-bit mantissa
+            with torch.no_grad():
+                o7 = F.linear(h32, W.float(), bvec.float())[..., :6]
+                o6b = F.linear(h32, W0.float(), b0.float())
+                eps32 = float(torch.finfo(torch.float32).eps)
+                bound = 2 * h32.shape[-1] * eps32 * F.linear(h32.abs(), W0.float().abs()) + 2 * eps32 * o6b.abs()
+            torch.backends.cuda.matmul.allow_tf32 = tf32_was
+            g3.update({"max_head_input_A_vs_base": float((hA.float() - h0.float()).abs().max()),
+                       "max_head_input_B_vs_A": float((hB.float() - hA.float()).abs().max()),
+                       "max_rows0to5_as_6row_gemm_vs_base": float((o6.float() - sx0).abs().max()),
+                       "rows0to5_params_equal_base": bool(torch.equal(W[:6], base.score_head.weight) and torch.equal(bvec[:6], base.score_head.bias)),
+                       "other_scorer_params_equal_base": all(torch.equal(p, q) for m in ("score_q_mlp", "score_dec")
+                                                             for p, q in zip(getattr(model, m).parameters(), getattr(base, m).parameters())),
+                       "row6_init": bool(float(W[6].abs().max()) == 0.0 and float(bvec[6]) == 1.5),
+                       "max_bf16_ulps_full_head_vs_base": float(((sxA[..., :6] - sx0).abs() / ulp).max()),
+                       "max_fp32_full_head_vs_base": float((o7 - o6b).abs().max()),
+                       "fp32_within_order_bound": bool(((o7 - o6b).abs() <= bound).all()),
+                       "fp32_bound_max": float(bound.max())})
+            g3["ok"] = (g3["max_head_input_A_vs_base"] == 0.0 and g3["max_head_input_B_vs_A"] == 0.0
+                        and g3["max_rows0to5_as_6row_gemm_vs_base"] == 0.0 and g3["rows0to5_params_equal_base"]
+                        and g3["other_scorer_params_equal_base"] and g3["row6_init"] and dBA == 0.0
+                        and g3["fp32_within_order_bound"])
+        else:
+            g3["ok"] = d0A == 0.0 and dBA == 0.0
+        gates["G3_copies_equal_model_at_step0"] = g3
         if a.b_mode == "compw":                              # SFT-2: unit weights must reproduce A; the declared ones must not
             keep_w = compw.clone()
             compw.fill_(1.0)

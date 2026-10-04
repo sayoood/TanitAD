@@ -544,6 +544,9 @@ if os.path.exists(_sft):
         elif _e in ("data", "start", "done"):
             _meta[_e] = _r
     out["sft1"] = {"train": _tr, "evals": _ev, "meta": _meta}
+    _sv = os.path.join(_pkg, "raw", "2026-10-04-sft1", "verdict.json")   # the registered verdict, once there is one
+    if os.path.exists(_sv):
+        out["sft1"]["verdict"] = json.load(open(_sv, encoding="utf-8"))
 # ⭐ LANE-1, lane discipline (raw/2026-10-04-lane-discipline/PREREG_LANE1.md): the registered analysis, when it exists
 _ld = os.path.join(_pkg, "raw", "2026-10-04-lane-discipline")
 out["lane1"] = None

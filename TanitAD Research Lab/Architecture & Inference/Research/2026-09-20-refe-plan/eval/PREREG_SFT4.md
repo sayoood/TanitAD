@@ -53,6 +53,55 @@ On the pod, DDC equals the independently computed NAVSIM direction label on 4/4 
   - **G10:** the teacher lane label reaches output 6.
   - **Deliberate regression:** an empty PDM label dir must turn G9 RED.
 
+### Amendment 1 (2026-10-04, before any SFT-4 training step): how G3 is checked with a 7-row head
+
+The first memory-light smoke (`refe/sft4_smoke2.sh`, 1,654 PDM-labelled training sets) failed only G3.
+- MEASURED: max |base − A| on outputs 0–5 = **0.0625**; B vs A = 0.0.
+- 0.0625 is exactly one bf16 rounding step at |logit| 8–16. The 7-row head is a different GEMM shape from the base's
+  6-row head, so under bf16 autocast the shared outputs may round differently. The check is wrong here; the copy is not.
+- The ulp formula was checked against real bf16 spacing: adjacent bf16 values read exactly 1.0 ulp.
+
+With `--lane-head`, G3 is now asserted EXACTLY wherever identity holds by construction:
+- the score head's INPUT is bit-identical across base, A and B (the same unchanged modules);
+- rows 0–5 applied as a 6-row GEMM reproduce the base output bit for bit;
+- the copied parameters are bit-equal (head rows 0–5, `score_q_mlp`, `score_dec`);
+- row 6 is initialised to weight 0, bias 1.5;
+- B equals A exactly.
+
+For the full 7-row head, the gating residual is computed in strict fp32 (TF32 off) on the same captured input, and it
+must stay within the standard forward-error bound for any summation order: 2 · K · eps32 · Σ|h·w|, plus the bias add.
+The bf16 residual is reported, not gated.
+
+A first attempt at that bound used one bf16 ulp **of the output**. It read 89 ulps, because the bias is added after the
+GEMM's bf16 rounding: an output near 0 carries rounding at the larger pre-bias magnitude. That was a wrong scale, not a
+copy defect. It was replaced before any training step.
+
+Without `--lane-head`, G3 is unchanged (exact).
+
+**New deliberate regression:** `REFE_SFT4_MUTATE_G3=1` mis-copies one weight of row 2 by 1e-3. It must turn G3 RED. It
+runs before launch, beside the chain's registered G9 mutation.
+
+**MEASURED, smoke round 2 with the final code** (`raw/2026-10-04-sft4-smoke/r2_*.log`; 1,654 PDM-labelled training sets,
+1,500 lane-labelled):
+- **Normal smoke: all 9 gates PASS.**
+  - Head inputs are identical.
+  - Rows 0–5 computed as a 6-row GEMM reproduce the base with residual 0.0.
+  - The fp32 residual of the full head is **0.0** (bound 0.0011).
+  - The bf16 residual is 0.0625, i.e. 12 pre-bias ulps (reported, not gated).
+  - Main-process peak RSS: 6.3 GB.
+- **Mutated smoke: G3 RED on three independent checks.**
+  - The copied parameters are not equal.
+  - The 6-row GEMM differs from the base by 0.03125.
+  - The fp32 residual is 0.0054, above the 0.0011 bound.
+
+### Amendment 2 (2026-10-04 15:33 UTC, before any SFT-4 training step): the PDM labels get the CPU first
+
+The pod's CPU quota is 7.65 CPUs (R32). Shared with the teacher-lane relabel, the PDM training relabel projected to about
+20 h. The 12 teacher-lane workers are therefore SIGSTOPped (no work lost) until `ZZPDM_TRAIN_EXIT`, then resumed
+automatically (`refe/lane_pause.sh`, log `/workspace/data/refe_sft2/lane_pause.log`).
+- The run's design is unchanged.
+- The lane subset at launch will be smaller; it is logged in the `data` event and G10, as already declared above.
+
 ## Stage 1: held-out (pod, label-only; the 3,137 sets of 24 logs that carry PDM targets)
 
 Truth = the PDM-target navsim_v1 score of the chosen plan (the harness score of executing it). Comparisons are against the deployed system: the base scorer under navsim_v1.
