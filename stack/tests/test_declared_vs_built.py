@@ -270,7 +270,29 @@ def test_GDVB_every_trainer_flag_has_an_entry_and_every_entry_is_well_formed():
     # refcv8 WP-B (2026-10-04): +30 = --refcv8 and its 29 --r8-* / --w-r8-* flags (incl. the v9 wiring's
     # --r8-v9-md5, --r8-v9-eval-md5, --r8-v9-lat-variant, --r8-rc-noise-along-m, --r8-rc-noise-lat-m,
     # --r8-no-rc), registered by `tanitad.train.refcv8_train._register_gdvb` (226 -> 256)
-    assert len(dvb.REGISTRY) == 256
+    # + --grad-share-every (the refcv8 X4 in-run gradient-share instrument, "runtime") (256 -> 257)
+    # + the ladder's regression-arm flags --r8-derange-feed / --r8-rc-roll / --r8-roll-targets ("runtime") (-> 260)
+    # + --init-from (the refcv8 warm start, "data") (-> 261)
+    # + X3 (SPEC_REFCV8 8.3): --r8-speed-input ("built": cfg.refcv8.speed_input), --r8-speed-unknown-p and
+    #   --r8-roll-speed-input ("runtime") (-> 264)
+    # + MM ruling Q2: --w-r8-v9-cons (the v9 constraint heads, "loss") (-> 265)
+    # + refcv8 X10 (pose-to-image timing, Data FlyWheel): --pose-sync-sidecar, "data", registered in
+    #   declared_vs_built itself (-> 266)
+    # + MM ruling Q1: --r8-alloc-emit-start ("built": cfg.refcv8.emit_start) (-> 267)
+    # + refcv8 (B): --r8-speed-enc8 ("built": cfg.refcv8.speed_enc8 + the seam) (-> 268). ONE pinned count
+    #   for the whole WP-B + X10 landing.
+    assert len(dvb.REGISTRY) == 268
+    assert dvb.REGISTRY["r8_speed_enc8"].kind == "built"
+    assert dvb.REGISTRY["r8_alloc_emit_start"].kind == "built"
+    assert dvb.REGISTRY["w_r8_v9_cons"].kind == "loss"
+    assert dvb.REGISTRY["pose_sync_sidecar"].kind == "data"
+    assert dvb.REGISTRY["init_from"].kind == "data"
+    assert dvb.REGISTRY["r8_speed_input"].kind == "built"
+    for d in ("r8_speed_unknown_p", "r8_roll_speed_input"):
+        assert dvb.REGISTRY[d].kind == "runtime", d
+    for d in ("r8_derange_feed", "r8_rc_roll", "r8_roll_targets"):
+        assert dvb.REGISTRY[d].kind == "runtime", d
+    assert dvb.REGISTRY["grad_share_every"].kind == "runtime"
     for d in ("r8_v9_md5", "r8_v9_eval_md5", "r8_v9_lat_variant"):
         assert dvb.REGISTRY[d].kind == "data", d
     for d in ("r8_rc_noise_along_m", "r8_rc_noise_lat_m", "r8_no_rc"):

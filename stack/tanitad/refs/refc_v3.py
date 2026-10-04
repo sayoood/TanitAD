@@ -1923,6 +1923,19 @@ class RefCV3Model(nn.Module):
                 # must be INERT there, so the limit is +inf rather than 30 km/h.
                 v_lim = torch.where(vmax_1h.sum(dim=-1) > 0.5, v_lim,
                                     torch.full_like(v_lim, float("inf")))
+                if getattr(self, "r8_enabled", False) and str(getattr(self.cfg.refcv8, "speed_input", "") or ""):
+                    # ⭐ refcv8 X3: with the PAST-ONLY proxy the ceiling is never BELOW the fed value. N2 = 130 km/h
+                    # (the ego went above 120 in the last 20 s; 1.98 % of train rows) bins to the 4-way top step,
+                    # and the inherited rule would cap the plan at 120 km/h -- below a speed the ego just drove.
+                    # Every other fed value snaps UP, so the bin limit already is >= the value there (unchanged).
+                    v_lim = torch.where(over.reshape(-1) & (vmax_1h.sum(dim=-1) > 0.5),
+                                        v_max_ms.reshape(-1).to(device=dev, dtype=v_lim.dtype), v_lim)
+                    if bool(getattr(self.cfg.refcv8, "speed_enc8", False)):
+                        # refcv8 (B): with the 8-step encoding the ceiling IS the fed N2 value (70 km/h stays 70,
+                        # not the 4-way 100); an unknown row keeps no ceiling
+                        v_lim = torch.where(vmax_1h.sum(dim=-1) > 0.5,
+                                            v_max_ms.reshape(-1).to(device=dev, dtype=v_lim.dtype),
+                                            torch.full_like(v_lim, float("inf")))
             else:
                 vmax_1h = torch.zeros(b, v6ms.N_SPEED_MAX_BINS_V6, device=dev,
                                       dtype=ref.dtype)
@@ -1954,10 +1967,18 @@ class RefCV3Model(nn.Module):
                     x = x.to(torch.float32).reshape(b, k)
                     return torch.cat([x[:, :k - 1] * x[:, k - 1:], x[:, k - 1:]], -1)
                 _ce = torch.cat([_gated(r8_nav, R8_NAV_DIMS), _gated(r8_rc, R8_RC_DIMS)], -1)
+            _cs8 = None
+            if self.r8_enabled and bool(getattr(cfg.refcv8, "speed_enc8", False)):
+                # refcv8 (B): the 8-step N2 encoding of the SAME (treated) fed value the 4-way channel reads;
+                # no value reached the model -> the unknown row
+                _cs8 = (r8c.speed_enc8(v_max_ms.reshape(-1).to(dev), v_max_valid) if v_max_ms is not None
+                        else torch.zeros(b, r8c.SPEED_ENC8_DIMS, device=dev))
+                cache["r8_speed_enc8"] = _cs8
             out = self.tac_decoder_v6(cond, agent_tokens=agent_tokens,
                                       agent_pad=agent_pad,
                                       bev_tokens=bev_tokens, bev_pad=bev_pad,
-                                      **({} if _ce is None else {"cond_extra": _ce}))
+                                      **({} if _ce is None else {"cond_extra": _ce}),
+                                      **({} if _cs8 is None else {"cond_speed8": _cs8}))
             # ⛔ THE RAW LOGITS GO IN THE CACHE, ATTACHED, because that is what
             # the LOSS reads. Only the PLANNER feeds below are detached.
             cache.update(tacv6_goal_logits=out["goal_logits"],
@@ -1970,6 +1991,9 @@ class RefCV3Model(nn.Module):
             if self.r8_enabled:
                 # the constraint heads' raw outputs, ATTACHED, for the constraint loss (the trainer)
                 cache.update(r8_cons_lat=out["cons_lat"], r8_cons_lon=out["cons_lon"])
+                if "v9_lat_c" in out:                       # refcv8 Q2: the v9 constraint heads, ATTACHED, for the loss
+                    cache.update(r8_v9_lat_c=out["v9_lat_c"], r8_v9_lon_c=out["v9_lon_c"],
+                                 r8_v9_speed=out["v9_speed"])
                 out, r8_force = self._r8_apply_force(out, b, dev)
                 lp_l, lp_o = r8c.hypothesis_posteriors(out["lat_logits"], out["lon_logits"])
                 r8_feed = {"logp_lat3": lp_l, "logp_lon6": lp_o,
@@ -2022,7 +2046,11 @@ class RefCV3Model(nn.Module):
                              "combining them is not attributable -- refused")
         self.cfg.refcv8 = r8cfg
         r8cfg.enable = True
-        self.r8_n_params = (self.tac_decoder_v6.attach_refcv8_heads(R8_NAV_DIMS + R8_RC_DIMS)
+        _v9d = ((r8c.V9_LAT_DIMS, r8c.V9_LON_DIMS, r8c.V9_SPEED_DIMS) if bool(getattr(r8cfg, "v9_cons", False))
+                else None)
+        _e8 = r8c.SPEED_ENC8_DIMS if bool(getattr(r8cfg, "speed_enc8", False)) else 0
+        self.r8_n_params = (self.tac_decoder_v6.attach_refcv8_heads(R8_NAV_DIMS + R8_RC_DIMS, v9_dims=_v9d,
+                                                                    speed_enc8_dims=_e8)
                             + self.core.decoder.attach_refcv8(r8cfg, d_rc=R8_RC_DIMS))
         self.r8_enabled = True
         return self.r8_n_params

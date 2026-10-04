@@ -531,9 +531,19 @@ The text above is the stage-1 design. The code differs in the points below. Wher
 
     `_pin_refcv8` refuses the converse cases: `--refcv8` with `--w-r8-cons 0`, and allocation with `--w-r8-alloc-l1 0`.
     The harness path (`wpb_arms.py`) builds `R8Config` directly and is unaffected.
-13. **Not built yet (named):**
+13. **Post-landing instruments (2026-10-04, for `SPEC_WPB_LADDER`; base tip `c39798d`):**
+    * **The X4 `grad_share` instrument.** `--grad-share-every N` (`tanitad/train/grad_share.py`) computes P-GRAD's
+      projection share per term (traj / agent / box3d / map_hires / tac_v6 / r8 / rest) on the trunk, the shared 0.25 m
+      encoder and the planner pool, with a linearity control. It runs on logged steps only, through autograd.grad;
+      `.grad` and the RNG are untouched.
+    * **The conflict detector now sees the agent head** (P-GRAD: 50.1 % of the trunk update). The agent term is on the
+      AUX side; the plan side is unchanged.
+    * **Regression-arm flags:** `--r8-derange-feed`, `--r8-rc-roll` and `--r8-roll-targets {tac,map}`.
+    * **The warm start:** `--init-from` (`refcv8_train.warm_start_from`).
+    * **The `refcv8` launch-gate profile**, plus the canonical smoke argv.
+    * **The v9 eval join in `refcv7_loader`.**
+14. **Not built yet (named):**
     * yaw augmentation (§3.3, a v7-tiny lever);
-    * the X4 `grad_share` instrument;
     * classifier-free guidance (an optional arm).
 
 ---

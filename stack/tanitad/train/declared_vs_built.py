@@ -1056,6 +1056,7 @@ for _d, _why in (
         ("prefetch_factor", "a data-loader argument"), ("u8_batches", "the in-flight dtype"),
         ("eval_cache", "the eval corpus path"), ("eval_labels", "the eval label blob"),
         ("clip_clock_sidecar", "the label CLOCK source; G3 checks the clock it produces"),
+        ("pose_sync_sidecar", "the X10 pose-to-image timing sidecar (training ego-state clock; stamped `pose_sync`)"),
         ("label_clock_max_unverified", "G3's coverage cap (an operator decision, stamped)"),
         ("v7_labels", "the train label blob"), ("cot_negative_sidecar", "a label sidecar"),
         ("tac_goal_negatives", "the label NEGATIVE policy"), ("v2_lru", "a cache size"),

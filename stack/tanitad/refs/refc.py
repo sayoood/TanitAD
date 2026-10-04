@@ -2074,6 +2074,12 @@ class AnchoredDiffusionDecoder(nn.Module):
         self.r8_gen = None
         self._r8_phi: Tensor | None = None
         self._r8_last_q: Tensor | None = None
+        #: refcv8: the base-candidate count while an EXTENDED fan is decoded (None = not extended). The decoder then
+        #: decodes the base slice and the appended extras in SEPARATE passes (`_r8_split`), so every GEMM over the base
+        #: candidates has refcv7's exact shape -- bit-identical on every device. MEASURED 2026-10-04 (SPEC_WPB I-W on
+        #: Thor GPU, and at full size on the dev-box CPU): ONE pass over 117 + extras moved the base fan's low bits on
+        #: every window (sel_idx unchanged), because the GEMM shape picks other kernels.
+        self._r8_split_nb: int | None = None
         if self.rv6.any_on and self.control_head is None:
             raise ValueError(
                 "refcv6 §3: F1..F9 describe the DIFFUSION decoder, and this "
@@ -2465,6 +2471,9 @@ class AnchoredDiffusionDecoder(nn.Module):
         if float(r8cfg.w_subscore) > 0.0:
             self.r8_sub = r8c.SubScoreHeads(d, hidden=int(r8cfg.subscore_hidden))
         self.r8_gen = r8c.R8Generator(int(r8cfg.seed))
+        #: MM ruling Q1: the per-step emission switch for the EXTRA candidates (set by
+        #: `refcv8_train.apply_emit_schedule` from `emit_start`; True = the config's emit flags apply as written)
+        self.r8_emit_live = True
         mods = [self.r8_mod, self.r8_sel, self.r8_rc_to_cond] + ([self.r8_sub] if self.r8_sub is not None else [])
         return int(sum(p.numel() for m in mods for p in m.parameters())) + 1
 
@@ -2560,9 +2569,10 @@ class AnchoredDiffusionDecoder(nn.Module):
             keep = (self.r8_gen.rand((b,), dev) >= float(cfg.cond_dropout)).to(phi.dtype)
             phi = phi * keep[:, None, None]
         emit = (kind == 0)
-        if bool(cfg.alloc_emit):
+        _live = bool(getattr(self, 'r8_emit_live', True))
+        if bool(cfg.alloc_emit) and _live:
             emit = emit | (kind == 1)
-        if bool(cfg.prior_free_emit):
+        if bool(cfg.prior_free_emit) and _live:
             emit = emit | (kind == 2)
         return {'bank': bank_x, 'n': n, 'n_base': nb, 'src': src, 'kind': kind, 'lat3': lat3, 'lon6': lon6,
                 'x0_offset': x0_off, 'alloc': alloc, 'phi': phi, 'hyp': hyp,
@@ -2699,6 +2709,32 @@ class AnchoredDiffusionDecoder(nn.Module):
             return None
         return wpi.build_relation(x_est, agent_pos, cfg)
 
+    def _r8_split(self, fn, ctrl: bool, kv: Tensor, cond: Tensor, x: Tensor, *rest):
+        """refcv8: decode the BASE candidates ``x[:, :nb]`` and the appended EXTRAS ``x[:, nb:]`` in two passes and
+        concatenate. The decoder has NO candidate-candidate interaction (every candidate query cross-attends the
+        scene / agents / BEV and runs its own MLP), so this is the same function -- and the base pass runs refcv7's
+        exact shapes, so its outputs are bit-identical to refcv7's. Per-candidate state follows the slices: ``phi``
+        is sliced, and ``_r8_last_q`` / the F3 cascade's per-layer lists are concatenated back."""
+        nb, phi = int(self._r8_split_nb), self._r8_phi
+        parts = []
+        self._r8_split_nb = None
+        try:
+            for sl in (slice(0, nb), slice(nb, None)):
+                self._r8_phi = None if phi is None else phi[:, sl]
+                c, o = fn(kv, cond, x[:, sl], *rest)
+                parts.append((c, o, self._r8_last_q if ctrl else None,
+                              (self._last_layer_conf, self._last_layer_du)
+                              if ctrl and self.cascade is not None else None))
+        finally:
+            self._r8_phi, self._r8_split_nb = phi, nb
+        (c0, o0, q0, l0), (c1, o1, q1, l1) = parts
+        if ctrl and q0 is not None and q1 is not None:
+            self._r8_last_q = torch.cat([q0, q1], 1)
+        if l0 is not None and l1 is not None:
+            self._last_layer_conf = [torch.cat([a, b], 1) for a, b in zip(l0[0], l1[0])]
+            self._last_layer_du = [torch.cat([a, b], 1) for a, b in zip(l0[1], l1[1])]
+        return torch.cat([c0, c1], 1), torch.cat([o0, o1], 1)
+
     def _decode(self, kv: Tensor, cond: Tensor, x_est: Tensor,
                 t_idx: int, agents: Tensor | None = None,
                 agent_pad: Tensor | None = None,
@@ -2713,6 +2749,8 @@ class AnchoredDiffusionDecoder(nn.Module):
         ``agent_pos`` (WP-B) is the metric address source and is inert in the
         same way — see :meth:`_agent_index`.
         """
+        if self._r8_split_nb is not None and 0 < self._r8_split_nb < x_est.shape[1]:
+            return self._r8_split(self._decode, False, kv, cond, x_est, t_idx, agents, agent_pad, agent_pos, bev)
         b, n = x_est.shape[:2]
         q = self.traj_proj(x_est.reshape(b, n, -1))           # [B, N, d]
         q = q + self.time_embed.weight[t_idx][None, None]     # timestep bias
@@ -2751,6 +2789,8 @@ class AnchoredDiffusionDecoder(nn.Module):
         timestep onto one of three rows, and the schedule would stop meaning
         anything.
         """
+        if self._r8_split_nb is not None and 0 < self._r8_split_nb < x_path.shape[1]:
+            return self._r8_split(self._decode_ctrl, True, kv, cond, x_path, t, agents, agent_pad, agent_pos, bev)
         b, n = x_path.shape[:2]
         q = self.traj_proj(x_path.reshape(b, n, -1))          # [B, N, d]
         te = self.time_mlp(t.reshape(-1).to(torch.float32)).to(q.dtype)
@@ -3397,6 +3437,7 @@ class AnchoredDiffusionDecoder(nn.Module):
             bank = _r8x['bank']
             n = int(_r8x['n'])
             self._r8_phi = _r8x['phi']
+            self._r8_split_nb = (int(_r8x['n_base']) if n > int(_r8x['n_base']) else None)
         x0 = bank
         prior_bank = bank if self.anchor_v0_cond else None
 
@@ -3926,6 +3967,7 @@ class AnchoredDiffusionDecoder(nn.Module):
                 out['r8_sub_logits'] = _r8_sub_logits
         self._r8_phi = None
         self._r8_last_q = None
+        self._r8_split_nb = None
         if u0_hat is not None:
             # [B, N, S, 2] in the VOCABULARY's control units -- `alat` (m/s^2)
             # or `kappa` (1/m) per `anchor_control_units`. ⛔ The x0 loss MUST

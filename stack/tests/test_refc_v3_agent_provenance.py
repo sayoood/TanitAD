@@ -546,6 +546,9 @@ def test_P2_every_knob_is_recoverable_from_the_stamp_BY_VALUE(tmp_path):
         **{k: TACV6_ON + R8_ON + ["--w-r8-cons", "0.05"] for k in ("w_r8_listwise", "w_r8_subscore")},
         "w_r8_alloc_l1": TACV6_ON + R8_ON + ["--w-r8-cons", "0.05", "--r8-n-alloc", "8"],
         "w_r8_sat": TACV6_ON + R8_ON + ["--w-r8-cons", "0.05", "--r8-n-alloc", "8", "--w-r8-alloc-l1", "1.0"],
+        # MM ruling Q2: the v9 constraint heads need the v9 release (the pin refuses the weight without it)
+        "w_r8_v9_cons": TACV6_ON + R8_ON + ["--w-r8-cons", "0.05", "--r8-v9-labels", "v9.npz",
+                                            "--r8-v9-labels-eval", "v9e.npz"],
     }
     # Candidates, tried in order: a knob with a DOMAIN (a mount height must be
     # a plausible height) takes the first admissible one. A per-knob table of

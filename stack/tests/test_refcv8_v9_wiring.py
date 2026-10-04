@@ -409,3 +409,64 @@ def test_the_real_release_loads_md5_checked_with_zero_contract_violations(split)
     c = j.manifest["census"]
     assert set(c["violations"].values()) == {0}, c["violations"]
     assert c["n_rows"] == {"eval139": 27_664, "train": 869_278}[split]
+
+
+# =========================================================================== #
+# 9. the ladder's deliberate-regression arms (SPEC_WPB_LADDER sec. 2)          #
+# =========================================================================== #
+def test_roll_targets_rolls_exactly_the_family_and_never_an_input():
+    b = {"lat_v7": torch.tensor([0, 6, 7]), "lon_v7": torch.tensor([1, 3, 5]),
+         "tac_goal_y": torch.eye(3), "frames": torch.arange(3.0), "map_fine": torch.tensor([[1], [2], [3]])}
+    t = RT.roll_targets(b, "tac")
+    assert t["lat_v7"].tolist() == [7, 0, 6] and t["lon_v7"].tolist() == [5, 1, 3]
+    assert t["tac_goal_y"].tolist() == torch.roll(torch.eye(3), 1, 0).tolist()
+    assert t["frames"] is b["frames"] and t["map_fine"] is b["map_fine"]           # inputs / other families untouched
+    assert b["lat_v7"].tolist() == [0, 6, 7]                                       # the caller's batch is not mutated
+    m = RT.roll_targets(b, "map")
+    assert m["map_fine"].tolist() == [[3], [1], [2]] and m["lat_v7"] is b["lat_v7"]
+    with pytest.raises(SystemExit):
+        RT.roll_targets({"frames": torch.zeros(2)}, "tac")                          # nothing to roll: refused
+
+
+def test_the_compute_losses_roll_is_TRAINING_only():
+    T = R.trainer()
+    import inspect
+    src = inspect.getsource(T.compute_losses_v3)
+    assert "if model.training and getattr(model, \"_r8_roll_targets\", None):" in src
+    assert "batch = r8train.roll_targets(batch, model._r8_roll_targets)" in src
+
+
+def test_rc_roll_feeds_another_windows_checkpoint_in_training_only(rig):
+    from tanitad.refs import refcv8_conditioning as C
+    cfg8, m8, bt, b, traj = rig
+    raw = {"r8_rc_raw": torch.tensor([[10.0, 1.0, 0.0], [20.0, -2.0, 30.0], [30.0, 3.0, -30.0]][:b]),
+           "r8_rc_valid": torch.ones(b, dtype=torch.bool)}
+    m8.train()
+    m8._r8_rc_dropout, m8._r8_rc_noise, m8._r8_nav_args_dropout = 0.3, (2.0, 0.75), 0.5
+
+    def run(roll):
+        m8._r8_rc_roll_train = roll
+        m8.core.decoder.r8_gen = C.R8Generator(5)                                  # the same draws both times
+        return _prep(m8, bt, b, traj, raw)["fwd"]["r8_rc"]
+    plain, rolled = run(False), run(True)
+    assert torch.equal(rolled, torch.roll(plain, 1, 0)) and not torch.equal(rolled, plain)
+    m8.eval()
+    m8._r8_rc_roll_train = True
+    e = _prep(m8, bt, b, traj, raw)["fwd"]["r8_rc"]
+    assert e[0].tolist() == pytest.approx([0.2, 0.02, 0.0, 1.0], abs=1e-7)        # eval: own checkpoint, no noise
+    m8._r8_rc_roll_train = False
+
+
+def test_derange_is_set_per_call_and_only_in_training(rig):
+    cfg8, m8, bt, b, traj = rig
+    m8._r8_derange_train = True
+    m8.eval()
+    _prep(m8, bt, b, traj, {})
+    assert m8._r8_derange_feed is False
+    m8.train()
+    m8._r8_rc_dropout, m8._r8_rc_noise = 0.3, (2.0, 0.75)
+    _prep(m8, bt, b, traj, {})
+    assert m8._r8_derange_feed is True
+    m8._r8_derange_train = False
+    _prep(m8, bt, b, traj, {})
+    assert m8._r8_derange_feed is False

@@ -462,21 +462,41 @@ class TacticalBehaviourDecoder(nn.Module):
         self.r8_cons_lon: nn.Linear | None = None
         self.r8_film: nn.ModuleList | None = None
         self.r8_cond_extra_dims = 0
+        #: refcv8 Q2: the v9 constraint-vector heads (lat_c 12 / lon_c 10 / speed_goal 4), built iff asked
+        self.r8_v9_lat_c: nn.Linear | None = None
+        self.r8_v9_lon_c: nn.Linear | None = None
+        self.r8_v9_speed: nn.Linear | None = None
+        #: refcv8 (B): the 8-step N2 speed FiLM (zero-init, per layer), built iff asked
+        self.r8_speed_film: nn.ModuleList | None = None
 
-    def attach_refcv8_heads(self, cond_extra_dims: int, c_lat: int = 2, c_lon: int = 2) -> int:
+    def attach_refcv8_heads(self, cond_extra_dims: int, c_lat: int = 2, c_lon: int = 2,
+                            v9_dims: tuple[int, int, int] | None = None, speed_enc8_dims: int = 0) -> int:
         """refcv8 WP-B (DESIGN sec. 3.1 / 3.3): (1) per-QUERY constraint heads -- the query IS the action, so the
         constraint 'if this action' is that query's readout (lat: psi_term/pi, t_onset/6; lon: log1p(P6)/log1p(120),
         v_end/30); (2) a SEPARATE zero-init FiLM per layer for the extra condition [nav args, route checkpoint],
         applied before each layer's own FiLM -- no existing tensor changes shape, so refcv7 loads strictly and the
-        decoder is the identity on it at step 0. Returns the parameter count."""
+        decoder is the identity on it at step 0; (3) with ``v9_dims`` = (12, 10, 4) (MM ruling Q2), per-QUERY heads
+        for the v9 constraint vectors lat_c (on the lateral queries) and lon_c / speed_goal (on the longitudinal
+        ones) -- supervision only: no planner input reads them; (4) with ``speed_enc8_dims`` > 0 (refcv8 (B)) a
+        zero-init per-layer FiLM for the 8-step N2 speed encoding, beside the inherited 4-way channel in ``cond``.
+        Returns the parameter count."""
         d = self.cfg.d_model
         self.r8_cons_lat = nn.Linear(d, int(c_lat))
         self.r8_cons_lon = nn.Linear(d, int(c_lon))
         self.r8_cond_extra_dims = int(cond_extra_dims)
         self.r8_film = nn.ModuleList(_QueryFiLM(d, cond_dims=int(cond_extra_dims))
                                      for _ in range(self.cfg.n_layers))
-        return int(sum(p.numel() for m in (self.r8_cons_lat, self.r8_cons_lon, self.r8_film)
-                       for p in m.parameters()))
+        mods = [self.r8_cons_lat, self.r8_cons_lon, self.r8_film]
+        if v9_dims is not None:
+            self.r8_v9_lat_c = nn.Linear(d, int(v9_dims[0]))
+            self.r8_v9_lon_c = nn.Linear(d, int(v9_dims[1]))
+            self.r8_v9_speed = nn.Linear(d, int(v9_dims[2]))
+            mods += [self.r8_v9_lat_c, self.r8_v9_lon_c, self.r8_v9_speed]
+        if int(speed_enc8_dims) > 0:
+            self.r8_speed_film = nn.ModuleList(_QueryFiLM(d, cond_dims=int(speed_enc8_dims))
+                                               for _ in range(self.cfg.n_layers))
+            mods.append(self.r8_speed_film)
+        return int(sum(p.numel() for m in mods for p in m.parameters()))
 
     # -- introspection ------------------------------------------------------
     @property
@@ -523,7 +543,8 @@ class TacticalBehaviourDecoder(nn.Module):
                 agent_pad: Tensor | None = None,
                 bev_tokens: Tensor | None = None,
                 bev_pad: Tensor | None = None,
-                cond_extra: Tensor | None = None) -> dict[str, Tensor]:
+                cond_extra: Tensor | None = None,
+                cond_speed8: Tensor | None = None) -> dict[str, Tensor]:
         if cond.dim() != 2 or cond.shape[-1] != COND_DIMS:
             raise ValueError(
                 f"[refcv6-tac] cond must be [B, {COND_DIMS}] = "
@@ -592,11 +613,16 @@ class TacticalBehaviourDecoder(nn.Module):
         if cond_extra is not None and cond_extra.shape[-1] != self.r8_cond_extra_dims:
             raise ValueError(f'[refcv8-tac] cond_extra must be [B, {self.r8_cond_extra_dims}], got '
                              f'{tuple(cond_extra.shape)}')
+        if (cond_speed8 is not None) != (self.r8_speed_film is not None):
+            raise ValueError("[refcv8-tac] cond_speed8 and the 8-step speed FiLM must come together (supplied "
+                             "without the seam it would be dropped; a seam fed nothing would be built and inert)")
         q = self.queries.weight.unsqueeze(0).expand(b, -1, -1).contiguous()
         attn = None
         for _li, lyr in enumerate(self.layers):
             if cond_extra is not None:
                 q = self.r8_film[_li](q, cond_extra)          # zero-init: identity at step 0
+            if cond_speed8 is not None:
+                q = self.r8_speed_film[_li](q, cond_speed8)   # refcv8 (B), zero-init: identity at step 0
             q, attn = lyr(q, kv, kv_pad, cond)
         q = self.out_norm(q)
         g = q[:, :N_GOAL_TOKENS]
@@ -613,6 +639,10 @@ class TacticalBehaviourDecoder(nn.Module):
         if self.r8_cons_lat is not None:
             out["cons_lat"] = self.r8_cons_lat(la)                # [B, 8, 2] (normalised, refcv8)
             out["cons_lon"] = self.r8_cons_lon(lo)                # [B, 8, 2]
+        if self.r8_v9_lat_c is not None:
+            out["v9_lat_c"] = self.r8_v9_lat_c(la)               # [B, 8, 12] (normalised v9 units, refcv8 Q2)
+            out["v9_lon_c"] = self.r8_v9_lon_c(lo)               # [B, 8, 10]
+            out["v9_speed"] = self.r8_v9_speed(lo)               # [B, 8, 4]
         return out
 
 

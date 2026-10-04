@@ -59,6 +59,61 @@ def test_GREEN_the_v9_wiring_pins_through_with_its_binding_defaults():
 T2 = ["--r8-n-alloc", "32", "--r8-alloc-emit", "--w-r8-alloc-l1", "1.0", "--w-r8-sat", "0.1", "--w-r8-listwise", "1.0"]
 
 
+def test_GREEN_the_regression_arm_flags_pin_through_with_their_prerequisites():
+    _pin(ON + ["--r8-derange-feed", "--batch", "4"])
+    _pin(ON + ["--r8-rc-roll", "--batch", "4", "--r8-v9-labels", "v9.npz"])
+    _pin(ON + ["--r8-roll-targets", "tac", "--w-tac-v6", "1.0", "--batch", "4"])
+    _pin(ON + ["--r8-roll-targets", "map", "--map-hires", "on", "--w-map-hires", "1.0", "--batch", "4"])
+    assert T.build_parser().parse_args(ON).r8_roll_targets is None            # default: no roll (not "none")
+
+
+X3 = ["--max-speed-input-v6", "--r8-speed-input", "n2", "--r8-v9-labels", "v9.npz"]
+
+
+def test_GREEN_X3_the_past_only_speed_input_pins_through():
+    """MM ruling Q5: N2 (and N3 behind the same flag) is the 4-way channel's SOURCE; the unknown-row rate defaults to
+    None (= 0.45 in the trainer) and is stated by a launch; V-VSHUF's roll needs a batch."""
+    assert _pin(ON + X3).speed_input == "n2"
+    assert _pin(ON + X3[:1] + ["--r8-speed-input", "n3", "--r8-v9-labels", "v9.npz"]).speed_input == "n3"
+    assert _pin(ON + X3 + ["--r8-speed-unknown-p", "0.45"]).speed_input == "n2"
+    _pin(ON + X3 + ["--r8-roll-speed-input", "--batch", "4"])
+    assert _pin(ON).speed_input == ""                                         # no channel at all: allowed, stamped ""
+    a = T.build_parser().parse_args(ON)
+    assert (a.r8_speed_input, a.r8_speed_unknown_p, a.r8_roll_speed_input) == (None, None, False)
+
+
+@pytest.mark.parametrize("argv,needle", [
+    # ⛔ the v8 FUTURE-MAX sidecar on a refcv8 run, by name -- with or without the past-only source
+    (ON + ["--max-speed-input-v6", "--speed-max-sidecar-v6", "S.jsonl"], "FUTURE-MAX sidecar"),
+    (ON + X3 + ["--speed-max-sidecar-v6", "S.jsonl"], "FUTURE-MAX sidecar"),
+    (ON + X3 + ["--speed-max-sidecar-v6-eval", "S.jsonl"], "FUTURE-MAX sidecar"),
+    (ON + ["--max-speed-input-v6"], "no past-only source"),                 # the channel with no source
+    (ON + ["--r8-speed-input", "n2", "--r8-v9-labels", "v9.npz"], "--max-speed-input-v6"),
+    (ON + ["--max-speed-input-v6", "--r8-speed-input", "n2"], "pass --r8-v9-labels"),
+    (ON + X3 + ["--r8-speed-unknown-p", "0"], "(0, 1)"),
+    (ON + X3 + ["--r8-speed-unknown-p", "1.0"], "(0, 1)"),
+    (ON + ["--r8-speed-unknown-p", "0.45"], "dead flag"),
+    (ON + ["--r8-roll-speed-input", "--batch", "4"], "dead flag"),
+    (ON + X3 + ["--r8-roll-speed-input", "--batch", "1"], "--batch >= 2"),
+    (BASE + ["--r8-speed-input", "n2"], "without --refcv8"),
+    (BASE + ["--r8-roll-speed-input"], "without --refcv8"),
+])
+def test_X3_every_oracle_dead_or_unsafe_speed_argv_refuses(argv, needle):
+    with pytest.raises(SystemExit) as e:
+        _pin(argv)
+    assert needle in str(e.value), str(e.value)[:300]
+
+
+def test_the_v6_pin_does_not_demand_a_sidecar_on_the_X3_path():
+    """`_pin_refcv6_tactical` still refuses --max-speed-input-v6 without a sidecar on a NON-refcv8 run (refcv7's rule,
+    unchanged) and admits the X3 path, whose source is the v9 column (SOURCE pin: a minimal argv cannot pass the rest
+    of `_pin_trainer_cfg`)."""
+    import inspect
+    src = inspect.getsource(T._pin_refcv6_tactical).replace("\r\n", "\n")
+    assert ('if not getattr(args, "speed_max_sidecar_v6", None) and not getattr(args, "r8_speed_input", None):'
+            in src)
+
+
 def test_GREEN_the_T2_recipe_pins_through():
     r = _pin(ON + T2)
     assert (r.n_alloc, r.alloc_emit, r.w_alloc_l1, r.w_sat, r.w_listwise) == (32, True, 1.0, 0.1, 1.0)
@@ -87,6 +142,14 @@ def test_GREEN_the_T2_recipe_pins_through():
     (BASE + ["--refcv8"], "never supervised"),                          # the default 0.0 is not a refcv8 weight
     (ON + ["--w-r8-cons", "0"], "never supervised"),
     (ON + ["--r8-n-alloc", "8"], "never matched to GT"),                # allocation with the default alloc_l1 0.0
+    # the ladder's regression-arm flags (SPEC_WPB_LADDER sec. 2)
+    (BASE + ["--r8-derange-feed"], "without --refcv8"),
+    (BASE + ["--r8-roll-targets", "tac"], "without --refcv8"),
+    (ON + ["--r8-derange-feed", "--batch", "1"], "--batch >= 2"),
+    (ON + ["--r8-rc-roll", "--batch", "4"], "route checkpoint to roll"),
+    (ON + ["--r8-rc-roll", "--batch", "4", "--r8-v9-labels", "v9.npz", "--r8-no-rc"], "route checkpoint to roll"),
+    (ON + ["--r8-roll-targets", "map", "--batch", "4"], "--map-hires on"),
+    (ON + ["--r8-roll-targets", "tac", "--batch", "4"], "--w-tac-v6 > 0"),
 ])
 def test_every_dead_or_unsafe_refcv8_argv_refuses(argv, needle):
     with pytest.raises(SystemExit) as e:

@@ -30,7 +30,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass, field
-from typing import Sequence
+from typing import Any, Mapping, Sequence
 
 import torch
 import torch.nn.functional as F
@@ -120,6 +120,21 @@ class R8Config:
     list_speed_scale_m: float = 1.0
     list_dir_scale_deg: float = 15.0
     seed: int = 20261004                 # the DEDICATED generator's seed
+    #: X3 (SPEC_REFCV8 sec. 8.3, MM ruling Q5): the SOURCE of the 4-way set-speed channel -- "" = the inherited one,
+    #: "n2" / "n3" = the past-only v9 proxy. With a past-only source the speed ceiling is never BELOW the fed value
+    #: (refc_v3._scene_hook): a fed 130 km/h is not clamped to the 4-way top step of 120.
+    speed_input: str = ""
+    #: MM ruling Q2: supervise the v9 CONSTRAINT vectors (lat_c / lon_c / speed_goal) with heads on the behaviour
+    #: decoder's action queries (built iff w_v9_cons > 0; they feed the loss, never the planner)
+    v9_cons: bool = False
+    w_v9_cons: float = 0.0
+    #: MM ruling Q1 (SPEC_REFCV8 sec. 3.1, I-2): the training step from which the EXTRA candidates (allocated /
+    #: prior-free) may be EMITTED; before it they are generated and trained but never win the argmax, so the
+    #: warm-started step 0 is refcv7's emitted plan. 0 = from the first step (the tiny arms, no warm start).
+    emit_start: int = 0
+    #: MM (B), 2026-10-04: the FULL N2 ladder (8 steps + unknown) through a zero-init FiLM seam beside the inherited
+    #: 4-way channel (the 4-way bins merge 70 / 80 into 100 on 20.8 % of rows); the ceiling is then the N2 value
+    speed_enc8: bool = False
 
     def to_dict(self) -> dict:
         return {k: getattr(self, k) for k in self.__dataclass_fields__}
@@ -533,6 +548,114 @@ def constraint_head_loss(cons_lat8: Tensor, cons_lon8: Tensor, gt_lat_v7: Tensor
     lo = (F.smooth_l1_loss(po.float(), torch.nan_to_num(lon_t.float()), reduction="none", beta=0.05) * mo).sum()
     n = (ml.sum() + mo.sum()).clamp_min(1.0)
     return (ll + lo) / n, {"n_cons_lat": int(ml.sum().item()), "n_cons_lon": int(mo.sum().item())}
+
+
+# ================================================================================================================= #
+# MM (B) 2026-10-04: the 8-step N2 encoding (`--r8-speed-enc8`)                                                     #
+# ================================================================================================================= #
+#: the road-law ladder N2 is snapped onto (WP-A SPEC_ADDENDUM_S3A1 item 4), LITERAL
+SPEED_ENC8_LADDER_KMH: tuple[int, ...] = (20, 30, 50, 70, 80, 100, 120, 130)
+SPEED_ENC8_DIMS = len(SPEED_ENC8_LADDER_KMH) + 1          # 8 one-hot + the known bit
+#: the tolerance of the step match, m/s (= 0.00036 km/h): the fed value is km/h / 3.6 computed ONCE in float64
+SPEED_ENC8_TOL_MS = 1e-4
+
+
+def speed_enc8(v_ms: Tensor, valid: Tensor | None) -> Tensor:
+    """``v_ms`` [B] (the FED value, m/s) + ``valid`` [B] -> [B, 9] = (one-hot over the 8-step ladder, known). The step
+    is the LOWEST ladder value >= v (the containing window, as N2 itself is built); above 130 km/h -> the top step. An
+    unknown row is exactly zeros next to a 0 (the X15 rule)."""
+    v = v_ms.reshape(-1).to(torch.float32)
+    ok = torch.ones_like(v) if valid is None else valid.reshape(-1).to(torch.float32)
+    steps = torch.tensor([k / 3.6 for k in SPEED_ENC8_LADDER_KMH], device=v.device, dtype=torch.float32)
+    ge = v[:, None] <= steps[None, :] + SPEED_ENC8_TOL_MS
+    idx = torch.where(ge.any(-1), ge.to(torch.long).argmax(-1), torch.full_like(v, len(steps) - 1, dtype=torch.long))
+    oh = F.one_hot(idx, len(steps)).to(torch.float32) * ok[:, None]
+    return torch.cat([oh, ok[:, None]], -1)
+
+
+# ================================================================================================================= #
+# the v9 CONSTRAINT vectors (MM ruling Q2, SPEC_REFCV8 sec. 13a): supervised on the GT-active action query            #
+# ================================================================================================================= #
+#: field order = `tanitad.data.v9_labels.LAT_CONSTRAINTS` / `LON_CONSTRAINTS` / `SPEED_GOAL` (pinned against the reader)
+V9_LAT_FIELDS: tuple[str, ...] = ("lat_theta_deg", "turn_t_start_s", "turn_t_end_s", "turn_d_start_m", "turn_len_m",
+                                  "turn_dyaw_deg", "turn_r_arc_m", "turn_exit_x_m", "turn_exit_y_m",
+                                  "turn_exit_psi_deg", "lc_t_cross_s", "lc_d_cross_m")
+V9_LON_FIELDS: tuple[str, ...] = ("lon_v_target_ms", "lon_t_reach_s", "lon_d_reach_m", "lon_t_start_s", "stop_x_m",
+                                  "stop_y_m", "lead_gap_m", "lead_tg_s", "lead_gap_min_m", "lead_tg_min_s")
+V9_SPEED_FIELDS: tuple[str, ...] = ("v_a_ms", "v_end_ms", "v_lo_ms", "v_hi_ms")
+#: WP-A INTEGRATION.md sec. 3.1's recommended scales -- distances / 50 m, times / 8 s, angles / 90 deg, speeds / 15 m/s
+#: -- as LITERALS per field; then clamped to +-V9_CLAMP. The tails are real (MEASURED on the train release: turn length
+#: to 470 m, |turn dpsi| to 505 deg, lead time gap to 95 s); the clamp bounds them (300 m, 48 s, 540 deg, 90 m/s).
+V9_LAT_SCALE: tuple[float, ...] = (90.0, 8.0, 8.0, 50.0, 50.0, 90.0, 50.0, 50.0, 50.0, 90.0, 8.0, 50.0)
+V9_LON_SCALE: tuple[float, ...] = (15.0, 8.0, 50.0, 8.0, 50.0, 50.0, 50.0, 8.0, 50.0, 8.0)
+V9_SPEED_SCALE: tuple[float, ...] = (15.0, 15.0, 15.0, 15.0)
+V9_CLAMP = 6.0
+#: INTEGRATION sec. 3.1: "supervise the turn fields only when the class is a TURN" -- columns 1..9, v7 TURN_L / TURN_R
+V9_TURN_COLS: tuple[int, ...] = tuple(range(1, 10))
+V9_TURN_V7: tuple[int, ...] = (6, 7)
+#: Huber knee in normalised units (= 5 m, 0.8 s, 9 deg, 1.5 m/s)
+V9_HUBER_BETA = 0.1
+V9_LAT_DIMS, V9_LON_DIMS, V9_SPEED_DIMS = len(V9_LAT_FIELDS), len(V9_LON_FIELDS), len(V9_SPEED_FIELDS)
+
+
+def _v9_norm(x: Tensor, scale) -> tuple[Tensor, Tensor]:
+    x = x.to(torch.float32)
+    fin = torch.isfinite(x)
+    s = torch.tensor(scale, device=x.device, dtype=torch.float32)
+    y = torch.nan_to_num((x / s).clamp(-V9_CLAMP, V9_CLAMP), nan=0.0, posinf=0.0, neginf=0.0)
+    return y, fin
+
+
+def v9_constraint_targets(lat_c: Tensor, lon_c: Tensor, speed: Tensor, lat_cls: Tensor,
+                          lon_cls: Tensor) -> dict[str, Tensor]:
+    """Raw v9 vectors ``lat_c`` [B, 12], ``lon_c`` [B, 10], ``speed`` [B, 4] (NaN = undefined for the row) and the v9
+    classes in frozen v7 ids (``lat_cls`` / ``lon_cls`` [B], -100 = PARTIAL or absent) -> normalised targets + bool masks.
+
+    MM ruling Q2: masked where the v9 row is PARTIAL or absent -- the lateral vector needs an EXACT lateral class (it is
+    read off that class's query), the longitudinal and speed vectors an EXACT longitudinal class; within a row a field
+    is supervised where it is finite (INTEGRATION sec. 3.1), and the turn fields only on a TURN class."""
+    lat_cls = lat_cls.reshape(-1).to(torch.long)
+    lon_cls = lon_cls.reshape(-1).to(torch.long)
+    tl, fl = _v9_norm(lat_c, V9_LAT_SCALE)
+    to, fo = _v9_norm(lon_c, V9_LON_SCALE)
+    ts, fs = _v9_norm(speed, V9_SPEED_SCALE)
+    ml = fl & (lat_cls >= 0)[:, None]
+    is_turn = torch.zeros_like(lat_cls, dtype=torch.bool)
+    for c in V9_TURN_V7:
+        is_turn |= lat_cls == c
+    tcols = torch.zeros(V9_LAT_DIMS, dtype=torch.bool, device=ml.device)
+    tcols[list(V9_TURN_COLS)] = True
+    ml = ml & (~tcols[None, :] | is_turn[:, None])
+    mo = fo & (lon_cls >= 0)[:, None]
+    ms = fs & (lon_cls >= 0)[:, None]
+    return {"lat": tl, "lat_m": ml, "lon": to, "lon_m": mo, "speed": ts, "speed_m": ms,
+            "lat_cls": lat_cls, "lon_cls": lon_cls}
+
+
+def v9_constraint_loss(pred_lat8: Tensor, pred_lon8: Tensor, pred_speed8: Tensor,
+                       tg: Mapping[str, Tensor]) -> tuple[Tensor, dict]:
+    """Huber (``V9_HUBER_BETA``) on the GT-ACTIVE class's query: ``lat_c`` from the lateral query of the row's v9 lateral
+    class, ``lon_c`` and ``speed_goal`` from the longitudinal query of its v9 longitudinal class (the
+    ``constraint_head_loss`` rule: the constraint "if this action" of a class that did not happen has no label). Mean
+    over the supervised ENTRIES of the three vectors; a batch with none -> an ATTACHED zero (never guarded)."""
+    b = pred_lat8.shape[0]
+    ar = torch.arange(b, device=pred_lat8.device)
+    pl = pred_lat8[ar, tg["lat_cls"].clamp_min(0)].float()
+    po = pred_lon8[ar, tg["lon_cls"].clamp_min(0)].float()
+    ps = pred_speed8[ar, tg["lon_cls"].clamp_min(0)].float()
+    tot = pl.new_zeros(())
+    n = 0.0
+    tele: dict[str, Any] = {}
+    for nm, p, t, m in (("lat_c", pl, tg["lat"], tg["lat_m"]), ("lon_c", po, tg["lon"], tg["lon_m"]),
+                        ("speed", ps, tg["speed"], tg["speed_m"])):
+        w = m.to(torch.float32)
+        tot = tot + (F.smooth_l1_loss(p, t.to(p), reduction="none", beta=V9_HUBER_BETA) * w).sum()
+        k = float(w.sum().item())
+        n += k
+        tele[f"n_v9_{nm}"] = int(k)
+        tele[f"r8_v9_mae_{nm}"] = (((p - t.to(p)).abs() * w).sum() / max(k, 1.0)).detach()
+    loss = tot / max(n, 1.0) if n > 0 else (pred_lat8.sum() + pred_lon8.sum() + pred_speed8.sum()) * 0.0
+    return loss, tele
 
 
 def constraint_satisfaction_loss(paths: Tensor, cons_raw: Tensor, cons_valid: Tensor, mask: Tensor,

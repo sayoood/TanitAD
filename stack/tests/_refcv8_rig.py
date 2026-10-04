@@ -59,7 +59,9 @@ def grid() -> torch.Tensor:
     return torch.cartesian_prod(torch.tensor(A_LON), torch.tensor(A_LAT))     # 20 anchors incl. (0, 0)
 
 
-def build(T, refcv8: bool, seed: int = 0, **r8kw):
+def build(T, refcv8: bool, seed: int = 0, vmax: bool = False, **r8kw):
+    """``vmax``: + the refcv6 4-way set-speed channel (`max_speed_onehot_v6`) and the inference-only ceiling filter
+    (`speed_ceiling_filter`), as --max-speed-input-v6 --speed-ceiling-filter build them (X3)."""
     from tanitad.refs.refc_agents import AgentSeamConfig
     argv = ["--arm", "hier", "--sampler", "ddim", "--anchor-v0-conditioned", "--anchor-control-units", "alat",
             "--n-anchors", str(len(A_LON) * len(A_LAT)), "--ego-history", "--residual-prior", "ha0_ext_pose",
@@ -75,6 +77,9 @@ def build(T, refcv8: bool, seed: int = 0, **r8kw):
     cfg.tac_decoder_cfg = v6tac.TacticalDecoderConfig(d_model=32, n_layers=1, n_heads=4, ff_mult=2,
                                                       d_agent=int(cfg.core.decoder.d), d_bev=D_BEV,
                                                       sources=("agent", "bev"))
+    if vmax:
+        cfg.max_speed_onehot_v6 = True
+        cfg.core.speed_ceiling_filter = True
     if refcv8:
         cfg.refcv8.enable = True
         for k, v in r8kw.items():

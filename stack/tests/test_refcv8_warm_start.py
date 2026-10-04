@@ -62,15 +62,16 @@ def test_allocation_and_prior_free_group_leave_the_emitted_plan_and_the_base_fan
     o8 = R.forward(cfg8, m8, bt)
     nb = int(o8["r8_n_base"])
     assert o8["anchor_traj"].shape[1] == nb + 8 + nb
-    # the GEOMETRY and the EMITTED plan are bit-identical; the base candidates' SCORES are equal to float rounding
-    # only (MEASURED 9.5e-7: the score heads run one GEMM over N + M + N rows instead of N, so the blocking differs)
-    # -- stated, not hidden. The no-extension build above is the bitwise warm-start identity.
+    # ⭐ BIT-IDENTICAL, scores included (2026-10-04): the decoder decodes the base slice and the extras in SEPARATE
+    # passes (`AnchoredDiffusionDecoder._r8_split`), so every GEMM over the base candidates has refcv7's exact shape.
+    # MEASURED before the split: one pass over N + M + N rows moved the base scores (9.5e-7 here, 2.1e-5 on the Thor
+    # GPU, where the plan and the base fan moved too: SPEC_WPB I-W FAILED on 205 / 218 windows).
     for k in ("traj", "sel_idx", "traj_base", "sel_idx_base"):
         assert torch.equal(o7[k], o8[k]), k
     assert torch.equal(o7["anchor_traj"], o8["anchor_traj"][:, :nb])
     assert torch.equal(o7["u0_hat"], o8["u0_hat"][:, :nb])
     for k in ("sel_score", "sel_score_v3"):
-        assert float((o7[k] - o8[k][:, :nb]).abs().max()) <= 1e-5, k
+        assert torch.equal(o7[k], o8[k][:, :nb]), k
     kind = o8["r8_kind"].tolist()
     assert kind == [0] * nb + [1] * 8 + [2] * nb
     assert not bool(o8["r8_emit_keep"][:, nb:].any())               # trained, never emitted (flags off)
@@ -220,3 +221,35 @@ def test_derange_diagnostic_feeds_another_windows_tactical_output(T, base) -> No
     m8._r8_derange_feed = False
     assert not torch.equal(a["r8_phi"], b["r8_phi"])
     assert torch.equal(a["r8_lat3"][:, :int(a["r8_n_base"])], b["r8_lat3"][:, :int(b["r8_n_base"])])  # tags = geometry
+
+
+def test_the_split_decode_is_the_same_function_as_one_pass(T, base) -> None:
+    """The split is a NUMERICS fix, not a semantic change: the decoder has no candidate-candidate interaction, so one
+    pass and two passes agree to float rounding on EVERY candidate (base and extras), and the split's per-candidate
+    state (the X1h query) comes back in candidate order."""
+    cfg7, m7, bt, o7 = base
+    cfg8, m8 = R.build(T, True, n_alloc=8, prior_free_group=True, w_subscore=0.5)
+    R.copy_into(m7, m8)
+    with torch.no_grad():
+        m8.core.decoder.r8_mod.proj[-1].weight.normal_(0.0, 0.1)    # phi matters, so a mis-sliced phi would show
+    dec = m8.core.decoder
+    dec.r8_gen = C.R8Generator(11)                             # the extras' noise: the same draws in both runs
+    split = R.forward(cfg8, m8, bt)
+    real = type(dec)._r8_split
+
+    def one_pass(self, fn, ctrl, kv, cond, x, *rest):           # the pre-split behaviour: ONE pass over all rows
+        nb = self._r8_split_nb
+        self._r8_split_nb = None
+        try:
+            return fn(kv, cond, x, *rest)
+        finally:
+            self._r8_split_nb = nb
+    type(dec)._r8_split = one_pass
+    try:
+        dec.r8_gen = C.R8Generator(11)
+        one = R.forward(cfg8, m8, bt)
+    finally:
+        type(dec)._r8_split = real
+    for k in ("anchor_traj", "sel_score_v3", "r8_sub_logits"):
+        assert torch.allclose(split[k], one[k], atol=1e-4, rtol=1e-4), k
+    assert torch.equal(split["sel_idx"], one["sel_idx"])

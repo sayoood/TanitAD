@@ -1,0 +1,454 @@
+{
+ "schema": "tanitad.launch_argv/1",
+ "arm": "refcv8-wpb-smoke",
+ "what": "The refcv8 FULL-SIZE SMOKE argv (SPEC_WPB_LADDER sec. 7): refcv7-r101-s0's canonical argv + every refcv8 seam, the v9 release, the RC, the warm start, and X3's past-only speed input N2 in place of refcv7's v8 future-max sidecar, the v9 constraint supervision (Q2) and X10's pose-to-image timing correction. A SMOKE, not a launch: R8-RECIPE / R8-BUDGET / R8-WARMUP are OPEN ITEMS of the refcv8 gate profile, and the RC and the N2/N3 choice (PI decision 2) are PI-DECISION.",
+ "derived_from": {
+  "file": "stack/ops/runs.d/refcv7-r101-s0.argv.json",
+  "n_tokens": 154
+ },
+ "changes_vs_refcv7": [
+  {
+   "flag": "--refcv8",
+   "value": [],
+   "was_present": false,
+   "why": "PLAN_REFCV8 R8-1: the seams (DESIGN sec. 3)"
+  },
+  {
+   "flag": "--init-from",
+   "value": [
+    "/home/nvidia/refcv7_run/runs/refcv7-r101-s0/ckpt.pt"
+   ],
+   "was_present": false,
+   "why": "DESIGN 3.7: the warm start from refcv7-r101-s0 @ 50,400 (the run's own ckpt.pt; md5 asserted at load)"
+  },
+  {
+   "flag": "--w-r8-cons",
+   "value": [
+    "0.05"
+   ],
+   "was_present": false,
+   "why": "SPEC_WPB: the constraint heads"
+  },
+  {
+   "flag": "--r8-n-alloc",
+   "value": [
+    "32"
+   ],
+   "was_present": false,
+   "why": "SMOKE: every seam on (allocation M 32) -- R8-RECIPE open"
+  },
+  {
+   "flag": "--r8-alloc-emit",
+   "value": [],
+   "was_present": false,
+   "why": "SMOKE: every seam on"
+  },
+  {
+   "flag": "--r8-alloc-emit-start",
+   "value": [
+    "2000"
+   ],
+   "was_present": false,
+   "why": "MM ruling Q1 (I-2): the allocated candidates are emitted from step 2,000 (the end of --warmup 2000); step 0 emits refcv7's plan"
+  },
+  {
+   "flag": "--w-r8-alloc-l1",
+   "value": [
+    "1.0"
+   ],
+   "was_present": false,
+   "why": "SPEC_WPB T2"
+  },
+  {
+   "flag": "--w-r8-listwise",
+   "value": [
+    "1.0"
+   ],
+   "was_present": false,
+   "why": "SPEC_WPB T1 / T2"
+  },
+  {
+   "flag": "--w-r8-sat",
+   "value": [
+    "0.1"
+   ],
+   "was_present": false,
+   "why": "SMOKE: every seam on (SPEC_WPB T2s)"
+  },
+  {
+   "flag": "--w-r8-subscore",
+   "value": [
+    "0.5"
+   ],
+   "was_present": false,
+   "why": "SMOKE: every seam on (SPEC_WPB X1h)"
+  },
+  {
+   "flag": "--r8-lat-prior-dropout",
+   "value": [
+    "0.3"
+   ],
+   "was_present": false,
+   "why": "SMOKE: every seam on (SPEC_WPB X2a)"
+  },
+  {
+   "flag": "--r8-v9-labels",
+   "value": [
+    "/home/nvidia/refcv8_v9labels/release/v9_labels_train.npz"
+   ],
+   "was_present": false,
+   "why": "WP-A v9 release (train)"
+  },
+  {
+   "flag": "--r8-v9-labels-eval",
+   "value": [
+    "/home/nvidia/refcv8_v9labels/release/v9_labels_eval139.npz"
+   ],
+   "was_present": false,
+   "why": "WP-A v9 release (eval139)"
+  },
+  {
+   "flag": "--r8-v9-md5",
+   "value": [
+    "f63ece410b725febb8a5242cf2b01d3c"
+   ],
+   "was_present": false,
+   "why": "WPA-S3"
+  },
+  {
+   "flag": "--r8-v9-eval-md5",
+   "value": [
+    "6b5c7f207cffc3b7eb3cd527fd433599"
+   ],
+   "was_present": false,
+   "why": "WPA-S3"
+  },
+  {
+   "flag": "--r8-v9-lat-variant",
+   "value": [
+    "a"
+   ],
+   "was_present": false,
+   "why": "D-WPA-1"
+  },
+  {
+   "flag": "--r8-nav-from-v9",
+   "value": [],
+   "was_present": false,
+   "why": "R8-2"
+  },
+  {
+   "flag": "--r8-rc-variant",
+   "value": [
+    "A50"
+   ],
+   "was_present": false,
+   "why": "R8-3 (PI-pending: the MM's provisional ruling)"
+  },
+  {
+   "flag": "--r8-rc-noise-along-m",
+   "value": [
+    "2.0"
+   ],
+   "was_present": false,
+   "why": "WP-A E2' certified"
+  },
+  {
+   "flag": "--r8-rc-noise-lat-m",
+   "value": [
+    "0.75"
+   ],
+   "was_present": false,
+   "why": "WP-A E2' certified"
+  },
+  {
+   "flag": "--r8-rc-dropout",
+   "value": [
+    "0.3"
+   ],
+   "was_present": false,
+   "why": "MM binding"
+  },
+  {
+   "flag": "--r8-nav-args-dropout",
+   "value": [
+    "0.5"
+   ],
+   "was_present": false,
+   "why": "MM binding"
+  },
+  {
+   "flag": "--join-defect-masks",
+   "value": [
+    "/home/nvidia/refcv8_run/tree/stack/tanitad/configs/refcv8_join_label_defects.json"
+   ],
+   "was_present": false,
+   "why": "MM binding item 6 (the shipped list in the launch tree; path = the Thor tree the gate runs)"
+  },
+  {
+   "flag": "--grad-share-every",
+   "value": [
+    "50"
+   ],
+   "was_present": false,
+   "why": "SPEC_WPB_LADDER: the in-run gradient share, every logged step in the smoke"
+  },
+  {
+   "flag": "--speed-max-sidecar-v6",
+   "value": null,
+   "was_present": true,
+   "why": "X3 (SPEC_REFCV8 8.3, MM ruling Q5): REMOVED -- the v8 future-max sidecar is a future-ego oracle input (D4 LEAK 0.238 > 0.05); the trainer and the refcv8 gate profile refuse it"
+  },
+  {
+   "flag": "--speed-max-sidecar-v6-eval",
+   "value": null,
+   "was_present": true,
+   "why": "X3: REMOVED with the train sidecar (refused by name)"
+  },
+  {
+   "flag": "--r8-speed-input",
+   "value": [
+    "n2"
+   ],
+   "was_present": false,
+   "why": "X3 / MM ruling Q5: the channel's source = the v9 past-only N2 (PI decision 2 open; N2 = default)"
+  },
+  {
+   "flag": "--r8-speed-unknown-p",
+   "value": [
+    "0.45"
+   ],
+   "was_present": false,
+   "why": "X3: the TRAINED unknown row at D4 / NavSim's no-limit share"
+  },
+  {
+   "flag": "--w-r8-v9-cons",
+   "value": [
+    "0.05"
+   ],
+   "was_present": false,
+   "why": "MM ruling Q2: the v9 constraint vectors supervised (the --w-r8-cons value; R8-RECIPE open)"
+  },
+  {
+   "flag": "--pose-sync-sidecar",
+   "value": [
+    "/home/nvidia/data/refcv6_pose_sync_sidecar.jsonl"
+   ],
+   "was_present": false,
+   "why": "X10 (MM ruling 2026-10-04, closes SPEC X10): the pose-to-image timing correction; sidecar md5 ce00a130525ede5aff6e8b57028c49bd, meta md5 823dd7a5e0b119c2aeac4cdec96bfb65 (Data FlyWheel)"
+  },
+  {
+   "flag": "--out",
+   "value": [
+    "/home/nvidia/refcv8_run/runs/refcv8-wpb-smoke"
+   ],
+   "was_present": true,
+   "why": "a new run dir (never refcv7's)"
+  }
+ ],
+ "argv": [
+  "--arm",
+  "hier",
+  "--size",
+  "small",
+  "--trunk",
+  "timm",
+  "--trunk-name",
+  "resnet101.a1_in1k",
+  "--trunk-mode",
+  "shared",
+  "--trunk-fuse",
+  "concat1x1",
+  "--ego-history",
+  "--no-strategic",
+  "--image-hw",
+  "416",
+  "1024",
+  "--sampler",
+  "ddim",
+  "--f1-random-t",
+  "--f2-dd-step",
+  "--f3-per-layer",
+  "--f4-adaln",
+  "--f5-focal",
+  "--f5-emitting-conf",
+  "--f6-w-u0-zero",
+  "--f9-assert-vocab",
+  "--anchors",
+  "/home/nvidia/data/anchors/refc_anchors_6s_v0cond_alat_117.pt",
+  "--anchor-v0-conditioned",
+  "--n-anchors",
+  "117",
+  "--v2-cache",
+  "/home/nvidia/data/refcv6-b1-416x1024-train",
+  "--v7-labels",
+  "/home/nvidia/data/v8labels/labels/s2_labels_v8_train.jsonl.gz",
+  "--nav-from-v7",
+  "--eval-cache",
+  "/home/nvidia/data/refcv6-b1-416x1024-eval139",
+  "--eval-labels",
+  "/home/nvidia/data/v8labels/labels/s2_labels_v8_eval.jsonl.gz",
+  "--eval-every",
+  "500",
+  "--eval-batches",
+  "8",
+  "--tac-decoder-v6",
+  "--w-tac-v6",
+  "1.0",
+  "--tac-decoder-d-bev",
+  "96",
+  "--graft-behaviour-sel",
+  "--max-speed-input-v6",
+  "--agents",
+  "head",
+  "--agent-join",
+  "/home/nvidia/data/joins/b1_train_plus_eval_agents.jsonl.xz",
+  "--agent-rig-camera",
+  "extrinsics",
+  "--agent-rig-extrinsics",
+  "/home/nvidia/data/refcv6_train_eval139_extrinsics.json",
+  "--agent-cls-weight",
+  "b1",
+  "--w-agent",
+  "1.0",
+  "--w-map",
+  "0",
+  "--map-gt-root",
+  "/home/nvidia/data/sam3_gt_v3",
+  "--w-box3d",
+  "1.0",
+  "--join3d",
+  "/home/nvidia/data/join3d/b1_train_plus_eval_agents_3d.jsonl.xz",
+  "--slot-presence-loss",
+  "focal",
+  "--slot-presence-prior",
+  "0.01",
+  "--slot-deep-supervision",
+  "--slot-vis1",
+  "--vis1-sidecar",
+  "/home/nvidia/data/refcv7/vis1_sidecar_refcv6b1_train4369_eval139.npz",
+  "--slot-query-select",
+  "learned_ref",
+  "--bev-coupling",
+  "--equalize-bottom-rows",
+  "43",
+  "--residual-prior",
+  "ha0_ext_pose",
+  "--graft-tac8-prior",
+  "--graft-nav-compliance",
+  "--nav-compliance-tau-rad",
+  "0.18063741505146028",
+  "--nav-compliance-tau-file",
+  "/home/nvidia/data/refcv7/nav_compliance_tau_train.json",
+  "--speed-ceiling-filter",
+  "--map-hires",
+  "on",
+  "--w-map-hires",
+  "1.0",
+  "--map-hires-class-weights",
+  "/home/nvidia/data/refcv7/map_hires_class_weights_train_100x30.json",
+  "--map-hires-decision-rule",
+  "prior_corrected",
+  "--map-hires-x-max-m",
+  "100",
+  "--map-hires-y-half-m",
+  "30",
+  "--map-hires-grad-ckpt",
+  "on",
+  "--map-hires-near-lift-m",
+  "20",
+  "--map-hires-near-refine-blocks",
+  "1",
+  "--bev-source",
+  "map_hires_pool",
+  "--bev-planner-crop-m",
+  "60",
+  "16",
+  "--opt",
+  "dd",
+  "--lr",
+  "1e-4",
+  "--warmup",
+  "2000",
+  "--seed",
+  "0",
+  "--u8-batches",
+  "--trunk-chunk-ckpt",
+  "8",
+  "--trunk-frozen-bn",
+  "--trunk-bf16",
+  "--trunk-channels-last",
+  "--trunk-fold-bn",
+  "--trunk-dedup-frames",
+  "--trunk-compile",
+  "--clip-clock-sidecar",
+  "/home/nvidia/data/refcv6_clip_clock_sidecar.jsonl",
+  "--workers",
+  "6",
+  "--conflict-every",
+  "50",
+  "--save-every",
+  "500",
+  "--log-every",
+  "50",
+  "--batch",
+  "16",
+  "--steps",
+  "50400",
+  "--out",
+  "/home/nvidia/refcv8_run/runs/refcv8-wpb-smoke",
+  "--refcv8",
+  "--init-from",
+  "/home/nvidia/refcv7_run/runs/refcv7-r101-s0/ckpt.pt",
+  "--w-r8-cons",
+  "0.05",
+  "--r8-n-alloc",
+  "32",
+  "--r8-alloc-emit",
+  "--r8-alloc-emit-start",
+  "2000",
+  "--w-r8-alloc-l1",
+  "1.0",
+  "--w-r8-listwise",
+  "1.0",
+  "--w-r8-sat",
+  "0.1",
+  "--w-r8-subscore",
+  "0.5",
+  "--r8-lat-prior-dropout",
+  "0.3",
+  "--r8-v9-labels",
+  "/home/nvidia/refcv8_v9labels/release/v9_labels_train.npz",
+  "--r8-v9-labels-eval",
+  "/home/nvidia/refcv8_v9labels/release/v9_labels_eval139.npz",
+  "--r8-v9-md5",
+  "f63ece410b725febb8a5242cf2b01d3c",
+  "--r8-v9-eval-md5",
+  "6b5c7f207cffc3b7eb3cd527fd433599",
+  "--r8-v9-lat-variant",
+  "a",
+  "--r8-nav-from-v9",
+  "--r8-rc-variant",
+  "A50",
+  "--r8-rc-noise-along-m",
+  "2.0",
+  "--r8-rc-noise-lat-m",
+  "0.75",
+  "--r8-rc-dropout",
+  "0.3",
+  "--r8-nav-args-dropout",
+  "0.5",
+  "--join-defect-masks",
+  "/home/nvidia/refcv8_run/tree/stack/tanitad/configs/refcv8_join_label_defects.json",
+  "--grad-share-every",
+  "50",
+  "--r8-speed-input",
+  "n2",
+  "--r8-speed-unknown-p",
+  "0.45",
+  "--w-r8-v9-cons",
+  "0.05",
+  "--pose-sync-sidecar",
+  "/home/nvidia/data/refcv6_pose_sync_sidecar.jsonl"
+ ]
+}

@@ -98,6 +98,7 @@ from tanitad.refs import tac_goal_head as _tac_goal_head  # noqa: E402
 from tanitad.refs import refcv6_tactical as v6tac  # noqa: E402
 from tanitad.refs import refcv8_conditioning as r8c  # noqa: E402  refcv8 WP-B
 from tanitad.train import refcv8_train as r8train  # noqa: E402  refcv8 WP-B (trainer side)
+from tanitad.train import grad_share as _gshare  # noqa: E402  refcv8 X4: the in-run P-GRAD statistic
 # ⛔⛔ refcv7's two modules are NOT ON THIS BRANCH (MEASURED 2026-09-23 on a clean
 # `git archive` of the tip: `refcv7_heads.py` / `refcv7_oracle.py` / `refcv7_toad.py`
 # absent). Its trainer integration arrived in d014414, swept in from a worktree that
@@ -771,11 +772,18 @@ def _pin_trainer_cfg(cfg: v3.RefCV3Config, args) -> v3.RefCV3Config:
 
 def _pin_refcv8(cfg, args) -> None:
     """refcv8 WP-B (DESIGN.md sec. 3) -- argv -> cfg.refcv8, with refusals that fire before config.json."""
+    _gse = int(getattr(args, "grad_share_every", 0) or 0)
+    if _gse < 0 or (_gse > 0 and _gse % max(1, int(getattr(args, "log_every", 50) or 50)) != 0):
+        raise SystemExit(f"[refcv8] --grad-share-every {_gse} must be 0 or a positive multiple of --log-every "
+                         f"{getattr(args, 'log_every', 50)}: a reading taken on a step that is not logged is "
+                         f"computed and thrown away")
     if not bool(getattr(args, "refcv8", False)):
         for k in ("r8_n_alloc", "w_r8_listwise", "w_r8_sat", "w_r8_subscore", "w_r8_cons", "w_r8_alloc_l1",
                   "r8_prior_free_group",
                   "r8_lat_prior_dropout", "r8_v9_labels", "r8_v9_labels_eval", "r8_nav_from_v9",
-                  "r8_no_rc"):
+                  "r8_no_rc", "r8_derange_feed", "r8_rc_roll", "r8_roll_targets",
+                  "r8_speed_input", "r8_speed_unknown_p", "r8_roll_speed_input", "w_r8_v9_cons",
+                  "r8_alloc_emit_start", "r8_speed_enc8"):
             v = getattr(args, k, None)
             if v not in (None, False, 0, 0.0):
                 raise SystemExit(f"[refcv8] --{k.replace('_', '-')} without --refcv8: a dead flag (refused)")
@@ -803,6 +811,25 @@ def _pin_refcv8(cfg, args) -> None:
             and not getattr(args, "r8_v9_labels_eval", None)):
         raise SystemExit("[refcv8] ⛔ --r8-v9-labels with an --eval-cache but no --r8-v9-labels-eval: train and "
                          "eval would be supervised by two different label releases (v9 vs v7.2)")
+    # ---- the deliberate-regression arms' flags (SPEC_WPB_LADDER sec. 2): training-only, roll-by-one, no RNG ---- #
+    _regr = [k for k in ("r8_derange_feed", "r8_rc_roll", "r8_roll_targets", "r8_roll_speed_input")
+             if getattr(args, k, None)]
+    if _regr and int(getattr(args, "batch", 0) or 0) < 2:
+        raise SystemExit("[refcv8] ⛔--%s needs --batch >= 2: a roll by one row over a batch of one is "
+                         "the identity, so the regression arm would be the treatment arm" % " / --".join(
+                             k.replace("_", "-") for k in _regr))
+    if bool(getattr(args, "r8_rc_roll", False)) and (not getattr(args, "r8_v9_labels", None)
+                                                       or bool(getattr(args, "r8_no_rc", False))):
+        raise SystemExit("[refcv8] ⛔--r8-rc-roll needs a route checkpoint to roll (--r8-v9-labels, "
+                         "and not --r8-no-rc)")
+    _rt = getattr(args, "r8_roll_targets", None)
+    if _rt == "map" and not (str(getattr(args, "map_hires", "off")) == "on"
+                              and float(getattr(args, "w_map_hires", 0.0) or 0.0) > 0.0):
+        raise SystemExit("[refcv8] ⛔--r8-roll-targets map needs --map-hires on with --w-map-hires > 0 "
+                         "(no 10 cm map target to roll)")
+    if _rt == "tac" and not float(getattr(args, "w_tac_v6", 0.0) or 0.0) > 0.0:
+        raise SystemExit("[refcv8] ⛔--r8-roll-targets tac needs --w-tac-v6 > 0 (no tactical loss "
+                         "would read the rolled targets)")
     if bool(getattr(args, "r8_nav_from_v9", False)) and not getattr(args, "r8_v9_labels", None):
         raise SystemExit("[refcv8] ⛔ --r8-nav-from-v9 without --r8-v9-labels: there is no v9 nav token to feed")
     if (float(args.r8_rc_noise_along_m) < r8train.RC_NOISE_ALONG_M
@@ -811,6 +838,34 @@ def _pin_refcv8(cfg, args) -> None:
                          f"{args.r8_rc_noise_lat_m}) m is below the E2'-CERTIFIED ({r8train.RC_NOISE_ALONG_M}, "
                          f"{r8train.RC_NOISE_LAT_M}) m: the CLEAN checkpoint carries future speed (WP-A INTEGRATION "
                          f"sec. 4)")
+    # ---- X3 (SPEC_REFCV8 sec. 8.3; MM ruling Q5): the speed input is PAST-ONLY; the v8 future-max sidecar is refused -- #
+    _si = getattr(args, "r8_speed_input", None)
+    _side = [f for f in ("speed_max_sidecar_v6", "speed_max_sidecar_v6_eval") if getattr(args, f, None)]
+    if _side:
+        raise SystemExit("[refcv8] ⛔ X3: --%s on a refcv8 run feeds the v8 FUTURE-MAX sidecar -- a future-ego "
+                         "speed ORACLE input (K12; D4 LEAK 0.238 against the 0.05 bar, SPEC_REFCV8 sec. 8.3). The speed "
+                         "channel's source is --r8-speed-input n2 (past-only, MM ruling Q5)."
+                         % " / --".join(f.replace("_", "-") for f in _side))
+    if bool(getattr(args, "max_speed_input_v6", False)) and not _si:
+        raise SystemExit("[refcv8] ⛔ X3: --max-speed-input-v6 on a refcv8 run without --r8-speed-input: the "
+                         "channel has no past-only source (N2 / N3, MM ruling Q5)")
+    if _si:
+        if not bool(getattr(args, "max_speed_input_v6", False)):
+            raise SystemExit("[refcv8] --r8-speed-input names the SOURCE of the 4-way set-speed channel; the "
+                             "channel itself is --max-speed-input-v6 (pass both)")
+        if not getattr(args, "r8_v9_labels", None):
+            raise SystemExit("[refcv8] --r8-speed-input reads the v9 release's past-only column: pass --r8-v9-labels")
+        _sp = getattr(args, "r8_speed_unknown_p", None)
+        if _sp is not None and not 0.0 < float(_sp) < 1.0:
+            raise SystemExit(f"[refcv8] --r8-speed-unknown-p {_sp} must be in (0, 1): the unknown row is a TRAINED "
+                             f"input (X3) and a known row must exist")
+    if bool(getattr(args, "r8_speed_enc8", False)) and _si != "n2":
+        raise SystemExit("[refcv8] --r8-speed-enc8 encodes the N2 LADDER: it needs --r8-speed-input n2 (N3 has three "
+                         "classes; with no source there is nothing to encode)")
+    if not _si and (getattr(args, "r8_speed_unknown_p", None) is not None
+                    or bool(getattr(args, "r8_roll_speed_input", False))):
+        raise SystemExit("[refcv8] --r8-speed-unknown-p / --r8-roll-speed-input without --r8-speed-input: "
+                         "there is no past-only speed input to drop or roll (a dead flag)")
     if getattr(args, "agent_join", None) and not getattr(args, "join_defect_masks", None):
         # MM binding 2026-10-04 item 6: the 693-box ego-footprint mask is APPLIED on refcv8 (the 8-clip drop list
         # is NOT -- PI decision 8 is open, the default is keep). WP-C's list reproduces D3's 693 boxes / 18 clips.
@@ -834,7 +889,14 @@ def _pin_refcv8(cfg, args) -> None:
     r.w_alloc_l1 = float(args.w_r8_alloc_l1)
     r.w_listwise = float(args.w_r8_listwise)
     r.w_subscore = float(args.w_r8_subscore)
+    r.w_v9_cons = float(getattr(args, "w_r8_v9_cons", 0.0) or 0.0)
+    r.v9_cons = r.w_v9_cons > 0.0
+    if r.v9_cons and not getattr(args, "r8_v9_labels", None):
+        raise SystemExit("[refcv8] --w-r8-v9-cons > 0 without --r8-v9-labels: the v9 constraint heads would be built "
+                         "and supervised by nothing (MM ruling Q2 reads the v9 release's constraint vectors)")
     r.seed = int(args.r8_seed)
+    r.speed_input = str(_si or "")
+    r.speed_enc8 = bool(getattr(args, "r8_speed_enc8", False))
     if r.w_sat > 0.0 and r.n_alloc <= 0:
         raise SystemExit("[refcv8] --w-r8-sat > 0 with no allocated candidates: L_sat acts on the allocated set "
                          "only (never the base fan) -- it would train nothing")
@@ -844,6 +906,20 @@ def _pin_refcv8(cfg, args) -> None:
     if r.n_alloc > 0 and r.w_alloc_l1 <= 0.0:
         raise SystemExit("[refcv8] --r8-n-alloc > 0 with --w-r8-alloc-l1 0: the allocated candidates would be "
                          "generated and never matched to GT (SPEC_WPB T2 uses 1.0)")
+    # ---- MM ruling Q1 (SPEC_REFCV8 sec. 3.1, I-2): the extra candidates' EMISSION schedule ---------------------- #
+    _es = getattr(args, "r8_alloc_emit_start", None)
+    if _es is not None:
+        if int(_es) < 1:
+            raise SystemExit(f"[refcv8] --r8-alloc-emit-start {_es} must be >= 1: emission from step 0 is the "
+                             f"un-scheduled default (pass no start)")
+        if not (r.alloc_emit or r.prior_free_emit):
+            raise SystemExit("[refcv8] --r8-alloc-emit-start without --r8-alloc-emit / --r8-prior-free-emit: a start "
+                             "for an emission that is never switched on (a dead flag)")
+    r.emit_start = int(_es or 0)
+    if getattr(args, "init_from", None) and r8train.emits_at_step0(r):
+        raise SystemExit("[refcv8] ⛔ a WARM-STARTED run (--init-from) that emits extra candidates from step 0 "
+                         "breaks step-0 identity of the emitted plan (I-2, MM ruling Q1): pass --r8-alloc-emit-start "
+                         "S_emit >= 1, or drop the emission flag")
 
 
 def _pin_refcv7(cfg, args) -> None:
@@ -1141,7 +1217,9 @@ def _pin_refcv6_tactical(cfg, args) -> None:
                 "source fields. Feeding both makes the channel's effect "
                 "non-attributable and `RefCV3Model.__init__` refuses the pair "
                 "as well. Pick one.")
-        if not getattr(args, "speed_max_sidecar_v6", None):
+        # refcv8 X3: with --r8-speed-input the channel's SOURCE is the v9 past-only column (and `_pin_refcv8`
+        # refuses the sidecar there), so the sidecar is not required on that path.
+        if not getattr(args, "speed_max_sidecar_v6", None) and not getattr(args, "r8_speed_input", None):
             raise SystemExit(
                 "[v3] ⛔ --max-speed-input-v6 without --speed-max-sidecar-v6. "
                 "The 4-value ladder is NOT a field of the label blob: it is "
@@ -2726,6 +2804,18 @@ REFC_WEIGHT_GATES: dict[str, dict] = {
         "mask": None,
         "already": "_pin_refcv8 (dead flag without --refcv8) + G-DVB `w_r8_subscore` (head built iff weight)",
     },
+    "w_r8_v9_cons": {
+        "flag": "--w-r8-v9-cons",
+        "term": "refcv8 v9 CONSTRAINT vectors (MM ruling Q2): Huber on the GT-active action query, masked where the "
+                "v9 row is PARTIAL / absent / undefined",
+        # the heads exist iff --refcv8 and w > 0 (G-DVB `w_r8_v9_cons`); the targets come from the v9 release only
+        "gate": lambda a: (bool(getattr(a, "refcv8", False)) and bool(getattr(a, "r8_v9_labels", None))
+                           and bool(getattr(a, "tac_decoder_v6", False)),
+                           "--w-r8-v9-cons needs --refcv8, --tac-decoder-v6 AND --r8-v9-labels (the targets are the v9 "
+                           "release's constraint vectors)"),
+        "mask": None,
+        "already": "_pin_refcv8 (dead flag without --refcv8; no v9 release refused) + G-DVB `w_r8_v9_cons`",
+    },
 }
 
 
@@ -2867,6 +2957,10 @@ class V3Dataset(RouteV21Dataset):
     r8_nav_from_v9 = False
     #: the v9 release SUPERVISES lat / lon (partial labels) and the 22 goals instead of v7.2 (set by enable_r8_v9)
     r8_v9_targets = False
+    #: refcv8 X3: the past-only speed source ("n2" / "n3") that feeds `v_max_ms` from the v9 join (enable_r8_speed)
+    r8_speed_mode = None
+    #: refcv8 Q2: emit the v9 CONSTRAINT vectors (`r8_v9_lat_c` / `r8_v9_lon_c` / `r8_v9_speed`) from the join
+    r8_v9_cons = False
     #: clip-stable-id -> V7Label, or None for the kin3 path. Set by the trainer
     #: rather than passed through the ctor, because the base class owns the
     #: signature and widening it would touch every RouteV21 consumer.
@@ -2887,6 +2981,14 @@ class V3Dataset(RouteV21Dataset):
     #: rows would make the loss-time refusal fire at random instead of at
     #: launch, which is the ``nav_args`` lesson.
     ego_history: bool = False
+    #: ⭐ refcv8 X10 (PI data audit D3): the POSE-TO-IMAGE timing correction, ``tanitad/data/pose_sync.py``.
+    #: ``None`` = OFF, the DEFAULT: ``__getitem__`` is then byte-for-byte the pre-X10 path (no new key, no new
+    #: branch taken). Set by :meth:`enable_pose_sync` from ``--pose-sync-sidecar``. It re-samples the WINDOW's ego
+    #: state at the NOW image's capture instant and touches ONLY the fields listed in :meth:`_pose_sync_apply`.
+    #: ⛔ It does not move a row index, the label clock, or any ``(sid, k)`` join.
+    pose_sync = None
+    #: sids the sidecar did not cover (counted at enable time, capped there); they are read UNSHIFTED.
+    pose_sync_uncovered_sids: frozenset = frozenset()
     #: ⭐ refcv7 (PI 2026-09-19): emit the GT agent boxes at each of the 8 V3
     #: waypoint slots, in the window's t0 ego frame, for the scorer's NC/TTC
     #: ORACLE. LABEL-ONLY (future agents). ⛔ Default False keeps the item's
@@ -4025,9 +4127,28 @@ class V3Dataset(RouteV21Dataset):
             rows[i] = join.row(sid, int(t) + w - 1 + self._raw_offset(ep), self._now_s(ep, t))
         self.r8_join = join
         self.r8_v9_targets = bool(targets)
+        self._r8_rows = rows
         return {"n_windows": int(len(rows)), "n_joined": int(len(rows)), "n_clips": len(sids),
                 "n_tactical_excluded_clips": len(sids & set(self.tactical_excluded_sids)),
                 "key": "(sid, k = t + w - 1 + raw_offset), now_s checked to 1e-6 s", "rows": rows}
+
+    def enable_r8_speed(self, mode: str) -> dict:
+        """refcv8 X3: the 4-way set-speed channel's SOURCE becomes the v9 PAST-ONLY column (`speed_n2_kmh` / `speed_n3`)
+        on the windows `enable_r8_v9` joined -- never the v8 future-max sidecar (the two are refused together).
+        Returns the census config.json stamps; REFUSES a column the release lacks, a value off its ladder, and a
+        split where no window is known (the v6 join-failure rule)."""
+        if self.r8_join is None:
+            raise SystemExit("[refcv8] enable_r8_speed before enable_r8_v9: the speed is read off the v9 join")
+        if self.max_speed_enabled:
+            raise SystemExit("[refcv8] ⛔ X3: the v8 sidecar is already feeding `v_max_ms` on this dataset; one "
+                             "channel, one source")
+        rep = r8train.speed_input_census(self.r8_join, self._r8_rows, str(mode))
+        self.r8_speed_mode = str(mode)
+        self.max_speed_report = dict(rep, channel="refcv8 X3 past-only -> the refcv6 4-way one-hot")
+        print(f"[v3] refcv8 X3 speed input {mode} ({rep['column']}): {rep['n_known']}/{rep['n_windows']} windows "
+              f"known, 4-way bins {rep.get('bin4_shares_of_known')}, over the 120 km/h top step "
+              f"{rep.get('over_ceiling_frac_of_known')}", flush=True)
+        return self.max_speed_report
 
     def enable_clip_clock(self, sidecar_path: str | None = None) -> dict:
         """Resolve every episode's clock ONCE and return the census config.json stamps.
@@ -4076,6 +4197,87 @@ class V3Dataset(RouteV21Dataset):
             "dt_s_max": dts_s[-1] if dts_s else None}
         return self.label_clock_report
 
+    def enable_pose_sync(self, sidecar_path: str, *, sign: float = 1.0,
+                         max_uncovered_frac: float = 0.01) -> dict:
+        """⭐ refcv8 X10 -- OPT-IN pose-to-image timing correction. Returns the census ``config.json`` stamps.
+
+        ``sidecar_path`` (``--pose-sync-sidecar``): JSON-lines ``{sid, dt_s, n_rows, delta_us}`` built by
+        ``scripts/build_pose_sync_sidecar.py`` from each clip's camera ``timestamps.parquet``.
+
+        ⛔ REFUSES, at launch and never mid-run: a sidecar that covers NONE of this split's clips; one that covers
+        fewer than ``1 - max_uncovered_frac`` of them; and any COVERED clip whose row count is not
+        ``len(poses) + raw_offset`` (a sidecar for another timeline). ``sign`` exists only for the tests'
+        deliberate-regression arm."""
+        from tanitad.data import pose_sync as _ps
+        ps = _ps.read_pose_sync_sidecar(str(sidecar_path), sign=sign)
+        n_cov = 0
+        unc = set()
+        bad = []
+        for ep in self.episodes:
+            sid = int(ep.episode_id)
+            row = ps.table.get(sid)
+            if row is None:
+                unc.add(sid)
+                continue
+            n_cov += 1
+            want = int(ep.poses.shape[0]) + self._raw_offset(ep)
+            if row.delta_s.shape[0] != want:
+                bad.append((sid, int(row.delta_s.shape[0]), want))
+        n_all = n_cov + len(unc)
+        if n_cov == 0:
+            raise SystemExit(f"[v3] ⛔ --pose-sync-sidecar {sidecar_path}: it covers NONE of this split's {n_all} "
+                             f"clips -- a sidecar for another corpus. Refusing rather than running every clip "
+                             f"unshifted while config.json names the sidecar.")
+        if bad:
+            raise SystemExit(f"[v3] ⛔ --pose-sync-sidecar {sidecar_path}: {len(bad)} covered clip(s) disagree on the "
+                             f"row count (sid, sidecar rows, needed) e.g. {bad[:3]} -- it was built on another "
+                             f"timeline than this cache.")
+        if len(unc) > max_uncovered_frac * n_all:
+            raise SystemExit(f"[v3] ⛔ --pose-sync-sidecar {sidecar_path}: {len(unc)}/{n_all} clips are uncovered "
+                             f"(cap {max_uncovered_frac:.1%}).")
+        self.pose_sync = ps
+        self.pose_sync_uncovered_sids = frozenset(unc)
+        return {"sidecar": ps.path, "sidecar_rows": ps.n_rows, "sidecar_meta": ps.meta, "sign": ps.sign,
+                "n_clips": n_all, "n_covered": n_cov, "n_uncovered_read_unshifted": len(unc),
+                "rule": "window re-sampled at t_pose + delta[NOW raw row]; rows, label clock and (sid,k) joins unchanged",
+                "fields_shifted": ["pose_last", "future_poses", "future_poses_ext", "pose_hist", "goal_tac",
+                                   "actions", "future_actions"]}
+
+    def _pose_sync_apply(self, item: dict, ep, t: int) -> None:
+        """Re-sample this window's ego state at the NOW image's capture instant (X10). In place.
+
+        Shifted (one common shift, the NOW row's): ``pose_last`` (hence ``v0 = pose_last[:, 3]``),
+        ``future_poses``, ``future_poses_ext`` (hence ``waypoint_targets`` and the tactical factored labels),
+        ``pose_hist`` when ``ego_history``, ``goal_tac``, ``actions`` and ``future_actions``.
+        NOT shifted: anything that reads ``ep.poses`` through another dataset layer (``nav_cmd``, route labels,
+        ``lan``, the agent-future transform) -- those are coarse/oracle labels on the pose clock the agent, v9 and
+        map joins are keyed on."""
+        from tanitad.data import pose_sync as _ps
+        sid = int(ep.episode_id)
+        if sid in self.pose_sync_uncovered_sids:
+            return
+        w = self.window
+        now = t + w - 1
+        got = _ps.window_shifted_tracks(self.pose_sync, sid, now, self._raw_offset(ep), ep.poses, ep.actions)
+        if got is None:                                   # covered at enable time, so this is a bug: FAIL LOUD
+            raise RuntimeError(f"[v3] pose-sync: sid {sid} NOW raw row {now + self._raw_offset(ep)} is outside "
+                               f"the sidecar although enable_pose_sync validated its length")
+        P, A, _s = got
+        pv = torch.from_numpy(P)
+        av = torch.from_numpy(A)
+        T = pv.shape[0]
+        idx = torch.arange(t + w, t + w + MAX_H_EXT)
+        item["pose_last"] = pv[now]
+        item["future_poses"] = pv[t + w:t + w + self.max_horizon]
+        item["future_poses_ext"] = pv[idx.clamp(max=T - 1)]
+        if self.ego_history:
+            item["pose_hist"] = pv[t:t + w]
+        g, gv = refb_labels.goal_tac_targets(pv, now, v3.GOAL_TAU_STEPS)
+        item["goal_tac"] = g
+        item["goal_tac_valid"] = gv
+        item["actions"] = av[t:t + w]
+        item["future_actions"] = av[t + w:t + w + self.max_horizon]
+
     def __getitem__(self, i: int):
         item = super().__getitem__(i)
         e_i, t = self.index[i]
@@ -4101,6 +4303,9 @@ class V3Dataset(RouteV21Dataset):
                                              v3.GOAL_TAU_STEPS)
         item["goal_tac"] = g                                        # [K, 4]
         item["goal_tac_valid"] = gv                                 # [K] bool
+        # ---- ⭐ refcv8 X10: pose-to-image timing (OPT-IN; None = this line is a no-op) ----
+        if self.pose_sync is not None:
+            self._pose_sync_apply(item, ep, t)
         # ---- v7.2 tactical labels (PI 2026-09-02: MANDATORY) --------------
         # ⭐ Joined on `stable_episode_id(clip_id)` — the v7.2 clip index names
         # it "the ONLY admissible join key", and `LazyV2Episode` carries the
@@ -4219,8 +4424,12 @@ class V3Dataset(RouteV21Dataset):
         # ---- refcv8 WP-B: the v9 per-frame nav + route checkpoint (v9 SPEC sec. 2.1 key) -----------
         if self.r8_join is not None:
             _j8 = self.r8_join.item(int(ep.episode_id), int(t) + int(w) - 1 + self._raw_offset(ep),
-                                    self._now_s(ep, t))
-            item.update({_k: _v for _k, _v in _j8.items() if not _k.startswith("v9_")})
+                                    self._now_s(ep, t), speed_mode=self.r8_speed_mode, cons=self.r8_v9_cons)
+            item.update({_k: _v for _k, _v in _j8.items() if not _k.startswith(("v9_", "r8_speed_"))})
+            if self.r8_speed_mode:
+                # X3: the channel's value + validity from the PAST-ONLY column (an unknown row is zeros next to a 0)
+                item["v_max_ms"] = _j8["r8_speed_ms"]
+                item["v_max_valid"] = _j8["r8_speed_known"].to(torch.float32)
             _tok8 = int(item.pop("r8_nav_token"))
             if self.r8_nav_from_v9:
                 item["nav_cmd"] = torch.tensor(R8_V9_NAV_TO_NAV_CMD[_tok8], dtype=torch.long)
@@ -4665,6 +4874,9 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
                       log_metrics: bool = True) -> dict:
     cfg = model.cfg
     core = cfg.core
+    # refcv8 SPEC_WPB_LADDER: the information control of a regression arm (training only; roll-by-one, no RNG)
+    if model.training and getattr(model, "_r8_roll_targets", None):
+        batch = r8train.roll_targets(batch, model._r8_roll_targets)
     # --u8-batches: uint8 in flight -> float32 [0,1] HERE, on the device, by
     # the contract's own /255 (frames_to_device). Float batches pass through.
     frames = frames_to_device(batch["frames"], device)
@@ -4852,7 +5064,8 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
                                              fut_valid, v0)
     # refcv8: the r8 inputs ride a wrapper, so the refcv7 call below -- and the pinned mutation anchor of
     # test_refc_v3_agent_gt_reaches_forward -- is byte-for-byte the tip's. None -> the model itself.
-    _fwd = model if _r8_prep is None else (lambda *_a, **_k: model(*_a, **_k, **_r8_prep["fwd"]))
+    # X3: `fwd` may carry the TREATED v_max_ms / v_max_valid (dropout / roll / legal row); they REPLACE the batch's.
+    _fwd = model if _r8_prep is None else (lambda *_a, **_k: model(*_a, **{**_k, **_r8_prep["fwd"]}))
     out = _fwd(frames, nav_cmd=nav_cmd, v0=v0, steps=steps, lan=lan,
                 ego_state=ego_state, nav_args=nav_args,
                 v_max_ms=v_max_ms, v_max_valid=v_max_valid,
@@ -5390,6 +5603,10 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
             cls_class_weight=getattr(model, "_cls_class_weight", None),
             vis=vis_ag)
         loss = loss + w_agent * ag["total"]
+        # ⭐ refcv8 WP-B (P-GRAD, WP-D 2026-10-04): the agent head is the LARGEST trunk driver (50.1 % of the
+        # update) and was in neither side of the conflict detector. Its UNWEIGHTED total, attached, BY KEY -- the
+        # detector and the grad-share instrument weight it themselves (`_w_agent`), like every other term.
+        extra["agent"] = ag["total"]
         for k_ag in ("presence", "cls", "centre", "size", "yaw", "project",
                      "ground"):
             if f"loss_{k_ag}" in ag:
@@ -5997,6 +6214,7 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
         _l8, _t8 = r8train.r8_losses(model, out, _r8_prep, traj_tgt, slot_valid)
         loss = loss + _l8
         extra["r8_total"] = _l8.detach()
+        extra["r8"] = _l8                       # attached, ALREADY weighted (grad_share enters it at 1.0)
         extra.update(_t8)
     return {"loss": loss, "traj": loss_traj, "cls": loss_cls, "law": loss_law,
             "route": loss_route, "lat": loss_lat, "lon": loss_lon,
@@ -6521,7 +6739,9 @@ def _seam_stamp(cfg, args) -> dict:
             "sidecar": (str(getattr(args, "speed_max_sidecar_v6", None) or "")
                         or None),
             "ladder_kmh": list(v6ms.SPEED_MAX_STEPS_KMH_V6),
-            "provenance": "ego-future (oracle INPUT, ~1.7555 bits)",
+            "provenance": ("ego-future (oracle INPUT, ~1.7555 bits)" if not getattr(args, "r8_speed_input", None)
+                           else "ego-PAST (refcv8 X3 %s, v9 release; config.json[r8_speed_derivation])"
+                           % str(args.r8_speed_input).upper()),
             "built": None,      # ← the MODEL fills this; see `train`
         },
         # ⭐⭐ E16 — THE MAX-SPEED CEILING, STAMPED AS INTENT + FACT.
@@ -8032,6 +8252,14 @@ CONFLICT_PERCEPTION_TERMS = (
     # consumer reads, so R3's mitigation must see it. ⚠️ On a map-hires arm the aux
     # side of every `cd_*` row includes it -- not comparable with refcv6's.
     ("map_hires", lambda m: float(getattr(m, "_w_map_hires", 0.0))),
+    # ⭐⭐ refcv8 WP-B (2026-10-04): THE AGENT HEAD. MEASURED by WP-D's P-GRAD on refcv7-50,400: the agent loss
+    # pays for 50.1 % of the whole-trunk update -- the single largest driver -- and this table did not list it, so
+    # the in-run detector was blind to the term that moves the trunk most. It sits on the AUX side: the PLAN side
+    # is the pre-registered trajectory term alone (PREREG_BEV_CAPACITY_COMPETITION sec. 4) and is not widened.
+    # ⛔ CONSEQUENCE, STATED: on an arm with `--w-agent > 0` the aux side of every `cd_*` row now includes the
+    # agent term, so those rows are NOT comparable with a pre-2026-10-04 run's; and a refcv6+ arm whose ONLY live
+    # aux is the agent head now has the detector ON under `auto` (it had no second gradient before).
+    ("agent", lambda m: float(getattr(m, "_w_agent", 0.0))),
 )
 
 
@@ -8745,6 +8973,11 @@ def train(args) -> dict:
     ds.u8_frames = u8
     nav_stats = eval_nav_stats = v7_manifest = None
     tac_goal_stats = None                       # D-TACGOAL
+    pose_sync_stats = eval_pose_sync_stats = None            # refcv8 X10 (opt-in)
+    if getattr(args, "pose_sync_sidecar", None):
+        pose_sync_stats = ds.enable_pose_sync(args.pose_sync_sidecar)
+        print(f"[v3] pose-sync: {pose_sync_stats['n_covered']}/{pose_sync_stats['n_clips']} clips shifted "
+              f"({pose_sync_stats['n_uncovered_read_unshifted']} unshifted)", flush=True)
     nav_args_stats = eval_nav_args_stats = None
     max_speed_stats = eval_max_speed_stats = None
     max_speed_v6_stats = eval_max_speed_v6_stats = None
@@ -8920,7 +9153,7 @@ def train(args) -> dict:
         # already refused the two together, so this `elif` can never shadow
         # E16; it is written as a separate `if` anyway so that a future
         # loosening of the pin cannot make one channel silently win.
-        if getattr(args, "max_speed_input_v6", False):
+        if getattr(args, "max_speed_input_v6", False) and not getattr(args, "r8_speed_input", None):
             max_speed_v6_stats = ds.enable_max_speed_v6(
                 str(args.speed_max_sidecar_v6), manifest)
         # ---- --nav-from-v7 (E-ARCH-NAVSRC-1, PI 2026-09-02): the nav INPUT
@@ -8940,7 +9173,10 @@ def train(args) -> dict:
                                    rc_variant=args.r8_rc_variant, lat_variant=args.r8_v9_lat_variant)
         ds.r8_nav_from_v9 = bool(getattr(args, "r8_nav_from_v9", False))
         _c8 = ds.enable_r8_v9(_j8, targets=True)
+        ds.r8_v9_cons = float(getattr(args, "w_r8_v9_cons", 0.0) or 0.0) > 0.0     # MM ruling Q2
         r8_v9_stats = {"train": dict(_j8.manifest, join={_k: _v for _k, _v in _c8.items() if _k != "rows"})}
+        if getattr(args, "r8_speed_input", None):
+            max_speed_v6_stats = ds.enable_r8_speed(args.r8_speed_input)
         print("[v3] refcv8 v9 release %s (md5 %s): %d windows joined over %d clips, census %s"
               % (_j8.manifest["split"], _j8.manifest["md5"][:8], _c8["n_joined"], _c8["n_clips"],
                  _j8.manifest["census"]["violations"]), flush=True)
@@ -9153,6 +9389,8 @@ def train(args) -> dict:
                 f"held out measures memorisation.")
         e_ds = dcls(e_eps, **kw)
         e_ds.u8_frames = u8     # the eval decodes in the MAIN process: 4x less there too
+        if getattr(args, "pose_sync_sidecar", None):             # refcv8 X10: the eval GT rides the SAME clock
+            eval_pose_sync_stats = e_ds.enable_pose_sync(args.pose_sync_sidecar)
         if args.eval_labels:
             from tanitad.data.v2_dataset import stable_episode_id
             e_lab, e_man = v7l.load_v7_labels(args.eval_labels,
@@ -9224,8 +9462,11 @@ def train(args) -> dict:
                                             rc_variant=args.r8_rc_variant, lat_variant=args.r8_v9_lat_variant)
                 e_ds.r8_nav_from_v9 = bool(getattr(args, "r8_nav_from_v9", False))
                 _c8e = e_ds.enable_r8_v9(_j8e, targets=True)
+                e_ds.r8_v9_cons = float(getattr(args, "w_r8_v9_cons", 0.0) or 0.0) > 0.0
                 r8_v9_stats["eval"] = dict(_j8e.manifest,
                                            join={_k: _v for _k, _v in _c8e.items() if _k != "rows"})
+                if getattr(args, "r8_speed_input", None):
+                    eval_max_speed_v6_stats = e_ds.enable_r8_speed(args.r8_speed_input)
             # ⭐ E16 — the eval dataset is fed the SAME ceiling channel.
             # ⚠️ No normaliser is handed down and none is fitted: the ladder
             # is PINNED road law, not a statistic of the split, which is
@@ -9241,7 +9482,7 @@ def train(args) -> dict:
             # ⚠️ `--speed-max-sidecar-v6-eval` falls back to the train
             # sidecar ONLY when the eval labels are the same blob; otherwise
             # the reader's md5 guard refuses, which is the intended outcome.
-            if getattr(args, "max_speed_input_v6", False):
+            if getattr(args, "max_speed_input_v6", False) and not getattr(args, "r8_speed_input", None):
                 eval_max_speed_v6_stats = e_ds.enable_max_speed_v6(
                     str(getattr(args, "speed_max_sidecar_v6_eval", None)
                         or args.speed_max_sidecar_v6), e_man)
@@ -9416,6 +9657,17 @@ def train(args) -> dict:
         _data_order.update(resume_data_position(state, _train_sampler, len(ds),
                                                 args.batch))
         _data_order["resumed_at_step"] = step
+    # refcv8 WP-B: --init-from (the warm start). A run that RESUMES its own ckpt.pt ignores it (resume wins).
+    _init_stamp = None
+    if getattr(args, "init_from", None):
+        if ck.exists():
+            _init_stamp = {"path": str(args.init_from), "applied": False,
+                           "why": "resumed this run's own ckpt.pt (resume wins)"}
+        else:
+            _init_stamp = dict(r8train.warm_start_from(model, args.init_from), applied=True)
+            print("[v3] warm start from %s (md5 %s, source step %s): %d keys loaded, %d new refcv8 keys, "
+                  "optimiser fresh" % (args.init_from, _init_stamp["md5"][:8], _init_stamp["source_step"],
+                                        _init_stamp["n_loaded"], _init_stamp["n_new_refcv8_keys"]), flush=True)
     # ⛔⛔ G-DVB (SPEC_REFCV7 §2): ARGV against the BUILT model, skipping the config in between.
     # `assert_seams_are_built` below compares the stamp (built FROM the config) with the model,
     # so a lever lost between argv and the config is lost from both and they agree -- that is
@@ -9716,17 +9968,28 @@ def train(args) -> dict:
         # once hard-coded AGENT-ONLY and would have mislabelled every R2 arm.
         "refcv6_tactical": _refcv6_tactical_block(args, model, tac_goal_stats),
         # ⭐ refcv8 WP-B: every switch + the dedicated seed + the new-parameter count (None on a refcv7 arm)
+        "init_from": _init_stamp,
         "refcv8": (dict(model.cfg.refcv8.to_dict(), n_params=int(getattr(model, "r8_n_params", 0)),
                          rc_dropout=float(args.r8_rc_dropout), nav_args_dropout=float(args.r8_nav_args_dropout),
                          v7_policy_scope=(ds._v7_scope.to_dict() if getattr(ds, "_v7_scope", None) else None),
                          v7_policy_travels=bool(r8train.v7_policy_travels(v7l)),
                          rc_noise_m=[float(args.r8_rc_noise_along_m), float(args.r8_rc_noise_lat_m)],
-                         no_rc=bool(getattr(args, "r8_no_rc", False)), v9=r8_v9_stats)
+                         no_rc=bool(getattr(args, "r8_no_rc", False)), v9=r8_v9_stats,
+                         speed_unknown_p=(None if not getattr(args, "r8_speed_input", None) else float(
+                             r8train.R8_SPEED_UNKNOWN_P if args.r8_speed_unknown_p is None
+                             else args.r8_speed_unknown_p)),
+                         regression_arm={"derange_feed": bool(getattr(args, "r8_derange_feed", False)),
+                                         "rc_roll": bool(getattr(args, "r8_rc_roll", False)),
+                                         "roll_targets": getattr(args, "r8_roll_targets", None),
+                                         "roll_speed_input": bool(getattr(args, "r8_roll_speed_input", False))})
                     if bool(getattr(model, "r8_enabled", False)) else None),
         # ⭐⭐ refcv6 §5 — the 4-way one-hot set-speed census.
         # ⭐⭐ A16 2026-09-26: WHICH clock read the labels, and how many clips fell back.
         "label_clock": ({"train": clip_clock_stats, "eval": eval_clip_clock_stats}
                         if clip_clock_stats is not None else None),
+        # ⭐ refcv8 X10: None = the pose-to-image offset is UNCORRECTED (every refcv<=7 run). Never a silent default.
+        "pose_sync": ({"train": pose_sync_stats, "eval": eval_pose_sync_stats}
+                      if pose_sync_stats is not None else None),
         "refcv6_max_speed": ({"train": max_speed_v6_stats,
                               "eval": eval_max_speed_v6_stats}
                              if max_speed_v6_stats is not None else None),
@@ -9736,7 +9999,11 @@ def train(args) -> dict:
         # describing a ceiling it never fed.
         "speed_max_derivation_v6": (
             v6ms.SPEED_MAX_DERIVATION_V6
-            if getattr(args, "max_speed_input_v6", False) else None),
+            if (getattr(args, "max_speed_input_v6", False)
+                and not getattr(args, "r8_speed_input", None)) else None),
+        # ⭐ refcv8 X3: the PAST-ONLY source's own stamp, on its own key (r8train.assert_r8_speed_stamp)
+        "r8_speed_derivation": r8train.speed_derivation(getattr(args, "r8_speed_input", None),
+                                                        bool(getattr(args, "r8_speed_enc8", False))),
     }
     # ⛔⛔ E16 — THE STAMP IS A PRECONDITION, NOT A FIELD. A --max-speed-input
     # run whose record would not declare the channel's ego-future provenance
@@ -9750,7 +10017,10 @@ def train(args) -> dict:
     # defensible exactly as long as every artifact says so. Both directions
     # refuse: a channel with no stamp, and a control that carries one.
     v6ms.assert_speed_max_stamp_v6(
-        _run_config, bool(getattr(args, "max_speed_input_v6", False)))
+        _run_config, bool(getattr(args, "max_speed_input_v6", False))
+        and not getattr(args, "r8_speed_input", None))
+    r8train.assert_r8_speed_stamp(_run_config, getattr(args, "r8_speed_input", None),
+                                  enc8=bool(getattr(args, "r8_speed_enc8", False)))
     (out_dir / "config.json").write_text(json.dumps(_run_config, indent=1),
                                          encoding="utf-8")
 
@@ -9770,6 +10040,9 @@ def train(args) -> dict:
     # `None` (the baseline) stays distinguishable from a live block -- the same
     # discipline `_refcv6_flags_of` states for the F-flags, and the reason
     # `config.json` stamps `refcv6: null` instead of omitting the key.
+    # refcv8 X4: the gradient-share instrument (off = 0 = the tip's loop and row, byte for byte)
+    _gs_every = int(getattr(args, "grad_share_every", 0) or 0)
+    _gs_groups = _gshare.param_groups(model) if _gs_every > 0 else {}
     _cd_aux = _conflict_aux_weights(model)
     _cd_on = _gcf.enabled_for_arm(
         getattr(getattr(cfg, "core", cfg).decoder, "refcv6", None),
@@ -9858,6 +10131,13 @@ def train(args) -> dict:
             model._r8_nav_args_dropout = float(args.r8_nav_args_dropout)
             model._r8_rc_noise = (float(args.r8_rc_noise_along_m), float(args.r8_rc_noise_lat_m))
             model._r8_no_rc = bool(getattr(args, "r8_no_rc", False))
+            model._r8_derange_train = bool(getattr(args, "r8_derange_feed", False))
+            model._r8_rc_roll_train = bool(getattr(args, "r8_rc_roll", False))
+            model._r8_roll_targets = getattr(args, "r8_roll_targets", None)
+            model._r8_speed_unknown_p = float(r8train.R8_SPEED_UNKNOWN_P if getattr(args, "r8_speed_unknown_p", None)
+                                              is None else args.r8_speed_unknown_p)
+            model._r8_roll_speed_train = bool(getattr(args, "r8_roll_speed_input", False))
+            r8train.apply_emit_schedule(model, step)        # MM ruling Q1: extras emitted only from emit_start
         losses = compute_losses_v3(model, batch, device, mode=args.mode,
                                    ablate_frames=args.ablate_frames,
                                    log_metrics=_logged_after(step, args.log_every, args.steps))
@@ -9927,6 +10207,13 @@ def train(args) -> dict:
                 if (_cd_checked and step % _cd_cfg.every == 0
                         and _cd_cfg.mode != _gcf.MODE_SUBTRACT):
                     _cd_row = _cd.measure(_cd_lt, _cd_la, step=step).row()
+        # ⭐ refcv8 X4: the gradient-share reading, on a LOGGED step only, BEFORE the backward. `autograd.grad`
+        # never touches `.grad`, so the backward below writes the bytes it writes without the instrument.
+        _gs_row = {}
+        if (_gs_every > 0 and _logged_after(step, args.log_every, args.steps)
+                and (step + 1) % _gs_every == 0):
+            _gs_row = _gshare.measure(_gshare.term_tensors(losses, _gshare.weights_of(model, TRAJ_WEIGHT)),
+                                      losses["loss"], _gs_groups)
         # ⚠️ `subtract` mode reads `.grad`, so it must run AFTER the backward
         # (and the backward must retain the graph for its one aux pass) and
         # BEFORE `clip_grad_norm_`, which rescales `.grad` in place.
@@ -10023,6 +10310,8 @@ def train(args) -> dict:
             # signature of the defect this measures.
             if _pr_row:
                 row.update(_pr_row)
+            if _gs_row:                          # exact, AFTER the rounding (a 1e-4 share must not read 0)
+                row.update(_gs_row)
             # ⛔ AFTER the rounding comprehension, for the same reason as
             # `_gp_row`: a conflict of -1e-8 rounded to 5 dp reads 0.0, which is
             # "no conflict" -- the exact misreading this instrument exists to
@@ -10342,6 +10631,13 @@ def build_parser() -> argparse.ArgumentParser:
                          "LABEL_CLOCK_MAX_UNVERIFIED_FRAC (0.01). A larger value is an OPERATOR "
                          "decision and is stamped in config.json `label_clock.*.g3`. MEASURED on "
                          "refcv6's splits: train 22/4,369 (0.50 %%), eval 3/139 (2.16 %%).")
+    ap.add_argument("--pose-sync-sidecar", default=None,
+                    help="⭐ refcv8 X10 (OPT-IN, default OFF): JSON-lines {sid, dt_s, n_rows, delta_us} built by "
+                         "`scripts/build_pose_sync_sidecar.py` from each clip's camera timestamps. Re-samples the "
+                         "TRAINING window's ego state (pose_last/v0, future poses, pose_hist, goal_tac, actions) at "
+                         "the instant the NOW image was captured (0-34 ms later than its stored pose; MEASURED mean "
+                         "16.5 ms). No row index, label clock or (sid,k) join moves. Adds NO inference input. "
+                         "Stamped in config.json `pose_sync`.")
     ap.add_argument("--clip-clock-sidecar", default=None,
                     help="A16 2026-09-26: JSON-lines {sid, grid_start_s, dt_s} built by "
                          "`scripts/build_clip_clock_sidecar.py` from each clip's 100 Hz "
@@ -11470,6 +11766,10 @@ def build_parser() -> argparse.ArgumentParser:
     g8.add_argument("--w-r8-listwise", type=float, default=0.0,
                     help="X1: > 0 REPLACES the E9 single-winner CE by the listwise soft-target CE")
     g8.add_argument("--w-r8-subscore", type=float, default=0.0, help="X1h: Hydra-style per-candidate critics")
+    g8.add_argument("--w-r8-v9-cons", type=float, default=0.0,
+                    help="MM ruling Q2: supervise the v9 CONSTRAINT vectors (lat_c 12 / lon_c 10 / speed_goal 4) with heads "
+                         "on the behaviour decoder's action queries (Huber on the GT-active query; masked where the "
+                         "v9 row is PARTIAL / absent / undefined). Builds the heads iff > 0; needs --r8-v9-labels.")
     g8.add_argument("--r8-base-constraints", action="store_true")
     g8.add_argument("--r8-no-modulate-base", action="store_true")
     g8.add_argument("--r8-rc-dropout", type=float, default=0.3, help="route-checkpoint dropout (>= 0.3, MM binding)")
@@ -11493,6 +11793,41 @@ def build_parser() -> argparse.ArgumentParser:
                     help="never feed the route checkpoint (the switch-off while the RC ruling awaits the PI)")
     g8.add_argument("--r8-nav-from-v9", action="store_true", help="R8-2: the per-frame announced nav token")
     g8.add_argument("--r8-seed", type=int, default=20261004, help="the DEDICATED generator's seed")
+    g8.add_argument("--init-from", default=None,
+                    help="WARM START: load this checkpoint's model state (every source key strict; every missing key "
+                         "must be a refcv8 seam; fresh optimiser) when --out has no ckpt.pt of its own")
+    g8.add_argument("--r8-derange-feed", action="store_true",
+                    help="DELIBERATE-REGRESSION arm (training only): the planner reads ANOTHER window's tactical "
+                         "output (roll by one row); the tactical loss still trains on the window's own outputs")
+    g8.add_argument("--r8-rc-roll", action="store_true",
+                    help="DELIBERATE-REGRESSION arm (training only): each row is fed ANOTHER window's route "
+                         "checkpoint (roll by one row, no RNG)")
+    g8.add_argument("--r8-roll-targets", default=None, choices=("tac", "map"),
+                    help="INFORMATION CONTROL (training only): roll the tactical targets (lat / lon / partial masks / "
+                         "22 goals) or the 10 cm map target by one row -- same head, same gradient magnitude, zero "
+                         "information (the --bev-aux-shuffle precedent)")
+    g8.add_argument("--r8-alloc-emit-start", type=int, default=None,
+                    help="MM ruling Q1 (I-2): the training step from which the extra candidates (allocated / "
+                         "prior-free) may be EMITTED; before it they are generated and trained but never win the "
+                         "argmax, so a warm start's step 0 emits refcv7's plan. Required with --init-from + an emit flag.")
+    g8.add_argument("--r8-speed-input", default=None, choices=("n2", "n3"),
+                    help="X3 (SPEC_REFCV8 8.3, MM ruling Q5): the SOURCE of the --max-speed-input-v6 channel = the v9 "
+                         "release's PAST-ONLY speed proxy (n2: the past-20-s max snapped up the road-law ladder with "
+                         "a 50 km/h urban floor; n3: urban / rural / motorway). Refuses the v8 future-max sidecar.")
+    g8.add_argument("--r8-speed-enc8", action="store_true",
+                    help="refcv8 (B): ALSO feed the full N2 ladder (8 steps + unknown) through a zero-init FiLM seam on "
+                         "the behaviour decoder (the 4-way bins merge 70 / 80 into 100); the ceiling becomes the fed "
+                         "N2 value. Needs --r8-speed-input n2.")
+    g8.add_argument("--r8-speed-unknown-p", type=float, default=None,
+                    help="X3: the trained 'unknown' row's rate on TRAINING windows (None = 0.45, D4 / NavSim's no-limit "
+                         "share); refused outside (0, 1)")
+    g8.add_argument("--r8-roll-speed-input", action="store_true",
+                    help="DELIBERATE REGRESSION (training only, SPEC_WPB_LADDER L4 V-VSHUF): every row takes another "
+                         "window's speed input (roll by one; distribution kept, information removed)")
+    g8.add_argument("--grad-share-every", type=int, default=0,
+                    help="refcv8 X4 (any arm): every N steps, on a LOGGED step, measure each loss term's share of "
+                         "the trunk / shared-BEV update (P-GRAD's projection statistic, tanitad/train/grad_share.py) "
+                         "into the metrics row as gs_*. 0 = off (the tip's row). Must be a multiple of --log-every.")
     g7 = ap.add_argument_group("refcv7 (DrivoR heads on refcv6)")
     g7.add_argument("--refcv7", action="store_true",
                     help="build the WTA proposal decoder (64 learned queries, one "

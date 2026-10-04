@@ -512,6 +512,11 @@ def _build_model(config: dict, ckpt_path: str, device: str = "cuda", remap: dict
                          "n_map_hires_keys": sum(1 for k in ck["model"] if k.startswith("_map_hires.")),
                          "ckpt_keys": sorted(k for k in ck if k != "model"),
                          "step": ck.get("step")}
+    # refcv8 (MM ruling Q1): the extra candidates are EMITTED as the checkpoint's own training step implies; a
+    # refcv7 checkpoint loaded into a refcv8 build is the warm start = refcv8 step 0 (emission off under a schedule)
+    if bool(getattr(args, "refcv8", False)):
+        _s8 = tr.r8train.checkpoint_r8_step(ck["model"].keys(), ck.get("step"))
+        rec["r8_emit"] = {"r8_step": _s8, "live": bool(tr.r8train.apply_emit_schedule(model, _s8))}
     # ⭐ CONTROL: the kit's anchor file must equal the checkpoint's own anchor buffers
     anc_ctl = {}
     for k, v in anc_before.items():
@@ -804,6 +809,14 @@ def build_eval_dataset(model, cfg, args, config: dict, *, with_perception_target
         rec["nav"] = e_ds.enable_nav_from_v7(e_man)
         if getattr(args, "nav_args", False):
             raise SystemExit(f"[{LOADER}] --nav-args needs the TRAIN normaliser; not in this run")
+    # refcv8 WP-B: the v9 EVAL release (inputs + targets), attached exactly as train() attaches it
+    if bool(getattr(args, "refcv8", False)) and getattr(args, "r8_v9_labels_eval", None):
+        _j8e = tr.r8train.load_v9_join(args.r8_v9_labels_eval, expect_md5=args.r8_v9_eval_md5,
+                                       rc_variant=args.r8_rc_variant, lat_variant=args.r8_v9_lat_variant)
+        e_ds.r8_nav_from_v9 = bool(getattr(args, "r8_nav_from_v9", False))
+        _c8e = e_ds.enable_r8_v9(_j8e, targets=True)
+        e_ds.r8_v9_cons = float(getattr(args, "w_r8_v9_cons", 0.0) or 0.0) > 0.0     # MM ruling Q2 targets
+        rec["r8_v9"] = dict(_j8e.manifest, join={k: v for k, v in _c8e.items() if k != "rows"})
     # train():8783-8797
     e_ds.ego_history = bool(getattr(args, "ego_history", False))
     e_ds.r7_agent_future = float(getattr(args, "w_r7_scorer", 0.0) or 0.0) > 0.0
@@ -814,7 +827,13 @@ def build_eval_dataset(model, cfg, args, config: dict, *, with_perception_target
     # train():8802-8816 -- the ceilings
     if getattr(args, "max_speed_input", False):
         raise SystemExit(f"[{LOADER}] E16 --max-speed-input is not a refcv7 arm")
-    if getattr(args, "max_speed_input_v6", False):
+    if getattr(args, "max_speed_input_v6", False) and getattr(args, "r8_speed_input", None):
+        # refcv8 X3: the channel's source is the v9 EVAL release's past-only column (train() does the same)
+        if getattr(e_ds, "r8_join", None) is None:
+            raise SystemExit(f"[{LOADER}] --r8-speed-input needs the v9 EVAL release (--r8-v9-labels-eval) in the "
+                             f"run's argv: the past-only speed is read off that join")
+        rec["max_speed_v6"] = e_ds.enable_r8_speed(args.r8_speed_input)
+    elif getattr(args, "max_speed_input_v6", False):
         rec["max_speed_v6"] = e_ds.enable_max_speed_v6(
             str(getattr(args, "speed_max_sidecar_v6_eval", None) or args.speed_max_sidecar_v6),
             e_man)

@@ -618,6 +618,94 @@ PROFILES: dict[str, dict] = {
     ),
 }
 
+#: refcv8 (WP-B, PLAN_REFCV8; DESIGN sec. 3; SPEC_WPB + SPEC_WPB_LADDER): the parts of the flag set NOT yet decided.
+#: ⛔ While any is open the token is not a PASS -- each names what decides it.
+_REFCV8_OPEN_ITEMS = (
+    {"id": "R8-RECIPE",
+     "what": "the conditioning recipe's values (--r8-n-alloc, --r8-alloc-emit, --w-r8-alloc-l1, --w-r8-listwise, "
+             "--w-r8-sat, --w-r8-subscore, --w-r8-v9-cons, --r8-lat-prior-dropout, --r8-prior-free-group) are decided "
+             "by SPEC_WPB's "
+             "frozen-trunk arms (registered c952d4b4) and SPEC_WPB_LADDER L1",
+     "owner": "WP-B (results) -> the Master Mind (ruling)"},
+    {"id": "R8-BUDGET",
+     "what": "--w-tac-v6 and --w-map-hires for refcv8 (SPEC_WPB_LADDER L2 / L3, sized from P-GRAD); refcv7's 1.0 "
+             "stands until the ladder reads",
+     "owner": "WP-B -> the Master Mind"},
+    {"id": "R8-WARMUP",
+     "what": "the warm-start schedule after --init-from (fresh AdamW moments; --lr / --warmup): DESIGN sec. 3.7 "
+             "names it a launch-SPEC decision",
+     "owner": "the Master Mind"},
+    {"id": "R8-INHERITED-RECORDS",
+     "what": "the Thor env-failure pin list and the G-MAP / G-BOX overfit records are refcv7's, INHERITED; they "
+             "are re-run on the refcv8 tree before a binding token",
+     "owner": "WP-B / the gate agent"},
+)
+_R7 = PROFILES["refcv7"]
+#: refcv8 = refcv7's profile (every refcv7 rule still binds: the perception stack, the selection mechanisms, the
+#: DrivoR-T levers off) + the refcv8 seams, the v9 release and the warm start.
+PROFILES["refcv8"] = dict(
+    _R7, name="refcv8",
+    open_items=_REFCV8_OPEN_ITEMS,
+    required_flags=tuple(_R7["required_flags"]) + (
+        "--refcv8", "--init-from", "--r8-v9-labels", "--r8-v9-labels-eval", "--r8-nav-from-v9",
+        "--r8-rc-variant", "--join-defect-masks", "--grad-share-every", "--max-speed-input-v6", "--r8-speed-input",
+        "--pose-sync-sidecar"),
+    required_flags_why=dict(_R7.get("required_flags_why") or {}, **{
+        "--max-speed-input-v6": "SPEC_REFCV8 8.3 (X3): the set-speed channel, the ceiling's source",
+        "--r8-speed-input": "SPEC_REFCV8 8.3 (X3) / MM ruling Q5: the channel's source is PAST-ONLY (N2 / N3)",
+        "--pose-sync-sidecar": "X10 (MM ruling 2026-10-04, closes SPEC X10): the pose-to-image timing correction "
+                               "(Data FlyWheel; tanitad/data/pose_sync.py)",
+        "--refcv8": "PLAN_REFCV8 R8-1: the tactical layer conditions generation and selection",
+        "--init-from": "DESIGN 3.7: the warm start from refcv7 (every source key strict, new keys = refcv8 seams)",
+        "--r8-v9-labels": "WP-A INTEGRATION 2: the v9 release supervises the tactical layer and feeds nav / RC",
+        "--r8-v9-labels-eval": "train and eval are supervised by ONE label release",
+        "--r8-nav-from-v9": "R8-2: the per-frame announced nav token",
+        "--r8-rc-variant": "R8-3: the route checkpoint, named so its pending ruling is visible",
+        "--join-defect-masks": "MM binding 2026-10-04 item 6: the 693-box ego mask",
+        "--grad-share-every": "SPEC_WPB_LADDER: the in-run gradient-share instrument is on every refcv8 run"}),
+    required_values=dict(_R7["required_values"], **{
+        "--r8-v9-md5": "f63ece410b725febb8a5242cf2b01d3c",
+        "--r8-v9-eval-md5": "6b5c7f207cffc3b7eb3cd527fd433599",
+        "--r8-v9-lat-variant": "a",
+        "--r8-rc-noise-along-m": "2.0",
+        "--r8-rc-noise-lat-m": "0.75",
+        "--r8-rc-dropout": "0.3",
+        "--r8-nav-args-dropout": "0.5",
+        "--r8-speed-unknown-p": "0.45",
+        "--r8-alloc-emit-start": "2000",
+        "--w-r8-cons": "0.05"}),
+    required_values_why=dict(_R7.get("required_values_why") or {}, **{
+        "--r8-v9-md5": "WP-A LANDING_READY WPA-S3: the validated train release",
+        "--r8-v9-eval-md5": "WP-A LANDING_READY WPA-S3: the validated eval139 release",
+        "--r8-v9-lat-variant": "D-WPA-1: lateral variant a (junction) is the default",
+        "--r8-rc-noise-along-m": "WP-A INTEGRATION 4: E2' certified the NOISED RC-A50 (the clean point leaks)",
+        "--r8-rc-noise-lat-m": "WP-A INTEGRATION 4: the certified lateral sigma",
+        "--r8-rc-dropout": "MM binding 2026-10-04: route-checkpoint dropout >= 0.3",
+        "--r8-nav-args-dropout": "MM binding 2026-10-04: nav-argument dropout, token kept",
+        "--r8-speed-unknown-p": "SPEC_REFCV8 8.3 (X3): the TRAINED unknown row at D4 / NavSim's no-limit share 0.45",
+        "--r8-alloc-emit-start": "MM ruling Q1 (I-2): extras emitted from the end of the LR warmup (--warmup 2000); "
+                                 "the emission-OFF phase is identity-free (iw_diag + the split decode)",
+        "--w-r8-cons": "SPEC_WPB: the constraint-head weight"}),
+    required_positive=tuple(_R7["required_positive"]) + ("--w-r8-cons", "--w-r8-v9-cons"),
+    forbidden_levers=tuple(_R7["forbidden_levers"]) + (
+        (("--r8-derange-feed",), "SPEC_WPB_LADDER's L1 deliberate-regression diagnostic"),
+        (("--r8-rc-roll",), "SPEC_WPB_LADDER's L1 deliberate-regression diagnostic"),
+        (("--r8-roll-targets",), "SPEC_WPB_LADDER's L2 / L3 information control"),
+        (("--r8-roll-speed-input",), "SPEC_WPB_LADDER's L4 deliberate-regression arm (V-VSHUF)"),
+        # ⛔ X3 (SPEC_REFCV8 8.3, MM ruling Q5): refcv7's speed source. Refused by NAME, whatever its value.
+        (("--speed-max-sidecar-v6", "--speed-max-sidecar-v6-eval"),
+         "X3: the v8 FUTURE-MAX sidecar -- a future-ego speed ORACLE input (K12; D4 LEAK 0.238 against the 0.05 bar, "
+         "SPEC_REFCV8 8.3); the refcv8 speed source is --r8-speed-input (past-only)"),
+    ),
+    #: ⛔ the RC input rests on the Master Mind's PROVISIONAL ruling (road-geometry speed information is admissible;
+    #: WP-A INTEGRATION 4): PI confirmation pending, so a launch feeding it is PI-DECISION until the PI rules
+    pi_pending_values=dict(_R7.get("pi_pending_values") or {}, **{
+        "--r8-rc-variant": "the route-checkpoint input: the Master Mind's provisional ruling that road-geometry "
+                            "speed information is admissible awaits the PI (WP-A INTEGRATION 4)",
+        "--r8-speed-input": "PI decision 2 (SPEC_REFCV8 sec. 11): N2 or N3 as the past-only speed proxy is open; N2 is "
+                            "the plan's default (MM ruling Q5)"}),
+)
+
 
 class GateError(RuntimeError):
     """A condition under which the gate cannot certify anything."""
@@ -2288,6 +2376,9 @@ LIVE_WEIGHT_RULES: dict[str, tuple[Callable, tuple[str, ...], float, str]] = {
                       ("r8_listwise",), 1.0, "refcv8 listwise selection CE (X1)"),
     "w_r8_subscore": (lambda a: bool(getattr(a, "refcv8", False)) and _w(a, "w_r8_subscore") > 0,
                       ("r8_subscore",), 1.0, "refcv8 sub-score critics (X1h)"),
+    "w_r8_v9_cons": (lambda a: bool(getattr(a, "refcv8", False)) and _w(a, "w_r8_v9_cons") > 0
+                     and bool(getattr(a, "r8_v9_labels", None)), ("r8_v9_cons",), 1.0,
+                     "refcv8 v9 constraint vectors (MM ruling Q2)"),
 }
 #: every field of `refcv6_diffusion.DiffusionFlags` -> the loss keys it declares ( () = none,
 #: with the reason). ⛔ EXHAUSTIVE for the same reason.
