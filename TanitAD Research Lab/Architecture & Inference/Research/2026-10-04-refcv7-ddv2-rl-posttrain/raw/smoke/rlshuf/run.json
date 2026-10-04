@@ -1,0 +1,78 @@
+{
+ "wp": "WP-RL",
+ "arm": {
+  "kind": "rlshuf",
+  "rl_weight": 1.0,
+  "groups": 4,
+  "il_form": "matched_anchor",
+  "grad_clip": 100.0,
+  "clip_sample": false
+ },
+ "seed": 0,
+ "steps": 2,
+ "batch": 8,
+ "micro": 4,
+ "lr": 0.0002,
+ "weight_decay": 0.0001,
+ "schedule": "linear warmup 10% + cosine to 1e-6 over steps (P suppl. 7)",
+ "consts": {
+  "group_size": 4,
+  "rollout_steps": 10,
+  "label_span": 20,
+  "trunc_t": 8,
+  "explore_std_floor": 0.04,
+  "likelihood_std_floor": 0.1,
+  "gamma": 0.8,
+  "eta": 1.0,
+  "clip_sample": false,
+  "clip_sample_range": 1.0,
+  "adv_std_eps": 0.0001,
+  "bar_eps": 1e-06,
+  "veto_value": -1.0,
+  "il_weight_with_positive": 0.1,
+  "il_weight_no_positive": 1.0,
+  "lr": 0.0002,
+  "weight_decay": 0.0001,
+  "epochs": 10,
+  "total_batch": 512,
+  "_source": "hustvl/DiffusionDriveV2@1cd12a1 + arXiv 2512.07745v1 (SPEC_DDV2_RL_PAPER.md)"
+ },
+ "n_ticks": 60,
+ "agent_frames": 70,
+ "proxy": {
+  "n_ticks": 60,
+  "w_ep": 5.0,
+  "w_ttc": 5.0,
+  "w_c": 2.0,
+  "w_spd": 0.0
+ },
+ "dac_ladder_rule": "R2",
+ "trainable": {
+  "prefixes": [
+   "traj_proj",
+   "time_mlp",
+   "layers",
+   "adaln",
+   "cascade",
+   "control_head"
+  ],
+  "n_params": 13804924,
+  "n_tensors": 144
+ },
+ "windows_digest": "2e53c5d8ab5474bc1ae3056eb55e5d98fc454927e2372b45d4fc7bcb1c5af576",
+ "n_windows_eligible": 507588,
+ "ckpt": "/home/nvidia/refcv7_post/rl/ckpt_50400.pt",
+ "ckpt_md5": "b418d0fc4a92a6848c246a6a7c50207b",
+ "config": "/home/nvidia/refcv7_run/runs/refcv7-r101-s0/config.json",
+ "_tier": "T0 training-side",
+ "_evidence_class": "MEASURED (ours)",
+ "dac_rule": {
+  "cell_m": 0.1,
+  "x_max_m": 100.0,
+  "y_half_m": 30.0,
+  "block": 5,
+  "min_seen": 13,
+  "road_frac": 0.5
+ },
+ "run_hash": "9973a31effae5ff9e45fa114b85338258f8d4c16e536b5986a4b6f754153a131"
+}

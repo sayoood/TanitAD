@@ -120,6 +120,12 @@ to see the effect. Run it on the Thor and evaluate the results."* Package:
   four families, RL vs RLOFF (the RL effect) and RL vs BASE; secondary: route set, NavSim navtest / navhard zero-shot.
 * **Compute:** Thor, ≤ ~24 GPU-h for the RL arm, checkpointed every ~45 min and stoppable/resumable, so the refcv8
   critical path (A7 capture, R1, v7-tiny ladder) takes Thor's GPU in short slots; launch gate binding before training.
+* **Status 2026-10-04 ~16:35: PORTED, GATED, LAUNCHED.** Step-0 identity 1131/1131; parity with the deployed sampler
+  bitwise; 36 tests incl. 14 mutations; the registered DAC rule failed its own human control and was replaced before any
+  RL number (A-0, human DAC 0.983). Gate PASS (Master Mind; PC-1 = the paper's Eq. 4 imitation loss). Measured cost
+  30.85 s/step ⇒ 2,000 steps ≈ 17.1 GPU-h per arm, ~69 GPU-h for RL / RLOFF / RL-SHUF / RL-s1 + ~9 h eval — larger than
+  the ≤ 24 h first estimate because all four registered arms are needed for the claim; RL vs RLOFF expected ~Tue/Wed;
+  the queue stops at a checkpoint before the refcv8 training run and resumes after.
 
 ---
 
