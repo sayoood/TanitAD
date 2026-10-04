@@ -16363,3 +16363,23 @@ intervals (another draw of LOGS only). NavSim open-loop benchmark, zero-shot, on
 | **NS-PREMATURE-TURN** | On 724 scenes with a LEFT/RIGHT command but a straight route inside the horizon, the plan turns anyway in ~59 %; DAC fails 37.9 % / 43.2 % when it turned vs 8.9 % / 25.0 % when it did not. | MEASURED (association, not cause; P2 NAVOFF tests it) |
 | **NS-VMAX-UNKNOWN** | The max-speed "unknown" row the bridge feeds on ~45 % of tokens (navhard 2,697 / 5,912; navtest 5,488 / 12,146) is NOT a disproportionate failure source: navhard DiD vs STOP −1.7 pp [−5.7, +1.7]; the navtest excess (+3.8 pp) is matched by the input-free PRIOR (+4.4 pp standardised) ⇒ a scene property. | MEASURED (no navhard VMAXOFF arm; causal reading rests on the PRIOR control) |
 | **NS-EPDMS-CEILING** | If A1 matched STOP's DAC wherever STOP is DAC-clean, official navhard EPDMS would go 0.2269 → 0.3504 (vs STOP 0.2985). | ESTIMATED (upper bound) |
+
+<!-- REFCV8-2026-10-04-WPA-WPB-S1 -->
+### 2026-10-04: refcv8 WP-A (v9 label SPEC) and WP-B (tactical-conditioning design + the D0 dose-response study)
+
+WP-B D0: `TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/` (DESIGN.md,
+SPEC_D0_DOSE_RESPONSE.md sha256 `7c7e4f52…` registered 11:11:58Z before any number, raw/d0_*.json). Zero GPU: it
+re-scores refcv7's banked eval fans under SIMULATED tactical posteriors of known quality. Open loop, held-out eval139,
+one training seed, both sampler seeds; controls: E9 argmax = sel_idx on all three captures (0 mismatches), A4's bounds
+reproduced exactly (B1 −0.1041 / −0.5658, B3 −0.6061 / −0.8917), the uninformative-posterior arm reads exactly 0.000,
+the shuffled-constraint arm +0.013 [−0.022, +0.049]. WP-A: `FlyWheels/TanitAD_DataFlyWheel/incoming/2026-10-04-v9-labels/SPEC.md`.
+
+| id | record | status |
+|---|---|---|
+| **D0-LAT-CLASS-WEAK** | Conditioning refcv7's selection on a lateral 3-way tactical class clears the route bar only at ≥ 0.95 class accuracy (ΔADE all −0.056; turn −0.149 [−0.308, −0.025]; direction 0.908) and never moves heading-within-15° off 0.52; a perfect class reproduces B1 (−0.103 all, −0.566 turn). | MEASURED |
+| **D0-PROGRESS-CONSTRAINT** | A 6-s progress constraint at lognormal σ 0.10 (median error 6.7 %) gives ΔADE **−0.484 [−0.615, −0.370]** (seed 1 −0.438); progress from constant velocity (6 s × v0) captures only 1.1 % of the oracle gain. Post hoc (D0c, design input only): a terminal-heading constraint ≤ 15° reaches direction 0.95 / heading-within-15° 0.70 (seed 1 0.67); ≤ 10° reaches 0.79 / 0.75. | MEASURED (D0c POST-HOC) |
+| **D0-E8-CORRELATED** | Conditioning on refcv7's OWN progress predictor (E8, median error 17.6 %) HURTS: **+0.213 [+0.121, +0.313]** m — its errors line up with the pick's errors, so an error-σ bar is necessary but not sufficient; the real head's conditioned arm must decide. | MEASURED |
+| **D0-TAC-NO-SKILL** | refcv7's tactical lateral head has no skill over the majority class on the dense 3-way relabel: accuracy 0.7375 vs 0.7388 (always majority); turn side-correct 0.402; longitudinal macro-F1 0.376. The pick agrees with the tactical argmax on only 0.449 of turn windows (with GT on 0.841). | MEASURED |
+| **D0-PRIOR-SIDE** | When the residual prior's side is right the pick is turn-correct on 0.967; when wrong 0.674 (31/46); 14 of the 17 wrong-direction turn picks follow the prior. | MEASURED (descriptive) |
+| **V9-EGO-COVERAGE** | Every clip has its egomotion log (train 4,369 / 4,369, eval 139 / 139): 100 Hz over raw 0–20 s, then irregular to the recording end (median 8.5 Hz; recording median 139.7 s). A usable 8-s future (largest log gap ≤ 1.0 s) exists for 95.17 % of train and 94.97 % of eval windows. | MEASURED (WP-A S1) |
+| **NAVSIM-AGENTINPUT-NO-ROUTE** | NavSim's `AgentInput` carries only ego statuses, cameras and lidars (`dataclasses.py:150-155`); the route centreline exists only in the eval-side metric cache (`metric_cache.py:43`). ⇒ a leaderboard-legal NavSim agent gets NEITHER the route checkpoint NOR a turn distance — only the bare driving command; every refcv8 NavSim number carries a legal row and a privileged (diagnostic) row. | MEASURED (local devkit, WP-A S1) |
