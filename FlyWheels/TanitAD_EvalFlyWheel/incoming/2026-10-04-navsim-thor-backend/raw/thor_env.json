@@ -1,0 +1,70 @@
+{
+ "evidence_class": "MEASURED 2026-10-04 (this session); hashes are sha256 over the sorted per-file sha256 list of the tree, first 16 hex",
+ "thor": {
+  "host": "tanitad-thor-wifi (thor6)",
+  "kernel": "Linux 6.8.12-tegra aarch64",
+  "os": "Ubuntu 24.04.4 LTS, glibc 2.39",
+  "python": "3.9.25 (python-build-standalone via uv 0.12.1) at /home/nvidia/venvs/navsim-cpu-python",
+  "venv": "/home/nvidia/venvs/navsim-cpu (NEW; tanitad-train / tanitad-edge untouched)",
+  "torch": "2.0.1 (PyPI aarch64 wheel, CPU-only in THIS venv; cuda_available False)",
+  "numeric_libs": {
+   "numpy": "1.23.4",
+   "scipy": "1.13.1",
+   "shapely": "2.0.7 (GEOS 3.11.4)",
+   "pandas": "2.3.3",
+   "pyproj": "3.6.1 (PROJ 9.3.0)",
+   "pyogrio": "0.11.1 (GDAL 3.10.3)",
+   "geopandas": "1.0.1"
+  },
+  "rasterio": "IMPORT-ONLY STUB (no cp39/aarch64 wheel exists); raises on any call",
+  "venv_vs_devbox": "78 packages installed; 74 identical versions to the dev-box venv; 4 differ by patch version, all non-numeric (charset_normalizer 3.5.2/3.5.1, greenlet 3.2.5/3.1.1, idna 3.20/3.19, pyparsing 3.3.3/3.3.2)",
+  "disk_footprint": {
+   "venv": "982M",
+   "python": "91M",
+   "code+src": "22M",
+   "total_GB": 1.1,
+   "budget_GB": 1.5,
+   "df_free_after": "23G"
+  },
+  "tmpfs": "/dev/shm/navsim, <= 7 GB at any time (navhard phase 6.9G incl. navtest cache staged)"
+ },
+ "devbox": {
+  "python": "3.9.25 (C:/Users/Admin/navsim-crun/venv)",
+  "numeric_libs": {
+   "numpy": "1.23.4",
+   "scipy": "1.13.1",
+   "shapely": "2.0.7 (GEOS 3.11.4)",
+   "pandas": "2.3.3",
+   "pyproj": "3.6.1 (PROJ 9.3.0)",
+   "pyogrio": "0.11.1 (GDAL 3.10.3)",
+   "geopandas": "1.0.1",
+   "torch": "2.0.1+cpu"
+  }
+ },
+ "source_trees_identical": {
+  "navsim_v2 (navsim-crun/devkit/navsim)": "73f37344a58914b5 both",
+  "nuplan (navsim-crun/nuplan-devkit/nuplan)": "091133f479808878 both",
+  "navsim_v11 (3e8291b/navsim)": "4c3d06809cb6b6ad both"
+ },
+ "data_trees_identical": {
+  "metric_cache_navhard_two_stage (5,919 files)": "1e465c875c59b3e6 both",
+  "synthetic_scene_pickles navhard (5,462)": "b5d8db92d3f16b7a both",
+  "navsim_logs/test (C: mirror, 76 logs)": "ebe563bdca4fb92d both; the 76 are byte-identical to the D:/Archive copies",
+  "maps (gpkg x4 + drivable_area npz + json; Intensity excluded)": "46e17fb85386a7ca on Thor == C: mirror == D:/Archive maps",
+  "w3_navtest_v1/metric_cache_navtest (12,152 files)": "ae553c8491dc989a both",
+  "D:/Archive navsim_logs/test (147 logs)": "170439438027f3ea dev box (Thor copy: see navtest phase)"
+ },
+ "byte_identical_code_on_thor": {
+  "E1 navsim_win.py": "97cf493a95607821\u2026",
+  "E2 tanitad_seam_agent.py": "fdb54c49052aa731\u2026",
+  "W3 navsim_v1_win.py": "0da699c13da7a26c\u2026",
+  "W3 run_v1.py": "125670597d99b243\u2026",
+  "W3 w3_agents_v1.py": "3dc778dd7ddd8f79\u2026",
+  "D6 d6_fan_score.py": "167d48f499f118aa\u2026",
+  "D6 d6_rescore.py": "cb1eafe458f22bee\u2026"
+ },
+ "not_copied": {
+  "sensor_blobs (12 GB)": "seam agents declare build_no_sensors(); navhard runs PASS without them (no sensor path exists on Thor at all)",
+  "Intensity.npy.npz (141 MB)": "raster layer; rasterio is a raising stub and no run touched it"
+ }
+}

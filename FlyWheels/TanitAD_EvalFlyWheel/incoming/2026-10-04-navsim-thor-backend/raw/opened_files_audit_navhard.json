@@ -1,0 +1,17 @@
+{
+ "what": "files the navhard scorer process OPENED (PEP 578 audit + pyogrio entry points), 24-token one-group run, MEASURED on Thor",
+ "metric_cache_pickles": 24,
+ "metric_cache_metadata_csv": 1,
+ "synthetic_scene_pickles": 5462,
+ "navsim_logs": 76,
+ "maps": [
+  "nuplan-maps-v1.0.json",
+  "sg-one-north/9.17.1964/map.gpkg",
+  "us-ma-boston/9.12.1817/map.gpkg",
+  "us-nv-las-vegas-strip/9.15.1915/map.gpkg",
+  "us-pa-pittsburgh-hazelwood/9.17.1937/map.gpkg"
+ ],
+ "sensor_blobs_opened": 0,
+ "intensity_or_drivable_area_npz_opened": 0,
+ "note": "the scene loader opens EVERY synthetic pickle and every navhard log at init (filtering), so the whole 0.84 GB + 0.55 GB are needed; sensor_blobs (12 GB) do not exist on Thor and were never opened"
+}
