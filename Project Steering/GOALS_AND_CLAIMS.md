@@ -16265,3 +16265,20 @@ Evidence: `s2_labels_v8_train.jsonl.gz` md5 `b45377a1f25263b5c0f3d318c126b1ac` (
 | **D-VLM-CONFLICT** | Alpamayo (VLM) disagrees with the geometric tactical label on 36 % of lateral (1,537/4,275 scored) and 36 % of longitudinal (1,655/4,567) records. Which side is right: stream D2. | label file `alpamayo.*.agree` | MEASURED (rate); OPEN (direction) |
 | **D-LATPEAK** | `a_tac.lat_args.lat_peak_m` reads median |x| 19.7 m, p90 110.8, max 305.3 (70.2 % > 5 m) — not a plausible lateral excursion for a nudge. Meaning/units UNVERIFIED; stream D2 settles it from the builder. | label file | MEASURED (values); OPEN (meaning) |
 | **H-NAV-TIMING-A5** | A time-localised nav (from `nav_30s`, horizon 6 s) in SPEC §5's nav-filter rule recovers turn direction WITHOUT the straight-window damage the clip token caused (V2: straight ΔADE +0.326). Pre-registered as route-package addendum A5 (sha256 `5f102584…`, 2026-10-04T10:01:55Z) before any number; reported arm T2, derangement control T2c, SPEC §5's bar. | `…/2026-10-04-refcv7-route-following/SPEC_ADDENDUM_A5.md` | PRE-REGISTERED; RUNNING |
+
+<!-- REFCV7-NAVSIM-30K-2026-10-04 -->
+### 2026-10-04: refcv7 step 30,000 on NavSim — navtest PASS, navhard FAILED, warmup NOT PROVEN
+
+Tier: NavSim open-loop benchmark, zero-shot (refcv7 never trained on navtrain), one training seed; intervals are
+paired log-cluster bootstraps (another draw of LOGS only); inference floor = the R7_A1_s1 seed. Launch tree `fec3a0d`
+(speed ceiling does not reach the emitted plan, SPEC_REFCV7 §26.1). ⚠️ The 30k navtest was scored after a CUDA → CPU
+device change at the 5k → 30k boundary (`_superseded_cpu_navtest_0710` history); compare 5k vs 30k with that caveat.
+Evidence: `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step30000/BARS.json`
+(ZZCOMPLETE7DONEZZ 2026-10-04T10:11:44Z).
+
+| id | record | status |
+|---|---|---|
+| **R7-N1-30K** | navtest v1.1 PDMS (full 12,146 tokens): R7_A1 **71.88** vs STOP 61.82, paired **+10.06 [+8.29, +11.78]**; seed floor 0.25; CV 20.65, HUMAN 94.55. **BAR-R7-N1 PASS** (5k: 65.60, +3.78). | MEASURED |
+| **R7-NH1-30K** | navhard official two-stage EPDMS: R7_A1 **0.2269** vs STOP 0.2985, paired **−0.0716 [−0.1112, −0.0346]**; CV 0.1148, ECHO 0.1429. **BAR-R7-NH1 FAILED** (5k: 0.1624). Cause UNATTRIBUTED (refcv8 effects inventory gap G1). | MEASURED |
+| **R7-NW1-30K** | warmup S2-EPDMS-u: R7_A1 0.5224 vs STOP 0.5212, margin 0.0011 inside 2× the seed floor 0.0069 → **NOT PROVEN**; interval UNAVAILABLE (7 logs < 8). | MEASURED |
+| **REFCV8-EFFECTS** | The refcv8 effects inventory (41 rows, 15 unmeasured gaps, four-family coverage) re-derives 109 headline numbers from raw files (109 OK, mutation control rejects a wrong expectation). Largest: selection speed profile (B3 bound −0.606 m), NavSim DAC/NC (no lever yet), turn selection, box duplicates. | `TanitAD Research Lab/Data Engineering/Research/2026-10-04-refcv8-data-audit/D5_effects_inventory/EFFECTS_INVENTORY.md` — MEASURED (re-derived) |

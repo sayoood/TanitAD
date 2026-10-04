@@ -1,0 +1,324 @@
+{
+ "split": "warmup_two_stage",
+ "label": "RESULT",
+ "model": {
+  "ckpt": "D:/refcv7_eval_kit/ckpt\\ckpt_30000.pt",
+  "ckpt_md5": "ac4e4fab87e35b20de24d8d94910d910",
+  "step": 30000,
+  "label": "RESULT",
+  "registry": "MODEL_REGISTRY.md -- refcv7-r101-s0 (TRAINING)",
+  "decoder_steps": 2,
+  "load_s": 4.8,
+  "precision": "fp32",
+  "trunk_levers_recorded": {
+   "chunk_ckpt": 8,
+   "frozen_bn": true,
+   "bn_pinned": 104,
+   "relu_out_of_place": 100,
+   "bf16": true,
+   "channels_last": true,
+   "bn_folded": 104,
+   "dedup_frames": true
+  },
+  "trunk_levers_eval": {
+   "chunk_ckpt": 8,
+   "frozen_bn": true,
+   "bn_pinned": 104,
+   "relu_out_of_place": 100,
+   "bf16": false,
+   "channels_last": false,
+   "bn_folded": 104,
+   "dedup_frames": true
+  },
+  "device": "cpu",
+  "seam_checks": {
+   "strict_0_0": true,
+   "gdvb_0": true,
+   "horizons": true,
+   "window": true,
+   "image_hw": true,
+   "n_anchors": true,
+   "anchor_units_alat": true,
+   "residual_prior": true,
+   "speed_ceiling_filter_on": true,
+   "ego_hist": true,
+   "max_speed_onehot_v6": true,
+   "hires_bank": true,
+   "no_stride16_bank": true,
+   "trunk_equalize_43": true,
+   "hires_mask_43": true,
+   "no_ego_state_inject": true,
+   "no_lan": true,
+   "no_nav_args": true,
+   "agents_not_oracle": true,
+   "decoder_steps_2": true
+  },
+  "loader_record": {
+   "loader": "refcv7_loader",
+   "repo": "C:\\Users\\Admin\\ev7nav",
+   "state_dict": {
+    "strict": true,
+    "missing": [],
+    "unexpected": [],
+    "n_keys": 1131,
+    "n_map_hires_keys": 54,
+    "ckpt_keys": [
+     "step"
+    ],
+    "step": 30000
+   },
+   "declared_vs_built": {
+    "mismatches": [],
+    "registry_entries": 221
+   },
+   "param_breakdown": {
+    "rebuilt": {
+     "core": 90787546,
+     "phi_tac": 2101504,
+     "str_goal_head": 771,
+     "gstr_cond": 66816,
+     "tac_heads": 14364,
+     "tac_latent_proj": 262656,
+     "scorer": 1145,
+     "nav_inject": 50176,
+     "tac_decoder_v6": 2253828,
+     "tac_behaviour_gate_v6": 2574,
+     "total": 100468987
+    },
+    "config_json": {
+     "core": 90787546,
+     "phi_tac": 2101504,
+     "str_goal_head": 771,
+     "gstr_cond": 66816,
+     "tac_heads": 14364,
+     "tac_latent_proj": 262656,
+     "scorer": 1145,
+     "nav_inject": 50176,
+     "tac_decoder_v6": 2253828,
+     "tac_behaviour_gate_v6": 2574,
+     "total": 100468987
+    },
+    "equal": true
+   },
+   "departures": [
+    "argv --trunk-compile REMOVED: no Triton on Windows; torch.compile wraps the backbone CALL only -- module tree and state_dict identical (LAUNCH_READINESS_FIXES.md sec. 10b)",
+    "Thor data paths REMAPPED to the eval kit D:\\refcv6_eval_kit for ['--agent-join', '--agent-rig-extrinsics', '--anchors', '--clip-clock-sidecar', '--eval-cache', '--eval-labels', '--join3d', '--map-gt-root', '--map-hires-class-weights', '--nav-compliance-tau-file', '--speed-max-sidecar-v6-eval', '--vis1-sidecar'] (per flag, basename-checked; recorded in argv_remap)",
+    "tactical-goal pos_weight / class mask from config.json tac_goal_stats (the TRAIN split's own constants; train():8483-8497 derives them from the loaded split)"
+   ],
+   "trunk_equalize_as_trained": {
+    "status": "set as trained",
+    "declared_by_pin": 43,
+    "as_trained": 43,
+    "why": "stamped (post-fix record)"
+   },
+   "nav_compliance_tau_file": {
+    "path": "D:\\refcv6_eval_kit\\data\\refcv7\\nav_compliance_tau_train.json",
+    "sha256": "10ca19db42ed0a49083978a4cb6d0914664d28bc3231ed7058a01d5161e938ca",
+    "tau": 0.18063741505146028
+   },
+   "map_hires": {
+    "w_map_hires": 1.0,
+    "x_max_m": 100.0,
+    "y_half_m": 30.0,
+    "lift_cell_m": 0.25,
+    "lift_grid_hw": [
+     400,
+     240
+    ],
+    "stride": 8,
+    "heights_m": [
+     0.0,
+     0.5,
+     1.5,
+     2.5
+    ],
+    "d_lift": 64,
+    "d_model": 64,
+    "dilations": [
+     1,
+     2,
+     4,
+     8,
+     16
+    ],
+    "d_up": 32,
+    "norm_groups": 8,
+    "n_classes": 8,
+    "out_hw": [
+     1000,
+     600
+    ],
+    "out_cell_m": 0.1,
+    "band_keys": [
+     "0_20",
+     "20_40",
+     "40_60",
+     "60_80",
+     "80_100"
+    ],
+    "grad_ckpt": true,
+    "class_weights_sha256": "d70dec8087ed73ee6d4129b6fc6e0a97a350f826907462b6b251413ede488b67",
+    "decision_rule": "prior_corrected",
+    "receptive_field_m": 15.75,
+    "near_lift_x_m": 20.0,
+    "near_lift_rows": 200,
+    "near_refine_blocks": 1,
+    "extent": {
+     "x_max_m": 100.0,
+     "y_half_m": 30.0,
+     "fine_shape": [
+      1000,
+      600
+     ],
+     "band_keys": [
+      "0_20",
+      "20_40",
+      "40_60",
+      "60_80",
+      "80_100"
+     ]
+    },
+    "trunk_tap": {
+     "s8_tap": true,
+     "s8_module": "layer2",
+     "s8_dim": 512,
+     "s8_hw": [
+      52,
+      128
+     ],
+     "s8_frame": "newest",
+     "s8_temporal_fusion": null
+    },
+    "bev_source": "map_hires_pool",
+    "planner_crop_m": [
+     60.0,
+     16.0
+    ],
+    "branch_params": {
+     "lift": 131200,
+     "encoder": 406912,
+     "refine": 20936,
+     "near": 65600,
+     "near_refine": 18496,
+     "total": 643144
+    },
+    "lift_valid_mask": true,
+    "lift_bank_n_clips": 4508,
+    "equalize_bottom_rows": 43
+   },
+   "anchors": {
+    "path": "D:\\refcv6_eval_kit\\data\\anchors\\refc_anchors_6s_v0cond_alat_117.pt",
+    "shape": [
+     117,
+     8,
+     2
+    ],
+    "controls_shape": [
+     117,
+     2
+    ],
+    "control_units": "alat",
+    "sha256_16": "51f930dc6f3564ff"
+   },
+   "mode": "diffusion",
+   "decoder_steps": 2,
+   "sampler": "ddim",
+   "build_s": 4.7
+  },
+  "lift_bank_params": {
+   "frame": "CanonicalFrame(height=416, width=1024, f_ref=488.92398517830253, projection='cylindrical')",
+   "stride": 8,
+   "heights_m": [
+    0.0,
+    0.5,
+    1.5,
+    2.5
+   ],
+   "grid": "BEVGrid(x_fwd_m=100.0, y_half_m=30.0, cell_m=0.25)",
+   "observed": [
+    416,
+    1024
+   ],
+   "equalize_bottom_rows": 43
+  },
+  "tree": {
+   "tree": "C:/Users/Admin/ev7nav",
+   "tree_commit": "0c444082a08efdcbeef36585f1b3baabbfafc1fc",
+   "tanitad": "C:\\Users/Admin/ev7nav/stack\\tanitad\\__init__.py",
+   "refcv6_suite": "C:/Users/Admin/ev7nav/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim",
+   "frames416": "C:\\Users/Admin/ev7nav/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/code\\frames416.py",
+   "refcv6_bridge": "C:\\Users/Admin/ev7nav/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/code\\refcv6_bridge.py"
+  },
+  "torch": "2.11.0+cu128",
+  "threads": 6,
+  "exact_dedup": true,
+  "lift": {
+   "road_z_m": -0.3557311968663991,
+   "road_plane_source": "C:\\Users\\Admin\\ev7nav\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-23-refcv6-standard-tests\\navsim\\raw\\inputs\\road_plane_navhard_warmup_logs.json",
+   "bank": "model._lift_bank_hires (0.25 m, stride 8; parameters read off the built bank)"
+  }
+ },
+ "bank2": "C:/Users/Admin/tanitad-caches/refcv6-navsim-20260923/warmup_two_stage",
+ "bank1": null,
+ "inputs": "C:\\Users\\Admin\\ev7nav\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\navsim_agent_inputs.json",
+ "speed": "C:\\Users\\Admin\\ev7nav\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-23-refcv6-standard-tests\\navsim\\raw\\inputs\\speed_limits_warmup_two_stage.json",
+ "speed_oracle": null,
+ "conversion": "E2's conversion, IMPORTED unchanged: a C2 not-a-knot cubic spline in time through the\norigin and the 8 knots (0.5 ... 6 s), evaluated at NavSim's 0.5 ... 4.0 s (knots reproduced;\n2.5 / 3.5 s interpolated; the 5 s / 6 s knots shape the spline but are not emitted); heading\n= the spline tangent, held below 1.0 m/s (E2 SPEC amendment 1).",
+ "nav_map": {
+  "0": "left",
+  "1": "follow",
+  "2": "right",
+  "3": "follow"
+ },
+ "gpu_lock_token": null,
+ "spec": {
+  "frames": "ST",
+  "nav": "cmd",
+  "vmax": "map",
+  "filter": false,
+  "seed": 0,
+  "meaning": "SPEC_REFCV7 A2 sensitivity reading: ceiling filter OFF (real forward)"
+ },
+ "declared_inputs": [
+  "ego_pose[1]",
+  "ego_pose[2]",
+  "ego_pose[3]",
+  "ego_velocity[1]",
+  "ego_velocity[2]",
+  "ego_velocity[3]",
+  "driving_command[3]"
+ ],
+ "withheld_egostatus_fields": [
+  "ego_pose[0]",
+  "ego_velocity[0]",
+  "ego_acceleration[0]",
+  "ego_acceleration[1]",
+  "ego_acceleration[2]",
+  "ego_acceleration[3]",
+  "driving_command[0]",
+  "driving_command[1]",
+  "driving_command[2]"
+ ],
+ "device": [
+  "cpu"
+ ],
+ "precision": [
+  "fp32"
+ ],
+ "rows_jsonl": "D:\\Projects\\TanitAD\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-28-refcv7-standard-tests\\navsim\\raw\\milestones\\step30000\\bridge_warmup\\rows_R7_FILTOFF.jsonl",
+ "seconds_this_launch": 270.9,
+ "KPR": {
+  "n": 204,
+  "max_abs_m": 0.0,
+  "tol_m": 0.0001,
+  "verdict": "PASS"
+ },
+ "arm": "R7_FILTOFF",
+ "n_expected": 220,
+ "n_rows": 220,
+ "missing": [],
+ "n_missing": 0,
+ "partial": false,
+ "n_model_rows": 204,
+ "n_cv_standin_rows": 16
+}
