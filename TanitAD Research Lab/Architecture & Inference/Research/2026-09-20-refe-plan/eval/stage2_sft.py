@@ -100,7 +100,9 @@ def main() -> int:
     out_dir.mkdir(parents=True, exist_ok=True)
     toks = sorted(json.load(open(TOKENS, encoding="utf-8"))["tokens"])
     seam = D / "seams" / f"stage2_{a.name}.npz"
-    label = f"stage2_{a.name}"
+    # ⛔ the harness refuses any label not starting with "refe" (its scratch must never collide with W3's / refcv6's);
+    # MEASURED 2026-10-05: "stage2_sft3_A" failed all score attempts in seconds. The selftests never scored, so missed it.
+    label = f"refe_stage2_{a.name}"
     res = {"name": a.name, "ckpt": a.ckpt, "rule": a.rule, "tokens": str(TOKENS), "n_tokens": len(toks),
            "deployed_seam": str(BASE_SEAM), "deployed_csv": str(BASE_CSV),
            "estimator": "paired log-cluster bootstrap over the confirmation logs, 10,000 resamples, 95 %, seed 20260927",
