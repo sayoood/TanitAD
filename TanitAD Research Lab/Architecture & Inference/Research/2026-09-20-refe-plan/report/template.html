@@ -687,7 +687,7 @@ a { color: var(--s1); }
         const dOf = a => a.x_lane ? a.x_lane.pick_minus_base_v1 : a.pick_minus_base;
         if (S.verdict) { lead.push(nm + ": " + S.verdict.summary); }
         else lead.push(nm + ": " + (done ? "finished, " + int(done.updates) + " updates in " + fmt(done.hours, 1) + " h" :
-          (last ? "update " + int(last.update) + " of " + int(last.of) + " (" + fmt(last.s_per_update, 1) + " s each, about " + fmt(left, 1) + " h left)" : "started, held-out read at step 0 pending")) +
+          (last ? "update " + int(last.update) + " of " + int(last.of) + " (" + fmt(last.s_per_update, 1) + " s each, about " + fmt(left, 1) + " h left)" : (ev.length ? "training started" : "started, held-out read at step 0 pending"))) +
           (le ? "; latest read (" + le.tag + "): arm A " + ci(dOf(le.A)) + ", arm B " + ci(dOf(le.B)) + " vs the original scorer's " + fmt(le.base.pick, 2) : "") +
           ". An arm passes only if its lower bound clears zero at the final update (" + pre + ").");
         ev.forEach(e => ["base", "A", "B"].forEach(k => { const a = e[k]; if (!a) return;

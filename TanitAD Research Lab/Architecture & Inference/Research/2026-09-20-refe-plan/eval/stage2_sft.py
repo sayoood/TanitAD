@@ -95,15 +95,19 @@ def main() -> int:
     ap.add_argument("--ckpt", required=True)
     ap.add_argument("--name", required=True)
     ap.add_argument("--rule", default="navsim_v1", choices=("navsim_v1", "navsim_v1_lane"))
+    ap.add_argument("--tokens", default=str(TOKENS), help="W3-format token set; default = Amendment 5's 923 (the registered set)")
+    ap.add_argument("--exploratory", action="store_true",
+                    help="a look on a NON-registered token set: the verdict is labelled EXPLORATORY and decides nothing")
     a = ap.parse_args()
     out_dir = PKG / "raw" / "2026-10-05-sft-stage2" / a.name
     out_dir.mkdir(parents=True, exist_ok=True)
-    toks = sorted(json.load(open(TOKENS, encoding="utf-8"))["tokens"])
+    TOK = Path(a.tokens)
+    toks = sorted(json.load(open(TOK, encoding="utf-8"))["tokens"])
     seam = D / "seams" / f"stage2_{a.name}.npz"
     # ⛔ the harness refuses any label not starting with "refe" (its scratch must never collide with W3's / refcv6's);
     # MEASURED 2026-10-05: "stage2_sft3_A" failed all score attempts in seconds. The selftests never scored, so missed it.
     label = f"refe_stage2_{a.name}"
-    res = {"name": a.name, "ckpt": a.ckpt, "rule": a.rule, "tokens": str(TOKENS), "n_tokens": len(toks),
+    res = {"name": a.name, "ckpt": a.ckpt, "rule": a.rule, "tokens": str(TOK), "n_tokens": len(toks), "exploratory": a.exploratory,
            "deployed_seam": str(BASE_SEAM), "deployed_csv": str(BASE_CSV),
            "estimator": "paired log-cluster bootstrap over the confirmation logs, 10,000 resamples, 95 %, seed 20260927",
            "tier": "NAVSIM v1.1 PDMS = ego pseudo-simulation of an open-loop plan against logged agents"}
@@ -115,7 +119,7 @@ def main() -> int:
             env = {k: (v.replace("D:/", "E:/") if isinstance(v, str) else v) for k, v in EC.env_driverl().items()}
             cmd = [PY_D, "refe_navtest_seam.py", "--ckpt", a.ckpt, "--frames", str(D / "frames"),
                    "--db-dir", "E:/Projects/TanitAD/data/nuplan/nuplan-v1.1/splits/test", "--export", EXPORT,
-                   "--tokens", str(TOKENS), "--out", str(seam), "--arm", f"REFe_{a.name}", "--rule", a.rule]
+                   "--tokens", str(TOK), "--out", str(seam), "--arm", f"REFe_{a.name}", "--rule", a.rule]
             t0 = time.time()
             rc = subprocess.call(cmd, cwd=str(PKG / "eval"), env=env, stdout=open(out_dir / "seam.log", "w"),
                                  stderr=subprocess.STDOUT)
@@ -139,7 +143,7 @@ def main() -> int:
         while free_mb() < 4000:
             time.sleep(60)
         lp = out_dir / f"score_{att}.log"
-        subprocess.call([PY_D, "score_e.py", "--label", label, "--seam", str(seam), "--tokens", str(TOKENS),
+        subprocess.call([PY_D, "score_e.py", "--label", label, "--seam", str(seam), "--tokens", str(TOK),
                          "--out", str(D / "score")], cwd=SP, env=dict(os.environ, PYTHONIOENCODING="utf-8"),
                         stdout=open(lp, "w"), stderr=subprocess.STDOUT)
         lines = open(lp, encoding="utf-8", errors="replace").read().splitlines()
@@ -187,6 +191,8 @@ def main() -> int:
         res["verdict"] = "REFUTED"
     else:
         res["verdict"] = "NOT PROVEN"
+    if a.exploratory:
+        res["verdict"] = "EXPLORATORY (not registered; decides nothing): would read " + res["verdict"]
     json.dump(res, open(out_dir / "result.json", "w"), indent=1)
     print("ZZSTAGE2", a.name, res["verdict"], f"{mu:+.2f} [{lo:+.2f}, {hi:+.2f}]", flush=True)
     return 0
