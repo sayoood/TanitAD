@@ -571,6 +571,10 @@ def _sft_events(path):
 
 out["sft3"] = _sft_events(os.environ.get("REFE_SFT3_LOG", os.path.join(HERE, "sft3.log")))
 out["sft4"] = _sft_events(os.environ.get("REFE_SFT4_LOG", os.path.join(HERE, "sft4.log")))
+for _k, _d in (("sft3", "2026-10-04-sft3"), ("sft4", "2026-10-05-sft4")):   # registered verdicts, once they exist
+    _vp = os.path.join(_pkg, "raw", _d, "verdict.json")
+    if out[_k] is not None and os.path.exists(_vp):
+        out[_k]["verdict"] = json.load(open(_vp, encoding="utf-8"))
 # ⭐ LANE-1, lane discipline (raw/2026-10-04-lane-discipline/PREREG_LANE1.md): the registered analysis, when it exists
 _ld = os.path.join(_pkg, "raw", "2026-10-04-lane-discipline")
 out["lane1"] = None

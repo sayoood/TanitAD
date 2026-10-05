@@ -45,3 +45,52 @@ Only A passes, so **A goes to stage 2**. Checkpoint: `model_sft_A.pt`, md5 `0ab4
   - ADOPT iff the paired lower bound > 0 and no longitudinal or lateral component separates adversely.
 - **A single seed.** A claim that this LEVER moves the metric needs a training-seed replicate (CLAUDE.md,
   H-ESTIM-SEED-1). If stage 2 adopts, that replicate is the next arm.
+
+## Stage 2 (navtest, dev box), 2026-10-05: arm A is NOT PROVEN, so it is not adopted
+
+Setup: `eval/stage2_sft.py`, unchanged seam (route fix ON, A7 ON, navsim_v1), Amendment 5's 923 confirmation tokens over
+43 logs. The arm's scores are compared with the DEPLOYED system's own scores on the same tokens (the adopted route-fix
+run). Raw: `raw/2026-10-05-sft-stage2/sft3_A/` (`result.json`, `score_status.json`, families of both).
+
+**Gates: all pass.**
+- Harness PASS: 923 / 923 tokens, 0 failed, C1 0.0.
+- Seam: 923 rows, 0 misses, frame control 7e-15 m.
+- Consistency: the 517 tokens whose executed poses equal the deployed poses score identically (0 differ).
+
+| | deployed | arm A |
+|---|---|---|
+| PDMS on the 923 tokens | 85.61 | 85.40 |
+| paired Δ ×100 [95 % CI] | – | **−0.20 [−1.30, +0.92]** |
+| better / worse / tied | – | 148 / 126 / 649 |
+| picks scoring 0 | 56 | 55 |
+
+**Four families** (families6, episode-cluster bootstrap over the 43 logs):
+
+| family | deployed | arm A |
+|---|---|---|
+| longitudinal: speed MAE | 0.857 m/s | 0.886 m/s |
+| longitudinal: along-track MAE | 1.226 m | 1.269 m |
+| lateral: heading MAE | 2.08° | 2.11° |
+| lateral: cross-track MAE | 0.325 m | 0.331 m |
+| lateral: curvature MAE | 0.0207 1/m | 0.0212 1/m |
+| tactical: lateral-decision κ | 0.848 | 0.854 |
+| tactical: longitudinal-decision κ | 0.513 | 0.503 |
+| strategic | UNAVAILABLE in NAVSIM (no strategic decision is scored) | same |
+
+None of the 21 longitudinal / lateral components separates adversely. Every point estimate is slightly worse.
+
+**Verdict by the registered rule: NOT PROVEN** (lower bound ≤ 0, upper bound ≥ 0). Arm A is not adopted, and the
+deployed scorer stays.
+
+### What it means, and the next lever (Rule Zero)
+
+- **The held-out gain did not transfer.** Arm A's +0.56 on held-out came from a truth built from the TEACHER'S labels.
+  On NAVSIM's own scoring, the same checkpoint reads −0.20 [−1.30, +0.92].
+  - This is the label mismatch `REVIEW_7_GAP_TO_PAPER.md` diagnosed, now measured end to end.
+  - Optimising selection against the teacher's labels does not improve selection against PDMS.
+- **The seed replicate is moot.** It would only have been needed for an adopted arm.
+- **Next lever: SFT-4** (`eval/PREREG_SFT4.md`), already chained on the pod.
+  - It trains and reads on the paper's own labels: NAVSIM PDM targets of the executed plans. The relabeller was
+    validated against NAVSIM's real cache (argmax identical on 300 / 300 tokens).
+  - Its stage-1 truth is therefore the metric navtest scores.
+  - It starts after the PDM training labels finish, around 06:45 UTC, plus the lane window.
