@@ -416,7 +416,7 @@ class OnPolicyBank:
     """
 
     def __init__(self, path: str, n_prop: int, horizon: int, sizes: dict | None = None, lane_labels: str | None = None,
-                 pdm_labels: str | None = None, teacher_lane_labels: str | None = None):
+                 pdm_labels: str | None = None, teacher_lane_labels: str | None = None, pdm_only: bool = False):
         self.by: dict = {}
         self.n_rows = self.n_incomplete = self.n_superseded = self.n_bad_lines = self.n_navsim_dac = 0
         files = _onpolicy_files(path)
@@ -478,6 +478,16 @@ class OnPolicyBank:
         self.pdm_keys: set = set()
         if pdm_labels:
             self._apply_pdm_labels(pdm_labels, n_prop)
+        # PREREG_P2: with pdm_only the bank serves ONLY sets that carry the paper's PDM targets, so no set mixes label
+        # sources; a training sample without one keeps its trajectory loss and gets no scorer loss (cand_m = 0).
+        self.n_dropped_non_pdm = 0
+        if pdm_only:
+            if not pdm_labels:
+                raise ValueError("pdm_only needs pdm_labels")
+            keep = {k: v for k, v in self.by.items() if k in self.pdm_keys}
+            self.n_dropped_non_pdm = len(self.by) - len(keep)
+            self.by = keep
+            self.n_navsim_dac = sum(1 for e in self.by.values() if e[4])
         self.n_tlane = self.n_tlane_stale = 0
         self.teacher_lane: dict = {}
         # 6 columns (the six components) unless a 7th, the teacher lane label, is loaded: then EVERY set serves 7, the
@@ -935,10 +945,26 @@ class SceneEpochSampler(torch.utils.data.Sampler):
 IDENTITY_ARGS = ("backbone", "synthetic", "n_cameras", "undistort", "detach_scorer_context",
                  "batch", "accum", "lr", "weight_decay", "cosine", "epochs", "steps", "score_w",
                  "seed", "spread", "overfit", "overfit_n", "epoch_unit", "amp", "tf32",
-                 "fused_adam", "compile", "grow", "grow_scenes", "scorer_mode")
+                 "fused_adam", "compile", "grow", "grow_scenes", "scorer_mode", "init_from", "pdm_labels",
+                 "pdm_only")
 # ⭐ an identity key ADDED after runs began: an OLD checkpoint lacks it and must read as the value
 # those runs actually used, or every pre-existing run would refuse its own resume
-IDENTITY_DEFAULTS = {"scorer_mode": "fixed"}
+IDENTITY_DEFAULTS = {"scorer_mode": "fixed", "init_from": None, "pdm_labels": None, "pdm_only": False}
+
+
+def warm_start(model, path: str) -> dict:
+    """PREREG_P2: start from a TRAINED REFe instead of the paper's fresh heads. FULL format (what planner.py loads) is
+    loaded STRICTLY; a PARTIAL snapshot through ckpt_io.load_partial (the trunk is already the published one). Returns
+    what was loaded, for config.json."""
+    sd = torch.load(path, map_location="cpu", weights_only=False)
+    if isinstance(sd, dict) and (sd.get("format") == ckpt_io.FORMAT_PARTIAL or "model_partial" in sd):
+        n = ckpt_io.load_partial(model, sd["model_partial"], (sd.get("meta") or {}).get("frozen_sha256"))
+        fmt = ckpt_io.FORMAT_PARTIAL
+    else:
+        st = sd["model"] if isinstance(sd, dict) and "model" in sd else sd
+        model.load_state_dict(st, strict=True)
+        n, fmt = len(st), ckpt_io.FORMAT_FULL
+    return {"path": path, "format": fmt, "tensors": n, "sha256": ckpt_io.sha256_file(path)}
 # what a GROWING bank changes by design; each epoch's own snapshot is in the checkpoint instead
 GROW_EXEMPT = ("n_tuples", "n_scenes", "per_rank", "targets_sha256", "scorer_sha256")
 
@@ -1097,6 +1123,15 @@ def run(a) -> int:
     else:
         print("  *** --weights none: FROZEN RANDOM TRUNK. An ABLATION, not a reproduction; no "
               "number from it may be compared with the paper. ***")
+    warm = None
+    if a.init_from:
+        if not os.path.exists(a.init_from):
+            print(f"  REFUSING: --init-from {a.init_from} does not exist"); return 4
+        warm = warm_start(model, a.init_from)
+        print(f"  WARM START (PREREG_P2): {warm['tensors']} tensors from {a.init_from} "
+              f"({warm['format']}, sha256 {warm['sha256'][:12]})")
+    if a.pdm_only and not (a.pdm_labels and a.scorer_mode == "onpolicy"):
+        print("  REFUSING: --pdm-only needs --pdm-labels and --scorer-mode onpolicy"); return 4
     # fingerprint the FROZEN trunk once, on CPU, before the move: it is what makes a partial
     # checkpoint safe to complete (ckpt_io.load_partial refuses a different trunk).
     frozen_sha = ckpt_io.frozen_fingerprint(model) if a.out else None
@@ -1154,7 +1189,12 @@ def run(a) -> int:
     scorer_bank = ScorerBank(a.scorer_targets if not OP else None, sizes=grow_snap)
     op_bank = None
     if OP:
-        op_bank = OnPolicyBank(OP, cfg.n_proposals, cfg.horizon_steps, sizes=grow_snap)
+        op_bank = OnPolicyBank(OP, cfg.n_proposals, cfg.horizon_steps, sizes=grow_snap,
+                               pdm_labels=a.pdm_labels or None, pdm_only=a.pdm_only)
+        if a.pdm_labels:
+            print(f"  PDM TARGETS (PREREG_P2): {op_bank.n_pdm:,} sets carry NAVSIM PDM targets ({op_bank.n_pdm_stale} "
+                  f"stale, {op_bank.n_pdm_superseded} superseded) <- {a.pdm_labels}"
+                  + (f"; --pdm-only dropped {op_bank.n_dropped_non_pdm:,} sets without them" if a.pdm_only else ""))
         print(f"  ON-POLICY scorer bank: {len(op_bank.by):,} complete sets ({op_bank.n_rows:,} set lines, "
               f"{op_bank.n_incomplete} incomplete, {op_bank.n_superseded} superseded by a newer "
               f"checkpoint, {op_bank.n_bad_lines} unparseable lines; NAVSIM drivable area on "
@@ -1366,7 +1406,7 @@ def run(a) -> int:
             cfg_out = {"argv": sys.argv,
                        "args": {k: (v if isinstance(v, (int, float, str, bool, type(None)))
                                     else str(v)) for k, v in vars(a).items()},
-                       "identity": ident, "meta": meta,
+                       "identity": ident, "meta": meta, "warm_start": warm,
                        "params": {"total": rep["total"], "trainable": rep["trainable"]},
                        "torch": torch.__version__,
                        "device": torch.cuda.get_device_name(0) if dev == "cuda" else "cpu",
@@ -1402,7 +1442,8 @@ def run(a) -> int:
     def _rebuild(snap):
         """--grow: the next epoch's bank, from a fresh snapshot (same construction as above)."""
         sb = ScorerBank(a.scorer_targets if not OP else None, sizes=snap)
-        ob = OnPolicyBank(OP, cfg.n_proposals, cfg.horizon_steps, sizes=snap) if OP else None
+        ob = (OnPolicyBank(OP, cfg.n_proposals, cfg.horizon_steps, sizes=snap, pdm_labels=a.pdm_labels or None,
+                           pdm_only=a.pdm_only) if OP else None)
         d = TargetBank(a.targets, a.images, cfg, synthetic=a.synthetic,
                        limit=a.overfit_n if a.overfit else None, spread=a.spread,
                        scorer=sb if sb.n_rows else None,
@@ -1788,6 +1829,14 @@ def main():
     ap.add_argument("--declare-change", action="append", default=[], metavar="ARG",
                     help="an identity argument (e.g. scorer_mode) allowed to DIFFER on --resume: a "
                          "deliberate mid-run recipe change, printed and logged as an event")
+    ap.add_argument("--init-from", default=None,
+                    help="PREREG_P2: warm-start from a trained REFe checkpoint (FULL strict, or PARTIAL) instead of fresh "
+                         "heads; the optimiser and schedule start fresh. Part of the run identity.")
+    ap.add_argument("--pdm-labels", default=None,
+                    help="PREREG_P2 / SFT-4: dir of pdm_*.jsonl (refe/onpolicy_relabel_pdm.py) -- NAVSIM PDM targets of "
+                         "the executed plans replace all six components of the sets they were computed on")
+    ap.add_argument("--pdm-only", action="store_true",
+                    help="with --pdm-labels: the scorer is trained ONLY on sets carrying PDM targets (no mixed sources)")
     ap.add_argument("--preflight", action="store_true",
                     help="build banks + model, load and check the checkpoint, then exit WITHOUT "
                          "writing anything (safe against a live run directory); prints PREFLIGHT_OK")

@@ -119,6 +119,20 @@ pause (1.2 % of training). Chain v2 (`refe/sft4_chain2.sh`) inserts a window aft
   `refe/lane_restart.sh` restarts the relabel at `ZZPDM_TRAIN_EXIT`; it resumes by (key, ckpt_step), so nothing is
   redone. It stops the relabel by PID when the window closes, so SFT-4 gets the pod's memory.
 
+### Amendment 4 (2026-10-05 05:06 UTC, before any SFT-4 training step): launch now, on the labels written so far
+
+PI 2026-10-05: *"I approve all your proposed levers, let use optimally the pod."*
+
+The A40 had idled since SFT-3 finished at 00:50 UTC. Under v2 it would have idled until about 09:40: the last PDM label
+(~07:30) plus the lane window. Chain v3 (`refe/sft4_chain3.sh`) launches immediately.
+- **PDM labels:** the 146,185 training-set labels written at arming, 84 % of 174,912. The `run` step loads the files at
+  its own launch, so its `data` event records the final count.
+- **Lane labels:** 2,109 subset sets, so Amendment 3's window is withdrawn.
+- **Nothing is lost.** The joint fine-tune (`eval/PREREG_P2.md`, approved the same message) trains on ALL PDM labels and
+  the lane labels the restarted relabel adds.
+- **Unchanged:** the design, the arms, the gate, the G9 mutation and the stage-1 / stage-2 rules.
+- v2 was stopped by explicit PID while it slept; `chain.log` records the swap.
+
 ## Stage 1: held-out (pod, label-only; the 3,137 sets of 24 logs that carry PDM targets)
 
 Truth = the PDM-target navsim_v1 score of the chosen plan (the harness score of executing it). Comparisons are against the deployed system: the base scorer under navsim_v1.
