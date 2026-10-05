@@ -224,3 +224,81 @@ Job argv per split (`python` = `/home/nvidia/venvs/navsim-cpu/bin/python`, code 
 * Pull results back with `scp -r tanitad-thor-wifi:/dev/shm/navsim/out/<run> <dev-box dir>`, and add a
   `.thor` provenance note next to them. Every counts/`.thor.json` already records `backend: thor`,
   the driver, the agent sha256, the seam sha256 and the overrides.
+
+---
+
+## Production on Thor under the ruling (2026-10-05)
+
+`RULING_BACKEND_POLICY.md` adopted the tolerance policy and accepted the fingerprint fallback.
+`raw/THOR_BACKEND_VALIDATED.json` records the verdict **ADMITTED_UNDER_POLICY**: the registered exact
+bar FAILED; all 5 full-split checks pass the policy; the verdict is computed from artifacts. Outputs
+go to `…/refcv7-standard-tests/navsim/raw/milestones/step50400/thor_scores/{navtest,navhard}/` under
+Thor-only names (`r7thor_s50400_<ARM>`, `<ARM>_THOR`). The milestone's standard names and
+`CLAIMED_ARMS.txt` were not touched. Every arm carries `<label>.thor` (provenance); arms the dev box
+also has carry `<label>.cross_backend.json`. All numbers below are MEASURED from the official devkit
+CSVs.
+
+### The refcv7 LEGAL row (R7_VMAXOFF): the BAR-R8-N4 baseline
+
+The seams were scored only after `code/vmaxoff_gate.py` read the dev-box `LEGAL_ROW_MANIFEST.json`:
+`legal_verification.ok` was True and all 7 `protocol_matches_R7_A1` flags were True, on both splits.
+The seam sha256 matched on Thor (navtest `5b65d31f…`, navhard `7f3e3842…`).
+
+| split | R7_VMAXOFF | STOP | Δ vs STOP (paired log-cluster bootstrap) | other pairs |
+|---|---|---|---|---|
+| navtest PDMS ×100 (12,146) | **70.2048** (NC 89.81, DAC 87.37, EP 68.27, TTC 79.13, C 99.94, DDC 94.71) | 61.8202 | **+8.3846, CI [+6.36, +10.24], separated, 136 logs** | vs CV +49.55; vs HUMAN −24.35; **vs R7_A1 (Thor) +0.21 [+0.04, +0.40]**; vs R7_A1_s1 +0.35 [−0.00, +0.69]; inference seed floor \|A1 − A1_s1\| = 0.14 |
+| navhard two-stage EPDMS ×100 (5,912) | **19.8729** (stage 1 52.22, stage 2 39.02) | 29.8532 | **−9.98, CI [−13.83, −6.27], separated, 76 logs** | vs CV_official +8.39 [+4.37, +12.66]; vs ECHO +5.58 [+2.20, +9.20] |
+
+* **Navtest:** the legal arm beats doing nothing.
+* **Navhard:** the legal arm loses to doing nothing, separated.
+* **Backends:** the floors are dev-box banks, so every VMAXOFF-vs-floor pair is mixed-backend, which
+  the policy admits. VMAXOFF vs R7_A1 / R7_A1_s1 on navtest is Thor vs Thor, i.e. backend-consistent.
+* **Estimator:** these CIs answer "another draw of logs?" only. A 0.21 difference against a 0.14
+  inference-seed floor is **not** a lever effect.
+* **Files:** `thor_scores/navtest/summary_navtest_vmaxoff_legal.THOR.json`,
+  `thor_scores/navhard/summary_navhard_vmaxoff_legal.THOR.json`, `thor_scores/navhard/pairs_navhard_vmaxoff_legal.THOR.json`.
+* ⚠ **A suite bug.** The `paired_intervals_vmaxoff_vs_each` block in `vmaxoff_legal_summary7.py` raises
+  FileNotFoundError, because its `<navsim>/../2026-09-19-navsim-refcv4b-bridge` path resolves inside
+  `2026-09-28-refcv7-standard-tests/`. It would fail on the dev box too. I recomputed the pairs with the
+  same `navsim_ci` functions in `code/vmaxoff_navhard_pairs.py`; both `reproduces_official` checks read OK.
+
+### The other arms at step 50,400
+
+| split / arm | Thor status | official (×100) | dev box | cross-backend |
+|---|---|---|---|---|
+| navtest R7_A1 | PASS 12,146 | PDMS 69.9904 | PASS, 69.9904 | **ADMISSIBLE**: 41 tokens differ, max 2.5e-11, 0 flips, mean Δ 1.5e-16; all 7 summaries equal at 4 dp |
+| navtest R7_A1_s1 | PASS 12,146 | 69.8506 | PASS, 69.8506 | **ADMISSIBLE**: 44 tokens, max 2.6e-11, 0 flips, mean Δ 3.3e-15 |
+| navtest R7_CEILDECL_d | PASS 12,146 | 69.9788 | PASS, 69.9788 | **ADMISSIBLE**: 41 tokens, max 2.5e-11, 0 flips, mean Δ 3.0e-16 |
+| navtest PRIOR_ha0p | PASS 12,146 | 58.6613 (NC 88.50, DAC 74.05, EP 54.16) | FAIL (partial, 1,759) | (no dev-box PASS) |
+| navhard PRIOR_ha0p | PASS 5,912 | EPDMS 13.0040 | PASS (02:18), 13.0040 | **ADMISSIBLE**: frame 66 tokens, max 2.6e-11, 0 flips; summary rows equal at 4 dp |
+| navhard R7_CEILDECL_d | PASS 5,912 | EPDMS 20.4844 | FAIL | (no dev-box PASS) |
+| navhard R7_VMAXOFF | PASS 5,912 | EPDMS 19.8729 | no counts yet | (pending on dev box) |
+
+**Order deviation, disclosed.** The ordered list was (1) VMAXOFF, then (2) the navtest arms, then (3)
+the navhard arms. After VMAXOFF navhard I ran (3) before (2), for two reasons. First, the dev box had
+meanwhile PASSed navtest R7_A1, R7_A1_s1 and R7_CEILDECL_d, while navhard PRIOR_ha0p and R7_CEILDECL_d
+were still open. Second, the navhard data was resident, and switching first would have cost one extra
+~15 min tmpfs swap.
+
+### Incidents, both caught by the safety layer; no global OOM was caused by NavSim
+
+1. **00:57.** A `refc_v3_train` job started with 5 workers at ~13.7 GB each, and no `NAVSIM_YIELD`
+   file existed. MemAvailable fell to **1.6 GB**. The pool watchdog fired below 20 GB, and the
+   scorers' own RAM guard aborted too. I freed my 5.4 GB of tmpfs, stopped my idle pool by PID, and
+   re-copied the data once MemAvailable was ≥ 35 GB. Evidence: `raw/prod_incident_0057/`.
+2. **The watchdog bug this exposed (FIXED).** `thor_pool.descendants()` read
+   `/proc/<p>/task/<t>/children`, which **does not exist on Thor's kernel**. It returned [], so SIGTERM
+   reached only the driver and the devkit wrapper holding the RAM was orphaned. Two orphans then
+   appended to a rerun's call log; the count guard refused that run (5,420 calls ≠ 3,037), and I re-ran
+   both shards.
+   * The fix: `killpg` (every job is a `setsid` group leader) plus a PPID walk over `/proc/*/stat`.
+   * The test: a dummy job with 2 grandchildren leaves 0 alive (`raw/pool_kill_tree_fix_test.json`).
+3. **02:29.** A transient drop to 14.9 GB, with `pbox_arms.py` (10 GB) running alongside. The fixed
+   watchdog killed 4 navhard shards cleanly, as whole process groups. They were re-run, and both arms
+   finished PASS.
+
+**Two tooling traps hit and fixed.**
+* MSYS rewrites a remote `/dev/shm/...` argument into `C:/Program Files/Git/dev/shm/...`, so run
+  `bank_and_compare.py` under `MSYS_NO_PATHCONV=1`.
+* Windows MAX_PATH: the merged navhard frame path is longer than 260 characters. Fixed with a
+  `\?\` prefix plus a short staging root.

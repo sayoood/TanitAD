@@ -49,29 +49,46 @@ def mem_available_gb() -> float:
 
 
 def descendants(pid: int) -> list:
+    """Descendants of ``pid`` from the PPID field of ``/proc/<n>/stat`` (a parent-pointer tree walk, NOT a
+    pattern match on command lines).
+
+    ⛔ FIXED 2026-10-05: the first version read ``/proc/<p>/task/<t>/children``, which DOES NOT EXIST on Thor's
+    kernel (CONFIG_PROC_CHILDREN off; MEASURED: ``ls /proc/self/task/*/children`` -> No such file). It
+    silently returned [] and the watchdog SIGTERMed only the driver, ORPHANING the devkit wrapper that held
+    the RAM. Caught when two orphans kept appending to a rerun's call log."""
+    ppid = {}
+    for d in os.listdir("/proc"):
+        if not d.isdigit():
+            continue
+        try:
+            with open(f"/proc/{d}/stat", encoding="ascii", errors="replace") as fh:
+                s = fh.read()
+            ppid[int(d)] = int(s[s.rindex(")") + 2:].split()[1])
+        except (OSError, ValueError):
+            pass
+    kids = {}
+    for c, p in ppid.items():
+        kids.setdefault(p, []).append(c)
     out, stack = [], [pid]
     while stack:
-        p = stack.pop()
-        try:
-            for t in os.listdir(f"/proc/{p}/task"):
-                try:
-                    with open(f"/proc/{p}/task/{t}/children", encoding="ascii") as fh:
-                        kids = [int(x) for x in fh.read().split()]
-                except OSError:
-                    kids = []
-                for k in kids:
-                    out.append(k)
-                    stack.append(k)
-        except OSError:
-            pass
+        for k in kids.get(stack.pop(), []):
+            out.append(k)
+            stack.append(k)
     return out
 
 
 def term_tree(pid: int) -> list:
-    """SIGTERM the recorded PID and its descendants (deepest first). Returns the PIDs signalled."""
-    pids = descendants(pid)[::-1] + [pid]
+    """SIGTERM the job's whole PROCESS GROUP (every job is started under ``setsid``, so pgid == the recorded
+    pid, and every subprocess it spawns inherits that group), then -- belt and braces -- every descendant
+    found by the PPID walk. Returns the PIDs signalled."""
     sent = []
-    for p in pids:
+    try:
+        if os.getpgid(pid) == pid:
+            os.killpg(pid, signal.SIGTERM)
+            sent.append(-pid)
+    except (ProcessLookupError, PermissionError):
+        pass
+    for p in descendants(pid)[::-1] + [pid]:
         try:
             os.kill(p, signal.SIGTERM)
             sent.append(p)
