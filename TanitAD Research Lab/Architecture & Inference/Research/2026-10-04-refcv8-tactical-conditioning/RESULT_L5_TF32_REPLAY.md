@@ -48,3 +48,19 @@ The same MemAvailable ≥ 40 GB guard applies, inside the lock. No arm launches 
 
 Tip 26dcb6a: 7 failed / 2,564 passed / 11 skipped. Candidate (tip + the 2 L5 files): 7 failed / 2,565 passed / 11 skipped.
 **Candidate-only failures: none.** The shared 7 also fail on the tip.
+
+## L6: the replay runs EAGER (MEASURED defect on the compile path)
+
+* **Observed** (Thor, `tree_L5` = 903dd51, `logs/s3_L5_train.log`): the S3 re-read with the canonical argv's
+  `--trunk-compile` died at its first gs-due step (step 10), inside `fp32_replay`. The switched precision state is a
+  dynamo guard, so the compiled backbone RECOMPILED inside the replay and the inductor build failed on Thor (gcc on
+  `cuda_utils.c`). That would kill the refcv8 LAUNCH at its first gradient-share step. The ladder arms are unaffected:
+  `ladder_arms` drops `--trunk-compile`.
+* **Fix:** the replay runs under `torch.compiler.set_stance("force_eager")`, restored on exit. Row: `gs_fp32_replay_eager`.
+  The training step is untouched: the replay runs before the training forward, and the bit-identity test is unchanged.
+* **Pinned:** `test_the_replay_never_compiles_a_torch_compiled_trunk`. A counting compile backend sees exactly the training
+  forward's compile and none from the replay; the replay's linearity is ≤ 1e-4. RED arm: with the eager stance removed,
+  the replay recompiles.
+* **Gate** (tip 2bdabfd): tip 7 failed / 2,565 passed; candidate 7 / 2,566. **Candidate-only failures: none.**
+* **Owed before the refcv8 LAUNCH** (MM ruling): one full-size S3 read WITH `--trunk-compile` on the L6 tree, ≤ 15 min.
+  The driver is `code/r8_smoke_thor_L5_s3.sh` with `NOCOMPILE=0` and `TREE=<L6 tree>`.

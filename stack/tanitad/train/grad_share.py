@@ -157,6 +157,16 @@ def _dedicated_generators(model) -> list:
     return out
 
 
+def _eager():
+    """``torch.compiler.set_stance("force_eager")`` as a context (every torch.compile'd callable runs EAGERLY inside;
+    the stance is restored on exit); a no-op context on a torch without stances."""
+    st = getattr(getattr(torch, "compiler", None), "set_stance", None)
+    if st is None:
+        import contextlib
+        return contextlib.nullcontext()
+    return st("force_eager")
+
+
 def fp32_replay(model, run_losses: Callable[[], dict], groups: Mapping[str, list], weights: Mapping[str, float], *,
                 prefix: str = "gs_") -> dict:
     """``run_losses()`` re-runs THIS step's forward + losses; it is called with every bf16 lever OFF, inside a forked
@@ -178,7 +188,11 @@ def fp32_replay(model, run_losses: Callable[[], dict], groups: Mapping[str, list
         torch.backends.cuda.matmul.allow_tf32 = False
         torch.backends.cudnn.allow_tf32 = False
         torch.set_float32_matmul_precision("highest")
-        with torch.random.fork_rng(devices=devs):
+        # ⛔ EAGER inside the replay (MEASURED 2026-10-05, the L5 S3 re-read on Thor with --trunk-compile): the
+        # switched precision state is a dynamo guard, so the compiled backbone RECOMPILED inside the replay and the
+        # inductor build died (gcc on Thor) -- killing the training run at its first gs-due step. The replay is an
+        # instrument: it runs the same modules eagerly, never compiles, never touches the compiled cache.
+        with torch.random.fork_rng(devices=devs), _eager():
             losses = run_losses()
             row = measure(term_tensors(losses, weights), losses["loss"], groups, prefix=prefix)
         del losses
@@ -199,5 +213,6 @@ def fp32_replay(model, run_losses: Callable[[], dict], groups: Mapping[str, list
     row[f"{prefix}fp32_replay"] = 1.0
     row[f"{prefix}fp32_replay_levers"] = float(len(levers))
     row[f"{prefix}fp32_replay_tf32_off"] = 1.0
+    row[f"{prefix}fp32_replay_eager"] = 1.0
     return row
 

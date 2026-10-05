@@ -8,8 +8,10 @@ R=/home/nvidia/refcv8_run
 T=${TREE:-$R/tree_L5}
 PY=/home/nvidia/venvs/tanitad-train/bin/python
 LOCK=/home/nvidia/refcv7_post/thor_gpu.lock
-OUT=$R/runs/refcv8-wpb-s3-L5
-LG=$R/logs/s3_L5_train.log
+NOCOMPILE=${NOCOMPILE:-0}   # 1 = drop --trunk-compile (the ladder arms' path: ladder_arms drops it too)
+SUF=$([ "$NOCOMPILE" = 1 ] && echo _nocompile)
+OUT=$R/runs/refcv8-wpb-s3-L5$SUF
+LG=$R/logs/s3_L5${SUF}_train.log
 MEM_MIN_GB=${MEM_MIN_GB:-40}
 mkdir -p $R/logs $R/runs
 export PYTHONPATH=$T/stack:$T/taniteval OMP_NUM_THREADS=6 HF_HUB_OFFLINE=1 PYTHONDONTWRITEBYTECODE=1
@@ -29,6 +31,7 @@ for f,v in (('--steps',['10']),('--log-every',['10']),('--grad-share-every',['10
             ('--join-defect-masks',['$T/stack/tanitad/configs/refcv8_join_label_defects.json']),
             ('--smoke-seed-ego-frames',[]),('--out',['$OUT'])):
     a=setf(a,f,v)
+if '$NOCOMPILE' == '1' and '--trunk-compile' in a: a.remove('--trunk-compile')
 print(' '.join(a))")
 [ -n "$ARGV" ] || { echo "[r8-s3-L5] could not build the argv -- stopping"; exit 1; }
 echo "[r8-s3-L5] $(date -u +%H:%M:%S) queueing on the GPU lock (flock is not FIFO; waiting is expected)"

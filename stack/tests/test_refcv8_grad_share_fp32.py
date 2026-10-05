@@ -148,3 +148,34 @@ def test_the_replay_runs_with_TF32_OFF_and_restores_every_switch():
     finally:
         torch.backends.cuda.matmul.allow_tf32, torch.backends.cudnn.allow_tf32 = before[0], before[1]
         torch.set_float32_matmul_precision(before[2])
+
+
+def test_the_replay_never_compiles_a_torch_compiled_trunk():
+    """L6 (MEASURED on Thor, the L5 S3 re-read with --trunk-compile): the precision switches are dynamo guards, so a
+    compiled backbone RECOMPILED inside the replay and the inductor build killed the run at its first gs-due step. The
+    replay runs eagerly: a counting backend sees exactly the ONE compile of the training forward, never a second.
+    RED arm: without the eager stance the replay's switched state triggers a recompile."""
+    import contextlib
+    calls = []
+
+    def counting(gm, _inputs):
+        calls.append(1)
+        return gm.forward
+    net, x, groups, weights = _setup()
+    torch._dynamo.reset()
+    net.encoder.net = torch.compile(net.encoder.net, backend=counting)
+    net.losses(x)                                         # the training forward compiles once
+    n_train = len(calls)
+    assert n_train >= 1
+    row = GS.fp32_replay(net, lambda: net.losses(x), groups, weights)
+    assert len(calls) == n_train and row["gs_fp32_replay_eager"] == 1.0
+    assert row["gs_trunk_lin_rel_err"] <= 1e-4
+    # RED ARM: the same replay with the eager stance removed recompiles
+    orig = GS._eager
+    try:
+        GS._eager = contextlib.nullcontext
+        GS.fp32_replay(net, lambda: net.losses(x), groups, weights)
+    finally:
+        GS._eager = orig
+        torch._dynamo.reset()
+    assert len(calls) > n_train
