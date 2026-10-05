@@ -94,3 +94,28 @@ deployed scorer stays.
     validated against NAVSIM's real cache (argmax identical on 300 / 300 tokens).
   - Its stage-1 truth is therefore the metric navtest scores.
   - It starts after the PDM training labels finish, around 06:45 UTC, plus the lane window.
+
+## Yardstick check: does a held-out read predict navtest? (2026-10-05, EXPLORATORY, not registered)
+
+Setup: `refe/heldout_truth_compare.py`, run on the idle pod GPU. Arm A and the deployed scorer are re-scored on the same
+3,137 held-out sets with navsim_v1 picks, exactly as `scorer_finetune.evaluate` does, under two truths.
+Raw: `raw/2026-10-05-yardstick/`.
+
+| truth | deployed pick | arm A pick | arm A − deployed [95 % CI] | picks = 0 |
+|---|---|---|---|---|
+| the teacher's labels (SFT-3's stage-1 truth) | 84.84 | 85.40 | +0.56 [+0.08, +1.14] → passes | 169 → 161 |
+| NAVSIM PDM targets (SFT-4's stage-1 truth) | 87.79 | 88.17 | **+0.39 [−0.09, +0.94] → would NOT pass** | 147 → 137 |
+| navtest, stage 2 (for comparison) | 85.61 | 85.40 | −0.20 [−1.30, +0.92] → NOT PROVEN | 56 → 55 |
+
+- **Control.** The teacher-truth row reproduces SFT-3's registered stage-1 read to the fourth decimal. Same sets, same
+  picks.
+- **How the picks differ.** The two scorers pick different hypotheses on 1,338 of 3,137 sets. On 146 of those, the two
+  truths disagree about which pick is better.
+
+**Reading (EXPLORATORY: one arm, one comparison):**
+- Under the paper's labels, arm A would have FAILED stage 1. That agrees with its navtest verdict.
+- The PDM-target yardstick is less optimistic than the teacher's: +0.39 vs +0.56, with a lower bound below zero.
+- It is still not identical to navtest. +0.39 vs −0.20 is not resolvable at navtest's interval width, and the held-out
+  logs are navtrain, not navtest.
+
+⇒ SFT-4's stage 1 is the better yardstick of the two, and stage 2 stays the deciding read.
