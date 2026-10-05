@@ -21,7 +21,9 @@ PY=${PY:-/home/nvidia/venvs/tanitad-train/bin/python}
 LOCK=${LOCK:-/home/nvidia/refcv7_post/thor_gpu.lock}
 CAP_S=${CAP_S:-2400}
 FREE_MIN_GB=${FREE_MIN_GB:-22}
+MEM_MIN_GB=${MEM_MIN_GB:-40}          # MM 2026-10-05: host RAM, asserted INSIDE the lock before every GPU job
 DRY=${DRY:-0}
+ONLY_S0=${ONLY_S0:-0}                 # 1 = S0 timing -> N, then stop (no arm)
 V9TRAIN=${V9TRAIN:-/home/nvidia/refcv8_v9labels/release/v9_labels_train.npz}
 V9TRAIN_MD5=${V9TRAIN_MD5:-f63ece410b725febb8a5242cf2b01d3c}   # refcv8_train.V9_RELEASE_MD5["train"]
 PSEP=${PSEP:-:}               # ";" only for a dev-box DRY run (Windows python)
@@ -38,6 +40,25 @@ disk_wait() {
     [ -n "$f" ] && [ "$f" -ge "$FREE_MIN_GB" ] && return 0
     log "disk ${f:-?} GB < $FREE_MIN_GB GB -- waiting (R1 stops below 20)"
     sleep 300
+  done
+}
+
+# MM 2026-10-05 (the L3 G-SMOKE global OOM): the GPU lock serialises the GPU, not host RAM. Every GPU job re-checks
+# MemAvailable INSIDE the lock; below MEM_MIN_GB it releases the lock, waits 5 min and queues again -- it never starts
+# a job into a host that cannot hold it and never holds the lock while waiting.
+locked() {   # cmd... -> exit 97 when MemAvailable < MEM_MIN_GB at lock time
+  flock "$LOCK" bash -c 'm=$(awk "/MemAvailable/ {print int(\$2/1048576)}" /proc/meminfo)
+    if [ -z "$m" ] || [ "$m" -lt "$0" ]; then exit 97; fi
+    exec "$@"' "$MEM_MIN_GB" "$@" 200>&-
+}
+
+locked_retry() {   # label cmd...
+  local lab=$1 rc; shift
+  while :; do
+    locked "$@"; rc=$?
+    [ "$rc" != 97 ] && return $rc
+    log "MemAvailable < ${MEM_MIN_GB} GB at lock time for $lab -- lock released, retry in 5 min"
+    sleep 300 200>&-
   done
 }
 
@@ -66,26 +87,37 @@ build_argv() {   # n [k]
       >> "$W/chain.log" 2>&1 || die "ladder_arms AUDIT FAIL (n=$1 k=$k)"
 }
 
-# run one trainer chunk under the lock; kill RIGHT AFTER a checkpoint once the next save would pass the cap
+trainer_pid() {   # out_dir -> the PID of the python trainer writing to it (explicit selection: comm + its own --out)
+  local p
+  for p in $(pgrep -f "refc_v3_train.py" 2>/dev/null); do
+    case "$(cat /proc/$p/comm 2>/dev/null)" in python*) ;; *) continue;; esac
+    tr '\0' '\n' < /proc/$p/cmdline 2>/dev/null | grep -qxF -- "$1" && { echo "$p"; return 0; }
+  done
+  return 1
+}
+
+# run one trainer chunk under the lock; kill RIGHT AFTER a checkpoint once the next save would pass the cap.
+# The chunk clock starts when the TRAINER starts (not while it queues on the lock).
 train_chunk() {   # out_dir log final_step argv...
   local out=$1 lg=$2 fin=$3; shift 3
   disk_wait
   if [ "$DRY" = 1 ]; then log "DRY train $out"; mkdir -p "$out"; echo '{"done": true}' > "$out/summary.json"; return 0; fi
-  flock "$LOCK" timeout "$CAP_S" "$PY" "$TREE/stack/scripts/refc_v3_train.py" "$@" >> "$lg" 2>&1 200>&- &
-  local fl=$! t0 now py="" last_e=-1 prev_e=0 n0 n1 e iv
-  t0=$(date +%s)
+  locked_retry "train $out" timeout "$CAP_S" "$PY" "$TREE/stack/scripts/refc_v3_train.py" "$@" >> "$lg" 2>&1 &
+  local fl=$! t0="" now tp="" prev_e=0 n0 n1 e iv cs
   n0=$(grep -c "ckpt step" "$lg" 2>/dev/null); n0=${n0:-0}
   while kill -0 "$fl" 2>/dev/null; do
     sleep 10
-    [ -z "$py" ] && py=$(pgrep -P "$fl" -x timeout 2>/dev/null | head -1)
+    if [ -z "$tp" ]; then
+      tp=$(trainer_pid "$out") && { t0=$(date +%s); prev_e=0; log "trainer PID $tp started (lock held)"; }
+      continue
+    fi
     n1=$(grep -c "ckpt step" "$lg" 2>/dev/null); n1=${n1:-0}
     if [ "$n1" -gt "$n0" ]; then
       now=$(date +%s); e=$((now - t0)); iv=$((e - prev_e)); prev_e=$e; n0=$n1
-      local cs; cs=$(grep -o "ckpt step [0-9]*" "$lg" | tail -1 | tr -dc 0-9)
+      cs=$(grep -o "ckpt step [0-9]*" "$lg" | tail -1 | tr -dc 0-9)
       if [ $((e + iv + iv / 10)) -gt $((CAP_S - 60)) ] && [ "$cs" != "$fin" ] && [ ! -f "$out/summary.json" ]; then
-        local tp; tp=$(pgrep -P "$py" 2>/dev/null | head -1)
         log "chunk end right after ckpt step $cs (elapsed ${e}s, interval ${iv}s): SIGTERM python=$tp"
-        [ -n "$tp" ] && kill -TERM "$tp"
+        kill -TERM "$tp" 2>/dev/null
       fi
     fi
   done
@@ -128,8 +160,8 @@ eval_arm() {   # arm n
     disk_wait
     log "ZZEVAL-$arm-$r-ZZ"
     if [ "$DRY" = 1 ]; then log "DRY eval $arm $r"; continue; fi
-    flock "$LOCK" timeout "$CAP_S" "$PY" "$CODE/ladder_eval.py" --run "$out" --expect-step "$n" --rows "$r" \
-        --seeds 0,1 --out-dir "$ed" --device cuda >> "$W/eval/$arm.log" 2>&1 200>&-
+    locked_retry "eval $arm/$r" timeout "$CAP_S" "$PY" "$CODE/ladder_eval.py" --run "$out" --expect-step "$n" \
+        --rows "$r" --seeds 0,1 --out-dir "$ed" --device cuda >> "$W/eval/$arm.log" 2>&1
     [ -f "$ed/${r}_s0.json" ] && [ -f "$ed/${r}_s1.json" ] || die "eval $arm/$r wrote no artifact (see $W/eval/$arm.log)"
   done
   # strip -> model-only for the dev-box puller; the optimiser-carrying ckpt.pt and the milestone are DELETED (disk)
@@ -200,6 +232,7 @@ log "ZZSTARTZZ W=$W"
 [ -f "$W/N.txt" ] || s0
 N=$(cat "$W/N.txt"); [ -n "$N" ] || die "no N"
 log "N=$N"
+if [ "${ONLY_S0:-0}" = 1 ]; then log "ZZS0DONEZZ N=$N (ONLY_S0: no arm starts)"; exit 0; fi
 build_argv "$N"
 cp "$W/argv/AUDIT.json" "$W/argv/AUDIT_n.json"
 argv_sha() { "$PY" -c 'import json,sys; print(",".join(json.load(open(sys.argv[1]+"/"+a+".json"))["argv_sha256"][:16] for a in ("V0","V-R8")))' "$W/argv"; }
@@ -213,8 +246,9 @@ K=$("$PY" -c 'import json,sys; k=json.load(open(sys.argv[1]))["k"]; print("" if 
 build_argv "$N" "$K"
 sha_after=$(argv_sha)
 [ "$sha_before" = "$sha_after" ] || die "re-deriving the argv with k changed V0/V-R8 ($sha_before vs $sha_after)"
-for arm in V-R8d V0r V-R8r V-TACk V-TACk-roll V-TACkr V-MAP4 V-MAP4-roll V-MAP4r V-VSHUF V-R8-E8 V-R8-E8-roll \
-           V-R8-DRV V-R8-DRV-roll; do
+# run order = the MM's queue ruling 2026-10-05 (L2 prioritised: R1's H5 controllability 0.355 pooled; L3 last)
+for arm in V-R8d V0r V-R8r V-TACk V-TACk-roll V-TACkr V-R8-DRV V-R8-DRV-roll V-R8-E8 V-R8-E8-roll V-VSHUF \
+           V-MAP4 V-MAP4-roll V-MAP4r; do
   [ -f "$W/argv/$arm.json" ] || { log "skip $arm (no argv)"; continue; }
   train_arm "$arm"; eval_arm "$arm" "$N"
 done

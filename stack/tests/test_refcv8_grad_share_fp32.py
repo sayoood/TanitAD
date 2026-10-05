@@ -122,3 +122,29 @@ def test_the_trainer_replays_before_its_training_forward():
     i_rep = src.index("_gshare.fp32_replay(")
     i_fwd = src.index("losses = compute_losses_v3(model, batch, device, mode=args.mode,\n")
     assert i_rep < i_fwd and "if _gs_due and _gshare.bf16_levers(model):" in src
+
+
+def test_the_replay_runs_with_TF32_OFF_and_restores_every_switch():
+    """L5 (MEASURED on Thor, L4 G-SMOKE: trunk linearity 4.2e-4 with bf16 off but cuDNN TF32 on). Inside the replay both
+    TF32 switches are off and matmul precision is 'highest'; afterwards every switch is back to its configured value."""
+    net, x, groups, weights = _setup()
+    seen = {}
+
+    def run():
+        seen.update(mm=torch.backends.cuda.matmul.allow_tf32, cd=torch.backends.cudnn.allow_tf32,
+                    prec=torch.get_float32_matmul_precision())
+        return net.losses(x)
+    before = (torch.backends.cuda.matmul.allow_tf32, torch.backends.cudnn.allow_tf32,
+              torch.get_float32_matmul_precision())
+    try:
+        torch.backends.cuda.matmul.allow_tf32 = True
+        torch.backends.cudnn.allow_tf32 = True
+        torch.set_float32_matmul_precision("high")
+        row = GS.fp32_replay(net, run, groups, weights)
+        assert seen == {"mm": False, "cd": False, "prec": "highest"}
+        assert (torch.backends.cuda.matmul.allow_tf32, torch.backends.cudnn.allow_tf32,
+                torch.get_float32_matmul_precision()) == (True, True, "high")
+        assert row["gs_fp32_replay_tf32_off"] == 1.0
+    finally:
+        torch.backends.cuda.matmul.allow_tf32, torch.backends.cudnn.allow_tf32 = before[0], before[1]
+        torch.set_float32_matmul_precision(before[2])

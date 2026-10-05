@@ -168,14 +168,23 @@ def fp32_replay(model, run_losses: Callable[[], dict], groups: Mapping[str, list
     gstate = [{k: g.get_state() for k, g in v._g.items()} for v in gens]
     bufs = {n: b.detach().clone() for n, b in model.named_buffers()}
     devs = [torch.cuda.current_device()] if torch.cuda.is_available() else []
+    # ⛔ TF32 OFF inside the replay too (MEASURED 2026-10-05, the L4 G-SMOKE on Thor: with bf16 off but cuDNN's TF32
+    # default ON the trunk linearity read 4.2e-4; P-GRAD's 1e-4 bar was measured with BOTH TF32 switches off,
+    # pgrad.py:68-69). Restored in `finally`, so the training step that follows runs exactly as configured.
+    tf32 = (torch.backends.cuda.matmul.allow_tf32, torch.backends.cudnn.allow_tf32, torch.get_float32_matmul_precision())
     try:
         for m in levers:
             m.memory_levers["bf16"] = False
+        torch.backends.cuda.matmul.allow_tf32 = False
+        torch.backends.cudnn.allow_tf32 = False
+        torch.set_float32_matmul_precision("highest")
         with torch.random.fork_rng(devices=devs):
             losses = run_losses()
             row = measure(term_tensors(losses, weights), losses["loss"], groups, prefix=prefix)
         del losses
     finally:
+        torch.backends.cuda.matmul.allow_tf32, torch.backends.cudnn.allow_tf32 = tf32[0], tf32[1]
+        torch.set_float32_matmul_precision(tf32[2])
         for m in levers:
             m.memory_levers["bf16"] = True
         for v, st in zip(gens, gstate):
@@ -189,5 +198,6 @@ def fp32_replay(model, run_losses: Callable[[], dict], groups: Mapping[str, list
                     b.copy_(bufs[n])
     row[f"{prefix}fp32_replay"] = 1.0
     row[f"{prefix}fp32_replay_levers"] = float(len(levers))
+    row[f"{prefix}fp32_replay_tf32_off"] = 1.0
     return row
 
