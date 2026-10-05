@@ -690,6 +690,7 @@ a { color: var(--s1); }
           (last ? "update " + int(last.update) + " of " + int(last.of) + " (" + fmt(last.s_per_update, 1) + " s each, about " + fmt(left, 1) + " h left)" : (ev.length ? "training started" : "started, held-out read at step 0 pending"))) +
           (le ? "; latest read (" + le.tag + "): arm A " + ci(dOf(le.A)) + ", arm B " + ci(dOf(le.B)) + " vs the original scorer's " + fmt(le.base.pick, 2) : "") +
           ". An arm passes only if its lower bound clears zero at the final update (" + pre + ").");
+        if (S.peek) lead.push("EXPLORATORY navtest look (arm B at update 400, " + int(S.peek.n) + " tokens / " + int(S.peek.logs) + " logs not in the registered set): PDMS " + fmt(S.peek.dep, 2) + " -> " + fmt(S.peek.arm, 2) + ", " + sgn(S.peek.d) + " [" + sgn(S.peek.ci[0]) + ", " + sgn(S.peek.ci[1]) + "]; it decides nothing -- the registered stage 2 reads the final checkpoint on the 923 confirmation tokens.");
         ev.forEach(e => ["base", "A", "B"].forEach(k => { const a = e[k]; if (!a) return;
           const p = k === "base" ? a : pickOf(a);
           rows.push([nm, e.tag, k === "base" ? "original" : "arm " + k, fmt(p.pick, 2), k === "base" ? "–" : ci(dOf(a)),

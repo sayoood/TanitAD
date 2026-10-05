@@ -575,6 +575,11 @@ for _k, _d in (("sft3", "2026-10-04-sft3"), ("sft4", "2026-10-05-sft4")):   # re
     _vp = os.path.join(_pkg, "raw", _d, "verdict.json")
     if out[_k] is not None and os.path.exists(_vp):
         out[_k]["verdict"] = json.load(open(_vp, encoding="utf-8"))
+_pk = os.path.join(_pkg, "raw", "2026-10-05-sft-stage2", "sft4_peek_u400_B", "result.json")   # exploratory navtest look
+if out["sft4"] is not None and os.path.exists(_pk):
+    _r = json.load(open(_pk, encoding="utf-8"))
+    out["sft4"]["peek"] = {"n": _r["n_tokens"], "logs": _r["primary"]["n_logs"], "d": _r["primary"]["mean"],
+                           "ci": _r["primary"]["ci95"], "dep": _r["primary"]["pdms_deployed"], "arm": _r["primary"]["pdms_arm"]}
 # ⭐ LANE-1, lane discipline (raw/2026-10-04-lane-discipline/PREREG_LANE1.md): the registered analysis, when it exists
 _ld = os.path.join(_pkg, "raw", "2026-10-04-lane-discipline")
 out["lane1"] = None
