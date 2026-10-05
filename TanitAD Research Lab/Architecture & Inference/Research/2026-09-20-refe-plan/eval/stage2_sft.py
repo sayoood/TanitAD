@@ -126,18 +126,30 @@ def main() -> int:
             res["verdict"] = "INCOMPLETE (seam failed)"
             json.dump(res, open(out_dir / "result.json", "w"), indent=1); print("ZZSTAGE2", a.name, res["verdict"]); return 1
     csv_p = D / "score" / label / f"{label}.csv"
+    # ⛔ the harness's OWN status must read PASS -- a CSV existing is not evidence (MEASURED 2026-10-05: without --tokens
+    # it scored the whole 12,146-token filter, marked the 11,223 tokens absent from the seam failed, guard C2 = FAIL,
+    # and still wrote a CSV whose absent rows carry empty scores). --tokens restricts the scene filter to the subset.
+    status = {}
+    stp = out_dir / "score_status.json"
+    if stp.exists():
+        status = json.load(open(stp, encoding="utf-8"))
     for att in range(1, 7):
-        if csv_p.exists():
+        if status.get("status") == "PASS":
             break
         while free_mb() < 4000:
             time.sleep(60)
-        subprocess.call([PY_D, "score_e.py", "--label", label, "--seam", str(seam), "--out", str(D / "score")], cwd=SP,
-                        env=dict(os.environ, PYTHONIOENCODING="utf-8"), stdout=open(out_dir / f"score_{att}.log", "w"),
-                        stderr=subprocess.STDOUT)
-        if not csv_p.exists():
+        lp = out_dir / f"score_{att}.log"
+        subprocess.call([PY_D, "score_e.py", "--label", label, "--seam", str(seam), "--tokens", str(TOKENS),
+                         "--out", str(D / "score")], cwd=SP, env=dict(os.environ, PYTHONIOENCODING="utf-8"),
+                        stdout=open(lp, "w"), stderr=subprocess.STDOUT)
+        lines = open(lp, encoding="utf-8", errors="replace").read().splitlines()
+        status = next((json.loads(l) for l in reversed(lines) if l.startswith("{") and '"status"' in l), {})
+        json.dump(status, open(stp, "w"), indent=1)
+        if status.get("status") != "PASS":
             time.sleep(120)
-    if not csv_p.exists():
-        res["verdict"] = "INCOMPLETE (harness did not produce a CSV)"
+    res["harness_status"] = status
+    if status.get("status") != "PASS" or not csv_p.exists():
+        res["verdict"] = "INCOMPLETE (the harness did not PASS)"
         json.dump(res, open(out_dir / "result.json", "w"), indent=1); print("ZZSTAGE2", a.name, res["verdict"]); return 1
     E = json.load(gzip.open(EXPORT, "rt", encoding="utf-8"))["tokens"]
     tl = {t: E[t]["log_name"] for t in toks}
