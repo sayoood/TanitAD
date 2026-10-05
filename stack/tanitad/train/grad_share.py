@@ -25,7 +25,7 @@ from typing import Callable, Mapping
 import torch
 from torch import Tensor
 
-__all__ = ["TERMS", "GROUP_PREFIXES", "term_tensors", "param_groups", "measure"]
+__all__ = ["TERMS", "GROUP_PREFIXES", "term_tensors", "param_groups", "measure", "bf16_levers", "fp32_replay"]
 
 #: the named terms, in the order P-GRAD reports them; ``rest`` is derived
 TERMS = ("traj", "agent", "box3d", "map_hires", "tac_v6", "r8")
@@ -125,3 +125,69 @@ def weights_of(model, traj_weight: float) -> dict:
             "map_hires": float(getattr(model, "_w_map_hires", 0.0) or 0.0),
             "tac_v6": float(getattr(model, "_w_tac_v6", 0.0) or 0.0),
             "r8": 1.0 if bool(getattr(model, "r8_enabled", False)) else 0.0}
+
+
+# ---------------------------------------------------------------------------------------------------------------- #
+# the fp32 REPLAY (MEASURED 2026-10-05, the Thor L3 smoke: under `--trunk-bf16` the trunk group's linearity control  #
+# read 5.9e-3 against the 1e-4 bar -- a bf16 backward makes the gradient of the sum differ from the sum of the        #
+# gradients by ~ bf16 epsilon; the fp32 groups read 9.3e-5 / 6.0e-5). The statistic is read on a REPLAY of the SAME  #
+# step's forward with every bf16 lever OFF; everything the replay could disturb is restored, so the training step  #
+# that follows is the step the trainer would have taken without the instrument.                                    #
+# ---------------------------------------------------------------------------------------------------------------- #
+def bf16_levers(model) -> list:
+    """Every module whose ``memory_levers['bf16']`` is ON (the timm trunk's autocast lever)."""
+    out = []
+    for m in model.modules():
+        lv = getattr(m, "memory_levers", None)
+        if isinstance(lv, dict) and bool(lv.get("bf16", False)):
+            out.append(m)
+    return out
+
+
+def _dedicated_generators(model) -> list:
+    """Every refcv8 dedicated generator reachable from the model (``R8Generator`` duck type: ``_g`` dict of
+    torch.Generator) -- their states are snapshotted and restored around the replay."""
+    seen, out = set(), []
+    for obj in [model] + list(model.modules()):
+        for v in list(vars(obj).values()):
+            g = getattr(v, "_g", None)
+            if isinstance(g, dict) and all(isinstance(x, torch.Generator) for x in g.values()) and id(v) not in seen:
+                seen.add(id(v))
+                out.append(v)
+    return out
+
+
+def fp32_replay(model, run_losses: Callable[[], dict], groups: Mapping[str, list], weights: Mapping[str, float], *,
+                prefix: str = "gs_") -> dict:
+    """``run_losses()`` re-runs THIS step's forward + losses; it is called with every bf16 lever OFF, inside a forked
+    global RNG, with the dedicated generators' states and every BUFFER (BN running stats, ...) snapshotted and restored
+    afterwards. -> ``measure(...)`` of that fp32 graph, plus ``{prefix}fp32_replay: 1.0`` and the number of levers
+    switched. ``.grad`` is never touched (``torch.autograd.grad`` only)."""
+    levers = bf16_levers(model)
+    gens = _dedicated_generators(model)
+    gstate = [{k: g.get_state() for k, g in v._g.items()} for v in gens]
+    bufs = {n: b.detach().clone() for n, b in model.named_buffers()}
+    devs = [torch.cuda.current_device()] if torch.cuda.is_available() else []
+    try:
+        for m in levers:
+            m.memory_levers["bf16"] = False
+        with torch.random.fork_rng(devices=devs):
+            losses = run_losses()
+            row = measure(term_tensors(losses, weights), losses["loss"], groups, prefix=prefix)
+        del losses
+    finally:
+        for m in levers:
+            m.memory_levers["bf16"] = True
+        for v, st in zip(gens, gstate):
+            for k in [k for k in v._g if k not in st]:
+                del v._g[k]              # a generator FIRST created by the replay: dropped, re-created fresh on use
+            for k, s_ in st.items():
+                v._g[k].set_state(s_)
+        with torch.no_grad():
+            for n, b in model.named_buffers():
+                if n in bufs:
+                    b.copy_(bufs[n])
+    row[f"{prefix}fp32_replay"] = 1.0
+    row[f"{prefix}fp32_replay_levers"] = float(len(levers))
+    return row
+

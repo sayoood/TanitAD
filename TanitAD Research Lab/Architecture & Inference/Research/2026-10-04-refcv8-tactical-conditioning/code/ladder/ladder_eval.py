@@ -164,7 +164,7 @@ def main():
             return orig_cf(self, cand, v_limit_ms)
         v6sel.SpeedCeilingFilter.forward = _cf
         keep = {k: [] for k in ("traj", "gt", "gt_valid", "v0", "nav", "v_fed", "v_valid", "v_lim", "p_lat", "p_lon",
-                                "off_drv", "drv_w", "rc_raw", "rc_valid", "cons_err_lat", "cons_err_lon", "cons_err_spd",
+                                "off_drv", "drv_w", "rc_raw_ds", "rc_valid_ds", "cons_err_lat", "cons_err_lon", "cons_err_spd",
                                 "cons_n_lat", "cons_n_lon", "cons_n_spd", "cons_pred", "cons_tgt", "cons_mask",
                                 "map_inter", "map_union")}
         gpu = 0.0
@@ -217,8 +217,10 @@ def main():
                             uu.append(((pc | gc) & sn).flatten(1).sum(1))
                     keep["map_inter"].append(torch.stack(ii, 1).numpy())
                     keep["map_union"].append(torch.stack(uu, 1).numpy())
-                keep["rc_raw"].append(b["r8_rc_raw"].numpy() if "r8_rc_raw" in b else np.full((n, 3), np.nan))
-                keep["rc_valid"].append(b["r8_rc_valid"].numpy().astype(np.float32) if "r8_rc_valid" in b
+                # the DATASET's route checkpoint (BEFORE the row's intervention: rc_off / legal / rc_shuf act inside the
+                # model's r8_before_forward, so these two arrays are the same on every row -- a record, never scored)
+                keep["rc_raw_ds"].append(b["r8_rc_raw"].numpy() if "r8_rc_raw" in b else np.full((n, 3), np.nan))
+                keep["rc_valid_ds"].append(b["r8_rc_valid"].numpy().astype(np.float32) if "r8_rc_valid" in b
                                         else np.zeros(n))
                 if "r8_v9_lat_c" in out and "r8_v9_lat_c" in b:
                     tg9 = r8c.v9_constraint_targets(b["r8_v9_lat_c"], b["r8_v9_lon_c"], b["r8_v9_speed"], b["lat_v7"],

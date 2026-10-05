@@ -1057,6 +1057,8 @@ def e9_rank(blended: Tensor, out: dict) -> tuple[Tensor, dict]:
 #: and the route checkpoint = (x/50, y/50, psi/90 deg, valid) in the NOW vehicle frame. The validity bit is RE-APPLIED
 #: in the model (the X15 rule): an invalid row is exactly zeros next to a 0.
 R8_NAV_DIMS: int = 6
+#: the refcv8 seams' DEDICATED init stream = cfg.refcv8.seed + this (enable_refcv8 forks the global RNG)
+R8_INIT_SEED_OFFSET: int = 880_008
 R8_RC_DIMS: int = 4
 
 
@@ -2051,12 +2053,20 @@ class RefCV3Model(nn.Module):
         _v9d = ((r8c.V9_LAT_DIMS, r8c.V9_LON_DIMS, r8c.V9_SPEED_DIMS) if bool(getattr(r8cfg, "v9_cons", False))
                 else None)
         _e8 = r8c.SPEED_ENC8_DIMS if bool(getattr(r8cfg, "speed_enc8", False)) else 0
-        if bool(getattr(r8cfg, "critic_drivable", False)):
-            self.r8_drv = r8c.DrivableCritic()
-        self.r8_n_params = (self.tac_decoder_v6.attach_refcv8_heads(R8_NAV_DIMS + R8_RC_DIMS, v9_dims=_v9d,
-                                                                    speed_enc8_dims=_e8)
-                            + (0 if self.r8_drv is None else sum(p.numel() for p in self.r8_drv.parameters()))
-                            + self.core.decoder.attach_refcv8(r8cfg, d_rc=R8_RC_DIMS))
+        # ⛔ THE SEAMS CONSUME NO GLOBAL RNG (MEASURED 2026-10-05, the ladder's I-0 arm-level identity on the dev
+        # box): built inside the model they drew from the global stream, and the TRAINER builds the perception branch
+        # (box3d) and the 10 cm map branch AFTER the model -- so V-R8's map / box heads started from a DIFFERENT
+        # init than V0's (the agent head, built before the seams, was identical), a second variable in every
+        # refcv8-vs-refcv7 comparison. The seams' init now comes from a DEDICATED stream (refcv8 seed + a constant)
+        # inside a forked RNG, so the global stream leaves this call exactly as it entered.
+        with torch.random.fork_rng(devices=[]):
+            torch.manual_seed(int(getattr(r8cfg, "seed", 0)) + R8_INIT_SEED_OFFSET)
+            if bool(getattr(r8cfg, "critic_drivable", False)):
+                self.r8_drv = r8c.DrivableCritic()
+            self.r8_n_params = (self.tac_decoder_v6.attach_refcv8_heads(R8_NAV_DIMS + R8_RC_DIMS, v9_dims=_v9d,
+                                                                        speed_enc8_dims=_e8)
+                                + (0 if self.r8_drv is None else sum(p.numel() for p in self.r8_drv.parameters()))
+                                + self.core.decoder.attach_refcv8(r8cfg, d_rc=R8_RC_DIMS))
         self.r8_enabled = True
         return self.r8_n_params
 

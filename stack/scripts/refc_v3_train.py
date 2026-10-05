@@ -10279,6 +10279,17 @@ def train(args) -> dict:
             model._r8_speed_unknown_p = float(r8train.R8_SPEED_UNKNOWN_P if getattr(args, "r8_speed_unknown_p", None)
                                               is None else args.r8_speed_unknown_p)
             model._r8_roll_speed_train = bool(getattr(args, "r8_roll_speed_input", False))
+        # refcv8 X4 + WP-B 2026-10-05: under a bf16 trunk the gradient-share statistic is read on an fp32 REPLAY of
+        # this very step (grad_share.fp32_replay restores RNG, dedicated generators and buffers), BEFORE the training
+        # forward -- a bf16 backward cannot meet the linearity control (MEASURED 5.9e-3 vs the 1e-4 bar on Thor).
+        _gs_due = (_gs_every > 0 and _logged_after(step, args.log_every, args.steps)
+                   and (step + 1) % _gs_every == 0)
+        _gs_replay = None
+        if _gs_due and _gshare.bf16_levers(model):
+            _gs_replay = _gshare.fp32_replay(
+                model, lambda: compute_losses_v3(model, batch, device, mode=args.mode,
+                                                 ablate_frames=args.ablate_frames, log_metrics=False),
+                _gs_groups, _gshare.weights_of(model, TRAJ_WEIGHT))
         losses = compute_losses_v3(model, batch, device, mode=args.mode,
                                    ablate_frames=args.ablate_frames,
                                    log_metrics=_logged_after(step, args.log_every, args.steps))
@@ -10351,8 +10362,9 @@ def train(args) -> dict:
         # ⭐ refcv8 X4: the gradient-share reading, on a LOGGED step only, BEFORE the backward. `autograd.grad`
         # never touches `.grad`, so the backward below writes the bytes it writes without the instrument.
         _gs_row = {}
-        if (_gs_every > 0 and _logged_after(step, args.log_every, args.steps)
-                and (step + 1) % _gs_every == 0):
+        if _gs_replay is not None:
+            _gs_row = _gs_replay                 # the fp32 replay of THIS step (bf16 trunk)
+        elif _gs_due:
             _gs_row = _gshare.measure(_gshare.term_tensors(losses, _gshare.weights_of(model, TRAJ_WEIGHT)),
                                       losses["loss"], _gs_groups)
         # ⚠️ `subtract` mode reads `.grad`, so it must run AFTER the backward

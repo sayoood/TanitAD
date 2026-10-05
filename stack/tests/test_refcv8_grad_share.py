@@ -206,13 +206,18 @@ def _wiring_ok(src: str) -> bool:
     b = tr.index('losses["loss"].backward()')
     r = tr.index("row.update(_gs_row)")
     rnd = tr.index("row = _train_row_scalars(losses, model)")
-    gate = tr[tr.rindex("if (_gs_every > 0", 0, m):m]
-    return m < b and r > rnd and "_logged_after(step, args.log_every, args.steps)" in gate
+    # WP-B 2026-10-05: the cadence gate is `_gs_due` (shared with the bf16 fp32 replay, taken before the forward)
+    g0 = tr.index("_gs_due = (")
+    gate = tr[g0:g0 + 300]
+    return (m < b and r > rnd and g0 < m and "_logged_after(step, args.log_every, args.steps)" in gate
+            and "elif _gs_due:" in tr[g0:m])
 
 
 def test_the_trainer_measures_before_the_backward_on_logged_steps_and_merges_after_rounding():
     src = inspect.getsource(T).replace("\r\n", "\n")
     assert _wiring_ok(src)
     # DELIBERATE REGRESSION: measuring on every step (the logged-step gate removed) goes RED
-    assert not _wiring_ok(src.replace("if (_gs_every > 0 and _logged_after(step, args.log_every, args.steps)",
-                                      "if (_gs_every > 0 and True", 1))
+    mut = src.replace("_gs_due = (_gs_every > 0 and _logged_after(step, args.log_every, args.steps)",
+                      "_gs_due = (_gs_every > 0 and True", 1)
+    assert mut != src                                    # the mutation really applied
+    assert not _wiring_ok(mut)

@@ -2,8 +2,10 @@
 own artifacts (CPU, no model). A failure STOPS the ladder; `ladder_score.py` refuses to score without I0.json PASS.
 
   I0-a  arm-level identity: V-R8's step-1 row (the forward of the FIRST batch, before any update) equals V0's on every
-        loss key whose inputs do not depend on the label release or on refcv8-only inputs (SPEC sec. 10.2); the
-        label-dependent keys are PRINTED side by side and are not part of the identity. Read on the S0 timing runs
+        10 cm MAP term (`map_hires*`, gradient readings excluded) -- the keys whose inputs depend on neither the label
+        release, the nav source, nor a refcv8-only input such as the join defect masks (SPEC sec. 10.2); every other
+        shared numeric key (agent / box3d included) is PRINTED side by side. The model-level half (the seams consume no
+        global RNG, so every shared parameter is identical) is pinned by `tests/test_refcv8_seam_rng.py`. Read on the S0 timing runs
         (`--log-every 1`, the same seed and data order). Tolerance: |a-b| <= 1e-4 * max(1, |b|) (declared here, before
         any arm has run; two processes may pick different cuDNN kernels -- `cudnn_benchmark` is recorded per run).
   I0-b  model-level identity: the warm-start identity test of the refcv8 seams = the landed pytest
@@ -32,11 +34,15 @@ import ladder_arms as LA  # noqa: E402
 
 TOL_REL = 1e-4
 LIN_MAX = 1e-4
-#: keys whose value depends on the label release or on refcv8-only inputs (SPEC sec. 10.2) -- printed, not compared
-LABEL_DEP = re.compile(r"(tac|goal|nav|lat|lon|route|maneuver|manoeuvre|r8|v9|cons|alloc|listwise|sel|compl|rc_)",
-                       re.I)
-#: per-step bookkeeping that is not a loss of the forward
-NOT_LOSS = re.compile(r"(step_s|lr|time|_s$|wall|mem|grad_norm|gs_|cd_|eval_|r8_spd_crc|n_terms|skipped)", re.I)
+#: I0-a's COMPARED keys (declared before any arm runs; SPEC sec. 10.2): the 10 cm MAP terms -- their inputs are the
+#: frames and the SAM3 targets, identical in V0 and V-R8 (same seed, same windows, zero-init refcv8 seams that consume
+#: no global RNG). The agent / box3d terms read the JOIN, which V-R8 reads through WP-C's `--join-defect-masks` (ego
+#: strip + id-switch rate masks: a refcv8-bundle input), so they are printed, not compared. The
+#: planner / tactical terms read the nav command, whose SOURCE differs by design (v7.2 vs `--r8-nav-from-v9`), and the
+#: label release, so they are label-dependent: PRINTED side by side, never compared. Gradient-derived readings
+#: (`ga_*`, `*_gn_*`, `*_gno_*`) see the refcv8 losses through the shared backward and are excluded as well.
+COMPARE = re.compile(r"^map_hires")
+NOT_COMPARED = re.compile(r"(^ga_|_gn_|_gno_|^cd_|^gs_|^eval_|^r8|^vis1_|^data_|^lr$|^elapsed_s$|^cuda_|^step$)")
 
 
 def rows_of(run: Path):
@@ -52,23 +58,19 @@ def rows_of(run: Path):
     return out
 
 
-def is_loss_key(k):
-    return ("loss" in k.lower() or k.startswith("l_")) and not NOT_LOSS.search(k)
-
-
 def check_identity(r0: dict, r8: dict) -> dict:
     if not r0 or not r8:
         return {"PASS": None, "why": "UNAVAILABLE: an S0 step-1 row is missing"}
     if r0.get("step") != r8.get("step"):
         return {"PASS": False, "why": f"step mismatch {r0.get('step')} vs {r8.get('step')}"}
-    shared = sorted(k for k in r0 if k in r8 and is_loss_key(k) and isinstance(r0[k], (int, float))
-                    and isinstance(r8[k], (int, float)))
-    cmp_k = [k for k in shared if not LABEL_DEP.search(k)]
-    side = {k: [r0[k], r8[k]] for k in shared if LABEL_DEP.search(k)}
+    num = sorted(k for k in r0 if k in r8 and isinstance(r0[k], (int, float)) and isinstance(r8[k], (int, float))
+                 and not isinstance(r0[k], bool))
+    cmp_k = [k for k in num if COMPARE.search(k) and not NOT_COMPARED.search(k)]
+    side = {k: [r0[k], r8[k]] for k in num if not COMPARE.search(k) and not NOT_COMPARED.search(k)}
     bad = {k: [r0[k], r8[k]] for k in cmp_k if abs(float(r8[k]) - float(r0[k])) > TOL_REL * max(1.0, abs(float(r0[k])))}
-    return {"PASS": (bool(cmp_k) and not bad), "n_compared": len(cmp_k), "compared": cmp_k, "mismatch": bad,
-            "label_dependent_side_by_side": side, "tol": f"|a-b| <= {TOL_REL} * max(1, |b|)",
-            "why": None if cmp_k else "no comparable loss key (the identity cannot be vacuous)"}
+    return {"PASS": (bool(cmp_k) and not bad), "n_compared": len(cmp_k), "mismatch": bad,
+            "printed_not_compared": side, "tol": f"|a-b| <= {TOL_REL} * max(1, |b|)",
+            "why": None if cmp_k else "no comparable key (the identity cannot be vacuous)"}
 
 
 def check_crc(a_rows, b_rows) -> dict:
