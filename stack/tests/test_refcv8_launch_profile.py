@@ -52,8 +52,21 @@ def test_the_smoke_argv_passes_every_argv_rule_with_the_RC_as_its_only_PI_decisi
     assert any(p.startswith("--r8-rc-variant A50") for p in pending)
     assert any(p.startswith("--r8-speed-input n2") for p in pending)
     ids = [it["id"] for it in prof["open_items"]]
-    assert ids == ["R8-RECIPE", "R8-BUDGET", "R8-WARMUP", "R8-INHERITED-RECORDS"]
-    assert len(LG.open_item_reasons(prof)) == 4                              # the token cannot read PASS yet
+    # R8-WARMUP was CLOSED by the Master Mind on 2026-10-11 (SPEC_REFCV8 sec. 10.3): three items still wait on evidence
+    assert ids == ["R8-RECIPE", "R8-BUDGET", "R8-INHERITED-RECORDS"]
+    assert "R8-WARMUP" not in ids
+    assert len(LG.open_item_reasons(prof)) == 3                              # the token cannot read PASS yet
+
+
+def test_S_emit_is_the_warmup_length_and_both_are_1000_literals():
+    """R8-WARMUP closed (SPEC_REFCV8 sec. 10.3): S_emit == the warmup length == 1,000. Literals, not derived."""
+    prof = LG.PROFILES["refcv8"]
+    assert prof["required_values"]["--r8-alloc-emit-start"] == "1000"
+    a = _argv()
+    assert a[a.index("--warmup") + 1] == "1000"
+    assert a[a.index("--r8-alloc-emit-start") + 1] == "1000"
+    why = prof["required_values_why"]["--r8-alloc-emit-start"]
+    assert "--warmup 1000" in why and "2000" not in why
 
 
 @pytest.mark.parametrize("mutate,needle", [

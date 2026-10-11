@@ -46,10 +46,18 @@
   {
    "flag": "--r8-alloc-emit-start",
    "value": [
-    "2000"
+    "1000"
    ],
    "was_present": false,
-   "why": "MM ruling Q1 (I-2): the allocated candidates are emitted from step 2,000 (the end of --warmup 2000); step 0 emits refcv7's plan"
+   "why": "MM ruling Q1 (I-2): the allocated candidates are emitted from step 1,000 (the end of --warmup 1000; R8-WARMUP closed 2026-10-11, SPEC_REFCV8 sec. 10.3); step 0 emits refcv7's plan"
+  },
+  {
+   "flag": "--warmup",
+   "value": [
+    "1000"
+   ],
+   "was_present": true,
+   "why": "R8-WARMUP closed (Master Mind 2026-10-11, SPEC_REFCV8 sec. 10.3): both LR groups re-warm over 1,000 steps (refcv7's canonical argv carries 2000); S_emit = this length"
   },
   {
    "flag": "--w-r8-alloc-l1",
@@ -369,7 +377,7 @@
   "--lr",
   "1e-4",
   "--warmup",
-  "2000",
+  "1000",
   "--seed",
   "0",
   "--u8-batches",
@@ -406,7 +414,7 @@
   "32",
   "--r8-alloc-emit",
   "--r8-alloc-emit-start",
-  "2000",
+  "1000",
   "--w-r8-alloc-l1",
   "1.0",
   "--w-r8-listwise",

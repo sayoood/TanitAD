@@ -154,3 +154,17 @@ margin reuse of +0.05 / +0.10 m; TAC-LAT-F1 0.80; TAC-LON-F1 0.60; R8-4 (iv) bar
 1e-4); R8-5-BOX 1.20; the NMS radius grid {2.0, 2.5, 3.0} m; R8-6-BOX-4 0.248 (= refcv7's box3d level); X1 REGRET 1.55 m;
 X2 0.90; X3 LEAK 0.05, CEIL-OBEY 0.01, UNKNOWN +0.10 / +0.20 m/s; X7 sign test; X10 1 ms. Each is listed with the
 refcv7 value that was visible in SPEC §14.
+
+
+## Added at registration (2026-10-11, Master Mind) — artifacts the registered text cites that the draft did not
+
+* X8 / X7 baseline: `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-11-r7base-fourfamily/` (`RESULT.md`, `raw/analysis_s{2,6}_s{0,1}.json`, `raw/lead_viol_s{0,1}.json`, `raw/family_rows.json`, `raw/cross_paired_*`); tip commit `c1ceba7`.
+* I-2 closure: `TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/RESULT_IW.md`, `raw/I_W.json` (md5 `1154accc`), `raw/r8_fullsize_warmstart_split.json`.
+* Registered ladder: `.../2026-10-04-refcv8-tactical-conditioning/SPEC_WPB_LADDER.md` (sha256 `e1b6aff7`), `SPEC_WPB_LADDER_A1.md` (`cbd64fa2`), `SPEC_WPB_LADDER_A2.md` (`8c7c73bb`); entry rule §10 item 1; commit `5798f56`.
+* R1 reading: `TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-r1-head-only/SPEC_R1_A2.md` (registered 2026-10-05T04:53:28Z).
+* X3 / X4 status: `TanitAD Research Lab/Architecture & Inference/Research/2026-10-11-r87-xitems-status/R87_STATUS.md` (143 tests); WP-B L1 `badb582`, L5 smoke `903dd51`.
+* refcv7-50,400 LEGAL NavSim: `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step50400/thor_scores/` (`THOR_RUNS.md`, `navtest/summary_navtest_vmaxoff_legal.THOR.json`, `navhard/summary_navhard_vmaxoff_legal.THOR.json`, key `official_two_stage_EPDMS`).
+* A7.2-A7.4: commit `c51d1cb`; battery `RESULT.md` sections "step50400_a6text" and "X8 CLOSURE" (`2e4e46b`).
+* Binding overfit precedent (wall-clock): `.../2026-09-28-refcv7-restart-options/raw/thor_bind/{gmo,gbo}_closure.REDACTED.json`.
+* Launch gate: `stack/scripts/launch_gate.py` profile `refcv8` (`_REFCV8_OPEN_ITEMS` now R8-RECIPE, R8-BUDGET, R8-INHERITED-RECORDS); pre-launch kit `stack/scripts/refcv8_prelaunch.sh`, `stack/scripts/refcv8_assemble_argv.py`.
+* Rulings with no artifact beyond the SPEC text: PI 2026-10-11 (LEAD-VIOL denominator, "use the human <=1s gap"; "You can stop the ladder after 11 runs"); Master Mind 2026-10-11 (R8-WARMUP closed, S_emit 1000, gradient-share schedule, Q-C keep, CEIL-OBEY / NIGHT-LUMA / LEFT-N definitions).

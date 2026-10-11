@@ -631,10 +631,11 @@ _REFCV8_OPEN_ITEMS = (
      "what": "--w-tac-v6 and --w-map-hires for refcv8 (SPEC_WPB_LADDER L2 / L3, sized from P-GRAD); refcv7's 1.0 "
              "stands until the ladder reads",
      "owner": "WP-B -> the Master Mind"},
-    {"id": "R8-WARMUP",
-     "what": "the warm-start schedule after --init-from (fresh AdamW moments; --lr / --warmup): DESIGN sec. 3.7 "
-             "names it a launch-SPEC decision",
-     "owner": "the Master Mind"},
+    # R8-WARMUP is CLOSED (Master Mind ruling 2026-10-11, SPEC_REFCV8 sec. 10.3, registered 2026-10-11): re-warm both
+    # LR groups over 1,000 steps to head 1e-4 / trunk 5e-5 under --opt dd, cosine over the run; --ema-decay 0.9998,
+    # the EMA evaluated at every in-run eval and saved; the B1 guard --b1-guard-ref-ap2m <refcv7-50,400 value>
+    # --b1-guard-step 1000. Its S_emit follows (--r8-alloc-emit-start 1000, pinned below). The remaining open items
+    # are the three that still wait on evidence.
     {"id": "R8-INHERITED-RECORDS",
      "what": "the Thor env-failure pin list and the G-MAP / G-BOX overfit records are refcv7's, INHERITED; they "
              "are re-run on the refcv8 tree before a binding token",
@@ -672,7 +673,7 @@ PROFILES["refcv8"] = dict(
         "--r8-rc-dropout": "0.3",
         "--r8-nav-args-dropout": "0.5",
         "--r8-speed-unknown-p": "0.45",
-        "--r8-alloc-emit-start": "2000",
+        "--r8-alloc-emit-start": "1000",
         "--w-r8-cons": "0.05"}),
     required_values_why=dict(_R7.get("required_values_why") or {}, **{
         "--r8-v9-md5": "WP-A LANDING_READY WPA-S3: the validated train release",
@@ -683,8 +684,9 @@ PROFILES["refcv8"] = dict(
         "--r8-rc-dropout": "MM binding 2026-10-04: route-checkpoint dropout >= 0.3",
         "--r8-nav-args-dropout": "MM binding 2026-10-04: nav-argument dropout, token kept",
         "--r8-speed-unknown-p": "SPEC_REFCV8 8.3 (X3): the TRAINED unknown row at D4 / NavSim's no-limit share 0.45",
-        "--r8-alloc-emit-start": "MM ruling Q1 (I-2): extras emitted from the end of the LR warmup (--warmup 2000); "
-                                 "the emission-OFF phase is identity-free (iw_diag + the split decode)",
+        "--r8-alloc-emit-start": "MM ruling Q1 (I-2) + R8-WARMUP (2026-10-11): extras emitted from the end of the LR warmup "
+                                 "(--warmup 1000, SPEC_REFCV8 sec. 10.3); the emission-OFF phase is identity-free "
+                                 "(iw_diag + the split decode, I-W PASS 218 windows)",
         "--w-r8-cons": "SPEC_WPB: the constraint-head weight"}),
     required_positive=tuple(_R7["required_positive"]) + ("--w-r8-cons", "--w-r8-v9-cons"),
     forbidden_levers=tuple(_R7["forbidden_levers"]) + (
