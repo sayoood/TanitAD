@@ -133,6 +133,39 @@ The A40 had idled since SFT-3 finished at 00:50 UTC. Under v2 it would have idle
 - **Unchanged:** the design, the arms, the gate, the G9 mutation and the stage-1 / stage-2 rules.
 - v2 was stopped by explicit PID while it slept; `chain.log` records the swap.
 
+### Amendment 5 (2026-10-11 07:50 UTC, before the read): the pod stopped; read the one surviving checkpoint on navtest, as a registered deviation
+
+⚠️ The name collides with SPEC_NAVTEST's Amendment 5, whose 923 tokens stage 2 below uses. This is THIS file's fifth
+amendment; the tokens are SPEC_NAVTEST's.
+
+The orchestrating session stopped at the weekly API limit after 09:05 UTC on 2026-10-05, and the pod was found
+unreachable on 2026-10-11 (`STOP_CONSEQUENCES_2026-10-11.md`). No final-update stage-1 read was ever looked at. Off the
+pod, only **arm B at update 400** survives: `model_sft4_B_u400.pt` (md5 `8e382eeb…`) with `scorer_states_u400.pt`
+(md5 `4dded9b1…`), on the dev box.
+- **The read:** `eval/stage2_sft.py --name sft4_B_u400 --rule navsim_v1_lane` on that checkpoint, in the unchanged
+  seam (route fix ON, A7 ON), on **SPEC_NAVTEST Amendment 5's 923 confirmation tokens** (43 logs, none in W3's 200;
+  `eval/raw/a5_confirm/`), against the deployed system's own scores on them (85.61 PDMS). Paired log-cluster
+  bootstrap, 10,000 resamples, seed 20260927.
+- **Rule, unchanged:** ADOPT iff the lower bound > 0 AND no longitudinal or lateral family component separates
+  adversely; REFUTED iff the upper bound < 0; otherwise NOT PROVEN.
+- **Deviations, stated before the read:**
+  1. A non-final checkpoint: update 400 of 2,335.
+  2. Stage 1 never selected it. B is read because it is the only survivor, not because it won; at update 800 the two
+     arms tied (+2.27 each, INHERITED from the handoff; no SFT-4 log was banked).
+  3. It trained on 146,185 of 174,912 PDM labels (Amendment 4).
+  4. Its exploratory read on W3's 200 tokens (+4.24 [+1.36, +7.39]) has been seen. Those 200 tokens share none with the
+     923 (MEASURED 2026-10-11: the peek's token file, named in `raw/2026-10-05-sft-stage2/sft4_peek_u400_B/result.json`,
+     against `eval/raw/a5_confirm/a5_confirm_tokens.json`: 200 and 923 tokens, intersection 0). But the decision to run
+     this read was informed by that number.
+  5. One fine-tune seed and deterministic inference: the interval answers *another draw of logs* only.
+- **What each outcome licenses:**
+  - **ADOPT:** "this checkpoint selects better than the deployed scorer on navtest's confirmation tokens". It is NOT a
+    claim that the SFT-4 recipe works. Then: the full 12,146-token navtest and the four families on this checkpoint;
+    deploying it is the PI's call; the SFT-4 re-run on the complete labels (registered fresh) and a training-seed
+    replicate come before the lever is claimed.
+  - **NOT PROVEN or REFUTED:** says nothing about the recipe at its final update. The re-run on the complete labels
+    stays the next arm and is blocked on a pod.
+
 ## Stage 1: held-out (pod, label-only; the 3,137 sets of 24 logs that carry PDM targets)
 
 Truth = the PDM-target navsim_v1 score of the chosen plan (the harness score of executing it). Comparisons are against the deployed system: the base scorer under navsim_v1.
