@@ -1,6 +1,6 @@
 # P6 GO signal: the evidence the Master Mind needs before the PI starts a pod
 
-> 2026-10-11. **Status: NO SIGNAL YET — C1–C5 GREEN (C3 SCORER-BOUND); C6 (PI: yaw loss) open. C6 concerns P6 only, not the P2 run S1 starts.**
+> 2026-10-11. **Status: S1 GIVEN (2026-10-11 ~20:45 Berlin) — C1–C6 ALL GREEN (C3 SCORER-BOUND). Awaiting the PI's pod (1× A40, ≥ 24 vCPU, ≥ 64 GB RAM, ≥ 400 GB, `HF_TOKEN` set) for P2. S2 (P6 on the same pod) follows only on P2's GO under `eval/PREREG_P2_AMENDMENT_1.md`.**
 >
 > PI, verbatim: *"I did not start the pod. I wait until you give me signal and we have evidence and confidence to
 > surpass the paper."*
@@ -67,7 +67,7 @@ levers. So S1 asks for about 1.5 pod-days, not 7.
 | **C3** | **Selection headroom on u400's own proposals** (dev box, pre-registered below) | ✅ **GREEN 2026-10-11: SCORER-BOUND.** Rescuable 86.0 % [80.2, 91.7] of the 529 zeroed tokens (bar 50 %); actual 88.28 vs random 73.42 vs oracle 98.16; oracle − actual +9.88 [+9.09, +10.78]; EP headroom +12.34 [+11.05, +13.78]; fidelity and table gates bit-exact. `eval/RESULT_C3_SELECTION_HEADROOM.md` |
 | C4 | M-LAB labeller cost ⇒ pod vCPU (P6-C) | ✅ **GREEN 2026-10-11.** c = 0.34–0.36 CPU-s/set pinned (worst measured 0.833 under a saturated box; 1.97 for the build fallback); 8 dev-box workers label 9.62 sets/s vs 4.49 needed; labels equal the NAVSIM census on 100 % of proposals. ⇒ **pod ≥ 24 vCPU, ≥ 64 GB RAM, ≥ 400 GB disk** (≥ 2× margin incl. an ESTIMATED 2× slower pod core). `eval/RESULT_M_LAB.md` |
 | C5 | The launch gate is landed with `refe_p2` and `refe_p6` profiles (P6-G) | ✅ **built and landed 2026-10-11.** A REFe-native gate (`refe/launch_gate.py`, `gate_checks.py`, `gate_token.py`; the token schema matches the generic gate) runs G-HYG, G-DVB (47 trainer flags; an unknown flag FAILS), G-LIVE, G-EVAL, G-CKPT, G-SUITE and G-P2GATE. Each check has a regression arm that makes it FAIL. Tests: `ZZLG_FULL_PASS 121` (ViT-S rehearsal, dev box), `ZZLG_STATIC_PASS 90` (re-run by the Master Mind), `test_p2r_chain.py` 111 checks with 32 mutations RED. `p2r_pod.sh` refuses `train` without a matching HMAC token. **`refe_p6` REFUSES today (exit 5)**, as it must: its flags are declared, not built. Pod-only and UNMEASURED: the ViT-L real-data G-LIVE smoke, ~15–25 min (ESTIMATED). Contract: `eval/REFE_LAUNCH_GATE.md`. |
-| C6 | P6-Y (yaw loss) is ruled | ⏳ PI |
+| C6 | P6-Y (yaw loss) is ruled | ✅ **PI 2026-10-11: unwrapped, as the paper** (`--yaw-wrap off`) |
 
 ### C3: pre-registration, written before any u400 proposal is scored
 
