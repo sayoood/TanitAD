@@ -137,13 +137,20 @@ def main() -> int:
     stp = out_dir / "score_status.json"
     if stp.exists():
         status = json.load(open(stp, encoding="utf-8"))
+    # ⛔ WinError 206 (MEASURED 2026-10-11, all six attempts of sft4_B_u400_navtest_full): --tokens becomes ONE Hydra
+    # override, scene_filter.tokens=[...], and 12,146 tokens make it 230,812 chars against Windows' 32,767 limit, so every
+    # attempt died in CreateProcess before scoring anything. When the set IS the whole navtest filter, the filter itself
+    # is the restriction: omit --tokens, and the harness's C2 then demands that ALL the filter's tokens score.
+    full = set(toks) == set(json.load(gzip.open(EXPORT, "rt", encoding="utf-8"))["tokens"])
+    tok_arg = [] if full else ["--tokens", str(TOK)]
+    res["scored_as"] = "the whole navtest filter (no --tokens)" if full else "a --tokens subset"
     for att in range(1, 7):
         if status.get("status") == "PASS":
             break
         while free_mb() < 4000:
             time.sleep(60)
         lp = out_dir / f"score_{att}.log"
-        subprocess.call([PY_D, "score_e.py", "--label", label, "--seam", str(seam), "--tokens", str(TOK),
+        subprocess.call([PY_D, "score_e.py", "--label", label, "--seam", str(seam), *tok_arg,
                          "--out", str(D / "score")], cwd=SP, env=dict(os.environ, PYTHONIOENCODING="utf-8"),
                         stdout=open(lp, "w"), stderr=subprocess.STDOUT)
         lines = open(lp, encoding="utf-8", errors="replace").read().splitlines()

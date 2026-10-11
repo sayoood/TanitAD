@@ -145,6 +145,20 @@ it is the labels or the lane output is NOT separable here: arm A of SFT-4 (no la
     over 136 logs, `E:/…/refe_navtest/navtest_full_minus_c1_tokens.json`, md5 `bc813be8…`, by
     `unseen_subset.py --tokens … --expect-md5 bc813be8 --expect-n 12110 --expect-logs 136`. If the two reads
     disagree on the verdict, the primary decides, and the disagreement is reported.
+- **Deviation 2, registered 2026-10-11 BEFORE any score of this run was read.**
+  - **What happened:** the rerun reused the seam and went to scoring. All six harness attempts died in
+    `CreateProcess` with `WinError 206` (`raw/…/sft4_B_u400_navtest_full/score_attempt2_winerr206_{1..6}.log`, six
+    identical tracebacks). The run ended `INCOMPLETE (the harness did not PASS)` with an empty harness status
+    (`result_attempt2_winerr206.json`). Nothing was scored, so there is no number to have seen.
+  - **Cause (MEASURED):** `--tokens` becomes one Hydra override, `scene_filter.tokens=[…]`. For 12,146 tokens it is
+    230,812 characters, against Windows' 32,767-character command-line limit. The 923-token read stayed under it.
+  - **Fix (`eval/stage2_sft.py`):** when the token set equals the whole navtest export set, `--tokens` is omitted and
+    the navtest scene filter itself is the restriction. The set equality is MEASURED: the token file and the export
+    hold the same 12,146 tokens. This is the path the deployed 84.46 was scored on. It is fail-closed: without
+    `--tokens`, the harness's C2 guard demands that every token of the filter scores, with 0 failed.
+    `result.json` records which path ran (`scored_as`). Any proper subset still passes `--tokens`.
+  - **Unchanged:** the checkpoint, the seam (reused, 12,146 rows, 0 misses), the primary read, the rule, the
+    estimator, the unseen read and the sensitivity read.
 
 ### 2. A training-seed replicate (H-ESTIM-SEED-1). Needs a pod.
 
