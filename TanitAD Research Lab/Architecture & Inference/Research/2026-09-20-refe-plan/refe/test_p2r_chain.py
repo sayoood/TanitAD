@@ -420,7 +420,11 @@ def main() -> int:
         tg, st = tmp / "tg.tar", tmp / "st.tar"
         make_tar(tg, {"train_grow/calib_table.json": b"{}", "train_grow/scorer_targets_r0.jsonl": b"1\n",
                       "train_grow/targets_rank0.jsonl": b"2\n"})
-        make_tar(st, {"sets/onpolicy_r0_w0.jsonl": b"3\n", "sets/pad.bin": b"p" * 12000})   # a different size from tg
+        # the REAL on-policy bank's four roots (MEASURED 2026-10-11 on the pod; a sets/-only fixture let the pod refuse)
+        make_tar(st, {"sets/onpolicy_r0_w0.jsonl": b"3\n", "sets/pad.bin": b"p" * 12000,      # a different size from tg
+                      "logs/supervisor.log": b"l", "pids/label_r0_w0.pid": b"1", "smoke_archive/onpolicy_r0_smoke.jsonl": b"s"})
+        assert S.EXTRACT["onpolicy_sets_logs_full"][1] == {"sets", "logs", "pids", "smoke_archive"}; n += 1
+        assert not S.member_verdict(tarfile.TarInfo("evil/x"), S.EXTRACT["onpolicy_sets_logs_full"][1])[0]; n += 1
         blobs = {"model_final.pt": mf, "refe_train_grow.tar": tg.read_bytes(), "onpolicy_sets_logs_full.tar": st.read_bytes()}
         pins = {"model_final": (md5(mf), len(mf), [".pt"]),
                 "refe_train_grow": (md5(blobs["refe_train_grow.tar"]), len(blobs["refe_train_grow.tar"]), [".tar"]),
@@ -452,6 +456,7 @@ def main() -> int:
         assert ok, why
         assert (w1 / S.INIT_REL).read_bytes() == mf and (w1 / "refe_navtrain/train_grow/calib_table.json").is_file()
         assert (w1 / "refe_navtrain/onpolicy/sets/onpolicy_r0_w0.jsonl").is_file(); n += 3
+        assert (w1 / "refe_navtrain/onpolicy/logs/supervisor.log").is_file(); n += 1
         ok, why = S.restore(fake, w1, fetch=fetcher(), pins=pins, model_repo="m", data_repo="d")   # idempotent
         assert ok, why; n += 1
         w2 = tmp / "w2"

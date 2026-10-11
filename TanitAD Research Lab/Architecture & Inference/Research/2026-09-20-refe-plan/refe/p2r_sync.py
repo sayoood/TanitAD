@@ -45,10 +45,13 @@ PINS = {
     "refe_train_grow": ("e07c7d6a5c0156f31a5de3af0843c325", 1043549966, [".tar.zst", ".tar"]),
     "onpolicy_sets_logs_full": ("4fc979939c5f9b5140ba59a952da77fb", 2070541308, [".tar.zst", ".tar"]),
 }
-# tar root -> where it is extracted (relative to --work). MEASURED roots: train_grow/..., sets/...
+# tar root -> where it is extracted (relative to --work). MEASURED roots: train_grow/...; and for the on-policy bank
+# (MEASURED 2026-10-11 on the P2 pod, `tar -tv` of the pinned 2,070,541,308 B archive, 31 members) sets/ 9, logs/ 11,
+# pids/ 6, smoke_archive/ 5. The first pin listed only sets/ and the restore REFUSED "unexpected_root:logs" on the pod.
+# Only sets/ is read downstream; the other three are the bank's own provenance and are kept with it.
 EXTRACT = {
     "refe_train_grow": ("refe_navtrain", {"train_grow"}),
-    "onpolicy_sets_logs_full": ("refe_navtrain/onpolicy", {"sets"}),
+    "onpolicy_sets_logs_full": ("refe_navtrain/onpolicy", {"sets", "logs", "pids", "smoke_archive"}),
 }
 INIT_REL = "refe_runs/vitl16_navtrain10_grow_tau0.3/model_final.pt"      # the P2 --init-from path, byte for byte
 
