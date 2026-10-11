@@ -1046,6 +1046,15 @@ def _register_gdvb() -> None:
         "the in-run gradient-share instrument's cadence (tanitad/train/grad_share.py, P-GRAD's statistic): "
         "autograd.grad on LOGGED steps only, never .grad, no parameter, no RNG; 0 = off; refused unless a multiple "
         "of --log-every (a reading on an unlogged step would be computed and discarded)"))
+    dvb.register("grad_share_terms", "runtime", reason=(
+        "which loss terms a gradient-share reading SEPARATES (grad_share.parse_keep; default = every term): the rest "
+        "fold into gs_*_rest, so the kept terms' proj/norm and every norm_total/lin_rel_err are unchanged -- an "
+        "instrument cost lever (SPEC_WPB_LADDER_A2), no parameter, no RNG, never .grad; refused if a term is unknown "
+        "or the instrument is off"))
+    dvb.register("grad_share_at", "runtime", reason=(
+        "the ROW steps a gradient-share reading is taken on (grad_share.parse_at / due; default = every "
+        "--grad-share-every-th row): changes only WHEN the instrument reads (SPEC_WPB_LADDER_A2), no parameter, no "
+        "RNG, never .grad; refused unless each step is a multiple of --grad-share-every and <= --steps"))
     def _c_speed(m, a):
         """X3: the BUILT model's source (`model.cfg.refcv8.speed_input`) equals the argv -- also on a SPEED-ONLY arm
         without the refcv8 seams (SPEC_WPB_LADDER V0), so it reads the model config, not the decoder's r8_cfg."""

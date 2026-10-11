@@ -161,9 +161,13 @@ def main():
         def _cf(self, cand, v_limit_ms):
             if "vlim" not in CAP:
                 CAP["vlim"] = v_limit_ms.detach().float().reshape(-1).cpu().clone()
+                # X3 CEIL-OBEY exempt rows (2026-10-11, additive): the fan's SMALLEST planned max speed. A row whose
+                # minimum is over the ceiling has NO compliant candidate, so the argmax filter keeps its whole fan.
+                CAP["fan_min_vmax"] = v6sel.planned_max_speed(cand.detach().float(), horizons=self.horizons,
+                                                             tick_s=self.tick_s).min(dim=1).values.cpu().clone()
             return orig_cf(self, cand, v_limit_ms)
         v6sel.SpeedCeilingFilter.forward = _cf
-        keep = {k: [] for k in ("traj", "gt", "gt_valid", "v0", "nav", "v_fed", "v_valid", "v_lim", "p_lat", "p_lon",
+        keep = {k: [] for k in ("traj", "gt", "gt_valid", "v0", "nav", "v_fed", "v_valid", "v_lim", "fan_min_vmax", "p_lat", "p_lon",
                                 "off_drv", "drv_w", "rc_raw_ds", "rc_valid_ds", "cons_err_lat", "cons_err_lon", "cons_err_spd",
                                 "cons_n_lat", "cons_n_lon", "cons_n_spd", "cons_pred", "cons_tgt", "cons_mask",
                                 "map_inter", "map_union")}
@@ -192,6 +196,7 @@ def main():
                 keep["v_fed"].append(np.full(n, np.nan) if vm is None else vm.detach().float().cpu().numpy())
                 keep["v_valid"].append(np.zeros(n) if vv is None else vv.detach().float().cpu().numpy())
                 keep["v_lim"].append(CAP["vlim"].numpy() if "vlim" in CAP else np.full(n, np.inf))
+                keep["fan_min_vmax"].append(CAP["fan_min_vmax"].numpy() if "fan_min_vmax" in CAP else np.full(n, np.nan))
                 keep["p_lat"].append(out["tacv6_lat_logits"].float().softmax(-1).cpu().numpy())
                 keep["p_lon"].append(out["tacv6_lon_logits"].float().softmax(-1).cpu().numpy())
                 if "map_fine" in b:          # A1 L5: the emitted plan's footprint at t 0.5..4.0 s (slots 0..5)

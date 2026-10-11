@@ -17983,3 +17983,22 @@ beside a live training run:**
 - price its peak anon memory, counting forked workers;
 - read `cpu.max` and `memory.max`, never `nproc` / `free`;
 - set the newcomer's `oom_score_adj` above the trainer's.
+
+### R33 (2026-10-11) - "the R2 v7-tiny ladder costs ~17 min/arm on Thor, ~3–4 h in total" (PLAN_REFCV8 §6): MEASURED ~3.9 h/arm, ~2.6 days for 16 arms -- and its first arm died on an instrument nobody had priced
+
+- **What was claimed.** PLAN_REFCV8 §6, R2 row, written 2026-10-04 BEFORE S0 timed the rig (ESTIMATED, quoted as plan fact).
+- **Measured 2026-10-11 on Thor** (V0 chunk 1, tree `235156d`): **3.15 s/step** x N = 3,000 = ~2.6 h of training per arm.
+  The gradient-share instrument (`--grad-share-every 250`, carried by every arm) reads on an fp32 REPLAY under the bf16
+  trunk (TF32 off, eager): forward ~228 s, then ~181 s per retained `autograd.grad` pass; 7 passes with every term
+  = ~25 min per reading, 12 readings = ~5 h per arm. The first reading (row 250) pushed V0 past the 2,400 s chunk cap
+  with **no checkpoint** (rc 124) and the chain died 40 min in.
+- **Fixed (same day):** `--grad-share-terms tac_v6,map_hires` + `--grad-share-at 500,2000,2500` (SPEC_WPB_LADDER_A2,
+  registered before any gs number existed) = ~48 min/arm; `CAP_S` 3600 with a predictor that budgets a reading
+  interval; the PLAN row corrected.
+
+**Class:** the artifact-cost family (C82, *price what the CONSUMER opens*) in a time costume. A cost was estimated for
+the TRAINING STEP and quoted for the ARM, while the arm's argv also switched on a periodic instrument whose cost had
+only been seen on a cheaper path (bf16 in-graph; a 30-step smoke at `--log-every 1` never reaches an every-250 reading).
+⇒ **Before a multi-arm launch, price EVERY periodic work item the argv switches on** (gs readings, in-run evals,
+checkpoints) **on the real precision path, times its frequency, and compare each interval to the chunk cap.** A smoke
+that never reaches the period of an instrument has not smoked it.

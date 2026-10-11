@@ -16,16 +16,30 @@ The statistic (per parameter group, on ONE batch, at the weights the terms enter
 
 ``torch.autograd.grad`` throughout: ``.grad`` is never touched, so the optimiser step that follows is the step the
 trainer would have taken without the instrument (pinned: ``tests/test_refcv8_grad_share.py``). No RNG is consumed.
+
+COST (MEASURED 2026-10-11, the R2 ladder's V0 on Thor): one reading is ONE retained ``autograd.grad`` pass per term
+plus one for the total, and under ``--trunk-chunk-ckpt`` / ``--map-hires-grad-ckpt`` EVERY pass re-runs the
+checkpointed forward; inside the fp32 replay (TF32 off, eager) the first reading at step 250 ran > 20 min and pushed
+the arm past its 2400 s cap with no checkpoint. Two levers, both recorded in the row so a reading carries its cost:
+``keep=`` (``--grad-share-terms``) names the terms a reading must SEPARATE -- every other term folds into ``rest``,
+so the kept terms' ``proj`` / ``norm`` and every ``norm_total`` / ``lin_rel_err`` are UNCHANGED and the pass count
+drops to ``len(keep) + 2``; and the timing keys ``{prefix}n_passes`` / ``{prefix}measure_s`` / ``{prefix}pass_s_max``
+(+ ``{prefix}fp32_fwd_s`` / ``{prefix}fp32_replay_s`` on a replay). ``TANITAD_GS_TIMING=1`` also prints every pass to
+stderr, so a stall is localised while it happens instead of after a timeout.
 """
 from __future__ import annotations
 
 import math
-from typing import Callable, Mapping
+import os
+import sys
+import time
+from typing import Callable, Iterable, Mapping, Optional
 
 import torch
 from torch import Tensor
 
-__all__ = ["TERMS", "GROUP_PREFIXES", "term_tensors", "param_groups", "measure", "bf16_levers", "fp32_replay"]
+__all__ = ["TERMS", "GROUP_PREFIXES", "term_tensors", "param_groups", "measure", "bf16_levers", "fp32_replay",
+           "parse_keep", "parse_at", "due"]
 
 #: the named terms, in the order P-GRAD reports them; ``rest`` is derived
 TERMS = ("traj", "agent", "box3d", "map_hires", "tac_v6", "r8")
@@ -35,12 +49,70 @@ GROUP_PREFIXES = {"trunk": ("core.encoder.",),
                   "bev_pool": ("_perception.bev_pool.",)}
 
 
-def term_tensors(losses: Mapping[str, Tensor], weights: Mapping[str, float]) -> dict:
+def parse_keep(spec) -> Optional[tuple]:
+    """``--grad-share-terms`` -> the kept term tuple (TERMS order), or ``None`` = every term. Accepts a comma string
+    or an iterable; an empty spec / ``"all"`` is ``None``. Refuses an unknown term (a typo would otherwise fold the
+    term it meant into ``rest`` and the reading would be silently about something else)."""
+    if spec is None:
+        return None
+    items = [x.strip() for x in (spec.split(",") if isinstance(spec, str) else spec)]
+    items = [x for x in items if x]
+    if not items or items == ["all"]:
+        return None
+    bad = [x for x in items if x not in TERMS]
+    if bad:
+        raise ValueError(f"grad-share terms {bad} are not in TERMS {TERMS}")
+    return tuple(t for t in TERMS if t in items)
+
+
+def parse_at(spec, every: int, steps: int = 0) -> Optional[frozenset]:
+    """``--grad-share-at`` -> the frozenset of ROW steps (``step + 1``, the step a metrics row is stamped with) on which
+    a reading is taken, or ``None`` = every ``every``-th row (the tip's schedule). Refuses a spec with the instrument
+    off, a non-integer / non-positive step, a step that is not a multiple of ``every`` (it would never be due -- the
+    reading the consumer waits for would silently never exist), and a step past ``steps`` when ``steps > 0``.
+    COST is why it exists: a reading inside the fp32 replay is ~16 min on Thor (MEASURED 2026-10-11), so a ladder arm
+    reads only where its consumer's window looks."""
+    if spec is None:
+        return None
+    items = [x.strip() for x in (spec.split(",") if isinstance(spec, str) else [str(v) for v in spec])]
+    items = [x for x in items if x]
+    if not items:
+        return None
+    if int(every) <= 0:
+        raise ValueError(f"names steps {items} but --grad-share-every is {every}: the instrument is off")
+    out = set()
+    for x in items:
+        try:
+            v = int(x)
+        except ValueError:
+            raise ValueError(f"step {x!r} is not an integer") from None
+        if v <= 0:
+            raise ValueError(f"step {v} is not positive")
+        if v % int(every) != 0:
+            raise ValueError(f"step {v} is not a multiple of --grad-share-every {every}: it would never be due")
+        if int(steps) > 0 and v > int(steps):
+            raise ValueError(f"step {v} is past --steps {steps}: it would never be due")
+        out.add(v)
+    return frozenset(out)
+
+
+def due(row_step: int, every: int, at: Optional[frozenset] = None) -> bool:
+    """Is a reading due on the metrics row stamped ``row_step`` (= ``step + 1``)? ``every <= 0`` is the instrument off;
+    ``at`` (``parse_at``) restricts the tip's every-N schedule to the named rows."""
+    return int(every) > 0 and row_step % int(every) == 0 and (at is None or row_step in at)
+
+
+def term_tensors(losses: Mapping[str, Tensor], weights: Mapping[str, float], keep: Optional[Iterable[str]] = None) -> dict:
     """``{term: weighted attached tensor}`` for every term with a non-zero weight that is PRESENT and attached in this
     batch's loss dict, plus ``rest = loss - sum(named)``. A zero weight or an absent / detached key is not a term
-    (its gradient is the zero vector, and a share of it is not a measurement)."""
+    (its gradient is the zero vector, and a share of it is not a measurement). ``keep`` (None = all): a term outside
+    it is not separated -- it stays inside ``rest`` -- which leaves every kept term's tensor, and therefore its
+    ``proj`` / ``norm``, exactly what the full reading gives."""
+    keep = None if keep is None else set(parse_keep(keep if isinstance(keep, str) else list(keep)) or TERMS)
     out: dict = {}
     for t in TERMS:
+        if keep is not None and t not in keep:
+            continue
         w = float(weights.get(t, 0.0) or 0.0)
         v = losses.get(t)
         if w == 0.0 or v is None or not torch.is_tensor(v) or not v.requires_grad:
@@ -72,11 +144,22 @@ def _grads(t: Tensor, params: list) -> list:
     return [torch.zeros_like(p) if x is None else x for x, p in zip(gr, params)]
 
 
+def _sync() -> None:
+    if torch.cuda.is_available() and torch.cuda.is_initialized():
+        torch.cuda.synchronize()
+
+
+def _say(msg: str) -> None:
+    if os.environ.get("TANITAD_GS_TIMING", "") == "1":
+        print(f"[grad_share {time.strftime('%H:%M:%S')}] {msg}", file=sys.stderr, flush=True)
+
+
 def measure(terms: Mapping[str, Tensor], total: Tensor, groups: Mapping[str, list], *,
             prefix: str = "gs_") -> dict:
     """One reading -> flat ``{key: float}`` for the metrics row (exact, never rounded: a 1e-4 share rounded to 5 dp is
     the "no signal" misreading). Keys: ``{prefix}{group}_proj_{term}``, ``{prefix}{group}_norm_{term}``,
-    ``{prefix}{group}_norm_total``, ``{prefix}{group}_lin_rel_err``, ``{prefix}n_terms``."""
+    ``{prefix}{group}_norm_total``, ``{prefix}{group}_lin_rel_err``, ``{prefix}n_terms``, and its cost
+    ``{prefix}n_passes`` / ``{prefix}measure_s`` / ``{prefix}pass_s_max`` (wall seconds, CUDA-synchronised)."""
     if not total.requires_grad:
         return {f"{prefix}skipped_no_graph": 1.0}
     flat, owner = [], []
@@ -86,7 +169,13 @@ def measure(terms: Mapping[str, Tensor], total: Tensor, groups: Mapping[str, lis
             owner.append(gname)
     if not flat:
         return {f"{prefix}skipped_no_params": 1.0}
+    _sync()
+    t_m0 = time.perf_counter()
+    _say(f"pass total: start ({len(flat)} params, terms {list(terms)})")
     g_tot = _grads(total, flat)
+    _sync()
+    pass_s = [time.perf_counter() - t_m0]
+    _say(f"pass total: {pass_s[-1]:.2f}s")
     tot2 = {g: 0.0 for g in groups}
     for gname, x in zip(owner, g_tot):
         tot2[gname] += float(torch.sum(x.double() * x.double()))
@@ -95,7 +184,12 @@ def measure(terms: Mapping[str, Tensor], total: Tensor, groups: Mapping[str, lis
     for t, v in terms.items():
         if not v.requires_grad:
             continue
+        t_p0 = time.perf_counter()
+        _say(f"pass {t}: start")
         gt = _grads(v, flat)
+        _sync()
+        pass_s.append(time.perf_counter() - t_p0)
+        _say(f"pass {t}: {pass_s[-1]:.2f}s")
         dot = {g: 0.0 for g in groups}
         nrm = {g: 0.0 for g in groups}
         for i, (gname, x) in enumerate(zip(owner, gt)):
@@ -114,6 +208,11 @@ def measure(terms: Mapping[str, Tensor], total: Tensor, groups: Mapping[str, lis
     for g in groups:
         row[f"{prefix}{g}_norm_total"] = math.sqrt(tot2[g])
         row[f"{prefix}{g}_lin_rel_err"] = (math.sqrt(err2[g]) / math.sqrt(tot2[g])) if tot2[g] > 0 else 0.0
+    _sync()
+    row[f"{prefix}n_passes"] = float(len(pass_s))
+    row[f"{prefix}measure_s"] = time.perf_counter() - t_m0
+    row[f"{prefix}pass_s_max"] = max(pass_s)
+    _say(f"measure: {row[f'{prefix}measure_s']:.2f}s over {len(pass_s)} passes")
     return row
 
 
@@ -168,11 +267,13 @@ def _eager():
 
 
 def fp32_replay(model, run_losses: Callable[[], dict], groups: Mapping[str, list], weights: Mapping[str, float], *,
-                prefix: str = "gs_") -> dict:
+                prefix: str = "gs_", keep: Optional[Iterable[str]] = None) -> dict:
     """``run_losses()`` re-runs THIS step's forward + losses; it is called with every bf16 lever OFF, inside a forked
     global RNG, with the dedicated generators' states and every BUFFER (BN running stats, ...) snapshotted and restored
     afterwards. -> ``measure(...)`` of that fp32 graph, plus ``{prefix}fp32_replay: 1.0`` and the number of levers
     switched. ``.grad`` is never touched (``torch.autograd.grad`` only)."""
+    _sync()
+    t_r0 = time.perf_counter()
     levers = bf16_levers(model)
     gens = _dedicated_generators(model)
     gstate = [{k: g.get_state() for k, g in v._g.items()} for v in gens]
@@ -193,8 +294,13 @@ def fp32_replay(model, run_losses: Callable[[], dict], groups: Mapping[str, list
         # inductor build died (gcc on Thor) -- killing the training run at its first gs-due step. The replay is an
         # instrument: it runs the same modules eagerly, never compiles, never touches the compiled cache.
         with torch.random.fork_rng(devices=devs), _eager():
+            _say(f"fp32 replay: forward start ({len(levers)} bf16 levers off, TF32 off, eager)")
+            t_f0 = time.perf_counter()
             losses = run_losses()
-            row = measure(term_tensors(losses, weights), losses["loss"], groups, prefix=prefix)
+            _sync()
+            fwd_s = time.perf_counter() - t_f0
+            _say(f"fp32 replay: forward {fwd_s:.2f}s")
+            row = measure(term_tensors(losses, weights, keep), losses["loss"], groups, prefix=prefix)
         del losses
     finally:
         torch.backends.cuda.matmul.allow_tf32, torch.backends.cudnn.allow_tf32 = tf32[0], tf32[1]
@@ -214,5 +320,9 @@ def fp32_replay(model, run_losses: Callable[[], dict], groups: Mapping[str, list
     row[f"{prefix}fp32_replay_levers"] = float(len(levers))
     row[f"{prefix}fp32_replay_tf32_off"] = 1.0
     row[f"{prefix}fp32_replay_eager"] = 1.0
+    row[f"{prefix}fp32_fwd_s"] = fwd_s
+    _sync()
+    row[f"{prefix}fp32_replay_s"] = time.perf_counter() - t_r0
+    _say(f"fp32 replay: total {row[f'{prefix}fp32_replay_s']:.2f}s")
     return row
 

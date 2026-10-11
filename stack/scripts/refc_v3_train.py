@@ -777,6 +777,17 @@ def _pin_refcv8(cfg, args) -> None:
         raise SystemExit(f"[refcv8] --grad-share-every {_gse} must be 0 or a positive multiple of --log-every "
                          f"{getattr(args, 'log_every', 50)}: a reading taken on a step that is not logged is "
                          f"computed and thrown away")
+    try:
+        _gs_keep_pin = _gshare.parse_keep(getattr(args, "grad_share_terms", None))
+    except ValueError as e:
+        raise SystemExit(f"[refcv8] --grad-share-terms: {e}")
+    if _gs_keep_pin is not None and _gse == 0:
+        raise SystemExit("[refcv8] --grad-share-terms names terms but --grad-share-every is 0: the instrument is off, "
+                         "so the flag would be recorded in config.json and do nothing")
+    try:
+        _gshare.parse_at(getattr(args, "grad_share_at", None), _gse, int(getattr(args, "steps", 0) or 0))
+    except ValueError as e:
+        raise SystemExit(f"[refcv8] --grad-share-at: {e}")
     if bool(getattr(args, "smoke_seed_ego_frames", False)) and int(getattr(args, "steps", 0) or 0) > 100:
         raise SystemExit("[v3] --smoke-seed-ego-frames is a SMOKE flag (it adds an extra, hand-picked batch): "
                          "refused above --steps 100")
@@ -10175,6 +10186,9 @@ def train(args) -> dict:
     # refcv8 X4: the gradient-share instrument (off = 0 = the tip's loop and row, byte for byte)
     _gs_every = int(getattr(args, "grad_share_every", 0) or 0)
     _gs_groups = _gshare.param_groups(model) if _gs_every > 0 else {}
+    _gs_keep = _gshare.parse_keep(getattr(args, "grad_share_terms", None))   # None = every term (the tip's reading)
+    _gs_at = _gshare.parse_at(getattr(args, "grad_share_at", None), _gs_every,
+                              int(getattr(args, "steps", 0) or 0))                # None = every _gs_every-th row
     _cd_aux = _conflict_aux_weights(model)
     _cd_on = _gcf.enabled_for_arm(
         getattr(getattr(cfg, "core", cfg).decoder, "refcv6", None),
@@ -10283,13 +10297,13 @@ def train(args) -> dict:
         # this very step (grad_share.fp32_replay restores RNG, dedicated generators and buffers), BEFORE the training
         # forward -- a bf16 backward cannot meet the linearity control (MEASURED 5.9e-3 vs the 1e-4 bar on Thor).
         _gs_due = (_gs_every > 0 and _logged_after(step, args.log_every, args.steps)
-                   and (step + 1) % _gs_every == 0)
+                   and _gshare.due(step + 1, _gs_every, _gs_at))
         _gs_replay = None
         if _gs_due and _gshare.bf16_levers(model):
             _gs_replay = _gshare.fp32_replay(
                 model, lambda: compute_losses_v3(model, batch, device, mode=args.mode,
                                                  ablate_frames=args.ablate_frames, log_metrics=False),
-                _gs_groups, _gshare.weights_of(model, TRAJ_WEIGHT))
+                _gs_groups, _gshare.weights_of(model, TRAJ_WEIGHT), keep=_gs_keep)
         losses = compute_losses_v3(model, batch, device, mode=args.mode,
                                    ablate_frames=args.ablate_frames,
                                    log_metrics=_logged_after(step, args.log_every, args.steps))
@@ -10365,7 +10379,7 @@ def train(args) -> dict:
         if _gs_replay is not None:
             _gs_row = _gs_replay                 # the fp32 replay of THIS step (bf16 trunk)
         elif _gs_due:
-            _gs_row = _gshare.measure(_gshare.term_tensors(losses, _gshare.weights_of(model, TRAJ_WEIGHT)),
+            _gs_row = _gshare.measure(_gshare.term_tensors(losses, _gshare.weights_of(model, TRAJ_WEIGHT), _gs_keep),
                                       losses["loss"], _gs_groups)
         # ⚠️ `subtract` mode reads `.grad`, so it must run AFTER the backward
         # (and the backward must retain the graph for its one aux pass) and
@@ -11990,6 +12004,17 @@ def build_parser() -> argparse.ArgumentParser:
                     help="refcv8 X4 (any arm): every N steps, on a LOGGED step, measure each loss term's share of "
                          "the trunk / shared-BEV update (P-GRAD's projection statistic, tanitad/train/grad_share.py) "
                          "into the metrics row as gs_*. 0 = off (the tip's row). Must be a multiple of --log-every.")
+    g8.add_argument("--grad-share-terms", type=str, default=None,
+                    help="refcv8 X4: comma list of the loss terms a gradient-share reading must SEPARATE (names from "
+                         "tanitad/train/grad_share.TERMS; default / 'all' = every term). Every other term folds into "
+                         "gs_*_rest, so the kept terms' proj/norm and every norm_total/lin_rel_err are unchanged and "
+                         "the reading costs len(terms)+2 backward passes instead of one per term (MEASURED: the full "
+                         "reading inside the fp32 replay ran > 20 min on Thor and killed the R2 ladder's V0).")
+    g8.add_argument("--grad-share-at", type=str, default=None,
+                    help="refcv8 X4: comma list of ROW steps (step+1, as stamped in metrics) on which a reading is "
+                         "taken; each must be a multiple of --grad-share-every and <= --steps. Default = every "
+                         "--grad-share-every-th row (the tip's schedule). A reading costs ~16 min inside the fp32 "
+                         "replay on Thor (MEASURED 2026-10-11), so a ladder arm reads only where its consumer looks.")
     g7 = ap.add_argument_group("refcv7 (DrivoR heads on refcv6)")
     g7.add_argument("--refcv7", action="store_true",
                     help="build the WTA proposal decoder (64 learned queries, one "

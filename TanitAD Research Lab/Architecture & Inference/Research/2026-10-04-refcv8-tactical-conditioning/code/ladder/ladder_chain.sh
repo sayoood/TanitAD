@@ -1,13 +1,15 @@
 #!/usr/bin/env bash
 # SPEC_WPB_LADDER (registered e1b6aff7...) + A1 (cbd64fa2...) -- the Thor chain. ONE GPU job at a time under the
 # programme lock (`flock $LOCK`, the same lock every stream uses; no second lock, no queue jumping: flock is not FIFO
-# and a waiter here simply waits). Detached; leaves no python alive; every chunk <= 40 min.
+# and a waiter here simply waits). Detached; leaves no python alive; every chunk <= 60 min (CAP_S; was 40 until
+# 2026-10-11, when V0's first gs reading inside the fp32 replay ran > 20 min and the 2400 s cap killed it with no ckpt).
 #
 #   S0   30 steps each of V0 / V-R8 / V-MAP4 at --log-every 1 (nothing kept) -> s/step -> N (sec. 4.1), and the I-0
 #        step-1 identity + the V0/V-R8 fed-speed CRC rows (MM assertion 2)
 #   ARMS in ORDER (ladder_arms.ORDER); after V-R8: k from its first 20 % of gs rows (sec. 4.2) -> the V-TACk* argv
 #        (every earlier argv is re-derived and must hash IDENTICALLY)
-#   each arm: resumable chunks, killed only RIGHT AFTER a ckpt write once the next save would pass the 40-min cap
+#   each arm: resumable chunks, killed only RIGHT AFTER a ckpt write once the next save would pass the cap; the
+#        predictor adds GS_S for an interval that holds a --grad-share-at row (read from the arm's own argv)
 #   EVAL per arm (sampler seeds 0,1; rows per SPEC sec. 2/3), then the checkpoint is stripped to a model-only
 #        `model_final.pt` (+md5) for the dev-box puller, and ckpt.pt / ckpt_5000.pt are DELETED (Thor disk)
 #   I0 + SCORE at the end (CPU).
@@ -19,7 +21,8 @@ TREE=${TREE:-/home/nvidia/refcv8_ladder/tree}
 CODE=${CODE:-/home/nvidia/refcv8_ladder/code}
 PY=${PY:-/home/nvidia/venvs/tanitad-train/bin/python}
 LOCK=${LOCK:-/home/nvidia/refcv7_post/thor_gpu.lock}
-CAP_S=${CAP_S:-2400}
+CAP_S=${CAP_S:-3600}
+GS_S=${GS_S:-1100}                    # MEASURED 2026-10-11 on Thor: one 2-term fp32-replay reading ~953 s (fwd 228 + 4 x 181)
 FREE_MIN_GB=${FREE_MIN_GB:-22}
 MEM_MIN_GB=${MEM_MIN_GB:-40}          # MM 2026-10-05: host RAM, asserted INSIDE the lock before every GPU job
 DRY=${DRY:-0}
@@ -100,6 +103,11 @@ trainer_pid() {   # out_dir -> the PID of the python trainer writing to it (expl
 # The chunk clock starts when the TRAINER starts (not while it queues on the lock).
 train_chunk() {   # out_dir log final_step argv...
   local out=$1 lg=$2 fin=$3; shift 3
+  local gsat="" sev=250 a_ prv_="" g_ gx
+  for a_ in "$@"; do
+    case "$prv_" in --grad-share-at) gsat=$a_;; --save-every) sev=$a_;; esac
+    prv_=$a_
+  done
   disk_wait
   if [ "$DRY" = 1 ]; then log "DRY train $out"; mkdir -p "$out"; echo '{"done": true}' > "$out/summary.json"; return 0; fi
   locked_retry "train $out" timeout "$CAP_S" "$PY" "$TREE/stack/scripts/refc_v3_train.py" "$@" >> "$lg" 2>&1 &
@@ -115,7 +123,11 @@ train_chunk() {   # out_dir log final_step argv...
     if [ "$n1" -gt "$n0" ]; then
       now=$(date +%s); e=$((now - t0)); iv=$((e - prev_e)); prev_e=$e; n0=$n1
       cs=$(grep -o "ckpt step [0-9]*" "$lg" | tail -1 | tr -dc 0-9)
-      if [ $((e + iv + iv / 10)) -gt $((CAP_S - 60)) ] && [ "$cs" != "$fin" ] && [ ! -f "$out/summary.json" ]; then
+      gx=0
+      for g_ in ${gsat//,/ }; do
+        [ -n "$cs" ] && [ "$g_" -gt "$cs" ] && [ "$g_" -le $((cs + sev)) ] && gx=$GS_S
+      done
+      if [ $((e + iv + iv / 10 + gx)) -gt $((CAP_S - 60)) ] && [ "$cs" != "$fin" ] && [ ! -f "$out/summary.json" ]; then
         log "chunk end right after ckpt step $cs (elapsed ${e}s, interval ${iv}s): SIGTERM python=$tp"
         kill -TERM "$tp" 2>/dev/null
       fi

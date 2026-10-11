@@ -10,6 +10,11 @@ cost per chunk), `--workers 2` (Thor host RAM: the 2026-10-04 global OOM), `--sa
 Speed (SPEC sec. 1, MM ruling Q5): EVERY arm, V0 included, feeds the past-only N2 with the trained unknown row; refcv7's
 v8 future-max sidecars are REMOVED from every arm. X10 (MM ruling 2026-10-04): `--pose-sync-sidecar` on every arm.
 `--grad-share-every 250` is an instrument (no gradient, no RNG) and is carried by every arm so V0 has readings too.
+COST (MEASURED 2026-10-11, V0 chunk 1 on Thor): one reading inside the fp32 replay ran > 20 min with every term and
+killed V0 at its cap with no checkpoint. Every arm therefore also carries `--grad-share-terms tac_v6,map_hires` (the
+only terms a consumer reads; the rest fold into gs_*_rest, ~16 min / reading) and `--grad-share-at` = gs_at(N): ONE
+row inside ladder_score's size_k window (0, 0.2 N] and TWO inside the L2/L3 window (0.5 N, N] -- 500,2000,2500 at
+N = 3000, i.e. ~48 min per arm instead of ~5 h (every term, every 250th row; SPEC A2). Common tokens on every arm, so no audit sees them.
 
 Usage:  python ladder_arms.py --tree <tree> --out <W> [--n N] [--k K]   -> <W>/argv/<arm>.json + <W>/argv/AUDIT.json
 """
@@ -68,6 +73,19 @@ def drop(ps, *fs):
     return [(a, b) for a, b in ps if a not in fs]
 
 
+GS_EVERY = 250
+GS_TERMS = "tac_v6,map_hires"
+
+
+def gs_at(n: int, every: int = GS_EVERY) -> str:
+    """The reading rows: the last multiple of `every` inside (0, 0.2 n] (size_k), and two inside (0.5 n, n] (L2/L3)."""
+    a = (n // 5) // every * every
+    b = (2 * n // 3) // every * every
+    c = (5 * n // 6) // every * every
+    assert 0 < a <= 0.2 * n and 0.5 * n < b < c <= n, (n, a, b, c)
+    return f"{a},{b},{c}"
+
+
 def base_v0(r7, n: int, out_root: str, seed: int = 0):
     ps = drop(pairs(r7), *RIG_FLAGS, *REMOVED)
     rig = [("--size", ["tiny"]), ("--trunk-name", ["resnet34.a1_in1k"]), ("--trunk-in-channels", ["9"]),
@@ -76,7 +94,8 @@ def base_v0(r7, n: int, out_root: str, seed: int = 0):
            ("--workers", ["2"]), ("--seed", [str(seed)]),
            ("--r8-speed-input", ["n2"]), ("--r8-speed-unknown-p", ["0.45"]),
            ("--r8-v9-labels", [f"{V9}/v9_labels_train.npz"]), ("--r8-v9-labels-eval", [f"{V9}/v9_labels_eval139.npz"]),
-           ("--pose-sync-sidecar", [POSE_SYNC]), ("--grad-share-every", ["250"])]
+           ("--pose-sync-sidecar", [POSE_SYNC]), ("--grad-share-every", [str(GS_EVERY)]),
+           ("--grad-share-terms", [GS_TERMS]), ("--grad-share-at", [gs_at(n)])]
     return ps + rig
 
 

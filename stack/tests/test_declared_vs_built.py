@@ -282,7 +282,8 @@ def test_GDVB_every_trainer_flag_has_an_entry_and_every_entry_is_well_formed():
     # + refcv8 (B): --r8-speed-enc8 ("built": cfg.refcv8.speed_enc8 + the seam) (-> 268)
     # + the drivable critic: --r8-critic-drivable ("built") and --w-r8-drivable ("loss") (-> 270)
     # + WP-B L3: --smoke-seed-ego-frames ("runtime": the full-size VIS-1 re-key smoke) (-> 271)
-    assert len(dvb.REGISTRY) == 271
+    # + SPEC_WPB_LADDER_A2: --grad-share-terms / --grad-share-at ("runtime": the gs instrument's cost levers) (-> 273)
+    assert len(dvb.REGISTRY) == 273
     assert dvb.REGISTRY["r8_speed_enc8"].kind == "built"
     assert dvb.REGISTRY["r8_alloc_emit_start"].kind == "built"
     assert dvb.REGISTRY["w_r8_v9_cons"].kind == "loss"
@@ -294,6 +295,8 @@ def test_GDVB_every_trainer_flag_has_an_entry_and_every_entry_is_well_formed():
     for d in ("r8_derange_feed", "r8_rc_roll", "r8_roll_targets"):
         assert dvb.REGISTRY[d].kind == "runtime", d
     assert dvb.REGISTRY["grad_share_every"].kind == "runtime"
+    for d in ("grad_share_terms", "grad_share_at"):                     # SPEC_WPB_LADDER_A2 (2026-10-11)
+        assert dvb.REGISTRY[d].kind == "runtime", d
     for d in ("r8_v9_md5", "r8_v9_eval_md5", "r8_v9_lat_variant"):
         assert dvb.REGISTRY[d].kind == "data", d
     for d in ("r8_rc_noise_along_m", "r8_rc_noise_lat_m", "r8_no_rc"):
