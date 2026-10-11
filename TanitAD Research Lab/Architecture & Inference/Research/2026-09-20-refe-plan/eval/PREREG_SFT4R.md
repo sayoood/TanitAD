@@ -106,3 +106,51 @@
     lane AUC.
   - If held-out passes but navtest does not, the yardstick gap (`RESULT_SFT3.md`, yardstick check) is the next
     diagnosis.
+
+## Amendment 1 (2026-10-11, before any SFT-4R launch): the tooling exists; what is and is not proven
+
+Landed with this amendment. Nothing in stage 1, stage 2 or their rules changes.
+
+- **The egress tooling exists.** The "tooling does not exist yet" blocker above is closed by `refe/hf_egress.py`:
+  - subcommands `push`, `gate`, `watch` and `verify`;
+  - `refe/test_hf_egress.py` passes 13/13 against a mocked API.
+  - **Live check:** `raw/2026-10-11-hf-egress/egress_verify_live.json` read the 1,288,484,600 B `model_final.pt` back
+    from its HF repo. The size matched on the attribute, the LFS size and the listing. A +1 B control read as a
+    mismatch.
+- **The success marker, as built:** `<utc> ZZEGRESS_OK <tag> <reason>` or `<utc> ZZEGRESS_FAIL <tag> <reason>` in
+  `chain.log`. This replaces `ZZEGRESS_OK <N>` above. The gate writes `<out>/g_egr_result.json` and prints
+  `ZZEGR_PASS` or `ZZEGR_FAIL`.
+  - The lines carry a timestamp prefix. ⇒ the chain greps `" ZZEGR_PASS "`, never `"^ZZEGR_PASS"`, which can never
+    match.
+- **HF quota read (MEASURED 2026-10-11):**
+  - `usedStorage` comes only from a per-repo `repo_info(..., expand=["usedStorage"])`. The list endpoints reject the
+    expand.
+  - The account's private total, summed that way, is **199,397,374,781 B against the 1e12 B allowance**.
+  - An unknown total fails closed. No push proceeds on a quota the tool could not read.
+- **The PDM labels go to `pdm_labels_sft4r/`, not `pdm_labels/`**, in `Sayood/tanitad-refe-navtrain-banks`. The prefix
+  names the run that produced them, so they cannot be confused with, or overwrite, any earlier upload. P2 reads them
+  from there.
+- **The PDM completeness check exists:** `refe/pdm_label_complete.py`, with 13/13 in its test.
+  - It recomputes the eligible count from the sets and credits only rows of the served (newest) `ckpt_step`.
+  - It refuses on a missing DONE marker, failed sets, a row-count mismatch, or a printed `served sets:` line that
+    disagrees with its own recount.
+  - The held-out pass runs `--served-only`. That is an assumption, because SFT-4's own command line was never banked.
+    It is guarded by `--expect 3137`: a wrong assumption stops the chain instead of training on it.
+- **The G3 deliberate regression is wired in the trainer**, not only in a test.
+  - `refe/scorer_finetune.py:184` perturbs a scorer copy under `REFE_SFT4_MUTATE_G3=1`; the gate key is at line 459.
+  - `refe/sft4r_pod.sh` has the `mutate_g3` mode, and the chain refuses unless it turns G3 RED.
+  - ⚠️ **It has not been RUN.** The preflight needs the pod's data, so the RED reading is enforced at launch by the
+    chain, not shown here.
+- **The held-out lane labels are RESTORED, not recomputed.** They come from
+  `raw/2026-10-04-lane-discipline/heldout_{navsim,teacher}_lane_labels.jsonl.xz` (`refe/sft4r_relabel.sh` step 1),
+  the labels SFT-4 trained against.
+- ⛔ **NAMED GAP — the train lane-subset queue.** The `--queue` source of SFT-4's 15,000-set subset was never written
+  into a banked script.
+  - The candidate is the HF banks' `onpolicy_queue`.
+  - `sft4r_relabel.sh` refuses (`ZZLANE_TRAIN_EXIT 9`) unless `LANE_QUEUE_SRC` names the restored directory. Nothing
+    is guessed.
+  - The chain then requires ≥ 2,109 train teacher-lane rows.
+- **What the three pod scripts have had: `bash -n` only.** `refe/sft4r_relabel.sh`, `refe/sft4r_chain.sh` and
+  `refe/sft4r_pod.sh` have NOT been dry-run against a fake root.
+  - Every flag they pass was traced to its argparse definition on 2026-10-11.
+  - Their first real execution is on the new pod, and every step there is fail-closed.
