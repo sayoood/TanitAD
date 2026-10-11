@@ -21,7 +21,7 @@ Definitions fixed here, in the commit that lands the prereg, before any number e
   * margin: p4_dac_margin.margin on at_10hz(T) (the plan's own footprint, no tracker), metres, positive inside.
 
   python eval/run_p4.py --log <log> --script p5_target_labels.py -- --out <json> [--npz <npz>] [--limit N]
-         [--controls-only] [--mutate knot|ident|d1|r7|margin|batch]
+         [--controls-only] [--mutate knot|ident|d1|r7|margin|batch] [--interp linear|cubic|pchip]
 Each --mutate value breaks exactly one control (C2, C1, C4, C5, C6, C7); with it, ZZP5_CONTROLS must read FAIL.
 Prints ZZP5_DONE, or ZZP5_GATE_FAIL with the failing control (no verdict is then read).
 """
@@ -75,9 +75,20 @@ def ego_frame(sim, ego):
     return np.stack([dx * c - dy * sn, dx * sn + dy * c, wrap(s[..., 2] - ra.heading)], -1)
 
 
-def iterate20(ND, t20, T, ego, ctl, mutate=None):
+def interp20(tk, e8z, mode):
+    """Spread the knot error [0, e8] onto the 0.2 s label grid. `linear` is prereg §2; `cubic` / `pchip` are the P5-S
+    amendment (prereg §9, 2026-10-11)."""
+    if mode == "linear":
+        return np.stack([np.interp(TQ, tk, e8z[:, c]) for c in range(3)], -1)
+    from scipy.interpolate import CubicSpline, PchipInterpolator
+    if mode == "cubic":
+        return CubicSpline(tk, e8z, axis=0, bc_type="natural")(TQ)
+    return PchipInterpolator(tk, e8z, axis=0)(TQ)
+
+
+def iterate20(ND, t20, T, ego, ctl, mutate=None, interp="linear"):
     """prereg §2: the 0.2 s-grid iteration, batched as [Tc20 (+), Tw (-), ident (0)]. Returns the three 20-pose labels
-    and the per-k max-xy deviation traces."""
+    and the per-k max-xy deviation traces. `interp` selects the P5-S interpolant; `linear` is the landed P5 run."""
     from p4_tracker_comp import tracked8, wrap
     r = np.stack([t20.copy(), t20.copy(), t20.copy()])
     sign = np.array([1.0, -1.0, 1e-9 if mutate == "ident" else 0.0])
@@ -95,9 +106,15 @@ def iterate20(ND, t20, T, ego, ctl, mutate=None):
         for j in range(3):
             e8 = np.concatenate([T[:, :2] - s[j, :, :2], wrap(T[:, 2] - s[j, :, 2])[:, None]], -1)
             e8z = np.concatenate([np.zeros((1, 3)), e8], 0)
-            e20 = np.stack([np.interp(TQ, tk, e8z[:, c]) for c in range(3)], -1)
-            if not np.array_equal(e20[KNOT_Q], e8[KNOT_E8]):
-                ctl["knot_exact"] = False
+            e20 = interp20(tk, e8z, interp)
+            if interp == "linear":
+                if not np.array_equal(e20[KNOT_Q], e8[KNOT_E8]):
+                    ctl["knot_exact"] = False
+            else:                                                   # C2': a spline is exact only to rounding
+                dev = float(np.abs(e20[KNOT_Q] - e8[KNOT_E8]).max())
+                ctl["knot_maxdev"] = max(ctl.get("knot_maxdev", 0.0), dev)
+                if not dev <= 1e-9:
+                    ctl["knot_exact"] = False
             ctl["knot_checks"] += 1
             r[j] = r[j] + sign[j] * e20
     return best, r[1].copy(), r[2].copy(), devs
@@ -156,6 +173,8 @@ def main() -> int:
     ap.add_argument("--threads", type=int, default=1)
     ap.add_argument("--mutate", choices=("knot", "ident", "d1", "r7", "margin", "batch"), default=None,
                     help="deliberate-regression arm: breaks ONE control, which must then FAIL (controls-only)")
+    ap.add_argument("--interp", choices=("linear", "cubic", "pchip"), default="linear",
+                    help="P5-S (prereg §9): interpolant of the knot error; linear reproduces the landed P5 run")
     a = ap.parse_args()
     if a.mutate and not a.controls_only:
         ap.error("--mutate is a control arm: it requires --controls-only")
@@ -214,7 +233,7 @@ def main() -> int:
                 polys = ND.drivable_polygons(sc.map_api, ego)
                 t20 = np.asarray(bank[(lg, tok)], np.float64)
                 T = ND.to_navsim(t20)
-                tc20, tw20, id20, devs = iterate20(ND, t20, T, ego, ctl, a.mutate)
+                tc20, tw20, id20, devs = iterate20(ND, t20, T, ego, ctl, a.mutate, a.interp)
                 Tc8, devs8 = compensate(ND, T, ego)
                 H = human_p8(sc, 0, ego)
                 Hc, devsH = compensate(ND, H, ego)
@@ -306,6 +325,8 @@ def main() -> int:
     res = {"prereg": "eval/PREREG_P5_TRACKER_AWARE_TARGETS.md", "n": n, "n_logs": len(set(logs_)),
            "n_errors": len(errors), "errors": errors, "controls_raw": ctl, "gates": gates,
            "controls_only": a.controls_only, "limit": a.limit, "mutate": a.mutate, "seconds": None}
+    if a.interp != "linear":                                        # linear's JSON stays byte-comparable to P5's
+        res["interp"] = a.interp
     if a.controls_only:
         res["seconds"] = round(time.time() - t0, 1)
         json.dump(res, open(a.out, "w", encoding="utf-8"), indent=1)
