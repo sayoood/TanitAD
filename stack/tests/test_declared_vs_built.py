@@ -283,7 +283,9 @@ def test_GDVB_every_trainer_flag_has_an_entry_and_every_entry_is_well_formed():
     # + the drivable critic: --r8-critic-drivable ("built") and --w-r8-drivable ("loss") (-> 270)
     # + WP-B L3: --smoke-seed-ego-frames ("runtime": the full-size VIS-1 re-key smoke) (-> 271)
     # + SPEC_WPB_LADDER_A2: --grad-share-terms / --grad-share-at ("runtime": the gs instrument's cost levers) (-> 273)
-    assert len(dvb.REGISTRY) == 273
+    # + refcv8 R8-WARMUP: --ema-decay / --b1-guard-ref-ap2m / --b1-guard-step ("runtime": the weight EMA and the B1 guard)
+    #   (273 -> 276)
+    assert len(dvb.REGISTRY) == 276
     assert dvb.REGISTRY["r8_speed_enc8"].kind == "built"
     assert dvb.REGISTRY["r8_alloc_emit_start"].kind == "built"
     assert dvb.REGISTRY["w_r8_v9_cons"].kind == "loss"
@@ -296,6 +298,8 @@ def test_GDVB_every_trainer_flag_has_an_entry_and_every_entry_is_well_formed():
         assert dvb.REGISTRY[d].kind == "runtime", d
     assert dvb.REGISTRY["grad_share_every"].kind == "runtime"
     for d in ("grad_share_terms", "grad_share_at"):                     # SPEC_WPB_LADDER_A2 (2026-10-11)
+        assert dvb.REGISTRY[d].kind == "runtime", d
+    for d in ("ema_decay", "b1_guard_ref_ap2m", "b1_guard_step"):       # R8-WARMUP (EMA + the B1 guard)
         assert dvb.REGISTRY[d].kind == "runtime", d
     for d in ("r8_v9_md5", "r8_v9_eval_md5", "r8_v9_lat_variant"):
         assert dvb.REGISTRY[d].kind == "data", d

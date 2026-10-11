@@ -1055,6 +1055,20 @@ def _register_gdvb() -> None:
         "the ROW steps a gradient-share reading is taken on (grad_share.parse_at / due; default = every "
         "--grad-share-every-th row): changes only WHEN the instrument reads (SPEC_WPB_LADDER_A2), no parameter, no "
         "RNG, never .grad; refused unless each step is a multiple of --grad-share-every and <= --steps"))
+    dvb.register("ema_decay", "runtime", reason=(
+        "R8-WARMUP's weight EMA (tanitad/train/weight_ema.py): an fp32 shadow updated after every optimiser step, saved "
+        "in ckpt.pt['ema'] (a resume without it refuses), evaluated at every in-run eval under ema_-prefixed keys and "
+        "written model-only (model_ema.pt); 0 = off = the tip; touches no live weight, no RNG (the EMA eval pass is "
+        "RNG-isolated); refused outside [0, 1)"))
+    dvb.register("b1_guard_ref_ap2m", "runtime", reason=(
+        "R8-WARMUP's B1 guard reference: refcv7-50,400's box3d AP@2 m on the same in-run eval set. Arms "
+        "weight_ema.b1_guard_apply, which reads ema_eval_box3d_ap2m at the first in-run eval >= --b1-guard-step and, if "
+        "it is below this value, cuts the head group's peak lr (initial_lr) to the trunk's; state in ckpt.pt['b1_guard'], "
+        "decision row `b1_guard` in metrics.jsonl; refused without --ema-decay, an in-run eval, --slot-vis1, "
+        "--w-box3d > 0, --opt dd and --encoder-lr-mult < 1"))
+    dvb.register("b1_guard_step", "runtime", reason=(
+        "the step the B1 guard first reads (default 1000 when --b1-guard-ref-ap2m arms it); the guard decides once, at "
+        "the first in-run eval at or after it; refused without --b1-guard-ref-ap2m or above --steps"))
     def _c_speed(m, a):
         """X3: the BUILT model's source (`model.cfg.refcv8.speed_input`) equals the argv -- also on a SPEED-ONLY arm
         without the refcv8 seams (SPEC_WPB_LADDER V0), so it reads the model config, not the decoder's r8_cfg."""

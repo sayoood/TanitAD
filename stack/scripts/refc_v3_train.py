@@ -99,6 +99,7 @@ from tanitad.refs import refcv6_tactical as v6tac  # noqa: E402
 from tanitad.refs import refcv8_conditioning as r8c  # noqa: E402  refcv8 WP-B
 from tanitad.train import refcv8_train as r8train  # noqa: E402  refcv8 WP-B (trainer side)
 from tanitad.train import grad_share as _gshare  # noqa: E402  refcv8 X4: the in-run P-GRAD statistic
+from tanitad.train import weight_ema as _wema  # noqa: E402  refcv8 R8-WARMUP: weight EMA + the B1 guard
 # ⛔⛔ refcv7's two modules are NOT ON THIS BRANCH (MEASURED 2026-09-23 on a clean
 # `git archive` of the tip: `refcv7_heads.py` / `refcv7_oracle.py` / `refcv7_toad.py`
 # absent). Its trainer integration arrived in d014414, swept in from a worktree that
@@ -770,8 +771,53 @@ def _pin_trainer_cfg(cfg: v3.RefCV3Config, args) -> v3.RefCV3Config:
     return cfg
 
 
+def _pin_ema_guard(args) -> None:
+    """refcv8 R8-WARMUP: ``--ema-decay`` / ``--b1-guard-ref-ap2m`` / ``--b1-guard-step`` refusals, before config.json
+    and before a batch (M18: a flag that is stamped and reaches nothing is refused, never discovered from a flat run).
+
+    ``--ema-decay 0`` (the default) is the tip: nothing below applies and nothing is built. The B1 guard needs
+    everything it READS to exist: the EMA (it reads ``ema_eval_box3d_ap2m``), an in-run eval, the box3d detection
+    metrics (``--slot-vis1`` + ``--w-box3d > 0``: the AP exists only with VIS-1 targets), and the ``--opt dd`` encoder /
+    head pair it cuts (with ``--encoder-lr-mult < 1``, else the 'cut' could not lower anything)."""
+    _d = getattr(args, "ema_decay", 0.0)
+    _d = 0.0 if _d is None else float(_d)
+    if not (_d == 0.0 or 0.0 < _d < 1.0):
+        raise SystemExit(f"[refcv8] --ema-decay {_d!r} must be 0 (off) or in (0, 1)")
+    _ref = getattr(args, "b1_guard_ref_ap2m", None)
+    _gs = getattr(args, "b1_guard_step", None)
+    if _ref is None:
+        if _gs is not None:
+            raise SystemExit("[refcv8] --b1-guard-step without --b1-guard-ref-ap2m: the guard is not armed, so the flag "
+                             "would be recorded in config.json and do nothing")
+        return
+    _gs = _wema.B1_DEFAULT_STEP if _gs is None else int(_gs)
+    try:
+        _wema.b1_guard_state(float(_ref), _gs)
+    except _wema.B1GuardError as e:
+        raise SystemExit(f"[refcv8] --b1-guard-*: {e}")
+    _bad = []
+    if not _d > 0.0:
+        _bad.append("--ema-decay 0: the guard reads the EMA's box3d AP@2 m, which does not exist")
+    if not (getattr(args, "eval_cache", None) and int(getattr(args, "eval_every", 0) or 0) > 0):
+        _bad.append("no in-run eval (--eval-cache and --eval-every > 0): the guard has no row to read")
+    if not bool(getattr(args, "slot_vis1", False)):
+        _bad.append("--slot-vis1 is off: the box3d detection metrics (eval_box3d_ap2m) exist only with VIS-1 targets")
+    if not float(getattr(args, "w_box3d", 0.0) or 0.0) > 0.0:
+        _bad.append("--w-box3d is 0: there is no box3d head, so no box3d AP@2 m")
+    if str(getattr(args, "opt", "adam")) != "dd":
+        _bad.append("--opt is not dd: the cut needs the 'encoder' (trunk) and 'head' parameter groups")
+    elif not float(getattr(args, "encoder_lr_mult", 0.5)) < 1.0:
+        _bad.append("--encoder-lr-mult >= 1: the trunk peak is not below the head peak, so the 'cut' could not cut")
+    if _gs > int(getattr(args, "steps", 0) or 0):
+        _bad.append(f"--b1-guard-step {_gs} > --steps {getattr(args, 'steps', 0)}: the guard could never fire")
+    if _bad:
+        raise SystemExit("[refcv8] ⛔ the B1 guard is armed (--b1-guard-ref-ap2m) but cannot work:\n  - "
+                         + "\n  - ".join(_bad))
+
+
 def _pin_refcv8(cfg, args) -> None:
     """refcv8 WP-B (DESIGN.md sec. 3) -- argv -> cfg.refcv8, with refusals that fire before config.json."""
+    _pin_ema_guard(args)
     _gse = int(getattr(args, "grad_share_every", 0) or 0)
     if _gse < 0 or (_gse > 0 and _gse % max(1, int(getattr(args, "log_every", 50) or 50)) != 0):
         raise SystemExit(f"[refcv8] --grad-share-every {_gse} must be 0 or a positive multiple of --log-every "
@@ -4982,6 +5028,132 @@ def _eval_row_from_acc(acc: dict, nb_e: int, model) -> dict:
         erow.update(_mhr.derived_per_class(erow, prefix="eval_",
                                            band_keys=_mhr.band_keys_of(model)))
     return erow
+
+
+def _ema_eval_row(model, ema, eval_dl, args, device, det_gates=None, det_nms_cfg=None, det_zh_cfg=None) -> dict:
+    """refcv8 R8-WARMUP: the in-run eval row of the EMA WEIGHTS -- the same aggregate metrics as the live block of
+    ``train()`` (the loss means, the pooled detection grid / NMS census / gated census), every key prefixed ``ema_``.
+
+    ``ema.swapped_in(model)`` puts the EMA weights into the model for the pass and takes the live ones back on ANY
+    exit; the pass is RNG-isolated, so evaluating the EMA moves nothing the training stream reads (the run with
+    ``--ema-decay`` is the run without it, step for step). The calibration and per-window-dump passes of the live block
+    are not repeated. A failure inside is returned as ``{"ema_eval_error": ...}`` (an in-run eval never takes the run
+    down) -- but a swap that did NOT come back is fatal: continuing would train the EMA weights."""
+    acc, nb_e, det_packs, err = {}, 0, {}, None
+    model.eval()
+    try:
+        with ema.swapped_in(model), _RngIsolated(device, None), torch.no_grad():
+            for eb in eval_dl:
+                if nb_e >= args.eval_batches:
+                    break
+                el = compute_losses_v3(model, eb, device, mode=args.mode, ablate_frames=args.ablate_frames)
+                for k, v in el.items():
+                    if torch.is_tensor(v) and v.ndim == 0:
+                        acc[k] = acc.get(k, 0.0) + float(v.detach())
+                    elif isinstance(v, (int, float, bool)):
+                        acc[k] = acc.get(k, 0.0) + float(v)
+                for _hd in _det_metrics.HEADS:
+                    if el.get(f"_det_pack_{_hd}"):
+                        det_packs.setdefault(_hd, []).extend(el[f"_det_pack_{_hd}"])
+                nb_e += 1
+    except Exception as exc:          # noqa: BLE001 (by design: a diagnostic never takes the run down)
+        import traceback
+        traceback.print_exc()
+        err = f"{type(exc).__name__}: {exc}"
+    finally:
+        model.train()
+    if ema.swapped:
+        raise SystemExit("[v3] ⛔ the EMA swap-out did not complete: the model still holds the EMA weights. "
+                         "Training on them would be silent corruption; refusing to continue.")
+    if err is not None:
+        return {"ema_eval_error": err, "ema_eval_batches_done": nb_e}
+    if not nb_e:
+        return {"ema_eval_error": "the eval loader yielded no batch", "ema_eval_batches_done": 0}
+    erow = _eval_row_from_acc(acc, nb_e, model)
+    for _hd, _pk in det_packs.items():
+        for _dk, _dv in _det_metrics.summarise(_pk, _hd).items():
+            erow[_dk] = None if (isinstance(_dv, float) and _dv != _dv) else round(float(_dv), 5)
+        for _dk, _dv in _det_metrics.gated_census_keys(_pk, _hd, det_gates).items():
+            erow[_dk] = None if (isinstance(_dv, float) and _dv != _dv) else round(float(_dv), 5)
+        for _dk, _dv in _wpc_eval_keys(_pk, _hd, det_nms_cfg, det_zh_cfg).items():
+            erow[_dk] = None if (isinstance(_dv, float) and _dv != _dv) else round(float(_dv), 5)
+    return {f"ema_{k}": v for k, v in erow.items()}
+
+
+def _resume_ema_guard(state: dict, args):
+    """refcv8 R8-WARMUP: what a RESUME may do with the EMA and the B1 guard -> ``(ema_state, b1_state)``.
+
+    A resume must continue the same experiment, so every mismatch REFUSES (never silently re-initialises or drops):
+    ``--ema-decay > 0`` on a checkpoint without ``ema`` (a re-initialised EMA is an average over a different run);
+    ``--ema-decay 0`` on a checkpoint WITH one (the flag was lost from the launch line); the guard armed on a checkpoint
+    that carries no guard state, or carries one the argv does not match (the guard decides once, from step 0)."""
+    d = getattr(args, "ema_decay", 0.0)
+    d = 0.0 if d is None else float(d)
+    ema_sd, b1_sd = state.get("ema"), state.get("b1_guard")
+    if d > 0.0 and ema_sd is None:
+        raise SystemExit(
+            "[v3] ⛔ resume REFUSED: --ema-decay %g but ckpt.pt carries no EMA state. Re-initialising the shadow from the "
+            "current weights would average a different run than the one the flag declares." % d)
+    if d == 0.0 and ema_sd is not None:
+        raise SystemExit(
+            "[v3] ⛔ resume REFUSED: ckpt.pt carries an EMA (decay %r, %s updates) but --ema-decay is 0. The flag was "
+            "dropped from the launch line; resuming would silently discard the average." %
+            (ema_sd.get("decay"), ema_sd.get("num_updates")))
+    ref = getattr(args, "b1_guard_ref_ap2m", None)
+    if ref is None and b1_sd is not None:
+        raise SystemExit("[v3] ⛔ resume REFUSED: ckpt.pt carries B1-guard state but --b1-guard-ref-ap2m is not set.")
+    if ref is not None:
+        if b1_sd is None:
+            raise SystemExit("[v3] ⛔ resume REFUSED: --b1-guard-ref-ap2m is set but ckpt.pt carries no guard state; the "
+                             "guard decides once, from step 0 of the run it guards.")
+        gs = _wema.B1_DEFAULT_STEP if getattr(args, "b1_guard_step", None) is None else int(args.b1_guard_step)
+        if float(b1_sd.get("ref_ap2m")) != float(ref) or int(b1_sd.get("guard_step")) != gs:
+            raise SystemExit("[v3] ⛔ resume REFUSED: the checkpoint's B1 guard (ref %r, step %r) is not the argv's "
+                             "(ref %r, step %r)." % (b1_sd.get("ref_ap2m"), b1_sd.get("guard_step"), float(ref), gs))
+    return ema_sd, b1_sd
+
+
+def _ema_ckpt_extra(ema, b1) -> dict:
+    """The keys ``ckpt.pt`` gains when the EMA is on ({} when off: the tip's checkpoint, key for key)."""
+    if ema is None:
+        return {}
+    out = {"ema": ema.state_dict()}
+    if b1 is not None:
+        out["b1_guard"] = dict(b1)
+    return out
+
+
+def _ckpt_payload(model, opt, step, dpos, n_windows, args, ema, b1) -> dict:
+    """The ``ckpt.pt`` dict for the B1 guard's RE-SAVE -- the same payload as the loop's own save (the tip's four keys
+    ``model``, ``opt``, ``step``, ``data_pos`` plus ``_ema_ckpt_extra``), written a second time once the guard has
+    decided, because the loop saves BEFORE it evals (see ``train``). The loop's own save stays inline, textually, because
+    ``tests/test_refc_v3_save_before_eval.py`` pins its position; ``tests/test_refcv8_ema_guard.py`` pins that the two
+    payloads have the same keys and ``data_pos``."""
+    return {"model": model.state_dict(),
+            "opt": opt.state_dict(), "step": step,
+            "data_pos": {"scheme": ResumableEpochSampler.SCHEME,
+                         "epoch": int(dpos["epoch"]),
+                         "batch": int(dpos["batch"]),
+                         "n": n_windows, "seed": int(args.seed),
+                         "batch_size": int(args.batch)},
+            **_ema_ckpt_extra(ema, b1)}
+
+
+def _ema_summary_extra(ema, b1) -> dict:
+    """The keys ``summary.json`` gains when the EMA is on ({} when off)."""
+    if ema is None:
+        return {}
+    out = {"ema_decay": ema.decay, "ema_num_updates": int(ema.num_updates)}
+    if b1 is not None:
+        out["b1_guard"] = dict(b1)
+    return out
+
+
+def _save_ema_model(ema, model, step: int, path) -> None:
+    """The model-only EMA file (``{"model": <state_dict with EMA values>, "step", "ema_decay", "num_updates"}``) --
+    the same layout as the ``ckpt_<milestone>.pt`` files, so every loader that takes one takes this."""
+    torch.save({"model": ema.model_state_dict(model), "step": int(step), "ema_decay": ema.decay,
+                "num_updates": int(ema.num_updates), "kind": "ema_model_only"}, path)
 
 
 def _train_row_scalars(losses: dict, model) -> dict:
@@ -9791,8 +9963,10 @@ def train(args) -> dict:
     ck = out_dir / "ckpt.pt"
     _data_order = {"scheme": ResumableEpochSampler.SCHEME, "seed": int(args.seed),
                    "resumed_from": None, "legacy_checkpoint": False}
+    _ema_resume = _b1_resume = None       # refcv8 R8-WARMUP: what the resumed checkpoint carries
     if ck.exists():
         state = torch.load(ck, map_location=device, weights_only=False)
+        _ema_resume, _b1_resume = _resume_ema_guard(state, args)     # refuses a mismatch BEFORE any state is loaded
         model.load_state_dict(state["model"])          # strict — resume exact
         opt.load_state_dict(state["opt"])
         step = int(state["step"])
@@ -10240,6 +10414,33 @@ def train(args) -> dict:
             model, dl, args, device, out_dir)
         (out_dir / "config.json").write_text(json.dumps(_run_config, indent=1),
                                              encoding="utf-8")
+    # ---- refcv8 R8-WARMUP: the weight EMA and the B1 guard (OFF = --ema-decay 0 = nothing below runs) ------- #
+    # ⛔ Built HERE -- after the withheld bank, the resume, the --init-from warm start and the BN recalibration -- so a
+    # fresh shadow starts from the weights step 1 will actually train, and a resumed one is loaded over them.
+    _ema = _b1 = None
+    if float(getattr(args, "ema_decay", 0.0) or 0.0) > 0.0:
+        _ema = _wema.WeightEMA(model, float(args.ema_decay))
+        if _ema_resume is not None:
+            try:
+                _ema.load_state_dict(_ema_resume, model)
+            except _wema.EMAStateError as e:
+                raise SystemExit(f"[v3] ⛔ resume REFUSED: the checkpoint's EMA does not fit this run: {e}")
+        if getattr(args, "b1_guard_ref_ap2m", None) is not None:
+            _b1 = _b1_resume if _b1_resume is not None else _wema.b1_guard_state(
+                float(args.b1_guard_ref_ap2m),
+                _wema.B1_DEFAULT_STEP if getattr(args, "b1_guard_step", None) is None else int(args.b1_guard_step))
+        _run_config["ema"] = {
+            "decay": _ema.decay, "n_tensors": len(_ema.shadow), "n_params": int(_ema.numel),
+            "shadow_bytes": int(_ema.nbytes), "num_updates_at_start": int(_ema.num_updates),
+            "init": "resumed ckpt.pt['ema']" if _ema_resume is not None else "the weights at step %d" % step,
+            "b1_guard": dict(_b1) if _b1 is not None else None}
+        (out_dir / "config.json").write_text(json.dumps(_run_config, indent=1), encoding="utf-8")
+        print("[v3] EMA decay %g: shadow = %d tensors, %d values = %.1f MB fp32 on %s (%s)%s" % (
+            _ema.decay, len(_ema.shadow), _ema.numel, _ema.nbytes / 1e6,
+            next(iter(_ema.shadow.values())).device,
+            "resumed at %d updates" % _ema.num_updates if _ema_resume is not None else "fresh",
+            "; B1 guard armed: ref %.5f at step >= %d" % (_b1["ref_ap2m"], _b1["guard_step"])
+            if _b1 is not None else ""), flush=True)
     t0, model = time.time(), model.train()
     # the data POSITION, saved in ckpt.pt -- a resumed run continues the same permutation
     _dpos = {"epoch": _train_sampler.epoch, "batch": _train_sampler.skip_batches}
@@ -10251,6 +10452,25 @@ def train(args) -> dict:
         _seed_batch = smoke_seed_batch(ds, dl, int(args.batch))
         print(f"[v3] SMOKE: the first batch is {int(_seed_batch['vis1_rekeyed'].numel())} ego-stripped windows "
               f"(re-keyed {int(_seed_batch['vis1_rekeyed'].sum())})", flush=True)
+    # ⭐ refcv8 R8-WARMUP, B1 guard: a RESUME at or past the guard step with the guard still PENDING means the previous
+    # process died between the step-N checkpoint (written BEFORE the eval) and the step-N eval -- the eval that dies
+    # most often (C-REFCV3-EVAL-DEATH). The weights loaded here are exactly the ones that eval would have read, so read
+    # the EMA AP now, BEFORE the next training step, instead of deciding at the next scheduled eval after more steps at
+    # the uncut head rate.
+    if _b1 is not None and _ema_resume is not None and not _b1["decided"] and step >= _b1["guard_step"] \
+            and eval_dl is not None:
+        _gc_row = _ema_eval_row(model, _ema, eval_dl, args, device, det_gates, det_nms_cfg, det_zh_cfg)
+        try:
+            _b1_row = _wema.b1_guard_apply(_b1, step, _gc_row, opt)
+        except _wema.B1GuardError as e:
+            raise SystemExit(f"[v3] ⛔ B1 guard (catch-up on resume): {e}")
+        if _b1_row is not None:
+            _b1_row["b1_catch_up_on_resume"] = True
+            log.write(json.dumps(_b1_row) + chr(10))
+            log.flush()
+            torch.save(_ckpt_payload(model, opt, step, _dpos, len(ds), args, _ema, _b1), ck)
+            print("[v3:eval] B1 GUARD (catch-up on resume) at step %d: EMA box3d AP@2 m %.5f vs refcv7-50,400 %.5f -> %s" % (
+                step, _b1_row["b1_ema_box3d_ap2m"], _b1_row["b1_ref_box3d_ap2m"], _b1_row["b1_guard"].upper()), flush=True)
     while step < args.steps:
         if _seed_batch is not None:
             batch, _seed_batch = _seed_batch, None       # an EXTRA batch: `_dpos` and the iterator are untouched
@@ -10436,6 +10656,8 @@ def train(args) -> dict:
                     _pr_row[f"ga_mh_{_pk}_n"] = _pv["n_params_with_grad"]
         torch.nn.utils.clip_grad_norm_(model.parameters(), 10.0)
         opt.step()
+        if _ema is not None:                 # refcv8 R8-WARMUP: after EVERY optimiser step (off: not executed)
+            _ema.update(model)
         step += 1
         if step % args.log_every == 0 or step == args.steps:
             # ⚠️ The tensor filter silently DROPPED every plain-float
@@ -10543,13 +10765,20 @@ def train(args) -> dict:
                                      "epoch": int(_dpos["epoch"]),
                                      "batch": int(_dpos["batch"]),
                                      "n": len(ds), "seed": int(args.seed),
-                                     "batch_size": int(args.batch)}}, ck)
+                                     "batch_size": int(args.batch)},
+                        **_ema_ckpt_extra(_ema, _b1)}, ck)
             # the one line that makes the order VERIFIABLE from train.log
             print(f"[v3:{args.arm}] ckpt step {step} -> {ck.name}",
                   flush=True)
         if step in MILESTONES:
             torch.save({"model": model.state_dict(), "step": step},
                        out_dir / f"ckpt_{step}.pt")
+        if _ema is not None:                 # refcv8 R8-WARMUP: the EMA weights, model-only, beside the live ones
+            if step in MILESTONES:
+                _save_ema_model(_ema, model, step, out_dir / f"ckpt_ema_{step}.pt")
+            if step == args.steps:
+                _save_ema_model(_ema, model, step, out_dir / "model_ema.pt")
+                print(f"[v3:{args.arm}] EMA model-only -> model_ema.pt", flush=True)
         # ---- held-out eval (PI 2026-09-02) --------------------------------
         # ⚠️ WHAT THIS IS AND IS NOT: an in-training MONITOR at T0 on the same
         # loss surface, over a FIXED set of held-out windows. It is NOT the
@@ -10654,6 +10883,9 @@ def train(args) -> dict:
                         erow["eval_calib_error"] = f"{type(_cexc).__name__}: {_cexc}"
                     finally:
                         model.train()
+                if _ema is not None:         # refcv8 R8-WARMUP: the EMA weights through the SAME eval, ema_ keys
+                    erow.update(_ema_eval_row(model, _ema, eval_dl, args, device,
+                                              det_gates, det_nms_cfg, det_zh_cfg))
                 erow.update(step=step, eval_batches=nb_e,
                             eval_windows=nb_e * args.batch)
                 log.write(json.dumps(erow) + chr(10))
@@ -10663,6 +10895,30 @@ def train(args) -> dict:
                       f"traj {erow.get('eval_traj', float('nan')):.4f} "
                       f"lat_tac {erow.get('eval_lat_tac', float('nan')):.4f}",
                       flush=True)
+                if _ema is not None:
+                    print(f"[v3:eval] step {step} EMA loss {erow.get('ema_eval_loss', float('nan')):.4f} "
+                          f"traj {erow.get('ema_eval_traj', float('nan')):.4f} "
+                          f"box3d_ap2m {erow.get(_wema.B1_METRIC_KEY)}", flush=True)
+                if _b1 is not None:          # refcv8 R8-WARMUP B1 guard: decides ONCE, at the first eval >= guard_step
+                    try:
+                        _b1_row = _wema.b1_guard_apply(_b1, step, erow, opt)
+                    except _wema.B1GuardError as e:
+                        raise SystemExit(f"[v3] ⛔ B1 guard: {e}")
+                    if _b1_row is not None:
+                        log.write(json.dumps(_b1_row) + chr(10))
+                        log.flush()
+                        # ⛔ The checkpoint of THIS step was written BEFORE the eval (the order above is load-bearing)
+                        # and so carries the guard as still PENDING. Re-write it with the decision, or a continuation of
+                        # a finished run (or a resume after a crash right here) would decide a second time.
+                        if step % args.save_every == 0 or step == args.steps:
+                            torch.save(_ckpt_payload(model, opt, step, _dpos, len(ds), args, _ema, _b1), ck)
+                            print(f"[v3:{args.arm}] ckpt step {step} re-saved with the B1 guard decision", flush=True)
+                        print("[v3:eval] B1 GUARD at step %d: EMA box3d AP@2 m %.5f vs refcv7-50,400 %.5f -> %s%s" % (
+                            step, _b1_row["b1_ema_box3d_ap2m"], _b1_row["b1_ref_box3d_ap2m"],
+                            _b1_row["b1_guard"].upper(),
+                            " (head peak lr %.3e -> %.3e)" % (_b1_row["b1_head_peak_lr_before"],
+                                                              _b1_row["b1_head_peak_lr_after"])
+                            if _b1_row["b1_cut"] else ""), flush=True)
 
             # ---- W-BOOTSTRAP: per-window rows, so the paired episode-cluster
             # bootstrap becomes reachable. ⚠️ A SEPARATE pass: the aggregate row
@@ -10722,7 +10978,8 @@ def train(args) -> dict:
     (out_dir / "summary.json").write_text(
         json.dumps({"done": True, "step": step, "arm": args.arm,
                     "seed": args.seed,
-                    "wallclock_s": round(time.time() - t0, 1)}),
+                    "wallclock_s": round(time.time() - t0, 1),
+                    **_ema_summary_extra(_ema, _b1)}),
         encoding="utf-8")
     log.close()
     print(f"[v3:{args.arm}] DONE at {step} — summary.json written")
@@ -12015,6 +12272,22 @@ def build_parser() -> argparse.ArgumentParser:
                          "taken; each must be a multiple of --grad-share-every and <= --steps. Default = every "
                          "--grad-share-every-th row (the tip's schedule). A reading costs ~16 min inside the fp32 "
                          "replay on Thor (MEASURED 2026-10-11), so a ladder arm reads only where its consumer looks.")
+    g8.add_argument("--ema-decay", type=float, default=0.0,
+                    help="refcv8 R8-WARMUP: weight EMA (tanitad/train/weight_ema.py). 0 = off (the tip's loop, "
+                         "checkpoint and rows, bit for bit). >0: an fp32 shadow of every trainable parameter and float "
+                         "buffer is updated after every optimiser step (ema <- ema + (1-d)(p - ema)), saved in "
+                         "ckpt.pt['ema'] (a resume without it REFUSES), written model-only at the final save "
+                         "(model_ema.pt) and at each milestone (ckpt_ema_<step>.pt), and EVALUATED at every in-run "
+                         "eval beside the live weights under ema_-prefixed keys. Ruling value 0.9998.")
+    g8.add_argument("--b1-guard-ref-ap2m", type=float, default=None,
+                    help="refcv8 R8-WARMUP B1 guard: refcv7-50,400's box3d AP@2 m ON THE SAME in-run eval set (a literal "
+                         "from its metrics.jsonl). Arms the guard: at the first in-run eval at or after "
+                         "--b1-guard-step, if ema_eval_box3d_ap2m < this value the head group's peak lr is cut to the "
+                         "trunk's for the rest of the run. Needs --ema-decay > 0, an in-run eval, --slot-vis1, "
+                         "--w-box3d > 0, --opt dd and --encoder-lr-mult < 1 (refused at startup otherwise).")
+    g8.add_argument("--b1-guard-step", type=int, default=None,
+                    help="refcv8 R8-WARMUP B1 guard: the step the guard first reads (default 1000 when armed). "
+                         "Refused without --b1-guard-ref-ap2m.")
     g7 = ap.add_argument_group("refcv7 (DrivoR heads on refcv6)")
     g7.add_argument("--refcv7", action="store_true",
                     help="build the WTA proposal decoder (64 learned queries, one "
