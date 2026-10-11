@@ -75,6 +75,35 @@ def to_navsim(poses20: np.ndarray, dt: float = SRC_DT) -> np.ndarray:
     return out
 
 
+def set_driving_command(planner, tok: str, rec: dict) -> bool:
+    """Hand the planner NAVSIM's OWN `driving_command` for this token. Returns True when it set one.
+
+    P6 / D6 (PI ruling P6-N): in `nav_mode == "command"` the navigation command is an INPUT at training AND inference, and its source at inference is
+    NAVSIM's `driving_command` -- the last `ego_statuses` entry of the agent input the W3 export carries (`rec`). It is never derived from the logged
+    future, from the goal fix, or from any classifier. SPEC_NAVTEST Amendment 8 (`planner.sanitize_goal`) reads the same field, so it takes the same hop.
+
+    REFUSES (never defaults): a command-mode model with no `driving_command` for the token, or one that is not a finite 4-vector, raises here -- a
+    command-mode model fed a missing command would be answering an unknown question (planner._command_for refuses the same way one hop later).
+    A goal-mode planner with the Amendment-8 sanitisation OFF is untouched: it neither reads nor sets a command, so every goal-mode evaluation stays
+    bit-identical. (Before 2026-10-11 only the sanitisation branch set the command, so a command-mode checkpoint crashed at its first `infer`.)
+    """
+    cmd_mode = getattr(planner.model.cfg, "nav_mode", "goal") == "command"
+    if not (planner.sanitize_goal or cmd_mode):
+        return False
+    st = rec.get("ego_statuses") or []
+    cmd = st[-1].get("driving_command") if st else None
+    if cmd is None:                                    # Amendment 8 used to KeyError here; keep it loud
+        raise RuntimeError(f"token {tok}: no driving_command in ego_statuses[-1] of the NAVSIM agent input")
+    if cmd_mode:
+        import nav_command as NC
+        v = np.asarray(cmd, dtype=np.float64).reshape(-1)
+        if v.size != NC.N_COMMANDS or not np.isfinite(v).all():
+            raise RuntimeError(f"token {tok}: a command-mode checkpoint needs NAVSIM's driving_command as a finite {NC.N_COMMANDS}-vector; got {cmd!r}")
+    planner.driving_command = cmd
+    planner.goal_diag = None
+    return True
+
+
 def selftest() -> int:
     """SPEC E-1 (with AMENDMENT 1): straight line exact; arc within its chord sagitta."""
     ok = True
@@ -199,6 +228,7 @@ def main() -> int:
     prop_diag: list = []
     dump_props, dump_logits, dump_pick = [], [], []
     n_prop = 0
+    n_cmd_set = 0
     t0 = time.time()
     for li, (log, lt) in enumerate(sorted(by_log.items())):
         db = os.path.join(a.db_dir, f"{log}.db")
@@ -215,9 +245,8 @@ def main() -> int:
             if img is None:
                 misses.append((tok, f"no frames: {planner.frames.miss_reason}"))
                 continue
-            if planner.sanitize_goal:                  # Amendment 8: NAVSIM's own command (an agent input)
-                planner.driving_command = exp[tok]["ego_statuses"][-1]["driving_command"]
-                planner.goal_diag = None
+            # NAVSIM's own command (an agent input): Amendment 8's sanitisation AND every command-mode (P6) checkpoint need it; else a no-op
+            n_cmd_set += int(set_driving_command(planner, tok, exp[tok]))
             traj, _score, k = planner.infer(ego, img)
             if a.record_inputs:
                 ev, gl = planner.last_inputs
@@ -289,6 +318,8 @@ def main() -> int:
            "miss_examples": misses[:10], "ckpt": a.ckpt, "select": a.select, "rule": planner.rule,
            "repair_last_heading": planner.repair_last_heading,
            "sanitize_goal": planner.sanitize_goal, "goal_fix": planner.goal_fix,
+           "nav_mode": getattr(planner.model.cfg, "nav_mode", "goal"),
+           "driving_command_set": n_cmd_set,        # tokens that received NAVSIM's driving_command (0 for a goal-mode run without Amendment 8)
            "frame_control": {"n": n_ctrl, "max_m": float(ce.max()), "median_m": float(np.median(ce)),
                              "bar_m": FRAME_CONTROL_MAX_M,
                              "what": "log future on NAVSIM's 0.5 s grid vs W3 human_future_poses"},
