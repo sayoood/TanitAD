@@ -5291,3 +5291,43 @@ wrong cause.
 | final checkpoints | rolling `ckpt.pt` step 50,400 md5 `d5f104ee54ba6b2861e38030b4f6fcf1` (model+opt+step+data_pos) = `D:/refcv7_eval_kit/ckpt/ckpt_50400_full.pt`; model-only `{model, step}` `ckpt_50400.pt` md5 `b418d0fc4a92a6848c246a6a7c50207b` (1131/1131 tensors torch.equal); milestones `ckpt_{5000,15000,20000,30000}.pt` (md5 06eb9dfd…, 2e7fd26c…, 4c0a78e7…, ac4e4fab…), all in `D:/refcv7_eval_kit/ckpt/MD5SUMS` and on Thor. PRIVATE HF `Sayood/tanitad-refcv7-r101-s0`: 5k, 30k, 50.4k + config.json (15k / 20k uploading). |
 | results so far (2026-10-04) | ⚠️ Launch tree ⇒ the speed ceiling does not reach the emitted plan (SPEC_REFCV7 26.1) on every planner row. **NavSim (open-loop benchmark, zero-shot):** step 5,000 BAR-R7-N1 **PASS** (navtest PDMS 65.5976 vs STOP 61.8202, paired [+1.58, +5.86]), NW1 **FAILED** (warmup 0.4487 < 0.5212), NH1 **FAILED** (navhard EPDMS 0.1624 vs STOP 0.2985); step 30,000 warmup 0.5224 vs 0.5212 NOT PROVEN; 30k navtest/navhard and 50.4k RUNNING (`FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/`). **Four-family battery:** none yet for any checkpoint — G0 failed at 5,000 on an estimator defect (SPEC A5, 24 seeds); the 50,400 chain is queued. **Perception at 50,400 (open-loop diagnostic, 1,112 eval windows / 139 episodes, one seed):** declared map rule hides the thin classes (edge IoU 0.000); opt-in F1 per-class thresholds give lane 0.164 / edge 0.042 / hatched 0.062; box conf_ratio 0.0059 at the 0.5 gate, 0.973 (box3d) / 0.995 (agent) at the TRAIN P=R gate (F4), AP@2m 0.248 / 0.131 (`TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv7-map-box-diagnostics/RESULT.md`; GOALS_AND_CLAIMS REFCV7-MAP-RULE / -MAP-LOC / -BOX-FOCAL). Frame-by-frame reel: `Media/2026-10-04-refcv7-final-reel/`. |
 | predecessor | refcv6-r101-s0 (stopped at 38,250) |
+
+## 15. refcv7-r101-s0 — refcv6 + FIX-1..5 + NEW-1/NEW-2 + A9 box head [NON-PARITY · NavSim zero-shot · ONE SEED]
+
+⚠️ **Not the DrivoR planning heads.** That scope was renamed DrivoR-T on 2026-09-26 (`SPEC_DRIVORT.md`); this
+arm passes none of `--refcv7` / `--w-r7-wta` / `--w-r7-scorer` and deploys refcv6's 1,145-parameter
+goal-distance scorer. H-REFCV7-1/2/3 are UNTESTED (`GOALS_AND_CLAIMS.md`, correction 2026-10-11).
+
+| Field | Value |
+|---|---|
+| **Status** | ✅ **TRAINING FINISHED** 2026-10-03 20:38 Berlin at step **50,400** (started 2026-09-28); 0 restarts; ~9.9 s/step. Val plateau from ~35k. |
+| **Code** | commit `fec3a0d`; spec `SPEC_REFCV7.md` (PI 2026-09-26) — refcv6 + FIX-1..5 + NEW-1 (`ha0_ext_pose`) + NEW-2 (10 cm map, A6/A7 pooled BEV) + A9 box head (300 queries) + A2 selection mechanisms ON; strategic layer OFF (PI ruling R5). |
+| **Params** | **100,468,987** (MEASURED, `ckpt/config.json`). |
+| **Corpus** | ⛔ **NON-PARITY** — 4,369 clips, `require_parity False`; not comparable to parity-corpus arms. |
+| **Checkpoints** | `ckpt_50400_full.pt` md5 `d5f104ee54ba6b2861e38030b4f6fcf1`; `ckpt_50400.pt` md5 `b418d0fc4a92a6848c246a6a7c50207b`. HF `Sayood/tanitad-refcv7-r101-s0` (private) holds `ckpt_5000`. |
+| **Graph audit** | `grad_unreachable`: `core.decoder.control_head`, `offset_head`, `scorer.goal_point`; declared_vs_built **0 mismatches**. |
+| **Tier / estimator** | NavSim open-loop benchmark (T1-family), zero-shot, never closed loop. `paired_navsim_log_cluster_bootstrap`, n_boot 2000, navtest 136 / navhard 76 log clusters. Answers *another draw of LOGS?*; inference variance vs the R7_A1_s1 seed floor; **training variance UNTESTED (one seed)**. |
+| **Evidence** | `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step{5000,30000,50400}/BARS.json`, `families_{navtest,navhard}_R7_A1.json`; narrative `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/RESULT.md` §8. |
+
+### 15.1 Committed bars (MEASURED, `BARS.json`)
+
+| suite (bar) | 5k | 30k | **50.4k** | STOP | CV | ECHO | 50.4k paired Δ vs STOP | verdict |
+|---|---|---|---|---|---|---|---|---|
+| navtest PDMS ×100 (BAR-R7-N1, 12,146 tokens) | 65.60 | 71.88 | **69.99** | 61.82 | 20.65 | — | **+0.0817 [+0.0612, +0.1007]** | ✅ **PASS** (all steps) |
+| navhard two-stage EPDMS (BAR-R7-NH1) | 0.1624 | 0.2269 | **0.2022** | 0.2985 | 0.1148 | 0.1429 | **−0.0964 [−0.136, −0.0589]** | ❌ **FAIL** |
+| warmup two-stage EPDMS | 0.4487 | 0.5224 | **0.5042** | 0.5212 | 0.3971 | 0.4287 | margin −0.0171 (interval UNAVAILABLE, 7 logs < 8; seed floor 0.0061) | ❌ **FAIL** (30k: NOT PROVEN) |
+
+**50.4k vs 30k:** navhard −0.0248 [−0.0545, +0.0046], not separated. navtest −1.89 points is cross-device
+(30k CPU, 50.4k CUDA) — not admissible as a training effect. ⇒ **no evidence that steps 30k→50.4k helped on NavSim.**
+
+### 15.2 Perception heads (trainer-val — NOT eval-grade)
+
+| head | value |
+|---|---|
+| map (10 cm) | lane IoU 0.164, edge 0.042; at 0–20 m edge 0.0009, hatched 0.0 |
+| box head (A9, 300 queries) | AP 0.248 / 0.131; with NMS 0.349 / 0.300; 2.12 boxes per object; conf_ratio 0.0059 |
+
+### 15.3 Fan ceiling (MEASURED, T1-family open loop, PhysicalAI held-out)
+
+Oracle-in-fan ADE **0.1914 m** vs selected **0.4728 m** (Δ +0.2813 [+0.2127, +0.3543]); a >2× better candidate on
+**41.09 %** of windows; `sampler_ranks_the_fan` false. Random-pick control **not yet run** — `D-REFCV7-FANCEIL`.

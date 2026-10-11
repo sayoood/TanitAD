@@ -215,7 +215,7 @@ final run, the question "would another training run say this?" stated) for every
 | STRATEGIC | N/A — strategic layer OFF by PI ruling R5 (2026-09-27); reported as absent with the reason, never silently dropped | — |
 | nav compliance | on windows with a turn starting within 6 s: pick turns the commanded way | to be measured on v9 nav (D1 gives the denominator) |
 | perception | map thin-class IoU (F1 thresholds), box AP@2 m, boxes/object, conf_ratio | lane 0.164, edge 0.042; AP 0.248 / 0.131 → 0.349 / 0.300 with NMS; 2.12 boxes/object |
-| closed loop (NavSim) | navtest PDMS vs STOP; navhard two-stage EPDMS incl. DAC-zero and NC-zero rates; warmup S2-EPDMS-u | 5k: PDMS 65.60 vs STOP 61.82 PASS; 30k navhard 0.227 vs STOP 0.299 FAIL (DAC-zero 26.0 %, NC-zero 15.6 %); 50.4k RUNNING |
+| closed loop (NavSim) | navtest PDMS vs STOP; navhard two-stage EPDMS incl. DAC-zero and NC-zero rates; warmup S2-EPDMS-u | 5k: PDMS 65.60 vs STOP 61.82 PASS; 30k navhard 0.227 vs STOP 0.299 FAIL (DAC-zero 26.0 %, NC-zero 15.6 %); 50.4k (final): navtest 69.99 vs STOP 61.82 PASS; navhard 0.2022 vs STOP 0.2985 FAIL; warmup 0.5042 vs STOP 0.5212 FAIL; 30k ≥ 50.4k on NavSim (navtest −1.89 cross-device, not admissible; navhard −0.0248 [−0.0545, +0.0046] not separated) — `MODEL_REGISTRY.md` §15 |
 
 Controls on every panel: STOP / hold-action, refcv7-50.4k itself (paired), a deliberate-regression arm per lever (e.g.
 time-shuffled dense labels, permuted nav), and the identity controls the replay already carries.

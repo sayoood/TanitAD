@@ -251,3 +251,36 @@ rootdir (MEASURED: node ids carry `tests/` from a C: cwd), so navtest and navhar
   ⚠️ **Not yet observed live:** `CUDA controls navtest: K0=True` — the first line to check in
   `raw/milestones/step50400/runner.log` once the lock is acquired (the `pytest.ini` fix is MEASURED by
   `--collect-only` only).
+
+## 8. Final verdict — step 50,400 (banked 2026-10-11 from the artifacts; suite DONE 2026-10-05 03:40Z)
+
+**Device history.** The first CUDA attempt logged `K0=False` and fell back to CPU; that CPU navtest is superseded
+(`raw/milestones/step50400/_superseded_cpu_navtest_0710`). The restart logged `K0=True`, `KD=False` and ran navtest
+and navhard on CUDA. Scorers needed tries 2–5 (`ram_guard_abort`). warmup ran CPU fp32, 9/9 OK, `exact_dedup`.
+⚠️ KD caveat (CUDA vs CPU controls): max_abs_traj_diff **0.0277 m**, selection identical 4/4.
+
+**Bars** (MEASURED, `raw/milestones/step50400/BARS.json`; tier NavSim open-loop benchmark (T1-family), zero-shot,
+NON-PARITY; estimator `paired_navsim_log_cluster_bootstrap`, n_boot 2000; one training seed):
+
+| suite | refcv7 50.4k | STOP | paired Δ vs STOP | verdict |
+|---|---|---|---|---|
+| navtest PDMS ×100 | **69.99** | 61.82 | +0.0817 [+0.0612, +0.1007], 136 clusters (`nuplan_drive` 44: [+0.0579, +0.1018]) | ✅ PASS |
+| navhard EPDMS | **0.2022** | 0.2985 | −0.0964 [−0.136, −0.0589], 76 clusters (`nuplan_drive` 34: [−0.1314, −0.0654]) | ❌ FAIL |
+| warmup EPDMS | **0.5042** | 0.5212 | margin −0.0171; interval UNAVAILABLE (7 logs < 8) | ❌ FAIL |
+
+**Trajectory over training:** navtest 65.60 → 71.88 → 69.99; navhard 0.1624 → 0.2269 → 0.2022; warmup
+0.4487 → 0.5224 → 0.5042 (5k / 30k / 50.4k). 50.4k vs 30k navhard −0.0248 [−0.0545, +0.0046] — not separated;
+navtest −1.89 is cross-device and inadmissible.
+
+**Four families** — `raw/milestones/step50400/families_{navtest,navhard}_R7_A1.json`:
+* **LONGITUDINAL** — the weak family: tactical longitudinal agreement κ **0.51** (navtest) / **0.37** (navhard); the
+  plan commits ~**+1.5 m** too far ahead (`goal_long_bias`). Distance-keeping UNAVAILABLE (no lead tracks in this
+  harness).
+* **LATERAL** — tactical lateral κ **0.81** (navtest) / **0.72** (navhard).
+* **TACTICAL** — reported per axis above; the gap is longitudinal, not lateral.
+* **STRATEGIC** — UNAVAILABLE on NAVSIM (no strategic label builder for this harness — an eval-engineering gap, not a
+  corpus fact); layer OFF in this arm (PI ruling R5).
+
+**Reading.** refcv7 clears the programme bar on navtest and is separated **below** doing nothing on navhard and below
+it on warmup. Training past 30k bought nothing measurable on NavSim. Verdict and next lever:
+`Project Steering/GOALS_AND_CLAIMS.md` R-REFCV7-TRAINED and `Project Steering/PLAN_REFCV8.md`.
