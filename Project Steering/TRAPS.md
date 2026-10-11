@@ -477,6 +477,19 @@ Each entry cost hours more than once. CLAUDE.md keeps a one-line index; this fil
   several "outages" were measurement artifacts. ⚠️ **But see the `ls-tree` trap above: repeated
   samples through ONE broken channel are one sample.** A second *probe* means a different
   mechanism, not the same command run again.
+- ⛔ **A POD CHAIN WHOSE OUTPUTS HAVE NO AUTOMATIC EGRESS HAS PRODUCED NOTHING UNTIL SOMETHING
+  COPIES THEM OFF.** MEASURED 2026-10-11 (`…/2026-09-20-refe-plan/STOP_CONSEQUENCES_2026-10-11.md`):
+  the REFe A40 pod (no persistent volume) became unreachable, ssh rc 255, while SFT-4 and P2 ran on
+  it unattended after the weekly API limit stopped the orchestrating session. The final run's model
+  had been pushed to HF the moment it finished, but the fine-tunes chained behind it had no push
+  step. **Lost unless the pod disk survives:** SFT-4's final checkpoints, its `sft.log` and
+  `chain.log`, P2's gate, run and checkpoints, and the 177,836 PDM training labels (~11.3 h of CPU to
+  redo). The only SFT-4 checkpoint off the pod is an update-400 peek someone happened to copy
+  for an exploratory read, and the update-800 held-out numbers survive only as prose in a handoff.
+  ⇒ **Every pod chain ends with an HF push of its checkpoints AND logs, and its success marker is
+  the REMOTE listing, never the local file.** Label sets and other derived data a later arm needs
+  get pushed when they are written, not when the arm that uses them finishes. Same family as
+  operating standard 3 (*an artifact on one disk is not done*), with the disk being one you rent.
 
 ## Git hygiene — the mistake that has now happened twice
 
