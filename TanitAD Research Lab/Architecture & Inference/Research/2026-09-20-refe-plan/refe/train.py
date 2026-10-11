@@ -36,6 +36,7 @@ from torch.utils.data import DataLoader, Dataset
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from model import BACKBONES, REFe, REFeConfig, param_report, wta_loss  # noqa: E402
 import ckpt_io  # noqa: E402
+import nav_command as NC  # noqa: E402
 
 
 CAMERAS = ("CAM_F0", "CAM_L0", "CAM_R0", "CAM_B0")
@@ -629,8 +630,11 @@ class TargetBank(Dataset):
     def __init__(self, target_dir: str, images_root: str | None, cfg: REFeConfig,
                  synthetic: bool = False, limit: int | None = None, spread: bool = False, scorer=None,
                  max_missing_frac: float = 0.001, calib: str | None = None,
-                 sizes: dict | None = None, onpolicy=None):
+                 sizes: dict | None = None, onpolicy=None, online: bool = False):
         self.scorer = scorer
+        # P6 / D1: the ONLINE labeller labels the model's own proposals, so each item also returns its row index (the trainer needs the row's
+        # (log_name, token, rank, aug) to find the metric-cache parts). Off => the tuple is the unchanged nine elements.
+        self.online = bool(online)
         # ⭐ on-policy mode (PI decision B): the paper's supervision REPLACES the fixed candidates
         self.onpolicy = onpolicy
         self.rows = []
@@ -766,6 +770,15 @@ class TargetBank(Dataset):
             sizes[len(g)] = sizes.get(len(g), 0) + 1
         print(f"  scenes: {len(self.scene_groups):,} over {len(self.rows):,} tuples  (rows per "
               f"scene: {', '.join(f'{k} x {v:,}' for k, v in sorted(sizes.items()))})")
+        # P6 / D6: where each row's navigation command comes from (NAVSIM's own, carried in the row, or the goal rule). Reported, never silent.
+        self.cmd_sources = None
+        if cfg.nav_mode == "command":
+            self.cmd_sources = {}
+            for r in self.rows:
+                k = NC.command_source(r)
+                self.cmd_sources[k] = self.cmd_sources.get(k, 0) + 1
+            print(f"  NAV COMMAND (P6): sources {self.cmd_sources}  (row = NAVSIM driving_command carried by the bank; goal_rule = nav_command.goal_to_command, "
+                  f"MEASURED 0.90 agreement with NAVSIM on navtest -- below SPEC_P6 D6's 95 % bar)")
 
     def __len__(self):
         return len(self.rows)
@@ -855,11 +868,16 @@ class TargetBank(Dataset):
         # vehicle's numbers differently from the table's -- same geometry, different key
         cal = (torch.tensor(r["_calib"], dtype=torch.float64) if "_calib" in r
                else torch.zeros(0, dtype=torch.float64))
-        return (img,
+        if c.nav_mode == "command":
+            gl = torch.tensor(NC.onehot(NC.command_of_row(r)), dtype=torch.float32)       # P6 / D6: the one-hot command rides in the `goal` slot
+        else:
+            gl = torch.tensor(r["goal"], dtype=torch.float32)[:2 * c.n_goal_points]
+        item = (img,
                 ego_t,
-                torch.tensor(r["goal"], dtype=torch.float32)[:2 * c.n_goal_points],
+                gl,
                 torch.tensor(r["traj"], dtype=torch.float32),
                 ct, cg, cm, ci, cal)
+        return item + (torch.tensor(i, dtype=torch.long),) if self.online else item
 
 
 class EpochSampler(torch.utils.data.Sampler):
@@ -946,10 +964,11 @@ IDENTITY_ARGS = ("backbone", "synthetic", "n_cameras", "undistort", "detach_scor
                  "batch", "accum", "lr", "weight_decay", "cosine", "epochs", "steps", "score_w",
                  "seed", "spread", "overfit", "overfit_n", "epoch_unit", "amp", "tf32",
                  "fused_adam", "compile", "grow", "grow_scenes", "scorer_mode", "init_from", "pdm_labels",
-                 "pdm_only")
+                 "pdm_only", "yaw_wrap", "nav_mode", "labeller", "label_backend")
 # ⭐ an identity key ADDED after runs began: an OLD checkpoint lacks it and must read as the value
 # those runs actually used, or every pre-existing run would refuse its own resume
-IDENTITY_DEFAULTS = {"scorer_mode": "fixed", "init_from": None, "pdm_labels": None, "pdm_only": False}
+IDENTITY_DEFAULTS = {"scorer_mode": "fixed", "init_from": None, "pdm_labels": None, "pdm_only": False,
+                     "yaw_wrap": "on", "nav_mode": "goal", "labeller": "bank", "label_backend": "pdm"}
 
 
 def warm_start(model, path: str) -> dict:
@@ -1080,6 +1099,17 @@ def run(a) -> int:
               f"workers={a.workers}"
               + ("   (DEPARTURE from the paper's FP32)" if a.amp != "none" or a.tf32 else ""))
     cfg = REFeConfig.for_backbone(a.backbone)
+    online = (a.labeller == "online")
+    if online and (a.grow or a.scorer_mode != "fixed" or a.onpolicy_targets or a.pdm_labels or a.pdm_only):
+        print("  REFUSING: --labeller online replaces the banked/on-policy label sources; it cannot be combined with --grow, --scorer-mode onpolicy, "
+              "--onpolicy-targets, --pdm-labels or --pdm-only.")
+        return 4
+    if online and a.label_backend == "pdm" and not a.metric_cache:
+        print("  REFUSING: --labeller online with the pdm backend needs --metric-cache (the D9 parts directory, refe/build_metric_cache.py).")
+        return 4
+    if a.nav_mode != "goal":
+        cfg.nav_mode = a.nav_mode
+        print(f"  NAV MODE: {a.nav_mode} -- the student is conditioned on the discrete navigation command (the paper's input), not on goal points")
     # ⭐ EVERY DEPARTURE IS A FLAG, AND EVERY FLAG IS PRINTED. A run that silently differs from the
     # default is how an ablation becomes an unexplained result three weeks later.
     if a.n_cameras is not None:
@@ -1186,7 +1216,7 @@ def run(a) -> int:
     # ⭐ ON-POLICY MODE (PI decision 2026-09-26, B): the fixed candidate bank is NOT loaded -- the
     # paper supervises the scorer with the student's own proposals only, and at full scale the fixed
     # bank costs GBs of Python lists in every DataLoader worker for rows this mode never reads.
-    scorer_bank = ScorerBank(a.scorer_targets if not OP else None, sizes=grow_snap)
+    scorer_bank = ScorerBank(a.scorer_targets if not (OP or online) else None, sizes=grow_snap)
     op_bank = None
     if OP:
         op_bank = OnPolicyBank(OP, cfg.n_proposals, cfg.horizon_steps, sizes=grow_snap,
@@ -1214,6 +1244,9 @@ def run(a) -> int:
         for name, mean, sd, frac, inert in scorer_bank.variance_report():
             flag = "  *** CANNOT RANK: constant within every frame" if inert else ""
             print(f"      {name:14s} {mean:6.3f} {sd:10.3f} {100*frac:9.1f} %{flag}")
+    elif online:
+        print("  SCORER (P6): ONLINE PDM labeller -- each micro-batch's OWN proposals are scored by NAVSIM's simulator while the next forward runs (lag 0); "
+              "the fixed candidate bank is NOT loaded")
     elif not OP:
         print("  scorer bank: NONE -- the scorer falls back to the zero PLACEHOLDER and "
               "proposal selection stays arbitrary")
@@ -1221,7 +1254,7 @@ def run(a) -> int:
                     limit=a.overfit_n if a.overfit else None, spread=a.spread,
                     scorer=scorer_bank if scorer_bank.n_rows else None,
                     max_missing_frac=a.max_missing_images, calib=a.calib, sizes=grow_snap,
-                    onpolicy=op_bank)
+                    onpolicy=op_bank, online=online)
     if not a.calib:
         print("  *** NO --calib: every tuple is lifted with the ONE baked rig (pre-R22 behaviour). "
               "An ABLATION -- PETR, the paper's cited embedding, uses each sample's own. ***")
@@ -1312,6 +1345,15 @@ def run(a) -> int:
         cov_norm = max(sum(len(e["traj"]) for e in scorer_bank.by.values()) / float(len(ds)), 1e-3)
     if op_bank is not None:
         cov_norm = onpolicy_cov_norm(ds, op_bank, cfg.n_proposals)
+    lab = None
+    if online:
+        import online_labeller as OL
+        # a CONSTANT denominator (all M proposals of every sample): a guard-skipped sample contributes LESS gradient instead of being upweighted, and
+        # --accum stays exactly equivalent to one large batch
+        cov_norm = float(cfg.n_proposals)
+        lab = OL.OnlineLabeller(backend=a.label_backend, workers=a.label_workers, metric_cache=a.metric_cache or None, timeout_s=a.label_timeout_s,
+                                python=a.label_python or None, n_prop=cfg.n_proposals, horizon=cfg.horizon_steps)
+        print(f"  ONLINE LABELLER: backend {a.label_backend}  workers {a.label_workers}  metric cache {a.metric_cache}  timeout {a.label_timeout_s:g} s")
     print(f"  score-loss normaliser: {cov_norm:.4f} covered candidates/sample x batch "
           f"(CONSTANT, so --accum is exactly equivalent to one large batch)")
     opt.zero_grad(set_to_none=True)          # the window is opened here, then after every step
@@ -1339,6 +1381,8 @@ def run(a) -> int:
         meta = {"backbone": a.backbone, "weights_dir": wdir_used, "frozen_sha256": frozen_sha,
                 "per_sample_calib": bool(a.calib),
                 "n_cameras": cfg.n_cameras, "cameras": list(cfg.cameras)}
+        if cfg.nav_mode != "goal":
+            meta["nav_mode"] = cfg.nav_mode         # ckpt_io.config_for_checkpoint: the planner builds the SAME model (absent => goal, every checkpoint before P6)
         ck_path = run_dir / "ckpt_last.pt"
         summ = run_dir / "summary.json"
         if summ.exists():
@@ -1432,6 +1476,10 @@ def run(a) -> int:
               "scorer_frames": len(getattr(scorer_bank, "by", {}) or {}),
               "cov_norm": cov_norm, "snapshot_bytes": sum(grow_snap.values()) if grow_snap else None,
               "at": _now()}
+        if online:                           # P6 / G-CLOCK: step-0 bank, registered schedule and where the commands come from
+            ev.update({"labeller": "online", "label_backend": a.label_backend, "nav_mode": cfg.nav_mode, "yaw_wrap": a.yaw_wrap,
+                       "epochs": a.epochs, "steps": a.steps, "epoch_len": epoch_len, "accum": a.accum, "batch": a.batch,
+                       "command_sources": getattr(ds, "cmd_sources", None)})
         if op_bank is not None:              # on-policy mode only: a fixed run's rows are unchanged
             ev.update({"scorer_mode": "onpolicy", "onpolicy_sets": len(op_bank.by),
                        "onpolicy_navsim_dac_sets": op_bank.n_navsim_dac,
@@ -1474,11 +1522,16 @@ def run(a) -> int:
 
     t0 = time.time() - elapsed0          # printed elapsed continues across resumes
     last_ck = time.time()
-    if a.grow and run_dir is not None:
+    if (a.grow or online) and run_dir is not None:
         _append_jsonl(run_dir / "metrics.jsonl", _bank_event())
+    pend = None                              # online labeller: the micro-batch whose labels have not been consumed yet (its graph is alive)
+    bce_comp = [float("nan")] * 6
+    t_log0 = time.time()
     while step < a.steps:
         sampler.set_epoch(epoch, start=pos)
-        for img, ego, goal, tgt, cand_xy, cand_tg, cand_m, cand_id, cal in dl:
+        for batch in dl:
+            img, ego, goal, tgt, cand_xy, cand_tg, cand_m, cand_id, cal = batch[:9]
+            ridx = batch[9] if len(batch) > 9 else None
             img, ego, goal, tgt, cand_xy, cand_tg, cand_m, cand_id = (
                 x.to(dev, non_blocking=True)
                 for x in (img, ego, goal, tgt, cand_xy, cand_tg, cand_m, cand_id))
@@ -1493,9 +1546,19 @@ def run(a) -> int:
                 else:
                     traj, score = model(img, ego, goal, calib=cal if cal.numel() else None)
             traj, score = traj.float(), score.float()      # every loss and assignment in FP32
-            l_traj, idx = wta_loss(traj, tgt)
+            # P6 / D5: --yaw-wrap on (default) is today's wrapped yaw L1, bit for bit; off is the paper's literal L1. parts=True returns the two terms the
+            # P6 profile logs (pos_L1, yaw_L1); the sum l_traj is the same expression as before.
+            l_traj, idx, l_pos, l_yaw = wta_loss(traj, tgt, yaw_wrap=(a.yaw_wrap == "on"), parts=True)
             n_cand = float(cand_m.sum())
-            if OP is not None:
+            if online:
+                # ⭐ P6 / D1 + D2 + D4. The scorer scored ITS OWN proposals (`score`, candidates detached inside the model); their detached copies go to the
+                # CPU pool NOW; the loss on them is taken only when their labels return (deferred backward, below). No extra forward, lag 0.
+                props_np = traj.detach().double().cpu().numpy()
+                metas = [{k: ds.rows[int(j)].get(k) for k in ("log_name", "token", "rank", "aug", "step")} for j in ridx]
+                cur = {"stamp": micro, "step": step, "B": int(img.shape[0]), "score": score, "l_traj": l_traj, "l_pos": l_pos, "l_yaw": l_yaw,
+                       "idx": idx, "props": props_np, "h": lab.submit(micro, step, metas, props_np)}
+                l_score = None
+            elif OP is not None:
                 if op_live:
                     # ⭐ THE PAPER'S SUPERVISION: every labelled trajectory's six predicted components
                     # against the teacher simulator's verdict on THAT trajectory -- no assignment.
@@ -1580,13 +1643,55 @@ def run(a) -> int:
                 assign_d = float("nan")
             n_seen += int(img.shape[0])
             pos += int(img.shape[0])
+            if online:
+                # ⭐ D4: DEFERRED BACKWARD. Within an accumulation window the weights are fixed, so the proposals of micro-batch k are exactly those of k's
+                # own forward. Order: F(k) -> submit(k) [above] -> collect(k-1) -> B(k-1) -> F(k+1); the window's LAST micro-batch is drained before the
+                # step, so backward order == forward order (the accumulated gradient is bit-identical to the undeferred one given the same labels).
+                done = [pend] if pend is not None else []
+                pend = cur
+                if (micro + 1) % a.accum == 0:
+                    done.append(pend)
+                    pend = None
+                for P in done:
+                    labels_np, mask_np, linfo = lab.collect(P["h"], step)
+                    # the array the labeller scored must be THIS micro-batch's own detached proposals (the trainer keeps its own copy and re-hashes it)
+                    if any(OL.sha_of(P["props"][j]) != P["h"]["shas"][j] for j in range(P["B"])):
+                        raise RuntimeError(f"LABEL/PROPOSAL IDENTITY VIOLATED: the array submitted for labelling is not micro-batch {P['stamp']}'s own proposals")
+                    if linfo["stamp"] != P["stamp"] or linfo["lag_steps"] != 0:
+                        raise RuntimeError(f"label clock violated: labels stamped {linfo['stamp']} (lag {linfo['lag_steps']} steps) consumed by micro-batch {P['stamp']}")
+                    lab_t = torch.from_numpy(labels_np).to(dev)
+                    msk = torch.from_numpy(mask_np).to(dev)
+                    bce = F.binary_cross_entropy_with_logits(P["score"], lab_t, reduction="none")            # [B, M, 6]
+                    per = bce.mean(-1)
+                    denom = max(cov_norm * float(P["B"]), 1.0)
+                    l_score = (per * msk[:, None]).sum() / denom * a.score_w
+                    with torch.no_grad():
+                        bce_comp = [float(v) for v in ((bce * msk[:, None, None]).sum((0, 1)) / denom)]
+                        has = msk > 0
+                        if bool(has.any()):
+                            pa = _pdm_aggregate(torch.sigmoid(P["score"][has]))
+                            ta = _pdm_aggregate(lab_t[has])
+                            pick = ta.gather(1, pa.argmax(1, keepdim=True)).squeeze(1)
+                            op_win[0] += float(pick.sum())
+                            op_win[1] += float(ta.mean(1).sum())
+                            op_win[2] += float(ta.max(1).values.sum())
+                            op_win[3] += int(has.sum())
+                            op_win[4] += 0.0                      # label lag in steps: asserted 0 above
+                        else:
+                            n_uncovered += 1
+                        n_cov += int(has.sum())
+                    ((P["l_traj"] + l_score) / a.accum).backward()
+                    l_traj, l_pos, l_yaw, idx = P["l_traj"], P["l_pos"], P["l_yaw"], P["idx"]
+                    assign_d = 0.0                                # the labelled trajectories ARE the current proposals (identity asserted by sha256)
+                    del P
             # ⭐ GRADIENT ACCUMULATION. `step` counts OPTIMISER steps, never micro-batches, so
             # `--steps` and the cosine schedule's `T_max` keep meaning the same thing whatever
             # `--accum` is. Dividing by accum makes the accumulated gradient the MEAN over the
             # effective batch, which is what a single large batch would have produced; clipping
             # then sees the real global norm rather than one micro-batch's.
-            loss = (l_traj + l_score) / a.accum
-            loss.backward()
+            if not online:
+                loss = (l_traj + l_score) / a.accum
+                loss.backward()
             micro += 1
             if micro % a.accum:
                 continue                     # still filling the window: no step, no step count
@@ -1604,15 +1709,30 @@ def run(a) -> int:
                       f"scorer_cov {100.0*n_cov/max(n_seen,1):5.1f} %  "
                       f"lr {opt.param_groups[0]['lr']:.2e}  {time.time()-t0:6.1f}s")
                 if run_dir is not None:
-                    _append_jsonl(run_dir / "metrics.jsonl", {
+                    row = {
                         "step": step, "epoch": epoch, "pos": pos, "traj_L1": float(l_traj),
                         "score": float(l_score), "winners": uniq, "batch": int(img.shape[0]),
                         "assign_d": assign_d, "scorer_cov": n_cov / max(n_seen, 1),
                         "lr": opt.param_groups[0]["lr"], "elapsed_s": time.time() - t0,
                         "samples": n_seen,
                         "cuda_max_mem_gb": (torch.cuda.max_memory_allocated() / 2**30
-                                            if dev == "cuda" else None)})
-                if OP is not None:
+                                            if dev == "cuda" else None),
+                        "pos_L1": float(l_pos), "yaw_L1": float(l_yaw)}
+                    if online:
+                        # P6: the six BCE components (NC, DAC, EP, TTC, C, DDC), unweighted, of the step's last micro-batch: score == score_w * mean(bce_*)
+                        row.update({"bce_nc": bce_comp[0], "bce_dac": bce_comp[1], "bce_ep": bce_comp[2],
+                                    "bce_ttc": bce_comp[3], "bce_c": bce_comp[4], "bce_ddc": bce_comp[5]})
+                    _append_jsonl(run_dir / "metrics.jsonl", row)
+                    if online:
+                        ls = lab.take_stats()
+                        dt_w = max(time.time() - t_log0, 1e-9)
+                        t_log0 = time.time()
+                        _append_jsonl(run_dir / "metrics.jsonl", {
+                            "step": step, "event": "labeller", "sets": ls["n_sets"], "labelled": ls["n_labelled"], "no_parts": ls["n_no_parts"],
+                            "failed": ls["n_failed"], "stall_s": ls["stall_s"], "stall_frac": ls["stall_s"] / dt_w,
+                            "queue_depth": ls["queue_sum"] / max(ls["n_submits"], 1), "lag_hist": ls["lag_hist"],
+                            "cpu_s_per_set": ls["cpu_s"] / max(ls["n_sets"], 1), "window_s": dt_w})
+                if OP is not None or online:
                     # selection skill on the labelled sets since the last log line: the share of the
                     # gain over a random pick that the scorer's argmax realises (SPEC E-6's measure)
                     n_w = op_win[3]
@@ -1713,6 +1833,8 @@ def run(a) -> int:
             json.dump(summary, f, indent=1)
         os.replace(tmp, run_dir / "summary.json")
         print(f"  saved {fin} (sha256 {fin_sha[:12]}) and summary.json (done=true)")
+    if lab is not None:
+        lab.close()
     print("TRAIN_DONE")
     return 0
 
@@ -1839,6 +1961,22 @@ def build_parser() -> argparse.ArgumentParser:
                          "the executed plans replace all six components of the sets they were computed on")
     ap.add_argument("--pdm-only", action="store_true",
                     help="with --pdm-labels: the scorer is trained ONLY on sets carrying PDM targets (no mixed sources)")
+    # ---- P6 (SPEC_P6_PAPER_FAITHFUL.md section 2). EVERY default below reproduces P2 / SFT-4 behaviour bit for bit; the P6 argv NAMES each one.
+    ap.add_argument("--yaw-wrap", choices=("on", "off"), default="on",
+                    help="D5. on = the yaw error is wrapped to (-pi, pi] (today's behaviour); off = the paper's literal L1 on the raw yaw difference. "
+                         "PI ruling P6-Y is OPEN: the P6 argv must name it, the default does not decide.")
+    ap.add_argument("--nav-mode", choices=("goal", "command"), default="goal",
+                    help="D6. goal = two Fourier goal points (P2/SFT-4); command = the paper's discrete navigation command (cmd_embed; no goal encoder is built)")
+    ap.add_argument("--labeller", choices=("bank", "online"), default="bank",
+                    help="D1. bank = the banked/on-policy label sources (unchanged); online = NAVSIM PDM targets on each sample's OWN current proposals, "
+                         "computed by a CPU pool while the next forward runs (deferred score backward, lag 0)")
+    ap.add_argument("--label-backend", choices=("pdm", "synthetic"), default="pdm",
+                    help="--labeller online: pdm = NAVSIM's simulator on the D9 metric cache; synthetic = a deterministic analytic CONTROL (rehearsal/tests; "
+                         "the P6 launch profile forbids it)")
+    ap.add_argument("--label-workers", type=int, default=12, help="--labeller online: labeller pool size (M-LAB: 12 workers sustain >= 2x the 4.49 sets/s needed)")
+    ap.add_argument("--label-timeout-s", type=float, default=900.0, help="--labeller online: a micro-batch whose labels are not back in this long raises")
+    ap.add_argument("--label-python", default="", help="--labeller online: interpreter for the pdm workers if the NAVSIM stack lives in another venv")
+    ap.add_argument("--metric-cache", default=None, help="--labeller online: the D9 parts directory (refe/build_metric_cache.py) <log>/<token>[__twin].pkl.xz")
     ap.add_argument("--preflight", action="store_true",
                     help="build banks + model, load and check the checkpoint, then exit WITHOUT "
                          "writing anything (safe against a live run directory); prints PREFLIGHT_OK")

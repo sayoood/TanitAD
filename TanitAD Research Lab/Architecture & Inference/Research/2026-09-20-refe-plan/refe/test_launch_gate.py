@@ -46,7 +46,7 @@ def real_args() -> str:
     return m.group(1)
 
 
-P6_ARGS = ("--backbone vitl16 --targets /w/train_grow --images /w/pix --calib /w/calib.json --scorer-sees-trunk --yaw-wrap off --nav-mode command "
+P6_ARGS = ("--backbone vitl16 --targets /w/train_grow --images /w/pix --calib /w/calib.json --metric-cache /w/mc --scorer-sees-trunk --yaw-wrap off --nav-mode command "
            "--labeller online --epochs 25 --batch 4 --accum 64 --lr 2e-4 --weight-decay 0.01 --amp bf16 --score-w 0.1 --tf32 --compile --workers 2 "
            "--log-every 1 --ckpt-every-min 20 --out /w/run --resume")
 
@@ -252,7 +252,7 @@ def static() -> None:
                 ok(False)
             except GT.GateError:
                 ok(True)
-    # ------------------------------------------------------------------ S4 profiles: P2 is clean on the chain's real ARGS; P6 REFUSES today
+    # ------------------------------------------------------------------ S4 profiles: P2 and P6 are clean on their real ARGS; an INCOMPLETE P6 argv is refused
     ra = L.parse_args_string(real_args())
     ok(L.profile_refusals(L.PROFILES["refe_p2"], ra) == [], L.profile_refusals(L.PROFILES["refe_p2"], ra))
     for bad_args, frag in ((GT.argv_from_string(real_args().replace("--lr 5e-5", "--lr 1e-4")), "--lr"),
@@ -262,32 +262,38 @@ def static() -> None:
         rs = L.profile_refusals(L.PROFILES["refe_p2"], bad_args)
         ok(rs and any(frag in r for r in rs), (frag, rs))
     p6 = L.parse_args_string(P6_ARGS)
-    rs = L.profile_refusals(L.PROFILES["refe_p6"], p6)
-    for flag in ("--yaw-wrap", "--nav-mode", "--labeller"):
-        ok(any(flag in r and "DECLARED, NOT BUILT" in r for r in rs), (flag, rs))
-    ok(any("yaw_L1" in r and "DECLARED, NOT BUILT" in r for r in rs) and len(rs) >= 8, rs)
+    ok(L.profile_refusals(L.PROFILES["refe_p6"], p6) == [], L.profile_refusals(L.PROFILES["refe_p6"], p6))             # P6 no longer refuses: D1/D5/D6 are built
     rc = subprocess.run([sys.executable, str(HERE / "launch_gate.py"), "refusals", "--profile", "refe_p6", "--args", P6_ARGS], capture_output=True, text=True,
                         encoding="utf-8")
-    ok(rc.returncode == 5 and "ZZGATE-REFUSEDZZ" in rc.stdout)
+    ok(rc.returncode == 0 and "ZZGATE-CLEANZZ" in rc.stdout, rc.stdout)
     rc2 = subprocess.run([sys.executable, str(HERE / "launch_gate.py"), "refusals", "--profile", "refe_p2", "--args", real_args()], capture_output=True, text=True,
                          encoding="utf-8")
     ok(rc2.returncode == 0 and "ZZGATE-CLEANZZ" in rc2.stdout, rc2.stdout)
-    # P6 end to end: every check FAILS on the profile refusal, no PASS token can exist, and verify refuses whatever token is there
+    # an argv that does NOT name the open ruling (--yaw-wrap) or the labeller is refused, exits 5, and no PASS token can exist
+    p6_bad = [t for t in p6 if t not in ("--yaw-wrap", "off")]
+    rs = L.profile_refusals(L.PROFILES["refe_p6"], p6_bad)
+    ok(any("--yaw-wrap" in r for r in rs), rs)
+    rc3 = subprocess.run([sys.executable, str(HERE / "launch_gate.py"), "refusals", "--profile", "refe_p6", "--args", " ".join(p6_bad)], capture_output=True, text=True,
+                         encoding="utf-8")
+    ok(rc3.returncode == 5 and "ZZGATE-REFUSEDZZ" in rc3.stdout)
+    # the loss terms the profile requires are emitted by the trainer (a declared term the trainer never emits is a launch blocker)
+    src_train = (HERE / "train.py").read_text(encoding="utf-8")
+    ok(all(('"' + t + '"') in src_train for t in L.P6_TERMS), [t for t in L.P6_TERMS if ('"' + t + '"') not in src_train])
     with tempfile.TemporaryDirectory() as td:
         td = Path(td)
         key = GT.load_key(td / "k" / "gate.key", forbid_under=[PKG])
         out = td / "p6"
-        st = L.run_checks(L.PROFILES["refe_p6"], p6, PKG, out)
+        st = L.run_checks(L.PROFILES["refe_p6"], p6_bad, PKG, out)
         ok(set(st.values()) == {"FAIL"} and set(st) == set(L.PROFILES["refe_p6"]["checks"]), st)
-        v, pth, t = L.finalize(L.PROFILES["refe_p6"], p6, PKG, out, key)
-        ok(v == "FAIL" and not list(out.glob("PASS_*")) and any("DECLARED, NOT BUILT" in r for r in t["reasons"]), t["reasons"][:3])
-        good, why, _ = GT.verify_token(pth, p6, PKG, key=key, profile="refe_p6")
+        v, pth, t = L.finalize(L.PROFILES["refe_p6"], p6_bad, PKG, out, key)
+        ok(v == "FAIL" and not list(out.glob("PASS_*")) and any("--yaw-wrap" in r for r in t["reasons"]), t["reasons"][:3])
+        good, why, _ = GT.verify_token(pth, p6_bad, PKG, key=key, profile="refe_p6")
         ok(not good and any("not PASS" in r for r in why))
     # ------------------------------------------------------------------ S5 the registry and the cheap checks, each with its red arm
     import train as T
     dests = {x.dest for x in T.build_parser()._actions if x.dest != "help"}
     ok(set(C.DVB_KINDS) == dests, (sorted(dests - set(C.DVB_KINDS)), sorted(set(C.DVB_KINDS) - dests)))
-    ok(len(dests) == 47)
+    ok(len(dests) == 55)
     ok(C.namespace_reads(C._train_run_source()) <= dests)
     ok(C.check_hyg()["status"] == "PASS")
     for arm, frag in (("no_cfg_guard", "ACCEPTED an undeclared attribute"), ("undeclared_namespace_read", "undeclared_lever_g_hyg")):
@@ -316,7 +322,7 @@ def static() -> None:
     pb = SimpleNamespace(parser_unknown=["--yaw-wrap", "off"], rc="UNRECOGNISED_ARGUMENTS", error="x", log="-")
     ev = C.check_dvb(p6, pb, None, L.PROFILES["refe_p6"])
     ok(ev["status"] == "FAIL" and "does not build" in " ".join(ev["reasons"]))
-    ok(C.instrumented_run(p6, mode="build", work=tempfile.mkdtemp()).rc == "UNRECOGNISED_ARGUMENTS")
+    ok(C.instrumented_run(p6 + ["--not-a-flag", "1"], mode="build", work=tempfile.mkdtemp()).rc == "UNRECOGNISED_ARGUMENTS")
     # D0: the config refuses an undeclared attribute and still copies / pickles
     import pickle
     from model import REFeConfig

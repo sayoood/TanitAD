@@ -90,7 +90,7 @@ def instrumented_run(argv: list, *, mode: str, work, arm: str | None = None) -> 
     cap = SimpleNamespace(mode=mode, model=None, cfg=None, opt=None, sched=None, steps=None, banks={}, bank_calls={}, loaders=[],
                           samplers=[], grads=[], first_batch=None, fwd_dtype=None, warm=None, trunk_dir=None, trunk_loaded=None,
                           rc=None, error=None, args=None, parser_unknown=[], seed=None, tf32=None, compiled=None, device=None,
-                          metrics=[], summary=None, log=str(work / f"{mode}.log"), run_dir=None)
+                          metrics=[], summary=None, log=str(work / f"{mode}.log"), run_dir=None, wta_yaw_wrap=None, bank_len={}, nav_modules={})
     ap = T.build_parser()
     a, unknown = ap.parse_known_args(list(argv))
     cap.parser_unknown, cap.args = unknown, a
@@ -113,6 +113,7 @@ def instrumented_run(argv: list, *, mode: str, work, arm: str | None = None) -> 
             super().__init__(cfg)
             if cap.model is None:
                 cap.model, cap.cfg = self, self.cfg
+                cap.nav_modules = {"cmd_embed": hasattr(self, "cmd_embed"), "goal_freqs": hasattr(self, "goal_freqs")}     # read before the BUILD model is freed
                 if arm_is("frozen_group", arm):       # a group that should train is frozen after the fact
                     for p in self.traj_head.parameters():
                         p.requires_grad_(False)
@@ -162,6 +163,8 @@ def instrumented_run(argv: list, *, mode: str, work, arm: str | None = None) -> 
             def __init__(self, *a_, **k_):
                 cap.banks.setdefault(name, []).append({"args": [plain(x) for x in a_], "kwargs": {k: plain(v) for k, v in k_.items()}})
                 super().__init__(*a_, **k_)
+                if hasattr(self, "scene_groups"):                       # the TargetBank: what the schedule is sized on (G-CLOCK)
+                    cap.bank_len[name] = {"n_tuples": len(self.rows), "n_scenes": len(self.scene_groups)}
         W.__name__ = name
         return W
 
@@ -183,6 +186,12 @@ def instrumented_run(argv: list, *, mode: str, work, arm: str | None = None) -> 
             super().__init__(ds, *a_, **k_)
 
     ws0, snap0, lstate0, mib0 = T.warm_start, T.bank_snapshot, LD.load_state, LD.map_into_backbone
+    wta0 = T.wta_loss
+
+    def rec_wta(traj, target, *a_, **k_):
+        if cap.wta_yaw_wrap is None:                                    # P6 / D5: the yaw_wrap the loss ACTUALLY received (G-DVB's observed value)
+            cap.wta_yaw_wrap = bool(k_.get("yaw_wrap", True))
+        return wta0(traj, target, *a_, **k_)
 
     def rec_warm(model, path):
         cap.warm = path
@@ -230,6 +239,16 @@ def instrumented_run(argv: list, *, mode: str, work, arm: str | None = None) -> 
         for nm in ("SceneEpochSampler", "EpochSampler"):
             patch(T, nm, wrap_sampler(nm))
         patch(T, "DataLoader", RecDL)
+        patch(T, "wta_loss", rec_wta)
+        import online_labeller as OLm
+        OL0 = OLm.OnlineLabeller
+
+        class RecLab(OL0):                                              # P6 / D1: record what the labeller was BUILT with
+            def __init__(self, *a_, **k_):
+                cap.banks.setdefault("OnlineLabeller", []).append({"args": [plain(x) for x in a_], "kwargs": {k: plain(v) for k, v in k_.items()}})
+                super().__init__(*a_, **k_)
+        RecLab.__name__ = "OnlineLabeller"
+        patch(OLm, "OnlineLabeller", RecLab)
         patch(T, "warm_start", rec_warm)
         patch(T, "bank_snapshot", rec_snap)
         patch(LD, "load_state", rec_state)
@@ -343,6 +362,9 @@ DVB_KINDS = {
     "out": "run", "resume": "run", "ckpt_every_min": "run", "ckpt_every_steps": "run", "halt_after_steps": "control",
     "scorer_mode": "built", "onpolicy_targets": "built", "declare_change": "control", "init_from": "built", "pdm_labels": "built",
     "pdm_only": "built", "preflight": "control",
+    # P6 (SPEC_P6 section 2): each new lever has its observed row in `dvb_rows`
+    "yaw_wrap": "built", "nav_mode": "built", "labeller": "built", "label_backend": "built", "label_workers": "built", "label_timeout_s": "built",
+    "label_python": "built", "metric_cache": "built",
 }
 DVB_REASON = {"score_w": "weights the score BCE inside run(); observed through the live `score` term (G-LIVE), statically traced here",
               "log_every": "logging cadence", "out": "output directory", "resume": "supervised relaunch",
@@ -386,7 +408,25 @@ def dvb_rows(a, b, s) -> list:
     add("calib", a.calib, tk.get("calib"), "TargetBank(calib=)")
     add("max_missing_images", a.max_missing_images, tk.get("max_missing_frac"), "TargetBank(max_missing_frac=)")
     add("synthetic", bool(a.synthetic), bool(tk.get("synthetic")), "TargetBank(synthetic=)")
-    add("scorer_targets", a.scorer_targets if a.scorer_mode != "onpolicy" else None, sb["args"][0], "ScorerBank(path)")
+    add("scorer_targets", a.scorer_targets if (a.scorer_mode != "onpolicy" and a.labeller != "online") else None, sb["args"][0], "ScorerBank(path)")
+    # ---- P6 levers: the BUILT value is read off the built objects, never off the namespace
+    lb = (b.banks.get("OnlineLabeller") or [None])[0]
+    add("labeller", a.labeller, "online" if lb is not None else "bank", "an OnlineLabeller is built iff --labeller online")
+    if tb.get("kwargs") is not None:
+        add("labeller", a.labeller == "online", bool(tk.get("online")), "TargetBank(online=)")
+    if lb is not None:
+        lk = lb["kwargs"]
+        add("label_backend", a.label_backend, lk.get("backend"), "OnlineLabeller(backend=)")
+        add("label_workers", a.label_workers, lk.get("workers"), "OnlineLabeller(workers=)")
+        add("label_timeout_s", a.label_timeout_s, lk.get("timeout_s"), "OnlineLabeller(timeout_s=)")
+        add("label_python", a.label_python or None, lk.get("python"), "OnlineLabeller(python=)")
+        add("metric_cache", a.metric_cache or None, lk.get("metric_cache"), "OnlineLabeller(metric_cache=)")
+    has_cmd, has_goal = bool(b.nav_modules.get("cmd_embed")), bool(b.nav_modules.get("goal_freqs"))
+    add("nav_mode", a.nav_mode, cfg.nav_mode, "cfg.nav_mode")
+    add("nav_mode", a.nav_mode, "command" if (has_cmd and not has_goal) else "goal" if (has_goal and not has_cmd) else "BOTH-OR-NEITHER",
+        "which navigation encoder the model BUILT (cmd_embed xor goal_freqs)")
+    if s is not None and s.wta_yaw_wrap is not None:
+        add("yaw_wrap", a.yaw_wrap == "on", bool(s.wta_yaw_wrap), "the yaw_wrap kwarg the loss function actually received")
     add("scorer_mode", a.scorer_mode, "onpolicy" if ob is not None else "fixed", "an OnPolicyBank is built iff onpolicy")
     if a.scorer_mode == "onpolicy":
         add("onpolicy_targets", a.onpolicy_targets, ob["args"][0] if ob else None, "OnPolicyBank(path)")
@@ -538,9 +578,10 @@ def check_live(argv: list, cap, profile: dict, arm=None, rehearsal=False, contro
                 x["finite"] = x["finite"] and r["finite"]
                 x["grad_seen"] += r["n_grad"]
         det["groups"] = agg
-        for g in sorted(set(agg) - set(TRAINABLE_GROUPS) - set(FROZEN_GROUPS)):
+        trainable = TRAINABLE_GROUPS + (("cmd_embed",) if getattr(cap.cfg, "nav_mode", "goal") == "command" else ())
+        for g in sorted(set(agg) - set(trainable) - set(FROZEN_GROUPS)):
             reasons.append(f"parameter group {g!r} is neither declared trainable nor declared frozen (a module was added without a declaration)")
-        for g in TRAINABLE_GROUPS:
+        for g in trainable:
             x = agg.get(g)
             if x is None or x["numel"] == 0:
                 reasons.append(f"declared trainable group {g!r} is absent from the model")
@@ -555,7 +596,7 @@ def check_live(argv: list, cap, profile: dict, arm=None, rehearsal=False, contro
             if x is not None and (x["grad_seen"] != 0 or x["n_req"] != 0):
                 reasons.append(f"declared-frozen group {g!r} received gradient / requires grad (its control must read exactly 0)")
         det["frozen_control_exact_zero"] = all(agg.get(g, {"grad_seen": 0})["grad_seen"] == 0 for g in FROZEN_GROUPS)
-    if cap.args.scorer_mode == "onpolicy":
+    if cap.args.scorer_mode == "onpolicy" or getattr(cap.args, "labeller", "bank") == "online":
         cov = steps[-1].get("scorer_cov") if steps else None
         det["scorer_cov_last"] = cov
         if not (cov and cov > 0):
@@ -784,4 +825,112 @@ def check_clock(argv: list, b, profile: dict, arm=None, rehearsal=False) -> dict
             reasons.append(f"realised steps {b.steps} != registered {exp['steps']}")
         if b.samplers and b.samplers[0]["n"] != exp["epoch_len"]:
             reasons.append(f"epoch length {b.samplers[0]['n']} != registered {exp['epoch_len']}")
+        if "n_tuples" in exp:                         # P6 / D8: the FULL bank from step 0 (no --grow), not a growing one
+            bl = (b.bank_len or {}).get("TargetBank") or {}
+            det["bank"] = bl
+            if bl.get("n_tuples") != exp["n_tuples"]:
+                reasons.append(f"step-0 bank has {bl.get('n_tuples')} tuples != registered {exp['n_tuples']}")
+            if bl.get("n_scenes") != exp["epoch_len"]:
+                reasons.append(f"step-0 bank has {bl.get('n_scenes')} scenes != registered {exp['epoch_len']}")
     return verdict("G-CLOCK", reasons, det, arm=arm, rehearsal=rehearsal)
+
+
+# ============================================================================================ P6: G-LIVE-LAB, G-LIVE-MEM, G-EGR (POD-RUN: they consume their instruments' output)
+# These test components that need the pod (the NAVSIM stack on a D9 cache, a CUDA device, the network). The INSTRUMENTS write raw measurements --
+# refe/diag_p6_labeller_identity.py (LAB), the trainer's own metrics.jsonl from a 200-micro-batch run (MEM), refe/hf_egress.py gate (EGR) -- and the gate JUDGES them
+# (thresholds live HERE, not in the instrument), binds their sha256 into the token, and never greps. Each judge has a fixture-driven regression arm in test_p6_levers.py.
+LAB_NEED_SETS_S, LAB_MARGIN, LAB_STALL_MAX, MEM_MAX_GB, MEM_MIN_MICRO = 4.49, 1.5, 0.05, 44.0, 200
+
+
+def judge_lab(lab: dict, smoke_metrics: list, workers_launch: int, arm=None) -> list:
+    """lab = diag_p6_labeller_identity.py's JSON; smoke_metrics = the SMOKE trainer's metrics rows. Returns the failure reasons."""
+    r = []
+    if arm_is("lab_two_workers", arm):
+        lab = dict(lab, workers=2, throughput_sets_s=lab.get("throughput_sets_s", 0.0) * 2.0 / max(lab.get("workers", 2), 1))
+    if not lab.get("identity_ok") or lab.get("n_sets", 0) < 64 or lab.get("identity_equal_sets", 0) < 64:
+        r.append(f"D1(a) identity: {lab.get('identity_equal_sets')}/{lab.get('n_sets')} sets bit-identical to the offline labeller (need all, over >= 64 sets)")
+    if not lab.get("stale_refused"):
+        r.append("D1(c): a one-step-stale proposal was NOT refused")
+    bar = LAB_MARGIN * LAB_NEED_SETS_S
+    if not lab.get("throughput_sets_s", 0.0) >= bar:
+        r.append(f"throughput {lab.get('throughput_sets_s')} sets/s < {bar:.3f} (1.5 x {LAB_NEED_SETS_S})")
+    if lab.get("workers") != workers_launch:
+        r.append(f"throughput measured at {lab.get('workers')} workers but the launch argv says --label-workers {workers_launch}")
+    ev = [m for m in smoke_metrics if m.get("event") == "labeller"]
+    if not ev:
+        r.append("the SMOKE run logged no `labeller` event (the online labeller did not run)")
+    else:
+        if any(set(e.get("lag_hist", {})) - {"0"} for e in ev):
+            r.append(f"label lag != 0 in the smoke run: {[e['lag_hist'] for e in ev][:2]}")
+        sets, lab_n = sum(e["sets"] for e in ev), sum(e["labelled"] for e in ev)
+        if sets == 0 or lab_n / sets <= 0.0:
+            r.append(f"coverage {lab_n}/{sets}: no set was labelled")
+        stall = max(e["stall_frac"] for e in (ev[1:] or ev))        # the first window includes pool start-up; steady state is judged
+        if stall > LAB_STALL_MAX:
+            r.append(f"GPU stall {100 * stall:.1f} % of a window > {100 * LAB_STALL_MAX:.0f} %")
+    return r
+
+
+def judge_mem(rows: list, arm=None) -> list:
+    """rows = metrics.jsonl step rows of a >= 200-micro-batch run on the real card. Peak must be <= 44 GB (SPEC_P6 3.2: two live graphs on a 48 GB A40)."""
+    r = []
+    sr = [m for m in rows if "cuda_max_mem_gb" in m and "traj_L1" in m]
+    if not sr or any(m["cuda_max_mem_gb"] is None for m in sr):
+        return ["no CUDA memory reading (cuda_max_mem_gb is null): G-LIVE-MEM needs a real A40, it cannot be judged on CPU"]
+    peak = max(m["cuda_max_mem_gb"] for m in sr) + (20.0 if arm_is("mem_over_budget", arm) else 0.0)
+    n_micro = max(m.get("samples", 0) for m in sr) / max(sr[-1].get("batch", 1), 1)
+    if n_micro < MEM_MIN_MICRO:
+        r.append(f"only {n_micro:.0f} micro-batches were observed (< {MEM_MIN_MICRO})")
+    if peak > MEM_MAX_GB:
+        r.append(f"peak {peak:.2f} GB > {MEM_MAX_GB} GB: drop to micro-batch 2 x accum 128 (SPEC_P6 3.2)")
+    return r
+
+
+def judge_egr(res: dict, local_size=None, remote_size=None, arm=None) -> list:
+    """res = hf_egress.py gate's g_egr_result.json; optionally the first ckpt_last.pt push's local vs LISTING size (the spec's check)."""
+    r = []
+    if res.get("pass") is not True:
+        r.append("hf_egress.py gate did not PASS")
+    if not (res.get("main") or {}).get("ok"):
+        r.append(f"the gate JSON push failed: {(res.get('main') or {}).get('reason')}")
+    if not (res.get("regression") or {}).get("refused_by_server"):
+        r.append("the deliberate-regression push was not refused BY THE SERVER (our own pre-check proves nothing about the token)")
+    if local_size is not None:
+        want = local_size + (1 if arm_is("egr_wrong_size", arm) else 0)
+        if remote_size != want:
+            r.append(f"ckpt_last.pt: remote listing size {remote_size} != expected {want}")
+    return r
+
+
+def _consume(path):
+    if not path or not Path(path).is_file():
+        return None
+    return json.loads(Path(path).read_text(encoding="utf-8"))
+
+
+def check_live_lab(lab_json, smoke_cap, argv: list, arm=None, rehearsal=False) -> dict:
+    import gate_token as GT_
+    lab = _consume(lab_json)
+    if lab is None:
+        return verdict("G-LIVE-LAB", [f"labeller instrument output missing: {lab_json} (run refe/diag_p6_labeller_identity.py on the pod)"], {}, arm=arm,
+                       rehearsal=rehearsal)
+    w = int((GT_.flag_values(argv, "--label-workers") or ["12"])[0])
+    reasons = judge_lab(lab, smoke_cap.metrics if smoke_cap is not None else [], w, arm=arm)
+    return verdict("G-LIVE-LAB", reasons, {"lab": lab, "file_sha256": GT_.sha256_file(lab_json)}, arm=arm, rehearsal=rehearsal)
+
+
+def check_live_mem(mem_metrics, arm=None, rehearsal=False) -> dict:
+    import gate_token as GT_
+    if not mem_metrics or not Path(mem_metrics).is_file():
+        return verdict("G-LIVE-MEM", [f"memory-run metrics missing: {mem_metrics}"], {}, arm=arm, rehearsal=rehearsal)
+    rows = [json.loads(ln) for ln in Path(mem_metrics).read_text(encoding="utf-8").splitlines() if ln.strip()]
+    return verdict("G-LIVE-MEM", judge_mem(rows, arm=arm), {"rows": len(rows), "file_sha256": GT_.sha256_file(mem_metrics)}, arm=arm, rehearsal=rehearsal)
+
+
+def check_egr(egr_json, ckpt_sizes=None, arm=None, rehearsal=False) -> dict:
+    import gate_token as GT_
+    res = _consume(egr_json)
+    if res is None:
+        return verdict("G-EGR", [f"hf_egress.py gate output missing: {egr_json}"], {}, arm=arm, rehearsal=rehearsal)
+    ls, rs = (ckpt_sizes or (None, None))
+    return verdict("G-EGR", judge_egr(res, ls, rs, arm=arm), {"result": res, "file_sha256": GT_.sha256_file(egr_json)}, arm=arm, rehearsal=rehearsal)

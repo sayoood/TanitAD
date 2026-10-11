@@ -15,7 +15,7 @@
 **Data and schedule.**
 - REFe ViT-L/16 trained from DINOv3 with fresh rank-32 Q/V LoRA and fresh heads.
 - The final run's bank: 189,888 tuples over 103,037 scenes, full from step 0.
-- 25 scene-epochs = 10,063 optimiser steps at 4 × 64.
+- 25 scene-epochs = 10,075 optimiser steps at 4 × 64 (25 × ⌈103,037 / 256⌉; corrected pre-data on 2026-10-11 from 10,063).
 
 **Optimiser.** AdamW, lr 2e-4 cosine to 0, no warm-up, wd 0.01, clip 1.0, bf16 + TF32 (declared departure), seed 0.
 

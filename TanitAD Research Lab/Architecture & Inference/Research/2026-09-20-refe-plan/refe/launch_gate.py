@@ -28,7 +28,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 import gate_token as GT  # noqa: E402
 
-CHECKS = ("G-HYG", "G-DVB", "G-LIVE", "G-CLOCK", "G-EVAL", "G-CKPT", "G-SUITE", "G-P2GATE")
+CHECKS = ("G-HYG", "G-DVB", "G-LIVE", "G-CLOCK", "G-EVAL", "G-CKPT", "G-SUITE", "G-P2GATE", "G-LIVE-LAB", "G-LIVE-MEM", "G-EGR")
 SUITE = [{"script": "test_p2r_chain.py", "token": "ZZTEST_PASS"}, {"script": "test_launch_gate.py", "args": ["--static", "--no-banked"], "token": "ZZLG_STATIC_PASS"}]
 FORBIDDEN = ("--synthetic", "--overfit", "--overfit-n", "--overfit-thresh", "--spread", "--break-optimizer", "--halt-after-steps",
              "--declare-change", "--preflight", "--cpu", "--n-cameras", "--no-undistort", "--no-cosine", "--weights")
@@ -48,13 +48,21 @@ PROFILES = {
     # SPEC_P6_PAPER_FAITHFUL.md section 5.  ⛔ REFUSES TODAY: --yaw-wrap / --nav-mode / --labeller are D5 / D6 / D1 and are NOT built, and the
     # trainer's metrics carry no pos / yaw / per-component BCE terms.  Flag and term NAMES are PROVISIONAL until the implementer lands them.
     "refe_p6": {**_BASE, "name": "refe_p6", "data_flags": ("--targets", "--images", "--calib", "--metric-cache"),
-                "checks": ("G-HYG", "G-DVB", "G-LIVE", "G-CLOCK", "G-EVAL", "G-CKPT", "G-SUITE"), "na_ok": (), "live_terms": P6_TERMS,
-                "forbidden_flags": FORBIDDEN + ("--grow", "--grow-scenes", "--onpolicy-targets", "--init-from"),
-                "required_flags": {"--scorer-sees-trunk": None, "--yaw-wrap": "off", "--nav-mode": "command", "--labeller": "online",
+                "suite": SUITE + [{"script": "test_p6_levers.py", "args": ["--fast"], "token": "ZZP6_PASS"}],
+                # G-LIVE-LAB / G-LIVE-MEM / G-EGR are POD-RUN: the gate consumes their instruments' output (--gate-lab-json / --gate-mem-metrics / --gate-egr-json)
+                "checks": ("G-HYG", "G-DVB", "G-LIVE", "G-CLOCK", "G-EVAL", "G-CKPT", "G-SUITE", "G-LIVE-LAB", "G-LIVE-MEM", "G-EGR"), "na_ok": (),
+                "live_terms": P6_TERMS,
+                "forbidden_flags": FORBIDDEN + ("--grow", "--grow-scenes", "--onpolicy-targets", "--init-from", "--pdm-labels", "--pdm-only",
+                                                "--scorer-mode", "--label-backend"),
+                # --yaw-wrap must be NAMED in the argv; its VALUE is the PI's open ruling P6-Y (on = wrapped, today's behaviour; off = the paper's literal L1).
+                # TODO(Master Mind): once the PI rules P6-Y, replace None with "on" or "off" so the gate asserts the ruling, not just the presence.
+                "required_flags": {"--scorer-sees-trunk": None, "--yaw-wrap": None, "--nav-mode": "command", "--labeller": "online",
                                    "--epochs": "25", "--batch": "4", "--accum": "64", "--lr": "2e-4", "--weight-decay": "0.01", "--amp": "bf16",
                                    "--score-w": "0.1"},
-                "provisional_flags": ("--yaw-wrap", "--nav-mode", "--labeller"),
-                "expect_schedule": {"epochs": 25, "steps": 10063, "epoch_len": 103037}},
+                "provisional_flags": (),
+                # SPEC_P6 section 0.2 wrote 10,063 steps (= ceil(25 x 103,037 / 256)); the trainer's own definition (train.py: epochs x ceil(epoch_len / (batch x
+                # accum)), re-derived independently by G-DVB) gives 25 x 403 = 10,075 -- the final run's measured step count. The profile registers the TRAINER's.
+                "expect_schedule": {"epochs": 25, "steps": 10075, "epoch_len": 103037, "n_tuples": 189888}},
     # the dev-box rehearsal: P2's levers on the tiny bank.  Exercises every instrument; its evidence is REHEARSAL and can never mint.
     "refe_rehearsal": {**_BASE, "name": "refe_rehearsal", "data_flags": ("--targets", "--scorer-targets", "--init-from", "--onpolicy-targets",
                                                                           "--pdm-labels"),
@@ -144,15 +152,20 @@ def write_evidence(out_dir: Path, ev: dict, binding: dict, data: dict) -> Path:
     return GT.write_json(out_dir / f"evidence_{ev['check']}.json", ev)
 
 
+def gate_inputs_of(p2_gate_json=None, lab_json=None, mem_metrics=None, egr_json=None) -> dict:
+    return {k: v for k, v in (("gate:p2_gate_json", p2_gate_json), ("gate:lab_json", lab_json), ("gate:mem_metrics", mem_metrics),
+                              ("gate:egr_json", egr_json)) if v}
+
+
 def run_checks(prof: dict, argv: list, pkg: Path, out_dir: Path, *, only=None, arm=None, gate_sets=None, gate_pdm=None, gate_bank=None,
-               p2_gate_json=None, commit=None) -> dict:
+               p2_gate_json=None, commit=None, lab_json=None, mem_metrics=None, egr_json=None) -> dict:
     """Run every check of the profile (or `only`), writing evidence files.  Returns {check: status}."""
     import gate_checks as C
     out_dir.mkdir(parents=True, exist_ok=True)
     work = out_dir / "work"
     tree = GT.tree_manifest(pkg)
     binding = GT.binding_of(prof["name"], commit, GT.tree_digest(tree), argv)
-    gate_inputs = {"gate:p2_gate_json": p2_gate_json} if p2_gate_json else {}
+    gate_inputs = gate_inputs_of(p2_gate_json, lab_json, mem_metrics, egr_json)
     data = GT.data_manifest(argv, prof["data_flags"], gate_inputs)
     rehearsal = bool(prof.get("rehearsal"))
     want = [c for c in (prof["checks"] + tuple(prof.get("na_ok", ()))) if (only is None or c in only)]
@@ -169,7 +182,7 @@ def run_checks(prof: dict, argv: list, pkg: Path, out_dir: Path, *, only=None, a
         return status
     b_argv, s_argv = derived_argvs(prof, argv, work, gate_sets, gate_pdm, gate_bank)
     need_b = any(c in want for c in ("G-DVB", "G-CLOCK"))
-    need_s = any(c in want for c in ("G-LIVE", "G-EVAL", "G-DVB"))
+    need_s = any(c in want for c in ("G-LIVE", "G-EVAL", "G-DVB", "G-LIVE-LAB"))
     b = C.instrumented_run(b_argv, mode="build", work=work / "build", arm=arm) if need_b else None
     if b is not None:
         _free(b)                      # the BUILD model is not needed again (a second ViT-L would sit on the pod's GPU through the smoke)
@@ -191,6 +204,12 @@ def run_checks(prof: dict, argv: list, pkg: Path, out_dir: Path, *, only=None, a
         emit(C.check_suite(prof2, arm=arm, rehearsal=rehearsal))
     if "G-P2GATE" in want:
         emit(consume_p2_gate(p2_gate_json, arm=arm, rehearsal=rehearsal))
+    if "G-LIVE-LAB" in want:
+        emit(C.check_live_lab(lab_json, s, argv, arm=arm, rehearsal=rehearsal))
+    if "G-LIVE-MEM" in want:
+        emit(C.check_live_mem(mem_metrics, arm=arm, rehearsal=rehearsal))
+    if "G-EGR" in want:
+        emit(C.check_egr(egr_json, arm=arm, rehearsal=rehearsal))
     return status
 
 
@@ -228,10 +247,11 @@ def collect(out_dir: Path, check: str):
     return GT.read_json(p) if p.is_file() else None
 
 
-def finalize(prof: dict, argv: list, pkg: Path, out_dir: Path, key: bytes, *, p2_gate_json=None, commit=None):
+def finalize(prof: dict, argv: list, pkg: Path, out_dir: Path, key: bytes, *, p2_gate_json=None, commit=None, lab_json=None, mem_metrics=None,
+             egr_json=None):
     """Mint the token from the evidence ON DISK.  Every required check must have usable PASS evidence bound to this launch."""
     tree = GT.tree_manifest(pkg)
-    gate_inputs = {"gate:p2_gate_json": p2_gate_json} if p2_gate_json else {}
+    gate_inputs = gate_inputs_of(p2_gate_json, lab_json, mem_metrics, egr_json)
     data = GT.data_manifest(argv, prof["data_flags"], gate_inputs)
     binding = GT.binding_of(prof["name"], commit, GT.tree_digest(tree), argv)
     reasons = profile_refusals(prof, argv) + GT.data_problems(data)
@@ -301,8 +321,10 @@ def cmd_run(a) -> int:
         src = (GT.flag_values(argv, "--targets") or [None])[0]
         print("  carved the smoke bank:", F.carve_gate_bank(src, a.gate_sets, a.gate_bank), flush=True)
     run_checks(prof, argv, pkg, out, only=set(a.only.split(",")) if a.only else None, arm=arm, gate_sets=a.gate_sets, gate_pdm=a.gate_pdm,
-               gate_bank=a.gate_bank, p2_gate_json=a.p2_gate_json, commit=commit)
-    verdict, path, tok = finalize(prof, argv, pkg, out, key, p2_gate_json=a.p2_gate_json, commit=commit)
+               gate_bank=a.gate_bank, p2_gate_json=a.p2_gate_json, commit=commit, lab_json=a.gate_lab_json, mem_metrics=a.gate_mem_metrics,
+               egr_json=a.gate_egr_json)
+    verdict, path, tok = finalize(prof, argv, pkg, out, key, p2_gate_json=a.p2_gate_json, commit=commit, lab_json=a.gate_lab_json,
+                                  mem_metrics=a.gate_mem_metrics, egr_json=a.gate_egr_json)
     for r in tok["reasons"][:8]:
         print("  REASON:", r[:300])
     print(f"verdict {verdict} -> {path}", flush=True)
@@ -359,6 +381,9 @@ def main(argv=None) -> int:
             p.add_argument("--gate-pdm")
             p.add_argument("--gate-bank")
             p.add_argument("--p2-gate-json")
+            p.add_argument("--gate-lab-json", help="refe_p6: diag_p6_labeller_identity.py --out (G-LIVE-LAB)")
+            p.add_argument("--gate-mem-metrics", help="refe_p6: metrics.jsonl of a >= 200-micro-batch run on the real card (G-LIVE-MEM)")
+            p.add_argument("--gate-egr-json", help="refe_p6: hf_egress.py gate's g_egr_result.json (G-EGR)")
         if name == "verify":
             p.add_argument("--token", required=True)
             p.add_argument("--commit")

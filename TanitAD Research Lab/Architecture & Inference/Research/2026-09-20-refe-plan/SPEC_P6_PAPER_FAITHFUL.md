@@ -61,9 +61,9 @@ edited it (another document's owner).
 | quantity | value | class |
 |---|---|---|
 | bank | 189,888 tuples over **103,037 scenes** | MEASURED, final run `bank` events, epochs 4–27 |
-| work | 25 × 103,037 = **2,575,925 sample-passes = 10,063 optimiser steps** at 256 | arithmetic |
+| work | 25 × 103,037 = **2,575,925 sample-passes = 10,075 optimiser steps** at 256 (25 × ⌈103,037 / 256⌉ = 25 × 403: the trainer rounds the partial last batch UP per epoch; corrected 2026-10-11 from 10,063 = the pooled ceiling, which the trainer never runs. The final run's 10,075 is MEASURED) | arithmetic |
 | pure training step, no labeller GPU work | **57.0 s** | MEASURED, median of epochs 0–11; epochs 12–27 with the on-policy dump read 60.99 s |
-| pure training time | 10,063 × 57.0 s = **159.3 h = 6.64 days** | MEASURED basis |
+| pure training time | 10,075 × 57.0 s = **159.5 h = 6.65 days** | MEASURED basis |
 | checkpoints + egress | +2 % | ESTIMATED; already inside the 168.97 h |
 | **L1** (deferred score backward, §3.2): GPU stall ≤ 5 % (gate) | **6.8–7.1 days** | ESTIMATED |
 | L1 forced to micro-batch 2 by memory (§3.2) | **6.8–8.2 days** | ESTIMATED; batch-2 per-sample throughput UNVERIFIED |
@@ -146,7 +146,7 @@ Each test also has a deliberate-regression (mutation) arm.
 | D5 | unwrapped yaw L1 | `dy = (dy + math.pi) % (2*math.pi) - math.pi` `model.py:788`; `yaw_w` 0.1 `:792` | analytic: error 2π−ε gives a yaw loss of **(2π−ε)·0.1** unwrapped (ε·0.1 is the wrapped mutation arm, which must FAIL); with `yaw_w` 0 the yaw-channel gradient is **exactly 0.0**. New flag `--yaw-wrap {on,off}`, **named in argv** (its default must not silently decide) |
 | D6 | command input | goal encoder: `n_goal_points=2` `model.py:170`, `goal_dim` `:511`, `forward(img, ego, goal, ...)` `:684`; the planner builds a `driving_command` one-hot at `planner.py:184/335/346/662` | new `cmd_embed`: **non-zero** gradient; the goal encoder is not built in command mode (assert absent, so its gradient is **exactly 0.0** by construction). `goal_to_command()` (the OpenScene rule; **exact rule UNVERIFIED**, the implementer reads [56]) agrees with NAVSIM `driving_command` on ≥ 95 % of non-twin navtrain tokens, a bar set now. Twins take the command of their own augmented goal. |
 | D7 | twin-route PDM labels | `metric_cache_parts(scenario)` `navsim_pdm_targets.py:87` always uses the scenario route; twin rows carry their parameter in `aug` (`augment_search.py`, docstring l. 34) | for lane-rank twins, build the cache under `route_lane_rank_patch.set_rank(aug)`; goal-horizon twins share the logged-route cache. Test: PDM-Closed's first centerline lane equals the twin's lane; **mutation:** no patch → logged lane → FAIL. ⚠️ Whether PDM-Closed honours the rank patch is UNVERIFIED. **Fallback** (declared): twin samples get trajectory loss only. |
-| D8 | full bank from step 0 | `--grow` `:1742`, `--grow-scenes` `:1747` | G-CLOCK: the bank event at step 0 reads 189,888 / 103,037; realised epochs = 25; steps = 10,063; **mutation:** `--grow` → FAIL |
+| D8 | full bank from step 0 | `--grow` `:1742`, `--grow-scenes` `:1747` | G-CLOCK: the bank event at step 0 reads 189,888 / 103,037; realised epochs = 25; steps = 10,075; **mutation:** `--grow` → FAIL |
 | D9 | metric-cache precompute (`refe/build_metric_cache.py`, new) | `metric_cache_parts` `navsim_pdm_targets.py:87` is deterministic per (token, route) | `score_plans(cached)` == `score_plans(fresh)` **exactly** on 300 tokens; **mutation:** perturb one cached field → FAIL |
 | D10 | `refe/p6_gate.py` + `refe/p6_pod.sh` + a `refe_p6` profile in the launch gate | none; `refe/p2_gate.py` G1–G4 is the pattern | §5 |
 
@@ -253,7 +253,7 @@ What that copy already provides:
 | **G-LIVE** | real-data smoke of 2 optimiser steps (128 micro-batches, ~2 min): the position, yaw and 6 BCE terms are present and finite; every trainable group (LoRA, traj head, scorer, `cmd_embed`) has a non-zero gradient; D2/D3 controls read exactly 0.0 | drop the BCE term; detach the context |
 | **G-LIVE-LAB** | D1(a) identity on ≥ 64 sets; throughput ≥ 1.5 × 4.49 sets/s; L1 stall ≤ 5 %; lag = 0; coverage reported | stale proposals (D1c); a pool of 2 workers must FAIL the throughput bar |
 | **G-LIVE-MEM** | L1 peak ≤ 44 GB at the chosen micro-batch, over 200 micro-batches | – (a measurement; on failure, switch to micro-batch 2) |
-| **G-CLOCK** | step 0 bank = 189,888 / 103,037; the trainer prints realised epochs = 25 and steps = 10,063; each label set is stamped with the micro-batch id whose forward produced its proposals | `--grow`; stamp mismatch |
+| **G-CLOCK** | step 0 bank = 189,888 / 103,037; the trainer prints realised epochs = 25 and steps = 10,075; each label set is stamped with the micro-batch id whose forward produced its proposals | `--grow`; stamp mismatch |
 | **G-EVAL** | `planner.py` builds the identical model from `ckpt_last.pt`; trajectories and scores are bit-identical on real rows (p2_gate G1); labeller and planner use the identical plan transform (`executed_plans8`, repair on) | repair off in the planner only |
 | **G-CKPT** | save → load → resume: model, optimiser, scheduler, sampler position and labeller stamps; 2 resumed steps are bit-identical to uninterrupted ones (`refe/diag_train_resume.py` pattern) | drop the optimiser state |
 | **G-SUITE** | clean-tree `refe` tests and `stack` `pytest -q`, 0 regressions | – |
@@ -279,5 +279,6 @@ What that copy already provides:
 | **P6-P** | bf16 (forced: FP32 is 38 days) | bf16, declared | implied by P6-T (FP32 cannot fit) |
 | **P6-D** | pod data re-fetch (164–449 GB, INHERITED) plus ~1–2 days of setup | approve with the pod | ✅ **DECIDED: data download approved** (PI: *"approve the data download"*) |
 | **P6-G** | launch-gate route (§5) | land the banked gate with a `refe_p6` profile (Master Mind) | ⏳ Master Mind |
+| **P6-N-SRC** | where the TRAINING command comes from (the PI ruled the command as input, P6-N) | — | ✅ **Master Mind, 2026-10-11, within P6-N:** rank-0 rows use **NAVSIM's own `driving_command`** (`refe/annotate_commands.py`, a pod stage), the exact signal the model receives at test; goal-augmented twins (no NAVSIM command exists for an augmented intent) use the goal rule. Why: train/test parity. The goal rule agrees with NAVSIM's command on only **0.90** of rows (MEASURED, `raw/2026-10-11-p6-impl/command_rule_measure.json`), below the 95 % bar, and train/test inconsistency in this very input already cost +1.05 PDMS once (A9, REVIEW_7 §3.5). A declared departure from the paper's literal 'derived from the teacher's goal'. |
 
 ⛔ **NO POD YET, by the PI's own choice (2026-10-11):** *"I did not start the pod. I wait until you give me signal and we have evidence and confidence to surpass the paper."* ⇒ The pod is started by the PI ONLY on the Master Mind's explicit GO signal, and that signal names the evidence it rests on (see `eval/P6_GO_SIGNAL.md`). Deciding P6-T/N/D is not a launch authorisation.

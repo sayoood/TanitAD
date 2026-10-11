@@ -127,6 +127,11 @@ def config_for_checkpoint(cfg, path: str):
     c = copy.deepcopy(cfg)
     if n != c.n_score_components:
         c.n_score_components = n
+    # P6 / D6: a checkpoint trained in command mode says so (train.py writes meta["nav_mode"] only when it is not "goal"); absent = "goal", every
+    # checkpoint before P6 loads exactly as before
+    nav = meta.get("nav_mode")
+    if nav and nav != c.nav_mode:
+        c.nav_mode = nav
     return c
 
 

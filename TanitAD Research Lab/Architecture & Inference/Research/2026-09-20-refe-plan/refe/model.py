@@ -183,6 +183,18 @@ class REFeConfig:
     #     constants cost the whole banked corpus its validity and buy exactly zero information.
     # A corpus with varied vehicles would change this, and then it is a one-line config move.
     ego_dim: int = 7          # vx, vy, ax, ay, yaw_rate, tire_steering_angle, speed
+    # ⭐ P6 / D6 (SPEC_P6_PAPER_FAITHFUL.md section 2, PI ruling 2026-10-11 P6-N). "goal" = today's two Fourier goal points (P2 / SFT-4, bit-identical when
+    # left at the default). "command" = the PAPER's input: a discrete navigation command (NAVSIM driving_command one-hot, order LEFT/STRAIGHT/RIGHT/UNKNOWN)
+    # embedded with the ego kinematics into one ego token. In command mode the goal encoder (`goal_freqs`) is NOT BUILT -- its gradient is absent by
+    # construction -- and `cmd_embed` is. The forward keeps the SAME positional signature (`goal` carries the one-hot), so the planner, the gate's
+    # probes and G-EVAL call it unchanged. Recorded in the checkpoint's meta (ckpt_io.config_for_checkpoint) so the planner builds the same model.
+    nav_mode: str = "goal"
+    n_commands: int = 4
+    cmd_dim: int = 64
+
+    def __post_init__(self):
+        if self.nav_mode not in ("goal", "command"):
+            raise ValueError(f"nav_mode must be 'goal' or 'command', got {self.nav_mode!r}")
 
     def __setattr__(self, name, value):
         """D0 / G-HYG (SPEC_P6 section 2): THE CONFIG REFUSES AN UNDECLARED ATTRIBUTE. A plain dataclass accepts `cfg.undistrot = False`
@@ -514,12 +526,19 @@ class REFe(nn.Module):
         # point with Fourier features rather than feeding raw metres, and a planner's goal is a
         # POSITION whose useful resolution spans centimetres to tens of metres -- exactly the range
         # a linear layer on raw coordinates handles worst. `n_goal_freq` bands per coordinate.
-        self.goal_freqs = nn.Parameter(
-            2.0 ** torch.arange(cfg.n_goal_freq).float(), requires_grad=False)
-        goal_dim = 2 * cfg.n_goal_points * (1 + 2 * cfg.n_goal_freq)
-        self.ego_enc = nn.Sequential(
-            nn.Linear(cfg.ego_dim + goal_dim, cfg.dec_width), nn.GELU(),
-            nn.Linear(cfg.dec_width, cfg.dec_width))
+        if cfg.nav_mode == "goal":
+            self.goal_freqs = nn.Parameter(
+                2.0 ** torch.arange(cfg.n_goal_freq).float(), requires_grad=False)
+            goal_dim = 2 * cfg.n_goal_points * (1 + 2 * cfg.n_goal_freq)
+            self.ego_enc = nn.Sequential(
+                nn.Linear(cfg.ego_dim + goal_dim, cfg.dec_width), nn.GELU(),
+                nn.Linear(cfg.dec_width, cfg.dec_width))
+        else:
+            # P6 / D6: the command, embedded with the ego kinematics into one ego token. No goal encoder exists in this mode.
+            self.cmd_embed = nn.Linear(cfg.n_commands, cfg.cmd_dim, bias=False)
+            self.ego_enc = nn.Sequential(
+                nn.Linear(cfg.ego_dim + cfg.cmd_dim, cfg.dec_width), nn.GELU(),
+                nn.Linear(cfg.dec_width, cfg.dec_width))
         self.queries = nn.Parameter(torch.zeros(1, cfg.n_proposals, cfg.dec_width))
         nn.init.trunc_normal_(self.queries, std=0.02)
         self.dec = nn.ModuleList([CrossBlock(cfg.dec_width, cfg.dec_heads, cfg.dec_width)
@@ -741,9 +760,15 @@ class REFe(nn.Module):
         # ⭐ AND THE TWO DECODERS NOW READ DIFFERENT TENSORS, which is the paper's asymmetry:
         # the trajectory decoder cross-attends to the SCENE tokens, the scoring decoder attends to
         # the VISUAL tokens. Feeding one tensor to both erased that distinction entirely.
-        g = goal.unsqueeze(-1) * self.goal_freqs                     # [B, G, F]
-        goal_feat = torch.cat([goal, g.sin().flatten(1), g.cos().flatten(1)], -1)
-        ego_tok = self.ego_enc(torch.cat([ego, goal_feat], -1)).unsqueeze(1)
+        if self.cfg.nav_mode == "goal":
+            g = goal.unsqueeze(-1) * self.goal_freqs                 # [B, G, F]
+            goal_feat = torch.cat([goal, g.sin().flatten(1), g.cos().flatten(1)], -1)
+            ego_tok = self.ego_enc(torch.cat([ego, goal_feat], -1)).unsqueeze(1)
+        else:
+            if goal.shape[-1] != self.cfg.n_commands:
+                raise ValueError(f"nav_mode='command' needs the one-hot command [B, {self.cfg.n_commands}] in the `goal` slot, "
+                                 f"got {tuple(goal.shape)}")
+            ego_tok = self.ego_enc(torch.cat([ego, self.cmd_embed(goal.to(ego.dtype))], -1)).unsqueeze(1)
         q = self.queries.expand(B, -1, -1) + ego_tok                 # ego token added to queries
         for blk in self.dec:
             q = blk(q, scene_ctx)
@@ -768,7 +793,7 @@ class REFe(nn.Module):
         return traj, self.score_head(s), self.score_trajectories(score_extra, sctx)
 
 
-def wta_loss(traj, target, yaw_w: float = 0.1):
+def wta_loss(traj, target, yaw_w: float = 0.1, yaw_wrap: bool = True, parts: bool = False):
     """Winner-takes-all L1 over POINTS, with yaw as its own weighted term.
 
     ⛔ THE OLD VERSION MIXED RADIANS INTO A METRE MEAN. It computed
@@ -793,10 +818,14 @@ def wta_loss(traj, target, yaw_w: float = 0.1):
     l_pos = pos[ar, idx].mean()
     if traj.shape[-1] > 2:
         dy = traj[ar, idx, :, 2] - target[..., 2]
-        dy = (dy + math.pi) % (2 * math.pi) - math.pi        # wrap; a 359-degree error is 1 degree
+        if yaw_wrap:                                         # P6 / D5: --yaw-wrap {on,off}. ON (the default) is every result before P6, bit for bit.
+            dy = (dy + math.pi) % (2 * math.pi) - math.pi    # wrap; a 359-degree error is 1 degree
+        # OFF is the paper's literal L1 over the raw yaw difference (an error of 2*pi - eps costs (2*pi - eps), not eps). PI ruling P6-Y is OPEN.
         l_yaw = dy.abs().mean()
     else:
         l_yaw = torch.zeros((), device=pos.device)
+    if parts:                                                # the per-term metrics (`pos_L1`, `yaw_L1`) the P6 profile requires
+        return l_pos + yaw_w * l_yaw, idx, l_pos, l_yaw
     return l_pos + yaw_w * l_yaw, idx
 
 

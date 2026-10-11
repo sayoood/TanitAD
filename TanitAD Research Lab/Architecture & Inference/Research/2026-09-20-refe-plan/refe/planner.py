@@ -464,7 +464,10 @@ class REFePlanner(AbstractPlanner):
         implementations of one quantity is how two checks agree on a wrong answer.
         """
         ego_vec = self._ego_vec(ego)
-        goal = self._goal_for(ego).to(self.device)
+        if getattr(self.model.cfg, "nav_mode", "goal") == "command":
+            goal = self._command_for().to(self.device)     # P6 / D6: the paper's input -- NAVSIM's driving_command, no goal points at all
+        else:
+            goal = self._goal_for(ego).to(self.device)
         self.last_inputs = (ego_vec, goal)             # recorded only (Amendment 8's gate (e)); changes nothing
         calib = self._calib_for(self._log_hint) if self.per_sample_calib else None
         with torch.no_grad():
@@ -657,6 +660,15 @@ class REFePlanner(AbstractPlanner):
             diag["goal"] = [round(float(x), 4) for x in g.reshape(-1).tolist()]
             self.goal_diag = diag
         return g.reshape(1, -1)
+
+    def _command_for(self) -> torch.Tensor:
+        """[1, 4] float one-hot (LEFT, STRAIGHT, RIGHT, UNKNOWN) for a command-mode checkpoint (SPEC_P6 D6). The runner sets `driving_command` per scenario
+        (NAVSIM's one-hot); there is NO silent default -- a command-mode model fed a missing command would be answering an unknown question."""
+        import nav_command as NC
+        cmd = getattr(self, "driving_command", None)
+        if cmd is None:
+            raise RuntimeError("this checkpoint is nav_mode='command': set planner.driving_command (NAVSIM's one-hot) before every infer()")
+        return torch.tensor([NC.onehot(NC.from_driving_command(cmd))], dtype=torch.float32)
 
     def _command_name(self) -> str:
         c = self.driving_command
