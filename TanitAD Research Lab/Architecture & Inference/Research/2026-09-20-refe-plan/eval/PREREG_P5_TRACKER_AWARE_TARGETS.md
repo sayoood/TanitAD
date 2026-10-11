@@ -234,4 +234,69 @@ resamples, cluster unit `log_name`):
 
 ## §9 Decisions log
 
-*(empty at writing)*
+### 2026-10-11 · Amendment P5-S: smoothed correction (registered after P5, before any P5-S code or run)
+
+**Why.** The P5 result (`eval/RESULT_P5.md`) read arm (ii) **CONFIRMED** with **LEARNABILITY RISK**:
+- Tc20's median per-row max |acceleration| is 2.824 against t20's 1.371 m/s², which is 2.06×.
+- Heading rate is 1.68×.
+
+§6 says such an arm goes to GPU only after a pre-registered smoothed-label amendment. This is that amendment.
+
+**Hypothesis** (HYPOTHESIS, from §2's construction, not measured). `e20` is a piecewise-linear interpolant of
+`[0, e8]`, so its slope jumps at every half-second knot. Each jump is a second-difference spike in the label, which
+`learnability()` reads as acceleration. A C²-continuous interpolant through the same knots should remove the
+spikes without moving the knots.
+
+**Arms.** Same 1,018 tokens, same `ITERS = 3`, same best-iterate selection, same bootstrap (10,000 resamples, seed
+20260927, log clusters). The only change is the interpolant that spreads `e8` onto the 0.2 s grid in `iterate20`,
+selected by a new flag `--interp`:
+
+| `--interp` | interpolant of `[0, e8]` at knots t = 0, 0.5, …, 4.0 s | role |
+|---|---|---|
+| `linear` | `np.interp`, unchanged | **control**: must reproduce the landed P5 run |
+| `cubic` | `scipy.interpolate.CubicSpline(..., bc_type="natural")` | **primary**, giving Tc20s |
+| `pchip` | `scipy.interpolate.PchipInterpolator` (C¹, no overshoot) | **secondary** |
+
+- The interpolant applies to all three rows of the batch: Tc20, Tw and ident.
+- Tc8 and Hc use P4's 8-pose `compensate` and are unaffected; they are rerun only as a byte-level check.
+
+**Controls**, in addition to §4's C1 and C3–C7, which stay as written:
+- **C2′ (knot exactness under a spline):** `max |e20[KNOT_Q] − e8[KNOT_E8]| ≤ 1e-9`, with the max recorded.
+  - `linear` keeps C2's `array_equal`.
+  - `--mutate knot --interp cubic --controls-only` must read FAIL.
+- **C8 (reproduction):** `--interp linear` must reproduce the landed `raw/2026-10-11-p5-target-labels/p5_labels.json`.
+  - That means every per-row record, every `per_ref` entry and every CI, compared with `"seconds"` stripped.
+  - A mismatch is a gate failure for the whole amendment, and no P5-S verdict is read.
+- **C3** stays binding: Tw under `cubic` must not be CONFIRMED.
+
+**PASS bar for a smoothed arm, committed. All three are required:**
+- (a) **Δ sim8 (Tc20s − T): upper CI bound < 0.**
+- (b) **No adverse guard**, with §6's guards and §6's directions, on Tc20s − T.
+- (c) **Learnability:** Tc20s median per-row max |acceleration| **≤ 2×** t20's, **AND** median per-row max |heading
+  rate| **≤ 2×** t20's.
+
+**How the outcome is read:**
+- `cubic` PASS ⇒ **P5-S PASSED**. Tc20s (cubic) is the label P5-C pre-registers.
+- `cubic` FAIL and `pchip` PASS ⇒ **P5-S PASSED on the secondary**. Tc20s (pchip) is the label, and the doc says
+  the primary failed.
+- Both FAIL ⇒ **P5-S FAILED**. The failed letter (a, b or c) is named for each arm. The committed next lever is
+  **P5-R, a regularised inversion**:
+  - solve for `r20` minimising the 8-pose tracking error plus λ·‖Δ²r20‖², rather than interpolating the error;
+  - it gets its own §9 entry before any code.
+
+**Descriptive reads (no verdict):**
+- Tc20s − Tc20 paired CIs on sim8 and interp8. This asks: does smoothing cost tracking?
+- Dual compliance (sim8 AND interp8) for T, Tc20 and Tc20s.
+- Learnability p95.
+- **Tsel-s**, DERIVED post hoc as in the P5 result: Tc20s where T fails sim8, else T.
+  - Report its dual compliance and its learnability on the selected rows.
+  - It stays an input to the P5-C design, never a verdict.
+- The four families (`eval/p5_families.py`) on the new `exec_Tc20` against T and H. STRATEGIC is UNAVAILABLE in
+  NAVSIM and PAUSED (PI ruling 2026-09-19).
+
+**Not licensed:** the same four limits as §8 apply. A P5-S PASS clears the learnability gate for a P5-C
+pre-registration. It is not a claim that a student learns Tc20s, and it is not a PDMS claim.
+
+**Outputs:**
+- `raw/2026-10-11-p5s-smoothed/p5s_{linear,cubic,pchip}.json` (+ `.npz`, `.log`), `mutate_knot_cubic.{json,log}`
+- `eval/p5s_compare.py`, `eval/RESULT_P5S.md`
