@@ -13858,11 +13858,13 @@
    "sha256": "e4608bdcdc670b50e1a37079fae7e65bba92bfd05e17202825fcaacff703c955",
    "banked": "2026-09-06",
    "tags": [
-    "driving-cot"
+    "driving-cot",
+    "refe-data-selection"
    ],
-   "note": "FactorDrive: adaptive multi-step reasoning driven by planning-critical factors",
+   "note": "FactorDrive: adaptive multi-step reasoning driven by planning-critical factors | FactorDrive: NAVSIM hard-sample mining (PDMS<0.80 subset, 4,910 of 103,288) used for targeted post-training",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-design-dialogue/LIT_COT_INFLUENCE_CONSISTENCY.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-design-dialogue/LIT_COT_INFLUENCE_CONSISTENCY.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-11-refe-data-and-rl/DATA_SELECTION_REVIEW.md"
    ]
   },
   "2503.07656": {
@@ -14154,11 +14156,13 @@
    "tags": [
     "A5",
     "drivor-analysis",
-    "recovered-orphan"
+    "recovered-orphan",
+    "refe-rl-posttrain"
    ],
-   "note": "navhard EPDMS source for E-BE-S1S2-1 Stage-1 fingerprint | index row lost to the pre-2026-08-23 concurrent-write race; bytes verified by sha256, row rebuilt",
+   "note": "navhard EPDMS source for E-BE-S1S2-1 Stage-1 fingerprint | index row lost to the pre-2026-08-23 concurrent-write race; bytes verified by sha256, row rebuilt | CLOVER: closed-loop value estimation and ranking for E2E planning, NAVSIM",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-19-drivor-deep-analysis/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-11-refe-data-and-rl/RL_POSTTRAIN_REVIEW.md",
     "TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-15-epdms-stage1-fingerprint/RESULT.md"
    ]
   },
@@ -17167,6 +17171,258 @@
    "note": "Adam: effective step is invariant to rescaling of the gradient (sec 2.1) -- a loss weight on a parameter group fed by ONE loss barely changes its update; loss budgets matter on SHARED parameters",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/DESIGN.md"
+   ]
+  },
+  "2509.21961": {
+   "key": "2509.21961",
+   "kind": "arxiv",
+   "title": "FlowDrive: moderated flow matching with data balancing for trajectory planning",
+   "authors": [
+    "Lingguang Wang",
+    "Ömer Şahin Taş",
+    "Marlon Steiner",
+    "Christoph Stiller"
+   ],
+   "published": "2025-09-26",
+   "abstract": "Learning-based planners are sensitive to the long-tailed distribution of driving data. Common maneuvers dominate datasets, while dangerous or rare scenarios are sparse. This imbalance can bias models toward the frequent cases and degrade performance on critical scenarios. To tackle this problem, we compare balancing strategies for sampling training data and find reweighting by trajectory pattern an effective approach. We then present FlowDrive, a flow-matching trajectory planner that learns a conditional rectified flow to map noise directly to trajectory distributions with few flow-matching steps. We further introduce moderated, in-the-loop guidance that injects small perturbation between flow steps to systematically increase trajectory diversity while remaining scene-consistent. On nuPlan and the interaction-focused interPlan benchmarks, FlowDrive achieves state-of-the-art results among",
+   "url": "https://arxiv.org/abs/2509.21961",
+   "path": "TanitAD Research Lab/Library/papers/2509.21961_FlowDrive-moderated-flow-matching-with-data-balancing-for-tr.pdf",
+   "bytes": 2551329,
+   "sha256": "3c2a42657519910609fd0006bf813c91c76d333b467f3eeb792e823ac30ab9a1",
+   "banked": "2026-10-11",
+   "tags": [
+    "refe-data-selection"
+   ],
+   "note": "FlowDrive: nuPlan Val14 sampling ablation (abstract-level, verify in review): scenario-type reweighting vs none vs trajectory-pattern balancing | FlowDrive Table 2a nuPlan Val14(R): no weighting 81.91, scenario-type 80.08, trajectory-cluster inverse-frequency 85.37; single run",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-11-refe-data-and-rl/DATA_SELECTION_REVIEW.md"
+   ]
+  },
+  "2512.19270": {
+   "key": "2512.19270",
+   "kind": "arxiv",
+   "title": "Are All Data Necessary? Efficient Data Pruning for Large-scale Autonomous Driving Dataset via Trajectory Entropy Maximization",
+   "authors": [
+    "Zhaoyang Liu",
+    "Weitao Zhou",
+    "Junze Wen",
+    "Cheng Jing",
+    "Qian Cheng",
+    "Kun Jiang",
+    "Diange Yang"
+   ],
+   "published": "2025-12-22",
+   "abstract": "Collecting large-scale naturalistic driving data is essential for training robust autonomous driving planners. However, real-world datasets often contain a substantial amount of repetitive and low-value samples, which lead to excessive storage costs and bring limited benefits to policy learning. To address this issue, we propose an information-theoretic data pruning method that effectively reduces the training data volume without compromising model performance. Our approach evaluates the trajectory distribution information entropy of driving data and iteratively selects high-value samples that preserve the statistical characteristics of the original dataset in a model-agnostic manner. From a theoretical perspective, we show that maximizing trajectory entropy effectively constrains the Kullback-Leibler divergence between the pruned subset and the original data distribution, thereby mainta",
+   "url": "https://arxiv.org/abs/2512.19270",
+   "path": "TanitAD Research Lab/Library/papers/2512.19270_Are-All-Data-Necessary-Efficient-Data-Pruning-for-Large-scal.pdf",
+   "bytes": 3307019,
+   "sha256": "0ecad3563d0f99de0da63e17e443a70edb1d54f81b4d8c1c6979ee553bd9e68b",
+   "banked": "2026-10-11",
+   "tags": [
+    "refe-data-selection"
+   ],
+   "note": "Trajectory-entropy pruning of nuPlan for imitation planning: up to 40% less data at equal closed-loop score",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-11-refe-data-and-rl/DATA_SELECTION_REVIEW.md"
+   ]
+  },
+  "2604.00388": {
+   "key": "2604.00388",
+   "kind": "arxiv",
+   "title": "Gradient-Based Data Valuation Improves Curriculum Learning for Game-Theoretic Motion Planning",
+   "authors": [
+    "Shihao Li",
+    "Jiachen Li",
+    "Dongmei Chen"
+   ],
+   "published": "2026-04-01",
+   "abstract": "We demonstrate that gradient-based data valuation produces curriculum orderings that significantly outperform metadata-based heuristics for training game-theoretic motion planners. Specifically, we apply TracIn gradient-similarity scoring to GameFormer on the nuPlan benchmark and construct a curriculum that weights training scenarios by their estimated contribution to validation loss reduction. Across three random seeds, the TracIn-weighted curriculum achieves a mean planning ADE of $1.704\\pm0.029$\\,m, significantly outperforming the metadata-based interaction-difficulty curriculum ($1.822\\pm0.014$\\,m; paired $t$-test $p=0.021$, Cohen's $d_z=3.88$) while exhibiting lower variance than the uniform baseline ($1.772\\pm0.134$\\,m). Our analysis reveals that TracIn scores and scenario metadata are nearly orthogonal (Spearman $ρ=-0.014$), indicating that gradient-based valuation captures traini",
+   "url": "https://arxiv.org/abs/2604.00388",
+   "path": "TanitAD Research Lab/Library/papers/2604.00388_Gradient-Based-Data-Valuation-Improves-Curriculum-Learning-f.pdf",
+   "bytes": 4504252,
+   "sha256": "bf9702cdc86823890c848a8e866be2d10a10c55067d16e602a5f943445d65f40",
+   "banked": "2026-10-11",
+   "tags": [
+    "refe-data-selection"
+   ],
+   "note": "Gradient-based data valuation curriculum for game-theoretic motion planning on nuPlan",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-11-refe-data-and-rl/DATA_SELECTION_REVIEW.md"
+   ]
+  },
+  "2212.01375": {
+   "key": "2212.01375",
+   "kind": "arxiv",
+   "title": "Embedding Synthetic Off-Policy Experience for Autonomous Driving via Zero-Shot Curricula",
+   "authors": [
+    "Eli Bronstein",
+    "Sirish Srinivasan",
+    "Supratik Paul",
+    "Aman Sinha",
+    "Matthew O'Kelly",
+    "Payam Nikdel",
+    "Shimon Whiteson"
+   ],
+   "published": "2022-12-02",
+   "abstract": "ML-based motion planning is a promising approach to produce agents that exhibit complex behaviors, and automatically adapt to novel environments. In the context of autonomous driving, it is common to treat all available training data equally. However, this approach produces agents that do not perform robustly in safety-critical settings, an issue that cannot be addressed by simply adding more data to the training set - we show that an agent trained using only a 10% subset of the data performs just as well as an agent trained on the entire dataset. We present a method to predict the inherent difficulty of a driving situation given data collected from a fleet of autonomous vehicles deployed on public roads. We then demonstrate that this difficulty score can be used in a zero-shot transfer to generate curricula for an imitation-learning based planning agent. Compared to training on the enti",
+   "url": "https://arxiv.org/abs/2212.01375",
+   "path": "TanitAD Research Lab/Library/papers/2212.01375_Embedding-Synthetic-Off-Policy-Experience-for-Autonomous-Dri.pdf",
+   "bytes": 5879211,
+   "sha256": "f3c10b59a5f2c5c9b39687211df615a85e8977c9ea637c5fccadea258cbc92d4",
+   "banked": "2026-10-11",
+   "tags": [
+    "refe-data-selection"
+   ],
+   "note": "Zero-shot curricula: difficulty-prioritised scenarios, -15% collisions with 10% of the training data (Waymo-style sim, not NAVSIM)",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-11-refe-data-and-rl/DATA_SELECTION_REVIEW.md"
+   ]
+  },
+  "2510.24166": {
+   "key": "2510.24166",
+   "kind": "arxiv",
+   "title": "UniPlanner: A Unified Motion Planning Framework for Autonomous Vehicle Decision-Making Systems via Multi-Dataset Integration",
+   "authors": [
+    "Xin Yang",
+    "Yuhang Zhang",
+    "Wei Li",
+    "Xin Lin",
+    "Wenbin Zou",
+    "Chen Xu"
+   ],
+   "published": "2025-10-28",
+   "abstract": "Motion planning is a critical component of autonomous vehicle decision-making systems, directly determining trajectory safety and driving efficiency. While deep learning approaches have advanced planning capabilities, existing methods remain confined to single-dataset training, limiting their robustness in planning. Through systematic analysis, we discover that vehicular trajectory distributions and history-future correlations demonstrate remarkable consistency across different datasets. Based on these findings, we propose UniPlanner, the first planning framework designed for multi-dataset integration in autonomous vehicle decision-making. UniPlanner achieves unified cross-dataset learning through three synergistic innovations. First, the History-Future Trajectory Dictionary Network (HFTDN) aggregates history-future trajectory pairs from multiple datasets, using historical trajectory sim",
+   "url": "https://arxiv.org/abs/2510.24166",
+   "path": "TanitAD Research Lab/Library/papers/2510.24166_UniPlanner-A-Unified-Motion-Planning-Framework-for-Autonomou.pdf",
+   "bytes": 9057357,
+   "sha256": "ccfda407bd7ed1aaa58667ec79be21aa6f7f77fe3144763c9981bd4ea7de1ae8",
+   "banked": "2026-10-11",
+   "tags": [
+    "refe-data-selection"
+   ],
+   "note": "Multi-dataset (Waymo/Lyft/nuPlan) trajectory learning via shared history-trajectory representation | UniPlanner: trajectory-only multi-dataset planner (history-future trajectory dictionary); no cameras, not NAVSIM; adjacent evidence only",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-11-refe-data-and-rl/DATA_SELECTION_REVIEW.md"
+   ]
+  },
+  "2508.09158": {
+   "key": "2508.09158",
+   "kind": "arxiv",
+   "title": "EvaDrive: Evolutionary Adversarial Policy Optimization for End-to-End Autonomous Driving",
+   "authors": [
+    "Siwen Jiao",
+    "Kangan Qian",
+    "Hao Ye",
+    "Yang Zhong",
+    "Ziang Luo",
+    "Sicong Jiang",
+    "Zilin Huang",
+    "Yangyi Fang",
+    "Jinyu Miao",
+    "Zheng Fu",
+    "Yunlong Wang",
+    "Kun Jiang"
+   ],
+   "published": "2025-08-05",
+   "abstract": "Autonomous driving faces significant challenges in achieving human-like iterative decision-making, which continuously generates, evaluates, and refines trajectory proposals. Current generation-evaluation frameworks isolate trajectory generation from quality assessment, preventing iterative refinement essential for planning, while reinforcement learning methods collapse multi-dimensional preferences into scalar rewards, obscuring critical trade-offs and yielding scalarization bias.To overcome these issues, we present EvaDrive, a novel multi-objective reinforcement learning framework that establishes genuine closed-loop co-evolution between trajectory generation and evaluation via adversarial optimization. EvaDrive frames trajectory planning as a multi-round adversarial game. In this game, a hierarchical generator continuously proposes candidate paths by combining autoregressive intent mod",
+   "url": "https://arxiv.org/abs/2508.09158",
+   "path": "TanitAD Research Lab/Library/papers/2508.09158_EvaDrive-Evolutionary-Adversarial-Policy-Optimization-for-En.pdf",
+   "bytes": 4345607,
+   "sha256": "40aa141f6a96dc7f47c5b34ebbd1beb8a33c19f14635211b81e4cd00d8388311",
+   "banked": "2026-10-11",
+   "tags": [
+    "refe-rl-posttrain"
+   ],
+   "note": "EvaDrive: multi-objective adversarial RL; 94.9 PDMS NAVSIM v1 (ResNet34, 4xH20); ablation 83.1->94.9",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-11-refe-data-and-rl/RL_POSTTRAIN_REVIEW.md"
+   ]
+  },
+  "2509.17940": {
+   "key": "2509.17940",
+   "kind": "arxiv",
+   "title": "DriveDPO: Policy Learning via Safety DPO For End-to-End Autonomous Driving",
+   "authors": [
+    "Shuyao Shang",
+    "Yuntao Chen",
+    "Yuqi Wang",
+    "Yingyan Li",
+    "Zhaoxiang Zhang"
+   ],
+   "published": "2025-09-22",
+   "abstract": "End-to-end autonomous driving has substantially progressed by directly predicting future trajectories from raw perception inputs, which bypasses traditional modular pipelines. However, mainstream methods trained via imitation learning suffer from critical safety limitations, as they fail to distinguish between trajectories that appear human-like but are potentially unsafe. Some recent approaches attempt to address this by regressing multiple rule-driven scores but decoupling supervision from policy optimization, resulting in suboptimal performance. To tackle these challenges, we propose DriveDPO, a Safety Direct Preference Optimization Policy Learning framework. First, we distill a unified policy distribution from human imitation similarity and rule-based safety scores for direct policy optimization. Further, we introduce an iterative Direct Preference Optimization stage formulated as tr",
+   "url": "https://arxiv.org/abs/2509.17940",
+   "path": "TanitAD Research Lab/Library/papers/2509.17940_DriveDPO-Policy-Learning-via-Safety-DPO-For-End-to-End-Auton.pdf",
+   "bytes": 1361439,
+   "sha256": "6d3fab2d91893ea844a392b69e4b57543bd14e2f583221c4c170aeeba3168d13",
+   "banked": "2026-10-11",
+   "tags": [
+    "refe-rl-posttrain"
+   ],
+   "note": "DriveDPO: unified policy distillation + safety DPO on discrete candidates; 90.0 PDMS NAVSIM v1",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-11-refe-data-and-rl/RL_POSTTRAIN_REVIEW.md"
+   ]
+  },
+  "2506.13757": {
+   "key": "2506.13757",
+   "kind": "arxiv",
+   "title": "AutoVLA: A Vision-Language-Action Model for End-to-End Autonomous Driving with Adaptive Reasoning and Reinforcement Fine-Tuning",
+   "authors": [
+    "Zewei Zhou",
+    "Tianhui Cai",
+    "Seth Z. Zhao",
+    "Yun Zhang",
+    "Zhiyu Huang",
+    "Bolei Zhou",
+    "Jiaqi Ma"
+   ],
+   "published": "2025-06-16",
+   "abstract": "Recent advancements in Vision-Language-Action (VLA) models have shown promise for end-to-end autonomous driving by leveraging world knowledge and reasoning capabilities. However, current VLA models often struggle with physically infeasible action outputs, complex model structures, or unnecessarily long reasoning. In this paper, we propose AutoVLA, a novel VLA model that unifies reasoning and action generation within a single autoregressive generation model for end-to-end autonomous driving. AutoVLA performs semantic reasoning and trajectory planning directly from raw visual inputs and language instructions. We tokenize continuous trajectories into discrete, feasible actions, enabling direct integration into the language model. For training, we employ supervised fine-tuning to equip the model with dual thinking modes: fast thinking (trajectory-only) and slow thinking (enhanced with chain-",
+   "url": "https://arxiv.org/abs/2506.13757",
+   "path": "TanitAD Research Lab/Library/papers/2506.13757_AutoVLA-A-Vision-Language-Action-Model-for-End-to-End-Autono.pdf",
+   "bytes": 19549077,
+   "sha256": "ab726d03d44020c67792cf4783a0e05a5615f5f6ee5f2b760f4d69e1502e18d3",
+   "banked": "2026-10-11",
+   "tags": [
+    "refe-rl-posttrain"
+   ],
+   "note": "AutoVLA: GRPO reinforcement fine-tuning of VLA, NAVSIM PDMS 80.54 to 89.11 after RFT",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-11-refe-data-and-rl/RL_POSTTRAIN_REVIEW.md"
+   ]
+  },
+  "2603.06049": {
+   "key": "2603.06049",
+   "kind": "arxiv",
+   "title": "Devil is in Narrow Policy: Unleashing Exploration in Driving VLA Models",
+   "authors": [
+    "Canyu Chen",
+    "Yuguang Yang",
+    "Zhewen Tan",
+    "Yizhi Wang",
+    "Ruiyi Zhan",
+    "Haiyan Liu",
+    "Xuanyao Mao",
+    "Jason Bao",
+    "Xinyue Tang",
+    "Linlin Yang",
+    "Bingchuan Sun",
+    "Yan Wang"
+   ],
+   "published": "2026-03-06",
+   "abstract": "We identify a fundamental Narrow Policy limitation undermining the performance of autonomous VLA models, where driving Imitation Learning (IL) tends to collapse exploration and limit the potential of subsequent Reinforcement Learning (RL) stages, which often saturate prematurely due to insufficient feedback diversity. Thereby, we propose Curious-VLA, a framework that alleviates the exploit-explore dilemma through a two-stage design. During IL, we introduce a Feasible Trajectory Expansion (FTE) strategy to generate multiple physically valid trajectories and a step-wise normalized trajectory representation to adapt this diverse data. In the RL stage, we present Adaptive Diversity-Aware Sampling (ADAS) that prioritizes high-diversity samples and introduce Spanning Driving Reward (SDR) with a focal style weighting to amplify reward's value span for improving sensitivity to driving quality. O",
+   "url": "https://arxiv.org/abs/2603.06049",
+   "path": "TanitAD Research Lab/Library/papers/2603.06049_Devil-is-in-Narrow-Policy-Unleashing-Exploration-in-Driving.pdf",
+   "bytes": 21712830,
+   "sha256": "e1bbda12a3fcfe791ab4d90b7057229bde6c8dfe1d7cf18db88398fcb3ed7f99",
+   "banked": "2026-10-11",
+   "tags": [
+    "refe-rl-posttrain"
+   ],
+   "note": "Devil is in Narrow Policy: exploration in driving VLA RL, NAVSIM",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-11-refe-data-and-rl/RL_POSTTRAIN_REVIEW.md"
    ]
   }
  }
