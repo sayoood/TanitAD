@@ -132,6 +132,15 @@ def check_chain(text, ref_args):
     cv = re.search(r'"\$PY" p2r_carve\.py --sets "\$SETS" .*?--expect "\$\{P2R_EXPECT_SERVED:-174912\}"', text, re.S)
     if not cv or not re.search(r'grep -q "\^ZZCARVE_OK" "\$P2/carve\.log" \|\| refuse', text) or "stage_mark carve" not in text:
         v.append("CARVE_NOT_CHECKED")
+    # every file the chain refuses to start without must EXIST in the package (2026-10-11: a mangled continuation turned the list
+    # into a literal "\n" token, `bash -n` passed, and the pod refused "$PKG/n missing")
+    fl = re.search(r'for f in (.*?); do\n  \[ -f "\$PKG/\$f" \] \|\| refuse', text, re.S)
+    if not fl:
+        v.append("REQUIRED_FILES_LOOP_MISSING")
+    else:
+        for f in fl.group(1).replace("\\\n", " ").split():
+            if not (HERE.parent / f).is_file():
+                v.append("REQUIRED_FILE_ABSENT:" + f)
     v += check_launch_gate(text)
     return v
 
@@ -202,6 +211,10 @@ def mutations(text):
         ("change a training argument", text.replace("--lr 5e-5 --amp", "--lr 1e-4 --amp"), "ARGS_CHANGED"),
         ("drop the token assertion", drop_line(text, '[ -n "${HF_TOKEN:-}" ] || refuse'), "NO_TOKEN_ASSERT"),
         ("drop the label-banking check", drop_line(text, "ZZEGRESS_OK p2r_pdm_labels"), "LABELS_NOT_BANKED_CHECK"),
+        ("the 2026-10-11 mangled continuation", text.replace("splits/navtrain.yaml \\\n", "splits/navtrain.yaml \\n"),
+         "REQUIRED_FILE_ABSENT:\\n"),
+        ("require a file the package does not ship", text.replace("refe/p2r_carve.py splits/", "refe/p2r_carve_gone.py splits/"),
+         "REQUIRED_FILE_ABSENT:refe/p2r_carve_gone.py"),
         ("drop the carve check", drop_line(text, 'grep -q "^ZZCARVE_OK"'), "CARVE_NOT_CHECKED"),
         ("carve without the expected count", text.replace(' \\\n    --expect "${P2R_EXPECT_SERVED:-174912}" --json', ' \\\n    --json'),
          "CARVE_NOT_CHECKED"),

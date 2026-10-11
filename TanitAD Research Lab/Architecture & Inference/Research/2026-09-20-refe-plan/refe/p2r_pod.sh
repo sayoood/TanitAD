@@ -76,7 +76,8 @@ log "chain start (p2r_pod.sh md5 $(md5sum "$0" | cut -c1-12))"
 for f in refe/train.py refe/p2_gate.py refe/p2r_sync.py refe/p2r_gate_prep.py refe/pdm_label_complete.py \
          refe/onpolicy_relabel_pdm.py refe/launch_gate.py refe/gate_token.py refe/gate_checks.py refe/gate_fixture.py \
          refe/test_launch_gate.py refe/test_p2r_chain.py SHIP_MANIFEST.json \
-         code/pod_teacher_env.sh code/pod_train.sh code/pod_dataprep.sh splits/navtrain.yaml \n         refe/p2r_carve.py splits/sft_heldout_logs.txt; do
+         code/pod_teacher_env.sh code/pod_train.sh code/pod_dataprep.sh splits/navtrain.yaml \
+         refe/p2r_carve.py splits/sft_heldout_logs.txt; do
   [ -f "$PKG/$f" ] || refuse "$PKG/$f missing: ship code/ refe/ splits/ to $PKG first"
 done
 # ⛔ never judge the disk with df (a pod volume's quota is invisible to it): WRITE to it.
