@@ -101,3 +101,11 @@ amendment. Stop the pod only after `ZZP2R_DONE` and the PI's say-so.
   (`raw/2026-10-04-sft3/sft.log`). `train.py` has no held-out flag, so without a carve P2 would have trained on them.
   New stage `carve` (`refe/p2r_carve.py`) removes them IN PLACE, so the pre-registered argv is byte-identical. The whole bank
   moves to `onpolicy/sets_full/`; the relabeller's own `served_keys` must equal 174,912, with 0 held-out keys.
+- **Pixel shards all "failed" while extracting fine:** root's `tar` restored the archive's uid 1000, the NFS volume refused every
+  `chown`, and the non-zero exit deleted each tgz with no `.done` marker. Fixed with `--no-same-owner` (`8dafe85`). The unfixed
+  job was stopped by explicit PID; the fixed one re-fetched from shard 1, and shard 1 then wrote `.done_1`.
+- **The relabel failed EVERY set:** `No module named 'navsim'` (43,212 tracebacks in 13 min). No pod script installed NAVSIM;
+  the first REFe pod had it by hand. `pod_teacher_env.sh` now installs NAVSIM v1.1 @ `3e8291b` `--no-deps`, and the chain refuses
+  in seconds unless `navsim_pdm_targets._setup()` prints `ZZPDM_SETUP_OK` (`17b3d2e`). On the pod: 20 of 20 smoke sets labelled.
+- **Relabel rate on this pod, MEASURED 21:25-21:29 UTC:** 212 labels/min with 11 workers while the pixels extract beside it
+  (0 tracebacks). 174,912 sets is therefore about 13.7 h (ESTIMATED from that rate), against the INHERITED 11.3 h above.
