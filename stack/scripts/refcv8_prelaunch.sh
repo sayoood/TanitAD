@@ -142,6 +142,12 @@ gate)
   [ -f "$ARGV" ] && pf PF-OK argv-committed || pf PF-FAIL argv-committed
   # SPEC_REFCV8 A2: the masks re-mined over the 4,572-clip view (the 4,508 old clips' entries identical)
   [ -f "$CODE/stack/tanitad/configs/refcv8_join_label_defects_train4572.json" ] && pf PF-OK joindefects || pf PF-FAIL joindefects
+  # SPEC_REFCV8 A4: every repo-relative input the refcv8 PROFILE names (G-CLOCK references, the FIX-4 tau record) must
+  # be IN the shipped tree -- the gate resolves them against --tree and a missing one reads as "no reference"
+  NPI="$(pyval 'import sys; sys.path.insert(0, sys.argv[1] + "/stack/scripts"); import launch_gate as L; p = L.PROFILES["refcv8"]; print("\n".join([*p["clock_reference"], p["nav_tau_record_default"]]))' "$CODE")"
+  n_pi=0; while IFS= read -r rel; do [ -n "$rel" ] || continue; n_pi=$((n_pi+1))
+    [ -f "$CODE/$rel" ] && pf PF-OK "profile-input:$(basename "$rel")" || pf PF-FAIL "profile-input:$(basename "$rel")"; done <<< "$NPI"
+  [ "$n_pi" -eq 4 ] && pf PF-OK profile-inputs-4 || pf PF-FAIL "profile-inputs-$n_pi-of-4"
   if [ "$DRY" = 1 ] && [ -z "$GSM" ]; then printf 'AUDIT-SKIPPED(dry-run, no --gs-measure)\nAUDIT-OK\n' > "$WORK/audit.txt"
   else GSF="${GSM:-$(ls -1 "$OUTROOT"/gs_measure_*/gs_measure.json 2>/dev/null | tail -1)}"
        py "$HERE/refcv8_assemble_argv.py" --audit "$ARGV" --gs-measure "${GSF:-/nonexistent}" > "$WORK/audit.txt" 2>&1 9>&- 200>&-; fi

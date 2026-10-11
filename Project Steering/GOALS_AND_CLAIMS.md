@@ -16651,3 +16651,8 @@ floor (MEASURED by simulation, iid-normal model).
 | id | record | status |
 |---|---|---|
 | **R8-NAVTAU-A3** (2026-10-12) | SPEC_REFCV8 A3 corrects A2.3. The gate's FIX-4 rule (`nav_tau_reasons`) refuses a tau record whose manifest is not inside `--v2-cache`, so the refcv7 tau (0.18063741505146028, 4,369 view) would have blocked the A2 launch. Re-derived on Thor by the registered rule: the CONTROL on the 4,369 view reproduces the registered record exactly (tau, 746,946 / 576,555 windows, 213,371 / 363,184, J 0.2342). The NEW value on the 4,572 view is **tau 0.1806411302089691** (+3.7e-6 rad; 781,635 / 603,327 windows; J 0.2284), record sha256 `9fa7ca38…`, at `/home/nvidia/data/refcv8/nav_compliance_tau_train4572.json`. No bar reads tau. | CORRECTED; pinned by gate + assembler |
+
+<!-- REFCV8-2026-10-12-A4-GCLOCK -->
+| id | record | status |
+|---|---|---|
+| **R8-GCLOCK-A4** (2026-10-12) | SPEC_REFCV8 A4. On the 4,572-clip view the gate's G-CLOCK (train) reads **225 / 4,572 UNVERIFIED (FAIL)** with refcv7's reference, because it holds 0 of the 203 ADD clips. With the unchanged q4c over the ADD clips: **55 (1.203 %) FAIL**. With the slow-regime q4c (V_MIN 0.5 m/s, pre-registered S2 control n 680, max 32.5 µs vs 1 ms; 0.1–0.3 failed it): **42 (0.919 %) PASS**, 3 clips of margin, 0 violations / 781,635 windows. The regression arm (slow file +0.2 s) gives 2,219 violating windows: FAIL. The 20 ADD clips still unverified are 15 parked (no independent measurement exists) and 5 below the 20-row floor. Cap (1 %, PI E2) and rule unchanged. MEASURED by the gate's own `check --checks G-CLOCK` child job on Thor CPU, tree `fa43d9c`. | ADMITTED (instrument scope); references ship under stack/ |

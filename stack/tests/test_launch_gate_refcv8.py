@@ -98,6 +98,29 @@ def _rules(argv):
     return LG.profile_argv_rules(PROF, argv, _OPTS)
 
 
+# ------------------------------------------------------------------------------------------------ A4 ---- #
+_CR = "stack/tanitad/configs/refcv8_clock_reference"
+
+
+def test_A4_the_clock_references_ship_in_stack_and_cover_the_ADD_clips():
+    """SPEC_REFCV8 A4: G-CLOCK reads THREE independent references, all under stack/ (a Thor tree ships stack/ +
+    taniteval/ only). Counts are LITERALS from the measured gate runs: 4,486 / 4,656 / 4,669 referenced clips."""
+    assert PROF["clock_reference"] == (f"{_CR}/q4c_grid_vs_egolog_ALLTRAIN.json", f"{_CR}/q4c_grid_vs_egolog_ADD203.json",
+                                       f"{_CR}/q4c_grid_vs_egolog_ADD203_slowregime.json")
+    assert PROF["nav_tau_record_default"] == "stack/tanitad/configs/refcv8_nav_compliance_tau_train4572.json"
+    assert LG.PROFILES["refcv7"]["clock_reference"][0].endswith("2026-09-26-refcv6-frozen-trunk-audit/raw/"
+                                                                 "q4c_grid_vs_egolog_ALLTRAIN.json")   # refcv7 unchanged
+    paths = [str(ROOT.parent / r) for r in PROF["clock_reference"]]
+    assert LG.load_clock_reference(paths)[1]["n_reference_clips"] == 4669
+    # DELIBERATE REGRESSIONS: without the slow regime 13 ADD clips are unreferenced (the 55-clip, 1.203 % FAIL);
+    # with ALLTRAIN alone all 203 are (the 225-clip FAIL)
+    assert LG.load_clock_reference(paths[:2])[1]["n_reference_clips"] == 4656
+    assert LG.load_clock_reference(paths[:1])[1]["n_reference_clips"] == 4486
+    rec = json.loads((ROOT.parent / PROF["nav_tau_record_default"]).read_text(encoding="utf-8"))
+    assert repr(rec["tau"]) == "0.1806411302089691" == PROF["required_values"]["--nav-compliance-tau-rad"]
+    assert rec["inputs"]["manifest"]["path"] == "/home/nvidia/data/refcv8-b1-416x1024-train-4572/_v2manifest.pt"
+
+
 # ------------------------------------------------------------------------------------------------ A2 ---- #
 def test_A2_the_full_pass_rows_are_due_in_the_trainers_own_pin():
     """SPEC_REFCV8 A2: --steps 48852 = ONE epoch over 781,635 windows at batch 16 (drop_last). Every launch

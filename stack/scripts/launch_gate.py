@@ -781,8 +781,19 @@ PROFILES["refcv8"] = dict(
     #: quantized label is the speed input), so no flag of this profile awaits a PI value -- the mechanism stays
     pi_pending_values=dict(_R7.get("pi_pending_values") or {}),
     #: SPEC_REFCV8 A3: the FIX-4 tau record derived on the 4,572-clip view (refcv7's record names the 4,369 manifest,
-    #: which `nav_tau_reasons` refuses for a --v2-cache it was not derived inside)
-    nav_tau_record_default="TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/data_coverage_2026-10-12/navtau_train4572/nav_compliance_tau_train4572.json",
+    #: which `nav_tau_reasons` refuses for a --v2-cache it was not derived inside). A4: the gate reads the byte-identical
+    #: copy under stack/ -- a Thor tree ships stack/ + taniteval/ only, and `_resolve_repo_rel` finds nothing else there
+    #: (the research copy: data_coverage_2026-10-12/navtau_train4572/nav_compliance_tau_train4572.json)
+    nav_tau_record_default="stack/tanitad/configs/refcv8_nav_compliance_tau_train4572.json",
+    #: SPEC_REFCV8 A4: G-CLOCK's INDEPENDENT references for the 4,572-clip view = refcv7's ALLTRAIN (4,486 clips) + the
+    #: 170 moving ADD clips (q4c unchanged) + 13 slow ADD clips (q4c unchanged, V_MIN 0.5 m/s, pre-registered control
+    #: S2 n 680 max 32.5 us vs the 1 ms bar). MEASURED gate verdicts: ALLTRAIN only 225 / 4,572 unverified FAIL; + ADD203
+    #: 55 (1.203 %) FAIL; + slow regime 42 (0.919 %) PASS; the slow file shifted +0.2 s -> 2,219 violating windows FAIL.
+    #: Byte-identical copies of the research files (data_coverage_2026-10-12/clockref_add203/ and
+    #: 2026-09-26-refcv6-frozen-trunk-audit/raw/), under stack/ so the shipped tree carries them.
+    clock_reference=("stack/tanitad/configs/refcv8_clock_reference/q4c_grid_vs_egolog_ALLTRAIN.json",
+                     "stack/tanitad/configs/refcv8_clock_reference/q4c_grid_vs_egolog_ADD203.json",
+                     "stack/tanitad/configs/refcv8_clock_reference/q4c_grid_vs_egolog_ADD203_slowregime.json"),
 )
 
 

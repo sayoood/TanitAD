@@ -1,6 +1,6 @@
 # SPEC_REFCV8 — pre-registration of the refcv8 run (REGISTERED by the Master Mind, 2026-10-11)
 
-**Status: REGISTERED (2026-10-11, Master Mind); AMENDED by A1 (2026-10-11, the PI's rulings on the route and speed inputs and three baseline-citation corrections, before any refcv8 number exists; see `## A1`); AMENDED by A2 and A3 (2026-10-12; A3 re-derives the nav tau on the 4,572 view; A2 is the PI's ruling: ONE full pass `--steps 48852` over the 4,572-clip train view with the 203 missing train clips added, eval139 kept out; before any refcv8 number exists; see the last section, `## A2`).** Written 2026-10-04 ~21:20 Berlin (19:20Z) by a design agent as a
+**Status: REGISTERED (2026-10-11, Master Mind); AMENDED by A1 (2026-10-11, the PI's rulings on the route and speed inputs and three baseline-citation corrections, before any refcv8 number exists; see `## A1`); AMENDED by A2, A3 and A4 (2026-10-12; A4 extends G-CLOCK's independent references to the 203 ADD clips; A3 re-derives the nav tau on the 4,572 view; A2 is the PI's ruling: ONE full pass `--steps 48852` over the 4,572-clip train view with the 203 missing train clips added, eval139 kept out; before any refcv8 number exists; see the last section, `## A2`).** Written 2026-10-04 ~21:20 Berlin (19:20Z) by a design agent as a
 draft; the Master Mind's rulings of 2026-10-04 (§13a) and 2026-10-11 (this registration) are folded into the clauses they
 govern. The file keeps its name `SPEC_REFCV8_DRAFT.md` on purpose: 25 files at the tip cite that path (docstrings and
 tests of `taniteval/taniteval/{lead_metrics,ceil_obey,four_families,nav_compliance,night_luma}.py`, and FlyWheel and
@@ -1623,3 +1623,48 @@ V-R8d, V0r, V-R8r, V-TACk, V-TACk-roll, V-TACkr, V-MAP4, V-MAP4-roll, V-MAP4r. V
   byte-for-byte as `…/data_coverage_2026-10-12/navtau_train4572/nav_compliance_tau_train4572.json`. The `refcv8` gate
   profile's `nav_tau_record_default` points at it. The assembler and the gate pin `--nav-compliance-tau-rad 0.1806411302089691` and
   `--nav-compliance-tau-file` to it as LITERALS. The 4,369-view value and file are each REFUSED (`test_A2_the_4369_clip_data_set_is_REFUSED`).
+
+---
+
+## A4 — G-CLOCK's independent references extended to the 203 ADD clips (an instrument-scope decision, no rule change)
+
+**Protocol fields (§12.2).**
+* **Time:** written 2026-10-12 ~01:56 Europe/Berlin (2026-10-11 23:56Z), by the Master Mind.
+* **refcv8 data read before writing: NONE** (the ladder's step counter only).
+* **What changes:** the gate's G-CLOCK check (`launch_gate.py` `load_clock_reference`, `_clock_split`) verifies a MEASURED
+  clip clock only against an INDEPENDENT reference (not the sidecar the trainer reads, fit residual < 5 ms). Clips without
+  one are UNVERIFIED, capped at 1 % (PI E2; unchanged). refcv7's reference `q4c_grid_vs_egolog_ALLTRAIN.json` holds **0
+  of the 203** ADD clips. The refcv8 profile's `clock_reference` becomes three files. All of them are byte-identical copies
+  under `stack/tanitad/configs/refcv8_clock_reference/`: a Thor tree ships stack/ + taniteval/ only, and the gate
+  resolves the profile's paths against it. The same move applies to A3's tau record: `nav_tau_record_default` =
+  `stack/tanitad/configs/refcv8_nav_compliance_tau_train4572.json`. `refcv8_prelaunch.sh` gains a preflight that every
+  profile-named input exists in the shipped tree.
+* **What does NOT change:** the rule, the 1 % cap, the 0.05 s tolerance, the clip set, every bar, refcv7's profile.
+
+### A4.1 The references and the gate's own verdicts (MEASURED; `…/data_coverage_2026-10-12/clockref_add203/`)
+| run | references | unverified (train) | violations / windows | verdict |
+|---|---|---|---|---|
+| C control: 4,369 view, refcv6 sidecar | ALLTRAIN | 22 / 4,369 (0.504 %) | 0 / 746,946 | PASS |
+| B: 4,572 view, ts33 sidecar | ALLTRAIN | 225 / 4,572 (4.92 %) | 0 / 781,635 | FAIL |
+| A | + ADD203 (q4c unchanged: 170 of 203 fit, all resid < 5 ms) | 55 (1.203 %) | 0 / 781,635 | FAIL |
+| **D** | **+ ADD203_slowregime (13 of the 33 stationary ADD clips)** | **42 (0.919 %)** | 0 / 781,635 | **PASS** (3 clips of margin) |
+| E regression: D with the slow file shifted +0.2 s | | 42 | 2,219 windows on exactly 13 clips | FAIL, as it must |
+* **q4c control:** the unchanged builder (md5 `4f394339…`) re-run on all 4,572 clips reproduces every one of the 4,357
+  stored ALLTRAIN entries to 3.3e-14 s.
+* **The slow regime** is the same `fit_clip` with its moving-row floor `V_MIN` lowered from 2.0 to 0.5 m/s. The rule was
+  PRE-REGISTERED in `run_q4c_slow.py` before the run: a threshold is admissible iff, on old moving clips with every row
+  ≥ 2.0 m/s masked out (S2), EVERY clip lands within 1 ms of its ALLTRAIN entry on grid_start and on dt × 200. The
+  smallest admissible threshold of {0.1, 0.2, 0.3, 0.5} is used. 0.1 / 0.2 / 0.3 fail (stop-and-go mis-inversions,
+  9–13 ms). **0.5 passes: S2 n 680, max 32.5 µs, max resid 0.014 ms.**
+* **Independence:** both references invert ego-log positions. The ts33 sidecar's source for the 33 stationary clips is
+  the camera-timestamp route, a different sensor stream. On the 13 slow clips, slow-regime vs camera route agree to
+  max |Δ grid_start| 7.6e-8 s.
+* **Still unverified under D (42), named:** 22 old clips on a fallback clock (the same as refcv7's), plus 20 ADD clips.
+  15 of the 20 are parked within the cache window (path ≤ 0.07 m): no independent measurement exists for them. The cache
+  carries no timestamps, the camera timestamps are the sidecar's own source, and the ego log cannot locate a row that
+  never moved. The other 5 have 11–18 rows above 0.5 m/s, below the instrument's 20-row floor. Reaching them needs
+  `V_MIN` 0.1, which failed the control.
+* **Why this is admissible, not a goalpost move:** the bar is unchanged. Whether the gate's measurement covers the clips
+  is a scope question, and A4 answers it with the gate's own predicate, an unchanged builder, a pre-registered control
+  that a stricter threshold failed, and a regression arm the gate caught. The 3-clip margin is thin. A future corpus
+  change that adds stationary clips will need the same treatment.
