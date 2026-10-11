@@ -490,6 +490,17 @@ Each entry cost hours more than once. CLAUDE.md keeps a one-line index; this fil
   the REMOTE listing, never the local file.** Label sets and other derived data a later arm needs
   get pushed when they are written, not when the arm that uses them finishes. Same family as
   operating standard 3 (*an artifact on one disk is not done*), with the disk being one you rent.
+- ⛔ **A QUOTA GUARD THAT CANNOT READ THE QUOTA MUST REFUSE, AND THE HF LIST ENDPOINTS DO NOT SERVE
+  `usedStorage`.** MEASURED 2026-10-11 against the live API while building
+  `…/2026-09-20-refe-plan/refe/hf_egress.py`: `list_models` / `list_datasets` / `list_spaces` with
+  `expand=["usedStorage"]` return **HTTP 400 "Invalid option"**. Only the per-repo
+  `repo_info(rid, repo_type=…, expand=["usedStorage"])` serves it. So the private total is a list with
+  `expand=["private"]`, then one `repo_info` per private repo. Summed that way it was
+  **199,397,374,781 B against the 1e12 B Pro allowance**.
+  ⚠️ The tempting shortcut is to catch the 400, or read a missing `used_storage` attribute as 0. Either way
+  the guard reports a total of 0 and approves every push, and private storage over 1 TB is **billed, not
+  refused**. ⇒ An unknown `private` flag or `used_storage` **raises**, and the push is refused
+  (`private_used_bytes`, `hf_egress.py:104`). Same family as *a zero is a claim about the probe*.
 
 ## Git hygiene — the mistake that has now happened twice
 
