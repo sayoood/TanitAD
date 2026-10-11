@@ -5351,3 +5351,85 @@ goal-distance scorer. H-REFCV7-1/2/3 are UNTESTED (`GOALS_AND_CLAIMS.md`, correc
 **CORRECTED 2026-10-11 - the figures this subsection carried belong to `refc-base-30k`, not to refcv7.** *(corrected 2026-10-11: was "Oracle-in-fan ADE **0.1914 m** vs selected **0.4728 m** (Δ +0.2813 [+0.2127, +0.3543]); a >2× better candidate on **41.09 %** of windows; `sampler_ranks_the_fan` false. Random-pick control **not yet run** — `D-REFCV7-FANCEIL`." - those figures are REF-C-base at step 29,999: 128 anchors, 881 windows / 40 val episodes (`taniteval/results/scaleab_refc-base-30k_vs_refc-xl-30k.json` `gap["refc-base-30k"]` and `comparisons.oracle_in_fan_full.a`; ADE@2s 0.4728 = `taniteval/results/driving_refc-base-30k.json` `headline.ade_0_2s.mean`, MODEL_REGISTRY REF-C-base results).)*
 **refcv7-r101-s0 @ 50,400** (ckpt_50400.pt md5 b418d0fc4a92a6848c246a6a7c50207b; 4,754 windows / 139 episodes / 117 candidates; T0 DIAGNOSTIC, FULL-SET mean, episode-cluster bootstrap n_boot 2000 - *another draw of EPISODES?* only): oracle-in-fan **0.1143 m** [0.1057, 0.1257] vs selected **0.2772 m** [0.2527, 0.3051] - delta **+0.1630 m [+0.1446, +0.1825]** (paired); a candidate more than 2x better than the selected one exists on **44.17 %** of windows; inference-seed replicate (seed 1, same checkpoint): 0.1145 / 0.2790 / +0.1645 [+0.1454, +0.1847] / 44.95 %; one training seed; `sampler_ranks_the_fan` false (`ckpt/config.json` `selection`).
 Random-pick control now RUN on refcv7 (was: not yet run): uniform-random pick 1.5501 m [1.5081, 1.5905], selected better by +1.2728 [+1.2201, +1.3232], skill fraction 0.8865 (point estimate); but the plain argmax of refined_logits is 0.2732 (-0.0040 [-0.0069, -0.0016] vs selected, separated) and a random pick among the model's own top-2 by refined_logits is 0.2994, so re-ranking by the model's own logits recovers only 0.0040 m of the 0.1630 m gap - the rest is a GT-peeking ceiling. Raw: `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/battery/raw/fanctl_x8/ctl_refcv7_50400_fan_s0.json` (+ `_s1`); narrative `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/battery/RESULT.md` section D-REFCV7-FANCEIL. Not comparable with the base-30k panel (different windows, 117 vs 128 anchors): do not pool or difference them. `D-REFCV7-FANCEIL`.
+
+### 15.4 refcv7-r101-s0 @ 50,400 - baseline rows banked for SPEC_REFCV8 (banked 2026-10-11)
+
+*Why this subsection exists.* `Project Steering/SPEC_REFCV8_DRAFT.md` (REGISTERED 2026-10-11) cites refcv7-50,400 values as the baseline refcv8 is read against; its R10 token-presence check found 8 of 29 cited values in neither this registry nor `GOALS_AND_CLAIMS.md`. **Each value below was re-read from the raw JSON named in its row on 2026-10-11 (MEASURED, our artifact)** - not from the SPEC, a RESULT narrative or a summary. Arm throughout: refcv7-r101-s0 step 50,400, **one training seed** (checkpoint md5s: the table at the top of this section; the md5 lines in the route package, `RESULT_A6.md` L10-11, are INHERITED - they are not inside the JSONs). Every interval answers *another draw of EPISODES (or LOGS)?* only: **training variance UNTESTED**; inference variance is shown as the sampler-seed s0 / s1 pair wherever a second seed exists. Raw files are named as repo paths; the copies read were taken from `origin/agent/arch-inf-20260803` @ `83663c9`.
+
+#### 15.4.1 NavSim on the LEGAL inputs (R7_VMAXOFF) - the BAR-R8-N4 baseline
+
+Tier: NavSim PDM scorer on the model's emitted plan - open-loop plan scoring, T1-family, **not** closed loop (`summary_navtest...json` `tier`). Backend: model arms scored on **Thor**, floors (STOP / CV / ECHO) banked on the dev box, so every LEGAL-minus-floor pair is **MIXED-BACKEND**, admitted under `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-04-navsim-thor-backend/RULING_BACKEND_POLICY.md`. Input set (LEGAL): frames + ego pose/velocity at t0-1.0..t0 + BARE driving_command; max speed = UNKNOWN row (`v_max_valid=0`); no route checkpoint, no turn distance. Estimator: `navsim_log_cluster_bootstrap` (paired: `paired_navsim_log_cluster_bootstrap`), unit `log_name`, n_boot 2000 - blind to training and inference variance.
+
+| suite | refcv7-50,400 LEGAL | 95% interval | n | STOP | paired LEGAL - STOP | CV | paired LEGAL - CV |
+|---|---|---|---|---|---|---|---|
+| navtest PDMS x100 (single-stage token mean) | **70.2048** | [68.55, 71.82] | 12,146 tokens / 136 logs | 61.8202 | **+8.3846** [+6.36, +10.24] separated | 20.6517 | +49.5532 [+47.29, +51.76] separated |
+| navhard official two-stage EPDMS (decimal; x100 = 19.8729) | **0.1987** | [0.1653, 0.2336] | 76 logs / 225 two-stage keys | 0.2985 | **-0.0998** [-0.1383, -0.0627] separated | 0.1148 | +0.0839 [+0.0437, +0.1266] separated |
+
+* **navtest.** Sub-scores x100: NC 89.8073, DAC 87.3703, EP 68.2735, TTC 79.1289, C 99.9424, DDC 94.7143; tokens zeroed by NC or DAC 2624 (STOP: 732). Paired against the privileged-input arm R7_A1 (map posted speed limit; PDMS 69.9904, A1 seed 1 69.8506): +0.2144 [+0.04, +0.40] - **below 2x the inference-seed floor** (|A1 - A1_s1| = 0.1398, 2x = 0.2796), so the speed input is not shown to matter on navtest; the LEGAL arm reproduces the official value to |diff| 0.0e+00.
+* **navhard.** Stage one 0.5222, stage two 0.3902 (`official_rows`); ECHO `ha0_ext` 0.1429, paired LEGAL - ECHO +0.0558 [+0.0220, +0.0920] separated; CV paired as above; device `cuda as_trained`. The dev-box privileged-input arm R7_A1 reads 0.2022 in section 15.1 - a different input set AND backend, set beside, **not** differenced here. LEGAL < STOP on navhard: the arm **loses to doing nothing** on the decisive NavSim bar, as it does at 15.1.
+* **Raw.** `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step50400/thor_scores/navtest/summary_navtest_vmaxoff_legal.THOR.json` (`arms.R7_VMAXOFF`, `pairs.R7_VMAXOFF__minus__*`); `.../thor_scores/navhard/summary_navhard_vmaxoff_legal.THOR.json` (`arms`, `intervals`) and `.../navhard/pairs_navhard_vmaxoff_legal.THOR.json` (`pairs`); run list `.../thor_scores/THOR_RUNS.md` (prints the navtest PDMS 70.2048 and the navhard EPDMS x100 as 19.8729). The summary's own `paired_intervals_vmaxoff_vs_each` key reads ERROR (FileNotFoundError); the navhard pairs are in the separate `pairs_` file above - both paired intervals vs STOP exist, contrary to SPEC_REFCV8 section 6.2's "owed" for the navtest one.
+
+#### 15.4.2 Route following: S-ROUTE (dense A6 capture) and S-GRID (A5 eval grid)
+
+Tier: **T1 open-loop pick** (the model's own selected candidate; SPEC_REFCV8 section 8.1 stamps these T1). The ORACLE-117 row is **T0** (a label-side bound that peeks at GT; a denominator, never a driving number). Estimator: full-set point estimate, **episode-cluster bootstrap** intervals (`taniteval.ci`; the artifacts' `_estimator` field; n_boot is not carried by these files); the REGRET interval is the paired `delta_ci95` of the same bootstrap. Sampler seeds 0 and 1 are two draws of the same checkpoint (inference variance). Pick = rule `V0` (the model as trained, no graft). **S-ROUTE** = `a6_dense_score.json`: capture on Thor, 139 episodes; selection (`capture.window_list`) = every GT-turn window of the 23,772 eval windows (n = 2,317) plus an equal-count seeded random sample of the rest, so it is turn-heavy by design; GT-straight n = 1,347; turn + straight + gentle scored together n = 3,940. **S-GRID** = `route_analysis.json`: the A5 eval grid, 1,112 windows (turnL 40, turnR 67, straight 588, gentle 105, unclassified 312), GT-turn n = 107 windows / 38 episodes.
+
+| quantity | seed 0 | seed 1 | n | note |
+|---|---|---|---|---|
+| S-ROUTE turn direction-correct (V0 pick) | **0.8153** [0.7299, 0.8847] | 0.8131 [0.7259, 0.8860] | 2,317 GT-turn windows | SPEC_REFCV8 cites 0.8153 |
+| S-ROUTE straight direction-correct | **0.9629** [0.9476, 0.9762] | 0.9577 [0.9408, 0.9727] | 1,347 GT-straight windows | SPEC cites it rounded to 0.963 |
+| S-ROUTE straight ADE (m, key `ade`) | 1.6783 [1.4884, 1.8794] | 1.6500 [1.4577, 1.8498] | 1,347 | SPEC cites 1.678 (horizon as stated in SPEC section 8.1: 0-6 s; the JSON key is `ade`) |
+| S-ROUTE turn ADE of the pick (m) | 3.2967 [2.9198, 3.7274] | 3.2736 [2.8897, 3.6909] | 2,317 | |
+| S-ROUTE turn ADE of ORACLE-117 (m, **T0 bound**) | 1.2250 [1.1261, 1.3370] | 1.2288 [1.1294, 1.3427] | 2,317 | the ADE-nearest of the 117 candidates |
+| **REGRET** (m) = pick ADE - ORACLE-117 ADE, paired | **2.0718** [1.7426, 2.4477] | 2.0448 [1.7141, 2.4142] | 2,317 | T0 denominator only; SPEC cites 2.072 [1.743, 2.448] |
+| S-GRID turn direction-correct (pick) | **0.8411** [0.7423, 0.9197] | 0.8505 [0.7553, 0.9241] | 107 windows / 38 ep | `K_core_pick` = `E_e9_pick`; SPEC cites 0.8411 |
+| S-GRID heading-15 (`E_e9_pick_headagree`) | 0.5140 [0.4228, 0.6027] | 0.4953 [0.3934, 0.5955] | 107 windows / 38 ep | SPEC cites 0.514 [0.423, 0.603] |
+| S-GRID random-in-reach pick (control) | 0.3849 [0.3378, 0.4329] | not read | 107 windows | SPEC: the control must read chance; fan-contains (`C_fan_reach`) 1.0000 |
+
+* **Dense heading-15 (0.505 seed 0 / 0.510 seed 1) stays INHERITED** (`RESULT_R1.md` H0; the artifact is on Thor) - not re-read here. **S-ROUTE PRIOR-WRONG-PICK and S-ROUTE LEAD-VIOL are NOT computed** (SPEC_REFCV8 sections 8.2 / 8.7: no plan capture on the A6 list).
+* Raw: `TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv7-route-following/raw/a6_dense_score.json` (`dense_seed{0,1}.V0.{turn,straight}`, `dense_seed{0,1}.ORACLE.turn.ade`) and `.../raw/route_analysis.json` (`chain_eval_s{0,1}.turn`, `class_counts_eval`). A6 and A7 label-file sha256 are recorded inside `a6_dense_score.json` `spec` (expected == on disk).
+
+#### 15.4.3 PRIOR-WRONG-PICK baseline (S-GRID; descriptive, post-hoc, NOT pre-registered)
+
+`TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/raw/d0b_prior_follow.json` (`d0b_prior_follow.py`: banked eval fans, CPU; the prior's side = direction class of the terminal heading of `prior_path`, the `ha0_ext_pose` residual prior). **No interval is carried by this artifact** (point rates on a small n), so none is quoted. Keys `eval_s0g` (sampler seed 0) and `eval_s1`. Tier: T1 open-loop pick.
+
+| quantity | seed 0 (`eval_s0g`) | seed 1 (`eval_s1`) | n |
+|---|---|---|---|
+| **PRIOR-WRONG-PICK**: pick direction-correct on GT-turn windows where the prior's side differs from GT | **0.6739** | 0.6957 | 46 windows (both seeds) |
+| pick direction-correct when the prior is right | 0.9672 | 0.9672 | 61 windows |
+| pick takes the prior's side when the prior is wrong | 0.3043 | 0.2826 | 46 windows |
+| wrong turn picks / of which on the prior's side | 17 / 14 | 16 / 13 | 107 GT-turn windows |
+| prior direction-correct on GT-turn windows | 0.5701 | 0.5701 | 107 windows |
+
+#### 15.4.4 X7 LEAD-VIOL baseline (S6, the 6 s block; Tier T1 open loop)
+
+Raw: `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-11-r7base-fourfamily/raw/lead_viol_s0.json` and `lead_viol_s1.json` (key `S6`); code `.../code/r7base_stageB.py`; narrative `.../RESULT.md` section 4. S6: 3668 windows, 139 episodes, instants 1..6 s (dt 1.0 s); **lead windows 1,151** (join state `LEAD` of the X7 k12/dt0.5 lead block; 75 episodes); **at-risk windows 830** (63 episodes) = lead window AND the human keeps a time gap >= 1.0 s (the human's gap is undefined on 229 lead windows and below 1.0 s on 92). Estimator: episode-cluster bootstrap, n_boot 2000 (`share_of_at_risk_ci` is the package author's own bootstrap over the at-risk windows; `lead_viol` itself emits only the all-lead-window `ci`); paired rows use `paired_episode_cluster_bootstrap`. Sampler seeds 0 / 1 = inference variance: **|s0 - s1| on `share_of_at_risk` = 0.0012**; training variance UNTESTED.
+
+**Denominator (PI ruling 2026-10-11, restated in SPEC_REFCV8 section 8.7 verbatim):** "the PI wrote 'use the human <=1s gap', read as conditioning on the human's 1 s gap" - so the headline is `share_of_at_risk`, over the 830 at-risk windows; `share` (all 1,151 lead windows) and `share_incl_lost_lead` are sensitivity rows, never the bar. **The columns below carry BOTH denominators for EVERY arm - compare arms only within one column.**
+
+| seed | arm | `share` (all lead windows) [95%] (n_viol/n) | **`share_of_at_risk`** [95%] | n at-risk | plan lost the lead | `share_incl_lost_lead` | r7base progress ratio (see caveat) | progress-matched share (ratio >= 0.9) |
+|---|---|---|---|---|---|---|---|---|
+| 0 | refcv7-50,400 (`os`) | 0.0426 [0.0197, 0.0734] (49/1,151) | **0.0590** [0.0272, 0.1002] | 830 | 28 | 0.0652 | 1.1078 | 0.0679 (n 707) |
+| 0 | hold-v0 (`ha0`) | 0.0765 [0.0415, 0.1214] (88/1,151) | **0.1060** [0.0590, 0.1672] | 830 | 43 | 0.1112 | 1.0586 | 0.1424 (n 597) |
+| 0 | echo (`ha0_ext`) | 0.0313 [0.0183, 0.0462] (36/1,151) | **0.0434** [0.0253, 0.0629] | 830 | 33 | 0.0573 | 0.9429 | 0.0501 (n 679) |
+| 0 | STOP | 0.0000 [0.0000, 0.0000] (0/1,151) | **0.0000** [0.0000, 0.0000] | 830 | 43 | 0.0348 | 0.0000 | NA |
+| 1 | refcv7-50,400 (`os`) | 0.0434 [0.0217, 0.0715] (50/1,151) | **0.0602** [0.0295, 0.0977] | 830 | 28 | 0.0660 | 1.1040 | 0.0697 (n 703) |
+| 1 | hold-v0 (`ha0`) | 0.0765 [0.0415, 0.1214] (88/1,151) | **0.1060** [0.0590, 0.1672] | 830 | 43 | 0.1112 | 1.0586 | 0.1424 (n 597) |
+| 1 | echo (`ha0_ext`) | 0.0313 [0.0183, 0.0462] (36/1,151) | **0.0434** [0.0253, 0.0629] | 830 | 33 | 0.0573 | 0.9429 | 0.0501 (n 679) |
+| 1 | STOP | 0.0000 [0.0000, 0.0000] (0/1,151) | **0.0000** [0.0000, 0.0000] | 830 | 43 | 0.0348 | 0.0000 | NA |
+
+Paired (`paired_episode_cluster_bootstrap`, on the **all-lead-window `share`**, n 1,151 - NOT on the at-risk denominator; the refcv8 - refcv7 bar in SPEC_REFCV8 section 8.7(c) is on `share_of_at_risk`, so that paired read is still to be formed):
+
+| seed | pair | delta | n_viol | verdict |
+|---|---|---|---|---|
+| 0 | os - STOP | +0.0426 [+0.0197, +0.0734] | 49 vs 0 | separated |
+| 0 | os - hold-v0 | -0.0339 [-0.0645, -0.0052] | 49 vs 88 | separated |
+| 0 | os - echo | +0.0113 [-0.0074, +0.0352] | 49 vs 36 | NOT separated |
+| 1 | os - STOP | +0.0434 [+0.0217, +0.0715] | 50 vs 0 | separated |
+| 1 | os - hold-v0 | -0.0330 [-0.0651, -0.0037] | 50 vs 88 | separated |
+| 1 | os - echo | +0.0122 [-0.0056, +0.0334] | 50 vs 36 | NOT separated |
+
+* Controls: STOP reads exactly 0.0000 on LEAD-VIOL and 0.000 on progress (STOP is censored by construction: 1003 of 1,151 plan TTCs pinned at the cap); human-as-plan reads 0 by construction (INHERITED from `RESULT.md`/`tests/test_lead_viol.py`, not in the JSON). The arm-to-name mapping hold-v0 = `ha0`, echo = `ha0_ext` is INHERITED from `RESULT.md` section 4 (the JSON carries only the keys). **refcv7 is not better than its echo here** (os - echo not separated at either seed) and is better than hold-v0 (separated).
+* **Denominator trap in the SPEC text:** SPEC_REFCV8 section 8.7(b) prints "hold-v0 0.0765; echo 0.0313" beside the headline 0.0590. Those two controls are the **all-lead-window** `share`; the refcv7 headline is the **at-risk** share. On one denominator the at-risk reads are refcv7 0.0590, hold-v0 0.1060, echo 0.0434 (this table). Quote controls from the same column as the headline.
+* S2 (2 s block) is nearly blind: refcv7 `share_of_at_risk` 0.0054 (5 violations) / 0.0086 (8) over 927 at-risk windows (`S2` key of the same files): reported, not barred.
+
+⛔ **PROGRESS-RATIO CAVEAT - the baseline's `lead_progress_ratio_clipped` is NOT YET COMPUTED (a work item).** The "progress ratio 1.1078 (seed 0) / 1.1040 (seed 1)" in the table is `mean_progress_ratio_plan_over_human` as written by `r7base_stageB.py` L98-L108: a `nanmean` over **all lead-valid windows (n 1,151)** of plan x(6 s) / human x(6 s) - the along-track coordinate of the last grid instant, **unclipped**. The registered instrument `taniteval/taniteval/lead_metrics.py::lead_progress` (L509-L545; MM ruling 2026-10-11) is a different quantity: a per-window **arc-length** ratio over the **at-risk** windows (human arc >= `min_human_arc_m`), and the DECISION reading is `lead_progress_ratio_clipped` - each ratio clipped at 1.0, then averaged - so out-running the human in some windows cannot buy back crawling in others. The raw JSON carries only the aggregate mean and a count (707 of 830 at-risk windows at ratio >= 0.9, seed 0), not per-window ratios, so the clipped value **cannot be derived from it and is not estimated here**. WORK ITEM (CPU, seconds): rebuild the S6 panel with `r7base_stageA.py` from the banked dumps (the `panel_dir` recorded in the JSON is a scratchpad string that did not resolve) and call `lead_progress` for both inference seeds. Until then 1.108 may be quoted only as "r7base mean x-ratio over lead windows" - **never as `lead_progress_ratio` and never against the 0.90 bar.** Holds regardless: STOP reads exactly 0 on it, and a clipped mean is <= 1.0 by construction.
