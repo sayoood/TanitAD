@@ -2800,6 +2800,38 @@ def lead_block_common_grid(path: str, dt: float, k: int):
     return view, idx, meta, info
 
 
+def _merge_distance_keeping(old, new) -> dict:
+    """MERGE the common-grid block into the family's existing ``distance_keeping`` block.
+
+    Every key ``old`` carries survives; ``new`` wins only where both have the key (a computed
+    value must replace an UNAVAILABLE ``status`` / ``reason`` / ``n``). The previous code REPLACED
+    the block, which dropped anything ``old`` held that ``new`` did not rebuild."""
+    merged = dict(old) if isinstance(old, dict) else {}
+    merged.update(new)
+    return merged
+
+
+def _arm_lead_viol(arm, dk, gt, eid_w, lead_win, plan_arc, human_arc, tier, n_boot, seed):
+    """-> ``(block | None, full result | None)``: LEAD-VIOL for one arm on the common grid.
+
+    ``block`` is the JSON-safe record (the result minus its per-window arrays) plus the
+    admissibility ``verdict``; the full result keeps ``_per_window`` for the paired read. A
+    ValueError is an honest "inputs inconsistent" (REFUSED with its reason); a DEFECT exception
+    propagates - it must not become a polite refusal."""
+    from taniteval import lead_metrics as lm
+    try:
+        res = lm.lead_viol(dk, gt, eid_w, lead_valid=lead_win, n_boot=n_boot, seed=seed,
+                           plan_arc=plan_arc, human_arc=human_arc)
+    except DEFECT_EXCEPTIONS:
+        raise
+    except Exception as ex:                                        # noqa: BLE001
+        _p(f"[lead] {arm}: LEAD-VIOL REFUSED - {type(ex).__name__}: {ex}")
+        return _refused(f"lead_viol could not be formed: {type(ex).__name__}: {ex}", tier, 0), None
+    blk = {kk: v for kk, v in res.items() if kk != "_per_window"}
+    blk["verdict"] = lm.lead_viol_verdict(blk)
+    return blk, res
+
+
 def _distance_keeping(rec, files, manifest, lead_path, arms, P_cat, G_all,
                       pairs, eid_w, n_boot, seed, tiers, dt, k, raw_off) -> dict:
     """``rec['refcv3']['distance_keeping']`` + the per-arm LONGITUDINAL patch.
@@ -2880,6 +2912,14 @@ def _distance_keeping(rec, files, manifest, lead_path, arms, P_cat, G_all,
                      "speed accuracy; a censored TTC carries n_closing; scored on "
                      f"the SHARED instants {info['instants_s']} s only")})
     pw, per_arm = {}, {}
+    # the HUMAN path scored against the same lead future: it is both the GT reference below and
+    # the human side of LEAD-VIOL (SPEC_REFCV8 s8.7), so it is computed once, here, before the arms
+    gt = lm.distance_keeping(G_all[:, cols], lead["leads"], lead["lead_lens"],
+                             lead["speeds"], dtv)
+    from taniteval.lead_source import LEAD as _LEAD_STATE
+    lead_win = np.asarray(lead["state"]).astype(str) == _LEAD_STATE
+    human_arc = lm.path_arc_length(G_all[:, cols])
+    lv_res = {}
     for arm in arms:
         dk = lm.distance_keeping(P_cat[arm][:, cols], lead["leads"],
                                  lead["lead_lens"], lead["speeds"], dtv)
@@ -2905,17 +2945,33 @@ def _distance_keeping(rec, files, manifest, lead_path, arms, P_cat, G_all,
             blk["by_speed"] = lm.distance_keeping_by_speed(
                 dk, lead["speeds"], lead["eid"], states=lead["state"],
                 n_boot=n_boot, seed=seed)
+        # ⭐ LEAD-VIOL (SPEC_REFCV8 s8.7 / X7) with the 2026-10-11 rulings: the human-gap-conditioned
+        # `share_of_at_risk` (+ CI), the LEAD-PROGRESS control and the admissibility verdict.
+        # MEASURED 2026-10-11 (r7base): this function used to REPLACE the family block with one that
+        # had no `lead_viol`, because lead_viol is wired only in four_families._distance_keeping,
+        # which this analysis path overrides -> LEAD-VIOL silently never appeared in a refcv3 analysis.
+        lvb, lvr = _arm_lead_viol(arm, dk, gt, eid_w, lead_win,
+                                  lm.path_arc_length(P_cat[arm][:, cols]), human_arc,
+                                  tiers.get(arm), n_boot, seed)
+        if lvb is not None:
+            blk["lead_viol"] = lvb
+        if lvr is not None:
+            lv_res[arm] = lvr
         per_arm[arm] = blk
         # -- patch the canonical family block, and re-check its CI coverage ----
         fam = rec["arms"][arm]["four_families"]
         lon = fam["longitudinal"]
-        lon["distance_keeping"] = {
+        # MERGE, never replace: every key the family block already carries survives (t1_eval's
+        # four_families block is the base); the common-grid values win only where they share a key,
+        # which is the point (an UNAVAILABLE status/reason/n must not outlive a computed block).
+        merged_dk = _merge_distance_keeping(lon.get("distance_keeping"), {
             **{kk: v for kk, v in blk.items() if kk != "tier"},
             "_declared_by": ("taniteval/tools/refcv3_arm.py — computed on the "
                              "COMMON-GRID view of the banked B1 EVAL lead block "
                              "(refav1_arm.join_lead_block guards: exact grid, "
                              "label-free speed proof, NO_LABEL never free flow)"),
-            "_time_join": info["_is"]}
+            "_time_join": info["_is"]})
+        lon["distance_keeping"] = merged_dk
         ci_ = lon.setdefault("ci", {})
         comps_ = ci_.setdefault("components", {})
         unav_ = ci_.setdefault("unavailable", {})
@@ -2936,8 +2992,6 @@ def _distance_keeping(rec, files, manifest, lead_path, arms, P_cat, G_all,
             fam["_ci_coverage"]["longitudinal"].get("complete")
             and fam["_ci_coverage"]["lateral"].get("complete"))
     out["per_arm"] = per_arm
-    gt = lm.distance_keeping(G_all[:, cols], lead["leads"], lead["lead_lens"],
-                             lead["speeds"], dtv)
     out["gt_reference"] = {
         "_is": ("lead_metrics.distance_keeping of the GT ego path on the same "
                 "instants: the value a perfect reproduction scores here"),
@@ -2946,6 +3000,22 @@ def _distance_keeping(rec, files, manifest, lead_path, arms, P_cat, G_all,
     out["paired"] = {nm: lm.paired_distance_keeping(
         pw[hi], pw[lo], eid_w, names=(hi, lo), n_boot=n_boot, seed=seed)
         for lo, hi, nm in pairs}
+    # paired LEAD-VIOL inside this run (the X7 bar itself is refcv8 - refcv7, ACROSS runs: see
+    # lead_metrics.paired_lead_viol / lead_viol_verdict). Key `x7_direction_met_at_risk` is the bar.
+    out["paired_lead_viol"] = {}
+    for lo, hi, nm in pairs:
+        if hi not in lv_res or lo not in lv_res:
+            out["paired_lead_viol"][nm] = _refused(
+                f"LEAD-VIOL was not formed for {hi if hi not in lv_res else lo}", "n/a", 0)
+            continue
+        try:
+            out["paired_lead_viol"][nm] = lm.paired_lead_viol(
+                lv_res[hi], lv_res[lo], eid_w, names=(hi, lo), n_boot=n_boot, seed=seed)
+        except DEFECT_EXCEPTIONS:
+            raise
+        except Exception as ex:                                    # noqa: BLE001
+            out["paired_lead_viol"][nm] = _refused(
+                f"paired LEAD-VIOL could not be formed: {type(ex).__name__}: {ex}", "n/a", 0)
     return out
 
 

@@ -771,7 +771,7 @@ def _distance_keeping(pred: torch.Tensor, dt: float, lead: dict | None,
     # lead_source.LEAD state, else (flagged in `denominator_source`) the human-corridor fallback.
     if gt is not None:
         import numpy as np
-        from taniteval.lead_metrics import lead_viol_vs_human
+        from taniteval.lead_metrics import lead_viol_vs_human, lead_viol_verdict
         from taniteval.lead_source import LEAD as _LEAD_STATE
         gpaths = gt.detach().cpu().numpy()
         if steps is not None:
@@ -779,13 +779,24 @@ def _distance_keeping(pred: torch.Tensor, dt: float, lead: dict | None,
         lv = lead.get("lead_valid")
         if lv is None and lead.get("state") is not None:
             lv = np.asarray(lead["state"], dtype=object).reshape(-1) == _LEAD_STATE
+        # LEAD-PROGRESS control (Master Mind ruling 2026-10-11): `lead_viol_vs_human` measures the
+        # plan's and the human's travelled ARC LENGTH as the polyline through the SAME waypoints the
+        # time gap is scored on (origin implicit) - like for like, and never touching the off-grid
+        # steps of a coarser lead block.
         out["lead_viol"] = lead_viol_vs_human(
             paths, gpaths, lead["leads"], lead["lead_lens"], lead["speeds"], dt_dk,
             eid=lead.get("eid"), lead_valid=lv, plan_dk=out,
             n_boot=int(lead.get("n_boot", 2000)), seed=int(lead.get("seed", 0)))
         # numpy does not belong in a JSON record: park the flags beside the other per-window
-        # arrays, which the arm tools already strip as one `_per_window` block.
-        out["_per_window"]["lead_viol"] = out["lead_viol"].pop("_per_window")["viol"]
+        # arrays, which the arm tools already strip as one `_per_window` block. The at-risk mask and
+        # the progress ratio are what `paired_lead_viol` needs for the human-gap-conditioned bar.
+        lv_pw = out["lead_viol"].pop("_per_window")
+        out["_per_window"]["lead_viol"] = lv_pw["viol"]
+        out["_per_window"]["lead_at_risk"] = lv_pw["at_risk"]
+        out["_per_window"]["lead_progress_ratio"] = lv_pw["progress_ratio"]
+        # the arm's own admissibility (progress >= 0.90). The bar itself is PAIRED against the
+        # baseline: lead_viol_verdict(this_block, paired=paired_lead_viol(arm, base, eid)).
+        out["lead_viol"]["verdict"] = lead_viol_verdict(out["lead_viol"])
     out["admitted_by"] = ("D-LEAD-1 discrimination control, 2026-08-03 — GT vs hold-v0 CV, "
                           "PASS on all three metrics, paired episode-cluster bootstrap, "
                           "14,027 windows / 1,431 clusters")

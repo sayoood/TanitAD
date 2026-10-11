@@ -42,6 +42,8 @@ from __future__ import annotations
 
 import numpy as np
 
+from taniteval.progress import PROGRESS_HUMAN_MIN_M      # numpy-only module; the shared 0.5 m
+
 #: lateral half-corridor for "this agent is in my lane", metres. `lead_state_gate.LEAD_LAT_M`.
 LEAD_LAT_M = 2.0
 #: TTC ceiling, seconds. `lead_state_gate.TTC_CAP_S`.
@@ -68,6 +70,9 @@ __all__ = [
     "band_label", "assign_bands", "distance_keeping_by_speed",
     "paired_distance_keeping",
     "LEAD_VIOL_TG_S", "lead_viol", "paired_lead_viol", "lead_viol_vs_human",
+    # 2026-10-11 additions (PI + Master Mind rulings): at-risk CI, progress control, verdict
+    "LEAD_PROGRESS_MIN", "MIN_HUMAN_ARC_M", "LEAD_VIOL_BAR_KEY",
+    "path_arc_length", "lead_progress", "lead_viol_verdict",
 ]
 
 
@@ -410,9 +415,60 @@ def paired_distance_keeping(dk_a: dict, dk_b: dict, eid, *, names=("A", "B"),
 #    is emitted (`share_incl_lost_lead`). The registered bar is on `share`.     #
 # The human path reads 0 BY CONSTRUCTION: plan == human cannot be both < 1.0   #
 # and >= 1.0.                                                                 #
+#                                                                             #
+# RULINGS 2026-10-11 (these supersede the "DENOMINATOR = ALL lead windows"     #
+# reading above for the BAR; the all-windows keys are kept, never repurposed): #
+#  * PI: the bar's denominator is the HUMAN-GAP-CONDITIONED reading - a        #
+#    violation counts only in lead windows where the human keeps >= 1.0 s.    #
+#    That is `share_of_at_risk` (+ `share_of_at_risk_ci`) and, paired,         #
+#    `x7_direction_met_at_risk`. It is barred on the 6 s lead block.           #
+#  * Master Mind: LEAD-VIOL is paired with a PROGRESS CONTROL. On the SAME      #
+#    at-risk windows, `lead_progress_ratio` = mean over windows of (the plan's  #
+#    travelled arc length over the horizon / the human's). The bar is          #
+#    admissible only if the arm's ratio is >= 0.90 (`LEAD_PROGRESS_MIN`): a     #
+#    planner that meets LEAD-VIOL by crawling FAILS; STOP reads ratio 0.        #
+#    `lead_viol_verdict` is the one place the two are combined.                #
 # --------------------------------------------------------------------------- #
 #: the registered threshold, seconds (SPEC_REFCV8_DRAFT.md section 8.7(a)).
 LEAD_VIOL_TG_S = 1.0
+#: Master Mind ruling 2026-10-11: LEAD-VIOL's bar is admissible only if the arm's
+#: `lead_progress_ratio` (plan arc length / human arc length, mean over at-risk windows) >= this.
+LEAD_PROGRESS_MIN = 0.90
+#: the progress comparison is inclusive (>= 0.90) and runs on a float MEAN: twenty windows that each
+#: read exactly 0.9 average to 0.8999999999999999. This guard (far below any measurable difference)
+#: keeps a tie a tie; it cannot move a decision on real data.
+_PROGRESS_EPS = 1e-9
+#: at-risk windows whose HUMAN arc is shorter than this are excluded from the progress ratio and
+#: COUNTED (`n_human_arc_degenerate`): a ratio over a crawling denominator explodes. This is the
+#: constant `taniteval.progress` / `pseudosim` already use for the same degenerate case - reused,
+#: not re-minted, so the two progress readings exclude the same standstill windows.
+MIN_HUMAN_ARC_M = PROGRESS_HUMAN_MIN_M
+#: the key of `paired_lead_viol(...)` the SPEC should cite for the X7 bar (human-gap-conditioned).
+LEAD_VIOL_BAR_KEY = "x7_direction_met_at_risk"
+
+
+def path_arc_length(paths) -> np.ndarray:
+    """-> [W] polyline length (metres) of each ``(K, 2)`` path, the ego origin (0, 0) implicit.
+
+    ``paths`` is ``(W, K, 2)`` in the window-origin frame (the same convention as
+    :func:`path_headings`: step 0 runs from the origin to ``paths[:, 0]``). NaN anywhere in a
+    path makes that window's length NaN - it is never silently skipped. The length is the sum of
+    the chord lengths between the supplied waypoints, so a sparse grid under-reads a curved path
+    by the same small factor for the plan and the human (the RATIO is what is used).
+    """
+    p = np.asarray(paths, dtype=np.float64)
+    if p.ndim != 3 or p.shape[2] != 2:
+        raise ValueError(f"paths must be (W, K, 2), got {p.shape}")
+    seq = np.concatenate([np.zeros((p.shape[0], 1, 2)), p], axis=1)
+    return np.linalg.norm(np.diff(seq, axis=1), axis=-1).sum(axis=1)
+
+
+def _at_risk_mask(lead_win, human_tg, thr: float) -> np.ndarray:
+    """-> bool [W]: the human-gap-CONDITIONED denominator (PI ruling 2026-10-11): lead windows
+    whose HUMAN keeps a time gap >= ``thr``. Only these can ever be a violation."""
+    h = np.asarray(human_tg, dtype=np.float64).reshape(-1)
+    with np.errstate(invalid="ignore"):
+        return np.asarray(lead_win, dtype=bool) & np.isfinite(h) & (h >= thr)
 
 
 def _viol_flags(plan_tg, human_tg, thr: float = LEAD_VIOL_TG_S) -> np.ndarray:
@@ -447,8 +503,113 @@ def _per_window_dk(dk: dict, what: str) -> dict:
             for k in ("headway_min_m", "time_gap_min_s", "min_ttc_s")}
 
 
+def lead_progress(plan_arc, human_arc, at_risk, eid=None, *,
+                  min_human_arc_m: float = MIN_HUMAN_ARC_M,
+                  min_progress: float = LEAD_PROGRESS_MIN,
+                  n_boot: int = 2000, seed: int = 0) -> dict:
+    """LEAD-PROGRESS: the control that stops LEAD-VIOL being met by crawling.
+
+    ``lead_progress_ratio`` = MEAN over the at-risk windows of ``plan_arc / human_arc``: the plan's
+    travelled arc length over the horizon divided by the human's, on the SAME windows the
+    human-gap-conditioned LEAD-VIOL denominator uses (Master Mind ruling 2026-10-11). The bar on
+    LEAD-VIOL is admissible only if the ratio is >= ``min_progress`` (0.90). A STOP plan reads
+    exactly 0; the human path reads exactly 1.
+
+    Args:
+        plan_arc / human_arc: ``[W]`` polyline length in metres, e.g. :func:`path_arc_length`.
+        at_risk: ``[W]`` bool - the at-risk windows (lead window AND human time gap >= 1.0 s).
+        eid: ``[W]`` episode id for the episode-cluster bootstrap. Without it the interval is
+            UNAVAILABLE with a reason, never silent.
+
+    A window whose human arc is below ``min_human_arc_m`` (or whose arcs are not finite) is
+    EXCLUDED and COUNTED (``n_human_arc_degenerate`` / ``n_arc_nonfinite``) - a ratio over a
+    crawling denominator explodes, and clamping it would turn "the human did not move" into a
+    free pass. ``_per_window['progress_ratio']`` is NaN outside the used windows.
+
+    Two sensitivity readings are emitted beside the RULED one (``lead_progress_ratio``), never
+    instead of it: ``lead_progress_ratio_clipped`` (per-window ratio clipped at 1.0) and
+    ``progress_ratio_of_means`` (sum of plan arcs / sum of human arcs). The ruled mean of ratios
+    can be pulled up by windows where the plan out-runs the human; ``overshoot_masks_crawl`` is
+    True exactly when the ruled mean clears the bar and the clipped reading does not.
+
+    ⛔ DECISION READING (Master Mind ruling 2026-10-11, registered before any refcv8 number): the bar
+    reads ``lead_progress_ratio_clipped`` - per-window ratios clipped at 1.0, then averaged - so
+    out-running the human in some at-risk windows cannot buy back crawling in others.
+    ``meets_min_progress`` is that decision; the unclipped mean's comparison is kept beside it as
+    ``meets_min_progress_mean`` (sensitivity only).
+    """
+    pa = np.asarray(plan_arc, dtype=np.float64).reshape(-1)
+    ha = np.asarray(human_arc, dtype=np.float64).reshape(-1)
+    ar = np.asarray(at_risk, dtype=bool).reshape(-1)
+    if not (pa.shape == ha.shape == ar.shape):
+        raise ValueError(f"plan_arc {pa.shape}, human_arc {ha.shape} and at_risk {ar.shape} "
+                         f"must have one entry per window")
+    ids = None
+    if eid is not None:
+        ids = np.asarray(eid, dtype=object).reshape(-1)
+        if ids.size != pa.size:
+            raise ValueError(f"eid has {ids.size} entries for {pa.size} windows")
+    fin = np.isfinite(pa) & np.isfinite(ha)
+    with np.errstate(invalid="ignore"):
+        usable = ar & fin & (ha >= float(min_human_arc_m))
+        degenerate = ar & fin & (ha < float(min_human_arc_m))
+    ratio = np.full(pa.size, np.nan)
+    ratio[usable] = pa[usable] / ha[usable]
+    n_use = int(usable.sum())
+    out = {
+        "metric": "LEAD-PROGRESS",
+        "definition": ("mean over the at-risk windows of (plan arc length over the horizon / "
+                       "human arc length); the LEAD-VIOL bar is admissible only if >= "
+                       f"{min_progress:g} (Master Mind ruling 2026-10-11)"),
+        "min_progress": float(min_progress),
+        "min_human_arc_m": float(min_human_arc_m),
+        "n_at_risk": int(ar.sum()),
+        "n": n_use,
+        "n_arc_nonfinite": int((ar & ~fin).sum()),
+        "n_human_arc_degenerate": int(degenerate.sum()),
+        "_per_window": {"progress_ratio": ratio},
+    }
+    if n_use == 0:
+        out.update(status="NOT-APPLICABLE", lead_progress_ratio=None, meets_min_progress=None,
+                   reason=(f"no usable at-risk window among the {int(ar.sum())} (arcs not finite "
+                           f"or the human arc < {min_human_arc_m:g} m) - the progress control "
+                           f"cannot be formed, so the LEAD-VIOL bar is not admissible"))
+        return out
+    r = ratio[usable]
+    mean = float(r.mean())
+    clipped = float(np.minimum(r, 1.0).mean())
+    out.update(
+        status="OK",
+        lead_progress_ratio=mean,                      # the mean of ratios (reported; NOT the decision)
+        meets_min_progress=bool(clipped >= float(min_progress) - _PROGRESS_EPS),   # MM 2026-10-11
+        meets_min_progress_mean=bool(mean >= float(min_progress) - _PROGRESS_EPS),
+        lead_progress_ratio_clipped=clipped,           # full precision: the decision reads THIS
+        decision_reading="lead_progress_ratio_clipped",
+        progress_ratio_of_means=float(pa[usable].sum() / ha[usable].sum()),
+        overshoot_masks_crawl=bool(mean >= float(min_progress) - _PROGRESS_EPS
+                                   and clipped < float(min_progress) - _PROGRESS_EPS),
+        n_below_min=int((r < float(min_progress) - _PROGRESS_EPS).sum()),
+        decision_rule=("point estimate of the CLIPPED mean (per-window ratio clipped at 1.0) >= "
+                       "min_progress (MM ruling 2026-10-11; the SPEC states the bar on the point "
+                       "estimate); the interval of the unclipped mean is reported beside it"),
+    )
+    if ids is None:
+        out["ci"] = {"status": "UNAVAILABLE", "n": n_use,
+                     "reason": "no per-window episode id, so the episode-cluster bootstrap "
+                               "cannot be formed (pass eid). A pooled number is not a substitute."}
+    else:
+        from taniteval.ci import episode_cluster_bootstrap
+        out["ci"] = episode_cluster_bootstrap(r, list(ids[usable]), reduce="mean",
+                                              n_boot=n_boot, seed=seed)
+        out["ci"]["question_answered"] = ("would another draw of EPISODES say this? It does NOT "
+                                          "answer 'another training run' or 'another inference "
+                                          "run' (H-ESTIM-SEED-1).")
+    return out
+
+
 def lead_viol(plan_dk: dict, human_dk: dict, eid=None, *, lead_valid=None,
-              threshold_s: float = LEAD_VIOL_TG_S, n_boot: int = 2000, seed: int = 0) -> dict:
+              threshold_s: float = LEAD_VIOL_TG_S, n_boot: int = 2000, seed: int = 0,
+              plan_arc=None, human_arc=None, min_progress: float = LEAD_PROGRESS_MIN) -> dict:
     """LEAD-VIOL: share of lead windows with plan time gap < 1.0 s while the human's is >= 1.0 s.
 
     Args:
@@ -461,9 +622,20 @@ def lead_viol(plan_dk: dict, human_dk: dict, eid=None, *, lead_valid=None,
         lead_valid: ``[W]`` bool - which windows are 'lead windows' (the denominator), e.g. the v9
             ``lead_valid`` AND the S2 / S-ROUTE subset, or ``lead_source.LEAD`` state. If omitted
             the fallback is 'the human's own path has a lead in its corridor'.
+        plan_arc / human_arc: ``[W]`` arc lengths in metres (:func:`path_arc_length`) for the
+            LEAD-PROGRESS control. Without them the control is UNAVAILABLE with a reason and
+            :func:`lead_viol_verdict` withholds the bar.
 
-    The per-window 0/1 flags are returned under ``_per_window["viol"]`` (NaN outside the lead
-    windows) for :func:`paired_lead_viol`.
+    WHICH KEY IS THE BAR (PI + Master Mind rulings 2026-10-11): the denominator is the
+    human-gap-CONDITIONED ``share_of_at_risk`` (with ``share_of_at_risk_ci``); ``share`` /
+    ``ci`` (all lead windows) are kept for back-comparison and are NOT the bar. The bar is
+    admissible only if ``lead_progress_ratio`` >= 0.90 - see :func:`lead_viol_verdict`.
+
+    The per-window 0/1 flags are returned under ``_per_window["viol"]``; all per-window arrays sit under
+    ``_per_window``: ``viol`` (0/1, NaN outside the lead
+    windows), ``at_risk`` (1.0 at-risk / 0.0 lead window the human is already tight in / NaN
+    outside the lead windows) and ``progress_ratio`` (NaN outside the used at-risk windows) -
+    for :func:`paired_lead_viol`.
     """
     p = _per_window_dk(plan_dk, "plan_dk")
     h = _per_window_dk(human_dk, "human_dk")
@@ -493,7 +665,9 @@ def lead_viol(plan_dk: dict, human_dk: dict, eid=None, *, lead_valid=None,
     }
     viol = np.full(w, np.nan)
     viol[lead_win] = flags[lead_win].astype(np.float64)
-    out["_per_window"] = {"viol": viol}
+    at_risk_f = np.full(w, np.nan)
+    progress_ratio = np.full(w, np.nan)
+    out["_per_window"] = {"viol": viol, "at_risk": at_risk_f, "progress_ratio": progress_ratio}
     if n_lead == 0:
         out["status"] = "NOT-APPLICABLE"
         out["reason"] = (f"no lead window among the {w} windows - nothing to violate; "
@@ -501,7 +675,8 @@ def lead_viol(plan_dk: dict, human_dk: dict, eid=None, *, lead_valid=None,
         out["n"] = 0
         return out
     htg = h["time_gap_min_s"]
-    at_risk = lead_win & np.isfinite(htg) & (htg >= thr)
+    at_risk = _at_risk_mask(lead_win, htg, thr)
+    at_risk_f[lead_win] = at_risk[lead_win].astype(np.float64)
     lost = lead_win & np.isfinite(htg) & ~np.isfinite(p["time_gap_min_s"])
     ttc_ok = lead_win & np.isfinite(p["min_ttc_s"])
     n_viol = int(flags.sum())
@@ -527,19 +702,57 @@ def lead_viol(plan_dk: dict, human_dk: dict, eid=None, *, lead_valid=None,
         "lost_lead_note": ("a plan that leaves the lead's corridor has an UNDEFINED time gap and is "
                            "not a violation under the registered text; `share_incl_lost_lead` "
                            "counts those at-risk windows as violations (sensitivity, not the bar)."),
+        "bar_denominator": ("share_of_at_risk (human-gap-conditioned, PI ruling 2026-10-11); "
+                            "`share` is the all-lead-windows reading, kept for back-comparison"),
     })
+    q = ("would another draw of EPISODES say this? It does NOT answer 'another training run' or "
+         "'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required.")
     if ids is None:
-        out["ci"] = {"status": "UNAVAILABLE", "n": n_lead,
-                     "reason": "no per-window episode id, so the episode-cluster bootstrap "
-                               "cannot be formed (pass eid). A pooled number is not a substitute."}
+        why = {"status": "UNAVAILABLE", "n": n_lead,
+               "reason": "no per-window episode id, so the episode-cluster bootstrap "
+                         "cannot be formed (pass eid). A pooled number is not a substitute."}
+        out["ci"] = dict(why)
+        out["share_of_at_risk_ci"] = dict(why, n=n_risk)
     else:
         from taniteval.ci import episode_cluster_bootstrap
         out["ci"] = episode_cluster_bootstrap(
             viol[lead_win], list(ids[lead_win]), reduce="mean", n_boot=n_boot, seed=seed)
-        out["ci"]["question_answered"] = ("would another draw of EPISODES say this? It does NOT "
-                                          "answer 'another training run' or 'another inference run' "
-                                          "(H-ESTIM-SEED-1): a replicate arm is still required.")
+        out["ci"]["question_answered"] = q
+        if n_risk == 0:
+            out["share_of_at_risk_ci"] = {
+                "status": "NOT-APPLICABLE", "n": 0,
+                "reason": "no at-risk window (the human is below the threshold on every lead "
+                          "window) - nothing can be a violation"}
+        else:
+            out["share_of_at_risk_ci"] = episode_cluster_bootstrap(
+                viol[at_risk], list(ids[at_risk]), reduce="mean", n_boot=n_boot, seed=seed)
+            out["share_of_at_risk_ci"]["question_answered"] = q
+    # --- the progress control, on the SAME at-risk windows ---------------------------------- #
+    if plan_arc is None or human_arc is None:
+        prog = {"metric": "LEAD-PROGRESS", "status": "UNAVAILABLE", "n_at_risk": n_risk, "n": 0,
+                "lead_progress_ratio": None, "meets_min_progress": None,
+                "min_progress": float(min_progress),
+                "reason": ("no plan_arc / human_arc supplied, so the progress control cannot be "
+                           "formed and the LEAD-VIOL bar is NOT admissible (a planner that meets "
+                           "it by crawling would pass). Pass path_arc_length(plan), "
+                           "path_arc_length(human).")}
+    else:
+        prog = lead_progress(plan_arc, human_arc, at_risk, ids, min_progress=min_progress,
+                             n_boot=n_boot, seed=seed)
+        progress_ratio[:] = prog["_per_window"]["progress_ratio"]
+    prog.pop("_per_window", None)
+    out["progress"] = prog
+    out["lead_progress_ratio"] = prog.get("lead_progress_ratio")
+    out["lead_progress_ratio_clipped"] = prog.get("lead_progress_ratio_clipped")   # the decision reading
     return out
+
+
+def _pw_get(r: dict, keys):
+    pw = r.get("_per_window", {})
+    for key in keys:
+        if key in pw:
+            return np.asarray(pw[key], dtype=np.float64)
+    return None
 
 
 def paired_lead_viol(a: dict, b: dict, eid, *, names=("A", "B"),
@@ -550,17 +763,27 @@ def paired_lead_viol(a: dict, b: dict, eid, *, names=("A", "B"),
     denominator is a property of the corpus and the human path, not of the arm - or the delta
     compares different windows and this raises rather than silently intersecting. Uses
     ``ci.paired_episode_cluster_bootstrap`` (never two intervals in quadrature).
+
+    Output layout (2026-10-11; every older key is unchanged):
+
+    * the TOP-LEVEL ``delta`` / ``lo`` / ``hi`` / ``separated`` / ``x7_direction_met`` are the
+      ALL-lead-windows reading, exactly as before - back-comparison only.
+    * ``at_risk`` is the same paired bootstrap on the AT-RISK windows of both arms (human gap
+      >= 1.0 s, PI ruling 2026-10-11), and ``x7_direction_met_at_risk`` mirrors its verdict.
+      **That is the key the SPEC should bar** (``LEAD_VIOL_BAR_KEY``). The at-risk set must be
+      identical in both arms (it is a property of the human path); if it is not, this raises.
+    * ``progress`` is the paired LEAD-PROGRESS delta on the windows usable in BOTH arms, with each
+      arm's own ratio. Admissibility of the bar is decided by :func:`lead_viol_verdict`, not here.
     """
     from taniteval.ci import paired_episode_cluster_bootstrap
 
     def _flags(nm, r):
         # a lead_viol() result keeps them at _per_window['viol']; the dict four_families
         # returns parks them at distance_keeping['_per_window']['lead_viol']
-        pw = r.get("_per_window", {})
-        for key in ("viol", "lead_viol"):
-            if key in pw:
-                return np.asarray(pw[key], dtype=np.float64)
-        raise KeyError(f"{nm}: no per-window LEAD-VIOL flags (_per_window.viol / .lead_viol)")
+        v = _pw_get(r, ("viol", "lead_viol"))
+        if v is None:
+            raise KeyError(f"{nm}: no per-window LEAD-VIOL flags (_per_window.viol / .lead_viol)")
+        return v
 
     va, vb = _flags(names[0], a), _flags(names[1], b)
     ids = np.asarray(eid, dtype=object).reshape(-1)
@@ -575,6 +798,7 @@ def paired_lead_viol(a: dict, b: dict, eid, *, names=("A", "B"),
            "n_viol_a": int(np.nansum(va)), "n_viol_b": int(np.nansum(vb))}
     if not ok.any():
         out.update(status="NOT-APPLICABLE", reason="no shared lead window")
+        out["x7_direction_met_at_risk"] = None
         return out
     r = paired_episode_cluster_bootstrap(va[ok], vb[ok], list(ids[ok]),
                                          n_boot=n_boot, seed=seed)
@@ -583,17 +807,161 @@ def paired_lead_viol(a: dict, b: dict, eid, *, names=("A", "B"),
     out["x7_direction_met"] = bool(r["delta"] < 0 and r["separated"])
     out["question_answered"] = ("episode-resampling only (H-ESTIM-SEED-1): a separated interval "
                                 "is necessary, not sufficient, for a lever effect")
+    out["all_windows_note"] = ("top-level delta / x7_direction_met are the ALL-lead-windows "
+                               "reading (kept for back-comparison); the bar reads "
+                               f"`{LEAD_VIOL_BAR_KEY}` (at-risk denominator).")
+
+    # --- the human-gap-conditioned (at-risk) denominator ------------------------------------ #
+    ra, rb = _pw_get(a, ("at_risk", "lead_at_risk")), _pw_get(b, ("at_risk", "lead_at_risk"))
+    if ra is None or rb is None:
+        out["at_risk"] = {"status": "UNAVAILABLE",
+                          "reason": ("an arm carries no per-window at-risk mask "
+                                     "(_per_window.at_risk / .lead_at_risk) - it predates the "
+                                     "2026-10-11 ruling; re-score it with this lead_metrics")}
+        out[LEAD_VIOL_BAR_KEY] = None
+    else:
+        if ra.shape != ids.shape or rb.shape != ids.shape:
+            raise ValueError(f"at-risk masks {ra.shape} / {rb.shape} disagree with eid {ids.shape}")
+        sel_a, sel_b = (ra == 1.0), (rb == 1.0)
+        if not np.array_equal(sel_a, sel_b):
+            raise ValueError("the two arms' at-risk sets differ; the at-risk denominator is a "
+                             "property of the human path and the lead windows, so a delta on "
+                             "it is only defined when both arms were scored against the same "
+                             "human path and the same lead windows")
+        blk = {"n_at_risk": int(sel_a.sum()), "denominator": "lead windows where the human keeps "
+               "a time gap >= the threshold (PI ruling 2026-10-11)",
+               "n_viol_a": int(np.nansum(va[sel_a])), "n_viol_b": int(np.nansum(vb[sel_a]))}
+        if not sel_a.any():
+            blk.update(status="NOT-APPLICABLE", reason="no at-risk window shared by the two arms")
+            out[LEAD_VIOL_BAR_KEY] = None
+        else:
+            blk.update(paired_episode_cluster_bootstrap(
+                va[sel_a], vb[sel_a], list(ids[sel_a]), n_boot=n_boot, seed=seed))
+            blk["status"] = "OK"
+            blk[LEAD_VIOL_BAR_KEY] = bool(blk["delta"] < 0 and blk["separated"])
+            out[LEAD_VIOL_BAR_KEY] = blk[LEAD_VIOL_BAR_KEY]
+        out["at_risk"] = blk
+
+    # --- the progress control, paired on the windows usable in both arms -------------------- #
+    pa_, pb_ = (_pw_get(a, ("progress_ratio", "lead_progress_ratio")),
+                _pw_get(b, ("progress_ratio", "lead_progress_ratio")))
+    if pa_ is None or pb_ is None:
+        out["progress"] = {"status": "UNAVAILABLE",
+                           "reason": "an arm carries no per-window progress ratio "
+                                     "(_per_window.progress_ratio / .lead_progress_ratio)"}
+    else:
+        if pa_.shape != ids.shape or pb_.shape != ids.shape:
+            raise ValueError(f"progress ratios {pa_.shape} / {pb_.shape} disagree with eid "
+                             f"{ids.shape}")
+        both = np.isfinite(pa_) & np.isfinite(pb_)
+        pblk = {"n_used": int(both.sum()),
+                "n_a_only": int((np.isfinite(pa_) & ~np.isfinite(pb_)).sum()),
+                "n_b_only": int((np.isfinite(pb_) & ~np.isfinite(pa_)).sum())}
+        if not both.any():
+            pblk.update(status="NOT-APPLICABLE",
+                        reason="no at-risk window has a usable progress ratio in BOTH arms")
+        else:
+            pblk["lead_progress_ratio_a"] = float(pa_[both].mean())
+            pblk["lead_progress_ratio_b"] = float(pb_[both].mean())
+            pblk.update(paired_episode_cluster_bootstrap(
+                pa_[both], pb_[both], list(ids[both]), n_boot=n_boot, seed=seed))
+            pblk["status"] = "OK"
+        out["progress"] = pblk
+    return out
+
+
+def lead_viol_verdict(lv: dict, *, paired: dict | None = None,
+                      min_progress: float = LEAD_PROGRESS_MIN) -> dict:
+    """The ONE place LEAD-VIOL and its progress control are combined (Master Mind 2026-10-11).
+
+    ``lv`` is the arm's :func:`lead_viol` block (or a ``distance_keeping`` dict that carries it
+    under ``lead_viol``); ``paired`` is :func:`paired_lead_viol` of the arm against its baseline.
+
+    Returns ``verdict`` and ``bar_decision`` (True / False / None):
+
+    * ``INADMISSIBLE-CRAWL`` - the arm's ``lead_progress_ratio_clipped`` < ``min_progress`` (the
+      CLIPPED mean, MM ruling 2026-10-11: over-running some windows cannot mask crawling). The bar
+      decision is WITHHELD (``bar_decision`` None): a planner that meets LEAD-VIOL by crawling
+      fails. A STOP plan reads ratio 0 and lands here.
+    * ``INADMISSIBLE-NO-PROGRESS-CONTROL`` - the ratio could not be formed (arcs not supplied, or
+      no usable at-risk window). Absence of the control is not admissibility.
+    * ``NOT-APPLICABLE`` - the arm has no lead window.
+    * ``ADMISSIBLE-BAR-PENDING-BASELINE`` - progress clears the bar; no ``paired`` supplied, so
+      the X7 comparison (arm - baseline < 0, separated) has not been evaluated.
+    * ``UNAVAILABLE-PAIRED`` - progress clears the bar but the paired at-risk result is missing.
+    * ``PASS`` / ``FAIL`` - progress clears the bar and ``paired[x7_direction_met_at_risk]`` is
+      True / False.
+
+    The decision reads the POINT ESTIMATE of the progress ratio (the SPEC states the bar on it);
+    its interval is reported beside it.
+    """
+    blk = lv
+    if isinstance(lv, dict) and "lead_viol" in lv and "metric" not in lv:
+        blk = lv["lead_viol"]
+    thr = float(min_progress)
+    prog = blk.get("progress") or {}
+    ratio = blk.get("lead_progress_ratio_clipped")         # the DECISION reading (MM 2026-10-11)
+    out = {
+        "metric": "LEAD-VIOL-VERDICT",
+        "min_progress": thr,
+        "lead_progress_ratio_clipped": ratio,
+        "lead_progress_ratio": blk.get("lead_progress_ratio"),
+        "lead_progress_ci": prog.get("ci"),
+        "n_progress": prog.get("n"),
+        "overshoot_masks_crawl": prog.get("overshoot_masks_crawl"),
+        "bar": (f"arm - baseline LEAD-VIOL < 0, separated, on the at-risk denominator "
+                f"(`{LEAD_VIOL_BAR_KEY}`), admissible only if lead_progress_ratio_clipped >= {thr:g}"),
+        "bar_decision": None,
+    }
+    if blk.get("status") == "NOT-APPLICABLE":
+        out["verdict"] = "NOT-APPLICABLE"
+        out["reason"] = blk.get("reason", "no lead window")
+        return out
+    if ratio is None or not np.isfinite(float(ratio)):
+        out["verdict"] = "INADMISSIBLE-NO-PROGRESS-CONTROL"
+        out["reason"] = prog.get("reason", "lead_progress_ratio_clipped is not available")
+        return out
+    if float(ratio) < thr - _PROGRESS_EPS:
+        out["verdict"] = "INADMISSIBLE-CRAWL"
+        out["reason"] = (f"lead_progress_ratio_clipped {float(ratio):.4f} < {thr:g}: on the at-risk "
+                         f"windows the plan covers too little of the human's distance, so a low "
+                         f"LEAD-VIOL here is not evidence of distance keeping. Bar decision "
+                         f"withheld.")
+        return out
+    if paired is None:
+        out["verdict"] = "ADMISSIBLE-BAR-PENDING-BASELINE"
+        out["reason"] = "progress control clears the bar; pass paired=paired_lead_viol(arm, base)"
+        return out
+    met = paired.get(LEAD_VIOL_BAR_KEY)
+    if met is None:
+        out["verdict"] = "UNAVAILABLE-PAIRED"
+        out["reason"] = (paired.get("at_risk") or {}).get("reason", "paired result has no "
+                                                          f"`{LEAD_VIOL_BAR_KEY}`")
+        return out
+    out["bar_decision"] = bool(met)
+    out["verdict"] = "PASS" if met else "FAIL"
+    pp = paired.get("progress") or {}
+    out["baseline_lead_progress_ratio"] = pp.get("lead_progress_ratio_b")
     return out
 
 
 def lead_viol_vs_human(plan_paths, human_paths, leads, lead_lens, speeds, dt: float, *,
                        eid=None, lead_valid=None, plan_dk: dict | None = None,
                        threshold_s: float = LEAD_VIOL_TG_S, n_boot: int = 2000,
-                       seed: int = 0) -> dict:
+                       seed: int = 0, plan_arc=None, human_arc=None,
+                       min_progress: float = LEAD_PROGRESS_MIN) -> dict:
     """Convenience: score the HUMAN path with :func:`distance_keeping` against the same lead and
-    return :func:`lead_viol`. ``plan_dk`` may be passed to avoid re-scoring the arm."""
+    return :func:`lead_viol`. ``plan_dk`` may be passed to avoid re-scoring the arm.
+
+    The progress control uses ``plan_arc`` / ``human_arc`` when given, else the polyline length of
+    ``plan_paths`` / ``human_paths`` (the steps the time gap is scored on)."""
     if plan_dk is None:
         plan_dk = distance_keeping(plan_paths, leads, lead_lens, speeds, dt)
     human_dk = distance_keeping(human_paths, leads, lead_lens, speeds, dt)
+    if plan_arc is None and plan_paths is not None:
+        plan_arc = path_arc_length(plan_paths)
+    if human_arc is None and human_paths is not None:
+        human_arc = path_arc_length(human_paths)
     return lead_viol(plan_dk, human_dk, eid, lead_valid=lead_valid,
-                     threshold_s=threshold_s, n_boot=n_boot, seed=seed)
+                     threshold_s=threshold_s, n_boot=n_boot, seed=seed,
+                     plan_arc=plan_arc, human_arc=human_arc, min_progress=min_progress)

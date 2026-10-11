@@ -45,6 +45,16 @@ default) is what decides whether a candidate "complies", i.e. who is exempt.
 The ladder's frozen ``ceil_violation`` is the STRICT form (> 1e-6, margin 0); it
 is reported beside the SPEC form as ``strict_*`` so the two cannot be confused.
 
+WHICH KEY IS THE BAR (Master Mind ruling 2026-10-11). The denominator is the windows with a FINITE
+fed ceiling. The bar (<= 0.01) applies to NON-EXEMPT violations -- ``bar_met_nonexempt`` -- because an
+exempt row (no compliant candidate in the fan) is a fan / anchor-bank defect no selection change can
+fix; the EXEMPT-ROW rate is reported BESIDE it (``nonexempt.exempt_row_rate`` + CI), never folded in.
+The SPEC should cite ``bar_met_nonexempt`` (and ``ceil_obey_nonexempt`` for the share). The legacy
+``bar.bar_met`` is the ALL-violations reading and keeps exactly that meaning; the same value is also
+emitted as ``bar_met_all_violations`` so the name says what it is. When no fan was supplied the
+exempt rows cannot be identified, so ``bar_met_nonexempt`` is None with a reason -- it never falls
+back to the all-violations reading.
+
 ESTIMATOR. With ``eid`` the shares carry ``taniteval.ci`` episode-cluster
 bootstrap intervals. That interval answers "would another draw of EPISODES say
 this?" -- it is blind to training variance (H-ESTIM-SEED-1) and, for a sampling
@@ -67,6 +77,7 @@ import numpy as np
 __all__ = [
     "SPEC_MARGIN_MS", "FILTER_TOL_MS", "BAR_CEIL_OBEY", "DEFAULT_TICK_S",
     "step_durations_s", "planned_max_speed_np", "ceil_obey_windows", "ceil_obey",
+    "nonexempt_flag",
 ]
 
 #: SPEC_REFCV8_DRAFT section 8.3 (a)(2): "exceeds the fed finite ceiling by > 0.5 m/s".
@@ -235,6 +246,13 @@ def _share(flag, finite, eid, n_boot, seed):
     return blk
 
 
+def nonexempt_flag(violate, exempt, finite) -> np.ndarray:
+    """-> bool [W]: the window violates the ceiling AND a compliant candidate existed (it is NOT an
+    exempt row), inside the finite-ceiling denominator. The numerator of the barred share."""
+    return (np.asarray(finite, dtype=bool) & np.asarray(violate, dtype=bool)
+            & ~np.asarray(exempt, dtype=bool))
+
+
 def ceil_obey(emitted=None, v_lim=None, *, horizons: Sequence[int], eid=None,
               n_boot: int = 2000, seed: int = 0, **kw) -> dict:
     """The CEIL-OBEY block. ``kw`` is everything ``ceil_obey_windows`` takes.
@@ -242,7 +260,12 @@ def ceil_obey(emitted=None, v_lim=None, *, horizons: Sequence[int], eid=None,
     ``ceil_obey`` is the SPEC share (violation share, LOWER is better, bar <=
     0.01); ``obey_rate`` is its complement. The bar is evaluated on the point
     estimate as the SPEC states it; ``bar_met`` is None while the share is
-    undefined."""
+    undefined.
+
+    ``bar.bar_met`` is the LEGACY all-violations flag (unchanged; also emitted as
+    ``bar_met_all_violations``). The barred reading (Master Mind 2026-10-11) is
+    ``bar_met_nonexempt`` on ``ceil_obey_nonexempt`` = share of finite-ceiling windows that
+    violate AND had a compliant candidate; the exempt-row rate sits beside it in ``nonexempt``."""
     w = ceil_obey_windows(emitted, v_lim, horizons=horizons, **kw)
     finite, viol, strict, ex = w["finite"], w["violate"], w["strict_violate"], w["exempt"]
     n_all, n_fin = int(finite.size), int(finite.sum())
@@ -275,12 +298,43 @@ def ceil_obey(emitted=None, v_lim=None, *, horizons: Sequence[int], eid=None,
     if main["share"] is None:
         out["status"] = main["status"]
         out["reason"] = main["reason"]
+    out["bar_met_all_violations"] = out["bar"]["bar_met"]       # the legacy flag, named for what it is
     if ex is None:
         out["exempt"] = {"status": "UNAVAILABLE",
                          "reason": "no fan supplied (fan / fan_vmax / fan_min_vmax): the exempt-row "
                                    "rate cannot be computed post hoc from the emitted plan alone"}
+        out["ceil_obey_nonexempt"] = None
+        out["bar_met_nonexempt"] = None
+        out["nonexempt"] = {"status": "UNAVAILABLE",
+                            "reason": "no fan supplied, so exempt rows cannot be identified and the "
+                                      "non-exempt share is undefined; bar_met_nonexempt is None and "
+                                      "does NOT fall back to the all-violations reading"}
         return out
     exs = _share(ex, finite, eid, n_boot, seed)
+    nxs = _share(nonexempt_flag(viol, ex, finite), finite, eid, n_boot, seed)
+    out["ceil_obey_nonexempt"] = nxs["share"]
+    out["bar_met_nonexempt"] = (None if nxs["share"] is None
+                                else bool(nxs["share"] <= BAR_CEIL_OBEY))
+    out["nonexempt"] = {
+        "n_violate_nonexempt": int(nonexempt_flag(viol, ex, finite).sum()),
+        "share": nxs["share"], "n": nxs["n"],
+        "denominator": "windows with a finite fed ceiling",
+        "rule": ("violate (excess > margin_ms) AND a fan candidate complied (not an exempt row); "
+                 "the BARRED reading, Master Mind ruling 2026-10-11"),
+        "bar": {"le": BAR_CEIL_OBEY, "bar_met_nonexempt": out["bar_met_nonexempt"]},
+        "exempt_row_rate": exs["share"],
+        "exempt_row_n": int(ex.sum()),
+        "exempt_row_note": ("reported BESIDE the bar, never folded into it: an exempt row is a "
+                            "fan / anchor-bank defect (no compliant candidate offered), not an "
+                            "unobeyed filter"),
+    }
+    if "ci" in nxs:
+        out["nonexempt"]["ci"] = nxs["ci"]
+    if "ci" in exs:
+        out["nonexempt"]["exempt_row_rate_ci"] = exs["ci"]
+    if nxs["share"] is None:
+        out["nonexempt"]["status"] = nxs["status"]
+        out["nonexempt"]["reason"] = nxs["reason"]
     n_ve, n_vn = int((viol & ex).sum()), int((viol & ~ex & finite).sum())
     out["exempt"] = {
         "n": int(ex.sum()), "rate": exs["share"], "denominator": "windows with a finite fed ceiling",

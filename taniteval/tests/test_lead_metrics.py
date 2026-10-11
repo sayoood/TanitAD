@@ -154,4 +154,7 @@ def test_supplying_a_lead_track_turns_distance_keeping_on():
     assert "D-LEAD-1" in dk["admitted_by"]
     assert set(dk["_per_window"]) == {"headway_min_m", "time_gap_min_s",
                                       "min_ttc_s", "n_steps_in_corridor",
-                                      "lead_viol"}      # LEAD-VIOL flags (X7), parked here
+                                      "lead_viol",      # LEAD-VIOL flags (X7), parked here
+                                      # 2026-10-11 (PI + Master Mind rulings): the at-risk mask
+                                      # and the progress ratio the paired bar / verdict need
+                                      "lead_at_risk", "lead_progress_ratio"}

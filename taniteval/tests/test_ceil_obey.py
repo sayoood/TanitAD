@@ -399,6 +399,171 @@ def test_mutation_denominator_over_all_windows_goes_red():
     _expect_red(patch)
 
 
+# --------------------------------------------------------------------------- #
+# 2026-10-11 (Master Mind): the BAR is on NON-EXEMPT violations, the denominator is the
+# windows with a FINITE fed ceiling, and the exempt-row rate sits BESIDE the bar.
+#
+# The window table above gives the literals (finite-ceiling windows w0 w1 w2 w5 -> n = 4):
+#   margin 0.5 (SPEC):   violators w2 (0.75) and w5 (1.0), BOTH exempt  -> 2 violations, 0 non-exempt
+#                        all-violations share 2/4 = 0.5  (bar_met False)
+#                        non-exempt share      0/4 = 0.0  (bar_met_nonexempt True)
+#                        exempt rows w2 w5 -> rate 2/4 = 0.5, reported beside, not folded in
+#   margin 0.0:          violators w1 (excess exactly 0.5, a compliant 9.5 m/s candidate EXISTS),
+#                        w2, w5 -> 3 violations, 1 non-exempt (w1)
+#                        non-exempt share 1/4 = 0.25  (bar_met_nonexempt False)
+# --------------------------------------------------------------------------- #
+def _check_nonexempt_literals():
+    """The registered literals for the barred reading. Called green on the real module and RED
+    under the deliberate regressions below."""
+    emitted, lim, fan = _tables()
+    r = co.ceil_obey(emitted, lim, horizons=H8, fan=fan)
+    assert r["n_finite_ceiling"] == 4, r
+    # the all-violations reading is untouched and still FAILS the bar ...
+    assert r["ceil_obey"] == 0.5 and r["bar"] == {"le": 0.01, "bar_met": False}, r
+    assert r["bar_met_all_violations"] is False, r
+    # ... while the barred reading is 0 of 4 and PASSES: both violators are exempt rows
+    assert r["ceil_obey_nonexempt"] == 0.0 and r["bar_met_nonexempt"] is True, r
+    nx = r["nonexempt"]
+    assert nx["n_violate_nonexempt"] == 0 and nx["share"] == 0.0 and nx["n"] == 4, nx
+    assert nx["denominator"] == "windows with a finite fed ceiling", nx
+    assert nx["bar"] == {"le": 0.01, "bar_met_nonexempt": True}, nx
+    # the exempt-row rate is reported BESIDE the bar (2 of the 4 finite-ceiling windows) ...
+    assert nx["exempt_row_rate"] == 0.5 and nx["exempt_row_n"] == 2, nx
+    # ... and agrees with the pre-existing exempt block, which is unchanged
+    assert r["exempt"]["rate"] == 0.5 and r["exempt"]["n"] == 2, r["exempt"]
+    # margin 0: w1 now violates WITH a compliant candidate in the fan -> 1 of 4, the bar FAILS
+    r0 = co.ceil_obey(emitted, lim, horizons=H8, fan=fan, margin_ms=0.0)
+    assert r0["n_violate"] == 3 and r0["ceil_obey"] == 0.75, r0
+    assert r0["nonexempt"]["n_violate_nonexempt"] == 1, r0["nonexempt"]
+    assert r0["ceil_obey_nonexempt"] == 0.25 and r0["bar_met_nonexempt"] is False, r0
+    return r
+
+
+def test_nonexempt_literals():
+    _check_nonexempt_literals()
+
+
+def test_nonexempt_bar_and_all_violations_bar_disagree_on_the_exempt_only_misses():
+    """The case the ruling exists for: every miss is a fan defect. The old flag says FAIL, the barred
+    reading says PASS, and the exempt-row rate says why."""
+    r = _check_nonexempt_literals()
+    assert r["bar_met_all_violations"] is not r["bar_met_nonexempt"]
+    assert r["bar"]["bar_met"] is r["bar_met_all_violations"]          # the legacy key keeps its meaning
+
+
+def test_the_existing_bar_block_and_exempt_block_are_unchanged():
+    emitted, lim, fan = _tables()
+    r = co.ceil_obey(emitted, lim, horizons=H8, fan=fan)
+    assert r["bar"] == {"le": 0.01, "bar_met": False}                  # exact: no key added to it
+    assert r["exempt"]["share_violate_and_not_exempt"] == 0.0
+    assert r["exempt"]["n_violate_and_not_exempt"] == 0 and r["exempt"]["n_violate_and_exempt"] == 2
+
+
+def test_nonexempt_agrees_with_the_exempt_blocks_own_count_on_every_tolerance():
+    emitted, lim, fan = _tables()
+    for tol in (0.0, 0.25, 0.5, 1.0):
+        r = co.ceil_obey(emitted, lim, horizons=H8, fan=fan, filter_tol_ms=tol)
+        assert r["nonexempt"]["n_violate_nonexempt"] == r["exempt"]["n_violate_and_not_exempt"], tol
+        assert r["ceil_obey_nonexempt"] == r["exempt"]["share_violate_and_not_exempt"], tol
+    # filter_tol 0.5: w2's best candidate (10.25) now complies -> w2 is a non-exempt violator
+    r = co.ceil_obey(emitted, lim, horizons=H8, fan=fan, filter_tol_ms=0.5)
+    assert r["nonexempt"]["n_violate_nonexempt"] == 1 and r["ceil_obey_nonexempt"] == 0.25
+    assert r["bar_met_nonexempt"] is False and r["nonexempt"]["exempt_row_rate"] == 0.25
+
+
+def test_nonexempt_is_unavailable_without_a_fan_and_never_falls_back_to_all_violations():
+    emitted, lim, _ = _tables()
+    r = co.ceil_obey(emitted, lim, horizons=H8)
+    assert r["ceil_obey"] == 0.5 and r["bar_met_all_violations"] is False
+    assert r["ceil_obey_nonexempt"] is None and r["bar_met_nonexempt"] is None, r
+    assert r["nonexempt"]["status"] == "UNAVAILABLE" and "fall back" in r["nonexempt"]["reason"]
+
+
+def test_nonexempt_with_no_finite_ceiling_is_undefined_not_zero():
+    emitted = np.stack([_plan([30.0] * 8)] * 2)
+    fan = emitted[:, None]
+    r = co.ceil_obey(emitted, [INF, NAN], horizons=H8, fan=fan)
+    assert r["ceil_obey_nonexempt"] is None and r["bar_met_nonexempt"] is None, r
+    assert r["nonexempt"]["status"] == "UNDEFINED" and "denominator" in r["nonexempt"]["reason"]
+    assert r["bar_met_all_violations"] is None
+
+
+def test_nonexempt_interval_and_exempt_rate_interval_carry_their_estimator():
+    emitted, lim, fan = _tables()
+    eid = ["a", "a", "b", "b", "c", "c"]
+    # margin 0 so there IS a non-exempt violator (w1, episode a) to put an interval around
+    r = co.ceil_obey(emitted, lim, horizons=H8, fan=fan, eid=eid, margin_ms=0.0,
+                     n_boot=200, seed=0)
+    nx = r["nonexempt"]
+    assert r["ceil_obey_nonexempt"] == 0.25                             # full-set point, not a bootstrap mean
+    assert nx["ci"]["estimator"] == "episode_cluster_bootstrap"
+    assert nx["ci"]["n_episodes"] == 3 and nx["ci"]["n_boot"] == 200   # finite windows: a (w0 w1), b (w2), c (w5)
+    assert 0.0 <= nx["ci"]["lo"] <= 0.25 <= nx["ci"]["hi"] <= 1.0, nx["ci"]
+    assert nx["exempt_row_rate"] == 0.5                                 # w2 and w5 of the 4 finite windows
+    assert nx["exempt_row_rate_ci"]["estimator"] == "episode_cluster_bootstrap"
+    assert nx["exempt_row_rate_ci"]["n_episodes"] == 3
+    assert 0.0 <= nx["exempt_row_rate_ci"]["lo"] <= 0.5 <= nx["exempt_row_rate_ci"]["hi"] <= 1.0
+    # without eid no interval is claimed (the existing behaviour, extended)
+    assert "ci" not in co.ceil_obey(emitted, lim, horizons=H8, fan=fan)["nonexempt"]
+
+
+def test_the_nonexempt_literals_are_green_on_the_real_module():
+    _check_nonexempt_literals()
+
+
+def test_mutation_exempt_rows_folded_into_the_bar_goes_red():
+    """Fold the exempt rows back into the barred numerator (the ruling's explicit prohibition): the
+    all-violations 0.5 replaces the non-exempt 0.0 and the literals must see it."""
+    orig = co.nonexempt_flag
+    co.nonexempt_flag = lambda violate, exempt, finite: (np.asarray(finite, bool)
+                                                         & np.asarray(violate, bool))
+    try:
+        try:
+            _check_nonexempt_literals()
+        except AssertionError:
+            return
+        raise AssertionError("folding exempt rows into the bar stayed GREEN")
+    finally:
+        co.nonexempt_flag = orig
+
+
+def test_mutation_exempt_rows_never_counted_makes_the_barred_share_equal_the_all_violations_share():
+    orig = co.ceil_obey_windows
+
+    def blind(*a, **k):
+        w = orig(*a, **k)
+        if w["exempt"] is not None:
+            w["exempt"] = np.zeros_like(w["exempt"])
+        return w
+    co.ceil_obey_windows = blind
+    try:
+        try:
+            _check_nonexempt_literals()
+        except AssertionError:
+            return
+        raise AssertionError("an instrument blind to exempt rows stayed GREEN")
+    finally:
+        co.ceil_obey_windows = orig
+
+
+def test_mutation_denominator_over_all_windows_goes_red_on_the_barred_share():
+    orig = co.ceil_obey_windows
+
+    def wide(*a, **k):
+        w = orig(*a, **k)
+        w["finite"] = np.ones_like(w["finite"])
+        return w
+    co.ceil_obey_windows = wide
+    try:
+        try:
+            _check_nonexempt_literals()
+        except AssertionError:
+            return
+        raise AssertionError("a widened denominator stayed GREEN on the barred share")
+    finally:
+        co.ceil_obey_windows = orig
+
+
 if __name__ == "__main__":                                  # pragma: no cover
     fns = [(k, v) for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     bad = 0
