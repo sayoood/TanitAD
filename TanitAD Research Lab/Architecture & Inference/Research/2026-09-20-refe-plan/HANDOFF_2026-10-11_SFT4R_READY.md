@@ -12,6 +12,7 @@ Successor to `HANDOFF_2026-10-11.md`. Read this and the files it names, nothing 
 | SFT-4 u400 stage 2 on the 923 A5 tokens | **ADOPT** +3.04 [+1.21, +4.87], landed `b582f3cc` | `eval/RESULT_SFT4.md`, register row `D-REFE-SFT-4` |
 | SFT-4R pod tooling + PREREG_SFT4R Amendment 1 | landed with this file | `refe/hf_egress.py`, `refe/pdm_label_complete.py`, `refe/sft4r_{relabel,chain,pod}.sh` |
 | Unseen-subset read (reported, not gating) | script landed; controls PASS | `eval/unseen_subset.py` |
+| Chain review: 3 defects fixed (G3 grep could never match, stale markers, unread lane rc) | landed with PREREG_SFT4R Amendment 2 | `refe/sft4r_chain.sh`, `refe/test_sft4r_chain.py` (20/20, 4/4 mutations RED) |
 | **Full navtest of the u400 checkpoint** | **RUNNING on the dev-box GPU**, started 08:37:22Z, ETA ~13:10–13:40Z | see below |
 
 ## The full-navtest read: how to finish it if this session is gone
@@ -53,7 +54,8 @@ Successor to `HANDOFF_2026-10-11.md`. Read this and the files it names, nothing 
      `/workspace/refe-sft4r/raw/2026-10-04-lane-discipline/`;
    - restore the banks from `Sayood/tanitad-refe-navtrain-banks`;
    - run `sft4r_relabel.sh`, then `sft4r_chain.sh` after `ZZRELABEL_SFT4R_DONE`.
-   - ⚠️ The pod scripts have had `bash -n` and a flag-to-argparse trace only, never a dry run. Read `chain.log` for
+   - ⚠️ The pod scripts have had `bash -n`, a flag-to-argparse trace, and a test of the chain's gate helpers on
+     SFT-4's banked smoke logs (`refe/test_sft4r_chain.py`). They have never had a dry run. Read `chain.log` for
      the first `REFUSED:` line.
 5. P2 follows on the same labels, after an egress amendment to `eval/PREREG_P2.md`.
 

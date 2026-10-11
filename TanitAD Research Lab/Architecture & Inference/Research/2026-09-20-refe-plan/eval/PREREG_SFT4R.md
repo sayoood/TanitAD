@@ -154,3 +154,49 @@ Landed with this amendment. Nothing in stage 1, stage 2 or their rules changes.
   `refe/sft4r_pod.sh` have NOT been dry-run against a fake root.
   - Every flag they pass was traced to its argparse definition on 2026-10-11.
   - Their first real execution is on the new pod, and every step there is fail-closed.
+
+## Amendment 2 (2026-10-11, before any SFT-4R launch): a static review of the pod scripts found three chain defects
+
+Nothing in stage 1, stage 2 or their rules changes. All three defects were in `refe/sft4r_chain.sh`, and all three are
+fixed with this amendment. With no WSL on the dev box, the review was static: `bash -n` plus a test of the helpers
+against SFT-4's banked smoke logs.
+
+1. **The G3 check would have refused every launch.**
+   - The chain grepped `"G3_copies_equal_model_at_step0": {"ok": false`. `json.dumps` keeps insertion order, and
+     `scorer_finetune.py` writes G3's `"ok"` **last**: the row opens `{"max_base_vs_A": 0.0625, …`.
+   - MEASURED on SFT-4's own RED log, `raw/2026-10-04-sft4-smoke/r2_smoke2_g3mut.log`: the old grep returns
+     **rc 1**. So a correctly RED G3 read as "did NOT fail G3", and the chain would have stopped at step 5.
+   - The G9 grep matched only because `"ok"` happens to come first in that gate. It was the same defect, waiting on
+     a key reorder.
+   - **Fix:** `gate_is <log> <gate> <key> <json literal>` PARSES the single preflight row and compares by value. It
+     refuses if there is no preflight row or more than one.
+2. **Stale markers could vouch for a failed retry.**
+   - `pdm_train.log`, `pdm_heldout.log` and `chain.log` are appended across attempts. `grep -q "ZZPDM_TRAIN_EXIT 0"`
+     would accept an earlier attempt's 0 after a later failure. The egress check had the same flaw.
+   - **Fix:** `last_exit` reads the **last** marker. The PDM-push check reads only the `chain.log` lines written
+     after that push started.
+3. **The lane relabel's exit code was never read.**
+   - **Fix:** the chain now logs it.
+   - It deliberately does **not** refuse on it. "Changed 2" trains on the rows present at launch, with the 2,109
+     floor. Refusing on a non-zero lane rc would move that registered rule. The floor still refuses.
+
+**Test:** `refe/test_sft4r_chain.py` passes **20/20**.
+- It extracts the helpers verbatim from the chain and runs them under bash on `r2_smoke2.log` (PASS) and
+  `r2_smoke2_g3mut.log` (RED). Each helper is tested in both directions: the reading it must accept, and the one it
+  must reject.
+- **Mutation check:** four deliberate regressions each turn the test **RED**, with 0 escaping:
+  - the old G3 grep restored;
+  - `tail -1` replaced by `head -1`;
+  - "exactly one preflight row" relaxed to "at least one";
+  - the value comparison disabled.
+
+**Correction to Amendment 1's "It has not been RUN."** It has run once.
+- The G3 regression turned the preflight RED on SFT-4's pod on 2026-10-04: `r2_smoke2_g3mut.log` shows
+  `"verdict": "FAIL"`, G3 `"ok": false` (`max_base_vs_A` 0.0625), `ZZSFT_PREFLIGHT_FAIL` and `ZZEXIT 3`.
+- That log was banked in **`971e2b6`**, the commit that added the `REFE_SFT4_MUTATE_G3` hook.
+- No later commit touches `refe/scorer_finetune.py`. The working copy's md5 (`8d694121…`) equals the tip blob.
+- INHERITED, not proven: that the pod ran exactly that blob. The log being banked with the hook is the only link.
+- What has never run is the **SFT-4R chain reading that verdict**. Defect 1 above shows why that difference mattered.
+
+**Still not done:** a dry run of the three pod scripts against a fake root. Their first real execution is on the new
+pod, every step fail-closed. Read `chain.log` for the first `REFUSED:` line.

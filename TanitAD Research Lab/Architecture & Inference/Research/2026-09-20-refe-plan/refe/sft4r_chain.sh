@@ -24,11 +24,32 @@ source /workspace/teacher_env.sh
 HPY=${HF_PY:-$DRIVERL_EVAL_PYTHON}
 cd $RUN
 log "chain armed"
+PY_C=$DRIVERL_EVAL_PYTHON
+# The LAST exit marker decides: the relabel logs and chain.log are APPENDED across attempts, so an earlier attempt's
+# "0" must never vouch for a later attempt that failed.  last_exit <marker> <log>
+last_exit() { grep "^$1 " "$2" 2>/dev/null | tail -1 | cut -d' ' -f2-; }
+# Gate JSON is PARSED, never grepped. json.dumps keeps insertion order and scorer_finetune.py writes G3's "ok" LAST,
+# so the earlier grep for '{"ok": false' could never match (MEASURED on SFT-4's
+# raw/2026-10-04-sft4-smoke/r2_smoke2_g3mut.log) and the chain would have refused every launch at step 5.
+#   gate_is <log> <gate> <key> <json literal>   -> rc 0 iff the log's single preflight row has gates.<gate>.<key> == it
+gate_is() {
+  $PY_C - "$@" <<'PYEOF'
+import json, sys
+log, gate, key, want = sys.argv[1:5]
+rows = [json.loads(ln) for ln in open(log, encoding="utf-8", errors="replace") if ln.startswith('{"event": "preflight"')]
+if len(rows) != 1:
+    sys.exit("%s: %d preflight rows, want 1" % (log, len(rows)))
+got = json.dumps(rows[0]["gates"].get(gate, {}).get(key, "<absent>"))
+if got != want:
+    sys.exit("%s: %s.%s = %s, want %s" % (log, gate, key, got, want))
+PYEOF
+}
 
 # 1. PDM completeness
-grep -q "^ZZPDM_TRAIN_EXIT 0" $D/pdm_train.log 2>/dev/null || refuse "PDM train relabel did not exit 0"
-grep -q "^ZZPDM_HELDOUT_EXIT 0" $D/pdm_heldout.log 2>/dev/null || refuse "PDM held-out relabel did not exit 0"
-PY_C=$DRIVERL_EVAL_PYTHON
+[ "$(last_exit ZZPDM_TRAIN_EXIT $D/pdm_train.log)" = "0" ] \
+  || refuse "PDM train relabel's last exit is '$(last_exit ZZPDM_TRAIN_EXIT $D/pdm_train.log)', not 0"
+[ "$(last_exit ZZPDM_HELDOUT_EXIT $D/pdm_heldout.log)" = "0" ] \
+  || refuse "PDM held-out relabel's last exit is '$(last_exit ZZPDM_HELDOUT_EXIT $D/pdm_heldout.log)', not 0"
 $PY_C pdm_label_complete.py --log $D/pdm_train.log --out $D/train_pdm --sets /workspace/data/refe_navtrain/onpolicy/sets \
   --json $OUT/pdm_complete_train.json >> $L 2>&1 || refuse "train PDM labels INCOMPLETE ($(tail -1 $L))"
 $PY_C pdm_label_complete.py --log $D/pdm_heldout.log --out $D/heldout_pdm --sets /workspace/data/refe_heldout/sets \
@@ -42,6 +63,9 @@ for d in heldout_lane heldout_teacher_lane; do
   [ "$(cat $D/$d/*.jsonl 2>/dev/null | wc -l)" -gt 0 ] || refuse "$d empty"
 done
 log "lane labels: train $NL, held-out lane $(cat $D/heldout_lane/*.jsonl | wc -l), teacher $(cat $D/heldout_teacher_lane/*.jsonl | wc -l)"
+# PREREG_SFT4R "Changed 2" trains on the rows written by launch with a 2,109 floor, so a non-zero lane rc is RECORDED,
+# not refused -- refusing on it would move the registered rule. A missing marker means the relabel never finished.
+log "lane relabel last exit (rank0 rank1): '$(last_exit ZZLANE_TRAIN_EXIT $D/tl_train.log)'"
 
 # 3. G-EGR
 $HPY -c "import huggingface_hub, torch" 2>>$L || refuse "huggingface_hub/torch not importable by $HPY"
@@ -56,23 +80,25 @@ tar -C $D -cf $OUT/pdm_egress/train_pdm.tar train_pdm && tar -C $D -cf $OUT/pdm_
 ( cd $OUT/pdm_egress && sha256sum train_pdm.tar heldout_pdm.tar > MANIFEST_pdm_sha256.txt
   cp $OUT/pdm_complete_train.json $OUT/pdm_complete_heldout.json . )
 log "PDM egress staged: $(du -sb $OUT/pdm_egress | cut -f1) bytes"
+N0=$(wc -l < $L)      # only THIS push's lines may vouch for it (chain.log is appended across attempts)
 $HPY hf_egress.py push --repo Sayood/tanitad-refe-navtrain-banks --repo-type dataset --prefix pdm_labels_sft4r \
   --tag pdm_labels --chain-log $L --egress-log $OUT/egress.jsonl \
   --files $OUT/pdm_egress/train_pdm.tar $OUT/pdm_egress/heldout_pdm.tar $OUT/pdm_egress/MANIFEST_pdm_sha256.txt \
           $OUT/pdm_egress/pdm_complete_train.json $OUT/pdm_egress/pdm_complete_heldout.json >> $OUT/gate.log 2>&1
-grep -q "ZZEGRESS_OK pdm_labels" $L || refuse "the PDM label push did not verify"
+tail -n +$((N0 + 1)) $L | grep -q " ZZEGRESS_OK pdm_labels " || refuse "the PDM label push did not verify"
 
 # 5. preflight + both deliberate regressions
 MODE=preflight bash $RUN/sft4r_pod.sh
 grep -q "^ZZSFT_PREFLIGHT_PASS" $OUT/preflight.log || refuse "preflight did not pass"
 log "preflight PASS"
 MODE=mutate bash $RUN/sft4r_pod.sh
-grep -q "^ZZSFT_PREFLIGHT_FAIL" $OUT/mutate.log && grep -q "\"G9_pdm_targets_in_bank\": {\"train_pdm\": 0" $OUT/mutate.log \
-  || refuse "the empty-PDM mutation did NOT fail G9"
+grep -q "^ZZSFT_PREFLIGHT_FAIL" $OUT/mutate.log || refuse "the empty-PDM mutation did not fail the preflight"
+m=$(gate_is $OUT/mutate.log G9_pdm_targets_in_bank train_pdm 0 2>&1) || refuse "the empty-PDM mutation did not empty the train PDM bank ($m)"
+m=$(gate_is $OUT/mutate.log G9_pdm_targets_in_bank ok false 2>&1) || refuse "the empty-PDM mutation did NOT fail G9 ($m)"
 log "G9 mutation RED as required"
 MODE=mutate_g3 bash $RUN/sft4r_pod.sh
-grep -q "^ZZSFT_PREFLIGHT_FAIL" $OUT/mutate_g3.log && grep -q "\"G3_copies_equal_model_at_step0\": {\"ok\": false" $OUT/mutate_g3.log \
-  || refuse "the MUTATE_G3 regression did NOT fail G3"
+grep -q "^ZZSFT_PREFLIGHT_FAIL" $OUT/mutate_g3.log || refuse "the MUTATE_G3 regression did not fail the preflight"
+m=$(gate_is $OUT/mutate_g3.log G3_copies_equal_model_at_step0 ok false 2>&1) || refuse "the MUTATE_G3 regression did NOT fail G3 ($m)"
 log "G3 mutation RED as required"
 
 # 6. run + watcher
