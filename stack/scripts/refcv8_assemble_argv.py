@@ -134,6 +134,11 @@ def assemble(base, *, code, run_out, recipe, k_tac, w_map, b1_ref, gs_at, stage=
         put("--steps", [100], "G-LIVE MEASUREMENT smoke: 100 steps (SPEC 3.2 item 5)")
         put("--grad-share-every", [50], "measurement smoke: one reading inside the smoke")
         put("--grad-share-at", [50], "measurement smoke: the reading at row 50; wall-clock recorded")
+        # MEASURED 2026-10-11 (the first Thor de-risk smoke's build): the launch's step-valued pins lie past a 100-step
+        # smoke -- the trainer refuses --b1-guard-step 1000 at --steps 100, and emission would never switch on.
+        # Bring both inside, exactly as launch_gate.smoke_argv does for G-LIVE (smoke the launch as launched).
+        put("--b1-guard-step", [100], "measurement smoke: the guard decides on the final-step eval")
+        put("--r8-alloc-emit-start", [50], "measurement smoke: emission switches ON mid-smoke")
     else:
         put("--grad-share-every", [250], "SPEC 10.3")
         put("--grad-share-at", [gs_at], "SPEC 10.3: picked by pick_gs_schedule from the MEASURED reading")
@@ -162,7 +167,8 @@ def audit(ps, gs_measure=None, stage="launch"):
     except ValueError:
         errs.append("--b1-guard-ref-ap2m not numeric")
     if stage == "measure":
-        for f, want in (("--steps", "100"), ("--grad-share-every", "50"), ("--grad-share-at", "50")):
+        for f, want in (("--steps", "100"), ("--grad-share-every", "50"), ("--grad-share-at", "50"),
+                        ("--b1-guard-step", "100"), ("--r8-alloc-emit-start", "50")):
             if (get(ps, f) or [None])[0] != want:
                 errs.append(f"measurement argv: {f} must be {want}")
     else:
@@ -182,8 +188,8 @@ def audit(ps, gs_measure=None, stage="launch"):
         if f not in names:
             errs.append(f"required flag {f} missing")
     for f, want in LITERALS.items():
-        if stage == "measure" and f in ("--steps", "--grad-share-every"):
-            continue
+        if stage == "measure" and f in ("--steps", "--grad-share-every", "--b1-guard-step", "--r8-alloc-emit-start"):
+            continue                    # the measurement stage pins these to its own literals (100 / 50 / 100 / 50) above
         got = get(ps, f)
         if got is None or got[:1] != [want]:
             errs.append(f"{f} must be {want!r}, got {got}")
@@ -236,6 +242,10 @@ def self_test():
     pm, _ = assemble(base, **{**kw, "gs_at": None}, stage="measure")
     assert not audit(pm, None, "measure"), audit(pm, None, "measure")
     assert get(pm, "--steps") == ["100"] and get(pm, "--grad-share-every") == ["50"] and get(pm, "--grad-share-at") == ["50"]
+    assert get(pm, "--b1-guard-step") == ["100"] and get(pm, "--r8-alloc-emit-start") == ["50"]
+    # DELIBERATE REGRESSION: the pre-fix measurement argv (launch step pins kept) must be refused by the measure audit
+    bad = set_flag(set_flag(list(pm), "--b1-guard-step", ["1000"]), "--r8-alloc-emit-start", ["1000"])
+    assert audit(bad, None, "measure"), "a measurement argv with launch-step pins past --steps 100 was accepted"
     # LITERAL expectations
     assert get(ps, "--w-tac-v6") == ["51.0"], get(ps, "--w-tac-v6")
     assert get(ps, "--w-map-hires") == ["4.0"]

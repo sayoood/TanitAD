@@ -85,7 +85,7 @@ gs-measure)
   pyval 'import json,sys; d=json.load(open(sys.argv[1])); a=d["argv"] if isinstance(d,dict) else d; print("\n".join(a))' "$ARGVM" > "$MD/args.txt"
   if [ "$DRY" = 1 ]; then say "DRY: flock $LOCKF; $CODE/stack/scripts/refc_v3_train.py with $(wc -l < "$MD/args.txt") args (100 steps, --grad-share-every 50 --grad-share-at 50) -> $MOUT/metrics.jsonl -> gs_measure.json"; echo "ZZGSMEASURE-DRYOKZZ"; exit 0; fi
   [ ! -e "$MOUT/metrics.jsonl" ] || die "$MOUT/metrics.jsonl already exists (a measurement is one run; move it aside)"
-  exec 9>"$LOCKF"; flock -n 9 || die "the Thor GPU lock is held"
+  exec 9>"$LOCKF"; say "waiting for the Thor GPU lock (blocking, <= 2 h; the ladder/evals release it between jobs)"; flock -w 7200 9 || die "the Thor GPU lock stayed held for 2 h"
   mapfile -t ARGS < "$MD/args.txt"
   ( cd "$CODE/stack" && export PYTHONPATH="$CODE/stack" OMP_NUM_THREADS=8 PYTHONIOENCODING=utf-8 HF_HUB_OFFLINE=1 &&
     /home/nvidia/venvs/tanitad-train/bin/python "$CODE/stack/scripts/refc_v3_train.py" "${ARGS[@]}" > "$MD/train.log" 2>&1 9>&- 200>&- )
@@ -113,7 +113,7 @@ bind)
   done
   if [ "$DRY" = 1 ]; then say "DRY: flock $LOCKF; map ($(wc -l < "$BD/map.args") args) then box ($(wc -l < "$BD/box.args") args) via closure_run.py --binding (MAIN arm only, A19), then assert the closure + record JSONs"; echo "ZZBIND-DRYOKZZ"; exit 0; fi
   NL="$(ps -eo args | grep -c 'ladder_chai[n]')"; [ "$NL" = 0 ] || die "the ladder is running"
-  exec 9>"$LOCKF"; flock -n 9 || die "the Thor GPU lock is held"
+  exec 9>"$LOCKF"; say "waiting for the Thor GPU lock (blocking, <= 2 h; the ladder/evals release it between jobs)"; flock -w 7200 9 || die "the Thor GPU lock stayed held for 2 h"
   for K2 in map box; do
     mapfile -t HARGS < "$BD/$K2.args"; mapfile -t ROOTS < "$BD/$K2.roots"; DR=(); for r in "${ROOTS[@]}"; do [ -n "$r" ] && DR+=(--data-root "$r"); done
     mkdir -p "$BD/run_$K2" 2>/dev/null
