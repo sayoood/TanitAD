@@ -1,0 +1,38 @@
+{
+ "schema": "tanitad.build_outputs/1",
+ "task": "refcv8 train set 4,369 -> 4,572 (PI 2026-10-12: one full pass, add the missing clips, never the val split)",
+ "date": "2026-10-12",
+ "zero_gpu": true,
+ "outputs": [
+  {"name": "train view (symlinks + manifest + record)", "where": "thor:/home/nvidia/data/refcv8-b1-416x1024-train-4572",
+   "counts": {"symlinks": 4572, "old_entries_identical_targets": 4369, "added": 203, "n_eval139_listing": 0, "n_v8_eval_labels": 0, "n_windows": 781635},
+   "files": {"_v2manifest.pt": {"md5": "77dafb50af0aedd1b940cf12c12518ef", "bytes": 24881873},
+             "_VIEW_RECORD.json": {"md5": "df2d8cfd6f44548d7d8cc82b0d5eba32"}},
+   "dev_copy": "C:/Users/Admin/tanitad-data/add203/in/train4572_v2manifest.pt",
+   "builder": "stage/stack/scripts/build_refcv8_add203_view.py", "report": "raw/view_report.json"},
+  {"name": "combined extrinsics (4,572 train + 139 eval = 4,711 keys... see note)", "where": "thor:/home/nvidia/data/refcv8_train4572_eval139_extrinsics.json",
+   "md5": "dba6da20b874670aef32f2451b312837", "bytes": 3519480, "counts": {"keys": 4711, "old_keys_unchanged": 4508, "new_keys": 203},
+   "note": "4,711 = 4,572 train + 139 eval; the old file had 4,508 = 4,369 + 139",
+   "tool": "taniteval/tools/pai_extrinsics_table.py (as at origin 58d413f)",
+   "control": "3 known clips re-run == stored entries (dict equality); old file re-serialises byte-identically with json.dumps(indent=2), so the 4,508 old entries are untouched"},
+  {"name": "pose-sync sidecar", "where": "thor:/home/nvidia/data/refcv8_pose_sync_sidecar.jsonl (+ .meta.json)",
+   "md5": "894fe1d9e5420dc7f8eadcbe20c791e5", "meta_md5": "d90c6aef777b417b914098f784fb5b94",
+   "counts": {"rows": 4711, "old_rows_reproduced_identical": "4508/4508", "add203_rows": "203/203", "skipped": 0, "k4_checked": 4653, "k4_worst_abs_dt_s": 6.2e-09},
+   "inputs_md5": {"train_manifest": "77dafb50af0aedd1b940cf12c12518ef", "eval_manifest": "3443323229279a18253691ff36ebffd3"},
+   "builder": "stack/scripts/build_pose_sync_sidecar.py"},
+  {"name": "clip-clock sidecar (position-inversion rows + camera-timestamp rows for 33 stationary ADD clips)",
+   "where": "thor:/home/nvidia/data/refcv8_clip_clock_sidecar_ts33.jsonl (+ .meta.json)",
+   "md5": "c81c2739b5bef58e3c7e389245bd506a", "meta_md5": "9d959c3e265332a46ce482f02a142072",
+   "counts": {"rows": 4686, "position_inversion_rows": 4653, "old_rows_reproduced_identical": "4483/4483", "camera_timestamp_rows": 33},
+   "builder": ["stack/scripts/build_clip_clock_sidecar.py", "stage/stack/scripts/refcv8_add203_ts_clock_probe.py", "stage/stack/scripts/refcv8_add203_mk_clock_ts33.py"],
+   "control": "camera-timestamp route validated on ALL 4,653 position-inversion rows: max|d grid_start_s| 4.27e-07 s, max|d dt_s| 6.2e-09 s",
+   "intermediate_not_for_launch": "dev:C:/Users/Admin/tanitad-data/add203/out/refcv8_clip_clock_sidecar.jsonl (4,653 rows; train unverified 55/4572 = 1.203 % -> G3 REFUSES)"},
+  {"name": "agent join (2-D) and 3-D join", "where": "UNCHANGED: thor:/home/nvidia/data/joins/b1_train_plus_eval_agents.jsonl.xz (md5 0c31a3a63d7205e9fa50e8ac4204ef46), thor:/home/nvidia/data/join3d/b1_train_plus_eval_agents_3d.jsonl.xz",
+   "finding": "the 58 no_validated_map clips are ALREADY in both joins (58/58, 2-D meta per_clip + 3-D meta sha12); the 145 no_agent_join clips cannot be joined: 132 have no obstacle data, 6 have 0-row obstacle parquets, 7 fail the per-clip frame gate. Builder re-run on those 13 reproduces the same 6 + 7 (raw/join_ctl16.log)."}
+ ],
+ "not_built_hard_blockers": [
+  {"artifact": "v9 train release (--r8-v9-labels / --r8-v9-md5)", "why": "release holds 4,369 clips; row_for_now raises V9LabelError 'clip sid not in the train release' for any window of the 203 (tanitad/data/v9_labels.py:112-115) at launch"},
+  {"artifact": "VIS-1 sidecar (--vis1-sidecar, launch_gate.py:572)", "why": "VIS1Sidecar.require_clips refuses when any clip of the dataset is absent (tanitad/data/vis1.py:277-283); 4,508 clips, 203 absent"}
+ ],
+ "old_files_unchanged": "raw/thor_BEFORE_md5.txt == AFTER (view dir digests, manifests, extrinsics, pose-sync, clock, speed sidecar md5; joins and vis1 npz size+mtime)"
+}
