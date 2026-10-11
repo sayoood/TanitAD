@@ -175,6 +175,10 @@ if [ "$NEED" = 1 ]; then
   export NUPLAN_DATA_ROOT="$DATA" REFE_NUPLAN_DB_ROOT="$DATA/navtrain_dbs" REFE_NAVTRAIN_YAML="$PKG/splits/navtrain.yaml"
   have="$(served_count "$SETS" 2>> $L)"
   [ "$have" = "$want" ] || refuse "restored sets serve $have keys, expected $want (P2R_EXPECT_SERVED)"
+  # the labeller must be ABLE to label before ~10 h of it: NAVSIM's metric-cache processor, simulator and scorer import and build.
+  # (2026-10-11: navsim was missing from the venv and the relabel failed EVERY set, 43,212 tracebacks in 13 min, MEASURED)
+  "$PY" -c "import navsim_pdm_targets as PT; PT._setup(); print('ZZPDM_SETUP_OK')" > "$P2/pdm_setup.log" 2>&1 200>&-
+  grep -q "^ZZPDM_SETUP_OK" "$P2/pdm_setup.log" || refuse "the PDM labeller cannot start: $(tail -n 1 "$P2/pdm_setup.log" | cut -c1-200)"
   CORES="$(nproc)"
   if { read -r q per < /sys/fs/cgroup/cpu.max; } 2> /dev/null && [ "$q" != "max" ] && [ "${per:-0}" -gt 0 ]; then
     CORES=$(( q / per > 0 ? q / per : 1 ))

@@ -49,6 +49,17 @@ uv pip install -q --python "$PY" --no-deps -r "$PKG/code/requirements_teacher_lo
 uv pip install -q --python "$PY" --index-url https://download.pytorch.org/whl/cu128 \
     "torch==2.7.1" || fail torch
 uv pip install -q --python "$PY" --no-deps -e "$DZ/nuplan-devkit" -e "$DZ" || fail editable
+# NAVSIM v1.1 @ 3e8291b: the PDM labeller (refe/navsim_pdm_targets.py) runs NAVSIM's OWN MetricCacheProcessor, PDMSimulator and
+# PDMScorer. No pod script installed it: the first REFe pod had it set up by hand, and on 2026-10-11 the P2 relabel failed EVERY
+# set with "No module named 'navsim'" (MEASURED). Pinned to the commit the labeller's validation cites; --no-deps like the rest.
+NAVSIM_COMMIT="3e8291bfa89ff247231e0227778840cd0a036896"
+NAVSIM_DIR="$WORK/navsim-3e8291b"
+if [ ! -d "$NAVSIM_DIR/.git" ]; then
+  git clone -q https://github.com/autonomousvision/navsim.git "$NAVSIM_DIR" || fail navsim-clone
+fi
+git -C "$NAVSIM_DIR" checkout -q "$NAVSIM_COMMIT" || fail navsim-checkout
+[ "$(git -C "$NAVSIM_DIR" rev-parse HEAD)" = "$NAVSIM_COMMIT" ] || fail "navsim HEAD $(git -C "$NAVSIM_DIR" rev-parse HEAD)"
+uv pip install -q --python "$PY" --no-deps -e "$NAVSIM_DIR" || fail navsim-editable
 
 echo "=== 3. prove CUDA with a real conv2d, not an import ==="
 # CLAUDE.md: cuBLAS/matmul can succeed while cuDNN/conv is broken, and `import torch` proves nothing.
