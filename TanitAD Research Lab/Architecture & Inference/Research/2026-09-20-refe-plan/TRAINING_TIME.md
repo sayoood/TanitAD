@@ -1,5 +1,7 @@
 # How long will REFe take to train, at the paper's data scale, including the augmented data?
 
+> ⚠️ **Precision note (2026-10-11).** Every day count in this file is **FP32**. The final REFe run trained in **bf16 + TF32 + `torch.compile`** and MEASURED **0.2227 s per sample-pass**, i.e. 25 epochs of navtrain in **7.04 A40-days**, against row C's FP32 36–39 days (×5.76). Reconciliation and sources: `SPEC_P6_PAPER_FAITHFUL.md` §0.1.
+
 **PI question, 2026-09-21.** *"How long will the training take with the same amount of data
 including the usage of the augmented data."*
 
