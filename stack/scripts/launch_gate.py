@@ -649,11 +649,20 @@ PROFILES["refcv8"] = dict(
     open_items=_REFCV8_OPEN_ITEMS,
     required_flags=tuple(_R7["required_flags"]) + (
         "--refcv8", "--init-from", "--r8-v9-labels", "--r8-v9-labels-eval", "--r8-nav-from-v9",
-        "--r8-rc-variant", "--join-defect-masks", "--grad-share-every", "--max-speed-input-v6", "--r8-speed-input",
-        "--pose-sync-sidecar"),
+        "--r8-no-rc", "--join-defect-masks", "--grad-share-every", "--max-speed-input-v6", "--r8-speed-input",
+        "--speed-max-sidecar-v6", "--speed-max-sidecar-v6-eval", "--pose-sync-sidecar",
+        # R8-WARMUP (SPEC_REFCV8 10.3 / 10.1): the weight EMA and the B1 guard
+        "--ema-decay", "--b1-guard-ref-ap2m", "--b1-guard-step"),
     required_flags_why=dict(_R7.get("required_flags_why") or {}, **{
         "--max-speed-input-v6": "SPEC_REFCV8 8.3 (X3): the set-speed channel, the ceiling's source",
-        "--r8-speed-input": "SPEC_REFCV8 8.3 (X3) / MM ruling Q5: the channel's source is PAST-ONLY (N2 / N3)",
+        "--r8-speed-input": "PI ruling 2026-10-11 (Q-B): the channel's source is the QUANTIZED max-speed LABEL "
+                            "(`--r8-speed-input label`; the trainer value lands in hold_r8label)",
+        "--speed-max-sidecar-v6": "PI ruling 2026-10-11 (Q-B): the 4-way road-type label sidecar (train), refcv7's",
+        "--speed-max-sidecar-v6-eval": "PI ruling 2026-10-11 (Q-B): the 4-way road-type label sidecar (eval), refcv7's",
+        "--r8-no-rc": "PI ruling 2026-10-11 (Q-A): NO route checkpoint -- the nav command and its distance only",
+        "--ema-decay": "R8-WARMUP (MM ruling 2026-10-11, SPEC_REFCV8 10.3): the weight EMA, 0.9998",
+        "--b1-guard-ref-ap2m": "SPEC_REFCV8 10.1 B1 guard: refcv7-50,400's in-run box3d AP@2 m (min of last 22 rows)",
+        "--b1-guard-step": "SPEC_REFCV8 10.1 B1 guard: first read at step 1,000",
         "--pose-sync-sidecar": "X10 (MM ruling 2026-10-04, closes SPEC X10): the pose-to-image timing correction "
                                "(Data FlyWheel; tanitad/data/pose_sync.py)",
         "--refcv8": "PLAN_REFCV8 R8-1: the tactical layer conditions generation and selection",
@@ -661,51 +670,86 @@ PROFILES["refcv8"] = dict(
         "--r8-v9-labels": "WP-A INTEGRATION 2: the v9 release supervises the tactical layer and feeds nav / RC",
         "--r8-v9-labels-eval": "train and eval are supervised by ONE label release",
         "--r8-nav-from-v9": "R8-2: the per-frame announced nav token",
-        "--r8-rc-variant": "R8-3: the route checkpoint, named so its pending ruling is visible",
         "--join-defect-masks": "MM binding 2026-10-04 item 6: the 693-box ego mask",
         "--grad-share-every": "SPEC_WPB_LADDER: the in-run gradient-share instrument is on every refcv8 run"}),
     required_values=dict(_R7["required_values"], **{
         "--r8-v9-md5": "f63ece410b725febb8a5242cf2b01d3c",
         "--r8-v9-eval-md5": "6b5c7f207cffc3b7eb3cd527fd433599",
         "--r8-v9-lat-variant": "a",
-        "--r8-rc-noise-along-m": "2.0",
-        "--r8-rc-noise-lat-m": "0.75",
-        "--r8-rc-dropout": "0.3",
         "--r8-nav-args-dropout": "0.5",
         "--r8-speed-unknown-p": "0.45",
         "--r8-alloc-emit-start": "1000",
-        "--w-r8-cons": "0.05"}),
+        "--w-r8-cons": "0.05",
+        # PI Q-B 2026-10-11: the speed channel's source is the quantized label sidecar, and the sidecar paths are
+        # refcv7-r101-s0's OWN launch record (`stack/ops/runs.d/refcv7-r101-s0.argv.json`); the files' content is
+        # bound by the data manifest + the meta check (FIX-5), exactly like `--vis1-sidecar`
+        "--r8-speed-input": "label",
+        "--speed-max-sidecar-v6": "/home/nvidia/data/refcv6_speed_max_v8_train.jsonl",
+        "--speed-max-sidecar-v6-eval": "/home/nvidia/data/refcv6_speed_max_v8_eval.jsonl",
+        # R8-WARMUP, written as the registered LITERALS (a flag left at the trainer's default is refused)
+        "--ema-decay": "0.9998",
+        "--b1-guard-ref-ap2m": "0.21211",
+        "--b1-guard-step": "1000",
+        "--warmup": "1000",
+        "--steps": "30000",
+        # B1 EVAL GEOMETRY (SPEC_REFCV8 10.1): the reference 0.21211 is defined on the 128-window in-run eval set =
+        # `--eval-batches 8` x the in-run batch (the trainer builds the eval loader with `batch_size=args.batch`:
+        # refc_v3_train.py `n_need = args.eval_batches * args.batch`), and the guard first reads at step 1,000, which
+        # `--eval-every 500` reaches. A launch batch other than 16 is a DIFFERENT window set (B-EVAL-GEOMETRY).
+        "--batch": "16",
+        "--eval-batches": "8",
+        "--eval-every": "500"}),
     required_values_why=dict(_R7.get("required_values_why") or {}, **{
         "--r8-v9-md5": "WP-A LANDING_READY WPA-S3: the validated train release",
         "--r8-v9-eval-md5": "WP-A LANDING_READY WPA-S3: the validated eval139 release",
         "--r8-v9-lat-variant": "D-WPA-1: lateral variant a (junction) is the default",
-        "--r8-rc-noise-along-m": "WP-A INTEGRATION 4: E2' certified the NOISED RC-A50 (the clean point leaks)",
-        "--r8-rc-noise-lat-m": "WP-A INTEGRATION 4: the certified lateral sigma",
-        "--r8-rc-dropout": "MM binding 2026-10-04: route-checkpoint dropout >= 0.3",
         "--r8-nav-args-dropout": "MM binding 2026-10-04: nav-argument dropout, token kept",
         "--r8-speed-unknown-p": "SPEC_REFCV8 8.3 (X3): the TRAINED unknown row at D4 / NavSim's no-limit share 0.45",
         "--r8-alloc-emit-start": "MM ruling Q1 (I-2) + R8-WARMUP (2026-10-11): extras emitted from the end of the LR warmup "
                                  "(--warmup 1000, SPEC_REFCV8 sec. 10.3); the emission-OFF phase is identity-free "
                                  "(iw_diag + the split decode, I-W PASS 218 windows)",
-        "--w-r8-cons": "SPEC_WPB: the constraint-head weight"}),
+        "--w-r8-cons": "SPEC_WPB: the constraint-head weight",
+        "--r8-speed-input": "PI ruling 2026-10-11 (Q-B): the max-speed LABEL quantized to the road-type set "
+                            "{30, 50, 100, 120} km/h, not a past-only proxy and not the exact future speed; "
+                            "`label` is the trainer value landing in hold_r8label",
+        "--speed-max-sidecar-v6": "PI ruling 2026-10-11 (Q-B): refcv7-r101-s0's train label sidecar (its launch record)",
+        "--speed-max-sidecar-v6-eval": "PI ruling 2026-10-11 (Q-B): refcv7-r101-s0's eval label sidecar (its launch record)",
+        "--ema-decay": "R8-WARMUP (SPEC_REFCV8 10.3): EMA 0.9998, evaluated at every in-run eval",
+        "--b1-guard-ref-ap2m": "SPEC_REFCV8 10.1 (MM ruling 2026-10-11): the MINIMUM of refcv7-r101-s0's in-run box3d_ap2m "
+                               "over its last 22 eval rows, inrun_curve.json md5 74436ec4f705c22cc7f6f4cc1ea6a024 -- a "
+                               "literal, never re-derived",
+        "--b1-guard-step": "SPEC_REFCV8 10.1: the guard reads at the first in-run eval at or after step 1,000",
+        "--warmup": "R8-WARMUP (SPEC_REFCV8 10.3): both LR groups re-warm over 1,000 steps (S_emit = the warmup length)",
+        "--steps": "SPEC_REFCV8 10.3: --steps 30000 binds (also the cosine horizon)",
+        "--batch": "SPEC_REFCV8 10.1: the B1 reference is defined on the 128-window in-run eval = "
+                   "--eval-batches 8 x --batch 16",
+        "--eval-batches": "SPEC_REFCV8 10.1: the in-run eval geometry the B1 reference is defined on (8 x 16 = 128 windows)",
+        "--eval-every": "SPEC_REFCV8 10.1: the in-run eval fires at step 1,000 (the guard's first read)"}),
     required_positive=tuple(_R7["required_positive"]) + ("--w-r8-cons", "--w-r8-v9-cons"),
     forbidden_levers=tuple(_R7["forbidden_levers"]) + (
         (("--r8-derange-feed",), "SPEC_WPB_LADDER's L1 deliberate-regression diagnostic"),
         (("--r8-rc-roll",), "SPEC_WPB_LADDER's L1 deliberate-regression diagnostic"),
         (("--r8-roll-targets",), "SPEC_WPB_LADDER's L2 / L3 information control"),
         (("--r8-roll-speed-input",), "SPEC_WPB_LADDER's L4 deliberate-regression arm (V-VSHUF)"),
-        # ⛔ X3 (SPEC_REFCV8 8.3, MM ruling Q5): refcv7's speed source. Refused by NAME, whatever its value.
-        (("--speed-max-sidecar-v6", "--speed-max-sidecar-v6-eval"),
-         "X3: the v8 FUTURE-MAX sidecar -- a future-ego speed ORACLE input (K12; D4 LEAK 0.238 against the 0.05 bar, "
-         "SPEC_REFCV8 8.3); the refcv8 speed source is --r8-speed-input (past-only)"),
+        # ⛔ PI Q-A 2026-10-11 ("just give the nav command and the distance"): NO route checkpoint. Refused by NAME,
+        # whatever the value: a launch carrying the RC variant, its noise or its dropout feeds a route input the PI
+        # ruled out. (`--r8-rc-roll` is already refused above; `--r8-no-rc` is REQUIRED.)
+        (("--r8-rc-variant", "--r8-rc-noise-along-m", "--r8-rc-noise-lat-m", "--r8-rc-dropout"),
+         "PI 2026-10-11 (Q-A): NO route checkpoint -- the refcv8 launch carries `--r8-no-rc` and none of the RC flags"),
+        # (the v8 future-max sidecar entry that stood here is LIFTED by PI Q-B 2026-10-11: the sidecar is the speed
+        #  channel's source, as the QUANTIZED label -- see required_values / forbidden_values. The entry's evidence is
+        #  kept: the EXACT future-max sidecar measured D4 LEAK 0.238 against the 0.05 bar (SPEC_REFCV8 8.3); the PI's
+        #  ruling is that the 4-way road-type quantization, not the exact future speed, is what the channel carries.
+        #  The RC entry above replaces the certified noised RC-A50 inputs (along 2.0 m, lat 0.75 m, dropout 0.3).)
     ),
-    #: ⛔ the RC input rests on the Master Mind's PROVISIONAL ruling (road-geometry speed information is admissible;
-    #: WP-A INTEGRATION 4): PI confirmation pending, so a launch feeding it is PI-DECISION until the PI rules
-    pi_pending_values=dict(_R7.get("pi_pending_values") or {}, **{
-        "--r8-rc-variant": "the route-checkpoint input: the Master Mind's provisional ruling that road-geometry "
-                            "speed information is admissible awaits the PI (WP-A INTEGRATION 4)",
-        "--r8-speed-input": "PI decision 2 (SPEC_REFCV8 sec. 11): N2 or N3 as the past-only speed proxy is open; N2 is "
-                            "the plan's default (MM ruling Q5)"}),
+    #: PI Q-B: the channel's source is the label; the past-only proxies are refused by value
+    forbidden_values=dict(_R7.get("forbidden_values") or {}, **{"--r8-speed-input": ("n2", "n3")}),
+    forbidden_values_why=dict(_R7.get("forbidden_values_why") or {}, **{"--r8-speed-input": (
+        "PI 2026-10-11 (Q-B): the refcv8 speed input is the quantized max-speed LABEL (`label`); the past-only "
+        "proxies n2 / n3 are superseded")}),
+    #: both PI items that stood here are CLOSED by the PI's rulings of 2026-10-11 (Q-A: no route checkpoint; Q-B: the
+    #: quantized label is the speed input), so no flag of this profile awaits a PI value -- the mechanism stays
+    pi_pending_values=dict(_R7.get("pi_pending_values") or {}),
 )
 
 
@@ -3118,17 +3162,110 @@ def _apply_smoke_arm(ctx: Ctx, T, pat: _Patcher, argv: list[str] | None = None) 
         _say("arm: " + _drop_from_passthrough(pat, (key,), fallback_pop=False))
 
 
-def step_cost(step_times: list[float], warmup: int) -> dict:
+def step_cost(step_times: list[float], warmup: int, exclude_rows: Iterable[int] = ()) -> dict:
     """s/step from the loop's own opt.step timestamps, after `warmup` intervals (compile, cuDNN
-    autotune and loader warm-up are not the run's cost)."""
+    autotune and loader warm-up are not the run's cost).
+
+    `exclude_rows` (B-GS-SMOKE, SPEC_REFCV8 3.2 item 5): the metrics ROWS on which a gradient-share reading ran. A
+    reading is a ~16 min fp32 replay INSIDE one step; its wall-clock is the instrument's cost, recorded separately
+    (`gs_*_s`), and must not enter the projected s/step the <= 10.5 cost gate reads. Step `r` (the row's step count)
+    owns `step_times[r-1]`; the replay can sit on either side of that step's `opt.step` timestamp, so the intervals
+    r-2, r-1 and r (interval j = step_times[j+1] - step_times[j]) are dropped for each reading row."""
     iv = [b - a for a, b in zip(step_times, step_times[1:])]
-    use = iv[warmup:] if len(iv) > warmup else []
+    drop = {j for r in exclude_rows for j in (int(r) - 2, int(r) - 1, int(r))}
+    use = [v for j, v in enumerate(iv) if j >= warmup and j not in drop]
+    n_dropped = sum(1 for j in range(len(iv)) if j >= warmup and j in drop)
+    extra = {"reading_intervals_excluded": n_dropped, "reading_rows": sorted(int(r) for r in exclude_rows)} \
+        if exclude_rows else {}
     if not use:
-        return {"n_intervals": len(iv), "n_used": 0, "s_per_step_mean": None}
+        return {"n_intervals": len(iv), "n_used": 0, "s_per_step_mean": None, **extra}
     s = sorted(use)
     return {"n_intervals": len(iv), "n_used": len(use), "warmup_skipped": warmup,
             "s_per_step_mean": round(sum(use) / len(use), 4),
-            "s_per_step_median": round(s[len(s) // 2], 4), "s_per_step_max": round(s[-1], 4)}
+            "s_per_step_median": round(s[len(s) // 2], 4), "s_per_step_max": round(s[-1], 4), **extra}
+
+
+def gs_reading_rows(argv: list[str], steps: int | None = None) -> list[int]:
+    """The metrics rows on which `argv` takes a gradient-share reading: `--grad-share-at` when given, else every
+    `--grad-share-every`-th row up to `--steps` (the trainer's default schedule). [] when the instrument is off."""
+    ev = flag_values(argv, "--grad-share-every")
+    try:
+        every = int(ev[0]) if ev else 0
+    except ValueError:
+        return []
+    if every <= 0:
+        return []
+    at = flag_values(argv, "--grad-share-at")
+    try:
+        if at:
+            return sorted({int(x) for x in str(at[0]).split(",") if x.strip()})
+        n = int(steps if steps is not None else ((flag_values(argv, "--steps") or ["0"])[0]))
+    except ValueError:
+        return []
+    return list(range(every, n + 1, every))
+
+
+def smoke_argv(base: list[str], steps: int, log_every: int) -> tuple[list[str], dict]:
+    """The G-LIVE smoke's argv from the LAUNCH argv: `--steps` -> the smoke length, and every flag whose value is a
+    STEP of the launch (a number the trainer's own pins compare with `--steps`) re-expressed inside the smoke.
+
+    B-GS-SMOKE (MEASURED by the SPEC_REFCV8 agent, 2026-10-11): the launch carries `--grad-share-at 1000,10000,20000,30000`
+    and `--b1-guard-step 1000`; the ~100-step smoke then died in the trainer's pins ("past --steps 100" / "the guard could
+    never fire") before step 1 -- a conformant launch argv could never PASS G-LIVE. CHOSEN: REWRITE, not drop.
+      * `--grad-share-every L --grad-share-at L` (L = the launch's `--log-every`): EXACTLY ONE reading, on the first logged
+        row -- SPEC_REFCV8 3.2 item 5 ("the smoke argv carries --grad-share-every 50 --grad-share-at 50"). Dropping the
+        flags would leave the instrument (`gs_*` rows, the fp32 replay) unreached, i.e. declared and untested; the rewrite
+        keeps it reached once, and its wall-clock is the number the schedule rule needs. Done only when the launch has the
+        instrument ON (`--grad-share-every` > 0).
+      * `--b1-guard-step` above the smoke -> the smoke's last step (the one step an in-run eval is guaranteed:
+        `step == args.steps`), so the guard is ARMED and DECIDES in the smoke and reads its EMA metric for real.
+    Everything rewritten is returned in the second value (it goes into the G-LIVE evidence as a departure)."""
+    out = set_flag(list(base), "--steps", [str(steps)])
+    dep: dict[str, Any] = {"--steps": steps}
+    L = max(1, int(log_every))
+    ev = flag_values(base, "--grad-share-every")
+    try:
+        on = bool(ev) and int(ev[0]) > 0
+    except ValueError:
+        on = False
+    if on:
+        was = {"--grad-share-every": ev[0], "--grad-share-at": (flag_values(base, "--grad-share-at") or [None])[0]}
+        out = set_flag(set_flag(out, "--grad-share-every", [str(L)]), "--grad-share-at", [str(L)])
+        dep["--grad-share-every/--grad-share-at"] = (f"{was} -> every {L} at {L} (one reading inside the smoke, "
+                                                     f"SPEC_REFCV8 3.2 item 5; its cost is excluded from s/step)")
+    gs = flag_values(base, "--b1-guard-step")
+    try:
+        late = bool(gs) and int(gs[0]) > steps
+    except ValueError:
+        late = False
+    if late:
+        out = set_flag(out, "--b1-guard-step", [str(steps)])
+        dep["--b1-guard-step"] = f"{gs[0]} -> {steps} (the smoke's last step: the guard decides on the final-step eval)"
+    # MM 2026-10-11 (smoke the launch as launched): the launch switches allocation EMISSION on at
+    # --r8-alloc-emit-start (1000). A smoke shorter than that never runs the switch, so a crash at the
+    # switch would first appear in the real run. Bring it inside: emission turns on mid-smoke.
+    es = flag_values(base, "--r8-alloc-emit-start")
+    if es and int(es[0]) >= steps:
+        mid = max(1, steps // 2)
+        out = set_flag(out, "--r8-alloc-emit-start", [str(mid)])
+        dep["--r8-alloc-emit-start"] = (f"{es[0]} -> {mid} (emission switches ON mid-smoke, so the launch's "
+                                        f"emission switch runs inside G-LIVE)")
+    return out, dep
+
+
+def judge_b1_reach(argv: list[str], rows: list[dict]) -> tuple[list[str], dict]:
+    """The B1 guard, armed on the smoke argv, must have DECIDED in the smoke (a `b1_guard` keep/cut row in
+    metrics.jsonl): a guard that is stamped in config.json and never reads its metric is exactly the M18 failure."""
+    if not has_flag(argv, "--b1-guard-ref-ap2m"):
+        return [], {"b1_guard": "not armed in this argv"}
+    dec = [r for r in rows if r.get("b1_guard") in ("keep", "cut")]
+    det = {"b1_guard_rows": [{k: r.get(k) for k in ("step", "b1_guard", "b1_ema_box3d_ap2m", "b1_ref_box3d_ap2m")}
+                              for r in dec][:3]}
+    if not dec:
+        return ["G-LIVE B1 reach: --b1-guard-ref-ap2m is armed in the smoke but no row carries a `b1_guard` decision "
+                "-- the guard never read ema_eval_box3d_ap2m (the in-run eval or the EMA eval did not run); "
+                "a stamped-and-unreached guard is refused"], det
+    return [], det
 
 
 def judge_new2_live(prof: dict, run1: dict, config: dict | None, argv_local: list[str],
@@ -3176,7 +3313,8 @@ def judge_new2_live(prof: dict, run1: dict, config: dict | None, argv_local: lis
                            f"{want[:16]} (found {[v[:16] for _, v in found]})")
     else:
         reasons.append(f"NEW-2: {h['class_weights_flag']} {cw} is not a readable file")
-    cost = step_cost(run1.get("step_times") or [], int(h["cost_warmup_steps"]))
+    cost = step_cost(run1.get("step_times") or [], int(h["cost_warmup_steps"]),
+                     exclude_rows=gs_reading_rows(argv_local))
     cost["cuda_max_mem_gb"] = run1.get("cuda_max_mem_gb")
     cost["ref_s_per_step"] = h["cost_ref_s_per_step"]
     cost["max_ratio"] = h["cost_max_ratio"]
@@ -4788,7 +4926,8 @@ def job_smoke(ctx: Ctx, checks: list[str]) -> dict[str, dict]:
         base = set_flag(base, "--trunk-compile", None)
     steps, log_every = smoke_step_count(
         T, base, int(ctx.options.get("smoke_steps") or ctx.prof["smoke_steps"]))
-    argv1 = set_flag(set_flag(base, "--steps", [str(steps)]), "--out", [str(run_dir)])
+    argv1, smoke_dep = smoke_argv(base, steps, log_every)
+    argv1 = set_flag(argv1, "--out", [str(run_dir)])
     all_inputs = _inputs_read(ctx, [f for f, _ in data_inputs(ctx.argv, ctx.prof)])
     for k, fp in implicit_inputs(ctx.argv):
         all_inputs[k] = fp
@@ -4814,13 +4953,14 @@ def job_smoke(ctx: Ctx, checks: list[str]) -> dict[str, dict]:
         det.update({"smoke_argv": argv1, "run_dir": str(run_dir), "elapsed_s": run1["elapsed_s"],
                     "declared_terms": terms, "eval_calls": run1["eval_calls"],
                     "out_keys": run1["out_keys"][:120],
-                    "departures_from_launch_argv": {"--steps": steps, "--out": "smoke dir",
+                    "departures_from_launch_argv": {**smoke_dep, "--out": "smoke dir",
                                                     **({"--trunk-compile": "dropped on a CPU host"}
                                                        if ctx.options.get("cpu_only") else {})}})
         # the measured cost, ALWAYS recorded (on Thor `max_memory_allocated` is the only
         # admissible memory reading)
         h = ctx.prof.get("map_hires") or {}
-        det["cost"] = {**step_cost(run1.get("step_times") or [], int(h.get("cost_warmup_steps", 10))),
+        det["cost"] = {**step_cost(run1.get("step_times") or [], int(h.get("cost_warmup_steps", 10)),
+                                   exclude_rows=gs_reading_rows(argv1)),
                        "cuda_max_mem_gb": run1.get("cuda_max_mem_gb"),
                        "batch": int(args.batch)}
         needs_pi = False
@@ -4878,6 +5018,9 @@ def job_smoke(ctx: Ctx, checks: list[str]) -> dict[str, dict]:
         gr_, gd_ = judge_grad_unreachable_probe(run1.get("grad_unreachable_probe"))
         det["grad_unreachable_probe"] = gd_
         reasons += gr_
+        b1r, b1d = judge_b1_reach(argv1, rows1)
+        det["b1_guard_reach"] = b1d
+        reasons += b1r
         if det["map_hires"]["on"]:
             # G-MAP (LOGGING_SPEC_MAP10 sec. 6): per-class signal at the logits (the gate's own
             # hook), the eval row's 24 IoU + 24 loss shares + counts, the train rows' loss

@@ -29,16 +29,23 @@ RECIPE_FLAGS = ("--r8-n-alloc", "--r8-alloc-emit", "--w-r8-alloc-l1", "--w-r8-li
                 "--w-r8-subscore", "--w-r8-v9-cons", "--r8-lat-prior-dropout", "--r8-prior-free-group")
 #: refused by NAME (launch_gate.py PROFILES['refcv8'] forbidden_levers)
 FORBIDDEN = ("--r8-derange-feed", "--r8-rc-roll", "--r8-roll-targets", "--r8-roll-speed-input",
-             "--speed-max-sidecar-v6", "--speed-max-sidecar-v6-eval",
+             # PI Q-A 2026-10-11: NO route checkpoint (the launch carries --r8-no-rc and none of these; the retired
+             # certified inputs were noise along 2.0 m / lateral 0.75 m, dropout 0.3)
+             "--r8-rc-variant", "--r8-rc-noise-along-m", "--r8-rc-noise-lat-m", "--r8-rc-dropout",
+             # (the v8 future-max sidecar entry is LIFTED by PI Q-B 2026-10-11: it is the speed channel's source)
              # PI 2026-10-11 ("You can stop the ladder after 11 runs"): L4b / L5 are not run, their entry rule cannot be met
              "--r8-speed-enc8", "--r8-critic-drivable", "--w-r8-drivable")
 #: literal expectations (SPEC_REFCV8 3.2 'required values' + R8-WARMUP), written out, not computed
 LITERALS = {"--r8-v9-md5": "f63ece410b725febb8a5242cf2b01d3c",
             "--r8-v9-eval-md5": "6b5c7f207cffc3b7eb3cd527fd433599",
-            "--r8-v9-lat-variant": "a", "--r8-rc-noise-along-m": "2.0", "--r8-rc-noise-lat-m": "0.75",
-            "--r8-rc-dropout": "0.3", "--r8-nav-args-dropout": "0.5", "--r8-speed-unknown-p": "0.45",
+            "--r8-v9-lat-variant": "a", "--r8-nav-args-dropout": "0.5", "--r8-speed-unknown-p": "0.45",
             "--r8-alloc-emit-start": "1000", "--w-r8-cons": "0.05", "--lr": "1e-4", "--warmup": "1000",
-            "--opt": "dd", "--r8-speed-input": "n2", "--eval-every": "500", "--log-every": "50",
+            # PI Q-B 2026-10-11: the speed channel's source is the quantized max-speed LABEL (trainer value `label`)
+            "--opt": "dd", "--r8-speed-input": "label", "--eval-every": "500", "--log-every": "50",
+            # B1 eval geometry (SPEC_REFCV8 10.1): the 128-window in-run eval = --eval-batches 8 x --batch 16
+            "--batch": "16", "--eval-batches": "8",
+            "--speed-max-sidecar-v6": "/home/nvidia/data/refcv6_speed_max_v8_train.jsonl",
+            "--speed-max-sidecar-v6-eval": "/home/nvidia/data/refcv6_speed_max_v8_eval.jsonl",
             # R8-WARMUP CLOSED (MM 2026-10-11, SPEC 10.3): EMA + the B1 guard step + the run length + the gradient-share terms
             "--ema-decay": "0.9998", "--b1-guard-step": "1000", "--steps": "30000",
             "--grad-share-terms": "tac_v6,map_hires", "--grad-share-every": "250"}
@@ -48,8 +55,9 @@ GS_AT_SHORT = "1000,30000"
 GS_BUDGET_FRAC = 0.03       # 4 readings may cost at most 3 % of the projected run wall-clock
 GS_N_LONG = 4
 REQUIRED_FLAGS = ("--refcv8", "--init-from", "--r8-v9-labels", "--r8-v9-labels-eval", "--r8-nav-from-v9",
-                  "--r8-rc-variant", "--join-defect-masks", "--grad-share-every", "--max-speed-input-v6",
-                  "--r8-speed-input", "--pose-sync-sidecar", "--ema-decay", "--b1-guard-ref-ap2m",
+                  "--r8-no-rc", "--join-defect-masks", "--grad-share-every", "--max-speed-input-v6",
+                  "--r8-speed-input", "--speed-max-sidecar-v6", "--speed-max-sidecar-v6-eval",
+                  "--pose-sync-sidecar", "--ema-decay", "--b1-guard-ref-ap2m",
                   "--b1-guard-step", "--grad-share-terms", "--grad-share-at")
 #: model-only is NOT on Thor; ckpt.pt is the full checkpoint, registry md5 d5f104ee54ba6b2861e38030b4f6fcf1
 INIT_FROM = "/home/nvidia/refcv7_run/runs/refcv7-r101-s0/ckpt.pt"
@@ -199,12 +207,14 @@ def self_test():
     base = ["--arm", "hier", "--opt", "dd", "--lr", "1e-4", "--warmup", "2000", "--eval-every", "500",
             "--log-every", "50", "--steps", "50400", "--out", "/x/smoke", "--w-tac-v6", "1.0",
             "--w-map-hires", "1.0", "--refcv8", "--init-from", "/old", "--r8-v9-labels", "a",
-            "--r8-v9-labels-eval", "b", "--r8-nav-from-v9", "--r8-rc-variant", "A50",
+            "--r8-v9-labels-eval", "b", "--r8-nav-from-v9", "--r8-no-rc",
             "--join-defect-masks", "/old/j.json", "--grad-share-every", "50", "--max-speed-input-v6",
-            "--r8-speed-input", "n2", "--pose-sync-sidecar", "p", "--w-r8-cons", "0.05",
+            "--r8-speed-input", "label", "--pose-sync-sidecar", "p", "--w-r8-cons", "0.05",
+            "--speed-max-sidecar-v6", "/home/nvidia/data/refcv6_speed_max_v8_train.jsonl",
+            "--speed-max-sidecar-v6-eval", "/home/nvidia/data/refcv6_speed_max_v8_eval.jsonl",
+            "--batch", "16", "--eval-batches", "8",
             "--r8-v9-md5", LITERALS["--r8-v9-md5"], "--r8-v9-eval-md5", LITERALS["--r8-v9-eval-md5"],
-            "--r8-v9-lat-variant", "a", "--r8-rc-noise-along-m", "2.0", "--r8-rc-noise-lat-m", "0.75",
-            "--r8-rc-dropout", "0.3", "--r8-nav-args-dropout", "0.5", "--r8-speed-unknown-p", "0.45",
+            "--r8-v9-lat-variant", "a", "--r8-nav-args-dropout", "0.5", "--r8-speed-unknown-p", "0.45",
             "--r8-alloc-emit-start", "2000", "--w-r8-sat", "0.1", "--w-r8-listwise", "1.0",
             "--w-r8-subscore", "0.5", "--r8-n-alloc", "32", "--r8-alloc-emit", "--w-r8-alloc-l1", "1.0"]
     kw = dict(code="/C", run_out="/R", recipe={"--w-r8-sat": "0.1"}, k_tac=51, w_map=4.0, b1_ref=0.21211,
@@ -235,8 +245,12 @@ def self_test():
     assert get(ps, "--grad-share-at") == ["1000,10000,20000,30000"] and get(ps, "--b1-guard-ref-ap2m") == ["0.21211"]
     assert get(ps, "--join-defect-masks") == ["/C/stack/tanitad/configs/refcv8_join_label_defects.json"]
     # deliberate regressions: each must be REFUSED
-    bads = (ps + [("--speed-max-sidecar-v6", ["s"])], set_flag(ps, "--w-r8-cons", ["0"]),
+    bads = (set_flag(ps, "--speed-max-sidecar-v6", None), set_flag(ps, "--w-r8-cons", ["0"]),
             set_flag(ps, "--r8-speed-input", None), set_flag(ps, "--w-r8-alloc-l1", ["0"]),
+            set_flag(ps, "--r8-speed-input", ["n2"]), set_flag(ps, "--r8-speed-input", ["n3"]),   # Q-B: past-only OUT
+            ps + [("--r8-rc-variant", ["A50"])], ps + [("--r8-rc-dropout", ["0.3"])],              # Q-A: no RC
+            set_flag(ps, "--r8-no-rc", None), set_flag(ps, "--batch", ["20"]),                      # B1 geometry
+            set_flag(ps, "--eval-batches", ["4"]),
             set_flag(ps, "--warmup", ["2000"]), set_flag(ps, "--r8-alloc-emit-start", ["0"]),
             set_flag(ps, "--r8-alloc-emit-start", ["2000"]),                       # the pre-2026-10-11 S_emit
             ps + [("--r8-speed-enc8", [])], ps + [("--r8-critic-drivable", [])],   # OUT by the PI's 11-run ruling

@@ -29,6 +29,24 @@ def _argv():
     return list(json.loads(ARGV_FILE.read_text(encoding="utf-8"))["argv"])
 
 
+#: PI rulings 2026-10-11 applied to the smoke argv IN MEMORY (the smoke JSON itself still carries the superseded flags until
+#: hold_r8label lands the trainer's `label` value; the trainer-acceptance tests below keep reading the raw file):
+#: Q-A no route checkpoint, Q-B the quantized label (refcv7's two sidecars) is the speed input -- all LITERALS
+_RULED = {"--r8-rc-variant": None, "--r8-rc-noise-along-m": None, "--r8-rc-noise-lat-m": None, "--r8-rc-dropout": None,
+          "--r8-no-rc": [], "--r8-speed-input": ["label"],
+          "--speed-max-sidecar-v6": ["/home/nvidia/data/refcv6_speed_max_v8_train.jsonl"],
+          "--speed-max-sidecar-v6-eval": ["/home/nvidia/data/refcv6_speed_max_v8_eval.jsonl"],
+          "--ema-decay": ["0.9998"], "--b1-guard-ref-ap2m": ["0.21211"], "--b1-guard-step": ["1000"],
+          "--steps": ["30000"], "--batch": ["16"], "--eval-batches": ["8"], "--eval-every": ["500"]}
+
+
+def _ruled_argv():
+    a = _argv()
+    for f, v in _RULED.items():
+        a = LG.set_flag(a, f, v)
+    return a
+
+
 def test_the_profile_inherits_every_refcv7_rule():
     r7, r8 = LG.PROFILES["refcv7"], LG.PROFILES["refcv8"]
     assert set(r7["required_flags"]) < set(r8["required_flags"])
@@ -38,19 +56,20 @@ def test_the_profile_inherits_every_refcv7_rule():
     assert r8["eval_loader"] == r7["eval_loader"] and r8["box_required"] == r7["box_required"]
 
 
-def test_the_smoke_argv_passes_every_argv_rule_with_the_RC_as_its_only_PI_decision():
+def test_the_ruled_smoke_argv_passes_every_argv_rule_with_NO_pending_PI_decision():
     prof = LG.PROFILES["refcv8"]
-    refusals, pending = LG.profile_argv_rules(prof, _argv())
+    refusals, pending = LG.profile_argv_rules(prof, _ruled_argv())
     # refcv7's FIX-4 rule still binds: the banked tau RECORD is a host-side input of the real gate run (its labels
     # sha256 is checked against the file the host reads), so without it this is the one refusal, and it must be there
     tau = [r for r in refusals if r.startswith("--graft-nav-compliance is passed without a RECORDED tau")]
     assert len(tau) == 1
     refusals = [r for r in refusals if r not in tau]
     assert refusals == [], refusals
-    # two PI decisions: the RC (the MM's provisional ruling) and N2 vs N3 (PI decision 2; N2 = the default)
-    assert len(pending) == 2, pending
-    assert any(p.startswith("--r8-rc-variant A50") for p in pending)
-    assert any(p.startswith("--r8-speed-input n2") for p in pending)
+    # both PI items are CLOSED by the PI's rulings of 2026-10-11 (Q-A no RC, Q-B the label is the speed input)
+    assert pending == [], pending
+    # ... and the SUPERSEDED argv (RC variant A50 + N2) is refused, not pending
+    old_refusals, _p = LG.profile_argv_rules(prof, _argv())
+    assert any("--r8-rc-variant" in r for r in old_refusals) and any("--r8-speed-input" in r for r in old_refusals)
     ids = [it["id"] for it in prof["open_items"]]
     # R8-WARMUP was CLOSED by the Master Mind on 2026-10-11 (SPEC_REFCV8 sec. 10.3): three items still wait on evidence
     assert ids == ["R8-RECIPE", "R8-BUDGET", "R8-INHERITED-RECORDS"]
@@ -73,8 +92,6 @@ def test_S_emit_is_the_warmup_length_and_both_are_1000_literals():
     (lambda a: LG.set_flag(a, "--w-r8-cons", None), "--w-r8-cons"),
     (lambda a: LG.set_flag(a, "--init-from", None), "--init-from"),
     (lambda a: LG.set_flag(a, "--join-defect-masks", None), "--join-defect-masks"),
-    (lambda a: LG.set_flag(a, "--r8-rc-noise-along-m", ["1.0"]), "--r8-rc-noise-along-m"),
-    (lambda a: LG.set_flag(a, "--r8-rc-dropout", ["0.2"]), "--r8-rc-dropout"),
     (lambda a: LG.set_flag(a, "--r8-v9-md5", ["0" * 32]), "--r8-v9-md5"),
     (lambda a: LG.set_flag(a, "--r8-derange-feed", []), "--r8-derange-feed"),
     (lambda a: LG.set_flag(a, "--r8-roll-targets", ["tac"]), "--r8-roll-targets"),
@@ -85,7 +102,7 @@ def test_S_emit_is_the_warmup_length_and_both_are_1000_literals():
     (lambda a: LG.set_flag(a, "--r8-roll-speed-input", []), "--r8-roll-speed-input"),
 ])
 def test_each_refcv8_rule_refuses_its_violation(mutate, needle):
-    refusals, _p = LG.profile_argv_rules(LG.PROFILES["refcv8"], mutate(_argv()))
+    refusals, _p = LG.profile_argv_rules(LG.PROFILES["refcv8"], mutate(_ruled_argv()))
     assert any(needle in r for r in refusals), refusals
 
 
@@ -93,21 +110,17 @@ V8_SIDECAR = "/home/nvidia/data/refcv6_speed_max_v8_train.jsonl"
 
 
 @pytest.mark.parametrize("flag", ["--speed-max-sidecar-v6", "--speed-max-sidecar-v6-eval"])
-def test_RED_a_mutation_that_re_attaches_the_v8_sidecar_goes_RED_at_the_gate_and_at_the_trainer(flag):
-    """MM item 1: "a mutation that re-attaches the sidecar must go RED at the gate". The canonical argv is GREEN on the
-    rule (no forbidden lever); the same argv with refcv7's sidecar re-attached is refused by NAME at the gate (the
-    lever rule, whatever the value) AND by the trainer's own pin -- two independent places."""
+def test_Q_B_the_label_sidecar_is_admitted_at_the_gate_and_only_refcv7s_files_pass(flag):
+    """PI Q-B 2026-10-11 LIFTED the by-name refusal of the v8 sidecar (it is the speed channel's source, as the 4-way
+    quantized label). The gate admits it as a lever, requires it, and pins the path to refcv7's launch record. (The
+    trainer-side pin that still refuses it with `--r8-speed-input n2` is hold_r8label's to flip, with its own test.)"""
     prof = LG.PROFILES["refcv8"]
-    green, _d = LG.forbidden_lever_reasons(prof, _argv())
-    assert green == [], green
-    bad = LG.set_flag(_argv(), flag, [V8_SIDECAR])
-    red, det = LG.forbidden_lever_reasons(prof, bad)
-    assert det["argv_hits"] == [flag] and any("FUTURE-MAX sidecar" in r for r in red), red
-    refusals, _p = LG.profile_argv_rules(prof, bad)
-    assert any(flag in r and "ORACLE" in r for r in refusals), refusals
-    T = trainer()
-    with pytest.raises(SystemExit, match="FUTURE-MAX sidecar"):
-        T._pin_refcv8(types.SimpleNamespace(refcv8=r8c.R8Config()), T.build_parser().parse_args(bad))
+    green, d = LG.forbidden_lever_reasons(prof, _ruled_argv())
+    assert green == [] and d["argv_hits"] == [], green
+    missing, _p = LG.profile_argv_rules(prof, LG.set_flag(_ruled_argv(), flag, None))
+    assert any(flag in r for r in missing), missing                          # required
+    other, _p = LG.profile_argv_rules(prof, LG.set_flag(_ruled_argv(), flag, ["/x/other.jsonl"]))
+    assert any(flag in r for r in other), other                               # not refcv7's file
 
 
 def test_the_canonical_argv_feeds_N2_and_no_sidecar():
