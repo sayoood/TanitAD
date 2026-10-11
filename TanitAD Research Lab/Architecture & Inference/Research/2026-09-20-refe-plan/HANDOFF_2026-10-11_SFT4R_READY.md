@@ -1,4 +1,4 @@
-# HANDOFF 2026-10-11 (b): SFT-4R tooling is built; the SFT-4 u400 full-navtest read is in flight
+# HANDOFF 2026-10-11 (b): SFT-4R tooling is built; the SFT-4 u400 full-navtest read is CONFIRMED
 
 Successor to `HANDOFF_2026-10-11.md`. Read this and the files it names, nothing else.
 
@@ -13,9 +13,9 @@ Successor to `HANDOFF_2026-10-11.md`. Read this and the files it names, nothing 
 | SFT-4R pod tooling + PREREG_SFT4R Amendment 1 | landed with this file | `refe/hf_egress.py`, `refe/pdm_label_complete.py`, `refe/sft4r_{relabel,chain,pod}.sh` |
 | Unseen-subset read (reported, not gating) | script landed; controls PASS | `eval/unseen_subset.py` |
 | Chain review: 3 defects fixed (G3 grep could never match, stale markers, unread lane rc) | landed with PREREG_SFT4R Amendment 2 | `refe/sft4r_chain.sh`, `refe/test_sft4r_chain.py` (20/20, 4/4 mutations RED) |
-| **Full navtest of the u400 checkpoint** | **RUNNING on the dev-box GPU**, started 08:37:22Z, ETA ~13:10–13:40Z | see below |
+| **Full navtest of the u400 checkpoint** | **DONE: CONFIRMED** +3.79 [+3.05, +4.54], 84.46 → 88.25 PDMS, 136 logs, 0 adverse; unseen +3.85, minus-C1 +3.75 | `eval/RESULT_SFT4.md` "Full navtest", register row `D-REFE-SFT-4` |
 
-## The full-navtest read: how to finish it if this session is gone
+## The full-navtest read (DONE 2026-10-11; kept for the record: steps 1–5 below were all carried out)
 
 - **Command (do NOT restart it while it runs):**
   `eval/stage2_sft.py --ckpt E:/Projects/TanitAD/data/refe_runs_eval/sft4_peek/model_sft4_B_u400.pt --name
@@ -61,5 +61,5 @@ Successor to `HANDOFF_2026-10-11.md`. Read this and the files it names, nothing 
 
 ## Do not
 
-- Do not poll the GPU run from a model turn. Do not start GPU work on the dev box while it runs.
+- The dev-box GPU is free again (the full-navtest run finished 14:15:46Z).
 - Do not land `MANIFEST*.txt` or any scratchpad `pod_probe.py`: they hold the pod IP and port, and the repo is public.

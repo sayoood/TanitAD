@@ -1,4 +1,4 @@
-# SFT-4 result: arm B at update 400 is ADOPT on the 923 confirmation tokens (a registered deviation; the recipe is unread)
+# SFT-4 result: arm B at update 400 is ADOPT on the 923 confirmation tokens and CONFIRMED on the full 12,146-token navtest (88.25 vs 84.46 PDMS; a registered deviation; the recipe is unread)
 
 > Pre-registration: `eval/PREREG_SFT4.md`, Amendment 5 (landed in `1730bc29` at 07:46:50 UTC on 2026-10-11, before
 > the read started at 07:47:31 UTC).
@@ -107,9 +107,153 @@ it is the labels or the lane output is NOT separable here: arm A of SFT-4 (no la
 | seam done (1,236 s), then harness (109.4 s) and families | – |
 | dev-box GPU lock released; exit 0 | 08:08:07 (10:08:07 Berlin) |
 
+## Full navtest (12,146 tokens, 136 logs): CONFIRMED
+
+> This is the registered confirmation read from "Next arm" §1 below. The rule, the token file and both deviations
+> were committed before any score of this run was read: Deviation 1 in `7592771` at 13:34:21 UTC, Deviation 2 in
+> `8638d4da` at 13:51:36 UTC, and the scoring rerun started after that.
+> Raw: `raw/2026-10-05-sft-stage2/sft4_B_u400_navtest_full/` (`result.json`, `score_status.json`, `seam_report.json`,
+> `seam.log`, the families of both arms, `unseen_subset.json`, `sensitivity_minus_c1.json`, and both failed attempts'
+> results and logs). The two seam `.npz` files stay on the dev box.
+>
+> **Tier:** NAVSIM v1.1 PDMS, an ego pseudo-simulation of an open-loop plan against logged agents. It is not closed
+> loop.
+>
+> **Interval:** paired log-cluster bootstrap over the 136 navtest logs, 10,000 resamples, seed 20260927. It answers
+> *another draw of logs* only. There is one fine-tune seed and inference is deterministic, so training variance is
+> unmeasured (H-ESTIM-SEED-1).
+
+**Verdict: CONFIRMED.** The script prints ADOPT, which maps one to one onto CONFIRMED.
+- The lower bound is above 0: +3.05.
+- None of the 21 longitudinal and lateral components separates adversely.
+
+`scored_as`: "the whole navtest filter (no --tokens)" (Deviation 2).
+
+| | deployed (route fix, `R6_A1`) | SFT-4 arm B, update 400 |
+|---|---|---|
+| PDMS on all 12,146 navtest tokens | 84.46 | **88.25** |
+| paired Δ ×100 [95 % CI] | – | **+3.79 [+3.05, +4.54]** |
+| better / worse / tied | – | 5,167 / 3,188 / 3,791 |
+| picks scoring 0 | 837 | 529 |
+| logs | 136 | 136 |
+
+MEASURED, `raw/2026-10-05-sft-stage2/sft4_B_u400_navtest_full/result.json`. The deployed side is the route-fix run's
+own CSV on the same tokens. Its sub-scores come from `raw/2026-10-04-navtest-final/routefix_full/3_parse.json`.
+
+**PDMS sub-scores** (×100, all 12,146 tokens):
+
+| | NC | DAC | EP | TTC | C | DDC | PDMS |
+|---|---|---|---|---|---|---|---|
+| deployed (`R6_A1`) | 98.13 | 94.71 | 76.70 | 93.69 | 99.93 | 97.61 | 84.46 |
+| **SFT-4 arm B u400** | **98.94** | **96.58** | **81.20** | **95.63** | **99.97** | **97.66** | **88.25** |
+| HUMAN (`eval/RESULT_NAVTEST_FINAL.md`) | 100.00 | 100.00 | 86.96 | 100.00 | 99.90 | – | 94.55 |
+
+- Every sub-score rises.
+- EP moves the most (+4.49), then TTC (+1.94) and DAC (+1.87).
+
+**Gates: all pass.**
+- Harness: status PASS, 12,146 / 12,146 tokens, 0 failed, 12,146 valid CSV rows, C1 max |Δ| 0.0, 1,335.7 s.
+- Seam: 12,146 rows, 0 misses, 17,496.8 s. It was written once, by attempt 1, and reused unchanged by both reruns.
+- Consistency: the 1,226 tokens whose executed poses equal the deployed poses all score identically (0 differ).
+- Frame control (reported, not gated): max 6.18063877792441 m, median 9.2e-16 m.
+  - The max is the declared C1 set (36 tokens, 4 logs; Deviation 1).
+  - It is identical to the deployed route-fix seam's max.
+
+### Four families (families6, on the same 12,146 tokens, 136 logs)
+
+| family | component | deployed | arm B u400 |
+|---|---|---|---|
+| longitudinal | speed MAE (m/s) | 0.889 | 0.740 |
+| longitudinal | along-track MAE (m) | 1.258 | 1.035 |
+| longitudinal | acceleration MAE (m/s²) | 0.580 | 0.519 |
+| longitudinal | speed bias (m/s) | −0.328 | −0.230 |
+| longitudinal | along-track bias (m) | −0.466 | −0.311 |
+| longitudinal | ego-progress ratio, mean | 0.980 | 1.003 |
+| longitudinal | distance-keeping (headway / TTC to a lead) | UNAVAILABLE: no lead-agent track in the seam | same |
+| lateral | heading MAE (°) | 2.716 | 2.532 |
+| lateral | cross-track MAE (m) | 0.426 | 0.378 |
+| lateral | final cross-track MAE (m) | 1.017 | 0.865 |
+| lateral | curvature MAE (1/m) | 0.0237 | 0.0199 |
+| lateral | yaw-rate MAE (°/s) | 3.232 | 2.983 |
+| tactical | lateral decision: accuracy / κ | 0.917 / 0.848 | 0.925 / 0.863 |
+| tactical | longitudinal decision: accuracy / κ | 0.642 / 0.459 | 0.679 / 0.516 |
+| tactical | 5-way collapsed: accuracy / κ | 0.770 / 0.701 | 0.783 / 0.718 |
+| strategic | – | UNAVAILABLE in NAVSIM: no strategic decision is scored, and the arm has no strategic layer. The family is also PAUSED by the PI's 2026-09-19 ruling. | same |
+
+MEASURED, `sft4_B_u400_navtest_full/deployed_families.json` and `sft4_B_u400_navtest_full_families.json`
+(`families.refcv6`, cluster unit `log_name`, 136 logs, `_ci_coverage` complete).
+
+- **None of the 21 longitudinal and lateral components separates adversely** (`families_adverse_arm_vs_deployed`:
+  `[]`).
+- Every MAE point estimate improves.
+- **Unlike the 923-token read, both biases SHRINK here:**
+  - along-track bias −0.47 → −0.31 m;
+  - speed bias −0.33 → −0.23 m/s;
+  - the mean ego-progress ratio crosses from 0.980 to 1.003.
+  - On the full set, the arm is less conservative than the deployed scorer, not more.
+- The tactical rows carry no interval, so they are reported, not tested.
+- **Anti-echo:**
+  - Both arms beat the hold-v0 control (`BEATS_HOLDV0`).
+  - The copy detector is CLEAN: echo index 0.0019 for the deployed scorer and 0.0013 for the arm, against 0.0338 for
+    the logged human.
+
+**Proposals (open-loop ADE over NAVSIM's 8 poses vs the human future, `seam_report.json`; reported, decides
+nothing):**
+- 64 proposals per token; the arm's pick 1.186 m.
+- Random pick (a random selector's expectation) 1.471 m; oracle best-of-64 0.334 m.
+- The pick closes 25 % of the random-to-oracle gap.
+- ⚠️ ADE against the human is not PDMS, so this ranks no lever on its own. It does show that the proposal set holds
+  far better plans than the selector picks.
+
+### Reported, not gating (committed in §1 before the run)
+
+| read | tokens / logs | deployed → arm | paired Δ ×100 [95 % CI] | better / worse / tied | zero picks |
+|---|---|---|---|---|---|
+| **primary (gating)** | 12,146 / 136 | 84.46 → 88.25 | +3.79 [+3.05, +4.54] | 5,167 / 3,188 / 3,791 | 837 → 529 |
+| unseen by any read of this checkpoint | 11,023 / 122 | 84.36 → 88.21 | +3.85 [+3.06, +4.66] | 4,744 / 2,871 / 3,408 | 767 → 484 |
+| minus the 36 C1 tokens (Deviation 1) | 12,110 / 136 | 84.47 → 88.22 | +3.75 [+3.02, +4.51] | 5,141 / 3,186 / 3,783 | 832 → 529 |
+
+MEASURED, `unseen_subset.json` (token-file md5 `ab59e479…`) and `sensitivity_minus_c1.json` (`bc813be8…`). Every
+input gate passes: md5, n, logs, every token logged, 0 missing on either side.
+
+- **The three reads agree.**
+- The 11,023 tokens that no read of this checkpoint has touched give the same effect as the full set (+3.85 vs +3.79).
+  ⇒ The 923-token confirmation set's reuse did not manufacture the result.
+- Removing the C1 tokens moves the effect by 0.04.
+
+### What this licenses, and what it does not
+
+**It licenses:** *this checkpoint (arm B at update 400) selects better than the deployed scorer on the full NAVSIM v1.1
+navtest: 88.25 vs 84.46 PDMS, +3.79 [+3.05, +4.54] over 136 logs, with no adverse longitudinal or lateral component.*
+It is a deployment **CANDIDATE**. Deploying it is the PI's call.
+
+**It does NOT license:**
+- "the SFT-4 recipe works". Four of the 923-token read's five deviations still hold: a non-final checkpoint (1),
+  never selected by stage 1 (2), trained on incomplete labels (3), and one fine-tune seed (5). Only deviation 4, the
+  seen exploratory read, is answered here, by the unseen read above.
+- a lever claim. That needs the training-seed replicate (§2 below; H-ESTIM-SEED-1).
+- any statement about the labels versus the lane output. SFT-4 arm A did not survive the stop.
+
+**Where it leaves the gap to the reference:**
+- HUMAN is 94.55, so about 6.3 PDMS remain.
+- Measured against HUMAN, the largest single sub-score gap is still **EP**: 81.20 against 86.96 for HUMAN
+  (`eval/RESULT_NAVTEST_FINAL.md`).
+
+### Timing (UTC, 2026-10-11)
+
+| event | UTC |
+|---|---|
+| seam started | 08:37:22 |
+| attempt 1 ends: 12,146 rows, 0 misses, then exit 1 at the frame-control gate (17,539 s) | 13:29:42 |
+| Deviation 1 landed (`7592771`) | 13:34:21 |
+| attempt 2: six harness attempts die on `WinError 206` | 13:34:40 → 13:46:44 |
+| Deviation 2 landed (`8638d4da`) | 13:51:36 |
+| scoring rerun: harness PASS (1,335.7 s), then families | → 14:15:46 |
+| unseen and minus-C1 reads | 14:16:18 |
+
 ## Next arm (Rule Zero), in order
 
-### 1. The full 12,146-token navtest of this checkpoint, on the dev box (0 pods). Rule committed here, before it starts.
+### 1. The full 12,146-token navtest of this checkpoint, on the dev box (0 pods). Rule committed here, before it starts. DONE 2026-10-11: CONFIRMED, +3.79 [+3.05, +4.54]; see "Full navtest" above.
 
 - **Command:** `eval/stage2_sft.py --ckpt …/sft4_peek/model_sft4_B_u400.pt --name sft4_B_u400_navtest_full
   --rule navsim_v1_lane --tokens E:/Projects/TanitAD/data/refe_navtest/navtest_full_tokens.json`. It runs in the
