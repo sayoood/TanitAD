@@ -1,6 +1,6 @@
 # SPEC_REFCV8 — pre-registration of the refcv8 run (REGISTERED by the Master Mind, 2026-10-11)
 
-**Status: REGISTERED (2026-10-11, Master Mind); AMENDED by A1 (2026-10-11, the PI's rulings on the route and speed inputs and three baseline-citation corrections, before any refcv8 number exists; see `## A1`); AMENDED by A2 (2026-10-12, the PI's ruling: ONE full pass `--steps 48852` over the 4,572-clip train view with the 203 missing train clips added, eval139 kept out; before any refcv8 number exists; see the last section, `## A2`).** Written 2026-10-04 ~21:20 Berlin (19:20Z) by a design agent as a
+**Status: REGISTERED (2026-10-11, Master Mind); AMENDED by A1 (2026-10-11, the PI's rulings on the route and speed inputs and three baseline-citation corrections, before any refcv8 number exists; see `## A1`); AMENDED by A2 and A3 (2026-10-12; A3 re-derives the nav tau on the 4,572 view; A2 is the PI's ruling: ONE full pass `--steps 48852` over the 4,572-clip train view with the 203 missing train clips added, eval139 kept out; before any refcv8 number exists; see the last section, `## A2`).** Written 2026-10-04 ~21:20 Berlin (19:20Z) by a design agent as a
 draft; the Master Mind's rulings of 2026-10-04 (§13a) and 2026-10-11 (this registration) are folded into the clauses they
 govern. The file keeps its name `SPEC_REFCV8_DRAFT.md` on purpose: 25 files at the tip cite that path (docstrings and
 tests of `taniteval/taniteval/{lead_metrics,ceil_obey,four_families,nav_compliance,night_luma}.py`, and FlyWheel and
@@ -1546,7 +1546,7 @@ V-R8d, V0r, V-R8r, V-TACk, V-TACk-roll, V-TACkr, V-MAP4, V-MAP4-roll, V-MAP4r. V
   than 20 moving rows. Left unclocked, the train set would read 55 / 4,572 = 1.203 % unverified, and the trainer refuses
   above 1 %. These 33 are clocked from the camera timestamps instead. That route was validated on ALL 4,653 moving clips
   against the position-inversion clock (max |Δ grid_start_s| 4.27e-07 s, max |Δ dt_s| 6.2e-09 s).
-* **Kept as registered, disclosed:** `nav_compliance_tau_train.json` (tau 0.18063741505146028) and
+* **SUPERSEDED for the tau by A3 (the gate's FIX-4 rule binds the tau record to `--v2-cache`; the map class weights part stands).** **Kept as registered, disclosed:** `nav_compliance_tau_train.json` (tau 0.18063741505146028) and
   `map_hires_class_weights_train_100x30.json` were derived on the 4,369-clip view. They are kept as the literals they are,
   so the gate's recorded-tau rule still binds to the recorded file. A re-derivation would be a new instrument value.
 
@@ -1591,3 +1591,35 @@ V-R8d, V0r, V-R8r, V-TACk, V-TACk-roll, V-TACkr, V-MAP4, V-MAP4-roll, V-MAP4r. V
   the A2 pin, whose 8 mutations each go RED against the pre-A2 gate.
 * **OWED:** the binding G-MAP / G-BOX overfits and G-LIVE re-run on the A2 argv (the kit's `bind` stage, after the ladder),
   then the launch gate. `GOALS_AND_CLAIMS.md` register row for the ruling (Master Mind).
+
+---
+
+## A3 — correction to A2.3: the nav-compliance tau is RE-DERIVED on the 4,572-clip view
+
+**Protocol fields (§12.2).**
+* **Time:** written 2026-10-12 ~01:34 Europe/Berlin (2026-10-11 23:34Z), by the Master Mind, right after A2 landed
+  (`fa43d9c`).
+* **refcv8 data read before writing: NONE** (as for A2; the ladder's step counter only).
+* **What changes:** A2.3's bullet *"Kept as registered, disclosed: `nav_compliance_tau_train.json` …"* was WRONG for the
+  tau, and is marked SUPERSEDED in place. The gate's FIX-4 rule (`launch_gate.py` `nav_tau_reasons`) refuses a tau record
+  whose `inputs.manifest.path` is not inside the launch's `--v2-cache` (*"a tau from another split is tuning
+  elsewhere"*). The refcv7 record names `/home/nvidia/data/refcv6-b1-416x1024-train/_v2manifest.pt`, so an A2 launch
+  carrying it would have been REFUSED at the gate. Found by reading the rule against the A2 argv, before any gate run.
+* **What does NOT change:** the rule (the Youden-J argmax over |terminal heading| of GT paths, LEFT/RIGHT vs FOLLOW
+  windows, from GT poses + the v8 labels only, no model), the labels (`s2_labels_v8_train.jsonl.gz`, md5 `b45377a1…`), the
+  script (`2026-09-26-declared-vs-built/code/derive_navc_tau.py`, md5 `73b46328…`), and every bar. No refcv8 bar reads tau
+  (SPEC text: no other `tau` mention). It is the training tolerance of `--graft-nav-compliance`, refcv7's E1 selection
+  mechanism. The map class weights (`map_hires_class_weights_train_100x30.json`) stay as A2.3 says: they are GT-only, and
+  no gate rule binds them to the view.
+
+### A3.1 The derivation (Thor CPU, nice 19, run under `/home/nvidia/navtau_4572/`, code tree `fa43d9c5ce`)
+| run | manifest | tau (rad) | windows total / scored | n_pos / n_neg | Youden J |
+|---|---|---|---|---|---|
+| CONTROL: the 4,369 view | `3c9f8bc8…` | 0.18063741505146028 | 746,946 / 576,555 | 213,371 / 363,184 | 0.2342 |
+| NEW: the 4,572 view | `77dafb50…` | **0.1806411302089691** | 781,635 / 603,327 | 221,019 / 382,308 | 0.2284 |
+* **The control** must reproduce the registered refcv7 record exactly: tau `0.18063741505146028`, 746,946 / 576,555
+  windows, 213,371 / 363,184. **REPRODUCED EXACTLY**: all four values are identical (`navtau_train4572/ctl_old4369.json`), so the script, inputs and rule are the ones that built the registered record. The new tau differs by +3.7e-6 rad.
+* **The new record** is `/home/nvidia/data/refcv8/nav_compliance_tau_train4572.json` (sha256 `9fa7ca38b529bacfe79209c4bb9ccad039c7af284e5080f1c4f856ea46ebb5a3`), banked
+  byte-for-byte as `…/data_coverage_2026-10-12/navtau_train4572/nav_compliance_tau_train4572.json`. The `refcv8` gate
+  profile's `nav_tau_record_default` points at it. The assembler and the gate pin `--nav-compliance-tau-rad 0.1806411302089691` and
+  `--nav-compliance-tau-file` to it as LITERALS. The 4,369-view value and file are each REFUSED (`test_A2_the_4369_clip_data_set_is_REFUSED`).

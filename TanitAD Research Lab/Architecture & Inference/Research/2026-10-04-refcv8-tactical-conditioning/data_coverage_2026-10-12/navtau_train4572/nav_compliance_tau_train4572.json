@@ -1,0 +1,79 @@
+{
+ "tau": 0.1806411302089691,
+ "youden_j": 0.2284,
+ "tpr_informative": 0.4273,
+ "fpr_follow": 0.1989,
+ "unit": "rad",
+ "n_pos": 221019,
+ "n_neg": 382308,
+ "p10_informative": 0.0043,
+ "p50_informative": 0.1114,
+ "p50_follow": 0.0319,
+ "p90_follow": 0.4094,
+ "status": "OK",
+ "rule": "argmax over the grid of TPR(informative |GT| >= tau) - FPR(follow |GT| >= tau); derived from GT + label only",
+ "what": "nav-compliance tau for --graft-nav-compliance (PI E1 ruling 2026-09-26: all three selection mechanisms ON for refcv7)",
+ "evidence_class": "MEASURED (thor6, Linux aarch64, CPU; GT poses + labels only, no model)",
+ "host": "thor6",
+ "platform": "Linux-6.8.12-tegra-aarch64-with-glibc2.39",
+ "python": "3.12.3",
+ "torch": "2.13.0+cu130",
+ "split": "TRAIN: the 4,572 clips of the manifest below (the split the model trains on)",
+ "inputs": {
+  "manifest": {
+   "path": "/home/nvidia/data/refcv8-b1-416x1024-train-4572/_v2manifest.pt",
+   "sha256": "1fb81c1be9f9a8edb3e1697da3105063feaf1e8481c35f7382ed84050e5f1baf",
+   "n_clips": 4572
+  },
+  "labels": {
+   "path": "/home/nvidia/data/v8labels/labels/s2_labels_v8_train.jsonl.gz",
+   "sha256": "0cb3c5021491f6bad9a17c4c9168c87864a1e371eafa5ec0dd320cf9d5c23371",
+   "md5": "b45377a1f25263b5c0f3d318c126b1ac"
+  }
+ },
+ "code": {
+  "tree": "/home/nvidia/refcv6_run/fa43d9c5ce",
+  "script_sha256": "bfc48f8380e5c5d263941356c78ad969ad7fc887c0dcfecd3205995c43b0ef73"
+ },
+ "window": 8,
+ "stride": 1,
+ "horizons": [
+  5,
+  10,
+  15,
+  20,
+  30,
+  40,
+  50,
+  60
+ ],
+ "windows_total": 781635,
+ "windows_scored": 603327,
+ "windows_skipped_short_future": 178308,
+ "windows_skipped_no_nav": 0,
+ "n_pos_left_or_right": 221019,
+ "n_neg_follow": 382308,
+ "nav_from_v7_stats": {
+  "n_clips": 4572,
+  "follow": 2897,
+  "left": 811,
+  "right": 864,
+  "missing": 0,
+  "derivation": "v7.2 nav_command token (oracle, provenance ego-future; allow_oracle_nav=True)",
+  "unlabeled_default": "nav_cmd=0 ('follow') + nav_valid=False (refav1_loader convention)",
+  "label_md5": "b45377a1f25263b5c0f3d318c126b1ac",
+  "allow_oracle_nav": true
+ },
+ "heading_rule": "compliance_target: last-segment heading of the GT waypoint path, 0.05 m stall",
+ "method": {
+  "function": "taniteval.nav_compliance.derive_tolerance",
+  "args": {
+   "pos": "|terminal heading| of GT paths on LEFT or RIGHT windows",
+   "neg": "|terminal heading| of GT paths on FOLLOW windows",
+   "grid": "None -> np.linspace(0, max(|pos| U |neg|), 401)[1:]",
+   "unit": "rad"
+  },
+  "selection": "argmax over the grid of TPR(pos >= tau) - FPR(neg >= tau)"
+ },
+ "seconds": 150.8
+}

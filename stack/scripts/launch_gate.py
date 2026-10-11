@@ -704,6 +704,9 @@ PROFILES["refcv8"] = dict(
         "--clip-clock-sidecar": "/home/nvidia/data/refcv8_clip_clock_sidecar_ts33.jsonl",
         "--r8-v9-labels": "/home/nvidia/refcv8_v9labels/release_train4572/v9_labels_train.npz",
         "--vis1-sidecar": "/home/nvidia/data/refcv8/vis1_sidecar_refcv8b1_train4572_eval139.npz",
+        # SPEC_REFCV8 A3: FIX-4 binds the tau record's manifest to --v2-cache, so the 4,572 view needs its own tau
+        "--nav-compliance-tau-file": "/home/nvidia/data/refcv8/nav_compliance_tau_train4572.json",
+        "--nav-compliance-tau-rad": "0.1806411302089691",
         # B1 EVAL GEOMETRY (SPEC_REFCV8 10.1): the reference 0.21211 is defined on the 128-window in-run eval set =
         # `--eval-batches 8` x the in-run batch (the trainer builds the eval loader with `batch_size=args.batch`:
         # refc_v3_train.py `n_need = args.eval_batches * args.batch`), and the guard first reads at step 1,000, which
@@ -741,6 +744,10 @@ PROFILES["refcv8"] = dict(
         "--clip-clock-sidecar": "SPEC_REFCV8 A2: 4,686 rows; 33 stationary ADD clips clocked by the camera-timestamp route "
                                 "(validated on all 4,653 moving clips); unverified 22 / 4,572 = 0.481 % < 1 %",
         "--r8-v9-labels": "SPEC_REFCV8 A2: the v9 train release over the 4,572 view",
+        "--nav-compliance-tau-file": "SPEC_REFCV8 A3: the FIX-4 nav tau record re-derived on the 4,572-clip view "
+                                     "(sha256 9fa7ca38b529bacfe79209c4bb9ccad039c7af284e5080f1c4f856ea46ebb5a3)",
+        "--nav-compliance-tau-rad": "SPEC_REFCV8 A3: = the 4,572-view record's tau, by the registered FIX-4 rule "
+                                    "(4,369-view value 0.18063741505146028)",
         "--vis1-sidecar": "SPEC_REFCV8 A2: the VIS-1 sidecar over 4,572 + 139 clips, sha256 "
                           "b50ab62ff7a49335cdc664a56fbfbb64c983bca6bd0563d0d7ab11e2f6e10c04 (the 4,508 refcv7 clips' entries identical; 145 unjoined ADD clips as "
                           "zero-frame entries, mask True)",
@@ -773,6 +780,9 @@ PROFILES["refcv8"] = dict(
     #: both PI items that stood here are CLOSED by the PI's rulings of 2026-10-11 (Q-A: no route checkpoint; Q-B: the
     #: quantized label is the speed input), so no flag of this profile awaits a PI value -- the mechanism stays
     pi_pending_values=dict(_R7.get("pi_pending_values") or {}),
+    #: SPEC_REFCV8 A3: the FIX-4 tau record derived on the 4,572-clip view (refcv7's record names the 4,369 manifest,
+    #: which `nav_tau_reasons` refuses for a --v2-cache it was not derived inside)
+    nav_tau_record_default="TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/data_coverage_2026-10-12/navtau_train4572/nav_compliance_tau_train4572.json",
 )
 
 

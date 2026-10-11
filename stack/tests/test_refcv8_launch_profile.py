@@ -45,6 +45,8 @@ _RULED = {"--r8-rc-variant": None, "--r8-rc-noise-along-m": None, "--r8-rc-noise
           "--clip-clock-sidecar": ["/home/nvidia/data/refcv8_clip_clock_sidecar_ts33.jsonl"],
           "--r8-v9-labels": ["/home/nvidia/refcv8_v9labels/release_train4572/v9_labels_train.npz"], "--r8-v9-md5": ["83e30bd3791f0767707eade5f4671759"],
           "--vis1-sidecar": ["/home/nvidia/data/refcv8/vis1_sidecar_refcv8b1_train4572_eval139.npz"],
+          # SPEC_REFCV8 A3: the nav tau re-derived on the 4,572 view
+          "--nav-compliance-tau-file": ["/home/nvidia/data/refcv8/nav_compliance_tau_train4572.json"], "--nav-compliance-tau-rad": ["0.1806411302089691"],
           }
 
 

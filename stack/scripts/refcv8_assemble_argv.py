@@ -61,8 +61,12 @@ DATA_A2 = {"--v2-cache": "/home/nvidia/data/refcv8-b1-416x1024-train-4572",
            "--pose-sync-sidecar": "/home/nvidia/data/refcv8_pose_sync_sidecar.jsonl",
            "--clip-clock-sidecar": "/home/nvidia/data/refcv8_clip_clock_sidecar_ts33.jsonl",
            "--r8-v9-labels": "/home/nvidia/refcv8_v9labels/release_train4572/v9_labels_train.npz",
-           "--vis1-sidecar": "/home/nvidia/data/refcv8/vis1_sidecar_refcv8b1_train4572_eval139.npz"}
+           "--vis1-sidecar": "/home/nvidia/data/refcv8/vis1_sidecar_refcv8b1_train4572_eval139.npz",
+           # SPEC_REFCV8 A3: the nav-compliance tau RE-DERIVED on the 4,572 view by the registered FIX-4 rule (the gate
+           # binds the record's manifest to --v2-cache, so the 4,369-view tau is refused for this launch)
+           "--nav-compliance-tau-file": "/home/nvidia/data/refcv8/nav_compliance_tau_train4572.json"}
 LITERALS.update(DATA_A2)
+LITERALS["--nav-compliance-tau-rad"] = "0.1806411302089691"      # SPEC_REFCV8 A3 (was 0.18063741505146028 on the 4,369 view)
 #: the join-defect masks re-mined over the 4,572 view (the 58 newly joined ADD clips), under the GATED tree
 JDM_REL = "stack/tanitad/configs/refcv8_join_label_defects_train4572.json"
 #: the launch `--grad-share-at` rows: the long schedule, or the short one when the MEASURED reading is too dear.
@@ -142,6 +146,8 @@ def assemble(base, *, code, run_out, recipe, k_tac, w_map, b1_ref, gs_at, stage=
     for f, v in DATA_A2.items():
         put(f, [v], "SPEC_REFCV8 A2: the 4,572-clip train view / the sidecars built over it")
     put("--r8-v9-md5", [LITERALS["--r8-v9-md5"]], "SPEC_REFCV8 A2: the 4,572-clip v9 release (the trainer checks the file)")
+    put("--nav-compliance-tau-rad", [LITERALS["--nav-compliance-tau-rad"]],
+        "SPEC_REFCV8 A3: the FIX-4 tau re-derived on the 4,572 view (= the record's tau)")
     put("--init-from", [init_from], "SPEC 3.1: warm start from refcv7-50,400")
     put("--warmup", [warmup], "R8-WARMUP: re-warm over 1,000 steps (SPEC 10.3)")
     put("--lr", ["1e-4"], "R8-WARMUP: head peak 1e-4 (trunk 5e-5 = --encoder-lr-mult default 0.5)")
@@ -288,6 +294,8 @@ def self_test():
     assert get(ps, "--agent-rig-extrinsics") == ["/home/nvidia/data/refcv8_train4572_eval139_extrinsics.json"]
     assert get(ps, "--r8-v9-labels") == ["/home/nvidia/refcv8_v9labels/release_train4572/v9_labels_train.npz"] and get(ps, "--r8-v9-md5") == ["83e30bd3791f0767707eade5f4671759"]
     assert get(ps, "--vis1-sidecar") == ["/home/nvidia/data/refcv8/vis1_sidecar_refcv8b1_train4572_eval139.npz"]
+    assert get(ps, "--nav-compliance-tau-file") == ["/home/nvidia/data/refcv8/nav_compliance_tau_train4572.json"]
+    assert get(ps, "--nav-compliance-tau-rad") == ["0.1806411302089691"]
     # deliberate regressions: each must be REFUSED
     bads = (set_flag(ps, "--speed-max-sidecar-v6", None), set_flag(ps, "--w-r8-cons", ["0"]),
             set_flag(ps, "--r8-speed-input", None), set_flag(ps, "--w-r8-alloc-l1", ["0"]),
@@ -306,6 +314,8 @@ def self_test():
             set_flag(ps, "--clip-clock-sidecar", ["/home/nvidia/data/refcv6_clip_clock_sidecar.jsonl"]),
             set_flag(ps, "--vis1-sidecar", ["/home/nvidia/data/refcv7/vis1_sidecar_refcv6b1_train4369_eval139.npz"]),
             set_flag(ps, "--r8-v9-md5", ["f63ece410b725febb8a5242cf2b01d3c"]),    # A2: the 4,369-clip release
+            set_flag(ps, "--nav-compliance-tau-rad", ["0.18063741505146028"]),    # A3: the 4,369-view tau
+            set_flag(ps, "--nav-compliance-tau-file", ["/home/nvidia/data/refcv7/nav_compliance_tau_train.json"]),
             set_flag(ps, "--grad-share-at", [GS_AT_SHORT]),                         # wrong for GSM (long qualifies)
             set_flag(ps, "--grad-share-terms", ["all"]))
     for i, bad in enumerate(bads):

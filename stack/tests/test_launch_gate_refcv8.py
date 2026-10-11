@@ -45,6 +45,8 @@ DELTAS = {
     "--clip-clock-sidecar": ["/home/nvidia/data/refcv8_clip_clock_sidecar_ts33.jsonl"],
     "--r8-v9-labels": ["/home/nvidia/refcv8_v9labels/release_train4572/v9_labels_train.npz"], "--r8-v9-md5": ["83e30bd3791f0767707eade5f4671759"],
     "--vis1-sidecar": ["/home/nvidia/data/refcv8/vis1_sidecar_refcv8b1_train4572_eval139.npz"],
+    # SPEC_REFCV8 A3: the nav tau re-derived on the 4,572 view
+    "--nav-compliance-tau-file": ["/home/nvidia/data/refcv8/nav_compliance_tau_train4572.json"], "--nav-compliance-tau-rad": ["0.1806411302089691"],
 }
 
 
@@ -118,7 +120,9 @@ def test_A2_the_full_pass_rows_are_due_in_the_trainers_own_pin():
     ("--agent-rig-extrinsics", ["/home/nvidia/data/refcv6_train_eval139_extrinsics.json"]),
     ("--vis1-sidecar", ["/home/nvidia/data/refcv7/vis1_sidecar_refcv6b1_train4369_eval139.npz"]),
     ("--r8-v9-labels", ["/home/nvidia/refcv8_v9labels/release/v9_labels_train.npz"]),
-    ("--r8-v9-md5", ["f63ece410b725febb8a5242cf2b01d3c"])])
+    ("--r8-v9-md5", ["f63ece410b725febb8a5242cf2b01d3c"]),
+    ("--nav-compliance-tau-file", ["/home/nvidia/data/refcv7/nav_compliance_tau_train.json"]),                       # A3: the 4,369-view record
+    ("--nav-compliance-tau-rad", ["0.18063741505146028"])])
 def test_A2_the_4369_clip_data_set_is_REFUSED(launch, flag, old):
     refusals, _p = _rules(_with(launch, flag, old))
     # the REQUIRED-VALUE refusal itself: an unrelated refusal that merely NAMES the flag (the nav-tau record is
