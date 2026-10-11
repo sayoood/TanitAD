@@ -129,6 +129,22 @@ it is the labels or the lane output is NOT separable here: arm A of SFT-4 (no la
   still not claimed until the seed replicate below.
 - **Cost:** ESTIMATED from this read's rate (1.34 s per token in the seam): ~4.5 h of seam, ~0.5 h to score, on the
   dev-box GPU, with no pod.
+- **Deviation, registered 2026-10-11 BEFORE any score of this run was read.**
+  - **What happened:** the run stopped as `INCOMPLETE (seam failed)` after 17,539 s. The seam had written all
+    12,146 / 12,146 rows with 0 misses (`seams/stage2_sft4_B_u400_navtest_full.report.json`). It then exited 1 at its
+    frame-control gate, which reported a max of 6.18063877792441 m against the 0.001 m bar.
+  - **Why it is not this checkpoint:** the frame control compares the log's own future
+    (`get_ego_future_trajectory`) against the export's `human_future_poses`. No planner is involved
+    (`refe_navtest_seam.py`). The failing tokens are the declared 36 tokens / 4 logs nuPlan-DB vs OpenScene pose
+    disagreement (`raw/2026-10-04-navtest-final/frame_control_navtest_full.json`, max 6.1806 m). The deployed
+    route-fix seam that produced the 84.46 fails the same tokens with the identical max (`frame_control_parts_max_m`
+    6.18063877792441). The 923-token read never hit it because none of the 36 were in it (max 7.3e-15, rc 0).
+  - **Recovery:** rerun the identical command. `stage2_sft.py` reuses the written seam and goes straight to scoring.
+  - **Primary read:** unchanged — all 12,146 tokens and the rule above. The deployed 84.46 also includes the 36.
+  - **Sensitivity read, REPORTED NOT GATING:** the same paired difference without the 36 C1 tokens: 12,110 tokens
+    over 136 logs, `E:/…/refe_navtest/navtest_full_minus_c1_tokens.json`, md5 `bc813be8…`, by
+    `unseen_subset.py --tokens … --expect-md5 bc813be8 --expect-n 12110 --expect-logs 136`. If the two reads
+    disagree on the verdict, the primary decides, and the disagreement is reported.
 
 ### 2. A training-seed replicate (H-ESTIM-SEED-1). Needs a pod.
 
