@@ -273,7 +273,7 @@ What that copy already provides:
 | id | decision | recommendation | **PI ruling, 2026-10-11** |
 |---|---|---|---|
 | **P6-T** | 25 epochs at 6.8–8.2 days, or a 7-day cap with a declared epoch cut (§0.2) | 25 epochs with L1 | ✅ **DECIDED: 25 epochs; 6.8–8.2 days accepted** (PI: *"25 epochs … I accept the 6.8–8.2 days"*) |
-| **P6-C** | pod vCPU | ≥ 24, final after M-LAB (dev box, 0 GPU) | ⏳ open: final count after M-LAB |
+| **P6-C** | pod vCPU | ≥ 24, final after M-LAB (dev box, 0 GPU) | M-LAB done (`eval/RESULT_M_LAB.md`): **recommend ≥ 24 vCPU, ≥ 64 GB RAM, ≥ 400 GB disk**; the PI provisions it with the pod |
 | **P6-N** | navigation command (paper) vs goal points (P2/SFT-4) | command | ✅ **DECIDED: navigation command** (PI: *"nav command"*) |
 | **P6-Y** | unwrapped yaw L1 (paper, literal) | unwrapped | ⏳ open: not ruled on 2026-10-11 |
 | **P6-P** | bf16 (forced: FP32 is 38 days) | bf16, declared | implied by P6-T (FP32 cannot fit) |

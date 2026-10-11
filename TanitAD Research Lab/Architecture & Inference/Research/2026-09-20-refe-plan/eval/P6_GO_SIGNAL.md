@@ -65,7 +65,7 @@ levers. So S1 asks for about 1.5 pod-days, not 7.
 | C1 | The P2 chain is built and mutation-tested | ✅ `refe/test_p2r_chain.py`: 89 checks pass and 17 mutations go RED |
 | C2 | P2's GO rule is pre-registered before any data | ✅ `eval/PREREG_P2_AMENDMENT_1.md` |
 | **C3** | **Selection headroom on u400's own proposals** (dev box, pre-registered below) | ⏳ not run |
-| C4 | M-LAB labeller cost ⇒ pod vCPU (P6-C) | ⏳ dev box, ~15 min |
+| C4 | M-LAB labeller cost ⇒ pod vCPU (P6-C) | ✅ **GREEN 2026-10-11.** c = 0.34–0.36 CPU-s/set pinned (worst measured 0.833 under a saturated box; 1.97 for the build fallback); 8 dev-box workers label 9.62 sets/s vs 4.49 needed; labels equal the NAVSIM census on 100 % of proposals. ⇒ **pod ≥ 24 vCPU, ≥ 64 GB RAM, ≥ 400 GB disk** (≥ 2× margin incl. an ESTIMATED 2× slower pod core). `eval/RESULT_M_LAB.md` |
 | C5 | The launch gate is landed with `refe_p2` and `refe_p6` profiles (P6-G) | ✅ **built and landed 2026-10-11.** A REFe-native gate (`refe/launch_gate.py`, `gate_checks.py`, `gate_token.py`; the token schema matches the generic gate) runs G-HYG, G-DVB (47 trainer flags; an unknown flag FAILS), G-LIVE, G-EVAL, G-CKPT, G-SUITE and G-P2GATE. Each check has a regression arm that makes it FAIL. Tests: `ZZLG_FULL_PASS 121` (ViT-S rehearsal, dev box), `ZZLG_STATIC_PASS 90` (re-run by the Master Mind), `test_p2r_chain.py` 111 checks with 32 mutations RED. `p2r_pod.sh` refuses `train` without a matching HMAC token. **`refe_p6` REFUSES today (exit 5)**, as it must: its flags are declared, not built. Pod-only and UNMEASURED: the ViT-L real-data G-LIVE smoke, ~15–25 min (ESTIMATED). Contract: `eval/REFE_LAUNCH_GATE.md`. |
 | C6 | P6-Y (yaw loss) is ruled | ⏳ PI |
 
