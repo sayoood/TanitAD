@@ -1,6 +1,6 @@
 # P6 GO signal: the evidence the Master Mind needs before the PI starts a pod
 
-> 2026-10-11. **Status: S1 GIVEN (2026-10-11 ~20:45 Berlin) — C1–C6 ALL GREEN (C3 SCORER-BOUND). Awaiting the PI's pod (1× A40, ≥ 24 vCPU, ≥ 64 GB RAM, ≥ 400 GB, `HF_TOKEN` set) for P2. S2 (P6 on the same pod) follows only on P2's GO under `eval/PREREG_P2_AMENDMENT_1.md`.**
+> 2026-10-11. **Status: S1 GIVEN (2026-10-11 evening, Berlin) — C1–C6 ALL GREEN (C3 SCORER-BOUND). Awaiting the PI's pod (1× A40, ≥ 24 vCPU, ≥ 64 GB RAM, ≥ 400 GB, `HF_TOKEN` set) for P2. S2 (P6 on the same pod) follows only on P2's GO under `eval/PREREG_P2_AMENDMENT_1.md`.**
 >
 > PI, verbatim: *"I did not start the pod. I wait until you give me signal and we have evidence and confidence to
 > surpass the paper."*
