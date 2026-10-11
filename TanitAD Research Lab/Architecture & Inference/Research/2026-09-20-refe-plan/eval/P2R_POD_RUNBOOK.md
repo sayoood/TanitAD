@@ -95,3 +95,9 @@ amendment. Stop the pod only after `ZZP2R_DONE` and the PI's say-so.
   `REFE_CD_CACHE=$DATA/nuplan_cdcache`; the running chain (shipped at `5dd6a22`) was started with that variable set.
   Every other Windows-path default on the P2 path is overridden by the chain (`--targets`, `--scorer-targets`, the backbone,
   DB, map and yaml roots).
+- **Full start 2 REFUSED at the relabel guard:** `restored sets serve 177836 keys, expected 174912`. The guard was right. The
+  restored bank still holds the **24 SFT held-out logs** (2,924 served sets; list `splits/sft_heldout_logs.txt`, from HF
+  `refe_heldout_v5.tar.zst`), which u400 never trained on. 177,836 − 2,924 = 174,912 exactly, the split SFT-3 logged
+  (`raw/2026-10-04-sft3/sft.log`). `train.py` has no held-out flag, so without a carve P2 would have trained on them.
+  New stage `carve` (`refe/p2r_carve.py`) removes them IN PLACE, so the pre-registered argv is byte-identical. The whole bank
+  moves to `onpolicy/sets_full/`; the relabeller's own `served_keys` must equal 174,912, with 0 held-out keys.

@@ -31,6 +31,7 @@ from types import SimpleNamespace
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 import hf_egress as E  # noqa: E402
+import p2r_carve as CV  # noqa: E402
 import p2r_gate_prep as GP  # noqa: E402
 import p2r_sync as S  # noqa: E402
 
@@ -40,7 +41,7 @@ ARGS_RX = re.compile(r'^ARGS="(.*)"$', re.M)
 CHILD_RX = re.compile(r'"\$PY" +(train\.py|p2r_sync\.py|p2_gate\.py|p2r_gate_prep\.py|pdm_label_complete\.py|launch_gate\.py|'
                       r'onpolicy_relabel_pdm\.py)|"\$PY" +"\$PKG/refe/launch_gate\.py"|bash +"\$PKG/code/|apt-get|uv pip|^sleep |\bsleep +\d+ |\bdd +if=')
 ORDER = ["source \"$WORK/teacher_env.sh\"", "p2r_sync.py watch", "STAGES=weights", "p2r_sync.py restore", "p2r_sync.py recover",
-         "STAGES=dbs",
+         "p2r_carve.py --sets", "STAGES=dbs",
          "onpolicy_relabel_pdm.py --sets", "p2r_sync.py pdm-push", "p2_gate.py --init-from", "launch_gate.py run --profile refe_p2",
          "train.py $ARGS --preflight", "train.py $ARGS >>", "p2r_sync.py final"]
 TOKEN_OK_RX = re.compile(r"^token_ok\(\) \{\n.*?^\}\n", re.S | re.M)
@@ -127,6 +128,10 @@ def check_chain(text, ref_args):
         v.append("RESTORED_LABELS_NOT_AUDITED")
     if "ZZEGRESS_OK p2r_pdm_labels" not in text:
         v.append("LABELS_NOT_BANKED_CHECK")
+    # the 24 SFT held-out logs OUT before the relabel and the trainer see the sets (MEASURED 2026-10-11: 177,836 = 174,912 + 2,924)
+    cv = re.search(r'"\$PY" p2r_carve\.py --sets "\$SETS" .*?--expect "\$\{P2R_EXPECT_SERVED:-174912\}"', text, re.S)
+    if not cv or not re.search(r'grep -q "\^ZZCARVE_OK" "\$P2/carve\.log" \|\| refuse', text) or "stage_mark carve" not in text:
+        v.append("CARVE_NOT_CHECKED")
     v += check_launch_gate(text)
     return v
 
@@ -197,6 +202,10 @@ def mutations(text):
         ("change a training argument", text.replace("--lr 5e-5 --amp", "--lr 1e-4 --amp"), "ARGS_CHANGED"),
         ("drop the token assertion", drop_line(text, '[ -n "${HF_TOKEN:-}" ] || refuse'), "NO_TOKEN_ASSERT"),
         ("drop the label-banking check", drop_line(text, "ZZEGRESS_OK p2r_pdm_labels"), "LABELS_NOT_BANKED_CHECK"),
+        ("drop the carve check", drop_line(text, 'grep -q "^ZZCARVE_OK"'), "CARVE_NOT_CHECKED"),
+        ("carve without the expected count", text.replace(' \\\n    --expect "${P2R_EXPECT_SERVED:-174912}" --json', ' \\\n    --json'),
+         "CARVE_NOT_CHECKED"),
+        ("delete the carve stage", re.sub(r"(?s)# ---- 3c\..*?stop_after carve\n", "", text), "MISSING:p2r_carve.py"),
         ("final failure swallowed", text.rstrip()[: -len("exit 1")] + "exit 0\n", "FINAL_FAILURE_NOT_PROPAGATED"),
     ]
     lg = re.search(r"# ---- 8b\..*?stop_after launch_gate\n", text, re.S)
@@ -297,6 +306,50 @@ def make_tar(path, members):
             ti = tarfile.TarInfo(name)
             ti.size = len(data)
             tf.addfile(ti, io.BytesIO(data))
+
+
+def carve_checks(tmp):
+    n = 0
+
+    def row(log, i, ck, pad=0):
+        return json.dumps({"kind": "onpolicy_set", "log_name": log, "token": f"t{i}", "step": i, "rank": 0, "ckpt_step": ck,
+                           "label_version": 3, "traj": [[0, 0]] * pad}) + "\n"
+    sets, stash, ho = tmp / "cv_sets", tmp / "cv_full", tmp / "cv_ho.txt"
+    sets.mkdir()
+    ho.write_text("H1\nH2\n", encoding="utf-8")
+    # 3 training logs x 2 steps, a superseded version of one key, 2 held-out logs (one row too long for the head parse's window
+    # to see its log_name -- it must still go OUT)
+    late = '{"traj": ' + json.dumps([[0, 0]] * 400) + ', "kind": "onpolicy_set", "log_name": "H2", "token": "t9", "step": 9, "rank": 0, "ckpt_step": 5, "label_version": 3}\n'
+    (sets / "onpolicy_r0_w0.jsonl").write_text(row("A", 0, 5) + row("A", 1, 5) + row("H1", 2, 5) + row("A", 0, 3), encoding="utf-8")
+    (sets / "onpolicy_r0_w1.jsonl").write_text(row("B", 3, 5) + row("B", 4, 5) + late + row("C", 5, 5) + row("C", 6, 5), encoding="utf-8")
+    full_before = {p.name: p.read_bytes() for p in sets.iterdir()}
+    assert CV.log_name_of(late) == "H2"; n += 1                                  # the JSON fallback places the long row
+    rep, why = CV.carve(str(sets), str(stash), str(ho), expect=6)
+    assert why is None, why; n += 1
+    assert (rep["served_full"], rep["served_in_heldout_logs"], rep["served_train"], rep["dropped_rows"]) == (8, 2, 6, 2), rep; n += 1
+    assert {p.name: p.read_bytes() for p in stash.iterdir()} == full_before; n += 1          # the whole bank, byte for byte
+    left = [json.loads(x)["log_name"] for f in sorted(sets.glob("onpolicy_*.jsonl")) for x in f.read_text().splitlines()]
+    assert sorted(set(left)) == ["A", "B", "C"] and len(left) == 7; n += 1           # the superseded row stays: served_keys decides
+    assert not list(sets.glob(".carve_*")); n += 1                                   # no part file left behind
+    after = {p.name: p.read_bytes() for p in sets.glob("onpolicy_*.jsonl")}
+    rep2, why2 = CV.carve(str(sets), str(stash), str(ho), expect=6)                  # re-run: rebuilt from the stash, identical
+    assert why2 is None and {p.name: p.read_bytes() for p in sets.glob("onpolicy_*.jsonl")} == after; n += 1
+    # an interrupted carve (original moved, carved copy not yet in place) is finished, not carved twice
+    (sets / "onpolicy_r0_w1.jsonl").unlink()
+    assert CV.carve(str(sets), str(stash), str(ho), expect=6)[1] is None and (sets / "onpolicy_r0_w1.jsonl").read_bytes() == after["onpolicy_r0_w1.jsonl"]; n += 1
+    # refusals: the wrong expected count (the pod's 177,836-vs-174,912 case), an empty held-out list, a parse that misses held-out rows
+    assert CV.carve(str(sets), str(stash), str(ho), expect=8)[1] == "served_train_6_expected_8"; n += 1
+    empty = tmp / "cv_empty.txt"
+    empty.write_text("\n", encoding="utf-8")
+    assert CV.carve(str(sets), str(stash), str(empty), expect=6)[1] == "empty_heldout_list"; n += 1
+    real = CV.log_name_of
+    CV.log_name_of = lambda line: None                                               # MUTANT: nothing is ever held out
+    try:
+        assert CV.carve(str(sets), str(stash), str(ho), expect=6)[1] == "heldout_rows_survived"; n += 1
+    finally:
+        CV.log_name_of = real
+    assert CV.carve(str(sets), str(stash), str(ho), expect=6)[1] is None; n += 1     # and the real parse restores the carve
+    return n
 
 
 def main() -> int:
@@ -615,6 +668,8 @@ def main() -> int:
         (p1 / "pdm_a.jsonl").write_text(json.dumps({"key": ["L0", "t0", 0, 0], "ckpt_step": 5, "nc": [1]}) + "\n", encoding="utf-8")
         assert GP.main(["--sets", str(g1), "--pdm", str(p1), "--out-sets", str(tmp / "y_s"), "--out-pdm", str(tmp / "y_p"),
                         "--n-labelled", "3", "--n-unlabelled", "1"]) == 1; n += 1
+        # ---- 3h. p2r_carve: the held-out logs OUT, in place, re-runnable, and refused when the count is not the expected one
+        n += carve_checks(tmp)
     print(f"ZZTEST_PASS {n}")
     return 0
 

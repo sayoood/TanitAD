@@ -7,9 +7,9 @@
 # stripped from every child except p2r_sync.py) and code/ refe/ splits/ shipped to /workspace/refe-plan.
 # Start (detached):  nohup setsid bash /workspace/refe-plan/refe/p2r_pod.sh > /workspace/data/refe_p2/p2r_stdout.log 2>&1 < /dev/null &
 # Re-running after ANY interruption is safe: finished stages leave /workspace/data/refe_p2/stage/<name>.ok.
-# P2R_STOP_AFTER=<env|weights|restore|recover|dbs|relabel|pix|pdm_push|gate|launch_gate> ends the chain after that stage (a cheap dry run).
+# P2R_STOP_AFTER=<env|weights|restore|recover|carve|dbs|relabel|pix|pdm_push|gate|launch_gate> ends the chain after that stage (a cheap dry run).
 #
-# Stages: env -> weights -> restore (HF) -> recover (HF, a lost pod's work) -> [dbs -> relabel (PDM, complete)] + pix (background) -> pdm_push (HF) -> gate ->
+# Stages: env -> weights -> restore (HF) -> recover (HF, a lost pod's work) -> carve (held-out logs OUT) -> [dbs -> relabel (PDM, complete)] + pix (background) -> pdm_push (HF) -> gate ->
 #         launch_gate (the BINDING launch gate, CLAUDE.md PI 2026-09-26: every check on the REAL argv and data -> a PASS token) ->
 #         preflight -> train (supervised; the token is VERIFIED against the exact ARGS before the preflight and before EVERY launch) -> final push
 #         (HF, remote-verified).  A watcher pushes logs/checkpoints all along.
@@ -76,7 +76,7 @@ log "chain start (p2r_pod.sh md5 $(md5sum "$0" | cut -c1-12))"
 for f in refe/train.py refe/p2_gate.py refe/p2r_sync.py refe/p2r_gate_prep.py refe/pdm_label_complete.py \
          refe/onpolicy_relabel_pdm.py refe/launch_gate.py refe/gate_token.py refe/gate_checks.py refe/gate_fixture.py \
          refe/test_launch_gate.py refe/test_p2r_chain.py SHIP_MANIFEST.json \
-         code/pod_teacher_env.sh code/pod_train.sh code/pod_dataprep.sh splits/navtrain.yaml; do
+         code/pod_teacher_env.sh code/pod_train.sh code/pod_dataprep.sh splits/navtrain.yaml \n         refe/p2r_carve.py splits/sft_heldout_logs.txt; do
   [ -f "$PKG/$f" ] || refuse "$PKG/$f missing: ship code/ refe/ splits/ to $PKG first"
 done
 # ⛔ never judge the disk with df (a pod volume's quota is invisible to it): WRITE to it.
@@ -133,6 +133,17 @@ if ! stage_done recover; then
   stage_mark recover
 fi
 log "recover: $(grep '^ZZRECOVER_OK' "$P2/recover.log" | tail -n 1 | cut -c1-80)"; stop_after recover
+
+# ---- 3c. P2 trains on the 174,912 served TRAINING sets (PREREG_P2): the restored bank serves 177,836, and the 2,924 more are the
+#          24 SFT held-out logs u400 never trained on (MEASURED 2026-10-11). Carved IN PLACE, so the pre-registered argv is unchanged;
+#          the whole bank stays beside it in sets_full/. The relabeller's own served_keys decides, and --expect must match it.
+if ! stage_done carve; then
+  "$PY" p2r_carve.py --sets "$SETS" --stash "$DATA/refe_navtrain/onpolicy/sets_full" --heldout-logs "$PKG/splits/sft_heldout_logs.txt" \
+    --expect "${P2R_EXPECT_SERVED:-174912}" --json "$P2/carve.json" > "$P2/carve.log" 2>&1 200>&-
+  grep -q "^ZZCARVE_OK" "$P2/carve.log" || refuse "carve failed: $(tail -n 1 "$P2/carve.log" | cut -c1-300)"
+  stage_mark carve
+fi
+log "carve: $(grep '^ZZCARVE_OK' "$P2/carve.log" | tail -n 1)"; stop_after carve
 
 # ---- 4. is the PDM relabel already complete? Restored labels are AUDITED by the same check as a fresh relabel, not trusted.
 want="${P2R_EXPECT_SERVED:-174912}"
