@@ -484,6 +484,125 @@ def test_unavailable_block_sits_at_every_registered_key():
         assert b["readouts"][r]["conditionings"]["nav_true"]["compliance_with_TRUE_command"]["n"] == 12
 
 
+# --------------------------------------------------------------------------- #
+# LEFT-N (SPEC_REFCV8_DRAFT section 8.10 X10): clip n beside window n          #
+# --------------------------------------------------------------------------- #
+# The corpus: 40 episodes x 12 windows.  Episode e is a turn episode iff e is even;
+# its side is LEFT iff (e // 2) is even  ->  LEFT episodes 0,4,8,...,36 (10),
+# RIGHT episodes 2,6,...,38 (10), FOLLOW episodes = the 20 odd ones.  Every window is
+# nav-valid, and EVERY window of a turn episode is informative for both readouts (the turn
+# sits at [4, 8] s and each window spans [0.5 w, 0.5 w + 6] s with 0.5 w in [0, 5.5], so the
+# overlap is 2 .. 4 s >= 1 s; the g_str fallback horizon is 30 s).  Hence, by hand:
+#   windows: left 120, right 120, follow 240;  informative: left 120, right 120.
+def _clip_ids_merged(C):
+    """LEFT episodes pairwise merged into one clip each (0&4 -> L0, 8&12 -> L1, ...); RIGHT
+    and FOLLOW episodes keep one clip per episode."""
+    out = []
+    for e in C["eid"].tolist():
+        k = int(str(e)[2:])
+        if k % 2 == 1:
+            out.append(f"F{k}")
+        elif (k // 2) % 2 == 0:
+            out.append(f"L{k // 8}")
+        else:
+            out.append(f"R{k}")
+    return np.asarray(out)
+
+
+def _left_n_literals():
+    C = _corpus()
+    sig = lambda fed: nc.commanded_side(fed) * 0.5       # noqa: E731  (a follower)
+    # --- no clip_id: clip n falls back to the episode, and says so
+    r = _report(sig, C)
+    assert (r["n_true_left"], r["n_true_right"], r["n_follow"], r["n_episodes"]) == (120, 120, 240, 40), r
+    assert (r["n_clips"], r["n_true_left_clips"], r["n_true_right_clips"], r["n_follow_clips"]) \
+        == (40, 10, 10, 20), r
+    assert r["clip_basis"].startswith("eid"), r["clip_basis"]
+    assert r["left_n"]["left_windows"] == 120 and r["left_n"]["left_clips"] == 10, r["left_n"]
+    assert r["left_n"]["informative_plan"] == {"windows": 120, "clips": 10}, r["left_n"]
+    assert r["left_n"]["informative_gstr"] == {"windows": 120, "clips": 10}, r["left_n"]
+    # --- with clip_id: five LEFT clips (pairs merged), ten RIGHT, twenty FOLLOW
+    r2 = _report(sig, C, clip_id=_clip_ids_merged(C))
+    assert (r2["n_true_left"], r2["n_true_right"], r2["n_follow"]) == (120, 120, 240), r2   # window n untouched
+    assert (r2["n_clips"], r2["n_true_left_clips"], r2["n_true_right_clips"], r2["n_follow_clips"]) \
+        == (35, 5, 10, 20), r2
+    assert r2["clip_basis"] == "clip_id", r2["clip_basis"]
+    assert r2["left_n"]["left_windows"] == 120 and r2["left_n"]["left_clips"] == 5, r2["left_n"]
+    ip, ig = r2["informative"]["plan"], r2["informative"]["gstr"]
+    assert (ip["n_windows"], ip["n_clips"], ip["n_left_windows"], ip["n_left_clips"],
+            ip["n_right_windows"], ip["n_right_clips"]) == (240, 15, 120, 5, 120, 10), ip
+    assert (ig["n_windows"], ig["n_clips"], ig["n_left_windows"], ig["n_left_clips"]) \
+        == (240, 15, 120, 5), ig
+    # --- the standalone helper, hand-counted
+    nav = [nc.NAV_LEFT, nc.NAV_LEFT, nc.NAV_LEFT, nc.NAV_RIGHT, nc.NAV_FOLLOW, nc.NAV_LEFT]
+    valid = [True, True, True, True, True, False]          # the last LEFT window is not nav-valid
+    clip = ["a", "a", "b", "b", "c", "d"]
+    s = nc.side_clip_counts(nav, valid, clip)
+    assert s["left"] == {"n_windows": 3, "n_clips": 2}, s            # clips a, b
+    assert s["right"] == {"n_windows": 1, "n_clips": 1}, s           # clip b
+    assert s["follow"] == {"n_windows": 1, "n_clips": 1}, s          # clip c
+    assert s["any_turn"] == {"n_windows": 4, "n_clips": 2}, s        # b carries a left AND a right: once
+    m = nc.side_clip_counts(nav, valid, clip, mask=[False, True, False, False, True, True])
+    assert m["left"] == {"n_windows": 1, "n_clips": 1}, m            # window 1 only
+    assert m["right"] == {"n_windows": 0, "n_clips": 0}, m
+    return True
+
+
+def test_left_n_reports_clip_n_beside_window_n():
+    assert _left_n_literals()
+
+
+def test_left_n_refuses_a_misaligned_clip_id():
+    C = _corpus()
+    try:
+        _report(lambda fed: nc.commanded_side(fed) * 0.5, C, clip_id=C["eid"][:-1])
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("a clip_id of the wrong length must raise")
+    try:
+        nc.window_and_clip_n([True, False], ["a"])
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("a mask / clip_id length mismatch must raise")
+
+
+def test_DELIBERATE_REGRESSION_left_n_clip_count_must_not_be_the_window_count():
+    """Re-introduce the defect LEFT-N exists to remove -- reporting the WINDOW count as the n --
+    and require the literals to go RED."""
+    orig = nc.window_and_clip_n
+    nc.window_and_clip_n = lambda mask, clip_id: {"n_windows": int(np.asarray(mask).sum()),
+                                                  "n_clips": int(np.asarray(mask).sum())}
+    try:
+        try:
+            _left_n_literals()
+        except AssertionError:
+            return
+        raise AssertionError("clip n == window n stayed GREEN -- the literals cannot see the defect")
+    finally:
+        nc.window_and_clip_n = orig
+
+
+def test_DELIBERATE_REGRESSION_any_turn_clip_must_be_counted_once():
+    orig = nc.side_clip_counts
+
+    def double(nav_true, nav_valid, clip_id, mask=None):
+        r = orig(nav_true, nav_valid, clip_id, mask)
+        r["any_turn"] = {"n_windows": r["any_turn"]["n_windows"],
+                         "n_clips": r["left"]["n_clips"] + r["right"]["n_clips"]}
+        return r
+    nc.side_clip_counts = double
+    try:
+        try:
+            _left_n_literals()
+        except AssertionError:
+            return
+        raise AssertionError("a clip carrying both sides counted twice stayed GREEN")
+    finally:
+        nc.side_clip_counts = orig
+
+
 if __name__ == "__main__":
     fails = 0
     for name, fn in sorted(globals().items()):

@@ -480,7 +480,7 @@ def longitudinal(pred: torch.Tensor, gt: torch.Tensor, dt: float = DT_S,
     sp_err = P["speed"] - G["speed"]
     al_err = P["along"] - G["along"]
     ac_err = P["accel"] - G["accel"]
-    dk = _distance_keeping(pred, dt, lead)
+    dk = _distance_keeping(pred, dt, lead, gt)
     out = {
         # --- speed setting ---
         "speed_mae_mps": round(float(sp_err.abs().mean()), 4),
@@ -691,7 +691,8 @@ def _ego_progress(pred: torch.Tensor, gt: torch.Tensor) -> dict:
     return _progress(pred.detach().cpu().numpy(), gt.detach().cpu().numpy())
 
 
-def _distance_keeping(pred: torch.Tensor, dt: float, lead: dict | None) -> dict:
+def _distance_keeping(pred: torch.Tensor, dt: float, lead: dict | None,
+                      gt: torch.Tensor | None = None) -> dict:
     """``lead_metrics.distance_keeping`` over the arm's own predicted path, or the reason why not.
 
     Kept out of :func:`longitudinal` so the UNAVAILABLE branch reads as one thing: a WORK ITEM with
@@ -764,6 +765,27 @@ def _distance_keeping(pred: torch.Tensor, dt: float, lead: dict | None) -> dict:
                        "a substitute — this corpus's behaviour is strongly speed-dependent."),
             "n": 0,
         }
+    # LEAD-VIOL (SPEC_REFCV8_DRAFT.md section 8.7 / X7): the HUMAN path scored against the SAME
+    # lead future, and the share of lead windows where the plan's min time gap < 1.0 s while the
+    # human's is >= 1.0 s. Needs `gt`; the lead windows are `lead["lead_valid"]` if supplied, else
+    # lead_source.LEAD state, else (flagged in `denominator_source`) the human-corridor fallback.
+    if gt is not None:
+        import numpy as np
+        from taniteval.lead_metrics import lead_viol_vs_human
+        from taniteval.lead_source import LEAD as _LEAD_STATE
+        gpaths = gt.detach().cpu().numpy()
+        if steps is not None:
+            gpaths = gpaths[:, idx]
+        lv = lead.get("lead_valid")
+        if lv is None and lead.get("state") is not None:
+            lv = np.asarray(lead["state"], dtype=object).reshape(-1) == _LEAD_STATE
+        out["lead_viol"] = lead_viol_vs_human(
+            paths, gpaths, lead["leads"], lead["lead_lens"], lead["speeds"], dt_dk,
+            eid=lead.get("eid"), lead_valid=lv, plan_dk=out,
+            n_boot=int(lead.get("n_boot", 2000)), seed=int(lead.get("seed", 0)))
+        # numpy does not belong in a JSON record: park the flags beside the other per-window
+        # arrays, which the arm tools already strip as one `_per_window` block.
+        out["_per_window"]["lead_viol"] = out["lead_viol"].pop("_per_window")["viol"]
     out["admitted_by"] = ("D-LEAD-1 discrimination control, 2026-08-03 — GT vs hold-v0 CV, "
                           "PASS on all three metrics, paired episode-cluster bootstrap, "
                           "14,027 windows / 1,431 clusters")
@@ -1798,6 +1820,7 @@ def ci_coverage(family_block: dict, family: str,
 
     # the other direction: a numeric leaf nobody declared
     skip_roots = ("ci.", "anti_echo.", "distance_keeping.by_speed.",
+                  "distance_keeping.lead_viol.",
                   "distance_keeping._per_window.", "ego_progress.n",
                   "distance_keeping.n")
     undeclared = []

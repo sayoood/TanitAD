@@ -153,4 +153,5 @@ def test_supplying_a_lead_track_turns_distance_keeping_on():
     assert dk["mean_headway_min_m"] == pytest.approx(38.0)     # 60 - 2 - 20
     assert "D-LEAD-1" in dk["admitted_by"]
     assert set(dk["_per_window"]) == {"headway_min_m", "time_gap_min_s",
-                                      "min_ttc_s", "n_steps_in_corridor"}
+                                      "min_ttc_s", "n_steps_in_corridor",
+                                      "lead_viol"}      # LEAD-VIOL flags (X7), parked here

@@ -95,6 +95,7 @@ __all__ = [
     "load_labels", "join_windows_to_labels", "time_base_control",
     "from_refcv3_dump", "FALSIFIABILITY", "flip_nav", "assign_strata",
     "unavailable_block", "REQUIRED_CONDITIONS", "STRATA", "kinematic_end_signals",
+    "window_and_clip_n", "side_clip_counts",
 ]
 
 #: ``tanitad.refs.refc.NAV_COMMANDS`` = ("follow", "left", "right", "straight")
@@ -172,6 +173,36 @@ def flip_nav(nav) -> np.ndarray:
     left, right = nav == NAV_LEFT, nav == NAV_RIGHT
     nav[left], nav[right] = NAV_RIGHT, NAV_LEFT
     return nav
+
+
+def window_and_clip_n(mask, clip_id) -> dict:
+    """``{"n_windows", "n_clips"}`` of a boolean window mask: the number of windows it
+    selects AND the number of DISTINCT clips those windows come from.
+
+    SPEC_REFCV8_DRAFT section 8.10 (X10) LEFT-N: a left-turn result that reports only its
+    window count hides how few clips carry it (D3: the eval set's left-turn route following
+    rests on 13 clips, while its windows number in the hundreds -- windows of one clip are
+    not independent). ``clip_id`` ``[N]`` is the clip each window was cut from."""
+    m = np.asarray(mask, dtype=bool)
+    ids = np.asarray([str(c) for c in np.asarray(clip_id).reshape(-1)])
+    if m.shape != ids.shape:
+        raise ValueError(f"mask {m.shape} and clip_id {ids.shape} must be the same length")
+    return {"n_windows": int(m.sum()), "n_clips": int(len(set(ids[m].tolist())))}
+
+
+def side_clip_counts(nav_true, nav_valid, clip_id, mask=None) -> dict:
+    """Window n AND clip n of the windows commanded left / right / follow (optionally
+    restricted by ``mask``, e.g. an informative-window mask). ``any_turn`` counts a clip once
+    even when it carries both a left and a right command. ADDITIVE: the window counts equal
+    the long-standing ``n_true_left`` / ``n_true_right`` / ``n_follow`` when ``mask`` is None."""
+    nav = np.asarray(nav_true, dtype=np.int64)
+    ok = np.asarray(nav_valid, dtype=bool)
+    if mask is not None:
+        ok = ok & np.asarray(mask, dtype=bool)
+    return {"left": window_and_clip_n(ok & (nav == NAV_LEFT), clip_id),
+            "right": window_and_clip_n(ok & (nav == NAV_RIGHT), clip_id),
+            "follow": window_and_clip_n(ok & (nav == NAV_FOLLOW), clip_id),
+            "any_turn": window_and_clip_n(ok & ((nav == NAV_LEFT) | (nav == NAV_RIGHT)), clip_id)}
 
 
 def assign_strata(nav_true, nav_valid, t_now_s, t_start_s, t_end_s, gt_signal, *,
@@ -780,13 +811,20 @@ def nav_compliance_report(*, readouts: Mapping[str, Mapping[str, np.ndarray]],
                           fan: Mapping[str, np.ndarray] | None = None,
                           tolerance: Mapping[str, float] | None = None,
                           n_boot: int = 2000, seed: int = 0, tier: str = "T1",
-                          tag: str | None = None, min_delta: float = 0.0) -> dict:
+                          tag: str | None = None, min_delta: float = 0.0,
+                          clip_id=None) -> dict:
     """Assemble the block. ``readouts`` = ``{"plan": {cond: heading[N]}, "gstr":
     {cond: bearing[N]}, "anchor": {cond: heading[N]}}`` (plus optional
     ``plan_bearing``, ``plan_lateral``). ``gt_signal`` = ``{"plan": gt_heading
     [N], "gstr": gt_bearing[N]}`` for the tolerance derivation and the GT
     control. ``controls`` = ``{"ha0": ..., "ha": ..., "ha0_ext": ...}`` signed
     headings ``[N]``. ``fan`` = ``{cond: {"heading": [N, A], "keep": [N, A]}}``.
+
+    ``clip_id`` ``[N]`` (optional, ADDITIVE; SPEC_REFCV8_DRAFT section 8.10 LEFT-N) is the clip
+    each window was cut from; the ``n_*_clips`` keys and the ``left_n`` block are computed on
+    it. When omitted they are computed on ``eid`` and ``clip_basis`` says so -- the refcv3
+    dump holds one episode file per clip, so the two coincide there, but that is a property of
+    the dump and not of this function.
     """
     nav_true = np.asarray(nav_true, dtype=np.int64)
     nav_valid = np.asarray(nav_valid, dtype=bool)
@@ -811,6 +849,18 @@ def nav_compliance_report(*, readouts: Mapping[str, Mapping[str, np.ndarray]],
             inf_gstr = side_ok & np.isfinite(ts) & ((ts - tn) <= 30.0) & (te > tn)
         gstr_rule = "commanded turn starts within 30 s (STRATEGIC_S upper bound) and has not ended"
     follow = (nav_true == NAV_FOLLOW) & nav_valid
+    if clip_id is None:
+        clip_arr = eid
+        clip_basis = ("eid -- one episode == one clip (true of the refcv3 dump: one file per "
+                      "clip); pass clip_id to make it explicit")
+    else:
+        clip_arr = np.asarray(clip_id)
+        clip_basis = "clip_id"
+        if clip_arr.shape != eid.shape:
+            raise ValueError(f"clip_id {clip_arr.shape} and eid {eid.shape} must be the same length")
+    n_all_sides = side_clip_counts(nav_true, nav_valid, clip_arr)
+    n_plan_sides = side_clip_counts(nav_true, nav_valid, clip_arr, mask=inf_plan)
+    n_gstr_sides = side_clip_counts(nav_true, nav_valid, clip_arr, mask=inf_gstr)
     tol = dict(tolerance or {})
     tol_meta: dict = {}
     if gt_signal is not None:
@@ -837,14 +887,43 @@ def nav_compliance_report(*, readouts: Mapping[str, Mapping[str, np.ndarray]],
         "n_true_left": int(((nav_true == NAV_LEFT) & nav_valid).sum()),
         "n_true_right": int(((nav_true == NAV_RIGHT) & nav_valid).sum()),
         "n_follow": int(follow.sum()),
+        # LEFT-N (SPEC_REFCV8_DRAFT 8.10, ADDITIVE): the clip n beside every window n above
+        "n_clips": int(len(set(clip_arr.tolist()))),
+        "n_true_left_clips": n_all_sides["left"]["n_clips"],
+        "n_true_right_clips": n_all_sides["right"]["n_clips"],
+        "n_follow_clips": n_all_sides["follow"]["n_clips"],
+        "clip_basis": clip_basis,
         "informative": {
             "plan": {"n_windows": int(inf_plan.sum()),
                      "n_episodes": int(len(set(eid[inf_plan].tolist()))),
+                     "n_clips": n_plan_sides["any_turn"]["n_clips"],
+                     "n_left_windows": n_plan_sides["left"]["n_windows"],
+                     "n_left_clips": n_plan_sides["left"]["n_clips"],
+                     "n_right_windows": n_plan_sides["right"]["n_windows"],
+                     "n_right_clips": n_plan_sides["right"]["n_clips"],
                      "rule": (f"true command left/right, token valid, commanded turn "
                               f"overlaps [t_now, t_now + {PLAN_HORIZON_S:.0f} s] by ≥ 1 s")},
             "gstr": {"n_windows": int(inf_gstr.sum()),
                      "n_episodes": int(len(set(eid[inf_gstr].tolist()))),
+                     "n_clips": n_gstr_sides["any_turn"]["n_clips"],
+                     "n_left_windows": n_gstr_sides["left"]["n_windows"],
+                     "n_left_clips": n_gstr_sides["left"]["n_clips"],
+                     "n_right_windows": n_gstr_sides["right"]["n_windows"],
+                     "n_right_clips": n_gstr_sides["right"]["n_clips"],
                      "rule": gstr_rule},
+        },
+        "left_n": {
+            "spec": "SPEC_REFCV8_DRAFT section 8.10 X10 LEFT-N (report-only)",
+            "left_windows": n_all_sides["left"]["n_windows"],
+            "left_clips": n_all_sides["left"]["n_clips"],
+            "informative_plan": {"windows": n_plan_sides["left"]["n_windows"],
+                                 "clips": n_plan_sides["left"]["n_clips"]},
+            "informative_gstr": {"windows": n_gstr_sides["left"]["n_windows"],
+                                 "clips": n_gstr_sides["left"]["n_clips"]},
+            "clip_basis": clip_basis,
+            "_reads": ("every left-turn result in this block rests on THESE clips; windows of one "
+                       "clip are not independent, so the clip count -- not the window count -- is "
+                       "the n that bounds what a left-turn number can claim"),
         },
         "tolerance": {"values": {k: round(float(v), 6) for k, v in tol.items()},
                       "units": {"plan": "rad (terminal heading)", "gstr": "rad (bearing)",
@@ -1184,7 +1263,8 @@ def from_refcv3_dump(dump_dir: str, labels_path: str | None = None, *,
         nav_fed_by_cond=nav_fed, eid=eid, t_now_s=t_now,
         t_start_s=join["t_start_s"], t_end_s=join["t_end_s"], arc_to_turn_m=arc,
         gt_signal={"plan": gt_dpsi, "gstr": gt_bear}, controls=controls,
-        fan=fan or None, n_boot=n_boot, seed=seed, tag=tag, min_delta=min_delta)
+        fan=fan or None, n_boot=n_boot, seed=seed, tag=tag, min_delta=min_delta,
+        clip_id=np.asarray(clip_of_window))
     rep["time_base_control"] = tb
     rep["join"] = {"labels": labels_path, "n_windows_with_record": int(join["has_record"].sum()),
                    "n_windows_with_commanded_turn": int(np.isfinite(join["t_start_s"]).sum()),

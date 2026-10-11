@@ -67,6 +67,7 @@ __all__ = [
     "path_headings", "per_step_gap", "distance_keeping",
     "band_label", "assign_bands", "distance_keeping_by_speed",
     "paired_distance_keeping",
+    "LEAD_VIOL_TG_S", "lead_viol", "paired_lead_viol", "lead_viol_vs_human",
 ]
 
 
@@ -383,3 +384,216 @@ def paired_distance_keeping(dk_a: dict, dk_b: dict, eid, *, names=("A", "B"),
             blk["status"] = "OK"
         out["metrics"][key] = blk
     return out
+
+
+# --------------------------------------------------------------------------- #
+# LEAD-VIOL  --  SPEC_REFCV8_DRAFT.md section 8.7 (X7), item (a)               #
+#                                                                             #
+# REGISTERED DEFINITION (verbatim, SPEC_REFCV8_DRAFT.md @ 8522e49 line 768):    #
+#   "LEAD-VIOL = share of lead windows whose plan's minimum time gap is        #
+#    < 1.0 s while the human's is >= 1.0 s."                                   #
+# READING, implemented literally and flagged for the Master Mind in REPORT.md: #
+#  * time gap = this module's own `time_gap_min_s` (min over the horizon of    #
+#    gap / v_ego(t0)); the plan and the human path are scored against the     #
+#    SAME logged lead future by the SAME `distance_keeping`, so the two time   #
+#    gaps differ only in the path.                                            #
+#  * strict `<` on the plan, inclusive `>=` on the human, both vs 1.0 s.       #
+#  * DENOMINATOR = ALL lead windows (`lead_valid`), including those where the  #
+#    human's own time gap is < 1.0 s or undefined: those can never be a        #
+#    violation, and they are counted in the denominator because the spec says  #
+#    "share of lead windows". The conditional reading (denominator = windows   #
+#    where the human was >= 1.0 s) is emitted beside it as `share_of_at_risk`. #
+#  * a plan whose own corridor gate LOSES the lead (veers out of the lane) has #
+#    an undefined time gap and is NOT a violation under the literal text. That #
+#    is a loophole a lane-leaving planner could use, so it is COUNTED            #
+#    (`n_plan_lost_lead`) and a sensitivity share that treats it as a violation #
+#    is emitted (`share_incl_lost_lead`). The registered bar is on `share`.     #
+# The human path reads 0 BY CONSTRUCTION: plan == human cannot be both < 1.0   #
+# and >= 1.0.                                                                 #
+# --------------------------------------------------------------------------- #
+#: the registered threshold, seconds (SPEC_REFCV8_DRAFT.md section 8.7(a)).
+LEAD_VIOL_TG_S = 1.0
+
+
+def _viol_flags(plan_tg, human_tg, thr: float = LEAD_VIOL_TG_S) -> np.ndarray:
+    """-> bool [W]: plan time gap ``< thr`` AND human time gap ``>= thr``.
+
+    NaN on either side compares False: an UNDEFINED time gap is not a violation (it is counted
+    separately by :func:`lead_viol`). The boundary is asymmetric on purpose, exactly as registered:
+    plan strictly below, human at-or-above.
+    """
+    p = np.asarray(plan_tg, dtype=np.float64).reshape(-1)
+    h = np.asarray(human_tg, dtype=np.float64).reshape(-1)
+    with np.errstate(invalid="ignore"):
+        return (p < thr) & (h >= thr)
+
+
+def _lead_window_mask(human_headway, lead_valid):
+    """-> (bool [W], source). The DENOMINATOR: windows that count as 'lead windows'."""
+    if lead_valid is not None:
+        return np.asarray(lead_valid, dtype=bool).reshape(-1), "caller lead_valid"
+    return (np.isfinite(np.asarray(human_headway, dtype=np.float64).reshape(-1)),
+            "FALLBACK: lead inside the human path's corridor (finite human headway) - no "
+            "lead_valid / state supplied")
+
+
+def _per_window_dk(dk: dict, what: str) -> dict:
+    pw = dk.get("_per_window", dk)
+    for key in ("headway_min_m", "time_gap_min_s", "min_ttc_s"):
+        if key not in pw:
+            raise KeyError(f"{what} is missing per-window {key!r}; pass the dict returned by "
+                           f"distance_keeping() or one carrying '_per_window'")
+    return {k: np.asarray(pw[k], dtype=np.float64).reshape(-1)
+            for k in ("headway_min_m", "time_gap_min_s", "min_ttc_s")}
+
+
+def lead_viol(plan_dk: dict, human_dk: dict, eid=None, *, lead_valid=None,
+              threshold_s: float = LEAD_VIOL_TG_S, n_boot: int = 2000, seed: int = 0) -> dict:
+    """LEAD-VIOL: share of lead windows with plan time gap < 1.0 s while the human's is >= 1.0 s.
+
+    Args:
+        plan_dk / human_dk: the dicts :func:`distance_keeping` returned for the arm's predicted
+            path and for the HUMAN (ground-truth) path, over the SAME windows, leads and speeds
+            (or dicts carrying ``_per_window``). Both must be scored against the same logged
+            lead future, or the comparison measures the lead, not the path.
+        eid: ``[W]`` episode / clip cluster id - the bootstrap resamples THESE. Without it the
+            share is still emitted but its interval is UNAVAILABLE with a reason, never silent.
+        lead_valid: ``[W]`` bool - which windows are 'lead windows' (the denominator), e.g. the v9
+            ``lead_valid`` AND the S2 / S-ROUTE subset, or ``lead_source.LEAD`` state. If omitted
+            the fallback is 'the human's own path has a lead in its corridor'.
+
+    The per-window 0/1 flags are returned under ``_per_window["viol"]`` (NaN outside the lead
+    windows) for :func:`paired_lead_viol`.
+    """
+    p = _per_window_dk(plan_dk, "plan_dk")
+    h = _per_window_dk(human_dk, "human_dk")
+    w = h["headway_min_m"].size
+    if p["headway_min_m"].size != w:
+        raise ValueError(f"plan_dk has {p['headway_min_m'].size} windows, human_dk has {w}")
+    lead_win, src = _lead_window_mask(h["headway_min_m"], lead_valid)
+    if lead_win.size != w:
+        raise ValueError(f"lead_valid has {lead_win.size} entries for {w} windows")
+    ids = None
+    if eid is not None:
+        ids = np.asarray(eid, dtype=object).reshape(-1)
+        if ids.size != w:
+            raise ValueError(f"eid has {ids.size} entries for {w} windows")
+    thr = float(threshold_s)
+    flags = _viol_flags(p["time_gap_min_s"], h["time_gap_min_s"], thr) & lead_win
+    n_lead = int(lead_win.sum())
+    out = {
+        "metric": "LEAD-VIOL",
+        "spec": "SPEC_REFCV8_DRAFT.md section 8.7 (X7) (a)",
+        "definition": (f"share of lead windows whose plan's minimum time gap is < {thr:g} s while "
+                       f"the human's is >= {thr:g} s"),
+        "threshold_s": thr,
+        "denominator_source": src,
+        "n_windows": int(w),
+        "n_lead_windows": n_lead,
+    }
+    viol = np.full(w, np.nan)
+    viol[lead_win] = flags[lead_win].astype(np.float64)
+    out["_per_window"] = {"viol": viol}
+    if n_lead == 0:
+        out["status"] = "NOT-APPLICABLE"
+        out["reason"] = (f"no lead window among the {w} windows - nothing to violate; "
+                         f"reported with n, never as a pass")
+        out["n"] = 0
+        return out
+    htg = h["time_gap_min_s"]
+    at_risk = lead_win & np.isfinite(htg) & (htg >= thr)
+    lost = lead_win & np.isfinite(htg) & ~np.isfinite(p["time_gap_min_s"])
+    ttc_ok = lead_win & np.isfinite(p["min_ttc_s"])
+    n_viol = int(flags.sum())
+    n_risk = int(at_risk.sum())
+    out.update({
+        "status": "OK",
+        "n": n_lead,
+        "n_viol": n_viol,
+        "share": round(n_viol / n_lead, 6),
+        "n_at_risk": n_risk,
+        "share_of_at_risk": (round(n_viol / n_risk, 6) if n_risk else None),
+        "n_human_tg_undefined": int((lead_win & ~np.isfinite(htg)).sum()),
+        "n_human_tg_below_thr": int((lead_win & np.isfinite(htg) & (htg < thr)).sum()),
+        "n_plan_lost_lead": int(lost.sum()),
+        "share_incl_lost_lead": round(
+            (n_viol + int((lost & at_risk).sum())) / n_lead, 6),
+        "n_plan_ttc_finite": int(ttc_ok.sum()),
+        "n_plan_ttc_censored": int((ttc_ok & (p["min_ttc_s"] >= TTC_CAP_S - 1e-9)).sum()),
+        "ttc_cap_s": TTC_CAP_S,
+        "censoring_note": ("n_plan_ttc_censored = lead windows whose plan never closes on the lead "
+                           "(TTC pinned at TTC_CAP_S). A STOP plan is censored by construction; "
+                           "report it beside the share."),
+        "lost_lead_note": ("a plan that leaves the lead's corridor has an UNDEFINED time gap and is "
+                           "not a violation under the registered text; `share_incl_lost_lead` "
+                           "counts those at-risk windows as violations (sensitivity, not the bar)."),
+    })
+    if ids is None:
+        out["ci"] = {"status": "UNAVAILABLE", "n": n_lead,
+                     "reason": "no per-window episode id, so the episode-cluster bootstrap "
+                               "cannot be formed (pass eid). A pooled number is not a substitute."}
+    else:
+        from taniteval.ci import episode_cluster_bootstrap
+        out["ci"] = episode_cluster_bootstrap(
+            viol[lead_win], list(ids[lead_win]), reduce="mean", n_boot=n_boot, seed=seed)
+        out["ci"]["question_answered"] = ("would another draw of EPISODES say this? It does NOT "
+                                          "answer 'another training run' or 'another inference run' "
+                                          "(H-ESTIM-SEED-1): a replicate arm is still required.")
+    return out
+
+
+def paired_lead_viol(a: dict, b: dict, eid, *, names=("A", "B"),
+                     n_boot: int = 2000, seed: int = 0) -> dict:
+    """Paired ``A - B`` LEAD-VIOL on the SAME lead windows (the X7 bar is ``refcv8 - refcv7 < 0``).
+
+    ``a`` / ``b`` are :func:`lead_viol` results. Their lead-window sets must be identical - the
+    denominator is a property of the corpus and the human path, not of the arm - or the delta
+    compares different windows and this raises rather than silently intersecting. Uses
+    ``ci.paired_episode_cluster_bootstrap`` (never two intervals in quadrature).
+    """
+    from taniteval.ci import paired_episode_cluster_bootstrap
+
+    def _flags(nm, r):
+        # a lead_viol() result keeps them at _per_window['viol']; the dict four_families
+        # returns parks them at distance_keeping['_per_window']['lead_viol']
+        pw = r.get("_per_window", {})
+        for key in ("viol", "lead_viol"):
+            if key in pw:
+                return np.asarray(pw[key], dtype=np.float64)
+        raise KeyError(f"{nm}: no per-window LEAD-VIOL flags (_per_window.viol / .lead_viol)")
+
+    va, vb = _flags(names[0], a), _flags(names[1], b)
+    ids = np.asarray(eid, dtype=object).reshape(-1)
+    if not (va.shape == vb.shape == ids.shape):
+        raise ValueError(f"shapes disagree: {va.shape} / {vb.shape} / eid {ids.shape}")
+    ok = np.isfinite(va)
+    if not np.array_equal(ok, np.isfinite(vb)):
+        raise ValueError("the two arms' lead-window sets differ; LEAD-VIOL deltas are only "
+                         "defined on one shared denominator")
+    out = {"_what": f"paired {names[0]} - {names[1]} LEAD-VIOL",
+           "arms": list(names), "n_lead_windows": int(ok.sum()),
+           "n_viol_a": int(np.nansum(va)), "n_viol_b": int(np.nansum(vb))}
+    if not ok.any():
+        out.update(status="NOT-APPLICABLE", reason="no shared lead window")
+        return out
+    r = paired_episode_cluster_bootstrap(va[ok], vb[ok], list(ids[ok]),
+                                         n_boot=n_boot, seed=seed)
+    out.update(r)
+    out["status"] = "OK"
+    out["x7_direction_met"] = bool(r["delta"] < 0 and r["separated"])
+    out["question_answered"] = ("episode-resampling only (H-ESTIM-SEED-1): a separated interval "
+                                "is necessary, not sufficient, for a lever effect")
+    return out
+
+
+def lead_viol_vs_human(plan_paths, human_paths, leads, lead_lens, speeds, dt: float, *,
+                       eid=None, lead_valid=None, plan_dk: dict | None = None,
+                       threshold_s: float = LEAD_VIOL_TG_S, n_boot: int = 2000,
+                       seed: int = 0) -> dict:
+    """Convenience: score the HUMAN path with :func:`distance_keeping` against the same lead and
+    return :func:`lead_viol`. ``plan_dk`` may be passed to avoid re-scoring the arm."""
+    if plan_dk is None:
+        plan_dk = distance_keeping(plan_paths, leads, lead_lens, speeds, dt)
+    human_dk = distance_keeping(human_paths, leads, lead_lens, speeds, dt)
+    return lead_viol(plan_dk, human_dk, eid, lead_valid=lead_valid,
+                     threshold_s=threshold_s, n_boot=n_boot, seed=seed)
