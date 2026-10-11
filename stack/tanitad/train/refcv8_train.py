@@ -41,7 +41,9 @@ __all__ = ["r8_before_forward", "r8_losses", "V7PolicyScope", "R8LabelJoin", "tf
            "navsim_legal_nav_cmd", "v7_policy_travels", "load_v9_join", "R8_SPEED_UNKNOWN_P", "R8_SPEED_DERIVATION",
            "assert_r8_speed_stamp", "speed_kmh_of", "speed_input_census", "speed_input_treatment", "tactical_rows", "I2_LITERALS", "emit_live",
            "apply_emit_schedule", "emits_at_step0", "checkpoint_r8_step", "i2_identity_row",
-           "speed_derivation", "R8_SPEED_ENC8_NOTE", "speed_gen", "speed_crc", "speed_only_fwd"]
+           "speed_derivation", "R8_SPEED_ENC8_NOTE", "speed_gen", "speed_crc", "speed_only_fwd",
+           "R8_SPEED_LABEL", "R8_SPEED_PAST_ONLY", "R8_ROAD_TYPE_KMH", "read_road_type_sidecar",
+           "road_type_histogram"]
 
 #: MM binding 2026-10-04 (i): route-checkpoint dropout >= 0.3
 RC_DROPOUT_MIN = 0.3
@@ -94,6 +96,119 @@ R8_SPEED_DERIVATION = {
            "trained unknown row (all-zero) on p of the TRAINING windows; the ceiling on the EMITTED plan is the bin "
            "limit and never below the fed value. D4 LEAK 0.0193 against the 0.05 bar. No future sample is read."),
 }
+#: ⭐ PI RULING 2026-10-11 (Sayed, verbatim): *"yes use the quantified label as input, it is not a training signal, it
+#: is the maximal wished speed. it is ok that it is matching the future speed in some cases since it also must be
+#: achieved in the future. It is important to assure the road type quantization and avoid the exact value of the
+#: future speed as target speed."*  => the third source, `label`: the channel is fed refcv7's 4-way ROAD-TYPE set-speed
+#: sidecar ({30, 50, 100, 120} km/h one-hot; `--speed-max-sidecar-v6[-eval]`, read by `v6ms.read_speed_max_sidecar_v6`).
+#: The ego-future derivation per clip is ACCEPTED BY THE PI; the condition is the QUANTIZATION: the batch carries the
+#: road-type step and NEVER the sidecar's exact `v_hi_ms` (see :func:`read_road_type_sidecar`).
+R8_SPEED_LABEL = "label"
+#: the sources read off the v9 release (past-only); `label` is read off the v8 sidecar instead
+R8_SPEED_PAST_ONLY = ("n2", "n3")
+#: ⛔ THE PI'S FOUR ROAD-TYPE VALUES, as LITERALS (not read from `v6ms`): a check derived from the value it checks is
+#: green forever, so the ladder this module ENFORCES is typed here and pinned equal to `v6ms`'s by a test.
+R8_ROAD_TYPE_KMH = (30, 50, 100, 120)
+R8_SPEED_DERIVATION["label"] = (
+    "refcv8 speed input LABEL (PI 2026-10-11: maximal wished speed, road-type quantized {30, 50, 100, 120} km/h; "
+    "ego-future derived per clip, accepted by the PI): the refcv7 v8 set-speed sidecar's `bin` (g_tac.goals.SPEED_BAND "
+    "`v_hi_ms` snapped to its CONTAINING road-type window), fed as the road-type step itself through the refcv6 "
+    "4-way one-hot; the sidecar's exact `v_hi_ms` is NEVER fed (a sidecar row without a road-type bin, with a step "
+    "off the four values, or with a one-hot that is not exactly the bin's refuses at load); a trained unknown row "
+    "(all-zero) on p of the TRAINING windows; an INPUT (the maximal wished speed), not a training signal: no loss "
+    "reaches this channel. config.json[refcv6_max_speed] carries the per-step histogram.")
+
+
+def _label_row_refusal(r: dict) -> str | None:
+    """Why ONE sidecar row may not feed the `label` source, or None. The PI's requirement as a REFUSAL (2026-10-11):
+    a valid row carries a road-type bin in 0..3, its `limit_kmh` is one of the FOUR road-type values and the bin's own,
+    and its `one_hot` is exactly the bin's -- so an exact / finer future speed cannot ride in a quantized field. An
+    explicit UNKNOWN row (valid 0) carries no bin, no limit and no one-hot mass."""
+    valid = bool(int(r.get("valid", 0) or 0)) and r.get("v_hi_ms") is not None
+    oh = r.get("one_hot")
+    if not valid:
+        mass = oh is not None and any(float(x) != 0.0 for x in oh)
+        if r.get("bin") is not None or r.get("limit_kmh") is not None or mass:
+            return "an UNKNOWN row (valid 0) carries a bin / limit / one-hot mass: it is neither a road type nor unknown"
+        return None
+    b = r.get("bin")
+    if b is None or isinstance(b, bool) or float(b) != int(b) or not 0 <= int(b) < len(R8_ROAD_TYPE_KMH):
+        return (f"bin {b!r} is not a road-type bin in 0..{len(R8_ROAD_TYPE_KMH) - 1} (a row with only the exact "
+                f"speed `v_hi_ms` and no road type)")
+    b = int(b)
+    lim = r.get("limit_kmh")
+    if lim is None or float(lim) not in {float(k) for k in R8_ROAD_TYPE_KMH}:
+        return f"limit_kmh {lim!r} is not one of the road-type values {list(R8_ROAD_TYPE_KMH)} (an exact / finer speed)"
+    if float(lim) != float(R8_ROAD_TYPE_KMH[b]):
+        return f"limit_kmh {lim!r} is not bin {b}'s road-type value {R8_ROAD_TYPE_KMH[b]}"
+    want = [1.0 if i == b else 0.0 for i in range(len(R8_ROAD_TYPE_KMH))]
+    if oh is None or [float(x) for x in oh] != want:
+        return f"one_hot {oh!r} is not exactly the one-hot of bin {b} ({want})"
+    return None
+
+
+def read_road_type_sidecar(path: str, *, label_md5: str | None = None) -> tuple[dict, dict]:
+    """``--r8-speed-input label``: ``sidecar.jsonl -> ({sid: (road_type_ms, valid)}, report)``.
+
+    PI 2026-10-11: the value this returns is the ROAD-TYPE STEP (``{30, 50, 100, 120}`` km/h ``/ 3.6``, python
+    float64, as :data:`tanitad.refs.refcv6_max_speed.SPEED_MAX_STEPS_MS_V6` spells it) -- NEVER the sidecar's exact
+    ``v_hi_ms``. Quantizing HERE (and not only in the model's one-hot) keeps the exact future speed out of the batch:
+    the model's over-ceiling rule (``refc_v3._scene_hook``) lifts the plan ceiling to the FED value on a >120 km/h row
+    whenever ``cfg.refcv8.speed_input`` is set, so a raw 130 km/h would become a 130 km/h ceiling; fed the step
+    instead, ``over`` is False and the ceiling is the road type's, exactly refcv7's.
+
+    Built on :func:`v6ms.read_speed_max_sidecar_v6` (exists / non-empty / ``sid``-keyed / md5 against the label blob /
+    the sidecar's bin re-derived from ``v_hi_ms`` on that module's ladder); then EVERY row is held to
+    :func:`_label_row_refusal`, a duplicate ``sid`` refuses, and the per-step histogram is counted. ``report`` goes
+    into config.json (``histogram_kmh`` = rows per road-type step; ``n_unknown`` = the explicit unknown rows)."""
+    import json as _json
+    from tanitad.refs import refcv6_max_speed as v6ms
+    _raw, rep = v6ms.read_speed_max_sidecar_v6(str(path), label_md5=label_md5)
+    out: dict[int, tuple[float, float]] = {}
+    hist = {str(k): 0 for k in R8_ROAD_TYPE_KMH}
+    n_unknown = 0
+    with open(str(path), "r", encoding="utf-8") as fh:
+        for ln, line in enumerate(fh, 1):
+            line = line.strip()
+            if not line:
+                continue
+            r = _json.loads(line)
+            why = _label_row_refusal(r)
+            if why is not None:
+                raise SystemExit(f"[refcv8] ⛔ --r8-speed-input label: sidecar {path!r} line {ln} (sid {r.get('sid')}): "
+                                 f"{why}. PI 2026-10-11: the input must be the ROAD-TYPE quantization "
+                                 f"{list(R8_ROAD_TYPE_KMH)} km/h, never the exact future speed.")
+            sid = int(r["sid"])
+            if sid in out:
+                raise SystemExit(f"[refcv8] ⛔ --r8-speed-input label: sid {sid} appears twice in {path!r}")
+            if int(r.get("valid", 0) or 0) and r.get("v_hi_ms") is not None:
+                kmh = R8_ROAD_TYPE_KMH[int(r["bin"])]
+                out[sid] = (float(kmh) / 3.6, 1.0)
+                hist[str(kmh)] += 1
+            else:
+                out[sid] = (0.0, 0.0)
+                n_unknown += 1
+    report = dict(rep, channel="refcv8 label source -> the refcv6 4-way one-hot (road-type step fed, never v_hi_ms)",
+                  source=R8_SPEED_LABEL, road_type_kmh=list(R8_ROAD_TYPE_KMH), histogram_kmh=hist,
+                  n_unknown=int(n_unknown), exact_future_speed_fed=False)
+    return out, report
+
+
+def road_type_histogram(by_sid: dict, sids) -> dict:
+    """The per-step histogram over the WINDOWS (``sids`` = one episode id per window): rows per road-type step,
+    ``n_unknown`` (no sidecar row, or valid 0) and ``n_windows``."""
+    h = {str(k): 0 for k in R8_ROAD_TYPE_KMH}
+    unk = 0
+    steps = {round(float(k) / 3.6, 9): str(k) for k in R8_ROAD_TYPE_KMH}
+    for s_ in sids:
+        v = by_sid.get(int(s_))
+        if v is None or v[1] < 0.5:
+            unk += 1
+        else:
+            h[steps[round(float(v[0]), 9)]] += 1
+    return {"histogram_kmh": h, "n_unknown": unk, "n_windows": int(sum(h.values()) + unk)}
+
+
 #: the tokens each stamp must carry -- LITERALS, never an expression over the text above (a check derived from the
 #: value it checks is green forever)
 R8_SPEED_STAMP_REQUIRED = {
@@ -101,6 +216,9 @@ R8_SPEED_STAMP_REQUIRED = {
            "urban floor 50 km/h", "4-way one-hot", "unknown row", "EMITTED plan"),
     "n3": ("past-only", "[NOW - 20 s, NOW]", "speed_n3", "urban / rural / motorway", "4-way one-hot", "unknown row",
            "EMITTED plan"),
+    "label": ("PI 2026-10-11", "maximal wished speed", "road-type quantized", "{30, 50, 100, 120} km/h",
+              "ego-future derived per clip", "accepted by the PI", "4-way one-hot", "unknown row",
+              "not a training signal"),
 }
 
 
@@ -416,7 +534,7 @@ def r8_before_forward(model, batch: Mapping[str, Tensor], device, traj_tgt: Tens
       noise on the kept rows (sigmas on ``model._r8_rc_noise``, refused below RC_NOISE_*).
     * EVAL: no dropout, no noise; ``model._r8_legal_row`` True -> the NavSim-LEGAL row (known 0, RC invalid).
     * ``model._r8_no_rc`` True (``--r8-no-rc``): the checkpoint is never fed (the switch-off the MM asked for).
-    * X3 (``cfg.speed_input`` "n2" / "n3"): the batch's ``v_max_ms`` / ``v_max_valid`` through
+    * X3 (``cfg.speed_input`` "n2" / "n3" / "label"): the batch's ``v_max_ms`` / ``v_max_valid`` through
       :func:`speed_input_treatment` (the trained unknown row, the V-VSHUF roll, VMAX-OFF / -SHUF, the LEGAL row)."""
     cfg = model.cfg.refcv8
     gen = _gen(model)

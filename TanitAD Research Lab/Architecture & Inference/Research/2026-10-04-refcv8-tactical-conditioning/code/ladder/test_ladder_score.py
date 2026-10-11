@@ -180,9 +180,42 @@ R7 = ["--size", "large", "--trunk-compile", "--speed-max-sidecar-v6", "x", "--sp
 
 def test_arm_table_audits_one_variable_and_V0_is_speed_only():
     A = LA.arms(R7, 3000, "51", "/r")
-    rep = LA.audit(A)
-    assert rep["PASS"] and rep["I0_assert1_V0_speed_only"]["PASS"] and rep["no_v8_sidecar_anywhere"]["PASS"]
+    rep = LA.audit(A, R7)
+    assert rep["PASS"] and rep["I0_assert1_V0_speed_only"]["PASS"] and rep["speed_source_on_every_arm"]["PASS"]
+    assert rep["no_route_checkpoint_on_refcv8_arms"]["PASS"]
     assert set(A) == set(LA.ORDER)
+    assert "V-R8-E8" not in A and "V-R8-E8-roll" not in A      # enc8 needs the N2 ladder: not built under the label source
+
+
+def test_PI_2026_10_11_every_arm_feeds_the_label_source_and_no_arm_feeds_a_route_checkpoint():
+    """The speed / route tokens of EVERY arm, as LITERALS (PI 2026-10-11)."""
+    A = LA.arms(R7, 3000, "51", "/r")
+    for name, (ps, _b, _d, _r) in A.items():
+        d = dict(ps)
+        assert d["--r8-speed-input"] == ["label"] and d["--r8-speed-unknown-p"] == ["0.45"], name
+        assert d["--speed-max-sidecar-v6"] == ["x"] and d["--speed-max-sidecar-v6-eval"] == ["y"], name   # R7's, verbatim
+        assert "--max-speed-input-v6" in d, name
+        assert not any(f.startswith("--r8-rc-") for f in d), name
+        assert ("--r8-no-rc" in d) == ("--refcv8" in d), name                 # V0 / V0r are speed-only: no refcv8, no RC
+        assert ("--r8-nav-from-v9" in d) == ("--refcv8" in d), name
+    assert dict(A["V-R8d"][0]).get("--r8-derange-feed") == [] and "--r8-rc-roll" not in dict(A["V-R8d"][0])
+    assert A["V-R8d"][2] == [("--r8-derange-feed", [])]
+
+
+def test_MUT_a_route_checkpoint_flag_or_a_missing_sidecar_or_the_wrong_source_fails_the_audit():
+    A = LA.arms(R7, 3000, None, "/r")
+    ps, base, delta, role = A["V-R8"]
+    A2 = dict(A, **{"V-R8": (ps + [("--r8-rc-dropout", ["0.3"])], base, delta, role)})
+    assert not LA.audit(A2, R7)["no_route_checkpoint_on_refcv8_arms"]["PASS"]
+    A3 = dict(A, **{"V-R8": (LA.drop(ps, "--r8-no-rc"), base, delta, role)})
+    assert not LA.audit(A3, R7)["no_route_checkpoint_on_refcv8_arms"]["PASS"]
+    ps0, b0, d0, r0 = A["V0"]
+    A4 = dict(A, **{"V0": (LA.setf(ps0, "--r8-speed-input", ["n2"]), b0, d0, r0)})
+    assert not LA.audit(A4, R7)["speed_source_on_every_arm"]["PASS"]
+    A5 = dict(A, **{"V0": (LA.drop(ps0, "--speed-max-sidecar-v6"), b0, d0, r0)})
+    assert not LA.audit(A5, R7)["speed_source_on_every_arm"]["PASS"]
+    A6 = dict(A, **{"V0": (LA.setf(ps0, "--speed-max-sidecar-v6", ["z"]), b0, d0, r0)})
+    assert not LA.audit(A6, R7)["speed_source_on_every_arm"]["PASS"]          # not refcv7's path
 
 
 def test_MUT_a_second_difference_fails_the_audit():

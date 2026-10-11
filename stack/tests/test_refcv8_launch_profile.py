@@ -29,9 +29,9 @@ def _argv():
     return list(json.loads(ARGV_FILE.read_text(encoding="utf-8"))["argv"])
 
 
-#: PI rulings 2026-10-11 applied to the smoke argv IN MEMORY (the smoke JSON itself still carries the superseded flags until
-#: hold_r8label lands the trainer's `label` value; the trainer-acceptance tests below keep reading the raw file):
-#: Q-A no route checkpoint, Q-B the quantized label (refcv7's two sidecars) is the speed input -- all LITERALS
+#: PI rulings 2026-10-11: Q-A no route checkpoint, Q-B the quantized label (refcv7's two sidecars) is the speed input --
+#: all LITERALS. hold_r8label (the trainer's `label` value) ALSO moved the smoke JSON itself onto Q-A / Q-B, so for those
+#: keys `_ruled_argv` is the identity on it; the EMA / B1 / geometry keys are still applied in memory.
 _RULED = {"--r8-rc-variant": None, "--r8-rc-noise-along-m": None, "--r8-rc-noise-lat-m": None, "--r8-rc-dropout": None,
           "--r8-no-rc": [], "--r8-speed-input": ["label"],
           "--speed-max-sidecar-v6": ["/home/nvidia/data/refcv6_speed_max_v8_train.jsonl"],
@@ -67,8 +67,13 @@ def test_the_ruled_smoke_argv_passes_every_argv_rule_with_NO_pending_PI_decision
     assert refusals == [], refusals
     # both PI items are CLOSED by the PI's rulings of 2026-10-11 (Q-A no RC, Q-B the label is the speed input)
     assert pending == [], pending
-    # ... and the SUPERSEDED argv (RC variant A50 + N2) is refused, not pending
-    old_refusals, _p = LG.profile_argv_rules(prof, _argv())
+    # ... and the SUPERSEDED argv (RC variant A50 + N2, no sidecar) is refused, not pending
+    old = _argv()
+    for f, v in (("--r8-no-rc", None), ("--r8-speed-input", ["n2"]), ("--speed-max-sidecar-v6", None),
+                 ("--speed-max-sidecar-v6-eval", None), ("--r8-rc-variant", ["A50"]),
+                 ("--r8-rc-noise-along-m", ["2.0"]), ("--r8-rc-noise-lat-m", ["0.75"]), ("--r8-rc-dropout", ["0.3"])):
+        old = LG.set_flag(old, f, v)
+    old_refusals, _p = LG.profile_argv_rules(prof, old)
     assert any("--r8-rc-variant" in r for r in old_refusals) and any("--r8-speed-input" in r for r in old_refusals)
     ids = [it["id"] for it in prof["open_items"]]
     # R8-WARMUP was CLOSED by the Master Mind on 2026-10-11 (SPEC_REFCV8 sec. 10.3): three items still wait on evidence
@@ -123,10 +128,16 @@ def test_Q_B_the_label_sidecar_is_admitted_at_the_gate_and_only_refcv7s_files_pa
     assert any(flag in r for r in other), other                               # not refcv7's file
 
 
-def test_the_canonical_argv_feeds_N2_and_no_sidecar():
+def test_the_canonical_argv_feeds_the_label_with_refcv7s_sidecars_and_no_route_checkpoint():
+    """PI 2026-10-11: the speed source is the road-type label (refcv7's two sidecars, verbatim) and there is no RC."""
     a = _argv()
-    assert LG.flag_values(a, "--r8-speed-input") == ["n2"] and LG.flag_values(a, "--r8-speed-unknown-p") == ["0.45"]
-    assert not any(t.startswith("--speed-max-sidecar") for t in a)
+    r7 = LG.flag_pairs(json.loads(R7_FILE.read_text(encoding="utf-8"))["argv"])
+    assert LG.flag_values(a, "--r8-speed-input") == ["label"] and LG.flag_values(a, "--r8-speed-unknown-p") == ["0.45"]
+    assert LG.flag_values(a, "--speed-max-sidecar-v6") == ["/home/nvidia/data/refcv6_speed_max_v8_train.jsonl"]
+    assert LG.flag_values(a, "--speed-max-sidecar-v6-eval") == ["/home/nvidia/data/refcv6_speed_max_v8_eval.jsonl"]
+    assert dict((f, list(v)) for f, v in r7)["--speed-max-sidecar-v6"] == LG.flag_values(a, "--speed-max-sidecar-v6")
+    assert "--r8-no-rc" in a and "--r8-nav-from-v9" in a                          # nav command + turn distance stay
+    assert not any(t.startswith("--r8-rc-") for t in a)
     assert "--max-speed-input-v6" in a and "--speed-ceiling-filter" in a          # the channel and the ceiling stay
 
 
@@ -137,7 +148,7 @@ def test_the_argv_is_a_refcv8_argv_the_trainer_accepts_with_exactly_the_stated_d
     cfg = types.SimpleNamespace(refcv8=r8c.R8Config())
     T._pin_refcv8(cfg, args)
     r = cfg.refcv8
-    assert r.enable and r.n_alloc == 32 and r.w_cons == 0.05 and r.w_listwise == 1.0 and r.speed_input == "n2"
+    assert r.enable and r.n_alloc == 32 and r.w_cons == 0.05 and r.w_listwise == 1.0 and r.speed_input == "label"
     rec = json.loads(ARGV_FILE.read_text(encoding="utf-8"))
     r7 = json.loads(R7_FILE.read_text(encoding="utf-8"))["argv"]
     assert rec["derived_from"]["n_tokens"] == len(r7)

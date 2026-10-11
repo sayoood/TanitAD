@@ -815,6 +815,20 @@ def _pin_ema_guard(args) -> None:
                          + "\n  - ".join(_bad))
 
 
+def _pin_r8_label_source(args) -> None:
+    """PI 2026-10-11 (Sayed): *"yes use the quantified label as input, it is not a training signal, it is the maximal
+    wished speed ... It is important to assure the road type quantization and avoid the exact value of the future
+    speed as target speed."*  ``--r8-speed-input label`` = the 4-way set-speed channel's SOURCE is refcv7's road-type
+    sidecar ({30, 50, 100, 120} km/h): it NEEDS the sidecar (train, and the eval one beside an in-run eval), unlike
+    n2 / n3 where the sidecar is refused. The quantization itself is enforced at LOAD (``r8train.read_road_type_sidecar``)."""
+    if not getattr(args, "speed_max_sidecar_v6", None):
+        raise SystemExit("[refcv8] ⛔ --r8-speed-input label without --speed-max-sidecar-v6: the label source IS "
+                         "refcv7's road-type set-speed sidecar (PI 2026-10-11) -- pass it")
+    if getattr(args, "eval_cache", None) and not getattr(args, "speed_max_sidecar_v6_eval", None):
+        raise SystemExit("[refcv8] ⛔ --r8-speed-input label with an --eval-cache but no --speed-max-sidecar-v6-eval: "
+                         "the eval split would be fed another split's road types (or none)")
+
+
 def _pin_refcv8(cfg, args) -> None:
     """refcv8 WP-B (DESIGN.md sec. 3) -- argv -> cfg.refcv8, with refusals that fire before config.json."""
     _pin_ema_guard(args)
@@ -857,19 +871,23 @@ def _pin_refcv8(cfg, args) -> None:
                 raise SystemExit(f"[refcv8] --{k.replace('_', '-')} without --refcv8: a dead flag (refused)")
         if _so:
             _side = [f for f in ("speed_max_sidecar_v6", "speed_max_sidecar_v6_eval") if getattr(args, f, None)]
-            if _side:
+            _label = str(_so) == r8train.R8_SPEED_LABEL
+            if _side and not _label:       # PI 2026-10-11: the `label` source IS the sidecar; n2 / n3 still refuse it
                 raise SystemExit("[refcv8] ⛔ X3: --r8-speed-input with the v8 FUTURE-MAX sidecar (--%s): one channel, "
                                  "one source, and the sidecar is the oracle (D4 LEAK 0.238)"
                                  % " / --".join(f.replace("_", "-") for f in _side))
             if not bool(getattr(args, "max_speed_input_v6", False)):
                 raise SystemExit("[refcv8] --r8-speed-input names the SOURCE of the 4-way set-speed channel; the "
                                  "channel itself is --max-speed-input-v6 (pass both)")
-            if not getattr(args, "r8_v9_labels", None):
-                raise SystemExit("[refcv8] --r8-speed-input reads the v9 release's past-only column: pass "
-                                 "--r8-v9-labels")
-            if getattr(args, "eval_cache", None) and not getattr(args, "r8_v9_labels_eval", None):
-                raise SystemExit("[refcv8] --r8-speed-input with an --eval-cache but no --r8-v9-labels-eval: the eval "
-                                 "split would have no past-only speed source")
+            if _label:
+                _pin_r8_label_source(args)
+            else:
+                if not getattr(args, "r8_v9_labels", None):
+                    raise SystemExit("[refcv8] --r8-speed-input reads the v9 release's past-only column: pass "
+                                     "--r8-v9-labels")
+                if getattr(args, "eval_cache", None) and not getattr(args, "r8_v9_labels_eval", None):
+                    raise SystemExit("[refcv8] --r8-speed-input with an --eval-cache but no --r8-v9-labels-eval: the "
+                                     "eval split would have no past-only speed source")
             _sp = getattr(args, "r8_speed_unknown_p", None)
             if _sp is not None and not 0.0 < float(_sp) < 1.0:
                 raise SystemExit(f"[refcv8] --r8-speed-unknown-p {_sp} must be in (0, 1): the unknown row is a "
@@ -932,7 +950,7 @@ def _pin_refcv8(cfg, args) -> None:
     # ---- X3 (SPEC_REFCV8 sec. 8.3; MM ruling Q5): the speed input is PAST-ONLY; the v8 future-max sidecar is refused -- #
     _si = getattr(args, "r8_speed_input", None)
     _side = [f for f in ("speed_max_sidecar_v6", "speed_max_sidecar_v6_eval") if getattr(args, f, None)]
-    if _side:
+    if _side and _si != r8train.R8_SPEED_LABEL:      # PI 2026-10-11: `label` IS the sidecar; n2 / n3 / none refuse it
         raise SystemExit("[refcv8] ⛔ X3: --%s on a refcv8 run feeds the v8 FUTURE-MAX sidecar -- a future-ego "
                          "speed ORACLE input (K12; D4 LEAK 0.238 against the 0.05 bar, SPEC_REFCV8 sec. 8.3). The speed "
                          "channel's source is --r8-speed-input n2 (past-only, MM ruling Q5)."
@@ -944,7 +962,9 @@ def _pin_refcv8(cfg, args) -> None:
         if not bool(getattr(args, "max_speed_input_v6", False)):
             raise SystemExit("[refcv8] --r8-speed-input names the SOURCE of the 4-way set-speed channel; the "
                              "channel itself is --max-speed-input-v6 (pass both)")
-        if not getattr(args, "r8_v9_labels", None):
+        if _si == r8train.R8_SPEED_LABEL:
+            _pin_r8_label_source(args)
+        elif not getattr(args, "r8_v9_labels", None):
             raise SystemExit("[refcv8] --r8-speed-input reads the v9 release's past-only column: pass --r8-v9-labels")
         _sp = getattr(args, "r8_speed_unknown_p", None)
         if _sp is not None and not 0.0 < float(_sp) < 1.0:
@@ -952,7 +972,7 @@ def _pin_refcv8(cfg, args) -> None:
                              f"input (X3) and a known row must exist")
     if bool(getattr(args, "r8_speed_enc8", False)) and _si != "n2":
         raise SystemExit("[refcv8] --r8-speed-enc8 encodes the N2 LADDER: it needs --r8-speed-input n2 (N3 has three "
-                         "classes; with no source there is nothing to encode)")
+                         "classes, `label` has the four road-type steps; with no source there is nothing to encode)")
     if not _si and (getattr(args, "r8_speed_unknown_p", None) is not None
                     or bool(getattr(args, "r8_roll_speed_input", False))):
         raise SystemExit("[refcv8] --r8-speed-unknown-p / --r8-roll-speed-input without --r8-speed-input: "
@@ -1319,9 +1339,11 @@ def _pin_refcv6_tactical(cfg, args) -> None:
                 "source fields. Feeding both makes the channel's effect "
                 "non-attributable and `RefCV3Model.__init__` refuses the pair "
                 "as well. Pick one.")
-        # refcv8 X3: with --r8-speed-input the channel's SOURCE is the v9 past-only column (and `_pin_refcv8`
-        # refuses the sidecar there), so the sidecar is not required on that path.
-        if not getattr(args, "speed_max_sidecar_v6", None) and not getattr(args, "r8_speed_input", None):
+        # refcv8 X3: with --r8-speed-input n2 / n3 the channel's SOURCE is the v9 past-only column (and `_pin_refcv8`
+        # refuses the sidecar there), so the sidecar is not required on that path. PI 2026-10-11: with `label` the
+        # source IS the sidecar, so it is required (as on refcv7).
+        if (not getattr(args, "speed_max_sidecar_v6", None)
+                and getattr(args, "r8_speed_input", None) not in r8train.R8_SPEED_PAST_ONLY):
             raise SystemExit(
                 "[v3] ⛔ --max-speed-input-v6 without --speed-max-sidecar-v6. "
                 "The 4-value ladder is NOT a field of the label blob: it is "
@@ -4331,6 +4353,35 @@ class V3Dataset(RouteV21Dataset):
               f"{rep.get('over_ceiling_frac_of_known')}", flush=True)
         return self.max_speed_report
 
+    def enable_r8_speed_label(self, sidecar_path: str, manifest=None) -> dict:
+        """refcv8 ``--r8-speed-input label`` (PI 2026-10-11): the 4-way set-speed channel's SOURCE is refcv7's ROAD-TYPE
+        sidecar ({30, 50, 100, 120} km/h), fed as the ROAD-TYPE STEP and never as the sidecar's exact ``v_hi_ms``
+        (``r8train.read_road_type_sidecar`` refuses a sidecar that carries anything else). Rides the same
+        ``_max_speed_by_sid`` -> ``item["v_max_ms"]`` path as :meth:`enable_max_speed_v6`, so ``r8_before_forward``'s
+        trained unknown row / V-VSHUF roll apply unchanged. REFUSES a split where NOT ONE window joins a known row (a
+        join failure, not a channel). Returns the census config.json stamps, with the per-step histogram."""
+        if self.max_speed_enabled:
+            raise SystemExit("[refcv8] ⛔ the label source: a max-speed channel is already feeding `v_max_ms` on this "
+                             "dataset; one channel, one source")
+        by_sid, report = r8train.read_road_type_sidecar(
+            str(sidecar_path), label_md5=(getattr(manifest, "md5", None) if manifest else None))
+        win = r8train.road_type_histogram(by_sid, [int(self.episodes[e_i].episode_id) for (e_i, _t) in self.index])
+        n_fed = win["n_windows"] - win["n_unknown"]
+        if win["n_windows"] and n_fed == 0:
+            raise SystemExit(f"[refcv8] ⛔ --r8-speed-input label: NOT ONE of this split's {win['n_windows']} windows "
+                             f"joins a sidecar row with a road type -- a sidecar for another split; the channel would "
+                             f"be a constant unknown row")
+        self._max_speed_by_sid = by_sid
+        self.max_speed_enabled = True
+        self.max_speed_report = dict(report, label_md5=getattr(manifest, "md5", None) if manifest else None,
+                                     n_windows=int(win["n_windows"]), n_windows_fed=int(n_fed),
+                                     window_ceiling_frac=round(n_fed / max(win["n_windows"], 1), 6),
+                                     window_histogram_kmh=win["histogram_kmh"], window_n_unknown=int(win["n_unknown"]))
+        print(f"[v3] refcv8 label speed input (road-type sidecar {report['sidecar']}): {n_fed}/{win['n_windows']} "
+              f"windows fed, per-step windows {win['histogram_kmh']}, per-clip rows {report['histogram_kmh']}",
+              flush=True)
+        return self.max_speed_report
+
     def enable_clip_clock(self, sidecar_path: str | None = None) -> dict:
         """Resolve every episode's clock ONCE and return the census config.json stamps.
 
@@ -7055,6 +7106,9 @@ def _seam_stamp(cfg, args) -> dict:
                         or None),
             "ladder_kmh": list(v6ms.SPEED_MAX_STEPS_KMH_V6),
             "provenance": ("ego-future (oracle INPUT, ~1.7555 bits)" if not getattr(args, "r8_speed_input", None)
+                           else "ego-future ROAD-TYPE quantized {30, 50, 100, 120} km/h (PI 2026-10-11 label source; "
+                                "the exact v_hi_ms is never fed; config.json[r8_speed_derivation])"
+                           if str(args.r8_speed_input) == r8train.R8_SPEED_LABEL
                            else "ego-PAST (refcv8 X3 %s, v9 release; config.json[r8_speed_derivation])"
                            % str(args.r8_speed_input).upper()),
             "built": None,      # ← the MODEL fills this; see `train`
@@ -9468,9 +9522,13 @@ def train(args) -> dict:
         # already refused the two together, so this `elif` can never shadow
         # E16; it is written as a separate `if` anyway so that a future
         # loosening of the pin cannot make one channel silently win.
-        if getattr(args, "max_speed_input_v6", False) and not getattr(args, "r8_speed_input", None):
-            max_speed_v6_stats = ds.enable_max_speed_v6(
-                str(args.speed_max_sidecar_v6), manifest)
+        if (getattr(args, "max_speed_input_v6", False)
+                and getattr(args, "r8_speed_input", None) not in r8train.R8_SPEED_PAST_ONLY):
+            if getattr(args, "r8_speed_input", None) == r8train.R8_SPEED_LABEL:       # PI 2026-10-11
+                max_speed_v6_stats = ds.enable_r8_speed_label(str(args.speed_max_sidecar_v6), manifest)
+            else:
+                max_speed_v6_stats = ds.enable_max_speed_v6(
+                    str(args.speed_max_sidecar_v6), manifest)
         # ---- --nav-from-v7 (E-ARCH-NAVSRC-1, PI 2026-09-02): the nav INPUT
         # from the record's token — the input refav1 already trains on. The
         # v1 derivation feeds `follow` (+invalid) on 94.6 % of B1 windows
@@ -9490,7 +9548,7 @@ def train(args) -> dict:
         _c8 = ds.enable_r8_v9(_j8, targets=bool(getattr(args, "refcv8", False)))
         ds.r8_v9_cons = float(getattr(args, "w_r8_v9_cons", 0.0) or 0.0) > 0.0     # MM ruling Q2
         r8_v9_stats = {"train": dict(_j8.manifest, join={_k: _v for _k, _v in _c8.items() if _k != "rows"})}
-        if getattr(args, "r8_speed_input", None):
+        if getattr(args, "r8_speed_input", None) in r8train.R8_SPEED_PAST_ONLY:
             max_speed_v6_stats = ds.enable_r8_speed(args.r8_speed_input)
         print("[v3] refcv8 v9 release %s (md5 %s): %d windows joined over %d clips, census %s"
               % (_j8.manifest["split"], _j8.manifest["md5"][:8], _c8["n_joined"], _c8["n_clips"],
@@ -9780,7 +9838,7 @@ def train(args) -> dict:
                 e_ds.r8_v9_cons = float(getattr(args, "w_r8_v9_cons", 0.0) or 0.0) > 0.0
                 r8_v9_stats["eval"] = dict(_j8e.manifest,
                                            join={_k: _v for _k, _v in _c8e.items() if _k != "rows"})
-                if getattr(args, "r8_speed_input", None):
+                if getattr(args, "r8_speed_input", None) in r8train.R8_SPEED_PAST_ONLY:
                     eval_max_speed_v6_stats = e_ds.enable_r8_speed(args.r8_speed_input)
             # ⭐ E16 — the eval dataset is fed the SAME ceiling channel.
             # ⚠️ No normaliser is handed down and none is fitted: the ladder
@@ -9797,10 +9855,13 @@ def train(args) -> dict:
             # ⚠️ `--speed-max-sidecar-v6-eval` falls back to the train
             # sidecar ONLY when the eval labels are the same blob; otherwise
             # the reader's md5 guard refuses, which is the intended outcome.
-            if getattr(args, "max_speed_input_v6", False) and not getattr(args, "r8_speed_input", None):
-                eval_max_speed_v6_stats = e_ds.enable_max_speed_v6(
-                    str(getattr(args, "speed_max_sidecar_v6_eval", None)
-                        or args.speed_max_sidecar_v6), e_man)
+            if (getattr(args, "max_speed_input_v6", False)
+                    and getattr(args, "r8_speed_input", None) not in r8train.R8_SPEED_PAST_ONLY):
+                _esc = str(getattr(args, "speed_max_sidecar_v6_eval", None) or args.speed_max_sidecar_v6)
+                if getattr(args, "r8_speed_input", None) == r8train.R8_SPEED_LABEL:    # PI 2026-10-11
+                    eval_max_speed_v6_stats = e_ds.enable_r8_speed_label(_esc, e_man)
+                else:
+                    eval_max_speed_v6_stats = e_ds.enable_max_speed_v6(_esc, e_man)
         # the eval sees the SAME label source as training, with its OWN
         # episode restriction -- and the SAME pad, so the two blocks are
         # directly comparable rather than two different paddings.
@@ -10317,7 +10378,7 @@ def train(args) -> dict:
         "speed_max_derivation_v6": (
             v6ms.SPEED_MAX_DERIVATION_V6
             if (getattr(args, "max_speed_input_v6", False)
-                and not getattr(args, "r8_speed_input", None)) else None),
+                and getattr(args, "r8_speed_input", None) not in r8train.R8_SPEED_PAST_ONLY) else None),
         # ⭐ refcv8 X3: the PAST-ONLY source's own stamp, on its own key (r8train.assert_r8_speed_stamp)
         "r8_speed_derivation": r8train.speed_derivation(getattr(args, "r8_speed_input", None),
                                                         bool(getattr(args, "r8_speed_enc8", False))),
@@ -10335,7 +10396,7 @@ def train(args) -> dict:
     # refuse: a channel with no stamp, and a control that carries one.
     v6ms.assert_speed_max_stamp_v6(
         _run_config, bool(getattr(args, "max_speed_input_v6", False))
-        and not getattr(args, "r8_speed_input", None))
+        and getattr(args, "r8_speed_input", None) not in r8train.R8_SPEED_PAST_ONLY)
     r8train.assert_r8_speed_stamp(_run_config, getattr(args, "r8_speed_input", None),
                                   enc8=bool(getattr(args, "r8_speed_enc8", False)))
     (out_dir / "config.json").write_text(json.dumps(_run_config, indent=1),
@@ -12243,10 +12304,14 @@ def build_parser() -> argparse.ArgumentParser:
                     help="MM ruling Q1 (I-2): the training step from which the extra candidates (allocated / "
                          "prior-free) may be EMITTED; before it they are generated and trained but never win the "
                          "argmax, so a warm start's step 0 emits refcv7's plan. Required with --init-from + an emit flag.")
-    g8.add_argument("--r8-speed-input", default=None, choices=("n2", "n3"),
+    g8.add_argument("--r8-speed-input", default=None, choices=("n2", "n3", "label"),
                     help="X3 (SPEC_REFCV8 8.3, MM ruling Q5): the SOURCE of the --max-speed-input-v6 channel = the v9 "
                          "release's PAST-ONLY speed proxy (n2: the past-20-s max snapped up the road-law ladder with "
-                         "a 50 km/h urban floor; n3: urban / rural / motorway). Refuses the v8 future-max sidecar.")
+                         "a 50 km/h urban floor; n3: urban / rural / motorway). Refuses the v8 future-max sidecar. "
+                         "label (PI 2026-10-11): the source is refcv7's road-type set-speed sidecar "
+                         "(--speed-max-sidecar-v6 [+ -eval]; {30, 50, 100, 120} km/h, ego-future derived per clip, "
+                         "accepted by the PI) fed as the road-type step, NEVER the exact future speed (a sidecar "
+                         "carrying anything else refuses at load).")
     g8.add_argument("--r8-speed-enc8", action="store_true",
                     help="refcv8 (B): ALSO feed the full N2 ladder (8 steps + unknown) through a zero-init FiLM seam on "
                          "the behaviour decoder (the 4-way bins merge 70 / 80 into 100); the ceiling becomes the fed "

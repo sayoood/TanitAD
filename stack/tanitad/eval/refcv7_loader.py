@@ -828,7 +828,12 @@ def build_eval_dataset(model, cfg, args, config: dict, *, with_perception_target
     # train():8802-8816 -- the ceilings
     if getattr(args, "max_speed_input", False):
         raise SystemExit(f"[{LOADER}] E16 --max-speed-input is not a refcv7 arm")
-    if getattr(args, "max_speed_input_v6", False) and getattr(args, "r8_speed_input", None):
+    if (getattr(args, "max_speed_input_v6", False)
+            and getattr(args, "r8_speed_input", None) == tr.r8train.R8_SPEED_LABEL):
+        # refcv8 label source (PI 2026-10-11): the road-type step off the EVAL sidecar, as train() feeds it
+        rec["max_speed_v6"] = e_ds.enable_r8_speed_label(
+            str(getattr(args, "speed_max_sidecar_v6_eval", None) or args.speed_max_sidecar_v6), e_man)
+    elif getattr(args, "max_speed_input_v6", False) and getattr(args, "r8_speed_input", None):
         # refcv8 X3: the channel's source is the v9 EVAL release's past-only column (train() does the same)
         if getattr(e_ds, "r8_join", None) is None:
             raise SystemExit(f"[{LOADER}] --r8-speed-input needs the v9 EVAL release (--r8-v9-labels-eval) in the "

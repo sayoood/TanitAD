@@ -111,8 +111,9 @@ def test_the_v6_pin_does_not_demand_a_sidecar_on_the_X3_path():
     of `_pin_trainer_cfg`)."""
     import inspect
     src = inspect.getsource(T._pin_refcv6_tactical).replace("\r\n", "\n")
-    assert ('if not getattr(args, "speed_max_sidecar_v6", None) and not getattr(args, "r8_speed_input", None):'
-            in src)
+    # PI 2026-10-11: the sidecar is required unless the source is a v9 past-only column (n2 / n3); `label` needs it
+    assert ('if (not getattr(args, "speed_max_sidecar_v6", None)\n'
+            '                and getattr(args, "r8_speed_input", None) not in r8train.R8_SPEED_PAST_ONLY):') in src
 
 
 def test_GREEN_the_T2_recipe_pins_through():

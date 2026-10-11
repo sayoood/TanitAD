@@ -1,7 +1,7 @@
 {
  "schema": "tanitad.launch_argv/1",
  "arm": "refcv8-wpb-smoke",
- "what": "The refcv8 FULL-SIZE SMOKE argv (SPEC_WPB_LADDER sec. 7): refcv7-r101-s0's canonical argv + every refcv8 seam, the v9 release, the RC, the warm start, and X3's past-only speed input N2 in place of refcv7's v8 future-max sidecar, the v9 constraint supervision (Q2) and X10's pose-to-image timing correction. A SMOKE, not a launch: R8-RECIPE / R8-BUDGET / R8-WARMUP are OPEN ITEMS of the refcv8 gate profile, and the RC and the N2/N3 choice (PI decision 2) are PI-DECISION.",
+ "what": "The refcv8 FULL-SIZE SMOKE argv (SPEC_WPB_LADDER sec. 7): refcv7-r101-s0's canonical argv + every refcv8 seam, the v9 release (nav command + turn distance, NO route checkpoint: --r8-no-rc, PI 2026-10-11), the warm start, the label speed source (refcv7's road-type sidecar, PI 2026-10-11: --r8-speed-input label), the v9 constraint supervision (Q2) and X10's pose-to-image timing correction. A SMOKE, not a launch: R8-RECIPE / R8-BUDGET / R8-WARMUP are OPEN ITEMS of the refcv8 gate profile, and the RC and the speed source were decided by the PI on 2026-10-11 (no RC; the road-type label).",
  "derived_from": {
   "file": "stack/ops/runs.d/refcv7-r101-s0.argv.json",
   "n_tokens": 154
@@ -146,36 +146,10 @@
    "why": "R8-2"
   },
   {
-   "flag": "--r8-rc-variant",
-   "value": [
-    "A50"
-   ],
+   "flag": "--r8-no-rc",
+   "value": [],
    "was_present": false,
-   "why": "R8-3 (PI-pending: the MM's provisional ruling)"
-  },
-  {
-   "flag": "--r8-rc-noise-along-m",
-   "value": [
-    "2.0"
-   ],
-   "was_present": false,
-   "why": "WP-A E2' certified"
-  },
-  {
-   "flag": "--r8-rc-noise-lat-m",
-   "value": [
-    "0.75"
-   ],
-   "was_present": false,
-   "why": "WP-A E2' certified"
-  },
-  {
-   "flag": "--r8-rc-dropout",
-   "value": [
-    "0.3"
-   ],
-   "was_present": false,
-   "why": "MM binding"
+   "why": "PI 2026-10-11 (Sayed): \"just give the nav command and the distance\" -> NO route checkpoint; the per-frame nav token (--r8-nav-from-v9) and its turn distance (nav_args) stay"
   },
   {
    "flag": "--r8-nav-args-dropout",
@@ -202,24 +176,12 @@
    "why": "SPEC_WPB_LADDER: the in-run gradient share, every logged step in the smoke"
   },
   {
-   "flag": "--speed-max-sidecar-v6",
-   "value": null,
-   "was_present": true,
-   "why": "X3 (SPEC_REFCV8 8.3, MM ruling Q5): REMOVED -- the v8 future-max sidecar is a future-ego oracle input (D4 LEAK 0.238 > 0.05); the trainer and the refcv8 gate profile refuse it"
-  },
-  {
-   "flag": "--speed-max-sidecar-v6-eval",
-   "value": null,
-   "was_present": true,
-   "why": "X3: REMOVED with the train sidecar (refused by name)"
-  },
-  {
    "flag": "--r8-speed-input",
    "value": [
-    "n2"
+    "label"
    ],
    "was_present": false,
-   "why": "X3 / MM ruling Q5: the channel's source = the v9 past-only N2 (PI decision 2 open; N2 = default)"
+   "why": "PI 2026-10-11 (Sayed): \"yes use the quantified label as input, it is not a training signal, it is the maximal wished speed ... assure the road type quantization and avoid the exact value of the future speed as target speed\" -> the channel's source = refcv7's road-type sidecar (--speed-max-sidecar-v6 / -eval, carried verbatim from refcv7; the trainer feeds the road-type step and refuses a sidecar carrying anything else)"
   },
   {
    "flag": "--r8-speed-unknown-p",
@@ -300,6 +262,8 @@
   "500",
   "--eval-batches",
   "8",
+  "--speed-max-sidecar-v6-eval",
+  "/home/nvidia/data/refcv6_speed_max_v8_eval.jsonl",
   "--tac-decoder-v6",
   "--w-tac-v6",
   "1.0",
@@ -307,6 +271,8 @@
   "96",
   "--graft-behaviour-sel",
   "--max-speed-input-v6",
+  "--speed-max-sidecar-v6",
+  "/home/nvidia/data/refcv6_speed_max_v8_train.jsonl",
   "--agents",
   "head",
   "--agent-join",
@@ -436,14 +402,7 @@
   "--r8-v9-lat-variant",
   "a",
   "--r8-nav-from-v9",
-  "--r8-rc-variant",
-  "A50",
-  "--r8-rc-noise-along-m",
-  "2.0",
-  "--r8-rc-noise-lat-m",
-  "0.75",
-  "--r8-rc-dropout",
-  "0.3",
+  "--r8-no-rc",
   "--r8-nav-args-dropout",
   "0.5",
   "--join-defect-masks",
@@ -451,7 +410,7 @@
   "--grad-share-every",
   "50",
   "--r8-speed-input",
-  "n2",
+  "label",
   "--r8-speed-unknown-p",
   "0.45",
   "--w-r8-v9-cons",
