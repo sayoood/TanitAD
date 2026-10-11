@@ -7,10 +7,12 @@
 # stripped from every child except p2r_sync.py) and code/ refe/ splits/ shipped to /workspace/refe-plan.
 # Start (detached):  nohup setsid bash /workspace/refe-plan/refe/p2r_pod.sh > /workspace/data/refe_p2/p2r_stdout.log 2>&1 < /dev/null &
 # Re-running after ANY interruption is safe: finished stages leave /workspace/data/refe_p2/stage/<name>.ok.
-# P2R_STOP_AFTER=<env|weights|restore|recover|dbs|relabel|pix|pdm_push|gate> ends the chain after that stage (a cheap dry run).
+# P2R_STOP_AFTER=<env|weights|restore|recover|dbs|relabel|pix|pdm_push|gate|launch_gate> ends the chain after that stage (a cheap dry run).
 #
 # Stages: env -> weights -> restore (HF) -> recover (HF, a lost pod's work) -> [dbs -> relabel (PDM, complete)] + pix (background) -> pdm_push (HF) -> gate ->
-#         preflight -> train (supervised) -> final push (HF, remote-verified).  A watcher pushes logs/checkpoints all along.
+#         launch_gate (the BINDING launch gate, CLAUDE.md PI 2026-09-26: every check on the REAL argv and data -> a PASS token) ->
+#         preflight -> train (supervised; the token is VERIFIED against the exact ARGS before the preflight and before EVERY launch) -> final push
+#         (HF, remote-verified).  A watcher pushes logs/checkpoints all along.
 # Every child is launched with fd 200 closed (the chain holds its flock on 200).  Markers are opaque ZZ tokens.
 set -u
 WORK=/workspace; PKG=$WORK/refe-plan; DATA=$WORK/data
@@ -20,6 +22,8 @@ INIT=$DATA/refe_runs/vitl16_navtrain10_grow_tau0.3/model_final.pt
 SETS=$DATA/refe_navtrain/onpolicy/sets
 PDM=$DATA/refe_sft2/train_pdm; PDMLOG=$DATA/refe_sft2/pdm_train.log
 WSTOP=$P2/sync.stop
+# the launch-gate HMAC key lives on the persistent volume but OUTSIDE the shipped code tree and outside anything p2r_sync pushes (*.log / *.json only)
+export TANITAD_GATE_KEY_FILE="$P2/launch_gate.key"
 mkdir -p "$P2" "$S" "$DATA/refe_sft2"
 log() { echo "$(date -u +%FT%T) $*" >> $L; }
 refuse() { log "REFUSED: $*"; exit 1; }
@@ -70,7 +74,9 @@ log "chain start (p2r_pod.sh md5 $(md5sum "$0" | cut -c1-12))"
 # ---- 0. the pod, before anything is downloaded
 [ -n "${HF_TOKEN:-}" ] || refuse "HF_TOKEN is not set in the environment"
 for f in refe/train.py refe/p2_gate.py refe/p2r_sync.py refe/p2r_gate_prep.py refe/pdm_label_complete.py \
-         refe/onpolicy_relabel_pdm.py code/pod_teacher_env.sh code/pod_train.sh code/pod_dataprep.sh splits/navtrain.yaml; do
+         refe/onpolicy_relabel_pdm.py refe/launch_gate.py refe/gate_token.py refe/gate_checks.py refe/gate_fixture.py \
+         refe/test_launch_gate.py refe/test_p2r_chain.py SHIP_MANIFEST.json \
+         code/pod_teacher_env.sh code/pod_train.sh code/pod_dataprep.sh splits/navtrain.yaml; do
   [ -f "$PKG/$f" ] || refuse "$PKG/$f missing: ship code/ refe/ splits/ to $PKG first"
 done
 # ⛔ never judge the disk with df (a pod volume's quota is invisible to it): WRITE to it.
@@ -197,6 +203,19 @@ if ! stage_done pdm_push; then
 fi
 log "PDM labels banked on HF"; stop_after pdm_push
 
+# ---- 7b. THE TRAINING ARGUMENTS, defined ONCE and BEFORE the launch gate: the token is minted over EXACTLY this string and verified against it
+#          before the preflight and before every train.py launch (p2_chain.sh's arguments, unchanged).
+ARGS="--backbone vitl16 --targets /workspace/data/refe_navtrain/train_grow --scorer-targets /workspace/data/refe_navtrain/train_grow --images /workspace/data/navtrain_pixels --calib /workspace/data/refe_navtrain/train_grow/calib_table.json --init-from /workspace/data/refe_runs/vitl16_navtrain10_grow_tau0.3/model_final.pt --scorer-mode onpolicy --onpolicy-targets /workspace/data/refe_navtrain/onpolicy/sets --pdm-labels /workspace/data/refe_sft2/train_pdm --pdm-only --scorer-sees-trunk --epochs 3 --epoch-unit scenes --batch 4 --accum 64 --lr 5e-5 --amp bf16 --tf32 --compile --workers 2 --log-every 1 --ckpt-every-min 20 --out $RUN --resume"
+LG=$P2/lg
+# ⛔ THE LAUNCH-GATE TOKEN (CLAUDE.md, PI 2026-09-26, BINDING): train.py does not start unless this returns 0.  `launch_gate.py verify` RE-MEASURES the
+# argv, the code tree and the data and checks the HMAC; it is never a grep of a log.   token_ok  -> rc 0 iff ZZGATE-MATCHZZ
+token_ok() {
+  tok="$(ls "$LG"/PASS_*.json 2> /dev/null | head -n 1)"
+  [ -n "$tok" ] || return 1
+  env -u HF_TOKEN "$PY" "$PKG/refe/launch_gate.py" verify --profile refe_p2 --token "$tok" --args "$ARGS" --pkg "$PKG" \
+    --json "$P2/token_verify.json" >> "$P2/token_verify.log" 2>&1 200>&-
+}
+
 # ---- 8. the launch gate: G1-G4, on a small bank where G3's mutation is NOT inert; the JSON is parsed
 if ! stage_done gate; then
   rm -rf "$P2/gate_sets" "$P2/gate_pdm" "$P2/gate"
@@ -210,14 +229,30 @@ if ! stage_done gate; then
 fi
 log "gate PASS"; stop_after gate
 
+# ---- 8b. THE LAUNCH GATE (G-HYG G-DVB G-LIVE G-EVAL G-CKPT G-SUITE + p2_gate's G1-G4 as a sub-check), on the REAL argv and the REAL data.  The smoke bank is
+#          carved from the real train_grow rows of the gate sets, so the scorer loss is reachable on every micro-batch.  A PASS token or a REFUSAL; the token
+#          is then VERIFIED (not grepped).  Route and contract: eval/REFE_LAUNCH_GATE.md.
+if ! stage_done launch_gate; then
+  rm -rf "$LG" "$P2/gate_bank"
+  env -u HF_TOKEN OMP_NUM_THREADS=4 "$PY" launch_gate.py run --profile refe_p2 --pkg "$PKG" --args "$ARGS" --out-dir "$LG" \
+    --gate-sets "$P2/gate_sets" --gate-pdm "$P2/gate_pdm" --gate-bank "$P2/gate_bank" --p2-gate-json "$P2/gate/gate.json" \
+    > "$P2/launch_gate.log" 2>&1 200>&-
+  echo "ZZEXIT $?" >> "$P2/launch_gate.log"
+  token_ok || refuse "the launch gate did not mint a PASS token that verifies for this argv (launch_gate.log, lg/, token_verify.log)"
+  stage_mark launch_gate
+fi
+token_ok || refuse "the launch-gate token no longer verifies (token_verify.log)"
+log "launch gate PASS (token verified)"; stop_after launch_gate
+
 # ---- 9. preflight on the REAL configuration, then the supervised run (the arguments are p2_chain.sh's, unchanged)
 export OMP_NUM_THREADS=4 PYTHONUNBUFFERED=1
-ARGS="--backbone vitl16 --targets /workspace/data/refe_navtrain/train_grow --scorer-targets /workspace/data/refe_navtrain/train_grow --images /workspace/data/navtrain_pixels --calib /workspace/data/refe_navtrain/train_grow/calib_table.json --init-from /workspace/data/refe_runs/vitl16_navtrain10_grow_tau0.3/model_final.pt --scorer-mode onpolicy --onpolicy-targets /workspace/data/refe_navtrain/onpolicy/sets --pdm-labels /workspace/data/refe_sft2/train_pdm --pdm-only --scorer-sees-trunk --epochs 3 --epoch-unit scenes --batch 4 --accum 64 --lr 5e-5 --amp bf16 --tf32 --compile --workers 2 --log-every 1 --ckpt-every-min 20 --out $RUN --resume"
+token_ok || refuse "no launch-gate token verifies for this argv: the preflight and the trainer do not start"
 env -u HF_TOKEN "$PY" train.py $ARGS --preflight > "$P2/preflight.log" 2>&1 200>&-
 grep -q "^PREFLIGHT_OK" "$P2/preflight.log" || refuse "train.py --preflight did not print PREFLIGHT_OK"
 log "train.py preflight OK; launching"
 for att in 1 2 3 4 5 6; do
   if [ -f $RUN/summary.json ] && grep -q '"done": true' $RUN/summary.json; then break; fi
+  token_ok || refuse "the launch-gate token does not verify for this argv (attempt $att): train.py is NOT started"
   env -u HF_TOKEN "$PY" train.py $ARGS >> "$P2/train.log" 2>&1 200>&-
   log "attempt $att exited rc $?"
   sleep 60 200>&-

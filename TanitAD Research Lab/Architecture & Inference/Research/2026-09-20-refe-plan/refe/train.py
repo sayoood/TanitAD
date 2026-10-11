@@ -1717,7 +1717,9 @@ def run(a) -> int:
     return 0
 
 
-def main():
+def build_parser() -> argparse.ArgumentParser:
+    """The trainer's argparse parser, built by a function so the launch gate (refe/gate_checks.py, G-DVB) can introspect every
+    flag without running a training. A PURE MOVE of the former body of main(): no flag, default or help changed."""
     ap = argparse.ArgumentParser()
     ap.add_argument("--backbone", default="vitl16", choices=sorted(BACKBONES))
     ap.add_argument("--weights", default="",
@@ -1840,7 +1842,11 @@ def main():
     ap.add_argument("--preflight", action="store_true",
                     help="build banks + model, load and check the checkpoint, then exit WITHOUT "
                          "writing anything (safe against a live run directory); prints PREFLIGHT_OK")
-    sys.exit(run(ap.parse_args()))
+    return ap
+
+
+def main():
+    sys.exit(run(build_parser().parse_args()))
 
 
 if __name__ == "__main__":

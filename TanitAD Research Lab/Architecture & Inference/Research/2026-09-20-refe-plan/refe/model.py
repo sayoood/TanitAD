@@ -184,6 +184,14 @@ class REFeConfig:
     # A corpus with varied vehicles would change this, and then it is a one-line config move.
     ego_dim: int = 7          # vx, vy, ax, ay, yaw_rate, tire_steering_angle, speed
 
+    def __setattr__(self, name, value):
+        """D0 / G-HYG (SPEC_P6 section 2): THE CONFIG REFUSES AN UNDECLARED ATTRIBUTE. A plain dataclass accepts `cfg.undistrot = False`
+        and nothing reads it -- the refcv6 defect class (a lever declared, never built). The check that this guard exists and bites is
+        `gate_checks.check_hyg` (arm: remove this method -> the gate FAILS)."""
+        if name not in type(self).__dataclass_fields__:
+            raise AttributeError(f"REFeConfig has no field {name!r} (undeclared attribute refused; declare it as a dataclass field)")
+        object.__setattr__(self, name, value)
+
     @classmethod
     def for_backbone(cls, name: str, **kw):
         """Build a config for a named DINOv3 variant, so size is never a hand-edit."""

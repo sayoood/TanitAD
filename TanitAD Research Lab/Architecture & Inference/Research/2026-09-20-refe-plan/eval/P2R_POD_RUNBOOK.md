@@ -18,6 +18,12 @@ scp/rsync `code/`, `refe/`, `splits/` of `TanitAD Research Lab/Architecture & In
 `/workspace/refe-plan/` (skip `__pycache__`). Check `ls /workspace/refe-plan/refe/p2r_pod.sh`.
 The repo is public: never write the pod's host or port into a repo file.
 
+**BINDING since 2026-09-26: the launch gate** (`eval/REFE_LAUNCH_GATE.md`). The package must be LANDED first, then on the dev box, before shipping:
+`python refe/launch_gate.py ship-manifest --pkg <package root> --commit <the landed 40-hex> --git-dir D:/Projects/TanitAD/.git --repo-prefix "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/" --out <package root>/SHIP_MANIFEST.json`
+(it REFUSES any file that is not its blob at that commit). Ship `SHIP_MANIFEST.json` at the package root next to `code/ refe/ splits/`. The chain refuses to start without it,
+mints the PASS token on the pod (stage `launch_gate`, ESTIMATED 15-25 min, UNVERIFIED) and verifies it against the exact `ARGS` before the preflight and before every `train.py` launch.
+A `REFUSED:` line naming `launch_gate.log` / `lg/` / `token_verify.log` means the gate said no: read `lg/evidence_*.json`, fix the cause, delete `stage/launch_gate.ok`, re-run.
+
 ## 3. Start (one command, detached)
 ```
 mkdir -p /workspace/data/refe_p2 && nohup setsid bash /workspace/refe-plan/refe/p2r_pod.sh \
@@ -37,7 +43,7 @@ mkdir -p /workspace/data/refe_p2 && nohup setsid bash /workspace/refe-plan/refe/
 | `run/model_final.pt` | at the end | the result, sha256-checked against `summary.json` |
 
 Markers in `chain.log`, in order: `env ok`, `weights ok`, `restore ok`, `recover: ZZRECOVER_OK labels=.. ckpt=..`, `dbs ok`,
-`PDM labels complete`, `pixels ok`, `PDM labels banked on HF`, `gate PASS`, `train.py preflight OK; launching`,
+`PDM labels complete`, `pixels ok`, `PDM labels banked on HF`, `gate PASS`, `launch gate PASS (token verified)`, `train.py preflight OK; launching`,
 `attempt N exited rc`, `ZZP2_DONE`, `ZZP2R_FINAL_OK`, **`ZZP2R_DONE`**.
 - `REFUSED: <reason>`: stopped on purpose. Fix the reason, re-run the start command. `ZZP2_FAILED`: six attempts, no `done: true`.
 - `ZZP2R_FINAL_FAILED`: the checkpoint is on the pod only. **Do not delete the pod.**

@@ -37,12 +37,13 @@ import p2r_sync as S  # noqa: E402
 CHAIN = HERE / "p2r_pod.sh"
 OLD = HERE / "p2_chain.sh"
 ARGS_RX = re.compile(r'^ARGS="(.*)"$', re.M)
-CHILD_RX = re.compile(r'"\$PY" +(train\.py|p2r_sync\.py|p2_gate\.py|p2r_gate_prep\.py|pdm_label_complete\.py|'
-                      r'onpolicy_relabel_pdm\.py)|bash +"\$PKG/code/|apt-get|uv pip|^sleep |\bsleep +\d+ |\bdd +if=')
+CHILD_RX = re.compile(r'"\$PY" +(train\.py|p2r_sync\.py|p2_gate\.py|p2r_gate_prep\.py|pdm_label_complete\.py|launch_gate\.py|'
+                      r'onpolicy_relabel_pdm\.py)|"\$PY" +"\$PKG/refe/launch_gate\.py"|bash +"\$PKG/code/|apt-get|uv pip|^sleep |\bsleep +\d+ |\bdd +if=')
 ORDER = ["source \"$WORK/teacher_env.sh\"", "p2r_sync.py watch", "STAGES=weights", "p2r_sync.py restore", "p2r_sync.py recover",
          "STAGES=dbs",
-         "onpolicy_relabel_pdm.py --sets", "p2r_sync.py pdm-push", "p2_gate.py --init-from", "train.py $ARGS --preflight",
-         "train.py $ARGS >>", "p2r_sync.py final"]
+         "onpolicy_relabel_pdm.py --sets", "p2r_sync.py pdm-push", "p2_gate.py --init-from", "launch_gate.py run --profile refe_p2",
+         "train.py $ARGS --preflight", "train.py $ARGS >>", "p2r_sync.py final"]
+TOKEN_OK_RX = re.compile(r"^token_ok\(\) \{\n.*?^\}\n", re.S | re.M)
 
 
 def logical_commands(text):
@@ -126,6 +127,48 @@ def check_chain(text, ref_args):
         v.append("RESTORED_LABELS_NOT_AUDITED")
     if "ZZEGRESS_OK p2r_pdm_labels" not in text:
         v.append("LABELS_NOT_BANKED_CHECK")
+    v += check_launch_gate(text)
+    return v
+
+
+def check_launch_gate(text):
+    """THE BINDING LAUNCH-GATE RULE (CLAUDE.md, PI 2026-09-26): no train.py starts without a PASS token that VERIFIES for the exact argv, tree and data."""
+    v = []
+    run_pos = text.find("launch_gate.py run --profile refe_p2")
+    if run_pos < 0:
+        v.append("NO_LAUNCH_GATE_STAGE")
+    if "stage_mark launch_gate" not in text:
+        v.append("LAUNCH_GATE_STAGE_NOT_MARKED")
+    am = ARGS_RX.search(text)
+    if am and run_pos >= 0 and am.start() > run_pos:
+        v.append("ARGS_AFTER_GATE")             # the token must be minted over the very string train.py is later given
+    if len(ARGS_RX.findall(text)) != 1:
+        v.append("ARGS_DEFINED_TWICE")
+    m = TOKEN_OK_RX.search(text)
+    if not m:
+        v.append("NO_TOKEN_OK_FUNCTION")
+    else:
+        body = m.group(0)
+        for needle in ('launch_gate.py" verify', '--profile refe_p2', '--args "$ARGS"', '--pkg "$PKG"', '--token "$tok"'):
+            if needle not in body:
+                v.append("TOKEN_OK_NOT_VERIFYING:" + needle)
+        if re.search(r"\bgrep\b|^\s*return 0|\btrue\b", body, re.M):
+            v.append("TOKEN_OK_NOT_VERIFYING:grep_or_constant")
+    tp = text.find('train.py $ARGS --preflight')
+    if "token_ok || refuse" not in text[max(0, tp - 260):tp]:
+        v.append("PREFLIGHT_WITHOUT_TOKEN")
+    lp = text.find('train.py $ARGS >>')
+    if "token_ok || refuse" not in text[max(0, lp - 260):lp]:
+        v.append("TRAIN_WITHOUT_TOKEN")
+    if text.count("token_ok ||") < 4:
+        v.append("TOKEN_CHECKS_MISSING")        # after the stage, again before it is marked done, before the preflight, before every launch
+    for ln in text.split("\n"):
+        if not ln.strip().startswith("#") and "grep" in ln and ("ZZGATE-" in ln or "launch_gate.log" in ln):
+            v.append("TOKEN_GREPPED:" + ln.strip()[:60])
+    if "SHIP_MANIFEST.json" not in text:
+        v.append("SHIP_MANIFEST_NOT_REQUIRED")
+    if not re.search(r'^export TANITAD_GATE_KEY_FILE="\$P2/', text, re.M):
+        v.append("KEY_NOT_OUTSIDE_TREE")
     return v
 
 
@@ -155,6 +198,30 @@ def mutations(text):
         ("drop the token assertion", drop_line(text, '[ -n "${HF_TOKEN:-}" ] || refuse'), "NO_TOKEN_ASSERT"),
         ("drop the label-banking check", drop_line(text, "ZZEGRESS_OK p2r_pdm_labels"), "LABELS_NOT_BANKED_CHECK"),
         ("final failure swallowed", text.rstrip()[: -len("exit 1")] + "exit 0\n", "FINAL_FAILURE_NOT_PROPAGATED"),
+    ]
+    lg = re.search(r"# ---- 8b\..*?stop_after launch_gate\n", text, re.S)
+    assert lg, "the launch-gate block moved"
+    argl = ARGS_RX.search(text).group(0) + "\n"
+    out += [
+        ("delete the launch-gate stage", text.replace(lg.group(0), ""), "NO_LAUNCH_GATE_STAGE"),
+        ("train.py without the token check", drop_line(text, "train.py is NOT started"), "TRAIN_WITHOUT_TOKEN"),
+        ("preflight without the token check", drop_line(text, "the preflight and the trainer do not start"), "PREFLIGHT_WITHOUT_TOKEN"),
+        ("token_ok always true", re.sub(r'(?s)(token_ok\(\) \{\n).*?(\n\}\n)', r'\1  return 0\2', text, count=1), "TOKEN_OK_NOT_VERIFYING"),
+        ("token_ok greps the gate log", re.sub(r'(?s)(token_ok\(\) \{\n).*?(\n\}\n)', r'\1  grep -q ZZGATE-PASS "$P2/launch_gate.log"\2', text, count=1),
+         "TOKEN_OK_NOT_VERIFYING"),
+        ("token_ok verifies another argv", text.replace('--args "$ARGS" --pkg "$PKG" \\', '--args "--lr 1" --pkg "$PKG" \\'), "TOKEN_OK_NOT_VERIFYING"),
+        ("token_ok forgets the profile", text.replace("verify --profile refe_p2 --token", "verify --token"), "TOKEN_OK_NOT_VERIFYING"),
+        ("ARGS defined after the gate", text.replace(argl, "").replace("# ---- 9. preflight", argl + "# ---- 9. preflight", 1), "ARGS_AFTER_GATE"),
+        ("ARGS defined twice", text.replace(argl, argl + argl, 1), "ARGS_DEFINED_TWICE"),
+        ("the gate log is grepped for PASS", text.replace('  token_ok || refuse "the launch gate did not mint',
+                                                       '  grep -q "^ZZGATE-PASS-" "$P2/launch_gate.log" || refuse "x"\n  token_ok || refuse "the launch gate did not mint'),
+         "TOKEN_GREPPED"),
+        ("the manifest is not required", text.replace(" SHIP_MANIFEST.json \\", " \\"), "SHIP_MANIFEST_NOT_REQUIRED"),
+        ("the key lives in the shipped tree", text.replace('export TANITAD_GATE_KEY_FILE="$P2/launch_gate.key"', 'export TANITAD_GATE_KEY_FILE="$PKG/launch_gate.key"'),
+         "KEY_NOT_OUTSIDE_TREE"),
+        ("the gate child keeps fd 200", text.replace('> "$P2/launch_gate.log" 2>&1 200>&-', '> "$P2/launch_gate.log" 2>&1'), "FD200"),
+        ("the stage is never marked", drop_line(text, "stage_mark launch_gate"), "LAUNCH_GATE_STAGE_NOT_MARKED"),
+        ("train before the gate", text.replace(lg.group(0), "").replace("# ---- 9. preflight", "# ---- 9. preflight", 1) + "\n" + lg.group(0), "ORDER"),
     ]
     out.append(("trust restored labels without the audit",
                 text.replace('elif [ -f "$PDMLOG" ] && "$PY" pdm_label_complete.py', 'elif [ -f "$PDMLOG" ] && true'),
@@ -264,6 +331,45 @@ def main() -> int:
         g({**full, "G2_b": {}}); assert call() != 0; n += 1                          # ok key absent is not a pass
         g({}); assert call() != 0; n += 1
         (tmp / "g.json").write_text("not json"); assert call() != 0; n += 1
+        # ---- 3a2. token_ok, extracted verbatim, against a token minted by the gate's own mint(): matching argv -> 0; every other case -> refused
+        import gate_token as GT
+        m3 = TOKEN_OK_RX.search(text)
+        assert m3, "token_ok is no longer in the chain"
+        pkgroot = HERE.parent
+        key = GT.load_key(tmp / "k" / "gate.key", forbid_under=[pkgroot])
+        real = ARGS_RX.search(text).group(1)
+        argv = GT.argv_from_string(real)
+        lgdir = tmp / "lg"
+
+        def mint_token(verdict_checks, argv_=argv):
+            shutil.rmtree(lgdir, ignore_errors=True)
+            return GT.mint(profile="refe_p2", commit="a" * 40, tree_man=GT.tree_manifest(pkgroot), argv=argv_, trainer="refe/train.py",
+                           data=GT.data_manifest(argv_, ("--targets", "--scorer-targets", "--images", "--calib", "--init-from",
+                                                         "--onpolicy-targets", "--pdm-labels")), checks=verdict_checks, reasons=[], key=key, out_dir=lgdir)
+        h3 = tmp / "helpers3.sh"
+        h3.write_text(m3.group(0), encoding="utf-8", newline="\n")
+        p2dir = tmp / "p2dir"
+        p2dir.mkdir(exist_ok=True)
+
+        def call_token_ok(args_str, keyfile=None):
+            env = {"PY": sys.executable.replace("\\", "/"), "PKG": str(pkgroot).replace("\\", "/"), "LG": str(lgdir).replace("\\", "/"),
+                   "P2": str(p2dir).replace("\\", "/"), "ARGS": args_str, "TANITAD_GATE_KEY_FILE": str(keyfile or (tmp / "k" / "gate.key")).replace("\\", "/"),
+                   "PYTHONIOENCODING": "utf-8"}
+            return sh(str(h3).replace("\\", "/"), "token_ok", env)[0]
+        mint_token({"G-HYG": {"status": "PASS"}})
+        assert call_token_ok(real) == 0; n += 1                                                       # the matching argv: the trainer may start
+        assert call_token_ok(real.replace("--lr 5e-5", "--lr 1e-4")) != 0; n += 1                    # a changed lever
+        assert call_token_ok(real + " --resume") != 0; n += 1                                         # an extra flag
+        assert call_token_ok(real, keyfile=tmp / "k" / "other.key") != 0; n += 1                      # another host's key (absent)
+        tokp = next(lgdir.glob("PASS_*.json"))
+        tok = json.loads(tokp.read_text(encoding="utf-8"))
+        tok["binding"]["argv_sha256"] = "0" * 64                                                       # an edited token
+        tokp.write_text(json.dumps(tok), encoding="utf-8")
+        assert call_token_ok(real) != 0; n += 1
+        mint_token({"G-HYG": {"status": "FAIL"}})                                                      # a FAIL token is a file called FAIL_*.json: no PASS token exists
+        assert not list(lgdir.glob("PASS_*.json")) and call_token_ok(real) != 0; n += 1
+        shutil.rmtree(lgdir, ignore_errors=True)
+        assert call_token_ok(real) != 0; n += 1                                                       # no token at all
         # ---- 3b. served_count, extracted verbatim, on a tiny sets dir (skipped, loudly, if the module cannot import here)
         m2 = re.search(r"^served_count\(\).*?^PYEOF$", text, re.S | re.M)
         assert m2
