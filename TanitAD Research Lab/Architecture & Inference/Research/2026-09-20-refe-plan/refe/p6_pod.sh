@@ -171,7 +171,7 @@ fetch_navlogs() {
   [ -n "$NAVLOGS_URL" ] || return 1
   mkdir -p "$DATA/navsim_logs_dl" "$NAVLOGS"
   curl -sSL --retry 10 --retry-all-errors -C - -o "$DATA/navsim_logs_dl/meta.tgz" "$NAVLOGS_URL" 200>&- || return 1
-  tar -xzf "$DATA/navsim_logs_dl/meta.tgz" -C "$DATA/navsim_logs_dl" 200>&- || return 1
+  tar -xzf "$DATA/navsim_logs_dl/meta.tgz" --no-same-owner -C "$DATA/navsim_logs_dl" 200>&- || return 1
   find "$DATA/navsim_logs_dl" -name '*.pkl' -exec mv -f {} "$NAVLOGS"/ \; 200>&-
   rm -f "$DATA/navsim_logs_dl/meta.tgz"
   have_navlogs

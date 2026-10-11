@@ -186,6 +186,13 @@ def check_launch_gate(text):
     return v
 
 
+def tar_owner_violations(text):
+    """Every `tar -x` must carry --no-same-owner: as root, tar restores the archive's owner, the 2026-10-11 pod's NFS refuses the
+    chown, and the non-zero exit is indistinguishable from a corrupt archive (pixel shards marked failed and deleted)."""
+    return [ln.strip()[:60] for ln in text.split("\n") if re.search(r"\btar -x", ln) and not ln.strip().startswith("#")
+            and "--no-same-owner" not in ln]
+
+
 def drop_line(text, needle):
     return "\n".join(ln for ln in text.split("\n") if needle not in ln)
 
@@ -681,6 +688,12 @@ def main() -> int:
         (p1 / "pdm_a.jsonl").write_text(json.dumps({"key": ["L0", "t0", 0, 0], "ckpt_step": 5, "nc": [1]}) + "\n", encoding="utf-8")
         assert GP.main(["--sets", str(g1), "--pdm", str(p1), "--out-sets", str(tmp / "y_s"), "--out-pdm", str(tmp / "y_p"),
                         "--n-labelled", "3", "--n-unlabelled", "1"]) == 1; n += 1
+        # ---- 3i. tar extraction on NFS as root: --no-same-owner on every pod script that extracts, and the check goes RED without it
+        for f in ("code/pod_dataprep.sh", "refe/p6_pod.sh", "code/pod_teacher_env.sh", "refe/p2r_pod.sh"):
+            src = (HERE.parent / f).read_text(encoding="utf-8")
+            assert tar_owner_violations(src) == [], (f, tar_owner_violations(src)); n += 1
+        dp = (HERE.parent / "code/pod_dataprep.sh").read_text(encoding="utf-8")
+        assert tar_owner_violations(dp.replace(" --no-same-owner", "")); n += 1
         # ---- 3h. p2r_carve: the held-out logs OUT, in place, re-runnable, and refused when the count is not the expected one
         n += carve_checks(tmp)
     print(f"ZZTEST_PASS {n}")

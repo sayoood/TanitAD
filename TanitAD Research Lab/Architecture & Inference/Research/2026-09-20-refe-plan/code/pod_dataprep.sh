@@ -119,7 +119,9 @@ if has pix; then
     tgz="$PIX/navtrain_current_$n.tgz"
     curl -sSL -C - --retry 10 --retry-all-errors -o "$tgz" "$HF/navtrain_current_$n.tgz" || { echo "ZZFAIL pix dl $n ZZ"; continue; }
     # extraction is the integrity check: a truncated gzip stream fails here and leaves no .done marker
-    if tar -xzf "$tgz" -C "$PIX" --wildcards '*/CAM_F0/*' '*/CAM_B0/*' '*/CAM_L0/*' '*/CAM_R0/*'; then
+    # --no-same-owner: root's tar restores the archive's uid 1000, which the 2026-10-11 pod's NFS refuses (EPERM on every file);
+    # the exit status then reads as a corrupt shard, the tgz is deleted and no .done marker is ever written (MEASURED, shards 1-3)
+    if tar -xzf "$tgz" --no-same-owner -C "$PIX" --wildcards '*/CAM_F0/*' '*/CAM_B0/*' '*/CAM_L0/*' '*/CAM_R0/*'; then
       touch "$PIX/.done_$n"; rm -f "$tgz"; echo "ZZOK pix shard $n ZZ"
     else
       echo "ZZFAIL pix extract $n ZZ"; rm -f "$tgz"
