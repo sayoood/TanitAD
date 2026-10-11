@@ -5237,7 +5237,7 @@ wrong cause.
 
 ---
 
-## 14. REFe — DriveZero reproduction on NAVSIM navtrain (their data, their benchmark) [SUBSET EVAL ONLY: NAVSIM v1 PDMS, 200 navtest tokens]
+## 14. REFe — DriveZero reproduction on NAVSIM navtrain (their data, their benchmark) [FULL NAVTEST, NAVSIM v1.1 PDMS, 12,146 tokens: §14.2]
 
 ### 14.1 `vitl16_navtrain10_grow_tau0.3` — ✅ **TRAINING FINISHED 2026-10-01 02:18 Berlin (00:18:49Z)** (started 2026-09-24 01:17 Berlin / 23:17:34Z; 10,075 steps, 27 epochs)
 
@@ -5263,6 +5263,25 @@ wrong cause.
 | **Speed** | **MEASURED 57.2 s / optimiser step = 0.2236 s/sample** with 7 CPU-teacher data-prep shards running on the same pod (idle-pod benchmark 0.2197, `refe/bench_speed.py`) -> 10,075 steps = **6.67 A40-days, ETA 2026-09-30 ~17:30 Berlin** (the PI's 7-day budget = 0.234 s/sample). **Re-measured 2026-09-24 03:17 Berlin** from `train.log`: steady **56.7-57.6 s/step** over steps 91-122; each grow-epoch boundary adds **~105 s** once (step 90->91 took 162.9 s: bank re-read + `snap_epochNNN.pt`), so a naive average over a boundary reads ~60 s/step and is wrong -> ETA **~2026-09-30 19:00 Berlin, ~6.8 days**. Batch 4 from the pod's resident probe (22.74 GiB peak; 8 predicted 45.47 GiB, not tried). |
 | **Declared departures from the paper** | (1) **bf16 autocast** (paper: FP32) -- numerics-checked, gradient cosine 0.99978 compiled vs FP32 (`refe/diag_amp.py`); (2) **growing bank** -- early epochs see fewer twins / scorer targets; (3) **10 Hz teacher rollouts** -- the teacher's own published sim rate, but a decision, not a paper fact; (4) gradient accumulation 4 x 64 instead of data parallel (reproduces the gradient, not the per-device forward statistics); (5) scorer supervision: steps 0-3,707 on a fixed candidate set assigned to the nearest proposal (`train.py:ScorerBank`, not the paper's mechanism); **from step 3,708 on the student's own 64 proposals labelled by the teacher's scorer, as in the paper** (PI decision B, 2026-09-26, the declared mid-run recipe change below), so the final scorer has both histories; (6) the on-policy labels' drivable-area component is **NAVSIM's own check** (`refe/navsim_dac.py`, its LQR simulator vendored; 100.00 % agreement with NAVSIM on 25,600 proposals) instead of the teacher's curb-crossing DAC, which flagged 0.06 % of proposals where NAVSIM fails ~27 % (PI instruction, 2026-09-26).; (7) from label_version 3 (2026-09-26 20:43 Berlin, PI decision option 2) their **comfort component is NAVSIM's own** comfort verdict on the same simulation (100.00 % agreement with the harness on 25,600 proposals), replacing the teacher's, which was a near-constant 0.375 on the student's proposals (GOALS_AND_CLAIMS D-REFE-COMFORT-1). |
 | **Evidence** | `TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/READINESS.md` (C15-C20, D9, I8, I9) · `Project Steering/GOALS_AND_CLAIMS.md` D-REFE-SIMRATE-1, D-REFE-GROW-1, D-REFE-EPOCH-1, D-REFE-READY-1 · diags `refe/diag_grow.py` (9/9 on the pod), `diag_query_cache.py`, `diag_lever_ab.py`, `diag_sim_rate*.py`. **Data-prep levers added 2026-09-24 (exact, byte-identical on BOTH machines, mutation-controlled):** READINESS C21 scorer ego view (pod 1.77x) and C22 map-step fast path (pod 1.21x rank 0 / 1.31x augmentation), `raw/2026-09-24-levers-v2/`; eval path `eval/eval_checkpoint.py` + `eval/learning_curve.py` (I10, I11). |
+
+<!-- REFE-FULL-NAVTEST-2026-10-11 -->
+### 14.2 Full-navtest results (NAVSIM v1.1 PDMS, all 12,146 navtest tokens, 0 failed) — added 2026-10-11
+
+Tier: **T1**, NAVSIM v1.1 non-reactive pseudo-simulation of an open-loop plan against logged agents (not closed loop).
+Every row is MEASURED from the harness CSV on the dev box, under `E:/Projects/TanitAD/data/refe_navtest/score/<run>/<run>.csv`. Each sha256 prefix equals the one in the run's `counts.json`. Single seed throughout, and inference is deterministic, so training variance is unmeasured (H-ESTIM-SEED-1).
+
+| arm | checkpoint (md5) | selection rule | PDMS | NC | DAC | EP | TTC | C | DDC | CSV run (sha256 prefix) |
+|---|---|---|---|---|---|---|---|---|---|---|
+| **SFT-4 B u400** ⭐ best REFe | `model_sft4_B_u400.pt` `8e382eebb35b3e15…` = `model_final.pt` (`b54773f8…`) + `scorer_states_u400.pt` (`4dded9b1…`), built by `eval/build_sft_ckpt.py` | `navsim_v1_lane` = navsim_v1 × p(lane), route fix ON, A7 ON | **88.25** | 98.94 | 96.58 | 81.20 | 95.63 | 99.97 | 97.66 | `refe_stage2_sft4_B_u400_navtest_full` (`df005c4750a186de`) |
+| model_final + route fix (A9) | `model_final.pt` `b54773f8…` | `navsim_v1`, A7 ON | 84.46 | 98.13 | 94.71 | 76.70 | 93.69 | 99.93 | 97.61 | `refe_navtest_final_routefix` (`bec72778cb6e1a41`) |
+| teacher (DriveRL protocol, privileged) | DriveRL `checkpoint_2400` | — | 89.79 | 99.37 | 95.20 | 85.16 | 97.16 | 99.92 | 98.97 | `refe_p4_teacher_navtest` (`23b6a41d636fd37e`) |
+| human (logged future) | — | — | 94.55 | 100.00 | 100.00 | 86.96 | 100.00 | 99.90 | 98.83 | `refe_p4_human_navtest` (`5bbe9006e6854246`) |
+
+* **SFT-4 B u400 vs model_final + route fix: +3.79 [+3.05, +4.54] PDMS ×100.** Paired log-cluster bootstrap, 136 logs, 10,000 resamples, seed 20260927. 0 of 21 longitudinal and lateral family components are adverse. Sources: `GOALS_AND_CLAIMS.md` D-REFE-SFT-4 and `…/2026-09-20-refe-plan/eval/RESULT_SFT4.md`. SFT-4 is a **scorer-only** fine-tune; proposals are unchanged from `model_final`. Only update 400 left the stopped pod (`STOP_CONSEQUENCES_2026-10-11.md`).
+* **p(lane) is a learned scorer output, not a map read.** It is output 6, trained on the teacher's centre-line distance (`eval/PREREG_SFT4.md`). Map-derived labels are used at training only, which is admissible per the PI on 2026-10-11 (maps as training labels and rewards, never as inference input).
+* **Bar:** 94.55, paper Table A13 (DINOv3 ViT-L, rank-32 Q/V LoRA, navtrain only, no SimScale). It equals our harness's human score.
+* **Gap decomposition** (D-REFE-GAP-1): human − u400 = 6.30 = zeroed tokens 4.15 + TTC 1.31 + EP 0.86 + C −0.01. Source: `…/2026-09-20-refe-plan/raw/2026-10-11-ep-gap-decomposition/ep_lowtail.out`.
+* ⚠️ The teacher row is 89.79 over all 12,146 tokens. `eval/RESULT_P4_TEACHER_NAVTEST.md` quotes **89.81** over its 12,110 primary tokens. Both are correct for their populations.
 
 <!-- REFCV6-R101-S0-FINAL-STATUS-2026-09-26 -->
 ### refcv6-r101-s0 — FINAL STATUS: STOPPED by the PI at step 38,250 (2026-09-26 20:40 Berlin)
