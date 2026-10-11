@@ -1,0 +1,123 @@
+{
+ "tool": "merge_vis1_sidecar.py",
+ "argv": [
+  "--old",
+  "/home/nvidia/data/refcv7/vis1_sidecar_refcv6b1_train4369_eval139.npz",
+  "--new",
+  "out/vis1_sub_add203_ctl.npz",
+  "--add-list",
+  "in/add_list.json",
+  "--train-cache",
+  "/home/nvidia/data/refcv8-b1-416x1024-train-4572",
+  "--eval-cache",
+  "/home/nvidia/data/refcv6-b1-416x1024-eval139",
+  "--extrinsics",
+  "/home/nvidia/data/refcv8_train4572_eval139_extrinsics.json",
+  "--calib-dir",
+  "/home/nvidia/data/physicalai-b1/calibration",
+  "--out",
+  "/home/nvidia/data/refcv8/vis1_sidecar_refcv8b1_train4572_eval139.npz",
+  "--work-dir",
+  "/home/nvidia/vis1_train4572_build/merge"
+ ],
+ "tool_md5": "b10ec14190fe03dfff33cf34e47aabba",
+ "started_utc": "2026-10-11T23:06:28Z",
+ "numpy": "2.5.1",
+ "old": {
+  "path": "/home/nvidia/data/refcv7/vis1_sidecar_refcv6b1_train4369_eval139.npz",
+  "sha256": "278443b3356bca054c15753e7c08d465d71b0327a2ce564e143d091261349dd4",
+  "md5": "6603505fb25938a1450e14b071bcbdb8"
+ },
+ "new_subbuild": {
+  "path": "out/vis1_sub_add203_ctl.npz",
+  "sha256": "4e31bb9c82a1ce8a87792c9c10a2b6ba99c6f032dc08f3620ef5c7133d8d5761",
+  "md5": "ce84aabc9cfadeac86d0c14622be4dbe",
+  "n_clips": 442
+ },
+ "roundtrip": {
+  "arrays_unequal": [],
+  "content_sha256": "8ba9dafd9e969b6098c16541277cd127f4225bf4511a9a14ec29ae0b402d1a43",
+  "old_meta_content_sha256": "8ba9dafd9e969b6098c16541277cd127f4225bf4511a9a14ec29ae0b402d1a43",
+  "file_sha256": "278443b3356bca054c15753e7c08d465d71b0327a2ce564e143d091261349dd4",
+  "old_file_sha256": "278443b3356bca054c15753e7c08d465d71b0327a2ce564e143d091261349dd4",
+  "FILE_BYTE_IDENTICAL": true,
+  "PASS": true
+ },
+ "merged": {
+  "path": "/home/nvidia/data/refcv8/vis1_sidecar_refcv8b1_train4572_eval139.npz",
+  "sha256": "b50ab62ff7a49335cdc664a56fbfbb64c983bca6bd0563d0d7ab11e2f6e10c04",
+  "content_sha256": "0d0b41beb7376d6e008c17e22629c6f5c1b0276a7f84109285131373a4e157c7",
+  "bytes": 189489856,
+  "n_clips": 4711,
+  "n_frames": 870560,
+  "n_rows": 4947844,
+  "n_zero_frame_clips": 145,
+  "content_sha256_of_arrays": "ad915507372802eb5a58c79411a00b1f4f3da3e47318332511342a7e33a55c7d",
+  "readback": {
+   "path": "/home/nvidia/data/refcv8/vis1_sidecar_refcv8b1_train4572_eval139.npz",
+   "sha256": "b50ab62ff7a49335cdc664a56fbfbb64c983bca6bd0563d0d7ab11e2f6e10c04",
+   "content_sha256": "ad915507372802eb5a58c79411a00b1f4f3da3e47318332511342a7e33a55c7d",
+   "schema": "tanitad.vis1_sidecar/1",
+   "n_clips": 4711,
+   "n_frames": 870560,
+   "n_rows": 4947844,
+   "splits": {
+    "eval": {
+     "cache": "/home/nvidia/data/refcv6-b1-416x1024-eval139",
+     "clip_sha12_sha256": "92b005984cfed78d02451eb1ef9bc33e43630a008417699d3eb9b8ce52091b15",
+     "n_clips": 139
+    },
+    "train": {
+     "cache": "/home/nvidia/data/refcv8-b1-416x1024-train-4572",
+     "clip_sha12_sha256": "dfc80b42eb91f4ac7a111500fa0db0d6b75a68924e3fb8509a3874e26d2b8065",
+     "n_clips": 4572
+    }
+   },
+   "sources": {
+    "agent_join": {
+     "md5": "0c31a3a63d7205e9fa50e8ac4204ef46",
+     "path": "/home/nvidia/data/joins/b1_train_plus_eval_agents.jsonl.xz"
+    },
+    "extrinsics": {
+     "md5": "dba6da20b874670aef32f2451b312837",
+     "path": "/home/nvidia/data/refcv8_train4572_eval139_extrinsics.json"
+    },
+    "intrinsics": {
+     "calib_dirs": [
+      "/home/nvidia/data/physicalai-b1/calibration"
+     ],
+     "md5_of_sorted_chunk_md5s": "feeb84dde35a1c754163d51137bc65f6",
+     "n_chunks": 1411,
+     "n_missing": 0
+    },
+    "join3d": {
+     "md5": "401c9c3119a50632dafc35c595d9e051",
+     "path": "/home/nvidia/data/join3d/b1_train_plus_eval_agents_3d.jsonl.xz"
+    }
+   },
+   "zbuffer": {
+    "audit_source": {
+     "lines": "39-144",
+     "md5": "3721a83f6bf8b1072c7b1f987c908c0f",
+     "path": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/code/vis_zbuf.py"
+    },
+    "function_sha256": {
+     "R_from_quat": "e30c2bb4bccdc2df",
+     "corners": "523c9d642557c085",
+     "observed_mask": "bff155873d8ba014",
+     "zbuffer": "0f6b41fbb32320d6"
+    },
+    "module_md5": "bfd93ca2edde5620a881d9b400ba16d8"
+   },
+   "store_scope": {
+    "half_angle_deg": 61.0,
+    "x_max_m": 61.0,
+    "x_min_m": -1.0,
+    "y_half_m": 17.0
+   },
+   "window": 8,
+   "n_stack": 3
+  }
+ },
+ "wall_s": 3.5
+}

@@ -37,7 +37,15 @@ _RULED = {"--r8-rc-variant": None, "--r8-rc-noise-along-m": None, "--r8-rc-noise
           "--speed-max-sidecar-v6": ["/home/nvidia/data/refcv6_speed_max_v8_train.jsonl"],
           "--speed-max-sidecar-v6-eval": ["/home/nvidia/data/refcv6_speed_max_v8_eval.jsonl"],
           "--ema-decay": ["0.9998"], "--b1-guard-ref-ap2m": ["0.21211"], "--b1-guard-step": ["1000"],
-          "--steps": ["30000"], "--batch": ["16"], "--eval-batches": ["8"], "--eval-every": ["500"]}
+          "--steps": ["48852"], "--batch": ["16"], "--eval-batches": ["8"], "--eval-every": ["500"],
+          # SPEC_REFCV8 A2 (PI 2026-10-12, one full pass over the 4,572-clip train view): the data set, as LITERALS
+          "--v2-cache": ["/home/nvidia/data/refcv8-b1-416x1024-train-4572"],
+          "--agent-rig-extrinsics": ["/home/nvidia/data/refcv8_train4572_eval139_extrinsics.json"],
+          "--pose-sync-sidecar": ["/home/nvidia/data/refcv8_pose_sync_sidecar.jsonl"],
+          "--clip-clock-sidecar": ["/home/nvidia/data/refcv8_clip_clock_sidecar_ts33.jsonl"],
+          "--r8-v9-labels": ["/home/nvidia/refcv8_v9labels/release_train4572/v9_labels_train.npz"], "--r8-v9-md5": ["83e30bd3791f0767707eade5f4671759"],
+          "--vis1-sidecar": ["/home/nvidia/data/refcv8/vis1_sidecar_refcv8b1_train4572_eval139.npz"],
+          }
 
 
 def _ruled_argv():
@@ -50,7 +58,11 @@ def _ruled_argv():
 def test_the_profile_inherits_every_refcv7_rule():
     r7, r8 = LG.PROFILES["refcv7"], LG.PROFILES["refcv8"]
     assert set(r7["required_flags"]) < set(r8["required_flags"])
-    assert all(r8["required_values"][k] == v for k, v in r7["required_values"].items())
+    # SPEC_REFCV8 A2 overrides exactly ONE refcv7 value: the VIS-1 sidecar, rebuilt over the 4,572-clip train view
+    # (the trainer refuses any absent clip). Written as a literal set -- every other refcv7 value is inherited verbatim.
+    overridden = {k for k, v in r7["required_values"].items() if r8["required_values"][k] != v}
+    assert overridden == {"--vis1-sidecar"}, overridden
+    assert r8["required_values"]["--vis1-sidecar"] == "/home/nvidia/data/refcv8/vis1_sidecar_refcv8b1_train4572_eval139.npz"
     assert set(r7["required_positive"]) < set(r8["required_positive"])
     assert set(r7["forbidden_levers"]) < set(r8["forbidden_levers"])
     assert r8["eval_loader"] == r7["eval_loader"] and r8["box_required"] == r7["box_required"]

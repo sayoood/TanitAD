@@ -1,6 +1,6 @@
 # SPEC_REFCV8 — pre-registration of the refcv8 run (REGISTERED by the Master Mind, 2026-10-11)
 
-**Status: REGISTERED (2026-10-11, Master Mind); AMENDED by A1 (2026-10-11, the PI's rulings on the route and speed inputs and three baseline-citation corrections, before any refcv8 number exists; see the last section, `## A1`).** Written 2026-10-04 ~21:20 Berlin (19:20Z) by a design agent as a
+**Status: REGISTERED (2026-10-11, Master Mind); AMENDED by A1 (2026-10-11, the PI's rulings on the route and speed inputs and three baseline-citation corrections, before any refcv8 number exists; see `## A1`); AMENDED by A2 (2026-10-12, the PI's ruling: ONE full pass `--steps 48852` over the 4,572-clip train view with the 203 missing train clips added, eval139 kept out; before any refcv8 number exists; see the last section, `## A2`).** Written 2026-10-04 ~21:20 Berlin (19:20Z) by a design agent as a
 draft; the Master Mind's rulings of 2026-10-04 (§13a) and 2026-10-11 (this registration) are folded into the clauses they
 govern. The file keeps its name `SPEC_REFCV8_DRAFT.md` on purpose: 25 files at the tip cite that path (docstrings and
 tests of `taniteval/taniteval/{lead_metrics,ceil_obey,four_families,nav_compliance,night_luma}.py`, and FlyWheel and
@@ -1180,17 +1180,17 @@ its eval-time rows VMAX-OFF / VMAX-SHUF (§8.3) and the D4 LEAK instrument.
   EMA evaluated at **every** in-run eval and saved; the B1 guard of §10.1 (`--b1-guard-ref-ap2m <refcv7-50,400 value>
   --b1-guard-step 1000`). **S_emit = the warmup length: `--r8-alloc-emit-start 1000`** (was 2000). The argv deltas the
   launch carries are exactly: `--warmup 1000`, `--ema-decay 0.9998`, `--b1-guard-ref-ap2m`, `--b1-guard-step 1000`,
-  `--steps 30000`, `--r8-alloc-emit-start 1000`, and the gradient-share flags below. The trainer flags `--ema-decay`,
+  `--steps 30000` (**SUPERSEDED by A2.1: `--steps 48852`**), `--r8-alloc-emit-start 1000`, and the gradient-share flags below. The trainer flags `--ema-decay`,
   `--b1-guard-ref-ap2m` and `--b1-guard-step` are being built by the trainer stream under these names; until they land
   the assembler cannot produce an argv the trainer accepts, which is the intended behaviour.
-* **Run length: `--steps 30000` binds** (PLAN §0.1 `PLAN_REFCV8.md:47`, §7 `:263`; ESTIMATED 3.5–4 days at ~10–11
+* **SUPERSEDED by A2.1 (PI 2026-10-12): `--steps 48852` = one epoch over the 4,572-clip view binds.** Historical text: **Run length: `--steps 30000` binds** (PLAN §0.1 `PLAN_REFCV8.md:47`, §7 `:263`; ESTIMATED 3.5–4 days at ~10–11
   s/step). `--steps` is also the cosine horizon, so stopping a 30k run at 12k is NOT a 12k run (the learning rate is
   still high). The 12k branch row of `PLAN_REFCV8.md:234` is SUPERSEDED by this section. **Cost gate:** the projected
   s/step must be **≤ 10.5** (the PI's approved refcv7 ceiling, `pi_cost_approval.json` `max_s_per_step` 10.5). MEASURED
   8.82 s/step in the WP-B L5 full-size smoke (`903dd51`) on the SMOKE argv; the final argv (allocation on, listwise,
   sat, two-pass decode, gradient-share cadence) is re-measured in the G-LIVE smoke and the number goes in the launch
   record; above 10.5 the PI decides before launch.
-* **Gradient share on the main run (ruled 2026-10-11):** `--grad-share-terms tac_v6,map_hires --grad-share-every 250`.
+* **Gradient share on the main run (ruled 2026-10-11; rows SUPERSEDED by A2.4 for 48,852 steps: long {1000, 16250, 32500, 48750}, short {1000, 48750}; the rule is unchanged):** `--grad-share-terms tac_v6,map_hires --grad-share-every 250`.
   The expensive full readings are the rows of `--grad-share-at`: **{1000, 10000, 20000, 30000}** if **4 × the MEASURED
   full-size reading cost ≤ 3 %** of the projected run wall-clock (30,000 × the projected s/step), otherwise **{1000,
   30000}**. The reading cost is MEASURED by the G-LIVE smoke (§3.2 item 5: `--grad-share-every 50 --grad-share-at 50`,
@@ -1480,3 +1480,114 @@ V-R8d, V0r, V-R8r, V-TACk, V-TACk-roll, V-TACkr, V-MAP4, V-MAP4-roll, V-MAP4r. V
    from the source of the sidecar's builder.
 5. **`SPEC_REFCV8_SHA256.txt`** entry for this amendment; **`GOALS_AND_CLAIMS.md`** register rows (Master Mind).
 6. **The registered clipped `lead_progress_ratio_clipped` baseline** for refcv7-50,400 (A1.4 item 2).
+
+---
+
+## A2 — PI ruling of 2026-10-12: one full pass over the whole train set, with the 203 missing train clips added
+
+**Protocol fields (§12.2).**
+* **Time:** written 2026-10-12 ~01:00 Europe/Berlin (2026-10-11 ~23:00Z), for the Master Mind, after the PI's ruling in
+  chat: *"yes do one full pass and add the missing clips except of course the val split which must be seperated from the
+  training part"* (answering *"Why did you choose 30000 steps. We need to use all the 26 h training data."*).
+* **refcv8 data read before writing: NONE.** No refcv8 checkpoint, training step, eval row or NavSim score exists. The R2
+  ladder (A1.3) is running; the only thing read from it is its chain-log step counter (V0 at step 1,151), never a metric.
+  The de-risk smoke numbers are `binding: false` (§12.6). Every number below is a data-set count, a file hash, or the
+  de-risk smoke's MEASURED s/step.
+* **What changes:** the run length (A2.1), the training corpus and the data artifacts built over it (A2.2, A2.3), the
+  gradient-share rows (A2.4). **No bar literal changes; no window set, estimator, control or regression arm changes.**
+* **What does NOT change:** the eval split (eval139, the same 139 clips and windows); every bar; the warm start
+  (refcv7-50,400); the inputs ruled in A1; the B1 guard (reference 0.21211, step 1,000) and the eval geometry
+  (`--batch 16 --eval-batches 8 --eval-every 500`); the label releases' semantics (the v8 labels, the v9 tactical rows
+  of the 4,369 old clips row-identical); the agent joins; the speed-label sidecars (already 4,572 / 4,572 rows); the
+  map-GT root; §9's one-seed wording.
+
+### A2.1 Run length: ONE epoch, `--steps 48852`
+* **MEASURED** (the de-risk smoke's `config.json`): the old train view has 4,369 clips / 746,946 windows. At `--batch 16`,
+  `--steps 30000` = 480,000 samples = **0.643 epoch** there and **0.614 epoch** over the new view. The 30,000 of §10.3 was
+  a cost choice for the warm start (PLAN §0.1), never a data-coverage criterion.
+* **The sampler** (`refc_v3_train.py`, per-epoch permutation without replacement, `drop_last`): one epoch over the new view
+  = **floor(781,635 / 16) = 48,852 steps** (3 windows dropped). `--steps 48852` binds and is also the cosine horizon.
+* **Cost (ESTIMATED):** 48,852 × 9.212 s/step (MEASURED, the de-risk smoke) = **125.0 h ≈ 5.2 days**. The §10.3 cost gate
+  is per step (≤ 10.5 s/step) and is unchanged; the PI's ruling approves the length.
+* **The replay finding** (data-coverage audit 2026-10-12, `…/data_coverage_2026-10-12/`): with the same seed and the same
+  n, refcv8 would have re-drawn refcv7's per-epoch permutation and replayed its first 480,000 positions. With n = 781,635
+  the permutation is a fresh draw, so the replay no longer holds. Nothing is claimed from this either way.
+
+### A2.2 The corpus: train 4,369 → 4,572 clips; eval139 stays out
+* **+203 ADD clips** = the labelled train release (4,572) minus the old view (4,369); list and accounting in
+  `…/2026-10-04-refcv8-tactical-conditioning/data_coverage_2026-10-12/` (landed `58d413f`), the build in
+  `…/data_coverage_2026-10-12/add203_build/` (landed `2b510e5`).
+* **Val separation, asserted positively by clip id:** n eval139 clips in the new view = **0**; the ADD list was built
+  disjoint from eval139. ⚠️ **Scope:** PhysicalAI exposes no drive / session id, so drive-level disjointness is
+  UNPROVABLE on this corpus. Only clip-id disjointness is asserted, as it was for refcv7.
+* **The parity invariant** ("anything that re-selects episodes … must be refused") is overridden for refcv8's train
+  corpus by the PI's ruling above. eval139, which every cross-arm comparison reads, is untouched.
+* **Comparability:** refcv8 now trains on +4.65 % clips (+4.64 % windows) over one full pass, from refcv7's warm start.
+  The refcv7-vs-refcv8 attribution therefore names three causes together: the refcv8 levers, the +203 clips, and the
+  longer run. §9 already forbids attributing a refcv8-vs-refcv7 difference to any ONE lever from a single seed; A2 adds
+  the corpus to that list. The ladder (A1.3) stays on the 4,369 view. Its readings are lever evidence on that view, and
+  the corpus change is second-order for them.
+* **Masking, not absence** (`add203_build/RESULT.md` §3): 58 ADD clips have no map GT. Their windows carry
+  `map_label False`, so map-supervised windows are 746,946 / 781,635 = **0.9556** (floor 0.90, `require_map_coverage`).
+  145 ADD clips have no agent join and emit NO_LABEL, never labelled-clear. 13 of them have obstacle data and were excluded
+  from the join for cause (6 empty parquets, 7 fail the frame gate), and are NOT forced in.
+
+### A2.3 The data set (all NEW paths on Thor; every pre-existing file byte-identical)
+| flag | path | md5 | control |
+|---|---|---|---|
+| `--v2-cache` | `/home/nvidia/data/refcv8-b1-416x1024-train-4572` | manifest `77dafb50af0aedd1b940cf12c12518ef` | 4,369 old entries bit-identical; n eval139 = 0; n windows 781,635 |
+| `--agent-rig-extrinsics` | `/home/nvidia/data/refcv8_train4572_eval139_extrinsics.json` | `dba6da20b874670aef32f2451b312837` | 4,508 old keys untouched + 203 |
+| `--pose-sync-sidecar` | `/home/nvidia/data/refcv8_pose_sync_sidecar.jsonl` | `894fe1d9e5420dc7f8eadcbe20c791e5` | 4,508 / 4,508 old rows reproduced |
+| `--clip-clock-sidecar` | `/home/nvidia/data/refcv8_clip_clock_sidecar_ts33.jsonl` | `c81c2739b5bef58e3c7e389245bd506a` | 4,483 / 4,483 old rows reproduced; unverified 22 / 4,572 = 0.481 % < 1 % |
+| `--r8-v9-labels` / `--r8-v9-md5` | `/home/nvidia/refcv8_v9labels/release_train4572/v9_labels_train.npz` | `83e30bd3791f0767707eade5f4671759` | 4,572 clips / 909,651 rows; 4,369 old clips bitwise identical on all 131 non-offset fields (869,278 rows); `row_for_now` 0 errors over all 781,635 windows; 0 eval139 ids |
+| `--vis1-sidecar` | `/home/nvidia/data/refcv8/vis1_sidecar_refcv8b1_train4572_eval139.npz` | sha256 `b50ab62ff7a49335cdc664a56fbfbb64c983bca6bd0563d0d7ab11e2f6e10c04` | 4,711 clips (145 zero-frame, mask True); 4,508 old clips identical; `require_clips` on 4,711 ids passes, an absent id raises |
+| `--join-defect-masks` | `<gated tree>/stack/tanitad/configs/refcv8_join_label_defects_train4572.json` | `b2591cb2ec4f4089831124e4738a961c` | old inputs reproduce the old file; 4,508 old clips 0 differ; 6 new keys, all ADD clips; 693 -> 1,068 ego boxes |
+* **The clock route for 33 stationary ADD clips:** the stock position-inversion builder cannot clock a clip with fewer
+  than 20 moving rows. Left unclocked, the train set would read 55 / 4,572 = 1.203 % unverified, and the trainer refuses
+  above 1 %. These 33 are clocked from the camera timestamps instead. That route was validated on ALL 4,653 moving clips
+  against the position-inversion clock (max |Δ grid_start_s| 4.27e-07 s, max |Δ dt_s| 6.2e-09 s).
+* **Kept as registered, disclosed:** `nav_compliance_tau_train.json` (tau 0.18063741505146028) and
+  `map_hires_class_weights_train_100x30.json` were derived on the 4,369-clip view. They are kept as the literals they are,
+  so the gate's recorded-tau rule still binds to the recorded file. A re-derivation would be a new instrument value.
+
+* **Build notes** (each in its package under `…/data_coverage_2026-10-12/`: `v9_train4572/`, `vis1_train4572/`,
+  `jdm_train4572/`; every control was re-run independently by the Master Mind on a disjoint random sample):
+  * **v9:** `build_v9_labels.py` crashed on one parked ADD clip, `12c90362-…` (arc 0.0 m): `smooth_path` built a one-point
+    grid and `np.gradient` raised. The patch is 6 lines and runs ONLY where the old code raised. Its test
+    `test_v9_labels_parked_clip.py` fails on the old builder in 3 of 4 cases (one passes on both by design). The lead input
+    is the 3-D join `401c9c31…`, the one the old lead-pass recorded. `sam3_gt_v3` holds 0 of the 203 ADD clips, so they
+    carry `has_lc` 0 (masked) and the old `lc_train.npz` is reused unchanged.
+  * **What the 203 add:** they are mostly low-speed or stationary. `lon_cls` is IGNORE on **78.1 %** of ADD rows against
+    28.7 % on the old clips, and `lead_valid` is 1 on 11.2 % against 40.3 % (MEASURED, `v9_train4572/RESULT.md`). They are
+    34,689 of 781,635 windows (4.4 %). This is a property of the data, not a build defect.
+  * **VIS-1:** the old entries were merged byte-for-byte, not rebuilt. Re-assembling the old file alone reproduces
+    `278443b3…` exactly, and the unmodified builder re-run on 239 old clips reproduces their entries. 48 of the ADD clips'
+    171 calibration chunks are absent from the old calib dir. They are read from `physicalai-b1/calibration`, where all
+    1,363 old chunk files are md5-identical.
+  * **Join masks:** the 58 newly joined ADD clips add **375 ego-as-agent boxes** (3 clips) and **5 track-id-switch events**
+    (3 clips): 693 → 1,068 boxes. `JoinDefectMasks.load` checks no coverage, so the old file would have left them unmasked
+    without any error.
+
+### A2.4 The gradient-share rows, re-derived for 48,852 steps (the §10.3 rule is unchanged)
+* The rule is the same: the long schedule iff 4 × the MEASURED full-size reading cost ≤ 3 % of steps × the projected
+  s/step. The rows are re-derived as the warmup end plus the thirds of the run, each a multiple of
+  `--grad-share-every 250` (`grad_share.parse_at` refuses any other row and any row past `--steps`):
+  **long {1000, 16250, 32500, 48750}**, **short {1000, 48750}**. 48,750 is the last due row ≤ 48,852.
+* The schedule boundary moves with the run: 4 × R ≤ 0.03 × 48,852 × s/step (at 10 s/step, R ≤ 3,663.9 s; it was
+  2,250 s at 30,000 steps).
+
+### A2.5 Clauses edited in place (old wording kept, marked SUPERSEDED)
+| clause | change |
+|---|---|
+| header | status line points to A2 |
+| §10.3 argv deltas and "Run length" bullet | `--steps 30000` → `--steps 48852` (A2.1), marked SUPERSEDED in place |
+| §10.3 "Gradient share" bullet | rows → A2.4, marked SUPERSEDED in place |
+
+### A2.6 Landed with this amendment, and OWED
+* **Landed with it:** `stack/scripts/refcv8_assemble_argv.py` writes every A2.3 path and `--steps 48852`, and its audit
+  REFUSES the 4,369-clip data set flag by flag (self-test: 29 regressions refused). The `refcv8` gate profile
+  (`stack/scripts/launch_gate.py`) pins the same values as LITERALS. It overrides refcv7's `--vis1-sidecar` and no other
+  refcv7 value (pinned by `test_the_profile_inherits_every_refcv7_rule`). `stack/tests/test_launch_gate_refcv8.py` gains
+  the A2 pin, whose 8 mutations each go RED against the pre-A2 gate.
+* **OWED:** the binding G-MAP / G-BOX overfits and G-LIVE re-run on the A2 argv (the kit's `bind` stage, after the ladder),
+  then the launch gate. `GOALS_AND_CLAIMS.md` register row for the ruling (Master Mind).

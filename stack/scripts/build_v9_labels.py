@@ -305,6 +305,12 @@ def smooth_path(tr: Track10, sigma: float, ds: float = LITERALS["rc_ds_m"],
     keep = np.concatenate([[True], np.diff(s_all) > 1e-6])
     s_u, x_u, y_u = s_all[keep], x_all[keep], y_all[keep]
     grid = np.arange(0.0, s_u[-1] + 1e-9, ds)
+    if len(grid) < 2:
+        # ADD-203 patch (2026-10-12): a recording whose whole 10 Hz track is shorter than ``ds`` (a parked car, arc 0.0 m:
+        # MEASURED on 12c90362-a57f-4c3d-bf0d-ebe47a687186, x/y range exactly 0) gives a ONE-point grid and
+        # ``np.gradient`` below raises ValueError, killing lead-pass AND build. Pad to two points at the clamped end
+        # position. Reached ONLY where the old code raised, so no previously built clip can change.
+        grid = np.array([0.0, ds])
     gx, gy = np.interp(grid, s_u, x_u), np.interp(grid, s_u, y_u)
     if sigma <= 0 or len(grid) < 3:
         xs, ys = gx, gy

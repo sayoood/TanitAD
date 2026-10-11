@@ -36,8 +36,15 @@ DELTAS = {
     "--r8-speed-input": ["label"],
     "--speed-max-sidecar-v6": [TRAIN_SIDECAR], "--speed-max-sidecar-v6-eval": [EVAL_SIDECAR],
     "--ema-decay": ["0.9998"], "--b1-guard-ref-ap2m": ["0.21211"], "--b1-guard-step": ["1000"],
-    "--warmup": ["1000"], "--steps": ["30000"], "--batch": ["16"], "--eval-batches": ["8"], "--eval-every": ["500"],
-    "--grad-share-every": ["250"], "--grad-share-at": ["1000,10000,20000,30000"],
+    "--warmup": ["1000"], "--steps": ["48852"], "--batch": ["16"], "--eval-batches": ["8"], "--eval-every": ["500"],
+    "--grad-share-every": ["250"], "--grad-share-at": ["1000,16250,32500,48750"],
+    # SPEC_REFCV8 A2 (PI 2026-10-12, one full pass over the 4,572-clip train view): the data set, as LITERALS
+    "--v2-cache": ["/home/nvidia/data/refcv8-b1-416x1024-train-4572"],
+    "--agent-rig-extrinsics": ["/home/nvidia/data/refcv8_train4572_eval139_extrinsics.json"],
+    "--pose-sync-sidecar": ["/home/nvidia/data/refcv8_pose_sync_sidecar.jsonl"],
+    "--clip-clock-sidecar": ["/home/nvidia/data/refcv8_clip_clock_sidecar_ts33.jsonl"],
+    "--r8-v9-labels": ["/home/nvidia/refcv8_v9labels/release_train4572/v9_labels_train.npz"], "--r8-v9-md5": ["83e30bd3791f0767707eade5f4671759"],
+    "--vis1-sidecar": ["/home/nvidia/data/refcv8/vis1_sidecar_refcv8b1_train4572_eval139.npz"],
 }
 
 
@@ -87,6 +94,36 @@ def launch(tmp_path_factory):
 
 def _rules(argv):
     return LG.profile_argv_rules(PROF, argv, _OPTS)
+
+
+# ------------------------------------------------------------------------------------------------ A2 ---- #
+def test_A2_the_full_pass_rows_are_due_in_the_trainers_own_pin():
+    """SPEC_REFCV8 A2: --steps 48852 = ONE epoch over 781,635 windows at batch 16 (drop_last). Every launch
+    --grad-share-at row must be a multiple of --grad-share-every 250 and <= --steps, or grad_share.parse_at refuses."""
+    gs = pytest.importorskip("tanitad.train.grad_share")
+    assert 781635 // 16 == 48852
+    assert sorted(gs.parse_at("1000,16250,32500,48750", 250, 48852)) == [1000, 16250, 32500, 48750]
+    assert sorted(gs.parse_at("1000,48750", 250, 48852)) == [1000, 48750]
+    # DELIBERATE REGRESSIONS: the unrounded thirds and the run end itself are not multiples of 250 -> never due
+    for bad in ("1000,16284,32568,48852", "1000,48852"):
+        with pytest.raises(ValueError):
+            gs.parse_at(bad, 250, 48852)
+
+
+@pytest.mark.parametrize("flag,old", [
+    ("--steps", ["30000"]),                                                         # the 0.614-epoch length
+    ("--v2-cache", ["/home/nvidia/data/refcv6-b1-416x1024-train"]),                 # the 4,369-clip view
+    ("--clip-clock-sidecar", ["/home/nvidia/data/refcv6_clip_clock_sidecar.jsonl"]),
+    ("--pose-sync-sidecar", ["/home/nvidia/data/refcv6_pose_sync_sidecar.jsonl"]),
+    ("--agent-rig-extrinsics", ["/home/nvidia/data/refcv6_train_eval139_extrinsics.json"]),
+    ("--vis1-sidecar", ["/home/nvidia/data/refcv7/vis1_sidecar_refcv6b1_train4369_eval139.npz"]),
+    ("--r8-v9-labels", ["/home/nvidia/refcv8_v9labels/release/v9_labels_train.npz"]),
+    ("--r8-v9-md5", ["f63ece410b725febb8a5242cf2b01d3c"])])
+def test_A2_the_4369_clip_data_set_is_REFUSED(launch, flag, old):
+    refusals, _p = _rules(_with(launch, flag, old))
+    # the REQUIRED-VALUE refusal itself: an unrelated refusal that merely NAMES the flag (the nav-tau record is
+    # keyed by --v2-cache) does not count -- MEASURED, it let the unpatched gate pass the --v2-cache mutation
+    assert any(r.startswith(flag + " ") and "is REQUIRED for a refcv8 launch" in r for r in refusals), refusals
 
 
 def test_the_conformant_launch_argv_has_no_refusal_and_no_pi_pending(launch):

@@ -670,10 +670,12 @@ PROFILES["refcv8"] = dict(
         "--r8-v9-labels": "WP-A INTEGRATION 2: the v9 release supervises the tactical layer and feeds nav / RC",
         "--r8-v9-labels-eval": "train and eval are supervised by ONE label release",
         "--r8-nav-from-v9": "R8-2: the per-frame announced nav token",
-        "--join-defect-masks": "MM binding 2026-10-04 item 6: the 693-box ego mask",
+        "--join-defect-masks": "MM binding 2026-10-04 item 6: the 693-box ego mask; SPEC_REFCV8 A2: re-mined over the "
+                               "4,572-clip view = 1,068 boxes (refcv8_join_label_defects_train4572.json, md5 "
+                               "b2591cb2ec4f4089831124e4738a961c; the 4,508 old clips' entries identical)",
         "--grad-share-every": "SPEC_WPB_LADDER: the in-run gradient-share instrument is on every refcv8 run"}),
     required_values=dict(_R7["required_values"], **{
-        "--r8-v9-md5": "f63ece410b725febb8a5242cf2b01d3c",
+        "--r8-v9-md5": "83e30bd3791f0767707eade5f4671759",
         "--r8-v9-eval-md5": "6b5c7f207cffc3b7eb3cd527fd433599",
         "--r8-v9-lat-variant": "a",
         "--r8-nav-args-dropout": "0.5",
@@ -691,7 +693,17 @@ PROFILES["refcv8"] = dict(
         "--b1-guard-ref-ap2m": "0.21211",
         "--b1-guard-step": "1000",
         "--warmup": "1000",
-        "--steps": "30000",
+        # SPEC_REFCV8 A2 (PI 2026-10-12, "do one full pass and add the missing clips except of course the val split"):
+        # ONE epoch over the 4,572-clip train view = floor(781,635 / 16) = 48,852 steps, and the data set built over it
+        # -- all LITERALS (data_coverage_2026-10-12/add203_build/RESULT.md sec. 6 + the v9 / VIS-1 build records). The
+        # refcv7 `--vis1-sidecar` value (4,369 + 139 clips) is OVERRIDDEN here: the trainer refuses any absent clip.
+        "--steps": "48852",
+        "--v2-cache": "/home/nvidia/data/refcv8-b1-416x1024-train-4572",
+        "--agent-rig-extrinsics": "/home/nvidia/data/refcv8_train4572_eval139_extrinsics.json",
+        "--pose-sync-sidecar": "/home/nvidia/data/refcv8_pose_sync_sidecar.jsonl",
+        "--clip-clock-sidecar": "/home/nvidia/data/refcv8_clip_clock_sidecar_ts33.jsonl",
+        "--r8-v9-labels": "/home/nvidia/refcv8_v9labels/release_train4572/v9_labels_train.npz",
+        "--vis1-sidecar": "/home/nvidia/data/refcv8/vis1_sidecar_refcv8b1_train4572_eval139.npz",
         # B1 EVAL GEOMETRY (SPEC_REFCV8 10.1): the reference 0.21211 is defined on the 128-window in-run eval set =
         # `--eval-batches 8` x the in-run batch (the trainer builds the eval loader with `batch_size=args.batch`:
         # refc_v3_train.py `n_need = args.eval_batches * args.batch`), and the guard first reads at step 1,000, which
@@ -700,7 +712,8 @@ PROFILES["refcv8"] = dict(
         "--eval-batches": "8",
         "--eval-every": "500"}),
     required_values_why=dict(_R7.get("required_values_why") or {}, **{
-        "--r8-v9-md5": "WP-A LANDING_READY WPA-S3: the validated train release",
+        "--r8-v9-md5": "SPEC_REFCV8 A2: the 4,572-clip train release (the 4,369 clips row-identical to WP-A WPA-S3's "
+                       "f63ece41..., the control in v9_train4572/RESULT.md)",
         "--r8-v9-eval-md5": "WP-A LANDING_READY WPA-S3: the validated eval139 release",
         "--r8-v9-lat-variant": "D-WPA-1: lateral variant a (junction) is the default",
         "--r8-nav-args-dropout": "MM binding 2026-10-04: nav-argument dropout, token kept",
@@ -720,7 +733,17 @@ PROFILES["refcv8"] = dict(
                                "literal, never re-derived",
         "--b1-guard-step": "SPEC_REFCV8 10.1: the guard reads at the first in-run eval at or after step 1,000",
         "--warmup": "R8-WARMUP (SPEC_REFCV8 10.3): both LR groups re-warm over 1,000 steps (S_emit = the warmup length)",
-        "--steps": "SPEC_REFCV8 10.3: --steps 30000 binds (also the cosine horizon)",
+        "--steps": "SPEC_REFCV8 A2 (PI 2026-10-12): ONE full pass = 48,852 steps over 781,635 windows (also the cosine "
+                   "horizon); the 10.3 length 30000 (0.614 epoch) is superseded",
+        "--v2-cache": "SPEC_REFCV8 A2: the 4,572-clip train view (manifest md5 77dafb50af0aedd1b940cf12c12518ef; n eval139 = 0)",
+        "--agent-rig-extrinsics": "SPEC_REFCV8 A2: 4,711 keys = the 4,508 refcv6 entries untouched + the 203 ADD clips",
+        "--pose-sync-sidecar": "SPEC_REFCV8 A2: 4,711 rows; every refcv6 row reproduced exactly (4,508 / 4,508)",
+        "--clip-clock-sidecar": "SPEC_REFCV8 A2: 4,686 rows; 33 stationary ADD clips clocked by the camera-timestamp route "
+                                "(validated on all 4,653 moving clips); unverified 22 / 4,572 = 0.481 % < 1 %",
+        "--r8-v9-labels": "SPEC_REFCV8 A2: the v9 train release over the 4,572 view",
+        "--vis1-sidecar": "SPEC_REFCV8 A2: the VIS-1 sidecar over 4,572 + 139 clips, sha256 "
+                          "b50ab62ff7a49335cdc664a56fbfbb64c983bca6bd0563d0d7ab11e2f6e10c04 (the 4,508 refcv7 clips' entries identical; 145 unjoined ADD clips as "
+                          "zero-frame entries, mask True)",
         "--batch": "SPEC_REFCV8 10.1: the B1 reference is defined on the 128-window in-run eval = "
                    "--eval-batches 8 x --batch 16",
         "--eval-batches": "SPEC_REFCV8 10.1: the in-run eval geometry the B1 reference is defined on (8 x 16 = 128 windows)",

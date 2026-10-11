@@ -140,13 +140,14 @@ gate)
   pf() { echo "$1 $2" >> "$PF"; }                                   # PF-OK / PF-FAIL <name>
   [ -f "$GATE" ] && pf PF-OK gate-present || pf PF-FAIL gate-present
   [ -f "$ARGV" ] && pf PF-OK argv-committed || pf PF-FAIL argv-committed
-  [ -f "$CODE/stack/tanitad/configs/refcv8_join_label_defects.json" ] && pf PF-OK joindefects || pf PF-FAIL joindefects
+  # SPEC_REFCV8 A2: the masks re-mined over the 4,572-clip view (the 4,508 old clips' entries identical)
+  [ -f "$CODE/stack/tanitad/configs/refcv8_join_label_defects_train4572.json" ] && pf PF-OK joindefects || pf PF-FAIL joindefects
   if [ "$DRY" = 1 ] && [ -z "$GSM" ]; then printf 'AUDIT-SKIPPED(dry-run, no --gs-measure)\nAUDIT-OK\n' > "$WORK/audit.txt"
   else GSF="${GSM:-$(ls -1 "$OUTROOT"/gs_measure_*/gs_measure.json 2>/dev/null | tail -1)}"
        py "$HERE/refcv8_assemble_argv.py" --audit "$ARGV" --gs-measure "${GSF:-/nonexistent}" > "$WORK/audit.txt" 2>&1 9>&- 200>&-; fi
   [ "$(grep -c '^AUDIT-OK' "$WORK/audit.txt")" = 1 ] && pf PF-OK argv-audit || pf PF-FAIL argv-audit
   JD="$(pyval 'import json,sys; d=json.load(open(sys.argv[1])); a=d["argv"] if isinstance(d,dict) else d; print(a[a.index("--join-defect-masks")+1])' "$ARGV")"
-  [ "$JD" = "$CODE/stack/tanitad/configs/refcv8_join_label_defects.json" ] && pf PF-OK argv-code-path || pf PF-FAIL argv-code-path
+  [ "$JD" = "$CODE/stack/tanitad/configs/refcv8_join_label_defects_train4572.json" ] && pf PF-OK argv-code-path || pf PF-FAIL argv-code-path
   if [ "$DRY" != 1 ]; then
     CK=/home/nvidia/refcv7_run/runs/refcv7-r101-s0/ckpt.pt
     [ "$(stat -c %s "$CK" 2>/dev/null)" = 1172814977 ] && pf PF-OK ckpt-size || pf PF-FAIL ckpt-size

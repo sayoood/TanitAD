@@ -36,7 +36,11 @@ FORBIDDEN = ("--r8-derange-feed", "--r8-rc-roll", "--r8-roll-targets", "--r8-rol
              # PI 2026-10-11 ("You can stop the ladder after 11 runs"): L4b / L5 are not run, their entry rule cannot be met
              "--r8-speed-enc8", "--r8-critic-drivable", "--w-r8-drivable")
 #: literal expectations (SPEC_REFCV8 3.2 'required values' + R8-WARMUP), written out, not computed
-LITERALS = {"--r8-v9-md5": "f63ece410b725febb8a5242cf2b01d3c",
+#: SPEC_REFCV8 A2 (PI 2026-10-12: "do one full pass and add the missing clips except of course the val split which must
+#: be seperated from the training part"): ONE epoch over the 4,572-clip train view = floor(781,635 / 16) = 48,852 steps
+#: (drop_last; refc_v3_train.py per-epoch permutation). The 4,369-clip run length 30000 (0.614 epoch) is superseded.
+STEPS = 48852
+LITERALS = {"--r8-v9-md5": "83e30bd3791f0767707eade5f4671759",
             "--r8-v9-eval-md5": "6b5c7f207cffc3b7eb3cd527fd433599",
             "--r8-v9-lat-variant": "a", "--r8-nav-args-dropout": "0.5", "--r8-speed-unknown-p": "0.45",
             "--r8-alloc-emit-start": "1000", "--w-r8-cons": "0.05", "--lr": "1e-4", "--warmup": "1000",
@@ -47,11 +51,25 @@ LITERALS = {"--r8-v9-md5": "f63ece410b725febb8a5242cf2b01d3c",
             "--speed-max-sidecar-v6": "/home/nvidia/data/refcv6_speed_max_v8_train.jsonl",
             "--speed-max-sidecar-v6-eval": "/home/nvidia/data/refcv6_speed_max_v8_eval.jsonl",
             # R8-WARMUP CLOSED (MM 2026-10-11, SPEC 10.3): EMA + the B1 guard step + the run length + the gradient-share terms
-            "--ema-decay": "0.9998", "--b1-guard-step": "1000", "--steps": "30000",
+            "--ema-decay": "0.9998", "--b1-guard-step": "1000", "--steps": "48852",
             "--grad-share-terms": "tac_v6,map_hires", "--grad-share-every": "250"}
-#: the launch `--grad-share-at` rows: the long schedule, or the short one when the MEASURED reading is too dear
-GS_AT_LONG = "1000,10000,20000,30000"
-GS_AT_SHORT = "1000,30000"
+#: SPEC_REFCV8 A2: the 4,572-clip train view and the sidecars built over it, as LITERALS (data_coverage_2026-10-12/
+#: add203_build/RESULT.md sec. 6; v9 / VIS-1 / join masks: their own build records). eval139 is NOT in the train view
+#: (n eval139 = 0, asserted by clip id); the clock / pose-sync / extrinsics / VIS-1 files serve train AND eval139.
+DATA_A2 = {"--v2-cache": "/home/nvidia/data/refcv8-b1-416x1024-train-4572",
+           "--agent-rig-extrinsics": "/home/nvidia/data/refcv8_train4572_eval139_extrinsics.json",
+           "--pose-sync-sidecar": "/home/nvidia/data/refcv8_pose_sync_sidecar.jsonl",
+           "--clip-clock-sidecar": "/home/nvidia/data/refcv8_clip_clock_sidecar_ts33.jsonl",
+           "--r8-v9-labels": "/home/nvidia/refcv8_v9labels/release_train4572/v9_labels_train.npz",
+           "--vis1-sidecar": "/home/nvidia/data/refcv8/vis1_sidecar_refcv8b1_train4572_eval139.npz"}
+LITERALS.update(DATA_A2)
+#: the join-defect masks re-mined over the 4,572 view (the 58 newly joined ADD clips), under the GATED tree
+JDM_REL = "stack/tanitad/configs/refcv8_join_label_defects_train4572.json"
+#: the launch `--grad-share-at` rows: the long schedule, or the short one when the MEASURED reading is too dear.
+#: SPEC_REFCV8 A2: re-derived for 48,852 steps -- the warmup end, then thirds of the run -- each a multiple of
+#: --grad-share-every 250 (grad_share.parse_at refuses any other row), the last at 48,750 = the last due row <= 48,852.
+GS_AT_LONG = "1000,16250,32500,48750"
+GS_AT_SHORT = "1000,48750"
 GS_BUDGET_FRAC = 0.03       # 4 readings may cost at most 3 % of the projected run wall-clock
 GS_N_LONG = 4
 REQUIRED_FLAGS = ("--refcv8", "--init-from", "--r8-v9-labels", "--r8-v9-labels-eval", "--r8-nav-from-v9",
@@ -63,9 +81,9 @@ REQUIRED_FLAGS = ("--refcv8", "--init-from", "--r8-v9-labels", "--r8-v9-labels-e
 INIT_FROM = "/home/nvidia/refcv7_run/runs/refcv7-r101-s0/ckpt.pt"
 
 
-def pick_gs_schedule(reading_s, s_per_step, steps=30000):
-    """SPEC 10.3 (ruled 2026-10-11): {1000, 10000, 20000, 30000} iff 4 x the MEASURED full-size reading cost is <= 3 % of
-    the projected run wall-clock (steps x projected s/step); otherwise {1000, 30000}."""
+def pick_gs_schedule(reading_s, s_per_step, steps=STEPS):
+    """SPEC 10.3 (ruled 2026-10-11; rows re-derived by A2 for 48,852 steps): {1000, 16250, 32500, 48750} iff 4 x the MEASURED full-size reading cost is <= 3 % of
+    the projected run wall-clock (steps x projected s/step); otherwise {1000, 48750}."""
     if not (reading_s and reading_s > 0 and s_per_step and s_per_step > 0):
         raise SystemExit("REFUSED: gs_measure.json must carry a POSITIVE reading_s and s_per_step (an unmeasured "
                          "reading has no escape; run the G-LIVE measurement smoke)")
@@ -108,7 +126,7 @@ def get(ps, flag):
     return v[-1] if v else None
 
 
-def assemble(base, *, code, run_out, recipe, k_tac, w_map, b1_ref, gs_at, stage="launch", steps=30000,
+def assemble(base, *, code, run_out, recipe, k_tac, w_map, b1_ref, gs_at, stage="launch", steps=STEPS,
              warmup=1000, init_from=INIT_FROM):
     ps = pairs(base)
     why = []
@@ -119,7 +137,11 @@ def assemble(base, *, code, run_out, recipe, k_tac, w_map, b1_ref, gs_at, stage=
         why.append(f"{flag} {'' if vals is None else ' '.join(map(str, vals))}  <- {clause}")
 
     put("--out", [run_out], "run dir (new; never the smoke dir)")
-    put("--steps", [steps], "SPEC_REFCV8 10.3: --steps 30000 binds (also the cosine horizon)")
+    put("--steps", [steps], "SPEC_REFCV8 A2 (PI 2026-10-12): ONE full pass = 48,852 steps over 781,635 windows "
+                            "(also the cosine horizon)")
+    for f, v in DATA_A2.items():
+        put(f, [v], "SPEC_REFCV8 A2: the 4,572-clip train view / the sidecars built over it")
+    put("--r8-v9-md5", [LITERALS["--r8-v9-md5"]], "SPEC_REFCV8 A2: the 4,572-clip v9 release (the trainer checks the file)")
     put("--init-from", [init_from], "SPEC 3.1: warm start from refcv7-50,400")
     put("--warmup", [warmup], "R8-WARMUP: re-warm over 1,000 steps (SPEC 10.3)")
     put("--lr", ["1e-4"], "R8-WARMUP: head peak 1e-4 (trunk 5e-5 = --encoder-lr-mult default 0.5)")
@@ -142,8 +164,8 @@ def assemble(base, *, code, run_out, recipe, k_tac, w_map, b1_ref, gs_at, stage=
     else:
         put("--grad-share-every", [250], "SPEC 10.3")
         put("--grad-share-at", [gs_at], "SPEC 10.3: picked by pick_gs_schedule from the MEASURED reading")
-    put("--join-defect-masks", [f"{code}/stack/tanitad/configs/refcv8_join_label_defects.json"],
-        "MM 2026-10-04 item 6; path under the GATED tree, not the smoke tree")
+    put("--join-defect-masks", [f"{code}/{JDM_REL}"],
+        "MM 2026-10-04 item 6; SPEC A2: re-mined over the 4,572 view; path under the GATED tree, not the smoke tree")
     for f, v in recipe.items():
         if f not in RECIPE_FLAGS:
             raise SystemExit(f"REFUSED: recipe flag {f} is not an R8-RECIPE flag {RECIPE_FLAGS}")
@@ -226,11 +248,16 @@ def self_test():
     kw = dict(code="/C", run_out="/R", recipe={"--w-r8-sat": "0.1"}, k_tac=51, w_map=4.0, b1_ref=0.21211,
               gs_at=GS_AT_LONG)
     GSM = {"reading_s": 800.0, "s_per_step": 10.0}
-    # analytic boundary of the schedule rule, written as LITERALS: 4 x 2250 = 9000 = 0.03 x 30000 x 10 -> long; 2251 -> short
-    assert pick_gs_schedule(2250.0, 10.0) == "1000,10000,20000,30000"
-    assert pick_gs_schedule(2251.0, 10.0) == "1000,30000"
-    assert pick_gs_schedule(788.0, 10.5) == "1000,10000,20000,30000"      # the tiny-rig 788 s reading would qualify
-    assert pick_gs_schedule(2500.0, 10.0) == "1000,30000"
+    # analytic boundary of the schedule rule, written as LITERALS: 0.03 x 48852 x 10 = 14655.6; 4 x 3663 = 14652 -> long;
+    # 4 x 3664 = 14656 -> short (A2: the rule is unchanged, only the run length moved)
+    assert pick_gs_schedule(3663.0, 10.0) == "1000,16250,32500,48750"
+    assert pick_gs_schedule(3664.0, 10.0) == "1000,48750"
+    assert pick_gs_schedule(2251.0, 10.0) == "1000,16250,32500,48750"     # short at 30,000 steps, long at 48,852
+    assert pick_gs_schedule(788.0, 10.5) == "1000,16250,32500,48750"      # the tiny-rig 788 s reading would qualify
+    assert pick_gs_schedule(4000.0, 10.0) == "1000,48750"
+    # the 2026-10-11 boundary at the old 30,000-step horizon: 4 x 2250 = 9000 = 0.03 x 30000 x 10 -> long; 2251 -> short
+    assert pick_gs_schedule(2250.0, 10.0, steps=30000) == "1000,16250,32500,48750"
+    assert pick_gs_schedule(2251.0, 10.0, steps=30000) == "1000,48750"
     for bad_m in ({}, {"reading_s": 0, "s_per_step": 10}, {"reading_s": 5, "s_per_step": None}):
         try:
             pick_gs_schedule(bad_m.get("reading_s"), bad_m.get("s_per_step"))
@@ -249,11 +276,18 @@ def self_test():
     # LITERAL expectations
     assert get(ps, "--w-tac-v6") == ["51.0"], get(ps, "--w-tac-v6")
     assert get(ps, "--w-map-hires") == ["4.0"]
-    assert get(ps, "--warmup") == ["1000"] and get(ps, "--steps") == ["30000"] and get(ps, "--out") == ["/R"]
+    assert get(ps, "--warmup") == ["1000"] and get(ps, "--steps") == ["48852"] and get(ps, "--out") == ["/R"]
     assert get(ps, "--ema-decay") == ["0.9998"] and get(ps, "--b1-guard-step") == ["1000"]
     assert get(ps, "--r8-alloc-emit-start") == ["1000"] and get(ps, "--grad-share-every") == ["250"]
-    assert get(ps, "--grad-share-at") == ["1000,10000,20000,30000"] and get(ps, "--b1-guard-ref-ap2m") == ["0.21211"]
-    assert get(ps, "--join-defect-masks") == ["/C/stack/tanitad/configs/refcv8_join_label_defects.json"]
+    assert get(ps, "--grad-share-at") == ["1000,16250,32500,48750"] and get(ps, "--b1-guard-ref-ap2m") == ["0.21211"]
+    assert get(ps, "--join-defect-masks") == ["/C/stack/tanitad/configs/refcv8_join_label_defects_train4572.json"]
+    # A2 data set, LITERALS (the base names the 4,369 view; the assembler must override every one)
+    assert get(ps, "--v2-cache") == ["/home/nvidia/data/refcv8-b1-416x1024-train-4572"]
+    assert get(ps, "--clip-clock-sidecar") == ["/home/nvidia/data/refcv8_clip_clock_sidecar_ts33.jsonl"]
+    assert get(ps, "--pose-sync-sidecar") == ["/home/nvidia/data/refcv8_pose_sync_sidecar.jsonl"]
+    assert get(ps, "--agent-rig-extrinsics") == ["/home/nvidia/data/refcv8_train4572_eval139_extrinsics.json"]
+    assert get(ps, "--r8-v9-labels") == ["/home/nvidia/refcv8_v9labels/release_train4572/v9_labels_train.npz"] and get(ps, "--r8-v9-md5") == ["83e30bd3791f0767707eade5f4671759"]
+    assert get(ps, "--vis1-sidecar") == ["/home/nvidia/data/refcv8/vis1_sidecar_refcv8b1_train4572_eval139.npz"]
     # deliberate regressions: each must be REFUSED
     bads = (set_flag(ps, "--speed-max-sidecar-v6", None), set_flag(ps, "--w-r8-cons", ["0"]),
             set_flag(ps, "--r8-speed-input", None), set_flag(ps, "--w-r8-alloc-l1", ["0"]),
@@ -267,6 +301,11 @@ def self_test():
             set_flag(ps, "--ema-decay", None), set_flag(ps, "--b1-guard-ref-ap2m", None),
             set_flag(ps, "--b1-guard-ref-ap2m", ["0"]), set_flag(ps, "--b1-guard-step", ["500"]),
             set_flag(ps, "--steps", ["12000"]), set_flag(ps, "--grad-share-every", ["2000"]),
+            set_flag(ps, "--steps", ["30000"]),                                    # A2: the superseded 0.614-epoch length
+            set_flag(ps, "--v2-cache", ["/home/nvidia/data/refcv6-b1-416x1024-train"]),          # A2: the 4,369 view
+            set_flag(ps, "--clip-clock-sidecar", ["/home/nvidia/data/refcv6_clip_clock_sidecar.jsonl"]),
+            set_flag(ps, "--vis1-sidecar", ["/home/nvidia/data/refcv7/vis1_sidecar_refcv6b1_train4369_eval139.npz"]),
+            set_flag(ps, "--r8-v9-md5", ["f63ece410b725febb8a5242cf2b01d3c"]),    # A2: the 4,369-clip release
             set_flag(ps, "--grad-share-at", [GS_AT_SHORT]),                         # wrong for GSM (long qualifies)
             set_flag(ps, "--grad-share-terms", ["all"]))
     for i, bad in enumerate(bads):

@@ -1,0 +1,43 @@
+=== CONTROL v9 train: new(4,572) vs old(4,369) ===
+old: old/v9_labels_train.npz
+new: release_train4572/v9_labels_train.npz
+fields old/new: 132 132 | identical field sets: True | dtype differs: []
+n_clips old/new: 4369 4572 | rows old/new: 869278 909651
+new sid set == manifest4572 sids: True | sha12 set equal: True | new clip order == manifest order: True
+eval139 clips in new release: sid 0 / sha12 0 (of 139 eval139)
+old sids subset of new: True | ADD sids in new/old: 203 0
+row0 contiguity old/new: True True | per-clip n_rows equal: True
+COMPARED: 4369 old clips, 869278 rows, 118 row fields + 13 clip fields (bitwise, by sid)
+DIFFERING old clips: 0 | fields with any difference: []
+CONTROL VERDICT: PASS
+ADD: 203 clips, 40373 rows
+   clip__has_record {'add_sum': 203, 'add_n': 203, 'old_sum': 4369, 'old_n': 4369}
+   clip__has_lead {'add_sum': 58, 'add_n': 203, 'old_sum': 4369, 'old_n': 4369}
+   clip__has_lc {'add_sum': 0, 'add_n': 203, 'old_sum': 4369, 'old_n': 4369}
+   clip__n_turns {'add_sum': 533, 'add_n': 203, 'old_sum': 9450, 'old_n': 4369}
+   clip__n_announced {'add_sum': 283, 'add_n': 203, 'old_sum': 7156, 'old_n': 4369}
+   clip__suppressed {'add_sum': 2, 'add_n': 203, 'old_sum': 59, 'old_n': 4369}
+clock_src (0 sidecar,1 pose_dt,2 nominal) ADD: {0: 203, 1: 0, 2: 0} | old-in-new: {0: 4347, 1: 13, 2: 9}
+now_s finite over all new rows: True
+--- ADD vs old row-level coverage (selected) ---
+  row__lead_valid          add={'IGNORE': 0.0, 'eq0': 0.8885, 'gt0': 0.1115}  old={'IGNORE': 0.0, 'eq0': 0.5973, 'gt0': 0.4027}
+  row__lat_cls_a           add={'IGNORE': 0.2032, 'eq0': 0.7109, 'gt0': 0.0859}  old={'IGNORE': 0.1608, 'eq0': 0.7282, 'gt0': 0.1111}
+  row__lat_cls_b           add={'IGNORE': 0.2023, 'eq0': 0.6198, 'gt0': 0.1779}  old={'IGNORE': 0.1601, 'eq0': 0.6935, 'gt0': 0.1463}
+  row__lon_cls             add={'IGNORE': 0.781, 'eq0': 0.0835, 'gt0': 0.1355}  old={'IGNORE': 0.2866, 'eq0': 0.01, 'gt0': 0.7034}
+  row__lon_v7id            add={'IGNORE': 0.781, 'eq0': 0.006, 'gt0': 0.213}  old={'IGNORE': 0.2866, 'eq0': 0.1312, 'gt0': 0.5822}
+  row__lat_v7id_a          add={'IGNORE': 0.2032, 'eq0': 0.7109, 'gt0': 0.0859}  old={'IGNORE': 0.1608, 'eq0': 0.7282, 'gt0': 0.1111}
+  row__nav_args_valid      add={'nonNaN': 1.0}  old={'nonNaN': 1.0}
+  row__nav_token           add={'nonNaN': 1.0}  old={'nonNaN': 1.0}
+  row__rc_A30_valid        add={'nonNaN': 1.0}  old={'nonNaN': 1.0}
+  row__rc_A50_valid        add={'nonNaN': 1.0}  old={'nonNaN': 1.0}
+  row__rcH_A50_valid       add={'nonNaN': 1.0}  old={'nonNaN': 1.0}
+  row__lc_measurable       add={'IGNORE': 0.0, 'eq0': 0.0099, 'gt0': 0.0}  old={'IGNORE': 0.0, 'eq0': 0.979, 'gt0': 0.0}
+  row__lc_frac             add={'nonNaN': 0.0}  old={'nonNaN': 0.979}
+  row__lc_d_cross_m        add={'nonNaN': 0.0}  old={'nonNaN': 0.0093}
+  row__goal_w              add={'IGNORE': None, 'eq0': 0.0691, 'gt0': 0.9309}  old={'IGNORE': None, 'eq0': 0.0492, 'gt0': 0.9508}
+  row__goal_y              add={'IGNORE': None, 'eq0': 0.167, 'gt0': 0.833}  old={'IGNORE': None, 'eq0': 0.1366, 'gt0': 0.8634}
+  row__h_obs_s             add={'nonNaN': 1.0}  old={'nonNaN': 1.0}
+  row__lon_v_target_ms     add={'nonNaN': 0.9068}  old={'nonNaN': 0.9565}
+  row__lead_gap_m          add={'nonNaN': 0.1115}  old={'nonNaN': 0.4027}
+  row__now_s               add={'nonNaN': 1.0}  old={'nonNaN': 1.0}
+  row__speed_n2_kmh        add={'IGNORE': 0.0, 'eq0': 0.0, 'gt0': 1.0}  old={'IGNORE': 0.0, 'eq0': 0.0, 'gt0': 1.0}

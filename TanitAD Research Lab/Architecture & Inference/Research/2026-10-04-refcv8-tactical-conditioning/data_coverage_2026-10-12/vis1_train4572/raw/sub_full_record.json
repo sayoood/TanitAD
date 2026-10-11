@@ -1,0 +1,322 @@
+{
+ "tool": "precompute_vis1_sidecar.py",
+ "mode": "full",
+ "argv": [
+  "--select-file",
+  "in/select.json",
+  "--mode",
+  "full",
+  "--train-cache",
+  "/home/nvidia/data/refcv8-b1-416x1024-train-4572",
+  "--eval-cache",
+  "/home/nvidia/data/refcv6-b1-416x1024-eval139",
+  "--agent-join",
+  "/home/nvidia/data/joins/b1_train_plus_eval_agents.jsonl.xz",
+  "--join3d",
+  "/home/nvidia/data/join3d/b1_train_plus_eval_agents_3d.jsonl.xz",
+  "--extrinsics",
+  "/home/nvidia/data/refcv8_train4572_eval139_extrinsics.json",
+  "--calib-dir",
+  "/home/nvidia/data/physicalai-b1/calibration",
+  "--work-dir",
+  "/home/nvidia/vis1_train4572_build/sub",
+  "--out",
+  "/home/nvidia/vis1_train4572_build/out/vis1_sub_add203_ctl.npz",
+  "--workers",
+  "4",
+  "--shards",
+  "24"
+ ],
+ "started_utc": "2026-10-11T22:56:25Z",
+ "tree": "/home/nvidia/vis1_train4572_build/tree",
+ "tool_md5": "7b726a76b837b473d47482d5f435222b",
+ "tanitad_file": "/home/nvidia/vis1_train4572_build/tree/stack/tanitad/__init__.py",
+ "zbuffer": {
+  "module_md5": "bfd93ca2edde5620a881d9b400ba16d8",
+  "audit_source": {
+   "path": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/code/vis_zbuf.py",
+   "md5": "3721a83f6bf8b1072c7b1f987c908c0f",
+   "lines": "39-144"
+  },
+  "function_sha256": {
+   "R_from_quat": "e30c2bb4bccdc2df",
+   "observed_mask": "bff155873d8ba014",
+   "corners": "523c9d642557c085",
+   "zbuffer": "0f6b41fbb32320d6"
+  }
+ },
+ "splits": {
+  "train": {
+   "cache": "/home/nvidia/data/refcv8-b1-416x1024-train-4572",
+   "n_clips": 303,
+   "clip_sha12_sha256": "3d62cf74c6a5f34a1d89da319fd88e125116da2790ee9a4eabe66138788e800c"
+  },
+  "eval": {
+   "cache": "/home/nvidia/data/refcv6-b1-416x1024-eval139",
+   "n_clips": 139,
+   "clip_sha12_sha256": "92b005984cfed78d02451eb1ef9bc33e43630a008417699d3eb9b8ce52091b15"
+  }
+ },
+ "n_stack": 3,
+ "window": 8,
+ "n_clips_run": 442,
+ "n_shards": 24,
+ "sources": {
+  "agent_join": {
+   "path": "/home/nvidia/data/joins/b1_train_plus_eval_agents.jsonl.xz",
+   "md5": "0c31a3a63d7205e9fa50e8ac4204ef46"
+  },
+  "join3d": {
+   "path": "/home/nvidia/data/join3d/b1_train_plus_eval_agents_3d.jsonl.xz",
+   "md5": "401c9c3119a50632dafc35c595d9e051"
+  },
+  "extrinsics": {
+   "path": "/home/nvidia/data/refcv8_train4572_eval139_extrinsics.json",
+   "md5": "dba6da20b874670aef32f2451b312837"
+  },
+  "intrinsics": {
+   "calib_dirs": [
+    "/home/nvidia/data/physicalai-b1/calibration"
+   ],
+   "n_chunks": 329,
+   "n_missing": 0,
+   "md5_of_sorted_chunk_md5s": "6f84102245fcc260a69e67a95b79f7ba"
+  }
+ },
+ "split_2d": {
+  "lines_read": 875657,
+  "lines_kept": 56516,
+  "clips_seen": 297,
+  "wall_s": 25.3
+ },
+ "split_3d": {
+  "lines_read": 875657,
+  "lines_kept": 56516,
+  "clips_seen": 297,
+  "wall_s": 29.3
+ },
+ "pool_wall_s": 529.9,
+ "sidecar": {
+  "path": "/home/nvidia/vis1_train4572_build/out/vis1_sub_add203_ctl.npz",
+  "sha256": "4e31bb9c82a1ce8a87792c9c10a2b6ba99c6f032dc08f3620ef5c7133d8d5761",
+  "content_sha256": "3abbe57d8f46c26dcb9cfad3c726499081bd64180357a16fc24f62182918f103",
+  "bytes": 12808166,
+  "n_clips": 442,
+  "n_frames": 56201,
+  "n_rows": 335858,
+  "content_sha256_of_arrays": "32acb882aa57d3dcc3f6f73e93d0435d735fc358d1b9f1333f0769e26b2108f3"
+ },
+ "readback": {
+  "path": "/home/nvidia/vis1_train4572_build/out/vis1_sub_add203_ctl.npz",
+  "sha256": "4e31bb9c82a1ce8a87792c9c10a2b6ba99c6f032dc08f3620ef5c7133d8d5761",
+  "content_sha256": "32acb882aa57d3dcc3f6f73e93d0435d735fc358d1b9f1333f0769e26b2108f3",
+  "schema": "tanitad.vis1_sidecar/1",
+  "n_clips": 442,
+  "n_frames": 56201,
+  "n_rows": 335858,
+  "splits": {
+   "eval": {
+    "cache": "/home/nvidia/data/refcv6-b1-416x1024-eval139",
+    "clip_sha12_sha256": "92b005984cfed78d02451eb1ef9bc33e43630a008417699d3eb9b8ce52091b15",
+    "n_clips": 139
+   },
+   "train": {
+    "cache": "/home/nvidia/data/refcv8-b1-416x1024-train-4572",
+    "clip_sha12_sha256": "3d62cf74c6a5f34a1d89da319fd88e125116da2790ee9a4eabe66138788e800c",
+    "n_clips": 303
+   }
+  },
+  "sources": {
+   "agent_join": {
+    "md5": "0c31a3a63d7205e9fa50e8ac4204ef46",
+    "path": "/home/nvidia/data/joins/b1_train_plus_eval_agents.jsonl.xz"
+   },
+   "extrinsics": {
+    "md5": "dba6da20b874670aef32f2451b312837",
+    "path": "/home/nvidia/data/refcv8_train4572_eval139_extrinsics.json"
+   },
+   "intrinsics": {
+    "calib_dirs": [
+     "/home/nvidia/data/physicalai-b1/calibration"
+    ],
+    "md5_of_sorted_chunk_md5s": "6f84102245fcc260a69e67a95b79f7ba",
+    "n_chunks": 329,
+    "n_missing": 0
+   },
+   "join3d": {
+    "md5": "401c9c3119a50632dafc35c595d9e051",
+    "path": "/home/nvidia/data/join3d/b1_train_plus_eval_agents_3d.jsonl.xz"
+   }
+  },
+  "zbuffer": {
+   "audit_source": {
+    "lines": "39-144",
+    "md5": "3721a83f6bf8b1072c7b1f987c908c0f",
+    "path": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/code/vis_zbuf.py"
+   },
+   "function_sha256": {
+    "R_from_quat": "e30c2bb4bccdc2df",
+    "corners": "523c9d642557c085",
+    "observed_mask": "bff155873d8ba014",
+    "zbuffer": "0f6b41fbb32320d6"
+   },
+   "module_md5": "bfd93ca2edde5620a881d9b400ba16d8"
+  },
+  "store_scope": {
+   "half_angle_deg": 61.0,
+   "x_max_m": 61.0,
+   "x_min_m": -1.0,
+   "y_half_m": 17.0
+  },
+  "window": 8,
+  "n_stack": 3
+ },
+ "per_shard": [
+  [
+   0,
+   92.7,
+   1.7,
+   2666
+  ],
+  [
+   1,
+   103.2,
+   1.8,
+   2488
+  ],
+  [
+   2,
+   107.3,
+   1.8,
+   2088
+  ],
+  [
+   3,
+   49.0,
+   1.4,
+   2110
+  ],
+  [
+   4,
+   68.0,
+   0.1,
+   1901
+  ],
+  [
+   5,
+   104.6,
+   0.5,
+   2582
+  ],
+  [
+   6,
+   100.6,
+   0.3,
+   2569
+  ],
+  [
+   7,
+   79.3,
+   0.3,
+   2787
+  ],
+  [
+   8,
+   145.6,
+   0.4,
+   2918
+  ],
+  [
+   9,
+   68.5,
+   0.3,
+   1786
+  ],
+  [
+   10,
+   133.7,
+   0.6,
+   2810
+  ],
+  [
+   11,
+   77.9,
+   0.3,
+   2377
+  ],
+  [
+   12,
+   108.1,
+   0.4,
+   3163
+  ],
+  [
+   13,
+   75.3,
+   0.3,
+   2381
+  ],
+  [
+   14,
+   48.8,
+   0.2,
+   1971
+  ],
+  [
+   15,
+   78.7,
+   0.3,
+   2123
+  ],
+  [
+   16,
+   83.1,
+   0.3,
+   2382
+  ],
+  [
+   17,
+   32.6,
+   0.1,
+   1189
+  ],
+  [
+   18,
+   69.9,
+   0.2,
+   2225
+  ],
+  [
+   19,
+   76.8,
+   0.2,
+   2461
+  ],
+  [
+   20,
+   114.2,
+   0.3,
+   2168
+  ],
+  [
+   21,
+   104.5,
+   0.5,
+   2665
+  ],
+  [
+   22,
+   52.1,
+   0.2,
+   2074
+  ],
+  [
+   23,
+   82.4,
+   0.3,
+   2317
+  ]
+ ],
+ "cpu_s_per_frame": 0.0366,
+ "wall_s": 588.0
+}
