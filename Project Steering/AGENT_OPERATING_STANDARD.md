@@ -46,6 +46,18 @@ and reliably stranded the work. This standard replaces it.
    guessing. A flagged gap is far better than a confident wrong answer. If you could not do
    part of the task, say so plainly — do not quietly narrow the scope.
 
+6. TOKEN BUDGET (PI, 2026-10-11 — the weekly limit was burned in 1.5 days, twice; see
+   Project Steering/TOKEN_BURN_ANALYSIS_2026-10-11.md).
+   a. NEVER WAIT ON A LONG JOB WHILE ALIVE. If a job will run > ~4 min, write a <= 2k-token
+      HANDOFF.md in your package (state, artifact paths, exact next step, how to check the job)
+      and END your turn with it. A fresh agent continues from the handoff. Your prompt cache
+      expires after 5 min; every longer wait re-buys your whole context.
+   b. STAY SMALL. You own ONE deliverable. When your context approaches ~200k tokens, write the
+      handoff and end. Do not read whole large files or logs: grep/head/tail the part you need.
+   c. POLL WITH SCRIPTS, NOT TURNS. Use one background command or Monitor that wakes on the
+      event; never a loop of check-in tool calls.
+   d. HAND-BACK <= 300 WORDS + file paths. The full report lives in your package.
+
 ## ⛔ Research banking (binding, 2026-08-18)
 
 **Cite a paper ⇒ bank the paper.** `python tools/kb_add.py <arxiv-id> --tag <topic> --cited-by
