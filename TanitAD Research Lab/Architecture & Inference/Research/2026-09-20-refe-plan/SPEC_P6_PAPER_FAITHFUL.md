@@ -270,12 +270,14 @@ What that copy already provides:
 
 ## 7 · PI decisions (headline)
 
-| id | decision | recommendation |
-|---|---|---|
-| **P6-T** | 25 epochs at 6.8–8.2 days, or a 7-day cap with a declared epoch cut (§0.2) | 25 epochs with L1 |
-| **P6-C** | pod vCPU | ≥ 24, final after M-LAB (dev box, 0 GPU) |
-| **P6-N** | navigation command (paper) vs goal points (P2/SFT-4) | command |
-| **P6-Y** | unwrapped yaw L1 (paper, literal) | unwrapped |
-| **P6-P** | bf16 (forced: FP32 is 38 days) | bf16, declared |
-| **P6-D** | pod data re-fetch (164–449 GB, INHERITED) plus ~1–2 days of setup | approve with the pod |
-| **P6-G** | launch-gate route (§5) | land the banked gate with a `refe_p6` profile (Master Mind) |
+| id | decision | recommendation | **PI ruling, 2026-10-11** |
+|---|---|---|---|
+| **P6-T** | 25 epochs at 6.8–8.2 days, or a 7-day cap with a declared epoch cut (§0.2) | 25 epochs with L1 | ✅ **DECIDED: 25 epochs; 6.8–8.2 days accepted** (PI: *"25 epochs … I accept the 6.8–8.2 days"*) |
+| **P6-C** | pod vCPU | ≥ 24, final after M-LAB (dev box, 0 GPU) | ⏳ open: final count after M-LAB |
+| **P6-N** | navigation command (paper) vs goal points (P2/SFT-4) | command | ✅ **DECIDED: navigation command** (PI: *"nav command"*) |
+| **P6-Y** | unwrapped yaw L1 (paper, literal) | unwrapped | ⏳ open: not ruled on 2026-10-11 |
+| **P6-P** | bf16 (forced: FP32 is 38 days) | bf16, declared | implied by P6-T (FP32 cannot fit) |
+| **P6-D** | pod data re-fetch (164–449 GB, INHERITED) plus ~1–2 days of setup | approve with the pod | ✅ **DECIDED: data download approved** (PI: *"approve the data download"*) |
+| **P6-G** | launch-gate route (§5) | land the banked gate with a `refe_p6` profile (Master Mind) | ⏳ Master Mind |
+
+⛔ **NO POD YET, by the PI's own choice (2026-10-11):** *"I did not start the pod. I wait until you give me signal and we have evidence and confidence to surpass the paper."* ⇒ The pod is started by the PI ONLY on the Master Mind's explicit GO signal, and that signal names the evidence it rests on (see `eval/P6_GO_SIGNAL.md`). Deciding P6-T/N/D is not a launch authorisation.

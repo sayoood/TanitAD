@@ -1,5 +1,7 @@
 # P2: joint fine-tune, with the scorer's visual context un-detached, on the paper's PDM targets (pre-registration)
 
+> **AMENDED 2026-10-11 (pre-data):** the "Next arm, by outcome" bullet *NOT PROVEN or REFUTED* below is replaced by a P6 GO / NO-GO rule in `eval/PREREG_P2_AMENDMENT_1.md`. Nothing else in this file changes.
+
 > Written 2026-10-05 before any P2 training step. It is landed in git before the first P2 read is looked at.
 > PI 2026-10-05: *"I approve all your proposed levers, let use optimally the pod."*
 > Lever P2 of `REVIEW_7_GAP_TO_PAPER.md` §4.
