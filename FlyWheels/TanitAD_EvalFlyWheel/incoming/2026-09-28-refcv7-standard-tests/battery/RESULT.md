@@ -159,3 +159,253 @@ Banked sanitized under `raw/smoke_step1500/` (work dirs on the dev box: `D:/refc
 ### Exploratory (NOT a registered read; the registered check is `raw/PREREG_SEED_GROUP_CHECK_50400.md` on step 50,400)
 Step 30,000 `eval_traj` seed means: seeds 0–7 sd **0.00399**, seeds 8–23 sd **0.00715**, one-sided F(15, 7) = **3.21, p = 0.063**; Levene p = 0.20 (MEASURED, `raw/step30000/g0.json`). The step-5,000 pattern (F 38.1) does not recur at this strength; it neither confirms nor refutes reading (A) or (B) — the registered test is the step-50,400 one.
 * **Addendum 08:13 (operational, no outcome changed):** the CPU job first met its 6 GB commit bar at 08:11:52 and was stopped by its author before it allocated anything, because free commit was MEASURED swinging **1.57 → 5.86 GB within two 2-min polls** (another stream's ~4.3 GB burst) — a 6 GB bar does not protect that stream from a ~3 GB job. Relaunched with a **10 GB** bar, no start deadline (≤ 36 h), and it also waits while any battery GPU job (`refcv7-milestone-*`, `refcv7-g0*`) holds the lock. Follow-up `code/post_cells.sh` runs the flip decomposition and banks to `raw/g0cells_step30000_cpu/` when it ends.
+
+## RESULT — refcv7 step50400 (2026-10-04T14:49:14+0200)
+
+* **G0 as registered: FAIL** — eval_agent_det_ap0p5_heavy_truck_0_20 [DETECTION] in-run 0.0 vs seeds mean 0.03333 (sd 0); eval_agent_det_ap1_heavy_truck_0_20 [DETECTION] in-run 0.07143 vs seeds mean 0.03333 (sd 0); eval_agent_det_ap1_heavy_truck_all [DETECTION] in-run 0.03571 vs seeds mean 0.01515 (sd 0)
+* **G0-A2 (seeds 0..7): PASS**
+* **G0-A6 (THE GATE, SPEC A6; 24 inference seeds): FAIL**; mutation terms moved: M1 22 (detected), M2 62 (detected), M4 2 (detected); wrapper clause PASS; reasons: ['eval_agent_det_ap0p5_heavy_truck_0_20 [DETECTION] in-run 0.0 vs seeds mean 0.03333 (sd 0)', 'eval_agent_det_ap1_heavy_truck_0_20 [DETECTION] in-run 0.07143 vs seeds mean 0.03333 (sd 0)', 'eval_agent_det_ap1_heavy_truck_all [DETECTION] in-run 0.03571 vs seeds mean 0.01515 (sd 0)', 'eval_agent_det_ap2_stroller_0_20 [DETECTION] in-run 0.33333 vs seeds mean 0.25 (sd 0)', 'eval_agent_det_ap2_stroller_all [DETECTION] in-run 0.16667 vs seeds mean 0.125 (sd 0)']
+* **G0-A5 (24 seeds; reported beside the A6 gate): PASS**
+* **G0-A6 (REGISTERED; measured numerics floor): FAIL** — eval_agent_det_ap0p5_heavy_truck_0_20 [DETECTION] in-run 0.0 vs seeds mean 0.03333 (sd 0); eval_agent_det_ap1_heavy_truck_0_20 [DETECTION] in-run 0.07143 vs seeds mean 0.03333 (sd 0); eval_agent_det_ap1_heavy_truck_all [DETECTION] in-run 0.03571 vs seeds mean 0.01515 (sd 0); floor-rescued terms: []; threshold-target terms: eval_tacv6_goal_conf_bce in-run 0.14591 interval [0.14224843595836026, 0.18356920461913012] OK
+* **Tier:** T1 self-action OPEN LOOP (status UNRULED for an action-free model); never closed loop, never driving performance. **Estimator:** FULL-SET point estimate; paired episode-cluster bootstrap, n_boot 2000, seed 0.
+* **Inference-seed floor:** None m ADE (training-seed floor NOT measured).
+
+| bar | verdict | seed 0 | seed 1 |
+|---|---|---|---|
+
+| BAR-R7-N1 (NavSim) | not this battery | — | — |
+
+**Four families, paired `os − ha0_ext` (seed 0):** 
+* strategic: NOT APPLICABLE (n 0): strategic layer OFF
+
+## X8 CLOSURE (2026-10-11) -- the 50,400 four-family battery RAN after the G0 text PASS; its banked section follows verbatim
+
+* **Why this block exists.** The section above dated 2026-10-04T14:49:14+0200 is the AS-REGISTERED run (G0 FAIL as coded). The Master Mind ruled 2026-10-04 (GOALS_AND_CLAIMS tip 235156d, RETRACTION_LOG R31) that G0-A6 as registered in the text is PASS and the coded FAIL is a judge defect (the A2 low-support tuple omitted A6). The battery then ran to completion under the corrected judge on 2026-10-05; nothing in RESULT.md recorded it until now. **MEASURED, artifact: `raw/step50400_a6text/RESULT_step50400_a6text.json` (section text: `raw/step50400_a6text/RESULT_SECTION_step50400_a6text.md`; the as-registered record stays in `raw/step50400/RESULT_step50400.json`).**
+* **Judge status for FUTURE checkpoints.** `run_battery_r7.g0_text_override` re-judges on content and is pinned by `battery/code/test_battery_g0_text_override.py` (deliberate-regression and mutation-count arms). Re-run 2026-10-11: **105 passed** (`raw/fanctl_x8/pytest_g0.out`). No gap found, so **no A7 is drafted**. Two records stay carried, as the section says.
+* **Tier / estimator / CI scope for everything in the next section:** T1 self-action OPEN LOOP (status UNRULED for an action-free model); FULL-SET mean; paired episode-cluster bootstrap n_boot 2000 seed 0. The CI answers ONLY "would another draw of EPISODES say this?". It does NOT answer training-seed variance (single training seed; floor unmeasured) and the inference-seed floor is 0.0006 m ADE.
+* **Every BAR-R7-1 / M7 / B7-2 FAILED line below is a committed-bar result, reported as written. The continuation levers are named in the fan-control block that follows the verbatim section.**
+
+## RESULT — refcv7 step50400_a6text (2026-10-05T02:09:30+0200)
+
+* **G0 as registered: FAIL** — eval_agent_det_ap0p5_heavy_truck_0_20 [DETECTION] in-run 0.0 vs seeds mean 0.03333 (sd 0); eval_agent_det_ap1_heavy_truck_0_20 [DETECTION] in-run 0.07143 vs seeds mean 0.03333 (sd 0); eval_agent_det_ap1_heavy_truck_all [DETECTION] in-run 0.03571 vs seeds mean 0.01515 (sd 0)
+* **G0-A2 (seeds 0..7): PASS**
+* **G0-A6 (THE GATE, SPEC A6; 24 inference seeds): FAIL**; mutation terms moved: M1 22 (detected), M2 62 (detected), M4 2 (detected); wrapper clause PASS; reasons: ['eval_agent_det_ap0p5_heavy_truck_0_20 [DETECTION] in-run 0.0 vs seeds mean 0.03333 (sd 0)', 'eval_agent_det_ap1_heavy_truck_0_20 [DETECTION] in-run 0.07143 vs seeds mean 0.03333 (sd 0)', 'eval_agent_det_ap1_heavy_truck_all [DETECTION] in-run 0.03571 vs seeds mean 0.01515 (sd 0)', 'eval_agent_det_ap2_stroller_0_20 [DETECTION] in-run 0.33333 vs seeds mean 0.25 (sd 0)', 'eval_agent_det_ap2_stroller_all [DETECTION] in-run 0.16667 vs seeds mean 0.125 (sd 0)']
+* **G0-A5 (24 seeds; reported beside the A6 gate): PASS**
+* **G0-A6 (REGISTERED; measured numerics floor): FAIL** — eval_agent_det_ap0p5_heavy_truck_0_20 [DETECTION] in-run 0.0 vs seeds mean 0.03333 (sd 0); eval_agent_det_ap1_heavy_truck_0_20 [DETECTION] in-run 0.07143 vs seeds mean 0.03333 (sd 0); eval_agent_det_ap1_heavy_truck_all [DETECTION] in-run 0.03571 vs seeds mean 0.01515 (sd 0); floor-rescued terms: []; threshold-target terms: eval_tacv6_goal_conf_bce in-run 0.14591 interval [0.14224843595836026, 0.18356920461913012] OK
+* ⭐ **G0 RECORD (gate source: REGISTERED A6 TEXT, corrected judge (Master Mind ruling 2026-10-04)):** **G0-A6 as registered (text): PASS, computed by the corrected judge after the coded verdict was read; the criterion is unchanged** · **G0-A6 as coded: FAIL (judge defect: the A2 low-support tuple omitted A6)** (`g0_A6_text.json`, sha256 f3c7de52db67…; re-verified by the judge in use)
+* **Tier:** T1 self-action OPEN LOOP (status UNRULED for an action-free model); never closed loop, never driving performance. **Estimator:** FULL-SET point estimate; paired episode-cluster bootstrap, n_boot 2000, seed 0.
+* **Inference-seed floor:** 0.0006 m ADE (training-seed floor NOT measured).
+
+| bar | verdict | seed 0 | seed 1 |
+|---|---|---|---|
+| BAR-R7-1 | FAILED | -0.0102 [-0.0260, +0.0067] (n 4754/139) | -0.0096 [-0.0253, +0.0069] (n 4754/139) |
+| BAR-R7-2 | PENDING (the refcv6@38k S2 rolls run LAST in the milestone chain; SPEC A4) | ABSENT | ABSENT |
+| BAR-R7-3 | PASS (single training seed; training-seed floor unmeasured) | -0.9804 [-1.2940, -0.6815] SEP (n 3668/139) | -0.9796 [-1.2855, -0.6842] SEP (n 3668/139) |
+| BAR-M7-1 | FAILED | (per band in perc_score.json) | — |
+| BAR-M7-2 | FAILED | (per band in perc_score.json) | — |
+| BAR-M7-3 | FAILED | (per band in perc_score.json) | — |
+| BAR-M7-4 | FAILED | (per band in perc_score.json) | — |
+| BAR-B7-1 | PASS (single training seed; no replicate floor measured for boxes) | +0.1051 [+0.0796, +0.1289] SEP (n 4532/139) | — |
+| BAR-B7-2 | FAILED | -0.2204 [-0.2448, -0.1885] SEP (n 4532/139) | — |
+
+| BAR-R7-N1 (NavSim) | not this battery | — | — |
+
+**Four families, paired `os − ha0_ext` (seed 0):** 
+* ADE: ade_m -0.0102 [-0.0260, +0.0067] (n 4754/139); fde_m -0.0360 [-0.0759, +0.0054] (n 4754/139)
+* longitudinal: LON_speed_mae_mps +0.0040 [-0.0102, +0.0198] (n 4754/139); LON_along_mae_m -0.0086 [-0.0225, +0.0057] (n 4754/139); LON_accel_mae_mps2 +0.0534 [+0.0329, +0.0753] SEP (n 4754/139)
+* lateral: LAT_cross_mae_m -0.0049 [-0.0158, +0.0059] (n 4754/139); LAT_heading_mae_deg -0.0961 [-0.2042, +0.0146] (n 4509/139); LAT_yaw_rate_mae_radps_valid -0.0047 [-0.0075, -0.0021] SEP (n 4473/139)
+* tactical: TAC_traj_lat_correct +0.0206 [+0.0103, +0.0306] SEP (n 4754/139); TAC_traj_lon_correct -0.0133 [-0.0288, +0.0006] (n 4754/139)
+
+**Family levels, seed 0 (T1; FULL-SET mean; intervals in `analysis_s0.json`):**
+
+| arm | speed MAE m/s | target-speed acc | along MAE m | min headway m / time gap s / min TTC s (n, n_closing) | heading ° | curvature 1/m | yaw-rate °/s | cross-track m | tac lat / lon (traj) |
+|---|---|---|---|---|---|---|---|---|---|
+| os | 0.259 | 0.853 (±0.5 m/s) | 0.226 | 27.95 / 4.13 / 25.1 (n 1303, closing 482) | 1.35 | 0.0037 | 1.08 | 0.103 | 0.962 / 0.831 |
+| os_filteroff | 0.259 | 0.853 (±0.5 m/s) | 0.226 | 27.95 / 4.13 / 25.1 (n 1303, closing 482) | 1.35 | 0.0037 | 1.08 | 0.103 | 0.962 / 0.831 |
+| ha0_ext | 0.255 | 0.866 (±0.5 m/s) | 0.235 | 28.02 / 4.20 / 25.5 (n 1285, closing 446) | 1.45 | 0.0038 | 1.36 | 0.108 | 0.941 / 0.844 |
+| ha | 0.255 | 0.866 (±0.5 m/s) | 0.235 | 28.05 / 4.21 / 25.6 (n 1291, closing 447) | 1.57 | 0.0041 | 1.47 | 0.124 | 0.937 / 0.844 |
+| ha0 | 0.489 | 0.705 (±0.5 m/s) | 0.472 | 27.45 / 4.12 / 24.1 (n 1315, closing 499) | 2.82 | 0.0069 | 2.41 | 0.317 | 0.864 / 0.757 |
+* TACTICAL lat decision, v6_behaviour_decoder: acc 0.7401, kappa 0.45663136165485746, n in band 1081 (label clock: the refcv7 loader's TRUE clip clock, `enable_clip_clock` + G3)
+* TACTICAL lat decision, z_tac_v7_heads: acc 0.7299, kappa 0.3461702577189327, n in band 1081 (label clock: the refcv7 loader's TRUE clip clock, `enable_clip_clock` + G3)
+* TACTICAL lon decision, v6_behaviour_decoder: acc 0.481, kappa 0.3184823321971728, n in band 1081 (label clock: the refcv7 loader's TRUE clip clock, `enable_clip_clock` + G3)
+* TACTICAL lon decision, z_tac_v7_heads: acc 0.519, kappa 0.3631659980581842, n in band 1081 (label clock: the refcv7 loader's TRUE clip clock, `enable_clip_clock` + G3)
+* TACTICAL goal selection (22 tokens): 2 scoreable classes (n_pos ≥ 200); per-class AUROC / AP / P / R in `tactical_v6_s0.json`
+* strategic: NOT APPLICABLE (n 0): the strategic layer is OFF (--no-strategic); its route loss is gated off in training, so the route head is untrained
+* ⚠️ baselines missing: ['b_refcv6_38k_s0', 'b_refcv6_38k_s1']
+
+## D-REFCV7-FANCEIL -- fan random-pick control, refcv7-r101-s0 at 50,400 (2026-10-11, EvalFlyWheel)
+
+* **Tests behind the judge statement above:** `pytest -q` over test_g0_a7, test_g0_a7_reports, test_g0_main_a7_flow, test_battery_g0_text_override, test_g0_a6, test_g0_a6_lowsupport, test_g0_main_a6_flow, test_r7_a7_reporting, test_g0_a5 (all in `battery/code/`) = **105 passed in 22.42 s**.
+* **What was measured (MEASURED, T0 DIAGNOSTIC).** A fresh fan roll of ckpt_50400 (md5 b418d0fc4a92a6848c246a6a7c50207b), 4,754 windows, 139 episodes (the battery window set `s2_windows.json`), 117 candidates per window, inference seed 0, wall 1,959.9 s. Producer: `code/fan_roll_r7.py` (wrapper over `run_battery_r7.roll_one`, full=False). Bank: `D:/refcv7_eval_kit/fanctl/s0/dump/fan_extras.npz` sha256 ff2d0f86b1e3a3f6ff6979b27d8dd5d7a819d1386117b2e971f60668f99ffcb8 (NOT in the repo; 21957189 bytes, on the D: kit only). `traj_equals_sidecar_nav_true` = true: the captured fan reproduces the banked selected plan exactly (max |fan_sel - traj4| = 0.0 m). Analysis: `code/fan_control_x8.py` -> `raw/fanctl_x8/ctl_refcv7_50400_fan_s0.json`.
+* **Metric.** ADE over the 4 saved waypoints (mean per-candidate L2 over 4 waypoints). Oracle-in-fan = per-window MIN over candidates (uses GT, optimistic, unreachable: the minimum of 117 noisy draws). **Tier:** the oracle and every difference containing it are T0 (GT-conditioned diagnostics, never driving performance); `selected` alone is the T1 open-loop pick. **Estimator:** FULL-SET mean; episode-cluster bootstrap (single arm) and PAIRED episode-cluster bootstrap (differences), `taniteval/taniteval/ci.py`, n_boot 2000, seed 0, n 4754 windows / 139 episodes. **CI scope:** ONLY "would another draw of EPISODES say this?". It does NOT answer training-seed or inference-seed variance; the seed-1 replicate below is the inference-seed check.
+* **Cross-check.** fan-selected 0.2772 vs the banked battery `os` 0.2784 (seed-0 dump) and 0.2790 (seed-1 dump): paired delta -0.0012 [-0.0036, +0.0012] not separated (RNG differs between full=False and full=True, so only means are comparable).
+
+| quantity (ADE 4wp, m) | value [95 % episode-cluster CI] |
+|---|---|
+| selected (shipped selector) | 0.2772 [0.2527, 0.3051] |
+| oracle-in-fan (T0) | 0.1143 [0.1057, 0.1257] |
+| uniform-random pick, analytic expectation | 1.5501 [1.5081, 1.5905] |
+| sel_gap = selected - oracle (paired) | +0.1630 [+0.1446, +0.1825] SEP |
+| random - selected (paired, analytic) | +1.2728 [+1.2201, +1.3232] SEP |
+| oracle - random (paired) | -1.4358 [-1.4765, -1.3942] SEP |
+| 12 explicit uniform draws (seeds 20261011..20261022) | mean 1.5557, range [1.5367, 1.5748]; random - selected range [+1.2595, +1.2976], **12 of 12 separated positive, 0 negative** |
+| skill fraction (random - selected)/(random - oracle), POINT estimate | **0.8865** (0 = chance, 1 = oracle) |
+| windows where selected > 2x oracle | **44.17 %** (uniform random: 99.64 %) |
+| windows where selected beats the random expectation | 97.83 % ; distinct sel_idx used: 64 of 117 |
+
+* **Reading, with the straw man named.** Uniform random over 117 candidates is the weakest null (the fan spans every anchor, so it includes plans for the wrong manoeuvre). Against it the selector has real skill (0.8865). The informative nulls are tighter, all PAIRED on the same windows:
+
+| informative null | ADE | null - selected [CI] |
+|---|---|---|
+| random among top-2 by anchor_logits | 0.3010 | +0.0238 [+0.0179, +0.0297] SEP |
+| random among top-4 / top-8 / top-16 / top-32 by anchor_logits | 0.3686 / 0.4678 / 0.6316 / 0.8985 | +0.0914 / +0.1905 / +0.3544 / +0.6213, all SEP |
+| random among top-2 by refined_logits | 0.2994 | +0.0222 [+0.0179, +0.0264] SEP |
+| random among top-2 by sel_score | 0.2983 | +0.0211 [+0.0167, +0.0254] SEP |
+| argmax anchor_logits | 0.2726 | -0.0046 [-0.0102, +0.0009] not separated |
+| argmax refined_logits | 0.2732 | -0.0040 [-0.0069, -0.0016] SEP (argmax is 4 mm BETTER) |
+| hold-action plan `ha` | 0.3010 | +0.0238 [+0.0062, +0.0405] SEP |
+
+  The selector beats a random choice among its own top-2 by only about 0.02 m, is not better than a plain argmax of the logits (the refined-logit argmax is 0.004 m better and separated), and beats the hold-action plan by +0.0238 m. (0.3010 and +0.0238 appear twice only because `ha` and the anchor_logits top-2 happen to agree at 4 dp; the intervals differ, so they are different quantities.) The `ha` here is the sidecar hold-action plan, NOT `ha0_ext` of BAR-R7-1, and the metric is the 4-waypoint ADE, not `ade_m`; do not read +0.0238 against BAR-R7-1 (-0.0102, not separated) as a contradiction without a matched-metric recompute (UNVERIFIED).
+
+### D-REFCV7-FANCEIL -- continuation (2026-10-11, EvalFlyWheel): conflict, headroom, and one inference-only lever
+
+**1. DOC-VS-RAW CONFLICT -- ESCALATED.** GOALS_AND_CLAIMS.md line 12229 (row D-REFCV7-FANCEIL) and MODEL_REGISTRY.md section 15.3 (the row at line 5300 at tip 37645fcc) label *oracle-in-fan 0.1914 m, selected 0.4728 m, gap +0.2813 [+0.2127, +0.3543], selected more than 2x worse in 41.09 %* as **refcv7 at 50.4k**. Those are the **refc-base-30k** numbers, not refcv7:
+- REPRODUCED from raw (`raw/fanctl_x8/ctl_repro_refc-base-30k.json`, pt sha256 f7edc65b..., 128 anchors, 881 windows, 40 episodes): selected 0.4728, oracle 0.1914, sel_gap +0.2813 [+0.2127, +0.3543], frac_sel_2x_worse 0.4109. Identical to four digits, i.e. the same arm.
+- INDEPENDENT corroboration: MODEL_REGISTRY line 3747 publishes 0.4728 [0.3835, 0.5699] as the registered REF-C-base ADE@2s headline (`taniteval/results/driving_refc-base-30k.json`). The refc-xl-30k fan reads 0.4714 / 0.1640 / +0.3075 (`ctl_repro_refc-xl-30k.json`, 256 anchors).
+- True refcv7-r101-s0 at 50,400 (4754 windows, 139 episodes, 117 candidates, ADE over 4 waypoints): selected 0.2772, oracle 0.1143, sel_gap +0.1630 [0.1446, 0.1825], selected beyond 2x oracle 44.17 % (section above).
+- The same registry row says the random-pick control is "not yet run". It has now run (section above). **Registry and claim row need the number swapped and the control status updated; this agent does not edit Project Steering.**
+- NOT comparable across rows: the old-pt panel was built by `run_oldpt` on the older arms stored fans over 881 windows; its random expectation is 14.5 m against 1.55 m for refcv7, so the candidate-space geometry differs. Metric-horizon equality of the two panels is UNVERIFIED; do not pool them.
+
+**2. HEADROOM -- what a reranker restricted to the model own top-K could win (T0 DIAGNOSTIC, uses GT).**
+Instrument `code/fan_headroom_x8.py`, output `raw/fanctl_x8/ctl_refcv7_50400_headroom_s0.json`. Selected = 0.2772. Oracle among the top-K by the model score vs oracle among a random K-subset (8 draws, same windows). Controls read as required: K=1 equals the argmax pick (anchor 0.2726, refined 0.2732, both equal to the banked argmax rows) and the K=117 random-subset oracle equals the full oracle 0.1143.
+
+| K | random-K oracle | top-K by anchor_logits | top-K by refined_logits | selected minus that oracle (refined), paired CI |
+|---|---|---|---|---|
+| 1 | 1.5534 | 0.2726 | 0.2732 | +0.0040 [+0.0016, +0.0069] SEP |
+| 2 | 1.0939 | 0.2159 | 0.2203 | +0.0569 [+0.0512, +0.0628] SEP |
+| 4 | 0.7349 | 0.1698 | 0.1737 | +0.1035 [+0.0935, +0.1137] SEP |
+| 8 | 0.4831 | 0.1440 | 0.1462 | +0.1310 [+0.1182, +0.1442] SEP |
+| 16 | 0.3130 | 0.1258 | 0.1275 | +0.1497 [+0.1341, +0.1664] SEP |
+| 32 | 0.2115 | 0.1182 | 0.1172 | +0.1600 [+0.1422, +0.1790] SEP |
+| 64 | 0.1501 | 0.1149 | 0.1146 | +0.1627 [+0.1444, +0.1819] SEP |
+
+Reading: the model own ranking is informative (top-4 contains a 0.170 m plan where four random plans contain 0.735 m), so the fan is a real proposal set and not a lottery. That makes the gap a **selection** problem, not a proposal problem. But each of those oracle cells peeks at GT per window, so the table is a **ceiling** for a reranker, not an achievable number. Estimator: FULL-SET mean, paired episode-cluster bootstrap n_boot 2000 seed 0. The CI answers only "another draw of EPISODES?".
+
+**3. NEXT LEVER, RUN IN THE SAME TURN -- an inference-only pick rule (post-hoc EXPLORATORY, not a registered claim).**
+Instrument `code/fan_mbr_x8.py`, output `raw/fanctl_x8/ctl_refcv7_50400_mbr_s0.json`. Rule: minimum-Bayes-risk pick inside the model own top-K, `argmin_i sum_j p_j d(i,j)` with `p = softmax(score/T)` over the top-K and `d` the 4-waypoint L2 between two fan members. It uses **no GT, no ego state and no new network**, so the vision-only rule is untouched and it is admissible at inference. GT enters only the scoring.
+Forking-paths guard: 36-cell grid (3 scores x K 4/8/16/32 x T 0.5/1/2); the cell is CHOSEN on episode-half A (even rank of sorted episode ids, 2398 windows) and REPORTED on half B (2356 windows, the other episodes). Chosen on A: `refined_logits`, K=32, T=1.0.
+
+| set | selected | argmax refined | MBR | selected minus MBR (paired) | argmax minus MBR (paired) |
+|---|---|---|---|---|---|
+| half B (held out) | 0.2845 | 0.2810 | 0.2715 | +0.0130 [+0.0076, +0.0187] SEP | +0.0095 [+0.0050, +0.0138] SEP |
+| all windows (reference only) | 0.2772 | 0.2732 | 0.2657 | +0.0115 [+0.0079, +0.0156] SEP | +0.0075 [+0.0046, +0.0106] SEP |
+
+- **It is real but small.** On the held-out half MBR beats the registered pick by 13 mm (4.6 % of 0.2845) and beats the plain refined-logit argmax by 9.5 mm. That recovers about 8 % of the 0.1630 selected-to-oracle gap (0.0130 / 0.1630), so it is NOT the closing lever for FANCEIL. By the headroom table, a rule must exploit information beyond the model own scores to get near 0.17 m.
+- **Variance honesty.** Single checkpoint, single inference seed (the seed-1 replicate below), n = 139 episodes. The CI answers only "another draw of EPISODES?". The 36-cell grid is exploratory: the half split controls selection bias within this fan, but half B belongs to the same 139 episodes, so it is not a fresh corpus. Promotion needs its own pre-registration and a fresh episode set.
+- **Tier.** The pick is T1 open loop (the model fan, self-action, no GT in the rule). Whether it helps CLOSED loop is **not measured** and cannot be read from this table; the planner feeding its own rollout is the open-vs-closed ruling territory.
+- **Four families.** This control scores the 4-waypoint ADE family (longitudinal/lateral not separated here). The four-family numbers for the registered selected pick are in the banked 50,400 section above; none was recomputed for the MBR pick, so the MBR gain is an ADE-family statement only. Per-family MBR scoring is a named open item.
+
+### D-REFCV7-FANCEIL -- inference-seed replicate (seed 1) and what it settles (2026-10-11, EvalFlyWheel)
+
+**Question this block answers (named, because one interval carries three):** *would another INFERENCE run say this?*
+The standard CI (paired episode-cluster bootstrap, `taniteval/taniteval/ci.py`, n_boot 2000, seed 0) answers only
+*another draw of EPISODES?*; the **training-seed floor is UNMEASURED** (H-ESTIM-SEED-1, tiny-rig `A0b_replicate`
+false-positive rate 14.3 %). Two inference seeds (0, 1) on ONE checkpoint (refcv7 step 50,400, ckpt md5
+b418d0fc4a92a6848c246a6a7c50207b) is **n = 2: a lower bound on inference noise, not a variance estimate.**
+Tier: the fan oracle rows are **T0** (they use GT); `selected` and the MBR pick are **T1 open-loop picks**; the
+closed-loop effect of the MBR pick is **NOT measured**. Estimator: FULL-SET mean, 4-waypoint mean L2 (`_de_all`).
+
+| metric (m, 2 s grid, 4 wp) | seed 0 | seed 1 | s0 - s1 (paired) |
+|---|---|---|---|
+| selected | 0.2772 [0.2527, 0.3051] | 0.2790 [0.2542, 0.3068] | -0.0018 [-0.0041, +0.0005] not separated |
+| oracle-in-fan (117 cand., GT) | 0.1143 | 0.1145 | -0.0003 [-0.0015, +0.0010] not separated |
+| random expectation | 1.5501 | 1.5501 | -0.0001 |
+| sel_gap (selected - oracle) | +0.1630 [0.1446, 0.1825] | +0.1645 [0.1454, 0.1847] | -0.0015 [-0.0041, +0.0009] not separated |
+| skill fraction | 0.8865 | 0.8854 | |
+| windows with selected > 2x oracle | 44.17 % | 44.95 % | |
+| argmax(refined_logits) - selected | -0.0040 [-0.0069, -0.0016] SEP | -0.0057 [-0.0092, -0.0027] SEP | |
+| ha - selected | +0.0238 [0.0062, 0.0405] | +0.0220 [0.0043, 0.0388] | |
+
+Artifacts (all MEASURED): `raw/fanctl_x8/ctl_refcv7_50400_fan_s0.json`, `..._fan_s1.json`,
+`..._headroom_s{0,1}.json`, `..._mbr_s{0,1}.json`, `..._seedcmp.json`; instrument `code/fan_seedcmp_x8.py`.
+Same windows both seeds (window order asserted identical; n = 4,754 windows, 139 episodes).
+
+**Verdict.** The FANCEIL finding for refcv7 -- the fan CONTAINS a plan ~0.114 m from GT and the selector lands at
+~0.278 m, a **+0.163 m selection gap and skill fraction ~0.886** -- is **not an inference-seed artefact**: the
+seed-to-seed change in `selected` is 1.8 mm (CI straddles 0) against a 163 mm gap. This says nothing about the
+TRAINING-seed floor and nothing about fresh episodes.
+
+**What varies and what does not (MEASURED, `ctl_refcv7_50400_seedcmp.json`).**
+* `anchor_logits` are **identical across inference seeds** (max abs diff 0.0, argmax agreement 1.0): the proposal
+  distribution is deterministic.
+* `refined_logits` and the fan trajectories are **stochastic**: refined_logits differ by up to 4.04, argmax
+  agreement 0.9011; selected-index agreement 89.0 %; mean L2 between the two selected plans 0.0827 m
+  [0.0796, 0.0860]; mean L2 between corresponding fan candidates 0.0803 m; only 2.27 % of windows have a bitwise
+  identical fan.
+* Headroom (selected minus refined-oracle at top-K) is stable: +0.0040 / +0.0057 at K = 1,
+  +0.0569 / +0.0582 at K = 2, +0.1627 / +0.1642 at K = 64 (s0 / s1). The gap is a SELECTION problem, not a
+  proposal problem, on both rolls.
+
+**Consistency with the banked battery dumps (and one open question).**
+* The s1 fan roll reproduces the banked battery seed-1 `os` arm **exactly**: paired delta 0.0 [0.0, 0.0], banked
+  mean 0.279. The s0 fan roll differs from banked `dump_s0` by -0.0012 (and from `dump_s1` by +0.0006
+  [-0.0019, +0.0031], not separated).
+* MEASURED from `raw/step50400_a6text/roll_s{0,1}.json`: the banked seed-0 roll used the **full** arm set
+  (SPEC 3.2) and the banked seed-1 roll the **os + model-free controls** set (SPEC A3); the fan roller
+  (`code/fan_roll_r7.py`) calls `roll_one(..., full=False)` for both seeds. So seed 1 was rolled with the SAME arm
+  set as the banked dump and seed 0 was not. That the differing arm set (hence differing RNG consumption) is the
+  CAUSE of the s0 offset is **UNVERIFIED** -- consistent with, not isolated by, this evidence. Do not read the
+  s1 exact match as a reproducibility guarantee beyond the measured identity.
+
+**The inference-only lever replicates (MBR re-rank of the model own top-K; post-hoc, exploratory, NOT a registered claim).**
+Rule: `argmin_i sum_j p_j d(i,j)` over the top-K, `p = softmax(score / T)`; no GT, no ego state, no new network,
+so it is admissible at inference. 36-cell grid (3 scores x K{4,8,16,32} x T{0.5,1,2}); the cell is chosen on
+episode-half A and reported on half B (same 139 episodes -- NOT fresh data). Gain = selected - MBR (positive =
+MBR closer to GT), paired episode-cluster bootstrap on half B.
+
+| cell | seed | gain on half B | argmax(refined) - MBR |
+|---|---|---|---|
+| own cell: refined_logits, K 32, T 1 | s0 | +0.0130 [+0.0076, +0.0187] | +0.0095 |
+| own cell: sel_score, K 32, T 2 | s1 | +0.0173 [+0.0067, +0.0282] | +0.0103 |
+| s0 cell FIXED on the s1 fan (`--fixed-cell refined_logits,32,1`) | s1 | +0.0136 [+0.0073, +0.0202] | +0.0083 [+0.0036, +0.0129] |
+
+All-window reference for the fixed-cell s1 gain (NOT a held-out number): +0.0118 [+0.0081, +0.0161].
+* The MBR gain (13 to 17 mm) is ~7x the s0-vs-s1 difference in `selected` (1.8 mm): it is not inference noise.
+* The cell chosen on A is **not stable across seeds** in score or T (K = 32 is); the lever does not depend on
+  which near-tied cell wins, as the fixed-cell replicate shows.
+* Size check: MBR closes ~13 to 17 mm of a 163 mm gap (~8 to 10 %). It is a small, real, free gain -- not the
+  fix for the selection problem. `argmax(refined_logits)` already beats `selected` by 4 to 6 mm (SEP on both
+  rolls), i.e. part of the MBR gain is simply "do not use the head selector".
+* Closed-loop effect: NOT MEASURED. Per-family (four-family) scoring of the MBR pick: NOT YET DONE.
+
+**Instruments added / changed this segment.** `code/fan_seedcmp_x8.py` (new; paired s0-vs-s1 comparison, asserts
+identical window order, stamps sha256 of both fans). `code/fan_mbr_x8.py` gained `--fixed-cell score,K,T`
+(writes `cell_source`); the default path re-run on s0 reproduces the original numbers exactly
+(`ctl_refcv7_50400_mbr_s0_recheck.json`). Off-repo, on `D:/refcv7_eval_kit/fanctl/`: `s0/dump/fan_extras.npz`
+sha256 ff2d0f86b1e3a3f6ff6979b27d8dd5d7a819d1386117b2e971f60668f99ffcb8,
+`s1/dump/fan_extras.npz` sha256 81be3b94abcba89b4a74581b97c039b8fb037c2b8b3b1e67c4baff13b7d3ef4c (both MEASURED 2026-10-11).
+
+**Incident (logged for the class): a self-aliased copy truncated 10 files to 0 bytes.** `D:/Projects/TanitAD` and
+`E:\Projects\TanitAD` are ONE tree; `cp` between the two spellings opens the destination for write and truncates
+the very file it is reading. Detected by `wc -c` / `samefile`; recovered by replaying the generating commands
+(`fan_control_x8.py` rebuilt to 314 lines and its re-run equalled the banked JSON on 1,223 leaves), re-copying
+8 `raw/fanctl_x8` files from `D:/refcv7_eval_kit/fanctl/*` through the E: spelling only, and replaying
+`HANDOFF.md`. A targeted `find -type f -size 0` over this package found none left. Rule: never copy between the
+two spellings; verify any copy by byte count or hash. (`D:/refcv7_eval_kit` is a SEPARATE tree and safe.)
+
+**Doc-vs-raw conflict, restated (escalated; I do not edit `Project Steering/*`).** `GOALS_AND_CLAIMS.md` line
+12229 and `MODEL_REGISTRY.md` section 15.3 (row ~5300) label 0.1914 / 0.4728 / +0.2813 [+0.2127, +0.3543] /
+41.09 % as refcv7; they are **refc-base-30k** numbers (`ctl_repro_refc-base-30k.json`; `MODEL_REGISTRY` line ~3747
+publishes 0.4728 as REF-C-base ADE@2s). True refcv7 (this block, raw JSON): selected 0.2772, oracle 0.1143,
+sel_gap +0.1630, 44.17 %. The registry row still says the random-pick control is "not yet run".
+
+**Next levers (RULE ZERO) -- executed above or named with their blocker.**
+1. Inference-seed replicate -- EXECUTED (this block). 2. MBR pick -- EXECUTED, replicates.
+3. Closed-loop T1 test of the MBR pick -- BLOCKED on a pre-registration with both outcomes committed and on
+   fresh (non-A/B-half) episodes; unblock = Master Mind registers it. 4. Four-family scoring of the MBR pick --
+   UNBLOCKED, 0 GPU (needs the per-window picks written out; a small code change in `fan_mbr_x8.py`): next EvalFlyWheel item.
+5. A trained reranker over the fan -- BLOCKED on PI authorisation (new network + training compute).
+6. Training-seed replicate of refcv7 (the missing floor) -- BLOCKED on compute and a PI decision.
+7. Fix the FANCEIL numbers in GOALS_AND_CLAIMS / MODEL_REGISTRY -- owed by the Master Mind.
+8. Land this UNTRACKED package (`2026-09-28-refcv7-standard-tests/`) -- owed by the single committer; the ckpt,
+   both `fan_extras.npz` and the chain logs live only on `D:/refcv7_eval_kit`.

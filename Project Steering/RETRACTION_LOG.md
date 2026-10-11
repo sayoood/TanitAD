@@ -18002,3 +18002,26 @@ only been seen on a cheaper path (bf16 in-graph; a 30-step smoke at `--log-every
 ⇒ **Before a multi-arm launch, price EVERY periodic work item the argv switches on** (gs readings, in-run evals,
 checkpoints) **on the real precision path, times its frequency, and compare each interval to the chunk cap.** A smoke
 that never reaches the period of an instrument has not smoked it.
+
+### R34 (2026-10-11) - "refcv7's proposal fan at 50.4k: oracle-in-fan 0.1914 m vs selected 0.4728 m, gap +0.2813 [+0.2127, +0.3543], a >2x-better candidate on 41.09 % of windows" (GOALS `D-REFCV7-FANCEIL`, MODEL_REGISTRY §15.3, commit `235156d`): every figure is refc-base-30k's
+
+- **What is true (MEASURED, EvalFlyWheel X8, raw-reproduced to 4 dp).**
+  * All five figures are REF-C-base at step 29,999: 128 anchors, 881 windows / 40 val episodes.
+    Source: `taniteval/results/scaleab_refc-base-30k_vs_refc-xl-30k.json`.
+  * refcv7-r101-s0 @ 50,400 (ckpt md5 `b418d0fc…`; 4,754 windows / 139 episodes / 117 candidates; T0 diagnostic) reads
+    **0.1143 / 0.2772 / +0.1630 [+0.1446, +0.1825] / 44.17 %**; the inference-seed replicate reads 44.95 %.
+  * The row therefore overstated refcv7's selected ADE **1.71x** and its gap **1.73x**. The qualitative finding — the
+    fan holds much better plans than the pick — survives.
+  * The row also carried a wrong tier label ("T1-family open loop"); the raw stamp says T0 diagnostic.
+- **Fixed:** both steering files, in place, with the old figures kept inside "(corrected 2026-10-11: was …)" notes.
+  The verification package is `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-11-refc-base-30k-mislabel/`.
+- **What it would have cost.** The selector lever was being sized on a 0.28 m headroom that is really 0.16 m. X8 also
+  found that re-ranking by the model's own logits recovers only **0.004 m** of the true gap; the rest is a GT-peeking
+  ceiling.
+
+**Class:** *a number's ARM travelled by adjacency, not by artifact.* A MEASURED row for arm B was filled with arm A's
+banked figures. Every digit was right, so every figure-level check passed. Nearest existing classes: C4 (inherited
+without re-verification) and C6 (the contrast varied more than the label admits). Here the arm, step (29,999 vs
+50,400), window set (881/40 vs 4,754/139) and anchor count (128 vs 117) all changed under one name.
+⇒ **A MEASURED row must name its raw artifact path and its n (windows / episodes / candidates).** A row whose figures
+equal another arm's registered figures at 4 dp is a lint hit until its artifact is shown.
