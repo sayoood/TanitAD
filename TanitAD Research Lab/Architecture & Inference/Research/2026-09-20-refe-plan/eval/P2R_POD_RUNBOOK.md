@@ -76,3 +76,17 @@ Sum about 33-36 h on a first run, about 21 h when the labels come back from HF (
 
 After `ZZP2R_DONE`: pull `run/model_final.pt` and `run/summary.json` to the dev box, check the sha256, run R1 then R2 of the
 amendment. Stop the pod only after `ZZP2R_DONE` and the PI's say-so.
+
+## 6. The 2026-10-11 pod: what it measured, and what the first dry run fixed (Master Mind, MEASURED)
+- **The pod is below the P6-C spec on two axes.** cgroup **v1**, CPU quota 1105000/100000 = **11.05 vCPU** (`nproc` says 96);
+  memory limit 71 GB; `/workspace` 373 GB network volume (`dd` 8 GB at 1.2-1.3 GB/s), plus a 500 GB container disk that a
+  restart wipes. All data stays on `/workspace` (about 310 GB at peak, ESTIMATED from the volumes in section 5).
+  P2 fits. **P6 is marginal at 11 vCPU**: `p6_pod.sh` gives 7 label workers and G-LIVE-LAB decides on the pod.
+- **Dry run 1 REFUSED at restore:** `No module named 'httpcore'`. huggingface_hub 1.32.0 requires httpx and hf-xet, which the
+  frozen `--no-deps` lock never held. Fixed: 4 pins in `code/requirements_teacher_lock.txt`, and `pod_teacher_env.sh` now
+  imports `HfApi` and `hf_xet` in its import check, so the env stage fails instead of the restore.
+- **Dry run 2 REFUSED at restore:** `unexpected_root:logs`. The on-policy archive holds `sets/` `logs/` `pids/` `smoke_archive/`
+  (31 members, `tar -tv` on the pod); `p2r_sync.EXTRACT` listed only `sets/`, and the test fixture copied that assumption.
+  Fixed in both; a mutant that restores `{"sets"}` turns `test_p2r_chain.py` RED.
+- **cgroup v1:** `p2r_pod.sh` (relabel workers) and `pod_dataprep.sh` read only v2 `cpu.max`, so they would have used 96
+  cores. Both now fall back to v1 `cpu.cfs_quota_us`; the snippet read 11 on the pod.

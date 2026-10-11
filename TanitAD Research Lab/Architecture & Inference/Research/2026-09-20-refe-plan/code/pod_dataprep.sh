@@ -33,6 +33,10 @@ STAGES="${STAGES:-dbs calib pix rank0 aug score assemble gate}"
 CORES="$(nproc)"
 if read -r q per < /sys/fs/cgroup/cpu.max 2>/dev/null && [ "$q" != "max" ] && [ "${per:-0}" -gt 0 ]; then
   CORES=$(( q / per > 0 ? q / per : 1 ))
+# cgroup v1 (MEASURED 2026-10-11 on the P2 pod: no cpu.max, cfs 1105000/100000 = 11 cores while nproc said 96)
+elif { read -r q < /sys/fs/cgroup/cpu/cpu.cfs_quota_us; read -r per < /sys/fs/cgroup/cpu/cpu.cfs_period_us; } 2>/dev/null \
+     && [ "${q:-0}" -gt 0 ] && [ "${per:-0}" -gt 0 ]; then
+  CORES=$(( q / per > 0 ? q / per : 1 ))
 fi
 SHARDS="${SHARDS:-$(( CORES / 6 > 0 ? CORES / 6 : 1 ))}"
 THREADS="${THREADS:-$(( CORES / SHARDS > 0 ? CORES / SHARDS : 1 ))}"

@@ -68,6 +68,10 @@ import sys, nuplan, driverl
 dz = sys.argv[1]
 for m in (nuplan, driverl):
     assert m.__file__.startswith(dz), f"{m.__name__} imported from {m.__file__}, not {dz}"
+# the HF stack the chain's restore/sync/egress import from THIS venv (2026-10-11: a --no-deps lock without httpx
+# passed every check above and refused only at restore, "No module named 'httpcore'")
+from huggingface_hub import HfApi  # noqa: F401
+import hf_xet  # noqa: F401
 print("ZZOK imports from the shipped checkout ZZ")
 PYEOF
 
