@@ -9,7 +9,9 @@ CLAUDE.md, PI 2026-09-26 (BINDING).  Route, contract and every regression arm: e
         --gate-bank <d> --p2-gate-json <gate.json>
     # POD -- the chain, before every train.py launch:  exits 0 (ZZGATE-MATCHZZ) or 5 (ZZGATE-REFUSEDZZ)
     python launch_gate.py verify --token <PASS_*.json> --args "$ARGS" --pkg /workspace/refe-plan --profile refe_p2
-    # anywhere, instant -- what a profile refuses before a single check runs (the P6 profile refuses today)
+    # POD, P6 -- refe/p6_pod.sh: --gate-bank carves the smoke bank from rows whose D9 parts exist (gate_fixture.carve_p6_gate_bank), plus the three pod-run inputs
+    python launch_gate.py run --profile refe_p6 --pkg <pkg> --args "$ARGS" --out-dir <dir> --gate-bank <d> --gate-lab-json <lab.json>         --gate-mem-metrics <metrics.jsonl> --gate-egr-json <g_egr_result.json>
+    # anywhere, instant -- what a profile refuses before a single check runs
     python launch_gate.py refusals --profile refe_p6 --args "<the P6 argv>"
 
 Token: schema `tanitad.launch_gate/1` (gate_token.py), HMAC-SHA256 with a pod-local key; PASS only if every required check has usable PASS
@@ -48,15 +50,16 @@ PROFILES = {
     # SPEC_P6_PAPER_FAITHFUL.md section 5.  ⛔ REFUSES TODAY: --yaw-wrap / --nav-mode / --labeller are D5 / D6 / D1 and are NOT built, and the
     # trainer's metrics carry no pos / yaw / per-component BCE terms.  Flag and term NAMES are PROVISIONAL until the implementer lands them.
     "refe_p6": {**_BASE, "name": "refe_p6", "data_flags": ("--targets", "--images", "--calib", "--metric-cache"),
-                "suite": SUITE + [{"script": "test_p6_levers.py", "args": ["--fast"], "token": "ZZP6_PASS"}],
+                "suite": SUITE + [{"script": "test_p6_levers.py", "args": ["--fast"], "token": "ZZP6_PASS"},
+                                  {"script": "test_p6_chain.py", "token": "ZZP6CHAIN_PASS"}],
                 # G-LIVE-LAB / G-LIVE-MEM / G-EGR are POD-RUN: the gate consumes their instruments' output (--gate-lab-json / --gate-mem-metrics / --gate-egr-json)
                 "checks": ("G-HYG", "G-DVB", "G-LIVE", "G-CLOCK", "G-EVAL", "G-CKPT", "G-SUITE", "G-LIVE-LAB", "G-LIVE-MEM", "G-EGR"), "na_ok": (),
                 "live_terms": P6_TERMS,
                 "forbidden_flags": FORBIDDEN + ("--grow", "--grow-scenes", "--onpolicy-targets", "--init-from", "--pdm-labels", "--pdm-only",
                                                 "--scorer-mode", "--label-backend"),
-                # --yaw-wrap must be NAMED in the argv; its VALUE is the PI's open ruling P6-Y (on = wrapped, today's behaviour; off = the paper's literal L1).
-                # TODO(Master Mind): once the PI rules P6-Y, replace None with "on" or "off" so the gate asserts the ruling, not just the presence.
-                "required_flags": {"--scorer-sees-trunk": None, "--yaw-wrap": None, "--nav-mode": "command", "--labeller": "online",
+                # --yaw-wrap must be NAMED in the argv AND carry the PI's ruling P6-Y (2026-10-11): "off" = unwrapped yaw L1, the paper's literal reading (on = the wrapped
+                # error of P2 / SFT-4). The gate asserts the ruling, not just the presence: `--yaw-wrap on` is refused as a value mismatch.
+                "required_flags": {"--scorer-sees-trunk": None, "--yaw-wrap": "off", "--nav-mode": "command", "--labeller": "online",
                                    "--epochs": "25", "--batch": "4", "--accum": "64", "--lr": "2e-4", "--weight-decay": "0.01", "--amp": "bf16",
                                    "--score-w": "0.1"},
                 "provisional_flags": (),
@@ -129,7 +132,9 @@ def derived_argvs(prof: dict, argv: list, work: Path, gate_sets=None, gate_pdm=N
     b = _set(b, "--out", str(work / "build_run"))
     s = list(b)
     if gate_bank:
-        s = _set(_set(s, "--targets", gate_bank), "--scorer-targets", gate_bank)
+        s = _set(s, "--targets", gate_bank)
+        if (GT.flag_values(s, "--labeller") or ["bank"])[0] != "online":         # the online labeller reads no scorer-targets file
+            s = _set(s, "--scorer-targets", gate_bank)
     for flag in ("--epochs", "--grow-scenes"):
         if flag in s:
             i = s.index(flag)
@@ -316,10 +321,14 @@ def cmd_run(a) -> int:
     man = GT.read_json(pkg / GT.SHIP_MANIFEST) if (pkg / GT.SHIP_MANIFEST).is_file() else None
     commit = man.get("commit") if man else a.commit
     arm = os.environ.get("TANITAD_GATE_ARM")
-    if a.gate_bank and a.gate_sets and not Path(a.gate_bank).exists():
+    if a.gate_bank and not Path(a.gate_bank).exists():
         import gate_fixture as F
         src = (GT.flag_values(argv, "--targets") or [None])[0]
-        print("  carved the smoke bank:", F.carve_gate_bank(src, a.gate_sets, a.gate_bank), flush=True)
+        if (GT.flag_values(argv, "--labeller") or ["bank"])[0] == "online":        # P6: rows whose D9 parts exist (no on-policy sets in this profile)
+            mc = (GT.flag_values(argv, "--metric-cache") or [None])[0]
+            print("  carved the P6 smoke bank:", F.carve_p6_gate_bank(src, mc, a.gate_bank, a.gate_bank_n), flush=True)
+        elif a.gate_sets:
+            print("  carved the smoke bank:", F.carve_gate_bank(src, a.gate_sets, a.gate_bank), flush=True)
     run_checks(prof, argv, pkg, out, only=set(a.only.split(",")) if a.only else None, arm=arm, gate_sets=a.gate_sets, gate_pdm=a.gate_pdm,
                gate_bank=a.gate_bank, p2_gate_json=a.p2_gate_json, commit=commit, lab_json=a.gate_lab_json, mem_metrics=a.gate_mem_metrics,
                egr_json=a.gate_egr_json)
@@ -380,6 +389,7 @@ def main(argv=None) -> int:
             p.add_argument("--gate-sets")
             p.add_argument("--gate-pdm")
             p.add_argument("--gate-bank")
+            p.add_argument("--gate-bank-n", type=int, default=64, help="refe_p6: rows per targets_rank*.jsonl of the carved smoke bank (rows whose D9 parts exist)")
             p.add_argument("--p2-gate-json")
             p.add_argument("--gate-lab-json", help="refe_p6: diag_p6_labeller_identity.py --out (G-LIVE-LAB)")
             p.add_argument("--gate-mem-metrics", help="refe_p6: metrics.jsonl of a >= 200-micro-batch run on the real card (G-LIVE-MEM)")

@@ -107,3 +107,40 @@ def carve_gate_bank(src_targets: str, sets_dir: str, dst: str) -> dict:
     if not any(v for k, v in counts.items() if k.startswith("targets_rank")):
         raise RuntimeError(f"no target row matched any of the {len(keys)} gate sets (counts {counts}): the smoke bank would be empty")
     return {"keys": len(keys), "rows": counts}
+
+
+def carve_p6_gate_bank(src_targets: str, metric_cache: str, dst: str, n: int = 64) -> dict:
+    """POD, `--labeller online` (P6): the SMOKE bank. `carve_gate_bank` keys on the on-policy sets and does not fit a run whose labels come from the D9 metric cache;
+    here a row is kept only if ITS parts file exists -- `<cache>/<log>/<token>.pkl.xz`, or `<token>__lane_rank_<k>.pkl.xz` for a lane-rank twin (online_labeller.parts_path,
+    the very path the labeller opens) -- so every micro-batch of the smoke reaches the online score loss and G-LIVE-LAB's coverage is real.  At most `n` rows per
+    `targets_rank*.jsonl`, in file order; streams, never loads a file whole.  Raises when rank 0 yields nothing (a smoke on a bank the labeller cannot reach proves
+    nothing).  Returns {"rows": {file: kept}, "scanned": {file: n}, "no_parts": {file: n}}."""
+    import glob
+    import os
+    import online_labeller as OL
+    dst_p = Path(dst)
+    dst_p.mkdir(parents=True, exist_ok=True)
+    kept, scanned, no_parts = {}, {}, {}
+    files = sorted(glob.glob(os.path.join(src_targets, "targets_rank*.jsonl")))
+    for fp in files:
+        name = os.path.basename(fp)
+        k = s = np_ = 0
+        with open(fp, encoding="utf-8") as fh, open(dst_p / name, "w", encoding="utf-8", newline="\n") as out:
+            for ln in fh:
+                try:
+                    r = json.loads(ln)
+                except json.JSONDecodeError:
+                    continue
+                s += 1
+                if OL.parts_path(metric_cache, r["log_name"], r["token"], r.get("aug")).is_file():
+                    out.write(ln if ln.endswith("\n") else ln + "\n")
+                    k += 1
+                    if k >= n:
+                        break
+                else:
+                    np_ += 1
+        kept[name], scanned[name], no_parts[name] = k, s, np_
+    if not files or not kept.get("targets_rank0.jsonl"):
+        raise RuntimeError(f"no rank-0 row of {src_targets} has a parts file under {metric_cache} (kept {kept}, rows without parts {no_parts}): "
+                           "the P6 smoke bank would be empty")
+    return {"rows": kept, "scanned": scanned, "no_parts": no_parts}

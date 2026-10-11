@@ -181,7 +181,7 @@ def push(api, repo, repo_type, files, tag, chain_log=None, egress_log=None, name
 
 
 def gate(api, repo, repo_type, out_dir, chain_log=None, egress_log=None,
-         regression_repo="google/tanitad-egress-regression-must-fail", allowance_bytes=ALLOWANCE):
+         regression_repo="google/tanitad-egress-regression-must-fail", allowance_bytes=ALLOWANCE, ckpt=None):
     """G-EGR. PASS iff the gate JSON reaches `repo` (by the listing) AND a push to `regression_repo` is refused BY THE
     SERVER (reason `exception:...`). A refusal by our own pre-checks would prove nothing about the token."""
     out = Path(out_dir)
@@ -194,9 +194,25 @@ def gate(api, repo, repo_type, out_dir, chain_log=None, egress_log=None,
     ok_reg, r_reg = push(api, regression_repo, "model", [g], "G-EGR-REGRESSION", chain_log, egress_log,
                          names=["g_egr.json"], prefix="gate", allowance_bytes=allowance_bytes)
     refused = (not ok_reg) and r_reg.startswith("exception:")
-    passed = ok_main and refused
+    ck = None
+    if ckpt is not None:
+        # P6 (SPEC_P6 section 5): the first-checkpoint size check. `ckpt` is a REAL ckpt_last.pt of the launch configuration (the memory run writes one); it is pushed
+        # and its LISTING size is read independently of push()'s own verdict, so the gate can compare both against the local size.
+        cp = Path(ckpt)
+        ck_path = "gate/ckpt_last_probe.pt"
+        ok_ck, r_ck = push(api, repo, repo_type, [cp], "G-EGR-CKPT", chain_log, egress_log, names=["ckpt_last_probe.pt"], prefix="gate",
+                           allowance_bytes=allowance_bytes)
+        ck = {"path": ck_path, "source": cp.name, "local_size": cp.stat().st_size if cp.is_file() else None, "remote_size": None,
+              "push_ok": ok_ck, "reason": r_ck}
+        try:
+            ck["remote_size"] = _remote_sizes(api, repo, repo_type).get(ck_path)
+        except Exception as e:                                           # noqa: BLE001 -- recorded, and the gate then fails on the missing size
+            ck["reason"] = f"{r_ck}; listing failed: {type(e).__name__}"
+    passed = ok_main and refused and (ck is None or bool(ck["push_ok"]))
     res = {"check": "G-EGR", "ts": _ts(), "pass": passed, "main": {"repo": repo, "ok": ok_main, "reason": r_main},
            "regression": {"repo": regression_repo, "ok": ok_reg, "reason": r_reg, "refused_by_server": refused}}
+    if ck is not None:
+        res["ckpt"] = ck
     (out / "g_egr_result.json").write_text(json.dumps(res, indent=1), encoding="utf-8")
     line = f"{_ts()} {'ZZEGR_PASS' if passed else 'ZZEGR_FAIL'} main_ok={ok_main} regression_refused={refused}"
     _append(chain_log, line)
@@ -418,6 +434,7 @@ def main(argv=None):
     p.add_argument("--repo-type", default="model", choices=["model", "dataset"])
     p.add_argument("--out", required=True)
     p.add_argument("--regression-repo", default="google/tanitad-egress-regression-must-fail")
+    p.add_argument("--ckpt", default=None, help="P6: a real ckpt_last.pt to push as gate/ckpt_last_probe.pt; its local and LISTING sizes go into the result (G-EGR)")
 
     p = sub.add_parser("verify")
     p.add_argument("--token-file", default=None)
@@ -445,7 +462,7 @@ def main(argv=None):
                      author=a.author)
         return 0 if ok else 1
     if a.cmd == "gate":
-        return gate(api, a.repo, a.repo_type, a.out, a.chain_log, a.egress_log, a.regression_repo, a.allowance_bytes)
+        return gate(api, a.repo, a.repo_type, a.out, a.chain_log, a.egress_log, a.regression_repo, a.allowance_bytes, ckpt=a.ckpt)
     if a.cmd == "verify":
         return verify(api, a.repo, a.local, a.out_json, a.author)
 

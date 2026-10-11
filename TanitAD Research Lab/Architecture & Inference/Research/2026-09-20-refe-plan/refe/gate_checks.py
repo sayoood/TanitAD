@@ -927,10 +927,26 @@ def check_live_mem(mem_metrics, arm=None, rehearsal=False) -> dict:
     return verdict("G-LIVE-MEM", judge_mem(rows, arm=arm), {"rows": len(rows), "file_sha256": GT_.sha256_file(mem_metrics)}, arm=arm, rehearsal=rehearsal)
 
 
-def check_egr(egr_json, ckpt_sizes=None, arm=None, rehearsal=False) -> dict:
+EGR_CKPT_MIN_BYTES = 50_000_000      # MEASURED ckpt_last.pt of this model class: 228,234,301 B (SPEC_P6 section 4); a probe far below it proves nothing about the real push
+
+
+def check_egr(egr_json, ckpt_sizes=None, arm=None, rehearsal=False, require_ckpt=True) -> dict:
+    """G-EGR. The first-checkpoint size comes from `ckpt_sizes=(local, listing)` if given, else from the `ckpt` record `hf_egress.py gate --ckpt <ckpt_last.pt>` wrote into the
+    SAME json (so its sha256, bound into the token, covers the sizes too). `require_ckpt`: a P6 token needs that size check; a result without it FAILS."""
     import gate_token as GT_
     res = _consume(egr_json)
     if res is None:
         return verdict("G-EGR", [f"hf_egress.py gate output missing: {egr_json}"], {}, arm=arm, rehearsal=rehearsal)
     ls, rs = (ckpt_sizes or (None, None))
-    return verdict("G-EGR", judge_egr(res, ls, rs, arm=arm), {"result": res, "file_sha256": GT_.sha256_file(egr_json)}, arm=arm, rehearsal=rehearsal)
+    ck = res.get("ckpt") or {}
+    if ckpt_sizes is None and ck:
+        ls, rs = ck.get("local_size"), ck.get("remote_size")
+    reasons = judge_egr(res, ls, rs, arm=arm)
+    if require_ckpt:
+        if ls is None:
+            reasons.append("no first-checkpoint push recorded (hf_egress.py gate --ckpt <ckpt_last.pt>): SPEC_P6 section 5's size check was not made")
+        elif ls < EGR_CKPT_MIN_BYTES:
+            reasons.append(f"the pushed checkpoint is {ls} B < {EGR_CKPT_MIN_BYTES} B: not a real ckpt_last.pt of this model")
+        if ck and ck.get("push_ok") is not True:
+            reasons.append(f"the first-checkpoint push failed: {ck.get('reason')}")
+    return verdict("G-EGR", reasons, {"result": res, "file_sha256": GT_.sha256_file(egr_json)}, arm=arm, rehearsal=rehearsal)

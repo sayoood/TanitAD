@@ -226,7 +226,8 @@ def chk_profile_p6():
             "--labeller online --epochs 25 --batch 4 --accum 64 --lr 2e-4 --weight-decay 0.01 --amp bf16 --score-w 0.1 --out /w/run")
     prof = L.PROFILES["refe_p6"]
     ok(L.profile_refusals(prof, L.parse_args_string(good)) == [], L.profile_refusals(prof, L.parse_args_string(good)))
-    ok(L.profile_refusals(prof, L.parse_args_string(good.replace("--yaw-wrap off", "--yaw-wrap on"))) == [], "either yaw value is admissible until P6-Y is ruled")
+    rs_on = L.profile_refusals(prof, L.parse_args_string(good.replace("--yaw-wrap off", "--yaw-wrap on")))
+    ok(rs_on and any("requires --yaw-wrap off" in r for r in rs_on), ("PI ruling P6-Y (2026-10-11): unwrapped yaw; --yaw-wrap on is a value mismatch", rs_on))
     for bad, frag in ((good.replace("--yaw-wrap off ", ""), "--yaw-wrap"), (good.replace("--labeller online", "--labeller bank"), "--labeller"),
                       (good.replace("--nav-mode command", "--nav-mode goal"), "--nav-mode"), (good + " --grow", "FORBIDS"),
                       (good + " --label-backend synthetic", "FORBIDS"), (good.replace("--epochs 25", "--epochs 24"), "--epochs"),
@@ -525,7 +526,7 @@ MUTATIONS = [
     ("online_labeller.py", 'if r["sha"] != h["shas"][i]:', 'if False:', "stale_label_refused"),
     ("ckpt_io.py", '    if nav and nav != c.nav_mode:\n        c.nav_mode = nav\n', '', "ckpt_meta_nav_mode"),
     ("nav_command.py", "    if ang > GOAL_RULE_BEARING_RAD:\n        return LEFT", "    if ang > GOAL_RULE_BEARING_RAD:\n        return RIGHT", "nav_rule"),
-    ("launch_gate.py", '"--yaw-wrap": None, ', '', "profile_p6"),
+    ("launch_gate.py", '"--yaw-wrap": "off", ', '', "profile_p6"),
 ]
 
 
