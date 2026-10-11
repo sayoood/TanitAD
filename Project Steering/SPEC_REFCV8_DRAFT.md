@@ -1,6 +1,6 @@
 # SPEC_REFCV8 — pre-registration of the refcv8 run (REGISTERED by the Master Mind, 2026-10-11)
 
-**Status: REGISTERED (2026-10-11, Master Mind).** Written 2026-10-04 ~21:20 Berlin (19:20Z) by a design agent as a
+**Status: REGISTERED (2026-10-11, Master Mind); AMENDED by A1 (2026-10-11, the PI's rulings on the route and speed inputs and three baseline-citation corrections, before any refcv8 number exists; see the last section, `## A1`).** Written 2026-10-04 ~21:20 Berlin (19:20Z) by a design agent as a
 draft; the Master Mind's rulings of 2026-10-04 (§13a) and 2026-10-11 (this registration) are folded into the clauses they
 govern. The file keeps its name `SPEC_REFCV8_DRAFT.md` on purpose: 25 files at the tip cite that path (docstrings and
 tests of `taniteval/taniteval/{lead_metrics,ceil_obey,four_families,nav_compliance,night_luma}.py`, and FlyWheel and
@@ -56,7 +56,7 @@ this the default. §10.2 fixes the rule that could still turn it into a branch.
 
 | component | source | row |
 |---|---|---|
-| v9 per-frame labels: tactical actions + goals over [NOW+2 s, NOW+8 s] with constraints; per-frame nav; route checkpoint input | WP-A release (train md5 `f63ece410b725febb8a5242cf2b01d3c`, eval139 md5 `6b5c7f207cffc3b7eb3cd527fd433599`) | R8-1, R8-2, R8-3 |
+| v9 per-frame labels: tactical actions + goals over [NOW+2 s, NOW+8 s] with constraints; per-frame nav with its turn distance (no route checkpoint input: PI ruling 2026-10-11, A1) | WP-A release (train md5 `f63ece410b725febb8a5242cf2b01d3c`, eval139 md5 `6b5c7f207cffc3b7eb3cd527fd433599`) | R8-1, R8-2 (R8-3 NOT APPLICABLE, A1) |
 | tactical conditioning of fan generation and selection; listwise selector; constraint heads | WP-B `code/fix/` overlay, registered `SPEC_WPB.md` (sha256 `c952d4b4…`) | R8-4, X1 |
 | perception fixes F1 / F4 / F4b / ego-box mask / track-id-switch mask / z-h trust | WP-C, opt-in modules | R8-5 |
 | perception architecture levers B1–B4, M1, M5, M6, W1–W7 | WP-D design; entry decided by probes (§10.1) | R8-6 |
@@ -120,10 +120,13 @@ GT-turn / GT-straight classes on S-ROUTE and S-GRID follow the route package's S
 
 1. Its tier (§1) and its surface (§2.1) with n (windows, episodes).
 2. *"single training seed; training-seed floor at full scale unmeasured"* (§9).
-3. **Privileged inputs, named** (GATE_PROTOCOL §0.8): on PhysicalAI the per-frame nav and the route checkpoint are
-   derived from the ego's own future path. They are optimistic by construction. Every route number is quoted beside
-   its **RC-OFF** and **LEGAL** rows (§4.3, §6).
-4. The speed input: which channel was fed (N2 / N3 / the v8 future-max sidecar / unknown), §8 X3.
+3. **Privileged inputs, named** (GATE_PROTOCOL §0.8): on PhysicalAI the per-frame nav and its turn distance are
+   derived from the ego's own future path (the route checkpoint of the registration text is NOT USED, A1). They are
+   optimistic by construction. Every route number is quoted beside its **LEGAL** row (§6) and its **NAVSHUF** row
+   (§4.2); the registration text's **RC-OFF** row is NOT APPLICABLE (§4.3, A1).
+4. The speed input: which channel was fed (**the road-type label**, the A1 ruling, or the `unknown` row; N2 / N3 are NOT
+   USED), §8 X3. A label-fed number carries the stamp *"speed input: road-type label (PI 2026-10-11); LEAK reported,
+   not barred"*.
 5. The decision rule for map and box numbers (F1 thresholds, F4 gates, F4b NMS radius), refitted on refcv8's own
    TRAIN-DIAG pass (WP-C I4), never on eval.
 6. **Which pose clock** (X10): the trainer's in-run eval uses the corrected clock (`--pose-sync-sidecar`); the standalone
@@ -134,11 +137,14 @@ GT-turn / GT-straight classes on S-ROUTE and S-GRID follow the route package's S
 
 * **Vision-only inference** (PI 2026-08-03): labels may use ego, other agents, maps and future poses; inference
   receives vision + the admitted inputs only: measured v0 and past ego history at cycle time (PI 2026-09-02), the
-  supplied nav, the route checkpoint (PI R8-3), and the speed limit (PI R1, 2026-09-27).
+  supplied nav with its turn distance (PI 2026-10-11: "just give the nav command and the distance"; the route checkpoint
+  of PI R8-3 is NOT USED, A1), and the speed limit (PI R1, 2026-09-27) fed as the quantified road-type label (PI
+  2026-10-11, A1).
 * **Goal input ≠ situation classifier** (PI 2026-08-03): no situation-classifier output (TL tokens, YIELD, tac_SIT)
   enters the route checkpoint, the per-candidate tags φ_k, the allocation or the selection terms. WP-B pins this by
   `assert_no_situation_feed` and an interventional test (the RC tensor is bit-identical under a forced tactical
-  posterior). The tactical layer's own lat/lon posteriors conditioning the planner ARE the hierarchy the PI asked for
+  posterior; moot under A1, `--r8-no-rc`). The road-type speed label arrives as a sidecar FILE, not from a model forward;
+  that its construction touches no situation-classifier output is NOT re-verified here (OWED, A1.6 item 4). The tactical layer's own lat/lon posteriors conditioning the planner ARE the hierarchy the PI asked for
   (R8-4); they are a separate, declared path.
 * ⛔ Never inputs: `nav_t_next_s`, `nav_token_ttime`, `rcH_*`, any v9 TARGET field, any VLM token (WP-A
   `INTEGRATION.md` §3.2).
@@ -183,16 +189,26 @@ with the split decode, 4 / 4 windows bit-identical (same directory, `raw/r8_full
 No refcv8 training step runs without a PASS token from `stack/scripts/launch_gate.py`, profile **`refcv8`**, bound to
 the exact commit, argv sha256 and data-manifest sha256s. The profile (WP-B overlay, base tip `5388a43`) inherits every
 refcv7 rule and adds:
-* **required flags:** `--refcv8 --init-from --r8-v9-labels --r8-v9-labels-eval --r8-nav-from-v9 --r8-rc-variant
-  --join-defect-masks --grad-share-every --max-speed-input-v6 --r8-speed-input --pose-sync-sidecar`;
-* **required values:** `--r8-v9-md5 f63ece410b725febb8a5242cf2b01d3c`, `--r8-v9-eval-md5
-  6b5c7f207cffc3b7eb3cd527fd433599`, `--r8-v9-lat-variant a`, `--r8-rc-noise-along-m 2.0`, `--r8-rc-noise-lat-m
-  0.75`, `--r8-rc-dropout 0.3`, `--r8-nav-args-dropout 0.5`, `--r8-speed-unknown-p 0.45`, `--r8-alloc-emit-start
-  1000`, **`--w-r8-cons 0.05`**; `required_positive` carries `--w-r8-cons` and `--w-r8-v9-cons` (the v9 constraint
-  weight is set by the R8-RECIPE reading, §10.3; the smoke value is 0.05);
+* **required flags (as amended by A1, 2026-10-11):** `--refcv8 --init-from --r8-v9-labels --r8-v9-labels-eval
+  --r8-nav-from-v9 --r8-no-rc --join-defect-masks --grad-share-every --max-speed-input-v6 --r8-speed-input
+  --speed-max-sidecar-v6 --speed-max-sidecar-v6-eval --pose-sync-sidecar`;
+* **required values (as amended by A1):** `--r8-v9-md5 f63ece410b725febb8a5242cf2b01d3c`, `--r8-v9-eval-md5
+  6b5c7f207cffc3b7eb3cd527fd433599`, `--r8-v9-lat-variant a`, `--r8-nav-args-dropout 0.5`, **`--r8-speed-input label`**,
+  `--r8-speed-unknown-p 0.45`, `--r8-alloc-emit-start 1000`, **`--w-r8-cons 0.05`**; `required_positive` carries
+  `--w-r8-cons` and `--w-r8-v9-cons` (the v9 constraint weight is set by the R8-RECIPE reading, §10.3; the smoke value
+  is 0.05);
+* **no `--r8-rc-*` flag may appear in the launch argv** (A1: the route checkpoint is not used; `--r8-no-rc` is the only
+  RC-related token);
 * **forbidden levers:** the regression flags `--r8-derange-feed`, `--r8-rc-roll`, `--r8-roll-targets`,
-  `--r8-roll-speed-input`, and the v8 future-max sidecars `--speed-max-sidecar-v6` / `--speed-max-sidecar-v6-eval`
-  (refused by name, whatever the value; READ `stack/scripts/launch_gate.py`, profile `refcv8`).
+  `--r8-roll-speed-input` (READ `stack/scripts/launch_gate.py`, profile `refcv8`). The sidecars
+  `--speed-max-sidecar-v6` / `--speed-max-sidecar-v6-eval` are NOT forbidden under A1: they are REQUIRED, and only
+  through `--r8-speed-input label`, whose trainer check refuses any value outside the four road-type values
+  {30, 50, 100, 120} km/h (PI quantization requirement, §8.3);
+* **SUPERSEDED by A1 (registration-time text, kept as history; a launch from it is refused):** required flag
+  `--r8-rc-variant`; required values `--r8-rc-noise-along-m 2.0`, `--r8-rc-noise-lat-m 0.75`, `--r8-rc-dropout 0.3`;
+  and the v8 future-max sidecars `--speed-max-sidecar-v6` / `--speed-max-sidecar-v6-eval` listed as "refused by name,
+  whatever the value". **The gate profile `refcv8` in `stack/scripts/launch_gate.py` still carries the superseded
+  text and must be changed to match (OWED, A1.6): until it is, the gate and this SPEC disagree and the SPEC governs.**
 
 **This SPEC adds (binding on the launch argv):**
 1. **`--w-r8-cons 0.05` always**, and **`--w-r8-alloc-l1 1.0` whenever `--r8-n-alloc > 0`**. `_pin_refcv8` refuses
@@ -216,10 +232,16 @@ refcv7 rule and adds:
    argv carries `--grad-share-every 50 --grad-share-at 50`, i.e. exactly one gradient-share reading inside a 100-step
    smoke, and the smoke RECORDS that reading's wall-clock (§10.3 turns it into the schedule); a smoke that never reaches
    the reading is a REFUSAL, there is no `--accept-gs-unmeasured` escape.
-6. **The speed-input channel is named in the argv** (§8 X3): CLOSED as a check. The channel is `--r8-speed-input`
-   (source past-only), the smoke argv (`stack/ops/runs.d/refcv8-wpb-smoke.argv.json`) carries it (`n2`) with the unknown row,
-   and `--speed-max-sidecar-v6` is absent (203 tokens at the tip, 197 in the draft; the gate refuses the sidecar by name). A run that bypasses the gate and keeps the v8 sidecar
-   is stamped "future-ego speed oracle input (K12)" on every number, and X3 then reads FAILED (§8).
+6. **The speed-input channel is named in the argv** (§8 X3). **As amended by A1 this check is REOPENED:** the channel is
+   `--r8-speed-input label` (source: the road-type set-speed sidecar, `--speed-max-sidecar-v6` +
+   `--speed-max-sidecar-v6-eval`, with the unknown row at p 0.45). The smoke argv
+   (`stack/ops/runs.d/refcv8-wpb-smoke.argv.json`) carries `n2` and no sidecar (203 tokens at the tip, 197 in the
+   draft), so it predates A1 and a smoke on it is NOT a smoke of the ruled argv; it must be regenerated with `label`,
+   both sidecars and `--r8-no-rc` (OWED, A1.6).
+   *History, SUPERSEDED by A1 (the registration-time wording of this item):* "CLOSED as a check. The channel is
+   `--r8-speed-input` (source past-only) ... the gate refuses the sidecar by name. A run that bypasses the gate and keeps
+   the v8 sidecar is stamped "future-ego speed oracle input (K12)" on every number, and X3 then reads FAILED (§8)." Under
+   A1 the K12 stamp is replaced, for a launch through `--r8-speed-input label`, by the label stamp of §2.3 item 4.
 7. **The refcv7-50,400 four-family baseline row exists** (X8) before launch: CLOSED for S2 and S6 (§5.1, MEASURED
    2026-10-11, EvalFlyWheel `2026-10-11-r7base-fourfamily/`).
 8. **The recipe flags of the 2026-10-11 ruling are in the argv** (§10.3 "R8-WARMUP — CLOSED"): `--warmup 1000`,
@@ -329,12 +351,20 @@ distance and time" is therefore a **delivered, bar-less claim**: it is reported 
 
 ### 4.3 R8-3 — the route checkpoint INPUT (simulated navigation system)
 
+> **⛔ NOT APPLICABLE — A1 (PI ruling 2026-10-11).** The PI answered the route question (decision 11 / Q-A) with
+> *"just give the nav command and the distance."* The run carries `--r8-no-rc`: there is no route checkpoint at
+> training or at inference, so EVERY row of this section — the RC-ON / RC-OFF / RC-SHUF / E-1 eval rows, bars 1–3, the
+> controls, the regression row and the outcome table — reads NOT APPLICABLE and is not scored. The text below is the
+> registration-time text, kept as the history of what was registered; it binds nothing. The route input is the per-frame
+> nav command and its turn distance (§4.2). Knock-on edits: §2.3, §2.4, §3.2, §4.4.4 (iv), §6, §9, §11, §13, §14, A1.
+
 **Variant fixed by the registered WP-A follow-up:** RC-A50, fed **with** the certified training noise (σ_along 2.0 m,
 σ_lat 0.75 m) and dropout 0.3. E2′ PASS (Δ −0.035 vs the road-level route, bar ≤ 0.01, certified instrument C1
 −0.0045, C2 0.997, O1 0.379) and E3′ PASS on both populations (WP-A `RESULT.md` §S2.7, `raw/s2_e2prime.json`;
 MEASURED, label-level). ⚠️ This rests on the Master Mind's PROVISIONAL ruling that road-geometry speed information is
-admissible inside a route input. **PI confirmation pending (asked 2026-10-11); registered with the default (admissible), §11.** If the PI overrules, the run carries `--r8-no-rc`
-and every row below reads NOT APPLICABLE.
+admissible inside a route input. **PI RULED 2026-10-11 (A1): no route checkpoint; the run carries `--r8-no-rc` and every row below reads NOT
+APPLICABLE.** *(Registration-time wording, SUPERSEDED: "PI confirmation pending (asked 2026-10-11); registered with the
+default (admissible), §11.")*
 
 * **(a) Measure.** On S-ROUTE, sampler seeds 0 and 1, four eval rows of the SAME refcv8 checkpoint (no training):
   * **RC-ON** (the model as configured);
@@ -477,7 +507,7 @@ R8-4 has four parts, each with its own bars. **(iv) route following is the decid
 #### 4.4.4 (iv) Route following — THE DECIDING BAR
 
 * **(a) Measure** (`tactical_conditioning.route_following` ≡ the route package's `route_metrics`): on S-ROUTE,
-  RC-ON row (the model as configured), sampler seeds 0 and 1: turn direction-correct pick (terminal-heading class,
+  the model as configured (the registration text's "RC-ON row"; under A1 there is no RC), sampler seeds 0 and 1: turn direction-correct pick (terminal-heading class,
   τ 10.35°) on GT-turn windows; heading within 15° of GT at 6 s on GT-turn windows; GT-straight ADE 0–6 s. Tier T1.
 * **(b) Baseline (refcv7-50,400, MEASURED):** S-ROUTE direction **0.8153** [0.730, 0.885] (seed 0), straight ADE 1.678
   m, straight direction 0.963 (`a6_dense_score.json`, V0); S-ROUTE heading-15 **0.505** [0.432, 0.579] seed 0 / 0.510
@@ -487,19 +517,23 @@ R8-4 has four parts, each with its own bars. **(iv) route following is the decid
   2. heading within 15° **≥ 0.70**;
   3. GT-straight ΔADE vs refcv7 **≤ +0.05 m** with CI upper **≤ +0.10 m**;
   4. the **RC-OFF** row also clears 1 and 2 at **≥ 0.90 / ≥ 0.60** (route following must not live only in the
-     privileged input; §4.3).
+     privileged input; §4.3). **NOT APPLICABLE as a separate row under A1:** there is no RC, so the RC-OFF row IS the
+     model as configured, and its literals ≥ 0.90 / ≥ 0.60 are implied by bars 1 and 2 (≥ 0.95 / ≥ 0.70) on the same
+     windows. Bars 1–3 keep their literals: §11's phrase "bar 4 becomes the main route row" is read as "the main row is
+     the one with no RC", NOT as "the thresholds relax". The privileged-input guard bar 4 carried is read by the NavSim
+     LEGAL row (§6.2); a nav-token-only or nav-args-OFF eval row on PhysicalAI would be a NEW bar and is NOT added here.
 * **(d) Estimator.** §2.2. The comparison is two single training runs (§9): a PASS is worded "the refcv8 run vs the
   refcv7 run", never "lever X lifts route following".
 * **(e) Controls.** The fan contains a direction-correct candidate (refcv7: 1.000) and the random-in-reach pick reads
   chance (refcv7 grid 0.385, `route_analysis.json`); oracle-117 reported. B1 / B3 bounds reproduce (D0 C1 form).
-* **(f) Deliberate regression.** Eval-time: RC-SHUF + NAVSHUF + CTRL-SHUF together (the "all route evidence
-  deranged" row) must FAIL bar 1. Lever level: the ladder's `V-R8d` must fail B-RECIPE.
+* **(f) Deliberate regression.** Eval-time: NAVSHUF + CTRL-SHUF together (the "all route evidence deranged" row; the
+  registration text's RC-SHUF third member does not exist under A1) must FAIL bar 1. Lever level: the ladder's `V-R8d` must fail B-RECIPE.
 * **(g) Outcome.**
 
 | reading | means | next arm |
 |---|---|---|
 | 1–4 PASS | R8-4 met: the conditioned planner follows the route | — |
-| 1–3 PASS, 4 FAIL | route following lives in the privileged RC | RC dropout 0.5 and the LEGAL schedule (§4.3 g); NavSim LEGAL row decides severity |
+| 1–3 PASS, 4 FAIL — NOT APPLICABLE under A1 (no RC, no separate bar 4) | route following lives in the privileged RC | RC dropout 0.5 and the LEGAL schedule (§4.3 g); NavSim LEGAL row decides severity |
 | 1 FAIL, fan-contains ≥ 0.99 | the pick loses a turn the fan holds (refcv7's D_core +0.159) | X1: per-candidate sub-score critics (`--w-r8-subscore`), then the terminal-heading constraint in selection (D0c: ≤ 10–15° reaches the bars by re-selection alone) |
 | 2 FAIL with 1 PASS | direction right, geometry wrong (over/under-steer, D6 classes) | the heading constraint (CONS-HEAD) and the curvature family; then yaw augmentation (UNREGISTERED PROPOSAL, §4.3) |
 | 3 FAIL | straight driving pays for turning | condition dropout up; read NAV-PREMATURE (§4.2) |
@@ -623,9 +657,14 @@ AND nuplan_drive), inference seeds 0 and 1; training variance untested (§9).
 |---|---|---|
 | nav token | NavSim's bare `driving_command` mapped: left → TURN_L, forward → FOLLOW, right → TURN_R, unknown → FOLLOW (WP-A `INTEGRATION.md` §5) | OUR announced token re-derived from the scene route's lane connectors (a junction connector whose heading change meets `is_turn`'s 15°) |
 | nav args (turn distance, angle) | none: `nav_args_known = 0` | from the route geometry (distance along the route centreline) |
-| route checkpoint | none: `route_cp_valid = 0` | the centreline point at arc L = 50 m from the metric-cache route |
+| route checkpoint | none: `route_cp_valid = 0` | NOT APPLICABLE under A1 (the model has no RC input; registration-time cell: the centreline point at arc L = 50 m from the metric-cache route) |
 | speed input | **`unknown` row** (default; §13 Q3): NavSim's `AgentInput` carries ego statuses, cameras and lidars only (`navsim/common/dataclasses.py:150-155`, INHERITED via WP-A INTEGRATION §5); a past-only N2 needs 20 s of ego history the agent does not receive | the refcv7 suite's map speed limit (`max_speed_input`, "map") |
 | frames, v0, ego history | as the refcv7 NavSim bridge (`refcv6_bridge` functions, imported unchanged) | same |
+
+**A1 (2026-10-11):** the model is trained with the road-type label as its speed input (§8.3). NavSim carries no such
+label, so the LEGAL row feeds the `unknown` row the model is trained on at p 0.45 (unchanged). The PRIVILEGED speed cell
+("map") is unchanged as written; how a map limit is mapped onto the four road-type values is a bridge detail owed by the
+EvalFlyWheel, and the row stays diagnostic, never a bar.
 
 ⚠️ **A deliberate mismatch, stated on every NavSim number:** NavSim's command also fires on curves (any \|y\| ≥ 2 m at
 20 m ahead) and carries no distance; the v9 token is announced junction turns only, with distance. The nav-args
@@ -638,8 +677,8 @@ The gap PRIVILEGED − LEGAL is reported with its paired CI. It is the price of 
 
 | bar | statement | refcv7 baseline (MEASURED, `navsim/raw/milestones/step*/BARS.json`; the refcv7 A1 arm fed the MAP speed limit, so it is NOT a legal-row baseline) |
 |---|---|---|
-| **BAR-R8-N1** (navtest, FULL 12,146 tokens) | PDMS(refcv8 LEGAL) > STOP, paired interval excluding 0, margin > 2× the full-split inference floor | step 30,000: **71.8849** vs STOP 61.8202, Δ +0.1006 [+0.0829, +0.1178], PASS; step 5,000: 65.5976, PASS. Step 50,400, LEGAL inputs (`R7_VMAXOFF`, Thor backend): PDMS **70.2048** over 12,146 tokens / 136 logs (`navsim/raw/milestones/step50400/thor_scores/navtest/summary_navtest_vmaxoff_legal.THOR.json`); the paired interval vs STOP at 50,400 is owed (zero GPU from the banked CSVs; UNVERIFIED whether done) |
-| **BAR-R8-N2** (navhard, official two-stage EPDMS) — **the decisive NavSim bar** | EPDMS(refcv8 LEGAL) > max(STOP, CV, ECHO); paired interval vs STOP excluding 0; margin > 2× the seed floor | step 30,000: **0.2269** vs STOP 0.2985, Δ −0.0716 [−0.1112, −0.0346], **FAILED**; step 5,000: 0.1624, FAILED. 50,400 LEGAL (`R7_VMAXOFF`, Thor): `official_two_stage_EPDMS` **0.1987** (`thor_scores/THOR_RUNS.md` prints it ×100 as 19.8729; key `official_rows.extended_pdm_score_combined` of `thor_scores/navhard/summary_navhard_vmaxoff_legal.THOR.json`), set against the dev-box STOP 0.2985: a mixed-backend comparison, admissible only under the Thor-backend policy and stated as mixed |
+| **BAR-R8-N1** (navtest, FULL 12,146 tokens) | PDMS(refcv8 LEGAL) > STOP, paired interval excluding 0, margin > 2× the full-split inference floor | step 30,000: **71.8849** vs STOP 61.8202, Δ +0.1006 [+0.0829, +0.1178], PASS; step 5,000: 65.5976, PASS. Step 50,400, LEGAL inputs (`R7_VMAXOFF`, Thor backend): PDMS **70.2048** over 12,146 tokens / 136 logs (`navsim/raw/milestones/step50400/thor_scores/navtest/summary_navtest_vmaxoff_legal.THOR.json`); the paired interval vs STOP at 50,400 is BANKED (MODEL_REGISTRY §15.4.1, MEASURED, re-read from the raw `pairs.R7_VMAXOFF__minus__*` of the same `summary_navtest_vmaxoff_legal.THOR.json`): LEGAL PDMS 70.2048 [68.55, 71.82], paired vs STOP **+8.3846 [+6.36, +10.24]**, separated (STOP 61.8202; MIXED-BACKEND: model scored on Thor, floors on the dev box, admitted under the backend policy). *Correction (A1.4): the registration text called this interval "owed".* |
+| **BAR-R8-N2** (navhard, official two-stage EPDMS) — **the decisive NavSim bar** | EPDMS(refcv8 LEGAL) > max(STOP, CV, ECHO); paired interval vs STOP excluding 0; margin > 2× the seed floor | step 30,000: **0.2269** vs STOP 0.2985, Δ −0.0716 [−0.1112, −0.0346], **FAILED**; step 5,000: 0.1624, FAILED. 50,400 LEGAL (`R7_VMAXOFF`, Thor): `official_two_stage_EPDMS` **0.1987** (`thor_scores/THOR_RUNS.md` prints it ×100 as 19.8729; key `official_rows.extended_pdm_score_combined` of `thor_scores/navhard/summary_navhard_vmaxoff_legal.THOR.json`), set against the dev-box STOP 0.2985: a mixed-backend comparison, admissible only under the Thor-backend policy and stated as mixed; the paired interval vs STOP is banked: −0.0998 [−0.1383, −0.0627], separated (MODEL_REGISTRY §15.4.1) |
 | **BAR-R8-N3** (warmup, S2-EPDMS-u) | > max(CV, STOP, ECHO), margin > 2× the seed floor | step 30,000: 0.5224 vs STOP 0.5212, NOT PROVEN; step 5,000: FAILED |
 | **BAR-R8-N4** (vs refcv7, same inputs) | navtest PDMS(refcv8 LEGAL) − PDMS(refcv7-50,400 LEGAL) > 0, separated | **refcv7-50,400 through the LEGAL inputs (MEASURED, Thor backend; the `R7_VMAXOFF` arm: bare command, unknown speed row, no route checkpoint, no turn distance):** navtest PDMS **70.2048**; navhard `official_two_stage_EPDMS` **0.1987** (both summaries are labelled "BAR-R8-N4 baseline"). Cross-backend (Thor vs dev box) is policy-admitted; the dev-box row is pending and not required |
 
@@ -668,7 +707,7 @@ the panel is VOID.
 | N1–N3 PASS on LEGAL | refcv8 beats STOP on the official navhard metric with leaderboard-legal inputs; the leaderboard examination with the PI may start | — |
 | N2 FAIL, D6 classes dominated by LATERAL-DRIFT / ROUTE-FOLLOWING / OVER-STEER | the steering-geometry failure persists. The D6 P3 ranking says the route / lateral lever (+0.113 EPDMS ceiling) exceeds the whole deficit to STOP (−0.072); speed alone (+0.061) does not | P1′ (`SPEC_P1P2_A2_P1PRIME.md`, registered) re-run on the refcv8 checkpoint decides selection vs generation: the fan holds a DAC-clean candidate ⇒ a drivable-area sub-score critic from the 10 cm map in selection (X1 family); not in the fan ⇒ generation (dense turn labels + the heading constraint) |
 | N2 FAIL, NC-zero dominated by front collisions with the plan faster than the reference | the longitudinal commitment failure persists (D6 P3: a perfect speed fix clears 46.0 % of navhard NC-zero) | X7: the FOLLOW lead gap / time gap from v9 as the longitudinal condition, plus a speed-profile critic in selection (X1) |
-| PRIVILEGED PASS, LEGAL FAIL | the model needs the privileged route | the RC-dropout / LEGAL schedule lever (§4.3 g) |
+| PRIVILEGED PASS, LEGAL FAIL | the model needs the privileged route | the nav-args dropout / LEGAL schedule lever (`--r8-nav-args-dropout`, already 0.5; an UNREGISTERED proposal): the §4.3 (g) RC-dropout lever does not exist under A1 |
 | R8_BLIND passes | the panel cannot see the frames | VOID |
 
 ---
@@ -818,14 +857,35 @@ the outcome.
 * **(g) Outcome.** PASS ⇒ the copycat bias is gone. FAIL ⇒ X2b (the prior-free sampler group) if not in the run; if in,
   read where the wrong picks come from (prior group vs prior-free group).
 
-### 8.3 X3 — a past-only speed input with a trained "unknown" row, and the ceiling on the emitted plan
+### 8.3 X3 — the speed input (A1: the road-type label) with a trained "unknown" row, and the ceiling on the emitted plan
+
+> **A1 (PI ruling 2026-10-11) — the SOURCE of the speed channel is the road-type label; LEAK is REPORTED, not a bar.**
+> **The PI, verbatim (spelling kept):** *"yes use the quantified lbel as input, it is not a training signal, it the maximal
+> wished speed. it is ok that it is matching the future speed in some cases since it also must be achieved in the future.
+> It is important to assure the road type quantization and avoid the exacvt value of the future speed as target speed."*
+> * **Channel:** `--r8-speed-input label` feeds the `--max-speed-input-v6` channel from refcv7's 4-way road-type
+>   set-speed sidecar {30, 50, 100, 120} km/h (`--speed-max-sidecar-v6` train, `--speed-max-sidecar-v6-eval` eval; the
+>   description of the sidecar is INHERITED from the Master Mind's brief, not re-verified here). The trained unknown row
+>   is kept (`--r8-speed-unknown-p 0.45`): NavSim carries no label. N2 and N3 are NOT used (PI decision 2 resolved).
+> * **Quantization guard:** the trainer REFUSES any sidecar value outside the four road-type values, so the exact future
+>   speed is never the input. A launch that feeds a speed sidecar by any other route is outside this ruling.
+> * This OVERRULES the Master Mind's ruling Q5 (§13a), which refused the sidecar as a future-speed leak (D4 LEAK 0.238
+>   against the 0.05 bar). **The LEAK measure stays REPORTED** (bar (a)(1) below: the D4 instrument's reading for the
+>   channel actually fed, beside its controls) **but is no longer a bar**: the PI accepts the correlation because the
+>   wished speed "also must be achieved in the future". The 0.238 is refcv7's per-clip reading (MEASURED, D4); the reading
+>   for the channel as fed under `label` is produced by the same instrument at the launch gate (OWED).
+> * **Unchanged bars:** CEIL-OBEY ≤ 0.01 (the emitted plan obeys the fed ceiling), VMAX-SHUF and UNKNOWN, i.e. (c)(2)–(4).
+> * **Stamp:** every speed-family number carries *"speed input: road-type label (PI 2026-10-11); LEAK reported, not
+>   barred"*, which replaces the K12 oracle stamp for this channel.
+>
+> The paragraph below is the registration-time text. Where it names N2 / N3 or the LEAK bar it is SUPERSEDED by this block.
 
 **BUILT (WP-B L1, `badb582`; `TanitAD Research Lab/Architecture & Inference/Research/2026-10-11-r87-xitems-status/R87_STATUS.md`: 143 tests pass, MEASURED).** `--r8-speed-input n2|n3`
 with a trained unknown row (p 0.45); the v8 future-max sidecar is refused by the trainer and by the gate by name. PI
-decision 2 (N2 vs N3) is PI-pending (asked 2026-10-11): the SPEC registers N2 (§11). **The LEAK bar is read on the
-encoding in the launch argv.** Both are MEASURED: **0.0193** (4-way bins fed) and 0.0348 (8-step encoding,
+decision 2 (N2 vs N3) was PI-pending at registration (asked 2026-10-11) and is RESOLVED by A1 (the label, above; §11). **The
+LEAK bar is read on the encoding in the launch argv** (registration-time wording; under A1 the LEAK reading is reported). Both are MEASURED: **0.0193** (4-way bins fed) and 0.0348 (8-step encoding,
 `--r8-speed-enc8`), against the 0.05 bar. By the PI ruling of 2026-10-11 the ladder stops after 11 runs and L4b is NOT
-run, so `--r8-speed-enc8` is OUT of refcv8 (§10.0): the launch argv feeds the 4-way bins and bar 1 reads 0.0193.
+run, so `--r8-speed-enc8` is OUT of refcv8 (§10.0): the launch argv feeds the 4-way bins; the 0.0193 above was bar 1's registered reading for the then-planned past-only channel (SUPERSEDED by A1: bar 1 is no longer a bar).
 * **(a) Measure.** (1) **LEAK** = the D4 instrument's recovered share of future-speed information (OOF R², 6-s future
   max) for the channel actually fed; (2) **CEIL-OBEY** = the violation share (lower is better; the code's `obey_rate` is its complement and is not the bar) of S-ROUTE windows **with a FINITE fed ceiling** whose EMITTED plan's max speed
   exceeds the fed finite ceiling by > 0.5 m/s, counted on **NON-exempt** violations (the exempt-row rate is reported beside it and never folded in); (3) **VMAX-OFF** and **VMAX-SHUF** eval rows (input removed / taken
@@ -836,16 +896,19 @@ run, so `--r8-speed-enc8` is OUT of refcv8 (§10.0): the launch argv feeds the 4
   window oracle 56.98 %. CEIL-OBEY: refcv7 as launched did not apply the ceiling to the emitted plan (SPEC_REFCV7 §26.1);
   110 / 2,059 reel windows exceeded it (INHERITED, PLAN X3). The unknown row: never trained in refcv7, fed on 45 % of
   navtest tokens (INHERITED, D4 / NavSim).
-* **(c) Bars.** (1) **LEAK ≤ 0.05** for the fed channel; (2) **CEIL-OBEY ≤ 0.01** on the non-exempt share (bar key `bar_met_nonexempt` — name per hold_instr); (3) VMAX-SHUF − VMAX-OFF on speed
+* **(c) Bars.** (1) **LEAK — REPORTED for the fed channel, NO BAR (A1)** (registration-time bar, SUPERSEDED: LEAK ≤ 0.05);
+  (2) **CEIL-OBEY ≤ 0.01** on the non-exempt share (bar key `bar_met_nonexempt` — name per hold_instr); (3) VMAX-SHUF − VMAX-OFF on speed
   MAE 2–6 s **not separated better** (a shuffled limit must not help); (4) UNKNOWN − known on speed MAE 2–6 s **≤ +0.10
   m/s** (CI upper ≤ +0.20).
 * **(d)** §2.2 for (2)–(4); (1) is the D4 census instrument.
 * **(e) Control.** The D4 instrument reads the window oracle at 0.5698 and "no input" at 0.0 (MEASURED).
 * **(f) Deliberate regression.** VMAX-SHUF (bar 3).
-* **(g) Outcome.** PASS ⇒ the speed channel is admissible and used as a limit. **If the launch keeps the v8 sidecar,
-  X3 reads FAILED on bar 1 (0.238 > 0.05) at launch**, and every speed-family number carries the K12 oracle stamp; the
-  next arm is a re-launch on the gate-admitted argv (the N2 / N3 wiring is built with the unknown row at p 0.45; the information-control rung V-VSHUF is not run, §10.0) — a re-launch
-  decision for the PI.
+* **(g) Outcome.** PASS (bars 2–4) ⇒ the speed channel is admissible and used as a limit. *History, SUPERSEDED by A1:*
+  "If the launch keeps the v8 sidecar, X3 reads FAILED on bar 1 (0.238 > 0.05) at launch, and every speed-family number
+  carries the K12 oracle stamp; the next arm is a re-launch on the gate-admitted argv (the N2 / N3 wiring is built with
+  the unknown row at p 0.45; the information-control rung V-VSHUF is not run, §10.0) — a re-launch decision for the PI."
+  Under A1 the sidecar IS the ruled source (through `--r8-speed-input label`), there is no bar 1, and the LEAK value is
+  reported, not a FAILED.
 
 ### 8.4 X4 — loss budget from measured gradient shares; label-state isolation
 
@@ -901,15 +964,32 @@ regression and outcome table: §6.2.
   read as conditioning on the human's 1 s gap."** Sensitivity rows, never the bar: `share_incl_lost_lead` (the plan lost
   the lead) and the share over ALL lead windows. **Progress control:** `lead_progress_ratio` = the plan's along-track
   distance at the last instant over the human's, on the lead windows; STOP reads exactly 0 on it, and the hold-v0 and
-  echo rows are printed beside it. Tier T1 open loop. Instruments: `share_of_at_risk` (with its episode-cluster CI)
+  echo rows are printed beside it. **[A1.4: this sentence is the registration-time paraphrase. The registered instrument
+  is `taniteval/taniteval/lead_metrics.py::lead_progress` (MM ruling 2026-10-11): a per-window ARC-LENGTH ratio over the
+  AT-RISK windows (human arc ≥ `min_human_arc_m`), each ratio clipped at 1.0 and then averaged = `lead_progress_ratio_clipped`;
+  the bar (c) reads that clipped value (MODEL_REGISTRY §15.4.4).]** Tier T1 open loop. Instruments: `share_of_at_risk` (with its episode-cluster CI)
   and `lead_progress_ratio` in `taniteval/taniteval/lead_metrics.py` (names per hold_instr).
 * **(b) Baseline (refcv7-50,400, MEASURED 2026-10-11, S6;** `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-11-r7base-fourfamily/`
   `RESULT.md` §4, `raw/lead_viol_s{0,1}.json`**).** `share_of_at_risk` **0.0590 [0.0272, 0.1002]** (seed 0) / 0.0602
   [0.0295, 0.0977] (seed 1) over **830** at-risk windows (1,151 lead windows); the share over all lead windows 0.0426
   [0.0197, 0.0734] (49 / 1,151) / 0.0434 [0.0217, 0.0715]; the plan lost the lead on 28 windows (`share_incl_lost_lead`
-  0.0652 / 0.0660). Progress ratio **1.108** (seed 0) / 1.104: the baseline is not bought by braking. Controls: STOP
-  reads 0.0000 (progress 0.000); hold-v0 0.0765; echo `ha0_ext` 0.0313 (`share_of_at_risk` 0.0434); human-as-plan reads
-  0 by construction. refcv7 is not better than its echo here (paired +0.0113 [−0.0074, +0.0352], not separated).
+  0.0652 / 0.0660). **The "progress ratio" 1.108 (seed 0) / 1.104 is the UNCLIPPED `mean_progress_ratio_plan_over_human`** (1.1078 / 1.1040 in
+  `r7base_stageB.py`'s output: a mean over ALL 1,151 lead windows of plan x(6 s) / human x(6 s)), **NOT the registered
+  `lead_progress_ratio`.** **The registered clipped at-risk baseline value is NOT YET COMPUTED** (a CPU work item in
+  progress, MODEL_REGISTRY §15.4.4), so "the baseline is not bought by braking" rests on the unclipped quantity only (707
+  of the 830 at-risk windows at a ratio ≥ 0.9, seed 0). **UPDATE 2026-10-11 (A1.4 closed, MEASURED, landed `9a9561e`):** the
+  registered `lead_progress_ratio_clipped` on the 830 at-risk windows reads **0.9539 [0.9351, 0.9698]** (seed 0) / **0.9530
+  [0.9341, 0.9692]** (seed 1), unclipped 1.1506 / 1.1453; `lead_viol_verdict` ADMISSIBLE-BAR-PENDING-BASELINE at both seeds;
+  hold-v0 0.8996 (INADMISSIBLE-CRAWL, CI straddles 0.90), echo 0.9265, STOP 0.0000 (episode-cluster bootstrap, 63 episodes;
+  `raw/leadprog_s6_s{0,1}.json`, MODEL_REGISTRY §15.4.4). The baseline's low LEAD-VIOL is therefore not bought by braking
+  on the registered instrument. **Controls, BOTH denominators, labelled** (MODEL_REGISTRY
+  §15.4.4; raw `lead_viol_s{0,1}.json`): STOP reads 0.0000 on both (progress 0.000); hold-v0 reads **0.0765 over ALL
+  lead windows** and **0.1060 over the AT-RISK windows**; echo `ha0_ext` reads **0.0313 over ALL lead windows** and
+  **0.0434 over the AT-RISK windows**; refcv7's own reads 0.0426 over all lead windows and 0.0590 over the at-risk
+  windows (seed 0). The bar and the headline are the AT-RISK column: compare arms only within one denominator. Human-as-plan
+  reads 0 by construction. refcv7 is not better than its echo here (paired +0.0113 [−0.0074, +0.0352], not separated) —
+  that paired read is on the ALL-lead-window share; the paired read on the at-risk denominator, which the bar uses, is not
+  yet formed.
   Inference floor `|s0 − s1|` 0.0009. S2 is nearly blind (5 / 8 violations in 1,188 lead windows; `share_of_at_risk`
   0.0054 / 0.0086 over 927 at-risk windows): reported, not barred. Context (MEASURED): refcv7's agent store scope x ≤
   61 m excluded 84 % of joined agents (D4); NavSim navhard NC-zero is 94.8 % front collisions (D6). **The lead set is the
@@ -920,7 +1000,8 @@ regression and outcome table: §6.2.
   (0.5–6 s) for all 4,754 windows, both seeds; the baseline above was produced on the dev-box CPU with no GPU. The
   question "Q-E" is therefore closed, not PI-level. The refcv8 battery dump must keep the same full 8-slot plan.
 * **(c) Bar.** On S6, at both inference seeds: refcv8 − refcv7 on `share_of_at_risk` **< 0, separated** (paired), AND
-  `lead_progress_ratio` **≥ 0.90** for refcv8 (STOP fails it by construction: a drop bought by braking does not count);
+  `lead_progress_ratio_clipped` **≥ 0.90** for refcv8 (the registered decision reading, `lead_metrics.lead_viol_verdict`;
+  STOP fails it by construction: a drop bought by braking does not count);
   and the LONGITUDINAL family carries the distance-keeping metrics with n (completeness).
 * **(d)** §2.2; at-risk windows and clips printed; strata below the UNPOWERED threshold carry no verdict.
 * **(e) Control.** The human path reads LEAD-VIOL = 0 by construction; STOP's TTC-censoring count is reported.
@@ -987,8 +1068,8 @@ full-scale run, and it is never used to declare a full-run difference "real".
    Lever attribution comes only from:
    * the frozen-trunk arms (R1, with its seed-1 training replicate; SPEC_WPB, with T0r);
    * the ladder rungs, with their replicates and R > 1;
-   * eval-time intervention rows of ONE refcv8 checkpoint (RC-OFF, RC-SHUF, NAVSHUF, CTRL-SHUF, forced conditions,
-     VMAX-OFF / VMAX-SHUF, UNKNOWN). These compare rows of the same weights, so they carry no training variance; they
+   * eval-time intervention rows of ONE refcv8 checkpoint (NAVSHUF, CTRL-SHUF, forced conditions,
+     VMAX-OFF / VMAX-SHUF, UNKNOWN; the registration text's RC-OFF and RC-SHUF rows do not exist under A1). These compare rows of the same weights, so they carry no training variance; they
      still carry inference variance (both sampler seeds).
 3. **Inference variance:** refcv8 samples (DDIM ε at eval, allocation noise). Every planner bar holds at sampler seeds 0
    AND 1; a margin within 2× \|m(s0) − m(s1)\| is NOT PROVEN. Per battery A7.4, the seed-0 / seed-1 floor is one draw
@@ -1118,13 +1199,16 @@ its eval-time rows VMAX-OFF / VMAX-SHUF (§8.3) and the D4 LEAK instrument.
   4-pass reading cost 788 s; the full-size cost is unmeasured until the smoke.)
 ---
 
-## 11. PI decisions still open, each with its default
+## 11. PI decisions, each with its default (decisions 11 and 2 RESOLVED by the PI on 2026-10-11, A1)
+
+Decisions **11** and **2** below were open at registration and were answered by the PI in chat on 2026-10-11 (verbatim
+below, and in A1). Their "default" cells are kept as the registration-time record and are SUPERSEDED where marked.
 
 | # | decision | default (what the run does if the PI does not overrule) | consequence of the alternative |
 |---|---|---|---|
-| **11** | road-geometry speed information admissible inside the route input? | **admissible** (Master Mind provisional ruling): RC-A50 with the certified noise, dropout 0.3. **PI confirmation pending (asked 2026-10-11)**; the gate keeps the token PI-DECISION until the PI rules | `--r8-no-rc`; §4.3 rows NOT APPLICABLE; R8-4 (iv) bar 4 (the RC-OFF row) becomes the main route row |
+| **11** | road-geometry speed information admissible inside the route input? | **RESOLVED 2026-10-11 (PI, in chat): *"just give the nav command and the distance."*** No route checkpoint: `--r8-no-rc`; §4.3 rows NOT APPLICABLE (A1). The question is MOOT, not answered: no route input is left that carries road geometry beyond the nav token and its distance. *Registration-time default, SUPERSEDED:* admissible (Master Mind provisional ruling), RC-A50 with the certified noise, dropout 0.3; the gate kept the token PI-DECISION | APPLIED: `--r8-no-rc`; §4.3 rows NOT APPLICABLE; R8-4 (iv) bar 4 (the RC-OFF row) becomes the main route row, read as §4.4.4 (iv) states (the literals do not relax) |
 | **8** | drop the 8 train clips that share a recording with eval clips or duplicate a video? | **RULED keep** (Master Mind 2026-10-11: the parity rule, dropping clips re-selects episodes and is refused; not a PI question): the refcv7 train corpus; mask the 693 ego boxes only; every eval139 number is also reported on the eval clips that share no recording with train (the leak-free sensitivity row, PLAN decision 8; n = 134 eval clips per PLAN decision 8, the clip-list artifact is owed by D3 / WP-C and its path is UNVERIFIED) | the train corpus is re-selected (≈ 0.2 % of train); refcv8-vs-refcv7 comparability carries that stamp |
-| **2** | N2 or N3 as the past-only speed proxy | **N2** (past-20-s max snapped up the road-law ladder, urban floor 50 km/h) with an unknown row at p 0.45. **PI confirmation pending (asked 2026-10-11)**; built and tested (§8.3); the gate keeps the token PI-DECISION | N3 (coarse urban / rural / motorway); X3's bars are unchanged. X3 is built for both (`--r8-speed-input n2|n3`, §8.3) |
+| **2** | N2 or N3 as the past-only speed proxy | **RESOLVED 2026-10-11 (PI, in chat): *"yes use the quantified lbel as input, it is not a training signal, it the maximal wished speed. it is ok that it is matching the future speed in some cases since it also must be achieved in the future. It is important to assure the road type quantization and avoid the exacvt value of the future speed as target speed."*** Neither N2 nor N3: the road-type label (`--r8-speed-input label`, the 4-way set-speed sidecar {30, 50, 100, 120} km/h, unknown row at p 0.45; the trainer refuses any other value). *Registration-time default, SUPERSEDED:* **N2** (past-20-s max snapped up the road-law ladder, urban floor 50 km/h) with an unknown row at p 0.45; the gate kept the token PI-DECISION | X3's LEAK reading becomes REPORTED, not a bar; bars 2–4 unchanged (§8.3). N3 and `n2\|n3` are not used (the registration-time alternative was N3, coarse urban / rural / motorway) |
 | **9** | LiDAR depth as an auxiliary target | **defer**: not in refcv8 | a Data FlyWheel build (~342 MB of streaming per clip, ESTIMATED ≈ 1.5 TB) and a P-DEPTH ladder arm before any entry |
 | **10** | past ego-motion for temporal BEV warping | **not in refcv8** (P-TEMP stays deferred until the PI rules; PLAN's provisional reading is "admissible under the 2026-09-02 ruling") | P-TEMP is registered in PREREG_WPD_PROBES and would run on the ladder before entry |
 
@@ -1132,7 +1216,7 @@ Also owed to the PI: a **second training seed** (X9, §9; PI-DEFERRED 2026-10-11
 before any submission (§6); a launch whose projected s/step exceeds 10.5.
 
 PLAN decisions 1, 3, 4, 5, 6 and 7 are resolved or superseded: 1 and 6 by §10.2; 3 (nav L2) by the v9 release; 4 by
-R8-6; 5 by E2′ (RC-A50, conditional on 11); 7 by §10.3.
+R8-6; 5 by E2′ (RC-A50, conditional on 11: MOOT under A1, decision 11 was answered with no route checkpoint); 7 by §10.3.
 
 ---
 
@@ -1168,7 +1252,7 @@ is open.
 |---|---|---|
 | Q1 | I-2, allocation identity | the exact criterion is met; S_emit = `--r8-alloc-emit-start 1000` (§3.1, §10.3) |
 | Q2 | the v9 constraint vectors | BUILT, WP-B L1 `badb582` (§4.1); delivery is a bar-less claim |
-| Q3 | NavSim LEGAL speed input | the unknown row; refcv7-50,400 LEGAL rolled: navtest PDMS 70.2048, navhard 0.1987 (§6.2) |
+| Q3 | NavSim LEGAL speed input | the unknown row; refcv7-50,400 LEGAL rolled: navtest PDMS 70.2048, navhard 0.1987 (§6.2). A1 (2026-10-11): unchanged — the model is trained on the road-type label with the unknown row at p 0.45, and NavSim, which carries no label, is fed that unknown row |
 | Q4 | agent-store range (X7) | OUT unless WP-D registers it; the metric is built from the v9 lead tables (§8.7) |
 | Q5 | X3 before launch | BUILT (§8.3) |
 | Q6 | MODEL_REGISTRY cross-check | DONE 2026-10-11, table in the registration record; the block `REFCV7-2026-10-04-FINAL` is the HTML comment at `Project Steering/GOALS_AND_CLAIMS.md:16252`, the refcv7 rows are `MODEL_REGISTRY.md` lines 5297–5352 |
@@ -1176,10 +1260,10 @@ is open.
 | Q8 | R8-1-REACH key | `r8v9_tac_rows` (§4.1) |
 | Q9 | SPEC_WPB_LADDER | REGISTERED 2026-10-04T19:44:49Z (§10.3) |
 | Q10 | X10 pose timing | BUILT as one shift per window (§8.10) |
-| Q11 | R8-4 (iv) bar 4 | confirmed |
+| Q11 | R8-4 (iv) bar 4 | confirmed at registration; NOT APPLICABLE as a separate row under A1 (no RC; §4.4.4 (iv)) |
 | Q12 | B3 | OUT (§10.1) |
-| Q-A | route checkpoint carries road geometry | PI-PENDING (asked 2026-10-11); registered with the default, admissible (§11) |
-| Q-B | N2 vs N3 speed input | PI-PENDING (asked 2026-10-11); registered with the default, N2 (§11) |
+| Q-A | route checkpoint carries road geometry | **PI-RULED 2026-10-11: no route checkpoint** ("just give the nav command and the distance"), `--r8-no-rc` (A1, §11). Registration-time status, SUPERSEDED: PI-PENDING, default admissible |
+| Q-B | N2 vs N3 speed input | **PI-RULED 2026-10-11: the quantified road-type label, neither N2 nor N3** (`--r8-speed-input label`, A1, §11, §8.3). Registration-time status, SUPERSEDED: PI-PENDING, default N2 |
 | Q-C | training corpus | RULED by the Master Mind: keep refcv7's corpus, mask the 693 ego boxes (§11) |
 | Q-D | second training seed | PI-DEFERRED: decided after the first read; not blocking (§8.9) |
 | Q-E | 6 s lead-block baseline compute | CLOSED: no re-roll was needed (§8.7 CORRECTION) |
@@ -1193,7 +1277,7 @@ is open.
 * **Q5 — BUILD before launch.** X3 enters as the past-only speed input **N2** (PI decision 2 is still open; N2 is the
   plan's default, leak 3.46 %), with a trained "unknown" row (input dropout), and the ceiling applied to the EMITTED plan.
   A refcv8 launch carrying refcv7's v8 future-max sidecar is refused. Assigned to WP-B; N3 behind a flag so decision 2
-  needs no new build. **DONE (§8.3).**
+  needs no new build. **DONE (§8.3).** **SUPERSEDED IN PART by A1 (PI 2026-10-11):** the channel's source is the road-type label, not N2, and the sidecar is no longer refused (it is required, through `--r8-speed-input label`, with the quantization guard); the unknown row and the ceiling on the EMITTED plan stand.
 * **Q1 — (SUPERSEDED 2026-10-11 by the exact criterion, §3.1) accept the I-2 literals** (`sel_idx` 100 %, max |Δ traj| ≤ 1e-3 m, max |Δ base score| ≤ 1e-4). Identity is
   checked with allocation EMISSION OFF; emission switches on at a declared step `S_emit` chosen by WP-B from `iw_diag.py`'s
   Thor result and written into the launch argv before registration. An argv emitting allocation at step 0 fails the
@@ -1221,7 +1305,7 @@ is open.
   refcv8** (`--pose-sync-sidecar`, sidecar md5 `ce00a130…` on Thor). The trainer hook lands through WP-B's tree. The
   standalone eval kit stays on the uncorrected clock for refcv7 comparability.
 * **Q11 — confirmed.** RC-OFF ≥ 0.90 / ≥ 0.60 stays: it is the bar that protects the leaderboard-legal case (no route
-  checkpoint at inference). Calibration disclosure in §14 stands.
+  checkpoint at inference). Calibration disclosure in §14 stands. **A1 (2026-10-11): NOT APPLICABLE** — there is no RC, so there is no RC-OFF row; see §4.4.4 (iv) bar 4.
 * **Q12 — B3 OUT** unless WP-D registers a probe for it before SPEC_REFCV8 registration.
 * **R8-4 (iii) tag definition (ruled 2026-10-04 ~23:20, MEASURED basis WP-B `raw/turn_disagreement_{train,eval139}.json`).**
   Consistency uses the PLAN tag over [0, 6] s, the tag the fan's candidates carry. It is scored ONLY on plan-observable
@@ -1259,22 +1343,22 @@ visible.
 |---|---|---|---|
 | R8-1-REACH | ≥ 0.93 | 0.2357 logged; v9 release 0.9509 | the release census minus 0.02 (this SPEC) |
 | NAV-COMPLY / NAV-PREMATURE | ≥ 0.95 / ≤ 0.05 | clip-token compliance 0.685 (dense) | PLAN R8-2 measure column (≤ 5 % / ≥ 90 %), tightened to 0.95 to match R8-4 (iv) |
-| R8-3 bars 1–3 | > E-1 / ≤ +0.02 / ≤ +0.05 m | E-1 RC-A50 0.916 / 0.654 (grid); refcv7 0.841 / 0.514 | PLAN R8-3 ("a trivial planner … sets a floor"; "a shuffled-checkpoint arm must lose the gain"); the ladder's B-RECIPE LEGAL rule (+0.05 m) |
+| R8-3 bars 1–3 (NOT APPLICABLE, A1: no RC) | > E-1 / ≤ +0.02 / ≤ +0.05 m | E-1 RC-A50 0.916 / 0.654 (grid); refcv7 0.841 / 0.514 | PLAN R8-3 ("a trivial planner … sets a floor"; "a shuffled-checkpoint arm must lose the gain"); the ladder's B-RECIPE LEGAL rule (+0.05 m) |
 | TAC-LAT-TURN | ≥ 0.95 | 0.402 | D0's q\* (registered `SPEC_D0_DOSE_RESPONSE.md`) |
 | TAC-LAT-F1 / TAC-LON-F1 | ≥ 0.80 / ≥ 0.60 | 0.492 / 0.351 | this SPEC (ambitious; not from any registered source) |
 | CONS-PROG / CONS-HEAD | ≤ 0.0674 / ≤ 15° | refcv7's progress head median 0.176 (D0 §2.3) | D0 σ\* 0.10; D0c (post hoc there, committed in SPEC_WPB B-TAC) |
 | (ii) controllability, (iii) consistency | ≥ 0.95 | ABSENT in refcv7 | SPEC_WPB B-CTRL / B-CONS (registered) |
 | R8-4 (iv) bars 1–3 | ≥ 0.95 / ≥ 0.70 / ≤ +0.05 m | 0.841 / 0.514 (grid), 0.815 / 0.505 (dense) | the PI's measure column (R8-4 iv); SPEC_R1 / SPEC_WPB B-ROUTE |
-| R8-4 (iv) bar 4 | ≥ 0.90 / ≥ 0.60 (RC-OFF) | as above | this SPEC (§13 Q11) |
+| R8-4 (iv) bar 4 (NOT APPLICABLE as a separate row, A1) | ≥ 0.90 / ≥ 0.60 (RC-OFF) | as above | this SPEC (§13 Q11) |
 | BAR-R8-E1 / E3 / NR | < 0 separated / not separated worse | refcv7-50,400 battery values existed only from 2026-10-11 (§5.1); the E1 / E3 / NR literals are inherited from SPEC_REFCV7 and were written before them | SPEC_REFCV7 BAR-R7-1 / R7-3 |
 | BAR-R8-N1 / N2 / N3 | > STOP / > max(STOP, CV, ECHO) | refcv7 30k: navtest PASS 71.88; navhard FAILED 0.2269 vs 0.2985; warmup NOT PROVEN | the refcv7 NavSim suite's registered bars, unchanged |
 | R8-5-BOX | ≤ 1.20 boxes / object; conf_ratio [0.5, 1.5] | 1.07 / 1.01 with NMS; 0.995 / 1.068 | this SPEC (1.20); SPEC_REFCV7 A10 §15.3 band |
 | R8-6 bars | AP@2 m raw ≥ 0.339; AP@1 m raw ≥ 0.260; ≤ 1.30 boxes / object; planner detector ≥ 0.248; edge IoU_2 ≥ 0.33 / ≥ 0.18; lane ≥ 0.38 | 0.248 / 0.130 / 1.97 / 0.131; 0.235 / 0.118 / 0.308 | PREREG_WPD_PROBES "dramatic" bars (registered), transposed to the full run; BOX-4 by this SPEC |
 | X1 | D-CORE ≤ +0.05; REGRET ≤ 1.55 m | +0.159 (grid); 2.072 m (dense) | D-CORE: implied by R8-4 (iv) with fan-contains 1.0; REGRET: 0.75 × refcv7, this SPEC |
 | X2 | ≥ 0.90 | 0.674 (prior wrong) vs 0.967 (prior right) | this SPEC (the prior-right neighbourhood) |
-| X3 | LEAK ≤ 0.05; CEIL-OBEY ≤ 0.01 (non-exempt, finite ceiling); UNKNOWN ≤ +0.10 m/s | 0.238 leak; 110 / 2,059 over the ceiling | LEAK: above D4's N2 0.0346; others this SPEC |
+| X3 | LEAK ≤ 0.05 (REPORTED, NOT a bar after A1); CEIL-OBEY ≤ 0.01 (non-exempt, finite ceiling); UNKNOWN ≤ +0.10 m/s | 0.238 leak; 110 / 2,059 over the ceiling | LEAK: above D4's N2 0.0346; others this SPEC |
 | X4 | LABEL-SCOPE = 0; TAC-SHARE ≥ 0.01 | 100 % flipped; −0.0005 | the WP-A / WP-B tests; ladder B-PREM |
-| X7 | `share_of_at_risk` on S6, refcv8 − refcv7 < 0, separated; `lead_progress_ratio` ≥ 0.90 | refcv7 S6 0.0590 [0.0272, 0.1002], progress 1.108 (MEASURED 2026-10-11; visible when the PI's denominator and the progress bar were fixed) | PI ruling 2026-10-11 (denominator, S6 block); this SPEC (the 0.90 literal, the form of the baseline's progress-matched share) |
+| X7 | `share_of_at_risk` on S6, refcv8 − refcv7 < 0, separated; `lead_progress_ratio` ≥ 0.90 | refcv7 S6 0.0590 [0.0272, 0.1002], progress 1.108 (the UNCLIPPED `mean_progress_ratio_plan_over_human`, NOT the registered `lead_progress_ratio`; MEASURED 2026-10-11; visible when the PI's denominator and the progress bar were fixed; the registered clipped at-risk value is NOT YET COMPUTED, A1.4) | PI ruling 2026-10-11 (denominator, S6 block); this SPEC (the 0.90 literal, the form of the baseline's progress-matched share) |
 | X10 | POSE-SYNC ≤ 1 ms (residual after the per-window shift) | 16.5 ms mean before the shift | this SPEC |
 
 **Lever readings that were visible at registration (2026-10-11).** Under their own registrations, not refcv8 numbers: R1 arms H0–H5 (direction 0.815 → 0.891 / 0.905 / 0.909, heading-15 0.54–0.57, straight ADE +0.07 … +0.20 m; H5 forced-follow 0.274 / 0.437 / 0.428; INHERITED through `SPEC_R1_A2.md`); the WP-B frozen-trunk arms; WP-D's P-GRAD and box probes; D6 P1′ (1,140 DAC-zero scenes); the I-W PASS (§3.1); the refcv7-50,400 LEGAL NavSim rows (§6.2); and the X8 / X7 baseline of §5.1, §8.7. No ladder arm had a scored or an instrument reading when the ladder was relaunched (`SPEC_WPB_LADDER_A2.md`: "no arm has a scored or an instrument number"), and the ladder is limited to 11 runs (§10.0).
@@ -1291,3 +1375,108 @@ Status 2026-10-11: H-R8-RECIPE-1 is filed; H-R8-RUN-1, H-R8-NAVSIM-1 and H-R8-PE
 * **H-R8-PERC-1** (proposed): the refcv8 run meets the R8-6 "dramatic" perception bars on S-PERC.
 * Lever hypotheses stay with their own registrations: H-R8-RECIPE-1 / H-R8-BUDGET-1 / H-R8-MAPW-1 (ladder draft), the
   SPEC_WPB arms, R1, P-BOX / P-MAP.
+
+---
+
+## A1 — PI rulings of 2026-10-11 on the route and speed inputs, and three baseline-citation corrections
+
+**Protocol fields (§12.2).**
+* **Time:** written 2026-10-11 ~22:00 Europe/Berlin (~20:00Z), for the Master Mind, after the PI's two rulings, which were
+  given in chat the same day. The file's sha256 after this amendment is recorded in `Project Steering/SPEC_REFCV8_SHA256.txt`
+  at landing (OWED, A1.6).
+* **refcv8 data read before writing: NONE.** No refcv8 checkpoint, training step, eval row or NavSim score exists. No ladder
+  arm has a scored number, and the one instrument reading that existed on the superseded inputs (V0, gradient-share row
+  500) was not read for this amendment (`SPEC_WPB_LADDER_A3.md`). Every number quoted here is a refcv7 value that §8.3,
+  §8.7 or §14 already carried, or a MODEL_REGISTRY §15.4 value (landed `cd64a04`).
+* **What changes:** the two inputs (A1.1, A1.2), the ladder's relaunch on them (A1.3) and three baseline citations
+  (A1.4). **No bar literal changes.** One bar stops being a bar by the PI's word (X3 bar 1, LEAK; A1.2). R8-3's bars and
+  R8-4 (iv) bar 4 read NOT APPLICABLE because the input they read no longer exists.
+* **What does NOT change:** the corpus and the warm start; every other bar (R8-1, R8-2, R8-4 (i)–(iii), R8-4 (iv) bars
+  1–3, §5, the §6 LEGAL bars, §7, X1, X2, X4–X10); the windows, the estimators, the tier of every number, and §9's
+  one-seed wording.
+
+### A1.1 Route (PI decision 11 / Q-A)
+* **The PI, verbatim (2026-10-11, in chat):** *"just give the nav command and the distance."*
+* **Applied:** no route checkpoint at training or inference. The launch argv carries `--r8-no-rc` and no `--r8-rc-*` flag
+  (§3.2). The route input is the per-frame v9 nav command and its turn distance (`--r8-nav-from-v9`, nav args, dropout 0.5
+  unchanged; §4.2). Every row of §4.3 reads NOT APPLICABLE (§4.3's banner).
+* **Decision 11's question is MOOT, not answered.** "Is road-geometry speed information admissible inside a route
+  input?" asked about an input that no longer exists. The Master Mind's provisional ruling (admissible) is withdrawn with
+  the input it governed. E2′ (WP-A, label level) stays a banked label-level measurement and gates nothing in refcv8.
+* **R8-4 (iv):** read as §4.4.4 states. Bars 1–3 are read on the model as configured, literals unchanged. Bar 4 (RC-OFF
+  ≥ 0.90 / ≥ 0.60) is not a separate row. **Reading chosen: the stricter one** — §11's "bar 4 becomes the main route row"
+  means "the main row has no RC", not "the thresholds relax". If the Master Mind or the PI intended 0.90 / 0.60 to
+  replace 0.95 / 0.70, that needs its own dated word (§12.3).
+* **Still privileged on PhysicalAI:** the nav token and its distance are derived from the ego's own future path (§2.3
+  item 3 stays, with RC-OFF removed). NavSim's LEGAL row has the bare command and no distance.
+
+### A1.2 Speed (PI decision 2 / Q-B)
+* **The PI, verbatim (2026-10-11, in chat, spelling kept):** *"yes use the quantified lbel as input, it is not a training
+  signal, it the maximal wished speed. it is ok that it is matching the future speed in some cases since it also must be
+  achieved in the future. It is important to assure the road type quantization and avoid the exacvt value of the future
+  speed as target speed."*
+* **Applied (§8.3):** `--r8-speed-input label`; the source is refcv7's 4-way ROAD-TYPE set-speed sidecar {30, 50, 100, 120}
+  km/h (`--speed-max-sidecar-v6` + `--speed-max-sidecar-v6-eval`; INHERITED from the Master Mind's brief, not re-verified
+  here); the trained unknown row is kept (`--r8-speed-unknown-p 0.45`) for NavSim, where no label exists. N2 and N3 are NOT
+  used. The trainer REFUSES any sidecar value outside the four road-type values (the PI's quantization requirement); the
+  build of `label` is with the stream that owns it (`hold_r8label`) and is not asserted here.
+* **Overrules the Master Mind's ruling Q5** (§13a), which refused the sidecar as a future-speed leak (D4 LEAK 0.238 against
+  the 0.05 bar). **LEAK stays REPORTED** (X3 (a)(1)) **and is no longer a bar** (X3 (c)(1)). **CEIL-OBEY ≤ 0.01 stays a
+  bar, unchanged**, as do VMAX-SHUF and UNKNOWN.
+* **Admissibility, stated:** the label arrives as a sidecar FILE on the command line, not from a model forward. The PI's
+  goal-input test of 2026-08-03 ("could this have been computed from the situation classifier's output?") is NOT
+  re-answered here from the sidecar builder's source (OWED, A1.6 item 4); until it is, the answer is UNVERIFIED. It is a
+  privileged input on PhysicalAI by the vision-only rule, admitted as an input by the PI's ruling of 2026-10-11, in the
+  same way as the posted speed limit of PI R1.
+* **Stamp:** *"speed input: road-type label (PI 2026-10-11); LEAK reported, not barred"* on every speed-family number; it
+  replaces the K12 stamp for this channel (§2.3 item 4).
+
+### A1.3 The ladder
+The running R2 ladder was built on N2 and RC-A50, so it is RELAUNCHED on the ruled inputs
+(`TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/SPEC_WPB_LADDER_A3.md`):
+no arm has a scored number; V0's partial run and its single row-500 reading are set aside (moved, never deleted) and read
+by nobody. The ladder runs the 11 arms of §10.0 (the PI's "You can stop the ladder after 11 runs", unchanged): V0, V-R8,
+V-R8d, V0r, V-R8r, V-TACk, V-TACk-roll, V-TACkr, V-MAP4, V-MAP4-roll, V-MAP4r. V-R8d becomes `--r8-derange-feed` only.
+
+### A1.4 Baseline-citation corrections (MODEL_REGISTRY §15.4, landed `cd64a04`; corrections of quoted refcv7 values, no bar changes)
+1. **§8.7(b) denominators.** The registration text printed the hold-v0 0.0765 and echo 0.0313 controls beside the at-risk
+   headline 0.0590. Those two are ALL-lead-window shares. On the at-risk denominator (the PI's ruling, the one the bar
+   reads) they are hold-v0 **0.1060** and echo **0.0434**. §8.7(b) now shows both denominators, labelled
+   (MODEL_REGISTRY §15.4.4; raw `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-11-r7base-fourfamily/raw/lead_viol_s{0,1}.json`).
+   The paired refcv7 − echo read (+0.0113 [−0.0074, +0.0352]) is on the all-lead-window share; the at-risk paired read is
+   not yet formed.
+2. **The "progress ratio" 1.108 / 1.104 is not the registered instrument.** It is the unclipped
+   `mean_progress_ratio_plan_over_human` (plan x(6 s) / human x(6 s), all 1,151 lead windows). The registered
+   `lead_progress_ratio` is the per-window arc-length ratio over the at-risk windows, clipped at 1.0 and averaged
+   (`lead_metrics.py::lead_progress`). **The registered clipped baseline value is NOT YET COMPUTED** (CPU work item in
+   progress). The bar's 0.90 literal was chosen while the unclipped 1.108 was visible (§14, X7 row). §8.7(a)'s sentence
+   defining the ratio is marked as the registration-time paraphrase; **whether (a)'s wording or the instrument's
+   definition governs is for the Master Mind to confirm** — this amendment records the discrepancy and moves no literal.
+3. **The navtest paired interval vs STOP is banked, not owed.** refcv7-50,400 LEGAL PDMS 70.2048 [68.55, 71.82], paired
+   vs STOP +8.3846 [+6.36, +10.24], separated (MODEL_REGISTRY §15.4.1). §6.2 BAR-R8-N1 now says so; the navhard paired
+   interval vs STOP (−0.0998 [−0.1383, −0.0627]) is added to the N2 cell from the same table.
+
+### A1.5 Clauses edited in place (the old wording is kept where it records history and is marked SUPERSEDED)
+| clause | change |
+|---|---|
+| header, §1 table | status line points to A1; the v9 row loses "route checkpoint input" |
+| §2.3 items 3–4, §2.4 | RC-OFF row removed from the stamps; speed stamp = the road-type label; admitted inputs restated |
+| §3.2 flags / values / forbidden, item 6 | `--r8-no-rc`, `--r8-speed-input label`, both sidecars REQUIRED; all `--r8-rc-*` out; item 6 REOPENED |
+| §4.3 | NOT APPLICABLE banner; the pending-PI sentence replaced |
+| §4.4.4 (iv) | "RC-ON row" = the model as configured; bar 4 not separate; (f) loses RC-SHUF; one outcome row NOT APPLICABLE |
+| §6.1, §6.2 | PRIVILEGED RC cell NOT APPLICABLE; speed note; one next-arm cell; N1 / N2 paired intervals banked |
+| §8.3 | A1 block; (c)(1) LEAK reported, no bar; (g) rewritten; "BUILT" paragraph marked |
+| §8.7(a)(b), §14 X7 | A1.4 items 1–2 |
+| §9, §11, §13, §14 | RC rows out of the intervention list; decisions 11 and 2 RESOLVED; Q3, Q-A, Q-B, 13a Q5 / Q11; calibration rows |
+
+### A1.6 OWED — not done by this amendment (named so nothing is assumed landed)
+1. **Gate profile `refcv8`** (`stack/scripts/launch_gate.py`) and its tests: required `--r8-no-rc`, `--r8-speed-input label`
+   and both sidecars; no `--r8-rc-*`; sidecars no longer forbidden by name; the PI-DECISION tokens for decisions 11 and 2
+   dropped. Owner: WP-B / Master Mind.
+2. **Trainer value `--r8-speed-input label`** with the four-value refusal (`hold_r8label`), and a test that feeds a value
+   outside the four and expects the refusal.
+3. **The smoke argv** `stack/ops/runs.d/refcv8-wpb-smoke.argv.json` regenerated on the ruled inputs (§3.2 item 6).
+4. **The LEAK instrument** run on the channel actually fed (reported, X3 (a)(1)), and the goal-input test of A1.2 answered
+   from the source of the sidecar's builder.
+5. **`SPEC_REFCV8_SHA256.txt`** entry for this amendment; **`GOALS_AND_CLAIMS.md`** register rows (Master Mind).
+6. **The registered clipped `lead_progress_ratio_clipped` baseline** for refcv7-50,400 (A1.4 item 2).

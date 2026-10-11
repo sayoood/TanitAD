@@ -38,6 +38,12 @@ fixes for identified problems of refcv7 from you?"*
 | **R8-6** | **Architecture + training workflow that DRAMATICALLY improves map and box** (head initialisation? other tricks?) | **WP-D · Perception architecture** (literature banked + frozen-BEV-feature probes + v7-tiny) | per-class AP@{0.5, 1, 2} m by range bin, boxes per object, conf_ratio; map IoU per class × range with 0.2 m tolerance; each trick pre-registered with a regression arm; the remaining localisation × range ceiling (edge IoU 0.062 at 0–20 m → 0.003 at 80–100 m) is the target |
 | **R8-7** | **Every other refcv7 fix the Master Mind identified** | WP-B / WP-C / WP-E (Master Mind) | listed in §0.2 with its own measure |
 
+> **2026-10-11 — PI ruling on R8-3 (recorded in `Project Steering/SPEC_REFCV8_DRAFT.md` amendment A1, section `## A1`; the
+> SPEC governs).** The PI answered decision 11 with *"just give the nav command and the distance."* ⇒ NO route checkpoint
+> (`--r8-no-rc`): the R8-3 row's input and every measure in it (the E-1 floor, the shuffled-checkpoint arm) are NOT
+> APPLICABLE. The route input is the per-frame nav command and its turn distance (R8-2). The R8-3 text above is kept as the
+> registration-time history.
+
 ### 0.1 What changed in the strategy because of R8-1…R8-6
 
 R8-3 adds an INPUT, R8-4 changes the decoder (conditioning) and R8-6 may change the lift and the heads. A head-only
@@ -62,6 +68,14 @@ conditioning before the trainer change. A from-scratch run (~6 days) only if the
 | X8 | The four-family battery has produced no number for any refcv7 checkpoint (G0 estimator issues, G4) | A5/A6 battery amendments carried; the 50,400 battery runs before refcv8 launches | four families present for refcv7-50.4k as the baseline row |
 | X9 | One training seed everywhere; the bootstrap answers "another draw of episodes" only (H-ESTIM-SEED-1) | a second seed of the refcv8 run if compute allows; otherwise every lever claim is read against the v7-tiny replicate floor | replicate arm |
 | X10 | Poses lead the image by 0–34 ms (mean 0.19 m, D3); day/night is a clock label (D3); left turns on eval rest on 13 clips (D3) | interpolate poses to the camera timestamp; stratify night by brightness; report left-turn n | — |
+
+> **2026-10-11 — PI ruling on X3 (SPEC_REFCV8 amendment A1; the SPEC governs).** The PI answered decision 2 with: *"yes use
+> the quantified lbel as input, it is not a training signal, it the maximal wished speed. it is ok that it is matching the
+> future speed in some cases since it also must be achieved in the future. It is important to assure the road type
+> quantization and avoid the exacvt value of the future speed as target speed."* ⇒ the speed input is the quantified
+> road-type label (`--r8-speed-input label`: refcv7's 4-way {30, 50, 100, 120} km/h set-speed sidecar, unknown row kept at
+> p 0.45, the trainer refuses any other value), NOT N2 or N3. The X3 row's past-only N2 fix is SUPERSEDED as to the source;
+> the LEAK measure is REPORTED and is no longer a bar; the ceiling on the EMITTED plan (CEIL-OBEY) stays a bar.
 
 **X6 answered by D6 (NavSim failure anatomy, 2026-10-04, `…/2026-10-04-refcv8-data-audit/D6_navsim_failure_anatomy/RESULT.md`;
 navhard step 30,000, all 5,912 tokens, failing plans re-scored exactly in the local metric cache, max diff 0.0):**
@@ -286,6 +300,8 @@ and the conditioning implementation (WP-B) are the critical path.
    "unknown" row on **45 %** of navtest tokens — a train/deploy mismatch refcv7 carries), and every speed result
    reported beside the input-REMOVED and input-SHUFFLED arms. The PI's 2026-09-16 future-ego authorisation is then not
    needed; R1 (input + cap) is satisfied by a past-only limit.
+   **⇒ RESOLVED 2026-10-11 (PI): neither N2 nor N3 — the quantified road-type label, `--r8-speed-input label`
+   (SPEC_REFCV8 A1, §8.3, §11).**
 3. **Nav L2** is a supplied route ("turn left in X m"), optimistic on PhysicalAI because it comes from the ego's own
    future — the same caveat as today's token, now time-correct. Default: adopt.
 4. **Trunk changes** (map F3 stride-4 tap; anything that needs R4′): defer to after refcv8-b unless R1 forces a full run.
@@ -293,6 +309,7 @@ and the conditioning implementation (WP-B) are the critical path.
    evidence and probes; those that fit a warm start (zero-gated new paths) go into refcv8.
 5. (new, R8-3) **Route-checkpoint variant** — fixed arc-length lookahead (RC-A, L ∈ {30, 50, 80} m) vs next decision
    point (RC-B): WP-A's echo/leak study recommends; the PI confirms before SPEC_REFCV8.
+   **⇒ MOOT 2026-10-11: no route checkpoint (decision 11, below).**
 6. (new, §0.1) **Warm-started full run** (~30k steps from 50,400, new paths zero-gated) instead of a head-only branch
    — recommended; from scratch only if the warm start is shown to block a fix.
 7. (new) **Tactical loss budget**: refcv7 pinned it at 0.1 (0.29 % of the realised loss, D4). Default: size it from
@@ -322,6 +339,8 @@ and the conditioning implementation (WP-B) are the critical path.
     with a noised training input + ≥ 0.3 dropout, the leak re-measured against the heavy route (E2′ ≤ 0.01 under a
     certified instrument, pre-registered). **The PI confirms or overrules** (if overruled: no route checkpoint; nav
     token + spatial args stay the route input). On NavSim the legal row carries no route either way.
+    **⇒ RESOLVED 2026-10-11 (PI, verbatim): *"just give the nav command and the distance."* No route checkpoint
+    (`--r8-no-rc`); SPEC_REFCV8 A1, §4.3 NOT APPLICABLE.**
 
 **WP-A status (2026-10-04 ~16:15): v9 release BUILT and VALIDATED** (R8-1/R8-2/R8-3; `FlyWheels/TanitAD_DataFlyWheel/
 incoming/2026-10-04-v9-labels/`): per-frame tactical labels on **95.09 %** of train windows (refcv7 23.22 %; eval 94.57 %,

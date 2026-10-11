@@ -1819,3 +1819,36 @@ The PI, verbatim: *"you can download opencv on D: 1 let it unchanged, 4: I solve
 - **The launch gate:** now BINDING for every arm.
 - **Videos:** the map video is delivered; the agent-box video is being rendered at step 38,000.
 **UPDATE 2026-09-26 21:23 Berlin (recorded 2026-09-27 00:35):** Amendment 5 read **NO MEASURABLE DIFFERENCE** -- NAVSIM v1 minus the shipped rule +0.78 [-0.30, +1.82] PDMS on 923 tokens / 43 logs outside W3's subset (gates: the shipped rule reproduced on 923/923; identical picks score identically, max diff 0.0) -> **v1 adopted as pre-committed** (`refe/planner.py` DEFAULT_RULE = `navsim_v1`); every evaluation from snapshot 014 on selects with it (snapshot 013's learning-curve point was picked with the old rule; its v1 re-selection, 50.9 vs 49.4, is the like-for-like baseline). Option 2's labels reach training at the epoch-14 boundary (~step 4,531, ~02:37 Berlin 2026-09-27); snapshot 015 (~09:31; 'after epoch 15', i.e. 15 epochs trained) is the first trained on them. **Nothing on this item is open with the PI.** Evidence: `…/eval/RESULT_A5_a5confirm_ep013.md`, MODEL_REGISTRY §14.1, GOALS_AND_CLAIMS D-REFE-RULE-1 / D-REFE-COMFORT-1.
+
+<!-- PIQ-ANSWERED-REFCV8-ROUTE-SPEED-SCOPE-2026-10-11 -->
+### ✅ RESOLVED (2026-10-11, in chat, evening Berlin) — refcv8 PI decisions 11 (route input), 2 (speed input) and the ladder scope
+
+These were asked in `Project Steering/SPEC_REFCV8_DRAFT.md` §11 (decisions 11 and 2; §13 Q-A / Q-B) and
+`Project Steering/PLAN_REFCV8.md` §8. This file carried no refcv8 item before (grep `refcv8` at the tip: 0 hits), so the
+question and the answer are recorded together here, append-only like the entries above.
+
+1. **Decision 11 / Q-A — the route input.** Asked: is road-geometry speed information admissible inside a route
+   checkpoint input (registration default: admissible, RC-A50 with the certified noise, dropout 0.3)?
+   - **The PI, verbatim:** *"just give the nav command and the distance."*
+   - **Applied:** no route checkpoint (`--r8-no-rc`); the route input is the per-frame nav command and its turn distance;
+     every row of SPEC §4.3 reads NOT APPLICABLE. The admissibility question is MOOT, not answered: the input it governed
+     no longer exists.
+2. **Decision 2 / Q-B — the speed input.** Asked: N2 or N3 as the past-only speed proxy (registration default: N2, unknown
+   row at p 0.45)?
+   - **The PI, verbatim (spelling kept):** *"yes use the quantified lbel as input, it is not a training signal, it the
+     maximal wished speed. it is ok that it is matching the future speed in some cases since it also must be achieved in the
+     future. It is important to assure the road type quantization and avoid the exacvt value of the future speed as target
+     speed."*
+   - **Applied:** neither N2 nor N3. The input is the road-type label (`--r8-speed-input label`; refcv7's 4-way set-speed
+     sidecar {30, 50, 100, 120} km/h; unknown row kept at p 0.45 for NavSim; the trainer refuses any other value). This
+     OVERRULES the Master Mind's ruling Q5, which refused the sidecar as a future-speed leak (D4 LEAK 0.238 against the 0.05
+     bar). The LEAK measure stays reported and is no longer a bar; CEIL-OBEY stays a bar, unchanged.
+3. **Ladder scope.** The PI, verbatim (earlier the same day, recorded in SPEC §10.0): *"You can stop the ladder after 11
+   runs."* Unchanged. The ladder runs V0, V-R8, V-R8d, V0r, V-R8r, V-TACk, V-TACk-roll, V-TACkr, V-MAP4, V-MAP4-roll,
+   V-MAP4r; L4, L4b and L5 are not run. With the RC gone the 11 arms are RELAUNCHED on the ruled inputs
+   (`SPEC_WPB_LADDER_A3.md`).
+
+**Where it lands:** `Project Steering/SPEC_REFCV8_DRAFT.md` (`## A1`, §3.2, §4.3, §4.4.4, §8.3, §11, §13);
+`TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/SPEC_WPB_LADDER_A3.md`;
+`Project Steering/PLAN_REFCV8.md` (dated notes under R8-3 / X3 and decisions 2, 5, 11).
+**Owed, not done by this record:** the `refcv8` gate profile and the trainer's `label` value (SPEC A1.6).
