@@ -90,3 +90,8 @@ amendment. Stop the pod only after `ZZP2R_DONE` and the PI's say-so.
   Fixed in both; a mutant that restores `{"sets"}` turns `test_p2r_chain.py` RED.
 - **cgroup v1:** `p2r_pod.sh` (relabel workers) and `pod_dataprep.sh` read only v2 `cpu.max`, so they would have used 96
   cores. Both now fall back to v1 `cpu.cfs_quota_us`; the snippet read 11 on the pod.
+- **Full start 1 REFUSED at dbs:** `OSError: [Errno 22] Invalid argument: 'D:'`. `fetch_front_camera.py`'s cache default is a
+  `D:/` path, a relative directory named `D:` on Linux, which this pod's NFS volume refuses. `pod_dataprep.sh` now exports
+  `REFE_CD_CACHE=$DATA/nuplan_cdcache`; the running chain (shipped at `5dd6a22`) was started with that variable set.
+  Every other Windows-path default on the P2 path is overridden by the chain (`--targets`, `--scorer-targets`, the backbone,
+  DB, map and yaml roots).

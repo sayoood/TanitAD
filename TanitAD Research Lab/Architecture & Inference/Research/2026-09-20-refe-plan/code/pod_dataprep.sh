@@ -48,6 +48,9 @@ HF="https://huggingface.co/datasets/OpenDriveLab/OpenScene/resolve/main/navsim"
 source "$WORK/teacher_env.sh"
 export NUPLAN_DATA_ROOT="$DATA" REFE_NUPLAN_DB_ROOT="$DBS"
 export REFE_NAVTRAIN_YAML="$PKG/splits/navtrain.yaml" REFE_BACKBONE_ROOT="$DATA/backbones"
+# fetch_front_camera.py's central-directory cache defaults to a D:/ path. On Linux that is a RELATIVE dir named "D:",
+# which MooseFS accepted and the 2026-10-11 pod's NFS volume refuses (OSError Errno 22 'D:', dbs stage REFUSED).
+export REFE_CD_CACHE="${REFE_CD_CACHE:-$DATA/nuplan_cdcache}"
 export OMP_NUM_THREADS="$THREADS" MKL_NUM_THREADS="$THREADS" OPENBLAS_NUM_THREADS="$THREADS"
 export PYTHONUNBUFFERED=1   # shard logs readable while they run (redirected stdout is block-buffered)
 # ⭐ SIMULATION RATE of every teacher rollout (refe/navtrain_scenarios.py SIM_HZ), 2026-09-24. nuPlan's
