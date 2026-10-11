@@ -1,6 +1,18 @@
 # P2R pod runbook: a fresh A40 to a banked P2 checkpoint (PI, 2026-10-11)
 Chain `refe/p2r_pod.sh` (tests `refe/test_p2r_chain.py`). What the result decides: `eval/PREREG_P2_AMENDMENT_1.md`.
 
+
+## 0. Pre-pod verification (Master Mind, 2026-10-11, dev box, MEASURED)
+- The PI's HF token resolves to user `Sayood`, role **write** (checked by `whoami`; the token was read in place from Keys.txt and never printed).
+- `restore`'s three pinned sources exist on HF under the exact names and **byte sizes** in `p2r_sync.py` `PINS`:
+  - `model_final.pt` = 1,288,484,600 B (model repo);
+  - `refe_train_grow.tar.zst` = 1,043,549,966 B;
+  - `onpolicy_sets_logs_full.tar.zst` = 2,070,541,308 B (dataset repo).
+- The dataset repo's own `MD5SUMS.txt` lists `4fc979939c5f9b5140ba59a952da77fb` for the on-policy bank, equal to its pin. The other md5s are checked at runtime, as designed.
+- Repo totals: model 74 files / 4.58 GB; banks 15 files / 8.10 GB.
+- ⇒ The "HF filenames UNVERIFIED" item from the chain agent is closed.
+- The code to ship is pinned by `SHIP_MANIFEST.json` (commit `0534392`, 185 files, `ZZSHIP_OK`).
+
 ## 1. Create the pod
 - **GPU:** 1 x A40 (48 GB), Linux, a `/workspace` volume; bash, flock, curl, tar, python3 and apt or pip (which template the
   old pod used is UNVERIFIED).
