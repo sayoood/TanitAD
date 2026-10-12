@@ -230,9 +230,9 @@ Scope kept: `rl_reward.py`, `rl_terms_label.py`, `rl_partition.py`, `launch_gate
 | claim | status |
 |---|---|
 | dumped record format is read by `OnPolicyBank`, `served_keys`, both labellers and the 3 `rl_val_eval` loaders | **MEASURED** (suite + labeller proof, above) |
-| dumper code-path equals the old dumper's (same GPU), batch-size / composition / worker invariance | **PENDING -- GPU** (`eval/rl_fan_identity.py` A and C; hard requirement: EXACT) |
-| dumped fan equals the banked 22,742 step-10,075 sets on every key the dev box holds images for | **PENDING -- GPU** (`eval/rl_fan_identity.py` B). (!) Cross-hardware: the dev box is an RTX 4060 (Ada), the banked sets came from an A40 (Ampere); bf16 / TF32 kernels may differ, so B is MEASURED, never assumed, and a difference is reported with its magnitude as a DEFECT, not a footnote. If B differs while A is exact, the pod gate below decides. |
-| dev-box s/set and peak GPU | **PENDING -- GPU** |
+| dumper code-path equals the old dumper's (same GPU), batch-size / composition / worker invariance | **A PASS** (500/500 bit-identical); **C FAILED its EXACT bar** (batch size and grouping change values by up to 0.25) -- and the OLD dumper is batch-variant by the identical 59,156 values, new == old bit for bit at batch 1 and at batch 4: inherited from the forward pass. MEASURED 2026-10-12, `raw/rl_fan/RESULT_IDENTITY.md` |
+| dumped fan equals the banked 22,742 step-10,075 sets on every key the dev box holds images for | **MEASURED 2026-10-12: NOT bit-identical** on 1,365/1,365 keys, max abs delta 0.25, the old dumper likewise (B2) -- cross-GPU plus batch dependence; the bit-identical pod gate of section 6 would refuse a correct dumper (see `raw/rl_fan/RESULT_IDENTITY.md`). Original row: (!) Cross-hardware: the dev box is an RTX 4060 (Ada), the banked sets came from an A40 (Ampere); bf16 / TF32 kernels may differ, so B is MEASURED, never assumed, and a difference is reported with its magnitude as a DEFECT, not a footnote. If B differs while A is exact, the pod gate below decides. |
+| dev-box s/set and peak GPU | 0.520 s/set total, 0.420 forward, peak 2.27 GB (RTX 4060; MEASURED 2026-10-12, `raw/rl_fan/identity_devbox.json`) |
 | P2 pod image coverage | **UNVERIFIED -- INHERITED** (`--plan-only` on the pod) |
 The dev-box GPU was held by another agent's `ladder_eval_diag.py` (7.7 GB, OOM at my model load) the whole session; I did not kill it. A waiter (`_rlfan_work/wait_and_run_identity.sh`) starts the identity run on its own once the GPU is idle -- see `raw/rl_fan/HANDOFF_IDENTITY.md`.
 
