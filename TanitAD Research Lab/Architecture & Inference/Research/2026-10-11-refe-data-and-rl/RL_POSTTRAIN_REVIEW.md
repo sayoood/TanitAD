@@ -38,6 +38,8 @@
 (D2) Confirm map-derived reward terms (drivable-area distance, lane geometry) are inside the 2026-10-11 ruling: labels and rewards only, never inference inputs.
 (D3) Whether the lane-change shaping arm (R2) is worth a screening slot given a 2.7 % activation.
 
+**PI rulings (2026-10-12):** D1 ✅ **before P6** (*"RL post training should be before P6"*): the A40 order is P2 → RL-S1 → P6. D2 ✅ already settled on 2026-10-11 (maps at training only, as labels and rewards). D3 ⏳ open.
+
 **Integration (Master Mind):** the reward module, the on-policy proposal dumper and the EPO loss do **not exist**; they are specified here, not built. Landing this package stages two measurement
 scripts + raw JSON + 4 newly banked PDFs. Launch needs a launch-gate PASS token with a G-DVB entry for every new flag (CLAUDE.md, 2026-09-26).
 
