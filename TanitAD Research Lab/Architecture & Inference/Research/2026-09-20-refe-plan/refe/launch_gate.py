@@ -45,7 +45,8 @@ RLS1_ARM_SEEDS = {"C0": 0, "C1": 1, "R0": 0, "R1": 1, "R2": 0}                  
 RLS1_ARM_CLASS = {"C0": "C", "C1": "C", "R0": "R", "R1": "R", "R2": "R2"}            # C: BCE-only control; R: BCE + EPO, core reward; R2: R + K + L (D3, PI 2026-10-12)
 RLS1_EPO_REGISTERED = {"epo_temp": 0.1, "epo_beta": 0.1, "epo_ramp": 200, "epo_lam": 1.0, "epo_lam_d": 0.15, "epo_w_prog": 0.5}   # effective value (named OR default)
 RLS1_R2_REGISTERED = {"epo_lam_k": 0.05, "epo_lam_l": 0.05}
-RLS1_RECIPE = {"lr": 1e-4, "warmup": 50, "batch": 8, "accum": 8, "max_updates": 1000}   # the SFT-4 optimiser, 1,000 updates; EVERY arm, so R vs C differ by EPO alone
+RLS1_RECIPE = {"lr": 1e-4, "warmup": 50, "batch": 8, "accum": 8, "max_updates": 1000,   # the SFT-4 optimiser, 1,000 updates; EVERY arm, so R vs C differ by EPO alone
+               "epochs": 4.0}   # TL-1 (PI 2026-10-12, 16,000 scenes): --epochs 2 SILENTLY ends at 500 updates (batch 8 x accum 8); 4 reaches the 1,000
 # named-but-inert levers (a flag whose effect is switched off by another registered value is a declared lever the run does not use): the SFT-2 NAVSIM labels would
 # mix label sources with the PDM labels; --b-compw / --tau-s belong to other b-modes; --tau-t scales a ListNet term that --lam 0 multiplies by zero.
 RLS1_FORBIDDEN = ("--preflight", "--lane-labels-train", "--lane-labels-heldout", "--b-compw", "--tau-s", "--tau-t")

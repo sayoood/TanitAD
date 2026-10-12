@@ -2,11 +2,13 @@
 # RL-S1 on the P2 pod, AFTER P2 (PI order: P2 -> RL-S1 -> P6): frozen-fan dump -> PDM + rl_terms labels -> five scorer-only arms, each behind its own launch-gate
 # PASS token -> RL-val lookup reads -> a PRIVATE HF repo.  Runbook: eval/RLS1_POD_RUNBOOK.md.  Spec: eval/PREREG_RL_S1.md (DRAFT) + eval/HANDOFF_RL_S1.md (the gate section's argv).
 #
+# TL-1 (PI 2026-10-12, "paper-pure, smaller pool"): the pool is 16,000 RL-train + 3,000 RL-val scenes, and THIS CHAIN produces the teacher-lane labels of both sides itself
+# (stage 6: refe/rl_tlane_label.py per shard, pipelined with the PDM and rl_terms labellers; stage 6b verifies them EXACT).  Nothing is supplied from outside.
 # Needs: HF_TOKEN in the environment (write-scoped; read here, never echoed, never an argument, stripped from every child except the egress ones) and the package
 # shipped to /workspace/refe-plan-rls1 (a directory of its OWN: P2's token_ok re-measures /workspace/refe-plan, so adding files there while P2 trains would break it).
 # Start (detached):  nohup setsid bash /workspace/refe-plan-rls1/refe/rls1_pod.sh > /workspace/data/rls1/stdout.log 2>&1 < /dev/null &
 # Re-running after ANY interruption is safe: finished stages leave /workspace/data/rls1/stage/<name>.ok (an arm interrupted in training restarts at update 0: the trainer has no resume).
-# RLS1_STOP_AFTER=<precheck|env|ckpts|partition|tlane|plan|dump|labels|join|bank|gate_<ARM>|arm_<ARM>> ends the chain after that stage (a dry run; gate_C0 stops after the first token).
+# RLS1_STOP_AFTER=<precheck|env|ckpts|partition|plan|tlane|dump|labels|join|bank|gate_<ARM>|arm_<ARM>> ends the chain after that stage (a dry run; gate_C0 stops after the first token).
 # RLS1_ARMS="C0 R0 C1 R1 R2" (the default order: a control runs BEFORE its R arm, so K4 compares R with a finished C).  RLS1_ARMS="R0 R1 R2" is the PAIRED design
 # (each R run's arm A is its matched control by construction; K4 then reads against that arm A): about 9 h of A40 less.  The choice is the Master Mind's (runbook D-RLS1-1).
 # Every child is launched with fd 200 closed (the chain holds its flock on 200).  Markers are opaque ZZ tokens.
@@ -19,10 +21,10 @@ BASE=$R/base/model_sft4_B_u400.pt                                          # the
 OUT_REPO=Sayood/tanitad-refe-rls1                                          # PRIVATE; created by the first push (hf_egress.py push: create_repo exist_ok, private, verified private)
 FINAL_SHA256=4246a320be71ad0e315f8f298b7dadab3dbbba2c24f4fc30706e0129f5057e66
 TARGETS=$DATA/refe_navtrain/train_grow; IMAGES=$DATA/navtrain_pixels; CALIB=$TARGETS/calib_table.json
-PART=$PKG/raw/rl_pool/partition_runs; PNAME=A_no_trained_list_seed20261012
+PART=$PKG/raw/rl_pool/partition_runs; PNAME=A_no_trained_list_seed20261012_n16000
 MANIFEST=$PART/$PNAME.manifest.json; TRAIN_TSV=$PART/$PNAME/rl_train_scenes.tsv; VAL_TSV=$PART/$PNAME/rl_val_scenes.tsv
 SETS_TR=$R/sets_train; SETS_VA=$R/sets_val; PDM_TR=$R/pdm_train; PDM_VA=$R/pdm_val; TERMS_TR=$R/terms_train; TERMS_VA=$R/terms_val
-TLANE_TR="${RLS1_TLANE_TRAIN:-$R/tlane_train}"; TLANE_VA="${RLS1_TLANE_HELDOUT:-$R/tlane_heldout}"; VALLOGS=$R/rl_val_logs.txt
+TLANE_TR=$R/tlane_train; TLANE_VA=$R/tlane_heldout; VALLOGS=$R/rl_val_logs.txt
 NSH="${RLS1_SHARDS:-4}"
 # the launch-gate HMAC key lives on the persistent volume but OUTSIDE the shipped code tree and outside anything the egress pushes
 export TANITAD_GATE_KEY_FILE="$R/launch_gate.key"
@@ -70,7 +72,7 @@ arm_args() {
     R2) seed=0; epo="--epo --epo-terms-train $TERMS_TR --epo-terms-heldout $TERMS_VA --epo-k --epo-l" ;;
     *) return 1 ;;
   esac
-  echo "--ckpt $BASE --backbone vitl16 --targets $TARGETS --images $IMAGES --calib $CALIB --onpolicy $SETS_TR --heldout $SETS_VA --heldout-logs $VALLOGS --out $ad --pdm-labels-train $PDM_TR --pdm-labels-heldout $PDM_VA --require-pdm --b-mode listnet --lam 0 --lr 1e-4 --max-updates 1000 --epochs 2 --workers 3 --seed $seed --eval-every 250 --dump-scores $ad/scores --lane-head --teacher-lane-train $TLANE_TR --teacher-lane-heldout $TLANE_VA${epo:+ $epo}"
+  echo "--ckpt $BASE --backbone vitl16 --targets $TARGETS --images $IMAGES --calib $CALIB --onpolicy $SETS_TR --heldout $SETS_VA --heldout-logs $VALLOGS --out $ad --pdm-labels-train $PDM_TR --pdm-labels-heldout $PDM_VA --require-pdm --b-mode listnet --lam 0 --lr 1e-4 --max-updates 1000 --epochs 4 --workers 3 --seed $seed --eval-every 250 --dump-scores $ad/scores --lane-head --teacher-lane-train $TLANE_TR --teacher-lane-heldout $TLANE_VA${epo:+ $epo}"
 }
 # ⛔ THE LAUNCH-GATE TOKEN (CLAUDE.md, PI 2026-09-26, BINDING): scorer_finetune.py does not start unless this returns 0.  `launch_gate.py verify` RE-MEASURES the argv,
 # the code tree and the data and checks the HMAC; it is never a grep of a log.   token_ok  -> rc 0 iff ZZGATE-MATCHZZ
@@ -103,11 +105,13 @@ why="$(p2_over)" || refuse "$why"
 for f in refe/scorer_finetune.py refe/rl_fan_dump.py refe/rl_partition.py refe/rl_pool_available.py refe/onpolicy_relabel_pdm.py refe/rl_terms_label.py \
          refe/pdm_label_complete.py refe/rl_reward.py refe/hf_egress.py refe/rls1_checks.py refe/train.py refe/model.py refe/ckpt_io.py \
          refe/launch_gate.py refe/gate_token.py refe/gate_checks.py refe/gate_fixture.py refe/test_launch_gate.py refe/test_rl_epo.py refe/test_rl_reward.py \
+         refe/rl_tlane_label.py refe/test_rl_tlane_label.py refe/onpolicy_relabel_teacher_lane.py refe/onpolicy_label.py refe/planner.py refe/scorer_gate.py \
+         refe/score_proposals.py refe/route_rank.py refe/map_feature_cache.py refe/query_cache.py refe/navtrain_scenarios.py refe/build_scorer_targets.py code/augment_routes.py \
          eval/rl_val_eval.py eval/proxy_eval.py eval/rl_terms_join_identity.py SHIP_MANIFEST.json \
          code/pod_teacher_env.sh code/pod_dataprep.sh splits/navtrain.yaml splits/sft_heldout_logs.txt \
-         raw/rl_pool/partition_runs/A_no_trained_list_seed20261012.manifest.json \
-         raw/rl_pool/partition_runs/A_no_trained_list_seed20261012/rl_train_scenes.tsv \
-         raw/rl_pool/partition_runs/A_no_trained_list_seed20261012/rl_val_scenes.tsv; do
+         raw/rl_pool/partition_runs/A_no_trained_list_seed20261012_n16000.manifest.json \
+         raw/rl_pool/partition_runs/A_no_trained_list_seed20261012_n16000/rl_train_scenes.tsv \
+         raw/rl_pool/partition_runs/A_no_trained_list_seed20261012_n16000/rl_val_scenes.tsv; do
   [ -f "$PKG/$f" ] || refuse "$PKG/$f missing: ship code/ refe/ splits/ eval/ raw/rl_pool/ SHIP_MANIFEST.json to $PKG first (a directory of its own, NOT the one P2 ran from)"
 done
 # ⛔ never judge the disk with df (a pod volume's quota is invisible to it): WRITE to it.
@@ -161,14 +165,11 @@ env -u HF_TOKEN "$PY" rls1_checks.py val-logs --val "$VAL_TSV" --out "$VALLOGS" 
 grep -q "^ZZRLS1_VALLOGS_OK" "$R/val_logs.log" || refuse "the RL-val log list was not written (val_logs.log)"
 log "partition verified ($(tail -n 1 "$R/partition_verify.log" | cut -c1-120))"; stop_after partition
 
-# ---- 3b. the 7th (lane) output's labels.  u400 is a 7-output checkpoint, scorer_finetune REFUSES it without --lane-head, and --lane-head needs teacher-lane labels
-#          that reach the batch (its G10).  The labeller that makes them (onpolicy_relabel_teacher_lane.py) reads the teacher simulator's QUEUE rows, which the lean
-#          frozen-fan dump does not carry (10.2 s per set): the chain therefore ASKS FOR THEM NOW, before any compute.  See the runbook, decision TL-1.
-env -u HF_TOKEN "$PY" rls1_checks.py tlane-check --dir "$TLANE_TR" --tsv "$TRAIN_TSV" --min-rows "${RLS1_TLANE_MIN_TRAIN:-1}" > "$R/tlane_train.log" 2>&1 200>&-
-grep -q "^ZZRLS1_TLANE_OK" "$R/tlane_train.log" || refuse "no usable teacher-lane labels for RL-train in $TLANE_TR: $(tail -n 1 "$R/tlane_train.log" | cut -c1-250)"
-env -u HF_TOKEN "$PY" rls1_checks.py tlane-check --dir "$TLANE_VA" --tsv "$VAL_TSV" --min-rows "${RLS1_TLANE_MIN_HELDOUT:-1}" > "$R/tlane_heldout.log" 2>&1 200>&-
-grep -q "^ZZRLS1_TLANE_OK" "$R/tlane_heldout.log" || refuse "no usable teacher-lane labels for RL-val in $TLANE_VA: $(tail -n 1 "$R/tlane_heldout.log" | cut -c1-250)"
-log "teacher-lane labels: train $(tail -n 1 "$R/tlane_train.log" | cut -c1-80); held-out $(tail -n 1 "$R/tlane_heldout.log" | cut -c1-80)"; stop_after tlane
+# ---- 3b. (TL-1) the 7th (lane) output's labels are PRODUCED by this chain, not asked for: stage 6 runs refe/rl_tlane_label.py per shard (the SFT-4 recipe: the DriveRL Scorer on the
+#          dumped proposals + the banked teacher trajectory, last heading held) and stage 6b verifies them EXACT (the `tlane-exact` mode of rls1_checks.py).  There is NO override of the label
+#          directories: a label source this chain did not make cannot reach the trainer.  The labeller is smoke-tested on 3 RL-val sets right after the val dump (stage `tlane`).
+NTRAIN=$(( $(wc -l < "$TRAIN_TSV") - 1 ))        # the verified partition's RL-train scenes (16,000): the planned-update check of every arm reads it
+log "partition: $NTRAIN RL-train scenes"
 
 # ---- 4. image coverage of the frozen partition on THIS pod (seconds, no GPU).  PREREG_RL_S1 section 8: a shortfall triggers the ONE admissible remedy
 #          (rl_pool_available.py + the same rl_partition.py / seed / params), which is LOGGED and then STOPS the chain: a new partition_id must be written into
@@ -184,9 +185,9 @@ if ! stage_done plan; then
     env -u HF_TOKEN "$PY" rl_pool_available.py --pool "$PKG/raw/rl_pool/navtrain_token_table.tsv.gz" --unavailable "$R"/plan/unavailable_scenes_*.tsv \
       --out "$R/partition_remedy/pool_available.tsv.gz" > "$R/remedy.log" 2>&1 200>&-
     env -u HF_TOKEN "$PY" rl_partition.py --pool "$R/partition_remedy/pool_available.tsv.gz" --navtest "$PKG/raw/p2_r2_instrument/baseline/navtest_full_tokens.json" \
-      --heldout-logs "$PKG/splits/sft_heldout_logs.txt" --n-train 48000 --n-val 3000 --min-val-logs 60 --seed 20261012 --out "$R/partition_remedy" >> "$R/remedy.log" 2>&1 200>&-
+      --heldout-logs "$PKG/splits/sft_heldout_logs.txt" --n-train 16000 --n-val 3000 --min-val-logs 60 --seed 20261012 --out "$R/partition_remedy" >> "$R/remedy.log" 2>&1 200>&-
     newid="$("$PY" -c "import json,sys; print(json.load(open(sys.argv[1]))['partition_id'])" "$R/partition_remedy/rl_partition_manifest.json" 2> /dev/null)"
-    log "ZZRLS1_REMEDY old partition_id 272cfd357b81 new ${newid:0:12} ($(cat "$R"/plan/unavailable_scenes_*.tsv | wc -l) rows incl. headers; $R/partition_remedy)"
+    log "ZZRLS1_REMEDY old partition_id 9995a39aeeac new ${newid:0:12} ($(cat "$R"/plan/unavailable_scenes_*.tsv | wc -l) rows incl. headers; $R/partition_remedy)"
     "$PY" hf_egress.py push --repo "$OUT_REPO" --prefix remedy --tag partition_remedy --chain-log "$L" --files "$R/plan.log" "$R/remedy.log" \
       "$R/partition_remedy/rl_partition_manifest.json" 200>&-
     refuse "image-coverage gap on this pod: the remedy partition is in $R/partition_remedy (new id ${newid:0:12}); log OLD and NEW partition_id in PREREG_RL_S1 section 8, re-pin rls1_checks.PARTITION, re-ship, re-run"
@@ -195,7 +196,7 @@ if ! stage_done plan; then
   grep -q "^ZZRLFAN_DONE 0 0 0$" "$R/plan.log" || refuse "plan-only did not print ZZRLFAN_DONE 0 0 0 (plan.log)"
   stage_mark plan
 fi
-log "image coverage complete for all 51,000 scenes ($(grep '^ZZRLFAN_PLAN' "$R/plan.log" | tail -n 1))"; stop_after plan
+log "image coverage complete for all 19,000 scenes ($(grep '^ZZRLFAN_PLAN' "$R/plan.log" | tail -n 1))"; stop_after plan
 
 # ---- 5. the labellers must be ABLE to label before hours of them: NAVSIM's metric-cache processor, simulator and scorer import and build
 #          (2026-10-11: navsim was missing from the venv and the relabel failed EVERY set).  The navtrain DBs are only needed here.
@@ -218,7 +219,7 @@ dump_one() {      # dump_one <side> <i> <n> <tsv> <sets dir>
   [ $? -eq 0 ] && grep -q "^ZZRLFAN_DONE [0-9]* [0-9]* 0$" "$R/$m.log" || refuse "dump $1 shard $2/$3 failed or has missing scenes ($m.log)"
   stage_mark "$m"
 }
-label_one() {     # label_one <side> <i> <n> <sets> <pdm> <terms>     (runs in a background subshell: it cannot exit the chain, the markers are the verdict)
+label_one() {     # label_one <side> <i> <n> <sets> <pdm> <terms> <tlane> <tsv>     (runs in a background subshell: it cannot exit the chain, the markers are the verdict)
   local m="label_$1_s$2of$3" f="onpolicy_rlfan_fan_s$2of$3.jsonl"
   stage_done "$m" && return 0
   ( echo 1000 > /proc/self/oom_score_adj 2> /dev/null
@@ -231,39 +232,60 @@ label_one() {     # label_one <side> <i> <n> <sets> <pdm> <terms>     (runs in a
     exec env -u HF_TOKEN OMP_NUM_THREADS=1 nice -n 19 "$PY" rl_terms_label.py --sets "$4" --out "$6" --files "$f" --workers "$LW" ) >> "$R/$m.terms.log" 2>&1 200>&-
   echo "ZZTERMS_EXIT $?" >> "$R/$m.terms.log"
   grep -q "^ZZRELABEL_RLT_DONE [0-9]* 0 0$" "$R/$m.terms.log" || { log "REFUSED: rl_terms of $m incomplete: $(tail -n 2 "$R/$m.terms.log" | tr '\n' ' ' | cut -c1-200)"; return 1; }
+  # TL-1: the teacher-lane labels of this shard (the long pole: about 10.2 s per set, MEASURED).  REFE_SIM_HZ=10 as op_env.sh / pod_dataprep.sh (the bank's own rate).
+  ( echo 1000 > /proc/self/oom_score_adj 2> /dev/null
+    exec env -u HF_TOKEN OMP_NUM_THREADS=1 REFE_SIM_HZ=10 nice -n 19 "$PY" rl_tlane_label.py --sets "$4" --bank "$TARGETS" --out "$7" --keys "$8" --shard "$2/$3" \
+      --repair-last-heading --workers "$LW" ) >> "$R/$m.tlane.log" 2>&1 200>&-
+  echo "ZZTLANE_EXIT $?" >> "$R/$m.tlane.log"
+  grep -q "^ZZTLANE_DONE [0-9]* [0-9]* 0$" "$R/$m.tlane.log" || { log "REFUSED: teacher-lane labels of $m incomplete: $(tail -n 2 "$R/$m.tlane.log" | tr '\n' ' ' | cut -c1-200)"; return 1; }
   stage_mark "$m"
 }
 LABEL_MARKS="label_val_s0of1"
 ( dump_one val 0 1 "$VAL_TSV" "$SETS_VA" ) 200>&-
 stage_done dump_val_s0of1 || refuse "dump of RL-val did not finish"
-( flock 201; label_one val 0 1 "$SETS_VA" "$PDM_VA" "$TERMS_VA" ) 201>"$R/label.lock" 200>&- &
+# ---- 6a. THE TEACHER-LANE LABELLER MUST BE ABLE TO LABEL before hours of dump + labels (2026-10-11: every long stage gets a smoke).  3 RL-val sets through the REAL
+#          rl_tlane_label.py (the DriveRL Scorer on THIS pod's DBs and maps), judged by the acceptance the trainer applies to the rows.
+if ! stage_done tlane; then
+  rm -rf "$R/tlane_smoke"
+  env -u HF_TOKEN OMP_NUM_THREADS=1 REFE_SIM_HZ=10 "$PY" rl_tlane_label.py --sets "$SETS_VA" --bank "$TARGETS" --out "$R/tlane_smoke" --keys "$VAL_TSV" \
+    --repair-last-heading --workers 1 --limit 3 > "$R/tlane_smoke.log" 2>&1 200>&-
+  grep -q "^ZZTLANE_DONE 3 0 0$" "$R/tlane_smoke.log" || refuse "the teacher-lane labeller cannot label 3 RL-val sets (tlane_smoke.log): $(tail -n 1 "$R/tlane_smoke.log" | cut -c1-200)"
+  env -u HF_TOKEN "$PY" rls1_checks.py tlane-check --dir "$R/tlane_smoke" --tsv "$VAL_TSV" --min-rows 3 > "$R/tlane_smoke_check.log" 2>&1 200>&-
+  grep -q "^ZZRLS1_TLANE_OK" "$R/tlane_smoke_check.log" || refuse "the 3 smoke labels are not rows the trainer accepts (tlane_smoke_check.log): $(tail -n 1 "$R/tlane_smoke_check.log" | cut -c1-200)"
+  stage_mark tlane
+fi
+log "teacher-lane labeller smoke ok (3 RL-val sets, rows accepted by the trainer's reader)"; stop_after tlane
+( flock 201; label_one val 0 1 "$SETS_VA" "$PDM_VA" "$TERMS_VA" "$TLANE_VA" "$VAL_TSV" ) 201>"$R/label.lock" 200>&- &
 LPIDS="$!"
 for i in $(seq 0 $((NSH - 1))); do
   ( dump_one train "$i" "$NSH" "$TRAIN_TSV" "$SETS_TR" ) 200>&-
   stage_done "dump_train_s${i}of${NSH}" || refuse "dump of RL-train shard $i/$NSH did not finish"
-  ( flock 201; label_one train "$i" "$NSH" "$SETS_TR" "$PDM_TR" "$TERMS_TR" ) 201>"$R/label.lock" 200>&- &
+  ( flock 201; label_one train "$i" "$NSH" "$SETS_TR" "$PDM_TR" "$TERMS_TR" "$TLANE_TR" "$TRAIN_TSV" ) 201>"$R/label.lock" 200>&- &
   LPIDS="$LPIDS $!"
   LABEL_MARKS="$LABEL_MARKS label_train_s${i}of${NSH}"
 done
 log "dump ok (val + $NSH train shards); waiting for the last labels"
 wait $LPIDS
 for m in $LABEL_MARKS; do stage_done "$m" || refuse "labels of $m did not finish ($m.pdm.log, $m.terms.log, chain.log); re-run to resume"; done
-log "labels ok (PDM + rl_terms)"; stop_after dump; stop_after labels       # the two are pipelined: either stop name ends the chain here
+log "labels ok (PDM + rl_terms + teacher lane)"; stop_after dump; stop_after labels       # the two are pipelined: either stop name ends the chain here
 
 # ---- 7. THE JOIN GATE (post-label): the dump IS the partition side, PDM labels and rl_terms on 100 % of the sets (C and R must train on the same sets), and G-REWARD-ID
 #          (g > 0 <=> DAC = 0) with ZERO disagreements.  A number below 100 % is a refusal, never a footnote.
 for side in train val; do
-  if [ "$side" = train ]; then sd=$SETS_TR; pd=$PDM_TR; td=$TERMS_TR; tsv=$TRAIN_TSV; ex=48000; else sd=$SETS_VA; pd=$PDM_VA; td=$TERMS_VA; tsv=$VAL_TSV; ex=3000; fi
+  if [ "$side" = train ]; then sd=$SETS_TR; pd=$PDM_TR; td=$TERMS_TR; tl=$TLANE_TR; tsv=$TRAIN_TSV; ex=16000; else sd=$SETS_VA; pd=$PDM_VA; td=$TERMS_VA; tl=$TLANE_VA; tsv=$VAL_TSV; ex=3000; fi
+  # TL-1 (6b): the teacher-lane labels of this side are EXACT: one accepted row per dumped set (= per scene), none foreign, none doubled, the count equal to the partition's
+  env -u HF_TOKEN "$PY" rls1_checks.py tlane-exact --dir "$tl" --sets "$sd" --tsv "$tsv" --expect "$ex" --json "$R/tlane_$side.json" > "$R/tlane_exact_$side.log" 2>&1 200>&-
+  grep -q "^ZZRLS1_TLANE_OK" "$R/tlane_exact_$side.log" || refuse "teacher-lane labels ($side) are not exact: $(tail -n 1 "$R/tlane_exact_$side.log" | cut -c1-300)"
   env -u HF_TOKEN "$PY" rls1_checks.py join-gate --side "$side" --sets "$sd" --pdm "$pd" --terms "$td" --tsv "$tsv" --expect "$ex" --json "$R/join_$side.json" \
     > "$R/join_$side.log" 2>&1 200>&-
   grep -q "^ZZRLS1_JOIN_OK" "$R/join_$side.log" || refuse "join gate ($side): $(tail -n 1 "$R/join_$side.log" | cut -c1-300)"
 done
-log "join gate PASS (train + val: labels on 100 %, G-REWARD-ID clean)"; stop_after join
+log "join gate PASS (train + val: PDM, rl_terms and teacher-lane labels on 100 %, G-REWARD-ID clean)"; stop_after join
 
 # ---- 8. bank the dump and the labels OFF the pod before any arm trains (3.3 h of GPU + ~63 CPU-h; they must not exist once)
 if ! stage_done bank; then
   mkdir -p "$R/outbox"
-  for d in sets_train sets_val pdm_train pdm_val terms_train terms_val; do
+  for d in sets_train sets_val pdm_train pdm_val terms_train terms_val tlane_train tlane_heldout; do
     tar -C "$R" -czf "$R/outbox/rlfan_$d.tar.gz" "$d" || refuse "tar of $d failed"
   done
   ( cd "$R/outbox" && sha256sum rlfan_*.tar.gz > MANIFEST_rlfan_sha256.txt )
@@ -286,6 +308,9 @@ for ARM in ${RLS1_ARMS:-C0 R0 C1 R1 R2}; do
   [ -f "$S/arm_${ARM}_killed" ] && stage_done "egress_$ARM" && refuse "arm $ARM was KILLED by a pre-registered rule ($(cat "$S/arm_${ARM}_killed")): the Master Mind decides; delete $S/arm_${ARM}_killed or drop the arm from RLS1_ARMS"
   ARMDIR=$R/arms/$ARM; LG=$R/lg/$ARM; ARGS="$(arm_args "$ARM")" || refuse "no argv for arm $ARM"
   mkdir -p "$ARMDIR" "$LG"
+  # TL-1: the pre-registered budget is --max-updates 1000.  On 16,000 scenes --epochs 2 would end at 500 (the trainer never complains), and the reads below name update1000.
+  env -u HF_TOKEN "$PY" rls1_checks.py updates-check --args "$ARGS" --n-sets "$NTRAIN" > "$ARMDIR/updates.log" 2>&1 200>&-
+  grep -q "^ZZRLS1_UPDATES_OK" "$ARMDIR/updates.log" || refuse "the planned optimizer updates of $ARM are not the pre-registered budget: $(tail -n 1 "$ARMDIR/updates.log" | cut -c1-250)"
   case "$ARM" in C*) KIND=A; RD="";; *) KIND=B; RD=C${ARM:1:1};; esac
   [ "$ARM" = R2 ] && RD=C0
   # the control the K4 / K5 monitor and the replay compare R with: the matched C run's arm A when that run finished, else this run's own arm A (paired by construction)

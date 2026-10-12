@@ -167,3 +167,38 @@ RL-val read is a table lookup (the true PDMS of a scorer's pick). Navtrain parti
   parameters), then this section gets the OLD and NEW partition_id BEFORE any RL number exists. Property-tested on the real `partition()`: removing a scene the partition did
   not use leaves train and val identical; removing a train scene replaces exactly it, by the next scene in the frozen order.
 * Not a pre-registration change: no lever, bar, kill rule or outcome in sections 1-7 is touched.
+
+## 9. TL-1 re-cut -- 2026-10-12 (PI: "Paper-pure, smaller pool"; appended, nothing above is edited; written BEFORE any RL number exists)
+
+**Reason (PI, 2026-10-12):** u400 is a 7-output scorer, so every arm needs teacher-lane labels for the RL scenes. They are the DriveRL teacher simulator's own signals (paper-pure, the SFT-4 recipe), which cost
+about 10.2 CPU-s per set; a lean re-implementation would have been a different label. The PI chose to keep them paper-pure and shrink the pool. Section 8 allowed ONE re-cut before any RL number exists (an availability
+filter); this is a second, PI-ordered one, made in the same window (no RL number, no training step, no label of any arm exists), by the SAME tool and seed, and it is logged here as the prereg requires.
+
+| | OLD (sections 0-8) | NEW (this section) |
+|---|---|---|
+| tool, seed, other parameters | `refe/rl_partition.py` (`rl_partition/1`), seed **20261012**, `--n-val 3000 --min-val-logs 60`, no trained-keys list | identical |
+| `--n-train` | 48,000 (576 logs) | **16,000 (166 logs)** |
+| `partition_id` | `272cfd357b81db535a1214fc344f71469219c17ac3c8203698d5c2b0f1befa49` | **`9995a39aeeac3833dd3f679b75e883b056e3d4d235bb9dc986578a81a7a256fa`** |
+| manifest sha256 | `6a2b5aec3ae2c2f3ea00b826f7414aad4a4617f9e9a793b16332e9ccb2b142f0` | **`f8a1640cb61df48ea86e6afdb9d7c357bd6443073b367779585f5238bb723edb`** |
+| RL-train TSV sha256 | `aaa2bcd530c2339241b5b5caec08b2bbf71698606ff924301e9b750ffce426bc` | `136923539e3537aaebce9cc20a8d98ddd4df6217dd2102de60a0206d612bf0a5` |
+| RL-val TSV sha256 | `39f425dc3f0866ec6e6bb4e553e85f19287e65273e261d6743dd9c2ad5b8b24c` (3,000 scenes, 75 logs) | **the same bytes** |
+| files | `raw/rl_pool/partition_runs/A_no_trained_list_seed20261012{.manifest.json,/}` (kept as the record) | `raw/rl_pool/partition_runs/A_no_trained_list_seed20261012_n16000{.manifest.json,/}` |
+
+MEASURED (2026-10-12, `refe/rl_partition.py` re-run on the shipped inputs): (1) the tool reproduces the frozen 48,000 / 3,000 partition **byte for byte** (both TSV sha256 equal to the old manifest's), so the inputs and the
+code are the ones that made it; (2) the new RL-train list is an **exact prefix** of the old RL-train order (the first 16,000 of 48,000 rows; it ends inside its 166th log, 64 of that log's 82 scenes, as the tool's `take` rule does), pinned in
+`refe/test_rls1_chain.py`; (3) **RL-val is byte-identical**, so every RL-val quantity (scenes, labels, the A0 base read, the K3/K4/K5 baselines) is unchanged. The re-cut drops 32,000 RL-train scenes and nothing else.
+
+**Bias, stated:** the 16,000 are the scenes of the first 166 logs in the frozen `sha256(seed | log)` order, whole logs, hash order inside a log: a draw of logs that no scene property (route, speed, map, manoeuvre) selected. The
+stated cost of section 0 stands and now applies to the smaller pool: about 24 % of the scenes were in u400's SFT-4 draw (ESTIMATED; the draw cannot be named), shared equally by every C and R arm. Fewer logs (166 vs 576) means a
+narrower coverage of road layouts per arm; RL-val still spans 75 logs and the decisive read is full navtest, which no arm trained on.
+
+**Considered and NOT adopted: choosing RL scenes whose queue rows or frozen-fan sets already exist.** The old queue / set files hold the 64 proposals for at most 22,742 served sets (13,713 plain rank-0 views); the simulator
+cost that dominates (about 10.2 CPU-s per set) is paid per set whatever produced the proposals, no PDM label survives off the dead pod, and those files are on the dev box, not on the pod. The only saving is the dump of at most
+13,713 sets: 13,713 x 0.2313 s = 0.9 h of A40 (E) out of about 8 h. A rule restricted to those keys would add a selection (rank-0 views of the first logs the old dump reached) for under an hour. No such rule is registered.
+
+**The recipe consequence (declared, one number):** `--max-updates 1000` is the pre-registered budget and `--epochs 2` was only ever headroom (48,000 / 64 x 2 = 1,500 > 1,000). On 16,000 scenes `--epochs 2` gives
+ceil(16,000 / 8 x 2 / 8) = **500 updates** (the trainer's `total = min(...)` ends silently), which would halve the budget, break the 250-update checks' schedule and the `update1000` reads. The chain therefore runs
+**`--epochs 4`** (exactly 1,000 updates), and `rls1_checks.py updates-check` REFUSES any arm whose planned updates differ from `--max-updates`. Every scene is seen 4 times instead of 1.33 (BCE and EPO alike, all arms
+identically). `--epochs` is not pinned by the gate. The alternative, 500 updates at `--epochs 2`, changes the ramp (200 of 500 updates), K3/K4 timing and the cost model, so it was not taken; it is the Master Mind's / PI's call.
+
+**Unchanged:** every lever, bar, kill rule and outcome of sections 1-7. Section 3's "48,000 scenes" and the 51,000 of the OPEN-BASE tables read 16,000 / 19,000 from here on.

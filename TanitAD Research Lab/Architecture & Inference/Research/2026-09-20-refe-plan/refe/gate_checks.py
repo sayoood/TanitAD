@@ -912,10 +912,24 @@ def _drop(argv, flag, nvalues: int = 0):
     return out
 
 
+# G-CKPT's three trainings run with DETERMINISTIC algorithms.  Two plain CUDA runs of the same config are NOT bit-identical (non-deterministic
+# reductions under bf16 autocast, amplified by the winner-take-all assignment), so the bitwise round trip could never pass on a GPU: MEASURED
+# 2026-10-12 on the P2 pod (U and H1 already differ at step 1, before any halt) and reproduced on the dev-box GPU.  Under this bootstrap the
+# round trip is bit-identical on CUDA and a resume that drops the optimiser state still FAILS (raw/2026-10-12-gate-gpu-defects/).  PyTorch
+# chooses deterministic attention kernels itself here; the math SDPA path is NOT forced (it would materialise ViT-L attention on the A40).
+DET_BOOT = ("import sys, runpy, torch\n"
+            "torch.use_deterministic_algorithms(True)\n"
+            "torch.backends.cudnn.deterministic = True\n"
+            "torch.backends.cudnn.benchmark = False\n"
+            "script = sys.argv[1]\n"
+            "sys.argv = sys.argv[1:]\n"
+            "runpy.run_path(script, run_name='__main__')\n")
+
+
 def _train_sub(args: list, log: Path) -> int:
-    env = dict(os.environ, PYTHONIOENCODING="utf-8", PYTHONHASHSEED="0")
+    env = dict(os.environ, PYTHONIOENCODING="utf-8", PYTHONHASHSEED="0", CUBLAS_WORKSPACE_CONFIG=":4096:8")
     env.pop(ARM_ENV, None)
-    r = subprocess.run([sys.executable, str(HERE / "train.py")] + args, cwd=str(HERE), env=env, capture_output=True, text=True,
+    r = subprocess.run([sys.executable, "-c", DET_BOOT, str(HERE / "train.py")] + args, cwd=str(HERE), env=env, capture_output=True, text=True,
                        encoding="utf-8", errors="replace")
     log.write_text(r.stdout + r.stderr, encoding="utf-8")
     return r.returncode

@@ -8,6 +8,8 @@
      --epo / an R arm without it / R0 with K,L ... REFUSED), token_ok against tokens minted by the gate's own mint() for refe_rls1.
   3. The REAL rls1_pod.sh executed in a sandbox up to its first refusals (lock held, GPU busy, P2 unfinished, no HF_TOKEN, missing or wrong model_final).
   4. rls1_checks.py in both directions (pins, partition, teacher lane, the join gate below 100 % / with a G-REWARD-ID break, the kill rules, monitor, replay).
+  5. TL-1 (2026-10-12): the chain PRODUCES the teacher-lane labels (smoke -> per-shard labeller -> EXACT gate), the partition constants the chain carries equal the pinned
+     ones, the planned update count equals the pre-registered budget; `rls1_checks.tlane_exact` / `updates_check` are driven in both directions and by source mutations.
 
 Run: python refe/test_rls1_chain.py   -> ZZTEST_PASS <n>   (needs bash on PATH; Git Bash on the dev box).   Any skipped check prints ZZTEST_SKIP and is NOT counted.
 """
@@ -17,8 +19,11 @@ import json
 import os
 import re
 import shlex
+import io
+import contextlib
 import shutil
 import subprocess
+import types
 import sys
 import tempfile
 from pathlib import Path
@@ -33,12 +38,13 @@ from test_p2r_chain import drop_line, logical_commands, tar_owner_violations  # 
 
 CHAIN = HERE / "rls1_pod.sh"
 ARMS = ("C0", "C1", "R0", "R1", "R2")
-CHILD_RX = re.compile(r'"\$PY" +(scorer_finetune\.py|rls1_checks\.py|rl_fan_dump\.py|rl_partition\.py|rl_pool_available\.py|onpolicy_relabel_pdm\.py|rl_terms_label\.py|'
+CHILD_RX = re.compile(r'"\$PY" +(scorer_finetune\.py|rls1_checks\.py|rl_fan_dump\.py|rl_partition\.py|rl_pool_available\.py|onpolicy_relabel_pdm\.py|rl_terms_label\.py|rl_tlane_label\.py|'
                       r'pdm_label_complete\.py|launch_gate\.py|hf_egress\.py)|"\$PY" +"\$PKG/refe/launch_gate\.py"|bash +"\$PKG/code/|^sleep |\bsleep +\d+ |\bdd +if=')
-ORDER = ["p2_over)\" || refuse", "source \"$WORK/teacher_env.sh\"", "--pin model_final", "--pin u400", "verify-partition", "tlane-check", "rl_fan_dump.py --plan-only",
-         "STAGES=dbs", "PT._setup()", "dump_one val 0 1", "rls1_checks.py join-gate", "--tag rlfan_data", "scorer_finetune.py $ARGS --preflight",
+ORDER = ["p2_over)\" || refuse", "source \"$WORK/teacher_env.sh\"", "--pin model_final", "--pin u400", "verify-partition", "rl_fan_dump.py --plan-only",
+         "STAGES=dbs", "PT._setup()", "dump_one val 0 1", "rl_tlane_label.py --sets \"$SETS_VA\"", "rls1_checks.py tlane-exact", "rls1_checks.py join-gate", "--tag rlfan_data",
+         "rls1_checks.py updates-check", "scorer_finetune.py $ARGS --preflight",
          "launch_gate.py run --profile refe_rls1", "scorer_finetune.py $ARGS >>", "rls1_checks.py replay", "--rl-val-scenes $VAL_TSV", "--tag \"arm_$ARM\""]
-PRESENT = ["onpolicy_relabel_pdm.py --sets", "rl_terms_label.py --sets", "dump_one()", "label_one()"]
+PRESENT = ["onpolicy_relabel_pdm.py --sets", "rl_terms_label.py --sets", "rl_tlane_label.py --sets", "dump_one()", "label_one()"]
 TOKEN_OK_RX = re.compile(r"^token_ok\(\) \{\n.*?^\}\n", re.S | re.M)
 
 
@@ -103,8 +109,57 @@ def check_chain(text):
             v.append("CKPT_RESULT_UNCHECKED:" + pin)
     if not re.search(r'grep -q "\^ZZRLS1_PARTITION_OK" "\$R/partition_verify\.log" \|\| refuse', text):
         v.append("PARTITION_UNCHECKED")
-    if len(re.findall(r'grep -q "\^ZZRLS1_TLANE_OK" "\$R/tlane_(?:train|heldout)\.log" \|\| refuse', text)) != 2:
-        v.append("TLANE_UNCHECKED")
+    # ---- TL-1: the chain PRODUCES the teacher-lane labels (smoke, per-shard labeller, exact gate); nothing is supplied from outside
+    if re.search(r"RLS1_TLANE_(TRAIN|HELDOUT|MIN)", text):
+        v.append("TLANE_OVERRIDE_PRESENT")
+    if not re.search(r'grep -q "\^ZZTLANE_DONE 3 0 0\$" "\$R/tlane_smoke\.log" \|\| refuse', text):
+        v.append("TLANE_SMOKE_UNCHECKED")
+    if not re.search(r'grep -q "\^ZZRLS1_TLANE_OK" "\$R/tlane_smoke_check\.log" \|\| refuse', text):
+        v.append("TLANE_SMOKE_ROWS_UNCHECKED")
+    if (not re.search(r'grep -q "\^ZZRLS1_TLANE_OK" "\$R/tlane_exact_\$side\.log" \|\| refuse', text)
+            or 'tlane-exact --dir "$tl" --sets "$sd" --tsv "$tsv" --expect "$ex"' not in text):
+        v.append("TLANE_EXACT_UNCHECKED")
+    if not re.search(r'grep -q "\^ZZTLANE_DONE \[0-9\]\* \[0-9\]\* 0\$" "\$R/\$m\.tlane\.log" \|\| \{ log "REFUSED', text):
+        v.append("TLANE_LABELS_UNAUDITED")
+    tl_cmds = [c for c in logical_commands(text) if "rl_tlane_label.py" in c and '"$PY"' in c]
+    if len(tl_cmds) != 2:
+        v.append(f"TLANE_LABELLER_CALLS:{len(tl_cmds)}")
+    for c in tl_cmds:
+        if "--repair-last-heading" not in c:
+            v.append("TLANE_NO_REPAIR")
+        if "REFE_SIM_HZ=10" not in c:
+            v.append("TLANE_NO_SIM_HZ")
+        if '--bank "$TARGETS"' not in c:
+            v.append("TLANE_BANK_NOT_THE_TRAINING_BANK")
+    lab = [c for c in tl_cmds if "$4" in c]
+    if len(lab) != 1 or '--keys "$8"' not in lab[0] or '--shard "$2/$3"' not in lab[0]:
+        v.append("TLANE_KEYS_OR_SHARD_NOT_PINNED")
+    if "for d in sets_train sets_val pdm_train pdm_val terms_train terms_val tlane_train tlane_heldout; do" not in text:
+        v.append("BANK_LACKS_TLANE")
+    if not re.search(r'grep -q "\^ZZRLS1_UPDATES_OK" "\$ARMDIR/updates\.log" \|\| refuse', text) or 'updates-check --args "$ARGS" --n-sets "$NTRAIN"' not in text:
+        v.append("UPDATES_UNCHECKED")
+    # the partition constants the chain carries are the pinned ones (a re-cut without a re-pin, or the reverse, is a silent drift)
+    mex = re.search(r"tsv=\$TRAIN_TSV; ex=(\d+); else .*? tsv=\$VAL_TSV; ex=(\d+); fi", text)
+    if not mex or (int(mex.group(1)), int(mex.group(2))) != (RC.PARTITION["n_train"], RC.PARTITION["n_val"]):
+        v.append("PARTITION_DRIFT:join_gate_counts")
+    mrm = re.search(r"--n-train (\d+) --n-val (\d+) --min-val-logs (\d+) --seed 20261012", text)
+    if not mrm or tuple(int(x) for x in mrm.groups()) != (RC.PARTITION["n_train"], RC.PARTITION["n_val"], RC.PARTITION["min_val_logs"]):
+        v.append("PARTITION_DRIFT:remedy_params")
+    mrid = re.search(r"ZZRLS1_REMEDY old partition_id (\w+) new", text)
+    if not mrid or not RC.PARTITION["partition_id"].startswith(mrid.group(1)):
+        v.append("PARTITION_DRIFT:remedy_old_id")
+    mpn = re.search(r"^PART=.*?; PNAME=(\S+)$", text, re.M)
+    if not mpn:
+        v.append("PARTITION_DRIFT:no_PNAME")
+    else:
+        mf_ = PKGROOT / "raw" / "rl_pool" / "partition_runs" / (mpn.group(1) + ".manifest.json")
+        if not mf_.is_file() or RC.sha256_file(str(mf_)) != RC.PARTITION["manifest_sha256"]:
+            v.append("PARTITION_DRIFT:manifest_sha256")
+        if f"raw/rl_pool/partition_runs/{mpn.group(1)}.manifest.json" not in text:
+            v.append("PARTITION_DRIFT:required_files")
+    mep = re.search(r"--epochs (\S+)", fn_body(text, "arm_args"))
+    if not mep or not RC.updates_check(f"--max-updates 1000 --epochs {mep.group(1)}", RC.PARTITION["n_train"])[0]:
+        v.append("UPDATES_BUDGET:" + (mep.group(1) if mep else "none"))
     if "--plan-only" not in text or not re.search(r'grep -q "\^ZZRLFAN_DONE 0 0 0\$" "\$R/plan\.log" \|\| refuse', text):
         v.append("NO_PLAN_ONLY")
     if '"$prc" = 3' not in text or "rl_pool_available.py" not in text or "ZZRLS1_REMEDY" not in text:
@@ -224,7 +279,26 @@ def mutations(text):
          "CKPT_RESULT_UNCHECKED:u400"),
         ("model_final sha256 pin edited", sw("FINAL_SHA256=4246a320", "FINAL_SHA256=4246a321"), "PIN_MISMATCH"),
         ("partition verdict unchecked", drop_line(text, 'grep -q "^ZZRLS1_PARTITION_OK"'), "PARTITION_UNCHECKED"),
-        ("teacher-lane verdict unchecked", drop_line(text, 'grep -q "^ZZRLS1_TLANE_OK" "$R/tlane_heldout.log"'), "TLANE_UNCHECKED"),
+        ("a label override is back", sw("TLANE_TR=$R/tlane_train;", 'TLANE_TR="${RLS1_TLANE_TRAIN:-$R/tlane_train}";'), "TLANE_OVERRIDE_PRESENT"),
+        ("no labeller smoke", re.sub(r"(?s)# ---- 6a\..*?stop_after tlane\n", "", text), 'MISSING:rl_tlane_label.py --sets "$SETS_VA"'),
+        ("smoke verdict unchecked", drop_line(text, 'grep -q "^ZZTLANE_DONE 3 0 0$"'), "TLANE_SMOKE_UNCHECKED"),
+        ("smoke rows unchecked", drop_line(text, 'grep -q "^ZZRLS1_TLANE_OK" "$R/tlane_smoke_check.log"'), "TLANE_SMOKE_ROWS_UNCHECKED"),
+        ("exact verdict unchecked", drop_line(text, 'grep -q "^ZZRLS1_TLANE_OK" "$R/tlane_exact_$side.log"'), "TLANE_EXACT_UNCHECKED"),
+        ("exact gate without the partition's count", sw(' --expect "$ex" --json "$R/tlane_$side.json"', ' --json "$R/tlane_$side.json"'), "TLANE_EXACT_UNCHECKED"),
+        ("exact gate deleted", sw("rls1_checks.py tlane-exact", "rls1_checks.py tlane-skipped"), "MISSING:rls1_checks.py tlane-exact"),
+        ("tlane labels unaudited", drop_line(text, 'grep -q "^ZZTLANE_DONE [0-9]* [0-9]* 0$"'), "TLANE_LABELS_UNAUDITED"),
+        ("tlane labeller without the repair", sw('--shard "$2/$3" \\\n      --repair-last-heading --workers "$LW"', '--shard "$2/$3" \\\n      --workers "$LW"'), "TLANE_NO_REPAIR"),
+        ("tlane labeller reads another bank", sw('--sets "$4" --bank "$TARGETS" --out "$7"', '--sets "$4" --bank "$IMAGES" --out "$7"'), "TLANE_BANK_NOT_THE_TRAINING_BANK"),
+        ("tlane labeller without REFE_SIM_HZ", sw("OMP_NUM_THREADS=1 REFE_SIM_HZ=10 nice", "OMP_NUM_THREADS=1 nice"), "TLANE_NO_SIM_HZ"),
+        ("tlane labeller not tied to the partition", sw(' --keys "$8" --shard', " --shard"), "TLANE_KEYS_OR_SHARD_NOT_PINNED"),
+        ("tlane labeller keeps fd 200", sw('--workers "$LW" ) >> "$R/$m.tlane.log" 2>&1 200>&-', '--workers "$LW" ) >> "$R/$m.tlane.log" 2>&1'), "FD200"),
+        ("the lane labels are not banked", sw(" terms_val tlane_train tlane_heldout; do", " terms_val; do"), "BANK_LACKS_TLANE"),
+        ("the update budget is unchecked", drop_line(text, 'grep -q "^ZZRLS1_UPDATES_OK"'), "UPDATES_UNCHECKED"),
+        ("--epochs back to 2 on 16,000 scenes", sw("--max-updates 1000 --epochs 4 --workers 3", "--max-updates 1000 --epochs 2 --workers 3"), "UPDATES_BUDGET:2"),
+        ("the join gate still expects 48,000", sw("tsv=$TRAIN_TSV; ex=16000", "tsv=$TRAIN_TSV; ex=48000"), "PARTITION_DRIFT:join_gate_counts"),
+        ("the remedy re-cuts at 48,000", sw("--n-train 16000 --n-val 3000", "--n-train 48000 --n-val 3000"), "PARTITION_DRIFT:remedy_params"),
+        ("the remedy logs the old id", sw("old partition_id 9995a39aeeac", "old partition_id 272cfd357b81"), "PARTITION_DRIFT:remedy_old_id"),
+        ("the chain reads the 48,000 partition", sw("PNAME=A_no_trained_list_seed20261012_n16000\n", "PNAME=A_no_trained_list_seed20261012\n"), "PARTITION_DRIFT:manifest_sha256"),
         ("no coverage plan", drop_line(text, "rl_fan_dump.py --plan-only"), "MISSING:rl_fan_dump.py --plan-only"),
         ("plan verdict unchecked", drop_line(text, 'grep -q "^ZZRLFAN_DONE 0 0 0$"'), "NO_PLAN_ONLY"),
         ("no remedy", sw('"$prc" = 3', '"$prc" = 99'), "NO_REMEDY"),
@@ -586,7 +660,8 @@ def helper_checks(tmp):
     assert RC.verify_file(str(f), "nope", good)[1].startswith("unknown_pin"); n += 1
     # ---- the frozen partition: the real files pass; every tamper is refused
     pr = PKGROOT / "raw" / "rl_pool" / "partition_runs"
-    mf, tr, va = pr / "A_no_trained_list_seed20261012.manifest.json", pr / "A_no_trained_list_seed20261012" / "rl_train_scenes.tsv", pr / "A_no_trained_list_seed20261012" / "rl_val_scenes.tsv"
+    PN = re.search(r"^PART=.*?; PNAME=(\S+)$", CHAIN.read_text(encoding="utf-8"), re.M).group(1)
+    mf, tr, va = pr / f"{PN}.manifest.json", pr / PN / "rl_train_scenes.tsv", pr / PN / "rl_val_scenes.tsv"
     ok, why = RC.verify_partition(str(mf), str(tr), str(va)); assert ok, why; n += 1
     t2 = tmp / "rl_train_scenes.tsv"; t2.write_bytes(tr.read_bytes()[:-1] + b"X")
     assert RC.verify_partition(str(mf), str(t2), str(va))[1].startswith("train_tsv_sha256_mismatch"); n += 1
@@ -594,6 +669,13 @@ def helper_checks(tmp):
     assert RC.verify_partition(str(m2), str(tr), str(va))[1].startswith("manifest_sha256_mismatch"); n += 1
     assert RC.verify_partition(str(mf), str(tr), str(va), {**RC.PARTITION, "partition_id": "0" * 64})[1].startswith("partition_id_mismatch"); n += 1
     assert RC.verify_partition(str(mf), str(tr), str(va), {**RC.PARTITION, "n_val": 2999})[1].startswith("counts"); n += 1
+    old = pr / "A_no_trained_list_seed20261012.manifest.json"                                      # the 48,000-scene partition is no longer the pinned one
+    assert old.is_file() and RC.verify_partition(str(old), str(pr / "A_no_trained_list_seed20261012" / "rl_train_scenes.tsv"), str(va))[1].startswith("manifest_sha256_mismatch"); n += 1
+    assert RC.PARTITION["partition_id"] != RC.OLD_PARTITION_ID and RC.PARTITION["n_train"] == 16000 and RC.PARTITION["n_val"] == 3000; n += 1
+    ltr_ = {l for _, l in RC.read_scenes(str(tr))}
+    old_tr = RC.read_scenes(str(pr / "A_no_trained_list_seed20261012" / "rl_train_scenes.tsv"))
+    assert RC.read_scenes(str(tr)) == old_tr[:16000] and len(ltr_) == 166; n += 1                      # the re-cut is an exact PREFIX of the frozen train order (same tool, same seed)
+    assert RC.read_scenes(str(va)) == RC.read_scenes(str(pr / "A_no_trained_list_seed20261012" / "rl_val_scenes.tsv")); n += 1   # RL-val is byte-identical to the frozen one
     mini = tmp / "mini"; mini.mkdir()
     for nm, rows in (("rl_train_scenes.tsv", [("t1", "L1"), ("t2", "L2")]), ("rl_val_scenes.tsv", [("t3", "L3"), ("t4", "L2")])):   # L2 is on BOTH sides
         (mini / nm).write_bytes(("token\tlog\n" + "".join(f"{t}\t{l}\n" for t, l in rows)).encode())
@@ -617,6 +699,7 @@ def helper_checks(tmp):
     ok, why, good_n = RC.tlane_check(str(td), str(tsv), RC.CKPT_STEP, 1); assert ok and good_n == 1, why; n += 1
     assert not RC.tlane_check(str(td), str(tsv), RC.CKPT_STEP, 2)[0]; n += 1
     assert not RC.tlane_check(str(tmp / "empty_dir"), str(tsv), RC.CKPT_STEP, 1)[0]; n += 1
+    n += tlane_exact_checks(tmp)
     # ---- THE JOIN GATE: ok, then every way below 100 % / broken identity / a dump that is not the partition side
     jg = lambda sd, pd, td_: RC.join_gate("train", str(sd), str(pd), str(td_), str(tsv), RC.CKPT_STEP, n_prop=N)  # noqa: E731
     d1 = mk_dump(tmp / "j1", scenes); p1, t1 = mk_labels(tmp / "j1", scenes)
@@ -706,6 +789,106 @@ def helper_checks(tmp):
     assert RC.replay("C0", str(od2), lambda tag, f: 1 / 0)[0] is None; n += 1
     # ---- the default checker (in-process rl_val_eval on a tiny RL-val) so the monitor's real path is exercised
     n += checker_smoke(tmp)
+    return n
+
+
+def tlane_exact_checks(tmp, RCm=None, tag="te"):
+    """TL-1: `tlane_exact` and `updates_check` in both directions.  RCm = the module under test (the real one, or a source mutation of it)."""
+    RCm = RCm or RC
+    n = 0
+    CK = RC.CKPT_STEP
+    scenes = [("t1", "L1"), ("t2", "L1"), ("t3", "L2")]
+    base = Path(tmp) / tag
+    shutil.rmtree(base, ignore_errors=True)
+    base.mkdir(parents=True)
+    tsv = base / "side.tsv"
+    tsv.write_text("token\tlog\n" + "".join(f"{t}\t{l}\n" for t, l in scenes), encoding="utf-8")
+    sd = mk_dump(base, scenes)
+
+    def row(l, t, **kw):
+        d = {"kind": "teacher_lane_labels", "key": [l, t, 0, 0], "ckpt_step": CK, "repair": "last_heading_hold", "teacher": {}, "props": [{"center_line.CenterLine.info": 0.3}] * 64}
+        d.update(kw)
+        return d
+
+    def write(name, rows, tail=""):
+        d = base / name
+        d.mkdir(parents=True)
+        (d / "teacher_lane_r0_s0of1.jsonl").write_text("".join(json.dumps(r) + "\n" for r in rows) + tail, encoding="utf-8")
+        return d
+    full = [row(l, t) for t, l in scenes]
+    ok, why, rep = RCm.tlane_exact(str(write("ok", full)), str(sd), str(tsv), CK, 64, 3); assert ok and rep["accepted"] == 3 and rep["torn"] == 0, why; n += 1
+    ok, why, rep = RCm.tlane_exact(str(write("torn", full, tail='{"kind": "teacher_lane_la')), str(sd), str(tsv), CK, 64, 3); assert ok and rep["torn"] == 1, why; n += 1   # a kill's fragment
+    bad = {
+        "missing": (full[:2], "missing:1"), "foreign": (full + [row("L9", "t9")], "foreign:1"), "doubled": (full + [full[0]], "doubled:1"),
+        "other_ckpt": ([row("L1", "t1", ckpt_step=5)] + full[1:], "rejected_rows:1"), "no_repair": ([row("L1", "t1", repair=None)] + full[1:], "rejected_rows:1"),
+        "null_distance": ([row("L1", "t1", props=[{"center_line.CenterLine.info": None}] * 64)] + full[1:], "rejected_rows:1"),
+        "short_fan": ([row("L1", "t1", props=[{"center_line.CenterLine.info": 0.3}] * 63)] + full[1:], "rejected_rows:1"),
+        "rank_one": ([row("L1", "t1", key=["L1", "t1", 0, 1])] + full[1:], "rejected_rows:1"),
+        "wrong_kind": ([row("L1", "t1", kind="onpolicy_set")] + full[1:], "rejected_rows:1"),
+        "empty": ([], "missing:3"),
+    }
+    for name, (rows, want) in bad.items():
+        ok, why, _ = RCm.tlane_exact(str(write("bad_" + name, rows)), str(sd), str(tsv), CK, 64, 3)
+        assert not ok and want in why, (name, ok, why); n += 1
+    ok, why, _ = RCm.tlane_exact(str(base / "ok"), str(sd), str(tsv), CK, 64, 4); assert not ok and "dumped_count:3!=4" in why, why; n += 1          # the partition's count is not 3
+    t2 = base / "side4.tsv"
+    t2.write_text("token\tlog\n" + "".join(f"{t}\t{l}\n" for t, l in scenes + [("t4", "L2")]), encoding="utf-8")
+    ok, why, _ = RCm.tlane_exact(str(base / "ok"), str(sd), str(t2), CK, 64, None); assert not ok and "dump_is_not_the_side" in why, why; n += 1    # a scene that was never dumped
+    t3 = base / "side_swapped.tsv"
+    t3.write_text("token\tlog\nt1\tL2\nt2\tL1\nt3\tL2\n", encoding="utf-8")
+    ok, why, _ = RCm.tlane_exact(str(base / "ok"), str(sd), str(t3), CK, 64, None); assert not ok and "dump_is_not_the_side" in why, why; n += 1    # token under another log
+    sd_dup = mk_dump(base / "dupdump", scenes + [("t1", "L1")])
+    ok, why, _ = RCm.tlane_exact(str(base / "ok"), str(sd_dup), str(tsv), CK, 64, None); assert not ok and "dump_not_clean" in why, why; n += 1   # a set dumped twice
+    # updates_check: the pre-registered budget is 1,000 updates (batch 8 x accum 8)
+    uc = RCm.updates_check
+    assert uc("--max-updates 1000 --epochs 2", 48000)[0]; n += 1                                   # the original pool: 1,500 capped to 1,000
+    ok, why = uc("--max-updates 1000 --epochs 2", 16000); assert not ok and "planned_updates:500!=max_updates:1000" in why, why; n += 1   # TL-1's trap: 2 epochs of 16,000 = 500
+    assert uc("--max-updates 1000 --epochs 4", 16000) == (True, "1000 updates over 16000 sets"); n += 1
+    assert not uc("--epochs 4", 16000)[0] and not uc("--epochs 4", 0)[0]; n += 1                  # no --max-updates: nothing pins the budget (and 0 sets would "equal" 0 updates)
+    assert not uc("--max-updates 1000 --epochs 4", 15000)[0]; n += 1                                 # a pool that lost scenes: 938 updates
+    assert RCm.planned_updates("--epochs 1.0 --max-updates 1000", 48000)[0] == 750; n += 1          # the handoff's documented silent trap
+    assert RCm.planned_updates("--max-updates 1000 --epochs 4 --batch 4 --accum 8", 16000)[0] == 1000; n += 1
+    # the CLI markers
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        rc1 = RCm.main(["tlane-exact", "--dir", str(base / "ok"), "--sets", str(sd), "--tsv", str(tsv), "--expect", "3", "--json", str(base / "te.json")])
+        rc2 = RCm.main(["tlane-exact", "--dir", str(base / "bad_missing"), "--sets", str(sd), "--tsv", str(tsv)])
+        rc3 = RCm.main(["updates-check", "--args", "--max-updates 1000 --epochs 4", "--n-sets", "16000"])
+        rc4 = RCm.main(["updates-check", "--args", "--max-updates 1000 --epochs 2", "--n-sets", "16000"])
+    out = buf.getvalue()
+    assert (rc1, rc2, rc3, rc4) == (0, 1, 0, 1) and out.count("ZZRLS1_TLANE_OK") == 1 and out.count("ZZRLS1_TLANE_REFUSED") == 1, out
+    assert out.count("ZZRLS1_UPDATES_OK") == 1 and out.count("ZZRLS1_UPDATES_REFUSED") == 1 and json.loads((base / "te.json").read_text())["ok"] is True; n += 1
+    if RCm is RC:                                                                                      # the real module: now every source mutation of it must turn this red
+        src = (HERE / "rls1_checks.py").read_text(encoding="utf-8")
+        muts = [
+            ("exact: missing rows ignored", 'if rep["missing"]:', "if False:"),
+            ("exact: foreign rows ignored", 'if rep["foreign"]:', "if False:"),
+            ("exact: doubled rows ignored", 'if rep["doubled"]:', "if False:"),
+            ("exact: rejected rows ignored", 'if rep["rejected"]:', "if False:"),
+            ("exact: the partition's count ignored", "if expect is not None and len(dumped) != expect:", "if False:"),
+            ("exact: dump need not be the side", "if len(scenes) != len(dumped) or any(scenes.get(k[1]) != k[0] for k in dumped):", "if False:"),
+            ("exact: a doubled dump accepted", "if dup_dump or stray:", "if False:"),
+            ("exact: the recipe marker not required", 'd.get("repair") == "last_heading_hold"', "True"),
+            ("exact: rank, checkpoint and fan size not required", 'int(k[3]) == 0 and int(d["ckpt_step"]) == ckpt_step and len(props) == n_prop and d.get("repair")',
+             'True and True and True and d.get("repair")'),
+            ("exact: any kind accepted", 'and d.get("kind") == "teacher_lane_labels"', "and True"),
+            ("updates: no budget needed", "if mx <= 0:", "if False:"),
+            ("updates: a shortfall accepted", "if total != mx:", "if False:"),
+            ("updates: accum ignored", "total = int(math.ceil(n_sets / batch * epochs / accum))", "total = int(math.ceil(n_sets / batch * epochs))"),
+            ("updates: the cap ignored", "return (min(total, mx) if mx else total), mx", "return total, mx"),
+        ]
+        for name, old, new in muts:
+            assert src.count(old) == 1, f"mutation {name}: snippet occurs {src.count(old)} times"
+            m = types.ModuleType("rls1_checks_mut")
+            m.__file__ = str(HERE / "rls1_checks.py")
+            sys.modules["rls1_checks_mut"] = m
+            exec(compile(src.replace(old, new), m.__file__, "exec"), m.__dict__)
+            try:
+                tlane_exact_checks(tmp, m, tag="mut")
+            except Exception:                                                                          # noqa: BLE001  (any failure IS the suite seeing the mutation)
+                n += 1
+                continue
+            raise AssertionError(f"rls1_checks mutation '{name}' stayed GREEN")
     return n
 
 

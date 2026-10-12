@@ -365,7 +365,7 @@ def static() -> None:
 # Every refusal below has its positive twin (the clean argv) and every check its regression arm.  Nothing here runs the suite (that would recurse into this file).
 RLS1_BASE = ("--ckpt /w/model_sft4_B_u400.pt --backbone vitl16 --targets /w/train --images /w/pix --calib /w/calib.json --onpolicy /w/onp --heldout /w/onh "
              "--heldout-logs /w/hl.txt --out /w/rl --lane-head --teacher-lane-train /w/tl --teacher-lane-heldout /w/tlh --pdm-labels-train /w/pdm "
-             "--pdm-labels-heldout /w/pdmh --require-pdm --b-mode listnet --lam 0 --lr 1e-4 --max-updates 1000 --epochs 2 --workers 3 --seed 0")
+             "--pdm-labels-heldout /w/pdmh --require-pdm --b-mode listnet --lam 0 --lr 1e-4 --max-updates 1000 --epochs 4 --workers 3 --seed 0")
 
 
 def rls1_gate_keys() -> list:
@@ -513,11 +513,12 @@ def rls1_static() -> None:
     red(C._set(r2, "--epo-lam-k", "0.1"), "requires --epo-lam-k 0.05", "R2")
     red(C._set(r2, "--epo-lam-l", "0.1"), "requires --epo-lam-l 0.05", "R2")
     clean(C._set(r0, "--epo-temp", "0.1"), "R0")                                                           # naming a registered value is fine
-    for flag, bad in (("--lr", "3e-5"), ("--max-updates", "500"), ("--batch", "4"), ("--accum", "4"), ("--warmup", "10")):
+    for flag, bad in (("--lr", "3e-5"), ("--max-updates", "500"), ("--batch", "4"), ("--accum", "4"), ("--warmup", "10"), ("--epochs", "2")):
         red(C._set(r0, flag, bad), "requires " + flag, "R0")
         red(C._set(c0, flag, bad), "requires " + flag, "C0")
     red(without(r0, "--max-updates"), "requires --max-updates", "R0")                                        # absent = the parser default 0, which is not 1000
     red(without(r0, "--lr"), "requires --lr", "R0")
+    red(without(r0, "--epochs"), "requires --epochs", "R0")                                                  # absent = the parser default 1.0: 250 updates
     red(C._set(r0, "--seed", "0"), "registered with --seed 1", "R1")
     red(C._set(r0, "--seed", "1"), "registered with --seed 0", "R0")
     red(c0, "registered with --seed 1", "C1")

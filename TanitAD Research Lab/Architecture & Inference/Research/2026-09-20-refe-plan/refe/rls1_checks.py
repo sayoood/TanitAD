@@ -6,6 +6,9 @@ refe/test_rls1_chain.py can drive it in both directions.  stdlib + numpy; the tw
   verify-partition  the frozen partition: manifest sha256, partition_id, both TSVs vs the manifest, log-disjoint ZZRLS1_PARTITION_OK / _REFUSED
   val-logs          cut -f2 rl_val_scenes.tsv | sort -u  (the trainer's --heldout-logs)                       ZZRLS1_VALLOGS_OK
   tlane-check       teacher-lane side files that REACH the 7th output (key + ckpt_step + 64 finite distances)   ZZRLS1_TLANE_OK / _REFUSED
+  tlane-exact       TL-1: the labels of one side are EXACT: one accepted row per dumped set, none foreign, none doubled, count == the
+                    partition side's scene count                                                               ZZRLS1_TLANE_OK / _REFUSED
+  updates-check     the planned optimizer updates (ceil(n/batch * epochs/accum), capped by --max-updates) EQUAL --max-updates  ZZRLS1_UPDATES_OK / _REFUSED
   join-gate         THE post-label gate: every dumped set has a PDM label AND an rl_terms record (100 %), the dump IS the
                     partition side, and G-REWARD-ID (g > 0 <=> DAC = 0) has ZERO disagreements                     ZZRLS1_JOIN_OK / _REFUSED
   monitor / replay  the kill rules K2 (NaN), K3, K4 (two consecutive 250-update checks), K5 (R2), K6 (hours) on the RL-val lookup
@@ -37,9 +40,12 @@ PINS = {
              "sha256": "8b4dba4818b5cc96c640fe892efe114037ace7cec9dda060c5b4cdd5fb92410d"},
 }
 CKPT_STEP = 10075                  # model_final.pt's step: the ckpt_step every dumped set must carry (raw/rl_pool/ckpt_last_vs_model_final.json)
-PARTITION = {"partition_id": "272cfd357b81db535a1214fc344f71469219c17ac3c8203698d5c2b0f1befa49",
-             "manifest_sha256": "6a2b5aec3ae2c2f3ea00b826f7414aad4a4617f9e9a793b16332e9ccb2b142f0",
-             "n_train": 48000, "n_val": 3000, "min_val_logs": 60}
+# TL-1 (PI 2026-10-12, "paper-pure, smaller pool"): the same tool, the same seed, n_train 48,000 -> 16,000 (RL-val is byte-identical).  OLD id 272cfd357b81 / manifest
+# 6a2b5aec... (48,000 / 3,000); NEW id below.  The reason and both ids are logged in eval/PREREG_RL_S1.md section 9.
+PARTITION = {"partition_id": "9995a39aeeac3833dd3f679b75e883b056e3d4d235bb9dc986578a81a7a256fa",
+             "manifest_sha256": "f8a1640cb61df48ea86e6afdb9d7c357bd6443073b367779585f5238bb723edb",
+             "n_train": 16000, "n_val": 3000, "min_val_logs": 60}
+OLD_PARTITION_ID = "272cfd357b81db535a1214fc344f71469219c17ac3c8203698d5c2b0f1befa49"
 N_PROP = 64
 LANE_CHANGE_FACTOR = 2.0           # K5
 K4_ROUNDS = 2                      # K3 / K4: two consecutive checks
@@ -154,6 +160,94 @@ def tlane_check(dir_, tsv, ckpt_step, min_rows, n_prop=N_PROP):
     if good < max(min_rows, 1):
         return False, f"usable_rows:{good}<{max(min_rows, 1)} (unusable {bad}) in {dir_}", good
     return True, f"{good} usable rows ({bad} unusable)", good
+
+
+def _lane_row_state(d, ckpt_step, n_prop=N_PROP):
+    """'ok' | 'bad' for a decoded teacher-lane row: the trainer's acceptance (4-part key, rank 0, ckpt_step, n_prop finite distances) PLUS the SFT-4 recipe marker."""
+    try:
+        k = tuple(d["key"])
+        props = d["props"]
+        ok = (len(k) == 4 and int(k[3]) == 0 and int(d["ckpt_step"]) == ckpt_step and len(props) == n_prop and d.get("repair") == "last_heading_hold"
+              and d.get("kind") == "teacher_lane_labels"
+              and all(p.get("center_line.CenterLine.info") is not None and math.isfinite(float(p["center_line.CenterLine.info"])) for p in props))
+    except (KeyError, TypeError, ValueError, AttributeError):
+        return "bad"
+    return "ok" if ok else "bad"
+
+
+def tlane_exact(dir_, sets_dir, tsv, ckpt_step=CKPT_STEP, n_prop=N_PROP, expect=None):
+    """TL-1: -> (ok, reason, report).  The teacher-lane labels of one partition side are EXACT, never 'at least one usable row' (that was the pre-TL-1 floor):
+      * the dump holds exactly the side's scenes (and `expect` of them when given);
+      * every dumped set has exactly ONE accepted row, of the dump's own ckpt_step, carrying `repair: last_heading_hold`;
+      * no accepted row for a set that was not dumped; no decodable-but-rejected row (a stale or foreign recipe in the directory); no key labelled twice.
+    A torn (undecodable) line is a kill's fragment: counted, not fatal."""
+    scenes = dict(read_scenes(tsv))
+    dumped, dup_dump, stray, _ = read_dumped(sets_dir)
+    rep = {"scenes": len(scenes), "dumped": len(dumped), "accepted": 0, "missing": 0, "foreign": 0, "doubled": 0, "rejected": 0, "torn": 0}
+    seen = {}
+    for fp in sorted(glob.glob(os.path.join(dir_, "teacher_lane_r*.jsonl"))):
+        with open(fp, encoding="utf-8") as fh:
+            for ln in fh:
+                if not ln.strip():
+                    continue
+                try:
+                    d = json.loads(ln)
+                except json.JSONDecodeError:
+                    rep["torn"] += 1
+                    continue
+                if _lane_row_state(d, ckpt_step, n_prop) != "ok":
+                    rep["rejected"] += 1
+                    continue
+                k = tuple(d["key"])
+                k = (k[0], k[1], int(k[2]), int(k[3]))
+                if k in seen:
+                    rep["doubled"] += 1
+                seen[k] = ckpt_step
+    rep["accepted"] = len(seen)
+    rep["foreign"] = sum(1 for k in seen if k not in dumped)
+    rep["missing"] = sum(1 for k in dumped if k not in seen)
+    bad = []
+    if dup_dump or stray:
+        bad.append(f"dump_not_clean(dup {dup_dump}, stray {stray[:2]})")
+    if len(scenes) != len(dumped) or any(scenes.get(k[1]) != k[0] for k in dumped):
+        bad.append(f"dump_is_not_the_side:{len(dumped)}/{len(scenes)}")
+    if expect is not None and len(dumped) != expect:
+        bad.append(f"dumped_count:{len(dumped)}!={expect}")
+    if rep["missing"]:
+        bad.append(f"missing:{rep['missing']}")
+    if rep["foreign"]:
+        bad.append(f"foreign:{rep['foreign']}")
+    if rep["doubled"]:
+        bad.append(f"doubled:{rep['doubled']}")
+    if rep["rejected"]:
+        bad.append(f"rejected_rows:{rep['rejected']}")
+    if rep["accepted"] != len(scenes):
+        bad.append(f"label_count:{rep['accepted']}!={len(scenes)}")
+    if bad:
+        return False, ";".join(bad) + f" in {dir_}", rep
+    return True, f"exact {rep['accepted']}/{len(scenes)} (torn fragments {rep['torn']})", rep
+
+
+def planned_updates(args_str, n_sets):
+    """The trainer's own schedule (scorer_finetune.py:927-929) from an argv string: ceil(n/batch * epochs/accum), capped by --max-updates.  -> (total, max_updates)."""
+    t = args_str.split()
+
+    def val(flag, default):
+        return type(default)(t[t.index(flag) + 1]) if flag in t else default
+    batch, accum, epochs, mx = val("--batch", 8), val("--accum", 8), val("--epochs", 1.0), val("--max-updates", 0)
+    total = int(math.ceil(n_sets / batch * epochs / accum))
+    return (min(total, mx) if mx else total), mx
+
+
+def updates_check(args_str, n_sets):
+    """The pre-registered budget is --max-updates updates.  A shrunken pool with an unchanged --epochs ends EARLIER (TL-1: 16,000 sets at --epochs 2 = 500 updates, and the
+    chain reads scores_update1000_*), silently: the trainer's `total = min(...)` never complains.  -> (ok, reason)."""
+    total, mx = planned_updates(args_str, n_sets)
+    if mx <= 0:
+        return False, "no_max_updates_in_argv"
+    if total != mx:
+        return False, f"planned_updates:{total}!=max_updates:{mx} (n_sets {n_sets}; raise --epochs or lower --max-updates, the prereg budget is {mx} updates)"
+    return True, f"{total} updates over {n_sets} sets"
 
 
 # ------------------------------------------------------------------------------------------------------------- the join gate
@@ -413,6 +507,9 @@ def main(argv=None):
     p = sub.add_parser("val-logs"); p.add_argument("--val", required=True); p.add_argument("--out", required=True)
     p = sub.add_parser("tlane-check"); p.add_argument("--dir", required=True); p.add_argument("--tsv", required=True)
     p.add_argument("--min-rows", type=int, default=1); p.add_argument("--ckpt-step", type=int, default=CKPT_STEP)
+    p = sub.add_parser("tlane-exact"); p.add_argument("--dir", required=True); p.add_argument("--sets", required=True); p.add_argument("--tsv", required=True)
+    p.add_argument("--ckpt-step", type=int, default=CKPT_STEP); p.add_argument("--expect", type=int, default=None); p.add_argument("--json", default=None)
+    p = sub.add_parser("updates-check"); p.add_argument("--args", required=True); p.add_argument("--n-sets", type=int, required=True)
     p = sub.add_parser("join-gate"); p.add_argument("--side", required=True, choices=["train", "val"])
     for x in ("sets", "pdm", "terms", "tsv"):
         p.add_argument(f"--{x}", required=True)
@@ -441,6 +538,17 @@ def main(argv=None):
     if a.cmd == "tlane-check":
         ok, why, _ = tlane_check(a.dir, a.tsv, a.ckpt_step, a.min_rows)
         say("ZZRLS1_TLANE_OK" if ok else "ZZRLS1_TLANE_REFUSED", why)
+        return 0 if ok else 1
+    if a.cmd == "tlane-exact":
+        ok, why, rep = tlane_exact(a.dir, a.sets, a.tsv, a.ckpt_step, N_PROP, a.expect)
+        if a.json:
+            with open(a.json, "w", encoding="utf-8", newline="\n") as f:
+                json.dump({"ok": ok, "why": why, **rep}, f, indent=1)
+        say("ZZRLS1_TLANE_OK" if ok else "ZZRLS1_TLANE_REFUSED", why)
+        return 0 if ok else 1
+    if a.cmd == "updates-check":
+        ok, why = updates_check(a.args, a.n_sets)
+        say("ZZRLS1_UPDATES_OK" if ok else "ZZRLS1_UPDATES_REFUSED", why)
         return 0 if ok else 1
     if a.cmd == "join-gate":
         ok, why, rep = join_gate(a.side, a.sets, a.pdm, a.terms, a.tsv, a.ckpt_step, a.n_prop, a.expect)

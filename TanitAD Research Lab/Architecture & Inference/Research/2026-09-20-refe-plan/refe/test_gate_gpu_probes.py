@@ -35,6 +35,13 @@ def free_deep_ok(mod) -> bool:
         and cap.samplers == [] and cap.metrics == [3]
 
 
+def det_boot_ok(src: str) -> bool:
+    """gate_checks._train_sub launches train.py THROUGH the deterministic bootstrap, with the cuBLAS workspace pinned."""
+    i = src.find("def _train_sub(")
+    body = src[i:src.find("\ndef ", i + 10)]
+    return ("torch.use_deterministic_algorithms(True)" in src and '"-c", DET_BOOT' in body and 'CUBLAS_WORKSPACE_CONFIG=":4096:8"' in body)
+
+
 def cuda_probe(gc_mod):
     """On a GPU, under bf16 autocast: the real backbone class's OUTPUT is float32 (why the old probe failed) and the probe module reads bf16."""
     import torch
@@ -67,6 +74,7 @@ def main() -> int:
     t("free_before_ckpt", order_ok(src_lg))
     t("free_deep_clears_pins", free_deep_ok(LG))
     t("probe_hooked_via_helper", "amp_probe_module(self.backbone).register_forward_hook" in src_gc)
+    t("ckpt_runs_deterministic", det_boot_ok(src_gc))
     cu = cuda_probe(GC)
     skipped = cu == "SKIP_CUDA"
     if not skipped:
@@ -78,6 +86,10 @@ def main() -> int:
         ("free_after_ckpt", lambda: order_ok(src_lg.replace("_free(s, deep=True)", "pass").replace(
             'emit(C.check_ckpt(s_argv, work / "ckpt", prof2, arm=arm, rehearsal=rehearsal))',
             'emit(C.check_ckpt(s_argv, work / "ckpt", prof2, arm=arm, rehearsal=rehearsal)); _free(s, deep=True)'))),
+        ("ckpt_plain_launch", lambda: det_boot_ok(src_gc.replace('[sys.executable, "-c", DET_BOOT, str(HERE / "train.py")]',
+                                                               '[sys.executable, str(HERE / "train.py")]'))),
+        ("ckpt_no_cublas_pin", lambda: det_boot_ok(src_gc.replace(', CUBLAS_WORKSPACE_CONFIG=":4096:8"', ""))),
+        ("ckpt_no_deterministic_algorithms", lambda: det_boot_ok(src_gc.replace("torch.use_deterministic_algorithms(True)", "pass"))),
         ("probe_back_on_output", lambda: "amp_probe_module(self.backbone).register_forward_hook" in src_gc.replace(
             "amp_probe_module(self.backbone).register_forward_hook", "self.backbone.register_forward_hook")),
     ]
