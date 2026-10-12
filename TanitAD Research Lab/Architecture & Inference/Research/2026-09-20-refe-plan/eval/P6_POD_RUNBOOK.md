@@ -39,7 +39,7 @@ nohup setsid bash /workspace/refe-plan-p6/refe/p6_pod.sh > /workspace/data/refe_
 Pre-training total about 3-5 h. A fresh pod adds the DBs, pixels and bank (the P2 runbook's figures).
 
 ## 6. Open, UNVERIFIED, and for the Master Mind
-- NAVSIM metadata URL (`openscene_metadata_trainval.tgz`): PUBLISHED-SECONDARY, size/md5 unknown; the stage verifies content (>= 99.5 % of rank-0 tokens matched). Set `P6_NAVSIM_LOGS_URL=""` to forbid the download.
+- NAVSIM metadata (`openscene_metadata_trainval.tgz`): MEASURED 2026-10-12, public, **7,052,210,642 B**, sha256 `193138ac...`, pinned to dataset revision `a76f840b` (not `main`); a download with another size or hash is refused. The stage then still verifies content (>= 99.5 % of rank-0 tokens matched). Set `P6_NAVSIM_LOGS_URL=""` to forbid the download.
 - D7 acceptance is judged from artifacts (twin route differs from the logged route on >= 90 % of 40 twins); first run on real parts objects is the pod.
 - 30-min checkpoint egress, not SPEC section 4's 6 h: ~48 pushes x 0.228 GB a day is ~77 GB of LFS history over 7 days (ESTIMATED), inside the 1 TB quota (199 GB used). `P6_HEAVY_MIN=120` cuts it.
 - The labeller workers inherit `OMP_NUM_THREADS=4`; G-LIVE-LAB measures under the same value.

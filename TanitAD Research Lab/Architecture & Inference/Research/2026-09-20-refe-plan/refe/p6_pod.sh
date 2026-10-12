@@ -31,7 +31,11 @@ DBS=$DATA/navtrain_dbs; PIX=$DATA/navtrain_pixels
 NAVLOGS="${P6_NAVSIM_LOGS:-$DATA/navsim_logs/trainval}"
 # the NAVSIM metadata (a <log>.pkl per log). URL = NAVSIM's download script, read from its GitHub page (PUBLISHED-SECONDARY); size and md5 UNVERIFIED -> content is verified instead.
 # `${VAR-default}`: P6_NAVSIM_LOGS_URL="" FORBIDS the download and the stage then refuses if the logs are absent.
-NAVLOGS_URL="${P6_NAVSIM_LOGS_URL-https://huggingface.co/datasets/OpenDriveLab/OpenScene/resolve/main/openscene-v1.1/openscene_metadata_trainval.tgz}"
+# PINNED to a dataset revision, never `main`, with the archive's size and sha256 (MEASURED 2026-10-12 from the HF file listing and a
+# HEAD: public, 7,052,210,642 B, sha256 193138ac..., revision a76f840b). A download that is not these bytes is REFUSED, not used.
+NAVLOGS_URL="${P6_NAVSIM_LOGS_URL-https://huggingface.co/datasets/OpenDriveLab/OpenScene/resolve/a76f840b65e972bc45e56c2adced897498e9a026/openscene-v1.1/openscene_metadata_trainval.tgz}"
+NAVLOGS_BYTES=7052210642
+NAVLOGS_SHA256=193138ac68b29d977d4438a95dfda35a07ff4ad3efb1800b3ee47d6e1dcb3764
 REPO="${P6_REPO:-Sayood/tanitad-refe-p6-paper-faithful}"          # a NEW private model repo, created by the first push
 EXP_DBS="${P6_EXPECT_DBS:-1192}"; EXP_PIX="${P6_EXPECT_PIX_SHARDS:-32}"
 # ⛔ THE ONE PLACE PI RULING P6-Y ENTERS (2026-10-11: "unwrapped yaw, as the paper"): off = the paper's literal L1 on the raw yaw difference (on = the wrapped error of P2 / SFT-4).
@@ -171,6 +175,8 @@ fetch_navlogs() {
   [ -n "$NAVLOGS_URL" ] || return 1
   mkdir -p "$DATA/navsim_logs_dl" "$NAVLOGS"
   curl -sSL --retry 10 --retry-all-errors -C - -o "$DATA/navsim_logs_dl/meta.tgz" "$NAVLOGS_URL" 200>&- || return 1
+  [ "$(stat -c %s "$DATA/navsim_logs_dl/meta.tgz")" = "$NAVLOGS_BYTES" ] || { log "D6: metadata size $(stat -c %s "$DATA/navsim_logs_dl/meta.tgz") != $NAVLOGS_BYTES"; return 1; }
+  [ "$(sha256sum "$DATA/navsim_logs_dl/meta.tgz" | cut -d' ' -f1)" = "$NAVLOGS_SHA256" ] || { log "D6: metadata sha256 mismatch"; rm -f "$DATA/navsim_logs_dl/meta.tgz"; return 1; }
   tar -xzf "$DATA/navsim_logs_dl/meta.tgz" --no-same-owner -C "$DATA/navsim_logs_dl" 200>&- || return 1
   find "$DATA/navsim_logs_dl" -name '*.pkl' -exec mv -f {} "$NAVLOGS"/ \; 200>&-
   rm -f "$DATA/navsim_logs_dl/meta.tgz"

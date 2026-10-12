@@ -90,6 +90,12 @@ def check_chain(text, ref_args=ARGS_REF):
         v.append("ARGS_DEFINED_TWICE")
     elif am[0] != ref_args:
         v.append("ARGS_CHANGED")
+    # the NAVSIM metadata is pinned to a REVISION with its size and sha256, and a mismatch refuses (MEASURED 2026-10-12)
+    if "/resolve/main/" in text or not re.search(r"/resolve/[0-9a-f]{40}/openscene-v1\.1/openscene_metadata_trainval\.tgz", text):
+        v.append("NAVLOGS_NOT_PINNED")
+    if not re.search(r'sha256sum "\$DATA/navsim_logs_dl/meta\.tgz".*= "\$NAVLOGS_SHA256" \] \|\| \{', text) \
+            or not re.search(r'= "\$NAVLOGS_BYTES" \] \|\| \{', text):
+        v.append("NAVLOGS_NOT_VERIFIED")
     for ln in text.split("\n"):
         if "HF_TOKEN" in ln and not T2.token_line_ok(ln):
             v.append("HF_TOKEN_USE:" + ln.strip()[:60])
@@ -243,6 +249,9 @@ def mutations(text):
     d = T2.drop_line
     out = [
         ("delete the final push", d(text, "p2r_sync.py final"), "NO_FINAL_EGRESS"),
+        ("metadata from main", text.replace("/resolve/a76f840b65e972bc45e56c2adced897498e9a026/", "/resolve/main/"), "NAVLOGS_NOT_PINNED"),
+        ("metadata sha256 unchecked", d(text, '= "$NAVLOGS_SHA256" ] ||'), "NAVLOGS_NOT_VERIFIED"),
+        ("metadata size unchecked", d(text, '= "$NAVLOGS_BYTES" ] ||'), "NAVLOGS_NOT_VERIFIED"),
         ("delete the periodic watcher", re.sub(r'"\$PY" p2r_sync\.py watch.*?200>&- &\n', "", text, flags=re.S), "NO_PERIODIC_EGRESS"),
         ("hourly egress", text.replace("P6_SYNC_MIN:-30", "P6_SYNC_MIN:-360"), "NO_PERIODIC_EGRESS"),
         ("watcher pushes to P2's repo", text.replace('--repo "$REPO" --run "$RUN" --logs "$P6" --chain-log "$L" --outbox "$P6/outbox" --stop-file', '--run "$RUN" --logs "$P6" --chain-log "$L" --outbox "$P6/outbox" --stop-file'),
