@@ -88,3 +88,42 @@ RL-train / RL-val log-disjoint partition, pod chain script, RL-val lookup evalua
 * NOT validated on a real checkpoint: the stubs replace REFe/OnPolicyBank/TargetBank/ckpt_io's loader, so the first real preflight (A40 smoke) is still the final check of the u400 strict load.
 
 ## Still open (unchanged): part 2 (dumper, extended labeller writing `rl_terms_*`, G-REWARD-ID, RL-train/RL-val partition, chain script, RL-val lookup evaluator) and OPEN-BASE.
+
+---
+
+# 2026-10-12 -- RL-S1 part 2, slice S1: the clean pool MEASURED, partition tool, RL-val evaluator, dump fitness check (nothing launched, no pod touched)
+
+## Pool numbers (evidence in `raw/rl_pool/rl_pool_by_base.json`; instrument `eval/rl_pool_measure.py`; paragraph appended to `PREREG_RL_S1.md`)
+Eligible population [M]: navtrain.yaml 103,288 tokens / 1,192 logs, 0 in navtest, minus the 24 SFT held-out logs = **101,583 tokens**.
+
+| | trained on (tokens / sets) | UNSEEN tokens (eligible) | vs the 51,000 planned |
+|---|---|---|---|
+| **B: P2** (3 epochs, all served train sets) | 99,495 / 174,912 [M] | **2,088** (1,837 placeable: 251 have no recoverable log), >= 632 logs | **4 %**; below the 3,000 RL-val alone needs |
+| **A: u400** (update 400 x 64 = 25,600 sets) | at most 25,600 tokens [M bound] | **>= 75,983 certain** (73,895 + 2,088), ~77.5k expected [E]; **members NOT identifiable** | exceeds 51,000 in count only |
+| both, strict lineage (model_final's scorer, main run) | fixed bank epochs 1-11 + on-policy epochs 12-27 | at most 8,531 escaped the on-policy phase | neither is clean |
+| no on-policy set at all | - | 2,126 tokens (2,088 eligible) | need a dump in either variant |
+
+* The banked bank reproduces the carve exactly (177,836 served = 174,912 + 2,924), so **B's trained-key list needs no pod fetch** (`raw/rl_pool/served_keys.tsv.gz`).
+* **A's draw is unrecoverable**, not merely unlocated: it is `randperm` seed 0 over the launch-time ordered index (n between 149,377 and 149,440). The only files that could rebuild it are on the SFT-4 pod, which is gone: `/workspace/data/refe_sft4/sft.jsonl` (the `data` event) and `/workspace/data/refe_sft2/train_pdm/pdm_*.jsonl` as they stood at launch. The P2 pod's recomputed labels are a different set at a different moment and cannot stand in. The review's "28,727 labels not written at arming" are SETS: mostly rank-1 views, so only ~3,027 whole tokens [E] had nothing labelled.
+* My per-epoch reconstruction of what the main run could train on (from each set's own label time) matches the trainer's own `onpolicy_sets` counts within 0.1 % at all 16 epoch boundaries: that is the validation of the reconstruction, not of the reading below.
+* **Reading (mine, ESTIMATED argument, not a measurement):** pool size decides against B. A's contamination (~24 % of a random scene's tokens touched by u400) hits C and R identically; the contrast R - C needs only RL-train / RL-val log-disjointness. Both bases share the model_final exposure.
+
+## Built (all staged; none of the do-not-edit files touched)
+| file | what | check |
+|---|---|---|
+| `refe/rl_partition.py` | deterministic LOG-disjoint RL-train / RL-val split: drops navtest tokens+logs, held-out logs, the base's trained tokens, unknown-log scenes; logs ordered by sha256(seed\|log); RL-val capped at n_val // min_val_logs scenes per log (3000 // 60 = 50) so it spans >= 60 logs; train = whole logs after; short pool -> exit 3, nothing written (`--allow-short`); `verify()` re-checks every invariant before writing (exit 5) | `refe/test_rl_partition.py`: **ZZTEST_PASS 20** = 1 + 18 source mutations, all RED (log split, held-out/navtest/trained admitted, urandom seed, seed ignored, input-order, cap removed, no trim, silent shortfall, blind verify, wrong manifest hash, ...) |
+| `eval/rl_val_eval.py` | RL-val LOOKUP: scores + `pdm_*.jsonl` + `rl_terms_*.jsonl` (+ `onpolicy_*.jsonl` for path length) -> PDMS and six sub-scores of the pick, R and D at the pick, skill, zero picks, slow-pick telemetry (pick/fan-mean path, median length rank, shorter-than-median share, quintile shares, shortest-bin share) with the review's g3 bounds, g5 and K4 flags; pairing = `proxy_eval.boot` (the stage-3 estimator); every run carries the self-pair == exactly 0 and arm<->base swap checks | `eval/test_rl_val_eval.py`: **ZZTEST_PASS 31** = 1 + 29 RED mutations; values hand-derived with exact fractions |
+| `eval/rl_pool_measure.py` | the pool instrument (needs Python >= 3.14 for `compression.zstd`) | regenerates `raw/rl_pool/*`; reproduces 177,836 / 174,912 / 2,924 |
+| `eval/rl_ckpt_equality.py` | ckpt_last@10075 vs model_final.pt | 276/276 tensors bit-identical, equal frozen fingerprints: the 22,742 step-10,075 served sets ARE the frozen fan |
+| `raw/rl_pool/` | `rl_pool_by_base.json`, `navtrain_token_table.tsv.gz` (token -> log, the partition's pool), `served_keys.tsv.gz` (P2's trained keys), `dump_fitness.json`, `ckpt_last_vs_model_final.json`, `partition_runs/` | manifests of two real runs: A (no list) 48,000 train / 3,000 val over 576 / 75 logs; B refused (val 1,837/3,000) |
+
+## Findings that change the plan
+1. **`scorer_finetune.py` writes NO per-proposal scores** (its `evaluate()` aggregates in-process). The evaluator's input is therefore new: `rl_val_eval.write_scores_npz(path, keys, ckpt_steps, scores[N,M,C], space)`. Add `--dump-scores DIR` to `evaluate()` (a few lines at the `sx0/sxA/sxB` site) before any RL-val read; pass `--epo-terms-heldout` through as `--terms`. NOT built (scorer_finetune is the EPO owner's file).
+2. **The dumper cannot do the frozen-fan re-dump as shipped** (`raw/rl_pool/dump_fitness.json`): F1 no key list / shard, F2 checkpoint path+step hard-wired to a live run dir (a FULL model_final.pt has no `state`; pointing `--run-dir` at the finished run's `ckpt_last.pt` works today), **F3 it writes `onpolicy_props`, the two labellers read only `onpolicy_set`** (only `onpolicy_label.py`, the teacher simulator, produces those: **10.2 s per set, 144 worker-hours for 51,000, AVOID**), F4 `train.OnPolicyBank` needs a `targets` field (a lean writer can emit `[{}]*64`; PDM labels overwrite all six components; untested on the train side), F5 dump numerics (bf16/TF32) vs the eval planner's are unmeasured, F6 images and DBs are pod-only.
+3. **Cost (E)**: dump 3.28 h for 51,000 (0.2313 s per sample, M), 2.40 h if the 13,713 plain final-fan sets already in the bundle are reused; labels 44 CPU-h (PDM 1.78 + rl_terms 1.34 CPU-s per set) = 1.8 h on 24 vCPU, 4.0 h on 11. The 13,713 are a contiguous slice of a seeded permutation, so reusing them introduces no selection by token (argued from source).
+4. The 251 yaml tokens with no target-bank row have no log and no images: they cannot be RL scenes in any variant.
+
+## Next (nothing here is launched)
+1. Master Mind: decide OPEN-BASE with the table above; freeze the partition seed/params in the prereg (default seed 20261012 [H]).
+2. Build, in this order: dumper edits F1-F4 + lean `onpolicy_set` writer + test; `--dump-scores`; the G11-style gate and chain script (`refe_rls1`, item 4 of the part-1 list is still open).
+3. Pod, after P2: F5 probe (20 navtest tokens), F4 smoke (`scorer_finetune --preflight` on a lean set), then dump + labels.

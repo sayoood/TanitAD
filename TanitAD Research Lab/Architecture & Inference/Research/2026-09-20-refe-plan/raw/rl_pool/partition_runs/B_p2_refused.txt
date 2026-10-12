@@ -1,0 +1,3 @@
+python refe/rl_partition.py --pool raw/rl_pool/navtrain_token_table.tsv.gz --navtest <navtest_full_tokens.json> --heldout-logs splits/sft_heldout_logs.txt --n-train 48000 --n-val 3000 --min-val-logs 60 --seed 20261012 --trained-keys raw/rl_pool/served_keys.tsv.gz --out <dir>
+ZZPARTITION_SHORT pool too small: val 1837/3000 (632 logs), train 0/48000; eligible 1837 scenes in 632 logs; tally {'input_scenes': 103288, 'trained_token': 99495, 'sft_heldout_log': 1705, 'log_unknown': 251, 'eligible_scenes': 1837, 'eligible_logs': 632}
+exit code 3, nothing written (the 2,088 unseen tokens of the pool measurement include 251 whose log is unrecoverable; they cannot be placed log-disjointly)

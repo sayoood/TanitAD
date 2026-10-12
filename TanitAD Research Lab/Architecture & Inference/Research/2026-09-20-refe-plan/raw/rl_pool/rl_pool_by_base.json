@@ -1,0 +1,299 @@
+{
+ "evidence_key": {
+  "M": "MEASURED, ours, artifact path in 'sources'",
+  "E": "ESTIMATED (arithmetic on measured inputs, assumption named)",
+  "I": "INHERITED, not re-verified",
+  "U": "UNVERIFIED / not recoverable"
+ },
+ "sources": {
+  "bank": {
+   "path": "D:/Projects/TanitAD-artifacts/refe-pod-final-2026-10-04/onpolicy_sets_logs_full.tar.zst",
+   "md5": "4fc979939c5f9b5140ba59a952da77fb",
+   "note": "pod-side md5 4fc979939c5f9b5140ba59a952da77fb per MD5SUMS.txt"
+  },
+  "grow": {
+   "path": "D:/Projects/TanitAD-artifacts/refe-onpolicy-2026-10-01/refe_train_grow.tar.zst",
+   "md5": "e07c7d6a5c0156f31a5de3af0843c325"
+  },
+  "navtrain_yaml_sha256": "5f3c406a06c961e75d69d33bc127acd5704a3a440a7186bfa2212493ecf9fc01",
+  "sft_heldout_logs_sha256": "b814998deeb40a9d7839cce2807f8f282ede76c7f2c5ccce97adc064b27f4902",
+  "navtest_tokens": "E:/Projects/TanitAD/data/refe_navtest/navtest_full_tokens.json",
+  "final_metrics": "D:/Projects/TanitAD-artifacts/refe-final-2026-10-01\\metrics.jsonl"
+ },
+ "navtrain": {
+  "yaml_tokens": 103288,
+  "yaml_tokens_unique": 103288,
+  "yaml_logs": 1192,
+  "yaml_tokens_in_navtest": 0,
+  "navtest_tokens": 12146,
+  "navtest_logs": 136,
+  "yaml_logs_in_navtest": 0,
+  "heldout_logs": 24,
+  "heldout_logs_in_yaml": 24,
+  "target_bank_rows": 189888,
+  "target_bank_rank0_tokens": 103037,
+  "target_bank_tokens_in_yaml": 103037,
+  "yaml_tokens_not_in_target_bank": 251,
+  "evidence": "M",
+  "tokens_with_known_log": 103037,
+  "tokens_in_heldout_logs": 1705,
+  "population_tokens_minus_navtest_minus_heldout_logs": 101583,
+  "population_note": "the 251 yaml tokens absent from the target bank have no recoverable log (navtrain.yaml pairs no token with a log); they are counted in the population, so the heldout-log subtraction is a lower bound by at most that many"
+ },
+ "bank": {
+  "rows": 190712,
+  "served_keys": 177836,
+  "served_train_sets": 174912,
+  "served_in_heldout_logs": 2924,
+  "reproduces_p2r_carve": {
+   "177836": true,
+   "174912": true,
+   "2924": true
+  },
+  "label_versions_of_served": {
+   "3": 177836
+  },
+  "served_by_rank": {
+   "0": 89493,
+   "1": 85419
+  },
+  "served_tokens_train": 99495,
+  "served_tokens_all": 101162,
+  "served_tokens_heldout_logs": 1667,
+  "served_train_tokens_in_yaml": 99495,
+  "served_train_logs": 1167,
+  "sets_per_token_train": {
+   "2": 75417,
+   "1": 24078
+  },
+  "ckpt_step_of_served_train_top": [
+   [
+    10075,
+    22742
+   ],
+   [
+    3708,
+    725
+   ],
+   [
+    7072,
+    538
+   ],
+   [
+    7112,
+    538
+   ],
+   [
+    6952,
+    537
+   ],
+   [
+    5104,
+    523
+   ]
+  ],
+  "evidence": "M"
+ },
+ "no_onpolicy_set": {
+  "tokens_in_yaml_with_no_served_set_at_all": 2126,
+  "of_which_not_in_target_bank_(no_recoverable_log)": 251,
+  "of_which_in_target_bank_(rank0_row_but_no_set)": 1875,
+  "of_which_in_heldout_logs": 38,
+  "target_bank_rows_without_a_served_set": 12052,
+  "logs_of_those_tokens_(known_log_only)": 647,
+  "evidence": "M"
+ },
+ "main_run_scorer_exposure_L0": {
+  "shared_by_both_bases": true,
+  "fixed_bank_keys_with_scorer_targets": 189858,
+  "target_bank_keys": 189888,
+  "fixed_bank_keys_in_target_bank": 189858,
+  "main_run_switch": "step 3,708 (epoch 11->12): scorer-mode fixed -> onpolicy (train.log l.3807-3808, DECLARED RECIPE CHANGE)",
+  "per_epoch_bank_vs_my_first_label_time": [
+   {
+    "epoch": 11,
+    "at": "2026-09-26T10:31:49Z",
+    "onpolicy_sets": 0,
+    "keys_first_labelled_by_then": 1158
+   },
+   {
+    "epoch": 12,
+    "at": "2026-09-26T10:51:48Z",
+    "onpolicy_sets": 1618,
+    "keys_first_labelled_by_then": 1627
+   },
+   {
+    "epoch": 13,
+    "at": "2026-09-26T17:43:01Z",
+    "onpolicy_sets": 10885,
+    "keys_first_labelled_by_then": 10902
+   },
+   {
+    "epoch": 14,
+    "at": "2026-09-27T00:36:49Z",
+    "onpolicy_sets": 20659,
+    "keys_first_labelled_by_then": 20687
+   },
+   {
+    "epoch": 15,
+    "at": "2026-09-27T07:30:29Z",
+    "onpolicy_sets": 30248,
+    "keys_first_labelled_by_then": 30280
+   },
+   {
+    "epoch": 16,
+    "at": "2026-09-27T14:25:40Z",
+    "onpolicy_sets": 40155,
+    "keys_first_labelled_by_then": 40193
+   },
+   {
+    "epoch": 17,
+    "at": "2026-09-27T21:21:30Z",
+    "onpolicy_sets": 49819,
+    "keys_first_labelled_by_then": 49865
+   },
+   {
+    "epoch": 18,
+    "at": "2026-09-28T04:17:13Z",
+    "onpolicy_sets": 59320,
+    "keys_first_labelled_by_then": 59372
+   },
+   {
+    "epoch": 19,
+    "at": "2026-09-28T11:12:46Z",
+    "onpolicy_sets": 68467,
+    "keys_first_labelled_by_then": 68526
+   },
+   {
+    "epoch": 20,
+    "at": "2026-09-28T18:09:56Z",
+    "onpolicy_sets": 78381,
+    "keys_first_labelled_by_then": 78448
+   },
+   {
+    "epoch": 21,
+    "at": "2026-09-29T01:08:36Z",
+    "onpolicy_sets": 88764,
+    "keys_first_labelled_by_then": 88834
+   },
+   {
+    "epoch": 22,
+    "at": "2026-09-29T08:07:07Z",
+    "onpolicy_sets": 98726,
+    "keys_first_labelled_by_then": 98799
+   },
+   {
+    "epoch": 23,
+    "at": "2026-09-29T15:04:40Z",
+    "onpolicy_sets": 108037,
+    "keys_first_labelled_by_then": 108121
+   },
+   {
+    "epoch": 24,
+    "at": "2026-09-29T22:02:28Z",
+    "onpolicy_sets": 117591,
+    "keys_first_labelled_by_then": 117677
+   },
+   {
+    "epoch": 25,
+    "at": "2026-09-30T05:01:14Z",
+    "onpolicy_sets": 127385,
+    "keys_first_labelled_by_then": 127473
+   },
+   {
+    "epoch": 26,
+    "at": "2026-09-30T11:59:36Z",
+    "onpolicy_sets": 137083,
+    "keys_first_labelled_by_then": 137187
+   },
+   {
+    "epoch": 27,
+    "at": "2026-09-30T18:57:53Z",
+    "onpolicy_sets": 146788,
+    "keys_first_labelled_by_then": 146893
+   }
+  ],
+  "validation": "keys_first_labelled_by_then is MY reconstruction from each row's own 'at'; onpolicy_sets is the trainer's own count at that epoch boundary",
+  "last_bank_reload_at": "2026-09-30T18:57:53Z",
+  "main_run_finished_at": "2026-10-01T00:18:49Z",
+  "served_train_tokens_whose_every_set_was_first_labelled_after_the_last_reload": 6443,
+  "served_keys_first_labelled_after_the_last_reload": 30943,
+  "evidence": "M"
+ },
+ "variant_B_P2": {
+  "trained_sets": 174912,
+  "trained_tokens": 99495,
+  "trained_logs": 1167,
+  "basis": "PREREG_P2.md l.41,47 (174,912 served sets, 3 epochs over scenes) and p2r_carve.py; the list is the banked bank minus the 24 held-out logs",
+  "unseen_tokens": 2088,
+  "unseen_tokens_with_known_log": 1837,
+  "unseen_tokens_log_unknown": 251,
+  "unseen_logs_known": 632,
+  "unseen_logs_with_zero_trained_tokens": 0,
+  "vs_review_plan_51000": 0.0409,
+  "evidence": "M (counts) / I (that P2 trains on all 174,912: its own prereg)"
+ },
+ "variant_A_u400": {
+  "stage": "SFT-4 arm B update 400 (model_sft4_B_u400.pt, md5 8e382eeb...)",
+  "sets_drawn_by_u400": 25600,
+  "basis": "400 updates x batch 8 x accum 8, 1 epoch shuffle=True without replacement, torch.Generator seed 0 (scorer_finetune.py l.488-489)",
+  "pool_size_n_range": [
+   149377,
+   149440
+  ],
+  "pool_size_basis": "ceil(n/64) = 2,335 total updates (STOP_CONSEQUENCES_2026-10-11.md), so 149,377 <= n <= 149,440; PDM labels at arming were 146,185 of 174,912 (PREREG_SFT4 Amendment 4), the rest written before launch",
+  "exact_draw_recoverable": false,
+  "why_not": "the permutation depends on the exact ordered tr_idx at launch (n and which sets carried a PDM label that minute); the SFT-4 `data` event and sft.log were never banked (STOP_CONSEQUENCES), and train_pdm lived only on the pod",
+  "tokens_certainly_unseen_lower_bound": 73895,
+  "tokens_certainly_unseen_lower_bound_basis": "pigeonhole: 25,600 sets touch at most 25,600 tokens",
+  "tokens_touched_upper_bound": 25600,
+  "est_processing_order_prefix_n": 149408,
+  "est_tail_sets_unlabelled": 25504,
+  "est_tokens_with_all_train_sets_in_tail": 3027,
+  "est_expected_unseen_tokens": 75449.2,
+  "est_expected_touched_tokens": 24045.8,
+  "est_expected_unseen_fraction_of_train_tokens": 0.7583,
+  "est_basis": "hypergeometric on the labelled prefix (relabel order = sorted files, then lines; ESTIMATED, not recorded anywhere)",
+  "evidence": "M for the draw size and bounds; E for the expectations; the exact list is U"
+ },
+ "pool_by_definition": {
+  "definitions": {
+   "D1_unseen_by_the_fine_tune_stage_only": "tokens the SFT-4 u400 / P2 fine-tune did not draw (the review's wording: 'navtrain scenes the SFT-4 scorer did not train on')",
+   "D2_unseen_by_the_whole_scorer_lineage": "D1 AND not in model_final's main-run scorer training (fixed bank epochs 1-11, on-policy sets epochs 12-27)"
+  },
+  "A_D1": {
+   "certain_lower_bound": 75983,
+   "expected_E": 77537.2,
+   "note": "lower bound = pigeonhole unseen tokens of the train sets + the tokens with no train set; the individual tokens are NOT identifiable"
+  },
+  "B_D1": {
+   "count": 2088,
+   "identifiable": true,
+   "note": "P2 sees every served training token for 3 epochs"
+  },
+  "D2_upper_bound_both_bases": {
+   "tokens": 8531,
+   "parts": {
+    "every_served_train_set_first_labelled_after_the_last_main_run_bank_reload": 6443,
+    "no_served_set_at_all": 2088
+   },
+   "identifiable": true,
+   "note": "an UPPER bound on tokens the main run's scorer never trained on in its ON-POLICY phase (epochs 12-27). The fixed bank of epochs 1-11 holds scorer targets for 189,858 of 189,888 target-bank keys and 120,264 scorer frames were in the epoch-10 snapshot, so the true D2 count is lower by an amount this artifact cannot resolve (the snapshot's keys are not banked). It does not depend on the base: it is the shared L0 floor."
+  },
+  "review_plan_scenes": 51000,
+  "reading": "B: no pool (about 4 % of the plan, and below the 3,000 scenes RL-val alone needs). A: a pool of at least 75,983 tokens exists in count under D1, but its members cannot be named, because the u400 draw is not recoverable; any RL-train/RL-val partition of A is a random partition with ~24 % expected overlap with the 25,600 sets u400 drew. Under D2 neither base has a pool near 51,000."
+ },
+ "final_checkpoint_sets": {
+  "ckpt_step": 10075,
+  "served_train_sets": 22742,
+  "tokens": 21501,
+  "by_rank": {
+   "0": 13713,
+   "1": 9029
+  },
+  "first_label_after_main_run_end": 22742,
+  "rank0_plain_view_sets": 13713,
+  "note": "sets whose 64 proposals came from the step-10,075 checkpoint = the fan RL-S1 freezes. ckpt_last@10075 == model_final.pt: MEASURED, all 276 trainable tensors bit-identical and equal frozen-trunk fingerprints (raw/rl_pool/ckpt_last_vs_model_final.json, eval/rl_ckpt_equality.py). Rank-1 sets are route/goal-augmented views; RL scenes use rank 0. Their PDM labels lived only on the pod",
+  "evidence": "M"
+ }
+}

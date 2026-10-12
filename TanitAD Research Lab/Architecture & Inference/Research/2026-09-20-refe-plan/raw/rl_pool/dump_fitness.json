@@ -1,0 +1,38 @@
+{
+ "question": "Can refe/onpolicy_dump.py dump a FIXED generator checkpoint's 64 proposals over a GIVEN key list into the set format that onpolicy_relabel_pdm.py and rl_terms_label.py consume?",
+ "date": "2026-10-12",
+ "answer": "Not as shipped. It can load the right generator and it can run on a fixed checkpoint, but it cannot take a key list and it does not write the consumers' format. Four small edits, one new ~40-line writer. NOTHING was built (read-only check).",
+ "evidence_key": {"M": "MEASURED, ours, source named", "I": "INHERITED, not re-verified", "E": "ESTIMATED, arithmetic on named inputs"},
+ "can_already": [
+  {"what": "load model_final's generator", "detail": "ckpt_io.load_for_inference accepts BOTH formats (FULL model_final.pt: strict load; PARTIAL ckpt_last.pt: trunk + load_partial with the recorded frozen fingerprint). ckpt_last.pt at step 10,075 is the same generator as model_final.pt: all 276 trainable tensors bit-identical, equal frozen-trunk fingerprints.", "evidence": "M raw/rl_pool/ckpt_last_vs_model_final.json (eval/rl_ckpt_equality.py)"},
+  {"what": "freeze the generator", "detail": "the watcher at onpolicy_dump.py:104 reloads only when ckpt_last.pt is NEWER than the one it started with; pointed at a finished run dir it never reloads. That is how the 22,742 existing step-10,075 sets were produced.", "evidence": "M source read; dump.log line 10004 'reloaded ckpt_last.pt at step 10075'"},
+  {"what": "plain (non-augmented) views", "detail": "--ranks 0 selects rank-0 rows only; rank-1 rows carry route/goal augmentations (aug) that navtest does not have.", "evidence": "M onpolicy_dump.py:60,85; aug null on rank 0 in the banked sets"},
+  {"what": "the trainer's own input construction", "detail": "ds = T.TargetBank(...): images, ego, goal, per-sample rig exactly as training builds them (bf16 autocast + TF32, batch 4).", "evidence": "M onpolicy_dump.py:84,134"}
+ ],
+ "missing": [
+  {"id": "F1", "what": "no key-list filter", "detail": "by_rank (onpolicy_dump.py:85) is every row of the bank, shuffled by seed 20260926+rank; there is no --keys. Needs: --keys <token list / rl_train+rl_val scenes TSV> restricting by_rank, and --shard I/N so several processes can split the list.", "size": "~10 lines"},
+  {"id": "F2", "what": "checkpoint path and step are hard-wired to a live run dir", "detail": "ck = <run-dir>/ckpt_last.pt (l.72) and ckpt_step = st['state']['step'] (l.77): a FULL model_final.pt has keys format/model/meta and NO 'state', so --run-dir cannot point at it (KeyError). Needs: --ckpt PATH, --ckpt-step N (default: state.step when present, else meta.step = 10075) and --fixed (never reload). Pointing --run-dir at a dir holding the finished run's ckpt_last.pt works TODAY and gives the same generator.", "size": "~12 lines"},
+  {"id": "F3", "what": "wrong output kind for the consumers", "detail": "the dumper writes kind 'onpolicy_props' queue chunks (props [M][T][3], onpolicy_dump.py:140). onpolicy_relabel_pdm.py (l.126-144) and rl_terms_label.py (l.484-495) read ONLY 'onpolicy_set' lines in onpolicy_*.jsonl: kind, log_name, token, step, rank, ckpt_step, label_version, traj [M][T][2], yaw [M][T]. The only existing producer of onpolicy_set is onpolicy_label.py (teacher simulator). Needs a lean writer props -> onpolicy_set (traj = props[..., :2], yaw = props[..., 2], label_version 3, rounding 5/6 decimals as onpolicy_label.py:396-397).", "size": "~40 lines + a test"},
+  {"id": "F4", "what": "the trainer's loader needs a 'targets' field", "detail": "train.OnPolicyBank (the loader scorer_finetune.py uses for --onpolicy) skips a line without targets of shape [M] (n_incomplete). ScorerBank.components({}) is defined for an empty dict (all keys default), and _apply_pdm_labels then OVERWRITES all six components, so the lean writer can emit targets = [{}]*M and --require-pdm serves only PDM-labelled sets. This avoids the teacher labeller entirely; UNTESTED end to end (needs the train-side smoke on the pod).", "size": "inside F3; one pod smoke"},
+  {"id": "F5", "what": "dump numerics vs eval numerics", "detail": "the dump runs the trainer's numerics (bf16 autocast, TF32, batch 4, eval mode); the navtest fan comes from the eval planner. Same weights, but the 64 proposals may differ in the last bits. Not measured. Probe before launch: re-dump 20 navtest tokens and take max |delta| against eval/raw proposals.", "size": "one 20-token probe on the pod"},
+  {"id": "F6", "what": "inputs live only on a pod", "detail": "--images needs navtrain_pixels (80 GB, not retrieved to the dev box); the labellers need navtrain_dbs (164 GB, not retrieved). The dev-box RTX 4060 cannot substitute. The A40 is P2's first (PI order P2 -> RL-S1 -> P6) and CLAUDE.md forbids adding GPU load to a training pod.", "size": "scheduling"}
+ ],
+ "reuse": {
+  "final_fan_sets_in_the_banked_bundle": {"served_train_sets": 22742, "rank0_plain_sets": 13713, "tokens_all_ranks": 21501, "evidence": "M raw/rl_pool/rl_pool_by_base.json final_checkpoint_sets"},
+  "unbiased": "the dump order is random.Random(20260926 + rank).shuffle (onpolicy_dump.py:86-87) walked by a cursor, so the rows dumped at step 10,075 are a contiguous slice of a seeded permutation: a random subset of tokens. Reusing them in RL-train / RL-val introduces no selection by token properties (E, argued from the source; not tested).",
+  "still_needs": "PDM labels and rl_terms for them: the original PDM labels (train_pdm) lived only on the pod."
+ },
+ "cost": {
+  "dump_s_per_sample_standalone": {"median": 0.2313, "mean": 0.2338, "min": 0.2125, "max": 0.3312, "chunks": 1451, "evidence": "M dump.log (inside onpolicy_sets_logs_full.tar.zst), chunks written at ckpt 10,075 after the trainer had stopped, labellers concurrent"},
+  "dump_s_per_sample_with_live_trainer": {"median": 0.4094, "evidence": "M same log, ckpt 3,647 (8 chunks) and 0.40 at 3,688 (23 chunks)"},
+  "dump_hours_51000_all_new": {"hours": 3.28, "basis": "51,000 x 0.2313 s, one process", "evidence": "E"},
+  "dump_hours_51000_with_13713_reused": {"hours": 2.40, "basis": "(51,000 - 13,713) x 0.2313 s", "evidence": "E"},
+  "gpu_mem_peak_gb": {"value": 2.28, "evidence": "M dump.log"},
+  "pdm_label_cpu_s_per_set": {"value": 1.78, "basis": "258 sets/min on 7.65 CPUs (STOP_CONSEQUENCES_2026-10-11.md, PREREG_SFT4 Amendment 3)", "evidence": "I"},
+  "rl_terms_cpu_s_per_scene": {"value": 1.34, "evidence": "M eval/RESULT_RL_TERMS.md section 5 (dev box, 22 scenes)"},
+  "label_cpu_hours_51000": {"value": 44.2, "basis": "51,000 x (1.78 + 1.34) s", "evidence": "E"},
+  "label_wall_hours_51000": {"7.65_cpus": 5.8, "11_vcpus": 4.0, "24_vcpus": 1.84, "evidence": "E, perfect scaling assumed"},
+  "AVOID_teacher_onpolicy_label": {"mean_wall_s_per_set": 10.2, "median": 10.05, "sets": 177836, "worker_hours_51000": 144.5, "evidence": "M the banked set lines' own 'sec' field; measured while the trainer shared the pod's 7.65 CPUs, so an upper bound. This is the cost F4's placeholder-targets route avoids."}
+ },
+ "not_built": "onpolicy_dump.py was not edited. F1-F4 are a ~60-line change plus a test; F5 and the F4 smoke need a pod."
+}

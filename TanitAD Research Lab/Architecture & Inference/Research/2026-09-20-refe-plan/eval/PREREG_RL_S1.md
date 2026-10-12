@@ -10,7 +10,7 @@
 
 | id | question | state |
 |---|---|---|
-| **OPEN-BASE** | **Which checkpoint is the base.** Variant **A**: SFT-4 arm B u400 (`model_sft4_B_u400.pt`, md5 `8e382eeb...`, full-navtest 88.25 [M, `eval/RESULT_SFT4.md`]) on the frozen `model_final.pt` fan, as the review wrote it. Variant **B**: P2's `model_final.pt`, *if* P2 clears its GO rule (`eval/PREREG_P2_AMENDMENT_1.md` section 4: lo > 0 AND no adverse sub-score vs u400). The two are written out in full below; do not read either as chosen. | **OPEN** |
+| ~~OPEN-BASE~~ **DECIDED: A** (Master Mind 2026-10-12, section below) | **Which checkpoint is the base.** Variant **A**: SFT-4 arm B u400 (`model_sft4_B_u400.pt`, md5 `8e382eeb...`, full-navtest 88.25 [M, `eval/RESULT_SFT4.md`]) on the frozen `model_final.pt` fan, as the review wrote it. Variant **B**: P2's `model_final.pt`, *if* P2 clears its GO rule (`eval/PREREG_P2_AMENDMENT_1.md` section 4: lo > 0 AND no adverse sub-score vs u400). The two are written out in full below; do not read either as chosen. | **OPEN** |
 | ~~D3~~ | Lane-change arm R2. | **DECIDED, PI 2026-10-12 ("yes include the lane change arm"; Master Mind, landed 5e4a998): R2 is IN.** One seed. Read on the TACTICAL family (lane-change precision / recall, lateral-decision kappa). Kill if the lane-change rate exceeds 2x the label base rate (K5). **No PDMS credit is expected** (review 4.2: label active on ~2.7 % of frames). |
 
 ### The two base variants, side by side (the differences are mechanical and each changes a number in this document)
@@ -20,9 +20,37 @@
 | scorer outputs | **7** (6 PDM components + teacher-lane) [M, `ckpt_io.config_for_checkpoint`, `planner.py` rule `navsim_v1_lane`] | **6** (PREREG_P2: "No lane head in P2") |
 | selection rule that the policy `pi` MUST mirror | `navsim_v1_lane` = NC*DAC*(5EP+5TTC+2C)/12 * p_lane [M, `planner.py:552-557`; RESULT_SFT4 line 23] | `navsim_v1` = NC*DAC*(5EP+5TTC+2C)/12 [M, `planner.py:558-561`] |
 | the fan | `model_final.pt`'s 64 proposals; generator, trunk, LoRA frozen, so the fan is bit-identical to the one SFT-4 trained on | **P2 changed the proposals** (joint fine-tune, scorer sees the trunk): the 64 proposals must be **re-dumped and re-labelled** (dump 1.0-3.1 h on the A40 + 25-85 CPU-h of labels [E]) |
-| "scenes the base scorer did not train on" | the SFT-4 `data` event list (exact list [U], to be frozen) | P2 trained on **174,912 served sets**; the not-trained-on partition must be recomputed from P2's own bank. **If P2 saw essentially all navtrain sets, variant B has no clean RL-train pool** [U: not measured], and that alone may decide OPEN-BASE |
+| "scenes the base scorer did not train on" | the SFT-4 `data` event list (exact list [U], to be frozen) | P2 trained on **174,912 served sets**; the not-trained-on partition must be recomputed from P2's own bank. **If P2 saw essentially all navtrain sets, variant B has no clean RL-train pool** [**MEASURED 2026-10-12: it saw 99,495 of 101,583 eligible tokens; 2,088 tokens (4.1 % of 51,000) are unseen**; see "OPEN-BASE pool measurement" below], and that alone may decide OPEN-BASE |
 | A0 drift check | expected 88.25 | P2's own full-navtest read (the R2 read of Amendment 1) |
 | extra work before launch | `scorer_finetune.py` must LOAD a 7-output checkpoint (see "What has to exist", item 3) | none for loading; everything else as A |
+
+### OPEN-BASE pool measurement (2026-10-12; `raw/rl_pool/rl_pool_by_base.json`, instrument `eval/rl_pool_measure.py`)
+
+Eligible population [M]: `splits/navtrain.yaml` 103,288 tokens / 1,192 logs, **0** tokens and 0 logs in navtest, minus the 24 SFT held-out logs (1,705 tokens whose log is known) = **101,583 tokens**. The yaml pairs no token with a log; the token-to-log table (103,037 tokens) comes from the main run's target bank, and 251 yaml tokens have no recoverable log.
+
+* **B (P2): no pool [M].** P2 trains 3 epochs on all 174,912 served sets = 99,495 tokens / 1,167 logs (the banked bank reproduces the carve exactly: 177,836 served = 174,912 + 2,924). Unseen: **2,088 tokens** = the tokens with no on-policy set at all, over >= 632 logs, each of which also holds trained tokens. That is 4.1 % of the planned 51,000, and below the 3,000 scenes RL-val alone needs.
+* **A (u400): a pool in count, not in membership [M bounds, E expectation].** u400 is update 400 x 64 = 25,600 sets, so it touched at most 25,600 of the 99,495 trained tokens: **>= 73,895 are certainly unseen (75,983 with the 2,088 set-less tokens), about 77.5k expected**. The draw itself is not recoverable (seed 0 over the launch-time ordered index; the SFT-4 `data` event and `sft.log` were never banked and `train_pdm` died with the pod). The review's "28,727 labels not written at arming" are SETS, not scenes: in relabel order they are mostly second (rank-1 augmented) views, so only about **3,027 tokens** [E] have no labelled set at all. Any RL-train / RL-val partition of A is therefore a random partition, with about 24 % of its tokens expected to overlap u400's draw.
+* **Neither base is clean at the scorer-lineage level [M].** Both start from `model_final`'s scorer, trained on navtrain in the main run: fixed bank in epochs 1-11 (targets for 189,858 of 189,888 keys) and on-policy sets in epochs 12-27 (146,788 sets at the last reload). My per-epoch reconstruction from each set's own label timestamp matches the trainer's own counts within 0.1 % (`rl_pool_by_base.json`, `main_run_scorer_exposure_L0`). At most **8,531 tokens** escaped the on-policy phase, before the fixed-bank phase is subtracted.
+* **Almost every RL scene needs a fresh frozen-fan dump [M].** Only 22,742 served training sets carry proposals from the step-10,075 checkpoint, which IS `model_final.pt` (all 276 trainable tensors bit-identical, equal frozen-trunk fingerprints: `raw/rl_pool/ckpt_last_vs_model_final.json`); 13,713 of them are plain rank-0 views (the others are route/goal-augmented rank-1 views). The other 152,170 come from older generator checkpoints, and no PDM label survives off the pods, so even the 13,713 need labels. The 2,126 tokens with no set at all (2,088 outside the held-out logs) need a dump in either variant. Fitness of the dumper: `HANDOFF_RL_S1.md`, 2026-10-12 RL-S1-S1 section.
+* **Reading, for the Master Mind:** if pool size decides OPEN-BASE it decides against B. A's pool is large in count but cannot be named; the cost of that is the ~24 % overlap above, which both arms of a C-vs-R pair share equally (ESTIMATED argument, not measured).
+
+### OPEN-BASE DECIDED: base = variant A (Master Mind, 2026-10-12, before any RL data exists)
+
+**RL-S1 starts from SFT-4 arm B u400 (`model_sft4_B_u400.pt`) on the frozen `model_final.pt` fan.** Three reasons, all measured above:
+1. **B fails this pre-registration's own pool requirement:** 2,088 tokens unseen by P2's scorer (1,837 placeable) against 51,000 planned and
+   3,000 needed for RL-val alone; `refe/rl_partition.py` REFUSES variant B (`raw/rl_pool/partition_runs/B_p2_refused.txt`).
+2. **A's fan already exists in part:** `ckpt_last@10075` is bit-identical to `model_final.pt` (276/276 tensors), so 22,742 served sets ARE
+   the frozen fan, and the PDM relabel P2 is running now labels them.
+3. **A does not wait on P2's read.** P2's R2 read cannot reopen this: a P2 that beats u400 still has no pool. Order on the A40 is unchanged
+   (P2 -> RL-S1 -> P6). The PI may overrule; the choice is reversible until the launch token is issued.
+
+**Partition frozen (pre-data):** tool `refe/rl_partition.py` (`rl_partition/1`), seed **20261012**, variant-A run
+`raw/rl_pool/partition_runs/A_no_trained_list_seed20261012.manifest.json` (partition_id `272cfd35...`): 48,000 RL-train / 3,000 RL-val
+scenes over 576 / 75 logs, log-disjoint, navtest and the 24 SFT held-out logs excluded. The launch quotes this manifest's sha256. One
+change remains admissible before any RL number exists, and only one: re-running the SAME tool and seed with an availability filter (tokens
+whose images are on the pod), if the dumper cannot reach some keys. It must be logged here with the old and new partition_id.
+**Stated cost:** about 24 % of these scenes were in u400's SFT-4 draw (ESTIMATED; the draw cannot be named). Every C and R arm shares it
+equally, and the decisive read is full navtest, which no arm trained on.
 
 ## 1. Question and lever
 
