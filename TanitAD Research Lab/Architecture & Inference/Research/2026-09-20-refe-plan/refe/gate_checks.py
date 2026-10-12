@@ -80,6 +80,16 @@ class Stop(Exception):
 
 
 # ============================================================================================ the instrumented run
+def amp_probe_module(backbone):
+    """The module whose output dtype G-DVB reads for --amp: the backbone's FIRST nn.Linear (inside its blocks), never its output.
+    The backbone ends in a LayerNorm (model.py `self.norm`), and CUDA autocast always runs layer_norm in float32, so its OUTPUT read
+    float32 with AMP fully on.  MEASURED 2026-10-12 on the P2 pod: G-DVB FAILED a correct trainer (declared bf16 != built float32);
+    on CPU the gate declares float32, which is why no dev-box run ever saw it (test_gate_gpu_probes.py pins both)."""
+    import torch
+    blocks = getattr(backbone, "blocks", backbone)
+    return next((m for m in blocks.modules() if isinstance(m, torch.nn.Linear)), backbone)
+
+
 def instrumented_run(argv: list, *, mode: str, work, arm: str | None = None) -> SimpleNamespace:
     """Run the REAL `train.run(a)` in this process on `argv`, recording what it builds.  mode='build' stops at the first
     `opt.zero_grad` (everything the levers decide is built; nothing has trained); mode='smoke' runs to the end."""
@@ -127,7 +137,7 @@ def instrumented_run(argv: list, *, mode: str, work, arm: str | None = None) -> 
                             cal.detach().cpu().clone() if hasattr(cal, "detach") else cal,)
                     return None
                 self.register_forward_pre_hook(pre, with_kwargs=True)
-                self.backbone.register_forward_hook(lambda _m, _i, o: setattr(cap, "fwd_dtype", str(o.dtype)))
+                amp_probe_module(self.backbone).register_forward_hook(lambda _m, _i, o: setattr(cap, "fwd_dtype", str(o.dtype)))
 
     Opt0 = torch.optim.AdamW
 
@@ -467,7 +477,7 @@ def dvb_rows(a, b, s) -> list:
     add("compile", bool(a.compile and b.device == "cuda"), bool(b.compiled), "backbone compiled (cuda only)")
     if s is not None and s.fwd_dtype is not None:
         add("amp", "torch.bfloat16" if (a.amp == "bf16" and not a.cpu and _cuda()) else "torch.float32", s.fwd_dtype,
-            "dtype of the backbone's output under autocast")
+            "dtype of the backbone's first matmul (amp_probe_module) under autocast")
     return rows
 
 

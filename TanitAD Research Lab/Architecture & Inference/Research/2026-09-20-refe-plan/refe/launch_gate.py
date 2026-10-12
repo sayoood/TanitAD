@@ -344,6 +344,11 @@ def run_checks(prof: dict, argv: list, pkg: Path, out_dir: Path, *, only=None, a
     if "G-EVAL" in want:
         emit(C.check_eval(s_argv, s, prof2, arm=arm, rehearsal=rehearsal))
     if "G-CKPT" in want:
+        # the round trip runs TWO real trainings in subprocesses: the smoke model, its optimizer and the caching allocator behind them
+        # must leave THIS process's GPU first (MEASURED 2026-10-12, P2 pod: this process held 24.11 GiB, U and H1 both died CUDA OOM on 44 GiB)
+        if s is not None:
+            _free(s, deep=True)
+        _log_gpu_reserved("before G-CKPT")
         emit(C.check_ckpt(s_argv, work / "ckpt", prof2, arm=arm, rehearsal=rehearsal))
     if "G-SUITE" in want:
         emit(C.check_suite(prof2, arm=arm, rehearsal=rehearsal))
@@ -358,16 +363,28 @@ def run_checks(prof: dict, argv: list, pkg: Path, out_dir: Path, *, only=None, a
     return status
 
 
-def _free(cap) -> None:
+def _free(cap, deep: bool = False) -> None:
     import gc
     cap.model = None
     cap.first_batch = None
+    if deep:            # everything else that can pin the model's parameters or its CUDA blocks; the metrics stay (G-LIVE-LAB reads them)
+        cap.opt = cap.sched = None
+        cap.loaders, cap.samplers = [], []
     gc.collect()
     try:
         import torch
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
     except Exception:                                                        # noqa: BLE001 -- best effort
+        pass
+
+
+def _log_gpu_reserved(when: str) -> None:
+    try:
+        import torch
+        if torch.cuda.is_available():
+            print(f"  GPU reserved by the gate process {when}: {torch.cuda.memory_reserved() / 2 ** 30:.2f} GiB", flush=True)
+    except Exception:                                                        # noqa: BLE001 -- evidence only
         pass
 
 
