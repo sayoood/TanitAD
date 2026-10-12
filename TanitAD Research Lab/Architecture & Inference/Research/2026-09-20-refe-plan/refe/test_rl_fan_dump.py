@@ -397,6 +397,136 @@ def suite(rl, tag="rl_fan_dump"):
             check("compare-sets: reference lines of one key that disagree with each other trip the gate (exit 5)", rc == 5, f"rc {rc}")
         guarded("compare", t_compare)
 
+        # ---- the ABSOLUTE-TOLERANCE gate (--compare-atol): bit-identity holds only at matched batching on one GPU (eval/rl_fan_identity.py: 0.25 floor)
+        def t_atol():
+            import math
+            # -- the pure helpers, hand-derived
+            check("quantile_nearest_rank [1..10]: p50 = 5, p90 = 9, p99 = 10, p100 = 10 (nearest rank = ceil(q n)-th smallest)",
+                  [rl.quantile_nearest_rank(list(range(1, 11)), q) for q in (0.5, 0.9, 0.99, 1.0)] == [5, 9, 10, 10])
+            check("quantile_nearest_rank: empty -> 0.0", rl.quantile_nearest_rank([], 0.5) == 0.0)
+            t0 = [[[1.0, 2.0], [3.0, 4.0]], [[5.0, 6.0], [7.0, 8.0]]]
+            y0 = [[0.1, 0.2], [0.3, 0.4]]
+            same = rl.set_delta_strict((t0, y0), (t0, y0))
+            check("set_delta_strict: identical -> (0, 0)", same == (0.0, 0.0), str(same))
+            t1 = [[[1.0, 2.0], [3.0, 4.0]], [[5.0, 6.0], [7.0, 8.75]]]            # one y value 0.75 away
+            y1 = [[0.1, 0.2], [0.3, 0.4 - 0.125]]                                 # one yaw value 0.125 away
+            d_xy, d_yaw = rl.set_delta_strict((t1, y1), (t0, y0))
+            check("set_delta_strict: x/y and yaw deltas are kept apart (hand-derived 0.75 and 0.125)", abs(d_xy - 0.75) < 1e-12 and abs(d_yaw - 0.125) < 1e-12, f"{d_xy} {d_yaw}")
+            nan_t = [[[1.0, 2.0], [3.0, float("nan")]], [[5.0, 6.0], [7.0, 8.0]]]
+            nan_y = [[0.1, 0.2], [0.3, float("nan")]]
+            check("set_delta_strict: a NaN in x/y is inf (max(0.0, nan) would read 0.0 = 'within')", rl.set_delta_strict((nan_t, y0), (t0, y0))[0] == math.inf)
+            check("set_delta_strict: a NaN in yaw is inf", rl.set_delta_strict((t0, nan_y), (t0, y0))[1] == math.inf)
+            check("set_delta_strict: an inf on one side is inf", rl.set_delta_strict(([[[1.0, 2.0], [3.0, float("inf")]], t0[1]], y0), (t0, y0))[0] == math.inf)
+            check("set_delta_strict: a dropped proposal is inf (zip would truncate it to 0.0)", rl.set_delta_strict((t0[:1], y0), (t0, y0))[0] == math.inf)
+            check("set_delta_strict: a dropped yaw proposal is inf", rl.set_delta_strict((t0, y0[:1]), (t0, y0))[1] == math.inf)
+            check("set_delta_strict: a dropped horizon step is inf", rl.set_delta_strict(([p[:1] for p in t0], y0), (t0, y0))[0] == math.inf)
+            check("set_delta_strict: a dropped yaw step is inf", rl.set_delta_strict((t0, [y[:1] for y in y0]), (t0, y0))[1] == math.inf)
+
+            # -- end to end through the parser and run(): a dump, then references built from it with KNOWN perturbations
+            rc, _, od = run_dump(rl, d, ckpt=ckA, out="atol0")
+            recs = sets_of(os.path.join(od, "onpolicy_rlfan_fan_s0of1.jsonl"))
+            ref_dir = os.path.join(d, "atol_refs")
+            os.makedirs(ref_dir, exist_ok=True)
+            ref_file = os.path.join(ref_dir, "onpolicy_r0_w0.jsonl")
+
+            def perturbed(i, kind, amount):
+                r = json.loads(json.dumps(recs[i]))
+                if kind == "x":
+                    r["traj"][1][2][0] = r["traj"][1][2][0] + amount
+                elif kind == "y":
+                    r["traj"][2][1][1] = r["traj"][2][1][1] + amount
+                elif kind == "yaw":
+                    r["yaw"][0][2] = r["yaw"][0][2] + amount
+                return r
+
+            def write_ref(rows):
+                with open(ref_file, "w", encoding="utf-8", newline="\n") as fh:
+                    for r in rows:
+                        fh.write(json.dumps(r) + "\n")
+
+            def gate(args, out):
+                rc_, so_, od_ = run_dump(rl, d, ckpt=ckA, args=("--compare-sets", ref_dir, *args), out=out)
+                mf = os.path.join(od_, "rl_fan_dump_fan_s0of1.manifest.json")
+                return rc_, so_, (json.load(open(mf))["compare_sets"] if os.path.exists(mf) else None)
+
+            A, B, C = 3, 7, 11                                                       # indices of the perturbed sets among the first 20 references
+            rowsA = perturbed(A, "x", 0.25)
+            rowsB = perturbed(B, "y", 3.0)
+            rowsC = perturbed(C, "yaw", 0.001)
+            dA = abs(recs[A]["traj"][1][2][0] - rowsA["traj"][1][2][0])               # the delta AS THE MODULE WILL SEE IT (binary rounding of new - ref), recomputed here
+            write_ref([recs[i] if i not in (A, B, C) else {A: rowsA, B: rowsB, C: rowsC}[i] for i in range(20)])
+            rc1, so1, m1 = gate(("--compare-atol", "0.5"), "atol1")
+            check("atol 0.5: sets off by 0.25 (x) and 0.001 (yaw) are WITHIN, the one off by 3.0 (y) is beyond -> 19 within, 1 beyond, exit 5",
+                  rc1 == 5 and m1["within_atol"] == 19 and m1["beyond_atol"] == 1 and m1["reference_keys_matched"] == 20, f"rc {rc1} {m1}")
+            check("atol: the three perturbed sets are NOT bit-identical (17 are) -- the exact report keeps its meaning", m1["not_identical"] == 3 and m1["bit_identical"] == 17)
+            check("atol: max |delta| is the 3.0 y offset; the x/y and yaw maxima are kept apart (3.0 and 0.001)",
+                  abs(m1["max_abs_delta"] - 3.0) < 1e-9 and abs(m1["max_abs_delta_xy"] - 3.0) < 1e-9 and abs(m1["max_abs_delta_yaw"] - 0.001) < 1e-9, str(m1))
+            q = m1["delta_quantiles"]
+            check("atol: per-set quantiles over ALL 20 matched sets (17 zeros, 0.001, 0.25, 3.0): p50 0, p90 0.001, p99 3.0, max 3.0 (hand-derived, nearest rank)",
+                  q["p50"] == 0.0 and abs(q["p90"] - 0.001) < 1e-9 and abs(q["p99"] - 3.0) < 1e-9 and abs(q["max"] - 3.0) < 1e-9, str(q))
+            check("atol: the offender is named (first_beyond_atol) and the FAIL marker is printed, not PASS",
+                  m1["first_beyond_atol"] and m1["first_beyond_atol"][0][0][1] == recs[B]["token"] and "ZZRLFAN_ATOL_FAIL 20 1 " in so1 and "ZZRLFAN_ATOL_PASS" not in so1, so1[-300:])
+            rc2, so2, m2 = gate(("--compare-atol", "0.2"), "atol2")
+            check("atol 0.2: monotone -- now the 0.25 offset is beyond too (2 beyond, exit 5)", rc2 == 5 and m2["beyond_atol"] == 2, f"rc {rc2} {m2['beyond_atol']}")
+            rc3, so3, m3 = gate(("--compare-atol", "5.0"), "atol3")
+            check("atol 5.0: all 20 within -> exit 0, PASS marker with the matched count",
+                  rc3 == 0 and m3["beyond_atol"] == 0 and m3["within_atol"] == 20 and "ZZRLFAN_ATOL_PASS 20 " in so3 and "ZZRLFAN_ATOL_FAIL" not in so3, f"rc {rc3}")
+            # -- the boundary: a set whose delta EQUALS atol is within (<=); one ulp below atol it is beyond
+            write_ref([recs[i] if i != A else rowsA for i in range(20)])
+            rc4, so4, m4 = gate(("--compare-atol", repr(dA)), "atol4")
+            check("atol == the set's delta exactly -> WITHIN (the test is <=, not <)", rc4 == 0 and m4["beyond_atol"] == 0 and m4["within_atol"] == 20, f"rc {rc4} dA {dA!r} {m4['max_abs_delta']!r}")
+            rc5, so5, m5 = gate(("--compare-atol", repr(math.nextafter(dA, 0.0))), "atol5")
+            check("atol one ulp below the set's delta -> beyond (exit 5)", rc5 == 5 and m5["beyond_atol"] == 1, f"rc {rc5}")
+            # -- the default is still bit-identity, and the SAME tiny disagreement flips only with the flag
+            tiny = perturbed(5, "yaw", 1e-5)
+            write_ref([recs[i] if i != 5 else tiny for i in range(20)])
+            rc6, so6, m6 = gate((), "atol6")
+            check("no --compare-atol: a 1e-5 yaw offset is still exit 5 and the report carries NONE of the atol keys (the default path is unchanged)",
+                  rc6 == 5 and m6["not_identical"] == 1 and not ({"atol", "within_atol", "beyond_atol", "delta_quantiles", "max_abs_delta"} & set(m6)) and "ZZRLFAN_ATOL" not in so6,
+                  f"rc {rc6} {sorted(m6)}")
+            rc7, so7, m7 = gate(("--compare-atol", "0.001"), "atol7")
+            check("--compare-atol 0.001: the same 1e-5 offset is WITHIN -> exit 0 (the flag, and only the flag, changes the verdict)",
+                  rc7 == 0 and m7["within_atol"] == 20 and m7["not_identical"] == 1, f"rc {rc7}")
+            rc8, so8, m8 = gate(("--compare-atol", "0.0"), "atol8")
+            check("--compare-atol 0.0 behaves as bit-identity (the 1e-5 offset is beyond)", rc8 == 5 and m8["beyond_atol"] == 1, f"rc {rc8}")
+            # -- a fan the reference does not have the shape of, and a NaN, are never within tolerance
+            cut = json.loads(json.dumps(recs[4]))
+            cut["traj"] = cut["traj"][:-1]
+            cut["yaw"] = cut["yaw"][:-1]
+            write_ref([recs[i] if i != 4 else cut for i in range(20)])
+            rc9, so9, m9 = gate(("--compare-atol", "1e9"), "atol9")
+            check("a reference fan with a dropped proposal is beyond even atol 1e9 (shape mismatch = inf)", rc9 == 5 and m9["beyond_atol"] == 1, f"rc {rc9} {m9 and m9.get('beyond_atol')}")
+            nanr = json.loads(json.dumps(recs[6]))
+            nanr["traj"][0][0][0] = float("nan")
+            write_ref([recs[i] if i != 6 else nanr for i in range(20)])
+            rc10, so10, m10 = gate(("--compare-atol", "1e9"), "atol10")
+            check("a reference with a NaN x value is beyond even atol 1e9", rc10 == 5 and m10["beyond_atol"] == 1, f"rc {rc10}")
+            nany = json.loads(json.dumps(recs[6]))
+            nany["yaw"][0][0] = float("nan")
+            write_ref([recs[i] if i != 6 else nany for i in range(20)])
+            rc10b, _, m10b = gate(("--compare-atol", "1e9"), "atol10b")
+            check("a reference with a NaN yaw value is beyond even atol 1e9", rc10b == 5 and m10b["beyond_atol"] == 1, f"rc {rc10b}")
+            # -- the reference-disagreement condition survives atol mode (two reference lines of one key that differ)
+            write_ref([recs[0], dict(recs[0], yaw=[[9.0] * T_] * M_)])
+            rc11, _, _ = gate(("--compare-atol", "1e9"), "atol11")
+            check("atol mode: reference lines of one key that disagree with each other still trip the gate (exit 5)", rc11 == 5, f"rc {rc11}")
+            # -- refusals: a tolerance that would be silently ignored, a nonsense tolerance, too few matches
+            write_ref(recs[:20])
+            rc12, so12, _ = run_dump(rl, d, ckpt=ckA, args=("--compare-atol", "0.5"), out="atol12")
+            check("--compare-atol without --compare-sets is REFUSED (exit 4), not silently ignored", rc12 == 4 and "need --compare-sets" in so12, f"rc {rc12}")
+            for nm, val in (("negative", "-0.1"), ("NaN", "nan"), ("infinite", "inf")):
+                rcn, son, _ = gate(("--compare-atol", val), "atol_bad_" + nm)
+                check(f"--compare-atol {val} ({nm}) is REFUSED (exit 4)", rcn == 4, f"rc {rcn}")
+            rcm, som, _ = gate(("--compare-atol", "5", "--compare-min-matched", "21"), "atol13")
+            check("--compare-min-matched 21 with 20 matched keys is REFUSED (exit 4)", rcm == 4 and "fewer than --compare-min-matched 21" in som, f"rc {rcm}")
+            rcm2, _, _ = gate(("--compare-atol", "5", "--compare-min-matched", "20"), "atol14")
+            check("--compare-min-matched 20 with 20 matched keys passes (exit 0)", rcm2 == 0, f"rc {rcm2}")
+            rcm3, som3, _ = gate(("--compare-min-matched", "0"), "atol15")
+            check("--compare-min-matched 0 is REFUSED (a floor of zero is no floor)", rcm3 == 4, f"rc {rcm3}")
+            ap = rl.build_parser().parse_args(["--ckpt", "x", "--keys", "y", "--targets", "t", "--images", "i", "--calib", "c", "--out", "o"])
+            check("the parser default is None for both flags (no tolerance unless named in the argv)", ap.compare_atol is None and ap.compare_min_matched is None)
+        guarded("atol", t_atol)
+
         # ---- the REAL consumers read the record
         def t_consumers():
             import train as T
@@ -467,6 +597,25 @@ MUTATIONS = [
     ("missing_scenes_exit_0", "keys", "    return EXIT_MISSING if (missing and not a.allow_missing) else EXIT_OK\n\n\ndef _write_json", "    return EXIT_OK\n\n\ndef _write_json"),
     ("plan_only_missing_exit_0", "keys", "        return EXIT_MISSING if (missing and not a.allow_missing) else EXIT_OK\n\n    # ---- the model", "        return EXIT_OK\n\n    # ---- the model"),
     ("dup_token_across_files_allowed", "keys", "if len({t for t, _ in scenes}) != len(scenes):", "if False:"),
+    # ---- --compare-atol (2026-10-12): each edit removes one property of the absolute-tolerance gate
+    ("atol_flag_ignored_by_the_gate", "atol", "        elif a.compare_atol is not None:\n            if cmp_", "        elif False:\n            if cmp_"),
+    ("atol_never_fails", "atol", 'if cmp_["beyond_atol"] or cmp_["reference_lines_disagreeing_with_each_other"]:\n                rc = EXIT_MISMATCH', 'if False:\n                rc = EXIT_MISMATCH'),
+    ("atol_beyond_not_exit_5", "atol", 'if cmp_["beyond_atol"] or cmp_["reference_lines_disagreeing_with_each_other"]:\n                rc = EXIT_MISMATCH',
+     'if cmp_["beyond_atol"] or cmp_["reference_lines_disagreeing_with_each_other"]:\n                rc = EXIT_OK'),
+    ("atol_compared_with_ge", "atol", "if d > atol), key=lambda kd: -kd[1])", "if d >= atol), key=lambda kd: -kd[1])"),
+    ("atol_doubled", "atol", "if d > atol), key=lambda kd: -kd[1])", "if d > 2 * atol), key=lambda kd: -kd[1])"),
+    ("atol_default_path_tolerant", "atol", 'elif cmp_["not_identical"] or cmp_["reference_lines_disagreeing_with_each_other"]:\n            rc = EXIT_MISMATCH',
+     'elif cmp_["reference_lines_disagreeing_with_each_other"]:\n            rc = EXIT_MISMATCH'),
+    ("atol_default_not_none", "atol", 'ap.add_argument("--compare-atol", type=float, default=None,', 'ap.add_argument("--compare-atol", type=float, default=0.5,'),
+    ("atol_shape_mismatch_reads_zero", "atol", "if len(ta) != len(tb) or len(ya) != len(yb):\n        return math.inf, math.inf", "if len(ta) != len(tb) or len(ya) != len(yb):\n        return 0.0, 0.0"),
+    ("atol_nan_xy_passes", "atol", "dxy = max(dxy, d if math.isfinite(d) else math.inf)", "dxy = max(dxy, d)"),
+    ("atol_nan_yaw_passes", "atol", "dyaw = max(dyaw, d if math.isfinite(d) else math.inf)", "dyaw = max(dyaw, d)"),
+    ("atol_without_compare_sets_ignored", "atol", "if (a.compare_atol is not None or a.compare_min_matched is not None) and a.compare_sets is None:", "if False:"),
+    ("atol_negative_allowed", "atol", "if a.compare_atol is not None and not (math.isfinite(a.compare_atol) and a.compare_atol >= 0):", "if False:"),
+    ("atol_min_matched_ignored", "atol", 'elif a.compare_min_matched is not None and cmp_["reference_keys_matched"] < a.compare_min_matched:', "elif False:"),
+    ("atol_min_matched_zero_allowed", "atol", "if a.compare_min_matched is not None and a.compare_min_matched < 1:", "if False:"),
+    ("atol_quantile_floor_rank", "atol", "return sorted_vals[max(0, math.ceil(q * len(sorted_vals)) - 1)]", "return sorted_vals[max(0, math.floor(q * len(sorted_vals)) - 1)]"),
+    ("atol_identical_sets_not_counted_within", "atol", '"within_atol": len(per_set) - len(beyond)', '"within_atol": len(per_set) - len(beyond) - n_equal'),
 ]
 
 
@@ -490,7 +639,7 @@ def main() -> int:
         failing = [n for n, ok, _ in suite(mod) if not ok]
         print(f"{name:36s} {cls:8s} {len(failing)}  {failing[0][:70] if failing else ''}")
         assert failing, f"mutation {name} ({cls}) stayed GREEN: the suite cannot see it"
-    need = {"ckpt", "shard", "fan", "format", "keys", "resume", "gate"}
+    need = {"ckpt", "shard", "fan", "format", "keys", "resume", "gate", "atol"}
     assert {c for _, c, _, _ in MUTATIONS} >= need, "a required mutation class is missing"
     n = 1 + len(MUTATIONS) + 1
     print(f"ZZTEST_PASS {n}  (1 unmutated suite of {len(base)} checks + {len(MUTATIONS)} RED mutations + coverage)")

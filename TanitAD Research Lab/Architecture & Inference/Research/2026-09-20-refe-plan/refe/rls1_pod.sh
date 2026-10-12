@@ -8,7 +8,9 @@
 # shipped to /workspace/refe-plan-rls1 (a directory of its OWN: P2's token_ok re-measures /workspace/refe-plan, so adding files there while P2 trains would break it).
 # Start (detached):  nohup setsid bash /workspace/refe-plan-rls1/refe/rls1_pod.sh > /workspace/data/rls1/stdout.log 2>&1 < /dev/null &
 # Re-running after ANY interruption is safe: finished stages leave /workspace/data/rls1/stage/<name>.ok (an arm interrupted in training restarts at update 0: the trainer has no resume).
-# RLS1_STOP_AFTER=<precheck|env|ckpts|partition|plan|tlane|dump|labels|join|bank|gate_<ARM>|arm_<ARM>> ends the chain after that stage (a dry run; gate_C0 stops after the first token).
+# RLS1_STOP_AFTER=<precheck|env|ckpts|partition|plan|fancmp|tlane|dump|labels|join|bank|gate_<ARM>|arm_<ARM>> ends the chain after that stage (a dry run; gate_C0 stops after the first token).
+# RLS1_FANCMP_ATOL=<metres> is REQUIRED (no default; runbook D-RLS1-5): the absolute tolerance of the fan-equivalence gate, stage fancmp.
+# RLS1_BANKED_SETS=<dir> overrides where the fan-equivalence gate (stage fancmp) finds the main run's banked step-10,075 sets (default: P2's restored+carved bank, see FANCMP below).
 # RLS1_ARMS="C0 R0 C1 R1 R2" (the default order: a control runs BEFORE its R arm, so K4 compares R with a finished C).  RLS1_ARMS="R0 R1 R2" is the PAIRED design
 # (each R run's arm A is its matched control by construction; K4 then reads against that arm A): about 9 h of A40 less.  The choice is the Master Mind's (runbook D-RLS1-1).
 # Every child is launched with fd 200 closed (the chain holds its flock on 200).  Markers are opaque ZZ tokens.
@@ -109,6 +111,7 @@ for f in refe/scorer_finetune.py refe/rl_fan_dump.py refe/rl_partition.py refe/r
          refe/score_proposals.py refe/route_rank.py refe/map_feature_cache.py refe/query_cache.py refe/navtrain_scenarios.py refe/build_scorer_targets.py code/augment_routes.py \
          eval/rl_val_eval.py eval/proxy_eval.py eval/rl_terms_join_identity.py SHIP_MANIFEST.json \
          code/pod_teacher_env.sh code/pod_dataprep.sh splits/navtrain.yaml splits/sft_heldout_logs.txt \
+         splits/rl_fancmp_keys.tsv \
          raw/rl_pool/partition_runs/A_no_trained_list_seed20261012_n16000.manifest.json \
          raw/rl_pool/partition_runs/A_no_trained_list_seed20261012_n16000/rl_train_scenes.tsv \
          raw/rl_pool/partition_runs/A_no_trained_list_seed20261012_n16000/rl_val_scenes.tsv; do
@@ -197,6 +200,38 @@ if ! stage_done plan; then
   stage_mark plan
 fi
 log "image coverage complete for all 19,000 scenes ($(grep '^ZZRLFAN_PLAN' "$R/plan.log" | tail -n 1))"; stop_after plan
+
+# ---- 4b. THE FAN-EQUIVALENCE GATE (before the DBs, the labellers or ONE of the 19,000 scenes is dumped).  Does THIS pod's dumper (these images, this calibration table, this
+#          torch / cv2 / cuDNN) reproduce the fan the main run banked at step 10,075?  Nothing else in the chain asks: every label is computed on whatever was dumped.
+#          rl_fan_dump.py dumps a PINNED slice (splits/rl_fancmp_keys.tsv: 512 scenes outside the 24 SFT held-out logs, each with a banked rank-0 step-10,075 set) from model_final
+#          and compares every set with the banked one under an ABSOLUTE tolerance: max |delta| over every x / y (m) and yaw (rad) value <= $FANCMP_ATOL, on EVERY set.
+#          BIT-IDENTITY IS THE WRONG BAR (MEASURED 2026-10-12, raw/rl_fan/RESULT_IDENTITY.md): the fan moves by up to 0.25 with the batch grouping alone, and dev box vs the A40's
+#          banked sets differ by 0.25 on every key.
+#          ⛔ THE TOLERANCE HAS NO DEFAULT HERE, ON PURPOSE.  Measured on the dev box (raw/rl_fan/atol_calibration/, verdict.json): the floor is 0.25 and the PRE-REGISTERED rule (every
+#          deliberate-regression arm >= 10x the tolerance) is met by NO tolerance: 5 of 6 decision arms do not reach it and one (another vehicle's rig) is indistinguishable from the floor.
+#          verdict.json CHOSEN_ATOL is therefore null and a number written here would be an assumption wearing a measurement's clothes.  The Master Mind sets RLS1_FANCMP_ATOL after
+#          reading runbook D-RLS1-5 (the arm-by-arm table: what a given value catches and misses).  The stage refuses until it is set, and when it is set, it is the dumper's argv.
+#          The banked sets are P2's restored bank AFTER its carve (refe/p2r_pod.sh:22, SETS=$DATA/refe_navtrain/onpolicy/sets; the 24 held-out logs were moved to sets_full/, which is why
+#          the slice excludes them).  That the directory is still on THIS pod is UNVERIFIED (never read from the pod): an absent or empty one is a refusal, not a skip.
+FANCMP_KEYS=$PKG/splits/rl_fancmp_keys.tsv
+FANCMP_KEYS_SHA256=4c613ff027e8984b924723ee2c6989cbed30a4f22002d5674eae0530ea30c55c
+FANCMP_ATOL="${RLS1_FANCMP_ATOL:-}"
+BANKED="${RLS1_BANKED_SETS:-$DATA/refe_navtrain/onpolicy/sets}"
+if ! stage_done fancmp; then
+  [ -n "$FANCMP_ATOL" ] || refuse "no fan-equivalence tolerance: set RLS1_FANCMP_ATOL=<metres> (runbook D-RLS1-5; raw/rl_fan/atol_calibration/verdict.json has CHOSEN_ATOL null, so the chain carries no default)"
+  awk -v a="$FANCMP_ATOL" 'BEGIN { exit !(a ~ /^[0-9]*[.]?[0-9]+$/ && a + 0 > 0 && a + 0 <= 1.0) }' || refuse "RLS1_FANCMP_ATOL='$FANCMP_ATOL' is not a number between 0 and 1.0 metres (the measured floor is 0.25; above 1.0 the weakest arm that separates at all would pass)"
+  [ "$(sha256sum "$FANCMP_KEYS" | cut -c1-64)" = "$FANCMP_KEYS_SHA256" ] || refuse "$FANCMP_KEYS is not the pinned fan-equivalence slice (sha256 != $FANCMP_KEYS_SHA256): a different slice is a different gate"
+  ls "$BANKED"/onpolicy_*.jsonl > /dev/null 2>&1 || refuse "no banked step-10,075 sets at $BANKED/onpolicy_*.jsonl (P2's restored bank; RLS1_BANKED_SETS=<dir> if it lives elsewhere): the fan-equivalence gate has nothing to compare with"
+  NK=$(( $(wc -l < "$FANCMP_KEYS") - 1 ))
+  rm -rf "$R/fancmp"
+  env -u HF_TOKEN OMP_NUM_THREADS=1 "$PY" rl_fan_dump.py --ckpt "$FINAL" --expect-ckpt-sha256 "$FINAL_SHA256" --keys "$FANCMP_KEYS" --targets "$TARGETS" \
+    --images "$IMAGES" --calib "$CALIB" --out "$R/fancmp" --tag fancmp --batch 4 \
+    --compare-sets "$BANKED" --compare-atol "$FANCMP_ATOL" --compare-min-matched "$NK" >> "$R/fancmp.log" 2>&1 200>&-
+  frc=$?
+  { [ "$frc" = 0 ] && grep -q "^ZZRLFAN_ATOL_PASS $NK " "$R/fancmp.log"; } || refuse "the fan-equivalence gate FAILED (rl_fan_dump.py exit $frc, want 0 and ZZRLFAN_ATOL_PASS $NK; log $R/fancmp.log, sets in $R/fancmp): $(grep -E '^(ZZRLFAN_ATOL_FAIL|REFUSED)' "$R/fancmp.log" | tail -n 1 | cut -c1-200)"
+  stage_mark fancmp
+fi
+log "ZZRLS1_FANCMP_OK $(grep '^ZZRLFAN_ATOL_PASS' "$R/fancmp.log" | tail -n 1) (atol $FANCMP_ATOL, slice $FANCMP_KEYS_SHA256, banked $BANKED)"; stop_after fancmp
 
 # ---- 5. the labellers must be ABLE to label before hours of them: NAVSIM's metric-cache processor, simulator and scorer import and build
 #          (2026-10-11: navsim was missing from the venv and the relabel failed EVERY set).  The navtrain DBs are only needed here.

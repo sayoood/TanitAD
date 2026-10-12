@@ -35,7 +35,15 @@ depend on it: `eval/rl_fan_identity.py` measures that).
 
 EXIT CODES: 0 ok - 3 scene(s) with no bank row / unresolved image under --pixels (written to <out>/unavailable_scenes_<tag>.tsv; see
 `refe/rl_pool_available.py` for the one admissible remedy) - 4 refused (bad arguments, checkpoint / manifest mismatch) - 5 `--compare-sets` found a set
-that is NOT bit-identical.  Markers: `ZZRLFAN_PLAN <n>`, `ZZRLFAN_DONE <written> <skipped_done> <missing>`.
+that is NOT bit-identical (default), or -- with `--compare-atol X` -- a set whose max |delta| over every x / y / yaw value exceeds X.
+Markers: `ZZRLFAN_PLAN <n>`, `ZZRLFAN_DONE <written> <skipped_done> <missing>`, and with `--compare-atol`: `ZZRLFAN_ATOL_PASS <matched> <max_delta> <atol>` or
+`ZZRLFAN_ATOL_FAIL <matched> <beyond> <max_delta> <atol>`.
+
+`--compare-atol X` (RL-S1 pod gate, 2026-10-12): bit-identity holds only at matched batching on ONE GPU.  `eval/rl_fan_identity.py` MEASURED (RTX 4060) that BOTH
+dumpers move by up to 0.25 when the batch grouping changes, and that dev box vs the A40's banked step-10,075 sets differ by max abs 0.25 on every key; a
+bit-identical gate would REFUSE a correct dumper on the pod.  With X the gate is an ABSOLUTE tolerance in trajectory units (metres for x / y, radians for yaw, one
+number for all three), judged per set as `max |delta| <= X`.  X is chosen from the measured floor and the deliberate-regression arms in
+`raw/rl_fan/atol_calibration/`, never assumed.  Default (no flag): today's bit-identical gate, unchanged.
 """
 from __future__ import annotations
 
@@ -46,6 +54,7 @@ import gzip
 import hashlib
 import io
 import json
+import math
 import os
 import sys
 import time
@@ -311,10 +320,48 @@ def dump(model, ds, order, *, out_file, done, ckpt_step, n_prop, horizon, batch,
 
 
 # ------------------------------------------------------------------------------------------------------------- bit-identity against existing sets
-def compare_sets(new_path, ref_paths, ckpt_step):
+def set_delta_strict(a, b):
+    """-> (d_xy, d_yaw): max |delta| over x / y values and over yaw values of two (traj, yaw) pairs.  Unlike the legacy loop in `compare_sets` (zip truncates), a SHAPE
+    mismatch (a missing proposal / step) or a NON-FINITE value on either side is `inf`: a fan with a dropped proposal, or a NaN, must never read as 'within tolerance'
+    (`max(0.0, nan)` is 0.0 in Python, which is how a NaN fan would otherwise pass)."""
+    (ta, ya), (tb, yb) = a, b
+    if len(ta) != len(tb) or len(ya) != len(yb):
+        return math.inf, math.inf
+    dxy = dyaw = 0.0
+    for pa, pb in zip(ta, tb):
+        if len(pa) != len(pb):
+            return math.inf, math.inf
+        for qa, qb in zip(pa, pb):
+            if len(qa) != len(qb):
+                return math.inf, math.inf
+            for u, v in zip(qa, qb):
+                d = abs(u - v)
+                dxy = max(dxy, d if math.isfinite(d) else math.inf)
+    for pa, pb in zip(ya, yb):
+        if len(pa) != len(pb):
+            return math.inf, math.inf
+        for u, v in zip(pa, pb):
+            d = abs(u - v)
+            dyaw = max(dyaw, d if math.isfinite(d) else math.inf)
+    return dxy, dyaw
+
+
+def quantile_nearest_rank(sorted_vals, q):
+    """Nearest-rank quantile (the smallest value with at least a fraction q of the sample at or below it); q in (0, 1].  Empty -> 0.0."""
+    if not sorted_vals:
+        return 0.0
+    return sorted_vals[max(0, math.ceil(q * len(sorted_vals)) - 1)]
+
+
+def compare_sets(new_path, ref_paths, ckpt_step, atol=None):
     """Compare this run's sets with EXISTING sets of the same keys and ckpt_step (e.g. the step-10,075 sets of the main run).  Exact list equality of traj
     and yaw (both sides are 5/6-decimal rounded floats).  -> dict with counts, max |delta| over unequal keys, and the first unequal keys.
-    Every reference line of a key must also agree with the other reference lines of that key (a relabelled set keeps its proposals)."""
+    Every reference line of a key must also agree with the other reference lines of that key (a relabelled set keeps its proposals).
+
+    atol=None: the result is exactly the bit-identity report above (no extra keys).  atol=X (a finite float >= 0): the report ALSO carries `atol`, `within_atol`
+    (sets with max |delta| <= X, bit-identical ones included), `beyond_atol` (> X, strict; a shape mismatch or non-finite value is always beyond), `max_abs_delta`
+    (over every matched set), `max_abs_delta_xy` / `max_abs_delta_yaw`, `delta_quantiles` (nearest-rank p50 / p90 / p99 / max of the per-set max delta over ALL
+    matched sets) and `first_beyond_atol`.  `not_identical` and the reference-disagreement count keep their exact meaning."""
     new = {}
     with open(new_path, encoding="utf-8", newline="") as f:
         for ln in f:
@@ -349,9 +396,12 @@ def compare_sets(new_path, ref_paths, ckpt_step):
                     ref_disagree.append(k)
                 ref.setdefault(k, v)
     n_equal, unequal, max_abs = 0, [], 0.0
+    per_set = []                                                        # atol mode: (key, max |delta| over x / y / yaw, d_xy, d_yaw) for EVERY matched set
     for k, v in ref.items():
         if new[k] == v:
             n_equal += 1
+            if atol is not None:
+                per_set.append((k, 0.0, 0.0, 0.0))
             continue
         d = 0.0
         for (a_t, a_y), (b_t, b_y) in ((new[k], v),):
@@ -363,9 +413,22 @@ def compare_sets(new_path, ref_paths, ckpt_step):
                     d = max(d, abs(qa - qb))
         unequal.append((k, d))
         max_abs = max(max_abs, d)
-    return {"new_sets": len(new), "reference_keys_matched": len(ref), "reference_lines_read": ref_lines, "bit_identical": n_equal,
-            "not_identical": len(unequal), "max_abs_delta_over_unequal": max_abs, "first_unequal": [[list(k), d] for k, d in unequal[:5]],
-            "reference_lines_disagreeing_with_each_other": len(ref_disagree)}
+        if atol is not None:
+            sxy, syaw = set_delta_strict(new[k], v)
+            per_set.append((k, max(sxy, syaw), sxy, syaw))
+    out = {"new_sets": len(new), "reference_keys_matched": len(ref), "reference_lines_read": ref_lines, "bit_identical": n_equal,
+           "not_identical": len(unequal), "max_abs_delta_over_unequal": max_abs, "first_unequal": [[list(k), d] for k, d in unequal[:5]],
+           "reference_lines_disagreeing_with_each_other": len(ref_disagree)}
+    if atol is not None:
+        beyond = sorted(((k, d) for k, d, _, _ in per_set if d > atol), key=lambda kd: -kd[1])
+        ds = sorted(d for _, d, _, _ in per_set)
+        out.update({"atol": atol, "within_atol": len(per_set) - len(beyond), "beyond_atol": len(beyond),
+                    "max_abs_delta": ds[-1] if ds else 0.0,
+                    "max_abs_delta_xy": max((x for _, _, x, _ in per_set), default=0.0), "max_abs_delta_yaw": max((y for _, _, _, y in per_set), default=0.0),
+                    "delta_quantiles": {"p50": quantile_nearest_rank(ds, 0.5), "p90": quantile_nearest_rank(ds, 0.9), "p99": quantile_nearest_rank(ds, 0.99),
+                                        "max": ds[-1] if ds else 0.0},
+                    "first_beyond_atol": [[list(k), d] for k, d in beyond[:5]]})
+    return out
 
 
 # ------------------------------------------------------------------------------------------------------------- CLI
@@ -393,6 +456,12 @@ def build_parser():
     ap.add_argument("--allow-missing", action="store_true", help="exit 0 although some scenes have no bank row / image (they are still listed)")
     ap.add_argument("--compare-sets", nargs="*", default=None,
                     help="existing onpolicy_*.jsonl files or dirs: after the dump, EVERY dumped key that also has a set there at this ckpt_step must be bit-identical (exit 5 otherwise)")
+    ap.add_argument("--compare-atol", type=float, default=None,
+                    help="with --compare-sets: judge each set by max |delta| over every x / y / yaw value <= ATOL (absolute, trajectory units) instead of bit-identity; exit 5 iff any set "
+                         "is beyond it.  Default None = the bit-identical gate, unchanged.  Choose ATOL from raw/rl_fan/atol_calibration/ (a measured floor and regression arms), never by hand")
+    ap.add_argument("--compare-min-matched", type=int, default=None,
+                    help="with --compare-sets: REFUSE (exit 4) when fewer than this many dumped keys have a reference set (a gate that compares 3 of 512 sets proves little); "
+                         "matching NOTHING is always refused")
     ap.add_argument("--device", default="cuda")
     return ap
 
@@ -411,6 +480,12 @@ def run(a, *, build=None, loader=None, ds_factory=None):
             scenes += read_scenes(p)
         if len({t for t, _ in scenes}) != len(scenes):
             raise ValueError("a token appears in two key files (train and val must be disjoint)")
+        if (a.compare_atol is not None or a.compare_min_matched is not None) and a.compare_sets is None:
+            raise ValueError("--compare-atol / --compare-min-matched need --compare-sets (a tolerance with nothing to compare against would be silently ignored)")
+        if a.compare_atol is not None and not (math.isfinite(a.compare_atol) and a.compare_atol >= 0):
+            raise ValueError(f"--compare-atol {a.compare_atol!r}: need a finite number >= 0")
+        if a.compare_min_matched is not None and a.compare_min_matched < 1:
+            raise ValueError(f"--compare-min-matched {a.compare_min_matched}: need >= 1")
     except (ValueError, OSError, KeyError, json.JSONDecodeError) as e:
         print(f"REFUSED: {e}")
         return EXIT_REFUSED
@@ -492,12 +567,21 @@ def run(a, *, build=None, loader=None, ds_factory=None):
         refs = []
         for p in a.compare_sets:
             refs += sorted(glob.glob(os.path.join(p, "onpolicy_*.jsonl"))) if os.path.isdir(p) else [p]
-        cmp_ = compare_sets(out_file, refs, step)
+        cmp_ = compare_sets(out_file, refs, step, atol=a.compare_atol)
         manifest["compare_sets"] = cmp_
         print("  compare-sets: " + json.dumps(cmp_), flush=True)
         if cmp_["reference_keys_matched"] == 0:
             print("REFUSED: --compare-sets matched NO key -- a gate that compares nothing proves nothing")
             rc = EXIT_REFUSED
+        elif a.compare_min_matched is not None and cmp_["reference_keys_matched"] < a.compare_min_matched:
+            print(f"REFUSED: --compare-sets matched {cmp_['reference_keys_matched']} key(s), fewer than --compare-min-matched {a.compare_min_matched}")
+            rc = EXIT_REFUSED
+        elif a.compare_atol is not None:
+            if cmp_["beyond_atol"] or cmp_["reference_lines_disagreeing_with_each_other"]:
+                rc = EXIT_MISMATCH
+                print(f"ZZRLFAN_ATOL_FAIL {cmp_['reference_keys_matched']} {cmp_['beyond_atol']} {cmp_['max_abs_delta']:.6g} {a.compare_atol:g}", flush=True)
+            else:
+                print(f"ZZRLFAN_ATOL_PASS {cmp_['reference_keys_matched']} {cmp_['max_abs_delta']:.6g} {a.compare_atol:g}", flush=True)
         elif cmp_["not_identical"] or cmp_["reference_lines_disagreeing_with_each_other"]:
             rc = EXIT_MISMATCH
     manifest["finished"] = True

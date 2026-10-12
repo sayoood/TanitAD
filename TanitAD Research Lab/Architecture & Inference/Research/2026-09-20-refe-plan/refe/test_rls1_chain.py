@@ -11,6 +11,11 @@
   5. TL-1 (2026-10-12): the chain PRODUCES the teacher-lane labels (smoke -> per-shard labeller -> EXACT gate), the partition constants the chain carries equal the pinned
      ones, the planned update count equals the pre-registered budget; `rls1_checks.tlane_exact` / `updates_check` are driven in both directions and by source mutations.
 
+  6. The FAN-EQUIVALENCE GATE (2026-10-12, stage `fancmp`): does this pod's dumper reproduce the fan the main run banked at step 10,075?  `check_fancmp` holds its static
+     properties (the pinned slice, the argv that reaches rl_fan_dump.py, the verdict that is read from the dumper's exit AND its marker, the tolerance equal to the MEASURED
+     one in raw/rl_fan/atol_calibration/verdict.json, the banked-sets path equal to the P2 chain's); `fancmp_behaviour` runs the stage's own text under bash against a stub
+     dumper and asserts the argv the caller really passes plus every refusal.
+
 Run: python refe/test_rls1_chain.py   -> ZZTEST_PASS <n>   (needs bash on PATH; Git Bash on the dev box).   Any skipped check prints ZZTEST_SKIP and is NOT counted.
 """
 from __future__ import annotations
@@ -41,7 +46,7 @@ ARMS = ("C0", "C1", "R0", "R1", "R2")
 CHILD_RX = re.compile(r'"\$PY" +(scorer_finetune\.py|rls1_checks\.py|rl_fan_dump\.py|rl_partition\.py|rl_pool_available\.py|onpolicy_relabel_pdm\.py|rl_terms_label\.py|rl_tlane_label\.py|'
                       r'pdm_label_complete\.py|launch_gate\.py|hf_egress\.py)|"\$PY" +"\$PKG/refe/launch_gate\.py"|bash +"\$PKG/code/|^sleep |\bsleep +\d+ |\bdd +if=')
 ORDER = ["p2_over)\" || refuse", "source \"$WORK/teacher_env.sh\"", "--pin model_final", "--pin u400", "verify-partition", "rl_fan_dump.py --plan-only",
-         "STAGES=dbs", "PT._setup()", "dump_one val 0 1", "rl_tlane_label.py --sets \"$SETS_VA\"", "rls1_checks.py tlane-exact", "rls1_checks.py join-gate", "--tag rlfan_data",
+         "--compare-atol \"$FANCMP_ATOL\"", "STAGES=dbs", "PT._setup()", "dump_one val 0 1", "rl_tlane_label.py --sets \"$SETS_VA\"", "rls1_checks.py tlane-exact", "rls1_checks.py join-gate", "--tag rlfan_data",
          "rls1_checks.py updates-check", "scorer_finetune.py $ARGS --preflight",
          "launch_gate.py run --profile refe_rls1", "scorer_finetune.py $ARGS >>", "rls1_checks.py replay", "--rl-val-scenes $VAL_TSV", "--tag \"arm_$ARM\""]
 PRESENT = ["onpolicy_relabel_pdm.py --sets", "rl_terms_label.py --sets", "rl_tlane_label.py --sets", "dump_one()", "label_one()"]
@@ -62,6 +67,92 @@ def token_line_ok(ln):
     s = ln.strip()
     return (s.startswith("#") or "env -u HF_TOKEN" in s or s == '[ -n "${HF_TOKEN:-}" ] || refuse "HF_TOKEN is not set in the environment"'
             or re.match(r'if \[ -n "\$\{PY:-\}" \] && \[ -d "\$PKG/refe" \] && \[ -n "\$\{HF_TOKEN:-\}" \]; then', s) is not None)
+
+
+FANCMP_BLOCK_RX = re.compile(r"^if ! stage_done fancmp; then\n(.*?)^fi\n", re.S | re.M)
+CAL_DIR = PKGROOT / "raw" / "rl_fan" / "atol_calibration"
+
+
+def check_fancmp(text):
+    """Static properties of stage `fancmp` (the fan-equivalence gate).  [] = all hold."""
+    import hashlib
+    v = []
+    m = FANCMP_BLOCK_RX.search(text)
+    if not m:
+        return ["FANCMP_STAGE_MISSING"]
+    body = m.group(1)
+    cmds = [c for c in logical_commands(body) if "rl_fan_dump.py" in c and '"$PY"' in c]
+    if len(cmds) != 1:
+        return [f"FANCMP_DUMP_CALLS:{len(cmds)}"]
+    c = cmds[0]
+    for need, tag in (('--ckpt "$FINAL"', "FANCMP_NOT_FROM_MODEL_FINAL"), ('--expect-ckpt-sha256 "$FINAL_SHA256"', "FANCMP_SHA_NOT_PINNED"), ('--keys "$FANCMP_KEYS"', "FANCMP_KEYS_NOT_THE_SLICE"),
+                      ('--targets "$TARGETS"', "FANCMP_WRONG_BANK"), ('--images "$IMAGES"', "FANCMP_WRONG_IMAGES"), ('--calib "$CALIB"', "FANCMP_WRONG_CALIB"),
+                      ('--compare-sets "$BANKED"', "FANCMP_NO_COMPARE_SETS"), ('--compare-atol "$FANCMP_ATOL"', "FANCMP_NO_ATOL"),
+                      ('--compare-min-matched "$NK"', "FANCMP_NO_MIN_MATCHED"), ("200>&-", "FANCMP_FD200"), ("env -u HF_TOKEN", "FANCMP_TOKEN_NOT_STRIPPED"),
+                      ("OMP_NUM_THREADS=1", "FANCMP_THREADS")):
+        if need not in c:
+            v.append(tag)
+    for bad in ("--allow-missing", "--limit", "--plan-only", "--shard"):
+        if bad in c:
+            v.append("FANCMP_NARROWED:" + bad)
+    if not re.search(r'\{ \[ "\$frc" = 0 \] && grep -q "\^ZZRLFAN_ATOL_PASS \$NK " "\$R/fancmp\.log"; \} \|\| refuse', body):
+        v.append("FANCMP_VERDICT_UNCHECKED")
+    if not re.search(r'sha256sum "\$FANCMP_KEYS".*= "\$FANCMP_KEYS_SHA256" \] \|\| refuse', body):
+        v.append("FANCMP_KEYS_UNPINNED")
+    if not re.search(r'ls "\$BANKED"/onpolicy_\*\.jsonl > /dev/null 2>&1 \|\| refuse', body):
+        v.append("FANCMP_NO_BANKED_CHECK")
+    if 'NK=$(( $(wc -l < "$FANCMP_KEYS") - 1 ))' not in body:
+        v.append("FANCMP_NK_NOT_THE_SLICE_SIZE")
+    if "stop_after fancmp" not in text:
+        v.append("FANCMP_NO_STOP_AFTER")
+    if 'log "ZZRLS1_FANCMP_OK' not in text:
+        v.append("FANCMP_NO_OK_MARKER")
+    if text.find("stage_done fancmp") > text.find("dump_one val 0 1"):
+        v.append("ORDER:fancmp_after_the_first_dump")
+    if not re.search(r"^\s+splits/rl_fancmp_keys\.tsv( \\)?$", text, re.M):
+        v.append("FANCMP_KEYS_NOT_REQUIRED")
+    # ---- drift against the artifacts the constants must equal
+    kf = PKGROOT / "splits" / "rl_fancmp_keys.tsv"
+    msha = re.search(r"^FANCMP_KEYS_SHA256=(\w+)$", text, re.M)
+    if not kf.is_file():
+        v.append("FANCMP_KEYS_FILE_ABSENT")
+    else:
+        raw = kf.read_bytes()
+        if not msha or msha.group(1) != hashlib.sha256(raw).hexdigest():
+            v.append("FANCMP_KEYS_PIN_DRIFT")
+        rows = raw.decode("utf-8").split("\n")
+        ho = set((PKGROOT / "splits" / "sft_heldout_logs.txt").read_text(encoding="utf-8").split())
+        body_rows = [r.split("\t") for r in rows[1:] if r]
+        if rows[0] != "token\tlog" or b"\r" in raw or len(body_rows) != 512 or len({r[0] for r in body_rows}) != 512 or any(len(r) != 2 for r in body_rows):
+            v.append("FANCMP_KEYS_MALFORMED")
+        elif any(r[1] in ho for r in body_rows):
+            v.append("FANCMP_KEYS_IN_HELDOUT_LOGS")
+    # The tolerance: RLS1_FANCMP_ATOL, required.  A numeric DEFAULT is allowed only when raw/rl_fan/atol_calibration/verdict.json CHOSE one (CHOSEN_ATOL) and then it must equal it:
+    # a number the pre-registered rule did not accept is an assumption, and the chain must not carry one.
+    matol = re.search(r'^FANCMP_ATOL="\$\{RLS1_FANCMP_ATOL:-([^}]*)\}"$', text, re.M)
+    vj = CAL_DIR / "verdict.json"
+    if not matol:
+        v.append("FANCMP_ATOL_NOT_AN_INPUT")
+    elif not vj.is_file():
+        v.append("FANCMP_ATOL_UNMEASURED")
+    else:
+        chosen = json.loads(vj.read_text(encoding="utf-8")).get("CHOSEN_ATOL")
+        dflt = matol.group(1)
+        if chosen is None and dflt != "":
+            v.append(f"FANCMP_ATOL_PICKED_WITHOUT_A_MEASURED_ONE:{dflt}")
+        elif chosen is not None and (dflt == "" or abs(float(dflt) - chosen) > 1e-12):
+            v.append(f"FANCMP_ATOL_DRIFT:chain default {dflt!r} measured {chosen}")
+    if '[ -n "$FANCMP_ATOL" ] || refuse' not in body:
+        v.append("FANCMP_ATOL_NOT_REQUIRED")
+    if not re.search(r"awk -v a=\"\$FANCMP_ATOL\" 'BEGIN \{ exit !\(a ~ .*a \+ 0 > 0 && a \+ 0 <= 1\.0\) \}' \|\| refuse", body):
+        v.append("FANCMP_ATOL_RANGE_UNCHECKED")
+    # the banked-sets default is P2's own SETS path (refe/p2r_pod.sh), not a guess
+    mb = re.search(r'^BANKED="\$\{RLS1_BANKED_SETS:-(\S+?)\}"$', text, re.M)
+    p2 = (HERE / "p2r_pod.sh").read_text(encoding="utf-8")
+    ms = re.search(r"^SETS=(\$DATA/\S+)$", p2, re.M)
+    if not mb or not ms or mb.group(1) != ms.group(1):
+        v.append(f"FANCMP_BANKED_DRIFT:{mb.group(1) if mb else None} vs p2r_pod.sh {ms.group(1) if ms else None}")
+    return v
 
 
 def check_chain(text):
@@ -259,6 +350,7 @@ def check_chain(text):
                 v.append("REQUIRED_FILE_ABSENT:" + f)
         if "SHIP_MANIFEST.json" not in fl.group(1).split():
             v.append("SHIP_MANIFEST_NOT_REQUIRED")
+    v += check_fancmp(text)
     return v
 
 
@@ -354,6 +446,43 @@ def mutations(text):
         ("preflight after the gate", (lambda a, b: text.replace(a + b, b + a))(*[re.search(p, text, re.S).group(0) for p in
             (r"  # ---- 9a\..*?(?=  # ---- 9b)", r"  # ---- 9b\..*?(?=  # ---- 9c)")]), "ORDER"),
         ("tar without --no-same-owner", sw("log \"env ok", "tar -xf x.tar -C /tmp\nlog \"env ok"), "TAR_OWNER"),
+    ]
+    atol_line = re.search(r"^FANCMP_ATOL=.*$", text, re.M).group(0)
+    out += [
+        # ---- the fan-equivalence gate (stage fancmp)
+        ("no fan-equivalence stage", re.sub(r"(?s)# ---- 4b\..*?stop_after fancmp\n", "", text), "FANCMP_STAGE_MISSING"),
+        ("the tolerance flag is dropped", sw(' --compare-atol "$FANCMP_ATOL"', ""), "FANCMP_NO_ATOL"),
+        ("the comparison itself is dropped", sw('--compare-sets "$BANKED" ', ""), "FANCMP_NO_COMPARE_SETS"),
+        ("the matched-key floor is dropped", sw(' --compare-min-matched "$NK"', ""), "FANCMP_NO_MIN_MATCHED"),
+        ("the verdict is not read", drop_line(text, "ZZRLFAN_ATOL_PASS $NK"), "FANCMP_VERDICT_UNCHECKED"),
+        ("the verdict reads the marker but not the exit", sw('{ [ "$frc" = 0 ] && grep -q', '{ [ "$frc" != 99 ] && grep -q'), "FANCMP_VERDICT_UNCHECKED"),
+        ("the gate tolerates missing images", sw("--tag fancmp --batch 4", "--tag fancmp --batch 4 --allow-missing"), "FANCMP_NARROWED:--allow-missing"),
+        ("the gate dumps only a smoke", sw("--tag fancmp --batch 4", "--tag fancmp --batch 4 --limit 8"), "FANCMP_NARROWED:--limit"),
+        ("the gate dumps from u400", sw('rl_fan_dump.py --ckpt "$FINAL" --expect-ckpt-sha256 "$FINAL_SHA256" --keys "$FANCMP_KEYS"',
+                                         'rl_fan_dump.py --ckpt "$BASE" --expect-ckpt-sha256 "$FINAL_SHA256" --keys "$FANCMP_KEYS"'), "FANCMP_NOT_FROM_MODEL_FINAL"),
+        ("the gate's checkpoint is not hash-pinned", sw(' --expect-ckpt-sha256 "$FINAL_SHA256" --keys "$FANCMP_KEYS"', ' --keys "$FANCMP_KEYS"'), "FANCMP_SHA_NOT_PINNED"),
+        ("the gate child keeps fd 200", sw('--compare-min-matched "$NK" >> "$R/fancmp.log" 2>&1 200>&-', '--compare-min-matched "$NK" >> "$R/fancmp.log" 2>&1'), "FANCMP_FD200"),
+        ("the gate child inherits the HF token", sw('env -u HF_TOKEN OMP_NUM_THREADS=1 "$PY" rl_fan_dump.py --ckpt "$FINAL" --expect-ckpt-sha256 "$FINAL_SHA256" --keys "$FANCMP_KEYS"',
+                                                     'OMP_NUM_THREADS=1 "$PY" rl_fan_dump.py --ckpt "$FINAL" --expect-ckpt-sha256 "$FINAL_SHA256" --keys "$FANCMP_KEYS"'),
+         "FANCMP_TOKEN_NOT_STRIPPED"),
+        ("the gate compares the RL partition instead of its slice", sw('--keys "$FANCMP_KEYS" --targets', '--keys "$TRAIN_TSV" --targets'), "FANCMP_KEYS_NOT_THE_SLICE"),
+        ("the gate reads another bank", sw('--targets "$TARGETS" \\\n    --images "$IMAGES" --calib "$CALIB" --out "$R/fancmp"', '--targets "$R" \\\n    --images "$IMAGES" --calib "$CALIB" --out "$R/fancmp"'),
+         "FANCMP_WRONG_BANK"),
+        ("the slice pin is edited", sw("FANCMP_KEYS_SHA256=" + "4c613ff0", "FANCMP_KEYS_SHA256=" + "4c613ff1"), "FANCMP_KEYS_PIN_DRIFT"),
+        ("the slice pin is not enforced", drop_line(text, 'sha256sum "$FANCMP_KEYS"'), "FANCMP_KEYS_UNPINNED"),
+        ("the slice size is a constant", sw('NK=$(( $(wc -l < "$FANCMP_KEYS") - 1 ))', "NK=1"), "FANCMP_NK_NOT_THE_SLICE_SIZE"),
+        ("a default tolerance is picked although the rule chose none", sw(atol_line, 'FANCMP_ATOL="${RLS1_FANCMP_ATOL:-0.5}"'), "FANCMP_ATOL_PICKED_WITHOUT_A_MEASURED_ONE"),
+        ("the tolerance is hard-coded", sw(atol_line, "FANCMP_ATOL=0.5"), "FANCMP_ATOL_NOT_AN_INPUT"),
+        ("an unset tolerance is not a refusal", drop_line(text, '[ -n "$FANCMP_ATOL" ] || refuse'), "FANCMP_ATOL_NOT_REQUIRED"),
+        ("the tolerance's range is not checked", drop_line(text, "awk -v a=\"$FANCMP_ATOL\""), "FANCMP_ATOL_RANGE_UNCHECKED"),
+        ("the banked sets are looked for elsewhere", sw('onpolicy/sets}"', 'onpolicy/sets_full}"'), "FANCMP_BANKED_DRIFT"),
+        ("an absent banked dir is not a refusal", drop_line(text, 'ls "$BANKED"/onpolicy_*.jsonl'), "FANCMP_NO_BANKED_CHECK"),
+        ("the gate runs after the first dump", (lambda b: text.replace(b, "").replace('stage_done dump_val_s0of1 || refuse "dump of RL-val did not finish"\n',
+                                                                                       'stage_done dump_val_s0of1 || refuse "dump of RL-val did not finish"\n' + b))(
+            re.search(r"# ---- 4b\..*?stop_after fancmp\n\n", text, re.S).group(0)), "ORDER"),
+        ("the stage cannot be stopped after", sw("; stop_after fancmp", ""), "FANCMP_NO_STOP_AFTER"),
+        ("the pass is not logged", sw('log "ZZRLS1_FANCMP_OK', 'log "ZZRLS1_FANCMP_SKIPPED'), "FANCMP_NO_OK_MARKER"),
+        ("the slice file is not shipped", sw("         splits/rl_fancmp_keys.tsv \\\n", ""), "FANCMP_KEYS_NOT_REQUIRED"),
     ]
     return out
 
@@ -571,6 +700,8 @@ def main() -> int:
         assert tok(argv_of["R0"]) != 0; n += 1                                                  # NO token at all
         # ---- 3. the REAL chain, executed in a sandbox up to its first refusals
         n += sandbox_runs(text, tmp)
+        # ---- 3b. the fan-equivalence stage, run from the chain's own text against a stub dumper
+        n += fancmp_behaviour(text, tmp)
         # ---- 4. rls1_checks.py
         n += helper_checks(tmp)
     print(f"ZZTEST_PASS {n}")
@@ -628,6 +759,107 @@ def sandbox_runs(text, tmp):
     fin.write_bytes(b"not the checkpoint")
     rc, out = run(env); assert rc == 1 and "REFUSED: model_final.pt is not the pinned file" in out and "size_mismatch" in out, out; n += 1
     return n
+
+
+def fancmp_behaviour(text, tmp):
+    """Stage `fancmp`, extracted VERBATIM from the chain and run under bash.  `$PY rl_fan_dump.py` resolves to a stub in the cwd that records its argv and replays a canned
+    output and exit code, so what is asserted is the argv the CALLER really passes (the flag-to-caller trace) and what the stage does with every outcome."""
+    n = 0
+    helpers = "\n".join(re.findall(r"^(?:log|refuse|stage_done|stage_mark|stop_after)\(\) .*$", text, re.M))
+    assert helpers.count("refuse()") == 1 and helpers.count("stop_after()") == 1, helpers
+    blk = re.search(r"(?ms)^FANCMP_KEYS=.*?stop_after fancmp\n", text)
+    assert blk, "stage fancmp not found"
+    w = Path(tmp) / "fc"
+    shutil.rmtree(w, ignore_errors=True)
+    stub, pkg = w / "stub", w / "pkg"
+    (pkg / "splits").mkdir(parents=True)
+    stub.mkdir(parents=True)
+    keys_src = PKGROOT / "splits" / "rl_fancmp_keys.tsv"
+    shutil.copy(keys_src, pkg / "splits" / "rl_fancmp_keys.tsv")
+    (stub / "rl_fan_dump.py").write_text("import json, os, sys\nopen(os.environ['FAKE_ARGV'], 'w').write(json.dumps(sys.argv[1:]))\n"
+                                         "sys.stdout.write(open(os.environ['FAKE_OUT'], encoding='utf-8').read())\nsys.exit(int(os.environ.get('FAKE_RC', '0')))\n", encoding="utf-8")
+    banked = w / "banked"
+    banked.mkdir()
+    (banked / "onpolicy_r0_w0.jsonl").write_text("{}\n", encoding="utf-8")
+    argvf, outf = w / "argv.json", w / "out.txt"
+    data = w / "data"
+    script = w / "stage.sh"
+    write_sh(script, f'set -u\nPKG={posix(pkg)}; DATA={posix(data)}; R=$DATA/rls1; S=$R/stage; L=$R/chain.log\nmkdir -p "$R" "$S"\n{helpers}\n'
+                     f'PY={posix(sys.executable)}; FINAL=POD_FINAL.pt; FINAL_SHA256=abc123; TARGETS=POD_TARGETS; IMAGES=POD_PIXELS; CALIB=POD_CALIB.json\n'
+                     f'cd {posix(stub)}\n{blk.group(0)}echo STAGE_PASSED\n')
+    nk = len(keys_src.read_text(encoding="utf-8").split("\n")) - 2          # header and the final newline
+    assert nk == 512, nk
+    atol = "0.375"                                                          # an arbitrary VALID value: the chain has no default, so this test supplies one through the env
+
+    def go(rc, out, env=None, clean=True):
+        if argvf.exists():
+            argvf.unlink()
+        if clean:
+            shutil.rmtree(data, ignore_errors=True)
+        outf.write_text(out, encoding="utf-8")
+        r = bash_run(f'bash "{posix(script)}"', {"FAKE_ARGV": posix(argvf), "FAKE_OUT": posix(outf), "FAKE_RC": str(rc), "RLS1_BANKED_SETS": posix(banked), "RLS1_FANCMP_ATOL": atol, **(env or {})})
+        lg = (data / "rls1" / "chain.log")
+        return r[0], r[1], (lg.read_text(encoding="utf-8") if lg.exists() else ""), (data / "rls1" / "stage" / "fancmp.ok").exists()
+    PASS = f"ZZRLFAN_PLAN {nk}\nZZRLFAN_ATOL_PASS {nk} 0.25 {atol}\nZZRLFAN_DONE {nk} 0 0\n"
+    # ---- the good case, and the argv the CALLER passes
+    rc, so, lg, ok = go(0, PASS)
+    assert rc == 0 and "STAGE_PASSED" in so and ok and "ZZRLS1_FANCMP_OK ZZRLFAN_ATOL_PASS" in lg, (rc, so, lg); n += 1
+    argv = json.loads(argvf.read_text(encoding="utf-8"))
+
+    def after(flag):
+        return argv[argv.index(flag) + 1]
+    assert argv[0] == "--ckpt" and after("--ckpt") == "POD_FINAL.pt" and after("--expect-ckpt-sha256") == "abc123"; n += 1             # model_final, hash-pinned
+    assert after("--keys") == posix(pkg / "splits" / "rl_fancmp_keys.tsv") and argv.count("--keys") == 1; n += 1                              # the pinned slice, nothing else
+    assert after("--compare-sets") == posix(banked) and after("--compare-atol") == atol and after("--compare-min-matched") == str(nk); n += 1   # the gate flags REACH the dumper
+    assert (after("--targets"), after("--images"), after("--calib")) == ("POD_TARGETS", "POD_PIXELS", "POD_CALIB.json"); n += 1
+    assert after("--out").endswith("/rls1/fancmp") and after("--tag") == "fancmp" and after("--batch") == "4"; n += 1
+    assert not ({"--allow-missing", "--limit", "--plan-only", "--shard", "--ranks", "--workers"} & set(argv)); n += 1                          # nothing narrows or reshapes the gate
+    # ---- a finished stage is not re-run
+    rc, so, lg, ok = go(0, PASS, clean=False)
+    assert rc == 0 and not argvf.exists() and "STAGE_PASSED" in so; n += 1
+    # ---- every refusal names its cause and leaves NO stage marker
+    for name, args, want in (
+            ("dumper exit 5 (a set beyond the tolerance)", (5, f"ZZRLFAN_ATOL_FAIL {nk} 3 3.0 {atol}\nZZRLFAN_DONE {nk} 0 0\n"), "ZZRLFAN_ATOL_FAIL"),
+            ("exit 0 but no PASS marker", (0, f"ZZRLFAN_DONE {nk} 0 0\n"), "want 0 and ZZRLFAN_ATOL_PASS"),
+            ("PASS marker with fewer matched keys than the slice", (0, f"ZZRLFAN_ATOL_PASS {nk - 1} 0.2 {atol}\n"), "want 0 and ZZRLFAN_ATOL_PASS"),
+            ("exit 4 (the dumper refused: nothing matched)", (4, "REFUSED: --compare-sets matched NO key -- a gate that compares nothing proves nothing\n"), "REFUSED: --compare-sets matched NO key"),
+            ("exit 3 (images missing on this pod)", (3, f"ZZRLFAN_PLAN {nk - 2}\nZZRLFAN_ATOL_PASS {nk - 2} 0.1 {atol}\n"), "want 0 and ZZRLFAN_ATOL_PASS"),
+            ("a PASS marker printed AFTER a failing exit", (5, f"ZZRLFAN_ATOL_PASS {nk} 0.1 {atol}\n"), "exit 5")):
+        rc, so, lg, ok = go(*args)
+        assert rc == 1 and "STAGE_PASSED" not in so and not ok and "REFUSED: the fan-equivalence gate FAILED" in lg and "fancmp.log" in lg and want in lg, (name, rc, lg); n += 1
+    # ---- the tolerance is a required input: unset, empty, non-numeric, zero, negative or above the sanity bound is a refusal BEFORE the dumper runs
+    for val in ("", "abc", "0", "-0.5", "1.5", "5", "1e-1", "0.5x"):
+        rc, so, lg, ok = go(0, PASS, {"RLS1_FANCMP_ATOL": val})
+        assert rc == 1 and not argvf.exists() and not ok and ("no fan-equivalence tolerance" in lg if val == "" else "is not a number between 0 and 1.0 metres" in lg), (val, rc, lg); n += 1
+    for val in ("0.25", "0.5", "1.0", ".75"):
+        rc, so, lg, ok = go(0, f"ZZRLFAN_ATOL_PASS {nk} 0.2 {val}\n", {"RLS1_FANCMP_ATOL": val})
+        assert rc == 0 and json.loads(argvf.read_text(encoding="utf-8"))[json.loads(argvf.read_text(encoding="utf-8")).index("--compare-atol") + 1] == val and f"atol {val}," in lg; n += 1   # reaches the dumper verbatim
+    # ---- refusals BEFORE the dumper runs
+    rc, so, lg, ok = go(0, PASS, {"RLS1_BANKED_SETS": posix(w / "nowhere")})
+    assert rc == 1 and not argvf.exists() and "no banked step-10,075 sets" in lg and not ok; n += 1                                            # absent banked dir
+    empty = w / "empty"
+    empty.mkdir(exist_ok=True)
+    rc, so, lg, ok = go(0, PASS, {"RLS1_BANKED_SETS": posix(empty)})
+    assert rc == 1 and not argvf.exists() and "no banked step-10,075 sets" in lg; n += 1                                                       # present but empty
+    ks = pkg / "splits" / "rl_fancmp_keys.tsv"
+    good = ks.read_bytes()
+    ks.write_bytes(good + b"deadbeefdeadbeef\t2021.01.01.00.00.00_veh-00_00000_00000\n")
+    rc, so, lg, ok = go(0, PASS)
+    assert rc == 1 and not argvf.exists() and "not the pinned fan-equivalence slice" in lg; n += 1                                             # a different slice is a different gate
+    ks.write_bytes(good)
+    rc, so, lg, ok = go(0, PASS, {"RLS1_BANKED_SETS": posix(banked) + "/."})
+    assert rc == 0 and after_flag(json.loads(argvf.read_text(encoding="utf-8")), "--compare-sets").endswith("banked/."); n += 1                  # RLS1_BANKED_SETS reaches the dumper
+    # ---- the default banked dir is P2's SETS path under $DATA
+    rc, so, lg, ok = go(0, PASS, {"RLS1_BANKED_SETS": ""})
+    assert rc == 1 and "no banked step-10,075 sets at " in lg, lg; n += 1                                                                      # an EMPTY override falls back to the default path, which is absent in this sandbox
+    # ---- the dry-run stop
+    rc, so, lg, ok = go(0, PASS, {"RLS1_STOP_AFTER": "fancmp"})
+    assert rc == 0 and "STAGE_PASSED" not in so and "stopping after fancmp" in lg and ok; n += 1
+    return n
+
+
+def after_flag(argv, flag):
+    return argv[argv.index(flag) + 1]
 
 
 def helper_checks(tmp):
