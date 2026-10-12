@@ -89,7 +89,7 @@ REFe's student is supervised by teacher rollouts plus on-policy scorer labels, b
 
 Clips are 6 s at 2 Hz in OpenScene format; the README says `sensor_blobs_hist` alone suffices for policy training. Transfer on a pod at 118 MB/s: round 0 **1.4 h**, rounds 0 to 1 **2.7 h**, all planner-based **5.2 h**, everything **8.5 h**.
 
-**Cameras (UNVERIFIED, material for REFe).** The SimScale planners used **3 cameras** (front, front-left, front-right, 2048x512; paper Table 6). The README tree shows `CAM_B0`. DriveZero-Scale trained a **4-camera** model on SimScale, which implies B0 exists (possibly the original image). The 0.9 MB index file `simscale_pdm_v1.0-4_sensor_blobs_hist.json` would settle it; I did not download it (permission). **Probe ready, one file.**
+**Cameras (UNVERIFIED, material for REFe).** The SimScale planners used **3 cameras** (front, front-left, front-right, 2048x512; paper Table 6). The README tree shows `CAM_B0`. DriveZero-Scale trained a **4-camera** model on SimScale, which implies B0 exists (possibly the original image). ~~The 0.9 MB index file `simscale_pdm_v1.0-4_sensor_blobs_hist.json` would settle it~~ **It does NOT (MEASURED 2026-10-12, downloaded with the PI's approval):** the index maps each of 33 history shards to the scene tokens it holds and names no sensor at all, so this probe was mis-designed and the camera set is still UNVERIFIED. What it did settle (`raw/data_selection/simscale_r4_index_check.json`, script beside it): round 4 holds **32,202 scenes**, all suffix `-004`, every base token **inside navtrain (32,202 / 32,202) and 0 in navtest** (no leak into the test split); history shards are **~9.3 GB per 1,000 scenes** (33 files, 298.46 GB), so a **one-shard pilot** is possible instead of a whole round. **Next camera probe:** stream the first few MB of one history shard and list the first scene's folders (`CAM_*`), or the 1.7 GB round-4 meta tarball (its OpenScene pickles name every camera path); both are downloads and need the PI's permission.
 
 **What it buys (PUBLISHED-PRIMARY):**
 
@@ -266,7 +266,7 @@ If L1, L2 and L3 all fail their bars, the committed conclusion is that **REFe's 
 
 ## 5. What I did not do, and what is UNVERIFIED
 
-- **Not downloaded (permission):** the SimScale index JSON (camera set), any PhysicalAI calibration file, any sensor data. Both probes are one small file each.
+- **Not downloaded (permission):** any PhysicalAI calibration file, any sensor data. *(The SimScale round-4 index JSON WAS downloaded 2026-10-12 with the PI's approval; it does not name cameras -- see section 2.3.)*
 - **UNVERIFIED:** SimScale B0 presence and generation cost; PhysicalAI cross/rear camera yaw; completion of SAM3 production and which cameras the private corpus holds; the loader adapter for sim tokens; the 1,250-log trainval count (published in MOSAIC, not recounted); trainval frame count (ESTIMATED 650K to 735K); pod disk quota for E1/E2.
 - **Not read in full:** I read the abstract, setup and results sections of the cited papers, not every appendix. FlowDrive Table 2a and DriveVLA-W0 Table 7 were read from the PDF text; MOSAIC Table 1 from raw text, with the garbled column layout checked against the table row order.
 - **R2SE** (hard-case refinement on NAVSIM) surfaced in search; I could not identify its arXiv id with certainty, so it is neither cited nor banked.

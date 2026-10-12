@@ -1,0 +1,538 @@
+{
+ "name": "p2_dryrun4",
+ "read": "R2 (+R2b)",
+ "dry_run": true,
+ "estimator": "paired log-cluster bootstrap over the navtest logs (cluster unit log_name), 10,000 resamples, 95 %, seed 20260927 (proxy_eval.boot, the estimator of RESULT_SFT4.md). It answers 'another draw of LOGS' and nothing else; training variance (one seed per arm, H-ESTIM-SEED-1) is unmeasured; inference is deterministic.",
+ "tier": "T1 = NAVSIM v1.1 PDMS, an ego pseudo-simulation of an open-loop plan against logged agents (self-action open loop, not closed loop)",
+ "strategic_family": "PAUSED by the PI (2026-09-19, PI_DECISION_QUEUE item 25) and UNAVAILABLE in NAVSIM (no strategic decision is scored); reported as such, never as a pass",
+ "script": "eval/stage3_full.py",
+ "stage2_sft_md5": "831a8d76bb5b8be2016288b02cd29ee5",
+ "stage2_sft_md5_expected": "831a8d76bb5b8be2016288b02cd29ee5",
+ "when_utc": "2026-10-12T11:13:30Z",
+ "stage2_sft_unmodified": true,
+ "arm": {
+  "name": "p2_dryrun4",
+  "csv": "E:\\Projects\\TanitAD\\data\\refe_navtest\\score\\refe_stage2_p2_dryrun4\\refe_stage2_p2_dryrun4.csv",
+  "seam": "E:\\Projects\\TanitAD\\data\\refe_navtest\\seams\\stage2_p2_dryrun4.npz",
+  "csv_md5": "b704a38825dcc5f8cfbffa82d598b400",
+  "seam_md5": "cd1b86de52fc36bc12ecbb46a6f3b91d",
+  "stage2_run": {
+   "ckpt": "E:/Projects/TanitAD/data/refe_runs_eval/model_final.pt",
+   "rule": "navsim_v1",
+   "tokens": "E:\\Projects\\TanitAD\\data\\refe_navtest\\p2_dryrun4_tokens.json",
+   "n_tokens": 4,
+   "scored_as": "a --tokens subset",
+   "exploratory": true,
+   "verdict": "EXPLORATORY (not registered; decides nothing): would read NOT PROVEN",
+   "WARNING": "that verdict is R1/R2b-style (arm vs DEPLOYED). It is NOT the P6 verdict; the P6 GO / NO-GO is this file's R2 block only"
+  }
+ },
+ "checkpoint": {
+  "path": "E:/Projects/TanitAD/data/refe_runs_eval/model_final.pt",
+  "bytes": 1288484600,
+  "sha256": "4246a320be71ad0e315f8f298b7dadab3dbbba2c24f4fc30706e0129f5057e66",
+  "seam_report_ckpt": "E:/Projects/TanitAD/data/refe_runs_eval/model_final.pt",
+  "seam_ckpt_path_matches": true,
+  "sha256_matches_expected": true,
+  "ok": true
+ },
+ "gates": {
+  "tokens": {
+   "path": "E:\\Projects\\TanitAD\\data\\refe_navtest\\p2_dryrun4_tokens.json",
+   "md5": "03ae31c8c578317590b521f8c24a1f5b",
+   "n": 4,
+   "n_logs": 2,
+   "all_in_export": true,
+   "unique": true,
+   "token_log_matches_export": true,
+   "ok": true
+  },
+  "tokens_minus_c1": {
+   "ok": true,
+   "note": "not applicable (dry run / file absent)"
+  },
+  "base_pinned": {
+   "ok": true,
+   "base": "u400",
+   "csv_md5": "b17c4fbac26d064f17ce790dca4d9d08",
+   "pinned": "b17c4fbac26d064f17ce790dca4d9d08",
+   "seam_md5": "b009e941620b6cbbbe63e1dd8a94a506",
+   "pinned_seam": "b009e941620b6cbbbe63e1dd8a94a506"
+  },
+  "also_pinned": {
+   "ok": true,
+   "also": "deployed",
+   "csv_md5": "2101bc7f2084195b2536e5ee09c6be32",
+   "seam_md5": "1ddc2c63b538bf49fcc71c6047260696"
+  },
+  "harness_status": {
+   "ok": true,
+   "status": "PASS",
+   "log_successful": 4,
+   "log_failed": 0,
+   "csv_valid_rows": 4,
+   "C1_max_abs_delta": 0.0,
+   "summary_x100_4dp": {
+    "NC": 100.0,
+    "DAC": 75.0,
+    "EP": 66.6824,
+    "TTC": 75.0,
+    "C": 100.0,
+    "DDC": 100.0,
+    "PDMS": 71.5343
+   }
+  },
+  "seam_report": {
+   "rule": "navsim_v1",
+   "ckpt": "E:/Projects/TanitAD/data/refe_runs_eval/model_final.pt",
+   "rows": 4,
+   "misses": 0,
+   "tokens_asked": 4,
+   "seconds": 17.4,
+   "repair_last_heading": true,
+   "sanitize_goal": false,
+   "goal_fix": "pdm_route",
+   "select": "best",
+   "frame_control": {
+    "n": 4,
+    "max_m": 7.105427357601002e-15,
+    "median_m": 7.235922605538569e-16,
+    "bar_m": 0.001,
+    "what": "log future on NAVSIM's 0.5 s grid vs W3 human_future_poses"
+   },
+   "rule_ok": true,
+   "expected_rule": "navsim_v1",
+   "seam_settings_equal_to_base": true,
+   "seam_setting_diffs": [],
+   "frame_control_equal_to_base": false,
+   "frame_control_gate_ok": true,
+   "ok": true
+  },
+  "checkpoint": {
+   "path": "E:/Projects/TanitAD/data/refe_runs_eval/model_final.pt",
+   "bytes": 1288484600,
+   "sha256": "4246a320be71ad0e315f8f298b7dadab3dbbba2c24f4fc30706e0129f5057e66",
+   "seam_report_ckpt": "E:/Projects/TanitAD/data/refe_runs_eval/model_final.pt",
+   "seam_ckpt_path_matches": true,
+   "sha256_matches_expected": true,
+   "ok": true
+  },
+  "rows": {
+   "ok": true,
+   "scored": 4,
+   "asked": 4,
+   "arm_rows": 4,
+   "base_rows": 12146
+  },
+  "consistency_vs_base": {
+   "ok": true,
+   "same_pose_tokens": 0,
+   "same_pose_different_score": 0,
+   "same_pose_any_column_differs": 0,
+   "seam_rows_arm": 4,
+   "seam_rows_base": 12146
+  },
+  "r2b_equals_stage2_primary": {
+   "ok": true,
+   "stage2": [
+    0.0,
+    [
+     0.0,
+     0.0
+    ]
+   ],
+   "stage3": [
+    0.0,
+    [
+     0.0,
+     0.0
+    ]
+   ]
+  }
+ },
+ "gates_ok": true,
+ "csv_vs_harness_summary": {
+  "harness": {
+   "NC": 100.0,
+   "DAC": 75.0,
+   "EP": 66.6824,
+   "TTC": 75.0,
+   "C": 100.0,
+   "DDC": 100.0,
+   "PDMS": 71.5343
+  },
+  "csv_means": {
+   "PDMS": 71.5343,
+   "NC": 100.0,
+   "DAC": 75.0,
+   "EP": 66.6824,
+   "TTC": 75.0,
+   "C": 100.0,
+   "DDC": 100.0
+  },
+  "equal_4dp": true
+ },
+ "R2": {
+  "vs": "SFT-4 arm B u400 (rule navsim_v1_lane)",
+  "primary": {
+   "mean": -21.47731669708824,
+   "ci95": [
+    -48.59276992179004,
+    5.638136527613554
+   ],
+   "base_mean_x100": 93.0116519310498,
+   "arm_mean_x100": 71.53433523396156,
+   "better": 3,
+   "worse": 1,
+   "tied": 0,
+   "n": 4,
+   "n_logs": 2,
+   "zero_base": 0,
+   "zero_arm": 1
+  },
+  "subscores": {
+   "NC": {
+    "mean": 0.0,
+    "ci95": [
+     0.0,
+     0.0
+    ],
+    "base_mean_x100": 100.0,
+    "arm_mean_x100": 100.0,
+    "better": 0,
+    "worse": 0,
+    "tied": 4,
+    "n": 4,
+    "n_logs": 2,
+    "adverse": false
+   },
+   "DAC": {
+    "mean": -25.0,
+    "ci95": [
+     -50.0,
+     0.0
+    ],
+    "base_mean_x100": 100.0,
+    "arm_mean_x100": 75.0,
+    "better": 0,
+    "worse": 1,
+    "tied": 3,
+    "n": 4,
+    "n_logs": 2,
+    "adverse": false
+   },
+   "EP": {
+    "mean": -16.545560073011785,
+    "ci95": [
+     -46.622647812296094,
+     13.531527666272524
+    ],
+    "base_mean_x100": 83.22796463451952,
+    "arm_mean_x100": 66.68240456150775,
+    "better": 3,
+    "worse": 1,
+    "tied": 0,
+    "n": 4,
+    "n_logs": 2,
+    "adverse": false
+   },
+   "TTC": {
+    "mean": -25.0,
+    "ci95": [
+     -50.0,
+     0.0
+    ],
+    "base_mean_x100": 100.0,
+    "arm_mean_x100": 75.0,
+    "better": 0,
+    "worse": 1,
+    "tied": 3,
+    "n": 4,
+    "n_logs": 2,
+    "adverse": false
+   },
+   "C": {
+    "mean": 0.0,
+    "ci95": [
+     0.0,
+     0.0
+    ],
+    "base_mean_x100": 100.0,
+    "arm_mean_x100": 100.0,
+    "better": 0,
+    "worse": 0,
+    "tied": 4,
+    "n": 4,
+    "n_logs": 2,
+    "adverse": false
+   },
+   "DDC": {
+    "mean": 0.0,
+    "ci95": [
+     0.0,
+     0.0
+    ],
+    "base_mean_x100": 100.0,
+    "arm_mean_x100": 100.0,
+    "better": 0,
+    "worse": 0,
+    "tied": 4,
+    "n": 4,
+    "n_logs": 2,
+    "adverse": false
+   }
+  },
+  "adverse_subscores": [],
+  "n_rows": 4,
+  "families_vs_base": {
+   "adverse": [],
+   "components_compared": 21,
+   "tactical_no_interval": {
+    "lateral_decision": {
+     "W": {
+      "accuracy": 0.9251,
+      "kappa": 0.8626
+     },
+     "P": {
+      "accuracy": 0.75,
+      "kappa": 0.6364
+     }
+    },
+    "longitudinal_decision": {
+     "W": {
+      "accuracy": 0.6791,
+      "kappa": 0.5159
+     },
+     "P": {
+      "accuracy": 0.5,
+      "kappa": 0.2
+     }
+    },
+    "maneuver_5way_collapsed": {
+     "W": {
+      "accuracy": 0.7831,
+      "kappa": 0.718
+     },
+     "P": {
+      "accuracy": 0.75,
+      "kappa": 0.6364
+     }
+    }
+   },
+   "strategic": "UNAVAILABLE in NAVSIM (no strategic decision scored; the arm has no strategic layer)",
+   "note": "REPORTED, NOT GATING (amendment section 5); unpaired interval non-overlap, a conservative reading"
+  },
+  "outcome": "DRYRUN (not a read): would read NO-GO (NOT PROVEN)",
+  "p6": "NONE (dry run)",
+  "why": "an instrument gate failed; this is not a result and never a GO",
+  "next": "fix the gate; the read is void until it passes",
+  "sft4_B_u400_pdms_x100_banked": 88.2469
+ },
+ "R2b": {
+  "vs": "deployed route-fix system (rule navsim_v1)",
+  "status": "REPORTED, decides nothing (amendment section 3)",
+  "primary": {
+   "mean": 0.0,
+   "ci95": [
+    0.0,
+    0.0
+   ],
+   "base_mean_x100": 71.53433523396156,
+   "arm_mean_x100": 71.53433523396156,
+   "better": 0,
+   "worse": 0,
+   "tied": 4,
+   "n": 4,
+   "n_logs": 2,
+   "zero_base": 1,
+   "zero_arm": 1
+  },
+  "subscores": {
+   "NC": {
+    "mean": 0.0,
+    "ci95": [
+     0.0,
+     0.0
+    ],
+    "base_mean_x100": 100.0,
+    "arm_mean_x100": 100.0,
+    "better": 0,
+    "worse": 0,
+    "tied": 4,
+    "n": 4,
+    "n_logs": 2,
+    "adverse": false
+   },
+   "DAC": {
+    "mean": 0.0,
+    "ci95": [
+     0.0,
+     0.0
+    ],
+    "base_mean_x100": 75.0,
+    "arm_mean_x100": 75.0,
+    "better": 0,
+    "worse": 0,
+    "tied": 4,
+    "n": 4,
+    "n_logs": 2,
+    "adverse": false
+   },
+   "EP": {
+    "mean": 0.0,
+    "ci95": [
+     0.0,
+     0.0
+    ],
+    "base_mean_x100": 66.68240456150775,
+    "arm_mean_x100": 66.68240456150775,
+    "better": 0,
+    "worse": 0,
+    "tied": 4,
+    "n": 4,
+    "n_logs": 2,
+    "adverse": false
+   },
+   "TTC": {
+    "mean": 0.0,
+    "ci95": [
+     0.0,
+     0.0
+    ],
+    "base_mean_x100": 75.0,
+    "arm_mean_x100": 75.0,
+    "better": 0,
+    "worse": 0,
+    "tied": 4,
+    "n": 4,
+    "n_logs": 2,
+    "adverse": false
+   },
+   "C": {
+    "mean": 0.0,
+    "ci95": [
+     0.0,
+     0.0
+    ],
+    "base_mean_x100": 100.0,
+    "arm_mean_x100": 100.0,
+    "better": 0,
+    "worse": 0,
+    "tied": 4,
+    "n": 4,
+    "n_logs": 2,
+    "adverse": false
+   },
+   "DDC": {
+    "mean": 0.0,
+    "ci95": [
+     0.0,
+     0.0
+    ],
+    "base_mean_x100": 100.0,
+    "arm_mean_x100": 100.0,
+    "better": 0,
+    "worse": 0,
+    "tied": 4,
+    "n": 4,
+    "n_logs": 2,
+    "adverse": false
+   }
+  },
+  "adverse_subscores": [],
+  "n_rows": 4,
+  "families_vs_also": {
+   "adverse": [
+    {
+     "family": "lateral",
+     "metric": "curvature_bias_1pm",
+     "direction": "magnitude",
+     "W_ci": [
+      0.000701,
+      0.002298
+     ],
+     "P_ci": [
+      0.002329,
+      0.005267
+     ]
+    }
+   ],
+   "components_compared": 21,
+   "tactical_no_interval": {
+    "lateral_decision": {
+     "W": {
+      "accuracy": 0.9174,
+      "kappa": 0.8483
+     },
+     "P": {
+      "accuracy": 0.75,
+      "kappa": 0.6364
+     }
+    },
+    "longitudinal_decision": {
+     "W": {
+      "accuracy": 0.6417,
+      "kappa": 0.4588
+     },
+     "P": {
+      "accuracy": 0.5,
+      "kappa": 0.2
+     }
+    },
+    "maneuver_5way_collapsed": {
+     "W": {
+      "accuracy": 0.7697,
+      "kappa": 0.7005
+     },
+     "P": {
+      "accuracy": 0.75,
+      "kappa": 0.6364
+     }
+    }
+   },
+   "strategic": "UNAVAILABLE in NAVSIM (no strategic decision scored; the arm has no strategic layer)",
+   "note": "REPORTED, NOT GATING (amendment section 5); unpaired interval non-overlap, a conservative reading"
+  },
+  "consistency_vs_also": {
+   "ok": true,
+   "same_pose_tokens": 4,
+   "same_pose_different_score": 0,
+   "same_pose_any_column_differs": 0,
+   "seam_rows_arm": 4,
+   "seam_rows_base": 12146
+  }
+ },
+ "tactical_vs_base": {
+  "lateral_decision": {
+   "W": {
+    "accuracy": 0.9251,
+    "kappa": 0.8626
+   },
+   "P": {
+    "accuracy": 0.75,
+    "kappa": 0.6364
+   }
+  },
+  "longitudinal_decision": {
+   "W": {
+    "accuracy": 0.6791,
+    "kappa": 0.5159
+   },
+   "P": {
+    "accuracy": 0.5,
+    "kappa": 0.2
+   }
+  },
+  "maneuver_5way_collapsed": {
+   "W": {
+    "accuracy": 0.7831,
+    "kappa": 0.718
+   },
+   "P": {
+    "accuracy": 0.75,
+    "kappa": 0.6364
+   }
+  }
+ },
+ "seconds": 33.5
+}

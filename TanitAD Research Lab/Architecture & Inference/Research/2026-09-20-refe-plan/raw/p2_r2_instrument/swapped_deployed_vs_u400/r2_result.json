@@ -1,0 +1,852 @@
+{
+ "name": "swapped_deployed_vs_u400",
+ "read": "R2 (+R2b)",
+ "dry_run": false,
+ "estimator": "paired log-cluster bootstrap over the navtest logs (cluster unit log_name), 10,000 resamples, 95 %, seed 20260927 (proxy_eval.boot, the estimator of RESULT_SFT4.md). It answers 'another draw of LOGS' and nothing else; training variance (one seed per arm, H-ESTIM-SEED-1) is unmeasured; inference is deterministic.",
+ "tier": "T1 = NAVSIM v1.1 PDMS, an ego pseudo-simulation of an open-loop plan against logged agents (self-action open loop, not closed loop)",
+ "strategic_family": "PAUSED by the PI (2026-09-19, PI_DECISION_QUEUE item 25) and UNAVAILABLE in NAVSIM (no strategic decision is scored); reported as such, never as a pass",
+ "script": "eval/stage3_full.py",
+ "stage2_sft_md5": "831a8d76bb5b8be2016288b02cd29ee5",
+ "stage2_sft_md5_expected": "831a8d76bb5b8be2016288b02cd29ee5",
+ "when_utc": "2026-10-12T11:22:08Z",
+ "stage2_sft_unmodified": true,
+ "arm": {
+  "name": "deployed",
+  "csv": "E:\\Projects\\TanitAD\\data\\refe_navtest\\score\\refe_navtest_final_routefix\\refe_navtest_final_routefix.csv",
+  "seam": "E:\\Projects\\TanitAD\\data\\refe_navtest\\seams\\refe_navtest_final_routefix.npz",
+  "csv_md5": "2101bc7f2084195b2536e5ee09c6be32",
+  "seam_md5": "1ddc2c63b538bf49fcc71c6047260696"
+ },
+ "gates": {
+  "tokens": {
+   "path": "E:\\Projects\\TanitAD\\data\\refe_navtest\\navtest_full_tokens.json",
+   "md5": "3a8b3653fd70891e50a230a37eb76ae8",
+   "n": 12146,
+   "n_logs": 136,
+   "all_in_export": true,
+   "unique": true,
+   "token_log_matches_export": true,
+   "pinned": {
+    "md5": "3a8b3653fd70891e50a230a37eb76ae8",
+    "n": 12146,
+    "logs": 136
+   },
+   "md5_ok": true,
+   "n_ok": true,
+   "logs_ok": true,
+   "ok": true
+  },
+  "tokens_minus_c1": {
+   "path": "E:\\Projects\\TanitAD\\data\\refe_navtest\\navtest_full_minus_c1_tokens.json",
+   "md5": "bc813be8300b69f9795e190238806329",
+   "n": 12110,
+   "n_logs": 136,
+   "all_in_export": true,
+   "unique": true,
+   "token_log_matches_export": true,
+   "pinned": {
+    "md5": "bc813be8300b69f9795e190238806329",
+    "n": 12110,
+    "logs": 136
+   },
+   "md5_ok": true,
+   "n_ok": true,
+   "logs_ok": true,
+   "ok": true
+  },
+  "base_pinned": {
+   "ok": true,
+   "base": "u400",
+   "csv_md5": "b17c4fbac26d064f17ce790dca4d9d08",
+   "pinned": "b17c4fbac26d064f17ce790dca4d9d08",
+   "seam_md5": "b009e941620b6cbbbe63e1dd8a94a506",
+   "pinned_seam": "b009e941620b6cbbbe63e1dd8a94a506"
+  },
+  "also_pinned": {
+   "ok": true,
+   "also": "u400",
+   "csv_md5": "b17c4fbac26d064f17ce790dca4d9d08",
+   "seam_md5": "b009e941620b6cbbbe63e1dd8a94a506"
+  },
+  "harness_status": {
+   "ok": true,
+   "note": "named baseline: its status is banked in baseline/*_score_status.json / RESULT_SFT4.md"
+  },
+  "seam_report": {
+   "rule": "navsim_v1",
+   "ckpt": null,
+   "rows": 12146,
+   "misses": 0,
+   "tokens_asked": null,
+   "seconds": null,
+   "repair_last_heading": true,
+   "sanitize_goal": false,
+   "goal_fix": "pdm_route",
+   "select": null,
+   "frame_control": null,
+   "rule_ok": true,
+   "expected_rule": "navsim_v1",
+   "seam_settings_equal_to_base": true,
+   "seam_setting_diffs": [],
+   "frame_control_equal_to_base": null,
+   "frame_control_gate_ok": true,
+   "ok": true
+  },
+  "rows": {
+   "ok": true,
+   "scored": 12146,
+   "asked": 12146,
+   "arm_rows": 12146,
+   "base_rows": 12146
+  },
+  "consistency_vs_base": {
+   "ok": true,
+   "same_pose_tokens": 1226,
+   "same_pose_different_score": 0,
+   "same_pose_any_column_differs": 0,
+   "seam_rows_arm": 12146,
+   "seam_rows_base": 12146
+  }
+ },
+ "gates_ok": true,
+ "R2": {
+  "vs": "SFT-4 arm B u400 (rule navsim_v1_lane)",
+  "primary": {
+   "mean": -3.7908187056340563,
+   "ci95": [
+    -4.542726430876108,
+    -3.047028951778753
+   ],
+   "base_mean_x100": 88.24694109622521,
+   "arm_mean_x100": 84.45612239059116,
+   "better": 3188,
+   "worse": 5167,
+   "tied": 3791,
+   "n": 12146,
+   "n_logs": 136,
+   "zero_base": 529,
+   "zero_arm": 837
+  },
+  "subscores": {
+   "NC": {
+    "mean": -0.8150831549481311,
+    "ci95": [
+     -1.1170067395128316,
+     -0.5182587746877003
+    ],
+    "base_mean_x100": 98.94203853120369,
+    "arm_mean_x100": 98.12695537625555,
+    "better": 65,
+    "worse": 174,
+    "tied": 11907,
+    "n": 12146,
+    "n_logs": 136,
+    "adverse": true
+   },
+   "DAC": {
+    "mean": -1.8689280421537955,
+    "ci95": [
+     -2.655581460509477,
+     -1.1242198072033727
+    ],
+    "base_mean_x100": 96.5750041165816,
+    "arm_mean_x100": 94.7060760744278,
+    "better": 150,
+    "worse": 377,
+    "tied": 11619,
+    "n": 12146,
+    "n_logs": 136,
+    "adverse": true
+   },
+   "EP": {
+    "mean": -4.492823918006209,
+    "ci95": [
+     -5.407663841844121,
+     -3.6422497988726756
+    ],
+    "base_mean_x100": 81.19597026438795,
+    "arm_mean_x100": 76.70314634638174,
+    "better": 3193,
+    "worse": 5013,
+    "tied": 3940,
+    "n": 12146,
+    "n_logs": 136,
+    "adverse": true
+   },
+   "TTC": {
+    "mean": -1.9347933476041494,
+    "ci95": [
+     -2.508217066799963,
+     -1.389540195056602
+    ],
+    "base_mean_x100": 95.62819035073275,
+    "arm_mean_x100": 93.6933970031286,
+    "better": 223,
+    "worse": 458,
+    "tied": 11465,
+    "n": 12146,
+    "n_logs": 136,
+    "adverse": true
+   },
+   "C": {
+    "mean": -0.032932652725177015,
+    "ci95": [
+     -0.08618599071023086,
+     0.01818326907930189
+    ],
+    "base_mean_x100": 99.96706734727482,
+    "arm_mean_x100": 99.93413469454964,
+    "better": 2,
+    "worse": 6,
+    "tied": 12138,
+    "n": 12146,
+    "n_logs": 136,
+    "adverse": false
+   },
+   "DDC": {
+    "mean": -0.05351556067841265,
+    "ci95": [
+     -0.41977499059701273,
+     0.30117826197656244
+    ],
+    "base_mean_x100": 97.66178165651243,
+    "arm_mean_x100": 97.60826609583403,
+    "better": 168,
+    "worse": 178,
+    "tied": 11800,
+    "n": 12146,
+    "n_logs": 136,
+    "adverse": false
+   }
+  },
+  "adverse_subscores": [
+   "NC",
+   "DAC",
+   "EP",
+   "TTC"
+  ],
+  "n_rows": 12146,
+  "families_vs_base": {
+   "adverse": [
+    {
+     "family": "longitudinal",
+     "metric": "accel_mae_mps2",
+     "direction": "lower",
+     "W_ci": [
+      0.5032,
+      0.5386
+     ],
+     "P_ci": [
+      0.562,
+      0.6002
+     ]
+    },
+    {
+     "family": "longitudinal",
+     "metric": "along_mae_m",
+     "direction": "lower",
+     "W_ci": [
+      0.988,
+      1.0826
+     ],
+     "P_ci": [
+      1.2088,
+      1.3103
+     ]
+    },
+    {
+     "family": "longitudinal",
+     "metric": "ego_progress.progress_error_mean",
+     "direction": "lower",
+     "W_ci": [
+      0.1848,
+      0.2045
+     ],
+     "P_ci": [
+      0.2119,
+      0.2319
+     ]
+    },
+    {
+     "family": "longitudinal",
+     "metric": "speed_mae_mps",
+     "direction": "lower",
+     "W_ci": [
+      0.7111,
+      0.7713
+     ],
+     "P_ci": [
+      0.8592,
+      0.9238
+     ]
+    },
+    {
+     "family": "longitudinal",
+     "metric": "speed_rmse_mps",
+     "direction": "lower",
+     "W_ci": [
+      1.0621,
+      1.1526
+     ],
+     "P_ci": [
+      1.2844,
+      1.3861
+     ]
+    },
+    {
+     "family": "longitudinal",
+     "metric": "target_speed_acc.within_0.5_mps",
+     "direction": "higher",
+     "W_ci": [
+      0.5308,
+      0.5573
+     ],
+     "P_ci": [
+      0.4875,
+      0.5085
+     ]
+    },
+    {
+     "family": "longitudinal",
+     "metric": "target_speed_acc.within_1.0_mps",
+     "direction": "higher",
+     "W_ci": [
+      0.728,
+      0.7567
+     ],
+     "P_ci": [
+      0.6731,
+      0.6963
+     ]
+    },
+    {
+     "family": "longitudinal",
+     "metric": "target_speed_acc.within_2.0_mps",
+     "direction": "higher",
+     "W_ci": [
+      0.9036,
+      0.9226
+     ],
+     "P_ci": [
+      0.8604,
+      0.8812
+     ]
+    },
+    {
+     "family": "lateral",
+     "metric": "cross_final_mae_m",
+     "direction": "lower",
+     "W_ci": [
+      0.7946,
+      0.9333
+     ],
+     "P_ci": [
+      0.9402,
+      1.088
+     ]
+    },
+    {
+     "family": "lateral",
+     "metric": "curvature_mae_1pm",
+     "direction": "lower",
+     "W_ci": [
+      0.018344,
+      0.021377
+     ],
+     "P_ci": [
+      0.021688,
+      0.025779
+     ]
+    }
+   ],
+   "components_compared": 21,
+   "tactical_no_interval": {
+    "lateral_decision": {
+     "W": {
+      "accuracy": 0.9251,
+      "kappa": 0.8626
+     },
+     "P": {
+      "accuracy": 0.9174,
+      "kappa": 0.8483
+     }
+    },
+    "longitudinal_decision": {
+     "W": {
+      "accuracy": 0.6791,
+      "kappa": 0.5159
+     },
+     "P": {
+      "accuracy": 0.6417,
+      "kappa": 0.4588
+     }
+    },
+    "maneuver_5way_collapsed": {
+     "W": {
+      "accuracy": 0.7831,
+      "kappa": 0.718
+     },
+     "P": {
+      "accuracy": 0.7697,
+      "kappa": 0.7005
+     }
+    }
+   },
+   "strategic": "UNAVAILABLE in NAVSIM (no strategic decision scored; the arm has no strategic layer)",
+   "note": "REPORTED, NOT GATING (amendment section 5); unpaired interval non-overlap, a conservative reading"
+  },
+  "outcome": "NO-GO (P2 below u400)",
+  "p6": "NO-GO",
+  "why": "upper bound < 0: P2 reads below u400",
+  "next": "SFT-4R (PREREG_SFT4R.md) plus P2's training log (score loss, LoRA movement, held-out ranking) to say which half failed",
+  "sft4_B_u400_pdms_x100_banked": 88.2469
+ },
+ "R2_minus_C1": {
+  "note": "reported, not gated (RESULT_SFT4.md Deviation 1)",
+  "tokens_md5": "bc813be8300b69f9795e190238806329",
+  "primary": {
+   "mean": -3.7548454954723525,
+   "ci95": [
+    -4.50864063460473,
+    -3.0158091033565624
+   ],
+   "base_mean_x100": 88.22085023771969,
+   "arm_mean_x100": 84.46600474224735,
+   "better": 3186,
+   "worse": 5141,
+   "tied": 3783,
+   "n": 12110,
+   "n_logs": 136,
+   "zero_base": 529,
+   "zero_arm": 832
+  },
+  "subscores": {
+   "NC": {
+    "mean": -0.8175061932287366,
+    "ci95": [
+     -1.120677653160962,
+     -0.5184094588956976
+    ],
+    "base_mean_x100": 98.93889347646574,
+    "arm_mean_x100": 98.121387283237,
+    "better": 65,
+    "worse": 174,
+    "tied": 11871,
+    "n": 12110,
+    "n_logs": 136,
+    "adverse": true
+   },
+   "DAC": {
+    "mean": -1.833195706028076,
+    "ci95": [
+     -2.612684924280625,
+     -1.0905350028691068
+    ],
+    "base_mean_x100": 96.56482246077621,
+    "arm_mean_x100": 94.73162675474815,
+    "better": 150,
+    "worse": 372,
+    "tied": 11588,
+    "n": 12110,
+    "n_logs": 136,
+    "adverse": true
+   },
+   "EP": {
+    "mean": -4.450601749941939,
+    "ci95": [
+     -5.3675714029398796,
+     -3.600853457346158
+    ],
+    "base_mean_x100": 81.15304825837639,
+    "arm_mean_x100": 76.70244650843445,
+    "better": 3192,
+    "worse": 4988,
+    "tied": 3930,
+    "n": 12110,
+    "n_logs": 136,
+    "adverse": true
+   },
+   "TTC": {
+    "mean": -1.9405450041288193,
+    "ci95": [
+     -2.515292062495847,
+     -1.392394885872482
+    ],
+    "base_mean_x100": 95.62345169281585,
+    "arm_mean_x100": 93.68290668868704,
+    "better": 222,
+    "worse": 457,
+    "tied": 11431,
+    "n": 12110,
+    "n_logs": 136,
+    "adverse": true
+   },
+   "C": {
+    "mean": -0.03303055326176713,
+    "ci95": [
+     -0.08644561565044782,
+     0.018249427344548232
+    ],
+    "base_mean_x100": 99.96696944673823,
+    "arm_mean_x100": 99.93393889347647,
+    "better": 2,
+    "worse": 6,
+    "tied": 12102,
+    "n": 12110,
+    "n_logs": 136,
+    "adverse": false
+   },
+   "DDC": {
+    "mean": -0.0495458298926507,
+    "ci95": [
+     -0.4175934402022038,
+     0.3060086329098577
+    ],
+    "base_mean_x100": 97.65483071841453,
+    "arm_mean_x100": 97.60528488852188,
+    "better": 168,
+    "worse": 177,
+    "tied": 11765,
+    "n": 12110,
+    "n_logs": 136,
+    "adverse": false
+   }
+  },
+  "adverse_subscores": [
+   "NC",
+   "DAC",
+   "EP",
+   "TTC"
+  ],
+  "n_rows": 12110
+ },
+ "R2b": {
+  "vs": "SFT-4 arm B u400 (rule navsim_v1_lane)",
+  "status": "REPORTED, decides nothing (amendment section 3)",
+  "primary": {
+   "mean": -3.7908187056340563,
+   "ci95": [
+    -4.542726430876108,
+    -3.047028951778753
+   ],
+   "base_mean_x100": 88.24694109622521,
+   "arm_mean_x100": 84.45612239059116,
+   "better": 3188,
+   "worse": 5167,
+   "tied": 3791,
+   "n": 12146,
+   "n_logs": 136,
+   "zero_base": 529,
+   "zero_arm": 837
+  },
+  "subscores": {
+   "NC": {
+    "mean": -0.8150831549481311,
+    "ci95": [
+     -1.1170067395128316,
+     -0.5182587746877003
+    ],
+    "base_mean_x100": 98.94203853120369,
+    "arm_mean_x100": 98.12695537625555,
+    "better": 65,
+    "worse": 174,
+    "tied": 11907,
+    "n": 12146,
+    "n_logs": 136,
+    "adverse": true
+   },
+   "DAC": {
+    "mean": -1.8689280421537955,
+    "ci95": [
+     -2.655581460509477,
+     -1.1242198072033727
+    ],
+    "base_mean_x100": 96.5750041165816,
+    "arm_mean_x100": 94.7060760744278,
+    "better": 150,
+    "worse": 377,
+    "tied": 11619,
+    "n": 12146,
+    "n_logs": 136,
+    "adverse": true
+   },
+   "EP": {
+    "mean": -4.492823918006209,
+    "ci95": [
+     -5.407663841844121,
+     -3.6422497988726756
+    ],
+    "base_mean_x100": 81.19597026438795,
+    "arm_mean_x100": 76.70314634638174,
+    "better": 3193,
+    "worse": 5013,
+    "tied": 3940,
+    "n": 12146,
+    "n_logs": 136,
+    "adverse": true
+   },
+   "TTC": {
+    "mean": -1.9347933476041494,
+    "ci95": [
+     -2.508217066799963,
+     -1.389540195056602
+    ],
+    "base_mean_x100": 95.62819035073275,
+    "arm_mean_x100": 93.6933970031286,
+    "better": 223,
+    "worse": 458,
+    "tied": 11465,
+    "n": 12146,
+    "n_logs": 136,
+    "adverse": true
+   },
+   "C": {
+    "mean": -0.032932652725177015,
+    "ci95": [
+     -0.08618599071023086,
+     0.01818326907930189
+    ],
+    "base_mean_x100": 99.96706734727482,
+    "arm_mean_x100": 99.93413469454964,
+    "better": 2,
+    "worse": 6,
+    "tied": 12138,
+    "n": 12146,
+    "n_logs": 136,
+    "adverse": false
+   },
+   "DDC": {
+    "mean": -0.05351556067841265,
+    "ci95": [
+     -0.41977499059701273,
+     0.30117826197656244
+    ],
+    "base_mean_x100": 97.66178165651243,
+    "arm_mean_x100": 97.60826609583403,
+    "better": 168,
+    "worse": 178,
+    "tied": 11800,
+    "n": 12146,
+    "n_logs": 136,
+    "adverse": false
+   }
+  },
+  "adverse_subscores": [
+   "NC",
+   "DAC",
+   "EP",
+   "TTC"
+  ],
+  "n_rows": 12146,
+  "families_vs_also": {
+   "adverse": [
+    {
+     "family": "longitudinal",
+     "metric": "accel_mae_mps2",
+     "direction": "lower",
+     "W_ci": [
+      0.5032,
+      0.5386
+     ],
+     "P_ci": [
+      0.562,
+      0.6002
+     ]
+    },
+    {
+     "family": "longitudinal",
+     "metric": "along_mae_m",
+     "direction": "lower",
+     "W_ci": [
+      0.988,
+      1.0826
+     ],
+     "P_ci": [
+      1.2088,
+      1.3103
+     ]
+    },
+    {
+     "family": "longitudinal",
+     "metric": "ego_progress.progress_error_mean",
+     "direction": "lower",
+     "W_ci": [
+      0.1848,
+      0.2045
+     ],
+     "P_ci": [
+      0.2119,
+      0.2319
+     ]
+    },
+    {
+     "family": "longitudinal",
+     "metric": "speed_mae_mps",
+     "direction": "lower",
+     "W_ci": [
+      0.7111,
+      0.7713
+     ],
+     "P_ci": [
+      0.8592,
+      0.9238
+     ]
+    },
+    {
+     "family": "longitudinal",
+     "metric": "speed_rmse_mps",
+     "direction": "lower",
+     "W_ci": [
+      1.0621,
+      1.1526
+     ],
+     "P_ci": [
+      1.2844,
+      1.3861
+     ]
+    },
+    {
+     "family": "longitudinal",
+     "metric": "target_speed_acc.within_0.5_mps",
+     "direction": "higher",
+     "W_ci": [
+      0.5308,
+      0.5573
+     ],
+     "P_ci": [
+      0.4875,
+      0.5085
+     ]
+    },
+    {
+     "family": "longitudinal",
+     "metric": "target_speed_acc.within_1.0_mps",
+     "direction": "higher",
+     "W_ci": [
+      0.728,
+      0.7567
+     ],
+     "P_ci": [
+      0.6731,
+      0.6963
+     ]
+    },
+    {
+     "family": "longitudinal",
+     "metric": "target_speed_acc.within_2.0_mps",
+     "direction": "higher",
+     "W_ci": [
+      0.9036,
+      0.9226
+     ],
+     "P_ci": [
+      0.8604,
+      0.8812
+     ]
+    },
+    {
+     "family": "lateral",
+     "metric": "cross_final_mae_m",
+     "direction": "lower",
+     "W_ci": [
+      0.7946,
+      0.9333
+     ],
+     "P_ci": [
+      0.9402,
+      1.088
+     ]
+    },
+    {
+     "family": "lateral",
+     "metric": "curvature_mae_1pm",
+     "direction": "lower",
+     "W_ci": [
+      0.018344,
+      0.021377
+     ],
+     "P_ci": [
+      0.021688,
+      0.025779
+     ]
+    }
+   ],
+   "components_compared": 21,
+   "tactical_no_interval": {
+    "lateral_decision": {
+     "W": {
+      "accuracy": 0.9251,
+      "kappa": 0.8626
+     },
+     "P": {
+      "accuracy": 0.9174,
+      "kappa": 0.8483
+     }
+    },
+    "longitudinal_decision": {
+     "W": {
+      "accuracy": 0.6791,
+      "kappa": 0.5159
+     },
+     "P": {
+      "accuracy": 0.6417,
+      "kappa": 0.4588
+     }
+    },
+    "maneuver_5way_collapsed": {
+     "W": {
+      "accuracy": 0.7831,
+      "kappa": 0.718
+     },
+     "P": {
+      "accuracy": 0.7697,
+      "kappa": 0.7005
+     }
+    }
+   },
+   "strategic": "UNAVAILABLE in NAVSIM (no strategic decision scored; the arm has no strategic layer)",
+   "note": "REPORTED, NOT GATING (amendment section 5); unpaired interval non-overlap, a conservative reading"
+  },
+  "consistency_vs_also": {
+   "ok": true,
+   "same_pose_tokens": 1226,
+   "same_pose_different_score": 0,
+   "same_pose_any_column_differs": 0,
+   "seam_rows_arm": 12146,
+   "seam_rows_base": 12146
+  }
+ },
+ "tactical_vs_base": {
+  "lateral_decision": {
+   "W": {
+    "accuracy": 0.9251,
+    "kappa": 0.8626
+   },
+   "P": {
+    "accuracy": 0.9174,
+    "kappa": 0.8483
+   }
+  },
+  "longitudinal_decision": {
+   "W": {
+    "accuracy": 0.6791,
+    "kappa": 0.5159
+   },
+   "P": {
+    "accuracy": 0.6417,
+    "kappa": 0.4588
+   }
+  },
+  "maneuver_5way_collapsed": {
+   "W": {
+    "accuracy": 0.7831,
+    "kappa": 0.718
+   },
+   "P": {
+    "accuracy": 0.7697,
+    "kappa": 0.7005
+   }
+  }
+ },
+ "seconds": 65.9
+}
