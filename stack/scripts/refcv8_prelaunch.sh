@@ -148,6 +148,12 @@ gate)
   n_pi=0; while IFS= read -r rel; do [ -n "$rel" ] || continue; n_pi=$((n_pi+1))
     [ -f "$CODE/$rel" ] && pf PF-OK "profile-input:$(basename "$rel")" || pf PF-FAIL "profile-input:$(basename "$rel")"; done <<< "$NPI"
   [ "$n_pi" -eq 4 ] && pf PF-OK profile-inputs-4 || pf PF-FAIL "profile-inputs-$n_pi-of-4"
+  # pregate 2026-10-12 B2: G-EVAL's loader knows refcv7's 4,369-view kit names (refcv7_loader PATH_REMAP_SPEC) and
+  # REFUSES the four A2 files by basename; a RECORDED override maps them. It must name exactly the argv's own files.
+  EVO="$CODE/stack/ops/refcv8_eval_remap_a2_thor.json"
+  [ -f "$EVO" ] && pf PF-OK eval-remap-override || pf PF-FAIL eval-remap-override
+  NEV="$(pyval 'import json,sys; o=json.load(open(sys.argv[1])); d=json.load(open(sys.argv[2])); a=d["argv"] if isinstance(d,dict) else d; print(sum(1 for f,p in o.items() if f in a and a[a.index(f)+1]==p), len(o))' "$EVO" "$ARGV" 2>/dev/null)"
+  [ "$NEV" = "4 4" ] && pf PF-OK eval-remap-is-argv || pf PF-FAIL "eval-remap-is-argv:${NEV:-unreadable}"
   if [ "$DRY" = 1 ] && [ -z "$GSM" ]; then printf 'AUDIT-SKIPPED(dry-run, no --gs-measure)\nAUDIT-OK\n' > "$WORK/audit.txt"
   else GSF="${GSM:-$(ls -1 "$OUTROOT"/gs_measure_*/gs_measure.json 2>/dev/null | tail -1)}"
        py "$HERE/refcv8_assemble_argv.py" --audit "$ARGV" --gs-measure "${GSF:-/nonexistent}" > "$WORK/audit.txt" 2>&1 9>&- 200>&-; fi
@@ -158,10 +164,16 @@ gate)
     CK=/home/nvidia/refcv7_run/runs/refcv7-r101-s0/ckpt.pt
     [ "$(stat -c %s "$CK" 2>/dev/null)" = 1172814977 ] && pf PF-OK ckpt-size || pf PF-FAIL ckpt-size
     M="$(md5sum "$CK" 2>/dev/null | cut -c1-32)"; [ "${#M}" = 32 ] && [ "$M" = d5f104ee54ba6b2861e38030b4f6fcf1 ] && pf PF-OK ckpt-md5 || pf PF-FAIL ckpt-md5
-    for f in v9_labels_train:f63ece410b725febb8a5242cf2b01d3c v9_labels_eval139:6b5c7f207cffc3b7eb3cd527fd433599; do
-      M="$(md5sum /home/nvidia/refcv8_v9labels/release/${f%%:*}.npz 2>/dev/null | cut -c1-32)"
-      [ "${#M}" = 32 ] && [ "$M" = "${f##*:}" ] && pf PF-OK "md5-${f%%:*}" || pf PF-FAIL "md5-${f%%:*}"; done
-    [ -s /home/nvidia/data/refcv6_pose_sync_sidecar.jsonl ] && pf PF-OK pose-sync || pf PF-FAIL pose-sync
+    # SPEC_REFCV8 A2: the v9 release and the pose-sync sidecar are read FROM THE ARGV (these checks used to name the
+    # 4,369-view files and passed on files the launch does not read); the md5s are the profile's pins
+    AV() { pyval 'import json,sys; d=json.load(open(sys.argv[1])); a=d["argv"] if isinstance(d,dict) else d; print(a[a.index(sys.argv[2])+1])' "$ARGV" "$1"; }
+    for f in --r8-v9-labels:83e30bd3791f0767707eade5f4671759 --r8-v9-labels-eval:6b5c7f207cffc3b7eb3cd527fd433599; do
+      M="$(md5sum "$(AV "${f%%:*}")" 2>/dev/null | cut -c1-32)"
+      [ "${#M}" = 32 ] && [ "$M" = "${f##*:}" ] && pf PF-OK "md5${f%%:*}" || pf PF-FAIL "md5${f%%:*}"; done
+    PS="$(AV --pose-sync-sidecar)"
+    [ "$PS" = /home/nvidia/data/refcv8_pose_sync_sidecar.jsonl ] && [ -s "$PS" ] && pf PF-OK pose-sync || pf PF-FAIL pose-sync
+    for p in $(pyval 'import json,sys; print("\n".join(json.load(open(sys.argv[1])).values()))' "$EVO"); do
+      [ -s "$p" ] && pf PF-OK "eval-remap-file:$(basename "$p")" || pf PF-FAIL "eval-remap-file:$(basename "$p")"; done
     [ ! -e "$OUTROOT/runs/$ARM/ckpt.pt" ] && [ ! -e "$OUTROOT/runs/$ARM/summary.json" ] && pf PF-OK run-dir-fresh || pf PF-FAIL run-dir-fresh
     exec 9>"$LOCKF"; flock -n 9 && pf PF-OK gpu-lock || pf PF-FAIL gpu-lock
     NL="$(ps -eo args | grep -c 'ladder_chai[n]')"; [ "$NL" = 0 ] && pf PF-OK ladder-stopped || pf PF-FAIL ladder-stopped
@@ -169,7 +181,8 @@ gate)
   else say "DRY: skipping Thor-only preflights (ckpt md5, v9 md5, sidecars, lock, ladder, disk)"; fi
   NF="$(grep -c '^PF-FAIL' "$PF")"; cat "$PF"
   [ "$NF" = 0 ] || die "$NF preflight failure(s) in $PF"
-  A=(run --profile refcv8 --stage thor --tree "$CODE" --commit "$COMMIT" --argv-file "$ARGV" --out-dir "$GATE_OUT" --eval-kit /home/nvidia)
+  A=(run --profile refcv8 --stage thor --tree "$CODE" --commit "$COMMIT" --argv-file "$ARGV" --out-dir "$GATE_OUT" --eval-kit /home/nvidia
+     --eval-remap-overrides "$EVO")
   [ -n "$DEVEV" ] && A+=(--import-evidence "$DEVEV"); [ -n "$SUITE" ] && A+=(--suite-verdict "$SUITE")
   [ -n "$PICOST" ] && A+=(--pi-cost-approval "$PICOST")
   BD="$OUTROOT/bind_$C12"

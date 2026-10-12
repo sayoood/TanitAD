@@ -1,0 +1,33 @@
+SET --out /home/nvidia/pregate_d014ff2/run_never_launched  <- run dir (new; never the smoke dir)
+SET --steps 48852  <- SPEC_REFCV8 A2 (PI 2026-10-12): ONE full pass = 48,852 steps over 781,635 windows (also the cosine horizon)
+SET --v2-cache /home/nvidia/data/refcv8-b1-416x1024-train-4572  <- SPEC_REFCV8 A2: the 4,572-clip train view / the sidecars built over it
+SET --agent-rig-extrinsics /home/nvidia/data/refcv8_train4572_eval139_extrinsics.json  <- SPEC_REFCV8 A2: the 4,572-clip train view / the sidecars built over it
+SET --pose-sync-sidecar /home/nvidia/data/refcv8_pose_sync_sidecar.jsonl  <- SPEC_REFCV8 A2: the 4,572-clip train view / the sidecars built over it
+SET --clip-clock-sidecar /home/nvidia/data/refcv8_clip_clock_sidecar_ts33.jsonl  <- SPEC_REFCV8 A2: the 4,572-clip train view / the sidecars built over it
+SET --r8-v9-labels /home/nvidia/refcv8_v9labels/release_train4572/v9_labels_train.npz  <- SPEC_REFCV8 A2: the 4,572-clip train view / the sidecars built over it
+SET --vis1-sidecar /home/nvidia/data/refcv8/vis1_sidecar_refcv8b1_train4572_eval139.npz  <- SPEC_REFCV8 A2: the 4,572-clip train view / the sidecars built over it
+SET --nav-compliance-tau-file /home/nvidia/data/refcv8/nav_compliance_tau_train4572.json  <- SPEC_REFCV8 A2: the 4,572-clip train view / the sidecars built over it
+SET --r8-v9-md5 83e30bd3791f0767707eade5f4671759  <- SPEC_REFCV8 A2: the 4,572-clip v9 release (the trainer checks the file)
+SET --nav-compliance-tau-rad 0.1806411302089691  <- SPEC_REFCV8 A3: the FIX-4 tau re-derived on the 4,572 view (= the record's tau)
+SET --init-from /home/nvidia/refcv7_run/runs/refcv7-r101-s0/ckpt.pt  <- SPEC 3.1: warm start from refcv7-50,400
+SET --warmup 1000  <- R8-WARMUP: re-warm over 1,000 steps (SPEC 10.3)
+SET --lr 1e-4  <- R8-WARMUP: head peak 1e-4 (trunk 5e-5 = --encoder-lr-mult default 0.5)
+SET --w-tac-v6 1.0  <- R8-BUDGET: 1.0 x k (ladder L2, SPEC_WPB_LADDER 4.2)
+SET --w-map-hires 1.0  <- R8-BUDGET: 4.0 iff B-MAPW else 1.0 (ladder L3)
+SET --ema-decay 0.9998  <- R8-WARMUP CLOSED (MM 2026-10-11): EMA evaluated at every in-run eval and saved
+SET --b1-guard-ref-ap2m 0.21211  <- SPEC 10.1 B1 guard: the refcv7-50,400 EMA box3d AP@2 m (cite artifact + md5)
+SET --b1-guard-step 1000  <- SPEC 10.1 B1 guard step
+SET --r8-alloc-emit-start 1000  <- S_emit = the warmup length (MM 2026-10-11)
+SET --grad-share-terms tac_v6,map_hires  <- SPEC 10.3 gradient share on the main run
+SET --grad-share-every 250  <- SPEC 10.3
+SET --grad-share-at 1000,16250,32500,48750  <- SPEC 10.3: picked by pick_gs_schedule from the MEASURED reading
+SET --join-defect-masks /home/nvidia/refcv6_run/d014ff2fd6/stack/tanitad/configs/refcv8_join_label_defects_train4572.json  <- MM 2026-10-04 item 6; SPEC A2: re-mined over the 4,572 view; path under the GATED tree, not the smoke tree
+SET --r8-n-alloc 32  <- R8-RECIPE: ladder L1 / SPEC_WPB reading
+SET --r8-alloc-emit   <- R8-RECIPE: ladder L1 / SPEC_WPB reading
+SET --w-r8-alloc-l1 1.0  <- R8-RECIPE: ladder L1 / SPEC_WPB reading
+SET --w-r8-listwise 1.0  <- R8-RECIPE: ladder L1 / SPEC_WPB reading
+SET --w-r8-sat 0.1  <- R8-RECIPE: ladder L1 / SPEC_WPB reading
+SET --w-r8-subscore 0.5  <- R8-RECIPE: ladder L1 / SPEC_WPB reading
+SET --r8-lat-prior-dropout 0.3  <- R8-RECIPE: ladder L1 / SPEC_WPB reading
+SET --w-r8-v9-cons 0.05  <- R8-RECIPE: ladder L1 / SPEC_WPB reading
+ASSEMBLED 210 tokens -> /home/nvidia/pregate_d014ff2/work/argv_PROVISIONAL.json

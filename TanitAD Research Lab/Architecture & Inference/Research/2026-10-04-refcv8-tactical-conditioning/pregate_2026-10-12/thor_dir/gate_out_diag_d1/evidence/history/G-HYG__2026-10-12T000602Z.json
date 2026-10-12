@@ -1,0 +1,177 @@
+{
+ "schema": "tanitad.launch_gate/1",
+ "kind": "evidence",
+ "check": "G-HYG",
+ "status": "PASS",
+ "reasons": [],
+ "binding": {
+  "profile": "refcv8",
+  "commit": "d014ff2fd695c306abf769af0572a17e8d713991",
+  "tree_sha256": "a88a01986eac321c1ac7a7132e4fd0314dc1b0495f3955e092b6e3761e2b419b",
+  "argv_sha256": "d1fa48b2654d33cd7af7f5077076b0f7b807efc359fe6549919ddb16e721d600"
+ },
+ "inputs_read": {
+  "--anchors": {
+   "kind": "file",
+   "bytes": 13477,
+   "sha256": "897099148d1b16eb109ad24516d1a1b9cc7d60d7a3ce71cd3f14beef33c1d63d",
+   "method": "sha256-v1"
+  }
+ },
+ "host": {
+  "node": "thor6",
+  "platform": "Linux-6.8.12-tegra-aarch64-with-glibc2.39",
+  "python": "3.12.3",
+  "torch": "2.13.0+cu130",
+  "cuda": false
+ },
+ "arm": null,
+ "gate_sha256": "e7b47e3dde5059cd00023f9563ce838754a1dbb9cd62d9de4f0db0b3a189ea50",
+ "started_utc": "2026-10-12T00:05:55Z",
+ "details": {
+  "argv_local": {
+   "kept": {
+    "--anchors": "/home/nvidia/data/anchors/refc_anchors_6s_v0cond_alat_117.pt",
+    "--agent-rig-extrinsics": "/home/nvidia/data/refcv8_train4572_eval139_extrinsics.json",
+    "--nav-compliance-tau-file": "/home/nvidia/data/refcv8/nav_compliance_tau_train4572.json",
+    "--map-hires-class-weights": "/home/nvidia/data/refcv7/map_hires_class_weights_train_100x30.json",
+    "--join-defect-masks": "/home/nvidia/refcv6_run/d014ff2fd6/stack/tanitad/configs/refcv8_join_label_defects_train4572.json"
+   },
+   "sentinel": {
+    "--v2-cache": "/home/nvidia/pregate_d014ff2/gate_out_diag_d1/scratch/__gate_unread__/v2-cache",
+    "--v7-labels": "/home/nvidia/pregate_d014ff2/gate_out_diag_d1/scratch/__gate_unread__/v7-labels",
+    "--eval-cache": "/home/nvidia/pregate_d014ff2/gate_out_diag_d1/scratch/__gate_unread__/eval-cache",
+    "--eval-labels": "/home/nvidia/pregate_d014ff2/gate_out_diag_d1/scratch/__gate_unread__/eval-labels",
+    "--speed-max-sidecar-v6-eval": "/home/nvidia/pregate_d014ff2/gate_out_diag_d1/scratch/__gate_unread__/speed-max-sidecar-v6-eval",
+    "--speed-max-sidecar-v6": "/home/nvidia/pregate_d014ff2/gate_out_diag_d1/scratch/__gate_unread__/speed-max-sidecar-v6",
+    "--agent-join": "/home/nvidia/pregate_d014ff2/gate_out_diag_d1/scratch/__gate_unread__/agent-join",
+    "--map-gt-root": "/home/nvidia/pregate_d014ff2/gate_out_diag_d1/scratch/__gate_unread__/map-gt-root",
+    "--join3d": "/home/nvidia/pregate_d014ff2/gate_out_diag_d1/scratch/__gate_unread__/join3d",
+    "--vis1-sidecar": "/home/nvidia/pregate_d014ff2/gate_out_diag_d1/scratch/__gate_unread__/vis1-sidecar",
+    "--clip-clock-sidecar": "/home/nvidia/pregate_d014ff2/gate_out_diag_d1/scratch/__gate_unread__/clip-clock-sidecar",
+    "--init-from": "/home/nvidia/pregate_d014ff2/gate_out_diag_d1/scratch/__gate_unread__/init-from",
+    "--r8-v9-labels": "/home/nvidia/pregate_d014ff2/gate_out_diag_d1/scratch/__gate_unread__/r8-v9-labels",
+    "--r8-v9-labels-eval": "/home/nvidia/pregate_d014ff2/gate_out_diag_d1/scratch/__gate_unread__/r8-v9-labels-eval",
+    "--pose-sync-sidecar": "/home/nvidia/pregate_d014ff2/gate_out_diag_d1/scratch/__gate_unread__/pose-sync-sidecar"
+   },
+   "dropped": {
+    "--trunk-compile": "the model job is CPU-only on every host; torch.compile wraps the backbone CALL only (module tree and state_dict unchanged) -- the eval loader drops it too"
+   }
+  },
+  "build_s": 4.1,
+  "model_params": 100598182,
+  "undeclared_attributes": [],
+  "n_config_dataclass_instances": 21,
+  "config_classes": [
+   "tanitad.data.bev_raster.BEVGrid",
+   "tanitad.models.ego_history.EgoHistoryConfig",
+   "tanitad.models.refc_bev_coupling.BEVCouplingConfig",
+   "tanitad.models.refcv6_diffusion.DiffusionFlags",
+   "tanitad.refs.goal_point.GoalPointConfig",
+   "tanitad.refs.max_speed_input.MaxSpeedConfig",
+   "tanitad.refs.refc.AnchorConfig",
+   "tanitad.refs.refc.CNNEncoderConfig",
+   "tanitad.refs.refc.DecoderConfig",
+   "tanitad.refs.refc.ImaginationConfig",
+   "tanitad.refs.refc.LanConfig",
+   "tanitad.refs.refc.LawConfig",
+   "tanitad.refs.refc.MeasurementConfig",
+   "tanitad.refs.refc.RefCConfig",
+   "tanitad.refs.refc.StrategicCtxConfig",
+   "tanitad.refs.refc.TrajectoryConfig",
+   "tanitad.refs.refc_agents.AgentSeamConfig",
+   "tanitad.refs.refc_v3.RefCV3Config",
+   "tanitad.refs.refcv6_tactical.TacticalDecoderConfig",
+   "tanitad.refs.refcv7_heads.Refcv7HeadConfig",
+   "tanitad.refs.refcv8_conditioning.R8Config"
+  ],
+  "not_strict": [],
+  "probe_assignments_accepted": [],
+  "probe_assignments_tried": 21,
+  "import_closure": {
+   "venv": "/home/nvidia/venvs/tanitad-train/bin/python",
+   "n_files": 180,
+   "third_party": [
+    "av",
+    "diffusers",
+    "huggingface_hub",
+    "metadrive",
+    "numpy",
+    "pandas",
+    "pyarrow",
+    "refa_plus",
+    "timm",
+    "torch",
+    "torchvision",
+    "transformers",
+    "truststore"
+   ],
+   "strict": [
+    "scipy"
+   ],
+   "missing_fail": {},
+   "missing_lazy_only": {
+    "metadrive": [
+     {
+      "file": "stack/tanitad/data/metadrive_env.py",
+      "line": 142,
+      "guarded": false,
+      "function_level": true
+     },
+     {
+      "file": "stack/tanitad/data/metadrive_env.py",
+      "line": 143,
+      "guarded": false,
+      "function_level": true
+     }
+    ],
+    "refa_plus": [
+     {
+      "file": "taniteval/taniteval/loaders.py",
+      "line": 118,
+      "guarded": false,
+      "function_level": true
+     }
+    ],
+    "transformers": [
+     {
+      "file": "taniteval/taniteval/data.py",
+      "line": 171,
+      "guarded": false,
+      "function_level": true
+     },
+     {
+      "file": "stack/scripts/train_v6_staged.py",
+      "line": 992,
+      "guarded": false,
+      "function_level": true
+     }
+    ],
+    "truststore": [
+     {
+      "file": "stack/scripts/train_v6_staged.py",
+      "line": 990,
+      "guarded": false,
+      "function_level": true
+     }
+    ]
+   },
+   "missing_guarded_only": {
+    "diffusers": [
+     {
+      "file": "stack/tanitad/refs/refc_sampler.py",
+      "line": 234,
+      "guarded": true,
+      "function_level": true
+     }
+    ]
+   }
+  },
+  "child": {
+   "tanitad": "/home/nvidia/refcv6_run/d014ff2fd6/stack/tanitad/__init__.py",
+   "torch": "2.13.0+cu130",
+   "cuda": false
+  }
+ },
+ "finished_utc": "2026-10-12T00:06:02Z"
+}

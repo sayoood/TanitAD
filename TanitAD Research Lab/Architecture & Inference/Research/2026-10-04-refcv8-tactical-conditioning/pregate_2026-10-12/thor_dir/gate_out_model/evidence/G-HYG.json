@@ -1,0 +1,63 @@
+{
+ "schema": "tanitad.launch_gate/1",
+ "kind": "evidence",
+ "check": "G-HYG",
+ "status": "FAIL",
+ "reasons": [
+  "the trainer REFUSED this argv while building: [v3] \u26d4--join-defect-masks '/home/nvidia/pregate_d014ff2/gate_out_model/scratch/__gate_unread__/join-defect-masks': join defect masks file '/home/nvidia/pregate_d014ff2/gate_out_model/scratch/__gate_unread__/join-defect-masks' does not exist"
+ ],
+ "binding": {
+  "profile": "refcv8",
+  "commit": "d014ff2fd695c306abf769af0572a17e8d713991",
+  "tree_sha256": "a88a01986eac321c1ac7a7132e4fd0314dc1b0495f3955e092b6e3761e2b419b",
+  "argv_sha256": "d1fa48b2654d33cd7af7f5077076b0f7b807efc359fe6549919ddb16e721d600"
+ },
+ "inputs_read": {},
+ "host": {
+  "node": "thor6",
+  "platform": "Linux-6.8.12-tegra-aarch64-with-glibc2.39",
+  "python": "3.12.3",
+  "torch": "2.13.0+cu130",
+  "cuda": false
+ },
+ "arm": null,
+ "gate_sha256": "e7b47e3dde5059cd00023f9563ce838754a1dbb9cd62d9de4f0db0b3a189ea50",
+ "started_utc": "2026-10-12T00:05:10Z",
+ "details": {
+  "argv_local": {
+   "kept": {
+    "--anchors": "/home/nvidia/data/anchors/refc_anchors_6s_v0cond_alat_117.pt",
+    "--agent-rig-extrinsics": "/home/nvidia/data/refcv8_train4572_eval139_extrinsics.json",
+    "--nav-compliance-tau-file": "/home/nvidia/data/refcv8/nav_compliance_tau_train4572.json",
+    "--map-hires-class-weights": "/home/nvidia/data/refcv7/map_hires_class_weights_train_100x30.json"
+   },
+   "sentinel": {
+    "--v2-cache": "/home/nvidia/pregate_d014ff2/gate_out_model/scratch/__gate_unread__/v2-cache",
+    "--v7-labels": "/home/nvidia/pregate_d014ff2/gate_out_model/scratch/__gate_unread__/v7-labels",
+    "--eval-cache": "/home/nvidia/pregate_d014ff2/gate_out_model/scratch/__gate_unread__/eval-cache",
+    "--eval-labels": "/home/nvidia/pregate_d014ff2/gate_out_model/scratch/__gate_unread__/eval-labels",
+    "--speed-max-sidecar-v6-eval": "/home/nvidia/pregate_d014ff2/gate_out_model/scratch/__gate_unread__/speed-max-sidecar-v6-eval",
+    "--speed-max-sidecar-v6": "/home/nvidia/pregate_d014ff2/gate_out_model/scratch/__gate_unread__/speed-max-sidecar-v6",
+    "--agent-join": "/home/nvidia/pregate_d014ff2/gate_out_model/scratch/__gate_unread__/agent-join",
+    "--map-gt-root": "/home/nvidia/pregate_d014ff2/gate_out_model/scratch/__gate_unread__/map-gt-root",
+    "--join3d": "/home/nvidia/pregate_d014ff2/gate_out_model/scratch/__gate_unread__/join3d",
+    "--vis1-sidecar": "/home/nvidia/pregate_d014ff2/gate_out_model/scratch/__gate_unread__/vis1-sidecar",
+    "--clip-clock-sidecar": "/home/nvidia/pregate_d014ff2/gate_out_model/scratch/__gate_unread__/clip-clock-sidecar",
+    "--init-from": "/home/nvidia/pregate_d014ff2/gate_out_model/scratch/__gate_unread__/init-from",
+    "--r8-v9-labels": "/home/nvidia/pregate_d014ff2/gate_out_model/scratch/__gate_unread__/r8-v9-labels",
+    "--r8-v9-labels-eval": "/home/nvidia/pregate_d014ff2/gate_out_model/scratch/__gate_unread__/r8-v9-labels-eval",
+    "--join-defect-masks": "/home/nvidia/pregate_d014ff2/gate_out_model/scratch/__gate_unread__/join-defect-masks",
+    "--pose-sync-sidecar": "/home/nvidia/pregate_d014ff2/gate_out_model/scratch/__gate_unread__/pose-sync-sidecar"
+   },
+   "dropped": {
+    "--trunk-compile": "the model job is CPU-only on every host; torch.compile wraps the backbone CALL only (module tree and state_dict unchanged) -- the eval loader drops it too"
+   }
+  },
+  "child": {
+   "tanitad": "/home/nvidia/refcv6_run/d014ff2fd6/stack/tanitad/__init__.py",
+   "torch": "2.13.0+cu130",
+   "cuda": false
+  }
+ },
+ "finished_utc": "2026-10-12T00:05:12Z"
+}

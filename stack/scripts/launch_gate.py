@@ -647,6 +647,11 @@ _R7 = PROFILES["refcv7"]
 PROFILES["refcv8"] = dict(
     _R7, name="refcv8",
     open_items=_REFCV8_OPEN_ITEMS,
+    #: pregate 2026-10-12 B1: the refcv8 trainer OPENS --join-defect-masks while building (refc_v3_train.py
+    #: 1783-1792 -> join_label_hygiene.py:112). Under refcv7's tuple `_sentinel_argv` pointed it at the sentinel and
+    #: G-HYG, G-DVB and G-EVAL all FAILED before any check body ran. MEASURED (pregate_2026-10-12, d014ff2): with
+    #: the flag kept real, G-HYG PASS and G-DVB PASS (100,598,182 params) -- it was the only reason for both.
+    model_input_flags=tuple(_R7["model_input_flags"]) + ("--join-defect-masks",),
     required_flags=tuple(_R7["required_flags"]) + (
         "--refcv8", "--init-from", "--r8-v9-labels", "--r8-v9-labels-eval", "--r8-nav-from-v9",
         "--r8-no-rc", "--join-defect-masks", "--grad-share-every", "--max-speed-input-v6", "--r8-speed-input",

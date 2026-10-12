@@ -12,7 +12,10 @@ computed from the code under test, and every guard carries a DELIBERATE-REGRESSI
 from __future__ import annotations
 
 import json
+import os
+import subprocess
 import sys
+import types
 from pathlib import Path
 
 import pytest
@@ -96,6 +99,85 @@ def launch(tmp_path_factory):
 
 def _rules(argv):
     return LG.profile_argv_rules(PROF, argv, _OPTS)
+
+
+# ------------------------------------------------------------------------------------- pregate B1/B2 ---- #
+def test_B1_the_model_job_keeps_the_join_defect_masks_real(tmp_path):
+    """pregate 2026-10-12 B1: the refcv8 trainer opens --join-defect-masks while building, so the model job must keep
+    it real. refcv7's tuple (the DELIBERATE REGRESSION) sends it to the non-existent sentinel."""
+    assert PROF["model_input_flags"] == ("--anchors", "--agent-rig-extrinsics", "--nav-compliance-tau-file",
+                                         "--map-hires-class-weights", "--join-defect-masks")
+    assert "--join-defect-masks" not in LG.PROFILES["refcv7"]["model_input_flags"]        # refcv7 unchanged
+    jdm = "/home/nvidia/refcv6_run/x/stack/tanitad/configs/refcv8_join_label_defects_train4572.json"
+    argv = ["--join-defect-masks", jdm, "--v2-cache", "/home/nvidia/data/refcv8-b1-416x1024-train-4572"]
+    ctx = types.SimpleNamespace(argv=argv, path_map=[], prof=PROF)
+    out, rec = LG._sentinel_argv(ctx, PROF["model_input_flags"], tmp_path)
+    assert out[1] == jdm and rec["kept"]["--join-defect-masks"] == jdm
+    assert "__gate_unread__" in out[3]                                         # every other path: the sentinel
+    out, rec = LG._sentinel_argv(ctx, LG.PROFILES["refcv7"]["model_input_flags"], tmp_path)
+    assert "__gate_unread__" in out[1] and "--join-defect-masks" in rec["sentinel"]
+
+
+_EVO = ROOT / "ops" / "refcv8_eval_remap_a2_thor.json"
+_EVO_LIT = {"--agent-rig-extrinsics": "/home/nvidia/data/refcv8_train4572_eval139_extrinsics.json",
+            "--clip-clock-sidecar": "/home/nvidia/data/refcv8_clip_clock_sidecar_ts33.jsonl",
+            "--vis1-sidecar": "/home/nvidia/data/refcv8/vis1_sidecar_refcv8b1_train4572_eval139.npz",
+            "--nav-compliance-tau-file": "/home/nvidia/data/refcv8/nav_compliance_tau_train4572.json"}
+
+
+def _loader_remap(tmp_path, overrides):
+    """refcv7_loader.remap_argv in a FRESH process (it reads REFCV6_REMAP_OVERRIDES at import) on an argv that
+    carries every remapped flag: the four A2 files as the profile pins them, the rest under their kit names."""
+    kit = tmp_path / "kit"
+    kit.mkdir(exist_ok=True)
+    code = ("import json, sys; sys.path.insert(0, sys.argv[1]); from tanitad.eval import refcv7_loader as L\n"
+            "argv = []\n"
+            "for f, (bn, _) in L.PATH_REMAP_SPEC.items():\n"
+            "    argv += [f, json.loads(sys.argv[2]).get(f, '/home/nvidia/data/' + bn)]\n"
+            "try:\n"
+            "    out, rec = L.remap_argv(argv)\n"
+            "    print(json.dumps({'ok': rec['remapped']}))\n"
+            "except SystemExit as e:\n"
+            "    print(json.dumps({'refused': str(e)}))\n")
+    pins = {f: PROF["required_values"][f] for f in _EVO_LIT}
+    env = {k: v for k, v in os.environ.items() if not k.startswith(("REFCV6_", "REFCV7_"))}
+    env.update(REFCV6_KIT=str(kit), PYTHONIOENCODING="utf-8")
+    if overrides:
+        env["REFCV6_REMAP_OVERRIDES"] = str(overrides)
+    r = subprocess.run([sys.executable, "-c", code, str(ROOT), json.dumps(pins)], env=env, capture_output=True,
+                       text=True, timeout=300)
+    assert r.returncode == 0, r.stderr[-2000:]
+    return json.loads(r.stdout.strip().splitlines()[-1])
+
+
+def test_B2_the_recorded_eval_override_maps_exactly_the_four_A2_files(tmp_path):
+    """pregate 2026-10-12 B2: the eval loader REFUSES the four A2 files by basename (its kit is refcv7's 4,369
+    view); the recorded override maps them to the argv's own Thor files and nothing else."""
+    o = json.loads(_EVO.read_text(encoding="utf-8"))
+    assert o == _EVO_LIT
+    assert all(PROF["required_values"][f] == p for f, p in o.items())        # = the launch argv's own files
+    got = _loader_remap(tmp_path, _EVO)
+    assert "ok" in got, got
+    for f, p in _EVO_LIT.items():
+        assert got["ok"][f]["source"] == "recorded override" and got["ok"][f]["local"] == p
+    assert {f for f, e in got["ok"].items() if e["source"] == "recorded override"} == set(_EVO_LIT)
+    # DELIBERATE REGRESSION: without the override the loader refuses, naming exactly these four flags
+    bad = _loader_remap(tmp_path, None)
+    assert "refused" in bad, bad
+    for f in _EVO_LIT:
+        assert f + ": the argv names" in bad["refused"]
+    assert bad["refused"].count(": the argv names") == 4
+
+
+def test_B2_the_prelaunch_passes_the_override_and_reads_A2_files_from_the_argv():
+    """The gate command carries the override; the v9 / pose-sync preflights name no 4,369-view file."""
+    s = (ROOT / "scripts" / "refcv8_prelaunch.sh").read_text(encoding="utf-8")
+    assert '--eval-remap-overrides "$EVO")' in s
+    assert 'EVO="$CODE/stack/ops/refcv8_eval_remap_a2_thor.json"' in s
+    for stale in ("f63ece410b725febb8a5242cf2b01d3c", "refcv6_pose_sync_sidecar.jsonl",
+                  "/home/nvidia/refcv8_v9labels/release/${f%%:*}.npz"):
+        assert stale not in s, stale
+    assert "--r8-v9-labels:83e30bd3791f0767707eade5f4671759" in s
 
 
 # ------------------------------------------------------------------------------------------------ A4 ---- #
