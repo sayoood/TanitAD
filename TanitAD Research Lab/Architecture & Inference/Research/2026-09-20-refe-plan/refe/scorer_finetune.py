@@ -29,6 +29,9 @@ RL-S1 (eval/PREREG_RL_S1.md, RL_POSTTRAIN_REVIEW 5.2) -- ALL DEFAULT OFF, the OF
                   Requires --pdm-labels-train --require-pdm --b-mode listnet --lam 0 (arm B = BCE + EPO and nothing else) and either
                   --epo-terms-train (rl_terms_*.jsonl: D, K, lane-change inputs) or --epo-lam-d 0 NAMED; preflight adds gate G11.
   The checkpoint's own meta sizes the score head (a 7-output checkpoint such as SFT-4 arm B u400 loads and trains with --lane-head).
+  --dump-scores DIR  OBSERVATIONAL, default off: after every held-out evaluation write the base / A / B scorers' per-proposal logits of every held-out set as
+                  DIR/scores_<tag>_<arm>.npz -- the input of eval/rl_val_eval.py (log, token, step, rank, ckpt_step, scores [N, M, C], space="logit").
+                  It changes no weight, no loss and no logged number (refe/test_dump_scores.py: the OFF path is AST-identical to the pre-edit evaluate()).
 """
 from __future__ import annotations
 
@@ -111,6 +114,44 @@ def boot_logs(diff: dict, logs: dict, n=10000, seed=20260927):
         idx = np.concatenate([groups[g] for g in pick])
         means[b] = vals[idx].mean()
     return float(vals.mean()), float(np.percentile(means, 2.5)), float(np.percentile(means, 97.5))
+
+
+# ================================================================================================ RL-S1: the per-proposal score dump (default OFF)
+class ScoreDump:
+    """The held-out evaluation's per-proposal scores, in the format `eval/rl_val_eval.py` reads (`write_scores_npz`): arrays log, token (str), step, rank,
+    ckpt_step (int64), scores float64 [N, M, C], scalar space = "logit".  Row n of `scores` belongs to key n, proposal m of row n is the m-th proposal of THAT set
+    in the order the set stores it (the order the PDM labels use).  The evaluator pairs arms and joins labels by (key, ckpt_step), so a row that is not keyed to
+    its own set would silently score another set's labels."""
+    ARMS = ("base", "A", "B")
+
+    def __init__(self):
+        self.keys: list = []
+        self.ckpts: list = []
+        self.chunks = {arm: [] for arm in self.ARMS}
+
+    def add(self, keys, ckpts, sx0, sxA, sxB):
+        n = len(keys)
+        if len(ckpts) != n:
+            raise ValueError(f"{n} keys but {len(ckpts)} ckpt steps")
+        for arm, sx in zip(self.ARMS, (sx0, sxA, sxB)):
+            if sx.shape[0] != n:
+                raise ValueError(f"arm {arm}: {sx.shape[0]} score rows for {n} keys")
+            self.chunks[arm].append(sx.detach().float().cpu().numpy().astype(np.float64))
+        self.keys += [tuple(k) for k in keys]
+        self.ckpts += [int(c) for c in ckpts]
+
+    def write(self, dir_, tag):
+        """-> {arm: path}.  One file per arm: scores_<tag>_<arm>.npz (the tag is made file-name safe)."""
+        os.makedirs(dir_, exist_ok=True)
+        safe = "".join(ch if (ch.isalnum() or ch in "._-") else "_" for ch in str(tag))
+        out = {}
+        for arm in self.ARMS:
+            path = os.path.join(dir_, f"scores_{safe}_{arm}.npz")
+            np.savez(path, log=np.asarray([k[0] for k in self.keys]), token=np.asarray([k[1] for k in self.keys]),
+                     step=np.asarray([k[2] for k in self.keys], np.int64), rank=np.asarray([k[3] for k in self.keys], np.int64),
+                     ckpt_step=np.asarray(self.ckpts, np.int64), scores=np.concatenate(self.chunks[arm], 0), space=np.asarray("logit"))
+            out[arm] = path
+        return out
 
 
 # ================================================================================================ RL-S1: the EPO scorer loss (all default OFF)
@@ -384,6 +425,8 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--epo-lam-l", type=float, default=0.05)
     ap.add_argument("--epo-terms-train", default="", help="dir of rl_terms_*.jsonl side files (D, K, lane-change inputs) for --onpolicy")
     ap.add_argument("--epo-terms-heldout", default="", help="dir of rl_terms_*.jsonl side files for --heldout (validated + logged; consumed by the RL-val lookup)")
+    ap.add_argument("--dump-scores", default="", help="RL-S1: DIR; after every held-out evaluation write the base / A / B scorers' per-proposal logits as "
+                    "<DIR>/scores_<tag>_<arm>.npz (eval/rl_val_eval.py's input).  Observational: no weight, loss or logged number changes.  '' = nothing is written")
     return ap
 
 
@@ -581,9 +624,13 @@ def main() -> int:
                    "lk_l": [], "auc_lane": []} for k in ("base", "A", "B")}
         lk_rows = [ho.lane_keep.get(key(ds.rows[i])) for i in idx]       # NAVSIM lk10 yardstick (only with --lane-labels-heldout)
         toks, logs_ = [], []
+        sdump = ScoreDump() if a.dump_scores else None
         j = 0
         for batch in dlh:
             sx0, sxA, sxB, tg = fwd(batch)
+            if sdump is not None:                                            # RL-S1: THESE sets' scores, keyed to their own rows (j = rows already done)
+                bkeys = [key(ds.rows[idx[j + bi]]) for bi in range(tg.shape[0])]
+                sdump.add(bkeys, [ho.by[k_][0] for k_ in bkeys], sx0, sxA, sxB)
             tlane = tg[..., 6] if tg.shape[-1] == 7 else None                    # teacher lane target (-1 = none)
             tg = tg[..., :6]
             ta = agg_v1(tg)                                                      # [b, M] true navsim_v1
@@ -666,6 +713,8 @@ def main() -> int:
         mu, lo, hi = boot_logs(do, tl)
         out["base"]["x_ddc"]["onc_pp_minus_base_v1"] = {"mean": mu, "ci95": [lo, hi]}
         log(out)
+        if sdump is not None:
+            log({"event": "score_dump", "tag": tag, "n_sets": len(sdump.keys), "files": sdump.write(a.dump_scores, tag)})
         return out
 
     def save_full(arm_name, mods):

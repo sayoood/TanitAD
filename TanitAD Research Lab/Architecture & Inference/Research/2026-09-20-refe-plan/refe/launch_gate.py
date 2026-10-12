@@ -13,6 +13,8 @@ CLAUDE.md, PI 2026-09-26 (BINDING).  Route, contract and every regression arm: e
     python launch_gate.py run --profile refe_p6 --pkg <pkg> --args "$ARGS" --out-dir <dir> --gate-bank <d> --gate-lab-json <lab.json>         --gate-mem-metrics <metrics.jsonl> --gate-egr-json <g_egr_result.json>
     # anywhere, instant -- what a profile refuses before a single check runs
     python launch_gate.py refusals --profile refe_p6 --args "<the P6 argv>"
+    # RL-S1 (trained by scorer_finetune.py, not train.py): the arm is NAMED (C0 C1 R0 R1 R2); the preflight is the trainer's own `--preflight` log, parsed
+    python launch_gate.py run --profile refe_rls1 --arm-name R0 --pkg <pkg> --args "$ARGS" --out-dir <dir> --gate-preflight-json <preflight.jsonl>
 
 Token: schema `tanitad.launch_gate/1` (gate_token.py), HMAC-SHA256 with a pod-local key; PASS only if every required check has usable PASS
 evidence bound to the same (profile, commit, tree_sha256, argv_sha256) whose `inputs_read` fingerprints equal the launch data manifest.
@@ -21,6 +23,7 @@ REHEARSAL evidence (tiny config, synthetic images, CPU) never counts toward a to
 from __future__ import annotations
 
 import argparse
+import importlib
 import json
 import os
 import sys
@@ -30,14 +33,29 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 import gate_token as GT  # noqa: E402
 
-CHECKS = ("G-HYG", "G-DVB", "G-LIVE", "G-CLOCK", "G-EVAL", "G-CKPT", "G-SUITE", "G-P2GATE", "G-LIVE-LAB", "G-LIVE-MEM", "G-EGR")
+CHECKS = ("G-HYG", "G-DVB", "G-LIVE", "G-CLOCK", "G-EVAL", "G-CKPT", "G-SUITE", "G-P2GATE", "G-LIVE-LAB", "G-LIVE-MEM", "G-EGR", "G-PREFLIGHT")
 SUITE = [{"script": "test_p2r_chain.py", "token": "ZZTEST_PASS"}, {"script": "test_launch_gate.py", "args": ["--static", "--no-banked"], "token": "ZZLG_STATIC_PASS"}]
 FORBIDDEN = ("--synthetic", "--overfit", "--overfit-n", "--overfit-thresh", "--spread", "--break-optimizer", "--halt-after-steps",
              "--declare-change", "--preflight", "--cpu", "--n-cameras", "--no-undistort", "--no-cosine", "--weights")
 P2_DATA = ("--targets", "--scorer-targets", "--images", "--calib", "--init-from", "--onpolicy-targets", "--pdm-labels")
 P6_TERMS = ("traj_L1", "score", "pos_L1", "yaw_L1", "bce_nc", "bce_dac", "bce_ep", "bce_ttc", "bce_c", "bce_ddc")
-_BASE = dict(trainer="refe/train.py", live_terms=("traj_L1", "score"), ckpt_steps=4, smoke_steps=2, smoke_accum=2, suite=SUITE,
-             forbidden_flags=FORBIDDEN, output_flags=("--out",), mintable=True, require_commit=True, rehearsal=False,
+# RL-S1 (eval/PREREG_RL_S1.md, DRAFT: section 1 "Lever" + "Recipe", section 3 arms).  ⛔ Every value below is the DRAFT's, so an amendment of the prereg is a
+# one-line change HERE (and nowhere else).  Trained by scorer_finetune.py, which is not train.py: the profile names its parser, its source and its own checks.
+RLS1_ARM_SEEDS = {"C0": 0, "C1": 1, "R0": 0, "R1": 1, "R2": 0}                       # arm -> its registered seed (naming an arm asserts the seed)
+RLS1_ARM_CLASS = {"C0": "C", "C1": "C", "R0": "R", "R1": "R", "R2": "R2"}            # C: BCE-only control; R: BCE + EPO, core reward; R2: R + K + L (D3, PI 2026-10-12)
+RLS1_EPO_REGISTERED = {"epo_temp": 0.1, "epo_beta": 0.1, "epo_ramp": 200, "epo_lam": 1.0, "epo_lam_d": 0.15, "epo_w_prog": 0.5}   # effective value (named OR default)
+RLS1_R2_REGISTERED = {"epo_lam_k": 0.05, "epo_lam_l": 0.05}
+RLS1_RECIPE = {"lr": 1e-4, "warmup": 50, "batch": 8, "accum": 8, "max_updates": 1000}   # the SFT-4 optimiser, 1,000 updates; EVERY arm, so R vs C differ by EPO alone
+# named-but-inert levers (a flag whose effect is switched off by another registered value is a declared lever the run does not use): the SFT-2 NAVSIM labels would
+# mix label sources with the PDM labels; --b-compw / --tau-s belong to other b-modes; --tau-t scales a ListNet term that --lam 0 multiplies by zero.
+RLS1_FORBIDDEN = ("--preflight", "--lane-labels-train", "--lane-labels-heldout", "--b-compw", "--tau-s", "--tau-t")
+RLS1_EPO_TERMS = ("epo", "epo_J", "epo_kl", "epo_lam_pg")                              # the trainer's metric rows must emit these on an --epo arm
+RLS1_DATA = ("--ckpt", "--targets", "--images", "--calib", "--onpolicy", "--heldout", "--heldout-logs", "--lane-labels-train", "--lane-labels-heldout",
+             "--pdm-labels-train", "--pdm-labels-heldout", "--teacher-lane-train", "--teacher-lane-heldout", "--epo-terms-train", "--epo-terms-heldout")
+RLS1_SUITE = [{"script": "test_rl_reward.py", "token": "ZZTEST_PASS"}, {"script": "test_rl_epo.py", "token": "ZZTEST_PASS"},
+              {"script": "test_launch_gate.py", "args": ["--static", "--no-banked"], "token": "ZZLG_STATIC_PASS"}]
+_BASE = dict(trainer="refe/train.py", parser_module="train", trainer_src="train.py", live_terms=("traj_L1", "score"), ckpt_steps=4, smoke_steps=2, smoke_accum=2,
+             suite=SUITE, forbidden_flags=FORBIDDEN, output_flags=("--out",), mintable=True, require_commit=True, rehearsal=False,
              checks=("G-HYG", "G-DVB", "G-LIVE", "G-EVAL", "G-CKPT", "G-SUITE"), na_ok=("G-CLOCK",),
              clock_na="P2 has no label clock: its labels are the PDM relabel of a banked on-policy bank, stamped by the relabeller's ckpt_step")
 
@@ -72,6 +90,17 @@ PROFILES = {
                        "forbidden_flags": tuple(f for f in FORBIDDEN if f not in ("--synthetic", "--cpu", "--n-cameras")), "mintable": False,
                        "require_commit": False, "rehearsal": True, "required_flags": {"--scorer-mode": "onpolicy", "--scorer-sees-trunk": None},
                        "provisional_flags": (), "eval_cfg_allowed": ("n_cameras", "cameras")},
+    # RL-S1 (eval/PREREG_RL_S1.md, eval/HANDOFF_RL_S1.md finding 5): scorer_finetune.py's EPO arms.  The arm is a CLASS the argv must satisfy (rls1_refusals): C = BCE-only
+    # control (no --epo), R = R0/R1 (--epo, core reward), R2 = R + --epo-k + --epo-l.  There is no BUILD/SMOKE instrumentation (that is train.py's): the trainer's own
+    # `--preflight` (G1-G11) is CONSUMED, parsed, and its file sha256 is bound into the token; G-DVB is static + the preflight's `data` event.
+    "refe_rls1": {**_BASE, "name": "refe_rls1", "runner": "scorer", "arm_rules": "rls1", "trainer": "refe/scorer_finetune.py", "parser_module": "scorer_finetune",
+                  "trainer_src": "scorer_finetune.py", "namespace_funcs": ("main", "epo_refusals", "_g_probe"), "data_flags": RLS1_DATA,
+                  "checks": ("G-HYG", "G-DVB", "G-PREFLIGHT", "G-SUITE"), "na_ok": ("G-CLOCK",), "suite": RLS1_SUITE, "live_terms": ("bceA", "lossB"),
+                  "clock_na": "RL-S1 has no label clock of its own: its labels are the PDM relabel of an on-policy bank, stamped by the relabeller's ckpt_step; "
+                              "the preflight's G9 bounds the stale share (<= 5 %) and rl_terms count only for the set and ckpt_step they were computed on",
+                  "forbidden_flags": RLS1_FORBIDDEN, "output_flags": ("--out",),
+                  "required_flags": {"--pdm-labels-train": None, "--pdm-labels-heldout": None, "--require-pdm": None, "--b-mode": "listnet", "--lam": "0"},
+                  "provisional_flags": ()},
 }
 
 
@@ -86,9 +115,11 @@ def flag_present(argv, flag):
 def profile_refusals(prof: dict, argv: list) -> list:
     """Reasons the profile refuses this argv BEFORE any check runs.  (a) a forbidden flag; (b) a required lever missing or different;
     (c) a lever the profile DECLARES that the trainer does not BUILD (flag absent from the parser) -- a launch blocker, never a footnote;
-    (d) a declared loss term the trainer never emits."""
+    (d) a declared loss term the trainer never emits.  The trainer is the profile's `parser_module` / `trainer_src` (default train / train.py); a profile with
+    `arm_rules` adds its arm rules (refe_rls1: `rls1_refusals`)."""
+    import importlib
     import re
-    import train as T
+    T = importlib.import_module(prof.get("parser_module", "train"))
     out = []
     parser = T.build_parser()
     known = {o for a in parser._actions for o in a.option_strings}
@@ -111,11 +142,107 @@ def profile_refusals(prof: dict, argv: list) -> list:
         if f not in known:
             out.append(f"DECLARED, NOT BUILT: {prof['name']} declares {f} but the trainer's parser has no such flag "
                        f"(a config that declares a lever the model does not build is a launch blocker)")
-    src = (HERE / "train.py").read_text(encoding="utf-8")
-    for t in prof.get("live_terms", ()):
+    trainer_src = prof.get("trainer_src", "train.py")
+    src = (HERE / trainer_src).read_text(encoding="utf-8")
+    terms = tuple(prof.get("live_terms", ()))
+    if prof.get("arm_rules") == "rls1":
+        rs, extra = rls1_refusals(prof, argv, T, parser)
+        out += rs
+        terms += extra
+    for t in terms:
         if not re.search(r'["\']' + re.escape(t) + r'["\']', src):
-            out.append(f"DECLARED, NOT BUILT: {prof['name']} requires the loss term {t!r}; train.py never emits it")
+            out.append(f"DECLARED, NOT BUILT: {prof['name']} requires the loss term {t!r}; {trainer_src} never emits it")
     return out
+
+
+# ============================================================================================ RL-S1 arm rules (refe_rls1)
+def rls1_arm_class(argv: list) -> str:
+    """The arm class an argv DECLARES by what it carries.  No --epo = C (the BCE-only control); --epo alone = R (R0/R1, the core reward); --epo with BOTH
+    --epo-k and --epo-l = R2; --epo with exactly one of them = R? (no arm is that)."""
+    k, l = "--epo-k" in argv, "--epo-l" in argv
+    if "--epo" not in argv:
+        return "C"
+    return "R2" if (k and l) else ("R?" if (k or l) else "R")
+
+
+def rls1_control_argv(argv: list) -> list:
+    """The matched control of an R argv: the SAME argv minus every EPO lever (flag and value), so R vs C differ by the EPO term alone.  (--out is the
+    caller's to change: two arms never share an output directory.)"""
+    out, skip = [], False
+    for t in argv:
+        if t.startswith("--"):
+            skip = t == "--epo" or t.startswith("--epo-")
+        if not skip:
+            out.append(t)
+    return out
+
+
+def rls1_refusals(prof: dict, argv: list, mod, parser) -> tuple:
+    """(refusals, extra live terms) of the RL-S1 arm rules.  The arm is DECLARED (`prof['declared_arm']`, the CLI's --arm-name) or, undeclared, read off the
+    argv by `rls1_arm_class`; a declared arm is what catches an OMITTED flag (an `--epo` left out of R0 would otherwise read as a clean control).  Beyond
+    the generic required/forbidden flags: the arm's own flags, the registered lever values, the recipe, the lane-head pairing, scorer_finetune's OWN refusals,
+    and exact flag spelling (argparse accepts unique prefixes; the gate's presence tests are exact tokens)."""
+    import gate_checks as C
+    out = []
+    name = prof["name"]
+    declared = prof.get("declared_arm")
+    if declared is not None and declared not in RLS1_ARM_CLASS:
+        out.append(f"{name}: unknown arm {declared!r} (one of {sorted(RLS1_ARM_CLASS)})")
+        declared = None
+    cls = RLS1_ARM_CLASS[declared] if declared else rls1_arm_class(argv)
+    who = declared or f"the {cls} arm class"
+    ns, err = C.parse_scorer_argv(parser, argv)
+    if err:
+        out.append(f"{name}: the trainer's parser rejects this argv ({err})")
+        return out, ()
+    known = {o for x in parser._actions for o in x.option_strings}
+    for t in argv:
+        if t.startswith("--") and t not in known:
+            out.append(f"{name}: {t} is not an exact option of the trainer (argparse accepts an abbreviation; the gate's flag tests are on exact tokens)")
+    out += [f"scorer_finetune refuses this argv: {m}" for m in mod.epo_refusals(ns, parser)]
+
+    def how(flag):
+        return "named" if flag in argv else "the parser DEFAULT"
+    epo_opts = sorted(o for o in known if o == "--epo" or o.startswith("--epo-"))
+    named = [o for o in epo_opts if o in argv]
+    if cls == "C":
+        if named:
+            out.append(f"{name}: {who} must NOT carry {named} -- the control is the BCE-only arm, and R vs C must differ by the EPO term alone")
+    else:
+        for f in ("--epo", "--epo-terms-train"):
+            if f not in argv:
+                out.append(f"{name} requires {f} for {who}; the argv does not carry it")
+        if cls == "R?":
+            out.append(f"{name}: exactly one of --epo-k / --epo-l: R0/R1 carry neither (the core reward), R2 carries both")
+        if cls == "R":
+            for f in ("--epo-k", "--epo-l", "--epo-lam-k", "--epo-lam-l"):
+                if f in argv:
+                    out.append(f"{name}: {who} (R0/R1) is the CORE reward (PDMS - 0.15 D + guard); {f} belongs to R2 only")
+        if cls == "R2":
+            for f in ("--epo-k", "--epo-l"):
+                if f not in argv:
+                    out.append(f"{name} requires {f} for {who}; the argv does not carry it")
+        for lam_f, on_f in (("--epo-lam-k", "--epo-k"), ("--epo-lam-l", "--epo-l")):
+            if lam_f in argv and on_f not in argv:
+                out.append(f"{name}: {lam_f} is named without {on_f}: a weight for a term that is OFF (scorer_finetune would ignore it silently)")
+        reg = dict(RLS1_EPO_REGISTERED)
+        if cls == "R2":
+            reg.update(RLS1_R2_REGISTERED)
+        for dest, want in reg.items():
+            f = "--" + dest.replace("_", "-")
+            if not C._close(getattr(ns, dest), want):
+                out.append(f"{name} requires {f} {want} (PREREG_RL_S1 lever); the argv resolves to {getattr(ns, dest)} ({how(f)})")
+    for dest, want in RLS1_RECIPE.items():
+        f = "--" + dest.replace("_", "-")
+        if not C._close(getattr(ns, dest), want):
+            out.append(f"{name} requires {f} {want} (PREREG_RL_S1 recipe, every arm); the argv resolves to {getattr(ns, dest)} ({how(f)})")
+    if declared and ns.seed != RLS1_ARM_SEEDS[declared]:
+        out.append(f"{name}: arm {declared} is registered with --seed {RLS1_ARM_SEEDS[declared]}; the argv resolves to {ns.seed} ({how('--seed')})")
+    if ns.lane_head and not (ns.teacher_lane_train and ns.teacher_lane_heldout):
+        out.append(f"{name}: --lane-head needs --teacher-lane-train AND --teacher-lane-heldout (the 7th output would have no label)")
+    if (ns.teacher_lane_train or ns.teacher_lane_heldout) and not ns.lane_head:
+        out.append(f"{name}: --teacher-lane-* is named without --lane-head: the labels would be loaded and never trained on")
+    return out, (RLS1_EPO_TERMS if cls != "C" else ())
 
 
 # ============================================================================================ orchestration
@@ -157,20 +284,20 @@ def write_evidence(out_dir: Path, ev: dict, binding: dict, data: dict) -> Path:
     return GT.write_json(out_dir / f"evidence_{ev['check']}.json", ev)
 
 
-def gate_inputs_of(p2_gate_json=None, lab_json=None, mem_metrics=None, egr_json=None) -> dict:
+def gate_inputs_of(p2_gate_json=None, lab_json=None, mem_metrics=None, egr_json=None, preflight_json=None) -> dict:
     return {k: v for k, v in (("gate:p2_gate_json", p2_gate_json), ("gate:lab_json", lab_json), ("gate:mem_metrics", mem_metrics),
-                              ("gate:egr_json", egr_json)) if v}
+                              ("gate:egr_json", egr_json), ("gate:preflight_json", preflight_json)) if v}
 
 
 def run_checks(prof: dict, argv: list, pkg: Path, out_dir: Path, *, only=None, arm=None, gate_sets=None, gate_pdm=None, gate_bank=None,
-               p2_gate_json=None, commit=None, lab_json=None, mem_metrics=None, egr_json=None) -> dict:
+               p2_gate_json=None, commit=None, lab_json=None, mem_metrics=None, egr_json=None, preflight_json=None) -> dict:
     """Run every check of the profile (or `only`), writing evidence files.  Returns {check: status}."""
     import gate_checks as C
     out_dir.mkdir(parents=True, exist_ok=True)
     work = out_dir / "work"
     tree = GT.tree_manifest(pkg)
     binding = GT.binding_of(prof["name"], commit, GT.tree_digest(tree), argv)
-    gate_inputs = gate_inputs_of(p2_gate_json, lab_json, mem_metrics, egr_json)
+    gate_inputs = gate_inputs_of(p2_gate_json, lab_json, mem_metrics, egr_json, preflight_json)
     data = GT.data_manifest(argv, prof["data_flags"], gate_inputs)
     rehearsal = bool(prof.get("rehearsal"))
     want = [c for c in (prof["checks"] + tuple(prof.get("na_ok", ()))) if (only is None or c in only)]
@@ -184,6 +311,19 @@ def run_checks(prof: dict, argv: list, pkg: Path, out_dir: Path, *, only=None, a
     if refusals:
         for c in want:
             emit(C.evidence(c, "FAIL", ["profile refusal: " + r for r in refusals], {"refusals": refusals}, arm=arm, rehearsal=rehearsal))
+        return status
+    if prof.get("runner") == "scorer":                      # scorer_finetune.py: no BUILD/SMOKE capture (that is train.py's) -- static checks + the trainer's own preflight
+        pf = C.load_scorer_preflight(preflight_json) if preflight_json else None
+        if "G-HYG" in want:
+            emit(C.check_hyg(arm=arm, rehearsal=rehearsal, profile=prof))
+        if "G-DVB" in want:
+            emit(C.check_dvb_scorer(argv, pf, prof, arm=arm, rehearsal=rehearsal))
+        if "G-PREFLIGHT" in want:
+            emit(consume_scorer_preflight(preflight_json, argv, prof, arm=arm, rehearsal=rehearsal))
+        if "G-SUITE" in want:
+            emit(C.check_suite(prof, arm=arm, rehearsal=rehearsal))
+        if "G-CLOCK" in want:
+            emit(C.evidence("G-CLOCK", "NA", [prof.get("clock_na", "no label clock in this profile")], {}, arm=arm, rehearsal=rehearsal))
         return status
     b_argv, s_argv = derived_argvs(prof, argv, work, gate_sets, gate_pdm, gate_bank)
     need_b = any(c in want for c in ("G-DVB", "G-CLOCK"))
@@ -247,16 +387,72 @@ def consume_p2_gate(path, arm=None, rehearsal=False) -> dict:
     return C.verdict("G-P2GATE", reasons, {"gates": {k: v.get("ok") for k, v in g.items()}, "file_sha256": GT.sha256_file(path)}, arm=arm, rehearsal=rehearsal)
 
 
+def consume_scorer_preflight(path, argv, prof, arm=None, rehearsal=False) -> dict:
+    """`scorer_finetune.py --preflight`'s own gates (G1 trainable == exactly the scorer; G2 live gradients; G3/G4 the identities; G5 the planner-loader
+    round trip; G7 held-out disjoint; G9 PDM targets; G10 the lane head's label; G11 the EPO term live with its zero controls) are a SUB-CHECK, not
+    duplicated: PARSED, never grepped; every gate the ARGV obliges must be present and ok, every gate present must be ok, and a gate the argv does NOT
+    oblige (G11 on a control) means the preflight ran ANOTHER configuration.  G11 is re-judged from its own fields, not trusted on its `ok`.  The file's
+    sha256 is bound into the token (`gate:preflight_json`).  (There is no G6: the trainer numbers 1-5 and 7-11.)"""
+    import gate_checks as C
+    import math
+    pf = C.load_scorer_preflight(path)
+    if pf["error"]:
+        return C.evidence("G-PREFLIGHT", "FAIL", [pf["error"]], {}, arm=arm, rehearsal=rehearsal)
+    mod = importlib.import_module(prof.get("parser_module", "scorer_finetune"))
+    ns, err = C.parse_scorer_argv(mod.build_parser(), argv)
+    if err:
+        return C.evidence("G-PREFLIGHT", "FAIL", [f"the trainer's parser rejects the argv: {err}"], {"file_sha256": pf["sha256"]}, arm=arm, rehearsal=rehearsal)
+    row = pf["preflight"]
+    if row is None:
+        return C.evidence("G-PREFLIGHT", "FAIL", ["the file carries no event=preflight row (not a scorer_finetune --preflight log)"],
+                          {"file_sha256": pf["sha256"]}, arm=arm, rehearsal=rehearsal)
+    gates = row.get("gates") if isinstance(row.get("gates"), dict) else {}
+    reasons = []
+    if row.get("verdict") != "PASS":
+        reasons.append(f"the preflight verdict is {row.get('verdict')!r}, not PASS")
+    req = C.scorer_required_gates(ns)
+    prefix = {k: k.split("_", 1)[0] for k in gates}
+    missing = [p for p in req if p not in prefix.values()]
+    if missing:
+        reasons.append(f"required preflight gate(s) ABSENT: {missing}" + (" -- G11 is the EPO term's live/identity gate; an --epo arm without it has not been proved live"
+                                                                           if "G11" in missing else ""))
+    stray = sorted(k for k, p in prefix.items() if p in C.SCORER_GATES and p not in req)
+    if stray:
+        reasons.append(f"gate(s) {stray} are present but this argv does not oblige them: the preflight ran a DIFFERENT configuration")
+    unknown = sorted(k for k, p in prefix.items() if p not in C.SCORER_GATES)
+    if unknown:
+        reasons.append(f"gate(s) {unknown} are not known to the gate: the consumer must be updated before it can judge them")
+    bad = sorted(k for k, v in gates.items() if not (isinstance(v, dict) and v.get("ok") is True))
+    if bad:
+        reasons.append(f"preflight gate(s) not ok: {bad}")
+    g11 = next((v for k, v in gates.items() if prefix[k] == "G11"), None)
+    if isinstance(g11, dict):
+        mods = set(C.SCORER_GROUPS)
+        on, lam0, off = (g11.get(k) or {} for k in ("per_module_on", "per_module_lam0", "per_module_off"))
+        if set(on) != mods or not all(isinstance(x, (int, float)) and math.isfinite(x) and x > 0.0 for x in on.values()):
+            reasons.append(f"G11: the EPO-only backward is not finite and non-zero on every scorer module {sorted(mods)}: {on}")
+        if g11.get("controls_exactly_zero") is not True or any(x != 0.0 for d in (lam0, off) for x in d.values()) or not (lam0 and off):
+            reasons.append("G11: the zero controls (lam 0 / --epo off) do not read EXACTLY 0.0 -- the probe is not proved able to read zero")
+        if g11.get("kl_ok") is not True:
+            reasons.append(f"G11: KL(pi_SFT || pi) at step 0 is {g11.get('kl_step0')} (tol {g11.get('kl_tol')}): arm B did not start AT the base")
+        if g11.get("mutate_detach"):
+            reasons.append("G11 was produced under REFE_RL_MUTATE_EPO_DETACH=1 (a regression arm): it can never count")
+    det = {"gates": {k: (v.get("ok") if isinstance(v, dict) else None) for k, v in gates.items()}, "required": req, "verdict": row.get("verdict"),
+           "file_sha256": pf["sha256"], "n_preflight_rows": pf["n_preflight"], "has_data_event": pf["data"] is not None,
+           "s_per_microbatch": row.get("s_per_microbatch"), "gpu_mem_gb": row.get("gpu_mem_gb")}
+    return C.verdict("G-PREFLIGHT", reasons, det, arm=arm, rehearsal=rehearsal)
+
+
 def collect(out_dir: Path, check: str):
     p = out_dir / f"evidence_{check}.json"
     return GT.read_json(p) if p.is_file() else None
 
 
 def finalize(prof: dict, argv: list, pkg: Path, out_dir: Path, key: bytes, *, p2_gate_json=None, commit=None, lab_json=None, mem_metrics=None,
-             egr_json=None):
+             egr_json=None, preflight_json=None):
     """Mint the token from the evidence ON DISK.  Every required check must have usable PASS evidence bound to this launch."""
     tree = GT.tree_manifest(pkg)
-    gate_inputs = gate_inputs_of(p2_gate_json, lab_json, mem_metrics, egr_json)
+    gate_inputs = gate_inputs_of(p2_gate_json, lab_json, mem_metrics, egr_json, preflight_json)
     data = GT.data_manifest(argv, prof["data_flags"], gate_inputs)
     binding = GT.binding_of(prof["name"], commit, GT.tree_digest(tree), argv)
     reasons = profile_refusals(prof, argv) + GT.data_problems(data)
@@ -313,8 +509,22 @@ def _argv_of(a) -> list:
     raise SystemExit("--args or --args-file is required")
 
 
-def cmd_run(a) -> int:
+def _profile_for(a, minting: bool) -> dict:
+    """The profile, with the DECLARED arm folded in (rls1_refusals reads `declared_arm`).  A profile with arm rules must be MINTED for one named arm: an arm read
+    off the argv cannot notice an omitted flag (an `--epo` left out of R0 reads as a clean control)."""
     prof = PROFILES[a.profile]
+    arm_name = getattr(a, "arm_name", None)
+    if arm_name:
+        if not prof.get("arm_rules"):
+            raise SystemExit(f"--arm-name is only meaningful for a profile with arm rules (refe_rls1), not {a.profile}")
+        prof = {**prof, "declared_arm": arm_name}
+    elif prof.get("arm_rules") and minting:
+        raise SystemExit(f"REFUSED: {a.profile} mints for ONE named arm: pass --arm-name {'|'.join(sorted(RLS1_ARM_CLASS))}")
+    return prof
+
+
+def cmd_run(a) -> int:
+    prof = _profile_for(a, minting=True)
     argv = _argv_of(a)
     pkg, out = Path(a.pkg), Path(a.out_dir)
     key = GT.load_key(a.key_file, create=True, forbid_under=[pkg])
@@ -331,9 +541,9 @@ def cmd_run(a) -> int:
             print("  carved the smoke bank:", F.carve_gate_bank(src, a.gate_sets, a.gate_bank), flush=True)
     run_checks(prof, argv, pkg, out, only=set(a.only.split(",")) if a.only else None, arm=arm, gate_sets=a.gate_sets, gate_pdm=a.gate_pdm,
                gate_bank=a.gate_bank, p2_gate_json=a.p2_gate_json, commit=commit, lab_json=a.gate_lab_json, mem_metrics=a.gate_mem_metrics,
-               egr_json=a.gate_egr_json)
+               egr_json=a.gate_egr_json, preflight_json=a.gate_preflight_json)
     verdict, path, tok = finalize(prof, argv, pkg, out, key, p2_gate_json=a.p2_gate_json, commit=commit, lab_json=a.gate_lab_json,
-                                  mem_metrics=a.gate_mem_metrics, egr_json=a.gate_egr_json)
+                                  mem_metrics=a.gate_mem_metrics, egr_json=a.gate_egr_json, preflight_json=a.gate_preflight_json)
     for r in tok["reasons"][:8]:
         print("  REASON:", r[:300])
     print(f"verdict {verdict} -> {path}", flush=True)
@@ -365,7 +575,7 @@ def cmd_ship(a) -> int:
 
 
 def cmd_refusals(a) -> int:
-    rs = profile_refusals(PROFILES[a.profile], _argv_of(a))
+    rs = profile_refusals(_profile_for(a, minting=False), _argv_of(a))
     for r in rs:
         print("REFUSED:", r)
     print(f"ZZGATE-{'REFUSED' if rs else 'CLEAN'}ZZ")
@@ -382,6 +592,9 @@ def main(argv=None) -> int:
         p.add_argument("--args-file")
         p.add_argument("--key-file")
         p.add_argument("--pkg", required=(name != "refusals"))
+        if name in ("run", "refusals"):
+            p.add_argument("--arm-name", choices=sorted(RLS1_ARM_CLASS),
+                           help="refe_rls1: the arm this argv is for (C0 C1 R0 R1 R2); REQUIRED to mint, optional for `refusals` (undeclared = read off the argv)")
         if name == "run":
             p.add_argument("--out-dir", required=True)
             p.add_argument("--only")
@@ -394,6 +607,7 @@ def main(argv=None) -> int:
             p.add_argument("--gate-lab-json", help="refe_p6: diag_p6_labeller_identity.py --out (G-LIVE-LAB)")
             p.add_argument("--gate-mem-metrics", help="refe_p6: metrics.jsonl of a >= 200-micro-batch run on the real card (G-LIVE-MEM)")
             p.add_argument("--gate-egr-json", help="refe_p6: hf_egress.py gate's g_egr_result.json (G-EGR)")
+            p.add_argument("--gate-preflight-json", help="refe_rls1: scorer_finetune.py --preflight's preflight.jsonl (G-PREFLIGHT; also G-DVB's built side)")
         if name == "verify":
             p.add_argument("--token", required=True)
             p.add_argument("--commit")

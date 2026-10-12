@@ -150,3 +150,20 @@ RL-val read is a table lookup (the true PDMS of a scorer's pick). Navtrain parti
 | `scorer_finetune.py` can load a **7-output** checkpoint (it calls `REFeConfig.for_backbone` without `config_for_checkpoint`, and `--lane-head` assumes a 6-row head) | **NOT BUILT; variant A cannot start without it** |
 | `refe_rls1` launch-gate profile (G-DVB entry per new flag, R0/R1 and R2 argvs accepted) | **NOT BUILT**, spec in the handoff |
 | on-policy proposal dumper (~51,000 scenes), extended labeller (`D`, `K`, `L`), RL-train / RL-val log-disjoint partition, pod chain script | **NOT BUILT (later part)** |
+
+
+## 8. Partition availability check -- 2026-10-12 (RL-S1 priority 2; appended, nothing above is edited)
+
+**NO availability filter was applied. The partition is unchanged: `partition_id` stays `272cfd35...`** (48,000 RL-train / 3,000 RL-val, seed 20261012, manifest
+`raw/rl_pool/partition_runs/A_no_trained_list_seed20261012.manifest.json`; the two scene TSVs are now banked beside it, sha256 equal to the manifest's).
+
+* MEASURED (banked artifacts, `raw/rl_fan/probe_image_coverage.py` -> `raw/rl_fan/image_coverage.json`, `ZZCOVERAGE_COMPLETE`): on the ORIGINAL A40 pod every one of the 51,000 scenes
+  resolves all four camera frames. Two routes that share no assumption: the main run's `train.log` (29 grow-epoch load lines, every one "N/N tuples resolve ALL cameras",
+  last 189,888/189,888, 413,152 frames indexed) and arithmetic (103,288 yaml tokens x 4 = 413,152; rank-0 bank names 412,148 distinct frames; the 1,004 = 251 x 4 difference
+  is exactly the 251 tokens with no bank row; all 51,000 partition scenes ARE bank rows with agreeing logs).
+* UNVERIFIED -- INHERITED: the P2 pod (where RL-S1 runs) builds `navtrain_pixels` from the same 32 public shards (`code/pod_dataprep.sh`), but nobody has measured it. The measurement
+  is `refe/rl_fan_dump.py --plan-only` on that pod BEFORE the first dump (exit 0 = complete; exit 3 + `unavailable_scenes_*.tsv` = gap).
+* If a gap is found, the ONLY admissible remedy is `refe/rl_pool_available.py` (filters the POOL token table; `rl_partition.py` is not edited, same tool, same seed, same
+  parameters), then this section gets the OLD and NEW partition_id BEFORE any RL number exists. Property-tested on the real `partition()`: removing a scene the partition did
+  not use leaves train and val identical; removing a train scene replaces exactly it, by the next scene in the frozen order.
+* Not a pre-registration change: no lever, bar, kill rule or outcome in sections 1-7 is touched.

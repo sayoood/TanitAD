@@ -22,6 +22,8 @@ argument are observed) and SMOKE (the same levers, `--steps N`: the loss terms a
   G-CKPT  halt + resume == uninterrupted: model, optimiser state, data position   resume_drops_opt
   G-SUITE the listed test scripts exit 0 and print their PASS token               suite_failing_test
   G-CLOCK (P6) the realised schedule equals the registered one                    clock_wrong_epochs
+  refe_rls1 (RL-S1) trains with scorer_finetune.py: G-HYG / G-DVB run on ITS parser (`check_dvb_scorer`, table `DVB_KINDS_SCORER`, arms unknown_flag, stale_registry,
+          dead_lever, unbound_data, lever_ignored); G-PREFLIGHT = launch_gate.consume_scorer_preflight (its own `--preflight` gates, parsed; fixtures in test_launch_gate)
 
 Evidence is written to disk (`evidence_<check>.json`); the token is minted from the files, never from a return value.
 """
@@ -302,21 +304,26 @@ def _train_run_source() -> str:
 NAMESPACE_FUNCS = ("run", "run_identity", "_g_probe")        # the trainer functions whose parameter `a` IS the argparse namespace
 
 
-def namespace_reads(src: str) -> set:
+def namespace_reads(src: str, funcs=None) -> set:
     """Every `a.<attr>` the trainer's namespace-taking functions read (AST, nested closures included), i.e. every namespace attribute the
-    trainer depends on.  Scoped to those functions: elsewhere `a` is an ordinary local (e.g. `a.shape`)."""
+    trainer depends on.  Scoped to those functions: elsewhere `a` is an ordinary local (e.g. `a.shape`).  `funcs` (default NAMESPACE_FUNCS =
+    train.py's) names another trainer's namespace-taking functions: the profile's `namespace_funcs` (refe_rls1: scorer_finetune.py)."""
+    funcs = NAMESPACE_FUNCS if funcs is None else funcs
     tree = ast.parse(src)
     out = set()
     for fn in ast.walk(tree):
-        if isinstance(fn, ast.FunctionDef) and fn.name in NAMESPACE_FUNCS:
+        if isinstance(fn, ast.FunctionDef) and fn.name in funcs:
             for node in ast.walk(fn):
                 if isinstance(node, ast.Attribute) and isinstance(node.value, ast.Name) and node.value.id == "a":
                     out.add(node.attr)
     return out
 
 
-def check_hyg(arm=None, rehearsal=False) -> dict:
-    import train as T
+def check_hyg(arm=None, rehearsal=False, profile=None) -> dict:
+    """`profile` (optional) names ANOTHER trainer: its `parser_module` / `trainer_src` / `namespace_funcs` (refe_rls1 -> scorer_finetune).  Omitted =
+    train.py, byte-for-byte the check every other profile has always run."""
+    profile = profile or {}
+    T = importlib.import_module(profile.get("parser_module", "train"))
     from model import REFeConfig
     reasons, det = [], {}
     cfg = REFeConfig.for_backbone("vits16")
@@ -336,11 +343,11 @@ def check_hyg(arm=None, rehearsal=False) -> dict:
     finally:
         if removed:
             REFeConfig.__setattr__ = orig
-    src = _train_run_source()
+    src = (HERE / profile["trainer_src"]).read_text(encoding="utf-8") if "trainer_src" in profile else _train_run_source()
     if arm_is("undeclared_namespace_read", arm):
         src += "\n\ndef _g_probe(a):\n    return a.undeclared_lever_g_hyg\n"
     dests = {x.dest for x in T.build_parser()._actions if x.dest != "help"}
-    reads = namespace_reads(src)
+    reads = namespace_reads(src, profile.get("namespace_funcs"))
     undeclared = sorted(reads - dests)
     det["namespace_reads"] = len(reads)
     det["undeclared_namespace_reads"] = undeclared
@@ -522,6 +529,197 @@ def check_dvb(argv: list, b, s, profile: dict, arm=None, rehearsal=False) -> dic
     det["kinds"] = {k: sum(1 for v in table.values() if v == k) for k in ("built", "consumed", "run", "control")}
     det["observed_rows"] = len(rows)
     det["not_observed_reasons"] = DVB_REASON
+    return verdict("G-DVB", reasons, det, arm=arm, rehearsal=rehearsal)
+
+
+# ============================================================================================ G-DVB for scorer_finetune.py (the refe_rls1 profile)
+# RL-S1 trains with scorer_finetune.py, not train.py (eval/HANDOFF_RL_S1.md finding 5).  Its flags are NOT added to DVB_KINDS: test_launch_gate S5 pins that table
+# EQUAL to train.py's parser dests (55).  A scorer flag has its own registry, and the same two regression arms (`unknown_flag`, `stale_registry`) must make it FAIL.
+#   data      an INPUT PATH: it must be one of the profile's `data_flags`, so the token fingerprints it (an input the token does not bind is a finding)
+#   built     the trainer's own `data` event (in the preflight log) records the value it BUILT: argv is compared with it (`scorer_dvb_rows`)
+#   consumed  static: the trainer READS it (`a.<dest>` in main() / epo_refusals; a flag nothing reads is a dead lever and FAILS); its effect is
+#             observed through the preflight's gates (G2 live gradients, G3/G4 identities, G9 labels, G10 lane head)
+#   run       run management (output directory, eval cadence, loader workers)
+#   control   a test / ablation switch: FORBIDDEN in a launch argv
+DVB_KINDS_SCORER = {
+    "ckpt": "data", "targets": "data", "images": "data", "calib": "data", "onpolicy": "data", "heldout": "data", "heldout_logs": "data",
+    "lane_labels_train": "data", "lane_labels_heldout": "data", "pdm_labels_train": "data", "pdm_labels_heldout": "data",
+    "teacher_lane_train": "data", "teacher_lane_heldout": "data", "epo_terms_train": "data", "epo_terms_heldout": "data",
+    "b_mode": "built", "b_compw": "built", "epo": "built", "epo_temp": "built", "epo_beta": "built", "epo_ramp": "built", "epo_lam": "built",
+    "epo_lam_d": "built", "epo_w_prog": "built", "epo_k": "built", "epo_lam_k": "built", "epo_l": "built", "epo_lam_l": "built",
+    "backbone": "consumed", "batch": "consumed", "accum": "consumed", "lr": "consumed", "warmup": "consumed", "epochs": "consumed",
+    "lam": "consumed", "tau_t": "consumed", "tau_s": "consumed", "seed": "consumed", "max_updates": "consumed", "require_pdm": "consumed",
+    "lane_head": "consumed", "lane_weight": "consumed",
+    "out": "run", "eval_every": "run", "workers": "run",
+    "dump_scores": "run",              # the per-proposal score .npz rl_val_eval.py reads; observational (bit-identical on/off, test_dump_scores.py)
+    "preflight": "control",
+}
+SCORER_EPO_KEYS = ("temp", "beta", "ramp", "lam", "lam_d", "w_prog", "k", "lam_k", "l", "lam_l")     # the keys of the data event's `epo` block
+SCORER_NAMESPACE_FUNCS = ("main", "epo_refusals", "_g_probe")      # scorer_finetune.py: the functions whose parameter `a` IS the argparse namespace
+# the preflight's gates (scorer_finetune.py `gates[...]`).  There is NO G6 -- the trainer numbers 1-5 and 7-11; test_launch_gate pins this table to the source.
+SCORER_GATES = {"G1": "trainable_is_exactly_the_scorer", "G2": "live", "G3": "copies_equal_model_at_step0", "G4": "identity_and_live",
+                "G5": "ckpt_roundtrip_planner_loader", "G7": "heldout_disjoint", "G8": "lane_labels_in_bank", "G9": "pdm_targets_in_bank",
+                "G10": "teacher_lane_in_bank", "G11": "epo_live_and_identity"}
+
+
+class ScorerArgvError(Exception):
+    pass
+
+
+def parse_scorer_argv(parser, argv: list):
+    """(namespace, None) or (None, message): the TRAINER'S OWN parser decides what an argv means (missing required flags, unknown flags, bad types), and
+    it never exits the gate's process."""
+    def _err(msg):
+        raise ScorerArgvError(msg)
+    parser.error = _err
+    try:
+        return parser.parse_args(list(argv)), None
+    except ScorerArgvError as e:
+        return None, str(e)
+    except SystemExit:
+        return None, "the parser exited (--help?)"
+    finally:
+        parser.__dict__.pop("error", None)
+
+
+def scorer_required_gates(ns) -> list:
+    """Which preflight gates the argv obliges (mirrors scorer_finetune.py's own conditions: G8 iff lane labels, G9 iff PDM labels, G10 iff --lane-head,
+    G11 iff --epo)."""
+    req = ["G1", "G2", "G3", "G4", "G5", "G7"]
+    if ns.lane_labels_train or ns.lane_labels_heldout:
+        req.append("G8")
+    if ns.pdm_labels_train or ns.pdm_labels_heldout:
+        req.append("G9")
+    if ns.lane_head:
+        req.append("G10")
+    if ns.epo:
+        req.append("G11")
+    return req
+
+
+def load_scorer_preflight(path) -> dict:
+    """`scorer_finetune.py --preflight`'s output, PARSED (never grepped): `preflight.jsonl` (the `data` and `preflight` events, appended per run) or
+    `PREFLIGHT_PASS.json` (the `preflight` event alone, written only when every gate is ok).  The verdict is the LAST preflight event; its `data` event
+    is the last one BEFORE it.  {path, sha256, rows, data, preflight, n_preflight, error}."""
+    out = {"path": str(path) if path else None, "sha256": None, "rows": [], "data": None, "preflight": None, "n_preflight": 0, "error": None}
+    if not path or not Path(path).is_file():
+        out["error"] = f"scorer_finetune --preflight output missing: {path}"
+        return out
+    raw = Path(path).read_bytes()
+    out["sha256"] = hashlib.sha256(raw).hexdigest()
+    text = raw.decode("utf-8", errors="replace")
+    rows = None
+    try:
+        obj = json.loads(text)
+        rows = [obj] if isinstance(obj, dict) else None
+    except ValueError:
+        rows = []
+        for i, ln in enumerate(text.splitlines()):
+            if not ln.strip():
+                continue
+            try:
+                r = json.loads(ln)
+            except ValueError:
+                out["error"] = f"{path}: line {i + 1} is not JSON (a truncated preflight log)"
+                return out
+            if isinstance(r, dict):
+                rows.append(r)
+    if rows is None:
+        out["error"] = f"{path}: not a JSON object / JSON-lines preflight log"
+        return out
+    out["rows"] = rows
+    pre = [i for i, r in enumerate(rows) if r.get("event") == "preflight"]
+    out["n_preflight"] = len(pre)
+    if pre:
+        out["preflight"] = rows[pre[-1]]
+        data = [r for r in rows[:pre[-1]] if r.get("event") == "data"]
+        out["data"] = data[-1] if data else None
+    return out
+
+
+def scorer_dvb_rows(ns, data: dict) -> list:
+    """{dest, flag, declared, built, how, ok}: the argv's EFFECTIVE value (named, else the parser default) against what the trainer's `data` event says it BUILT."""
+    rows = []
+
+    def add(dest, declared, built, how):
+        rows.append({"dest": dest, "flag": "--" + dest.replace("_", "-"), "declared": declared, "built": built, "how": how, "ok": _close(declared, built)})
+    add("b_mode", ns.b_mode, data.get("b_mode"), "data event: b_mode")
+    add("b_compw", ns.b_compw, data.get("b_compw"), "data event: b_compw")
+    add("epo", bool(ns.epo), "epo" in data, "the data event carries an `epo` block iff --epo")
+    if ns.epo:
+        blk = data.get("epo") or {}
+        for k in SCORER_EPO_KEYS:
+            declared = getattr(ns, "epo_" + k)
+            built = blk.get(k)
+            add("epo_" + k, declared, (bool(built) if isinstance(declared, bool) and built is not None else built), f"data event: epo.{k}")
+    return rows
+
+
+def check_dvb_scorer(argv: list, pf, profile: dict, arm=None, rehearsal=False) -> dict:
+    """G-DVB for a profile whose trainer is scorer_finetune.py.  `pf` = `load_scorer_preflight(...)` (or None: then the built side is unobservable and the
+    check FAILS -- no preflight, no declared-vs-built).  Static part: every parser dest is classified (unknown FAILS, stale FAILS), every `data` flag is
+    bound by the token, no dead lever, no forbidden flag.  Observed part: the argv's effective levers equal the trainer's own `data` event."""
+    mod = importlib.import_module(profile.get("parser_module", "scorer_finetune"))
+    reasons, det = [], {}
+    parser = mod.build_parser()
+    dests = {x.dest for x in parser._actions if x.dest != "help"}
+    table = dict(DVB_KINDS_SCORER)
+    data_flags = set(profile.get("data_flags", ()))
+    if arm_is("unknown_flag", arm):
+        dests = dests | {"g_probe_new_flag"}
+    if arm_is("stale_registry", arm):
+        table["g_probe_removed_flag"] = "built"
+    if arm_is("dead_lever", arm):
+        dests = dests | {"g_probe_dead_lever"}
+        table["g_probe_dead_lever"] = "consumed"
+    if arm_is("unbound_data", arm):
+        data_flags = data_flags - {"--onpolicy"}
+    unknown = sorted(dests - set(table))
+    stale = sorted(set(table) - dests)
+    det["parser_flags"], det["registry_flags"] = len(dests), len(table)
+    det["unknown_flags"], det["stale_registry"] = unknown, stale
+    det["declared_arm"] = profile.get("declared_arm")                          # the arm this evidence was minted for (the token binds the argv, which fixes its class)
+    if unknown:
+        reasons.append(f"trainer flags with NO declared-vs-built entry (a new lever needs its check): {unknown}")
+    if stale:
+        reasons.append(f"registry entries for flags the parser no longer has: {stale}")
+    opt_of = {x.dest: x.option_strings[0] for x in parser._actions if x.option_strings}
+    unbound = sorted(opt_of[d] for d, k in table.items() if k == "data" and d in opt_of and opt_of[d] not in data_flags)
+    det["unbound_data_flags"] = unbound
+    if unbound:
+        reasons.append(f"input flags the token would NOT fingerprint (not in {profile.get('name', 'the profile')}'s data_flags): {unbound}")
+    src = (HERE / profile.get("trainer_src", "scorer_finetune.py")).read_text(encoding="utf-8")
+    reads = namespace_reads(src, profile.get("namespace_funcs", SCORER_NAMESPACE_FUNCS))
+    for d in sorted(dests):
+        if d in table and table[d] != "control" and d not in reads:
+            reasons.append(f"--{d.replace('_', '-')} is never read by the trainer (a dead lever)")
+    for t in argv:
+        if t in profile.get("forbidden_flags", ()):
+            reasons.append(f"argv flag {t} is FORBIDDEN in a launch ({profile.get('name')}): "
+                           f"{'a test/ablation control' if table.get(argv_flag_dest(parser, t)) == 'control' else 'profile rule'}")
+    ns, err = parse_scorer_argv(parser, argv)
+    if err:
+        reasons.append(f"argv declares lever(s) the trainer does not build (its parser rejects the argv): {err}")
+        det["rejected_by_parser"] = err
+        return verdict("G-DVB", reasons, det, arm=arm, rehearsal=rehearsal)
+    data = (pf or {}).get("data")
+    if data is None:
+        reasons.append("no preflight `data` event: the BUILT side of declared-vs-built is unobservable (pass scorer_finetune's preflight.jsonl, "
+                       "not PREFLIGHT_PASS.json, which carries the preflight event alone)")
+    else:
+        if arm_is("lever_ignored", arm):                                     # the trainer ignored --b-mode: its data event says the other mode
+            data = dict(data, b_mode=("compw" if data.get("b_mode") == "listnet" else "listnet"))
+        rows = scorer_dvb_rows(ns, data)
+        det["rows"], det["observed_rows"] = rows, len(rows)
+        for r in rows:
+            if not r["ok"]:
+                reasons.append(f"{r['flag']}: declared {r['declared']!r} != built {r['built']!r} ({r['how']})")
+        expect = {d for d, k in table.items() if k == "built" and (ns.epo or not d.startswith("epo_"))}
+        missing = sorted(expect - {r["dest"] for r in rows})
+        det["built_without_observer"] = missing
+        if missing:
+            reasons.append(f"registry says `built` but nothing observes it: {missing}")
+    det["kinds"] = {k: sum(1 for v in table.values() if v == k) for k in ("data", "built", "consumed", "run", "control")}
     return verdict("G-DVB", reasons, det, arm=arm, rehearsal=rehearsal)
 
 
