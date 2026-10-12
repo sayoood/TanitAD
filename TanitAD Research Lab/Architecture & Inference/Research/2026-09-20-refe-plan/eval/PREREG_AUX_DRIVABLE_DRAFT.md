@@ -141,7 +141,7 @@ Instrument: the one that produced `sft4_B_u400_families.json`, on the identical 
 
 | blank | value |
 |---|---|
-| label store: path, frame count (expect 103,288), manifest sha256 | _ |
+| label store: path, frame count (expect 103,288), manifest sha256 | `D:/Projects/TanitAD-artifacts/aux_drivable/label_store/` (dev box; 1,192 shards, 351,383,740 B); **103,139 frames, NOT 103,288**: 100 % of the 103,037-row train bank + 102 from local DBs; 149 yaml tokens have neither a bank row nor a local DB (`missing_tokens.txt`; unblock = their nuPlan DBs, a download needing the PI). `store_sha256` `4a17db673b1548ba35724ab848a7dc551e4b0bc1e49c57ae93e6357454bf287a`, `manifest.json` sha256 `5b629af3ca5354ca260bafdcb179ad182a9acb68f8357e119076ee197c3671a9`. S0 gate PASS pre (80 samples) and post (`raw/2026-10-12-aux-label-store/s0_gate_post.json`, 2026-10-12 21:31): 0 bad / 0 extra files, 0 navtest tokens and logs, A-vs-B 0 cells on 64, origin max 0.0 m on 37,932. |
 | navtest label store: path, frame count (expect 12,146), sha256 | _ |
 | head config (cell, blocks, tap, feed) and `w_aux` after the balance, with the 8-micro-batch ratio it came from | _ |
 | comparator checkpoints and their sha256 (u400: `eval/RESULT_SFT4.md`) | _ |
