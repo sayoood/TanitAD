@@ -2473,7 +2473,13 @@ class AnchoredDiffusionDecoder(nn.Module):
         self.r8_gen = r8c.R8Generator(int(r8cfg.seed))
         #: MM ruling Q1: the per-step emission switch for the EXTRA candidates (set by
         #: `refcv8_train.apply_emit_schedule` from `emit_start`; True = the config's emit flags apply as written)
-        self.r8_emit_live = True
+        #: ⛔ BORN AT REFCV8 STEP 0 (2026-10-12): the switch starts at the schedule's value for step 0, i.e.
+        #: `refcv8_train.emit_live(0, emit_start)`. It was `True` whatever `emit_start` said, so a build that was never
+        #: scheduled -- the launch gate's G-EVAL trainer model, captured before step 0 -- EMITTED the extras at step 0
+        #: while the eval loader (scheduled at the checkpoint's step 0, `refcv7_loader.py:517-519`) did not:
+        #: trainer-vs-loader differed on `out.r8_emit_keep` (pre-gate d6/d7). `train()` re-applies the schedule at
+        #: EVERY step before the forward (`refc_v3_train.py:10572`), so training is unchanged.
+        self.r8_emit_live = int(getattr(r8cfg, 'emit_start', 0) or 0) <= 0
         mods = [self.r8_mod, self.r8_sel, self.r8_rc_to_cond] + ([self.r8_sub] if self.r8_sub is not None else [])
         return int(sum(p.numel() for m in mods for p in m.parameters())) + 1
 
@@ -2506,7 +2512,8 @@ class AnchoredDiffusionDecoder(nn.Module):
             force = r8.get('force_hyp')
             hyp = r8c.allocate(joint, m, int(cfg.alloc_top_k), int(cfg.alloc_min_each), force=force,
                                force_min=int(r8.get('force_min', 4)))
-            src_a, lvl = r8c.select_source_anchors(lat_b, lon_b, hyp, self.r8_gen)
+            # ⛔ eval: the source-anchor choice is a function of the inference seed (R8Generator.rand_eval, 2026-10-12)
+            src_a, lvl = r8c.select_source_anchors(lat_b, lon_b, hyp, self.r8_gen, training=self.training)
             hl, ho = r8c.split_joint(hyp)
             cons_a = r8c.candidate_constraints(c8l, c8o, hl, ho)
             cons_ag = cons_a
@@ -3021,7 +3028,12 @@ class AnchoredDiffusionDecoder(nn.Module):
             # shifts a base candidate's noise.
             _nb = int(self.anchors.shape[0])
             eps_b = torch.randn((b, _nb) + tuple(x0_n.shape[2:]), device=dev, dtype=x0_n.dtype)
-            eps_x = self.r8_gen.randn((b, x0_n.shape[1] - _nb) + tuple(x0_n.shape[2:]), dev, x0_n.dtype)
+            # ⛔ at EVAL the extras' values come from a generator seeded off the GLOBAL state (read, not consumed):
+            # the persistent r8_gen is not restored by a seed / fork_rng, so drawing its values at eval made the same
+            # checkpoint + batch + inference seed answer differently on every call (G-EVAL control, 2026-10-12).
+            _shape_x = (b, x0_n.shape[1] - _nb) + tuple(x0_n.shape[2:])
+            eps_x = (self.r8_gen.randn(_shape_x, dev, x0_n.dtype) if self.training
+                     else self.r8_gen.randn_eval(_shape_x, dev, r8c.EVAL_SITE_EXTRA_EPS, x0_n.dtype))
             eps = torch.cat([eps_b, eps_x], 1)
         t_noise = (train_t if train_t is not None
                    else torch.tensor(t0, device=dev))
