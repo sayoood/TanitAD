@@ -5697,6 +5697,24 @@ _GIT_ENV = ("GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_OBJECT_DIRECTORY"
             "GIT_ALTERNATE_OBJECT_DIRECTORIES", "GIT_COMMON_DIR", "GIT_NAMESPACE")
 
 
+def safe_dir_env(env: dict, dest: Path) -> dict:
+    """`env` plus ONE `safe.directory` entry for the throwaway repo at `dest`, as COMMAND-scope config
+    (`GIT_CONFIG_COUNT`/`_KEY_n`/`_VALUE_n`, appended after any the caller already carries).
+    ⛔ MEASURED 2026-10-12 on the dev box: with `--suite-work` on E: (exFAT, which records no file
+    ownership) every git call in the throwaway repo died "detected dubious ownership", so its HEAD read
+    None and G-SUITE-PINNED ERRORed before a single test ran. The gate's earlier dev-box runs had used
+    C: (NTFS). Scoped to `dest` only and never written to a config file: no global setting changes."""
+    env = dict(env)
+    try:
+        n = int(env.get("GIT_CONFIG_COUNT") or 0)
+    except ValueError:
+        n = 0
+    env["GIT_CONFIG_COUNT"] = str(n + 1)
+    env[f"GIT_CONFIG_KEY_{n}"] = "safe.directory"
+    env[f"GIT_CONFIG_VALUE_{n}"] = Path(dest).resolve().as_posix()
+    return env
+
+
 def pinned_env(dest: Path, o: dict, base: dict) -> dict:
     """The pinned files' test environment: the archive's tree first on PYTHONPATH, NO git
     redirection (`_GIT_ENV`: a test's `git` must never reach tanitad-push's shared index), NO
@@ -5712,6 +5730,8 @@ def pinned_env(dest: Path, o: dict, base: dict) -> dict:
     if o.get("cpu_only"):
         env["CUDA_VISIBLE_DEVICES"] = "-1"
     env.pop(ARM_ENV, None)
+    # the pinned tests run git INSIDE the throwaway repo (secret_scan's hook test, git reads)
+    env = safe_dir_env(env, dest)
     return env
 
 
@@ -5719,6 +5739,7 @@ def throwaway_repo(dest: Path, git_dir: str, commit: str) -> dict:
     """A repo INSIDE the archive whose objects come read-only from `git_dir` (alternates), HEAD at
     `commit`, index = HEAD. Idempotent; its HEAD is asserted by the caller."""
     env = {k: v for k, v in os.environ.items() if k not in _GIT_ENV}
+    env = safe_dir_env(env, dest)
 
     def g(*args: str) -> subprocess.CompletedProcess:
         return subprocess.run(["git", "-C", str(dest), *args], env=env, capture_output=True,
@@ -5865,6 +5886,8 @@ def job_suite_pinned(ctx: Ctx, checks: list[str]) -> dict[str, dict]:
     # and nothing can write into tanitad-push.
     det["throwaway_repo"] = throwaway_repo(dest, git_dir, commit)
     if det["throwaway_repo"].get("head") != commit:
+        # the reason git gave (2026-10-12: "dubious ownership" was discarded and only "HEAD is None" shown)
+        _say(f"G-SUITE-PINNED: throwaway repo git errors: {det['throwaway_repo'].get('errors')}")
         finish_evidence(ev, "ERROR", [f"G-SUITE-PINNED: the throwaway repo's HEAD is "
                                       f"{det['throwaway_repo'].get('head')!r}, not {commit}"])
         return {"G-SUITE-PINNED": ev}

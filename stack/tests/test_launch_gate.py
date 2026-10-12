@@ -2372,8 +2372,13 @@ def test_G_SUITE_PINNED_git_reads_go_to_a_THROWAWAY_repo_never_the_shared_one(tm
     env = LG.pinned_env(dest, {"omp": 4, "cpu_only": True},
                         {"GIT_DIR": "x", "GIT_WORK_TREE": "y", "GIT_INDEX_FILE": "z",
                          "MKL_NUM_THREADS": "4", "PATH": "p", LG.ARM_ENV: "arm"})
-    assert sorted(env) == ["CUDA_VISIBLE_DEVICES", "OMP_NUM_THREADS", "PATH", "PYTHONDONTWRITEBYTECODE",
+    # + ONE command-scope safe.directory entry for THIS archive (2026-10-12, exFAT suite-work:
+    # test_launch_gate_safe_directory.py) -- config, never a redirection of git to another repo
+    assert sorted(env) == ["CUDA_VISIBLE_DEVICES", "GIT_CONFIG_COUNT", "GIT_CONFIG_KEY_0",
+                           "GIT_CONFIG_VALUE_0", "OMP_NUM_THREADS", "PATH", "PYTHONDONTWRITEBYTECODE",
                            "PYTHONIOENCODING", "PYTHONPATH", "SECRET_SCAN_FULL"]
+    assert (env["GIT_CONFIG_COUNT"], env["GIT_CONFIG_KEY_0"], env["GIT_CONFIG_VALUE_0"]) == \
+        ("1", "safe.directory", dest.resolve().as_posix())
 
 
 def test_an_ABORT_is_VERIFIED_the_child_tree_is_gone_or_the_evidence_says_it_is_not(
