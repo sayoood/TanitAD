@@ -16671,3 +16671,8 @@ floor (MEASURED by simulation, iid-normal model).
 | id | record | status |
 |---|---|---|
 | **PI-R8-NOLW** (2026-10-12) | PI, verbatim: *"yes, run V-R8-noLW after the ladder"*. A 12th tiny-rig run beyond PI-R8-LADDER-11: V-R8 with `--w-r8-listwise 0.0` (the selection CE trains the selector again), pre-registered in `…/emit_off_diag_2026-10-12/PREREG_VR8_NOLW.md` + `PREREG_VR8_NOLW_A1.md` (readout unchanged). Armed on Thor 2026-10-12T18:57Z: it waits for the ladder chain and starts only on a clean `ZZALLDONEZZ`. MEASURED cost about 4.6 h of Thor (4.4 h train + 11 min `base` eval). | RULED; ARMED, waiting for the ladder |
+
+<!-- REFCV8-2026-10-12-VR8R-REPLICATE -->
+| id | record | status |
+|---|---|---|
+| **H-R8-RECIPE-1** (replicate evidence line 2026-10-12, POST-HOC) | V-R8r (training seed 1) vs V0r, Thor batch 8, eval139: GT-turn cross **+6.88 / +6.21 m**, ADE +2.32 / +2.14 m, separated worse. The turn regression REPLICATES across training seeds (seed 0: +4.41 / +4.09). Correction: "not mis-directed" was seed-0-only; at seed 1 `dir_correct_turn` 0.523 / 0.533 vs V0r 0.645 / 0.636. R8 replicate spread on turns (V-R8r vs V-R8) +3.30 / +2.95 m, about 4× V0's (+0.83). Longitudinal and `lat3_f1_v9` better, lateral worse, as at seed 0. `…/emit_off_diag_2026-10-12/RESULT.md` addendum. | DESCRIPTIVE; L1 almost certainly FAILS as registered at I-0. V-R8-noLW's P1 floor = 3.30 / 2.95 m |

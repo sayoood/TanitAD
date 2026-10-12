@@ -100,3 +100,28 @@ REAL loss function (`listwise_selection_loss` fed `score = −cost` must return 
 ≤ 4.8e-7 on every batch. A mutated cost with a lateral term added must break that identity, and it does
 (|ΔH| 2.4–3.8). The capture's `base` plans are bit-identical to the Q1 batch-4 `base` dumps (0 / 1,112 windows
 differ).
+
+## ADDENDUM 2026-10-12 ~21:45Z: the V-R8r replicate (training seed 1)
+
+Thor batch-8 dumps, same eval139 grid (1,112 windows / 139 episodes), paired episode-cluster bootstrap, sampler seeds
+0 / 1, md5-verified against Thor. Readouts: `raw/vr8r/`. Still POST-HOC and descriptive; L1 is scored at I-0.
+
+* **The turn regression REPLICATES on a second training seed, and is larger there.** V-R8r vs V0r (both training seed
+  1): GT-turn `cross_abs_6s` **+6.88 / +6.21 m**, ADE **+2.32 / +2.14 m**, all separated worse; all windows cross
+  **+0.99 / +1.03 m**. At training seed 0 (V-R8 vs V0, Thor batch 8) it was +4.41 / +4.09 m.
+* ⚠ **CORRECTION to "mis-SHAPED, not mis-directed" above: that holds at training seed 0 only.** At seed 1
+  `dir_correct_turn` is **0.523 / 0.533** against V0r's 0.645 / 0.636 (separated worse on sampler seed 0, ns on 1)
+  and against V-R8's 0.692 / 0.710 (separated worse on both). The R8 recipe also gets the turn DIRECTION wrong more
+  often at seed 1.
+* **The R8 recipe is far less stable run-to-run on turns.** V-R8r vs V-R8 (same recipe, seed 1 vs 0): GT-turn cross
+  **+3.30 / +2.95 m**, separated. That is about **4×** V0's own replicate spread (V0r vs V0: +0.83 / +0.83 m). It fits a
+  near-flat selector score that picks among near-ties.
+* **This is P1's floor in PREREG_VR8_NOLW (rule unchanged).** V-R8-noLW must beat V-R8 on GT-turn cross by more than
+  **3.30 m (s0) / 2.95 m (s1)**. V0 beats V-R8 by 4.41 / 4.09 m on Thor batch 8, so a noLW that only matched V0 would
+  read R ≈ 1.3–1.4.
+* **Families, V-R8r vs V0r (same pattern as seed 0):** LONGITUDINAL better (`speed_mae_0_2s` −0.016 / −0.017,
+  `speed_mae_2_6s` −0.095 / −0.101, separated); TACTICAL `lat3_f1_v9` +0.205 better; LATERAL worse (cross, curvature
+  and yaw-rate separated); PERCEPTION drivable IoU +0.030 better, lane IoU −0.008 worse; SAFETY `off_drivable` ns.
+  STRATEGIC and distance-keeping are not instrumented at this rung.
+* **Consequence for L1.** B-RECIPE needs turn direction-correct and heading-15 GAINS of V-R8 over V0, separated
+  with R > 1. Descriptively both training seeds show losses, so L1 will almost certainly FAIL as registered.
