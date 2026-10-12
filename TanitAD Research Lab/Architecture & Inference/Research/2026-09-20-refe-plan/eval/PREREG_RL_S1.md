@@ -141,15 +141,15 @@ RL-val read is a table lookup (the true PDMS of a scorer's pick). Navtrain parti
 * **REFUTED:** remaining levers with blockers named: (a) P6 (blocked on P2's verdict, a pod with >= 24 vCPU, the PI's P6-T/C/N/Y decisions); (b) generator-side alternation
   (blocked on a stochastic-policy design and A100-class compute); (c) tracker-aware targets (P5), a zero-training EP lever.
 
-## 7. What has to exist before launch (state at this draft)
+## 7. What has to exist before launch (state updated 2026-10-12 by the Master Mind)
 
 | item | state |
 |---|---|
-| `refe/rl_reward.py` + `test_rl_reward.py` | **BUILT, 28 checks, 26 RED mutations (K and L included)** |
-| EPO term in `scorer_finetune.py`, default OFF, bit-identical identity test, non-zero-gradient + exact-0.0 control, mutations | **NOT BUILT (part 2 of this build)**, spec in `eval/HANDOFF_RL_S1.md` |
-| `scorer_finetune.py` can load a **7-output** checkpoint (it calls `REFeConfig.for_backbone` without `config_for_checkpoint`, and `--lane-head` assumes a 6-row head) | **NOT BUILT; variant A cannot start without it** |
-| `refe_rls1` launch-gate profile (G-DVB entry per new flag, R0/R1 and R2 argvs accepted) | **NOT BUILT**, spec in the handoff |
-| on-policy proposal dumper (~51,000 scenes), extended labeller (`D`, `K`, `L`), RL-train / RL-val log-disjoint partition, pod chain script | **NOT BUILT (later part)** |
+| `refe/rl_reward.py` + `test_rl_reward.py` | **BUILT** (9c75945; P4 guard cap ruled the same day): `ZZTEST_PASS 31`, 29 RED mutations |
+| EPO term in `scorer_finetune.py`, default OFF, bit-identical identity test, non-zero-gradient + exact-0.0 control, mutations | **BUILT** (ac4d3b8): `test_rl_epo.py` `ZZTEST_PASS 42`, 41 RED; preflight G11; OFF path bit-identical to blob 92b52dac |
+| `scorer_finetune.py` can load a **7-output** checkpoint (it calls `REFeConfig.for_backbone` without `config_for_checkpoint`, and `--lane-head` assumes a 6-row head) | **BUILT** (ac4d3b8): cfg sized from the checkpoint, a 7-row head left untouched; stubbed in tests, so the first A40 preflight is the final check of the u400 strict load |
+| `refe_rls1` launch-gate profile (G-DVB entry per new flag, R0/R1 and R2 argvs accepted) | **BUILT** (bd45e96): `test_launch_gate.py --static` 316 / `--no-banked` 302; the FULL suite re-runs once the dev box has memory (its e2e G-CKPT arm OOM'd on 2026-10-12, environmental) and G-SUITE re-checks it on the pod |
+| on-policy proposal dumper (~51,000 scenes), extended labeller (`D`, `K`, `L`), RL-train / RL-val log-disjoint partition, pod chain script | labeller **BUILT** (eceb88f; G-REWARD-ID 0 disagreements on 91,520 proposals); partition **BUILT + FROZEN** (b0ea104, seed 20261012); dumper + `--dump-scores` **BUILT** (bd45e96; bit-identity vs the banked frozen-fan sets PENDING the dev-box GPU); pod chain **IN BUILD** (2026-10-12) |
 
 
 ## 8. Partition availability check -- 2026-10-12 (RL-S1 priority 2; appended, nothing above is edited)
