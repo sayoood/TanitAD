@@ -103,6 +103,18 @@ def main(argv=None) -> int:
                      "new_eq_v8_train_label_set": True,
                      "new_n_eval139_listing": 0, "new_n_v8_eval_labels": 0}
 
+    # ---- THE PARITY INGEST GATE (tests/test_build_parity_guard.py; parity.py sec. 10c) ----------
+    # The eval139 / v8-eval checks above are this view's OWN disjointness. The gate asks the programme-wide
+    # question by per-clip sha256: is any of these 4,572 inside the 40-episode DEPLOYED VAL? It runs BEFORE
+    # the first byte of the view is written and REFUSES on any overlap. (Added 2026-10-12 after the launch
+    # gate's G-SUITE-PINNED run on a0b9faf failed `test_every_derived_corpus_writer_is_gated_or_classified`
+    # on this module; the 4,572 view already built on Thor was re-checked through the same call: 0 inside.)
+    from tanitad.data import parity
+    parity.require_ingest_gate("build_refcv8_add203_view")
+    _kept, rep["parity_gate"] = parity.guard_corpus_build(
+        new_ids, label="build_refcv8_add203_view -> " + new_view, role="train", mode="refuse")
+    assert sorted(_kept) == new_ids, "parity gate changed the clip set in refuse mode"
+
     # ---- old manifest + scan the 203 + controls -----------------------------------------
     old_man_path = os.path.join(old_view, V.MANIFEST_NAME)
     old_md5 = md5(old_man_path)
@@ -223,6 +235,7 @@ def main(argv=None) -> int:
         "join": old_rec.get("join"), "labels": old_rec.get("labels"),
         "map_gt_revision": old_rec.get("map_gt_revision"),
         "disjoint_from_eval139": True, "built_by": "stack/scripts/build_refcv8_add203_view.py",
+        "parity_gate": rep["parity_gate"],
     }
     with open(os.path.join(new_view, "_VIEW_RECORD.json"), "w", encoding="utf-8") as fh:
         json.dump(rec, fh, indent=1)
