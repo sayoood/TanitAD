@@ -45,3 +45,46 @@ D3 is DECIDED (R2 in, Master Mind 5e4a998): K and L are built and tested to the 
 
 ## Part 2 (not started, not in any brief yet): on-policy proposal dumper (~51,000 scenes), extended labeller (D, K, L -> `rl_terms` side files; G-REWARD-ID `g>0 iff DAC=0` on 10,000 labelled proposals),
 RL-train / RL-val log-disjoint partition, pod chain script, RL-val lookup evaluator. Also OPEN: base checkpoint (PREREG_RL_S1 OPEN-BASE).
+
+---
+
+# 2026-10-12 -- RL-S1 build, steps 1-3 of "Next steps" DONE (scorer_finetune.py + test_rl_epo.py); step 4 (`refe_rls1` profile) is the NEXT agent's
+
+## What is built (all in `refe/`, all default OFF; baseline = blob 92b52dac, verified byte-equal to the disk file BEFORE editing)
+* `scorer_finetune.py`: `build_parser()` extracted VERBATIM (38 lines moved by script, not retyped); u400 fix = `cfg = ckpt_io.config_for_checkpoint(...)` + `extend_lane_head()` skips a head that already
+  has 7 rows (and consumes no RNG); `native7` flag so preflight G3/G5/restore treat a trained 7-row head as an ordinary 7-wide base; a 7-row ckpt without `--lane-head` is REFUSED.
+  EPO: module-level `epo_loss(sxB, sx_ref, R, rule_fn, T, beta, lam_pg, parts=None)`, `epo_policy`, `epo_ramp`, `epo_reward` (-> `rl_reward.reward`), `load_rl_terms`, `epo_refusals(a, ap)`,
+  `IndexedSubset`/`make_train_set`/`split_rows` (row index rides the batch ONLY with `--epo`), `g11_epo_live_and_identity`; in main(): closures `epo_term`, `train_losses` (THE loss assembly: loop, speed
+  probe and G11 all call it), `epo_probe`. Flags exactly as listed in "Next steps" 1. Policy = softmax(log(A + 1e-6)/T) with A = main()'s own `sel_score` (navsim_v1 x lane output), never `_pdm_aggregate`.
+* Preflight gate `G11_epo_live_and_identity` (only with `--epo`): EPO-only backward non-zero + finite on EACH of score_q_mlp/score_dec/score_head of arm B; controls `lam0` (graph live, weight 0.0) and `off`
+  read EXACTLY 0.0; KL(pi_SFT||pi) at step 0 = 0.0 (u400/6-col) or <= 1e-2 (freshly extended lane head); train rows resolve in the terms; held-out terms matched > 0 when given.
+  `REFE_RL_MUTATE_EPO_DETACH=1` -> RED and no PREFLIGHT_PASS.json is written.
+* `test_rl_epo.py`: `ZZTEST_PASS 42` = unmutated suite + 41 source mutations all RED. Run: `PYTHONIOENCODING=utf-8 C:/Users/Admin/venvs/tanitad/Scripts/python.exe refe/test_rl_epo.py` (~5 min, CPU).
+  It proves: (a) OFF path == the embedded baseline closures, AST-equal AND bit-identical (loss bits + 3-update AdamW parameter hash) across b-mode listnet/compw/expreward x lane head +/-;
+  (b) epo_loss against hand-computed values (J, KL 0.41903392 and its reverse, gradient, ramp); (c) every hop flag -> `.backward()` with the real caller TEXT exec'd (the train-loop body, train_losses, epo_term,
+  epo_probe are AST-extracted from main()); (d) the REAL `main()` end to end on CPU with stubbed REFe/banks/ckpt-loader: preflight (G1-G11) -> PASS json -> train, 6-col and native-7+lane-head, OFF, `--epo-lam 0`
+  (arm B == arm A bitwise at the END of a run = K1 at main level), and EPO never touches arm A (A bitwise equal to the OFF run's A).
+
+## Findings that change the plan (read before step 4 / part 2)
+1. **The existing G4 gate would have failed EVERY `--lam 0` run** (`float(bB) != float(bA)` demands the ranking term be live). Arm B must be BCE-only + EPO, i.e. `--b-mode listnet --lam 0`. G4 now accepts
+   `lam == 0` (identity still asserted); for lam > 0 it is unchanged. Pinned by a mutation.
+2. `DataLoader` calls `Subset.__getitems__`, which bypasses an overridden `__getitem__` -- `IndexedSubset` overrides both (a mutation without the second goes RED on a real DataLoader).
+3. `scorer_finetune.py` is UNTRACKED in this D: index (blob 92b52dac exists in the object store; HEAD has no entry) -- `git add` stages it as a NEW file; the lander must land it as a modification of 92b52dac on the mirror tip.
+
+## DESIGN CALLS I MADE that the Master Mind may overrule (each is one `epo_refusals` line or one constant)
+* `--epo` is REFUSED unless `--pdm-labels-train` AND `--require-pdm` (R is built from PDM sub-scores; no set may mix label sources) and unless `--b-mode listnet --lam 0` (R vs C must differ by the EPO term alone).
+* EPO levers named WITHOUT `--epo` are REFUSED (a flag whose default disables it must be named in the arm's argv).
+* `log(A + 1e-6)` as the review writes it, not `clamp_min(1e-6)` as `expected_reward_loss` does (the clamp zeroes the gradient exactly where a proposal needs raising).
+* `--epo-terms-heldout` is loaded, validated and logged (and G11 requires >= 1 matched set), but `evaluate()` does NOT yet compute R-at-pick: that is the part-2 RL-val lookup evaluator.
+* Side-file name convention (part-2 labeller must write it): `<dir>/rl_terms_*.jsonl`, schema as in "Next steps" 1; a line counts only for the set it was computed on (same key AND ckpt_step, OnPolicyBank's rule);
+  d must be [64] in [0,1]; k [64] >= 0; lc_executed [64] bool; dither [64]; label_fires JSON bool. The training index is restricted to sets that have a record.
+
+## Step 4 (NOT done): what the `refe_rls1` profile can rely on
+* `scorer_finetune.build_parser()` (import has side effects: torch, train, model); `scorer_finetune.epo_refusals(a, ap)` returns the refusal messages for an argv -- the profile can call it for R0/R1/R2.
+* New dests for `DVB_KINDS_SCORER`: epo, epo_temp, epo_beta, epo_ramp, epo_lam, epo_lam_d, epo_w_prog, epo_k, epo_lam_k, epo_l, epo_lam_l, epo_terms_train, epo_terms_heldout (EPO_DESTS = all but `epo`).
+* `--preflight` writes `preflight.jsonl` (last `event=preflight` row, `gates` -> `G11_epo_live_and_identity`) and `PREFLIGHT_PASS.json` ONLY if every gate is ok; parse, never grep. R2 argv = R0 + `--epo-k --epo-l`
+  (both need `--epo-terms-train` with k / lc_executed / label_fires / dither present). R0/R1 argv needs `--epo-ramp 200` etc. only if they differ from the defaults (defaults ARE the registered values).
+* u400 argv shape that the CPU smoke passes (stubs): `--lane-head --teacher-lane-train <d> --teacher-lane-heldout <d> --pdm-labels-train <d> --pdm-labels-heldout <d> --require-pdm --b-mode listnet --lam 0 --epo --epo-terms-train <d>`.
+* NOT validated on a real checkpoint: the stubs replace REFe/OnPolicyBank/TargetBank/ckpt_io's loader, so the first real preflight (A40 smoke) is still the final check of the u400 strict load.
+
+## Still open (unchanged): part 2 (dumper, extended labeller writing `rl_terms_*`, G-REWARD-ID, RL-train/RL-val partition, chain script, RL-val lookup evaluator) and OPEN-BASE.

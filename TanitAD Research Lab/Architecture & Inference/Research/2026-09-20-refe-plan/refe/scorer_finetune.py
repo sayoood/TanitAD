@@ -21,11 +21,20 @@ final model's own proposals (24 logs) -- selection metrics per arm: pick / rando
 scoring 0, within-set AUC of NC and DAC, and the paired log-cluster bootstrap of pick(arm) - pick(base).
   python scorer_finetune.py --preflight ...      # the launch gate; prints ZZSFT_PREFLIGHT_PASS or _FAIL
   python scorer_finetune.py ...                  # the run (refuses without a preflight PASS file in --out)
+
+RL-S1 (eval/PREREG_RL_S1.md, RL_POSTTRAIN_REVIEW 5.2) -- ALL DEFAULT OFF, the OFF path is bit-identical to the SFT-4 trainer (refe/test_rl_epo.py):
+  --epo           arm B += lam_pg(t) * [ -J + beta * KL(pi_SFT || pi) ],  pi = softmax(log(A + eps) / T) under the BASE's own selection rule
+                  (sel_score: navsim_v1 x the lane output), J = sum_i pi_i R_i EXACT over the 64 hypotheses, R from rl_reward (detached),
+                  pi_SFT = the frozen base copy, lam_pg ramped 0 -> 1 over --epo-ramp updates.  Arm A stays the BCE-only control.
+                  Requires --pdm-labels-train --require-pdm --b-mode listnet --lam 0 (arm B = BCE + EPO and nothing else) and either
+                  --epo-terms-train (rl_terms_*.jsonl: D, K, lane-change inputs) or --epo-lam-d 0 NAMED; preflight adds gate G11.
+  The checkpoint's own meta sizes the score head (a 7-output checkpoint such as SFT-4 arm B u400 loads and trains with --lane-head).
 """
 from __future__ import annotations
 
 import argparse
 import copy
+import glob
 import json
 import math
 import os
@@ -41,6 +50,7 @@ from torch.utils.data import DataLoader, Subset
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import ckpt_io  # noqa: E402
+import rl_reward  # noqa: E402  (RL-S1: pure numpy; the reward the EPO term maximises)
 import train as T  # noqa: E402
 from model import REFe, REFeConfig  # noqa: E402
 
@@ -103,7 +113,225 @@ def boot_logs(diff: dict, logs: dict, n=10000, seed=20260927):
     return float(vals.mean()), float(np.percentile(means, 2.5)), float(np.percentile(means, 97.5))
 
 
-def main() -> int:
+# ================================================================================================ RL-S1: the EPO scorer loss (all default OFF)
+# eval/PREREG_RL_S1.md, RL_POSTTRAIN_REVIEW.md 5.2.  Arm B only; arm A stays the BCE-only control (= C), so A / B are paired by construction.
+EPO_EPS = 1e-6                    # log(A + eps): the gradient stays defined as A -> 0 (a clamp would zero it exactly where a proposal needs raising)
+EPO_DESTS = ("epo_temp", "epo_beta", "epo_ramp", "epo_lam", "epo_lam_d", "epo_w_prog", "epo_k", "epo_lam_k", "epo_l", "epo_lam_l",
+             "epo_terms_train", "epo_terms_heldout")          # every EPO lever except the switch itself (named without --epo = refused)
+RL_TERMS_GLOB = "rl_terms_*.jsonl"
+
+
+def epo_ramp(upd, ramp):
+    """lam_pg(t) ramp factor, review 5.2: 0 -> 1 linearly over `ramp` optimizer updates (update 0 trains BCE only); ramp <= 0 = no ramp"""
+    return 1.0 if ramp <= 0 else min(1.0, upd / ramp)
+
+
+def epo_policy(sx, rule_fn, T):
+    """log pi_i = log_softmax_i( log(A_i + eps) / T ) with A = rule_fn(sigmoid(sx)): the selection policy under the BASE's OWN selection rule
+    (`rule_fn` is main()'s sel_score = navsim_v1 x the lane output -- what u400 deploys -- never train._pdm_aggregate)"""
+    return torch.log_softmax(torch.log(rule_fn(torch.sigmoid(sx)) + EPO_EPS) / T, dim=1)
+
+
+def epo_loss(sxB, sx_ref, R, rule_fn, T, beta, lam_pg, parts=None):
+    """lam_pg * mean_over_scenes[ -J + beta * KL(pi_SFT || pi) ],  J = sum_i pi_i R_i   (review 5.2) -- EXACT over the 64 hypotheses of a scene, no sampling.
+    sxB [b, M, C] = arm B's logits (carries the gradient); sx_ref = the frozen base's logits (pi_SFT, no gradient); R [b, M] = the reward (rl_reward),
+    DETACHED here; rule_fn maps probabilities [b, M, C] to the selection score [b, M].  `parts`, if given, receives the batch means J and kl."""
+    if os.environ.get("REFE_RL_MUTATE_EPO_DETACH") == "1":          # deliberate regression for the gate (G11): the policy loses its graph
+        sxB = sxB.detach()
+    logpi = epo_policy(sxB, rule_fn, T)
+    with torch.no_grad():
+        logpi0 = epo_policy(sx_ref, rule_fn, T)
+    J = (logpi.exp() * R.detach()).sum(1)
+    kl = (logpi0.exp() * (logpi0 - logpi)).sum(1)
+    if parts is not None:
+        parts["J"], parts["kl"] = float(J.detach().mean()), float(kl.detach().mean())
+    return lam_pg * (-J + beta * kl).mean()
+
+
+def epo_reward(tg6, recs, rcfg):
+    """R [b, M] (float64, numpy) for a micro-batch: rl_reward.reward on the six PDM sub-scores tg6 [b, M, 6] plus the per-set side terms in `recs`
+    (one load_rl_terms record per set; None when the config needs none).  A term the config turns ON whose input is missing RAISES."""
+    d = k = lane = None
+    need = rcfg.lam_d != 0.0 or rcfg.use_k or rcfg.use_l
+    if need and (recs is None or any(r is None for r in recs)):
+        raise ValueError("EPO reward: a set in this batch has no rl_terms record (the training index must be restricted to sets that have one)")
+    if rcfg.lam_d != 0.0:
+        d = np.stack([r["d"] for r in recs])
+    if rcfg.use_k:
+        k = np.stack([r["k"] for r in recs])
+    if rcfg.use_l:
+        lane = {"lc_executed": np.stack([r["lc_executed"] for r in recs]).astype(bool),
+                "label_fires": np.asarray([r["label_fires"] for r in recs], bool),
+                "dither": np.stack([r["dither"] for r in recs])}
+    return rl_reward.reward(tg6, rcfg, d=d, k=k, lane=lane)["R"]
+
+
+def _rl_terms_record(d, n_prop, need_d, need_k, need_l):
+    """one validated rl_terms line -> {'d': [M], 'k': [M], 'lc_executed': [M] bool, 'label_fires': bool, 'dither': [M]} (only what is needed), or None"""
+    rec = {}
+    try:
+        if need_d:
+            x = np.asarray(d["d"], np.float32)
+            if x.shape != (n_prop,) or not np.isfinite(x).all() or x.min() < 0.0 or x.max() > 1.0 + 1e-6:
+                return None
+            rec["d"] = x
+        if need_k:
+            x = np.asarray(d["k"], np.float32)
+            if x.shape != (n_prop,) or not np.isfinite(x).all() or x.min() < 0.0:
+                return None
+            rec["k"] = x
+        if need_l:
+            lc, dith = np.asarray(d["lc_executed"], bool), np.asarray(d["dither"], np.float32)
+            if lc.shape != (n_prop,) or dith.shape != (n_prop,) or not np.isfinite(dith).all() or not isinstance(d["label_fires"], bool):
+                return None
+            rec["lc_executed"], rec["dither"], rec["label_fires"] = lc, dith, bool(d["label_fires"])
+    except (KeyError, ValueError, TypeError):
+        return None
+    return rec
+
+
+def load_rl_terms(path, bank_by, n_prop, need_d, need_k, need_l):
+    """The part-2 labeller's side files: `<path>/rl_terms_*.jsonl`, one line per set,
+    {"kind":"rl_terms","key":[log,token,step,rank],"ckpt_step":c,"d":[M],"k":[M],"lc_executed":[M],"label_fires":bool,"dither":[M]}.
+    Staleness is OnPolicyBank's own rule: a line counts only for the set it was computed on (same key AND ckpt_step).
+    Returns ({key: record}, stats); a set with no usable record is simply absent (the caller restricts the training index to the present ones)."""
+    terms: dict = {}
+    st = {"files": 0, "lines": 0, "matched": 0, "stale": 0, "superseded": 0, "incomplete": 0, "not_in_bank": 0, "bad_lines": 0, "duplicates": 0}
+    for fp in sorted(glob.glob(os.path.join(path, RL_TERMS_GLOB))):
+        st["files"] += 1
+        with open(fp, encoding="utf-8") as fh:
+            for line in fh:
+                try:
+                    d = json.loads(line)
+                except json.JSONDecodeError:
+                    st["bad_lines"] += 1
+                    continue
+                if not isinstance(d, dict) or d.get("kind") != "rl_terms":
+                    continue
+                st["lines"] += 1
+                k = tuple(d.get("key", ()))
+                if len(k) != 4:
+                    st["incomplete"] += 1
+                    continue
+                k = (k[0], k[1], int(k[2]), int(k[3]))
+                e = bank_by.get(k)
+                if e is None:
+                    st["not_in_bank"] += 1
+                    continue
+                ck = int(d.get("ckpt_step", -1))
+                if ck != int(e[0]):
+                    st["superseded" if ck < int(e[0]) else "stale"] += 1
+                    continue
+                rec = _rl_terms_record(d, n_prop, need_d, need_k, need_l)
+                if rec is None:
+                    st["incomplete"] += 1
+                    continue
+                if k in terms:
+                    st["duplicates"] += 1
+                terms[k] = rec
+    st["matched"] = len(terms)
+    return terms, st
+
+
+def epo_refusals(a, ap):
+    """Every reason this command line must not start, as messages ([] = fine).  `ap` is build_parser() (its defaults say which levers were NAMED)."""
+    bad = []
+    named = [d for d in EPO_DESTS if getattr(a, d) != ap.get_default(d)]
+    if not a.epo:
+        if named:
+            bad.append(f"EPO levers {named} are set but --epo is not: they would be silently ignored")
+        return bad
+    if not a.epo_terms_train and a.epo_lam_d != 0.0:
+        bad.append("--epo needs --epo-terms-train (the drivable-area excess D of every set) unless --epo-lam-d 0 is NAMED")
+    if (a.epo_k or a.epo_l) and not a.epo_terms_train:
+        bad.append("--epo-k / --epo-l need --epo-terms-train (their per-proposal inputs live in the side files)")
+    if not a.pdm_labels_train or not a.require_pdm:
+        bad.append("--epo needs --pdm-labels-train and --require-pdm: R is computed from the PDM sub-scores, and no set may mix label sources")
+    if a.b_mode != "listnet" or a.lam != 0.0:
+        bad.append("--epo needs arm B's other loss to be plain BCE (--b-mode listnet --lam 0): R vs C must differ by the EPO term alone")
+    if a.epo_temp <= 0.0:
+        bad.append("--epo-temp must be > 0")
+    for nm in ("epo_beta", "epo_ramp", "epo_lam", "epo_lam_d", "epo_w_prog", "epo_lam_k", "epo_lam_l"):
+        if getattr(a, nm) < 0.0:
+            bad.append(f"--{nm.replace('_', '-')} must be >= 0")
+    return bad
+
+
+class IndexedSubset(Subset):
+    """A Subset whose samples also carry their DATASET ROW INDEX as a trailing element.  RL-S1 looks the D / K / L side files up by row key, and
+    the stock batch carries none (TargetBank returns the per-proposal ckpt_step in that slot).  DataLoader's fetcher calls __getitems__, which
+    Subset implements by reaching past __getitem__ -- so BOTH are overridden here."""
+
+    def __getitem__(self, idx):
+        return tuple(super().__getitem__(idx)) + (int(self.indices[idx]),)
+
+    def __getitems__(self, indices):
+        return [self[i] for i in indices]
+
+
+def make_train_set(ds, idx, epo):
+    """the training subset: the stock Subset unless --epo is on (then it also yields the row index)"""
+    return IndexedSubset(ds, idx) if epo else Subset(ds, idx)
+
+
+def split_rows(batch, epo):
+    """(the 9-tuple fwd() expects, the row-index tensor or None); a no-op unless --epo is on"""
+    if not epo:
+        return batch, None
+    return batch[:9], batch[9]
+
+
+def module_grad_abs(arm, names=SCORER):
+    """sum of |grad| per scorer module of `arm` (a parameter with no gradient reads 0.0)"""
+    return {m: float(sum((p.grad.detach().abs().sum().double() if p.grad is not None else torch.zeros((), dtype=torch.float64))
+                         for p in getattr(arm, m).parameters())) for m in names}
+
+
+def g11_epo_live_and_identity(arm, probe, kl_tol, names=SCORER):
+    """G11 (RL-S1 preflight).  probe(mode) -> (the EPO term alone from a FRESH forward, info) for mode 'on' (weight 1.0), 'lam0' (the term built with
+    weight 0.0: graph live, factor 0) and 'off' (--epo off).  An EPO-ONLY backward must give a finite non-zero gradient on EVERY scorer module of
+    arm B ('on'); the two controls must read EXACTLY 0.0 (they prove the probe can read zero at all -- a zero from a broken probe looks the same);
+    and at step 0 the KL anchor must be ~0 (arm B == the base, so pi == pi_SFT)."""
+    reads, vals, infos = {}, {}, {}
+    for mode in ("on", "lam0", "off"):
+        arm.zero_grad(set_to_none=True)
+        term, info = probe(mode)
+        vals[mode], infos[mode] = float(term.detach()), info
+        if term.requires_grad:
+            term.backward()
+        reads[mode] = module_grad_abs(arm, names)
+    arm.zero_grad(set_to_none=True)
+    live = {m: bool(math.isfinite(reads["on"][m]) and reads["on"][m] > 0.0) for m in names}
+    zero_ok = all(v == 0.0 for r in ("lam0", "off") for v in reads[r].values()) and vals["lam0"] == 0.0 and vals["off"] == 0.0
+    kl0 = infos["on"].get("kl")
+    kl_ok = kl0 is not None and math.isfinite(kl0) and abs(kl0) <= kl_tol
+    return {"ok": bool(all(live.values()) and zero_ok and kl_ok), "per_module_on": reads["on"], "per_module_lam0": reads["lam0"],
+            "per_module_off": reads["off"], "live": live, "controls_exactly_zero": bool(zero_ok), "value_on": vals["on"], "J_on": infos["on"].get("J"),
+            "kl_step0": kl0, "kl_tol": kl_tol, "kl_ok": bool(kl_ok), "mutate_detach": os.environ.get("REFE_RL_MUTATE_EPO_DETACH") == "1"}
+
+
+def extend_lane_head(model, dev):
+    """SFT-4: grow the 6-row score head to 7 (the teacher-lane output): rows 0-5 copied, row 6 zero weight and bias 1.5.
+    RL-S1: a head that ALREADY has 7 rows (u400, whose 7th row is trained) is left EXACTLY as it is -- re-extending it would copy
+    7 rows into 6 and overwrite the trained lane output with the initialisation."""
+    old = model.score_head
+    if int(old.out_features) == 7:
+        return old
+    new = nn.Linear(old.in_features, 7).to(dev)
+    with torch.no_grad():
+        new.weight.zero_(); new.bias.zero_()
+        new.weight[:6].copy_(old.weight); new.bias[:6].copy_(old.bias)
+        new.bias[6] = 1.5                                   # ~0.82: the mean of the soft lane target on held-out
+        if os.environ.get("REFE_SFT4_MUTATE_G3") == "1":   # deliberate regression: a mis-copied row 0-5 must turn G3 RED
+            new.weight[2, 0] += 1e-3
+    model.score_head = new
+    for p in model.score_head.parameters():
+        p.requires_grad_(True)
+    return new
+
+
+def build_parser() -> argparse.ArgumentParser:
+    """The command line, extracted VERBATIM from main() (RL-S1) so a test and the launch gate can read the flags without running a job."""
     ap = argparse.ArgumentParser()
     ap.add_argument("--ckpt", required=True)
     ap.add_argument("--backbone", default="vitl16")
@@ -142,7 +370,31 @@ def main() -> int:
     ap.add_argument("--lane-weight", type=float, default=1.0)
     ap.add_argument("--tau-s", type=float, default=0.1,
                     help="b-mode expreward: temperature of the selection policy softmax(log agg_v1(p) / tau_s)")
+    # RL-S1 (eval/PREREG_RL_S1.md, RL_POSTTRAIN_REVIEW 5.2): the EPO scorer loss on arm B; all default OFF = SFT-4 exactly
+    ap.add_argument("--epo", action="store_true", help="arm B += lam_pg(t) * [-J + beta*KL(pi_SFT||pi)], J = E_pi[R] exact over the 64 proposals")
+    ap.add_argument("--epo-temp", type=float, default=0.1, help="T of the selection policy pi = softmax(log(A + eps) / T), A = the BASE's own rule")
+    ap.add_argument("--epo-beta", type=float, default=0.1, help="weight of the KL anchor KL(pi_SFT || pi) (pi_SFT = the frozen base)")
+    ap.add_argument("--epo-ramp", type=int, default=200, help="optimizer updates over which lam_pg ramps 0 -> 1 (0 = no ramp)")
+    ap.add_argument("--epo-lam", type=float, default=1.0, help="final weight lam_pg of the EPO term (0 reproduces arm A exactly)")
+    ap.add_argument("--epo-lam-d", type=float, default=0.15, help="reward: drivable-area excess weight lam_d (0 must be NAMED to run without --epo-terms-train)")
+    ap.add_argument("--epo-w-prog", type=float, default=0.5, help="reward: progress-guard weight (capped by rl_reward.guard_penalty)")
+    ap.add_argument("--epo-k", action="store_true", help="reward += -lam_k*K (lane consistency; the R2 arm; needs --epo-terms-train)")
+    ap.add_argument("--epo-lam-k", type=float, default=0.05)
+    ap.add_argument("--epo-l", action="store_true", help="reward += +lam_l*L (lane-change shaping; the R2 arm; needs --epo-terms-train)")
+    ap.add_argument("--epo-lam-l", type=float, default=0.05)
+    ap.add_argument("--epo-terms-train", default="", help="dir of rl_terms_*.jsonl side files (D, K, lane-change inputs) for --onpolicy")
+    ap.add_argument("--epo-terms-heldout", default="", help="dir of rl_terms_*.jsonl side files for --heldout (validated + logged; consumed by the RL-val lookup)")
+    return ap
+
+
+def main() -> int:
+    ap = build_parser()
     a = ap.parse_args()
+    bad_cli = epo_refusals(a, ap)                            # RL-S1: a command line that names EPO levers inconsistently never starts
+    if bad_cli:
+        for msg in bad_cli:
+            print("REFUSED: " + msg)
+        return 4
     os.makedirs(a.out, exist_ok=True)
     dev = "cuda"
     torch.manual_seed(a.seed)
@@ -158,7 +410,9 @@ def main() -> int:
         print("REFUSED: no PREFLIGHT_PASS.json in --out -- run --preflight first (the launch gate)"); return 4
 
     # ---------------- model: built and loaded EXACTLY as the planner does
-    cfg = REFeConfig.for_backbone(a.backbone)
+    # RL-S1: the config is sized from the checkpoint's own meta (ckpt_io.config_for_checkpoint, as planner.py does), so a 7-output
+    # checkpoint (u400 = SFT-4 arm B) builds a 7-row head and loads STRICTLY; a checkpoint without that meta is sized as before.
+    cfg = ckpt_io.config_for_checkpoint(REFeConfig.for_backbone(a.backbone), a.ckpt)
     model = REFe(cfg).to(dev)
     meta: dict = {}
     fmt = ckpt_io.load_for_inference(model, a.ckpt, map_location=dev, backbone=a.backbone, meta_out=meta)
@@ -171,21 +425,14 @@ def main() -> int:
     if os.environ.get("REFE_SFT_MUTATE_UNFREEZE") == "1":            # deliberate regression for the gate
         for p in model.traj_head.parameters():
             p.requires_grad_(True)
+    native7 = int(model.score_head.out_features) == 7       # RL-S1: u400 ALREADY carries the trained 7th (lane) output
+    if native7 and not a.lane_head:
+        print("REFUSED: the checkpoint's score head has 7 outputs (the lane output) -- pass --lane-head and the teacher-lane labels"); return 4
     base = ScorerCopy(model).to(dev)
     for p in base.parameters():
         p.requires_grad_(False)
     if a.lane_head:
-        old = model.score_head
-        new = nn.Linear(old.in_features, 7).to(dev)
-        with torch.no_grad():
-            new.weight.zero_(); new.bias.zero_()
-            new.weight[:6].copy_(old.weight); new.bias[:6].copy_(old.bias)
-            new.bias[6] = 1.5                                   # ~0.82: the mean of the soft lane target on held-out
-            if os.environ.get("REFE_SFT4_MUTATE_G3") == "1":   # deliberate regression: a mis-copied row 0-5 must turn G3 RED
-                new.weight[2, 0] += 1e-3
-        model.score_head = new
-        for p in model.score_head.parameters():
-            p.requires_grad_(True)
+        extend_lane_head(model, dev)
     armB = ScorerCopy(model).to(dev)
     for p in armB.parameters():
         p.requires_grad_(True)
@@ -208,6 +455,17 @@ def main() -> int:
     ds_ho = copy.copy(ds)
     ds_ho.onpolicy = ho
     ho_idx = [i for i, r in enumerate(ds.rows) if key(r) in ho.by and (not a.require_pdm or key(r) in ho.pdm_keys)]
+    # RL-S1: the reward config and the D / K / L side terms.  The training index is restricted to sets that HAVE a usable record, so the reward
+    # of every set in a batch is computable; nothing below runs unless --epo is on (the OFF path is untouched).
+    rcfg = terms_train = terms_ho = st_tr = st_ho = None
+    if a.epo:
+        rcfg = rl_reward.RewardCfg(lam_d=a.epo_lam_d, w_prog=a.epo_w_prog, guard=True, lam_k=a.epo_lam_k, use_k=a.epo_k,
+                                   lam_l=a.epo_lam_l, use_l=a.epo_l)
+        if a.epo_terms_train:
+            terms_train, st_tr = load_rl_terms(a.epo_terms_train, op.by, cfg.n_proposals, a.epo_lam_d != 0.0, a.epo_k, a.epo_l)
+            tr_idx = [i for i in tr_idx if key(ds.rows[i]) in terms_train]
+        if a.epo_terms_heldout:
+            terms_ho, st_ho = load_rl_terms(a.epo_terms_heldout, ho.by, cfg.n_proposals, a.epo_lam_d != 0.0, a.epo_k, a.epo_l)
     lv: dict = {}
     for k_ in (key(ds.rows[i]) for i in tr_idx):
         v = op.by[k_][3][1]
@@ -222,9 +480,13 @@ def main() -> int:
                             "pdm_train": op.n_pdm, "pdm_train_stale": op.n_pdm_stale, "pdm_train_superseded": op.n_pdm_superseded,
                             "pdm_heldout": ho.n_pdm, "teacher_lane_train": op.n_tlane, "teacher_lane_heldout": ho.n_tlane,
                             "heldout_stale": ho.n_lane_stale}, "b_mode": a.b_mode, "b_compw": a.b_compw}
+    if a.epo:
+        info["epo"] = {"temp": a.epo_temp, "beta": a.epo_beta, "ramp": a.epo_ramp, "lam": a.epo_lam, "lam_d": a.epo_lam_d, "w_prog": a.epo_w_prog,
+                       "k": a.epo_k, "lam_k": a.epo_lam_k, "l": a.epo_l, "lam_l": a.epo_lam_l, "eps": EPO_EPS,
+                       "terms_train": st_tr, "terms_heldout": st_ho, "native7": native7}
     log(info)
     g = torch.Generator().manual_seed(a.seed)
-    dl = DataLoader(Subset(ds, tr_idx), batch_size=a.batch, shuffle=True, generator=g, num_workers=a.workers,
+    dl = DataLoader(make_train_set(ds, tr_idx, a.epo), batch_size=a.batch, shuffle=True, generator=g, num_workers=a.workers,
                     drop_last=True, pin_memory=True, persistent_workers=a.workers > 0,
                     prefetch_factor=(4 if a.workers > 0 else None))
 
@@ -274,6 +536,41 @@ def main() -> int:
         q = torch.softmax(agg_v1(tg) / a.tau_t, dim=1)
         listnet = -(q * torch.log_softmax(s, dim=1)).sum(1).mean()
         return bceA, bceB + lam * listnet, listnet
+
+    epo_last: dict = {}                                      # J and KL of the latest EPO call (logging; G11 reads kl at step 0)
+
+    def epo_term(sx0, sxB, tg, rows, upd, lam_pg=None):
+        """RL-S1: arm B's EPO contribution for one micro-batch = epo_loss(policy under sel_score, the base as pi_SFT, R from rl_reward, DETACHED).
+        lam_pg=None -> the schedule a.epo_lam * ramp(upd); a scheduled 0 returns a constant with no graph (update 0, or --epo-lam 0 = arm A exactly).
+        An EXPLICIT lam_pg (the G11 probe) is never short-circuited, so a weight of 0.0 still builds the graph and its gradient must read exactly 0.0."""
+        if lam_pg is None:
+            lam_pg = a.epo_lam * epo_ramp(upd, a.epo_ramp)
+            if lam_pg == 0.0:
+                return torch.zeros((), device=sxB.device)
+        recs = [terms_train.get(key(ds.rows[int(i)])) for i in rows] if terms_train is not None else None
+        R = epo_reward(tg[..., :6].detach().float().cpu().numpy(), recs, rcfg)
+        return epo_loss(sxB, sx0, torch.as_tensor(R, dtype=torch.float32, device=sxB.device), sel_score, a.epo_temp, a.epo_beta, lam_pg, epo_last)
+
+    def train_losses(sx0, sxA, sxB, tg, rows, upd, lam_pg=None):
+        """THE loss assembly of the run: the training loop, the speed probe and the G11 probe all call it.  losses() exactly as before, plus
+        (--epo only) the EPO term on arm B ONLY -- arm A stays the BCE-only control.  Returns (lossA, lossB incl. EPO, listnet/er, the EPO term)."""
+        lA, lB, ln = losses(sxA, sxB, tg, a.lam)
+        ep = torch.zeros((), device=sxB.device)
+        if a.epo:
+            ep = epo_term(sx0, sxB, tg, rows, upd, lam_pg)
+            lB = lB + ep
+        return lA, lB, ln, ep
+
+    def epo_probe(batch, rows, mode):
+        """G11: the EPO term ALONE from a FRESH forward.  'on' = weight 1.0; 'lam0' = built with weight 0.0 (graph live, factor 0); 'off' = --epo off"""
+        s0, sA_, sB_, tg_ = fwd(batch)
+        keep = a.epo
+        try:
+            a.epo = mode != "off"
+            ep = train_losses(s0, sA_, sB_, tg_, rows, 0, lam_pg=(1.0 if mode == "on" else 0.0))[3]
+        finally:
+            a.epo = keep
+        return ep, (dict(epo_last) if mode != "off" else {})
 
     @torch.no_grad()
     def evaluate(tag, limit=None):
@@ -401,16 +698,17 @@ def main() -> int:
                                                        "extra": sorted(tn - want)[:5], "missing": sorted(want - tn)[:5]}
         gates["G7_heldout_disjoint"] = {"ok": info["train_rows_in_heldout_logs"] == 0 and len(ho_idx) > 0,
                                         "heldout_sets": len(ho_idx), "train_rows_in_heldout_logs": info["train_rows_in_heldout_logs"]}
-        batch = next(iter(DataLoader(Subset(ds, tr_idx[:a.batch]), batch_size=a.batch)))
+        batch, prow = split_rows(next(iter(DataLoader(make_train_set(ds, tr_idx[:a.batch], a.epo), batch_size=a.batch))), a.epo)
         hk: dict = {}                                        # score-head input/output of each copy (last call = the scored set)
         hooks = [mod.score_head.register_forward_hook(lambda m_, i_, o_, nm=nm: hk.__setitem__(nm, (i_[0].detach(), o_.detach())))
                  for nm, mod in (("A", model), ("B", armB), ("base", base))]
         sx0, sxA, sxB, tg = fwd(batch)
         for h_ in hooks:
             h_.remove()
-        d0A, dBA = float((sx0 - sxA[..., :6]).abs().max()), float((sxB - sxA).abs().max())
+        # RL-S1: [..., :sx0.shape[-1]] == [..., :6] for every 6-wide base (unchanged); a 7-wide NATIVE head (u400) compares all 7 columns
+        d0A, dBA = float((sx0 - sxA[..., :sx0.shape[-1]]).abs().max()), float((sxB - sxA).abs().max())
         g3 = {"max_base_vs_A": d0A, "max_B_vs_A": dBA, "n_out": int(sxA.shape[-1])}
-        if a.lane_head:
+        if a.lane_head and not native7:
             # ⛔ A 7-row head is a different GEMM shape from the base's 6-row one, so under bf16 the shared outputs can differ by
             # one bf16 rounding step (MEASURED in the 2026-10-04 smoke: 0.0625 = 1 ulp at |logit| 8..16). "Identical at step
             # 0" is therefore asserted EXACTLY where it is exact by construction: the head's INPUT (same unchanged modules),
@@ -470,7 +768,9 @@ def main() -> int:
         else:
             bA, bB0, _ = losses(sxA, sxB, tg, 0.0)
             bA2, bB, ln = losses(sxA, sxB, tg, a.lam)
-            gates["G4_listnet_identity_and_live"] = {"ok": float(bA) == float(bB0) and float(bB) != float(bA) and math.isfinite(float(ln)),
+            # RL-S1: --lam 0 DECLARES arm B's non-EPO loss plain BCE (--epo requires it), so liveness of the ranking term is not demanded then
+            # (the EPO term has its own live gate, G11); for every lam > 0 this is the unchanged identity-AND-live gate.
+            gates["G4_listnet_identity_and_live"] = {"ok": float(bA) == float(bB0) and (float(bB) != float(bA) or a.lam == 0.0) and math.isfinite(float(ln)),
                                                      "bceA": float(bA), "lossB_lam0": float(bB0), "lossB": float(bB), "listnet": float(ln)}
         if a.lane_labels_train or a.lane_labels_heldout:      # G8: the NAVSIM direction labels really are in the banks
             def has_half(bank):
@@ -508,6 +808,12 @@ def main() -> int:
         base_grads = sum(1 for p in base.parameters() if p.grad is not None)
         gates["G2_live"] = {"ok": all(v["A_nonzero"] and v["B_nonzero"] for v in live.values()) and frozen_grads == 0 and base_grads == 0,
                             "per_module": live, "frozen_params_with_grad": frozen_grads, "base_params_with_grad": base_grads}
+        if a.epo:                                            # G11 (RL-S1): the EPO term is live on every scorer module, its zero controls read EXACTLY 0.0
+            g11 = g11_epo_live_and_identity(armB, lambda mode: epo_probe(batch, prow, mode), kl_tol=(1e-2 if (a.lane_head and not native7) else 0.0))
+            g11["rows_have_terms"] = terms_train is None or all(key(ds.rows[int(i)]) in terms_train for i in prow)
+            g11["heldout_terms"] = st_ho
+            g11["ok"] = bool(g11["ok"] and g11["rows_have_terms"] and (not a.epo_terms_heldout or st_ho["matched"] > 0))
+            gates["G11_epo_live_and_identity"] = g11
         # G5: a CHANGED scorer, saved, reloads through the PLANNER's loader and reproduces its logits (and differs from
         # base) -- saving an unchanged scorer would pass even if the save wrote the original weights back
         with torch.no_grad():
@@ -525,7 +831,7 @@ def main() -> int:
             _, _, s_orig = model(img.to(dev), ego.to(dev), goal.to(dev), calib=cal if cal.numel() else None, score_extra=cxy.to(dev))
             s_base = base(cxy.to(dev), cap["sctx"])
         d_rt = float((s_reload.float() - s_orig.float()).abs().max())
-        d_base = float((s_orig.float()[..., :6] - s_base.float()).abs().max())
+        d_base = float((s_orig.float()[..., :s_base.shape[-1]] - s_base.float()).abs().max())      # == [..., :6] for a 6-wide base
         gates["G5_ckpt_roundtrip_planner_loader"] = {"ok": d_rt == 0.0 and d_base > 0.0, "max_abs_reload_vs_saved": d_rt,
                                                      "max_abs_saved_vs_base": d_base}
         os.remove(pth)
@@ -535,7 +841,7 @@ def main() -> int:
         with torch.no_grad():
             for n, p in model.named_parameters():
                 if n.split(".")[0] in SCORER:
-                    if n.startswith("score_head.") and a.lane_head:
+                    if n.startswith("score_head.") and a.lane_head and not native7:
                         p[:6].copy_(st0[n].to(dev))
                         if n.endswith("weight"):
                             p[6].zero_()
@@ -548,9 +854,9 @@ def main() -> int:
         t0 = time.time()
         it = iter(dl)
         for _ in range(3):
-            b_ = next(it)
+            b_, r_ = split_rows(next(it), a.epo)
             s0, sA, sB, t_ = fwd(b_)
-            l1, l2, _ = losses(sA, sB, t_, a.lam)
+            l1, l2, _, _ = train_losses(s0, sA, sB, t_, r_, 0, lam_pg=(1.0 if a.epo else None))      # --epo: the timing includes the EPO term
             (l1 + l2).backward()
         torch.cuda.synchronize()
         sp = (time.time() - t0) / 3
@@ -559,7 +865,7 @@ def main() -> int:
                "s_per_microbatch": round(sp, 2), "est_hours_per_epoch": round(len(tr_idx) / a.batch * sp / 3600, 2),
                "gpu_mem_gb": round(torch.cuda.max_memory_allocated() / 1e9, 2)}
         log(res)
-        if ok and os.environ.get("REFE_SFT_MUTATE_UNFREEZE") != "1":
+        if ok and os.environ.get("REFE_SFT_MUTATE_UNFREEZE") != "1" and os.environ.get("REFE_RL_MUTATE_EPO_DETACH") != "1":
             json.dump(res, open(os.path.join(a.out, "PREFLIGHT_PASS.json"), "w"), indent=1, default=str)
         print("ZZSFT_PREFLIGHT_" + ("PASS" if ok else "FAIL"))
         return 0 if ok else 3
@@ -577,13 +883,17 @@ def main() -> int:
     evaluate("step0")
     upd, micro, t0 = 0, 0, time.time()
     accl = {"bceA": 0.0, "lossB": 0.0, "listnet": 0.0, "n": 0}
+    epo_acc = {"epo": 0.0, "J": 0.0, "kl": 0.0, "n": 0}      # --epo only
     done = False
     while not done:
         for batch in dl:
+            batch, rows = split_rows(batch, a.epo)
             _s0, sA, sB, tg = fwd(batch)
-            lA, lB, ln = losses(sA, sB, tg, a.lam)
+            lA, lB, ln, ep_t = train_losses(_s0, sA, sB, tg, rows, upd)
             ((lA + lB) / a.accum).backward()
             accl["bceA"] += float(lA); accl["lossB"] += float(lB); accl["listnet"] += float(ln); accl["n"] += 1
+            if a.epo:
+                epo_acc["epo"] += float(ep_t); epo_acc["J"] += epo_last.get("J", 0.0); epo_acc["kl"] += epo_last.get("kl", 0.0); epo_acc["n"] += 1
             micro += 1
             if micro % a.accum:
                 continue
@@ -596,8 +906,14 @@ def main() -> int:
             upd += 1
             if upd % 25 == 0:
                 n = max(accl["n"], 1)
-                log({"event": "train", "update": upd, "of": total, "lr": lr_at(upd), "bceA": accl["bceA"] / n,
-                     "lossB": accl["lossB"] / n, "listnet": accl["listnet"] / n, "s_per_update": (time.time() - t0) / upd})
+                row = {"event": "train", "update": upd, "of": total, "lr": lr_at(upd), "bceA": accl["bceA"] / n,
+                       "lossB": accl["lossB"] / n, "listnet": accl["listnet"] / n, "s_per_update": (time.time() - t0) / upd}
+                if a.epo:
+                    ne = max(epo_acc["n"], 1)
+                    row.update({"epo": epo_acc["epo"] / ne, "epo_J": epo_acc["J"] / ne, "epo_kl": epo_acc["kl"] / ne,
+                                "epo_lam_pg": a.epo_lam * epo_ramp(upd, a.epo_ramp)})
+                    epo_acc = {"epo": 0.0, "J": 0.0, "kl": 0.0, "n": 0}
+                log(row)
                 accl = {"bceA": 0.0, "lossB": 0.0, "listnet": 0.0, "n": 0}
             if upd % a.eval_every == 0 or upd == total:
                 evaluate(f"update{upd}")
