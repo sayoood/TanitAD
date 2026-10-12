@@ -1,0 +1,69 @@
+{
+ "scenes": 432,
+ "proposals": 27648,
+ "source": "dev-box ckpt-4933 on-policy dry-run sets (data/refe_m5/sets), A7-repaired executed plans",
+ "contract": "rl_reward.reward() ran on every scene with the R0/R1 config (D) and the R2 config (D + K + L ON), pdms column asserted (check_pdms)",
+ "D": {
+  "share_proposals_D_gt_0": 0.20739293981481483,
+  "D_among_positive": {
+   "min": 1e-05,
+   "p10": 0.009023000000000002,
+   "p50": 0.166985,
+   "p90": 0.468315,
+   "max": 0.75917
+  },
+  "gmax_among_positive_m": {
+   "min": 4e-05,
+   "p10": 0.077652,
+   "p50": 0.60364,
+   "p90": 1.9675420000000008,
+   "max": 6.60359
+  }
+ },
+ "K": {
+  "k": {
+   "min": 0.0,
+   "p10": 0.0,
+   "p50": 0.11904,
+   "p90": 0.4556299999999998,
+   "max": 0.91536
+  },
+  "k_raw": {
+   "min": 0.0,
+   "p10": 0.0,
+   "p50": 0.135165,
+   "p90": 0.50732,
+   "max": 0.91536
+  },
+  "scenes_k_differs_from_k_raw": 13
+ },
+ "L": {
+  "scenes_label_fires": 13,
+  "scene_rate_label_fires": 0.03009259259259259,
+  "scenes_human_lane_change_i": 13,
+  "scenes_route_needs_iii": 5,
+  "scenes_start_on_lane": 286,
+  "proposal_rate_lc_executed": 0.02325665509259259,
+  "proposal_rate_dither": 0.07921006944444445
+ },
+ "reward_term_size": {
+  "mean_abs_lam_d_D": 0.006474388888888889,
+  "mean_abs_guard": 0.03379569107620805,
+  "mean_abs_lam_k_K": 0.008908386646412038,
+  "mean_abs_lam_l_L": 0.004285916069878473,
+  "mean_abs_pdms": 0.6275482446741174
+ },
+ "scenes_where_argmax_R_core_differs_from_argmax_PDMS": 1,
+ "scenes_where_argmax_R_r2_differs_from_argmax_R_core": 232,
+ "note_argmax": "np.argmax takes the FIRST of exact ties, so the two counts above are tie-sensitive; the tie counts below say how many scenes have a tied top",
+ "scenes_with_tied_top": {
+  "PDMS": 318,
+  "R_core": 317,
+  "R_r2": 103
+ },
+ "PDMS_given_up_by_the_R2_pick_vs_best_PDMS": {
+  "max": 0.02113750000000003,
+  "mean": 0.0002717592592592594,
+  "scenes_with_gap_gt_0.01": 5
+ }
+}
