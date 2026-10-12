@@ -54,3 +54,58 @@ No evidence for the 2 Hz-hold augmentation lever (O2). The NAVSIM-native contrac
 `stage/<repo path>/temporal_history_2026-10-12/`: `PREREG.md`, `RESULT.md`, `HANDOFF.md`, `code/{make_g3_windows,hold_roll,hist_analyze,blind_control,make_tables}.py`, `raw/*` (above). Top-level: `C:/Users/Admin/qland/hold_temporal/RESULT.md`, `msg.txt`.
 Off-git, dev box only: roll dumps `E:/hold_temporal/work/dumps/{real_s0,real_s1,hold,st,nt,blind}`, analysis `E:/hold_temporal/work/analysis`, tip clone `E:/hold_temporal/tip`, battery code copy `E:/hold_temporal/work/battery`. Full-S6 extension: `E:/hold_temporal/work/{dumps/f_*,analysis_full}`.
 Suggested register line (for the Master Mind): H-HIST-1 -- G3 verdict O3/INDETERMINATE; bounds above; extension pending.
+
+---
+
+## FULL-S6 extension (PREREG s6 O3's named next lever; a SEPARATE section — G3 above stays the registered primary)
+
+**Run:** the same arms, checkpoint, sampler seeds and analysis on **all 3,668 S6 windows / 139 episodes** (G3: 1,253).
+Dev box GPU, 2026-10-12 01:30–02:51 Europe/Berlin. Two rolls (D NT, B HOLD) died when the landing renamed the hold dir
+under them; both were re-run from a byte-identical code copy (`E:/hold_temporal/code`, `make_tables.py` md5 `277599a1…`
+in both places). Every other arm is the original roll. Tables: `raw/tables_full.md`; verdict: `raw/full_verdict_s6.json`.
+
+### PREREG s5 classification on the full set (MEASURED, T1 open loop, paired episode-cluster bootstrap B=2000)
+| arm | P1 ADE | P2 along | P3 cross | P4 TAC lon | P5 LEAD-VIOL | arm verdict |
+|---|---|---|---|---|---|---|
+| A-rep (inference seed 1) | EQUIV | INDET | INDET | INDET | INDET | MIXED |
+| B HOLD | EQUIV | EQUIV | INDET | EQUIV | INDET | MIXED |
+| C NAVSIM-ST | EQUIV | EQUIV | INDET | EQUIV | INDET | MIXED |
+| D NAVSIM-NT | EQUIV | EQUIV | INDET | EQUIV | INDET | MIXED |
+
+**Verdict, as pre-registered: O3 again — MIXED. Not O1 (P3 and P5 are not EQUIVALENT for C or D), not O2 (no arm is
+DEGRADED on any primary).** No margin or metric was changed.
+
+### What moved from G3 to the full set
+* **P1, P2, P4 became EQUIVALENT for B, C and D** (all three INDETERMINATE in G3). S6 ADE deltas: ST **+0.014 m
+  [−0.020, +0.046]** (95 % upper bound **+1.7 %** of 2.700 m), NT **+0.003 [−0.028, +0.033]** (upper +1.2 %), HOLD
+  +0.006 [−0.026, +0.037]. The G3 upper bounds were +3.8 % (ST) and +3.3 % (NT).
+* **P3 cross-track stays INDETERMINATE for every arm, including the replicate.** All four point estimates are within
+  ±0.010 m of 0. The CI half-widths are ~0.017–0.019 m against a margin of 0.0170 m. **At n = 3,668 / 139 episodes, the
+  2 % P3 margin sits at the instrument's own resolution**: A-rep, which differs from A only in the sampler seed, cannot
+  clear it either.
+* **P5 LEAD-VIOL (1,151 lead windows; at-risk = human ≥ 1.0 s):** B HOLD and D NT read **−0.0096 [−0.0185, −0.0025/−0.0027]
+  SEP**, i.e. FEWER at-risk violations without real history (47 → 39 of the at-risk windows). |Δ| 0.0096 < the 0.01
+  margin, so it is INDETERMINATE under s5, not IMPROVED. ST −0.0060 [−0.0161, +0.0025]. A-rep +0.0024 [−0.0065, +0.0108].
+  ⚠️ This is the third variance in CLAUDE.md (inference): 8 violations of difference on one sampler draw per arm.
+* Separated non-primary cells (S2, short horizon) appear on **A-rep only** (accel MAE −0.0039, yaw-rate +0.00039, TAC lon
+  +0.0063) — the replicate against itself, i.e. the S2 noise floor. None appears on B, C or D.
+
+### What it supports
+* **MEASURED bound:** on this checkpoint, removing all image motion (ST) or all time spacing (NT) moves S6 ADE by at most
+  **+1.7 % / +1.2 %** (95 % upper), and no arm is DEGRADED on any of the five primaries. The history is **not shown to be
+  load-bearing**. The pre-registered O1 claim (EQUIVALENT on all five) is **not established**, because P3 and P5 cannot
+  be resolved at this n.
+* Scope unchanged: T1 open loop on PhysicalAI, one checkpoint, does NOT measure NAVSIM PDMS.
+
+### Next lever (named, not run here)
+P3 and P5 are limited by the sampler (A-rep fails them) and by the 139 episodes, and the full S6 set is exhausted. The
+cheapest lever that can still move them is **inference-seed averaging**: K seeds per arm, plans scored per seed, paired
+on the seed-mean. It shrinks the sampler term; the episode term remains. It needs its own pre-registration (K, and
+whether the margin is judged on the seed-mean) BEFORE any roll. Cost ESTIMATED from these rolls: ~30–40 min dev-box GPU
+per roll, so K = 3 × 5 arms ≈ 8–10 h. Not on refcv8's critical path; refcv9's input contract is the consumer.
+
+### Manifest (this extension)
+`raw/tables_full.md`, `raw/full_{cross_paired_s2,cross_paired_s6,lead_viol,verdict_s6}.json`,
+`raw/full_roll_{real_s0,real_s1,hold,st,nt}.json`, `raw/full_s6_windows.json`. Off-git, dev box only: dumps
+`E:/hold_temporal/work/dumps/f_*` (the two dead rolls kept as `f_{nt,hold}_dead_pathmove`), analysis
+`E:/hold_temporal/work/analysis_full`.
