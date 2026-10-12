@@ -303,6 +303,7 @@ per sample, so the other 63 proposals are free to leave the road, and "dirty fan
 - Limits: it acts on the raw plan, so it does not touch the 29 % of failures made by the tracker (F2); it may shorten plans (EP
   risk, pre-registered as an adverse-component check).
 - Registered as a separate arm because bundling it with the head confounds the one question this spec asks. **D-AUX-4.**
+- ⚠️ **CORRECTION 2026-10-12 (read against the banked PDF `2605.04647`, eq. 11-14):** ReflectDrive-2's `L_field` is a field-weighted **log barrier on the probability mass** its coordinate tokens put on BEV cells, `sum_t sum_ij -log(1 - p_xy[i,j]) C[i,j]`, with `C = max(0, d_out - eps_safe)`, applied to waypoints. It is **not** a hinge on footprint corners of continuous proposals. The arm above is the continuous-trajectory analogue of the same cost field (REFe emits trajectories, not token distributions), so the **+2.4 PDMS / DAC 93.9 -> 97.0 is PUBLISHED for a related loss, one run**, and is a prior for this arm, never its expected effect. Implementation and proof: `refe/field_loss.py`, `refe/test_field_loss.py` (`ZZTEST_PASS 42`); draft prereg `eval/PREREG_AUX_FIELD_LOSS_DRAFT.md`.
 
 ## 9 · Risks and what would change my mind
 
