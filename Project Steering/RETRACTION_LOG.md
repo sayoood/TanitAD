@@ -18025,3 +18025,26 @@ without re-verification) and C6 (the contrast varied more than the label admits)
 50,400), window set (881/40 vs 4,754/139) and anchor count (128 vs 117) all changed under one name.
 ⇒ **A MEASURED row must name its raw artifact path and its n (windows / episodes / candidates).** A row whose figures
 equal another arm's registered figures at 4 dp is a lint hit until its artifact is shown.
+
+### R35 (2026-10-12) - "VMAX-SHUF (another window's speed) is the leak control for the refcv8 speed input" (SPEC_WPB_LADDER L4 bar 2; SPEC_REFCV8 sec. 8.3 (c)(3) via A3 item 6)
+
+- **What is true (MEASURED, Thor, `/home/nvidia/refcv8_ladder/W/eval/V-R8/`).** On the ladder's eval139 grid every
+  batch is ONE episode: `window_set` takes K=8 windows per episode in sha order, the loader runs `shuffle=False`, and
+  `--batch 8`. The speed input is a per-CLIP road-type label, and `speed_input_treatment`'s "shuf" rolls it INSIDE the
+  batch. So the row hands every window its own clip's value. `vmax_shuf_s{0,1}.npz` equal `base_s{0,1}.npz` on all
+  31 arrays, `v_fed` included.
+- **What it would have cost.** L4 bar 2 ("VMAX-SHUF - VMAX-OFF not separated better") read base vs VMAX-OFF. On
+  literal worlds it CLEARS a real leak and FAILS a world without one (`test_ladder_xshuf.py`). No verdict had been read
+  from it: the ladder scores nothing before I-0 at the chain's end. The Master Mind's DESCRIPTIVE V-R8 vs V0 read
+  showed the exact zeros, which is how it was caught.
+- **Fixed (SPEC_WPB_LADDER_A4).** A new row `vmax_xshuf` takes a DIFFERENT clip's speed (1,112 / 1,112 windows changed
+  on this grid). The amended scorer refuses to pass bar 2 unless the row's fed speed is shown to differ from base. The
+  chain's own files are unchanged; the extra eval runs after the chain.
+
+**Class:** *a shuffle control whose permutation group is smaller than the variable's support.* An in-batch roll is the
+identity whenever the batch is homogeneous in the shuffled variable — here because the eval grid is episode-contiguous
+and the variable is per-clip. Same family as CLAUDE.md's "a check that shares the defect it checks for is green
+forever". ⇒ **Every shuffle / derangement control must assert, at run time, that the fed value CHANGED on the windows
+it claims to perturb, and report that count beside its result.** An exact 0.0000 delta on every metric is a lint hit,
+not a null result. The RC rows' exact zeros on the same arm are NOT this defect: no route checkpoint is fed (PI
+2026-10-11), so they are structural zeros by design.
