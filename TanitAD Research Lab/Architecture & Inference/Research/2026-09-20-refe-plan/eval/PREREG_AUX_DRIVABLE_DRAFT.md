@@ -1,7 +1,7 @@
 # Auxiliary drivable-area head: pre-registration (DRAFT)
 
 > ⛔ **DRAFT. It is not in force until all three hold:**
-> 1. the PI has decided **D-AUX-1** (inside P6, or a separate arm) and **D-AUX-2** (`SPEC_AUX_DRIVABLE_HEAD.md` §0);
+> 1. the PI has decided **D-AUX-1** (inside P6, or a separate arm) and **D-AUX-2** (`SPEC_AUX_DRIVABLE_HEAD.md` §0); **MET 2026-10-12: D-AUX-1 = (b) separate arm, D-AUX-2 = yes (PI in chat; SPEC §0 "PI DECISIONS").**
 > 2. the label store is built and its **S0 gate passes** (`SPEC_AUX_DRIVABLE_HEAD.md` §7: alignment, no-leakage, exact-0.0 controls, mutation arms RED);
 > 3. this file is finalised, its blanks (last section) are filled, and it is **landed in git before the first training step of the first arm**.
 >

@@ -35,6 +35,15 @@ realistic range (+1.0 to +1.6) is **1.8–2.9× the published seed std**. A sing
 | **D-AUX-3** | a pod slot for the graft arms (~40 A40-h for head + control, ESTIMATED from P2's ~20 h/arm) | decide after S1 reads (§5) |
 | **D-AUX-4** | register the proposal-level field loss (§8) as its own arm | **yes**: it has the largest controlled published effect (+2.4 PDMS) and needs no extra labels |
 
+### PI DECISIONS (2026-10-12, in chat: *"yes to D-AUX-1 to 4"*, i.e. the recommendation column above)
+
+| id | decided |
+|---|---|
+| **D-AUX-1** | **(b) a separate arm.** P6 stays paper-faithful and head-less. |
+| **D-AUX-2** | **yes: build the label store now** (S0, CPU, dev box). |
+| **D-AUX-3** | **the pod slot (~40 A40-h) is decided AFTER S1 reads** (§5). No A40 time is committed by this ruling. |
+| **D-AUX-4** | **yes: the proposal-level field loss (§8) is registered as its own arm.** |
+
 ### Conflicts found (reported, not fixed)
 
 1. **`MODEL_REGISTRY.md` has no §14.2 and no SFT-4 / u400 row.** §14 ends at 14.1 and `grep -c "88\.25"` on the registry = 0.
