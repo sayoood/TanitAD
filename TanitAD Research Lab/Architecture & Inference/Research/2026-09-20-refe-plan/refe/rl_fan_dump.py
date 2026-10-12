@@ -35,15 +35,27 @@ depend on it: `eval/rl_fan_identity.py` measures that).
 
 EXIT CODES: 0 ok - 3 scene(s) with no bank row / unresolved image under --pixels (written to <out>/unavailable_scenes_<tag>.tsv; see
 `refe/rl_pool_available.py` for the one admissible remedy) - 4 refused (bad arguments, checkpoint / manifest mismatch) - 5 `--compare-sets` found a set
-that is NOT bit-identical (default), or -- with `--compare-atol X` -- a set whose max |delta| over every x / y / yaw value exceeds X.
+that is NOT bit-identical (default), or -- with `--compare-atol X` -- a set whose max |delta| over every x / y / yaw value exceeds X, or -- with `--compare-mean-atol M` as
+well -- a set whose mean |delta| over its x / y values exceeds M.
 Markers: `ZZRLFAN_PLAN <n>`, `ZZRLFAN_DONE <written> <skipped_done> <missing>`, and with `--compare-atol`: `ZZRLFAN_ATOL_PASS <matched> <max_delta> <atol>` or
-`ZZRLFAN_ATOL_FAIL <matched> <beyond> <max_delta> <atol>`.
+`ZZRLFAN_ATOL_FAIL <matched> <beyond> <max_delta> <atol>`; and with `--compare-mean-atol` as well: `ZZRLFAN_MEAN_ATOL_PASS <matched> <max_m> <mean_atol>` or
+`ZZRLFAN_MEAN_ATOL_FAIL <matched> <beyond> <max_m> <mean_atol>` (one line per bound, the bound's own value last).
 
 `--compare-atol X` (RL-S1 pod gate, 2026-10-12): bit-identity holds only at matched batching on ONE GPU.  `eval/rl_fan_identity.py` MEASURED (RTX 4060) that BOTH
 dumpers move by up to 0.25 when the batch grouping changes, and that dev box vs the A40's banked step-10,075 sets differ by max abs 0.25 on every key; a
 bit-identical gate would REFUSE a correct dumper on the pod.  With X the gate is an ABSOLUTE tolerance in trajectory units (metres for x / y, radians for yaw, one
 number for all three), judged per set as `max |delta| <= X`.  X is chosen from the measured floor and the deliberate-regression arms in
 `raw/rl_fan/atol_calibration/`, never assumed.  Default (no flag): today's bit-identical gate, unchanged.
+
+`--compare-mean-atol M` (2026-10-12, needs `--compare-atol`): the SECOND bound.  Round 1 (`raw/rl_fan/atol_calibration/verdict.json`) found the per-set MAX delta useless as the only
+bound (one bf16 ulp, 0.25, in every null; 5 of 6 regression arms missed the 10x bar), and round 2 (`round2/PREREG_ROUND2.md`, PASS, `round2/verdict_round2.json`, CHOSEN_MEAN_ATOL 0.025,
+48 keys the first round never saw) pre-registered and passed the per-set MEAN: m = (1 / n) * sum |new - ref| over EVERY x and EVERY y value of the set, YAW EXCLUDED (the definition of
+`run_calibration.xy_moments` / `arm_deltas` element 3, mirrored here line for line, including the left-to-right summation order, so the two agree to the last bit; the test recomputes it
+with that code).  A set FAILS when m > M (strict: m == M is within); a shape mismatch of the x / y arrays or a non-finite x / y value is m = inf.  `--compare-atol` stays the
+CATASTROPHE bound and is REQUIRED beside it: m never reads yaw, so the max bound is the one that sees a yaw fault and a dropped yaw proposal.  The report then also carries `mean_atol`,
+`within_mean_atol`, `beyond_mean_atol`, `max_mean_abs_delta`, `mean_abs_delta_quantiles` (nearest-rank p50 / p90 / p99 / max of m over ALL matched sets: on a pod the A40-vs-A40 floor,
+to be banked) and `first_beyond_mean_atol`; without the flag NONE of those keys exist.  A round-2 PASS is a gate on the fan's movement on one 48-key sample per arm, not a proof that the pod
+is equivalent and not a check that the calibration table is the right vehicle's (PREREG_ROUND2 sections 6 and 9).
 """
 from __future__ import annotations
 
@@ -346,6 +358,30 @@ def set_delta_strict(a, b):
     return dxy, dyaw
 
 
+def set_mean_abs_xy_strict(a, b):
+    """m of two (traj, yaw) pairs: (1 / n) * sum |a - b| over EVERY x and EVERY y value of the set, yaw excluded.  Mirrors `run_calibration.xy_moments` (raw/rl_fan/atol_calibration/)
+    line for line -- same loop nest, same left-to-right accumulation, same `sa / n` -- so a valid set gives the identical float.  Where that analysis code lets `zip` truncate and lets
+    a NaN make `m > M` False, this is STRICT: a shape mismatch of the x / y arrays, or a non-finite x / y value on either side, is `inf` (a fan with a dropped proposal, or a NaN, must
+    never read as 'within tolerance').  Yaw is outside this statistic altogether (values and shape): the max bound reads yaw."""
+    (ta, _), (tb, _) = a, b
+    if len(ta) != len(tb):
+        return math.inf
+    sa, n = 0.0, 0
+    for pa, pb in zip(ta, tb):
+        if len(pa) != len(pb):
+            return math.inf
+        for qa, qb in zip(pa, pb):
+            if len(qa) != len(qb):
+                return math.inf
+            for u, w in zip(qa, qb):
+                d = u - w
+                if not math.isfinite(d):
+                    return math.inf
+                sa += abs(d)
+                n += 1
+    return sa / n if n else 0.0
+
+
 def quantile_nearest_rank(sorted_vals, q):
     """Nearest-rank quantile (the smallest value with at least a fraction q of the sample at or below it); q in (0, 1].  Empty -> 0.0."""
     if not sorted_vals:
@@ -353,7 +389,7 @@ def quantile_nearest_rank(sorted_vals, q):
     return sorted_vals[max(0, math.ceil(q * len(sorted_vals)) - 1)]
 
 
-def compare_sets(new_path, ref_paths, ckpt_step, atol=None):
+def compare_sets(new_path, ref_paths, ckpt_step, atol=None, mean_atol=None):
     """Compare this run's sets with EXISTING sets of the same keys and ckpt_step (e.g. the step-10,075 sets of the main run).  Exact list equality of traj
     and yaw (both sides are 5/6-decimal rounded floats).  -> dict with counts, max |delta| over unequal keys, and the first unequal keys.
     Every reference line of a key must also agree with the other reference lines of that key (a relabelled set keeps its proposals).
@@ -361,7 +397,11 @@ def compare_sets(new_path, ref_paths, ckpt_step, atol=None):
     atol=None: the result is exactly the bit-identity report above (no extra keys).  atol=X (a finite float >= 0): the report ALSO carries `atol`, `within_atol`
     (sets with max |delta| <= X, bit-identical ones included), `beyond_atol` (> X, strict; a shape mismatch or non-finite value is always beyond), `max_abs_delta`
     (over every matched set), `max_abs_delta_xy` / `max_abs_delta_yaw`, `delta_quantiles` (nearest-rank p50 / p90 / p99 / max of the per-set max delta over ALL
-    matched sets) and `first_beyond_atol`.  `not_identical` and the reference-disagreement count keep their exact meaning."""
+    matched sets) and `first_beyond_atol`.  `not_identical` and the reference-disagreement count keep their exact meaning.
+
+    mean_atol=M (a finite float >= 0): the report ALSO carries `mean_atol`, `within_mean_atol` (sets with m <= M, `set_mean_abs_xy_strict`; bit-identical ones included), `beyond_mean_atol`
+    (m > M, strict; inf is always beyond), `max_mean_abs_delta`, `mean_abs_delta_quantiles` (nearest-rank p50 / p90 / p99 / max of m over ALL matched sets) and `first_beyond_mean_atol`.
+    mean_atol=None adds NO key.  The two bounds are independent: this function judges nothing, the caller exits 5 on either."""
     new = {}
     with open(new_path, encoding="utf-8", newline="") as f:
         for ln in f:
@@ -397,7 +437,10 @@ def compare_sets(new_path, ref_paths, ckpt_step, atol=None):
                 ref.setdefault(k, v)
     n_equal, unequal, max_abs = 0, [], 0.0
     per_set = []                                                        # atol mode: (key, max |delta| over x / y / yaw, d_xy, d_yaw) for EVERY matched set
+    mean_ms = []                                                        # mean_atol mode: (key, m = mean |delta| over x / y) for EVERY matched set
     for k, v in ref.items():
+        if mean_atol is not None:
+            mean_ms.append((k, 0.0 if new[k] == v else set_mean_abs_xy_strict(new[k], v)))
         if new[k] == v:
             n_equal += 1
             if atol is not None:
@@ -428,6 +471,14 @@ def compare_sets(new_path, ref_paths, ckpt_step, atol=None):
                     "delta_quantiles": {"p50": quantile_nearest_rank(ds, 0.5), "p90": quantile_nearest_rank(ds, 0.9), "p99": quantile_nearest_rank(ds, 0.99),
                                         "max": ds[-1] if ds else 0.0},
                     "first_beyond_atol": [[list(k), d] for k, d in beyond[:5]]})
+    if mean_atol is not None:
+        mbeyond = sorted(((k, m) for k, m in mean_ms if m > mean_atol), key=lambda km: -km[1])
+        ms = sorted(m for _, m in mean_ms)
+        out.update({"mean_atol": mean_atol, "within_mean_atol": len(mean_ms) - len(mbeyond), "beyond_mean_atol": len(mbeyond),
+                    "max_mean_abs_delta": ms[-1] if ms else 0.0,
+                    "mean_abs_delta_quantiles": {"p50": quantile_nearest_rank(ms, 0.5), "p90": quantile_nearest_rank(ms, 0.9), "p99": quantile_nearest_rank(ms, 0.99),
+                                                 "max": ms[-1] if ms else 0.0},
+                    "first_beyond_mean_atol": [[list(k), m] for k, m in mbeyond[:5]]})
     return out
 
 
@@ -459,6 +510,10 @@ def build_parser():
     ap.add_argument("--compare-atol", type=float, default=None,
                     help="with --compare-sets: judge each set by max |delta| over every x / y / yaw value <= ATOL (absolute, trajectory units) instead of bit-identity; exit 5 iff any set "
                          "is beyond it.  Default None = the bit-identical gate, unchanged.  Choose ATOL from raw/rl_fan/atol_calibration/ (a measured floor and regression arms), never by hand")
+    ap.add_argument("--compare-mean-atol", type=float, default=None,
+                    help="with --compare-atol: ALSO judge each set by m = mean |delta| over its x / y values (yaw excluded) <= MEAN_ATOL; exit 5 iff any set is beyond EITHER bound.  The "
+                         "second, tighter bound (round 2: raw/rl_fan/atol_calibration/round2/verdict_round2.json CHOSEN_MEAN_ATOL); --compare-atol stays the catastrophe bound.  Default None = "
+                         "behaviour unchanged")
     ap.add_argument("--compare-min-matched", type=int, default=None,
                     help="with --compare-sets: REFUSE (exit 4) when fewer than this many dumped keys have a reference set (a gate that compares 3 of 512 sets proves little); "
                          "matching NOTHING is always refused")
@@ -484,6 +539,10 @@ def run(a, *, build=None, loader=None, ds_factory=None):
             raise ValueError("--compare-atol / --compare-min-matched need --compare-sets (a tolerance with nothing to compare against would be silently ignored)")
         if a.compare_atol is not None and not (math.isfinite(a.compare_atol) and a.compare_atol >= 0):
             raise ValueError(f"--compare-atol {a.compare_atol!r}: need a finite number >= 0")
+        if a.compare_mean_atol is not None and a.compare_atol is None:
+            raise ValueError("--compare-mean-atol needs --compare-atol (the max bound is the catastrophe bound and the only one that reads yaw; the mean bound never replaces it)")
+        if a.compare_mean_atol is not None and not (math.isfinite(a.compare_mean_atol) and a.compare_mean_atol >= 0):
+            raise ValueError(f"--compare-mean-atol {a.compare_mean_atol!r}: need a finite number >= 0")
         if a.compare_min_matched is not None and a.compare_min_matched < 1:
             raise ValueError(f"--compare-min-matched {a.compare_min_matched}: need >= 1")
     except (ValueError, OSError, KeyError, json.JSONDecodeError) as e:
@@ -567,7 +626,7 @@ def run(a, *, build=None, loader=None, ds_factory=None):
         refs = []
         for p in a.compare_sets:
             refs += sorted(glob.glob(os.path.join(p, "onpolicy_*.jsonl"))) if os.path.isdir(p) else [p]
-        cmp_ = compare_sets(out_file, refs, step, atol=a.compare_atol)
+        cmp_ = compare_sets(out_file, refs, step, atol=a.compare_atol, mean_atol=a.compare_mean_atol)
         manifest["compare_sets"] = cmp_
         print("  compare-sets: " + json.dumps(cmp_), flush=True)
         if cmp_["reference_keys_matched"] == 0:
@@ -582,6 +641,12 @@ def run(a, *, build=None, loader=None, ds_factory=None):
                 print(f"ZZRLFAN_ATOL_FAIL {cmp_['reference_keys_matched']} {cmp_['beyond_atol']} {cmp_['max_abs_delta']:.6g} {a.compare_atol:g}", flush=True)
             else:
                 print(f"ZZRLFAN_ATOL_PASS {cmp_['reference_keys_matched']} {cmp_['max_abs_delta']:.6g} {a.compare_atol:g}", flush=True)
+            if a.compare_mean_atol is not None:
+                if cmp_["beyond_mean_atol"] or cmp_["reference_lines_disagreeing_with_each_other"]:
+                    rc = EXIT_MISMATCH
+                    print(f"ZZRLFAN_MEAN_ATOL_FAIL {cmp_['reference_keys_matched']} {cmp_['beyond_mean_atol']} {cmp_['max_mean_abs_delta']:.6g} {a.compare_mean_atol:g}", flush=True)
+                else:
+                    print(f"ZZRLFAN_MEAN_ATOL_PASS {cmp_['reference_keys_matched']} {cmp_['max_mean_abs_delta']:.6g} {a.compare_mean_atol:g}", flush=True)
         elif cmp_["not_identical"] or cmp_["reference_lines_disagreeing_with_each_other"]:
             rc = EXIT_MISMATCH
     manifest["finished"] = True

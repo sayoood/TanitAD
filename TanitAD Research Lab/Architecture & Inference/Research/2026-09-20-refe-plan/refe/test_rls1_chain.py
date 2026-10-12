@@ -12,9 +12,11 @@
      ones, the planned update count equals the pre-registered budget; `rls1_checks.tlane_exact` / `updates_check` are driven in both directions and by source mutations.
 
   6. The FAN-EQUIVALENCE GATE (2026-10-12, stage `fancmp`): does this pod's dumper reproduce the fan the main run banked at step 10,075?  `check_fancmp` holds its static
-     properties (the pinned slice, the argv that reaches rl_fan_dump.py, the verdict that is read from the dumper's exit AND its marker, the tolerance equal to the MEASURED
-     one in raw/rl_fan/atol_calibration/verdict.json, the banked-sets path equal to the P2 chain's); `fancmp_behaviour` runs the stage's own text under bash against a stub
-     dumper and asserts the argv the caller really passes plus every refusal.
+     properties (the pinned slice, the argv that reaches rl_fan_dump.py, the verdict that is read from the dumper's exit AND BOTH markers at the bound each echoes, the TWO
+     bounds -- the catastrophe bound `FANCMP_ATOL` and the mean bound `FANCMP_MEAN_ATOL` -- being constants of the chain equal to the ones the measurement chose in
+     raw/rl_fan/atol_calibration/round2/verdict_round2.json (`catastrophe_atol_kept`, `CHOSEN_MEAN_ATOL`, state PASS), `RLS1_FANCMP_ATOL` / `RLS1_FANCMP_MEAN_ATOL` being guards that
+     must EQUAL the pins and never inputs, the done-marker bound to the bounds it passed under, the banked-sets path equal to the P2 chain's); `fancmp_behaviour` runs the
+     stage's own text under bash against a stub dumper and asserts the argv the caller really passes, every refusal, every env value that must be refused, and a stale marker.
 
 Run: python refe/test_rls1_chain.py   -> ZZTEST_PASS <n>   (needs bash on PATH; Git Bash on the dev box).   Any skipped check prints ZZTEST_SKIP and is NOT counted.
 """
@@ -88,6 +90,7 @@ def check_fancmp(text):
     for need, tag in (('--ckpt "$FINAL"', "FANCMP_NOT_FROM_MODEL_FINAL"), ('--expect-ckpt-sha256 "$FINAL_SHA256"', "FANCMP_SHA_NOT_PINNED"), ('--keys "$FANCMP_KEYS"', "FANCMP_KEYS_NOT_THE_SLICE"),
                       ('--targets "$TARGETS"', "FANCMP_WRONG_BANK"), ('--images "$IMAGES"', "FANCMP_WRONG_IMAGES"), ('--calib "$CALIB"', "FANCMP_WRONG_CALIB"),
                       ('--compare-sets "$BANKED"', "FANCMP_NO_COMPARE_SETS"), ('--compare-atol "$FANCMP_ATOL"', "FANCMP_NO_ATOL"),
+                      ('--compare-mean-atol "$FANCMP_MEAN_ATOL"', "FANCMP_NO_MEAN_ATOL"),
                       ('--compare-min-matched "$NK"', "FANCMP_NO_MIN_MATCHED"), ("200>&-", "FANCMP_FD200"), ("env -u HF_TOKEN", "FANCMP_TOKEN_NOT_STRIPPED"),
                       ("OMP_NUM_THREADS=1", "FANCMP_THREADS")):
         if need not in c:
@@ -95,7 +98,10 @@ def check_fancmp(text):
     for bad in ("--allow-missing", "--limit", "--plan-only", "--shard"):
         if bad in c:
             v.append("FANCMP_NARROWED:" + bad)
-    if not re.search(r'\{ \[ "\$frc" = 0 \] && grep -q "\^ZZRLFAN_ATOL_PASS \$NK " "\$R/fancmp\.log"; \} \|\| refuse', body):
+    # the verdict: the dumper's exit AND the max-bound marker AND the mean-bound marker, each with the slice's key count and ECHOING the pinned bound it applied
+    verdict_line = ('{ [ "$frc" = 0 ] && grep -qE "^ZZRLFAN_ATOL_PASS $NK [^ ]+ ${FANCMP_ATOL}\\$" "$R/fancmp.log" '
+                    '&& grep -qE "^ZZRLFAN_MEAN_ATOL_PASS $NK [^ ]+ ${FANCMP_MEAN_ATOL}\\$" "$R/fancmp.log"; } || refuse')
+    if verdict_line not in body:
         v.append("FANCMP_VERDICT_UNCHECKED")
     if not re.search(r'sha256sum "\$FANCMP_KEYS".*= "\$FANCMP_KEYS_SHA256" \] \|\| refuse', body):
         v.append("FANCMP_KEYS_UNPINNED")
@@ -127,25 +133,39 @@ def check_fancmp(text):
             v.append("FANCMP_KEYS_MALFORMED")
         elif any(r[1] in ho for r in body_rows):
             v.append("FANCMP_KEYS_IN_HELDOUT_LOGS")
-    # The tolerance: RLS1_FANCMP_ATOL, required.  A numeric DEFAULT is allowed only when raw/rl_fan/atol_calibration/verdict.json CHOSE one (CHOSEN_ATOL) and then it must equal it:
-    # a number the pre-registered rule did not accept is an assumption, and the chain must not carry one.
-    matol = re.search(r'^FANCMP_ATOL="\$\{RLS1_FANCMP_ATOL:-([^}]*)\}"$', text, re.M)
-    vj = CAL_DIR / "verdict.json"
-    if not matol:
-        v.append("FANCMP_ATOL_NOT_AN_INPUT")
-    elif not vj.is_file():
-        v.append("FANCMP_ATOL_UNMEASURED")
-    else:
-        chosen = json.loads(vj.read_text(encoding="utf-8")).get("CHOSEN_ATOL")
-        dflt = matol.group(1)
-        if chosen is None and dflt != "":
-            v.append(f"FANCMP_ATOL_PICKED_WITHOUT_A_MEASURED_ONE:{dflt}")
-        elif chosen is not None and (dflt == "" or abs(float(dflt) - chosen) > 1e-12):
-            v.append(f"FANCMP_ATOL_DRIFT:chain default {dflt!r} measured {chosen}")
-    if '[ -n "$FANCMP_ATOL" ] || refuse' not in body:
-        v.append("FANCMP_ATOL_NOT_REQUIRED")
-    if not re.search(r"awk -v a=\"\$FANCMP_ATOL\" 'BEGIN \{ exit !\(a ~ .*a \+ 0 > 0 && a \+ 0 <= 1\.0\) \}' \|\| refuse", body):
-        v.append("FANCMP_ATOL_RANGE_UNCHECKED")
+    # The BOUNDS: constants of the chain, NOT inputs, equal to what the measurement chose.  Round 2 (raw/rl_fan/atol_calibration/round2/verdict_round2.json, state PASS) chose the
+    # MEAN bound (CHOSEN_MEAN_ATOL) and kept the catastrophe bound (catastrophe_atol_kept); a number the pre-registered rule did not accept is an assumption.
+    vj = CAL_DIR / "round2" / "verdict_round2.json"
+    verdict = json.loads(vj.read_text(encoding="utf-8")) if vj.is_file() else None
+    if verdict is None:
+        v.append("FANCMP_BOUNDS_UNMEASURED")
+    elif verdict.get("state") != "PASS":
+        v.append(f"FANCMP_ROUND2_NOT_PASS:{verdict.get('state')}")
+    for var, key in (("FANCMP_ATOL", "catastrophe_atol_kept"), ("FANCMP_MEAN_ATOL", "CHOSEN_MEAN_ATOL")):
+        if len(re.findall(rf"^{var}=", text, re.M)) != 1:
+            v.append(f"{var}_NOT_ASSIGNED_ONCE")
+        mc = re.search(rf"^{var}=([0-9]*\.?[0-9]+)$", text, re.M)
+        if not mc:
+            v.append(f"{var}_NOT_PINNED")
+        elif verdict is not None:
+            want = verdict.get(key)
+            if want is None or abs(float(mc.group(1)) - float(want)) > 1e-12:
+                v.append(f"{var}_DRIFT:chain {mc.group(1)!r} measured {want!r} ({key})")
+    # the env vars are GUARDS (set -> must equal the pin, else refuse), read nowhere else
+    for env, var in (("RLS1_FANCMP_ATOL", "FANCMP_ATOL"), ("RLS1_FANCMP_MEAN_ATOL", "FANCMP_MEAN_ATOL")):
+        gl = next((ln for ln in body.split("\n") if ln.strip().startswith(f'[ -z "${{{env}:-}}" ] ||')), "")
+        if not (gl and f'awk -v a="${env}" -v p="${var}"' in gl and "a + 0 == p + 0" in gl and gl.rstrip().count("|| refuse") == 1 and "a ~ /^[0-9]*[.]?[0-9]+$/" in gl):
+            v.append(f"{env}_NOT_GUARDED")
+    for ln in text.split("\n"):
+        if re.search(r"(?<![A-Z0-9])RLS1_FANCMP_(MEAN_)?ATOL", ln) and not ln.lstrip().startswith("#") and not ln.lstrip().startswith('[ -z "${RLS1_FANCMP_'):
+            v.append("FANCMP_BOUND_READ_FROM_ENV:" + ln.strip()[:60])
+    # the done-marker is bound to the bounds it passed under: a marker from another pair (or none) is discarded and the stage runs again
+    if not re.search(r'^if stage_done fancmp && ! grep -qx "atol=\$FANCMP_ATOL mean_atol=\$FANCMP_MEAN_ATOL" "\$S/fancmp\.ok"; then\n.*\n  rm -f "\$S/fancmp\.ok"\nfi$', text, re.M):
+        v.append("FANCMP_MARKER_NOT_BOUND_TO_BOUNDS")
+    if not re.search(r'  stage_mark fancmp\n  echo "atol=\$FANCMP_ATOL mean_atol=\$FANCMP_MEAN_ATOL" >> "\$S/fancmp\.ok"\n', body):
+        v.append("FANCMP_MARKER_BOUNDS_NOT_RECORDED")
+    if "grep '^ZZRLFAN_MEAN_ATOL_PASS'" not in text:
+        v.append("FANCMP_OK_MARKER_NO_MEAN_VERDICT")
     # the banked-sets default is P2's own SETS path (refe/p2r_pod.sh), not a guess
     mb = re.search(r'^BANKED="\$\{RLS1_BANKED_SETS:-(\S+?)\}"$', text, re.M)
     p2 = (HERE / "p2r_pod.sh").read_text(encoding="utf-8")
@@ -471,10 +491,28 @@ def mutations(text):
         ("the slice pin is edited", sw("FANCMP_KEYS_SHA256=" + "4c613ff0", "FANCMP_KEYS_SHA256=" + "4c613ff1"), "FANCMP_KEYS_PIN_DRIFT"),
         ("the slice pin is not enforced", drop_line(text, 'sha256sum "$FANCMP_KEYS"'), "FANCMP_KEYS_UNPINNED"),
         ("the slice size is a constant", sw('NK=$(( $(wc -l < "$FANCMP_KEYS") - 1 ))', "NK=1"), "FANCMP_NK_NOT_THE_SLICE_SIZE"),
-        ("a default tolerance is picked although the rule chose none", sw(atol_line, 'FANCMP_ATOL="${RLS1_FANCMP_ATOL:-0.5}"'), "FANCMP_ATOL_PICKED_WITHOUT_A_MEASURED_ONE"),
-        ("the tolerance is hard-coded", sw(atol_line, "FANCMP_ATOL=0.5"), "FANCMP_ATOL_NOT_AN_INPUT"),
-        ("an unset tolerance is not a refusal", drop_line(text, '[ -n "$FANCMP_ATOL" ] || refuse'), "FANCMP_ATOL_NOT_REQUIRED"),
-        ("the tolerance's range is not checked", drop_line(text, "awk -v a=\"$FANCMP_ATOL\""), "FANCMP_ATOL_RANGE_UNCHECKED"),
+        # ---- the TWO bounds are pinned constants (round 2 PASS), the env vars are guards, the done-marker is bound to the bounds
+        ("the mean flag is dropped", sw(' --compare-mean-atol "$FANCMP_MEAN_ATOL"', ""), "FANCMP_NO_MEAN_ATOL"),
+        ("the mean verdict is not read", sw(' && grep -qE "^ZZRLFAN_MEAN_ATOL_PASS $NK [^ ]+ ${FANCMP_MEAN_ATOL}\\$" "$R/fancmp.log"', ""), "FANCMP_VERDICT_UNCHECKED"),
+        ("the max verdict is not read", sw(' && grep -qE "^ZZRLFAN_ATOL_PASS $NK [^ ]+ ${FANCMP_ATOL}\\$" "$R/fancmp.log"', ""), "FANCMP_VERDICT_UNCHECKED"),
+        ("a PASS marker at ANOTHER max bound is accepted", sw('[^ ]+ ${FANCMP_ATOL}\\$"', '[^ ]+ [0-9.]+\\$"'), "FANCMP_VERDICT_UNCHECKED"),
+        ("a PASS marker at ANOTHER mean bound is accepted", sw('[^ ]+ ${FANCMP_MEAN_ATOL}\\$"', '[^ ]+ [0-9.]+\\$"'), "FANCMP_VERDICT_UNCHECKED"),
+        ("the mean marker's key count is not the slice's", sw('"^ZZRLFAN_MEAN_ATOL_PASS $NK [^ ]+', '"^ZZRLFAN_MEAN_ATOL_PASS [0-9]+ [^ ]+'), "FANCMP_VERDICT_UNCHECKED"),
+        ("the catastrophe bound is edited", sw("FANCMP_ATOL=0.5\n", "FANCMP_ATOL=0.9\n"), "FANCMP_ATOL_DRIFT"),
+        ("the catastrophe bound is loosened past the measured one", sw("FANCMP_ATOL=0.5\n", "FANCMP_ATOL=1.0\n"), "FANCMP_ATOL_DRIFT"),
+        ("the mean bound is loosened", sw("FANCMP_MEAN_ATOL=0.025\n", "FANCMP_MEAN_ATOL=0.05\n"), "FANCMP_MEAN_ATOL_DRIFT"),
+        ("the mean bound is tightened without a verdict", sw("FANCMP_MEAN_ATOL=0.025\n", "FANCMP_MEAN_ATOL=0.0125\n"), "FANCMP_MEAN_ATOL_DRIFT"),
+        ("the catastrophe bound is an input again", sw("FANCMP_ATOL=0.5\n", 'FANCMP_ATOL="${RLS1_FANCMP_ATOL:-0.5}"\n'), "FANCMP_ATOL_NOT_PINNED"),
+        ("the mean bound is an input", sw("FANCMP_MEAN_ATOL=0.025\n", 'FANCMP_MEAN_ATOL="${RLS1_FANCMP_MEAN_ATOL:-0.025}"\n'), "FANCMP_MEAN_ATOL_NOT_PINNED"),
+        ("the catastrophe bound is re-assigned from the env", sw('BANKED="${RLS1_BANKED_SETS', 'FANCMP_ATOL="${RLS1_FANCMP_ATOL}"\nBANKED="${RLS1_BANKED_SETS'), "FANCMP_ATOL_NOT_ASSIGNED_ONCE"),
+        ("the argv reads the env, not the pin", sw('--compare-atol "$FANCMP_ATOL"', '--compare-atol "${RLS1_FANCMP_ATOL:-0.9}"'), "FANCMP_NO_ATOL"),
+        ("a stale max-bound export is not refused", drop_line(text, '[ -z "${RLS1_FANCMP_ATOL:-}" ]'), "RLS1_FANCMP_ATOL_NOT_GUARDED"),
+        ("a stale mean-bound export is not refused", drop_line(text, '[ -z "${RLS1_FANCMP_MEAN_ATOL:-}" ]'), "RLS1_FANCMP_MEAN_ATOL_NOT_GUARDED"),
+        ("the export guard accepts any number", sw("a + 0 == p + 0", "a + 0 > 0"), "RLS1_FANCMP_ATOL_NOT_GUARDED"),
+        ("the export guard is advisory", sw("|| refuse \"RLS1_FANCMP_MEAN_ATOL=", "|| true \"RLS1_FANCMP_MEAN_ATOL="), "RLS1_FANCMP_MEAN_ATOL_NOT_GUARDED"),
+        ("the done-marker is not bound to the bounds", sw(re.search(r'if stage_done fancmp && ! grep -qx .*?\nfi\n', text, re.S).group(0), ""), "FANCMP_MARKER_NOT_BOUND_TO_BOUNDS"),
+        ("the done-marker does not record the bounds", drop_line(text, 'echo "atol=$FANCMP_ATOL mean_atol=$FANCMP_MEAN_ATOL" >> "$S/fancmp.ok"'), "FANCMP_MARKER_BOUNDS_NOT_RECORDED"),
+        ("the pass line omits the mean verdict", sw("$(grep '^ZZRLFAN_MEAN_ATOL_PASS' \"$R/fancmp.log\" | tail -n 1) ", ""), "FANCMP_OK_MARKER_NO_MEAN_VERDICT"),
         ("the banked sets are looked for elsewhere", sw('onpolicy/sets}"', 'onpolicy/sets_full}"'), "FANCMP_BANKED_DRIFT"),
         ("an absent banked dir is not a refusal", drop_line(text, 'ls "$BANKED"/onpolicy_*.jsonl'), "FANCMP_NO_BANKED_CHECK"),
         ("the gate runs after the first dump", (lambda b: text.replace(b, "").replace('stage_done dump_val_s0of1 || refuse "dump of RL-val did not finish"\n',
@@ -789,7 +827,13 @@ def fancmp_behaviour(text, tmp):
                      f'cd {posix(stub)}\n{blk.group(0)}echo STAGE_PASSED\n')
     nk = len(keys_src.read_text(encoding="utf-8").split("\n")) - 2          # header and the final newline
     assert nk == 512, nk
-    atol = "0.375"                                                          # an arbitrary VALID value: the chain has no default, so this test supplies one through the env
+    atol = re.search(r"^FANCMP_ATOL=(\S+)$", text, re.M).group(1)            # the chain's own PINNED bounds: check_fancmp ties them to round2/verdict_round2.json
+    matol = re.search(r"^FANCMP_MEAN_ATOL=(\S+)$", text, re.M).group(1)
+    v2 = json.loads((CAL_DIR / "round2" / "verdict_round2.json").read_text(encoding="utf-8"))
+    assert atol == f"{v2['catastrophe_atol_kept']:g}" and matol == f"{v2['CHOSEN_MEAN_ATOL']:g}", (atol, matol); n += 1
+    marker_bounds = f"atol={atol} mean_atol={matol}"
+    stage_ok = data / "rls1" / "stage" / "fancmp.ok"
+    BASE_ENV = {"RLS1_FANCMP_ATOL": "", "RLS1_FANCMP_MEAN_ATOL": ""}         # hermetic: an export in the developer's shell must not leak into the cases
 
     def go(rc, out, env=None, clean=True):
         if argvf.exists():
@@ -797,43 +841,77 @@ def fancmp_behaviour(text, tmp):
         if clean:
             shutil.rmtree(data, ignore_errors=True)
         outf.write_text(out, encoding="utf-8")
-        r = bash_run(f'bash "{posix(script)}"', {"FAKE_ARGV": posix(argvf), "FAKE_OUT": posix(outf), "FAKE_RC": str(rc), "RLS1_BANKED_SETS": posix(banked), "RLS1_FANCMP_ATOL": atol, **(env or {})})
+        r = bash_run(f'bash "{posix(script)}"', {"FAKE_ARGV": posix(argvf), "FAKE_OUT": posix(outf), "FAKE_RC": str(rc), "RLS1_BANKED_SETS": posix(banked), **BASE_ENV, **(env or {})})
         lg = (data / "rls1" / "chain.log")
-        return r[0], r[1], (lg.read_text(encoding="utf-8") if lg.exists() else ""), (data / "rls1" / "stage" / "fancmp.ok").exists()
-    PASS = f"ZZRLFAN_PLAN {nk}\nZZRLFAN_ATOL_PASS {nk} 0.25 {atol}\nZZRLFAN_DONE {nk} 0 0\n"
+        return r[0], r[1], (lg.read_text(encoding="utf-8") if lg.exists() else ""), stage_ok.exists()
+
+    def passes(a=None, m=None, na=None, nm=None):
+        """What a good dumper prints.  a / m = the bound each marker echoes; na / nm = the matched count on each marker."""
+        return (f"ZZRLFAN_PLAN {nk}\nZZRLFAN_ATOL_PASS {nk if na is None else na} 0.25 {atol if a is None else a}\n"
+                f"ZZRLFAN_MEAN_ATOL_PASS {nk if nm is None else nm} 0.0104167 {matol if m is None else m}\nZZRLFAN_DONE {nk} 0 0\n")
+    PASS = passes()
     # ---- the good case, and the argv the CALLER passes
     rc, so, lg, ok = go(0, PASS)
     assert rc == 0 and "STAGE_PASSED" in so and ok and "ZZRLS1_FANCMP_OK ZZRLFAN_ATOL_PASS" in lg, (rc, so, lg); n += 1
+    assert f"ZZRLFAN_MEAN_ATOL_PASS {nk} 0.0104167 {matol} (atol {atol}, mean_atol {matol}," in lg; n += 1                                   # the OK line carries BOTH verdicts and BOTH bounds
+    assert stage_ok.read_text(encoding="utf-8").split("\n")[1] == marker_bounds; n += 1                                                       # the marker records the bounds it passed under
     argv = json.loads(argvf.read_text(encoding="utf-8"))
 
     def after(flag):
         return argv[argv.index(flag) + 1]
     assert argv[0] == "--ckpt" and after("--ckpt") == "POD_FINAL.pt" and after("--expect-ckpt-sha256") == "abc123"; n += 1             # model_final, hash-pinned
     assert after("--keys") == posix(pkg / "splits" / "rl_fancmp_keys.tsv") and argv.count("--keys") == 1; n += 1                              # the pinned slice, nothing else
-    assert after("--compare-sets") == posix(banked) and after("--compare-atol") == atol and after("--compare-min-matched") == str(nk); n += 1   # the gate flags REACH the dumper
+    assert after("--compare-sets") == posix(banked) and after("--compare-min-matched") == str(nk); n += 1                                     # the gate flags REACH the dumper
+    assert after("--compare-atol") == atol and after("--compare-mean-atol") == matol and argv.count("--compare-atol") == 1 and argv.count("--compare-mean-atol") == 1; n += 1   # BOTH pinned bounds, once each
     assert (after("--targets"), after("--images"), after("--calib")) == ("POD_TARGETS", "POD_PIXELS", "POD_CALIB.json"); n += 1
     assert after("--out").endswith("/rls1/fancmp") and after("--tag") == "fancmp" and after("--batch") == "4"; n += 1
     assert not ({"--allow-missing", "--limit", "--plan-only", "--shard", "--ranks", "--workers"} & set(argv)); n += 1                          # nothing narrows or reshapes the gate
     # ---- a finished stage is not re-run
     rc, so, lg, ok = go(0, PASS, clean=False)
     assert rc == 0 and not argvf.exists() and "STAGE_PASSED" in so; n += 1
+    # ---- a marker written under OTHER bounds (or none, or a different spelling) is not trusted: the gate runs again and rewrites it
+    for stale in ("2026-01-01T00:00:00\n", f"2026-01-01T00:00:00\natol=0.9 mean_atol={matol}\n", f"2026-01-01T00:00:00\natol={atol} mean_atol=0.05\n", f"2026-01-01T00:00:00\n{marker_bounds} \n"):
+        go(0, PASS)
+        stage_ok.write_text(stale, encoding="utf-8")
+        rc, so, lg, ok = go(0, PASS, clean=False)
+        assert rc == 0 and argvf.exists() and "was not written under the pinned bounds" in lg and stage_ok.read_text(encoding="utf-8").split("\n")[1] == marker_bounds, (stale, rc, lg); n += 1
+    go(0, PASS)
+    stage_ok.write_text(f"2026-01-01T00:00:00\n{marker_bounds}\n", encoding="utf-8")
+    rc, so, lg, ok = go(0, PASS, clean=False)
+    assert rc == 0 and not argvf.exists() and "was not written under" not in lg; n += 1                                                       # a marker under the pinned bounds IS trusted
     # ---- every refusal names its cause and leaves NO stage marker
     for name, args, want in (
-            ("dumper exit 5 (a set beyond the tolerance)", (5, f"ZZRLFAN_ATOL_FAIL {nk} 3 3.0 {atol}\nZZRLFAN_DONE {nk} 0 0\n"), "ZZRLFAN_ATOL_FAIL"),
+            ("dumper exit 5 (a set beyond the catastrophe bound)", (5, f"ZZRLFAN_ATOL_FAIL {nk} 3 3.0 {atol}\nZZRLFAN_MEAN_ATOL_PASS {nk} 0.01 {matol}\nZZRLFAN_DONE {nk} 0 0\n"), "ZZRLFAN_ATOL_FAIL"),
+            ("dumper exit 5 (a set beyond the MEAN bound only)", (5, f"ZZRLFAN_ATOL_PASS {nk} 0.3 {atol}\nZZRLFAN_MEAN_ATOL_FAIL {nk} 2 0.05 {matol}\nZZRLFAN_DONE {nk} 0 0\n"), "ZZRLFAN_MEAN_ATOL_FAIL"),
             ("exit 0 but no PASS marker", (0, f"ZZRLFAN_DONE {nk} 0 0\n"), "want 0 and ZZRLFAN_ATOL_PASS"),
-            ("PASS marker with fewer matched keys than the slice", (0, f"ZZRLFAN_ATOL_PASS {nk - 1} 0.2 {atol}\n"), "want 0 and ZZRLFAN_ATOL_PASS"),
+            ("exit 0 with the max-bound PASS only (the mean verdict missing)", (0, f"ZZRLFAN_ATOL_PASS {nk} 0.25 {atol}\nZZRLFAN_DONE {nk} 0 0\n"), "want 0 and ZZRLFAN_ATOL_PASS"),
+            ("exit 0 with the mean-bound PASS only (the max verdict missing)", (0, f"ZZRLFAN_MEAN_ATOL_PASS {nk} 0.01 {matol}\nZZRLFAN_DONE {nk} 0 0\n"), "want 0 and ZZRLFAN_ATOL_PASS"),
+            ("PASS markers that echo ANOTHER max bound (the dumper ran with a different number)", (0, passes(a="0.9")), "want 0 and ZZRLFAN_ATOL_PASS"),
+            ("PASS markers that echo ANOTHER mean bound", (0, passes(m="0.05")), "want 0 and ZZRLFAN_ATOL_PASS"),
+            ("max-bound PASS with fewer matched keys than the slice", (0, passes(na=nk - 1)), "want 0 and ZZRLFAN_ATOL_PASS"),
+            ("mean-bound PASS with fewer matched keys than the slice", (0, passes(nm=nk - 1)), "want 0 and ZZRLFAN_ATOL_PASS"),
             ("exit 4 (the dumper refused: nothing matched)", (4, "REFUSED: --compare-sets matched NO key -- a gate that compares nothing proves nothing\n"), "REFUSED: --compare-sets matched NO key"),
-            ("exit 3 (images missing on this pod)", (3, f"ZZRLFAN_PLAN {nk - 2}\nZZRLFAN_ATOL_PASS {nk - 2} 0.1 {atol}\n"), "want 0 and ZZRLFAN_ATOL_PASS"),
-            ("a PASS marker printed AFTER a failing exit", (5, f"ZZRLFAN_ATOL_PASS {nk} 0.1 {atol}\n"), "exit 5")):
+            ("exit 4 (the dumper refused the mean flag)", (4, "REFUSED: --compare-mean-atol needs --compare-atol (x)\n"), "REFUSED: --compare-mean-atol needs --compare-atol"),
+            ("exit 3 (images missing on this pod)", (3, passes(na=nk - 2, nm=nk - 2).replace(f"ZZRLFAN_PLAN {nk}", f"ZZRLFAN_PLAN {nk - 2}")), "want 0 and ZZRLFAN_ATOL_PASS"),
+            ("PASS markers printed AFTER a failing exit", (5, PASS), "exit 5")):
         rc, so, lg, ok = go(*args)
         assert rc == 1 and "STAGE_PASSED" not in so and not ok and "REFUSED: the fan-equivalence gate FAILED" in lg and "fancmp.log" in lg and want in lg, (name, rc, lg); n += 1
-    # ---- the tolerance is a required input: unset, empty, non-numeric, zero, negative or above the sanity bound is a refusal BEFORE the dumper runs
-    for val in ("", "abc", "0", "-0.5", "1.5", "5", "1e-1", "0.5x"):
-        rc, so, lg, ok = go(0, PASS, {"RLS1_FANCMP_ATOL": val})
-        assert rc == 1 and not argvf.exists() and not ok and ("no fan-equivalence tolerance" in lg if val == "" else "is not a number between 0 and 1.0 metres" in lg), (val, rc, lg); n += 1
-    for val in ("0.25", "0.5", "1.0", ".75"):
-        rc, so, lg, ok = go(0, f"ZZRLFAN_ATOL_PASS {nk} 0.2 {val}\n", {"RLS1_FANCMP_ATOL": val})
-        assert rc == 0 and json.loads(argvf.read_text(encoding="utf-8"))[json.loads(argvf.read_text(encoding="utf-8")).index("--compare-atol") + 1] == val and f"atol {val}," in lg; n += 1   # reaches the dumper verbatim
+    # ---- the bounds are PINNED, not inputs: an export that equals the pin (or is empty) is harmless; any other value is a refusal BEFORE the dumper runs, and the argv carries the PIN
+    for env, pin, flag, what in (("RLS1_FANCMP_ATOL", atol, "--compare-atol", "catastrophe"), ("RLS1_FANCMP_MEAN_ATOL", matol, "--compare-mean-atol", "mean")):
+        equal = ("", pin, f"{float(pin):.3f}", f"{float(pin):.5f}", ("." + pin.split(".")[1]) if pin.startswith("0.") else pin)
+        for val in equal:
+            rc, so, lg, ok = go(0, PASS, {env: val})
+            a = json.loads(argvf.read_text(encoding="utf-8"))
+            assert rc == 0 and ok and a[a.index(flag) + 1] == pin, (env, val, rc, lg); n += 1                                                   # accepted, and the dumper still gets the pinned spelling
+        for val in (f"{float(pin) * 1.8:g}", f"{float(pin) / 2:g}", f"{float(pin) * 1.0001:.6g}", f"{float(pin) * 0.9999:.6g}", "0", "-" + pin, "abc", pin + "x", f"{float(pin):e}", " " + pin, "1", "10"):
+            rc, so, lg, ok = go(0, PASS, {env: val})
+            assert rc == 1 and not argvf.exists() and not ok and f"{env}='{val}' is not the pinned {what} bound" in lg, (env, val, rc, lg); n += 1
+    rc, so, lg, ok = go(0, PASS, {"RLS1_FANCMP_ATOL": atol, "RLS1_FANCMP_MEAN_ATOL": matol})
+    assert rc == 0 and ok; n += 1                                                                                                             # both exported at the pins: fine
+    rc, so, lg, ok = go(0, PASS, {"RLS1_FANCMP_ATOL": atol, "RLS1_FANCMP_MEAN_ATOL": "0.5"})
+    assert rc == 1 and not argvf.exists() and "RLS1_FANCMP_MEAN_ATOL='0.5' is not the pinned mean bound" in lg; n += 1                         # one right export does not excuse the other
+    rc, so, lg, ok = go(0, PASS, {"RLS1_FANCMP_ATOL": "0.025", "RLS1_FANCMP_MEAN_ATOL": matol})
+    assert rc == 1 and not argvf.exists() and "RLS1_FANCMP_ATOL='0.025' is not the pinned catastrophe bound" in lg; n += 1                    # the two numbers are not interchangeable
     # ---- refusals BEFORE the dumper runs
     rc, so, lg, ok = go(0, PASS, {"RLS1_BANKED_SETS": posix(w / "nowhere")})
     assert rc == 1 and not argvf.exists() and "no banked step-10,075 sets" in lg and not ok; n += 1                                            # absent banked dir

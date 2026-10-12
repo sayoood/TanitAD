@@ -9,7 +9,8 @@
 # Start (detached):  nohup setsid bash /workspace/refe-plan-rls1/refe/rls1_pod.sh > /workspace/data/rls1/stdout.log 2>&1 < /dev/null &
 # Re-running after ANY interruption is safe: finished stages leave /workspace/data/rls1/stage/<name>.ok (an arm interrupted in training restarts at update 0: the trainer has no resume).
 # RLS1_STOP_AFTER=<precheck|env|ckpts|partition|plan|fancmp|tlane|dump|labels|join|bank|gate_<ARM>|arm_<ARM>> ends the chain after that stage (a dry run; gate_C0 stops after the first token).
-# RLS1_FANCMP_ATOL=<metres> is REQUIRED (no default; runbook D-RLS1-5): the absolute tolerance of the fan-equivalence gate, stage fancmp.
+# The fan-equivalence bounds (stage fancmp) are PINNED in this script, NOT inputs: FANCMP_ATOL 0.5 (catastrophe bound) and FANCMP_MEAN_ATOL 0.025 (runbook D-RLS1-5, DECIDED 2026-10-12).
+# RLS1_FANCMP_ATOL / RLS1_FANCMP_MEAN_ATOL, if set, must EQUAL the pinned values or the stage refuses (a stale export cannot loosen the gate).
 # RLS1_BANKED_SETS=<dir> overrides where the fan-equivalence gate (stage fancmp) finds the main run's banked step-10,075 sets (default: P2's restored+carved bank, see FANCMP below).
 # RLS1_ARMS="C0 R0 C1 R1 R2" (the default order: a control runs BEFORE its R arm, so K4 compares R with a finished C).  RLS1_ARMS="R0 R1 R2" is the PAIRED design
 # (each R run's arm A is its matched control by construction; K4 then reads against that arm A): about 9 h of A40 less.  The choice is the Master Mind's (runbook D-RLS1-1).
@@ -204,34 +205,46 @@ log "image coverage complete for all 19,000 scenes ($(grep '^ZZRLFAN_PLAN' "$R/p
 # ---- 4b. THE FAN-EQUIVALENCE GATE (before the DBs, the labellers or ONE of the 19,000 scenes is dumped).  Does THIS pod's dumper (these images, this calibration table, this
 #          torch / cv2 / cuDNN) reproduce the fan the main run banked at step 10,075?  Nothing else in the chain asks: every label is computed on whatever was dumped.
 #          rl_fan_dump.py dumps a PINNED slice (splits/rl_fancmp_keys.tsv: 512 scenes outside the 24 SFT held-out logs, each with a banked rank-0 step-10,075 set) from model_final
-#          and compares every set with the banked one under an ABSOLUTE tolerance: max |delta| over every x / y (m) and yaw (rad) value <= $FANCMP_ATOL, on EVERY set.
+#          and compares every set with the banked one under TWO ABSOLUTE bounds, BOTH PINNED below and BOTH required on EVERY set:
+#            FANCMP_ATOL = 0.5       the CATASTROPHE bound: max |delta| over every x / y (m) and yaw (rad) value of the set.  The only bound that reads yaw.
+#            FANCMP_MEAN_ATOL = 0.025   the MEAN bound: mean |delta| over the set's x / y values (yaw excluded), strictly greater fails.
 #          BIT-IDENTITY IS THE WRONG BAR (MEASURED 2026-10-12, raw/rl_fan/RESULT_IDENTITY.md): the fan moves by up to 0.25 with the batch grouping alone, and dev box vs the A40's
-#          banked sets differ by 0.25 on every key.
-#          ⛔ THE TOLERANCE HAS NO DEFAULT HERE, ON PURPOSE.  Measured on the dev box (raw/rl_fan/atol_calibration/, verdict.json): the floor is 0.25 and the PRE-REGISTERED rule (every
-#          deliberate-regression arm >= 10x the tolerance) is met by NO tolerance: 5 of 6 decision arms do not reach it and one (another vehicle's rig) is indistinguishable from the floor.
-#          verdict.json CHOSEN_ATOL is therefore null and a number written here would be an assumption wearing a measurement's clothes.  The Master Mind sets RLS1_FANCMP_ATOL after
-#          reading runbook D-RLS1-5 (the arm-by-arm table: what a given value catches and misses).  The stage refuses until it is set, and when it is set, it is the dumper's argv.
+#          banked sets differ by 0.25 on every key.  The max delta alone cannot separate a fault from that floor (round 1, raw/rl_fan/atol_calibration/verdict.json: CHOSEN_ATOL null);
+#          the per-set MEAN can (round 2, raw/rl_fan/atol_calibration/round2/PREREG_ROUND2.md, PASS, verdict_round2.json: CHOSEN_MEAN_ATOL 0.025 = 2 x the null floor 0.0122 rounded up
+#          to 0.005; weakest decision arm 7.2 x M; 0 of 1,509 null sets above M).  Runbook D-RLS1-5: DECIDED by the Master Mind 2026-10-12.
+#          THE BOUNDS ARE NOT INPUTS.  They are constants here, cross-checked against verdict_round2.json by test_rls1_chain.py (check_fancmp: CHOSEN_MEAN_ATOL and
+#          catastrophe_atol_kept), so a drifted number fails the suite.  RLS1_FANCMP_ATOL / RLS1_FANCMP_MEAN_ATOL, if exported, must equal them or the stage refuses.  The verdict is the
+#          dumper's exit 0 AND both PASS markers, each echoing the bound it applied (a dumper that ran with another number is refused).  `fancmp.ok` records the bounds it passed under: a
+#          marker from another pair is discarded and the stage runs again.  PASS is not 'the pod is equivalent': the pod's own floor (this A40 against the A40's banked sets) is
+#          UNMEASURED; this run writes it (`delta_quantiles` and `mean_abs_delta_quantiles` in $R/fancmp/rl_fan_dump_fancmp_s0of1.manifest.json and the compare-sets line of fancmp.log):
+#          BANK both, and tighten M from it (runbook D-RLS1-5).
 #          The banked sets are P2's restored bank AFTER its carve (refe/p2r_pod.sh:22, SETS=$DATA/refe_navtrain/onpolicy/sets; the 24 held-out logs were moved to sets_full/, which is why
 #          the slice excludes them).  That the directory is still on THIS pod is UNVERIFIED (never read from the pod): an absent or empty one is a refusal, not a skip.
 FANCMP_KEYS=$PKG/splits/rl_fancmp_keys.tsv
 FANCMP_KEYS_SHA256=4c613ff027e8984b924723ee2c6989cbed30a4f22002d5674eae0530ea30c55c
-FANCMP_ATOL="${RLS1_FANCMP_ATOL:-}"
+FANCMP_ATOL=0.5
+FANCMP_MEAN_ATOL=0.025
 BANKED="${RLS1_BANKED_SETS:-$DATA/refe_navtrain/onpolicy/sets}"
+if stage_done fancmp && ! grep -qx "atol=$FANCMP_ATOL mean_atol=$FANCMP_MEAN_ATOL" "$S/fancmp.ok"; then
+  log "fancmp.ok was not written under the pinned bounds (atol $FANCMP_ATOL, mean_atol $FANCMP_MEAN_ATOL): the fan-equivalence gate runs again"
+  rm -f "$S/fancmp.ok"
+fi
 if ! stage_done fancmp; then
-  [ -n "$FANCMP_ATOL" ] || refuse "no fan-equivalence tolerance: set RLS1_FANCMP_ATOL=<metres> (runbook D-RLS1-5; raw/rl_fan/atol_calibration/verdict.json has CHOSEN_ATOL null, so the chain carries no default)"
-  awk -v a="$FANCMP_ATOL" 'BEGIN { exit !(a ~ /^[0-9]*[.]?[0-9]+$/ && a + 0 > 0 && a + 0 <= 1.0) }' || refuse "RLS1_FANCMP_ATOL='$FANCMP_ATOL' is not a number between 0 and 1.0 metres (the measured floor is 0.25; above 1.0 the weakest arm that separates at all would pass)"
+  [ -z "${RLS1_FANCMP_ATOL:-}" ] || awk -v a="$RLS1_FANCMP_ATOL" -v p="$FANCMP_ATOL" 'BEGIN { exit !(a ~ /^[0-9]*[.]?[0-9]+$/ && a + 0 == p + 0) }' || refuse "RLS1_FANCMP_ATOL='$RLS1_FANCMP_ATOL' is not the pinned catastrophe bound $FANCMP_ATOL: the fan-equivalence bounds are constants of this script (runbook D-RLS1-5), not inputs; unset it"
+  [ -z "${RLS1_FANCMP_MEAN_ATOL:-}" ] || awk -v a="$RLS1_FANCMP_MEAN_ATOL" -v p="$FANCMP_MEAN_ATOL" 'BEGIN { exit !(a ~ /^[0-9]*[.]?[0-9]+$/ && a + 0 == p + 0) }' || refuse "RLS1_FANCMP_MEAN_ATOL='$RLS1_FANCMP_MEAN_ATOL' is not the pinned mean bound $FANCMP_MEAN_ATOL: the fan-equivalence bounds are constants of this script (runbook D-RLS1-5), not inputs; unset it"
   [ "$(sha256sum "$FANCMP_KEYS" | cut -c1-64)" = "$FANCMP_KEYS_SHA256" ] || refuse "$FANCMP_KEYS is not the pinned fan-equivalence slice (sha256 != $FANCMP_KEYS_SHA256): a different slice is a different gate"
   ls "$BANKED"/onpolicy_*.jsonl > /dev/null 2>&1 || refuse "no banked step-10,075 sets at $BANKED/onpolicy_*.jsonl (P2's restored bank; RLS1_BANKED_SETS=<dir> if it lives elsewhere): the fan-equivalence gate has nothing to compare with"
   NK=$(( $(wc -l < "$FANCMP_KEYS") - 1 ))
   rm -rf "$R/fancmp"
   env -u HF_TOKEN OMP_NUM_THREADS=1 "$PY" rl_fan_dump.py --ckpt "$FINAL" --expect-ckpt-sha256 "$FINAL_SHA256" --keys "$FANCMP_KEYS" --targets "$TARGETS" \
     --images "$IMAGES" --calib "$CALIB" --out "$R/fancmp" --tag fancmp --batch 4 \
-    --compare-sets "$BANKED" --compare-atol "$FANCMP_ATOL" --compare-min-matched "$NK" >> "$R/fancmp.log" 2>&1 200>&-
+    --compare-sets "$BANKED" --compare-atol "$FANCMP_ATOL" --compare-mean-atol "$FANCMP_MEAN_ATOL" --compare-min-matched "$NK" >> "$R/fancmp.log" 2>&1 200>&-
   frc=$?
-  { [ "$frc" = 0 ] && grep -q "^ZZRLFAN_ATOL_PASS $NK " "$R/fancmp.log"; } || refuse "the fan-equivalence gate FAILED (rl_fan_dump.py exit $frc, want 0 and ZZRLFAN_ATOL_PASS $NK; log $R/fancmp.log, sets in $R/fancmp): $(grep -E '^(ZZRLFAN_ATOL_FAIL|REFUSED)' "$R/fancmp.log" | tail -n 1 | cut -c1-200)"
+  { [ "$frc" = 0 ] && grep -qE "^ZZRLFAN_ATOL_PASS $NK [^ ]+ ${FANCMP_ATOL}\$" "$R/fancmp.log" && grep -qE "^ZZRLFAN_MEAN_ATOL_PASS $NK [^ ]+ ${FANCMP_MEAN_ATOL}\$" "$R/fancmp.log"; } || refuse "the fan-equivalence gate FAILED (rl_fan_dump.py exit $frc, want 0 and ZZRLFAN_ATOL_PASS $NK and ZZRLFAN_MEAN_ATOL_PASS $NK at the pinned bounds $FANCMP_ATOL / $FANCMP_MEAN_ATOL; log $R/fancmp.log, sets in $R/fancmp): $(grep -E '^(ZZRLFAN_ATOL_FAIL|ZZRLFAN_MEAN_ATOL_FAIL|REFUSED)' "$R/fancmp.log" | tail -n 2 | tr '\n' ' ' | cut -c1-300)"
   stage_mark fancmp
+  echo "atol=$FANCMP_ATOL mean_atol=$FANCMP_MEAN_ATOL" >> "$S/fancmp.ok"
 fi
-log "ZZRLS1_FANCMP_OK $(grep '^ZZRLFAN_ATOL_PASS' "$R/fancmp.log" | tail -n 1) (atol $FANCMP_ATOL, slice $FANCMP_KEYS_SHA256, banked $BANKED)"; stop_after fancmp
+log "ZZRLS1_FANCMP_OK $(grep '^ZZRLFAN_ATOL_PASS' "$R/fancmp.log" | tail -n 1) $(grep '^ZZRLFAN_MEAN_ATOL_PASS' "$R/fancmp.log" | tail -n 1) (atol $FANCMP_ATOL, mean_atol $FANCMP_MEAN_ATOL, slice $FANCMP_KEYS_SHA256, banked $BANKED)"; stop_after fancmp
 
 # ---- 5. the labellers must be ABLE to label before hours of them: NAVSIM's metric-cache processor, simulator and scorer import and build
 #          (2026-10-11: navsim was missing from the venv and the relabel failed EVERY set).  The navtrain DBs are only needed here.

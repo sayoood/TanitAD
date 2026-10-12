@@ -527,6 +527,217 @@ def suite(rl, tag="rl_fan_dump"):
             check("the parser default is None for both flags (no tolerance unless named in the argv)", ap.compare_atol is None and ap.compare_min_matched is None)
         guarded("atol", t_atol)
 
+        # ---- the MEAN bound (--compare-mean-atol, 2026-10-12): round 2 (raw/rl_fan/atol_calibration/round2, PASS, CHOSEN_MEAN_ATOL 0.025) pre-registered m = the per-set mean |delta|
+        #      over the x / y values (yaw excluded); the gate must compute exactly that number, judge it strictly (m > M fails), and keep the catastrophe bound beside it.
+        def t_mean():
+            import math
+            import random
+            mf = rl.set_mean_abs_xy_strict
+            # -- the statistic, hand-derived (2 proposals x 2 steps x (x, y) = 8 values)
+            t0 = [[[1.0, 2.0], [3.0, 4.0]], [[5.0, 6.0], [7.0, 8.0]]]
+            y0 = [[0.1, 0.2], [0.3, 0.4]]
+            check("set_mean_abs_xy_strict: identical -> 0.0", mf((t0, y0), (t0, y0)) == 0.0)
+            t1 = [[[1.5, 2.0], [3.0, 4.0]], [[5.0, 6.0], [7.0, 7.75]]]            # one x value 0.5 away, one y value 0.25 away
+            check("set_mean_abs_xy_strict: the MEAN, not the max -- (0.5 + 0.25) / 8 = 0.09375 exactly (the max delta is 0.5)", mf((t1, y0), (t0, y0)) == 0.09375, str(mf((t1, y0), (t0, y0))))
+            check("set_mean_abs_xy_strict: symmetric in its arguments", mf((t0, y0), (t1, y0)) == 0.09375)
+            tx = [[[1.75, 2.0], [3.0, 4.0]], [[5.0, 6.0], [7.0, 8.0]]]            # one x value 0.75 away
+            ty = [[[1.0, 2.0], [3.0, 4.0]], [[5.0, 6.0], [7.0, 8.75]]]            # one y value 0.75 away
+            check("set_mean_abs_xy_strict: x AND y both count (0.75 / 8 = 0.09375 for an x-only and for a y-only difference)", mf((tx, y0), (t0, y0)) == 0.09375 and mf((ty, y0), (t0, y0)) == 0.09375)
+            y1 = [[0.1, 0.2], [0.3, 0.4 - 0.125]]                                 # one yaw value 0.125 away
+            check("set_mean_abs_xy_strict: YAW IS EXCLUDED -- a yaw-only difference is m = 0.0", mf((t0, y1), (t0, y0)) == 0.0, str(mf((t0, y1), (t0, y0))))
+            check("set_mean_abs_xy_strict: ... and a yaw difference adds nothing to an x / y one", mf((t1, y1), (t0, y0)) == 0.09375)
+            nan_t = [[[1.0, 2.0], [3.0, float("nan")]], t0[1]]
+            check("set_mean_abs_xy_strict: a NaN in x / y is inf (a NaN sum makes `m > M` False, i.e. 'within')", mf((nan_t, y0), (t0, y0)) == math.inf and mf((t0, y0), (nan_t, y0)) == math.inf)
+            check("set_mean_abs_xy_strict: an inf in x / y is inf", mf(([[[1.0, 2.0], [3.0, float("inf")]], t0[1]], y0), (t0, y0)) == math.inf)
+            check("set_mean_abs_xy_strict: a dropped proposal is inf (zip would truncate it to a 'perfect' 0.0)", mf((t0[:1], y0), (t0, y0)) == math.inf)
+            check("set_mean_abs_xy_strict: a dropped horizon step is inf", mf(([p[:1] for p in t0], y0), (t0, y0)) == math.inf)
+            check("set_mean_abs_xy_strict: a dropped coordinate is inf", mf(([[[1.0], [3.0, 4.0]], t0[1]], y0), (t0, y0)) == math.inf)
+            check("set_mean_abs_xy_strict: yaw is out of the statistic altogether (a NaN yaw and a dropped yaw proposal read m = 0.0: the max bound is the one that reads yaw)",
+                  mf((t0, [[0.1, float("nan")], [0.3, 0.4]]), (t0, y0)) == 0.0 and mf((t0, y0[:1]), (t0, y0)) == 0.0)
+            check("set_mean_abs_xy_strict: nothing to average -> 0.0, not a ZeroDivisionError", mf(([], []), ([], [])) == 0.0)
+
+            # -- ONE dump; the references below are built from it with KNOWN perturbations of x / y / yaw values
+            rc, _, od = run_dump(rl, d, ckpt=ckA, out="mean0")
+            new_path = os.path.join(od, "onpolicy_rlfan_fan_s0of1.jsonl")
+            recs = sets_of(new_path)
+            ref_dir = os.path.join(d, "mean_refs")
+            os.makedirs(ref_dir, exist_ok=True)
+            ref_file = os.path.join(ref_dir, "onpolicy_r0_w0.jsonl")
+            NV = M_ * T_ * 2                                                       # x / y values per set: 24
+
+            def shifted(i, xy=(), yaw=()):
+                r = json.loads(json.dumps(recs[i]))
+                for (mi, ti, ci), amt in xy:
+                    r["traj"][mi][ti][ci] = r["traj"][mi][ti][ci] + amt
+                for (mi, ti), amt in yaw:
+                    r["yaw"][mi][ti] = r["yaw"][mi][ti] + amt
+                return r
+
+            def write_ref(rows):
+                with open(ref_file, "w", encoding="utf-8", newline="\n") as fh:
+                    for r in rows:
+                        fh.write(json.dumps(r) + "\n")
+
+            def gate(args, out):
+                rc_, so_, od_ = run_dump(rl, d, ckpt=ckA, args=("--compare-sets", ref_dir, *args), out=out)
+                mf_ = os.path.join(od_, "rl_fan_dump_fan_s0of1.manifest.json")
+                return rc_, so_, (json.load(open(mf_))["compare_sets"] if os.path.exists(mf_) else None)
+
+            def marker(so, name):
+                return [ln for ln in so.splitlines() if ln.startswith(name + " ")]
+
+            MEAN_KEYS = {"mean_atol", "within_mean_atol", "beyond_mean_atol", "max_mean_abs_delta", "mean_abs_delta_quantiles", "first_beyond_mean_atol"}
+
+            # -- the SAME statistic as the analysis code that chose M: recompute round 2's per-arm numbers (sets, sets above M, worst m, quantiles) from a small fixture with
+            #    run_calibration's own code (xy_moments / arm_deltas element 3), and demand the gate's numbers EQUAL them -- exactly, not approximately (same summation order)
+            cal = os.path.normpath(os.path.join(HERE, os.pardir, "raw", "rl_fan", "atol_calibration"))
+            if cal not in sys.path:
+                sys.path.insert(0, cal)
+            import run_calibration as RC
+            rng = random.Random(20261012)
+            fix_rows = []
+            for r in recs[:16]:
+                q = json.loads(json.dumps(r))
+                for _ in range(rng.randrange(0, 6)):                               # 0 to 5 values moved by up to 0.6, rounded to 5 decimals like a dump
+                    mi, ti, ci = rng.randrange(M_), rng.randrange(T_), rng.randrange(2)
+                    q["traj"][mi][ti][ci] = round(q["traj"][mi][ti][ci] + rng.uniform(-0.6, 0.6), 5)
+                fix_rows.append(q)
+            write_ref(fix_rows)
+            STEP = 10075
+            ref_sets = RC.load_sets(ref_file, STEP)
+            new_sets = RC.load_sets(new_path, STEP)
+            dd = RC.arm_deltas(new_path, STEP, ref_sets)
+            ms_an = sorted(x[3] for x in dd.values())
+            above_an = sum(1 for v in ms_an if v > 0.025)                          # run_calibration2.count_above
+            check("fixture sanity: 16 matched sets, some above M = 0.025 and some not, many distinct m values (the comparison below is not vacuous)",
+                  len(dd) == 16 and 0 < above_an < 16 and len(set(ms_an)) > 8, f"{len(dd)} {above_an} {len(set(ms_an))}")
+            check("per set: the gate's m EQUALS run_calibration.arm_deltas' element 3, bit for bit, on all 16 sets",
+                  all(rl.set_mean_abs_xy_strict(new_sets[k], ref_sets[k]) == dd[k][3] for k in dd), "")
+            rep = rl.compare_sets(new_path, [ref_file], STEP, mean_atol=0.025)
+            qa = RC.RF.quantile_nearest_rank
+            check("per arm: worst m, p50 / p90 / p99, sets above M and sets within M all EQUAL round 2's analysis numbers on the fixture",
+                  rep["reference_keys_matched"] == 16 and rep["max_mean_abs_delta"] == ms_an[-1] and rep["beyond_mean_atol"] == above_an and rep["within_mean_atol"] == 16 - above_an
+                  and [rep["mean_abs_delta_quantiles"][k] for k in ("p50", "p90", "p99", "max")] == [qa(ms_an, 0.5), qa(ms_an, 0.9), qa(ms_an, 0.99), ms_an[-1]], str(rep))
+            check("compare_sets without mean_atol adds NONE of the mean keys", not (MEAN_KEYS & set(rl.compare_sets(new_path, [ref_file], STEP, atol=0.5))))
+
+            # -- end to end through the parser and run().  Five known sets among the first 20 references (24 x / y values each):
+            A, F, G, D, Y = 3, 5, 8, 12, 15
+            rowsA = shifted(A, xy=[((0, 0, 0), 0.25)])                             # ONE value off by 0.25 (the bf16 floor):               d = 0.25, m = 0.25 / 24 = 0.0104
+            rowsF = shifted(F, xy=[((0, 0, 0), 0.25), ((1, 1, 1), 0.25)])          # two values off by 0.25:                              d = 0.25, m = 0.5 / 24  = 0.0208
+            rowsG = shifted(G, xy=[((0, 0, 0), 0.3), ((1, 1, 1), 0.3), ((3, 2, 0), 0.3)])   # three values off by 0.3:                   d = 0.3,  m = 0.9 / 24  = 0.0375
+            rowsD = shifted(D, xy=[((mi, ti, ci), 0.05) for mi in range(M_) for ti in range(T_) for ci in range(2)])   # ALL values by 0.05: d = 0.05, m = 0.05
+            rowsY = shifted(Y, yaw=[((0, 0), 2.0)])                                # ONE yaw value off by 2.0:                            d = 2.0,  m = 0 (yaw excluded)
+
+            def refs_with(use):
+                rows = {A: rowsA, F: rowsF, G: rowsG, D: rowsD, Y: rowsY}
+                write_ref([rows[i] if i in use else recs[i] for i in range(20)])
+
+            refs_with((A, F))
+            rc1, so1, m1 = gate(("--compare-atol", "0.5", "--compare-mean-atol", "0.025"), "mean1")
+            check("0.5 + 0.025, only the floor-sized offsets (m 0.0104 and 0.0208): both bounds hold -> exit 0, 20 within each, nothing beyond",
+                  rc1 == 0 and m1["within_mean_atol"] == 20 and m1["beyond_mean_atol"] == 0 and m1["within_atol"] == 20 and m1["beyond_atol"] == 0 and m1["reference_keys_matched"] == 20, f"rc {rc1} {m1}")
+            check("mean: the report echoes the bound and the worst m (0.5 / 24 = 0.0208333)", m1["mean_atol"] == 0.025 and abs(m1["max_mean_abs_delta"] - 0.5 / NV) < 1e-9, str(m1.get("max_mean_abs_delta")))
+            pm = marker(so1, "ZZRLFAN_MEAN_ATOL_PASS")
+            check("mean: PASS marker `ZZRLFAN_MEAN_ATOL_PASS <matched> <max_m> <bound>` (one line, the bound last), next to the unchanged ATOL one; no FAIL marker",
+                  len(pm) == 1 and pm[0].startswith("ZZRLFAN_MEAN_ATOL_PASS 20 0.02083") and pm[0].endswith(" 0.025") and len(marker(so1, "ZZRLFAN_ATOL_PASS")) == 1
+                  and marker(so1, "ZZRLFAN_ATOL_PASS")[0].endswith(" 0.5") and "FAIL" not in so1, so1[-400:])
+            check("mean: the printed compare-sets line carries the mean keys too", "within_mean_atol" in so1 and "mean_abs_delta_quantiles" in so1)
+
+            refs_with((A, F, G, D))
+            rc2, so2, m2 = gate(("--compare-atol", "0.5", "--compare-mean-atol", "0.025"), "mean2")
+            check("m 0.0375 (three values 0.3 off) and m 0.05 (every value 0.05 off) are beyond 0.025 while their max delta (0.3, 0.05) is far inside 0.5 -> exit 5, 2 beyond the MEAN bound, 0 beyond the max bound",
+                  rc2 == 5 and m2["beyond_mean_atol"] == 2 and m2["within_mean_atol"] == 18 and m2["beyond_atol"] == 0 and m2["within_atol"] == 20, f"rc {rc2} {m2}")
+            check("mean: FAIL marker `ZZRLFAN_MEAN_ATOL_FAIL <matched> <beyond> <max_m> <bound>` while the max bound still prints PASS (they are judged separately)",
+                  len(marker(so2, "ZZRLFAN_MEAN_ATOL_FAIL")) == 1 and marker(so2, "ZZRLFAN_MEAN_ATOL_FAIL")[0].startswith("ZZRLFAN_MEAN_ATOL_FAIL 20 2 0.05")
+                  and marker(so2, "ZZRLFAN_MEAN_ATOL_FAIL")[0].endswith(" 0.025") and not marker(so2, "ZZRLFAN_MEAN_ATOL_PASS") and len(marker(so2, "ZZRLFAN_ATOL_PASS")) == 1 and not marker(so2, "ZZRLFAN_ATOL_FAIL"), so2[-500:])
+            fb = m2["first_beyond_mean_atol"]
+            check("mean: the offenders are named, worst first (D at m 0.05, then G at 0.0375)",
+                  len(fb) == 2 and fb[0][0][1] == recs[D]["token"] and fb[1][0][1] == recs[G]["token"] and abs(fb[0][1] - 0.05) < 1e-9 and abs(fb[1][1] - 0.0375) < 1e-9, str(fb))
+            q = m2["mean_abs_delta_quantiles"]
+            check("mean: quantiles over ALL 20 matched sets (16 zeros, 0.0104, 0.0208, 0.0375, 0.05): p50 0, p90 0.0208 (18th smallest), p99 0.05, max 0.05 (hand-derived, nearest rank)",
+                  q["p50"] == 0.0 and abs(q["p90"] - 0.5 / NV) < 1e-9 and abs(q["p99"] - 0.05) < 1e-9 and abs(q["max"] - 0.05) < 1e-9 and m2["max_mean_abs_delta"] == q["max"], str(q))
+            for bound, want in (("0.01", 4), ("0.04", 1), ("1.0", 0)):
+                rcb, _, mb = gate(("--compare-atol", "0.5", "--compare-mean-atol", bound), "mean_b" + bound)
+                check(f"mean bound {bound}: monotone -- {want} set(s) beyond, exit {5 if want else 0} (the max bound, untouched, passes all 20)",
+                      mb["beyond_mean_atol"] == want and rcb == (5 if want else 0) and mb["beyond_atol"] == 0, f"rc {rcb} {mb['beyond_mean_atol']}")
+
+            # -- the boundary: m == M is within (the test is `m > M`); one ulp below M it is beyond.  Only set A differs, by ONE value: the sum is that value alone, m = d / 24 exactly
+            refs_with((A,))
+            dA = abs(recs[A]["traj"][0][0][0] - rowsA["traj"][0][0][0])
+            mA = dA / NV
+            rc4, so4, m4 = gate(("--compare-atol", "0.5", "--compare-mean-atol", repr(mA)), "mean4")
+            check("mean == the set's m exactly -> WITHIN (the test is m > M, not >=)", rc4 == 0 and m4["beyond_mean_atol"] == 0 and m4["within_mean_atol"] == 20 and m4["max_mean_abs_delta"] == mA, f"rc {rc4} mA {mA!r} {m4['max_mean_abs_delta']!r}")
+            rc5, so5, m5 = gate(("--compare-atol", "0.5", "--compare-mean-atol", repr(math.nextafter(mA, 0.0))), "mean5")
+            check("mean one ulp below the set's m -> beyond (exit 5)", rc5 == 5 and m5["beyond_mean_atol"] == 1 and "ZZRLFAN_MEAN_ATOL_FAIL 20 1 " in so5, f"rc {rc5}")
+            rc5b, _, m5b = gate(("--compare-atol", "0.5", "--compare-mean-atol", "0.0"), "mean5b")
+            check("mean bound 0.0: any x / y difference at all is beyond (exit 5)",
+                  rc5b == 5 and m5b["beyond_mean_atol"] == 1, f"rc {rc5b}")
+
+            # -- the two bounds are INDEPENDENT: a yaw fault trips only the max bound; a big x offset trips both
+            refs_with((Y,))
+            rc6, so6, m6 = gate(("--compare-atol", "0.5", "--compare-mean-atol", "0.025"), "mean6")
+            check("a yaw-only fault (2.0): exit 5 from the MAX bound alone -- ATOL_FAIL, MEAN_ATOL_PASS (m = 0)",
+                  rc6 == 5 and m6["beyond_atol"] == 1 and m6["beyond_mean_atol"] == 0 and len(marker(so6, "ZZRLFAN_ATOL_FAIL")) == 1 and len(marker(so6, "ZZRLFAN_MEAN_ATOL_PASS")) == 1
+                  and not marker(so6, "ZZRLFAN_MEAN_ATOL_FAIL"), f"rc {rc6} {m6['beyond_atol']} {m6['beyond_mean_atol']}")
+            rc6b, so6b, m6b = gate(("--compare-atol", "0.5", "--compare-mean-atol", "0.0"), "mean6b")
+            check("... and with mean bound 0.0 the yaw-only fault still does not move m (exit 5 is the max bound's)", m6b["beyond_mean_atol"] == 0 and m6b["beyond_atol"] == 1 and rc6b == 5)
+            big = shifted(7, xy=[((2, 1, 1), 3.0)])
+            write_ref([big if i == 7 else recs[i] for i in range(20)])
+            rc7, so7, m7 = gate(("--compare-atol", "0.5", "--compare-mean-atol", "0.025"), "mean7")
+            check("one x / y value 3.0 off (d 3.0, m 0.125): beyond BOTH bounds -> exit 5, both FAIL markers",
+                  rc7 == 5 and m7["beyond_atol"] == 1 and m7["beyond_mean_atol"] == 1 and len(marker(so7, "ZZRLFAN_ATOL_FAIL")) == 1 and len(marker(so7, "ZZRLFAN_MEAN_ATOL_FAIL")) == 1, f"rc {rc7}")
+            rc7b, _, m7b = gate(("--compare-atol", "5.0", "--compare-mean-atol", "0.025"), "mean7b")
+            check("max bound loosened to 5.0: the same set is still beyond the MEAN bound (exit 5) -- the mean bound is not subsumed by the max one",
+                  rc7b == 5 and m7b["beyond_atol"] == 0 and m7b["beyond_mean_atol"] == 1)
+
+            # -- a fan the reference does not have the shape of, and a NaN, are never within the mean bound either
+            cut = json.loads(json.dumps(recs[4]))
+            cut["traj"] = cut["traj"][:-1]
+            cut["yaw"] = cut["yaw"][:-1]
+            write_ref([recs[i] if i != 4 else cut for i in range(20)])
+            rc8, _, m8 = gate(("--compare-atol", "1e9", "--compare-mean-atol", "1e9"), "mean8")
+            check("a reference fan with a dropped proposal is beyond even a mean bound of 1e9 (m = inf)", rc8 == 5 and m8["beyond_mean_atol"] == 1 and m8["max_mean_abs_delta"] == math.inf, f"rc {rc8} {m8['beyond_mean_atol']}")
+            nanr = json.loads(json.dumps(recs[6]))
+            nanr["traj"][0][0][0] = float("nan")
+            write_ref([recs[i] if i != 6 else nanr for i in range(20)])
+            rc9, _, m9 = gate(("--compare-atol", "1e9", "--compare-mean-atol", "1e9"), "mean9")
+            check("a reference with a NaN x value is beyond even a mean bound of 1e9", rc9 == 5 and m9["beyond_mean_atol"] == 1, f"rc {rc9}")
+            nany = json.loads(json.dumps(recs[6]))
+            nany["yaw"][0][0] = float("nan")
+            write_ref([recs[i] if i != 6 else nany for i in range(20)])
+            rc9b, _, m9b = gate(("--compare-atol", "1e9", "--compare-mean-atol", "1e9"), "mean9b")
+            check("a reference with a NaN yaw value is NOT a mean-bound failure (yaw excluded) -- the max bound is the one that trips (exit 5)", rc9b == 5 and m9b["beyond_mean_atol"] == 0 and m9b["beyond_atol"] == 1, f"rc {rc9b}")
+            # -- the reference-disagreement condition reaches the mean marker too
+            write_ref([recs[0], dict(recs[0], yaw=[[9.0] * T_] * M_)])
+            rc10, so10, _ = gate(("--compare-atol", "1e9", "--compare-mean-atol", "1e9"), "mean10")
+            check("reference lines of one key that disagree with each other: exit 5 and BOTH FAIL markers", rc10 == 5 and len(marker(so10, "ZZRLFAN_MEAN_ATOL_FAIL")) == 1 and len(marker(so10, "ZZRLFAN_ATOL_FAIL")) == 1, f"rc {rc10}")
+
+            # -- the default path is unchanged: without the flag NO mean key, NO mean marker, the same exit
+            refs_with((A, G))
+            rc11, so11, m11 = gate(("--compare-atol", "0.5"), "mean11")
+            check("no --compare-mean-atol: the report carries NONE of the mean keys, no MEAN marker, and the verdict is the max bound's alone (m 0.0375 is not looked at -> exit 0)",
+                  rc11 == 0 and not (MEAN_KEYS & set(m11)) and "ZZRLFAN_MEAN_ATOL" not in so11 and "mean_atol" not in so11 and m11["within_atol"] == 20, f"rc {rc11} {sorted(m11)}")
+            rc12, so12, m12 = gate((), "mean12")
+            check("no flags at all: still the bit-identity gate (exit 5, 2 not identical), no atol and no mean keys, no markers",
+                  rc12 == 5 and m12["not_identical"] == 2 and not (MEAN_KEYS & set(m12)) and "atol" not in m12 and "ZZRLFAN_ATOL" not in so12 and "ZZRLFAN_MEAN" not in so12, f"rc {rc12}")
+
+            # -- refusals: the mean bound without the catastrophe bound, without compare-sets, a nonsense value, too few matches
+            write_ref(recs[:20])
+            rcr, sor, _ = gate(("--compare-mean-atol", "0.025"), "mean_r1")
+            check("--compare-mean-atol WITHOUT --compare-atol is REFUSED (exit 4): the max bound is the one that reads yaw", rcr == 4 and "needs --compare-atol" in sor, f"rc {rcr}")
+            rcr2, sor2, _ = run_dump(rl, d, ckpt=ckA, args=("--compare-mean-atol", "0.025"), out="mean_r2")
+            check("--compare-mean-atol with no --compare-sets and no --compare-atol is REFUSED (exit 4)", rcr2 == 4, f"rc {rcr2}")
+            rcr3, sor3, _ = run_dump(rl, d, ckpt=ckA, args=("--compare-atol", "0.5", "--compare-mean-atol", "0.025"), out="mean_r3")
+            check("--compare-atol + --compare-mean-atol without --compare-sets is REFUSED (exit 4)", rcr3 == 4 and "need --compare-sets" in sor3, f"rc {rcr3}")
+            for nm, val in (("negative", "-0.1"), ("NaN", "nan"), ("infinite", "inf")):
+                rcn, son, _ = gate(("--compare-atol", "0.5", "--compare-mean-atol", val), "mean_bad_" + nm)
+                check(f"--compare-mean-atol {val} ({nm}) is REFUSED (exit 4)", rcn == 4 and "--compare-mean-atol" in son, f"rc {rcn}")
+            rcm, som, _ = gate(("--compare-atol", "5", "--compare-mean-atol", "5", "--compare-min-matched", "21"), "mean_r4")
+            check("--compare-min-matched 21 with 20 matched keys is still REFUSED (exit 4) with both bounds given, and neither marker is printed", rcm == 4 and "fewer than --compare-min-matched 21" in som and "ZZRLFAN_MEAN_ATOL" not in som and "ZZRLFAN_ATOL" not in som, f"rc {rcm}")
+            ap = rl.build_parser().parse_args(["--ckpt", "x", "--keys", "y", "--targets", "t", "--images", "i", "--calib", "c", "--out", "o"])
+            check("the parser default is None (no mean bound unless named in the argv)", ap.compare_mean_atol is None)
+        guarded("mean", t_mean)
+
         # ---- the REAL consumers read the record
         def t_consumers():
             import train as T
@@ -616,6 +827,33 @@ MUTATIONS = [
     ("atol_min_matched_zero_allowed", "atol", "if a.compare_min_matched is not None and a.compare_min_matched < 1:", "if False:"),
     ("atol_quantile_floor_rank", "atol", "return sorted_vals[max(0, math.ceil(q * len(sorted_vals)) - 1)]", "return sorted_vals[max(0, math.floor(q * len(sorted_vals)) - 1)]"),
     ("atol_identical_sets_not_counted_within", "atol", '"within_atol": len(per_set) - len(beyond)', '"within_atol": len(per_set) - len(beyond) - n_equal'),
+    # ---- --compare-mean-atol (2026-10-12, round-2 PASS): each edit removes one property of the second bound
+    ("mean_bound_ignored", "mean", "if m > mean_atol), key=lambda km: -km[1])", "if False), key=lambda km: -km[1])"),
+    ("mean_compared_with_ge", "mean", "if m > mean_atol), key=lambda km: -km[1])", "if m >= mean_atol), key=lambda km: -km[1])"),
+    ("mean_doubled", "mean", "if m > mean_atol), key=lambda km: -km[1])", "if m > 2 * mean_atol), key=lambda km: -km[1])"),
+    ("mean_includes_yaw", "mean", "    (ta, _), (tb, _) = a, b\n", "    (ta, ya), (tb, yb) = a, b\n    ta, tb = ta + [[[u, u] for u in y] for y in ya], tb + [[[u, u] for u in y] for y in yb]\n"),
+    ("mean_x_only", "mean", "for u, w in zip(qa, qb):\n                d = u - w", "for u, w in zip(qa[:1], qb[:1]):\n                d = u - w"),
+    ("mean_is_max", "mean", "sa += abs(d)\n                n += 1", "sa = max(sa, abs(d))\n                n = 1"),
+    ("mean_denominator_off_by_one", "mean", "return sa / n if n else 0.0", "return sa / (n + 1) if n else 0.0"),
+    ("mean_proposal_mismatch_reads_zero", "mean", "    if len(ta) != len(tb):\n        return math.inf\n    sa, n = 0.0, 0", "    if False:\n        return math.inf\n    sa, n = 0.0, 0"),
+    ("mean_step_mismatch_reads_zero", "mean", "        if len(pa) != len(pb):\n            return math.inf\n", "        if False:\n            return math.inf\n"),
+    ("mean_coordinate_mismatch_reads_zero", "mean", "            if len(qa) != len(qb):\n                return math.inf\n", "            if False:\n                return math.inf\n"),
+    ("mean_nan_passes", "mean", "                if not math.isfinite(d):\n                    return math.inf\n", "                if False:\n                    return math.inf\n"),
+    ("mean_within_miscounted", "mean", '"within_mean_atol": len(mean_ms) - len(mbeyond)', '"within_mean_atol": len(mean_ms) - len(mbeyond) - 1'),
+    ("mean_report_reads_the_max_delta", "mean", "        ms = sorted(m for _, m in mean_ms)\n", "        ms = sorted(d for _, d, _, _ in per_set)\n"),
+    ("mean_keys_without_the_flag", "mean", "    if mean_atol is not None:\n        mbeyond", "    if True:\n        mbeyond"),
+    ("mean_not_given_to_compare_sets", "mean", "atol=a.compare_atol, mean_atol=a.compare_mean_atol)", "atol=a.compare_atol)"),
+    ("mean_flag_ignored_by_the_gate", "mean", '            if a.compare_mean_atol is not None:\n                if cmp_["beyond_mean_atol"]', '            if False:\n                if cmp_["beyond_mean_atol"]'),
+    ("mean_never_fails", "mean", 'if cmp_["beyond_mean_atol"] or cmp_["reference_lines_disagreeing_with_each_other"]:\n                    rc = EXIT_MISMATCH',
+     'if False:\n                    rc = EXIT_MISMATCH'),
+    ("mean_beyond_not_exit_5", "mean", 'if cmp_["beyond_mean_atol"] or cmp_["reference_lines_disagreeing_with_each_other"]:\n                    rc = EXIT_MISMATCH',
+     'if cmp_["beyond_mean_atol"] or cmp_["reference_lines_disagreeing_with_each_other"]:\n                    rc = EXIT_OK'),
+    ("mean_disagreement_not_tripping", "mean", 'if cmp_["beyond_mean_atol"] or cmp_["reference_lines_disagreeing_with_each_other"]:', 'if cmp_["beyond_mean_atol"]:'),
+    ("mean_marker_shows_the_catastrophe_bound", "mean", "ZZRLFAN_MEAN_ATOL_PASS {cmp_['reference_keys_matched']} {cmp_['max_mean_abs_delta']:.6g} {a.compare_mean_atol:g}",
+     "ZZRLFAN_MEAN_ATOL_PASS {cmp_['reference_keys_matched']} {cmp_['max_mean_abs_delta']:.6g} {a.compare_atol:g}"),
+    ("mean_default_not_none", "mean", 'ap.add_argument("--compare-mean-atol", type=float, default=None,', 'ap.add_argument("--compare-mean-atol", type=float, default=0.025,'),
+    ("mean_without_atol_allowed", "mean", "if a.compare_mean_atol is not None and a.compare_atol is None:", "if False:"),
+    ("mean_negative_allowed", "mean", "if a.compare_mean_atol is not None and not (math.isfinite(a.compare_mean_atol) and a.compare_mean_atol >= 0):", "if False:"),
 ]
 
 
@@ -639,7 +877,7 @@ def main() -> int:
         failing = [n for n, ok, _ in suite(mod) if not ok]
         print(f"{name:36s} {cls:8s} {len(failing)}  {failing[0][:70] if failing else ''}")
         assert failing, f"mutation {name} ({cls}) stayed GREEN: the suite cannot see it"
-    need = {"ckpt", "shard", "fan", "format", "keys", "resume", "gate", "atol"}
+    need = {"ckpt", "shard", "fan", "format", "keys", "resume", "gate", "atol", "mean"}
     assert {c for _, c, _, _ in MUTATIONS} >= need, "a required mutation class is missing"
     n = 1 + len(MUTATIONS) + 1
     print(f"ZZTEST_PASS {n}  (1 unmutated suite of {len(base)} checks + {len(MUTATIONS)} RED mutations + coverage)")
