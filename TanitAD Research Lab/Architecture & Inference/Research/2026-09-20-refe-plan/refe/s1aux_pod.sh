@@ -65,8 +65,8 @@ gpu_busy() {
 }
 # rc 0 = nothing upstream holds the pod; rc 2 = a chain still runs (WAIT); rc 1 = it never will be over (REFUSE).  PI order: P2 -> RL-S1 -> S1 -> P6.
 upstream() {
-  if [ -e "$P2/chain.lock" ] && ! ( flock -n 9 ) 9< "$P2/chain.lock"; then echo "the P2 chain still holds $P2/chain.lock"; return 2; fi
-  if [ -e "$RLS1/chain.lock" ] && ! ( flock -n 9 ) 9< "$RLS1/chain.lock"; then echo "the RL-S1 chain still holds $RLS1/chain.lock"; return 2; fi
+  if [ -e "$P2/chain.lock" ] && ! ( flock -n 9 ) 9<> "$P2/chain.lock"; then echo "the P2 chain still holds $P2/chain.lock"; return 2; fi
+  if [ -e "$RLS1/chain.lock" ] && ! ( flock -n 9 ) 9<> "$RLS1/chain.lock"; then echo "the RL-S1 chain still holds $RLS1/chain.lock"; return 2; fi
   if ! grep -q "ZZRLS1_DONE" "$RLS1/chain.log" 2> /dev/null && [ "${S1AUX_RLS1_ABANDONED:-}" != "1" ]; then
     echo "RL-S1 is neither running nor finished: ZZRLS1_DONE is not in $RLS1/chain.log (S1AUX_RLS1_ABANDONED=1 only on the Master Mind's word)"; return 1; fi
   return 0

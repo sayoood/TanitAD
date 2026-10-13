@@ -377,7 +377,7 @@ def check_chain(text):
 def mutations(text):
     sw = lambda a, b: text.replace(a, b)  # noqa: E731
     out = [
-        ("no P2 lock check", drop_line(text, '9< "$P2/chain.lock"'), "NO_P2_LOCK_CHECK"),
+        ("no P2 lock check", drop_line(text, '9<> "$P2/chain.lock"'), "NO_P2_LOCK_CHECK"),
         ("no GPU check", drop_line(text, "if gpu_busy; then"), "NO_GPU_CHECK"),
         ("GPU unknown counts as idle", sw("|| return 0\n  [ -n", "|| return 1\n  [ -n"), "NO_GPU_CHECK"),
         ("no P2 finished check", sw('grep -q "ZZP2R_DONE" "$P2/chain.log"', 'grep -q "ZZNOTHING" "$P2/chain.log"'), "NO_P2_DONE_CHECK"),

@@ -57,7 +57,7 @@ gpu_busy() {
 }
 # P2 must be OVER: its chain holds its flock for its whole life; nothing may be on the GPU; and it must have logged ZZP2R_DONE (the PI's order, P2 -> RL-S1).
 p2_over() {
-  if [ -e "$P2/chain.lock" ] && ! ( flock -n 9 ) 9< "$P2/chain.lock"; then echo "the P2 chain still holds $P2/chain.lock"; return 1; fi
+  if [ -e "$P2/chain.lock" ] && ! ( flock -n 9 ) 9<> "$P2/chain.lock"; then echo "the P2 chain still holds $P2/chain.lock"; return 1; fi
   if gpu_busy; then echo "a process is on the GPU (or nvidia-smi cannot say): RL-S1 never adds load to a pod that is training"; return 1; fi
   if ! grep -q "ZZP2R_DONE" "$P2/chain.log" 2> /dev/null && [ "${RLS1_P2_ABANDONED:-}" != "1" ]; then
     echo "P2 never logged ZZP2R_DONE in $P2/chain.log (RLS1_P2_ABANDONED=1 only on the PI's word)"; return 1; fi

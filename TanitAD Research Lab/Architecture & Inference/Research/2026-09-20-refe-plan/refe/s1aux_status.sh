@@ -16,7 +16,7 @@ last_line="$(grep -E '^[0-9T:-]+ ZZS1AUX_' "$L" | tail -n 1 | cut -c1-260)"
 done_arms="$(grep -E '^[0-9T:-]+ ZZS1AUX_ARM_DONE ' "$L" | sed 's/.*ZZS1AUX_ARM_DONE //' | awk '!s[$1]++ {printf "%s%s", (n++ ? "," : ""), $1}')"
 now="$(grep -E '^[0-9T:-]+ ZZS1AUX_ARM_(GATE_OK|TRAIN_START|TRAINED|DONE|RESTART) ' "$L" | tail -n 1 | awk '{ sub(/^ZZS1AUX_ARM_/, "", $2); print $3 ":" $2 }')"
 held=no
-if [ -e "$R/chain.lock" ] && ! ( flock -n 9 ) 9< "$R/chain.lock" 2> /dev/null; then held=yes; fi
+if [ -e "$R/chain.lock" ] && ! ( flock -n 9 ) 9<> "$R/chain.lock" 2> /dev/null; then held=yes; fi
 case "$last_term" in
   *ZZS1AUX_DONE*)    state=done; rc=10 ;;
   *ZZS1AUX_REFUSED*) state=refused; rc=11 ;;
