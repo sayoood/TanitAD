@@ -13,6 +13,7 @@
 > Where this file and the draft disagree for S1, this file governs. For S2 and S3 the draft is unchanged.
 >
 > **Amendment A2 (2026-10-13, before any S1 arm)** at the end of this file adds a paired floor to P3 and fixes the ctx of record.
+> **Amendment A3 (2026-10-13, before any S1 step)** places S1 on the A40 pod after RL-S1 (the PI's option A), resolves B1 and B2, and states that the train teacher-lane labels are a regenerated draw.
 >
 > Evidence classes: **MEASURED** (ours, artifact named) · **INHERITED** · **ANALYTIC** · **ESTIMATED** · **UNVERIFIED**.
 
@@ -173,3 +174,70 @@ H1's scorer is bit-identical to N by construction (no path from the head to the 
 - Within-set the initial heads read 0.49–0.57, i.e. at chance. Their P1 IoU on [0, 40) m is 0.13–0.27.
 - The 32-token 0.8245 that triggered A2 was a one-log artefact. The position prior is real but seed-dependent, which is why A2 pairs each arm with its own initial head.
 - **No number in this file changes.**
+
+## Amendment A3 (2026-10-13 21:40 Berlin, before any S1 step): where S1 runs, and the labels it trains on
+
+**The ruling.** The PI chose **option A** on 2026-10-13 (*"go with A"*), between:
+- **A:** the A40 pod, after RL-S1 and before P6;
+- **B:** the pod, after P6;
+- **C:** the dev box.
+
+This resolves **B1** and **B2** of §5. No S1 step, token or label existed when this was written. The pod's `/workspace/data/s1aux` did not exist, and RL-S1 was still labelling (MEASURED 2026-10-13 19:38Z).
+
+**A3.1 · Host and order.**
+- **Host:** one A40 and 11 vCPU, running the chain `refe/s1aux_pod.sh` from `/workspace/refe-plan-s1aux`. This is a directory of its own, so the RL-S1 and P6 trees are never re-measured or touched.
+- **Tree:** shipped from git at the commit named in its `SHIP_MANIFEST.json`. The chain refuses a drift, and every arm's gate re-measures the tree.
+- **Order:** the chain starts only when all four hold:
+  - RL-S1 has written `ZZRLS1_DONE`;
+  - the P2 and RL-S1 locks are free;
+  - the GPU has been idle on 3 consecutive polls;
+  - the GPU is re-checked before every arm.
+- **If RL-S1 ends without `ZZRLS1_DONE`:** the chain refuses (S1-D4).
+- **P6** does not know about S1 (S1-D5). It is started **by hand after `ZZS1AUX_DONE`**, and still needs P2's R2 GO plus the PI's confirmation.
+- **The §5 B1 estimate (dev box, 35–46 h) no longer applies.** ESTIMATED A40 wall time is about **12–16 h** (`eval/S1_POD_RUNBOOK.md` §5):
+
+| step | ESTIMATED time |
+|---|---|
+| `heldout_pdm` | 3–20 min |
+| `train_teacher_lane` at 2,500 sets | 0.7–0.9 h |
+| nine arms (1.3–1.6 h each) | 11.7–14.4 h |
+
+  P6 starts later by the same amount.
+- **HF storage:** private storage is **213.95 GB** before S1 (MEASURED 2026-10-13: Σ `usedStorage` over 56 repos). S1's pushes add about 15 GB (ESTIMATED: nine arms of ~1.3–1.6 GB, plus labels and logs), well inside the 1 TB private ceiling.
+
+**A3.2 · The inputs, and which are regenerated.** The audit (`raw/2026-10-13-aux-s1-data-audit/`) left two inputs unresolved anywhere. On the pod they are produced by the chain, **before any arm**:
+
+| input | source at S1 | same as SFT-4's? |
+|---|---|---|
+| `heldout_pdm` | recomputed: `onpolicy_relabel_pdm.py --served-only` (P2's recipe) over the 3,137 held-out sets; accepted only at `pdm_label_complete.py --expect 3137` and ≥ 3,137 rows | same recipe, same sets; recomputed |
+| `train_teacher_lane` | regenerated: `select_bank_subset.py --seed 20261004 --n 2500` over the HF banks' `onpolicy_queue.tar.zst` (1,817,869,216 B, md5 from the repo's `MD5SUMS.txt`), then `onpolicy_relabel_teacher_lane.py --repair-last-heading`; refused below **2,109** rows | **NO: a different draw of the same recipe** (below) |
+| held-out lane + teacher-lane labels | SFT-4's own, restored from `raw/2026-10-04-lane-discipline/*.xz`; refused unless 3,137 rows each | yes |
+| `train_pdm`, `navtrain_pixels`, targets, on-policy bank | P2's, on the pod (the bank after the 24-log carve) | as P2 |
+| aux label store (train) | shipped; verified by the store's own sha check, `store_sha256` `4a17db67…f287a` | — |
+
+**Why the teacher-lane draw differs, and what that costs.**
+- The queue SFT-4 drew its subset from was **never banked** (`eval/PREREG_SFT4R.md`, NAMED GAP).
+- u400 trained on the **2,109** rows written by its launch.
+- S1 uses the first **2,500** sets of the seed-20261004 order, i.e. a prefix of the 15,000-set subset the recipe registers.
+- **2,500 rather than 15,000:**
+  - it is the size nearest u400's own 2,109 that clears the floor;
+  - its cost is 0.7–0.9 h, against 4.3–5.7 h for 15,000.
+  - A later amendment can extend to 15,000 without changing these 2,500 (same seed, prefix order).
+
+**Consequences, stated before the data:**
+1. **Attribution is unaffected.** Every S1 arm (N, H1, H2, all seeds) trains on the **identical** regenerated label set. The comparator of record is the same-seed N (§2).
+2. **The labels are banked before the first arm** (`labels/` in the private `Sayood/tanitad-refe-s1aux`, proven by the remote listing and content, stage `bank_labels`). The set every arm saw is therefore recoverable.
+3. **S1's N arms are not a replication of SFT-4's 400 updates.** An N-vs-u400 difference is not attributable. u400 stays a reference row only, as §2 already says.
+
+**A3.3 · The H1-s1 / H1-s2 drop rule is not exercised.**
+- On the pod, all **nine** registered arms run unattended in the registered order.
+- Exercising the drop rule would need a model-turn gate between arm 7 and arm 8, with the A40 idle while it waits. The saving would be about 2.6–3.2 A40-h.
+- Nine runs are the cost the PI accepted with option A.
+- Running a registered arm moves no criterion. Both H1 replicates are reported.
+
+**A3.4 · Where the token ids are first written.**
+- §2's rule is "written **before that arm's first step**". On the pod, that write is the chain's `arms_manifest.jsonl` row, appended before `trainstart`.
+- The row is pushed to HF with the arm.
+- `raw/<date>-aux-s1-runs/MANIFEST.json` is transcribed from it when the arms are banked into the repo. The order of events is unchanged; only the first file holding the id differs.
+
+**No number, criterion or read in this file changes.** B3 is unchanged: tokens are minted per arm at launch.
