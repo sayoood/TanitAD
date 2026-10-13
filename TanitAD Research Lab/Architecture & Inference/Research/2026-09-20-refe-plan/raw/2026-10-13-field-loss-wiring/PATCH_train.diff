@@ -1,0 +1,265 @@
+--- a/refe/train.py
++++ b/refe/train.py
+@@ -35,6 +35,7 @@
+ 
+ sys.path.insert(0, str(Path(__file__).resolve().parent))
+ from model import BACKBONES, REFe, REFeConfig, param_report, wta_loss  # noqa: E402
++from field_loss import field_loss  # noqa: E402  (L_field, eval/PREREG_AUX_FIELD_LOSS_DRAFT.md: only called when --w-field > 0; the label reader is imported lazily by TargetBank)
+ import ckpt_io  # noqa: E402
+ import nav_command as NC  # noqa: E402
+ 
+@@ -630,11 +631,26 @@
+     def __init__(self, target_dir: str, images_root: str | None, cfg: REFeConfig,
+                  synthetic: bool = False, limit: int | None = None, spread: bool = False, scorer=None,
+                  max_missing_frac: float = 0.001, calib: str | None = None,
+-                 sizes: dict | None = None, onpolicy=None, online: bool = False):
++                 sizes: dict | None = None, onpolicy=None, online: bool = False,
++                 field_labels: str | None = None, field_shuffle_seed: int | None = None):
+         self.scorer = scorer
+         # P6 / D1: the ONLINE labeller labels the model's own proposals, so each item also returns its row index (the trainer needs the row's
+         # (log_name, token, rank, aug) to find the metric-cache parts). Off => the tuple is the unchanged nine elements.
+         self.online = bool(online)
++        # L_field (eval/PREREG_AUX_FIELD_LOSS_DRAFT.md): the stored ground-truth SDF per sample, read by aux_drivable_head.AuxLabelSource -- the ONE store reader (pinned
++        # sha256 + key count, manifest/shard checks). `field_labels=None` (the default) => self.field is None and the item tuple is EXACTLY what it was without this
++        # feature; otherwise the item carries two more elements, (sdf int8 [160, 128], valid bool), always the LAST TWO. The key is (log_name, token) ONLY: goal twins share a frame.
++        self.field = None
++        self.field_cov = None
++        if field_labels:
++            import aux_drivable_head as AUX
++            try:
++                self.field = AUX.AuxLabelSource(field_labels, pinned_sha256=AUX.PINNED_STORE_SHA256, pinned_keys=AUX.PINNED_STORE_KEYS,
++                                                shuffle_seed=field_shuffle_seed, max_logs=None)
++                if field_shuffle_seed is not None:
++                    self.field.key_map()                     # the derangement is built once, HERE, and travels to the workers with the dataset
++            except AUX.StoreRefused as e:
++                raise SystemExit(f"TargetBank: --field-labels {field_labels} is refused: {e}")
+         # ⭐ on-policy mode (PI decision B): the paper's supervision REPLACES the fixed candidates
+         self.onpolicy = onpolicy
+         self.rows = []
+@@ -779,6 +795,14 @@
+                 self.cmd_sources[k] = self.cmd_sources.get(k, 0) + 1
+             print(f"  NAV COMMAND (P6): sources {self.cmd_sources}  (row = NAVSIM driving_command carried by the bank; goal_rule = nav_command.goal_to_command, "
+                   f"MEASURED 0.90 agreement with NAVSIM on navtest -- below SPEC_P6 D6's 95 % bar)")
++        if self.field is not None:
++            # coverage of the FINAL rows (after every drop above) by the label store, keyed by (log_name, token): a row the store lacks reads zeros + valid False = exactly 0 loss
++            have = set(self.field.all_keys())
++            n_lab = sum(1 for r in self.rows if (r.get("log_name", ""), r.get("token", "")) in have)
++            self.field_cov = {"rows": len(self.rows), "labelled": n_lab, "store_keys": len(have)}
++            print(f"  L_field labels: {n_lab:,}/{len(self.rows):,} rows ({100.0 * n_lab / max(len(self.rows), 1):.3f} %) have a stored SDF  <- {field_labels}  "
++                  f"(store_sha256 {self.field.manifest['store_sha256'][:12]}, {len(have):,} keys"
++                  + (f"; LABEL-SHUFFLED CONTROL, derangement seed {field_shuffle_seed}" if field_shuffle_seed is not None else "") + ")")
+ 
+     def __len__(self):
+         return len(self.rows)
+@@ -877,7 +901,16 @@
+                 gl,
+                 torch.tensor(r["traj"], dtype=torch.float32),
+                 ct, cg, cm, ci, cal)
+-        return item + (torch.tensor(i, dtype=torch.long),) if self.online else item
++        item = item + (torch.tensor(i, dtype=torch.long),) if self.online else item
++        if self.field is not None:
++            # L_field: (sdf int8 [160, 128], valid bool) as the LAST TWO elements, after the optional row index. A key with no stored label reads zeros and valid False.
++            key = (r.get("log_name", ""), r.get("token", ""))
++            if self.field.shuffle_seed is not None and key not in self.field.key_map():
++                lab, vld = torch.zeros(1, 160, 128, dtype=torch.int8), torch.zeros(1, dtype=torch.bool)      # the control's derangement covers the STORE's keys; a frame outside it has no label
++            else:
++                lab, vld = self.field.labels([key])
++            item = item + (lab[0], vld[0])
++        return item
+ 
+ 
+ class EpochSampler(torch.utils.data.Sampler):
+@@ -964,11 +997,13 @@
+                  "batch", "accum", "lr", "weight_decay", "cosine", "epochs", "steps", "score_w",
+                  "seed", "spread", "overfit", "overfit_n", "epoch_unit", "amp", "tf32",
+                  "fused_adam", "compile", "grow", "grow_scenes", "scorer_mode", "init_from", "pdm_labels",
+-                 "pdm_only", "yaw_wrap", "nav_mode", "labeller", "label_backend")
++                 "pdm_only", "yaw_wrap", "nav_mode", "labeller", "label_backend",
++                 "w_field", "field_margin", "field_interp", "field_labels", "field_shuffle_seed")
+ # ⭐ an identity key ADDED after runs began: an OLD checkpoint lacks it and must read as the value
+ # those runs actually used, or every pre-existing run would refuse its own resume
+ IDENTITY_DEFAULTS = {"scorer_mode": "fixed", "init_from": None, "pdm_labels": None, "pdm_only": False,
+-                     "yaw_wrap": "on", "nav_mode": "goal", "labeller": "bank", "label_backend": "pdm"}
++                     "yaw_wrap": "on", "nav_mode": "goal", "labeller": "bank", "label_backend": "pdm",
++                     "w_field": 0.0, "field_margin": 0.25, "field_interp": "5hz", "field_labels": None, "field_shuffle_seed": None}
+ 
+ 
+ def warm_start(model, path: str) -> dict:
+@@ -1006,14 +1041,18 @@
+         k = str(int(r.get("rank", 0)))
+         per_rank[k] = per_rank.get(k, 0) + 1
+     grow = bool(getattr(a, "grow", False))
+-    return {"args": {k: getattr(a, k, None) for k in IDENTITY_ARGS},
+-            "n_tuples": len(ds), "n_scenes": len(ds.scene_groups), "per_rank": per_rank,
+-            # not hashed under --grow: the files are still being appended to (GROW_EXEMPT)
+-            "targets_sha256": None if grow else _digest_files(tfiles),
+-            "scorer_sha256": (None if grow else
+-                              _digest_files(getattr(scorer_bank, "files", []) or [])),
+-            "calib_sha256": _digest_files([a.calib]) if a.calib else None,
+-            "frozen_sha256": frozen_sha256}
++    ident = {"args": {k: getattr(a, k, None) for k in IDENTITY_ARGS},
++             "n_tuples": len(ds), "n_scenes": len(ds.scene_groups), "per_rank": per_rank,
++             # not hashed under --grow: the files are still being appended to (GROW_EXEMPT)
++             "targets_sha256": None if grow else _digest_files(tfiles),
++             "scorer_sha256": (None if grow else
++                               _digest_files(getattr(scorer_bank, "files", []) or [])),
++             "calib_sha256": _digest_files([a.calib]) if a.calib else None,
++             "frozen_sha256": frozen_sha256}
++    if a.field_labels:
++        # L_field: the label store's CONTENT (its manifest sha256), beside the path in `args` -- a key present ONLY on a field run, so every other run's identity is unchanged
++        ident["field_store_sha256"] = ds.field.manifest["store_sha256"] if getattr(ds, "field", None) is not None else None
++    return ident
+ 
+ 
+ def _identity_diff(old: dict, new: dict, declared=(), accepted: list | None = None) -> list:
+@@ -1032,7 +1071,7 @@
+             out.append(msg)
+     grow = bool(new["args"].get("grow")) and bool(old["args"].get("grow"))
+     for k in ("n_tuples", "n_scenes", "per_rank", "targets_sha256", "scorer_sha256",
+-              "calib_sha256", "frozen_sha256"):
++              "calib_sha256", "frozen_sha256", "field_store_sha256"):
+         if grow and k in GROW_EXEMPT:
+             continue
+         if old.get(k) != new.get(k):
+@@ -1107,6 +1146,16 @@
+     if online and a.label_backend == "pdm" and not a.metric_cache:
+         print("  REFUSING: --labeller online with the pdm backend needs --metric-cache (the D9 parts directory, refe/build_metric_cache.py).")
+         return 4
++    # L_field (eval/PREREG_AUX_FIELD_LOSS_DRAFT.md). --w-field defaults to 0.0 and a term that is OFF is not computed at all (the trainer is then bit-identical to one without
++    # the feature); an arm that means it NAMES it. A weight with no label source, or a shuffle seed with no labels, is a lever that would silently do nothing: refused.
++    if not (0.0 <= a.w_field < float("inf")):
++        print(f"  REFUSING: --w-field {a.w_field} must be a finite number >= 0."); return 4
++    if not (-float("inf") < a.field_margin < float("inf")):
++        print(f"  REFUSING: --field-margin {a.field_margin} must be finite."); return 4
++    if a.w_field > 0.0 and not a.field_labels:
++        print("  REFUSING: --w-field > 0 needs --field-labels (the SDF label store): the term would have no label."); return 4
++    if a.field_shuffle_seed is not None and not a.field_labels:
++        print("  REFUSING: --field-shuffle-seed needs --field-labels."); return 4
+     if a.nav_mode != "goal":
+         cfg.nav_mode = a.nav_mode
+         print(f"  NAV MODE: {a.nav_mode} -- the student is conditioned on the discrete navigation command (the paper's input), not on goal points")
+@@ -1254,7 +1303,8 @@
+                     limit=a.overfit_n if a.overfit else None, spread=a.spread,
+                     scorer=scorer_bank if scorer_bank.n_rows else None,
+                     max_missing_frac=a.max_missing_images, calib=a.calib, sizes=grow_snap,
+-                    onpolicy=op_bank, online=online)
++                    onpolicy=op_bank, online=online,
++                    field_labels=a.field_labels, field_shuffle_seed=a.field_shuffle_seed)
+     if not a.calib:
+         print("  *** NO --calib: every tuple is lifted with the ONE baked rig (pre-R22 behaviour). "
+               "An ABLATION -- PETR, the paper's cited embedding, uses each sample's own. ***")
+@@ -1496,7 +1546,7 @@
+                        limit=a.overfit_n if a.overfit else None, spread=a.spread,
+                        scorer=sb if sb.n_rows else None,
+                        max_missing_frac=a.max_missing_images, calib=a.calib, sizes=snap,
+-                       onpolicy=ob)
++                       onpolicy=ob, field_labels=a.field_labels, field_shuffle_seed=a.field_shuffle_seed)
+         smp = (SceneEpochSampler(d.scene_groups, a.seed, shuffle=not a.overfit)
+                if a.epoch_unit == "scenes" else EpochSampler(len(d), a.seed, shuffle=not a.overfit))
+         ld = DataLoader(d, batch_size=a.batch, sampler=smp, num_workers=a.workers,
+@@ -1524,14 +1574,27 @@
+     last_ck = time.time()
+     if (a.grow or online) and run_dir is not None:
+         _append_jsonl(run_dir / "metrics.jsonl", _bank_event())
++    if ds.field is not None and run_dir is not None:
++        # L_field: what the loader was BUILT with, written by the trainer itself (G-DVB / the weight rule read it): the store's pinned manifest sha256 and key count, and
++        # the share of this bank's rows that have a stored label
++        _append_jsonl(run_dir / "metrics.jsonl", {"event": "field", "step": step, "w_field": a.w_field, "margin": a.field_margin, "interp": a.field_interp,
++                                                  "shuffle_seed": a.field_shuffle_seed, "store_sha256": ds.field.manifest["store_sha256"],
++                                                  "store_keys": ds.field_cov["store_keys"], "rows": ds.field_cov["rows"], "rows_labelled": ds.field_cov["labelled"],
++                                                  "at": _now()})
+     pend = None                              # online labeller: the micro-batch whose labels have not been consumed yet (its graph is alive)
+     bce_comp = [float("nan")] * 6
+     t_log0 = time.time()
++    field_on = bool(a.field_labels)
+     while step < a.steps:
+         sampler.set_epoch(epoch, start=pos)
+         for batch in dl:
+             img, ego, goal, tgt, cand_xy, cand_tg, cand_m, cand_id, cal = batch[:9]
+-            ridx = batch[9] if len(batch) > 9 else None
++            # L_field: the loader appends (sdf int8 [B,160,128], valid bool [B]) as the LAST TWO elements, after the online row index -- so the index is found by its
++            # position among the elements that precede them, and the field elements by negative index. Without --field-labels this is the unchanged `batch[9]`.
++            ridx = batch[9] if len(batch) > 9 + (2 if field_on else 0) else None
++            sdf_t = valid_t = None
++            if field_on:
++                sdf_t, valid_t = batch[-2].to(dev, non_blocking=True), batch[-1].to(dev, non_blocking=True)
+             img, ego, goal, tgt, cand_xy, cand_tg, cand_m, cand_id = (
+                 x.to(dev, non_blocking=True)
+                 for x in (img, ego, goal, tgt, cand_xy, cand_tg, cand_m, cand_id))
+@@ -1549,6 +1612,11 @@
+             # P6 / D5: --yaw-wrap on (default) is today's wrapped yaw L1, bit for bit; off is the paper's literal L1. parts=True returns the two terms the
+             # P6 profile logs (pos_L1, yaw_L1); the sum l_traj is the same expression as before.
+             l_traj, idx, l_pos, l_yaw = wta_loss(traj, tgt, yaw_wrap=(a.yaw_wrap == "on"), parts=True)
++            # L_field (eval/PREREG_AUX_FIELD_LOSS_DRAFT.md): a hinge on the footprint corners of ALL proposals against the stored SDF. Computed ONLY when --w-field > 0, so a
++            # run without it executes exactly the operations it did before this term existed (tested: bit-identical losses, gradients and parameters).
++            l_field = fparts = None
++            if a.w_field > 0.0:
++                l_field, fparts = field_loss(traj, sdf_t, margin=a.field_margin, valid=valid_t, interp=a.field_interp, return_parts=True)
+             n_cand = float(cand_m.sum())
+             if online:
+                 # ⭐ P6 / D1 + D2 + D4. The scorer scored ITS OWN proposals (`score`, candidates detached inside the model); their detached copies go to the
+@@ -1556,7 +1624,7 @@
+                 props_np = traj.detach().double().cpu().numpy()
+                 metas = [{k: ds.rows[int(j)].get(k) for k in ("log_name", "token", "rank", "aug", "step")} for j in ridx]
+                 cur = {"stamp": micro, "step": step, "B": int(img.shape[0]), "score": score, "l_traj": l_traj, "l_pos": l_pos, "l_yaw": l_yaw,
+-                       "idx": idx, "props": props_np, "h": lab.submit(micro, step, metas, props_np)}
++                       "idx": idx, "props": props_np, "h": lab.submit(micro, step, metas, props_np), "l_field": l_field, "fparts": fparts}
+                 l_score = None
+             elif OP is not None:
+                 if op_live:
+@@ -1680,8 +1748,12 @@
+                         else:
+                             n_uncovered += 1
+                         n_cov += int(has.sum())
+-                    ((P["l_traj"] + l_score) / a.accum).backward()
++                    tot_ = P["l_traj"] + l_score
++                    if a.w_field > 0.0:
++                        tot_ = tot_ + a.w_field * P["l_field"]          # L_field rides the same deferred backward as the other two terms
++                    (tot_ / a.accum).backward()
+                     l_traj, l_pos, l_yaw, idx = P["l_traj"], P["l_pos"], P["l_yaw"], P["idx"]
++                    l_field, fparts = P["l_field"], P["fparts"]
+                     assign_d = 0.0                                # the labelled trajectories ARE the current proposals (identity asserted by sha256)
+                     del P
+             # ⭐ GRADIENT ACCUMULATION. `step` counts OPTIMISER steps, never micro-batches, so
+@@ -1690,7 +1762,10 @@
+             # effective batch, which is what a single large batch would have produced; clipping
+             # then sees the real global norm rather than one micro-batch's.
+             if not online:
+-                loss = (l_traj + l_score) / a.accum
++                loss = l_traj + l_score
++                if l_field is not None:
++                    loss = loss + a.w_field * l_field
++                loss = loss / a.accum
+                 loss.backward()
+             micro += 1
+             if micro % a.accum:
+@@ -1718,6 +1793,10 @@
+                         "cuda_max_mem_gb": (torch.cuda.max_memory_allocated() / 2**30
+                                             if dev == "cuda" else None),
+                         "pos_L1": float(l_pos), "yaw_L1": float(l_yaw)}
++                    if l_field is not None:
++                        # L_field: the unweighted loss, the multiplier applied to it, the share of in-extent footprint corners with SDF < 0, and the share of corners in extent
++                        row.update({"field_L": float(l_field), "field_w": float(a.w_field), "field_viol": float(fparts["violating_frac"]),
++                                    "field_inext": float(fparts["in_extent_frac"])})
+                     if online:
+                         # P6: the six BCE components (NC, DAC, EP, TTC, C, DDC), unweighted, of the step's last micro-batch: score == score_w * mean(bce_*)
+                         row.update({"bce_nc": bce_comp[0], "bce_dac": bce_comp[1], "bce_ep": bce_comp[2],
+@@ -1977,6 +2056,18 @@
+     ap.add_argument("--label-timeout-s", type=float, default=900.0, help="--labeller online: a micro-batch whose labels are not back in this long raises")
+     ap.add_argument("--label-python", default="", help="--labeller online: interpreter for the pdm workers if the NAVSIM stack lives in another venv")
+     ap.add_argument("--metric-cache", default=None, help="--labeller online: the D9 parts directory (refe/build_metric_cache.py) <log>/<token>[__twin].pkl.xz")
++    # ---- L_field (eval/PREREG_AUX_FIELD_LOSS_DRAFT.md, PI decision D-AUX-4). EVERY default reproduces the trainer without the term bit for bit; an arm that means the term NAMES --w-field.
++    ap.add_argument("--w-field", type=float, default=0.0,
++                    help="weight of L_field, the hinge relu(margin - SDF_gt(corner)) on the footprint corners of ALL 64 proposals (refe/field_loss.py). 0.0 = OFF: the term is not "
++                         "computed. Set once by the committed gradient-norm rule (refe/weight_rule.py), never tuned on PDMS. Needs --field-labels.")
++    ap.add_argument("--field-margin", type=float, default=0.25, help="L_field's margin in metres (registered 0.25)")
++    ap.add_argument("--field-interp", choices=("5hz", "navsim2hz"), default="5hz",
++                    help="L_field's pose up-sampling: 5hz = 20 poses at 5 Hz -> 10 Hz linear from the origin (registered); navsim2hz = NAVSIM's own 2 Hz chain")
++    ap.add_argument("--field-labels", default=None,
++                    help="the int8 SDF label store directory (aux_label_store.py; the pinned store). The loader then also delivers (sdf, valid) per sample. Absent = the item tuple "
++                         "is unchanged.")
++    ap.add_argument("--field-shuffle-seed", type=int, default=None,
++                    help="the label-shuffled CONTROL arm: a derangement of the label keys with this seed (registered 20261011). Needs --field-labels.")
+     ap.add_argument("--preflight", action="store_true",
+                     help="build banks + model, load and check the checkpoint, then exit WITHOUT "
+                          "writing anything (safe against a live run directory); prints PREFLIGHT_OK")

@@ -34,6 +34,8 @@ It is a **separate arm from the head** (D-AUX-4). It shares the labels and nothi
 If r(64) < 0.25 the arm is **not launched** (K2). If r(1/4) > 1.0 the arm is not launched (K2b: the field term would dominate the trajectory loss at the lowest weight; investigate the label).
 *Why a rule and not a number:* the mean divides each proposal's share by 64 × 40 × 4, while WTA trains the winner at 1/20 per point, so a unit weight is ESTIMATED to be one to two orders of magnitude weaker per proposal; the published method's weight and tolerance band were **not found** in the extracted text of `2605.04647` §4.4 (UNVERIFIED), so there is no published value to inherit.
 
+**Weight rule, clarification of the reading (2026-10-13, before any measurement on real data):** r(w) is computed on the gradient **accumulated over the 8 micro-batches** (the gradient the optimiser sees under `--accum 8`), not as a mean of 8 per-micro-batch ratios. `raw/2026-10-13-field-loss-wiring/weight_rule.py` implements this reading; it has run on a tiny synthetic bank only (output stamped NOT_A_DECISION), never on real data.
+
 **Gradient reach (required by the gate, not yet measured).** `L_field` depends on `traj` only. It must reach `traj_head`, the queries and proposal decoder, `scene_proj`, `reg_compress` and the LoRA, and must read **exactly 0.0** on `score_q_mlp`, `score_dec`, `score_head`: L_field's graph holds only the ancestors of `traj`, and the scorer sits downstream of `traj` (`model.py:775-779`), not upstream.
 
 ## What the published precedent does and does not say
@@ -191,13 +193,13 @@ Anchors are the working tree on 2026-10-12 and drift; `SPEC_AUX_DRIVABLE_HEAD.md
 
 | blank | value |
 |---|---|
-| label store: path, frame count (expect 103,288), manifest sha256 | _ |
-| navtest label store (for evaluation only): path, frame count (expect 12,146), sha256 | _ |
-| `refe/field_loss.py` sha256 and the `test_field_loss.py` output (`ZZTEST_PASS 42`) | _ |
+| label store: path, frame count (expect 103,288), manifest sha256 | `D:/Projects/TanitAD-artifacts/aux_drivable/label_store/`; **103,139 frames, not 103,288** (100 % of the 103,037-row rank-0 bank, MEASURED `raw/2026-10-13-field-loss-wiring/real_bank_label_coverage.out`; the 149 yaml tokens without a bank row or a local DB are in `missing_tokens.txt`); `store_sha256` `4a17db673b1548ba35724ab848a7dc551e4b0bc1e49c57ae93e6357454bf287a`, `manifest.json` sha256 `5b629af3ca5354ca260bafdcb179ad182a9acb68f8357e119076ee197c3671a9` (filled 2026-10-13) |
+| navtest label store (for evaluation only): path, frame count (expect 12,146), sha256 | `D:/Projects/TanitAD-artifacts/aux_drivable/label_store_navtest/`, 12,146 frames, `store_sha256` `985a3bc77f3ab7a96b0dceace48e73b80e5b69b70710958635060939bce0d7c1`, 0 overlap with the train store (`raw/2026-10-13-aux-navtest-store/s0_gate_navtest.json`, gate PASS; filled 2026-10-13) |
+| `refe/field_loss.py` sha256 and the `test_field_loss.py` output (`ZZTEST_PASS 42`) | `e29d91c349539ba366c73739fd2fe7fc6f1e7a6a015c4c0749df5f15df36c994` at `ee16738` (unchanged since `7da149b`); `ZZTEST_PASS 42` re-run 2026-10-13 by the wiring work (`raw/2026-10-13-field-loss-wiring/`). **Re-hash at launch**: the token binds the shipped bytes |
 | host (H-P2 / H-P6 / H-0), its init checkpoint and sha256 | _ |
 | **w_field** after the weight rule, with r(w) for every candidate and the 8 micro-batch ids | _ |
 | comparator checkpoints and sha256 (C, C-seed) | _ |
 | seeds for every arm; the derangement seed (20261011) if the shuffle arm runs | _ |
-| the C3 token set used by M1/A3 and the instrument that produced it | _ |
+| the C3 token set used by M1/A3 and the instrument that produced it | `raw/2026-10-11-c3-selection-headroom/tokens.json` (1,058 tokens: u400's 529 zeroed + 529 random), `table.npz` produced by `c3_run.py` (u400 scorer, `navsim_v1_lane`); its scorer logits are reproduced bit for bit on all 1,058 by `eval/aux_navtest_forward.py` (`D:/Projects/TanitAD-artifacts/aux_navtest_forward/c3_full/identity.json`, 473,984 values, 0 differ; filled 2026-10-13) |
 | harness commit and the seam's flags | _ |
 | gate PASS token id (commit, argv sha256, data-manifest sha256s) | _ |
