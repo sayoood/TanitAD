@@ -16693,3 +16693,8 @@ floor (MEASURED by simulation, iid-normal model).
 | id | record | status |
 |---|---|---|
 | **H-R8-BUDGET-1** (replicate evidence line 2026-10-13, POST-HOC) | V-TACkr − V-R8r (training seed 1). The 100× tactical weight's costs REPLICATE: `speed_mae_0_2s` +0.03 and constraint MAEs +0.03–0.07, worse at both seeds. No route gain at either seed. Off-drivable and tactical accuracy do not replicate. ⚠ The premise reading flips with the seed: last-50 % median 0.0183 (seed 1, MET) vs 0.0042 (seed 0, UNMET), each the median of TWO gs readings. B-PREM as registered reads V-TACk (seed 0), so L2 reads PREMISE-UNMET. `…/raw/vtackr/README.md`. | DESCRIPTIVE; under either premise reading, no route gain at either seed and replicated costs |
+
+<!-- REFCV8-2026-10-13-VMAP4-DESC -->
+| id | record | status |
+|---|---|---|
+| **H-R8-MAPW-1** (descriptive evidence line 2026-10-13, POST-HOC) | V-MAP4 (`--w-map-hires` 4). Premise MET: `gs_bev025_proj_map_hires` median 0.833 (V-R8 0.175). 10 cm map IoU gain over V-R8 against F (V-MAP4r not yet in): drivable 0_20 R 1.55, drivable 20_40 R 1.37, lane 0_20 R 2.86; lane 20_40 degenerate (all base arms 0). Box / agent AP worse by slightly more than F. Route and turns unchanged. `…/emit_off_diag_2026-10-12/raw/vmap4/README.md`. | DESCRIPTIVE; reads as NOT clearing B-MAPW (drivable R < 2, AP guard); L3 scored at I-0 with V-MAP4r in F |
