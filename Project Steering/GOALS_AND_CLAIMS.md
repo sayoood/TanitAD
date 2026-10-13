@@ -16681,3 +16681,9 @@ floor (MEASURED by simulation, iid-normal model).
 | id | record | status |
 |---|---|---|
 | **H-R8-BUDGET-1** (descriptive evidence line 2026-10-13, POST-HOC) | V-TACk = V-R8 + `--w-tac-v6 100`. Premise reading: `gs_trunk_proj_tac_v6` last-50 % median **0.0042** < 0.01 (V-R8 0.0001), so it reads PREMISE-UNMET. Against the R8 replicate spread (V-R8r − V-R8), the only differences beyond it are all WORSE: constraint MAEs +0.06–0.09, `speed_mae_0_2s` +0.03 / +0.04, `off_drivable` +0.03. Turns and route metrics differ within the replicate spread. `…/emit_off_diag_2026-10-12/raw/vtack/README.md`. | DESCRIPTIVE; L2 scored at I-0. Weight alone did not buy the budget at this rig (the SPEC's named next lever is architectural) |
+
+<!-- REFCV8-2026-10-13-VTACKROLL-DESC -->
+| id | record | status |
+|---|---|---|
+| **H-R8-BUDGET-1** (B-REG evidence line 2026-10-13, POST-HOC) | V-TACk-roll (tactical targets rolled by one row): its lateral tactical head collapses to one class on 1,112 / 1,112 windows, so the scramble took effect. No route gain over V-R8 (`dir_correct_turn` −0.075 ns, `head15_all` ns), so B-REG reads as holding and L2 is quotable. Against V-TACk, speed and off-drivable RECOVER, so V-TACk's costs came from the informative 100× signal. `…/emit_off_diag_2026-10-12/raw/vtackroll/README.md`. | DESCRIPTIVE; L2 scored at I-0 |
+| **H-R8-RECIPE-1** (caveat 2026-10-13) | ⚠ V0's lateral tactical head ALSO predicts one class (lane keep) on 1,112 / 1,112 eval139 windows at the tiny rung. Its `lat3_f1_v9` 0.3149 is the constant-majority value (identical to 4 dp to V-TACk-roll's). Every "R8's tactical head beats V0's" read at this rung compares against a DEGENERATE head, not a working one. | CAVEAT on the 2026-10-12 lines |
