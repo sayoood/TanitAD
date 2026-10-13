@@ -313,7 +313,8 @@ def chk_p3_integration(m):
     p = r["pooled"]
     assert p["head"]["est"] == 1.0 and p["scorer"]["est"] == 0.5 and abs(p["head_minus_scorer"]["est"] - 0.5) < 1e-15, p
     assert p["n_proposals"] == 4 and p["n_pass"] == 2 and p["n_fail"] == 2 and p["n_logs"] == 2
-    assert r["decision"]["decision"] == "H2_EVALUATED" and abs(r["decision"]["evaluate_threshold"] - 0.9) < 1e-15
+    # A2: with no initial-head prediction the thresholds are met but the floor is unread => FLOOR_UNREAD, never a pass (the floor's own cases are chk_p3_floor_*)
+    assert r["decision"]["decision"] == "FLOOR_UNREAD" and r["decision"]["decision_without_floor"] == "H2_EVALUATED" and abs(r["decision"]["evaluate_threshold"] - 0.9) < 1e-15
     valid2 = valid.copy()
     valid2[0, 1] = False                                                       # drop token 1's failing proposal: one fail left (token 2's veer)
     r2 = m.p3_read(sdf, props, dac, valid2, scorer, ["L1", "L2"], n_boot=100)
@@ -329,10 +330,154 @@ def chk_p3_integration(m):
 
 
 def chk_p3_decision(m):
-    cases = [((0.95, 0.80), "H2_EVALUATED", 0.90), ((0.95, 0.93), "UNCOMMITTED_BAND", 0.98), ((0.70, 0.78), "H2_KILLED", 0.90), ((0.86, 0.80), "UNCOMMITTED_BAND", 0.90)]
+    # the THRESHOLDS (0.90 / scorer + 0.05 / head < scorer), with a clearly positive floor so only the thresholds decide; S1 R3: the old UNCOMMITTED_BAND is H2_PROVISIONAL
+    cases = [((0.95, 0.80), "H2_EVALUATED", 0.90), ((0.95, 0.93), "H2_PROVISIONAL", 0.98), ((0.70, 0.78), "H2_KILLED", 0.90), ((0.86, 0.80), "H2_PROVISIONAL", 0.90)]
     for (h, s), want, thr in cases:
-        d = m.p3_decision(h, s)
-        assert d["decision"] == want and abs(d["evaluate_threshold"] - thr) < 1e-12, (h, s, d)
+        d = m.p3_decision(h, s, 0.10)
+        assert d["decision"] == want and d["decision_without_floor"] == want and abs(d["evaluate_threshold"] - thr) < 1e-12, (h, s, d)
+        assert d["decision"] != "UNCOMMITTED_BAND"
+
+
+def chk_p3_floor_rule(m):
+    """A2.1 on the pure rule: the floor is an ADDED condition on the two promoting outcomes (lower bound strictly > 0), a missing floor is never a pass, a kill is unchanged."""
+    for (h, s), base in (((0.95, 0.80), "H2_EVALUATED"), ((0.86, 0.80), "H2_PROVISIONAL")):
+        assert m.p3_decision(h, s, 1e-9)["decision"] == base                        # strictly positive lower bound: the base outcome stands
+        assert m.p3_decision(h, s, 0.0)["decision"] == "P3_AT_FLOOR"                # exactly 0 is not > 0
+        assert m.p3_decision(h, s, -0.02)["decision"] == "P3_AT_FLOOR"
+        assert m.p3_decision(h, s, float("nan"))["decision"] == "P3_AT_FLOOR"       # an unreadable bound is not a cleared floor
+        d = m.p3_decision(h, s, None)
+        assert d["decision"] == "FLOOR_UNREAD" and d["decision_without_floor"] == base
+    for fl in (0.3, 0.0, -0.3, None):                                               # head < scorer is a kill whatever the floor says
+        d = m.p3_decision(0.70, 0.78, fl)
+        assert d["decision"] == "H2_KILLED" and abs(d["evaluate_threshold"] - 0.90) < 1e-12
+    assert abs(m.p3_decision(0.95, 0.93, 0.1)["evaluate_threshold"] - 0.98) < 1e-12   # scorer + 0.05 beats 0.90 when the scorer is above 0.85: unchanged
+    assert m.p3_decision(0.95, 0.93, 0.1)["decision"] == "H2_PROVISIONAL"
+
+
+# ---- the floor on synthetic C3-like data.  Every token has the same 8 proposals (final lateral offsets YS_F; the first 4 pass DAC, the last 4 fail) so every pooled AUC below is a
+# fraction you can count by hand.  Fields: C = the corridor SDF (min along the footprint strictly decreases with the offset => the ranking is perfect), Z = all zeros (every
+# proposal ties => AUC exactly 1/2).
+YS_F = [0.5, 1.0, 1.5, 2.0, 4.0, 5.0, 6.0, 7.0]
+DAC_PERFECT_F = np.array([1, 1, 1, 1, 0, 0, 0, 0], float)
+DAC_BAND_F = np.array([1, 1, 0, 1, 1, 0, 0, 0], float)       # pass {0,1,3,4} fail {2,5,6,7}: wins 4 + 4 + 3 + 3 of 16 pairs = 14/16 = 0.875 for the corridor ranking
+
+
+def _floor_case(m, trained, init, dac=DAC_PERFECT_F, scorer=None, n_logs=12, tpl=2, n_boot=400):
+    """trained / init: a field [40, 32] for every log (or a list of n_logs fields); init=None => the floor is not given."""
+    N = n_logs * tpl
+    one = lambda f: [f] * n_logs if isinstance(f, np.ndarray) else list(f)         # noqa: E731
+    th = np.stack([one(trained)[i // tpl] for i in range(N)])
+    ih = None if init is None else np.stack([one(init)[i // tpl] for i in range(N)])
+    props = np.stack([np.stack([_p8(y) for y in YS_F])] * N)
+    sc = np.zeros((N, len(YS_F))) if scorer is None else scorer(N)
+    r = m.p3_read(th, props, np.tile(dac[None], (N, 1)), np.ones((N, len(YS_F)), bool), sc, [f"L{i // tpl:02d}" for i in range(N)], n_boot=n_boot, init_sdf=ih)
+    return r, (th, ih, props, sc)
+
+
+def chk_p3_floor_decisions(m):
+    C, Z = _corridor_sdf(), np.zeros((40, 32), np.float32)
+    # (a) trained beats its init clearly: AUC 1.0 vs 1/2, scorer ties (1/2) => thr 0.90 cleared, floor lower bound 0.5 => H2_EVALUATED
+    r, _ = _floor_case(m, C, Z)
+    p, f, d = r["pooled"], r["floor"], r["decision"]
+    assert p["head"]["est"] == 1.0 and p["scorer"]["est"] == 0.5 and f["status"] == "READ" and f["init"]["est"] == 0.5, (p, f)
+    assert f["trained_minus_init"]["est"] == 0.5 and f["trained_minus_init"]["ci95"] == [0.5, 0.5], f["trained_minus_init"]
+    assert d["decision"] == "H2_EVALUATED" and d["floor_lower_bound"] == 0.5 and abs(d["evaluate_threshold"] - 0.9) < 1e-15, d
+    # (b) trained == init (identical predictions): its AUC clears 0.90 and the scorer, yet the paired difference is exactly 0 => P3_AT_FLOOR
+    r, _ = _floor_case(m, C, C)
+    d = r["decision"]
+    assert r["pooled"]["head"]["est"] == 1.0 and r["floor"]["init"]["est"] == 1.0
+    assert r["floor"]["trained_minus_init"]["est"] == 0.0 and r["floor"]["trained_minus_init"]["ci95"] == [0.0, 0.0]
+    assert d["decision"] == "P3_AT_FLOOR" and d["decision_without_floor"] == "H2_EVALUATED", d
+    # (c) the band: the corridor ranking on DAC_BAND_F reads 14/16 = 0.875, between the scorer (1/2) and 0.90 => H2_PROVISIONAL only if the floor holds
+    r, _ = _floor_case(m, C, Z, dac=DAC_BAND_F)
+    assert r["pooled"]["head"]["est"] == 0.875 and r["decision"]["decision"] == "H2_PROVISIONAL" and r["floor"]["trained_minus_init"]["est"] == 0.375, r["decision"]
+    r, _ = _floor_case(m, C, C, dac=DAC_BAND_F)
+    assert r["decision"]["decision"] == "P3_AT_FLOOR" and r["decision"]["decision_without_floor"] == "H2_PROVISIONAL", r["decision"]
+    # (d) the floor is missing: FLOOR_UNREAD, never a pass, in both outcomes that would promote
+    for dac, base in ((DAC_PERFECT_F, "H2_EVALUATED"), (DAC_BAND_F, "H2_PROVISIONAL")):
+        r, _ = _floor_case(m, C, None, dac=dac)
+        assert r["decision"]["decision"] == "FLOOR_UNREAD" and r["decision"]["decision_without_floor"] == base and r["floor"]["status"] == "FLOOR_UNREAD", r["decision"]
+    # a kill is a kill: the scorer ranks perfectly (AUC 1.0), the head ties (1/2) => H2_KILLED with an init, with an identical init, and with none
+    perfect_scorer = lambda N: np.tile(-np.asarray(YS_F)[None], (N, 1))              # noqa: E731
+    for init in (C, Z, None):
+        r, _ = _floor_case(m, Z, init, scorer=perfect_scorer)
+        assert r["pooled"]["scorer"]["est"] == 1.0 and r["decision"]["decision"] == "H2_KILLED", r["decision"]
+    # an init of another shape (other tokens) is refused
+    try:
+        m.p3_read(np.stack([C] * 4), np.stack([np.stack([_p8(y) for y in YS_F])] * 4), np.tile(DAC_PERFECT_F[None], (4, 1)), np.ones((4, 8), bool), np.zeros((4, 8)),
+                  ["L0", "L0", "L1", "L1"], n_boot=10, init_sdf=np.stack([C] * 3))
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("an init prediction of another token count must be refused")
+
+
+def chk_p3_floor_same_draws(m):
+    """The floor difference rides the SAME log resamples as head-minus-scorer.  Make the init head's AUC equal the scorer's on EVERY resample (the scorer's logit IS the init
+    head's score, so the pair-count matrices are identical): the two paired differences are then the same numbers, interval included.  Different weights break the equality.
+    The fixture is deliberately irregular (14 logs of 1-5 tokens, continuous offsets, labels noisy in the offset) so the resampled differences are CONTINUOUS: on a regular
+    fixture they take few distinct values and two different draws can land on the same percentile atoms (MEASURED: the unpaired mutation then stayed GREEN)."""
+    rng = np.random.default_rng(11)
+    C, Z = _corridor_sdf(), np.zeros((40, 32), np.float32)
+    n_logs = 14
+    sizes = rng.integers(1, 6, n_logs)
+    tok_logs = [f"L{g:02d}" for g in range(n_logs) for _ in range(int(sizes[g]))]
+    N = len(tok_logs)
+    ys = rng.uniform(0.3, 7.5, (N, 8))
+    props = np.stack([np.stack([_p8(y) for y in row]) for row in ys])
+    dac = (ys + rng.normal(0.0, 1.5, ys.shape) < 3.0).astype(float)
+    log_i = np.asarray([int(l[1:]) for l in tok_logs])
+    trained = np.stack([Z if g == 0 else C for g in log_i])                    # at chance in log 0 only,
+    init = np.stack([Z if g in (1, 2, 3, 4, 5) else C for g in log_i])         # at chance in logs 1-5: trained beats init on average, not on every draw
+    init_score = m.corner_min_sdf(init, props)[0]
+    r = m.p3_read(trained, props, dac, np.ones(dac.shape, bool), init_score, tok_logs, n_boot=3000, init_sdf=init)
+    a, b = r["floor"]["trained_minus_init"], r["pooled"]["head_minus_scorer"]
+    assert a["ci95"][1] - a["ci95"][0] > 0.05 and a["est"] > 0.0, a             # a non-degenerate interval: the check is not vacuous
+    assert a["est"] == b["est"] and a["ci95"] == b["ci95"], (a, b)
+    assert r["floor"]["init"]["est"] == r["pooled"]["scorer"]["est"] and r["floor"]["init"]["ci95"] == r["pooled"]["scorer"]["ci95"]
+    assert len({round(x, 12) for x in (a["ci95"][0], a["ci95"][1], r["floor"]["init"]["ci95"][0])}) == 3
+
+
+def chk_p3_floor_ci_bound(m):
+    """The condition is on the 95 % LOWER BOUND, not on the point estimate: trained beats init on average (+0.083) but one draw of logs may not."""
+    C, Z = _corridor_sdf(), np.zeros((40, 32), np.float32)
+    r, _ = _floor_case(m, [Z if i == 0 else C for i in range(12)], [Z if i in (1, 2, 3) else C for i in range(12)], n_boot=4000)
+    f = r["floor"]["trained_minus_init"]
+    assert f["est"] > 0.05 and f["ci95"][0] < 0.0 < f["ci95"][1], f               # the premise (hand-built: trained is at chance in log 0, the init in logs 1-3)
+    assert r["decision"]["decision_without_floor"] == "H2_EVALUATED" and r["pooled"]["head"]["est"] > 0.9
+    assert r["decision"]["decision"] == "P3_AT_FLOOR" and r["decision"]["floor_lower_bound"] == f["ci95"][0] < 0.0, r["decision"]
+
+
+def chk_floor_key_guard(m):
+    """A2 guard: the init prediction must cover EXACTLY the trained arm's keys.  Fewer, more, or other keys are refused; a permutation is aligned to the trained order."""
+    def pred(keys, off=0.0):
+        return {"keys": list(keys), "logit": np.stack([np.full((40, 32), i + off, np.float32) for i in range(len(keys))]),
+                "sdf": np.stack([np.full((40, 32), 10.0 * i + off, np.float32) for i in range(len(keys))]), "dropped_step_nonzero": 0, "duplicate_keys_identical": 0}
+    keys = [("L1", "a"), ("L1", "b"), ("L2", "c")]
+    trained = pred(keys)
+    for bad in (keys[:2], keys + [("L9", "z")], [keys[0], keys[1], ("L2", "d")], keys[:2] + [("L2", "d"), ("L9", "z")]):
+        try:
+            m.align_init_pred(trained, pred(bad))
+        except m.FloorRefused:
+            pass
+        else:
+            raise AssertionError(f"an init prediction over {bad} must be refused")
+    perm = [keys[2], keys[0], keys[1]]                                        # same SET, another order: row i of the result is the init row of trained key i
+    al = m.align_init_pred(trained, pred(perm, off=0.5))
+    assert al["keys"] == keys
+    assert al["logit"][0, 0, 0] == 1.5 and al["logit"][1, 0, 0] == 2.5 and al["logit"][2, 0, 0] == 0.5, al["logit"][:, 0, 0]
+    assert al["sdf"][0, 0, 0] == 10.5 and al["sdf"][2, 0, 0] == 0.5
+
+
+def chk_cli_pred_init_refusals(m):
+    with tempfile.TemporaryDirectory() as d:
+        p = os.path.join(d, "x.npz")
+        np.savez(p, log=np.array(["A"]), token=np.array(["t"]), logit=np.zeros((1, 40, 32), np.float32), sdf_m=np.zeros((1, 40, 32), np.float32))
+        for pred_args, init_args, want in ((["H2-s0=" + p], ["N-s0=" + p], "no floor"), (["H2-s0=" + p], ["H1-s0=" + p], "no --pred arm")):
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                rc = m.main(["perception", "--pred", *pred_args, "--pred-init", *init_args, "--labels-set", "navtest", "--out", os.path.join(d, "o.json")])
+            assert rc == 4 and "--pred-init" in buf.getvalue() and want in buf.getvalue(), (rc, buf.getvalue())
 
 
 def chk_pair_with_n(m):
@@ -489,7 +634,8 @@ def chk_cli_refuses_n_arm_and_unpinned_store(m):
 
 CHECKS = [chk_band_geometry, chk_p1_exact, chk_p1_split_direction, chk_unlabelled, chk_matches_head_metrics, chk_p2_exact, chk_k2, chk_boot_scheme_is_pe_boot,
           chk_selfpair_zero, chk_swap_flips, chk_pairing_is_paired, chk_auc_hand, chk_corner_min_sdf, chk_p3_integration, chk_p3_decision, chk_pair_with_n,
-          chk_leak_key_and_log, chk_leak_heldout, chk_train_keys_for, chk_load_head_pred, chk_selection_exact, chk_seed_floor, chk_cli_refuses_n_arm_and_unpinned_store]
+          chk_leak_key_and_log, chk_leak_heldout, chk_train_keys_for, chk_load_head_pred, chk_selection_exact, chk_seed_floor, chk_cli_refuses_n_arm_and_unpinned_store,
+          chk_p3_floor_rule, chk_p3_floor_decisions, chk_p3_floor_same_draws, chk_p3_floor_ci_bound, chk_floor_key_guard, chk_cli_pred_init_refusals]
 BYNAME = {f.__name__: f for f in CHECKS}
 
 
@@ -547,7 +693,23 @@ def real_store_checks(mod) -> list:
         with contextlib.redirect_stdout(buf):
             rc = mod.main(["perception", "--pred", f"H2-s0={d}/leak.npz", "--labels-set", "navtest", "--out", f"{d}/o2.json"])
         assert rc == 3 and "ZZAUXS1_REFUSED" in buf.getvalue(), (rc, buf.getvalue())
-    return ["real_store_navtest_oracle_and_leak_cli"]
+        # A2 on the CLI: H2's initial head = the oracle rolled one row in y (a weak head); H1 has no init => FLOOR_UNREAD; trained - init is positive on P1; an init over 95 of the 96 keys is refused
+        np.savez(os.path.join(d, "i2.npz"), log=np.array([k[0] for k in keys96]), token=np.array([k[1] for k in keys96]), logit=np.roll(logit, 1, 2), sdf_m=np.roll(sdf, 1, 2))
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc = mod.main(["perception", "--pred", f"H2-s0={d}/h2.npz", f"H1-s0={d}/h1.npz", "--pred-init", f"H2-s0={d}/i2.npz", "--labels-set", "navtest", "--n-boot", "200",
+                           "--out", f"{d}/o3.json"])
+        assert rc == 0 and "floor_read ['H2-s0']" in buf.getvalue() and "floor_unread ['H1-s0']" in buf.getvalue(), (rc, buf.getvalue())
+        r3 = json.load(open(f"{d}/o3.json", encoding="utf-8"))
+        fl = r3["arms"]["H2-s0"]["floor"]
+        assert fl["status"] == "READ" and fl["p1"]["all"]["0-40"]["est"] < 0.9 and fl["trained_minus_init"]["iou_0-40"]["est"] > 0.1 and fl["trained_minus_init"]["near_boundary_mae_m"]["est"] < 0.0
+        assert r3["arms"]["H1-s0"]["floor"]["status"] == "FLOOR_UNREAD" and r3["arms"]["H2-s0"]["p1"]["all"]["0-40"]["est"] == 1.0
+        np.savez(os.path.join(d, "i3.npz"), log=np.array([k[0] for k in keys96[:95]]), token=np.array([k[1] for k in keys96[:95]]), logit=logit[:95], sdf_m=sdf[:95])
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc = mod.main(["perception", "--pred", f"H2-s0={d}/h2.npz", "--pred-init", f"H2-s0={d}/i3.npz", "--labels-set", "navtest", "--n-boot", "200", "--out", f"{d}/o4.json"])
+        assert rc == 3 and "ZZAUXS1_REFUSED H2-s0" in buf.getvalue() and "missing" in buf.getvalue(), (rc, buf.getvalue())
+    return ["real_store_navtest_oracle_and_leak_cli", "real_store_a2_floor_cli"]
 
 
 # ------------------------------------------------------------------------------------------------------------------ RED mutations
@@ -577,8 +739,19 @@ M = [
     ("duplicate_keys_silent", "io", "if not (np.array_equal(lg[i], lg[j]) and np.array_equal(sd[i], sd[j])):", "if False:", ["chk_load_head_pred"]),
     ("unlabelled_counted_as_labelled", "io", 'out["valid"][s:e] = valid.numpy()', 'out["valid"][s:e] = True', ["chk_unlabelled", "chk_p1_exact"]),
     ("k2_bar_dropped", "bar", "K2_IOU_MIN = 0.80", "K2_IOU_MIN = 0.0", ["chk_k2"]),
-    ("p3_gap_collapsed_into_kill", "bar", '    elif auc_head < auc_scorer:\n        d = "H2_KILLED"\n    else:\n        d = "UNCOMMITTED_BAND"', '    else:\n        d = "H2_KILLED"',
+    ("p3_gap_collapsed_into_kill", "bar", '    elif auc_head < auc_scorer:\n        base = "H2_KILLED"\n    else:\n        base = "H2_PROVISIONAL"', '    else:\n        base = "H2_KILLED"',
      ["chk_p3_decision"]),
+    ("p3_band_label_reverted", "bar", 'base = "H2_PROVISIONAL"', 'base = "UNCOMMITTED_BAND"', ["chk_p3_decision", "chk_p3_floor_rule"]),
+    # ---- Amendment A2: the paired P3 floor
+    ("a2_floor_condition_dropped", "floor", "elif not (floor_lo > 0.0):", "elif False:", ["chk_p3_floor_rule", "chk_p3_floor_decisions", "chk_p3_floor_ci_bound"]),
+    ("a2_floor_unread_is_a_pass", "floor", 'd = "FLOOR_UNREAD"', "d = base", ["chk_p3_floor_rule", "chk_p3_floor_decisions", "chk_p3_integration"]),
+    ("a2_floor_diff_unpaired_weights", "unpaired", "floor_diff = auc_diff_read(Sh, Nh, Si, Ni, W)",
+     "floor_diff = auc_diff_read(Sh, Nh, Si, Ni, boot_weights(len(ul), n_boot, seed + 1))", ["chk_p3_floor_same_draws"]),
+    ("a2_floor_bound_is_point_estimate", "floor", 'floor_lo = floor_diff["ci95"][0]', 'floor_lo = floor_diff["est"]', ["chk_p3_floor_ci_bound"]),
+    ("a2_floor_read_on_the_trained_head", "floor", "init_score, init_oob = corner_min_sdf(init_sdf, props8)", "init_score, init_oob = corner_min_sdf(head_sdf, props8)",
+     ["chk_p3_floor_decisions", "chk_p3_floor_same_draws"]),
+    ("a2_floor_key_guard_off", "floor", "    if st != si:", "    if False:", ["chk_floor_key_guard"]),
+    ("a2_floor_arm_check_off", "floor", 'if cls == "N" or name not in arms:', "if False:", ["chk_cli_pred_init_refusals"]),
     ("p2_band_unmasked", "metric", "near = kn & (np.abs(true_sdf) <= P2_HALF_BAND_M)", "near = kn & (np.abs(true_sdf) <= 1e9)", ["chk_p2_exact"]),
     ("p2_squared_error", "metric", 'err = np.abs(pred["sdf"][s:e].astype(np.float64) - true_sdf)', 'err = (pred["sdf"][s:e].astype(np.float64) - true_sdf) ** 2', ["chk_p2_exact"]),
     ("floor_measured_with_one_seed", "floor", '"measured": n_seeds >= 3', '"measured": n_seeds >= 1', ["chk_seed_floor"]),

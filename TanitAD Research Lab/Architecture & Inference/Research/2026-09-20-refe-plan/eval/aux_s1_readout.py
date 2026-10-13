@@ -9,7 +9,11 @@ PERCEPTION READS (on the head itself; an N arm has no head, so these are per hea
   P2  SDF MAE (m) over the cells whose TRUE block-mean SDF lies within +-3 m of the boundary.
   P3  AUC of the minimum predicted SDF along each proposal's footprint corners (40 steps x 4 corners, 0.1 s grid) for NAVSIM DAC = 1 vs 0, pooled over the
       64 proposals x the C3 tokens, against the scorer's own DAC AUC on the SAME proposals. Decision: head AUC >= max(0.90, scorer AUC + 0.05) => H2 is
-      evaluated; head AUC < scorer AUC => H2 is killed; in between the prereg commits NOTHING and the harness says UNCOMMITTED_BAND (it does not pick).
+      evaluated; head AUC < scorer AUC => H2 is killed; in between is H2_PROVISIONAL (S1 ruling R3; the harness's old label was UNCOMMITTED_BAND).
+  AMENDMENT A2 (PREREG_AUX_DRIVABLE_S1.md): the PAIRED FLOOR. `--pred-init ARM=<head_pred npz of that arm's INITIAL, never-trained head>` (same tokens, same ctx): the
+      init head's pooled P3 AUC and the paired difference (trained - init) through the SAME log resamples as head-minus-scorer (same weights, same seed). H2_EVALUATED and
+      H2_PROVISIONAL additionally need the (trained - init) 95 % LOWER bound > 0, else P3_AT_FLOOR; an arm with no init prediction reads FLOOR_UNREAD (never a pass);
+      H2_KILLED is unchanged. The init head's P1 / P2 are reported beside P1 (no decision). The init npz must cover EXACTLY the trained npz's keys (FloorRefused).
 SELECTION READS (from `--dump-scores`, per arm paired with the N run of the SAME seed: H2-sK minus N-sK, H1-sK minus N-sK)
   pick PDMS and the six sub-scores (E1 / DAC), the held-out analogue of E2 (DAC-zero share of the picks = -DAC delta), zero picks (E3 analogue), via
   rl_val_eval's own functions; the seed floor = the largest |delta| between two N seeds (read only when >= 3 N seeds exist, else the verdict is capped).
@@ -28,7 +32,7 @@ per-frame outputs nowhere (only AuxEvalAcc aggregates and aux_drv.pt). The reade
 GUARDS: the label store must be the pinned train or navtest store (sha256 + key count); every evaluated key must be disjoint (key AND log) from the keys the
 head was trained on (LeakRefused); an N arm cannot be a perception arm; a head arm without an N of its seed is UNPAIRED, never paired with another seed.
 
-    python eval/aux_s1_readout.py perception --pred H2-s0=head_pred_update400.npz --labels-set navtest --dac-csv <u400 csv> --out p.json
+    python eval/aux_s1_readout.py perception --pred H2-s0=head_pred_update400.npz --pred-init H2-s0=head_pred_init_seed0.npz --labels-set navtest --dac-csv <u400 csv> --out p.json
     python eval/aux_s1_readout.py selection  --scores N-s0=.../scores_update400_B.npz H2-s0=... --pdm <heldout_pdm dir> --rule navsim_v1 --out s.json
 """
 from __future__ import annotations
@@ -80,6 +84,10 @@ NOT_COMPUTED = ["E1 / E2 / E3 on the full navtest (PDMS, DAC-zero share, zeroed 
 
 class LeakRefused(RuntimeError):
     """An evaluated frame belongs to the data the head was trained on (key or log overlap)."""
+
+
+class FloorRefused(RuntimeError):
+    """The initial-head prediction (the A2 floor) does not cover exactly the trained arm's (log, token) keys."""
 
 
 # ================================================================================================================ geometry
@@ -227,6 +235,21 @@ def load_head_pred(path: str) -> dict:
     rows = np.asarray(rows, np.int64)
     return {"keys": [(log[i], tok[i]) for i in rows], "logit": lg[rows], "sdf": sd[rows], "dropped_step_nonzero": int((~keep).sum()),
             "duplicate_keys_identical": dup_identical}
+
+
+def align_init_pred(trained: dict, init: dict) -> dict:
+    """A2 guard: the init head's prediction must cover EXACTLY the trained arm's (log, token) keys -- neither fewer (a floor on other frames is not a floor) nor more.
+    Returns the init prediction re-ordered to the trained arm's row order (so P1 / P3 are read row for row on the same frames)."""
+    tk, ik = trained["keys"], init["keys"]
+    st, si = set(tk), set(ik)
+    if st != si:
+        miss, extra = sorted(st - si), sorted(si - st)
+        raise FloorRefused(f"the initial-head prediction must cover exactly the trained arm's keys: {len(miss)} trained keys are missing from it (first {miss[:1]}), "
+                           f"it has {len(extra)} keys the trained arm lacks (first {extra[:1]})")
+    pos = {k: i for i, k in enumerate(ik)}
+    rows = np.asarray([pos[k] for k in tk], np.int64)
+    return {"keys": list(tk), "logit": init["logit"][rows], "sdf": init["sdf"][rows], "dropped_step_nonzero": init["dropped_step_nonzero"],
+            "duplicate_keys_identical": init["duplicate_keys_identical"]}
 
 
 def open_labels(label_set: str, store: str | None = None):
@@ -392,21 +415,34 @@ def corner_min_sdf(sdf_pred: np.ndarray, props8: np.ndarray) -> tuple:
     return s.min(-1).values.numpy().astype(np.float64), (1.0 - inb.float().mean(-1)).numpy().astype(np.float64)
 
 
-def p3_decision(auc_head: float, auc_scorer: float) -> dict:
+def p3_decision(auc_head: float, auc_scorer: float, floor_lo: float | None = None) -> dict:
+    """The P3 decision (S1 prereg 3 R2/R3, Amendment A2). `floor_lo` = the 95 % LOWER bound of the paired pooled-AUC difference (trained head - its initial head);
+    None = the arm's init prediction was not read. The 0.90 / scorer + 0.05 thresholds and 'head < scorer => killed' are decided on the point estimates, unchanged;
+    the floor is an ADDED condition on the two outcomes that would promote H2."""
     thr = max(P3_AUC_FLOOR, auc_scorer + P3_AUC_MARGIN)
     if auc_head >= thr:
-        d = "H2_EVALUATED"
+        base = "H2_EVALUATED"
     elif auc_head < auc_scorer:
-        d = "H2_KILLED"
+        base = "H2_KILLED"
     else:
-        d = "UNCOMMITTED_BAND"
-    return {"decision": d, "auc_head": auc_head, "auc_scorer": auc_scorer, "evaluate_threshold": thr,
-            "note": "decided on the point estimates; between the scorer's AUC and the threshold the prereg commits no action and none is taken here"}
+        base = "H2_PROVISIONAL"                          # R3: between the scorer's AUC and the threshold (the harness's old label was UNCOMMITTED_BAND)
+    d = base
+    if base != "H2_KILLED":
+        if floor_lo is None:
+            d = "FLOOR_UNREAD"
+        elif not (floor_lo > 0.0):                       # also true for NaN: a floor that cannot be read is not cleared
+            d = "P3_AT_FLOOR"
+    return {"decision": d, "decision_without_floor": base, "auc_head": auc_head, "auc_scorer": auc_scorer, "evaluate_threshold": thr, "floor_lower_bound": floor_lo,
+            "note": "thresholds decided on the point estimates; H2_EVALUATED / H2_PROVISIONAL additionally need the paired (trained - init) 95 % lower bound > 0 (A2.1), "
+                    "else P3_AT_FLOOR; no init prediction => FLOOR_UNREAD, never a pass; H2_KILLED is unchanged"}
 
 
 def p3_read(head_sdf: np.ndarray, props8: np.ndarray, dac: np.ndarray, valid: np.ndarray, scorer_dac_logit: np.ndarray, tok_logs, n_boot: int = N_BOOT,
-            seed: int = SEED) -> dict:
-    """head_sdf [N,40,32]; props8 [N,K,8,3]; dac [N,K] in {0,1}; valid [N,K] bool; scorer_dac_logit [N,K]; tok_logs: log of each of the N tokens."""
+            seed: int = SEED, init_sdf: np.ndarray | None = None) -> dict:
+    """head_sdf [N,40,32]; props8 [N,K,8,3]; dac [N,K] in {0,1}; valid [N,K] bool; scorer_dac_logit [N,K]; tok_logs: log of each of the N tokens.
+    init_sdf [N,40,32] (optional): the SAME arm's head at initialisation on the SAME tokens (A2.1 floor); without it the decision reads FLOOR_UNREAD."""
+    if init_sdf is not None and np.shape(init_sdf) != np.shape(head_sdf):
+        raise ValueError(f"init_sdf {np.shape(init_sdf)} must have the trained head's shape {np.shape(head_sdf)} (same tokens, same order)")
     dac = np.asarray(dac, np.float64)
     if not np.isin(dac[valid], (0.0, 1.0)).all():
         raise ValueError("DAC labels must be exactly 0.0 or 1.0 on the valid proposals")
@@ -421,6 +457,15 @@ def p3_read(head_sdf: np.ndarray, props8: np.ndarray, dac: np.ndarray, valid: np
     Ss, Ns = auc_cluster_stats(np.asarray(scorer_dac_logit, np.float64)[m], passes, cl[m], len(ul))
     W = boot_weights(len(ul), n_boot, seed)
     head, scorer, diff = auc_read(Sh, Nh, W), auc_read(Ss, Ns, W), auc_diff_read(Sh, Nh, Ss, Ns, W)
+    floor, floor_lo = {"status": "FLOOR_UNREAD", "reason": "no initial-head prediction was given for this arm (--pred-init)"}, None
+    if init_sdf is not None:                                                    # A2.1: the SAME proposals, tokens, clusters, weights and seed as the reads above
+        init_score, init_oob = corner_min_sdf(init_sdf, props8)
+        Si, Ni = auc_cluster_stats(init_score[m], passes, cl[m], len(ul))
+        floor_diff = auc_diff_read(Sh, Nh, Si, Ni, W)
+        floor = {"status": "READ", "init": auc_read(Si, Ni, W), "trained_minus_init": floor_diff, "init_minus_scorer": auc_diff_read(Si, Ni, Ss, Ns, W),
+                 "init_corner_oob_share_mean": float(init_oob[m].mean()) if m.any() else None,
+                 "estimator": f"paired log-cluster bootstrap, {n_boot} resamples, seed {seed}: the SAME resamples as head_minus_scorer"}
+        floor_lo = floor_diff["ci95"][0]
     # mean within-set AUC (SUPPLEMENTARY: the prereg's words are 'over the 64 proposals x the C3 tokens', i.e. the pooled read above)
     wh, ws, tl = {}, {}, {}
     for i in range(N):
@@ -436,8 +481,8 @@ def p3_read(head_sdf: np.ndarray, props8: np.ndarray, dac: np.ndarray, valid: np
                   "n_sets_with_both_classes": len(wh), "note": "mean of per-token AUCs; supplementary, NOT the committed read"}
     return {"pooled": {"head": head, "scorer": scorer, "head_minus_scorer": diff, "n_proposals": int(m.sum()), "n_pass": int(passes.sum()),
                        "n_fail": int((~passes).sum()), "n_tokens": N, "n_logs": len(ul)},
-            "within_set": within, "head_corner_oob_share_mean": float(oob[m].mean()) if m.any() else None,
-            "decision": p3_decision(head["est"], scorer["est"]), "frames_note": "failure-enriched set (529 u400-zeroed + 529 random): a DIAGNOSTIC, never a rate"}
+            "within_set": within, "head_corner_oob_share_mean": float(oob[m].mean()) if m.any() else None, "floor": floor,
+            "decision": p3_decision(head["est"], scorer["est"], floor_lo), "frames_note": "failure-enriched set (529 u400-zeroed + 529 random): a DIAGNOSTIC, never a rate"}
 
 
 # ================================================================================================================ pairing by seed + selection
@@ -560,6 +605,14 @@ def cmd_perception(a) -> int:
             print(f"REFUSED: {name} is a no-head arm; it has no perception read", flush=True)
             return 4
         arms[name] = path
+    init_paths = {}
+    for spec in (a.pred_init or []):
+        name, _, path = spec.partition("=")
+        cls, _seed = parse_arm(name)
+        if cls == "N" or name not in arms:
+            print(f"REFUSED: --pred-init {name}: {'a no-head arm has no floor' if cls == 'N' else 'no --pred arm of that name (a floor belongs to a trained arm)'}", flush=True)
+            return 4
+        init_paths[name] = path
     src = open_labels(a.labels_set, a.labels)
     heldout = [l.strip() for l in open(a.heldout_logs, encoding="utf-8") if l.strip()] if a.heldout_logs else None
     train_src = open_labels("train", a.train_store) if a.labels_set == "navtest" or a.heldout_logs else None
@@ -568,7 +621,7 @@ def cmd_perception(a) -> int:
         "set": a.labels_set, "store_sha256": src.manifest["store_sha256"], "frames": src.manifest["counts"]["stored_keys"]},
         "estimator": f"paired log-cluster bootstrap, {a.n_boot} resamples, 95 %, seed {SEED}; proxy_eval.boot's draw scheme. Answers 'another draw of LOGS' only",
         "dac_zero_tokens": None if dz is None else len(dz), "arms": {}, "not_computed": NOT_COMPUTED}
-    preds, stats = {}, {}
+    preds, stats, inits = {}, {}, {}
     for name, path in sorted(arms.items()):
         p = load_head_pred(path)
         if train_src is not None:
@@ -584,6 +637,20 @@ def cmd_perception(a) -> int:
         preds[name], stats[name] = p, st
         r = perception_reads(p, st, dz, a.n_boot)
         r["input"] = {"pred_sha256": sha256_file(path), "dropped_step_nonzero": p["dropped_step_nonzero"], "duplicate_keys_identical": p["duplicate_keys_identical"]}
+        if name in init_paths:                       # A2: the arm's own head at initialisation, on exactly the same keys
+            try:
+                ip = align_init_pred(p, load_head_pred(init_paths[name]))
+            except FloorRefused as e:
+                print(f"ZZAUXS1_REFUSED {name}: {e}", flush=True)
+                return 3
+            ist = frame_stats(ip, src)
+            fl = perception_reads(ip, ist, dz, a.n_boot)
+            inits[name] = ip
+            r["floor"] = {"status": "READ", "init_pred_sha256": sha256_file(init_paths[name]), "p1": fl["p1"], "p2": fl["p2"],
+                          "trained_minus_init": head_fit_diff(p, st, ip, ist, a.n_boot),
+                          "note": "A2.2: the initial head's P1 / P2 on the same frames, reported beside P1; no decision. K2's 0.80 is unchanged"}
+        else:
+            r["floor"] = {"status": "FLOOR_UNREAD", "reason": "no --pred-init for this arm"}
         res["arms"][name] = r
     if a.c3_table and a.c3_tokens:
         tab, toks = np.load(a.c3_table, allow_pickle=False), json.load(open(a.c3_tokens, encoding="utf-8"))
@@ -598,7 +665,7 @@ def cmd_perception(a) -> int:
                 continue
             sel = np.asarray([idx[t] for t in tok_list])
             res["arms"][name]["p3"] = p3_read(p["sdf"][sel], tab["proposals"], tab["sub"][..., di], tab["valid"], tab["logits"][..., 1],
-                                              [toks["token_log"][t] for t in tok_list], a.n_boot)
+                                              [toks["token_log"][t] for t in tok_list], a.n_boot, init_sdf=inits[name]["sdf"][sel] if name in inits else None)
     else:
         for name in res["arms"]:
             res["arms"][name]["p3"] = {"status": "NOT_COMPUTED", "reason": "no --c3-table / --c3-tokens given"}
@@ -609,7 +676,7 @@ def cmd_perception(a) -> int:
             res["head_fit_pairs"][f"{h2}-minus-{h1}"] = head_fit_diff(preds[h2], stats[h2], preds[h1], stats[h1], a.n_boot)
     with open(a.out, "w", encoding="utf-8", newline="\n") as f:
         json.dump(res, f, indent=1, sort_keys=True, default=_json)
-    print(f"ZZAUXS1_PERCEPTION_OK arms {sorted(res['arms'])}", flush=True)
+    print(f"ZZAUXS1_PERCEPTION_OK arms {sorted(res['arms'])} floor_read {sorted(inits)} floor_unread {sorted(set(res['arms']) - set(inits))}", flush=True)
     return 0
 
 
@@ -641,6 +708,7 @@ def main(argv=None) -> int:
     sub = ap.add_subparsers(dest="cmd", required=True)
     p = sub.add_parser("perception")
     p.add_argument("--pred", nargs="+", required=True, help="ARM=head_pred.npz (ARM = H1-s<k> | H2-s<k>)")
+    p.add_argument("--pred-init", nargs="*", default=None, help="ARM=head_pred.npz of that arm's INITIAL (never-trained) head on the SAME tokens (A2 floor); an arm without one reads FLOOR_UNREAD")
     p.add_argument("--labels-set", choices=sorted(LABEL_PINS), required=True)
     p.add_argument("--labels", default=None, help="label store dir (default: the pinned D: artifact)")
     p.add_argument("--train-store", default=None)
