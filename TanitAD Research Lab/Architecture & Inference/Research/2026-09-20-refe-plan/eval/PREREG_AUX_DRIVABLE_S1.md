@@ -163,3 +163,13 @@ H1's scorer is bit-identical to N by construction (no path from the head to the 
 **A2.4 · The floor is measured before the first S1 step.**
 - Seeds 0, 1 and 2, on all 1,058 C3 tokens, published as an instrument property.
 - It changes no number in this file. Its only role is to show, before any arm trains, how much of the 0.90 bar a position prior already covers.
+
+**A2.4 result (MEASURED 2026-10-13, still before any S1 arm; `raw/2026-10-13-aux-p3-floor/full_1058/FLOOR_1058.md`).**
+- On all 1,058 C3 tokens over 123 logs (the ctx bit-identical to the C3 table on all 473,984 scorer values), the initial heads read a P3 pooled AUC of:
+  - seed 0: **0.659** [0.623, 0.694];
+  - seed 1: **0.563** [0.516, 0.605];
+  - seed 2: **0.698** [0.654, 0.737].
+  The scorer reads **0.787** [0.731, 0.831], and every initial head is separated below it.
+- Within-set the initial heads read 0.49–0.57, i.e. at chance. Their P1 IoU on [0, 40) m is 0.13–0.27.
+- The 32-token 0.8245 that triggered A2 was a one-log artefact. The position prior is real but seed-dependent, which is why A2 pairs each arm with its own initial head.
+- **No number in this file changes.**
