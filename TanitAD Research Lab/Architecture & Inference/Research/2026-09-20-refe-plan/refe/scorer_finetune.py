@@ -631,6 +631,16 @@ def main() -> int:
     ds_ho = copy.copy(ds)
     ds_ho.onpolicy = ho
     ho_idx = [i for i, r in enumerate(ds.rows) if key(r) in ho.by and (not a.require_pdm or key(r) in ho.pdm_keys)]
+    # A label dir that is NAMED but loads nothing refuses; it never masks silently (S1 input audit 2026-10-13: a missing teacher_lane dir still gives
+    # n_cols 7 and fully masks the train-side lane loss; a missing heldout_pdm dir under --require-pdm leaves ho_idx empty, so every eval reads n = 0).
+    empty = [f for f, given, n in (("--lane-labels-train", a.lane_labels_train, op.n_lane), ("--lane-labels-heldout", a.lane_labels_heldout, ho.n_lane),
+                                   ("--pdm-labels-train", a.pdm_labels_train, op.n_pdm), ("--pdm-labels-heldout", a.pdm_labels_heldout, ho.n_pdm),
+                                   ("--teacher-lane-train", a.teacher_lane_train, op.n_tlane), ("--teacher-lane-heldout", a.teacher_lane_heldout, ho.n_tlane))
+             if given and n == 0]
+    if empty:
+        print(f"REFUSED: {' '.join(empty)} named but loaded 0 labels -- a missing or empty label dir would silently mask its loss or empty the eval"); return 4
+    if not tr_idx or not ho_idx:
+        print(f"REFUSED: {len(tr_idx)} training sets and {len(ho_idx)} held-out sets survive the filters -- an empty side would train or evaluate on nothing"); return 4
     # RL-S1: the reward config and the D / K / L side terms.  The training index is restricted to sets that HAVE a usable record, so the reward
     # of every set in a batch is computable; nothing below runs unless --epo is on (the OFF path is untouched).
     rcfg = terms_train = terms_ho = st_tr = st_ho = None
