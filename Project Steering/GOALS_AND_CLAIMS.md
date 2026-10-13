@@ -16676,3 +16676,8 @@ floor (MEASURED by simulation, iid-normal model).
 | id | record | status |
 |---|---|---|
 | **H-R8-RECIPE-1** (replicate evidence line 2026-10-12, POST-HOC) | V-R8r (training seed 1) vs V0r, Thor batch 8, eval139: GT-turn cross **+6.88 / +6.21 m**, ADE +2.32 / +2.14 m, separated worse. The turn regression REPLICATES across training seeds (seed 0: +4.41 / +4.09). Correction: "not mis-directed" was seed-0-only; at seed 1 `dir_correct_turn` 0.523 / 0.533 vs V0r 0.645 / 0.636. R8 replicate spread on turns (V-R8r vs V-R8) +3.30 / +2.95 m, about 4× V0's (+0.83). Longitudinal and `lat3_f1_v9` better, lateral worse, as at seed 0. `…/emit_off_diag_2026-10-12/RESULT.md` addendum. | DESCRIPTIVE; L1 almost certainly FAILS as registered at I-0. V-R8-noLW's P1 floor = 3.30 / 2.95 m |
+
+<!-- REFCV8-2026-10-13-VTACK-DESC -->
+| id | record | status |
+|---|---|---|
+| **H-R8-BUDGET-1** (descriptive evidence line 2026-10-13, POST-HOC) | V-TACk = V-R8 + `--w-tac-v6 100`. Premise reading: `gs_trunk_proj_tac_v6` last-50 % median **0.0042** < 0.01 (V-R8 0.0001), so it reads PREMISE-UNMET. Against the R8 replicate spread (V-R8r − V-R8), the only differences beyond it are all WORSE: constraint MAEs +0.06–0.09, `speed_mae_0_2s` +0.03 / +0.04, `off_drivable` +0.03. Turns and route metrics differ within the replicate spread. `…/emit_off_diag_2026-10-12/raw/vtack/README.md`. | DESCRIPTIVE; L2 scored at I-0. Weight alone did not buy the budget at this rig (the SPEC's named next lever is architectural) |
