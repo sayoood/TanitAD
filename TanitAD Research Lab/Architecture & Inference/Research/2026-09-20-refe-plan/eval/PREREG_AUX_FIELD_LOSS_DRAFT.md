@@ -71,7 +71,7 @@ ESTIMATED totals: 2 arms ≈ 40 A40-h, 4 arms ≈ 80 A40-h. **Cost of the loss i
 | id | endpoint | role |
 |---|---|---|
 | **E1** | **PDMS** (F − C) | the decision endpoint |
-| **E2** | **DAC sub-score** and **DAC-zero share** (u400 reads 3.42 % = 415 tokens; the comparator's own value is read, not inherited) | the **mechanism**: a PDMS gain without fewer DAC zeros is not credited to the loss |
+| **E2** | **DAC sub-score** and **DAC-zero share** (u400 reads 3.42 % = ~~415~~ **416** tokens = 3.425 %, corrected 2026-10-13, `eval/PREREG_AUX_DRIVABLE_S1.md` R4; the comparator's own value is read, not inherited) | the **mechanism**: a PDMS gain without fewer DAC zeros is not credited to the loss |
 | **E3** | zeroed-token share (NC × DAC = 0) | the zero tail |
 | **M1** | **fan cleanliness**: per token, the share of the 64 proposals that are NAVSIM-DAC-compliant; and the same share on the **raw** plan (`navsim_dac_violation(mode="raw")`) | the loss acts on all 64, so this moves first. Diagnostic on the 1,058 C3 tokens (`raw/2026-10-11-c3-selection-headroom/tokens.json`, failure-enriched: **not a rate**) |
 | **M2** | **raw → tracked transfer**: ΔDAC on the raw plan against ΔDAC on NAVSIM's LQR-tracked plan | the loss fixes the raw geometry; if raw improves and tracked does not, the loss fixed the wrong thing (routes to tracker-aware compensation) |

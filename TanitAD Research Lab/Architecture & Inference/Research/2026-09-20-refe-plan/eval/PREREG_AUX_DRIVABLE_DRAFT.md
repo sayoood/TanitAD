@@ -6,6 +6,8 @@
 > 3. this file is finalised, its blanks (last section) are filled, and it is **landed in git before the first training step of the first arm**.
 >
 > After landing nothing below changes without a dated amendment written before the read.
+>
+> **2026-10-13: host S1 is registered in `eval/PREREG_AUX_DRIVABLE_S1.md`**, which fills this draft's blanks for S1, resolves four ambiguities (bands, pooled P3, the uncommitted P3 band, 416 not 415) and adds the S1 → S2 promotion rule. For S1 it governs; for S2 and S3 this draft is unchanged.
 > Design: `SPEC_AUX_DRIVABLE_HEAD.md`. Host recipes: `SPEC_P6_PAPER_FAITHFUL.md`, `eval/PREREG_P6.md`, `eval/RESULT_SFT4.md`.
 > Written 2026-10-11. Evidence classes as in the SPEC.
 
@@ -47,7 +49,7 @@ S1 is replaced by S2 and the perception proof is read from a head-only fit on ca
 | id | endpoint | role |
 |---|---|---|
 | **E1** | **PDMS** (arm − comparator) | the decision endpoint |
-| **E2** | **DAC sub-score** and **DAC-zero share** (fraction of tokens with DAC = 0; u400 reads 3.42 % = 415 tokens) | the **mechanism**: a PDMS gain that does not come with fewer DAC zeros is not credited to the head |
+| **E2** | **DAC sub-score** and **DAC-zero share** (fraction of tokens with DAC = 0; u400 reads 3.42 % = ~~415~~ **416** tokens = 3.425 %; corrected 2026-10-13, MEASURED on the u400 csv, `eval/PREREG_AUX_DRIVABLE_S1.md` R4: 415 was back-derived from the rounded 3.42 %) | the **mechanism**: a PDMS gain that does not come with fewer DAC zeros is not credited to the head |
 | **E3** | **zeroed-token share** (NC × DAC = 0; u400 reads 529 tokens = 4.36 %) | the zero tail |
 
 All six sub-scores are reported with their paired CI. Nothing is pooled across families.
@@ -66,7 +68,7 @@ All six sub-scores are reported with their paired CI. Nothing is pooled across f
 
 **NOT PROVEN** otherwise.
 
-**Size label (reported with every ADOPT):** **LARGE** iff E1 Δ ≥ **+1.0** and DAC-zero share ≤ **2.39 %** (a ≥ 30 % cut, ≤ 290 tokens); else **SMALL**.
+**Size label (reported with every ADOPT):** **LARGE** iff E1 Δ ≥ **+1.0** and DAC-zero share ≤ **2.39 %** (a ≥ 30 % cut, ≤ 290 tokens; **corrected 2026-10-13 to ≤ 2.396 %, ≤ 291 tokens**, a 30 % cut of 416, S1 R4); else **SMALL**.
 These are the scales the SPEC's arithmetic gives (+0.98 PDMS at a 30 % cut). They are labels, not bars: the verdict is the rule above.
 
 ## Perception proof (reads on the head itself; gates H2, not an endpoint)

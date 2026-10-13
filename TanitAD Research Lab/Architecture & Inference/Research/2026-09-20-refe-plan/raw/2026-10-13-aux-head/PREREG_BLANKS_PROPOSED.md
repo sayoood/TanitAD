@@ -1,5 +1,7 @@
 # Auxiliary drivable-area head, S1: PROPOSED pre-registration blanks (not in force)
 
+> **2026-10-13: APPROVED by the Master Mind and REGISTERED** through `eval/PREREG_AUX_DRIVABLE_S1.md` (§1–§4 and §6 unchanged; §5's open reads and §7's items are answered there). This file stays as the record of the proposal.
+
 > ⛔ **PROPOSED. Not registered until the Master Mind approves this file and it is landed in git BEFORE the first S1 training step.** After landing, nothing below
 > changes without a dated amendment written before the read. `eval/PREREG_AUX_DRIVABLE_DRAFT.md` is **not edited** by this file: this file fills, for host S1 only,
 > the blanks that draft leaves open (its last table), and states what S1 can and cannot read.
