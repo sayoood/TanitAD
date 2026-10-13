@@ -1,0 +1,196 @@
+{
+ "mode": "navtest",
+ "bars": {
+  "ab_cells_differing_max": 0,
+  "origin_dev_m_max": 1e-06,
+  "origin_dev_rad_max": 1e-09,
+  "corner_agree_min": 0.98,
+  "verdict_agree_min": 0.95,
+  "target_inside_min": 0.9,
+  "navtest_overlap_max": 0
+ },
+ "seed": 20261013,
+ "store": "D:\\Projects\\TanitAD-artifacts\\aux_drivable\\label_store_navtest",
+ "store_sha256_in_manifest": "985a3bc77f3ab7a96b0dceace48e73b80e5b69b70710958635060939bce0d7c1",
+ "counts": {
+  "stored_keys": 12146,
+  "logs": 136,
+  "bytes": 40149323,
+  "by_src": {
+   "bank": 0,
+   "db": 12146
+  },
+  "by_map": {
+   "us-nv-las-vegas-strip": 4064,
+   "us-pa-pittsburgh-hazelwood": 2437,
+   "us-ma-boston": 3731,
+   "sg-one-north": 1914
+  }
+ },
+ "files_ok": true,
+ "bad_files": [],
+ "extra_files": [],
+ "sha_recomputed_equals_manifest": true,
+ "coverage": {
+  "navtest_tokens": 12146,
+  "navtest_logs": 136,
+  "stored_keys": 12146,
+  "stored_logs": 136,
+  "tokens_missing": 0,
+  "tokens_not_in_navtest": 0,
+  "logs_missing": 0,
+  "logs_not_in_navtest": 0
+ },
+ "coverage_ok": true,
+ "disjoint_vs_train": {
+  "train_store_sha256": "4a17db673b1548ba35724ab848a7dc551e4b0bc1e49c57ae93e6357454bf287a",
+  "train_store_is_pinned": true,
+  "train_shards_rehashed": 1192,
+  "train_shards_bad": 0,
+  "train_keys": 103139,
+  "navtest_keys": 12146,
+  "key_overlap": 0,
+  "token_overlap": 0,
+  "log_overlap": 0
+ },
+ "disjoint_ok": true,
+ "qc_origin_inside_label": {
+  "by_map": {
+   "sg-one-north": {
+    "n": 1914,
+    "origin_inside_share": 1.0
+   },
+   "us-ma-boston": {
+    "n": 3731,
+    "origin_inside_share": 1.0
+   },
+   "us-nv-las-vegas-strip": {
+    "n": 4064,
+    "origin_inside_share": 1.0
+   },
+   "us-pa-pittsburgh-hazelwood": {
+    "n": 2437,
+    "origin_inside_share": 1.0
+   }
+  },
+  "all": 1.0
+ },
+ "n_logs_sampled": 136,
+ "path_a_kinds": {
+  "scenario": 136
+ },
+ "samples_without_4s_tail": 0,
+ "samples_by_map": {
+  "us-nv-las-vegas-strip": 50,
+  "us-pa-pittsburgh-hazelwood": 22,
+  "us-ma-boston": 51,
+  "sg-one-north": 13
+ },
+ "metrics": {
+  "samples": 136,
+  "proposals": 1768,
+  "corners": 289952,
+  "corners_outside_extent": 0,
+  "corner_agree_nearest": 0.989950060699702,
+  "corner_agree_bilinear": 0.9911226685796269,
+  "verdict_agree_nearest": 0.9700226244343891,
+  "verdict_agree_bilinear": 0.9762443438914027,
+  "exact_violation_rate": 0.25961538461538464,
+  "label_violation_rate": 0.27658371040723984,
+  "target_inside_frac": 0.9705882352941176,
+  "target_inside_frac_exact": 0.9926470588235294,
+  "ab_cells_differing": 0,
+  "ab_samples": 136,
+  "origin_max_m": 0.0,
+  "origin_max_rad": 4.440892098500626e-16,
+  "navtest_overlap": 0
+ },
+ "verdict": {
+  "criteria": {
+   "AB": true,
+   "ORIGIN": 1.0,
+   "CORNER": true,
+   "VERDICT": true,
+   "TARGET": true,
+   "LEAK": true
+  },
+  "pass": true,
+  "failed": []
+ },
+ "arms": {
+  "y_axis_flipped": {
+   "gate_fails": true,
+   "failed_criteria": [
+    "AB",
+    "CORNER",
+    "VERDICT",
+    "TARGET"
+   ],
+   "ab_cells_differing": 3470368,
+   "corner_agree_bilinear": 0.7726037413089063,
+   "verdict_agree_bilinear": 0.5282805429864253,
+   "target_inside_frac": 0.5882352941176471
+  },
+  "xy_swapped": {
+   "gate_fails": true,
+   "failed_criteria": [
+    "AB",
+    "CORNER",
+    "VERDICT",
+    "TARGET"
+   ],
+   "ab_cells_differing": 3690095,
+   "corner_agree_bilinear": 0.5885112018541,
+   "verdict_agree_bilinear": 0.3778280542986425,
+   "target_inside_frac": 0.16911764705882354
+  },
+  "padding_removed": {
+   "gate_fails": true,
+   "failed_criteria": [
+    "AB"
+   ],
+   "ab_cells_differing": 76159,
+   "corner_agree_bilinear": 0.9911226685796269,
+   "verdict_agree_bilinear": 0.9762443438914027,
+   "target_inside_frac": 0.9705882352941176
+  },
+  "clip_changed_to_6m": {
+   "gate_fails": true,
+   "failed_criteria": [
+    "AB"
+   ],
+   "ab_cells_differing": 1353961,
+   "corner_agree_bilinear": 0.9911226685796269,
+   "verdict_agree_bilinear": 0.9762443438914027,
+   "target_inside_frac": 0.9705882352941176
+  },
+  "wrong_map_for_log": {
+   "gate_fails": true,
+   "failed_criteria": [
+    "AB",
+    "CORNER",
+    "VERDICT",
+    "TARGET"
+   ],
+   "ab_cells_differing": 3122611,
+   "corner_agree_bilinear": 0.10119950888422913,
+   "verdict_agree_bilinear": 0.2596153846153846,
+   "target_inside_frac": 0.0
+  },
+  "label_offset_one_frame_0p5s": {
+   "gate_fails": true,
+   "failed_criteria": [
+    "AB",
+    "CORNER",
+    "VERDICT"
+   ],
+   "ab_cells_differing": 1570196,
+   "corner_agree_bilinear": 0.972164358238605,
+   "verdict_agree_bilinear": 0.9434389140271493,
+   "target_inside_frac": 0.9264705882352942
+  }
+ },
+ "all_arms_fail_the_gate": true,
+ "gate_pass": true,
+ "seconds": 46.92385268211365
+}

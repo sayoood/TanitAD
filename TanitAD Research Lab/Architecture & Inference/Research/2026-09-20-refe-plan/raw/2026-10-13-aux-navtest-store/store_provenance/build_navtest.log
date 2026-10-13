@@ -1,0 +1,16 @@
+== 2026-10-13 10:01:55 navtest store build; inputs {"tokens": 12146, "logs": 136, "navtest_json_sha256": "0b9c63895d4e8da4205e194c90379cbf986badd1baf8beab948adb3743a33700", "yaml_sha256": "fa8f765cb1f13fd6ceecddb7e24cbe944d15953e41ce4242574e3b71c80c46b2"}
+$ C:\Users\Admin\venvs\driverl-eval\Scripts\python.exe -u E:\Projects\TanitAD\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\aux_label_store.py logmap --bank D:\Projects\TanitAD-artifacts\aux_drivable\label_store_navtest\inputs\empty_bank.jsonl --db-root D:/Projects/TanitAD/data/nuplan/nuplan-v1.1/splits/test --maps-root D:/Projects/TanitAD/data/nuplan-maps/nuplan-maps-v1.0 --yaml D:\Projects\TanitAD-artifacts\aux_drivable\label_store_navtest\inputs\navtest_tokens.yaml --out D:\Projects\TanitAD-artifacts\aux_drivable\label_store_navtest\inputs\log_map_navtest.json
+{"logs": 136, "from_db": 136, "inferred": 0, "ambiguous": 0, "infer_vs_db_agree": 0, "infer_vs_db_n": 0, "inferred_min_best_score": null, "inferred_max_runner_up": null}
+ZZAUXLOGMAP_DONE 136 0
+$ C:\Users\Admin\venvs\driverl-eval\Scripts\python.exe -u E:\Projects\TanitAD\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\aux_label_store.py build --bank D:\Projects\TanitAD-artifacts\aux_drivable\label_store_navtest\inputs\empty_bank.jsonl --db-root D:/Projects/TanitAD/data/nuplan/nuplan-v1.1/splits/test --maps-root D:/Projects/TanitAD/data/nuplan-maps/nuplan-maps-v1.0 --yaml D:\Projects\TanitAD-artifacts\aux_drivable\label_store_navtest\inputs\navtest_tokens.yaml --logmap D:\Projects\TanitAD-artifacts\aux_drivable\label_store_navtest\inputs\log_map_navtest.json --out D:\Projects\TanitAD-artifacts\aux_drivable\label_store_navtest --workers 4
+build: 136 logs (all), bank 0 tokens / 0 logs, db held 1349, free mem 11.9 GB, workers 4
+[25/136] new 1366 skipped 0 failed 0 elapsed 21s eta 93s free 11.0 GB
+[50/136] new 3573 skipped 0 failed 0 elapsed 38s eta 65s free 10.8 GB
+[75/136] new 5841 skipped 0 failed 0 elapsed 55s eta 45s free 10.8 GB
+[100/136] new 7700 skipped 0 failed 0 elapsed 70s eta 25s free 10.7 GB
+[125/136] new 10346 skipped 0 failed 0 elapsed 94s eta 8s free 10.6 GB
+[136/136] new 12146 skipped 0 failed 0 elapsed 111s eta 0s free 10.6 GB
+manifest: stored 12146 keys in 136 shards, 40149323 bytes, store_sha256 985a3bc77f3ab7a9
+ZZAUXSTORE_DONE 12146 0 new=12146 skipped=0
+{"navtest_store_keys": 12146, "navtest_store_logs": 136, "train_store_keys": 103139, "train_store_logs": 1192, "key_overlap": 0, "token_overlap": 0, "log_overlap": 0, "navtest_store_tokens_not_in_navtest_json": 0, "navtest_store_logs_not_in_navtest_json": 0, "navtest_json_tokens_missing_from_store": 0}
+ZZNAVTESTSTORE_DONE 12146 0 overlap_tokens=0 overlap_logs=0 seconds=113
