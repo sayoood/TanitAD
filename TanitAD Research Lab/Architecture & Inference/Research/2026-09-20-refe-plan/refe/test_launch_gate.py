@@ -357,6 +357,7 @@ def static() -> None:
     # the chain's ARGS are the profile's design, byte for byte (the token binds this string)
     ok(real_args().count('"') == 0 and "  " not in real_args())
     rls1_static()
+    aux_s1_static()
 
 
 # ====================================================================================================== RL-S1: the refe_rls1 profile
@@ -574,7 +575,7 @@ def rls1_static() -> None:
     P0 = {**P, "declared_arm": "R0"}
     pf_ok = C.load_scorer_preflight(rls1_write(Path(tempfile.mkdtemp()) / "preflight.jsonl", rls1_pf_rows(r0)))
     ev = C.check_dvb_scorer(r0, pf_ok, P0)
-    ok(ev["status"] == "PASS" and ev["details"]["observed_rows"] == 13 and ev["details"]["unknown_flags"] == [] and ev["details"]["stale_registry"] == [], ev["reasons"])
+    ok(ev["status"] == "PASS" and ev["details"]["observed_rows"] == 14 and ev["details"]["unknown_flags"] == [] and ev["details"]["stale_registry"] == [], ev["reasons"])
     ok(sum(ev["details"]["kinds"].values()) == len(C.DVB_KINDS_SCORER) == len(sdests))
     ok(C.check_dvb_scorer(c0, C.load_scorer_preflight(rls1_write(Path(tempfile.mkdtemp()) / "p.jsonl", rls1_pf_rows(c0))), P)["status"] == "PASS")
     for arm, frag in (("unknown_flag", "NO declared-vs-built entry"), ("stale_registry", "no longer has"), ("dead_lever", "never read by the trainer"),
@@ -642,7 +643,7 @@ def rls1_static() -> None:
         if k.startswith("G4_compw"):
             continue
         ev = cons(r0, notok=(k,))
-        if k.startswith("G8_"):                                    # r0 carries no lane labels: G8 is not obliged, so a G8 flag in the fixture is simply not written
+        if k.startswith(("G8_", "G12_")):                          # r0 carries no lane labels / no --aux-drv: G8 / G12 are not obliged, so such a flag in the fixture is simply not written
             ok(ev["status"] == "PASS", (k, ev["reasons"]))
         else:
             ok(ev["status"] == "FAIL" and "not ok" in " ".join(ev["reasons"]) and k in " ".join(ev["reasons"]), (k, ev["reasons"]))
@@ -653,7 +654,7 @@ def rls1_static() -> None:
     ok(ev["status"] == "FAIL" and "not PASS" in " ".join(ev["reasons"]))
     ev = cons(c0, add={g11_key: {"ok": True}})
     ok(ev["status"] == "FAIL" and "DIFFERENT configuration" in " ".join(ev["reasons"]))                      # a control offered an EPO run's preflight
-    ev = cons(r0, add={"G12_something_new": {"ok": True}})
+    ev = cons(r0, add={"G13_something_new": {"ok": True}})
     ok(ev["status"] == "FAIL" and "not known to the gate" in " ".join(ev["reasons"]))
     ok(cons(r0, add={"G8_lane_labels_in_bank": {"ok": True}})["status"] == "FAIL")                           # a gate the argv does not oblige
     good = rls1_pf_rows(r0)[-1]["gates"][g11_key]
@@ -756,6 +757,348 @@ def rls1_static() -> None:
     with tempfile.TemporaryDirectory() as td3:
         st = L.run_checks({**P, "declared_arm": "R2"}, r0, PKG, Path(td3) / "o")
         ok(set(st.values()) == {"FAIL"} and set(st) == set(P["checks"]) | set(P["na_ok"]), st)
+
+
+# ====================================================================================================== aux drivable-area head, S1: the refe_aux_s1 profile
+# scorer_finetune.py with --aux-drv (WIRING_PLAN.md).  The profile is the RL-S1 runner (static checks + the trainer's own --preflight, now with G12) with its own arm rules: arms are
+# N (no head) / H1 (head, feed off) / H2 (head + feed) x seeds 0..2.  Every refusal has its clean twin; every G-DVB row its mutation; every G12 field its mutation.
+AUXS1_BASE = ("--ckpt /w/model_sft4_B_u400.pt --backbone vitl16 --targets /w/train --images /w/pix --calib /w/calib.json --onpolicy /w/onp --heldout /w/onh "
+              "--heldout-logs /w/hl.txt --out /w/aux --lane-head --teacher-lane-train /w/tl --teacher-lane-heldout /w/tlh --pdm-labels-train /w/pdm "
+              "--pdm-labels-heldout /w/pdmh --require-pdm --b-mode expreward --lam 1.0 --tau-s 0.1 --lr 1e-4 --max-updates 400 --eval-every 400 --workers 3 --seed 0")
+AUXS1_HEAD = "--aux-drv --w-aux-drv 0.1 --aux-drv-lr 2e-4 --aux-drv-labels /w/store"
+AUX_GROUPS = ("q", "pos_mlp", "blocks.0", "blocks.1", "norm", "out")
+_FACTS: dict = {}
+
+
+def aux_block(ns, **mut) -> dict:
+    """the `aux_drv` block the trainer's data event carries (BUILT facts), for this namespace: AuxDrivable.built_facts() of a REAL head + the trainer-side keys"""
+    import aux_drivable_head as AUX
+    cfg = AUX.AuxDrivableConfig(tap=ns.aux_drv_tap, depth=ns.aux_drv_depth, feed=ns.aux_drv_feed, w_aux=ns.w_aux_drv, seed=ns.seed)
+    k = (cfg.depth, cfg.feed)
+    if k not in _FACTS:
+        _FACTS[k] = AUX.AuxDrivable(cfg).built_facts()
+    f = dict(_FACTS[k], w_aux=ns.w_aux_drv)
+    b = {**f, "tap": cfg.tap, "feed": cfg.feed, "lr": ns.aux_drv_lr, "store_sha256": AUX.PINNED_STORE_SHA256, "frames": AUX.PINNED_STORE_KEYS,
+         "shuffle_seed": ns.aux_drv_shuffle_seed, "head_params_in_optimiser": f["n_params"]}
+    if ns.aux_drv_shuffle_seed is not None:
+        b.update(shuffle_keys=AUX.PINNED_STORE_KEYS, derangement_fixed_points=0)
+    b.update(mut)
+    return b
+
+
+def aux_g12(ns, **mut) -> dict:
+    """a G12 exactly as scorer_finetune's g12_probe writes it (the same raw-field names), all proved"""
+    g = {"ok": True, "w_aux": ns.w_aux_drv, "feed": ns.aux_drv_feed, "labelled_frames_in_batch": 8, "batch_frames": 8, "mutate": [], "scene_proj_calls": 2,
+         "tap_is_visual_ctx": True, "tap_is_scene_ctx": False, "score_to_head_grads_all_none": True, "bce_declared": 0.70, "huber_declared": 0.4, "bce_w0": 0.70, "huber_w0": 0.4,
+         "per_group_declared": {k: (1.5 if ns.w_aux_drv > 0 else 0.0) for k in AUX_GROUPS}, "per_group_w0": {k: 0.0 for k in AUX_GROUPS}, "bce_near_ln2": True,
+         "adam_head_params": 43, "adam_head_params_with_state": 43, "head_retained_gb": None}
+    if ns.aux_drv_feed == "off":
+        g.update(reference_replay_identical=True, scorer_params_bit_identical_2steps=True, identity_probe_reads_one_ulp=True)
+    else:
+        g.update(feed_zero_init=True, feed_step0_equal_base=True, feed_probe_reads_difference=True, feed_proj_grad_abs=0.3)
+    g.update(mut)
+    return g
+
+
+def aux_pf_rows(argv, *, g12=None, data_aux=None, drop=(), notok=(), **kw) -> list:
+    """rls1_pf_rows + the head's G12 (full raw fields) and the data event's `aux_drv` block, for an argv that carries --aux-drv"""
+    import scorer_finetune as S
+    ns, err = C.parse_scorer_argv(S.build_parser(), argv)
+    assert err is None, err
+    rows = rls1_pf_rows(argv, drop=drop, notok=notok, **kw)
+    k12 = next(k for k in rls1_gate_keys() if k.startswith("G12_"))
+    if ns.aux_drv:
+        if "G12" not in drop:
+            rows[-1]["gates"][k12] = dict(g12 if g12 is not None else aux_g12(ns), ok=(k12 not in notok) and (g12 or {}).get("ok", True))
+        if rows[0].get("event") == "data":
+            rows[0]["aux_drv"] = data_aux if data_aux is not None else aux_block(ns)
+    return rows
+
+
+def aux_s1_static() -> None:
+    import scorer_finetune as S
+    import aux_drivable_head as AUX
+    P = L.PROFILES["refe_aux_s1"]
+    PR = L.PROFILES["refe_rls1"]
+    base = L.parse_args_string(AUXS1_BASE)
+    h1 = base + L.parse_args_string(AUXS1_HEAD)
+    h2 = h1 + ["--aux-drv-feed", "on"]
+    seeded = lambda argv, k: C._set(argv, "--seed", str(k))                      # noqa: E731
+
+    def refs(argv, arm=None, prof=None):
+        return L.profile_refusals(prof or ({**P, "declared_arm": arm} if arm else P), argv)
+
+    def clean(argv, arm=None):
+        rs = refs(argv, arm)
+        ok(rs == [], (arm, rs))
+
+    def red(argv, frag, arm=None, prof=None):
+        rs = refs(argv, arm, prof)
+        ok(any(frag in r for r in rs), (frag, arm, rs))
+
+    def without(argv, flag, nvalues=1):
+        return C._drop(argv, flag, nvalues)
+    # ------------------------------------------------------------------ A1 the profile's shape; RL-S1 stays head-free; the registry classifies every new flag
+    ok(P["parser_module"] == "scorer_finetune" and P["trainer_src"] == "scorer_finetune.py" and P["runner"] == "scorer" and P["arm_rules"] == "auxs1" and P["mintable"] and P["require_commit"])
+    ok(P["namespace_funcs"] == C.SCORER_NAMESPACE_FUNCS and PR["namespace_funcs"] == C.SCORER_NAMESPACE_FUNCS and "aux_s1_refusals" in C.SCORER_NAMESPACE_FUNCS)
+    ok(set(L.AUXS1_ARM_CLASS) == {f"{c}-s{k}" for c in ("N", "H1", "H2") for k in (0, 1, 2)} and len(L.AUXS1_SEEDS) >= 3 and all(L.AUXS1_ARM_SEED[a_] in L.AUXS1_SEEDS for a_ in L.AUXS1_ARM_CLASS))
+    for e in L.AUXS1_SUITE:
+        ok((HERE / e["script"]).is_file() and e["token"] in (HERE / e["script"]).read_text(encoding="utf-8"), e)
+    ok({"test_aux_s1_wiring.py", "test_aux_drivable_head.py", "test_rl_epo.py"} <= {e["script"] for e in L.AUXS1_SUITE})
+    ap = S.build_parser()
+    opt_of = {x.dest: x.option_strings[0] for x in ap._actions if x.option_strings}
+    aux_dests = ("aux_drv", "w_aux_drv", "aux_drv_tap", "aux_drv_depth", "aux_drv_feed", "aux_drv_labels", "aux_drv_shuffle_seed", "aux_drv_lr")
+    ok(set(L.AUX_HEAD_FLAGS) == {opt_of[d] for d in aux_dests})
+    ok(all(C.DVB_KINDS_SCORER.get(d) == ("data" if d == "aux_drv_labels" else "built") for d in aux_dests), {d: C.DVB_KINDS_SCORER.get(d) for d in aux_dests})
+    ok(set(C.DVB_KINDS_SCORER) == {x.dest for x in ap._actions if x.dest != "help"})                         # a new flag without an entry is refused by the gate itself (tested in R10 + A6)
+    ok({"--aux-drv-labels"} <= set(L.RLS1_DATA) and set(L.RLS1_DATA) <= set(opt_of.values()) and all(f in L.RLS1_FORBIDDEN for f in L.AUX_HEAD_FLAGS))
+    ok({d: ap.get_default(d) for d in aux_dests} == {"aux_drv": False, "w_aux_drv": 0.0, "aux_drv_tap": "visual", "aux_drv_depth": 2, "aux_drv_feed": "off", "aux_drv_labels": "",
+                                                       "aux_drv_shuffle_seed": None, "aux_drv_lr": None})                                    # every default DISABLES the head
+    ok("G12" in C.SCORER_GATES and "aux_drv" in " ".join(rls1_gate_keys()))
+    for argv, req in ((base, False), (h1, True), (h2, True)):
+        ns_, _ = C.parse_scorer_argv(S.build_parser(), argv)
+        ok(("G12" in C.scorer_required_gates(ns_)) is req)                                                    # G12 is obliged by --aux-drv and by nothing else
+    # RL-S1: each head flag is FORBIDDEN in its argv (any RL-S1 re-ship passes the gate only with the head flags OFF)
+    r0 = L.parse_args_string(RLS1_BASE) + ["--epo", "--epo-terms-train", "/w/terms"]
+    ok(L.profile_refusals({**PR, "declared_arm": "R0"}, r0) == [])
+    for f_ in L.AUX_HEAD_FLAGS:
+        ok(any("FORBIDS" in r and f_ in r for r in L.profile_refusals({**PR, "declared_arm": "R0"}, r0 + [f_] + ([] if f_ == "--aux-drv" else ["1"]))), f_)
+    # ------------------------------------------------------------------ A2 the clean argvs: the 9 arms (declared) and the 3 classes (undeclared)
+    for k in (0, 1, 2):
+        clean(seeded(base, k), f"N-s{k}")
+        clean(seeded(h1, k), f"H1-s{k}")
+        clean(seeded(h2, k), f"H2-s{k}")
+    clean(base)
+    clean(h1)
+    clean(h2)
+    ok([L.auxs1_arm_class(a_) for a_ in (base, h1, h2, h1 + ["--aux-drv-feed", "off"])] == ["N", "H1", "H2", "H1"])
+    ok(L.auxs1_control_argv(h2) == base and L.auxs1_control_argv(h1) == base and L.auxs1_control_argv(base) == base)       # a head arm and N differ by the head flags and nothing else
+    clean(L.auxs1_control_argv(h2), "N-s0")
+    ok(L.profile_refusals({**P, "declared_arm": "N-s0"}, base) == [] and "aux_bce" not in " ".join(L.profile_refusals({**P, "declared_arm": "N-s0"}, base)))
+    # ------------------------------------------------------------------ A3 the head arms NAME every flag whose default disables the head; N carries none of them
+    for flag, nv in (("--aux-drv", 0), ("--w-aux-drv", 1), ("--aux-drv-lr", 1), ("--aux-drv-labels", 1)):
+        for arm, argv in (("H1-s0", h1), ("H2-s0", h2)):
+            red(without(argv, flag, nv), f"requires {flag} for {arm}", arm)
+    red(without(h2, "--aux-drv-feed"), "requires --aux-drv-feed on for H2-s0", "H2-s0")                       # H2 without its feed named is an H1 arm
+    red(without(h2, "--aux-drv-feed"), "arm H2-s0 is the H2 class; the argv resolves to the H1 class", "H2-s0")
+    red(h2, "arm H1-s0 is the H1 class; the argv resolves to the H2 class", "H1-s0")
+    red(h1, "must NOT carry", "N-s0")
+    red(h2, "must NOT carry", "N-s1")
+    red(base + ["--aux-drv-lr", "2e-4"], "must NOT carry", "N-s0")
+    red(base + ["--aux-drv-lr", "2e-4"], "scorer_finetune refuses")                                           # undeclared: the trainer's own refusal surfaces
+    red(base + ["--w-aux-drv", "0.1"], "w-aux-drv is set but --aux-drv is not")
+    red(without(h1, "--aux-drv", 0), "w-aux-drv is set but --aux-drv is not", "H1-s0")
+    red(without(h1, "--aux-drv-labels"), "needs --aux-drv-labels", "H1-s0")
+    red(without(h1, "--aux-drv-lr"), "needs --aux-drv-lr", "H1-s0")
+    # ------------------------------------------------------------------ A4 registered values, recipe, seeds; forbidden flags; exact spelling; lane pairing
+    for flag, bad, frag in (("--w-aux-drv", "0.2", "requires --w-aux-drv 0.1"), ("--w-aux-drv", "0", "requires --w-aux-drv 0.1"), ("--aux-drv-lr", "1e-4", "requires --aux-drv-lr 0.0002"),
+                            ("--aux-drv-depth", "3", "requires --aux-drv-depth 2"), ("--aux-drv-depth", "1", "requires --aux-drv-depth 2")):
+        red(C._set(h1, flag, bad) if flag in h1 else h1 + [flag, bad], frag, "H1-s0")
+        red(C._set(h2, flag, bad) if flag in h2 else h2 + [flag, bad], frag, "H2-s0")
+    red(h1 + ["--aux-drv-tap", "scene"], "requires --aux-drv-tap visual", "H1-s0")
+    red(h1 + ["--aux-drv-tap", "scene"], "scene is not built")                                                # and the trainer refuses it on its own
+    clean(h1 + ["--aux-drv-depth", "2", "--aux-drv-tap", "visual"], "H1-s0")                                  # naming a registered value is fine
+    for flag, bad in (("--lr", "3e-5"), ("--max-updates", "500"), ("--b-mode", "listnet"), ("--lam", "0.3"), ("--tau-s", "0.2"), ("--eval-every", "100")):
+        for arm, argv in (("N-s0", base), ("H1-s0", h1), ("H2-s0", h2)):
+            red(C._set(argv, flag, bad), "requires " + flag, arm)
+    for flag, bad in (("--warmup", "10"), ("--batch", "4"), ("--accum", "4"), ("--lane-weight", "0.5")):
+        for arm, argv in (("N-s0", base), ("H1-s0", h1)):
+            red(argv + [flag, bad], "requires " + flag, arm)
+    for flag, nv in (("--lr", 1), ("--max-updates", 1), ("--b-mode", 1), ("--lam", 1), ("--tau-s", 1), ("--lane-head", 0), ("--pdm-labels-train", 1), ("--require-pdm", 0)):
+        red(without(h1, flag, nv), "requires " + flag, "H1-s0")
+    red(seeded(h2, 1), "registered with --seed 0", "H2-s0")
+    red(seeded(base, 3), "registered with --seed 0", "N-s0")
+    ok(any("unknown arm" in r for r in L.profile_refusals({**P, "declared_arm": "H3-s0"}, h1)))
+    ok(any("unknown arm" in r for r in L.profile_refusals({**P, "declared_arm": "R0"}, h1)))                 # an RL-S1 arm name is not an aux arm
+    for extra, frag in ((["--preflight"], "FORBIDS"), (["--lane-labels-train", "/w/ll"], "FORBIDS"), (["--b-compw", "1,1,1,1,1,1"], "FORBIDS"), (["--tau-t", "0.2"], "FORBIDS"),
+                        (["--aux-drv-shuffle-seed", "7"], "FORBIDS"), (["--epo"], "FORBIDS"), (["--epo-terms-train", "/w/t"], "FORBIDS"), (["--epo-lam", "1.0"], "FORBIDS"),
+                        (["--epo-k"], "FORBIDS")):
+        red(h1 + extra, frag, "H1-s0")
+        red(base + extra, frag, "N-s0")
+    red(without(h1, "--teacher-lane-heldout"), "--lane-head needs", "H1-s0")
+    red(h1 + ["--epo-bogus", "1"], "parser rejects", "H1-s0")
+    red(without(h1, "--ckpt"), "parser rejects", "H1-s0")
+    red(["--require-p" if t == "--require-pdm" else t for t in h1], "not an exact option", "H1-s0")
+    red(h1, "DECLARED, NOT BUILT", prof={**P, "declared_arm": "H1-s0", "required_flags": {**P["required_flags"], "--g-probe-lever": None}})
+    red(h1, "scorer_finetune.py never emits it", prof={**P, "declared_arm": "H1-s0", "live_terms": ("g_probe_term",)})
+    terms_ = L.AUXS1_HEAD_TERMS
+    L.AUXS1_HEAD_TERMS = ("g_probe_aux_term",)
+    try:
+        red(h1, "scorer_finetune.py never emits it", "H1-s0")                                              # a head arm requires its aux_bce / aux_huber rows ...
+        clean(base, "N-s0")                                                                               # ... N does not
+    finally:
+        L.AUXS1_HEAD_TERMS = terms_
+    clean(h1, "H1-s0")
+    # ------------------------------------------------------------------ A5 the CLI: the arm name belongs to the profile it is passed with
+    def cli(*args):
+        return subprocess.run([sys.executable, str(HERE / "launch_gate.py"), *args], capture_output=True, text=True, encoding="utf-8")
+    rc = cli("refusals", "--profile", "refe_aux_s1", "--arm-name", "H2-s1", "--args", " ".join(seeded(h2, 1)))
+    ok(rc.returncode == 0 and "ZZGATE-CLEANZZ" in rc.stdout, rc.stdout[-400:] + rc.stderr[-400:])
+    rc = cli("refusals", "--profile", "refe_aux_s1", "--arm-name", "H1-s1", "--args", " ".join(seeded(h2, 1)))
+    ok(rc.returncode == 5 and "ZZGATE-REFUSEDZZ" in rc.stdout and "H2 class" in rc.stdout, rc.stdout[-400:])
+    rc = cli("refusals", "--profile", "refe_aux_s1", "--arm-name", "R0", "--args", " ".join(h2))
+    ok(rc.returncode != 0 and "is not an arm of refe_aux_s1" in (rc.stdout + rc.stderr), rc.stderr[-300:])
+    rc = cli("refusals", "--profile", "refe_rls1", "--arm-name", "H1-s0", "--args", " ".join(h2))
+    ok(rc.returncode != 0 and "is not an arm of refe_rls1" in (rc.stdout + rc.stderr), rc.stderr[-300:])
+    with tempfile.TemporaryDirectory() as td_:
+        rc = cli("run", "--profile", "refe_aux_s1", "--args", " ".join(h2), "--pkg", td_, "--out-dir", str(Path(td_) / "o"))
+        ok(rc.returncode != 0 and "mints for ONE named arm" in (rc.stdout + rc.stderr), rc.stderr[-300:])
+    # ------------------------------------------------------------------ A6 G-HYG on the scorer reads the new namespace; G-DVB: the observed rows, one mutation each, the registry arms
+    ev = C.check_hyg(profile=P)
+    reads = C.namespace_reads((HERE / "scorer_finetune.py").read_text(encoding="utf-8"), C.SCORER_NAMESPACE_FUNCS)
+    ok(ev["status"] == "PASS" and {d for d in aux_dests} <= reads, ev["details"])
+    for arm, frag in (("no_cfg_guard", "ACCEPTED an undeclared attribute"), ("undeclared_namespace_read", "undeclared_lever_g_hyg")):
+        ev = C.check_hyg(arm=arm, profile=P)
+        ok(ev["status"] == "FAIL" and frag in " ".join(ev["reasons"]), (arm, ev["reasons"]))
+    ns_h1, _ = C.parse_scorer_argv(S.build_parser(), h1)
+    ns_h2, _ = C.parse_scorer_argv(S.build_parser(), h2)
+    sh = h1 + ["--aux-drv-shuffle-seed", "7"]                                                              # a CONTROL argv (the profile forbids it; the check itself is profile-agnostic)
+    Pn, P1, P2 = {**P, "declared_arm": "N-s0"}, {**P, "declared_arm": "H1-s0"}, {**P, "declared_arm": "H2-s0"}
+    Pc = {**P1, "forbidden_flags": tuple(f for f in P1["forbidden_flags"] if f != "--aux-drv-shuffle-seed")}
+
+    def pf_of(argv, name="p.jsonl", **kw):
+        return C.load_scorer_preflight(rls1_write(Path(tempfile.mkdtemp()) / name, aux_pf_rows(argv, **kw)))
+    ev = C.check_dvb_scorer(h1, pf_of(h1), P1)
+    ok(ev["status"] == "PASS" and ev["details"]["observed_rows"] == 19 and ev["details"]["unknown_flags"] == [] and ev["details"]["stale_registry"] == [], ev["reasons"])
+    ev = C.check_dvb_scorer(h2, pf_of(h2), P2)
+    ok(ev["status"] == "PASS" and ev["details"]["observed_rows"] == 19, ev["reasons"])
+    ev = C.check_dvb_scorer(sh, pf_of(sh), Pc)
+    ok(ev["status"] == "PASS" and ev["details"]["observed_rows"] == 21, ev["reasons"])
+    ev = C.check_dvb_scorer(base, pf_of(base), Pn)
+    ok(ev["status"] == "PASS" and ev["details"]["observed_rows"] == 4, ev["reasons"])                      # N: b_mode, b_compw, the epo presence row + the `aux_drv` presence row (no head: nothing else is observed)
+    ok(sum(ev["details"]["kinds"].values()) == len(C.DVB_KINDS_SCORER))
+    for arm, frag in (("unknown_flag", "NO declared-vs-built entry"), ("stale_registry", "no longer has"), ("dead_lever", "never read by the trainer"),
+                      ("unbound_data", "would NOT fingerprint"), ("aux_lever_ignored", "--w-aux-drv: declared 0.1 != built 0.15")):
+        ev = C.check_dvb_scorer(h1, pf_of(h1), P1, arm=arm)
+        ok(ev["status"] == "FAIL" and frag in " ".join(ev["reasons"]) and ev["arm"] == arm, (arm, ev["reasons"]))
+    ev = C.check_dvb_scorer(h1, pf_of(h1), {**P1, "data_flags": tuple(f for f in P1["data_flags"] if f != "--aux-drv-labels")})
+    ok(ev["status"] == "FAIL" and "would NOT fingerprint (not in refe_aux_s1's data_flags): ['--aux-drv-labels']" in " ".join(ev["reasons"]), ev["reasons"])       # the label store must be bound by the token
+    ok(C.check_dvb_scorer(h1, pf_of(h1), P1)["status"] == "PASS")                                           # the arms left no residue
+    kept = C.DVB_KINDS_SCORER.pop("aux_drv_lr")
+    try:
+        ev = C.check_dvb_scorer(h1, pf_of(h1), P1)
+        ok(ev["status"] == "FAIL" and "aux_drv_lr" in " ".join(ev["reasons"]) and "NO declared-vs-built entry" in " ".join(ev["reasons"]), ev["reasons"])      # a new flag without an entry
+    finally:
+        C.DVB_KINDS_SCORER["aux_drv_lr"] = kept
+    kept = C.DVB_KINDS_SCORER["aux_drv_lr"]
+    C.DVB_KINDS_SCORER["aux_drv_lr"] = "consumed"
+    try:
+        ok(C.check_dvb_scorer(h1, pf_of(h1), P1)["status"] == "PASS")                                       # `consumed` is static; the head optimiser's lr row is still observed
+    finally:
+        C.DVB_KINDS_SCORER["aux_drv_lr"] = kept
+    for nm, argv, prof_, mut, frag in (
+            ("weight", h1, P1, {"w_aux": 0.15}, "--w-aux-drv: declared 0.1 != built 0.15"), ("weight zero", h1, P1, {"w_aux": 0.0}, "--w-aux-drv: declared 0.1 != built 0.0"),
+            ("tap", h1, P1, {"tap": "scene"}, "--aux-drv-tap: declared 'visual' != built 'scene'"), ("depth", h1, P1, {"depth": 1}, "--aux-drv-depth: declared 2 != built 1"),
+            ("feed built on", h1, P1, {"feed_built": True}, "--aux-drv-feed: declared 'off' != built 'on'"), ("feed not built", h2, P2, {"feed_built": False}, "--aux-drv-feed: declared 'on' != built 'off'"),
+            ("width 60 for H2", h2, P2, {"scorer_in_width": 60}, "declared 63 != built 60"), ("width 63 for H1", h1, P1, {"scorer_in_width": 63}, "declared 60 != built 63"),
+            ("lr", h1, P1, {"lr": 1e-4}, "--aux-drv-lr: declared 0.0002 != built 0.0001"), ("params not all in the optimiser", h1, P1, {"head_params_in_optimiser": 100},
+                                                                                              "every head parameter is in the head optimiser"),
+            ("store sha", h1, P1, {"store_sha256": "0" * 64}, "aux_drv.store_sha256"), ("frames", h1, P1, {"frames": 103138}, "aux_drv.frames"),
+            ("cell", h1, P1, {"cell": 4.0}, "aux_drv.cell"), ("x0", h1, P1, {"x0": -9.0}, "aux_drv.x0"), ("y0", h1, P1, {"y0": -30.0}, "aux_drv.y0"),
+            ("nx", h1, P1, {"nx": 20}, "aux_drv.nx"), ("ny", h1, P1, {"ny": 16}, "aux_drv.ny"),
+            ("shuffle seed ignored", sh, Pc, {"shuffle_seed": None}, "--aux-drv-shuffle-seed: declared 7 != built None"),
+            ("shuffle has fixed points", sh, Pc, {"derangement_fixed_points": 3}, "the shuffle map has no fixed point"),
+            ("shuffle covers too few keys", sh, Pc, {"shuffle_keys": 1000}, "covers every key of the store")):
+        ev = C.check_dvb_scorer(argv, pf_of(argv, data_aux=aux_block(C.parse_scorer_argv(S.build_parser(), argv)[0], **mut)), prof_)
+        ok(ev["status"] == "FAIL" and frag in " ".join(ev["reasons"]), (nm, ev["reasons"]))
+    ev = C.check_dvb_scorer(h1, pf_of(h1, data_aux={}), P1)                                               # a head arm whose data event carries no aux block: nothing was built
+    ok(ev["status"] == "FAIL" and any("declared" in r for r in ev["reasons"]))
+    rows_noaux = aux_pf_rows(h1)
+    del rows_noaux[0]["aux_drv"]
+    ev = C.check_dvb_scorer(h1, C.load_scorer_preflight(rls1_write(Path(tempfile.mkdtemp()) / "p.jsonl", rows_noaux)), P1)
+    ok(ev["status"] == "FAIL" and "--aux-drv: declared True != built False" in " ".join(ev["reasons"]), ev["reasons"])
+    ev = C.check_dvb_scorer(base, pf_of(base, data_mut={"aux_drv": aux_block(ns_h1)}), Pn)               # N whose preflight built a head
+    ok(ev["status"] == "FAIL" and "--aux-drv: declared False != built True" in " ".join(ev["reasons"]), ev["reasons"])
+    # ------------------------------------------------------------------ A7 the preflight consumer: G12 obliged by --aux-drv, re-judged from its raw fields (its own ok is not trusted)
+    td = Path(tempfile.mkdtemp())
+
+    def cons(argv, prof_, name="aux_pf.jsonl", **kw):
+        p_ = td / name
+        rls1_write(p_, aux_pf_rows(argv, **kw))
+        return L.consume_scorer_preflight(p_, argv, prof_)
+    for nm, argv, prof_ in (("N", base, Pn), ("H1", h1, P1), ("H2", h2, P2)):
+        ev = cons(argv, prof_)
+        ok(ev["status"] == "PASS" and ("G12" in ev["details"]["required"]) == (nm != "N"), (nm, ev["reasons"]))
+    ev = cons(h1, P1, drop=("G12",))
+    ok(ev["status"] == "FAIL" and "ABSENT: ['G12']" in " ".join(ev["reasons"]), ev["reasons"])               # the headline: a head arm without G12 has not been proved live
+    ev = cons(h2, P2, drop=("G12",))
+    ok(ev["status"] == "FAIL" and "ABSENT: ['G12']" in " ".join(ev["reasons"]))
+    ev = cons(h1, P1, notok=("G12_aux_drv_live_and_identity",))
+    ok(ev["status"] == "FAIL" and "not ok" in " ".join(ev["reasons"]))
+    k12 = next(k for k in rls1_gate_keys() if k.startswith("G12_"))
+    ev = cons(base, Pn, add={k12: {"ok": True}})
+    ok(ev["status"] == "FAIL" and "DIFFERENT configuration" in " ".join(ev["reasons"]))                      # N offered a head run's preflight
+    ev = cons(h1, P1, g12=aux_g12(ns_h1, ok=False))
+    ok(ev["status"] == "FAIL" and "not ok" in " ".join(ev["reasons"]))
+    ns_w0, _ = C.parse_scorer_argv(S.build_parser(), C._set(h1, "--w-aux-drv", "0"))
+    ev = cons(C._set(h1, "--w-aux-drv", "0"), {**P1}, g12=aux_g12(ns_w0))
+    ok(ev["status"] == "PASS", ev["reasons"])                                                              # a declared weight of 0 reads all-zero and is fine as such
+    for nm, mut, frag in (
+            ("regression switch", {"mutate": ["REFE_AUX_MUTATE_TAP"]}, "regression switch"), ("no labelled frame", {"labelled_frames_in_batch": 0}, "no labelled frame"),
+            ("a group is dead", {"per_group_declared": {**aux_g12(ns_h1)["per_group_declared"], "q": 0.0}}, "non-zero on every head sub-module"),
+            ("a group is nan", {"per_group_declared": {**aux_g12(ns_h1)["per_group_declared"], "out": float("nan")}}, "non-zero on every head sub-module"),
+            ("no groups", {"per_group_declared": {}}, "no per-sub-module gradient read"),
+            ("control reads non-zero", {"per_group_w0": {**aux_g12(ns_h1)["per_group_w0"], "norm": 1e-9}}, "EXACTLY 0.0"),
+            ("control missing a group", {"per_group_w0": {k: 0.0 for k in AUX_GROUPS[:-1]}}, "EXACTLY 0.0"), ("control empty", {"per_group_w0": {}}, "EXACTLY 0.0"),
+            ("probed weight != argv", {"w_aux": 0.2}, "probed weight"), ("probed feed != argv", {"feed": "on"}, "probed feed"),
+            ("bce far from ln2", {"bce_declared": 1.2}, "within 0.15 of ln 2"), ("bce flag lies", {"bce_near_ln2": False}, "within 0.15 of ln 2"),
+            ("tap is a copy", {"tap_is_visual_ctx": False}, "storage of visual_ctx"), ("tap is scene_ctx", {"tap_is_scene_ctx": True}, "storage of visual_ctx"),
+            ("path from score to head", {"score_to_head_grads_all_none": False}, "autograd path"),
+            ("adam state missing", {"adam_head_params_with_state": 42}, "hold Adam state"), ("no head params", {"adam_head_params": 0, "adam_head_params_with_state": 0}, "hold Adam state"),
+            ("memory", {"head_retained_gb": 1.5}, "> 1 GB"),
+            ("scorer not bit identical", {"scorer_params_bit_identical_2steps": False}, "scorer_params_bit_identical_2steps"),
+            ("reference not deterministic", {"reference_replay_identical": False}, "reference_replay_identical"),
+            ("identity probe cannot read a difference", {"identity_probe_reads_one_ulp": False}, "identity_probe_reads_one_ulp")):
+        ev = cons(h1, P1, g12=aux_g12(ns_h1, **mut))
+        ok(ev["status"] == "FAIL" and frag in " ".join(ev["reasons"]), (nm, ev["reasons"]))
+    for nm, mut, frag in (("feed not zero-initialised", {"feed_zero_init": False}, "feed_zero_init"), ("step 0 differs from the base", {"feed_step0_equal_base": False}, "feed_step0_equal_base"),
+                          ("probe cannot see a feed", {"feed_probe_reads_difference": False}, "feed_probe_reads_difference"),
+                          ("feed unreachable", {"feed_proj_grad_abs": 0.0}, "received no gradient"), ("feed grad missing", {"feed_proj_grad_abs": None}, "received no gradient")):
+        ev = cons(h2, P2, g12=aux_g12(ns_h2, **mut))
+        ok(ev["status"] == "FAIL" and frag in " ".join(ev["reasons"]), (nm, ev["reasons"]))
+    g_dead = aux_g12(ns_h1, per_group_declared={k: 0.0 for k in AUX_GROUPS})
+    ev = cons(h1, P1, g12=g_dead)
+    ok(ev["status"] == "FAIL" and "non-zero on every head sub-module" in " ".join(ev["reasons"]))            # the loss never reached the head
+    ns_w0b = ns_w0
+    ev = cons(C._set(h1, "--w-aux-drv", "0"), P1, g12=aux_g12(ns_w0b, per_group_declared={k: 0.5 for k in AUX_GROUPS}))
+    ok(ev["status"] == "FAIL" and "received gradient" in " ".join(ev["reasons"]))                           # w = 0 that trained is a leak
+    # ------------------------------------------------------------------ A8 END TO END on the real run_checks / finalize for an H2 arm (G-SUITE excluded: it would recurse into this file)
+    with tempfile.TemporaryDirectory() as td2:
+        td2 = Path(td2)
+        pkg = mini_pkg(td2 / "pkg")
+        key = GT.load_key(td2 / "k" / "gate.key", create=True, forbid_under=[pkg])
+        real = [t.replace("/w", td2.as_posix() + "/w") for t in seeded(h2, 1)]
+        (td2 / "w").mkdir()
+        for f_ in ("--ckpt", "--heldout-logs", "--calib"):
+            Path(GT.flag_values(real, f_)[0]).write_text("x", encoding="utf-8")
+        for f_ in P["data_flags"]:
+            if f_ in real and not Path(GT.flag_values(real, f_)[0]).exists():
+                Path(GT.flag_values(real, f_)[0]).mkdir(parents=True)
+        Pe = {**P, "declared_arm": "H2-s1", "checks": ("G-HYG", "G-DVB", "G-PREFLIGHT"), "require_commit": False}
+        ok(L.profile_refusals(Pe, real) == [], L.profile_refusals(Pe, real))
+        pfp = rls1_write(td2 / "preflight.jsonl", aux_pf_rows(real))
+        out = td2 / "gate"
+        st = L.run_checks(Pe, real, pkg, out, preflight_json=pfp)
+        ok(st == {"G-HYG": "PASS", "G-DVB": "PASS", "G-PREFLIGHT": "PASS", "G-CLOCK": "NA"}, st)
+        v, pth, tok = L.finalize(Pe, real, pkg, out, key, preflight_json=pfp)
+        ok(v == "PASS" and tok["binding"]["profile"] == "refe_aux_s1" and tok["binding"]["trainer"] == "refe/scorer_finetune.py", tok["reasons"])
+        ok("--aux-drv-labels" in tok["binding"]["data"] and tok["binding"]["data"]["gate:preflight_json"]["sha256"] == GT.sha256_file(pfp))      # the label store IS bound by the token
+        good_, why, _ = GT.verify_token(pth, real, pkg, key=key, profile="refe_aux_s1", data_flags=P["data_flags"])
+        ok(good_, why)
+        ok(not GT.verify_token(pth, L.auxs1_control_argv(real), pkg, key=key, profile="refe_aux_s1", data_flags=P["data_flags"])[0])        # the no-head argv is not H2's
+        ok(not GT.verify_token(pth, C._set(real, "--w-aux-drv", "0.2"), pkg, key=key, profile="refe_aux_s1", data_flags=P["data_flags"])[0])  # a changed weight is another launch
+        rls1_write(pfp, aux_pf_rows(real, drop=("G12",)))
+        out_b = td2 / "gate_nog12"
+        st = L.run_checks(Pe, real, pkg, out_b, preflight_json=pfp)
+        v, _, t = L.finalize(Pe, real, pkg, out_b, key, preflight_json=pfp)
+        ok(st["G-PREFLIGHT"] == "FAIL" and v == "FAIL" and any("G-PREFLIGHT" in r for r in t["reasons"]))
+        rls1_write(pfp, aux_pf_rows(real, data_aux=aux_block(C.parse_scorer_argv(S.build_parser(), real)[0], depth=1)))
+        out_c = td2 / "gate_depth"
+        st = L.run_checks(Pe, real, pkg, out_c, preflight_json=pfp)
+        ok(st["G-DVB"] == "FAIL" and st["G-PREFLIGHT"] == "PASS", st)                                          # built depth 1 for an argv that says 2: G-DVB alone refuses it
+    with tempfile.TemporaryDirectory() as td3:
+        st = L.run_checks({**P, "declared_arm": "H1-s0"}, h2, PKG, Path(td3) / "o")
+        ok(set(st.values()) == {"FAIL"} and set(st) == set(P["checks"]) | set(P["na_ok"]), st)             # a refused argv fails every check including the suite and starts nothing
 
 
 def full() -> None:

@@ -49,12 +49,30 @@ RLS1_RECIPE = {"lr": 1e-4, "warmup": 50, "batch": 8, "accum": 8, "max_updates": 
                "epochs": 4.0}   # TL-1 (PI 2026-10-12, 16,000 scenes): --epochs 2 SILENTLY ends at 500 updates (batch 8 x accum 8); 4 reaches the 1,000
 # named-but-inert levers (a flag whose effect is switched off by another registered value is a declared lever the run does not use): the SFT-2 NAVSIM labels would
 # mix label sources with the PDM labels; --b-compw / --tau-s belong to other b-modes; --tau-t scales a ListNet term that --lam 0 multiplies by zero.
-RLS1_FORBIDDEN = ("--preflight", "--lane-labels-train", "--lane-labels-heldout", "--b-compw", "--tau-s", "--tau-t")
+AUX_HEAD_FLAGS = ("--aux-drv", "--w-aux-drv", "--aux-drv-tap", "--aux-drv-depth", "--aux-drv-feed", "--aux-drv-labels", "--aux-drv-shuffle-seed", "--aux-drv-lr")
+RLS1_FORBIDDEN = ("--preflight", "--lane-labels-train", "--lane-labels-heldout", "--b-compw", "--tau-s", "--tau-t") + AUX_HEAD_FLAGS      # RL-S1 is not the head's experiment
 RLS1_EPO_TERMS = ("epo", "epo_J", "epo_kl", "epo_lam_pg")                              # the trainer's metric rows must emit these on an --epo arm
 RLS1_DATA = ("--ckpt", "--targets", "--images", "--calib", "--onpolicy", "--heldout", "--heldout-logs", "--lane-labels-train", "--lane-labels-heldout",
-             "--pdm-labels-train", "--pdm-labels-heldout", "--teacher-lane-train", "--teacher-lane-heldout", "--epo-terms-train", "--epo-terms-heldout")
+             "--pdm-labels-train", "--pdm-labels-heldout", "--teacher-lane-train", "--teacher-lane-heldout", "--epo-terms-train", "--epo-terms-heldout", "--aux-drv-labels")
 RLS1_SUITE = [{"script": "test_rl_reward.py", "token": "ZZTEST_PASS"}, {"script": "test_rl_epo.py", "token": "ZZTEST_PASS"},
               {"script": "test_launch_gate.py", "args": ["--static", "--no-banked"], "token": "ZZLG_STATIC_PASS"}]
+# Auxiliary drivable-area head, S1 (WIRING_PLAN.md; eval/PREREG_AUX_DRIVABLE_DRAFT.md "Hosts": S1 = the SFT-4 recipe on the dev box, trunk frozen).  ⛔ PROPOSED values: they are
+# raw/2026-10-13-aux-head/PREREG_BLANKS_PROPOSED.md's, and the Master Mind's approval of that file is what makes them registered -- an amendment is a one-line change HERE.
+# Arms: N = the no-head replicate, H1 = head with the feed off (perception proof; the scorer is bit-identical to N, G12), H2 = head + feed.  One seed per arm name.
+AUXS1_SEEDS = (0, 1, 2)
+AUXS1_ARM_CLASS = {f"{c}-s{k}": c for c in ("N", "H1", "H2") for k in AUXS1_SEEDS}
+AUXS1_ARM_SEED = {f"{c}-s{k}": k for c in ("N", "H1", "H2") for k in AUXS1_SEEDS}
+AUXS1_HEAD_REGISTERED = {"w_aux_drv": 0.1, "aux_drv_lr": 2e-4, "aux_drv_tap": "visual", "aux_drv_depth": 2}      # effective value (named OR default), head arms
+# the optimiser and loss of EVERY arm (N included), inherited from the SFT-4 run that produced u400 (refe/sft4_pod.sh COMMON); --max-updates 400 is the S1 budget
+AUXS1_RECIPE = {"lr": 1e-4, "warmup": 50, "batch": 8, "accum": 8, "max_updates": 400, "eval_every": 400, "b_mode": "expreward", "lam": 1.0, "tau_s": 0.1, "lane_weight": 1.0}
+AUXS1_EPO_FLAGS = ("--epo", "--epo-temp", "--epo-beta", "--epo-ramp", "--epo-lam", "--epo-lam-d", "--epo-w-prog", "--epo-k", "--epo-lam-k", "--epo-l", "--epo-lam-l",
+                   "--epo-terms-train", "--epo-terms-heldout")
+# --aux-drv-shuffle-seed is the label-shuffled CONTROL's lever: a non-control arm never carries it (a dated prereg amendment adds the control arm and relaxes this)
+AUXS1_FORBIDDEN = ("--preflight", "--lane-labels-train", "--b-compw", "--tau-t", "--aux-drv-shuffle-seed") + AUXS1_EPO_FLAGS
+AUXS1_HEAD_TERMS = ("aux_bce", "aux_huber")                                           # the trainer's metric rows must emit these on a head arm
+AUXS1_SUITE = [{"script": "test_rl_reward.py", "token": "ZZTEST_PASS"}, {"script": "test_rl_epo.py", "token": "ZZTEST_PASS"},
+               {"script": "test_aux_drivable_head.py", "token": "ZZTEST_PASS"}, {"script": "test_aux_s1_wiring.py", "token": "ZZTEST_PASS"},
+               {"script": "test_launch_gate.py", "args": ["--static", "--no-banked"], "token": "ZZLG_STATIC_PASS"}]
 _BASE = dict(trainer="refe/train.py", parser_module="train", trainer_src="train.py", live_terms=("traj_L1", "score"), ckpt_steps=4, smoke_steps=2, smoke_accum=2,
              suite=SUITE, forbidden_flags=FORBIDDEN, output_flags=("--out",), mintable=True, require_commit=True, rehearsal=False,
              checks=("G-HYG", "G-DVB", "G-LIVE", "G-EVAL", "G-CKPT", "G-SUITE"), na_ok=("G-CLOCK",),
@@ -95,13 +113,24 @@ PROFILES = {
     # control (no --epo), R = R0/R1 (--epo, core reward), R2 = R + --epo-k + --epo-l.  There is no BUILD/SMOKE instrumentation (that is train.py's): the trainer's own
     # `--preflight` (G1-G11) is CONSUMED, parsed, and its file sha256 is bound into the token; G-DVB is static + the preflight's `data` event.
     "refe_rls1": {**_BASE, "name": "refe_rls1", "runner": "scorer", "arm_rules": "rls1", "trainer": "refe/scorer_finetune.py", "parser_module": "scorer_finetune",
-                  "trainer_src": "scorer_finetune.py", "namespace_funcs": ("main", "epo_refusals", "_g_probe"), "data_flags": RLS1_DATA,
+                  "trainer_src": "scorer_finetune.py", "namespace_funcs": ("main", "epo_refusals", "_g_probe", "aux_s1_refusals"), "data_flags": RLS1_DATA,
                   "checks": ("G-HYG", "G-DVB", "G-PREFLIGHT", "G-SUITE"), "na_ok": ("G-CLOCK",), "suite": RLS1_SUITE, "live_terms": ("bceA", "lossB"),
                   "clock_na": "RL-S1 has no label clock of its own: its labels are the PDM relabel of an on-policy bank, stamped by the relabeller's ckpt_step; "
                               "the preflight's G9 bounds the stale share (<= 5 %) and rl_terms count only for the set and ckpt_step they were computed on",
                   "forbidden_flags": RLS1_FORBIDDEN, "output_flags": ("--out",),
                   "required_flags": {"--pdm-labels-train": None, "--pdm-labels-heldout": None, "--require-pdm": None, "--b-mode": "listnet", "--lam": "0"},
                   "provisional_flags": ()},
+    # Auxiliary drivable-area head, S1 (see AUXS1_* above): scorer_finetune.py with --aux-drv.  Same runner as refe_rls1 (static checks + the trainer's own --preflight, now with G12);
+    # the arm is NAMED (N-s0 .. H2-s2) and is a CLASS the argv must satisfy (auxs1_refusals).  NOT an RL profile: every EPO lever is forbidden.
+    "refe_aux_s1": {**_BASE, "name": "refe_aux_s1", "runner": "scorer", "arm_rules": "auxs1", "trainer": "refe/scorer_finetune.py", "parser_module": "scorer_finetune",
+                    "trainer_src": "scorer_finetune.py", "namespace_funcs": ("main", "epo_refusals", "_g_probe", "aux_s1_refusals"), "data_flags": RLS1_DATA,
+                    "checks": ("G-HYG", "G-DVB", "G-PREFLIGHT", "G-SUITE"), "na_ok": ("G-CLOCK",), "suite": AUXS1_SUITE, "live_terms": ("bceA", "lossB"),
+                    "clock_na": "aux S1 has no label clock of its own: its scorer labels are the PDM relabel of an on-policy bank (the preflight's G9 bounds the stale share) and the head's "
+                                "labels are keyed by (log_name, token) in a pinned store (G12 + G-DVB bind its sha256 and frame count)",
+                    "forbidden_flags": AUXS1_FORBIDDEN, "output_flags": ("--out",),
+                    "required_flags": {"--pdm-labels-train": None, "--pdm-labels-heldout": None, "--require-pdm": None, "--lane-head": None, "--teacher-lane-train": None,
+                                       "--teacher-lane-heldout": None, "--b-mode": "expreward", "--lam": "1.0", "--tau-s": "0.1", "--max-updates": "400", "--lr": "1e-4"},
+                    "provisional_flags": ()},
 }
 
 
@@ -148,6 +177,10 @@ def profile_refusals(prof: dict, argv: list) -> list:
     terms = tuple(prof.get("live_terms", ()))
     if prof.get("arm_rules") == "rls1":
         rs, extra = rls1_refusals(prof, argv, T, parser)
+        out += rs
+        terms += extra
+    elif prof.get("arm_rules") == "auxs1":
+        rs, extra = auxs1_refusals(prof, argv, T, parser)
         out += rs
         terms += extra
     for t in terms:
@@ -244,6 +277,80 @@ def rls1_refusals(prof: dict, argv: list, mod, parser) -> tuple:
     if (ns.teacher_lane_train or ns.teacher_lane_heldout) and not ns.lane_head:
         out.append(f"{name}: --teacher-lane-* is named without --lane-head: the labels would be loaded and never trained on")
     return out, (RLS1_EPO_TERMS if cls != "C" else ())
+
+
+# ============================================================================================ aux S1 arm rules (refe_aux_s1)
+def auxs1_arm_class(argv: list) -> str:
+    """The arm class an argv DECLARES by what it carries: no --aux-drv = N (the no-head replicate); --aux-drv with `--aux-drv-feed on` = H2; otherwise H1."""
+    if "--aux-drv" not in argv:
+        return "N"
+    return "H2" if (GT.flag_values(argv, "--aux-drv-feed") or ["off"])[0] == "on" else "H1"
+
+
+def auxs1_control_argv(argv: list) -> list:
+    """The matched no-head argv of a head arm: the SAME argv minus every head lever (flag and value), so a head arm and N differ by the head alone.  (--out and --seed are the
+    caller's: two arms never share an output directory.)"""
+    out, skip = [], False
+    for t in argv:
+        if t.startswith("--"):
+            skip = t in AUX_HEAD_FLAGS
+        if not skip:
+            out.append(t)
+    return out
+
+
+def auxs1_refusals(prof: dict, argv: list, mod, parser) -> tuple:
+    """(refusals, extra live terms) of the aux S1 arm rules.  The arm is DECLARED (`prof['declared_arm']`) or, undeclared, read off the argv.  A head arm must NAME every flag whose
+    default disables it (--aux-drv, --w-aux-drv, --aux-drv-lr, --aux-drv-labels; --aux-drv-feed on for H2), carry the registered values, and resolve to the declared class and seed;
+    N must carry no head lever at all.  Every arm carries the SFT-4 recipe.  scorer_finetune's OWN refusals (epo + aux) are surfaced, and flags are matched as exact tokens."""
+    import gate_checks as C
+    out = []
+    name = prof["name"]
+    declared = prof.get("declared_arm")
+    if declared is not None and declared not in AUXS1_ARM_CLASS:
+        out.append(f"{name}: unknown arm {declared!r} (one of {sorted(AUXS1_ARM_CLASS)})")
+        declared = None
+    argv_cls = auxs1_arm_class(argv)
+    cls = AUXS1_ARM_CLASS[declared] if declared else argv_cls
+    who = declared or f"the {cls} arm class"
+    ns, err = C.parse_scorer_argv(parser, argv)
+    if err:
+        out.append(f"{name}: the trainer's parser rejects this argv ({err})")
+        return out, ()
+    known = {o for x in parser._actions for o in x.option_strings}
+    for t in argv:
+        if t.startswith("--") and t not in known:
+            out.append(f"{name}: {t} is not an exact option of the trainer (argparse accepts an abbreviation; the gate's flag tests are on exact tokens)")
+    out += [f"scorer_finetune refuses this argv: {m}" for m in mod.epo_refusals(ns, parser) + mod.AUX.aux_refusals(ns) + mod.aux_s1_refusals(ns)]
+
+    def how(flag):
+        return "named" if flag in argv else "the parser DEFAULT"
+    if declared and argv_cls != cls:
+        out.append(f"{name}: arm {declared} is the {cls} class; the argv resolves to the {argv_cls} class "
+                   f"({'--aux-drv is absent' if argv_cls == 'N' else '--aux-drv-feed ' + ('on' if argv_cls == 'H2' else 'is not on')})")
+    named = [o for o in AUX_HEAD_FLAGS if o in argv]
+    if cls == "N":
+        if named:
+            out.append(f"{name}: {who} must NOT carry {named} -- the no-head replicate differs from the head arms by the head alone")
+    else:
+        for f in ("--aux-drv", "--w-aux-drv", "--aux-drv-lr", "--aux-drv-labels"):
+            if f not in argv:
+                out.append(f"{name} requires {f} for {who}; the argv does not carry it (a flag whose default disables the head must be NAMED, or the arm did not test it)")
+        if cls == "H2" and (GT.flag_values(argv, "--aux-drv-feed") or ["off"])[0] != "on":
+            out.append(f"{name} requires --aux-drv-feed on for {who}; the argv does not carry it")
+        for dest, want in AUXS1_HEAD_REGISTERED.items():
+            f = "--" + dest.replace("_", "-")
+            if not C._close(getattr(ns, dest), want):
+                out.append(f"{name} requires {f} {want} (the registered head lever); the argv resolves to {getattr(ns, dest)} ({how(f)})")
+    for dest, want in AUXS1_RECIPE.items():
+        f = "--" + dest.replace("_", "-")
+        if not C._close(getattr(ns, dest), want):
+            out.append(f"{name} requires {f} {want} (the SFT-4 recipe, every arm); the argv resolves to {getattr(ns, dest)} ({how(f)})")
+    if declared and ns.seed != AUXS1_ARM_SEED[declared]:
+        out.append(f"{name}: arm {declared} is registered with --seed {AUXS1_ARM_SEED[declared]}; the argv resolves to {ns.seed} ({how('--seed')})")
+    if ns.lane_head and not (ns.teacher_lane_train and ns.teacher_lane_heldout):
+        out.append(f"{name}: --lane-head needs --teacher-lane-train AND --teacher-lane-heldout (the 7th output would have no label)")
+    return out, (AUXS1_HEAD_TERMS if cls != "N" else ())
 
 
 # ============================================================================================ orchestration
@@ -455,6 +562,9 @@ def consume_scorer_preflight(path, argv, prof, arm=None, rehearsal=False) -> dic
             reasons.append(f"G11: KL(pi_SFT || pi) at step 0 is {g11.get('kl_step0')} (tol {g11.get('kl_tol')}): arm B did not start AT the base")
         if g11.get("mutate_detach"):
             reasons.append("G11 was produced under REFE_RL_MUTATE_EPO_DETACH=1 (a regression arm): it can never count")
+    g12 = next((v for k, v in gates.items() if prefix[k] == "G12"), None)
+    if g12 is not None:                                      # G12 (--aux-drv) is re-judged from its raw fields too: its own `ok` is a claim, the fields are the evidence
+        reasons += C.judge_g12(g12, ns)
     det = {"gates": {k: (v.get("ok") if isinstance(v, dict) else None) for k, v in gates.items()}, "required": req, "verdict": row.get("verdict"),
            "file_sha256": pf["sha256"], "n_preflight_rows": pf["n_preflight"], "has_data_event": pf["data"] is not None,
            "s_per_microbatch": row.get("s_per_microbatch"), "gpu_mem_gb": row.get("gpu_mem_gb")}
@@ -532,12 +642,15 @@ def _profile_for(a, minting: bool) -> dict:
     off the argv cannot notice an omitted flag (an `--epo` left out of R0 reads as a clean control)."""
     prof = PROFILES[a.profile]
     arm_name = getattr(a, "arm_name", None)
+    arms = {"rls1": RLS1_ARM_CLASS, "auxs1": AUXS1_ARM_CLASS}.get(prof.get("arm_rules"), {})
     if arm_name:
         if not prof.get("arm_rules"):
-            raise SystemExit(f"--arm-name is only meaningful for a profile with arm rules (refe_rls1), not {a.profile}")
+            raise SystemExit(f"--arm-name is only meaningful for a profile with arm rules (refe_rls1, refe_aux_s1), not {a.profile}")
+        if arm_name not in arms:
+            raise SystemExit(f"REFUSED: {arm_name!r} is not an arm of {a.profile} (one of {'|'.join(sorted(arms))})")
         prof = {**prof, "declared_arm": arm_name}
     elif prof.get("arm_rules") and minting:
-        raise SystemExit(f"REFUSED: {a.profile} mints for ONE named arm: pass --arm-name {'|'.join(sorted(RLS1_ARM_CLASS))}")
+        raise SystemExit(f"REFUSED: {a.profile} mints for ONE named arm: pass --arm-name {'|'.join(sorted(arms))}")
     return prof
 
 
@@ -611,8 +724,8 @@ def main(argv=None) -> int:
         p.add_argument("--key-file")
         p.add_argument("--pkg", required=(name != "refusals"))
         if name in ("run", "refusals"):
-            p.add_argument("--arm-name", choices=sorted(RLS1_ARM_CLASS),
-                           help="refe_rls1: the arm this argv is for (C0 C1 R0 R1 R2); REQUIRED to mint, optional for `refusals` (undeclared = read off the argv)")
+            p.add_argument("--arm-name", choices=sorted(RLS1_ARM_CLASS) + sorted(AUXS1_ARM_CLASS),
+                           help="refe_rls1: the arm this argv is for (C0 C1 R0 R1 R2); refe_aux_s1: N-s0..H2-s2; REQUIRED to mint, optional for `refusals` (undeclared = read off the argv)")
         if name == "run":
             p.add_argument("--out-dir", required=True)
             p.add_argument("--only")

@@ -560,16 +560,80 @@ DVB_KINDS_SCORER = {
     "backbone": "consumed", "batch": "consumed", "accum": "consumed", "lr": "consumed", "warmup": "consumed", "epochs": "consumed",
     "lam": "consumed", "tau_t": "consumed", "tau_s": "consumed", "seed": "consumed", "max_updates": "consumed", "require_pdm": "consumed",
     "lane_head": "consumed", "lane_weight": "consumed",
+    # the auxiliary drivable-area head (WIRING_PLAN.md): ALL default OFF.  `built` = the trainer's data event records the value the head was BUILT with (scorer_dvb_rows);
+    # `data` = the label store directory: it must be one of the profile's data_flags so the token fingerprints it.
+    "aux_drv": "built", "w_aux_drv": "built", "aux_drv_tap": "built", "aux_drv_depth": "built", "aux_drv_feed": "built", "aux_drv_shuffle_seed": "built",
+    "aux_drv_lr": "built", "aux_drv_labels": "data",
     "out": "run", "eval_every": "run", "workers": "run",
     "dump_scores": "run",              # the per-proposal score .npz rl_val_eval.py reads; observational (bit-identical on/off, test_dump_scores.py)
     "preflight": "control",
 }
 SCORER_EPO_KEYS = ("temp", "beta", "ramp", "lam", "lam_d", "w_prog", "k", "lam_k", "l", "lam_l")     # the keys of the data event's `epo` block
-SCORER_NAMESPACE_FUNCS = ("main", "epo_refusals", "_g_probe")      # scorer_finetune.py: the functions whose parameter `a` IS the argparse namespace
+SCORER_NAMESPACE_FUNCS = ("main", "epo_refusals", "_g_probe", "aux_s1_refusals")      # scorer_finetune.py: the functions whose parameter `a` IS the argparse namespace
+SCORER_AUX_DESTS = ("w_aux_drv", "aux_drv_tap", "aux_drv_depth", "aux_drv_feed", "aux_drv_shuffle_seed", "aux_drv_lr")          # the head's levers: observed only when --aux-drv is on
 # the preflight's gates (scorer_finetune.py `gates[...]`).  There is NO G6 -- the trainer numbers 1-5 and 7-11; test_launch_gate pins this table to the source.
 SCORER_GATES = {"G1": "trainable_is_exactly_the_scorer", "G2": "live", "G3": "copies_equal_model_at_step0", "G4": "identity_and_live",
                 "G5": "ckpt_roundtrip_planner_loader", "G7": "heldout_disjoint", "G8": "lane_labels_in_bank", "G9": "pdm_targets_in_bank",
-                "G10": "teacher_lane_in_bank", "G11": "epo_live_and_identity"}
+                "G10": "teacher_lane_in_bank", "G11": "epo_live_and_identity", "G12": "aux_drv_live_and_identity"}
+
+
+def judge_g12(g12, ns) -> list:
+    """G12 (scorer_finetune --preflight, --aux-drv) re-judged from its RAW FIELDS against the argv's namespace -- never from its own `ok`.  [] = proved.
+      live / control   every head sub-module has a finite non-zero gradient from the aux-only backward at the DECLARED weight (a declared 0.0 reads all-zero), and the same
+                       backward at weight 0.0 reads EXACTLY 0.0 on the same sub-modules (so a zero is a property of the head, not of a broken probe)
+      tap              the head read the storage of visual_ctx (scene_proj's second output), not a copy and not scene_ctx
+      no path          autograd.grad(score, head parameters) is None for every parameter
+      identity         feed off: two optimiser steps with the head leave the scorer bit-identical to two without, the reference replays identically and the probe reads one ulp;
+                       feed on: step 0 of the fed scorer == the base scorer exactly, a non-zero projection changes it, and the projection gets a gradient
+      adam             every head parameter holds Adam state after a step
+      memory           the head's retained activations <= 1 GB where measured (CUDA)"""
+    import math
+    if not isinstance(g12, dict):
+        return ["G12 is not a dict"]
+    r = []
+    if g12.get("ok") is not True:
+        r.append("G12 reports ok != true")
+    if g12.get("mutate"):
+        r.append(f"G12 was produced under regression switch(es) {g12['mutate']}: a regression arm can never count")
+    if not (g12.get("labelled_frames_in_batch") or 0) > 0:
+        r.append("G12: no labelled frame in the probe batch: the aux loss path was not exercised")
+    live, w0 = g12.get("per_group_declared") or {}, g12.get("per_group_w0") or {}
+    if g12.get("w_aux") != ns.w_aux_drv:
+        r.append(f"G12 probed weight {g12.get('w_aux')} != the argv's --w-aux-drv {ns.w_aux_drv}")
+    if g12.get("feed") != ns.aux_drv_feed:
+        r.append(f"G12 probed feed {g12.get('feed')!r} != the argv's --aux-drv-feed {ns.aux_drv_feed!r}")
+    if not live:
+        r.append("G12: no per-sub-module gradient read of the head")
+    elif ns.w_aux_drv > 0.0 and not all(isinstance(v, (int, float)) and math.isfinite(v) and v > 0.0 for v in live.values()):
+        r.append(f"G12: the aux-only backward is not finite and non-zero on every head sub-module: {live}")
+    elif ns.w_aux_drv == 0.0 and any(v != 0.0 for v in live.values()):
+        r.append(f"G12: --w-aux-drv 0 but the head received gradient: {live}")
+    if not w0 or set(w0) != set(live) or any(v != 0.0 for v in w0.values()):
+        r.append(f"G12: the weight-0 control does not read EXACTLY 0.0 on every sub-module (the probe is not proved able to read zero): {w0}")
+    b = g12.get("bce_declared")
+    if not (isinstance(b, (int, float)) and abs(b - math.log(2.0)) <= 0.15) or g12.get("bce_near_ln2") is not True:
+        r.append(f"G12: the initial aux BCE {b} is not within 0.15 of ln 2 (SPEC 7: a mis-scaled head or the wrong tap)")
+    if g12.get("tap_is_visual_ctx") is not True or g12.get("tap_is_scene_ctx") is not False:
+        r.append("G12: the head did not read the storage of visual_ctx (the declared tap)")
+    if g12.get("score_to_head_grads_all_none") is not True:
+        r.append("G12: an autograd path from the score to the head exists (the scorer could teach the head to game the score)")
+    n_, k_ = g12.get("adam_head_params"), g12.get("adam_head_params_with_state")
+    if not (isinstance(n_, int) and n_ > 0 and k_ == n_):
+        r.append(f"G12: {k_} of {n_} head parameters hold Adam state (a registered parameter without state never received a gradient)")
+    mem = g12.get("head_retained_gb")
+    if mem is not None and not mem <= 1.0:
+        r.append(f"G12: the head retains {mem} GB for backward (> 1 GB)")
+    if ns.aux_drv_feed == "off":
+        for k in ("reference_replay_identical", "scorer_params_bit_identical_2steps", "identity_probe_reads_one_ulp"):
+            if g12.get(k) is not True:
+                r.append(f"G12 (feed off): {k} is {g12.get(k)!r}: H1 is not proved to leave the scorer bit-identical to a head-less run")
+    else:
+        for k in ("feed_zero_init", "feed_step0_equal_base", "feed_probe_reads_difference"):
+            if g12.get(k) is not True:
+                r.append(f"G12 (feed on): {k} is {g12.get(k)!r}")
+        if not (isinstance(g12.get("feed_proj_grad_abs"), (int, float)) and g12["feed_proj_grad_abs"] > 0.0):
+            r.append("G12 (feed on): the feed projection received no gradient from the score loss (the feed is built but unreachable)")
+    return r
 
 
 class ScorerArgvError(Exception):
@@ -594,7 +658,7 @@ def parse_scorer_argv(parser, argv: list):
 
 def scorer_required_gates(ns) -> list:
     """Which preflight gates the argv obliges (mirrors scorer_finetune.py's own conditions: G8 iff lane labels, G9 iff PDM labels, G10 iff --lane-head,
-    G11 iff --epo)."""
+    G11 iff --epo, G12 iff --aux-drv)."""
     req = ["G1", "G2", "G3", "G4", "G5", "G7"]
     if ns.lane_labels_train or ns.lane_labels_heldout:
         req.append("G8")
@@ -604,6 +668,8 @@ def scorer_required_gates(ns) -> list:
         req.append("G10")
     if ns.epo:
         req.append("G11")
+    if ns.aux_drv:
+        req.append("G12")
     return req
 
 
@@ -662,6 +728,25 @@ def scorer_dvb_rows(ns, data: dict) -> list:
             declared = getattr(ns, "epo_" + k)
             built = blk.get(k)
             add("epo_" + k, declared, (bool(built) if isinstance(declared, bool) and built is not None else built), f"data event: epo.{k}")
+    add("aux_drv", bool(ns.aux_drv), "aux_drv" in data, "the data event carries an `aux_drv` block iff --aux-drv")
+    if ns.aux_drv:
+        import aux_drivable_head as AUX                  # the pinned constants (store sha256, key count, raster geometry): one source of truth with the trainer
+        b = data.get("aux_drv") or {}
+        add("w_aux_drv", ns.w_aux_drv, b.get("w_aux"), "data event: aux_drv.w_aux (the weight the built loss multiplies)")
+        add("aux_drv_tap", ns.aux_drv_tap, b.get("tap"), "data event: aux_drv.tap")
+        add("aux_drv_depth", ns.aux_drv_depth, b.get("depth"), "data event: aux_drv.depth (the built head's CrossBlocks)")
+        add("aux_drv_feed", ns.aux_drv_feed, ("on" if b.get("feed_built") else "off") if b else None, "data event: aux_drv.feed_built")
+        add("aux_drv_feed", 60 + (3 if ns.aux_drv_feed == "on" else 0), b.get("scorer_in_width"), "data event: aux_drv.scorer_in_width (60 off / 63 on)")
+        add("aux_drv_lr", ns.aux_drv_lr, b.get("lr"), "data event: aux_drv.lr (the head optimiser's built learning rate)")
+        add("aux_drv_lr", b.get("n_params"), b.get("head_params_in_optimiser"), "data event: every head parameter is in the head optimiser")
+        add("aux_drv_shuffle_seed", ns.aux_drv_shuffle_seed, b.get("shuffle_seed"), "data event: aux_drv.shuffle_seed")
+        if ns.aux_drv_shuffle_seed is not None:
+            add("aux_drv_shuffle_seed", 0, b.get("derangement_fixed_points"), "data event: the shuffle map has no fixed point")
+            add("aux_drv_shuffle_seed", AUX.PINNED_STORE_KEYS, b.get("shuffle_keys"), "data event: the shuffle map covers every key of the store")
+        add("aux_drv_labels", AUX.PINNED_STORE_SHA256, b.get("store_sha256"), "data event: aux_drv.store_sha256 (the pinned label store)")
+        add("aux_drv_labels", AUX.PINNED_STORE_KEYS, b.get("frames"), "data event: aux_drv.frames")
+        for k, want in (("cell", AUX.CELL_M), ("x0", AUX.X0), ("y0", AUX.Y0), ("nx", int(round((AUX.X1 - AUX.X0) / AUX.CELL_M))), ("ny", int(round((AUX.Y1 - AUX.Y0) / AUX.CELL_M)))):
+            add("aux_drv", want, b.get(k), f"data event: aux_drv.{k} (the label raster's geometry)")
     return rows
 
 
@@ -719,12 +804,14 @@ def check_dvb_scorer(argv: list, pf, profile: dict, arm=None, rehearsal=False) -
     else:
         if arm_is("lever_ignored", arm):                                     # the trainer ignored --b-mode: its data event says the other mode
             data = dict(data, b_mode=("compw" if data.get("b_mode") == "listnet" else "listnet"))
+        if arm_is("aux_lever_ignored", arm) and isinstance(data.get("aux_drv"), dict):          # the trainer built the head with another weight than the argv's
+            data = dict(data, aux_drv=dict(data["aux_drv"], w_aux=float(data["aux_drv"].get("w_aux", 0.0)) + 0.05))
         rows = scorer_dvb_rows(ns, data)
         det["rows"], det["observed_rows"] = rows, len(rows)
         for r in rows:
             if not r["ok"]:
                 reasons.append(f"{r['flag']}: declared {r['declared']!r} != built {r['built']!r} ({r['how']})")
-        expect = {d for d, k in table.items() if k == "built" and (ns.epo or not d.startswith("epo_"))}
+        expect = {d for d, k in table.items() if k == "built" and (ns.epo or not d.startswith("epo_")) and (ns.aux_drv or d not in SCORER_AUX_DESTS)}
         missing = sorted(expect - {r["dest"] for r in rows})
         det["built_without_observer"] = missing
         if missing:

@@ -105,7 +105,7 @@ log "chain start (rls1_pod.sh md5 $(md5sum "$0" | cut -c1-12))"
 # ---- 0. the pod, before anything is downloaded
 why="$(p2_over)" || refuse "$why"
 [ -n "${HF_TOKEN:-}" ] || refuse "HF_TOKEN is not set in the environment"
-for f in refe/scorer_finetune.py refe/rl_fan_dump.py refe/rl_partition.py refe/rl_pool_available.py refe/onpolicy_relabel_pdm.py refe/rl_terms_label.py \
+for f in refe/scorer_finetune.py refe/aux_drivable_head.py refe/rl_fan_dump.py refe/rl_partition.py refe/rl_pool_available.py refe/onpolicy_relabel_pdm.py refe/rl_terms_label.py \
          refe/pdm_label_complete.py refe/rl_reward.py refe/hf_egress.py refe/rls1_checks.py refe/train.py refe/model.py refe/ckpt_io.py \
          refe/launch_gate.py refe/gate_token.py refe/gate_checks.py refe/gate_fixture.py refe/test_launch_gate.py refe/test_rl_epo.py refe/test_rl_reward.py \
          refe/rl_tlane_label.py refe/test_rl_tlane_label.py refe/onpolicy_relabel_teacher_lane.py refe/onpolicy_label.py refe/planner.py refe/scorer_gate.py \

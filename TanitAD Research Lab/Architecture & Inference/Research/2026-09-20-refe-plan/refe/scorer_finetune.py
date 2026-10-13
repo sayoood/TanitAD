@@ -32,6 +32,16 @@ RL-S1 (eval/PREREG_RL_S1.md, RL_POSTTRAIN_REVIEW 5.2) -- ALL DEFAULT OFF, the OF
   --dump-scores DIR  OBSERVATIONAL, default off: after every held-out evaluation write the base / A / B scorers' per-proposal logits of every held-out set as
                   DIR/scores_<tag>_<arm>.npz -- the input of eval/rl_val_eval.py (log, token, step, rank, ckpt_step, scores [N, M, C], space="logit").
                   It changes no weight, no loss and no logged number (refe/test_dump_scores.py: the OFF path is AST-identical to the pre-edit evaluate()).
+
+AUXILIARY DRIVABLE-AREA HEAD (SPEC_AUX_DRIVABLE_HEAD.md, raw/2026-10-13-aux-head/WIRING_PLAN.md) -- ALL DEFAULT OFF, the OFF path is bit-identical to the trainer above
+  (refe/test_aux_s1_wiring.py runs the real main() of the pre-edit source and of this one and compares every loss, eval and saved tensor bit for bit):
+  --aux-drv       build the head (refe/aux_drivable_head.py) as a SIBLING of the model, never a submodule: it reads `sctx` (= visual_ctx, the tensor the scoring decoder
+                  reads), has its own optimiser (--aux-drv-lr, a pre-registered VALUE) and its own grad-clip norm, and is saved to aux_drv.pt beside the scorer checkpoints,
+                  so model_sft_*.pt still loads strictly in the planner.  The backbone is frozen here, so the head can change what the scorer sees only through --aux-drv-feed on.
+  --w-aux-drv     weight of L_aux = BCE + Huber on the int8 SDF labels (--aux-drv-labels, the pinned store); 0.0 = a head that receives exactly zero gradient.
+  --aux-drv-feed  off = H1 (representation only: the scorer is bit-identical to a head-less run); on = H2 (three DETACHED scalars of the predicted SDF along each proposal
+                  enter score_q_mlp[0] additively, zero-initialised, so step 0 is the base scorer's exact function).
+  The preflight adds gate G12 (live + exact-zero control + identity + tap storage + Adam state); the data event carries an `aux_drv` block of BUILT facts for G-DVB.
 """
 from __future__ import annotations
 
@@ -56,9 +66,11 @@ import ckpt_io  # noqa: E402
 import rl_reward  # noqa: E402  (RL-S1: pure numpy; the reward the EPO term maximises)
 import train as T  # noqa: E402
 from model import REFe, REFeConfig  # noqa: E402
+import aux_drivable_head as AUX  # noqa: E402  (the auxiliary drivable-area head; every flag it adds defaults OFF)
 
 SCORER = ("score_q_mlp", "score_dec", "score_head")
 V1_W = (5.0, 5.0, 2.0)
+AUX_MUTATE_ENVS = ("REFE_AUX_MUTATE_TAP", "REFE_AUX_MUTATE_DROP_LOSS", "REFE_AUX_MUTATE_DETACH_HEAD")      # --aux-drv deliberate regressions: each must turn G12 RED
 
 
 def agg_v1(p):
@@ -310,8 +322,31 @@ class IndexedSubset(Subset):
         return [self[i] for i in indices]
 
 
+class AuxSubset(Subset):
+    """The training Subset of an --aux-drv run: each sample also carries (label int8 [160, 128], valid bool) as its LAST TWO elements (after the row index when --epo is on).
+    The lookup runs in the DataLoader WORKER (`AuxLabelSource` is picklable and keeps one shard per log), keyed by (log_name, token) ONLY -- never by `key(r)`, whose step and
+    rank would split the goal twins and ranks of one frame across different labels (SPEC 3.1).  A key with no stored label reads zeros and valid False (exactly 0 loss)."""
+
+    def __init__(self, dataset, indices, src, with_rows):
+        super().__init__(dataset, indices)
+        self.src, self.with_rows = src, bool(with_rows)
+
+    def __getitem__(self, idx):
+        i = int(self.indices[idx])
+        r = self.dataset.rows[i]
+        lab, valid = self.src.labels([(r.get("log_name", ""), r.get("token", ""))])
+        return tuple(self.dataset[i]) + ((i,) if self.with_rows else ()) + (lab[0], valid[0])
+
+    def __getitems__(self, indices):                          # DataLoader's fetcher calls this and Subset's own version reaches past __getitem__
+        return [self[i] for i in indices]
+
+
 def make_train_set(ds, idx, epo):
-    """the training subset: the stock Subset unless --epo is on (then it also yields the row index)"""
+    """the training subset: the stock Subset unless --epo is on (then it also yields the row index); a dataset that carries an aux label source (--aux-drv sets
+    `ds.aux_src`) yields (label, valid) as its last two elements as well"""
+    src = getattr(ds, "aux_src", None)
+    if src is not None:
+        return AuxSubset(ds, idx, src, epo)
     return IndexedSubset(ds, idx) if epo else Subset(ds, idx)
 
 
@@ -320,6 +355,86 @@ def split_rows(batch, epo):
     if not epo:
         return batch, None
     return batch[:9], batch[9]
+
+
+def split_aux(batch, aux_on):
+    """(the batch without the aux tail, (label int8 [B, 160, 128], valid bool [B]) or None); a no-op unless --aux-drv is on"""
+    if not aux_on:
+        return batch, None
+    return batch[:-2], (batch[-2], batch[-1])
+
+
+class AuxPeelLoader:
+    """Iterates `dl` and peels the trailing (label, valid) pair off every batch into `.tail`, so the training loop's own four statements (split_rows, fwd, train_losses, backward)
+    stay byte-identical to the pre-edit loop: only an --aux-drv run installs it, and the loop reads `dl.tail` for the batch it is currently holding (a generator is suspended at
+    the `yield` while the body runs, so `.tail` is always the current batch's)."""
+
+    def __init__(self, dl):
+        self.dl, self.tail = dl, None
+
+    def __len__(self):
+        return len(self.dl)
+
+    def __iter__(self):
+        for b in self.dl:
+            body, self.tail = split_aux(b, True)
+            yield body
+
+
+def aux_s1_refusals(a):
+    """The head's refusals that belong to THIS host (AUX.aux_refusals covers a lever named without --aux-drv, missing labels, and shuffle with the feed on).  The head's
+    learning rate is a separate flag whose VALUE is pre-registered: it is named whenever the head is on and never otherwise.  The `scene` tap needs scene_ctx, which a
+    frozen-trunk host does not capture (the scorer's context is visual_ctx): that lever is S2's, so it is refused here rather than silently reading visual_ctx."""
+    bad = []
+    if not a.aux_drv:
+        if a.aux_drv_lr is not None:
+            bad.append("--aux-drv-lr is set but --aux-drv is not: the lever would silently do nothing")
+        return bad
+    if a.aux_drv_lr is None or not a.aux_drv_lr > 0.0:
+        bad.append("--aux-drv needs --aux-drv-lr > 0 NAMED: the head's learning rate is a pre-registered value, not scorer_finetune's --lr")
+    if a.aux_drv_tap != "visual":
+        bad.append("--aux-drv-tap scene is not built in scorer_finetune.py (this host captures visual_ctx only); the scene tap is S2's (train.py)")
+    return bad
+
+
+class AuxEvalAcc:
+    """The counts behind AUX.head_metrics, ADDITIVE across chunks and logs (head_metrics returns ratios, which cannot be merged).  Same formulas: mask IoU / accuracy at the
+    2 m grid over the cells of labelled frames, SDF MAE in metres; test_aux_s1_wiring pins `result()` equal to AUX.head_metrics on the concatenation."""
+
+    def __init__(self):
+        self.inter = self.union = self.agree = self.cells = self.frames = self.labelled = 0
+        self.abs_sdf = 0.0
+
+    @torch.no_grad()
+    def add(self, logit, sdf, label, valid):
+        t = AUX.build_targets(label, valid)
+        tm, pm, kn = t.mask_frac >= 0.5, logit > 0, t.known
+        self.inter += int((tm & pm & kn).sum())
+        self.union += int(((tm | pm) & kn).sum())
+        self.agree += int(((tm == pm) & kn).sum())
+        self.cells += int(kn.sum())
+        self.abs_sdf += float(((sdf.float() - t.sdf_m).abs() * kn).sum())
+        self.frames += int(label.shape[0])
+        self.labelled += int(valid.sum())
+
+    def merge(self, o):
+        for k in ("inter", "union", "agree", "cells", "frames", "labelled", "abs_sdf"):
+            setattr(self, k, getattr(self, k) + getattr(o, k))
+        return self
+
+    def result(self):
+        n = max(self.cells, 1)
+        return {"iou": self.inter / max(self.union, 1), "acc": self.agree / n, "sdf_mae_m": self.abs_sdf / n, "n_cells": self.cells,
+                "frames": self.frames, "labelled": self.labelled}
+
+
+def group_grad_abs(head):
+    """sum of |grad| per head sub-module (pos_mlp, q, blocks.<i>, norm, out); a parameter with no gradient reads 0.0"""
+    out: dict = {}
+    for n, p in head.named_parameters():
+        g = n.split(".")[0] if not n.startswith("blocks.") else ".".join(n.split(".")[:2])
+        out[g] = out.get(g, 0.0) + (float(p.grad.detach().abs().sum().double()) if p.grad is not None else 0.0)
+    return out
 
 
 def module_grad_abs(arm, names=SCORER):
@@ -427,6 +542,11 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--epo-terms-heldout", default="", help="dir of rl_terms_*.jsonl side files for --heldout (validated + logged; consumed by the RL-val lookup)")
     ap.add_argument("--dump-scores", default="", help="RL-S1: DIR; after every held-out evaluation write the base / A / B scorers' per-proposal logits as "
                     "<DIR>/scores_<tag>_<arm>.npz (eval/rl_val_eval.py's input).  Observational: no weight, loss or logged number changes.  '' = nothing is written")
+    # auxiliary drivable-area head (SPEC_AUX_DRIVABLE_HEAD.md; WIRING_PLAN.md): ALL DEFAULT OFF = this trainer exactly.  --aux-drv / --w-aux-drv / --aux-drv-tap /
+    # --aux-drv-depth / --aux-drv-feed / --aux-drv-labels / --aux-drv-shuffle-seed come from the module; the head's learning rate is this host's seventh flag.
+    AUX.add_aux_args(ap)
+    ap.add_argument("--aux-drv-lr", type=float, default=None, help="the head's peak learning rate (its OWN AdamW; the scorer keeps --lr).  A pre-registered value, never tuned on "
+                    "PDMS; None = no head optimiser, and naming it without --aux-drv is refused")
     return ap
 
 
@@ -434,8 +554,8 @@ def main() -> int:
     ap = build_parser()
     a = ap.parse_args()
     bad_cli = epo_refusals(a, ap)                            # RL-S1: a command line that names EPO levers inconsistently never starts
-    if bad_cli:
-        for msg in bad_cli:
+    if bad_cli or AUX.aux_refusals(a) or aux_s1_refusals(a):
+        for msg in bad_cli + AUX.aux_refusals(a) + aux_s1_refusals(a):         # + the aux head's levers: named without --aux-drv, labels missing, shuffle with the feed on, no head LR ...
             print("REFUSED: " + msg)
         return 4
     os.makedirs(a.out, exist_ok=True)
@@ -482,6 +602,17 @@ def main() -> int:
     cap: dict = {}
     model.score_dec[0].register_forward_pre_hook(lambda mod, args: cap.__setitem__("sctx", args[1]))
 
+    # ---------------- auxiliary drivable-area head (--aux-drv; default OFF = nothing below runs).  A SIBLING of the model, never a submodule: it is not in `model.state_dict()`, so
+    # model_sft_*.pt still loads strictly in the planner (G-EVAL).  It draws from its own RNG stream (AUX.build_head forks the global one), so building it consumes
+    # nothing the data order or the scorer's init depends on.
+    aux = aux_src = aux_src_eval = optH = None
+    if a.aux_drv:
+        aux = AUX.AuxDrivable(AUX.AuxDrivableConfig(tap=a.aux_drv_tap, depth=a.aux_drv_depth, feed=a.aux_drv_feed, w_aux=a.w_aux_drv, seed=int(a.seed))).to(dev)
+        aux_src = AUX.AuxLabelSource(a.aux_drv_labels, shuffle_seed=a.aux_drv_shuffle_seed, max_logs=64)
+        aux_src_eval = AUX.AuxLabelSource(a.aux_drv_labels, max_logs=64)                    # the TRUE map, for the held-out perception read (never shuffled)
+        optH = torch.optim.AdamW(list(aux.head.parameters()), lr=a.aux_drv_lr, weight_decay=0.01)
+        aux.head.register_forward_pre_hook(lambda mod, args: cap.__setitem__("aux_ctx", args[0]))      # what the head ACTUALLY reads (G12 compares its storage)
+
     # ---------------- data: train.py's own banks
     op = T.OnPolicyBank(a.onpolicy, cfg.n_proposals, cfg.horizon_steps, lane_labels=a.lane_labels_train or None,
                         pdm_labels=a.pdm_labels_train or None, teacher_lane_labels=a.teacher_lane_train or None)
@@ -492,7 +623,9 @@ def main() -> int:
     compw = torch.tensor([float(x) for x in a.b_compw.split(",")], device=dev)
     assert compw.numel() == 6 and (compw > 0).all(), "--b-compw needs 6 positive weights"
     ds = T.TargetBank(a.targets, a.images, cfg, calib=a.calib, onpolicy=op)
-    ho_logs = set(open(a.heldout_logs, encoding="utf-8").read().split())
+    if aux_src is not None:
+        ds.aux_src = aux_src                                 # make_train_set() wraps the TRAINING subset so each sample also carries its (label, valid)
+    ho_logs =set(open(a.heldout_logs, encoding="utf-8").read().split())
     tr_idx = [i for i, r in enumerate(ds.rows) if key(r) in op.by and r.get("log_name") not in ho_logs
               and (not a.require_pdm or key(r) in op.pdm_keys)]
     ds_ho = copy.copy(ds)
@@ -527,11 +660,21 @@ def main() -> int:
         info["epo"] = {"temp": a.epo_temp, "beta": a.epo_beta, "ramp": a.epo_ramp, "lam": a.epo_lam, "lam_d": a.epo_lam_d, "w_prog": a.epo_w_prog,
                        "k": a.epo_k, "lam_k": a.epo_lam_k, "l": a.epo_l, "lam_l": a.epo_lam_l, "eps": EPO_EPS,
                        "terms_train": st_tr, "terms_heldout": st_ho, "native7": native7}
+    if aux is not None:
+        # BUILT facts only (G-DVB compares them with the argv): read off the objects the run holds, never echoed from the namespace
+        info["aux_drv"] = {**aux.built_facts(), "tap": aux.cfg.tap, "feed": "on" if aux.feed is not None else "off", "lr": optH.param_groups[0]["lr"],
+                           "store_sha256": aux_src.manifest["store_sha256"], "frames": aux_src.manifest["counts"]["stored_keys"], "shuffle_seed": aux_src.shuffle_seed,
+                           "head_params_in_optimiser": sum(p.numel() for g_ in optH.param_groups for p in g_["params"])}
+        if aux_src.shuffle_seed is not None:                 # the control's map must be a derangement of ALL the store's keys (SPEC 7)
+            km = aux_src.key_map()
+            info["aux_drv"].update({"shuffle_keys": len(km), "derangement_fixed_points": sum(1 for k_, v_ in km.items() if k_ == v_)})
     log(info)
     g = torch.Generator().manual_seed(a.seed)
     dl = DataLoader(make_train_set(ds, tr_idx, a.epo), batch_size=a.batch, shuffle=True, generator=g, num_workers=a.workers,
                     drop_last=True, pin_memory=True, persistent_workers=a.workers > 0,
                     prefetch_factor=(4 if a.workers > 0 else None))
+    if aux is not None:
+        dl = AuxPeelLoader(dl)                               # --aux-drv: batches arrive WITHOUT the (label, valid) tail, which is read from dl.tail
 
     def fwd(batch):
         img, ego, goal, _tgt, cxy, ctg, cm, _ci, cal = batch
@@ -539,7 +682,14 @@ def main() -> int:
         with torch.autocast("cuda", dtype=torch.bfloat16):
             _traj, _score, sxA = model(img, ego, goal, calib=cal if cal.numel() else None, score_extra=cxy)
             sctx = cap["sctx"]
-            sxB = armB(cxy, sctx)
+            if aux is not None:
+                # the head reads the SAME tensor the scoring decoder reads (visual_ctx).  REFE_AUX_MUTATE_TAP=1 is the deliberate regression for G12: the head reads a COPY.
+                actx = sctx.detach().clone() if os.environ.get("REFE_AUX_MUTATE_TAP") == "1" else sctx
+                logit, sdf = aux.predict(actx)
+                cap["aux"] = (logit, sdf)
+                if cap.get("aux_buf") is not None:           # an --aux-drv evaluate() is collecting the held-out head outputs (run_evaluate)
+                    cap["aux_buf"].append((logit.detach().float().cpu(), sdf.detach().float().cpu()))
+            sxB = armB(cxy, sctx) if (aux is None or aux.feed is None) else aux.score(armB, cxy, sctx, sdf)       # H2: the three detached SDF scalars enter the first layer
             with torch.no_grad():
                 sx0 = base(cxy, sctx)
         return sx0.float(), sxA.float(), sxB.float(), ctg.float()
@@ -603,6 +753,20 @@ def main() -> int:
             ep = epo_term(sx0, sxB, tg, rows, upd, lam_pg)
             lB = lB + ep
         return lA, lB, ln, ep
+
+    def aux_backward(lv, div=1.0, retain=False):
+        """THE aux loss assembly of the run: the training loop, the speed probe and the G12 probes all call it.  Backward of  combine(0, L_aux) / div  from the head output of
+        the latest fwd() -- SEPARATELY from the scorer's own backward, whose line in the loop stays byte-identical.  combine() always multiplies, so a weight of 0.0
+        yields gradients of EXACTLY 0.0 (not None).  -> (bce, huber) floats.  AUX_MUTATE_ENVS are the deliberate regressions: G12 must turn RED under each."""
+        logit, sdf = cap["aux"]
+        if os.environ.get("REFE_AUX_MUTATE_DETACH_HEAD") == "1":            # the head's output is cut from the loss: its parameters never get a gradient
+            logit, sdf = logit.detach(), sdf.detach()
+        l_aux, bce, hub = aux.loss(logit, sdf, lv[0].to(dev), lv[1].to(dev))
+        if os.environ.get("REFE_AUX_MUTATE_DROP_LOSS") != "1":              # ... "== 1": the aux term never reaches backward()
+            tot = aux.combine(torch.zeros((), device=dev), l_aux) / div
+            if tot.requires_grad:
+                tot.backward(retain_graph=retain)
+        return float(bce), float(hub)
 
     def epo_probe(batch, rows, mode):
         """G11: the EPO term ALONE from a FRESH forward.  'on' = weight 1.0; 'lam0' = built with weight 0.0 (graph live, factor 0); 'off' = --epo off"""
@@ -717,6 +881,52 @@ def main() -> int:
             log({"event": "score_dump", "tag": tag, "n_sets": len(sdump.keys), "files": sdump.write(a.dump_scores, tag)})
         return out
 
+    def run_evaluate(tag):
+        """evaluate() unchanged; with --aux-drv ALSO the head's perception read (mask IoU / accuracy / SDF MAE at the 2 m grid, overall and per held-out log) on the very
+        batches evaluate() forwarded -- no second trunk pass.  evaluate() visits `ho_idx` in order (shuffle=False, in-order workers) and calls fwd() once per batch, so the
+        head outputs collected in cap['aux_buf'] line up row for row with `ds.rows[ho_idx]`; the count is checked.  Labels are the TRUE ones (a --aux-drv-shuffle-seed arm is
+        read against the real map: a head trained on a wrong map must score ~0 here)."""
+        if aux is None:
+            return evaluate(tag)
+        cap["aux_buf"] = []
+        try:
+            out = evaluate(tag)
+            buf = cap["aux_buf"]
+        finally:
+            cap["aux_buf"] = None
+        rows = [ds.rows[i] for i in ho_idx]
+        n = sum(int(x[0].shape[0]) for x in buf)
+        if n != len(rows):
+            raise RuntimeError(f"aux eval: {n} head outputs for {len(rows)} held-out sets -- the row alignment with evaluate() is broken")
+        lg_all, sd_all = torch.cat([x[0] for x in buf]), torch.cat([x[1] for x in buf])
+        per_log: dict = {}
+        for s in range(0, n, 64):
+            ks = rows[s:s + 64]
+            lab, valid = aux_src_eval.labels([(r.get("log_name", ""), r.get("token", "")) for r in ks])
+            grp: dict = {}
+            for j_, r in enumerate(ks):
+                grp.setdefault(r.get("log_name", ""), []).append(j_)
+            for lg_name, js in grp.items():
+                sel = torch.as_tensor(js)
+                per_log.setdefault(lg_name, AuxEvalAcc()).add(lg_all[s:s + 64][sel], sd_all[s:s + 64][sel], lab[sel], valid[sel])
+        tot = AuxEvalAcc()
+        for v in per_log.values():
+            tot.merge(v)
+        log({"event": "aux_eval", "tag": tag, **tot.result(), "per_log": {k_: v.result() for k_, v in sorted(per_log.items())}})
+        return out
+
+    def aux_meta():
+        """what a consumer needs to rebuild the head and to know which map it was trained on"""
+        return {"config": {k_: getattr(aux.cfg, k_) for k_ in aux.cfg.__dataclass_fields__}, "store_sha256": aux_src.manifest["store_sha256"],
+                "frames": aux_src.manifest["counts"]["stored_keys"], "shuffle_seed": aux_src.shuffle_seed, "head_file": "aux_drv.pt"}
+
+    def save_aux(upd_):
+        """the head (and H2's feed projection) beside the scorer checkpoints: model_sft_*.pt stays exactly what the planner loads strictly"""
+        p_ = os.path.join(a.out, "aux_drv.pt")
+        ckpt_io.atomic_save({"format": "aux_drv/1", "head": aux.head.state_dict(), "feed": aux.feed.state_dict() if aux.feed is not None else None,
+                             "opt": optH.state_dict(), "update": upd_, "meta": aux_meta()}, p_)
+        return p_
+
     def save_full(arm_name, mods):
         sd = torch.load(a.ckpt, map_location="cpu", weights_only=False)
         state = sd["model"] if isinstance(sd, dict) and "model" in sd else sd
@@ -733,10 +943,147 @@ def main() -> int:
         meta = dict(sd.get("meta", {}) if isinstance(sd, dict) else {},
                     scorer_finetune={"arm": arm_name, "base_ckpt": a.ckpt, "args": vars(a)})
         meta["n_score_components"] = n_out                    # the planner sizes its score head from this (ckpt_io)
+        if aux is not None:                                   # H2's planner needs the head beside the scorer (S3); the planner's strict load never sees it (not in `state`)
+            meta["aux_drv"] = aux_meta()
         out = {"format": ckpt_io.FORMAT_FULL, "model": state, "meta": meta}
         p = os.path.join(a.out, f"model_sft_{arm_name}.pt")
         ckpt_io.atomic_save(out, p)
         return p
+
+    def g12_probe(batch, lv):
+        """G12 (--aux-drv preflight), one dict of RAW FIELDS that the launch gate re-judges (consume_scorer_preflight): it never trusts this `ok`.
+          live      the head's aux-only backward (aux_backward -- the run's own function) at the DECLARED weight: every head sub-module gets a finite non-zero gradient
+                    (a declared weight of 0.0 is judged the other way: every gradient exactly 0.0)
+          control   the same backward at weight 0.0 reads EXACTLY 0.0 on every sub-module (a zero from a broken probe looks like a zero from a dead head)
+          tap       the tensor the head READ is the storage of visual_ctx, the SECOND output of scene_proj in the same forward (not a copy, not scene_ctx)
+          no path   autograd.grad(score, head parameters, allow_unused) is None for every parameter: the scorer cannot teach the head to game the score
+          feed off  two optimiser steps of (scorer + head) leave every scorer parameter BIT-IDENTICAL to two steps of the scorer alone (separate optimiser, separate clip);
+                    the head-less reference is run twice under deterministic algorithms, and the probe is shown able to read a one-ulp difference
+          feed on   step 0 of the fed scorer equals the base scorer exactly (zero-initialised projection), a non-zero projection DOES change it, and the projection gets a
+                    non-zero gradient from the score loss
+          adam      after a head step every head parameter holds Adam state (a registered parameter without one never received a gradient)"""
+        label_ok = int(lv[1].sum())
+        g = {"w_aux": float(aux.w_aux), "feed": aux.cfg.feed, "labelled_frames_in_batch": label_ok, "batch_frames": int(lv[1].shape[0]),
+             "mutate": [k_ for k_ in AUX_MUTATE_ENVS if os.environ.get(k_) == "1"]}
+        hp = list(aux.head.parameters())
+        outs: list = []
+        h_ = model.scene_proj.register_forward_hook(lambda m_, i_, o_: outs.append(o_))
+        try:
+            s0, sA, sB, tg = fwd(batch)
+        finally:
+            h_.remove()
+        g["scene_proj_calls"] = len(outs)
+        g["tap_is_visual_ctx"] = bool(len(outs) >= 2 and AUX.tap_is(cap["aux_ctx"], outs[1]))
+        g["tap_is_scene_ctx"] = bool(len(outs) >= 1 and AUX.tap_is(cap["aux_ctx"], outs[0]))
+        gs = torch.autograd.grad(sB.sum(), hp, retain_graph=True, allow_unused=True)
+        g["score_to_head_grads_all_none"] = bool(all(x is None for x in gs))
+        reads = {}
+        for mode in ("declared", "w0"):
+            aux.head.zero_grad(set_to_none=True)
+            keep = aux.w_aux
+            if mode == "w0":
+                aux.w_aux = 0.0
+            try:
+                g["bce_" + mode], g["huber_" + mode] = aux_backward(lv, 1.0, retain=True)
+            finally:
+                aux.w_aux = keep
+            reads[mode] = group_grad_abs(aux.head)
+        aux.head.zero_grad(set_to_none=True)
+        g["per_group_declared"], g["per_group_w0"] = reads["declared"], reads["w0"]
+        g["bce_near_ln2"] = bool(abs(g["bce_declared"] - math.log(2.0)) <= 0.15)
+        cxy_d, sctx_d = batch[4].to(dev), cap["sctx"].detach()
+        if aux.feed is None:
+            def run_arm(with_head):
+                S = copy.deepcopy(armB)
+                for p_ in S.parameters():
+                    p_.requires_grad_(True)
+                oS = torch.optim.AdamW(list(S.parameters()), lr=a.lr, weight_decay=0.01)
+                H = oH = None
+                if with_head:
+                    H = copy.deepcopy(aux)
+                    oH = torch.optim.AdamW(list(H.head.parameters()), lr=a.aux_drv_lr, weight_decay=0.01)
+                for _ in range(2):
+                    with torch.autocast("cuda", dtype=torch.bfloat16):
+                        sx = S(cxy_d, sctx_d)
+                        if with_head:
+                            lg_, sd_ = H.predict(sctx_d)
+                    losses(sx.float(), sx.float(), tg, a.lam)[1].backward()
+                    if with_head:
+                        H.combine(torch.zeros((), device=dev), H.loss(lg_, sd_, lv[0].to(dev), lv[1].to(dev))[0]).backward()
+                        torch.nn.utils.clip_grad_norm_(list(H.head.parameters()), 1.0)
+                        oH.step()
+                        oH.zero_grad(set_to_none=True)
+                    torch.nn.utils.clip_grad_norm_(list(S.parameters()), 1.0)
+                    oS.step()
+                    oS.zero_grad(set_to_none=True)
+                st = (sum(1 for _ in H.head.parameters()), sum(1 for p_ in H.head.parameters() if p_ in oH.state and "exp_avg" in oH.state[p_])) if with_head else None
+                return S, st
+
+            def same(P, Q):
+                return all(torch.equal(p_, q_) for p_, q_ in zip(P.parameters(), Q.parameters()))
+            was_det = torch.are_deterministic_algorithms_enabled()
+            os.environ.setdefault("CUBLAS_WORKSPACE_CONFIG", ":4096:8")
+            torch.use_deterministic_algorithms(True, warn_only=True)
+            try:
+                X1, _ = run_arm(False)
+                X2, _ = run_arm(False)
+                Y, st = run_arm(True)
+            finally:
+                torch.use_deterministic_algorithms(was_det)
+            Z = copy.deepcopy(X1)
+            with torch.no_grad():
+                z0 = next(Z.parameters()).view(-1)
+                z0[0] = torch.nextafter(z0[0], torch.tensor(float("inf"), dtype=z0.dtype, device=z0.device))
+            g.update({"reference_replay_identical": bool(same(X1, X2)), "scorer_params_bit_identical_2steps": bool(same(X1, Y)),
+                      "identity_probe_reads_one_ulp": bool(not same(X1, Z)), "adam_head_params": st[0], "adam_head_params_with_state": st[1]})
+        else:
+            with torch.no_grad(), torch.autocast("cuda", dtype=torch.bfloat16):
+                lg0, sd0 = aux.predict(sctx_d)
+                s_plain = armB(cxy_d, sctx_d)
+                g["feed_zero_init"] = bool(float(aux.feed.proj.weight.abs().max()) == 0.0)
+                g["feed_step0_equal_base"] = bool(torch.equal(aux.score(armB, cxy_d, sctx_d, sd0), s_plain))
+                keep_w = aux.feed.proj.weight.detach().clone()
+                aux.feed.proj.weight.copy_(torch.full_like(keep_w, 1e-2))
+                g["feed_probe_reads_difference"] = bool(not torch.equal(aux.score(armB, cxy_d, sctx_d, sd0), s_plain))
+                aux.feed.proj.weight.copy_(keep_w)
+            armB.zero_grad(set_to_none=True)
+            aux.feed.zero_grad(set_to_none=True)
+            losses(sB, sB, tg, a.lam)[1].backward(retain_graph=True)
+            gp = aux.feed.proj.weight.grad
+            g["feed_proj_grad_abs"] = float(gp.abs().sum()) if gp is not None else 0.0
+            armB.zero_grad(set_to_none=True)
+            aux.feed.zero_grad(set_to_none=True)
+            hd = copy.deepcopy(aux.head)
+            oHd = torch.optim.AdamW(list(hd.parameters()), lr=a.aux_drv_lr, weight_decay=0.01)
+            with torch.autocast("cuda", dtype=torch.bfloat16):
+                lg_, sd_ = hd(sctx_d)
+            AUX.aux_loss(lg_, sd_, lv[0].to(dev), lv[1].to(dev))[0].backward()
+            oHd.step()
+            g["adam_head_params"] = sum(1 for _ in hd.parameters())
+            g["adam_head_params_with_state"] = sum(1 for p_ in hd.parameters() if p_ in oHd.state and "exp_avg" in oHd.state[p_])
+        g["head_retained_gb"] = None
+        if dev == "cuda":
+            torch.cuda.synchronize()
+            m0 = torch.cuda.memory_allocated()
+            with torch.autocast("cuda", dtype=torch.bfloat16):
+                _lg, _sd = aux.predict(sctx_d)
+            torch.cuda.synchronize()
+            g["head_retained_gb"] = round((torch.cuda.memory_allocated() - m0) / 1e9, 3)       # the head's activations kept for backward (a lower bound of its peak)
+            del _lg, _sd
+        expect_live = aux.w_aux > 0.0
+        if expect_live:
+            live = bool(g["per_group_declared"] and all(math.isfinite(v) and v > 0.0 for v in g["per_group_declared"].values()))
+        else:
+            live = bool(g["per_group_declared"] and all(v == 0.0 for v in g["per_group_declared"].values()))
+        control = bool(g["per_group_w0"] and set(g["per_group_w0"]) == set(g["per_group_declared"]) and all(v == 0.0 for v in g["per_group_w0"].values()))
+        if aux.feed is None:
+            path_ok = bool(g["reference_replay_identical"] and g["scorer_params_bit_identical_2steps"] and g["identity_probe_reads_one_ulp"])
+        else:
+            path_ok = bool(g["feed_zero_init"] and g["feed_step0_equal_base"] and g["feed_probe_reads_difference"] and g["feed_proj_grad_abs"] > 0.0)
+        g["ok"] = bool(label_ok > 0 and live and control and g["tap_is_visual_ctx"] and not g["tap_is_scene_ctx"] and g["score_to_head_grads_all_none"] and g["bce_near_ln2"]
+                       and path_ok and g["adam_head_params"] > 0 and g["adam_head_params_with_state"] == g["adam_head_params"] and not g["mutate"]
+                       and (g["head_retained_gb"] is None or g["head_retained_gb"] <= 1.0))
+        return g
 
     # ---------------- PREFLIGHT (the launch gate)
     if a.preflight:
@@ -747,7 +1094,8 @@ def main() -> int:
                                                        "extra": sorted(tn - want)[:5], "missing": sorted(want - tn)[:5]}
         gates["G7_heldout_disjoint"] = {"ok": info["train_rows_in_heldout_logs"] == 0 and len(ho_idx) > 0,
                                         "heldout_sets": len(ho_idx), "train_rows_in_heldout_logs": info["train_rows_in_heldout_logs"]}
-        batch, prow = split_rows(next(iter(DataLoader(make_train_set(ds, tr_idx[:a.batch], a.epo), batch_size=a.batch))), a.epo)
+        batch0, aux_lv = split_aux(next(iter(DataLoader(make_train_set(ds, tr_idx[:a.batch], a.epo), batch_size=a.batch))), a.aux_drv)     # aux_lv: the (label, valid) tail or None
+        batch, prow = split_rows(batch0, a.epo)
         hk: dict = {}                                        # score-head input/output of each copy (last call = the scored set)
         hooks = [mod.score_head.register_forward_hook(lambda m_, i_, o_, nm=nm: hk.__setitem__(nm, (i_[0].detach(), o_.detach())))
                  for nm, mod in (("A", model), ("B", armB), ("base", base))]
@@ -863,6 +1211,8 @@ def main() -> int:
             g11["heldout_terms"] = st_ho
             g11["ok"] = bool(g11["ok"] and g11["rows_have_terms"] and (not a.epo_terms_heldout or st_ho["matched"] > 0))
             gates["G11_epo_live_and_identity"] = g11
+        if aux is not None:                                  # G12 (aux head): live + exact-zero control + identity + tap storage + Adam state
+            gates["G12_aux_drv_live_and_identity"] = g12_probe(batch, aux_lv)
         # G5: a CHANGED scorer, saved, reloads through the PLANNER's loader and reproduces its logits (and differs from
         # base) -- saving an unchanged scorer would pass even if the save wrote the original weights back
         with torch.no_grad():
@@ -907,6 +1257,8 @@ def main() -> int:
             s0, sA, sB, t_ = fwd(b_)
             l1, l2, _, _ = train_losses(s0, sA, sB, t_, r_, 0, lam_pg=(1.0 if a.epo else None))      # --epo: the timing includes the EPO term
             (l1 + l2).backward()
+            if aux is not None:
+                aux_backward(dl.tail)                        # --aux-drv: the head's forward + backward are part of the measured step (and of gpu_mem_gb)
         torch.cuda.synchronize()
         sp = (time.time() - t0) / 3
         ok = all(v["ok"] for v in gates.values())
@@ -914,14 +1266,14 @@ def main() -> int:
                "s_per_microbatch": round(sp, 2), "est_hours_per_epoch": round(len(tr_idx) / a.batch * sp / 3600, 2),
                "gpu_mem_gb": round(torch.cuda.max_memory_allocated() / 1e9, 2)}
         log(res)
-        if ok and os.environ.get("REFE_SFT_MUTATE_UNFREEZE") != "1" and os.environ.get("REFE_RL_MUTATE_EPO_DETACH") != "1":
+        if ok and os.environ.get("REFE_SFT_MUTATE_UNFREEZE") != "1" and os.environ.get("REFE_RL_MUTATE_EPO_DETACH") != "1"                 and not any(os.environ.get(k_) == "1" for k_ in AUX_MUTATE_ENVS):
             json.dump(res, open(os.path.join(a.out, "PREFLIGHT_PASS.json"), "w"), indent=1, default=str)
         print("ZZSFT_PREFLIGHT_" + ("PASS" if ok else "FAIL"))
         return 0 if ok else 3
 
     # ---------------- the run
     paramsA = [p for m in SCORER for p in getattr(model, m).parameters()]
-    paramsB = list(armB.parameters())
+    paramsB = list(armB.parameters()) + (list(aux.feed.parameters()) if (aux is not None and aux.feed is not None) else [])     # H2: the feed projection is scorer-side
     optA = torch.optim.AdamW(paramsA, lr=a.lr, weight_decay=0.01)
     optB = torch.optim.AdamW(paramsB, lr=a.lr, weight_decay=0.01)
     total = int(math.ceil(len(tr_idx) / a.batch * a.epochs / a.accum))
@@ -929,10 +1281,12 @@ def main() -> int:
         total = min(total, a.max_updates)
     lr_at = lambda u: a.lr * (u + 1) / a.warmup if u < a.warmup else a.lr * 0.5 * (1 + math.cos(math.pi * (u - a.warmup) / max(total - a.warmup, 1)))
     log({"event": "start", "updates": total, "micro_per_update": a.accum, "batch": a.batch, "train_sets": len(tr_idx)})
-    evaluate("step0")
+    run_evaluate("step0")
     upd, micro, t0 = 0, 0, time.time()
     accl = {"bceA": 0.0, "lossB": 0.0, "listnet": 0.0, "n": 0}
     epo_acc = {"epo": 0.0, "J": 0.0, "kl": 0.0, "n": 0}      # --epo only
+    aux_acc = {"bce": 0.0, "huber": 0.0, "n": 0}              # --aux-drv only
+    lr_ratio = (a.aux_drv_lr / a.lr) if aux is not None else 0.0      # the head follows the scorer's warm-up + cosine shape at its own peak
     done = False
     while not done:
         for batch in dl:
@@ -940,6 +1294,9 @@ def main() -> int:
             _s0, sA, sB, tg = fwd(batch)
             lA, lB, ln, ep_t = train_losses(_s0, sA, sB, tg, rows, upd)
             ((lA + lB) / a.accum).backward()
+            if aux is not None:
+                a_bce, a_hub = aux_backward(dl.tail, a.accum)        # the head's loss, backward SEPARATELY (the line above stays byte-identical); dl.tail = THIS batch's (label, valid)
+                aux_acc["bce"] += a_bce; aux_acc["huber"] += a_hub; aux_acc["n"] += 1
             accl["bceA"] += float(lA); accl["lossB"] += float(lB); accl["listnet"] += float(ln); accl["n"] += 1
             if a.epo:
                 epo_acc["epo"] += float(ep_t); epo_acc["J"] += epo_last.get("J", 0.0); epo_acc["kl"] += epo_last.get("kl", 0.0); epo_acc["n"] += 1
@@ -952,6 +1309,12 @@ def main() -> int:
                     gr["lr"] = lr_at(upd)
                 o.step()
                 o.zero_grad(set_to_none=True)
+            if optH is not None:                             # the head: its own clip norm and its own AdamW, so it can never change the scorer's update scale
+                torch.nn.utils.clip_grad_norm_(aux.head.parameters(), 1.0)
+                for gr in optH.param_groups:
+                    gr["lr"] = lr_at(upd) * lr_ratio
+                optH.step()
+                optH.zero_grad(set_to_none=True)
             upd += 1
             if upd % 25 == 0:
                 n = max(accl["n"], 1)
@@ -962,17 +1325,24 @@ def main() -> int:
                     row.update({"epo": epo_acc["epo"] / ne, "epo_J": epo_acc["J"] / ne, "epo_kl": epo_acc["kl"] / ne,
                                 "epo_lam_pg": a.epo_lam * epo_ramp(upd, a.epo_ramp)})
                     epo_acc = {"epo": 0.0, "J": 0.0, "kl": 0.0, "n": 0}
+                if aux is not None:
+                    na = max(aux_acc["n"], 1)
+                    row.update({"aux_bce": aux_acc["bce"] / na, "aux_huber": aux_acc["huber"] / na, "w_aux": aux.w_aux, "aux_lr": optH.param_groups[0]["lr"]})       # aux_lr = the head optimiser's lr of the LAST step (read off the optimiser, not recomputed)
+                    aux_acc = {"bce": 0.0, "huber": 0.0, "n": 0}
                 log(row)
                 accl = {"bceA": 0.0, "lossB": 0.0, "listnet": 0.0, "n": 0}
             if upd % a.eval_every == 0 or upd == total:
-                evaluate(f"update{upd}")
+                run_evaluate(f"update{upd}")
                 torch.save({"A": {m: getattr(model, m).state_dict() for m in SCORER},
-                            "B": {m: getattr(armB, m).state_dict() for m in SCORER}, "update": upd},
+                            "B": {m: getattr(armB, m).state_dict() for m in SCORER}, "update": upd,
+                            **({"AUX": aux.state_dict()} if aux is not None else {})},
                            os.path.join(a.out, "scorer_states_last.pt"))
             if upd >= total:
                 done = True
                 break
     pA, pB = save_full("A", model), save_full("B", armB)
+    if aux is not None:
+        log({"event": "aux_saved", "path": save_aux(upd)})
     log({"event": "done", "updates": upd, "model_A": pA, "model_B": pB, "hours": (time.time() - t0) / 3600})
     print("ZZSFT_DONE")
     return 0
