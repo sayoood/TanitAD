@@ -12,6 +12,8 @@
 >
 > Where this file and the draft disagree for S1, this file governs. For S2 and S3 the draft is unchanged.
 >
+> **Amendment A2 (2026-10-13, before any S1 arm)** at the end of this file adds a paired floor to P3 and fixes the ctx of record.
+>
 > Evidence classes: **MEASURED** (ours, artifact named) · **INHERITED** · **ANALYTIC** · **ESTIMATED** · **UNVERIFIED**.
 
 ## 1 · Approved without change (from the proposal)
@@ -129,3 +131,35 @@ H1's scorer is bit-identical to N by construction (no path from the head to the 
 | **B2** | S1's inputs on the dev box. SFT-4 ran on an **earlier pod** (`refe/sft4_pod.sh`: label root `refe_sft2/{train_teacher_lane, heldout_teacher_lane, heldout_lane, heldout_pdm, train_pdm}`, `refe_heldout/`, `navtrain_pixels`). The current pod holds only `refe_sft2/train_pdm` of the label root (MEASURED 2026-10-13 by `ls`) | the S1 input audit (`raw/2026-10-13-aux-s1-data-audit/`, running). An unresolved path is a launch blocker. If the inputs cannot reach the dev box, the draft's fallback applies: S1 → S2, perception from a head-only fit on cached C3 `visual_ctx` |
 | **B3** | per-arm PASS tokens | minted at launch (§2) |
 | — | (a read blocker, not a launch blocker) the navtest forward for P1 and P3 | in build; §4.1 says what happens without it |
+
+## Amendment A2 (2026-10-13, before any S1 arm exists): a paired floor for P3, and the ctx of record
+
+**What triggered it, stated plainly.**
+- The navtest head-forward tool (`eval/aux_navtest_forward.py`) ran a **plumbing** read on 32 C3 tokens from one log, using a **never-trained** head (seed 0).
+- That head scored a P3 pooled AUC of **0.8245**, against the u400 scorer's **0.8005** on the same 32 tokens (`raw/2026-10-13-aux-navtest-forward/RESULT.md` §5, `readout_plumbing_slice32.json`). One log means the interval is degenerate, so this is a signal, not an estimate.
+- The mechanism: the head's learnable BEV queries and position features give it a **position-dependent SDF field before any training**. The minimum along a footprint then tracks how far and how wide a proposal reaches, and that already correlates with DAC = 0.
+- ⇒ The bar max(0.90, scorer + 0.05) is partly a **position-prior** bar. A head could clear it without having learned the road.
+
+**Why this is not a goalpost moved after the data.**
+- No S1 arm has trained; the number seen is a property of the instrument on an untrained head.
+- The amendment **adds** a condition and removes none, so every outcome it changes becomes stricter.
+
+**A2.1 · The P3 floor (an added condition).**
+- For each head arm, the floor is **that arm's own head at initialisation**: `AUX.AuxDrivable(AUX.AuxDrivableConfig(tap="visual", depth=2, feed=<the arm's>, seed=<the arm's seed>))`.
+  - Its weights depend on the seed alone (`refe/aux_drivable_head.py:179-180`, `fork_rng` + `manual_seed(cfg.seed)`), so it is exactly the head the trainer starts from.
+  - The feed module has its own fork (`:294-295`), so feed off and feed on share one initial head per seed.
+- The floor is read on the same tokens, through the same ctx (A2.3) and the same statistic.
+- **H2_EVALUATED and H2_PROVISIONAL now also require** the paired pooled-AUC difference *(trained head − its initial head)* to have a 95 % lower bound **> 0**. The estimator is the paired log-cluster bootstrap over the C3 logs, 10,000 resamples, seed 20260927.
+- Otherwise the read is **P3_AT_FLOOR**: the head's DAC ranking is not shown to come from training. H2 is **not promoted**, and the draft's "P1/P3 fail (K2)" row of the next-arm table applies.
+- The 0.90 and scorer + 0.05 conditions are unchanged. "Head AUC < scorer AUC ⇒ H2 killed" is unchanged.
+
+**A2.2 · The P1 floor is reported.** The initial head's P1 IoU on the same frames is published beside every P1 read. K2's 0.80 is unchanged.
+
+**A2.3 · The ctx of record is the planner's fp32 ctx.**
+- This is the default of `eval/aux_navtest_forward.py`. Its identity is MEASURED: scorer logits bit-identical to the C3 table on 32 of 32 tokens, 14,336 values, max |d| 0.0. The camera-swap regression arm makes it fail.
+- Why: it is the path a deployed feed would read, and the floor is read through the same ctx, so the comparison is paired.
+- The trainer's bf16-autocast ctx differs by 1.05–1.46 % relative L2 (MEASURED, 32 tokens, `smoke.json`). It is **supplementary** if run, and never decides.
+
+**A2.4 · The floor is measured before the first S1 step.**
+- Seeds 0, 1 and 2, on all 1,058 C3 tokens, published as an instrument property.
+- It changes no number in this file. Its only role is to show, before any arm trains, how much of the 0.90 bar a position prior already covers.
