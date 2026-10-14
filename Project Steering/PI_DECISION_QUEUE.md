@@ -1882,3 +1882,18 @@ the CEIL-OBEY indicator reads 0.9 % / 0.8 % (bar 1 %; V0 1.3 % / 1.2 %).
 bindings on Thor, the suite and the launch gate, all mine. ⚠ Honest scope: no arm improved TURN DIRECTION over V0 at the
 tiny rung; refcv8's measured gain is longitudinal.
 **Evidence.** `TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/emit_off_diag_2026-10-12/raw/nolw/README.md`.
+
+
+### ✅ RESOLVED (2026-10-14, in chat, ~12:00 Berlin) — the I-0 amendment A1 and the refcv8 launch recipe
+
+The PI, verbatim: *"Î follow your recommendations here."* (answering the two recommendations: accept I-0 A1; launch with
+the listwise loss off, tactical weight 1, map weight 1).
+1. **I-0 amendment A1: ACCEPTED.** The ladder's score is `ladder_score_2026-10-14/raw/LADDER_SCORE_A1.json` (L1 NOT
+   QUOTABLE, L2 PREMISE-UNMET, L3 FAILS). The registered `I0.json` / `LADDER_SCORE.json` stay in the record as the
+   registered reading.
+2. **Launch recipe: DECIDED.** V-R8's R8-RECIPE with `--w-r8-listwise 0.0` (`stack/ops/runs.d/refcv8-r101-s0.l1_recipe.json`:
+   `--r8-n-alloc 32 --r8-alloc-emit --w-r8-alloc-l1 1.0 --w-r8-listwise 0.0 --w-r8-v9-cons 0.05`), `--w-tac-v6 1.0`
+   (k = 1), `--w-map-hires 1.0`, `--b1-guard-ref-ap2m 0.21211` (the registered literal).
+**Applied:** `refcv8_prelaunch.sh assemble --stage measure` -> `stack/ops/runs.d/refcv8-r101-s0.measure.argv.json`
+(self-test OK, ASSEMBLED 210 tokens). Next: ship this commit to Thor as `/home/nvidia/refcv8_run/launch_tree`, the
+G-LIVE measurement smoke, the launch-stage argv from its reading, `bind`, the Thor suite verdict, `gate`, `fire`.

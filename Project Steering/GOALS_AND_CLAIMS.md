@@ -16727,3 +16727,10 @@ floor (MEASURED by simulation, iid-normal model).
 |---|---|---|
 | **PI-R8-NOLW** (pre-registered readout, 2026-10-14) | V-R8-noLW (`--w-r8-listwise 0`) vs V-R8, GT-turn cross 6 s: 10.42 vs 14.98 m (d -4.57 [-8.04, -1.48]) and 10.16 vs 15.14 m (d -4.98 [-8.54, -1.64]); R 1.38 / 1.69 over the V-R8 replicate floor; P2 bank ns both seeds. Four families vs V0: lateral equal, longitudinal better beyond F (along 6 s -0.31 / -0.34 m, speed 2-6 s -0.08 / -0.10), raw ceiling overshoot +0.009; CEIL-OBEY indicator (non-exempt) 0.0090 / 0.0081 vs V0 0.0126 / 0.0117. `…/emit_off_diag_2026-10-12/raw/nolw/README.md` | **CONFIRMED** (P1 + P2, both seeds) |
 | **H-R8-RECIPE-1** (2026-10-14, after noLW) | The L1 turn loss was the X1 listwise selection loss (lateral-blind target), now shown by intervention. But no refcv8 arm moves TURN DIRECTION beyond F vs V0 at the tiny rung (noLW -0.009 / 0.000): the conditioning's lateral claim is unsupported here; its measured gain is longitudinal. Same file. | listwise REFUTED as the recipe; conditioning lateral benefit NOT SHOWN at the tiny rung |
+
+
+<!-- REFCV8-2026-10-14-PI-ACCEPTS -->
+| id | record | status |
+|---|---|---|
+| **refcv8 W-PB ladder I-0** (PI ruling 2026-10-14) | The PI accepted amendment A1 ("Î follow your recommendations here"). The L1-L3 verdicts under A1 are the ladder's score: L1 NOT QUOTABLE, L2 PREMISE-UNMET, L3 FAILS. `Project Steering/PI_DECISION_QUEUE.md` (2026-10-14 RESOLVED). | A1 ACCEPTED by the PI |
+| **refcv8 launch recipe** (PI ruling 2026-10-14) | `--w-r8-listwise 0.0` (V-R8-noLW CONFIRMED), `--w-tac-v6 1.0`, `--w-map-hires 1.0`; recipe file `stack/ops/runs.d/refcv8-r101-s0.l1_recipe.json`; measurement argv `stack/ops/runs.d/refcv8-r101-s0.measure.argv.json`. | DECIDED; pre-launch kit running |
