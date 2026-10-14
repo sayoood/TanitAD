@@ -27,6 +27,7 @@ from __future__ import annotations
 import argparse
 import importlib
 import json
+import math
 import os
 import sys
 from pathlib import Path
@@ -110,6 +111,12 @@ def p2rep_argv(p2_argv: str = P2_ARGV) -> list:
 
 
 P2REP_ARGV = p2rep_argv()
+# L_field, the proposal-level drivable-area field loss (eval/PREREG_AUX_FIELD_LOSS_DRAFT.md; PI decision D-AUX-4).  A host is a `refe/train.py` run (P2's recipe).  The registered values below
+# are the draft's: an amendment of the prereg is a one-line change HERE.  --w-field is NOT registered here: it is set once by the committed gradient-norm rule (refe/weight_rule.py) and
+# lands in the prereg's blanks, so the F profile requires it NAMED and POSITIVE and the C profile requires it NAMED and EXACTLY 0.0 (a flag whose default disables the term must be named,
+# or the arm did not test it).  F and C differ by --w-field alone.  --field-shuffle-seed (the label-shuffled control) is forbidden until a dated amendment adds that arm.
+FIELD_REGISTERED = {"--field-margin": "0.25", "--field-interp": "5hz"}
+FIELD_SUITE_EXTRA = [{"script": "test_field_loss.py", "token": "ZZTEST_PASS"}]
 _BASE = dict(trainer="refe/train.py", parser_module="train", trainer_src="train.py", live_terms=("traj_L1", "score"), ckpt_steps=4, smoke_steps=2, smoke_accum=2,
              suite=SUITE, forbidden_flags=FORBIDDEN, output_flags=("--out",), mintable=True, require_commit=True, rehearsal=False,
              checks=("G-HYG", "G-DVB", "G-LIVE", "G-EVAL", "G-CKPT", "G-SUITE"), na_ok=("G-CLOCK",),
@@ -140,6 +147,20 @@ PROFILES = {
                 # SPEC_P6 section 0.2 wrote 10,063 steps (= ceil(25 x 103,037 / 256)); the trainer's own definition (train.py: epochs x ceil(epoch_len / (batch x
                 # accum)), re-derived independently by G-DVB) gives 25 x 403 = 10,075 -- the final run's measured step count. The profile registers the TRAINER's.
                 "expect_schedule": {"epochs": 25, "steps": 10075, "epoch_len": 103037, "n_tuples": 189888}},
+    # L_field arm F (w_field > 0) and its control C (--w-field 0.0, same init / bank / steps / seed): P2's recipe plus the term.  Cloned from refe_p2, so every P2 lever is asserted too.
+    "refe_field": {**_BASE, "name": "refe_field", "data_flags": P2_DATA + ("--field-labels",), "checks": _BASE["checks"] + ("G-P2GATE",), "field_arm": "F",
+                   "suite": SUITE + FIELD_SUITE_EXTRA, "live_terms": ("traj_L1", "score", "field_L"), "field_min_coverage": 0.999,
+                   "forbidden_flags": FORBIDDEN + ("--field-shuffle-seed",),
+                   "required_flags": {"--scorer-mode": "onpolicy", "--pdm-only": None, "--scorer-sees-trunk": None, "--epochs": "3", "--epoch-unit": "scenes",
+                                      "--batch": "4", "--accum": "64", "--lr": "5e-5", "--amp": "bf16",
+                                      "--w-field": None, "--field-labels": None, **FIELD_REGISTERED},
+                   "provisional_flags": ()},
+    "refe_field_ctrl": {**_BASE, "name": "refe_field_ctrl", "data_flags": P2_DATA + ("--field-labels",), "checks": _BASE["checks"] + ("G-P2GATE",), "field_arm": "C",
+                        "suite": SUITE + FIELD_SUITE_EXTRA, "field_min_coverage": 0.999, "forbidden_flags": FORBIDDEN + ("--field-shuffle-seed",),
+                        "required_flags": {"--scorer-mode": "onpolicy", "--pdm-only": None, "--scorer-sees-trunk": None, "--epochs": "3", "--epoch-unit": "scenes",
+                                           "--batch": "4", "--accum": "64", "--lr": "5e-5", "--amp": "bf16",
+                                           "--w-field": "0.0", "--field-labels": None, **FIELD_REGISTERED},
+                        "provisional_flags": ()},
     # the dev-box rehearsal: P2's levers on the tiny bank.  Exercises every instrument; its evidence is REHEARSAL and can never mint.
     "refe_rehearsal": {**_BASE, "name": "refe_rehearsal", "data_flags": ("--targets", "--scorer-targets", "--init-from", "--onpolicy-targets",
                                                                           "--pdm-labels"),
@@ -244,6 +265,18 @@ def profile_refusals(prof: dict, argv: list) -> list:
             out.append(f"DECLARED, NOT BUILT: {prof['name']} declares {f} but the trainer's parser has no such flag "
                        f"(a config that declares a lever the model does not build is a launch blocker)")
     out += pinned_argv_refusals(prof, argv)
+    if prof.get("field_arm"):
+        got = GT.flag_values(argv, "--w-field")
+        try:
+            wv = float(got[0]) if got else None
+        except ValueError:
+            wv = None
+        if "--w-field" in argv and (wv is None or not math.isfinite(wv)):
+            out.append(f"{prof['name']}: --w-field {' '.join(got or [])} is not a finite number")
+        elif "--w-field" in argv and prof["field_arm"] == "F" and not wv > 0.0:
+            out.append(f"{prof['name']} (arm F) requires --w-field > 0; the argv has --w-field {got[0]} (that is the control C: profile refe_field_ctrl)")
+        elif "--w-field" in argv and prof["field_arm"] == "C" and wv != 0.0:
+            out.append(f"{prof['name']} (the control C) requires --w-field EXACTLY 0.0; the argv has --w-field {got[0]} (that is arm F: profile refe_field)")
     trainer_src = prof.get("trainer_src", "train.py")
     src = (HERE / trainer_src).read_text(encoding="utf-8")
     terms = tuple(prof.get("live_terms", ()))

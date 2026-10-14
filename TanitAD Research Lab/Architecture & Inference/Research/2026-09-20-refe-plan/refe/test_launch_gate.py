@@ -293,7 +293,7 @@ def static() -> None:
     import train as T
     dests = {x.dest for x in T.build_parser()._actions if x.dest != "help"}
     ok(set(C.DVB_KINDS) == dests, (sorted(dests - set(C.DVB_KINDS)), sorted(set(C.DVB_KINDS) - dests)))
-    ok(len(dests) == 55)
+    ok(len(dests) == 60)                                                                                      # 55 + the five L_field levers (--w-field, --field-margin, --field-interp, --field-labels, --field-shuffle-seed)
     ok(C.namespace_reads(C._train_run_source()) <= dests)
     ok(C.check_hyg()["status"] == "PASS")
     for arm, frag in (("no_cfg_guard", "ACCEPTED an undeclared attribute"), ("undeclared_namespace_read", "undeclared_lever_g_hyg")):
@@ -358,11 +358,12 @@ def static() -> None:
     ok(real_args().count('"') == 0 and "  " not in real_args())
     rls1_static()
     aux_s1_static()
+    field_static()
 
 
 # ====================================================================================================== RL-S1: the refe_rls1 profile
 # RL-S1 trains with scorer_finetune.py (the EPO loss), not train.py: the profile names that parser and source, classifies every one of ITS flags (DVB_KINDS_SCORER, a table
-# SEPARATE from DVB_KINDS -- S5 pins that one equal to train.py's 55), states the arm rules, and consumes the trainer's own `--preflight` (G1-G11) as parsed JSON.
+# SEPARATE from DVB_KINDS -- S5 pins that one equal to train.py's 60), states the arm rules, and consumes the trainer's own `--preflight` (G1-G11) as parsed JSON.
 # Every refusal below has its positive twin (the clean argv) and every check its regression arm.  Nothing here runs the suite (that would recurse into this file).
 RLS1_BASE = ("--ckpt /w/model_sft4_B_u400.pt --backbone vitl16 --targets /w/train --images /w/pix --calib /w/calib.json --onpolicy /w/onp --heldout /w/onh "
              "--heldout-logs /w/hl.txt --out /w/rl --lane-head --teacher-lane-train /w/tl --teacher-lane-heldout /w/tlh --pdm-labels-train /w/pdm "
@@ -757,6 +758,183 @@ def rls1_static() -> None:
     with tempfile.TemporaryDirectory() as td3:
         st = L.run_checks({**P, "declared_arm": "R2"}, r0, PKG, Path(td3) / "o")
         ok(set(st.values()) == {"FAIL"} and set(st) == set(P["checks"]) | set(P["na_ok"]), st)
+
+
+# ====================================================================================================== L_field: the refe_field / refe_field_ctrl profiles (eval/PREREG_AUX_FIELD_LOSS_DRAFT.md)
+FIELD_TAIL = " --w-field 8 --field-margin 0.25 --field-interp 5hz --field-labels /w/label_store"
+
+
+def field_static() -> None:
+    """The L_field arm's gate entries, each with its negative twin: the registry, the profile refusals (F needs --w-field > 0 NAMED; the control C names EXACTLY 0.0; the registered margin /
+    interp / labels are named), G-DVB's observed rows (the margin and interp the term RECEIVED, the multiplier measured at the graph, the store's pinned sha256 / key count / coverage /
+    raster constants) judged on synthetic captures, G-LIVE's reach judge, and the SUITE.  The instrumented end-to-end arms (the real trainer's smoke run) are
+    raw/2026-10-13-field-loss-wiring/test_field_wiring.py part (d)."""
+    import aux_drivable_head as AUX
+    import aux_label_store as ALS
+    import field_loss as FL
+    import train as T
+    PF, PC = L.PROFILES["refe_field"], L.PROFILES["refe_field_ctrl"]
+    # ---- the registry: the five flags are in DVB_KINDS (S5 pins the table equal to the parser's dests)
+    for d in ("w_field", "field_margin", "field_interp", "field_labels", "field_shuffle_seed"):
+        ok(C.DVB_KINDS.get(d) == "built", d)
+    # ---- the profiles: F and C are clean on their argv and differ by --w-field alone
+    fa = L.parse_args_string(real_args() + FIELD_TAIL)
+    fc = [("0.0" if (i > 0 and fa[i - 1] == "--w-field") else t) for i, t in enumerate(fa)]
+    ok(fc != fa and sum(1 for x, y in zip(fa, fc) if x != y) == 1)
+    ok(L.profile_refusals(PF, fa) == [], L.profile_refusals(PF, fa))
+    ok(L.profile_refusals(PC, fc) == [], L.profile_refusals(PC, fc))
+
+    def refs(prof, argv):
+        return L.profile_refusals(prof, argv)
+
+    def red(prof, argv, frag):
+        rs = refs(prof, argv)
+        ok(rs and any(frag in r for r in rs), (frag, rs))
+
+    def swap(argv, flag, value):
+        return [(value if (i > 0 and argv[i - 1] == flag) else t) for i, t in enumerate(argv)]
+
+    def without(argv, flag, nvalues=1):
+        i = argv.index(flag)
+        return argv[:i] + argv[i + 1 + nvalues:]
+    red(PF, without(fa, "--w-field"), "requires --w-field")                          # --w-field ABSENT from the argv of an arm that means it (its default disables the term)
+    red(PC, without(fc, "--w-field"), "requires --w-field")                          # the control NAMES 0.0
+    red(PF, fc, "arm F) requires --w-field > 0")                                     # the control's argv is not arm F
+    red(PC, fa, "EXACTLY 0.0")                                                       # arm F's argv is not the control
+    red(PF, swap(fa, "--w-field", "-1"), "requires --w-field > 0")
+    red(PF, swap(fa, "--w-field", "nan"), "not a finite number")
+    red(PC, swap(fc, "--w-field", "0.0001"), "EXACTLY 0.0")
+    for pr, base in ((PF, fa), (PC, fc)):
+        red(pr, without(base, "--field-labels"), "--field-labels")
+        red(pr, without(base, "--field-margin"), "--field-margin")
+        red(pr, swap(base, "--field-margin", "0.5"), "--field-margin")
+        red(pr, swap(base, "--field-interp", "navsim2hz"), "--field-interp")
+        red(pr, without(base, "--field-interp"), "--field-interp")
+        red(pr, base + ["--field-shuffle-seed", "20261011"], "FORBIDS")             # the label-shuffled control arm is not admitted until a dated amendment adds it
+        red(pr, base + ["--synthetic"], "FORBIDS")
+        red(pr, swap(base, "--lr", "1e-4"), "--lr")                                  # P2's levers are asserted too
+        red(pr, without(base, "--pdm-only", 0), "--pdm-only")
+    # a profile that DECLARES the levers against a trainer that does not build them is a launch blocker (train.py without PATCH_train): simulated with a parser that lacks one
+    orig_bp = T.build_parser
+
+    def bp_old():
+        ap = orig_bp()
+        ap._actions[:] = [x for x in ap._actions if x.dest != "w_field"]
+        for o in [o for o in list(ap._option_string_actions) if o == "--w-field"]:
+            del ap._option_string_actions[o]
+        return ap
+    T.build_parser = bp_old
+    try:
+        red(PF, fa, "DECLARED, NOT BUILT")
+    finally:
+        T.build_parser = orig_bp
+    # the CLI: exit 0 / ZZGATE-CLEANZZ on F's and C's argv, exit 5 / ZZGATE-REFUSEDZZ on an argv with --w-field absent
+    for prof_name, argv_ in (("refe_field", fa), ("refe_field_ctrl", fc)):
+        rc = subprocess.run([sys.executable, str(HERE / "launch_gate.py"), "refusals", "--profile", prof_name, "--args", " ".join(argv_)], capture_output=True, text=True, encoding="utf-8")
+        ok(rc.returncode == 0 and "ZZGATE-CLEANZZ" in rc.stdout, rc.stdout[-300:])
+    rc = subprocess.run([sys.executable, str(HERE / "launch_gate.py"), "refusals", "--profile", "refe_field", "--args", " ".join(without(fa, "--w-field"))], capture_output=True, text=True,
+                        encoding="utf-8")
+    ok(rc.returncode == 5 and "ZZGATE-REFUSEDZZ" in rc.stdout)
+    # P2's own profile is unchanged by all of this (its argv is clean, and it does not carry the field suite)
+    ok(L.profile_refusals(L.PROFILES["refe_p2"], L.parse_args_string(real_args())) == [])
+    ok({"script": "test_field_loss.py", "token": "ZZTEST_PASS"} in PF["suite"] and {"script": "test_field_loss.py", "token": "ZZTEST_PASS"} in PC["suite"])
+    ok({"script": "test_field_loss.py", "token": "ZZTEST_PASS"} not in L.SUITE and (HERE / "test_field_loss.py").is_file())
+    ok(PF["live_terms"] == ("traj_L1", "score", "field_L") and "field_L" not in PC["live_terms"] and "--field-labels" in PF["data_flags"] and "--field-labels" in PC["data_flags"])
+    ok('"field_L"' in (HERE / "train.py").read_text(encoding="utf-8"))
+    # ---- admissibility (prereg "Admissibility"; G-EVAL is unchanged by construction): the planner / model import no label path.  `grep -c "field_loss\|sdf" refe/model.py refe/planner.py` must stay 0
+    def label_path_free(src: str) -> bool:
+        return "field_loss" not in src and "sdf" not in src
+    for f_ in ("model.py", "planner.py"):
+        ok(label_path_free((HERE / f_).read_text(encoding="utf-8")), f_)
+    ok(not label_path_free("from field_loss import field_loss") and not label_path_free("x = sdf_int8"))                  # the check can go red
+    # ---- G-DVB's observed rows on synthetic captures
+    td = Path(tempfile.mkdtemp())
+    (td / "manifest.json").write_text(json.dumps({"raster": ALS.raster_spec()}), encoding="utf-8")
+    ev = {"event": "field", "store_sha256": AUX.PINNED_STORE_SHA256, "store_keys": AUX.PINNED_STORE_KEYS, "rows": 4000, "rows_labelled": 4000, "shuffle_seed": None}
+
+    def caps(w=8.0, **mut):
+        a = SimpleNamespace(w_field=w, field_margin=0.25, field_interp="5hz", field_labels=str(td), field_shuffle_seed=mut.pop("declared_seed", None))
+        b = SimpleNamespace(banks={"TargetBank": [{"args": [], "kwargs": {"field_labels": mut.pop("built_labels", str(td)), "field_shuffle_seed": mut.pop("built_seed", None)}}]})
+        calls = mut.pop("calls", [{"margin": 0.25, "interp": "5hz", "valid": True}] * 4)
+        grads = mut.pop("grads", [w / 2.0] * 4)
+        events = mut.pop("events", [dict(ev), {"field_w": w}, {"field_w": w}])
+        s_ = SimpleNamespace(args=SimpleNamespace(steps=2, accum=2), field_calls=calls, field_grads=grads, metrics=events)
+        assert not mut, mut
+        return a, b, s_
+
+    def rows_of(**mut):
+        a, b, s_ = caps(**mut)
+        return C.field_dvb_rows(a, b, s_)
+    ok(len(rows_of()) >= 12 and all(r["ok"] for r in rows_of()), [r for r in rows_of() if not r["ok"]])
+    # the default arm (no field flags) adds only the two TargetBank rows, both equal
+    a0, b0, _ = caps()
+    a0.w_field, a0.field_labels = 0.0, None
+    b0.banks["TargetBank"][0]["kwargs"]["field_labels"] = None
+    r0 = C.field_dvb_rows(a0, b0, None)
+    ok(len(r0) == 2 and all(r["ok"] for r in r0))
+    b0.banks["TargetBank"][0]["kwargs"]["field_labels"] = "/somewhere"                  # a loader that was handed a store the argv did not declare
+    ok(not all(r["ok"] for r in C.field_dvb_rows(a0, b0, None)))
+
+    def bad(frag, **mut):
+        rs = [r for r in rows_of(**mut) if not r["ok"]]
+        ok(rs and any(frag in (r["flag"] + " " + r["how"]) for r in rs), (frag, rs))
+    bad("margin", calls=[{"margin": 0.5, "interp": "5hz", "valid": True}] * 4)                                          # the margin the term RECEIVED
+    bad("interp", calls=[{"margin": 0.25, "interp": "navsim2hz", "valid": True}] * 4)
+    bad("valid", calls=[{"margin": 0.25, "interp": "5hz", "valid": False}] * 4)
+    bad("multiplier", grads=[2.0] * 4)                                                                                  # wired off by a factor (0.5 w): the gradient arriving is w/accum / 2
+    bad("multiplier", grads=[8.0] * 4)                                                                                  # ... or by 2
+    bad("multiplier", grads=[])                                                                                         # computed but never added (the hook never fires)
+    bad("multiplier", grads=[4.0] * 3)                                                                                  # added on 3 of 4 micro-batches
+    bad("once per micro-batch", calls=[{"margin": 0.25, "interp": "5hz", "valid": True}] * 3)
+    bad("logged field_w", events=[dict(ev), {"field_w": 4.0}, {"field_w": 4.0}])
+    bad("`field` event", events=[{"field_w": 8.0}])                                                                      # the trainer wrote no store record
+    bad("pinned store", events=[dict(ev, store_sha256="0" * 64), {"field_w": 8.0}])
+    bad("key count", events=[dict(ev, store_keys=AUX.PINNED_STORE_KEYS - 1), {"field_w": 8.0}])
+    bad("coverage", events=[dict(ev, rows_labelled=3990), {"field_w": 8.0}])                                             # 99.75 % < 99.9 %
+    bad("derangement seed", declared_seed=20261011)
+    bad("TargetBank(field_shuffle_seed=)", declared_seed=20261011, built_seed=1)
+    bad("TargetBank(field_labels=)", built_labels="/elsewhere")
+    ok(all(r["ok"] for r in rows_of(events=[dict(ev, rows_labelled=3997), {"field_w": 8.0}])))                          # 99.925 % >= 99.9 %: the threshold is a threshold
+    man = ALS.raster_spec()
+    for mut_ in ({"x0": man["x0"] + 1.0}, {"nx": man["nx"] + 1}, {"sdf_unit_m": 0.2}):
+        (td / "manifest.json").write_text(json.dumps({"raster": {**man, **mut_}}), encoding="utf-8")
+        bad("raster constants")
+    (td / "manifest.json").write_text(json.dumps({"raster": man}), encoding="utf-8")
+    ok(all(r["ok"] for r in rows_of()))
+    ok(dict(zip(("x0", "x1", "y0", "y1", "res_m", "nx", "ny", "sdf_unit_m"), (FL.X0, FL.X1, FL.Y0, FL.Y1, FL.RES, FL.NX, FL.NY, FL.SDF_UNIT_M)))
+       == {k: man[k] for k in ("x0", "x1", "y0", "y1", "res_m", "nx", "ny", "sdf_unit_m")})
+    shutil.rmtree(td, ignore_errors=True)
+
+    # ---- G-LIVE's reach judge, from raw fields: clean, then each fault
+    def grp(abs_sum, none=0, n=3):
+        return {"abs_sum": abs_sum, "n": n, "n_none": none}
+
+    def fr(**over):
+        g = {k: grp(1.0) for k in C.FIELD_REACH_GROUPS}
+        g.update({k: grp(0.0, none=3) for k in C.SCORER_GROUPS})
+        g0 = {k: grp(0.0) for k in list(C.FIELD_REACH_GROUPS) + list(C.SCORER_GROUPS)}
+        d = {"ran": True, "labelled": 2, "declared": {"loss": 1.0, "groups": g}, "zero": {"loss": 0.0, "groups": g0}}
+        for k, v in over.items():
+            d[k] = v
+        return d
+    ok(C.judge_field_reach(fr(), 8.0) == [])
+    gd = {k: grp(1.0) for k in C.FIELD_REACH_GROUPS}
+    gd.update({k: grp(0.0, none=3) for k in C.SCORER_GROUPS})
+    for g in C.FIELD_REACH_GROUPS:                                   # a term that does not reach one of its ancestors
+        gx = dict(gd)
+        gx[g] = grp(0.0)
+        rs = C.judge_field_reach(fr(declared={"loss": 1.0, "groups": gx}), 8.0)
+        ok(rs and g in rs[0], (g, rs))
+    for g in C.SCORER_GROUPS:                                        # ... or that reaches the scorer, with a value or merely with a path
+        for bad_ in (grp(0.5, none=0), grp(0.0, none=0)):
+            gx = dict(gd)
+            gx[g] = bad_
+            rs = C.judge_field_reach(fr(declared={"loss": 1.0, "groups": gx}), 8.0)
+            ok(rs and "scorer group" in rs[0], (g, rs))
+    g0x = {k: grp(0.0) for k in list(C.FIELD_REACH_GROUPS) + list(C.SCORER_GROUPS)}
+    g0x["traj_head"] = grp(1e-9)
+    ok("weight-0 control" in " ".join(C.judge_field_reach(fr(zero={"loss": 0.0, "groups": g0x}), 8.0)))
+    ok(C.judge_field_reach(fr(labelled=0), 8.0) and C.judge_field_reach({"ran": False}, 8.0))
 
 
 # ====================================================================================================== aux drivable-area head, S1: the refe_aux_s1 profile
