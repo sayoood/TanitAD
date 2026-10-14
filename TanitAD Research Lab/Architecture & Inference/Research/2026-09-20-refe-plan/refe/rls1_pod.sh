@@ -8,16 +8,27 @@
 # shipped to /workspace/refe-plan-rls1 (a directory of its OWN: P2's token_ok re-measures /workspace/refe-plan, so adding files there while P2 trains would break it).
 # Start (detached):  nohup setsid bash /workspace/refe-plan-rls1/refe/rls1_pod.sh > /workspace/data/rls1/stdout.log 2>&1 < /dev/null &
 # Re-running after ANY interruption is safe: finished stages leave /workspace/data/rls1/stage/<name>.ok (an arm interrupted in training restarts at update 0: the trainer has no resume).
-# RLS1_STOP_AFTER=<precheck|env|ckpts|partition|plan|fancmp|tlane|dump|labels|join|bank|gate_<ARM>|arm_<ARM>> ends the chain after that stage (a dry run; gate_C0 stops after the first token).
+# RLS1_STOP_AFTER=<precheck|queue|env|ckpts|partition|plan|fancmp|tlane|dump|labels|join|bank|gate_<ARM>|arm_<ARM>> ends the chain after that stage (a dry run; gate_C0 stops after the first token).
+# THE QUEUE (2026-10-14).  This chain never trains beside another chain, and never deadlocks with one.  AHEAD of it: P2, S1 (its chain.lock held), the P2 seed replicate once it is PAST its
+# wait (ZZP2REP_WAIT_OK after its last ZZP2REP_START) and P6 once past its wait (ZZP6_WAIT_OK).  While any of them is alive this chain holds ONLY $R/chain.queue (the single-instance guard):
+# S1 and the replicate re-check the RL-S1 chain.lock before their next GPU step, so holding it while waiting for them would be a DEADLOCK.  It takes chain.lock the moment nothing is ahead
+# (every other chain reads that lock as "RL-S1 holds the pod": a replicate still waiting then waits on it), settles RLS1_SETTLE_S, and needs the GPU idle on RLS1_IDLE_POLLS (3) polls.
+# Knobs: RLS1_QUEUE_POLL_S (5), RLS1_IDLE_POLL_S (30), RLS1_IDLE_POLLS (3), RLS1_SETTLE_S (20), RLS1_WAIT_MAX_S (0 = unbounded), RLS1_GPU_WAIT_MAX_S (1800, per arm), RLS1_P2_ABANDONED.
+# RL-S1b (eval/rls1b_arms.json, profile refe_rls1b):  RLS1_ARMS="R0b C1 R1b"  -- R0b is read against C0's banked dumps, C1 runs, R1b is read against C1.  A kill of R0b (K3 ...) STOPS the chain after its
+# evidence is banked: no C1, no R1b; the Master Mind decides (the generic "a killed arm refuses" rule below).
+# FAIL CLOSED (K-MON): an arm's kill monitor must print ZZRLS1_MONITOR_READY within RLS1_MON_READY_S (600) and stay alive while its trainer runs; otherwise the chain stops the trainer by its
+# explicit process-group id, writes KILLED.json (code K-MON), banks the evidence and refuses.  Knobs: RLS1_MON_READY_S, RLS1_SUP_POLL_S (5), RLS1_STOP_GRACE_S (30).
 # The fan-equivalence bounds (stage fancmp) are PINNED in this script, NOT inputs: FANCMP_ATOL 0.5 (catastrophe bound) and FANCMP_MEAN_ATOL 0.025 (runbook D-RLS1-5, DECIDED 2026-10-12).
 # RLS1_FANCMP_ATOL / RLS1_FANCMP_MEAN_ATOL, if set, must EQUAL the pinned values or the stage refuses (a stale export cannot loosen the gate).
 # RLS1_BANKED_SETS=<dir> overrides where the fan-equivalence gate (stage fancmp) finds the main run's banked step-10,075 sets (default: P2's restored+carved bank, see FANCMP below).
-# RLS1_ARMS="C0 R0 C1 R1 R2" (the default order: a control runs BEFORE its R arm, so K4 compares R with a finished C).  RLS1_ARMS="R0 R1 R2" is the PAIRED design
+# RLS1_ARMS (refused at the precheck when it names an arm that is not in REGISTERED_ARMS) = "C0 R0 C1 R1 R2" (the default order: a control runs BEFORE its R arm, so K4 compares R with a finished C).  RLS1_ARMS="R0 R1 R2" is the PAIRED design
 # (each R run's arm A is its matched control by construction; K4 then reads against that arm A): about 9 h of A40 less.  The choice is the Master Mind's (runbook D-RLS1-1).
-# Every child is launched with fd 200 closed (the chain holds its flock on 200).  Markers are opaque ZZ tokens.
+# Every child is launched with fd 200 closed (the chain holds chain.lock on 200 once the queue cleared); fd 199 (chain.queue) is deliberately inherited by the trainer, monitor and watcher: a
+# survivor of a killed chain keeps the single-instance guard, so a restart cannot start a second chain beside it (the ticker closes it).  Markers are opaque ZZ tokens.
 set -u
 WORK=/workspace; PKG=$WORK/refe-plan-rls1; DATA=$WORK/data
 P2=$DATA/refe_p2                                   # P2R's work dir: its chain.lock and chain.log decide "P2 is over"
+S1=$DATA/s1aux; P2REP=$DATA/refe_p2rep; P6D=$DATA/refe_p6      # the chains AHEAD of RL-S1 in the queue: their chain.lock / chain.log (read-only here)
 R=$DATA/rls1; S=$R/stage; L=$R/chain.log; STOPF=$R/chain.stop
 FINAL=$DATA/refe_runs/vitl16_navtrain10_grow_tau0.3/model_final.pt        # P2's restore put it here (md5-pinned); the frozen fan is ITS 64 proposals
 BASE=$R/base/model_sft4_B_u400.pt                                          # the RL-S1 base (PREREG_RL_S1 OPEN-BASE DECIDED: variant A)
@@ -26,6 +37,9 @@ FINAL_SHA256=4246a320be71ad0e315f8f298b7dadab3dbbba2c24f4fc30706e0129f5057e66
 TARGETS=$DATA/refe_navtrain/train_grow; IMAGES=$DATA/navtrain_pixels; CALIB=$TARGETS/calib_table.json
 PART=$PKG/raw/rl_pool/partition_runs; PNAME=A_no_trained_list_seed20261012_n16000
 MANIFEST=$PART/$PNAME.manifest.json; TRAIN_TSV=$PART/$PNAME/rl_train_scenes.tsv; VAL_TSV=$PART/$PNAME/rl_val_scenes.tsv
+# the arms this chain knows.  RLS1B-INSERTION-POINT-1 (FILLED 2026-10-14 from eval/rls1b_arms.json): the RL-S1b arms R0b and R1b (R0 / R1 with --epo-lam 0.25), argv in arm_args (-2), the control each reads
+# against in the arm loop (-3).  RL-S1b is run as  RLS1_ARMS="R0b C1 R1b"  (Master Mind's order): R0b against C0's banked dumps, then C1, then R1b against C1.  Their gate profile is refe_rls1b (arm_profile).
+REGISTERED_ARMS="C0 C1 R0 R1 R2 R0b R1b"
 SETS_TR=$R/sets_train; SETS_VA=$R/sets_val; PDM_TR=$R/pdm_train; PDM_VA=$R/pdm_val; TERMS_TR=$R/terms_train; TERMS_VA=$R/terms_val
 TLANE_TR=$R/tlane_train; TLANE_VA=$R/tlane_heldout; VALLOGS=$R/rl_val_logs.txt
 NSH="${RLS1_SHARDS:-4}"
@@ -55,13 +69,111 @@ gpu_busy() {
   apps="$("$nv" --query-compute-apps=pid --format=csv,noheader 2> /dev/null)" || return 0
   [ -n "$(echo "$apps" | tr -d '[:space:]')" ]
 }
-# P2 must be OVER: its chain holds its flock for its whole life; nothing may be on the GPU; and it must have logged ZZP2R_DONE (the PI's order, P2 -> RL-S1).
+# P2 must be OVER: its chain holds its flock for its whole life, and it must have logged ZZP2R_DONE (the PI's order, P2 -> RL-S1).  The GPU is NOT judged here any more: a chain that is
+# queued behind S1 must be startable while S1 trains; queue_wait judges the GPU (3 idle polls) before this chain's first load.
 p2_over() {
   if [ -e "$P2/chain.lock" ] && ! ( flock -n 9 ) 9<> "$P2/chain.lock"; then echo "the P2 chain still holds $P2/chain.lock"; return 1; fi
-  if gpu_busy; then echo "a process is on the GPU (or nvidia-smi cannot say): RL-S1 never adds load to a pod that is training"; return 1; fi
   if ! grep -q "ZZP2R_DONE" "$P2/chain.log" 2> /dev/null && [ "${RLS1_P2_ABANDONED:-}" != "1" ]; then
     echo "P2 never logged ZZP2R_DONE in $P2/chain.log (RLS1_P2_ABANDONED=1 only on the PI's word)"; return 1; fi
   return 0
+}
+# the launch-gate profile an arm is judged and its token minted under: refe_rls1b for the RL-S1b arms (C1 too when it runs inside an RL-S1b list), refe_rls1 for the rest.
+arm_profile() {
+  case "$1" in
+    R0b|R1b) echo refe_rls1b ;;
+    C1) case " ${RLS1_ARMS:-} " in *" R0b "*|*" R1b "*) echo refe_rls1b ;; *) echo refe_rls1 ;; esac ;;
+    *) echo refe_rls1 ;;
+  esac
+}
+arm_registered() { case " $REGISTERED_ARMS " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
+# ---- THE QUEUE.  ⛔ a lock probe takes a READ-WRITE fd (`9<>`): an exclusive flock on a read-only fd is EBADF on the pod's nfs4 (refe/test_flock_rw.py scans this file).
+lock_held() { [ -e "$1/chain.lock" ] && ! ( flock -n 9 ) 9<> "$1/chain.lock"; }
+# rc 0 iff the chain at <dir> is ALIVE (its chain.lock is held) and its CURRENT attempt has logged <ok marker> after its last <start marker> (chain.log is appended across attempts, so a
+# marker from an earlier attempt must not count).  Literal substring matches, never regexes.
+chain_past() { lock_held "$1" && awk -v s="$2" -v k="$3" 'index($0, s) { ok = 0 } index($0, k) { ok = 1 } END { exit !ok }' "$1/chain.log" 2> /dev/null; }
+# rc 0 (and the reason on stdout) iff a chain AHEAD of RL-S1 is alive.  S1 and P2: their lock.  The P2 seed replicate and P6: only once PAST their wait (still waiting, they wait on US).
+ahead() {
+  if lock_held "$P2"; then echo "the P2 chain holds $P2/chain.lock"; return 0; fi
+  if lock_held "$S1"; then echo "the S1 chain holds $S1/chain.lock"; return 0; fi
+  if chain_past "$P2REP" "ZZP2REP_START" "ZZP2REP_WAIT_OK"; then echo "the P2 seed replicate is past its wait (ZZP2REP_WAIT_OK) and holds $P2REP/chain.lock"; return 0; fi
+  if chain_past "$P6D" " chain start (p6_pod.sh" "ZZP6_WAIT_OK"; then echo "P6 is past its wait (ZZP6_WAIT_OK) and holds $P6D/chain.lock"; return 0; fi
+  return 1
+}
+# BLOCK until nothing is ahead, THEN hold chain.lock (fd 200) for the rest of the life, settle, and see the GPU idle on RLS1_IDLE_POLLS polls.  chain.lock is RELEASED again whenever something
+# ahead shows up (a replicate that passed its wait inside the settle window): never wait for an upstream chain while holding the lock they read.
+queue_wait() {
+  local poll="${RLS1_QUEUE_POLL_S:-5}" gpoll="${RLS1_IDLE_POLL_S:-30}" need="${RLS1_IDLE_POLLS:-3}" settle="${RLS1_SETTLE_S:-20}" max="${RLS1_WAIT_MAX_S:-0}"
+  local t0=$SECONDS held=0 idle=0 since=-1 tlock=0 tgpu=-1000000 why=""
+  while :; do
+    if why="$(ahead)"; then
+      if [ "$held" = 1 ]; then exec 200>&-; held=0; log "ZZRLS1_QUEUE_YIELD chain.lock released: $why"; fi
+      idle=0
+      if [ "$since" -lt 0 ] || [ $((SECONDS - since)) -ge 600 ]; then log "ZZRLS1_QUEUED $why (waited $((SECONDS - t0))s)"; since=$SECONDS; fi
+    elif [ "$held" = 0 ]; then
+      exec 200>"$R/chain.lock"
+      for _i in 1 2 3 4 5 6; do flock -n 200 && break; sleep 1 200>&-; done        # the other chains PROBE this lock (an exclusive try-lock for a few ms): a collision with a probe is not a second RL-S1
+      flock -n 200 || refuse "another process holds $R/chain.lock although no chain is ahead in the queue"
+      held=1; idle=0; tlock=$SECONDS
+      log "ZZRLS1_QUEUE_LOCK nothing is ahead: chain.lock taken, settling ${settle}s before the GPU polls"
+    elif [ $((SECONDS - tlock)) -ge "$settle" ] && [ $((SECONDS - tgpu)) -ge "$gpoll" ]; then
+      tgpu=$SECONDS
+      if gpu_busy; then idle=0; why="a process is on the GPU (or nvidia-smi cannot say)"
+      else idle=$((idle + 1)); [ "$idle" -ge "$need" ] && return 0; fi
+    fi
+    if [ "$max" -gt 0 ] && [ $((SECONDS - t0)) -ge "$max" ]; then refuse "waited $((SECONDS - t0))s in the queue (RLS1_WAIT_MAX_S): ${why:-the GPU never idled}"; fi
+    sleep "$poll" 200>&-
+  done
+}
+# the GPU idle on RLS1_IDLE_POLLS consecutive polls while THIS chain holds chain.lock (before every trainer); rc 1 after RLS1_GPU_WAIT_MAX_S.  nvidia-smi that cannot answer counts as busy.
+gpu_idle_wait() {
+  local gpoll="${RLS1_IDLE_POLL_S:-30}" need="${RLS1_IDLE_POLLS:-3}" max="${RLS1_GPU_WAIT_MAX_S:-1800}" idle=0 t0=$SECONDS
+  while :; do
+    if gpu_busy; then idle=0; else idle=$((idle + 1)); [ "$idle" -ge "$need" ] && return 0; fi
+    [ $((SECONDS - t0)) -ge "$max" ] && return 1
+    sleep "$gpoll" 200>&-
+  done
+}
+# ---- FAIL CLOSED.  rc 0 iff <pid> exists and is not a zombie (kill -0 also answers for a child that has exited and was not waited for yet).
+pid_alive() {
+  local st
+  kill -0 "$1" 2> /dev/null || return 1
+  st="$(sed -n 's/^.*) \(.\).*$/\1/p' "/proc/$1/stat" 2> /dev/null)"
+  [ "$st" != Z ]
+}
+# stop the trainer's OWN process group by its explicit id (== the trainer's pid, verified at launch): TERM, a grace period, KILL.  Never by name (pkill -f / pgrep -f match their own command line).
+stop_trainer() {
+  local pg="$1" i
+  case "$pg" in ''|*[!0-9]*) return 1 ;; esac
+  { [ "$pg" -gt 1 ] && [ "$pg" != "$$" ]; } || return 1
+  kill -TERM -- "-$pg" 2> /dev/null
+  for i in $(seq 1 "${RLS1_STOP_GRACE_S:-30}"); do pid_alive "$pg" || break; sleep 1 200>&-; done
+  kill -KILL -- "-$pg" 2> /dev/null
+  return 0
+}
+# supervise_arm <arm> <trainer pid = pgid> <monitor pid> <monitor log> <arm dir>: returns when the trainer is over (0) or after a K-MON stop (3).  The kill monitor is the ONLY thing that enforces K2 / K3 / K4 /
+# K5 / K6 while the trainer runs; a monitor that is dead (rc 137 on 2026-10-14: SIGKILLed by the cgroup's OOM killer before it printed a line) or never READY means those rules are unenforceable.
+# MON_RC carries the monitor's exit code when it was reaped here.  An existing KILLED.json (the monitor's own K-rule) is never overwritten.
+supervise_arm() {
+  local arm="$1" tp="$2" mp="$3" mlog="$4" ad="$5" ready_s="${RLS1_MON_READY_S:-600}" poll="${RLS1_SUP_POLL_S:-5}" t0=$SECONDS ready=0 why=""
+  MON_RC=""
+  while pid_alive "$tp"; do
+    if [ "$ready" = 0 ] && grep -q "^ZZRLS1_MONITOR_READY" "$mlog" 2> /dev/null; then
+      ready=1; log "arm $arm: kill monitor READY ($(grep '^ZZRLS1_MONITOR_READY' "$mlog" | tail -n 1 | cut -c1-60), after $((SECONDS - t0))s)"
+    fi
+    if ! pid_alive "$mp"; then
+      wait "$mp"; MON_RC=$?
+      if pid_alive "$tp"; then why="kill rules unenforceable: monitor died rc $MON_RC"; fi
+      break
+    fi
+    if [ "$ready" = 0 ] && [ $((SECONDS - t0)) -ge "$ready_s" ]; then why="kill rules unenforceable: monitor not READY within ${ready_s}s"; break; fi
+    sleep "$poll" 200>&-
+  done
+  [ -n "$why" ] || return 0
+  stop_trainer "$tp"
+  if pid_alive "$mp"; then kill -KILL "$mp" 2> /dev/null; fi
+  [ -f "$ad/KILLED.json" ] || printf '{"arm": "%s", "code": "K-MON", "why": "%s", "at": "%s"}\n' "$arm" "$why" "$(date +%FT%T)" > "$ad/KILLED.json"
+  log "ZZRLS1_KILL $arm K-MON $why"
+  return 3
 }
 # THE argv of one arm: the gate section's tokens (eval/HANDOFF_RL_S1.md), in its order, plus the two run-kind additions --eval-every 250 (the prereg's 250-update
 # checks) and --dump-scores (the RL-val read's input).  C0/C1 carry NO --epo* flag at all; R0/R1 the core reward; R2 = R0 + --epo-k --epo-l.
@@ -73,6 +185,9 @@ arm_args() {
     R0) seed=0; epo="--epo --epo-terms-train $TERMS_TR --epo-terms-heldout $TERMS_VA" ;;
     R1) seed=1; epo="--epo --epo-terms-train $TERMS_TR --epo-terms-heldout $TERMS_VA" ;;
     R2) seed=0; epo="--epo --epo-terms-train $TERMS_TR --epo-terms-heldout $TERMS_VA --epo-k --epo-l" ;;
+    # RLS1B-INSERTION-POINT-2 (FILLED): R0 / R1 with --epo-lam 0.25 and nothing else (eval/rls1b_arms.json, token for token; launch_gate.py profile refe_rls1b).  An R2b is NOT here: it needs a PI decision.
+    R0b) seed=0; epo="--epo --epo-terms-train $TERMS_TR --epo-terms-heldout $TERMS_VA --epo-lam 0.25" ;;
+    R1b) seed=1; epo="--epo --epo-terms-train $TERMS_TR --epo-terms-heldout $TERMS_VA --epo-lam 0.25" ;;
     *) return 1 ;;
   esac
   echo "--ckpt $BASE --backbone vitl16 --targets $TARGETS --images $IMAGES --calib $CALIB --onpolicy $SETS_TR --heldout $SETS_VA --heldout-logs $VALLOGS --out $ad --pdm-labels-train $PDM_TR --pdm-labels-heldout $PDM_VA --require-pdm --b-mode listnet --lam 0 --lr 1e-4 --max-updates 1000 --epochs 4 --workers 3 --seed $seed --eval-every 250 --dump-scores $ad/scores --lane-head --teacher-lane-train $TLANE_TR --teacher-lane-heldout $TLANE_VA${epo:+ $epo}"
@@ -82,7 +197,7 @@ arm_args() {
 token_ok() {
   tok="$(ls "$LG"/PASS_*.json 2> /dev/null | head -n 1)"
   [ -n "$tok" ] || return 1
-  env -u HF_TOKEN "$PY" "$PKG/refe/launch_gate.py" verify --profile refe_rls1 --token "$tok" --args "$ARGS" --pkg "$PKG" \
+  env -u HF_TOKEN "$PY" "$PKG/refe/launch_gate.py" verify --profile "$PROFILE" --token "$tok" --args "$ARGS" --pkg "$PKG" \
     --json "$ARMDIR/token_verify.json" >> "$ARMDIR/token_verify.log" 2>&1 200>&-
 }
 on_exit() {
@@ -96,15 +211,16 @@ on_exit() {
   exit $rc
 }
 
-exec 200>"$R/chain.lock"
-flock -n 200 || { echo "ZZRLS1_REFUSED another rls1_pod.sh holds $R/chain.lock"; exit 1; }
+exec 199>"$R/chain.queue"
+flock -n 199 || { echo "ZZRLS1_REFUSED another rls1_pod.sh is queued or running ($R/chain.queue is held; a survivor of an earlier chain holds it too)"; exit 1; }
 trap on_exit EXIT
 rm -f "$STOPF"
 log "chain start (rls1_pod.sh md5 $(md5sum "$0" | cut -c1-12))"
 
-# ---- 0. the pod, before anything is downloaded
+# ---- 0. the cheap refusals, before anything is downloaded and BEFORE the queue (a mistake costs seconds, not the hours of a wait behind S1)
 why="$(p2_over)" || refuse "$why"
 [ -n "${HF_TOKEN:-}" ] || refuse "HF_TOKEN is not set in the environment"
+for ARM in ${RLS1_ARMS:-C0 R0 C1 R1 R2}; do arm_registered "$ARM" || refuse "unknown arm '$ARM' in RLS1_ARMS (registered: $REGISTERED_ARMS)"; done
 for f in refe/scorer_finetune.py refe/aux_drivable_head.py refe/rl_fan_dump.py refe/rl_partition.py refe/rl_pool_available.py refe/onpolicy_relabel_pdm.py refe/rl_terms_label.py \
          refe/pdm_label_complete.py refe/rl_reward.py refe/hf_egress.py refe/rls1_checks.py refe/train.py refe/model.py refe/ckpt_io.py \
          refe/launch_gate.py refe/gate_token.py refe/gate_checks.py refe/gate_fixture.py refe/test_launch_gate.py refe/test_rl_epo.py refe/test_rl_reward.py \
@@ -118,12 +234,16 @@ for f in refe/scorer_finetune.py refe/aux_drivable_head.py refe/rl_fan_dump.py r
          raw/rl_pool/partition_runs/A_no_trained_list_seed20261012_n16000/rl_val_scenes.tsv; do
   [ -f "$PKG/$f" ] || refuse "$PKG/$f missing: ship code/ refe/ splits/ eval/ raw/rl_pool/ SHIP_MANIFEST.json to $PKG first (a directory of its own, NOT the one P2 ran from)"
 done
+log "precheck ok (P2 over, the token is set, the package, the arm list)"; stop_after precheck
+# ---- 0b. THE QUEUE: wait for every chain ahead of us, then hold chain.lock and see the GPU idle.  Nothing below adds load (the dd test, the checksums, the labellers, the GPU) before this returns.
+queue_wait
+log "ZZRLS1_QUEUE_CLEAR nothing is ahead, chain.lock held, GPU idle on ${RLS1_IDLE_POLLS:-3} polls"; stop_after queue
 # ⛔ never judge the disk with df (a pod volume's quota is invisible to it): WRITE to it.
 DDMB="${RLS1_DD_MB:-16384}"
 dd if=/dev/zero of="$DATA/.dd_test" bs=1M count="$DDMB" conv=fsync 2>> $L 200>&-
 [ "$(stat -c %s "$DATA/.dd_test" 2>/dev/null)" = "$((DDMB * 1024 * 1024))" ] || { rm -f "$DATA/.dd_test"; refuse "dd write test of ${DDMB} MB failed"; }
 rm -f "$DATA/.dd_test"
-log "precheck ok (P2 over, dd ${DDMB} MB)"; stop_after precheck
+log "dd write test ok (${DDMB} MB)"
 
 # ---- 1. env (P2's teacher env is REUSED: it holds the NAVSIM stack, the maps and the DriveRL fork)
 if ! [ -f "$WORK/teacher_env.sh" ]; then
@@ -139,8 +259,8 @@ CORES="$(cgroup_cores)"
 LW="${RLS1_LABEL_WORKERS:-$(( CORES - 1 < 1 ? 1 : (CORES - 1 > 16 ? 16 : CORES - 1) ))}"    # one core stays with the dump that overlaps the labels
 # a ticker pushes chain.log every 30 min, so the hours of dump and labels are not invisible
 if [ "${RLS1_TICK:-1}" = 1 ]; then
-  ( while [ ! -f "$STOPF" ]; do sleep 1800 200>&-; [ -f "$STOPF" ] && break
-      "$PY" hf_egress.py push --repo "$OUT_REPO" --prefix logs --tag chain_tick --files "$L" --chain-log "$R/egress_tick.log" 200>&-; done ) >> "$R/ticker.log" 2>&1 200>&- &
+  ( while [ ! -f "$STOPF" ]; do sleep 1800 200>&- 199>&-; [ -f "$STOPF" ] && break
+      "$PY" hf_egress.py push --repo "$OUT_REPO" --prefix logs --tag chain_tick --files "$L" --chain-log "$R/egress_tick.log" 200>&- 199>&-; done ) >> "$R/ticker.log" 2>&1 200>&- 199>&- &
   TICKPID=$!
 fi
 log "env ok (cgroup cores $CORES, label workers $LW)"; stop_after env
@@ -351,18 +471,24 @@ log "dump + labels banked on HF"; stop_after bank
 #          K1 (lam_pg = 0 reproduces C) is the preflight's G11 and the G-SUITE's test_rl_epo.py; K2/K6 and K3/K4/K5 are the monitor's.
 export OMP_NUM_THREADS=4
 for ARM in ${RLS1_ARMS:-C0 R0 C1 R1 R2}; do
-  case "$ARM" in C0|C1|R0|R1|R2) ;; *) refuse "unknown arm '$ARM'" ;; esac
+  arm_registered "$ARM" || refuse "unknown arm '$ARM'"
   stage_done "arm_$ARM" && { log "arm $ARM already done"; continue; }
   [ -f "$S/arm_${ARM}_killed" ] && stage_done "egress_$ARM" && refuse "arm $ARM was KILLED by a pre-registered rule ($(cat "$S/arm_${ARM}_killed")): the Master Mind decides; delete $S/arm_${ARM}_killed or drop the arm from RLS1_ARMS"
   ARMDIR=$R/arms/$ARM; LG=$R/lg/$ARM; ARGS="$(arm_args "$ARM")" || refuse "no argv for arm $ARM"
+  PROFILE="$(arm_profile "$ARM")"
   mkdir -p "$ARMDIR" "$LG"
   # TL-1: the pre-registered budget is --max-updates 1000.  On 16,000 scenes --epochs 2 would end at 500 (the trainer never complains), and the reads below name update1000.
   env -u HF_TOKEN "$PY" rls1_checks.py updates-check --args "$ARGS" --n-sets "$NTRAIN" > "$ARMDIR/updates.log" 2>&1 200>&-
   grep -q "^ZZRLS1_UPDATES_OK" "$ARMDIR/updates.log" || refuse "the planned optimizer updates of $ARM are not the pre-registered budget: $(tail -n 1 "$ARMDIR/updates.log" | cut -c1-250)"
+  # RLS1B-INSERTION-POINT-3: KIND (A = a control run, B = an R run) and RD (the matched control a B run reads against) of an RL-S1b arm that does not follow the C<n> / R<n> naming.
   case "$ARM" in C*) KIND=A; RD="";; *) KIND=B; RD=C${ARM:1:1};; esac
   [ "$ARM" = R2 ] && RD=C0
   # the control the K4 / K5 monitor and the replay compare R with: the matched C run's arm A when that run finished, else this run's own arm A (paired by construction)
   if [ -z "$RD" ] || [ ! -f "$R/arms/$RD/scores/scores_update1000_A.npz" ]; then REFDIR="$ARMDIR/scores"; else REFDIR="$R/arms/$RD/scores"; fi
+  # RL-S1b: an R arm is read against ITS control's banked dumps (R0b -> C0, R1b -> C1), never silently against its own arm A (the fallback above is the original plan's paired design)
+  if [ "$PROFILE" = refe_rls1b ] && [ "$KIND" = B ] && [ "$REFDIR" = "$ARMDIR/scores" ]; then
+    refuse "RL-S1b arm $ARM is read against $RD, whose dumps $R/arms/$RD/scores/scores_update1000_A.npz are missing: run it first (RLS1_ARMS=\"R0b C1 R1b\") or restore them"
+  fi
   # ---- 9a. preflight on the REAL configuration (G1-G11); the gate CONSUMES its preflight.jsonl, so it comes first
   if ! stage_done "pre_$ARM"; then
     rm -f "$ARMDIR/preflight.jsonl" "$ARMDIR/PREFLIGHT_PASS.json"
@@ -373,7 +499,7 @@ for ARM in ${RLS1_ARMS:-C0 R0 C1 R1 R2}; do
   # ---- 9b. the launch gate, for THIS arm: a PASS token or a refusal; the token is then VERIFIED (not grepped)
   if ! stage_done "gate_$ARM"; then
     rm -rf "$LG"; mkdir -p "$LG"
-    env -u HF_TOKEN OMP_NUM_THREADS=4 "$PY" launch_gate.py run --profile refe_rls1 --arm-name "$ARM" --pkg "$PKG" --args "$ARGS" --out-dir "$LG" \
+    env -u HF_TOKEN OMP_NUM_THREADS=4 "$PY" launch_gate.py run --profile "$PROFILE" --arm-name "$ARM" --pkg "$PKG" --args "$ARGS" --out-dir "$LG" \
       --gate-preflight-json "$ARMDIR/preflight.jsonl" > "$ARMDIR/launch_gate.log" 2>&1 200>&-
     echo "ZZEXIT $?" >> "$ARMDIR/launch_gate.log"
     token_ok || refuse "the launch gate did not mint a PASS token that verifies for $ARM (launch_gate.log, lg/, token_verify.log)"
@@ -382,29 +508,34 @@ for ARM in ${RLS1_ARMS:-C0 R0 C1 R1 R2}; do
   token_ok || refuse "the launch-gate token of $ARM no longer verifies (token_verify.log)"
   log "arm $ARM: preflight PASS, launch gate PASS (token verified)"; stop_after "gate_$ARM"
   # ---- 9c. train.  An interrupted attempt is archived, never appended to (the trainer has no resume).
-  if ! stage_done "train_$ARM"; then
-    for f in sft.jsonl sft.log KILLED.json kill_checks.jsonl; do [ -e "$ARMDIR/$f" ] && mv "$ARMDIR/$f" "$ARMDIR/$f.attempt$(date +%s)"; done
+  # (a KILLED arm never re-trains by itself: only the Master Mind removes stage/arm_<ARM>_killed; a deliberate re-run then also clears the arm's read and egress markers below)
+  if ! stage_done "train_$ARM" && [ ! -f "$S/arm_${ARM}_killed" ]; then
+    for f in sft.jsonl sft.log KILLED.json kill_checks.jsonl monitor.log; do [ -e "$ARMDIR/$f" ] && mv "$ARMDIR/$f" "$ARMDIR/$f.attempt$(date +%s)"; done
     rm -rf "$ARMDIR/scores" "$ARMDIR/egress_stage"
+    rm -f "$S/read_$ARM.ok" "$S/egress_$ARM.ok"
+    gpu_idle_wait || refuse "the GPU was not idle on ${RLS1_IDLE_POLLS:-3} polls within ${RLS1_GPU_WAIT_MAX_S:-1800}s before the trainer of $ARM (this chain holds chain.lock: a process outside the queue is on it)"
     token_ok || refuse "the launch-gate token does not verify for $ARM: scorer_finetune.py is NOT started"
     set -m
     ( env -u HF_TOKEN OMP_NUM_THREADS=4 PYTHONUNBUFFERED=1 "$PY" scorer_finetune.py $ARGS >> "$ARMDIR/sft.log" 2>&1 ) 200>&- &
     TPID=$!
     set +m
-    sleep 2 200>&-
+    sleep "${RLS1_LAUNCH_SETTLE_S:-2}" 200>&-
     PG="$(ps -o pgid= "$TPID" | tr -d ' ')"
     if [ "$PG" != "$TPID" ]; then kill "$TPID" 2> /dev/null; refuse "the trainer of $ARM is not its own process group (pgid $PG, pid $TPID)"; fi
     # the checkpoint watcher: pushes every settled scorer_states + the logs; two consecutive failed pushes + the next checkpoint HALT the run (PREREG_SFT4R Changed 3)
     "$PY" hf_egress.py watch --repo "$OUT_REPO-$(echo "$ARM" | tr 'A-Z' 'a-z')" --out "$ARMDIR" --stage "$ARMDIR/egress_stage" --halt-pid "$TPID" --chain-log "$L" \
       --egress-log "$ARMDIR/egress.jsonl" --log "$ARMDIR/sft.log" "$ARMDIR/sft.jsonl" "$L" > "$ARMDIR/watch.log" 2>&1 200>&- &
     WPID=$!
-    # the kill monitor: K2 (non-finite loss), K6 (hours) on every arm; K3 / K4 (two consecutive 250-update checks) and K5 (R2) on the RL-val lookup of the R arms
+    # the kill monitor: K2 (non-finite loss), K6 (hours) on every arm; K3 / K4 (two consecutive 250-update checks) and K5 (R2) on the RL-val lookup of the R arms.  It is SUPERVISED below
+    # (supervise_arm): it must print ZZRLS1_MONITOR_READY and stay alive while the trainer runs, or the trainer is stopped and the arm is K-MON.
     env -u HF_TOKEN OMP_NUM_THREADS=1 nice -n 10 "$PY" rls1_checks.py monitor --arm "$ARM" --out "$ARMDIR" --refdir "$REFDIR" --pdm "$PDM_VA" --terms "$TERMS_VA" \
       --sets "$SETS_VA" --tsv "$VAL_TSV" --pid "$TPID" > "$ARMDIR/monitor.log" 2>&1 200>&- &
     MPID=$!
     log "arm $ARM: trainer pid/pgid $TPID, watcher $WPID, monitor $MPID (control: $REFDIR)"
+    supervise_arm "$ARM" "$TPID" "$MPID" "$ARMDIR/monitor.log" "$ARMDIR"
     wait "$TPID"; TRC=$?
     wait "$WPID"; WRC=$?
-    wait "$MPID"; MRC=$?
+    if [ -n "${MON_RC:-}" ]; then MRC=$MON_RC; else wait "$MPID"; MRC=$?; fi
     log "arm $ARM: trainer rc $TRC, watcher rc $WRC, monitor rc $MRC"
     if [ -f "$ARMDIR/KILLED.json" ]; then
       echo "$(tr -d '\n' < "$ARMDIR/KILLED.json" | cut -c1-200)" > "$S/arm_${ARM}_killed"
@@ -445,7 +576,7 @@ for ARM in ${RLS1_ARMS:-C0 R0 C1 R1 R2}; do
   if ! stage_done "egress_$ARM"; then
     FILES=""
     for f in "$ARMDIR/model_sft_$KIND.pt" "$ARMDIR"/sft.jsonl "$ARMDIR"/sft.log "$ARMDIR"/preflight.jsonl "$ARMDIR"/PREFLIGHT_PASS.json "$ARMDIR"/launch_gate.log \
-             "$ARMDIR"/token_verify.json "$LG"/PASS_*.json "$ARMDIR"/KILLED.json "$ARMDIR"/kill_checks.jsonl "$ARMDIR"/kill_replay.json "$ARMDIR"/rlval_*.json \
+             "$ARMDIR"/token_verify.json "$LG"/PASS_*.json "$ARMDIR"/KILLED.json "$ARMDIR"/kill_checks.jsonl "$ARMDIR"/monitor.log "$ARMDIR"/kill_replay.json "$ARMDIR"/rlval_*.json \
              "$ARMDIR"/scorer_states_last.pt "$ARMDIR"/scores/scores_*.npz; do
       [ -f "$f" ] && FILES="$FILES $f"
     done

@@ -18,6 +18,9 @@
      must EQUAL the pins and never inputs, the done-marker bound to the bounds it passed under, the banked-sets path equal to the P2 chain's); `fancmp_behaviour` runs the
      stage's own text under bash against a stub dumper and asserts the argv the caller really passes, every refusal, every env value that must be refused, and a stale marker.
 
+  7. THE QUEUE and FAIL-CLOSED supervision (2026-10-14): `check_queue` holds their static properties here; the interleavings (S1, the P2 seed replicate before / after its wait, P6, the
+     settle race, the GPU), the monitor-dies-while-training case that must end in K-MON, the checker's memory and the mutations that must go RED run in refe/test_rls1_queue.py.
+
 Run: python refe/test_rls1_chain.py   -> ZZTEST_PASS <n>   (needs bash on PATH; Git Bash on the dev box).   Any skipped check prints ZZTEST_SKIP and is NOT counted.
 """
 from __future__ import annotations
@@ -47,10 +50,10 @@ CHAIN = HERE / "rls1_pod.sh"
 ARMS = ("C0", "C1", "R0", "R1", "R2")
 CHILD_RX = re.compile(r'"\$PY" +(scorer_finetune\.py|rls1_checks\.py|rl_fan_dump\.py|rl_partition\.py|rl_pool_available\.py|onpolicy_relabel_pdm\.py|rl_terms_label\.py|rl_tlane_label\.py|'
                       r'pdm_label_complete\.py|launch_gate\.py|hf_egress\.py)|"\$PY" +"\$PKG/refe/launch_gate\.py"|bash +"\$PKG/code/|^sleep |\bsleep +\d+ |\bdd +if=')
-ORDER = ["p2_over)\" || refuse", "source \"$WORK/teacher_env.sh\"", "--pin model_final", "--pin u400", "verify-partition", "rl_fan_dump.py --plan-only",
+ORDER = ["p2_over)\" || refuse", "; stop_after queue", "source \"$WORK/teacher_env.sh\"", "--pin model_final", "--pin u400", "verify-partition", "rl_fan_dump.py --plan-only",
          "--compare-atol \"$FANCMP_ATOL\"", "STAGES=dbs", "PT._setup()", "dump_one val 0 1", "rl_tlane_label.py --sets \"$SETS_VA\"", "rls1_checks.py tlane-exact", "rls1_checks.py join-gate", "--tag rlfan_data",
          "rls1_checks.py updates-check", "scorer_finetune.py $ARGS --preflight",
-         "launch_gate.py run --profile refe_rls1", "scorer_finetune.py $ARGS >>", "rls1_checks.py replay", "--rl-val-scenes $VAL_TSV", "--tag \"arm_$ARM\""]
+         "launch_gate.py run --profile \"$PROFILE\"", "scorer_finetune.py $ARGS >>", "rls1_checks.py replay", "--rl-val-scenes $VAL_TSV", "--tag \"arm_$ARM\""]
 PRESENT = ["onpolicy_relabel_pdm.py --sets", "rl_terms_label.py --sets", "rl_tlane_label.py --sets", "dump_one()", "label_one()"]
 TOKEN_OK_RX = re.compile(r"^token_ok\(\) \{\n.*?^\}\n", re.S | re.M)
 
@@ -58,6 +61,101 @@ TOKEN_OK_RX = re.compile(r"^token_ok\(\) \{\n.*?^\}\n", re.S | re.M)
 def fn_body(text, name):
     m = re.search(rf"^{name}\(\) \{{\n.*?^\}}\n", text, re.S | re.M)
     return m.group(0) if m else ""
+
+
+def fn_any(text, name):
+    """a function body whether it is written over several lines or on one."""
+    b = fn_body(text, name)
+    if b:
+        return b
+    m = re.search(rf"^{name}\(\) .*$", text, re.M)
+    return m.group(0) if m else ""
+
+
+def check_queue(text):
+    """Static properties of the QUEUE and of the FAIL-CLOSED supervision (2026-10-14).  [] = all hold.  Behaviour is driven in refe/test_rls1_queue.py."""
+    v = []
+    qw, ah, sa, st, gi = (fn_any(text, n) for n in ("queue_wait", "ahead", "supervise_arm", "stop_trainer", "gpu_idle_wait"))
+    # ---- lock discipline: chain.queue (fd 199) is the single-instance guard for the whole life; chain.lock (fd 200) is taken ONLY inside queue_wait, and given back while anything is ahead
+    if 'exec 199>"$R/chain.queue"' not in text or "flock -n 199" not in text:
+        v.append("QUEUE_NO_INSTANCE_GUARD")
+    if len(re.findall(r'^\s*exec 200>"\$R/chain\.lock"', text, re.M)) != 1 or 'exec 200>"$R/chain.lock"' not in qw:
+        v.append("CHAIN_LOCK_TAKEN_OUTSIDE_QUEUE")
+    if "exec 200>&-" not in qw:
+        v.append("QUEUE_NEVER_YIELDS_THE_LOCK")
+    if "flock -n 200 || refuse" not in qw:
+        v.append("QUEUE_LOCK_NOT_CHECKED")
+    # ---- what is AHEAD: P2 and S1 by their lock; the replicate and P6 only once PAST their wait (a waiting chain waits on us)
+    for need in ('lock_held "$P2"', 'lock_held "$S1"', 'chain_past "$P2REP" "ZZP2REP_START" "ZZP2REP_WAIT_OK"', 'chain_past "$P6D"', "ZZP6_WAIT_OK", "p6_pod.sh"):
+        if need not in ah:
+            v.append("AHEAD_LACKS:" + need)
+    if "lock_held \"$P2REP\"" in ah.replace("chain_past", ""):
+        v.append("AHEAD_WAITS_ON_A_WAITING_REPLICATE")
+    cp = fn_any(text, "chain_past")
+    if "lock_held" not in cp or "index($0, s) { ok = 0 }" not in cp or "index($0, k) { ok = 1 }" not in cp:
+        v.append("CHAIN_PAST_NOT_PER_ATTEMPT")
+    if not fn_any(text, "lock_held").count("9<>") or re.search(r"9<(?!>)", fn_any(text, "lock_held")):
+        v.append("LOCK_PROBE_NOT_READ_WRITE")
+    # ---- the GPU: 3 idle polls before the first load (queue) and before every trainer; an unanswerable nvidia-smi is busy (gpu_busy, checked above)
+    if "gpu_busy" not in qw or "RLS1_IDLE_POLLS" not in qw or "RLS1_SETTLE_S" not in qw or '[ "$idle" -ge "$need" ] && return 0' not in qw:
+        v.append("QUEUE_NO_GPU_POLLS")
+    if "gpu_busy" not in gi or "RLS1_IDLE_POLLS" not in gi or '[ "$idle" -ge "$need" ] && return 0' not in gi:
+        v.append("NO_GPU_IDLE_WAIT_FN")
+    # ---- order: the queue clears before the disk test, the checkpoints, the dump (GPU) and every arm; the arm list is validated before the queue
+    qpos = text.find("\nqueue_wait\n")
+    if qpos < 0:
+        v.append("QUEUE_NOT_CALLED")
+    else:
+        for later in ('dd if=/dev/zero', 'source "$WORK/teacher_env.sh"', '"$PY" rl_fan_dump.py', 'scorer_finetune.py $ARGS'):
+            if text.find(later) < qpos:                                  # absent (-1) or before the queue clears
+                v.append("ORDER:queue_after:" + later)
+        arm_chk = text.find('arm_registered "$ARM" || refuse "unknown arm \'$ARM\' in RLS1_ARMS')
+        if arm_chk < 0 or arm_chk > qpos:
+            v.append("ARMS_NOT_VALIDATED_EARLY")
+    tp = text.find("scorer_finetune.py $ARGS >>")
+    if "gpu_idle_wait || refuse" not in text[max(0, tp - 700):tp]:
+        v.append("NO_GPU_IDLE_BEFORE_TRAINER")
+    wp = text.find('wait "$TPID"; TRC=$?')
+    if 'supervise_arm "$ARM" "$TPID" "$MPID"' not in text[tp:wp] or wp < 0:
+        v.append("NO_SUPERVISOR")
+    # ---- fail closed (K-MON)
+    if "pid_alive \"$mp\"" not in sa or "wait \"$mp\"" not in sa or 'if pid_alive "$tp"; then why="kill rules unenforceable: monitor died rc $MON_RC"; fi' not in sa:
+        v.append("KMON_NO_DEAD_MONITOR_BRANCH")
+    if '[ $((SECONDS - t0)) -ge "$ready_s" ]' not in sa or "monitor not READY within" not in sa or '^ZZRLS1_MONITOR_READY' not in sa:
+        v.append("KMON_NO_READY_TIMEOUT")
+    if 'stop_trainer "$tp"' not in sa:
+        v.append("KMON_TRAINER_NOT_STOPPED")
+    if '"code": "K-MON"' not in sa or '> "$ad/KILLED.json"' not in sa:
+        v.append("KMON_NO_KILLED_JSON")
+    if '[ -f "$ad/KILLED.json" ] || printf' not in sa:
+        v.append("KMON_OVERWRITES_A_KILL")
+    if 'kill -TERM -- "-$pg"' not in st or 'kill -KILL -- "-$pg"' not in st or '[ "$pg" -gt 1 ]' not in st or '"$pg" != "$$"' not in st:
+        v.append("STOP_NOT_BY_EXPLICIT_PGID")
+    if not re.search(r'if \[ -n "\$\{MON_RC:-\}" \]; then MRC=\$MON_RC; else wait "\$MPID"; MRC=\$\?; fi', text):
+        v.append("MON_RC_NOT_CARRIED")
+    if '"$ARMDIR"/kill_checks.jsonl "$ARMDIR"/monitor.log' not in text:
+        v.append("MONITOR_LOG_NOT_BANKED")
+    if '&& [ ! -f "$S/arm_${ARM}_killed" ]; then' not in text:
+        v.append("KILLED_ARM_RETRAINS")
+    if 'rm -f "$S/read_$ARM.ok" "$S/egress_$ARM.ok"' not in text:
+        v.append("STALE_MARKERS_KEPT")
+    # ---- the RL-S1b arms are somebody else's: three named insertion points, none filled
+    for k in (1, 2, 3):
+        if f"RLS1B-INSERTION-POINT-{k}" not in text:
+            v.append(f"NO_INSERTION_POINT_{k}")
+    known = {"C0", "C1", "R0", "R1", "R2", "R0b", "R1b", "*"}
+    if set(re.findall(r"^    (\w+|\*)\)", fn_body(text, "arm_args"), re.M)) - known:
+        v.append("INVENTED_RLS1B_ARGV")                       # R2b and anything else RL-S1b names needs a PI decision / its owner's argv: never invented here
+    mreg = re.search(r'^REGISTERED_ARMS="([^"]*)"', text, re.M)
+    if not mreg or not {"R0b", "R1b"} <= set(mreg.group(1).split()):
+        v.append("RLS1B_ARMS_NOT_REGISTERED")
+    if 'R0b|R1b) echo refe_rls1b' not in fn_body(text, "arm_profile"):
+        v.append("NO_RLS1B_PROFILE")
+    if 'PROFILE="$(arm_profile "$ARM")"' not in text or 'refuse "RL-S1b arm $ARM is read against $RD' not in text:
+        v.append("RLS1B_CONTROL_NOT_ENFORCED")
+    if text.count('arm_registered "$ARM" || refuse') != 2:
+        v.append("ARM_NAMES_NOT_REFUSED_TWICE")
+    return v
 
 
 def arm_block(text, arm):
@@ -198,7 +296,9 @@ def check_chain(text):
     po, gb = fn_body(text, "p2_over"), fn_body(text, "gpu_busy")
     if "flock -n 9" not in po or '"$P2/chain.lock"' not in po:
         v.append("NO_P2_LOCK_CHECK")
-    if "gpu_busy" not in po or "--query-compute-apps=pid" not in gb or "|| return 0" not in gb:
+    if "gpu_busy" in po:
+        v.append("P2_OVER_JUDGES_THE_GPU")                  # a chain queued behind S1 must be startable while S1 trains
+    if "gpu_busy" not in fn_body(text, "queue_wait") or "--query-compute-apps=pid" not in gb or "|| return 0" not in gb:
         v.append("NO_GPU_CHECK")
     if 'grep -q "ZZP2R_DONE" "$P2/chain.log"' not in po:
         v.append("NO_P2_DONE_CHECK")
@@ -342,7 +442,7 @@ def check_chain(text):
         v.append("NO_TOKEN_OK_FUNCTION")
     else:
         body = m.group(0)
-        for needle in ('launch_gate.py" verify', '--profile refe_rls1', '--args "$ARGS"', '--pkg "$PKG"', '--token "$tok"'):
+        for needle in ('launch_gate.py" verify', '--profile "$PROFILE"', '--args "$ARGS"', '--pkg "$PKG"', '--token "$tok"'):
             if needle not in body:
                 v.append("TOKEN_OK_NOT_VERIFYING:" + needle)
         if re.search(r"\bgrep\b|^\s*return 0|\btrue\b", body, re.M):
@@ -371,6 +471,7 @@ def check_chain(text):
         if "SHIP_MANIFEST.json" not in fl.group(1).split():
             v.append("SHIP_MANIFEST_NOT_REQUIRED")
     v += check_fancmp(text)
+    v += check_queue(text)
     return v
 
 
@@ -378,7 +479,8 @@ def mutations(text):
     sw = lambda a, b: text.replace(a, b)  # noqa: E731
     out = [
         ("no P2 lock check", drop_line(text, '9<> "$P2/chain.lock"'), "NO_P2_LOCK_CHECK"),
-        ("no GPU check", drop_line(text, "if gpu_busy; then"), "NO_GPU_CHECK"),
+        ("no GPU check in the queue", sw("if gpu_busy; then idle=0; why=", "if false; then idle=0; why="), "NO_GPU_CHECK"),
+        ("p2_over judges the GPU again", sw("  if ! grep -q \"ZZP2R_DONE\" \"$P2/chain.log\"", "  if gpu_busy; then echo busy; return 1; fi\n  if ! grep -q \"ZZP2R_DONE\" \"$P2/chain.log\""), "P2_OVER_JUDGES_THE_GPU"),
         ("GPU unknown counts as idle", sw("|| return 0\n  [ -n", "|| return 1\n  [ -n"), "NO_GPU_CHECK"),
         ("no P2 finished check", sw('grep -q "ZZP2R_DONE" "$P2/chain.log"', 'grep -q "ZZNOTHING" "$P2/chain.log"'), "NO_P2_DONE_CHECK"),
         ("p2_over never called", sw('why="$(p2_over)" || refuse "$why"', "true"), "P2_OVER_NOT_CALLED"),
@@ -450,7 +552,7 @@ def mutations(text):
         ("token_ok greps the gate log", re.sub(r'(?s)(token_ok\(\) \{\n).*?(\n\}\n)', r'\1  grep -q ZZGATE-PASS "$ARMDIR/launch_gate.log"\2', text, count=1),
          "TOKEN_OK_NOT_VERIFYING"),
         ("token_ok verifies another argv", sw('--args "$ARGS" --pkg "$PKG" \\', '--args "--lr 1" --pkg "$PKG" \\'), "TOKEN_OK_NOT_VERIFYING"),
-        ("token_ok forgets the profile", sw("verify --profile refe_rls1 --token", "verify --token"), "TOKEN_OK_NOT_VERIFYING"),
+        ("token_ok forgets the profile", sw('verify --profile "$PROFILE" --token', "verify --token"), "TOKEN_OK_NOT_VERIFYING"),
         ("the trainer starts without the token check", drop_line(text, "scorer_finetune.py is NOT started"), "TRAIN_WITHOUT_TOKEN"),
         ("the gate log is grepped for PASS", sw('    token_ok || refuse "the launch gate did not mint', '    grep -q "^ZZGATE-PASS-" "$ARMDIR/launch_gate.log" || refuse "x"\n    token_ok || refuse "the launch gate did not mint'),
          "TOKEN_GREPPED"),
@@ -466,6 +568,44 @@ def mutations(text):
         ("preflight after the gate", (lambda a, b: text.replace(a + b, b + a))(*[re.search(p, text, re.S).group(0) for p in
             (r"  # ---- 9a\..*?(?=  # ---- 9b)", r"  # ---- 9b\..*?(?=  # ---- 9c)")]), "ORDER"),
         ("tar without --no-same-owner", sw("log \"env ok", "tar -xf x.tar -C /tmp\nlog \"env ok"), "TAR_OWNER"),
+    ]
+    out += [
+        # ---- the queue and the fail-closed supervision (2026-10-14)
+        ("the queue is never called", sw("\nqueue_wait\nlog", "\ntrue\nlog"), "QUEUE_NOT_CALLED"),
+        ("the queue clears AFTER the disk test", (lambda b: text.replace(b, "").replace('log "dd write test ok (${DDMB} MB)"\n', 'log "dd write test ok (${DDMB} MB)"\n' + b))(
+            re.search(r"queue_wait\nlog \"ZZRLS1_QUEUE_CLEAR[^\n]*\n", text).group(0)), "ORDER:queue_after"),
+        ("chain.lock is taken at the top (held while queued)", sw('exec 199>"$R/chain.queue"', 'exec 200>"$R/chain.lock"\nexec 199>"$R/chain.queue"'), "CHAIN_LOCK_TAKEN_OUTSIDE_QUEUE"),
+        ("the queue never gives chain.lock back", sw("exec 200>&-; held=0;", "held=0;"), "QUEUE_NEVER_YIELDS_THE_LOCK"),
+        ("the queue does not check its own lock", sw('flock -n 200 || refuse "another process holds', 'flock -n 200 || true "another process holds'), "QUEUE_LOCK_NOT_CHECKED"),
+        ("no single-instance guard", drop_line(text, "flock -n 199 ||"), "QUEUE_NO_INSTANCE_GUARD"),
+        ("S1 is not ahead", drop_line(text, '  if lock_held "$S1"; then echo'), "AHEAD_LACKS:lock_held \"$S1\""),
+        ("P2 is not ahead", drop_line(text, '  if lock_held "$P2"; then echo "the P2 chain holds'), "AHEAD_LACKS:lock_held \"$P2\""),
+        ("a WAITING replicate is ahead (deadlock with it)", sw('chain_past "$P2REP" "ZZP2REP_START" "ZZP2REP_WAIT_OK"', 'lock_held "$P2REP"'), "AHEAD_LACKS:chain_past \"$P2REP\""),
+        ("P6 is not ahead once past its wait", drop_line(text, '  if chain_past "$P6D"'), "AHEAD_LACKS:chain_past \"$P6D\""),
+        ("past-wait ignores the attempt boundary", sw("index($0, s) { ok = 0 } ", ""), "CHAIN_PAST_NOT_PER_ATTEMPT"),
+        ("the lock probe is read-only", sw('( flock -n 9 ) 9<> "$1/chain.lock"; }', '( flock -n 9 ) 9< "$1/chain.lock"; }'), "LOCK_PROBE_NOT_READ_WRITE"),
+        ("the queue skips the GPU polls", sw('[ "$idle" -ge "$need" ] && return 0; fi\n    fi', 'return 0; fi\n    fi'), "QUEUE_NO_GPU_POLLS"),
+        ("no settle window", sw('"${RLS1_SETTLE_S:-20}"', '0'), "QUEUE_NO_GPU_POLLS"),
+        ("the arm list is not validated before the queue", drop_line(text, "for ARM in ${RLS1_ARMS:-C0 R0 C1 R1 R2}; do arm_registered"), "ARMS_NOT_VALIDATED_EARLY"),
+        ("no GPU idle wait before a trainer", drop_line(text, "gpu_idle_wait || refuse"), "NO_GPU_IDLE_BEFORE_TRAINER"),
+        ("the trainer is not supervised", drop_line(text, 'supervise_arm "$ARM" "$TPID" "$MPID"'), "NO_SUPERVISOR"),
+        ("the fail-closed branch is removed", sw('if pid_alive "$tp"; then why="kill rules unenforceable: monitor died rc $MON_RC"; fi', ":"), "KMON_NO_DEAD_MONITOR_BRANCH"),
+        ("the READY timeout is removed", sw('[ $((SECONDS - t0)) -ge "$ready_s" ]', "false"), "KMON_NO_READY_TIMEOUT"),
+        ("the trainer is not stopped", sw('  stop_trainer "$tp"\n', ""), "KMON_TRAINER_NOT_STOPPED"),
+        ("K-MON writes no KILLED.json", sw('"code": "K-MON"', '"code": "K-X"'), "KMON_NO_KILLED_JSON"),
+        ("K-MON overwrites a real kill", sw('[ -f "$ad/KILLED.json" ] || printf', "printf"), "KMON_OVERWRITES_A_KILL"),
+        ("the trainer is stopped by name", sw('kill -TERM -- "-$pg"', "pkill -f scorer_finetune"), "STOP_NOT_BY_EXPLICIT_PGID"),
+        ("the stop may signal the chain's own group", sw('{ [ "$pg" -gt 1 ] && [ "$pg" != "$$" ]; } || return 1', "true"), "STOP_NOT_BY_EXPLICIT_PGID"),
+        ("the reaped monitor rc is lost", sw('if [ -n "${MON_RC:-}" ]; then MRC=$MON_RC; else wait "$MPID"; MRC=$?; fi', 'wait "$MPID"; MRC=$?'), "MON_RC_NOT_CARRIED"),
+        ("monitor.log is not banked", sw('"$ARMDIR"/kill_checks.jsonl "$ARMDIR"/monitor.log', '"$ARMDIR"/kill_checks.jsonl'), "MONITOR_LOG_NOT_BANKED"),
+        ("a killed arm re-trains", sw(' && [ ! -f "$S/arm_${ARM}_killed" ]; then', "; then"), "KILLED_ARM_RETRAINS"),
+        ("a re-run keeps the stale read / egress markers", drop_line(text, 'rm -f "$S/read_$ARM.ok" "$S/egress_$ARM.ok"'), "STALE_MARKERS_KEPT"),
+        ("an insertion point is gone", sw("RLS1B-INSERTION-POINT-2", "NOTHING"), "NO_INSERTION_POINT_2"),
+        ("an RL-S1b arm is invented", sw("    # RLS1B-INSERTION-POINT-2", "    R2b) seed=0 ;;\n    # RLS1B-INSERTION-POINT-2"), "INVENTED_RLS1B_ARGV"),
+        ("R0b / R1b are not registered", sw('REGISTERED_ARMS="C0 C1 R0 R1 R2 R0b R1b"', 'REGISTERED_ARMS="C0 C1 R0 R1 R2"'), "RLS1B_ARMS_NOT_REGISTERED"),
+        ("R0b is judged under the original profile", sw("R0b|R1b) echo refe_rls1b", "R0b|R1b) echo refe_rls1"), "NO_RLS1B_PROFILE"),
+        ("a missing control is silently replaced by the arm's own A", sw('refuse "RL-S1b arm $ARM is read against $RD', 'refuse "x $ARM $RD'), "RLS1B_CONTROL_NOT_ENFORCED"),
+        ("the in-loop arm check is gone", sw('  arm_registered "$ARM" || refuse "unknown arm \'$ARM\'"\n', ""), "ARM_NAMES_NOT_REFUSED_TWICE"),
     ]
     atol_line = re.search(r"^FANCMP_ATOL=.*$", text, re.M).group(0)
     out += [
@@ -660,8 +800,11 @@ def main() -> int:
             return bash_run(f'bash "{posix(scr)}"', {"RLS1_NVSMI": posix(nv_idle), **env})
         rc, out, _ = po(); assert rc == 0 and out == ""; n += 1                                  # everything clear
         rc, out, _ = po(FAKE_FLOCK_RC="1"); assert rc == 1 and "still holds" in out; n += 1       # P2's chain lock is held
-        rc, out, _ = po(RLS1_NVSMI=posix(nv_busy)); assert rc == 1 and "GPU" in out; n += 1       # a process on the GPU
-        rc, out, _ = po(RLS1_NVSMI=posix(nv_broken)); assert rc == 1 and "GPU" in out; n += 1     # nvidia-smi cannot say: not provably idle
+        rc, out, _ = po(RLS1_NVSMI=posix(nv_busy)); assert rc == 0 and out == ""; n += 1          # a process on the GPU is the QUEUE's business now (a chain queued behind S1 must start)
+        gscr = tmp / "gb.sh"
+        write_sh(gscr, fn_body(text, "gpu_busy") + "\ngpu_busy\n")
+        for nv, want in ((nv_idle, 1), (nv_busy, 0), (nv_broken, 0)):                              # idle -> rc 1 (not busy); a process -> busy; nvidia-smi cannot say -> busy
+            assert bash_run(f'bash "{posix(gscr)}"', {"RLS1_NVSMI": posix(nv)})[0] == want; n += 1
         (p2 / "chain.log").write_text("ZZP2_FAILED\n")
         rc, out, _ = po(); assert rc == 1 and "ZZP2R_DONE" in out; n += 1                         # P2 never finished
         rc, out, _ = po(RLS1_P2_ABANDONED="1"); assert rc == 0; n += 1                            # ... unless the PI said so
@@ -718,7 +861,7 @@ def main() -> int:
                            data=GT.data_manifest(av, LGM.RLS1_DATA), checks=checks, reasons=[], key=key, out_dir=lgdir)
 
         def tok(args, keyfile=None):
-            env = {"PY": posix(sys.executable), "PKG": posix(PKGROOT), "LG": posix(lgdir), "ARMDIR": posix(armdir), "ARGS": args, "PYTHONIOENCODING": "utf-8",
+            env = {"PY": posix(sys.executable), "PKG": posix(PKGROOT), "PROFILE": "refe_rls1", "LG": posix(lgdir), "ARMDIR": posix(armdir), "ARGS": args, "PYTHONIOENCODING": "utf-8",
                    "TANITAD_GATE_KEY_FILE": posix(keyfile or (tmp / "k" / "gate.key"))}
             return bash_run(f'bash -c \'. "{posix(h3)}"; token_ok\'', env)[0]
         mint("R0", {"G-HYG": {"status": "PASS"}})
@@ -759,14 +902,15 @@ def sandbox_runs(text, tmp):
     (pk / "refe").mkdir(parents=True)
     bindir = tmp / "bin"
     bindir.mkdir(exist_ok=True)
-    write_sh(bindir / "flock", '#!/bin/bash\nif [ "$2" = 200 ]; then exit 0; fi\nexit "${FAKE_FLOCK_RC:-0}"\n')
+    write_sh(bindir / "flock", '#!/bin/bash\nif [ "$2" = 200 ] || [ "$2" = 199 ]; then exit 0; fi\nexit "${FAKE_FLOCK_RC:-0}"\n')
     write_sh(bindir / "nvidia-smi", '#!/bin/bash\nif [ -n "${FAKE_GPU_PID:-}" ]; then echo "$FAKE_GPU_PID"; fi\nexit 0\n')
     script = tmp / "rls1_sandbox.sh"
     write_sh(script, text.replace("WORK=/workspace", f"WORK={posix(w)}").replace("sleep 1800 200>&-", "sleep 1 200>&-"))
     R = w / "data" / "rls1"
     (w / "data" / "refe_p2" / "chain.lock").write_text("")
     (w / "data" / "refe_p2" / "chain.log").write_text("ZZP2R_DONE\n")
-    base_env = {"PATH": posix(bindir) + os.pathsep + os.environ["PATH"], "HF_TOKEN": "hf_notarealtoken", "HF_HUB_OFFLINE": "1", "RLS1_DD_MB": "8"}
+    base_env = {"PATH": posix(bindir) + os.pathsep + os.environ["PATH"], "HF_TOKEN": "hf_notarealtoken", "HF_HUB_OFFLINE": "1", "RLS1_DD_MB": "8",
+                "RLS1_QUEUE_POLL_S": "1", "RLS1_IDLE_POLL_S": "1", "RLS1_SETTLE_S": "0", "RLS1_WAIT_MAX_S": "10"}
 
     def run(env_extra=None, drop=()):
         shutil.rmtree(R, ignore_errors=True)
@@ -777,7 +921,6 @@ def sandbox_runs(text, tmp):
         log = (R / "chain.log").read_text(encoding="utf-8") if (R / "chain.log").exists() else ""
         return r.returncode, r.stdout + log
     rc, out = run({"FAKE_FLOCK_RC": "1"}); assert rc == 1 and "REFUSED: the P2 chain still holds" in out, out; n += 1          # P2's lock is held
-    rc, out = run({"FAKE_GPU_PID": "777"}); assert rc == 1 and "REFUSED: a process is on the GPU" in out, out; n += 1             # a trainer on the GPU
     (w / "data" / "refe_p2" / "chain.log").write_text("ZZP2_FAILED\n")
     rc, out = run(); assert rc == 1 and "REFUSED: P2 never logged ZZP2R_DONE" in out, out; n += 1                                # P2 unfinished
     (w / "data" / "refe_p2" / "chain.log").write_text("ZZP2R_DONE\n")
@@ -791,6 +934,7 @@ def sandbox_runs(text, tmp):
     (w / "teacher_env.sh").write_text(f'export DRIVERL_EVAL_PYTHON="{posix(sys.executable)}"\n')
     (w / "data" / "backbones").mkdir(parents=True, exist_ok=True)
     env = {"RLS1_TICK": "0", "RLS1_DD_MB": "8"}
+    rc, out = run({"RLS1_TICK": "0", "FAKE_GPU_PID": "777"}); assert rc == 1 and "REFUSED: waited" in out and "a process is on the GPU" in out, out; n += 1   # a trainer on the GPU: the QUEUE waits (bounded here), never trains beside it
     rc, out = run(env); assert rc == 1 and "REFUSED: model_final.pt is not the pinned file" in out and "missing:" in out, out; n += 1
     fin = w / "data" / "refe_runs" / "vitl16_navtrain10_grow_tau0.3" / "model_final.pt"
     fin.parent.mkdir(parents=True)

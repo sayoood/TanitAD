@@ -12,6 +12,13 @@ refe/test_rls1_chain.py can drive it in both directions.  stdlib + numpy; the tw
   join-gate         THE post-label gate: every dumped set has a PDM label AND an rl_terms record (100 %), the dump IS the
                     partition side, and G-REWARD-ID (g > 0 <=> DAC = 0) has ZERO disagreements                     ZZRLS1_JOIN_OK / _REFUSED
   monitor / replay  the kill rules K2 (NaN), K3, K4 (two consecutive 250-update checks), K5 (R2), K6 (hours) on the RL-val lookup
+                    monitor prints ZZRLS1_MONITOR_UP before it loads anything and ZZRLS1_MONITOR_READY rss_mb=<n> after (the chain fails CLOSED on a monitor that dies or
+                    never gets READY: K-MON, refe/rls1_pod.sh supervise_arm); one ZZRLS1_MONITOR_RSS line per check carries the process's peak RSS (MEASURED on the pod from now on)
+
+Why the checker has its own score loader (2026-10-14, raw/2026-10-14-rls1-monitor-fix/REPORT.md): rl_val_eval.load_scores reads `z["scores"][i]` ONCE PER SET, and an NpzFile
+re-reads the WHOLE member on every access, so each of the 3,000 per-set rows is a view that keeps its own freshly decoded 10.25 MiB copy alive: N x file = 30 GiB per scores file
+and ~60 GiB for the two files of one check (MEASURED: 3,457 MB at N=1,000 and 31,605 MB peak commit at N=3,000 on the dev box, N^2 x 3,584 B).  That is what a 71 GB cgroup beside a
+trainer cannot hold: the R0 monitor was SIGKILLed (rc 137) before it printed one line.  `load_scores_light` returns the same dict from ONE read of each column.
 
 Why 100 %: a C run (no --epo) trains on EVERY PDM-labelled set of --onpolicy, while --epo restricts the index to sets that have an rl_terms
 record (scorer_finetune.py, `tr_idx = [... in terms_train]`).  Unless the labeller covered every set, C and R are not set-identical and the
@@ -345,8 +352,83 @@ def lane_change_stats(picks_lc, fires):
             "breach": bool(rate > LANE_CHANGE_FACTOR * base)}
 
 
+def _rss_mb():
+    """(current RSS MB, peak RSS MB) of THIS process; (-1, -1) when the platform offers neither /proc nor psutil.  Linux: VmRSS / VmHWM."""
+    try:
+        cur = peak = None
+        with open("/proc/self/status", encoding="utf-8") as f:
+            for ln in f:
+                if ln.startswith("VmRSS:"):
+                    cur = int(ln.split()[1]) / 1024.0
+                elif ln.startswith("VmHWM:"):
+                    peak = int(ln.split()[1]) / 1024.0
+        if cur is not None:
+            return round(cur), round(peak if peak is not None else cur)
+    except (OSError, ValueError, IndexError):
+        pass
+    try:
+        import psutil
+        mi = psutil.Process().memory_info()
+        return round(mi.rss / 2 ** 20), round(getattr(mi, "peak_wset", mi.rss) / 2 ** 20)
+    except Exception:                                                    # noqa: BLE001  (no psutil: the number is advisory, never a gate)
+        return -1, -1
+
+
+def load_scores_light(path):
+    """rl_val_eval.load_scores with its memory defect removed: the SAME dict ({key: {"ckpt", "scores" [M, C] float64, "space"}}), from ONE read of each column.
+
+    The original reads `z["scores"][i]` once per set; an NpzFile decodes the whole member on every access and the row is a VIEW of that fresh copy, so N sets retain N full copies
+    (N x 10.25 MiB = 30 GiB for the 3,000 RL-val sets, per file).  Here the 2-D array is decoded once and every row is a view of that one base.  A duplicated key is an error, a
+    space other than logit / prob is an error (same order as the original's `put`); a non-npz path falls through to the original reader."""
+    if not str(path).endswith(".npz"):
+        sys.path.insert(0, str(EVAL_DIR))
+        import rl_val_eval as RV
+        return RV.load_scores(path)
+    import numpy as np
+    sys.path.insert(0, str(EVAL_DIR))
+    import rl_val_eval as RV
+    with np.load(path, allow_pickle=False) as z:
+        sp = str(z["space"]) if "space" in z.files else "logit"
+        log, token, step, rank, ck = z["log"], z["token"], z["step"], z["rank"], z["ckpt_step"]
+        scores = np.asarray(z["scores"], np.float64)
+    out = {}
+    for i in range(len(token)):
+        k = RV.key_of((log[i], token[i], step[i], rank[i]))
+        if k in out:
+            raise ValueError(f"duplicate scores for set {RV.kstr(k)} in {path}")
+        if sp not in ("logit", "prob"):
+            raise ValueError(f"space must be logit or prob, got {sp!r}")
+        out[k] = {"ckpt": int(ck[i]), "scores": scores[i], "space": sp}
+    return out
+
+
+def load_path_cache(dir_):
+    """{(key, ckpt_step): path length [M]} for EVERY set of the dump, read once.  rl_val_eval.load_paths re-reads the whole dump (112 MB for RL-val) at every tag and keeps only
+    the wanted keys whose ckpt equals the scores' own; this keeps every (key, ckpt) and the caller filters the same way, so the result is the same dict.  Later lines win, as there."""
+    sys.path.insert(0, str(EVAL_DIR))
+    sys.path.insert(0, str(HERE))
+    import rl_val_eval as RV
+    import select_bank_subset as SB
+    out = {}
+    for fp in sorted(glob.glob(os.path.join(dir_, "onpolicy_*.jsonl"))):
+        with open(fp, encoding="utf-8") as fh:
+            for ln in fh:
+                f = SB.head_fields(ln[:2000] + ln[-400:])
+                if "log_name" not in f:
+                    continue
+                k = (f["log_name"], f.get("token", ""), int(f.get("step", 0)), int(f.get("rank", 0)))
+                try:
+                    out[(k, int(f.get("ckpt_step", -1)))] = RV.path_len(json.loads(ln)["traj"])
+                except (ValueError, KeyError, TypeError) as e:            # the original raised only for a WANTED key: keep the error, raise it at lookup
+                    out[(k, int(f.get("ckpt_step", -1)))] = e
+    return out
+
+
 class RlValChecker:
-    """One RL-val lookup of an R arm against its matched control at one tag (in-process rl_val_eval, point values only: n_boot is small)."""
+    """One RL-val lookup of an R arm against its matched control at one tag (in-process rl_val_eval, point values only: n_boot is small).
+
+    Memory (the 2026-10-14 R0 kill): everything that does not depend on the tag is loaded ONCE here (PDM labels, rl_terms, the scene list, the path lengths of the dump); a check then
+    reads two 10.7 MB score files with `load_scores_light` and holds ~100-200 MB, not rl_val_eval.load_scores' 60 GiB."""
 
     def __init__(self, arm, refdir, pdm, terms, sets, tsv, rule="navsim_v1_lane", n_boot=200):
         sys.path.insert(0, str(EVAL_DIR))
@@ -358,13 +440,17 @@ class RlValChecker:
         self.terms, _ = RV.load_terms(terms)
         self.sets, self.scenes = sets, RV.read_scenes(tsv)
         self.cfg = RW.RewardCfg(lam_d=0.15, w_prog=0.5, guard=True, use_k=(arm == "R2"), use_l=(arm == "R2"))
+        self.path_cache = load_path_cache(sets)
 
     def __call__(self, tag, files):
         RV = self.RV
         ref = os.path.join(self.refdir, f"scores_{tag}_A.npz")
-        arms = {"R": RV.load_scores(files["B"]), "C": RV.load_scores(ref)}
+        arms = {"R": load_scores_light(files["B"]), "C": load_scores_light(ref)}
         common = set(arms["R"]) & set(arms["C"])
-        paths = RV.load_paths(self.sets, common, {k: arms["R"][k]["ckpt"] for k in common})
+        paths = {k: self.path_cache[(k, arms["R"][k]["ckpt"])] for k in common if (k, arms["R"][k]["ckpt"]) in self.path_cache}
+        for v in paths.values():
+            if isinstance(v, Exception):
+                raise v
         res = RV.run(arms, self.pdm, self.terms, paths, self.rule, self.cfg, self.scenes, True, "C", self.n_boot)
         g3 = res["arms"]["R"].get("g3") or {}
         pv = res["paired_vs_base"]["R"]
@@ -401,6 +487,11 @@ def _finite_row(r):
     return all(math.isfinite(float(v)) for k, v in r.items() if k in ("bceA", "lossB", "listnet", "epo", "epo_J", "epo_kl") and isinstance(v, (int, float)))
 
 
+def _say_rss(arm, tag):
+    cur, peak = _rss_mb()
+    say("ZZRLS1_MONITOR_RSS", arm, tag, f"rss_mb={cur}", f"peak_mb={peak}")
+
+
 def monitor(arm, out_dir, check_fn, pid, alive_fn, kill_fn, sleep_fn=time.sleep, now_fn=time.time, poll=20.0, max_hours=6.0, start=None):
     """Beside a running scorer_finetune.py: after every `score_dump` event (the files are complete then) run the RL-val lookup and apply the kill rules.
     C arms are watched for K2 (non-finite loss) and K6 only; K3 / K4 / K5 are the R arms' (they compare R with its control).  A check that RAISES is
@@ -432,6 +523,7 @@ def monitor(arm, out_dir, check_fn, pid, alive_fn, kill_fn, sleep_fn=time.sleep,
                     rec = check_fn("step0", r["files"])
                     k3_enabled = bool(rec["g3_ok"])
                     say("ZZRLS1_K3_" + ("LIVE" if k3_enabled else "DISABLED_BASE_ALREADY_BREACHES_G3_ON_RL_VAL"), arm, json.dumps(rec.get("g3")))
+                    _say_rss(arm, "step0")
                     continue
                 rec = check_fn(r["tag"], r["files"])
             except Exception as e:                                       # noqa: BLE001
@@ -442,6 +534,7 @@ def monitor(arm, out_dir, check_fn, pid, alive_fn, kill_fn, sleep_fn=time.sleep,
             with open(os.path.join(out_dir, "kill_checks.jsonl"), "a", encoding="utf-8") as f:
                 f.write(json.dumps({**rec, "k3_enabled": k3_enabled, "kill": code}) + "\n")
             say("ZZRLS1_CHECK", arm, r["tag"], f"g3_ok={rec['g3_ok']} g5_ok={rec['g5_ok']} k4_breach={rec['k4_breach']} k5_breach={rec['k5_breach']}")
+            _say_rss(arm, r["tag"])
             if code:
                 kill(code, why)
                 return 2
@@ -557,8 +650,11 @@ def main(argv=None):
                 json.dump({"ok": ok, "why": why, **rep}, f, indent=1)
         say("ZZRLS1_JOIN_OK" if ok else "ZZRLS1_JOIN_REFUSED", a.side, why)
         return 0 if ok else 1
+    if a.cmd == "monitor":
+        say("ZZRLS1_MONITOR_UP", a.arm, f"pid={os.getpid()}")                  # BEFORE anything is loaded: a monitor that dies while loading has still said it started
     chk = RlValChecker(a.arm, a.refdir, a.pdm, a.terms, a.sets, a.tsv, a.rule) if not a.arm.startswith("C") else (lambda *x: None)
     if a.cmd == "monitor":
+        say("ZZRLS1_MONITOR_READY", f"rss_mb={_rss_mb()[0]}")                  # the chain stops the trainer (K-MON) if this never appears, or if the monitor dies after it
         return monitor(a.arm, a.out, chk, a.pid, _alive, _kill_group, poll=a.poll, max_hours=a.max_hours)
     code, why, recs = replay(a.arm, a.out, chk)
     with open(os.path.join(a.out, "kill_replay.json"), "w", encoding="utf-8", newline="\n") as f:
