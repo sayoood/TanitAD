@@ -1910,14 +1910,20 @@ The attribution (`D-REFE-RLS1B-1`) puts about four fifths of the loss on the **p
 TTC-failing picks. The defect is the shared scorer generalising under the EPO gradient.
 
 **Options:**
-1. **O2 (ii): a separate safety head** whose TTC/NC outputs EPO cannot move (gradient-isolated from the progress outputs). This is an architecture
-   change: a pre-registration, a launch-gate profile, and about 3.5 A40-h per arm. It is the only lever left that attacks the measured mechanism.
+1. **O2 (ii): a separate safety head** whose TTC/NC outputs EPO cannot move. ⚠️ **CORRECTED 2026-10-15 ~02:10 (same night, before any read):** this
+   lever is **predicted to FAIL by banked evidence**. Hybrid H1 (`D-REFE-RLS1B-1`) gave R0 the BCE-only arm's safety outputs and still read TTC
+   **-0.80 [-1.51, -0.14]**, so isolating the safety heads recovers at most about 0.2 of the 1.0 loss. About four fifths of the loss rides on the
+   **progress** outputs. The first draft of this item called (ii) "the only lever left that attacks the measured mechanism". That was wrong: it
+   attacks the minor term.
 2. **R2b**, the lane-change arm: a 4th arm outside the authorised three. It does not address TTC.
 3. **Park RL-S1.** The pod time goes to S1, P2-s1 and P6, which are already queued.
+4. **A lever on the PROGRESS outputs (zero-A40 design first).** HYPOTHESIS for why the dose lever (R0b, `--epo-lam 0.25`) bought the same trade:
+   Adam's update is nearly invariant to the scale of a loss term that dominates a parameter's gradient, so a 0.25 weight acts almost like 1.0.
+   If so, the dose must be applied where Adam does not normalise it away: a separate, lower learning rate for the EPO-dominated parameters, or
+   EPO's gradient restricted to fewer of them. This is testable at zero A40 first: check the per-parameter gradient shares in R0's telemetry.
 
-**Master Mind recommendation: 3 now, and 1 after P6 is training.** The pod is fully booked (P2-s1 for about 21 h, then the S1 arms, then P6's GPU
-stages). The safety-head design and pre-registration can be built at zero A40 in the meantime, so the arm would be ready the moment the pod frees.
-Default if unanswered: 3, with the zero-A40 design work on 1 continuing.
+**Master Mind recommendation: 3 now, with the zero-A40 diagnosis of 4.** The pod is fully booked (P2-s1 for about 21 h, then the S1 arms, then
+P6's GPU stages). If the diagnosis holds, a pre-registered arm is ready when the pod frees. Default if unanswered: 3, plus the diagnosis of 4.
 
 Evidence: `TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-15-rls1-calib/REPORT.md`, `.../raw/2026-10-15-rls1b-r0b-kill/`,
 `.../raw/2026-10-14-rls1b-attribution/REPORT.md`.

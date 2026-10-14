@@ -18048,3 +18048,19 @@ forever". ⇒ **Every shuffle / derangement control must assert, at run time, th
 it claims to perturb, and report that count beside its result.** An exact 0.0000 delta on every metric is a lint hit,
 not a null result. The RC rows' exact zeros on the same arm are NOT this defect: no route checkpoint is fed (PI
 2026-10-11), so they are structural zeros by design.
+
+### R36 (2026-10-15) - "O2 (ii), a separate safety head, is the only lever left that attacks the measured mechanism" (PI_DECISION_QUEUE.md, item of 2026-10-15 ~02:00, landed d5a9829)
+
+- **What is true (MEASURED, banked 2026-10-14, `.../2026-09-20-refe-plan/raw/2026-10-14-rls1b-attribution/REPORT.md` section 3).** Hybrid H1 gave R0
+  the BCE-only arm's safety outputs and still read TTC **-0.80 [-1.51, -0.14]** against C0. Isolating the safety heads recovers at most about 0.2 of
+  the 1.0 loss; about four fifths rides on the PROGRESS outputs. A separate safety head is the H1 configuration made permanent, so the banked
+  evidence predicts it FAILS.
+- **What it would have cost.** An architecture change, a pre-registration and about 3.5 A40-h per arm, aimed at the minor term. The claim was
+  corrected about 10 minutes after it landed, before the PI read it. No arm was designed or launched on it.
+- **Fixed.** The item now marks (ii) as predicted to fail and adds lever 4: a zero-A40 diagnosis on the progress outputs (HYPOTHESIS: Adam's
+  per-parameter scale invariance voided R0b's 0.25 dose). Register row `D-REFE-RLS1-O2-CALIB` corrected in the same commit.
+
+**Class:** *a next lever copied from a pre-registration's OUTCOME LIST without re-reading the attribution that had already measured it.* The
+outcome list (O2 (ii)) was written BEFORE the attribution existed, so it is INHERITED, not MEASURED. When an outcome fires, re-rank its listed
+levers against every attribution banked since the list was written. Same family as CLAUDE.md rule 5 of RULE ZERO: *prefer the lever with the
+largest measured effect*. A lever that the attribution assigns about 0.2 of the effect is not the next lever.
