@@ -16705,3 +16705,11 @@ floor (MEASURED by simulation, iid-normal model).
 | id | record | status |
 |---|---|---|
 | **H-R8-MAPW-1** (B-REG evidence line 2026-10-13, POST-HOC) | V-MAP4-roll (`--w-map-hires` 4 + `--r8-roll-targets map`): every in-run map IoU collapses vs V-R8 (drivable 0_20 -0.117 = R -9.4; lane 0_20 -> 0.0000), box/agent AP -0.007/-0.001. B-REG holds. Vs V-MAP4 the short-horizon speed error is 0.016/0.013 LOWER (beyond the replicate, both seeds): V-MAP4's speed cost comes with learning the correct map. Premise readings are n = 2 per arm. `…/emit_off_diag_2026-10-12/raw/vmap4roll/README.md`. | B-REG HOLDS; V-MAP4's map gain is real map learning but below the R >= 2 bar on drivable |
+
+<!-- REFCV8-2026-10-14-LADDER-SCORE -->
+| id | record | status |
+|---|---|---|
+| **refcv8 W-PB ladder I-0** (2026-10-14) | Registered I-0 FAIL (I0-d, I0-e, MM-2): nothing scored. Amendment A1 (POST-HOC, PI to accept): I0-d / I0-e were readers of keys the trainer never writes (agent term confirmed in every train.log; coverage 100 % train 746,946 + eval 23,772); MM-2's 10/60 CRC mismatches are predicted exactly by resume asymmetry, out of sample on V0r / V-R8r too. A1: I-0 PASS. `…/2026-10-04-refcv8-tactical-conditioning/ladder_score_2026-10-14/README.md` | REGISTERED: FAIL; A1: PASS (awaiting PI) |
+| **H-R8-RECIPE-1** (L1 score under A1, 2026-10-14) | NOT QUOTABLE: V-R8 vs deranged-nav V-R8d not separated on turn direction (R -0.17 / -0.11); B-RECIPE fails on dir, head15, a family worse, LEGAL ADE. Same file. | NOT QUOTABLE (A1); V-R8-noLW running |
+| **H-R8-BUDGET-1** (L2 score under A1, 2026-10-14) | PREMISE-UNMET (`gs_trunk_proj_tac_v6` 0.0042 < 0.01, n = 2); turn direction separated worse, box3d AP drop > F. Same file. | PREMISE-UNMET (A1): `--w-tac-v6` stays 1.0 |
+| **H-R8-MAPW-1** (L3 score under A1, 2026-10-14) | FAILS: dump map IoU drivable R 2.12 clears, lane R 0.61 does not; box3d / agent AP drop beyond F. Supersedes the 2026-10-13 descriptive line's reason (in-run 10 cm IoU), not its outcome. Same file. | FAILS (A1): `--w-map-hires` stays 1.0 |

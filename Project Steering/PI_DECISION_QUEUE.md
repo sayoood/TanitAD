@@ -1852,3 +1852,14 @@ question and the answer are recorded together here, append-only like the entries
 `TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/SPEC_WPB_LADDER_A3.md`;
 `Project Steering/PLAN_REFCV8.md` (dated notes under R8-3 / X3 and decisions 2, 5, 11).
 **Owed, not done by this record:** the `refcv8` gate profile and the trainer's `label` value (SPEC A1.6).
+
+## 🔴 NEW ITEM (2026-10-14 ~08:40 Berlin) — refcv8 ladder: accept the I-0 amendment A1?
+
+**Fact.** The ladder's registered integrity gate I-0 FAILED, so the scorer refused to score. Two of the three failures are
+the checker reading fields the trainer does not write (agent term, speed coverage); the third (fed-speed CRC) is a real
+but harmless effect of crash-restarts, predicted exactly by rule, out of sample too. Under the corrected checker (A1):
+I-0 PASS; L1 NOT QUOTABLE, L2 PREMISE-UNMET, L3 FAILS.
+**Ask.** Accept A1 as the ladder's score? **Recommendation: yes.** Rejecting it leaves `--w-tac-v6` 1.0 and
+`--w-map-hires` 1.0 anyway (the registered defaults), so the launch argv is the same either way; what changes is
+whether the L1-L3 verdicts are quotable. The selection recipe waits on V-R8-noLW (verdict ~12:00 Berlin).
+**Evidence.** `TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/ladder_score_2026-10-14/README.md`.
