@@ -16713,3 +16713,9 @@ floor (MEASURED by simulation, iid-normal model).
 | **H-R8-RECIPE-1** (L1 score under A1, 2026-10-14) | NOT QUOTABLE: V-R8 vs deranged-nav V-R8d not separated on turn direction (R -0.17 / -0.11); B-RECIPE fails on dir, head15, a family worse, LEGAL ADE. Same file. | NOT QUOTABLE (A1); V-R8-noLW running |
 | **H-R8-BUDGET-1** (L2 score under A1, 2026-10-14) | PREMISE-UNMET (`gs_trunk_proj_tac_v6` 0.0042 < 0.01, n = 2); turn direction separated worse, box3d AP drop > F. Same file. | PREMISE-UNMET (A1): `--w-tac-v6` stays 1.0 |
 | **H-R8-MAPW-1** (L3 score under A1, 2026-10-14) | FAILS: dump map IoU drivable R 2.12 clears, lane R 0.61 does not; box3d / agent AP drop beyond F. Supersedes the 2026-10-13 descriptive line's reason (in-run 10 cm IoU), not its outcome. Same file. | FAILS (A1): `--w-map-hires` stays 1.0 |
+
+
+<!-- REFCV8-2026-10-14-A4-XSHUF -->
+| id | record | status |
+|---|---|---|
+| **SPEC_REFCV8 8.3 (c)(3) on V-R8** (A4 reported reading, 2026-10-14, under I-0 A1) | V-R8 fed a DIFFERENT clip's road-type speed label on every window (control PASS: 1,112 / 1,112 windows changed, both sampler seeds) vs no label (VMAX-OFF): speed MAE 2-6 s +0.048 [+0.024, +0.074] separated WORSE at seed 0, +0.020 [-0.003, +0.045] ns at seed 1. Reading NOT-SEPARATED-BETTER: a wrong label never helps, and at seed 0 it hurts, so the speed channel is read. `vmax_shuf` is a structural identity on eval139 (A4). REPORTED ONLY (L4 not run). `…/ladder_score_2026-10-14/raw/LADDER_SCORE_A4_A1.json` | REPORTED: the speed label is live and wrong labels do not help |

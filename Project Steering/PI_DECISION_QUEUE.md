@@ -1863,3 +1863,9 @@ I-0 PASS; L1 NOT QUOTABLE, L2 PREMISE-UNMET, L3 FAILS.
 `--w-map-hires` 1.0 anyway (the registered defaults), so the launch argv is the same either way; what changes is
 whether the L1-L3 verdicts are quotable. The selection recipe waits on V-R8-noLW (verdict ~12:00 Berlin).
 **Evidence.** `TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/ladder_score_2026-10-14/README.md`.
+
+
+**Correction (2026-10-14, same item):** the item above is stamped "~08:40 Berlin"; it was written at ~06:20 Berlin
+(04:20Z). **Addendum:** the A4 cross-shuffle reading was also re-scored under A1 (`raw/LADDER_SCORE_A4_A1.json`): a wrong
+clip's speed label does not help V-R8 (speed MAE 2-6 s worse at seed 0, ns at seed 1), so the road-type speed input is
+read by the model. V-R8-noLW took the GPU lock at 04:23Z (training ~4.4 h, then Thor eval and the dev-box readout).
