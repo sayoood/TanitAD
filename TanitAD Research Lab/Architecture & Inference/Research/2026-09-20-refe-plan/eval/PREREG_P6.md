@@ -9,6 +9,12 @@
 >
 > Design: `SPEC_P6_PAPER_FAITHFUL.md`. Confidence: `P6_CONFIDENCE.md`.
 > Written 2026-10-11.
+>
+> **State on 2026-10-14 (still a DRAFT, so edited in place):**
+> - Precondition 1 **holds**. P2 R2 is **GO**: +0.57 PDMS [+0.02, +1.18] over u400 on the full navtest (`eval/RESULT_P2.md`, landed `78e9bc9`).
+> - Precondition 2: the PI decided P6-T (25 epochs), P6-N (command), P6-Y (unwrapped) and P6-D on 2026-10-11. **P6-C is open:** M-LAB recommends ≥ 24 vCPU, and the current A40 pod has 11.
+> - **Also open, for the PI:** the P2 training-seed replicate that `PREREG_P2.md` registers on ADOPT (see "Training variance" below).
+> - Pod order (PI): P2 ✅ → RL-S1 (training since 2026-10-14 04:33 Berlin) → S1 aux fine-tunes → P6.
 
 ## The arm
 
@@ -24,8 +30,10 @@
 - Context un-detached; candidates detached.
 - Six components, selected by `navsim_v1`.
 
-**Inputs and losses.** Command nav input (if P6-N = command) and unwrapped yaw L1 (if P6-Y = unwrapped). The final
-text names the decided values, and each one is also named in the argv.
+**Inputs and losses.**
+- Command nav input: P6-N, decided. It is `--nav-mode command`, hard-wired in the argv of `refe/p6_pod.sh`.
+- Unwrapped yaw L1: P6-Y, decided. It is `--yaw-wrap off`, from `P6_YAW_WRAP`, whose default is `off`.
+- The launch-gate token binds both, because it is minted over the exact argv.
 
 **Launch.** Only on a launch-gate PASS token (SPEC §5).
 
@@ -46,7 +54,7 @@ text names the decided values, and each one is also named in the argv.
 | comparator | PDMS on the full navtest | source |
 |---|---|---|
 | **C1: SFT-4 arm B u400** | **88.25** | `eval/RESULT_SFT4.md`, MEASURED, with its own seam: route fix ON, A7 ON, `navsim_v1_lane` |
-| **C2: P2** | its full-navtest number, if P2 reached that stage | – |
+| **C2: P2** | **88.82** | `eval/RESULT_P2.md`, MEASURED 2026-10-14, with its own seam: goal fix `pdm_route`, A7 ON, `navsim_v1` |
 
 The comparison is **system against system**: each arm runs with its own registered selection rule.
 
@@ -94,8 +102,15 @@ component carries a paired CI.
 **Training variance (H-ESTIM-SEED-1).**
 - A second 7-day P6 seed is not in budget.
 - The seed floor is therefore taken from the **cheapest available replicate**, in this order:
-  1. P2's training-seed replicate (`eval/PREREG_P2.md`, on ADOPT);
-  2. otherwise an SFT-4 u400 seed replicate on the dev box.
+  1. P2's training-seed replicate (`eval/PREREG_P2.md`, on ADOPT).
+     - ⚠️ 2026-10-14: P2 was ADOPT and GO. `PREREG_P2.md`'s ADOPT clause ("the seed replicate, then P6") still stands, because Amendment 1 replaced only the NO-GO clause.
+     - The PI's pod order does **not** include this replicate.
+     - Cost: about **21 A40-h** (MEASURED for P2: 42 half-hourly egress ticks) plus a 5.3 h dev-box navtest read.
+     - Whether it runs is the PI's call.
+  2. Otherwise, the three S1 no-head arms (`N-s0/N-s1/N-s2`: the SFT-4 recipe on u400, 400 updates, seeds 0–2; `PREREG_AUX_DRIVABLE_S1.md`).
+     - They are read on the full navtest on the dev box, at about 5.3 h each (MEASURED for u400).
+     - This read belongs to P6, not to S1: S1 computes no navtest PDMS (its §4.2), and N carries no head, so the read cannot touch S1's H2 question.
+     - ⚠️ It is a **scorer-only** floor (frozen trunk). It may understate the seed variance of a joint fine-tune, and is reported as such.
 - A lever claim needs **Δ's lower bound > that floor**.
 - If the floor is unmeasured at read time, P6 is reported as **"separated, single seed, not yet a lever claim"**.
 - A P6 seed-1 replicate is requested **only if P6 is ADOPT and the delta is within 2× the floor**.
