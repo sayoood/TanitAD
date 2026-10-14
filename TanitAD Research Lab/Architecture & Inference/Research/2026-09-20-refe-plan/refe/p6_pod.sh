@@ -18,6 +18,9 @@
 #         launch_gate (the BINDING launch gate, CLAUDE.md PI 2026-09-26: a PASS token) -> preflight -> train (supervised; the token is VERIFIED against the exact ARGS before the
 #         preflight and before EVERY launch) -> final push (HF, remote-verified).
 # Every child is launched with fd 200 closed (the chain holds its flock on 200).  Markers are opaque ZZ tokens.
+# OVERLAP (PI 2026-10-14 "the pod is idling", eval/P6_ON_11VCPU.md section 9): P2, RL-S1 and S1 must be OVER, but the P2 seed replicate (refe_p2rep) may be TRAINING.  Then every CPU-only
+# stage above the first GPU stage (G-LIVE-MEM) runs BESIDE its trainer: CUDA hidden, nice 19, pool sizes capped to the cores the trainer leaves (measured, not guessed), a step-time guard that
+# PAUSES the stage when the trainer slows by more than P6_GUARD_TOL (5 %), and a WAIT (replicate's lock free + ZZP2REP_DONE + GPU idle on 3 polls) before the first GPU stage.  P6_OVERLAP=0 refuses instead.
 set -u
 WORK="${WORK:-/workspace}"; DATA=$WORK/data
 PKG="${P6_PKG:-$WORK/refe-plan-p6}"
@@ -45,6 +48,8 @@ WSTOP=$P6/sync.stop
 # the launch-gate HMAC key lives on the persistent volume but OUTSIDE the shipped code tree and outside anything the watcher pushes (*.log / *.json only)
 export TANITAD_GATE_KEY_FILE="$P6/launch_gate.key"
 mkdir -p "$P6" "$S"
+P2REPD=$DATA/refe_p2rep; PAUSE_FILE=$P6/overlap.pause
+OVERLAP=0; GUARD_BASE=""; P2REP_METRICS="${P6_P2REP_METRICS:-$DATA/refe_runs/p2_joint_pdm_s1/metrics.jsonl}"
 log() { echo "$(date -u +%FT%T) $*" >> $L; }
 refuse() { log "REFUSED: $*"; exit 1; }
 stage_done() { [ -f "$S/$1.ok" ]; }
@@ -72,6 +77,7 @@ cgroup_cores() {
 }
 on_exit() {
   rc=$?
+  rm -f "$PAUSE_FILE" 2>/dev/null
   touch "$WSTOP" 2>/dev/null
   if [ -n "${WPID:-}" ]; then
     for _w in $(seq 1 36); do kill -0 "$WPID" 2>/dev/null || break; sleep 5 200>&-; done
@@ -89,24 +95,90 @@ flock -n 200 || { echo "ZZP6_REFUSED another p6_pod.sh holds $P6/chain.lock"; ex
 trap on_exit EXIT
 log "chain start (p6_pod.sh md5 $(md5sum "$0" | cut -c1-12))"
 
-# ---- P2 must be OVER: never add GPU/RAM load to a pod that is training (CLAUDE.md).  P2's chain holds its flock for its whole life.
-if [ -e "$P2DIR/chain.lock" ] && ! ( flock -n 9 ) 9> "$P2DIR/chain.lock"; then
-  refuse "the P2 chain still holds $P2DIR/chain.lock: P6 starts only after ZZP2R_DONE"
+# ---- who holds the pod?  Never add GPU/RAM load to a pod that is training (CLAUDE.md).  P2, RL-S1 and S1 must be OVER (a chain holds its flock for its whole life).  Only the P2 SEED REPLICATE may be running,
+#      and then only P6's CPU-only stages run beside it (OVERLAP, section 9 of eval/P6_ON_11VCPU.md); P6_OVERLAP=0 restores the plain refusal.
+# ⛔ a lock probe takes a READ-WRITE fd (`9<>`): an exclusive flock on a read-only fd is EBADF on the pod's nfs4 (refe/test_flock_rw.py scans this file).
+lock_held() { [ -e "$1/chain.lock" ] && ! ( flock -n 9 ) 9<> "$1/chain.lock"; }
+for u in "$P2DIR" "$DATA/rls1" "$DATA/s1aux"; do
+  if lock_held "$u"; then refuse "the chain at $u still holds its chain.lock: P6 starts only after it is over (only the P2 seed replicate may run beside P6's CPU-only stages)"; fi
+done
+if lock_held "$P2REPD"; then
+  [ "${P6_OVERLAP:-1}" = 1 ] || refuse "the P2 seed replicate holds $P2REPD/chain.lock and P6_OVERLAP=0: P6 starts only after ZZP2REP_DONE"
+  grep -q "ZZP2REP_TRAIN_START" "$P2REPD/chain.log" 2> /dev/null \
+    || refuse "the P2 seed replicate is not TRAINING yet (no ZZP2REP_TRAIN_START in $P2REPD/chain.log): its own gates measure this pod, so P6 starts beside it only once it trains"
+  OVERLAP=1
+  log "ZZP6_OVERLAP on: the P2 seed replicate is training; CPU-only stages run beside it (nice 19, capped, guarded); the first GPU stage waits for it"
 fi
+overlap_now() { lock_held "$P2REPD"; }
+nice_level() { if overlap_now; then echo 19; else echo 10; fi; }
+# the pool size a CPU-only stage may use NOW.  Beside the replicate: cores - the cgroup's MEASURED CPU burn (the trainer + its loaders) - a margin, never above the unconstrained count $1
+# (P6_OVERLAP_WORKERS fixes it).  Not beside it any more (it finished): the unconstrained count.
+cap_workers() {
+  local n="$1" out cap
+  overlap_now || { echo "$n"; return 0; }
+  if [ -n "${P6_OVERLAP_WORKERS:-}" ]; then
+    cap="$P6_OVERLAP_WORKERS"; [ "$cap" -gt "$n" ] && cap="$n"; log "ZZP6_OVERLAP_CAP $cap (P6_OVERLAP_WORKERS)"; echo "$cap"; return 0
+  fi
+  out="$("$PY" p6_overlap.py overlap-cap --cores "$CORES" --max "$n" --secs "${P6_OVERLAP_CENSUS_S:-60}" --margin "${P6_OVERLAP_MARGIN:-1.0}" 200>&-)"
+  log "$out"
+  cap="$(printf '%s\n' "$out" | sed -n 's/^ZZOVERLAP_CAP \([0-9][0-9]*\) .*/\1/p')"
+  [ -n "$cap" ] || { log "ZZP6_OVERLAP_CAP unreadable: using 1 worker"; cap=1; }
+  echo "$cap"
+}
+# The step-time guard.  While a CPU-only stage ($1 = its pid) runs beside the replicate, every P6_GUARD_POLL_S the trainer's median step time (p6_overlap.py trainer-guard) is compared with the baseline
+# taken before P6 put any load on the pod.  TWO slow reads in a row (ratio > 1 + P6_GUARD_TOL, 5 %) PAUSE the stage (its workers sleep between tokens while $PAUSE_FILE exists) for P6_GUARD_PAUSE_S,
+# doubling up to an hour while it keeps happening.  Returns the stage's own exit status.  Without a trainer beside it this is just `wait`.
+guard_watch() {
+  local pid="$1" tick="${P6_GUARD_TICK_S:-5}" poll="${P6_GUARD_POLL_S:-300}" t=0 slow=0 pause0="${P6_GUARD_PAUSE_S:-600}" pause g rc
+  pause=$pause0
+  while kill -0 "$pid" 2> /dev/null; do
+    sleep "$tick" 200>&-; t=$((t + tick))
+    [ "$t" -ge "$poll" ] || continue
+    t=0
+    { overlap_now && [ -n "$GUARD_BASE" ]; } || continue
+    "$PY" p6_overlap.py trainer-guard --metrics "$P2REP_METRICS" --base "$GUARD_BASE" --tol "${P6_GUARD_TOL:-0.05}" > "$P6/guard.out" 2>&1 200>&-; g=$?
+    if [ "$g" = 1 ]; then
+      slow=$((slow + 1)); log "ZZP6_OVERLAP_SLOW $(tail -n 1 "$P6/guard.out") (read $slow)"
+      if [ "$slow" -ge 2 ]; then
+        : > "$PAUSE_FILE"; log "ZZP6_OVERLAP_BACKOFF the stage is paused for ${pause}s"
+        sleep "$pause" 200>&-
+        rm -f "$PAUSE_FILE"; slow=0
+        pause=$((pause * 2 > 3600 ? 3600 : pause * 2))
+      fi
+    else
+      slow=0; pause=$pause0
+    fi
+  done
+  wait "$pid"; rc=$?
+  rm -f "$PAUSE_FILE"
+  return $rc
+}
 # ---- the PI's ruling P6-Y, checked NOW (cheap) and again right before ARGS: a blanked or different value stops the chain before hours of CPU are spent
 yaw_check
 
 # ---- 0. the pod, before anything is downloaded
 [ -n "${HF_TOKEN:-}" ] || refuse "HF_TOKEN is not set in the environment"
-for f in refe/train.py refe/p2r_sync.py refe/hf_egress.py refe/p6_prep.py refe/build_metric_cache.py refe/annotate_commands.py \
+for f in refe/train.py refe/p2r_sync.py refe/hf_egress.py refe/p6_prep.py refe/p6_overlap.py refe/p6_cpu_probe.py refe/build_metric_cache.py refe/annotate_commands.py \
          refe/diag_p6_labeller_identity.py refe/launch_gate.py refe/gate_token.py refe/gate_checks.py refe/gate_fixture.py \
          refe/test_launch_gate.py refe/test_p2r_chain.py refe/test_p6_levers.py refe/test_p6_chain.py SHIP_MANIFEST.json \
          code/pod_teacher_env.sh code/pod_train.sh code/pod_dataprep.sh splits/navtrain.yaml; do
   [ -f "$PKG/$f" ] || refuse "$PKG/$f missing: ship code/ refe/ splits/ SHIP_MANIFEST.json to $PKG first (a directory of its own, NOT the one P2 runs from)"
 done
 # ⛔ never judge the disk with df (a pod volume's quota is invisible to it): WRITE to it.
-DDGB="${P6_DD_GB:-8}"
-dd if=/dev/zero of="$DATA/.dd_test" bs=1M count=$((DDGB * 1024)) conv=fsync 2>> $L 200>&-
+# P6 adds 44-85 GB to a P2 pod (34-60 GB with P6_FREE_NAVLOGS=1) and the P2 seed replicate beside it writes up to ~7 GB (P6_ON_11VCPU section 5, ESTIMATED), so an 8 GB write proves nothing:
+# the default is the HIGH case + that + a margin, 96 GB (72 GB with P6_FREE_NAVLOGS=1) -- a stage-0 write that REFUSES before any CPU-hour is spent when the volume cannot hold P6.
+# The probe's exact bank scan narrows the high case; set P6_DD_GB to what it measured (P6_DD_GB=8 restores the old probe).
+DDGB="${P6_DD_GB:-$([ "${P6_FREE_NAVLOGS:-0}" = 1 ] && echo 72 || echo 96)}"
+if [ "$OVERLAP" = 1 ] && [ "$DDGB" -gt 0 ]; then
+  # beside a trainer that reads this volume: 1 GiB at a time with a pause, not one 96 GiB burst (the guard has no trainer baseline yet, so be gentle)
+  : > "$DATA/.dd_test"
+  for _c in $(seq 1 "$DDGB"); do
+    dd if=/dev/zero of="$DATA/.dd_test" bs=1M count=1024 oflag=append conv=notrunc,fsync 2>> $L 200>&- || break
+    sleep "${P6_OVERLAP_DD_PAUSE_S:-1}" 200>&-
+  done
+else
+  dd if=/dev/zero of="$DATA/.dd_test" bs=1M count=$((DDGB * 1024)) conv=fsync 2>> $L 200>&-
+fi
 [ "$(stat -c %s "$DATA/.dd_test" 2>/dev/null)" = "$((DDGB * 1024 * 1024 * 1024))" ] || { rm -f "$DATA/.dd_test"; refuse "dd write test of ${DDGB} GB failed"; }
 rm -f "$DATA/.dd_test"
 log "dd write test ${DDGB} GB ok"
@@ -126,6 +198,21 @@ CW="${P6_CACHE_WORKERS:-$(( CORES < 1 ? 1 : (CORES > 24 ? 24 : CORES) ))}"
 log "cores $CORES ($CORES_SRC): label workers $LW, cache workers $CW"
 [ "$LW" -ge 12 ] || log "WARNING: $LW label workers (< 12): G-LIVE-LAB's 6.735 sets/s bar is unlikely to hold; the gate decides"
 cd "$PKG/refe" || refuse "cannot cd $PKG/refe"
+CVD_SAVED="${CUDA_VISIBLE_DEVICES-__unset__}"
+if [ "$OVERLAP" = 1 ]; then
+  # ⛔ the CPU-only stages must not be able to touch the replicate's GPU: no device is visible to them (restored in the wait before the first GPU stage)
+  export CUDA_VISIBLE_DEVICES=""
+  # the baseline: the trainer's median step time BEFORE P6 puts any load on the pod (it needs a few steps after its compile; wait for them)
+  for _b in $(seq 1 "${P6_OVERLAP_BASELINE_TRIES:-30}"); do
+    GUARD_BASE="$("$PY" p6_overlap.py trainer-rate --metrics "$P2REP_METRICS" --last 5 200>&- | sed -n 's/^ZZTRAINER_RATE step_s=\([0-9.][0-9.]*\) .*/\1/p')"
+    [ -n "$GUARD_BASE" ] && break
+    sleep "${P6_OVERLAP_BASELINE_SLEEP_S:-60}" 200>&-
+  done
+  if [ -n "$GUARD_BASE" ]; then log "ZZP6_OVERLAP_BASELINE trainer step ${GUARD_BASE}s (guard: pause at +${P6_GUARD_TOL:-0.05}, two reads)"
+  elif [ "${P6_OVERLAP_UNGUARDED:-0}" = 1 ]; then log "ZZP6_OVERLAP_UNGUARDED no trainer baseline readable from $P2REP_METRICS (P6_OVERLAP_UNGUARDED=1)"
+  else refuse "no trainer baseline readable from $P2REP_METRICS (fewer than 3 live step intervals): the step-time guard cannot protect the replicate (P6_OVERLAP_UNGUARDED=1 only on the Master Mind's word)"; fi
+fi
+rm -f "$PAUSE_FILE"
 stage_mark env; log "env ok"; stop_after env
 
 # ---- watcher: logs every P6_SYNC_MIN (30), checkpoints every P6_HEAVY_MIN (30), to a NEW private repo; a failed push never stops the run
@@ -177,7 +264,7 @@ fetch_navlogs() {
   curl -sSL --retry 10 --retry-all-errors -C - -o "$DATA/navsim_logs_dl/meta.tgz" "$NAVLOGS_URL" 200>&- || return 1
   [ "$(stat -c %s "$DATA/navsim_logs_dl/meta.tgz")" = "$NAVLOGS_BYTES" ] || { log "D6: metadata size $(stat -c %s "$DATA/navsim_logs_dl/meta.tgz") != $NAVLOGS_BYTES"; return 1; }
   [ "$(sha256sum "$DATA/navsim_logs_dl/meta.tgz" | cut -d' ' -f1)" = "$NAVLOGS_SHA256" ] || { log "D6: metadata sha256 mismatch"; rm -f "$DATA/navsim_logs_dl/meta.tgz"; return 1; }
-  tar -xzf "$DATA/navsim_logs_dl/meta.tgz" --no-same-owner -C "$DATA/navsim_logs_dl" 200>&- || return 1
+  nice -n "$(nice_level)" tar -xzf "$DATA/navsim_logs_dl/meta.tgz" --no-same-owner -C "$DATA/navsim_logs_dl" 200>&- || return 1
   find "$DATA/navsim_logs_dl" -name '*.pkl' -exec mv -f {} "$NAVLOGS"/ \; 200>&-
   rm -f "$DATA/navsim_logs_dl/meta.tgz"
   have_navlogs
@@ -193,24 +280,55 @@ log "inputs ok (bank, $EXP_DBS DBs, $EXP_PIX pixel shards, maps: reused in place
 # ---- 5. D6 (PI P6-N-SRC): NAVSIM's OWN driving_command on the rank-0 rows, so the student sees at TRAIN time what NAVSIM hands it at TEST time.  Needs the navtrain metadata: REFUSES without it.
 if ! { stage_done commands && ls "$CBANK"/targets_rank*.jsonl > /dev/null 2>&1; }; then
   have_navlogs || fetch_navlogs || refuse "D6: no NAVSIM metadata (*.pkl) under $NAVLOGS and no download (P6_NAVSIM_LOGS_URL): the command source P6-N-SRC cannot be built"
-  "$PY" p6_prep.py command-table --logs "$NAVLOGS" --bank "$BANK" --out "$P6/commands.json" > "$P6/commands_table.out" 2>&1 200>&-
+  nice -n "$(nice_level)" "$PY" p6_prep.py command-table --logs "$NAVLOGS" --bank "$BANK" --out "$P6/commands.json" > "$P6/commands_table.out" 2>&1 200>&-
   grep -q "^ZZCMD_TABLE_OK " "$P6/commands_table.out" || refuse "D6: the command table does not cover the bank: $(tail -n 1 "$P6/commands_table.out" | cut -c1-200)"
   rm -rf "$CBANK.tmp"
-  "$PY" annotate_commands.py --bank "$BANK" --table "$P6/commands.json" --out-dir "$CBANK.tmp" > "$P6/annotate.out" 2>&1 200>&-
+  ( echo 1000 > /proc/self/oom_score_adj 2> /dev/null      # beside a trainer the OOM killer takes this before it takes the trainer
+    exec nice -n "$(nice_level)" "$PY" annotate_commands.py --bank "$BANK" --table "$P6/commands.json" --out-dir "$CBANK.tmp" ) > "$P6/annotate.out" 2>&1 200>&-
   grep -q "^ZZANNOTATE rows=[0-9]* annotated=[1-9][0-9]*" "$P6/annotate.out" || refuse "D6: annotate_commands.py annotated nothing (annotate.out)"
   rm -rf "$CBANK"; mv "$CBANK.tmp" "$CBANK"
   invalidate cache lanes lab mem egr launch_gate
   stage_mark commands
+  # opt-in disk relief (P6_ON_11VCPU section 5): the 7 GB metadata archive + its extracted pickles are needed ONLY to build commands.json; the default tree is deleted, a custom P6_NAVSIM_LOGS never
+  if [ "${P6_FREE_NAVLOGS:-0}" = 1 ]; then
+    rm -rf "$DATA/navsim_logs_dl" 200>&-
+    if [ "$NAVLOGS" = "$DATA/navsim_logs/trainval" ]; then rm -rf "$DATA/navsim_logs" 200>&-; log "D6: NAVSIM metadata deleted (P6_FREE_NAVLOGS=1); commands.json is built, a rebuild of the commands stage re-fetches it"; fi
+  fi
 fi
 log "commands ok: $(tail -n 1 "$P6/commands_table.out" | cut -c1-120)"; stop_after commands
+
+# ---- 5b. (OVERLAP only) THE EARLY READING of G-LIVE-LAB: D9 parts for the first P6_EARLY_LOGS (3) logs (~250 parts, minutes; the full build below skips them), then the labeller instrument on them
+#          BESIDE the replicate's trainer.  It answers the 11-vCPU question in the first half hour instead of after D9 + D7 (hours).  INFORMATION: it writes lab_early.json, NEVER lab.json (the
+#          gate judges lab.json); only an IDENTITY failure refuses, because the online labeller differing from the offline one is a defect whatever the speed.  P6_EARLY_LAB=0 skips it.
+if [ "$OVERLAP" = 1 ] && [ "${P6_EARLY_LAB:-1}" != "0" ] && ! stage_done earlylab; then
+  export NUPLAN_DATA_ROOT="$DATA" REFE_NUPLAN_DB_ROOT="$DBS" REFE_NAVTRAIN_YAML="$PKG/splits/navtrain.yaml"
+  CWX="$(cap_workers "$CW")"
+  ( echo 1000 > /proc/self/oom_score_adj 2> /dev/null
+    exec env -u HF_TOKEN -u DRIVERL_EVAL_ROUTE_LANE_RANK OMP_NUM_THREADS=1 REFE_PAUSE_FILE="$PAUSE_FILE" nice -n "$(nice_level)" "$PY" build_metric_cache.py build --targets "$CBANK" --out "$MC" \
+      --db-root "$DBS" --map-root "${NUPLAN_MAPS_ROOT:-}" --workers "$CWX" --limit "${P6_EARLY_LOGS:-3}" ) > "$P6/early_build.out" 2>&1 200>&- &
+  guard_watch $!
+  grep -q "^ZZMETRIC_CACHE_DONE .* failed=0 " "$P6/early_build.out" || refuse "the early D9 slice failed (early_build.out)"
+  ETOKS="$("$PY" p6_prep.py sample-tokens --cache "$MC" --n 128 200>&- | sed -n 's/^ZZTOKENS //p')"
+  [ -n "$ETOKS" ] || refuse "no parts to sample for the early labeller instrument"
+  ( echo 1000 > /proc/self/oom_score_adj 2> /dev/null
+    exec env -u HF_TOKEN -u DRIVERL_EVAL_ROUTE_LANE_RANK "$PY" diag_p6_labeller_identity.py --cache "$MC" --db-root "$DBS" --map-root "${NUPLAN_MAPS_ROOT:-}" --tokens "$ETOKS" \
+      --workers "$LW" --n-sets "${P6_LAB_SETS:-256}" --out "$P6/lab_early.json" ) > "$P6/lab_early.log" 2>&1 200>&-
+  grep -q "^ZZLAB_IDENTITY_PASS" "$P6/lab_early.log" || refuse "EARLY G-LIVE-LAB: identity or the stale-proposal refusal failed (lab_early.log)"
+  "$PY" p6_overlap.py lab-bar --json "$P6/lab_early.json" > "$P6/lab_early_bar.out" 2>&1 200>&-
+  log "ZZP6_EARLY_LAB $(tail -n 1 "$P6/lab_early_bar.out") | $(grep '^ZZLAB_THROUGHPUT' "$P6/lab_early.log" | tail -n 1) sets/s at $LW workers BESIDE the P2 seed replicate (a LOWER bound of the gate's pool-alone number; >= 6.735 = FIT on throughput)"
+  stage_mark earlylab
+fi
+stop_after earlylab
 
 # ---- 6. D9: the metric-cache PARTS, once per token (~24 CPU-h, ESTIMATED; resumable: existing files are skipped), then the EXACTNESS check on a sample
 if ! { stage_done cache && [ -d "$MC" ]; }; then
   export NUPLAN_DATA_ROOT="$DATA" REFE_NUPLAN_DB_ROOT="$DBS" REFE_NAVTRAIN_YAML="$PKG/splits/navtrain.yaml"
   for att in 1 2 3; do
+    CWX="$(cap_workers "$CW")"; NICEX="$(nice_level)"
     ( echo 1000 > /proc/self/oom_score_adj 2> /dev/null
-      exec env -u HF_TOKEN -u DRIVERL_EVAL_ROUTE_LANE_RANK OMP_NUM_THREADS=1 nice -n 10 "$PY" build_metric_cache.py build --targets "$CBANK" --out "$MC" \
-        --db-root "$DBS" --map-root "${NUPLAN_MAPS_ROOT:-}" --workers "$CW" ) > "$P6/cache_attempt$att.out" 2>&1 200>&-
+      exec env -u HF_TOKEN -u DRIVERL_EVAL_ROUTE_LANE_RANK OMP_NUM_THREADS=1 REFE_PAUSE_FILE="$PAUSE_FILE" nice -n "$NICEX" "$PY" build_metric_cache.py build --targets "$CBANK" --out "$MC" \
+        --db-root "$DBS" --map-root "${NUPLAN_MAPS_ROOT:-}" --workers "$CWX" ) > "$P6/cache_attempt$att.out" 2>&1 200>&- &
+    guard_watch $!
     cat "$P6/cache_attempt$att.out" >> "$P6/cache.log"
     grep -q "^ZZMETRIC_CACHE_DONE .* failed=0 " "$P6/cache_attempt$att.out" && break
     log "cache attempt $att incomplete: $(tail -n 1 "$P6/cache_attempt$att.out" | cut -c1-200)"
@@ -238,9 +356,11 @@ if ! stage_done lanes; then
       || refuse "D7: the DriveRL route patch is not importable (lanes_probe.out): lane-rank twins cannot be built; fix the env or decide the fallback (PI/Master Mind)"
     for k in $RANKS; do
       # DRIVERL_EVAL_ROUTE_LANE_RANK reaches the spawned pool workers through the venv's sitecustomize (a patch installed only in the parent never would)
+      CWX="$(cap_workers "$CW")"; NICEX="$(nice_level)"
       ( echo 1000 > /proc/self/oom_score_adj 2> /dev/null
-        exec env -u HF_TOKEN DRIVERL_EVAL_ROUTE_LANE_RANK="$k" OMP_NUM_THREADS=1 nice -n 10 "$PY" build_metric_cache.py build --targets "$CBANK" --out "$MC" \
-          --db-root "$DBS" --map-root "${NUPLAN_MAPS_ROOT:-}" --workers "$CW" --lane-rank "$k" ) > "$P6/lanes_$k.out" 2>&1 200>&-
+        exec env -u HF_TOKEN DRIVERL_EVAL_ROUTE_LANE_RANK="$k" OMP_NUM_THREADS=1 REFE_PAUSE_FILE="$PAUSE_FILE" nice -n "$NICEX" "$PY" build_metric_cache.py build --targets "$CBANK" --out "$MC" \
+          --db-root "$DBS" --map-root "${NUPLAN_MAPS_ROOT:-}" --workers "$CWX" --lane-rank "$k" ) > "$P6/lanes_$k.out" 2>&1 200>&- &
+      guard_watch $!
       cat "$P6/lanes_$k.out" >> "$P6/cache.log"
       grep -q "^ZZMETRIC_CACHE_DONE .* failed=0 " "$P6/lanes_$k.out" || refuse "D7: the rank-$k twin build failed (lanes_$k.out)"
       "$PY" p6_prep.py lane-distinct --bank "$CBANK" --cache "$MC" --k "$k" --n 40 --min-frac "${P6_D7_MIN_DISTINCT:-0.9}" > "$P6/lanes_distinct_$k.out" 2>&1 200>&-
@@ -277,17 +397,73 @@ token_ok() {
 export OMP_NUM_THREADS=4 PYTHONUNBUFFERED=1
 
 # ---- 8. G-LIVE-LAB's instrument: the ONLINE labeller == the OFFLINE one bit for bit (>= 64 sets), a stale proposal REFUSED, throughput at the LAUNCH worker count
-if ! key_done lab "w$LW"; then
-  TOKS="$("$PY" p6_prep.py sample-tokens --cache "$MC" --n 128 200>&- | sed -n 's/^ZZTOKENS //p')"
-  [ -n "$TOKS" ] || refuse "no parts to sample for the labeller instrument"
-  env -u HF_TOKEN -u DRIVERL_EVAL_ROUTE_LANE_RANK "$PY" diag_p6_labeller_identity.py --cache "$MC" --db-root "$DBS" --map-root "${NUPLAN_MAPS_ROOT:-}" --tokens "$TOKS" \
-    --workers "$LW" --n-sets "${P6_LAB_SETS:-256}" --out "$P6/lab.json" > "$P6/lab.log" 2>&1 200>&-
-  grep -q "^ZZLAB_IDENTITY_PASS" "$P6/lab.log" || refuse "G-LIVE-LAB instrument: identity or the stale-proposal refusal failed (lab.log)"
-  log "lab: $(grep '^ZZLAB_THROUGHPUT' "$P6/lab.log" | tail -n 1) sets/s at $LW workers (the gate judges it against 6.735)"
-  invalidate launch_gate
-  key_mark lab "w$LW"
+#         (a function, because it can run twice: beside the P2 seed replicate it reads a LOWER bound of the gate's pool-alone number, and 8c re-measures it when that bound is below the bar)
+lab_stage() {
+  if ! key_done lab "w$LW"; then
+    TOKS="$("$PY" p6_prep.py sample-tokens --cache "$MC" --n 128 200>&- | sed -n 's/^ZZTOKENS //p')"
+    [ -n "$TOKS" ] || refuse "no parts to sample for the labeller instrument"
+    ( echo 1000 > /proc/self/oom_score_adj 2> /dev/null
+      exec env -u HF_TOKEN -u DRIVERL_EVAL_ROUTE_LANE_RANK "$PY" diag_p6_labeller_identity.py --cache "$MC" --db-root "$DBS" --map-root "${NUPLAN_MAPS_ROOT:-}" --tokens "$TOKS" \
+        --workers "$LW" --n-sets "${P6_LAB_SETS:-256}" --out "$P6/lab.json" ) > "$P6/lab.log" 2>&1 200>&-
+    grep -q "^ZZLAB_IDENTITY_PASS" "$P6/lab.log" || refuse "G-LIVE-LAB instrument: identity or the stale-proposal refusal failed (lab.log)"
+    if overlap_now; then date -u +%FT%T > "$P6/lab_beside_trainer"; else rm -f "$P6/lab_beside_trainer"; fi
+    log "lab: $(grep '^ZZLAB_THROUGHPUT' "$P6/lab.log" | tail -n 1) sets/s at $LW workers$(overlap_now && echo ' BESIDE the P2 seed replicate (a lower bound)') (the gate judges it against 6.735)"
+    invalidate launch_gate
+    key_mark lab "w$LW"
+  fi
+  log "lab ok"
+}
+lab_stage; stop_after lab
+
+# ---- 8b. THE WAIT before the FIRST GPU STAGE (9, G-LIVE-MEM).  Everything above is CPU-only.  This chain holds its chain.lock while it waits, so nothing else can start on top of it.
+#          It goes on when no other chain holds the pod (P2, RL-S1, S1, the P2 seed replicate), the replicate logged ZZP2REP_DONE (when it ever ran), and nvidia-smi shows no compute process
+#          on P6_IDLE_POLLS (3) consecutive polls of P6_POLL_S (10 s); an nvidia-smi that cannot answer counts as busy.  P6_WAIT_MAX_S bounds it (0 = unbounded).
+gpu_busy() {
+  local nv="${P6_NVSMI:-nvidia-smi}" apps
+  apps="$("$nv" --query-compute-apps=pid --format=csv,noheader 2> /dev/null 200>&-)" || return 0
+  [ -n "$(echo "$apps" | tr -d '[:space:]')" ]
+}
+wait_clear() {
+  local poll="${P6_POLL_S:-10}" need="${P6_IDLE_POLLS:-3}" max="${P6_WAIT_MAX_S:-0}" idle=0 waited=0 since=0 why rc u
+  while :; do
+    why=""; rc=0
+    for u in "$P2DIR" "$DATA/rls1" "$DATA/s1aux" "$P2REPD"; do
+      if lock_held "$u"; then why="the chain at $u still holds its chain.lock"; rc=2; break; fi
+    done
+    if [ "$rc" = 0 ] && [ -f "$P2REPD/chain.log" ] && ! grep -q "ZZP2REP_DONE" "$P2REPD/chain.log" && [ "${P6_P2REP_ABANDONED:-}" != "1" ]; then
+      why="the P2 seed replicate is neither running nor finished: ZZP2REP_DONE is not in $P2REPD/chain.log (P6_P2REP_ABANDONED=1 only on the Master Mind's word)"; rc=1
+    fi
+    [ "$rc" = 1 ] && refuse "$why"
+    if [ "$rc" = 0 ] && gpu_busy; then why="a process is on the GPU (or nvidia-smi cannot say)"; rc=2; fi
+    if [ "$rc" = 0 ]; then
+      idle=$((idle + 1))
+      [ "$idle" -ge "$need" ] && return 0
+    else
+      idle=0
+      if [ "$since" = 0 ] || [ "$since" -ge 600 ]; then log "ZZP6_WAITING $why (waited ${waited}s)"; since=0; fi
+    fi
+    [ "$max" -gt 0 ] && [ "$waited" -ge "$max" ] && refuse "waited ${waited}s for the pod (P6_WAIT_MAX_S): $why"
+    sleep "$poll" 200>&-
+    waited=$((waited + poll)); since=$((since + poll))
+  done
+}
+wait_clear
+if [ "$CVD_SAVED" = "__unset__" ]; then unset CUDA_VISIBLE_DEVICES; else export CUDA_VISIBLE_DEVICES="$CVD_SAVED"; fi
+OVERLAP=0; rm -f "$PAUSE_FILE"
+log "ZZP6_WAIT_OK (no other chain holds the pod, GPU idle): the GPU stages start"; stop_after wait
+
+# ---- 8c. a G-LIVE-LAB reading taken BESIDE the replicate is a LOWER bound of the gate's quantity (the gate's pool runs alone): kept when it already clears the gate's bar (identity, stale refusal, >= 6.735
+#          sets/s), otherwise re-measured NOW, with the cores free.  The gate itself still judges lab.json, whichever run wrote it.
+if [ -f "$P6/lab_beside_trainer" ]; then
+  if "$PY" p6_overlap.py lab-bar --json "$P6/lab.json" > "$P6/lab_bar.out" 2>&1 200>&-; then
+    log "lab: the reading beside the replicate already clears the gate's bar, kept: $(tail -n 1 "$P6/lab_bar.out")"
+  else
+    log "lab: the reading beside the replicate is below the bar (or unreadable), re-measured now that the pod is free: $(tail -n 1 "$P6/lab_bar.out")"
+    invalidate lab launch_gate
+  fi
+  rm -f "$P6/lab_beside_trainer"
 fi
-log "lab ok"; stop_after lab
+lab_stage
 
 # ---- 9. G-LIVE-MEM's instrument: the REAL launch configuration for 200 micro-batches on this card (peak <= 44 GB); its ckpt_last.pt is G-EGR's probe.  An instrument run, NOT a training run:
 #          scratch --out, no --resume, never the real run directory.
