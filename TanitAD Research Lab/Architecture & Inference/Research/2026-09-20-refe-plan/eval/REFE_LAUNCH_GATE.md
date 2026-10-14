@@ -93,6 +93,9 @@ Behaviour: `token_ok` extracted verbatim and run under bash against a token mint
   --epo-terms-train`, no K/L; **R2** = R + `--epo-k --epo-l`; all of them `--pdm-labels-train/-heldout --require-pdm --b-mode listnet --lam 0`, the PREREG recipe (`RLS1_RECIPE`) and the registered EPO lever values (`RLS1_EPO_REGISTERED`, the
   effective value, named or default). `run` mints for ONE named arm (`--arm-name C0|C1|R0|R1|R2`, which also asserts the arm's seed); an undeclared arm is read off the argv, which cannot notice an omitted flag. `--gate-preflight-json` takes
   `preflight.jsonl` (the `data` event is what binds the preflight to the argv's levers); `PREFLIGHT_PASS.json` alone passes the gates but G-DVB refuses it.
+* **`refe_p2rep`** (the P2 training-seed replicate, `P2REP_POD_RUNBOOK.md`, chain `refe/p2rep_pod.sh`; 2026-10-14): `refe_p2` (same checks, same `G-P2GATE`, same data and forbidden flags) plus `--seed 1` required plus the WHOLE argv PINNED (`pinned_argv`, a generic rule
+  that only a profile carrying it triggers): the argv must be P2's `ARGS` with exactly two changes, `--out /workspace/data/refe_runs/p2_joint_pdm_s1` and `--seed 1`; the same (flag, values) groups, each once, in any order. A moved lever, a flag added / dropped / doubled, P2's own `--out`
+  or a missing / different seed is a refusal. Why not `refe_p2`: it names 9 of the argv's 24 flags and neither `--seed` nor `--out` (it is CLEAN on the replicate's argv with the seed dropped). `G-SUITE` adds `test_p2rep_chain.py`. Regression arms: `test_p2rep_chain.py` (23 argv mutations through the real `profile_refusals`, `run_checks` and `finalize`).
 
 ## 5. `refe_p6` refuses today (a test, not a note)
 

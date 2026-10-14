@@ -15,6 +15,8 @@ CLAUDE.md, PI 2026-09-26 (BINDING).  Route, contract and every regression arm: e
     python launch_gate.py refusals --profile refe_p6 --args "<the P6 argv>"
     # RL-S1 (trained by scorer_finetune.py, not train.py): the arm is NAMED (C0 C1 R0 R1 R2); the preflight is the trainer's own `--preflight` log, parsed
     python launch_gate.py run --profile refe_rls1 --arm-name R0 --pkg <pkg> --args "$ARGS" --out-dir <dir> --gate-preflight-json <preflight.jsonl>
+    # P2-s1, the P2 training-seed replicate (refe/p2rep_pod.sh): P2's gates on P2's argv PLUS exactly two changes (--out, --seed 1), PINNED token for token
+    python launch_gate.py run --profile refe_p2rep --pkg <pkg> --args "$ARGS" --out-dir <dir> --gate-sets <d> --gate-pdm <d> --gate-bank <d> --p2-gate-json <gate.json>
 
 Token: schema `tanitad.launch_gate/1` (gate_token.py), HMAC-SHA256 with a pod-local key; PASS only if every required check has usable PASS
 evidence bound to the same (profile, commit, tree_sha256, argv_sha256) whose `inputs_read` fingerprints equal the launch data manifest.
@@ -73,6 +75,29 @@ AUXS1_HEAD_TERMS = ("aux_bce", "aux_huber")                                     
 AUXS1_SUITE = [{"script": "test_rl_reward.py", "token": "ZZTEST_PASS"}, {"script": "test_rl_epo.py", "token": "ZZTEST_PASS"},
                {"script": "test_aux_drivable_head.py", "token": "ZZTEST_PASS"}, {"script": "test_aux_s1_wiring.py", "token": "ZZTEST_PASS"},
                {"script": "test_launch_gate.py", "args": ["--static", "--no-banked"], "token": "ZZLG_STATIC_PASS"}]
+# P2-s1, the P2 TRAINING-SEED REPLICATE (eval/PREREG_P2_REPLICATE.md; chain refe/p2rep_pod.sh).  The arm is P2's argv CHARACTER FOR CHARACTER with exactly two changes: `--out` is the
+# replicate's own run directory and `--seed 1` is added (P2 ran the parser default, seed 0).  `refe_p2` binds NEITHER (its `required_flags` names 8 of its 20 flags; a missing `--seed 1`, P2's
+# own `--out`, or any other lever that moved would still mint), so the replicate has a profile of its own that PINS the whole argv (`pinned_argv`, token for token).
+# P2_ARGV is `ARGS` of refe/p2r_pod.sh as it EXPANDS on the pod (DATA=/workspace/data, RUN=$DATA/refe_runs/p2_joint_pdm); test_p2rep_chain.py diffs the three copies (p2r_pod.sh, p2rep_pod.sh, this).
+P2_RUN_DIR = "/workspace/data/refe_runs/p2_joint_pdm"
+P2REP_RUN_DIR = "/workspace/data/refe_runs/p2_joint_pdm_s1"
+P2REP_SEED = 1
+P2_ARGV = ("--backbone vitl16 --targets /workspace/data/refe_navtrain/train_grow --scorer-targets /workspace/data/refe_navtrain/train_grow --images /workspace/data/navtrain_pixels "
+           "--calib /workspace/data/refe_navtrain/train_grow/calib_table.json --init-from /workspace/data/refe_runs/vitl16_navtrain10_grow_tau0.3/model_final.pt --scorer-mode onpolicy "
+           "--onpolicy-targets /workspace/data/refe_navtrain/onpolicy/sets --pdm-labels /workspace/data/refe_sft2/train_pdm --pdm-only --scorer-sees-trunk --epochs 3 --epoch-unit scenes "
+           "--batch 4 --accum 64 --lr 5e-5 --amp bf16 --tf32 --compile --workers 2 --log-every 1 --ckpt-every-min 20 --out " + P2_RUN_DIR + " --resume")
+
+
+def p2rep_argv(p2_argv: str = P2_ARGV) -> list:
+    """P2's argv with EXACTLY the replicate's two changes: `--out` -> the replicate's run dir, and `--seed 1` inserted before it.  Anything else is P2's."""
+    toks = p2_argv.split()
+    i = toks.index("--out")
+    toks[i + 1] = P2REP_RUN_DIR
+    toks[i:i] = ["--seed", str(P2REP_SEED)]
+    return toks
+
+
+P2REP_ARGV = p2rep_argv()
 _BASE = dict(trainer="refe/train.py", parser_module="train", trainer_src="train.py", live_terms=("traj_L1", "score"), ckpt_steps=4, smoke_steps=2, smoke_accum=2,
              suite=SUITE, forbidden_flags=FORBIDDEN, output_flags=("--out",), mintable=True, require_commit=True, rehearsal=False,
              checks=("G-HYG", "G-DVB", "G-LIVE", "G-EVAL", "G-CKPT", "G-SUITE"), na_ok=("G-CLOCK",),
@@ -134,12 +159,42 @@ PROFILES = {
 }
 
 
+# the replicate = refe_p2 (same checks, same G-P2GATE sub-check, same data flags, same forbidden flags, same P2 levers asserted) + `--seed 1` required + the WHOLE argv pinned + its own chain test in G-SUITE
+PROFILES["refe_p2rep"] = {**PROFILES["refe_p2"], "name": "refe_p2rep", "suite": SUITE + [{"script": "test_p2rep_chain.py", "token": "ZZTEST_PASS"}],
+                          "required_flags": {**PROFILES["refe_p2"]["required_flags"], "--seed": str(P2REP_SEED)}, "pinned_argv": tuple(P2REP_ARGV)}
+
+
 def parse_args_string(s: str) -> list:
     return GT.argv_from_string(s)
 
 
 def flag_present(argv, flag):
     return flag in argv
+
+
+def pinned_argv_refusals(prof: dict, argv: list) -> list:
+    """A profile with `pinned_argv` accepts ONE argv: the same (flag, values) groups, each exactly once, in any order (argparse is order-blind).  A lever that moved, a flag added, a flag dropped,
+    a flag twice, or a token before the first flag is a refusal -- the generic `required_flags` rules name only the levers a profile ASSERTS and let every other flag through."""
+    pin = prof.get("pinned_argv")
+    if not pin:
+        return []
+    name, out = prof["name"], []
+    want, got = {}, {}
+    for d, toks in ((want, list(pin)), (got, list(argv))):
+        for f, v in GT.flag_pairs(toks):
+            d.setdefault(f, []).append(tuple(v))
+    if argv and not str(argv[0]).startswith("--"):
+        out.append(f"{name}: the argv starts with {argv[0]!r}, which belongs to no flag")
+    for f in sorted(want):
+        if f not in got:
+            out.append(f"{name} PINS {f} {' '.join(want[f][0])}; the argv does not carry it")
+        elif len(got[f]) > 1:
+            out.append(f"{name}: {f} is carried {len(got[f])} times (it is pinned once)")
+        elif got[f][0] != want[f][0]:
+            out.append(f"{name} PINS {f} {' '.join(want[f][0])}; the argv has {f} {' '.join(got[f][0])}")
+    for f in sorted(set(got) - set(want)):
+        out.append(f"{name}: the argv carries {f} {' '.join(got[f][0])}, which the profile does not pin (the replicate is P2's argv plus --out and --seed {P2REP_SEED}, and nothing else)")
+    return out
 
 
 def profile_refusals(prof: dict, argv: list) -> list:
@@ -172,6 +227,7 @@ def profile_refusals(prof: dict, argv: list) -> list:
         if f not in known:
             out.append(f"DECLARED, NOT BUILT: {prof['name']} declares {f} but the trainer's parser has no such flag "
                        f"(a config that declares a lever the model does not build is a launch blocker)")
+    out += pinned_argv_refusals(prof, argv)
     trainer_src = prof.get("trainer_src", "train.py")
     src = (HERE / trainer_src).read_text(encoding="utf-8")
     terms = tuple(prof.get("live_terms", ()))
