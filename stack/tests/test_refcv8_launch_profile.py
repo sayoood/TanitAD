@@ -47,6 +47,8 @@ _RULED = {"--r8-rc-variant": None, "--r8-rc-noise-along-m": None, "--r8-rc-noise
           "--vis1-sidecar": ["/home/nvidia/data/refcv8/vis1_sidecar_refcv8b1_train4572_eval139.npz"],
           # SPEC_REFCV8 A3: the nav tau re-derived on the 4,572 view
           "--nav-compliance-tau-file": ["/home/nvidia/data/refcv8/nav_compliance_tau_train4572.json"], "--nav-compliance-tau-rad": ["0.1806411302089691"],
+          # PI 2026-10-14 (R8-RECIPE closed): the smoke ran the X1 listwise loss; the launch recipe turns it off
+          "--w-r8-listwise": ["0.0"],
           }
 
 
@@ -90,10 +92,11 @@ def test_the_ruled_smoke_argv_passes_every_argv_rule_with_NO_pending_PI_decision
     old_refusals, _p = LG.profile_argv_rules(prof, old)
     assert any("--r8-rc-variant" in r for r in old_refusals) and any("--r8-speed-input" in r for r in old_refusals)
     ids = [it["id"] for it in prof["open_items"]]
-    # R8-WARMUP was CLOSED by the Master Mind on 2026-10-11 (SPEC_REFCV8 sec. 10.3): three items still wait on evidence
-    assert ids == ["R8-RECIPE", "R8-BUDGET", "R8-INHERITED-RECORDS"]
-    assert "R8-WARMUP" not in ids
-    assert len(LG.open_item_reasons(prof)) == 3                              # the token cannot read PASS yet
+    # R8-WARMUP was CLOSED by the Master Mind on 2026-10-11 (SPEC_REFCV8 sec. 10.3); R8-RECIPE, R8-BUDGET and
+    # R8-INHERITED-RECORDS on 2026-10-15 (the PI's ruling of 2026-10-14). They stay on record as CLOSED items.
+    assert ids == [] and LG.open_item_reasons(prof) == []
+    assert [it["id"] for it in LG._REFCV8_CLOSED_ITEMS] == ["R8-RECIPE", "R8-BUDGET", "R8-INHERITED-RECORDS"]
+    assert all(it["closed"].startswith("2026-10-15") for it in LG._REFCV8_CLOSED_ITEMS)
 
 
 def test_S_emit_is_the_warmup_length_and_both_are_1000_literals():
@@ -119,6 +122,13 @@ def test_S_emit_is_the_warmup_length_and_both_are_1000_literals():
     (lambda a: LG.set_flag(a, "--r8-speed-input", None), "--r8-speed-input"),
     (lambda a: LG.set_flag(a, "--r8-speed-unknown-p", ["0.2"]), "--r8-speed-unknown-p"),
     (lambda a: LG.set_flag(a, "--r8-roll-speed-input", []), "--r8-roll-speed-input"),
+    # R8-RECIPE / R8-BUDGET closed 2026-10-15: each decided value refuses its violation
+    (lambda a: LG.set_flag(a, "--w-r8-listwise", ["1.0"]), "--w-r8-listwise"),
+    (lambda a: LG.set_flag(a, "--r8-n-alloc", ["16"]), "--r8-n-alloc"),
+    (lambda a: LG.set_flag(a, "--r8-alloc-emit", None), "--r8-alloc-emit"),
+    (lambda a: LG.set_flag(a, "--r8-prior-free-group", []), "--r8-prior-free-group"),
+    (lambda a: LG.set_flag(a, "--w-tac-v6", ["100.0"]), "--w-tac-v6"),
+    (lambda a: LG.set_flag(a, "--w-map-hires", ["4.0"]), "--w-map-hires"),
 ])
 def test_each_refcv8_rule_refuses_its_violation(mutate, needle):
     refusals, _p = LG.profile_argv_rules(LG.PROFILES["refcv8"], mutate(_ruled_argv()))
@@ -170,3 +180,23 @@ def test_the_argv_is_a_refcv8_argv_the_trainer_accepts_with_exactly_the_stated_d
     for f, v in LG.flag_pairs(r7):                     # every refcv7 token not named as a change is kept verbatim
         if f not in changed:
             assert LG.flag_values(a, f) == list(v), f
+
+
+LAUNCH_FILE = STACK / "ops" / "runs.d" / "refcv8-r101-s0.argv.json"
+
+
+def test_the_committed_LAUNCH_argv_passes_every_argv_rule_and_carries_the_ruled_recipe():
+    """The profile's closed items are only as good as their agreement with the argv that actually launches: the
+    committed launch argv (b30f924) passes every argv-level rule -- the host-side FIX-4 tau record aside, as for the
+    smoke -- and carries the PI's 2026-10-14 recipe as LITERALS."""
+    prof = LG.PROFILES["refcv8"]
+    a = list(json.loads(LAUNCH_FILE.read_text(encoding="utf-8"))["argv"])
+    refusals, pending = LG.profile_argv_rules(prof, a)
+    refusals = [r for r in refusals if not r.startswith("--graft-nav-compliance is passed without a RECORDED tau")]
+    assert refusals == [] and pending == [], (refusals, pending)
+    for f, v in (("--r8-n-alloc", ["32"]), ("--w-r8-alloc-l1", ["1.0"]), ("--w-r8-listwise", ["0.0"]),
+                 ("--w-r8-sat", ["0.1"]), ("--w-r8-subscore", ["0.5"]), ("--w-r8-v9-cons", ["0.05"]),
+                 ("--r8-lat-prior-dropout", ["0.3"]), ("--w-tac-v6", ["1.0"]), ("--w-map-hires", ["1.0"]),
+                 ("--r8-alloc-emit", [])):
+        assert LG.flag_values(a, f) == v, f
+    assert LG.flag_values(a, "--r8-prior-free-group") is None

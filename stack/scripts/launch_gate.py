@@ -620,17 +620,27 @@ PROFILES: dict[str, dict] = {
 
 #: refcv8 (WP-B, PLAN_REFCV8; DESIGN sec. 3; SPEC_WPB + SPEC_WPB_LADDER): the parts of the flag set NOT yet decided.
 #: ⛔ While any is open the token is not a PASS -- each names what decides it.
-_REFCV8_OPEN_ITEMS = (
+#: ALL THREE CLOSED 2026-10-15 (Master Mind) on the PI's ruling of 2026-10-14 ("follow your recommendations":
+#: accept the ladder's I-0 amendment A1; launch with --w-r8-listwise 0.0, --w-tac-v6 1.0, --w-map-hires 1.0). They
+#: are kept below VERBATIM, each with its `closed` record, and their flags are LITERALS in `required_values` /
+#: `required_flags` / `forbidden_values`, equal to the committed launch argv (refcv8-r101-s0.argv.json, b30f924).
+_REFCV8_CLOSED_ITEMS = (
     {"id": "R8-RECIPE",
      "what": "the conditioning recipe's values (--r8-n-alloc, --r8-alloc-emit, --w-r8-alloc-l1, --w-r8-listwise, "
              "--w-r8-sat, --w-r8-subscore, --w-r8-v9-cons, --r8-lat-prior-dropout, --r8-prior-free-group) are decided "
              "by SPEC_WPB's "
              "frozen-trunk arms (registered c952d4b4) and SPEC_WPB_LADDER L1",
-     "owner": "WP-B (results) -> the Master Mind (ruling)"},
+     "owner": "WP-B (results) -> the Master Mind (ruling)",
+     "closed": "2026-10-15 on the PI's ruling of 2026-10-14: the ladder is scored under A1 (L1 NOT QUOTABLE; "
+               "…/2026-10-04-refcv8-tactical-conditioning/ladder_score_2026-10-14/), V-R8-noLW CONFIRMED "
+               "(5fef1b0), so the recipe is stack/ops/runs.d/refcv8-r101-s0.l1_recipe.json: listwise 0.0, the rest "
+               "as the smoke -- required_values / required_flags / forbidden_values below"},
     {"id": "R8-BUDGET",
      "what": "--w-tac-v6 and --w-map-hires for refcv8 (SPEC_WPB_LADDER L2 / L3, sized from P-GRAD); refcv7's 1.0 "
              "stands until the ladder reads",
-     "owner": "WP-B -> the Master Mind"},
+     "owner": "WP-B -> the Master Mind",
+     "closed": "2026-10-15 on the PI's ruling of 2026-10-14: L2 PREMISE-UNMET, L3 FAILS under A1, so k 1 and "
+               "w 1 -- --w-tac-v6 1.0 and --w-map-hires 1.0 (required_values below)"},
     # R8-WARMUP is CLOSED (Master Mind ruling 2026-10-11, SPEC_REFCV8 sec. 10.3, registered 2026-10-11): re-warm both
     # LR groups over 1,000 steps to head 1e-4 / trunk 5e-5 under --opt dd, cosine over the run; --ema-decay 0.9998,
     # the EMA evaluated at every in-run eval and saved; the B1 guard --b1-guard-ref-ap2m <refcv7-50,400 value>
@@ -639,8 +649,17 @@ _REFCV8_OPEN_ITEMS = (
     {"id": "R8-INHERITED-RECORDS",
      "what": "the Thor env-failure pin list and the G-MAP / G-BOX overfit records are refcv7's, INHERITED; they "
              "are re-run on the refcv8 tree before a binding token",
-     "owner": "WP-B / the gate agent"},
+     "owner": "WP-B / the gate agent",
+     "closed": "2026-10-15: the gate's own checks enforce exactly this, and nothing inherited can pass them. "
+               "G-MAP-OVERFIT / G-BOX-OVERFIT accept only a --binding record whose launch-argv sha256 is THIS "
+               "argv's and whose code closure equals the launch tree's (refcv7's records carry refcv7's argv); "
+               "both are re-run on the refcv8 tree (Thor refcv8_run/bind_<c12>). G-SUITE accepts only a Thor "
+               "verdict bound to the launch tree with every failure inside the pin: MEASURED on the refcv8 tree "
+               "c95768b, 147 of the 165 pinned ids failing and 3 outside, all 3 FIXED in afaaf42 / 2f40f90 "
+               "(…/2026-10-04-refcv8-tactical-conditioning/launch_gate_2026-10-14/README.md)"},
 )
+#: ⛔ an item is OPEN only while it sits here; the closed ones above stay as the record of how each was decided
+_REFCV8_OPEN_ITEMS: tuple = ()
 _R7 = PROFILES["refcv7"]
 #: refcv8 = refcv7's profile (every refcv7 rule still binds: the perception stack, the selection mechanisms, the
 #: DrivoR-T levers off) + the refcv8 seams, the v9 release and the warm start.
@@ -657,7 +676,9 @@ PROFILES["refcv8"] = dict(
         "--r8-no-rc", "--join-defect-masks", "--grad-share-every", "--max-speed-input-v6", "--r8-speed-input",
         "--speed-max-sidecar-v6", "--speed-max-sidecar-v6-eval", "--pose-sync-sidecar",
         # R8-WARMUP (SPEC_REFCV8 10.3 / 10.1): the weight EMA and the B1 guard
-        "--ema-decay", "--b1-guard-ref-ap2m", "--b1-guard-step"),
+        "--ema-decay", "--b1-guard-ref-ap2m", "--b1-guard-step",
+        # R8-RECIPE CLOSED 2026-10-15 (PI 2026-10-14): the allocated extras ARE emitted
+        "--r8-alloc-emit"),
     required_flags_why=dict(_R7.get("required_flags_why") or {}, **{
         "--max-speed-input-v6": "SPEC_REFCV8 8.3 (X3): the set-speed channel, the ceiling's source",
         "--r8-speed-input": "PI ruling 2026-10-11 (Q-B): the channel's source is the QUANTIZED max-speed LABEL "
@@ -718,7 +739,18 @@ PROFILES["refcv8"] = dict(
         # `--eval-every 500` reaches. A launch batch other than 16 is a DIFFERENT window set (B-EVAL-GEOMETRY).
         "--batch": "16",
         "--eval-batches": "8",
-        "--eval-every": "500"}),
+        "--eval-every": "500",
+        # R8-RECIPE + R8-BUDGET, CLOSED 2026-10-15 on the PI's ruling of 2026-10-14 -- the committed launch argv's
+        # values (refcv8-r101-s0.argv.json, b30f924), written out
+        "--r8-n-alloc": "32",
+        "--w-r8-alloc-l1": "1.0",
+        "--w-r8-listwise": "0.0",
+        "--w-r8-sat": "0.1",
+        "--w-r8-subscore": "0.5",
+        "--w-r8-v9-cons": "0.05",
+        "--r8-lat-prior-dropout": "0.3",
+        "--w-tac-v6": "1.0",
+        "--w-map-hires": "1.0"}),
     required_values_why=dict(_R7.get("required_values_why") or {}, **{
         "--r8-v9-md5": "SPEC_REFCV8 A2: the 4,572-clip train release (the 4,369 clips row-identical to WP-A WPA-S3's "
                        "f63ece41..., the control in v9_train4572/RESULT.md)",
@@ -759,7 +791,17 @@ PROFILES["refcv8"] = dict(
         "--batch": "SPEC_REFCV8 10.1: the B1 reference is defined on the 128-window in-run eval = "
                    "--eval-batches 8 x --batch 16",
         "--eval-batches": "SPEC_REFCV8 10.1: the in-run eval geometry the B1 reference is defined on (8 x 16 = 128 windows)",
-        "--eval-every": "SPEC_REFCV8 10.1: the in-run eval fires at step 1,000 (the guard's first read)"}),
+        "--eval-every": "SPEC_REFCV8 10.1: the in-run eval fires at step 1,000 (the guard's first read)",
+        "--r8-n-alloc": "PI 2026-10-14 (R8-RECIPE closed): the l1 recipe, refcv8-r101-s0.l1_recipe.json: allocation M 32",
+        "--w-r8-alloc-l1": "PI 2026-10-14 (R8-RECIPE closed): the l1 recipe, refcv8-r101-s0.l1_recipe.json",
+        "--w-r8-listwise": "PI 2026-10-14 (R8-RECIPE closed): the X1 listwise selector loss OFF -- V-R8-noLW "
+                             "CONFIRMED (5fef1b0): the listwise-trained selector is what lost the GT turns",
+        "--w-r8-sat": "PI 2026-10-14 (R8-RECIPE closed): the l1 recipe, refcv8-r101-s0.l1_recipe.json",
+        "--w-r8-subscore": "PI 2026-10-14 (R8-RECIPE closed): the l1 recipe, refcv8-r101-s0.l1_recipe.json",
+        "--w-r8-v9-cons": "PI 2026-10-14 (R8-RECIPE closed): the l1 recipe, refcv8-r101-s0.l1_recipe.json",
+        "--r8-lat-prior-dropout": "PI 2026-10-14 (R8-RECIPE closed): the l1 recipe, refcv8-r101-s0.l1_recipe.json",
+        "--w-tac-v6": "PI 2026-10-14 (R8-BUDGET closed): k 1 -- L2 PREMISE-UNMET under A1",
+        "--w-map-hires": "PI 2026-10-14 (R8-BUDGET closed): w 1 -- L3 FAILS under A1"}),
     required_positive=tuple(_R7["required_positive"]) + ("--w-r8-cons", "--w-r8-v9-cons"),
     forbidden_levers=tuple(_R7["forbidden_levers"]) + (
         (("--r8-derange-feed",), "SPEC_WPB_LADDER's L1 deliberate-regression diagnostic"),
@@ -778,10 +820,15 @@ PROFILES["refcv8"] = dict(
         #  The RC entry above replaces the certified noised RC-A50 inputs (along 2.0 m, lat 0.75 m, dropout 0.3).)
     ),
     #: PI Q-B: the channel's source is the label; the past-only proxies are refused by value
-    forbidden_values=dict(_R7.get("forbidden_values") or {}, **{"--r8-speed-input": ("n2", "n3")}),
+    #: R8-RECIPE CLOSED 2026-10-15 (PI 2026-10-14): the prior-free group is OFF -- `()` refuses the boolean's mere
+    #: presence (`forbidden_value_reasons`: a present flag with no value is refused)
+    forbidden_values=dict(_R7.get("forbidden_values") or {}, **{"--r8-speed-input": ("n2", "n3"),
+                                                                "--r8-prior-free-group": ()}),
     forbidden_values_why=dict(_R7.get("forbidden_values_why") or {}, **{"--r8-speed-input": (
         "PI 2026-10-11 (Q-B): the refcv8 speed input is the quantized max-speed LABEL (`label`); the past-only "
-        "proxies n2 / n3 are superseded")}),
+        "proxies n2 / n3 are superseded"),
+        "--r8-prior-free-group": "PI 2026-10-14 (R8-RECIPE closed): the l1 recipe launches without the prior-free "
+                                  "group, as the smoke and the ladder arms did"}),
     #: both PI items that stood here are CLOSED by the PI's rulings of 2026-10-11 (Q-A: no route checkpoint; Q-B: the
     #: quantized label is the speed input), so no flag of this profile awaits a PI value -- the mechanism stays
     pi_pending_values=dict(_R7.get("pi_pending_values") or {}),

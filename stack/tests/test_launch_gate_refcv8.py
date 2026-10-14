@@ -50,6 +50,8 @@ DELTAS = {
     "--vis1-sidecar": ["/home/nvidia/data/refcv8/vis1_sidecar_refcv8b1_train4572_eval139.npz"],
     # SPEC_REFCV8 A3: the nav tau re-derived on the 4,572 view
     "--nav-compliance-tau-file": ["/home/nvidia/data/refcv8/nav_compliance_tau_train4572.json"], "--nav-compliance-tau-rad": ["0.1806411302089691"],
+    # PI 2026-10-14 (R8-RECIPE closed, launch_gate.py _REFCV8_CLOSED_ITEMS): the X1 listwise loss OFF
+    "--w-r8-listwise": ["0.0"],
 }
 
 
