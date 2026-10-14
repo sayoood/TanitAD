@@ -16720,3 +16720,10 @@ floor (MEASURED by simulation, iid-normal model).
 | id | record | status |
 |---|---|---|
 | **SPEC_REFCV8 8.3 (c)(3) on V-R8** (A4 reported reading, 2026-10-14, under I-0 A1) | V-R8 fed a DIFFERENT clip's road-type speed label on every window (control PASS: 1,112 / 1,112 windows changed, both sampler seeds) vs no label (VMAX-OFF): speed MAE 2-6 s +0.048 [+0.024, +0.074] separated WORSE at seed 0, +0.020 [-0.003, +0.045] ns at seed 1. Reading NOT-SEPARATED-BETTER: a wrong label never helps, and at seed 0 it hurts, so the speed channel is read. `vmax_shuf` is a structural identity on eval139 (A4). REPORTED ONLY (L4 not run). `…/ladder_score_2026-10-14/raw/LADDER_SCORE_A4_A1.json` | REPORTED: the speed label is live and wrong labels do not help |
+
+
+<!-- REFCV8-2026-10-14-NOLW -->
+| id | record | status |
+|---|---|---|
+| **PI-R8-NOLW** (pre-registered readout, 2026-10-14) | V-R8-noLW (`--w-r8-listwise 0`) vs V-R8, GT-turn cross 6 s: 10.42 vs 14.98 m (d -4.57 [-8.04, -1.48]) and 10.16 vs 15.14 m (d -4.98 [-8.54, -1.64]); R 1.38 / 1.69 over the V-R8 replicate floor; P2 bank ns both seeds. Four families vs V0: lateral equal, longitudinal better beyond F (along 6 s -0.31 / -0.34 m, speed 2-6 s -0.08 / -0.10), raw ceiling overshoot +0.009; CEIL-OBEY indicator (non-exempt) 0.0090 / 0.0081 vs V0 0.0126 / 0.0117. `…/emit_off_diag_2026-10-12/raw/nolw/README.md` | **CONFIRMED** (P1 + P2, both seeds) |
+| **H-R8-RECIPE-1** (2026-10-14, after noLW) | The L1 turn loss was the X1 listwise selection loss (lateral-blind target), now shown by intervention. But no refcv8 arm moves TURN DIRECTION beyond F vs V0 at the tiny rung (noLW -0.009 / 0.000): the conditioning's lateral claim is unsupported here; its measured gain is longitudinal. Same file. | listwise REFUTED as the recipe; conditioning lateral benefit NOT SHOWN at the tiny rung |

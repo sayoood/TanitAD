@@ -1869,3 +1869,16 @@ whether the L1-L3 verdicts are quotable. The selection recipe waits on V-R8-noLW
 (04:20Z). **Addendum:** the A4 cross-shuffle reading was also re-scored under A1 (`raw/LADDER_SCORE_A4_A1.json`): a wrong
 clip's speed label does not help V-R8 (speed MAE 2-6 s worse at seed 0, ns at seed 1), so the road-type speed input is
 read by the model. V-R8-noLW took the GPU lock at 04:23Z (training ~4.4 h, then Thor eval and the dev-box readout).
+
+
+## 🔴 NEW ITEM (2026-10-14 ~11:40 Berlin) — refcv8 launch recipe after V-R8-noLW: launch with the listwise loss OFF?
+
+**Fact.** V-R8-noLW is CONFIRMED by its pre-registered rule: with the listwise selection loss off, the turn cross-track
+error at 6 s drops from ~15.0 m to ~10.3 m (both seeds, beyond V-R8's run-to-run spread) and the candidate bank is
+unharmed. Against V0 it is equal laterally and better longitudinally (along-track 6 s -0.3 m, speed 2-6 s -0.09 m/s);
+the CEIL-OBEY indicator reads 0.9 % / 0.8 % (bar 1 %; V0 1.3 % / 1.2 %).
+**Ask.** Launch refcv8 with V-R8's recipe and `--w-r8-listwise 0`, `--w-tac-v6` 1.0, `--w-map-hires` 1.0?
+**Recommendation: yes.** Then the remaining path is argv assembly, the 100-step G-LIVE measurement smoke, the overfit
+bindings on Thor, the suite and the launch gate, all mine. ⚠ Honest scope: no arm improved TURN DIRECTION over V0 at the
+tiny rung; refcv8's measured gain is longitudinal.
+**Evidence.** `TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/emit_off_diag_2026-10-12/raw/nolw/README.md`.
