@@ -1897,3 +1897,27 @@ the listwise loss off, tactical weight 1, map weight 1).
 **Applied:** `refcv8_prelaunch.sh assemble --stage measure` -> `stack/ops/runs.d/refcv8-r101-s0.measure.argv.json`
 (self-test OK, ASSEMBLED 210 tokens). Next: ship this commit to Thor as `/home/nvidia/refcv8_run/launch_tree`, the
 G-LIVE measurement smoke, the launch-stage argv from its reading, `bind`, the Thor suite verdict, `gate`, `fire`.
+
+## 🔴 NEW ITEM (2026-10-15 ~02:00 Berlin) — RL-S1 after outcome O2: a separate safety head, R2b, or park it?
+
+**State (MEASURED, RL-val selection tier, one seed per arm):** RL-S1's EPO arm buys PDMS (R0 +1.16 at u1000) but loses TTC (-1.00), and the trade
+is **not separable** by any lever that needs no A40:
+- the dose: R0b at `--epo-lam 0.25` was KILLED by K3 (`D-REFE-RLS1B-R0B`);
+- calibration of the TTC/NC heads (`D-REFE-RLS1-O2-CALIB`, TTC -0.70 to -0.87 at every deciding read);
+- a TTC gate on both sides, or on R only (both FAIL as registered).
+
+The attribution (`D-REFE-RLS1B-1`) puts about four fifths of the loss on the **progress** outputs and shows that the reward does not prefer the
+TTC-failing picks. The defect is the shared scorer generalising under the EPO gradient.
+
+**Options:**
+1. **O2 (ii): a separate safety head** whose TTC/NC outputs EPO cannot move (gradient-isolated from the progress outputs). This is an architecture
+   change: a pre-registration, a launch-gate profile, and about 3.5 A40-h per arm. It is the only lever left that attacks the measured mechanism.
+2. **R2b**, the lane-change arm: a 4th arm outside the authorised three. It does not address TTC.
+3. **Park RL-S1.** The pod time goes to S1, P2-s1 and P6, which are already queued.
+
+**Master Mind recommendation: 3 now, and 1 after P6 is training.** The pod is fully booked (P2-s1 for about 21 h, then the S1 arms, then P6's GPU
+stages). The safety-head design and pre-registration can be built at zero A40 in the meantime, so the arm would be ready the moment the pod frees.
+Default if unanswered: 3, with the zero-A40 design work on 1 continuing.
+
+Evidence: `TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-15-rls1-calib/REPORT.md`, `.../raw/2026-10-15-rls1b-r0b-kill/`,
+`.../raw/2026-10-14-rls1b-attribution/REPORT.md`.

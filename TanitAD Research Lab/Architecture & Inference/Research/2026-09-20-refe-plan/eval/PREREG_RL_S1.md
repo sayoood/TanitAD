@@ -289,3 +289,70 @@ max(|C0 - C1|, |R0b - R1b|) is not called one. The g5 / K3 decision stays one-se
 | chain wiring (arm names, R0b -> C1 -> R1b order, stop after an R0b kill, K3 control dirs) | **OPEN**: the owner of `refe/rls1_pod.sh` |
 | live K3 monitor that fails closed | **OPEN**: same owner (K-MON) |
 | C0's full-navtest read (R0b's endpoint pair) | check the chain; required before the section 4 read |
+
+## 11. O2 lever (i): TTC / NC head calibration read on the banked dumps -- 2026-10-15 (appended, nothing above is edited; written BEFORE any calibrated pick exists)
+
+> Status: **BINDING for this read once landed**; zero A40, zero training, dev-box CPU. Sections 0-10 are byte-identical to git blob `0a71d19e7dc76a3cd61c753469b4fcd8ce8b7bc4`
+> (file sha256 `c7f9ad0420c70f6356121c14ab44a2fdde3e8ef329f39108e2459c5a500926b8`, 36,667 bytes). Package: `raw/2026-10-15-rls1-calib/`. **R0 and R0b stay KILLED (K3).** Nothing here
+> changes g5, K3, the section 4 bar or the full-navtest endpoint. Seen before writing: the uncalibrated deltas of section 10.1 and of `raw/2026-10-15-rls1-calib/r0b_deltas.json`
+> (task 1 of this package: R0b - C0 TTC -0.60 [-1.14, -0.10] at u250 and -0.73 [-1.39, -0.17] at u500). No calibrated number of any arm had been computed.
+
+### 11.1 Feasibility (source, MEASURED by reading code)
+
+The pick is `argmax_i NC_i * DAC_i * (5 EP_i + 5 TTC_i + 2 C_i) / 12 * LANE_i` over the sigmoid of the seven logits (`refe/planner.py:552-557`, rule `navsim_v1_lane`;
+the same formula in `eval/rl_val_eval.py` `select()` l.62-75 and `refe/scorer_finetune.py` `sel_score` l.715-717). The pick is NOT the argmax of one learned score: it is a product of
+NC and DAC with a weighted sum in which TTC trades against EP and C. A per-head monotone map on NC or TTC therefore changes the cross-head trade and can change the pick, so the lever is
+feasible. **Stated limit:** a monotone map cannot change a head's within-scene ranking, so it cannot undo the NC AUC loss of 10.1 (-0.0085); it can only re-weight heads. Hybrid H1
+(10.1: R0's safety logits replaced wholesale by the BCE-only arm's) still read TTC -0.80 at R0 u1000. **Prior [E]: a PASS is unlikely (about 0.2).** The read runs anyway because it is
+the registered zero-A40 lever and its FAIL is what hands (ii) to the PI.
+
+### 11.2 The calibration (primary P)
+
+* **Map:** per head, Platt: `p' = sigmoid(a * z + b)` on the logit `z` of **TTC (col 3) and NC (col 0)**; `a` bounded to [0.01, 100] (monotone increasing), `b` to [-50, 50]. Fit by
+  minimising the mean BCE against the proposal's own sub-score label (the head's own BCE target, soft labels included: `scorer_finetune.py` l.728), over every proposal (64 per set) of
+  the fitting sets; scipy L-BFGS-B from (1, 0), float64. Every other output (DAC, EP, C, DDC, lane) is untouched. Selection on the calibrated probabilities is `navsim_v1_lane`, unchanged.
+* **Cross-fitting over logs:** K = 5 folds over the 75 RL-val logs. Fold of a log = (its rank when the logs are sorted by `sha256("20261015|" + log)`) mod 5, 15 logs per fold. Every
+  set's calibrated probabilities come from the map fit on the OTHER four folds. A set's own log is never in its map's fitting data (asserted in code per fold).
+* **The SAME procedure for every dump:** C0-A, R0-B and R0b-B (and R0b-A for O5) at each read tag each get their own maps, by the same code, folds and optimiser. Calibration's own
+  effect is therefore present on both sides of every pair and is not credited to RL.
+
+### 11.3 The bar (RL-val, selection tier)
+
+For a read = (R dump, tag), compare **calibrated R** with **calibrated control at the same tag**, on the 3,000 RL-val sets, paired log-cluster bootstrap (10,000, seed 20260927):
+* **B1 (g5 as registered):** the TTC point delta and the NC point delta (x100) are each >= -0.5;
+* **B2:** the PDMS delta's 95 % lower bound is > 0.
+
+**Deciding reads:** R0 (arm B) at **u500 and u1000** vs C0-A; R0b (arm B) at **u250 and u500** vs C0-A **and** vs its own arm A (outcome O5 fired by its letter at u250, `r0b_deltas.json`:
+R0b-A - C0 EP -0.08 [-0.18, -0.01]; O5 says the bar is read on the pair that shares the trainer blob, so R0b must clear both pairs). An arm PASSES iff B1 and B2 hold at both of its reads.
+Reported, deciding nothing: R0 at u250 and u750; R0 vs R0-A at u500 and u1000; every sub-score delta (PDMS, NC, DAC, EP, TTC, C, DDC) of every read.
+
+### 11.4 Controls that must read known values (else the read is void)
+
+* **CTRL-ID:** identity maps (a = 1, b = 0) reproduce the raw picks of every dump exactly (0 changed picks), and the raw R0 u1000 - C0 PDMS equals `rlval_vs_C0.json` (91.2230 - 90.0598).
+* **CTRL-REACH:** a constant map (TTC probability 0.5 for every proposal; then the same for NC) changes the pick on > 0 sets of every dump: the channel reaches the pick.
+* **CTRL-LEAK:** per fold, fitting logs and scored logs are disjoint (assert). An IN-SAMPLE variant (fit on all 75 logs, scored on the same) is reported as D5 to show what in-sample fitting
+  would have flattered; it is never read against the bar.
+
+### 11.5 Diagnostics (pre-registered, deciding nothing)
+
+D1 held-out calibration quality per dump and head (BCE and 15-bin equal-count ECE, raw vs calibrated); D2 calibrated C0 - raw C0 per tag (calibration's own effect on the control);
+D3 calibrated R - RAW C0 (the uncalibrated registered control); D4 the fitted (a, b) per fold; D5 the in-sample variant; **D6 fold-seed stability**: the primary re-run with fold seeds
+20261016 / 20261017 / 20261018; a PASS whose verdict flips under any of them is reported as **PASS, fold-unstable**, and that travels with it. Secondaries under the same bar, deciding
+nothing: **S1** Platt on NC, DAC, TTC; **S2** isotonic (sklearn `IsotonicRegression`, increasing, on the probability, output clipped to [1e-6, 1 - 1e-6]) on TTC and NC; **S3** Platt on the
+five outputs the rule uses (NC, DAC, EP, TTC, C; RL-val has no lane label). **A secondary that clears the bar where P does not is NOT a PASS**: it names the next lever, which gets its own
+pre-registration before any navtest read.
+
+### 11.6 Outcomes committed in advance, and the next lever of each (RULE ZERO)
+
+| outcome | condition | next lever |
+|---|---|---|
+| **PASS** | R0 passes (B1 + B2 at u500 and u1000) | full-navtest read on the dev box (0 pods): **R0 u1000 + calibration vs C0 u1000 + calibration**, maps re-fit on ALL 3,000 RL-val sets per arm (navtest is disjoint, no cross-fitting needed), frozen with sha256 before the run. **Framing: R0 stays KILLED; the claim would be about "R0 + calibration", a NEW registered pair**, read under its own section (12) written before the run. One pair cannot reach section 4's ADOPT (it needs two pairs and the seed floor); a navtest win would buy the second pair (C1 / R1 + calibration: A40, PI). **Needs:** (1) a planner rule with frozen per-head maps, default OFF, whose identity map reproduces `navsim_v1_lane` bit for bit (test + mutation); (2) `model_sft_B.pt` of `tanitad-refe-rls1-r0` and `model_sft_A.pt` of `-c0` (both on HF); (3) two seam + harness runs of the stage-3 path (`eval/RLS1_POD_RUNBOOK.md` l.107; about 4.9 h seam + 0.4 h harness each [I, `eval/RESULT_SFT4.md` l.155-156]); (4) C0's uncalibrated full-navtest read if it does not exist (10.7). |
+| **PASS-R0b** | R0 fails, R0b passes (both reads, both controls) | the same with **R0b u500** (R0b's final state: `scorer_states_last.pt` = `scorer_states_u500.pt`, sha256 `230bbaad...`) vs C0 u500, both + calibration; a planner checkpoint is built from scorer states (`eval/build_sft_ckpt.py`) |
+| **FAIL** | neither arm passes | **O2 (ii): a scorer whose safety outputs EPO cannot move (a separate safety head) -- an architecture change, PI decision.** If S3 cleared the bar, its pre-registration is written first (zero A40). |
+
+### 11.7 H-ESTIM-SEED-1
+
+One training seed per arm (C1 and R1b never ran: the chain stopped after R0b's kill, 10.3). RL-val is the selection tier, never an endpoint. The interval answers "another draw of LOGS" with
+the cross-fitted maps held fixed: it measures neither training variance nor the variance of the map fit (D6 is the only probe of the latter). The only floors on record are same-seed reruns:
+R0-A - C0 PDMS +0.01 [-0.13, +0.14] (10.6) and R0b-A - C0 PDMS -0.07 [-0.17, +0.00] at u250 / +0.02 [-0.10, +0.14] at u500 (`r0b_deltas.json`). Inference variance is zero on banked dumps
+(argmax of fixed logits, no sampling).
