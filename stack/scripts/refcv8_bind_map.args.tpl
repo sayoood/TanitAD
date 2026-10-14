@@ -36,6 +36,10 @@ healthy
 --device
 cuda
 # data roots whose OPENED files the closure records (every file read under them is hashed into the closure)
-DATA-ROOT /home/nvidia/data/refcv6-b1-416x1024-train
-DATA-ROOT /home/nvidia/data/sam3_gt_v3
+# VERIFIED 2026-10-14 (MM, launch commit b30f924) against the MEASURED refcv7 bind command lines on Thor
+# (/home/nvidia/refcv7_bind/run_gbo_binding_main.sh:48, run_gmo_binding_main.sh:86): those declared
+# `--data-root /home/nvidia/data` + the run's own dir. The narrower roots this template carried left files the
+# harness READS outside every root (closure_run records only files opened UNDER a root; it does not refuse),
+# and the box template's {INPUTS} root does not exist on Thor. Roots below = refcv7's measured set.
+DATA-ROOT /home/nvidia/data
 DATA-ROOT {INPUTS}

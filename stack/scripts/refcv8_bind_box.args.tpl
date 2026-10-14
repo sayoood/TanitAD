@@ -19,6 +19,11 @@ cuda
 BINDING: launch commit {COMMIT} (refcv8-r101-s0; A19 MAIN-only)
 --arms
 main
-DATA-ROOT /home/nvidia/data/refcv6-b1-416x1024-train
-DATA-ROOT /home/nvidia/data/sam3_gt_v3
-DATA-ROOT {INPUTS}
+# VERIFIED 2026-10-14 (MM, launch commit b30f924) against the MEASURED refcv7 bind command lines on Thor
+# (/home/nvidia/refcv7_bind/run_gbo_binding_main.sh:48, run_gmo_binding_main.sh:86): those declared
+# `--data-root /home/nvidia/data` + the run's own dir. The narrower roots this template carried left files the
+# harness READS outside every root (closure_run records only files opened UNDER a root; it does not refuse),
+# and the box template's {INPUTS} root does not exist on Thor. Roots below = refcv7's measured set + the refcv8 v9 label release, read from the launch argv outside /home/nvidia/data.
+DATA-ROOT /home/nvidia/data
+DATA-ROOT /home/nvidia/refcv8_v9labels
+DATA-ROOT {OUT}/audit
