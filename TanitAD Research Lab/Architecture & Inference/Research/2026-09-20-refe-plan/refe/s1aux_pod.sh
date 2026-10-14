@@ -31,6 +31,7 @@ ONP=$DATA/refe_navtrain/onpolicy/sets              # P2's restored bank AFTER it
 HO_ROOT=$DATA/refe_heldout; HO=$HO_ROOT/sets; HOLOGS=$HO_ROOT/heldout_logs.txt
 HO_TAR=$DATA/hf_dl/heldout/refe_heldout_v5.tar.zst; HO_TAR_PATH=refe_heldout_v5.tar.zst; HO_TAR_MD5=1f43409ba8ea2a8909e5035236c73676
 QUEUE_TAR=$DATA/hf_dl/queue/onpolicy_queue.tar.zst; QUEUE_TAR_PATH=onpolicy_queue.tar.zst; QUEUE_TAR_SIZE=1817869216; QDIR=$R/queue_src
+NAVTEST_JSON=$DATA/aux_drivable/navtest.json; NAVTEST_SHA=0b9c63895d4e8da4205e194c90379cbf986badd1baf8beab948adb3743a33700   # the navtest list the store was checked against (its manifest pins this sha256; G-SUITE E10 reads it)
 LABELS=$DATA/aux_drivable/label_store              # store_sha256 4a17db67...f287a, 103,139 frames (pinned in aux_drivable_head.py, gate_checks.py and the trainer's data event)
 LANE_XZ=$PKG/raw/2026-10-04-lane-discipline        # the held-out lane labels SFT-4 trained against (3,137 rows each), restored from the repo (sft4r_relabel.sh step 1)
 HELDOUT_SETS_N=3137; TLANE_MIN_ROWS=2109; TLANE_SEED=20261004; EXP_DBS=1192; EXP_PIX=32
@@ -191,7 +192,7 @@ log "ZZS1AUX_PRECHECK_OK (tree $(tail -n 1 "$R/tree_check.log" | cut -c1-80); up
 
 # ---- 1. env (P2's teacher env is REUSED: it holds the NAVSIM stack, the maps and the DriveRL fork)
 STAGE=env
-export REFE_BACKBONE_ROOT="$DATA/backbones" PYTHONUNBUFFERED=1 AUX_LABEL_STORE="$LABELS"        # AUX_LABEL_STORE: the gate's G-SUITE runs test_aux_drivable_head.py, which reads the store there
+export REFE_BACKBONE_ROOT="$DATA/backbones" PYTHONUNBUFFERED=1 AUX_LABEL_STORE="$LABELS" AUX_NAVTEST="$NAVTEST_JSON"        # AUX_LABEL_STORE / AUX_NAVTEST: the gate's G-SUITE runs test_aux_drivable_head.py, which reads the store and the navtest list there
 [ -d "$REFE_BACKBONE_ROOT" ] || refuse "$REFE_BACKBONE_ROOT is missing: P2's weights stage did not run on this pod"
 CORES="$(cgroup_cores)"
 LW="${S1AUX_LABEL_WORKERS:-$(( CORES - 4 < 1 ? 1 : (CORES - 4 > 16 ? 16 : CORES - 4) ))}"        # CORES-4: the labellers may run beside a training upstream (A4)
@@ -256,6 +257,8 @@ done
 [ -e "$LABELS/manifest.json" ] || refuse "the aux label store is absent: $LABELS (ship the 352 MB store there; eval/S1_POD_RUNBOOK.md section 2)"
 env -u HF_TOKEN "$PY" s1aux_checks.py store --store "$LABELS" > "$R/store_check.log" 2>&1 200>&-
 grep -q "^ZZS1AUX_STORE_OK" "$R/store_check.log" || refuse "the aux label store fails its own sha check: $(tail -n 1 "$R/store_check.log" | cut -c1-300)"
+# the navtest list G-SUITE's E10 checks the store against (no-leak), by CONTENT: absent or different here = a REFUSAL now, not 25 minutes into the first gate (2026-10-14)
+[ "$(sha256sum "$NAVTEST_JSON" 2> /dev/null | cut -c1-64)" = "$NAVTEST_SHA" ] || refuse "the navtest list $NAVTEST_JSON is absent or not sha256 ${NAVTEST_SHA:0:12} (copy the repo's FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/raw/cluster_maps/navtest.json there)"
 log "ZZS1AUX_DATA_OK (held-out bank $(ls "$HO" | wc -l) files, 24 logs; held-out lane + teacher lane $HELDOUT_SETS_N rows each; $(tail -n 1 "$R/store_check.log" | cut -c1-120))"; stop_after data
 
 # ---- 4. relabel.  The labellers must be ABLE to label before hours of them (2026-10-11: navsim was missing from the venv and the relabel failed EVERY set).

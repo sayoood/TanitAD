@@ -32,6 +32,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 PKGROOT = HERE.parent
+NAVTEST = PKGROOT.parents[3] / "FlyWheels" / "TanitAD_EvalFlyWheel" / "incoming" / "2026-09-19-navsim-estimator-and-route-leak" / "raw" / "cluster_maps" / "navtest.json"
 sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(PKGROOT / "eval"))
 import gate_token as GT  # noqa: E402
@@ -164,6 +165,8 @@ def check_chain(text):
         v.append("NO_GPU_WAIT_BEFORE_ARMS")
     if 'upw="$(upstream)"; [ $? = 1 ] && refuse "$upw"' not in text.split("# ---- 1. env")[0]:
         v.append("NO_UPSTREAM_REFUSAL_AT_PRECHECK")
+    if 'AUX_NAVTEST="$NAVTEST_JSON"' not in text or '= "$NAVTEST_SHA" ] || refuse' not in text.split('log "ZZS1AUX_DATA_OK')[0]:
+        v.append("NO_NAVTEST_CHECK")
     if "--resume" in text:
         v.append("RESUME")
     if not re.search(r"^token_ok\(\) \{\n.*launch_gate\.py\" verify --profile refe_aux_s1 --token \"\$tok\" --args \"\$ARGS\" --pkg \"\$PKG\"", text, re.S | re.M):
@@ -244,6 +247,8 @@ def mutations(text):
     sub("arm order edited", 'ARM_ORDER="N-s0 H2-s0 H1-s0', 'ARM_ORDER="N-s0 H1-s0 H2-s0', "ARM_ORDER")
     sub("GPU wait removed before the arms", "\nSTAGE=gpu_wait\nwait_clear\n", "\nSTAGE=gpu_wait\n", "NO_GPU_WAIT_BEFORE_ARMS")
     sub("upstream refusal removed at the precheck", 'upw="$(upstream)"; [ $? = 1 ] && refuse "$upw"', 'upw="$(upstream)"', "NO_UPSTREAM_REFUSAL_AT_PRECHECK")
+    sub("navtest content check disarmed", '= "$NAVTEST_SHA" ] || refuse', '= "$NAVTEST_SHA" ] || true', "NO_NAVTEST_CHECK")
+    sub("navtest not exported to the gate", ' AUX_NAVTEST="$NAVTEST_JSON"', '', "NO_NAVTEST_CHECK")
     sub("wait removed before the arm", "    wait_clear\n    token_ok || refuse", "    token_ok || refuse", "NO_WAIT_BEFORE_ARM")
     sub("token check removed before the trainer", '    token_ok || refuse "the launch-gate token does not verify for $ARM: scorer_finetune.py is NOT started"\n', "", "TRAIN_NO_TOKEN_CHECK")
     sub("token not verified by the gate", 'launch_gate.py" verify --profile', 'launch_gate.py" refusals --profile', "TOKEN_NOT_VERIFIED_BY_THE_GATE")
@@ -665,6 +670,8 @@ class Sandbox:
         write_sh(self.tmp / "bin" / "flock", '#!/bin/bash\nif [ "$2" = 200 ]; then exit "${FAKE_FLOCK200_RC:-0}"; fi\nexit "${FAKE_FLOCK_RC:-0}"\n')
         write_sh(self.tmp / "bin" / "nvidia-smi", '#!/bin/bash\nn=$(cat "$NVCOUNT" 2>/dev/null || echo 0)\necho $((n + 1)) > "$NVCOUNT"\nif [ "$n" -lt "${NV_BUSY_CALLS:-0}" ]; then echo 4242; fi\nexit 0\n')
         d = W / "data"
+        (d / "aux_drivable").mkdir(parents=True, exist_ok=True)
+        shutil.copy(NAVTEST, d / "aux_drivable" / "navtest.json")
         (d / "navtrain_dbs").mkdir(parents=True, exist_ok=True)
         for i in range(1192):
             (d / "navtrain_dbs" / f"{i}.db").write_bytes(b"")
@@ -779,6 +786,12 @@ def sandbox_runs(text, tmp):
     (sb.fix / "model_sft4_B_u400.pt").write_bytes(sb.u400)
     # ---- data: the store
     if have_store:
+        nt = sb.W / "data" / "aux_drivable" / "navtest.json"
+        nt.unlink()
+        rc, out, lg = sb.run(fresh=True, env_extra={"S1AUX_STOP_AFTER": "data"}); ok(rc == 1, out); refused(out, lg, "data", "navtest list")
+        nt.write_text('{"token_to_log_name": {}}')                                                                  # present, but not the pinned content
+        rc, out, lg = sb.run(fresh=True, env_extra={"S1AUX_STOP_AFTER": "data"}); ok(rc == 1, out); refused(out, lg, "data", "navtest list")
+        shutil.copy(NAVTEST, nt)
         rc, out, lg = sb.run(fresh=True, env_extra={"S1AUX_STOP_AFTER": "data"}); ok(rc == 0 and "ZZS1AUX_DATA_OK" in lg and "held-out lane + teacher lane 3137 rows each" in lg, lg)
         lane = sb.W / "data" / "refe_sft2" / "heldout_teacher_lane"
         ok(len(list(lane.glob("*.jsonl"))) == 1)                                                                       # restored from the repo's .xz: 3,137 rows each (the labels SFT-4 trained against)

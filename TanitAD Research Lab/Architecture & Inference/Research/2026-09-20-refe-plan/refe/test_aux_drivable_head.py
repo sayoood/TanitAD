@@ -785,7 +785,15 @@ def suite(M, heavy: bool, verbose: bool = False) -> Rec:
             src = M.AuxLabelSource(STORE)
             v = src.verify_all()
             ks = src.all_keys()
-            nt_path = src.manifest["runs"][0]["inputs"]["navtest"]["path"]
+            # the navtest list the store was checked against, found by CONTENT: the manifest records the build machine's path (absent on a pod),
+            # so AUX_NAVTEST may name another location, but the file must carry the manifest's sha256 (2026-10-14: G-SUITE failed on the pod here)
+            nt_rec = src.manifest["runs"][0]["inputs"]["navtest"]
+            nt_path = os.environ.get("AUX_NAVTEST") or nt_rec["path"]
+            if not os.path.isfile(nt_path):
+                return False, f"navtest list not found at {nt_path} (set AUX_NAVTEST to a copy with sha256 {nt_rec['sha256'][:12]}...)"
+            nt_sha = hashlib.sha256(open(nt_path, "rb").read()).hexdigest()
+            if nt_sha != nt_rec["sha256"]:
+                return False, f"{nt_path} has sha256 {nt_sha[:12]}..., not the manifest's {nt_rec['sha256'][:12]}...: not the navtest the store was checked against"
             nt_tokens, nt_logs = ALS.load_navtest(nt_path)
             inter = len({t for _, t in ks} & nt_tokens)
             REPORT.update(store_files=v["files"], store_mismatch=v["mismatch"], store_keys=len(ks), navtest_tokens=len(nt_tokens), navtest_intersection=inter)
