@@ -2728,7 +2728,13 @@ class AnchoredDiffusionDecoder(nn.Module):
         try:
             for sl in (slice(0, nb), slice(nb, None)):
                 self._r8_phi = None if phi is None else phi[:, sl]
-                c, o = fn(kv, cond, x[:, sl], *rest)
+                # ⛔ CONTIGUOUS, not just same-shaped. `x[:, sl]` is a STRIDED view of the [B, N+M+N, S, 2] fan,
+                # so `_decode`'s reshape reached `traj_proj` with batch stride (N+M+N)*S*2 instead of refcv7's
+                # N*S*2. MEASURED 2026-10-14 on the Thor launch-gate suite (aarch64 CPU): that layout takes a
+                # different GEMM path and moved the base scores by 1.9e-6 -- plan, indices and fan stayed
+                # identical, the BIT-identity claim did not (test_refcv8_warm_start / _emit_schedule RED there,
+                # GREEN on x86). With the copy both files pass 20/20 on Thor; without it the same 2 fail.
+                c, o = fn(kv, cond, x[:, sl].contiguous(), *rest)
                 parts.append((c, o, self._r8_last_q if ctrl else None,
                               (self._last_layer_conf, self._last_layer_du)
                               if ctrl and self.cascade is not None else None))

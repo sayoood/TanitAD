@@ -253,3 +253,67 @@ def test_the_split_decode_is_the_same_function_as_one_pass(T, base) -> None:
     for k in ("anchor_traj", "sel_score_v3", "r8_sub_logits"):
         assert torch.allclose(split[k], one[k], atol=1e-4, rtol=1e-4), k
     assert torch.equal(split["sel_idx"], one["sel_idx"])
+
+
+# ---------------------------------------------------------------------------------------------------------------- #
+# 2026-10-14: the base pass must see refcv7's MEMORY LAYOUT, not only its shapes                                     #
+# ---------------------------------------------------------------------------------------------------------------- #
+def _traj_proj_inputs(cfg, m, bt):
+    """-> (forward output, [(shape, stride, contiguous)] of every `traj_proj` input, in call order)."""
+    seen = []
+    h = m.core.decoder.traj_proj.register_forward_hook(
+        lambda mod, inp, out: seen.append((tuple(inp[0].shape), tuple(inp[0].stride()), inp[0].is_contiguous())))
+    try:
+        out = R.forward(cfg, m, bt)
+    finally:
+        h.remove()
+    return out, seen
+
+
+def _strided_split(dec):
+    """The pre-2026-10-14 `_r8_split`, re-compiled from the CURRENT source with the `.contiguous()` removed -- the
+    real historical defect, not a hand-written stand-in."""
+    import importlib
+    import inspect
+    import textwrap
+    src = textwrap.dedent(inspect.getsource(type(dec)._r8_split))
+    assert src.count("x[:, sl].contiguous()") == 1, "the fix's anchor moved: re-point this twin"
+    mod = importlib.import_module(type(dec).__module__)
+    ns: dict = {}
+    exec(compile(src.replace("x[:, sl].contiguous()", "x[:, sl]"), mod.__file__, "exec"), mod.__dict__, ns)
+    return ns["_r8_split"]
+
+
+def test_the_split_base_pass_feeds_traj_proj_refcv7_s_exact_layout(T, base) -> None:
+    """PLATFORM-INDEPENDENT form of the bit-identity claim's precondition. The numeric tests above can only go RED on
+    a host whose GEMM is layout-sensitive (the Thor CPU was; x86 MKL agreed by luck), so a dev-box suite could never
+    see the 2026-10-14 defect. Shapes, strides and contiguity of every base-pass `traj_proj` input are visible on
+    EVERY host: they must equal refcv7's, call for call."""
+    cfg7, m7, bt, _ = base
+    cfg8, m8 = R.build(T, True, n_alloc=8, prior_free_group=True)
+    R.copy_into(m7, m8)
+    _, s7 = _traj_proj_inputs(cfg7, m7, bt)
+    o8, s8 = _traj_proj_inputs(cfg8, m8, bt)
+    nb = int(o8["r8_n_base"])
+    assert o8["anchor_traj"].shape[1] > nb                      # the split is live on this build
+    assert s7 and all(c for _, _, c in s7)
+    assert [s for s in s8 if s[0][1] == nb] == s7
+    assert all(c for _, _, c in s8)                             # the extras' pass too
+
+
+def test_deliberate_regression_the_strided_slice_goes_red(T, base) -> None:
+    cfg7, m7, bt, _ = base
+    cfg8, m8 = R.build(T, True, n_alloc=8, prior_free_group=True)
+    R.copy_into(m7, m8)
+    _, s7 = _traj_proj_inputs(cfg7, m7, bt)
+    dec = m8.core.decoder
+    real = type(dec)._r8_split
+    type(dec)._r8_split = _strided_split(dec)
+    try:
+        o8, s8 = _traj_proj_inputs(cfg8, m8, bt)
+    finally:
+        type(dec)._r8_split = real
+    nb = int(o8["r8_n_base"])
+    bad = [s for s in s8 if s[0][1] == nb]
+    assert bad and bad != s7                                    # the guard above would have FAILED on this
+    assert not any(c for _, _, c in bad)                        # ...because the base slice is a strided view

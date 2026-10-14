@@ -43,7 +43,8 @@ def run_stage(name, st):
             d.write_bytes((R / "overlay" / t).read_bytes())
             assert hashlib.md5(d.read_bytes()).hexdigest() == plan["overlay_md5"][t], t
         probe = subprocess.run([PY, "-c", "import tanitad, taniteval; print(tanitad.__file__); print(taniteval.__file__)"],
-                               cwd=tree, env=env_for(tree), capture_output=True, text=True, timeout=300)
+                               cwd=tree, env=env_for(tree), capture_output=True, text=True, encoding="utf-8",
+                               errors="replace", timeout=300)
         rec["import_probe"] = probe.stdout.strip().splitlines()
         assert len(rec["import_probe"]) == 2 and all(str(tree) in ln for ln in rec["import_probe"]), probe.stdout + probe.stderr
         (OUT / name).mkdir(exist_ok=True)
@@ -53,7 +54,8 @@ def run_stage(name, st):
                 t0 = time.time()
                 try:
                     r = subprocess.run([PY, "-m", "pytest", "-q", "-p", "no:cacheprovider", "-rfE", f"--junitxml={x}", f],
-                                       cwd=tree / sub, env=env_for(tree), capture_output=True, text=True, timeout=2400)
+                                       cwd=tree / sub, env=env_for(tree), capture_output=True, text=True,
+                                       encoding="utf-8", errors="replace", timeout=2400)
                     rc, tail = r.returncode, (r.stdout[-300:] + r.stderr[-200:])
                 except subprocess.TimeoutExpired:
                     rc, tail = "TIMEOUT", ""

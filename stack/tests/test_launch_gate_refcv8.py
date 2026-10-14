@@ -145,7 +145,7 @@ def _loader_remap(tmp_path, overrides):
     if overrides:
         env["REFCV6_REMAP_OVERRIDES"] = str(overrides)
     r = subprocess.run([sys.executable, "-c", code, str(ROOT), json.dumps(pins)], env=env, capture_output=True,
-                       text=True, timeout=300)
+                       text=True, encoding="utf-8", timeout=300)
     assert r.returncode == 0, r.stderr[-2000:]
     return json.loads(r.stdout.strip().splitlines()[-1])
 
