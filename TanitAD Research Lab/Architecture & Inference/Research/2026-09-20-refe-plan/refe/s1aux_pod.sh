@@ -1,5 +1,5 @@
 #!/bin/bash
-# S1 of the auxiliary drivable-area head on the A40 pod, AFTER RL-S1 and BEFORE P6 (PI order: P2 -> RL-S1 -> S1 -> P6): precheck (waits for the GPU) -> u400 -> held-out data and labels ->
+# S1 of the auxiliary drivable-area head on the A40 pod, AFTER RL-S1 and BEFORE P6 (PI order: P2 -> RL-S1 -> S1 -> P2-s1 -> P6): precheck -> (CPU stages beside a training upstream, A4) u400 -> held-out data and labels ->
 # relabel (held-out PDM, train teacher lane) -> nine scorer fine-tunes (arms N, H1, H2 x seeds 0, 1, 2), each behind its own launch-gate PASS token -> a PRIVATE HF repo.
 # Runbook: eval/S1_POD_RUNBOOK.md.  Spec: eval/PREREG_AUX_DRIVABLE_S1.md (+ Amendment A2); the exact argv: raw/2026-10-13-aux-head/PREREG_BLANKS_PROPOSED.md section 3; gate profile refe_aux_s1.
 #
@@ -9,11 +9,11 @@
 # Start (detached):  nohup setsid bash /workspace/refe-plan-s1aux/refe/s1aux_pod.sh > /workspace/data/s1aux/stdout.log 2>&1 < /dev/null &
 # Re-running after ANY interruption is safe: finished stages leave /workspace/data/s1aux/stage/<name>.ok, inputs are re-verified by content on every start.  An arm interrupted in TRAINING
 # restarts at update 0 under a fresh preflight and a fresh token (the trainer has no resume; PREREG_AUX_DRIVABLE_S1 section 4 rule 1): its directory is renamed <ARM>_killed_<k>, never stitched.
-# S1AUX_STOP_AFTER=<precheck|env|fetch|data|relabel|bank_labels|gate_<ARM>|arm_<ARM>> ends the chain after that stage (a dry run; gate_N-s0 stops after the first token).
+# S1AUX_STOP_AFTER=<precheck|env|fetch|data|relabel|bank_labels|gpu_wait|gate_<ARM>|arm_<ARM>> ends the chain after that stage (a dry run; gate_N-s0 stops after the first token).
 # S1AUX_ARMS="N-s0 H2-s0 ..." selects the arms (default: all nine, in the REGISTERED priority order; a list must be a subsequence of it).  The registered drop of H1-s1 / H1-s2 is the Master Mind's.
 # S1AUX_RLS1_ABANDONED=1 lets the chain start when RL-S1's chain never logged ZZRLS1_DONE (a killed arm, a refusal): only on the Master Mind's word.
 # S1AUX_TLANE_N (default 15000) = the size of the seeded train teacher-lane subset (SFT-4R's: seed 20261004).  The same seed gives a PREFIX of the same shuffled order, so 2500 is a subset of 15000.
-# The chain WAITS (it never starts beside RL-S1, P2 or any process on the GPU) and it re-checks the GPU right before every arm.  Every child is launched with fd 200 closed (the chain holds its flock
+# The CPU stages (env .. bank_labels) run beside a training upstream at nice 19 (A4, 2026-10-14); the chain WAITS before its first GPU use (stage gpu_wait: never a GPU job beside RL-S1, P2 or any process on the GPU) and re-checks the GPU right before every arm.  Every child is launched with fd 200 closed (the chain holds its flock
 # on 200).  Markers are opaque ZZS1AUX_* tokens; every stop is `ZZS1AUX_REFUSED stage=<stage>: <why>` in chain.log.
 set -u
 WORK=/workspace; PKG=$WORK/refe-plan-s1aux; DATA=$WORK/data
@@ -183,20 +183,18 @@ cd "$PKG/refe" || refuse "cannot cd $PKG/refe"
 env -u HF_TOKEN "$PY" s1aux_checks.py tree --pkg "$PKG" > "$R/tree_check.log" 2>&1 200>&-
 grep -q "^ZZS1AUX_TREE_OK" "$R/tree_check.log" || refuse "the shipped code tree is not its SHIP_MANIFEST.json: $(tail -n 1 "$R/tree_check.log" | cut -c1-400)"
 bad="$(arms_ok)" || refuse "$bad"
-wait_clear
-# ⛔ never judge the disk with df (a pod volume's quota is invisible to it): WRITE to it.  Nine runs leave about 24 GB (model_sft_A.pt + model_sft_B.pt, 1.29 GB each, per arm) plus the inputs.
-DDMB="${S1AUX_DD_MB:-24576}"
-dd if=/dev/zero of="$DATA/.dd_test_s1" bs=1M count="$DDMB" conv=fsync 2>> "$R/dd_test.log" 200>&-
-[ "$(stat -c %s "$DATA/.dd_test_s1" 2>/dev/null)" = "$((DDMB * 1024 * 1024))" ] || { rm -f "$DATA/.dd_test_s1"; refuse "dd write test of ${DDMB} MB failed"; }
-rm -f "$DATA/.dd_test_s1"
-log "ZZS1AUX_PRECHECK_OK (tree $(tail -n 1 "$R/tree_check.log" | cut -c1-80); upstream over, GPU idle; dd ${DDMB} MB)"; stop_after precheck
+# OVERLAP (PI 2026-10-14: "The pod is idling, this is not acceptable"; PREREG_AUX_DRIVABLE_S1.md Amendment A4): the CPU-only stages (env, fetch, data, relabel, bank_labels) run
+# BESIDE a training upstream, the labellers at nice 19 with CORES-4 workers.  Only a REFUSED upstream (lock free, no ZZRLS1_DONE) stops here.  The GPU wait and the disk write test
+# come before the FIRST GPU use (stage gpu_wait, ahead of the first arm's preflight): S1 still never puts a GPU job beside a training job.
+upw="$(upstream)"; [ $? = 1 ] && refuse "$upw"
+log "ZZS1AUX_PRECHECK_OK (tree $(tail -n 1 "$R/tree_check.log" | cut -c1-80); upstream: ${upw:-over}; the CPU stages run now, the GPU wait comes before the first arm)"; stop_after precheck
 
 # ---- 1. env (P2's teacher env is REUSED: it holds the NAVSIM stack, the maps and the DriveRL fork)
 STAGE=env
 export REFE_BACKBONE_ROOT="$DATA/backbones" PYTHONUNBUFFERED=1 AUX_LABEL_STORE="$LABELS"        # AUX_LABEL_STORE: the gate's G-SUITE runs test_aux_drivable_head.py, which reads the store there
 [ -d "$REFE_BACKBONE_ROOT" ] || refuse "$REFE_BACKBONE_ROOT is missing: P2's weights stage did not run on this pod"
 CORES="$(cgroup_cores)"
-LW="${S1AUX_LABEL_WORKERS:-$(( CORES - 1 < 1 ? 1 : (CORES - 1 > 16 ? 16 : CORES - 1) ))}"
+LW="${S1AUX_LABEL_WORKERS:-$(( CORES - 4 < 1 ? 1 : (CORES - 4 > 16 ? 16 : CORES - 4) ))}"        # CORES-4: the labellers may run beside a training upstream (A4)
 # a ticker pushes chain.log every 30 min, so the hours of labelling and training are not invisible
 if [ "${S1AUX_TICK:-1}" = 1 ]; then
   ( while [ ! -f "$STOPF" ]; do sleep 1800 200>&-; [ -f "$STOPF" ] && break
@@ -352,6 +350,16 @@ if ! stage_done bank_labels; then
   stage_mark bank_labels
 fi
 log "ZZS1AUX_LABELS_BANKED"; stop_after bank_labels
+
+# ---- 4b. THE GPU: P2 / RL-S1 over AND the GPU idle on consecutive polls, BEFORE the first GPU use (the first arm's preflight); then the disk WRITE test
+STAGE=gpu_wait
+wait_clear
+# ⛔ never judge the disk with df (a pod volume's quota is invisible to it): WRITE to it.  Nine runs leave about 24 GB (model_sft_A.pt + model_sft_B.pt, 1.29 GB each, per arm) plus the inputs.
+DDMB="${S1AUX_DD_MB:-24576}"
+dd if=/dev/zero of="$DATA/.dd_test_s1" bs=1M count="$DDMB" conv=fsync 2>> "$R/dd_test.log" 200>&-
+[ "$(stat -c %s "$DATA/.dd_test_s1" 2>/dev/null)" = "$((DDMB * 1024 * 1024))" ] || { rm -f "$DATA/.dd_test_s1"; refuse "dd write test of ${DDMB} MB failed"; }
+rm -f "$DATA/.dd_test_s1"
+log "ZZS1AUX_GPU_CLEAR (upstream over, GPU idle on ${S1AUX_IDLE_POLLS:-3} polls; dd ${DDMB} MB)"; stop_after gpu_wait
 
 # ---- 5. the arms, one at a time, in the registered order: preflight -> data check -> gate (PASS token) -> manifest row -> wait for the GPU -> train -> run check -> egress.
 export OMP_NUM_THREADS=4

@@ -99,9 +99,9 @@ def drop_line(text, needle):
 
 
 # ============================================================================================ 1. static properties
-ORDER = ['[ -n "${HF_TOKEN:-}" ] || refuse', "s1aux_checks.py tree", 'bad="$(arms_ok)"', "\nwait_clear\n", "dd if=/dev/zero", "s1aux_checks.py fetch --repo \"$U400_REPO\"",
+ORDER = ['[ -n "${HF_TOKEN:-}" ] || refuse', "s1aux_checks.py tree", 'bad="$(arms_ok)"', 'upw="$(upstream)"; [ $? = 1 ] && refuse', "s1aux_checks.py fetch --repo \"$U400_REPO\"",
          "s1aux_checks.py store", "onpolicy_relabel_pdm.py --sets \"$HO\"", "pdm_label_complete.py", "select_bank_subset.py", "onpolicy_relabel_teacher_lane.py --queue \"$Q\" --files 'props_r0_*'",
-         "bank_push s1_labels labels", "scorer_finetune.py $ARGS --preflight", "s1aux_checks.py data-check", "launch_gate.py run --profile refe_aux_s1", "s1aux_checks.py manifest-row --arm \"$ARM\" --event token_verified",
+         "bank_push s1_labels labels", "\nSTAGE=gpu_wait\nwait_clear\n", "dd if=/dev/zero", "scorer_finetune.py $ARGS --preflight", "s1aux_checks.py data-check", "launch_gate.py run --profile refe_aux_s1", "s1aux_checks.py manifest-row --arm \"$ARM\" --event token_verified",
          "    wait_clear\n", 'stage_mark "trainstart_$ARM"', '"$PY" scorer_finetune.py $ARGS >>', "s1aux_checks.py run-check", 'bank_push "arm_$ARM"']
 HF_CHILDREN = ("s1aux_checks.py fetch", "hf_egress.py", "s1aux_checks.py remote-verify")          # the only children that may hold the token (private repos, write scope)
 CHILD_RX = re.compile(r'"\$PY" +(?:[\w./-]+\.py\b|-c\b|--|")|bash +"\$PKG/code/|\bsleep +"?\$?\w+"? +200|\bdd +if=')
@@ -159,8 +159,11 @@ def check_chain(text):
         tl = [ln for ln in b.split("\n") if "scorer_finetune.py $ARGS >>" in ln]
         if not (tl and "env -u HF_TOKEN" in tl[0] and "200>&-" in tl[0]):
             v.append("TRAINER_LINE(token/fd200)")
-    if "\nwait_clear\n" not in text.split("# ---- 1. env")[0]:
-        v.append("NO_WAIT_AT_PRECHECK")
+    gw = text.split("\nSTAGE=gpu_wait\n")
+    if len(gw) != 2 or "\nwait_clear\n" not in "\n" + gw[1].split("# ---- 5. the arms")[0] or "bank_push s1_labels labels" not in gw[0]:
+        v.append("NO_GPU_WAIT_BEFORE_ARMS")
+    if 'upw="$(upstream)"; [ $? = 1 ] && refuse "$upw"' not in text.split("# ---- 1. env")[0]:
+        v.append("NO_UPSTREAM_REFUSAL_AT_PRECHECK")
     if "--resume" in text:
         v.append("RESUME")
     if not re.search(r"^token_ok\(\) \{\n.*launch_gate\.py\" verify --profile refe_aux_s1 --token \"\$tok\" --args \"\$ARGS\" --pkg \"\$PKG\"", text, re.S | re.M):
@@ -206,7 +209,7 @@ def check_chain(text):
                       ('stage_done "trainstart_$ARM" && ! stage_done "train_$ARM"', "RESTART_RULE")):
         if need not in text:
             v.append(tag)
-    for stg in ("precheck", "env", "fetch", "data", "relabel", "bank_labels"):
+    for stg in ("precheck", "env", "fetch", "data", "relabel", "bank_labels", "gpu_wait"):
         if f"\nSTAGE={stg}\n" not in text:
             v.append(f"STAGE_UNNAMED:{stg}")
     if 'STAGE="arm_$ARM"' not in text:
@@ -239,7 +242,8 @@ def mutations(text):
     sub("seed edited", "TLANE_SEED=20261004", "TLANE_SEED=20261005", "PIN:TLANE_SEED")
     sub("lane floor edited", "TLANE_MIN_ROWS=2109", "TLANE_MIN_ROWS=100", "PIN:TLANE_MIN_ROWS")
     sub("arm order edited", 'ARM_ORDER="N-s0 H2-s0 H1-s0', 'ARM_ORDER="N-s0 H1-s0 H2-s0', "ARM_ORDER")
-    sub("wait removed at the precheck", "\nwait_clear\n# ⛔ never judge", "\n# ⛔ never judge", "NO_WAIT_AT_PRECHECK")
+    sub("GPU wait removed before the arms", "\nSTAGE=gpu_wait\nwait_clear\n", "\nSTAGE=gpu_wait\n", "NO_GPU_WAIT_BEFORE_ARMS")
+    sub("upstream refusal removed at the precheck", 'upw="$(upstream)"; [ $? = 1 ] && refuse "$upw"', 'upw="$(upstream)"', "NO_UPSTREAM_REFUSAL_AT_PRECHECK")
     sub("wait removed before the arm", "    wait_clear\n    token_ok || refuse", "    token_ok || refuse", "NO_WAIT_BEFORE_ARM")
     sub("token check removed before the trainer", '    token_ok || refuse "the launch-gate token does not verify for $ARM: scorer_finetune.py is NOT started"\n', "", "TRAIN_NO_TOKEN_CHECK")
     sub("token not verified by the gate", 'launch_gate.py" verify --profile', 'launch_gate.py" refusals --profile', "TOKEN_NOT_VERIFIED_BY_THE_GATE")
@@ -752,14 +756,13 @@ def sandbox_runs(text, tmp):
     rc, out, lg = sb.run(fresh=True, env_extra={"S1AUX_RLS1_ABANDONED": "1", "S1AUX_STOP_AFTER": "precheck"}); ok(rc == 0 and "ZZS1AUX_PRECHECK_OK" in lg, lg)
     (rl / "chain.log").write_text("ZZRLS1_DONE arms: R0 R1 R2\n")
     rc, out, lg = sb.run(fresh=True, env_extra={"S1AUX_ARMS": "H2-s0 N-s0"}); ok(rc == 1, out); refused(out, lg, "precheck", "out of the registered priority order")
-    # RL-S1 still running: the chain WAITS (bounded here) and says so
+    # RL-S1 still running: the CPU stages proceed beside it (A4): precheck passes WITHOUT waiting and WITHOUT polling the GPU, and names the running upstream
     (rl / "chain.lock").write_text("")
-    rc, out, lg = sb.run(fresh=True, env_extra={"FAKE_FLOCK_RC": "1", "S1AUX_POLL_S": "1", "S1AUX_WAIT_MAX_S": "2"}); ok(rc == 1 and "ZZS1AUX_WAITING the RL-S1 chain still holds" in lg, lg)
-    refused(out, lg, "precheck", "waited")
+    (sb.tmp / "nvc").write_text("0")
+    rc, out, lg = sb.run(fresh=True, env_extra={"FAKE_FLOCK_RC": "1", "S1AUX_STOP_AFTER": "precheck"})
+    ok(rc == 0 and "ZZS1AUX_PRECHECK_OK" in lg and "upstream: the RL-S1 chain still holds" in lg and "ZZS1AUX_WAITING" not in lg, lg)
+    ok(int((sb.tmp / "nvc").read_text() or 0) == 0, "precheck must not poll the GPU")
     (rl / "chain.lock").unlink()
-    # a busy GPU: waits, then proceeds once it was idle on 3 consecutive polls
-    rc, out, lg = sb.run(fresh=True, env_extra={"NV_BUSY_CALLS": "3", "S1AUX_STOP_AFTER": "precheck"}); ok(rc == 0 and lg.count("ZZS1AUX_WAITING") == 3 and "ZZS1AUX_PRECHECK_OK" in lg, lg)
-    ok(int((sb.tmp / "nvc").read_text()) == 6)                                                                      # 3 busy + 3 consecutive idle polls
     # ---- fetch: a WRONG u400 stops the chain at fetch and is deleted; the right one passes
     (sb.fix / "model_sft4_B_u400.pt").write_bytes(sb.bad_u400)
     rc, out, lg = sb.run(fresh=True, env_extra={"S1AUX_STOP_AFTER": "fetch"}); ok(rc == 1, out); refused(out, lg, "fetch", "is not the pinned file")
@@ -835,6 +838,18 @@ def sandbox_runs(text, tmp):
     rc, out, lg = sb.run(env_extra={"S1AUX_STOP_AFTER": "bank_labels", "FAKE_PUSH_FAIL_TAG": "s1_labels"}); ok(rc == 1, out); refused(out, lg, "bank_labels", "were not banked")
     rc, out, lg = sb.run(env_extra={"S1AUX_STOP_AFTER": "bank_labels", "FAKE_PUSH_CORRUPT_TAG": "s1_labels"}); ok(rc == 1, out); refused(out, lg, "bank_labels", "were not banked")   # pushed, but the content differs
     rc, out, lg = sb.run(env_extra={"S1AUX_STOP_AFTER": "bank_labels"}); ok(rc == 0 and "ZZS1AUX_LABELS_BANKED" in lg, lg)
+    seg = lg[lg.rfind("ZZS1AUX_START"):]
+    ok("ZZS1AUX_GPU_CLEAR" not in seg and "ZZS1AUX_WAITING" not in seg, "the GPU wait and the dd test must come AFTER the CPU stages")
+    # ---- gpu_wait: RL-S1 still running blocks the FIRST GPU use (bounded here); a busy GPU waits, then proceeds after 3 consecutive idle polls
+    (rl / "chain.lock").write_text("")
+    rc, out, lg = sb.run(env_extra={"FAKE_FLOCK_RC": "1", "S1AUX_POLL_S": "1", "S1AUX_WAIT_MAX_S": "2", "S1AUX_STOP_AFTER": "gpu_wait"})
+    ok(rc == 1 and "ZZS1AUX_WAITING the RL-S1 chain still holds" in lg, lg); refused(out, lg, "gpu_wait", "waited")
+    (rl / "chain.lock").unlink()
+    (sb.tmp / "nvc").write_text("0")
+    rc, out, lg = sb.run(env_extra={"NV_BUSY_CALLS": "3", "S1AUX_STOP_AFTER": "gpu_wait"})
+    seg = lg[lg.rfind("ZZS1AUX_START"):]                                                                              # THIS run only: chain.log accumulates across runs
+    ok(rc == 0 and seg.count("ZZS1AUX_WAITING") == 3 and "ZZS1AUX_GPU_CLEAR" in seg, seg)
+    ok(int((sb.tmp / "nvc").read_text()) == 6)                                                                      # 3 busy + 3 consecutive idle polls
     hub = sb.hub / "Sayood_tanitad-refe-s1aux" / "labels"
     ok(all((hub / n).is_file() for n in ("s1_heldout_pdm.tar", "s1_train_teacher_lane.tar", "s1_heldout_lane.tar", "s1_heldout_teacher_lane.tar", "MANIFEST_s1_labels_sha256.txt", "pdm_complete_heldout.json", "subset_keys.json")))
     # ---- arms.  A failing preflight / data check / gate leaves the trainer UNSTARTED and the next arm UNTOUCHED

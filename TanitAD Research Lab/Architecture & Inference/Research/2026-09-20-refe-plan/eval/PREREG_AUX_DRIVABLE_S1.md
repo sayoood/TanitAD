@@ -14,6 +14,7 @@
 >
 > **Amendment A2 (2026-10-13, before any S1 arm)** at the end of this file adds a paired floor to P3 and fixes the ctx of record.
 > **Amendment A3 (2026-10-13, before any S1 step)** places S1 on the A40 pod after RL-S1 (the PI's option A), resolves B1 and B2, and states that the train teacher-lane labels are a regenerated draw.
+> **Amendment A4 (2026-10-14, before any S1 step)** runs S1's CPU-only stages beside RL-S1's training; the GPU stages still start only after RL-S1.
 >
 > Evidence classes: **MEASURED** (ours, artifact named) · **INHERITED** · **ANALYTIC** · **ESTIMATED** · **UNVERIFIED**.
 
@@ -241,3 +242,35 @@ This resolves **B1** and **B2** of §5. No S1 step, token or label existed when 
 - `raw/<date>-aux-s1-runs/MANIFEST.json` is transcribed from it when the arms are banked into the repo. The order of events is unchanged; only the first file holding the id differs.
 
 **No number, criterion or read in this file changes.** B3 is unchanged: tokens are minted per arm at launch.
+
+## Amendment A4 (2026-10-14 ~08:30 Berlin, before any S1 step): the CPU stages run beside RL-S1's training
+
+**The ruling.** PI, 2026-10-14, verbatim: *"The pod is idling, this is not acceptable"*.
+
+**What was idle (MEASURED on the pod, RL-S1's `chain.log`):**
+- the A40 had no work for **~11.5 h** (2026-10-13 14:59Z → 2026-10-14 02:33Z), while RL-S1 labelled on the CPU before its first GPU stage;
+- it was idle for **~28 min between consecutive arms** (C0 trainer exit 05:55:55Z → R0 trainer start 06:24:19Z).
+
+Under A3, S1 would add the same pattern: about 1–1.5 h of CPU-only stages (u400 fetch, held-out data, `heldout_pdm`, `train_teacher_lane`, label banking) with the GPU idle after RL-S1 ends.
+
+**The change (mechanics only).**
+- `refe/s1aux_pod.sh` no longer waits at precheck. Precheck still **refuses** a refused upstream (RL-S1's lock free with no `ZZRLS1_DONE`).
+- The stages `env`, `fetch`, `data`, `relabel` and `bank_labels` then run **beside RL-S1's training**:
+  - the labellers at `nice -n 19`;
+  - label workers capped at the cgroup cores minus 4 (7 of 11), leaving the RL-S1 trainer and its two loaders their cores. MEASURED: they use ~2.3 cores while an arm trains. Memory has room: ~4.5 GB RSS against the 71 GB cgroup limit.
+- A new stage, `gpu_wait`, sits **before the first GPU use** (the first arm's preflight). It waits until:
+  - the P2 and RL-S1 locks are free;
+  - RL-S1 has written `ZZRLS1_DONE`;
+  - the GPU has been idle on 3 consecutive polls.
+
+  It then runs the disk write test. The per-arm GPU re-check is unchanged. **S1 still never puts a GPU job beside a training job.**
+
+**Why this changes no read and no criterion.**
+- The labels are a function of their inputs and seeds (seed 20261004, 2,500 sets, the same queue and the same recipe), not of when they are computed.
+- `bank_labels` still banks them, proven by content, before the first arm.
+- The arms, argv, tokens, order and every criterion of this file are untouched.
+
+**The guard on RL-S1.**
+- RL-S1's update rate is read from its own egress ticks before and during the overlap: C0 took ~58 min per 250 updates.
+- If the rate drops by more than 5 % during the overlap, the S1 labellers are stopped by explicit PID, and the drop is reported.
+- Rationale: the binding rule "never add GPU/RAM load to a training pod" exists to protect the training run. This overlap adds no GPU load and ~2–3 GB of RAM. Its CPU load runs at the lowest priority, and it is measured against the run it could harm.
