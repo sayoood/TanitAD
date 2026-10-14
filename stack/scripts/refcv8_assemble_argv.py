@@ -347,9 +347,28 @@ def self_test():
         json.dump({"binding": False, "exit_status": 1, "closure_sha256": "a" * 64, "outside_tree": ["x"]}, open(cp, "w"))
         assert len(assert_closure(cp)) == 3
         rp = os.path.join(td, "r.json")
-        json.dump({"verdict": "PASS"}, open(rp, "w"))
+        # LITERAL fixtures in the REAL records' shapes (refcv8 map 2026-10-14, refcv7 box), each with a mutation that must go RED
+        mp_ok = {"schema": "tanitad.g_map_overfit_record/1",
+                 "verdict": {"MAIN": {"verdict": "PASS", "loss_finite_every_step": True}, "controls_reproduced": True,
+                             "G_MAP_OVERFIT": "PASS"}}
+        json.dump(mp_ok, open(rp, "w"))
         assert assert_record(rp, "map") == []
-        json.dump({"RESULT": "FAIL", "binding": True}, open(rp, "w"))                      # refcv7's own box record read FAIL
+        json.dump({"verdict": "PASS"}, open(rp, "w"))                                      # the old reader's flat shape
+        assert len(assert_record(rp, "map")) == 1
+        bad = json.loads(json.dumps(mp_ok)); bad["verdict"]["MAIN"]["verdict"] = "FAIL"
+        json.dump(bad, open(rp, "w"))
+        assert len(assert_record(rp, "map")) == 1
+        bad = json.loads(json.dumps(mp_ok)); bad["verdict"]["controls_reproduced"] = False
+        json.dump(bad, open(rp, "w"))
+        assert len(assert_record(rp, "map")) == 1
+        bx_ok = {"RESULT": "FAIL", "binding": True, "arms": {"main": {"verdict": "PASS"}}}   # refcv7's accepted box record
+        json.dump(bx_ok, open(rp, "w"))
+        assert assert_record(rp, "box") == []
+        json.dump(dict(bx_ok, arms={"main": {"verdict": "FAIL"}}), open(rp, "w"))
+        assert len(assert_record(rp, "box")) == 1
+        json.dump(dict(bx_ok, arms={"main": {"verdict": "PASS"}, "lane_w0": {"verdict": "FAIL"}}), open(rp, "w"))
+        assert len(assert_record(rp, "box")) == 1
+        json.dump(dict(bx_ok, binding=False), open(rp, "w"))
         assert len(assert_record(rp, "box")) == 1
         try:
             render_template("--x\n{UNSET}\n", {})
@@ -429,18 +448,36 @@ def assert_closure(path):
 
 
 def assert_record(path, kind):
-    """The harness record: map = top-level `verdict` PASS (map_hires_overfit.py); box = `RESULT` PASS (g_box_overfit.py).
-    MAIN arm only (SPEC_REFCV7 A19): the box record must list exactly the `main` arm."""
+    """The harness record, read the way `launch_gate.py` judges it under SPEC_REFCV7 A19 (MAIN arm only).
+    map (`map_hires_overfit.py`, schema `tanitad.g_map_overfit_record/1`): `verdict` is a DICT; `verdict.MAIN.verdict`
+    PASS, its loss finite on every step, and the C1-C3 controls reproduced (`G_MAP_OVERFIT` is informative: the gate
+    does not read the harness's overall verdict under A19). box (`g_box_overfit.py`): a `--binding` record listing
+    exactly the `main` arm, `arms.main.verdict` PASS. Its top-level `RESULT` reads FAIL BY CONSTRUCTION under A19 (the
+    must-fail arms are not run) and is NOT the bar -- refcv7's own accepted binding record carries RESULT FAIL.
+    MEASURED 2026-10-14: the earlier reader (top-level `verdict` / `RESULT` == PASS) refused a PASSING refcv8 map
+    record, and would have refused refcv7's accepted box record; its self-test fixtures were written in its own
+    wrong shape, so it could never see that."""
     d = json.load(open(path, encoding="utf-8"))
     errs = []
     if kind == "map":
-        if d.get("verdict") != "PASS":
-            errs.append(f"map record verdict is {d.get('verdict')!r}, not PASS")
+        v = d.get("verdict")
+        if not isinstance(v, dict):
+            return [f"map record `verdict` is {type(v).__name__}, not the harness's dict (wrong schema)"]
+        m = v.get("MAIN") if isinstance(v.get("MAIN"), dict) else {}
+        if m.get("verdict") != "PASS":
+            errs.append(f"map record MAIN verdict is {m.get('verdict')!r}, not PASS")
+        if m.get("loss_finite_every_step") is not True:
+            errs.append("map record MAIN loss is not finite on every step")
+        if v.get("controls_reproduced") is not True:
+            errs.append("map record controls C1-C3 are not reproduced")
     elif kind == "box":
-        if d.get("RESULT") != "PASS":
-            errs.append(f"box record RESULT is {d.get('RESULT')!r}, not PASS")
         if d.get("binding") is not True:
             errs.append("box record is not a --binding record")
+        arms = d.get("arms") if isinstance(d.get("arms"), dict) else {}
+        if sorted(arms) != ["main"]:
+            errs.append(f"box record arms are {sorted(arms)}, not exactly ['main'] (A19)")
+        if (arms.get("main") or {}).get("verdict") != "PASS":
+            errs.append(f"box record arms.main verdict is {(arms.get('main') or {}).get('verdict')!r}, not PASS")
     else:
         errs.append(f"unknown kind {kind!r}")
     return errs
