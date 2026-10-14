@@ -12,9 +12,13 @@
 >
 > **State on 2026-10-14 (still a DRAFT, so edited in place):**
 > - Precondition 1 **holds**. P2 R2 is **GO**: +0.57 PDMS [+0.02, +1.18] over u400 on the full navtest (`eval/RESULT_P2.md`, landed `78e9bc9`).
-> - Precondition 2: the PI decided P6-T (25 epochs), P6-N (command), P6-Y (unwrapped) and P6-D on 2026-10-11. **P6-C is open:** M-LAB recommends ≥ 24 vCPU, and the current A40 pod has 11.
-> - **Also open, for the PI:** the P2 training-seed replicate that `PREREG_P2.md` registers on ADOPT (see "Training variance" below).
-> - Pod order (PI): P2 ✅ → RL-S1 (training since 2026-10-14 04:33 Berlin) → S1 aux fine-tunes → P6.
+> - Precondition 2: the PI decided P6-T (25 epochs), P6-N (command), P6-Y (unwrapped) and P6-D on 2026-10-11.
+>   **P6-C was decided 2026-10-14:** the PI said, verbatim, *"Find a solution with our 11 cpu pod"*. P6 runs on the existing A40 pod, which has an 11-vCPU cgroup.
+>   - The feasibility plan and a CPU-only pod probe are in build (`eval/P6_ON_11VCPU.md`, `refe/p6_cpu_probe.sh`).
+>   - The probe runs in a non-training window before P6. The chain's own G-LIVE-LAB gate (≥ 6.735 sets/s at the launch worker count) is unchanged.
+> - **The P2 seed replicate is ordered** (PI 2026-10-14, *"Replicate p2"*; `eval/PREREG_P2_REPLICATE.md`). It supplies P6's training-seed floor F.
+> - Pod order (PI): P2 ✅ → RL-S1 (training since 2026-10-14 04:33 Berlin) → S1 aux fine-tunes → **P2-s1** → P6.
+> - Still to do before P6's first step: finalise this file (the 11-vCPU configuration, once the probe has measured it) and land it.
 
 ## The arm
 
@@ -104,10 +108,9 @@ component carries a paired CI.
 - The seed floor is therefore taken from the **cheapest available replicate**, in this order:
   1. P2's training-seed replicate (`eval/PREREG_P2.md`, on ADOPT).
      - ⚠️ 2026-10-14: P2 was ADOPT and GO. `PREREG_P2.md`'s ADOPT clause ("the seed replicate, then P6") still stands, because Amendment 1 replaced only the NO-GO clause.
-     - The PI's pod order does **not** include this replicate.
-     - Cost: about **21 A40-h** (MEASURED for P2: 42 half-hourly egress ticks) plus a 5.3 h dev-box navtest read.
-     - Whether it runs is the PI's call.
-  2. Otherwise, the three S1 no-head arms (`N-s0/N-s1/N-s2`: the SFT-4 recipe on u400, 400 updates, seeds 0–2; `PREREG_AUX_DRIVABLE_S1.md`).
+     - **Ordered by the PI on 2026-10-14** as P2-s1 (`eval/PREREG_P2_REPLICATE.md`). It runs after S1 and before P6. Its floor is **F = |mean Δ_seed|**, a one-draw estimate.
+     - Cost: about **21 A40-h** (MEASURED for P2: 42 half-hourly egress ticks), plus a 5.3 h dev-box navtest read.
+  2. Only if P2-s1 yields no valid read: the three S1 no-head arms (`N-s0/N-s1/N-s2`: the SFT-4 recipe on u400, 400 updates, seeds 0–2; `PREREG_AUX_DRIVABLE_S1.md`).
      - They are read on the full navtest on the dev box, at about 5.3 h each (MEASURED for u400).
      - This read belongs to P6, not to S1: S1 computes no navtest PDMS (its §4.2), and N carries no head, so the read cannot touch S1's H2 question.
      - ⚠️ It is a **scorer-only** floor (frozen trunk). It may understate the seed variance of a joint fine-tune, and is reported as such.
