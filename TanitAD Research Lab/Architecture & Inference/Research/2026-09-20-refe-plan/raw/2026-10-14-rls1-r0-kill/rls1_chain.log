@@ -1,0 +1,43 @@
+2026-10-13T13:22:54 chain start (rls1_pod.sh md5 bec6e66411fe)
+2026-10-13T13:22:54 REFUSED: the P2 chain still holds /workspace/data/refe_p2/chain.lock
+2026-10-13T13:28:27 chain start (rls1_pod.sh md5 bec6e66411fe)
+2026-10-13T13:28:27 REFUSED: /workspace/refe-plan-rls1/eval/rl_val_eval.py missing: ship code/ refe/ splits/ eval/ raw/rl_pool/ SHIP_MANIFEST.json to /workspace/refe-plan-rls1 first (a directory of its own, NOT the one P2 ran from)
+2026-10-13T13:30:02 chain start (rls1_pod.sh md5 bec6e66411fe)
+16384+0 records in
+16384+0 records out
+17179869184 bytes (17 GB, 16 GiB) copied, 12.998 s, 1.3 GB/s
+2026-10-13T13:30:18 precheck ok (P2 over, dd 16384 MB)
+2026-10-13T13:30:18 env ok (cgroup cores 11, label workers 10)
+2026-10-13T13:30:23 u400 is not on the pod (or does not verify): fetching Sayood/tanitad-refe-rls1 base/model_sft4_B_u400.pt
+2026-10-13T13:30:37 checkpoints verified (model_final + u400)
+2026-10-13T13:30:37 partition verified (ZZRLS1_PARTITION_OK 9995a39aeeac train=16000/166 logs val=3000/75 logs)
+2026-10-13T13:30:37 partition: 16000 RL-train scenes
+2026-10-13T13:31:38 image coverage complete for all 19,000 scenes (ZZRLFAN_PLAN 19000)
+2026-10-13T13:35:03 ZZRLS1_FANCMP_OK ZZRLFAN_ATOL_PASS 512 0 0.5 ZZRLFAN_MEAN_ATOL_PASS 512 0 0.025 (atol 0.5, mean_atol 0.025, slice 4c613ff027e8984b924723ee2c6989cbed30a4f22002d5674eae0530ea30c55c, banked /workspace/data/refe_navtrain/onpolicy/sets)
+2026-10-13T13:49:51 teacher-lane labeller smoke ok (3 RL-val sets, rows accepted by the trainer's reader)
+2026-10-13T14:59:19 dump ok (val + 4 train shards); waiting for the last labels
+2026-10-14T02:12:06 labels ok (PDM + rl_terms + teacher lane)
+2026-10-14T02:12:36 join gate PASS (train + val: PDM, rl_terms and teacher-lane labels on 100 %, G-REWARD-ID clean)
+2026-10-14T02:13:22Z ZZEGRESS_OK rlfan_data 12 files 217704964 B
+2026-10-14T02:13:22 dump + labels banked on HF
+2026-10-14T02:30:11 arm C0: preflight PASS, launch gate PASS (token verified)
+2026-10-14T02:33:31 arm C0: trainer pid/pgid 36701, watcher 36709, monitor 36710 (control: /workspace/data/rls1/arms/C0/scores)
+2026-10-14T03:31:43Z ZZEGRESS_OK u250 4 files 34449304 B
+2026-10-14T04:19:46Z ZZEGRESS_OK u500 4 files 34459981 B
+2026-10-14T05:07:50Z ZZEGRESS_OK u750 4 files 34470624 B
+2026-10-14T05:55:54Z ZZEGRESS_OK exit 4 files 34481648 B
+2026-10-14T05:55:54Z ZZEGRESS_WATCH_END ok=True pushed=[250, 500, 750, 1000] pending=[]
+2026-10-14T05:55:55 arm C0: trainer rc 0, watcher rc 0, monitor rc 0
+2026-10-14T06:00:59Z ZZEGRESS_OK arm_C0 26 files 1495093811 B
+2026-10-14T06:00:59 ZZRLS1_ARM_DONE C0
+2026-10-14T06:20:29 arm R0: preflight PASS, launch gate PASS (token verified)
+2026-10-14T06:24:19 arm R0: trainer pid/pgid 41312, watcher 41320, monitor 41322 (control: /workspace/data/rls1/arms/C0/scores)
+2026-10-14T07:23:32Z ZZEGRESS_OK u250 4 files 34453114 B
+2026-10-14T08:11:41Z ZZEGRESS_OK u500 4 files 34465929 B
+2026-10-14T08:59:44Z ZZEGRESS_OK u750 4 files 34478716 B
+2026-10-14T09:46:48Z ZZEGRESS_OK exit 4 files 34491936 B
+2026-10-14T09:46:48Z ZZEGRESS_WATCH_END ok=True pushed=[250, 500, 750, 1000] pending=[]
+2026-10-14T09:46:49 arm R0: trainer rc 0, watcher rc 0, monitor rc 137
+2026-10-14T09:58:15 ZZRLS1_ARM_KILLED R0 retroactive: ZZRLS1_REPLAY_KILL R0 K3 g3/g5 bound breached at update250 and update500
+2026-10-14T10:07:21Z ZZEGRESS_OK arm_R0 27 files 2783596210 B
+2026-10-14T10:07:21 REFUSED: arm R0 was KILLED (retroactive: ZZRLS1_REPLAY_KILL R0 K3 g3/g5 bound breached at update250 and update500): its evidence is banked; the Master Mind decides before any further arm
