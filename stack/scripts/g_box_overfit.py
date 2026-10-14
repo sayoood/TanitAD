@@ -695,6 +695,22 @@ class TrainerAdapter:
                     _e_clip, _e_ns, min_coverage=getattr(a, "map_min_coverage", None))
         finally:
             v2d.build_v2_providers = _orig
+        # ⛔ refcv8 (MEASURED 2026-10-14, the first refcv8 binding run on Thor): the launch argv builds the v9
+        # constraint heads (--w-r8-v9-cons > 0) and a refcv8 decoder that reads the v9 inputs, but this loader never
+        # attached the v9 release, so the refcv8 guard refused the first batch ("the batch carries no r8_v9_*
+        # targets") and the harness exited 1 before any step. Attach it EXACTLY as train() does (refc_v3_train.py,
+        # "refcv8 WP-B: the v9 release"): the same join, the same nav-from-v9 / targets / cons switches. NOT replayed:
+        # train()'s v9 re-derivation of the tactical GOAL pos_weight on the model -- this harness judges the box head.
+        if getattr(a, "r8_v9_labels", None):
+            _j8 = tr.r8train.load_v9_join(a.r8_v9_labels, expect_md5=a.r8_v9_md5, rc_variant=a.r8_rc_variant,
+                                          lat_variant=a.r8_v9_lat_variant)
+            e_ds.r8_nav_from_v9 = bool(getattr(a, "r8_nav_from_v9", False))
+            _c8 = e_ds.enable_r8_v9(_j8, targets=bool(getattr(a, "refcv8", False)))
+            e_ds.r8_v9_cons = float(getattr(a, "w_r8_v9_cons", 0.0) or 0.0) > 0.0
+            self.dataset_record["r8_v9"] = {"split": _j8.manifest.get("split"), "md5": _j8.manifest.get("md5"),
+                                            "n_joined": _c8.get("n_joined"), "n_clips": _c8.get("n_clips"),
+                                            "targets": bool(e_ds.r8_v9_targets), "cons": bool(e_ds.r8_v9_cons),
+                                            "nav_from_v9": bool(e_ds.r8_nav_from_v9)}
         sc = V.VIS1Sidecar(a.vis1_sidecar)
         self.sidecar_stamp = sc.stamp()
         self.vis1_stats = e_ds.enable_vis1(sc, split="train")
