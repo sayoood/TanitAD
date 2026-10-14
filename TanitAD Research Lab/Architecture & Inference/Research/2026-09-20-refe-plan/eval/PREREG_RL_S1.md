@@ -202,3 +202,90 @@ ceil(16,000 / 8 x 2 / 8) = **500 updates** (the trainer's `total = min(...)` end
 identically). `--epochs` is not pinned by the gate. The alternative, 500 updates at `--epochs 2`, changes the ramp (200 of 500 updates), K3/K4 timing and the cost model, so it was not taken; it is the Master Mind's / PI's call.
 
 **Unchanged:** every lever, bar, kill rule and outcome of sections 1-7. Section 3's "48,000 scenes" and the 51,000 of the OPEN-BASE tables read 16,000 / 19,000 from here on.
+
+## 10. RL-S1b -- 2026-10-14 (after R0's K3 kill; appended, nothing above is edited; written BEFORE any RL-S1b training step)
+
+> Numbered 10, not 9: section 9 is the TL-1 re-cut. Status: **DRAFT amendment.** Binding when landed in git before the first RL-S1b step, with a launch-gate PASS token per arm
+> (profile `refe_rls1b`). Evidence: the scripts and JSON in `raw/2026-10-14-rls1b-attribution/` (`attribution.json`, `dose.json`, `proxy_seed0.json`); the narrative is 10.1-10.2 below. Evidence classes as in the header. **R0 stays KILLED** (K3, `raw/2026-10-14-rls1-r0-kill/`);
+> g5, K3, the section 4 bar and the full-navtest endpoint are NOT changed by this section.
+
+### 10.1 What killed R0, attributed (MEASURED on banked dumps, zero training; RL-val = selection tier, never an endpoint)
+
+R0 vs C0 at update 1,000 on RL-val (3,000 sets, 75 logs; paired log-cluster bootstrap, 10,000, seed 20260927; answers "another draw of logs" only): PDMS **+1.16 [+0.59, +1.74]**,
+EP +3.47 [+2.72, +4.27], **TTC -1.00 [-1.70, -0.34]**, NC -0.30 [-0.65, +0.00] (`raw/2026-10-14-rls1-r0-kill/rlval_vs_C0.json`, reproduced exactly by the `attribution.json` selfcheck).
+
+| question | answer [M] (`raw/2026-10-14-rls1b-attribution/`) |
+|---|---|
+| Is the TTC loss the REWARD's preference? | **No.** R0 changed its pick on 2,329 of 3,000 sets. On the **59** sets where the change made the pick TTC-failing, R0's OWN reward ranks R0's pick above C0's on **1 / 59** (mean reward gap **-0.40**; R0's pick sits at median rank **46 / 64** under its own reward, C0's at 15; the reward's argmax is TTC-failing on 0 / 59; those picks even LOSE EP, -0.06). NC-worsening changes: 0 / 14 reward-preferred. TTC-improving changes: 28 / 29 reward-preferred (`attribution.json` Q1). |
+| Does any candidate reward prefer unsafe plans? | **No candidate does, and they barely differ.** On the 16,000 RL-train scenes (1,024,000 labelled proposals; 13.6 % of proposals and 50.4 % of scenes carry a TTC failure), the reward-optimal pick is TTC-failing in **0.07-0.11 %** of scenes for every candidate: (a) R0, (b) guard off, (c1) TTC / NC hard multiplier, (c2) penalty 5/12 and 2/3 (2/3 = the smallest constant that orders every unsafe proposal below every safe one), (d) lexicographic. Boltzmann(R / 0.02) mass on TTC-failing proposals: 0.07-0.11 % (Q3). Only (c1) changes the policy-gradient push at the REAL base policy materially (share of the positive push landing on TTC-failing proposals 2.06 % -> 0.01 %), on a channel the pick-level evidence above says is not the cause. |
+| Then what carried the loss? | **The scorer's generalisation of the EPO shift.** Within-scene AUC of the safety logits fell (R0-B minus C0-A: TTC -0.0063 [-0.0131, +0.0005], NC **-0.0085 [-0.0173, -0.0001]**, DAC -0.0037 [-0.0093, +0.0015]), against a same-pass, same-seed BCE-only arm (R0-A) that equals C0-A to 0.0000 [-0.0001, +0.0001]; the TTC logit absorbed progress (its within-scene correlation with true EP on TTC-passing proposals moved -0.257 -> -0.083) (Q2). But swapping the safety outputs back to the BCE-only arm (hybrid H1) still leaves **TTC -0.80 [-1.51, -0.14]**: about four fifths of the loss rides on the PROGRESS outputs (EP, C, lane) that EPO moved (Q5). |
+| Is the trade separable by dose? | **Yes, on a first-order (linear-response) model [E].** Interpolating the logits C0-A -> R0-B at fraction alpha (a stationary point of BCE + lam EPO shifts ~ linearly in lam): alpha 0.25 = PDMS **+0.60 [+0.27, +0.95]**, EP +1.05, **TTC -0.03 [-0.36, +0.27]**, NC -0.03; alpha 0.375 = +0.71 / TTC -0.27; alpha 0.5 = +0.84 / -0.47; alpha 1 = +1.16 / -1.00. At alpha 0.25 the g5 point read holds at every K3 check (TTC -0.30 / -0.13 / -0.10 / -0.03 at u250 / u500 / u750 / u1000, NC >= -0.17) (`dose.json`): about half the PDMS gain for 3 % of the TTC loss. |
+| Noted, not acted on | The control moved too: C0-A vs the base (u400) is PDMS -0.57 [-1.26, +0.09], **TTC +0.83 [+0.13, +1.58]**; R0-B vs the base is TTC -0.17 [-0.71, +0.38]. g5 is defined versus the control and stays so. |
+| A CPU proxy (MLP on the base logits) | Its pre-registered face validity **FAILED** (the R0 replica gave TTC +0.53, not < 0), so it ranks nothing (`proxy_seed0.json`, `sim_rls1b_proxy.py`). |
+
+### 10.2 The lever: the EPO dose, `--epo-lam 1.0 -> 0.25` (ONE lever; RULE ZERO item 5)
+
+* **Why this one.** The reward-side levers (b)-(d) act on a preference that is not there (0.07-0.11 % unsafe optimum for all of them; 1 / 59 reward-preferred TTC-worsening picks). A
+  stop-gradient on the safety heads is bounded by hybrid H1 to recovering ~0.20 of the 1.00 (TTC -0.80 would still breach g5). A stronger KL anchor pulls toward the BASE, i.e. against
+  the control's own TTC gain (+0.83 vs base), which g5 is measured against. The dose is the only lever with a measured effect on the trade itself: alpha 0.25 keeps 52 % of the PDMS gain
+  at 3 % of the TTC loss [E, linear response].
+* **The value rule (stated, applied on RL-val = hyper-parameter selection, after seeing the curve):** the largest alpha on the grid {0.125, 0.25, ..., 1} whose interpolated TTC and NC point
+  deltas are >= -0.25 (half the g5 bound) at u1000 and >= -0.5 at every check: **0.25** (0.375 reads TTC -0.27 at u1000). 0.25 is also a power of two, so `lam_pg x` is exact in floating
+  point and the dose identity is testable bit for bit.
+* **What does NOT change:** trainer and reward code (pinned to the bytes R0 trained with: `refe/test_rl_s1b.py` P-checks; `rl_reward.py` git blob `cd5c5144`), the reward `PDMS - 0.15 D + g2`,
+  T 0.1, beta 0.1, the 200-update ramp (it now ramps 0 -> 0.25), the SFT-4 recipe (lr 1e-4, 1,000 updates, `--epochs 4`), the frozen fan, the n16000 partition, the labels, the seeds.
+* **Stated risk [E]:** logit interpolation is not training. AdamW and the per-arm grad clip (1.0) mean lam changes the MIX of the BCE and EPO directions, not the step size, so the realised
+  dose can be larger or smaller than alpha 0.25. K3 is the guard, unchanged.
+
+### 10.3 Arms (RL-S1's remaining authorised budget: THREE A40 arms)
+
+| arm | argv | seed | control for the bar | A40-h (plan) |
+|---|---|---|---|---|
+| **R0b** | R0's argv token for token + `--epo-lam 0.25` (+ its own `--out` / `--dump-scores`) | 0 | **C0** (banked: HF `Sayood/tanitad-refe-rls1-c0`) | 3.5 |
+| **C1** | RL-S1's C1 **exactly as registered** (BCE only; accepted by `refe_rls1` AND `refe_rls1b`) | 1 | - | 3.5 |
+| **R1b** | as R0b, `--seed 1` | 1 | **C1** | 3.5 |
+| ~~R2b~~ | R0b + `--epo-k --epo-l` (lane change at lam 0.25), read on the TACTICAL family, K5 | 0 | C0 / R0b | **CONDITIONAL: a 4th A40 arm -> PI decision.** Not registered; `refe_rls1b` refuses it. |
+
+Exact argvs: `eval/rls1b_arms.json` (derived from R0's banked token argv, sha256 `24451b62...`; self-checked against `refe_rls1b`). **Order: R0b -> C1 -> R1b** (R1b's K3 / K4 checks
+need C1's dumps). **If R0b is killed by K3, stop:** section 4 (4) needs the bounds to hold on BOTH R arms, so C1 + R1b could not change the verdict (saves ~7 A40-h). Plan: 3 x 3.5 = **10.5 A40-h**
+(C0 and R0 MEASURED 3.4-3.5 h; K6 stays 6 h per arm), plus the full-navtest reads (C0's included, if not yet read) and the I-rep (section 3) on C1 and R0b.
+
+**Prerequisite (launch blocker, owned elsewhere):** the live K3 monitor must run. R0's never did (OOM, rc 137); the fix (K-MON: the chain fails CLOSED when the monitor dies or never gets
+READY, peak RSS logged) is in `refe/rls1_checks.py` / `refe/rls1_pod.sh` and must be landed and tested before R0b starts. Comparability note: `scorer_finetune.py` changed after R0's launch
+commit (`main.fwd`: the default-OFF aux head's feed path); every EPO / loss segment is byte-identical (pinned), and outcome O5 below checks the residue empirically.
+
+### 10.4 Bar, kills and reads: sections 4 and 5 AS REGISTERED, with these controls
+
+* ADOPT-FOR-NEXT-STAGE iff all of section 4 (1)-(5) on full navtest with the pairs **R0b - C0** and **R1b - C1** (each >= +0.25, mean >= +0.5; pooled lower bound > 0; mean contrast
+  > 2 x max(|R0b - R1b|, |C0 - C1|, inference-replicate |delta|); no adverse longitudinal / lateral separation and the g3-g5 bounds held; every sub-score reported, EP included).
+  REFUTED iff the pooled upper bound < +0.25; otherwise NOT PROVEN. Four families as in section 4 (STRATEGIC: PAUSED, PI ruling 2026-09-19, item 25).
+* K0-K6 unchanged. K3 = any g3 / g4 / g5 bound breached at two consecutive 250-update RL-val checks; g5 = TTC and NC may not fall by more than 0.5 point versus the arm's control
+  (R0b: C0's dumps at the same update; R1b: C1's).
+
+### 10.5 Outcomes committed in advance, and the next lever of each (RULE ZERO)
+
+| outcome | condition | next lever |
+|---|---|---|
+| **O1 ADOPT** | 10.4's bar, both R arms within g3-g5 | the EPO term at lam 0.25 enters P6's scorer loss (section 6 ADOPT); the dose curve's next point (lam 0.5) only as its own pre-registered pair, budget = PI |
+| **O2 KILLED again (K3 at lam 0.25)** | g5 breached at two consecutive checks on R0b (then stop) or on R1b | the linear-response dose model is REFUTED on this rig: the trade is not dose-separable. Next: (i) zero-A40, dev box: TTC / NC head calibration read on the banked C0 / R0 / R0b dumps (section 6's calibration lever); (ii) a scorer whose safety outputs EPO cannot move (separate safety head): an architecture change, **PI decision** |
+| **O3a NOT PROVEN, EP up** | bounds held, bar missed, R - C EP separated > 0 on navtest | the lam 0.5 pair (2 more A40 arms): **PI decision** (beyond the authorised budget) |
+| **O3b NOT PROVEN, EP flat** | bounds held, bar missed, EP not separated | section 6's NOT-PROVEN lever (TTC / NC / DAC head calibration); re-read C vs A0 first |
+| **O4 REFUTED** | pooled upper bound < +0.25 | section 6's REFUTED list: P6; generator-side alternation; P5 tracker-aware targets |
+| **O5 CONFOUNDED** | R0b's same-pass arm A (BCE only, seed 0) differs from C0 on RL-val by PDMS > 0.3 or any separated sub-score (the R0-A vs C0-A floor is +0.01 [-0.13, +0.14]) | report R0b against BOTH C0 and its own arm A; the bar is read on the pair that shares the trainer blob, and the confound is stated. Not a pass |
+
+### 10.6 Seed floor (H-ESTIM-SEED-1)
+
+The paired log-cluster bootstrap answers "another draw of LOGS" only. MEASURED so far: same seed, same flags, different RNG consumption (R0-A vs C0-A, RL-val): PDMS +0.01 [-0.13, +0.14],
+TTC 0.00 [-0.13, +0.13], within-scene safety AUCs 0.0000. That is a floor for "the same run again", **not** a training-seed floor. The training-seed floor exists only after C1: |C0 - C1| and
+|R0b - R1b| (two pairs: necessary, not sufficient, section 4 (3)); the inference floor is the I-rep. Every RL-S1b effect is quoted with the floor it cleared, and a lever effect smaller than
+max(|C0 - C1|, |R0b - R1b|) is not called one. The g5 / K3 decision stays one-seed-per-arm as registered (the goalpost does not move).
+
+### 10.7 What has to exist before launch
+
+| item | state |
+|---|---|
+| `refe_rls1b` launch-gate profile (arms C1 / R0b / R1b, `epo_lam` 0.25 registered, R2b refused as a PI decision, G-DVB on built `epo.lam`) | **BUILT** 2026-10-14 (`refe/launch_gate.py`; `refe/test_rl_s1b.py` in its G-SUITE) |
+| the three argvs | **BUILT** `eval/rls1b_arms.json` |
+| chain wiring (arm names, R0b -> C1 -> R1b order, stop after an R0b kill, K3 control dirs) | **OPEN**: the owner of `refe/rls1_pod.sh` |
+| live K3 monitor that fails closed | **OPEN**: same owner (K-MON) |
+| C0's full-navtest read (R0b's endpoint pair) | check the chain; required before the section 4 read |

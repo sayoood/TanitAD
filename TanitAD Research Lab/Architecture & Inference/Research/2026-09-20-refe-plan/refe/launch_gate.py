@@ -58,6 +58,18 @@ RLS1_DATA = ("--ckpt", "--targets", "--images", "--calib", "--onpolicy", "--held
              "--pdm-labels-train", "--pdm-labels-heldout", "--teacher-lane-train", "--teacher-lane-heldout", "--epo-terms-train", "--epo-terms-heldout", "--aux-drv-labels")
 RLS1_SUITE = [{"script": "test_rl_reward.py", "token": "ZZTEST_PASS"}, {"script": "test_rl_epo.py", "token": "ZZTEST_PASS"},
               {"script": "test_launch_gate.py", "args": ["--static", "--no-banked"], "token": "ZZLG_STATIC_PASS"}]
+# RL-S1b (eval/PREREG_RL_S1.md section 10, 2026-10-14; raw/2026-10-14-rls1b-attribution/attribution.json + dose.json).  R0 was KILLED by K3/g5; the attribution found the TTC loss is NOT
+# the reward's preference (58/59 TTC-worsening pick changes are DISPREFERRED by R0's own reward) but the scorer's generalisation of the EPO shift, and the dose read
+# (logit interpolation C0 -> R0) put half the PDMS gain at a quarter of the shift with no TTC loss.  ONE lever moves: the EPO dose, --epo-lam 1.0 -> 0.25 (NAMED in
+# the argv; the parser default stays 1.0, so refe_rls1 is untouched).  Same trainer, reward, recipe, data, kills and bar.  C1 is RL-S1's C1 exactly (same class, seed and
+# argv).  R2b (lane change at 0.25) is NOT an arm here: it would be a 4th A40 arm beyond the three authorised, so it is a PI decision (section 10).
+RLS1B_ARM_SEEDS = {"C1": 1, "R0b": 0, "R1b": 1}
+RLS1B_ARM_CLASS = {"C1": "C", "R0b": "R", "R1b": "R"}
+RLS1B_EPO_LAM = 0.25                                                                  # a power of two: lam_pg * x is EXACT in binary floating point (test_rl_s1b.py)
+RLS1B_EPO_REGISTERED = {**RLS1_EPO_REGISTERED, "epo_lam": RLS1B_EPO_LAM}
+RLS1B_NEEDS_PI = {"R2b": "R2b (R0b + --epo-k --epo-l, the lane-change arm at --epo-lam 0.25) is a 4th A40 arm beyond RL-S1's remaining three: it needs a PI decision "
+                         "(eval/PREREG_RL_S1.md section 10) before it can be registered"}
+RLS1B_SUITE = RLS1_SUITE + [{"script": "test_rl_s1b.py", "token": "ZZTEST_PASS"}]
 # Auxiliary drivable-area head, S1 (WIRING_PLAN.md; eval/PREREG_AUX_DRIVABLE_DRAFT.md "Hosts": S1 = the SFT-4 recipe on the dev box, trunk frozen).  ⛔ PROPOSED values: they are
 # raw/2026-10-13-aux-head/PREREG_BLANKS_PROPOSED.md's, and the Master Mind's approval of that file is what makes them registered -- an amendment is a one-line change HERE.
 # Arms: N = the no-head replicate, H1 = head with the feed off (perception proof; the scorer is bit-identical to N, G12), H2 = head + feed.  One seed per arm name.
@@ -162,6 +174,10 @@ PROFILES = {
 # the replicate = refe_p2 (same checks, same G-P2GATE sub-check, same data flags, same forbidden flags, same P2 levers asserted) + `--seed 1` required + the WHOLE argv pinned + its own chain test in G-SUITE
 PROFILES["refe_p2rep"] = {**PROFILES["refe_p2"], "name": "refe_p2rep", "suite": SUITE + [{"script": "test_p2rep_chain.py", "token": "ZZTEST_PASS"}],
                           "required_flags": {**PROFILES["refe_p2"]["required_flags"], "--seed": str(P2REP_SEED)}, "pinned_argv": tuple(P2REP_ARGV)}
+# RL-S1b = refe_rls1 (same runner, checks, data flags, forbidden / required flags, recipe, G-DVB, G-PREFLIGHT) with ITS arm table and ONE registered value moved (epo_lam).
+# rls1_refusals reads `arm_class` / `arm_seeds` / `epo_registered` from the profile; refe_rls1 carries none of them, so it keeps the module constants above.
+PROFILES["refe_rls1b"] = {**PROFILES["refe_rls1"], "name": "refe_rls1b", "suite": RLS1B_SUITE, "arm_class": RLS1B_ARM_CLASS, "arm_seeds": RLS1B_ARM_SEEDS,
+                          "epo_registered": RLS1B_EPO_REGISTERED, "arms_need_pi": RLS1B_NEEDS_PI}
 
 
 def parse_args_string(s: str) -> list:
@@ -275,12 +291,17 @@ def rls1_refusals(prof: dict, argv: list, mod, parser) -> tuple:
     import gate_checks as C
     out = []
     name = prof["name"]
+    arm_class = prof.get("arm_class", RLS1_ARM_CLASS)                    # refe_rls1b carries its own table (RL-S1b); refe_rls1 keeps the module constants
+    arm_seeds = prof.get("arm_seeds", RLS1_ARM_SEEDS)
     declared = prof.get("declared_arm")
-    if declared is not None and declared not in RLS1_ARM_CLASS:
-        out.append(f"{name}: unknown arm {declared!r} (one of {sorted(RLS1_ARM_CLASS)})")
+    if declared is not None and declared not in arm_class:
+        out.append(f"{name}: unknown arm {declared!r} (one of {sorted(arm_class)})")
         declared = None
-    cls = RLS1_ARM_CLASS[declared] if declared else rls1_arm_class(argv)
+    cls = arm_class[declared] if declared else rls1_arm_class(argv)
     who = declared or f"the {cls} arm class"
+    if cls != "R?" and cls not in set(arm_class.values()):
+        out.append(f"{name}: the argv is an {cls}-class arm, which {name} does not register (its arms: {sorted(arm_class)})"
+                   + (f"; {'; '.join(prof.get('arms_need_pi', {}).values())}" if prof.get("arms_need_pi") else ""))
     ns, err = C.parse_scorer_argv(parser, argv)
     if err:
         out.append(f"{name}: the trainer's parser rejects this argv ({err})")
@@ -315,7 +336,7 @@ def rls1_refusals(prof: dict, argv: list, mod, parser) -> tuple:
         for lam_f, on_f in (("--epo-lam-k", "--epo-k"), ("--epo-lam-l", "--epo-l")):
             if lam_f in argv and on_f not in argv:
                 out.append(f"{name}: {lam_f} is named without {on_f}: a weight for a term that is OFF (scorer_finetune would ignore it silently)")
-        reg = dict(RLS1_EPO_REGISTERED)
+        reg = dict(prof.get("epo_registered", RLS1_EPO_REGISTERED))
         if cls == "R2":
             reg.update(RLS1_R2_REGISTERED)
         for dest, want in reg.items():
@@ -326,8 +347,8 @@ def rls1_refusals(prof: dict, argv: list, mod, parser) -> tuple:
         f = "--" + dest.replace("_", "-")
         if not C._close(getattr(ns, dest), want):
             out.append(f"{name} requires {f} {want} (PREREG_RL_S1 recipe, every arm); the argv resolves to {getattr(ns, dest)} ({how(f)})")
-    if declared and ns.seed != RLS1_ARM_SEEDS[declared]:
-        out.append(f"{name}: arm {declared} is registered with --seed {RLS1_ARM_SEEDS[declared]}; the argv resolves to {ns.seed} ({how('--seed')})")
+    if declared and ns.seed != arm_seeds[declared]:
+        out.append(f"{name}: arm {declared} is registered with --seed {arm_seeds[declared]}; the argv resolves to {ns.seed} ({how('--seed')})")
     if ns.lane_head and not (ns.teacher_lane_train and ns.teacher_lane_heldout):
         out.append(f"{name}: --lane-head needs --teacher-lane-train AND --teacher-lane-heldout (the 7th output would have no label)")
     if (ns.teacher_lane_train or ns.teacher_lane_heldout) and not ns.lane_head:
@@ -698,10 +719,12 @@ def _profile_for(a, minting: bool) -> dict:
     off the argv cannot notice an omitted flag (an `--epo` left out of R0 reads as a clean control)."""
     prof = PROFILES[a.profile]
     arm_name = getattr(a, "arm_name", None)
-    arms = {"rls1": RLS1_ARM_CLASS, "auxs1": AUXS1_ARM_CLASS}.get(prof.get("arm_rules"), {})
+    arms = {"rls1": prof.get("arm_class", RLS1_ARM_CLASS), "auxs1": AUXS1_ARM_CLASS}.get(prof.get("arm_rules"), {})
     if arm_name:
         if not prof.get("arm_rules"):
-            raise SystemExit(f"--arm-name is only meaningful for a profile with arm rules (refe_rls1, refe_aux_s1), not {a.profile}")
+            raise SystemExit(f"--arm-name is only meaningful for a profile with arm rules (refe_rls1, refe_rls1b, refe_aux_s1), not {a.profile}")
+        if arm_name in prof.get("arms_need_pi", {}):
+            raise SystemExit(f"REFUSED: {prof['arms_need_pi'][arm_name]}")
         if arm_name not in arms:
             raise SystemExit(f"REFUSED: {arm_name!r} is not an arm of {a.profile} (one of {'|'.join(sorted(arms))})")
         prof = {**prof, "declared_arm": arm_name}
@@ -780,8 +803,9 @@ def main(argv=None) -> int:
         p.add_argument("--key-file")
         p.add_argument("--pkg", required=(name != "refusals"))
         if name in ("run", "refusals"):
-            p.add_argument("--arm-name", choices=sorted(RLS1_ARM_CLASS) + sorted(AUXS1_ARM_CLASS),
-                           help="refe_rls1: the arm this argv is for (C0 C1 R0 R1 R2); refe_aux_s1: N-s0..H2-s2; REQUIRED to mint, optional for `refusals` (undeclared = read off the argv)")
+            p.add_argument("--arm-name", choices=sorted(set(RLS1_ARM_CLASS) | set(RLS1B_ARM_CLASS) | set(RLS1B_NEEDS_PI)) + sorted(AUXS1_ARM_CLASS),
+                           help="refe_rls1: the arm this argv is for (C0 C1 R0 R1 R2); refe_rls1b: C1 R0b R1b (R2b needs a PI decision); refe_aux_s1: N-s0..H2-s2; "
+                                "REQUIRED to mint, optional for `refusals` (undeclared = read off the argv)")
         if name == "run":
             p.add_argument("--out-dir", required=True)
             p.add_argument("--only")
