@@ -44,3 +44,47 @@ on Thor.
 The pinned env list exists for genuine environment failures. Adding these two ids was considered first and **was
 not done**: the per-host difference had a cause in our code, and a cause is fixed, not admitted. The fix costs
 re-running the map and box binding records, because `refc.py` is in both harnesses' code closure.
+
+
+## 2026-10-15 — the gate PASSED on `fb47a583763f`, and refcv8-r101-s0 is training
+
+**The first run on the launch commit (`bc2816862b8c`): 8/10 PASS, 2 FAIL** (`raw/gate_bc2816862b8c/FAIL_bc2816862b8c.json`).
+Every reason is quoted from the evidence:
+
+* G-LIVE: "101 training loss calls observed, expected 100". The smoke takes one gradient-share reading at step 50.
+  Under the bf16 trunk that reading runs on an fp32 REPLAY of its step (`grad_share.fp32_replay`), which is one more
+  training-mode loss call. The run records it: the step-50 metrics row carries `gs_fp32_replay: 1.0`.
+* G-LIVE: "1 declared-trainable leaf module(s) received ZERO gradient: ['core.decoder.r8_rc_to_cond']". This is the
+  route-checkpoint projection. `refc.py` applies it only when `r8['rc'] is not None`, and the REQUIRED `--r8-no-rc`
+  (PI Q-A) feeds none.
+* G-EVAL: "the run record ... was written for ANOTHER argv". The gate compared its own smoke's `config.json` with the
+  RAW launch argv. The smoke re-expresses `--grad-share-every`, `--grad-share-at`, `--b1-guard-step` and
+  `--r8-alloc-emit-start` inside its 100 steps. Those four were the entire difference; every model flag was equal.
+
+**Fix (`fb47a58`, `stack/scripts/launch_gate.py`)**, gate rules only, no model code:
+
+* The replay is counted from the run's own record. An extra call without a replay row still FAILS.
+* `core.decoder.r8_rc_to_cond` is admitted in refcv8's `live_dead_admitted`, and only while `--r8-no-rc` is in the
+  argv. That is the flag-gated mechanism refcv7's strategic modules use. refcv7's own table is unchanged.
+* `stamps_written_for()` compares a smoke record with `smoke_argv(launch argv)` at the smoke length, and is exact on
+  every model flag. ⚠ The length comes from `smoke_step_count`, exactly as the smoke derives it, and is **never read
+  from the record**. The newest smoke `config.json` is G-CKPT's RESUME run (`--steps 102`). The first draft read 102,
+  and re-judging the real Thor record refused it again. That is how the trap was caught before landing.
+* Tests in `stack/tests/test_launch_gate_refcv8.py`. Mutation: reverting the replay count, dropping the admission,
+  ignoring the smoke rule, or reading the length from the record each turns exactly one test RED.
+
+**PASS (`raw/gate_fb47a583763f/`)**: token `PASS_fb47a583763f.json` (md5 `07d9a350d1794809825ef504f484c9bd`),
+10/10 checks; per-check evidence under `evidence/`. Supporting files: `final_gate.log` (the chain: suite-bind,
+G-SUITE precheck, the binding records carried, the kit `gate`), `final_gate2.sh` (the chain script),
+`bind_PROVENANCE.txt` (md5s of the carried binding records), `verify.json` (MATCH), and `fire.out`. Measured in
+the smoke:
+
+* G-LIVE: 101 calls = 100 steps + 1 replay at step 50; `r8_rc_to_cond` was the only admitted dead group.
+* Cost: 8.94 s/step mean (median 8.90); peak `cuda_max_mem` 31.26 GB at batch 16.
+* G-EVAL: `written_for_this_argv` True under `smoke_argv`, smoke length 100.
+* G-DVB: 100,598,182 parameters.
+* Dev box G-SUITE-PINNED: 0 failures, 0 unregistered skips.
+
+**Launched** 2026-10-15 02:54:15Z (04:54 Berlin): supervisor launch #1 of 4, run dir
+`/home/nvidia/refcv8_run/runs/refcv8-r101-s0`. The running trainer's argv, read from `/proc/<pid>/cmdline`, equals the
+gated argv token for token (sha `188aa439…`). Registry: `Project Steering/MODEL_REGISTRY.md` §16.

@@ -1,0 +1,125 @@
+{
+ "schema": "tanitad.launch_gate/1",
+ "kind": "evidence",
+ "check": "G-BOX-OVERFIT",
+ "status": "PASS",
+ "reasons": [
+  "G-BOX-OVERFIT PASS covers the head IN ISOLATION (trunk + branch on the frozen frames); the launch model's WIRING is G-LIVE's and G-DVB's job at the launch commit; MAIN-ONLY binding under SPEC_REFCV7 24 (A19, landed 36cc332): the must-fail arm(s) ['memory_zeros', 'presence_w0'] were NOT RUN -- presence_w0 is robust by construction (zero presence-loss weight gives the presence head no gradient); memory_zeros was NOT measured at full scale on the launch head -- it held in the TOY test on the A17 code (18/18 cells, ap2m 0.0022-0.0171) and on the pre-A14 head, and learned_ref also reads BEV tokens pooled from the map branch, so a leak around the blinded memory would not be seen before launch; the PI accepted this knowingly (A19 Q2) (evidence: TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-box-head/raw/toy/; TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-box-head/raw/thor_gbo/gbo_early_nonbinding.json; stack/tests/test_g_box_overfit.py::test_TOY_the_loop_memorises_and_the_memory_zeros_arm_cannot)"
+ ],
+ "binding": {
+  "profile": "refcv8",
+  "commit": "fb47a583763ff98723e059eaaf07faf413c71a80",
+  "tree_sha256": "92afd7417388f6aa321764c757dca2288dd014d359a2b98f4c82b35d0b0d8060",
+  "argv_sha256": "188aa439258d28e712e9a1b4a8ebda982d5f068b4515022f54ba1172e18fd956"
+ },
+ "inputs_read": {
+  "gate:box-overfit-record": {
+   "kind": "file",
+   "bytes": 28562,
+   "sha256": "18e664d20562bec6e7224825bd20dd73256f820fe4580eefc41c95410c438846",
+   "method": "sha256-v1"
+  },
+  "gate:box-overfit-closure": {
+   "kind": "file",
+   "bytes": 21225,
+   "sha256": "10f4a477fa69ee3958779701e89a863587d46f1786df846cb5ffe78aa555fddf",
+   "method": "sha256-v1"
+  }
+ },
+ "host": {
+  "node": "thor6",
+  "platform": "Linux-6.8.12-tegra-aarch64-with-glibc2.39",
+  "python": "3.12.3",
+  "torch": "2.13.0+cu130",
+  "cuda": true,
+  "device": "NVIDIA Thor"
+ },
+ "arm": null,
+ "gate_sha256": "31a1b352351b9c860976d081613e45c7989ea5fc17292d56bbd2529a5c09250d",
+ "started_utc": "2026-10-15T02:52:24Z",
+ "details": {
+  "record": "/home/nvidia/refcv8_run/bind_fb47a583763f/run_box/gbo_binding.json",
+  "sha256": "18e664d20562bec6e7224825bd20dd73256f820fe4580eefc41c95410c438846",
+  "result": "FAIL",
+  "harness_binding_informative": [
+   true,
+   "2f40f900cfa90c4d98d815847d58fa0729ca6d23"
+  ],
+  "a19": {
+   "policy": "A19_MAIN_ONLY_BINDING",
+   "source": "SPEC_REFCV7 24 (A19, landed 36cc332)",
+   "applied": true,
+   "absent_must_fail_arms": [
+    "memory_zeros",
+    "presence_w0"
+   ],
+   "harness_result_not_read": "FAIL",
+   "statement": "MAIN-ONLY binding under SPEC_REFCV7 24 (A19, landed 36cc332): the must-fail arm(s) ['memory_zeros', 'presence_w0'] were NOT RUN -- presence_w0 is robust by construction (zero presence-loss weight gives the presence head no gradient); memory_zeros was NOT measured at full scale on the launch head -- it held in the TOY test on the A17 code (18/18 cells, ap2m 0.0022-0.0171) and on the pre-A14 head, and learned_ref also reads BEV tokens pooled from the map branch, so a leak around the blinded memory would not be seen before launch; the PI accepted this knowingly (A19 Q2) (evidence: TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-box-head/raw/toy/; TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-box-head/raw/thor_gbo/gbo_early_nonbinding.json; stack/tests/test_g_box_overfit.py::test_TOY_the_loop_memorises_and_the_memory_zeros_arm_cannot)"
+  },
+  "argv_form": "gate",
+  "main": {
+   "criteria": {
+    "1": true,
+    "2": true,
+    "3": true,
+    "4": true,
+    "5": true,
+    "6": true
+   },
+   "final": {
+    "ap2m": 1.0,
+    "prec": 1.0,
+    "rec": 1.0,
+    "n_conf": 113.0,
+    "count_rel": 0.0,
+    "centre_p50_m": 0.009144848212599754,
+    "size_p50_m": 0.010151267051696777,
+    "z_p50_m": 0.005396485328674316,
+    "cls_acc": 1.0,
+    "presence_ratio": 0.001201116289742682
+   },
+   "finite": true
+  },
+  "must_fail": {
+   "memory_zeros": "NOT RUN -- excused under SPEC_REFCV7 24 (A19, landed 36cc332); inherited",
+   "presence_w0": "NOT RUN -- excused under SPEC_REFCV7 24 (A19, landed 36cc332); inherited"
+  },
+  "closure": {
+   "closure": "/home/nvidia/refcv8_run/bind_fb47a583763f/box_closure.json",
+   "sha256": "10f4a477fa69ee3958779701e89a863587d46f1786df846cb5ffe78aa555fddf",
+   "n_modules": 116,
+   "n_probed": 0,
+   "n_absent": 60,
+   "n_data": 49,
+   "scope": "covers the head IN ISOLATION (trunk + branch on the frozen frames); the launch model's WIRING is G-LIVE's and G-DVB's job at the launch commit",
+   "changed": [],
+   "missing_at_launch": [],
+   "absent_now_present": [],
+   "static_eager_files": 1,
+   "data_problems": [],
+   "env": {
+    "record": {
+     "python": "3.12.3",
+     "platform": "linux",
+     "torch": "2.13.0+cu130",
+     "timm": "1.0.29",
+     "cuda": "13.0",
+     "cudnn": 92000
+    },
+    "host": {
+     "python": "3.12.3",
+     "torch": "2.13.0+cu130",
+     "timm": "1.0.29",
+     "cuda": "13.0",
+     "cudnn": 92000
+    }
+   }
+  },
+  "child": {
+   "tanitad": "/home/nvidia/refcv8_run/launch_tree/stack/tanitad/__init__.py",
+   "torch": "2.13.0+cu130",
+   "cuda": true
+  }
+ },
+ "finished_utc": "2026-10-15T02:52:26Z"
+}
