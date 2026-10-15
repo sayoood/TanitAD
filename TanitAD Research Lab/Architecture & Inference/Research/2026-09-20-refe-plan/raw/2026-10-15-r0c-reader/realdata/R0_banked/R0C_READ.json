@@ -1,0 +1,280 @@
+{
+ "tool": "r0c_read/1",
+ "prereg": {
+  "path": "C:\\Users\\Admin\\AppData\\Local\\Temp\\rrd\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\eval\\PREREG_R0C.md",
+  "sha256": "cab2bb1c56f90c3eec74a4e541a15e04d7e15108b5763fa895e7d7c7bcea92cd",
+  "matches_pinned": true
+ },
+ "arm_dir": "C:\\Users\\Admin\\AppData\\Local\\Temp\\rrd\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\raw\\2026-10-15-r0c-reader\\realdata\\R0_banked",
+ "tier": "RL-val selection tier: the true NAVSIM v1.1 PDMS of the scorer's pick on 3,000 RL-val sets of a frozen fan (open-loop 4 s plan, table lookup); NOT T1, NOT an endpoint. One training seed per arm: a separated interval is NECESSARY, not sufficient (H-ESTIM-SEED-1).",
+ "estimator": "paired log-cluster bootstrap, 10,000 resamples, 95 %, seed 20260927 (proxy_eval.boot) when a CI is shown; 'point' = a difference of means with NO interval",
+ "outcome": "AMBIGUOUS",
+ "ambiguity_kind": "missing_input",
+ "reason": "labels across the readings: ['MISSING']. MISSING: g5 breached at (250, 500) but the logged epo_kl is not A-to-B (data.epo.ref = None); O3/O4 need epo_kl (A to B)",
+ "candidate_labels": [
+  "MISSING"
+ ],
+ "meaning": null,
+ "next_lever": null,
+ "prereg_row": null,
+ "readings": {
+  "policy_sha256": null,
+  "policy_amendment": null,
+  "answered": {},
+  "unanswered": [
+   "Q1",
+   "Q2",
+   "Q3",
+   "Q4",
+   "Q5",
+   "Q6",
+   "Q7",
+   "Q8"
+  ],
+  "split_by": [],
+  "questions": {
+   "Q1": {
+    "what": "g4 on RL-val",
+    "options": [
+     "vacuous",
+     "blocking"
+    ],
+    "text": "O1 says g3-g5 hold, but rl_val_eval lists g4 (longitudinal bias rows) under not_computed: nothing on RL-val can show g4 holds. vacuous = treat g4 as holding; blocking = O1 cannot be certified."
+   },
+   "Q2": {
+    "what": "which epo_kl is 'the mean at the breach'",
+    "options": [
+     "second_breach_window",
+     "first_breach_window",
+     "both_breach_windows",
+     "row_at_second_breach",
+     "row_at_first_breach"
+    ],
+    "text": "epo_kl is logged every 25 updates as a window mean. second/first_breach_window = mean of the rows in (previous check, that check]; both = (check before the first breach, second breach]; row_at_* = the single row at that update."
+   },
+   "Q3": {
+    "what": "an NC fall inside a g5 breach",
+    "options": [
+     "g5",
+     "O5"
+    ],
+    "text": "g5 = NC and TTC; O5 lists 'an NC / DAC bound', which section 5 never defines. g5 = an NC-involved breach is still O3/O4; O5 = it is the O5 NC bound."
+   },
+   "Q4": {
+    "what": "O2's 'PDMS B - A lower bound <= 0' (which check)",
+    "options": [
+     "both_le0",
+     "final_le0",
+     "either_le0"
+    ],
+    "text": "O1 needs LB > 0 at u500 AND u1000; O2 names no check. both = LB <= 0 at u500 and u1000; final = at u1000; either = at u500 or u1000."
+   },
+   "Q5": {
+    "what": "does O2 ('safe') need g3",
+    "options": [
+     "as_written",
+     "g3_also"
+    ],
+    "text": "O2's condition names g5 only. as_written = g3 is not required; g3_also = O2 also needs g3 to hold at every check."
+   },
+   "Q6": {
+    "what": "the +0.25 floor of section 4 (1) on RL-val",
+    "options": [
+     "applies",
+     "not_applicable"
+    ],
+    "text": "O1 cites 'the section 4 bar', defined on full navtest with two pairs. applies = B - A PDMS point >= +0.25 at u1000; not_applicable = RL-val needs only LB > 0."
+   },
+   "Q7": {
+    "what": "scope of 'no longitudinal / lateral component separates adversely'",
+    "options": [
+     "narrow",
+     "longlat",
+     "all"
+    ],
+    "text": "adverse = the B - A interval lies entirely below 0 at u1000. narrow = EP, DAC; longlat = EP, TTC, DAC, DDC; all = all six sub-scores."
+   },
+   "Q8": {
+    "what": "a K-MON stop (the monitor died)",
+    "options": [
+     "O5",
+     "not_O5"
+    ],
+    "text": "O5 lists K0-K2 and K4-K6; K-MON is the chain's fail-closed stop of a dead monitor and is not listed. O5 = count it as 'other kill'; not_O5 = it is no outcome."
+   }
+  }
+ },
+ "evidence": {
+  "checks": {
+   "update250": {
+    "g3_ok": true,
+    "g5_ok": false,
+    "nc_ok": true,
+    "ttc_ok": false,
+    "k4": false,
+    "pdms_delta_x100": 0.5985392361111113,
+    "k3_enabled": true,
+    "source": "kill_replay.json",
+    "n_sets": 3000
+   },
+   "update500": {
+    "g3_ok": true,
+    "g5_ok": false,
+    "nc_ok": true,
+    "ttc_ok": false,
+    "k4": false,
+    "pdms_delta_x100": 0.9280338194444445,
+    "k3_enabled": true,
+    "source": "kill_replay.json",
+    "n_sets": 3000
+   }
+  },
+  "terminal_kill_derived": {
+   "code": "K3",
+   "checks": [
+    250,
+    500
+   ]
+  },
+  "first_g5_pair": [
+   250,
+   500
+  ],
+  "recorded_kill": "K3",
+  "recorded_kill_reproduced": true,
+  "recorded_kill_sources": {
+   "kill_replay.json": "K3"
+  },
+  "monitor_log": {
+   "present": false,
+   "bytes": 0,
+   "ready": false,
+   "k3_state": null,
+   "check_errors": 0,
+   "kill": null
+  },
+  "monitor_control": "C0",
+  "sft": {
+   "present": true,
+   "epo_ref": null,
+   "epo_lam": 1.0,
+   "epo_beta": 0.1,
+   "has_data_event": true,
+   "score_dump_tags": [
+    "step0",
+    "update250",
+    "update500",
+    "update750",
+    "update1000"
+   ],
+   "done": true,
+   "train_rows": 40
+  },
+  "epo_kl": {
+   "logged_reference": null,
+   "is_A_to_B": false,
+   "candidate_windows_for_first_g5_pair": {
+    "second_breach_window": 0.1185361580150202,
+    "first_breach_window": 0.1271762074182916,
+    "both_breach_windows": 0.12285618271665591,
+    "row_at_second_breach": 0.11380805173888803,
+    "row_at_first_breach": 0.10526317514479161
+   },
+   "split": 0.2,
+   "note": "values are labelled A-to-B only when sft.jsonl data.epo.ref == 'armA'; otherwise they are base-to-B (R0 / R0b) and decide nothing"
+  },
+  "b_minus_a_reads": {},
+  "b_minus_a_reads_errors": {},
+  "g5_from_b_minus_a_reads": {},
+  "chain_u1000_read_rlval_vs_A0": null,
+  "second_control": {
+   "present": true,
+   "base": "C",
+   "arm": "R",
+   "B_minus_C0_arm_A": {
+    "PDMS": {
+     "mean": 1.163221875,
+     "ci95": [
+      0.5873357050786489,
+      1.7367502573800964
+     ]
+    },
+    "TTC": {
+     "mean": -1.0,
+     "ci95": [
+      -1.7009477954315677,
+      -0.33509824231910684
+     ]
+    },
+    "NC": {
+     "mean": -0.3,
+     "ci95": [
+      -0.6521048042982095,
+      0.0
+     ]
+    },
+    "EP": {
+     "mean": 3.4742903333333337,
+     "ci95": [
+      2.7185666948039504,
+      4.267348525876657
+     ]
+    },
+    "DAC": {
+     "mean": 0.26666666666666666,
+     "ci95": [
+      -0.21521622734691956,
+      0.7332402234636871
+     ]
+    }
+   },
+   "g5": {
+    "NC_fall_ok": true,
+    "TTC_fall_ok": false,
+    "bound": 0.5,
+    "note": "point deltas, x100 units; review g5 'NC and TTC may not fall by > 0.5 each versus control'"
+   },
+   "note": "the SECOND control (C0's banked arm A). It is reported and NEVER enters the outcome."
+  }
+ },
+ "families": {
+  "tier": "RL-val selection tier: the true NAVSIM v1.1 PDMS of the scorer's pick on 3,000 RL-val sets of a frozen fan (open-loop 4 s plan, table lookup); NOT T1, NOT an endpoint. One training seed per arm: a separated interval is NECESSARY, not sufficient (H-ESTIM-SEED-1).",
+  "estimator": "paired log-cluster bootstrap, 10,000 resamples, 95 %, seed 20260927 (proxy_eval.boot) when a CI is shown; 'point' = a difference of means with NO interval",
+  "LONGITUDINAL": {
+   "EP_progress": "NOT AVAILABLE in the arm dir",
+   "progress_telemetry_g3": {
+    "update250": {
+     "pick_over_fan_mean_path": 0.9877099013439766,
+     "shortest_bin_share": 0.30266666666666664
+    },
+    "update500": {
+     "pick_over_fan_mean_path": 0.9856517037302764,
+     "shortest_bin_share": 0.308
+    }
+   },
+   "g4_longitudinal_bias": "NOT COMPUTED on RL-val (rl_val_eval not_computed)"
+  },
+  "LATERAL": {
+   "DAC": "NOT AVAILABLE in the arm dir",
+   "DDC": "NOT AVAILABLE in the arm dir"
+  },
+  "SUBSCORES": {
+   "TTC": "NOT AVAILABLE in the arm dir",
+   "NC": "NOT AVAILABLE in the arm dir",
+   "comfort_C": "NOT AVAILABLE in the arm dir",
+   "PDMS": "NOT AVAILABLE in the arm dir"
+  },
+  "TACTICAL": "N/A on this scorer-only arm: R0c trains the scorer heads on a FROZEN fan and picks among its proposals; no tactical-decision output exists to score (decision kappa and lane-change precision/recall are full-navtest endpoints, R2 only: PREREG_RL_S1 section 4).",
+  "STRATEGIC": "PAUSED (PI ruling 2026-09-19, PI_DECISION_QUEUE ITEM 25): reported as paused, not as a pass, not omitted."
+ },
+ "notes": [
+  "the monitor records were taken against 'C0', NOT against the arm's own A: they are not R0c's control (PREREG_R0C section 2 guards)"
+ ],
+ "conflicts": [],
+ "inputs_sha256": {
+  "arm_meta.json": "1547b6175227b45f832f23b4a2ac039dab8e2971f9f14f42cb038b6f7c3ec68e",
+  "kill_replay.json": "d292d6fd6ae2a78266a359b8b6f8b87f7f72d2aaa61bb3cfaa520a4832c1a171",
+  "sft.jsonl": "a043c4a4ecdcfc7404c30ce00f94a0749690a02de0193bbe5635cc0ec9729cdb",
+  "rlval_vs_C0.json": "cc33aa30b8f45fa3ea8bb74d9f42acb74a6c8d77412ff12585a56ec893124b26"
+ }
+}
