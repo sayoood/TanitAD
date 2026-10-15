@@ -254,7 +254,10 @@ def from_tr(r: dict, td: str) -> dict:
 
 # ================================================================================================ comparisons
 def norm_row(r: dict) -> dict:
-    return {k: v for k, v in r.items() if k not in VOLATILE}
+    r = {k: v for k, v in r.items() if k not in VOLATILE}
+    if r.get("event") == "data" and isinstance(r.get("epo"), dict):          # R0c: the data event of an --epo run gained epo.ref (the BUILT KL-anchor reference, G-DVB's input); every other byte is unchanged
+        r["epo"] = {k: v for k, v in r["epo"].items() if k != "ref"}
+    return r
 
 
 def rows_of(res: dict, event: str, log="sft.jsonl") -> list:

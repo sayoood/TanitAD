@@ -21,10 +21,17 @@
   7. THE QUEUE and FAIL-CLOSED supervision (2026-10-14): `check_queue` holds their static properties here; the interleavings (S1, the P2 seed replicate before / after its wait, P6, the
      settle race, the GPU), the monitor-dies-while-training case that must end in K-MON, the checker's memory and the mutations that must go RED run in refe/test_rls1_queue.py.
 
+  8. RL-S1c / R0c (2026-10-15; eval/rls1c_arms.json, profile refe_rls1c, raw/2026-10-15-rls1-adam-dose/PREREG_R0C_DRAFT.md): `check_rls1c` holds the static properties (registered, its profile, its argv
+     line, its control rule, the loud second-control marker, the generic kill rule, the suite files the gate runs); `r0c_behaviour` RUNS the chain's own text under bash (the argv token for token against
+     eval/rls1c_arms.json and R0's banked sha256, the profile each arm gets, the control-read block with and without C0's banked dumps, the kill refusals, the precheck refusal of misspelled arms);
+     `r0c_mutations` breaks each property in a copy and the matching check must say so; the REAL gate and a REAL minted token are driven for the chain's own R0c argv and profile.
+     `write_sh` gives every shim the exec bit (the pod runs them directly: without +x each one fails with rc 126; Git Bash hides it).
+
 Run: python refe/test_rls1_chain.py   -> ZZTEST_PASS <n>   (needs bash on PATH; Git Bash on the dev box).   Any skipped check prints ZZTEST_SKIP and is NOT counted.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
@@ -143,7 +150,7 @@ def check_queue(text):
     for k in (1, 2, 3):
         if f"RLS1B-INSERTION-POINT-{k}" not in text:
             v.append(f"NO_INSERTION_POINT_{k}")
-    known = {"C0", "C1", "R0", "R1", "R2", "R0b", "R1b", "*"}
+    known = {"C0", "C1", "R0", "R1", "R2", "R0b", "R1b", "R0c", "*"}                  # R0c: 2026-10-15, eval/rls1c_arms.json (checked in check_rls1c)
     if set(re.findall(r"^    (\w+|\*)\)", fn_body(text, "arm_args"), re.M)) - known:
         v.append("INVENTED_RLS1B_ARGV")                       # R2b and anything else RL-S1b names needs a PI decision / its owner's argv: never invented here
     mreg = re.search(r'^REGISTERED_ARMS="([^"]*)"', text, re.M)
@@ -161,6 +168,65 @@ def check_queue(text):
 def arm_block(text, arm):
     m = re.search(rf"^    {arm}\) .*$", fn_body(text, "arm_args"), re.M)
     return m.group(0) if m else ""
+
+
+R0_ARGV_SHA256 = "24451b621d515066bf8febefaf66bea2c7a345b48bf7a89c9443e2d848d8eef6"      # R0's banked token argv (HF Sayood/tanitad-refe-rls1-r0 final/PASS_a120418a870f.json)
+R0C_ARGV_SHA256 = "f588a6cbdf8319bc30e8da12407f5eeb65a5e0a82d392320f2676ca3f94ed534"      # R0's argv with /arms/R0 -> /arms/R0c plus `--epo-ref armA` (raw/2026-10-15-r0c-build/R0c_ARGV.txt)
+R0C_EPO_TOKENS = {"--epo", "--epo-terms-train", "$TERMS_TR", "--epo-terms-heldout", "$TERMS_VA", "--epo-ref", "armA"}      # R0c = R0 + --epo-ref armA: no other lever may appear in its line
+R0C_SUITE_FILES = ("refe/test_rl_s1b.py", "refe/test_rl_r0c.py")                          # the suite the refe_rls1c gate runs on the pod (launch_gate.RLS1C_SUITE): absent = a refusal AFTER the queue wait and the preflight
+KILL_HEAD_RX = re.compile(r'^\s*\[ -f "\$S/arm_\$\{ARM\}_killed" \](?: && stage_done "egress_\$ARM")?\s*$')           # a kill rule keyed on the arm VARIABLE, never on an arm's name
+
+
+def argv_sha256(argv):
+    return hashlib.sha256(json.dumps(argv, ensure_ascii=False, separators=(",", ":")).encode("utf-8")).hexdigest()
+
+
+def control_block(text):
+    """The arm loop's control-read lines (stage 9, from the KIND / RD case to just before 9a): the text r0c_behaviour runs under bash."""
+    m = re.search(r'^  case "\$ARM" in C\*\) KIND=A;.*?\n(?=  # ---- 9a\.)', text, re.S | re.M)
+    return m.group(0) if m else ""
+
+
+def check_rls1c(text):
+    """Static properties of the R0c wiring (RL-S1c, 2026-10-15).  [] = all hold.  The behaviour behind each is driven by r0c_behaviour and the arm-loop scenarios of refe/test_rls1_queue.py."""
+    v = []
+    mreg = re.search(r'^REGISTERED_ARMS="([^"]*)"', text, re.M)
+    if not mreg or "R0c" not in mreg.group(1).split():
+        v.append("R0C_NOT_REGISTERED")
+    if "R0c) echo refe_rls1c" not in fn_body(text, "arm_profile"):
+        v.append("R0C_NO_PROFILE")
+    blk = arm_block(text, "R0c")
+    if not blk:
+        v.append("R0C_NO_ARGV")
+    else:
+        if "seed=0;" not in blk:
+            v.append("R0C_WRONG_SEED")
+        m = re.search(r'epo="([^"]*)"', blk)
+        toks = m.group(1).split() if m else []
+        if toks.count("--epo-ref") != 1 or toks[toks.index("--epo-ref") + 1:toks.index("--epo-ref") + 2] != ["armA"]:
+            v.append("R0C_NO_EPO_REF_ARMA")
+        v += ["R0C_EXTRA_LEVER:" + t for t in toks if t not in R0C_EPO_TOKENS]
+    cb = control_block(text)
+    if not cb:
+        v.append("R0C_NO_CONTROL_BLOCK")
+    else:
+        if '[ "$ARM" = R0c ] && RD=C0' not in cb:
+            v.append("R0C_SECOND_CONTROL_NOT_NAMED")
+        i_generic, i_own = cb.find('if [ -z "$RD" ] ||'), cb.find('[ "$ARM" = R0c ] && REFDIR="$ARMDIR/scores"')
+        if i_own < 0 or i_generic < 0 or i_own < i_generic:
+            v.append("R0C_NOT_READ_AGAINST_ITS_OWN_A")
+    if 'elif [ "$ARM" = R0c ]; then\n        log "ZZRLS1_R0C_NO_SECOND_CONTROL' not in text:
+        v.append("R0C_SILENT_WITHOUT_SECOND_CONTROL")
+    kills = [ln for ln in text.split("\n") if "arm $ARM was KILLED" in ln and not ln.lstrip().startswith("#")]
+    if len(kills) != 2:
+        v.append(f"KILL_RULE_LINES:{len(kills)}")
+    v += ["KILL_RULE_ARM_GATED:" + ln.strip()[:50] for ln in kills if not KILL_HEAD_RX.match(ln.split("&& refuse", 1)[0])]
+    fl = re.search(r'for f in (.*?); do\n  \[ -f "\$PKG/\$f" \] \|\| refuse', text, re.S)
+    req = fl.group(1).replace("\\\n", " ").split() if fl else []
+    v += ["R0C_SUITE_FILE_NOT_REQUIRED:" + f for f in R0C_SUITE_FILES if f not in req]
+    if 'if [ "$PROFILE" = refe_rls1b ] && [ "$KIND" = B ] && [ "$REFDIR" = "$ARMDIR/scores" ]; then' not in cb:
+        v.append("RLS1B_GUARD_EDITED")                     # the RL-S1b rule is untouched, and R0c is not under it (its own arm A IS its registered control)
+    return v
 
 
 def token_line_ok(ln):
@@ -472,6 +538,7 @@ def check_chain(text):
             v.append("SHIP_MANIFEST_NOT_REQUIRED")
     v += check_fancmp(text)
     v += check_queue(text)
+    v += check_rls1c(text)
     return v
 
 
@@ -602,7 +669,7 @@ def mutations(text):
         ("a re-run keeps the stale read / egress markers", drop_line(text, 'rm -f "$S/read_$ARM.ok" "$S/egress_$ARM.ok"'), "STALE_MARKERS_KEPT"),
         ("an insertion point is gone", sw("RLS1B-INSERTION-POINT-2", "NOTHING"), "NO_INSERTION_POINT_2"),
         ("an RL-S1b arm is invented", sw("    # RLS1B-INSERTION-POINT-2", "    R2b) seed=0 ;;\n    # RLS1B-INSERTION-POINT-2"), "INVENTED_RLS1B_ARGV"),
-        ("R0b / R1b are not registered", sw('REGISTERED_ARMS="C0 C1 R0 R1 R2 R0b R1b"', 'REGISTERED_ARMS="C0 C1 R0 R1 R2"'), "RLS1B_ARMS_NOT_REGISTERED"),
+        ("R0b / R1b are not registered", sw('REGISTERED_ARMS="C0 C1 R0 R1 R2 R0b R1b R0c"', 'REGISTERED_ARMS="C0 C1 R0 R1 R2 R0c"'), "RLS1B_ARMS_NOT_REGISTERED"),
         ("R0b is judged under the original profile", sw("R0b|R1b) echo refe_rls1b", "R0b|R1b) echo refe_rls1"), "NO_RLS1B_PROFILE"),
         ("a missing control is silently replaced by the arm's own A", sw('refuse "RL-S1b arm $ARM is read against $RD', 'refuse "x $ARM $RD'), "RLS1B_CONTROL_NOT_ENFORCED"),
         ("the in-loop arm check is gone", sw('  arm_registered "$ARM" || refuse "unknown arm \'$ARM\'"\n', ""), "ARM_NAMES_NOT_REFUSED_TWICE"),
@@ -678,6 +745,32 @@ def posix(p):
 
 def write_sh(path, text):
     Path(path).write_text(text, encoding="utf-8", newline="\n")
+    # +x (2026-10-15; the same fix refe/test_p2rep_chain.py took): the chain runs its shims DIRECTLY ("$nv", `flock` looked up on PATH).  Git Bash on the dev box needs no exec bit;
+    # Linux does, so on the POD every shim here failed with rc 126 (gpu_busy read "busy" forever) and a non-executable `flock` on PATH is skipped for the real /usr/bin/flock.
+    os.chmod(path, 0o755)
+
+
+def write_sh_violations(fn):
+    """[] iff `fn(path, text)` leaves `path` executable.  Windows records no exec bit, so the os.chmod CALL is recorded (and, off Windows, the file is really run directly)."""
+    calls, real = [], os.chmod
+    with tempfile.TemporaryDirectory() as d:
+        p = Path(d) / "shim"
+
+        def spy(path, mode, *a, **k):
+            calls.append((Path(path), mode))
+            return real(path, mode, *a, **k)
+        os.chmod = spy
+        try:
+            fn(p, "#!/bin/bash\nexit 0\n")
+        finally:
+            os.chmod = real
+        v = [] if any(c[0] == p and c[1] & 0o111 == 0o111 for c in calls) else ["NO_CHMOD_X"]
+        if os.name != "nt":
+            if not os.access(p, os.X_OK):
+                v.append("NOT_EXECUTABLE")
+            elif subprocess.run([str(p)], capture_output=True).returncode != 0:
+                v.append("DIRECT_EXEC_FAILS")
+    return v
 
 
 def handoff_expected_tokens():
@@ -732,6 +825,176 @@ def arm_args_runner(text, tmp, arm):
     return out
 
 
+# ------------------------------------------------------------------------------------------------------------- RL-S1c / R0c: the chain's own text, RUN under bash
+def control_runner(text, tmp, arm, profile, c0=False, c1=False):
+    """The arm loop's control-read block extracted verbatim and run for `arm` under `profile`, with C0's / C1's banked dumps present or not.  -> (rc, stdout)."""
+    d = Path(tmp) / f"ctl_{arm}_{profile}_{int(c0)}{int(c1)}"
+    shutil.rmtree(d, ignore_errors=True)
+    d.mkdir(parents=True)
+    for name, have in (("C0", c0), ("C1", c1)):
+        if have:
+            (d / "arms" / name / "scores").mkdir(parents=True)
+            (d / "arms" / name / "scores" / "scores_update1000_A.npz").write_text("x")
+    sc = d / "ctl.sh"
+    write_sh(sc, f'set -u\nR="{posix(d)}"; ARM="{arm}"; PROFILE="{profile}"; ARMDIR="$R/arms/$ARM"\nrefuse() {{ echo "REFUSED: $*"; exit 1; }}\n{control_block(text)}\n'
+                 'echo "KIND=$KIND RD=$RD REFDIR=${REFDIR#$R/}"\n')
+    rc, out, _ = bash_run(f'bash "{posix(sc)}"')
+    return rc, out
+
+
+R0C_CONTROL_CASES = (       # (arm, profile, C0 dumps on the pod, C1 dumps on the pod) -> KIND, RD, the dir the monitor and the replay read against (relative to $R), or REFUSED
+    ("R0c", "refe_rls1c", True, False, "B", "C0", "arms/R0c/scores"),      # R0c: its OWN arm A, even with C0's dumps there (PREREG_R0C_DRAFT.md section 2) ...
+    ("R0c", "refe_rls1c", False, False, "B", "C0", "arms/R0c/scores"),     # ... and without them (no refusal: C0 is the SECOND control, and a log line says when it is missing)
+    ("R0c", "refe_rls1c", True, True, "B", "C0", "arms/R0c/scores"),
+    ("R0", "refe_rls1", True, False, "B", "C0", "arms/C0/scores"),         # every arm before R0c is read exactly as it was
+    ("R0", "refe_rls1", False, False, "B", "C0", "arms/R0/scores"),
+    ("R1", "refe_rls1", False, True, "B", "C1", "arms/C1/scores"),
+    ("R2", "refe_rls1", True, False, "B", "C0", "arms/C0/scores"),
+    ("R0b", "refe_rls1b", True, False, "B", "C0", "arms/C0/scores"),
+    ("R0b", "refe_rls1b", False, False, "B", "C0", "REFUSED"),
+    ("R1b", "refe_rls1b", False, True, "B", "C1", "arms/C1/scores"),
+    ("C0", "refe_rls1", True, False, "A", "", "arms/C0/scores"),
+)
+R0C_UNKNOWN_ARMS = ("R0C", "r0c", "R0cc", "R0c2", "R0-c", "RC0", "Roc", "R0c,", "R0d", "c", "0c", "R", "R0 c", "R0b R0C", "R0c R1c")      # every one must be refused at the precheck
+R0C_KNOWN_LISTS = ("R0c", "C0 R0c", "R0 R0c", "R0b C1 R1b R0c")
+
+
+def r0c_behaviour(text, tmp, P, groups=None):
+    """RUN the chain's own text under bash for R0c (everything extracted verbatim).  -> ([violations], probes run); [] = all hold.
+    groups (None = all): argv (the argv token for token against eval/rls1c_arms.json and R0's banked sha256, then the REAL gate), profile, control (the block that picks the
+    reference the monitor and the replay read against), kill (the two refusals that stop the chain after a kill), arms (the precheck refusal of an unknown or misspelled arm)."""
+    import launch_gate as LGM
+    tmp, v, k = Path(tmp), [], 0                                                                  # k = the number of probes run (each one a counted check)
+    want = lambda g: groups is None or g in groups                                               # noqa: E731
+    bash = shutil.which("bash")
+    if want("argv"):
+        k += 6
+        try:
+            got_s = arm_args_runner(text, tmp, "R0c")
+            got = shlex.split(got_s)
+        except AssertionError:
+            got_s, got = None, None
+        if got is None:
+            v.append("R0C_NO_ARGV")
+        else:
+            js = json.loads((PKGROOT / "eval" / "rls1c_arms.json").read_text(encoding="utf-8"))["arms"]["R0c"]
+            if got != js["argv"]:
+                v.append("R0C_ARGV_NOT_THE_JSON")
+            if argv_sha256(got) != R0C_ARGV_SHA256 or js["argv_sha256"] != R0C_ARGV_SHA256:
+                v.append("R0C_ARGV_SHA256_DRIFT")
+            r0 = shlex.split(arm_args_runner(text, tmp, "R0"))
+            if argv_sha256(r0) != R0_ARGV_SHA256:
+                v.append("R0_ARGV_NOT_THE_BANKED_TOKEN")
+            ad = f"{P['R']}/arms"
+            rebuilt = [t.replace(f"{ad}/R0c", f"{ad}/R0") for t in got[:-2]]                      # R0c minus the lever, with the arm directory swapped back, IS R0
+            if ([t for t in got if t not in r0] != [f"{ad}/R0c", f"{ad}/R0c/scores", "--epo-ref", "armA"] or [t for t in r0 if t not in got] != [f"{ad}/R0", f"{ad}/R0/scores"]
+                    or len(got) != len(r0) + 2 or got[-2:] != ["--epo-ref", "armA"] or rebuilt != r0):
+                v.append("R0C_NOT_R0_PLUS_ONE_FLAG")
+            if LGM.profile_refusals({**LGM.PROFILES["refe_rls1c"], "declared_arm": "R0c"}, LGM.parse_args_string(got_s)):
+                v.append("R0C_REFUSED_BY_THE_REAL_GATE")
+    if want("profile"):
+        k += 9
+        pr = tmp / "ap.sh"
+        write_sh(pr, fn_any(text, "arm_profile") + '\narm_profile "$1"\n')
+        for arm, arms, want_p in (("R0c", "", "refe_rls1c"), ("R0c", "R0c", "refe_rls1c"), ("R0c", "C0 R0c", "refe_rls1c"), ("R0c", "R0b C1 R1b R0c", "refe_rls1c"),
+                                  ("C1", "R0c", "refe_rls1"), ("C0", "R0c", "refe_rls1"), ("R0", "R0c", "refe_rls1"), ("R0b", "R0c", "refe_rls1b"), ("C1", "R0b C1 R1b", "refe_rls1b")):
+            got_p = subprocess.run([bash, posix(pr), arm], capture_output=True, text=True, env={**os.environ, "RLS1_ARMS": arms}).stdout.strip()
+            if got_p != want_p:
+                v.append(f"R0C_WRONG_PROFILE:{arm}[{arms}]->{got_p}")
+    if want("control"):
+        k += len(R0C_CONTROL_CASES)
+        for arm, prof, c0, c1, kind, rd, ref in R0C_CONTROL_CASES:
+            rc, out = control_runner(text, tmp, arm, prof, c0, c1)
+            ok = (rc != 0 and f"RL-S1b arm {arm} is read against {rd}" in out) if ref == "REFUSED" else (rc == 0 and out == f"KIND={kind} RD={rd} REFDIR={ref}")
+            if not ok:
+                v.append(f"{'R0C_CONTROL' if arm == 'R0c' else 'CONTROL_DRIFT'}:{arm}:C0={c0}:C1={c1}:{out[:120]}")
+    if want("kill"):
+        k += 6
+        heads = [ln for ln in text.split("\n") if "arm $ARM was KILLED" in ln and not ln.lstrip().startswith("#")]
+        sdone = re.search(r"^stage_done\(\) .*$", text, re.M)
+        if len(heads) != 2 or not sdone:
+            v.append("R0C_KILL_LINES_MISSING")
+        else:
+            for arm in ("R0c", "R0b"):
+                for marker, egress, case in ((True, True, "head"), (True, False, "tail"), (False, False, "none")):
+                    d = tmp / f"kill_{arm}_{case}"
+                    shutil.rmtree(d, ignore_errors=True)
+                    (d / "stage").mkdir(parents=True)
+                    if marker:
+                        (d / "stage" / f"arm_{arm}_killed").write_text("K3 g5 breached")
+                    if egress:
+                        (d / "stage" / f"egress_{arm}.ok").write_text("x")
+                    sc = d / "kill.sh"
+                    write_sh(sc, f'set -u\nS="{posix(d)}/stage"; ARM="{arm}"\nrefuse() {{ echo "REFUSED: $*"; exit 1; }}\n{sdone.group(0)}\n{heads[0]}\necho PASSED_HEAD\n{heads[1]}\necho PASSED_TAIL\n')
+                    rc, out, _ = bash_run(f'bash "{posix(sc)}"')
+                    ok = {"head": rc == 1 and f"REFUSED: arm {arm} was KILLED" in out and "PASSED_HEAD" not in out and "delete" in out,
+                          "tail": rc == 1 and "PASSED_HEAD" in out and f"REFUSED: arm {arm} was KILLED" in out and "before any further arm" in out and "PASSED_TAIL" not in out,
+                          "none": rc == 0 and "PASSED_HEAD" in out and "PASSED_TAIL" in out and "REFUSED" not in out}[case]
+                    if not ok:
+                        v.append(f"R0C_KILL_DOES_NOT_REFUSE:{arm}:{case}:{out[:100]}")
+    if want("arms"):
+        k += len(R0C_KNOWN_LISTS) + len(R0C_UNKNOWN_ARMS)
+        loop = re.search(r'^for ARM in \$\{RLS1_ARMS:-C0 R0 C1 R1 R2\}; do arm_registered "\$ARM" \|\| refuse "unknown arm.*?; done$', text, re.M)
+        regs = re.search(r'^REGISTERED_ARMS="[^"]*"$', text, re.M)
+        if not loop or not regs:
+            v.append("R0C_NO_PRECHECK")
+        else:
+            d = tmp / "arms_empty_cwd"
+            d.mkdir(exist_ok=True)
+            sc = tmp / "precheck.sh"
+            write_sh(sc, f'set -u\ncd "{posix(d)}"\nrefuse() {{ echo "REFUSED: $*"; exit 1; }}\n{regs.group(0)}\n{fn_any(text, "arm_registered")}\n{loop.group(0)}\necho ACCEPTED\n')
+            for arms in R0C_KNOWN_LISTS:
+                rc, out, _ = bash_run(f'bash "{posix(sc)}"', {"RLS1_ARMS": arms})
+                if not (rc == 0 and out == "ACCEPTED"):
+                    v.append(f"R0C_REFUSED_AT_PRECHECK:[{arms}]:{out[:100]}")
+            for arms in R0C_UNKNOWN_ARMS:
+                rc, out, _ = bash_run(f'bash "{posix(sc)}"', {"RLS1_ARMS": arms})
+                if not (rc == 1 and "REFUSED: unknown arm" in out and "ACCEPTED" not in out):
+                    v.append(f"MISSPELLED_ARM_ACCEPTED:[{arms}]:{out[:100]}")
+    return v, k
+
+
+def r0c_mutations(text):
+    """(name, mutated text, static violation prefix check_chain must raise or None, (r0c_behaviour group, violation prefix) or None).  Every mutated copy must differ from `text`."""
+    sw = lambda a, b: text.replace(a, b)                                                         # noqa: E731
+    regs = 'REGISTERED_ARMS="C0 C1 R0 R1 R2 R0b R1b R0c"'
+    precheck = re.search(r'^for ARM in \$\{RLS1_ARMS:-C0 R0 C1 R1 R2\}; do arm_registered "\$ARM" \|\| refuse "unknown arm.*?; done\n', text, re.M).group(0)
+    own = re.search(r'^  \[ "\$ARM" = R0c \] && REFDIR="\$ARMDIR/scores"\n', text, re.M).group(0)
+    generic = '  if [ -z "$RD" ] || [ ! -f "$R/arms/$RD/scores/scores_update1000_A.npz" ]; then REFDIR="$ARMDIR/scores"; else REFDIR="$R/arms/$RD/scores"; fi\n'
+    r0c_line = re.search(r"^    R0c\) seed=0;.*\n", text, re.M).group(0)
+    return [
+        ("the R0c argv line is deleted", text.replace(r0c_line, ""), "R0C_NO_ARGV", ("argv", "R0C_NO_ARGV")),
+        ("R0c is not registered", sw(regs, regs.replace(" R0c", "")), "R0C_NOT_REGISTERED", ("arms", "R0C_REFUSED_AT_PRECHECK")),
+        ("R0c is registered under a typo (R0C)", sw(regs, regs.replace(" R0c", " R0C")), "R0C_NOT_REGISTERED", ("arms", "MISSPELLED_ARM_ACCEPTED")),
+        ("R0c is judged under the original profile", sw("R0c) echo refe_rls1c", "R0c) echo refe_rls1"), "R0C_NO_PROFILE", ("profile", "R0C_WRONG_PROFILE")),
+        ("R0c is judged under the RL-S1b profile", sw("R0c) echo refe_rls1c ;;", "R0c) echo refe_rls1b ;;"), "R0C_NO_PROFILE", ("profile", "R0C_WRONG_PROFILE")),
+        ("R0c has no profile line (falls through to refe_rls1)", drop_line(text, "R0c) echo refe_rls1c"), "R0C_NO_PROFILE", ("profile", "R0C_WRONG_PROFILE")),
+        ("C1 is judged under refe_rls1b whenever R0c is listed", sw('*" R0b "*|*" R1b "*) echo refe_rls1b', '*" R0b "*|*" R1b "*|*" R0c "*) echo refe_rls1b'), None, ("profile", "R0C_WRONG_PROFILE")),
+        ("--epo-ref armA is dropped from R0c's argv", sw(' --epo-ref armA" ;;', '" ;;'), "R0C_NO_EPO_REF_ARMA", ("argv", "R0C_ARGV_NOT_THE_JSON")),
+        ("--epo-ref armA is dropped (the real gate says so too)", sw(' --epo-ref armA" ;;', '" ;;'), None, ("argv", "R0C_REFUSED_BY_THE_REAL_GATE")),
+        ("--epo-ref base is named instead of armA", sw("--epo-ref armA\" ;;", "--epo-ref base\" ;;"), "R0C_NO_EPO_REF_ARMA", ("argv", "R0C_ARGV_NOT_THE_JSON")),
+        ("a second lever rides along (--epo-lam 0.25)", sw('--epo-ref armA" ;;', '--epo-ref armA --epo-lam 0.25" ;;'), "R0C_EXTRA_LEVER:--epo-lam", ("argv", "R0C_NOT_R0_PLUS_ONE_FLAG")),
+        ("R0c runs with seed 1", sw("R0c) seed=0;", "R0c) seed=1;"), "R0C_WRONG_SEED", ("argv", "R0C_ARGV_NOT_THE_JSON")),
+        ("R0 is no longer the banked token's argv", sw("    R0) seed=0;", "    R0) seed=7;"), None, ("argv", "R0_ARGV_NOT_THE_BANKED_TOKEN")),
+        ("R0c is read against C0's dumps when they are there (the own-A override is deleted)", drop_line(text, '[ "$ARM" = R0c ] && REFDIR='), "R0C_NOT_READ_AGAINST_ITS_OWN_A", ("control", "R0C_CONTROL")),
+        ("the own-A override runs BEFORE the generic assignment and is overwritten", text.replace(own, "").replace(generic, own + generic), "R0C_NOT_READ_AGAINST_ITS_OWN_A",
+         ("control", "R0C_CONTROL")),
+        ("C0 is not named as R0c's second control (static only: ${ARM:1:1} happens to give C0 as well)", drop_line(text, '[ "$ARM" = R0c ] && RD=C0'), "R0C_SECOND_CONTROL_NOT_NAMED", None),
+        ("R0c falls under the RL-S1b control guard (refused against its own arm A)",
+         sw('if [ "$PROFILE" = refe_rls1b ] && [ "$KIND" = B ]', 'if { [ "$PROFILE" = refe_rls1b ] || [ "$PROFILE" = refe_rls1c ]; } && [ "$KIND" = B ]'), "RLS1B_GUARD_EDITED", ("control", "R0C_CONTROL")),
+        ("R0b / R1b lose their guard (a missing control is silently replaced by the arm's own A)", sw('if [ "$PROFILE" = refe_rls1b ] && [ "$KIND" = B ]', 'if false && [ "$KIND" = B ]'), "RLS1B_GUARD_EDITED",
+         ("control", "CONTROL_DRIFT")),
+        ("no loud marker when C0's banked dumps are missing", re.sub(r'      elif \[ "\$ARM" = R0c \]; then\n        log "ZZRLS1_R0C_NO_SECOND_CONTROL[^\n]*\n', "", text), "R0C_SILENT_WITHOUT_SECOND_CONTROL", None),
+        ("the end-of-loop kill refusal skips R0c", sw('  [ -f "$S/arm_${ARM}_killed" ] && refuse "arm $ARM was KILLED ($(cat', '  [ "$ARM" != R0c ] && [ -f "$S/arm_${ARM}_killed" ] && refuse "arm $ARM was KILLED ($(cat'),
+         "KILL_RULE_ARM_GATED", ("kill", "R0C_KILL_DOES_NOT_REFUSE")),
+        ("the restart-after-kill refusal skips R0c", sw('  [ -f "$S/arm_${ARM}_killed" ] && stage_done "egress_$ARM" && refuse', '  [ "$ARM" != R0c ] && [ -f "$S/arm_${ARM}_killed" ] && stage_done "egress_$ARM" && refuse'),
+         "KILL_RULE_ARM_GATED", ("kill", "R0C_KILL_DOES_NOT_REFUSE")),
+        ("the gate's suite files are not required before the queue wait", sw(" refe/test_rl_s1b.py refe/test_rl_r0c.py \\", " \\"), "R0C_SUITE_FILE_NOT_REQUIRED", None),
+        ("arm names are matched as substrings", sw('*" $1 "*) return 0', '*"$1"*) return 0'), None, ("arms", "MISSPELLED_ARM_ACCEPTED")),
+        ("the precheck no longer validates the arm names", sw(precheck, ""), "ARM_NAMES_NOT_REFUSED_TWICE", ("arms", "R0C_NO_PRECHECK")),
+    ]
+
+
 # ------------------------------------------------------------------------------------------------------------- fixtures for the helper
 N = 4
 
@@ -774,6 +1037,9 @@ def main() -> int:
         n += 1
     rc, _, err = bash_run(f'bash -n "{posix(CHAIN)}"')
     assert rc == 0, err; n += 1                                                              # bash can parse it
+    # ---- 0b. write_sh gives every shim the exec bit (the pod runs them directly); the helper without os.chmod is caught
+    assert write_sh_violations(write_sh) == [], write_sh_violations(write_sh); n += 1
+    assert "NO_CHMOD_X" in write_sh_violations(lambda p, t: Path(p).write_text(t, encoding="utf-8", newline="\n")); n += 1
     # ---- 1. the real chain satisfies every property; every property goes RED when broken
     assert check_chain(text) == [], check_chain(text); n += 1
     for name, mut, want in mutations(text):
@@ -784,6 +1050,18 @@ def main() -> int:
     with tempfile.TemporaryDirectory() as tmp:
         tmp = Path(tmp)
         P = chain_paths(text)
+        # ---- 1b. RL-S1c / R0c: the chain's own text RUN under bash (every probe counted), then each property broken in a copy -- the static check and/or the behaviour probe must say so
+        bad_beh, probes = r0c_behaviour(text, tmp, P)
+        assert bad_beh == [], bad_beh; n += probes
+        for name, mut, swant, beh in r0c_mutations(text):
+            assert mut != text, f"R0c mutation '{name}' changed nothing"
+            assert swant or beh, f"R0c mutation '{name}' has no catcher"
+            if swant:
+                got = check_chain(mut)
+                assert any(g.startswith(swant) for g in got), f"R0c mutation '{name}' did not raise {swant}: {got}"; n += 1
+            if beh:
+                got, _ = r0c_behaviour(mut, tmp, P, groups={beh[0]})
+                assert any(g.startswith(beh[1]) for g in got), f"R0c mutation '{name}' did not raise {beh[1]} in group {beh[0]}: {got}"; n += 1
         # ---- 2a. p2_over / gpu_busy: extracted verbatim, run under bash with a shimmed flock and a fake nvidia-smi
         p2 = tmp / "p2"
         p2.mkdir()
@@ -879,6 +1157,47 @@ def main() -> int:
         assert not list(lgdir.glob("PASS_*.json")) and tok(argv_of["R0"]) != 0; n += 1          # a FAIL token is no PASS token
         shutil.rmtree(lgdir, ignore_errors=True)
         assert tok(argv_of["R0"]) != 0; n += 1                                                  # NO token at all
+        # ---- 2e. R0c: the chain's OWN argv and the profile the chain's own arm_profile picks, judged by the REAL gate (the CLI the arm loop calls) and by a REAL minted token
+        pr_sc = tmp / "ap_c.sh"
+        write_sh(pr_sc, fn_any(text, "arm_profile") + '\narm_profile "$1"\n')
+        prof_c = subprocess.run([shutil.which("bash"), posix(pr_sc), "R0c"], capture_output=True, text=True, env={**os.environ, "RLS1_ARMS": "R0c"}).stdout.strip()
+        assert prof_c == "refe_rls1c", prof_c; n += 1
+        argv_c, argv_r0 = arm_args_runner(text, tmp, "R0c"), argv_of["R0"]
+
+        def lg_cli(profile, args, arm="R0c"):
+            r = subprocess.run([sys.executable, str(HERE / "launch_gate.py"), "refusals", "--profile", profile, "--arm-name", arm, "--args", args], capture_output=True, text=True, timeout=180)
+            return r.returncode, r.stdout + r.stderr
+        rc, out = lg_cli(prof_c, argv_c); assert rc == 0 and "ZZGATE-CLEANZZ" in out, out; n += 1                    # `launch_gate.py run --profile "$PROFILE" --arm-name "$ARM"` accepts what the chain builds
+        rc, out = lg_cli(prof_c, argv_r0); assert rc == 5 and "--epo-ref" in out, out; n += 1                       # R0's argv under R0c's name: the lever is missing and the gate says so
+        rc, out = lg_cli("refe_rls1", argv_c, arm="R0"); assert rc == 5 and "--epo-ref" in out, out; n += 1         # the original profile refuses R0c's argv even under R0's name
+        rc, out = lg_cli("refe_rls1", argv_c); assert rc != 0 and "'R0c' is not an arm of refe_rls1" in out, out; n += 1   # ... and R0c is not one of its arms
+
+        def mint_c(profile, args):
+            shutil.rmtree(lgdir, ignore_errors=True)
+            av = GT.argv_from_string(args)
+            return GT.mint(profile=profile, commit="a" * 40, tree_man=GT.tree_manifest(PKGROOT), argv=av, trainer="refe/scorer_finetune.py",
+                           data=GT.data_manifest(av, LGM.RLS1_DATA), checks={"G-HYG": {"status": "PASS"}}, reasons=[], key=key, out_dir=lgdir)
+
+        def tok_c(args, profile):
+            env = {"PY": posix(sys.executable), "PKG": posix(PKGROOT), "PROFILE": profile, "LG": posix(lgdir), "ARMDIR": posix(armdir), "ARGS": args, "PYTHONIOENCODING": "utf-8",
+                   "TANITAD_GATE_KEY_FILE": posix(tmp / "k" / "gate.key")}
+            return bash_run(f'bash -c \'. "{posix(h3)}"; token_ok\'', env)[0]
+        mint_c(prof_c, argv_c)
+        assert tok_c(argv_c, prof_c) == 0; n += 1                                               # the chain's argv under the chain's profile: the trainer may start
+        assert tok_c(argv_r0, prof_c) != 0; n += 1                                              # R0's argv (no --epo-ref armA) is not R0c's token
+        assert tok_c(argv_c.replace("--epo-ref armA", "--epo-ref base"), prof_c) != 0; n += 1   # the lever flipped back
+        assert tok_c(argv_c.replace("/arms/R0c", "/arms/R0"), prof_c) != 0; n += 1              # R0c's lever, R0's directory
+        assert tok_c(argv_c, "refe_rls1") != 0; n += 1                                          # the token is bound to its profile
+        mint_c("refe_rls1", argv_r0)
+        assert tok_c(argv_c, prof_c) != 0; n += 1                                               # R0's token does not start R0c
+        shutil.rmtree(lgdir, ignore_errors=True)
+        # ---- 2f. the hops between the chain's argv and the trainer: the planned-update check, the trainer's OWN parser and its EPO refusals take R0c's argv and read `armA` (R0's reads `base`)
+        ok, why = RC.updates_check(argv_c, 16000); assert ok, why; n += 1
+        import scorer_finetune as SF
+        sf_ap = SF.build_parser()
+        ns_c, ns_0 = sf_ap.parse_args(shlex.split(argv_c)), sf_ap.parse_args(shlex.split(argv_r0))
+        assert ns_c.epo and ns_c.epo_ref == "armA" and SF.epo_refusals(ns_c, sf_ap) == [], (ns_c.epo_ref, SF.epo_refusals(ns_c, sf_ap)); n += 1
+        assert ns_0.epo and ns_0.epo_ref == "base" and SF.epo_refusals(ns_0, sf_ap) == []; n += 1
         # ---- 3. the REAL chain, executed in a sandbox up to its first refusals
         n += sandbox_runs(text, tmp)
         # ---- 3b. the fan-equivalence stage, run from the chain's own text against a stub dumper
@@ -925,7 +1244,11 @@ def sandbox_runs(text, tmp):
     rc, out = run(); assert rc == 1 and "REFUSED: P2 never logged ZZP2R_DONE" in out, out; n += 1                                # P2 unfinished
     (w / "data" / "refe_p2" / "chain.log").write_text("ZZP2R_DONE\n")
     rc, out = run(drop=("HF_TOKEN",)); assert rc == 1 and "REFUSED: HF_TOKEN is not set" in out, out; n += 1                    # no token
-    rc, out = run(); assert rc == 1 and "REFUSED:" in out and "missing: ship" in out, out; n += 1                                  # past the P2 check: the package is empty
+    reg = re.search(r'^REGISTERED_ARMS="([^"]*)"', text, re.M).group(1)
+    for bad_arm in ("R0C", "r0c", "R0 R0cc", "R0c R1c"):                                                                           # a misspelled / unknown arm is refused at the PRECHECK, before the package or the queue
+        rc, out = run({"RLS1_ARMS": bad_arm}); assert rc == 1 and re.search(r"REFUSED: unknown arm '(R0C|r0c|R0cc|R1c)' in RLS1_ARMS \(registered: " + re.escape(reg) + r"\)", out), (bad_arm, out); n += 1
+    rc, out = run({"RLS1_ARMS": "R0c"}); assert rc == 1 and "REFUSED:" in out and "unknown arm" not in out and "missing: ship" in out, out; n += 1   # R0c passes the arm check; the (empty) package is what stops it
+    rc, out = run(); assert rc == 1 and "REFUSED:" in out and "missing: ship" in out, out; n += 1                                 # past the P2 check: the package is empty
     # a package with every required file, then the env stage, then model_final: absent -> refused; a wrong file -> refused
     for f in re.search(r'for f in (.*?); do\n  \[ -f', text, re.S).group(1).replace("\\\n", " ").split():
         (pk / f).parent.mkdir(parents=True, exist_ok=True)
@@ -1241,6 +1564,14 @@ def helper_checks(tmp):
     assert RC.replay("R0", str(od2), lambda tag, f: k4[tag])[0] == "K4"; n += 1                                 # the replay finds what a flaky monitor missed
     assert RC.replay("R0", str(od2), lambda tag, f: ok_recs[tag])[0] is None; n += 1
     assert RC.replay("C0", str(od2), lambda tag, f: 1 / 0)[0] is None; n += 1
+    # ---- R0c is an R arm (RL-S1c): judged on K3 / K4 / K6 and the replay like R0, never as a control, and K5 stays R2's alone
+    rc, killed, od = run_mon("R0c", ev, k4); assert rc == 2 and killed == [99] and json.loads((od / "KILLED.json").read_text())["code"] == "K4"; n += 1
+    rc, killed, od = run_mon("R0c", ev, k3); assert rc == 2 and json.loads((od / "KILLED.json").read_text())["code"] == "K3"; n += 1
+    rc, killed, od = run_mon("R0c", ev, ok_recs); assert rc == 0 and not killed and len((od / "kill_checks.jsonl").read_text().splitlines()) == 2; n += 1
+    rc, killed, od = run_mon("R0c", ev, {**ok_recs, "update250": rec("update250", k5=True)}); assert rc == 0 and not killed; n += 1
+    rc, killed, od = run_mon("R0c", [dump("step0")], ok_recs, now=[7 * 3600.0] * 4); assert rc == 2 and json.loads((od / "KILLED.json").read_text())["code"] == "K6"; n += 1
+    assert RC.replay("R0c", str(od2), lambda tag, f: k4[tag])[0] == "K4"; n += 1
+    assert RC.replay("R0c", str(od2), lambda tag, f: ok_recs[tag])[0] is None; n += 1
     # ---- the default checker (in-process rl_val_eval on a tiny RL-val) so the monitor's real path is exercised
     n += checker_smoke(tmp)
     return n

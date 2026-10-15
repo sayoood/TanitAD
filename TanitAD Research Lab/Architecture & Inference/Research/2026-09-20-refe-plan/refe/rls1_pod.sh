@@ -16,6 +16,9 @@
 # Knobs: RLS1_QUEUE_POLL_S (5), RLS1_IDLE_POLL_S (30), RLS1_IDLE_POLLS (3), RLS1_SETTLE_S (20), RLS1_WAIT_MAX_S (0 = unbounded), RLS1_GPU_WAIT_MAX_S (1800, per arm), RLS1_P2_ABANDONED.
 # RL-S1b (eval/rls1b_arms.json, profile refe_rls1b):  RLS1_ARMS="R0b C1 R1b"  -- R0b is read against C0's banked dumps, C1 runs, R1b is read against C1.  A kill of R0b (K3 ...) STOPS the chain after its
 # evidence is banked: no C1, no R1b; the Master Mind decides (the generic "a killed arm refuses" rule below).
+# RL-S1c (eval/rls1c_arms.json, profile refe_rls1c; raw/2026-10-15-rls1-adam-dose/PREREG_R0C_DRAFT.md):  RLS1_ARMS="R0c"  -- R0 with ONE lever, --epo-ref armA (the EPO term's KL anchor is arm A's detached policy, not the frozen base).
+# NOT launched without a PI decision (~3.5 A40-h).  R0c is read against ITS OWN arm A, always (the same-pass control: the K3 / K4 monitor, the kill replay and rlval_vs_A0.json), never against C0 even when C0's dumps are on the pod;
+# C0's banked dumps are the SECOND control (rlval_vs_C0.json) and a log line (ZZRLS1_R0C_NO_SECOND_CONTROL) says so when they are not there.  A kill of R0c STOPS the chain (the generic "a killed arm refuses" rule below).
 # FAIL CLOSED (K-MON): an arm's kill monitor must print ZZRLS1_MONITOR_READY within RLS1_MON_READY_S (600) and stay alive while its trainer runs; otherwise the chain stops the trainer by its
 # explicit process-group id, writes KILLED.json (code K-MON), banks the evidence and refuses.  Knobs: RLS1_MON_READY_S, RLS1_SUP_POLL_S (5), RLS1_STOP_GRACE_S (30).
 # The fan-equivalence bounds (stage fancmp) are PINNED in this script, NOT inputs: FANCMP_ATOL 0.5 (catastrophe bound) and FANCMP_MEAN_ATOL 0.025 (runbook D-RLS1-5, DECIDED 2026-10-12).
@@ -39,7 +42,8 @@ PART=$PKG/raw/rl_pool/partition_runs; PNAME=A_no_trained_list_seed20261012_n1600
 MANIFEST=$PART/$PNAME.manifest.json; TRAIN_TSV=$PART/$PNAME/rl_train_scenes.tsv; VAL_TSV=$PART/$PNAME/rl_val_scenes.tsv
 # the arms this chain knows.  RLS1B-INSERTION-POINT-1 (FILLED 2026-10-14 from eval/rls1b_arms.json): the RL-S1b arms R0b and R1b (R0 / R1 with --epo-lam 0.25), argv in arm_args (-2), the control each reads
 # against in the arm loop (-3).  RL-S1b is run as  RLS1_ARMS="R0b C1 R1b"  (Master Mind's order): R0b against C0's banked dumps, then C1, then R1b against C1.  Their gate profile is refe_rls1b (arm_profile).
-REGISTERED_ARMS="C0 C1 R0 R1 R2 R0b R1b"
+# R0c (2026-10-15, from eval/rls1c_arms.json): R0 + --epo-ref armA, gate profile refe_rls1c, read against its own arm A (arm loop, "RL-S1c").  Run as  RLS1_ARMS="R0c".
+REGISTERED_ARMS="C0 C1 R0 R1 R2 R0b R1b R0c"
 SETS_TR=$R/sets_train; SETS_VA=$R/sets_val; PDM_TR=$R/pdm_train; PDM_VA=$R/pdm_val; TERMS_TR=$R/terms_train; TERMS_VA=$R/terms_val
 TLANE_TR=$R/tlane_train; TLANE_VA=$R/tlane_heldout; VALLOGS=$R/rl_val_logs.txt
 NSH="${RLS1_SHARDS:-4}"
@@ -81,6 +85,7 @@ p2_over() {
 arm_profile() {
   case "$1" in
     R0b|R1b) echo refe_rls1b ;;
+    R0c) echo refe_rls1c ;;
     C1) case " ${RLS1_ARMS:-} " in *" R0b "*|*" R1b "*) echo refe_rls1b ;; *) echo refe_rls1 ;; esac ;;
     *) echo refe_rls1 ;;
   esac
@@ -188,6 +193,8 @@ arm_args() {
     # RLS1B-INSERTION-POINT-2 (FILLED): R0 / R1 with --epo-lam 0.25 and nothing else (eval/rls1b_arms.json, token for token; launch_gate.py profile refe_rls1b).  An R2b is NOT here: it needs a PI decision.
     R0b) seed=0; epo="--epo --epo-terms-train $TERMS_TR --epo-terms-heldout $TERMS_VA --epo-lam 0.25" ;;
     R1b) seed=1; epo="--epo --epo-terms-train $TERMS_TR --epo-terms-heldout $TERMS_VA --epo-lam 0.25" ;;
+    # R0c: R0's argv with --epo-ref armA appended and nothing else (eval/rls1c_arms.json, token for token; launch_gate.py profile refe_rls1c, which requires the flag NAMED: its parser default `base` would reproduce R0).
+    R0c) seed=0; epo="--epo --epo-terms-train $TERMS_TR --epo-terms-heldout $TERMS_VA --epo-ref armA" ;;
     *) return 1 ;;
   esac
   echo "--ckpt $BASE --backbone vitl16 --targets $TARGETS --images $IMAGES --calib $CALIB --onpolicy $SETS_TR --heldout $SETS_VA --heldout-logs $VALLOGS --out $ad --pdm-labels-train $PDM_TR --pdm-labels-heldout $PDM_VA --require-pdm --b-mode listnet --lam 0 --lr 1e-4 --max-updates 1000 --epochs 4 --workers 3 --seed $seed --eval-every 250 --dump-scores $ad/scores --lane-head --teacher-lane-train $TLANE_TR --teacher-lane-heldout $TLANE_VA${epo:+ $epo}"
@@ -223,7 +230,7 @@ why="$(p2_over)" || refuse "$why"
 for ARM in ${RLS1_ARMS:-C0 R0 C1 R1 R2}; do arm_registered "$ARM" || refuse "unknown arm '$ARM' in RLS1_ARMS (registered: $REGISTERED_ARMS)"; done
 for f in refe/scorer_finetune.py refe/aux_drivable_head.py refe/rl_fan_dump.py refe/rl_partition.py refe/rl_pool_available.py refe/onpolicy_relabel_pdm.py refe/rl_terms_label.py \
          refe/pdm_label_complete.py refe/rl_reward.py refe/hf_egress.py refe/rls1_checks.py refe/train.py refe/model.py refe/ckpt_io.py \
-         refe/launch_gate.py refe/gate_token.py refe/gate_checks.py refe/gate_fixture.py refe/test_launch_gate.py refe/test_rl_epo.py refe/test_rl_reward.py \
+         refe/launch_gate.py refe/gate_token.py refe/gate_checks.py refe/gate_fixture.py refe/test_launch_gate.py refe/test_rl_epo.py refe/test_rl_reward.py refe/test_rl_s1b.py refe/test_rl_r0c.py \
          refe/rl_tlane_label.py refe/test_rl_tlane_label.py refe/onpolicy_relabel_teacher_lane.py refe/onpolicy_label.py refe/planner.py refe/scorer_gate.py \
          refe/score_proposals.py refe/route_rank.py refe/map_feature_cache.py refe/query_cache.py refe/navtrain_scenarios.py refe/build_scorer_targets.py code/augment_routes.py \
          eval/rl_val_eval.py eval/proxy_eval.py eval/rl_terms_join_identity.py SHIP_MANIFEST.json \
@@ -483,8 +490,11 @@ for ARM in ${RLS1_ARMS:-C0 R0 C1 R1 R2}; do
   # RLS1B-INSERTION-POINT-3: KIND (A = a control run, B = an R run) and RD (the matched control a B run reads against) of an RL-S1b arm that does not follow the C<n> / R<n> naming.
   case "$ARM" in C*) KIND=A; RD="";; *) KIND=B; RD=C${ARM:1:1};; esac
   [ "$ARM" = R2 ] && RD=C0
+  [ "$ARM" = R0c ] && RD=C0        # RL-S1c: C0 is R0c's SECOND control (the 9d read below); named here, not left to ${ARM:1:1}
   # the control the K4 / K5 monitor and the replay compare R with: the matched C run's arm A when that run finished, else this run's own arm A (paired by construction)
   if [ -z "$RD" ] || [ ! -f "$R/arms/$RD/scores/scores_update1000_A.npz" ]; then REFDIR="$ARMDIR/scores"; else REFDIR="$R/arms/$RD/scores"; fi
+  # RL-S1c (PREREG_R0C_DRAFT.md section 2: "the control for every delta is the arm's own A"): R0c's monitor and replay reference is ITS OWN arm A whether or not C0's dumps are on the pod
+  [ "$ARM" = R0c ] && REFDIR="$ARMDIR/scores"
   # RL-S1b: an R arm is read against ITS control's banked dumps (R0b -> C0, R1b -> C1), never silently against its own arm A (the fallback above is the original plan's paired design)
   if [ "$PROFILE" = refe_rls1b ] && [ "$KIND" = B ] && [ "$REFDIR" = "$ARMDIR/scores" ]; then
     refuse "RL-S1b arm $ARM is read against $RD, whose dumps $R/arms/$RD/scores/scores_update1000_A.npz are missing: run it first (RLS1_ARMS=\"R0b C1 R1b\") or restore them"
@@ -567,6 +577,8 @@ for ARM in ${RLS1_ARMS:-C0 R0 C1 R1 R2}; do
       if [ -f "$R/arms/$RD/scores/scores_update1000_A.npz" ]; then
         env -u HF_TOKEN $RV --scores C=$R/arms/$RD/scores/scores_update1000_A.npz R=$SC/scores_update1000_B.npz --base C --out "$ARMDIR/rlval_vs_$RD.json" \
           >> "$ARMDIR/rlval.log" 2>&1 200>&-
+      elif [ "$ARM" = R0c ]; then
+        log "ZZRLS1_R0C_NO_SECOND_CONTROL arm R0c: C0's banked dumps $R/arms/$RD/scores/scores_update1000_A.npz are not on the pod, so rlval_vs_$RD.json was NOT produced: the read against its own arm A (rlval_vs_A0.json) stands alone; restore C0's scores (HF Sayood/tanitad-refe-rls1-c0) and run rl_val_eval.py for the second control"
       fi
     fi
     grep -q "^ZZRLVAL_OK" "$ARMDIR/rlval.log" || refuse "rl_val_eval.py did not finish clean for $ARM (rlval.log)"

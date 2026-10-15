@@ -890,7 +890,7 @@ def rls1_static() -> None:
     P0 = {**P, "declared_arm": "R0"}
     pf_ok = C.load_scorer_preflight(rls1_write(Path(tempfile.mkdtemp()) / "preflight.jsonl", rls1_pf_rows(r0)))
     ev = C.check_dvb_scorer(r0, pf_ok, P0)
-    ok(ev["status"] == "PASS" and ev["details"]["observed_rows"] == 14 and ev["details"]["unknown_flags"] == [] and ev["details"]["stale_registry"] == [], ev["reasons"])
+    ok(ev["status"] == "PASS" and ev["details"]["observed_rows"] == 15 and ev["details"]["unknown_flags"] == [] and ev["details"]["stale_registry"] == [], ev["reasons"])      # 14 -> 15: R0c's epo.ref row
     ok(sum(ev["details"]["kinds"].values()) == len(C.DVB_KINDS_SCORER) == len(sdests))
     ok(C.check_dvb_scorer(c0, C.load_scorer_preflight(rls1_write(Path(tempfile.mkdtemp()) / "p.jsonl", rls1_pf_rows(c0))), P)["status"] == "PASS")
     for arm, frag in (("unknown_flag", "NO declared-vs-built entry"), ("stale_registry", "no longer has"), ("dead_lever", "never read by the trainer"),

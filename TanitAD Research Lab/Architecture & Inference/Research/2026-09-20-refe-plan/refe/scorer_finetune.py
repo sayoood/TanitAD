@@ -28,6 +28,10 @@ RL-S1 (eval/PREREG_RL_S1.md, RL_POSTTRAIN_REVIEW 5.2) -- ALL DEFAULT OFF, the OF
                   pi_SFT = the frozen base copy, lam_pg ramped 0 -> 1 over --epo-ramp updates.  Arm A stays the BCE-only control.
                   Requires --pdm-labels-train --require-pdm --b-mode listnet --lam 0 (arm B = BCE + EPO and nothing else) and either
                   --epo-terms-train (rl_terms_*.jsonl: D, K, lane-change inputs) or --epo-lam-d 0 NAMED; preflight adds gate G11.
+  --epo-ref       R0c (raw/2026-10-15-rls1-adam-dose/PREREG_R0C_DRAFT.md): WHICH policy plays pi_SFT in the KL anchor.  base (the default = R0, R0b, R1, R1b, R2 exactly) = the
+                  frozen base copy; armA = arm A's logits of the SAME micro-batch, DETACHED (the BCE-only control's own policy, so the anchor follows A instead of the start).
+                  The default `base` silently reproduces R0, so the R0c profile (refe_rls1c) requires `--epo-ref armA` NAMED; the data event's epo.ref records the reference
+                  the built selector (epo_reference) actually returns, which is what G-DVB compares with the argv.
   The checkpoint's own meta sizes the score head (a 7-output checkpoint such as SFT-4 arm B u400 loads and trains with --lane-head).
   --dump-scores DIR  OBSERVATIONAL, default off: after every held-out evaluation write the base / A / B scorers' per-proposal logits of every held-out set as
                   DIR/scores_<tag>_<arm>.npz -- the input of eval/rl_val_eval.py (log, token, step, rank, ckpt_step, scores [N, M, C], space="logit").
@@ -170,8 +174,10 @@ class ScoreDump:
 # eval/PREREG_RL_S1.md, RL_POSTTRAIN_REVIEW.md 5.2.  Arm B only; arm A stays the BCE-only control (= C), so A / B are paired by construction.
 EPO_EPS = 1e-6                    # log(A + eps): the gradient stays defined as A -> 0 (a clamp would zero it exactly where a proposal needs raising)
 EPO_DESTS = ("epo_temp", "epo_beta", "epo_ramp", "epo_lam", "epo_lam_d", "epo_w_prog", "epo_k", "epo_lam_k", "epo_l", "epo_lam_l",
-             "epo_terms_train", "epo_terms_heldout")          # every EPO lever except the switch itself (named without --epo = refused)
+             "epo_terms_train", "epo_terms_heldout", "epo_ref")          # every EPO lever except the switch itself (named without --epo = refused)
 RL_TERMS_GLOB = "rl_terms_*.jsonl"
+EPO_REFS = ("base", "armA")          # --epo-ref: the policy pi_SFT of the KL anchor (R0c, raw/2026-10-15-rls1-adam-dose/PREREG_R0C_DRAFT.md)
+EPO_REF_DEFAULT = "base"             # = every arm before R0c, bit for bit; the R0c profile requires `armA` NAMED (a default that reproduces R0 must not carry the experiment)
 
 
 def epo_ramp(upd, ramp):
@@ -183,6 +189,30 @@ def epo_policy(sx, rule_fn, T):
     """log pi_i = log_softmax_i( log(A_i + eps) / T ) with A = rule_fn(sigmoid(sx)): the selection policy under the BASE's OWN selection rule
     (`rule_fn` is main()'s sel_score = navsim_v1 x the lane output -- what u400 deploys -- never train._pdm_aggregate)"""
     return torch.log_softmax(torch.log(rule_fn(torch.sigmoid(sx)) + EPO_EPS) / T, dim=1)
+
+
+def epo_reference(ref, sx0, sxA):
+    """The logits that play pi_SFT in epo_loss's KL anchor KL(pi_SFT || pi) for ONE micro-batch (train_losses passes this, not sx0, to epo_term).
+    "base" (the default, every arm before R0c): sx0 ITSELF -- the very object train_losses used to hand epo_term, so the default path is bit-identical.
+    "armA" (R0c): arm A's logits of the SAME micro-batch, DETACHED, so the anchor follows the BCE-only control instead of the start.  Detached here so that arm A can never
+    receive an EPO gradient through the anchor (epo_loss also computes pi_SFT under no_grad: two independent guards, each proved alone by refe/test_rl_r0c.py)."""
+    if ref == "base":
+        return sx0
+    if ref == "armA":
+        return sxA.detach()
+    raise ValueError(f"--epo-ref {ref!r} is not one of {EPO_REFS}")
+
+
+def epo_reference_built(ref):
+    """The reference epo_reference ACTUALLY returns for `ref`, read by calling it on two sentinel tensors -> "base" / "armA" / "other".  This is what the data event's
+    epo.ref records for G-DVB: the launch gate compares the argv with the selector that runs (an armA that is not detached reads "other"), never with an echo of the namespace."""
+    s0, sA = torch.zeros(1), torch.ones(1, requires_grad=True)
+    out = epo_reference(ref, s0, sA)
+    if out is s0:
+        return "base"
+    if torch.equal(out, sA.detach()) and not out.requires_grad:
+        return "armA"
+    return "other"
 
 
 def epo_loss(sxB, sx_ref, R, rule_fn, T, beta, lam_pg, parts=None):
@@ -307,6 +337,8 @@ def epo_refusals(a, ap):
     for nm in ("epo_beta", "epo_ramp", "epo_lam", "epo_lam_d", "epo_w_prog", "epo_lam_k", "epo_lam_l"):
         if getattr(a, nm) < 0.0:
             bad.append(f"--{nm.replace('_', '-')} must be >= 0")
+    if a.epo_ref not in EPO_REFS:
+        bad.append(f"--epo-ref {a.epo_ref!r} is not one of {EPO_REFS}")
     return bad
 
 
@@ -540,6 +572,9 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--epo-lam-l", type=float, default=0.05)
     ap.add_argument("--epo-terms-train", default="", help="dir of rl_terms_*.jsonl side files (D, K, lane-change inputs) for --onpolicy")
     ap.add_argument("--epo-terms-heldout", default="", help="dir of rl_terms_*.jsonl side files for --heldout (validated + logged; consumed by the RL-val lookup)")
+    ap.add_argument("--epo-ref", default=EPO_REF_DEFAULT, choices=EPO_REFS,
+                    help="R0c: the policy pi_SFT of the KL anchor KL(pi_SFT||pi): base = the frozen base copy (default; every arm before R0c), armA = arm A's DETACHED logits of the same "
+                         "micro-batch (the BCE-only control's own policy)")
     ap.add_argument("--dump-scores", default="", help="RL-S1: DIR; after every held-out evaluation write the base / A / B scorers' per-proposal logits as "
                     "<DIR>/scores_<tag>_<arm>.npz (eval/rl_val_eval.py's input).  Observational: no weight, loss or logged number changes.  '' = nothing is written")
     # auxiliary drivable-area head (SPEC_AUX_DRIVABLE_HEAD.md; WIRING_PLAN.md): ALL DEFAULT OFF = this trainer exactly.  --aux-drv / --w-aux-drv / --aux-drv-tap /
@@ -668,7 +703,7 @@ def main() -> int:
                             "heldout_stale": ho.n_lane_stale}, "b_mode": a.b_mode, "b_compw": a.b_compw}
     if a.epo:
         info["epo"] = {"temp": a.epo_temp, "beta": a.epo_beta, "ramp": a.epo_ramp, "lam": a.epo_lam, "lam_d": a.epo_lam_d, "w_prog": a.epo_w_prog,
-                       "k": a.epo_k, "lam_k": a.epo_lam_k, "l": a.epo_l, "lam_l": a.epo_lam_l, "eps": EPO_EPS,
+                       "k": a.epo_k, "lam_k": a.epo_lam_k, "l": a.epo_l, "lam_l": a.epo_lam_l, "eps": EPO_EPS, "ref": epo_reference_built(a.epo_ref),
                        "terms_train": st_tr, "terms_heldout": st_ho, "native7": native7}
     if aux is not None:
         # BUILT facts only (G-DVB compares them with the argv): read off the objects the run holds, never echoed from the namespace
@@ -760,7 +795,7 @@ def main() -> int:
         lA, lB, ln = losses(sxA, sxB, tg, a.lam)
         ep = torch.zeros((), device=sxB.device)
         if a.epo:
-            ep = epo_term(sx0, sxB, tg, rows, upd, lam_pg)
+            ep = epo_term(epo_reference(a.epo_ref, sx0, sxA), sxB, tg, rows, upd, lam_pg)
             lB = lB + ep
         return lA, lB, ln, ep
 
