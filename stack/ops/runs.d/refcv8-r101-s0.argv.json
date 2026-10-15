@@ -1,220 +1,43 @@
 {
  "schema": "tanitad.launch_argv/1",
- "arm": "refcv8-wpb-smoke",
- "what": "The refcv8 FULL-SIZE SMOKE argv (SPEC_WPB_LADDER sec. 7): refcv7-r101-s0's canonical argv + every refcv8 seam, the v9 release (nav command + turn distance, NO route checkpoint: --r8-no-rc, PI 2026-10-11), the warm start, the label speed source (refcv7's road-type sidecar, PI 2026-10-11: --r8-speed-input label), the v9 constraint supervision (Q2) and X10's pose-to-image timing correction. A SMOKE, not a launch: R8-RECIPE / R8-BUDGET / R8-WARMUP are OPEN ITEMS of the refcv8 gate profile, and the RC and the speed source were decided by the PI on 2026-10-11 (no RC; the road-type label).",
+ "arm": "refcv8-r101-s0",
+ "stage": "launch",
+ "what": "The refcv8 LAUNCH argv for refcv8-r101-s0, assembled by stack/scripts/refcv8_assemble_argv.py from the base below. Every override is one `set_lines` entry, traced to its SPEC clause; every other token is the base's.",
  "derived_from": {
-  "file": "stack/ops/runs.d/refcv7-r101-s0.argv.json",
-  "n_tokens": 154
+  "file": "stack/ops/runs.d/refcv8-wpb-smoke.argv.json",
+  "arm": "refcv8-wpb-smoke",
+  "n_tokens": 200
  },
- "changes_vs_refcv7": [
-  {
-   "flag": "--refcv8",
-   "value": [],
-   "was_present": false,
-   "why": "PLAN_REFCV8 R8-1: the seams (DESIGN sec. 3)"
-  },
-  {
-   "flag": "--init-from",
-   "value": [
-    "/home/nvidia/refcv7_run/runs/refcv7-r101-s0/ckpt.pt"
-   ],
-   "was_present": false,
-   "why": "DESIGN 3.7: the warm start from refcv7-r101-s0 @ 50,400 (the run's own ckpt.pt; md5 asserted at load)"
-  },
-  {
-   "flag": "--w-r8-cons",
-   "value": [
-    "0.05"
-   ],
-   "was_present": false,
-   "why": "SPEC_WPB: the constraint heads"
-  },
-  {
-   "flag": "--r8-n-alloc",
-   "value": [
-    "32"
-   ],
-   "was_present": false,
-   "why": "SMOKE: every seam on (allocation M 32) -- R8-RECIPE open"
-  },
-  {
-   "flag": "--r8-alloc-emit",
-   "value": [],
-   "was_present": false,
-   "why": "SMOKE: every seam on"
-  },
-  {
-   "flag": "--r8-alloc-emit-start",
-   "value": [
-    "1000"
-   ],
-   "was_present": false,
-   "why": "MM ruling Q1 (I-2): the allocated candidates are emitted from step 1,000 (the end of --warmup 1000; R8-WARMUP closed 2026-10-11, SPEC_REFCV8 sec. 10.3); step 0 emits refcv7's plan"
-  },
-  {
-   "flag": "--warmup",
-   "value": [
-    "1000"
-   ],
-   "was_present": true,
-   "why": "R8-WARMUP closed (Master Mind 2026-10-11, SPEC_REFCV8 sec. 10.3): both LR groups re-warm over 1,000 steps (refcv7's canonical argv carries 2000); S_emit = this length"
-  },
-  {
-   "flag": "--w-r8-alloc-l1",
-   "value": [
-    "1.0"
-   ],
-   "was_present": false,
-   "why": "SPEC_WPB T2"
-  },
-  {
-   "flag": "--w-r8-listwise",
-   "value": [
-    "1.0"
-   ],
-   "was_present": false,
-   "why": "SPEC_WPB T1 / T2"
-  },
-  {
-   "flag": "--w-r8-sat",
-   "value": [
-    "0.1"
-   ],
-   "was_present": false,
-   "why": "SMOKE: every seam on (SPEC_WPB T2s)"
-  },
-  {
-   "flag": "--w-r8-subscore",
-   "value": [
-    "0.5"
-   ],
-   "was_present": false,
-   "why": "SMOKE: every seam on (SPEC_WPB X1h)"
-  },
-  {
-   "flag": "--r8-lat-prior-dropout",
-   "value": [
-    "0.3"
-   ],
-   "was_present": false,
-   "why": "SMOKE: every seam on (SPEC_WPB X2a)"
-  },
-  {
-   "flag": "--r8-v9-labels",
-   "value": [
-    "/home/nvidia/refcv8_v9labels/release/v9_labels_train.npz"
-   ],
-   "was_present": false,
-   "why": "WP-A v9 release (train)"
-  },
-  {
-   "flag": "--r8-v9-labels-eval",
-   "value": [
-    "/home/nvidia/refcv8_v9labels/release/v9_labels_eval139.npz"
-   ],
-   "was_present": false,
-   "why": "WP-A v9 release (eval139)"
-  },
-  {
-   "flag": "--r8-v9-md5",
-   "value": [
-    "f63ece410b725febb8a5242cf2b01d3c"
-   ],
-   "was_present": false,
-   "why": "WPA-S3"
-  },
-  {
-   "flag": "--r8-v9-eval-md5",
-   "value": [
-    "6b5c7f207cffc3b7eb3cd527fd433599"
-   ],
-   "was_present": false,
-   "why": "WPA-S3"
-  },
-  {
-   "flag": "--r8-v9-lat-variant",
-   "value": [
-    "a"
-   ],
-   "was_present": false,
-   "why": "D-WPA-1"
-  },
-  {
-   "flag": "--r8-nav-from-v9",
-   "value": [],
-   "was_present": false,
-   "why": "R8-2"
-  },
-  {
-   "flag": "--r8-no-rc",
-   "value": [],
-   "was_present": false,
-   "why": "PI 2026-10-11 (Sayed): \"just give the nav command and the distance\" -> NO route checkpoint; the per-frame nav token (--r8-nav-from-v9) and its turn distance (nav_args) stay"
-  },
-  {
-   "flag": "--r8-nav-args-dropout",
-   "value": [
-    "0.5"
-   ],
-   "was_present": false,
-   "why": "MM binding"
-  },
-  {
-   "flag": "--join-defect-masks",
-   "value": [
-    "/home/nvidia/refcv8_run/tree/stack/tanitad/configs/refcv8_join_label_defects.json"
-   ],
-   "was_present": false,
-   "why": "MM binding item 6 (the shipped list in the launch tree; path = the Thor tree the gate runs)"
-  },
-  {
-   "flag": "--grad-share-every",
-   "value": [
-    "50"
-   ],
-   "was_present": false,
-   "why": "SPEC_WPB_LADDER: the in-run gradient share, every logged step in the smoke"
-  },
-  {
-   "flag": "--r8-speed-input",
-   "value": [
-    "label"
-   ],
-   "was_present": false,
-   "why": "PI 2026-10-11 (Sayed): \"yes use the quantified label as input, it is not a training signal, it is the maximal wished speed ... assure the road type quantization and avoid the exact value of the future speed as target speed\" -> the channel's source = refcv7's road-type sidecar (--speed-max-sidecar-v6 / -eval, carried verbatim from refcv7; the trainer feeds the road-type step and refuses a sidecar carrying anything else)"
-  },
-  {
-   "flag": "--r8-speed-unknown-p",
-   "value": [
-    "0.45"
-   ],
-   "was_present": false,
-   "why": "X3: the TRAINED unknown row at D4 / NavSim's no-limit share"
-  },
-  {
-   "flag": "--w-r8-v9-cons",
-   "value": [
-    "0.05"
-   ],
-   "was_present": false,
-   "why": "MM ruling Q2: the v9 constraint vectors supervised (the --w-r8-cons value; R8-RECIPE open)"
-  },
-  {
-   "flag": "--pose-sync-sidecar",
-   "value": [
-    "/home/nvidia/data/refcv6_pose_sync_sidecar.jsonl"
-   ],
-   "was_present": false,
-   "why": "X10 (MM ruling 2026-10-04, closes SPEC X10): the pose-to-image timing correction; sidecar md5 ce00a130525ede5aff6e8b57028c49bd, meta md5 823dd7a5e0b119c2aeac4cdec96bfb65 (Data FlyWheel)"
-  },
-  {
-   "flag": "--out",
-   "value": [
-    "/home/nvidia/refcv8_run/runs/refcv8-wpb-smoke"
-   ],
-   "was_present": true,
-   "why": "a new run dir (never refcv7's)"
-  }
+ "set_lines": [
+  "--out /home/nvidia/refcv8_run/runs/refcv8-r101-s0  <- run dir (new; never the smoke dir)",
+  "--steps 48852  <- SPEC_REFCV8 A2 (PI 2026-10-12): ONE full pass = 48,852 steps over 781,635 windows (also the cosine horizon)",
+  "--v2-cache /home/nvidia/data/refcv8-b1-416x1024-train-4572  <- SPEC_REFCV8 A2: the 4,572-clip train view / the sidecars built over it",
+  "--agent-rig-extrinsics /home/nvidia/data/refcv8_train4572_eval139_extrinsics.json  <- SPEC_REFCV8 A2: the 4,572-clip train view / the sidecars built over it",
+  "--pose-sync-sidecar /home/nvidia/data/refcv8_pose_sync_sidecar.jsonl  <- SPEC_REFCV8 A2: the 4,572-clip train view / the sidecars built over it",
+  "--clip-clock-sidecar /home/nvidia/data/refcv8_clip_clock_sidecar_ts33.jsonl  <- SPEC_REFCV8 A2: the 4,572-clip train view / the sidecars built over it",
+  "--r8-v9-labels /home/nvidia/refcv8_v9labels/release_train4572/v9_labels_train.npz  <- SPEC_REFCV8 A2: the 4,572-clip train view / the sidecars built over it",
+  "--vis1-sidecar /home/nvidia/data/refcv8/vis1_sidecar_refcv8b1_train4572_eval139.npz  <- SPEC_REFCV8 A2: the 4,572-clip train view / the sidecars built over it",
+  "--nav-compliance-tau-file /home/nvidia/data/refcv8/nav_compliance_tau_train4572.json  <- SPEC_REFCV8 A2: the 4,572-clip train view / the sidecars built over it",
+  "--r8-v9-md5 83e30bd3791f0767707eade5f4671759  <- SPEC_REFCV8 A2: the 4,572-clip v9 release (the trainer checks the file)",
+  "--nav-compliance-tau-rad 0.1806411302089691  <- SPEC_REFCV8 A3: the FIX-4 tau re-derived on the 4,572 view (= the record's tau)",
+  "--init-from /home/nvidia/refcv7_run/runs/refcv7-r101-s0/ckpt.pt  <- SPEC 3.1: warm start from refcv7-50,400",
+  "--warmup 1000  <- R8-WARMUP: re-warm over 1,000 steps (SPEC 10.3)",
+  "--lr 1e-4  <- R8-WARMUP: head peak 1e-4 (trunk 5e-5 = --encoder-lr-mult default 0.5)",
+  "--w-tac-v6 1.0  <- R8-BUDGET: 1.0 x k (ladder L2, SPEC_WPB_LADDER 4.2)",
+  "--w-map-hires 1.0  <- R8-BUDGET: 4.0 iff B-MAPW else 1.0 (ladder L3)",
+  "--ema-decay 0.9998  <- R8-WARMUP CLOSED (MM 2026-10-11): EMA evaluated at every in-run eval and saved",
+  "--b1-guard-ref-ap2m 0.21211  <- SPEC 10.1 B1 guard: the refcv7-50,400 EMA box3d AP@2 m (cite artifact + md5)",
+  "--b1-guard-step 1000  <- SPEC 10.1 B1 guard step",
+  "--r8-alloc-emit-start 1000  <- S_emit = the warmup length (MM 2026-10-11)",
+  "--grad-share-terms tac_v6,map_hires  <- SPEC 10.3 gradient share on the main run",
+  "--grad-share-every 250  <- SPEC 10.3",
+  "--grad-share-at 1000,16250,32500,48750  <- SPEC 10.3: picked by pick_gs_schedule from the MEASURED reading",
+  "--join-defect-masks /home/nvidia/refcv8_run/launch_tree/stack/tanitad/configs/refcv8_join_label_defects_train4572.json  <- MM 2026-10-04 item 6; SPEC A2: re-mined over the 4,572 view; path under the GATED tree, not the smoke tree",
+  "--r8-n-alloc 32  <- R8-RECIPE: ladder L1 / SPEC_WPB reading",
+  "--r8-alloc-emit   <- R8-RECIPE: ladder L1 / SPEC_WPB reading",
+  "--w-r8-alloc-l1 1.0  <- R8-RECIPE: ladder L1 / SPEC_WPB reading",
+  "--w-r8-listwise 0.0  <- R8-RECIPE: ladder L1 / SPEC_WPB reading",
+  "--w-r8-v9-cons 0.05  <- R8-RECIPE: ladder L1 / SPEC_WPB reading"
  ],
  "argv": [
   "--arm",
@@ -427,5 +250,6 @@
   "tac_v6,map_hires",
   "--grad-share-at",
   "1000,16250,32500,48750"
- ]
+ ],
+ "header_corrected": "2026-10-15, after launch: the header was the base smoke file's, copied by the assembler (fixed in this commit); the argv list is unchanged (argv_sha256 188aa439258d28e7..., the launch gate's binding). SET lines from the launch assembly's own log."
 }

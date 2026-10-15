@@ -110,6 +110,23 @@ def flat(ps):
     return [t for f, v in ps for t in [f, *v]]
 
 
+def launch_doc(base_doc, argv, why, *, base_path, run_out, stage):
+    """The header the assembled file carries: ITS OWN arm, stage and SET lines. Nothing descriptive is copied from the
+    base. MEASURED 2026-10-15: `dict(doc, argv=...)` copied the smoke file's header verbatim, so the committed LAUNCH
+    argv (`refcv8-r101-s0`, 48,852 steps, listwise 0.0) still said `"arm": "refcv8-wpb-smoke"`, "A SMOKE, not a
+    launch" and listed `--w-r8-listwise 1.0` under `changes_vs_refcv7`. The base's arm is kept under `derived_from`;
+    its `changes_vs_refcv7` is not -- it describes the base."""
+    b = base_doc if isinstance(base_doc, dict) else {}
+    arm = str(run_out).rstrip("/").rsplit("/", 1)[-1]
+    return {"schema": b.get("schema", "tanitad.launch_argv/1"), "arm": arm, "stage": stage,
+            "what": (f"The refcv8 {stage.upper()} argv for {arm}, assembled by stack/scripts/refcv8_assemble_argv.py "
+                     f"from the base below. Every override is one `set_lines` entry, traced to its SPEC clause; "
+                     f"every other token is the base's."),
+            "derived_from": {"file": str(base_path), "arm": b.get("arm"),
+                             "n_tokens": len(b.get("argv") or []) if b else None},
+            "set_lines": list(why), "argv": list(argv)}
+
+
 def set_flag(ps, flag, vals):
     """replace (first hit, drop duplicates) or append; vals None = remove."""
     out, done = [], False
@@ -550,7 +567,7 @@ def main():
     if errs:
         print("\n".join("REFUSED " + e for e in errs))
         return 2
-    out = dict(doc, argv=flat(ps)) if isinstance(doc, dict) else flat(ps)
+    out = launch_doc(doc, flat(ps), why, base_path=a.base, run_out=a.run_out, stage=a.stage)
     with open(a.out_json, "w", encoding="utf-8", newline="\n") as fh:
         json.dump(out, fh, indent=1)
     print(f"ASSEMBLED {len(flat(ps))} tokens -> {a.out_json}")
