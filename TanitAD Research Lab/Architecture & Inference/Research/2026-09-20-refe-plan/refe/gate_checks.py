@@ -1266,11 +1266,13 @@ def check_suite(profile: dict, arm=None, rehearsal=False) -> dict:
         token = e["token"]
         env = dict(os.environ, PYTHONIOENCODING="utf-8", REFE_GATE_NESTED="1")
         env.pop(ARM_ENV, None)
+        t_script = time.perf_counter()
         r = subprocess.run(argv, cwd=str(HERE), env=env, capture_output=True, text=True, encoding="utf-8", errors="replace")
         ok = r.returncode == 0 and token in r.stdout
         skipped = [ln for ln in r.stdout.splitlines() if ln.startswith("ZZTEST_SKIP")]
         name = e.get("script", "raw")
-        det["scripts"].append({"script": name, "rc": r.returncode, "token": token, "token_seen": token in r.stdout, "skips": skipped[:4]})
+        det["scripts"].append({"script": name, "rc": r.returncode, "token": token, "token_seen": token in r.stdout, "skips": skipped[:4],
+                               "seconds": round(time.perf_counter() - t_script, 1)})            # where the G-SUITE time went (evidence only)
         if not ok:
             reasons.append(f"{name}: rc {r.returncode}, {token!r} {'seen' if token in r.stdout else 'NOT seen'}")
         if skipped and profile.get("suite_skips_fail", True):

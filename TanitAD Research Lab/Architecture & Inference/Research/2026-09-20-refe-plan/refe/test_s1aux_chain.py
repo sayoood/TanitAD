@@ -160,6 +160,22 @@ def check_chain(text):
         tl = [ln for ln in b.split("\n") if "scorer_finetune.py $ARGS >>" in ln]
         if not (tl and "env -u HF_TOKEN" in tl[0] and "200>&-" in tl[0]):
             v.append("TRAINER_LINE(token/fd200)")
+    # ---- the gate block (raw/2026-10-15-s1-gate-gap): the token is verified ONCE after the mint (fresh path); an EARLIER invocation's token is verified before its manifest row is written
+    gb = re.search(r'  GATE_MINTED_NOW=0\n  if ! stage_done "gate_\$ARM"; then\n(.*?)\n  fi\n(.*?)\n  # PREREG_AUX_DRIVABLE_S1 section 2', text, re.S)
+    if not gb:
+        v.append("GATE_BLOCK_SHAPE")
+    else:
+        inside, after = gb.group(1), gb.group(2)
+        if (text.count("GATE_MINTED_NOW=1") != 1 or inside.find("GATE_MINTED_NOW=1") < 0
+                or inside.find("GATE_MINTED_NOW=1") < inside.find('stage_mark "gate_$ARM"') or inside.find('stage_mark "gate_$ARM"') < inside.find("token_ok || refuse")):
+            v.append("MINTED_FLAG(set only after the mint's verify and the stage mark)")
+        if "token_ok || refuse" not in inside:
+            v.append("MINT_NOT_VERIFIED")
+        vl = [ln for ln in after.split("\n") if "token_ok" in ln and not ln.strip().startswith("#")]
+        if not vl:
+            v.append("RESUMED_PATH_UNVERIFIED")
+        elif vl != ['  [ "$GATE_MINTED_NOW" = 1 ] || token_ok || refuse "the launch-gate token of $ARM no longer verifies (token_verify.log)"']:
+            v.append("GATE_VERIFY_GUARD")
     gw = text.split("\nSTAGE=gpu_wait\n")
     if len(gw) != 2 or "\nwait_clear\n" not in "\n" + gw[1].split("# ---- 5. the arms")[0] or "bank_push s1_labels labels" not in gw[0]:
         v.append("NO_GPU_WAIT_BEFORE_ARMS")
@@ -251,6 +267,16 @@ def mutations(text):
     sub("navtest not exported to the gate", ' AUX_NAVTEST="$NAVTEST_JSON"', '', "NO_NAVTEST_CHECK")
     sub("wait removed before the arm", "    wait_clear\n    token_ok || refuse", "    token_ok || refuse", "NO_WAIT_BEFORE_ARM")
     sub("token check removed before the trainer", '    token_ok || refuse "the launch-gate token does not verify for $ARM: scorer_finetune.py is NOT started"\n', "", "TRAIN_NO_TOKEN_CHECK")
+    # the BINDING verify must stay AFTER the wait for the GPU: swapped, the check would be a minutes-old claim by the time the trainer starts
+    sub("binding verify moved before the GPU wait", '    wait_clear\n    token_ok || refuse "the launch-gate token does not verify for $ARM: scorer_finetune.py is NOT started"\n',
+        '    token_ok || refuse "the launch-gate token does not verify for $ARM: scorer_finetune.py is NOT started"\n    wait_clear\n', "TRAIN_ORDER")
+    guarded = '  [ "$GATE_MINTED_NOW" = 1 ] || token_ok || refuse "the launch-gate token of $ARM no longer verifies (token_verify.log)"'
+    sub("resumed-path verify removed", guarded + "\n", "", "RESUMED_PATH_UNVERIFIED")
+    sub("redundant verify re-added on the fresh path", guarded, '  token_ok || refuse "the launch-gate token of $ARM no longer verifies (token_verify.log)"', "GATE_VERIFY_GUARD")
+    sub("verify guard inverted", '[ "$GATE_MINTED_NOW" = 1 ] || token_ok', '[ "$GATE_MINTED_NOW" = 0 ] || token_ok', "GATE_VERIFY_GUARD")
+    sub("minted flag on by default (a resumed token would never be verified)", "  GATE_MINTED_NOW=0\n  if ! stage_done", "  GATE_MINTED_NOW=1\n  if ! stage_done", "GATE_BLOCK_SHAPE")
+    sub("minted flag set before the mint's verify", '    stage_mark "gate_$ARM"\n    GATE_MINTED_NOW=1\n', '    GATE_MINTED_NOW=1\n    stage_mark "gate_$ARM"\n', "MINTED_FLAG")
+    sub("mint's own verify removed", '    token_ok || refuse "the launch gate did not mint a PASS token that verifies for $ARM (launch_gate.log, lg/, token_verify.log)"\n', "", "MINT_NOT_VERIFIED")
     sub("token not verified by the gate", 'launch_gate.py" verify --profile', 'launch_gate.py" refusals --profile', "TOKEN_NOT_VERIFIED_BY_THE_GATE")
     sub("gate profile swapped", "launch_gate.py run --profile refe_aux_s1", "launch_gate.py run --profile refe_rls1", "GATE_PROFILE_OR_ARM")
     sub("trainer keeps HF_TOKEN", 'env -u HF_TOKEN OMP_NUM_THREADS=4 PYTHONUNBUFFERED=1 "$PY" scorer_finetune.py $ARGS >>', 'env OMP_NUM_THREADS=4 PYTHONUNBUFFERED=1 "$PY" scorer_finetune.py $ARGS >>', "TRAINER_LINE")
@@ -906,9 +932,60 @@ def sandbox_runs(text, tmp):
     man = [json.loads(l) for l in (sb.R / "arms_manifest.jsonl").read_text(encoding="utf-8").splitlines()]
     ok([m["arm"] for m in man if m["event"] == "token_verified"] == ["N-s0", "H2-s0"] and all(m["argv_sha256"] and m["commit"] for m in man if m["event"] == "token_verified"))
     ok(sb.calls("hf_egress")[-1]["tag"] == "chain_exit", "the exit trap pushes chain.log last")
+    seq_all = [("pre" if c["preflight"] else "train") if c["tool"] == "scorer_finetune" else c["cmd"] for c in sb.calls() if c["tool"] in ("scorer_finetune", "launch_gate")]
+    ok(seq_all == ["pre", "run", "verify", "verify", "train"] * 2, seq_all)                  # raw/2026-10-15-s1-gate-gap: each fresh arm of the happy path is verified twice (after the mint, BINDING before the trainer), not three times
     # a re-run of a finished chain redoes nothing
     n_before = len(sb.calls("scorer_finetune"))
     rc, out, lg = sb.run(env_extra={"S1AUX_ARMS": "N-s0 H2-s0"}); ok(rc == 0 and len(sb.calls("scorer_finetune")) == n_before and "arm N-s0 already done" in lg, lg[-300:])
+    # ---- the VERIFY COUNT (raw/2026-10-15-s1-gate-gap): a freshly minted token is re-measured ONCE after the mint and ONCE (BINDING) right before the trainer -- not three times (each
+    # verify re-measures argv, code tree and the 413,184-file image listing: 3.4-3.8 min of GPU idle on the pod).  A token minted by an EARLIER invocation is verified before its manifest row
+    # is written and again right before the trainer.  The call sequence of one arm is read off the stub log; the same runs on a chain with a verify deleted / re-added must differ (RED).
+    def arm_seq(start):
+        return [("pre" if c["preflight"] else "train") if c["tool"] == "scorer_finetune" else c["cmd"] for c in sb.calls()[start:] if c["tool"] in ("scorer_finetune", "launch_gate")]
+
+    def reset_arm(arm="N-s0"):                       # the arm's own state only: the labels the chain regenerated (stage bank_labels) stay, so a variant costs one arm run, not a whole chain
+        for d in (sb.R / "runs" / arm, sb.R / "lg" / arm):
+            shutil.rmtree(d, ignore_errors=True)
+        for mk in (sb.R / "stage").glob(f"*_{arm}.ok"):
+            mk.unlink()
+        if (sb.R / "arms_manifest.jsonl").exists():
+            (sb.R / "arms_manifest.jsonl").unlink()
+
+    def variant(script_text, stop=None):
+        reset_arm()
+        n = len(sb.calls())
+        write_sh(sb.script, script_text)
+        try:
+            res = sb.run(env_extra={"S1AUX_ARMS": "N-s0", **({"S1AUX_STOP_AFTER": stop} if stop else {})})
+        finally:
+            write_sh(sb.script, sb.text)
+        return res, n
+    FRESH = ["pre", "run", "verify", "verify", "train"]
+    binding = '    token_ok || refuse "the launch-gate token does not verify for $ARM: scorer_finetune.py is NOT started"\n'
+    guarded = '  [ "$GATE_MINTED_NOW" = 1 ] || token_ok || refuse "the launch-gate token of $ARM no longer verifies (token_verify.log)"'
+    ok(binding in sb.text and guarded in sb.text)
+    sb.run(fresh=True, env_extra={"S1AUX_STOP_AFTER": "bank_labels"})
+    (rc, out, lg), n = variant(sb.text, stop="gate_N-s0")
+    ok(rc == 0 and "ZZS1AUX_ARM_GATE_OK N-s0" in lg and arm_seq(n) == ["pre", "run", "verify"], arm_seq(n))      # a fresh arm up to its manifest row: preflight, the gate mints, ONE verify
+    n = len(sb.calls())
+    rc, out, lg = sb.run(env_extra={"S1AUX_ARMS": "N-s0"})                                                      # ... the same arm resumed by a later invocation (its gate was passed before)
+    ok(rc == 0 and "ZZS1AUX_ARM_DONE N-s0" in lg and arm_seq(n) == ["verify", "verify", "train"], arm_seq(n))   # old token: verified before its row, again (BINDING) before the trainer
+    (rc, out, lg), n = variant(sb.text)
+    ok(rc == 0 and arm_seq(n) == FRESH, arm_seq(n))                                                             # a fresh arm end to end: pre, run, verify, verify, train
+    # RED: the same runs on chains with a verify deleted / re-added differ from the registered sequences
+    (rc, out, lg), n = variant(sb.text.replace(binding, ""))
+    ok(arm_seq(n) != FRESH and arm_seq(n) == ["pre", "run", "verify", "train"], arm_seq(n))                    # the BINDING verify deleted: the trainer starts after ONE verify
+    (rc, out, lg), n = variant(sb.text.replace(guarded, '  token_ok || refuse "the launch-gate token of $ARM no longer verifies (token_verify.log)"'))
+    ok(arm_seq(n) != FRESH and arm_seq(n).count("verify") == 3, arm_seq(n))                                     # the redundant verify re-added: three
+    no_resumed = sb.text.replace(guarded + "\n", "")
+    variant(no_resumed, stop="gate_N-s0")
+    n = len(sb.calls())
+    write_sh(sb.script, no_resumed)
+    try:
+        sb.run(env_extra={"S1AUX_ARMS": "N-s0"})
+    finally:
+        write_sh(sb.script, sb.text)
+    ok(arm_seq(n) != ["verify", "verify", "train"] and arm_seq(n) == ["verify", "train"], arm_seq(n))           # the resumed-path verify deleted: a stale token reaches its row unverified (RED)
     # ---- a stage that fails never lets the next run: N-s0 ok, then H2-s0's trainer dies
     rc, out, lg = sb.run(fresh=True, env_extra={"S1AUX_STOP_AFTER": "bank_labels"}); ok(rc == 0, lg)
     rc, out, lg = sb.run(env_extra={**E2, "FAKE_TRAIN_FAIL_ARM": "H2-s0"}); ok(rc == 1, out); refused(out, lg, "arm_H2-s0", "the trainer did not finish")
