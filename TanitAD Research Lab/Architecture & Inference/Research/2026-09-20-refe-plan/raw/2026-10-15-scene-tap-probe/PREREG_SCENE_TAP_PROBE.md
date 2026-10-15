@@ -194,3 +194,7 @@ Tests: `test_scene_tap_probe.py` 19 passed (`logs/test_scene_tap_probe.log`). A 
 - the per-fold IoU;
 - the train-loss curve's last 10 % (did it plateau?);
 - the wall time.
+
+### A2.1 (2026-10-16 ~01:15 Berlin, Master Mind; BEFORE any 10,000-update unit exists — the grid is still waiting for the GPU lock): what "separated" means in A2
+A2's Δ clause says "separated = beyond V's seed floor". It is read with the probe's OWN rule (section 4 mechanical form, `scene_tap_probe.decide`): **the paired interval excludes 0 AND |Δ point| exceeds V's seed floor**. The floor is the value in `PROBE_RESULT.json` (`arms.V.seed_floor` = 0.003552…; A2's "0.0036" is that number rounded). `A2_RESULT.json` reports `row_depends_on_the_ci_clause`; a U2 / U4 that depends on it is quoted with that flag.
+Implementation note (no effect on the contract): the A2 copy of the GPU lease never deletes another job's lock (the banked copy removed a > 10-min lock whose pid Windows could not see, which would steal an MSYS-pid lock of another session).
