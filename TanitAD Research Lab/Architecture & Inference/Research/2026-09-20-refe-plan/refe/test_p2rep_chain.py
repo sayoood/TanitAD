@@ -65,6 +65,10 @@ def posix(p):
 
 def write_sh(path, text):
     Path(path).write_text(text, encoding="utf-8", newline="\n")
+    # +x (Master Mind 2026-10-15): the chain runs its shims DIRECTLY ("$nv", `flock` looked up on PATH).  Git Bash on the dev box needs no exec bit;
+    # Linux does, so on the POD every shim failed with rc 126: gpu_busy read "busy" forever (wait_clear never cleared, a 60 s TimeoutExpired), and a
+    # non-executable `flock` on PATH is skipped for the real /usr/bin/flock.  Found by the pod G-SUITE pre-run, raw/2026-10-15-p2rep-gsuite-pod/.
+    os.chmod(path, 0o755)
 
 
 def bash_run(script, env=None, timeout=300):
