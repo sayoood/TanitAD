@@ -1,3 +1,5 @@
+diff --git a/refe/test_rls1_queue.py b/refe/test_rls1_queue.py
+index 0348f13..3f28d2c 100644
 --- a/refe/test_rls1_queue.py
 +++ b/refe/test_rls1_queue.py
 @@ -6,6 +6,8 @@
@@ -9,7 +11,7 @@
    B2. RL-S1b: the chain's argv for C1 / R0b / R1b equals eval/rls1b_arms.json token for token and the real refe_rls1b gate accepts it; the whole arm loop run for "R0b C1 R1b": order, control
       (R0b vs C0's banked dumps, R1b vs C1's), profile, every monitor READY; a K3 kill (or a K-MON) of R0b STOPS the chain with its evidence banked; a missing control is refused.
    B. FAIL CLOSED: the chain's own stage 9c (launch, supervise_arm, the rc bookkeeping) extracted verbatim and run against a fake trainer / monitor / watcher: a healthy run; the monitor SIGKILLed
-@@ -523,6 +525,85 @@
+@@ -523,6 +525,85 @@ def rls1b_checks(text, tmp, only=None):
      return n
  
  
@@ -95,7 +97,7 @@
  # ------------------------------------------------------------------------------------------------------------------------------- C. the checker's memory
  def synth_scores(path, n, m=8, c=7, dup=False, space="logit"):
      import numpy as np
-@@ -644,6 +725,11 @@
+@@ -646,6 +727,11 @@ def main() -> int:
          return 0
      text = CHAIN.read_text(encoding="utf-8")
      n = 0
@@ -107,11 +109,11 @@
      with tempfile.TemporaryDirectory() as tmp:
          tmp = Path(tmp)
          # ---- A, B: the real interleavings and the fail-closed cases
-@@ -682,6 +768,7 @@
+@@ -684,6 +770,7 @@ def main() -> int:
          ]
          for name, mut, only in bmuts:
              n += must_fail(lambda mut=mut, only=only: rls1b_checks(mut, tmp, only), name)
 +        n += rls1c_all(text, tmp)
-         n += must_fail(lambda: loader_checks(tmp, module_mutation("    if not str(path).endswith(\".npz\"):", "    if True:", "original loader back")), "the original loader is back")
-     print(f"ZZTEST_PASS {n}")
-     return 0
+         # 2026-10-15: rl_val_eval.load_scores is fixed at the root, so "fall back to the original" is no longer a memory regression; the regression is
+         # the per-row decode of the whole member, re-introduced here inside the light loader (and pinned in the original by test_rl_val_eval.py).
+         n += must_fail(lambda: loader_checks(tmp, module_mutation('        out[k] = {"ckpt": int(ck[i]), "scores": scores[i], "space": sp}',

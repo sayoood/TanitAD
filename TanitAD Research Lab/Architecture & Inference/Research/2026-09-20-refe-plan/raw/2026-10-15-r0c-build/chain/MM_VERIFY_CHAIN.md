@@ -36,3 +36,27 @@ With `TMP` on C: all three pass. Only `test_p6_chain` needs `TMP` on E:, because
 - **Patches NOT applied to `refe/`:** running R0c is a PI decision (about 3.5 A40-h), and `PREREG_R0C_DRAFT.md` must be finalised before launch.
 - **When applied:** regenerate `SHIP_MANIFEST.json` at that commit. At the same re-ship, fix `eval/rl_val_eval.load_scores` at its root (one read per npz column), because it ships with RL-S1 and runs at `rls1_pod.sh:559`.
 - **UNVERIFIED:** any pod run; a real `launch_gate.py run` (mint) for `refe_rls1c`.
+
+## Rebase of PATCH_10 onto `5a81e8d` (2026-10-15, after the `rl_val_eval.load_scores` root fix)
+
+**Why.** `5a81e8d` changed `refe/test_rls1_queue.py` in two places, so the original `PATCH_10` no longer applied (`refe/test_rls1_queue.py:682`):
+- its pin of the old loader defect became "both loaders stay light";
+- the mutation "the original loader is back" was replaced by "the per-row decode is back in the light loader".
+
+**How it was rebuilt.** By replay, not by hand:
+1. The original `PATCH_10` was applied to the `94248ec` file it was built on.
+2. The two `5a81e8d` edit scripts were re-run on the result.
+3. The diff was taken against `5a81e8d`'s file. It is byte-identical to applying the rebased patch on `5a81e8d`.
+
+**Files.**
+- `PATCH_10_test_rls1_queue.diff` is now the rebased patch.
+- The original is kept as `PATCH_10_test_rls1_queue.on_94248ec.diff`.
+
+**Re-verified** on a fresh `git archive` of `5a81e8d`, with PATCH_1..12 applied (`git -c core.autocrlf=false apply`, the rebased PATCH_10, 0 CR bytes):
+
+| suite | result |
+|---|---|
+| `test_rls1_queue` | **134** |
+| `test_rls1_chain` | **512** |
+| `test_rl_r0c` | **26** |
+| `test_rl_val_eval` | **32** |
