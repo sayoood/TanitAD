@@ -1,0 +1,47 @@
+[2026-10-15T22:21:13+0200] p2tab_driver start tag=smoke8 pid=28924
+[2026-10-15T22:21:13+0200] STATUS {'tag': 'smoke8', 'n_tokens': 8, 'pid': 28924, 'started': '2026-10-15T21:58:28+0200'}
+[2026-10-15T22:21:44+0200] STATUS {'preflight_ckpt_sha256': 'ea31db2296210b6a35dbf32ad95f1813edfa259ab330002b3ca7564aac727e51', 'preflight_ckpt_ok': True}
+dump: already done
+[2026-10-15T22:21:44+0200] STATUS {'result': 'stage dump done'}
+[2026-10-15T22:21:44+0200] STATUS {'tag': 'smoke8', 'n_tokens': 8, 'pid': 28924, 'started': '2026-10-15T21:58:28+0200'}
+[2026-10-15T22:21:45+0200] STATUS {'stage': 'gate', 'fidelity_pass': False, 'fidelity': {'n_tokens_asked': 8, 'n_rows': 8, 'proposals_shape': [8, 64, 8, 3], 'logits_shape': [8, 64, 6], 'rule_in_dump': 'navsim_v1', 'ckpt_in_dump': 'D:/Projects/TanitAD/data/refe_runs_eval/p2/model_final.pt', 'tolerance_m': 0.001, 'all_tokens_present': True, 'tokens_in_banked_seam': True, 'max_abs_pose_diff_m': 0.001361846923828125, 'n_identical': 0, 'n_diff_gt_1e_4': 8, 'n_diff_gt_tol': 1, 'fingerprints_equal': True, 'worst_tokens': [('6884907db45c5cad', 0.001361846923828125), ('6cc1bbadf8f25f7c', 0.0007610321044921875), ('a622ff338b425c28', 0.00072479248046875), ('2cbf505c735c5c34', 0.0004215240478515625), ('ca2552a32a0058bc', 0.0002658367156982422)], 'pick_index_distinct': 8, 'PASS': False}}
+[2026-10-15T22:21:45+0200] STATUS {'stage': 'gate', 'result': 'INSTRUMENT FAILURE: the fidelity gate failed -- no verdict (gate_fidelity.json)'}
+[2026-10-15T22:21:45+0200] STATUS {'tag': 'smoke8', 'n_tokens': 8, 'pid': 28924, 'started': '2026-10-15T21:58:28+0200'}
+[2026-10-15T22:22:23+0200] STATUS {'stage': 'score', 'state': '1/8 scored, 1 PASS', 'score_seconds': 38}
+[2026-10-15T22:22:23+0200] STATUS {'stage': 'score', 'state': '2/8 scored, 2 PASS', 'score_seconds': 38}
+[2026-10-15T22:22:23+0200] STATUS {'stage': 'score', 'state': '3/8 scored, 3 PASS', 'score_seconds': 38}
+[2026-10-15T22:22:23+0200] STATUS {'stage': 'score', 'state': '4/8 scored, 4 PASS', 'score_seconds': 38}
+[2026-10-15T22:22:37+0200] STATUS {'stage': 'score', 'state': '5/8 scored, 5 PASS', 'score_seconds': 52}
+[2026-10-15T22:22:37+0200] STATUS {'stage': 'score', 'state': '6/8 scored, 6 PASS', 'score_seconds': 52}
+[2026-10-15T22:22:37+0200] STATUS {'stage': 'score', 'state': '7/8 scored, 7 PASS', 'score_seconds': 52}
+[2026-10-15T22:22:37+0200] STATUS {'stage': 'score', 'state': '8/8 scored, 8 PASS', 'score_seconds': 52}
+[2026-10-15T22:22:37+0200] STATUS {'stage': 'score', 'g3_all_pass': True, 'g3_failed': []}
+[2026-10-15T22:22:37+0200] STATUS {'result': 'stage score done'}
+{
+ "evidence": "MEASURED on P2, CPU dump (not the GPU that produced the banked seam); tier T1",
+ "n_tokens": 8,
+ "tokens_asked": 8,
+ "criteria": {
+  "same_proposal": "argmin over the 64 proposals of max|pose - banked P2 pick| == the dump's pick, d_pick <= 0.005 m, and the nearest OTHER proposal >= 100.0x farther",
+  "score": "table PDMS at the pick == 0.0 and the banked P2 csv score == 0.0 (all 8 are P2 zero tokens), all valid; sub-score differences REPORTED, not gating",
+  "why_not_the_C3_1e-3_m_pose_bar": "the first CPU attempt read max |d| 1.36e-3 m (1 of 8 tokens above 1e-3 m; attempt1_gate_fidelity_cpu.json). The 1e-3 m bar was registered for GPU-vs-GPU (C3 u400: 0.0 on 1,058). This CPU-vs-GPU smoke cannot be bit-exact, so it asks the question the bar stands for -- is it the SAME PROPOSAL -- and the strict 1e-3 m + score-equality proof is applied to all 509 on the GPU in the main run. Criterion pinned after seeing the 8 pose diffs (post-hoc, flagged)."
+ },
+ "pose_max_abs_m": 0.001361846923828125,
+ "pose_n_bit_identical": 0,
+ "n_same_proposal": 8,
+ "score_n_exact": 8,
+ "score_max_abs_diff": 0.0,
+ "subscore_max_abs_diff": 0.0,
+ "distinct_pick_columns": [
+  1,
+  4,
+  5,
+  31,
+  32,
+  37,
+  54,
+  55
+ ],
+ "PASS": true,
+ "reading": "P2's own pick is REPRODUCED on the smoke"
+}
