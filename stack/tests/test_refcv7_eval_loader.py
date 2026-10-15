@@ -369,3 +369,39 @@ def test_RED_a_REFCV7_env_that_contradicts_the_gates_REFCV6_env_is_REFUSED(rig, 
     finally:
         sys.modules.pop("refcv7_loader_env_conflict", None)
     assert "REFCV7_KIT" in str(e.value) and "disagree" in str(e.value)
+
+
+
+# --------------------------------------------------------------------------------------------- #
+# refcv8 X10: the eval set rides the pose-sync clock, as train() does (2026-10-15)               #
+# --------------------------------------------------------------------------------------------- #
+def _pose_sync_calls(rig, monkeypatch, sidecar):
+    """Drive build_eval_dataset up to its --eval-labels check (which comes AFTER the clock is set) with a stub
+    eval dataset that records enable_pose_sync, and an empty provider list. -> the recorded sidecar paths."""
+    import tanitad.data.v2_dataset as v2d
+    calls = []
+
+    class Stub(rig.L.trainer().V3Dataset):
+        def __init__(self, eps, **kw):                                  # no windows needed: the call is the point
+            pass
+
+        def enable_pose_sync(self, path, **kw):
+            calls.append(path)
+            return {"stub": True}
+
+    monkeypatch.setattr(v2d, "build_v2_providers", lambda *a, **k: [])
+    args = types.SimpleNamespace(graft_lan=False, goal_str=False, eval_cache="unused", v2_lru=1, u8_batches=False,
+                                 nav_from_v7=False, eval_labels=None, pose_sync_sidecar=sidecar)
+    cfg = types.SimpleNamespace(core=types.SimpleNamespace(window=4, encoder=types.SimpleNamespace(in_channels=3)))
+    with pytest.raises(SystemExit, match="eval-labels"):
+        rig.L.build_eval_dataset(None, cfg, args, {}, dataset_cls=Stub)
+    return calls
+
+
+def test_the_eval_dataset_rides_the_pose_sync_clock_exactly_as_train_does(rig, monkeypatch):
+    """MEASURED 2026-10-15 by the refcv8 milestone kit: train() calls `e_ds.enable_pose_sync(--pose-sync-sidecar)` on
+    the EVAL set (refc_v3_train.py, "refcv8 X10: the eval GT rides the SAME clock"). This loader never did, so
+    every loader-built refcv8 eval scored a differently-timed GT than the run's own in-run row. Mutation:
+    deleting the call turns this test RED. Control: a refcv7 argv (no sidecar) makes no call."""
+    assert _pose_sync_calls(rig, monkeypatch, "/x/pose_sync.jsonl") == ["/x/pose_sync.jsonl"]
+    assert _pose_sync_calls(rig, monkeypatch, None) == []

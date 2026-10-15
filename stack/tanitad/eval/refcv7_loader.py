@@ -782,6 +782,12 @@ def build_eval_dataset(model, cfg, args, config: dict, *, with_perception_target
     # (train():8725-8731 -- the train/eval overlap refusal needs the TRAIN cache; not built here)
     e_ds = dcls(e_eps, **kw)
     e_ds.u8_frames = bool(getattr(args, "u8_batches", False))
+    # train():9765-9766 -- refcv8 X10: the eval GT rides the SAME clock as the in-run eval. MEASURED 2026-10-15
+    # (refcv8 milestone kit): this loader never enabled it, so a loader-built refcv8 eval read the GT, `pose_last`
+    # and the actions on the UNSHIFTED pose clock while the run's in-run row was scored on the shifted one. G-EVAL
+    # could not see it (it feeds both models the same loader-built batch). A refcv7 argv has no sidecar: no-op.
+    if getattr(args, "pose_sync_sidecar", None):
+        rec["pose_sync"] = e_ds.enable_pose_sync(args.pose_sync_sidecar)
     nav_on = bool(getattr(args, "nav_from_v7", False))
     if not args.eval_labels:
         raise SystemExit(f"[{LOADER}] the run's argv has no --eval-labels")
