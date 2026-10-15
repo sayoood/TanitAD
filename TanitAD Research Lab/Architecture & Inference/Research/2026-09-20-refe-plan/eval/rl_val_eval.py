@@ -138,8 +138,11 @@ def load_scores(path):
     if path.endswith(".npz"):
         z = np.load(path, allow_pickle=False)
         sp = str(z["space"]) if "space" in z.files else "logit"
-        for i in range(len(z["token"])):
-            put(key_of((z["log"][i], z["token"][i], z["step"][i], z["rank"][i])), z["ckpt_step"][i], z["scores"][i], sp)
+        # ONE read per column.  Indexing the NpzFile per row (z["scores"][i]) decompresses the WHOLE member at every row: the 2026-10-14 RL-S1 monitor
+        # SIGKILL (raw/2026-10-14-rls1-monitor-fix) and the S1 read driver's MemoryError (~33.5 GB per arm, raw/2026-10-15-s1-read-driver).  Same dict out.
+        lg, tk, st, rk, ck, sc = (z[c] for c in ("log", "token", "step", "rank", "ckpt_step", "scores"))
+        for i in range(len(tk)):
+            put(key_of((lg[i], tk[i], st[i], rk[i])), ck[i], sc[i], sp)
     else:
         with open(path, encoding="utf-8") as fh:
             for ln in fh:

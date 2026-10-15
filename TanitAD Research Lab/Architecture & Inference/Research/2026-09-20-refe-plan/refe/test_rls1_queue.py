@@ -557,8 +557,10 @@ def loader_checks(tmp, RCm=None):
     new, p_new = peak_alloc(RCm.load_scores_light, str(f))
     assert list(old) == list(new) and all(old[k]["ckpt"] == new[k]["ckpt"] and old[k]["space"] == new[k]["space"] and old[k]["scores"].dtype == new[k]["scores"].dtype
                                           and old[k]["scores"].tobytes() == new[k]["scores"].tobytes() for k in old); n += 1                  # same dict, same bytes
-    assert p_old > 100 * (f.stat().st_size / 4), (p_old, f.stat().st_size)                                                                   # the original retains N full copies (N x N)
-    assert p_new < 4 * f.stat().st_size and p_new * 20 < p_old, (p_new, p_old); n += 1                                                       # the light loader: ONE read
+    # 2026-10-15: rl_val_eval.load_scores is fixed at the ROOT (one read per npz column), so BOTH loaders must stay light.  Before the fix this line
+    # asserted the original's N x N retention (> 25x the file); its return now goes RED here and in test_rl_val_eval.py (mutation npz_reread_per_row).
+    assert p_old < 4 * f.stat().st_size, (p_old, f.stat().st_size)                                                                            # rl_val_eval: ONE read
+    assert p_new < 4 * f.stat().st_size, (p_new, p_old); n += 1                                                                               # the light loader: ONE read
     synth_scores(base / "d.npz", 10, dup=True)
     for fn in (RV.load_scores, RCm.load_scores_light):                                                                                       # a duplicated key is an error in both
         try:
@@ -682,7 +684,11 @@ def main() -> int:
         ]
         for name, mut, only in bmuts:
             n += must_fail(lambda mut=mut, only=only: rls1b_checks(mut, tmp, only), name)
-        n += must_fail(lambda: loader_checks(tmp, module_mutation("    if not str(path).endswith(\".npz\"):", "    if True:", "original loader back")), "the original loader is back")
+        # 2026-10-15: rl_val_eval.load_scores is fixed at the root, so "fall back to the original" is no longer a memory regression; the regression is
+        # the per-row decode of the whole member, re-introduced here inside the light loader (and pinned in the original by test_rl_val_eval.py).
+        n += must_fail(lambda: loader_checks(tmp, module_mutation('        out[k] = {"ckpt": int(ck[i]), "scores": scores[i], "space": sp}',
+                                                                  '        out[k] = {"ckpt": int(ck[i]), "scores": np.load(path, allow_pickle=False)["scores"][i], "space": sp}',
+                                                                  "per-row decode back")), "the per-row decode is back in the light loader")
     print(f"ZZTEST_PASS {n}")
     return 0
 

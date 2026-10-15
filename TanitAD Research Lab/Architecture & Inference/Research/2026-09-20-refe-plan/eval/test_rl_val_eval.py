@@ -217,6 +217,32 @@ def suite(E) -> list:
             for n in ("X", "B"):
                 E.write_scores_npz(os.path.join(d, n + ".npz"), keys, [CK] * 12, np.stack([arms[n][k]["scores"] for k in keys]))
             back = E.load_scores(os.path.join(d, "X.npz"))
+            # each npz member is read ONCE (an NpzFile decompresses the whole member on every z[key] access)
+            class CountingNpz:
+                def __init__(self, z):
+                    self.z, self.n = z, {}
+
+                @property
+                def files(self):
+                    return self.z.files
+
+                def __getitem__(self, k):
+                    self.n[k] = self.n.get(k, 0) + 1
+                    return self.z[k]
+            real_load, box = E.np.load, {}
+
+            def counting_load(p, *a, **kw):
+                box["z"] = CountingNpz(real_load(p, *a, **kw))
+                return box["z"]
+            E.np.load = counting_load
+            try:
+                again = E.load_scores(os.path.join(d, "X.npz"))
+            finally:
+                E.np.load = real_load
+                if box:
+                    box["z"].z.close()                                           # Windows cannot delete an open npz
+            out["npz_one_read_per_column"] = bool(box) and max(box["z"].n.values()) == 1 and box["z"].n.get("scores") == 1 and \
+                all(np.array_equal(again[k]["scores"], back[k]["scores"]) for k in keys)
             out["npz_roundtrip"] = all(np.array_equal(back[k]["scores"], arms["X"][k]["scores"]) and back[k]["ckpt"] == CK and back[k]["space"] == "logit" for k in keys)
             E.write_scores_npz(os.path.join(d, "dup.npz"), keys[:1] * 2, [CK, CK], np.zeros((2, M, 7)))
             out["duplicate_scores_refused"] = raises(lambda: E.load_scores(os.path.join(d, "dup.npz")))
@@ -270,6 +296,8 @@ def suite(E) -> list:
 
 # (name, class, old snippet, new snippet) -- each snippet must occur EXACTLY once in rl_val_eval.py
 MUTATIONS = [
+    ("npz_reread_per_row", "io", "            put(key_of((lg[i], tk[i], st[i], rk[i])), ck[i], sc[i], sp)",
+     "            put(key_of((z[\"log\"][i], z[\"token\"][i], z[\"step\"][i], z[\"rank\"][i])), z[\"ckpt_step\"][i], z[\"scores\"][i], sp)"),
     ("pick_is_argmin", "select", "return int(np.argmax(sel)), sel", "return int(np.argmin(sel)), sel"),
     ("lane_factor_dropped", "select", "sel = sel * p[:, 6]", "sel = sel * 1.0"),
     ("lane_factor_always_on", "select", 'if rule == "navsim_v1_lane":\n        if s.shape[-1] < 7:', 'if True:\n        if s.shape[-1] < 7:'),
