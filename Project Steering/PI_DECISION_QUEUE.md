@@ -1931,3 +1931,17 @@ word. Default if unanswered: 3 (park), plus the zero-A40 build of 5.
 
 Evidence: `TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-15-rls1-calib/REPORT.md`, `.../raw/2026-10-15-rls1b-r0b-kill/`,
 `.../raw/2026-10-14-rls1b-attribution/REPORT.md`.
+
+**Update 2026-10-15 ~07:30Z: R0c is BUILT, WIRED and RE-VERIFIED at zero A40. It waits only on your word.**
+- **The flag.** `--epo-ref {base,armA}`, gate profile `refe_rls1c`, with a G-DVB entry that reads the BUILT reference. `--epo-ref base` is bit-identical
+  to today's trainer. Landed `ed39928` as `raw/2026-10-15-r0c-build/`.
+- **The chain.** `RLS1_ARMS="R0c"` runs R0's banked argv plus `--epo-ref armA`, token for token, read against its own arm A. C0 is a second control and is
+  never required. Landed `699d231` as `raw/2026-10-15-r0c-build/chain/`.
+- **The Master Mind re-ran every suite** on a fresh tip copy, with all 12 patches applied and LF preserved. All agree: `test_rl_r0c` 26 on torch 2.11
+  and on the pod's 2.7.1, `rls1_chain` 512, `rls1_queue` 134, `launch_gate --static` 659. The S1, P2-s1 and P6 chain suites are unchanged.
+- **On a yes, before the first R0c step:**
+  1. finalise `PREREG_R0C_DRAFT.md` (a pre-registration with both outcomes committed);
+  2. apply the 12 patches to `refe/`, fixing `rl_val_eval.load_scores` at the root in the same re-ship;
+  3. regenerate `SHIP_MANIFEST.json`, ship, and pre-run G-SUITE on the pod in the chain's exact environment.
+  Slot: after P2-s1 and before P6's GPU stages, as recommended above.
+- **Still unverified:** the bf16/GPU path on the A40 and a real `launch_gate.py run` mint for `refe_rls1c`. Both happen on the pod at launch.
