@@ -61,6 +61,9 @@ def posix(p):
 
 def write_sh(path, text):
     Path(path).write_text(text, encoding="utf-8", newline="\n")
+    # +x (Master Mind 2026-10-15, the test_p2rep_chain fix): the nvidia-smi and python shims are run DIRECTLY.  Git Bash needs no exec bit;
+    # Linux does (rc 126 on the pod, raw/2026-10-15-p2rep-gsuite-pod/).
+    os.chmod(path, 0o755)
 
 
 def bash_run(script, env=None, timeout=300):
