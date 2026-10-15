@@ -687,7 +687,32 @@ def chk_argv_helpers(m):
     assert m.argv_sha256(["--a", "1"]) == hashlib.sha256(b'["--a","1"]').hexdigest()
 
 
-CHECKS = [chk_pins, chk_harness_json_pins, chk_reads_table, chk_incomplete_gate, chk_refused_gate, chk_evidence_control, chk_swap_manifest, chk_swap_argv, chk_registered_values,
+def chk_abs_paths(m):
+    import types as _t
+    a = _t.SimpleNamespace(out="raw/x", cache="C:/abs/cache" if os.name == "nt" else "/abs/cache", ctx_cache=None, floor_dir="", heldout_logs="rel/h.txt", eval_dir=None)
+    m.abs_paths(a)
+    assert os.path.isabs(a.out) and a.out == os.path.abspath("raw/x") and os.path.isabs(a.heldout_logs), a
+    assert a.cache in ("C:/abs/cache", "/abs/cache") and a.ctx_cache is None and a.floor_dir == "" and a.eval_dir is None, a      # absolute / empty / None untouched
+    # behavioural, not textual (inspect.getsource reads the UNMUTATED file): stop cmd_read at its first path use and look at --out there
+    class Stop(Exception):
+        pass
+    seen, real = {}, m.find_eval_dir
+    b = _t.SimpleNamespace(out="raw/y", cache="raw/c", ctx_cache=None, floor_dir=None, heldout_logs=None, eval_dir=None)
+
+    def probe(x):
+        seen["out"] = b.out
+        raise Stop
+    m.find_eval_dir = probe
+    try:
+        m.cmd_read(b)
+    except Stop:
+        pass
+    finally:
+        m.find_eval_dir = real
+    assert os.path.isabs(seen.get("out", "")), ("cmd_read used a relative --out: abs_paths(a) must run first", seen)
+
+
+CHECKS = [chk_pins, chk_abs_paths, chk_harness_json_pins, chk_reads_table, chk_incomplete_gate, chk_refused_gate, chk_evidence_control, chk_swap_manifest, chk_swap_argv, chk_registered_values,
           chk_k5_problems, chk_plumbing_check, chk_cross_arm, chk_fetch, chk_arm_paths, chk_p3_floor, chk_p3_matches_harness, chk_classify_matches_harness, chk_k2, chk_k6, chk_k3, chk_promote_h2,
           chk_promote_h1, chk_h1_identity, chk_decide_complete, chk_decide_rederivation, chk_families_and_md, chk_loader_shim, chk_safe_tar, chk_argv_helpers]
 BYNAME = {f.__name__: f for f in CHECKS}
@@ -784,6 +809,8 @@ M = [
     ("k3_mem_limit_2gb", "rule", "mem = bool(ret is not None and ret > K3_GB)", "mem = bool(ret is not None and ret > 2 * K3_GB)", ["chk_k3"]),
     ("k3_time_limit_30pct", "rule", "tim = bool(rise is not None and rise > K3_TIME)", "tim = bool(rise is not None and rise > 0.3)", ["chk_k3"]),
     ("k3_gpu_delta_unread", "rule", "gpu = bool(dgb is not None and dgb > K3_GB)", "gpu = False", ["chk_k3"]),
+    ("abs_paths_not_called", "gate", "    abs_paths(a)\n    T: dict = {}", "    T: dict = {}", ["chk_abs_paths"]),
+    ("abs_paths_noop", "gate", "            setattr(a, n, os.path.abspath(v))", "            pass", ["chk_abs_paths"]),
     ("k3_median_limb_off", "rule", "(mem or gpu or tim or tmed)", "(mem or gpu or tim)", ["chk_k3"]),
     ("k3_window_not_differenced", "rule", "out.append((s * u - ps * pu) / (u - pu))", "out.append(s)", ["chk_k3"]),
     ("a7_rulings_dropped", "rule", "        _a[\"ruled\"] = A7_RULINGS[_a[\"id\"]]", "        pass", ["chk_k3"]),

@@ -542,7 +542,7 @@ def chk_load_head_pred(m):
         r = m.load_head_pred(p)
         assert r["keys"] == [("A", "t0"), ("A", "t1"), ("B", "t2")] and r["dropped_step_nonzero"] == 1 and r["duplicate_keys_identical"] == 0, r
         lg2 = lg.copy()
-        lg2[3] += 1.0
+        lg2[3] += 3.0                                    # beyond A8's one-logit bound: a different frame under one key
         np.savez(p, step=np.array([0, 0, 0, 0]), **dict(base, logit=lg2))
         try:
             m.load_head_pred(p)
@@ -550,6 +550,24 @@ def chk_load_head_pred(m):
             pass
         else:
             raise AssertionError("two different outputs for one key must be refused")
+        # A8: a duplicate within bf16 noise (0.03 logit, 0.09 m) is accepted, counted, and the FIRST copy is kept
+        lg3, sd3 = lg.copy(), sd.copy()
+        lg3[3], sd3[3] = lg[0] + np.float32(0.03), sd[0] + np.float32(0.09)
+        np.savez(p, step=np.array([0, 0, 0, 0]), **dict(base, logit=lg3, sdf_m=sd3))
+        r = m.load_head_pred(p)
+        assert r["keys"] == [("A", "t0"), ("A", "t1"), ("B", "t2")] and r["duplicate_keys_within_tol"] == 1 and r["duplicate_keys_identical"] == 0, r
+        assert np.array_equal(r["logit"][0], lg3[0]) and np.array_equal(r["sdf"][0], sd3[0]), "the FIRST copy must be kept"
+        assert abs(r["duplicate_max_abs_diff"][0] - 0.03) < 1e-3 and abs(r["duplicate_max_abs_diff"][1] - 0.09) < 1e-3, r["duplicate_max_abs_diff"]
+        # ... and one beyond a 2 m cell on the SDF alone is still refused
+        sd4 = sd.copy()
+        sd4[3] = sd[0] + np.float32(2.5)
+        np.savez(p, step=np.array([0, 0, 0, 0]), **dict(base, logit=lg3, sdf_m=sd4))
+        try:
+            m.load_head_pred(p)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("a duplicate 2.5 m apart on the SDF is a different frame and must be refused")
         np.savez(p, log=base["log"], token=base["token"], logit=lg[:, :39], sdf_m=sd[:, :39])
         try:
             m.load_head_pred(p)
@@ -736,6 +754,9 @@ M = [
     ("pair_seed_ignored", "pair", 'return {n: n_by_seed.get(s) for n, (c, s) in sorted(parsed.items()) if c != "N"}',
      'return {n: next(iter(n_by_seed.values()), None) for n, (c, s) in sorted(parsed.items()) if c != "N"}', ["chk_pair_with_n", "chk_selection_exact"]),
     ("later_step_rows_kept", "io", "keep = step == 0", "keep = step >= 0", ["chk_load_head_pred"]),
+    ("dup_bound_dropped", "io", "if d_lg > DUP_LOGIT_ATOL or d_sd > DUP_SDF_ATOL_M:", "if False:", ["chk_load_head_pred"]),
+    ("dup_sdf_bound_dropped", "io", "if d_lg > DUP_LOGIT_ATOL or d_sd > DUP_SDF_ATOL_M:", "if d_lg > DUP_LOGIT_ATOL:", ["chk_load_head_pred"]),
+    ("dup_keeps_last", "io", "                dup_close += 1\n", "                dup_close += 1\n                seen[k] = i\n                rows[rows.index(j)] = i\n", ["chk_load_head_pred"]),
     ("duplicate_keys_silent", "io", "if not (np.array_equal(lg[i], lg[j]) and np.array_equal(sd[i], sd[j])):", "if False:", ["chk_load_head_pred"]),
     ("unlabelled_counted_as_labelled", "io", 'out["valid"][s:e] = valid.numpy()', 'out["valid"][s:e] = True', ["chk_unlabelled", "chk_p1_exact"]),
     ("k2_bar_dropped", "bar", "K2_IOU_MIN = 0.80", "K2_IOU_MIN = 0.0", ["chk_k2"]),

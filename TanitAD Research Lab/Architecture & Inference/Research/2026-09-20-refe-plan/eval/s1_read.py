@@ -937,7 +937,20 @@ def main(argv=None) -> int:
     return cmd_read(a)
 
 
+PATH_ARGS = ("out", "cache", "ctx_cache", "floor_dir", "heldout_logs", "eval_dir")
+
+
+def abs_paths(a, names=PATH_ARGS) -> None:
+    """Every path an instrument subprocess receives must be ABSOLUTE: run_cmd runs them with cwd = the eval dir.  2026-10-15: a relative --out sent
+    perception_navtest.json to eval/raw/..., the step returned 0, and the read crashed on the missing file (selection failed outright)."""
+    for n in names:
+        v = getattr(a, n, None)
+        if isinstance(v, str) and v and not os.path.isabs(v):
+            setattr(a, n, os.path.abspath(v))
+
+
 def cmd_read(a) -> int:
+    abs_paths(a)
     T: dict = {}
     t_all = time.perf_counter()
     ev_dir = find_eval_dir(a.eval_dir)

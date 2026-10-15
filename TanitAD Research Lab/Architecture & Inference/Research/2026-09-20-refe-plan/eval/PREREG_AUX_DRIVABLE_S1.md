@@ -425,3 +425,41 @@ names one number where the text named none. No ruling relaxes a bar.
 - `read_k3` gains the median-window limb, with a check and a RED mutation in `test_s1_read.py`.
 
 Unchanged: every bar, arm, argv, seed, estimator, outcome name and the read order (A5: the first read happens after all registered arms exist).
+
+## Amendment A8 (2026-10-15 ~16:30Z, after all nine arms exist and BEFORE any S1 outcome is read): a duplicated held-out frame, and two read-path fixes
+
+**What happened.** The first two attempts at the nine-arm read stopped before any outcome was computed. No S1 outcome number has been read by anyone.
+- **Attempt 1.** The driver passed a relative `--out` to instrument subprocesses that run with `cwd` = `eval/`. The selection step could not
+  write its output; the navtest perception wrote its JSON under `eval/` and returned 0. The read then crashed on the missing file.
+  - **Fixed:** `eval/s1_read.py` `abs_paths()` makes every path argument absolute before any is used.
+  - **Proof:** check `chk_abs_paths`, which is behavioural (it stops `cmd_read` at its first path use), plus RED mutations
+    `abs_paths_not_called` and `abs_paths_noop`. `test_s1_read.py` 97 → 100.
+- **Attempt 2.** The held-out perception step (P1-HO) refused H1-s0's `head_pred_update400.npz`: *"key (…, `b7e55cdff61159db`) appears twice with
+  DIFFERENT head outputs"*.
+
+**The duplicated frame (MEASURED on the nine arms' banked dumps; instrument properties, not outcomes).**
+- **The dumps.** The trainer's held-out head dumps hold the 3,137 held-out sets, which are **1,705 unique t0 frames**: 1,432 tokens appear under
+  two ranks. The dumps carry `log`, `token` and `step`, but not `rank`, and `step` is 0 for every duplicate. The harness deduplicates by
+  `(log, token)` and required the two copies to be **bit-identical**.
+- **The pairs.** In all six head arms and both tags (`step0`, `update400`), **1,431 of 1,432** duplicate pairs are bit-identical.
+  - The single exception is the same frame in every arm and tag: token `b7e55cdff61159db`, **rows 95 and 3136**. Row 3136 is the dump's last
+    row, i.e. the final partial batch.
+  - Max |d| is **0.031 logit** and **0.094 m** of SDF. That is bf16 batch-composition noise, not a different input.
+
+**The change (instrument only).** `eval/aux_s1_readout.py` `load_head_pred`:
+- A duplicated `(log, token)` t0 frame keeps its **FIRST** copy, row 95, from a full batch.
+- A non-identical duplicate is accepted when max |d| ≤ **1.0 logit** and ≤ **2.0 m SDF**, i.e. one logit unit and one 2 m grid cell. These bounds come from
+  the instrument's own units, not from this data: they sit about 30× and 20× above the measured noise. They separate numerical noise from a
+  different frame filed under the same key, which is what the check exists to catch. Beyond either bound it still refuses.
+- **Reporting:** accepted duplicates are counted (`duplicate_keys_within_tol`) and their max |d| is published (`duplicate_max_abs_diff`) in every perception output.
+- **The first bound I tried was rejected.** A relative tolerance of 2⁻⁵ was checked first and failed on the SDF near its zero crossing. It was not
+  adjusted to fit the data. The unit-based bound above replaced it.
+- **Tests:** `test_aux_s1_readout.py` 63 → 66, with RED mutations `dup_bound_dropped`, `dup_sdf_bound_dropped` and `dup_keeps_last`. The existing
+  refuse-fixture moved from +1.0 to +3.0 logit, because +1.0 sits exactly on the new bound.
+
+**What it changes.** One frame out of 1,705 per head arm, in the held-out perception read (P1-HO) only, now uses the full-batch copy instead of
+refusing the arm. Unchanged: every bar, arm, argv, seed, estimator, outcome name, the navtest reads (P1 and P3, which govern K2) and the selection read.
+The harness tool id stays `aux_s1_readout/1`: its output contract only gains two reported fields.
+
+**Upstream cause, for the next trainer change (not S1).** The held-out head dump should carry `rank`, or write one row per t0 frame, so the
+duplicate never reaches the reader.

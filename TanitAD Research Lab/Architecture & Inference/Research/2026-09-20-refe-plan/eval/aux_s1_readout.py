@@ -59,6 +59,7 @@ import aux_drivable_head as AUX  # noqa: E402  -- the head's own target definiti
 import navsim_dac as ND  # noqa: E402  -- NAVSIM's 8 -> 41 pose interpolation
 
 TOOL = "aux_s1_readout/1"
+DUP_LOGIT_ATOL, DUP_SDF_ATOL_M = 1.0, 2.0      # A8: a duplicated t0 frame may differ by bf16 noise; more than one logit or one 2 m cell is a different frame
 N_BOOT, SEED = 10000, 20260927
 BANDS = ((0.0, 20.0), (20.0, 40.0), (40.0, 72.0))
 BAND_NAMES = ("0-20", "20-40", "40-72")
@@ -209,7 +210,8 @@ def auc_diff_read(Sa, Na, Sb, Nb, W):
 
 # ================================================================================================================ inputs
 def load_head_pred(path: str) -> dict:
-    """head_pred_<tag>.npz -> {keys [(log, token)], logit [N,40,32] f32, sdf [N,40,32] f32, dropped_step_nonzero, duplicate_keys_identical}."""
+    """head_pred_<tag>.npz -> {keys [(log, token)], logit [N,40,32] f32, sdf [N,40,32] f32, dropped_step_nonzero, duplicate_keys_identical,
+    duplicate_keys_within_tol, duplicate_max_abs_diff [logit, sdf_m]}.  A duplicated key keeps its FIRST row (A8)."""
     z = np.load(path, allow_pickle=False)
     for k in ("log", "token", "logit", "sdf_m"):
         if k not in z.files:
@@ -221,20 +223,28 @@ def load_head_pred(path: str) -> dict:
     step = np.asarray(z["step"], np.int64) if "step" in z.files else np.zeros(len(log), np.int64)
     keep = step == 0                                     # the label is the frame at t0 of the token (SPEC 3.1): a later on-policy step is another frame
     seen, rows = {}, []
-    dup_identical = 0
+    dup_identical, dup_close, dmax_lg, dmax_sd = 0, 0, 0.0, 0.0
     for i in np.flatnonzero(keep):
         k = (log[i], tok[i])
         if k in seen:
             j = seen[k]
             if not (np.array_equal(lg[i], lg[j]) and np.array_equal(sd[i], sd[j])):
-                raise ValueError(f"{path}: key {k} appears twice with DIFFERENT head outputs")
+                # A8: the held-out bank holds two ranks of one t0 frame, and the FIRST copy is kept.  bf16 batch composition moves an output by ulps
+                # (MEASURED 2026-10-15: one frame per arm, in the dump's final partial batch, <= 0.031 logit / 0.094 m); beyond one logit or one cell it is
+                # a DIFFERENT frame under the same key, and that is refused.
+                d_lg, d_sd = float(np.abs(lg[i] - lg[j]).max()), float(np.abs(sd[i] - sd[j]).max())
+                if d_lg > DUP_LOGIT_ATOL or d_sd > DUP_SDF_ATOL_M:
+                    raise ValueError(f"{path}: key {k} appears twice with DIFFERENT head outputs (max |d| logit {d_lg:.4g}, sdf {d_sd:.4g} m)")
+                dup_close += 1
+                dmax_lg, dmax_sd = max(dmax_lg, d_lg), max(dmax_sd, d_sd)
+                continue
             dup_identical += 1
             continue
         seen[k] = i
         rows.append(i)
     rows = np.asarray(rows, np.int64)
     return {"keys": [(log[i], tok[i]) for i in rows], "logit": lg[rows], "sdf": sd[rows], "dropped_step_nonzero": int((~keep).sum()),
-            "duplicate_keys_identical": dup_identical}
+            "duplicate_keys_identical": dup_identical, "duplicate_keys_within_tol": dup_close, "duplicate_max_abs_diff": [dmax_lg, dmax_sd]}
 
 
 def align_init_pred(trained: dict, init: dict) -> dict:
@@ -249,7 +259,8 @@ def align_init_pred(trained: dict, init: dict) -> dict:
     pos = {k: i for i, k in enumerate(ik)}
     rows = np.asarray([pos[k] for k in tk], np.int64)
     return {"keys": list(tk), "logit": init["logit"][rows], "sdf": init["sdf"][rows], "dropped_step_nonzero": init["dropped_step_nonzero"],
-            "duplicate_keys_identical": init["duplicate_keys_identical"]}
+            "duplicate_keys_identical": init["duplicate_keys_identical"], "duplicate_keys_within_tol": init.get("duplicate_keys_within_tol", 0),
+            "duplicate_max_abs_diff": init.get("duplicate_max_abs_diff", [0.0, 0.0])}
 
 
 def open_labels(label_set: str, store: str | None = None):
@@ -636,7 +647,8 @@ def cmd_perception(a) -> int:
         st = frame_stats(p, src)
         preds[name], stats[name] = p, st
         r = perception_reads(p, st, dz, a.n_boot)
-        r["input"] = {"pred_sha256": sha256_file(path), "dropped_step_nonzero": p["dropped_step_nonzero"], "duplicate_keys_identical": p["duplicate_keys_identical"]}
+        r["input"] = {"pred_sha256": sha256_file(path), "dropped_step_nonzero": p["dropped_step_nonzero"], "duplicate_keys_identical": p["duplicate_keys_identical"],
+                      "duplicate_keys_within_tol": p.get("duplicate_keys_within_tol", 0), "duplicate_max_abs_diff": p.get("duplicate_max_abs_diff", [0.0, 0.0])}
         if name in init_paths:                       # A2: the arm's own head at initialisation, on exactly the same keys
             try:
                 ip = align_init_pred(p, load_head_pred(init_paths[name]))
