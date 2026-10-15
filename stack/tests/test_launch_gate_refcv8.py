@@ -433,3 +433,67 @@ def test_the_kit_runs_the_gate_under_the_training_venv_and_preflights_its_import
     assert 'PY="${PYTHON:-python3}"' not in s                     # the historical default, which must not come back
     g = s.index("\ngate)")
     assert g < s.index('"$PY" -c "import torch, timm"') < s.index('flock -n 9 && pf PF-OK gpu-lock', g)
+
+
+# ------------------------------------------------- the first refcv8 gate run (2026-10-15, bc2816862b8c): G-LIVE / G-EVAL ---- #
+def _live8(n_calls, rows, dead=(), admitted=None):
+    steps = [{"keys": ["loss"], "nonfinite": [], "vals": {"loss": 10.0 - 0.01 * i}} for i in range(n_calls)]
+    grads = {"n_trainable_params": 5, "nonfinite_params": [], "dead_groups": [{"group": g, "numel": 4} for g in dead]}
+    return LG.judge_live([], [], steps, expect_steps=100, summary={"done": True, "step": 100}, train_rows=rows,
+                         grads=grads, prior=None, exit_msg=None, admitted_dead=admitted)
+
+
+_ROW100 = {"step": 100, "loss": 9.0}
+
+
+def test_G_LIVE_counts_the_fp32_gradient_share_replay_from_the_runs_own_record():
+    """MEASURED: 101 training loss calls for the 100-step smoke, the extra one being the fp32 replay of the step-50
+    reading, which stamps `gs_fp32_replay: 1.0` on its row. Admitted from that record; nothing else is."""
+    rows = [{"step": 50, "loss": 9.5, "gs_fp32_replay": 1.0}, _ROW100]
+    reasons, det = _live8(101, rows)
+    assert not any("loss calls" in r for r in reasons) and det["fp32_replay_steps"] == [50]
+    # DELIBERATE REGRESSIONS: the same 101 calls WITHOUT the record, and a second unexplained call WITH it
+    assert any("101 training loss calls observed, expected 100" in r for r in _live8(101, [_ROW100])[0])
+    assert any("102 training loss calls observed" in r for r in _live8(102, rows)[0])
+    assert _live8(100, [_ROW100])[1]["fp32_replay_steps"] == []                      # off: exactly the old rule
+
+
+def test_G_LIVE_refcv8_admits_the_RC_projection_ONLY_under_r8_no_rc():
+    rows8 = PROF["live_dead_admitted"]
+    assert tuple(rows8[:len(LG.PROFILES["refcv7"]["live_dead_admitted"])]) == tuple(LG.PROFILES["refcv7"]["live_dead_admitted"])
+    extra = {g: f for g, f, _w in rows8[len(LG.PROFILES["refcv7"]["live_dead_admitted"]):]}
+    assert extra == {"core.decoder.r8_rc_to_cond": "--r8-no-rc"}
+    adm = lambda argv: {g: w for g, f, w in rows8 if LG.has_flag(argv, f)}           # the call site's filter
+    dead = ["core.decoder.r8_rc_to_cond"]
+    assert not any("ZERO gradient" in r for r in _live8(100, [_ROW100], dead, adm(["--r8-no-rc"]))[0])
+    assert any("ZERO gradient" in r for r in _live8(100, [_ROW100], dead, adm([]))[0])          # RED without the flag
+    assert any("ZERO gradient" in r                                                             # and for any other group
+               for r in _live8(100, [_ROW100], ["core.decoder.r8_mod.proj.0"], adm(["--r8-no-rc"]))[0])
+
+
+def test_G_EVAL_the_gates_own_smoke_record_matches_under_the_smoke_rule_and_nothing_else():
+    """MEASURED: G-EVAL refused the gate's own smoke config.json because the smoke re-expresses the gradient-share
+    cadence, the B1 guard step and the emission start inside its 100 steps. The record matches iff its argv IS the
+    launch argv under `smoke_argv`'s rule AT THE SMOKE LENGTH; any model flag, or a schedule value off that rule, still
+    refuses. The record on disk is G-CKPT's resume run (`--steps 102`), so the length must not come from the record."""
+    launch = list(json.loads((ROOT / "ops" / "runs.d" / "refcv8-r101-s0.argv.json").read_text(encoding="utf-8"))["argv"])
+    smoke, dep = LG.smoke_argv(launch, 100, 50)
+    assert set(dep) == {"--steps", "--grad-share-every/--grad-share-at", "--b1-guard-step", "--r8-alloc-emit-start"}
+    rec = LG.set_flag(LG.set_flag(smoke, "--out", ["/tmp/smoke"]), "--steps", ["102"])   # the resume run's record
+    assert LG.stamps_written_for(rec, launch, 100, 50)[0]
+    assert not LG.stamps_written_for(rec, launch, None, 50)[0]                     # the old comparison: RED
+    assert not LG.stamps_written_for(rec, launch, 102, 50)[0]                      # length read from the record: RED
+    for f, v in (("--w-r8-listwise", ["1.0"]), ("--r8-n-alloc", ["16"]), ("--r8-alloc-emit-start", ["60"]),
+                 ("--b1-guard-step", ["99"])):
+        assert not LG.stamps_written_for(LG.set_flag(rec, f, v), launch, 100, 50)[0], f
+    assert LG.stamps_written_for(launch, launch, None, 50)[0]                      # --eval-stamps for THIS argv
+
+
+def test_G_EVAL_eval_identity_judges_through_the_smoke_rule():
+    """The helper above is the rule; this pins that G-EVAL's verdict USES it (the gate run on Thor is the end-to-end
+    check). Mutation: restoring the raw comparison `_argv_model_view(ctx.argv)` turns this RED."""
+    import inspect
+    src = inspect.getsource(LG.eval_identity)
+    assert "stamps_written_for(" in src and "ctx.local_argv() if smoke_cfg else" in src
+    assert "smoke_step_count(T, ctx.local_argv()" in src and "s_steps if smoke_cfg else None" in src
+    assert "_argv_model_view(ctx.argv)" not in src

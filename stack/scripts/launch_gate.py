@@ -666,6 +666,16 @@ _R7 = PROFILES["refcv7"]
 PROFILES["refcv8"] = dict(
     _R7, name="refcv8",
     open_items=_REFCV8_OPEN_ITEMS,
+    #: G-LIVE's admitted dead groups = refcv7's ten + ONE (MEASURED by the first refcv8 gate smoke, 2026-10-15,
+    #: bc2816862b8c: exactly this group of the refcv8 seams took ZERO gradient). `refc.py` applies it only when
+    #: `r8['rc'] is not None`, and `--r8-no-rc` (PI Q-A 2026-10-11, REQUIRED) feeds none: bypassed by construction,
+    #: kept BUILT (zero-init) for strict checkpoint loads. Admitted only while its flag is in the argv, like refcv7's;
+    #: the model-side declaration (BYPASS_DECLARATIONS) is owed at the next restart -- it touches code the binding
+    #: runs recorded.
+    live_dead_admitted=tuple(_R7["live_dead_admitted"]) + (
+        ("core.decoder.r8_rc_to_cond", "--r8-no-rc",
+         "the route-checkpoint -> cond projection; PI 2026-10-11 (Q-A): NO route checkpoint, so `r8['rc']` is None "
+         "and refc.py never applies it"),),
     #: pregate 2026-10-12 B1: the refcv8 trainer OPENS --join-defect-masks while building (refc_v3_train.py
     #: 1783-1792 -> join_label_hygiene.py:112). Under refcv7's tuple `_sentinel_argv` pointed it at the sentinel and
     #: G-HYG, G-DVB and G-EVAL all FAILED before any check body ran. MEASURED (pregate_2026-10-12, d014ff2): with
@@ -2597,8 +2607,18 @@ def judge_live(terms: list[dict], problems: list[str], steps: list[dict], *,
     if not (summary and summary.get("done") is True and int(summary.get("step", -1)) == expect_steps):
         reasons.append(f"summary.json does not say done at step {expect_steps} "
                        f"(got {summary!r}) -- the artifact, not an exit code, is the verdict")
-    if len(steps) != expect_steps:
-        reasons.append(f"{len(steps)} training loss calls observed, expected {expect_steps}")
+    # refcv8 X4: under a bf16 trunk the gradient-share reading is taken on an fp32 REPLAY of its step
+    # (`tanitad/train/grad_share.fp32_replay`, called before the training forward): ONE extra training-mode loss
+    # call per reading. MEASURED 2026-10-15 (refcv8 gate, bc2816862b8c): 101 calls for the 100-step smoke with one
+    # reading at step 50. Counted from the run's OWN record -- the replay stamps `gs_fp32_replay: 1.0` on its step's
+    # metrics row -- never assumed from the argv, so an unexplained extra call still FAILS.
+    replay_steps = sorted(int(r.get("step", -1)) for r in train_rows
+                          if r.get("gs_fp32_replay") == 1.0)
+    det["fp32_replay_steps"] = replay_steps
+    if len(steps) != expect_steps + len(replay_steps):
+        reasons.append(f"{len(steps)} training loss calls observed, expected {expect_steps}"
+                       + (f" + {len(replay_steps)} fp32 gradient-share replay(s) at {replay_steps}"
+                          if replay_steps else ""))
     n = max(len(steps), 1)
     per_term = []
     for t in terms:
@@ -4843,6 +4863,27 @@ def _argv_model_view(argv: list[str]) -> list[tuple[str, list[str]]]:
     return sorted((f, v) for f, v in flag_pairs(list(argv)) if f not in _NON_MODEL_FLAGS)
 
 
+def stamps_written_for(stamps_argv: list[str], launch_argv: list[str], smoke_steps: int | None,
+                       log_every: int) -> tuple[bool, dict]:
+    """Is a run record (`config.json`'s argv) written for THIS launch, model-wise? A record from THIS gate's G-LIVE
+    smoke (`smoke_steps` = the smoke length, from `smoke_step_count` exactly as `job_smoke` derives it) is compared with
+    the launch argv put through the smoke's ONE declared rule (`smoke_argv`: `--steps` and the step-valued schedule
+    flags re-expressed inside the smoke -- refcv8's gradient-share cadence, B1 guard step and emission start); any other
+    record (`--eval-stamps`, `smoke_steps=None`) with the launch argv itself. EXACT on every model flag either way.
+    MEASURED 2026-10-15 (refcv8 gate, bc2816862b8c): compared with the raw launch argv, the gate refused its own smoke's
+    record over exactly those four flags (`--grad-share-every`, `--grad-share-at`, `--b1-guard-step`,
+    `--r8-alloc-emit-start`), every model flag equal.
+    ⚠ The smoke length is NOT read from the record: the newest smoke config.json is G-CKPT's RESUME run, which re-writes
+    it with `--steps` = smoke + `resume_extra_steps` (MEASURED: `--steps 102` for the 100-step smoke). Re-applying the
+    rule at 102 moves the guard step and the emission start, and the gate's own record would still be refused."""
+    want, dep = list(launch_argv), {}
+    if smoke_steps is not None:
+        want, dep = smoke_argv(list(launch_argv), int(smoke_steps), log_every)
+    same = _argv_model_view(stamps_argv) == _argv_model_view(want)
+    return same, {"rule": "smoke_argv" if smoke_steps is not None else "identity", "smoke_steps": smoke_steps,
+                  "smoke_departures": dep}
+
+
 def latest_smoke_config(ctx: "Ctx") -> Path | None:
     """The config.json the trainer wrote in THIS gate dir's newest smoke (same ctx, same argv)."""
     d = Path(ctx.out_dir) / "smoke"
@@ -4871,12 +4912,16 @@ def eval_identity(ctx: Ctx, T, model_t, args_t, scratch: Path,
     stamps = read_json(stamps_path) if stamps_path else {}
     config = {k: v for k, v in stamps.items() if k != "argv"}
     config["argv"] = list(ctx.argv)
-    same_argv = _argv_model_view(stamps.get("argv") or []) == _argv_model_view(ctx.argv)
+    s_steps, s_le = smoke_step_count(T, ctx.local_argv(),
+                                     int(ctx.options.get("smoke_steps") or ctx.prof["smoke_steps"]))
+    same_argv, rule = stamps_written_for(
+        list(stamps.get("argv") or []), ctx.local_argv() if smoke_cfg else list(ctx.argv),
+        s_steps if smoke_cfg else None, s_le)
     det["eval_stamps"] = {"path": stamps_path, "sha256": sha256_file(stamps_path)
                           if stamps_path else None,
                           "source": ("this gate's smoke (the trainer's own config.json for THIS "
                                      "argv)" if smoke_cfg else "--eval-stamps"),
-                          "written_for_this_argv": same_argv,
+                          "written_for_this_argv": same_argv, "argv_rule": rule,
                           "used_keys": sorted(k for k in config if k != "argv")}
     if not stamps_path:
         return ["G-EVAL needs the launch's own run record: run the smoke (G-LIVE) in this gate "
