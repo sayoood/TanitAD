@@ -144,10 +144,28 @@ def main():
         lab.write_text(json.dumps({**base, "throughput_sets_s": thr}))
         v, det = O.lab_bar(lab)
         t(f"labbar/thr_{thr}_is_{want}", v == want)
+    # a compared set that differs makes the PRODUCER (diag_p6_labeller_identity.py) set identity_ok False; < 64 compared fails judge_lab's D1(a)
     for nm, patch in (("identity_failed", {"identity_ok": False}), ("only_32_sets_compared", {"n_sets": 32, "identity_equal_sets": 32}), ("stale_not_refused", {"stale_refused": False}),
-                      ("some_sets_differ", {"identity_equal_sets": 255})):
+                      ("some_sets_differ", {"identity_ok": False, "identity_equal_sets": 63}), ("fewer_than_64_compared", {"identity_equal_sets": 63})):
         lab.write_text(json.dumps({**base, "throughput_sets_s": 12.0, **patch}))
         t(f"labbar/{nm}_is_bad_whatever_the_throughput", O.lab_bar(lab)[0] == "bad")
+    # the REAL producer's shape (Master Mind 2026-10-15): the pod's clean early lab, 256 labelled, 64 compared (min(n_sets, 64)), all equal.  The old
+    # `identity_equal_sets == n_sets` rule logged it "bad identity=False" while the chain's own refusal read ZZLAB_IDENTITY_PASS and judge_lab passes it.
+    real = {"n_sets": 256, "distinct_tokens": 86, "workers": 7, "labelled": 256, "identity_equal_sets": 64, "identity_ok": True,
+            "throughput_sets_s": 10.887, "throughput_bar_sets_s": 6.735, "throughput_ok": True, "stale_refused": True}
+    lab.write_text(json.dumps(real))
+    v, det = O.lab_bar(lab)
+    t("labbar/real_producer_shape_256_labelled_64_compared_is_ok", v == "ok" and det["identity"] is True)
+    # lab_bar exists to PREDICT the launch gate: its identity verdict must equal judge_lab's D1(a)/D1(c) on every fixture
+    import gate_checks as G  # noqa: E402
+    fx = [real, {**real, "identity_ok": False}, {**real, "identity_equal_sets": 63}, {**real, "n_sets": 32, "identity_equal_sets": 32},
+          {**real, "stale_refused": False}, {**base, "throughput_sets_s": 12.0}]
+    agree = []
+    for d in fx:
+        lab.write_text(json.dumps(d))
+        g_ok = not any(s.startswith(("D1(a)", "D1(c)")) for s in G.judge_lab(d, [], d.get("workers", 7)))
+        agree.append(O.lab_bar(lab)[1]["identity"] is g_ok)
+    t("labbar/identity_verdict_equals_judge_lab_on_every_fixture", all(agree) and len(agree) == 6)
     lab.write_text(json.dumps(base))
     t("labbar/no_throughput_is_bad", O.lab_bar(lab)[0] == "bad")
     t("labbar/missing_file_is_bad", O.lab_bar(tmp / "nope.json")[0] == "bad")

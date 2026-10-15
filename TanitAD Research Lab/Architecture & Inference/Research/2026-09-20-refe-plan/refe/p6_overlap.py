@@ -122,7 +122,10 @@ def lab_bar(path):
     except (OSError, json.JSONDecodeError) as e:
         return "bad", {"why": f"unreadable: {type(e).__name__}"}
     thr = d.get("throughput_sets_s")
-    ident = (bool(d.get("identity_ok")) and d.get("n_sets", 0) >= 64 and d.get("identity_equal_sets") == d.get("n_sets")      # ALL sets bit-identical, over >= 64 (gate_checks.judge_lab)
+    # EXACTLY gate_checks.judge_lab's D1(a) + D1(c) (Master Mind 2026-10-15): the labeller compares min(n_sets, 64) sets and sets `identity_ok`
+    # only when every compared set is bit-identical, so `identity_equal_sets` is 64 of 256 on a clean run.  The old `== n_sets` read the pod's clean
+    # early lab (64/64 compared, ZZLAB_IDENTITY_PASS, 10.887 sets/s) as "bad identity=False" -- a stricter bar than the gate it exists to predict.
+    ident = (bool(d.get("identity_ok")) and d.get("n_sets", 0) >= 64 and (d.get("identity_equal_sets") or 0) >= 64
              and bool(d.get("stale_refused")))
     det = {"thr": thr, "bar": BAR_GATE, "workers": d.get("workers"), "identity": ident}
     if not ident or not isinstance(thr, (int, float)):

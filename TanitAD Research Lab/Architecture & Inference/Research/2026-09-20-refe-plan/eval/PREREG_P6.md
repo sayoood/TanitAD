@@ -1,4 +1,35 @@
-# P6: the paper-faithful full REFe run on one A40 (pre-registration, DRAFT)
+# P6: the paper-faithful full REFe run on one A40 (pre-registration, IN FORCE 2026-10-15)
+
+> ⭐ **IN FORCE. Finalised 2026-10-15 ~17:15Z, BEFORE P6's first training step.**
+> - P6's first GPU stage waits for P2-s1, which was training at 16:30Z (GPU 100 %).
+> - Both preconditions hold: (1) P2 R2 is GO (`eval/RESULT_P2.md`, `78e9bc9`); (2) P6-T, P6-N, P6-Y and P6-D were decided on 2026-10-11,
+>   and P6-C on 2026-10-14.
+> - **From here on, nothing below may change without a dated amendment written before the read.** The DRAFT notes further down are kept as history.
+>
+> **The 11-vCPU configuration, MEASURED on the pod** (`/workspace/data/refe_p6/chain.log`, `lab_early.json`; ⛔ pod paths, mirrored into this
+> amendment because the pod is not durable):
+> - **Code.** Ship commit `963638a`, ship-tree sha256 `3a226316…`, `p6_pod.sh` md5 `cb627bfe075e` (= the chain's own start line).
+> - **Launch.** 16:13:29Z with `P6_FREE_NAVLOGS=1 P6_YAW_WRAP=off P6_DD_GB=64`, in **overlap**: CPU-only stages run beside P2-s1 at nice 19,
+>   and the first GPU stage waits for it.
+> - **Cores 11** (cgroup v1 cfs): **label workers 7, cache workers 11**. Overlap cap 8 (`ZZOVERLAP_CAP`, census burn 1.80–1.81 cores).
+> - **Early G-LIVE-LAB**, on the first 3 logs' D9 parts, beside P2-s1's trainer:
+>   - **identity:** 64 of 64 compared sets are bit-identical to the offline labeller (256 labelled, 86 distinct tokens);
+>   - **stale proposal:** a one-step-stale proposal was refused;
+>   - **throughput:** **10.887 sets/s at 7 workers**, against the gate's **6.735** (1.5 × the needed 4.49). It was measured beside a training
+>     run, so it is a LOWER bound on the pool-alone rate;
+>   - **verdict:** FIT on both.
+>   - The launch gate re-measures G-LIVE-LAB at launch, and **that** reading binds. This one only de-risks it.
+> - ⚠️ **An instrument defect, with no effect on the run.** The chain logged the early reading as `ZZLAB_BAR bad … identity=False`.
+>   - The cause: `p6_overlap.lab_bar` demanded `identity_equal_sets == n_sets` (256). The labeller compares `min(n_sets, 64)` sets, and the
+>     gate's `judge_lab` needs ≥ 64.
+>   - Nothing refuses on that line: the chain's refusal reads `ZZLAB_IDENTITY_PASS`, and it passed.
+>   - Fixed in `refe/p6_overlap.py` in the same commit as this amendment. `lab_bar` now equals `judge_lab`'s D1(a)/D1(c) on every fixture
+>     (`test_p6_overlap.py` 54, with the old rule RED).
+> - **Seed floor F.** P2-s1 started training at 16:13:26Z, and F is read from it under the rule below. If it yields no valid read, the S1
+>   no-head arms are the fallback, as written.
+> - **Related since the draft, not a change to this arm.** The S1 aux drivable-area head was NOT promoted (`raw/2026-10-15-s1-read/`): frozen
+>   visual features reach navtest P1 IoU ~0.50 against K2's 0.80. This bears on P7.1's DESIGN (below), not on P6: a P7.1 head on a frozen trunk
+>   inherits that ceiling unless the scene-tap probe (`raw/2026-10-15-scene-tap-probe/`) or a trunk-trained variant says otherwise.
 
 > ⛔ **DRAFT. It is not in force until both of these hold:**
 > 1. P2 has a verdict under `eval/PREREG_P2.md`.
