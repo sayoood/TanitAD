@@ -32,5 +32,14 @@ execution-order amendment had landed as A5 first.
   - `adam_head_params_with_state` 43 / 43.
 - **Resources.** Preflight measured 2.0 s per microbatch and 5.51 GB of GPU memory.
 
-**H1's fix: NOT YET VERIFIED on the A40.** The strict-determinism path and the cuBLAS env at process start are what this arm adds. Its first A40 preflight is
-**H1-s0**, the second arm in the queue. If it refuses, the chain logs `ZZS1AUX_REFUSED` and the pod watcher wakes the Master Mind.
+**H1's fix: VERIFIED on the A40 (MEASURED, `a40_H1-s0_PREFLIGHT_PASS.json`).** This arm adds the strict-determinism path, with
+`CUBLAS_WORKSPACE_CONFIG=:4096:8` exported at process start on the preflight line.
+- **The arm.** H1-s0's preflight passed at 2026-10-15T06:58:57Z (`verdict PASS`, `gpu_mem_gb` 5.52). The chain then logged `ARM_GATE_OK H1-s0` at 07:06:34Z,
+  `ARM_TRAIN_START` at 07:08:23Z and `ARM_DONE` at 08:36:00Z.
+- **G12 `ok: true`** on the feed-off path, the one that refused at 23:31Z on 10-14:
+  - `reference_replay_identical: true`, `scorer_params_bit_identical_2steps: true`, `identity_probe_reads_one_ulp: true`;
+  - `score_to_head_grads_all_none: true`;
+  - every head group reads **exactly 0.0 at `w_aux` 0**;
+  - `adam_head_params_with_state` 43 / 43, `head_retained_gb` 0.463.
+- ⇒ **Both A6 instrument fixes now hold on the pod's GPU, build and data.** The later arms H2-s1, H2-s2 and H1-s1 also passed their gates
+  (`chain.log`).
