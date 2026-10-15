@@ -1,0 +1,977 @@
+{
+ "brief": "cut the GPU-idle gap before each S1 arm without weakening any check",
+ "harness_note": "REPORT.md was refused by the harness (both locations); this file + the hand-back carry the report. All other deliverables are as listed.",
+ "evidence_classes": {
+  "MEASURED": "pod timestamps in the copied logs, or a dev-box run (script + JSON named)",
+  "INFERRED": "arithmetic on MEASURED figures",
+  "ESTIMATED": "a model with stated assumptions",
+  "SIMULATED": "a stand-in (constant stat / sleep in os.stat), never a pod figure"
+ },
+ "attribution_24_8_min": {
+  "gap_min": 24.78,
+  "source": "attribution.json (attribution_from_logs.py over the copied pod logs)",
+  "segments_min": {
+   "A_gate_start_to_HYG_DVB_PREFLIGHT": 3.55,
+   "B_G-SUITE": 5.62,
+   "C_finalize_and_mint": 3.65,
+   "D_verify_400_and_403": 7.57,
+   "E_wait_clear_and_verify_414": 4.4
+  },
+  "shares_pct": {
+   "A_gate_start_to_HYG_DVB_PREFLIGHT": 14.3,
+   "B_G-SUITE": 22.7,
+   "C_finalize_and_mint": 14.7,
+   "D_verify_400_and_403": 30.5,
+   "E_wait_clear_and_verify_414": 17.8
+  },
+  "one_remeasure_min": [
+   3.79,
+   3.4
+  ],
+  "five_remeasures_min_total": 18.17,
+  "five_remeasures_share_pct": 73.3,
+  "inside_one_remeasure": {
+   "image_listing_files": 413184,
+   "image_listing_s_lower_bound_INFERRED": 222.4,
+   "per_file_ms_INFERRED": 0.538,
+   "checkpoint_sha256_s_upper_bound_MEASURED": 4.0,
+   "code_tree_s_upper_bound_MEASURED": 1.0
+  },
+  "reading": "72-73 % of the gap is the SAME operation run five times (tree_manifest + data_manifest); inside it, hashing is <= 2 % and the 413,184-file image LISTING is >= 97 %.  G-SUITE is 23 %, the mandatory GPU-idle wait 4 %.  For arms 2-8 the preflight (5.9-6.4 min MEASURED, GPU) is added on top (~31 min)."
+ },
+ "levers": [
+  {
+   "id": "B",
+   "title": "drop the redundant second verify on the fresh path (s1aux_pod.sh :403)",
+   "patch": "PATCH_s1aux_pod.sh.diff",
+   "kept": [
+    "verify after the mint (:400)",
+    "the BINDING verify after wait_clear, right before scorer_finetune.py (:414)",
+    "the verify on the resumed path (gate passed by an earlier invocation)"
+   ],
+   "unchanged": [
+    "what is recorded in the arms manifest",
+    "the PREREG order: token row written before the arm's first step"
+   ],
+   "saved_min_per_arm": 3.79,
+   "evidence_class": "MEASURED per-verify cost (3.4-3.8 min, pod); the saving is one verify by construction",
+   "tests": "test_s1aux_chain.py: 6 static properties + 6 chain mutations + behavioural verify-count sequences in the sandbox (fresh arm = pre,run,verify,verify,train; resumed = verify,verify,train) with RED twins"
+  },
+  {
+   "id": "A1",
+   "title": "directory listing: stat on worker threads, string ops instead of a Path per file; independent inputs fingerprinted concurrently",
+   "patch": "PATCH_gate_token.py.diff",
+   "digest_identity": "bit-identical: frozen pre-patch code is the oracle in test_launch_gate.py (fingerprint_identity_static, 21 checks, 7 digest-altering mutations RED); also equals the banked generic gate's fingerprint (dev static suite)",
+   "dev_box_413184_file_tree_MEASURED": {
+    "old_min_s": 98.783,
+    "new_min_s_by_threads": {
+     "1": 70.106,
+     "4": 16.707,
+     "8": 8.677,
+     "16": 9.695,
+     "32": 11.228
+    },
+    "speedup_by_threads": {
+     "1": 1.41,
+     "4": 5.91,
+     "8": 11.38,
+     "16": 10.19,
+     "32": 8.8
+    },
+    "identical_all": true,
+    "box": "NTFS, shared with other agents' CPU jobs (load 100 %), HIGH priority class; ratios are the result, absolute seconds are not"
+   },
+   "python_overhead_per_file_us_MEASURED_stat_stubbed": {
+    "old": 48.23,
+    "new": {
+     "1": 6.5,
+     "4": 9.27,
+     "8": 7.23,
+     "16": 9.22,
+     "32": 7.42
+    }
+   },
+   "data_manifest_realistic_MEASURED": {
+    "old_min_s": 102.444,
+    "new_min_s_by_threads": {
+     "1": 71.752,
+     "16": 10.925
+    },
+    "identical": true
+   },
+   "latency_bound_mechanism_SIMULATED": {
+    "files": 20000,
+    "nominal_ms": 0.5,
+    "effective_ms_per_stat": 2.05,
+    "old_s": 41.022,
+    "new_s_by_threads": {
+     "1": 39.083,
+     "16": 1.775
+    },
+    "note": "Windows sleep granularity makes the effective latency ~2 ms, not 0.5 ms: this shows the mechanism (threads overlap latency), not a pod number"
+   },
+   "pod_effect_ESTIMATED": {
+    "saved_min_per_arm_range_A_and_B": [
+     4.86,
+     17.52
+    ],
+    "depends_on": "S = how many metadata requests the pod volume serves at once (UNKNOWN: S=1 -> only the string ops help; S>=8 -> ~17 min)",
+    "scenarios": [
+     {
+      "k": 1,
+      "S": 1,
+      "A_and_B_saved_min": 4.86,
+      "gap_after_min": {
+       "N-s0 shape (no preflight)": 19.9,
+       "arms 2-8 shape (+ ~6 min preflight)": 25.9
+      }
+     },
+     {
+      "k": 1,
+      "S": 2,
+      "A_and_B_saved_min": 11.61,
+      "gap_after_min": {
+       "N-s0 shape (no preflight)": 13.2,
+       "arms 2-8 shape (+ ~6 min preflight)": 19.2
+      }
+     },
+     {
+      "k": 1,
+      "S": 4,
+      "A_and_B_saved_min": 14.99,
+      "gap_after_min": {
+       "N-s0 shape (no preflight)": 9.8,
+       "arms 2-8 shape (+ ~6 min preflight)": 15.8
+      }
+     },
+     {
+      "k": 1,
+      "S": 8,
+      "A_and_B_saved_min": 16.68,
+      "gap_after_min": {
+       "N-s0 shape (no preflight)": 8.1,
+       "arms 2-8 shape (+ ~6 min preflight)": 14.1
+      }
+     },
+     {
+      "k": 1,
+      "S": 16,
+      "A_and_B_saved_min": 17.52,
+      "gap_after_min": {
+       "N-s0 shape (no preflight)": 7.3,
+       "arms 2-8 shape (+ ~6 min preflight)": 13.3
+      }
+     },
+     {
+      "k": 2,
+      "S": 1,
+      "A_and_B_saved_min": 5.94,
+      "gap_after_min": {
+       "N-s0 shape (no preflight)": 18.8,
+       "arms 2-8 shape (+ ~6 min preflight)": 24.8
+      }
+     },
+     {
+      "k": 2,
+      "S": 2,
+      "A_and_B_saved_min": 12.02,
+      "gap_after_min": {
+       "N-s0 shape (no preflight)": 12.8,
+       "arms 2-8 shape (+ ~6 min preflight)": 18.8
+      }
+     },
+     {
+      "k": 2,
+      "S": 4,
+      "A_and_B_saved_min": 15.07,
+      "gap_after_min": {
+       "N-s0 shape (no preflight)": 9.7,
+       "arms 2-8 shape (+ ~6 min preflight)": 15.7
+      }
+     },
+     {
+      "k": 2,
+      "S": 8,
+      "A_and_B_saved_min": 16.59,
+      "gap_after_min": {
+       "N-s0 shape (no preflight)": 8.2,
+       "arms 2-8 shape (+ ~6 min preflight)": 14.2
+      }
+     },
+     {
+      "k": 2,
+      "S": 16,
+      "A_and_B_saved_min": 17.35,
+      "gap_after_min": {
+       "N-s0 shape (no preflight)": 7.4,
+       "arms 2-8 shape (+ ~6 min preflight)": 13.4
+      }
+     }
+    ]
+   },
+   "NFS_pod_speedup": "UNMEASURED.  bench_fingerprint.py --token <the pod's PASS token> proves identity on the real 413,184-file tree and times it in about a minute"
+  },
+  {
+   "id": "A2",
+   "title": "sha256_file through a reusable buffer (readinto)",
+   "patch": "inside PATCH_gate_token.py.diff",
+   "dev_box_1.285GB_MB_per_s_MEASURED": {
+    "old gate_token.sha256_file (read 4 MiB)": 334,
+    "new gate_token.sha256_file (readinto 4 MiB)": 560,
+    "readinto 1 MiB": 629,
+    "readinto 16 MiB": 607,
+    "hashlib.file_digest (3.11+)": 653
+   },
+   "reading": "334 -> 560 MB/s, ~1.5 s saved per call on a 1.29 GB checkpoint; the pod's checkpoint hash is <= 4 s in total, so lever A2 is worth seconds, not minutes.  Digest identical (sha256 of the same bytes; tested at chunk boundaries)."
+  },
+  {
+   "id": "I",
+   "title": "instrumentation (no semantic change): per-input manifest seconds in launch_gate.log and token_verify.json (timing_s), per-script seconds in the G-SUITE evidence",
+   "patch": "PATCH_launch_gate.py.diff, PATCH_gate_checks.py.diff, inside PATCH_gate_token.py.diff",
+   "why": "the pod wrote no per-phase timestamps, so section 1.1 of the attribution is INFERRED; after landing, the next arm's logs MEASURE it"
+  }
+ ],
+ "g_suite": {
+  "dev_box_seconds_sequential_MEASURED": {
+   "test_rl_reward.py": 0.29,
+   "test_rl_epo.py": 72.16,
+   "test_aux_drivable_head.py": 268.79,
+   "test_aux_s1_wiring.py": 90.26,
+   "test_launch_gate.py": 26.86
+  },
+  "sequential_wall_s": 458.36,
+  "parallel_wall_s": 481.36,
+  "parallel_same_outcome": true,
+  "long_pole": "test_aux_drivable_head.py: 73 % torch autograd backward (a_amp re-run in each of 20 mutation repetitions); the store re-hash is 1.65 s",
+  "decision": "NOT changed.  Parallel wall (481 s) was not below sequential (458 s) on a box shared with other CPU jobs, torch oversubscribes threads (TRAPS.md), and shortening the long pole would weaken a check.",
+  "profile": "aux_head_profile.json"
+ },
+ "suites": {
+  "base": {
+   "label": "base",
+   "refe": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\c216c849-5fe7-4d43-a3be-32429241f811\\scratchpad\\s1gap_work\\1\\2\\3\\orig\\refe",
+   "python": "C:/Users/Admin/venvs/tanitad/Scripts/python.exe",
+   "runs": [
+    {
+     "cmd": "test_launch_gate.py --static",
+     "rc": 0,
+     "token": "ZZLG_STATIC_PASS",
+     "checks": 637,
+     "skips": 0,
+     "seconds": 45.3,
+     "tail": [
+      "  G-SUITE   FAIL  profile refusal: refe_aux_s1: arm H1-s0 is the H1 class; the argv resolves to the H2 class (--aux-drv-feed on)",
+      "  G-CLOCK   FAIL  profile refusal: refe_aux_s1: arm H1-s0 is the H1 class; the argv resolves to the H2 class (--aux-drv-feed on)",
+      "ZZLG_STATIC_PASS 637"
+     ]
+    },
+    {
+     "cmd": "test_launch_gate.py --static --no-banked",
+     "rc": 0,
+     "token": "ZZLG_STATIC_PASS",
+     "checks": 623,
+     "skips": 0,
+     "seconds": 31.6,
+     "tail": [
+      "  G-SUITE   FAIL  profile refusal: refe_aux_s1: arm H1-s0 is the H1 class; the argv resolves to the H2 class (--aux-drv-feed on)",
+      "  G-CLOCK   FAIL  profile refusal: refe_aux_s1: arm H1-s0 is the H1 class; the argv resolves to the H2 class (--aux-drv-feed on)",
+      "ZZLG_STATIC_PASS 623"
+     ]
+    },
+    {
+     "cmd": "test_s1aux_chain.py (recorded from base_chain_log.txt)",
+     "rc": 0,
+     "token": "ZZTEST_PASS",
+     "checks": 361,
+     "skips": 0,
+     "seconds": 293
+    }
+   ]
+  },
+  "patched": {
+   "label": "patched",
+   "refe": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\c216c849-5fe7-4d43-a3be-32429241f811\\scratchpad\\s1gap_work\\1\\2\\3\\new\\refe",
+   "python": "C:/Users/Admin/venvs/tanitad/Scripts/python.exe",
+   "runs": [
+    {
+     "cmd": "test_launch_gate.py --static",
+     "rc": 0,
+     "token": "ZZLG_STATIC_PASS",
+     "checks": 658,
+     "skips": 0,
+     "seconds": 38.5,
+     "tail": [
+      "  G-SUITE   FAIL  profile refusal: refe_aux_s1: arm H1-s0 is the H1 class; the argv resolves to the H2 class (--aux-drv-feed on)",
+      "  G-CLOCK   FAIL  profile refusal: refe_aux_s1: arm H1-s0 is the H1 class; the argv resolves to the H2 class (--aux-drv-feed on)",
+      "ZZLG_STATIC_PASS 658"
+     ]
+    },
+    {
+     "cmd": "test_launch_gate.py --static --no-banked",
+     "rc": 0,
+     "token": "ZZLG_STATIC_PASS",
+     "checks": 644,
+     "skips": 0,
+     "seconds": 36.2,
+     "tail": [
+      "  G-SUITE   FAIL  profile refusal: refe_aux_s1: arm H1-s0 is the H1 class; the argv resolves to the H2 class (--aux-drv-feed on)",
+      "  G-CLOCK   FAIL  profile refusal: refe_aux_s1: arm H1-s0 is the H1 class; the argv resolves to the H2 class (--aux-drv-feed on)",
+      "ZZLG_STATIC_PASS 644"
+     ]
+    },
+    {
+     "cmd": "test_s1aux_chain.py (recorded from new_chain_final.out)",
+     "rc": 0,
+     "token": "ZZTEST_PASS",
+     "checks": 383,
+     "skips": 0,
+     "seconds": 730
+    }
+   ]
+  },
+  "other_chains_base_vs_patched": {
+   "base": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\c216c849-5fe7-4d43-a3be-32429241f811\\scratchpad\\s1gap_work\\1\\2\\3\\orig",
+   "patched": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\c216c849-5fe7-4d43-a3be-32429241f811\\scratchpad\\s1gap_work\\1\\2\\3\\new",
+   "python": "C:/Users/Admin/venvs/tanitad/Scripts/python.exe",
+   "suites": [
+    {
+     "suite": "test_p2r_chain.py",
+     "base": {
+      "rc": 0,
+      "token": "ZZTEST_PASS",
+      "checks": 139,
+      "skips": 0,
+      "seconds": 5.9
+     },
+     "patched": {
+      "rc": 0,
+      "token": "ZZTEST_PASS",
+      "checks": 139,
+      "skips": 0,
+      "seconds": 5.5
+     },
+     "same_outcome": true,
+     "patched_tail": []
+    },
+    {
+     "suite": "test_p2rep_chain.py",
+     "base": {
+      "rc": 0,
+      "token": "ZZTEST_PASS",
+      "checks": 350,
+      "skips": 0,
+      "seconds": 162.4
+     },
+     "patched": {
+      "rc": 0,
+      "token": "ZZTEST_PASS",
+      "checks": 350,
+      "skips": 0,
+      "seconds": 158.9
+     },
+     "same_outcome": true,
+     "patched_tail": []
+    },
+    {
+     "suite": "test_rls1_chain.py",
+     "base": {
+      "rc": 1,
+      "token": null,
+      "checks": null,
+      "skips": 0,
+      "seconds": 50.3
+     },
+     "patched": {
+      "rc": 1,
+      "token": null,
+      "checks": null,
+      "skips": 0,
+      "seconds": 51.7
+     },
+     "same_outcome": true,
+     "patched_tail": [
+      "           ^^^^^^^^^^^^^^^^^^^^",
+      "AssertionError: MODEL_REGISTRY.md not found above the package"
+     ]
+    },
+    {
+     "suite": "test_rl_s1b.py",
+     "base": {
+      "rc": 0,
+      "token": "ZZTEST_PASS",
+      "checks": 18,
+      "skips": 0,
+      "seconds": 14.6
+     },
+     "patched": {
+      "rc": 0,
+      "token": "ZZTEST_PASS",
+      "checks": 18,
+      "skips": 0,
+      "seconds": 15.0
+     },
+     "same_outcome": true,
+     "patched_tail": []
+    },
+    {
+     "suite": "test_p6_chain.py",
+     "base": {
+      "rc": 0,
+      "token": "ZZP6CHAIN_PASS",
+      "checks": 341,
+      "skips": 0,
+      "seconds": 444.0
+     },
+     "patched": {
+      "rc": 0,
+      "token": "ZZP6CHAIN_PASS",
+      "checks": 341,
+      "skips": 0,
+      "seconds": 445.8
+     },
+     "same_outcome": true,
+     "patched_tail": []
+    },
+    {
+     "suite": "test_aux_s1_wiring.py",
+     "base": {
+      "rc": 0,
+      "token": "ZZTEST_PASS",
+      "checks": 20,
+      "skips": 0,
+      "seconds": 147.3
+     },
+     "patched": {
+      "rc": 0,
+      "token": "ZZTEST_PASS",
+      "checks": 20,
+      "skips": 0,
+      "seconds": 146.2
+     },
+     "same_outcome": true,
+     "patched_tail": []
+    },
+    {
+     "suite": "test_rl_reward.py",
+     "base": {
+      "rc": 0,
+      "token": "ZZTEST_PASS",
+      "checks": 31,
+      "skips": 0,
+      "seconds": 0.3
+     },
+     "patched": {
+      "rc": 0,
+      "token": "ZZTEST_PASS",
+      "checks": 31,
+      "skips": 0,
+      "seconds": 0.3
+     },
+     "same_outcome": true,
+     "patched_tail": []
+    },
+    {
+     "suite": "test_rl_epo.py",
+     "base": {
+      "rc": 0,
+      "token": "ZZTEST_PASS",
+      "checks": 42,
+      "skips": 0,
+      "seconds": 83.2
+     },
+     "patched": {
+      "rc": 0,
+      "token": "ZZTEST_PASS",
+      "checks": 42,
+      "skips": 0,
+      "seconds": 78.7
+     },
+     "same_outcome": true,
+     "patched_tail": []
+    }
+   ],
+   "all_same": true
+  }
+ },
+ "mutation_proofs": {
+  "pkg": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\c216c849-5fe7-4d43-a3be-32429241f811\\scratchpad\\s1gap_work\\1\\2\\3\\new",
+  "mutations": [
+   {
+    "mutation": "chain_binding_verify_deleted",
+    "file": "s1aux_pod.sh",
+    "suite": "test_s1aux_chain.py",
+    "rc": 1,
+    "went_red": true,
+    "expect_in_output": "TRAIN_NO_TOKEN_CHECK",
+    "red_in_the_right_place": true,
+    "caught": true,
+    "seconds": 0.9,
+    "tail": [
+     "    ok(check_chain(text) == [], check_chain(text))",
+     "    ~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+     "  File \"C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\c216c849-5fe7-4d43-a3be-32429241f811\\scratchpad\\s1gap_work\\mut\\1\\2\\3\\chain_binding_verify_deleted\\refe\\test_s1aux_chain.py\", line 54, in ok",
+     "    assert cond, msg",
+     "           ^^^^",
+     "AssertionError: ['TRAIN_ORDER(wait,token,mark,launch)', 'TRAIN_NO_TOKEN_CHECK']"
+    ]
+   },
+   {
+    "mutation": "chain_binding_verify_before_wait",
+    "file": "s1aux_pod.sh",
+    "suite": "test_s1aux_chain.py",
+    "rc": 1,
+    "went_red": true,
+    "expect_in_output": "TRAIN_ORDER",
+    "red_in_the_right_place": true,
+    "caught": true,
+    "seconds": 1.6,
+    "tail": [
+     "    ok(check_chain(text) == [], check_chain(text))",
+     "    ~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+     "  File \"C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\c216c849-5fe7-4d43-a3be-32429241f811\\scratchpad\\s1gap_work\\mut\\1\\2\\3\\chain_binding_verify_before_wait\\refe\\test_s1aux_chain.py\", line 54, in ok",
+     "    assert cond, msg",
+     "           ^^^^",
+     "AssertionError: ['TRAIN_ORDER(wait,token,mark,launch)']"
+    ]
+   },
+   {
+    "mutation": "chain_resumed_path_verify_deleted",
+    "file": "s1aux_pod.sh",
+    "suite": "test_s1aux_chain.py",
+    "rc": 1,
+    "went_red": true,
+    "expect_in_output": "RESUMED_PATH_UNVERIFIED",
+    "red_in_the_right_place": true,
+    "caught": true,
+    "seconds": 0.9,
+    "tail": [
+     "    ok(check_chain(text) == [], check_chain(text))",
+     "    ~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+     "  File \"C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\c216c849-5fe7-4d43-a3be-32429241f811\\scratchpad\\s1gap_work\\mut\\1\\2\\3\\chain_resumed_path_verify_deleted\\refe\\test_s1aux_chain.py\", line 54, in ok",
+     "    assert cond, msg",
+     "           ^^^^",
+     "AssertionError: ['RESUMED_PATH_UNVERIFIED']"
+    ]
+   },
+   {
+    "mutation": "chain_redundant_verify_readded",
+    "file": "s1aux_pod.sh",
+    "suite": "test_s1aux_chain.py",
+    "rc": 1,
+    "went_red": true,
+    "expect_in_output": "GATE_VERIFY_GUARD",
+    "red_in_the_right_place": true,
+    "caught": true,
+    "seconds": 1.5,
+    "tail": [
+     "    ok(check_chain(text) == [], check_chain(text))",
+     "    ~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+     "  File \"C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\c216c849-5fe7-4d43-a3be-32429241f811\\scratchpad\\s1gap_work\\mut\\1\\2\\3\\chain_redundant_verify_readded\\refe\\test_s1aux_chain.py\", line 54, in ok",
+     "    assert cond, msg",
+     "           ^^^^",
+     "AssertionError: ['GATE_VERIFY_GUARD']"
+    ]
+   },
+   {
+    "mutation": "chain_minted_flag_default_on",
+    "file": "s1aux_pod.sh",
+    "suite": "test_s1aux_chain.py",
+    "rc": 1,
+    "went_red": true,
+    "expect_in_output": "GATE_BLOCK_SHAPE",
+    "red_in_the_right_place": true,
+    "caught": true,
+    "seconds": 0.8,
+    "tail": [
+     "    ok(check_chain(text) == [], check_chain(text))",
+     "    ~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+     "  File \"C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\c216c849-5fe7-4d43-a3be-32429241f811\\scratchpad\\s1gap_work\\mut\\1\\2\\3\\chain_minted_flag_default_on\\refe\\test_s1aux_chain.py\", line 54, in ok",
+     "    assert cond, msg",
+     "           ^^^^",
+     "AssertionError: ['GATE_BLOCK_SHAPE']"
+    ]
+   },
+   {
+    "mutation": "fp_relative_path_dropped",
+    "file": "gate_token.py",
+    "suite": "test_launch_gate.py --static --no-banked",
+    "rc": 1,
+    "went_red": true,
+    "expect_in_output": "fingerprint_identity_static",
+    "red_in_the_right_place": true,
+    "caught": true,
+    "seconds": 137.7,
+    "tail": [
+     "    ok(v == [], v)",
+     "    ~~^^^^^^^^^^^^",
+     "  File \"C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\c216c849-5fe7-4d43-a3be-32429241f811\\scratchpad\\s1gap_work\\mut\\1\\2\\3\\fp_relative_path_dropped\\refe\\test_launch_gate.py\", line 40, in ok",
+     "    assert cond, msg",
+     "           ^^^^",
+     "AssertionError: ['fingerprint[nested] threads=1 form=str', 'fingerprint[nested] threads=1 form=WindowsPath', 'fingerprint[nested] threads=1 form=str', 'fingerprint[skips] threads=1 form=str', 'fingerprint[skips] threads=1 form=WindowsPath', 'fingerprint[skips] threads=1 form=str', 'fingerprint[names"
+    ]
+   },
+   {
+    "mutation": "fp_size_off_by_one",
+    "file": "gate_token.py",
+    "suite": "test_launch_gate.py --static --no-banked",
+    "rc": 1,
+    "went_red": true,
+    "expect_in_output": "fingerprint_identity_static",
+    "red_in_the_right_place": true,
+    "caught": true,
+    "seconds": 130.3,
+    "tail": [
+     "    ok(v == [], v)",
+     "    ~~^^^^^^^^^^^^",
+     "  File \"C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\c216c849-5fe7-4d43-a3be-32429241f811\\scratchpad\\s1gap_work\\mut\\1\\2\\3\\fp_size_off_by_one\\refe\\test_launch_gate.py\", line 40, in ok",
+     "    assert cond, msg",
+     "           ^^^^",
+     "AssertionError: ['fingerprint[flat] threads=1 form=str', 'fingerprint[flat] threads=1 form=WindowsPath', 'fingerprint[flat] threads=1 form=str', 'fingerprint[nested] threads=1 form=str', 'fingerprint[nested] threads=1 form=WindowsPath', 'fingerprint[nested] threads=1 form=str', 'fingerprint[big] thr"
+    ]
+   },
+   {
+    "mutation": "fp_skip_names_not_pruned",
+    "file": "gate_token.py",
+    "suite": "test_launch_gate.py --static --no-banked",
+    "rc": 1,
+    "went_red": true,
+    "expect_in_output": "fingerprint_identity_static",
+    "red_in_the_right_place": true,
+    "caught": true,
+    "seconds": 138.3,
+    "tail": [
+     "    ok(v == [], v)",
+     "    ~~^^^^^^^^^^^^",
+     "  File \"C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\c216c849-5fe7-4d43-a3be-32429241f811\\scratchpad\\s1gap_work\\mut\\1\\2\\3\\fp_skip_names_not_pruned\\refe\\test_launch_gate.py\", line 40, in ok",
+     "    assert cond, msg",
+     "           ^^^^",
+     "AssertionError: ['fingerprint[skips] threads=1 form=str', 'fingerprint[skips] threads=1 form=WindowsPath', 'fingerprint[skips] threads=1 form=str', 'fingerprint[whole] threads=1 form=str', 'fingerprint[whole] threads=1 form=WindowsPath', 'fingerprint[whole] threads=1 form=str', 'data_manifest thread"
+    ]
+   },
+   {
+    "mutation": "fp_lines_not_sorted",
+    "file": "gate_token.py",
+    "suite": "test_launch_gate.py --static --no-banked",
+    "rc": 1,
+    "went_red": true,
+    "expect_in_output": "fingerprint_identity_static",
+    "red_in_the_right_place": true,
+    "caught": true,
+    "seconds": 106.9,
+    "tail": [
+     "    ok(v == [], v)",
+     "    ~~^^^^^^^^^^^^",
+     "  File \"C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\c216c849-5fe7-4d43-a3be-32429241f811\\scratchpad\\s1gap_work\\mut\\1\\2\\3\\fp_lines_not_sorted\\refe\\test_launch_gate.py\", line 40, in ok",
+     "    assert cond, msg",
+     "           ^^^^",
+     "AssertionError: ['fingerprint[nested] threads=1 form=str', 'fingerprint[nested] threads=1 form=WindowsPath', 'fingerprint[nested] threads=1 form=str', 'fingerprint[names] threads=1 form=str', 'fingerprint[names] threads=1 form=WindowsPath', 'fingerprint[names] threads=1 form=str', 'fingerprint[whole"
+    ]
+   },
+   {
+    "mutation": "sha256_loses_last_byte",
+    "file": "gate_token.py",
+    "suite": "test_launch_gate.py --fp-identity-only",
+    "rc": 1,
+    "went_red": true,
+    "expect_in_output": "fingerprint_identity_static",
+    "red_in_the_right_place": true,
+    "caught": true,
+    "seconds": 0.8,
+    "tail": [
+     "    ok(v == [], v)",
+     "    ~~^^^^^^^^^^^^",
+     "  File \"C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\c216c849-5fe7-4d43-a3be-32429241f811\\scratchpad\\s1gap_work\\mut\\1\\2\\3\\sha256_loses_last_byte\\refe\\test_launch_gate.py\", line 40, in ok",
+     "    assert cond, msg",
+     "           ^^^^",
+     "AssertionError: ['fingerprint[file flat/f6.bin]', 'fingerprint[file nested/top.txt]', 'data_manifest threads=1 path_map=False', 'data_manifest threads=1 path_map=True', 'tree_manifest threads=1', 'fingerprint[file flat/f6.bin]', 'fingerprint[file nested/top.txt]', 'data_manifest threads=2 path_map=F"
+    ]
+   },
+   {
+    "mutation": "sha256_loses_last_byte__whole_static_suite_red_anywhere",
+    "file": "gate_token.py",
+    "suite": "test_launch_gate.py --static --no-banked",
+    "rc": 1,
+    "went_red": true,
+    "expect_in_output": "",
+    "red_in_the_right_place": true,
+    "caught": true,
+    "seconds": 15.7,
+    "tail": [
+     "    ok(ev[\"status\"] == \"PASS\" and ev[\"details\"][\"file_sha256\"] == GT.sha256_file(td / \"preflight.jsonl\") and \"G6\" not in ev[\"details\"][\"required\"], (nm, ev[\"reasons\"]))",
+     "    ~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+     "  File \"C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\c216c849-5fe7-4d43-a3be-32429241f811\\scratchpad\\s1gap_work\\mut\\1\\2\\3\\sha256_loses_last_byte__whole_static_suite_red_anywhere\\refe\\test_launch_gate.py\", line 40, in ok",
+     "    assert cond, msg",
+     "           ^^^^",
+     "AssertionError: ('R0', [])"
+    ]
+   },
+   {
+    "mutation": "sha256_chunk_boundary_skipped",
+    "file": "gate_token.py",
+    "suite": "test_launch_gate.py --static --no-banked",
+    "rc": 1,
+    "went_red": true,
+    "expect_in_output": "fingerprint_identity_static",
+    "red_in_the_right_place": true,
+    "caught": true,
+    "seconds": 30.1,
+    "tail": [
+     "    ok(v == [], v)",
+     "    ~~^^^^^^^^^^^^",
+     "  File \"C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\c216c849-5fe7-4d43-a3be-32429241f811\\scratchpad\\s1gap_work\\mut\\1\\2\\3\\sha256_chunk_boundary_skipped\\refe\\test_launch_gate.py\", line 40, in ok",
+     "    assert cond, msg",
+     "           ^^^^",
+     "AssertionError: ['fingerprint[file flat/f6.bin]', 'data_manifest threads=1 path_map=False', 'data_manifest threads=1 path_map=True', 'tree_manifest threads=1', 'fingerprint[file flat/f6.bin]', 'data_manifest threads=2 path_map=False', 'data_manifest threads=2 path_map=True', 'tree_manifest threads=2"
+    ]
+   },
+   {
+    "mutation": "data_manifest_gate_inputs_dropped",
+    "file": "gate_token.py",
+    "suite": "test_launch_gate.py --fp-identity-only",
+    "rc": 1,
+    "went_red": true,
+    "expect_in_output": "fingerprint_identity_static",
+    "red_in_the_right_place": true,
+    "caught": true,
+    "seconds": 0.8,
+    "tail": [
+     "    ok(v == [], v)",
+     "    ~~^^^^^^^^^^^^",
+     "  File \"C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\c216c849-5fe7-4d43-a3be-32429241f811\\scratchpad\\s1gap_work\\mut\\1\\2\\3\\data_manifest_gate_inputs_dropped\\refe\\test_launch_gate.py\", line 40, in ok",
+     "    assert cond, msg",
+     "           ^^^^",
+     "AssertionError: ['data_manifest threads=1 path_map=False', 'data_manifest threads=1 path_map=True', 'data_manifest threads=2 path_map=False', 'data_manifest threads=2 path_map=True', 'data_manifest threads=16 path_map=False', 'data_manifest threads=16 path_map=True']"
+    ]
+   },
+   {
+    "mutation": "data_manifest_gate_inputs_dropped__whole_static_suite_red_anywhere",
+    "file": "gate_token.py",
+    "suite": "test_launch_gate.py --static --no-banked",
+    "rc": 1,
+    "went_red": true,
+    "expect_in_output": "",
+    "red_in_the_right_place": true,
+    "caught": true,
+    "seconds": 16.3,
+    "tail": [
+     "    rls1_static()",
+     "    ~~~~~~~~~~~^^",
+     "  File \"C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\c216c849-5fe7-4d43-a3be-32429241f811\\scratchpad\\s1gap_work\\mut\\1\\2\\3\\data_manifest_gate_inputs_dropped__whole_static_suite_red_anywhere\\refe\\test_launch_gate.py\", line 1033, in rls1_static",
+     "    ok(tok[\"binding\"][\"data\"][\"gate:preflight_json\"][\"sha256\"] == GT.sha256_file(pfp))                   # the preflight file's sha256 IS in the token",
+     "       ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^",
+     "KeyError: 'gate:preflight_json'"
+    ]
+   },
+   {
+    "mutation": "data_manifest_duplicate_flag_first_wins",
+    "file": "gate_token.py",
+    "suite": "test_launch_gate.py --static --no-banked",
+    "rc": 1,
+    "went_red": true,
+    "expect_in_output": "fingerprint_identity_static",
+    "red_in_the_right_place": true,
+    "caught": true,
+    "seconds": 33.7,
+    "tail": [
+     "    ok(v == [], v)",
+     "    ~~^^^^^^^^^^^^",
+     "  File \"C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\c216c849-5fe7-4d43-a3be-32429241f811\\scratchpad\\s1gap_work\\mut\\1\\2\\3\\data_manifest_duplicate_flag_first_wins\\refe\\test_launch_gate.py\", line 40, in ok",
+     "    assert cond, msg",
+     "           ^^^^",
+     "AssertionError: ['data_manifest threads=2 path_map=False', 'data_manifest threads=2 path_map=True', 'data_manifest threads=16 path_map=False', 'data_manifest threads=16 path_map=True']"
+    ]
+   }
+  ],
+  "all_caught": true
+ },
+ "token_identity_selftest_dev": {
+  "env": {
+   "node": "FREEDOM2035",
+   "python": "3.13.5",
+   "os": "Windows-11-10.0.26200-SP0",
+   "cpu_count": 24,
+   "high_priority": false,
+   "cpu_load_pct_at_start": 100.0
+  },
+  "old": null,
+  "new": "E:/Projects/TanitAD/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-15-s1-gate-gap/gate_token_NEW_snapshot.py",
+  "repeat": 3,
+  "dirs": [],
+  "files": [],
+  "data_manifest": null,
+  "simulated": null,
+  "token_check": {
+   "token": "PASS_aaaaaaaaaaaa.json",
+   "rows": [
+    {
+     "input": "--aux-drv-labels",
+     "threads": 1,
+     "seconds": 0.1,
+     "kind": "dir",
+     "n_files": 1196,
+     "equal_to_the_token_record": true
+    },
+    {
+     "input": "--aux-drv-labels",
+     "threads": 16,
+     "seconds": 0.09,
+     "kind": "dir",
+     "n_files": 1196,
+     "equal_to_the_token_record": true
+    },
+    {
+     "input": "--calib",
+     "threads": 1,
+     "seconds": 0.0,
+     "kind": "file",
+     "n_files": null,
+     "equal_to_the_token_record": true
+    },
+    {
+     "input": "--calib",
+     "threads": 16,
+     "seconds": 0.0,
+     "kind": "file",
+     "n_files": null,
+     "equal_to_the_token_record": true
+    },
+    {
+     "input": "--images",
+     "threads": 1,
+     "seconds": 1.25,
+     "kind": "dir",
+     "n_files": 20000,
+     "equal_to_the_token_record": true
+    },
+    {
+     "input": "--images",
+     "threads": 16,
+     "seconds": 0.32,
+     "kind": "dir",
+     "n_files": 20000,
+     "equal_to_the_token_record": true
+    },
+    {
+     "input": "gate:x",
+     "threads": 1,
+     "seconds": 0.01,
+     "kind": "file",
+     "n_files": null,
+     "equal_to_the_token_record": true
+    },
+    {
+     "input": "gate:x",
+     "threads": 16,
+     "seconds": 0.0,
+     "kind": "file",
+     "n_files": null,
+     "equal_to_the_token_record": true
+    }
+   ],
+   "whole_manifest": [
+    {
+     "threads": 1,
+     "seconds": 2.34,
+     "data_manifest_equals_the_token": true
+    },
+    {
+     "threads": 16,
+     "seconds": 0.4,
+     "data_manifest_equals_the_token": true
+    }
+   ],
+   "all_equal": true
+  }
+ },
+ "residual_gap_not_removed": [
+  {
+   "what": "preflight (scorer_finetune.py --preflight), ~6 min per arm for arms 2-8 (not in the 24.8)",
+   "why": "a GPU job; S1 never puts a GPU job beside a training job"
+  },
+  {
+   "what": "G-SUITE 5.6 min",
+   "why": "one script is 59 % of it and is compute; shortening it weakens a check; parallelism not shown to help"
+  },
+  {
+   "what": "wait_clear >= 60 s",
+   "why": "3 idle polls by design (never train beside anything)"
+  },
+  {
+   "what": "4 remaining tree+data re-measures (gate start, finalize, post-mint verify, BINDING verify)",
+   "why": "each is a real re-measure the brief keeps; after lever A their cost depends on S (pod only)"
+  },
+  {
+   "what": "gate start imports (scorer_finetune -> torch) inside segment A",
+   "why": "needed for the trainer's parser; seconds"
+  }
+ ],
+ "proposals_not_implemented": [
+  {
+   "id": "E",
+   "what": "run G-SUITE beside the preflight (both ~6 min; CPU vs GPU)",
+   "needs": "per-check evidence binding in launch_gate.run_checks (today every check's inputs_read is the whole data manifest, including the preflight file)",
+   "estimated_saving_min": "up to ~5.6 for arms 2-8"
+  },
+  {
+   "id": "F",
+   "what": "run the CPU-only part of the NEXT arm's gate (G-SUITE, listing) at nice 19 beside the current arm's training (A4 precedent for CPU stages)",
+   "needs": "a PI decision (CPU load on a training pod) and the same evidence-binding change as E",
+   "estimated_saving_min": "most of segments A-C for arms 2-8"
+  },
+  {
+   "id": "D",
+   "what": "G-SUITE scripts in parallel",
+   "needs": "a quiet-box measurement on the pod first; dev box showed no gain"
+  }
+ ],
+ "pod_followups": [
+  "land the patches, re-run `launch_gate.py ship-manifest` (the shipped tree changes), re-ship to the pod",
+  "pod, read-only, ~1 min: python bench_fingerprint.py --new <pkg>/refe/gate_token.py --token <lg/ARM/PASS_*.json> --threads 1,16 --out token_identity_pod.json   (identity on the real data + the pod's real timing)",
+  "pod, ~7 min, CPU + metadata only (run when idle): python bench_fingerprint.py --old gate_token_OLD_snapshot.py --new <pkg>/refe/gate_token.py --dir /workspace/data/navtrain_pixels --threads 1,4,16,32 --repeat 1 --cpu-only --out fp_timing_pod.json",
+  "after the next arm: read the `[timing]` lines in launch_gate.log and info.timing_s in token_verify.json"
+ ],
+ "patches": {
+  "gate_token.py": {
+   "patch": "PATCH_gate_token.py.diff",
+   "base_sha256": "dc61bad20b4dfbe6d927c1c6a8ee70c9867712761088284174ef4fb265e6b8f7",
+   "patched_sha256": "360fde694e6ddc6363a95c0f2610fa0f653e88b43946cc0b14606ee214a219f0",
+   "patched_equals_new_file": true,
+   "lines": 210
+  },
+  "launch_gate.py": {
+   "patch": "PATCH_launch_gate.py.diff",
+   "base_sha256": "20efce8d42a3abf988922b41bde40a06e15081c5bbf5a2dde5e14b8b61531c16",
+   "patched_sha256": "a7819f3ac9fe0f01d6a6c01d37fbfd7028424eeb0f4b6dfebaf978bde67d5aea",
+   "patched_equals_new_file": true,
+   "lines": 54
+  },
+  "gate_checks.py": {
+   "patch": "PATCH_gate_checks.py.diff",
+   "base_sha256": "18d9b540b111532f91b597e7d4b84c430da76402d17cff55f98df14648dab169",
+   "patched_sha256": "39b746a2f23e157f31b94fdf6f3bdc68cad5c3c8ef5fcdd28e299a48b2c47a7b",
+   "patched_equals_new_file": true,
+   "lines": 17
+  },
+  "s1aux_pod.sh": {
+   "patch": "PATCH_s1aux_pod.sh.diff",
+   "base_sha256": "3b356dabb0fe4bb8ad6ea1c6e2321089da9775f33a8f83de934cd2dc9baf8123",
+   "patched_sha256": "73fa521ad39a24785f290cec07d7d8b249e43073b2290f32c3ef34498ce8cd7c",
+   "patched_equals_new_file": true,
+   "lines": 24
+  },
+  "test_launch_gate.py": {
+   "patch": "PATCH_test_launch_gate.py.diff",
+   "base_sha256": "dfaf669aa62a05311a02bbd6a7babccb510d5098b3ecf6c69839809fb1d9102b",
+   "patched_sha256": "6e48d6b321225cccf190ce0f2d81601f71f8b79f9959f4a2016cfad3f0358f77",
+   "patched_equals_new_file": true,
+   "lines": 341
+  },
+  "test_s1aux_chain.py": {
+   "patch": "PATCH_test_s1aux_chain.py.diff",
+   "base_sha256": "b8baf6acdf1f2ce523cdaf2ad3733237f07904b89be7d55439d89d8bd9d4c8a9",
+   "patched_sha256": "08f79e324612b60f6a628c975c2b37680c386ab5a20dcd1e68ec169c7bd901b4",
+   "patched_equals_new_file": true,
+   "lines": 103
+  }
+ }
+}

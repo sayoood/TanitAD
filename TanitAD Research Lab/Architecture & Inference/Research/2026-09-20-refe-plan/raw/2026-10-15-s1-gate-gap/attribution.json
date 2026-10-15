@@ -1,0 +1,185 @@
+{
+ "arm": "N-s0",
+ "gap_min": 24.78,
+ "gap_from": "2026-10-14T19:10:38Z ZZS1AUX_GPU_CLEAR",
+ "gap_to": "2026-10-14T19:35:25Z ZZS1AUX_ARM_TRAIN_START",
+ "timestamp_consistency": {
+  "G-HYG.finished_utc == mtime": true,
+  "G-SUITE.finished_utc == mtime": true,
+  "token.created_utc == mtime": true,
+  "manifest row mtime == ARM_GATE_OK": true
+ },
+ "segments": {
+  "A_gate_start_to_HYG_DVB_PREFLIGHT": {
+   "min": 3.55,
+   "what": "launch_gate.py run start: imports (profile_refusals imports scorer_finetune -> torch), tree_manifest + data_manifest #1, G-HYG, G-DVB, G-PREFLIGHT",
+   "share_pct": 14.3
+  },
+  "B_G-SUITE": {
+   "min": 5.62,
+   "what": "five test scripts, serially (check_suite)",
+   "share_pct": 22.7
+  },
+  "C_finalize_and_mint": {
+   "min": 3.65,
+   "what": "finalize: tree_manifest + data_manifest #2, evidence hashes, HMAC, write token",
+   "share_pct": 14.7
+  },
+  "D_verify_400_and_403": {
+   "min": 7.57,
+   "what": "token_ok :400 (after the mint) and token_ok :403 (unconditional), then the manifest row (~1 s)",
+   "per_verify_min": 3.79,
+   "share_pct": 30.5
+  },
+  "E_wait_clear_and_verify_414": {
+   "min": 4.4,
+   "what": "wait_clear (3 idle polls x 30 s = >= 60 s by design) then token_ok :414 (the binding verify)",
+   "share_pct": 17.8
+  }
+ },
+ "remeasure": {
+  "verify_each_min": [
+   3.79,
+   3.4
+  ],
+  "A_incl_imports_min": 3.55,
+  "C_min": 3.65,
+  "five_remeasures_min_total": 18.17,
+  "share_of_gap_pct": 73.3,
+  "evidence_class": "MEASURED (pod timestamps) for the segments; the split of a segment into 're-measure' vs 'imports / checks' is INFERRED (A also holds the imports and three cheap checks)"
+ },
+ "inside_one_remeasure": {
+  "checkpoint_sha256_upper_bound_s": 4.0,
+  "checkpoint_sha256_evidence": "chain.log ENV_OK 19:08:55 -> FETCH_OK 19:08:59: file_pin_ok = stat + md5sum + sha256sum of the same 1,288,489,838-byte file ran inside that window (second resolution)",
+  "code_tree_upper_s": 1.0,
+  "code_tree_evidence": "chain.log START -> PRECHECK_OK: s1aux_checks.py tree (the same tree_manifest) ran inside that window (second resolution)",
+  "image_listing_files": 413184,
+  "image_listing_s_lower_bound": 222.4,
+  "per_file_ms_lower_bound": 0.538,
+  "other_eleven_inputs": "1-8 files each (token binding.data): negligible",
+  "evidence_class": "INFERRED: per-re-measure cost (MEASURED, verify) minus two MEASURED upper bounds; the pod wrote no per-phase timestamps"
+ },
+ "data_inputs": {
+  "--calib": {
+   "kind": "file",
+   "n_files": null,
+   "bytes": 2336659
+  },
+  "--ckpt": {
+   "kind": "file",
+   "n_files": null,
+   "bytes": 1288489838
+  },
+  "--heldout": {
+   "kind": "dir",
+   "n_files": 8,
+   "bytes": 186272504
+  },
+  "--heldout-logs": {
+   "kind": "file",
+   "n_files": null,
+   "bytes": 936
+  },
+  "--images": {
+   "kind": "dir",
+   "n_files": 413184,
+   "bytes": 85872932604
+  },
+  "--lane-labels-heldout": {
+   "kind": "dir",
+   "n_files": 1,
+   "bytes": 3776046
+  },
+  "--onpolicy": {
+   "kind": "dir",
+   "n_files": 8,
+   "bytes": 11088393052
+  },
+  "--pdm-labels-heldout": {
+   "kind": "dir",
+   "n_files": 7,
+   "bytes": 8589885
+  },
+  "--pdm-labels-train": {
+   "kind": "dir",
+   "n_files": 8,
+   "bytes": 478323318
+  },
+  "--targets": {
+   "kind": "dir",
+   "n_files": 7,
+   "bytes": 6330899550
+  },
+  "--teacher-lane-heldout": {
+   "kind": "dir",
+   "n_files": 1,
+   "bytes": 68175341
+  },
+  "--teacher-lane-train": {
+   "kind": "dir",
+   "n_files": 2,
+   "bytes": 54231097
+  },
+  "gate:preflight_json": {
+   "kind": "file",
+   "n_files": null,
+   "bytes": 2282
+  }
+ },
+ "g_suite_scripts_on_pod": [
+  {
+   "rc": 0,
+   "script": "test_rl_reward.py",
+   "skips": [],
+   "token": "ZZTEST_PASS",
+   "token_seen": true
+  },
+  {
+   "rc": 0,
+   "script": "test_rl_epo.py",
+   "skips": [],
+   "token": "ZZTEST_PASS",
+   "token_seen": true
+  },
+  {
+   "rc": 0,
+   "script": "test_aux_drivable_head.py",
+   "skips": [],
+   "token": "ZZTEST_PASS",
+   "token_seen": true
+  },
+  {
+   "rc": 0,
+   "script": "test_aux_s1_wiring.py",
+   "skips": [],
+   "token": "ZZTEST_PASS",
+   "token_seen": true
+  },
+  {
+   "rc": 0,
+   "script": "test_launch_gate.py",
+   "skips": [],
+   "token": "ZZLG_STATIC_PASS",
+   "token_seen": true
+  }
+ ],
+ "preflight_inside_gap_for_arms_2_to_8_min": [
+  {
+   "arm": "H2-s0",
+   "from": "2026-10-14T21:01:46",
+   "to": "2026-10-14T21:07:38",
+   "min": 5.87,
+   "from_event": "ZZS1AUX_ARM_DONE"
+  },
+  {
+   "arm": "H1-s0",
+   "from": "2026-10-14T23:25:54",
+   "to": "2026-10-14T23:31:52",
+   "min": 5.97,
+   "from_event": "arm"
+  }
+ ],
+ "preflight_first_attempt_min": 6.45,
+ "preflight_note": "N-s0's own preflight is NOT in the 24.8 min (pre_N-s0 was already done by the first attempt); every later arm pays about 6 min of it inside the gap (MEASURED: H2-s0, H1-s0 FAILED at the end of their preflight, so the duration is the full run)",
+ "evidence_class": "MEASURED (pod timestamps in the copied logs) unless a block says INFERRED"
+}
