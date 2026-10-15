@@ -17,6 +17,7 @@ token is a measured fact about the bytes, not a label.
 """
 from __future__ import annotations
 
+import concurrent.futures
 import hashlib
 import hmac
 import json
@@ -30,6 +31,9 @@ from typing import Any, Iterable
 
 GATE_SCHEMA = "tanitad.launch_gate/1"
 KEY_ENV = "TANITAD_GATE_KEY_FILE"
+FP_THREADS_ENV = "TANITAD_GATE_FP_THREADS"          # worker threads of the metadata walk / the concurrent fingerprints; 1 = fully serial (the pre-2026-10-15 shape)
+FP_THREADS_DEFAULT = 16
+FP_STAT_CHUNK = 256                                  # files per stat task of a directory listing
 SHIP_MANIFEST = "SHIP_MANIFEST.json"
 TREE_ROOTS = ("refe", "code", "splits")
 _TREE_SUFFIX = (".py", ".sh", ".yaml", ".yml", ".json", ".txt", ".patch")
@@ -50,10 +54,16 @@ def sha256_bytes(b: bytes) -> str:
 
 
 def sha256_file(p, chunk: int = 1 << 22) -> str:
+    """sha256 of the file's bytes.  `readinto` a reusable buffer: no 4 MiB allocation per read (the digest is the same bytes' digest, whatever the read size)."""
     h = hashlib.sha256()
-    with open(p, "rb") as fh:
-        for c in iter(lambda: fh.read(chunk), b""):
-            h.update(c)
+    buf = bytearray(chunk)
+    mv = memoryview(buf)
+    with open(p, "rb", buffering=0) as fh:
+        while True:
+            n = fh.readinto(mv)
+            if not n:
+                break
+            h.update(mv[:n])
     return h.hexdigest()
 
 
@@ -131,24 +141,79 @@ def signature_ok(token: dict, key: bytes) -> bool:
 
 
 # ------------------------------------------------------------------------------------------ fingerprints
-def fingerprint(path) -> dict:
+def fp_threads() -> int:
+    """Worker threads for the directory walk and for the concurrent fingerprints of `data_manifest` (env TANITAD_GATE_FP_THREADS; 1 = serial)."""
+    try:
+        n = int(os.environ.get(FP_THREADS_ENV, ""))
+    except ValueError:
+        n = 0
+    return n if n >= 1 else FP_THREADS_DEFAULT
+
+
+def _stat_lines(dirpath: str, rel_prefix: str, names: list) -> tuple:
+    """([`relpath\\tsize\\n`...], total bytes) of `names` in `dirpath`.  os.stat FOLLOWS symlinks, like Path.stat() did; it raises the same errors."""
+    lines, total = [], 0
+    for fn in names:
+        size = os.stat(os.path.join(dirpath, fn)).st_size
+        lines.append(f"{rel_prefix}{fn}\t{size}\n")
+        total += size
+    return lines, total
+
+
+def _dir_listing(p: Path, pool) -> tuple:
+    """(lines, n_files, total_bytes) of the LISTING of directory `p`: exactly the walk the gate has always taken (os.walk unchanged: symlinked dirs not followed, unreadable
+    dirs skipped, `_DIR_SKIP_NAMES` pruned), one `relpath\\tsize` line per file.  What changed is only HOW the per-file sizes are read: string ops instead of a Path object per file,
+    and, when `pool` is given, the stat calls of a directory's files run on worker threads (os.stat releases the GIL; on a network filesystem the per-file latency, not the CPU,
+    is the cost) while os.walk goes on listing the next directory.  The digest taken over the sorted lines is bit-identical to the serial one (test_launch_gate.py: fingerprint_identity_static)."""
+    root = os.fspath(p)
+    posix_fix = os.sep == "\\"
+    lines, n, total, futs = [], 0, 0, []
+    try:
+        for dirpath, dirnames, filenames in os.walk(p):
+            dirnames[:] = sorted(d for d in dirnames if d not in _DIR_SKIP_NAMES)
+            names = [fn for fn in filenames if fn not in _DIR_SKIP_NAMES]
+            if not names:
+                continue
+            sub = dirpath[len(root):]
+            if sub.startswith(os.sep):
+                sub = sub[len(os.sep):]
+            if posix_fix:
+                sub = sub.replace("\\", "/")
+            rel_prefix = sub + "/" if sub else ""
+            n += len(names)
+            if pool is None:
+                ls, t = _stat_lines(dirpath, rel_prefix, names)
+                lines += ls
+                total += t
+            else:
+                for i in range(0, len(names), FP_STAT_CHUNK):
+                    futs.append(pool.submit(_stat_lines, dirpath, rel_prefix, names[i:i + FP_STAT_CHUNK]))
+        for f in futs:
+            ls, t = f.result()
+            lines += ls
+            total += t
+    finally:
+        for f in futs:
+            f.cancel()
+    return lines, n, total
+
+
+def fingerprint(path, *, _pool=None) -> dict:
     """A file: its sha256.  A directory: its LISTING (relpath + size of every file; contents NOT hashed -- a 449 GB bank is not re-read
-    per launch; stated in `method`).  Missing: missing.  (== the generic gate's)"""
+    per launch; stated in `method`).  Missing: missing.  (== the generic gate's)  `_pool`: a ThreadPoolExecutor for the listing's stat calls (default: a private one of
+    `fp_threads()` workers; `TANITAD_GATE_FP_THREADS=1` = serial).  The value returned is the same for every thread count."""
     p = Path(path)
     if p.is_file():
         return {"kind": "file", "bytes": p.stat().st_size, "sha256": sha256_file(p), "method": "sha256-v1"}
     if p.is_dir():
-        lines, n, total = [], 0, 0
-        for dirpath, dirnames, filenames in os.walk(p):
-            dirnames[:] = sorted(d for d in dirnames if d not in _DIR_SKIP_NAMES)
-            for fn in filenames:
-                if fn in _DIR_SKIP_NAMES:
-                    continue
-                f = Path(dirpath) / fn
-                st = f.stat()
-                lines.append(f"{f.relative_to(p).as_posix()}\t{st.st_size}\n")
-                n += 1
-                total += st.st_size
+        own = None
+        if _pool is None and fp_threads() > 1:
+            own = _pool = concurrent.futures.ThreadPoolExecutor(max_workers=fp_threads(), thread_name_prefix="fp-stat")
+        try:
+            lines, n, total = _dir_listing(p, _pool)
+        finally:
+            if own is not None:
+                own.shutdown(wait=True)
         lines.sort()
         return {"kind": "dir", "n_files": n, "bytes": total, "listing_sha256": sha256_bytes("".join(lines).encode("utf-8")),
                 "method": "dir-listing-v1 (relpath + size of every file; contents NOT hashed; _v2manifest.pt excluded -- a cache "
@@ -183,20 +248,50 @@ def flag_values(argv: list, flag: str):
     return None
 
 
-def data_manifest(argv: list, data_flags: Iterable[str], gate_inputs: dict | None = None, path_map=None) -> dict:
+def _timed_fingerprint(path, pool=None) -> tuple:
+    t0 = time.perf_counter()
+    fp = fingerprint(path, _pool=pool)
+    return fp, time.perf_counter() - t0
+
+
+def data_manifest(argv: list, data_flags: Iterable[str], gate_inputs: dict | None = None, path_map=None, timings: dict | None = None) -> dict:
     """Every input the launch READS, fingerprinted on THIS host: the value of each data flag in the argv, plus the gate's own inputs
-    (`gate:*`).  A data flag that is passed and missing on the host is a finding (`data_problems`)."""
-    man: dict = {}
+    (`gate:*`).  A data flag that is passed and missing on the host is a finding (`data_problems`).  `timings`, when given, is filled {input: seconds}: evidence of where the
+    time went, never part of the manifest."""
     want = set(data_flags)
+    jobs = []                                                         # (key, extra fields, path to fingerprint), in the order the manifest has always been built
     for flag, vals in flag_pairs(argv):
         if flag in want and vals:
             local = vals[0]
             for a, b in (path_map or []):
                 if local.startswith(a):
                     local = b + local[len(a):]
-            man[flag] = {"path": vals[0], **({"local": local} if local != vals[0] else {}), **fingerprint(local)}
+            jobs.append((flag, {"path": vals[0], **({"local": local} if local != vals[0] else {})}, local))
     for key, path in sorted((gate_inputs or {}).items()):
-        man[key] = {"path": str(path), **fingerprint(path)}
+        jobs.append((key, {"path": str(path)}, path))
+    # The inputs are independent: the 1.29 GB checkpoint's sha256 and the 413,184-file image listing do not wait for each other.  Every job still runs (a flag named twice is
+    # still fingerprinted twice, the later one wins, a raise still raises); one pool of `fp_threads()` workers serves all the listings.
+    nthr = fp_threads()
+    man: dict = {}
+    if nthr <= 1 or not jobs:
+        for key, extra, path in jobs:
+            fp, dt = _timed_fingerprint(path)
+            man[key] = {**extra, **fp}
+            if timings is not None:
+                timings[key] = round(dt, 2)
+        return man
+    with concurrent.futures.ThreadPoolExecutor(max_workers=nthr, thread_name_prefix="fp-stat") as stat_pool, \
+            concurrent.futures.ThreadPoolExecutor(max_workers=min(len(jobs), 8), thread_name_prefix="fp-job") as job_pool:
+        futs = [job_pool.submit(_timed_fingerprint, path, stat_pool) for _, _, path in jobs]
+        try:
+            for (key, extra, _), f in zip(jobs, futs):
+                fp, dt = f.result()
+                man[key] = {**extra, **fp}
+                if timings is not None:
+                    timings[key] = round(dt, 2)
+        finally:
+            for f in futs:
+                f.cancel()
     return man
 
 
@@ -315,14 +410,19 @@ def verify_token(token_path, argv: list, pkg, *, key: bytes, profile: str | None
         reasons.append(f"argv differs from the gated argv (sha {a_sha[:12]} vs {str(b.get('argv_sha256'))[:12]}; "
                        f"{changed or 'length differs'})")
     try:
+        t_tree = time.perf_counter()
         tsha = tree_digest(tree_manifest(pkg))
         info["tree_sha256"] = tsha
+        info["timing_s"] = {"tree_manifest": round(time.perf_counter() - t_tree, 2)}          # where the time went (evidence only: no verdict reads it, the HMAC does not bind it)
         if tsha != b.get("tree_sha256"):
             reasons.append(f"code tree differs from the gated tree ({tsha[:16]} vs {str(b.get('tree_sha256'))[:16]})")
     except Exception as e:                                                  # noqa: BLE001
         reasons.append(f"cannot measure the code tree: {e}")
     flags = list(data_flags) or sorted({k for k in (b.get("data") or {}) if k.startswith("--")})
-    data = data_manifest(argv, flags, b.get("gate_inputs") or {}, path_map)
+    t_data, dtim = time.perf_counter(), {}
+    data = data_manifest(argv, flags, b.get("gate_inputs") or {}, path_map, timings=dtim)
+    info.setdefault("timing_s", {})["data_manifest"] = round(time.perf_counter() - t_data, 2)
+    info["timing_s"]["data_inputs"] = dict(sorted(dtim.items(), key=lambda kv: -kv[1])[:6])
     want = b.get("data") or {}
     d_bad = [k for k in sorted(set(want) | set(data)) if k not in want or k not in data or fp_key(want[k]) != fp_key(data[k])]
     info["data_differs"] = d_bad

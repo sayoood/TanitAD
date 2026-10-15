@@ -622,7 +622,10 @@ def behaviour(text, tmp, rep_argv):
 
     def tok(args, keyfile=None):
         env = {"PY": posix(PY), "PKG": posix(PKGROOT), "LG": posix(lgdir), "R": posix(rdir), "ARGS": args, "PYTHONIOENCODING": "utf-8", "MSYS_NO_PATHCONV": "1", "MSYS2_ARG_CONV_EXCL": "*", "TANITAD_GATE_KEY_FILE": posix(keyfile or (tmp / "k" / "gate.key"))}
-        return bash_run(f'bash -c \'. "{posix(h3)}"; token_ok\'', env)[0]
+        # timeout 1800 (Master Mind 2026-10-15): token_ok RE-MEASURES the argv's data; on the POD that is the real navtrain_pixels (413,184 files over NFS:
+        # 206 s serial, 49 s with gate_token's threaded listing, MEASURED raw/2026-10-15-p2rep-gsuite-pod/fp_pod.json).  bash_run's default 300 s let one verify
+        # overrun under load and crash this test, so the 2026-10-15 00:39Z launch gate REFUSED a correct chain (G-SUITE).  The dev box never sees it: no /workspace/data.
+        return bash_run(f'bash -c \'. "{posix(h3)}"; token_ok\'', env, timeout=1800)[0]
     good = " ".join(rep_argv)
     v, pth, _ = mint(rep_argv)
     ok(v == "PASS" and tok(good) == 0, "a token minted for the replicate argv must verify for it")
