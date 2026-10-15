@@ -151,11 +151,15 @@ class StubTargets256(torch.utils.data.Dataset):
         return (img, torch.zeros(4), torch.zeros(2), torch.zeros(1), cxy, torch.as_tensor(e[2]), torch.ones(8), torch.full((8,), 5), torch.zeros(0))
 
 
-def smoke_aux(src: str, td: str, *, tag: str, extra=(), preflight=True, run=True, env=None, max_updates=25, accum=2) -> dict:
-    """the REAL main() of `src` on CPU against the 256-wide stub trunk and the synthetic label store -> {codes, rows, tensors, files}"""
+def smoke_aux(src: str, td: str, *, tag: str, extra=(), preflight=True, run=True, env=None, max_updates=25, accum=2, cuda=False, aux_patch=None, refe_cls=None, targets_cls=None) -> dict:
+    """the REAL main() of `src` on CPU against the 256-wide stub trunk and the synthetic label store -> {codes, rows, tensors, files}.
+    cuda=True (test_aux_g12_bf16.py, A6): the source runs UNREWRITTEN on the GPU -- `dev = "cuda"` and every torch.autocast("cuda", bfloat16) stay, the pod's numeric path.
+    aux_patch(stub_aux): a hook to replace names in the aux module the trainer sees (a deliberately broken AuxDrivable).
+    refe_cls / targets_cls: the stub trunk and the stub dataset the trainer is given (default Stub256REFe / StubTargets256); the checkpoint is written from refe_cls."""
     import ckpt_io as real_ckpt_io
-    csrc = (src.replace('dev = "cuda"', 'dev = "cpu"').replace("pin_memory=True", "pin_memory=False").replace("num_workers=2", "num_workers=0")
-            .replace("n=10000, seed=20260927", "n=40, seed=20260927").replace('torch.autocast("cuda", dtype=torch.bfloat16)', 'torch.autocast("cpu", enabled=False)'))
+    csrc = (src.replace("pin_memory=True", "pin_memory=False").replace("num_workers=2", "num_workers=0").replace("n=10000, seed=20260927", "n=40, seed=20260927"))
+    if not cuda:
+        csrc = csrc.replace('dev = "cuda"', 'dev = "cpu"').replace('torch.autocast("cuda", dtype=torch.bfloat16)', 'torch.autocast("cpu", enabled=False)')
     sm = TR.load(csrc, f"aux_smoke_{tag}")
 
     class StubCkptIO:
@@ -180,11 +184,14 @@ def smoke_aux(src: str, td: str, *, tag: str, extra=(), preflight=True, run=True
     stub_aux = types.ModuleType("aux_stub")
     stub_aux.__dict__.update(vars(AUXREAL))
     stub_aux.AuxLabelSource = StubSource
-    sm.REFe, sm.REFeConfig, sm.ckpt_io, sm.AUX = Stub256REFe, TR.StubCfgFactory, StubCkptIO, stub_aux
-    sm.T = types.SimpleNamespace(OnPolicyBank=TR.StubBank, TargetBank=StubTargets256)
+    if aux_patch is not None:
+        aux_patch(stub_aux)
+    R_, T_ = refe_cls or Stub256REFe, targets_cls or StubTargets256
+    sm.REFe, sm.REFeConfig, sm.ckpt_io, sm.AUX = R_, TR.StubCfgFactory, StubCkptIO, stub_aux
+    sm.T = types.SimpleNamespace(OnPolicyBank=TR.StubBank, TargetBank=T_)
     torch.manual_seed(0)
     ck = os.path.join(td, "ck.pt")
-    torch.save({"format": "full", "model": Stub256REFe(types.SimpleNamespace(n_score_components=6)).state_dict(), "meta": {}}, ck)
+    torch.save({"format": "full", "model": R_(types.SimpleNamespace(n_score_components=6)).state_dict(), "meta": {}}, ck)
     out = os.path.join(td, "out")
     with open(os.path.join(td, "ho_logs.txt"), "w") as fh:
         fh.write(" ".join(f"H{i}" for i in range(4)))
@@ -192,7 +199,8 @@ def smoke_aux(src: str, td: str, *, tag: str, extra=(), preflight=True, run=True
             "--out", out, "--batch", "2", "--accum", str(accum), "--workers", "0", "--max-updates", str(max_updates), "--eval-every", str(max_updates), "--warmup", "2",
             "--lr", "1e-3", "--b-mode", "listnet", "--lam", "0.3", "--pdm-labels-train", "d", "--pdm-labels-heldout", "d", "--require-pdm", *extra]
     saved_argv, saved_cuda = sys.argv, (torch.cuda.synchronize, torch.cuda.max_memory_allocated)
-    torch.cuda.synchronize, torch.cuda.max_memory_allocated = (lambda *a, **k: None), (lambda *a, **k: 0)
+    if not cuda:
+        torch.cuda.synchronize, torch.cuda.max_memory_allocated = (lambda *a, **k: None), (lambda *a, **k: 0)
     saved_env = {k: os.environ.get(k) for k in (env or {})}
     os.environ.update(env or {})
     StubSource.CALLS = []

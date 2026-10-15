@@ -222,7 +222,7 @@ def check_chain(text):
                       ('bad="$(arms_ok)" || refuse', "ARMS_UNVALIDATED"), ("grep -q \"ZZRLS1_DONE\"", "NO_RLS1_GATE"), ('--expect "$HELDOUT_SETS_N"', "PDM_NOT_EXPECT_3137"),
                       ('[ "$NPH" -ge "$HELDOUT_SETS_N" ] || refuse', "HELDOUT_PDM_ROWS_UNCHECKED"), ('[ "$NTL" -ge "$TLANE_MIN_ROWS" ] || refuse', "TLANE_FLOOR_UNCHECKED"),
                       ("event token_verified", "NO_TOKEN_ROW"), ("s1aux_checks.py run-check", "NO_RUN_CHECK"), ("s1aux_checks.py data-check", "NO_DATA_CHECK"),
-                      ("scorer_finetune.py $ARGS --preflight", "NO_PREFLIGHT"), ('mv "$ARMDIR" "$OUT/${ARM}_killed_$k"', "NO_RESTART_ARCHIVE"),
+                      ("scorer_finetune.py $ARGS --preflight", "NO_PREFLIGHT"), ('CUBLAS_WORKSPACE_CONFIG=:4096:8 "$PY" scorer_finetune.py $ARGS --preflight', "PREFLIGHT_NO_CUBLAS_ENV"), ('mv "$ARMDIR" "$OUT/${ARM}_killed_$k"', "NO_RESTART_ARCHIVE"),
                       ('rm -f "$U400"', "WRONG_U400_NOT_DELETED"), ("S1AUX_RLS1_ABANDONED", "NO_ABANDON_SWITCH"), ("trap on_exit EXIT", "NO_EXIT_PUSH"),
                       ("flock -n 200", "NO_CHAIN_LOCK"), ("bank_push s1_labels labels", "LABELS_NOT_BANKED"),
                       ('stage_done "trainstart_$ARM" && ! stage_done "train_$ARM"', "RESTART_RULE")):
@@ -265,6 +265,7 @@ def mutations(text):
     sub("upstream refusal removed at the precheck", 'upw="$(upstream)"; [ $? = 1 ] && refuse "$upw"', 'upw="$(upstream)"', "NO_UPSTREAM_REFUSAL_AT_PRECHECK")
     sub("navtest content check disarmed", '= "$NAVTEST_SHA" ] || refuse', '= "$NAVTEST_SHA" ] || true', "NO_NAVTEST_CHECK")
     sub("navtest not exported to the gate", ' AUX_NAVTEST="$NAVTEST_JSON"', '', "NO_NAVTEST_CHECK")
+    sub("cuBLAS config dropped from the preflight (torch 2.7.1 strict-mode raise, A6)", ' CUBLAS_WORKSPACE_CONFIG=:4096:8 "$PY" scorer_finetune.py $ARGS --preflight', ' "$PY" scorer_finetune.py $ARGS --preflight', "PREFLIGHT_NO_CUBLAS_ENV")
     sub("wait removed before the arm", "    wait_clear\n    token_ok || refuse", "    token_ok || refuse", "NO_WAIT_BEFORE_ARM")
     sub("token check removed before the trainer", '    token_ok || refuse "the launch-gate token does not verify for $ARM: scorer_finetune.py is NOT started"\n', "", "TRAIN_NO_TOKEN_CHECK")
     # the BINDING verify must stay AFTER the wait for the GPU: swapped, the check would be a minutes-old claim by the time the trainer starts

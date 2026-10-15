@@ -385,7 +385,9 @@ for ARM in $ARMS; do
   # ---- 5a. preflight on the REAL configuration (G1-G11, and G12 on a head arm); the gate CONSUMES its preflight.jsonl, so it comes first
   if ! stage_done "pre_$ARM"; then
     rm -f "$ARMDIR/preflight.jsonl" "$ARMDIR/PREFLIGHT_PASS.json"
-    env -u HF_TOKEN "$PY" scorer_finetune.py $ARGS --preflight > "$ARMDIR/preflight.log" 2>&1 200>&-
+    # CUBLAS_WORKSPACE_CONFIG at PROCESS START, for the preflight ONLY (PREREG_AUX_DRIVABLE_S1.md A6 addendum): G12 runs its identity arms under STRICT
+    # determinism, and the pod's torch 2.7.1 raises its cuBLAS check unless the variable exists before CUDA starts.  The trainer below runs without it, as the N arms did.
+    env -u HF_TOKEN CUBLAS_WORKSPACE_CONFIG=:4096:8 "$PY" scorer_finetune.py $ARGS --preflight > "$ARMDIR/preflight.log" 2>&1 200>&-
     grep -q "^ZZSFT_PREFLIGHT_PASS" "$ARMDIR/preflight.log" || refuse "scorer_finetune.py --preflight did not pass for $ARM (preflight.log): $(tail -n 2 "$ARMDIR/preflight.log" | tr '\n' ' ' | cut -c1-250)"
     env -u HF_TOKEN "$PY" s1aux_checks.py data-check --jsonl "$ARMDIR/preflight.jsonl" > "$ARMDIR/data_check.log" 2>&1 200>&-
     grep -q "^ZZS1AUX_DATA_OK" "$ARMDIR/data_check.log" || refuse "the data of $ARM is not the audited data: $(tail -n 1 "$ARMDIR/data_check.log" | cut -c1-400)"

@@ -974,9 +974,11 @@ def main() -> int:
           tap       the tensor the head READ is the storage of visual_ctx, the SECOND output of scene_proj in the same forward (not a copy, not scene_ctx)
           no path   autograd.grad(score, head parameters, allow_unused) is None for every parameter: the scorer cannot teach the head to game the score
           feed off  two optimiser steps of (scorer + head) leave every scorer parameter BIT-IDENTICAL to two steps of the scorer alone (separate optimiser, separate clip);
-                    the head-less reference is run twice under deterministic algorithms, and the probe is shown able to read a one-ulp difference
+                    the head-less reference is run twice under STRICT deterministic algorithms (warn_only=False, A6: a warn_only run keeps the non-deterministic SDPA
+                    backward on CUDA and X1 != X2), and the probe is shown able to read a one-ulp difference
           feed on   step 0 of the fed scorer equals the base scorer exactly (zero-initialised projection), a non-zero projection DOES change it, and the projection gets a
-                    non-zero gradient from the score loss
+                    non-zero gradient from the score loss.  The change is read on the run's own bf16 path with the weight mutated OUTSIDE any autocast region and the autocast
+                    cast cache cleared (A6: a mutation inside one region is invisible to the next call in it -- see the comment at the probe)
           adam      after a head step every head parameter holds Adam state (a registered parameter without one never received a gradient)"""
         label_ok = int(lv[1].sum())
         g = {"w_aux": float(aux.w_aux), "feed": aux.cfg.feed, "labelled_frames_in_batch": label_ok, "batch_frames": int(lv[1].shape[0]),
@@ -1037,15 +1039,25 @@ def main() -> int:
 
             def same(P, Q):
                 return all(torch.equal(p_, q_) for p_, q_ in zip(P.parameters(), Q.parameters()))
-            was_det = torch.are_deterministic_algorithms_enabled()
+            # ⛔ STRICT DETERMINISM, NOT warn_only (MEASURED 2026-10-14, raw/2026-10-14-s1-g12-bf16/probe_d_*.json, PREREG_AUX_DRIVABLE_S1.md A6): with warn_only=True the
+            # memory-efficient SDPA backward (the scorer's and the head's nn.MultiheadAttention at 7,680 visual tokens) keeps its atomics-based NON-deterministic algorithm and only
+            # WARNS ("Memory Efficient attention defaults to a non-deterministic algorithm. To explicitly enable determinism call ...(True, warn_only=False)"), so two identical
+            # head-less runs X1, X2 differed in all 78 scorer tensors (CUDA bf16, max |d| 1.2e-4) and G12 read reference_replay_identical / scorer_params_bit_identical_2steps False
+            # on the A40.  warn_only=False switches that kernel to its deterministic algorithm: X1 == X2 == Y bit for bit, no tolerance.  The identity check stays a bit comparison;
+            # a head that DID touch the scorer still reads different (the one-ulp control below, and test_aux_g12_bf16.py's leak mutation).
+            # CUBLAS_WORKSPACE_CONFIG only takes effect if it is in the environment BEFORE the CUDA context; the setdefault below is therefore a late no-op for cuBLAS itself (kept for
+            # torch's own config check).  MEASURED: it is NOT the cause here (strict mode is bit-identical with the variable unset, set late or set early; warn_only stays non-identical
+            # with it set early).  Strict mode RAISES on an op that has no deterministic implementation -- a loud preflight failure, never a silent one; if torch's cuBLAS check raises on
+            # a pod, export CUBLAS_WORKSPACE_CONFIG=:4096:8 in the launch environment (s1aux_pod.sh does not today).
+            was_det, was_warn = torch.are_deterministic_algorithms_enabled(), torch.is_deterministic_algorithms_warn_only_enabled()
             os.environ.setdefault("CUBLAS_WORKSPACE_CONFIG", ":4096:8")
-            torch.use_deterministic_algorithms(True, warn_only=True)
+            torch.use_deterministic_algorithms(True, warn_only=False)
             try:
                 X1, _ = run_arm(False)
                 X2, _ = run_arm(False)
                 Y, st = run_arm(True)
             finally:
-                torch.use_deterministic_algorithms(was_det)
+                torch.use_deterministic_algorithms(was_det, warn_only=was_warn)
             Z = copy.deepcopy(X1)
             with torch.no_grad():
                 z0 = next(Z.parameters()).view(-1)
@@ -1053,15 +1065,36 @@ def main() -> int:
             g.update({"reference_replay_identical": bool(same(X1, X2)), "scorer_params_bit_identical_2steps": bool(same(X1, Y)),
                       "identity_probe_reads_one_ulp": bool(not same(X1, Z)), "adam_head_params": st[0], "adam_head_params_with_state": st[1]})
         else:
+            # ⛔ THE AUTOCAST WEIGHT-CAST CACHE (MEASURED 2026-10-14, raw/2026-10-14-s1-g12-bf16/, PREREG_AUX_DRIVABLE_S1.md A6): inside ONE autocast region the first bf16 use of a
+            # requires-grad fp32 leaf (here feed.proj.weight, still all zeros) CACHES its bf16 cast until the OUTERMOST region exits, whatever the grad mode.  An in-place copy_ of the
+            # fp32 weight afterwards is NOT seen by the next call in that region, so the old probe re-read the cached ZEROS, scored exactly s_plain, and reported
+            # `feed_probe_reads_difference: false` on the A40 -- while on CPU (autocast disabled: no cast, no cache) the same probe passed.  So: every mutation of the weight below
+            # happens OUTSIDE an autocast region, the cache is cleared explicitly (the probe may itself be called inside an outer region), and each read gets its own region.
+            def bf16_scores(field):
+                with torch.no_grad(), torch.autocast("cuda", dtype=torch.bfloat16):
+                    return aux.score(armB, cxy_d, sctx_d, field)
             with torch.no_grad(), torch.autocast("cuda", dtype=torch.bfloat16):
                 lg0, sd0 = aux.predict(sctx_d)
                 s_plain = armB(cxy_d, sctx_d)
                 g["feed_zero_init"] = bool(float(aux.feed.proj.weight.abs().max()) == 0.0)
                 g["feed_step0_equal_base"] = bool(torch.equal(aux.score(armB, cxy_d, sctx_d, sd0), s_plain))
-                keep_w = aux.feed.proj.weight.detach().clone()
-                aux.feed.proj.weight.copy_(torch.full_like(keep_w, 1e-2))
-                g["feed_probe_reads_difference"] = bool(not torch.equal(aux.score(armB, cxy_d, sctx_d, sd0), s_plain))
-                aux.feed.proj.weight.copy_(keep_w)
+            keep_w = aux.feed.proj.weight.detach().clone()
+            known = (3.0 + 0.1 * torch.linspace(AUX.Y0, AUX.Y1, sd0.shape[-1], device=dev)).clamp(-aux.cfg.sdf_scale, aux.cfg.sdf_scale).expand(sd0.shape).contiguous()       # a KNOWN field: > 0 everywhere, varying along y
+            try:
+                with torch.no_grad():
+                    aux.feed.proj.weight.copy_(torch.full_like(keep_w, 1e-2))
+                torch.clear_autocast_cache()
+                s_fed, s_fed_known = bf16_scores(sd0), bf16_scores(known)
+            finally:
+                with torch.no_grad():
+                    aux.feed.proj.weight.copy_(keep_w)                 # restored, whatever happened
+                torch.clear_autocast_cache()
+            g["feed_probe_reads_difference"] = bool(not torch.equal(s_fed, s_plain))
+            # raw diagnostics (not re-judged by the launch gate): which cause a False would be -- the contribution vanishing in bf16, the head's step-0 scalars being degenerate, or a cut path
+            g["feed_probe_known_field_reads_difference"] = bool(not torch.equal(s_fed_known, s_plain))
+            g["feed_probe_max_abs_diff"] = float((s_fed.float() - s_plain.float()).abs().max())
+            g["feed_probe_elems_differ"], g["feed_probe_elems"] = int((s_fed != s_plain).sum()), int(s_plain.numel())
+            g["feed_probe_scalar_std_over_proposals"] = [round(float(v), 6) for v in AUX.feed_scalars(sd0, cxy_d)[0].float().std(1).mean(0)]
             armB.zero_grad(set_to_none=True)
             aux.feed.zero_grad(set_to_none=True)
             losses(sB, sB, tg, a.lam)[1].backward(retain_graph=True)

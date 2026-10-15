@@ -299,3 +299,63 @@ Under A3, S1 would add the same pattern: about 1–1.5 h of CPU-only stages (u40
 
 **Disclosure.** Line 234's "all nine registered arms run unattended in the registered order" no longer holds as written: the execution order is
 N-s0, N-s1, N-s2, then the H arms. Each arm's `chain.log` timestamps record it.
+
+## Amendment A6 (2026-10-15, before any H arm trains): two instrument fixes in gate G12, found on the A40
+
+**What this is.** Two bugs in the G12 preflight probe of `scorer_finetune.py`, both invisible to the CPU suite because it switches off the bf16 autocast and the GPU kernels the pod runs. It is an instrument fix. It changes **no arm, argv, bar, outcome, loss, weight, default, or training path** (N, H1 and H2 train exactly as before; the edited code runs only under `--preflight`). The launch gate's `consume_scorer_preflight` and `gate_checks.py` are untouched and still require every field they required before.
+
+**The failures, quoted (MEASURED on the A40 pod).**
+- **H2-s0, 2026-10-14 21:07Z**, `scorer_finetune.py --preflight`, gate `G12_aux_drv_live_and_identity`: every sub-check true except **`feed_probe_reads_difference: false`** (`feed_zero_init`, `feed_step0_equal_base`, `score_to_head_grads_all_none` held; `feed_proj_grad_abs` 1.22; Adam state 43/43). Arm N-s0 (no head) trained fine.
+- **H1-s0, 2026-10-14 23:31Z**, same gate: **`reference_replay_identical: false`** and **`scorer_params_bit_identical_2steps: false`**; `identity_probe_reads_one_ulp`, `score_to_head_grads_all_none`, `bce_near_ln2` true; Adam state 43/43.
+
+**Root causes.** Measured on this machine's GPU (RTX 4060, torch 2.11.0+cu128, CUDA bf16 autocast), with the **real trained scorer** (`D:/Projects/TanitAD-artifacts/refe-final-2026-10-01/model_final.pt`, 6 outputs) and the real head, in `PK/raw/2026-10-14-s1-g12-bf16/` (`probe_b_rootcause.json`, `probe_d_*.json`, `probe_d_summary.json`).
+
+*H2 — cause (c), the autocast weight-cast cache; (a) and (b) are refuted.*
+- Inside one `torch.autocast` region the first bf16 use of a requires-grad fp32 leaf caches its bf16 cast until the outermost region exits, whatever the grad mode. The old probe used `feed.proj.weight` (all zeros) in `feed_step0_equal_base`, then `copy_`-ed 1e-2 into it **in the same region**, then scored again. The second score re-read the cached zeros and equalled the base scorer exactly. On CPU autocast is disabled (no cast, no cache), so the dev-box test passed.
+- Feed output `|max|` through the real `DrivableFeed`: **0.0** at w = 0; **0.0** after `copy_` of 1e-2 in the same region (stale); **0.0564** after `torch.clear_autocast_cache()`. The old probe code on CUDA bf16 read `feed_probe_reads_difference: false`, `max |diff|` 0.0, at context scales 0.05, 1 and 5 — the pod's signature (`feed_zero_init`, `feed_step0_equal_base` true).
+- **(a) rounding is refuted.** The 1e-2 contribution has median |·| 0.042 (max 0.056) against the base first-layer pre-activation median |·| 2.45 (p95 11.6), whose bf16 half-ulp at the median is 0.0078; 87.9 % of elements exceed the half-ulp. Read in a fresh region, **691 of 768** bf16 score outputs change (max |d| 0.28). The smallest constant that still changes the output is about 1e-5 (248 of 768 elements).
+- **(b) degenerate step-0 scalars is refuted.** Head at step 0, bf16: SDF range [-4.25, 4.94]. Over 128 (batch, proposal) rows: min-corner SDF in [-2.94, 1.55], centre-mean SDF in [2.24, 4.19], share below 0 in [0, 0.21]; all **128 of 128 rows distinct**.
+
+*H1 — `warn_only=True` leaves the memory-efficient SDPA backward non-deterministic; bf16 and cuBLAS are refuted.*
+- The three arms ran under `use_deterministic_algorithms(True, warn_only=True)`. torch then only warns ("Memory Efficient attention defaults to a non-deterministic algorithm. To explicitly enable determinism call `torch.use_deterministic_algorithms(True, warn_only=False)`"). The scorer's and the head's `nn.MultiheadAttention` at 7,680 visual tokens (B = 2, K = 64) take that kernel.
+- Measured two identical head-less runs, X1 and X2, then the head arm Y, 2 steps, AdamW 3e-5, same process:
+
+  | variant | X1 == X2 | X1 == Y | params differing X1 vs X2 (of 78) | max \|d\| |
+  |---|---|---|---|---|
+  | as the trainer ran it (`warn_only=True`, `setdefault` of the cuBLAS config after CUDA init) | no | no | 78 | 1.19e-4 |
+  | `warn_only=True`, `CUBLAS_WORKSPACE_CONFIG=:4096:8` set BEFORE the CUDA context | no | no | 78 | 1.17e-4 |
+  | no determinism flag at all | no | no | 78 | 1.19e-4 |
+  | `warn_only=True`, fp32 (no autocast) | no | no | 65 | 1.16e-6 |
+  | `warn_only=True`, SDPA forced to the math kernel | yes | yes | 0 | 0 |
+  | **`warn_only=False`**, cuBLAS config unset / set late / set early | **yes** | **yes** | **0** | **0** |
+
+- So: the op is the memory-efficient SDPA backward; **bf16 is not the cause** (fp32 differs too); the late `CUBLAS_WORKSPACE_CONFIG` is a no-op but **not the cause** (setting it early does not help under `warn_only=True`, and strict mode is bit-identical without it). `warn_only=False` makes that kernel deterministic and **does not raise** here.
+
+**The fixes (G12 probe only; `refe/scorer_finetune.py`).**
+1. *Feed branch (H2).* The zero-weight reads keep their autocast region. The weight is then set to 1e-2 **outside** any autocast region, `torch.clear_autocast_cache()` is called (the probe may itself run inside an outer region), and each read (the head's own step-0 field, and a **known** field: 3 m plus a ramp along y, clamped to the SDF bound) gets its own region. The weight is restored in a `finally` and the cache cleared again. `feed_zero_init`, `feed_step0_equal_base`, `feed_proj_grad_abs`, the gradient checks, the restore, and every other field are unchanged. New raw diagnostics (not re-judged by the gate): `feed_probe_known_field_reads_difference`, `feed_probe_max_abs_diff`, `feed_probe_elems_differ`, `feed_probe_elems`, `feed_probe_scalar_std_over_proposals` — they tell a failing run apart as rounding, a degenerate field, or a cut path.
+2. *No-feed branch (H1).* `torch.use_deterministic_algorithms(True, warn_only=True)` becomes `(True, warn_only=False)`, and the previous warn-only state is restored. **The identity check is still a bit comparison; no tolerance was introduced.** A head that does reach the scorer still reads different (below).
+
+**What this does NOT show (UNVERIFIED).**
+- It has **not run on the A40**. The local GPU is an RTX 4060 (sm_89) on torch 2.11.0+cu128; the pod's torch is not the same build. Strict mode raises on an op with no deterministic implementation, and torch's cuBLAS config check can raise when `CUBLAS_WORKSPACE_CONFIG` is unset: either is a **loud** preflight failure, never a silent pass. The first `gate_H1-s0` / `gate_H2-s0` on the pod is the confirmation; if the cuBLAS check raises, export `CUBLAS_WORKSPACE_CONFIG=:4096:8` in the launch environment (`s1aux_pod.sh` does not set it today).
+- The full `scorer_finetune.py --preflight` could not run here with the real data banks; the CUDA tests run the real `main()` `--preflight` against a stub trunk (and, for H1, a **real** `CrossBlock` at 7,680 tokens).
+
+**Proof on CUDA bf16 (`refe/test_aux_g12_bf16.py`, source unrewritten, this GPU).**
+- H2: the fixed probe passes (`max |d|` and the differing-element count read, the known field reads, the weight is set to 1e-2 during the probe and restored to exactly 0.0, the probe ran under CUDA autocast and returned bf16); the old block put back reads `feed_probe_reads_difference: false` on CUDA and `true` on CPU (the blind spot, reproduced); `aux.score` ignoring the feed reads RED and the launch-gate consumer refuses it.
+- H1: with a real `CrossBlock` at 7,680 tokens, X1 == X2 and X1 == Y bit for bit and the one-ulp control reads; `warn_only=True` put back breaks the identity probe on CUDA (the replay is stochastic, so the check takes the first of at most 3 runs that reads RED) and stays green on CPU; a head whose loss reaches the scorer's parameters reads `scorer_params_bit_identical_2steps: false` while the replay stays identical, and the consumer refuses it.
+- Counts: `test_aux_g12_bf16.py` `ZZTEST_PASS 7` (30 checks on the unmutated source + 6 RED mutations); `test_aux_s1_wiring.py` `ZZTEST_PASS 20`; `test_rl_s1b.py` `ZZTEST_PASS 18` (the EPO / loss pins hold); `test_aux_drivable_head.py` `ZZTEST_PASS 68`; `test_s1aux_chain.py` `ZZTEST_PASS 361`; `test_launch_gate.py --static` `ZZLG_STATIC_PASS 637`; `test_rl_epo.py` `ZZTEST_PASS 42`.
+
+**Consequences.** The tree changes (`scorer_finetune.py`), so the S1 manifest and the launch-gate tokens (bound to commit, argv and data hashes) are re-derived before the next S1 preflight; N-s0 already trained under the earlier file, and the edited code is outside every code path it ran after `--preflight`. No registered claim, bar or promotion rule moves.
+
+*Numbering.* Drafted as "A5" (the probe artifacts under `raw/2026-10-14-s1-g12-bf16/` still say so). It became **A6** on landing, because A5 (the
+execution order) had landed first, in `6c3dbe4`.
+
+**A6 addendum (Master Mind, 2026-10-15 ~04:40 Berlin, before any H arm trains): the pod's torch build needs `CUBLAS_WORKSPACE_CONFIG` at process start.**
+
+- **The pod runs torch 2.7.1+cu128 (MEASURED).** The local `driverl-eval` venv has the same build, so `test_aux_g12_bf16.py` was run there on the local GPU.
+- **As written, it FAILS.** In strict mode, torch 2.7.1 raises its cuBLAS determinism error ("...uses CuBLAS and you have CUDA >= 10.2..."). The probe's
+  in-process `setdefault` comes too late for that build's check, and every H1 identity check fails.
+- **With `CUBLAS_WORKSPACE_CONFIG=:4096:8` in the environment at process start, it PASSES:** `ZZTEST_PASS 7` (MEASURED).
+- **So `s1aux_pod.sh` exports the variable on the preflight command line ONLY.** The trainers' environment is unchanged, and stays identical to the N
+  arms that already trained.
+- `test_s1aux_chain.py` pins it (`PREFLIGHT_NO_CUBLAS_ENV`), and a mutation removing it goes RED.
+- The A40 run itself is still to come. It happens at the first H arm's preflight, after a pod pre-run of the suite.
