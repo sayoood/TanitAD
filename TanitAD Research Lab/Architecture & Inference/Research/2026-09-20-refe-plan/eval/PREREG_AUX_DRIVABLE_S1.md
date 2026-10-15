@@ -359,3 +359,69 @@ execution order) had landed first, in `6c3dbe4`.
   arms that already trained.
 - `test_s1aux_chain.py` pins it (`PREFLIGHT_NO_CUBLAS_ENV`), and a mutation removing it goes RED.
 - The A40 run itself is still to come. It happens at the first H arm's preflight, after a pod pre-run of the suite.
+
+## Amendment A7 (2026-10-15 ~07:00Z, before any H-arm read): rulings on four wordings the read driver found ambiguous
+
+**What triggered it.**
+- The end-to-end read driver (`eval/s1_read.py`, package `raw/2026-10-15-s1-read-driver/`) was built on 2026-10-15. It found four places where this
+  file's words admit two readings: AMB-1 to AMB-4 in its `NOTES.md` §6.
+  - The driver implements one reading and recomputes the outcome under the other. Without a ruling, nothing says which reading governs.
+- **When.** At this writing H2-s0 is still training (`ZZS1AUX_ARM_TRAIN_START H2-s0` 05:24:53Z) and no other H arm has started.
+  - The driver has been run only on the three N arms, where it reads `INCOMPLETE` by design.
+  - **No H-arm number has been produced or seen by anyone.**
+
+**Why this is not a goalpost moved after the data.** Each ruling below picks the reading that makes **promotion harder or a kill easier**, or it
+names one number where the text named none. No ruling relaxes a bar.
+- The rejected reading of AMB-1 to AMB-3 is still computed and published beside the governing one, as **supplementary**. It never decides
+  (the A2.3 pattern).
+- AMB-4's added limb only adds a way for K3 to fire.
+
+**A7.1 · AMB-1, the H2 P3 condition with three H2 seeds (§4.3 cond 1).**
+- **Governing:** cond 1 holds only if **every one of the three H2 seeds** reads `H2_EVALUATED` or `H2_PROVISIONAL` (A2.1's floor included).
+- **Regime:** `H2_PROVISIONAL` governs cond 2 (3 of 3 pairs) if **any** seed is PROVISIONAL.
+- **Why:** cond 4 already reads "on any H2 run", and promotion is the claim, so the condition applies to every run.
+- **Supplementary:** 2 of 3 seeds.
+
+**A7.2 · AMB-2, H1's K2 / K6 with three H1 seeds (§4.3 H1 paragraph).**
+- **Governing:** K2 and K6 are read on **all three H1 seeds**. Any firing means H1 is not promoted.
+- The alternative ("H1-s0 only", from the runbook's S1-D3 drop rule) does not arise: **A3.3 says the drop rule is not exercised**, and all
+  nine arms run.
+- **Supplementary:** H1-s0 alone.
+
+**A7.3 · AMB-3, K6's step-0 value and its "after 10 % of the steps" row.**
+- **Governing step-0 value:** G12's `bce_declared`. That is the head's BCE on a real training batch through the training loss path, at the
+  initial weights, recorded in the arm's `PREFLIGHT_PASS.json`.
+- **Governing row:** the first `train` event with `update ≥ ceil(0.10 × 400) = 40`. The trainer logs every 25 updates (`scorer_finetune.py:1368`),
+  so this is the update-50 row. Its `aux_bce` is a mean over updates 26–50.
+- K6 fires iff that row's `aux_bce ≥ 0.9 × bce_declared`.
+- **Supplementary, never deciding:** the update-25 row; and ln 2 as the step-0 value.
+
+**A7.4 · AMB-4, K3 at the S1 batch, and a disclosed contamination of its time limb.**
+- **Batch.** The draft's K3 was written "at micro-batch 4"; S1's argv uses `--batch 8`.
+  - **Governing:** K3 is read at the arm's own batch, 8. Head activations grow with the batch, so the 1 GB memory bar read at 8 is **stricter** than at 4.
+  - The memory limbs are as the driver implements them: G12 `head_retained_gb > 1.0`, or the preflight `gpu_mem_gb` of H minus that of the same-seed N `> 1.0`.
+- **The time limb: a contamination disclosed BEFORE the read.** The Master Mind ran CPU jobs on the pod (tests, gate pre-runs and diagnostics,
+  all at `nice 19`) while some S1 arms trained. End times are the files' mtimes; start times are approximate.
+
+  | arm (training window, UTC) | overlapping Master Mind CPU jobs (end time) |
+  |---|---|
+  | N-s0 (10-14 19:35:25 – 21:01:30) | `p6suite` (19:47:17), `rls1b_suite` (20:09:38) |
+  | N-s1 (10-15 01:23:22 – 02:49:38) | `p2rep_suite_diag2` (01:36:30), `fpbench` gate-token listing (01:45:56), `p2rep_suite_prerun` (02:00:59, ~817 s), `p2rep_fix2` (02:17:23), `count_pod` (02:31:08) |
+  | N-s2 (03:19:07 – 04:45:14) | none known |
+  | H2-s0 (from 05:24:53) | `p2rep_gsuite_exact` (05:13:26 – 05:33:44, ~9 min of overlap) |
+
+  The trainer's `s_per_update` is the **cumulative** run mean, `(time.time() − t0) / upd` (`scorer_finetune.py:1371`). Any contention window is
+  therefore averaged into the literal number, in either arm of a pair and in either direction.
+- **Governing:** K3's time limb fires if **either** of two estimates exceeds +3 %, each taken as H vs the same-seed N:
+  1. the run-mean at update 400 (the literal reading);
+  2. the **median per-window** s/update. With rows every 25 updates, there are 16 windows per arm, each derived exactly from consecutive
+     cumulative rows: window (u1, u2] = (s2·u2 − s1·u1) / (u2 − u1).
+
+  The median is robust to a transient contention window. Taking either estimate only adds ways to fire. Both are published.
+- **Supplementary:** the mean of the three N seeds as the comparator.
+
+**What it changes.** The read driver only:
+- `AMBIGUITIES` entries carry `ruled: A7.x`;
+- `read_k3` gains the median-window limb, with a check and a RED mutation in `test_s1_read.py`.
+
+Unchanged: every bar, arm, argv, seed, estimator, outcome name and the read order (A5: the first read happens after all registered arms exist).
