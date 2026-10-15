@@ -1920,6 +1920,12 @@ TTC-failing picks. The defect is the shared scorer generalising under the EPO gr
 4. ~~A lever on the PROGRESS outputs: Adam's scale invariance voided the dose~~ **REFUTED 2026-10-15 ~03:00 (`D-REFE-RLS1-HADAM`):** the quarter dose
    moved the parameters about half as far (rho 0.52 / 0.55, MEASURED from the banked states).
 5. **R0c: anchor EPO's KL to arm A's policy instead of the frozen base** (`raw/2026-10-15-rls1-adam-dose/PREREG_R0C_DRAFT.md`). MEASURED, re-verified:
+   - ✅ **DECIDED 2026-10-15 by the PI:** *"run R0c, I dont have currently asecon pod or gpu aprt of my local computer with the 8gb gpu"*. Done before the first R0c step:
+     - landed `f64a952` (patches 1-12, `eval/PREREG_R0C.md` IN FORCE, 18 suite runs green);
+     - C0's score dumps restored on the pod (15 files, sha256 against HF);
+     - shipped and sha256-verified on the pod (tree `958f3e5d…`);
+     - the gate's own G-SUITE pre-run for `refe_rls1c` **PASS** (238.5 s).
+     **QUEUED 2026-10-15 20:57:25Z** (`ZZRLS1_QUEUED` behind the P2 seed replicate). It takes the A40 when P2-s1 exits (~10-16 11:50Z), and P6 waits on `rls1/chain.lock`. No second GPU exists (PI), so the slot before P6 is the only one short of a week.
    **about 83 % of R0's -1.00 TTC gap is the BCE-only control's own gain over the start** (A - base +0.83 [+0.13, +1.58]). The EPO arm is not
    separated from the start (B - base -0.17 [-0.71, +0.38]); EPO's KL anchor holds it at KL 0.15-0.26 from the frozen base while A drifts to 1.14
    (ESTIMATED). One arm: R0's argv plus `--epo-ref armA`, every guard as registered (g5 stays against the control). It needs a trainer flag (zero-A40
