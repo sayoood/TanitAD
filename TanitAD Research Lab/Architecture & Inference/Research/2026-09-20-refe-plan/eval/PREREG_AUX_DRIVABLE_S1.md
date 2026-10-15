@@ -274,3 +274,28 @@ Under A3, S1 would add the same pattern: about 1–1.5 h of CPU-only stages (u40
 - RL-S1's update rate is read from its own egress ticks before and during the overlap: C0 took ~58 min per 250 updates.
 - If the rate drops by more than 5 % during the overlap, the S1 labellers are stopped by explicit PID, and the drop is reported.
 - Rationale: the binding rule "never add GPU/RAM load to a training pod" exists to protect the training run. This overlap adds no GPU load and ~2–3 GB of RAM. Its CPU load runs at the lowest priority, and it is measured against the run it could harm.
+
+## Amendment A5 (2026-10-15 ~03:40 Berlin, before any S1 read): execution order after the H-arm refusal
+
+**What happened.**
+- N-s0 trained and was banked (`ZZS1AUX_ARM_DONE N-s0`, 2026-10-14 21:01Z).
+- The chain then REFUSED at the preflight of the next two arms:
+  - H2-s0 at 21:07Z;
+  - H1-s0 at 23:31Z after a restart.
+- In both cases G12 failed under CUDA bf16 while passing on the dev box (CPU, fp32). A fix is in build; it touches only the preflight check.
+
+**The change.**
+- To keep the A40 busy, the chain was restarted on 2026-10-15 00:51Z with `S1AUX_ARMS="N-s1 N-s2"`. That is a subsequence of the registered order, and the chain
+  accepts it by design (`s1aux_pod.sh:13`).
+- The H arms (H2-s0, H1-s0, H2-s1, H2-s2, then H1-s1 / H1-s2 under A3.3) run afterwards, in their registered relative order, once the fix is landed,
+  shipped and has passed the gate ON THE POD.
+
+**Why this changes no read and no criterion.**
+- Every arm is an independent fine-tune from the same u400 checkpoint, with its own seed and its own data order. Nothing passes between arms; there is
+  no resume (section 2's travel rules).
+- The order mattered only as a PRIORITY: a chain killed early should still yield the most important arms. With the H arms blocked, it cannot be honoured
+  for them.
+- The arms, argv, tokens, criteria and the A3.3 drop rule are untouched. The first S1 read happens after all registered arms exist.
+
+**Disclosure.** Line 234's "all nine registered arms run unattended in the registered order" no longer holds as written: the execution order is
+N-s0, N-s1, N-s2, then the H arms. Each arm's `chain.log` timestamps record it.
