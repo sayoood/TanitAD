@@ -1,0 +1,189 @@
+{
+ "binding": {
+  "argv": [
+   "--backbone",
+   "vitl16",
+   "--targets",
+   "/workspace/data/refe_navtrain/train_grow",
+   "--scorer-targets",
+   "/workspace/data/refe_navtrain/train_grow",
+   "--images",
+   "/workspace/data/navtrain_pixels",
+   "--calib",
+   "/workspace/data/refe_navtrain/train_grow/calib_table.json",
+   "--init-from",
+   "/workspace/data/refe_runs/vitl16_navtrain10_grow_tau0.3/model_final.pt",
+   "--scorer-mode",
+   "onpolicy",
+   "--onpolicy-targets",
+   "/workspace/data/refe_navtrain/onpolicy/sets",
+   "--pdm-labels",
+   "/workspace/data/refe_sft2/train_pdm",
+   "--pdm-only",
+   "--scorer-sees-trunk",
+   "--epochs",
+   "3",
+   "--epoch-unit",
+   "scenes",
+   "--batch",
+   "4",
+   "--accum",
+   "64",
+   "--lr",
+   "5e-5",
+   "--amp",
+   "bf16",
+   "--tf32",
+   "--compile",
+   "--workers",
+   "2",
+   "--log-every",
+   "1",
+   "--ckpt-every-min",
+   "20",
+   "--seed",
+   "1",
+   "--out",
+   "/workspace/data/refe_runs/p2_joint_pdm_s1",
+   "--resume"
+  ],
+  "argv_sha256": "d7474190962564592f10024f74790a0eef170c42427ed875fb5815391ebfc8f6",
+  "commit": "12b13288a134347e7dee74d88d1219c801f677ee",
+  "data": {
+   "--calib": {
+    "bytes": 2336659,
+    "kind": "file",
+    "method": "sha256-v1",
+    "path": "/workspace/data/refe_navtrain/train_grow/calib_table.json",
+    "sha256": "772c00abfd5070f7f6ecb648e45e7d422a3aeb3c5112ab12c43bbe5eb4a8ab6f"
+   },
+   "--images": {
+    "bytes": 85872932604,
+    "kind": "dir",
+    "listing_sha256": "95155321fc232cbd371cafc9be0f868654fa6baf90b3cf0fc93989b55a85182b",
+    "method": "dir-listing-v1 (relpath + size of every file; contents NOT hashed; _v2manifest.pt excluded -- a cache rewrites it on first use)",
+    "n_files": 413184,
+    "path": "/workspace/data/navtrain_pixels"
+   },
+   "--init-from": {
+    "bytes": 1288484600,
+    "kind": "file",
+    "method": "sha256-v1",
+    "path": "/workspace/data/refe_runs/vitl16_navtrain10_grow_tau0.3/model_final.pt",
+    "sha256": "4246a320be71ad0e315f8f298b7dadab3dbbba2c24f4fc30706e0129f5057e66"
+   },
+   "--onpolicy-targets": {
+    "bytes": 11088393052,
+    "kind": "dir",
+    "listing_sha256": "d03977fb0da31992d70e807f13dc165271e4605c168961cf1d0688e00a1ffcc5",
+    "method": "dir-listing-v1 (relpath + size of every file; contents NOT hashed; _v2manifest.pt excluded -- a cache rewrites it on first use)",
+    "n_files": 8,
+    "path": "/workspace/data/refe_navtrain/onpolicy/sets"
+   },
+   "--pdm-labels": {
+    "bytes": 478323318,
+    "kind": "dir",
+    "listing_sha256": "8127c2dec85057c28bbfcaddd98214113ca6a7a2432291393295100cfa9884a8",
+    "method": "dir-listing-v1 (relpath + size of every file; contents NOT hashed; _v2manifest.pt excluded -- a cache rewrites it on first use)",
+    "n_files": 8,
+    "path": "/workspace/data/refe_sft2/train_pdm"
+   },
+   "--scorer-targets": {
+    "bytes": 6330899550,
+    "kind": "dir",
+    "listing_sha256": "10d953183a62ddd17def37d0a60a20fe9578890e5f7f46bd3511f38608a724c6",
+    "method": "dir-listing-v1 (relpath + size of every file; contents NOT hashed; _v2manifest.pt excluded -- a cache rewrites it on first use)",
+    "n_files": 7,
+    "path": "/workspace/data/refe_navtrain/train_grow"
+   },
+   "--targets": {
+    "bytes": 6330899550,
+    "kind": "dir",
+    "listing_sha256": "10d953183a62ddd17def37d0a60a20fe9578890e5f7f46bd3511f38608a724c6",
+    "method": "dir-listing-v1 (relpath + size of every file; contents NOT hashed; _v2manifest.pt excluded -- a cache rewrites it on first use)",
+    "n_files": 7,
+    "path": "/workspace/data/refe_navtrain/train_grow"
+   },
+   "gate:p2_gate_json": {
+    "bytes": 1006,
+    "kind": "file",
+    "method": "sha256-v1",
+    "path": "/workspace/data/refe_p2rep/gate/gate.json",
+    "sha256": "68a67e06a22fa78859d9ace877b8d62c5766655d5faa0624cc6f7c1f588ead07"
+   }
+  },
+  "data_sha256": "5a680f272889368fc123fee6b5739318f06d48ac017f88fcd1df7df10a661cb4",
+  "gate_inputs": {
+   "gate:p2_gate_json": "/workspace/data/refe_p2rep/gate/gate.json"
+  },
+  "profile": "refe_p2rep",
+  "trainer": "refe/train.py",
+  "tree_sha256": "16c23b0c4ca63a95a49200dce364f3e9ff38fd01013a6bff864cb564e95b006f"
+ },
+ "checks": {
+  "G-CKPT": {
+   "evidence_sha256": "b895d80c4a922865b7877b1247ed0c2cb53723cb58066a178acd68711edf6f33",
+   "finished_utc": "2026-10-15T04:53:30Z",
+   "reasons": [],
+   "status": "PASS"
+  },
+  "G-CLOCK": {
+   "evidence_sha256": "c890b08a4ccb56afcb7e039a4da2e434f78289aca892cb72e560cd9e5a6a6db6",
+   "finished_utc": "2026-10-15T04:51:26Z",
+   "na_reason": "P2 has no label clock: its labels are the PDM relabel of a banked on-policy bank, stamped by the relabeller's ckpt_step",
+   "reasons": [
+    "P2 has no label clock: its labels are the PDM relabel of a banked on-policy bank, stamped by the relabeller's ckpt_step"
+   ],
+   "status": "PASS"
+  },
+  "G-DVB": {
+   "evidence_sha256": "6cdcbabe443c80748b0c707dfdc5712e5b3f816be54bf56f163bd0e864cf56ab",
+   "finished_utc": "2026-10-15T04:51:19Z",
+   "reasons": [],
+   "status": "PASS"
+  },
+  "G-EVAL": {
+   "evidence_sha256": "46b2f8d424f17afd5e86844991a909d488cdda9c2474dc3f8e4558884cc1f83f",
+   "finished_utc": "2026-10-15T04:51:38Z",
+   "reasons": [],
+   "status": "PASS"
+  },
+  "G-HYG": {
+   "evidence_sha256": "e12e0c1a4ab1df5c8cd984bdbe5a7721637533bb919a4f6a2fa2a77e5868c0f6",
+   "finished_utc": "2026-10-15T04:51:19Z",
+   "reasons": [],
+   "status": "PASS"
+  },
+  "G-LIVE": {
+   "evidence_sha256": "a6e57736531ac8bbd5829410ef9e89b3c08691f019cab699716cbe925147d179",
+   "finished_utc": "2026-10-15T04:51:26Z",
+   "reasons": [],
+   "status": "PASS"
+  },
+  "G-P2GATE": {
+   "evidence_sha256": "793e53c481f6c57a567b8d41a319fa1ce26c6f5a7578dca947287014004f72cc",
+   "finished_utc": "2026-10-15T05:03:20Z",
+   "reasons": [],
+   "status": "PASS"
+  },
+  "G-SUITE": {
+   "evidence_sha256": "e50afc08f9e89069988e1932cb9ba7b1c0b4c507b3c0ff654d6deb5fffb2e23b",
+   "finished_utc": "2026-10-15T05:03:20Z",
+   "reasons": [
+    "test_p2rep_chain.py: rc 1, 'ZZTEST_PASS' NOT seen"
+   ],
+   "status": "FAIL"
+  }
+ },
+ "created_utc": "2026-10-15T05:04:12Z",
+ "gate_sha256": "90d04cbfe7bb17e75595c130c8b3612f54a00f0c8b695c5c40e60a63c3240a3b",
+ "hmac_sha256": "658eb7eb8e0357d0a5100f7d760539341450b69e2a1321ab5d0b7e544bba2616",
+ "key_id": "0ea512d775e4dae8",
+ "kind": "launch-gate-token",
+ "reasons": [
+  "G-SUITE FAIL: test_p2rep_chain.py: rc 1, 'ZZTEST_PASS' NOT seen",
+  "checks not PASS: ['G-SUITE']"
+ ],
+ "schema": "tanitad.launch_gate/1",
+ "verdict": "FAIL"
+}

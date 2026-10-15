@@ -70,3 +70,49 @@ the cheap host.
   that found this cause.
 - ⇒ A sibling defect is latent: `write_sh` in `test_s1aux_chain.py` and `test_rls1_chain.py` has no chmod either. Those suites pass on the pod
   because their shims are invoked through `bash <file>`. They should get the same chmod at their next touch.
+
+## Second refusal, 05:04Z: the chain's own launch override leaked into the test (MEASURED, pod + dev box)
+
+**What happened.**
+- `12b1328` reached the gate at 04:47:19Z (`ZZP2REP_GATE_OK`).
+- At 05:04:14Z it was **REFUSED again on G-SUITE, and only on G-SUITE**: `test_p2rep_chain.py` rc 1, `ZZTEST_PASS` NOT seen. Every other check
+  passed.
+- Evidence: `r2_launch_gate.log`, `r2_FAIL_12b13288a134.json`, `r2_evidence_G-SUITE.json`, `r2_chain_excerpt.log`.
+- The pre-run above had passed. **What differed was the environment.** The 02:33Z restart was launched as `export P2REP_S1_ABANDONED=1 && setsid ...
+  p2rep_pod.sh`, the Master Mind's override for "S1 is neither running nor finished".
+
+**Root cause: the variable propagated down to the test.**
+- The launch gate runs G-SUITE as a CHILD of `p2rep_pod.sh`, so the test inherits the chain's environment.
+- The test's harness built its env as `dict(os.environ, **env)`, so `P2REP_S1_ABANDONED=1` reached the `wait_clear` harness.
+- There, the case **"S1 is neither running nor finished ⇒ REFUSED, never an endless wait"** (l.608) read CLEAR instead.
+- A correct chain was refused by a test that had been told the answer.
+
+**The fix (`refe/test_p2rep_chain.py`).**
+- `clean_environ()` drops every caller `P2REP_*`. Both `bash_run` and `Pod.run` build from it. Every `P2REP_*` a check needs is set EXPLICITLY by
+  that check.
+- `env_isolation()` runs first in `main()`. It sets the exact hostile value and requires three things:
+  - the harness sees `[unset]`;
+  - an explicit `P2REP_S1_ABANDONED=1` still arrives as `[1]`;
+  - `PATH` survives the scrub.
+
+**Proof, both directions:**
+
+| arm | where | result |
+|---|---|---|
+| **UNFIXED** test (the `d257647` blob), `P2REP_S1_ABANDONED=1` in the caller's env | dev box | **RED**: `AssertionError` at **l.608**, the exact case above (`dev_unfixed_hostile_env.log`). The `G-* FAIL` lines before it are the test's own expected negative cases. |
+| fixed test, hostile env set | dev box, tip tree | `ZZTEST_PASS 353` |
+| fixed test, hostile env unset | dev box, tip tree | `ZZTEST_PASS 353` |
+| **the gate's own `gate_checks.check_suite(PROFILES["refe_p2rep"])`, in-process from the shipped tree**, in the chain's env (`P2REP_S1_ABANDONED=1`, the gate key, `OMP_NUM_THREADS=4`, no `HF_TOKEN`, GPU hidden) | **pod**, beside S1's training | **G-SUITE PASS**, 1,218 s, all three scripts rc 0 with their tokens seen and 0 skips (`r2_p2rep_gsuite_exact.py` / `.json` / `.log`) |
+
+**Shipping.**
+- Ship branch `ship/p2rep-s1-20261015` is now at **`55227a3`**: `12b1328` plus this one file. Trainer bytes are still `8679849`'s. On the pod, 235/235
+  files are sha256-verified with 0 bad. `.old_12b1328` is kept.
+- The chain restarted at **05:35:25Z** (`ZZP2REP_PRECHECK_OK ... commit 55227a312709`) WITHOUT the override. S1's chain.log already holds
+  `ZZS1AUX_DONE` from the N arms, so the chain WAITS on S1's lock while S1's H arms train.
+
+**Class.** This is a fourth host-difference failure, and a new kind: the variable was neither a path, a device nor a file mode, but **the
+caller's environment**.
+- A pre-run in "the gate's environment" that does not carry **the chain's launch-time variables** is not the gate's environment.
+- ⇒ A pod pre-run of G-SUITE runs **through `gate_checks.check_suite` in-process, with the exact env the chain will export** (as
+  `r2_p2rep_gsuite_exact.py` does), not by re-running the scripts by hand.
+- ⇒ A test harness that shells out builds its env from an allow-list or a scrub of its own switches. It never builds from `os.environ` wholesale.
