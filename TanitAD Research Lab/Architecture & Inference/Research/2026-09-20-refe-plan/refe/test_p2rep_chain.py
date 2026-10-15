@@ -71,8 +71,15 @@ def write_sh(path, text):
     os.chmod(path, 0o755)
 
 
+def clean_environ() -> dict:
+    """os.environ WITHOUT the chain's own switches (P2REP_*).  The launch gate runs this test as a CHILD of p2rep_pod.sh, so on the pod it inherits the
+    chain's environment -- 2026-10-15 05:04Z: P2REP_S1_ABANDONED=1 (the Master Mind's launch override) reached the wait_clear harness, the case "S1 is
+    neither running nor finished => REFUSED" read CLEAR, and G-SUITE refused a correct chain.  Every P2REP_* a check needs is set EXPLICITLY by that check."""
+    return {k: v for k, v in os.environ.items() if not k.startswith("P2REP_")}
+
+
 def bash_run(script, env=None, timeout=300):
-    e = dict(os.environ, **(env or {}))
+    e = dict(clean_environ(), **(env or {}))
     r = subprocess.run([BASH, "-c", script], capture_output=True, text=True, env=e, timeout=timeout)
     return r.returncode, r.stdout.strip(), r.stderr.strip()
 
@@ -853,7 +860,7 @@ class Pod:
         if fresh:
             self.reset()
         (self.tmp / "nvc").write_text("0")
-        e = {k: v for k, v in os.environ.items() if k not in drop}
+        e = {k: v for k, v in clean_environ().items() if k not in drop}            # never the CALLER's P2REP_* (see clean_environ)
         e.update({k: v for k, v in {**self.base_env, **(env_extra or {})}.items() if k not in drop})
         r = subprocess.run([BASH, posix(self.script)], capture_output=True, text=True, env=e, timeout=timeout)
         return r.returncode, r.stdout + r.stderr, self.log()
@@ -1118,8 +1125,26 @@ def hygiene():
         ok("p2rep_pod.sh" in txt and "ZZP2REP_DONE" in txt and "refe_p2rep" in txt and "--seed 1" in txt and S1_REPO in txt and "-c core.autocrlf=false" in txt, "the runbook lost a load-bearing fact")
 
 
+def env_isolation():
+    """the caller's P2REP_S1_ABANDONED=1 (the chain's own launch override, inherited through the launch gate) must not reach a harness"""
+    saved = os.environ.get("P2REP_S1_ABANDONED")
+    os.environ["P2REP_S1_ABANDONED"] = "1"
+    try:
+        ok("P2REP_S1_ABANDONED" not in clean_environ() and "PATH" in clean_environ(), "clean_environ must drop the caller's P2REP_* and keep the rest")
+        rc, out, _ = bash_run('echo "[${P2REP_S1_ABANDONED:-unset}]"')
+        ok(rc == 0 and out.strip() == "[unset]", ("a harness saw the caller's P2REP_S1_ABANDONED", out))
+        rc, out, _ = bash_run('echo "[${P2REP_S1_ABANDONED:-unset}]"', {"P2REP_S1_ABANDONED": "1"})
+        ok(rc == 0 and out.strip() == "[1]", ("an EXPLICIT P2REP_* must still reach the harness", out))
+    finally:
+        if saved is None:
+            os.environ.pop("P2REP_S1_ABANDONED", None)
+        else:
+            os.environ["P2REP_S1_ABANDONED"] = saved
+
+
 def main() -> int:
     assert BASH, "bash is required"
+    env_isolation()
     text = CHAIN.read_text(encoding="utf-8")
     rep_argv = arm_checks()
     with tempfile.TemporaryDirectory() as td:
