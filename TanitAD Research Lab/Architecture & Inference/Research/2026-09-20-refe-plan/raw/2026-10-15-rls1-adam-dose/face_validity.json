@@ -1,0 +1,153 @@
+{
+ "tool": "face_validity/1",
+ "trainer_blob_sha256": "1413a81a874baa9fdd5207e6bd39c0c5293e2ccd4ce13f05268f8b04bc707ea7",
+ "base_ckpt_sha256_expected": "8b4dba4818b5cc96c640fe892efe114037ace7cec9dda060c5b4cdd5fb92410d",
+ "C6_strict_load": "PASS (load_state_dict(strict=True) of all three scorer modules did not raise)",
+ "val_pool": {
+  "side": "val",
+  "lines_scanned": 3000,
+  "lines_with_cached_visual": 62,
+  "n_pool": 62,
+  "pdm_matched": 62,
+  "tlane_matched": 62,
+  "terms_stats": {
+   "files": 1,
+   "lines": 3000,
+   "matched": 62,
+   "stale": 0,
+   "superseded": 0,
+   "incomplete": 0,
+   "not_in_bank": 2938,
+   "bad_lines": 0,
+   "duplicates": 0
+  },
+  "n_cols": 7,
+  "ckpt_steps": [
+   10075
+  ]
+ },
+ "V_median_over_heads_of_mean_within_scene_r": 0.9969104459186302,
+ "status": "ADMISSIBLE",
+ "per_head": {
+  "NC": {
+   "mean_within_scene_r": 0.9969104459186302,
+   "median_within_scene_r": 0.9982387233234916,
+   "scenes": 62,
+   "mean_abs_logit_diff": 0.13016458833777916,
+   "mean_logit_mine": 4.308611565947367,
+   "mean_logit_banked": 4.2115257017074095,
+   "std_logit_mine": 1.910948426404275,
+   "std_logit_banked": 1.931226612535125
+  },
+  "DAC": {
+   "mean_within_scene_r": 0.994609239775768,
+   "median_within_scene_r": 0.9985726191714256,
+   "scenes": 62,
+   "mean_abs_logit_diff": 0.22460747337989292,
+   "mean_logit_mine": 2.8083930987418317,
+   "mean_logit_banked": 3.0225207421087448,
+   "std_logit_mine": 2.493853206891546,
+   "std_logit_banked": 2.572335977254919
+  },
+  "EP": {
+   "mean_within_scene_r": 0.997319200302924,
+   "median_within_scene_r": 0.9989460715554294,
+   "scenes": 62,
+   "mean_abs_logit_diff": 0.0744256321782051,
+   "mean_logit_mine": 0.7020709151242515,
+   "mean_logit_banked": 0.7555469697521578,
+   "std_logit_mine": 1.088669624232417,
+   "std_logit_banked": 1.0796165136699472
+  },
+  "TTC": {
+   "mean_within_scene_r": 0.9971072154817204,
+   "median_within_scene_r": 0.9988644644089976,
+   "scenes": 62,
+   "mean_abs_logit_diff": 0.10220699847981919,
+   "mean_logit_mine": 2.8908828068961157,
+   "mean_logit_banked": 2.8229267674107708,
+   "std_logit_mine": 1.7081470321061725,
+   "std_logit_banked": 1.7288999956689304
+  },
+  "C": {
+   "mean_within_scene_r": 0.996251329609875,
+   "median_within_scene_r": 0.998203269919009,
+   "scenes": 62,
+   "mean_abs_logit_diff": 0.0821185435258573,
+   "mean_logit_mine": 8.909941923594282,
+   "mean_logit_banked": 8.947950793850806,
+   "std_logit_mine": 1.927078763681171,
+   "std_logit_banked": 1.9080927014339804
+  },
+  "DDC": {
+   "mean_within_scene_r": 0.9967334965449602,
+   "median_within_scene_r": 0.9990660925428029,
+   "scenes": 62,
+   "mean_abs_logit_diff": 0.22005149267610133,
+   "mean_logit_mine": 4.856892298806587,
+   "mean_logit_banked": 5.065094409450408,
+   "std_logit_mine": 2.6864985335356297,
+   "std_logit_banked": 2.7917079581853463
+  },
+  "LANE": {
+   "mean_within_scene_r": 0.997051261760909,
+   "median_within_scene_r": 0.9989054958153465,
+   "scenes": 62,
+   "mean_abs_logit_diff": 0.05071762005888646,
+   "mean_logit_mine": 1.075032985078231,
+   "mean_logit_banked": 1.1232152138986895,
+   "std_logit_mine": 0.9423483721219144,
+   "std_logit_banked": 0.9644558445625634
+  }
+ },
+ "pick_agreement_with_banked": 0.7580645161290323,
+ "n_val_scenes": 62,
+ "train_pool": {
+  "side": "train",
+  "lines_scanned": 16000,
+  "lines_with_cached_visual": 302,
+  "n_pool": 302,
+  "pdm_matched": 302,
+  "tlane_matched": 302,
+  "terms_stats": {
+   "files": 4,
+   "lines": 16000,
+   "matched": 302,
+   "stale": 0,
+   "superseded": 0,
+   "incomplete": 0,
+   "not_in_bank": 15698,
+   "bad_lines": 0,
+   "duplicates": 0
+  },
+  "n_cols": 7,
+  "ckpt_steps": [
+   10075
+  ]
+ },
+ "D1_mean_BCE_base_on_pool": 0.694820402441798,
+ "D1_logged_R0_bceA_u25": 0.5741515401005745,
+ "D2_mean_J_base_on_pool": 0.8428034814628395,
+ "D2_logged_R0_epoJ_u25": 0.8171236744523048,
+ "D2_KL_at_init": 3.5861802176499793e-09,
+ "D3_pool": {
+  "TTC_fail_share_of_proposals": 0.11687706953642384,
+  "scenes_with_TTC_fail": 0.3841059602649007,
+  "n": 302
+ },
+ "D3_RL_train_partition": {
+  "TTC_fail_share_of_proposals": 0.136203125,
+  "NC_fail_share_of_proposals": 0.06670507812499998,
+  "scenes_with_safe": 0.99725,
+  "scenes_with_TTC_fail": 0.5035625
+ },
+ "closure_hashes": {
+  "lane_bce": "8ece79db89b6c764",
+  "sel_score": "bbaa977a6677d10d",
+  "losses": "c5e0de8a57451c82",
+  "losses6": "62e67202c17a3bca",
+  "epo_term": "17be21ca1b12991f",
+  "train_losses": "949ad388a9cb2cb3"
+ },
+ "runtime_s": 152.6
+}

@@ -1,0 +1,82 @@
+{
+ "tool": "controls_trainer/1",
+ "C6": "PASS (strict load in build_scorer; reached here)",
+ "n_params": 4296967,
+ "C1_lam0_equals_BCE_only": {
+  "explicit_lam0_graph_live": {
+   "loss_A": 0.24881017208099365,
+   "loss_B": 0.24881017208099365,
+   "epo_term": -0.0,
+   "max_abs_grad_diff": 0.0,
+   "max_abs_update_diff": 0.0,
+   "bit_identical": true
+  },
+  "scheduled_upd0_short_circuit": {
+   "loss_A": 0.24881017208099365,
+   "loss_B": 0.24881017208099365,
+   "epo_term": 0.0,
+   "max_abs_grad_diff": 0.0,
+   "max_abs_update_diff": 0.0,
+   "bit_identical": true
+  }
+ },
+ "C5_closures_vs_module_level": {
+  "rel_diff_gB": 0.0,
+  "rel_diff_gE": 0.0,
+  "bce_closure": 0.24881017208099365,
+  "bce_hand": 0.24881017208099365,
+  "epo_closure": -0.9239833950996399,
+  "epo_hand": -0.9239833950996399,
+  "pass_le_1e-5": true,
+  "closure_ast_hashes": {
+   "lane_bce": "8ece79db89b6c764",
+   "sel_score": "bbaa977a6677d10d",
+   "losses": "c5e0de8a57451c82",
+   "losses6": "62e67202c17a3bca",
+   "epo_term": "17be21ca1b12991f",
+   "train_losses": "949ad388a9cb2cb3"
+  }
+ },
+ "C7_logit_level_dose_exact": {
+  "max_abs(g025 - 0.25*g1)": 0.0,
+  "max_abs_g1": 0.0007762768655084074,
+  "exact": true
+ },
+ "C8_fp32_vs_bf16_autocast": {
+  "median_rel_dev_of_r_p": 0.005621893608172446,
+  "max_rel_dev_of_r_p": 0.0369808173575541,
+  "share_tensors_within_15pct": 1.0,
+  "worst5": [
+   [
+    "score_dec.1.n2.bias",
+    0.40729719400405884,
+    0.4223593771457672,
+    0.0369808173575541
+   ],
+   [
+    "score_dec.0.n2.bias",
+    0.4707496166229248,
+    0.48218321800231934,
+    0.02428807369279906
+   ],
+   [
+    "score_dec.1.n2.weight",
+    0.5596593618392944,
+    0.5695424675941467,
+    0.017659144881222
+   ],
+   [
+    "score_q_mlp.0.bias",
+    0.29008111357688904,
+    0.2948484420776367,
+    0.016434467042557133
+   ],
+   [
+    "score_q_mlp.2.bias",
+    0.219053253531456,
+    0.22252215445041656,
+    0.015835879463266922
+   ]
+  ]
+ }
+}

@@ -1917,13 +1917,17 @@ TTC-failing picks. The defect is the shared scorer generalising under the EPO gr
    attacks the minor term.
 2. **R2b**, the lane-change arm: a 4th arm outside the authorised three. It does not address TTC.
 3. **Park RL-S1.** The pod time goes to S1, P2-s1 and P6, which are already queued.
-4. **A lever on the PROGRESS outputs (zero-A40 design first).** HYPOTHESIS for why the dose lever (R0b, `--epo-lam 0.25`) bought the same trade:
-   Adam's update is nearly invariant to the scale of a loss term that dominates a parameter's gradient, so a 0.25 weight acts almost like 1.0.
-   If so, the dose must be applied where Adam does not normalise it away: a separate, lower learning rate for the EPO-dominated parameters, or
-   EPO's gradient restricted to fewer of them. This is testable at zero A40 first: check the per-parameter gradient shares in R0's telemetry.
+4. ~~A lever on the PROGRESS outputs: Adam's scale invariance voided the dose~~ **REFUTED 2026-10-15 ~03:00 (`D-REFE-RLS1-HADAM`):** the quarter dose
+   moved the parameters about half as far (rho 0.52 / 0.55, MEASURED from the banked states).
+5. **R0c: anchor EPO's KL to arm A's policy instead of the frozen base** (`raw/2026-10-15-rls1-adam-dose/PREREG_R0C_DRAFT.md`). MEASURED, re-verified:
+   **about 83 % of R0's -1.00 TTC gap is the BCE-only control's own gain over the start** (A - base +0.83 [+0.13, +1.58]). The EPO arm is not
+   separated from the start (B - base -0.17 [-0.71, +0.38]); EPO's KL anchor holds it at KL 0.15-0.26 from the frozen base while A drifts to 1.14
+   (ESTIMATED). One arm: R0's argv plus `--epo-ref armA`, every guard as registered (g5 stays against the control). It needs a trainer flag (zero-A40
+   build, reachability and identity proofs before launch) and **about 3.5 A40-h, beyond RL-S1b's authorised budget**.
 
-**Master Mind recommendation: 3 now, with the zero-A40 diagnosis of 4.** The pod is fully booked (P2-s1 for about 21 h, then the S1 arms, then
-P6's GPU stages). If the diagnosis holds, a pre-registered arm is ready when the pod frees. Default if unanswered: 3, plus the diagnosis of 4.
+**Master Mind recommendation (revised ~03:05): authorise R0c as ONE arm, placed after P2-s1 and before P6's GPU stages.** It attacks the largest measured
+term. Until you answer, the Master Mind builds and proves the `--epo-ref` flag at zero A40, so the arm is launch-ready. Nothing launches without your
+word. Default if unanswered: 3 (park), plus the zero-A40 build of 5.
 
 Evidence: `TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-15-rls1-calib/REPORT.md`, `.../raw/2026-10-15-rls1b-r0b-kill/`,
 `.../raw/2026-10-14-rls1b-attribution/REPORT.md`.
