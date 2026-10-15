@@ -392,3 +392,44 @@ def test_b1_reach_judge():
     assert LG.judge_b1_reach(armed, [{"step": 50}, row])[0] == []
     assert len(LG.judge_b1_reach(armed, [{"step": 50}, {"step": 100}])[0]) == 1   # armed, never decided -> RED
     assert LG.judge_b1_reach(["--steps", "100"], [{"step": 50}])[0] == []          # not armed -> inert
+
+
+# ---------------------------------------------------------------------------------- the kit's box audit inputs ---- #
+_BOX_AUDIT = (("PREREG_G_BOX_OVERFIT.md", "594c71196cc5bbd527fee40b2cb0e3f1"),
+              ("visibility/gbo_frameset.json", "b291404c36f83c3e397e3b90367e8e7b"))
+
+
+def test_the_kit_bind_prepares_the_box_audit_inputs_and_pins_them_by_md5():
+    """MEASURED 2026-10-14: the kit's `bind` handed the box harness an EMPTY --audit-dir and the first refcv8 binding
+    run died before step 0. The kit now copies the prereg + frame set from stack/ops and asserts md5 LITERALS. The
+    literals are written here independently; the copies must match them, and so must the Research Lab ORIGINALS
+    wherever the tree carries them (a full checkout -- the dev box, G-SUITE-PINNED's archive; a Thor tree is stack/ +
+    taniteval/ only, and there the copies are the only bytes present)."""
+    import hashlib
+    s = (ROOT / "scripts" / "refcv8_prelaunch.sh").read_text(encoding="utf-8")
+    assert 'BSRC="$CODE/stack/ops/refcv8_box_audit/raw"' in s and 'BAUD="$BD/run_box/audit/raw"' in s
+    lab = ROOT.parent / "TanitAD Research Lab" / "Architecture & Inference" / "Research" / "2026-09-26-box-head-audit" / "raw"
+    n_lab = 0
+    for rel, md5 in _BOX_AUDIT:
+        assert f'echo "{md5}  $BAUD/{rel}"' in s, rel
+        assert hashlib.md5((ROOT / "ops" / "refcv8_box_audit" / "raw" / rel).read_bytes()).hexdigest() == md5, rel
+        if (lab / rel).is_file():
+            assert hashlib.md5((lab / rel).read_bytes()).hexdigest() == md5, rel
+            n_lab += 1
+    assert n_lab in (0, 2)                                     # both originals, or a stack/-only tree with neither
+    # the kit's bind prepares them BEFORE the harness runs: inside the `bind)` block, before ITS GPU lock (the
+    # file's first `flock -w` belongs to gs-measure, which is why the search starts at the block)
+    b = s.index("\nbind)")
+    assert b < s.index('cp -p "$BSRC/PREREG_G_BOX_OVERFIT.md"') < s.index('flock -w 7200 9', b)
+
+
+def test_the_kit_runs_the_gate_under_the_training_venv_and_preflights_its_imports():
+    """MEASURED 2026-10-15: `PY="${PYTHON:-python3}"` ran the gate under Thor's system python, which has no torch; every
+    preflight passed and the token was a FAIL of ten import ERRORs. The kit now defaults to the venv and refuses at
+    preflight when its interpreter cannot import torch + timm."""
+    s = (ROOT / "scripts" / "refcv8_prelaunch.sh").read_text(encoding="utf-8")
+    assert '_VENV_PY=/home/nvidia/venvs/tanitad-train/bin/python' in s
+    assert 'PY="${PYTHON:-$( [ -x "$_VENV_PY" ] && echo "$_VENV_PY" || echo python3 )}"' in s
+    assert 'PY="${PYTHON:-python3}"' not in s                     # the historical default, which must not come back
+    g = s.index("\ngate)")
+    assert g < s.index('"$PY" -c "import torch, timm"') < s.index('flock -n 9 && pf PF-OK gpu-lock', g)

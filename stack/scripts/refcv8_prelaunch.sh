@@ -24,7 +24,11 @@
 set -u
 DRY=0; if [ "${1:-}" = "--dry-run" ]; then DRY=1; shift; fi
 MODE="${1:-}"; shift || true
-PY="${PYTHON:-python3}"
+# the gate's checks import torch / timm, which a bare `python3` on Thor does not have: MEASURED 2026-10-15, the
+# first refcv8 gate run wrote a FAIL token of ten "No module named 'torch'" ERRORs after every preflight passed.
+# Default to the training venv where it exists (refcv7's launch passed PYTHON by hand); $PYTHON still overrides.
+_VENV_PY=/home/nvidia/venvs/tanitad-train/bin/python
+PY="${PYTHON:-$( [ -x "$_VENV_PY" ] && echo "$_VENV_PY" || echo python3 )}"
 # dev box (Git-Bash + Windows python): hand python a native path for any argument that EXISTS here; leave
 # /home/nvidia/... untouched (MSYS would otherwise rewrite it to C:/Program Files/Git/home/...). No-op on Thor.
 export MSYS_NO_PATHCONV=1
@@ -101,6 +105,20 @@ bind)
   C12="${COMMIT:0:12}"; ARGV="$CODE/stack/ops/runs.d/$ARM.argv.json"; BD="$OUTROOT/bind_$C12"
   [ -f "$ARGV" ] || die "no launch argv at $ARGV"
   mkdir -p "$BD" 2>/dev/null
+  # the BOX harness READS its prereg + frame set from --audit-dir = {OUT}/audit, an INPUT package that refcv7's run
+  # script prepared (/home/nvidia/refcv7_bind/run_gbo_binding_main.sh:8-13) and this kit did not: MEASURED 2026-10-14,
+  # the first refcv8 binding run died before step 0. The copies ship under stack/ops (a Thor tree is stack/ +
+  # taniteval/ only); the md5 LITERALS are the Research Lab originals' (2026-09-26-box-head-audit/raw), and
+  # test_launch_gate_refcv8 asserts both against an independent read of those originals.
+  BAUD="$BD/run_box/audit/raw"; BSRC="$CODE/stack/ops/refcv8_box_audit/raw"
+  if [ "$DRY" != 1 ]; then
+    mkdir -p "$BAUD/visibility" 2>/dev/null
+    cp -p "$BSRC/PREREG_G_BOX_OVERFIT.md" "$BAUD/" && cp -p "$BSRC/visibility/gbo_frameset.json" "$BAUD/visibility/" \
+      || die "could not prepare the box audit inputs from $BSRC"
+    echo "594c71196cc5bbd527fee40b2cb0e3f1  $BAUD/PREREG_G_BOX_OVERFIT.md" | md5sum -c - > /dev/null 2>&1 || die "box audit prereg md5"
+    echo "b291404c36f83c3e397e3b90367e8e7b  $BAUD/visibility/gbo_frameset.json" | md5sum -c - > /dev/null 2>&1 \
+      || die "box audit frame-set md5"
+  fi
   # the harness records bind to sha256(json.dumps(argv, separators=(",",":"))) (refcv7_bind gbo_binding.json launch_argv_sha256_form)
   ASHA="$(pyval 'import json,hashlib,sys; d=json.load(open(sys.argv[1])); a=d["argv"] if isinstance(d,dict) else d; print(hashlib.sha256(json.dumps(a,separators=(",",":")).encode()).hexdigest())' "$ARGV")"
   [ "${#ASHA}" = 64 ] || die "could not hash the launch argv"
@@ -175,6 +193,9 @@ gate)
     for p in $(pyval 'import json,sys; print("\n".join(json.load(open(sys.argv[1])).values()))' "$EVO"); do
       [ -s "$p" ] && pf PF-OK "eval-remap-file:$(basename "$p")" || pf PF-FAIL "eval-remap-file:$(basename "$p")"; done
     [ ! -e "$OUTROOT/runs/$ARM/ckpt.pt" ] && [ ! -e "$OUTROOT/runs/$ARM/summary.json" ] && pf PF-OK run-dir-fresh || pf PF-FAIL run-dir-fresh
+    # the interpreter the gate will run under must import what its checks import (2 s here, not a FAIL token later)
+    "$PY" -c "import torch, timm" > /dev/null 2>&1 9>&- 200>&- && pf PF-OK python-imports-torch-timm \
+      || pf PF-FAIL "python-imports-torch-timm:$PY"
     exec 9>"$LOCKF"; flock -n 9 && pf PF-OK gpu-lock || pf PF-FAIL gpu-lock
     NL="$(ps -eo args | grep -c 'ladder_chai[n]')"; [ "$NL" = 0 ] && pf PF-OK ladder-stopped || pf PF-FAIL ladder-stopped
     FREE="$(df -BG --output=avail "$OUTROOT" 2>/dev/null | tail -1 | tr -dc 0-9)"; [ "${FREE:-0}" -ge 60 ] && pf PF-OK disk-60G || pf PF-FAIL disk-60G
