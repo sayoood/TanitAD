@@ -1,0 +1,104 @@
+--- /dev/null
++++ b/eval/rls1c_arms.json
+@@ -0,0 +1,101 @@
++{
++ "schema": "rls1c_arms/1",
++ "prereg": "raw/2026-10-15-rls1-adam-dose/PREREG_R0C_DRAFT.md (DRAFT; running R0c is a PI decision)",
++ "profile": "refe_rls1c",
++ "lever": "--epo-ref armA (the EPO term's KL anchor is arm A's detached policy instead of the frozen base); everything else is R0's argv token for token",
++ "derived_from": {
++  "arm": "R0",
++  "token": "HF Sayood/tanitad-refe-rls1-r0 final/PASS_a120418a870f.json",
++  "argv_sha256": "24451b621d515066bf8febefaf66bea2c7a345b48bf7a89c9443e2d848d8eef6",
++  "commit": "a120418a870f94f7f769b24a593ea0c91d131c3d"
++ },
++ "order": [
++  "R0c"
++ ],
++ "arms": {
++  "R0c": {
++   "seed": 0,
++   "class": "R",
++   "control": "its OWN arm A (the same-pass control: every delta, the K3/K4 monitor and the kill replay read against it); C0 (banked, HF Sayood/tanitad-refe-rls1-c0) is the SECOND control",
++   "argv": [
++    "--ckpt",
++    "/workspace/data/rls1/base/model_sft4_B_u400.pt",
++    "--backbone",
++    "vitl16",
++    "--targets",
++    "/workspace/data/refe_navtrain/train_grow",
++    "--images",
++    "/workspace/data/navtrain_pixels",
++    "--calib",
++    "/workspace/data/refe_navtrain/train_grow/calib_table.json",
++    "--onpolicy",
++    "/workspace/data/rls1/sets_train",
++    "--heldout",
++    "/workspace/data/rls1/sets_val",
++    "--heldout-logs",
++    "/workspace/data/rls1/rl_val_logs.txt",
++    "--out",
++    "/workspace/data/rls1/arms/R0c",
++    "--pdm-labels-train",
++    "/workspace/data/rls1/pdm_train",
++    "--pdm-labels-heldout",
++    "/workspace/data/rls1/pdm_val",
++    "--require-pdm",
++    "--b-mode",
++    "listnet",
++    "--lam",
++    "0",
++    "--lr",
++    "1e-4",
++    "--max-updates",
++    "1000",
++    "--epochs",
++    "4",
++    "--workers",
++    "3",
++    "--seed",
++    "0",
++    "--eval-every",
++    "250",
++    "--dump-scores",
++    "/workspace/data/rls1/arms/R0c/scores",
++    "--lane-head",
++    "--teacher-lane-train",
++    "/workspace/data/rls1/tlane_train",
++    "--teacher-lane-heldout",
++    "/workspace/data/rls1/tlane_heldout",
++    "--epo",
++    "--epo-terms-train",
++    "/workspace/data/rls1/terms_train",
++    "--epo-terms-heldout",
++    "/workspace/data/rls1/terms_val",
++    "--epo-ref",
++    "armA"
++   ],
++   "args": "--ckpt /workspace/data/rls1/base/model_sft4_B_u400.pt --backbone vitl16 --targets /workspace/data/refe_navtrain/train_grow --images /workspace/data/navtrain_pixels --calib /workspace/data/refe_navtrain/train_grow/calib_table.json --onpolicy /workspace/data/rls1/sets_train --heldout /workspace/data/rls1/sets_val --heldout-logs /workspace/data/rls1/rl_val_logs.txt --out /workspace/data/rls1/arms/R0c --pdm-labels-train /workspace/data/rls1/pdm_train --pdm-labels-heldout /workspace/data/rls1/pdm_val --require-pdm --b-mode listnet --lam 0 --lr 1e-4 --max-updates 1000 --epochs 4 --workers 3 --seed 0 --eval-every 250 --dump-scores /workspace/data/rls1/arms/R0c/scores --lane-head --teacher-lane-train /workspace/data/rls1/tlane_train --teacher-lane-heldout /workspace/data/rls1/tlane_heldout --epo --epo-terms-train /workspace/data/rls1/terms_train --epo-terms-heldout /workspace/data/rls1/terms_val --epo-ref armA",
++   "argv_sha256": "f588a6cbdf8319bc30e8da12407f5eeb65a5e0a82d392320f2676ca3f94ed534"
++  }
++ },
++ "self_check": {
++  "refe_rls1c_refusals": {
++   "R0c": []
++  },
++  "R0c_tokens_not_in_R0": [
++   "/workspace/data/rls1/arms/R0c",
++   "/workspace/data/rls1/arms/R0c/scores",
++   "--epo-ref",
++   "armA"
++  ],
++  "R0_tokens_not_in_R0c": [
++   "/workspace/data/rls1/arms/R0",
++   "/workspace/data/rls1/arms/R0/scores"
++  ],
++  "R0_argv_rebuilt_from_R0c_sha256": "24451b621d515066bf8febefaf66bea2c7a345b48bf7a89c9443e2d848d8eef6",
++  "note": "paths are the pod chain's ($R = /workspace/data/rls1), copied from R0c_ARGV.txt (raw/2026-10-15-r0c-build/), which is R0's banked token argv with /arms/R0 -> /arms/R0c plus `--epo-ref armA`; the sha256 of R0 rebuilt by removing those two edits equals R0's banked token's argv_sha256"
++ },
++ "budget": {
++  "a40_arms": 1,
++  "hours_per_arm_planned": 3.5,
++  "basis": "C0 and R0 MEASURED 3.4-3.5 A40-h (raw/2026-10-14-rls1-r0-kill/README.md); beyond RL-S1b's authorised budget (PREREG_R0C_DRAFT.md section 5): a PI decision"
++ }
++}
