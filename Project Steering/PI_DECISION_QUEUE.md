@@ -1971,6 +1971,14 @@ Evidence: `TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-ref
 2. **Insert S1c before P6's GPU stages.** This delays P6 by about 5-8 h.
 3. **Park it.**
 
+- ✅ **DECIDED 2026-10-16 by the PI:** *"run S1c before P6, continue and dont idle"* (overrules the recommendation of option 1). The A40 order is now **P2-s1 → R0c → S1c → P6**.
+  - **Mechanics (MEASURED from the shipped chains):**
+    - P6's `wait_clear` (`refe/p6_pod.sh`) waits while `$DATA/s1aux/chain.lock` is held.
+    - S1's chain takes that lock on its first line and waits for the P2 and RL-S1 locks and an idle GPU.
+    - R0c's `queue_wait` YIELDS to any holder of the S1 lock until it logs `ZZRLS1_QUEUE_CLEAR`.
+    - ⇒ S1c's chain is launched only AFTER R0c's `ZZRLS1_QUEUE_CLEAR` (~10-16 11:50Z) and before R0c ends. Then R0c → S1c → P6 is guaranteed by locks, not by timing.
+  - **Before launch:** the S1c build is made launch-ready (`raw/2026-10-16-s1c-build/`), with the pre-registration finalised before the first step, a launch-gate PASS token, and the G-SUITE pre-run on the pod.
+  - **Cost to P6:** about 5-8 h of delay (ESTIMATED).
 **Master Mind recommendation: 1.** P6 is the paper-gap lever. S1c's prize is real but indirect: a ≥ 0.80 head still has to be wired into selection before it touches PDMS.
 - **Default if unanswered:** 1 (queue behind P6), with the zero-A40 build.
 - **Evidence:** `raw/2026-10-16-scene-tap-a2/`, `raw/2026-10-16-scene-tap-a3r/`, `raw/2026-10-16-aux-shift-locate/SHIFT_LOCATE.md`.
