@@ -1984,3 +1984,28 @@ Evidence: `TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-ref
 - **Evidence:** `raw/2026-10-16-scene-tap-a2/`, `raw/2026-10-16-scene-tap-a3r/`, `raw/2026-10-16-aux-shift-locate/SHIFT_LOCATE.md`.
 
 - **S1c status (Master Mind, 2026-10-16 ~08:40 Berlin):** launch-ready and shipped. Arm `H1u10k-s0` (10,000 updates × batch 8, ~4.3 A40-h ESTIMATED), `eval/PREREG_S1C.md` in force at 10d4fae, pod tree `/workspace/refe-plan-s1aux` = ship 10d4fae (247/247 sha256). A pod-side waiter (`/workspace/ops/s1c_waiter.sh`) launches it on R0c's `ZZRLS1_QUEUE_CLEAR`, only if the exact-env G-SUITE pre-run reads PASS. NOT pre-authorised (each goes back to the PI on its outcome): the seed-1 replicate, the `N-u10k` control, the trunk lever.
+
+## 🟡 NEW ITEM (2026-10-16 ~09:45 Berlin) — P6's lane-rank twins: the declared fallback is IN FORCE; a twin-bank re-roll is your call
+
+**What happened (MEASURED, `raw/2026-10-16-p6-d7-route-patch/` + `raw/2026-10-16-p6-d7-pdm-route-rank/`).**
+- P6 refused at D7 because its lane-rank twins were cached on the LOGGED route: PDM-Closed never consulted the route patch.
+- The fix now works: PDM starts from the rank-K lane, SPEC test 74/74.
+- **But the twin TRAJECTORIES in the bank do not follow that lane:** they are closer to it on only 0.029 / 0.0 / 0.0 of twins.
+- So scoring them on the rank-K route would give contradictory labels.
+
+**In force now (pre-declared in SPEC_P6 §2 D7, so no ruling was needed):**
+- `P6_D7_FALLBACK=1`: lane twins train with the trajectory loss only.
+- P6 keeps its ship (c1dc5d3) and starts after S1c, as decided.
+- The deviation from the paper ("the augmented route evaluates the twins") is reported with P6's result.
+
+**Options for you (none blocks P6):**
+1. **Keep the fallback** (default). Cost 0.
+2. **Score lane twins on the logged route,** as the goal-horizon twins already are. Their trajectories follow it, so the labels would be consistent.
+   - This is NOT a pre-declared option, so it needs your ruling before P6's first step (~after S1c).
+   - It restores PDM supervision on the ~44k twin rows.
+3. **Re-roll the lane twins** with the route held fixed over the rollout, then apply the landed fix.
+   - This is paper-faithful, but it is a multi-day CPU job plus a P6 delay. It is better as a P7 item.
+
+**Master Mind recommendation: 1 now, 3 for P7.**
+- 2 is cheap, but it changes P6's recipe after its pre-registration was finalised.
+- The twins' value as route intents is unproven: their trajectories barely leave the logged route.
