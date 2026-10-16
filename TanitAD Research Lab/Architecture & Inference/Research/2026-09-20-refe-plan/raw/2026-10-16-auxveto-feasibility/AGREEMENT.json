@@ -1,0 +1,573 @@
+{
+ "tool": "agreement/1",
+ "unit": "proposal, pooled over all 64 proposals of all tokens (never restricted to picks)",
+ "n_tokens": 1058,
+ "n_proposals": 67712,
+ "positive_class": "violation (NAVSIM DAC = 0)",
+ "navsim_dac_zero_share": 0.3314478969754253,
+ "gt_store_sha256": "985a3bc77f3ab7a96b0dceace48e73b80e5b69b70710958635060939bce0d7c1",
+ "table": "raw/2026-10-11-c3-selection-headroom/table.npz sub[:,:,1]",
+ "primary_instrument": "GT raster, raw proposal poses -> 41-step 0.1 s grid, bilinear signed field, unknown=drivable",
+ "estimator": null,
+ "A_bilinear": {
+  "N": 67712,
+  "tp_both_fail": 17302,
+  "fp_geo_fails_navsim_ok": 3279,
+  "fn_geo_ok_navsim_fails": 5141,
+  "tn_both_ok": 41990,
+  "agreement": 0.8756498109640832,
+  "kappa": 0.7134196685698135,
+  "mcc": 0.7148566581752439,
+  "sensitivity_navsim_fail_found": 0.7709308024773872,
+  "specificity": 0.9275663257416775,
+  "ppv_geo_fail_is_navsim_fail": 0.8406782955152811,
+  "npv": 0.8909210498398082,
+  "base_rate_navsim_fail": 0.3314478969754253,
+  "base_rate_geo_fail": 0.3039490784499055,
+  "agreement_ci95": [
+   0.858611581600082,
+   0.8940088483832571
+  ],
+  "kappa_ci95": [
+   0.6724006255048102,
+   0.7512939427330266
+  ],
+  "B": 2000,
+  "seed": 20260927,
+  "clusters": 123,
+  "n_corner_samples_outside_raster_extent": 0
+ },
+ "A_nearest": {
+  "N": 67712,
+  "tp_both_fail": 17885,
+  "fp_geo_fails_navsim_ok": 3655,
+  "fn_geo_ok_navsim_fails": 4558,
+  "tn_both_ok": 41614,
+  "agreement": 0.8787068761814745,
+  "kappa": 0.7235073424380718,
+  "mcc": 0.7238418863631244,
+  "sensitivity_navsim_fail_found": 0.7969077217840752,
+  "specificity": 0.9192604210386799,
+  "ppv_geo_fail_is_navsim_fail": 0.8303156917363046,
+  "npv": 0.9012821623494759,
+  "base_rate_navsim_fail": 0.3314478969754253,
+  "base_rate_geo_fail": 0.31811200378071836,
+  "agreement_ci95": [
+   0.8620473425682179,
+   0.8967854360303975
+  ],
+  "kappa_ci95": [
+   0.684751118102215,
+   0.759762744920942
+  ],
+  "B": 2000,
+  "seed": 20260927,
+  "clusters": 123,
+  "n_corner_samples_outside_raster_extent": 0
+ },
+ "A_splits_bilinear": [
+  {
+   "by": "geoDAC min corner margin (m; negative = a corner is outside)",
+   "bins": [
+    {
+     "bin": "[-99,-2)",
+     "n": 1857,
+     "disagree_rate": 0.0
+    },
+    {
+     "bin": "[-2,-1)",
+     "n": 3272,
+     "disagree_rate": 0.004889975550122249
+    },
+    {
+     "bin": "[-1,-0.5)",
+     "n": 4361,
+     "disagree_rate": 0.03668883283650539
+    },
+    {
+     "bin": "[-0.5,-0.25)",
+     "n": 3406,
+     "disagree_rate": 0.0989430416911333
+    },
+    {
+     "bin": "[-0.25,0)",
+     "n": 7685,
+     "disagree_rate": 0.3599219258295381
+    },
+    {
+     "bin": "[0,0.25)",
+     "n": 8952,
+     "disagree_rate": 0.34148793565683644
+    },
+    {
+     "bin": "[0.25,0.5)",
+     "n": 9043,
+     "disagree_rate": 0.16200375981422094
+    },
+    {
+     "bin": "[0.5,1)",
+     "n": 8895,
+     "disagree_rate": 0.06419336706014615
+    },
+    {
+     "bin": "[1,2)",
+     "n": 6013,
+     "disagree_rate": 0.0051554964244137705
+    },
+    {
+     "bin": "[2,99)",
+     "n": 14228,
+     "disagree_rate": 0.0011948271014900196
+    }
+   ]
+  },
+  {
+   "by": "final x (m) at 4 s",
+   "bins": [
+    {
+     "bin": "[-1,5)",
+     "n": 3662,
+     "disagree_rate": 0.04614964500273075
+    },
+    {
+     "bin": "[5,10)",
+     "n": 7718,
+     "disagree_rate": 0.08383000777403472
+    },
+    {
+     "bin": "[10,20)",
+     "n": 21931,
+     "disagree_rate": 0.14395148420044684
+    },
+    {
+     "bin": "[20,30)",
+     "n": 14400,
+     "disagree_rate": 0.13784722222222223
+    },
+    {
+     "bin": "[30,40)",
+     "n": 14147,
+     "disagree_rate": 0.11528946066303809
+    },
+    {
+     "bin": "[40,70)",
+     "n": 5854,
+     "disagree_rate": 0.14195421933720534
+    }
+   ]
+  },
+  {
+   "by": "|final y| (m) at 4 s",
+   "bins": [
+    {
+     "bin": "[0,1)",
+     "n": 23563,
+     "disagree_rate": 0.05364342401222255
+    },
+    {
+     "bin": "[1,2)",
+     "n": 8342,
+     "disagree_rate": 0.1189163270198993
+    },
+    {
+     "bin": "[2,4)",
+     "n": 10797,
+     "disagree_rate": 0.12308974715198666
+    },
+    {
+     "bin": "[4,8)",
+     "n": 10200,
+     "disagree_rate": 0.15313725490196078
+    },
+    {
+     "bin": "[8,30)",
+     "n": 14810,
+     "disagree_rate": 0.22099932478055367
+    }
+   ]
+  },
+  {
+   "by": "|final heading| (rad) at 4 s",
+   "bins": [
+    {
+     "bin": "[0,0.1)",
+     "n": 27706,
+     "disagree_rate": 0.06594239514906518
+    },
+    {
+     "bin": "[0.1,0.3)",
+     "n": 14048,
+     "disagree_rate": 0.1224373576309795
+    },
+    {
+     "bin": "[0.3,0.6)",
+     "n": 9185,
+     "disagree_rate": 0.14491017964071856
+    },
+    {
+     "bin": "[0.6,1)",
+     "n": 7901,
+     "disagree_rate": 0.20313884318440703
+    },
+    {
+     "bin": "[1,4)",
+     "n": 8872,
+     "disagree_rate": 0.2183273219116321
+    }
+   ]
+  },
+  {
+   "by": "path length (m)",
+   "bins": [
+    {
+     "bin": "[0,5)",
+     "n": 3562,
+     "disagree_rate": 0.03874227961819203
+    },
+    {
+     "bin": "[5,10)",
+     "n": 6286,
+     "disagree_rate": 0.06379255488386891
+    },
+    {
+     "bin": "[10,20)",
+     "n": 18052,
+     "disagree_rate": 0.12524927985818746
+    },
+    {
+     "bin": "[20,30)",
+     "n": 18175,
+     "disagree_rate": 0.15570839064649244
+    },
+    {
+     "bin": "[30,70)",
+     "n": 21637,
+     "disagree_rate": 0.12894578730877662
+    }
+   ]
+  },
+  {
+   "by": "geoDAC first off-road step (0.1 s steps; -1 = none)",
+   "bins": [
+    {
+     "bin": "t=0",
+     "n_geo_fail": 576,
+     "navsim_also_fails": 0.13020833333333334
+    },
+    {
+     "bin": "0.1-1.0 s",
+     "n_geo_fail": 1315,
+     "navsim_also_fails": 0.7718631178707225
+    },
+    {
+     "bin": "1.1-2.0 s",
+     "n_geo_fail": 5762,
+     "navsim_also_fails": 0.9333564734467199
+    },
+    {
+     "bin": "2.1-3.0 s",
+     "n_geo_fail": 7603,
+     "navsim_also_fails": 0.9196369854004998
+    },
+    {
+     "bin": "3.1-4.0 s",
+     "n_geo_fail": 5325,
+     "navsim_also_fails": 0.7215023474178404
+    }
+   ]
+  }
+ ],
+ "A_by_stratum_and_map_bilinear": {
+  "stratum_zero": {
+   "N": 33856,
+   "agreement": 0.8267958412098299,
+   "kappa": 0.6559615943840459,
+   "base_rate_navsim_fail": 0.5528119092627599,
+   "sensitivity_navsim_fail_found": 0.7660824962598846,
+   "specificity": 0.9018494055482167
+  },
+  "stratum_random": {
+   "N": 33856,
+   "agreement": 0.9245037807183365,
+   "kappa": 0.6562974050554043,
+   "base_rate_navsim_fail": 0.11008388468809074,
+   "sensitivity_navsim_fail_found": 0.795277703246579,
+   "specificity": 0.9404892296458561
+  },
+  "map_sg-one-north": {
+   "N": 15296,
+   "agreement": 0.8408734309623431,
+   "kappa": 0.6630232539658447,
+   "base_rate_navsim_fail": 0.4112839958158996,
+   "sensitivity_navsim_fail_found": 0.7240502304879988,
+   "specificity": 0.9224875069405886
+  },
+  "map_us-ma-boston": {
+   "N": 19840,
+   "agreement": 0.9005040322580645,
+   "kappa": 0.7649693801314169,
+   "base_rate_navsim_fail": 0.30100806451612905,
+   "sensitivity_navsim_fail_found": 0.8452779638312123,
+   "specificity": 0.9242861263340063
+  },
+  "map_us-nv-las-vegas-strip": {
+   "N": 14912,
+   "agreement": 0.9144983905579399,
+   "kappa": 0.6834345183581939,
+   "base_rate_navsim_fail": 0.18575643776824036,
+   "sensitivity_navsim_fail_found": 0.6310469314079422,
+   "specificity": 0.979163235051886
+  },
+  "map_us-pa-pittsburgh-hazelwood": {
+   "N": 17664,
+   "agreement": 0.8450520833333334,
+   "kappa": 0.6807756850144044,
+   "base_rate_navsim_fail": 0.4194972826086957,
+   "sensitivity_navsim_fail_found": 0.8031039136302294,
+   "specificity": 0.8753657109420714
+  }
+ },
+ "B_decomposition": {
+  "n_tokens": 1058,
+  "n_proposals": 67712,
+  "note": "DIAGNOSTIC: re-derivation from NAVSIM v1.1's own code (tracked_dump.py); decides nothing",
+  "R0_navsim_code_reproduces_table_dac": {
+   "equal": 67712,
+   "of": 67712
+  },
+  "R1_origin_metric_cache_vs_store": {
+   "max_xy_m": 0.0,
+   "max_heading_rad": 4.440892098500626e-16
+  },
+  "R2_my_raw_corners_vs_navsim_raw_corners_as_sets_max_abs_m": 1.7258970518375524e-05,
+  "R2_per_token_p99_max_over_tokens_m": 1.5708102889504848e-05,
+  "R3_tracker_displacement_of_corners_m": {
+   "median": 0.5777595788478691,
+   "p90": 1.3005218474585674,
+   "max": 4.549920916637717
+  },
+  "V2_detail": {
+   "FP_n": 3148,
+   "FN_n": 417,
+   "FP_min_margin_m_percentiles": {
+    "p10": -0.12475984096527098,
+    "p50": -0.06796093881130219,
+    "p90": -0.012853212356567372
+   },
+   "FN_min_margin_m_percentiles": {
+    "p10": 0.009257828834355024,
+    "p50": 0.06051952996458567,
+    "p90": 0.3066239738464356
+   },
+   "FP_share_margin_in_[-0.25,0)": 1.0,
+   "FP_share_margin_in_[-0.5,-0.25)": 0.0,
+   "FP_share_margin_below_-0.5": 0.0,
+   "FP_with_first_bad_step_0 (initial footprint flagged)": 501,
+   "tokens_whose_initial_footprint_is_flagged_by_the_raster": 9,
+   "tokens_where_raster_flags_ALL_64_but_NAVSIM_passes_at_least_one": 42,
+   "descriptive_margin_threshold_sweep (fail iff min margin < t; NOT a tuned setting)": [
+    {
+     "t_m": -0.5,
+     "agreement": 0.8430558837429112,
+     "kappa": 0.5978615680382854,
+     "sensitivity_navsim_fail_found": 0.5264893285211425,
+     "specificity": 1.0
+    },
+    {
+     "t_m": -0.35,
+     "agreement": 0.8820445415879017,
+     "kappa": 0.707609172766781,
+     "sensitivity_navsim_fail_found": 0.6441206612306732,
+     "specificity": 1.0
+    },
+    {
+     "t_m": -0.25,
+     "agreement": 0.9146975425330813,
+     "kappa": 0.7941665004588667,
+     "sensitivity_navsim_fail_found": 0.7426369023749053,
+     "specificity": 1.0
+    },
+    {
+     "t_m": -0.15,
+     "agreement": 0.9602138468809074,
+     "kappa": 0.9075441332232637,
+     "sensitivity_navsim_fail_found": 0.8824577819364613,
+     "specificity": 0.9987629503633834
+    },
+    {
+     "t_m": 0.0,
+     "agreement": 0.9473505434782609,
+     "kappa": 0.8847369819999515,
+     "sensitivity_navsim_fail_found": 0.9814195963106537,
+     "specificity": 0.9304601382844773
+    },
+    {
+     "t_m": 0.1,
+     "agreement": 0.9096615075614367,
+     "kappa": 0.808694044303019,
+     "sensitivity_navsim_fail_found": 0.9936728601345631,
+     "specificity": 0.8680112218074179
+    },
+    {
+     "t_m": 0.25,
+     "agreement": 0.8467627599243857,
+     "kappa": 0.6898037274290452,
+     "sensitivity_navsim_fail_found": 0.9962571848683331,
+     "specificity": 0.7726479489275222
+    }
+   ]
+  },
+  "variants_vs_table_dac": {
+   "V1_exact_polygons_on_NAVSIM_raw_states (tracker effect alone)": {
+    "N": 67712,
+    "tp_both_fail": 16202,
+    "fp_geo_fails_navsim_ok": 1665,
+    "fn_geo_ok_navsim_fails": 6241,
+    "tn_both_ok": 43604,
+    "agreement": 0.8832407844990549,
+    "kappa": 0.7222655569910638,
+    "mcc": 0.7317826274998626,
+    "sensitivity_navsim_fail_found": 0.7219177471817493,
+    "specificity": 0.9632198634827366,
+    "ppv_geo_fail_is_navsim_fail": 0.9068114400850731,
+    "npv": 0.8747918547497241,
+    "base_rate_navsim_fail": 0.3314478969754253,
+    "base_rate_geo_fail": 0.26386755671077505,
+    "agreement_ci95": [
+     0.8685657956622092,
+     0.9008876852610546
+    ],
+    "kappa_ci95": [
+     0.6869076839551052,
+     0.7600095840909744
+    ],
+    "B": 1000,
+    "seed": 20260927,
+    "clusters": 123
+   },
+   "V2_GT_raster_on_TRACKED_states (raster effect alone)": {
+    "N": 67712,
+    "tp_both_fail": 22026,
+    "fp_geo_fails_navsim_ok": 3148,
+    "fn_geo_ok_navsim_fails": 417,
+    "tn_both_ok": 42121,
+    "agreement": 0.9473505434782609,
+    "kappa": 0.8847369819999515,
+    "mcc": 0.8882062441722964,
+    "sensitivity_navsim_fail_found": 0.9814195963106537,
+    "specificity": 0.9304601382844773,
+    "ppv_geo_fail_is_navsim_fail": 0.8749503455946611,
+    "npv": 0.9901970003291175,
+    "base_rate_navsim_fail": 0.3314478969754253,
+    "base_rate_geo_fail": 0.3717804820415879,
+    "agreement_ci95": [
+     0.9378085360564681,
+     0.9558781472688177
+    ],
+    "kappa_ci95": [
+     0.8610562712496385,
+     0.9037531680140213
+    ],
+    "B": 1000,
+    "seed": 20260927,
+    "clusters": 123
+   },
+   "V2n_same_with_nearest_cell": {
+    "N": 67712,
+    "tp_both_fail": 22135,
+    "fp_geo_fails_navsim_ok": 3991,
+    "fn_geo_ok_navsim_fails": 308,
+    "tn_both_ok": 41278,
+    "agreement": 0.9365105151228733,
+    "kappa": 0.8624328121405059,
+    "mcc": 0.8684854797235854,
+    "sensitivity_navsim_fail_found": 0.9862763445172215,
+    "specificity": 0.9118381232189798,
+    "ppv_geo_fail_is_navsim_fail": 0.8472402970221236,
+    "npv": 0.9925936613283316,
+    "base_rate_navsim_fail": 0.3314478969754253,
+    "base_rate_geo_fail": 0.3858400283553875,
+    "agreement_ci95": [
+     0.9261602733893606,
+     0.9459034329145207
+    ],
+    "kappa_ci95": [
+     0.8389542366210264,
+     0.8820191640130929
+    ],
+    "B": 1000,
+    "seed": 20260927,
+    "clusters": 123
+   },
+   "V3_GT_raster_on_NAVSIM_raw_states": {
+    "N": 67712,
+    "tp_both_fail": 17302,
+    "fp_geo_fails_navsim_ok": 3279,
+    "fn_geo_ok_navsim_fails": 5141,
+    "tn_both_ok": 41990,
+    "agreement": 0.8756498109640832,
+    "kappa": 0.7134196685698135,
+    "mcc": 0.7148566581752439,
+    "sensitivity_navsim_fail_found": 0.7709308024773872,
+    "specificity": 0.9275663257416775,
+    "ppv_geo_fail_is_navsim_fail": 0.8406782955152811,
+    "npv": 0.8909210498398082,
+    "base_rate_navsim_fail": 0.3314478969754253,
+    "base_rate_geo_fail": 0.3039490784499055,
+    "agreement_ci95": [
+     0.8588541965630229,
+     0.8937644104084321
+    ],
+    "kappa_ci95": [
+     0.6737830381082358,
+     0.752554155285218
+    ],
+    "B": 1000,
+    "seed": 20260927,
+    "clusters": 123
+   },
+   "V4_PRIMARY_GT_raster_on_my_raw_poses": {
+    "N": 67712,
+    "tp_both_fail": 17302,
+    "fp_geo_fails_navsim_ok": 3279,
+    "fn_geo_ok_navsim_fails": 5141,
+    "tn_both_ok": 41990,
+    "agreement": 0.8756498109640832,
+    "kappa": 0.7134196685698135,
+    "mcc": 0.7148566581752439,
+    "sensitivity_navsim_fail_found": 0.7709308024773872,
+    "specificity": 0.9275663257416775,
+    "ppv_geo_fail_is_navsim_fail": 0.8406782955152811,
+    "npv": 0.8909210498398082,
+    "base_rate_navsim_fail": 0.3314478969754253,
+    "base_rate_geo_fail": 0.3039490784499055,
+    "agreement_ci95": [
+     0.8588541965630229,
+     0.8937644104084321
+    ],
+    "kappa_ci95": [
+     0.6737830381082358,
+     0.752554155285218
+    ],
+    "B": 1000,
+    "seed": 20260927,
+    "clusters": 123
+   }
+  },
+  "attribution_of_primary_disagreements": {
+   "n_disagree": 8420,
+   "FP_geo_fails_navsim_ok": 3279,
+   "FN_geo_ok_navsim_fails": 5141,
+   "disagreements_where_exact_polygons_on_raw_states_ALSO_disagree_with_table (tracker-caused)": 6402,
+   "disagreements_where_exact_polygons_on_raw_states_AGREE_with_table (raster-caused)": 2018,
+   "FP_tracker_caused": 1519,
+   "FP_raster_caused": 1760,
+   "FN_tracker_caused": 4883,
+   "FN_raster_caused": 258
+  },
+  "tracker_direction_exact_polygons_raw_vs_table": {
+   "raw_fails_navsim_ok(tracker repairs)": 1665,
+   "raw_ok_navsim_fails(tracker breaks)": 6241
+  }
+ }
+}
