@@ -300,6 +300,8 @@ Moved out of this file on 2026-10-11 (token budget, P6): every session and agent
 - A number carries its ARM and its ARTIFACT PATH, or it is not quotable — and
 - A CORRECT FORMULA APPLIED UNDER THE WRONG UNITS READS EXACTLY LIKE AN ANSWER — AND AN
 - Verify before alarming.
+- On the pod's `/workspace` (VAST NFS) deleted space is reclaimed LAZILY — size `dd` tests to the measured need; an empty log may be a failed write
+- RELAUNCH A CHAIN EXACTLY THE WAY ITS STARTER DID — source the same env file; a bare `bash chain.sh` silently reverts its overrides
 - **Git hygiene** — commits sweep the whole index; phantom deletions / stale index blobs; `git commit -- <pathspec>` segfaults; use the coordinated lander (`land.sh`) or `scoped_commit.py`.
 
 

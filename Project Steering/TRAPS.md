@@ -501,6 +501,37 @@ Each entry cost hours more than once. CLAUDE.md keeps a one-line index; this fil
   the guard reports a total of 0 and approves every push, and private storage over 1 TB is **billed, not
   refused**. ⇒ An unknown `private` flag or `used_storage` **raises**, and the push is refused
   (`private_used_bytes`, `hf_egress.py:104`). Same family as *a zero is a claim about the probe*.
+- ⛔ **ON THE POD'S `/workspace` (VAST NFS), DELETED SPACE IS RECLAIMED LAZILY, SO A FULL QUOTA
+  OUTLIVES THE `rm` THAT CLEARED IT. A CHAIN THAT LOGS ITS REFUSAL ONTO THAT VOLUME LOSES THE
+  REFUSAL.** MEASURED 2026-10-16 (P6 restart):
+  - A relaunch that omitted the starter's env file ran P6's default **96 GB `dd` write test**. That
+    test filled the quota at 01:00Z. The chain's own refusal line could not be written, so the log
+    went silent instead of saying why.
+  - After the test file was deleted, an `echo` into a log still hit **`EDQUOT` at 03:10Z while `df`
+    showed ~36 GB free**. A relaunch one minute later wrote normally.
+  - ⇒ **(a)** Size a pre-flight `dd` test to the MEASURED need of the stages that remain (P6:
+    `P6_DD_GB=16`), never to a default, whenever a training run shares the volume. The test
+    consumes the same quota the trainer's next checkpoint needs.
+  - **(b)** After deleting multi-GB files, re-test with a small `dd` before relaunching anything.
+    `df` was already wrong in the full direction (see the `df` entry above); here it is wrong in
+    the free direction too.
+  - **(c)** A chain that goes silent on a full volume has not "hung": check its PID and its exit
+    code, not its log.
+  Same family as *a zero is a claim about the probe*: an empty log is a claim about a write that
+  may have failed.
+- ⛔ **RELAUNCH A CHAIN EXACTLY THE WAY ITS STARTER DID: SOURCE THE SAME ENV FILE. A bare
+  `bash chain.sh` silently runs on defaults the starter had overridden.** MEASURED 2026-10-16:
+  - P6's starter sources `/workspace/ops/p6_start.env` (`P6_FREE_NAVLOGS=1`, `P6_YAW_WRAP=off`,
+    `P6_DD_GB`; each override is justified in that file).
+  - After an instrument fix, the Master Mind restarted with the bare script. That reverted all
+    three overrides with no warning, and the default `dd` size filled the volume (entry above).
+  - ⇒ Before any relaunch, read how the dead chain was started: its starter script, or
+    `/proc/<pid>/environ` while it is alive. Relaunch with the same `set -a; . <env>; set +a`
+    prefix.
+  - ⇒ Every chain starter keeps its overrides in a file next to the chain, with a backup before
+    any edit. An override that exists only in a shell history is lost on the first restart.
+  Same family as *`supervise_run.sh` sources its manifest once*: a run's configuration lives in
+  how it was LAUNCHED, not in the script you are about to re-run.
 
 ## Git hygiene — the mistake that has now happened twice
 
