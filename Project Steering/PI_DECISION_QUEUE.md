@@ -1951,3 +1951,26 @@ Evidence: `TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-ref
   3. regenerate `SHIP_MANIFEST.json`, ship, and pre-run G-SUITE on the pod in the chain's exact environment.
   Slot: after P2-s1 and before P6's GPU stages, as recommended above.
 - **Still unverified:** the bf16/GPU path on the A40 and a real `launch_gate.py run` mint for `refe_rls1c`. Both happen on the pod at launch.
+
+## 🔴 NEW ITEM (2026-10-16 ~07:00 Berlin) — S1c: train the aux drivable-area head longer (an A40 arm). When?
+
+**Evidence (all MEASURED, dev box, 0 A40; T0-like head perception, never driving).**
+- **The head can fit the frozen trunk's features.** At 10,000 updates it reaches in-sample 0.894 (bar 0.80) and held-out 0.675 (A2).
+  ⇒ the unfrozen-trunk graft (the earlier registered lever) is **not** needed for this head.
+- **S1 was starved of updates.** On the same 1,058 navtest tokens, the probe head reads 0.428 / 0.635 / 0.675 at 400 / 2,000 / 10,000 updates (A3R = R-BUDGET).
+  S1 trained 400 updates and read 0.501.
+- **No label bug and no navtrain → navtest shift.** The apparent 0.13 gap is the test sample's city and failure mix (shift-locate study).
+  On the natural navtest population S1 reads 0.56. Its weak spots are missed drivable area (recall 0.73) and Boston / Pittsburgh / Singapore.
+
+**The arm.** S1's H1 head, frozen trunk, natural sampling, with **2,000-10,000 updates** instead of 400.
+- **Cost (ESTIMATED):** about 4.5-7 A40-h. This is from S1's MEASURED 86 min per 400 updates × 64 frames (≈ 0.2 s per frame) and assumes the trunk forward dominates: 10,000 × 8 frames ≈ 4.5 h; 2,000 × 64 ≈ 7 h.
+- **Bar:** S1's K2, P1 IoU [0, 40) ≥ 0.80, read on BOTH the natural navtest population and the C3 set.
+
+**Options.**
+1. **Queue S1c behind P6** (P6's ~7 days are not delayed). Meanwhile the Master Mind makes the arm launch-ready at 0 A40: argv, gate profile, reachability.
+2. **Insert S1c before P6's GPU stages.** This delays P6 by about 5-8 h.
+3. **Park it.**
+
+**Master Mind recommendation: 1.** P6 is the paper-gap lever. S1c's prize is real but indirect: a ≥ 0.80 head still has to be wired into selection before it touches PDMS.
+- **Default if unanswered:** 1 (queue behind P6), with the zero-A40 build.
+- **Evidence:** `raw/2026-10-16-scene-tap-a2/`, `raw/2026-10-16-scene-tap-a3r/`, `raw/2026-10-16-aux-shift-locate/SHIFT_LOCATE.md`.

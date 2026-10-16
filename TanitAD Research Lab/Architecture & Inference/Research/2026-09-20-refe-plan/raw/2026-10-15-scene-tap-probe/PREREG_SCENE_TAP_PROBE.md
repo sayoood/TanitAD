@@ -247,3 +247,12 @@ The H2 arms read the same to 4 decimals.
 
 - **Reported, never gating:** the per-city H400 (BOS / LV / PIT / SG), I400, and the curve 400 / 2,000 / 10,000.
 - **The caveat, stated now:** U400 trains on navtest folds, which share the test set's composition. That is the point of the contrast, but it means R-PRIOR is a statement about training-mix sensitivity, NOT a deployable recipe (navtest labels are never training data for a deployed head).
+
+### A3R RESULT (2026-10-16 06:55 Berlin, mechanical on the rows above): **R-BUDGET**
+- **H400 = 0.428** (95 % logs-only CI 0.382-0.478, ≤ 0.53). In-sample I400 = 0.433. Δ vs 2,000 updates = **-0.207 [-0.243, -0.176]**.
+- Per-fold held-out: 0.430 / 0.467 / 0.382 / 0.432 / 0.398. Wall time: 231 s for 5 units.
+- Instrument identity: exact (V-s0 2k reproduced 0.6348906684); zero control exact.
+- The update curve on the same tokens and folds: **0.428 / 0.635 / 0.675 at 400 / 2,000 / 10,000 updates.**
+- Per-city H400: NOT COMPUTED (the reader has no city split; reported-only, never gating).
+- ⇒ S1's 0.501 (400 updates × 64 frames, navtrain) is what roughly 400 optimizer steps buy, whatever the training mix. **S1c = more updates, natural sampling.**
+- ⚠️ `A2_RESULT.md` in that dir prints "U3 / U10k": that is A2's reader vocabulary, reused by flag. A3R does not use A2's rows.
