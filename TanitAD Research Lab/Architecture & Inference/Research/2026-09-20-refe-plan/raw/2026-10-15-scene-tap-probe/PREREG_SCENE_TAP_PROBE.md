@@ -198,3 +198,33 @@ Tests: `test_scene_tap_probe.py` 19 passed (`logs/test_scene_tap_probe.log`). A 
 ### A2.1 (2026-10-16 ~01:15 Berlin, Master Mind; BEFORE any 10,000-update unit exists — the grid is still waiting for the GPU lock): what "separated" means in A2
 A2's Δ clause says "separated = beyond V's seed floor". It is read with the probe's OWN rule (section 4 mechanical form, `scene_tap_probe.decide`): **the paired interval excludes 0 AND |Δ point| exceeds V's seed floor**. The floor is the value in `PROBE_RESULT.json` (`arms.V.seed_floor` = 0.003552…; A2's "0.0036" is that number rounded). `A2_RESULT.json` reports `row_depends_on_the_ci_clause`; a U2 / U4 that depends on it is quoted with that flag.
 Implementation note (no effect on the contract): the A2 copy of the GPU lease never deletes another job's lock (the banked copy removed a > 10-min lock whose pid Windows could not see, which would steal an MSYS-pid lock of another session).
+
+### A2 RESULT (2026-10-16 04:26 Berlin, mechanical; `raw/2026-10-16-scene-tap-a2/A2_RESULT.json`): **U2**
+- **H = 0.675** held-out (95 % logs-only CI 0.643–0.708).
+- **I = 0.894** in-sample.
+- **Δ vs 2,000 updates = +0.040 [+0.032, +0.049]**: separated, and NOT dependent on the CI clause.
+- ⇒ the head CAN fit the frozen visual features. **D2 at 2,000 updates was under-training, not a feature limit.** Generalisation is the limit, from ~100 training logs.
+- Committed next lever: S1c with more updates AND more label logs, each as its own registered pair. S1c needs the A40 ⇒ the PI's decision.
+
+### A3: CONSIDERED AND NOT RUN (2026-10-16 ~04:50 Berlin, Master Mind): the question is already answered by banked data
+**The question.** A3 was drafted to ask whether S1's navtest 0.50 is update starvation: the same head, in-domain, at S1's 400 updates.
+
+**The answer, already banked.** S1's own read banks that head on **navtrain held-out logs** at S1's exact budget. MEASURED, `raw/2026-10-15-s1-read/S1_READ.json` `outcome.per_arm.k2.*.p1_ho`:
+
+| arm | navtest P1 IoU [0, 40) | navtrain held-out (24 logs) |
+|---|---|---|
+| H1-s0 | 0.496 | 0.631 |
+| H1-s1 | 0.521 | 0.643 |
+| H1-s2 | 0.486 | 0.621 |
+
+The H2 arms read the same to 4 decimals.
+
+**What that means.**
+- In its own domain, at 400 updates, S1's head reaches **~0.63**, the same as the probe's navtest-trained head on navtest (0.635 at 2,000 updates).
+- **The deficit is a navtrain → navtest gap of ≈ 0.13**, consistent across 3 seeds. It is not update starvation.
+- The comparison is cross-instrument: different held-out sets, unpaired. It is descriptive, not a separated effect.
+
+**Lever ranking (Rule Zero item 5).**
+- The gap (≈ 0.13) is about **3×** the +0.040 that 5× more updates bought in-domain (A2).
+- ⇒ the first lever is to **LOCATE the navtrain → navtest shift**. Candidates: label construction, city or scene composition, region statistics. That is a 0-GPU diagnostic.
+- S1c comes after it; its expected value depends on what the shift is.

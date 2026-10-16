@@ -18064,3 +18064,19 @@ not a null result. The RC rows' exact zeros on the same arm are NOT this defect:
 outcome list (O2 (ii)) was written BEFORE the attribution existed, so it is INHERITED, not MEASURED. When an outcome fires, re-rank its listed
 levers against every attribution banked since the list was written. Same family as CLAUDE.md rule 5 of RULE ZERO: *prefer the lever with the
 largest measured effect*. A lever that the attribution assigns about 0.2 of the effect is not the next lever.
+
+### R37 (2026-10-16) - "two instruments now point the same way: the frozen representation of drivable area is the limit" (scene-tap probe REPORT.md and GAC `D-REFE-SCENETAP-1`, landed 73db963)
+
+- **What is true (MEASURED 2026-10-16, `.../2026-09-20-refe-plan/raw/2026-10-16-scene-tap-a2/A2_RESULT.json`).**
+  - The same head at 10,000 updates instead of 2,000 fits the frozen visual features in-sample at **0.894** (the bar is 0.80), and held-out rises **+0.040 [+0.032, +0.049]** to 0.675.
+  - The "D2" in-sample read at a single update budget was **under-training**.
+  - The larger deficit was already banked: S1's heads read navtrain held-out **0.63** vs navtest **0.50** at the same budget (`raw/2026-10-15-s1-read/S1_READ.json` `p1_ho`). That is a navtrain → navtest gap of ≈ 0.13.
+- **What it would have cost.** It would have ranked the unfrozen-trunk graft (A40 + an architecture change, a PI decision) as THE lever for the drivable-area head, and it lent false corroboration to P6.
+  - It was corrected about 4 h after landing, by the cheap discriminator pre-registered in the same commit (A2), before the PI read it.
+  - No arm was designed on it.
+- **Fixed.** GAC `D-REFE-SCENETAP-1` was corrected in the same commit as this entry. PREREG A3 was considered and NOT run, because the banked `p1_ho` already answered it. The next lever is re-ranked by measured size: locate the navtrain → navtest shift first.
+
+**Class:** *one training budget read as a capability limit, plus a corroboration claimed across two instruments that measured different things.*
+- An in-sample fit below the bar at ONE update count is not evidence that the features cannot carry the target. It is the TRAPS entry "a negative from a linear probe is not a negative about learnability", with a nonlinear head.
+- The selection-rule finding was about the SCORER's DAC head being confidently wrong. The probe was about a separate perception head. "Two instruments agree" needs both to measure the same quantity.
+- ⇒ **Before calling a head-fit a feature limit, run at least two update budgets, or show the training loss has plateaued. And before quoting a deficit, check the banked reads for a larger term (here `p1_ho`).**
