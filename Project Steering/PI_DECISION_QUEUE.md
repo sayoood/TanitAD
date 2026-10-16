@@ -2035,3 +2035,13 @@ Evidence: `TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-ref
 - **Master Mind recommendation:** do NOT spend an A40 arm on head-only EPO.
 - **The prereg's next lever is an architecture call for you:** a separate safety head that EPO cannot move.
 - Meanwhile the MM runs the cheap CPU follow-up (K = 250, ~5 h CPU). It tests whether the sim reproduces R0's real TTC loss; if it does, it becomes a CPU testbed for safety-head designs before any A40 arm.
+
+### ✅ DECIDED (PI, 2026-10-16 ~20:20 Berlin): "yes experiment with the seperate safety head"
+- Resolves the R0c/PHEAD item above: the RL scorer gets a safety head that EPO's gradient cannot move.
+- **Stage 1, started now (CPU, 0 A40):**
+  - design from `scorer_finetune.py` source;
+  - `PREREG_SAFEHEAD.md`, committed before any number;
+  - a sim verdict on the phead harness: f = J-gain fraction, TTC/NC/DAC proxies vs matched controls, K = 50 and K = 250.
+  - Package: `raw/2026-10-16-safety-head/`.
+- **Stage 2, on SH-GO:** the trainer implementation (default OFF), launch-gate entries and reachability tests.
+- **Stage 3:** one A40 arm. The A40 is running P6 (several days), so the arm queues after P6 unless the PI orders otherwise.
