@@ -1,0 +1,24 @@
+ZZINFO real NAVSIM metadata absent on this box; the synthetic pickles above cover the format
+  carved the P6 smoke bank: {'rows': {'targets_rank0.jsonl': 2, 'targets_rank1.jsonl': 2}, 'scanned': {'targets_rank0.jsonl': 3, 'targets_rank1.jsonl': 3}, 'no_parts': {'targets_rank0.jsonl': 1, 'targets_rank1.jsonl': 1}}
+verdict FAIL -> x
+ZZGATE-FAIL-000000000000ZZ
+2026-10-16T06:35:45Z ZZEGRESS_OK G-EGR 1 files 125 B
+2026-10-16T06:35:45Z ZZEGRESS_FAIL G-EGR-REGRESSION exception:PermissionError:403 Forbidden: token hf_*** cannot write google/tanitad-egress-regression-must-fail
+2026-10-16T06:35:45Z ZZEGRESS_OK G-EGR-CKPT 1 files 1234 B
+2026-10-16T06:35:45Z ZZEGR_PASS main_ok=True regression_refused=True
+2026-10-16T06:35:45Z ZZEGRESS_OK G-EGR 1 files 125 B
+2026-10-16T06:35:45Z ZZEGRESS_FAIL G-EGR-REGRESSION exception:PermissionError:403 Forbidden: token hf_*** cannot write google/tanitad-egress-regression-must-fail
+2026-10-16T06:35:45Z ZZEGR_PASS main_ok=True regression_refused=True
+2026-10-16T06:35:45Z ZZEGRESS_FAIL G-EGR exception:PermissionError:403 Forbidden: token hf_*** cannot write Sayood/tanitad-refe-p6-paper-faithful
+2026-10-16T06:35:45Z ZZEGRESS_FAIL G-EGR-REGRESSION exception:PermissionError:403 Forbidden: token hf_*** cannot write google/tanitad-egress-regression-must-fail
+2026-10-16T06:35:45Z ZZEGRESS_FAIL G-EGR-CKPT exception:PermissionError:403 Forbidden: token hf_*** cannot write Sayood/tanitad-refe-p6-paper-faithful
+2026-10-16T06:35:45Z ZZEGR_FAIL main_ok=False regression_refused=True
+Traceback (most recent call last):
+  File "/workspace/ops/d7fix/pkg/refe/test_p6_chain.py", line 1239, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/workspace/ops/d7fix/pkg/refe/test_p6_chain.py", line 1196, in main
+    assert tt.is_alive() and not list(out.glob("*/*.pkl.xz")); n += 2                                              # paused: nothing built, nothing lost
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError
+rc=1
