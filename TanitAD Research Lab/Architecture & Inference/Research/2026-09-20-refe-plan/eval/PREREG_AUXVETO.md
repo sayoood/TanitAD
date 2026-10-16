@@ -79,3 +79,16 @@ For each token and arm:
 3. **Zero control:** an all-drivable raster vetoes nothing, and Δ = 0.0 exactly.
 4. **O-DAC sanity:** O-DAC's Z-stratum recovery is ≥ the recovery of every raster arm (the oracle bounds the rasters).
 5. **Mutation:** a y-flipped V-GT raster must not read as well as V-GT. It is reported, and must fall below V-GT's point estimate.
+
+## Amendment A1 (2026-10-16 ~09:30 Berlin, Master Mind; written BEFORE S1c has trained and before any arm of this prereg has been read): arm V-S1C
+**What it adds.** One arm, **V-S1C**: the S1c head's (`eval/PREREG_S1C.md`, arm `H1u10k-s0`) navtest forward rasters on the 1,058 C3 tokens
+(`aux_navtest_forward.py`).
+- It is read through §3–§9 unchanged: the MASK (`logit > 0`), the distance transform, the −0.25 m margin, the same rule, estimator and validity checks.
+- Its identity check replaces §9.2's: the read reproduces S1c's own C3 P1 IoU [0, 40) from `aux_s1_readout.py`.
+
+**Its role.** S1c's head is trained on navtrain only, so V-S1C is the first **deployable** raster arm. V-PRED's head was trained on navtest
+folds; it measures the route, not a deployable component.
+
+**Decision rule.** V-S1C is read by the same §6 decision list, as its own row, after V-PRED's. It cannot change V-PRED's row.
+
+**What it does not change.** Every other line above.

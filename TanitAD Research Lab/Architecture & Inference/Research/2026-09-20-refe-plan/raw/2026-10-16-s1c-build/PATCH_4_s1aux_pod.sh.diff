@@ -1,0 +1,151 @@
+--- a/refe/s1aux_pod.sh
++++ b/refe/s1aux_pod.sh
+@@ -11,7 +11,13 @@
+ # restarts at update 0 under a fresh preflight and a fresh token (the trainer has no resume; PREREG_AUX_DRIVABLE_S1 section 4 rule 1): its directory is renamed <ARM>_killed_<k>, never stitched.
+ # S1AUX_STOP_AFTER=<precheck|env|fetch|data|relabel|bank_labels|gpu_wait|gate_<ARM>|arm_<ARM>> ends the chain after that stage (a dry run; gate_N-s0 stops after the first token).
+ # S1AUX_ARMS="N-s0 H2-s0 ..." selects the arms (default: all nine, in the REGISTERED priority order; a list must be a subsequence of it).  The registered drop of H1-s1 / H1-s2 is the Master Mind's.
+-# S1AUX_RLS1_ABANDONED=1 lets the chain start when RL-S1's chain never logged ZZRLS1_DONE (a killed arm, a refusal): only on the Master Mind's word.
++# S1AUX_RLS1_ABANDONED=1 lets the chain start when RL-S1's chain never logged ZZRLS1_DONE (a killed arm, a refusal): only on the Master Mind's word.  NOT NEEDED by an S1c-only launch (see S1C_ONLY): there the
++# RL-S1 dependency is the chain.lock alone and a missing ZZRLS1_DONE is a logged WARN (ZZS1AUX_UPSTREAM_NO_DONE), never a refusal.
++# S1c LAUNCH WINDOW (PI 2026-10-16, A40 order P2-s1 -> R0c -> S1c -> P6): start this chain only AFTER R0c's chain logged ZZRLS1_QUEUE_CLEAR (rls1_pod.sh): R0c's queue_wait YIELDS to any holder of $DATA/s1aux/chain.lock, and this
++# chain holds it from its first line, so an earlier start would run S1c BEFORE R0c.  Its CPU stages then run beside R0c's training; its GPU use waits for R0c's chain.lock to be free and the GPU idle on 3 polls.  P6's precheck refuses
++# while this chain holds its lock: start P6 after ZZS1AUX_DONE.
++# S1c (raw/2026-10-16-s1c-build/S1C_DESIGN.md): the S1 head with a longer training budget, ONE arm: S1AUX_ARMS="H1u10k-s0" (profile refe_aux_s1c; H1u2k-s0 is the registered alternative budget).  S1's nine arms stay in
++# the registered order BEFORE it, so a list naming only S1c arms skips them; S1's own arm markers (stage/arm_<ARM>.ok) would skip them anyway.  S1AUX_DD_MB (default 24576 for S1's nine arms, 5120 when every arm is an S1c arm).
+ # S1AUX_TLANE_N (default 15000) = the size of the seeded train teacher-lane subset (SFT-4R's: seed 20261004).  The same seed gives a PREFIX of the same shuffled order, so 2500 is a subset of 15000.
+ # The CPU stages (env .. bank_labels) run beside a training upstream at nice 19 (A4, 2026-10-14); the chain WAITS before its first GPU use (stage gpu_wait: never a GPU job beside RL-S1, P2 or any process on the GPU) and re-checks the GPU right before every arm.  Every child is launched with fd 200 closed (the chain holds its flock
+ # on 200).  Markers are opaque ZZS1AUX_* tokens; every stop is `ZZS1AUX_REFUSED stage=<stage>: <why>` in chain.log.
+@@ -31,12 +37,19 @@
+ HO_ROOT=$DATA/refe_heldout; HO=$HO_ROOT/sets; HOLOGS=$HO_ROOT/heldout_logs.txt
+ HO_TAR=$DATA/hf_dl/heldout/refe_heldout_v5.tar.zst; HO_TAR_PATH=refe_heldout_v5.tar.zst; HO_TAR_MD5=1f43409ba8ea2a8909e5035236c73676
+ QUEUE_TAR=$DATA/hf_dl/queue/onpolicy_queue.tar.zst; QUEUE_TAR_PATH=onpolicy_queue.tar.zst; QUEUE_TAR_SIZE=1817869216; QDIR=$R/queue_src
+-NAVTEST_JSON=$DATA/aux_drivable/navtest.json; NAVTEST_SHA=0b9c63895d4e8da4205e194c90379cbf986badd1baf8beab948adb3743a33700   # the navtest list the store was checked against (its manifest pins this sha256; G-SUITE E10 reads it)
++# the navtest list the store was checked against, pinned by the sha256 of its CR-STRIPPED bytes (3ba1c96488f1...): the store manifest recorded the sha256 of a Windows autocrlf checkout (CRLF, 0b9c63895d4e...), while the git blob and
++# our LF ship are the same 12,152-line list without the CRs (raw/2026-10-15-s1-chain-linux-hygiene/ #2).  G-SUITE's E10 (test_aux_drivable_head.navtest_identity) applies the same rule.  A different list fails BOTH forms.
++NAVTEST_JSON=$DATA/aux_drivable/navtest.json; NAVTEST_SHA=3ba1c96488f157fd2ca7c57c83abe439b4c9680ebdb1eadf65c34ac323d42d44
++navtest_sha() { tr -d '\r' < "$1" 2> /dev/null | sha256sum | cut -c1-64; }
+ LABELS=$DATA/aux_drivable/label_store              # store_sha256 4a17db67...f287a, 103,139 frames (pinned in aux_drivable_head.py, gate_checks.py and the trainer's data event)
+ LANE_XZ=$PKG/raw/2026-10-04-lane-discipline        # the held-out lane labels SFT-4 trained against (3,137 rows each), restored from the repo (sft4r_relabel.sh step 1)
+ HELDOUT_SETS_N=3137; TLANE_MIN_ROWS=2109; TLANE_SEED=20261004; EXP_DBS=1192; EXP_PIX=32
+-ARM_ORDER="N-s0 H2-s0 H1-s0 N-s1 H2-s1 N-s2 H2-s2 H1-s1 H1-s2"      # PREREG_BLANKS_PROPOSED section 2, the registered priority order
+-ARMS="${S1AUX_ARMS:-$ARM_ORDER}"
++ARM_ORDER_S1="N-s0 H2-s0 H1-s0 N-s1 H2-s1 N-s2 H2-s2 H1-s1 H1-s2"      # PREREG_BLANKS_PROPOSED section 2, the registered priority order
++ARM_ORDER_S1C="H1u10k-s0 H1u2k-s0"                                     # S1c (PREREG_S1C_DRAFT.md): the head with a longer budget; ONE arm per launch, the recommended one first.  profile refe_aux_s1c
++ARM_ORDER="$ARM_ORDER_S1 $ARM_ORDER_S1C"
++ARMS="${S1AUX_ARMS:-$ARM_ORDER_S1}"                                    # the DEFAULT list is S1's nine: an S1c launch NAMES its arm (S1AUX_ARMS), it is never an accident of a default
++# an S1c-ONLY launch (every arm is an S1c arm): its dependency on RL-S1 is the chain.lock ALONE (upstream() below) and its dd write test is small (DD_DEFAULT_MB).  S1's own nine-arm list keeps both of S1's rules.
++S1C_ONLY=1; for _a in $ARMS; do case "$_a" in H1u*) ;; *) S1C_ONLY=0 ;; esac; done
+ # the launch-gate HMAC key lives on the persistent volume but OUTSIDE the shipped code tree and outside anything the egress pushes
+ export TANITAD_GATE_KEY_FILE="$R/launch_gate.key"
+ mkdir -p "$R" "$S"
+@@ -69,6 +82,12 @@
+   if [ -e "$P2/chain.lock" ] && ! ( flock -n 9 ) 9<> "$P2/chain.lock"; then echo "the P2 chain still holds $P2/chain.lock"; return 2; fi
+   if [ -e "$RLS1/chain.lock" ] && ! ( flock -n 9 ) 9<> "$RLS1/chain.lock"; then echo "the RL-S1 chain still holds $RLS1/chain.lock"; return 2; fi
+   if ! grep -q "ZZRLS1_DONE" "$RLS1/chain.log" 2> /dev/null && [ "${S1AUX_RLS1_ABANDONED:-}" != "1" ]; then
++    # S1c (PI 2026-10-16): the rls1 dependency is the LOCK ONLY.  A killed R0c (K3 is a pre-registered outcome) never logs ZZRLS1_DONE, S1c does not consume RL-S1's result, and on 2026-10-14 exactly this refusal
++    # idled the A40 for 8.3 h.  The lock is free here (the check above), so nothing runs beside us: proceed and say so.  S1's nine-arm chain keeps the refusal (S1-D4).
++    if [ "${S1C_ONLY:-0}" = 1 ]; then
++      log "ZZS1AUX_UPSTREAM_NO_DONE rls1 (WARN: ZZRLS1_DONE is not in $RLS1/chain.log and no RL-S1 chain holds its lock; S1c does not consume RL-S1's result, so it proceeds)"
++      return 0
++    fi
+     echo "RL-S1 is neither running nor finished: ZZRLS1_DONE is not in $RLS1/chain.log (S1AUX_RLS1_ABANDONED=1 only on the Master Mind's word)"; return 1; fi
+   return 0
+ }
+@@ -114,22 +133,28 @@
+ # THE argv of one arm: PREREG_BLANKS_PROPOSED section 3, character for character.  N = the SFT-4 recipe on u400 for 400 updates; H1 = N + the four head flags; H2 = H1 + --aux-drv-feed on.
+ # --warmup 50 --batch 8 --accum 8 are the parser defaults and are NOT named (the gate checks the effective values).  --dump-scores is on EVERY arm, N included.
+ arm_args() {
+-  local arm="$1" cls seed ad="$OUT/$1" base
+-  case "$arm" in N-s0|N-s1|N-s2|H1-s0|H1-s1|H1-s2|H2-s0|H2-s1|H2-s2) ;; *) return 1 ;; esac
++  local arm="$1" cls seed ad="$OUT/$1" base bud="--max-updates 400 --eval-every 400"
++  case "$arm" in N-s0|N-s1|N-s2|H1-s0|H1-s1|H1-s2|H2-s0|H2-s1|H2-s2|H1u10k-s0|H1u2k-s0) ;; *) return 1 ;; esac
+   cls="${arm%%-*}"; seed="${arm##*-s}"
+-  base="--ckpt $U400 --targets $TARGETS --images $IMAGES --calib $CALIB --onpolicy $ONP --heldout $HO --heldout-logs $HOLOGS --workers 3 --lr 1e-4 --b-mode expreward --lam 1.0 --tau-s 0.1 --lane-head --lane-weight 1.0 --teacher-lane-train $D/train_teacher_lane --teacher-lane-heldout $D/heldout_teacher_lane --lane-labels-heldout $D/heldout_lane --pdm-labels-train $D/train_pdm --pdm-labels-heldout $D/heldout_pdm --require-pdm --max-updates 400 --eval-every 400 --dump-scores $ad/dump --seed $seed --out $ad"
++  # S1c: the budget is the lever.  batch / accum are NAMED (the parser defaults are 8 / 8); gate profile refe_aux_s1c registers exactly these values per class (launch_gate.AUXS1C_BUDGETS)
++  case "$cls" in
++    H1u10k) bud="--max-updates 10000 --batch 8 --accum 1 --eval-every 5000" ;;
++    H1u2k) bud="--max-updates 2000 --batch 8 --accum 8 --eval-every 1000" ;;
++  esac
++  base="--ckpt $U400 --targets $TARGETS --images $IMAGES --calib $CALIB --onpolicy $ONP --heldout $HO --heldout-logs $HOLOGS --workers 3 --lr 1e-4 --b-mode expreward --lam 1.0 --tau-s 0.1 --lane-head --lane-weight 1.0 --teacher-lane-train $D/train_teacher_lane --teacher-lane-heldout $D/heldout_teacher_lane --lane-labels-heldout $D/heldout_lane --pdm-labels-train $D/train_pdm --pdm-labels-heldout $D/heldout_pdm --require-pdm $bud --dump-scores $ad/dump --seed $seed --out $ad"
+   case "$cls" in
+     N) echo "$base" ;;
+-    H1) echo "$base --aux-drv --w-aux-drv 0.1 --aux-drv-lr 2e-4 --aux-drv-labels $LABELS" ;;
++    H1|H1u10k|H1u2k) echo "$base --aux-drv --w-aux-drv 0.1 --aux-drv-lr 2e-4 --aux-drv-labels $LABELS" ;;
+     H2) echo "$base --aux-drv --w-aux-drv 0.1 --aux-drv-lr 2e-4 --aux-drv-labels $LABELS --aux-drv-feed on" ;;
+   esac
+ }
+ # ⛔ THE LAUNCH-GATE TOKEN (CLAUDE.md, PI 2026-09-26, BINDING): scorer_finetune.py does not start unless this returns 0.  `launch_gate.py verify` RE-MEASURES the argv,
+ # the code tree and the data and checks the HMAC; it is never a grep of a log.   token_ok  -> rc 0 iff ZZGATE-MATCHZZ
++arm_profile() { case "$1" in H1u*) echo refe_aux_s1c ;; *) echo refe_aux_s1 ;; esac; }       # the gate profile an arm is judged and its token minted under
+ token_ok() {
+   tok="$(ls "$LG"/PASS_*.json 2> /dev/null | head -n 1)"
+   [ -n "$tok" ] || return 1
+-  env -u HF_TOKEN "$PY" "$PKG/refe/launch_gate.py" verify --profile refe_aux_s1 --token "$tok" --args "$ARGS" --pkg "$PKG" \
++  env -u HF_TOKEN "$PY" "$PKG/refe/launch_gate.py" verify --profile "$PROFILE" --token "$tok" --args "$ARGS" --pkg "$PKG" \
+     --json "$ARMDIR/token_verify.json" >> "$ARMDIR/token_verify.log" 2>&1 200>&-
+ }
+ # push files to the PRIVATE repo, then prove them by the REMOTE listing: hf_egress.py's size check (ZZEGRESS_OK <tag>) AND the content (LFS sha256 / git blob id), never the push's return code.
+@@ -169,7 +194,7 @@
+          refe/launch_gate.py refe/gate_token.py refe/gate_checks.py refe/gate_fixture.py refe/hf_egress.py refe/p2r_sync.py refe/s1aux_checks.py refe/s1aux_pod.sh \
+          refe/onpolicy_relabel_pdm.py refe/pdm_label_complete.py refe/onpolicy_relabel_teacher_lane.py refe/select_bank_subset.py refe/onpolicy_label.py refe/navsim_pdm_targets.py \
+          refe/navtrain_scenarios.py refe/scorer_gate.py refe/score_proposals.py refe/route_rank.py refe/map_feature_cache.py refe/query_cache.py refe/build_scorer_targets.py \
+-         refe/test_rl_reward.py refe/test_rl_epo.py refe/test_aux_drivable_head.py refe/test_aux_s1_wiring.py refe/test_launch_gate.py \
++         refe/test_rl_reward.py refe/test_rl_epo.py refe/test_aux_drivable_head.py refe/test_aux_s1_wiring.py refe/test_launch_gate.py refe/test_s1c.py \
+          code/pod_teacher_env.sh code/pod_dataprep.sh splits/navtrain.yaml SHIP_MANIFEST.json \
+          raw/2026-10-04-lane-discipline/heldout_navsim_lane_labels.jsonl.xz raw/2026-10-04-lane-discipline/heldout_teacher_lane_labels.jsonl.xz \
+          raw/2026-10-11-aux-drivable/head_proto_selftest.out; do
+@@ -258,7 +283,7 @@
+ env -u HF_TOKEN "$PY" s1aux_checks.py store --store "$LABELS" > "$R/store_check.log" 2>&1 200>&-
+ grep -q "^ZZS1AUX_STORE_OK" "$R/store_check.log" || refuse "the aux label store fails its own sha check: $(tail -n 1 "$R/store_check.log" | cut -c1-300)"
+ # the navtest list G-SUITE's E10 checks the store against (no-leak), by CONTENT: absent or different here = a REFUSAL now, not 25 minutes into the first gate (2026-10-14)
+-[ "$(sha256sum "$NAVTEST_JSON" 2> /dev/null | cut -c1-64)" = "$NAVTEST_SHA" ] || refuse "the navtest list $NAVTEST_JSON is absent or not sha256 ${NAVTEST_SHA:0:12} (copy the repo's FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/raw/cluster_maps/navtest.json there)"
++[ "$(navtest_sha "$NAVTEST_JSON")" = "$NAVTEST_SHA" ] || refuse "the navtest list $NAVTEST_JSON is absent or its CR-stripped bytes are not sha256 ${NAVTEST_SHA:0:12} (copy the repo's FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/raw/cluster_maps/navtest.json there)"
+ log "ZZS1AUX_DATA_OK (held-out bank $(ls "$HO" | wc -l) files, 24 logs; held-out lane + teacher lane $HELDOUT_SETS_N rows each; $(tail -n 1 "$R/store_check.log" | cut -c1-120))"; stop_after data
+ 
+ # ---- 4. relabel.  The labellers must be ABLE to label before hours of them (2026-10-11: navsim was missing from the venv and the relabel failed EVERY set).
+@@ -358,7 +383,10 @@
+ STAGE=gpu_wait
+ wait_clear
+ # ⛔ never judge the disk with df (a pod volume's quota is invisible to it): WRITE to it.  Nine runs leave about 24 GB (model_sft_A.pt + model_sft_B.pt, 1.29 GB each, per arm) plus the inputs.
+-DDMB="${S1AUX_DD_MB:-24576}"
++# 24576 = nine S1 arms (about 2.7 GB each).  An S1c-only launch leaves ONE arm: model_sft_A.pt + model_sft_B.pt 2 x 1.29 GB, 3 evals x about 69 MB of dumps, aux_drv.pt 29 MB, scorer_states_last.pt (<= 0.5 GB, UNMEASURED) = about
++# 3.3 GB, plus one transient 1.3 GB checkpoint (atomic_save writes beside the target): 5120 MB.  /workspace is an NFS volume that reclaims deleted space LAZILY (2026-10-16): a larger test can refuse a healthy volume or hit EDQUOT for a neighbour.
++DD_DEFAULT_MB=24576; [ "$S1C_ONLY" = 1 ] && DD_DEFAULT_MB=5120
++DDMB="${S1AUX_DD_MB:-$DD_DEFAULT_MB}"
+ dd if=/dev/zero of="$DATA/.dd_test_s1" bs=1M count="$DDMB" conv=fsync 2>> "$R/dd_test.log" 200>&-
+ [ "$(stat -c %s "$DATA/.dd_test_s1" 2>/dev/null)" = "$((DDMB * 1024 * 1024))" ] || { rm -f "$DATA/.dd_test_s1"; refuse "dd write test of ${DDMB} MB failed"; }
+ rm -f "$DATA/.dd_test_s1"
+@@ -370,13 +398,14 @@
+   STAGE="arm_$ARM"
+   stage_done "arm_$ARM" && { log "arm $ARM already done"; continue; }
+   ARMDIR=$OUT/$ARM; LG=$LGROOT/$ARM; ARGS="$(arm_args "$ARM")" || refuse "no argv for arm $ARM"
++  PROFILE="$(arm_profile "$ARM")"
+   # a previous attempt that STARTED training and did not finish is archived whole: no resume, a fresh preflight, a FRESH token, the old directory kept and never stitched
+   if stage_done "trainstart_$ARM" && ! stage_done "train_$ARM"; then
+     k=1; while [ -e "$OUT/${ARM}_killed_$k" ]; do k=$((k + 1)); done
+     mv "$ARMDIR" "$OUT/${ARM}_killed_$k" || refuse "cannot archive the killed attempt $ARMDIR"
+     [ -d "$LG" ] && mv "$LG" "$LGROOT/${ARM}_killed_$k"
+     rm -f "$S/pre_$ARM.ok" "$S/gate_$ARM.ok" "$S/trainstart_$ARM.ok" "$S/token_row_$ARM.ok"
+-    env -u HF_TOKEN "$PY" s1aux_checks.py manifest-row --arm "$ARM" --event restart --k "$k" --out "$MANIFEST" --note "attempt killed before update 400; directory kept as ${ARM}_killed_$k" > /dev/null 2>&1 200>&-
++    env -u HF_TOKEN "$PY" s1aux_checks.py manifest-row --arm "$ARM" --event restart --k "$k" --out "$MANIFEST" --note "attempt killed before the arm's last update; directory kept as ${ARM}_killed_$k" > /dev/null 2>&1 200>&-
+     log "ZZS1AUX_ARM_RESTART $ARM k=$k (the killed attempt is kept in ${ARM}_killed_$k, never stitched; a fresh preflight and a fresh token follow)"
+     bank_push "arm_${ARM}_killed_$k" "arms/${ARM}_killed_$k" "$OUT/${ARM}_killed_$k/sft.log::sft.log" "$OUT/${ARM}_killed_$k/sft.jsonl::sft.jsonl" > /dev/null 2>&1 \
+       || log "ZZS1AUX_WARN the logs of the killed attempt ${ARM}_killed_$k were not banked to HF"
+@@ -397,7 +426,7 @@
+   GATE_MINTED_NOW=0
+   if ! stage_done "gate_$ARM"; then
+     rm -rf "$LG"; mkdir -p "$LG"
+-    env -u HF_TOKEN OMP_NUM_THREADS=4 "$PY" launch_gate.py run --profile refe_aux_s1 --arm-name "$ARM" --pkg "$PKG" --args "$ARGS" --out-dir "$LG" \
++    env -u HF_TOKEN OMP_NUM_THREADS=4 "$PY" launch_gate.py run --profile "$PROFILE" --arm-name "$ARM" --pkg "$PKG" --args "$ARGS" --out-dir "$LG" \
+       --gate-preflight-json "$ARMDIR/preflight.jsonl" > "$ARMDIR/launch_gate.log" 2>&1 200>&-
+     echo "ZZEXIT $?" >> "$ARMDIR/launch_gate.log"
+     token_ok || refuse "the launch gate did not mint a PASS token that verifies for $ARM (launch_gate.log, lg/, token_verify.log)"
+@@ -430,7 +459,7 @@
+     fi
+     stage_mark "train_$ARM"
+   fi
+-  # ---- 5d. the finished arm IS an S1 arm: start/done read updates == 400, evals and dumps exist, head files iff a head arm
++  # ---- 5d. the finished arm IS the registered arm: start/done read its registered update count (S1: 400; S1c: s1aux_checks.S1C_BUDGETS), evals and dumps exist, head files iff a head arm
+   if ! stage_done "check_$ARM"; then
+     env -u HF_TOKEN "$PY" s1aux_checks.py run-check --dir "$ARMDIR" --arm "$ARM" --json "$ARMDIR/run_check.json" > "$ARMDIR/run_check.log" 2>&1 200>&-
+     grep -q "^ZZS1AUX_RUN_OK" "$ARMDIR/run_check.log" || refuse "arm $ARM is not a valid S1 arm: $(tail -n 1 "$ARMDIR/run_check.log" | cut -c1-500)"

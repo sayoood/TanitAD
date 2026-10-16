@@ -1,0 +1,35 @@
+mutation                                 term   caught-by (failing checks)
+pdms_ttc_weight_5_to_4                   PDMS   pdms_values, R_values, guard_never_crosses_safety_boundary, guard_reorders_inside_safe
+lam_d_sign_flipped                       D      R_values, P4_property_random_fans
+lam_d_default_0                          D      defaults, R_values, missing_d_raises, d_range_raises
+D_saturation_removed                     D      D_value
+guard_applied_to_unsafe                  g2     guard_values
+guard_reference_includes_unsafe          g2     guard_reference_ignores_unsafe
+guard_sign_flipped                       g2     guard_values, R_values, guard_never_crosses_safety_boundary, guard_reorders_inside_safe
+w_prog_default_0                         g2     defaults, R_values, guard_never_crosses_safety_boundary, guard_reorders_inside_safe
+P4_cap_removed                           g2     guard_never_crosses_safety_boundary, P4_property_random_fans
+P4_cap_keep_1_ties                       g2     guard_never_crosses_safety_boundary, P4_property_random_fans
+P4_cap_counts_safe_rivals                g2     guard_reorders_inside_safe
+guard_default_off                        g2     defaults, guard_values, R_values, guard_reference_ignores_unsafe
+guard_flag_ignored                       g2     identity_R_equals_PDMS, K_enters_reward
+safe_requires_ttc_dropped                g2     guard_values, safe_mask, R_values, guard_reference_ignores_unsafe
+K_sign_flipped                           K      K_enters_reward
+K_intersection_mask_dropped              K      K_intersection_masked
+K_lane_change_exemption_dropped          K      K_value
+K_straddle_weight_0                      K      K_value, K_intersection_masked
+K_default_on                             K      suite setup raised ValueError: cfg.use_k but no `k` input
+L_sign_flipped                           L      L_enters_reward
+L_dither_dropped                         L      L_labelled, L_unlabelled_penalised, L_dither_and_clip, L_enters_reward
+L_unlabelled_unpenalised                 L      L_unlabelled_penalised
+L_credit_without_safety                  L      L_labelled, L_enters_reward
+L_credit_without_label                   L      L_unlabelled_penalised
+L_credit_unbounded_by_gain               L      L_bounded_by_gain, L_no_stay_reference
+L_stay_reference_includes_changes        L      L_labelled, L_bounded_by_gain, L_dither_and_clip, L_enters_reward
+L_clip_removed                           L      L_dither_and_clip
+L_default_on                             L      suite setup raised ValueError: cfg.use_l but no `lane` input
+silent_zero_when_d_missing               reach  missing_d_raises
+ZZTEST_PASS 31  (1 unmutated suite + 29 RED mutations + coverage)
+
+real	0m0.507s
+user	0m0.015s
+sys	0m0.000s

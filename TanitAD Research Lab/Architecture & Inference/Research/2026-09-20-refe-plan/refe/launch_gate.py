@@ -101,6 +101,20 @@ AUXS1_HEAD_TERMS = ("aux_bce", "aux_huber")                                     
 AUXS1_SUITE = [{"script": "test_rl_reward.py", "token": "ZZTEST_PASS"}, {"script": "test_rl_epo.py", "token": "ZZTEST_PASS"},
                {"script": "test_aux_drivable_head.py", "token": "ZZTEST_PASS"}, {"script": "test_aux_s1_wiring.py", "token": "ZZTEST_PASS"},
                {"script": "test_launch_gate.py", "args": ["--static", "--no-banked"], "token": "ZZLG_STATIC_PASS"}]
+# S1c (raw/2026-10-16-s1c-build/S1C_DESIGN.md; PI 2026-10-16 "run S1c before P6"): S1's H1 head (frozen trunk, feed off, natural sampling, the registered head levers) with ONE thing moved: the TRAINING
+# BUDGET.  The budget is a CLASS of arm (like N / H1 / H2), each with its own (max_updates, batch, accum, eval_every); every other recipe value is S1's (AUXS1_RECIPE).  The budget flags are NAMED in the
+# argv (a default would hide the lever) and the schedule must REACH max_updates (profile key `schedule_reach`: a --epochs that is too small stops a run SILENTLY early, TL-1 / refe_rls1's --epochs 4).
+#   u10k  RECOMMENDED: 10,000 updates x 8 rows (accum 1) = 80,000 rows, 0.46 of an epoch: the (updates, batch) of the dev-box probe that read 0.675 (raw/2026-10-16-scene-tap-a2/); ~4.3 A40-h (4.1-5.4: COST_MODEL.json)
+#   u2k   S1's own update (8 x 8 = 64 rows) x 2,000 = 128,000 rows, 0.73 of an epoch; ~6.2 A40-h (COST_MODEL.json)
+# ONE seed (0) is registered: the replicate (seed 1) is a follow-up PI decision, and registering it is a one-line change here.
+AUXS1C_BUDGETS = {"u10k": {"max_updates": 10000, "batch": 8, "accum": 1, "eval_every": 5000},
+                  "u2k": {"max_updates": 2000, "batch": 8, "accum": 8, "eval_every": 1000}}
+AUXS1C_SEEDS = (0,)
+AUXS1C_ARM_CLASS = {f"H1{b}-s{k}": f"H1{b}" for b in AUXS1C_BUDGETS for k in AUXS1C_SEEDS}
+AUXS1C_ARM_SEED = {f"H1{b}-s{k}": k for b in AUXS1C_BUDGETS for k in AUXS1C_SEEDS}
+AUXS1C_ARM_RECIPE = {f"H1{b}": {**AUXS1_RECIPE, **bud} for b, bud in AUXS1C_BUDGETS.items()}      # class -> the full registered recipe (S1's, with the budget moved)
+AUXS1C_MUST_NAME = ("--max-updates", "--batch", "--accum", "--eval-every")                          # the budget the arm tests is NAMED, never a parser default
+AUXS1C_SUITE = AUXS1_SUITE + [{"script": "test_s1c.py", "token": "ZZTEST_PASS"}]
 # P2-s1, the P2 TRAINING-SEED REPLICATE (eval/PREREG_P2_REPLICATE.md; chain refe/p2rep_pod.sh).  The arm is P2's argv CHARACTER FOR CHARACTER with exactly two changes: `--out` is the
 # replicate's own run directory and `--seed 1` is added (P2 ran the parser default, seed 0).  `refe_p2` binds NEITHER (its `required_flags` names 8 of its 20 flags; a missing `--seed 1`, P2's
 # own `--out`, or any other lever that moved would still mint), so the replicate has a profile of its own that PINS the whole argv (`pinned_argv`, token for token).
@@ -215,6 +229,11 @@ PROFILES["refe_rls1b"] = {**PROFILES["refe_rls1"], "name": "refe_rls1b", "suite"
 # RL-S1c = refe_rls1 with ITS arm table (R0c only), `epo_ref armA` registered AND required to be named.  Everything else (checks, data flags, forbidden / required flags, recipe, G-DVB) is refe_rls1's.
 PROFILES["refe_rls1c"] = {**PROFILES["refe_rls1"], "name": "refe_rls1c", "suite": RLS1C_SUITE, "arm_class": RLS1C_ARM_CLASS, "arm_seeds": RLS1C_ARM_SEEDS,
                           "epo_registered": RLS1C_EPO_REGISTERED, "must_name": RLS1C_MUST_NAME}
+# S1c = refe_aux_s1 (same runner, checks, data flags, forbidden flags, head levers, recipe except the budget) with ITS arm table and per-class budget.  `--max-updates` is no longer a pinned value of
+# the PROFILE (400) but of the ARM CLASS (auxs1_refusals reads `arm_recipe`); it must still be NAMED.  `schedule_reach` adds G-DVB rows that re-derive the schedule the trainer will build.
+PROFILES["refe_aux_s1c"] = {**PROFILES["refe_aux_s1"], "name": "refe_aux_s1c", "suite": AUXS1C_SUITE, "arm_class": AUXS1C_ARM_CLASS, "arm_seeds": AUXS1C_ARM_SEED,
+                            "arm_recipe": AUXS1C_ARM_RECIPE, "must_name_flags": AUXS1C_MUST_NAME, "schedule_reach": True,
+                            "required_flags": {**PROFILES["refe_aux_s1"]["required_flags"], "--max-updates": None}}
 
 
 def parse_args_string(s: str) -> list:
@@ -416,6 +435,11 @@ def auxs1_arm_class(argv: list) -> str:
     return "H2" if (GT.flag_values(argv, "--aux-drv-feed") or ["off"])[0] == "on" else "H1"
 
 
+def auxs1_kind(arm_cls: str) -> str:
+    """N / H1 / H2 of a registered arm class: the S1c classes (H1u10k, H1u2k) are H1 arms with a budget, so `H1u10k` -> `H1`."""
+    return "N" if arm_cls == "N" else arm_cls[:2]
+
+
 def auxs1_control_argv(argv: list) -> list:
     """The matched no-head argv of a head arm: the SAME argv minus every head lever (flag and value), so a head arm and N differ by the head alone.  (--out and --seed are the
     caller's: two arms never share an output directory.)"""
@@ -435,12 +459,18 @@ def auxs1_refusals(prof: dict, argv: list, mod, parser) -> tuple:
     import gate_checks as C
     out = []
     name = prof["name"]
+    arm_class = prof.get("arm_class", AUXS1_ARM_CLASS)                    # refe_aux_s1c carries its own arm table, seeds and per-class recipe; refe_aux_s1 keeps the module constants
+    arm_seeds = prof.get("arm_seeds", AUXS1_ARM_SEED)
+    recipes = prof.get("arm_recipe")
     declared = prof.get("declared_arm")
-    if declared is not None and declared not in AUXS1_ARM_CLASS:
-        out.append(f"{name}: unknown arm {declared!r} (one of {sorted(AUXS1_ARM_CLASS)})")
+    if declared is not None and declared not in arm_class:
+        out.append(f"{name}: unknown arm {declared!r} (one of {sorted(arm_class)})")
         declared = None
+    if recipes is not None and declared is None:
+        out.append(f"{name}: the budget is a property of the ARM CLASS ({'|'.join(sorted(recipes))}); the arm must be NAMED (--arm-name), an argv alone cannot say which budget it tests")
     argv_cls = auxs1_arm_class(argv)
-    cls = AUXS1_ARM_CLASS[declared] if declared else argv_cls
+    cls = auxs1_kind(arm_class[declared]) if declared else argv_cls
+    recipe = recipes.get(arm_class[declared], AUXS1_RECIPE) if (recipes is not None and declared) else AUXS1_RECIPE
     who = declared or f"the {cls} arm class"
     ns, err = C.parse_scorer_argv(parser, argv)
     if err:
@@ -471,12 +501,16 @@ def auxs1_refusals(prof: dict, argv: list, mod, parser) -> tuple:
             f = "--" + dest.replace("_", "-")
             if not C._close(getattr(ns, dest), want):
                 out.append(f"{name} requires {f} {want} (the registered head lever); the argv resolves to {getattr(ns, dest)} ({how(f)})")
-    for dest, want in AUXS1_RECIPE.items():
+    why_recipe = (f"the S1c budget of {arm_class[declared]}, S1's recipe otherwise" if (recipes is not None and declared) else "the SFT-4 recipe, every arm")
+    for dest, want in recipe.items():
         f = "--" + dest.replace("_", "-")
         if not C._close(getattr(ns, dest), want):
-            out.append(f"{name} requires {f} {want} (the SFT-4 recipe, every arm); the argv resolves to {getattr(ns, dest)} ({how(f)})")
-    if declared and ns.seed != AUXS1_ARM_SEED[declared]:
-        out.append(f"{name}: arm {declared} is registered with --seed {AUXS1_ARM_SEED[declared]}; the argv resolves to {ns.seed} ({how('--seed')})")
+            out.append(f"{name} requires {f} {want} ({why_recipe}); the argv resolves to {getattr(ns, dest)} ({how(f)})")
+    for f in prof.get("must_name_flags", ()):                              # S1c: the budget the arm tests is NAMED (a flag whose default equals the registered value would hide the lever)
+        if f not in argv:
+            out.append(f"{name} requires {f} to be NAMED in the argv for {who} (the budget is the lever under test; the parser default is not a statement)")
+    if declared and ns.seed != arm_seeds[declared]:
+        out.append(f"{name}: arm {declared} is registered with --seed {arm_seeds[declared]}; the argv resolves to {ns.seed} ({how('--seed')})")
     if ns.lane_head and not (ns.teacher_lane_train and ns.teacher_lane_heldout):
         out.append(f"{name}: --lane-head needs --teacher-lane-train AND --teacher-lane-heldout (the 7th output would have no label)")
     return out, (AUXS1_HEAD_TERMS if cls != "N" else ())
@@ -785,10 +819,10 @@ def _profile_for(a, minting: bool) -> dict:
     off the argv cannot notice an omitted flag (an `--epo` left out of R0 reads as a clean control)."""
     prof = PROFILES[a.profile]
     arm_name = getattr(a, "arm_name", None)
-    arms = {"rls1": prof.get("arm_class", RLS1_ARM_CLASS), "auxs1": AUXS1_ARM_CLASS}.get(prof.get("arm_rules"), {})
+    arms = {"rls1": prof.get("arm_class", RLS1_ARM_CLASS), "auxs1": prof.get("arm_class", AUXS1_ARM_CLASS)}.get(prof.get("arm_rules"), {})
     if arm_name:
         if not prof.get("arm_rules"):
-            raise SystemExit(f"--arm-name is only meaningful for a profile with arm rules (refe_rls1, refe_rls1b, refe_rls1c, refe_aux_s1), not {a.profile}")
+            raise SystemExit(f"--arm-name is only meaningful for a profile with arm rules (refe_rls1, refe_rls1b, refe_rls1c, refe_aux_s1, refe_aux_s1c), not {a.profile}")
         if arm_name in prof.get("arms_need_pi", {}):
             raise SystemExit(f"REFUSED: {prof['arms_need_pi'][arm_name]}")
         if arm_name not in arms:
@@ -869,8 +903,8 @@ def main(argv=None) -> int:
         p.add_argument("--key-file")
         p.add_argument("--pkg", required=(name != "refusals"))
         if name in ("run", "refusals"):
-            p.add_argument("--arm-name", choices=sorted(set(RLS1_ARM_CLASS) | set(RLS1B_ARM_CLASS) | set(RLS1B_NEEDS_PI) | set(RLS1C_ARM_CLASS)) + sorted(AUXS1_ARM_CLASS),
-                           help="refe_rls1: the arm this argv is for (C0 C1 R0 R1 R2); refe_rls1b: C1 R0b R1b (R2b needs a PI decision); refe_rls1c: R0c; refe_aux_s1: N-s0..H2-s2; "
+            p.add_argument("--arm-name", choices=sorted(set(RLS1_ARM_CLASS) | set(RLS1B_ARM_CLASS) | set(RLS1B_NEEDS_PI) | set(RLS1C_ARM_CLASS)) + sorted(AUXS1_ARM_CLASS) + sorted(AUXS1C_ARM_CLASS),
+                           help="refe_rls1: the arm this argv is for (C0 C1 R0 R1 R2); refe_rls1b: C1 R0b R1b (R2b needs a PI decision); refe_rls1c: R0c; refe_aux_s1: N-s0..H2-s2; refe_aux_s1c: H1u10k-s0 | H1u2k-s0; "
                                 "REQUIRED to mint, optional for `refusals` (undeclared = read off the argv)")
         if name == "run":
             p.add_argument("--out-dir", required=True)

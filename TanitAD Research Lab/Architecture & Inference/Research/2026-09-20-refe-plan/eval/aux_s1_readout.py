@@ -77,7 +77,7 @@ LABEL_PINS = {                                         # (store_sha256, stored_k
     "navtest": ("985a3bc77f3ab7a96b0dceace48e73b80e5b69b70710958635060939bce0d7c1", 12146),
 }
 LABEL_DIRS = {"train": f"{ART}/label_store", "navtest": f"{ART}/label_store_navtest"}
-ARM_RE = re.compile(r"^(N|H1|H2)-s(\d+)$")
+ARM_RE = re.compile(r"^(N|H1|H2|H1u10k|H1u2k)-s(\d+)$")                  # H1u10k / H1u2k: the S1c head arms (raw/2026-10-16-s1c-build): H1's head with a longer budget, NO budget-matched N arm
 NOT_COMPUTED = ["E1 / E2 / E3 on the full navtest (PDMS, DAC-zero share, zeroed share): the planner / seam does not apply H2's feed (PREREG_BLANKS_PROPOSED section 5)",
                 "the four metric families on navtest (same reason); STRATEGIC is PAUSED (PI 2026-09-19, PI_DECISION_QUEUE item 25)",
                 "inference variance: REFe scoring is deterministic, ASSERTED by a second pass of the same checkpoint, not measured here"]
@@ -500,7 +500,7 @@ def p3_read(head_sdf: np.ndarray, props8: np.ndarray, dac: np.ndarray, valid: np
 def parse_arm(name: str) -> tuple:
     m = ARM_RE.match(name)
     if not m:
-        raise ValueError(f"arm name {name!r} is not N-s<k> / H1-s<k> / H2-s<k>")
+        raise ValueError(f"arm name {name!r} is not N-s<k> / H1-s<k> / H2-s<k> / H1u10k-s<k> / H1u2k-s<k>")
     return m.group(1), int(m.group(2))
 
 
@@ -508,7 +508,8 @@ def pair_with_n(names) -> dict:
     """{head arm: the N arm of the SAME seed, or None}. An N arm is never in the keys; a head arm is never paired with another seed."""
     parsed = {n: parse_arm(n) for n in names}
     n_by_seed = {s: n for n, (c, s) in parsed.items() if c == "N"}
-    return {n: n_by_seed.get(s) for n, (c, s) in sorted(parsed.items()) if c != "N"}
+    # an S1c arm (H1u10k / H1u2k) trained a different BUDGET from every N arm (400 updates): the same-seed N is NOT its comparator, so it is never paired (None => the selection read refuses it as UNPAIRED)
+    return {n: (n_by_seed.get(s) if c in ("H1", "H2") else None) for n, (c, s) in sorted(parsed.items()) if c != "N"}
 
 
 def eligible_sets(arm_scores: dict, pdm: dict) -> list:
@@ -686,6 +687,10 @@ def cmd_perception(a) -> int:
         h1 = f"H1-s{parse_arm(h2)[1]}"
         if h1 in preds:
             res["head_fit_pairs"][f"{h2}-minus-{h1}"] = head_fit_diff(preds[h2], stats[h2], preds[h1], stats[h1], a.n_boot)
+    for sc in sorted(n for n in arms if parse_arm(n)[0] in ("H1u10k", "H1u2k")):         # S1c: the BUDGET contrast on the same frames, paired on the same log resamples (the comparator is the SAME seed's 400-update H1 head)
+        h1 = f"H1-s{parse_arm(sc)[1]}"
+        if h1 in preds:
+            res["head_fit_pairs"][f"{sc}-minus-{h1}"] = head_fit_diff(preds[sc], stats[sc], preds[h1], stats[h1], a.n_boot)
     with open(a.out, "w", encoding="utf-8", newline="\n") as f:
         json.dump(res, f, indent=1, sort_keys=True, default=_json)
     print(f"ZZAUXS1_PERCEPTION_OK arms {sorted(res['arms'])} floor_read {sorted(inits)} floor_unread {sorted(set(res['arms']) - set(inits))}", flush=True)

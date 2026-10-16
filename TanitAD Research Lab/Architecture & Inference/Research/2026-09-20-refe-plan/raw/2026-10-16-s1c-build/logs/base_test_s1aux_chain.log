@@ -1,0 +1,22 @@
+Traceback (most recent call last):
+  File "C:\Users\Admin\AppData\Local\Temp\s1c_base\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\test_s1aux_chain.py", line 1255, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "C:\Users\Admin\AppData\Local\Temp\s1c_base\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\test_s1aux_chain.py", line 1243, in main
+    sandbox_runs(text, _mk(tmp, "s"))
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Temp\s1c_base\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\test_s1aux_chain.py", line 825, in sandbox_runs
+    rc, out, lg = sb.run(fresh=True, env_extra={"S1AUX_STOP_AFTER": "data"}); ok(rc == 0 and "ZZS1AUX_DATA_OK" in lg and "held-out lane + teacher lane 3137 rows each" in lg, lg)
+                                                                              ~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Temp\s1c_base\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\test_s1aux_chain.py", line 54, in ok
+    assert cond, msg
+           ^^^^
+AssertionError: 2026-10-16T05:09:34 ZZS1AUX_START chain (s1aux_pod.sh md5 0e4255c9a03f, arms: N-s0 H2-s0 H1-s0 N-s1 H2-s1 N-s2 H2-s2 H1-s1 H1-s2)
+2026-10-16T05:09:35 ZZS1AUX_PRECHECK_OK (tree ZZS1AUX_TREE_OK 38 files, commit None, tree d37f8e4d0408; upstream: over; the CPU stages run now, the GPU wait comes before the first arm)
+2026-10-16T05:09:35 ZZS1AUX_ENV_OK (cgroup cores 24, label workers 2)
+2026-10-16T05:09:35 u400 is not on the pod (or does not verify): fetching Sayood/tanitad-refe-rls1 base/model_sft4_B_u400.pt
+2026-10-16T05:09:35 ZZS1AUX_FETCH_OK u400 168 bytes md5 561c7eeb609d
+2026-10-16T05:09:37 heldout_lane restored from the repo: 3137 rows
+2026-10-16T05:09:37 heldout_teacher_lane restored from the repo: 3137 rows
+2026-10-16T05:09:44 ZZS1AUX_REFUSED stage=data: the navtest list C:/Users/Admin/AppData/Local/Temp/s1c_tmp/tmp1pxukwz4/s/work/data/aux_drivable/navtest.json is absent or not sha256 0b9c63895d4e (copy the repo's FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/raw/cluster_maps/navtest.json there)
+

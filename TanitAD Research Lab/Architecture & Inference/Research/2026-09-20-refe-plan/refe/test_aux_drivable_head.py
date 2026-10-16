@@ -791,9 +791,11 @@ def suite(M, heavy: bool, verbose: bool = False) -> Rec:
             nt_path = os.environ.get("AUX_NAVTEST") or nt_rec["path"]
             if not os.path.isfile(nt_path):
                 return False, f"navtest list not found at {nt_path} (set AUX_NAVTEST to a copy with sha256 {nt_rec['sha256'][:12]}...)"
-            nt_sha = hashlib.sha256(open(nt_path, "rb").read()).hexdigest()
-            if nt_sha != nt_rec["sha256"]:
-                return False, f"{nt_path} has sha256 {nt_sha[:12]}..., not the manifest's {nt_rec['sha256'][:12]}...: not the navtest the store was checked against"
+            nt_raw = open(nt_path, "rb").read()
+            nt_sha = hashlib.sha256(nt_raw).hexdigest()
+            nt_ok, nt_how = navtest_identity(nt_raw, nt_rec["sha256"])
+            if not nt_ok:
+                return False, f"{nt_path} has sha256 {nt_sha[:12]}..., not the manifest's {nt_rec['sha256'][:12]}...: not the navtest the store was checked against ({nt_how})"
             nt_tokens, nt_logs = ALS.load_navtest(nt_path)
             inter = len({t for _, t in ks} & nt_tokens)
             REPORT.update(store_files=v["files"], store_mismatch=v["mismatch"], store_keys=len(ks), navtest_tokens=len(nt_tokens), navtest_intersection=inter)
@@ -852,6 +854,23 @@ MUTATIONS = [
     ("feed share counts the wrong sign", "extra", "(s_corner < 0).float().mean(-1)", "(s_corner > 0).float().mean(-1)"),
     ("derangement with fixed points", "extra", "out[order[pos]] = keys[order[(pos + 1) % n]]", "out[order[pos]] = keys[order[pos]]"),
 ]
+
+
+# The navtest list the store was checked against is recorded in the store's manifest by the sha256 of the BUILD MACHINE's file: a Windows `autocrlf` checkout (CRLF, 765,337 bytes), not the git blob
+# (LF, 753,185 bytes, our ship standard since 2026-10-15).  The two files are the same list (12,152 lines; stripping every CR from either gives the same bytes), so the identity is decided on the
+# CR-stripped bytes: NAVTEST_LF_SHA maps the manifest's recorded (CRLF) sha256 to the sha256 of the list with CR removed.  A genuinely different list matches neither (test_s1c.py).
+# raw/2026-10-16-s1c-build/: found because G-SUITE's E10 refused an LF ship exactly as the chain's `data` stage did (s1aux_pod.sh), 25 minutes into the first gate instead of at the start.
+NAVTEST_LF_SHA = {"0b9c63895d4e8da4205e194c90379cbf986badd1baf8beab948adb3743a33700": "3ba1c96488f157fd2ca7c57c83abe439b4c9680ebdb1eadf65c34ac323d42d44"}
+
+
+def navtest_identity(raw: bytes, manifest_sha256: str) -> tuple:
+    """(ok, how): `raw` is the manifest's navtest list iff its sha256 is the recorded one (the build machine's bytes) or its CR-stripped sha256 is the registered LF form of that record."""
+    if hashlib.sha256(raw).hexdigest() == manifest_sha256:
+        return True, "raw sha256 equals the manifest's"
+    want = NAVTEST_LF_SHA.get(manifest_sha256)
+    if want is not None and hashlib.sha256(raw.replace(b"\r", b"")).hexdigest() == want:
+        return True, f"CR-stripped sha256 {want[:12]} (the manifest's {manifest_sha256[:12]} is the CRLF checkout of the same list)"
+    return False, f"neither the raw sha256 nor the CR-stripped one matches the manifest's {manifest_sha256[:12]}"
 
 
 def main() -> int:

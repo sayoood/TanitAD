@@ -837,6 +837,26 @@ def scorer_dvb_rows(ns, data: dict) -> list:
     return rows
 
 
+def scorer_schedule_rows(ns, data: dict, arm=None) -> list:
+    """S1c (profile key `schedule_reach`): the schedule the trainer WILL build, re-derived from the data event's `train_sets` and the argv's EFFECTIVE --batch / --accum / --epochs, against the
+    --max-updates the argv DECLARES.  scorer_finetune.py:1363-1365 is `total = ceil(len(tr_idx) / batch * epochs / accum); total = min(total, max_updates)`: an --epochs that is too small ends a run SILENTLY
+    at fewer updates than declared (TL-1: `--epochs 2` ended at 500 of 1,000), and `max_updates` is only `consumed` in DVB_KINDS_SCORER, i.e. never observed.  A smaller derived total is a FAIL.
+    Deliberate-regression arm `schedule_truncated`: the same preflight with a quarter of the training sets."""
+    n = data.get("train_sets")
+    if arm_is("schedule_truncated", arm) and isinstance(n, int):
+        n = n // 4
+    rows = []
+    if not isinstance(n, int) or n <= 0 or not ns.max_updates:
+        built = None
+    else:
+        built = min(int(math.ceil(n / ns.batch * ns.epochs / ns.accum)), ns.max_updates)
+    rows.append({"dest": "max_updates", "flag": "--max-updates", "declared": ns.max_updates, "built": built,
+                 "how": f"re-derived: min(ceil(data.train_sets {n} / --batch {ns.batch} x --epochs {ns.epochs} / --accum {ns.accum}), --max-updates) = the updates the run would end at "
+                        f"(scorer_finetune.py:1363-1365); a smaller number means --epochs stops the run early",
+                 "ok": _close(ns.max_updates, built)})
+    return rows
+
+
 def check_dvb_scorer(argv: list, pf, profile: dict, arm=None, rehearsal=False) -> dict:
     """G-DVB for a profile whose trainer is scorer_finetune.py.  `pf` = `load_scorer_preflight(...)` (or None: then the built side is unobservable and the
     check FAILS -- no preflight, no declared-vs-built).  Static part: every parser dest is classified (unknown FAILS, stale FAILS), every `data` flag is
@@ -894,6 +914,8 @@ def check_dvb_scorer(argv: list, pf, profile: dict, arm=None, rehearsal=False) -
         if arm_is("aux_lever_ignored", arm) and isinstance(data.get("aux_drv"), dict):          # the trainer built the head with another weight than the argv's
             data = dict(data, aux_drv=dict(data["aux_drv"], w_aux=float(data["aux_drv"].get("w_aux", 0.0)) + 0.05))
         rows = scorer_dvb_rows(ns, data)
+        if profile.get("schedule_reach"):
+            rows = rows + scorer_schedule_rows(ns, data, arm)
         det["rows"], det["observed_rows"] = rows, len(rows)
         for r in rows:
             if not r["ok"]:

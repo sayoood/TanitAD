@@ -259,9 +259,9 @@ def chk_strict_load_refuses(M):
     shallow = dict(sd)
     shallow["meta"] = dict(sd["meta"], config=dict(sd["meta"]["config"], depth=1))
     refuses(shallow, "a depth-1 config over depth-2 weights")
-    for good in ("H1-s0", "H2-s3"):
+    for good in ("H1-s0", "H2-s3", "H1u10k-s0", "H1u2k-s0"):
         assert M.parse_arm(good)
-    for bad in ("N-s0", "H3-s0", "H2", "H2-s"):
+    for bad in ("N-s0", "H3-s0", "H2", "H2-s", "H1u3k-s0"):
         try:
             M.parse_arm(bad)
         except RuntimeError:
