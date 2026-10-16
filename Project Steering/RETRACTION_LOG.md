@@ -18093,3 +18093,15 @@ largest measured effect*. A lever that the attribution assigns about 0.2 of the 
 - **Fixed.** GAC row corrected in the same commit. PREREG A3R re-instates the 400-update probe with its outcomes committed before any unit exists.
 
 **Class:** *two reads on different evaluation POPULATIONS subtracted as if they measured a shift.* A held-out set and a test set are compared only after their composition (strata that move the metric: city, failure enrichment) is standardised. A difference that a no-image prior baseline already reproduces (here 0.108 of 0.135) is a population effect first. Same family as R37 one step later. A banked number "answering" a question needs the SAME population as the question.
+
+### R39 (2026-10-16) - "the S1c patch leaves every other suite unchanged" (landing 10d4fae's verification)
+- **What was true.** The S1c landing was verified on the suites of its own profile (s1aux_chain, s1c, aux_drivable_head, aux_s1_wiring, rl_epo, rl_reward, launch_gate static, aux_s1_readout). `refe/test_rl_s1b.py` was not run.
+  - Its mutation `lg_cli_arm_table_ignored` anchors on the exact `launch_gate.py` line the S1c patch rewrote (`"auxs1": AUXS1_ARM_CLASS` became `"auxs1": prof.get("arm_class", AUXS1_ARM_CLASS)`).
+  - From 10d4fae to its fix, the tip carried a RED suite: rc 1, "the snippet occurs 0 times … a vacuous mutation proves nothing".
+  - That would have failed G-SUITE for any refe_rls1b / refe_rls1c ship built from the tip. Chains already shipped were unaffected.
+  - It was found by the gate-lever agent's baseline run, the same day, before any ship from the tip.
+- **Fixed.** The anchor was updated to the new line, keeping the mutation's intent (the rls1 arm table ignores the profile). Before: rc 1; after: `ZZTEST_PASS 18` (1 unmutated + 17 RED).
+
+**Class:** *a change verified against the suites of its own profile, while a mutation test elsewhere anchors on the changed bytes.* Every mutation-anchored suite is a reader of the source text it mutates.
+- ⇒ Before landing an edit to a shared gate file (`launch_gate.py`, `gate_checks.py`, `gate_token.py`), run EVERY `refe/test_*.py` that names that file. A `grep -l <file> refe/test_*.py` lists them.
+- Same family as "built, tested, and unreachable from its caller", from the other side: tested, and breaking a caller of its text.

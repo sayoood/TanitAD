@@ -247,7 +247,7 @@ MUTATIONS = [
     ("lg_R2b_PI_refusal_removed", "G", LG_PATH, '        if arm_name in prof.get("arms_need_pi", {}):\n', "        if False:\n"),
     ("lg_rls1b_seeds_swapped", "G", LG_PATH, 'RLS1B_ARM_SEEDS = {"C1": 1, "R0b": 0, "R1b": 1}', 'RLS1B_ARM_SEEDS = {"C1": 1, "R0b": 1, "R1b": 0}'),
     ("lg_rls1_registry_moved", "G", LG_PATH, '"epo_lam": 1.0, "epo_lam_d": 0.15', '"epo_lam": 0.25, "epo_lam_d": 0.15'),
-    ("lg_cli_arm_table_ignored", "G", LG_PATH, 'arms = {"rls1": prof.get("arm_class", RLS1_ARM_CLASS), "auxs1": AUXS1_ARM_CLASS}', 'arms = {"rls1": RLS1_ARM_CLASS, "auxs1": AUXS1_ARM_CLASS}'),
+    ("lg_cli_arm_table_ignored", "G", LG_PATH, 'arms = {"rls1": prof.get("arm_class", RLS1_ARM_CLASS), "auxs1": prof.get("arm_class", AUXS1_ARM_CLASS)}', 'arms = {"rls1": RLS1_ARM_CLASS, "auxs1": prof.get("arm_class", AUXS1_ARM_CLASS)}'),
     ("lg_suite_without_s1b", "G", LG_PATH, 'RLS1B_SUITE = RLS1_SUITE + [{"script": "test_rl_s1b.py", "token": "ZZTEST_PASS"}]', "RLS1B_SUITE = RLS1_SUITE"),
     ("gc_dvb_does_not_observe_lam", "G", GC_PATH, 'SCORER_EPO_KEYS = ("temp", "beta", "ramp", "lam", ', 'SCORER_EPO_KEYS = ("temp", "beta", "ramp", '),
 ]
