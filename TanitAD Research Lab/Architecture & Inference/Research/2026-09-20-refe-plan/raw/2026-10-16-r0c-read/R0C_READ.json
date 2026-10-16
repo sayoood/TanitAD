@@ -1,0 +1,462 @@
+{
+ "tool": "r0c_read/1",
+ "prereg": {
+  "path": "C:\\Users\\Admin\\AppData\\Local\\Temp\\tipsweep\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\eval\\PREREG_R0C.md",
+  "sha256": "cab2bb1c56f90c3eec74a4e541a15e04d7e15108b5763fa895e7d7c7bcea92cd",
+  "matches_pinned": true
+ },
+ "arm_dir": "C:\\Users\\Admin\\r0c_read\\R0c",
+ "tier": "RL-val selection tier: the true NAVSIM v1.1 PDMS of the scorer's pick on 3,000 RL-val sets of a frozen fan (open-loop 4 s plan, table lookup); NOT T1, NOT an endpoint. One training seed per arm: a separated interval is NECESSARY, not sufficient (H-ESTIM-SEED-1).",
+ "estimator": "paired log-cluster bootstrap, 10,000 resamples, 95 %, seed 20260927 (proxy_eval.boot) when a CI is shown; 'point' = a difference of means with NO interval",
+ "outcome": "O3",
+ "ambiguity_kind": null,
+ "reason": "g5 breached at (250, 500); mean epo_kl (A to B) = 0.0665 under Q2=second_breach_window (<= 0.2)",
+ "candidate_labels": [],
+ "meaning": "the EPO ascent ITSELF lowers TTC relative to A, whatever the anchor: the reference hypothesis is REFUTED",
+ "next_lever": "EPO restricted to the progress heads' parameters with a frozen trunk. The banked displacement lives 99 % in `score_dec` and 0.0 % in `score_head`, so this is a different regime, and its fraction of R0's J gain on cached trunk features is a CPU job to run FIRST (PI decision for the parameter-group change)",
+ "prereg_row": {
+  "name": "O3 breached with a small KL",
+  "condition": "g5 breached at two consecutive checks AND mean `epo_kl` (A to B) <= 0.2 at the breach",
+  "meaning": "the EPO ascent ITSELF lowers TTC relative to A, whatever the anchor: the reference hypothesis is REFUTED",
+  "next_lever": "EPO restricted to the progress heads' parameters with a frozen trunk. The banked displacement lives 99 % in `score_dec` and 0.0 % in `score_head`, so this is a different regime, and its fraction of R0's J gain on cached trunk features is a CPU job to run FIRST (PI decision for the parameter-group change)"
+ },
+ "readings": {
+  "policy_sha256": "34a8e169c2248c12d9dd2315c4028035a99c9c0e5498ace6b089e926b5b0a0eb",
+  "policy_amendment": "eval/PREREG_R0C_A1.md (IN FORCE 2026-10-15 ~23:30 Berlin, before R0c's first step; R0c queued 20:57:25Z, no number produced)",
+  "answered": {
+   "Q1": "vacuous",
+   "Q2": "second_breach_window",
+   "Q3": "g5",
+   "Q4": "either_le0",
+   "Q5": "g3_also",
+   "Q6": "not_applicable",
+   "Q7": "all",
+   "Q8": "not_O5"
+  },
+  "unanswered": [],
+  "split_by": [],
+  "questions": {
+   "Q1": {
+    "what": "g4 on RL-val",
+    "options": [
+     "vacuous",
+     "blocking"
+    ],
+    "text": "O1 says g3-g5 hold, but rl_val_eval lists g4 (longitudinal bias rows) under not_computed: nothing on RL-val can show g4 holds. vacuous = treat g4 as holding; blocking = O1 cannot be certified."
+   },
+   "Q2": {
+    "what": "which epo_kl is 'the mean at the breach'",
+    "options": [
+     "second_breach_window",
+     "first_breach_window",
+     "both_breach_windows",
+     "row_at_second_breach",
+     "row_at_first_breach"
+    ],
+    "text": "epo_kl is logged every 25 updates as a window mean. second/first_breach_window = mean of the rows in (previous check, that check]; both = (check before the first breach, second breach]; row_at_* = the single row at that update."
+   },
+   "Q3": {
+    "what": "an NC fall inside a g5 breach",
+    "options": [
+     "g5",
+     "O5"
+    ],
+    "text": "g5 = NC and TTC; O5 lists 'an NC / DAC bound', which section 5 never defines. g5 = an NC-involved breach is still O3/O4; O5 = it is the O5 NC bound."
+   },
+   "Q4": {
+    "what": "O2's 'PDMS B - A lower bound <= 0' (which check)",
+    "options": [
+     "both_le0",
+     "final_le0",
+     "either_le0"
+    ],
+    "text": "O1 needs LB > 0 at u500 AND u1000; O2 names no check. both = LB <= 0 at u500 and u1000; final = at u1000; either = at u500 or u1000."
+   },
+   "Q5": {
+    "what": "does O2 ('safe') need g3",
+    "options": [
+     "as_written",
+     "g3_also"
+    ],
+    "text": "O2's condition names g5 only. as_written = g3 is not required; g3_also = O2 also needs g3 to hold at every check."
+   },
+   "Q6": {
+    "what": "the +0.25 floor of section 4 (1) on RL-val",
+    "options": [
+     "applies",
+     "not_applicable"
+    ],
+    "text": "O1 cites 'the section 4 bar', defined on full navtest with two pairs. applies = B - A PDMS point >= +0.25 at u1000; not_applicable = RL-val needs only LB > 0."
+   },
+   "Q7": {
+    "what": "scope of 'no longitudinal / lateral component separates adversely'",
+    "options": [
+     "narrow",
+     "longlat",
+     "all"
+    ],
+    "text": "adverse = the B - A interval lies entirely below 0 at u1000. narrow = EP, DAC; longlat = EP, TTC, DAC, DDC; all = all six sub-scores."
+   },
+   "Q8": {
+    "what": "a K-MON stop (the monitor died)",
+    "options": [
+     "O5",
+     "not_O5"
+    ],
+    "text": "O5 lists K0-K2 and K4-K6; K-MON is the chain's fail-closed stop of a dead monitor and is not listed. O5 = count it as 'other kill'; not_O5 = it is no outcome."
+   }
+  }
+ },
+ "evidence": {
+  "checks": {
+   "update250": {
+    "g3_ok": true,
+    "g5_ok": false,
+    "nc_ok": true,
+    "ttc_ok": false,
+    "k4": false,
+    "pdms_delta_x100": 0.6946788888888888,
+    "k3_enabled": true,
+    "source": "kill_checks.jsonl",
+    "n_sets": 3000
+   },
+   "update500": {
+    "g3_ok": true,
+    "g5_ok": false,
+    "nc_ok": true,
+    "ttc_ok": false,
+    "k4": false,
+    "pdms_delta_x100": 0.6176189583333334,
+    "k3_enabled": true,
+    "source": "kill_checks.jsonl",
+    "n_sets": 3000
+   }
+  },
+  "terminal_kill_derived": {
+   "code": "K3",
+   "checks": [
+    250,
+    500
+   ]
+  },
+  "first_g5_pair": [
+   250,
+   500
+  ],
+  "recorded_kill": "K3",
+  "recorded_kill_reproduced": true,
+  "recorded_kill_sources": {
+   "kill_checks.jsonl": "K3",
+   "KILLED.json": "K3",
+   "monitor.log": "K3"
+  },
+  "monitor_log": {
+   "present": true,
+   "bytes": 774,
+   "ready": true,
+   "k3_state": "LIVE",
+   "check_errors": 0,
+   "kill": "K3"
+  },
+  "monitor_control": "armA",
+  "sft": {
+   "present": true,
+   "epo_ref": "armA",
+   "epo_lam": 1.0,
+   "epo_beta": 0.1,
+   "has_data_event": true,
+   "score_dump_tags": [
+    "step0",
+    "update250",
+    "update500"
+   ],
+   "done": false,
+   "train_rows": 20
+  },
+  "epo_kl": {
+   "logged_reference": "armA",
+   "is_A_to_B": true,
+   "candidate_windows_for_first_g5_pair": {
+    "second_breach_window": 0.0665293706129305,
+    "first_breach_window": 0.033651722677220275,
+    "both_breach_windows": 0.050090546645075396,
+    "row_at_second_breach": 0.06364797172602266,
+    "row_at_first_breach": 0.05687876469455659
+   },
+   "split": 0.2,
+   "note": "values are labelled A-to-B only when sft.jsonl data.epo.ref == 'armA'; otherwise they are base-to-B (R0 / R0b) and decide nothing"
+  },
+  "b_minus_a_reads": {
+   "update250": {
+    "C": {
+     "mean": 0.0,
+     "ci95": [
+      0.0,
+      0.0
+     ],
+     "adverse_recomputed": false
+    },
+    "D": {
+     "mean": 0.041757333333333334,
+     "ci95": [
+      0.0025164777560244987,
+      0.0981085359888566
+     ],
+     "adverse_recomputed": false
+    },
+    "DAC": {
+     "mean": -0.23333333333333334,
+     "ci95": [
+      -0.5905546010188615,
+      0.07289029041649003
+     ],
+     "adverse_recomputed": false
+    },
+    "DDC": {
+     "mean": -0.15,
+     "ci95": [
+      -0.35270621913610506,
+      0.08353242713077523
+     ],
+     "adverse_recomputed": false
+    },
+    "EP": {
+     "mean": 2.507229333333333,
+     "ci95": [
+      2.0486177155841663,
+      2.9705784549803127
+     ],
+     "adverse_recomputed": false
+    },
+    "NC": {
+     "mean": -0.05,
+     "ci95": [
+      -0.26525418882598506,
+      0.13550135501355012
+     ],
+     "adverse_recomputed": false
+    },
+    "PDMS": {
+     "mean": 0.6946788888888888,
+     "ci95": [
+      0.30853840794393816,
+      1.067328774186128
+     ],
+     "adverse_recomputed": false
+    },
+    "R": {
+     "mean": 1.9643353305555553,
+     "ci95": [
+      1.518801189380787,
+      2.4084337053899314
+     ],
+     "adverse_recomputed": false
+    },
+    "TTC": {
+     "mean": -0.5333333333333333,
+     "ci95": [
+      -0.9676369918305402,
+      -0.10110798187872798
+     ],
+     "adverse_recomputed": true
+    }
+   },
+   "update500": {
+    "C": {
+     "mean": 0.0,
+     "ci95": [
+      0.0,
+      0.0
+     ],
+     "adverse_recomputed": false
+    },
+    "D": {
+     "mean": 0.003600000000000004,
+     "ci95": [
+      -0.03876619880139827,
+      0.04354968722022119
+     ],
+     "adverse_recomputed": false
+    },
+    "DAC": {
+     "mean": -0.03333333333333333,
+     "ci95": [
+      -0.35052025980108936,
+      0.3138102677561575
+     ],
+     "adverse_recomputed": false
+    },
+    "DDC": {
+     "mean": -0.15,
+     "ci95": [
+      -0.2596985240468224,
+      -0.054344878807884606
+     ],
+     "adverse_recomputed": true
+    },
+    "EP": {
+     "mean": 2.7023676666666665,
+     "ci95": [
+      2.157315745006169,
+      3.2719334490714633
+     ],
+     "adverse_recomputed": false
+    },
+    "NC": {
+     "mean": -0.2833333333333333,
+     "ci95": [
+      -0.6120383574885776,
+      0.0
+     ],
+     "adverse_recomputed": false
+    },
+    "PDMS": {
+     "mean": 0.6176189583333334,
+     "ci95": [
+      0.15687164790741315,
+      1.0706256296313665
+     ],
+     "adverse_recomputed": false
+    },
+    "R": {
+     "mean": 1.9487510888888888,
+     "ci95": [
+      1.4260939513097006,
+      2.4846979583531805
+     ],
+     "adverse_recomputed": false
+    },
+    "TTC": {
+     "mean": -1.1,
+     "ci95": [
+      -1.7277987160292072,
+      -0.5521124800566584
+     ],
+     "adverse_recomputed": true
+    }
+   }
+  },
+  "b_minus_a_reads_errors": {},
+  "g5_from_b_minus_a_reads": {
+   "update250": {
+    "NC_fall_ok": true,
+    "TTC_fall_ok": false,
+    "NC": -0.05,
+    "TTC": -0.5333333333333333
+   },
+   "update500": {
+    "NC_fall_ok": true,
+    "TTC_fall_ok": false,
+    "NC": -0.2833333333333333,
+    "TTC": -1.1
+   }
+  },
+  "chain_u1000_read_rlval_vs_A0": null,
+  "second_control": {
+   "present": false
+  }
+ },
+ "families": {
+  "tier": "RL-val selection tier: the true NAVSIM v1.1 PDMS of the scorer's pick on 3,000 RL-val sets of a frozen fan (open-loop 4 s plan, table lookup); NOT T1, NOT an endpoint. One training seed per arm: a separated interval is NECESSARY, not sufficient (H-ESTIM-SEED-1).",
+  "estimator": "paired log-cluster bootstrap, 10,000 resamples, 95 %, seed 20260927 (proxy_eval.boot) when a CI is shown; 'point' = a difference of means with NO interval",
+  "LONGITUDINAL": {
+   "EP_progress": {
+    "B_minus_A_x100": 2.7023676666666665,
+    "ci95": [
+     2.157315745006169,
+     3.2719334490714633
+    ],
+    "check": "update500",
+    "kind": "interval",
+    "adverse": false
+   },
+   "progress_telemetry_g3": {
+    "update250": {
+     "pick_over_fan_mean_path": 0.9675876726259464,
+     "shortest_bin_share": 0.31866666666666665
+    },
+    "update500": {
+     "pick_over_fan_mean_path": 0.9759642766956337,
+     "shortest_bin_share": 0.3006666666666667
+    }
+   },
+   "g4_longitudinal_bias": "NOT COMPUTED on RL-val (rl_val_eval not_computed)"
+  },
+  "LATERAL": {
+   "DAC": {
+    "B_minus_A_x100": -0.03333333333333333,
+    "ci95": [
+     -0.35052025980108936,
+     0.3138102677561575
+    ],
+    "check": "update500",
+    "kind": "interval",
+    "adverse": false
+   },
+   "DDC": {
+    "B_minus_A_x100": -0.15,
+    "ci95": [
+     -0.2596985240468224,
+     -0.054344878807884606
+    ],
+    "check": "update500",
+    "kind": "interval",
+    "adverse": true
+   }
+  },
+  "SUBSCORES": {
+   "TTC": {
+    "B_minus_A_x100": -1.1,
+    "ci95": [
+     -1.7277987160292072,
+     -0.5521124800566584
+    ],
+    "check": "update500",
+    "kind": "interval",
+    "adverse": true
+   },
+   "NC": {
+    "B_minus_A_x100": -0.2833333333333333,
+    "ci95": [
+     -0.6120383574885776,
+     0.0
+    ],
+    "check": "update500",
+    "kind": "interval",
+    "adverse": false
+   },
+   "comfort_C": {
+    "B_minus_A_x100": 0.0,
+    "ci95": [
+     0.0,
+     0.0
+    ],
+    "check": "update500",
+    "kind": "interval",
+    "adverse": false
+   },
+   "PDMS": {
+    "B_minus_A_x100": 0.6176189583333334,
+    "ci95": [
+     0.15687164790741315,
+     1.0706256296313665
+    ],
+    "check": "update500",
+    "kind": "interval",
+    "adverse": false
+   }
+  },
+  "TACTICAL": "N/A on this scorer-only arm: R0c trains the scorer heads on a FROZEN fan and picks among its proposals; no tactical-decision output exists to score (decision kappa and lane-change precision/recall are full-navtest endpoints, R2 only: PREREG_RL_S1 section 4).",
+  "STRATEGIC": "PAUSED (PI ruling 2026-09-19, PI_DECISION_QUEUE ITEM 25): reported as paused, not as a pass, not omitted."
+ },
+ "notes": [],
+ "conflicts": [],
+ "inputs_sha256": {
+  "kill_checks.jsonl": "9ae8f91e1255bf10aa3c9bee701640c0194ee7d856fd89766048268dd810cf88",
+  "KILLED.json": "18fadc24796c2176c3b2ca34bcfb1546ea2ca50086209135f6f6a900c5325da6",
+  "monitor.log": "46bec7c6613e32cf69c11568d303b8fde1d823fac29887b7975e10f849f47c9c",
+  "sft.jsonl": "564e8fb5ffda79b8aae07907c1956ac224cb56fb24d3f0745bc2b4d4c1f41493",
+  "rlval_BvsA_update250.json": "b94b03731e87401afcf56ed9af504023821779d2342df3faa6299d7ad9fc56b0",
+  "rlval_BvsA_update500.json": "053d7bb0e3f68d118782d8e9f937218ed083851919bad45771769f93c60300f9"
+ }
+}

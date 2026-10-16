@@ -2009,3 +2009,20 @@ Evidence: `TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-ref
 **Master Mind recommendation: 1 now, 3 for P7.**
 - 2 is cheap, but it changes P6's recipe after its pre-registration was finalised.
 - The twins' value as route intents is unproven: their trajectories barely leave the logged route.
+
+## 🟡 NEW ITEM (2026-10-16 ~16:00 Berlin) — R0c read O3: the next RL lever changes which parameters train (your call)
+
+**What happened (MEASURED, `raw/2026-10-16-r0c-read/RESULT.md`).**
+- R0c (`--epo-ref armA`) was killed by K3 at 13:43Z. Its pre-registered read is **O3**.
+- The EPO ascent itself lowers TTC: B − A −0.53 / −1.10 at u250 / u500, against a 0.5 bar.
+- That happens even though B stays close to A (KL 0.07), while it buys progress (EP +2.5).
+- It is the third arm with this signature (R0, R0b, R0c). The anchor was not the defect.
+- The A40 moved on to S1c with no gap.
+
+**The prereg's committed next lever:**
+- EPO restricted to the progress heads' parameters, with a frozen trunk.
+- The banked displacement lives 99 % in `score_dec`, so this is a different regime.
+- **Its CPU feasibility job runs first** (0 A40, mine): what fraction of R0's objective gain survives the restriction, on cached trunk features.
+
+**Your decision, after that CPU result:** whether to spend one A40 arm (~3.5 A40-h) on the parameter-group change.
+- Nothing is blocked meanwhile. The A40 order stays S1c → P6.
