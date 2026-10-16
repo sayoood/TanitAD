@@ -2026,3 +2026,12 @@ Evidence: `TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-ref
 
 **Your decision, after that CPU result:** whether to spend one A40 arm (~3.5 A40-h) on the parameter-group change.
 - Nothing is blocked meanwhile. The A40 order stays S1c → P6.
+
+### ↳ Follow-up (2026-10-16 ~19:45 Berlin): the CPU feasibility result on the item above
+- **Pre-registered outcome R3:** a head-only EPO keeps only 4–16 % of the objective gain (best 0.164), and loses TTC per unit gained.
+  - Raising the learning rate does not fix it: f reaches 0.41 while TTC crosses g5.
+  - Releasing the scoring decoder recovers 0.90.
+  - ESTIMATED, from the sim; `raw/2026-10-16-phead-epo-feasibility/RESULT.md`.
+- **Master Mind recommendation:** do NOT spend an A40 arm on head-only EPO.
+- **The prereg's next lever is an architecture call for you:** a separate safety head that EPO cannot move.
+- Meanwhile the MM runs the cheap CPU follow-up (K = 250, ~5 h CPU). It tests whether the sim reproduces R0's real TTC loss; if it does, it becomes a CPU testbed for safety-head designs before any A40 arm.
