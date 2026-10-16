@@ -18080,3 +18080,16 @@ largest measured effect*. A lever that the attribution assigns about 0.2 of the 
 - An in-sample fit below the bar at ONE update count is not evidence that the features cannot carry the target. It is the TRAPS entry "a negative from a linear probe is not a negative about learnability", with a nonlinear head.
 - The selection-rule finding was about the SCORER's DAC head being confidently wrong. The probe was about a separate perception head. "Two instruments agree" needs both to measure the same quantity.
 - ⇒ **Before calling a head-fit a feature limit, run at least two update budgets, or show the training loss has plateaued. And before quoting a deficit, check the banked reads for a larger term (here `p1_ho`).**
+
+### R38 (2026-10-16) - "a navtrain -> navtest GAP of ~0.13 is the dominant deficit; A3 is answered by banked data" (GAC `D-REFE-SCENETAP-1`, RETRACTION_LOG R37 and PREREG note "A3 not run", landed 9570bf9)
+
+- **What is true (MEASURED 2026-10-16, `.../2026-09-20-refe-plan/raw/2026-10-16-aux-shift-locate/SHIFT_LOCATE.md`).** S1's held-out read (24 navtrain logs, 59 % Las Vegas) and its navtest read (the 1,058 C3 tokens: 22 % LV, half of them u400 failure tokens) score DIFFERENT POPULATIONS.
+  - City mix explains +0.077.
+  - Failure enrichment explains +0.040.
+  - The residual is +0.013 [-0.071, +0.080].
+  - No label-construction difference exists.
+  - On the natural navtest population S1 reads 0.561 / 0.577 / 0.554, not 0.496 / 0.521 / 0.486.
+- **What it would have cost.** A "domain-shift" lever would have been chased, and A3 (a 4-minute discriminator) would have been dropped as "answered", when the banked comparison it relied on is confounded. Corrected about 2 h after landing, by the 0-GPU locate study pre-scoped in the same commit, before any GPU was spent and before the PI read it.
+- **Fixed.** GAC row corrected in the same commit. PREREG A3R re-instates the 400-update probe with its outcomes committed before any unit exists.
+
+**Class:** *two reads on different evaluation POPULATIONS subtracted as if they measured a shift.* A held-out set and a test set are compared only after their composition (strata that move the metric: city, failure enrichment) is standardised. A difference that a no-image prior baseline already reproduces (here 0.108 of 0.135) is a population effect first. Same family as R37 one step later. A banked number "answering" a question needs the SAME population as the question.

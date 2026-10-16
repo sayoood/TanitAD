@@ -228,3 +228,22 @@ The H2 arms read the same to 4 decimals.
 - The gap (≈ 0.13) is about **3×** the +0.040 that 5× more updates bought in-domain (A2).
 - ⇒ the first lever is to **LOCATE the navtrain → navtest shift**. Candidates: label construction, city or scene composition, region statistics. That is a 0-GPU diagnostic.
 - S1c comes after it; its expected value depends on what the shift is.
+
+### A3R (2026-10-16 ~05:30 Berlin, Master Mind; supersedes the "A3 NOT RUN" note above; written BEFORE any 400-update unit exists): budget or city prior?
+**Why "not run" was wrong.** The banked S1 held-out vs navtest comparison it relied on scores different POPULATIONS (R38; `raw/2026-10-16-aux-shift-locate/`). The question stays open: on the SAME 1,058 tokens, S1's heads read **0.501** (mean of 0.496 / 0.521 / 0.486; trained on navtrain, 65.5 % LV, 400 updates × 64 frames). The probe's navtest-cross-fold head reads 0.635 at 2,000 updates.
+
+**Arm U400.**
+- Arm V, seed 0, the same 5 folds (`folds.json` sha256 `20dec343…`), and the same head, optimizer, warm-up 50 and cosine.
+- **`n_updates` = 400 at batch 8**, a strictly smaller frame budget than S1 (3,200 vs 25,600 draws).
+- It is read by `a2_read.py --updates-a2 400` (H = pooled held-out IoU [0, 40)). A2's U1-U4 rows are NOT used. The units go to a separate work dir.
+
+**Committed outcomes (on H400, unrounded; the thresholds are the shift-locate study's, adopted before any 400 unit exists):**
+
+| row | condition | reading | consequence |
+|---|---|---|---|
+| **R-BUDGET** | H400 ≤ 0.53 | at S1's update count, even the test-like training mix reads near S1 ⇒ S1 is **update-budget-limited** | S1c = more updates, natural sampling |
+| **R-PRIOR** | H400 ≥ 0.605 | with 8× FEWER frames, but a navtest-like city / failure mix, it reads near the 2,000-update probe ⇒ S1's **training city prior** (65 % LV) limits it on this set | S1c with city-balanced (and hard-example) sampling, then more updates |
+| **R-BOTH** | 0.53 < H400 < 0.605 | both contribute | S1c with both, each as its own registered pair |
+
+- **Reported, never gating:** the per-city H400 (BOS / LV / PIT / SG), I400, and the curve 400 / 2,000 / 10,000.
+- **The caveat, stated now:** U400 trains on navtest folds, which share the test set's composition. That is the point of the contrast, but it means R-PRIOR is a statement about training-mix sensitivity, NOT a deployable recipe (navtest labels are never training data for a deployed head).
