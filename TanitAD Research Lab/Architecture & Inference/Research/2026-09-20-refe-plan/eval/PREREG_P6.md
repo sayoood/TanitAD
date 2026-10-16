@@ -141,6 +141,7 @@ component carries a paired CI.
      - ⚠️ 2026-10-14: P2 was ADOPT and GO. `PREREG_P2.md`'s ADOPT clause ("the seed replicate, then P6") still stands, because Amendment 1 replaced only the NO-GO clause.
      - **Ordered by the PI on 2026-10-14** as P2-s1 (`eval/PREREG_P2_REPLICATE.md`). It runs after S1 and before P6. Its floor is **F = |mean Δ_seed|**, a one-draw estimate.
      - Cost: about **21 A40-h** (MEASURED for P2: 42 half-hourly egress ticks), plus a 5.3 h dev-box navtest read.
+     - ✅ **READ 2026-10-16 (a VALID read, all 25 gates PASS): F = 0.33 PDMS×100**. Δ_seed = +0.33 [+0.04, +0.64]; P2-s0 88.82, P2-s1 89.15 (`eval/RESULT_P2REP.md`). P2-s1's own outcome is NOT REPLICATED (adverse TTC), which does not void the floor. Item 2 below is therefore not needed.
   2. Only if P2-s1 yields no valid read: the three S1 no-head arms (`N-s0/N-s1/N-s2`: the SFT-4 recipe on u400, 400 updates, seeds 0–2; `PREREG_AUX_DRIVABLE_S1.md`).
      - They are read on the full navtest on the dev box, at about 5.3 h each (MEASURED for u400).
      - This read belongs to P6, not to S1: S1 computes no navtest PDMS (its §4.2), and N carries no head, so the read cannot touch S1's H2 question.

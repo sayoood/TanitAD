@@ -1,0 +1,616 @@
+{
+ "read": "P2-s1 replicate: RR1 + RR2 (+ RR3 families), PREREG_P2_REPLICATE sections 2-3",
+ "estimator": "paired log-cluster bootstrap over the 136 navtest logs (cluster unit log_name), 10,000 resamples, 95 %, seed 20260927 (proxy_eval.boot via stage3_full.read_pair). It answers 'another draw of LOGS'. Delta_seed is ONE draw of the run-to-run difference of two training seeds: F is a one-draw estimate, never a variance (PREREG_P2_REPLICATE section 2).",
+ "tier": "T1 = NAVSIM v1.1 PDMS, an ego pseudo-simulation of an open-loop plan against logged agents (self-action open loop, not closed loop)",
+ "evidence": "MEASURED (ours): T1 NAVSIM v1.1 PDMS on the 12,146 pinned navtest tokens; tables named in `inputs`",
+ "n_boot": 10000,
+ "seed": 20260927,
+ "n_tokens": 12146,
+ "n_logs": 136,
+ "outcome": "NOT REPLICATED",
+ "result_recorded": true,
+ "outcome_detail": {
+  "outcome": "NOT REPLICATED",
+  "F": 0.330921860366193,
+  "min_delta_vs_u400": 0.5714677935040782,
+  "F_lt_min_delta": true,
+  "claim": "NOT supported: P2's +0.57 lies within run-to-run variance",
+  "next": "the next lever is the NOT PROVEN row of amendment section 4: SFT-4R (scorer-only on complete labels), then a seed replicate of the better arm (Rule Zero: never a stopping point)"
+ },
+ "gates_ok": true,
+ "failed_gates": [],
+ "RR1": {
+  "vs": "SFT-4 arm B u400 (88.25 PDMS)",
+  "rule": "PREREG_P2_AMENDMENT_1 section 4 (stage3_full.decide): lo > 0 AND no sub-score adverse",
+  "passes": false,
+  "amendment_4_row": "NO-GO (adverse sub-score)",
+  "why": "lower bound > 0 but adverse sub-score(s): TTC",
+  "primary": {
+   "mean": 0.9023896538702711,
+   "ci95": [
+    0.36031881167477414,
+    1.589217152647298
+   ],
+   "base_mean_x100": 88.24694109622521,
+   "arm_mean_x100": 89.1493307500955,
+   "better": 5945,
+   "worse": 2694,
+   "tied": 3507,
+   "n": 12146,
+   "n_logs": 136,
+   "zero_base": 529,
+   "zero_arm": 472
+  },
+  "subscores": {
+   "NC": {
+    "mean": -0.1687798452165322,
+    "ci95": [
+     -0.3585565509471973,
+     0.034195917075260276
+    ],
+    "base_mean_x100": 98.94203853120369,
+    "arm_mean_x100": 98.77325868598716,
+    "better": 45,
+    "worse": 64,
+    "tied": 12037,
+    "n": 12146,
+    "n_logs": 136,
+    "adverse": false
+   },
+   "DAC": {
+    "mean": 0.650419891322246,
+    "ci95": [
+     0.10666760089035582,
+     1.3728330017569503
+    ],
+    "base_mean_x100": 96.5750041165816,
+    "arm_mean_x100": 97.22542400790384,
+    "better": 169,
+    "worse": 90,
+    "tied": 11887,
+    "n": 12146,
+    "n_logs": 136,
+    "adverse": false
+   },
+   "EP": {
+    "mean": 1.797909108741149,
+    "ci95": [
+     1.3328671937649024,
+     2.4136821349358404
+    ],
+    "base_mean_x100": 81.19597026438795,
+    "arm_mean_x100": 82.99387937312912,
+    "better": 5933,
+    "worse": 2605,
+    "tied": 3608,
+    "n": 12146,
+    "n_logs": 136,
+    "adverse": false
+   },
+   "TTC": {
+    "mean": -0.4939897908776552,
+    "ci95": [
+     -0.9733500707695575,
+     -0.06961475624772966
+    ],
+    "base_mean_x100": 95.62819035073275,
+    "arm_mean_x100": 95.1342005598551,
+    "better": 146,
+    "worse": 206,
+    "tied": 11794,
+    "n": 12146,
+    "n_logs": 136,
+    "adverse": true
+   },
+   "C": {
+    "mean": 0.016466326362588508,
+    "ci95": [
+     0.0,
+     0.052118859459500184
+    ],
+    "base_mean_x100": 99.96706734727482,
+    "arm_mean_x100": 99.98353367363741,
+    "better": 2,
+    "worse": 0,
+    "tied": 12144,
+    "n": 12146,
+    "n_logs": 136,
+    "adverse": false
+   },
+   "DDC": {
+    "mean": -0.07409846863164828,
+    "ci95": [
+     -0.3643448345224995,
+     0.2306280777993192
+    ],
+    "base_mean_x100": 97.66178165651243,
+    "arm_mean_x100": 97.58768318788078,
+    "better": 123,
+    "worse": 138,
+    "tied": 11885,
+    "n": 12146,
+    "n_logs": 136,
+    "adverse": false
+   }
+  },
+  "adverse_subscores": [
+   "TTC"
+  ],
+  "n_rows": 12146
+ },
+ "RR2": {
+  "definition": "Delta_seed = PDMS(P2-s1) - PDMS(P2-s0), paired per token; F = |mean Delta_seed|, with its interval",
+  "delta_seed_mean": 0.330921860366193,
+  "delta_seed_ci95": [
+   0.03873932785227082,
+   0.6371149616116415
+  ],
+  "F": 0.330921860366193,
+  "F_upper_if_interval_endpoint": 0.6371149616116415,
+  "note": "F = |point estimate| is the registered floor; the interval shows how loosely one pair of seeds pins it. One draw, never a variance.",
+  "primary": {
+   "mean": 0.330921860366193,
+   "ci95": [
+    0.03873932785227082,
+    0.6371149616116415
+   ],
+   "base_mean_x100": 88.81840888972928,
+   "arm_mean_x100": 89.1493307500955,
+   "better": 4789,
+   "worse": 3536,
+   "tied": 3821,
+   "n": 12146,
+   "n_logs": 136,
+   "zero_base": 509,
+   "zero_arm": 472
+  },
+  "subscores": {
+   "NC": {
+    "mean": -0.04116581590647127,
+    "ci95": [
+     -0.16426118011656105,
+     0.09491190706646158
+    ],
+    "base_mean_x100": 98.81442450189363,
+    "arm_mean_x100": 98.77325868598716,
+    "better": 36,
+    "worse": 41,
+    "tied": 12069,
+    "n": 12146,
+    "n_logs": 136,
+    "adverse": false
+   },
+   "DAC": {
+    "mean": 0.3540260167956529,
+    "ci95": [
+     0.08980283707976706,
+     0.6410356695869837
+    ],
+    "base_mean_x100": 96.87139799110818,
+    "arm_mean_x100": 97.22542400790384,
+    "better": 112,
+    "worse": 69,
+    "tied": 11965,
+    "n": 12146,
+    "n_logs": 136,
+    "adverse": false
+   },
+   "EP": {
+    "mean": 0.6543277544198053,
+    "ci95": [
+     0.3345785691921074,
+     1.0076687475371908
+    ],
+    "base_mean_x100": 82.3395516187093,
+    "arm_mean_x100": 82.99387937312912,
+    "better": 4794,
+    "worse": 3448,
+    "tied": 3904,
+    "n": 12146,
+    "n_logs": 136,
+    "adverse": false
+   },
+   "TTC": {
+    "mean": -0.18112958998847356,
+    "ci95": [
+     -0.4737611683857427,
+     0.0882793171007393
+    ],
+    "base_mean_x100": 95.31533014984358,
+    "arm_mean_x100": 95.1342005598551,
+    "better": 107,
+    "worse": 129,
+    "tied": 11910,
+    "n": 12146,
+    "n_logs": 136,
+    "adverse": false
+   },
+   "C": {
+    "mean": 0.008233163181294254,
+    "ci95": [
+     0.0,
+     0.026059429729750092
+    ],
+    "base_mean_x100": 99.97530051045612,
+    "arm_mean_x100": 99.98353367363741,
+    "better": 1,
+    "worse": 0,
+    "tied": 12145,
+    "n": 12146,
+    "n_logs": 136,
+    "adverse": false
+   },
+   "DDC": {
+    "mean": 0.08233163181294254,
+    "ci95": [
+     -0.06735898665754647,
+     0.2423216435723438
+    ],
+    "base_mean_x100": 97.50535155606784,
+    "arm_mean_x100": 97.58768318788078,
+    "better": 85,
+    "worse": 73,
+    "tied": 11988,
+    "n": 12146,
+    "n_logs": 136,
+    "adverse": false
+   }
+  },
+  "adverse_subscores": [],
+  "n_rows": 12146
+ },
+ "P2_s0_vs_u400": {
+  "note": "P2 of record against u400, recomputed here from the banked tables (the banked R2: +0.57 [+0.02, +1.18])",
+  "primary": {
+   "mean": 0.5714677935040782,
+   "ci95": [
+    0.017916605286551753,
+    1.1755185398706811
+   ],
+   "base_mean_x100": 88.24694109622521,
+   "arm_mean_x100": 88.81840888972928,
+   "better": 5449,
+   "worse": 3178,
+   "tied": 3519,
+   "n": 12146,
+   "n_logs": 136,
+   "zero_base": 529,
+   "zero_arm": 509
+  },
+  "subscores": {
+   "NC": {
+    "mean": -0.12761402931006094,
+    "ci95": [
+     -0.3135671161195477,
+     0.07833246540526694
+    ],
+    "base_mean_x100": 98.94203853120369,
+    "arm_mean_x100": 98.81442450189363,
+    "better": 54,
+    "worse": 68,
+    "tied": 12024,
+    "n": 12146,
+    "n_logs": 136,
+    "adverse": false
+   },
+   "DAC": {
+    "mean": 0.2963938745265931,
+    "ci95": [
+     -0.22517430166518945,
+     0.8899089305642804
+    ],
+    "base_mean_x100": 96.5750041165816,
+    "arm_mean_x100": 96.87139799110818,
+    "better": 156,
+    "worse": 120,
+    "tied": 11870,
+    "n": 12146,
+    "n_logs": 136,
+    "adverse": false
+   },
+   "EP": {
+    "mean": 1.1435813543213438,
+    "ci95": [
+     0.6149153274362094,
+     1.6981340717523838
+    ],
+    "base_mean_x100": 81.19597026438795,
+    "arm_mean_x100": 82.3395516187093,
+    "better": 5393,
+    "worse": 3142,
+    "tied": 3611,
+    "n": 12146,
+    "n_logs": 136,
+    "adverse": false
+   },
+   "TTC": {
+    "mean": -0.31286020088918165,
+    "ci95": [
+     -0.7960718300105515,
+     0.13537911659040125
+    ],
+    "base_mean_x100": 95.62819035073275,
+    "arm_mean_x100": 95.31533014984358,
+    "better": 162,
+    "worse": 200,
+    "tied": 11784,
+    "n": 12146,
+    "n_logs": 136,
+    "adverse": false
+   },
+   "C": {
+    "mean": 0.008233163181294254,
+    "ci95": [
+     0.0,
+     0.026059429729750092
+    ],
+    "base_mean_x100": 99.96706734727482,
+    "arm_mean_x100": 99.97530051045612,
+    "better": 1,
+    "worse": 0,
+    "tied": 12145,
+    "n": 12146,
+    "n_logs": 136,
+    "adverse": false
+   },
+   "DDC": {
+    "mean": -0.15643010044459082,
+    "ci95": [
+     -0.42621075707508355,
+     0.12830658530557223
+    ],
+    "base_mean_x100": 97.66178165651243,
+    "arm_mean_x100": 97.50535155606784,
+    "better": 113,
+    "worse": 145,
+    "tied": 11888,
+    "n": 12146,
+    "n_logs": 136,
+    "adverse": false
+   }
+  },
+  "adverse_subscores": [],
+  "n_rows": 12146
+ },
+ "D_s0": 0.5714677935040782,
+ "D_s1": 0.9023896538702711,
+ "mean_of_two_seeds_delta": 0.7369287236871747,
+ "arm_pdms_means_x100": {
+  "u400": 88.24694109622521,
+  "p2_s0": 88.81840888972928,
+  "p2_s1": 89.1493307500955
+ },
+ "gates": {
+  "pin:p2_s0_csv": {
+   "ok": true,
+   "path": "E:\\Projects\\TanitAD\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\raw\\p2_readout\\p2_full\\arm\\refe_stage2_p2_full.csv"
+  },
+  "pin:u400_csv": {
+   "ok": true,
+   "path": "E:\\Projects\\TanitAD\\data\\refe_navtest\\score\\refe_stage2_sft4_B_u400_navtest_full\\refe_stage2_sft4_B_u400_navtest_full.csv"
+  },
+  "pin:tokens": {
+   "path": "E:\\Projects\\TanitAD\\data\\refe_navtest\\navtest_full_tokens.json",
+   "md5": "3a8b3653fd70891e50a230a37eb76ae8",
+   "n": 12146,
+   "n_logs": 136,
+   "unique": true,
+   "all_mapped": true,
+   "md5_ok": true,
+   "n_ok": true,
+   "logs_ok": true,
+   "ok": true
+  },
+  "stage3:gates_ok": {
+   "ok": true
+  },
+  "stage3:tokens": {
+   "ok": true
+  },
+  "stage3:tokens_minus_c1": {
+   "ok": true
+  },
+  "stage3:base_pinned": {
+   "ok": true
+  },
+  "stage3:also_pinned": {
+   "ok": true
+  },
+  "stage3:harness_status": {
+   "ok": true
+  },
+  "stage3:seam_report": {
+   "ok": true
+  },
+  "stage3:checkpoint": {
+   "ok": true
+  },
+  "stage3:rows": {
+   "ok": true
+  },
+  "stage3:consistency_vs_base": {
+   "ok": true
+  },
+  "stage3:r2b_equals_stage2_primary": {
+   "ok": true
+  },
+  "stage3:not_dry_run": {
+   "ok": true
+  },
+  "stage3:name": {
+   "ok": true,
+   "got": "p2s1_full",
+   "want": "p2s1_full"
+  },
+  "stage3:same_table": {
+   "ok": true,
+   "stage3": "8dce98b80b7254f24d8816f9b35656fc",
+   "read_here": "8dce98b80b7254f24d8816f9b35656fc"
+  },
+  "stage3:checkpoint_sha256_was_checked": {
+   "ok": true,
+   "sha256_matches_expected": true
+  },
+  "estimator_pinned": {
+   "ok": true,
+   "stage3": [
+    10000,
+    20260927
+   ],
+   "here": [
+    10000,
+    20260927
+   ]
+  },
+  "rows": {
+   "ok": true,
+   "tokens": 12146,
+   "s1": 12146,
+   "p2_s0": 12146,
+   "u400": 12146
+  },
+  "finite": {
+   "ok": true
+  },
+  "s1_not_s0": {
+   "ok": true,
+   "why": "the replicate's table is token-for-token identical to P2-s0's PDMS (Delta_seed identically 0)"
+  },
+  "s1_not_u400": {
+   "ok": true,
+   "why": "the replicate's table is token-for-token identical to u400's PDMS"
+  },
+  "p2s0_vs_u400_reproduces_banked_R2": {
+   "ok": true,
+   "recomputed": [
+    0.5714677935040782,
+    [
+     0.017916605286551753,
+     1.1755185398706811
+    ]
+   ],
+   "banked": [
+    0.5714677935040782,
+    [
+     0.017916605286551753,
+     1.1755185398706811
+    ]
+   ]
+  },
+  "rr1_equals_stage3_R2": {
+   "ok": true,
+   "here": [
+    0.9023896538702711,
+    [
+     0.36031881167477414,
+     1.589217152647298
+    ]
+   ],
+   "stage3": [
+    0.9023896538702711,
+    [
+     0.36031881167477414,
+     1.589217152647298
+    ]
+   ]
+  }
+ },
+ "families": {
+  "s1_vs_u400": {
+   "adverse": [],
+   "components_compared": 21,
+   "tactical_no_interval": {
+    "lateral_decision": {
+     "W": {
+      "accuracy": 0.9251,
+      "kappa": 0.8626
+     },
+     "P": {
+      "accuracy": 0.9248,
+      "kappa": 0.8616
+     }
+    },
+    "longitudinal_decision": {
+     "W": {
+      "accuracy": 0.6791,
+      "kappa": 0.5159
+     },
+     "P": {
+      "accuracy": 0.6838,
+      "kappa": 0.5239
+     }
+    },
+    "maneuver_5way_collapsed": {
+     "W": {
+      "accuracy": 0.7831,
+      "kappa": 0.718
+     },
+     "P": {
+      "accuracy": 0.7839,
+      "kappa": 0.7206
+     }
+    }
+   },
+   "strategic": "UNAVAILABLE in NAVSIM (no strategic decision scored; the arm has no strategic layer)",
+   "note": "REPORTED, NOT GATING (amendment section 5); unpaired interval non-overlap, a conservative reading"
+  },
+  "s1_vs_p2_s0": {
+   "adverse": [],
+   "components_compared": 21,
+   "tactical_no_interval": {
+    "lateral_decision": {
+     "W": {
+      "accuracy": 0.9237,
+      "kappa": 0.8604
+     },
+     "P": {
+      "accuracy": 0.9248,
+      "kappa": 0.8616
+     }
+    },
+    "longitudinal_decision": {
+     "W": {
+      "accuracy": 0.6748,
+      "kappa": 0.5101
+     },
+     "P": {
+      "accuracy": 0.6838,
+      "kappa": 0.5239
+     }
+    },
+    "maneuver_5way_collapsed": {
+     "W": {
+      "accuracy": 0.7794,
+      "kappa": 0.7145
+     },
+     "P": {
+      "accuracy": 0.7839,
+      "kappa": 0.7206
+     }
+    }
+   },
+   "strategic": "UNAVAILABLE in NAVSIM (no strategic decision scored; the arm has no strategic layer)",
+   "note": "REPORTED, NOT GATING (amendment section 5); unpaired interval non-overlap, a conservative reading"
+  },
+  "strategic": "PAUSED by the PI (2026-09-19, PI_DECISION_QUEUE item 25) and UNAVAILABLE in NAVSIM (no strategic decision is scored); reported as such, never as a pass",
+  "gating": false,
+  "note": "RR3 is reported, not tested (PREREG_P2_REPLICATE section 2: 'as R2'); adverse list = unpaired interval non-overlap, a conservative reading"
+ },
+ "name": "p2s1_full",
+ "when_utc": "2026-10-16T19:53:12Z",
+ "script": "p2rep_read.py",
+ "eval_dir": "C:\\Users\\Admin\\AppData\\Local\\Temp\\p2s1r\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\eval",
+ "inputs": {
+  "s1_csv": "E:\\Projects\\TanitAD\\data\\refe_navtest\\score\\refe_stage2_p2s1_full\\refe_stage2_p2s1_full.csv",
+  "s1_csv_md5": "8dce98b80b7254f24d8816f9b35656fc",
+  "p2_s0_csv": "E:\\Projects\\TanitAD\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\raw\\p2_readout\\p2_full\\arm\\refe_stage2_p2_full.csv",
+  "u400_csv": "E:\\Projects\\TanitAD\\data\\refe_navtest\\score\\refe_stage2_sft4_B_u400_navtest_full\\refe_stage2_sft4_B_u400_navtest_full.csv",
+  "tokens": "E:\\Projects\\TanitAD\\data\\refe_navtest\\navtest_full_tokens.json",
+  "r2_result": "E:\\Projects\\TanitAD\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\raw\\p2_readout\\p2s1_full\\r2_result.json",
+  "families": [
+   "None",
+   "None",
+   "None"
+  ]
+ }
+}
