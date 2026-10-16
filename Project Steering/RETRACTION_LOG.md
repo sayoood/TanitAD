@@ -18145,3 +18145,15 @@ largest measured effect*. A lever that the attribution assigns about 0.2 of the 
 - ⇒ Before ANY landing that edits `refe/` or `eval/`, run every test that names the edited file, in FULL form: `grep -l <file> refe/test_*.py eval/test_*.py`.
 - ⇒ The gate's suites are a launch check, not the repo's regression suite.
 - ⇒ A periodic full sweep of all 40 is cheap (~20 min on the dev box) and catches what the per-landing rule misses.
+
+### R45 (2026-10-16) - "the S1c head generalises from only ~100 label logs, so the next lever is more label logs" (PREREG_S1C row O2 (a); A2 row U2; GAC H-REFE-S1C-1 as landed in c935a6d)
+- **What was true** (MEASURED, `raw/2026-10-16-s1d-scope/SCOPE.md`, `sim_s1c_draws.json`):
+  - The ~100-log figure is the A2 dev-box PROBE's training unit (~98 logs per fold, `raw/2026-10-16-scene-tap-a2/folds.json`).
+  - S1c's 80,000 draws (same torch draw, reproduced) reached 64,146 frames from 1,161 of the 1,167 train logs, and every drawn frame carries a label.
+  - The label store already covers all 1,192 navtrain logs, so only 6 navtrain logs were left to add.
+  - Held-out unseen-log P1 [0,40) is 0.821. The navtest gap is city composition (BOS 0.713, PIT 0.703, SG 0.632 vs LV 0.860).
+- **Why it propagated.** The probe's own prereg said, before S1, *"the data lever is more head updates / frames seen, not more logs"* (`PREREG_SCENE_TAP_PROBE.md:53`). Then A2 wrote "more label logs" relative to the PROBE's 98 logs, PREREG_S1C copied it as lever (a) for an arm already trained on navtrain's logs, and the Master Mind copied the prereg into the register the same evening. Each step was INHERITED; none re-measured the arm's own draw.
+- **Fixed.** H-REFE-S1C-1's NEXT is re-ranked: a log-removal dose-response (`PREREG_S1D_DRAFT.md`) and a city-balanced-draws arm, both A40, after P6. The ×2 label build is scripted and tested but NOT run (its pixels exist nowhere we hold).
+
+**Class:** *a lever's premise inherited from a smaller instrument and applied to a larger arm without re-measuring the arm.*
+- ⇒ Before executing a "more X" lever, measure how much X the arm ALREADY consumed. Here that was a 20-second draw simulation.
