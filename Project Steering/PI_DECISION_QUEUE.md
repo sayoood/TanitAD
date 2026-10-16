@@ -2007,6 +2007,10 @@ Evidence: `TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-ref
    - This is paper-faithful, but it is a multi-day CPU job plus a P6 delay. It is better as a P7 item.
 
 **Master Mind recommendation: 1 now, 3 for P7.**
+
+**✅ DECIDED (PI, 2026-10-16 ~20:00Z): OPTION 3 for P6** — Sayed, verbatim: *"choose option 3 faithful for the paper"*. P6 does NOT launch on the fallback; it waits for a re-rolled lane-twin bank, then the PDM-route-rank fix is applied at D7 and P6 re-gates.
+- **Executed (Master Mind, 2026-10-16 20:00-21:20Z, pod CPU only; `TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-16-twin-reroll/RESULT.md`):** holding the route over the rollout is NOT sufficient. At the bank's 12 s goal horizon the teacher commits to the rank-K lane (10 s rollout ends with f >= 0.75) on **17 % of K=1 twins, 0 % of K=2/K=3**. Shorter goal horizons raise commitment (h6 37 % / 29 % / 22 % at K=1/2/3; h2 54 % at K=1) but h <= 3 s SLOWS the teacher (h2: 4 s path -19 %, end speed -1.32 m/s), a confound; a goal-distance floor does not remove it. D7 check (c) FAILS at every horizon (K=1 best 0.34 vs 0.75) and is unsatisfiable for any lane change slower than 4 s (analytic, addendum 2).
+- **⏳ NEW PI DECISION NEEDED (it changes D7's check and the twin yield):** **3-C (recommended)** keep a twin only if its route-held, goal-horizon-6 s, 10 s rollout COMMITS; the kept twins show no slowdown (K=1 path ratio 1.021, 0 % < 0.9); replace (c) by (c') = every kept twin commits + no slowdown on a held-out sample; yield ~37 / 29 / 22 % at K=1/2/3 (one bank, no CI); ~37 min per 10k twins on 90 pod processes (ESTIMATED). **3-S** h2 for more yield, accepting slower twins (advised against). **3-T** a rule-based teacher for twins only (teacher-identity confound).
 - 2 is cheap, but it changes P6's recipe after its pre-registration was finalised.
 - The twins' value as route intents is unproven: their trajectories barely leave the logged route.
 
