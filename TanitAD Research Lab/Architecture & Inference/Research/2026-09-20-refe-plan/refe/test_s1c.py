@@ -88,6 +88,7 @@ def tables():
     for e in L.AUXS1C_SUITE:
         ok((HERE / e["script"]).is_file() and e["token"] in (HERE / e["script"]).read_text(encoding="utf-8"), e)
     ok(L.AUXS1C_SUITE[-1]["script"] == "test_s1c.py" and L.AUXS1C_SUITE[:-1] == L.AUXS1_SUITE)
+    ok(L.AUXS1C_SUITE[-1].get("args") == ["--no-e2e"])                                             # the pod run DECLARES the e2e scope (a skip would fail G-SUITE)
     ok(C.DVB_KINDS_SCORER["max_updates"] == "consumed")                                                     # the registry kind is unchanged: the schedule is observed by the profile's extra rows
 
 
@@ -662,7 +663,10 @@ def main() -> int:
     chain_static()
     upstream_s1c()
     navtest_pin(tmp)
-    end_to_end(tmp)
+    if "--no-e2e" in sys.argv[1:]:                                                              # the gate's POD run (launch_gate.AUXS1C_SUITE): a DECLARED scope, not a skip
+        print("ZZTEST_SCOPE end_to_end NOT run (--no-e2e): the chain sandbox needs the repo checkout -- dev-box-only, like test_s1aux_chain's sandbox")
+    else:
+        end_to_end(tmp)
     reachability()
     if os.environ.get("S1C_EVIDENCE_OUT"):
         Path(os.environ["S1C_EVIDENCE_OUT"]).write_text(json.dumps({"tool": "refe/test_s1c.py reachability", "checks_passed": N_OK, "evidence": EVID}, indent=1, default=str), encoding="utf-8")

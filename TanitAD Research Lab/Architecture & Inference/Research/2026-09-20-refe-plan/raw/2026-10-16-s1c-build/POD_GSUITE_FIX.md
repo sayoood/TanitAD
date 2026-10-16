@@ -18,3 +18,24 @@
 | fixed | deep dev-box | `test_s1aux_chain` 404, `test_s1c` 241 (unchanged) |
 | fixed | shallow `C:/s1cfixA` (1 parent, pod-like) | `test_s1c` 219 + 2 skipped |
 | UNFIXED | shallow `C:/s1cfixB` | `IndexError: 3`, the pod failure reproduced |
+
+## Part 2: pre-run #2 (ship fd7e175) FAILED on a SKIP; the e2e scope is now DECLARED (fixed)
+- After the import fix, every suite ran. `test_s1c.py` printed `ZZTEST_SKIP end_to_end`, and G-SUITE refuses ANY skip (`gate_checks.py:1301`, "a skip is not a pass").
+- That case is dev-box-only by design: it runs the real chain in `test_s1aux_chain`'s sandbox, which needs the repo checkout. `test_s1aux_chain` itself is in no pod suite for the same reason.
+- **The fix declares the scope, never hides it.**
+  - `launch_gate.AUXS1C_SUITE` runs `test_s1c.py --no-e2e`. With that flag the case prints `ZZTEST_SCOPE` (neither a pass nor a skip).
+  - A dev-box run without the flag still runs it.
+  - A new check pins `args == ["--no-e2e"]` in the suite entry.
+- Rejected alternatives:
+  - turning off `suite_skips_fail` for the profile, which would weaken the gate for every script;
+  - printing nothing for the case, which would hide it.
+
+**Proof (MEASURED, `logs/podfix2/`):**
+
+| run | result |
+|---|---|
+| deep, no flag | `test_s1c` **242** (241 + the pin; the e2e case RAN), 0 skips |
+| shallow `C:/s1cfixC` (pod-like), `--no-e2e`, `AUX_NAVTEST` set as on the pod | **225**, **0 skips**, 1 declared scope line |
+| gate static | `test_launch_gate --static` **645** (unchanged) |
+
+The unfixed state is pre-run #2 itself (`logs/podfix/`).

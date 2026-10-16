@@ -114,7 +114,7 @@ AUXS1C_ARM_CLASS = {f"H1{b}-s{k}": f"H1{b}" for b in AUXS1C_BUDGETS for k in AUX
 AUXS1C_ARM_SEED = {f"H1{b}-s{k}": k for b in AUXS1C_BUDGETS for k in AUXS1C_SEEDS}
 AUXS1C_ARM_RECIPE = {f"H1{b}": {**AUXS1_RECIPE, **bud} for b, bud in AUXS1C_BUDGETS.items()}      # class -> the full registered recipe (S1's, with the budget moved)
 AUXS1C_MUST_NAME = ("--max-updates", "--batch", "--accum", "--eval-every")                          # the budget the arm tests is NAMED, never a parser default
-AUXS1C_SUITE = AUXS1_SUITE + [{"script": "test_s1c.py", "token": "ZZTEST_PASS"}]
+AUXS1C_SUITE = AUXS1_SUITE + [{"script": "test_s1c.py", "token": "ZZTEST_PASS", "args": ["--no-e2e"]}]   # --no-e2e: the end-to-end chain sandbox is dev-box-only (it needs the repo checkout), DECLARED out of the pod run rather than skipped (a skip fails G-SUITE); 2026-10-16 pod pre-run, raw/2026-10-16-s1c-build/POD_GSUITE_FIX.md
 # P2-s1, the P2 TRAINING-SEED REPLICATE (eval/PREREG_P2_REPLICATE.md; chain refe/p2rep_pod.sh).  The arm is P2's argv CHARACTER FOR CHARACTER with exactly two changes: `--out` is the
 # replicate's own run directory and `--seed 1` is added (P2 ran the parser default, seed 0).  `refe_p2` binds NEITHER (its `required_flags` names 8 of its 20 flags; a missing `--seed 1`, P2's
 # own `--out`, or any other lever that moved would still mint), so the replicate has a profile of its own that PINS the whole argv (`pinned_argv`, token for token).
