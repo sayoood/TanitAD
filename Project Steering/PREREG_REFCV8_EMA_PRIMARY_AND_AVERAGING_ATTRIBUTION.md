@@ -66,3 +66,8 @@ seeds 0 and 1, all four families at S2 and S6. Both batteries run anyway under s
 * the per-frame nav and the road-type speed label are ego-future derived, so optimistic by construction;
 * G0 is FAIL as coded at step 5,000. The wrapper clause is settled (W-R8-1, GPU PASS). One detection term is open, localised to a
   single near-threshold match; the GPU arms are queued.
+
+## 4. Addendum 2026-10-16 ~21:47 Berlin -- the refcv7 retrain is declined
+
+PI, verbatim: *"dont retrain refcv7"*. The costed option in section 2 (re-train refcv7 from 30,000 with the EMA on) is closed.
+Section 3 is the only averaging-attribution instrument, and its committed readings are unchanged.

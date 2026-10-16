@@ -2056,3 +2056,5 @@ the step-5,000 batteries showed the choice flips NR (raw FAIL, EMA PASS); the fi
 refcv7's (EMA-weighted LR mass 1.16e-2 vs 1.19e-2). Readings are committed in
 `Project Steering/PREREG_REFCV8_EMA_PRIMARY_AND_AVERAGING_ATTRIBUTION.md`. A true refcv7 EMA (~2.2 Thor-days, after refcv8 ends)
 stays open for the PI.
+**Update 2026-10-16 ~21:47 Berlin -- PI: "dont retrain refcv7".** The true refcv7 EMA option (~2.2 Thor-days from its 30,000
+checkpoint) is CLOSED. The averaging attribution rests only on refcv8's own final EMA-minus-raw pair, as pre-registered.
