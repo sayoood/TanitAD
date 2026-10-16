@@ -1982,3 +1982,5 @@ Evidence: `TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-ref
 **Master Mind recommendation: 1.** P6 is the paper-gap lever. S1c's prize is real but indirect: a ≥ 0.80 head still has to be wired into selection before it touches PDMS.
 - **Default if unanswered:** 1 (queue behind P6), with the zero-A40 build.
 - **Evidence:** `raw/2026-10-16-scene-tap-a2/`, `raw/2026-10-16-scene-tap-a3r/`, `raw/2026-10-16-aux-shift-locate/SHIFT_LOCATE.md`.
+
+- **S1c status (Master Mind, 2026-10-16 ~08:40 Berlin):** launch-ready and shipped. Arm `H1u10k-s0` (10,000 updates × batch 8, ~4.3 A40-h ESTIMATED), `eval/PREREG_S1C.md` in force at 10d4fae, pod tree `/workspace/refe-plan-s1aux` = ship 10d4fae (247/247 sha256). A pod-side waiter (`/workspace/ops/s1c_waiter.sh`) launches it on R0c's `ZZRLS1_QUEUE_CLEAR`, only if the exact-env G-SUITE pre-run reads PASS. NOT pre-authorised (each goes back to the PI on its outcome): the seed-1 replicate, the `N-u10k` control, the trunk lever.
