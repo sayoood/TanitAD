@@ -32,7 +32,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 PKGROOT = HERE.parent
-NAVTEST = PKGROOT.parents[3] / "FlyWheels" / "TanitAD_EvalFlyWheel" / "incoming" / "2026-09-19-navsim-estimator-and-route-leak" / "raw" / "cluster_maps" / "navtest.json"
+NAVTEST = (PKGROOT.parents[3] / "FlyWheels" / "TanitAD_EvalFlyWheel" / "incoming" / "2026-09-19-navsim-estimator-and-route-leak" / "raw" / "cluster_maps" / "navtest.json") if len(PKGROOT.parents) > 3 else PKGROOT / "_no_repo_checkout" / "navtest.json"   # a shallow tree (the pod: /workspace/refe-plan-s1aux) has no repo copy: a NON-existent path, so the sandbox cases SKIP there (2026-10-16: parents[3] raised at import and killed test_s1c in G-SUITE)
 sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(PKGROOT / "eval"))
 import gate_token as GT  # noqa: E402

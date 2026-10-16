@@ -432,7 +432,7 @@ def navtest_pin(tmp):
     ok(TA.navtest_identity(b"x", hashlib.sha256(b"x").hexdigest())[0])                                      # the raw form still passes
     ok(not TA.navtest_identity(other, crlf_rec)[0] and not TA.navtest_identity(b"", crlf_rec)[0])           # a different list matches neither form
     # the REAL list, when this machine has it (the pod: $AUX_NAVTEST; the dev box: the repo copy, LF or CRLF)
-    cands = [os.environ.get("AUX_NAVTEST", ""), str(PKGROOT.parents[3] / "FlyWheels" / "TanitAD_EvalFlyWheel" / "incoming" / "2026-09-19-navsim-estimator-and-route-leak" / "raw" / "cluster_maps" / "navtest.json")]
+    cands = [os.environ.get("AUX_NAVTEST", "")] + ([str(PKGROOT.parents[3] / "FlyWheels" / "TanitAD_EvalFlyWheel" / "incoming" / "2026-09-19-navsim-estimator-and-route-leak" / "raw" / "cluster_maps" / "navtest.json")] if len(PKGROOT.parents) > 3 else [])
     real = next((c for c in cands if c and Path(c).is_file()), None)
     if real is None:
         skip("the real navtest list is not on this machine (AUX_NAVTEST unset, no repo copy)")
