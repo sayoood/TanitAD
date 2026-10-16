@@ -487,3 +487,25 @@ register rows carry them. The fix itself cannot close the following:
   - clean tree: 17 passed;
   - mutation proof: 11 of 11 arms RED, including one per new guard;
   - the proof is in `…/2026-09-23-refcv6-fixes/raw/mutation_proof_training_watch_refcv6_navsim.json`.
+
+### OPEN — 2026-10-16 — the launch gate idles the A40 for ~40 min per arm; G-SUITE alone is 22 min of it
+- **MEASURED** on P2-s1's successful launch (pod `/workspace/data/refe_p2rep/chain.log`, `lg/` evidence mtimes, 2026-10-15):
+
+  | step | time (Z) |
+  |---|---|
+  | `WAIT_OK` (GPU free) | 15:33:19 |
+  | G-HYG / G-DVB evidence | 15:38:41 |
+  | G-LIVE | 15:38:48 |
+  | G-EVAL | 15:39:01 |
+  | G-CKPT | 15:41:13 |
+  | **G-SUITE** | **16:03:26 (22 min)** |
+  | PASS token | 16:04:38 |
+  | `LAUNCH_GATE_OK` | 16:06:12 |
+  | `TRAIN_START` | 16:13:26 |
+
+  ⇒ **40 min of idle A40 per arm.** Two earlier P2-s1 attempts spent 64 min and 17 min before refusing.
+- **Lever:** G-SUITE is CPU-only and depends only on the commit and tree. Run it during the chain's WAIT stage (nice 19, beside the previous arm), then let the post-wait gate ACCEPT that evidence only if its commit, tree sha, profile and suite selection are identical, it is under 12 h old, and its tree check is re-verified. The gate still mints the token itself; nothing is hand-written.
+  - Deliberate-regression arms: a different tree, a different profile, stale evidence, and evidence with one failing test must each FAIL the gate.
+  - Expected saving: ~22 of the 40 min per arm (ESTIMATED from the table).
+  - Also measure the ~5 min before G-HYG and the 7 min `train.py` preflight.
+- **Sequencing:** start after the S1c build lands. The S1c agent edits the gate profiles, so running both at once would race on `launch_gate.py`/`gate_checks.py`. Chains already shipped (R0c, P6 @ c1dc5d3) keep their gate unchanged.
