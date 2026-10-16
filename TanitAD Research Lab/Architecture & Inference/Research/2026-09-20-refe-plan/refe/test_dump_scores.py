@@ -257,8 +257,11 @@ def suite(src):
         check("parser: --dump-scores exists and DEFAULTS TO OFF ('')", getattr(ns_, "dump_scores", None) == "", str(getattr(ns_, "dump_scores", "<absent>")))
         # the auxiliary drivable-area head (a LATER, separately tested edit: test_aux_s1_wiring.py) adds eight default-OFF dests; they are not this edit's and are named, not waved through
         aux_dests = {"aux_drv", "w_aux_drv", "aux_drv_tap", "aux_drv_depth", "aux_drv_feed", "aux_drv_labels", "aux_drv_shuffle_seed", "aux_drv_lr"}
+        # the R0c EPO anchor (a LATER, separately tested edit: test_rl_epo.py / test_rl_r0c.py, f64a952) adds ONE dest; its default "base" is every pre-R0c arm bit for bit (R41)
+        epo_dests = {"epo_ref"}
         check("parser: exactly ONE new dest from the dump edit (dump_scores); every pre-edit dest is still there",
-              dests - set(BASE_DESTS) - aux_dests == {"dump_scores"} and set(BASE_DESTS) <= dests and (dests & aux_dests) in (set(), aux_dests), str(sorted(dests - set(BASE_DESTS))))
+              dests - set(BASE_DESTS) - aux_dests - epo_dests == {"dump_scores"} and set(BASE_DESTS) <= dests and (dests & aux_dests) in (set(), aux_dests)
+              and (dests & epo_dests) in (set(), epo_dests) and getattr(ns_, "epo_ref", "base") == "base", str(sorted(dests - set(BASE_DESTS))))
     guarded("parser", t_parser)
 
     # ---- OFF: structurally identical to the pre-edit evaluate()

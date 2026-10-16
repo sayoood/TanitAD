@@ -18124,3 +18124,24 @@ largest measured effect*. A lever that the attribution assigns about 0.2 of the 
 **Class:** R39's class, an EARLIER instance (introduced 2026-10-14, two days before R39's, and found only now), *plus a hiding place*: **a suite whose gate form skips its mutations (`--fast`) cannot catch a stale mutation anchor, so G-SUITE is blind to this class by construction.**
 - ⇒ The R39 rule is extended: before landing an edit to a file that any `refe/test_*.py` mutates (not only the gate files), run every such test in its **FULL form**, never only its gate form.
 - ⇒ `grep -l "<file>" refe/test_*.py` lists the readers; `--fast`/`--no-e2e`/`--static` are gate scopes, not verification scopes.
+
+### R41 (2026-10-16) - "the R0c landing leaves every other suite green" (landing f64a952, 2026-10-15 22:50)
+- **What was true.** f64a952 added `--epo-ref` (default `base`) to `refe/scorer_finetune.py`'s parser.
+  - `refe/test_dump_scores.py` pins that parser: only `dump_scores` plus 8 NAMED aux-head dests may be new.
+  - So its unmutated source failed its own check ("exactly ONE new dest … ['epo_ref', …]"), rc 1, on the tip for ~11 h.
+- **Why nothing saw it.** `test_dump_scores` is in NO gate suite. R0c's own suite (rl_reward, rl_epo, launch_gate, rl_s1b, rl_r0c) never runs it. R0c's ship and launch are unaffected.
+- **Found by** the R40 follow-up: every `refe/` + `eval/` test not covered by the gate-lever sweep, run in FULL form on tip b8a6a5f. 25 tests:
+  - this one RED;
+  - two need the driverl-eval venv and pass there (`aux_label_store` 16, `p6_planner_command` 172);
+  - one is pinned to the D: checkout by design (`aux_navtest_forward`);
+  - the rest green.
+  - Logs: `raw/2026-10-16-gate-suite-prerun/logs/tip_sweep/`.
+- **Fixed.** `epo_ref` is named in the pin the way the aux dests are, and its default must be `base`.
+  - Before: rc 1. After: `ZZTEST_PASS 16` (41 checks + 14 RED mutations).
+  - Deliberate regression: default `armA` → RED on the parser check; control `base` → 16.
+
+**Class:** R39's class, the THIRD instance in three days (R39 10d4fae, R40 134be4f, R41 f64a952): *a landing verified on its own suites while another test pins the bytes it changed.*
+- R40's hiding place was a gate scope (`--fast`). R41's is simpler: **the pinning test is in no suite at all.**
+- ⇒ Before ANY landing that edits `refe/` or `eval/`, run every test that names the edited file, in FULL form: `grep -l <file> refe/test_*.py eval/test_*.py`.
+- ⇒ The gate's suites are a launch check, not the repo's regression suite.
+- ⇒ A periodic full sweep of all 40 is cheap (~20 min on the dev box) and catches what the per-landing rule misses.

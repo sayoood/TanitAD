@@ -1,0 +1,19 @@
+unmutated suite: 27 checks GREEN   (INFO {"fd_max_abs_err": 1.22e-11, "fd_max_abs_grad": 0.00761, "r8": "teacher paths off-road 1/20, mirrored 7/20, loss 0.0012 vs mirrored 0.1764", "corner_dev_f64": 1.42e-14, "corner_dev_f32": 1.43e-05, "poses_5hz_dev": 1.42e-14, "poses_navsim_dev": 1.42e-14})
+mutation                                     term       caught-by (failing checks)
+margin sign flipped                          margin     11 failing; outside the end-to-end reference (R*): H1, H2, H3
+x/y swapped in the sampling grid             grid       12 failing; outside the end-to-end reference (R*): H3, C1, D1, H5
+align_corners flipped                        grid        9 failing; outside the end-to-end reference (R*): H5
+upsampling dropped (5 Hz poses repeated)     upsample    9 failing; outside the end-to-end reference (R*): F2, F5
+loss on the best-matching proposal only      all-64     12 failing; outside the end-to-end reference (R*): H1, H2, H3, C2, D1
+int8 unit (0.1 m) forgotten                  unit       12 failing; outside the end-to-end reference (R*): H1, H2, H3, H5
+hinge dropped (linear)                       hinge      13 failing; outside the end-to-end reference (R*): H1, H3, C1, C2, D1, E2
+out-of-extent mask dropped                   extent     10 failing; outside the end-to-end reference (R*): H2, E1, E2
+yaw wrap dropped                             wrap        4 failing; outside the end-to-end reference (R*): F2, F3, F5
+poses detached (no gradient path)            grad        7 failing; outside the end-to-end reference (R*): C1, C2, D1, G1, E1, E2, V1
+valid mask ignored                           valid       1 failing; outside the end-to-end reference (R*): V1
+rear-axle offset sign (centre vs axle)       footprint   9 failing; outside the end-to-end reference (R*): F1
+interp switch ignored                        interp      1 failing; outside the end-to-end reference (R*): -- none (reference only)
+time base off by one (t = 0 ... 3.9)         steps      10 failing; outside the end-to-end reference (R*): H2, H3, E1
+corner agreement vs navsim_dac.corners_global: max dev f64 1.42e-14 m, f32 1.43e-05 m
+up-sampling route (5hz vs navsim2hz) on 256 arcs v 5-18 m/s, |kappa| <= 0.05: corner deviation max 0.475 m, p99 0.362 m, mean 0.0777 m  (margin is 0.25 m)
+ZZTEST_PASS 42  (27 checks green on the unmutated module + 14 RED mutations + 1 coverage of the PI's six)
