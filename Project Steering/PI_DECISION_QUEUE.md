@@ -2045,3 +2045,14 @@ Evidence: `TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-ref
   - Package: `raw/2026-10-16-safety-head/`.
 - **Stage 2, on SH-GO:** the trainer implementation (default OFF), launch-gate entries and reachability tests.
 - **Stage 3:** one A40 arm. The A40 is running P6 (several days), so the arm queues after P6 unless the PI orders otherwise.
+
+## DECIDED 2026-10-16 ~21:40 Berlin -- refcv8 bars are scored on the EMA weights (raw reported beside)
+
+PI: *"option 1, and queue the refcv7 averaged baseline"*. Every `SPEC_REFCV8_DRAFT.md` section 5 bar is read on the EMA weights
+(`ckpt_ema_<N>.pt`; `model_ema.pt` at the end), and the raw weights are always reported beside them. The PI made this call after
+the step-5,000 batteries showed the choice flips NR (raw FAIL, EMA PASS); the final checkpoint is ~34,000 steps away.
+**The refcv7 averaged baseline cannot be built from saved checkpoints.** refcv7 had no EMA, and its last two saves are 30,000 and
+50,400. The same question is instead measured on refcv8's own final raw-versus-EMA pair: its end-of-schedule LR regime matches
+refcv7's (EMA-weighted LR mass 1.16e-2 vs 1.19e-2). Readings are committed in
+`Project Steering/PREREG_REFCV8_EMA_PRIMARY_AND_AVERAGING_ATTRIBUTION.md`. A true refcv7 EMA (~2.2 Thor-days, after refcv8 ends)
+stays open for the PI.
