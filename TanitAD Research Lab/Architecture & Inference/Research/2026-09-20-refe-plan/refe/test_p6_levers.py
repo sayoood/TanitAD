@@ -520,7 +520,7 @@ MUTATIONS = [
      "ego_tok = self.ego_enc(torch.cat([ego, 0.0 * self.cmd_embed(goal.to(ego.dtype)).detach()], -1)).unsqueeze(1)", "command_model_reach"),
     ("train.py", 'yaw_wrap=(a.yaw_wrap == "on"), parts=True)', "yaw_wrap=True, parts=True)", "trainer_reach_online"),
     ("train.py", '"bce_ttc": bce_comp[3], ', '', "trainer_reach_online"),
-    ("train.py", "((P[\"l_traj\"] + l_score) / a.accum).backward()", "((P[\"l_traj\"] + 0.0 * l_score) / a.accum).backward()", "score_only_grad"),
+    ("train.py", "tot_ = P[\"l_traj\"] + l_score\n", "tot_ = P[\"l_traj\"] + 0.0 * l_score\n", "score_only_grad"),   # anchor moved by 134be4f (field-loss wiring split the backward line); R40
     ("train.py", 'cfg.nav_mode = a.nav_mode', 'pass', "trainer_reach_online"),
     ("train.py", "lab.submit(micro, step, metas, props_np)", "lab.submit(micro, step, metas, props_np + 0.01)", "deferred_bit_identity"),
     ("online_labeller.py", 'if r["sha"] != h["shas"][i]:', 'if False:', "stale_label_refused"),

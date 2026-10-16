@@ -18105,3 +18105,22 @@ largest measured effect*. A lever that the attribution assigns about 0.2 of the 
 **Class:** *a change verified against the suites of its own profile, while a mutation test elsewhere anchors on the changed bytes.* Every mutation-anchored suite is a reader of the source text it mutates.
 - ⇒ Before landing an edit to a shared gate file (`launch_gate.py`, `gate_checks.py`, `gate_token.py`), run EVERY `refe/test_*.py` that names that file. A `grep -l <file> refe/test_*.py` lists them.
 - Same family as "built, tested, and unreachable from its caller", from the other side: tested, and breaking a caller of its text.
+
+### R40 (2026-10-16) - "the field-loss wiring leaves P6's suites green" (landing 134be4f, 2026-10-14)
+- **What was true.** 134be4f rewrote `train.py`'s backward line:
+  - before: `((P["l_traj"] + l_score) / a.accum).backward()`;
+  - after: `tot_ = P["l_traj"] + l_score` … `(tot_ / a.accum).backward()`, so that `L_field` rides the same backward.
+- `refe/test_p6_levers.py`'s full-mode mutation `score_only_grad` anchors on the OLD line. So, from 134be4f to this fix:
+  - the full run stops at "mutation target not found exactly once in train.py" with rc 1;
+  - every mutation after it never ran;
+  - the tip carried a RED full-mode suite for two days.
+- **Why nothing saw it.** The gate's `refe_p6` suite runs `test_p6_levers.py --fast`, which skips the mutations, so G-SUITE stayed green on every ship.
+- **Blast radius.**
+  - P6's ship `c1dc5d3` predates 134be4f (anchor count 1 there), so P6's own gate is unaffected.
+  - No chain was shipped with a vacuous `score_only_grad`.
+- **Found by** the R39 sweep for the gate-lever landing, which runs each reader in its FULL form.
+- **Fixed.** The anchor moved to `tot_ = P["l_traj"] + l_score` → `+ 0.0 * l_score`. It is the same mutation: zero the score term's gradient. Result: rc 1 → `ZZP6_PASS 145`, 11/11 mutations RED, `score_only_grad` among them (`raw/2026-10-16-gate-suite-prerun/logs/landing_sweep/p6_levers_fixed.log`).
+
+**Class:** R39's class, an EARLIER instance (introduced 2026-10-14, two days before R39's, and found only now), *plus a hiding place*: **a suite whose gate form skips its mutations (`--fast`) cannot catch a stale mutation anchor, so G-SUITE is blind to this class by construction.**
+- ⇒ The R39 rule is extended: before landing an edit to a file that any `refe/test_*.py` mutates (not only the gate files), run every such test in its **FULL form**, never only its gate form.
+- ⇒ `grep -l "<file>" refe/test_*.py` lists the readers; `--fast`/`--no-e2e`/`--static` are gate scopes, not verification scopes.

@@ -488,7 +488,19 @@ register rows carry them. The fix itself cannot close the following:
   - mutation proof: 11 of 11 arms RED, including one per new guard;
   - the proof is in `…/2026-09-23-refcv6-fixes/raw/mutation_proof_training_watch_refcv6_navsim.json`.
 
-### OPEN — 2026-10-16 — the launch gate idles the A40 for ~40 min per arm; G-SUITE alone is 22 min of it
+### BUILT, LANDED UNWIRED — 2026-10-16 — the launch gate idles the A40 for ~40 min per arm; G-SUITE alone is 22 min of it
+- **2026-10-16 status:**
+  - The pre-run evidence lever is built: `launch_gate.py suite-prerun` / `run --suite-evidence`, 63/63 regression arms, 26/26 mutations caught.
+  - It is landed UNWIRED: no chain passes `--suite-evidence`.
+  - The real-profile check agrees: accepted 2.9 s PASS vs live 201.3 s PASS (`raw/2026-10-16-gate-suite-prerun/MEASURE_RERUN.md`).
+- **The larger lever is ONE script** (MEASURED from pod suite logs): `test_p2r_chain.py` takes **1,290 s on the pod** vs 5–14 s on the dev box.
+  - It is in the P2/P2-s1/P6/field suites; R0c's and S1c's pod G-SUITE take only 238 s and 479 s.
+  - **Cause (MEASURED 2026-10-16 on the pod):** its `token_ok` scenarios minted and verified tokens on the chain's REAL argv.
+    - On the pod, `/workspace/data/...` exists, so each mint and each `launch_gate.py verify` fingerprinted the real 413,184-file image listing and the train_grow bank, and sha256'd the 1.29 GB init checkpoint over NFS.
+    - On the dev box those paths are absent, which is why the same test takes seconds there.
+  - **Fixed in the test only** (the gate is untouched): the scenarios run on an absent data root on every host. Token logic unchanged, 139/139.
+  - Pod A/B in P6's tree copy: as shipped **1,226 s** vs fixed **6 s**, both `ZZTEST_PASS 139` (`raw/2026-10-16-gate-suite-prerun/logs/pod_p2r_ab/`).
+  - It reaches the next ship of any P2/P6/field profile. P6 itself keeps c1dc5d3, because a re-ship would rebuild its stages.
 - **MEASURED** on P2-s1's successful launch (pod `/workspace/data/refe_p2rep/chain.log`, `lg/` evidence mtimes, 2026-10-15):
 
   | step | time (Z) |

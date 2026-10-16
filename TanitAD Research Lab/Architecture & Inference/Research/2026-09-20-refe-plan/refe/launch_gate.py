@@ -20,6 +20,11 @@ CLAUDE.md, PI 2026-09-26 (BINDING).  Route, contract and every regression arm: e
     # P2-s1, the P2 training-seed replicate (refe/p2rep_pod.sh): P2's gates on P2's argv PLUS exactly two changes (--out, --seed 1), PINNED token for token
     python launch_gate.py run --profile refe_p2rep --pkg <pkg> --args "$ARGS" --out-dir <dir> --gate-sets <d> --gate-pdm <d> --gate-bank <d> --p2-gate-json <gate.json>
 
+    # OPTIONAL, to take G-SUITE's CPU-only minutes OFF the GPU's idle clock: run the suite beforehand (the chain's WAIT stage), then hand the signed result to `run`.
+    # `run` re-measures EVERY binding (signature, commit, profile, tree digest, suite entries, gate code, environment, age <= 12 h, PASS with 0 skips) and otherwise runs the suite LIVE, exactly as without the flag
+    python launch_gate.py suite-prerun --profile refe_p2rep --pkg <pkg> --out <suite_prerun.json>            # exits 0 + ZZSUITE-PRERUN-PASSZZ, or 1 + ZZSUITE-PRERUN-FAILZZ (a FAIL evidence is written too)
+    python launch_gate.py run --profile refe_p2rep ... --suite-evidence <suite_prerun.json>                  # raw/2026-10-16-gate-suite-prerun/WIRING.md; tests: refe/test_gate_suite_prerun.py
+
 Token: schema `tanitad.launch_gate/1` (gate_token.py), HMAC-SHA256 with a pod-local key; PASS only if every required check has usable PASS
 evidence bound to the same (profile, commit, tree_sha256, argv_sha256) whose `inputs_read` fingerprints equal the launch data manifest.
 REHEARSAL evidence (tiny config, synthetic images, CPU) never counts toward a token.
@@ -567,8 +572,9 @@ def gate_inputs_of(p2_gate_json=None, lab_json=None, mem_metrics=None, egr_json=
 
 
 def run_checks(prof: dict, argv: list, pkg: Path, out_dir: Path, *, only=None, arm=None, gate_sets=None, gate_pdm=None, gate_bank=None,
-               p2_gate_json=None, commit=None, lab_json=None, mem_metrics=None, egr_json=None, preflight_json=None) -> dict:
-    """Run every check of the profile (or `only`), writing evidence files.  Returns {check: status}."""
+               p2_gate_json=None, commit=None, lab_json=None, mem_metrics=None, egr_json=None, preflight_json=None, suite_evidence=None, key=None) -> dict:
+    """Run every check of the profile (or `only`), writing evidence files.  Returns {check: status}.  `suite_evidence` (+ the gate `key` that verifies it) is the OPTIONAL pre-run of G-SUITE
+    (`suite-prerun`): see `suite_check`.  Without it every check is exactly as it has always been."""
     import gate_checks as C
     out_dir.mkdir(parents=True, exist_ok=True)
     work = out_dir / "work"
@@ -602,7 +608,7 @@ def run_checks(prof: dict, argv: list, pkg: Path, out_dir: Path, *, only=None, a
         if "G-PREFLIGHT" in want:
             emit(consume_scorer_preflight(preflight_json, argv, prof, arm=arm, rehearsal=rehearsal))
         if "G-SUITE" in want:
-            emit(C.check_suite(prof, arm=arm, rehearsal=rehearsal))
+            emit(suite_check(prof, pkg, evidence=suite_evidence, key=key, commit=commit, arm=arm, rehearsal=rehearsal))
         if "G-CLOCK" in want:
             emit(C.evidence("G-CLOCK", "NA", [prof.get("clock_na", "no label clock in this profile")], {}, arm=arm, rehearsal=rehearsal))
         return status
@@ -632,7 +638,7 @@ def run_checks(prof: dict, argv: list, pkg: Path, out_dir: Path, *, only=None, a
         _log_gpu_reserved("before G-CKPT")
         emit(C.check_ckpt(s_argv, work / "ckpt", prof2, arm=arm, rehearsal=rehearsal))
     if "G-SUITE" in want:
-        emit(C.check_suite(prof2, arm=arm, rehearsal=rehearsal))
+        emit(suite_check(prof2, pkg, evidence=suite_evidence, key=key, commit=commit, arm=arm, rehearsal=rehearsal))
     if "G-P2GATE" in want:
         emit(consume_p2_gate(p2_gate_json, arm=arm, rehearsal=rehearsal))
     if "G-LIVE-LAB" in want:
@@ -744,6 +750,40 @@ def consume_scorer_preflight(path, argv, prof, arm=None, rehearsal=False) -> dic
     return C.verdict("G-PREFLIGHT", reasons, det, arm=arm, rehearsal=rehearsal)
 
 
+# ============================================================================================ G-SUITE pre-run (suite-prerun / run --suite-evidence)
+def suite_check(prof: dict, pkg, *, evidence=None, key=None, commit=None, arm=None, rehearsal=False) -> dict:
+    """G-SUITE's evidence for `run_checks`.  WITHOUT `evidence` it is `C.check_suite` and nothing else -- byte for byte the check every profile has always run.  WITH `evidence` (a
+    `suite-prerun` file) it ACCEPTS the pre-run's result only if `GT.verify_suite_evidence` finds every binding equal when re-measured NOW (signature, profile, commit, tree digest recomputed,
+    suite entries, gate code, environment, age <= 12 h, no regression arm, PASS with 0 skips); otherwise it RUNS THE SUITE LIVE and records why the evidence was rejected.  A bad evidence file never
+    makes the gate weaker, it only costs time.  `details.suite_source` names the path taken; finalize copies it into the token."""
+    import gate_checks as C
+    if not evidence:
+        return C.check_suite(prof, arm=arm, rehearsal=rehearsal)
+    t0 = time.perf_counter()
+    try:
+        ok, why, info = GT.verify_suite_evidence(evidence, profile_name=prof["name"], commit=commit, pkg=pkg, suite=prof.get("suite", ()), suite_dir=C.HERE, key=key, arm=arm)
+    except Exception as e:                                                   # noqa: BLE001 -- cannot judge = not accepted, never accepted
+        ok, why, info = False, [f"cannot judge the suite evidence: {type(e).__name__}: {str(e)[:200]}"], {"path": str(evidence)}
+    dt = time.perf_counter() - t0
+    if ok:
+        pre = info["evidence"]
+        scripts = pre["suite"]["details"]["scripts"]
+        src = {"path": "accepted", "evidence_sha256": info["evidence_sha256"], "evidence_created_utc": pre.get("created_utc"), "age_s": info.get("age_s"), "verify_seconds": round(dt, 1)}
+        print(f"  [timing] G-SUITE: ACCEPTED the pre-run evidence {str(info['evidence_sha256'])[:12]} (age {info.get('age_s')} s, every binding re-measured equal in {dt:.1f}s); "
+              f"the pre-run's suite took {sum(float(r.get('seconds') or 0) for r in scripts):.0f}s", flush=True)
+        return C.evidence("G-SUITE", "PASS", [], {"scripts": scripts, "suite_source": src}, arm=arm, rehearsal=rehearsal)
+    print(f"  [timing] G-SUITE: pre-run evidence REJECTED ({len(why)} reason(s): {'; '.join(w[:120] for w in why[:3])}) -> running the suite LIVE", flush=True)
+    ev = C.check_suite(prof, arm=arm, rehearsal=rehearsal)
+    ev["details"]["suite_source"] = {"path": "live", "evidence_sha256": info.get("evidence_sha256"), "rejected": [w[:300] for w in why[:8]]}
+    return ev
+
+
+def _commit_of(pkg: Path, flag_commit):
+    """The commit a run / pre-run is bound to: the SHIP_MANIFEST's, else `--commit`.  ONE definition for `run` and `suite-prerun`, so their bindings cannot drift apart."""
+    man = GT.read_json(pkg / GT.SHIP_MANIFEST) if (pkg / GT.SHIP_MANIFEST).is_file() else None
+    return man.get("commit") if man else flag_commit
+
+
 def collect(out_dir: Path, check: str):
     p = out_dir / f"evidence_{check}.json"
     return GT.read_json(p) if p.is_file() else None
@@ -796,6 +836,9 @@ def finalize(prof: dict, argv: list, pkg: Path, out_dir: Path, key: bytes, *, p2
         status = ev.get("status") if not why else "REJECTED"
         checks[c] = {"status": status if status in ok_status or status == "REJECTED" else status, "evidence_sha256": GT.sha256_file(out_dir / f"evidence_{c}.json"),
                      "finished_utc": ev.get("finished_utc"), "reasons": (ev.get("reasons") or [])[:6] + why}
+        src = (ev.get("details") or {}).get("suite_source") if c == "G-SUITE" else None
+        if src:                                                # only when `run --suite-evidence` was given: the token names the path G-SUITE took (accepted + the pre-run's sha256, or live + why)
+            checks[c]["suite_source"] = src
         if status not in ok_status:
             reasons.append(f"{c} {status}: " + " | ".join((ev.get("reasons") or [])[:2] + why))
         if c in prof.get("na_ok", ()) and ev.get("status") == "NA":
@@ -851,7 +894,8 @@ def cmd_run(a) -> int:
             print("  carved the smoke bank:", F.carve_gate_bank(src, a.gate_sets, a.gate_bank), flush=True)
     run_checks(prof, argv, pkg, out, only=set(a.only.split(",")) if a.only else None, arm=arm, gate_sets=a.gate_sets, gate_pdm=a.gate_pdm,
                gate_bank=a.gate_bank, p2_gate_json=a.p2_gate_json, commit=commit, lab_json=a.gate_lab_json, mem_metrics=a.gate_mem_metrics,
-               egr_json=a.gate_egr_json, preflight_json=a.gate_preflight_json)
+               egr_json=a.gate_egr_json, preflight_json=a.gate_preflight_json,
+               suite_evidence=a.suite_evidence, key=key)
     verdict, path, tok = finalize(prof, argv, pkg, out, key, p2_gate_json=a.p2_gate_json, commit=commit, lab_json=a.gate_lab_json,
                                   mem_metrics=a.gate_mem_metrics, egr_json=a.gate_egr_json, preflight_json=a.gate_preflight_json)
     for r in tok["reasons"][:8]:
@@ -859,6 +903,35 @@ def cmd_run(a) -> int:
     print(f"verdict {verdict} -> {path}", flush=True)
     print(f"ZZGATE-{verdict}-{(tok['binding']['commit'] or tok['binding']['tree_sha256'])[:12]}ZZ", flush=True)
     return 0 if verdict == "PASS" else 1
+
+
+def cmd_suite_prerun(a) -> int:
+    """Run EXACTLY `check_suite(PROFILES[profile])` in THIS environment and write the result as SIGNED evidence bound to the commit, the tree digest, the profile, the suite entries, the gate's own code,
+    the environment and the time (gate_token.make_suite_evidence), for `run --suite-evidence`.  CPU only: it never asks for CUDA.  The binding is measured BEFORE the suite and again AFTER it; if the
+    tree, the gate code or the environment moved while the suite ran, the verdict is FAIL (the result belongs to neither state).  Exit 0 = PASS evidence written, 1 = a FAIL evidence written."""
+    import gate_checks as C
+    prof = PROFILES[a.profile]
+    pkg = Path(a.pkg)
+    key = GT.load_key(a.key_file, create=True, forbid_under=[pkg])
+    commit = _commit_of(pkg, a.commit)
+    arm = os.environ.get("TANITAD_GATE_ARM")
+    kw = dict(profile_name=prof["name"], commit=commit, pkg=pkg, suite=prof.get("suite", ()), suite_dir=C.HERE)
+    binding, env = GT.suite_evidence_binding(**kw)
+    t0 = time.perf_counter()
+    res = C.check_suite(prof, arm=arm, rehearsal=bool(prof.get("rehearsal")))
+    secs = time.perf_counter() - t0
+    after, _ = GT.suite_evidence_binding(**kw)
+    moved = sorted(k for k in binding if binding[k] != after[k])
+    extra = [f"{moved} changed WHILE the suite ran: its result belongs to neither state"] if moved else []
+    ev = GT.make_suite_evidence(binding=binding, env=env, suite_result=res, key=key, arm=arm, extra_reasons=extra)
+    GT.write_json(a.out, ev)
+    for r in res["details"]["scripts"]:
+        print(f"  {str(r['script'])[-48:]:48s} rc {r['rc']} token {'seen' if r['token_seen'] else 'NOT seen'} skips {len(r['skips'])} {r['seconds']}s", flush=True)
+    for r in (list(res["reasons"]) + ev["reasons"])[:8]:
+        print("  REASON:", r[:300])
+    print(f"suite-prerun {ev['verdict']} in {secs:.0f}s -> {a.out} (profile {prof['name']}, tree {binding['tree_sha256'][:12]}, commit {str(commit)[:12]})", flush=True)
+    print(f"ZZSUITE-PRERUN-{ev['verdict']}ZZ", flush=True)
+    return 0 if ev["verdict"] == "PASS" else 1
 
 
 def cmd_verify(a) -> int:
@@ -919,10 +992,18 @@ def main(argv=None) -> int:
             p.add_argument("--gate-mem-metrics", help="refe_p6: metrics.jsonl of a >= 200-micro-batch run on the real card (G-LIVE-MEM)")
             p.add_argument("--gate-egr-json", help="refe_p6: hf_egress.py gate's g_egr_result.json (G-EGR)")
             p.add_argument("--gate-preflight-json", help="refe_rls1: scorer_finetune.py --preflight's preflight.jsonl (G-PREFLIGHT; also G-DVB's built side)")
+            p.add_argument("--suite-evidence", help="OPTIONAL: a `suite-prerun` JSON.  G-SUITE ACCEPTS it in place of the live run only if its signature verifies and the commit, profile, tree digest, suite entries, "
+                                                    "gate code and environment all re-measure equal now, it is <= 12 h old and it is PASS with 0 skips; otherwise the suite runs LIVE and the token says why. Absent = today's gate")
         if name == "verify":
             p.add_argument("--token", required=True)
             p.add_argument("--commit")
             p.add_argument("--json")
+    p = sub.add_parser("suite-prerun", help="run G-SUITE's scripts NOW (CPU only) and write SIGNED, BOUND evidence for `run --suite-evidence`")
+    p.add_argument("--profile", required=True, choices=sorted(PROFILES))
+    p.add_argument("--pkg", required=True)
+    p.add_argument("--out", required=True)
+    p.add_argument("--key-file")
+    p.add_argument("--commit")
     p = sub.add_parser("ship-manifest")
     p.add_argument("--pkg", required=True)
     p.add_argument("--commit")
@@ -930,7 +1011,7 @@ def main(argv=None) -> int:
     p.add_argument("--repo-prefix", default="")
     p.add_argument("--out", required=True)
     a = ap.parse_args(argv)
-    return {"run": cmd_run, "verify": cmd_verify, "refusals": cmd_refusals, "ship-manifest": cmd_ship}[a.cmd](a)
+    return {"run": cmd_run, "verify": cmd_verify, "refusals": cmd_refusals, "ship-manifest": cmd_ship, "suite-prerun": cmd_suite_prerun}[a.cmd](a)
 
 
 if __name__ == "__main__":

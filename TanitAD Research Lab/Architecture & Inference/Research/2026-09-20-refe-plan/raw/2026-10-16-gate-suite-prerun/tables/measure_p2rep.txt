@@ -1,0 +1,7 @@
+| step (dev box, profile refe_p2rep, 24 cpus, 31.8 GiB RAM, SHARED with other jobs) | seconds | rc | other |
+|---|---|---|---|
+| suite-prerun | 237.8 | 0 | verdict PASS; peak RSS of the process tree 1.01 GiB; peak threads 39; peak processes 9; CPU 63.8 s; evidence 2058 bytes |
+| run --only G-SUITE --suite-evidence (ACCEPTED path) | 2.9 | 1 | G-SUITE PASS; path accepted; binding re-measure 0.4 s |
+| run --only G-SUITE, no flag (today's gate, LIVE) | 201.3 | 1 | G-SUITE PASS; suite_source None |
+
+whole-process seconds include python start, `import train` and the data manifest; live - accepted = 198.4 s on this box

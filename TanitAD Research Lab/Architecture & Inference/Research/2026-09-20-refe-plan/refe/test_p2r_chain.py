@@ -415,6 +415,8 @@ def main() -> int:
         pkgroot = HERE.parent
         key = GT.load_key(tmp / "k" / "gate.key", forbid_under=[pkgroot])
         real = ARGS_RX.search(text).group(1)
+        assert "/workspace/data/" in real, "the chain's data root moved: update the absent-root rewrite below"
+        real = real.replace("/workspace/data/", "/zz_absent_test_root/data/")   # the token LOGIC on an absent data root, on EVERY host: on the pod the real paths exist and each mint/verify fingerprinted the real 413k-file listing + the 1.29 GB init ckpt (1,290 s pod vs ~10 s dev box). R40/BACKLOG 2026-10-16
         argv = GT.argv_from_string(real)
         lgdir = tmp / "lg"
 

@@ -1,0 +1,380 @@
+{
+ "resigned_unchanged": {
+  "expected": "ACCEPTED",
+  "observed": "ACCEPTED",
+  "e2e": false,
+  "first_reason": null
+ },
+ "age_11h59": {
+  "expected": "ACCEPTED",
+  "observed": "ACCEPTED",
+  "e2e": false,
+  "first_reason": null
+ },
+ "stale_13h": {
+  "expected": "REJECTED",
+  "observed": "REJECTED",
+  "e2e": false,
+  "first_reason": "evidence is 13.00 h old (limit 12 h)"
+ },
+ "stale_12h_plus": {
+  "expected": "REJECTED",
+  "observed": "REJECTED",
+  "e2e": false,
+  "first_reason": "evidence is 12.03 h old (limit 12 h)"
+ },
+ "future_dated": {
+  "expected": "REJECTED",
+  "observed": "REJECTED",
+  "e2e": false,
+  "first_reason": "evidence is dated 3600 s in the future"
+ },
+ "created_unparseable": {
+  "expected": "REJECTED",
+  "observed": "REJECTED",
+  "e2e": false,
+  "first_reason": "created_utc 'yesterday' is not a UTC timestamp"
+ },
+ "verdict_FAIL_only": {
+  "expected": "REJECTED",
+  "observed": "REJECTED",
+  "e2e": false,
+  "first_reason": "evidence verdict is 'FAIL', not PASS"
+ },
+ "status_FAIL_only": {
+  "expected": "REJECTED",
+  "observed": "REJECTED",
+  "e2e": false,
+  "first_reason": "the recorded suite status is 'FAIL' with reasons []"
+ },
+ "reasons_nonempty_only": {
+  "expected": "REJECTED",
+  "observed": "REJECTED",
+  "e2e": false,
+  "first_reason": "the recorded suite status is 'PASS' with reasons ['x']"
+ },
+ "script_rc_1_only": {
+  "expected": "REJECTED",
+  "observed": "REJECTED",
+  "e2e": false,
+  "first_reason": "ppData\\Local\\Temp\\tmpf61xhqkl\\w\\probe.py: rc 1, token_seen True"
+ },
+ "token_not_seen_only": {
+  "expected": "REJECTED",
+  "observed": "REJECTED",
+  "e2e": false,
+  "first_reason": "ppData\\Local\\Temp\\tmpf61xhqkl\\w\\probe.py: rc 0, token_seen False"
+ },
+ "skip_in_row_only": {
+  "expected": "REJECTED",
+  "observed": "REJECTED",
+  "e2e": false,
+  "first_reason": "ppData\\Local\\Temp\\tmpf61xhqkl\\w\\probe.py: skip(s) 'ZZTEST_SKIP x' -- a skip is not a pass"
+ },
+ "row_count_short": {
+  "expected": "REJECTED",
+  "observed": "REJECTED",
+  "e2e": false,
+  "first_reason": "the recorded suite ran 1 script(s), the profile lists 2"
+ },
+ "row_script_renamed": {
+  "expected": "REJECTED",
+  "observed": "REJECTED",
+  "e2e": false,
+  "first_reason": "a recorded script row (other.py) is not the profile's entry ppData\\Local\\Temp\\tmpf61xhqkl\\w\\probe.py"
+ },
+ "check_name_wrong": {
+  "expected": "REJECTED",
+  "observed": "REJECTED",
+  "e2e": false,
+  "first_reason": "the recorded result is for check 'G-LIVE', not G-SUITE"
+ },
+ "kind_is_token": {
+  "expected": "REJECTED",
+  "observed": "REJECTED",
+  "e2e": false,
+  "first_reason": "not a gate-suite pre-run evidence (kind 'launch-gate-token', schema 'tanitad.launch_gate.suite_prerun/1')"
+ },
+ "schema_wrong": {
+  "expected": "REJECTED",
+  "observed": "REJECTED",
+  "e2e": false,
+  "first_reason": "not a gate-suite pre-run evidence (kind 'gate-suite-prerun-evidence', schema 'tanitad.launch_gate/1')"
+ },
+ "gate_sha_changed": {
+  "expected": "REJECTED",
+  "observed": "REJECTED",
+  "e2e": false,
+  "first_reason": "gate code differs from the pre-run's: gate_sha256 32c3d4b9e98156df now vs 0000000000000000"
+ },
+ "gate_checks_sha_changed": {
+  "expected": "REJECTED",
+  "observed": "REJECTED",
+  "e2e": false,
+  "first_reason": "gate code differs from the pre-run's: gate_checks_sha256 5659211c05750b75 now vs 0000000000000000"
+ },
+ "gate_token_sha_changed": {
+  "expected": "REJECTED",
+  "observed": "REJECTED",
+  "e2e": false,
+  "first_reason": "gate code differs from the pre-run's: gate_token_sha256 e90096efba925cd6 now vs 0000000000000000"
+ },
+ "env_sha_changed": {
+  "expected": "REJECTED",
+  "observed": "REJECTED",
+  "e2e": false,
+  "first_reason": "environment differs from the pre-run's (python / installed distributions / suite dir / env vars): now 102 dists, suite dir c:\\users\\admin\\appdata\\local\\temp\\gpre\\tanitad research lab\\architecture & inference\\research\\2026-09-20-refe-plan\\refe"
+ },
+ "tree_sha_changed_resigned": {
+  "expected": "REJECTED",
+  "observed": "REJECTED",
+  "e2e": false,
+  "first_reason": "code tree differs from the pre-run's (c9f4be783d8d280b now vs 0000000000000000)"
+ },
+ "suite_sha_changed_resigned": {
+  "expected": "REJECTED",
+  "observed": "REJECTED",
+  "e2e": false,
+  "first_reason": "suite entries differ from the pre-run's (8635013c0e30f5fe now vs 0000000000000000)"
+ },
+ "arm_recorded": {
+  "expected": "REJECTED",
+  "observed": "REJECTED",
+  "e2e": false,
+  "first_reason": "a regression arm is involved (now None, evidence 'suite_failing_test'): an arm run is never short-cut"
+ },
+ "valid": {
+  "expected": "ACCEPTED",
+  "observed": "ACCEPTED",
+  "e2e": false,
+  "first_reason": null
+ },
+ "valid_same_commit": {
+  "expected": "ACCEPTED",
+  "observed": "ACCEPTED",
+  "e2e": false,
+  "first_reason": null
+ },
+ "commit_changed": {
+  "expected": "REJECTED",
+  "observed": "REJECTED",
+  "e2e": false,
+  "first_reason": "evidence commit cccccccccccc != launch commit dddddddddddd"
+ },
+ "commit_none_vs_set": {
+  "expected": "REJECTED",
+  "observed": "REJECTED",
+  "e2e": false,
+  "first_reason": "evidence commit None != launch commit cccccccccccc"
+ },
+ "tree_edited_file": {
+  "expected": "REJECTED",
+  "observed": "REJECTED",
+  "e2e": false,
+  "first_reason": "code tree differs from the pre-run's (88146f1c4e029c66 now vs c9f4be783d8d280b)"
+ },
+ "tree_added_file": {
+  "expected": "REJECTED",
+  "observed": "REJECTED",
+  "e2e": false,
+  "first_reason": "code tree differs from the pre-run's (25ddb9f69838a789 now vs c9f4be783d8d280b)"
+ },
+ "tree_removed_file": {
+  "expected": "REJECTED",
+  "observed": "REJECTED",
+  "e2e": false,
+  "first_reason": "code tree differs from the pre-run's (5e9cbae885f12777 now vs c9f4be783d8d280b)"
+ },
+ "profile_renamed_same_suite": {
+  "expected": "REJECTED",
+  "observed": "REJECTED",
+  "e2e": false,
+  "first_reason": "evidence profile 'refe_synth' != launch profile 'refe_synth_other'"
+ },
+ "profile_other_real_profile": {
+  "expected": "REJECTED",
+  "observed": "REJECTED",
+  "e2e": false,
+  "first_reason": "evidence profile 'refe_synth' != launch profile 'refe_p2rep'"
+ },
+ "suite_args_edited": {
+  "expected": "REJECTED",
+  "observed": "REJECTED",
+  "e2e": false,
+  "first_reason": "suite entries differ from the pre-run's (4f484c111b72c8e8 now vs 8635013c0e30f5fe)"
+ },
+ "suite_token_edited": {
+  "expected": "REJECTED",
+  "observed": "REJECTED",
+  "e2e": false,
+  "first_reason": "suite entries differ from the pre-run's (3ef6886c608f9005 now vs 8635013c0e30f5fe)"
+ },
+ "suite_entry_dropped": {
+  "expected": "REJECTED",
+  "observed": "REJECTED",
+  "e2e": false,
+  "first_reason": "suite entries differ from the pre-run's (05d4e4d6a0999c1b now vs 8635013c0e30f5fe)"
+ },
+ "suite_entry_added": {
+  "expected": "REJECTED",
+  "observed": "REJECTED",
+  "e2e": false,
+  "first_reason": "suite entries differ from the pre-run's (e0ec224b06c641d2 now vs 8635013c0e30f5fe)"
+ },
+ "suite_entries_reordered": {
+  "expected": "REJECTED",
+  "observed": "REJECTED",
+  "e2e": false,
+  "first_reason": "suite entries differ from the pre-run's (a22f7e27d3295fb8 now vs 8635013c0e30f5fe)"
+ },
+ "tampered_one_byte": {
+  "expected": "REJECTED",
+  "observed": "REJECTED",
+  "e2e": false,
+  "first_reason": "HMAC does not verify -- edited, or signed with another key (evidence key_id 0bd08fed787ab9bd, this host's 0bd08fed787ab9bd)"
+ },
+ "key_other": {
+  "expected": "REJECTED",
+  "observed": "REJECTED",
+  "e2e": false,
+  "first_reason": "HMAC does not verify -- edited, or signed with another key (evidence key_id 8064c07560fe1b22, this host's 0bd08fed787ab9bd)"
+ },
+ "hmac_removed": {
+  "expected": "REJECTED",
+  "observed": "REJECTED",
+  "e2e": false,
+  "first_reason": "HMAC does not verify -- edited, or signed with another key (evidence key_id 0bd08fed787ab9bd, this host's 0bd08fed787ab9bd)"
+ },
+ "hmac_garbage": {
+  "expected": "REJECTED",
+  "observed": "REJECTED",
+  "e2e": false,
+  "first_reason": "HMAC does not verify -- edited, or signed with another key (evidence key_id 0bd08fed787ab9bd, this host's 0bd08fed787ab9bd)"
+ },
+ "no_key": {
+  "expected": "REJECTED",
+  "observed": "REJECTED",
+  "e2e": false,
+  "first_reason": "cannot judge the suite evidence: TypeError: key: expected bytes or bytearray, but got 'NoneType'"
+ },
+ "token_as_evidence": {
+  "expected": "REJECTED",
+  "observed": "REJECTED",
+  "e2e": false,
+  "first_reason": "not a gate-suite pre-run evidence (kind 'launch-gate-token', schema 'tanitad.launch_gate/1')"
+ },
+ "regression_arm_active": {
+  "expected": "REJECTED",
+  "observed": "REJECTED",
+  "e2e": false,
+  "first_reason": "a regression arm is involved (now 'suite_failing_test', evidence 'None'): an arm run is never short-cut"
+ },
+ "env_var_set_after_prerun": {
+  "expected": "REJECTED",
+  "observed": "REJECTED",
+  "e2e": false,
+  "first_reason": "environment differs from the pre-run's (python / installed distributions / suite dir / env vars): now 102 dists, suite dir c:\\users\\admin\\appdata\\local\\temp\\gpre\\tanitad research lab\\architecture & inference\\research\\2026-09-20-refe-plan\\refe"
+ },
+ "env_var_set_at_prerun_only": {
+  "expected": "REJECTED",
+  "observed": "REJECTED",
+  "e2e": false,
+  "first_reason": "environment differs from the pre-run's (python / installed distributions / suite dir / env vars): now 102 dists, suite dir c:\\users\\admin\\appdata\\local\\temp\\gpre\\tanitad research lab\\architecture & inference\\research\\2026-09-20-refe-plan\\refe"
+ },
+ "env_var_unbound_is_ignored": {
+  "expected": "ACCEPTED",
+  "observed": "ACCEPTED",
+  "e2e": false,
+  "first_reason": null
+ },
+ "real_prerun_FAIL": {
+  "expected": "REJECTED",
+  "observed": "REJECTED",
+  "e2e": false,
+  "first_reason": "evidence verdict is 'FAIL', not PASS"
+ },
+ "real_prerun_skip": {
+  "expected": "REJECTED",
+  "observed": "REJECTED",
+  "e2e": false,
+  "first_reason": "evidence verdict is 'FAIL', not PASS"
+ },
+ "real_prerun_pass_under_arm_env": {
+  "expected": "REJECTED",
+  "observed": "REJECTED",
+  "e2e": false,
+  "first_reason": "a regression arm is involved (now None, evidence 'suite_failing_test'): an arm run is never short-cut"
+ },
+ "real_prerun_tree_moved_during": {
+  "expected": "REJECTED",
+  "observed": "REJECTED",
+  "e2e": false,
+  "first_reason": "evidence verdict is 'FAIL', not PASS"
+ },
+ "evidence_missing": {
+  "expected": "REJECTED",
+  "observed": "REJECTED",
+  "e2e": false,
+  "first_reason": "suite evidence unreadable: FileNotFoundError: [Errno 2] No such file or directory: 'C:\\\\Users\\\\Admin\\\\AppData\\\\Local\\\\Temp\\\\tmpf61xhqkl\\\\w\\\\no_such_file.json'"
+ },
+ "evidence_empty": {
+  "expected": "REJECTED",
+  "observed": "REJECTED",
+  "e2e": false,
+  "first_reason": "suite evidence unreadable: JSONDecodeError: Expecting value: line 1 column 1 (char 0)"
+ },
+ "evidence_not_json": {
+  "expected": "REJECTED",
+  "observed": "REJECTED",
+  "e2e": false,
+  "first_reason": "suite evidence unreadable: JSONDecodeError: Expecting value: line 1 column 1 (char 0)"
+ },
+ "evidence_json_list": {
+  "expected": "REJECTED",
+  "observed": "REJECTED",
+  "e2e": false,
+  "first_reason": "suite evidence is not a JSON object"
+ },
+ "evidence_truncated": {
+  "expected": "REJECTED",
+  "observed": "REJECTED",
+  "e2e": false,
+  "first_reason": "suite evidence unreadable: JSONDecodeError: Unterminated string starting at: line 19 column 16 (char 939)"
+ },
+ "e2e_main_accepted": {
+  "expected": "ACCEPTED",
+  "observed": "ACCEPTED",
+  "e2e": true,
+  "first_reason": null
+ },
+ "e2e_scorer_accepted": {
+  "expected": "ACCEPTED",
+  "observed": "ACCEPTED",
+  "e2e": true,
+  "first_reason": null
+ },
+ "e2e_ship_manifest_commit_accepted": {
+  "expected": "ACCEPTED",
+  "observed": "ACCEPTED",
+  "e2e": true,
+  "first_reason": null
+ },
+ "e2e_main_rejected_falls_back_live": {
+  "expected": "REJECTED",
+  "observed": "REJECTED",
+  "e2e": true,
+  "first_reason": null
+ },
+ "e2e_scorer_rejected_falls_back_live": {
+  "expected": "REJECTED",
+  "observed": "REJECTED",
+  "e2e": true,
+  "first_reason": null
+ },
+ "e2e_no_flag_is_todays_live_run": {
+  "expected": "REJECTED",
+  "observed": "REJECTED",
+  "e2e": true,
+  "first_reason": null
+ }
+}

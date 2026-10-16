@@ -17,6 +17,7 @@ token is a measured fact about the bytes, not a label.
 """
 from __future__ import annotations
 
+import calendar
 import concurrent.futures
 import hashlib
 import hmac
@@ -25,6 +26,7 @@ import os
 import re
 import secrets
 import subprocess
+import sys
 import time
 from pathlib import Path
 from typing import Any, Iterable
@@ -428,4 +430,162 @@ def verify_token(token_path, argv: list, pkg, *, key: bytes, profile: str | None
     info["data_differs"] = d_bad
     if d_bad:
         reasons.append(f"data differs from the gated data on {d_bad[:8]}")
+    return not reasons, reasons, info
+
+
+# ------------------------------------------------------------------------------------------ G-SUITE pre-run evidence
+# G-SUITE is 22 CPU-only minutes (MEASURED 2026-10-15, P2-s1's launch: GPU free 15:33Z -> TRAIN_START 16:13Z, G-SUITE alone 22 min) that depend only on the shipped tree and the environment, so they
+# can run BEFORE the GPU frees.  `launch_gate.py suite-prerun` runs exactly `check_suite(profile)` and writes the result as SIGNED evidence; `launch_gate.py run --suite-evidence <file>` ACCEPTS it in
+# place of the live run only if EVERY binding below re-measures equal NOW (`verify_suite_evidence`).  Anything else -> the suite RUNS LIVE, exactly as without the flag, and the token records why.
+# A bad evidence file never makes the gate weaker; it only costs time.  The evidence is NOT a token: its schema and kind (both inside the signed body) differ, verify_token refuses it and
+# verify_suite_evidence refuses a token.  Wiring: raw/2026-10-16-gate-suite-prerun/WIRING.md; the regression arms and the source-mutation matrix: refe/test_gate_suite_prerun.py.
+SUITE_EVIDENCE_SCHEMA = "tanitad.launch_gate.suite_prerun/1"
+SUITE_EVIDENCE_KIND = "gate-suite-prerun-evidence"
+SUITE_EVIDENCE_MAX_AGE_S = 12 * 3600                 # accepted at <= 12 h, refused beyond
+SUITE_EVIDENCE_FUTURE_S = 120                        # an evidence dated more than this far in the FUTURE is refused (clock skew or forgery)
+# Environment variables the shipped code READS and that can change a test's outcome (MEASURED 2026-10-16: test_s1c.py failed on the pod on a path AND needed AUX_NAVTEST).  A matching name is bound by a
+# short hash of its VALUE (never the value).  Secrets are never read; thread-count and key-file variables are performance / location only and are not bound.
+SUITE_ENV_PREFIXES = ("REFE_", "AUX_", "NUPLAN_", "P2REP_", "P6CPU_", "S1C_", "DZ_", "TANITAD_")
+SUITE_ENV_NAMES = ("PYTHONPATH", "PYTHONHASHSEED", "PKG")
+SUITE_ENV_IGNORE = frozenset({"TANITAD_GATE_ARM", "TANITAD_GATE_KEY_FILE", "TANITAD_GATE_FP_THREADS", "REFE_GATE_NESTED"})
+_SECRET_MARKS = ("TOKEN", "KEY", "SECRET", "PASSWORD", "PASSWD", "CREDENTIAL")
+
+
+def parse_utc(s) -> float | None:
+    """Seconds since the epoch of `YYYY-MM-DDTHH:MM:SSZ` (what `utc_now` writes), or None when it is anything else."""
+    try:
+        return float(calendar.timegm(time.strptime(str(s), "%Y-%m-%dT%H:%M:%SZ")))
+    except (ValueError, TypeError, OverflowError):
+        return None
+
+
+def suite_entries_canonical(suite) -> list:
+    """The suite entries as the gate runs them: (script, token, args) -- and `raw` for a raw-argv entry -- in order.  Order is meaning."""
+    return [{"script": e.get("script"), "token": e.get("token"), "args": [str(x) for x in e.get("args", ())],
+             "raw": [str(x) for x in e["raw"]] if "raw" in e else None} for e in suite]
+
+
+def suite_entries_sha256(suite) -> str:
+    return sha256_bytes(canonical_json(suite_entries_canonical(suite)))
+
+
+def gate_code_shas() -> dict:
+    """sha256 of the gate's own code.  `gate_sha256` is launch_gate.py -- the SAME notion `mint` binds (`gate_self_sha`); gate_checks.py (it holds `check_suite`) and this file are bound too."""
+    here = Path(__file__).resolve().parent
+    return {"gate_sha256": sha256_file(here / "launch_gate.py"), "gate_checks_sha256": sha256_file(here / "gate_checks.py"), "gate_token_sha256": sha256_file(here / "gate_token.py")}
+
+
+def suite_env(suite_dir) -> dict:
+    """What the suite runs IN: the interpreter, the installed distributions (name==version; a `uv pip install` during the wait would change them), the directory the scripts run from (MEASURED 2026-10-16:
+    a repo-relative path that indexed fine at a deep dev-box path killed test_s1c on the pod's shallow one), and the value hashes of the environment variables the code reads (SUITE_ENV_*)."""
+    import importlib.metadata as md
+
+    def _dist(d):
+        try:
+            return f"{str(d.metadata['Name']).lower().replace('_', '-')}=={d.version}" if d.metadata["Name"] else None
+        except Exception:                                                   # noqa: BLE001 -- a broken dist-info is skipped identically by the pre-run and by the check
+            return None
+    dists = sorted({x for x in map(_dist, md.distributions()) if x})
+    names = sorted(n for n in os.environ if n not in SUITE_ENV_IGNORE and (n in SUITE_ENV_NAMES or n.startswith(SUITE_ENV_PREFIXES)) and not any(m in n.upper() for m in _SECRET_MARKS))
+    return {"python": sys.version, "executable": os.path.normcase(os.path.abspath(sys.executable)), "dists_sha256": sha256_bytes(canonical_json(dists)), "n_dists": len(dists),
+            "suite_dir": os.path.normcase(os.path.abspath(str(suite_dir))), "vars": {n: sha256_bytes(os.environ[n].encode("utf-8", "replace"))[:16] for n in names}}
+
+
+def suite_evidence_binding(*, profile_name: str, commit: str | None, pkg, suite, suite_dir) -> tuple:
+    """(binding, env): every fact an evidence is held to, MEASURED NOW.  `suite-prerun` takes it before and after the suite; `verify_suite_evidence` takes it when the evidence is offered."""
+    env = suite_env(suite_dir)
+    return {"profile": profile_name, "commit": commit, "tree_sha256": tree_digest(tree_manifest(pkg)), "suite_sha256": suite_entries_sha256(suite), **gate_code_shas(),
+            "env_sha256": sha256_bytes(canonical_json(env))}, env
+
+
+def make_suite_evidence(*, binding: dict, env: dict, suite_result: dict, key: bytes, arm: str | None = None, extra_reasons: Iterable[str] = ()) -> dict:
+    """The SIGNED evidence of one `check_suite` run (`suite_result` is its evidence dict, whole: per-script rc / token / skips / seconds).  `binding` / `env` are what was measured BEFORE the suite ran.
+    The verdict is PASS only if the suite passed, no regression arm was active and nothing in `extra_reasons` (e.g. the tree changed while the suite ran)."""
+    reasons = list(extra_reasons) + ([f"regression arm {arm} active"] if arm else [])
+    verdict = "PASS" if (suite_result.get("status") == "PASS" and not reasons) else "FAIL"
+    ev = {"schema": SUITE_EVIDENCE_SCHEMA, "kind": SUITE_EVIDENCE_KIND, "verdict": verdict, "reasons": reasons, "binding": binding, "env": env, "arm": arm or None, "suite": suite_result,
+          "created_utc": utc_now(), "key_id": key_id(key)}
+    ev["hmac_sha256"] = sign(ev, key)
+    return ev
+
+
+def suite_result_refusals(res) -> list:
+    """Why a recorded `check_suite` result is not a clean pass, RE-JUDGED from its raw fields (its own `status` is a claim, the per-script rows are the evidence): every script exited 0, printed its
+    token, and not one printed a skip."""
+    if not isinstance(res, dict) or not isinstance(res.get("details"), dict) or not isinstance(res["details"].get("scripts"), list):
+        return ["the recorded suite result has no per-script rows"]
+    out = []
+    if res.get("check") != "G-SUITE":
+        out.append(f"the recorded result is for check {str(res.get('check'))[:20]!r}, not G-SUITE")
+    if res.get("status") != "PASS" or res.get("reasons"):
+        out.append(f"the recorded suite status is {str(res.get('status'))[:20]!r} with reasons {[str(x)[:80] for x in list(res.get('reasons') or [])[:2]]}")
+    for r in res["details"]["scripts"]:
+        r = r if isinstance(r, dict) else {}
+        if r.get("rc") != 0 or r.get("token_seen") is not True:
+            out.append(f"{str(r.get('script'))[-40:]}: rc {r.get('rc')}, token_seen {r.get('token_seen')}")
+        if r.get("skips"):
+            out.append(f"{str(r.get('script'))[-40:]}: skip(s) {str(r['skips'][0])[:80]!r} -- a skip is not a pass")
+    return out
+
+
+def verify_suite_evidence(path, *, profile_name: str, commit: str | None, pkg, suite, suite_dir, key: bytes, arm: str | None = None, now: float | None = None,
+                          max_age_s: float = SUITE_EVIDENCE_MAX_AGE_S) -> tuple:
+    """THE GATE'S SIDE.  Returns (ok, reasons, info); `info["evidence"]` is the PARSED evidence (the bytes that were verified -- the file is read once).  Every field the evidence binds is RE-MEASURED
+    here, now, on this host, and ALL differences are collected (not the first).  ok only if: the signature verifies; profile, commit, tree digest (recomputed), suite entries, gate code and
+    environment all equal; the age is within `max_age_s`; no regression arm is involved; and the recorded result is PASS with every script rc 0, its token seen and 0 skips.  Any False ->
+    the caller RUNS THE SUITE LIVE."""
+    reasons: list = []
+    info: dict = {"path": str(path)}
+    try:
+        raw = Path(path).read_bytes()
+        info["evidence_sha256"] = sha256_bytes(raw)
+        ev = json.loads(raw.decode("utf-8"))
+    except Exception as e:                                                  # noqa: BLE001 -- a refusal, never a pass
+        return False, [f"suite evidence unreadable: {type(e).__name__}: {str(e)[:120]}"], info
+    if not isinstance(ev, dict):
+        return False, ["suite evidence is not a JSON object"], info
+    info["evidence"] = ev
+    if ev.get("kind") != SUITE_EVIDENCE_KIND or ev.get("schema") != SUITE_EVIDENCE_SCHEMA:
+        reasons.append(f"not a gate-suite pre-run evidence (kind {str(ev.get('kind'))[:40]!r}, schema {str(ev.get('schema'))[:40]!r})")
+    if not signature_ok(ev, key):
+        reasons.append(f"HMAC does not verify -- edited, or signed with another key (evidence key_id {str(ev.get('key_id'))[:20]}, this host's {key_id(key)})")
+    b = ev.get("binding") if isinstance(ev.get("binding"), dict) else {}
+    want, env = suite_evidence_binding(profile_name=profile_name, commit=commit, pkg=pkg, suite=suite, suite_dir=suite_dir)
+    info["binding_now"] = want
+    if b.get("profile") != want["profile"]:
+        reasons.append(f"evidence profile {str(b.get('profile'))[:40]!r} != launch profile {want['profile']!r}")
+    if b.get("commit") != want["commit"]:
+        reasons.append(f"evidence commit {str(b.get('commit'))[:12]} != launch commit {str(want['commit'])[:12]}")
+    if b.get("tree_sha256") != want["tree_sha256"]:
+        reasons.append(f"code tree differs from the pre-run's ({want['tree_sha256'][:16]} now vs {str(b.get('tree_sha256'))[:16]})")
+    if b.get("suite_sha256") != want["suite_sha256"]:
+        reasons.append(f"suite entries differ from the pre-run's ({want['suite_sha256'][:16]} now vs {str(b.get('suite_sha256'))[:16]})")
+    for k in ("gate_sha256", "gate_checks_sha256", "gate_token_sha256"):
+        if b.get(k) != want[k]:
+            reasons.append(f"gate code differs from the pre-run's: {k} {want[k][:16]} now vs {str(b.get(k))[:16]}")
+    if b.get("env_sha256") != want["env_sha256"]:
+        reasons.append(f"environment differs from the pre-run's (python / installed distributions / suite dir / env vars): now {env['n_dists']} dists, suite dir {env['suite_dir']}")
+    created = parse_utc(ev.get("created_utc"))
+    t_now = time.time() if now is None else float(now)
+    info["age_s"] = None if created is None else round(t_now - created, 1)
+    if created is None:
+        reasons.append(f"created_utc {str(ev.get('created_utc'))[:30]!r} is not a UTC timestamp")
+    elif t_now - created > max_age_s:
+        reasons.append(f"evidence is {(t_now - created) / 3600:.2f} h old (limit {max_age_s / 3600:g} h)")
+    elif created - t_now > SUITE_EVIDENCE_FUTURE_S:
+        reasons.append(f"evidence is dated {created - t_now:.0f} s in the future")
+    if arm or ev.get("arm"):
+        reasons.append(f"a regression arm is involved (now {arm!r}, evidence {str(ev.get('arm'))[:30]!r}): an arm run is never short-cut")
+    if ev.get("verdict") != "PASS":
+        reasons.append(f"evidence verdict is {str(ev.get('verdict'))[:20]!r}, not PASS")
+    reasons += suite_result_refusals(ev.get("suite"))
+    rows = ((ev.get("suite") or {}).get("details") or {}).get("scripts") if isinstance(ev.get("suite"), dict) else None
+    if isinstance(rows, list):
+        suite = list(suite)
+        if len(rows) != len(suite):
+            reasons.append(f"the recorded suite ran {len(rows)} script(s), the profile lists {len(suite)}")
+        else:
+            for r, e in zip(rows, suite):
+                if not isinstance(r, dict) or r.get("script") != e.get("script", "raw") or r.get("token") != e.get("token"):
+                    reasons.append(f"a recorded script row ({str((r or {}).get('script') if isinstance(r, dict) else r)[-40:]}) is not the profile's entry {str(e.get('script', 'raw'))[-40:]}")
     return not reasons, reasons, info

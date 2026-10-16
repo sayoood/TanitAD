@@ -1,0 +1,148 @@
+{
+ "binding": {
+  "argv": [
+   "--backbone",
+   "vitl16",
+   "--targets",
+   "/workspace/data/refe_navtrain/train_grow",
+   "--scorer-targets",
+   "/workspace/data/refe_navtrain/train_grow",
+   "--images",
+   "/workspace/data/navtrain_pixels",
+   "--calib",
+   "/workspace/data/refe_navtrain/train_grow/calib_table.json",
+   "--init-from",
+   "/workspace/data/refe_runs/vitl16_navtrain10_grow_tau0.3/model_final.pt",
+   "--scorer-mode",
+   "onpolicy",
+   "--onpolicy-targets",
+   "/workspace/data/refe_navtrain/onpolicy/sets",
+   "--pdm-labels",
+   "/workspace/data/refe_sft2/train_pdm",
+   "--pdm-only",
+   "--scorer-sees-trunk",
+   "--epochs",
+   "3",
+   "--epoch-unit",
+   "scenes",
+   "--batch",
+   "4",
+   "--accum",
+   "64",
+   "--lr",
+   "5e-5",
+   "--amp",
+   "bf16",
+   "--tf32",
+   "--compile",
+   "--workers",
+   "2",
+   "--log-every",
+   "1",
+   "--ckpt-every-min",
+   "20",
+   "--seed",
+   "1",
+   "--out",
+   "/workspace/data/refe_runs/p2_joint_pdm_s1",
+   "--resume"
+  ],
+  "argv_sha256": "d7474190962564592f10024f74790a0eef170c42427ed875fb5815391ebfc8f6",
+  "commit": "22b406875ae8d0315d254be3499ca19fca5c40db",
+  "data": {
+   "--calib": {
+    "kind": "missing",
+    "path": "/workspace/data/refe_navtrain/train_grow/calib_table.json"
+   },
+   "--images": {
+    "kind": "missing",
+    "path": "/workspace/data/navtrain_pixels"
+   },
+   "--init-from": {
+    "kind": "missing",
+    "path": "/workspace/data/refe_runs/vitl16_navtrain10_grow_tau0.3/model_final.pt"
+   },
+   "--onpolicy-targets": {
+    "kind": "missing",
+    "path": "/workspace/data/refe_navtrain/onpolicy/sets"
+   },
+   "--pdm-labels": {
+    "kind": "missing",
+    "path": "/workspace/data/refe_sft2/train_pdm"
+   },
+   "--scorer-targets": {
+    "kind": "missing",
+    "path": "/workspace/data/refe_navtrain/train_grow"
+   },
+   "--targets": {
+    "kind": "missing",
+    "path": "/workspace/data/refe_navtrain/train_grow"
+   }
+  },
+  "data_sha256": "5ddf533d4b636e97c5ffd97c89e4534fdade4402e7c0ba3e6ef32e994b6e37d9",
+  "gate_inputs": {},
+  "profile": "refe_p2rep",
+  "trainer": "refe/train.py",
+  "tree_sha256": "d86c4bafe3f4d6bf16bda743fc8a6c2b3ecb81a07b4aad197aa9b5621bd68b0f"
+ },
+ "checks": {
+  "G-CKPT": {
+   "status": "MISSING"
+  },
+  "G-CLOCK": {
+   "status": "MISSING"
+  },
+  "G-DVB": {
+   "status": "MISSING"
+  },
+  "G-EVAL": {
+   "status": "MISSING"
+  },
+  "G-HYG": {
+   "status": "MISSING"
+  },
+  "G-LIVE": {
+   "status": "MISSING"
+  },
+  "G-P2GATE": {
+   "status": "MISSING"
+  },
+  "G-SUITE": {
+   "evidence_sha256": "54ca1c69d0c148d416a466464529a9a1e064bb5f79307e1624d4ab7799e736ce",
+   "finished_utc": "2026-10-16T08:19:44Z",
+   "reasons": [],
+   "status": "PASS",
+   "suite_source": {
+    "age_s": 3.1,
+    "evidence_created_utc": "2026-10-16T08:19:41Z",
+    "evidence_sha256": "a6f808d4211de6a8e83b370f08b38c9539d9ad239bd1d3546df7756d51b9c52f",
+    "path": "accepted",
+    "verify_seconds": 0.4
+   }
+  }
+ },
+ "created_utc": "2026-10-16T08:19:44Z",
+ "gate_sha256": "32c3d4b9e98156df2bb9abf0f0d631660e1dde369e2676aba57a8c44952dfff5",
+ "hmac_sha256": "882b8c6861feeabd39d92c288a62e96b69b93d39e958a668e07ee95e57dff806",
+ "key_id": "f2f3a27a5d3a44f6",
+ "kind": "launch-gate-token",
+ "reasons": [
+  "data input --calib (/workspace/data/refe_navtrain/train_grow/calib_table.json) is missing on this host",
+  "data input --images (/workspace/data/navtrain_pixels) is missing on this host",
+  "data input --init-from (/workspace/data/refe_runs/vitl16_navtrain10_grow_tau0.3/model_final.pt) is missing on this host",
+  "data input --onpolicy-targets (/workspace/data/refe_navtrain/onpolicy/sets) is missing on this host",
+  "data input --pdm-labels (/workspace/data/refe_sft2/train_pdm) is missing on this host",
+  "data input --scorer-targets (/workspace/data/refe_navtrain/train_grow) is missing on this host",
+  "data input --targets (/workspace/data/refe_navtrain/train_grow) is missing on this host",
+  "the pod's code tree is not the shipped tree: {'missing': [], 'extra': ['refe/test_gate_suite_prerun.py'], 'changed': ['refe/gate_token.py', 'refe/launch_gate.py']}",
+  "G-HYG: no evidence file",
+  "G-DVB: no evidence file",
+  "G-LIVE: no evidence file",
+  "G-EVAL: no evidence file",
+  "G-CKPT: no evidence file",
+  "G-P2GATE: no evidence file",
+  "checks not PASS: ['G-HYG', 'G-DVB', 'G-LIVE', 'G-EVAL', 'G-CKPT', 'G-P2GATE', 'G-CLOCK']"
+ ],
+ "schema": "tanitad.launch_gate/1",
+ "verdict": "FAIL"
+}

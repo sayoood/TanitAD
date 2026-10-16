@@ -1,0 +1,154 @@
+===== tests_before_after =====
+test_launch_gate.py --static --no-banked standalone, BEFORE: 645
+
+| script (as check_suite runs it: cwd refe/, REFE_GATE_NESTED=1) | before: rc / checks / s | after: rc / checks / s | verdict |
+|---|---|---|---|
+| test_rl_reward.py | rc 0 / 31 / 0 s | rc 0 / 31 / 0 s | same |
+| test_p2r_chain.py | rc 0 / 139 / 5 s | rc 0 / 139 / 10 s | same |
+| test_launch_gate.py | rc 0 / 645 / 44 s | rc 0 / 645 / 69 s | same |
+| test_rl_epo.py | rc 0 / 42 / 108 s | rc 0 / 42 / 131 s | same |
+| test_p2rep_chain.py | rc 0 / 353 / 170 s | rc 0 / 353 / 203 s | same |
+| test_rl_s1b.py | rc 1 / None / 35 s | rc 1 / None / 51 s | same (RED before AND after: pre-existing) |
+| test_rl_r0c.py | rc 0 / 26 / 204 s | rc 0 / 26 / 268 s | same |
+| test_s1c.py | rc 0 / 225 / 286 s | rc 0 / 225 / 319 s | same |
+| test_aux_s1_wiring.py | rc 0 / 20 / 317 s | rc 0 / 20 / 380 s | same |
+| test_aux_drivable_head.py | rc 0 / 68 / 609 s | rc 0 / 68 / 601 s | same |
+| test_gate_gpu_probes.py | rc 0 / 12 / 5 s | rc 0 / 12 / 3 s | same |
+| test_field_loss.py | rc 0 / 42 / 15 s | rc 0 / 42 / 13 s | same |
+| test_p6_levers.py | rc 0 / 123 / 186 s | rc 0 / 123 / 144 s | same |
+| test_p6_chain.py | rc 0 / 341 / 371 s | rc 0 / 341 / 343 s | same |
+
+===== regression_arms =====
+| # | arm | expected | observed | the gate's first reason (verbatim, cut at 130 chars) |
+|---|---|---|---|---|
+| 1 | resigned_unchanged | ACCEPTED | ACCEPTED | (accepted) |
+| 2 | age_11h59 | ACCEPTED | ACCEPTED | (accepted) |
+| 3 | stale_13h | REJECTED | REJECTED | evidence is 13.00 h old (limit 12 h) |
+| 4 | stale_12h_plus | REJECTED | REJECTED | evidence is 12.03 h old (limit 12 h) |
+| 5 | future_dated | REJECTED | REJECTED | evidence is dated 3600 s in the future |
+| 6 | created_unparseable | REJECTED | REJECTED | created_utc 'yesterday' is not a UTC timestamp |
+| 7 | verdict_FAIL_only | REJECTED | REJECTED | evidence verdict is 'FAIL', not PASS |
+| 8 | status_FAIL_only | REJECTED | REJECTED | the recorded suite status is 'FAIL' with reasons [] |
+| 9 | reasons_nonempty_only | REJECTED | REJECTED | the recorded suite status is 'PASS' with reasons ['x'] |
+| 10 | script_rc_1_only | REJECTED | REJECTED | ppData\Local\Temp\tmpf61xhqkl\w\probe.py: rc 1, token_seen True |
+| 11 | token_not_seen_only | REJECTED | REJECTED | ppData\Local\Temp\tmpf61xhqkl\w\probe.py: rc 0, token_seen False |
+| 12 | skip_in_row_only | REJECTED | REJECTED | ppData\Local\Temp\tmpf61xhqkl\w\probe.py: skip(s) 'ZZTEST_SKIP x' -- a skip is not a pass |
+| 13 | row_count_short | REJECTED | REJECTED | the recorded suite ran 1 script(s), the profile lists 2 |
+| 14 | row_script_renamed | REJECTED | REJECTED | a recorded script row (other.py) is not the profile's entry ppData\Local\Temp\tmpf61xhqkl\w\probe.py |
+| 15 | check_name_wrong | REJECTED | REJECTED | the recorded result is for check 'G-LIVE', not G-SUITE |
+| 16 | kind_is_token | REJECTED | REJECTED | not a gate-suite pre-run evidence (kind 'launch-gate-token', schema 'tanitad.launch_gate.suite_prerun/1') |
+| 17 | schema_wrong | REJECTED | REJECTED | not a gate-suite pre-run evidence (kind 'gate-suite-prerun-evidence', schema 'tanitad.launch_gate/1') |
+| 18 | gate_sha_changed | REJECTED | REJECTED | gate code differs from the pre-run's: gate_sha256 32c3d4b9e98156df now vs 0000000000000000 |
+| 19 | gate_checks_sha_changed | REJECTED | REJECTED | gate code differs from the pre-run's: gate_checks_sha256 5659211c05750b75 now vs 0000000000000000 |
+| 20 | gate_token_sha_changed | REJECTED | REJECTED | gate code differs from the pre-run's: gate_token_sha256 e90096efba925cd6 now vs 0000000000000000 |
+| 21 | env_sha_changed | REJECTED | REJECTED | environment differs from the pre-run's (python / installed distributions / suite dir / env vars): now 102 dists, suite dir c:\user |
+| 22 | tree_sha_changed_resigned | REJECTED | REJECTED | code tree differs from the pre-run's (c9f4be783d8d280b now vs 0000000000000000) |
+| 23 | suite_sha_changed_resigned | REJECTED | REJECTED | suite entries differ from the pre-run's (8635013c0e30f5fe now vs 0000000000000000) |
+| 24 | arm_recorded | REJECTED | REJECTED | a regression arm is involved (now None, evidence 'suite_failing_test'): an arm run is never short-cut |
+| 25 | valid | ACCEPTED | ACCEPTED | (accepted) |
+| 26 | valid_same_commit | ACCEPTED | ACCEPTED | (accepted) |
+| 27 | commit_changed | REJECTED | REJECTED | evidence commit cccccccccccc != launch commit dddddddddddd |
+| 28 | commit_none_vs_set | REJECTED | REJECTED | evidence commit None != launch commit cccccccccccc |
+| 29 | tree_edited_file | REJECTED | REJECTED | code tree differs from the pre-run's (88146f1c4e029c66 now vs c9f4be783d8d280b) |
+| 30 | tree_added_file | REJECTED | REJECTED | code tree differs from the pre-run's (25ddb9f69838a789 now vs c9f4be783d8d280b) |
+| 31 | tree_removed_file | REJECTED | REJECTED | code tree differs from the pre-run's (5e9cbae885f12777 now vs c9f4be783d8d280b) |
+| 32 | profile_renamed_same_suite | REJECTED | REJECTED | evidence profile 'refe_synth' != launch profile 'refe_synth_other' |
+| 33 | profile_other_real_profile | REJECTED | REJECTED | evidence profile 'refe_synth' != launch profile 'refe_p2rep' |
+| 34 | suite_args_edited | REJECTED | REJECTED | suite entries differ from the pre-run's (4f484c111b72c8e8 now vs 8635013c0e30f5fe) |
+| 35 | suite_token_edited | REJECTED | REJECTED | suite entries differ from the pre-run's (3ef6886c608f9005 now vs 8635013c0e30f5fe) |
+| 36 | suite_entry_dropped | REJECTED | REJECTED | suite entries differ from the pre-run's (05d4e4d6a0999c1b now vs 8635013c0e30f5fe) |
+| 37 | suite_entry_added | REJECTED | REJECTED | suite entries differ from the pre-run's (e0ec224b06c641d2 now vs 8635013c0e30f5fe) |
+| 38 | suite_entries_reordered | REJECTED | REJECTED | suite entries differ from the pre-run's (a22f7e27d3295fb8 now vs 8635013c0e30f5fe) |
+| 39 | tampered_one_byte | REJECTED | REJECTED | HMAC does not verify -- edited, or signed with another key (evidence key_id 0bd08fed787ab9bd, this host's 0bd08fed787ab9bd) |
+| 40 | key_other | REJECTED | REJECTED | HMAC does not verify -- edited, or signed with another key (evidence key_id 8064c07560fe1b22, this host's 0bd08fed787ab9bd) |
+| 41 | hmac_removed | REJECTED | REJECTED | HMAC does not verify -- edited, or signed with another key (evidence key_id 0bd08fed787ab9bd, this host's 0bd08fed787ab9bd) |
+| 42 | hmac_garbage | REJECTED | REJECTED | HMAC does not verify -- edited, or signed with another key (evidence key_id 0bd08fed787ab9bd, this host's 0bd08fed787ab9bd) |
+| 43 | no_key | REJECTED | REJECTED | cannot judge the suite evidence: TypeError: key: expected bytes or bytearray, but got 'NoneType' |
+| 44 | token_as_evidence | REJECTED | REJECTED | not a gate-suite pre-run evidence (kind 'launch-gate-token', schema 'tanitad.launch_gate/1') |
+| 45 | regression_arm_active | REJECTED | REJECTED | a regression arm is involved (now 'suite_failing_test', evidence 'None'): an arm run is never short-cut |
+| 46 | env_var_set_after_prerun | REJECTED | REJECTED | environment differs from the pre-run's (python / installed distributions / suite dir / env vars): now 102 dists, suite dir c:\user |
+| 47 | env_var_set_at_prerun_only | REJECTED | REJECTED | environment differs from the pre-run's (python / installed distributions / suite dir / env vars): now 102 dists, suite dir c:\user |
+| 48 | env_var_unbound_is_ignored | ACCEPTED | ACCEPTED | (accepted) |
+| 49 | real_prerun_FAIL | REJECTED | REJECTED | evidence verdict is 'FAIL', not PASS |
+| 50 | real_prerun_skip | REJECTED | REJECTED | evidence verdict is 'FAIL', not PASS |
+| 51 | real_prerun_pass_under_arm_env | REJECTED | REJECTED | a regression arm is involved (now None, evidence 'suite_failing_test'): an arm run is never short-cut |
+| 52 | real_prerun_tree_moved_during | REJECTED | REJECTED | evidence verdict is 'FAIL', not PASS |
+| 53 | evidence_missing | REJECTED | REJECTED | suite evidence unreadable: FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\Admin\\AppData\\Local\\Temp\\tmpf61 |
+| 54 | evidence_empty | REJECTED | REJECTED | suite evidence unreadable: JSONDecodeError: Expecting value: line 1 column 1 (char 0) |
+| 55 | evidence_not_json | REJECTED | REJECTED | suite evidence unreadable: JSONDecodeError: Expecting value: line 1 column 1 (char 0) |
+| 56 | evidence_json_list | REJECTED | REJECTED | suite evidence is not a JSON object |
+| 57 | evidence_truncated | REJECTED | REJECTED | suite evidence unreadable: JSONDecodeError: Unterminated string starting at: line 19 column 16 (char 939) |
+| 58 | e2e_main_accepted [e2e] | ACCEPTED | ACCEPTED | (accepted) |
+| 59 | e2e_scorer_accepted [e2e] | ACCEPTED | ACCEPTED | (accepted) |
+| 60 | e2e_ship_manifest_commit_accepted [e2e] | ACCEPTED | ACCEPTED | (accepted) |
+| 61 | e2e_main_rejected_falls_back_live [e2e] | REJECTED | REJECTED | (end-to-end arm: see the token's suite_source) |
+| 62 | e2e_scorer_rejected_falls_back_live [e2e] | REJECTED | REJECTED | (end-to-end arm: see the token's suite_source) |
+| 63 | e2e_no_flag_is_todays_live_run [e2e] | REJECTED | REJECTED | (end-to-end arm: see the token's suite_source) |
+
+63 arms: 8 positive twins/controls (must be ACCEPTED), 55 must be REJECTED (live fallback). expected != observed: none
+
+===== mutation_matrix =====
+| # | mutation (one acceptance condition / plumbing hop neutralised in a COPY of refe/) | arms that must turn ACCEPTED (= test RED) | caught |
+|---|---|---|---|
+| 1 | accept_tree_skipped | 4 | 4/4 ['tree_added_file', 'tree_edited_file', 'tree_removed_file', 'tree_sha_changed_resigned'] |
+| 2 | accept_signature_skipped | 4 | 4/4 ['hmac_garbage', 'hmac_removed', 'key_other', 'tampered_one_byte'] |
+| 3 | accept_kind_schema_skipped | 2 | 2/2 ['kind_is_token', 'schema_wrong'] |
+| 4 | accept_profile_skipped | 1 | 1/1 ['profile_renamed_same_suite'] |
+| 5 | accept_commit_skipped | 2 | 2/2 ['commit_changed', 'commit_none_vs_set'] |
+| 6 | accept_suite_entries_skipped | 2 | 2/2 ['suite_args_edited', 'suite_sha_changed_resigned'] |
+| 7 | accept_gate_code_skipped | 3 | 3/3 ['gate_checks_sha_changed', 'gate_sha_changed', 'gate_token_sha_changed'] |
+| 8 | accept_environment_skipped | 3 | 3/3 ['env_sha_changed', 'env_var_set_after_prerun', 'env_var_set_at_prerun_only'] |
+| 9 | accept_age_skipped | 2 | 2/2 ['stale_12h_plus', 'stale_13h'] |
+| 10 | accept_future_skipped | 1 | 1/1 ['future_dated'] |
+| 11 | accept_arm_skipped | 2 | 2/2 ['arm_recorded', 'regression_arm_active'] |
+| 12 | accept_verdict_skipped | 1 | 1/1 ['verdict_FAIL_only'] |
+| 13 | accept_suite_status_skipped | 2 | 2/2 ['reasons_nonempty_only', 'status_FAIL_only'] |
+| 14 | accept_script_rc_token_skipped | 2 | 2/2 ['script_rc_1_only', 'token_not_seen_only'] |
+| 15 | accept_skips_skipped | 1 | 1/1 ['skip_in_row_only'] |
+| 16 | accept_row_count_skipped | 1 | 1/1 ['row_count_short'] |
+| 17 | accept_row_names_skipped | 1 | 1/1 ['row_script_renamed'] |
+| 18 | accept_check_name_skipped | 1 | 1/1 ['check_name_wrong'] |
+| 19 | accept_everything | 6 | 6/6 ['key_other', 'profile_renamed_same_suite', 'stale_13h', 'tampered_one_byte'] |
+| 20 | noflag_takes_the_acceptance_path | 1 | 1/1 ['e2e_no_flag_is_todays_live_run'] |
+| 21 | plumb_cmd_run_drops_the_flag | 3 | 3/3 ['e2e_main_accepted', 'e2e_scorer_accepted', 'e2e_ship_manifest_commit_accepted'] |
+| 22 | plumb_cmd_run_drops_the_key | 2 | 2/2 ['e2e_main_accepted', 'e2e_scorer_accepted'] |
+| 23 | plumb_main_branch_runs_live_suite | 1 | 1/1 ['e2e_main_accepted'] |
+| 24 | plumb_scorer_branch_runs_live_suite | 1 | 1/1 ['e2e_scorer_accepted'] |
+| 25 | plumb_token_forgets_the_path | 2 | 2/2 ['e2e_main_accepted', 'e2e_scorer_accepted'] |
+| 26 | plumb_prerun_commit_ignored | 1 | 1/1 ['e2e_ship_manifest_commit_accepted'] |
+
+26 mutations; last token of the full run: ZZTEST_PASS 144
+
+===== measure_p2rep =====
+| step (dev box, profile refe_p2rep, 24 cpus, 31.8 GiB RAM, SHARED with other jobs) | seconds | rc | other |
+|---|---|---|---|
+| suite-prerun | 237.8 | 0 | verdict PASS; peak RSS of the process tree 1.01 GiB; peak threads 39; peak processes 9; CPU 63.8 s; evidence 2058 bytes |
+| run --only G-SUITE --suite-evidence (ACCEPTED path) | 2.9 | 1 | G-SUITE PASS; path accepted; binding re-measure 0.4 s |
+| run --only G-SUITE, no flag (today's gate, LIVE) | 201.3 | 1 | G-SUITE PASS; suite_source None |
+
+whole-process seconds include python start, `import train` and the data manifest; live - accepted = 198.4 s on this box
+
+===== savings_estimate =====
+| profile (arms it gates) | suite scripts | dev-box s (BASELINE, 4-way contended) | pod G-SUITE | saved per arm (minus ~0.2 min re-measure) |
+|---|---|---|---|---|
+| refe_p2 (P2) | p2r_chain, launch_gate | 49 | 5 min ESTIMATED | 5 min ESTIMATED |
+| refe_p2rep (P2-s1) | p2r_chain, launch_gate, p2rep_chain | 219 | 22 min MEASURED | 22 min  |
+| refe_p6 (P6) | p2r_chain, launch_gate, p6_levers, p6_chain | 606 | 61 min ESTIMATED | 61 min ESTIMATED |
+| refe_field (L_field F) | p2r_chain, launch_gate, field_loss | 64 | 6 min ESTIMATED | 6 min ESTIMATED |
+| refe_field_ctrl (L_field C) | p2r_chain, launch_gate, field_loss | 64 | 6 min ESTIMATED | 6 min ESTIMATED |
+| refe_rls1 (RL-S1 C0 C1 R0 R1 R2) | rl_reward, rl_epo, launch_gate | 152 | 15 min ESTIMATED | 15 min ESTIMATED |
+| refe_rls1b (RL-S1b C1 R0b R1b) | rl_reward, rl_epo, launch_gate, rl_s1b (test_rl_s1b is RED: its 35 s is a lower bound) | 187 | 19 min ESTIMATED | 19 min ESTIMATED |
+| refe_rls1c (RL-S1c R0c) | rl_reward, rl_epo, launch_gate, rl_s1b, rl_r0c (test_rl_s1b is RED: its 35 s is a lower bound) | 391 | 39 min ESTIMATED | 39 min ESTIMATED |
+| refe_aux_s1 (aux S1: 9 arms) | rl_reward, rl_epo, aux_drivable_head, aux_s1_wiring, launch_gate | 1078 | 108 min ESTIMATED | 108 min ESTIMATED |
+| refe_aux_s1c (aux S1c: 2 arms) | rl_reward, rl_epo, aux_drivable_head, aux_s1_wiring, launch_gate, s1c | 1364 | 137 min ESTIMATED | 137 min ESTIMATED |
+
+ESTIMATED rows: pod seconds = dev-box baseline seconds x 6.03 (= 22 min / the 219 s the baseline took for refe_p2rep's three scripts); assumes one pod/dev ratio for every script; order of magnitude (+-2x). Only the refe_p2rep row is anchored to a measurement (P2-s1, 2026-10-15: GPU free 15:33Z -> TRAIN_START 16:13Z = 40 min, G-SUITE 22 min).
+
+===== files =====
+| file | bytes | sha256 |
+|---|---|---|
+| refe/launch_gate.py | 77725 | 32c3d4b9e98156df2bb9abf0f0d631660e1dde369e2676aba57a8c44952dfff5 |
+| refe/gate_token.py | 34204 | e90096efba925cd6f53c31227607a0d8d46e39fdcabda62b9481f0bd890167e1 |
+| refe/test_gate_suite_prerun.py | 35255 | 8dbb2b8340ff2cb9e279fc89c7d8527be2d6380ed005746840d2baa9773cf20f |
+
+shipped tree after all runs vs before them (248 files): UNCHANGED; digest d86c4bafe3f4d6bf
