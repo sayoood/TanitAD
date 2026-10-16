@@ -94,3 +94,21 @@ Tree PK = `C:/Users/Admin/AppData/Local/Temp/phead/TanitAD Research Lab/Architec
 | `phead_common.py`, `phead_open.py`, `phead_closed.py`, `phead_closed_cached.py`, `phead_controls.py`, `phead_checks_closed.py`, `phead_proxy_validity.py`, `phead_full_ref.py`, `phead_summarize.py`, `phead_streams.py`, `probe0_fullarm_baseline.py`, `run_*.sh` | package | the instrument; reuses `raw/2026-10-15-rls1-adam-dose/` unchanged |
 | `logs/` | package | every run log |
 | gradient banks `bank_s{0,1,2}.pt` (3.7 GB), pool pickles `phead/pool_*.pkl` | **scratchpad only** (`.../scratchpad/bank`, `.../scratchpad/phead`) | regenerable with `grad_bank.py` / `phead_common.get_pool`; the banks are from the H-ADAM package |
+
+## 9. Addendum (Master Mind, 2026-10-16 ~20:00Z): §7 item 3 RUN. The sim does NOT reproduce R0's TTC loss even at K = 250
+- **Run:** closed loop, regime T, stream 0, K = 250, snaps 50 / 100 / 250, groups FULL and LAD_2, each at lam 1 (B) and lam 0 (its own control), on the real pipeline (`closed_out/closed_s0_T_*k250T.pkl`, about 55–93 min CPU each, `logs/k250T_queue.txt`).
+  - Read by `phead_k250T_read.py`, which uses `phead_summarize.prox`'s estimator (pooled train+val, log-cluster bootstrap) → `k250T_read.json`.
+  - The middle rung (head + blocks 2–3) was not run.
+- **MEASURED, P2 TTC (policy expectation), B − control ×100, pooled [95 % CI]:**
+
+| group | K = 50 | K = 100 | K = 250 |
+|---|---|---|---|
+| FULL | −0.59 [−1.13, −0.10] | +0.12 [−0.57, +0.91] | **+0.23 [−0.50, +1.04]** |
+| LAD_2 | −0.38 [−0.79, +0.00] | −0.13 [−0.74, +0.54] | −0.03 [−0.98, +0.95] |
+
+- P1 (pick) TTC, P2 NC and P2 DAC are in the JSON. At K = 250, P2 NC is +0.10 for both groups, and P2 DAC is +0.45 (FULL) / +0.67 (LAD_2).
+- **Reading.** The validated proxy (§3 (d)) reads R0's banked states at −1.53 / −1.25 / −1.07 (u250 / u500 / u1000), and RL-val measured −1.23 / −0.63 / −1.00.
+  - The sim's FULL arm at the same update count (K = 250) reads **+0.23**, its CI clearly above the −1.5 the real states show.
+  - ⇒ **The frozen-feature sim does not carry the mechanism that costs R0 its TTC.** It can rank J-gain restrictions (§4) but cannot test a TTC remedy.
+- Any safety-head test therefore needs the real pipeline, i.e. an A40 arm. Stage 1 of that experiment was told the same day.
+- Corroboration from outside RL (`eval/RESULT_P2REP.md`, 2026-10-16): P2's supervised seed replicate shows TTC −0.49 [−0.97, −0.07] with EP +1.80. The trade is not specific to EPO.
