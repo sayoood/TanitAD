@@ -1,0 +1,183 @@
+def _fn_body(text: str, name: str) -> str:
+    m = re.search(rf"^{name}\(\) \{{\n.*?^\}}\n", text, re.S | re.M)
+    return m.group(0) if m else ""
+
+
+def _posix(p: str) -> str:
+    return str(p).replace("\\", "/")
+
+
+def _bash_args(pod_src: str, tmp: str, arm: str) -> str:
+    """the chain's OWN arm_args function (extracted verbatim, with the header assignments it needs) RUN under bash -> the argv string of `arm`"""
+    hdr = "\n".join(l for l in pod_src.split("\n") if re.match(r"^[A-Z0-9_]+=", l) and not l.startswith("export") and "$(" not in l and "FINAL_SHA256" not in l and not l.startswith("NSH"))
+    sc = os.path.join(tmp, f"aa_{arm}.sh")
+    with open(sc, "w", encoding="utf-8", newline="\n") as f:
+        f.write(hdr + "\n" + _fn_body(pod_src, "arm_args") + '\narm_args "$1"\n')
+    bash = shutil.which("bash")
+    assert bash, "bash is not on PATH (Git Bash on the dev box): the chain's argv cannot be RUN"
+    r = subprocess.run([bash, _posix(sc), arm], capture_output=True, text=True, timeout=120)
+    assert r.returncode == 0, (arm, r.stderr[-200:])
+    return r.stdout.strip()
+
+
+def suite_ch(rc_src: str, pod_src: str, tag: str) -> list:
+    import inspect
+    import gate_token as GT
+    bad: list = []
+    RC = S1B.load(rc_src, f"rc_so_{tag}", RC_PATH)
+    LGM = S1B.load(open(LG_PATH, encoding="utf-8").read(), f"lg_so_ch_{tag}", LG_PATH)
+    AJ = json.load(open(os.path.join(HERE, "..", "eval", "rls1d_arms.json"), encoding="utf-8"))
+
+    # ---------------------------------------------------------------- static: registration, profile, argv (RUN under bash), the files the pod needs
+    reg = re.search(r'^REGISTERED_ARMS="([^"]*)"', pod_src, re.M)
+    check(bad, "CH_registered_arms_are_the_older_eight_plus_R0d_R1d_R1o", lambda: reg is not None and reg.group(1).split() == ["C0", "C1", "R0", "R1", "R2", "R0b", "R1b", "R0c", "R0d", "R1d", "R1o"])
+    ap_body = _fn_body(pod_src, "arm_profile")
+    check(bad, "CH_profile_R0d_R1d_R1o_are_judged_under_refe_rls1d_and_R0c_under_refe_rls1c", lambda: "    R0d|R1d|R1o) echo refe_rls1d ;;\n" in ap_body and "    R0c) echo refe_rls1c ;;\n" in ap_body)
+    check(bad, "CH_arms_json_is_derived_from_R0_s_banked_token_and_orders_the_three_arms", lambda: AJ["order"] == ["R0d", "R1d", "R1o"] and AJ["profile"] == "refe_rls1d"
+          and AJ["derived_from"]["argv_sha256"] == R0_ARGV_SHA256 and AJ["self_check"]["equals_R0_banked_token"] is True and AJ["self_check"]["R0_argv_rebuilt_sha256"] == R0_ARGV_SHA256
+          and AJ["budget"]["total_a40_hours"] == 10.5 and AJ["budget"]["a40_arms"] == 3)
+    with tempfile.TemporaryDirectory() as tmp:
+        got = {}
+        for arm in ("R0", "R0d", "R1d", "R1o"):
+            try:
+                got[arm] = _bash_args(pod_src, tmp, arm).split()
+            except Exception as e:                                              # noqa: BLE001
+                got[arm] = None
+                bad.append(f"CH_arm_args_run_under_bash[{arm}]: {type(e).__name__}: {str(e)[:80]}")
+        with open(os.path.join(tmp, "pod.sh"), "w", encoding="utf-8", newline="\n") as f:
+            f.write(pod_src)
+        syntax_ok = subprocess.run([shutil.which("bash") or "bash", "-n", _posix(os.path.join(tmp, "pod.sh"))], capture_output=True).returncode == 0
+    check(bad, "CH_the_chain_parses_under_bash_n", lambda: syntax_ok)
+    check(bad, "CH_argv_R0_is_still_the_banked_token", lambda: got["R0"] is not None and GT.argv_sha256(got["R0"]) == R0_ARGV_SHA256)
+    for arm in ("R0d", "R1d", "R1o"):
+        check(bad, f"CH_argv_{arm}_equals_eval_rls1d_arms_json_token_for_token_and_its_sha256", lambda arm=arm: got[arm] == AJ["arms"][arm]["argv"] and GT.argv_sha256(got[arm]) == AJ["arms"][arm]["argv_sha256"])
+        check(bad, f"CH_argv_{arm}_is_the_argv_the_gate_tests_use", lambda arm=arm: got[arm] == LGM.parse_args_string(ARM_ARGS[arm]))
+        check(bad, f"CH_argv_{arm}_is_clean_under_the_real_refe_rls1d_profile", lambda arm=arm: LGM.profile_refusals({**LGM.PROFILES["refe_rls1d"], "declared_arm": arm}, got[arm]) == [])
+    check(bad, "CH_R0d_and_R1d_carry_the_five_flags_R1o_names_off_and_only_the_epo_tail_differs_from_R0", lambda: got["R0d"][-10:] == CON_ON.split() and got["R1d"][-10:] == CON_ON.split() and got["R1o"][-2:] == ["--epo-con", "off"]
+          and got["R0d"][:-10] == [t.replace("/arms/R0", "/arms/R0d") for t in got["R0"]] and got["R1o"][:-2] == [t.replace("/arms/R1d", "/arms/R1o") for t in got["R1d"][:-10]])
+    # the arm loop
+    i_generic, own = pod_src.find('if [ -z "$RD" ] ||'), 'case "$ARM" in R0d|R1d|R1o) REFDIR="$ARMDIR/scores";; esac'
+    check(bad, "CH_own_arm_A_is_the_monitor_and_replay_reference_after_the_generic_pick", lambda: i_generic > 0 and pod_src.count(own) == 1 and pod_src.find(own) > i_generic)
+    check(bad, "CH_the_seed_matched_control_is_named_the_SECOND_control_before_the_generic_pick", lambda: pod_src.count('case "$ARM" in R0d) RD=C0;; R1d|R1o) RD=C1;; esac') == 1
+          and 0 < pod_src.find('case "$ARM" in R0d) RD=C0;; R1d|R1o) RD=C1;; esac') < i_generic)
+    mon = re.search(r'rls1_checks\.py monitor .*?monitor\.log', pod_src, re.S)
+    rep = re.search(r'rls1_checks\.py replay .*?replay\.log', pod_src, re.S)
+    check(bad, "CH_M9_the_monitor_line_carries_OBS_so_R1o_s_K3_is_observe_only", lambda: mon is not None and '${OBS:-}' in mon.group(0))
+    check(bad, "CH_the_replay_line_carries_OBS_too_a_retroactive_K3_must_not_kill_R1o", lambda: rep is not None and '${OBS:-}' in rep.group(0))
+    check(bad, "CH_OBS_is_observe_only_for_R1o_alone", lambda: pod_src.count('OBS="--observe-only"') == 1 and '  OBS=""\n  if [ "$ARM" = R1o ]; then\n    OBS="--observe-only"' in pod_src)
+    gate_i = pod_src.find('safeobj-gate --dirs "$R/arms/R0d" "$R/arms/R1d"')
+    check(bad, "CH_R1o_waits_for_both_S_verdicts_before_any_directory_preflight_or_GPU_work", lambda: gate_i > 0 and pod_src.count("safeobj-gate --dirs") == 1
+          and '|| refuse "R1o runs only if R0d and R1d both read bar S = PASS' in pod_src and gate_i < pod_src.find('mkdir -p "$ARMDIR" "$LG"') and gate_i < pod_src.find("scorer_finetune.py $ARGS --preflight"))
+    check(bad, "CH_the_precheck_ships_test_rl_safeobj_the_refe_rls1d_suite_runs_it_on_the_pod", lambda: "refe/test_rl_r0c.py refe/test_rl_safeobj.py \\\n" in pod_src)
+    check(bad, "CH_a_missing_second_control_is_ANNOUNCED_not_refused", lambda: re.search(r'elif \[ "\$ARM" = R0d \] \|\| \[ "\$ARM" = R1d \] \|\| \[ "\$ARM" = R1o \]; then\n        log "ZZRLS1_SAFEOBJ_NO_SECOND_CONTROL', pod_src) is not None)
+    check(bad, "CH_a_killed_arm_still_stops_the_chain_no_exemption_for_R0d_R1d_R1o", lambda: pod_src.count('\n  [ -f "$S/arm_${ARM}_killed" ] && refuse "arm $ARM was KILLED') == 1
+          and pod_src.count('\n  [ -f "$S/arm_${ARM}_killed" ] && stage_done "egress_$ARM" && refuse') == 1 and not re.search(r'"\$ARM" != R(0d|1d|1o)', pod_src))
+
+    # ---------------------------------------------------------------- behaviour: rls1_checks.py
+    rec = lambda t, g3=True, g5=True, k4=False, k5=False: {"tag": t, "g3_ok": g3, "g5_ok": g5, "k4_breach": k4, "k5_breach": k5}          # noqa: E731
+    one = [rec("u250", g3=False)]
+    check(bad, "CH_judge_K3_kills_by_default", lambda: RC.judge("R1o", rec("u500", g3=False), one)[0] == "K3" and RC.judge("R0d", rec("u500", g5=False), one)[0] == "K3")
+    check(bad, "CH_judge_observe_only_is_off_by_default_and_never_returns_K3_when_on", lambda: inspect.signature(RC.judge).parameters["observe_only"].default is False
+          and RC.judge("R1o", rec("u500", g3=False), one, True, True)[0] is None and RC.judge("R1o", rec("u500", g5=False), one, True, True)[0] is None)
+    check(bad, "CH_judge_observe_only_keeps_K4_and_K5_exactly", lambda: RC.judge("R1o", rec("u500", k4=True), [rec("u250", k4=True)], True, True)[0] == "K4"
+          and RC.judge("R2", rec("u250", k5=True), [], True, True)[0] == "K5" and RC.judge("R1o", rec("u250", k5=True), [], True, True)[0] is None)
+
+    def run_mon(arm, events, recs, observe=False, now=None):
+        with tempfile.TemporaryDirectory() as td:
+            od = os.path.join(td, "o")
+            os.makedirs(od)
+            with open(os.path.join(od, "sft.jsonl"), "w", encoding="utf-8") as f:
+                f.write("".join(json.dumps(e) + "\n" for e in events))
+            killed, seq, clock = [], [True, False], (iter(now) if now else None)
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                rc = RC.monitor(arm, od, lambda t, files: recs[t], 99, lambda p: seq.pop(0) if len(seq) > 1 else seq[0], killed.append, sleep_fn=lambda s: None,
+                                now_fn=(lambda: next(clock)) if clock else (lambda: 0.0), start=0.0, observe_only=observe)
+            kp, cp = os.path.join(od, "KILLED.json"), os.path.join(od, "kill_checks.jsonl")
+            code = json.load(open(kp, encoding="utf-8"))["code"] if os.path.exists(kp) else None
+            rows = [json.loads(x) for x in open(cp, encoding="utf-8").read().splitlines()] if os.path.exists(cp) else []
+            return rc, killed, code, buf.getvalue(), rows
+    dump = lambda t: {"event": "score_dump", "tag": t, "files": {"B": "b", "A": "a", "base": "z"}}          # noqa: E731
+    ev = [dump("step0"), dump("update250"), dump("update500"), dump("update750")]
+    ok0 = {"step0": rec("step0")}
+    k3 = {**ok0, "update250": rec("update250", g3=False), "update500": rec("update500", g3=False), "update750": rec("update750", g3=False)}
+    k4 = {**ok0, "update250": rec("update250", k4=True), "update500": rec("update500", k4=True), "update750": rec("update750")}
+    check(bad, "CH_monitor_R0d_two_consecutive_g3_g5_breaches_are_a_K3_KILL_as_ever", lambda: (lambda r: r[0] == 2 and r[1] == [99] and r[2] == "K3" and "ZZRLS1_K3_OBSERVED" not in r[3])(run_mon("R0d", ev, k3)))
+    check(bad, "CH_monitor_R1o_without_the_flag_would_be_killed_which_is_what_M9_guards", lambda: run_mon("R1o", ev, k3)[2] == "K3")
+    check(bad, "CH_monitor_R1o_observe_only_NEVER_kills_on_K3_logs_it_and_keeps_every_check_row", lambda: (lambda r: r[0] == 0 and r[1] == [] and r[2] is None and r[3].count("ZZRLS1_K3_OBSERVED R1o update500") == 1
+                                                                                                           and r[3].count("ZZRLS1_K3_OBSERVED R1o update750") == 1 and len(r[4]) == 3 and all(x["kill"] is None for x in r[4]))(run_mon("R1o", ev, k3, observe=True)))
+    check(bad, "CH_monitor_R1o_observe_only_still_dies_on_K4_two_consecutive_RL_val_PDMS_breaches", lambda: (lambda r: r[0] == 2 and r[2] == "K4")(run_mon("R1o", ev, k4, observe=True)))
+    check(bad, "CH_monitor_R1o_observe_only_still_dies_on_K2_a_non_finite_loss", lambda: (lambda r: r[0] == 2 and r[2] == "K2")(
+        run_mon("R1o", [{"event": "train", "update": 25, "bceA": 0.3, "lossB": float("nan")}], {}, observe=True)))
+    check(bad, "CH_monitor_R1o_observe_only_still_dies_on_K6_hours", lambda: (lambda r: r[0] == 2 and r[2] == "K6")(run_mon("R1o", [dump("step0")], ok0, observe=True, now=[7 * 3600.0] * 4)))
+    with tempfile.TemporaryDirectory() as td:
+        with open(os.path.join(td, "sft.jsonl"), "w", encoding="utf-8") as f:
+            f.write("".join(json.dumps(e) + "\n" for e in ev))
+        check(bad, "CH_replay_R1o_observe_only_does_not_retro_kill_on_K3_and_marks_the_records", lambda: (lambda r: r[0] is None and r[2] and all(x.get("observe_only") is True for x in r[2]))(RC.replay("R1o", td, lambda t, f: k3[t], observe_only=True)))
+        check(bad, "CH_replay_without_the_flag_finds_the_K3", lambda: RC.replay("R1o", td, lambda t, f: k3[t])[0] == "K3" and RC.replay("R0d", td, lambda t, f: k3[t], observe_only=False)[0] == "K3")
+        check(bad, "CH_replay_R1o_observe_only_still_finds_a_K4", lambda: RC.replay("R1o", td, lambda t, f: k4[t], observe_only=True)[0] == "K4")
+
+    def cli(*a):
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc = RC.main(list(a))
+        return rc, buf.getvalue()
+    def cargs(cmd, arm):
+        return [cmd, "--arm", arm, "--out", "o", "--refdir", "r", "--pdm", "p", "--terms", "t", "--sets", "s", "--tsv", "v", *(["--pid", "1"] if cmd == "monitor" else []), "--observe-only"]
+    check(bad, "CH_cli_observe_only_is_refused_on_every_arm_but_R1o_monitor_and_replay", lambda: all(
+        (lambda r: r[0] == 1 and r[1].startswith("ZZRLS1_OBSERVE_ONLY_REFUSED"))(cli(*cargs(c, a))) for a in ("R0", "R0d", "R1d", "R0c", "C0") for c in ("monitor", "replay")))
+    # ---- the S gate
+    with tempfile.TemporaryDirectory() as td:
+        def sdir(name, content):
+            d = os.path.join(td, name)
+            os.makedirs(d, exist_ok=True)
+            if content is not None:
+                with open(os.path.join(d, "safeobj_S.json"), "w", encoding="utf-8") as f:
+                    f.write(content)
+            return d
+        d_pass, d_pass2, d_fail, d_none, d_junk, d_weak = (sdir("p", '{"S": "PASS"}'), sdir("p2", '{"S": "PASS", "checks": {}}'), sdir("f", '{"S": "FAIL"}'), sdir("n", None), sdir("j", "{not json"),
+                                                          sdir("w", '{"S": "PASS "}'))
+        check(bad, "CH_safeobj_gate_passes_only_when_every_constrained_arm_reads_S_PASS", lambda: RC.safeobj_gate([d_pass, d_pass2])[0] is True)
+        check(bad, "CH_safeobj_gate_refuses_a_FAIL_a_missing_file_junk_and_an_almost_PASS", lambda: all(RC.safeobj_gate([d_pass, x])[0] is False for x in (d_fail, d_none, d_junk, d_weak))
+              and all(RC.safeobj_gate([x, d_pass])[0] is False for x in (d_fail, d_none, d_junk, d_weak)))
+        check(bad, "CH_safeobj_gate_cli_prints_the_marker_the_chain_greps_and_the_exit_code", lambda: (lambda a, b: a[0] == 0 and a[1].startswith("ZZRLS1_SAFEOBJ_S_PASS") and b[0] == 1 and b[1].startswith("ZZRLS1_SAFEOBJ_S_REFUSED")
+                                                                                                         and "safeobj_S.json" in b[1])(cli("safeobj-gate", "--dirs", d_pass, d_pass2), cli("safeobj-gate", "--dirs", d_pass, d_fail)))
+    return bad
+
+
+# the chain mutations (name, part CH, edits, env)
+CH_MUTATIONS = [
+    ("M9 R1o's K3 monitor without --observe-only", "CH", [(POD_PATH, '--pid "$TPID" ${OBS:-} > "$ARMDIR/monitor.log"', '--pid "$TPID" > "$ARMDIR/monitor.log"')], None),
+    ("CH1 the replay forgets --observe-only", "CH", [(POD_PATH, '--tsv "$VAL_TSV" ${OBS:-} > "$ARMDIR/replay.log"', '--tsv "$VAL_TSV" > "$ARMDIR/replay.log"')], None),
+    ("CH2 OBS is set for every arm", "CH", [(POD_PATH, '  OBS=""\n  if [ "$ARM" = R1o ]; then\n    OBS="--observe-only"', '  OBS="--observe-only"\n  if [ "$ARM" = R1o ]; then\n    :')], None),
+    ("CH3 R1o's S gate is not enforced", "CH", [(POD_PATH, '|| refuse "R1o runs only if R0d and R1d both read bar S = PASS: $(tail', '|| echo "R1o runs only if R0d and R1d both read bar S = PASS: $(tail')], None),
+    ("CH4 R0d is read against C0's dumps when they are there", "CH", [(POD_PATH, '  case "$ARM" in R0d|R1d|R1o) REFDIR="$ARMDIR/scores";; esac', "  :")], None),
+    ("CH5 R1o is not registered", "CH", [(POD_PATH, 'REGISTERED_ARMS="C0 C1 R0 R1 R2 R0b R1b R0c R0d R1d R1o"', 'REGISTERED_ARMS="C0 C1 R0 R1 R2 R0b R1b R0c R0d R1d"')], None),
+    ("CH6 R1o's argv names --epo-con g5", "CH", [(POD_PATH, '--epo-terms-heldout $TERMS_VA --epo-con off" ;;', '--epo-terms-heldout $TERMS_VA --epo-con g5" ;;')], None),
+    ("CH7 a killed R0d does not stop the chain", "CH", [(POD_PATH, '\n  [ -f "$S/arm_${ARM}_killed" ] && refuse "arm $ARM was KILLED', '\n  [ "$ARM" != R0d ] && [ -f "$S/arm_${ARM}_killed" ] && refuse "arm $ARM was KILLED')], None),
+    ("CH8 judge ignores observe_only", "CH", [(RC_PATH, "if k3_enabled and not observe_only and prev is not None", "if k3_enabled and prev is not None")], None),
+    ("CH9 --observe-only is accepted on any arm", "CH", [(RC_PATH, 'and a.observe_only and a.arm != "R1o":', "and a.observe_only and False:")], None),
+    ("CH10 safeobj_gate accepts anything but FAIL", "CH", [(RC_PATH, '        if s != "PASS":\n', '        if s == "FAIL":\n')], None),
+    ("CH11 replay ignores observe_only", "CH", [(RC_PATH, "code, why = judge(arm, rec, hist, k3_enabled, observe_only)\n        hist.append(rec)", "code, why = judge(arm, rec, hist, k3_enabled)\n        hist.append(rec)")], None),
+    ("CH12 the monitor does not log the observed K3", "CH", [(RC_PATH, '                    say("ZZRLS1_K3_OBSERVED", arm, r["tag"], would_why)\n', "                    pass\n")], None),
+    ("CH13 R0d's argv loses --epo-con-lam0", "CH", [(POD_PATH, '    R0d) seed=0; epo="--epo --epo-terms-train $TERMS_TR --epo-terms-heldout $TERMS_VA --epo-con g5 --epo-con-eps 0 --epo-con-lr 4 --epo-con-max 10 --epo-con-lam0 0" ;;',
+                                                          '    R0d) seed=0; epo="--epo --epo-terms-train $TERMS_TR --epo-terms-heldout $TERMS_VA --epo-con g5 --epo-con-eps 0 --epo-con-lr 4 --epo-con-max 10" ;;')], None),
+    ("CH14 the pod precheck does not ship test_rl_safeobj.py", "CH", [(POD_PATH, "refe/test_rl_r0c.py refe/test_rl_safeobj.py \\\n", "refe/test_rl_r0c.py \\\n")], None),
+]
+CH_EXPECT = {
+    "M9 R1o's K3 monitor without --observe-only": ["CH_M9_the_monitor_line_carries_OBS_so_R1o_s_K3_is_observe_only"],
+    "CH1 the replay forgets --observe-only": ["CH_the_replay_line_carries_OBS_too_a_retroactive_K3_must_not_kill_R1o"],
+    "CH2 OBS is set for every arm": ["CH_OBS_is_observe_only_for_R1o_alone"],
+    "CH3 R1o's S gate is not enforced": ["CH_R1o_waits_for_both_S_verdicts_before_any_directory_preflight_or_GPU_work"],
+    "CH4 R0d is read against C0's dumps when they are there": ["CH_own_arm_A_is_the_monitor_and_replay_reference_after_the_generic_pick"],
+    "CH5 R1o is not registered": ["CH_registered_arms_are_the_older_eight_plus_R0d_R1d_R1o"],
+    "CH6 R1o's argv names --epo-con g5": ["CH_argv_R1o_equals_eval_rls1d_arms_json_token_for_token_and_its_sha256"],
+    "CH7 a killed R0d does not stop the chain": ["CH_a_killed_arm_still_stops_the_chain_no_exemption_for_R0d_R1d_R1o"],
+    "CH8 judge ignores observe_only": ["CH_monitor_R1o_observe_only_NEVER_kills_on_K3_logs_it_and_keeps_every_check_row", "CH_judge_observe_only_is_off_by_default_and_never_returns_K3_when_on"],
+    "CH9 --observe-only is accepted on any arm": ["CH_cli_observe_only_is_refused_on_every_arm_but_R1o_monitor_and_replay"],
+    "CH10 safeobj_gate accepts anything but FAIL": ["CH_safeobj_gate_refuses_a_FAIL_a_missing_file_junk_and_an_almost_PASS"],
+    "CH11 replay ignores observe_only": ["CH_replay_R1o_observe_only_does_not_retro_kill_on_K3_and_marks_the_records"],
+    "CH12 the monitor does not log the observed K3": ["CH_monitor_R1o_observe_only_NEVER_kills_on_K3_logs_it_and_keeps_every_check_row"],
+    "CH13 R0d's argv loses --epo-con-lam0": ["CH_argv_R0d_equals_eval_rls1d_arms_json_token_for_token_and_its_sha256"],
+    "CH14 the pod precheck does not ship test_rl_safeobj.py": ["CH_the_precheck_ships_test_rl_safeobj_the_refe_rls1d_suite_runs_it_on_the_pod"],
+}

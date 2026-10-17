@@ -1,0 +1,351 @@
+#!/usr/bin/env python3
+"""safeobj_read: the READER of bar S for the SAFEOBJ arms (PREREG_SAFEOBJ.md section 5; IMPL_PLAN step 8).  Stdlib only; no GPU, no network, no pod.
+
+    python eval/safeobj_read.py --arm-dir <RLS1>/arms/R0d [--arm-dir <RLS1>/arms/R1d ...]
+
+For every arm directory it writes `<arm-dir>/safeobj_S.json` -- the file `rls1_checks.py safeobj-gate` (and so `rls1_pod.sh` before R1o) reads -- and prints
+`ZZSAFEOBJ_S <arm> <PASS|FAIL|NOT_READ> <why>`.  That file is written by THIS tool and by nothing else, and the gate checks that it was: `rls1_checks.safeobj_gate` refuses a record whose `tool` is not TOOL, whose `record_sha256` does not
+recompute (`record_digest` below -- the ONE canonicalisation, imported by the gate, never copied), whose listed input sha256s no longer match the files in the arm directory, or which a fresh read of the arm directory does not reproduce
+(`differing_fields` below: the gate runs `read_arm` again on the directory as it is NOW and the two records must be equal).
+
+BAR S, as registered (PREREG_SAFEOBJ.md section 5, quoted): "The TTC and NC point deltas are both >= -0.5 at EVERY check (u250, u500, u750, u1000).  g3 holds at every check: pick / fan-mean
+path >= 0.894 and shortest-bin share <= 0.55 ...  K3 still kills on two consecutive breaches.  A single non-consecutive breach does not kill, but it fails S."   Deltas are B minus the arm's OWN A
+(the same-pass control), point values x100 (rl_val_eval.py:50-52, :306).
+
+WHERE THE NUMBERS COME FROM (what the trainer and the chain write; nothing is recomputed from a model):
+  kill_replay.json   {"arm","kill","why","checks":[rec,...]}  written by `rls1_checks.py replay` after the run: ONE rec per update tag, re-judged from sft.jsonl by RlValChecker
+                     rec = {tag, g3:{pick_over_fan_mean_path, min_allowed, pick_ok, shortest_bin_share, max_allowed, share_ok}, g5:{NC_fall_ok, TTC_fall_ok, bound}, g3_ok, g5_ok, n_sets, k3_enabled, ...}
+  kill_checks.jsonl  the live monitor's rows (same rec shape + "kill"); absent/partial is fine, a DISAGREEMENT with the replay is not
+  KILLED.json        the monitor's own kill ({"code": K3|K2|K4|K6|K-MON ...}); a K3 kill IS two consecutive breaches
+  rlval_vs_A0.json   rl_val_eval.py's full read at u1000 (arms A0 / CTRL = the arm's own A / R = B): the ONLY place the numeric TTC and NC deltas exist
+The replay stores the g5 verdict as two booleans (NC_fall_ok, TTC_fall_ok), not as numbers, so at u250 / u500 / u750 the g5 bar is the producer's own booleans (INHERITED rule, cross-checked
+against `g5.bound` = 0.5); at u1000 the deltas are RECOMPUTED from rlval_vs_A0.json (CTRL, R sub-score means) and must agree with the replay.  g3 is always re-judged from its raw numbers.
+
+VERDICT (fail closed: only "PASS" opens R1o):
+  PASS      every one of u250 / u500 / u750 / u1000 is present exactly once, every one holds g5 (NC and TTC) and g3 (pick ratio, shortest-bin share), the arm was not killed, the replay did not kill,
+            the monitor's rows (when there) agree with the replay, the u1000 numeric read agrees with the replay, the control of the u1000 read is the arm's own A (sha256, when the dumps are on disk).
+  FAIL      a breach of g5 or g3 at ANY recorded check (also a single, non-consecutive one), or a K3 kill (live or retroactive).
+  NOT_READ  anything else: a missing / duplicated / unparsable input, a missing check, a bound that is not the registered one, a producer flag that disagrees with its own raw fields, a conflict
+            between two sources, a kill that is not K3.  The reasons are listed.  A FAIL wins over a NOT_READ in the same arm.
+Exit code: 0 = every arm PASS, 1 = some arm FAIL, 2 = some arm NOT_READ (none FAIL), 3 = usage.
+"""
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import math
+import os
+import sys
+
+TOOL = "safeobj_read/1"
+# ---- the registered bar (PREREG_SAFEOBJ.md section 5; the constants of eval/rl_val_eval.py:50-52, pinned against them by eval/test_safeobj_read.py)
+CHECK_TAGS = ("update250", "update500", "update750", "update1000")
+G5_BOUND = 0.5                                   # TTC and NC may not fall by more than this versus the arm's own A (points x100)
+G3_PICK_MIN = 0.914 - 0.02                       # pick / fan-mean path (0.894), the SAME expression as rl_val_eval.G3_PICK_FAN_MEAN_MIN so the float is the producer's
+G3_SHARE_MAX = 0.55                              # shortest-bin share
+G_TOL = 1e-9
+OUT_NAME = "safeobj_S.json"
+REQUIRED_INPUTS = ("kill_replay.json", "rlval_vs_A0.json")       # a PASS record always lists these two (the reader fails closed without either); the gate refuses a record that lists fewer
+VOLATILE_FIELDS = ()                             # the record fields a fresh read may legitimately change: NONE.  The record is a pure function of the arm directory's files (no clock, no path, no host name), so a
+                                                 # fresh read of an unchanged directory reproduces it EXACTLY.  A field that ever carries a time or a host must be named HERE, or every genuine record turns "stale".
+
+
+def sha256_file(path):
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for b in iter(lambda: f.read(1 << 22), b""):
+            h.update(b)
+    return h.hexdigest()
+
+
+def record_digest(rec):
+    """THE canonicalisation of `record_sha256`: sha256 of the compact, key-sorted JSON of the record WITHOUT that field.  The reader stamps every record with it and `rls1_checks.safeobj_gate`
+    recomputes it by calling THIS function (it keeps no copy), so the stamp and the check cannot drift apart."""
+    body = json.dumps({k: v for k, v in rec.items() if k != "record_sha256"}, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(body.encode("utf-8")).hexdigest()
+
+
+def comparable(rec):
+    """the part of a record that a fresh read of the same directory must reproduce: every field except the stamp (it is derived from the rest, and the gate checks it on its own) and VOLATILE_FIELDS (none)."""
+    return {k: v for k, v in rec.items() if k != "record_sha256" and k not in VOLATILE_FIELDS}
+
+
+def differing_fields(stored, fresh):
+    """-> the sorted names of the fields in which `stored` differs from `fresh` (empty = `fresh`, a read of the directory as it is now, reproduces `stored`).  Each field is compared as its canonical JSON, i.e.
+    as the file holds it (a tuple is a list, a float is its repr), and a field present in one record only differs.  `rls1_checks.safeobj_gate` calls this with the stored record and `read_arm(<dir>)`."""
+    a, b = comparable(stored), comparable(fresh)
+    dump = lambda v: json.dumps(v, sort_keys=True)                   # noqa: E731
+    return sorted(k for k in set(a) | set(b) if k not in a or k not in b or dump(a[k]) != dump(b[k]))
+
+
+def _num(x):
+    return isinstance(x, (int, float)) and not isinstance(x, bool) and math.isfinite(x)
+
+
+def judge_check(rec):
+    """-> (breaches, problems) for ONE replay/monitor record.  breaches = the registered clauses that FAIL; problems = what makes the record unreadable or untrustworthy.
+    The verdict of each clause is re-derived from the RAW fields (never from the producer's own `*_ok`), then the producer's flag must agree with it."""
+    breaches, problems = [], []
+    g3, g5 = rec.get("g3"), rec.get("g5")
+    if not isinstance(g3, dict) or not isinstance(g5, dict):
+        return breaches, ["g3 / g5 block missing"]
+    # ---- g3: raw numbers against the registered bounds
+    ratio, share = g3.get("pick_over_fan_mean_path"), g3.get("shortest_bin_share")
+    if not (_num(ratio) and _num(share)):
+        problems.append("g3 raw fields missing or not finite")
+    else:
+        mn, mx = g3.get("min_allowed"), g3.get("max_allowed")
+        if not (_num(mn) and abs(mn - G3_PICK_MIN) <= G_TOL):
+            problems.append(f"g3.min_allowed is {mn!r}, not the registered {G3_PICK_MIN}")
+        if not (_num(mx) and abs(mx - G3_SHARE_MAX) <= G_TOL):
+            problems.append(f"g3.max_allowed is {mx!r}, not the registered {G3_SHARE_MAX}")
+        pick_ok, share_ok = ratio >= G3_PICK_MIN, share <= G3_SHARE_MAX
+        if not pick_ok:
+            breaches.append(f"g3 pick/fan-mean path {ratio:.4f} < {G3_PICK_MIN:.3f}")
+        if not share_ok:
+            breaches.append(f"g3 shortest-bin share {share:.4f} > {G3_SHARE_MAX}")
+        if g3.get("pick_ok") is not pick_ok or g3.get("share_ok") is not share_ok:
+            problems.append(f"the producer's g3 flags (pick_ok={g3.get('pick_ok')!r}, share_ok={g3.get('share_ok')!r}) disagree with its own raw fields")
+        if rec.get("g3_ok") is not (pick_ok and share_ok):
+            problems.append(f"the producer's g3_ok={rec.get('g3_ok')!r} disagrees with its own raw fields")
+    # ---- g5: the producer's two booleans (the replay keeps no numbers), against the registered bound
+    nc, ttc = g5.get("NC_fall_ok"), g5.get("TTC_fall_ok")
+    if not (isinstance(nc, bool) and isinstance(ttc, bool)):
+        problems.append("g5.NC_fall_ok / g5.TTC_fall_ok missing or not booleans")
+    else:
+        if not _num(g5.get("bound")) or abs(g5["bound"] - G5_BOUND) > G_TOL:
+            problems.append(f"g5.bound is {g5.get('bound')!r}, not the registered {G5_BOUND}")
+        if not nc:
+            breaches.append(f"g5 NC fell by more than {G5_BOUND}")
+        if not ttc:
+            breaches.append(f"g5 TTC fell by more than {G5_BOUND}")
+        if rec.get("g5_ok") is not (nc and ttc):
+            problems.append(f"the producer's g5_ok={rec.get('g5_ok')!r} disagrees with its own NC / TTC flags")
+    return breaches, problems
+
+
+def _agree(a, b):
+    """the monitor's row and the replay's rec for one tag must carry the same verdict and the same raw numbers."""
+    for blk, keys in (("g3", ("pick_over_fan_mean_path", "shortest_bin_share")),):
+        for k in keys:
+            x, y = (a.get(blk) or {}).get(k), (b.get(blk) or {}).get(k)
+            if not (_num(x) and _num(y) and abs(x - y) <= G_TOL):
+                return False
+    return (a.get("g3_ok") is b.get("g3_ok") and a.get("g5_ok") is b.get("g5_ok")
+            and (a.get("g5") or {}).get("NC_fall_ok") is (b.get("g5") or {}).get("NC_fall_ok") and (a.get("g5") or {}).get("TTC_fall_ok") is (b.get("g5") or {}).get("TTC_fall_ok"))
+
+
+def _load(path):
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def _rows(path):
+    out = []
+    with open(path, encoding="utf-8", errors="replace") as f:
+        for ln in f:
+            try:
+                out.append(json.loads(ln))
+            except ValueError:
+                pass
+    return out
+
+
+def read_u1000(rlval, rec):
+    """the numeric u1000 read from rl_val_eval's own file: B (R) minus the arm's own A (CTRL), TTC and NC in points x100, and g3 of B.  -> (info, breaches, problems)."""
+    arms = rlval.get("arms") if isinstance(rlval, dict) else None
+    if not isinstance(arms, dict) or "CTRL" not in arms or "R" not in arms:
+        return None, [], ["rlval_vs_A0.json has no arms CTRL / R (is this a B-kind arm's file?)"]
+    try:
+        d = {q: float(arms["R"]["subscores_x100"][q]) - float(arms["CTRL"]["subscores_x100"][q]) for q in ("TTC", "NC")}
+        g3 = arms["R"].get("g3") or {}
+        ratio, share = float(g3["pick_over_fan_mean_path"]), float(g3["shortest_bin_share"])
+    except (KeyError, TypeError, ValueError):
+        return None, [], ["rlval_vs_A0.json: sub-score means or g3 missing"]
+    if not all(math.isfinite(v) for v in (*d.values(), ratio, share)):
+        return None, [], ["rlval_vs_A0.json: a non-finite number"]
+    breaches, problems = [], []
+    for q in ("TTC", "NC"):
+        if not d[q] >= -G5_BOUND:
+            breaches.append(f"u1000 {q} B-A = {d[q]:.4f} < -{G5_BOUND} (recomputed from rlval_vs_A0.json)")
+    if not ratio >= G3_PICK_MIN:
+        breaches.append(f"u1000 g3 pick/fan-mean path {ratio:.4f} < {G3_PICK_MIN:.3f} (rlval_vs_A0.json)")
+    if not share <= G3_SHARE_MAX:
+        breaches.append(f"u1000 g3 shortest-bin share {share:.4f} > {G3_SHARE_MAX} (rlval_vs_A0.json)")
+    r5 = (rec.get("g5") or {})
+    if r5.get("TTC_fall_ok") is not (d["TTC"] >= -G5_BOUND) or r5.get("NC_fall_ok") is not (d["NC"] >= -G5_BOUND):
+        problems.append("the replay's u1000 g5 flags disagree with the TTC / NC deltas recomputed from rlval_vs_A0.json")
+    rg3 = rec.get("g3") or {}
+    if not (_num(rg3.get("pick_over_fan_mean_path")) and abs(rg3["pick_over_fan_mean_path"] - ratio) <= G_TOL and _num(rg3.get("shortest_bin_share")) and abs(rg3["shortest_bin_share"] - share) <= G_TOL):
+        problems.append("the replay's u1000 g3 numbers disagree with rlval_vs_A0.json")
+    n_rl = (rlval.get("eligibility") or {}).get("sets_used")
+    if n_rl != rec.get("n_sets"):
+        problems.append(f"the replay's u1000 n_sets={rec.get('n_sets')!r} is not rlval_vs_A0.json's sets_used={n_rl!r}")
+    return {"TTC_delta_x100": d["TTC"], "NC_delta_x100": d["NC"], "g3_pick_over_fan_mean_path": ratio, "g3_shortest_bin_share": share, "sets_used": n_rl}, breaches, problems
+
+
+def read_arm(arm_dir):
+    """-> the safeobj_S.json record for one arm directory.  Never raises on bad input: a shape this reader did not expect is NOT_READ (fail closed), with the exception named."""
+    try:
+        return _read_arm(arm_dir)
+    except Exception as e:                                                                                                   # noqa: BLE001
+        out = {"tool": TOOL, "arm": os.path.basename(os.path.normpath(arm_dir)), "S": "NOT_READ", "breaches": [], "checks": [], "notes": [], "u1000_recomputed": None, "inputs_sha256": {},
+               "problems": [f"the reader could not interpret this directory's files: {type(e).__name__}: {str(e)[:200]}"]}
+        out["record_sha256"] = record_digest(out)
+        return out
+
+
+def _read_arm(arm_dir):
+    arm = os.path.basename(os.path.normpath(arm_dir))
+    breaches, problems, notes, inputs = [], [], [], {}
+    out = {"tool": TOOL, "arm": arm, "S": None, "breaches": breaches, "problems": problems, "notes": notes, "checks": [], "u1000_recomputed": None, "inputs_sha256": inputs,
+           "bar": {"tags": list(CHECK_TAGS), "g5_bound": G5_BOUND, "g3_pick_min": G3_PICK_MIN, "g3_share_max": G3_SHARE_MAX, "source": "PREREG_SAFEOBJ.md section 5 (bar S); rl_val_eval.py:50-52"}}
+    p = lambda n: os.path.join(arm_dir, n)           # noqa: E731
+    # ---- 1. the kill marker
+    killed = None
+    if os.path.exists(p("KILLED.json")):
+        try:
+            killed = _load(p("KILLED.json"))
+            inputs["KILLED.json"] = sha256_file(p("KILLED.json"))
+        except (OSError, ValueError):
+            problems.append("KILLED.json exists and does not parse")
+            killed = {"code": "?"}
+        if not isinstance(killed, dict):
+            problems.append("KILLED.json is not an object")
+            killed = {"code": "?"}
+        code = str(killed.get("code"))
+        out["killed"] = code
+        if code == "K3":
+            breaches.append("the arm was K3-killed (two consecutive g3/g5 breaches)")
+        else:
+            problems.append(f"the arm was killed by {code}: the u1000 check cannot exist")
+    # ---- 2. the replay (authoritative: it re-judges every tag from sft.jsonl)
+    rep = None
+    if not os.path.exists(p("kill_replay.json")):
+        problems.append("kill_replay.json is missing (the chain writes it after the run; a K3-killed arm never gets one)")
+    else:
+        try:
+            rep = _load(p("kill_replay.json"))
+            inputs["kill_replay.json"] = sha256_file(p("kill_replay.json"))
+        except (OSError, ValueError):
+            problems.append("kill_replay.json does not parse")
+    recs = []
+    if isinstance(rep, dict):
+        if rep.get("arm") != arm:
+            problems.append(f"kill_replay.json is the replay of arm {rep.get('arm')!r}, not {arm!r}")
+        if rep.get("kill"):
+            (breaches if rep["kill"] == "K3" else problems).append(f"the retroactive replay killed the arm: {rep['kill']} ({rep.get('why')})")
+        recs = rep.get("checks") if isinstance(rep.get("checks"), list) else []
+        if not isinstance(rep.get("checks"), list):
+            problems.append("kill_replay.json has no `checks` list")
+    elif rep is not None:
+        problems.append("kill_replay.json is not an object")
+    by_tag = {}
+    for r in recs:
+        t = r.get("tag") if isinstance(r, dict) else None
+        if t in by_tag:
+            problems.append(f"the replay carries the tag {t!r} twice")
+        by_tag[t] = r
+    if any(isinstance(r, dict) and r.get("observe_only") for r in recs):
+        problems.append("the replay was run --observe-only (R1o's mode): K3 was not enforced on it")
+    # ---- 3. the monitor's live rows must agree with the replay where both exist
+    mon = {}
+    if os.path.exists(p("kill_checks.jsonl")):
+        try:
+            for r in _rows(p("kill_checks.jsonl")):
+                if isinstance(r, dict) and r.get("tag") in CHECK_TAGS:
+                    mon.setdefault(r["tag"], r)
+            inputs["kill_checks.jsonl"] = sha256_file(p("kill_checks.jsonl"))
+        except OSError:
+            problems.append("kill_checks.jsonl is unreadable")
+    else:
+        notes.append("kill_checks.jsonl absent: the monitor's rows could not be cross-checked")
+    # ---- 4. every registered check, judged
+    for tag in CHECK_TAGS:
+        r = by_tag.get(tag)
+        row = {"tag": tag, "present": r is not None}
+        if r is None:
+            if killed is None or str(killed.get("code")) != "K3":
+                problems.append(f"check {tag} is missing")
+            out["checks"].append(row)
+            continue
+        b, pr = judge_check(r)
+        row.update({"ok": not b and not pr, "breaches": b, "problems": pr, "n_sets": r.get("n_sets"), "k3_enabled": r.get("k3_enabled"),
+                    "g3_pick_over_fan_mean_path": (r.get("g3") or {}).get("pick_over_fan_mean_path"), "g3_shortest_bin_share": (r.get("g3") or {}).get("shortest_bin_share"),
+                    "NC_fall_ok": (r.get("g5") or {}).get("NC_fall_ok"), "TTC_fall_ok": (r.get("g5") or {}).get("TTC_fall_ok"), "g5_source": "replay booleans"})
+        breaches.extend(f"{tag}: {x}" for x in b)
+        problems.extend(f"{tag}: {x}" for x in pr)
+        if r.get("k3_enabled") is False:
+            notes.append(f"{tag}: k3_enabled is false (the base already breached g3 on RL-val at step0); the registered g3 clause is still applied")
+        if tag in mon and not _agree(mon[tag], r):
+            problems.append(f"{tag}: the live monitor's row and the replay disagree")
+            row["ok"] = False
+        out["checks"].append(row)
+    # ---- 5. the numeric u1000 read, and the control it used
+    last = by_tag.get("update1000")
+    if not os.path.exists(p("rlval_vs_A0.json")):
+        problems.append("rlval_vs_A0.json is missing (the chain's u1000 read)")
+    else:
+        try:
+            rl = _load(p("rlval_vs_A0.json"))
+            inputs["rlval_vs_A0.json"] = sha256_file(p("rlval_vs_A0.json"))
+        except (OSError, ValueError):
+            rl = None
+            problems.append("rlval_vs_A0.json does not parse")
+        if rl is not None and not isinstance(rl, dict):
+            problems.append("rlval_vs_A0.json is not an object")
+            rl = None
+        if rl is not None and last is not None:
+            info, b, pr = read_u1000(rl, last)
+            out["u1000_recomputed"] = info
+            breaches.extend(b)
+            problems.extend(pr)
+        if rl is not None:
+            hashes = (rl.get("inputs") or {}).get("scores_sha256") or {}
+            for name, f in (("CTRL", "scores_update1000_A.npz"), ("R", "scores_update1000_B.npz")):
+                fp = os.path.join(arm_dir, "scores", f)
+                if os.path.exists(fp):
+                    got = sha256_file(fp)
+                    inputs[f"scores/{f}"] = got
+                    if hashes.get(name) != got:
+                        problems.append(f"rlval_vs_A0.json read {name} from a file that is NOT this arm's scores/{f} (sha256 differs): the control may not be the arm's own A")
+                else:
+                    notes.append(f"scores/{f} is not on disk: the u1000 control could not be tied to this arm's own A by sha256")
+    # ---- 6. the verdict
+    out["breaches"] = sorted(set(breaches))
+    out["problems"] = sorted(set(problems))
+    out["S"] = "FAIL" if out["breaches"] else ("NOT_READ" if out["problems"] else "PASS")
+    out["record_sha256"] = record_digest(out)                                # stamped last; the gate recomputes it with the same function
+    return out
+
+
+def write_record(arm_dir, rec):
+    path = os.path.join(arm_dir, OUT_NAME)
+    tmp = path + ".tmp"
+    with open(tmp, "w", encoding="utf-8", newline="\n") as f:
+        json.dump(rec, f, indent=1, sort_keys=True)
+    os.replace(tmp, path)
+    return path
+
+
+def main(argv=None):
+    ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    ap.add_argument("--arm-dir", action="append", required=True, help="<RLS1>/arms/R0d (repeat for R1d)")
+    a = ap.parse_args(argv)
+    seen = set()
+    for d in a.arm_dir:
+        if not os.path.isdir(d):
+            print(f"ZZSAFEOBJ_S {os.path.basename(os.path.normpath(d))} NOT_READ no such directory: {d}", flush=True)
+            seen.add("NOT_READ")
+            continue
+        rec = read_arm(d)
+        write_record(d, rec)
+        why = "; ".join(rec["breaches"] or rec["problems"]) or "every check holds"
+        print(f"ZZSAFEOBJ_S {rec['arm']} {rec['S']} {why[:600]}", flush=True)
+        seen.add(rec["S"])
+    return 1 if "FAIL" in seen else (2 if "NOT_READ" in seen else 0)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

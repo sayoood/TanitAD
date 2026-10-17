@@ -33,6 +33,11 @@ RL-S1 (eval/PREREG_RL_S1.md, RL_POSTTRAIN_REVIEW 5.2) -- ALL DEFAULT OFF, the OF
                   The default `base` silently reproduces R0, so the R0c profile (refe_rls1c) requires `--epo-ref armA` NAMED; the data event's epo.ref records the reference
                   the built selector (epo_reference) actually returns, which is what G-DVB compares with the argv.
   The checkpoint's own meta sizes the score head (a 7-output checkpoint such as SFT-4 arm B u400 loads and trains with --lane-head).
+  --epo-con       SAFEOBJ (raw/2026-10-17-safety-objective/{PREREG,SPEC}_SAFEOBJ.md): CONSTRAINED EPO.  off (the default = every arm before SAFEOBJ, bit for bit) | g5 = arm B also pays
+                  L_con = sum_k lambda_k * (c^k_A - eps - c^k_B),  k in {TTC, NC},  c^k_X = mean over sets of E_{pi_X}[y^k]  (pi_X = the EPO selection policy of arm X on the SAME
+                  micro-batch; arm A's is DETACHED), with ONE projected dual-ascent step per optimiser update: lambda_k <- clip(lambda_k + eta * mean g^k, 0, lambda_max).  Needs --epo.
+  --epo-con-eps / --epo-con-lr (eta) / --epo-con-max (lambda_max) / --epo-con-lam0 (lambda_0): the slack, the dual step, the cap and the start (registered 0 / 4 / 10 / 0; they enable nothing:
+                  only `--epo-con g5` does).  The profile (refe_rls1d) requires all five NAMED on R0d / R1d and `--epo-con off` NAMED on R1o.  The preflight adds gate G13.
   --dump-scores DIR  OBSERVATIONAL, default off: after every held-out evaluation write the base / A / B scorers' per-proposal logits of every held-out set as
                   DIR/scores_<tag>_<arm>.npz -- the input of eval/rl_val_eval.py (log, token, step, rank, ckpt_step, scores [N, M, C], space="logit").
                   It changes no weight, no loss and no logged number (refe/test_dump_scores.py: the OFF path is AST-identical to the pre-edit evaluate()).
@@ -213,6 +218,238 @@ def epo_reference_built(ref):
     if torch.equal(out, sA.detach()) and not out.requires_grad:
         return "armA"
     return "other"
+
+
+# ================================================================================================ SAFEOBJ: constrained EPO (--epo-con g5; default OFF)
+# raw/2026-10-17-safety-objective/PREREG_SAFEOBJ.md + SPEC_SAFEOBJ.md (+ SPEC_ADDENDUM.md).  Arm B only.  L_con = sum_k lambda_k * (c^k_A - eps - c^k_B) is added to arm B's loss inside
+# `train_losses`; arm A (detached) is the reference; the duals are updated ONCE per optimiser update by EpoDual.step.  Nothing here runs unless `--epo --epo-con g5` is on.
+EPO_CON_MODES = ("off", "g5")
+EPO_CON_DEFAULT = "off"            # = every arm before SAFEOBJ, bit for bit; R0d / R1d / R1o NAME the flag (a default that reproduces R0 must not carry the experiment)
+EPO_CON_DESTS = ("epo_con", "epo_con_eps", "epo_con_lr", "epo_con_max", "epo_con_lam0")
+EPO_CON_TERMS = {"g5": ("ttc", "nc")}          # mode -> the PDM sub-scores constrained: g5 = "TTC and NC may not fall by > 0.5 versus control" (rl_val_eval.py g5)
+EPO_CON_MUTATE_ENVS = ("REFE_RL_MUTATE_CON_DETACH", "REFE_RL_MUTATE_CON_ATTACH_A")      # deliberate regressions: each must turn G13 RED
+
+
+def epo_con_cols(comps):
+    """The label columns of the constrained terms, READ from rl_reward.COMPONENTS (nc, dac, ep, ttc, c, ddc) by name -- never typed (a typed column would silently constrain EP)."""
+    return tuple(rl_reward.COMPONENTS.index(c) for c in comps)
+
+
+def epo_con_reference(sxA):
+    """Arm A's logits as the constraint's REFERENCE: DETACHED, so no gradient of L_con can reach arm A (the control stays BCE-only).  REFE_RL_MUTATE_CON_ATTACH_A=1 keeps the graph (G13 / C1 must go RED)."""
+    if os.environ.get("REFE_RL_MUTATE_CON_ATTACH_A") == "1":
+        return sxA
+    return sxA.detach()
+
+
+def epo_con_reference_built():
+    """What epo_con_reference ACTUALLY returns, read by calling it on a sentinel -> "armA_detached" / "armA_attached" / "other".  This is what the data event's epo_con.ref records for G-DVB."""
+    sA = torch.ones(1, requires_grad=True)
+    out = epo_con_reference(sA)
+    if out is sA:
+        return "armA_attached"
+    if (not out.requires_grad) and torch.equal(out, sA.detach()):
+        return "armA_detached"
+    return "other"
+
+
+def epo_con_term(sxB, sxA, tg, rule_fn, T, eps, lam, parts=None):
+    """L_con = sum_k lam[k] * (c^k_A - eps - c^k_B)  (SPEC_SAFEOBJ 1.2), float32.  sxB / sxA [b, M, C] = arm B's / arm A's logits of the SAME micro-batch (sxA is detached HERE, by
+    epo_con_reference, which is the one guard G13 reads); tg [b, M, >= 6] the PDM labels in rl_reward.COMPONENTS order; rule_fn = the base's selection rule (main's sel_score); T = --epo-temp.
+    c^k_X = mean over sets of sum_i pi^X_i y^k_i with pi^X = epo_policy(sxX) -- the very policy of the EPO term.  lam = {component: float} (constant within one optimiser update).
+    `parts`, if given, receives the batch's detached floats: con (the term), and per component g_ / cA_ / cB_ (the violation and the two outcomes), hinge_ (the share of sets whose own
+    violation is > 0) and p1gap_ (the label of B's argmax pick minus A's: P1, negative = B picks the worse one)."""
+    comps = tuple(lam)
+    if not comps:
+        raise ValueError("epo_con_term needs at least one constrained component")
+    sxA_ref = epo_con_reference(sxA)
+    if os.environ.get("REFE_RL_MUTATE_CON_DETACH") == "1":          # deliberate regression for G13: c_B loses its graph
+        sxB = sxB.detach()
+    piB = epo_policy(sxB.float(), rule_fn, T).exp()
+    piA = epo_policy(sxA_ref.float(), rule_fn, T).exp()
+    y = tg.detach().float()
+    L = None
+    for comp, col in zip(comps, epo_con_cols(comps)):
+        yk = y[..., col]
+        cA_s, cB_s = (piA * yk).sum(1), (piB * yk).sum(1)
+        g = cA_s.mean() - eps - cB_s.mean()
+        t_ = float(lam[comp]) * g
+        L = t_ if L is None else L + t_
+        if parts is not None:
+            with torch.no_grad():
+                ia = rule_fn(torch.sigmoid(sxA_ref.detach().float())).argmax(1, keepdim=True)
+                ib = rule_fn(torch.sigmoid(sxB.detach().float())).argmax(1, keepdim=True)
+                parts["g_" + comp], parts["cA_" + comp], parts["cB_" + comp] = float(g.detach()), float(cA_s.detach().mean()), float(cB_s.detach().mean())
+                parts["hinge_" + comp] = float(((cA_s.detach() - eps - cB_s.detach()) > 0).float().mean())
+                parts["p1gap_" + comp] = float((yk.gather(1, ib) - yk.gather(1, ia)).mean())
+    if parts is not None and L is not None:
+        parts["con"] = float(L.detach())
+    return L
+
+
+class EpoDual:
+    """The dual variables of --epo-con and their projected ascent (SPEC_SAFEOBJ 1.4): lambda_k <- min(lam_max, max(0, lambda_k + eta * gbar_k)), gbar_k = the mean over the update's
+    micro-batches of the detached violation g^k.  `comps` = () is the OFF object (`active` False: train_losses never calls epo_con_term).  lambda used during update u is the value BEFORE
+    u's step; `step` runs once per optimiser update, after o.step() and before `upd += 1`."""
+
+    def __init__(self, comps, eps, lr, lam_max, lam0):
+        self.comps, self.eps, self.lr, self.lam_max, self.lam0 = tuple(comps), float(eps), float(lr), float(lam_max), float(lam0)
+        self.reset()
+
+    def reset(self):
+        self.lam = {c: self.lam0 for c in self.comps}
+        self.updates = self.cap_hits = self.pos_updates = 0
+        self.lam_seen_max = {c: self.lam0 for c in self.comps}
+
+    @property
+    def active(self):
+        return bool(self.comps)
+
+    def step(self, acc):
+        """acc = {"n": micro-batches, "g_<comp>": the SUM over them of the detached violation}.  An empty accumulator is a wiring bug and raises."""
+        n = int(acc.get("n", 0))
+        if n <= 0:
+            raise ValueError("EpoDual.step: no micro-batch was accumulated for this update (the constraint's per-batch parts never reached the dual)")
+        if any(v > 0.0 for v in self.lam.values()):
+            self.pos_updates += 1
+        for c in self.comps:
+            raw = self.lam[c] + self.lr * (float(acc["g_" + c]) / n)
+            self.lam[c] = min(self.lam_max, max(0.0, raw))
+            self.lam_seen_max[c] = max(self.lam_seen_max[c], self.lam[c])
+            if raw >= self.lam_max:
+                self.cap_hits += 1
+        self.updates += 1
+
+    def built_mode(self):
+        for m, c in EPO_CON_TERMS.items():
+            if tuple(c) == self.comps:
+                return m
+        return "other" if self.comps else "off"
+
+    def built_facts(self):
+        """BUILT facts for G-DVB (the data event's `epo_con` block): read off this object and the selectors that run, never echoed from the namespace."""
+        return {"mode": self.built_mode(), "comps": list(self.comps), "cols": list(epo_con_cols(self.comps)), "eps": self.eps, "lr": self.lr, "max": self.lam_max,
+                "lam0": self.lam0, "ref": epo_con_reference_built()}
+
+    def state_dict(self):
+        return {"lam": dict(self.lam), "update": self.updates, "cap_hits": self.cap_hits, "pos_updates": self.pos_updates, "lam_seen_max": dict(self.lam_seen_max)}
+
+    def load_state_dict(self, sd):
+        self.lam, self.updates, self.cap_hits = dict(sd["lam"]), int(sd["update"]), int(sd["cap_hits"])
+        self.pos_updates, self.lam_seen_max = int(sd["pos_updates"]), dict(sd["lam_seen_max"])
+
+
+def epo_con_dual_reach(dual):
+    """G13 "dual reach": SYNTHETIC sequences through a COPY of the run's own EpoDual.step (the run's lambda is never touched).  (a) ten steps of a violation of 2^-7 -> lambda0 + 10 * eta * 2^-7
+    (0.3125 exactly at the registered eta 4, lambda0 0); (b) then three steps of a violation of -1 floor lambda at 0.0 exactly; (c) then a violation of 1e6 caps it at lam_max exactly."""
+    d = copy.deepcopy(dual)
+    d.reset()
+    viol, steps = 2.0 ** -7, 10
+
+    def feed(g, n_steps):
+        for _ in range(n_steps):
+            d.step({"n": 8, **{"g_" + c: 8 * g for c in d.comps}})
+        return dict(d.lam)
+    got = feed(viol, steps)
+    floor_got = feed(-1.0, 3)
+    cap_got = feed(1e6, 2)
+    return {"comps": list(d.comps), "eta": dual.lr, "lam0": dual.lam0, "lam_max": dual.lam_max, "viol": viol, "steps": steps, "got": got, "floor_got": floor_got, "cap_got": cap_got}
+
+
+def epo_con_ckpt_roundtrip(dual):
+    """G13 "checkpoint": the EPO_CON block (EpoDual.state_dict) survives torch.save / torch.load and load_state_dict BIT-EQUAL, on non-trivial values (so a block that dropped a field cannot pass)."""
+    import io
+    d = copy.deepcopy(dual)
+    d.lam = {c: 0.3125 + i / 3.0 for i, c in enumerate(d.comps)}
+    d.updates, d.cap_hits, d.pos_updates, d.lam_seen_max = 11, 7, 5, {c: 1.0 + i for i, c in enumerate(d.comps)}
+    buf = io.BytesIO()
+    torch.save({"EPO_CON": d.state_dict()}, buf)
+    buf.seek(0)
+    back = torch.load(buf, weights_only=False)["EPO_CON"]
+    e = copy.deepcopy(dual)
+    e.load_state_dict(back)
+    return {"keys": sorted(back), "block_equal": bool(back == d.state_dict()), "restored_equal": bool(e.state_dict() == d.state_dict())}
+
+
+def epo_con_refusals(a, ap):
+    """Every reason the --epo-con levers must not start, as messages ([] = fine).  epo_refusals stays byte-unchanged (pinned): this is its sibling, called beside it (main(), the launch gate).
+    `ap` is build_parser() (its defaults say which levers were NAMED)."""
+    bad = []
+    con_named = [d for d in EPO_CON_DESTS if getattr(a, d) != ap.get_default(d)]
+    if not a.epo:
+        if con_named:
+            bad.append(f"--epo-con levers {con_named} are set but --epo is not: they would be silently ignored")
+        return bad
+    if a.epo_con not in EPO_CON_MODES:
+        bad.append(f"--epo-con {a.epo_con!r} is not one of {EPO_CON_MODES}")
+        return bad
+    if a.epo_con == "off":
+        if con_named:
+            bad.append(f"--epo-con-* levers {con_named} are set but --epo-con is off: their weights would belong to a term that is OFF")
+        return bad
+    if not a.epo_con_eps >= 0.0:
+        bad.append("--epo-con-eps must be >= 0")
+    if not a.epo_con_lr >= 0.0:
+        bad.append("--epo-con-lr must be >= 0")
+    if not a.epo_con_max > 0.0:
+        bad.append("--epo-con-max must be > 0")
+    if not 0.0 <= a.epo_con_lam0 <= a.epo_con_max:
+        bad.append("--epo-con-lam0 must be in [0, --epo-con-max]")
+    if a.epo_con_lr == 0.0 and a.epo_con_lam0 == 0.0:
+        bad.append("--epo-con g5 with --epo-con-lr 0 AND --epo-con-lam0 0 is INERT by construction (lambda is 0 at every update): a wired mechanism that can never act")
+    return bad
+
+
+def g13_epo_con_live_and_identity(armA, armB, probe, dual_probe, ckpt_probe, kl_tol, names=SCORER):
+    """G13 (SAFEOBJ preflight), one dict of RAW FIELDS that the launch gate re-judges (gate_checks.judge_g13): it never trusts this `ok`.
+    probe(mode) -> (the constraint term ALONE as a DIFFERENCE of two `train_losses` calls on one fresh forward -- the run's own assembly, so deleting `lB = lB + ct` there leaves it
+    identically zero --, arm A's BCE loss of that forward, the constraint's batch parts) for mode 'on' (lambda = (1, 1)), 'lam0' (lambda = (0, 0): graph live, factor 0) and 'off'
+    (the block skipped).  An L_con-ONLY backward must give a finite non-zero gradient on EVERY scorer module of arm B ('on'); the two controls must read EXACTLY 0.0 (a zero from a broken
+    probe looks the same); arm A must read EXACTLY 0.0 from it while A's own BCE gradient (same probe) reads non-zero; at step 0 the two policies coincide (c_A == c_B, so g = -eps)."""
+    reads, readsA, vals, infos, a_ctrl = {}, {}, {}, {}, None
+    modes = ("on", "lam0", "off")
+    for mode in modes:
+        armA.zero_grad(set_to_none=True)
+        armB.zero_grad(set_to_none=True)
+        term, loss_a, info = probe(mode)
+        vals[mode] = float(term.detach())
+        infos[mode] = info
+        if bool(term.requires_grad):
+            term.backward(retain_graph=True)
+        reads[mode], readsA[mode] = module_grad_abs(armB, names), module_grad_abs(armA, names)
+        if mode == "on":
+            armA.zero_grad(set_to_none=True)
+            if loss_a.requires_grad:
+                loss_a.backward()
+            a_ctrl = module_grad_abs(armA, names)
+    armA.zero_grad(set_to_none=True)
+    armB.zero_grad(set_to_none=True)
+    on_reads = reads["on"]
+    live = {m: bool(on_reads[m] > 0.0 and math.isfinite(on_reads[m])) for m in names}
+    zero_ok = vals["lam0"] == 0.0 and vals["off"] == 0.0 and all(v == 0.0 for r in ("lam0", "off") for v in reads[r].values())
+    a_zero = all(v == 0.0 for r in ("on", "lam0", "off") for v in readsA[r].values())
+    a_ctrl_live = bool(a_ctrl) and all(math.isfinite(v) and v > 0.0 for v in a_ctrl.values())
+    on = infos["on"]
+    comps = sorted(k[3:] for k in on if k.startswith("cA_"))
+    gap = {c: abs(on["cA_" + c] - on["cB_" + c]) for c in comps}
+    ident_ok = bool(gap) and all(math.isfinite(v) and v <= kl_tol for v in gap.values())
+    dual_reach, ckpt = dual_probe(), ckpt_probe()
+    mutate = [k for k in EPO_CON_MUTATE_ENVS if os.environ.get(k) == "1"]
+    dual_ok = _g13_dual_ok(dual_reach)
+    ckpt_ok = bool(ckpt.get("block_equal") and ckpt.get("restored_equal"))
+    return {"ok": bool(all(live.values()) and zero_ok and a_zero and a_ctrl_live and ident_ok and dual_ok and ckpt_ok and not mutate), "per_module_on": reads["on"],
+            "per_module_lam0": reads["lam0"], "per_module_off": reads["off"], "A_per_module_on": readsA["on"], "A_per_module_lam0": readsA["lam0"], "A_per_module_off": readsA["off"],
+            "A_bce_control": a_ctrl, "live": live, "controls_exactly_zero": bool(zero_ok), "A_untouched": bool(a_zero), "A_control_reads_nonzero": bool(a_ctrl_live),
+            "value_on": vals["on"], "value_lam0": vals["lam0"], "value_off": vals["off"], "c_gap": gap, "c_gap_tol": kl_tol, "identity_ok": bool(ident_ok), "comps": comps,
+            "dual_reach": dual_reach, "dual_ok": bool(dual_ok), "checkpoint": ckpt, "mutate": mutate}
+
+
+def _g13_dual_ok(d):
+    """the probe's own reading of its synthetic dual sequences (gate_checks.judge_g13 re-derives the expected values from the raw fields; this is only the trainer-side `ok`)"""
+    exp = d["lam0"]
+    for _ in range(d["steps"]):
+        exp = min(d["lam_max"], max(0.0, exp + d["eta"] * d["viol"]))
+    return bool(d["comps"] and all(d["got"][c] == exp and d["floor_got"][c] == 0.0 and d["cap_got"][c] == d["lam_max"] for c in d["comps"]))
 
 
 def epo_loss(sxB, sx_ref, R, rule_fn, T, beta, lam_pg, parts=None):
@@ -575,6 +812,13 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--epo-ref", default=EPO_REF_DEFAULT, choices=EPO_REFS,
                     help="R0c: the policy pi_SFT of the KL anchor KL(pi_SFT||pi): base = the frozen base copy (default; every arm before R0c), armA = arm A's DETACHED logits of the same "
                          "micro-batch (the BCE-only control's own policy)")
+    # SAFEOBJ (raw/2026-10-17-safety-objective/SPEC_SAFEOBJ.md 2): constrained EPO.  The switch's default DISABLES it; the numeric defaults are the registered values and enable nothing.
+    ap.add_argument("--epo-con", default=EPO_CON_DEFAULT, choices=EPO_CON_MODES,
+                    help="SAFEOBJ: off = no constraint (default; every arm before SAFEOBJ), g5 = constrain TTC and NC against arm A (needs --epo): L_con = sum_k lambda_k (c^k_A - eps - c^k_B), lambda by dual ascent")
+    ap.add_argument("--epo-con-eps", type=float, default=0.0, help="SAFEOBJ: slack eps of the constraint, in probability units (>= 0)")
+    ap.add_argument("--epo-con-lr", type=float, default=4.0, help="SAFEOBJ: the dual step eta per unit violation per optimiser update (>= 0)")
+    ap.add_argument("--epo-con-max", type=float, default=10.0, help="SAFEOBJ: the cap lambda_max of the duals (> 0)")
+    ap.add_argument("--epo-con-lam0", type=float, default=0.0, help="SAFEOBJ: the initial dual lambda_0, the same for both terms (in [0, --epo-con-max])")
     ap.add_argument("--dump-scores", default="", help="RL-S1: DIR; after every held-out evaluation write the base / A / B scorers' per-proposal logits as "
                     "<DIR>/scores_<tag>_<arm>.npz (eval/rl_val_eval.py's input).  Observational: no weight, loss or logged number changes.  '' = nothing is written")
     # auxiliary drivable-area head (SPEC_AUX_DRIVABLE_HEAD.md; WIRING_PLAN.md): ALL DEFAULT OFF = this trainer exactly.  --aux-drv / --w-aux-drv / --aux-drv-tap /
@@ -588,7 +832,7 @@ def build_parser() -> argparse.ArgumentParser:
 def main() -> int:
     ap = build_parser()
     a = ap.parse_args()
-    bad_cli = epo_refusals(a, ap)                            # RL-S1: a command line that names EPO levers inconsistently never starts
+    bad_cli = epo_refusals(a, ap) + epo_con_refusals(a, ap)           # RL-S1: a command line that names EPO levers inconsistently never starts (SAFEOBJ: epo_con_refusals is epo_refusals' sibling)
     if bad_cli or AUX.aux_refusals(a) or aux_s1_refusals(a):
         for msg in bad_cli + AUX.aux_refusals(a) + aux_s1_refusals(a):         # + the aux head's levers: named without --aux-drv, labels missing, shuffle with the feed on, no head LR ...
             print("REFUSED: " + msg)
@@ -687,6 +931,9 @@ def main() -> int:
             tr_idx = [i for i in tr_idx if key(ds.rows[i]) in terms_train]
         if a.epo_terms_heldout:
             terms_ho, st_ho = load_rl_terms(a.epo_terms_heldout, ho.by, cfg.n_proposals, a.epo_lam_d != 0.0, a.epo_k, a.epo_l)
+    # SAFEOBJ: the constraint's dual object (--epo-con g5; `comps` () = OFF, and then nothing below it runs).  `con_last` receives the latest epo_con_term call's batch parts (as epo_last does).
+    dual = EpoDual(EPO_CON_TERMS.get(a.epo_con, ()), a.epo_con_eps, a.epo_con_lr, a.epo_con_max, a.epo_con_lam0)
+    con_last: dict = {}
     lv: dict = {}
     for k_ in (key(ds.rows[i]) for i in tr_idx):
         v = op.by[k_][3][1]
@@ -705,6 +952,7 @@ def main() -> int:
         info["epo"] = {"temp": a.epo_temp, "beta": a.epo_beta, "ramp": a.epo_ramp, "lam": a.epo_lam, "lam_d": a.epo_lam_d, "w_prog": a.epo_w_prog,
                        "k": a.epo_k, "lam_k": a.epo_lam_k, "l": a.epo_l, "lam_l": a.epo_lam_l, "eps": EPO_EPS, "ref": epo_reference_built(a.epo_ref),
                        "terms_train": st_tr, "terms_heldout": st_ho, "native7": native7}
+        info["epo_con"] = dual.built_facts()                 # SAFEOBJ: BUILT facts of the constraint for G-DVB (every --epo run writes the block, an OFF run included)
     if aux is not None:
         # BUILT facts only (G-DVB compares them with the argv): read off the objects the run holds, never echoed from the namespace
         info["aux_drv"] = {**aux.built_facts(), "tap": aux.cfg.tap, "feed": "on" if aux.feed is not None else "off", "lr": optH.param_groups[0]["lr"],
@@ -797,6 +1045,9 @@ def main() -> int:
         if a.epo:
             ep = epo_term(epo_reference(a.epo_ref, sx0, sxA), sxB, tg, rows, upd, lam_pg)
             lB = lB + ep
+            if dual.active:                                  # SAFEOBJ: the constraint, arm B ONLY (arm A is its detached reference); the dual weights are Python floats
+                ct = epo_con_term(sxB, sxA, tg, sel_score, a.epo_temp, a.epo_con_eps, dual.lam, con_last)
+                lB = lB + ct
         return lA, lB, ln, ep
 
     def aux_backward(lv, div=1.0, retain=False):
@@ -823,6 +1074,24 @@ def main() -> int:
         finally:
             a.epo = keep
         return ep, (dict(epo_last) if mode != "off" else {})
+
+    def con_probe(batch, rows, mode):
+        """G13: the constraint term ALONE, as a DIFFERENCE of two train_losses calls on ONE fresh forward (the run's own assembly: deleting `lB = lB + ct` leaves a zero difference).  mode 'on' = the
+        duals at (1, 1); 'lam0' = at (0, 0) (graph live, factor 0); 'off' = the block skipped.  The EPO term is built with an EXPLICIT weight 0.0 in both calls, so it cancels.
+        -> (the B-side term, arm A's BCE loss of the same forward, the constraint's batch parts)"""
+        fw_ = fwd(batch)
+        s0, sA_, sB_, tg_ = fw_
+        keep_comps, keep_lam = dual.comps, dual.lam
+        try:
+            dual.comps = ()
+            ref = train_losses(s0, sA_, sB_, tg_, rows, 0, lam_pg=0.0)
+            if mode != "off":
+                dual.comps, dual.lam = keep_comps, {c: (1.0 if mode == "on" else 0.0) for c in keep_comps}
+            con_last.clear()
+            on = train_losses(s0, sA_, sB_, tg_, rows, 0, lam_pg=0.0)
+        finally:
+            dual.comps, dual.lam = keep_comps, keep_lam
+        return on[1] - ref[1], on[0], dict(con_last)
 
     @torch.no_grad()
     def evaluate(tag, limit=None):
@@ -994,6 +1263,8 @@ def main() -> int:
         meta = dict(sd.get("meta", {}) if isinstance(sd, dict) else {},
                     scorer_finetune={"arm": arm_name, "base_ckpt": a.ckpt, "args": vars(a)})
         meta["n_score_components"] = n_out                    # the planner sizes its score head from this (ckpt_io)
+        if dual.active:                                       # SAFEOBJ: the dual state at this save (an audit; any future resume must restore it)
+            meta["epo_con"] = dual.state_dict()
         if aux is not None:                                   # H2's planner needs the head beside the scorer (S3); the planner's strict load never sees it (not in `state`)
             meta["aux_drv"] = aux_meta()
         out = {"format": ckpt_io.FORMAT_FULL, "model": state, "meta": meta}
@@ -1295,6 +1566,10 @@ def main() -> int:
             g11["heldout_terms"] = st_ho
             g11["ok"] = bool(g11["ok"] and g11["rows_have_terms"] and (not a.epo_terms_heldout or st_ho["matched"] > 0))
             gates["G11_epo_live_and_identity"] = g11
+        if dual.active:                                      # G13 (SAFEOBJ): L_con is live on every B module, A untouched, zero controls, step-0 identity, dual reach, checkpoint block
+            gates["G13_epo_con_live_and_identity"] = g13_epo_con_live_and_identity(
+                model, armB, lambda mode: con_probe(batch, prow, mode), lambda: epo_con_dual_reach(dual), lambda: epo_con_ckpt_roundtrip(dual),
+                kl_tol=(1e-2 if (a.lane_head and not native7) else 0.0))
         if aux is not None:                                  # G12 (aux head): live + exact-zero control + identity + tap storage + Adam state
             gates["G12_aux_drv_live_and_identity"] = g12_probe(batch, aux_lv)
         # G5: a CHANGED scorer, saved, reloads through the PLANNER's loader and reproduces its logits (and differs from
@@ -1350,7 +1625,7 @@ def main() -> int:
                "s_per_microbatch": round(sp, 2), "est_hours_per_epoch": round(len(tr_idx) / a.batch * sp / 3600, 2),
                "gpu_mem_gb": round(torch.cuda.max_memory_allocated() / 1e9, 2)}
         log(res)
-        if ok and os.environ.get("REFE_SFT_MUTATE_UNFREEZE") != "1" and os.environ.get("REFE_RL_MUTATE_EPO_DETACH") != "1"                 and not any(os.environ.get(k_) == "1" for k_ in AUX_MUTATE_ENVS):
+        if ok and os.environ.get("REFE_SFT_MUTATE_UNFREEZE") != "1" and os.environ.get("REFE_RL_MUTATE_EPO_DETACH") != "1"                 and not any(os.environ.get(k_) == "1" for k_ in AUX_MUTATE_ENVS + EPO_CON_MUTATE_ENVS):
             json.dump(res, open(os.path.join(a.out, "PREFLIGHT_PASS.json"), "w"), indent=1, default=str)
         print("ZZSFT_PREFLIGHT_" + ("PASS" if ok else "FAIL"))
         return 0 if ok else 3
@@ -1370,6 +1645,8 @@ def main() -> int:
     accl = {"bceA": 0.0, "lossB": 0.0, "listnet": 0.0, "n": 0}
     epo_acc = {"epo": 0.0, "J": 0.0, "kl": 0.0, "n": 0}      # --epo only
     aux_acc = {"bce": 0.0, "huber": 0.0, "n": 0}              # --aux-drv only
+    con_acc = {"n": 0}                                        # --epo-con only: the constraint's parts summed over THIS update's micro-batches (EpoDual.step reads it) ...
+    con_log = {"n": 0}                                        # ... and over the updates since the last logged row
     lr_ratio = (a.aux_drv_lr / a.lr) if aux is not None else 0.0      # the head follows the scorer's warm-up + cosine shape at its own peak
     done = False
     while not done:
@@ -1384,6 +1661,10 @@ def main() -> int:
             accl["bceA"] += float(lA); accl["lossB"] += float(lB); accl["listnet"] += float(ln); accl["n"] += 1
             if a.epo:
                 epo_acc["epo"] += float(ep_t); epo_acc["J"] += epo_last.get("J", 0.0); epo_acc["kl"] += epo_last.get("kl", 0.0); epo_acc["n"] += 1
+            if dual.active:                                  # SAFEOBJ: this micro-batch's parts (g, c_A, c_B, ...) -> the dual step and the logged means
+                for k_, v_ in con_last.items():
+                    con_acc[k_] = con_acc.get(k_, 0.0) + v_
+                con_acc["n"] += 1
             micro += 1
             if micro % a.accum:
                 continue
@@ -1399,6 +1680,11 @@ def main() -> int:
                     gr["lr"] = lr_at(upd) * lr_ratio
                 optH.step()
                 optH.zero_grad(set_to_none=True)
+            if dual.active:                                  # SAFEOBJ: ONE projected dual step per optimiser update, after o.step() and before `upd += 1` (SPEC 1.4)
+                dual.step(con_acc)
+                for k_, v_ in con_acc.items():
+                    con_log[k_] = con_log.get(k_, 0.0) + v_
+                con_acc = {"n": 0}
             upd += 1
             if upd % 25 == 0:
                 n = max(accl["n"], 1)
@@ -1409,6 +1695,15 @@ def main() -> int:
                     row.update({"epo": epo_acc["epo"] / ne, "epo_J": epo_acc["J"] / ne, "epo_kl": epo_acc["kl"] / ne,
                                 "epo_lam_pg": a.epo_lam * epo_ramp(upd, a.epo_ramp)})
                     epo_acc = {"epo": 0.0, "J": 0.0, "kl": 0.0, "n": 0}
+                if dual.active:
+                    nc_ = max(con_log["n"], 1)
+                    cm_ = lambda k_: con_log.get(k_, 0.0) / nc_              # noqa: E731  (window mean of a per-micro-batch part)
+                    row.update({"con": cm_("con"), "con_lam_ttc": dual.lam["ttc"], "con_lam_nc": dual.lam["nc"], "con_g_ttc": cm_("g_ttc"), "con_g_nc": cm_("g_nc"),
+                                "con_cA_ttc": cm_("cA_ttc"), "con_cB_ttc": cm_("cB_ttc"), "con_cA_nc": cm_("cA_nc"), "con_cB_nc": cm_("cB_nc"),
+                                "con_p1_gap_ttc": cm_("p1gap_ttc"), "con_p1_gap_nc": cm_("p1gap_nc"), "con_hinge_ttc": cm_("hinge_ttc"), "con_hinge_nc": cm_("hinge_nc"),
+                                "con_cap_hits": dual.cap_hits, "con_lam_pos_updates": dual.pos_updates,
+                                "con_lam_max_ttc": dual.lam_seen_max["ttc"], "con_lam_max_nc": dual.lam_seen_max["nc"]})
+                    con_log = {"n": 0}
                 if aux is not None:
                     na = max(aux_acc["n"], 1)
                     row.update({"aux_bce": aux_acc["bce"] / na, "aux_huber": aux_acc["huber"] / na, "w_aux": aux.w_aux, "aux_lr": optH.param_groups[0]["lr"]})       # aux_lr = the head optimiser's lr of the LAST step (read off the optimiser, not recomputed)
@@ -1419,7 +1714,8 @@ def main() -> int:
                 run_evaluate(f"update{upd}")
                 torch.save({"A": {m: getattr(model, m).state_dict() for m in SCORER},
                             "B": {m: getattr(armB, m).state_dict() for m in SCORER}, "update": upd,
-                            **({"AUX": aux.state_dict()} if aux is not None else {})},
+                            **({"AUX": aux.state_dict()} if aux is not None else {}),
+                            **({"EPO_CON": dual.state_dict()} if dual.active else {})},
                            os.path.join(a.out, "scorer_states_last.pt"))
             if upd >= total:
                 done = True
@@ -1427,7 +1723,7 @@ def main() -> int:
     pA, pB = save_full("A", model), save_full("B", armB)
     if aux is not None:
         log({"event": "aux_saved", "path": save_aux(upd)})
-    log({"event": "done", "updates": upd, "model_A": pA, "model_B": pB, "hours": (time.time() - t0) / 3600})
+    log({"event": "done", "updates": upd, "model_A": pA, "model_B": pB, "hours": (time.time() - t0) / 3600, **({"epo_con": dual.state_dict()} if dual.active else {})})
     print("ZZSFT_DONE")
     return 0
 

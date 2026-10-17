@@ -43,7 +43,13 @@ MANIFEST=$PART/$PNAME.manifest.json; TRAIN_TSV=$PART/$PNAME/rl_train_scenes.tsv;
 # the arms this chain knows.  RLS1B-INSERTION-POINT-1 (FILLED 2026-10-14 from eval/rls1b_arms.json): the RL-S1b arms R0b and R1b (R0 / R1 with --epo-lam 0.25), argv in arm_args (-2), the control each reads
 # against in the arm loop (-3).  RL-S1b is run as  RLS1_ARMS="R0b C1 R1b"  (Master Mind's order): R0b against C0's banked dumps, then C1, then R1b against C1.  Their gate profile is refe_rls1b (arm_profile).
 # R0c (2026-10-15, from eval/rls1c_arms.json): R0 + --epo-ref armA, gate profile refe_rls1c, read against its own arm A (arm loop, "RL-S1c").  Run as  RLS1_ARMS="R0c".
-REGISTERED_ARMS="C0 C1 R0 R1 R2 R0b R1b R0c"
+# SAFEOBJ (2026-10-17, from eval/rls1d_arms.json; PREREG_SAFEOBJ.md): R0d / R1d = R0 / R1's argv + the constrained-EPO levers --epo-con g5 --epo-con-eps 0 --epo-con-lr 4 --epo-con-max 10 --epo-con-lam0 0; R1o = seed 1 with --epo-con off NAMED.
+# Gate profile refe_rls1d; each is read against its OWN arm A (the K3 / K4 monitor, the replay, rlval_vs_A0.json), the seed-matched C<n> is the SECOND control (read when its dumps are there, announced when not).
+# Run in TWO STEPS, never as the one list "R0d R1d R1o":  (1) RLS1_ARMS="R0d R1d"  (a K3 kill of R0d or R1d STOPS the chain);  (2) the operator runs the reader  python eval/safeobj_read.py --arm-dir $R/arms/R0d
+# --arm-dir $R/arms/R1d  (this chain never runs it: a bar-S record is the READER's output, never hand-written, and it can exist only once both arms have finished -- the chain itself rewrites an arm's kill_replay.json,
+# rlval_vs_A0.json and scores/, so a record made earlier would be refused as stale);  (3) RLS1_ARMS="R1o".  R1o refuses (before any GPU work) unless R0d and R1d both carry a GENUINE safeobj_S.json reading S = PASS, every input unchanged since the read and a fresh
+# read of the directory reproducing the record: rls1_checks.py safeobj-gate.  The one list trains R0d and R1d and then R1o's gate refuses (nothing of R1o is created).  R1o's monitor and replay are --observe-only.
+REGISTERED_ARMS="C0 C1 R0 R1 R2 R0b R1b R0c R0d R1d R1o"
 SETS_TR=$R/sets_train; SETS_VA=$R/sets_val; PDM_TR=$R/pdm_train; PDM_VA=$R/pdm_val; TERMS_TR=$R/terms_train; TERMS_VA=$R/terms_val
 TLANE_TR=$R/tlane_train; TLANE_VA=$R/tlane_heldout; VALLOGS=$R/rl_val_logs.txt
 NSH="${RLS1_SHARDS:-4}"
@@ -86,6 +92,7 @@ arm_profile() {
   case "$1" in
     R0b|R1b) echo refe_rls1b ;;
     R0c) echo refe_rls1c ;;
+    R0d|R1d|R1o) echo refe_rls1d ;;
     C1) case " ${RLS1_ARMS:-} " in *" R0b "*|*" R1b "*) echo refe_rls1b ;; *) echo refe_rls1 ;; esac ;;
     *) echo refe_rls1 ;;
   esac
@@ -195,6 +202,10 @@ arm_args() {
     R1b) seed=1; epo="--epo --epo-terms-train $TERMS_TR --epo-terms-heldout $TERMS_VA --epo-lam 0.25" ;;
     # R0c: R0's argv with --epo-ref armA appended and nothing else (eval/rls1c_arms.json, token for token; launch_gate.py profile refe_rls1c, which requires the flag NAMED: its parser default `base` would reproduce R0).
     R0c) seed=0; epo="--epo --epo-terms-train $TERMS_TR --epo-terms-heldout $TERMS_VA --epo-ref armA" ;;
+    # SAFEOBJ (eval/rls1d_arms.json, token for token; launch_gate.py profile refe_rls1d, which requires every --epo-con* flag NAMED: the parser default `off` must never carry a lever)
+    R0d) seed=0; epo="--epo --epo-terms-train $TERMS_TR --epo-terms-heldout $TERMS_VA --epo-con g5 --epo-con-eps 0 --epo-con-lr 4 --epo-con-max 10 --epo-con-lam0 0" ;;
+    R1d) seed=1; epo="--epo --epo-terms-train $TERMS_TR --epo-terms-heldout $TERMS_VA --epo-con g5 --epo-con-eps 0 --epo-con-lr 4 --epo-con-max 10 --epo-con-lam0 0" ;;
+    R1o) seed=1; epo="--epo --epo-terms-train $TERMS_TR --epo-terms-heldout $TERMS_VA --epo-con off" ;;
     *) return 1 ;;
   esac
   echo "--ckpt $BASE --backbone vitl16 --targets $TARGETS --images $IMAGES --calib $CALIB --onpolicy $SETS_TR --heldout $SETS_VA --heldout-logs $VALLOGS --out $ad --pdm-labels-train $PDM_TR --pdm-labels-heldout $PDM_VA --require-pdm --b-mode listnet --lam 0 --lr 1e-4 --max-updates 1000 --epochs 4 --workers 3 --seed $seed --eval-every 250 --dump-scores $ad/scores --lane-head --teacher-lane-train $TLANE_TR --teacher-lane-heldout $TLANE_VA${epo:+ $epo}"
@@ -230,10 +241,10 @@ why="$(p2_over)" || refuse "$why"
 for ARM in ${RLS1_ARMS:-C0 R0 C1 R1 R2}; do arm_registered "$ARM" || refuse "unknown arm '$ARM' in RLS1_ARMS (registered: $REGISTERED_ARMS)"; done
 for f in refe/scorer_finetune.py refe/aux_drivable_head.py refe/rl_fan_dump.py refe/rl_partition.py refe/rl_pool_available.py refe/onpolicy_relabel_pdm.py refe/rl_terms_label.py \
          refe/pdm_label_complete.py refe/rl_reward.py refe/hf_egress.py refe/rls1_checks.py refe/train.py refe/model.py refe/ckpt_io.py \
-         refe/launch_gate.py refe/gate_token.py refe/gate_checks.py refe/gate_fixture.py refe/test_launch_gate.py refe/test_rl_epo.py refe/test_rl_reward.py refe/test_rl_s1b.py refe/test_rl_r0c.py \
+         refe/launch_gate.py refe/gate_token.py refe/gate_checks.py refe/gate_fixture.py refe/test_launch_gate.py refe/test_rl_epo.py refe/test_rl_reward.py refe/test_rl_s1b.py refe/test_rl_r0c.py refe/test_rl_safeobj.py \
          refe/rl_tlane_label.py refe/test_rl_tlane_label.py refe/onpolicy_relabel_teacher_lane.py refe/onpolicy_label.py refe/planner.py refe/scorer_gate.py \
          refe/score_proposals.py refe/route_rank.py refe/map_feature_cache.py refe/query_cache.py refe/navtrain_scenarios.py refe/build_scorer_targets.py code/augment_routes.py \
-         eval/rl_val_eval.py eval/proxy_eval.py eval/rl_terms_join_identity.py SHIP_MANIFEST.json \
+         eval/rl_val_eval.py eval/proxy_eval.py eval/rl_terms_join_identity.py eval/safeobj_read.py eval/test_safeobj_read.py eval/test_safeobj_gate.py SHIP_MANIFEST.json \
          code/pod_teacher_env.sh code/pod_dataprep.sh splits/navtrain.yaml splits/sft_heldout_logs.txt \
          splits/rl_fancmp_keys.tsv \
          raw/rl_pool/partition_runs/A_no_trained_list_seed20261012_n16000.manifest.json \
@@ -483,6 +494,13 @@ for ARM in ${RLS1_ARMS:-C0 R0 C1 R1 R2}; do
   [ -f "$S/arm_${ARM}_killed" ] && stage_done "egress_$ARM" && refuse "arm $ARM was KILLED by a pre-registered rule ($(cat "$S/arm_${ARM}_killed")): the Master Mind decides; delete $S/arm_${ARM}_killed or drop the arm from RLS1_ARMS"
   ARMDIR=$R/arms/$ARM; LG=$R/lg/$ARM; ARGS="$(arm_args "$ARM")" || refuse "no argv for arm $ARM"
   PROFILE="$(arm_profile "$ARM")"
+  # SAFEOBJ (PREREG_SAFEOBJ.md section 4): R1o -- the lever-off control -- runs only if BOTH constrained arms read bar S = PASS (the reader writes <arm>/safeobj_S.json); refused here, before any GPU work.
+  OBS=""
+  if [ "$ARM" = R1o ]; then
+    OBS="--observe-only"                  # R1o's K3 is logged (ZZRLS1_K3_OBSERVED), never a kill: a kill at u500 would delete the matched control at the checks where the lever is read; K2 / K6 stay live
+    env -u HF_TOKEN "$PY" rls1_checks.py safeobj-gate --dirs "$R/arms/R0d" "$R/arms/R1d" > "$R/safeobj_gate_R1o.log" 2>&1 200>&-
+    grep -q "^ZZRLS1_SAFEOBJ_S_PASS" "$R/safeobj_gate_R1o.log" || refuse "R1o runs only if R0d and R1d both read bar S = PASS: $(tail -n 1 "$R/safeobj_gate_R1o.log" | cut -c1-300)"
+  fi
   mkdir -p "$ARMDIR" "$LG"
   # TL-1: the pre-registered budget is --max-updates 1000.  On 16,000 scenes --epochs 2 would end at 500 (the trainer never complains), and the reads below name update1000.
   env -u HF_TOKEN "$PY" rls1_checks.py updates-check --args "$ARGS" --n-sets "$NTRAIN" > "$ARMDIR/updates.log" 2>&1 200>&-
@@ -491,10 +509,12 @@ for ARM in ${RLS1_ARMS:-C0 R0 C1 R1 R2}; do
   case "$ARM" in C*) KIND=A; RD="";; *) KIND=B; RD=C${ARM:1:1};; esac
   [ "$ARM" = R2 ] && RD=C0
   [ "$ARM" = R0c ] && RD=C0        # RL-S1c: C0 is R0c's SECOND control (the 9d read below); named here, not left to ${ARM:1:1}
+  case "$ARM" in R0d) RD=C0;; R1d|R1o) RD=C1;; esac        # SAFEOBJ: the seed-matched control is the SECOND control (read when its dumps are there, announced when not); named here, not left to ${ARM:1:1}
   # the control the K4 / K5 monitor and the replay compare R with: the matched C run's arm A when that run finished, else this run's own arm A (paired by construction)
   if [ -z "$RD" ] || [ ! -f "$R/arms/$RD/scores/scores_update1000_A.npz" ]; then REFDIR="$ARMDIR/scores"; else REFDIR="$R/arms/$RD/scores"; fi
   # RL-S1c (PREREG_R0C_DRAFT.md section 2: "the control for every delta is the arm's own A"): R0c's monitor and replay reference is ITS OWN arm A whether or not C0's dumps are on the pod
   [ "$ARM" = R0c ] && REFDIR="$ARMDIR/scores"
+  case "$ARM" in R0d|R1d|R1o) REFDIR="$ARMDIR/scores";; esac     # SAFEOBJ (PREREG_SAFEOBJ.md section 9: "K3 and K4 read against the arm's OWN A"): the monitor and replay reference is its own arm A, whether or not C<n>'s dumps are on the pod
   # RL-S1b: an R arm is read against ITS control's banked dumps (R0b -> C0, R1b -> C1), never silently against its own arm A (the fallback above is the original plan's paired design)
   if [ "$PROFILE" = refe_rls1b ] && [ "$KIND" = B ] && [ "$REFDIR" = "$ARMDIR/scores" ]; then
     refuse "RL-S1b arm $ARM is read against $RD, whose dumps $R/arms/$RD/scores/scores_update1000_A.npz are missing: run it first (RLS1_ARMS=\"R0b C1 R1b\") or restore them"
@@ -539,7 +559,7 @@ for ARM in ${RLS1_ARMS:-C0 R0 C1 R1 R2}; do
     # the kill monitor: K2 (non-finite loss), K6 (hours) on every arm; K3 / K4 (two consecutive 250-update checks) and K5 (R2) on the RL-val lookup of the R arms.  It is SUPERVISED below
     # (supervise_arm): it must print ZZRLS1_MONITOR_READY and stay alive while the trainer runs, or the trainer is stopped and the arm is K-MON.
     env -u HF_TOKEN OMP_NUM_THREADS=1 nice -n 10 "$PY" rls1_checks.py monitor --arm "$ARM" --out "$ARMDIR" --refdir "$REFDIR" --pdm "$PDM_VA" --terms "$TERMS_VA" \
-      --sets "$SETS_VA" --tsv "$VAL_TSV" --pid "$TPID" > "$ARMDIR/monitor.log" 2>&1 200>&- &
+      --sets "$SETS_VA" --tsv "$VAL_TSV" --pid "$TPID" ${OBS:-} > "$ARMDIR/monitor.log" 2>&1 200>&- &
     MPID=$!
     log "arm $ARM: trainer pid/pgid $TPID, watcher $WPID, monitor $MPID (control: $REFDIR)"
     supervise_arm "$ARM" "$TPID" "$MPID" "$ARMDIR/monitor.log" "$ARMDIR"
@@ -560,7 +580,7 @@ for ARM in ${RLS1_ARMS:-C0 R0 C1 R1 R2}; do
   #          then R against its MATCHED control run when that run exists.
   if stage_done "train_$ARM" && ! stage_done "read_$ARM"; then
     env -u HF_TOKEN OMP_NUM_THREADS=1 "$PY" rls1_checks.py replay --arm "$ARM" --out "$ARMDIR" --refdir "$REFDIR" --pdm "$PDM_VA" --terms "$TERMS_VA" \
-      --sets "$SETS_VA" --tsv "$VAL_TSV" > "$ARMDIR/replay.log" 2>&1 200>&-
+      --sets "$SETS_VA" --tsv "$VAL_TSV" ${OBS:-} > "$ARMDIR/replay.log" 2>&1 200>&-
     if grep -q "^ZZRLS1_REPLAY_KILL" "$ARMDIR/replay.log"; then
       echo "retroactive: $(tail -n 1 "$ARMDIR/replay.log" | cut -c1-200)" > "$S/arm_${ARM}_killed"; log "ZZRLS1_ARM_KILLED $ARM $(cat "$S/arm_${ARM}_killed")"
     else
@@ -579,6 +599,8 @@ for ARM in ${RLS1_ARMS:-C0 R0 C1 R1 R2}; do
           >> "$ARMDIR/rlval.log" 2>&1 200>&-
       elif [ "$ARM" = R0c ]; then
         log "ZZRLS1_R0C_NO_SECOND_CONTROL arm R0c: C0's banked dumps $R/arms/$RD/scores/scores_update1000_A.npz are not on the pod, so rlval_vs_$RD.json was NOT produced: the read against its own arm A (rlval_vs_A0.json) stands alone; restore C0's scores (HF Sayood/tanitad-refe-rls1-c0) and run rl_val_eval.py for the second control"
+      elif [ "$ARM" = R0d ] || [ "$ARM" = R1d ] || [ "$ARM" = R1o ]; then
+        log "ZZRLS1_SAFEOBJ_NO_SECOND_CONTROL arm $ARM: $RD's banked dumps $R/arms/$RD/scores/scores_update1000_A.npz are not on the pod, so rlval_vs_$RD.json was NOT produced: the read against its own arm A (rlval_vs_A0.json) stands alone"
       fi
     fi
     grep -q "^ZZRLVAL_OK" "$ARMDIR/rlval.log" || refuse "rl_val_eval.py did not finish clean for $ARM (rlval.log)"

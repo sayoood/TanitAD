@@ -1,0 +1,22 @@
+unmutated suite ...
+mutation                                       caught-by (failing checks)
+loop_drops_the_aux_backward                    h1/head_parameters_moved_during_training
+peel_loader_not_installed                      h1/run_completes
+peel_loader_tail_goes_stale                    unit/AuxPeelLoader_pairs_each_batch_body_with_ITS_OWN_tail_across_epochs
+aux_backward_drops_the_term                    pre/G12_present_and_ok, h1/head_parameters_moved_during_training
+head_optimiser_never_steps                     h1/head_parameters_moved_during_training
+head_lr_ignores_aux_drv_lr                     h1/head_lr_follows_the_scorer_schedule_at_the_head_peak
+head_params_added_to_the_scorer_optimiser      h1/scorer_arms_bit_identical_to_a_head_less_run_of_the_same_seed, h1/head_has_its_own_Adam_state_in_aux_drv_pt
+dataset_hook_removed                           h1/run_completes
+aux_eval_rows_misaligned                       h1/held_out_perception_read_equals_an_independent_recompute_row_for_row
+fwd_ignores_the_feed                           h2/arm_B_differs_from_the_head_less_run_so_the_feed_is_reachable, h2/feed_projection_left_zero
+feed_projection_not_in_the_scorer_optimiser    h2/feed_projection_left_zero
+labels_keyed_by_the_wrong_row                  unit/AuxSubset_serves_the_label_of_ITS_row_keyed_by_log_token_only
+labels_keyed_with_step_and_rank                unit/AuxSubset_serves_the_label_of_ITS_row_keyed_by_log_token_only
+head_optimiser_lr_is_the_scorers               pre/data_event_carries_BUILT_aux_facts, gate/G_DVB_passes_on_the_real_H1_data_event_and_observes_the_head
+head_built_with_the_default_depth              pre/depth_flag_reaches_the_built_head
+w_aux_not_passed_to_the_head                   pre/data_event_carries_BUILT_aux_facts, gate/G_DVB_passes_on_the_real_H1_data_event_and_observes_the_head
+g12_tap_check_bypassed                         pre/regression_switch_REFE_AUX_MUTATE_TAP_turns_G12_RED_and_withholds_PASS
+g12_zero_control_never_zeroes_the_weight       pre/G12_present_and_ok, pre/G12_weight0_control_reads_EXACTLY_zero_on_the_same_groups, gate/consumer_accepts_the_real_H1_preflight_and_obliges_G12
+g12_not_in_gates                               pre/G12_present_and_ok, gate/consumer_accepts_the_real_H1_preflight_and_obliges_G12
+ZZTEST_PASS 20  (1 unmutated suite + 19 RED mutations)

@@ -890,7 +890,7 @@ def rls1_static() -> None:
     P0 = {**P, "declared_arm": "R0"}
     pf_ok = C.load_scorer_preflight(rls1_write(Path(tempfile.mkdtemp()) / "preflight.jsonl", rls1_pf_rows(r0)))
     ev = C.check_dvb_scorer(r0, pf_ok, P0)
-    ok(ev["status"] == "PASS" and ev["details"]["observed_rows"] == 15 and ev["details"]["unknown_flags"] == [] and ev["details"]["stale_registry"] == [], ev["reasons"])      # 14 -> 15: R0c's epo.ref row
+    ok(ev["status"] == "PASS" and ev["details"]["observed_rows"] == 23 and ev["details"]["unknown_flags"] == [] and ev["details"]["stale_registry"] == [], ev["reasons"])      # 14 -> 15: R0c's epo.ref row; 15 -> 23: SAFEOBJ's eight epo_con rows
     ok(sum(ev["details"]["kinds"].values()) == len(C.DVB_KINDS_SCORER) == len(sdests))
     ok(C.check_dvb_scorer(c0, C.load_scorer_preflight(rls1_write(Path(tempfile.mkdtemp()) / "p.jsonl", rls1_pf_rows(c0))), P)["status"] == "PASS")
     for arm, frag in (("unknown_flag", "NO declared-vs-built entry"), ("stale_registry", "no longer has"), ("dead_lever", "never read by the trainer"),
@@ -898,6 +898,29 @@ def rls1_static() -> None:
         ev = C.check_dvb_scorer(r0, pf_ok, P0, arm=arm)
         ok(ev["status"] == "FAIL" and frag in " ".join(ev["reasons"]) and ev["arm"] == arm, (arm, ev["reasons"]))
     ok(C.check_dvb_scorer(r0, pf_ok, P0)["status"] == "PASS")                                                # the arms left no residue
+    # ------------------------------------------------------------------ R11 SAFEOBJ (refe_rls1d, raw/2026-10-17-safety-objective): the arms R0d / R1d / R1o (the full matrix and its mutations: refe/test_rl_safeobj.py)
+    Pd = L.PROFILES["refe_rls1d"]
+    CON = ["--epo-con", "g5", "--epo-con-eps", "0", "--epo-con-lr", "4", "--epo-con-max", "10", "--epo-con-lam0", "0"]
+    r1_ = C._set(r0, "--seed", "1")
+    r0d, r1d, r1o = r0 + CON, r1_ + CON, r1_ + ["--epo-con", "off"]
+    redd = lambda argv, frag, arm: red(argv, frag, arm, {**Pd, "declared_arm": arm})          # noqa: E731
+    for argv_, arm_ in ((r0d, "R0d"), (r1d, "R1d"), (r1o, "R1o")):
+        ok(refs(argv_, arm_, {**Pd, "declared_arm": arm_}) == [], arm_)
+    for fl in ("--epo-con", "--epo-con-eps", "--epo-con-lr", "--epo-con-max", "--epo-con-lam0"):                 # a parser DEFAULT never carries a lever: each flag must be NAMED
+        redd(without(r0d, fl), f"requires {fl} NAMED", "R0d")
+        redd(without(r1d, fl), f"requires {fl} NAMED", "R1d")
+    redd(r0, "requires --epo-con g5", "R0d")                                                                     # R0's own argv (the default `off`) is not R0d
+    redd(C._set(r0d, "--seed", "1"), "registered with --seed 0", "R0d")
+    redd(C._set(r1d, "--seed", "0"), "registered with --seed 1", "R1d")
+    redd(C._set(r1o, "--seed", "0"), "registered with --seed 1", "R1o")
+    redd(C._set(r1o, "--epo-con", "g5"), "requires --epo-con off", "R1o")                                        # the lever-off control must not carry the lever
+    redd(without(r1o, "--epo-con"), "requires --epo-con NAMED", "R1o")
+    redd(C._set(r0d, "--epo-con-lr", "2"), "requires --epo-con-lr 4.0", "R0d")
+    for nm_, arm_, argv_ in (("refe_rls1", "R0", r0), ("refe_rls1b", "R0b", r0 + ["--epo-lam", "0.25"]), ("refe_rls1c", "R0c", r0 + ["--epo-ref", "armA"])):          # every older profile refuses the lever ...
+        red(argv_ + CON, "requires --epo-con off", arm_, {**L.PROFILES[nm_], "declared_arm": arm_})
+        ok(refs(argv_ + ["--epo-con", "off"], arm_, {**L.PROFILES[nm_], "declared_arm": arm_}) == [], nm_)         # ... and still accepts the switch NAMED off
+    ok([e["script"] for e in Pd["suite"]][-1] == "test_rl_safeobj.py" and Pd["suite"][:-1] == L.PROFILES["refe_rls1c"]["suite"])                  # M8: the suite carries the new test
+    ok(all(C.DVB_KINDS_SCORER.get(k) == "built" for k in ("epo_con", "epo_con_eps", "epo_con_lr", "epo_con_max", "epo_con_lam0")))               # M7: the five flags are classified
 
     def bp_new():                                                                                           # a REAL new flag on the parser, no arm: the gate itself refuses
         a_ = orig_bp()
@@ -958,7 +981,7 @@ def rls1_static() -> None:
         if k.startswith("G4_compw"):
             continue
         ev = cons(r0, notok=(k,))
-        if k.startswith(("G8_", "G12_")):                          # r0 carries no lane labels / no --aux-drv: G8 / G12 are not obliged, so such a flag in the fixture is simply not written
+        if k.startswith(("G8_", "G12_", "G13_")):                  # r0 carries no lane labels / no --aux-drv / no --epo-con: G8 / G12 / G13 are not obliged, so such a flag in the fixture is simply not written
             ok(ev["status"] == "PASS", (k, ev["reasons"]))
         else:
             ok(ev["status"] == "FAIL" and "not ok" in " ".join(ev["reasons"]) and k in " ".join(ev["reasons"]), (k, ev["reasons"]))
@@ -969,7 +992,7 @@ def rls1_static() -> None:
     ok(ev["status"] == "FAIL" and "not PASS" in " ".join(ev["reasons"]))
     ev = cons(c0, add={g11_key: {"ok": True}})
     ok(ev["status"] == "FAIL" and "DIFFERENT configuration" in " ".join(ev["reasons"]))                      # a control offered an EPO run's preflight
-    ev = cons(r0, add={"G13_something_new": {"ok": True}})
+    ev = cons(r0, add={"G14_something_new": {"ok": True}})                                                   # (G13 is a KNOWN gate since SAFEOBJ: the unknown-gate fixture moves to G14)
     ok(ev["status"] == "FAIL" and "not known to the gate" in " ".join(ev["reasons"]))
     ok(cons(r0, add={"G8_lane_labels_in_bank": {"ok": True}})["status"] == "FAIL")                           # a gate the argv does not oblige
     good = rls1_pf_rows(r0)[-1]["gates"][g11_key]

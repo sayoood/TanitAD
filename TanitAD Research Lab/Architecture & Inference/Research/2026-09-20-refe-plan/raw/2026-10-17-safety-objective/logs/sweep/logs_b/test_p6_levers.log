@@ -1,0 +1,63 @@
+  wta_default_identity: ok (10)
+  yaw_analytic: ok (15)
+  nav_rule: ok (20)
+  command_model_reach: ok (26)
+  ckpt_meta_nav_mode: ok (28)
+  identity_resume: ok (30)
+  profile_p6: ok (40)
+  REFUSING: --labeller online replaces the banked/on-policy label sources; it cannot be combined with --grow, --scorer-mode onpolicy, --onpolicy-targets, --pdm-labels or --pdm-only.
+  REFUSING: --labeller online replaces the banked/on-policy label sources; it cannot be combined with --grow, --scorer-mode onpolicy, --onpolicy-targets, --pdm-labels or --pdm-only.
+  REFUSING: --labeller online replaces the banked/on-policy label sources; it cannot be combined with --grow, --scorer-mode onpolicy, --onpolicy-targets, --pdm-labels or --pdm-only.
+  REFUSING: --labeller online with the pdm backend needs --metric-cache (the D9 parts directory, refe/build_metric_cache.py).
+  online_conflicts: ok (44)
+  default_flags_inert: ok (48)
+  trainer_reach_online: ok (77)
+  score_only_grad: ok (89)
+  NAV MODE: command -- the student is conditioned on the discrete navigation command (the paper's input), not on goal points
+  ABLATION: rig reduced to 1 camera(s) ('CAM_F0',)
+  ABLATION: the PDM loss reaches the backbone LoRA (REFe's extra detach removed)
+  *** --weights none: FROZEN RANDOM TRUNK. An ABLATION, not a reproduction; no number from it may be compared with the paper. ***
+  REFe vits16 31.94 M total / 10.35 M trainable (32.41 %)  device=cpu
+  WTA reach: at most 1 of 64 proposals updated per step (1.6 %)
+  *** SYNTHETIC IMAGES: this run validates the LOOP MECHANICS ONLY.
+  *** Its loss says nothing about driving and must not be quoted as a result.
+  SCORER (P6): ONLINE PDM labeller -- each micro-batch's OWN proposals are scored by NAVSIM's simulator while the next forward runs (lag 0); the fixed candidate bank is NOT loaded
+  targets: 6 rows from ['targets_rank0.jsonl', 'targets_rank1.jsonl']  per rank {0: 4, 1: 2}
+  scenes: 4 over 6 tuples  (rows per scene: 1 x 2, 2 x 2)
+  NAV COMMAND (P6): sources {'goal_rule': 6}  (row = NAVSIM driving_command carried by the bank; goal_rule = nav_command.goal_to_command, MEASURED 0.90 agreement with NAVSIM on navtest -- below SPEC_P6 D6's 95 % bar)
+  *** NO --calib: every tuple is lifted with the ONE baked rig (pre-R22 behaviour). An ABLATION -- PETR, the paper's cited embedding, uses each sample's own. ***
+  bank: 6 tuples in 4 scenes   epoch = one pass over 4 scenes   batch 1   training
+  optimiser: AdamW lr 0.0002 wd 0.01  schedule: cosine -> 0 over 1 steps
+  ONLINE LABELLER: backend synthetic  workers 2  metric cache None  timeout 900 s
+  score-loss normaliser: 64.0000 covered candidates/sample x batch (CONSTANT, so --accum is exactly equivalent to one large batch)
+  gradient accumulation: 2 micro-batches of 1 = effective batch 2  (paper: 256)
+    step     0  traj_L1   8.5943  score  0.0748  winners 1/1  assign_d   0.00 m  scorer_cov 100.0 %  lr 0.00e+00     3.0s
+      on-policy: sets    2  pick 0.156  random 0.156  best 0.157  skill -0.208  drift  0.00 m  label lag     0.0 steps
+
+  scorer coverage: 2 of 2 samples carried PDM targets (100.0 %)
+  batches with NO scorer supervision at all: 0 (they contribute zero gradient, not a zero target)
+  assignment distance per candidate (the floor is set by the CANDIDATE SET, not by
+  model quality -- teacher/lat should converge, over-curb/stopped should not):
+      candidate       n    whole run    last 25 %   (the trailing column is the one that answers the question)
+
+  traj L1: first 8.5943 -> last 8.5943   (0.0 % reduction)
+  saved C:\Users\Admin\AppData\Local\Temp\tmpkkzehfzz\o\model_final.pt (sha256 cd04b3b1a4c3) and summary.json (done=true)
+TRAIN_DONE
+  deferred_bit_identity: ok (96)
+  stale_label_refused: ok (98)
+  gate_judges: ok (123)
+  gate_p6_rows: ok (134)
+  mutation RED as required: model.py [if yaw_wrap:] -> yaw_analytic
+  mutation RED as required: model.py [ego_tok = self.ego_enc(torch.cat([ego, self.cmd_] -> command_model_reach
+  mutation RED as required: train.py [yaw_wrap=(a.yaw_wrap == "on"), parts=True)] -> trainer_reach_online
+  mutation RED as required: train.py ["bce_ttc": bce_comp[3],] -> trainer_reach_online
+  mutation RED as required: train.py [tot_ = P["l_traj"] + l_score] -> score_only_grad
+  mutation RED as required: train.py [cfg.nav_mode = a.nav_mode] -> trainer_reach_online
+  mutation RED as required: train.py [lab.submit(micro, step, metas, props_np)] -> deferred_bit_identity
+  mutation RED as required: online_labeller.py [if r["sha"] != h["shas"][i]:] -> stale_label_refused
+  mutation RED as required: ckpt_io.py [if nav and nav != c.nav_mode:
+        c.nav_] -> ckpt_meta_nav_mode
+  mutation RED as required: nav_command.py [if ang > GOAL_RULE_BEARING_RAD:
+        retu] -> nav_rule
+  mutation RED as required: launch_gate.py ["--yaw-wrap": "off",] -> profile_p6
+ZZP6_PASS 156

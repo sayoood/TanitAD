@@ -1,0 +1,456 @@
+#!/usr/bin/env python3
+"""Self-test of eval/safeobj_read.py, the reader of bar S (SAFEOBJ; PREREG_SAFEOBJ.md section 5).  Run: python eval/test_safeobj_read.py -> ZZTEST_PASS <n>.   No pod, no GPU, no network.
+
+THE FIXTURES ARE WRITTEN BY THE PRODUCERS, NOT BY HAND.  The reader's inputs are the files the chain leaves in an arm directory.  Each fixture here is made by the REAL code that makes them:
+  * the per-check record   = `rls1_checks.RlValChecker.__call__` (the real class, built without its data loaders, on synthetic score files written by `rl_val_eval.write_scores_npz`, read by the real
+                              `load_scores_light`, labelled by the real `rl_val_eval.run`)
+  * kill_checks.jsonl      = `rls1_checks.monitor` (live), KILLED.json = its own kill()
+  * kill_replay.json       = `rls1_checks.replay` + the json.dump of `rls1_checks.main` (pinned below by a source check, so a changed writer cannot go unseen)
+  * rlval_vs_A0.json       = `rl_val_eval.run` (A0 / CTRL / R) + the `inputs.scores_sha256` block `rl_val_eval.main` adds, hashing the arm's real scores/ files
+A reader that is tested on a schema its author invented passes its test and reads nothing: that is the "built, tested, unreachable" class, and the fixtures exist to rule it out.
+
+FIXTURE.  250 sets in 125 logs, 5 proposals each (P0..P4).  Path lengths 50/40/30/20/10 m.  TTC = 0 only on P3, NC = 0 only on P2, so ONE set where B picks P3 instead of a TTC-clean proposal moves the
+mean TTC by -100/250 = -0.4 points (inside the 0.5 bar) and TWO move it by -0.8 (outside).  The control A picks P1 everywhere; B's variants are listed in VARIANTS.  A set where B picks P4 (the shortest
+path) is what g3's shortest-bin share counts.
+
+Then: SCENARIOS (a directory per case, each with its expected verdict: PASS / FAIL / NOT_READ and a reason), BOUNDARY unit checks, the END-TO-END path (the reader's CLI writes the file the REAL
+`rls1_checks.safeobj_gate` reads, in-process and through its own CLI), and MUTATIONS of the reader's source, each of which must turn the scenarios it exists for RED.
+"""
+from __future__ import annotations
+
+import contextlib
+import copy
+import hashlib
+import io
+import json
+import math
+import os
+import shutil
+import subprocess
+import sys
+import tempfile
+import types
+from pathlib import Path
+
+import numpy as np
+
+HERE = Path(__file__).resolve().parent                    # eval/
+PKGROOT = HERE.parent
+sys.path.insert(0, str(HERE))
+sys.path.insert(0, str(PKGROOT / "refe"))
+import rl_reward as RW  # noqa: E402
+import rl_val_eval as RV  # noqa: E402
+import rls1_checks as RC  # noqa: E402
+
+READER = HERE / "safeobj_read.py"
+N, M, CK, ARM = 250, 5, 100, "R0d"
+TAGS = ("update250", "update500", "update750", "update1000")
+TG = np.array([[1, 1, 1.0, 1, 1, 1], [1, 1, 0.5, 1, 1, 1], [0, 1, 0.0, 1, 1, 1], [1, 1, 0.2, 0, 1, 1], [1, 1, 0.1, 1, 1, 1]], float)       # NC DAC EP TTC C DDC (P2: NC 0, P3: TTC 0)
+DF = np.array([0.0, 0.2, 1.0, 0.4, 0.1])
+LEN = np.array([50.0, 40.0, 30.0, 20.0, 10.0])
+KEYS = [(f"LOG{i // 2:03d}", f"tok{i:03d}", 0, 0) for i in range(N)]
+SCENES = {k[1]: k[0] for k in KEYS}
+A_PICK = [1] * N                                                                                                         # the control: P1 everywhere
+
+
+def _picks(**counts):
+    p = [0] * N
+    j = 0
+    for pick, c in counts.items():
+        for _ in range(c):
+            p[j] = int(pick[1:])
+            j += 1
+    return p
+
+
+VARIANTS = {                                                                                                             # B's picks per variant
+    "same": A_PICK,                                                                                                      # B == A (the step0 read)
+    "ok": _picks(P3=1),                                                                                                  # TTC -0.4, NC 0: inside g5; g3 fine
+    "ttc": _picks(P3=2),                                                                                                 # TTC -0.8
+    "nc": _picks(P2=2),                                                                                                  # NC -0.8
+    "pick": [4] * N,                                                                                                     # g3: pick/fan-mean path 0.333 AND shortest-bin share 1.0 (g5 clean)
+    "share": _picks(P4=140),                                                                                             # g3: shortest-bin share 0.56 > 0.55 while pick/fan-mean 0.92 >= 0.894
+    "edge": _picks(P4=135),                                                                                              # g3: share 0.54, pick/fan-mean 0.947: holds
+}
+
+
+def _scores(picks):
+    s = np.full((len(picks), M, 7), -8.0)
+    for i, pk in enumerate(picks):
+        s[i, pk, :6] = 8.0
+    s[:, :, 6] = 8.0
+    return s
+
+
+def load_reader(src: str, where: Path):
+    """the reader from a (possibly mutated) source text, written to a file so its CLI can be run too."""
+    where.write_text(src, encoding="utf-8", newline="\n")
+    m = types.ModuleType("safeobj_read_under_test")
+    m.__file__ = str(where)
+    exec(compile(src, str(where), "exec"), m.__dict__)
+    return m
+
+
+class Fx:
+    """the producers' output for the fixture, cached per variant."""
+
+    def __init__(self, root: Path):
+        self.root = root
+        (root / "ref").mkdir(parents=True)
+        (root / "b").mkdir(parents=True)
+        self.pdm = {RV.key_of(k): {"ckpt": CK, "tg": TG.copy()} for k in KEYS}
+        self.terms = {RV.key_of(k): {"ckpt": CK, "d": DF.copy(), "k": np.zeros(M), "lc": np.zeros(M, bool), "fires": False, "dither": np.zeros(M)} for k in KEYS}
+        self.paths = {RV.key_of(k): LEN.copy() for k in KEYS}
+        self.cfg = RW.RewardCfg(lam_d=0.15, w_prog=0.5, guard=True, use_k=False, use_l=False)
+        self.ck = RC.RlValChecker.__new__(RC.RlValChecker)                                                              # the REAL class, without its disk loaders
+        self.ck.RV, self.ck.arm, self.ck.refdir, self.ck.rule, self.ck.n_boot = RV, ARM, str(root / "ref"), "navsim_v1_lane", 50
+        self.ck.pdm, self.ck.terms, self.ck.sets, self.ck.scenes, self.ck.cfg = self.pdm, self.terms, "unused", SCENES, self.cfg
+        self.ck.path_cache = {(k, CK): LEN.copy() for k in self.pdm}
+        self.bfile, self._rec, self._rl = {}, {}, {}
+        for t in ("step0",) + TAGS:
+            RV.write_scores_npz(str(root / "ref" / f"scores_{t}_A.npz"), KEYS, [CK] * N, _scores(A_PICK))
+        for v, pk in VARIANTS.items():
+            self.bfile[v] = str(root / "b" / f"{v}.npz")
+            RV.write_scores_npz(self.bfile[v], KEYS, [CK] * N, _scores(pk))
+
+    def rec(self, variant):
+        """one RlValChecker record for B = variant against A = P1 everywhere (cached; the tag is set by the caller)."""
+        if variant not in self._rec:
+            self._rec[variant] = self.ck("update250", {"B": self.bfile[variant]})
+        return copy.deepcopy(self._rec[variant])
+
+    def rlval(self, variant):
+        """rl_val_eval.run's result for arms A0 / CTRL / R (cached numbers; the caller adds the `inputs` block with the real file hashes)."""
+        if variant not in self._rl:
+            a = self.root / "ref" / "scores_update250_A.npz"                                                              # A0 and CTRL: the same scores (this fixture needs only R - CTRL)
+            arms = {"A0": self._load(a), "CTRL": self._load(a), "R": self._load(self.bfile[variant])}
+            self._rl[variant] = RV.run(arms, self.pdm, self.terms, self.paths, "navsim_v1_lane", self.cfg, SCENES, True, "A0", 50)
+        return copy.deepcopy(self._rl[variant])
+
+    @staticmethod
+    def _load(path):
+        return RC.load_scores_light(str(path))
+
+
+def build_arm(fx: Fx, root: Path, name: str, variants: dict, *, arm=ARM, live=False, replay=True, rlval_variant="last", scores_dir=True):
+    """an arm directory the way the chain leaves it.  variants = {tag: variant name or None (no score_dump for that tag)}.  -> its path (basename = the arm)."""
+    d = root / name / arm
+    d.mkdir(parents=True)
+    rows = [{"event": "score_dump", "tag": "step0", "files": {"B": fx.bfile["same"]}}]
+    for t in TAGS:
+        if variants.get(t):
+            rows.append({"event": "score_dump", "tag": t, "files": {"B": fx.bfile[variants[t]]}})
+    (d / "sft.jsonl").write_text("".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8")
+    vt = {"step0": "same", **{t: v for t, v in variants.items() if v}}
+
+    def check_fn(tag, files):
+        return {**fx.rec(vt[tag]), "tag": tag}
+
+    if live:                                                                                                                # the real monitor, one pass (alive_fn False after the first read)
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            RC.monitor(arm, str(d), check_fn, 1, lambda pid: False, lambda pid: None, sleep_fn=lambda s: None, now_fn=lambda: 0.0)
+    if replay:                                                                                                              # the real replay + main()'s own json.dump
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            code, why, recs = RC.replay(arm, str(d), check_fn)
+        with open(d / "kill_replay.json", "w", encoding="utf-8", newline="\n") as f:
+            json.dump({"arm": arm, "kill": code, "why": why, "checks": recs}, f, indent=1)
+    last = variants.get("update1000") if rlval_variant == "last" else rlval_variant
+    if last:
+        sc = d / "scores"
+        sc.mkdir()
+        RV.write_scores_npz(str(sc / "scores_update1000_A.npz"), KEYS, [CK] * N, _scores(A_PICK))
+        shutil.copy(fx.bfile[last], sc / "scores_update1000_B.npz")
+        RV.write_scores_npz(str(sc / "scores_update1000_base.npz"), KEYS, [CK] * N, _scores(A_PICK))
+        res = fx.rlval(last)
+        res["inputs"] = {"scores_sha256": {"A0": RV.sha256_file(str(sc / "scores_update1000_base.npz")), "CTRL": RV.sha256_file(str(sc / "scores_update1000_A.npz")),
+                                           "R": RV.sha256_file(str(sc / "scores_update1000_B.npz"))}}
+        with open(d / "rlval_vs_A0.json", "w", encoding="utf-8", newline="\n") as f:
+            json.dump(res, f, indent=1, sort_keys=True)
+        if not scores_dir:
+            shutil.rmtree(sc)
+    return d
+
+
+def jload(p):
+    return json.loads(Path(p).read_text(encoding="utf-8"))
+
+
+def jsave(p, o):
+    Path(p).write_text(json.dumps(o, indent=1), encoding="utf-8")
+
+
+ALL = dict(zip(TAGS, ("ok",) * 4))
+
+
+def make_scenarios(fx: Fx, root: Path):
+    """-> {name: (dir, expected S, [reason substrings], extra check or None)}  (built once; the reader never writes into these, the CLI scenario works on copies)."""
+    sc = {}
+
+    def add(name, d, S, why=(), extra=None):
+        sc[name] = (d, S, tuple(why), extra)
+
+    B = lambda name, v, **kw: build_arm(fx, root, name, v, **kw)                                                            # noqa: E731
+    add("pass", B("pass", ALL, live=True), "PASS")
+    add("pass_g3_edge", B("pass_g3_edge", dict.fromkeys(TAGS, "edge")), "PASS")
+    add("single_ttc_u500", B("single_ttc_u500", {**ALL, "update500": "ttc"}, live=True), "FAIL", ("update500", "g5 TTC"),
+        lambda d: (jload(d / "kill_replay.json")["kill"] is None and not (d / "KILLED.json").exists()) or (_ for _ in ()).throw(AssertionError("a single non-consecutive breach must NOT have killed")))
+    add("ttc_u1000_only", B("ttc_u1000_only", {**ALL, "update1000": "ttc"}), "FAIL", ("update1000: g5 TTC", "u1000 TTC B-A"))                # the replay's AND rl_val_eval's own read
+    add("nc_u750", B("nc_u750", {**ALL, "update750": "nc"}), "FAIL", ("update750", "g5 NC"))
+    add("g3_pick_u250", B("g3_pick_u250", {**ALL, "update250": "pick"}), "FAIL", ("update250", "g3 pick/fan-mean path"))
+    add("g3_share_u1000", B("g3_share_u1000", {**ALL, "update1000": "share"}), "FAIL", ("update1000: g3 shortest-bin share", "u1000 g3 shortest-bin share"))
+    d = B("two_consec_live_kill", {**ALL, "update500": "ttc", "update750": "ttc"}, live=True, replay=False, rlval_variant=None)
+    add("two_consec_live_kill", d, "FAIL", ("K3-killed",), lambda d: jload(d / "KILLED.json")["code"] == "K3" or (_ for _ in ()).throw(AssertionError("the real monitor did not K3-kill")))
+    d = B("retroactive_kill", {**ALL, "update500": "ttc", "update750": "ttc"}, rlval_variant=None)
+    add("retroactive_kill", d, "FAIL", ("retroactive replay killed",), lambda d: jload(d / "kill_replay.json")["kill"] == "K3" or (_ for _ in ()).throw(AssertionError("no retroactive K3")))
+    d = B("retro_k3_marker_only", ALL)                                                                                      # the kill marker alone (clean checks beside it): still FAIL
+    r = jload(d / "kill_replay.json")
+    r["kill"], r["why"] = "K3", "g3/g5 bound breached at update500 and update750"
+    jsave(d / "kill_replay.json", r)
+    add("retro_k3_marker_only", d, "FAIL", ("retroactive replay killed",))
+    d = B("killed_k3_marker_only", ALL)
+    jsave(d / "KILLED.json", {"arm": ARM, "code": "K3", "why": "g3/g5 bound breached", "at": "t"})
+    add("killed_k3_marker_only", d, "FAIL", ("K3-killed",))
+    d = B("killed_k6_clean", ALL)
+    jsave(d / "KILLED.json", {"arm": ARM, "code": "K6", "why": "more than 6.0 h", "at": "t"})
+    add("killed_k6_clean", d, "NOT_READ", ("killed by K6",))
+    add("missing_u750", B("missing_u750", {**ALL, "update750": None}), "NOT_READ", ("check update750 is missing",))
+    d = B("duplicate_tag", ALL)
+    r = jload(d / "kill_replay.json")
+    r["checks"].append(copy.deepcopy(r["checks"][1]))
+    jsave(d / "kill_replay.json", r)
+    add("duplicate_tag", d, "NOT_READ", ("twice",))
+    d = B("monitor_conflict", ALL, live=True)
+    rows = [json.loads(ln) for ln in (d / "kill_checks.jsonl").read_text(encoding="utf-8").splitlines()]
+    rows[1] = {**fx.rec("ttc"), "tag": "update500", "k3_enabled": True, "kill": None}
+    (d / "kill_checks.jsonl").write_text("".join(json.dumps(x) + "\n" for x in rows), encoding="utf-8")
+    add("monitor_conflict", d, "NOT_READ", ("update500: the live monitor's row and the replay disagree",))
+    add("rlval_disagrees", B("rlval_disagrees", ALL, rlval_variant="ttc"), "FAIL", ("u1000 TTC B-A",))                          # replay says clean, rl_val_eval's own u1000 read says -0.8
+    d = B("bound_moved", ALL)
+    r = jload(d / "kill_replay.json")
+    for c in r["checks"]:
+        c["g5"]["bound"] = 1.0
+    jsave(d / "kill_replay.json", r)
+    add("bound_moved", d, "NOT_READ", ("g5.bound is 1.0",))
+    d = B("flag_lies", {**ALL, "update500": "pick"})
+    r = jload(d / "kill_replay.json")
+    c = r["checks"][1]
+    c["g3"]["pick_ok"] = c["g3"]["share_ok"] = c["g3_ok"] = True                                                              # the producer's flags say fine, its raw numbers say 0.333 / 1.0
+    jsave(d / "kill_replay.json", r)
+    add("flag_lies", d, "FAIL", ("g3 pick/fan-mean path", "disagree with its own raw fields"))
+    d = B("wrong_arm_dir", ALL)
+    r = jload(d / "kill_replay.json")
+    r["arm"] = "R1d"
+    jsave(d / "kill_replay.json", r)
+    add("wrong_arm_dir", d, "NOT_READ", ("is the replay of arm 'R1d'",))
+    d = B("own_A_hash", ALL)
+    rl = jload(d / "rlval_vs_A0.json")
+    rl["inputs"]["scores_sha256"]["CTRL"] = hashlib.sha256(b"C0's dumps").hexdigest()
+    jsave(d / "rlval_vs_A0.json", rl)
+    add("own_A_hash", d, "NOT_READ", ("NOT this arm's scores/scores_update1000_A.npz",))
+    d = B("no_replay", ALL, replay=False)
+    add("no_replay", d, "NOT_READ", ("kill_replay.json is missing",))
+    d = B("no_rlval", ALL, rlval_variant=None)
+    add("no_rlval", d, "NOT_READ", ("rlval_vs_A0.json is missing",))
+    d = B("garbage_files", ALL)                                                                                             # files of the wrong SHAPE: NOT_READ, never an exception
+    jsave(d / "kill_replay.json", {"arm": ARM, "kill": None, "checks": [1, "x", None]})
+    jsave(d / "rlval_vs_A0.json", [])
+    jsave(d / "KILLED.json", [])
+    add("garbage_files", d, "NOT_READ", ("KILLED.json is not an object", "rlval_vs_A0.json is not an object"))
+    d = B("garbage_replay_list", ALL)
+    jsave(d / "kill_replay.json", [1, 2, 3])
+    add("garbage_replay_list", d, "NOT_READ", ("kill_replay.json is not an object",))
+    d = B("garbage_unhashable_tag", ALL)                                                                                    # an input that makes the reader RAISE inside (an unhashable tag): the wrapper turns it into NOT_READ
+    jsave(d / "kill_replay.json", {"arm": ARM, "kill": None, "checks": [{"tag": ["update250"]}]})
+    add("garbage_unhashable_tag", d, "NOT_READ", ("could not interpret this directory's files: TypeError",))
+    d = B("observe_only", ALL)
+    r = jload(d / "kill_replay.json")
+    for c in r["checks"]:
+        c["observe_only"] = True
+    jsave(d / "kill_replay.json", r)
+    add("observe_only", d, "NOT_READ", ("--observe-only",))
+    return sc
+
+
+def boundary_checks(R):
+    """judge_check / read_u1000 at the registered edges (hand-built records of the producer's shape)."""
+    def rec(ratio=1.5, share=0.1, nc=True, ttc=True, bound=0.5, mn=None, mx=0.55):
+        pick_ok, share_ok = ratio >= R.G3_PICK_MIN, share <= R.G3_SHARE_MAX
+        return {"tag": "update250", "g3": {"pick_over_fan_mean_path": ratio, "min_allowed": R.G3_PICK_MIN if mn is None else mn, "pick_ok": pick_ok, "shortest_bin_share": share, "max_allowed": mx, "share_ok": share_ok},
+                "g3_ok": pick_ok and share_ok, "g5": {"NC_fall_ok": nc, "TTC_fall_ok": ttc, "bound": bound}, "g5_ok": nc and ttc}
+    chk = []
+    b, p = R.judge_check(rec(ratio=R.G3_PICK_MIN))                                                                              # exactly on the bound holds
+    chk.append(("edge_pick_exactly_on_bound_holds", b == [] and p == []))
+    b, p = R.judge_check(rec(ratio=R.G3_PICK_MIN - 1e-6))
+    chk.append(("edge_pick_just_below_breaches", len(b) == 1 and "g3 pick/fan-mean path" in b[0] and p == []))
+    b, p = R.judge_check(rec(share=0.55))
+    chk.append(("edge_share_exactly_on_bound_holds", b == [] and p == []))
+    b, p = R.judge_check(rec(share=0.5500001))
+    chk.append(("edge_share_just_above_breaches", len(b) == 1 and "shortest-bin share" in b[0] and p == []))
+    b, p = R.judge_check(rec(nc=False))
+    chk.append(("edge_nc_flag_false_breaches", len(b) == 1 and "g5 NC" in b[0]))
+    b, p = R.judge_check(rec(ttc=False))
+    chk.append(("edge_ttc_flag_false_breaches", len(b) == 1 and "g5 TTC" in b[0]))
+    b, p = R.judge_check(rec(mx=0.6))
+    chk.append(("edge_moved_g3_share_bound_is_unreadable", any("max_allowed" in x for x in p)))
+    b, p = R.judge_check({"tag": "x"})
+    chk.append(("edge_record_without_blocks_is_unreadable", p and not b))
+
+    def rl(ttc_r, ttc_c, nc_r=99.0, nc_c=99.0, ratio=1.5, share=0.1):
+        return {"arms": {"R": {"subscores_x100": {"TTC": ttc_r, "NC": nc_r}, "g3": {"pick_over_fan_mean_path": ratio, "shortest_bin_share": share}},
+                         "CTRL": {"subscores_x100": {"TTC": ttc_c, "NC": nc_c}}}, "eligibility": {"sets_used": 7}}
+
+    def u_rec(ttc_ok, nc_ok=True, ratio=1.5, share=0.1):
+        return {"g5": {"TTC_fall_ok": ttc_ok, "NC_fall_ok": nc_ok}, "g3": {"pick_over_fan_mean_path": ratio, "shortest_bin_share": share}, "n_sets": 7}
+    i, b, p = R.read_u1000(rl(98.5, 99.0), u_rec(True))                                                                         # B - A = -0.5 exactly: holds
+    chk.append(("u1000_delta_exactly_minus_0.5_holds", b == [] and p == [] and i["TTC_delta_x100"] == -0.5))
+    i, b, p = R.read_u1000(rl(98.4999, 99.0), u_rec(False))
+    chk.append(("u1000_delta_just_below_minus_0.5_breaches", len(b) == 1 and "TTC" in b[0] and p == []))
+    i, b, p = R.read_u1000(rl(99.0, 99.0, nc_r=98.0), u_rec(True, nc_ok=True))                                                  # replay says NC fine, the numbers say -1.0
+    chk.append(("u1000_nc_numbers_vs_replay_flag", len(b) == 1 and "NC" in b[0] and len(p) == 1))
+    return chk
+
+
+def end_to_end(R, rpath: Path, sc: dict, tmp: Path):
+    """the reader's CLI writes the file the REAL gate reads: PASS opens it, FAIL and NOT_READ do not; rc 0 / 1 / 2; the record hash is self-consistent."""
+    chk = []
+    for name, want_rc, gate_ok in (("pass", 0, True), ("single_ttc_u500", 1, False), ("missing_u750", 2, False)):
+        d0 = sc[name][0]
+        d = tmp / "cli" / name / d0.name
+        shutil.copytree(d0, d)
+        r = subprocess.run([sys.executable, "-X", "utf8", str(rpath), "--arm-dir", str(d)], capture_output=True, text=True, timeout=120)
+        out = d / "safeobj_S.json"
+        chk.append((f"cli_{name}_rc_{want_rc}", r.returncode == want_rc))
+        chk.append((f"cli_{name}_writes_the_file", out.exists() and jload(out)["S"] == {0: "PASS", 1: "FAIL", 2: "NOT_READ"}[want_rc] and f"ZZSAFEOBJ_S {ARM} " in r.stdout))
+        ok, _why = RC.safeobj_gate([str(d)]) if out.exists() else (None, "")
+        chk.append((f"cli_{name}_real_gate_{'opens' if gate_ok else 'refuses'}", ok is gate_ok))
+        g = subprocess.run([sys.executable, "-X", "utf8", str(PKGROOT / "refe" / "rls1_checks.py"), "safeobj-gate", "--dirs", str(d)], capture_output=True, text=True, timeout=120)
+        chk.append((f"cli_{name}_real_gate_cli_rc_{0 if gate_ok else 1}", g.returncode == (0 if gate_ok else 1)))
+        if out.exists():
+            rec = jload(out)
+            body = json.dumps({k: v for k, v in rec.items() if k != "record_sha256"}, sort_keys=True, separators=(",", ":"))
+            chk.append((f"cli_{name}_record_sha256_is_self_consistent", rec["record_sha256"] == hashlib.sha256(body.encode()).hexdigest()))
+    both = [str(tmp / "cli" / "pass" / ARM), str(tmp / "cli" / "single_ttc_u500" / ARM)]
+    ok, why = RC.safeobj_gate(both)
+    chk.append(("cli_gate_needs_EVERY_arm_to_pass", ok is False))
+    return chk
+
+
+def constants_pin(R):
+    return [("pin_tags", R.CHECK_TAGS == TAGS), ("pin_g5_bound_is_rl_val_eval_and_0.5", R.G5_BOUND == RV.G5_SUBSCORE_FALL_MAX == 0.5),
+            ("pin_g3_pick_is_rl_val_eval_exactly_and_0.894", R.G3_PICK_MIN == RV.G3_PICK_FAN_MEAN_MIN and abs(R.G3_PICK_MIN - 0.894) < 1e-12),
+            ("pin_g3_share_is_rl_val_eval_and_0.55", R.G3_SHARE_MAX == RV.G3_SHORTEST_SHARE_MAX == 0.55),
+            ("pin_writer_of_kill_replay_is_the_one_the_fixture_copies",
+             'json.dump({"arm": a.arm, "kill": code, "why": why, "checks": recs}, f, indent=1)' in (PKGROOT / "refe" / "rls1_checks.py").read_text(encoding="utf-8")),
+            ("pin_chain_reads_the_file_name_the_reader_writes", R.OUT_NAME == "safeobj_S.json" and '"safeobj_S.json"' in (PKGROOT / "refe" / "rls1_checks.py").read_text(encoding="utf-8"))]
+
+
+def suite(src: str, fx: Fx, sc: dict, tmp: Path, tag: str, e2e: bool = True) -> list:
+    """-> the names of the failing checks for the reader whose source is `src`."""
+    bad = []
+    rpath = tmp / f"reader_{tag}.py"
+    try:
+        R = load_reader(src, rpath)
+    except Exception as e:                                                                                                   # noqa: BLE001
+        return [f"IMPORT:{type(e).__name__}"]
+
+    def t(name, fn):
+        try:
+            ok = bool(fn())
+        except Exception:                                                                                                    # noqa: BLE001
+            ok = False
+        if not ok:
+            bad.append(name)
+    for name, (d, S, why, extra) in sc.items():
+        def one(d=d, S=S, why=why, extra=extra, name=name):
+            rec = R.read_arm(str(d))
+            assert rec["S"] == S, (name, rec["S"], rec["breaches"], rec["problems"])
+            text = " | ".join(rec["breaches"] + rec["problems"])
+            assert all(w in text for w in why), (name, why, text)
+            if extra:
+                extra(d)
+            return True
+        t(f"scenario:{name}", one)
+    for nm, ok in boundary_checks(R):
+        t(f"boundary:{nm}", lambda ok=ok: ok)
+    for nm, ok in constants_pin(R):
+        t(nm, lambda ok=ok: ok)
+    if e2e:
+        sub = tmp / f"e2e_{tag}"
+        try:
+            for nm, ok in end_to_end(R, rpath, sc, sub):
+                t(f"e2e:{nm}", lambda ok=ok: ok)
+        except Exception as e:                                                                                               # noqa: BLE001
+            bad.append(f"e2e:CRASH:{type(e).__name__}")
+    return bad
+
+
+MUTATIONS = [   # (name, old, new, scenarios / checks of which AT LEAST these must go RED)
+    ("g3 is not judged (flags forced true)", 'pick_ok, share_ok = ratio >= G3_PICK_MIN, share <= G3_SHARE_MAX', 'pick_ok, share_ok = True, True',
+     {"scenario:g3_pick_u250", "scenario:g3_share_u1000"}),
+    ("the producer's g3 flags are trusted instead of its raw numbers", 'pick_ok, share_ok = ratio >= G3_PICK_MIN, share <= G3_SHARE_MAX', 'pick_ok, share_ok = g3.get("pick_ok") is True, g3.get("share_ok") is True',
+     {"scenario:flag_lies"}),
+    ("pick/fan-mean bound is strict (>) instead of >=", 'pick_ok, share_ok = ratio >= G3_PICK_MIN, share <= G3_SHARE_MAX', 'pick_ok, share_ok = ratio > G3_PICK_MIN, share <= G3_SHARE_MAX',
+     {"boundary:edge_pick_exactly_on_bound_holds"}),
+    ("shortest-bin share bound is strict (<) instead of <=", 'pick_ok, share_ok = ratio >= G3_PICK_MIN, share <= G3_SHARE_MAX', 'pick_ok, share_ok = ratio >= G3_PICK_MIN, share < G3_SHARE_MAX',
+     {"boundary:edge_share_exactly_on_bound_holds"}),
+    ("only the LAST check is judged", 'for tag in CHECK_TAGS:\n        r = by_tag.get(tag)', 'for tag in CHECK_TAGS[-1:]:\n        r = by_tag.get(tag)',
+     {"scenario:single_ttc_u500", "scenario:nc_u750", "scenario:g3_pick_u250", "scenario:missing_u750"}),
+    ("NC is not judged", '        if not nc:\n            breaches.append', '        if False:\n            breaches.append', {"scenario:nc_u750", "boundary:edge_nc_flag_false_breaches"}),
+    ("TTC is not judged", '        if not ttc:\n            breaches.append', '        if False:\n            breaches.append', {"scenario:single_ttc_u500", "boundary:edge_ttc_flag_false_breaches"}),
+    ("a missing check is not a problem", 'problems.append(f"check {tag} is missing")', 'pass', {"scenario:missing_u750"}),
+    ("a duplicated tag is not a problem", 'problems.append(f"the replay carries the tag {t!r} twice")', 'pass', {"scenario:duplicate_tag"}),
+    ("a non-K3 kill is not a problem", 'problems.append(f"the arm was killed by {code}: the u1000 check cannot exist")', 'pass', {"scenario:killed_k6_clean"}),
+    ("a K3 kill marker is not a breach", 'breaches.append("the arm was K3-killed (two consecutive g3/g5 breaches)")', 'pass', {"scenario:two_consec_live_kill", "scenario:killed_k3_marker_only"}),
+    ("a retroactive K3 is not a breach", '(breaches if rep["kill"] == "K3" else problems).append', '(problems).append', {"scenario:retro_k3_marker_only"}),
+    ("the live monitor's rows are not compared with the replay", 'if tag in mon and not _agree(mon[tag], r):', 'if False:', {"scenario:monitor_conflict"}),
+    ("the u1000 numeric read is not used", 'info, b, pr = read_u1000(rl, last)', 'info, b, pr = None, [], []', {"scenario:rlval_disagrees", "scenario:ttc_u1000_only"}),
+    ("a moved g5 bound is accepted", 'if not _num(g5.get("bound")) or abs(g5["bound"] - G5_BOUND) > G_TOL:', 'if False:', {"scenario:bound_moved"}),
+    ("the u1000 control is not tied to the arm's own A", 'if hashes.get(name) != got:', 'if False:', {"scenario:own_A_hash"}),
+    ("the replay of another arm is accepted", 'if rep.get("arm") != arm:', 'if False:', {"scenario:wrong_arm_dir"}),
+    ("an observe-only replay is accepted", 'if any(isinstance(r, dict) and r.get("observe_only") for r in recs):', 'if False:', {"scenario:observe_only"}),
+    ("a NOT_READ arm is written as PASS (fail open)", 'out["S"] = "FAIL" if out["breaches"] else ("NOT_READ" if out["problems"] else "PASS")', 'out["S"] = "FAIL" if out["breaches"] else "PASS"',
+     {"scenario:missing_u750", "scenario:no_replay", "e2e:cli_missing_u750_real_gate_refuses"}),
+    ("a KILLED.json of the wrong shape is not a problem", 'if not isinstance(killed, dict):\n            problems.append("KILLED.json is not an object")', 'if False:\n            problems.append("KILLED.json is not an object")', {"scenario:garbage_files"}),
+    ("an rlval_vs_A0.json of the wrong shape is not a problem", 'if rl is not None and not isinstance(rl, dict):', 'if False:', {"scenario:garbage_files"}),
+    ("an unexpected shape raises instead of reading NOT_READ", '    try:\n        return _read_arm(arm_dir)\n    except Exception as e:', '    try:\n        return _read_arm(arm_dir)\n    except ZeroDivisionError as e:', {"scenario:garbage_unhashable_tag"}),
+    ("the registered g5 bound is 0.6", 'G5_BOUND = 0.5 ', 'G5_BOUND = 0.6 ', {"pin_g5_bound_is_rl_val_eval_and_0.5"}),
+    ("the registered g3 share bound is 0.6", 'G3_SHARE_MAX = 0.55 ', 'G3_SHARE_MAX = 0.6 ', {"pin_g3_share_is_rl_val_eval_and_0.55"}),
+    ("the file is never written", 'os.replace(tmp, path)', 'pass', {"e2e:cli_pass_writes_the_file"}),
+    ("the file is written under another name", 'OUT_NAME = "safeobj_S.json"', 'OUT_NAME = "safeobj_state.json"', {"pin_chain_reads_the_file_name_the_reader_writes", "e2e:cli_pass_real_gate_opens"}),
+]
+
+
+def main() -> int:
+    src = READER.read_text(encoding="utf-8")
+    n = 0
+    with tempfile.TemporaryDirectory() as td:
+        tmp = Path(td)
+        fx = Fx(tmp / "fx")
+        # ---- fixture sanity: the variants mean what the file header says (read from the REAL producer's record, not assumed)
+        s = {v: fx.rec(v) for v in VARIANTS}
+        g = lambda v, k: s[v]["g5"][k]                                                                                       # noqa: E731
+        assert s["same"]["g5_ok"] and s["same"]["g3_ok"], s["same"]
+        assert s["ok"]["g5_ok"] and s["ok"]["g3_ok"] and s["edge"]["g3_ok"] and s["edge"]["g5_ok"], (s["ok"], s["edge"])
+        assert g("ttc", "TTC_fall_ok") is False and g("ttc", "NC_fall_ok") is True and s["ttc"]["g3_ok"], s["ttc"]
+        assert g("nc", "NC_fall_ok") is False and g("nc", "TTC_fall_ok") is True and s["nc"]["g3_ok"], s["nc"]
+        assert s["pick"]["g3"]["pick_ok"] is False and s["pick"]["g3"]["share_ok"] is False and s["pick"]["g5_ok"], s["pick"]
+        assert s["share"]["g3"]["pick_ok"] is True and s["share"]["g3"]["share_ok"] is False and s["share"]["g5_ok"], s["share"]
+        assert abs(s["share"]["g3"]["shortest_bin_share"] - 0.56) < 1e-12 and abs(s["edge"]["g3"]["shortest_bin_share"] - 0.54) < 1e-12
+        n += 7
+        sc = make_scenarios(fx, tmp / "arms")
+        bad = suite(src, fx, sc, tmp, "base")
+        assert bad == [], f"the UNMUTATED reader fails: {bad}"
+        n += 1
+        for i, (name, old, new, expect) in enumerate(MUTATIONS):
+            assert src.count(old) == 1, f"mutation anchor x{src.count(old)}: {name}: {old[:70]!r}"
+            got = suite(src.replace(old, new), fx, sc, tmp, f"m{i}", e2e=any(x.startswith("e2e:") for x in expect))          # the CLI runs (slow) only where a mutation needs them
+            assert got, f"mutation '{name}' stayed GREEN"
+            assert expect <= set(got), f"mutation '{name}' went RED but NOT where it exists to: expected {sorted(expect)}, got {got}"
+            print(f"  RED  {name}  ->  {len(got)} check(s): {', '.join(got[:4])}{' ...' if len(got) > 4 else ''}", flush=True)
+            n += 1
+    print(f"ZZTEST_PASS {n}  (1 unmutated suite of {len(sc)} scenarios + boundary + end-to-end + pins, {len(MUTATIONS)} RED mutations, 7 fixture-sanity checks)")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -329,11 +329,12 @@ def join_gate(side, sets_dir, pdm_dir, terms_dir, tsv, ckpt_step=CKPT_STEP, n_pr
 
 
 # ------------------------------------------------------------------------------------------------------------- the kill rules
-def judge(arm, rec, hist, k3_enabled=True):
-    """(code or None, why).  rec/hist items: {'tag','g3_ok','g5_ok','k4_breach','k5_breach'}.  K3 and K4 need TWO CONSECUTIVE breaches, K5 (R2 only) one."""
+def judge(arm, rec, hist, k3_enabled=True, observe_only=False):
+    """(code or None, why).  rec/hist items: {'tag','g3_ok','g5_ok','k4_breach','k5_breach'}.  K3 and K4 need TWO CONSECUTIVE breaches, K5 (R2 only) one.
+    observe_only (SAFEOBJ R1o, PREREG_SAFEOBJ.md section 9): K3 is NOT a kill -- the caller logs it (ZZRLS1_K3_OBSERVED); K4 and K5 are judged exactly as before."""
     prev = hist[-1] if hist else None
     k3 = lambda r: not (r["g3_ok"] and r["g5_ok"])                                # noqa: E731
-    if k3_enabled and prev is not None and k3(rec) and k3(prev):
+    if k3_enabled and not observe_only and prev is not None and k3(rec) and k3(prev):
         return "K3", f"g3/g5 bound breached at {prev['tag']} and {rec['tag']}"
     if prev is not None and rec["k4_breach"] and prev["k4_breach"]:
         return "K4", f"RL-val PDMS below the control by more than 0.5 at {prev['tag']} and {rec['tag']}"
@@ -492,7 +493,7 @@ def _say_rss(arm, tag):
     say("ZZRLS1_MONITOR_RSS", arm, tag, f"rss_mb={cur}", f"peak_mb={peak}")
 
 
-def monitor(arm, out_dir, check_fn, pid, alive_fn, kill_fn, sleep_fn=time.sleep, now_fn=time.time, poll=20.0, max_hours=6.0, start=None):
+def monitor(arm, out_dir, check_fn, pid, alive_fn, kill_fn, sleep_fn=time.sleep, now_fn=time.time, poll=20.0, max_hours=6.0, start=None, observe_only=False):
     """Beside a running scorer_finetune.py: after every `score_dump` event (the files are complete then) run the RL-val lookup and apply the kill rules.
     C arms are watched for K2 (non-finite loss) and K6 only; K3 / K4 / K5 are the R arms' (they compare R with its control).  A check that RAISES is
     logged (ZZRLS1_CHECK_ERROR) and does not kill: `replay` re-judges every tag after the run.  -> exit code 0 (clean) / 2 (killed)."""
@@ -529,7 +530,11 @@ def monitor(arm, out_dir, check_fn, pid, alive_fn, kill_fn, sleep_fn=time.sleep,
             except Exception as e:                                       # noqa: BLE001
                 say("ZZRLS1_CHECK_ERROR", arm, r.get("tag"), f"{type(e).__name__}: {str(e)[:200]}")
                 continue
-            code, why = judge(arm, rec, hist, k3_enabled)
+            code, why = judge(arm, rec, hist, k3_enabled, observe_only)
+            if observe_only:                                             # SAFEOBJ R1o: the K3 it WOULD have been killed by is logged, never acted on
+                would, would_why = judge(arm, rec, hist, k3_enabled)
+                if would == "K3":
+                    say("ZZRLS1_K3_OBSERVED", arm, r["tag"], would_why)
             hist.append(rec)
             with open(os.path.join(out_dir, "kill_checks.jsonl"), "a", encoding="utf-8") as f:
                 f.write(json.dumps({**rec, "k3_enabled": k3_enabled, "kill": code}) + "\n")
@@ -546,7 +551,7 @@ def monitor(arm, out_dir, check_fn, pid, alive_fn, kill_fn, sleep_fn=time.sleep,
         sleep_fn(poll)
 
 
-def replay(arm, out_dir, check_fn):
+def replay(arm, out_dir, check_fn, observe_only=False):
     """After the run: re-judge EVERY tag in order from sft.jsonl (the monitor may have errored or missed a check).  -> (code or None, why, records)."""
     rows = _read_rows(os.path.join(out_dir, "sft.jsonl"))
     if any(r.get("event") == "train" and not _finite_row(r) for r in rows):
@@ -561,12 +566,86 @@ def replay(arm, out_dir, check_fn):
         if r["tag"] == "step0":
             k3_enabled = bool(rec["g3_ok"])
             continue
-        code, why = judge(arm, rec, hist, k3_enabled)
+        code, why = judge(arm, rec, hist, k3_enabled, observe_only)
         hist.append(rec)
-        recs.append({**rec, "k3_enabled": k3_enabled})
+        recs.append({**rec, "k3_enabled": k3_enabled, **({"observe_only": True} if observe_only else {})})
         if code:
             return code, why, recs
     return None, "", recs
+
+
+def _safeobj_reader():
+    """eval/safeobj_read.py of THIS checkout, loaded by path (never through sys.path or sys.modules, so a gate loaded from one tree cannot use another tree's reader): the one place that says what a
+    genuine bar-S record is -- TOOL (its identity), record_digest (the canonicalisation of record_sha256), sha256_file, REQUIRED_INPUTS, and read_arm / differing_fields (the reader's own judgement, re-run).  The gate calls them and keeps
+    no copy of any."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("safeobj_read_of_the_gate", str(EVAL_DIR / "safeobj_read.py"))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def safeobj_not_genuine(d, rec):
+    """-> "" when `rec` (the parsed <d>/safeobj_S.json) is a genuine, unmodified output of eval/safeobj_read.py, else the reasons joined by "; ".  Fail closed: anything unexpected is a reason.
+    (a) `tool` is the reader's identity; (b) `record_sha256` recomputes over the record by the reader's own `record_digest`; (c) the record lists the inputs every PASS read has (REQUIRED_INPUTS)
+    and every input it lists still has the listed sha256 in <d>; (d) -- only for a record that (a)-(c) found nothing wrong with -- the reader's OWN judgement, re-run in-process on <d> as it is NOW
+    (`SO.read_arm`), reproduces the stored record (`SO.differing_fields`: every field but the stamp and the reader's VOLATILE_FIELDS, which is empty).  (a)-(c) give the specific reasons; (d) is the
+    sufficient check: a record equal to a fresh read IS what the reader writes for this directory now, so it refuses a forger who re-implements the canonicalisation and hashes the inputs himself, and a
+    KILLED.json / kill_checks.jsonl / scores/ that appeared after the read.  Read-only: it writes nothing.  Still trusted, and said so in BUILD.md section 8.12: the reader's and the gate's own source, and
+    the producers' files in <d> (a producer file edited BEFORE the reader ran is read as it stands)."""
+    try:
+        SO = _safeobj_reader()
+    except Exception as e:                                                                                                   # noqa: BLE001
+        return f"the reader eval/safeobj_read.py cannot be loaded ({type(e).__name__}: {str(e)[:120]})"
+    try:
+        why = []
+        if rec.get("tool") != SO.TOOL:
+            why.append(f"tool is {rec.get('tool')!r}, not the reader's {SO.TOOL!r}")
+        if rec.get("record_sha256") != SO.record_digest(rec):
+            why.append("record_sha256 does not recompute (the record was edited, or not written by the reader)")
+        ins = rec.get("inputs_sha256")
+        if not isinstance(ins, dict):
+            why.append("inputs_sha256 is missing or not an object")
+            ins = {}
+        for name in SO.REQUIRED_INPUTS:
+            if name not in ins:
+                why.append(f"lists no input {name!r}")
+        for name, want in sorted(ins.items()):
+            fp = os.path.join(d, *str(name).split("/"))
+            if not os.path.isfile(fp):
+                why.append(f"input {name!r} is missing")
+            elif SO.sha256_file(fp) != want:
+                why.append(f"input {name!r} changed since the read (sha256 differs)")
+        if not why:                  # (d) the re-read: the stored record must be what the reader writes for <d> NOW (a forger's PASS, or an input that appeared after the read, is not)
+            diff = SO.differing_fields(rec, SO.read_arm(d))
+            if diff:
+                why.append("record is stale or not the reader's output (a fresh read of the directory differs in: " + ", ".join(diff) + ")")
+        return "; ".join(why)
+    except Exception as e:                                                                                                   # noqa: BLE001
+        return f"cannot verify the record ({type(e).__name__}: {str(e)[:120]})"
+
+
+def safeobj_gate(dirs):
+    """SAFEOBJ (PREREG_SAFEOBJ.md section 4 / outcome table): R1o runs only if EVERY constrained arm read bar S = PASS.  Each <dir>/safeobj_S.json must exist, parse, carry "S": "PASS", AND be a
+    genuine, unmodified output of eval/safeobj_read.py (safeobj_not_genuine: its tool, its record_sha256, its inputs' sha256s, and a fresh read of the directory reproducing it) -- a gate input is never hand-written.  -> (ok, why); a missing,
+    unparsable, non-PASS or non-genuine file is a refusal, and the reason is named."""
+    bad = []
+    for d in dirs:
+        p = os.path.join(d, "safeobj_S.json")
+        try:
+            with open(p, encoding="utf-8") as f:
+                rec = json.load(f)
+            s = rec.get("S")
+        except (OSError, ValueError, AttributeError) as e:
+            bad.append(f"{p}: {type(e).__name__}")
+            continue
+        if s != "PASS":
+            bad.append(f"{p}: S={s!r}")
+        else:
+            why = safeobj_not_genuine(d, rec)
+            if why:
+                bad.append(f"{p}: not a genuine reader record: {why}")
+    return (not bad), (f"S = PASS on {len(dirs)} constrained arm(s), each a genuine reader record: its inputs unchanged and a fresh read of the arm directory reproducing it" if not bad else "; ".join(bad))
 
 
 # ------------------------------------------------------------------------------------------------------------- CLI
@@ -603,6 +682,7 @@ def main(argv=None):
     p = sub.add_parser("tlane-exact"); p.add_argument("--dir", required=True); p.add_argument("--sets", required=True); p.add_argument("--tsv", required=True)
     p.add_argument("--ckpt-step", type=int, default=CKPT_STEP); p.add_argument("--expect", type=int, default=None); p.add_argument("--json", default=None)
     p = sub.add_parser("updates-check"); p.add_argument("--args", required=True); p.add_argument("--n-sets", type=int, required=True)
+    p = sub.add_parser("safeobj-gate"); p.add_argument("--dirs", nargs="+", required=True)
     p = sub.add_parser("join-gate"); p.add_argument("--side", required=True, choices=["train", "val"])
     for x in ("sets", "pdm", "terms", "tsv"):
         p.add_argument(f"--{x}", required=True)
@@ -613,6 +693,7 @@ def main(argv=None):
         for x in ("arm", "out", "refdir", "pdm", "terms", "sets", "tsv"):
             p.add_argument(f"--{x}", required=True)
         p.add_argument("--rule", default="navsim_v1_lane")
+        p.add_argument("--observe-only", action="store_true")                 # SAFEOBJ: R1o only (refused for any other arm below)
         if name == "monitor":
             p.add_argument("--pid", type=int, required=True); p.add_argument("--poll", type=float, default=20.0)
             p.add_argument("--max-hours", type=float, default=6.0)
@@ -639,6 +720,10 @@ def main(argv=None):
                 json.dump({"ok": ok, "why": why, **rep}, f, indent=1)
         say("ZZRLS1_TLANE_OK" if ok else "ZZRLS1_TLANE_REFUSED", why)
         return 0 if ok else 1
+    if a.cmd == "safeobj-gate":
+        ok, why = safeobj_gate(a.dirs)
+        say("ZZRLS1_SAFEOBJ_S_PASS" if ok else "ZZRLS1_SAFEOBJ_S_REFUSED", why)
+        return 0 if ok else 1
     if a.cmd == "updates-check":
         ok, why = updates_check(a.args, a.n_sets)
         say("ZZRLS1_UPDATES_OK" if ok else "ZZRLS1_UPDATES_REFUSED", why)
@@ -650,13 +735,16 @@ def main(argv=None):
                 json.dump({"ok": ok, "why": why, **rep}, f, indent=1)
         say("ZZRLS1_JOIN_OK" if ok else "ZZRLS1_JOIN_REFUSED", a.side, why)
         return 0 if ok else 1
+    if a.cmd in ("monitor", "replay") and a.observe_only and a.arm != "R1o":
+        say("ZZRLS1_OBSERVE_ONLY_REFUSED", a.arm, "--observe-only is R1o's alone (the matched lever-off control); on any other arm it would disable K3")
+        return 1
     if a.cmd == "monitor":
         say("ZZRLS1_MONITOR_UP", a.arm, f"pid={os.getpid()}")                  # BEFORE anything is loaded: a monitor that dies while loading has still said it started
     chk = RlValChecker(a.arm, a.refdir, a.pdm, a.terms, a.sets, a.tsv, a.rule) if not a.arm.startswith("C") else (lambda *x: None)
     if a.cmd == "monitor":
         say("ZZRLS1_MONITOR_READY", f"rss_mb={_rss_mb()[0]}")                  # the chain stops the trainer (K-MON) if this never appears, or if the monitor dies after it
-        return monitor(a.arm, a.out, chk, a.pid, _alive, _kill_group, poll=a.poll, max_hours=a.max_hours)
-    code, why, recs = replay(a.arm, a.out, chk)
+        return monitor(a.arm, a.out, chk, a.pid, _alive, _kill_group, poll=a.poll, max_hours=a.max_hours, observe_only=a.observe_only)
+    code, why, recs = replay(a.arm, a.out, chk, observe_only=a.observe_only)
     with open(os.path.join(a.out, "kill_replay.json"), "w", encoding="utf-8", newline="\n") as f:
         json.dump({"arm": a.arm, "kill": code, "why": why, "checks": recs}, f, indent=1)
     say("ZZRLS1_REPLAY_KILL" if code else "ZZRLS1_REPLAY_CLEAN", a.arm, code or "", why)

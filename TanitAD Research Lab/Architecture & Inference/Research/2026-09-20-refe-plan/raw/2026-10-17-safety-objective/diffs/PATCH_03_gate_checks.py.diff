@@ -1,0 +1,150 @@
+--- a/refe/gate_checks.py
++++ b/refe/gate_checks.py
+@@ -644,6 +644,8 @@
+     "b_mode": "built", "b_compw": "built", "epo": "built", "epo_temp": "built", "epo_beta": "built", "epo_ramp": "built", "epo_lam": "built",
+     "epo_lam_d": "built", "epo_w_prog": "built", "epo_k": "built", "epo_lam_k": "built", "epo_l": "built", "epo_lam_l": "built",
+     "epo_ref": "built",                # R0c: the KL anchor's reference policy; observed through the data event's epo.ref = scorer_finetune.epo_reference_built (what the selector RETURNS)
++    # SAFEOBJ (--epo-con g5; SPEC_SAFEOBJ 5.1): all `built` -- observed through the data event's `epo_con` block (SCORER_EPO_CON_KEYS), which EpoDual.built_facts reads off the object the run holds
++    "epo_con": "built", "epo_con_eps": "built", "epo_con_lr": "built", "epo_con_max": "built", "epo_con_lam0": "built",
+     "backbone": "consumed", "batch": "consumed", "accum": "consumed", "lr": "consumed", "warmup": "consumed", "epochs": "consumed",
+     "lam": "consumed", "tau_t": "consumed", "tau_s": "consumed", "seed": "consumed", "max_updates": "consumed", "require_pdm": "consumed",
+     "lane_head": "consumed", "lane_weight": "consumed",
+@@ -656,12 +658,15 @@
+     "preflight": "control",
+ }
+ SCORER_EPO_KEYS = ("temp", "beta", "ramp", "lam", "lam_d", "w_prog", "k", "lam_k", "l", "lam_l", "ref")     # the keys of the data event's `epo` block
++SCORER_EPO_CON_KEYS = ("mode", "comps", "cols", "eps", "lr", "max", "lam0", "ref")     # the keys of the data event's `epo_con` block (SAFEOBJ; every --epo run writes it, an OFF run included)
++SCORER_EPO_CON_COMPS = {"g5": ("ttc", "nc")}          # what each mode is REGISTERED to constrain (PREREG_SAFEOBJ 2): the gate's own statement, independent of the trainer's table
++SCORER_EPO_CON_DEFAULTS = {"eps": 0.0, "lr": 4.0, "max": 10.0, "lam0": 0.0}          # the registered numbers; a trainer that predates SAFEOBJ cannot have built any other
+ SCORER_NAMESPACE_FUNCS = ("main", "epo_refusals", "_g_probe", "aux_s1_refusals")      # scorer_finetune.py: the functions whose parameter `a` IS the argparse namespace
+ SCORER_AUX_DESTS = ("w_aux_drv", "aux_drv_tap", "aux_drv_depth", "aux_drv_feed", "aux_drv_shuffle_seed", "aux_drv_lr")          # the head's levers: observed only when --aux-drv is on
+ # the preflight's gates (scorer_finetune.py `gates[...]`).  There is NO G6 -- the trainer numbers 1-5 and 7-11; test_launch_gate pins this table to the source.
+ SCORER_GATES = {"G1": "trainable_is_exactly_the_scorer", "G2": "live", "G3": "copies_equal_model_at_step0", "G4": "identity_and_live",
+                 "G5": "ckpt_roundtrip_planner_loader", "G7": "heldout_disjoint", "G8": "lane_labels_in_bank", "G9": "pdm_targets_in_bank",
+-                "G10": "teacher_lane_in_bank", "G11": "epo_live_and_identity", "G12": "aux_drv_live_and_identity"}
++                "G10": "teacher_lane_in_bank", "G11": "epo_live_and_identity", "G12": "aux_drv_live_and_identity", "G13": "epo_con_live_and_identity"}
+ 
+ 
+ def judge_g12(g12, ns) -> list:
+@@ -743,9 +748,65 @@
+         parser.__dict__.pop("error", None)
+ 
+ 
++def judge_g13(g13, ns) -> list:
++    """G13 (scorer_finetune --preflight, --epo-con g5) re-judged from its RAW FIELDS against the argv's namespace -- never from its own `ok`.  [] = proved.
++    The L_con-only backward is finite and non-zero on every scorer module of arm B; the lambda-0 and switch-off controls read EXACTLY 0.0 (value and gradient); arm A reads EXACTLY 0.0 from L_con
++    while its own BCE gradient (the same probe) reads non-zero; at step 0 the two policies coincide; the dual's synthetic sequences land on the closed form EXACTLY (0.3125 at the registered eta 4,
++    lambda0 0), floor at 0.0 and cap at lam_max; the EPO_CON block round-trips bit-equal; no regression switch was set."""
++    if not isinstance(g13, dict):
++        return ["G13 is not a dict"]
++    r = []
++    mods = set(SCORER_GROUPS)
++    fin = lambda x: isinstance(x, (int, float)) and not isinstance(x, bool) and math.isfinite(x)          # noqa: E731
++    if g13.get("ok") is not True:
++        r.append("G13 reports ok != true")
++    if g13.get("mutate"):
++        r.append(f"G13 was produced under regression switch(es) {g13['mutate']}: a regression arm can never count")
++    on, lam0, off = (g13.get(k) or {} for k in ("per_module_on", "per_module_lam0", "per_module_off"))
++    if set(on) != mods or not all(fin(x) and x > 0.0 for x in on.values()):
++        r.append(f"G13: the L_con-only backward is not finite and non-zero on every scorer module {sorted(mods)} of arm B: {on}")
++    if not (lam0 and off) or any(x != 0.0 for d in (lam0, off) for x in d.values()) or g13.get("value_lam0") != 0.0 or g13.get("value_off") != 0.0:
++        r.append("G13: the zero controls (lambda 0 / --epo-con off) do not read EXACTLY 0.0 (value and gradient) -- the probe is not proved able to read zero")
++    a_reads = [g13.get(k) or {} for k in ("A_per_module_on", "A_per_module_lam0", "A_per_module_off")]
++    if any(set(d) != mods or any(x != 0.0 for x in d.values()) for d in a_reads):
++        r.append(f"G13: arm A received a gradient from L_con (it must read EXACTLY 0.0 on every module): {a_reads[0]}")
++    a_ctrl = g13.get("A_bce_control") or {}
++    if set(a_ctrl) != mods or not all(fin(x) and x > 0.0 for x in a_ctrl.values()):
++        r.append(f"G13: arm A's own BCE gradient does not read non-zero in the same probe (a zero on A would be a property of the probe, not of the term): {a_ctrl}")
++    want = list(SCORER_EPO_CON_COMPS.get(getattr(ns, "epo_con", "off"), ()))
++    gap, tol = g13.get("c_gap") or {}, g13.get("c_gap_tol")
++    if sorted(gap) != sorted(want) or not fin(tol) or not all(fin(v) and v <= tol for v in gap.values()):
++        r.append(f"G13: the step-0 identity |c_A - c_B| <= {tol} does not hold on {want}: {gap}")
++    dr = g13.get("dual_reach") or {}
++    if sorted(dr.get("comps") or ()) != sorted(want):
++        r.append(f"G13: the dual probe covers {dr.get('comps')}, not the declared constraint {want}")
++    for k, flag in (("eta", "epo_con_lr"), ("lam0", "epo_con_lam0"), ("lam_max", "epo_con_max")):
++        if not (fin(dr.get(k)) and _close(dr.get(k), getattr(ns, flag, None))):
++            r.append(f"G13: the dual probe ran with {k} {dr.get(k)!r}, not the argv's --{flag.replace('_', '-')} {getattr(ns, flag, None)!r}")
++    if all(fin(dr.get(k)) for k in ("eta", "lam0", "lam_max", "viol")) and isinstance(dr.get("steps"), int) and dr["steps"] >= 1 and dr["viol"] > 0.0:
++        exp = dr["lam0"]
++        for _ in range(dr["steps"]):
++            exp = min(dr["lam_max"], max(0.0, exp + dr["eta"] * dr["viol"]))
++        if (dr["eta"], dr["lam0"], dr["lam_max"], dr["viol"], dr["steps"]) == (4.0, 0.0, 10.0, 2.0 ** -7, 10) and exp != 0.3125:
++            r.append(f"G13: the closed form of the registered dual sequence is {exp}, not 0.3125 (the judge's own arithmetic is off)")
++        for c in want:
++            if (dr.get("got") or {}).get(c) != exp:
++                r.append(f"G13: dual ascent on {c}: {(dr.get('got') or {}).get(c)!r} != the closed form {exp} -- the dual step does not reach lambda")
++            if (dr.get("floor_got") or {}).get(c) != 0.0:
++                r.append(f"G13: a negative violation did not floor lambda_{c} at EXACTLY 0.0: {(dr.get('floor_got') or {}).get(c)!r}")
++            if (dr.get("cap_got") or {}).get(c) != dr["lam_max"]:
++                r.append(f"G13: a large violation did not cap lambda_{c} at lam_max {dr['lam_max']} EXACTLY: {(dr.get('cap_got') or {}).get(c)!r}")
++    else:
++        r.append("G13: the dual probe's raw fields are missing or malformed")
++    ck = g13.get("checkpoint") or {}
++    if ck.get("block_equal") is not True or ck.get("restored_equal") is not True or not {"lam", "update", "cap_hits"} <= set(ck.get("keys") or ()):
++        r.append(f"G13: the EPO_CON checkpoint block does not round-trip bit-equal with lam/update/cap_hits: {ck}")
++    return r
++
++
+ def scorer_required_gates(ns) -> list:
+     """Which preflight gates the argv obliges (mirrors scorer_finetune.py's own conditions: G8 iff lane labels, G9 iff PDM labels, G10 iff --lane-head,
+-    G11 iff --epo, G12 iff --aux-drv)."""
++    G11 iff --epo, G12 iff --aux-drv, G13 iff --epo AND --epo-con != off)."""
+     req = ["G1", "G2", "G3", "G4", "G5", "G7"]
+     if ns.lane_labels_train or ns.lane_labels_heldout:
+         req.append("G8")
+@@ -755,6 +816,8 @@
+         req.append("G10")
+     if ns.epo:
+         req.append("G11")
++    if ns.epo and getattr(ns, "epo_con", "off") != "off":
++        req.append("G13")
+     if ns.aux_drv:
+         req.append("G12")
+     return req
+@@ -800,7 +863,7 @@
+     return out
+ 
+ 
+-def scorer_dvb_rows(ns, data: dict) -> list:
++def scorer_dvb_rows(ns, data: dict, profile=None) -> list:
+     """{dest, flag, declared, built, how, ok}: the argv's EFFECTIVE value (named, else the parser default) against what the trainer's `data` event says it BUILT."""
+     rows = []
+ 
+@@ -815,6 +878,27 @@
+             declared = getattr(ns, "epo_" + k)
+             built = blk.get(k)
+             add("epo_" + k, declared, (bool(built) if isinstance(declared, bool) and built is not None else built), f"data event: epo.{k}")
++    if ns.epo:                                       # SAFEOBJ: the constraint, compared with the BUILT facts of the EpoDual the run holds (never an echo of the namespace)
++        import rl_reward                             # the pinned component order: one source of truth with the trainer
++        mode = getattr(ns, "epo_con", "off")
++        comps = list(SCORER_EPO_CON_COMPS.get(mode, ()))
++        blk = data.get("epo_con")
++        legacy = blk is None and mode == "off" and not (profile or {}).get("epo_con_block")
++        why = " (legacy trainer: no epo_con block, so no constraint can have been built)" if legacy else ""
++        if legacy:
++            blk = {"mode": "off", "comps": [], "cols": [], "ref": "armA_detached", **SCORER_EPO_CON_DEFAULTS}
++        blk = blk or {}
++        for k in SCORER_EPO_CON_KEYS:
++            if k == "mode":
++                add("epo_con", mode, blk.get("mode"), "data event: epo_con.mode (derived from the BUILT comps tuple)" + why)
++            elif k == "comps":
++                add("epo_con", comps, blk.get("comps"), "data event: epo_con.comps (the constrained sub-scores)" + why)
++            elif k == "cols":
++                add("epo_con", [rl_reward.COMPONENTS.index(c) for c in comps], blk.get("cols"), "data event: epo_con.cols (the label columns, from rl_reward.COMPONENTS)" + why)
++            elif k == "ref":
++                add("epo_con", "armA_detached", blk.get("ref"), "data event: epo_con.ref (what epo_con_reference RETURNS: arm A's logits, detached)" + why)
++            else:
++                add("epo_con_" + k, getattr(ns, "epo_con_" + k), blk.get(k), f"data event: epo_con.{k}" + why)
+     add("aux_drv", bool(ns.aux_drv), "aux_drv" in data, "the data event carries an `aux_drv` block iff --aux-drv")
+     if ns.aux_drv:
+         import aux_drivable_head as AUX                  # the pinned constants (store sha256, key count, raster geometry): one source of truth with the trainer
+@@ -913,7 +997,7 @@
+             data = dict(data, b_mode=("compw" if data.get("b_mode") == "listnet" else "listnet"))
+         if arm_is("aux_lever_ignored", arm) and isinstance(data.get("aux_drv"), dict):          # the trainer built the head with another weight than the argv's
+             data = dict(data, aux_drv=dict(data["aux_drv"], w_aux=float(data["aux_drv"].get("w_aux", 0.0)) + 0.05))
+-        rows = scorer_dvb_rows(ns, data)
++        rows = scorer_dvb_rows(ns, data, profile)
+         if profile.get("schedule_reach"):
+             rows = rows + scorer_schedule_rows(ns, data, arm)
+         det["rows"], det["observed_rows"] = rows, len(rows)

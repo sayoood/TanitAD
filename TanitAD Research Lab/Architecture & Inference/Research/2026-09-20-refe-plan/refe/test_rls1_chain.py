@@ -150,7 +150,7 @@ def check_queue(text):
     for k in (1, 2, 3):
         if f"RLS1B-INSERTION-POINT-{k}" not in text:
             v.append(f"NO_INSERTION_POINT_{k}")
-    known = {"C0", "C1", "R0", "R1", "R2", "R0b", "R1b", "R0c", "*"}                  # R0c: 2026-10-15, eval/rls1c_arms.json (checked in check_rls1c)
+    known = {"C0", "C1", "R0", "R1", "R2", "R0b", "R1b", "R0c", "R0d", "R1d", "R1o", "*"}                  # R0c: 2026-10-15, eval/rls1c_arms.json (checked in check_rls1c)
     if set(re.findall(r"^    (\w+|\*)\)", fn_body(text, "arm_args"), re.M)) - known:
         v.append("INVENTED_RLS1B_ARGV")                       # R2b and anything else RL-S1b names needs a PI decision / its owner's argv: never invented here
     mreg = re.search(r'^REGISTERED_ARMS="([^"]*)"', text, re.M)
@@ -174,6 +174,7 @@ R0_ARGV_SHA256 = "24451b621d515066bf8febefaf66bea2c7a345b48bf7a89c9443e2d848d8ee
 R0C_ARGV_SHA256 = "f588a6cbdf8319bc30e8da12407f5eeb65a5e0a82d392320f2676ca3f94ed534"      # R0's argv with /arms/R0 -> /arms/R0c plus `--epo-ref armA` (raw/2026-10-15-r0c-build/R0c_ARGV.txt)
 R0C_EPO_TOKENS = {"--epo", "--epo-terms-train", "$TERMS_TR", "--epo-terms-heldout", "$TERMS_VA", "--epo-ref", "armA"}      # R0c = R0 + --epo-ref armA: no other lever may appear in its line
 R0C_SUITE_FILES = ("refe/test_rl_s1b.py", "refe/test_rl_r0c.py")                          # the suite the refe_rls1c gate runs on the pod (launch_gate.RLS1C_SUITE): absent = a refusal AFTER the queue wait and the preflight
+SAFEOBJ_FILES = ("eval/safeobj_read.py", "eval/test_safeobj_read.py", "eval/test_safeobj_gate.py")      # the gate loads the first BY PATH (rls1_checks._safeobj_reader), the launch gate's suite runs the other two: absent = a refusal AFTER the queue wait
 KILL_HEAD_RX = re.compile(r'^\s*\[ -f "\$S/arm_\$\{ARM\}_killed" \](?: && stage_done "egress_\$ARM")?\s*$')           # a kill rule keyed on the arm VARIABLE, never on an arm's name
 
 
@@ -536,6 +537,9 @@ def check_chain(text):
                 v.append("REQUIRED_FILE_ABSENT:" + f)
         if "SHIP_MANIFEST.json" not in fl.group(1).split():
             v.append("SHIP_MANIFEST_NOT_REQUIRED")
+        v += ["SAFEOBJ_FILE_NOT_REQUIRED:" + f for f in SAFEOBJ_FILES if f not in fl.group(1).split()]
+        gate_loads = sorted(set(re.findall(r'EVAL_DIR / "([A-Za-z0-9_]+\.py)"', (HERE / "rls1_checks.py").read_text(encoding="utf-8"))))          # every file the chain's helper loads from eval/ BY PATH
+        v += ["GATE_LOADS_A_FILE_THE_PRECHECK_DOES_NOT_REQUIRE:eval/" + f for f in gate_loads if "eval/" + f not in fl.group(1).split()]
     v += check_fancmp(text)
     v += check_queue(text)
     v += check_rls1c(text)
@@ -627,6 +631,10 @@ def mutations(text):
         ("the gate child keeps fd 200", sw('> "$ARMDIR/launch_gate.log" 2>&1 200>&-', '> "$ARMDIR/launch_gate.log" 2>&1'), "FD200"),
         ("the trainer is not its own process group", sw("set -m\n", ""), "TRAINER_NOT_OWN_PROCESS_GROUP"),
         ("the manifest is not required", sw(" SHIP_MANIFEST.json \\", " \\"), "SHIP_MANIFEST_NOT_REQUIRED"),
+        ("the S-reader is not required by the precheck", sw(" eval/safeobj_read.py", ""), "SAFEOBJ_FILE_NOT_REQUIRED:eval/safeobj_read.py"),
+        ("the S-reader's own test is not required by the precheck", sw(" eval/test_safeobj_read.py", ""), "SAFEOBJ_FILE_NOT_REQUIRED:eval/test_safeobj_read.py"),
+        ("the S-gate's test is not required by the precheck", sw(" eval/test_safeobj_gate.py", ""), "SAFEOBJ_FILE_NOT_REQUIRED:eval/test_safeobj_gate.py"),
+        ("the helper loads eval/safeobj_read.py by path and the precheck does not require it", sw(" eval/safeobj_read.py", ""), "GATE_LOADS_A_FILE_THE_PRECHECK_DOES_NOT_REQUIRE:eval/safeobj_read.py"),
         ("the key lives in the shipped tree", sw('export TANITAD_GATE_KEY_FILE="$R/launch_gate.key"', 'export TANITAD_GATE_KEY_FILE="$PKG/launch_gate.key"'), "KEY_NOT_OUTSIDE_TREE"),
         ("echo the token", sw('log "env ok', 'log "env ok token=$HF_TOKEN'), "HF_TOKEN_USE"),
         ("xtrace on", sw("set -u\n", "set -ux\n", ), "XTRACE"),
@@ -669,7 +677,7 @@ def mutations(text):
         ("a re-run keeps the stale read / egress markers", drop_line(text, 'rm -f "$S/read_$ARM.ok" "$S/egress_$ARM.ok"'), "STALE_MARKERS_KEPT"),
         ("an insertion point is gone", sw("RLS1B-INSERTION-POINT-2", "NOTHING"), "NO_INSERTION_POINT_2"),
         ("an RL-S1b arm is invented", sw("    # RLS1B-INSERTION-POINT-2", "    R2b) seed=0 ;;\n    # RLS1B-INSERTION-POINT-2"), "INVENTED_RLS1B_ARGV"),
-        ("R0b / R1b are not registered", sw('REGISTERED_ARMS="C0 C1 R0 R1 R2 R0b R1b R0c"', 'REGISTERED_ARMS="C0 C1 R0 R1 R2 R0c"'), "RLS1B_ARMS_NOT_REGISTERED"),
+        ("R0b / R1b are not registered", sw('REGISTERED_ARMS="C0 C1 R0 R1 R2 R0b R1b R0c R0d R1d R1o"', 'REGISTERED_ARMS="C0 C1 R0 R1 R2 R0c R0d R1d R1o"'), "RLS1B_ARMS_NOT_REGISTERED"),
         ("R0b is judged under the original profile", sw("R0b|R1b) echo refe_rls1b", "R0b|R1b) echo refe_rls1"), "NO_RLS1B_PROFILE"),
         ("a missing control is silently replaced by the arm's own A", sw('refuse "RL-S1b arm $ARM is read against $RD', 'refuse "x $ARM $RD'), "RLS1B_CONTROL_NOT_ENFORCED"),
         ("the in-loop arm check is gone", sw('  arm_registered "$ARM" || refuse "unknown arm \'$ARM\'"\n', ""), "ARM_NAMES_NOT_REFUSED_TWICE"),
@@ -855,7 +863,7 @@ R0C_CONTROL_CASES = (       # (arm, profile, C0 dumps on the pod, C1 dumps on th
     ("R1b", "refe_rls1b", False, True, "B", "C1", "arms/C1/scores"),
     ("C0", "refe_rls1", True, False, "A", "", "arms/C0/scores"),
 )
-R0C_UNKNOWN_ARMS = ("R0C", "r0c", "R0cc", "R0c2", "R0-c", "RC0", "Roc", "R0c,", "R0d", "c", "0c", "R", "R0 c", "R0b R0C", "R0c R1c")      # every one must be refused at the precheck
+R0C_UNKNOWN_ARMS = ("R0C", "r0c", "R0cc", "R0c2", "R0-c", "RC0", "Roc", "R0c,", "R0dd", "c", "0c", "R", "R0 c", "R0b R0C", "R0c R1c")      # every one must be refused at the precheck
 R0C_KNOWN_LISTS = ("R0c", "C0 R0c", "R0 R0c", "R0b C1 R1b R0c")
 
 
@@ -957,7 +965,7 @@ def r0c_behaviour(text, tmp, P, groups=None):
 def r0c_mutations(text):
     """(name, mutated text, static violation prefix check_chain must raise or None, (r0c_behaviour group, violation prefix) or None).  Every mutated copy must differ from `text`."""
     sw = lambda a, b: text.replace(a, b)                                                         # noqa: E731
-    regs = 'REGISTERED_ARMS="C0 C1 R0 R1 R2 R0b R1b R0c"'
+    regs = 'REGISTERED_ARMS="C0 C1 R0 R1 R2 R0b R1b R0c R0d R1d R1o"'
     precheck = re.search(r'^for ARM in \$\{RLS1_ARMS:-C0 R0 C1 R1 R2\}; do arm_registered "\$ARM" \|\| refuse "unknown arm.*?; done\n', text, re.M).group(0)
     own = re.search(r'^  \[ "\$ARM" = R0c \] && REFDIR="\$ARMDIR/scores"\n', text, re.M).group(0)
     generic = '  if [ -z "$RD" ] || [ ! -f "$R/arms/$RD/scores/scores_update1000_A.npz" ]; then REFDIR="$ARMDIR/scores"; else REFDIR="$R/arms/$RD/scores"; fi\n'
@@ -989,7 +997,7 @@ def r0c_mutations(text):
          "KILL_RULE_ARM_GATED", ("kill", "R0C_KILL_DOES_NOT_REFUSE")),
         ("the restart-after-kill refusal skips R0c", sw('  [ -f "$S/arm_${ARM}_killed" ] && stage_done "egress_$ARM" && refuse', '  [ "$ARM" != R0c ] && [ -f "$S/arm_${ARM}_killed" ] && stage_done "egress_$ARM" && refuse'),
          "KILL_RULE_ARM_GATED", ("kill", "R0C_KILL_DOES_NOT_REFUSE")),
-        ("the gate's suite files are not required before the queue wait", sw(" refe/test_rl_s1b.py refe/test_rl_r0c.py \\", " \\"), "R0C_SUITE_FILE_NOT_REQUIRED", None),
+        ("the gate's suite files are not required before the queue wait", sw(" refe/test_rl_s1b.py refe/test_rl_r0c.py refe/test_rl_safeobj.py \\", " \\"), "R0C_SUITE_FILE_NOT_REQUIRED", None),
         ("arm names are matched as substrings", sw('*" $1 "*) return 0', '*"$1"*) return 0'), None, ("arms", "MISSPELLED_ARM_ACCEPTED")),
         ("the precheck no longer validates the arm names", sw(precheck, ""), "ARM_NAMES_NOT_REFUSED_TWICE", ("arms", "R0C_NO_PRECHECK")),
     ]
@@ -1249,6 +1257,18 @@ def sandbox_runs(text, tmp):
         rc, out = run({"RLS1_ARMS": bad_arm}); assert rc == 1 and re.search(r"REFUSED: unknown arm '(R0C|r0c|R0cc|R1c)' in RLS1_ARMS \(registered: " + re.escape(reg) + r"\)", out), (bad_arm, out); n += 1
     rc, out = run({"RLS1_ARMS": "R0c"}); assert rc == 1 and "REFUSED:" in out and "unknown arm" not in out and "missing: ship" in out, out; n += 1   # R0c passes the arm check; the (empty) package is what stops it
     rc, out = run(); assert rc == 1 and "REFUSED:" in out and "missing: ship" in out, out; n += 1                                 # past the P2 check: the package is empty
+    # the S-reader and the two tests that pin the S gate are REQUIRED by the precheck (SAFEOBJ round 4): with every other listed file present, a package lacking any ONE of them is refused by the chain
+    # itself, in seconds, naming it -- before the queue, the disk test and the GPU
+    listed = re.search(r'for f in (.*?); do\n  \[ -f', text, re.S).group(1).replace("\\\n", " ").split()
+    for skip in SAFEOBJ_FILES:
+        assert skip in listed, skip; n += 1
+        for f in listed:
+            if f != skip:
+                (pk / f).parent.mkdir(parents=True, exist_ok=True)
+                (pk / f).write_text("")
+        if (pk / skip).exists():
+            (pk / skip).unlink()
+        rc, out = run(); assert rc == 1 and f"/{skip} missing: ship" in out and "ZZRLS1_QUEUE_CLEAR" not in out, (skip, out); n += 1
     # a package with every required file, then the env stage, then model_final: absent -> refused; a wrong file -> refused
     for f in re.search(r'for f in (.*?); do\n  \[ -f', text, re.S).group(1).replace("\\\n", " ").split():
         (pk / f).parent.mkdir(parents=True, exist_ok=True)

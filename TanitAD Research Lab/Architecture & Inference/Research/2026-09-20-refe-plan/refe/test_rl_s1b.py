@@ -70,6 +70,20 @@ def undo_r0c(name: str, text: str) -> str:
     return text
 
 
+# SAFEOBJ (raw/2026-10-17-safety-objective): the constrained-EPO block (`if dual.active:` ...) is the ONE edit inside a pinned segment (main.train_losses).  The pins above are STILL R0's bytes:
+# P_pinned_* reverses SAFEOBJ's block FIRST (undo_safeobj), then R0c's edit (undo_r0c).  refe/test_rl_safeobj.py proves the block is the whole diff of the trainer (the reversed FILE is the 7c8071ea blob).
+SAFEOBJ_REVERSALS = {
+    "main.train_losses": (('        if dual.active:                                  # SAFEOBJ: the constraint, arm B ONLY (arm A is its detached reference); the dual weights are Python floats\n            ct = epo_con_term(sxB, sxA, tg, sel_score, a.epo_temp, a.epo_con_eps, dual.lam, con_last)\n            lB = lB + ct\n', ""),),
+}
+
+
+def undo_safeobj(name: str, text: str) -> str:
+    for new, old in SAFEOBJ_REVERSALS.get(name, ()):
+        assert text.count(new) == 1, f"SAFEOBJ edit of {name} not found exactly once"
+        text = text.replace(new, old)
+    return text
+
+
 R0_REWARD_GIT_BLOB = "cd5c51445ad4ce38153d72ceab0aa01226aa7372"          # refe/rl_reward.py at the R0 launch commit (and today)
 BASE = ("--ckpt /w/model_sft4_B_u400.pt --backbone vitl16 --targets /w/train --images /w/pix --calib /w/calib.json --onpolicy /w/onp --heldout /w/onh "
         "--heldout-logs /w/hl.txt --out /w/rl --lane-head --teacher-lane-train /w/tl --teacher-lane-heldout /w/tlh --pdm-labels-train /w/pdm "
@@ -117,7 +131,7 @@ def suite_sf(sf_src: str, rr_bytes: bytes, tag: str) -> list:
     seg = segments(sf_src)
     # ---- P: the code R0 trained with, and the default that keeps refe_rls1 unchanged
     for k, h in R0_SEGMENTS.items():
-        check(bad, f"P_pinned_{k}", lambda k=k, h=h: hashlib.sha256(undo_r0c(k, seg[k]).encode()).hexdigest() == h)
+        check(bad, f"P_pinned_{k}", lambda k=k, h=h: hashlib.sha256(undo_r0c(k, undo_safeobj(k, seg[k])).encode()).hexdigest() == h)
     check(bad, "P_reward_is_R0s", lambda: git_blob(rr_bytes) == R0_REWARD_GIT_BLOB)
     check(bad, "P_parser_default_lam_1", lambda: M.build_parser().get_default("epo_lam") == 1.0)
     # ---- D: the dose identity on the REAL epo_loss (fresh forward per call; a tiny linear scorer, 7 outputs, the base's rule incl. the lane output)
