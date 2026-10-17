@@ -1,0 +1,274 @@
+{
+ "cuda_available": false,
+ "ckpt": "E:/refcv7_eval_kit/ckpt/ckpt_50400.pt",
+ "config": "E:/refcv7_eval_kit/ckpt/config.json",
+ "t_start": "2026-10-17T16:20:15",
+ "build_s": 7.5,
+ "build_s_done": true,
+ "model_facts": {
+  "state_dict": {
+   "strict": true,
+   "n_keys": 1131,
+   "step": 50400
+  },
+  "state_dict_missing": [],
+  "state_dict_unexpected": [],
+  "param_breakdown_equal": true,
+  "param_total": 100468987,
+  "declared_vs_built_mismatches": [],
+  "mode": "diffusion",
+  "decoder_steps": 2,
+  "sampler": "ddim",
+  "image_hw": [
+   416,
+   1024
+  ],
+  "encoder_in_channels": 9,
+  "horizons": [
+   5,
+   10,
+   15,
+   20,
+   30,
+   40,
+   50,
+   60
+  ],
+  "hier": true,
+  "cfg_ego_state_inject": false,
+  "cfg_nav_args_inject": false,
+  "cfg_max_speed_input": false,
+  "cfg_max_speed_onehot_v6": true,
+  "core_ego_hist_built": true,
+  "core_agents": null,
+  "residual_prior": "ha0_ext_pose",
+  "has_perception": true,
+  "has_map_hires": true,
+  "has_lift_bank_hires": true,
+  "has_vis1": true,
+  "cfg_window_attr": {
+   "window": null,
+   "n_stack": null,
+   "ego_history": true,
+   "no_strategic": true,
+   "residual_prior": "ha0_ext_pose",
+   "bev_source": "map_hires_pool",
+   "map_hires": "on"
+  },
+  "departures": [
+   "argv --trunk-compile REMOVED: no Triton on Windows; torch.compile wraps the backbone CALL only -- module tree and state_dict identical (LAUNCH_READINESS_FIXES.md sec. 10b)",
+   "Thor data paths REMAPPED to the eval kit D:\\refcv6_eval_kit for ['--agent-join', '--agent-rig-extrinsics', '--anchors', '--clip-clock-sidecar', '--eval-cache', '--eval-labels', '--join3d', '--map-gt-root', '--map-hires-class-weights', '--nav-compliance-tau-file', '--speed-max-sidecar-v6-eval', '--vis1-sidecar'] (per flag, basename-checked; recorded in argv_remap)",
+   "tactical-goal pos_weight / class mask from config.json tac_goal_stats (the TRAIN split's own constants; train():8483-8497 derives them from the loaded split)"
+  ],
+  "anchor_file_vs_ckpt_max_abs_diff": {
+   "core.decoder.anchors": 0.0,
+   "core.decoder.anchor_controls": 0.0
+  }
+ },
+ "t_build_done": "2026-10-17T16:20:22",
+ "eval_dataset_build_s": 0.1,
+ "eval_dataset_len": 23772,
+ "eval_dataset_window": 8,
+ "cfg_core_window": 8,
+ "eval_item_index0": [
+  0,
+  0
+ ],
+ "eval_item_contract": {
+  "frames": {
+   "shape": [
+    8,
+    9,
+    416,
+    1024
+   ],
+   "dtype": "torch.uint8"
+  },
+  "actions": {
+   "shape": [
+    8,
+    2
+   ],
+   "dtype": "torch.float32"
+  },
+  "future_frames": {
+   "shape": [
+    20,
+    9,
+    416,
+    1024
+   ],
+   "dtype": "torch.uint8"
+  },
+  "future_actions": {
+   "shape": [
+    20,
+    2
+   ],
+   "dtype": "torch.float32"
+  },
+  "future_poses": {
+   "shape": [
+    20,
+    4
+   ],
+   "dtype": "torch.float32"
+  },
+  "pose_last": {
+   "shape": [
+    4
+   ],
+   "dtype": "torch.float32"
+  },
+  "episode_id": {
+   "py": "int"
+  },
+  "nav_cmd": {
+   "shape": [],
+   "dtype": "torch.int64"
+  },
+  "nav_valid": {
+   "shape": [],
+   "dtype": "torch.bool"
+  },
+  "route_target": {
+   "shape": [],
+   "dtype": "torch.int64"
+  },
+  "route_valid": {
+   "shape": [],
+   "dtype": "torch.bool"
+  },
+  "future_poses_ext": {
+   "shape": [
+    60,
+    4
+   ],
+   "dtype": "torch.float32"
+  },
+  "future_valid_ext": {
+   "shape": [
+    60
+   ],
+   "dtype": "torch.bool"
+  },
+  "pose_hist": {
+   "shape": [
+    8,
+    4
+   ],
+   "dtype": "torch.float32"
+  },
+  "goal_tac": {
+   "shape": [
+    3,
+    4
+   ],
+   "dtype": "torch.float32"
+  },
+  "goal_tac_valid": {
+   "shape": [
+    3
+   ],
+   "dtype": "torch.bool"
+  },
+  "lat_v7": {
+   "shape": [],
+   "dtype": "torch.int64"
+  },
+  "lon_v7": {
+   "shape": [],
+   "dtype": "torch.int64"
+  },
+  "tac_goal_y": {
+   "shape": [
+    22
+   ],
+   "dtype": "torch.float32"
+  },
+  "tac_goal_w": {
+   "shape": [
+    22
+   ],
+   "dtype": "torch.float32"
+  },
+  "v_max_ms": {
+   "shape": [],
+   "dtype": "torch.float32"
+  },
+  "v_max_valid": {
+   "shape": [],
+   "dtype": "torch.float32"
+  }
+ },
+ "eval_item_values": {
+  "pose_last": [
+   9.27668571472168,
+   0.0004924826789647341,
+   0.008149156346917152,
+   9.976810455322266
+  ],
+  "pose_hist": [
+   [
+    2.006436586380005,
+    -0.0035578403621912003,
+    -0.000515053397975862,
+    10.648273468017578
+   ],
+   [
+    3.0732457637786865,
+    -0.005629417952150106,
+    -4.7489684220636263e-05,
+    10.555638313293457
+   ],
+   [
+    4.130408763885498,
+    -0.007233734242618084,
+    0.00055274972692132,
+    10.457615852355957
+   ],
+   [
+    5.178086757659912,
+    -0.008431544527411461,
+    0.0014292234554886818,
+    10.365890502929688
+   ],
+   [
+    6.216648101806641,
+    -0.00853272620588541,
+    0.0027022252324968576,
+    10.27579116821289
+   ],
+   [
+    7.246520042419434,
+    -0.0069829621352255344,
+    0.004286686424165964,
+    10.190174102783203
+   ],
+   [
+    8.267123222351074,
+    -0.004345601890236139,
+    0.006083014886826277,
+    10.091888427734375
+   ],
+   [
+    9.27668571472168,
+    0.0004924826789647341,
+    0.008149156346917152,
+    9.976810455322266
+   ]
+  ],
+  "nav_cmd": 2,
+  "nav_valid": true,
+  "v_max_ms": 7.300000190734863,
+  "v_max_valid": 1.0
+ },
+ "lift_bank": {
+  "len": 4508,
+  "type": "HiresLiftGeometryBank",
+  "frame": "CanonicalFrame(height=416, width=1024, f_ref=488.92398517830253, projection='cylindrical')",
+  "for_episodes_sig": "(self, ep_ids, device=None) -> 'tuple'",
+  "init_sig": "(self, extr_by_clip: 'dict', *, frame, stride: 'int', heights_m=(0.0, 0.5, 1.5, 2.5), grid: 'BEVGrid' = BEVGrid(x_fwd_m=60.0, y_half_m=16.0, cell_m=0.5), equalize_bottom_rows: 'int' = 0)"
+ },
+ "t_end": "2026-10-17T16:20:25"
+}

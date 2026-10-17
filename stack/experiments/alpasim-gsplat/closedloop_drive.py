@@ -604,6 +604,11 @@ def plan_to_poses(traj, v0):
 #: DIFFERENT instrument on a DIFFERENT tier and are not comparable as levels.
 FLOOR_ARMS = ("cl_ha0", "cl_ha", "cl_ha0_ext")
 
+#: ⭐ T2-A (2026-10-17): arms registered by an EXTERNAL module (`t2a_policies.register()`), so a new
+#: arm does not need an edit to `main()`. name -> {"build": callable(args) -> policy, "needs_ckpt": bool}.
+#: EMPTY unless something registers: with it empty `main()` behaves exactly as before.
+EXTRA_ARMS: dict = {}
+
 #: below this speed the unicycle cannot turn at all (`yaw_rate = v * kappa`, so a
 #: stopped vehicle has no yaw rate — `kinematic.py:228-231`). A constant-yaw-rate
 #: extrapolation therefore has to DROP the yaw rate rather than divide by ~0, and
@@ -890,10 +895,24 @@ def run_rollout(transport, renderer, policy, intr, start_frame, n_steps, gt_T,
     if leadgeom is not None:
         leadgeom.set_t0(float(t_us))
 
+    # ⭐ T2-A (2026-10-17): the EXECUTED ego track, for policies that read ego HISTORY
+    # (refcv7: `--ego-history`, residual prior `ha0_ext_pose`) or that re-estimate the
+    # kinematic state every tick (`cl_p10`, `cl_ha0_ext_live`). Rows are (x, y, yaw, v) --
+    # `gt_poses_xyv`'s own format -- seeded from the LOGGED path up to f0 (the observed window
+    # is logged by construction) and then the EXECUTED pose after every step. ⛔ INERT for
+    # every policy without `set_history`: the hook is a `hasattr` and the history is never
+    # read otherwise, so every historical rollout is byte-identical (pinned by
+    # `test_t2a_dry.py::test_history_hook_is_inert_for_historical_arms`).
+    pose_hist = deque(maxlen=16)
+    for _f in range(max(0, f0 - 15), f0 + 1):
+        pose_hist.append(gtp[_f].copy())
+
     for k in range(n_steps):
         i_gt = gf.nearest(T_ego[:3, 3])
         nav, navd = nav_from_route(gtp, i_gt)
         nk = navd.get("nav_known")
+        if hasattr(policy, "set_history"):
+            policy.set_history(np.stack(pose_hist))
         t_plan = time.time()
         traj, extra = policy.plan(
             list(frames), intr, v, nav,
@@ -932,6 +951,7 @@ def run_rollout(transport, renderer, policy, intr, start_frame, n_steps, gt_T,
         T_ego, _ = gf.correct(T_new)
         v = max(0.0, v + accel * DT)
         t_us = t_us + DT * 1e6
+        pose_hist.append(np.array([T_ego[0, 3], T_ego[1, 3], _yaw(T_ego), v]))
 
         T_start = _rollback(T_ego, v, steer, shutter_s)
         img = transport.render(T_ego @ Ts_cam, t_us,
@@ -958,7 +978,7 @@ def main():
     ap.add_argument("--scene-dir", required=True)
     ap.add_argument("--arm", required=True,
                     choices=["flagship-v1", "refc-base", "refc-xl", "refcv3"]
-                            + list(FLOOR_ARMS),
+                            + list(FLOOR_ARMS) + sorted(EXTRA_ARMS),
                     help="a model arm, or one of the TRIVIAL FLOOR arms "
                          f"{FLOOR_ARMS} — the `ha0`-equivalent bar every "
                          "closed-loop number needs and none had before "
@@ -998,6 +1018,10 @@ def main():
     ap.add_argument("--all-dynamic-layers", action="store_true",
                     help="with --condition objects, also render dynamic_deformables "
                          "(the scene ships 2 tracks / 1039 gaussians there)")
+    # T2-A: an externally registered arm may add its own flags (once per distinct callable)
+    for _fn in {id(s["add_args"]): s["add_args"]
+                for s in EXTRA_ARMS.values() if s.get("add_args")}.values():
+        _fn(ap)
     args = ap.parse_args()
     # ⛔ An arm/ckpt mismatch must STOP, never degrade. A floor arm silently
     # carrying a --ckpt would bank a payload whose `ckpt` field names weights that
@@ -1009,6 +1033,14 @@ def main():
                 f"--ckpt={args.ckpt!r} was given for the TRIVIAL FLOOR arm "
                 f"{args.arm!r}, which loads no weights. Refusing: the payload would "
                 f"claim a checkpoint it never read.")
+    elif args.arm in EXTRA_ARMS:
+        _need = bool(EXTRA_ARMS[args.arm].get("needs_ckpt"))
+        if _need and not args.ckpt:
+            raise SystemExit(f"--ckpt is required for the model arm {args.arm!r}.")
+        if (not _need) and args.ckpt:
+            raise SystemExit(f"--ckpt={args.ckpt!r} was given for the weight-free arm "
+                             f"{args.arm!r}. Refusing: the payload would claim a "
+                             f"checkpoint it never read.")
     elif not args.ckpt:
         raise SystemExit(f"--ckpt is required for the model arm {args.arm!r}.")
 
@@ -1093,6 +1125,8 @@ def main():
         pol = FlagshipV1Policy(args.ckpt)
     elif args.arm == "refcv3":
         pol = RefCV3Policy(args.ckpt, config=args.ckpt_config)
+    elif args.arm in EXTRA_ARMS:
+        pol = EXTRA_ARMS[args.arm]["build"](args)
     else:
         pol = RefCPolicy(args.ckpt, preset=args.arm.split("-", 1)[1])
 

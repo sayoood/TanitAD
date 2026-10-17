@@ -1,0 +1,57 @@
+F
+================================== FAILURES ===================================
+_____________ test_refcv7_argv_flags_reach_the_model_through_main _____________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-5022/test_refcv7_argv_flags_reach_t0')
+
+                               "00040136-e651-4abd-991d-0655ccda9430")
+        pol = tp.RefCV7Policy(ck, cfg, rig, vmax_ms=None, device="cpu", scene_id="00040136-e651-4abd-991d-0655ccda9430")
+        assert pol.prov["horizons"][:4] == list(cd.WP_STEPS) and pol.window == 8
+        assert pol.prov["state_dict_strict"] and not pol.prov["missing"] and not pol.prov["unexpected"]
+        r, tr, intr, gt_T, gt_ts = _scene()
+        rec = cd.run_rollout(tr, r, pol, intr, 0, 1, gt_T, gt_ts, gt_stride=3)
+        st = rec["steps"][0]
+        plan = np.array(st["plan"])
+        assert plan.shape == (4, 2) and np.isfinite(plan).all()
+        full = np.array(st["extra"]["traj_full_6s"])
+        assert full.shape == (8, 2) and np.isfinite(full).all()
+        assert st["extra"]["vmax_valid"] == 0.0
+        (tmp_path / "tick.json").write_text(json.dumps({"plan": plan.tolist(), "full": full.tolist(),
+                                                        "plan_ms": st["plan_ms"], "canon": pol.canon_provenance}))
+        out = os.environ.get("T2A_TICK_OUT")
+        if out:
+            Path(out).write_text((tmp_path / "tick.json").read_text())
+    
+    
+    @pytest.mark.skipif(os.environ.get("T2A_SLOW") != "1", reason="set T2A_SLOW=1 (two CPU forwards of the real checkpoint, ~7 min)")
+    def test_refcv7_argv_flags_reach_the_model_through_main(tmp_path):
+        """REACHABILITY FROM THE ACTUAL CALLER (CLAUDE.md: 'built, tested, and unreachable from its caller'). The slow test above builds the
+        policy directly; this one goes argv -> cd.main() -> EXTRA_ARMS -> RefCV7Policy -> plan, for the two levers box 2 varies:
+          * `--t2a-infer-seed 3` must change the plan against the banked seed-0 plan (same ckpt, same stub world, same everything else);
+          * `--t2a-vmax-mode logged_2_6s` must feed v_max_valid == 1.0 with the stub log's 15.0 m/s AND change the plan against the banked
+            withheld plan -- while `withheld` must feed v_max_valid == 0.0.
+        The banked reference is raw/refcv7_cpu_tick.json (seed 0, ceiling withheld, device cpu, same single tick)."""
+        ref = json.loads((PKG / "raw" / "refcv7_cpu_tick.json").read_text())
+        ref_plan = np.array(ref["plan"])
+>       scene = ("E:/thor_archive/2026-09-14/nurec_scenes/sample_set/26.04_release/00040136-e651-4abd-991d-0655ccda9430")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: the ceiling did not reach the model
+E       assert np.float64(0.0) > 1e-06
+E        +  where np.float64(0.0) = <built-in method max of numpy.ndarray object at 0x0000024F5B70B6F0>()
+E        +    where <built-in method max of numpy.ndarray object at 0x0000024F5B70B6F0> = array([[0., 0.],\n       [0., 0.],\n       [0., 0.],\n       [0., 0.]]).max
+E        +      where array([[0., 0.],\n       [0., 0.],\n       [0., 0.],\n       [0., 0.]]) = <ufunc 'absolute'>((array([[7.54119778e+00, 2.30113864e-02],\n       [1.51050577e+01, 9.61232483e-02],\n       [2.25936451e+01, 2.03827828e-01],\n       [3.00400658e+01, 3.12283397e-01]]) - array([[7.54119778e+00, 2.30113864e-02],\n       [1.51050577e+01, 9.61232483e-02],\n       [2.25936451e+01, 2.03827828e-01],\n       [3.00400658e+01, 3.12283397e-01]])))
+E        +        where <ufunc 'absolute'> = np.abs
+E        +        and   array([[7.54119778e+00, 2.30113864e-02],\n       [1.51050577e+01, 9.61232483e-02],\n       [2.25936451e+01, 2.03827828e-01],\n       [3.00400658e+01, 3.12283397e-01]]) = <built-in function array>([[7.541197776794434, 0.023011386394500732], [15.105057716369629, 0.09612324833869934], [22.593645095825195, 0.20382782816886902], [30.04006576538086, 0.31228339672088623]])
+E        +          where <built-in function array> = np.array
+
+tests\test_t2a_dry.py:512: AssertionError
+---------------------------- Captured stdout call -----------------------------
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1\n[v3] rig camera = PER-CLIP EXTRINSICS from C:\\Users\\Admin\\t2a_scratch\\kit\\refcv6_eval_kit\\data\\refcv6_train_eval139_extrinsics.json (4508 clips, z 1.203-1.687 m, pitch -0.0755..+0.0683 rad)\n[v3] \u26a0\ufe0f a rig camera is built but --agent-w-project and --agent-w-ground are both 0: neither monocular term contributes. That is a legal ablation baseline and the stamp records it, but it is not a projection arm.\n[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers\n[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers\n[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers\n[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None\n[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1\n[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers\n[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers\n[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers\n[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+=========================== short test summary info ===========================
+FAILED tests/test_t2a_dry.py::test_refcv7_argv_flags_reach_the_model_through_main
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 22 deselected in 354.36s (0:05:54)
+
+real	5m58.850s
+user	0m0.015s
+sys	0m0.000s
