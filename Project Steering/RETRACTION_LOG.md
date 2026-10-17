@@ -18216,3 +18216,25 @@ largest measured effect*. A lever that the attribution assigns about 0.2 of the 
 
 **Class:** R43's class again, one level down. The probe that FIXED the parent's share of the card also MEASURED the child's own need, and the child's need was the binding term.
 - ⇒ A resource fix is verified by the run it was for completing, not by the resource it freed.
+
+### R45 (2026-10-17) - "the prior swap is the largest measured lever: damp50 - ha0_ext = -1.90 m @ 6 s" (PLAN_V8F_REFAV1_HJEPA_2026-10-17.md §0 item 7)
+
+**Claimed:** the prior swap is the largest lever the programme has not used: `damp50 - ha0_ext` = -1.90 m @ 6 s. P10 (2.93 m) far beats the echo (5.36 m).
+
+**True:** both margins are against a defective echo control.
+- The refav1 trunk-probe package (`extract.py:71-78`) builds `ha0_ext` / `damp50` / `kd_x` with `paths_from_controls(...)` at its default `action_units="kappa"` (`taniteval/tools/refav1_arm.py:471`).
+- But `actions[:, 0]` is a road-wheel STEER ANGLE, arctan(L*kappa) with L = 2.9 (`refav1_loader.py`), so the echo is over-rotated about 2.9x.
+- MEASURED (`FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-17-p10-floors-refcv/raw/refav1_units_check.json`, 141 episodes / 2,399 windows):
+  - the `kappa` rebuild reproduces the banked arrays to 9.6e-5 m; the `steer` rebuild differs by up to 87 m;
+  - `ha0_ext` 5.356 -> 2.838 m;
+  - `damp50 - ha0_ext` -1.9025 [-2.3605, -1.4971] -> +0.0956 [-0.0761, +0.2901], n.s.
+- On eval139, where the refcv floors are in the correct unit, damp50 is worse than `ha0_ext` at 2 s (+0.1239, SEP).
+- What survives is smaller: `P10 - ha0_ext` -0.0378 @ 2 s and -0.5743 @ 6 s, both SEP.
+
+**Fixed:**
+- Plan §14 (erratum 1): damp50 is dropped; α1's bar was amended before any α1 data.
+- GOALS_AND_CLAIMS rows `RETR-LEVER7-UNITS` and `D-PRIOR-P10-2S`.
+- The v8F-mini agent was told to refit P10 on the correct-unit `kd_x` (`taniteval/taniteval/floors_kin.py`, 18 tests).
+- Open: `paths_from_controls` should refuse to run without an explicit `action_units` (BACKLOG HJ-UNITS).
+
+**Class:** *a control inherits the unit of the nearest default*. Same family as `C-REFCV3-ARM-SAME-DEFECT`. It survived because the defective control made every learned arm look strong, so no number looked wrong. It was caught only because S1 rebuilt the floor from source in a second unit, instead of reusing the banked array.

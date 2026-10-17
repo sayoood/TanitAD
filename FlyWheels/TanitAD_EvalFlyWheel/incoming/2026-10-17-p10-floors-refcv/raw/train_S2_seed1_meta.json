@@ -1,0 +1,25 @@
+{
+ "horizon": "S2",
+ "instants_frames": [
+  5,
+  10,
+  15,
+  20
+ ],
+ "n_fine_ticks": 20,
+ "train_manifest_md5": "77dafb50af0aedd1b940cf12c12518ef",
+ "n_train_episodes": 4572,
+ "n_train_windows": 157239,
+ "window_rule": "t0 = 7 + (e mod 5) + 5j for every t0 with t0 + 20 <= T-1 (stride 5 frames = 0.5 s)",
+ "train_eval_clip_overlap": 0,
+ "base": "kd_x on the native 0.1 s polyline, grid instants selected",
+ "features": "kin_features((v0, a0, steer0)) -- 8 features, unchanged from fit_mlp_kin",
+ "ade_base_train_m": 0.34688931740068946,
+ "training_seed": 1,
+ "selection": {
+  "wd": 0.0001,
+  "epochs": 60
+ },
+ "fit_seconds": 830.0,
+ "ade_p10_train_m": 0.26338560761051766
+}

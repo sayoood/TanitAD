@@ -24,7 +24,8 @@ plan scoring · T2 = closed loop (not provisioned).
    It beats the echo control at 6 s by **−0.98 m** (T1), but not at 2 s.
    * At its 15k milestone, refcv8 ties refcv7 on ADE, LON and TAC. It is **worse on lateral heading** (+0.071°, PROVISIONAL), and the loss sits in **sharp turns**.
    * The best NAVSIM driver is **REFe P2: 88.82 PDMS**. Its gain replicated on seed 1, but TTC is adverse.
-   * No arm has been read against the strongest kinematic floor, **P10**: 6 s ADE **2.93 m**, versus **5.36 m** for the echo.
+   * ~~No arm has been read against the strongest kinematic floor, **P10**: 6 s ADE 2.93 m, versus 5.36 m for the echo.~~ **RETRACTED 2026-10-17 (§14):** that 5.36 m echo integrated a steer angle as a curvature; in the correct unit it is 2.838 m.
+   * **NOW READ (S1, M, T1 open loop, eval139 S6, paired episode-cluster bootstrap B = 2,000):** `refcv7 − P10` ADE 0–6 s = **−0.4061 m [−0.5936, −0.2161]** (inference seed 0) / −0.4054 (seed 1), lateral. ⚠️ At 0–2 s **P10 wins**: +0.0276 [+0.0163, +0.0398], on speed and along-track. `P10 − ha0_ext` = −0.5743 m @ 6 s, −0.0378 m @ 2 s, both separated.
 2. **Our most persistent failure is the world model ignoring actions (M).**
    * In the v7-tiny census, **0 of 32 arms** change more than 0.1 % under action shuffle.
    * refav1's WM varies along κ by **1.99e-06**.
@@ -44,7 +45,8 @@ plan scoring · T2 = closed loop (not provisioned).
 6. **Fastest path (Rule Zero):** do **not** build a new imagination planner from scratch.
    * Put the H-JEPA stack on the chassis that already drives (refcv8, REF-C). That definition is **v8F**.
    * Climb a gated ladder: **α** (prior swap, H-JEPA WM as auxiliary) → **β** (the WM scores the proposal fan in the tactical latent) → **γ** (the WM refines the chosen plan by gradient, aimed at the sharp-turn under-correction) → **δ** (NAVSIM/REFe port and RL-in-imagination).
-7. **The prior swap is the largest measured lever we have not used (M):** `damp50 − ha0_ext` = **−1.90 m @ 6 s**. refcv7/8 still sit on the echo-type prior `ha0_ext_pose`. This lever drives v8F-α.
+7. ~~**The prior swap is the largest measured lever we have not used (M):** `damp50 − ha0_ext` = −1.90 m @ 6 s.~~ **RETRACTED 2026-10-17 (§14): a unit artifact.** In the correct unit, `damp50 − ha0_ext` = +0.0956 [−0.0761, +0.2901] (n.s., refav1 grid), and on eval139 damp50 is **worse at 2 s** (+0.1239, separated). ⇒ damp50 is dropped as a prior.
+   **What survives, smaller and measured (S1):** `P10 − ha0_ext` = **−0.5743 m [−0.7744, −0.3753] @ 6 s** and **−0.0378 m @ 2 s**, both separated. The 2 s side is exactly where refcv7 loses to P10. refcv7/8 still sit on `ha0_ext_pose`, so **the prior swap to P10** remains v8F-α's first arm. It is now a *2 s / longitudinal* lever, not a −1.90 m one.
 8. **refav1 becomes the frozen-encoder H-JEPA reference (refav2).**
    * A dev-box mini-arm on pooled frozen DINOv3 tokens decides **frozen vs LoRA vs trained** before any big spend.
    * Pooling also shrinks the 303 GB storage blocker to **~19–76 GB**.
@@ -134,7 +136,7 @@ kinematic prior.** It extends the handover's option F1 (C §C.6) with H-JEPA.
 | **Brain 1: operative WM** (H-JEPA level 1) | z¹ = attention-pooled BEV/scene tokens (16–32 tokens × 256 d) at **Δt = 0.5 s**. Action = the (a, κ) block of 5 × 0.1 s. Causal-transformer predictor with **AdaLN action conditioning** (not FiLM-by-sum: the paper's H26 lesson on magnitude swamping). **SIGReg (T,N,D) + IDM** | E1, E4, E5 |
 | **Brain 2: tactical WM** (H-JEPA level 2) | z² = MLP(z¹) at stride **s = 2 (1.0 s)**; macro-action = a learned pool of 2 level-1 action embeddings (≈ a manoeuvre embedding); own predictor; SIGReg + IDM on the macro-action (detached target) + action-embedding SIGReg (weight 0.005, as on DROID). **The v9 tactical label heads read z²** (R3), and nav + turn distance enter z² and z¹ (R2) | E1, E5; it makes the tactical latent supervised **and** predictive |
 | **Brain 3: strategic** (level 3, s = 3 → 3 s) | **Built, OFF** (R6, PI 2026-09-19). Reported as PAUSED | R6 |
-| **Residual prior** | Replace `ha0_ext_pose` (= the echo) with the **learned kinematic prior P10** (8 t0 features, fitted on TRAIN), fallback `damp50`; prior dropout kept | `damp50 − ha0_ext` −1.90 m @ 6 s; P10 2.93 vs 5.36 m (refav1 grid). Transfer to eval139 is **UNVERIFIED** ⇒ S1 |
+| **Residual prior** | Replace `ha0_ext_pose` (= the echo) with the **learned kinematic prior P10** (8 t0 features, fitted on TRAIN, correct steer unit). ~~fallback `damp50`~~: dropped, because damp50 is worse than `ha0_ext` at 2 s. Prior dropout kept | **MEASURED on eval139 (S1):** `P10 − ha0_ext` −0.5743 @ 6 s / −0.0378 @ 2 s, separated. ~~`damp50 − ha0_ext` −1.90 m @ 6 s; P10 2.93 vs 5.36 m (refav1 grid)~~ is **RETRACTED** as a unit artifact (§14) |
 | **Max speed (R1)** | road-type label input + **hard cap on the EMITTED plan** | `SPEC_REFCV7.md` 26.1 |
 | **Params** | ≈ 100.6 M (refcv8) + ≈ 6–12 M for the WM levels (E) | sub-300 M |
 | **Step-time lever from H-JEPA** | future-frame targets computed under **`no_grad`** (paper K.1: target detachment changes nothing). Training cost ≈ one extra trunk forward per target frame, no backward ⇒ **≈ +10–15 % step** (E), instead of the handover's +20–45 % | keeps v8F near the PI's 10.5 s/step cap; **G-CLOCK measures it before launch** |
@@ -190,8 +192,8 @@ refav1 (ckpt 21,109) is **closed as a zero-training lever**: every planner lever
 
 | rung | arms (tiny rung, Thor, batch 8, ≈ 4.5 h/arm, seeds 0 and 1) | bar | FAIL ⇒ next lever (runs in the same package) |
 |---|---|---|---|
-| **0** (S1, 0 GPU) | read refcv7-50,400 and refcv8 EMA-15k against **P10 / damp50 / kd_x** on eval139 S2/S6. Exploratory: a late-fusion `α·os + (1−α)·P10` with α fit by grouped 5-fold CV inside eval139 | **BAR-V8F-FLOOR**: `os − P10` ADE 0–6 s < 0, separated, both inference seeds | Negative ⇒ the prior is v8F's critical lever (rung α, arm α1 first) and every "beats doing nothing" row on LEADERBOARD gets re-read |
-| **α** | `α0` refcv8 recipe (rung baseline) + replicate `α0r`; `α1` prior swap → P10; `α2` α1 + H-JEPA L1+L2 **without** IDM; `α3` α1 + H-JEPA **with** IDM; `α3x` α3 with **time-shuffled targets** (deliberate regression: must NOT help) | **BAR-V8F-NR**: no family separated worse than α0, each \|Δ\| read against F = max(\|α0r−α0\|, …). **BAR-HJ-SENS** on α3 vs α2. **α1 must win** S6 ADE and LAT cross by > F | α1 fails ⇒ P10 becomes an **input feature** + a learned prior head with dropout (X2). α3 SENS fails ⇒ γ grid ×2, then IDM on z² only, then a **command-channel** action vocabulary (`D-V7F-COMMAND-CHANNEL`, never run). α3x helps ⇒ **instrument broken; stop and fix before reading anything** |
+| **0** (S1, 0 GPU) | read refcv7-50,400 and refcv8 EMA-15k against **P10 / damp50 / kd_x** on eval139 S2/S6. Exploratory: a late-fusion `α·os + (1−α)·P10` with α fit by grouped 5-fold CV inside eval139 | **BAR-V8F-FLOOR**: `os − P10` ADE 0–6 s < 0, separated, both inference seeds | Negative ⇒ the prior is v8F's critical lever (rung α, arm α1 first) and every "beats doing nothing" row on LEADERBOARD gets re-read. **RESULT 2026-10-17: POS** at both inference seeds, `os − P10` −0.4061 / −0.4054 m @ 6 s; **but P10 wins at 2 s** (+0.0276, separated). refcv8 EMA-15k was not read (§14) |
+| **α** | `α0` refcv8 recipe (rung baseline) + replicate `α0r`; `α1` prior swap → P10; `α2` α1 + H-JEPA L1+L2 **without** IDM; `α3` α1 + H-JEPA **with** IDM; `α3x` α3 with **time-shuffled targets** (deliberate regression: must NOT help) | **BAR-V8F-NR**: no family separated worse than α0, each \|Δ\| read against F = max(\|α0r−α0\|, …). **BAR-HJ-SENS** on α3 vs α2. ~~**α1 must win** S6 ADE and LAT cross by > F~~ **AMENDED 2026-10-17, before any α1 data (§14):** **α1 must win S2 ADE and LON speed by > F, and must not be separated-worse at S6 (NR).** The old S6/LAT bar was premised on the retracted −1.90 m @ 6 s; S1 places P10's measured advantage over refcv7 at 2 s and in the longitudinal family. S6/LAT are still reported | α1 fails ⇒ P10 becomes an **input feature** + a learned prior head with dropout (X2). α3 SENS fails ⇒ γ grid ×2, then IDM on z² only, then a **command-channel** action vocabulary (`D-V7F-COMMAND-CHANNEL`, never run). α3x helps ⇒ **instrument broken; stop and fix before reading anything** |
 | **α′** | trunk ladder `T-A` / `T-B` / `T-C` on the best α arm (§3) | NR + K at F | all tie ⇒ keep `T-A` (already gated) |
 | **β** | best α + the hierarchical scorer (gate init 0) + a **shuffled-goal** control (ĝ² taken from another window) | `β − α_best`: S6 ADE and the TAC selection families < 0 beyond F; the shuffled-goal control must lose | scorer gate stays ≈ 0 ⇒ score in z¹ only (E2 says it should be worse: a known-direction check); then a learned scorer over WM-imagined features (paper §3.4) |
 | **γ** | best β + gradient refinement | sharp-turn stratum (\|yaw\| ≥ 0.15 rad/s, v0 5–10 m/s): slope shortfall vs refcv7 > 0 beyond F; no family worse | refinement does not move ⇒ more steps / an LR sweep; then a refinement **head** trained on WM gradients (amortised) |
@@ -406,7 +408,7 @@ The trajectory bars in §8 stand. The new ones are:
 
 ### 13.5 Compute: the fastest path and the A40 readiness gate
 
-* **Thor** (after refcv8, ≈ 10-20): v8F-α on the refcv8 chassis as approved, starting with the prior swap at 2 seeds. It is the largest measured lever on the proven chassis.
+* **Thor** (after refcv8, ≈ 10-20): v8F-α on the refcv8 chassis as approved, starting with the prior swap at 2 seeds. ~~It is the largest measured lever on the proven chassis.~~ (RETRACTED, §14.) It is the cheapest measured lever on the proven chassis: P10 beats `ha0_ext` by 0.038 m @ 2 s and 0.574 m @ 6 s, both separated, and refcv7 loses to P10 at 2 s.
 * **Box 2** (the PI's 8 GB machine, over SSH from the dev box): **track M**.
   * **M0** — the pooled DINOv3-L cache (S4).
   * **M1** — **v8F-mini**: the three layers + the P10 prior on the **cached frozen** features. No LoRA (impossible on cached features), no WM. Minutes to hours per arm.
@@ -429,3 +431,38 @@ The trajectory bars in §8 stand. The new ones are:
 | CONSISTENCY misses | raise the penalty weights → inference projection → a goal-anchored operative decoder (anchors per goal class) |
 | STRATEGIC loses to the nav-only baseline | ship the PI's literal nav + distance-only strategic layer |
 | TACTICAL loses to the nav-only baseline | the tactical heads read the z² WM latent (M2) → D1 rebalancing → D3 data |
+
+## 14. ERRATUM 1 (2026-10-17, same day): lever 7 was a unit artifact, and the S1 floors result
+
+**What was wrong.** §0 item 7 and the §4 residual-prior row cited `damp50 − ha0_ext` = −1.90 m @ 6 s and "P10 2.93 vs 5.36 m echo". Both come from the refav1 trunk-probe package. Its `extract.py:71-78` calls `paths_from_controls(...)` at the default `action_units="kappa"` (`taniteval/tools/refav1_arm.py:471`). But `actions[:, 0]` is a road-wheel **steer angle**, arctan(L·κ) with L = 2.9, per `refav1_loader.py`. The echo control therefore integrated the angle as a curvature and over-rotated.
+* MEASURED, `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-17-p10-floors-refcv/raw/refav1_units_check.json`, 141 episodes / 2,399 windows.
+* The rebuild with `kappa` reproduces the banked arrays to 9.6e-5 m; the rebuild with `steer` differs by up to 87 m.
+
+| 6 s ADE, refav1 grid | banked unit (`kappa`) | correct unit (`steer`) |
+|---|---|---|
+| `ha0_ext` | 5.356 | **2.838** |
+| `damp50` | 3.454 | 2.934 |
+| `kd_x` | 3.558 | 2.940 |
+| `damp50 − ha0_ext` | −1.9025 [−2.3605, −1.4971] | **+0.0956 [−0.0761, +0.2901], n.s.** |
+
+**What survives.** The S1 floors read on eval139, where every floor is in the correct unit. Estimator: paired episode-cluster bootstrap, B = 2,000; it answers the **episode** variance. Tier: T1 open loop. Artifacts: `…/2026-10-17-p10-floors-refcv/raw/summary.json`, `raw/tables.md`.
+
+| pair | 0–2 s (S2) | 0–6 s (S6) |
+|---|---|---|
+| `refcv7 − P10` (inference seed 0) | **+0.0276 [+0.0163, +0.0398] SEP** (P10 better) | **−0.4061 [−0.5936, −0.2161] SEP** |
+| `refcv7 − P10` (inference seed 1) | +0.0282 [+0.0167, +0.0401] SEP | −0.4054 [−0.5911, −0.2231] SEP |
+| `P10 − ha0_ext` | −0.0378 [−0.0478, −0.0278] SEP | −0.5743 [−0.7744, −0.3753] SEP |
+| `damp50 − ha0_ext` | +0.1239 [+0.0985, +0.1506] SEP (worse) | −0.0140 [−0.2162, +0.2197] n.s. |
+
+* refcv7's 6 s gain over P10 is **lateral**: cross-track −0.598 m, heading −2.06°. It is not in speed or along-track.
+* At 2 s refcv7 is separated-worse on LON speed (+0.035), along-track (+0.027) and accel (+0.067).
+* The P10 training-seed floor is 0.0213 m (one refit); the 6 s margin is 18× it.
+* ⚠️ **refcv7's own training-seed variance is NOT measured** (one run). refcv8 was not read.
+
+**What changes in the plan:**
+1. **H-V8F-FLOOR-1 is POS.** refcv7-50,400 beats P10 at 6 s at both inference seeds. The sentence "refcv7 beats the learned kinematic floor" is **false without the horizon**: at 2 s, P10 wins.
+2. **The prior swap α1 keeps P10 and drops damp50.** Its bar was amended *before any α1 data*: it must win S2 ADE and LON speed by > F and not regress at S6. The swap is now a **2 s / longitudinal** lever, not a −1.90 m one.
+3. **v8F-mini (§13, `PREREG_V8F_MINI.md`) is unaffected.** Its operative layer was already a residual on P10, and its P10 reference numbers (2 s 0.2229 / 6 s 2.9257 m) are P10's own, not margins against the defective echo.
+   ⚠️ **But the refav1-grid P10 was fit as a residual on the defective `kd_x`.** The correctly-integrated echo (2.838 m) beats it (2.926 m) on that grid. Before M1 is scored, **refit P10 on the correct-unit `kd_x`** of the refav1 grid. The S1 version already does that: `taniteval/taniteval/floors_kin.py`, 18 tests.
+4. **Exposure, not a retraction.** §0 item 9, "fully frozen DINOv3 + a WM adds nothing beyond kinematics", compares two probes that both sit on the same defective `kd_x` base. The comparison is internally consistent, but its absolute level is wrong. It needs a re-read on the correct-unit base before it is quoted again.
+5. **Root-cause class** (`RETRACTION_LOG.md`): *a control inherits the unit of the nearest default*. Same family as `C-REFCV3-ARM-SAME-DEFECT`. The fix is mechanical: `paths_from_controls` should refuse to run without an explicit `action_units` (BACKLOG item).

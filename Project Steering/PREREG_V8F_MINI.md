@@ -73,3 +73,11 @@ Every setting is run at 2 seeds.
 | both within 2F of 0 | neither binds at this scale ⇒ the architecture and the trunk (LoRA) are the lever |
 
 * **Reporting:** the 25 % point and the 4S point are read for curvature and reported, but they do not decide.
+
+## Amendment 1 (2026-10-17, before any M-arm data): the P10 reference is refit in the correct steer unit
+
+* The banked refav1-grid P10 (2 s 0.2229 / 6 s 2.9257 m, "Common settings" above) was fit as a residual on a `kd_x` built with the steer angle integrated as a curvature (RETRACTION_LOG R45).
+* On that grid the correctly-integrated echo `ha0_ext` reads 2.838 m, which already beats it.
+* ⇒ **M1's residual base, and the P10 every H-MINI bar is read against, is P10 refit on the correct-unit `kd_x`** (`taniteval/taniteval/floors_kin.py`, `action_units="steer"`). Its 2 s / 6 s numbers are reported beside the old ones.
+* **`ha0_ext` (correct unit) is added as a reported floor.**
+* This makes every bar stricter, never looser. No arm has been trained.
