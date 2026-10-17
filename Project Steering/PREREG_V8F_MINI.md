@@ -81,3 +81,27 @@ Every setting is run at 2 seeds.
 * ⇒ **M1's residual base, and the P10 every H-MINI bar is read against, is P10 refit on the correct-unit `kd_x`** (`taniteval/taniteval/floors_kin.py`, `action_units="steer"`). Its 2 s / 6 s numbers are reported beside the old ones.
 * **`ha0_ext` (correct unit) is added as a reported floor.**
 * This makes every bar stricter, never looser. No arm has been trained.
+
+## Amendment 2 (2026-10-17, evening, before any M-arm data): reference numbers, label release, and two rulings
+
+Source: the M1-build package `TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/` (`RESULT.md`, `raw/p10/p10_fit.json`, `LABEL_JOIN_REPORT.md`). No arm has been trained.
+
+1. **The P10 reference, refit in the correct steer unit** (Amendment 1), on the 2,399-window grid:
+   * 6 s ADE **2.5744 m** [2.327, 2.829];
+   * 2 s ADE (first 10 knots) **0.2187 m**;
+   * 6 s FDE 8.024 m.
+   * The same script in the legacy unit gives 2.9281 m, against the banked 2.9257, so the pipeline reproduces.
+   * The correct-unit `kd_x` reads 2.9396 m. S1 independently read 2.9396 for the same floor (`…/2026-10-17-p10-floors-refcv/raw/refav1_units_check.json`).
+   * ⇒ **H-MINI-K-1 is read against 2.5744 m, not 2.9257.** The bar is harder by 0.35 m.
+   * Artifacts: `raw/p10/p10_prior.pt` (the residual base) and `raw/p10/p10_eval_pred6.npy` (the comparison).
+2. **Label release.** Train on the v9 **4,572-clip** release (md5 `83e30bd3…`), which labels 100 % of train windows. The f63ece41 release leaves 4.4 % unlabelled.
+   * Eval: **139 of 141 episodes** carry v9 labels (2,365 of 2,399 windows).
+   * TACTICAL, STRATEGIC and CONSISTENCY are read on those 139. The trajectory bar (K-1) is read on all 141.
+   * The 2 missing episodes are a named gap, not a silent drop.
+3. **CONSISTENCY floor, reported beside every reading.** The frozen SPEED rule flags **6.3 %** of windows on the human's own path, because the max-speed sidecar holds one limit per clip. The GT-plan control reads **7.9 %** overall. P10 reads **32.4 % [27.6, 36.9]**.
+   * The rules and the bar are **unchanged**: the best arm must read ≤ P10's rate, separated, and self-consistency must be ≥ 0.90.
+   * The GT control is the rule's own noise floor, so no arm is expected to go below it.
+4. **TAC-1 ruling, made before any data:**
+   * **primary = goal-token macro-F1** over the v9 tactical goal vocabulary, with IGNORE masked. This is the PI's "tactical goals" as a layer output;
+   * **reported, not decisive:** lateral and longitudinal macro-F1, plus the confusion matrices.
+5. **Strategic floor numbers.** The nav-only kinematic checkpoint baseline reads **2.01 / 4.82 / 11.15 m** at 30 / 50 / 80 m of arc.
