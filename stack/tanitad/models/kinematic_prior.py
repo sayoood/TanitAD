@@ -60,6 +60,19 @@ THE MODES (``--residual-prior``)
 ``cv_yawrate``    the SPEC's literal words: ``a = 0``, ``kappa0`` as
                   ``ha0_ext_pose``. Constant speed ``v0`` and, because the speed
                   is constant, constant yaw rate ``v0 * kappa0``.
+``p10``           (v8F rung alpha, arm alpha-1; ``p10_prior.py``) the FROZEN learned
+                  kinematic floor P10: a 30-knot, 6 s path, converted to PER-TICK
+                  controls ``(a_j, kappa_j)`` so the SAME ``compose_ticks`` /
+                  ``roll_plan`` / ``absolute_controls`` serve it. Reads the pose
+                  window AND the recorded steer at t0 (``ACTION_MODES``, like
+                  ``ha0_ext``). A per-tick prior is a ``[B, T]`` tensor where every
+                  other mode carries a ``[B]`` constant -- see "THE PER-TICK PRIOR".
+``p10_pose``      (v8F rung alpha, arm alpha-1, the POSE-ONLY variant) the same frozen learned floor, refit with P10's
+                  third feature ``k`` = the POSE-TRACK curvature ``kappa0`` of ``ha0_ext_pose`` (same floor / cap, same
+                  ``omega0``) instead of the recorded steer, and its ``kd_x`` base built from ``ha0_ext_pose`` instead
+                  of ``ha0_ext``. Reads ONLY the observed pose window (``POSE_MODES``): ``prior_controls`` REFUSES a
+                  supplied ``actions`` exactly as it does for ``ha0_ext_pose``. Its ``a0`` is ``ha0_ext_pose``'s ONE-frame
+                  backward difference. The only thing that differs from alpha-0's prior is what is LEARNED on top.
 
 MEASURED 2026-09-26 (T1, the refcv6 battery's step-30k S2 surface: 4,754 windows / 139 eval
 clips; paired episode-cluster bootstrap, n_boot 2000; package
@@ -112,6 +125,33 @@ makes. Pinned by ``stack/tests/test_residual_prior.py``.
 consumer that rolls a residual any other way receives ``Delta`` as if it were
 the plan; the decoder therefore exports ABSOLUTE controls (``absolute_controls``)
 and never lets the residual state leave it.
+
+============================================================================
+THE PER-TICK PRIOR (mode ``p10``) -- what changes, and what is pinned not to
+============================================================================
+Every mode above is ONE constant ``(a0, kappa0)`` pair per row. P10 is a whole
+path, so its controls differ at every 0.1 s tick. The functions below therefore
+accept ``a0`` / ``kappa0`` of shape ``[B]`` (a constant: the code path is the
+unchanged one, bit for bit) OR ``[B, T]`` (per tick):
+
+* ``compose_ticks`` / ``roll_plan``: the residual is held over its slot span by
+  ``controls_to_ticks`` as before and the prior is ADDED PER TICK afterwards. For
+  a constant prior this is the same float32 sum the slot-wise form computes
+  (``(a0 + d)`` held == ``held(d) + a0``), pinned bit-for-bit by
+  ``test_residual_prior.py``.
+* ``absolute_controls`` / ``residual_controls`` need the prior AT SLOT level
+  (``u0_hat`` is per slot): that is the MEAN of the per-tick prior over the slot's
+  span (``slot_prior``; the ``horizons`` are then REQUIRED). The plan itself is
+  always rolled with the per-tick prior, so ``Delta == 0`` still rolls EXACTLY to
+  the prior path ``P10u``; the slot mean only fixes what ``u0_hat`` is.
+* ``prior_path`` rolls the per-tick prior from ``v0`` -> ``P10u``.
+
+``P10u`` is P10's path RE-ROLLED through ``rollout_unicycle`` from the MEASURED
+``v0``: :func:`controls_from_path` is the CLOSED-LOOP inverse (it tracks the
+rolled state, so the entry-speed mismatch the open-loop
+``kinematic.unicycle_controls_from_path`` documents does not accumulate into a
+constant speed offset). ``ADE(P10u, P10)`` is MEASURED and reported, not assumed
+(``Research/2026-10-20-v8f-rung-alpha/RESULT.md``).
 """
 
 from __future__ import annotations
@@ -134,18 +174,29 @@ __all__ = [
     "needs_actions", "prior_controls", "withhold", "prior_path",
     "compose_ticks", "roll_plan", "absolute_controls", "residual_controls",
     "prior_from_out", "zero_residual_index", "plan_check", "prior_stamp",
-    "ResidualPriorError", "FORWARD_EXCLUSIONS",
+    "ResidualPriorError", "FORWARD_EXCLUSIONS", "TICK_MODES", "P10_MODE", "P10_POSE_MODE", "P10_MODES", "pose_kin3", "P10_TICKS", "P10_KAPPA_CAP",
+    "knots_to_ticks", "controls_from_path", "slot_prior", "is_tick_prior", "p10_tick_prior",
 ]
 
 #: ``off`` first: the default, and the value under which refcv6 builds
 #: bit-identically.
 RESIDUAL_PRIOR_OFF = "off"
+P10_MODE = "p10"
+#: the POSE-ONLY P10 (v8F alpha-1 as launched): no recorded-steer channel at inference
+P10_POSE_MODE = "p10_pose"
+#: the modes that carry a frozen P10 module
+P10_MODES: tuple[str, ...] = (P10_MODE, P10_POSE_MODE)
 RESIDUAL_PRIOR_MODES: tuple[str, ...] = (
-    RESIDUAL_PRIOR_OFF, "ha0_ext", "ha0_ext_pose", "cv_yawrate")
+    RESIDUAL_PRIOR_OFF, "ha0_ext", "ha0_ext_pose", "cv_yawrate", P10_MODE, P10_POSE_MODE)
 #: the modes that read ONLY the observed pose window
-POSE_MODES: tuple[str, ...] = ("ha0_ext_pose", "cv_yawrate")
+POSE_MODES: tuple[str, ...] = ("ha0_ext_pose", "cv_yawrate", P10_POSE_MODE)
 #: the modes that also read the observed window's RECORDED ACTIONS
-ACTION_MODES: tuple[str, ...] = ("ha0_ext",)
+#: (``p10`` reads the recorded steer at t0 as its kinematic feature ``k``, like ``ha0_ext``)
+ACTION_MODES: tuple[str, ...] = ("ha0_ext", P10_MODE)
+#: the modes whose prior is a PER-TICK control sequence ``[B, T]`` (every other mode is a constant ``[B]``)
+TICK_MODES: tuple[str, ...] = P10_MODES
+#: P10 covers 30 knots x 0.2 s = 6 s = 60 ticks of DT_TICK; a decoder horizon beyond it is REFUSED
+P10_TICKS: int = 60
 
 #: 10 Hz -- the v2ep provider grid, the ego-history encoder's ``dt`` and the
 #: battery's ``DT_FRAME`` (``refcv3_arm.py:242``). BINDING.
@@ -162,6 +213,13 @@ POSE_KAPPA_V_FLOOR: float = 2.0
 #: A safety bound on the pose-derived curvature, ABOVE every value the steer
 #: channel carries on the same 139 clips (max |kappa_steer| 0.2766 1/m).
 POSE_KAPPA_CAP: float = 0.3
+#: The curvature bound of the P10 -> per-tick-controls CONVERSION. NOT ``POSE_KAPPA_CAP``: that bound exists to
+#: keep a noisy POSE-derived curvature plausible, and applied to P10's knot path it is the dominant source of
+#: conversion error. MEASURED 2026-10-20 (eval139 S2 windows, n = 4,754; ``Research/2026-10-20-v8f-rung-alpha/raw/
+#: sens_p10u.json``): ``ADE6(P10u, P10)`` mean 0.0463 m at cap 0.30 (worst window 7.44 m, 1 % of windows carry 57 %
+#: of the error mass, all sharp turns at 3-7 m/s) -> 0.0339 at 0.5 -> 0.0231 at 1.0 -> 0.0154 unbounded. 1.0 1/m
+#: (a 1 m radius) is a numerical-safety bound no vehicle reaches, binding on < 0.1 % of ticks.
+P10_KAPPA_CAP: float = 1.0
 
 #: The pose window's last speed must equal the ``v0`` the plan is rolled from
 #: (m/s). Both are the SAME measured sample on every call site read at source
@@ -197,9 +255,10 @@ class ResidualPriorError(ValueError):
 #: ``tests/test_rl_forward_keys_cover_signature.py`` for ``refc_adapter``), and the
 #: Thor full-suite gate of 2026-09-27 went RED on it in six RL test files --
 #: correctly. The channel is read ONLY by ``residual_prior='ha0_ext'``
-#: (:data:`ACTION_MODES`), which SPEC_REFCV7 section 10 (A5) EXCLUDES for refcv7,
-#: so it is declared here, by its owner, as must-not-be-plumbed: TEMPORARY, with
-#: its route back. The exclusion mechanism is build-independent, so on an
+#: (:data:`ACTION_MODES`: ``ha0_ext``, which SPEC_REFCV7 section 10 (A5) EXCLUDES
+#: for refcv7, and -- since v8F alpha-1 -- ``p10``, whose kinematic feature ``k`` is
+#: the same recorded steer), so it is declared here, by its owner, as
+#: must-not-be-plumbed: TEMPORARY, with its route back. The exclusion mechanism is build-independent, so on an
 #: ``ha0_ext`` build the requirement is enforced one layer down, by the two
 #: refusals the reason cites (both pinned by ``test_residual_prior.py``).
 FORWARD_EXCLUSIONS: tuple[ChannelExclusion, ...] = (
@@ -215,22 +274,27 @@ FORWARD_EXCLUSIONS: tuple[ChannelExclusion, ...] = (
             "corpus's `const2p9` regime). The steer half at t0 is "
             "UNRULED AT INFERENCE -- the refcv6 battery's lever panel runs the "
             "echo that reads it as DIAGNOSTIC ONLY for that reason -- and "
-            "SPEC_REFCV7 section 10 (A5) excludes the one mode that reads it, "
-            "`ha0_ext`. refcv7 sets `ha0_ext_pose`, whose prior reads ONLY the "
+            "SPEC_REFCV7 section 10 (A5) excludes the mode that reads it, "
+            "`ha0_ext`; v8F alpha-1's `p10` (PLAN_V8F section 6) reads the SAME "
+            "recorded steer as its kinematic feature `k` and is the second "
+            "ACTION mode, awaiting the same ruling (DESIGN.md D1). refcv7 sets "
+            "`ha0_ext_pose`, whose prior reads ONLY the "
             "past pose track, which the adapter already plumbs as "
             "`ego_poses`/`ego_n_past`. NOT a label in the goal-point sense, so "
             "the exclusion is TEMPORARY. Withholding it cannot silently change "
-            "a rollout: on every build except `ha0_ext` the channel is never "
-            "read and a SUPPLIED one is REFUSED (`refc.py::RefCModel.forward`, "
-            "'would be SILENTLY DROPPED'), and on an `ha0_ext` build the prior "
-            "REFUSES to be built without it (`prior_controls`, 'Refusing rather "
-            "than substituting the pose curvature'). No state exists in which a "
+            "a rollout: on every build except `ha0_ext` / `p10` the channel is "
+            "never read and a SUPPLIED one is REFUSED "
+            "(`refc.py::RefCModel.forward`, 'would be SILENTLY DROPPED'), and "
+            "on an `ha0_ext` or `p10` build the prior REFUSES to be built "
+            "without it (`prior_controls`, 'Refusing rather than substituting "
+            "the pose curvature'). `p10_pose` (the arm alpha-1 launches) is a "
+            "POSE mode and never reads this channel. No state exists in which a "
             "withheld `ego_actions` is quietly replaced by a default."),
         unblock=(
             "A PI ruling that the recorded steer at t0 is admissible at "
             "inference (SPEC_REFCV7 section 10: it 'would make ha0_ext available "
-            "in a later arm') AND an RL arm that sets `--residual-prior "
-            "ha0_ext`. Then delete this declaration; add `ego_actions` to "
+            "in a later arm'; the same ruling admits `p10`) AND an RL arm that "
+            "sets `--residual-prior ha0_ext` or `p10`. Then delete this declaration; add `ego_actions` to "
             "`tanitad.rl.refc_adapter.FORWARD_KEYS` in signature order with a "
             "CHANNEL_REQUIREMENTS record REQUIRED only when the build's "
             "`decoder.residual_prior` is in `ACTION_MODES` (the predicate "
@@ -274,13 +338,41 @@ def _wrap_pi(a: Tensor) -> Tensor:
     return (a + math.pi) % (2 * math.pi) - math.pi
 
 
+def _pose_kappa0(omega0: Tensor, v0: Tensor) -> Tensor:
+    """The pose-track curvature of every POSE mode: ``clamp(omega0 / max(v0, POSE_KAPPA_V_FLOOR), +-POSE_KAPPA_CAP)``."""
+    return (omega0 / v0.clamp_min(POSE_KAPPA_V_FLOOR)).clamp(-POSE_KAPPA_CAP, POSE_KAPPA_CAP)
+
+
+def pose_kin3(poses: Tensor, n_past: int | None = None, *, dt: float = DT_TICK) -> Tensor:
+    """``[B, 3]`` float64 = ``(v0, a0, kappa0)`` at the window's LAST observed frame, from the POSE track ONLY.
+
+    The derivation is :func:`tanitad.models.ego_history.ego_channels_from_poses` (the ego-history encoder's own, which
+    ``ha0_ext_pose`` calls): ``a0`` is the ONE-frame backward speed difference, ``omega0`` the ONE-frame wrapped yaw
+    difference, ``kappa0`` through :func:`_pose_kappa0`. It is the feature triple of ``p10_pose``. Computed in float64
+    (the fit's precision): ``ha0_ext_pose``'s own float32 wrap carries ~1e-7 rad of rounding noise per yaw difference,
+    which is irrelevant to a prior but would exceed the 1e-4 m known-value tolerance at 6 s on fast windows.
+    Every read is at an index <= ``n_past - 1`` (the slice is taken first), so a future read is impossible."""
+    if poses.dim() != 3 or poses.shape[-1] < 4:
+        raise ResidualPriorError(f"poses must be [B, T, >=4] (x, y, yaw, v), got {tuple(poses.shape)}")
+    n = int(poses.shape[1] if n_past is None else n_past)
+    if n < 2:
+        raise ResidualPriorError(f"n_past {n} < 2: the pose prior's acceleration and yaw rate are backward differences "
+                                 f"at t0 and need t0-1 inside the window.")
+    ch = ego_channels_from_poses(poses[:, :n].to(torch.float64), n, dt=float(dt))       # [B, n, 3]
+    v0, a0, om = ch[:, -1, 0], ch[:, -1, 1], ch[:, -1, 2]
+    return torch.stack([v0, a0, _pose_kappa0(om, v0)], dim=-1)
+
+
 def prior_controls(mode: str, poses: Tensor, n_past: int | None = None,
                    actions: Tensor | None = None, *,
                    dt: float = DT_TICK,
-                   wheelbase: float = STEER_WHEELBASE_M
+                   wheelbase: float = STEER_WHEELBASE_M,
+                   p10=None
                    ) -> tuple[Tensor, Tensor]:
     """``(a0 [B], kappa0 [B])`` -- the prior's controls in GEOMETRY units
-    (m/s^2, 1/m), from the OBSERVED window only.
+    (m/s^2, 1/m), from the OBSERVED window only. Mode ``p10`` returns the PER-TICK
+    pair ``(a [B, 60], kappa [B, 60])`` (``p10`` = the frozen
+    :class:`tanitad.models.p10_prior.FrozenP10`, REQUIRED for that mode).
 
     ``poses`` ``[B, T, >=4]`` = ``(x, y, yaw, v)``; ``n_past`` is how many
     leading steps are PAST (``None`` = all of them), exactly the contract of
@@ -299,6 +391,10 @@ def prior_controls(mode: str, poses: Tensor, n_past: int | None = None,
         raise ResidualPriorError(
             "prior_controls called with residual_prior='off' -- there is no "
             "prior to build; the caller must not reach this function.")
+    if p10 is not None and mode not in P10_MODES:
+        raise ResidualPriorError(
+            f"a frozen P10 module was supplied to residual_prior={mode!r}, which does not read it -- it would "
+            f"be silently dropped and the run record could not say which prior ran.")
     if poses.dim() != 3 or poses.shape[-1] < 4:
         raise ResidualPriorError(
             f"poses must be [B, T, >=4] (x, y, yaw, v), got "
@@ -311,6 +407,37 @@ def prior_controls(mode: str, poses: Tensor, n_past: int | None = None,
     ch = ego_channels_from_poses(poses, n, dt=float(dt))       # [B, n, 3]
     v0 = ch[:, -1, 0]
     a0 = ch[:, -1, 1]              # (v[t0] - v[t0-1]) / dt  (ego_history.py:96)
+    if mode == P10_MODE:
+        if actions is None:
+            raise ResidualPriorError(
+                "residual_prior='p10' reads the RECORDED STEER at t0 (P10's kinematic feature k = "
+                "actions[t0, 0], the channel `ha0_ext` reads) and no `actions` reached the prior. Refusing "
+                "rather than substituting a pose curvature: that is a DIFFERENT prior and would be stamped "
+                "as P10.")
+        if p10 is None:
+            raise ResidualPriorError(
+                "residual_prior='p10' but no frozen P10 module reached prior_controls -- a P10 mode with no "
+                "P10 would silently be ANOTHER prior.")
+        if getattr(p10, "variant", "steer") != "steer":
+            raise ResidualPriorError(
+                f"residual_prior='p10' reads the recorded steer and needs the STEER-variant P10; the module supplied is "
+                f"the {getattr(p10, 'variant', None)!r} one (fit on another input channel = ANOTHER prior).")
+        return p10_tick_prior(p10, poses, n, actions, dt=float(dt))[:2]
+    if mode == P10_POSE_MODE:
+        if actions is not None:
+            raise ResidualPriorError(
+                f"`actions` were supplied to residual_prior={mode!r}, which reads ONLY the pose track -- they would be "
+                f"silently dropped and the run record could not say which curvature the prior used.")
+        if p10 is None:
+            raise ResidualPriorError(
+                "residual_prior='p10_pose' but no frozen P10 module reached prior_controls -- a P10 mode with no "
+                "P10 would silently be ANOTHER prior.")
+        if getattr(p10, "variant", None) != "pose":
+            raise ResidualPriorError(
+                f"residual_prior='p10_pose' reads ONLY the pose track and needs the POSE-variant P10; the module supplied "
+                f"is the {getattr(p10, 'variant', None)!r} one (fit on the recorded steer: it would be fed a curvature "
+                f"where it expects a steer angle).")
+        return p10_tick_prior(p10, poses, n, None, dt=float(dt))[:2]
     if mode == "cv_yawrate":
         a0 = torch.zeros_like(a0)
     if mode == "ha0_ext":
@@ -338,8 +465,7 @@ def prior_controls(mode: str, poses: Tensor, n_past: int | None = None,
             f"ONLY the pose track -- they would be silently dropped and the "
             f"run record could not say which curvature the prior used.")
     omega0 = ch[:, -1, 2]          # wrap(yaw[t0] - yaw[t0-1]) / dt (:98)
-    kappa0 = (omega0 / v0.clamp_min(POSE_KAPPA_V_FLOOR)).clamp(
-        -POSE_KAPPA_CAP, POSE_KAPPA_CAP)
+    kappa0 = _pose_kappa0(omega0, v0)
     return a0, kappa0
 
 
@@ -359,8 +485,151 @@ def withhold(a0: Tensor, kappa0: Tensor,
     if keep is None:
         return a0, kappa0
     k = keep.reshape(-1).to(torch.bool)
+    if a0.dim() == 2:                       # per-tick prior [B, T]: one decision per ROW
+        k = k[:, None]
     z = torch.zeros_like(a0)
     return torch.where(k, a0, z), torch.where(k, kappa0, torch.zeros_like(kappa0))
+
+
+# --------------------------------------------------------------------------- #
+# the PER-TICK prior (mode p10)                                                #
+# --------------------------------------------------------------------------- #
+def is_tick_prior(a0: Tensor) -> bool:
+    """True for a per-tick prior ``[B, T]`` (mode ``p10``), False for the constant ``[B]`` of every other mode."""
+    return a0.dim() == 2
+
+
+def _need_ticks(a0: Tensor, kappa0: Tensor, t_max: int, b: int) -> None:
+    if kappa0.shape != a0.shape:
+        raise ResidualPriorError(f"per-tick prior a0 {tuple(a0.shape)} and kappa0 {tuple(kappa0.shape)} differ")
+    if a0.shape[0] != b:
+        raise ResidualPriorError(f"per-tick prior has {a0.shape[0]} rows, expected {b}")
+    if a0.shape[1] < t_max:
+        raise ResidualPriorError(
+            f"per-tick prior covers {a0.shape[1]} ticks but the plan needs {t_max}: P10 reaches 6 s = "
+            f"{P10_TICKS} ticks and a decoder horizon beyond it would silently read a prior that is not there")
+
+
+def slot_prior(x: Tensor, horizons: Sequence[int]) -> Tensor:
+    """``[B, T]`` per-tick values -> ``[B, S]``: the MEAN over each slot's span ``(h[s-1], h[s]]`` ticks.
+
+    This is what ``u0_hat`` (per slot) is measured against when the prior is per-tick; the plan is always rolled
+    with the per-tick prior itself. The mean is an exact ``sum / n`` (float32) per span."""
+    h = [int(v) for v in horizons]
+    if any(b <= a for a, b in zip(h, h[1:])) or h[0] <= 0:
+        raise ResidualPriorError(f"horizons must be positive and increasing, got {h}")
+    if x.shape[1] < h[-1]:
+        raise ResidualPriorError(f"per-tick prior covers {x.shape[1]} ticks, the last slot ends at {h[-1]}")
+    edges = [0] + h
+    x32 = x.to(torch.float32)
+    return torch.stack([x32[:, a:b].mean(dim=1) for a, b in zip(edges[:-1], edges[1:])], dim=1)
+
+
+def _slot_of(x: Tensor, horizons: Sequence[int] | None) -> Tensor:
+    if horizons is None:
+        raise ResidualPriorError(
+            "a per-tick prior was handed to absolute_controls / residual_controls without `horizons`: u0_hat is "
+            "per SLOT and the prior's slot mean cannot be formed without the slot spans. Refusing rather than "
+            "guessing them.")
+    return slot_prior(x, horizons)
+
+
+def knots_to_ticks(p30: Tensor) -> Tensor:
+    """``[B, 30, 2]`` P10 knots (0.2 s, origin implicit) -> ``[B, 60, 2]`` positions at 0.1 s ticks 1..60.
+
+    Even ticks ARE the knots; odd ticks are the 4-point interpolatory subdivision midpoints
+    ``(-p[m-2] + 9 p[m-1] + 9 p[m] - p[m+1]) / 16`` (C1; exact for a cubic), with the origin as ``p[0]`` and the
+    ends extended by quadratic extrapolation (so the scheme is exact for a quadratic everywhere). Chosen over the linear midpoints of
+    ``v8f_mini.upsample_prior`` because a linear path has a heading kink at every knot -- a curvature spike every
+    other tick that the ``kappa`` cap would clip in a sharp turn (MEASURED: DESIGN.md sec. 3)."""
+    if p30.dim() != 3 or p30.shape[-1] != 2:
+        raise ResidualPriorError(f"knots must be [B, K, 2], got {tuple(p30.shape)}")
+    p = p30.to(torch.float64)
+    b, k, _ = p.shape
+    pts = torch.cat([p.new_zeros(b, 1, 2), p], dim=1)                       # p[0..K], p[0] = origin
+    left = 3 * pts[:, 0:1] - 3 * pts[:, 1:2] + pts[:, 2:3]                  # p[-1]: quadratic extrapolation
+    right = 3 * pts[:, -1:] - 3 * pts[:, -2:-1] + pts[:, -3:-2]             # p[K+1]
+    ext = torch.cat([left, pts, right], dim=1)                              # p[-1..K+1]
+    # midpoint m (between p[m-1] and p[m]), m = 1..K: indices into ext are shifted by +1
+    mid = (-ext[:, 0:k] + 9 * ext[:, 1:k + 1] + 9 * ext[:, 2:k + 2] - ext[:, 3:k + 3]) / 16.0
+    out = torch.stack([mid, p], dim=2).reshape(b, 2 * k, 2)               # tick 2m-1 = mid, tick 2m = knot
+    return out.to(p30.dtype)
+
+
+def controls_from_path(path: Tensor, v0: Tensor, *, dt: float = DT_TICK, v_floor: float = POSE_KAPPA_V_FLOOR,
+                       kappa_cap: float = POSE_KAPPA_CAP, min_speed: float | None = None) -> Tensor:
+    """The CLOSED-LOOP inverse of :func:`kinematic.rollout_unicycle`: ``path`` ``[B, K, 2]`` (ego frame, ticks
+    1..K, origin implicit) and the measured ``v0`` ``[B]`` -> per-tick controls ``[B, K, 2]`` = (accel, kappa)
+    such that ``rollout_unicycle`` from ``(0, 0, 0, v0)`` reproduces ``path[1:]`` exactly wherever neither bound
+    below binds.
+
+    Why not :func:`kinematic.unicycle_controls_from_path`: that one is OPEN loop and takes no entry speed -- rolled
+    from the measured ``v0`` it leaves a CONSTANT speed offset ``v0 - |p1| / dt`` for the whole horizon (its own
+    docstring says so: ``entry_speed_mismatch``). This one tracks the ROLLED state, so a mismatch costs one tick.
+
+    The update order is ``rollout_unicycle``'s (position and heading on the speed at the START of the tick, ``v``
+    updated LAST, clamped at 0): control ``i`` fixes the state that moves tick ``i + 2``, so it is solved from
+    segment ``i + 1`` (0-based), and the LAST control -- which no waypoint depends on -- repeats the previous one.
+    The first tick's displacement is ``(v0 * dt, 0)`` by construction and is NOT controllable.
+
+    Conventions inherited, not invented: a tick slower than ``kinematic.MIN_DS_MPS`` has no tangent, so the heading
+    is HELD; the curvature divides by ``max(v, v_floor)`` (``POSE_KAPPA_V_FLOOR``: below it the heading change is
+    attenuated instead of dividing noise by a small speed) and is clamped to ``+-kappa_cap``
+    (``POSE_KAPPA_CAP``). Both bounds leave a heading error that the NEXT tick re-targets (that is the closed
+    loop); ``ADE(P10u, P10)`` measures what is left."""
+    from tanitad.models.kinematic import MIN_DS_MPS
+    ms = float(MIN_DS_MPS if min_speed is None else min_speed)
+    if path.dim() != 3 or path.shape[-1] != 2 or path.shape[1] < 2:
+        raise ResidualPriorError(f"path must be [B, K>=2, 2], got {tuple(path.shape)}")
+    p = torch.cat([path.new_zeros(path.shape[0], 1, 2), path], dim=1).to(torch.float64)
+    seg = p[:, 1:] - p[:, :-1]                                              # tick j+1's displacement
+    ds = (seg.pow(2).sum(-1) + 1e-18).sqrt()
+    v_star = ds / float(dt)                                                 # speed during tick j+1
+    psi_star = torch.atan2(seg[..., 1], seg[..., 0])
+    k_ticks = path.shape[1]
+    v = v0.reshape(-1).to(torch.float64)
+    psi = torch.zeros_like(v)
+    ctrl = torch.zeros(path.shape[0], k_ticks, 2, dtype=torch.float64, device=path.device)
+    for i in range(k_ticks - 1):
+        tgt_v = v_star[:, i + 1]
+        a_i = (tgt_v - v) / float(dt)
+        moving = tgt_v > ms
+        tgt_psi = torch.where(moving, psi_star[:, i + 1], psi)             # no tangent -> hold the heading
+        dpsi = (tgt_psi - psi + math.pi) % (2 * math.pi) - math.pi
+        kap = (dpsi / (v.clamp_min(float(v_floor)) * float(dt))).clamp(-float(kappa_cap), float(kappa_cap))
+        ctrl[:, i, 0], ctrl[:, i, 1] = a_i, kap
+        psi = psi + v * kap * float(dt)                                     # rollout_unicycle's order
+        v = (v + a_i * float(dt)).clamp_min(0.0)
+    ctrl[:, -1] = ctrl[:, -2]                                               # the last control is unobservable
+    return ctrl.to(torch.float32)
+
+
+def p10_tick_prior(p10, poses: Tensor, n_past: int, actions: "Tensor | None", *, dt: float = DT_TICK
+                   ) -> tuple[Tensor, Tensor, Tensor]:
+    """``(a [B, 60], kappa [B, 60], p30 [B, 30, 2])``: the frozen P10 read on the OBSERVED window -> its knots ->
+    per-tick controls rolled from the window's measured ``v0``. Pure function of the window (no RNG, no state),
+    detached: nothing in here can carry a gradient. The P10's ``variant`` picks the feature source: ``"steer"`` reads the
+    recorded steer at t0 (``actions`` REQUIRED), ``"pose"`` reads the pose track only (``actions`` REFUSED)."""
+    from tanitad.models.p10_prior import P10_K, kin3_from_window
+    variant = getattr(p10, "variant", "steer")
+    with torch.no_grad():
+        if variant == "pose":
+            if actions is not None:
+                raise ResidualPriorError("a POSE-variant P10 reads ONLY the pose track; `actions` were supplied")
+            kin3 = pose_kin3(poses, n_past, dt=float(dt))
+        elif variant == "steer":
+            if actions is None:
+                raise ResidualPriorError("a STEER-variant P10 reads the recorded steer at t0 and no `actions` were supplied")
+            kin3 = kin3_from_window(poses, actions, n_past, dt_frame=float(dt))
+        else:
+            raise ResidualPriorError(f"P10 variant {variant!r} is not one of ('steer', 'pose')")
+        p30 = p10(kin3)                                                     # [B, 30, 2] float32
+        if p30.shape[1] != P10_K:
+            raise ResidualPriorError(f"P10 returned {p30.shape[1]} knots, expected {P10_K}")
+        ticks = knots_to_ticks(p30.to(torch.float64)).to(torch.float32)
+        ctrl = controls_from_path(ticks, kin3[:, 0].to(torch.float32), dt=float(dt),
+                                  v_floor=POSE_KAPPA_V_FLOOR, kappa_cap=P10_KAPPA_CAP)
+    return ctrl[..., 0], ctrl[..., 1], p30
 
 
 def _slot_index(horizons: Sequence[int], device) -> Tensor:
@@ -379,9 +648,13 @@ def prior_path(a0: Tensor, kappa0: Tensor, v0: Tensor,
     h = [int(x) for x in horizons]
     b = int(v0.reshape(-1).shape[0])
     t_max = max(h)
-    a = a0.reshape(-1).to(torch.float32)
-    k = kappa0.reshape(-1).to(torch.float32)
-    ctrl = torch.stack([a, k], dim=-1)[:, None, :].expand(b, t_max, 2)
+    if a0.dim() == 2:                       # per-tick prior [B, T]
+        _need_ticks(a0, kappa0, t_max, b)
+        ctrl = torch.stack([a0[:, :t_max], kappa0[:, :t_max]], dim=-1).to(torch.float32)
+    else:
+        a = a0.reshape(-1).to(torch.float32)
+        k = kappa0.reshape(-1).to(torch.float32)
+        ctrl = torch.stack([a, k], dim=-1)[:, None, :].expand(b, t_max, 2)
     state0 = torch.zeros(b, 4, device=ctrl.device, dtype=torch.float32)
     state0[:, 3] = v0.reshape(-1).to(torch.float32)
     path = rollout_unicycle(state0, ctrl, dt=float(tick))[..., :2]
@@ -422,6 +695,18 @@ def compose_ticks(delta: Tensor, a0: Tensor, kappa0: Tensor, v: Tensor,
     vv = v.reshape(-1).to(torch.float32)
     if vv.shape[0] != b:
         raise ResidualPriorError(f"v has {vv.shape[0]} rows, expected {b}")
+    if a0.dim() == 2:
+        # PER-TICK prior [B, T] (mode p10): the residual (a, kappa) is converted in slot units and HELD over its
+        # span exactly as before, then the prior is added tick by tick. For a constant prior this is the same
+        # float32 sum the branch below computes, pinned bit for bit by test_residual_prior.py.
+        dk = _lat_to_curvature(d32[..., 1], vv[:, None, None], control_units,
+                               alat_v_floor, kappa_cap)
+        held = controls_to_ticks(torch.stack([d32[..., 0], dk], dim=-1),
+                                 tuple(int(x) for x in horizons))          # [B, N, T, 2]
+        t_max = held.shape[-2]
+        _need_ticks(a0, kappa0, t_max, b)
+        pr = torch.stack([a0[:, :t_max], kappa0[:, :t_max]], dim=-1).to(torch.float32)   # [B, T, 2]
+        return held + pr[:, None]
     a = a0.reshape(b, 1, 1).to(torch.float32) + d32[..., 0]
     dk = _lat_to_curvature(d32[..., 1], vv[:, None, None], control_units,
                            alat_v_floor, kappa_cap)
@@ -468,9 +753,15 @@ def _alat_scale(v: Tensor, alat_v_floor: float) -> Tensor:
     return v.clamp_min(float(alat_v_floor)) ** 2
 
 
+def _slot_view(x: Tensor, ref: Tensor) -> Tensor:
+    """A slot-level prior ``[B, S]`` shaped to broadcast against ``ref [B, ..., S, 2]``'s control columns."""
+    return x.reshape(x.shape[0], *([1] * (ref.dim() - 3)), x.shape[1])
+
+
 def absolute_controls(delta: Tensor, a0: Tensor, kappa0: Tensor, v: Tensor,
                       *, control_units: str,
-                      alat_v_floor: float = 4.0) -> Tensor:
+                      alat_v_floor: float = 4.0,
+                      horizons: Sequence[int] | None = None) -> Tensor:
     """The residual state -> ABSOLUTE controls in the vocabulary's units.
 
     This is what the decoder EXPORTS as ``u0_hat`` / ``layer_u0_hat``, so the
@@ -489,8 +780,12 @@ def absolute_controls(delta: Tensor, a0: Tensor, kappa0: Tensor, v: Tensor,
     b = delta.shape[0]
     shp = (b, *([1] * (delta.dim() - 2)))
     d32 = delta.to(torch.float32)          # float32 like every roll here
-    a = a0.reshape(shp).to(torch.float32) + d32[..., 0]
-    k0 = kappa0.reshape(shp).to(torch.float32)
+    if a0.dim() == 2:                      # per-tick prior: its SLOT MEAN is what u0_hat is relative to
+        a = _slot_view(_slot_of(a0, horizons), delta).to(torch.float32) + d32[..., 0]
+        k0 = _slot_view(_slot_of(kappa0, horizons), delta).to(torch.float32)
+    else:
+        a = a0.reshape(shp).to(torch.float32) + d32[..., 0]
+        k0 = kappa0.reshape(shp).to(torch.float32)
     if control_units == "alat":
         sc = _alat_scale(v.reshape(-1).to(torch.float32),
                          alat_v_floor).reshape(shp)
@@ -505,14 +800,19 @@ def absolute_controls(delta: Tensor, a0: Tensor, kappa0: Tensor, v: Tensor,
 
 def residual_controls(u_abs: Tensor, a0: Tensor, kappa0: Tensor, v: Tensor,
                       *, control_units: str,
-                      alat_v_floor: float = 4.0) -> Tensor:
+                      alat_v_floor: float = 4.0,
+                      horizons: Sequence[int] | None = None) -> Tensor:
     """The inverse of :func:`absolute_controls` (exact in real arithmetic;
-    float32 rounding otherwise)."""
+    float32 rounding otherwise). A per-tick prior needs ``horizons`` (slot means)."""
     b = u_abs.shape[0]
     shp = (b, *([1] * (u_abs.dim() - 2)))
     u32 = u_abs.to(torch.float32)
-    a = u32[..., 0] - a0.reshape(shp).to(torch.float32)
-    k0 = kappa0.reshape(shp).to(torch.float32)
+    if a0.dim() == 2:
+        a = u32[..., 0] - _slot_view(_slot_of(a0, horizons), u_abs).to(torch.float32)
+        k0 = _slot_view(_slot_of(kappa0, horizons), u_abs).to(torch.float32)
+    else:
+        a = u32[..., 0] - a0.reshape(shp).to(torch.float32)
+        k0 = kappa0.reshape(shp).to(torch.float32)
     if control_units == "alat":
         sc = _alat_scale(v.reshape(-1).to(torch.float32),
                          alat_v_floor).reshape(shp)
@@ -586,7 +886,7 @@ def plan_check(out: dict, anchor_controls: Tensor, *, decoder=None,
         kw = dict(control_units=decoder.anchor_control_units,
                   alat_v_floor=decoder.anchor_alat_v_floor)
         delta = residual_controls(out["u0_hat"].float(), rp[0], rp[1], rp[2],
-                                  **kw)
+                                  horizons=decoder.anchor_horizons, **kw)
         fan = roll_plan(delta, rp[0], rp[1], rp[2], decoder.anchor_horizons,
                         tick=decoder.anchor_dt,
                         kappa_cap=decoder.anchor_kappa_cap, **kw)
@@ -600,7 +900,7 @@ def plan_check(out: dict, anchor_controls: Tensor, *, decoder=None,
                   and torch.isfinite(out["traj"].float()).all())
     # informative, not gated: on a withheld row the controls are zero BY DESIGN
     # (`withhold`), so this counts the rows that carry a measured prior at all
-    ctrl_nz = int(((rp[0] != 0) | (rp[1] != 0)).sum())
+    ctrl_nz = int(((rp[0] != 0) | (rp[1] != 0)).reshape(rp[0].shape[0], -1).any(dim=1).sum())
     rep = {"rows": int(p.shape[0]), "rows_v_gt_0": n_mov,
            "rows_v_gt_0_prior_nonzero": n_nonzero,
            "rows_prior_controls_nonzero": ctrl_nz,
@@ -613,9 +913,21 @@ def plan_check(out: dict, anchor_controls: Tensor, *, decoder=None,
     return rep
 
 
-def prior_stamp(mode: str) -> dict:
-    """What ``config.json`` and the declared-vs-built check record."""
+def prior_stamp(mode: str, p10: dict | None = None) -> dict:
+    """What ``config.json`` and the declared-vs-built check record. ``p10`` (mode ``p10`` only) = the frozen
+    artifact's identity: ``{"path", "file_sha256", "content_sha256", "meta"}`` -- REQUIRED for that mode and
+    REFUSED for every other (a stamp that names a P10 the mode does not read is false provenance)."""
     check_mode(mode)
+    if (mode in P10_MODES) != (p10 is not None):
+        raise ResidualPriorError(
+            f"prior_stamp(mode={mode!r}, p10={'given' if p10 is not None else None}): the P10 identity is "
+            f"recorded if and only if the mode is one of {P10_MODES}")
+    if p10 is not None and p10.get("variant") is not None:
+        want_variant = "pose" if mode == P10_POSE_MODE else "steer"
+        if p10["variant"] != want_variant:
+            raise ResidualPriorError(
+                f"prior_stamp(mode={mode!r}): the stamped P10 is the {p10['variant']!r} variant, this mode reads the "
+                f"{want_variant!r} one -- a stamp that names another prior is false provenance")
     defs = {
         RESIDUAL_PRIOR_OFF: "no prior (refcv6 decoder, bit-identical)",
         "ha0_ext": ("constant a0 = (v[t0]-v[t0-1])/dt and constant kappa0 = "
@@ -627,11 +939,25 @@ def prior_stamp(mode: str) -> dict:
         "cv_yawrate": ("a = 0 and constant kappa0 = clamp(omega0/max(v0, "
                        "%.1f), +-%.2f) -- constant speed v0, constant yaw "
                        "rate" % (POSE_KAPPA_V_FLOOR, POSE_KAPPA_CAP)),
+        P10_MODE: ("the FROZEN learned kinematic floor P10 (30 knots x 0.2 s, kd_x + MLP on (v0, a0 stride-2, "
+                   "steer[t0])) converted to PER-TICK controls by the closed-loop inverse of "
+                   "rollout_unicycle (knots -> 0.1 s by 4-point interpolatory subdivision; kappa floor %.1f m/s, "
+                   "cap %.2f 1/m) -- Delta == 0 rolls to P10u, P10's path re-rolled from the measured v0"
+                   % (POSE_KAPPA_V_FLOOR, P10_KAPPA_CAP)),
+        P10_POSE_MODE: ("the FROZEN learned kinematic floor P10, POSE-ONLY variant (30 knots x 0.2 s, kd_x_pose + MLP on "
+                        "(v0, a0 = ONE-frame backward difference, kappa0 = clamp(omega0/max(v0, %.1f), +-%.2f)) of the "
+                        "past pose track -- ha0_ext_pose's own triple) converted to PER-TICK controls by the closed-loop "
+                        "inverse of rollout_unicycle (knots -> 0.1 s by 4-point interpolatory subdivision; kappa cap "
+                        "%.2f 1/m) -- Delta == 0 rolls to P10u, P10's path re-rolled from the measured v0"
+                        % (POSE_KAPPA_V_FLOOR, POSE_KAPPA_CAP, P10_KAPPA_CAP)),
     }
-    return {"residual_prior": mode, "definition": defs[mode],
+    extra = {} if p10 is None else {"p10": dict(p10), "prior_shape": "per tick [B, 60]"}
+    return {**extra, "residual_prior": mode, "definition": defs[mode],
             "reads": ({"off": [], "ha0_ext": ["pose window", "actions[t0, 0]"],
                        "ha0_ext_pose": ["pose window"],
-                       "cv_yawrate": ["pose window"]}[mode]),
+                       "cv_yawrate": ["pose window"],
+                       P10_MODE: ["pose window (v[t0], v[t0-2])", "actions[t0, 0]"],
+                       P10_POSE_MODE: ["pose window (v[t0], v[t0-1], yaw[t0], yaw[t0-1])"]}[mode]),
             "integrator": "tanitad.models.kinematic.rollout_unicycle, dt 0.1, "
                           "float32, index-select at horizons - 1",
             "composition": "a = a0 + delta_a; kappa = kappa0 + "

@@ -764,3 +764,20 @@ The PI stopped it. From now on:
    - Each check has a deliberate-regression arm that must make the gate FAIL.
 3. **A new trainer flag without a G-DVB entry is refused by the gate itself.** Adding a lever means adding its check.
 4. **A config that DECLARES a lever the model does not BUILD is a launch blocker, never a footnote.**
+
+## ⛔ BINDING — THE MODEL GETS MEASURED EGO MOTION (INCL. YAW RATE), NEVER THE STEERING ANGLE (Sayed, 2026-10-17)
+
+**Sayed, verbatim:** *"the model shoul et measured ego motion and its history, instead of steering angle which represents a sort of ction, the model should get the measured yaw rate"*
+
+* ✅ **Admissible inputs, at training and inference:** measured ego motion and its HISTORY: speed, acceleration, **yaw rate**, pose track. Example: refcv8's `--ego-history` channels `(v, dv, dyaw/dt)` come from `ego_channels_from_poses`.
+* ⛔ **Not an input:** the steering angle, in any form. That covers the `actions[:, 0]` "steer" channel, any prior that reads it (`ha0_ext`, the steer-reading P10 `p10`), and any feature built from it. It is an ACTION, not a measurement.
+* ⚠️ **Know what our "steer" actually is.** In PhysicalAI it is NOT a recorded command. It is `atan(2.9 · curvature)` of the egomotion's measured path curvature (`stack/tanitad/data/physicalai.py`, D-016 R1). So it carries measured-motion information in an action's units. ⇒ Re-express it as measured yaw rate. Do not simply delete the information.
+* **Already compliant:**
+  * refcv8's ego history;
+  * α1's `p10_pose` (yaw rate from the pose track);
+  * `ha0_ext_pose`.
+* **Not compliant, and to be fixed:**
+  * RA-1 (its P10-540 reads steer; its action vector is `(a, steer, v)`);
+  * v8F-mini (its P10 reads steer).
+  * The arm α1s (`v8f_steer`) is REJECTED and never launches.
+* Same family as the vision-only and goal-input rules: **ask what an input at inference really is**, not what it is called.

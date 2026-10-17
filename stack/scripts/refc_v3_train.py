@@ -511,6 +511,23 @@ def _pin_trainer_cfg(cfg: v3.RefCV3Config, args) -> v3.RefCV3Config:
             "[v3] --residual-prior %s needs --ego-history: the prior reads "
             "the observed pose window, which reaches the model only through "
             "that channel." % _rp_mode)
+    # ---- v8F alpha-1: the frozen P10 (--residual-prior p10) -------------------------------------------------- #
+    # Pinned onto the CONFIG like the mode, so `rebuild_config` (the eval loaders replay argv through this helper)
+    # builds the SAME P10. The identity is IN THE ARGV: the path AND its sha256. `FrozenP10` is loaded and the file
+    # hashed at model build (`AnchoredDiffusionDecoder.__init__`), so train, resume and eval all enforce one rule.
+    _p10_path = str(getattr(args, "p10_prior", None) or "")
+    _p10_sha = str(getattr(args, "p10_prior_sha256", None) or "")
+    if _rp_mode in _kp.P10_MODES:
+        if not _p10_path or not _p10_sha:
+            raise SystemExit(
+                "[v3] --residual-prior %s needs BOTH --p10-prior <file> and --p10-prior-sha256 <hex>: a P10 whose "
+                "bytes are not pinned is not an identity (the record could not say which P10 trained)." % _rp_mode)
+    elif _p10_path or _p10_sha:
+        raise SystemExit(
+            "[v3] --p10-prior / --p10-prior-sha256 were passed with --residual-prior %s, which does not read a P10: "
+            "the record would name a prior that never ran." % _rp_mode)
+    cfg.core.decoder.p10_prior_path = _p10_path
+    cfg.core.decoder.p10_prior_sha256 = _p10_sha.lower()
     # ---- refcv6 §3: the F1..F9 block onto the CORE config ----------------- #
     # ⛔ Pinned onto the CONFIG, never only onto `args`: `rebuild_config`
     # rebuilds through this same helper, so a block living on the Namespace
@@ -5164,6 +5181,54 @@ def _resume_ema_guard(state: dict, args):
     return ema_sd, b1_sd
 
 
+def _p10_identity(dec) -> "dict | None":
+    """v8F alpha-1: ``{"path", "file_sha256", "content_sha256", "meta"}`` of the P10, or ``None`` when there is none.
+
+    Two readers, deliberately different facts. On the BUILT decoder (``AnchoredDiffusionDecoder``, which has a
+    ``p10`` attribute -- ``None`` when absent) it is read off the LIVE BUFFERS, never off argv. On a DECODER CONFIG
+    (``DecoderConfig``: no ``p10`` attribute) it is the INTENT -- the file the config names, loaded and hashed here --
+    which ``assert_seams_are_built`` then compares to the built one."""
+    if hasattr(dec, "p10"):
+        p10 = dec.p10
+        if p10 is None:
+            return None
+        return {"path": str(p10.source), "file_sha256": str(p10.file_sha), "content_sha256": str(p10.content_sha()),
+                "variant": str(p10.variant), "meta": dict(p10.meta)}
+    _mode = str(getattr(dec, "residual_prior", "off"))
+    if _mode not in _kp.P10_MODES:
+        return None
+    from tanitad.models.p10_prior import load_frozen_p10
+    f = load_frozen_p10(getattr(dec, "p10_prior_path"), expect_file_sha256=getattr(dec, "p10_prior_sha256") or None,
+                        variant=("pose" if _mode == _kp.P10_POSE_MODE else "steer"))
+    return {"path": str(f.source), "file_sha256": str(f.file_sha), "content_sha256": str(f.content_sha()),
+            "variant": str(f.variant), "meta": dict(f.meta)}
+
+
+def _p10_ckpt_extra(model) -> dict:
+    """The key ``ckpt.pt`` gains on a p10 build ({} otherwise: every other checkpoint, key for key). The P10 weights
+    are NOT in ``model.state_dict()`` (non-persistent buffers), so the checkpoint carries their IDENTITY."""
+    idn = _p10_identity(getattr(getattr(model, "core", model), "decoder", None))
+    return {} if idn is None else {"p10_prior": {k: idn[k] for k in ("file_sha256", "content_sha256")}}
+
+
+def _resume_p10_guard(state: dict, model) -> None:
+    """A resume continues the SAME experiment: the checkpoint's P10 identity must be the built model's. Both
+    directions REFUSE (a p10 checkpoint into a non-p10 build, a non-p10 checkpoint into a p10 build, or a different
+    P10), BEFORE any state is loaded."""
+    have = state.get("p10_prior")
+    idn = _p10_identity(getattr(getattr(model, "core", model), "decoder", None))
+    if (have is None) != (idn is None):
+        raise SystemExit("[v3] ⛔ resume REFUSED: ckpt.pt %s a P10 identity but this build %s a P10 prior -- the "
+                         "resumed run would be a different experiment." %
+                         ("carries" if have is not None else "carries no",
+                          "has no" if idn is None else "HAS"))
+    if idn is not None:
+        for k in ("file_sha256", "content_sha256"):
+            if str(have.get(k)) != str(idn[k]):
+                raise SystemExit("[v3] ⛔ resume REFUSED: ckpt.pt P10 %s %s != the built P10's %s." %
+                                 (k, str(have.get(k))[:16], str(idn[k])[:16]))
+
+
 def _ema_ckpt_extra(ema, b1) -> dict:
     """The keys ``ckpt.pt`` gains when the EMA is on ({} when off: the tip's checkpoint, key for key)."""
     if ema is None:
@@ -5187,7 +5252,7 @@ def _ckpt_payload(model, opt, step, dpos, n_windows, args, ema, b1) -> dict:
                          "batch": int(dpos["batch"]),
                          "n": n_windows, "seed": int(args.seed),
                          "batch_size": int(args.batch)},
-            **_ema_ckpt_extra(ema, b1)}
+            **_ema_ckpt_extra(ema, b1), **_p10_ckpt_extra(model)}
 
 
 def _ema_summary_extra(ema, b1) -> dict:
@@ -6956,7 +7021,8 @@ def _seam_stamp(cfg, args) -> dict:
         # refcv7 NEW-1 -- the full definition, not just the mode, so the run
         # record says WHICH prior (and whether it IS the battery's echo).
         "residual_prior": _kp.prior_stamp(str(getattr(
-            core.decoder, "residual_prior", _kp.RESIDUAL_PRIOR_OFF))),
+            core.decoder, "residual_prior", _kp.RESIDUAL_PRIOR_OFF)),
+            p10=_p10_identity(core.decoder)),
         # ⭐ STAGE 0. A run that does not stamp these cannot say whether its
         # fan was projected -- and a projected fan reads `envelope 0.0000` as
         # an IDENTITY, which is indistinguishable in a metrics table from a
@@ -7594,6 +7660,18 @@ def assert_seams_are_built(model, stamp: dict) -> None:
         bad.append(f"stamp says residual_prior={_rp_st!r} but the decoder "
                    f"was BUILT with {_rp_built!r} -- the record would name a "
                    f"different plan space than the one that trains")
+    # v8F alpha-1: the P10 the record names must be the P10 that is built (file bytes AND live buffers)
+    _p10_st = (stamp.get("residual_prior") or {}).get("p10")
+    _p10_b = _p10_identity(dec)
+    if (_p10_st is None) != (_p10_b is None):
+        bad.append(f"stamp P10 identity {None if _p10_st is None else 'present'} but the decoder was built "
+                   f"{'with' if _p10_b is not None else 'without'} a P10 -- a prior absent from / invented in the "
+                   f"run record")
+    elif _p10_b is not None:
+        for _k in ("file_sha256", "content_sha256", "variant"):
+            if str(_p10_st.get(_k)) != str(_p10_b[_k]):
+                bad.append(f"stamp P10 {_k} {str(_p10_st.get(_k))[:16]} != the built P10's {str(_p10_b[_k])[:16]} -- "
+                           f"the record names a different P10 than the one that trains")
     # --- WP-6: the agent seam --------------------------------------------- #
     layers = list(getattr(dec, "layers", []))
     if bool(stamp.get("cross_agent", False)):
@@ -10028,6 +10106,7 @@ def train(args) -> dict:
     if ck.exists():
         state = torch.load(ck, map_location=device, weights_only=False)
         _ema_resume, _b1_resume = _resume_ema_guard(state, args)     # refuses a mismatch BEFORE any state is loaded
+        _resume_p10_guard(state, model)                              # v8F alpha-1: the same P10, or REFUSE
         model.load_state_dict(state["model"])          # strict — resume exact
         opt.load_state_dict(state["opt"])
         step = int(state["step"])
@@ -10827,7 +10906,7 @@ def train(args) -> dict:
                                      "batch": int(_dpos["batch"]),
                                      "n": len(ds), "seed": int(args.seed),
                                      "batch_size": int(args.batch)},
-                        **_ema_ckpt_extra(_ema, _b1)}, ck)
+                        **_ema_ckpt_extra(_ema, _b1), **_p10_ckpt_extra(model)}, ck)
             # the one line that makes the order VERIFIABLE from train.log
             print(f"[v3:{args.arm}] ckpt step {step} -> {ck.name}",
                   flush=True)
@@ -12453,8 +12532,20 @@ def build_parser() -> argparse.ArgumentParser:
                          "battery's echo exactly (reads the recorded steer "
                          "at t0); 'ha0_ext_pose' = the same construction "
                          "with the pose-track curvature; 'cv_yawrate' = "
-                         "constant speed + constant yaw rate. Definitions: "
+                         "constant speed + constant yaw rate; 'p10' = the "
+                         "FROZEN learned kinematic floor P10 (reads the "
+                         "recorded steer at t0, like ha0_ext); 'p10_pose' = "
+                         "the same floor refit on the POSE track only (v8F "
+                         "alpha-1). Definitions: "
                          "tanitad/models/kinematic_prior.py.")
+    ap.add_argument("--p10-prior", default=None,
+                    help="v8F alpha-1: the frozen P10 artifact (`v8f_mini.save_p10`'s format) read when "
+                         "--residual-prior p10 / p10_pose (the artifact declares which: `meta['units']`). Required "
+                         "with those, REFUSED with any other mode. Loaded as "
+                         "non-persistent BUFFERS (never a Parameter, never in state_dict).")
+    ap.add_argument("--p10-prior-sha256", default=None,
+                    help="v8F alpha-1: the sha256 of the --p10-prior file's BYTES. Required with p10; the model "
+                         "build REFUSES a file that hashes otherwise, at train, at resume and at eval.")
     ap.add_argument("--opt", choices=("adam", "dd"), default="adam",
                     help="refcv6 §2. `dd` is DiffusionDrive's optimiser "
                          "(`diffusiondrivev2_rl_config.py:119-131`): AdamW, "

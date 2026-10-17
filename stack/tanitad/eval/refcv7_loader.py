@@ -127,6 +127,16 @@ PATH_REMAP_SPEC: dict[str, tuple[str, str]] = {
                                   str(KIT / "data/refcv7/nav_compliance_tau_train.json")),
     "--map-hires-class-weights": ("map_hires_class_weights_train_100x30.json",
                                   str(KIT / "data/refcv7/map_hires_class_weights_train_100x30.json")),
+    # v8F alpha-1: the frozen P10 prior. The file ships IN the tree under test; the argv names the launch tree's copy on
+    # Thor, so it is remapped to this tree's. Its identity is `--p10-prior-sha256`, which the model build checks against
+    # the file's bytes (a wrong file REFUSES to load). The default is the POSE-ONLY artifact (arm alpha-1 as launched);
+    # the steer artifact (the optional arm alpha-1s) is the second known basename, `P10_ARTIFACTS`.
+    "--p10-prior": ("p10_pose_prior.pt", str(STACK / "tanitad" / "configs" / "v8f_p10" / "p10_pose_prior.pt")),
+}
+#: every P10 artifact the tree ships, by basename -- the argv's `--p10-prior` basename picks the file
+P10_ARTIFACTS: dict[str, str] = {
+    "p10_pose_prior.pt": str(STACK / "tanitad" / "configs" / "v8f_p10" / "p10_pose_prior.pt"),
+    "p10_prior.pt": str(STACK / "tanitad" / "configs" / "v8f_p10" / "p10_prior.pt"),
 }
 #: Thor path -> kit path, per flag (the refcv6 loader's name, kept for callers)
 PATH_REMAP: dict[str, str] = {f: p for f, (_, p) in PATH_REMAP_SPEC.items()}
@@ -239,11 +249,13 @@ def remap_argv(argv: list[str], remap: dict | None = None) -> tuple[list[str], d
             thor, local = argv[i + 1], remap[a]
             src = ("caller remap" if explicit else
                    "recorded override" if a in OVERRIDDEN else "kit default")
+            if a == "--p10-prior" and src == "kit default" and _basename(thor) in P10_ARTIFACTS:
+                local = P10_ARTIFACTS[_basename(thor)]
             ent = {"thor": thor, "local": local, "source": src}
             spec = PATH_REMAP_SPEC.get(a)
             if src == "kit default" and spec is not None:
                 ent["basename_expected"] = spec[0]
-                if _basename(thor) != spec[0]:
+                if _basename(thor) != spec[0] and not (a == "--p10-prior" and _basename(thor) in P10_ARTIFACTS):
                     bad.append(f"{a}: the argv names {_basename(thor)!r}, the kit's file for this "
                                f"flag is {spec[0]!r}")
             rec["remapped"][a] = ent

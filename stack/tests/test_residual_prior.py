@@ -690,7 +690,8 @@ def test_rl_ego_actions_is_declared_must_not_be_plumbed_by_the_seam_that_owns_it
     assert d == KP.FORWARD_EXCLUSIONS[0] and "kinematic_prior" in d.owner
     assert d.permanent is False                        # TEMPORARY: a PI ruling lifts it
     assert "ha0_ext" in d.reason and "ha0_ext" in d.unblock
-    assert KP.ACTION_MODES == ("ha0_ext",)             # the one mode the reason names
+    assert KP.ACTION_MODES == ("ha0_ext", "p10")       # the modes the reason names (p10: v8F alpha-1)
+    assert all(f"`{m}`" in d.reason for m in KP.ACTION_MODES)
     assert "ego_actions" not in ra.FORWARD_KEYS        # honoured, not merely declared
     assert _rl_required_minus_plumbed() == set()
 

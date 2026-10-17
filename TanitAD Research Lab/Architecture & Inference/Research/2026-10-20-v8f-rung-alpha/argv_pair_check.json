@@ -1,0 +1,137 @@
+{
+ "diff": {
+  "a1": {
+   "only_in_arm": {
+    "--p10-prior": [
+     "/home/nvidia/v8f_run/launch_tree/stack/tanitad/configs/v8f_p10/p10_pose_prior.pt"
+    ],
+    "--p10-prior-sha256": [
+     "e70a9ae30b4418705442bffdeb62d9810a43b0a6ccce0c177796c72295fe693d"
+    ]
+   },
+   "changed": {
+    "--residual-prior": [
+     [
+      "ha0_ext_pose"
+     ],
+     [
+      "p10_pose"
+     ]
+    ],
+    "--out": [
+     [
+      "/home/nvidia/v8f_run/runs/v8f-a0-s0"
+     ],
+     [
+      "/home/nvidia/v8f_run/runs/v8f-a1-s0"
+     ]
+    ]
+   },
+   "only_in_a0": {}
+  },
+  "a1s": {
+   "only_in_arm": {
+    "--p10-prior": [
+     "/home/nvidia/v8f_run/launch_tree/stack/tanitad/configs/v8f_p10/p10_prior.pt"
+    ],
+    "--p10-prior-sha256": [
+     "af5a29ddadb4c7d98f1db0d8116bddd0634e83a7e687fc601989d3fda984d7b3"
+    ]
+   },
+   "changed": {
+    "--residual-prior": [
+     [
+      "ha0_ext_pose"
+     ],
+     [
+      "p10"
+     ]
+    ],
+    "--out": [
+     [
+      "/home/nvidia/v8f_run/runs/v8f-a0-s0"
+     ],
+     [
+      "/home/nvidia/v8f_run/runs/v8f-a1s-s0"
+     ]
+    ]
+   },
+   "only_in_a0": {}
+  }
+ },
+ "argv_sha256": {
+  "a0": "2a88519851719db5b79a7751b5e80435324d6315aa92385d4638025d5121ded9",
+  "a1": "17b9e5199ac290bf1730a785649f42c570e18c272c616c776d5c3d8908dfc8dd",
+  "a1s": "5af855f7afb46b9ded54d251f7918e8aa5c46616cd0c3ee7d03b9fb11c2b9059"
+ },
+ "rules": {
+  "a0 under refcv8": {
+   "refusals": [],
+   "pi_pending": []
+  },
+  "a0 under v8f": {
+   "refusals": [
+    "profile v8f requires --p10-prior in the launch argv (PLAN_V8F section 6 (alpha-1): the frozen learned kinematic floor P10 is the residual prior)",
+    "profile v8f requires --p10-prior-sha256 in the launch argv (the P10 file's identity: checked at the build, stamped into config.json and ckpt.pt, re-checked at eval and at resume)",
+    "--residual-prior ['ha0_ext_pose'] is REFUSED for a v8f launch (refused values: ['off', 'ha0_ext', 'ha0_ext_pose', 'cv_yawrate', 'p10']; PLAN_V8F section 6: this arm's prior is `p10_pose`; `ha0_ext_pose` is alpha-0's (the baseline arm), `ha0_ext` reads the steer as an ECHO, `cv_yawrate` drops the acceleration, `off` is the refcv6 decoder; THIS value: alpha-0's prior (the baseline arm), not this arm's)",
+    "--residual-prior p10_pose is REQUIRED for a v8f launch (PLAN_V8F section 6 (alpha-1): the ONE lever that differs from refcv8 -- the residual prior is the frozen POSE-ONLY P10 (alpha-0's `ha0_ext_pose` reads past poses only, so the input set is unchanged)) and the argv has ['ha0_ext_pose']",
+    "--p10-prior-sha256 e70a9ae30b4418705442bffdeb62d9810a43b0a6ccce0c177796c72295fe693d is REQUIRED for a v8f launch (the banked pose-only P10 (refit on the 4,572-clip train view, 74,604 bytes): a literal) and the argv has None"
+   ],
+   "pi_pending": []
+  },
+  "a0 under v8f_steer": {
+   "refusals": [
+    "profile v8f_steer requires --p10-prior in the launch argv (PLAN_V8F section 6 (alpha-1): the frozen learned kinematic floor P10 is the residual prior)",
+    "profile v8f_steer requires --p10-prior-sha256 in the launch argv (the P10 file's identity: checked at the build, stamped into config.json and ckpt.pt, re-checked at eval and at resume)",
+    "--residual-prior ['ha0_ext_pose'] is REFUSED for a v8f_steer launch (refused values: ['off', 'ha0_ext', 'ha0_ext_pose', 'cv_yawrate', 'p10_pose']; PLAN_V8F section 6: this arm's prior is `p10`; `ha0_ext_pose` is alpha-0's (the baseline arm), `ha0_ext` reads the steer as an ECHO, `cv_yawrate` drops the acceleration, `off` is the refcv6 decoder; THIS value: alpha-0's prior (the baseline arm), not this arm's)",
+    "--residual-prior p10 is REQUIRED for a v8f_steer launch (PLAN_V8F section 6 (alpha-1): the ONE lever that differs from refcv8 -- the residual prior is the frozen STEER-reading P10 (optional arm alpha-1s)) and the argv has ['ha0_ext_pose']",
+    "--p10-prior-sha256 af5a29ddadb4c7d98f1db0d8116bddd0634e83a7e687fc601989d3fda984d7b3 is REQUIRED for a v8f_steer launch (the banked v8F-mini P10 (raw/p10/p10_prior.pt, 74,475 bytes): a literal) and the argv has None"
+   ],
+   "pi_pending": []
+  },
+  "a1 under refcv8": {
+   "refusals": [
+    "--residual-prior ha0_ext_pose is REQUIRED for a refcv8 launch (SPEC_REFCV7 10 (A5): the prior is ha0_ext_pose, past poses only) and the argv has ['p10_pose']"
+   ],
+   "pi_pending": []
+  },
+  "a1 under v8f": {
+   "refusals": [],
+   "pi_pending": []
+  },
+  "a1 under v8f_steer": {
+   "refusals": [
+    "--residual-prior ['p10_pose'] is REFUSED for a v8f_steer launch (refused values: ['off', 'ha0_ext', 'ha0_ext_pose', 'cv_yawrate', 'p10_pose']; PLAN_V8F section 6: this arm's prior is `p10`; `ha0_ext_pose` is alpha-0's (the baseline arm), `ha0_ext` reads the steer as an ECHO, `cv_yawrate` drops the acceleration, `off` is the refcv6 decoder; THIS value: the pose-only sibling is arm alpha-1 (profile v8f), not alpha-1s)",
+    "--residual-prior p10 is REQUIRED for a v8f_steer launch (PLAN_V8F section 6 (alpha-1): the ONE lever that differs from refcv8 -- the residual prior is the frozen STEER-reading P10 (optional arm alpha-1s)) and the argv has ['p10_pose']",
+    "--p10-prior-sha256 af5a29ddadb4c7d98f1db0d8116bddd0634e83a7e687fc601989d3fda984d7b3 is REQUIRED for a v8f_steer launch (the banked v8F-mini P10 (raw/p10/p10_prior.pt, 74,475 bytes): a literal) and the argv has ['e70a9ae30b4418705442bffdeb62d9810a43b0a6ccce0c177796c72295fe693d']"
+   ],
+   "pi_pending": []
+  },
+  "a1s under refcv8": {
+   "refusals": [
+    "--residual-prior ha0_ext_pose is REQUIRED for a refcv8 launch (SPEC_REFCV7 10 (A5): the prior is ha0_ext_pose, past poses only) and the argv has ['p10']"
+   ],
+   "pi_pending": []
+  },
+  "a1s under v8f": {
+   "refusals": [
+    "--residual-prior ['p10'] is REFUSED for a v8f launch (refused values: ['off', 'ha0_ext', 'ha0_ext_pose', 'cv_yawrate', 'p10']; PLAN_V8F section 6: this arm's prior is `p10_pose`; `ha0_ext_pose` is alpha-0's (the baseline arm), `ha0_ext` reads the steer as an ECHO, `cv_yawrate` drops the acceleration, `off` is the refcv6 decoder; THIS value: steer at inference: no PI ruling (SPEC_REFCV7 A5))",
+    "--residual-prior p10_pose is REQUIRED for a v8f launch (PLAN_V8F section 6 (alpha-1): the ONE lever that differs from refcv8 -- the residual prior is the frozen POSE-ONLY P10 (alpha-0's `ha0_ext_pose` reads past poses only, so the input set is unchanged)) and the argv has ['p10']",
+    "--p10-prior-sha256 e70a9ae30b4418705442bffdeb62d9810a43b0a6ccce0c177796c72295fe693d is REQUIRED for a v8f launch (the banked pose-only P10 (refit on the 4,572-clip train view, 74,604 bytes): a literal) and the argv has ['af5a29ddadb4c7d98f1db0d8116bddd0634e83a7e687fc601989d3fda984d7b3']"
+   ],
+   "pi_pending": []
+  },
+  "a1s under v8f_steer": {
+   "refusals": [],
+   "pi_pending": []
+  },
+  "open_items_v8f": [
+   "OPEN ITEM V8F-RUNG-GEOMETRY: the tiny rung's step / batch / eval cadence (PLAN_V8F section 6: batch 8, ~4.5 h/arm, seeds 0 and 1) is not fixed: refcv8's full-run literals (--steps 48852, --batch 16, --eval-batches 8, --eval-every 500) and its B1 guard (--b1-guard-ref-ap2m 0.21211 is defined on the 128-window eval = 8 x 16, so a batch-8 rung reads a DIFFERENT window set; --b1-guard-step 1000) are therefore NOT in this profile's required_values (owner: the Master Mind (rung sizing; set at launch from refcv8's measured step time) -> closes by writing the six literals into required_values)"
+  ],
+  "open_items_v8f_steer": [
+   "OPEN ITEM V8F-RUNG-GEOMETRY: the tiny rung's step / batch / eval cadence (PLAN_V8F section 6: batch 8, ~4.5 h/arm, seeds 0 and 1) is not fixed: refcv8's full-run literals (--steps 48852, --batch 16, --eval-batches 8, --eval-every 500) and its B1 guard (--b1-guard-ref-ap2m 0.21211 is defined on the 128-window eval = 8 x 16, so a batch-8 rung reads a DIFFERENT window set; --b1-guard-step 1000) are therefore NOT in this profile's required_values (owner: the Master Mind (rung sizing; set at launch from refcv8's measured step time) -> closes by writing the six literals into required_values)",
+   "OPEN ITEM V8F-P10-ACTION-INPUT: `--residual-prior p10` reads the RECORDED STEER at t0 (kinematic feature k) -- an ACTION mode, like `ha0_ext` which SPEC_REFCV7 section 10 (A5) EXCLUDED; NavSim has no steer channel. The eval harness must supply `ego_actions` or REFUSES (kinematic_prior.FORWARD_EXCLUSIONS names both modes). alpha-1 as launched is the POSE-ONLY `p10_pose`; this is the optional arm alpha-1s (owner: PI (admissibility of the recorded steer at inference; the vision-only rule is about ego STATE, and this is a vehicle-bus signal the past-pose prior does not read))"
+  ],
+  "open_items_refcv8": []
+ }
+}

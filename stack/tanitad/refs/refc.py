@@ -613,6 +613,15 @@ class DecoderConfig:
     # `kinematic_prior.roll_plan` the one function that turns a residual into
     # a path. SPEC_REFCV7 section 1, NEW-1.
     residual_prior: str = "off"
+    # ---- v8F rung alpha, arm alpha-1: THE FROZEN P10 PRIOR (residual_prior == "p10") -------------------------
+    # DECLARED fields (strict_fields: an undeclared attribute is refused at assignment). `p10_prior_path` is the
+    # artifact FILE the trainer's `--p10-prior` names; `p10_prior_sha256` its expected bytes' sha256 ("" = do not
+    # pin, which the LAUNCH GATE refuses -- an unpinned P10 is not an identity). Both are "" on every other mode,
+    # and a non-empty value with another mode is REFUSED at build (a P10 the build does not read is false
+    # provenance). The weights are NOT in the state_dict (non-persistent buffers): the file + its sha256 are the
+    # identity, stamped in config.json and re-checked at eval and at resume.
+    p10_prior_path: str = ""
+    p10_prior_sha256: str = ""
 
 
 @strict_fields
@@ -2032,6 +2041,30 @@ class AnchoredDiffusionDecoder(nn.Module):
                     "measured v0 and the residual vocabulary with it; a "
                     "FIXED-path bank carries no controls to compose on. "
                     "Build with --anchor-v0-conditioned.")
+        # ---- v8F alpha-1: the frozen P10, loaded and sha-checked AT BUILD -------------------------------- #
+        # `None` on every other mode: nothing is constructed, no RNG is drawn, the state_dict is unchanged.
+        self.p10 = None
+        _p10_path = str(getattr(cfg, "p10_prior_path", "") or "")
+        _p10_sha = str(getattr(cfg, "p10_prior_sha256", "") or "")
+        if self.residual_prior in _kp.P10_MODES:
+            if not _p10_path:
+                raise ValueError(
+                    f"v8F alpha-1: residual_prior={self.residual_prior!r} but cfg.p10_prior_path is empty -- a P10 mode "
+                    f"with no P10 would silently be ANOTHER prior. Pass --p10-prior <file>.")
+            if max(int(h) for h in self.anchor_horizons) > _kp.P10_TICKS:
+                raise ValueError(
+                    f"v8F alpha-1: P10 reaches {_kp.P10_TICKS} ticks (6 s) but the decoder's horizon is "
+                    f"{max(int(h) for h in self.anchor_horizons)}; the prior beyond 6 s does not exist.")
+            from tanitad.models.p10_prior import load_frozen_p10
+            # the artifact DECLARES the input channel it was fit on (`steer` | `pose_kappa`); a mode that reads the
+            # other one is refused here, at build, by name
+            self.p10 = load_frozen_p10(_p10_path, expect_file_sha256=_p10_sha or None,
+                                       variant=("pose" if self.residual_prior == _kp.P10_POSE_MODE else "steer"))
+        elif _p10_path or _p10_sha:
+            raise ValueError(
+                f"v8F alpha-1: cfg.p10_prior_path/sha256 are set ({_p10_path!r}, {_p10_sha[:12]!r}) but "
+                f"residual_prior={self.residual_prior!r} does not read a P10 -- the record would name a prior "
+                f"that never ran.")
         # ---- refcv6 §3: F1..F9 -------------------------------------------- #
         # ⛔ CONSTRUCTED LAST, AND ONLY WHEN ASKED -- the same discipline the
         # sampler above follows, for the same reason: with `cfg.refcv6` None
@@ -2334,8 +2367,19 @@ class AnchoredDiffusionDecoder(nn.Module):
                 "the reference speed (a speed-blind vocabulary); a prior "
                 "built from the measured state contradicts it. Refusing.")
         a0, k0 = residual_prior
-        a0 = a0.reshape(-1).to(torch.float32)
-        k0 = k0.reshape(-1).to(torch.float32)
+        if self.residual_prior in _kp.TICK_MODES:
+            # a PER-TICK prior [B, T]: the rows axis is kept, never flattened
+            if a0.dim() != 2 or k0.dim() != 2:
+                raise ValueError(f"v8F alpha-1: residual_prior={self.residual_prior!r} needs a per-tick prior "
+                                 f"[B, T], got {tuple(a0.shape)} / {tuple(k0.shape)}")
+            a0, k0 = a0.to(torch.float32), k0.to(torch.float32)
+        else:
+            if a0.dim() != 1 or k0.dim() != 1:
+                raise ValueError(f"v8F alpha-1: residual_prior={self.residual_prior!r} is a CONSTANT prior [B] but "
+                                 f"got {tuple(a0.shape)} / {tuple(k0.shape)} -- a per-tick prior on a mode that "
+                                 f"does not declare one")
+            a0 = a0.reshape(-1).to(torch.float32)
+            k0 = k0.reshape(-1).to(torch.float32)
         if a0.shape[0] != batch or k0.shape[0] != batch:
             raise ValueError(f"refcv7 NEW-1: prior rows {a0.shape[0]}/"
                              f"{k0.shape[0]} != batch {batch}")
@@ -2349,7 +2393,11 @@ class AnchoredDiffusionDecoder(nn.Module):
         # DEDICATED generator (the refcv7 stream is untouched); never at eval.
         if (self.r8_cfg is not None and self.training
                 and float(self.r8_cfg.lat_prior_dropout) > 0.0):
-            _drop = self.r8_gen.rand(tuple(k0.shape), k0.device) < float(self.r8_cfg.lat_prior_dropout)
+            # ONE draw per ROW ([B]), whatever the prior's shape: a per-tick prior keeps the generator stream the
+            # constant prior consumes (same shape -> same draws), and the decision is the row's, not the tick's.
+            _drop = self.r8_gen.rand((k0.shape[0],), k0.device) < float(self.r8_cfg.lat_prior_dropout)
+            if k0.dim() == 2:
+                _drop = _drop[:, None]
             k0 = torch.where(_drop, torch.zeros_like(k0), k0)
         return a0, k0, v
 
@@ -2396,7 +2444,7 @@ class AnchoredDiffusionDecoder(nn.Module):
         a0, k0, pv = prior
         return _kp.absolute_controls(
             z, a0, k0, pv, control_units=self.anchor_control_units,
-            alat_v_floor=self.anchor_alat_v_floor)
+            alat_v_floor=self.anchor_alat_v_floor, horizons=self.anchor_horizons)
 
     def _feasible(self, x: Tensor, v_ms: Tensor | None) -> Tensor:
         """Project the emitted fan onto the friction-feasible set. No-op when
@@ -2534,6 +2582,9 @@ class AnchoredDiffusionDecoder(nn.Module):
         if bool(cfg.prior_free_group):
             if prior is None:
                 raise ValueError('[refcv8] the X2b prior-free group cancels the RESIDUAL prior; this build has none')
+            if prior[0].dim() == 2:
+                raise ValueError('[v8F] the X2b prior-free group cancels a CONSTANT lateral prior kappa0; a per-tick '
+                                 '(p10) prior has no single kappa0 to cancel -- refused, not approximated')
             norm = bank.new_tensor(tuple(self.cfg.control_norm)).to(torch.float32)
             off = r8c.prior_free_lateral_offset(prior[1], prior[2], nb, s, float(norm[1]),
                                                 self.anchor_alat_v_floor)
@@ -2893,7 +2944,7 @@ class AnchoredDiffusionDecoder(nn.Module):
                     "out['residual_prior_v'].")
             delta = _kp.residual_controls(
                 state, a0, k0, pv, control_units=self.anchor_control_units,
-                alat_v_floor=self.anchor_alat_v_floor)
+                alat_v_floor=self.anchor_alat_v_floor, horizons=self.anchor_horizons)
             return self._roll_state(delta, pv, metre, prior)
         if prior is not None:
             raise ValueError(
@@ -4528,7 +4579,8 @@ class RefCModel(nn.Module):
         mode = self.decoder.residual_prior
         acts = ego_actions if _kp.needs_actions(mode) else None
         a0, k0 = _kp.prior_controls(mode, ego_poses, n_past, acts,
-                                    dt=float(self.ego_hist.cfg.dt))
+                                    dt=float(self.ego_hist.cfg.dt),
+                                    p10=(self.decoder.p10 if mode in _kp.P10_MODES else None))
         if v0 is not None:
             vw = ego_poses[:, int(n_past) - 1, 3].to(torch.float32)
             dv = float((vw - v0.reshape(-1).to(torch.float32)).abs().max())

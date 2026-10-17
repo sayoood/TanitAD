@@ -285,7 +285,9 @@ def test_GDVB_every_trainer_flag_has_an_entry_and_every_entry_is_well_formed():
     # + SPEC_WPB_LADDER_A2: --grad-share-terms / --grad-share-at ("runtime": the gs instrument's cost levers) (-> 273)
     # + refcv8 R8-WARMUP: --ema-decay / --b1-guard-ref-ap2m / --b1-guard-step ("runtime": the weight EMA and the B1 guard)
     #   (273 -> 276)
-    assert len(dvb.REGISTRY) == 276
+    # + v8F rung alpha, arm alpha-1: --p10-prior ("built": core.decoder.p10, the frozen P10) and --p10-prior-sha256
+    #   ("elsewhere": checked with it, `_c_p10_prior`) (276 -> 278)
+    assert len(dvb.REGISTRY) == 278
     assert dvb.REGISTRY["r8_speed_enc8"].kind == "built"
     assert dvb.REGISTRY["r8_alloc_emit_start"].kind == "built"
     assert dvb.REGISTRY["w_r8_v9_cons"].kind == "loss"

@@ -466,3 +466,16 @@ The trajectory bars in §8 stand. The new ones are:
    ⚠️ **But the refav1-grid P10 was fit as a residual on the defective `kd_x`.** The correctly-integrated echo (2.838 m) beats it (2.926 m) on that grid. Before M1 is scored, **refit P10 on the correct-unit `kd_x`** of the refav1 grid. The S1 version already does that: `taniteval/taniteval/floors_kin.py`, 18 tests.
 4. **Exposure, not a retraction.** §0 item 9, "fully frozen DINOv3 + a WM adds nothing beyond kinematics", compares two probes that both sit on the same defective `kd_x` base. The comparison is internally consistent, but its absolute level is wrong. It needs a re-read on the correct-unit base before it is quoted again.
 5. **Root-cause class** (`RETRACTION_LOG.md`): *a control inherits the unit of the nearest default*. Same family as `C-REFCV3-ARM-SAME-DEFECT`. The fix is mechanical: `paths_from_controls` should refuse to run without an explicit `action_units` (BACKLOG item).
+
+## 15. Amendment 2026-10-17 (night, before any α1 data): α1's prior is the POSE-ONLY P10 (`p10_pose`)
+
+* **Why.** α0 (the refcv8 recipe) uses `ha0_ext_pose`, which reads **past poses only**. The P10 measured in S1 reads the **recorded steer**, and the steer channel at inference has **no PI ruling** (SPEC_REFCV7 §10, A5); NavSim has no steer channel either. α1 = `p10` would therefore move **two** things: the prior and the input set. That breaks "one lever".
+* **The lever as built:** `--residual-prior p10_pose`.
+  * It is P10 refit on the 4,572-clip train view, with features and kd_x base computed from past poses only (POSE_MODES).
+  * It is frozen and sha-pinned: `stack/tanitad/configs/v8f_p10/p10_pose_prior.pt`.
+  * The `v8f` launch-gate profile refuses every other prior by name.
+  * The steer variant is built as arm α1s (profile `v8f_steer`). **The PI REJECTED it on 2026-10-17:** the model gets measured ego motion and its history, including yaw rate, never the steering angle (`D-PI-YAWRATE-1`, CLAUDE.md).
+* **Premise re-measured for the pose variant** (`D-PRIOR-P10POSE-2S`): `os − P10pose` at 0–2 s is +0.0221 [+0.0105, +0.0346], separated, and the gap is longitudinal. The pose-only prior keeps the 2 s advantage the α1 bar rests on.
+* **Bar unchanged** (§6 as amended before data): α1 must win S2 ADE and LON speed by > F against α0, and must not be separated-worse at S6.
+* **Still open: D2, the tiny-rung geometry.** The Master Mind sets it at launch from refcv8's measured Thor step time, and the gate token is issued then.
+* Package: `TanitAD Research Lab/Architecture & Inference/Research/2026-10-20-v8f-rung-alpha/`.

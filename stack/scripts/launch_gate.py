@@ -859,6 +859,116 @@ PROFILES["refcv8"] = dict(
 )
 
 
+# --------------------------------------------------------------------------------------------- #
+# v8F rung alpha, arm alpha-1 (PLAN_V8F section 6): the refcv8 recipe with ONE lever changed -- the residual prior   #
+# (alpha-1 = `p10_pose`, the POSE-ONLY P10; the steer-reading `p10` is the optional arm alpha-1s, profile `v8f_steer`)   #
+# --------------------------------------------------------------------------------------------- #
+#: the frozen P10 artifacts. ⛔ LITERALS, never read from the file under test: the file is checked AGAINST them.
+#: alpha-1 AS LAUNCHED reads the POSE-ONLY artifact (`--residual-prior p10_pose`; refit on the 4,572-clip train view,
+#: banked in the package and shipped in stack/tanitad/configs/v8f_p10/). The STEER artifact (v8F-mini's, 600 clips) belongs
+#: to the optional arm alpha-1s (profile `v8f_steer`), pending the PI.
+V8F_P10_SHA256 = "e70a9ae30b4418705442bffdeb62d9810a43b0a6ccce0c177796c72295fe693d"
+V8F_P10_STEER_SHA256 = "af5a29ddadb4c7d98f1db0d8116bddd0634e83a7e687fc601989d3fda984d7b3"
+_V8F_P10_REL = "stack/tanitad/configs/v8f_p10"
+#: the refcv8 FULL-RUN geometry literals. PLAN_V8F section 6 sizes rung alpha as a TINY rung (batch 8, ~4.5 h/arm, two
+#: seeds), so these are not inherited: forcing them would force a full run. They are the open item V8F-RUNG-GEOMETRY.
+_V8F_GEOMETRY_FLAGS = ("--steps", "--batch", "--eval-batches", "--eval-every",
+                       "--b1-guard-step", "--b1-guard-ref-ap2m")
+_V8F_GEOMETRY_ITEM = {
+    "id": "V8F-RUNG-GEOMETRY",
+    "what": "the tiny rung's step / batch / eval cadence (PLAN_V8F section 6: batch 8, ~4.5 h/arm, seeds 0 and 1) is not "
+            "fixed: refcv8's full-run literals (--steps 48852, --batch 16, --eval-batches 8, --eval-every 500) and its "
+            "B1 guard (--b1-guard-ref-ap2m 0.21211 is defined on the 128-window eval = 8 x 16, so a batch-8 rung reads "
+            "a DIFFERENT window set; --b1-guard-step 1000) are therefore NOT in this profile's required_values",
+    "owner": "the Master Mind (rung sizing; set at launch from refcv8's measured step time) -> closes by writing the six "
+             "literals into required_values",
+    "closes_when": "the rung's argv fixes --steps/--batch/--eval-batches/--eval-every and either re-derives or drops "
+                   "the B1 guard; both arms (alpha0, alpha1) then carry the SAME values"}
+#: ⛔ While any is open the token is not a PASS -- each names what decides it. NONE of them is an engineering gap.
+_V8F_OPEN_ITEMS = (_V8F_GEOMETRY_ITEM,)
+_V8F_STEER_OPEN_ITEMS = (
+    _V8F_GEOMETRY_ITEM,
+    {"id": "V8F-P10-ACTION-INPUT",
+     "what": "`--residual-prior p10` reads the RECORDED STEER at t0 (kinematic feature k) -- an ACTION mode, like "
+             "`ha0_ext` which SPEC_REFCV7 section 10 (A5) EXCLUDED; NavSim has no steer channel. The eval harness must "
+             "supply `ego_actions` or REFUSES (kinematic_prior.FORWARD_EXCLUSIONS names both modes). alpha-1 as launched "
+             "is the POSE-ONLY `p10_pose`; this is the optional arm alpha-1s. PI RULING 2026-10-17: REJECTED -- \"the model should get measured ego motion and its history, instead of steering angle which represents a sort of action ... the measured yaw rate\". This item never closes; alpha-1s is not launched",
+     "owner": "PI (admissibility of the recorded steer at inference; the vision-only rule is about ego STATE, and "
+              "this is a vehicle-bus signal the past-pose prior does not read)",
+     "closes_when": "a PI ruling that steer[t0] is admissible at inference; then FORWARD_EXCLUSIONS' declaration is "
+                    "deleted for p10 and the RL/NavSim adapters plumb actions"},
+)
+_R8 = PROFILES["refcv8"]
+
+
+def _v8f_profile(variant: str) -> dict:
+    """The v8f profile for one P10 variant. ``pose`` = arm alpha-1 as launched (``p10_pose``); ``steer`` = the optional arm
+    alpha-1s (``p10``), whose open item is the PI's steer ruling. Everything else is refcv8's, literally."""
+    pose = variant == "pose"
+    mode = "p10_pose" if pose else "p10"
+    other = "p10" if pose else "p10_pose"
+    sha = V8F_P10_SHA256 if pose else V8F_P10_STEER_SHA256
+    file_bytes = 74604 if pose else 74475
+    steer_why = "steer at inference: REJECTED by the PI 2026-10-17 (the model gets measured ego motion and its history, incl. yaw rate)"
+    return dict(
+        _R8, name="v8f" if pose else "v8f_steer",
+        open_items=_V8F_OPEN_ITEMS if pose else _V8F_STEER_OPEN_ITEMS,
+        #: the model build reads the P10 file (FrozenP10 is built at decoder construction), so the model job keeps it real
+        model_input_flags=tuple(_R8["model_input_flags"]) + ("--p10-prior",),
+        required_flags=tuple(_R8["required_flags"]) + ("--p10-prior", "--p10-prior-sha256"),
+        required_flags_why=dict(_R8.get("required_flags_why") or {}, **{
+            "--p10-prior": "PLAN_V8F section 6 (alpha-1): the frozen learned kinematic floor P10 is the residual prior",
+            "--p10-prior-sha256": "the P10 file's identity: checked at the build, stamped into config.json and ckpt.pt, "
+                                  "re-checked at eval and at resume"}),
+        required_values={**{k: v for k, v in _R8["required_values"].items() if k not in _V8F_GEOMETRY_FLAGS},
+                         "--residual-prior": mode,
+                         "--p10-prior-sha256": sha},
+        required_values_why={**{k: v for k, v in (_R8.get("required_values_why") or {}).items()
+                                if k not in _V8F_GEOMETRY_FLAGS},
+                             "--residual-prior": ("PLAN_V8F section 6 (alpha-1): the ONE lever that differs from refcv8 -- "
+                                                  "the residual prior is the frozen " +
+                                                  ("POSE-ONLY P10 (alpha-0's `ha0_ext_pose` reads past poses only, so the "
+                                                   "input set is unchanged)" if pose else
+                                                   "STEER-reading P10 (optional arm alpha-1s)")),
+                             "--p10-prior-sha256": ("the banked pose-only P10 (refit on the 4,572-clip train view, "
+                                                    f"{file_bytes:,} bytes): a literal" if pose else
+                                                    "the banked v8F-mini P10 (raw/p10/p10_prior.pt, 74,475 bytes): a literal")},
+        # every other prior is REFUSED by name (each has its regression arm); `ha0_ext_pose` is alpha-0's, `ha0_ext` and
+        # `cv_yawrate` are refcv7's refusals kept, and the sibling P10 is refused with its own reason
+        forbidden_values=dict(_R8.get("forbidden_values") or {}, **{
+            "--residual-prior": ("off", "ha0_ext", "ha0_ext_pose", "cv_yawrate", other)}),
+        forbidden_values_why=dict(_R8.get("forbidden_values_why") or {}, **{
+            "--residual-prior": f"PLAN_V8F section 6: this arm's prior is `{mode}`; `ha0_ext_pose` is alpha-0's (the baseline "
+                                "arm), `ha0_ext` reads the steer as an ECHO, `cv_yawrate` drops the acceleration, `off` is "
+                                "the refcv6 decoder"}),
+        #: the reason a SPECIFIC refused value gets (appended to the generic one in the refusal message)
+        forbidden_value_each_why={"--residual-prior": {
+            **({"p10": steer_why, "ha0_ext": steer_why} if pose else
+               {"p10_pose": "the pose-only sibling is arm alpha-1 (profile v8f), not alpha-1s"}),
+            "ha0_ext_pose": "alpha-0's prior (the baseline arm), not this arm's"}},
+        #: declared_vs_built.check_refcv7_required(..., residual_prior=) compares the argv AND the built decoder to THIS value
+        dvb_residual_prior=mode,
+        #: G-LIVE / G-CKPT / G-EVAL / G-CLOCK read these (literals, equal to the committed fixture)
+        p10_prior={"variant": variant, "sha256": sha, "file_bytes": file_bytes,
+                   "dir": _V8F_P10_REL,
+                   "fixture": f"{_V8F_P10_REL}/{'p10_pose_fixture.npz' if pose else 'p10_fixture.npz'}",
+                   #: in-decoder P10 vs the banked floors_kin / v8F-mini predictions, metres (the brief)
+                   "known_value_tol_m": 1e-4,
+                   #: the emitted per-tick prior vs the gate's independent recompute, control units
+                   "live_tol": 1e-4,
+                   #: ADE@6s (P10u, P10) on the fixture windows -- the brief's escalation bar
+                   "ade6_bar_m": 0.05,
+                   "fit_clips": 4572 if pose else 600, "knots": 30, "ticks": 60,
+                   #: the fraction of windows a ONE-FRAME-early window must move beyond the tolerance (the instrument
+                   #: has to be able to SEE a clock error, or the known-value check is decorative)
+                   "shift_control_min_frac": 0.95},
+    )
+
+
+PROFILES["v8f"] = _v8f_profile("pose")
+PROFILES["v8f_steer"] = _v8f_profile("steer")
+
+
 class GateError(RuntimeError):
     """A condition under which the gate cannot certify anything."""
 
@@ -1915,8 +2025,9 @@ def forbidden_value_reasons(prof: dict, argv: list[str]) -> list[str]:
         v = flag_values(argv, f)
         if v is not None and (not v or v[0] in bad):
             why = (prof.get("forbidden_values_why") or {}).get(f)
+            each = ((prof.get("forbidden_value_each_why") or {}).get(f) or {}).get(v[0] if v else None)
             out.append(f"{f} {v} is REFUSED for a {prof['name']} launch (refused values: "
-                       f"{list(bad)}" + (f"; {why})" if why else ")"))
+                       f"{list(bad)}" + (f"; {why}" if why else "") + (f"; THIS value: {each}" if each else "") + ")")
     return out
 
 
@@ -1996,6 +2107,543 @@ def residual_prior_on(argv: list[str]) -> bool:
     """NEW-1 is ON only when `--residual-prior` carries a mode other than `off`."""
     v = flag_values(argv, "--residual-prior")
     return bool(v) and v[0] != "off"
+
+
+# --------------------------------------------------------------------------------------------- #
+# v8F alpha-1: the frozen P10 prior -- G-LIVE / G-CKPT / G-EVAL / G-CLOCK clauses                 #
+# --------------------------------------------------------------------------------------------- #
+# Every clause reads a DIFFERENT fact and none of them trusts the module under test:
+#   * the P10 the gate compares against is its OWN read of the file the ARGV names (torch.load of the file + the
+#     module-independent content hash), never `load_frozen_p10` -- so an arm (or a defect) that patches the loader
+#     patches the build and not the reference;
+#   * the window features are the gate's OWN three lines of arithmetic, not `kin3_from_window` -- so a shifted clock
+#     inside the model's feature builder disagrees with the reference.
+# What is deliberately SHARED with the model is the knots -> per-tick conversion (`kinematic_prior.knots_to_ticks` +
+# `controls_from_path`): it is the mechanism whose fidelity is MEASURED separately (ADE6(P10u, P10), G-CLOCK below).
+def p10_on(argv: list[str]) -> bool:
+    """The P10 switch: `--residual-prior p10_pose` (arm alpha-1 as launched) or `p10` (the optional steer arm alpha-1s)."""
+    v = flag_values(argv, "--residual-prior")
+    return bool(v) and v[0] in ("p10", "p10_pose")
+
+
+def p10_variant(argv: list[str]) -> str:
+    """The P10 variant the argv's mode reads: `pose` for `p10_pose`, `steer` for `p10`."""
+    v = flag_values(argv, "--residual-prior")
+    return "pose" if (v and v[0] == "p10_pose") else "steer"
+
+
+def p10_declared(argv: list[str], pmap: list[tuple[str, str]] | None = None) -> tuple[str | None, str | None]:
+    """(the `--p10-prior` path mapped onto THIS host, the declared `--p10-prior-sha256` lower-cased)."""
+    pv, sv = flag_values(argv, "--p10-prior"), flag_values(argv, "--p10-prior-sha256")
+    return (map_path(pv[0], pmap or []) if pv else None), (str(sv[0]).lower() if sv else None)
+
+
+def p10_independent_load(path: str | None, sha: str | None, variant: str = "steer") -> tuple[Any, dict]:
+    """-> (a FrozenP10 | None, record). The gate's OWN read of the P10 file: bytes hashed here, tensors from `torch.load`
+    of the file, the module-independent `content_sha256`, and the artifact's OWN declared feature unit (`meta['units']`)
+    compared with the variant the argv's mode reads. A file that is absent, unreadable, of another sha256 than the
+    declared one, of the other variant, or not a v8F-mini P10 artifact is `ok False` with the reason -- never a silent skip."""
+    rec: dict[str, Any] = {"path": path, "declared_sha256": sha, "variant": variant, "ok": False, "error": None}
+    if not path or not Path(path).is_file():
+        rec["error"] = f"the P10 file {path!r} does not exist on this host"
+        return None, rec
+    try:
+        import torch
+        from tanitad.models import p10_prior as P
+        fsha = sha256_file(path)
+        rec["file_sha256"] = fsha
+        if sha and fsha != sha:
+            rec["error"] = f"the file hashes to {fsha}, the argv declares {sha}"
+            return None, rec
+        o = torch.load(path, map_location="cpu", weights_only=True)
+        st = o["state"]
+        units = (o.get("meta") or {}).get("units")
+        rec["declared_units"] = units
+        declared = P.P10_UNITS_TO_VARIANT.get(units)
+        if declared != variant:
+            rec["error"] = (f"the file declares the {declared!r} variant (meta['units']={units!r}); the argv's mode reads "
+                            f"the {variant!r} one -- a P10 fit on another input channel is ANOTHER prior")
+            return None, rec
+        tensors = {k: st[k] for k in P.P10_STATE_KEYS}
+        rec["content_sha256"] = P.content_sha256(tensors)
+        f = P.FrozenP10(tensors, source=str(path), file_sha=fsha, meta=o.get("meta") or {}, variant=variant)
+    except Exception as e:                                # noqa: BLE001 -- recorded, judged
+        rec["error"] = f"{type(e).__name__}: {str(e)[:240]}"
+        return None, rec
+    rec["ok"] = True
+    return f, rec
+
+
+def p10_new_record(argv: list[str], pmap: list[tuple[str, str]] | None = None) -> tuple[Any, dict]:
+    """The G-LIVE observer's record for a p10 launch + the independent P10 it compares against."""
+    path, sha = p10_declared(argv, pmap)
+    variant = p10_variant(argv)
+    ind, irec = p10_independent_load(path, sha, variant)
+    return ind, {"independent_load": irec, "declared_sha256": sha, "variant": variant, "forwards_seen": 0, "forwards_checked": 0,
+                 "p10_calls": 0, "rows": 0, "rows_kept": 0, "rows_withheld": 0, "rows_withheld_nonzero": 0,
+                 "rows_checked": 0, "rows_kept_zero_moving": 0, "rows_kappa_zeroed": 0,
+                 "max_abs_diff_a": 0.0, "max_abs_diff_k": 0.0, "fallback_control_max_abs_diff": 0.0,
+                 "n_nonfinite": 0, "problems": [], "emitted_shape": None,
+                 "content_sha_first": None, "frozen": None}
+
+
+def p10_live_observe(rec: dict, ind: Any, module: Any, out: Any, batch: Any) -> None:
+    """One TRAINING forward: the prior the model EMITTED (`residual_prior_ctrl` [B, 60, 2]) against the gate's
+    independent recompute from the batch's observed window + the independently loaded P10. Observes only (no grad)."""
+    import torch
+    from tanitad.models import kinematic_prior as KP
+    rec["forwards_seen"] += 1
+    dec = getattr(getattr(module, "core", None), "decoder", None)
+    p10 = getattr(dec, "p10", None)
+    if p10 is not None and rec["content_sha_first"] is None:
+        rec["content_sha_first"] = p10.content_sha()
+    ctrl = out.get("residual_prior_ctrl") if isinstance(out, dict) else None
+    if not torch.is_tensor(ctrl) or ctrl.dim() != 3 or int(ctrl.shape[-1]) != 2:
+        rec["problems"].append(f"the forward emitted no per-tick `residual_prior_ctrl` [B, T, 2] "
+                               f"(got {type(ctrl).__name__} {tuple(getattr(ctrl, 'shape', ()))})")
+        return
+    rec["emitted_shape"] = list(ctrl.shape)
+    variant = str(rec.get("variant") or "steer")
+    ph = batch.get("pose_hist") if isinstance(batch, dict) else None
+    ac = batch.get("actions") if isinstance(batch, dict) else None
+    if ph is None or (ac is None and variant == "steer"):
+        rec["problems"].append("the training batch carries no `pose_hist`" + (" / `actions`" if variant == "steer" else "") +
+                               " -- the recompute has no window")
+        return
+    if ind is None:
+        rec["problems"].append("no independent P10 (the file could not be read here) -- nothing to compare against")
+        return
+    with torch.no_grad():
+        dt = float(module.core.ego_hist.cfg.dt)
+        n = int(ph.shape[1])
+        po = ph.detach().to(torch.float64).cpu()
+        v0 = po[:, n - 1, 3]
+        if variant == "pose":
+            # the gate's OWN three lines (not `pose_kin3`): ha0_ext_pose's derivation -- a ONE-frame a0, the wrapped ONE-frame
+            # yaw difference over max(v0, floor), clamped; the POSE TRACK only, nothing else is read
+            a0 = (v0 - po[:, n - 2, 3]) / dt
+            om = ((po[:, n - 1, 2] - po[:, n - 2, 2] + math.pi) % (2.0 * math.pi) - math.pi) / dt
+            k0 = (om / v0.clamp_min(KP.POSE_KAPPA_V_FLOOR)).clamp(-KP.POSE_KAPPA_CAP, KP.POSE_KAPPA_CAP)
+            kin3 = torch.stack([v0, a0, k0], dim=-1)
+        else:
+            act = ac.detach().to(torch.float64).cpu()
+            a0 = (v0 - po[:, n - 3, 3]) / (2.0 * dt)         # the fit's convention: a 2-frame backward difference
+            kin3 = torch.stack([v0, a0, act[:, n - 1, 0]], dim=-1)
+        p30 = ind(kin3)
+        ticks = KP.knots_to_ticks(p30.to(torch.float64)).to(torch.float32)
+        ref = KP.controls_from_path(ticks, v0.to(torch.float32), dt=dt, v_floor=KP.POSE_KAPPA_V_FLOOR,
+                                    kappa_cap=KP.P10_KAPPA_CAP)
+        em = ctrl.detach().to(torch.float32).cpu()
+        if tuple(em.shape) != tuple(ref.shape):
+            rec["problems"].append(f"the emitted prior is {tuple(em.shape)}, the recompute {tuple(ref.shape)}")
+            return
+        fin = torch.isfinite(em).all(dim=(1, 2))
+        rec["n_nonfinite"] += int((~fin).sum())
+        # WHICH rows were withheld (training ego dropout, `cfg.ego_dropout`) is read off the model's OWN emitted speed:
+        # a kept row is rolled from the window's measured v0 (`residual_prior_v` == v0), a withheld row from the
+        # withheld speed -- and its prior is ZERO by design (`kinematic_prior.withhold`)
+        rv = out.get("residual_prior_v")
+        if not torch.is_tensor(rv) or rv.numel() != em.shape[0]:
+            rec["problems"].append("the forward emitted no `residual_prior_v` [B] -- kept and withheld rows cannot be told apart")
+            return
+        kept = (rv.detach().to(torch.float32).cpu().reshape(-1) - v0.to(torch.float32)).abs() < 1e-3
+        nz = em.abs().amax(dim=(1, 2)) > 0
+        rec["rows"] += int(em.shape[0])
+        rec["rows_kept"] += int(kept.sum())
+        rec["rows_withheld"] += int((~kept).sum())
+        rec["rows_withheld_nonzero"] += int((~kept & nz).sum())
+        rec["rows_kept_zero_moving"] += int((kept & ~nz & (v0.to(torch.float32) > 0.5)).sum())
+        rec["forwards_checked"] += 1
+        use = kept & nz & fin
+        if not bool(use.any()):
+            return
+        rec["rows_checked"] += int(use.sum())
+        da = (em[..., 0] - ref[..., 0]).abs().amax(dim=1)
+        dk = (em[..., 1] - ref[..., 1]).abs().amax(dim=1)
+        # refcv8's lateral prior dropout zeroes kappa on a row (training only): a row whose emitted kappa is
+        # exactly 0 is that, not a disagreement -- counted, and its `a` is still checked
+        kz = em[..., 1].abs().amax(dim=1) == 0
+        rec["rows_kappa_zeroed"] += int((kz & use).sum())
+        rec["max_abs_diff_a"] = max(rec["max_abs_diff_a"], float(da[use].max()))
+        kk = use & ~kz
+        if bool(kk.any()):
+            rec["max_abs_diff_k"] = max(rec["max_abs_diff_k"], float(dk[kk].max()))
+        # the POSITIVE CONTROL: the comparison can SEE a fallback to a constant (ha0_ext_pose) prior -- for the pose variant
+        # that IS alpha-0's prior, i.e. the arm silently degrading into its own baseline
+        a_f, _k_f = KP.prior_controls("ha0_ext_pose", po.to(torch.float32), n, None, dt=dt)
+        rec["fallback_control_max_abs_diff"] = max(rec["fallback_control_max_abs_diff"],
+                                                   float((em[..., 0] - a_f[:, None]).abs().amax(dim=1)[use].max()))
+
+
+def p10_frozen_report(model: Any) -> dict:
+    """What the BUILT model says about its P10: structure (no Parameter, no requires_grad buffer, no state_dict key),
+    gradients (none), and the live content hash against the one taken at load."""
+    dec = getattr(getattr(model, "core", model), "decoder", None)
+    p = getattr(dec, "p10", None)
+    if p is None:
+        return {"present": False}
+    return {"present": True, "source": str(p.source), "file_sha256": str(p.file_sha),
+            "variant": str(getattr(p, "variant", "<absent>")),
+            "n_parameters": len(list(p.parameters())),
+            "n_buffers": len(list(p.buffers())),
+            "n_buffers_requires_grad": sum(1 for t in p.buffers() if t.requires_grad),
+            "n_tensors_with_grad": sum(1 for t in [*p.buffers(), *p.parameters()] if t.grad is not None),
+            "n_in_state_dict": sum(1 for k in model.state_dict() if ".p10." in k or k.startswith("p10.")),
+            "content_sha256": p.content_sha(), "content_sha_at_load": str(p.content_sha_at_load)}
+
+
+def _find_nested(d: Any, key: str) -> Any:
+    """The first value stored under `key` anywhere in a nested dict (config.json's layout is the trainer's)."""
+    if isinstance(d, dict):
+        if key in d and isinstance(d[key], dict):
+            return d[key]
+        for v in d.values():
+            r = _find_nested(v, key)
+            if r is not None:
+                return r
+    return None
+
+
+def judge_p10_live(prof: dict, argv: list[str], rec: dict | None, grad_names: list[str],
+                   grads: dict, fwd_train_calls: int, config: dict | None = None) -> tuple[list[str], dict]:
+    """G-LIVE for `--residual-prior p10`: the model's emitted prior IS the P10 of the declared file, P10 is read on
+    every training forward, and it is FROZEN (no Parameter, exactly zero gradient, bytes unchanged)."""
+    tol = float((prof.get("p10_prior") or {}).get("live_tol", 1e-4))
+    reasons: list[str] = []
+    if rec is None:
+        return ["G-LIVE P10: the smoke recorded NOTHING for a `--residual-prior p10` launch (no observer ran)"], {}
+    det: dict[str, Any] = {k: v for k, v in rec.items() if k != "frozen"}
+    det["frozen"] = rec.get("frozen")
+    il = rec.get("independent_load") or {}
+    if not il.get("ok"):
+        reasons.append(f"G-LIVE P10: the independent read of the declared P10 file failed: {il.get('error')}")
+    reasons += [f"G-LIVE P10: {p}" for p in (rec.get("problems") or [])[:4]]
+    n_fwd = int(fwd_train_calls)
+    if n_fwd <= 0:
+        reasons.append("G-LIVE P10: no training forward was observed")
+    if int(rec.get("forwards_checked", 0)) != n_fwd:
+        reasons.append(f"G-LIVE P10: the prior was checked on {rec.get('forwards_checked')} of {n_fwd} training "
+                       f"forwards -- every one must be")
+    if int(rec.get("p10_calls", 0)) < max(n_fwd, 1):
+        reasons.append(f"G-LIVE P10: the FrozenP10 module was CALLED {rec.get('p10_calls')} times over {n_fwd} "
+                       f"training forwards -- the prior the loss composed on did not come from P10 "
+                       f"(a fallback to another prior)")
+    if int(rec.get("rows_checked", 0)) == 0:
+        reasons.append(f"G-LIVE P10: ZERO rows were comparable ({rec.get('rows_withheld')} of {rec.get('rows')} rows were "
+                       f"withheld by ego dropout, the rest emitted an all-zero prior) -- P10 was never read")
+    if int(rec.get("rows_kept_zero_moving", 0)):
+        reasons.append(f"G-LIVE P10: {rec.get('rows_kept_zero_moving')} KEPT rows moving at v0 > 0.5 m/s emitted an all-zero "
+                       f"prior -- P10 is a non-zero prior wherever the ego keeps its window")
+    if int(rec.get("rows_withheld_nonzero", 0)):
+        reasons.append(f"G-LIVE P10: {rec.get('rows_withheld_nonzero')} WITHHELD rows emitted a non-zero prior -- the "
+                       f"window leaked past the ego dropout")
+    if int(rec.get("n_nonfinite", 0)):
+        reasons.append(f"G-LIVE P10: {rec.get('n_nonfinite')} rows carry a non-finite prior")
+    for ch in ("a", "k"):
+        d = float(rec.get(f"max_abs_diff_{ch}", 0.0))
+        if d > tol:
+            reasons.append(f"G-LIVE P10: the emitted prior's {'accel' if ch == 'a' else 'curvature'} channel "
+                           f"differs from the INDEPENDENT P10 recompute by {d:.3g} (> {tol:g}) -- the model's prior "
+                           f"is not the declared P10 evaluated on this window")
+    if int(rec.get("rows_checked", 0)) and float(rec.get("fallback_control_max_abs_diff", 0.0)) <= 1e-3:
+        reasons.append("G-LIVE P10: control -- the emitted prior is indistinguishable from the CONSTANT ha0_ext_pose "
+                       "prior on every checked row, so the comparison cannot see a fallback")
+    fr = rec.get("frozen") or {}
+    if not fr.get("present"):
+        reasons.append("G-LIVE P10: the BUILT decoder carries no P10 module (mode p10 with nothing built)")
+    else:
+        if fr.get("variant") != rec.get("variant"):
+            reasons.append(f"G-LIVE P10: the BUILT P10 is the {fr.get('variant')!r} variant, the argv's mode reads the "
+                           f"{rec.get('variant')!r} one -- the prior is fed the wrong input channel")
+        if int(fr.get("n_parameters", -1)) != 0:
+            reasons.append(f"G-LIVE P10: the P10 module has {fr.get('n_parameters')} Parameters -- it must be buffers only "
+                           f"(UNFROZEN: it would train)")
+        if int(fr.get("n_buffers_requires_grad", -1)) != 0:
+            reasons.append(f"G-LIVE P10: {fr.get('n_buffers_requires_grad')} P10 tensors require grad")
+        if int(fr.get("n_tensors_with_grad", -1)) != 0:
+            reasons.append(f"G-LIVE P10: {fr.get('n_tensors_with_grad')} P10 tensors hold a .grad -- exactly 0 is required")
+        if int(fr.get("n_in_state_dict", -1)) != 0:
+            reasons.append(f"G-LIVE P10: {fr.get('n_in_state_dict')} P10 keys are in the state_dict (the warm start's "
+                           f"strict load would change)")
+        if fr.get("file_sha256") != rec.get("declared_sha256"):
+            reasons.append(f"G-LIVE P10: the built P10 loaded file sha256 {str(fr.get('file_sha256'))[:16]}, the argv "
+                           f"declares {str(rec.get('declared_sha256'))[:16]}")
+        ind_c = il.get("content_sha256")
+        for lab, v in (("at load", fr.get("content_sha_at_load")), ("first training forward", rec.get("content_sha_first")),
+                       ("after the smoke's optimizer steps", fr.get("content_sha256"))):
+            if ind_c and v != ind_c:
+                reasons.append(f"G-LIVE P10: the built P10's content hash {lab} ({str(v)[:16]}) != the independent "
+                               f"read of the file ({str(ind_c)[:16]}) -- the weights are not the declared ones")
+    p10_trained = sorted(n for n in (grad_names or []) if ".p10." in n or n.startswith("p10."))
+    p10_moved = sorted(n for n, g in (grads or {}).items() if (".p10." in n or n.startswith("p10.")) and g.get("nz_steps"))
+    det["p10_parameters_in_optimizer"] = p10_trained
+    det["p10_parameters_with_nonzero_grad"] = p10_moved
+    if p10_trained:
+        reasons.append(f"G-LIVE P10: P10 parameters are in the optimizer: {p10_trained[:5]}")
+    if p10_moved:
+        reasons.append(f"G-LIVE P10: P10 parameters took a NON-ZERO gradient: {p10_moved[:5]}")
+    st = _find_nested(config, "residual_prior") if config else None
+    p10c = (st or {}).get("p10") if isinstance(st, dict) else None
+    det["config_stamp_p10"] = p10c
+    if config is not None:
+        if not isinstance(p10c, dict):
+            reasons.append("G-LIVE P10: config.json's residual_prior stamp carries no `p10` identity")
+        else:
+            if p10c.get("file_sha256") != rec.get("declared_sha256"):
+                reasons.append(f"G-LIVE P10: config.json stamps P10 file sha256 {str(p10c.get('file_sha256'))[:16]}, the "
+                               f"argv declares {str(rec.get('declared_sha256'))[:16]}")
+            if il.get("content_sha256") and p10c.get("content_sha256") != il.get("content_sha256"):
+                reasons.append("G-LIVE P10: config.json's stamped P10 content hash != the independent read of the file")
+    return reasons, det
+
+
+def judge_p10_ckpt(prof: dict, argv: list[str], ckpt: dict | None, rec: dict | None) -> tuple[list[str], dict]:
+    """G-CKPT for p10: ckpt.pt carries the P10 IDENTITY (the weights are non-persistent buffers, so not in `model`),
+    equal to the declared file's and to the independent read; the resume (judge_ckpt) already refuses a mismatch."""
+    reasons: list[str] = []
+    det: dict[str, Any] = {}
+    if ckpt is None:
+        return ["G-CKPT P10: no ckpt.pt to read the P10 identity from"], det
+    have = ckpt.get("p10_prior")
+    det["ckpt_p10_prior"] = have
+    il = (rec or {}).get("independent_load") or {}
+    if not isinstance(have, dict):
+        return ["G-CKPT P10: ckpt.pt carries NO `p10_prior` identity -- a resume could not tell which P10 trained"], det
+    if have.get("file_sha256") != (rec or {}).get("declared_sha256"):
+        reasons.append(f"G-CKPT P10: ckpt.pt names P10 file sha256 {str(have.get('file_sha256'))[:16]}, the argv declares "
+                       f"{str((rec or {}).get('declared_sha256'))[:16]}")
+    if not il.get("ok"):
+        reasons.append(f"G-CKPT P10: the independent read of the declared P10 failed: {il.get('error')}")
+    elif have.get("content_sha256") != il.get("content_sha256"):
+        reasons.append("G-CKPT P10: ckpt.pt's P10 content hash != the independent read of the declared file")
+    return reasons, det
+
+
+def judge_p10_eval(prof: dict, argv: list[str], model_t: Any, model_l: Any) -> tuple[list[str], dict]:
+    """G-EVAL for p10: the eval loader's model carries the SAME P10 as the trainer's, and that is the declared file. The
+    P10 tensors are non-persistent buffers, so the state_dict comparison cannot see them -- this is their comparison."""
+    reasons: list[str] = []
+    ft, fl = p10_frozen_report(model_t), p10_frozen_report(model_l)
+    _p, sha = p10_declared(argv)
+    det = {"trainer": ft, "loader": fl, "declared_sha256": sha}
+    for lab, f in (("trainer", ft), ("loader", fl)):
+        if not f.get("present"):
+            reasons.append(f"G-EVAL P10: the {lab}'s model has no P10 (mode p10)")
+    if ft.get("present") and fl.get("present"):
+        if ft.get("variant") != fl.get("variant"):
+            reasons.append(f"G-EVAL P10: the loader built the {fl.get('variant')!r} P10 variant, the trainer the "
+                           f"{ft.get('variant')!r} one")
+        if ft["file_sha256"] != fl["file_sha256"]:
+            reasons.append(f"G-EVAL P10: the loader built P10 from file sha256 {fl['file_sha256'][:16]}, the trainer "
+                           f"{ft['file_sha256'][:16]}")
+        if ft["content_sha256"] != fl["content_sha256"]:
+            reasons.append(f"G-EVAL P10: the loader's P10 weights ({fl['content_sha256'][:16]}) are not the trainer's "
+                           f"({ft['content_sha256'][:16]})")
+        if sha and fl["file_sha256"] != sha:
+            reasons.append(f"G-EVAL P10: the loader's P10 file sha256 {fl['file_sha256'][:16]} != the declared {sha[:16]}")
+        if fl["n_parameters"] or fl["n_in_state_dict"]:
+            reasons.append("G-EVAL P10: the loader's P10 is not frozen buffers (Parameters / state_dict keys present)")
+    return reasons, det
+
+
+def p10_clock_check(prof: dict, argv: list[str], pmap: list[tuple[str, str]] | None, tree: str | os.PathLike,
+                    *, ind: Any = None) -> tuple[list[str], dict]:
+    """G-CLOCK for p10 (PLAN_V8F section 6, brief item 3): the P10 the DECODER evaluates -- through the model's own feature
+    builder (`kin3_from_window`) -- equals the banked floors_kin / v8F-mini predictions on real eval141 windows to
+    <= 1e-4 m; a window ending ONE FRAME EARLY must FAIL that tolerance (the instrument can see a clock error); the
+    P10 fit clips are disjoint from eval139 / eval141; and the per-tick controls re-roll to P10 within the ADE bar."""
+    import numpy as np
+    import torch
+    from tanitad.models import kinematic_prior as KP
+    from tanitad.models import p10_prior as P
+    from tanitad.models.kinematic import rollout_unicycle
+    spec = prof.get("p10_prior") or {}
+    variant = p10_variant(argv)
+    tol = float(spec.get("known_value_tol_m", 1e-4))
+    reasons: list[str] = []
+    det: dict[str, Any] = {"tolerance_m": tol, "variant": variant}
+    path, sha = p10_declared(argv, pmap)
+    if ind is None:
+        ind, irec = p10_independent_load(path, sha, variant)
+        det["independent_load"] = irec
+        if ind is None:
+            return [f"G-CLOCK P10: cannot read the declared P10: {irec.get('error')}"], det
+    fx_path = _resolve_repo_rel(Path(tree), spec["fixture"])
+    det["fixture"] = {"path": str(fx_path), "sha256": sha256_file(fx_path) if Path(fx_path).is_file() else None}
+    if not Path(fx_path).is_file():
+        return [f"G-CLOCK P10: the known-value fixture {spec['fixture']} is absent from the tree"], det
+    z = np.load(fx_path, allow_pickle=False)
+    po = torch.from_numpy(z["poses"]).double()
+    if variant == "steer" and "actions" not in z.files:
+        return [f"G-CLOCK P10: the steer fixture {spec['fixture']} carries no `actions`"], det
+    ac = torch.from_numpy(z["actions"]).double() if variant == "steer" else None
+    banked = z["p10_banked"]
+
+    def feats(n: int):
+        """The MODEL's own feature builder for this variant -- the thing a clock error would live in."""
+        return KP.pose_kin3(po, n) if variant == "pose" else P.kin3_from_window(po, ac, n)
+    n_w = int(po.shape[1])
+    det["n_windows"], det["window_len"] = int(po.shape[0]), n_w
+    if po.shape[0] < 500:
+        reasons.append(f"G-CLOCK P10: the fixture has {po.shape[0]} windows (< 500) -- too few to be a known value")
+    with torch.no_grad():
+        got = ind(feats(n_w)).numpy()
+        err = np.abs(got - banked).max(axis=(1, 2))
+        det["in_decoder_vs_banked_max_m"] = float(err.max())
+        if float(err.max()) > tol:
+            reasons.append(f"G-CLOCK P10: the in-decoder P10 ({'pose_kin3' if variant == 'pose' else 'kin3_from_window'} -> FrozenP10) differs from the banked "
+                           f"floors_kin / fit-script predictions by up to {float(err.max()):.3g} m (> {tol:g}) on "
+                           f"{int((err > tol).sum())} of {len(err)} windows -- a CLOCK or feature-order error")
+        early = np.abs(ind(feats(n_w - 1)).numpy() - banked).max(axis=(1, 2))
+        frac = float((early > tol).mean())
+        det["one_frame_early_control"] = {"frac_beyond_tol": frac, "median_m": float(np.median(early))}
+        if frac < float(spec.get("shift_control_min_frac", 0.95)):
+            reasons.append(f"G-CLOCK P10: control -- a window ending ONE FRAME EARLY moves only {frac:.1%} of windows "
+                           f"beyond {tol:g} m, so the known-value check cannot see a clock error")
+        a, k, p30 = KP.p10_tick_prior(ind, po.float(), n_w, ac.float() if variant == "steer" else None)
+        st = torch.zeros(a.shape[0], 4)
+        st[:, 3] = po[:, -1, 3].float()
+        rolled = rollout_unicycle(st, torch.stack([a, k], -1), dt=0.1)[..., :2]
+        ade6 = (rolled[:, 1::2] - p30).norm(dim=-1).mean(1)
+        det["ade6_P10u_vs_P10_m"] = {"mean": float(ade6.mean()), "median": float(ade6.median()),
+                                     "p95": float(torch.quantile(ade6, 0.95)), "max": float(ade6.max())}
+        bar = float(spec.get("ade6_bar_m", 0.05))
+        if float(ade6.mean()) > bar:
+            reasons.append(f"G-CLOCK P10: ADE@6s(P10u, P10) = {float(ade6.mean()):.4f} m > the {bar} m bar -- the per-tick "
+                           f"conversion no longer reproduces P10")
+        # Delta == 0 rolls EXACTLY to P10u: the zero anchor minus the prior, through the model's own composition
+        hz = (5, 10, 15, 20, 30, 40, 50, 60)
+        rolled0 = KP.roll_plan(torch.zeros(a.shape[0], 1, len(hz), 2), a, k, po[:, -1, 3].float(), hz,
+                               control_units="alat", tick=0.1)[:, 0]
+        ref0 = rolled[:, [h - 1 for h in hz]]
+        d0 = float((rolled0 - ref0).abs().max())
+        det["delta_zero_vs_P10u_max_m"] = d0
+        if d0 > 1e-4:
+            reasons.append(f"G-CLOCK P10: Delta == 0 rolls to a path {d0:.3g} m from P10u -- the composition is not the "
+                           f"identity on the prior")
+    fit = [str(c) for c in z["fit_clip_ids"]]
+    det["disjoint"] = {}
+    for nm in ("eval141_clip_ids", "eval139_clip_ids"):
+        try:
+            det["disjoint"][nm] = P.assert_fit_disjoint(fit, [str(c) for c in z[nm]])
+        except P.P10Error as e:
+            reasons.append(f"G-CLOCK P10: {str(e)[:200]}")
+    return reasons, det
+
+
+def _p10_tick_prior_with_grad():
+    """The deliberate regression 'P10 is not a no_grad island': `p10_tick_prior`'s own source with its torch.no_grad()
+    removed, compiled in the module's namespace."""
+    import inspect
+    from tanitad.models import kinematic_prior as KP
+    src = inspect.getsource(KP.p10_tick_prior).replace("with torch.no_grad():", "if True:")
+    ns = dict(vars(KP))
+    exec(compile(src, "<p10_unfrozen_mutant>", "exec"), ns)
+    return ns["p10_tick_prior"]
+
+
+def apply_p10_arm(ctx: Any, pat: "_Patcher", T: Any = None) -> str | None:
+    """The v8F alpha-1 deliberate-regression arms (SPEC: each must make its check FAIL). -> a description, or None when
+    `ctx.arm` is not a p10 arm. Applied through `_Patcher` (restored by the caller). Variant-aware: the mode in `ctx.argv`
+    (`p10_pose` = alpha-1 as launched, `p10` = the optional steer arm alpha-1s) decides which feature builder / fallback the
+    arm regresses; an arm that has no meaning for the variant at hand is applied as a no-op and graded NOT-APPLICABLE by
+    the arms runner (`only_residual_prior`)."""
+    name = str(getattr(ctx, "arm", "") or "")
+    if not name.startswith("p10_"):
+        return None
+    import torch
+    from tanitad.models import kinematic_prior as KP
+    from tanitad.models import p10_prior as P
+    variant = p10_variant(getattr(ctx, "argv", None) or ["--residual-prior", "p10_pose"])
+    if name == "p10_zero_weights":
+        real = P.load_frozen_p10
+
+        def zeroed(path, *, expect_file_sha256=None, variant=None, _r=real):
+            f = _r(path, expect_file_sha256=expect_file_sha256, variant=variant)
+            return P.FrozenP10({k: (torch.zeros_like(v) if k.startswith("net.") else v)
+                                for k, v in f.tensors().items()}, source=f.source, file_sha=f.file_sha, meta=f.meta,
+                               variant=f.variant)
+        pat.set(P, "load_frozen_p10", zeroed)
+        return ("load_frozen_p10 returns a P10 whose MLP weights are ZERO while it still claims the file's sha256 "
+                "(the standardisation constants are kept: zeroing them would be NaN, not a silent defect)")
+    if name == "p10_unfrozen":
+        orig_init = P.FrozenP10.__init__
+
+        def init(self, *a, _o=orig_init, **k):
+            _o(self, *a, **k)
+            for nm in ("w1", "b1", "w2", "b2", "ym"):
+                t = getattr(self, nm)
+                delattr(self, nm)
+                self.register_parameter(nm, torch.nn.Parameter(t.clone()))
+        pat.set(P.FrozenP10, "__init__", init)
+        pat.set(P.FrozenP10, "forward", P.FrozenP10.forward.__wrapped__)
+        pat.set(KP, "p10_tick_prior", _p10_tick_prior_with_grad())
+        return "P10's tensors are Parameters and the prior is no longer a no_grad island"
+    if name == "p10_fallback_ha0_ext":
+        real = KP.prior_controls
+        const_mode = "ha0_ext_pose" if variant == "pose" else "ha0_ext"
+
+        def fallback(mode, poses, n_past=None, actions=None, _r=real, **kw):
+            if mode not in KP.P10_MODES:
+                return _r(mode, poses, n_past, actions, **kw)
+            kw.pop("p10", None)
+            a0, k0 = _r(const_mode, poses, n_past, actions if const_mode == "ha0_ext" else None, **kw)
+            return (a0[:, None].expand(-1, KP.P10_TICKS).contiguous(), k0[:, None].expand(-1, KP.P10_TICKS).contiguous())
+        pat.set(KP, "prior_controls", fallback)
+        return (f"mode {'p10_pose' if variant == 'pose' else 'p10'} silently builds the {const_mode} prior (constants "
+                f"broadcast to 60 ticks)" + (" -- alpha-1 degrading into alpha-0's own prior" if variant == "pose" else ""))
+    if name == "p10_clock_shift":
+        if variant == "pose":
+            real_p = KP.pose_kin3
+
+            def shifted_p(poses, n_past=None, _r=real_p, **kw):
+                n = int(poses.shape[1] if n_past is None else n_past)
+                return _r(poses, n - 1, **kw)
+            pat.set(KP, "pose_kin3", shifted_p)
+            return "the P10 features are read ONE FRAME EARLY (pose_kin3 ends the window at n_past - 1)"
+        real_k = P.kin3_from_window
+
+        def shifted(poses, actions, n_past=None, _r=real_k, **kw):
+            n = int(poses.shape[1] if n_past is None else n_past)
+            return _r(poses, actions, n - 1, **kw)
+        pat.set(P, "kin3_from_window", shifted)
+        return "the P10 features are read ONE FRAME EARLY (kin3_from_window ends the window at n_past - 1)"
+    if name == "p10_pose_a0_stride2":
+        real_p = KP.pose_kin3
+
+        def stride2(poses, n_past=None, _r=real_p, **kw):
+            n = int(poses.shape[1] if n_past is None else n_past)
+            kin = _r(poses, n, **kw).clone()
+            kin[:, 1] = (poses[:, n - 1, 3].to(torch.float64) - poses[:, n - 3, 3].to(torch.float64)) / (
+                2.0 * float(kw.get("dt", KP.DT_TICK)))
+            return kin
+        pat.set(KP, "pose_kin3", stride2)
+        return ("the pose P10's a0 is the STEER variant's 2-frame backward difference instead of ha0_ext_pose's ONE-frame one "
+                "(the features no longer match the fit)")
+    if name == "p10_variant_flipped":
+        real = P.load_frozen_p10
+        flipped = "steer" if variant == "pose" else "pose"
+
+        def wrong(path, *, expect_file_sha256=None, variant=None, _r=real):
+            f = _r(path, expect_file_sha256=expect_file_sha256, variant=None)
+            return P.FrozenP10(f.tensors(), source=f.source, file_sha=f.file_sha, meta=f.meta, variant=flipped)
+        pat.set(P, "load_frozen_p10", wrong)
+        return (f"the builder forgets which input channel the artifact was fit on: a {variant}-variant P10 is built as the "
+                f"{flipped} one")
+    if name == "p10_ckpt_stamp_dropped" and T is not None:
+        pat.set(T, "_p10_ckpt_extra", lambda model: {})
+        return "ckpt.pt is saved without the P10 identity"
+    if name == "p10_loader_other_p10":
+        real = P.load_frozen_p10
+
+        def other(path, *, expect_file_sha256=None, variant=None, _r=real):
+            f = _r(path, expect_file_sha256=expect_file_sha256, variant=variant)
+            t = {k: v.clone() for k, v in f.tensors().items()}
+            t["ym"] = t["ym"] + 0.5
+            return P.FrozenP10(t, source=f.source, file_sha=f.file_sha, meta=f.meta, variant=f.variant)
+        pat.set(P, "load_frozen_p10", other)
+        return "the EVAL LOADER builds a P10 whose weights are not the trainer's"
+    return None
 
 
 def hires_on(prof: dict, argv: list[str]) -> bool:
@@ -2258,10 +2906,12 @@ def required_on_reasons(prof: dict, argv: list[str], D=None, model=None,
                        f"frozen REQUIRED-ON API) -- BUILT-and-ON cannot be read")
         return reasons, det
     tf = tau_file if (tau_file and Path(tau_file).is_file()) else None
+    rp_kw = ({"residual_prior": str(prof["dvb_residual_prior"])} if prof.get("dvb_residual_prior") else {})
     det["helper_call"] = (f"{DVB_REQUIRED_HELPER}(model, args, tau_file="
-                          f"{'<the banked tau record>' if tf else None})")
+                          f"{'<the banked tau record>' if tf else None}"
+                          f"{', residual_prior=' + repr(rp_kw['residual_prior']) if rp_kw else ''})")
     try:
-        res = fn(model, args, tau_file=tf)
+        res = fn(model, args, tau_file=tf, **rp_kw)
     except SystemExit as e:
         reasons.append(f"REQUIRED-ON ({DVB_REQUIRED_HELPER}) refused: {str(e)[:400]}")
         return reasons, det
@@ -2901,6 +3551,9 @@ def run_smoke(ctx: Ctx, T, argv: list[str], *, snapshot: str) -> dict:
               "n_rows_v0_pos": 0, "n_rows_v0_pos_prior_zero": 0, "n_nonfinite": 0,
               "out_keys_sample": []}
     cur_v0: dict[str, Any] = {"v0": None}
+    # v8F alpha-1: the gate's OWN read of the declared P10 file + the observer's record (None on any other launch)
+    want_p10 = p10_on(ctx.argv)
+    p10_ind, p10rec = (p10_new_record(ctx.argv, [tuple(x) for x in ctx.path_map]) if want_p10 else (None, None))
     try:
         if torch.cuda.is_available():
             torch.cuda.reset_peak_memory_stats()
@@ -2986,6 +3639,11 @@ def run_smoke(ctx: Ctx, T, argv: list[str], *, snapshot: str) -> dict:
                     pstats["n_rows_v0_pos_prior_zero"] += int((pos & (mag == 0)).sum())
                     pstats["n_nonfinite"] += int((~fin).sum())
                 _owner_plan_check(module, out)
+            if want_p10:
+                try:
+                    p10_live_observe(p10rec, p10_ind, module, out, cur_batch.get("b"))
+                except Exception as e:                    # noqa: BLE001 -- recorded, judged
+                    p10rec["problems"].append(f"the P10 observer crashed: {type(e).__name__}: {str(e)[:200]}")
 
     def _owner_plan_check(module, out):
         """The refcv7 model agent's consumer check, read on the SAME training forward. Observes
@@ -3015,6 +3673,11 @@ def run_smoke(ctx: Ctx, T, argv: list[str], *, snapshot: str) -> dict:
     def build_opt_wrap(model, args, _orig=T.build_optimizer):
         opt = _orig(model, args)
         state["model"], state["opt"] = model, opt
+        if want_p10:
+            _p10m = getattr(getattr(getattr(model, "core", None), "decoder", None), "p10", None)
+            if _p10m is not None:
+                _p10m.register_forward_hook(
+                    lambda m, i, o: p10rec.__setitem__("p10_calls", p10rec["p10_calls"] + 1))
         names = {id(p): n for n, p in model.named_parameters()}
         in_opt = [p for g in opt.param_groups for p in g["params"]]
         ids_in = {id(p) for p in in_opt}
@@ -3178,6 +3841,10 @@ def run_smoke(ctx: Ctx, T, argv: list[str], *, snapshot: str) -> dict:
             ctx, T, state.get("model"), cur_batch.get("last_train"))
     rec["out_keys"] = sorted(rec["out_keys"])
     rec["prior"] = pstats if want_prior else None
+    if want_p10:
+        if state["model"] is not None:
+            p10rec["frozen"] = p10_frozen_report(state["model"])
+        rec["p10"] = p10rec
     rec["grad_names"] = state["names"]
     return rec
 
@@ -3233,6 +3900,9 @@ class _GaFinalRowOnlyJson:
 
 def _apply_smoke_arm(ctx: Ctx, T, pat: _Patcher, argv: list[str] | None = None) -> None:
     argv = list(argv if argv is not None else ctx.argv)
+    _p10_arm = apply_p10_arm(ctx, pat, T)                  # v8F alpha-1's arms (`p10_*`)
+    if _p10_arm:
+        _say("arm: " + _p10_arm)
     if arm_is(ctx, "no_cascade_passthrough") or arm_is(ctx, "no_cascade_silent"):
         # D-REFCV6-F3-WHITELIST exactly: the production forward's output carries neither key
         _say("arm: " + _drop_from_passthrough(pat, ("layer_u0_hat", "layer_logits"),
@@ -4616,6 +5286,9 @@ def job_model(ctx: Ctx, checks: list[str]) -> dict[str, dict]:
     argv, arec = _sentinel_argv(ctx, ctx.prof["model_input_flags"], scratch)
     parser = T.build_parser()
     pat = _Patcher()
+    _p10_arm = apply_p10_arm(ctx, pat, T)                  # v8F alpha-1's arms act at the BUILD (zeroed / unfrozen / ...)
+    if _p10_arm:
+        _say("arm: " + _p10_arm)
     if arm_is(ctx, "undeclared_equalize") or arm_is(ctx, "drop_fix3_field"):
         orig_pin = T._pin_trainer_cfg
 
@@ -4642,7 +5315,14 @@ def job_model(ctx: Ctx, checks: list[str]) -> dict[str, dict]:
         arm_rec: dict[str, Any] = {}
         on_built = ((lambda m: arm_rec.update(_arm_unwire_selection(m)) or dict(arm_rec))
                     if arm_is(ctx, "unwire_selection_term") else None)
-        cap = run_trainer_until(T, argv, stop, on_built)
+        try:
+            cap = run_trainer_until(T, argv, stop, on_built)
+        except Exception as e_:                           # noqa: BLE001
+            if type(e_).__name__ != "P10Error":
+                raise
+            # v8F alpha-1: the decoder REFUSES a missing / wrong-sha / malformed P10 at construction -- a refusal of this
+            # argv, stated as one (with the profile's argv rules), not a crashed job with no evidence
+            raise SystemExit(f"P10Error: {e_}") from e_
     except SystemExit as e:
         msg = f"the trainer REFUSED this argv while building: {e}"
         # the profile's argv-only rules are stated even when no model exists to check
@@ -4934,6 +5614,8 @@ def eval_identity(ctx: Ctx, T, model_t, args_t, scratch: Path,
     if arm_is(ctx, "loader_skips_pin"):
         tr = L.trainer()
         pat.set(tr, "_pin_trainer_cfg", lambda cfg, args: cfg)
+    if arm_is(ctx, "p10_loader_other_p10"):
+        apply_p10_arm(ctx, pat)                              # patched ONLY while the loader builds
     try:
         model_l, cfg_l, args_l, rec = L.build_model(config, str(ck), device="cpu", strict=True)
     except RuntimeError as e:
@@ -4949,6 +5631,11 @@ def eval_identity(ctx: Ctx, T, model_t, args_t, scratch: Path,
                        f"{len(sd.get('unexpected') or [])} unexpected keys (must be 0/0)")
     det["loader_departures"] = rec.get("departures")
     det["loader_argv_remap"] = rec.get("argv_remap")
+    if p10_on(ctx.argv):
+        # the P10 tensors are non-persistent buffers: the state_dict comparison below cannot see them
+        p10r_, p10d_ = judge_p10_eval(ctx.prof, ctx.argv, model_t, model_l)
+        det["p10"] = p10d_
+        reasons += p10r_
     # every tensor the model holds, bit for bit
     dt, dl = state_digests(model_t.state_dict()), state_digests(model_l.state_dict())
     diff = sorted(k for k in set(dt) & set(dl) if dt[k] != dl[k])
@@ -5162,6 +5849,13 @@ def job_smoke(ctx: Ctx, checks: list[str]) -> dict[str, dict]:
         b1r, b1d = judge_b1_reach(argv1, rows1)
         det["b1_guard_reach"] = b1d
         reasons += b1r
+        if p10_on(ctx.argv):
+            # v8F alpha-1: the emitted prior IS the declared P10 (independent recompute), P10 is read on every training
+            # forward, and it is FROZEN -- exactly zero gradient, bytes unchanged
+            p10r, p10d = judge_p10_live(ctx.prof, ctx.argv, run1.get("p10"), list(run1.get("grads") or {}),
+                                        run1.get("grads") or {}, int(run1.get("fwd_train_calls") or 0), cfg1)
+            det["p10_live"] = p10d
+            reasons += p10r
         if det["map_hires"]["on"]:
             # G-MAP (LOGGING_SPEC_MAP10 sec. 6): per-class signal at the logits (the gate's own
             # hook), the eval row's 24 IoU + 24 loss shares + counts, the train rows' loss
@@ -5244,6 +5938,10 @@ def job_smoke(ctx: Ctx, checks: list[str]) -> dict[str, dict]:
         reasons, det = judge_ckpt(ckpt, run1, run2, smoke_steps=steps, extra=extra,
                                   batch=int(args.batch), seed=int(args.seed),
                                   run2_rows=rows2 or [], run2_config=cfg2, run2_summary=summ2)
+        if p10_on(ctx.argv):
+            kr_, kd_ = judge_p10_ckpt(ctx.prof, ctx.argv, ckpt, run1.get("p10"))
+            det["p10"] = kd_
+            reasons = [*reasons, *kr_]
         ev["details"].update(det)
         finish_evidence(ev, "FAIL" if reasons else "PASS", reasons)
     return evs
@@ -5435,8 +6133,26 @@ def job_clock(ctx: Ctx, checks: list[str]) -> dict[str, dict]:
         g3 = r.get("trainer_g3") or {}
         if g3.get("g3") == "REFUSED":
             reasons.append(f"{split}: the trainer's own G3 REFUSES: {g3.get('message', '')[:300]}")
+    if p10_on(ctx.argv):
+        # v8F alpha-1: the P10 prior's own clock -- the in-decoder P10 equals the banked floors_kin / v8F-mini
+        # predictions, a window ending one frame early FAILS, the fit clips are disjoint from eval139 / eval141
+        pat_p = _Patcher()
+        try:
+            _pa = apply_p10_arm(ctx, pat_p, T)
+            if _pa:
+                _say("arm: " + _pa)
+            p10r_, p10d_ = p10_clock_check(ctx.prof, ctx.argv, [tuple(x) for x in ctx.path_map], ctx.tree)
+        except Exception as e:                            # noqa: BLE001 -- a crash is not a pass
+            p10r_, p10d_ = [f"G-CLOCK P10 crashed: {type(e).__name__}: {e}"], {
+                "traceback": traceback.format_exc()[-1500:]}
+        finally:
+            pat_p.restore()
+        det["p10_clock"] = p10d_
+        reasons += p10r_
     ins = ("--v2-cache", "--eval-cache", "--v7-labels", "--eval-labels", "--clip-clock-sidecar")
     ev["inputs_read"] = _inputs_read(ctx, ins)
+    if p10_on(ctx.argv):
+        ev["inputs_read"].update(_inputs_read(ctx, ("--p10-prior",)))
     for i, r_ in enumerate(refs):
         ev["inputs_read"][f"gate:clock-reference[{i}]"] = fingerprint(r_)
     cm = ctx.options.get("clock_manifest") or {}

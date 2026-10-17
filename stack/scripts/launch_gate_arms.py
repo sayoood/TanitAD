@@ -159,6 +159,57 @@ ARMS: dict[str, dict] = {
                "without its built nav-compliance gate while the argv still declares "
                "--graft-nav-compliance -- D-REFCV6-CONFIG-BUILD re-installed",
         "needs": "a declared --graft-nav-compliance on a tree that builds it (FIX-4, ab436ee)"},
+    # ---- v8F rung alpha, arm alpha-1 (PLAN_V8F section 6): the frozen P10 residual prior ------------------------------
+    # Each re-installs one defect of the P10 wiring through the real gate CLI (`--arm`), graded against a control run.
+    "p10_wrong_sha": {
+        "checks": ["G-DVB"], "sig": r"--p10-prior-sha256 .* is REQUIRED|P10Error",
+        "profile": "v8f", "requires_flag": "--p10-prior-sha256",
+        "argv_set": ("--p10-prior-sha256", ["0" * 64]),
+        "doc": "v8F alpha-1: the argv names a P10 sha256 that is not the banked artifact's (the profile's literal) -- "
+               "the build REFUSES the file, and the profile refuses the argv"},
+    "p10_missing_file": {
+        "checks": ["G-DVB"], "sig": r"P10Error|P10 file .* does not exist",
+        "profile": "v8f", "requires_flag": "--p10-prior",
+        "argv_set": ("--p10-prior", ["/nonexistent/__gate_arm__/p10_prior.pt"]),
+        "doc": "v8F alpha-1: --p10-prior names a file that is not there -- the decoder must REFUSE to build, never fall "
+               "back to another prior"},
+    "p10_zero_weights": {
+        "checks": ["G-DVB"], "sig": r"core\.decoder\.p10 live buffers",
+        "profile": "v8f", "requires_flag": "--p10-prior",
+        "doc": "v8F alpha-1: the loader returns a P10 whose weights are ZERO while claiming the file's sha256 -- G-DVB's "
+               "independent re-read of the file must disagree with the built buffers"},
+    "p10_unfrozen": {
+        "checks": ["G-DVB", "G-LIVE"], "sig": r"Parameter count|P10 parameters|Parameters",
+        "profile": "v8f", "requires_flag": "--p10-prior",
+        "doc": "v8F alpha-1: P10's tensors are Parameters and the prior is not a no_grad island (the frozen floor trains)"},
+    "p10_fallback_ha0_ext": {
+        "checks": ["G-LIVE"], "sig": r"INDEPENDENT P10 recompute|FrozenP10 module was CALLED",
+        "profile": "v8f", "requires_flag": "--p10-prior",
+        "doc": "v8F alpha-1: mode p10 silently builds the ha0_ext prior (constants broadcast to 60 ticks)"},
+    "p10_clock_shift": {
+        "checks": ["G-CLOCK"], "sig": r"CLOCK or feature-order error|banked floors_kin",
+        "profile": "v8f", "requires_flag": "--p10-prior",
+        "doc": "v8F alpha-1: the P10 features are read ONE FRAME EARLY -- the known-value check must FAIL"},
+    "p10_ckpt_stamp_dropped": {
+        "checks": ["G-CKPT"], "sig": r"carries NO `p10_prior`",
+        "profile": "v8f", "requires_flag": "--p10-prior",
+        "doc": "v8F alpha-1: ckpt.pt is saved without the P10 identity (a resume could not tell which P10 trained)"},
+    "p10_loader_other_p10": {
+        "checks": ["G-EVAL"], "sig": r"G-EVAL P10: the loader's P10 weights",
+        "profile": "v8f", "requires_flag": "--p10-prior",
+        "doc": "v8F alpha-1: the EVAL LOADER builds a P10 whose weights are not the trainer's (non-persistent buffers: "
+               "invisible to the state_dict comparison)"},
+    # ---- the POSE-ONLY variant (`--residual-prior p10_pose`, alpha-1 as launched) ----------------------------------------
+    "p10_pose_a0_stride2": {
+        "checks": ["G-CLOCK"], "sig": r"CLOCK or feature-order error|banked floors_kin",
+        "profile": "v8f", "requires_flag": "--p10-prior", "only_residual_prior": "p10_pose",
+        "doc": "v8F alpha-1 (pose): the pose P10's a0 is the steer variant's 2-frame difference instead of ha0_ext_pose's "
+               "ONE-frame one -- the features no longer match the fit; the known-value check must FAIL"},
+    "p10_variant_flipped": {
+        "checks": ["G-DVB"], "sig": r"core\.decoder\.p10\.variant|input channel the P10 was fit on",
+        "profile": "v8f", "requires_flag": "--p10-prior",
+        "doc": "v8F alpha-1: the builder forgets which input channel the artifact was fit on (a pose P10 built as the steer "
+               "variant, or the reverse) -- G-DVB's variant clause must disagree with the mode"},
 }
 TOKEN_ARMS = ("token_argv_changed", "token_hand_edited", "token_argv_and_token_edited",
               "token_other_key", "token_tree_changed", "token_data_changed")
@@ -339,6 +390,14 @@ def main(argv=None) -> int:
     for name in names:
         arm = ARMS[name]
         prof = arm.get("profile", a.profile)
+        if prof == "v8f" and a.profile == "v8f_steer":
+            prof = a.profile                                   # the p10_* arms run against alpha-1s' profile too
+        only_rp = arm.get("only_residual_prior")
+        if only_rp and LG.flag_values(argv_launch, "--residual-prior") != [only_rp]:
+            result["arms"][name] = {"verdict": "NOT-APPLICABLE",
+                                    "why": f"this arm regresses the {only_rp!r} variant; the argv's --residual-prior is "
+                                           f"{LG.flag_values(argv_launch, '--residual-prior')}"}
+            continue
         if name in ("no_fmap_s8_passthrough", "map_class_weight_zero", "map_drivable_only_logging",
                     "map_drivable_only_static",
                     "map_overfit_missing", "map_iou_not_counts") and not LG.hires_on(

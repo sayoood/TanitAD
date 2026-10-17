@@ -700,6 +700,75 @@ def _c_residual_prior(m, a):
     return out
 
 
+def _c_p10_prior(m, a):
+    """v8F alpha-1: the frozen P10, DECLARED (``--p10-prior`` + ``--p10-prior-sha256``) against BUILT
+    (``core.decoder.p10``). Every clause reads a different fact, so a defect in one cannot hide behind another:
+
+    * the mode and the module agree (``p10`` / ``p10_pose`` mode <-> a ``FrozenP10`` is attached; any other mode <->
+      none) AND the module's VARIANT is the one the mode reads (``p10_pose`` <-> ``pose``, ``p10`` <-> ``steer``), both
+      on the built module and on the artifact's own declared feature unit (an independent load);
+    * the config carries the argv's path and sha256 (``_pin_trainer_cfg`` pinned them);
+    * the FILE named by argv hashes to the argv's sha256 NOW (a file swapped after launch is a different P10);
+    * the BUILT module loaded exactly those bytes (``file_sha``) and its live buffers still carry what the file
+      holds, re-derived by an INDEPENDENT second load of the file (``content_sha256``) -- zeroed or perturbed weights
+      after the load cannot pass;
+    * FROZEN: the module has no Parameter, every P10 tensor is a buffer with ``requires_grad`` False, and none is in
+      ``state_dict`` (the warm start and the strict load stay as they were).
+    """
+    d = _dec(m)
+    mode = str(_a(a, "residual_prior", "off"))
+    want_path = _a(a, "p10_prior", None)
+    want_sha = _a(a, "p10_prior_sha256", None)
+    p10 = getattr(d, "p10", None)
+    from tanitad.models import kinematic_prior as _kp
+    is_p10 = mode in _kp.P10_MODES
+    out = _eq("p10_prior", is_p10, p10 is not None, "core.decoder.p10 is not None (mode <-> module)")
+    if not is_p10:
+        for dest, v in (("p10_prior", want_path), ("p10_prior_sha256", want_sha)):
+            if v:
+                out.append(Mismatch(_flag(dest), "absent (the mode reads no P10)", str(v)[:60], "argv",
+                                    "a P10 the build does not read is false provenance"))
+        return out
+    if p10 is None:
+        return out
+    cfg = getattr(d, "cfg", None)
+    out += _eq("p10_prior", str(want_path or ""), str(getattr(cfg, "p10_prior_path", "<absent>")),
+               "core.decoder.cfg.p10_prior_path")
+    out += _eq("p10_prior_sha256", str(want_sha or "").lower(), str(getattr(cfg, "p10_prior_sha256", "<absent>")),
+               "core.decoder.cfg.p10_prior_sha256")
+    from tanitad.models import p10_prior as _P
+    want_variant = "pose" if mode == _kp.P10_POSE_MODE else "steer"
+    out += _eq("p10_prior", want_variant, str(getattr(p10, "variant", "<absent>")),
+               "core.decoder.p10.variant (the mode <-> the input channel the P10 was fit on)")
+    out += _eq("p10_prior_sha256", str(want_sha or "").lower(), str(p10.file_sha), "core.decoder.p10.file_sha "
+               "(the bytes the build loaded)")
+    try:
+        now = _P.file_sha256(want_path)
+    except OSError as e:
+        out.append(Mismatch("--p10-prior", "a readable file", repr(e)[:80], "argv", "the named P10 file"))
+        return out
+    out += _eq("p10_prior_sha256", str(want_sha or "").lower(), now, "sha256 of the file --p10-prior names, NOW")
+    try:
+        import torch as _t
+        _o = _t.load(want_path, map_location="cpu", weights_only=True)
+        st = _o["state"]
+        fresh = _P.content_sha256({k: st[k] for k in _P.P10_STATE_KEYS})
+        out += _eq("p10_prior", want_variant,
+                   str(_P.P10_UNITS_TO_VARIANT.get((_o.get("meta") or {}).get("units"), "<undeclared>")),
+                   "the artifact file's own declared feature unit (meta['units']) -> variant, an independent load")
+    except Exception as e:                                                  # noqa: BLE001 -- recorded, judged
+        out.append(Mismatch("--p10-prior", "a loadable P10 artifact", repr(e)[:80], "argv", "an independent load"))
+        return out
+    out += _eq("p10_prior", fresh, p10.content_sha(), "core.decoder.p10 live buffers (content) vs an independent "
+               "load of the file")
+    params = list(p10.parameters())
+    out += _eq("p10_prior", 0, len(params), "core.decoder.p10 Parameter count (FROZEN: buffers only)")
+    out += _eq("p10_prior", 0, sum(1 for t in p10.buffers() if t.requires_grad), "P10 tensors with requires_grad")
+    in_sd = [k for k in m.state_dict() if ".p10." in k or k.startswith("p10.")]
+    out += _eq("p10_prior", 0, len(in_sd), "P10 keys in state_dict (non-persistent: the warm start is untouched)")
+    return out
+
+
 # ============================================================================
 # THE REGISTRY — every trainer dest, one entry each (coverage is tested)
 # ============================================================================
@@ -820,6 +889,10 @@ _b("no_strategic", _c_attr("no_strategic", "no_strategic",
 _b("ego_history", _c_ego_history)
 # refcv7 NEW-1: the plan is a residual on a causal kinematic prior
 _b("residual_prior", _c_residual_prior)
+# v8F alpha-1: the frozen P10 behind --residual-prior p10 (two dests, one check)
+_b("p10_prior", _c_p10_prior)
+register("p10_prior_sha256", "elsewhere", reason="checked with --p10-prior (_c_p10_prior): the file's bytes, the "
+                                                  "built buffers' content, and the config pin")
 for _d in ("ego_history_kind", "ego_history_hidden", "ego_history_out"):
     register(_d, "elsewhere", reason="checked with --ego-history against core.ego_hist.cfg (G-DVB)")
 _b("ego_state_inject", _c_mod("ego_state_inject", "ego_inj",
@@ -1108,7 +1181,15 @@ REFCV7_REQUIRED_ON: tuple[str, ...] = ("graft_tac8_prior", "graft_nav_compliance
 REFCV7_RESIDUAL_PRIOR: str = "ha0_ext_pose"
 
 
-def check_refcv7_required(model, args, *, tau_file: str | None = None) -> list[Mismatch]:
+#: v8F rung alpha, arm alpha-1: the ONE prior a v8f launch carries (PLAN_V8F section 6: "the refcv8 recipe with ONE
+#: lever changed: the residual prior -> P10"), the POSE-ONLY P10: alpha-0's prior `ha0_ext_pose` reads past poses only, so
+#: swapping in a steer-reading P10 would move TWO things (the prior AND the input set; SPEC_REFCV7 A5 excluded the steer
+#: channel). The steer variant `p10` is the optional arm alpha-1s, pending the PI. A LITERAL, like REFCV7_RESIDUAL_PRIOR.
+V8F_RESIDUAL_PRIOR: str = "p10_pose"
+
+
+def check_refcv7_required(model, args, *, tau_file: str | None = None,
+                          residual_prior: str | None = None) -> list[Mismatch]:
     """-> a Mismatch for every REFCV7_REQUIRED_ON lever that is OFF in argv or UNBUILT in the
     model, for a residual prior that is not REFCV7_RESIDUAL_PRIOR in argv or on the BUILT
     decoder, and for an ego history OFF in argv or not built ([] == a refcv7 build). With
@@ -1127,14 +1208,16 @@ def check_refcv7_required(model, args, *, tau_file: str | None = None) -> list[M
                                 f"selection mechanism `{key}` (built)",
                                 "refcv7 requires all three selection mechanisms"))
     # ---- SPEC_REFCV7 §10 (A5): the prior, in argv AND on the built decoder ---------------- #
+    want_prior = REFCV7_RESIDUAL_PRIOR if residual_prior is None else str(residual_prior)
+    why_prior = ("SPEC_REFCV7 §10 (A5): a refcv7 launch uses ha0_ext_pose only" if residual_prior is None else
+                 "the profile's ONE admissible prior (v8F alpha: PLAN_V8F section 6)")
     got = str(_a(args, "residual_prior", "off"))
-    if got != REFCV7_RESIDUAL_PRIOR:
-        out.append(Mismatch("--residual-prior", REFCV7_RESIDUAL_PRIOR, got, "argv",
-                            "SPEC_REFCV7 §10 (A5): a refcv7 launch uses ha0_ext_pose only"))
+    if got != want_prior:
+        out.append(Mismatch("--residual-prior", want_prior, got, "argv", why_prior))
     dec = getattr(_core(model), "decoder", None)
     built = str(getattr(dec, "residual_prior", "<absent>")) if dec is not None else "<absent>"
-    if built != REFCV7_RESIDUAL_PRIOR:
-        out.append(Mismatch("--residual-prior", REFCV7_RESIDUAL_PRIOR, built,
+    if built != want_prior:
+        out.append(Mismatch("--residual-prior", want_prior, built,
                             "core.decoder.residual_prior",
                             "SPEC_REFCV7 §10 (A5): the BUILT prior is the one that trains"))
     # ...and the observed pose window it reads
