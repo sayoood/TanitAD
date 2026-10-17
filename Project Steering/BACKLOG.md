@@ -521,3 +521,12 @@ register rows carry them. The fix itself cannot close the following:
   - Expected saving: ~22 of the 40 min per arm (ESTIMATED from the table).
   - Also measure the ~5 min before G-HYG and the 7 min `train.py` preflight.
 - **Sequencing:** start after the S1c build lands. The S1c agent edits the gate profiles, so running both at once would race on `launch_gate.py`/`gate_checks.py`. Chains already shipped (R0c, P6 @ c1dc5d3) keep their gate unchanged.
+
+## Added 2026-10-17 (Master Mind)
+
+| # | item | unblocked by / GPU |
+|---|---|---|
+| S4R-1 | **Integrate SFT-4R readiness** (`raw/2026-10-16-sft4r-readiness/`, banked `76eedfb` as a RECORD, code NOT applied): rebase its patch set onto the tip (`launch_gate.py`/`gate_checks.py` changed in `daa4568`); fix the open defect (`test_sft4r_gate.py` exits rc 1 INSIDE the refe_sft4r G-SUITE, passes standalone); make `sft4r_chain.sh` take the token-file path from a REQUIRED env var (3 files were withheld from the public repo for naming it, `NOT_BANKED.sha256`); land `AMENDMENT_3_DRAFT.md` into `eval/PREREG_SFT4R.md`; run every test naming an edited file in FULL form. | nothing / 0 GPU (the launch needs the A40 after the safety-objective arm) |
+| S4R-2 | **The nesting guard protects every profile, but its test runs only in `SFT4R_SUITE`.** Decide whether `test_suite_nesting.py` joins the common SUITE (+10 s per G-SUITE and a new suite binding for every profile). | S4R-1 / 0 GPU |
+| P2F-1 | **P2 full 64-proposal table is GPU-starved on the dev box**: 4 of 14 chunks done (fidelity gates PASS), waiting > 19 h for the dev-box GPU lock (held in turn by other sessions' jobs). The SELRULE-DAC confirm waits on it (watcher re-armed 48 h). | a free dev-box GPU, or port the dump to the pod / 1 small GPU |
+
