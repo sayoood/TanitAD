@@ -106,7 +106,7 @@ def flatten(out_dir: Path):
     rows = []
     for f in sorted(out_dir.rglob("T2A_*.json")):
         d = json.loads(f.read_text())
-        if d.get("tier") != TIER or "families" not in d:
+        if not isinstance(d, dict) or d.get("tier") != TIER or "families" not in d:   # T2A_SUMMARY.json (a list) matches the glob
             continue
         fam = d["families"]
         g = lambda k1, k2: (fam.get(k1, {}).get(k2) or {})

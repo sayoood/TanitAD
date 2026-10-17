@@ -1,0 +1,654 @@
+{
+ "tier": "T2",
+ "tier_text": "T2 = ACTION-CLOSED, PERCEPTION-CLOSED loop: the arm's own trajectory drives a kinematic bicycle and the next observation is RE-RENDERED from the resulting pose (EVAL_DOCTRINE D-LOOP-1). In-house NuRec/gsplat harness (stack/experiments/alpasim-gsplat/closedloop_drive.py), NOT AlpaSim.",
+ "scope": "The loop is closed on PERCEPTION, not on INTERACTION: nothing in the scene responds to the ego (actors are replayed or absent), there is no map and no drivable-area polygon, and the vehicle model has no collision response. This measures HOW WELL THE MODEL DRIVES ITSELF; it cannot measure WHAT HAPPENS WHEN IT DRIVES BADLY, and it cannot say 'safe'. n = 2 scenes; clusters are disjoint rollout starts of ONE clip each, not independent episodes. WITHIN-SIM RELATIVE: absolute levels do not transfer to real footage (REF-C open-loop ADE 1.5157 on these reconstructions vs 0.4728 on real footage, 3.21x OOD) -- orderings and paired differences may.",
+ "arm": "cl_ha0",
+ "scene": "7c72937c-c620-4776-9555-d57222c0081f",
+ "scene_label": "7c72937c-c620-4776-9555-d57222c0081f",
+ "condition": "empty",
+ "ckpt": null,
+ "steps_per_rollout": 50,
+ "n_rollouts": 9,
+ "n_windows": 442,
+ "n_clusters": 9,
+ "provenance": {
+  "model_provenance": null,
+  "canon": {
+   "mode": "none",
+   "why": "a trivial kinematic floor consumes no image. The frames are still RENDERED (identical rollout/render path, identical `f0`), they are simply never canonicalised or read.",
+   "reads_pixels": false
+  },
+  "window": 8,
+  "f_eff": null,
+  "layers": "background,road",
+  "render_quality": {
+   "layers": "background,road",
+   "all_dynamic_layers": false,
+   "sky_gain": 0.3,
+   "sky_ramp_deg": [
+    0.0,
+    6.0
+   ],
+   "rolling_shutter": false,
+   "shutter_s": 0.0,
+   "shutter_type": "ROLLING_TOP_TO_BOTTOM",
+   "cull_scale_quantile": 0.95,
+   "cull": {
+    "quantile": 0.95,
+    "scale_thresh_m": 0.8193,
+    "n_dropped": 134206,
+    "n_kept": 2532391
+   }
+  },
+  "transport": "inproc"
+ },
+ "families": {
+  "ADE": {
+   "ade_0_2s": {
+    "mean": 2.7311,
+    "lo": 1.7821,
+    "hi": 3.6424,
+    "ci95": 0.9302,
+    "se": 0.4618,
+    "reducer": "mean",
+    "n_windows": 442,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 442,
+    "n_total": 442
+   },
+   "de_0_5s": {
+    "mean": 0.6968,
+    "lo": 0.3445,
+    "hi": 1.0703,
+    "ci95": 0.3629,
+    "se": 0.1849,
+    "reducer": "mean",
+    "n_windows": 442,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 442,
+    "n_total": 442
+   },
+   "de_1s": {
+    "mean": 1.7765,
+    "lo": 1.0095,
+    "hi": 2.5533,
+    "ci95": 0.7719,
+    "se": 0.3781,
+    "reducer": "mean",
+    "n_windows": 442,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 442,
+    "n_total": 442
+   },
+   "de_1_5s": {
+    "mean": 3.2728,
+    "lo": 2.1086,
+    "hi": 4.3877,
+    "ci95": 1.1395,
+    "se": 0.5656,
+    "reducer": "mean",
+    "n_windows": 442,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 442,
+    "n_total": 442
+   },
+   "de_2s": {
+    "mean": 5.1783,
+    "lo": 3.6422,
+    "hi": 6.5724,
+    "ci95": 1.4651,
+    "se": 0.7389,
+    "reducer": "mean",
+    "n_windows": 442,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 442,
+    "n_total": 442
+   },
+   "dist_to_gt_traj_m": {
+    "mean": 2.5249,
+    "lo": 0.7828,
+    "hi": 4.4295,
+    "ci95": 1.8233,
+    "se": 0.9578,
+    "reducer": "mean",
+    "n_windows": 442,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 442,
+    "n_total": 442
+   },
+   "note": "plan vs the log's own motion from the matched point; `dist_to_gt_traj_m` is the CLOSED-LOOP deviation of the driven path from the logged path."
+  },
+  "LONGITUDINAL": {
+   "target_speed_err_ms": {
+    "mean": -1.0107,
+    "lo": -1.7771,
+    "hi": -0.2721,
+    "ci95": 0.7525,
+    "se": 0.3917,
+    "reducer": "mean",
+    "n_windows": 442,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 442,
+    "n_total": 442
+   },
+   "abs_target_speed_err_ms": {
+    "mean": 1.1257,
+    "lo": 0.4508,
+    "hi": 1.8598,
+    "ci95": 0.7045,
+    "se": 0.3567,
+    "reducer": "mean",
+    "n_windows": 442,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 442,
+    "n_total": 442
+   },
+   "executed_speed_err_ms": {
+    "mean": -1.0107,
+    "lo": -1.7771,
+    "hi": -0.2721,
+    "ci95": 0.7525,
+    "se": 0.3917,
+    "reducer": "mean",
+    "n_windows": 442,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 442,
+    "n_total": 442
+   },
+   "along_track_ade_m": {
+    "mean": 2.1461,
+    "lo": 1.1065,
+    "hi": 3.2261,
+    "ci95": 1.0598,
+    "se": 0.5429,
+    "reducer": "mean",
+    "n_windows": 442,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 442,
+    "n_total": 442
+   },
+   "along_track_0_5s_m": {
+    "mean": 0.6362,
+    "lo": 0.2654,
+    "hi": 1.0249,
+    "ci95": 0.3798,
+    "se": 0.196,
+    "reducer": "mean",
+    "n_windows": 442,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 442,
+    "n_total": 442
+   },
+   "along_track_1s_m": {
+    "mean": 1.4667,
+    "lo": 0.6673,
+    "hi": 2.3177,
+    "ci95": 0.8252,
+    "se": 0.4257,
+    "reducer": "mean",
+    "n_windows": 442,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 442,
+    "n_total": 442
+   },
+   "along_track_1_5s_m": {
+    "mean": 2.5514,
+    "lo": 1.2834,
+    "hi": 3.8715,
+    "ci95": 1.294,
+    "se": 0.6639,
+    "reducer": "mean",
+    "n_windows": 442,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 442,
+    "n_total": 442
+   },
+   "along_track_2s_m": {
+    "mean": 3.93,
+    "lo": 2.217,
+    "hi": 5.7032,
+    "ci95": 1.7431,
+    "se": 0.8914,
+    "reducer": "mean",
+    "n_windows": 442,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 442,
+    "n_total": 442
+   },
+   "distance_keeping": {
+    "n": 0,
+    "reason": "NOT MEASURED \u2014 no annotated agent was observed on any window. That is what you get both from a scene with no agents AND from running without `--tracks`, so this is reported as an unmeasured family rather than as a property of the scene. Re-run with `--tracks <sequence_tracks.json>` to distinguish them.",
+    "n_actor_observations": 0
+   }
+  },
+  "LATERAL": {
+   "heading_err_rad": {
+    "mean": 0.3204,
+    "lo": 0.0923,
+    "hi": 0.5675,
+    "ci95": 0.2376,
+    "se": 0.1235,
+    "reducer": "mean",
+    "n_windows": 442,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 442,
+    "n_total": 442
+   },
+   "curvature_err_1pm": {
+    "mean": 0.0274,
+    "lo": 0.0077,
+    "hi": 0.0494,
+    "ci95": 0.0209,
+    "se": 0.0109,
+    "reducer": "mean",
+    "n_windows": 442,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 442,
+    "n_total": 442
+   },
+   "yawrate_err_rads": {
+    "mean": 0.1721,
+    "lo": 0.0517,
+    "hi": 0.3052,
+    "ci95": 0.1267,
+    "se": 0.0652,
+    "reducer": "mean",
+    "n_windows": 442,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 442,
+    "n_total": 442
+   },
+   "cross_track_abs_m": {
+    "mean": 2.5249,
+    "lo": 0.7828,
+    "hi": 4.4295,
+    "ci95": 1.8233,
+    "se": 0.9578,
+    "reducer": "mean",
+    "n_windows": 442,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 442,
+    "n_total": 442
+   },
+   "cross_track_signed_m": {
+    "mean": -2.5241,
+    "lo": -4.4287,
+    "hi": -0.7811,
+    "ci95": 1.8238,
+    "se": 0.958,
+    "reducer": "mean",
+    "n_windows": 442,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 442,
+    "n_total": 442
+   },
+   "lateral_ade_m": {
+    "mean": 0.8929,
+    "lo": 0.3028,
+    "hi": 1.5258,
+    "ci95": 0.6115,
+    "se": 0.3185,
+    "reducer": "mean",
+    "n_windows": 442,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 442,
+    "n_total": 442
+   }
+  },
+  "TACTICAL": {
+   "manoeuvre_plan_eq_logged": {
+    "mean": 0.0837,
+    "lo": 0.0244,
+    "hi": 0.1644,
+    "ci95": 0.07,
+    "se": 0.0386,
+    "reducer": "mean",
+    "n_windows": 442,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 442,
+    "n_total": 442
+   },
+   "manoeuvre_exec_eq_plan": {
+    "mean": 1.0,
+    "lo": 1.0,
+    "hi": 1.0,
+    "ci95": 0.0,
+    "se": 0.0,
+    "reducer": "mean",
+    "n_windows": 270,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 270,
+    "n_total": 442
+   },
+   "plan_class_share": {
+    "lane_keep": 1.0,
+    "turn_left": 0.0,
+    "turn_right": 0.0,
+    "accelerate": 0.0,
+    "brake_stop": 0.0
+   },
+   "logged_class_share": {
+    "lane_keep": 0.0837,
+    "turn_left": 0.3552,
+    "turn_right": 0.0,
+    "accelerate": 0.5611,
+    "brake_stop": 0.0
+   },
+   "confusion_logged_x_planned": [
+    [
+     37,
+     0,
+     0,
+     0,
+     0
+    ],
+    [
+     157,
+     0,
+     0,
+     0,
+     0
+    ],
+    [
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    [
+     248,
+     0,
+     0,
+     0,
+     0
+    ],
+    [
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   ],
+   "confusion_planned_x_executed": [
+    [
+     270,
+     0,
+     0,
+     0,
+     0
+    ],
+    [
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    [
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    [
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    [
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   ],
+   "class_names": [
+    "lane_keep",
+    "turn_left",
+    "turn_right",
+    "accelerate",
+    "brake_stop"
+   ],
+   "maneuver_head": {
+    "n": 0,
+    "n_windows_checked": 442,
+    "reason": "this arm exposes no maneuver_head logits at the deploy path",
+    "checked_aliases": [
+     "maneuver_logits",
+     "t_maneuver_logits",
+     "tactical_maneuver_logits"
+    ],
+    "evidence": "ABSENT ON EVERY WINDOW, not inferred from one row. An unrecognised width-5 vector in `extra` would have raised MissingStampError instead of reaching this branch."
+   }
+  }
+ },
+ "STRATEGIC": {
+  "status": "PAUSED -- PI ruling 2026-09-19 (PI_DECISION_QUEUE item 25): the strategic layer is switched off until the tactical and operative layers drive with high quality. Neither a pass nor omitted.",
+  "harness_values_for_reference_only_NOT_A_RESULT": {
+   "route_corridor_departure_rate": {
+    "mean": 0.2986,
+    "lo": 0.0968,
+    "hi": 0.5023,
+    "ci95": 0.2027,
+    "se": 0.1048,
+    "reducer": "mean",
+    "n_windows": 442,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 442,
+    "n_total": 442
+   },
+   "route_logged_share": {
+    "left": 0.7466,
+    "straight": 0.1629,
+    "right": 0.0,
+    "unknown": 0.0905
+   },
+   "route_label_valid_rate": 0.9095,
+   "route_derivation_reason_share": {
+    "tight_transient": 0.7466,
+    "gray_zone": 0.0905,
+    "road_following": 0.1629
+   },
+   "logged_net_dyaw_rad": {
+    "mean": 1.3996,
+    "lo": 0.7837,
+    "hi": 1.9608,
+    "ci95": 0.5885,
+    "se": 0.3049,
+    "reducer": "mean",
+    "n_windows": 442,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 442,
+    "n_total": 442
+   },
+   "route_label_error_rate": 0.0,
+   "route_head_eq_logged": {
+    "n": 0,
+    "n_windows_checked": 442,
+    "reason": "this arm exposes no strategic route logits at the deploy path",
+    "checked_aliases": [
+     "s_route_logits",
+     "route_logits",
+     "strategic_route_logits"
+    ],
+    "evidence": "ABSENT ON EVERY WINDOW. An unrecognised width-3 vector in `extra` would have raised MissingStampError instead of reaching this branch."
+   },
+   "route_head": {
+    "n": 0,
+    "n_windows_checked": 442,
+    "reason": "this arm exposes no strategic route logits at the deploy path",
+    "checked_aliases": [
+     "s_route_logits",
+     "route_logits",
+     "strategic_route_logits"
+    ],
+    "evidence": "ABSENT ON EVERY WINDOW. An unrecognised width-3 vector in `extra` would have raised MissingStampError instead of reaching this branch."
+   },
+   "route_progress_rel": {
+    "mean": 1.3383,
+    "lo": 1.0719,
+    "hi": 1.6734,
+    "ci95": 0.3007,
+    "se": 0.1575,
+    "reducer": "mean",
+    "n_windows": 7,
+    "n_episodes": 7,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 7,
+    "n_total": 7
+   },
+   "route_progress_note": "straight-line distance the ego covered divided by the logged path length over the same tick span; one value per rollout, so the cluster IS the window here (n_windows == n_episodes by construction)."
+  }
+ },
+ "progress": {
+  "per_rollout": [
+   {
+    "start": 0,
+    "n": 50,
+    "driven_m": 0.003884163299637012,
+    "gt_dist_m": 0.0035919782265863513,
+    "progress_rel": null,
+    "max_cross_track": 0.0014343047089221816,
+    "corridor_departure_rate": 0.0
+   },
+   {
+    "start": 17,
+    "n": 50,
+    "driven_m": 0.0031186096146960892,
+    "gt_dist_m": 0.002235409132922796,
+    "progress_rel": null,
+    "max_cross_track": 0.0006542411934729526,
+    "corridor_departure_rate": 0.0
+   },
+   {
+    "start": 34,
+    "n": 50,
+    "driven_m": 7.407332466793272,
+    "gt_dist_m": 7.663147285205732,
+    "progress_rel": 0.9666175255555469,
+    "max_cross_track": 0.02084868702304948,
+    "corridor_departure_rate": 0.0
+   },
+   {
+    "start": 51,
+    "n": 50,
+    "driven_m": 24.899031085451043,
+    "gt_dist_m": 23.479912005905483,
+    "progress_rel": 1.060439710301667,
+    "max_cross_track": 3.2793930544516448,
+    "corridor_departure_rate": 0.1
+   },
+   {
+    "start": 68,
+    "n": 50,
+    "driven_m": 29.14111617395039,
+    "gt_dist_m": 17.970407029944084,
+    "progress_rel": 1.6216169241683038,
+    "max_cross_track": 14.614508187177666,
+    "corridor_departure_rate": 0.56
+   },
+   {
+    "start": 85,
+    "n": 50,
+    "driven_m": 27.275084935883918,
+    "gt_dist_m": 12.53629742383488,
+    "progress_rel": 2.175689042286651,
+    "max_cross_track": 18.755819182743668,
+    "corridor_departure_rate": 0.74
+   },
+   {
+    "start": 102,
+    "n": 50,
+    "driven_m": 26.697726035616196,
+    "gt_dist_m": 17.456208182094986,
+    "progress_rel": 1.529411528386808,
+    "max_cross_track": 16.390645701712558,
+    "corridor_departure_rate": 0.74
+   },
+   {
+    "start": 119,
+    "n": 50,
+    "driven_m": 33.180068763625634,
+    "gt_dist_m": 32.62037076999365,
+    "progress_rel": 1.017157928632339,
+    "max_cross_track": 5.878816448892594,
+    "corridor_departure_rate": 0.5
+   },
+   {
+    "start": 136,
+    "n": 50,
+    "driven_m": 45.814350628889315,
+    "gt_dist_m": 45.9482970352021,
+    "progress_rel": 0.9970848450333172,
+    "max_cross_track": 2.0007303683681092,
+    "corridor_departure_rate": 0.02
+   }
+  ],
+  "mean_progress_rel": 1.3382882149092332,
+  "note": "driven distance / logged distance over the matched stretch; 1.0 = the log's pace"
+ },
+ "collision": {
+  "status": "UNAVAILABLE",
+  "reason": "the bicycle has no collision response and the `empty` condition has no actor to hit; the only collision metric in the harness is a geometric in-lane headway<=0 test against a SCRIPTED lead (synth_lead_collision_rate_inlane) which exists only for the constructed lead conditions"
+ },
+ "off_road": {
+  "status": "UNAVAILABLE",
+  "reason": "no map in the harness: `grep -iE 'xodr|off_road|drivable'` over closedloop_drive.py, cl_metrics.py, actor_map.py returns 0 hits. `route_corridor_departure_rate` is |cross-track to the LOGGED path| > 2 m -- a corridor around the log, NOT a lane or a road edge. map.xodr ships in the scene but is not wired in"
+ },
+ "estimator": "paired/unpaired episode-cluster bootstrap over ROLLOUT STARTS (cl_metrics._ci). Answers 'would another draw of rollout starts say this?' ONLY: it is blind to training-seed and (for stochastic planners) inference-seed variance -- see H-ESTIM-SEED-1."
+}
