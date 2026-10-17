@@ -25,6 +25,7 @@ Each entry cost hours more than once. CLAUDE.md keeps a one-line index; this fil
   `PYTHONPATH=<clone>/stack`, and the death looks like a broken suite, not a broken mount. Set it
   for every clone-side suite run and re-check which tree actually got imported
   (`python -c "import tanitad; print(tanitad.__file__)"`).
+- **After deleting a large file on the VAST `/workspace` volume, writes can fail with `Disk quota exceeded` for a short window** — the quota is reclaimed asynchronously. MEASURED 2026-10-17: a 19 GiB `dd` write test (the probe the next entry prescribes) succeeded and was deleted, and the very next small write failed with EDQUOT, then succeeded within seconds. ⇒ size the write test well below the headroom you need, and retry a write before launching a job straight after a big delete.
 - **Never judge pod disk with `df`.** It reports the 965 TB cluster and hides the per-pod MooseFS
   quota. Use a real `dd` write test. A full quota killed the flagship mid-checkpoint.
 - **`step_s` in trainer logs is ACCUMULATED over `--log-every`** (÷50), not per-step. This has
