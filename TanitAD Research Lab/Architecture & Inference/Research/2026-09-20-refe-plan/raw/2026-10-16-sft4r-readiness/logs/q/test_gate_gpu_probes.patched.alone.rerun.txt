@@ -1,0 +1,21 @@
+Traceback (most recent call last):
+  File "C:\s4r\p\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\test_gate_gpu_probes.py", line 115, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "C:\s4r\p\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\test_gate_gpu_probes.py", line 78, in main
+    cu = cuda_probe(GC)
+         ^^^^^^^^^^^^^^
+  File "C:\s4r\p\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\test_gate_gpu_probes.py", line 55, in cuda_probe
+    with torch.no_grad(), torch.autocast("cuda", dtype=torch.bfloat16):
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\venvs\driverl-eval\Lib\site-packages\torch\amp\autocast_mode.py", line 327, in __init__
+    and not torch.cuda.is_bf16_supported()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\venvs\driverl-eval\Lib\site-packages\torch\cuda\__init__.py", line 193, in is_bf16_supported
+    if cuda_version is not None and torch.cuda.get_device_properties(device).major >= 8:
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\venvs\driverl-eval\Lib\site-packages\torch\cuda\__init__.py", line 579, in get_device_properties
+    raise AssertionError("Invalid device id")
+AssertionError: Invalid device id
+
+ZZBOUNDED rc=1 peak_children=1 secs=2.3 killed=none survivors=0

@@ -1,0 +1,10 @@
+  guarded engine: {"cycle": {"ledger": ["P1"], "peak": 3}, "chain": {"ledger": ["P1", "P2"], "peak": 5}, "legacy": {"ledger": ["P1"], "peak": 3}, "garbage": {"ledger": [], "peak": 1}}
+  mutation guard_branch_removed                             RED (7 reason(s)); fuse blown in ['cycle']; watchdog kills []; peak descendants 11
+  mutation identity_rule_removed                            RED (2 reason(s)); fuse blown in []; watchdog kills []; peak descendants 5
+  mutation depth_cap_removed                                RED (3 reason(s)); fuse blown in []; watchdog kills []; peak descendants 7
+  mutation sentinel_not_propagated__the_pre_fix_state       RED (6 reason(s)); fuse blown in ['cycle']; watchdog kills []; peak descendants 11
+  mutation garbage_sentinel_fails_open                      RED (1 reason(s)); fuse blown in []; watchdog kills []; peak descendants 5
+  psutil descendant cap: ENFORCED; 15 s
+ZZTEST_PASS 88
+
+ZZBOUNDED rc=0 peak_children=13 secs=15.1 killed=none survivors=0

@@ -1,0 +1,7 @@
+# test_hf_egress.py in the 'tanitad' venv (httpx 0.28.1 present), CUDA_VISIBLE_DEVICES='', patched tree
+PASS test_watch_halts_after_the_checkpoint_following_two_failures
+2026-10-16T21:13:37Z ZZEGRESS_WATCH_END ok=True pushed=[400, 800, 1200] pending=[]
+PASS test_watch_pushes_each_checkpoint_once
+ZZTEST_PASS 13
+# same test in 'driverl-eval' venv (no httpx): see logs/q/test_hf_egress.patched.gate.txt  -> ModuleNotFoundError: No module named 'httpx' -> ZZTEST_FAIL 1/13
+ModuleNotFoundError: No module named 'httpx'
