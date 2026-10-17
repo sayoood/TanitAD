@@ -18217,7 +18217,7 @@ largest measured effect*. A lever that the attribution assigns about 0.2 of the 
 **Class:** R43's class again, one level down. The probe that FIXED the parent's share of the card also MEASURED the child's own need, and the child's need was the binding term.
 - ⇒ A resource fix is verified by the run it was for completing, not by the resource it freed.
 
-### R45 (2026-10-17) - "the prior swap is the largest measured lever: damp50 - ha0_ext = -1.90 m @ 6 s" (PLAN_V8F_REFAV1_HJEPA_2026-10-17.md §0 item 7)
+### R46 (2026-10-17) - "the prior swap is the largest measured lever: damp50 - ha0_ext = -1.90 m @ 6 s" (PLAN_V8F_REFAV1_HJEPA_2026-10-17.md §0 item 7)
 
 **Claimed:** the prior swap is the largest lever the programme has not used: `damp50 - ha0_ext` = -1.90 m @ 6 s. P10 (2.93 m) far beats the echo (5.36 m).
 
