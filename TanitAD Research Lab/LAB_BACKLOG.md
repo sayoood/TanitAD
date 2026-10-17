@@ -743,3 +743,36 @@ occupancy GT is still absent, so P-11's CLOSED verdict for SparseOcc++ stands; w
 AUXILIARY target (BEVDepth-style) is buildable — refcv8 WP-D lever B4 / probe P-DEPTH
 (`TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md`),
 parked behind `Project Steering/PLAN_REFCV8.md` §8 decision 9.
+
+## 2026-10-17 Lab run, SAFEOBJ literature pass (LAB-RUN-018) — backlog motions
+
+`Rows below are PROPOSED (unranked) — never self-ranked; the Master Mind ranks. A targeted pass on a Master Mind brief (SAFEOBJ O2/O4/O5 levers), not the four-package daily gate. 0 GPU. Report: `TanitAD Research Lab/2026-10-17-LAB-RUN-018.md`.`
+
+### Motions on existing rows
+| row | motion |
+|---|---|
+| **SAFEOBJ (PREREG_SAFEOBJ + addendum 1)** | ⭐⭐ **Literature now ranks the O5/O4/O2-O3 next levers** (`TanitAD Research Lab/2026-10-17-LAB-RUN-018.md` §6). Nothing in the prereg is changed: every lever is a proposal for a NEW pre-registration with both outcomes committed first. Headlines: the dual is plain integral control (`2007.03964`, `1705.10528`); the constraint-generalisation fix is published (`1807.00028`) but needs a carve of roughly 75-150 logs to be worth building; single-iterate K3 reads are phase-exposed (`2403.11844`, `2302.01275`) |
+| **DZ-3** (per-term decomposed critic / multiplicative soft-score objective) | ⭐ **First published datum for the vector-versus-scalar choice:** CLOVER `2605.15120` Tab. 8, vector-Pareto targets 94.5 PDMS vs scalar real-PDMS top-k 93.9 (single run, generator side, no interval). Still unproven for a scorer |
+| **DZ-1** (goal augmentation without an RL teacher) | ⭐ **Priced:** DriveZero Tab. 7 shows TTC +1.02 / NC +0.57 on the original read (single run); NaviHydra `2512.10660` shows EP -3.9 / TTC -1.7 / NC -1.2 on the alternative-route read. Report both reads for a matched on/off pair |
+| **P6 3-C twin bank** | ⭐ **Evaluation requirement added:** navtest PDMS is blind to the command (`2604.12208` Tab. IV: 84.0 true command vs 84.4 none vs 84.7 random), so the twin bank needs a command-sensitive read |
+
+### New proposed rows
+| # | domain | proposed work item | source finding | cost |
+|---|---|---|---|---|
+| **LR18-1** | Arch | ⭐⭐ **SAFEOBJ post-hoc reader diagnostics (read-only, relabels no O-outcome).** (i) cross-correlation lag of `con_lam_*` vs `con_g_*` (a 90-degree lag is the integral-only signature); (ii) the O5 split WINDUP / AUTHORITY / LAG / OSCILLATION, because the cases need opposite levers; (iii) the standard deviation of a per-update `gbar` at b = 8 from banked R0 states on the A2 harness. Pure analysis of traces and banked states | `2007.03964` Fig. 1; `2403.11844` Fig. 1; `TanitAD Research Lab/2026-10-17-LAB-RUN-018.md` §6.1 | 0 GPU |
+| **LR18-2** | Arch | ⭐ **Power calculation for an LTT-certified mixing weight** (fixed-sequence test over alpha on a log-level calibration split). Per-log TTC contrast sigma is about 3.2 points (derived from R0's interval), so at n = 75 logs the certifiable bound is of order 1-3 points, looser than the 0.5-point K3 bar. Compute the power and the calibration pool (RL-val is the read, navtest the endpoint, the A2 pool is 30 logs) BEFORE building; record a negative result if underpowered | `2110.01052` Prop. 3; `TanitAD Research Lab/2026-10-17-LAB-RUN-018.md` §3, §6 L2a | 0 GPU |
+| **LR18-3** | Arch | ⭐⭐ **O4 pre-step: count the logs in RL-train and re-measure the train-vs-held-out TTC gap** on the A2 harness (the prereg's -0.21 / -0.35 points came from a 62-set / 13-log pool). A carve under about 75 logs reads its own constraint noisier than the 0.5-point bar; resolving +/-0.5 needs about 150. Decides between negative eps (tighten), a carve-fed dual, or both | `1807.00028`; `1705.10528` s8.2; `TanitAD Research Lab/2026-10-17-LAB-RUN-018.md` §3.1 | 0 GPU |
+| **LR18-4** | Arch | ⭐⭐ **O5 candidates, CPU unit proofs with identity controls, NOT arms:** (a) P-dominant PID dual (`K_P = K_D = 0` must reproduce the current dual update bit for bit; `1/(1+lambda)` rescale as a separate flag with its own identity); (b) CRPO-style switch (a tolerance far above any violation must reproduce the unconstrained EPO gradient exactly; one far below must give the constraint-only gradient). Both outcomes committed in a prereg BEFORE any arm | `2007.03964` Alg. 2; `2011.05869` Alg. 1; `TanitAD Research Lab/2026-10-17-LAB-RUN-018.md` §6 | CPU only |
+| **LR18-5** | B&E | ⭐ **Add a TTC-lost-per-EP-gained row to the published-results ledger,** each pair stamped with its protocol: R0 0.29, P2-s1 0.27 (ours, MEASURED); DriveSuprim v1 R34 0.125; DriveDPO rule-only vs unified 2.58. Context only, never a bar; cross-method, one run each, no intervals | `2506.06659` Tab. 2; `2509.17940` Tab. 3; `TanitAD Research Lab/2026-10-17-LAB-RUN-018.md` s1 finding 4, s4.2 | 0 GPU |
+| **LR18-6** | DataEng / B&E | ⭐⭐ **Twin-bank evaluation spec (3-C):** for a matched twins-on / twins-off pair, read (a) the original-command split and (b) an alternative-route split, each with the four sub-score deltas, plus a command-sensitive metric. NaviHydra reports the price only on (b); DriveZero the gain only on (a); neither has the matched pair | `2512.10660` Tabs. II-III; `2609.06055` Tab. 7; `2604.12208` Tab. IV; `TanitAD Research Lab/2026-10-17-LAB-RUN-018.md` §5 | 0 GPU (spec) |
+| **LR18-7** | B&E | **Confirm the SAFEOBJ endpoint harness is NAVSIM v1.1 and record the scoring-stack disclosure** (numerics stack, solver) next to any v2.2 number that reaches the register; the score-basis audit shows v2.2 original-scene single-stage scoring can rank an actor-blind probe above human replay | `2608.04896`; `TanitAD Research Lab/2026-10-17-LAB-RUN-018.md` §4.2 | 0 GPU |
+
+### Backlog delta — 2026-10-17 (LAB-RUN-018)
+
+| motion | detail |
+|---|---|
+| **injected-served** | none (a targeted brief; the injection-lane guarantee belongs to the daily pass) |
+| **consumed** | none |
+| **proposed** | **7 rows LR18-1 … LR18-7**, none self-ranked; LR18-1/-2/-3/-5/-6/-7 are 0 GPU, LR18-4 is CPU unit proofs |
+| **re-priced, not consumed** | **DZ-3**, **DZ-1**, **P6 3-C twin bank**, **SAFEOBJ** (literature ranking only; prereg untouched) |
+| **debts opened** | none |

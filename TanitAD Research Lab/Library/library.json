@@ -2351,11 +2351,13 @@
     "benchmarks",
     "ego-input",
     "input-pipeline",
+    "navsim-scorer-trade",
     "refcv8-tactical-conditioning",
     "resnet-trunk"
    ],
    "note": "Hydra-MDP++: origin of EPDMS sub-metrics TLC and LK adopted by NAVSIM v2 | Hydra-MDP++: default 256x1024; ResNet-34 PDMS 86.6 vs V2-99 91.0 at the SAME resolution - backbone, not resolution, is the lever | resnet-trunk review 2026-09-15: Hydra-MDP++ camera-only, 'classic pretrained vision encoders'; ResNet-34 86.6 -> V2-99 91.0 (Tab.1); 2 frames Temporal SE; no augmentation | Hydra-MDP++ p4-7: same vocab/losses; ego status ADDED to vocab queries (Eq3) and driving command in input (4.2); weighted-confidence inference 85.0->86.5 PDMS (Table 3)",
    "cited_by": [
+    "TanitAD Research Lab/2026-10-17-LAB-RUN-018.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/SPEC_AUX_DRIVABLE_HEAD.md",
@@ -2578,11 +2580,13 @@
     "benchmarks",
     "ego-input",
     "input-pipeline",
+    "navsim-scorer-trade",
     "refcv8-tactical-conditioning",
     "resnet-trunk"
    ],
    "note": "Hydra-MDP: 2024 NAVSIM challenge winner; NavFormer planning head | Hydra-MDP: NAVSIM default input 256x1024 (front + cropped front-left/right concatenated); no matched resolution pair - V2-99@512x2048 scores 90.3 vs ViT-L@256x1024 91.0 | resnet-trunk review 2026-09-15: Hydra-MDP ResNet-34 256x1024 -> 86.5; V2-99 (DD3D-init) at 512x2048 -> 90.3; 91.0 is a 3-model ensemble (Tab.2) | Hydra-MDP p3-4: 4096/8192 K-means vocab, imitation softmax-CE + per-candidate BCE sub-score distillation; V8192 83.0 vs VADv2-V8192 80.9; -W-EP 86.5",
    "cited_by": [
+    "TanitAD Research Lab/2026-10-17-LAB-RUN-018.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/DESIGN.md",
@@ -2641,10 +2645,12 @@
     "benchmarks",
     "diffusiondrive",
     "ego-input",
+    "navsim-scorer-trade",
     "refcv8-tactical-conditioning"
    ],
    "note": "DriveSuprim: navtest PDMS and navtest-EPDMS single-stage tables | DDv2 analysis 2026-09-05: released code read at 1cd12a1 - see the report | DriveSuprim p3-8: coarse-to-fine 8192->256, per-metric BCE (no listwise/pairwise loss), soft-label self-distillation clip 0.15; oracle top-256 98.7 vs top-1 91.9 (Table 1)",
    "cited_by": [
+    "TanitAD Research Lab/2026-10-17-LAB-RUN-018.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-diffusiondrive-v2-analysis/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/DESIGN.md",
@@ -8103,10 +8109,12 @@
    "sha256": "28826095e637947f9959c6f3005e96e0e75b9ab16adbc6e8afce6b1431a00d46",
    "banked": "2026-08-31",
    "tags": [
-    "action-provenance"
+    "action-provenance",
+    "navsim-scorer-trade"
    ],
    "note": "",
    "cited_by": [
+    "TanitAD Research Lab/2026-10-17-LAB-RUN-018.md",
     "TanitAD Research Lab/Opponent Analysis/Research/2026-08-31-frontier-action-provenance-sweep/RESULT.md"
    ]
   },
@@ -10740,11 +10748,13 @@
    "tags": [
     "diffusiondrive",
     "ego-input",
+    "navsim-scorer-trade",
     "resnet-trunk",
     "vocabulary"
    ],
    "note": "GTRS: the 16,384-trajectory vocabulary DiffusionDriveV2's selector mixes in (1 %, precomputed PDM sub-scores) as foreign-candidate augmentation | GTRS (Hydra-MDP family, NVlabs/GTRS@92a740d): fixed super-dense k-means vocabulary (4096-16384 metre trajectories, 40x(x,y,heading)); ego status cmd4+vel2+acc2 ADDED to every vocabulary feature AFTER scene cross-attention (dist_status = tr_out + status_encoding); a VOCABULARY dropout exists (random half at train, default off) and there is NO ego dropout | resnet-trunk review 2026-09-15: GTRS camera-only; V2-99 DD3D-init / EVA-ViT-L StreamPETR-init / ViT-L DepthAnything; rotation sensor augmentation",
    "cited_by": [
+    "TanitAD Research Lab/2026-10-17-LAB-RUN-018.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-diffusiondrive-v2-analysis/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md"
    ]
@@ -14174,11 +14184,13 @@
    "tags": [
     "A5",
     "drivor-analysis",
+    "navsim-scorer-trade",
     "recovered-orphan",
     "refe-rl-posttrain"
    ],
    "note": "navhard EPDMS source for E-BE-S1S2-1 Stage-1 fingerprint | index row lost to the pre-2026-08-23 concurrent-write race; bytes verified by sha256, row rebuilt | CLOVER: closed-loop value estimation and ranking for E2E planning, NAVSIM",
    "cited_by": [
+    "TanitAD Research Lab/2026-10-17-LAB-RUN-018.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-19-drivor-deep-analysis/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-10-11-refe-data-and-rl/RL_POSTTRAIN_REVIEW.md",
     "TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-15-epdms-stage1-fingerprint/RESULT.md"
@@ -14533,11 +14545,13 @@
     "A1-world-models",
     "aux-drivable-head",
     "drivor-analysis",
+    "navsim-scorer-trade",
     "recovered-orphan",
     "refe-sizing"
    ],
    "note": "DriveZero: frozen multi-VFM consolidation +0.53 PDMS over DINOv3-only (ViT-S navtest); 5.7M privileged PPO teacher distilled to vision student; navhard two-stage 57.1 EPDMS (Scale); consumes ego+nav at inference | index row lost to the pre-2026-08-23 concurrent-write race; bytes verified by sha256, row rebuilt | DriveZero (the reproduction target): Table A12 gives 18.58 M trainable / 338.46 M full, 4 cams, 64 proposals, 256-d planning, 4-layer PROPOSAL decoder, 16 registers/camera -- and NO scoring-decoder depth, head count, MLP ratio or 3D-PE form; the 3D PE cites PETR [50] and the registers cite DrivoR [34]",
    "cited_by": [
+    "TanitAD Research Lab/2026-10-17-LAB-RUN-018.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-19-drivor-deep-analysis/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/MODULE_SIZING_STUDY.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/SPEC_AUX_DRIVABLE_HEAD.md",
@@ -15135,10 +15149,12 @@
    "sha256": "c45655ef9c277c51a67162c64e01595edc966d33cc5f9e5ffaf0ac89901793c1",
    "banked": "2026-09-20",
    "tags": [
+    "navsim-scorer-trade",
     "rl-teacher-driving"
    ],
    "note": "ZTRS: zero-imitation E2E driving with trajectory scoring, RL on REAL images + rule-based rewards, no simulated data; 48.1 EPDMS navhard",
    "cited_by": [
+    "TanitAD Research Lab/2026-10-17-LAB-RUN-018.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-drivezero-deep-analysis/RESULT.md"
    ]
   },
@@ -17378,10 +17394,12 @@
    "sha256": "6d3fab2d91893ea844a392b69e4b57543bd14e2f583221c4c170aeeba3168d13",
    "banked": "2026-10-11",
    "tags": [
+    "navsim-scorer-trade",
     "refe-rl-posttrain"
    ],
    "note": "DriveDPO: unified policy distillation + safety DPO on discrete candidates; 90.0 PDMS NAVSIM v1",
    "cited_by": [
+    "TanitAD Research Lab/2026-10-17-LAB-RUN-018.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-10-11-refe-data-and-rl/RL_POSTTRAIN_REVIEW.md"
    ]
   },
@@ -17444,6 +17462,299 @@
    "note": "Devil is in Narrow Policy: exploration in driving VLA RL, NAVSIM",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-10-11-refe-data-and-rl/RL_POSTTRAIN_REVIEW.md"
+   ]
+  },
+  "2007.03964": {
+   "key": "2007.03964",
+   "kind": "arxiv",
+   "title": "Responsive Safety in Reinforcement Learning by PID Lagrangian Methods",
+   "authors": [
+    "Adam Stooke",
+    "Joshua Achiam",
+    "Pieter Abbeel"
+   ],
+   "published": "2020-07-08",
+   "abstract": "Lagrangian methods are widely used algorithms for constrained optimization problems, but their learning dynamics exhibit oscillations and overshoot which, when applied to safe reinforcement learning, leads to constraint-violating behavior during agent training. We address this shortcoming by proposing a novel Lagrange multiplier update method that utilizes derivatives of the constraint function. We take a controls perspective, wherein the traditional Lagrange multiplier update behaves as \\emph{integral} control; our terms introduce \\emph{proportional} and \\emph{derivative} control, achieving favorable learning dynamics through damping and predictive measures. We apply our PID Lagrangian methods in deep RL, setting a new state of the art in Safety Gym, a safe RL benchmark. Lastly, we introduce a new method to ease controller tuning by providing invariance to the relative numerical scales ",
+   "url": "https://arxiv.org/abs/2007.03964",
+   "path": "TanitAD Research Lab/Library/papers/2007.03964_Responsive-Safety-in-Reinforcement-Learning-by-PID-Lagrangia.pdf",
+   "bytes": 7101158,
+   "sha256": "257df5edb57e5c13b4fa2bb083f18b6a36913160c37957747805f772f26ee718",
+   "banked": "2026-10-17",
+   "tags": [
+    "constrained-rl",
+    "safeobj-dual"
+   ],
+   "note": "PID Lagrangian: gradient-ascent dual (I-only) overshoots/oscillates; P and D terms damp cost overshoot",
+   "cited_by": [
+    "TanitAD Research Lab/2026-10-17-LAB-RUN-018.md"
+   ]
+  },
+  "1805.11074": {
+   "key": "1805.11074",
+   "kind": "arxiv",
+   "title": "Reward Constrained Policy Optimization",
+   "authors": [
+    "Chen Tessler",
+    "Daniel J. Mankowitz",
+    "Shie Mannor"
+   ],
+   "published": "2018-05-28",
+   "abstract": "Solving tasks in Reinforcement Learning is no easy feat. As the goal of the agent is to maximize the accumulated reward, it often learns to exploit loopholes and misspecifications in the reward signal resulting in unwanted behavior. While constraints may solve this issue, there is no closed form solution for general constraints. In this work we present a novel multi-timescale approach for constrained policy optimization, called `Reward Constrained Policy Optimization' (RCPO), which uses an alternative penalty signal to guide the policy towards a constraint satisfying one. We prove the convergence of our approach and provide empirical evidence of its ability to train constraint satisfying policies.",
+   "url": "https://arxiv.org/abs/1805.11074",
+   "path": "TanitAD Research Lab/Library/papers/1805.11074_Reward-Constrained-Policy-Optimization.pdf",
+   "bytes": 854982,
+   "sha256": "a46d0adc71e3c814c154f0efe55bbe16d5386acd99d3fb8c5f4c7aef8857ef04",
+   "banked": "2026-10-17",
+   "tags": [
+    "constrained-rl",
+    "safeobj-dual"
+   ],
+   "note": "RCPO: penalty-signal actor-critic with multiplier on a slower timescale; converges to a fixed point under 3-timescale assumptions",
+   "cited_by": [
+    "TanitAD Research Lab/2026-10-17-LAB-RUN-018.md"
+   ]
+  },
+  "1705.10528": {
+   "key": "1705.10528",
+   "kind": "arxiv",
+   "title": "Constrained Policy Optimization",
+   "authors": [
+    "Joshua Achiam",
+    "David Held",
+    "Aviv Tamar",
+    "Pieter Abbeel"
+   ],
+   "published": "2017-05-30",
+   "abstract": "For many applications of reinforcement learning it can be more convenient to specify both a reward function and constraints, rather than trying to design behavior through the reward function. For example, systems that physically interact with or around humans should satisfy safety constraints. Recent advances in policy search algorithms (Mnih et al., 2016, Schulman et al., 2015, Lillicrap et al., 2016, Levine et al., 2016) have enabled new capabilities in high-dimensional control, but do not consider the constrained setting. We propose Constrained Policy Optimization (CPO), the first general-purpose policy search algorithm for constrained reinforcement learning with guarantees for near-constraint satisfaction at each iteration. Our method allows us to train neural network policies for high-dimensional control while making guarantees about policy behavior all throughout training. Our guar",
+   "url": "https://arxiv.org/abs/1705.10528",
+   "path": "TanitAD Research Lab/Library/papers/1705.10528_Constrained-Policy-Optimization.pdf",
+   "bytes": 1013867,
+   "sha256": "3f93760d9b472af5b17f2f4b887950beaaad7fc501962390986857f242549a59",
+   "banked": "2026-10-17",
+   "tags": [
+    "constrained-rl",
+    "safeobj-dual"
+   ],
+   "note": "CPO: trust-region constrained policy search with near-constraint-satisfaction guarantee each iteration",
+   "cited_by": [
+    "TanitAD Research Lab/2026-10-17-LAB-RUN-018.md"
+   ]
+  },
+  "2006.05487": {
+   "key": "2006.05487",
+   "kind": "arxiv",
+   "title": "Probably Approximately Correct Constrained Learning",
+   "authors": [
+    "Luiz F. O. Chamon",
+    "Alejandro Ribeiro"
+   ],
+   "published": "2020-06-09",
+   "abstract": "As learning solutions reach critical applications in social, industrial, and medical domains, the need to curtail their behavior has become paramount. There is now ample evidence that without explicit tailoring, learning can lead to biased, unsafe, and prejudiced solutions. To tackle these problems, we develop a generalization theory of constrained learning based on the probably approximately correct (PAC) learning framework. In particular, we show that imposing requirements does not make a learning problem harder in the sense that any PAC learnable class is also PAC constrained learnable using a constrained counterpart of the empirical risk minimization (ERM) rule. For typical parametrized models, however, this learner involves solving a constrained non-convex optimization program for which even obtaining a feasible solution is challenging. To overcome this issue, we prove that under mi",
+   "url": "https://arxiv.org/abs/2006.05487",
+   "path": "TanitAD Research Lab/Library/papers/2006.05487_Probably-Approximately-Correct-Constrained-Learning.pdf",
+   "bytes": 756709,
+   "sha256": "78f98f63e912a42ed58cbc441a2066ae9350347ca0210a477a63c4b4210ffb2c",
+   "banked": "2026-10-17",
+   "tags": [
+    "constrained-learning",
+    "safeobj-dual"
+   ],
+   "note": "PAC constrained learning: empirical dual is a PAC constrained learner; generalisation of BOTH objective and constraint via sample-complexity bounds",
+   "cited_by": [
+    "TanitAD Research Lab/2026-10-17-LAB-RUN-018.md"
+   ]
+  },
+  "2403.11844": {
+   "key": "2403.11844",
+   "kind": "arxiv",
+   "title": "Near-Optimal Solutions of Constrained Learning Problems",
+   "authors": [
+    "Juan Elenter",
+    "Luiz F. O. Chamon",
+    "Alejandro Ribeiro"
+   ],
+   "published": "2024-03-18",
+   "abstract": "With the widespread adoption of machine learning systems, the need to curtail their behavior has become increasingly apparent. This is evidenced by recent advancements towards developing models that satisfy robustness, safety, and fairness requirements. These requirements can be imposed (with generalization guarantees) by formulating constrained learning problems that can then be tackled by dual ascent algorithms. Yet, though these algorithms converge in objective value, even in non-convex settings, they cannot guarantee that their outcome is feasible. Doing so requires randomizing over all iterates, which is impractical in virtually any modern applications. Still, final iterates have been observed to perform well in practice. In this work, we address this gap between theory and practice by characterizing the constraint violation of Lagrangian minimizers associated with optimal dual vari",
+   "url": "https://arxiv.org/abs/2403.11844",
+   "path": "TanitAD Research Lab/Library/papers/2403.11844_Near-Optimal-Solutions-of-Constrained-Learning-Problems.pdf",
+   "bytes": 703689,
+   "sha256": "b391e555d44846c901b7c1ff458042171e2a10eb4c957be02ef4c376cd14fc8e",
+   "banked": "2026-10-17",
+   "tags": [
+    "constrained-learning",
+    "safeobj-dual"
+   ],
+   "note": "Near-optimal constrained learning (dual ascent): feasibility of the dual-ascent output is not guaranteed; bounds violation of Lagrangian minimisers at optimal duals",
+   "cited_by": [
+    "TanitAD Research Lab/2026-10-17-LAB-RUN-018.md"
+   ]
+  },
+  "2110.01052": {
+   "key": "2110.01052",
+   "kind": "arxiv",
+   "title": "Learn then Test: Calibrating Predictive Algorithms to Achieve Risk Control",
+   "authors": [
+    "Anastasios N. Angelopoulos",
+    "Stephen Bates",
+    "Emmanuel J. Candès",
+    "Michael I. Jordan",
+    "Lihua Lei"
+   ],
+   "published": "2021-10-03",
+   "abstract": "We introduce a framework for calibrating machine learning models so that their predictions satisfy explicit, finite-sample statistical guarantees. Our calibration algorithms work with any underlying model and (unknown) data-generating distribution and do not require model refitting. The framework addresses, among other examples, false discovery rate control in multi-label classification, intersection-over-union control in instance segmentation, and the simultaneous control of the type-1 error of outlier detection and confidence set coverage in classification or regression. Our main insight is to reframe the risk-control problem as multiple hypothesis testing, enabling techniques and mathematical arguments different from those in the previous literature. We use the framework to provide new calibration methods for several core machine learning tasks, with detailed worked examples in comput",
+   "url": "https://arxiv.org/abs/2110.01052",
+   "path": "TanitAD Research Lab/Library/papers/2110.01052_Learn-then-Test-Calibrating-Predictive-Algorithms-to-Achieve.pdf",
+   "bytes": 2934353,
+   "sha256": "a43d0f089add075ecb4c74f71c9eb6a648e020edc70139b19360d6e717ddc0e2",
+   "banked": "2026-10-17",
+   "tags": [
+    "risk-control",
+    "safeobj-dual"
+   ],
+   "note": "Learn then Test: finite-sample risk control for a hyperparameter chosen on a calibration set (multiple-testing over a grid)",
+   "cited_by": [
+    "TanitAD Research Lab/2026-10-17-LAB-RUN-018.md"
+   ]
+  },
+  "2011.05869": {
+   "key": "2011.05869",
+   "kind": "arxiv",
+   "title": "CRPO: A New Approach for Safe Reinforcement Learning with Convergence Guarantee",
+   "authors": [
+    "Tengyu Xu",
+    "Yingbin Liang",
+    "Guanghui Lan"
+   ],
+   "published": "2020-11-11",
+   "abstract": "In safe reinforcement learning (SRL) problems, an agent explores the environment to maximize an expected total reward and meanwhile avoids violation of certain constraints on a number of expected total costs. In general, such SRL problems have nonconvex objective functions subject to multiple nonconvex constraints, and hence are very challenging to solve, particularly to provide a globally optimal policy. Many popular SRL algorithms adopt a primal-dual structure which utilizes the updating of dual variables for satisfying the constraints. In contrast, we propose a primal approach, called constraint-rectified policy optimization (CRPO), which updates the policy alternatingly between objective improvement and constraint satisfaction. CRPO provides a primal-type algorithmic framework to solve SRL problems, where each policy update can take any variant of policy optimization step. To demonst",
+   "url": "https://arxiv.org/abs/2011.05869",
+   "path": "TanitAD Research Lab/Library/papers/2011.05869_CRPO-A-New-Approach-for-Safe-Reinforcement-Learning-with-Con.pdf",
+   "bytes": 536346,
+   "sha256": "bda39fe8890ad987a80fd0affd7b663504f1c269533c7dcac21c2178b071ce46",
+   "banked": "2026-10-17",
+   "tags": [
+    "constrained-rl",
+    "safeobj-dual"
+   ],
+   "note": "CRPO: primal-only constraint-rectified policy optimisation (switch between objective step and constraint step; no dual variable) with finite-time rates",
+   "cited_by": [
+    "TanitAD Research Lab/2026-10-17-LAB-RUN-018.md"
+   ]
+  },
+  "2302.01275": {
+   "key": "2302.01275",
+   "kind": "arxiv",
+   "title": "ReLOAD: Reinforcement Learning with Optimistic Ascent-Descent for Last-Iterate Convergence in Constrained MDPs",
+   "authors": [
+    "Ted Moskovitz",
+    "Brendan O'Donoghue",
+    "Vivek Veeriah",
+    "Sebastian Flennerhag",
+    "Satinder Singh",
+    "Tom Zahavy"
+   ],
+   "published": "2023-02-02",
+   "abstract": "In recent years, Reinforcement Learning (RL) has been applied to real-world problems with increasing success. Such applications often require to put constraints on the agent's behavior. Existing algorithms for constrained RL (CRL) rely on gradient descent-ascent, but this approach comes with a caveat. While these algorithms are guaranteed to converge on average, they do not guarantee last-iterate convergence, i.e., the current policy of the agent may never converge to the optimal solution. In practice, it is often observed that the policy alternates between satisfying the constraints and maximizing the reward, rarely accomplishing both objectives simultaneously. Here, we address this problem by introducing Reinforcement Learning with Optimistic Ascent-Descent (ReLOAD), a principled CRL method with guaranteed last-iterate convergence. We demonstrate its empirical effectiveness on a wide v",
+   "url": "https://arxiv.org/abs/2302.01275",
+   "path": "TanitAD Research Lab/Library/papers/2302.01275_ReLOAD-Reinforcement-Learning-with-Optimistic-Ascent-Descent.pdf",
+   "bytes": 6265897,
+   "sha256": "530ce75a83b63c0df416ef3df2c60dedcbb46d3e302ba267d7b1f5d154cbb0e7",
+   "banked": "2026-10-17",
+   "tags": [
+    "constrained-rl",
+    "safeobj-dual"
+   ],
+   "note": "ReLOAD: gradient descent-ascent on CMDPs oscillates between meeting constraints and maximising reward; optimistic ascent-descent gives last-iterate convergence",
+   "cited_by": [
+    "TanitAD Research Lab/2026-10-17-LAB-RUN-018.md"
+   ]
+  },
+  "2604.12208": {
+   "key": "2604.12208",
+   "kind": "arxiv",
+   "title": "Unveiling the Surprising Efficacy of Navigation Understanding in End-to-End Autonomous Driving",
+   "authors": [
+    "Zhihua Hua",
+    "Junli Wang",
+    "Pengfei LI",
+    "Qihao Jin",
+    "Bo Zhang",
+    "Kehua Sheng",
+    "Yilun Chen",
+    "Zhongxue Gan",
+    "Wenchao Ding"
+   ],
+   "published": "2026-04-14",
+   "abstract": "Global navigation information and local scene understanding are two crucial components of autonomous driving systems. However, our experimental results indicate that many end-to-end autonomous driving systems tend to over-rely on local scene understanding while failing to utilize global navigation information. These systems exhibit weak correlation between their planning capabilities and navigation input, and struggle to perform navigation-following in complex scenarios. To overcome this limitation, we propose the Sequential Navigation Guidance (SNG) framework, an efficient representation of global navigation information based on real-world navigation patterns. The SNG encompasses both navigation paths for constraining long-term trajectories and turn-by-turn (TBT) information for real-time decision-making logic. We constructed the SNG-QA dataset, a visual question answering (VQA) dataset",
+   "url": "https://arxiv.org/abs/2604.12208",
+   "path": "TanitAD Research Lab/Library/papers/2604.12208_Unveiling-the-Surprising-Efficacy-of-Navigation-Understandin.pdf",
+   "bytes": 2535357,
+   "sha256": "4f92f98ac6574e4cc912cdc74bda516a07db403dc7db36232a071a22e2c1843f",
+   "banked": "2026-10-17",
+   "tags": [
+    "nav-echo",
+    "route-conditioning"
+   ],
+   "note": "Navigation Understanding (SNG): removing/corrupting the nav input barely hurts E2E planning; BVR lane-change vs 'Go Forward' command = causal confusion",
+   "cited_by": [
+    "TanitAD Research Lab/2026-10-17-LAB-RUN-018.md"
+   ]
+  },
+  "2512.10660": {
+   "key": "2512.10660",
+   "kind": "arxiv",
+   "title": "Closing the Navigation Compliance Gap in End-to-end Autonomous Driving",
+   "authors": [
+    "Hanfeng Wu",
+    "Marlon Steiner",
+    "Michael Schmidt",
+    "Alvaro Marcos-Ramiro",
+    "Christoph Stiller"
+   ],
+   "published": "2025-12-11",
+   "abstract": "Trajectory-scoring planners achieve high navigation compliance when following the expert's original command, yet they struggle at intersections when presented with alternative commands; over 30 percent of such commands are ignored. We attribute this navigation compliance gap to two root causes: (1) existing metrics like Ego Progress do not explicitly measure navigation adherence, diluting the gap between on-route and off-route trajectories; and (2) current datasets pair each scenario with a single command, preventing models from learning command-dependent behavior. We address the metric gap by introducing the binary Navigation Compliance metric (NAVI) and the derived Controllability Measure (CM), and the data gap with the NavControl dataset, 14,918 intersection scenarios augmented with all feasible alternative commands and routing annotations, yielding over 34,000 direction samples. Buil",
+   "url": "https://arxiv.org/abs/2512.10660",
+   "path": "TanitAD Research Lab/Library/papers/2512.10660_Closing-the-Navigation-Compliance-Gap-in-End-to-end-Autonomo.pdf",
+   "bytes": 5411852,
+   "sha256": "698da96a52957c1e9e2b92eaa37ff2b9a5a66e6f1b455993d9a05929e5f2cfe8",
+   "banked": "2026-10-17",
+   "tags": [
+    "navsim-scorer",
+    "route-conditioning"
+   ],
+   "note": "NaviHydra: navigation-guided Hydra-distillation scorer; navigation-compliance sub-score head/metric on NAVSIM",
+   "cited_by": [
+    "TanitAD Research Lab/2026-10-17-LAB-RUN-018.md"
+   ]
+  },
+  "1807.00028": {
+   "key": "1807.00028",
+   "kind": "arxiv",
+   "title": "Training Well-Generalizing Classifiers for Fairness Metrics and Other Data-Dependent Constraints",
+   "authors": [
+    "Andrew Cotter",
+    "Maya Gupta",
+    "Heinrich Jiang",
+    "Nathan Srebro",
+    "Karthik Sridharan",
+    "Serena Wang",
+    "Blake Woodworth",
+    "Seungil You"
+   ],
+   "published": "2018-06-29",
+   "abstract": "Classifiers can be trained with data-dependent constraints to satisfy fairness goals, reduce churn, achieve a targeted false positive rate, or other policy goals. We study the generalization performance for such constrained optimization problems, in terms of how well the constraints are satisfied at evaluation time, given that they are satisfied at training time. To improve generalization performance, we frame the problem as a two-player game where one player optimizes the model parameters on a training dataset, and the other player enforces the constraints on an independent validation dataset. We build on recent work in two-player constrained optimization to show that if one uses this two-dataset approach, then constraint generalization can be significantly improved. As we illustrate experimentally, this approach works not only in theory, but also in practice.",
+   "url": "https://arxiv.org/abs/1807.00028",
+   "path": "TanitAD Research Lab/Library/papers/1807.00028_Training-Well-Generalizing-Classifiers-for-Fairness-Metrics.pdf",
+   "bytes": 542156,
+   "sha256": "abc90edc78bca9748a59992fee5f36d78c3663c3afcd64b95013d7d1d6d64605",
+   "banked": "2026-10-17",
+   "tags": [
+    "constrained-learning",
+    "safeobj-dual"
+   ],
+   "note": "Constraint generalisation: a classifier meeting data-dependent constraints in-sample often violates them on new data; fix = model on train set, Lagrange multipliers/constraints on a separate validation set (O4 lever)",
+   "cited_by": [
+    "TanitAD Research Lab/2026-10-17-LAB-RUN-018.md"
    ]
   }
  }
