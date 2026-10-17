@@ -2098,3 +2098,15 @@ The A40 readiness gate AR-1..AR-4 is in plan §13.5. In short:
 **One interpretation is open for the PI.** The strategic layer is also given the **scene summary**, because checkpoints must sit on the actual road. The nav + distance-only version is kept as the ablation, and it ships if the scene adds nothing.
 
 - **✅ DECIDED (PI, 2026-10-17, plan-selection lever):** *"start working on the plan selection lever now"*; then *"P6 first (Recommended)"*: when the A40 frees after R0d, **P6 gets it BEFORE the SAFEOBJ Stage 2** (R1d + R1o). And *"Auto-launch on PASS (Recommended)"*: P6's training starts automatically when its launch-gate dry run passes; any refusal or ambiguity stops without launching.
+
+## DECIDED 2026-10-17 ~21:40 Berlin -- G0 wrapper clause: a term over the bar is re-judged in float64 (amendment W-R8-2)
+
+PI: *"fp64 re-check rule"*. The fp32 bar stays max(3*floor, 1e-5). A term over it passes only if the same probe in float64 reads
+**≤ 1e-9**, with W1/W2 still detected. Anything above that is a real coupling.
+
+Trigger, all MEASURED (`FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-15-refcv8-milestone-battery/raw/step20000/`):
+* At step 20,000 only `lat_tac` was over the bar: 1.0647e-5 in fp32 against **1.98e-14** in fp64. That is 128 ulps in both
+  precisions, and 0/369 terms are above 1e-9 in fp64.
+* `lat_tac` is a CE of 0.0028 on logits up to ~61.
+
+**Step 20,000 is G0 PASS under A7 + W-R8-1 + W-R8-2.** Step 5,000 stays PROVISIONAL, on its detection term.
