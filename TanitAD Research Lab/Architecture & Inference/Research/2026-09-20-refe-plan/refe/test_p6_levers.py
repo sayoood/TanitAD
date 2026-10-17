@@ -452,17 +452,48 @@ def chk_gate_judges():
     """G-LIVE-LAB / G-LIVE-MEM / G-EGR judges (pod-run checks): fixture-driven, each with its regression arm."""
     import gate_checks as C
     lab = {"identity_ok": True, "n_sets": 64, "identity_equal_sets": 64, "stale_refused": True, "throughput_sets_s": 9.6, "workers": 12}
-    ev = [{"event": "labeller", "sets": 8, "labelled": 8, "lag_hist": {"0": 8}, "stall_frac": 0.30},
-          {"event": "labeller", "sets": 8, "labelled": 8, "lag_hist": {"0": 8}, "stall_frac": 0.01}]
-    ok(C.judge_lab(lab, ev, 12) == [], C.judge_lab(lab, ev, 12))
+    # the smoke (accum 2): its post-start-up window is DRAIN-dominated -- these are the MEASURED P6-pod values of 2026-10-16 (R42), and the judge must
+    # NOT fail on them; the L1 stall is judged on the launch-accum run (`st`, the G-LIVE-MEM metrics: bank event + >= 3 labeller windows)
+    ev = [{"event": "labeller", "sets": 8, "labelled": 8, "lag_hist": {"0": 8}, "stall_frac": 0.36692370317285544},
+          {"event": "labeller", "sets": 8, "labelled": 8, "lag_hist": {"0": 8}, "stall_frac": 0.3310444063967688}]
+    st = [{"event": "bank", "accum": 64}] + [{"event": "labeller", "sets": 256, "labelled": 256, "lag_hist": {"0": 256}, "stall_frac": s}
+                                            for s in (0.1413863002634917, 0.02780238159944948, 0.04803343924789811, 0.0300)]
+
+    def J(lab_, ev_, w_=12, arm=None, st_=st, acc=64):
+        return C.judge_lab(lab_, ev_, w_, arm=arm, steady_metrics=st_, launch_accum=acc)
+
+    ok(J(lab, ev) == [], J(lab, ev))
     for bad, frag in (({**lab, "identity_equal_sets": 63, "identity_ok": False}, "identity"), ({**lab, "stale_refused": False}, "stale"),
                       ({**lab, "throughput_sets_s": 4.3}, "throughput"), ({**lab, "workers": 2}, "launch argv"), ({**lab, "n_sets": 32}, "identity")):
-        r = C.judge_lab(bad, ev, 12)
+        r = J(bad, ev)
         ok(r and any(frag in x for x in r), (frag, r))
-    ok(any("stall" in x for x in C.judge_lab(lab, [ev[0], {**ev[1], "stall_frac": 0.2}], 12)))
-    ok(any("lag" in x for x in C.judge_lab(lab, [{**ev[0], "lag_hist": {"0": 4, "3": 4}}, ev[1]], 12)))
-    ok(any("no `labeller` event" in x for x in C.judge_lab(lab, [], 12)))
-    ok(C.judge_lab(lab, ev, 12, arm="lab_two_workers"), "a 2-worker pool must FAIL the throughput bar")
+    # the stall bar, on the launch-accum run: a window above 5 % FAILS (incl. the 2026-10-16 accum-50 reading 0.0500021, which is > 0.05)
+    ok(any("stall" in x for x in J(lab, ev, st_=st[:2] + [{**st[2], "stall_frac": 0.2}] + st[3:])))
+    ok(any("stall" in x for x in J(lab, ev, st_=st[:2] + [{**st[2], "stall_frac": 0.05000205494919062}] + st[3:])))
+    ok(not any("stall" in x for x in J(lab, ev, st_=st[:1] + [{**st[1], "stall_frac": 0.9}] + st[2:])), "the FIRST window (pool start-up) is not judged")
+    # ... and only there: no stall run, an accum that is not the launch accum, or too few windows FAIL; the old smoke-only call FAILS
+    ok(any("no steady-state stall run" in x for x in J(lab, ev, st_=None)))
+    ok(any("no steady-state stall run" in x for x in C.judge_lab(lab, ev, 12)), "the pre-R42 call (smoke only) must FAIL, never pass silently")
+    ok(any("1/accum" in x for x in J(lab, ev, st_=[{"event": "bank", "accum": 50}] + st[1:])))
+    ok(any("1/accum" in x for x in J(lab, ev, acc=None)))
+    ok(any("labeller windows" in x for x in J(lab, ev, st_=st[:3])))
+    ok(any("lag" in x for x in J(lab, ev, st_=st[:2] + [{**st[2], "lag_hist": {"0": 200, "1": 56}}] + st[3:])))
+    # the smoke still proves the labeller RAN at lag 0 with coverage
+    ok(any("lag" in x for x in J(lab, [{**ev[0], "lag_hist": {"0": 4, "3": 4}}, ev[1]])))
+    ok(any("no `labeller` event" in x for x in J(lab, [])))
+    ok(J(lab, ev, arm="lab_two_workers"), "a 2-worker pool must FAIL the throughput bar")
+    # check_live_lab reads the stall run from the G-LIVE-MEM metrics FILE and the accum from the launch ARGV
+    import tempfile
+    import types
+    with tempfile.TemporaryDirectory() as td_:
+        lj, mj = Path(td_) / "lab.json", Path(td_) / "mem.jsonl"
+        lj.write_text(json.dumps({**lab, "workers": 7}), encoding="utf-8")
+        mj.write_text("".join(json.dumps(x) + "\n" for x in st), encoding="utf-8")
+        cap = types.SimpleNamespace(metrics=ev)
+        av = ["--label-workers", "7", "--batch", "4", "--accum", "64"]
+        ok(C.check_live_lab(str(lj), cap, av, mem_metrics=str(mj))["status"] == "PASS", C.check_live_lab(str(lj), cap, av, mem_metrics=str(mj)))
+        ok(C.check_live_lab(str(lj), cap, av)["status"] == "FAIL", "no mem_metrics -> FAIL")
+        ok(C.check_live_lab(str(lj), cap, av[:4] + ["--accum", "128"], mem_metrics=str(mj))["status"] == "FAIL", "launch accum != stall-run accum -> FAIL")
     rows = [{"cuda_max_mem_gb": 31.0, "traj_L1": 1.0, "samples": 800, "batch": 4}]
     ok(C.judge_mem(rows) == [] and C.judge_mem(rows, arm="mem_over_budget"))
     ok(C.judge_mem([{**rows[0], "cuda_max_mem_gb": 47.0}]) and C.judge_mem([{**rows[0], "cuda_max_mem_gb": None}]) and C.judge_mem([{**rows[0], "samples": 40}]))

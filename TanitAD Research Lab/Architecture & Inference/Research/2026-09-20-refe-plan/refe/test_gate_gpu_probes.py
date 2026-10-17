@@ -4,7 +4,9 @@
 1. G-DVB read --amp at the backbone's OUTPUT.  The backbone ends in a LayerNorm, which CUDA autocast always runs in float32, so a correct
    bf16 trainer read 'built float32'.  Fix: gate_checks.amp_probe_module = the backbone's first nn.Linear.
 2. G-CKPT spawned two real trainings while the gate process still held the smoke model + its cached CUDA blocks (24.11 GiB): both died
-   CUDA OOM.  Fix: launch_gate frees the smoke capture (deep) before check_ckpt.
+   CUDA OOM.  Fix: launch_gate frees the smoke capture (deep) before check_ckpt.  R43 (2026-10-16, P6 pod): the free leaves this process's
+   CUDA CONTEXT (394-474 MiB) on the card, and P6's compile-free smoke needs > 43.6 GiB allocated of 44.43: U and H1 died OOM again.
+   Fix: check_ckpt runs BEFORE the build and the smoke, i.e. before this process opens a CUDA context at all.
 
 Run: python refe/test_gate_gpu_probes.py  ->  ZZTEST_PASS <n>.  The CUDA check needs a GPU; without one it reports SKIP_CUDA and the suite
 says so in its final line (a skipped check is not a passed one).
@@ -21,11 +23,14 @@ sys.path.insert(0, str(HERE))
 
 
 def order_ok(src: str) -> bool:
-    """launch_gate.py: inside the G-CKPT branch, the deep free of the smoke capture comes BEFORE check_ckpt."""
-    i = src.find('if "G-CKPT" in want:')
-    j = src.find("C.check_ckpt(", i)
-    k = src.find("_free(s, deep=True)", i)
-    return i >= 0 and j > i and i < k < j
+    """launch_gate.py run_checks: check_ckpt is CALLED before the first instrumented_run (the build/smoke that open this process's CUDA
+    context), and its evidence is emitted (R43)."""
+    i = src.find("def run_checks(")
+    end = src.find("\ndef ", i + 10)
+    body = src[i:end]
+    j = body.find("C.check_ckpt(")
+    k = body.find("C.instrumented_run(")
+    return i >= 0 and 0 < j < k and "emit(ckpt_ev)" in body
 
 
 def free_deep_ok(mod) -> bool:
@@ -33,6 +38,24 @@ def free_deep_ok(mod) -> bool:
     mod._free(cap, deep=True)
     return cap.model is None and cap.first_batch is None and cap.opt is None and cap.sched is None and cap.loaders == [] \
         and cap.samplers == [] and cap.metrics == [3]
+
+
+def ckpt_mb_ok(gc_mod, profile: dict, want: tuple) -> bool:
+    """R44: check_ckpt hands its trainings the profile's micro-batch (accumulation scaled, effective batch kept, --compile dropped).
+    The trainings are faked (rc 1), so this reads the argv check_ckpt BUILDS, on any box."""
+    import tempfile
+    seen = []
+    real = gc_mod._train_sub
+    gc_mod._train_sub = lambda args, log: (seen.append(list(args)), 1)[1]
+    try:
+        with tempfile.TemporaryDirectory() as td:
+            ev = gc_mod.check_ckpt(["--batch", "4", "--accum", "2", "--compile", "--out", "x", "--resume"], Path(td) / "ckpt", profile)
+    finally:
+        gc_mod._train_sub = real
+    if not seen or ev.get("status") != "FAIL":
+        return False
+    return all(a[a.index("--batch") + 1] == want[0] and a[a.index("--accum") + 1] == want[1] and "--compile" not in a and "--resume" not in a
+               for a in seen) and ev["details"].get("batch_accum") == [int(want[0]), int(want[1])]
 
 
 def det_boot_ok(src: str) -> bool:
@@ -75,6 +98,9 @@ def main() -> int:
     t("free_deep_clears_pins", free_deep_ok(LG))
     t("probe_hooked_via_helper", "amp_probe_module(self.backbone).register_forward_hook" in src_gc)
     t("ckpt_runs_deterministic", det_boot_ok(src_gc))
+    t("ckpt_p6_micro_batch_2", LG.PROFILES["refe_p6"].get("ckpt_micro_batch") == 2 and "ckpt_micro_batch" not in LG.PROFILES["refe_p2"])
+    t("ckpt_argv_scaled", ckpt_mb_ok(GC, {"ckpt_steps": 4, "ckpt_micro_batch": 2}, ("2", "4")))
+    t("ckpt_argv_default_unchanged", ckpt_mb_ok(GC, {"ckpt_steps": 4}, ("4", "2")))
     cu = cuda_probe(GC)
     skipped = cu == "SKIP_CUDA"
     if not skipped:
@@ -82,10 +108,11 @@ def main() -> int:
 
     # mutations: each must make the matching check FAIL
     muts = [
-        ("free_removed", lambda: order_ok(src_lg.replace("            _free(s, deep=True)\n", ""))),
-        ("free_after_ckpt", lambda: order_ok(src_lg.replace("_free(s, deep=True)", "pass").replace(
-            'emit(C.check_ckpt(s_argv, work / "ckpt", prof2, arm=arm, rehearsal=rehearsal))',
-            'emit(C.check_ckpt(s_argv, work / "ckpt", prof2, arm=arm, rehearsal=rehearsal)); _free(s, deep=True)'))),
+        ("ckpt_after_smoke", lambda: order_ok(src_lg.replace(
+            '        ckpt_ev = C.check_ckpt(s_argv, work / "ckpt", prof2, arm=arm, rehearsal=rehearsal)\n', "").replace(
+            "emit(ckpt_ev)", 'emit(C.check_ckpt(s_argv, work / "ckpt", prof2, arm=arm, rehearsal=rehearsal))'))),
+        ("ckpt_not_emitted", lambda: order_ok(src_lg.replace("emit(ckpt_ev)", "pass"))),
+        ("ckpt_mb_key_ignored", lambda: ckpt_mb_ok(GC, {"ckpt_steps": 4, "ckpt_micro_batch": 2}, ("4", "2"))),
         ("ckpt_plain_launch", lambda: det_boot_ok(src_gc.replace('[sys.executable, "-c", DET_BOOT, str(HERE / "train.py")]',
                                                                '[sys.executable, str(HERE / "train.py")]'))),
         ("ckpt_no_cublas_pin", lambda: det_boot_ok(src_gc.replace(', CUBLAS_WORKSPACE_CONFIG=":4096:8"', ""))),

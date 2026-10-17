@@ -32,7 +32,7 @@ All dev-box seconds are on an i9-12900F thread; a pod vCPU is slower by a ratio 
 | pod CPU quota | cgroup v1 CFS 1105000/100000 = **11.05 vCPU** (`nproc` says 96) | MEASURED by the Master Mind 2026-10-11, `eval/P2R_POD_RUNBOOK.md` section 6 |
 | pod memory limit / volume | 71 GB; `/workspace` 373 GB NFSv4 volume (`dd` 8 GB at 1.2 to 1.3 GB/s); a 500 GB container disk that a restart wipes | same |
 | chain workers | `LW = CORES - 4 = 7`, `CW = CORES = 11` (`refe/p6_pod.sh:124-125`); it logs a WARNING below 12 | read from source |
-| gate bars | pool-alone throughput >= 1.5 x 4.49 = **6.735 sets/s** at the launch worker count; GPU stall <= **5 %** of a window (max over windows after the first, in the SMOKE run) | `refe/gate_checks.py:1151,1154-1180` |
+| gate bars | pool-alone throughput >= 1.5 x 4.49 = **6.735 sets/s** at the launch worker count; GPU stall <= **5 %** of a window (max over windows after the first, in the G-LIVE-MEM run at the LAUNCH --accum; until R42 it was the accum-2 SMOKE, whose post-start-up window is drain-dominated: 33.1 % on the pod) | `refe/gate_checks.py:1151,1154-1180` |
 | step | 57.0 s per 256-sample step = 64 micro-batches of 4 -> **P = 0.8906 s**; 10,075 steps = 6.65 days | SPEC_P6 0.2, section 3 |
 | loop | `F(k)` -> `submit(k)` -> `collect(k-1)` (= the GPU stall) -> `B(k-1)`: the labels of k-1 get one period P; <= 2 micro-batches x 4 sets = **8 sets in flight**, so workers beyond 8 add nothing | read from `train.py` / `diag_p6_labeller_identity.py:57-66`; forward share 1/3 ESTIMATED |
 | P2-s1 | `--workers 2`, OMP 4, `--log-every 1`, about 60 s per step, 1,209 steps, about 20 to 21 h | `refe/p2rep_pod.sh:46`, `eval/P2REP_POD_RUNBOOK.md:75` |

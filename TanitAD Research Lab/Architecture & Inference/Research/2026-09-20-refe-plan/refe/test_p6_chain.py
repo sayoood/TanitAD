@@ -737,7 +737,7 @@ def main() -> int:
         # mem-argv
         argv = Template(ARGS_REF).substitute(env, YAW_WRAP="off")
         m = PP.mem_argv(argv, "/w/mem")
-        assert "--epochs" not in m and "--resume" not in m and m[m.index("--steps") + 1] == "4" and m[m.index("--accum") + 1] == "50", m; n += 3
+        assert "--epochs" not in m and "--resume" not in m and m[m.index("--steps") + 1] == "4" and m[m.index("--accum") + 1] == "64", m; n += 3     # the LAUNCH accum (R42)
         assert m[m.index("--out") + 1] == "/w/mem" and m[m.index("--batch") + 1] == "4" and m[m.index("--yaw-wrap") + 1] == "off" and "--compile" in m and "--tf32" in m; n += 2
         assert m[m.index("--ckpt-every-min") + 1] == "999" and m[m.index("--label-workers") + 1] == "16"; n += 1
         # egr-ok
@@ -867,7 +867,7 @@ def main() -> int:
         g, f, mm = c[gate_i], c[full_i], c[mem_i]
         assert "--profile refe_p6" in g and all(k in g for k in ("--gate-lab-json", "--gate-mem-metrics", "--gate-egr-json", "--gate-bank")); n += 2
         assert "--yaw-wrap off" in f and "--resume" in f and "--labeller online" in f and "--nav-mode command" in f and "--label-workers 2" in f, f; n += 1
-        assert "--resume" not in mm and "--epochs" not in mm and "--accum 50" in mm and "refe_p6/mem_run" in mm; n += 1
+        assert "--resume" not in mm and "--epochs" not in mm and "--accum 64" in mm and "refe_p6/mem_run" in mm; n += 1
         assert "--ckpt" in c[egr_i] and "--repo Sayood/tanitad-refe-p6-paper-faithful" in c[egr_i] and "--workers 2" in c[lab_i]; n += 1
         assert any(x.startswith("p2r_sync.py final") and "--repo Sayood/tanitad-refe-p6-paper-faithful" in x for x in c); n += 1
         assert (sb.data / "refe_p6" / "gate" / "PASS_stub.json").is_file(); n += 1

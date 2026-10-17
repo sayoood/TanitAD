@@ -11,7 +11,7 @@ Every subcommand prints ONE opaque marker line (so the chain parses a marker, ne
                   PDM-Closed did not honour the DriveRL route patch and the twin is labelled on the wrong route.   ZZD7_DISTINCT_OK|ZZD7_DISTINCT_BAD k= sampled= differ= frac=
   quarantine      D7 declared fallback: move every rank-K twin parts file out of the cache (the labeller then masks those samples: trajectory loss only).
   sample-tokens   an even stride over the cache's logged-route parts, as "log:token,..." (G-LIVE-LAB / D9 verify inputs).     ZZTOKENS <list>
-  mem-argv        the G-LIVE-MEM trainer argv: the launch ARGS with --epochs/--resume dropped and --steps 4 --accum 50 (200 micro-batches), a scratch --out.
+  mem-argv        the G-LIVE-MEM trainer argv: the launch ARGS with --epochs/--resume dropped and --steps 4 at the LAUNCH --accum (4 x 64 = 256 micro-batches), a scratch --out.
   egr-ok          the chain-level fail-fast read of hf_egress.py gate's g_egr_result.json (the launch gate re-judges it).     ZZEGR_OK / ZZEGR_BAD <why>
 """
 from __future__ import annotations
@@ -29,7 +29,8 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent / "code"))
 
-MEM_STEPS, MEM_ACCUM = 4, 50                    # 4 x 50 micro-batches of 4 = 200 micro-batches (gate_checks.MEM_MIN_MICRO)
+MEM_STEPS = 4                                   # 4 windows at the LAUNCH --accum (64: 256 micro-batches >= gate_checks.MEM_MIN_MICRO).  It was --accum 50 until R42:
+MEM_MIN_MICRO = 200                             # the same run is G-LIVE-LAB's L1 stall reading, and the stall fraction scales like 1/accum
 
 
 # ------------------------------------------------------------------------------------------------ the bank
@@ -198,11 +199,16 @@ def _set(argv, flag, value):
 
 
 def mem_argv(args: str, out_dir: str) -> list:
-    """The launch argv with the schedule cut to MEM_STEPS x MEM_ACCUM micro-batches (--epochs derives the step count and is dropped), no --resume, a scratch --out,
-    no periodic checkpoint. Everything that sets the memory (batch, backbone, amp, compile, labeller, workers) is the LAUNCH value."""
+    """The launch argv with the schedule cut to MEM_STEPS windows at the LAUNCH --accum (--epochs derives the step count and is dropped), no --resume,
+    a scratch --out, no periodic checkpoint. Everything that sets the memory (batch, backbone, amp, compile, labeller, workers) AND the L1 stall
+    (the accumulation: one drained micro-batch per window, R42) is the LAUNCH value."""
     argv = args.split()
+    if "--accum" not in argv or argv.index("--accum") + 1 >= len(argv):
+        raise SystemExit("the launch ARGS carry no --accum: the stall run must use the launch accumulation (R42)")
+    if MEM_STEPS * int(argv[argv.index("--accum") + 1]) < MEM_MIN_MICRO:
+        raise SystemExit(f"{MEM_STEPS} windows x --accum {argv[argv.index('--accum') + 1]} < {MEM_MIN_MICRO} micro-batches (G-LIVE-MEM)")
     argv = _drop(_drop(_drop(argv, "--resume"), "--epochs", 1), "--grow-scenes", 1)
-    for f, v in (("--steps", str(MEM_STEPS)), ("--accum", str(MEM_ACCUM)), ("--log-every", "1"), ("--ckpt-every-min", "999"), ("--out", out_dir)):
+    for f, v in (("--steps", str(MEM_STEPS)), ("--log-every", "1"), ("--ckpt-every-min", "999"), ("--out", out_dir)):
         argv = _set(argv, f, v)
     if any(re.search(r"\s", t) for t in argv):
         raise SystemExit("whitespace inside an argv token")

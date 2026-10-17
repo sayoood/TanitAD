@@ -1232,7 +1232,20 @@ def check_ckpt(argv: list, work, profile: dict, arm=None, rehearsal=False) -> di
 
     def with_out(tag, extra):
         # --compile is dropped: the resume contract is independent of it, and three compiles would cost ~6 min on the pod
-        return _drop(_drop(_set(_set(argv, "--out", str(work / tag)), "--steps", str(n)), "--resume"), "--compile") + extra
+        a_ = _drop(_drop(_set(_set(argv, "--out", str(work / tag)), "--steps", str(n)), "--resume"), "--compile")
+        mb = profile.get("ckpt_micro_batch")
+        if mb:
+            # R44 (MEASURED 2026-10-16, P6 pod): under DET_BOOT's deterministic kernels P6's eager micro-batch of 4 needs >= 43.70 GiB ALLOCATED of
+            # the A40's 44.43 ALONE on the card (U died OOM with no other process; H1 survived the same step: the edge).  The resume contract
+            # (model, optimiser, data position, loss trajectory bit-identical) is independent of the micro-batch exactly as it is of --compile,
+            # so the round trip runs at micro-batch `mb` with the accumulation scaled to keep the effective batch.
+            b0, k0 = int(a_[a_.index("--batch") + 1]), int(a_[a_.index("--accum") + 1])
+            if (b0 * k0) % int(mb):
+                raise ValueError(f"ckpt_micro_batch {mb} does not divide the smoke's effective batch {b0} x {k0}")
+            a_ = _set(_set(a_, "--batch", str(mb)), "--accum", str(b0 * k0 // int(mb)))
+        return a_ + extra
+    w_ = with_out("U", [])
+    det["batch_accum"] = [int(w_[w_.index("--batch") + 1]), int(w_[w_.index("--accum") + 1])] if "--batch" in w_ and "--accum" in w_ else None
     rc_u = _train_sub(with_out("U", []), work / "U.log")
     rc_h1 = _train_sub(with_out("H", ["--ckpt-every-steps", str(h), "--halt-after-steps", str(h)]), work / "H1.log")
     ck = work / "H" / "ckpt_last.pt"
@@ -1335,10 +1348,16 @@ def check_clock(argv: list, b, profile: dict, arm=None, rehearsal=False) -> dict
 # refe/diag_p6_labeller_identity.py (LAB), the trainer's own metrics.jsonl from a 200-micro-batch run (MEM), refe/hf_egress.py gate (EGR) -- and the gate JUDGES them
 # (thresholds live HERE, not in the instrument), binds their sha256 into the token, and never greps. Each judge has a fixture-driven regression arm in test_p6_levers.py.
 LAB_NEED_SETS_S, LAB_MARGIN, LAB_STALL_MAX, MEM_MAX_GB, MEM_MIN_MICRO = 4.49, 1.5, 0.05, 44.0, 200
+LAB_STALL_MIN_WINDOWS = 2           # steady-state windows (after the first, which includes pool start-up) the L1 stall bar is judged on (R42)
 
 
-def judge_lab(lab: dict, smoke_metrics: list, workers_launch: int, arm=None) -> list:
-    """lab = diag_p6_labeller_identity.py's JSON; smoke_metrics = the SMOKE trainer's metrics rows. Returns the failure reasons."""
+def judge_lab(lab: dict, smoke_metrics: list, workers_launch: int, arm=None, steady_metrics=None, launch_accum=None) -> list:
+    """lab = diag_p6_labeller_identity.py's JSON; smoke_metrics = the SMOKE trainer's metrics rows (the labeller RAN, lag 0, coverage);
+    steady_metrics = the G-LIVE-MEM run's metrics rows (the launch argv at the launch's --accum): the L1 stall bar (SPEC_P6 3.2) is judged THERE.
+    R42 (MEASURED 2026-10-16, P6 pod): train.py drains each accumulation window's LAST micro-batch before the optimizer step (D4), so one label
+    latency per window is unhidden by construction and the stall fraction scales like 1/accum.  The accum-2 smoke read 33.1 % in its only
+    post-start-up window while the launch-argv run read 2.8-5.0 %; a stall bar judged on the smoke can never pass on any pod.
+    Returns the failure reasons."""
     r = []
     if arm_is("lab_two_workers", arm):
         lab = dict(lab, workers=2, throughput_sets_s=lab.get("throughput_sets_s", 0.0) * 2.0 / max(lab.get("workers", 2), 1))
@@ -1360,9 +1379,22 @@ def judge_lab(lab: dict, smoke_metrics: list, workers_launch: int, arm=None) -> 
         sets, lab_n = sum(e["sets"] for e in ev), sum(e["labelled"] for e in ev)
         if sets == 0 or lab_n / sets <= 0.0:
             r.append(f"coverage {lab_n}/{sets}: no set was labelled")
-        stall = max(e["stall_frac"] for e in (ev[1:] or ev))        # the first window includes pool start-up; steady state is judged
+    # the L1 stall bar, at the LAUNCH accumulation (R42): never on the smoke, whose 2-micro-batch windows are drain-dominated
+    sm = steady_metrics or []
+    sev = [m for m in sm if m.get("event") == "labeller"]
+    s_acc = next((m.get("accum") for m in sm if m.get("event") == "bank"), None)
+    if not sm:
+        r.append("no steady-state stall run (the G-LIVE-MEM metrics): the L1 stall is judged at the launch --accum, never on the accum-2 smoke (R42)")
+    elif launch_accum is None or s_acc != launch_accum:
+        r.append(f"the stall run's accum {s_acc} != the launch argv's --accum {launch_accum}: the stall fraction scales like 1/accum (R42)")
+    elif len(sev) < 1 + LAB_STALL_MIN_WINDOWS:
+        r.append(f"the stall run logged {len(sev)} labeller windows; need >= {1 + LAB_STALL_MIN_WINDOWS} (the first includes pool start-up)")
+    else:
+        if any(set(e.get("lag_hist", {})) - {"0"} for e in sev):
+            r.append(f"label lag != 0 in the stall run: {[e.get('lag_hist') for e in sev][:2]}")
+        stall = max(e["stall_frac"] for e in sev[1:])               # the first window includes pool start-up; steady state is judged
         if stall > LAB_STALL_MAX:
-            r.append(f"GPU stall {100 * stall:.1f} % of a window > {100 * LAB_STALL_MAX:.0f} %")
+            r.append(f"GPU stall {100 * stall:.1f} % of a window > {100 * LAB_STALL_MAX:.0f} % (launch accum {launch_accum}, max over windows after the first)")
     return r
 
 
@@ -1403,15 +1435,25 @@ def _consume(path):
     return json.loads(Path(path).read_text(encoding="utf-8"))
 
 
-def check_live_lab(lab_json, smoke_cap, argv: list, arm=None, rehearsal=False) -> dict:
+def check_live_lab(lab_json, smoke_cap, argv: list, arm=None, rehearsal=False, mem_metrics=None) -> dict:
     import gate_token as GT_
     lab = _consume(lab_json)
     if lab is None:
         return verdict("G-LIVE-LAB", [f"labeller instrument output missing: {lab_json} (run refe/diag_p6_labeller_identity.py on the pod)"], {}, arm=arm,
                        rehearsal=rehearsal)
     w = int((GT_.flag_values(argv, "--label-workers") or ["12"])[0])
-    reasons = judge_lab(lab, smoke_cap.metrics if smoke_cap is not None else [], w, arm=arm)
-    return verdict("G-LIVE-LAB", reasons, {"lab": lab, "file_sha256": GT_.sha256_file(lab_json)}, arm=arm, rehearsal=rehearsal)
+    acc = (GT_.flag_values(argv, "--accum") or [None])[0]
+    launch_accum = int(acc) if acc is not None else None
+    steady = None
+    if mem_metrics and Path(mem_metrics).is_file():
+        steady = [json.loads(ln) for ln in Path(mem_metrics).read_text(encoding="utf-8").splitlines() if ln.strip()]
+    smoke = smoke_cap.metrics if smoke_cap is not None else []
+    reasons = judge_lab(lab, smoke, w, arm=arm, steady_metrics=steady, launch_accum=launch_accum)
+    details = {"lab": lab, "file_sha256": GT_.sha256_file(lab_json),
+               "stall_judged_on": {"mem_metrics_sha256": GT_.sha256_file(mem_metrics) if steady is not None else None, "launch_accum": launch_accum,
+                                   "stall_frac_by_window": [e.get("stall_frac") for e in (steady or []) if e.get("event") == "labeller"]},
+               "smoke_stall_frac_by_window_reported_only": [e.get("stall_frac") for e in smoke if e.get("event") == "labeller"]}
+    return verdict("G-LIVE-LAB", reasons, details, arm=arm, rehearsal=rehearsal)
 
 
 def check_live_mem(mem_metrics, arm=None, rehearsal=False) -> dict:

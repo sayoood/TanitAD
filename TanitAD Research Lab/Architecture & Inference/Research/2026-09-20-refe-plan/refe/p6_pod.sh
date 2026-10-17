@@ -191,6 +191,9 @@ fi
 source "$WORK/teacher_env.sh"
 PY="$DRIVERL_EVAL_PYTHON"; export PKG
 export REFE_BACKBONE_ROOT="$DATA/backbones" PYTHONUNBUFFERED=1
+# R43 (MEASURED 2026-10-16, this pod): a gate smoke died CUDA OOM with 5.79 GiB reserved-but-unallocated beside 37.72 GiB allocated; the launch
+# argv peaks at 41.29 GiB allocated of 44.43, so fragmentation alone can end a 7-day run.  The gate, every instrument and the launch inherit it.
+export PYTORCH_CUDA_ALLOC_CONF="${PYTORCH_CUDA_ALLOC_CONF:-expandable_segments:True}"
 CG="$(cgroup_cores)"; CORES="${CG%%|*}"; CORES_SRC="${CG#*|}"
 # labeller pool: leave 4 vCPU for the trainer, its loaders and IPC (M-LAB sizing); at most 16
 LW="${P6_LABEL_WORKERS:-$(( CORES - 4 < 1 ? 1 : (CORES - 4 > 16 ? 16 : CORES - 4) ))}"

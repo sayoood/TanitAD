@@ -168,6 +168,8 @@ PROFILES = {
                 # G-LIVE-LAB / G-LIVE-MEM / G-EGR are POD-RUN: the gate consumes their instruments' output (--gate-lab-json / --gate-mem-metrics / --gate-egr-json)
                 "checks": ("G-HYG", "G-DVB", "G-LIVE", "G-CLOCK", "G-EVAL", "G-CKPT", "G-SUITE", "G-LIVE-LAB", "G-LIVE-MEM", "G-EGR"), "na_ok": (),
                 "live_terms": P6_TERMS,
+                # R44: G-CKPT's round trip at micro-batch 2 x accum 4 (the smoke's effective 8): batch 4 under deterministic kernels needs >= 43.70 GiB of 44.43
+                "ckpt_micro_batch": 2,
                 "forbidden_flags": FORBIDDEN + ("--grow", "--grow-scenes", "--onpolicy-targets", "--init-from", "--pdm-labels", "--pdm-only",
                                                 "--scorer-mode", "--label-backend"),
                 # --yaw-wrap must be NAMED in the argv AND carry the PI's ruling P6-Y (2026-10-11): "off" = unwrapped yaw L1, the paper's literal reading (on = the wrapped
@@ -613,13 +615,21 @@ def run_checks(prof: dict, argv: list, pkg: Path, out_dir: Path, *, only=None, a
             emit(C.evidence("G-CLOCK", "NA", [prof.get("clock_na", "no label clock in this profile")], {}, arm=arm, rehearsal=rehearsal))
         return status
     b_argv, s_argv = derived_argvs(prof, argv, work, gate_sets, gate_pdm, gate_bank)
+    prof2 = dict(prof)
+    # G-CKPT runs FIRST (R43, MEASURED 2026-10-16, P6 pod): its round trip runs two real trainings in SUBPROCESSES, and the CUDA context this
+    # process opens for the build/smoke (394-474 MiB, which no free can release) is taken from them.  P6's compile-free smoke needs > 43.6 GiB
+    # ALLOCATED of the A40's 44.43: U and H1 died OOM with the smoke freed (0.00-0.14 GiB reserved), with and without expandable_segments.
+    # check_ckpt reads only s_argv + the profile, never the build or the smoke capture, so running it before them changes none of its inputs.
+    ckpt_ev = None
+    if "G-CKPT" in want:
+        _log_gpu_reserved("before G-CKPT")
+        ckpt_ev = C.check_ckpt(s_argv, work / "ckpt", prof2, arm=arm, rehearsal=rehearsal)
     need_b = any(c in want for c in ("G-DVB", "G-CLOCK"))
     need_s = any(c in want for c in ("G-LIVE", "G-EVAL", "G-DVB", "G-LIVE-LAB"))
     b = C.instrumented_run(b_argv, mode="build", work=work / "build", arm=arm) if need_b else None
     if b is not None:
         _free(b)                      # the BUILD model is not needed again (a second ViT-L would sit on the pod's GPU through the smoke)
     s = C.instrumented_run(s_argv, mode="smoke", work=work / "smoke", arm=arm) if need_s else None
-    prof2 = dict(prof)
     if "G-HYG" in want:
         emit(C.check_hyg(arm=arm, rehearsal=rehearsal))
     if "G-DVB" in want:
@@ -631,18 +641,14 @@ def run_checks(prof: dict, argv: list, pkg: Path, out_dir: Path, *, only=None, a
     if "G-EVAL" in want:
         emit(C.check_eval(s_argv, s, prof2, arm=arm, rehearsal=rehearsal))
     if "G-CKPT" in want:
-        # the round trip runs TWO real trainings in subprocesses: the smoke model, its optimizer and the caching allocator behind them
-        # must leave THIS process's GPU first (MEASURED 2026-10-12, P2 pod: this process held 24.11 GiB, U and H1 both died CUDA OOM on 44 GiB)
-        if s is not None:
-            _free(s, deep=True)
-        _log_gpu_reserved("before G-CKPT")
-        emit(C.check_ckpt(s_argv, work / "ckpt", prof2, arm=arm, rehearsal=rehearsal))
+        # computed FIRST, above (R43; the 2026-10-12 P2 fix, a deep free of the smoke before check_ckpt, left the context behind)
+        emit(ckpt_ev)
     if "G-SUITE" in want:
         emit(suite_check(prof2, pkg, evidence=suite_evidence, key=key, commit=commit, arm=arm, rehearsal=rehearsal))
     if "G-P2GATE" in want:
         emit(consume_p2_gate(p2_gate_json, arm=arm, rehearsal=rehearsal))
     if "G-LIVE-LAB" in want:
-        emit(C.check_live_lab(lab_json, s, argv, arm=arm, rehearsal=rehearsal))
+        emit(C.check_live_lab(lab_json, s, argv, arm=arm, rehearsal=rehearsal, mem_metrics=mem_metrics))     # the L1 stall: on the launch-accum run (R42)
     if "G-LIVE-MEM" in want:
         emit(C.check_live_mem(mem_metrics, arm=arm, rehearsal=rehearsal))
     if "G-EGR" in want:
@@ -670,7 +676,9 @@ def _log_gpu_reserved(when: str) -> None:
     try:
         import torch
         if torch.cuda.is_available():
-            print(f"  GPU reserved by the gate process {when}: {torch.cuda.memory_reserved() / 2 ** 30:.2f} GiB", flush=True)
+            init = torch.cuda.is_initialized()
+            res = torch.cuda.memory_reserved() / 2 ** 30 if init else 0.0
+            print(f"  GPU reserved by the gate process {when}: {res:.2f} GiB (CUDA initialised in this process: {init})", flush=True)
     except Exception:                                                        # noqa: BLE001 -- evidence only
         pass
 
