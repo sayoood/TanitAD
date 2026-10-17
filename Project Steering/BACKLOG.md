@@ -530,3 +530,10 @@ register rows carry them. The fix itself cannot close the following:
 | S4R-2 | **The nesting guard protects every profile, but its test runs only in `SFT4R_SUITE`.** Decide whether `test_suite_nesting.py` joins the common SUITE (+10 s per G-SUITE and a new suite binding for every profile). | S4R-1 / 0 GPU |
 | P2F-1 | **P2 full 64-proposal table is GPU-starved on the dev box**: 4 of 14 chunks done (fidelity gates PASS), waiting > 19 h for the dev-box GPU lock (held in turn by other sessions' jobs). The SELRULE-DAC confirm waits on it (watcher re-armed 48 h). | a free dev-box GPU, or port the dump to the pod / 1 small GPU |
 
+## Added 2026-10-17 later (Master Mind)
+
+| # | item | unblocked by / GPU |
+|---|---|---|
+| SO-A16 | `test_launch_gate.py:339` calls a bare `bash`, which Windows resolves to the WSL launcher, so the full-form test fails on the dev box without the safety build's `sitecustomize_bash.py` shim. Call Git/POSIX bash by an absolute path, or skip when `shutil.which('bash')` is the WSL launcher. | the safety-objective build landing / 0 GPU |
+| SO-G | After EACH SAFEOBJ arm: the B − own-A `rl_val_eval.py --base A` read bar G needs (PREREG_SAFEOBJ addendum 1 R1; the chain does not write it). Keep the arm's u1000 dumps until it is banked. | the arm / 0 GPU (CPU read) |
+| LAB-D | **The daily Research Lab run lapsed after LAB-RUN-017 (2026-09-20)**: about four weeks with no Lab run. Restarted as LAB-RUN-018 on 2026-10-17 (constrained-RL levers for SAFEOBJ O4/O5, NAVSIM scorer-based state of the art). The Master Mind triggers it daily; a missed day is a stream lost. | nothing / 0 GPU |
