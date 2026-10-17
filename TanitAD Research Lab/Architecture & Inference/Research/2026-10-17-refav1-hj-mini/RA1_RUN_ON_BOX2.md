@@ -33,6 +33,8 @@ set "CUDA_VISIBLE_DEVICES="
 
 Single-arm form (what the queue runs): `python stack\scripts\ra1_hjepa_train.py --arm A1 --beta 0.08 --gamma 100 --seed 0 --grid 4x10 --holdout-n 60 --cache D:\tanitad\cache --p10-prior <p10_prior.pt> --out D:\tanitad\runs\ra1\A1_b0.08g100_s0 --steps 6000 --device cuda`
 (`p10_prior.pt` = `...\2026-10-17-v8f-mini\raw\p10\p10_prior.pt`, the steer-unit refit). The secondary 8×20 grid is `--grid 8x20` (A2 estimate 5.5 GB; use `--batch 32` if it OOMs).
+
+⛔ **Superseded by PREREG Amendment 2 (2026-10-17):** RA-1's prior is **P10-540**, `...\2026-10-17-refav1-hj-mini\raw\p10_540\p10_prior.pt` (sha256 `f70b3daa…6a42`), fit on the 540 train clips only, so the 60-clip selection holdout is out of sample for the prior too. The queue already points there; the eval baseline is `p10_540\p10_eval_pred6.npy`.
 Launch detached (the dev-box lesson; UNVERIFIED on Box 2): `powershell -NoProfile -Command "([wmiclass]'Win32_Process').Create('cmd /c \"<queue.cmd> stage1 > D:\tanitad\runs\stage1.log 2>&1\"')"`.
 
 ## 2. Wall time and memory

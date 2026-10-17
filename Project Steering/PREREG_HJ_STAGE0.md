@@ -84,3 +84,19 @@ and each read names which variance it answered (episodes / training seed / infer
 * **`A1h` (EXPLORATORY, does not decide H-HJ-SENS-1):** A1 plus history dropout (`--hist-drop`), the copycat remedy (`2010.14876`).
   * Why it was added: post-hoc, the RA-0 write-up found that rho does not corroborate an operative-level encoder collapse (H-HJ-COLLAPSE-1, `2e4fe68`).
   * Its test proves that the history is really dropped.
+
+## Amendment 2 (2026-10-17, night, before any RA-1 data): RA-1's frozen P10 prior is refit on the 540 TRAIN clips (P10-540)
+
+* **The defect.** RA-1's residual base was the shared P10-600, fit on the first 600 clips in sha12 order. Those include the 60 holdout clips that Amendment 1 selects the A1 cell on. So the prior is **in sample** on the selection set, and cells that correct P10 less would look better there.
+* **The rule was fixed before measuring:** "if |ADE6(P10-600) − ADE6(P10-540)| on the holdout < 0.0213 m (P10's training-seed floor, S1), keep P10-600; otherwise switch RA-1 to P10-540". It was written into the probe's docstring before the run (`…/2026-10-17-refav1-hj-mini/code/p10_holdout_gap.py`).
+* **MEASURED** (`raw/p10_540/p10_holdout_gap.json`):
+  * same code, seed 0, steer unit, stride 8;
+  * holdout = the last 60 of the picker's 600 (asserted equal to `raw/s4b/clips600.txt` [540:600]);
+  * 540 windows / 60 clusters, paired episode-cluster bootstrap, B = 2,000 (episode variance only).
+  * `ADE6(P10-600) − ADE6(P10-540)` = **−0.0356 m [−0.0680, −0.0069]**: separated and above the floor ⇒ **SWITCH**.
+  * Part of the gap is model selection: the inner CV picks wd 1e-4 at 600 clips and 1e-2 at 540. This is disclosed, and it is the in-sample advantage the rule exists to remove.
+* **Out of sample the switch costs nothing.** On eval-141 (2,399 windows), P10-540 scores ADE@6 s **2.5560 m** against 2.5744 for P10-600, and the first 10 knots (2 s) score 0.2169 against 0.2187.
+* **Binding:**
+  * every RA-1 arm uses `raw/p10_540/p10_prior.pt` (sha256 `f70b3daa07bc911c72cfb56cafbd4cfc20d0304c4c6eec2b08b22830dafe6a42`);
+  * the eval's P10 baseline is `raw/p10_540/p10_eval_pred6.npy`.
+  * The v8F-mini prereg is unaffected: it keeps P10-600, which is out of sample on eval-141, and it has no train holdout.
