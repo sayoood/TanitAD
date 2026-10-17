@@ -113,8 +113,10 @@ def a_batch(bank, world, step=0, b=4):
 
 
 def run_train(world, arm, out, seed=0, steps=3, extra=()):
+    # these tests exercise the LEGACY steer representation explicitly (PI ruling D-PI-YAWRATE-1: the trainer's default is now `yaw`);
+    # the compliant mode is covered by test_yaw_rate_ruling.py
     argv = ["--arm", arm, "--seed", str(seed), "--cache", world["root"], "--p10-prior", world["prior_path"], "--out", str(out),
-            "--steps", str(steps)] + TINY_FLAGS + ARM_FLAGS[arm] + HOLD_FLAGS + list(extra)
+            "--steps", str(steps), "--kin-mode", "steer"] + TINY_FLAGS + ARM_FLAGS[arm] + HOLD_FLAGS + list(extra)
     return TR.main(argv)
 
 
@@ -356,7 +358,7 @@ def test_resume_after_a_crash_equals_the_uninterrupted_run(world, tmp_path, monk
     assert all(torch.equal(a[k], b[k]) for k in a), "resume must reproduce the uninterrupted run exactly"
     with pytest.raises(SystemExit, match="different configuration"):  # a changed configuration is refused
         TR.main(["--arm", "A1h", "--seed", "5", "--cache", world["root"], "--p10-prior", world["prior_path"], "--out",
-                 str(tmp_path / "crash"), "--steps", "6"] + TINY_FLAGS + ARM_FLAGS["A1h"] + HOLD_FLAGS)
+                 str(tmp_path / "crash"), "--steps", "6", "--kin-mode", "steer"] + TINY_FLAGS + ARM_FLAGS["A1h"] + HOLD_FLAGS)
 
 
 def test_post_training_audit_names_a_parameter_that_never_got_a_gradient(world, tmp_path):
@@ -370,7 +372,7 @@ def test_post_training_audit_names_a_parameter_that_never_got_a_gradient(world, 
 
 def test_launch_gate_refuses_a_silent_a0(world, tmp_path):
     assert TR.main(["--arm", "A1", "--cache", world["root"], "--p10-prior", world["prior_path"], "--out", str(tmp_path / "x"),
-                    "--steps", "2", "--beta", "0.08"] + TINY_FLAGS + HOLD_FLAGS) == 2      # --gamma unnamed => REFUSED, no training
+                    "--steps", "2", "--beta", "0.08", "--kin-mode", "steer"] + TINY_FLAGS + HOLD_FLAGS) == 2      # --gamma unnamed => REFUSED, no training
     assert not (tmp_path / "x" / "final.pt").exists()
 
 
@@ -460,7 +462,7 @@ def test_holdout_refusals():
 
 def _train_argv(world, arm, out, extra):
     return ["--arm", arm, "--seed", "0", "--cache", world["root"], "--p10-prior", world["prior_path"], "--out", str(out),
-            "--steps", "2"] + TINY_FLAGS + ARM_FLAGS[arm] + list(extra)
+            "--steps", "2", "--kin-mode", "steer"] + TINY_FLAGS + ARM_FLAGS[arm] + list(extra)
 
 
 def test_trainer_refuses_to_run_without_holdout_n_and_with_an_unusable_one(world, tmp_path, capsys):

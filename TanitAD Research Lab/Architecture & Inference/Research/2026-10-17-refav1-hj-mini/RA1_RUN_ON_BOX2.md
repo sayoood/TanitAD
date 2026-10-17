@@ -1,5 +1,14 @@
 # RA-1 on Box 2 — job file (refav1-HJ mini: R0 / A0 / A1 / A2 / A1x, + exploratory A1h)
 
+## ⛔ READ FIRST — PI ruling `D-PI-YAWRATE-1` (2026-10-17, `PREREG_HJ_STAGE0.md` Amendment 3): this job file now runs the MEASURED-YAW-RATE representation
+
+*"the model should get measured ego motion and its history, instead of steering angle which represents a sort of action, the model should get the measured yaw rate"*. Every line below that says `steer`, `p10_540` or `runs\ra1` describes the RETIRED representation. The steer runs launched on box 2 at 2026-10-17 22:35 are **NON-DECIDING**: a representation-equivalence check against the compliant runs, nothing else.
+* **Queue:** `code\ra1_box2_queue.cmd` passes `--kin-mode yaw --tracks %CACHE%\native_tracks.pt` on every trainer and eval call, uses `…\raw\p10_yaw540\p10_prior.pt` (P10-yaw-540), and writes to `D:\tanitad\runs\ra1_yaw`. Never point it at `runs\ra1`: a steer `eval.json` there would make a compliant job "skip as done".
+* **One new file next to the cache:** `D:\tanitad\cache\native_tracks.pt` (16,591,688 bytes, sha256 `1db431f112b1bd7c426073c43c7df5fc75b2a032736c1e2020f02ffb118669e7`): the raw 10 Hz pose tracks of the 4,572 train and 141 eval clips. The cache holds only the even frames and the one-frame yaw difference needs the odd ones. Rebuild with `python stack\scripts\build_native_tracks.py --out native_tracks.pt`; the loader REFUSES a track that does not reproduce the clip's own `pose_grid`, and the queue refuses to start without the file.
+* **Preflight now also runs** `stack\tests\test_yaw_rate_ruling.py` (26 tests, CPU) beside `test_ra1_hjepa.py` and `test_hjepa.py`.
+* **The action vector is `(a, yaw_rate, v)`** and SENS reads `yaw_rate` (bar unchanged: 0.10 at k = 10, standardised). `eval` reads the checkpoint's own representation; `verdict` REFUSES a verdict that mixes steer and yaw runs and stamps `deciding: false` on a steer-only one.
+* **Reference numbers (eval-141, MEASURED):** P10-yaw-540 ADE@6 s 2.5627 m and ADE@2 s 0.2185 m, against the retired steer P10-540 at 2.5560 m and 0.2169 m (paired Δ +0.0067 m [-0.0154, 0.0302], not separated). The queue passes `--p10-ref-pred …\p10_yaw540\p10_eval_pred6.npy`: the eval's `p10_vs_banked_refit` control must read ~0 on the real cache.
+
 Spec: `Project Steering/PREREG_HJ_STAGE0.md` (H-HJ-SENS-1 / H-HJ-K-1 / H-HJ-COST-1). **No bar is changed.** Box 2 = Windows, RTX 4060 8 GB,
 venv `D:\tanitad\venv`, repo `D:\tanitad\repo`, cache `D:\tanitad\cache\{train,eval}` (the S4 pooled cache; `train` = 600 clips first).
 Code: `stack/tanitad/models/ra1_hjepa.py`, `stack/tanitad/data/ra1_pooled.py`, `stack/scripts/ra1_hjepa_{train,eval}.py`,

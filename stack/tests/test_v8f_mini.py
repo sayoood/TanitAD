@@ -460,7 +460,7 @@ def _built(a, J, **over):
     mu, sd = M.cons_stats(J)
     model = M.V8FMini(cfg, M.P10Prior.synthetic(0), mu, sd)
     opt = torch.optim.AdamW([p for p in model.parameters() if p.requires_grad], lr=a.lr, weight_decay=a.wd)
-    info = {"n_clips": 6, "n_clips_expected": 6, "batch": a.batch, "md5_overridden": True}
+    info = {"n_clips": 6, "n_clips_expected": 6, "batch": a.batch, "md5_overridden": True, "kin_mode": a.kin_mode, "p10_units": None}
     return cfg, model, opt, info
 
 
@@ -489,6 +489,18 @@ def test_declared_vs_built_passes_for_every_arm_and_refuses_lies(world):
     a = _args(["--arm", "M1", "--w-pen", "0"])
     cfg, model, opt, info = _built(a, J)
     assert any("does nothing" in m for m in TR.declared_vs_built(a, cfg, model, opt, info))
+    # PI ruling D-PI-YAWRATE-1: the data store built in the OTHER representation than the one declared is refused, as is a prior whose
+    # declared units are not the mode's, and a WM channel-1 scale that is not the mode's
+    a = _args(["--arm", "M1", "--kin-mode", "yaw"])
+    cfg, model, opt, info = _built(a, J)
+    assert TR.declared_vs_built(a, cfg, model, opt, info) == []
+    assert any("kin_mode" in m for m in TR.declared_vs_built(a, cfg, model, opt, dict(info, kin_mode="steer")))
+    assert any("P10 units" in m for m in TR.declared_vs_built(a, cfg, model, opt, dict(info, p10_units="steer")))
+    a = _args(["--arm", "M2a", "--kin-mode", "yaw"])
+    cfg, model, opt, info = _built(a, J)
+    assert TR.declared_vs_built(a, cfg, model, opt, info) == []
+    model.wm.ch1_scale = M.CH1_SCALE["steer"]                                   # built the steer scale under a yaw declaration
+    assert any("scale" in m for m in TR.declared_vs_built(a, cfg, model, opt, info))
     # a data fraction that was not applied
     a = _args(["--arm", "M1", "--data-frac", "0.5"])
     cfg, model, opt, info = _built(a, J)
@@ -545,9 +557,10 @@ def test_live_check_goes_red_on_a_deliberately_broken_model(world):
 
 
 # ------------------------------------------------------------------------------------------------ end to end
-def test_end_to_end_train_resume_eval(world, tmp_path, monkeypatch):
+@pytest.mark.parametrize("kin_mode", ["yaw", "steer"])      # PI ruling D-PI-YAWRATE-1: the compliant mode AND the legacy one end to end
+def test_end_to_end_train_resume_eval(world, tmp_path, monkeypatch, kin_mode):
     common = ["--synthetic", "--batch", "8", "--d", "32", "--n-q", "2", "--steps", "8", "--log-every", "4", "--warmup", "2",
-              "--ckpt-every", "4", "--threads", "1", "--seed", "5"]
+              "--ckpt-every", "4", "--threads", "1", "--kin-mode", kin_mode, "--seed", "5"]
     full = tmp_path / "full"
     assert TR.main(["--out", str(full), *common]) == 0
     s = json.load(open(full / "summary.json"))
@@ -576,8 +589,9 @@ def test_end_to_end_train_resume_eval(world, tmp_path, monkeypatch):
     rc = EV.main(["run", "--ckpt", str(full / "ckpt_last.pt"), "--tag", "t", "--eval-cache", str(root),
                   "--eval-grid", str(root / "eval_grid_windows.json"), "--eval-kin", str(root / "eval_kin.npz"),
                   "--eval-join", str(root / "join_eval.npz"), "--out-dir", str(out), "--n-boot", "50", "--batch", "16",
-                  "--lru", "4", "--project"])
+                  "--lru", "4", "--project", "--tracks", str(root / "native_tracks.pt")])
     assert rc == 0
+    assert json.load(open(out / "eval_t.json"))["kin_mode"] == kin_mode
     r = json.load(open(out / "eval_t.json"))["raw"]
     z = np.load(out / "eval_t.npz")
     assert np.isfinite(z["pred"]).all() and z["pred"].shape[1:] == (30, 2)

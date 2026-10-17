@@ -105,3 +105,20 @@ Source: the M1-build package `TanitAD Research Lab/Architecture & Inference/Rese
    * **primary = goal-token macro-F1** over the v9 tactical goal vocabulary, with IGNORE masked. This is the PI's "tactical goals" as a layer output;
    * **reported, not decisive:** lateral and longitudinal macro-F1, plus the confusion matrices.
 5. **Strategic floor numbers.** The nav-only kinematic checkpoint baseline reads **2.01 / 4.82 / 11.15 m** at 30 / 50 / 80 m of arc.
+
+## Amendment 3 (2026-10-17, late night, before any M-arm data): the three-layer v8F-mini gets the MEASURED YAW RATE, not the steer angle (PI ruling `D-PI-YAWRATE-1`)
+
+* **The ruling (PI, verbatim):** *"the model should get measured ego motion and its history, instead of steering angle which represents a sort of action, the model should get the measured yaw rate"*. Same finding as `PREREG_HJ_STAGE0.md` Amendment 3: `actions[:, 0]` is `atan(2.9 · measured curvature)`, measured motion in an action's units, so it is **re-expressed, not deleted**.
+* **Where the steer reached the model** (audit of `v8f_mini.py` and the data layer): the eight P10 features `p10f` (read by the ego token and by the prior), the `kd_x` `base`, and the WM auxiliary's action channel 1 (M2a / M2b only). No other input.
+* **Binding:**
+  * **P10-yaw-600 replaces P10-600** as the residual base and as the reference every H-MINI bar is read against. Features `(v0, a0, κ0)` with `κ0` from the measured yaw rate (`kin_mode="yaw"`, the `p10_pose` triple), `kd_x` integrated as a curvature. Recipe, clips (first 600 by sha12), stride 8 and seed 0 are unchanged.
+  * The WM auxiliary's action channel 1 is the measured yaw rate (scale 0.4 rad/s; the steer scale was 0.3 rad).
+  * The trainer and the evaluator default to `--kin-mode yaw`, need `--tracks native_tracks.pt`, and REFUSE a prior whose declared units are not the mode's. The floors are named `kd_x_yaw` / `damp50_yaw`.
+* **Reference numbers, MEASURED** (eval-141, 2,399 windows, `raw/p10_yaw/p10_fit.json`, `…/2026-10-17-refav1-hj-mini/raw/p10_yaw_vs_steer.json`):
+  * 6 s ADE **2.5817 m** [2.3285, 2.8410], against 2.5744 m for the steer P10-600 of Amendment 2;
+  * 2 s ADE (first 10 knots) **0.2201 m**, against 0.2187 m;
+  * 6 s FDE 8.035 m; the yaw `kd_x` reads 2.9444 m;
+  * paired `yaw − steer`: **+0.0074 m [-0.0140, 0.0306]** at 6 s, **not separated** (episode-cluster bootstrap, B = 2,000: episode variance only).
+  * ⇒ **H-MINI-K-1 is read against 2.5817 m**, not 2.5744. **This bar is 0.0073 m looser than Amendment 2's.** Amendment 1's "stricter, never looser" does not hold here; the loosening is the measured price of complying with the ruling, it is disclosed, and no M-arm exists to have been tuned against it.
+* **No M-arm has been trained** under either representation (INHERITED from Amendment 2, not re-verified here); the steer representation remains selectable with `--kin-mode steer` for reproduction only and decides nothing.
+* **Guards:** `stack/tests/test_yaw_rate_ruling.py` plus the parametrised end-to-end in `test_v8f_mini.py`; the deliberate-regression arms and the source mutations are the ones listed in `PREREG_HJ_STAGE0.md` Amendment 3.

@@ -65,6 +65,7 @@ FLAG_CHECKS = {
     "w_cons": "cfg:w_cons", "w_traj": "cfg:w_traj", "w_pen": "cfg:w_pen", "w_pen_self": "cfg:w_pen_self",
     "w_wm": "cfg:w_wm", "detach_upper": "cfg:detach_upper", "synthetic": "run", "selfcheck_only": "run",
     "fit_join": "run", "workers": "run", "clip_grad": "opt:clip_grad", "threads": "run",
+    "kin_mode": "cfg:kin_mode", "tracks": "path",
 }
 
 
@@ -82,7 +83,13 @@ def build_parser():
     ap.add_argument("--lead-train", default="D:/Projects/TanitAD-artifacts/v9labels/inputs/lead_train.npz")
     ap.add_argument("--join-train", default=None, help="a prebuilt join npz (else built from the v9 release)")
     ap.add_argument("--fit-join", action="store_true", help="(re)build the join even if --join-train exists")
-    ap.add_argument("--p10", default=os.path.join(PKG, "raw", "p10", "p10_prior.pt"))
+    ap.add_argument("--p10", default=None, help="the frozen P10 prior; default = the one for --kin-mode (yaw: raw/p10_yaw, steer: raw/p10). "
+                    "Its declared units must match --kin-mode or the launch is REFUSED")
+    ap.add_argument("--kin-mode", choices=D.KIN_MODES, default="yaw",
+                    help="PI ruling D-PI-YAWRATE-1 (2026-10-17): yaw (default) = the model gets the MEASURED yaw rate (P10 features, kd_x base and "
+                         "the WM action channel 1 from the native pose track); steer = the legacy recorded-steer representation")
+    ap.add_argument("--tracks", default=None, help="native_tracks.pt (build_native_tracks.py): REQUIRED for --kin-mode yaw (the cache holds only "
+                    "the even frames); the synthetic world writes its own")
     ap.add_argument("--grid", choices=("pool4x10", "pool8x20"), default="pool4x10")
     ap.add_argument("--data-frac", type=float, default=1.0)
     ap.add_argument("--max-clips", type=int, default=0, help="smoke: cap the TRAIN clips (0 = all)")
@@ -142,7 +149,7 @@ def make_config(a) -> M.V8FMiniConfig:
                            consistency=lv["consistency"], wm=lv["wm"], n_tok=40 if a.grid == "pool4x10" else 160,
                            p_gt_start=a.p_gt_start, p_gt_end=a.p_gt_end, w_ckpt=a.w_ckpt, w_tac=a.w_tac,
                            w_cons=a.w_cons, w_traj=a.w_traj, w_pen=a.w_pen, w_pen_self=a.w_pen_self, w_wm=a.w_wm,
-                           detach_upper=a.detach_upper)
+                           detach_upper=a.detach_upper, kin_mode=a.kin_mode)
 
 
 def declared_vs_built(a, cfg, model, opt, data_info) -> list:
@@ -161,8 +168,16 @@ def declared_vs_built(a, cfg, model, opt, data_info) -> list:
         bad.append("the P10 prior is not frozen")
     if model.cfg.n_tok != (40 if a.grid == "pool4x10" else 160):
         bad.append(f"grid {a.grid} declared but n_tok built {model.cfg.n_tok}")
+    # PI ruling D-PI-YAWRATE-1: the mode the model was built for, the mode the DATA was built in and the mode the PRIOR's units say
+    # must be one and the same (a steer prior fed yaw features is a silently wrong model).
+    if data_info.get("kin_mode") != a.kin_mode:
+        bad.append(f"kin_mode: declared {a.kin_mode} but the data store was built {data_info.get('kin_mode')}")
+    if data_info.get("p10_units") not in (None, D.P10_META_UNITS[a.kin_mode]):
+        bad.append(f"P10 units {data_info.get('p10_units')} do not match kin_mode {a.kin_mode} (needs {D.P10_META_UNITS[a.kin_mode]})")
+    if built["wm"] != "off" and built["wm_ch1_scale"] != M.CH1_SCALE[a.kin_mode]:
+        bad.append(f"WM action channel 1 scale {built['wm_ch1_scale']} != {M.CH1_SCALE[a.kin_mode]} for kin_mode {a.kin_mode}")
     for f in ("hist", "hmax", "d", "n_q", "nb", "p_gt_start", "p_gt_end", "w_ckpt", "w_tac", "w_cons", "w_traj", "w_pen",
-              "w_pen_self", "w_wm", "detach_upper"):
+              "w_pen_self", "w_wm", "detach_upper", "kin_mode"):
         want = {"hist": a.hist, "hmax": cfg.hmax, "d": a.d, "n_q": a.n_q, "nb": a.nb}.get(f, getattr(a, f, None))
         got = getattr(model.cfg, f)
         if want is not None and not (got == want or (isinstance(want, float) and abs(got - want) < 1e-12)):
@@ -281,7 +296,14 @@ def build_data(a, cfg):
     info.update({"n_clips": len(clips), "n_clips_expected": expected, "n_clips_all": len(clips_all)})
     lru = a.lru or max(8, int(1.5e9 // (J["n"].max() * cfg.n_tok * 1024 * 2)))
     info["lru"] = lru
-    store = D.ClipStore(cache, "train", lru=lru, grid=a.grid)
+    tracks = None
+    if a.kin_mode == "yaw":
+        tpath = os.path.join(cache, "native_tracks.pt") if a.synthetic else a.tracks
+        if not tpath:
+            raise SystemExit("REFUSED: --kin-mode yaw needs --tracks native_tracks.pt (build_native_tracks.py): the cache holds only the even frames")
+        tracks = D.load_native_tracks(tpath)
+    info["kin_mode"] = a.kin_mode
+    store = D.ClipStore(cache, "train", lru=lru, grid=a.grid, kin_mode=a.kin_mode, tracks=tracks)
     allw = D.train_windows(store, J, clips_all, hist=cfg.hist)
     wins = D.train_windows(store, J, clips, hist=cfg.hist)
     info.update({"n_windows_all_clips": len(allw), "n_windows": len(wins)})
@@ -324,6 +346,8 @@ def argv_sha(argv) -> str:
 def main(argv=None):
     argv = list(sys.argv[1:] if argv is None else argv)
     a = build_parser().parse_args(argv)
+    if a.p10 is None:
+        a.p10 = os.path.join(PKG, "raw", "p10_yaw" if a.kin_mode == "yaw" else "p10", "p10_prior.pt")
     if a.threads:
         torch.set_num_threads(a.threads)
     os.makedirs(a.out, exist_ok=True)
@@ -332,6 +356,12 @@ def main(argv=None):
     torch.manual_seed(a.seed)
     np.random.seed(a.seed)
     store, J, wins, clips, info = build_data(a, cfg)
+    info["p10_units"] = None if a.synthetic else M.p10_meta(a.p10).get("units", "steer")
+    if not a.synthetic:
+        try:
+            M.check_p10_units(a.p10, a.kin_mode)                 # REFUSES a prior whose declared units are not this mode's
+        except ValueError as e:
+            raise SystemExit(f"ZZDVB-REFUSEDZZ {e}")
     ds = D.V8FMiniWindows(store, J, wins, hist=cfg.hist, hmax=cfg.hmax, max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s)
     prior = M.load_p10(a.p10) if not a.synthetic else M.P10Prior.synthetic(a.seed)
     mu, sd = M.cons_stats(J)

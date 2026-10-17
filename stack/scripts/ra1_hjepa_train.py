@@ -43,7 +43,9 @@ import torch  # noqa: E402
 from tanitad.data import ra1_pooled as RD  # noqa: E402
 from tanitad.data import v8f_mini_data as D  # noqa: E402
 from tanitad.models import ra1_hjepa as R  # noqa: E402
-from tanitad.models.v8f_mini import load_p10  # noqa: E402
+from tanitad.models.v8f_mini import load_p10, p10_meta  # noqa: E402
+
+P10_UNITS_OF = lambda path: p10_meta(path).get("units", "steer")  # noqa: E731
 
 NOT_IN_HASH = {"out", "resume", "log_every", "ckpt_every", "device", "check_only", "no_resume", "est_vram_only"}
 
@@ -60,7 +62,14 @@ def build_parser():
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--grid", default="4x10", choices=sorted(R.GRIDS))
     ap.add_argument("--cache", required=True, help="cache root holding train/ (and eval/) from pull_encode_pooled.py")
-    ap.add_argument("--p10-prior", required=True, help="p10_prior.pt (v8f_mini_fit_p10.py, steer unit): the FROZEN residual prior")
+    ap.add_argument("--p10-prior", required=True, help="p10_prior.pt (v8f_mini_fit_p10.py): the FROZEN residual prior; its declared units must "
+                    "match --kin-mode (pose_kappa for yaw, steer for steer) or the launch is REFUSED")
+    ap.add_argument("--kin-mode", choices=D.KIN_MODES, default="yaw",
+                    help="PI ruling D-PI-YAWRATE-1 (2026-10-17): yaw (default) = the model gets the MEASURED yaw rate (kinematics, P10 features, "
+                         "kd_x base and action channel 1 from the native pose track); steer = the legacy recorded-steer representation "
+                         "(NON-DECIDING since the ruling; kept to evaluate the in-flight 2026-10-17 runs)")
+    ap.add_argument("--tracks", default=None, help="native_tracks.pt (build_native_tracks.py): REQUIRED for --kin-mode yaw (the cache holds "
+                    "only the even frames; the one-frame yaw difference needs the odd ones)")
     ap.add_argument("--out", required=True)
     ap.add_argument("--n-clips", type=int, default=0, help="train clips = first N by sha12 (0 = all in the manifest), MINUS the holdout")
     ap.add_argument("--holdout-n", type=int, required=True,
@@ -98,11 +107,15 @@ def config_from_args(a, d_feat: int) -> R.RA1Config:
                        d1=a.d1, d_up=a.d_up, macro_dim=a.macro_dim, enc_hidden=a.enc_hidden, pred_width=a.pred_width,
                        pred_depth=a.pred_depth, pred_heads=a.pred_heads, context=a.context, stride=a.stride, t1=a.t1,
                        readout_hidden=a.readout_hidden, sigreg_proj=a.sigreg_proj, beta=a.beta, gamma=a.gamma,
-                       beta_up=a.beta_up, gamma_up=a.gamma_up, act_sigreg=a.act_sigreg, w_traj=a.w_traj, hist_drop=a.hist_drop)
+                       beta_up=a.beta_up, gamma_up=a.gamma_up, act_sigreg=a.act_sigreg, w_traj=a.w_traj, hist_drop=a.hist_drop,
+                       kin_mode=a.kin_mode)
 
 
 def args_hash(a) -> str:
     d = {k: v for k, v in sorted(vars(a).items()) if k not in NOT_IN_HASH}
+    if d.get("kin_mode") == "steer":       # LEGACY-COMPATIBLE: a steer run hashes exactly as before the ruling (the key did not exist),
+        d.pop("kin_mode")                  # so the 2026-10-17 steer runs still resume under this code with `--kin-mode steer`
+        d.pop("tracks", None)
     return hashlib.sha256(json.dumps(d, sort_keys=True, default=str).encode()).hexdigest()[:16]
 
 
@@ -143,7 +156,15 @@ def main(argv=None) -> int:
     torch.manual_seed(a.seed)
     np.random.seed(a.seed)
     t_boot = time.time()
-    prior = load_p10(a.p10_prior)
+    try:
+        D.check_kin_mode(a.kin_mode)
+        prior = load_p10(a.p10_prior, a.kin_mode)             # REFUSES a prior whose declared units are not this mode's
+        tracks = D.load_native_tracks(a.tracks) if a.kin_mode == "yaw" and a.tracks else None
+        if a.kin_mode == "yaw" and not tracks:
+            raise ValueError("--kin-mode yaw needs --tracks native_tracks.pt (build_native_tracks.py)")
+    except (ValueError, OSError, KeyError) as e:
+        print(f"[G-HYG] REFUSED: {e}", flush=True)
+        return 2
     train = RD.list_clips(a.cache, "train")
     try:
         names, hold = RD.split_train_holdout([c for c, _ in train], a.n_clips, a.holdout_n, a.holdout_pool)
@@ -172,7 +193,9 @@ def main(argv=None) -> int:
         return 0
 
     # the run's record of what it withheld (PREREG Amendment 1): written BEFORE the gate, so even a refused launch names its split
-    meta = dict(schema="ra1-run-meta-v1", arm=a.arm, seed=a.seed, args_hash=ahash, cache=str(a.cache),
+    meta = dict(schema="ra1-run-meta-v1", arm=a.arm, seed=a.seed, args_hash=ahash, cache=str(a.cache), kin_mode=a.kin_mode,
+                p10_prior=os.path.abspath(a.p10_prior), p10_units=P10_UNITS_OF(a.p10_prior),
+                tracks=(os.path.abspath(a.tracks) if a.tracks else None),
                 holdout=dict(holdout_rec, disjoint_from_train=not (set(hold) & set(names)),
                              rule="the last holdout_n of the first holdout_pool clips in sha12 order, withheld from training for EVERY arm "
                                   "(PREREG_HJ_STAGE0 Amendment 1); the A1 cell is selected on it, never on eval-141"),
@@ -181,7 +204,7 @@ def main(argv=None) -> int:
     print(f"[ra1] holdout: {len(hold)} clips withheld from training (sha256 {holdout_rec['sha256'][:12]}); "
           f"{len(names)} train clips (sha256 {holdout_rec['train_sha256'][:12]})", flush=True)
 
-    bank = RD.ClipBank(a.cache, "train", prior, a.grid)
+    bank = RD.ClipBank(a.cache, "train", prior, a.grid, a.kin_mode, tracks)
     resident = RD.chunk_clips(names, a.seed, start, a.chunk_clips, a.chunk_steps)
     bank.load(resident)
     d_feat = bank.clips[resident[0]]["pool"].shape[-1]
@@ -213,6 +236,11 @@ def main(argv=None) -> int:
     # ------------------------------------------------------------------ launch gate
     probe = RD.to_device(RD.sample_batch(bank, resident, a.seed, 10 ** 9, min(a.batch, 32), a.t1), device)
     dvb = R.declared_vs_built(cfg, model)
+    # the data side of the same lever (PI ruling D-PI-YAWRATE-1): the bank, the prior and the model all say the same mode
+    want_units = D.P10_META_UNITS[a.kin_mode]
+    dvb += [dict(lever="kin_mode_bank", declared=a.kin_mode, built=bank.kin_mode, ok=bank.kin_mode == a.kin_mode),
+            dict(lever="p10_units", declared=want_units, built=P10_UNITS_OF(a.p10_prior), ok=P10_UNITS_OF(a.p10_prior) == want_units),
+            dict(lever="act_ch1_name", declared=D.CH1_NAMES[a.kin_mode], built=model.act_channels[1], ok=model.act_channels[1] == D.CH1_NAMES[a.kin_mode])]
     live = R.live_report(model, probe, seed=a.seed)
     model.zero_grad(set_to_none=True)
     est = R.estimate_vram_gb(model, RD.to_device(RD.sample_batch(bank, resident, a.seed, 10 ** 9 + 1, a.batch, a.t1), device))

@@ -48,14 +48,15 @@ def build_eval_join(grid, release_path, lead_path, speed_path, kin_npz, expect_m
     return J, rel
 
 
-def ctx_from_args(a):
+def ctx_from_args(a, kin_mode=None):
+    kin_mode = kin_mode or a.kin_mode
     grid = json.load(open(a.eval_grid))
     if os.path.exists(a.eval_join):
         J = D.load_join(a.eval_join)
     else:
         J, _ = build_eval_join(grid, a.v9_eval, a.lead_eval, a.speed_eval, a.eval_kin, a.v9_eval_md5)
         D.save_join(J, a.eval_join)
-    return grid, J, D.eval_context(grid, a.eval_kin, J)
+    return grid, J, D.eval_context(grid, a.eval_kin, J, kin_mode=kin_mode)
 
 
 # ------------------------------------------------------------------------------------------------ metrics
@@ -184,10 +185,11 @@ def cmd_floors(a):
     os.makedirs(outdir, exist_ok=True)
     p10 = np.load(a.p10_pred)
     assert p10.shape == X["gt"].shape, "P10 predictions are not aligned with the grid"
-    floors = {"P10_refit": p10, "kd_x_steer": X["base"]}
+    tag = "steer" if a.kin_mode == "steer" else "yaw"       # the floor names say which representation they are
+    floors = {"P10_refit": p10, f"kd_x_{tag}": X["base"]}
     ha0 = fk.ha0_paths(X["kin"][:, 0], D.DT, D.HORIZON)
-    hx = fk.ha0_ext_paths(X["kin"], D.DT, D.HORIZON, action_units="steer")
-    floors["damp50_steer"] = fk.damp50(ha0, hx)
+    hx = fk.ha0_ext_paths(X["kin"], D.DT, D.HORIZON, action_units=D.KIN_UNITS[a.kin_mode])
+    floors[f"damp50_{tag}"] = fk.damp50(ha0, hx)
     floors["ha0_const_velocity"] = ha0
     # the GT-plan control: the human's own future must violate (almost) nothing
     floors["GT_control"] = X["gt"]
@@ -225,9 +227,14 @@ def cmd_floors(a):
 def cmd_run(a):
     import torch
     from tanitad.models import v8f_mini as M
-    grid, J, X = ctx_from_args(a)
     ck = torch.load(a.ckpt, map_location="cpu", weights_only=False)
-    cfg = M.V8FMiniConfig(**ck["cfg"])
+    cfg = M.V8FMiniConfig(**ck["cfg"])                 # a checkpoint written before the ruling has no kin_mode => steer
+    grid, J, X = ctx_from_args(a, cfg.kin_mode)       # the scoring context is built in the CHECKPOINT's representation
+    tracks = None
+    if cfg.kin_mode == "yaw":
+        if not a.tracks:
+            raise SystemExit("REFUSED: this checkpoint was trained with --kin-mode yaw; run needs --tracks native_tracks.pt")
+        tracks = D.load_native_tracks(a.tracks)
     # the checkpoint is self-contained: the frozen prior's weights and the constraint statistics are in its state dict
     model = M.V8FMini(cfg, M.P10Prior(torch.zeros(8), torch.ones(8), torch.zeros(2 * M.K30)))
     model.load_state_dict(ck["model"])
@@ -235,7 +242,7 @@ def cmd_run(a):
     model.to(dev).eval()
     tot_hmax = cfg.hmax
     ej = D.load_join(a.eval_join)
-    store = D.ClipStore(a.eval_cache, "eval", lru=a.lru, grid=ck.get("grid", "pool4x10"))
+    store = D.ClipStore(a.eval_cache, "eval", lru=a.lru, grid=ck.get("grid", "pool4x10"), kin_mode=cfg.kin_mode, tracks=tracks)
     wins = D.eval_grid_windows(a.eval_grid, ej)
     ds = D.V8FMiniWindows(store, ej, wins, hist=cfg.hist, hmax=tot_hmax, max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s)
     N = len(wins)
@@ -281,7 +288,7 @@ def cmd_run(a):
     extras = {"ckpt": ck_now, "goal_prob": O["goal_prob"], "lat_logits": O["lat_logits"],
               "lon_logits": O["lon_logits"], "cons": cons_dec}
     tag = a.tag
-    res = {"tag": tag, "ckpt": a.ckpt, "ages": a.ages, "nav_shuffle": bool(a.nav_shuffle)}
+    res = {"tag": tag, "ckpt": a.ckpt, "ages": a.ages, "nav_shuffle": bool(a.nav_shuffle), "kin_mode": cfg.kin_mode}
     r, pw = evaluate(O["traj30"].astype(np.float64), X, extras, a.n_boot, with_families=a.families)
     res["raw"] = r
     if a.project:
@@ -420,13 +427,16 @@ def main(argv=None):
         p.add_argument("--speed-eval", default="C:/Users/Admin/qland/landed_hold_datacov/raw/refcv6_speed_max_v8_eval.jsonl")
         p.add_argument("--n-boot", type=int, default=B_BOOT)
         p.add_argument("--families", action="store_true", help="also run taniteval.four_families (slower)")
-        p.add_argument("--p10", default=os.path.join(RAW, "p10", "p10_prior.pt"))
+        p.add_argument("--kin-mode", choices=D.KIN_MODES, default="yaw",
+                       help="PI ruling D-PI-YAWRATE-1: yaw (default; the floors are built on the MEASURED yaw rate, curvature unit) | steer (legacy)")
+        p.add_argument("--p10", default=None, help="default = the prior for --kin-mode (raw/p10_yaw | raw/p10)")
         p.add_argument("--out-dir", default=os.path.join(RAW, "eval"))
     p = sub.add_parser("join"); common(p)
     p = sub.add_parser("floors"); common(p)
-    p.add_argument("--p10-pred", default=os.path.join(RAW, "p10", "p10_eval_pred6.npy"))
+    p.add_argument("--p10-pred", default=None, help="default = raw/p10_yaw/p10_eval_pred6.npy (yaw) | raw/p10/p10_eval_pred6.npy (steer)")
     p = sub.add_parser("run"); common(p)
     p.add_argument("--ckpt", required=True); p.add_argument("--tag", required=True)
+    p.add_argument("--tracks", default=None, help="native_tracks.pt: REQUIRED for a checkpoint trained with --kin-mode yaw")
     p.add_argument("--eval-cache", default="C:/Users/Admin/refav1_hj_cache")
     p.add_argument("--ages", choices=("fresh", "cycle"), default="cycle")
     p.add_argument("--nav-shuffle", action="store_true"); p.add_argument("--project", action="store_true")
@@ -436,6 +446,11 @@ def main(argv=None):
     p.add_argument("--runs", nargs="+", required=True); p.add_argument("--floors-npz", default=os.path.join(RAW, "eval", "floors_perwindow.npz"))
     p.add_argument("--out", required=True)
     a = ap.parse_args(argv)
+    sub_p10 = "p10_yaw" if a.kin_mode == "yaw" else "p10"
+    if getattr(a, "p10", "x") is None:
+        a.p10 = os.path.join(RAW, sub_p10, "p10_prior.pt")
+    if getattr(a, "p10_pred", "x") is None:
+        a.p10_pred = os.path.join(RAW, sub_p10, "p10_eval_pred6.npy")
     if a.mode == "join":
         grid, J, X = ctx_from_args(a)
         print(json.dumps(D.join_report(J), indent=1)[:3000])

@@ -11,6 +11,15 @@ CONTROL: it must land near the banked 2.9257 m, else this script is not the bank
 
 Outputs (--out-dir): p10_prior.pt (the frozen prior), p10_fit.json (selection + eval numbers), p10_eval_pred6.npy
 [2399, 30, 2] (the refit-P10 baseline predictions on the trunk-probe grid) and p10_legacy_eval_pred6.npy.
+
+``--kin-mode yaw`` (PI ruling D-PI-YAWRATE-1, 2026-10-17: *"the model should get the measured yaw rate"*): the SAME recipe with ONE
+lever changed -- the third kinematic input is ``kappa0 = clamp(omega0 / max(v0, 2), +-0.3)`` from the MEASURED yaw rate of the pose
+track (``v8f_mini_data.window_kin(..., kin_mode="yaw")``: ``ego_channels_from_poses`` + ``kinematic_prior._pose_kappa0``, the
+``p10_pose`` spelling) instead of the recorded steer, integrated as a CURVATURE (``action_units="kappa"``). ``actions`` is never
+opened in that mode. The artifact declares ``meta['units'] == 'pose_kappa'`` and the steer-mode run of the SAME script at the same
+``--clips`` is kept as the PIPELINE CONTROL (it must reproduce the banked steer P10: 2.5744 m at 600 clips, 2.5560 m at 540).
+Outputs in yaw mode: p10_prior.pt (units pose_kappa), p10_fit.json, p10_eval_pred6.npy, eval_base6_yaw.npy and
+p10_steer_control_eval_pred6.npy. ``--holdout A:B`` also scores the fit on clips A..B of the sha12 order (RA-1: 540:600).
 """
 from __future__ import annotations
 
@@ -41,7 +50,7 @@ def _base(kin, units):
     return fk.kd_x(ha0, hx).astype(np.float64)
 
 
-def build_rows(poses_by_clip, clips, stride, units, t_first=3):
+def build_rows(poses_by_clip, clips, stride, units, t_first=3, kin_mode="steer"):
     kf, y, base, g, grp = [], [], [], [], []
     for gi, c in enumerate(clips):
         P, A = poses_by_clip[c]
@@ -50,7 +59,7 @@ def build_rows(poses_by_clip, clips, stride, units, t_first=3):
         ts = ts[2 * ts < len(P)]
         if len(ts) == 0:
             continue
-        kin, gt, _ = D.window_kin(P, A, ts)
+        kin, gt, _ = D.window_kin(P, None if kin_mode == "yaw" else A, ts, kin_mode)
         ok = np.isfinite(kin).all(1) & np.isfinite(gt).all((1, 2))
         kin, gt = kin[ok], gt[ok]
         b = _base(kin, units)
@@ -63,14 +72,14 @@ def build_rows(poses_by_clip, clips, stride, units, t_first=3):
     return cat(kf), cat(y), cat(base), cat(g), cat(grp)
 
 
-def eval_rows(eval_kin, grid, units):
+def eval_rows(eval_kin, grid, units, kin_mode="steer"):
     z = np.load(eval_kin)
     off = np.concatenate([[0], np.cumsum(z["n"])])
     kf, base, g = [], [], []
     for i, c in enumerate(z["clip"].tolist()):
         P = z["poses"][off[i]:off[i + 1]].astype(np.float64)
-        A = z["actions"][off[i]:off[i + 1]].astype(np.float64)
-        kin, gt, _ = D.window_kin(P, A, grid["windows"][c])
+        A = None if kin_mode == "yaw" else z["actions"][off[i]:off[i + 1]].astype(np.float64)
+        kin, gt, _ = D.window_kin(P, A, grid["windows"][c], kin_mode)
         kf.append(fk.kin_features(kin))
         base.append(_base(kin, units))
         g.append(gt)
@@ -86,7 +95,11 @@ def main(argv=None):
     ap.add_argument("--stride", type=int, default=8)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--out-dir", default=os.path.join(PKG, "raw", "p10"))
-    ap.add_argument("--skip-legacy", action="store_true")
+    ap.add_argument("--skip-legacy", action="store_true",
+                    help="skip the pipeline control (steer mode: the legacy wrong-unit refit; yaw mode: the steer refit)")
+    ap.add_argument("--kin-mode", choices=D.KIN_MODES, default="steer",
+                    help="steer (default, the banked recipe) | yaw (PI ruling D-PI-YAWRATE-1: measured-yaw-rate kappa0, curvature unit)")
+    ap.add_argument("--holdout", default="", help="A:B -- also score the fit on clips A..B of the sha12 order (RA-1 holdout: 540:600)")
     a = ap.parse_args(argv)
     os.makedirs(a.out_dir, exist_ok=True)
     t0 = time.time()
@@ -96,29 +109,50 @@ def main(argv=None):
     grid = json.load(open(a.eval_grid))
     res = {"manifest": a.manifest, "n_manifest_clips": len(byc), "fit_clips": len(clips), "stride": a.stride,
            "seed": a.seed, "banked_legacy_p10": {"ade2": 0.2229, "ade6": 2.9257, "note": "kd_x integrated in the WRONG unit"}}
-    for units in (("steer",) if a.skip_legacy else ("steer", "kappa")):
-        kf, y, base, g, grp = build_rows(byc, clips, a.stride, units)
+    hold = None
+    if a.holdout:
+        lo, hi = (int(x) for x in a.holdout.split(":"))
+        hold = sorted(byc, key=D.sha12)[lo:hi]
+        assert not set(hold) & set(clips), "--holdout overlaps the fit clips: it must be OUT of sample"
+    # (label, kin_mode, floors_kin action unit). The first entry is the PRODUCT; the second is the PIPELINE CONTROL.
+    if a.kin_mode == "yaw":
+        runs = [("yaw", "yaw", D.KIN_UNITS["yaw"])] + ([] if a.skip_legacy else [("steer_control", "steer", "steer")])
+    else:
+        runs = [("steer", "steer", "steer")] + ([] if a.skip_legacy else [("kappa", "steer", "kappa")])
+    for label, kmode, units in runs:
+        kf, y, base, g, grp = build_rows(byc, clips, a.stride, units, kin_mode=kmode)
         net, st, best = fk.fit_p10(kf, y, base, g, grp, seed=a.seed)
-        kfe, be, ge = eval_rows(a.eval_kin, grid, units)
+        kfe, be, ge = eval_rows(a.eval_kin, grid, units, kmode)
         pred = fk.predict_p10((net, st, best), kfe, be)
         ade6, fde6 = fk.ade(pred, ge), fk.fde(pred, ge)
         ade2 = fk.ade(pred[:, :10], ge[:, :10])
-        res[units] = {"n_fit_rows": int(len(kf)), "best": [int(best[0]), float(best[1]), int(best[2])],
+        res[label] = {"kin_mode": kmode, "action_units": units, "n_fit_rows": int(len(kf)),
+                      "best": [int(best[0]), float(best[1]), int(best[2])],
                       "eval_n": int(len(ge)), "ade6_m": float(ade6.mean()), "fde6_m": float(fde6.mean()),
                       "ade2_first10knots_m": float(ade2.mean()),
                       "kd_x_ade6_m": float(fk.ade(be, ge).mean()),
                       "acts": fk.acts_check(pred, D.DT)}
-        np.save(os.path.join(a.out_dir, "p10_eval_pred6.npy" if units == "steer" else "p10_legacy_eval_pred6.npy"),
-                pred.astype(np.float32))
-        if units == "steer":
+        if hold is not None:
+            kh, _yh, bh, gh, grph = build_rows(byc, hold, a.stride, units, kin_mode=kmode)
+            ph = fk.predict_p10((net, st, best), kh, bh)
+            res[label]["holdout"] = {"clips": a.holdout, "n_clips": len(hold), "n_windows": int(len(gh)),
+                                     "ade6_m": float(fk.ade(ph, gh).mean()), "ade2_first10knots_m": float(fk.ade(ph[:, :10], gh[:, :10]).mean()),
+                                     "kd_x_ade6_m": float(fk.ade(bh, gh).mean())}
+        product = label in ("steer", "yaw")
+        if product:
+            np.save(os.path.join(a.out_dir, "p10_eval_pred6.npy"), pred.astype(np.float32))
             prior = M.P10Prior.from_fit((net, st, best))
             M.save_p10(prior, os.path.join(a.out_dir, "p10_prior.pt"),
-                       {"units": "steer", "fit_clips": len(clips), "stride": a.stride, "best": res[units]["best"],
-                        "eval_ade6_m": res[units]["ade6_m"]})
-            np.save(os.path.join(a.out_dir, "eval_base6_steer.npy"), be.astype(np.float32))
+                       {"units": D.P10_META_UNITS[kmode], "kin_mode": kmode, "fit_clips": len(clips), "stride": a.stride,
+                        "best": res[label]["best"], "eval_ade6_m": res[label]["ade6_m"]})
+            np.save(os.path.join(a.out_dir, f"eval_base6_{kmode}.npy"), be.astype(np.float32))
+        else:
+            np.save(os.path.join(a.out_dir, "p10_legacy_eval_pred6.npy" if label == "kappa" else "p10_steer_control_eval_pred6.npy"),
+                    pred.astype(np.float32))
     res["seconds"] = time.time() - t0
     json.dump(res, open(os.path.join(a.out_dir, "p10_fit.json"), "w"), indent=1)
-    print(json.dumps({k: v for k, v in res.items() if k in ("steer", "kappa", "banked_legacy_p10")}, indent=1, default=str)[:2500])
+    print(json.dumps({k: v for k, v in res.items() if k in ("steer", "kappa", "yaw", "steer_control", "banked_legacy_p10")},
+                     indent=1, default=str)[:(3500 if a.kin_mode == "yaw" else 2500)])
     return 0
 
 

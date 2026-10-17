@@ -21,11 +21,17 @@ ARMS (all share adapter, readout, data, optimiser, seeds; they differ ONLY in wh
          is predicted from itself alone (context 1) instead of from its causal history.
 
 THE ACTION VECTOR (3 channels, STANDARDISED with train statistics so Prop. 3's unit-variance premise holds):
-    ``a`` (m/s^2, the acceleration of the step that OPENS at frame t), ``steer`` (rad, a ROAD-WHEEL STEER ANGLE =
-    arctan(2.9 kappa), NOT a curvature -- RETRACTION_LOG R46; every path integration goes through
-    ``taniteval.floors_kin`` with ``action_units="steer"``), ``v`` (m/s, the measured speed at frame t: refav1's
-    speed conditioning channel, kept so the steer-vs-speed sensitivity read is comparable with RA-0).
+    ``a`` (m/s^2, the acceleration of the step that OPENS at frame t), channel 1, ``v`` (m/s, the measured speed at frame t:
+    refav1's speed conditioning channel, kept so the lateral-vs-speed sensitivity read is comparable with RA-0).
     ``a_seq[:, t]`` is the block for the transition ``t -> t+1`` (hjepa.py convention).
+    CHANNEL 1 is what ``cfg.kin_mode`` says (PI ruling D-PI-YAWRATE-1, 2026-10-17: *"the model should get measured ego motion and
+    its history, instead of steering angle which represents a sort of action, the model should get the measured yaw rate"*):
+      ``kin_mode="yaw"`` (the compliant, DEFAULT-in-the-trainer mode): ``yaw_rate`` (rad/s) = the MEASURED yaw rate of the pose
+      track, ONE grid frame back (``ego_channels_from_poses``' backward wrapped difference / 0.2 s) -- measured motion, not an
+      action; the P10 features and the kd_x base are the yaw-derived ``kappa0`` ones and the base is integrated as a CURVATURE.
+      ``kin_mode="steer"`` (legacy; the 2026-10-17 22:35 box-2 runs; NON-DECIDING since the ruling): ``steer`` (rad, a ROAD-WHEEL
+      STEER ANGLE = arctan(2.9 kappa), NOT a curvature -- RETRACTION_LOG R46). Every path integration goes through
+      ``taniteval.floors_kin`` with ``action_units="steer"``.
 
 DESIGN CONSTANTS NOT FIXED BY THE PREREG (identical across arms; hand-back item): ``w_traj`` = 10 (trajectory loss in metres vs the
 WM terms), level-1-only reading of the (beta, gamma) grid, upper-level weights 0.16 / 50 / act_sigreg 0.005, adapter 64-wide token
@@ -47,8 +53,16 @@ from tanitad.models.hjepa import (HJEPAStack, LevelConfig, dead_parameters, mono
                                   param_grad_report)
 
 ARMS = ("R0", "A0", "A1", "A2", "A1x", "A1h")
-ACT_CHANNELS = ("a", "steer", "v")
+#: the action vector's channel names per kin mode (PI ruling D-PI-YAWRATE-1); channel 1 is the lateral-control channel
+ACT_CHANNELS_BY_MODE = {"steer": ("a", "steer", "v"), "yaw": ("a", "yaw_rate", "v")}
+ACT_CHANNELS = ACT_CHANNELS_BY_MODE["steer"]            # legacy name (the steer representation)
 ACT_DIM = len(ACT_CHANNELS)
+KIN_MODES = tuple(ACT_CHANNELS_BY_MODE)
+
+
+def ctl_channel(kin_mode: str) -> str:
+    """The name of the lateral-control action channel (SENS' control read): ``steer`` | ``yaw_rate``."""
+    return ACT_CHANNELS_BY_MODE[kin_mode][1]
 HORIZON = 30                      # 30 x 0.2 s = 6 s
 DT = 0.2
 GRIDS = {"4x10": 40, "8x20": 160}  # grid -> tokens per frame
@@ -103,6 +117,7 @@ class RA1Config:
     act_sigreg: float = 0.005
     w_traj: float = 10.0
     hist_drop: float = 0.0
+    kin_mode: str = "steer"            # steer (legacy; a config serialised before the ruling has no such key) | yaw (compliant)
 
     @property
     def spec(self) -> ArmSpec:
@@ -120,7 +135,10 @@ class RA1Config:
         return [(float(self.beta), g1)] + [(float(self.beta_up), gu)] * self.n_up()
 
     def to_json(self) -> dict:
-        return dataclasses.asdict(self)
+        d = dataclasses.asdict(self)
+        if d["kin_mode"] == "steer":          # LEGACY-COMPATIBLE: a steer config serialises (and hashes) exactly as before the ruling,
+            d.pop("kin_mode")                 # so a checkpoint written by the old code still resumes / re-loads under this one
+        return d
 
     def sha12(self) -> str:
         return hashlib.sha256(json.dumps(self.to_json(), sort_keys=True).encode()).hexdigest()[:12]
@@ -131,6 +149,8 @@ def validate_config(cfg: RA1Config) -> None:
     is refused. Raises ``ValueError``."""
     if cfg.arm not in ARMS:
         raise ValueError(f"arm {cfg.arm!r} not in {ARMS}")
+    if cfg.kin_mode not in KIN_MODES:
+        raise ValueError(f"kin_mode {cfg.kin_mode!r} not in {KIN_MODES}")
     if cfg.grid not in GRIDS or GRIDS[cfg.grid] != cfg.n_tok:
         raise ValueError(f"grid {cfg.grid!r} has {GRIDS.get(cfg.grid)} tokens/frame, config says n_tok={cfg.n_tok}")
     sp = cfg.spec
@@ -237,6 +257,7 @@ class RA1Model(nn.Module):
         validate_config(cfg)
         self.cfg = cfg
         sp = cfg.spec
+        self.act_channels = ACT_CHANNELS_BY_MODE[cfg.kin_mode]
         self.adapter = PooledAdapter(cfg.d_feat, cfg.n_tok, cfg.d_tok, cfg.adapter_hidden, cfg.d1)
         self.register_buffer("act_mean", torch.as_tensor(act_mean, dtype=torch.float32).clone())
         self.register_buffer("act_std", torch.as_tensor(act_std, dtype=torch.float32).clone())
@@ -338,6 +359,8 @@ def declared_vs_built(cfg: RA1Config, model: RA1Model) -> list:
         ok = (abs(declared - built) < 1e-12) if isinstance(declared, float) and isinstance(built, (int, float)) else declared == built
         rows.append(dict(lever=name, declared=declared, built=built, ok=bool(ok)))
 
+    add("act_channels", ACT_CHANNELS_BY_MODE[cfg.kin_mode], model.act_channels)
+    add("act_dim", ACT_DIM, int(model.act_mean.numel()))
     add("d1", cfg.d1, model.adapter.mlp[-1].out_features)
     add("n_tok*d_tok", cfg.n_tok * cfg.d_tok, model.adapter.mlp[1].in_features)
     add("w_traj", float(cfg.w_traj), float(model.cfg.w_traj))
@@ -442,10 +465,11 @@ def estimate_vram_gb(model: RA1Model, batch: dict, *, slack: float = 1.25) -> di
 def sensitivity_per_window(model: RA1Model, z_start: Tensor, fut_actions_raw: Tensor, eid: Tensor, *,
                            ks=(1, 5, 10), seed: int = 0, perm: Tensor | None = None) -> dict:
     """Level-1 action sensitivity (PREREG definition, delegated to ``HJEPAStack.action_sensitivity``) for c in
-    {all, a, steer, v}; ``perm = arange`` is the SELF-SWAP CONTROL and must read exactly 0.0. T0: recorded future actions are
+    {all, a, <lateral channel>, v} where the lateral channel is ``steer`` (legacy) or ``yaw_rate`` (the compliant mode; PI ruling
+    D-PI-YAWRATE-1); ``perm = arange`` is the SELF-SWAP CONTROL and must read exactly 0.0. T0: recorded future actions are
     consumed by the rollout. Returns ``hjepa``'s dict (floats + per-window arrays under ``win/...``)."""
     assert model.stack is not None, "R0 has no world model"
-    chans = {"all": [0, 1, 2], "a": [0], "steer": [1], "v": [2]}
+    chans = {"all": [0, 1, 2], "a": [0], model.act_channels[1]: [1], "v": [2]}
     return model.stack.action_sensitivity(z_start, model.std_actions(fut_actions_raw), level=1, ks=ks, channels=chans,
                                           perm=perm, episode_ids=None if perm is not None else eid, seed=seed,
                                           per_window=True)

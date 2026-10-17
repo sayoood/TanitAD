@@ -100,3 +100,34 @@ and each read names which variance it answered (episodes / training seed / infer
   * every RA-1 arm uses `raw/p10_540/p10_prior.pt` (sha256 `f70b3daa07bc911c72cfb56cafbd4cfc20d0304c4c6eec2b08b22830dafe6a42`);
   * the eval's P10 baseline is `raw/p10_540/p10_eval_pred6.npy`.
   * The v8F-mini prereg is unaffected: it keeps P10-600, which is out of sample on eval-141, and it has no train holdout.
+
+## Amendment 3 (2026-10-17, late night, before any compliant-run data): RA-1 gets the MEASURED YAW RATE, not the steer angle (PI ruling `D-PI-YAWRATE-1`)
+
+* **The ruling (PI, verbatim):** *"the model should get measured ego motion and its history, instead of steering angle which represents a sort of action, the model should get the measured yaw rate"*.
+* **The finding that sets the shape of the fix.** In our PhysicalAI data `actions[:, 0]` is `atan(2.9 · curvature)` of the egomotion's MEASURED curvature (`physicalai.py`, D-016 R1): measured motion in an action's units. Amendment 1 wrote the action channels as (a, steer, v), and the steer reached RA-1 through **three** inputs, not one:
+  * action channel 1 (the world model's conditioning, the IDM targets, the SENS read);
+  * the three of the eight P10 features that multiply it (`v·k`, `v²·k`, `a·k`) and the `k` feature itself;
+  * the `kd_x` base the readout is a residual on (`action_units="steer"`).
+  * ⇒ the information is **re-expressed as the measured yaw rate, not deleted**.
+* **Binding from this amendment (all fixed before any compliant-run data exists):**
+  * **Action vector** `(a, steer, v)` → **`(a, yaw_rate, v)`**, standardised with train statistics like the others. `yaw_rate` (rad/s) is the pose track's heading, ONE frame back (0.1 s), wrapped, divided by 0.1 s, read at raw frame 2t. It is `tanitad.models.ego_history.ego_channels_from_poses`' `dyaw` channel, called and not re-implemented. The IDM targets and the SENS read use this channel.
+  * **P10-yaw-540 replaces P10-540** as the frozen prior and as the K comparator. Its features are `p10_pose`'s (arm α-1) triple `(v0, a0, κ0)`: `a0` the one-frame speed difference, `κ0 = clamp(ω0 / max(v0, 2 m/s), ±0.3)` with `ω0` the measured yaw rate. The `kd_x` base is integrated as a **curvature** (`action_units="kappa"`). The recipe is unchanged: MLP 8→256→60, inner CV, stride 8, seed 0, the first 540 clips by sha12. The 60-clip selection holdout stays out (asserted).
+  * **Native tracks.** The S4 cache holds only the even frames, and the one-frame difference needs the odd ones, so the loader reads `native_tracks.pt` (raw poses only; `stack/scripts/build_native_tracks.py`) and REFUSES a track that does not reproduce the cache's own `pose_grid`.
+  * **SENS bar unchanged:** 0.10 on the standardised channel, now **`yaw_rate`** (k = 10, separated above A0 at both seeds). The RA-0 comparison ("23× above 0.0043") is **dropped**: refav1's action space is steer, so it has no yaw-rate channel, and its steer sensitivity is not comparable to a yaw-rate one. This is disclosed, not hidden.
+  * **K bar unchanged:** `best(R0, A1, A2) − P10` ADE@6 s < 0, separated at both seeds, |Δ| > 2× the training-seed floor, **with P10 = P10-yaw-540**. COST, the A1x gate, the branches, the holdout rule (Amendment 1) and every training constant are unchanged.
+* **Reference numbers, MEASURED** (eval-141, 2,399 windows; same script and seed as the steer P10s; the pipeline control reproduces the banked steer values; `raw/p10_yaw540/p10_fit.json`, `raw/p10_yaw_vs_steer.json`):
+
+  | P10 (540 clips) | ADE @ 6 s | ADE @ 2 s | holdout ADE @ 6 s (clips 541–600, 540 windows) |
+  |---|---|---|---|
+  | steer (Amendment 2, the retired comparator) | 2.5560 m [2.3085, 2.8001] | 0.2169 m | 3.0469 m |
+  | **yaw (this amendment)** | **2.5627 m** [2.3106, 2.8108] | 0.2185 m | 3.0529 m |
+
+  * Paired `yaw − steer` on eval-141: **+0.0067 m [-0.0154, 0.0302]** at 6 s and **+0.0016 m [-0.0017, 0.0049]** at 2 s, **not separated**. Estimator: episode-cluster bootstrap, B = 2,000 (episode variance only; blind to the P10 training-seed floor of 0.0213 m).
+  * The yaw floor is +0.0067 m **looser** than the steer one on the same windows: the comparator K is read against is slightly easier, and that is disclosed.
+  * The Amendment-2 rule is untouched: P10-yaw-540 is out of sample on the holdout.
+* **Why the native 0.1 s track and not the cache's 0.2 s grid.** MEASURED (`raw/p10_yaw_dt_ablation_540.json`): a P10 fit on yaw differenced on the 0.2 s grid scores 2.5944 m at 6 s, which is +0.032 m worse than the native-track one and MORE than the P10 training-seed floor (0.0213 m). That variant was rejected before use.
+* **The in-flight RA-1 runs are NON-DECIDING.** The runs launched on box 2 at 2026-10-17 22:35 use the steer representation, which this ruling retires. They decide nothing in H-HJ-SENS-1 / K-1 / COST-1. They serve **only** as a representation-equivalence check against the compliant runs (same arm, cell and seed), read descriptively against each arm's own 2-seed floor. `ra1_hjepa_eval.py verdict` REFUSES a verdict that mixes the two representations, and the compliant queue writes to a different directory (`runs\ra1_yaw`).
+* **Disclosed side effects of the change** (none moves a bar):
+  * `a0` in the P10 features is now the one-frame (0.1 s) speed difference; it was the 0.2 s one;
+  * for TRAIN clips the first usable cache step is 2, not 1 (the train manifest starts at raw frame 2, so the one-frame difference at raw frame 2 is undefined), which changes no scored window (valid frames start at t = 3).
+* **Guards (CLAUDE.md reachability rule).** `stack/tests/test_yaw_rate_ruling.py` (26 tests): the yaw spelling equals `ego_channels_from_poses`' `dyaw` on all 141 real eval clips to ≤ 1e-6 while a one-frame shift fails the same comparator; a twin cache whose `steer`, `kin3`, `p10` and `yaw_rate` are garbage gives bit-identical RA-1 inputs and losses in the compliant mode and different ones in the legacy mode. 11 source mutations that re-introduce the steer or a future pose each turn a guard RED (`raw/mutate_yaw_guards.json`).

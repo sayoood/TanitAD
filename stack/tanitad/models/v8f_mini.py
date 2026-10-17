@@ -49,6 +49,10 @@ CONS_NAMES = ("lat_theta_deg", "turn_t_start_s", "turn_t_end_s", "turn_d_start_m
               "lead_gap_m", "lead_tg_s", "lead_gap_min_m", "lead_tg_min_s", "v_a_ms", "v_end_ms", "v_lo_ms", "v_hi_ms")
 CI = {n: i for i, n in enumerate(CONS_NAMES)}
 LIMITS_MS = (30 / 3.6, 50 / 3.6, 100 / 3.6, 120 / 3.6)
+#: the scale the WM auxiliary divides action channel 1 by, per kin mode (PI ruling D-PI-YAWRATE-1): the recorded steer angle
+#: (rad) in the legacy mode, the MEASURED yaw rate (rad/s) in the compliant one. 0.4 keeps the scaled channel's std at 0.255 vs the
+#: steer channel's 0.267 (MEASURED on the first 200 sha12 train clips: std omega 0.1022 rad/s, std steer 0.0802 rad).
+CH1_SCALE = {"steer": 0.3, "yaw": 0.4}
 #: EXACTLY the batch keys the inference path may read. Everything else (``lab*``, ``gt``, ``s_h``, ``lead_gap_h`` ...)
 #: is a label or an evaluator-side quantity and is never touched by ``forward_infer``.
 INFERENCE_INPUT_KEYS = frozenset({"feats", "frame_ok", "p10f", "act", "nav", "pose", "limit", "limit_ok", "base",
@@ -92,8 +96,11 @@ class V8FMiniConfig:
     max_age_t: int = 2
     max_age_s: int = 6
     detach_upper: bool = False         # stop O/T gradients into the upper layer's output
+    kin_mode: str = "steer"            # steer | yaw: what the kinematic inputs (P10 features, base, WM action channel 1) are made of
 
     def __post_init__(self):
+        if self.kin_mode not in CH1_SCALE:
+            raise ValueError(f"kin_mode must be one of {tuple(CH1_SCALE)}, got {self.kin_mode!r}")
         if self.wm not in ("off", "a", "b"):
             raise ValueError(f"wm must be off|a|b, got {self.wm!r}")
         if self.hmax < self.hist + self.max_age_s:
@@ -162,7 +169,26 @@ def save_p10(prior: P10Prior, path, meta: dict | None = None):
     torch.save({"state": prior.state_dict(), "hidden": prior.net[0].out_features, "k": prior.k, "meta": meta or {}}, path)
 
 
-def load_p10(path) -> P10Prior:
+def p10_meta(path) -> dict:
+    """The ``meta`` dict a P10 artifact was saved with (``units`` is ``steer`` | ``pose_kappa``; absent => ``steer``)."""
+    return dict(torch.load(path, map_location="cpu", weights_only=True).get("meta") or {})
+
+
+def check_p10_units(path, kin_mode: str) -> str:
+    """REFUSE a P10 artifact whose declared feature unit is not the one ``kin_mode`` builds (a steer prior fed yaw-derived
+    features -- or the reverse -- is a silently wrong model, not an error the first forward pass would raise). Returns the units."""
+    want = {"steer": "steer", "yaw": "pose_kappa"}[kin_mode]
+    got = p10_meta(path).get("units", "steer")
+    if got != want:
+        raise ValueError(f"P10 prior {path} declares units {got!r} but kin_mode {kin_mode!r} needs {want!r} "
+                         f"(a steer-unit prior cannot be fed yaw-derived features, nor the reverse)")
+    return got
+
+
+def load_p10(path, kin_mode: str | None = None) -> P10Prior:
+    """Load the frozen prior. With ``kin_mode`` named, the artifact's declared units must match it (``check_p10_units``)."""
+    if kin_mode is not None:
+        check_p10_units(path, kin_mode)
     o = torch.load(path, map_location="cpu", weights_only=True)
     m = P10Prior(torch.zeros(8), torch.ones(8), torch.zeros(2 * o["k"]), hidden=o["hidden"], k=o["k"])
     m.load_state_dict(o["state"])
@@ -378,10 +404,12 @@ class WMAux(nn.Module):
         self.stack = HJEPAStack(lv, sigreg_projections=256)
         self.proj = nn.Sequential(nn.LayerNorm(cfg.d), nn.Linear(cfg.d, cfg.wm_dim))
         self.gamma = gamma
+        self.ch1_scale = CH1_SCALE[cfg.kin_mode]
 
     def forward(self, adapt: Tensor, act: Tensor) -> dict:
         z1 = self.proj(adapt.mean(2))                                           # [B, F, D]
-        a = torch.stack([act[..., 0] / 2.0, act[..., 1] / 0.3], -1)[:, :-1]     # action of the transition j -> j+1
+        # channel 1 = the recorded steer (kin_mode steer) or the MEASURED yaw rate (kin_mode yaw, PI ruling D-PI-YAWRATE-1)
+        a = torch.stack([act[..., 0] / 2.0, act[..., 1] / self.ch1_scale], -1)[:, :-1]     # action of the transition j -> j+1
         return self.stack.loss(z1, a)
 
 
@@ -623,6 +651,7 @@ class V8FMini(nn.Module):
         return {"navonly": (not self.read_s.uses_scene) and (not self.read_t.uses_scene) and self.read_o.uses_scene,
                 "consistency": bool(cfg.consistency), "wm": "off" if self.wm is None else ("b" if self.wm.gamma > 0 else "a"),
                 "wm_idm_gamma": 0.0 if self.wm is None else float(self.wm.gamma),
+                "kin_mode": self.cfg.kin_mode, "wm_ch1_scale": None if self.wm is None else float(self.wm.ch1_scale),
                 "prior_frozen": not any(p.requires_grad for p in self.prior.parameters()),
                 "residual_zero_init": bool(float(self.head_o[2].weight.detach().abs().sum()) == 0.0),
                 "params": {k: gp(v) for k, v in self.trainable_groups().items()},

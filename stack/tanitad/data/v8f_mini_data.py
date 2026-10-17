@@ -15,6 +15,24 @@ KINEMATIC FLOOR UNITS (orchestrator correction 2026-10-17): ``actions[:, 0]`` is
 path integration here goes through ``taniteval.floors_kin`` with ``action_units="steer"``. The banked refav1 kd_x
 / P10 integrated it as a curvature (ha0_ext 5.356 m vs 2.838 m); they are NOT used as the residual base or as the
 bar. Nothing here re-implements a floor.
+
+THE YAW-RATE MODE (PI RULING D-PI-YAWRATE-1, 2026-10-17 -- ``kin_mode="yaw"``): *"the model should get measured ego motion
+and its history, instead of steering angle which represents a sort of action, the model should get the measured yaw rate"*.
+``actions[:, 0]`` is ``atan(2.9 * measured curvature)`` -- measured motion in an action's units -- so the steer-mode inputs
+(``kin3[2]``, the three P10 features that multiply it, the kd_x base integrated from it, the ``steer`` action channel) are
+RE-EXPRESSED, not deleted: the third kinematic channel becomes ``kappa0 = clamp(omega0 / max(v0, 2), +-0.3)`` with ``omega0`` the
+measured yaw rate = the ONE-FRAME (0.1 s) BACKWARD wrapped difference of the pose-track heading, the action channel becomes ``omega``
+itself, and the base is integrated as a CURVATURE (``action_units="kappa"``). ONE spelling: all of it comes from
+``tanitad.models.ego_history.ego_channels_from_poses`` (+ ``kinematic_prior._pose_kappa0``), the functions ``p10_pose`` and the
+ego-history encoder already use, on the NATIVE 10 Hz pose track (``a0`` is the one-frame difference too, exactly as ``p10_pose``).
+Why the native track and not the cache's 0.2 s ``pose_grid`` (MEASURED 2026-10-17, ``p10_yaw_dt_ablation_540.json``): the P10
+fitted on the grid-derived yaw scores 2.5944 m at 6 s on eval-141, the one on the native-track yaw 2.5627 m (steer P10-540: 2.5560)
+-- the coarser difference costs 0.032 m, MORE than the P10 training-seed floor of 0.0213 m. The S4 cache holds only the even frames,
+so the odd ones come from a ``native_tracks.pt`` sidecar (``stack/scripts/build_native_tracks.py``: the raw poses of every train
+and eval clip, keyed by clip id); ``ClipStore`` / ``ra1_pooled.load_clip`` REFUSE a track that does not reproduce the cache's own
+``pose_grid`` on its even frames. In yaw mode nothing here opens ``actions`` or the cache's ``steer`` / ``kin3`` / ``p10`` /
+``yaw_rate`` (the cache's ``yaw_rate`` is a FORWARD difference: at the NOW frame it would read the first future pose).
+The default stays ``"steer"`` so every banked artifact reproduces; the trainers default to ``yaw``.
 """
 from __future__ import annotations
 
@@ -236,15 +254,83 @@ def load_join(path) -> dict:
 
 
 # ------------------------------------------------------------------------------------------------ kinematic floors
-def kdx_base(kin3) -> np.ndarray:
-    """kd_x on the 30 x 0.2 s grid from ``kin3`` rows ``[n, 3]`` (v0, a0, steer0), CORRECT UNIT (steer).
-    Row with NaN (cache row 0) -> zeros."""
+KIN_MODES = ("steer", "yaw")
+#: ``floors_kin`` action unit the third kinematic channel is integrated in, per mode
+KIN_UNITS = {"steer": "steer", "yaw": "kappa"}
+#: the ``meta['units']`` a P10 artifact must declare for each mode (``p10_prior.P10_UNITS_TO_VARIANT`` spelling)
+P10_META_UNITS = {"steer": "steer", "yaw": "pose_kappa"}
+#: the name of the lateral-control channel (action channel 1, the SENS read) per mode
+CH1_NAMES = {"steer": "steer", "yaw": "yaw_rate"}
+
+
+def check_kin_mode(kin_mode: str) -> str:
+    if kin_mode not in KIN_MODES:
+        raise ValueError(f"kin_mode must be one of {KIN_MODES}, got {kin_mode!r}")
+    return kin_mode
+
+
+DT_NATIVE = 0.1       # the v2ep / pose-track frame interval (the ego-history encoder's, p10_pose's)
+
+
+def ego_channels_native(track) -> np.ndarray:
+    """``[n, 3]`` float64 = (v, dv/dt, dyaw/dt) of the NATIVE 10 Hz pose track ``[n, 4]`` (x, y, yaw, v): THE ONE SPELLING --
+    ``tanitad.models.ego_history.ego_channels_from_poses`` (one-frame BACKWARD differences, yaw wrapped, row 0 = 0 rate), called,
+    not re-implemented. Row ``k`` reads track rows ``k`` and ``k - 1`` only. A NaN pose row gives NaN."""
+    import torch
+    from tanitad.models.ego_history import ego_channels_from_poses
+    tr = torch.as_tensor(np.asarray(track, np.float64))[None]
+    return ego_channels_from_poses(tr, tr.shape[1], dt=DT_NATIVE)[0].numpy()
+
+
+def yaw_kin_from_track(track) -> tuple:
+    """``(kin3 [T, 3], omega [T])`` in the YAW mode for a native track with ``n`` frames (``T = ceil(n / 2)`` cache steps; step ``j``
+    is raw frame ``2 j``). ``kin3[j]`` = (v0, a0, kappa0) for a window whose last observed frame is ``2 j``: ``v0 = v[2j]``,
+    ``a0`` = the ONE-frame backward speed difference, ``kappa0 = kinematic_prior._pose_kappa0(omega0, v0)`` =
+    ``clamp(omega0 / max(v0, 2.0), +-0.3)`` with ``omega0`` the ONE-frame wrapped yaw difference / 0.1 s -- ``p10_pose``'s feature
+    triple (``kinematic_prior.pose_kin3``), nothing recorded after frame ``2 j`` and no steer / action channel. Row 0 is NaN (as the
+    cache's); ``omega[j]`` is the measured yaw rate (rad/s) at frame ``2 j`` (row 0 = 0.0, ``ego_channels_from_poses``' convention)."""
+    import torch
+    from tanitad.models.kinematic_prior import _pose_kappa0
+    ch = ego_channels_native(track)[0::2]
+    kap = _pose_kappa0(torch.from_numpy(ch[:, 2].copy()), torch.from_numpy(ch[:, 0].copy())).numpy()
+    kin = np.stack([ch[:, 0], ch[:, 1], kap], 1)
+    kin[0] = np.nan
+    return kin, ch[:, 2].copy()
+
+
+def load_native_tracks(path) -> dict:
+    """``native_tracks.pt`` (``stack/scripts/build_native_tracks.py``) -> ``{clip_id: float64 [n_raw, 4]}`` (raw frame-indexed
+    (x, y, yaw, v); the first two rows of a TRAIN clip are NaN: the v2 manifest starts at raw frame 2)."""
+    import torch
+    o = torch.load(path, map_location="cpu", weights_only=True)
+    return {c: t.double().numpy() for c, t in o["tracks"].items()}
+
+
+def check_track_matches_grid(track, pose_grid, clip: str = "?", tol: float = 1e-4) -> int:
+    """REFUSE a native track that is not THIS clip's: its even frames must reproduce the cache's ``pose_grid`` wherever the track
+    is finite (the track is float32 of the same raw poses => expected max |diff| 0). Returns the number of rows compared."""
+    pg = np.asarray(pose_grid, np.float64)
+    ev = np.asarray(track, np.float64)[0::2]
+    if len(ev) != len(pg):
+        raise ValueError(f"{clip}: native track has {len(track)} frames => {len(ev)} even rows, cache pose_grid has {len(pg)}")
+    m = np.isfinite(ev).all(1)
+    if m.sum() < 0.9 * len(pg):
+        raise ValueError(f"{clip}: only {int(m.sum())}/{len(pg)} finite even track rows")
+    err = float(np.abs(ev[m] - pg[m]).max())
+    if not err <= tol:
+        raise ValueError(f"{clip}: native track disagrees with the cache pose_grid (max |diff| {err:.3g} > {tol})")
+    return int(m.sum())
+
+
+def kdx_base(kin3, units: str = "steer") -> np.ndarray:
+    """kd_x on the 30 x 0.2 s grid from ``kin3`` rows ``[n, 3]``: (v0, a0, steer0) with ``units="steer"`` (the default, CORRECT
+    unit for the recorded channel) or (v0, a0, kappa0) with ``units="kappa"`` (the yaw mode). Row with NaN (cache row 0) -> zeros."""
     fk = _fk()
     kin3 = np.asarray(kin3, np.float64)
     bad = ~np.isfinite(kin3).all(1)
     k = np.where(bad[:, None], 0.0, kin3)
     ha0 = fk.ha0_paths(k[:, 0], DT, HORIZON)
-    hx = fk.ha0_ext_paths(k, DT, HORIZON, action_units="steer")
+    hx = fk.ha0_ext_paths(k, DT, HORIZON, action_units=units)
     base = fk.kd_x(ha0, hx).astype(np.float32)
     base[bad] = 0.0
     return base
@@ -282,15 +368,22 @@ def full_from_manifest(poses_m, actions_m):
     return P, A
 
 
-def window_kin(poses, actions, ts):
-    """(kin3 [n, 3], gt [n, 30, 2], pose_grid [Tg, 4]) for cache steps ``ts`` of one clip, computed EXACTLY as the S4
-    cache does: v0 = poses[2t, 3]; a0 = (v[2t] - v[2t-2]) / 0.2 (backward); steer0 = actions[2t, 0]; GT from the 0.2 s
-    pose grid ``poses[0::2]``."""
+def window_kin(poses, actions, ts, kin_mode: str = "steer"):
+    """(kin3 [n, 3], gt [n, 30, 2], pose_grid [Tg, 4]) for cache steps ``ts`` of one clip.
+    ``kin_mode="steer"`` (default; computed EXACTLY as the S4 cache does): v0 = poses[2t, 3]; a0 = (v[2t] - v[2t-2]) / 0.2
+    (backward); steer0 = actions[2t, 0]; GT from the 0.2 s pose grid ``poses[0::2]``.
+    ``kin_mode="yaw"`` (PI ruling D-PI-YAWRATE-1): ``poses`` must be the NATIVE raw-frame track; the kinematics are
+    ``yaw_kin_from_track`` (``p10_pose``'s triple: ONE-frame a0, kappa0 from the measured yaw rate); ``actions`` is NOT READ
+    (may be ``None``)."""
     fk = _fk()
+    check_kin_mode(kin_mode)
     ts = np.asarray(ts, np.int64)
-    k = 2 * ts
-    kin = np.stack([poses[k, 3], (poses[k, 3] - poses[k - 2, 3]) / DT, actions[k, 0]], 1)
     grid = poses[0::2]
+    if kin_mode == "yaw":
+        kin = yaw_kin_from_track(poses)[0][ts]
+    else:
+        k = 2 * ts
+        kin = np.stack([poses[k, 3], (poses[k, 3] - poses[k - 2, 3]) / DT, actions[k, 0]], 1)
     gt = fk.gt_waypoints(grid, ts, np.arange(1, HORIZON + 1))
     return kin, gt, grid
 
@@ -299,9 +392,13 @@ def window_kin(poses, actions, ts):
 class ClipStore:
     """Lazy per-clip cache reader with an LRU. ``get(clip)`` returns float32/float16 numpy views + derived arrays."""
 
-    def __init__(self, cache_dir, split, lru: int = 64, grid: str = "pool4x10"):
+    def __init__(self, cache_dir, split, lru: int = 64, grid: str = "pool4x10", kin_mode: str = "steer", tracks: dict | None = None):
         self.dir = Path(cache_dir) / split / "clips"
         self.lru, self.grid, self._c = int(lru), grid, {}
+        self.kin_mode = check_kin_mode(kin_mode)
+        self.tracks = tracks
+        if self.kin_mode == "yaw" and not tracks:
+            raise ValueError("kin_mode 'yaw' needs the native pose tracks (native_tracks.pt: --tracks); the cache holds only the even frames")
 
     def get(self, clip: str) -> dict:
         if clip in self._c:
@@ -310,10 +407,25 @@ class ClipStore:
         import torch
         o = torch.load(self.dir / f"{clip}.pt", map_location="cpu", weights_only=True)
         pg = o["pose_grid"].numpy().astype(np.float64)
-        d = {"feats": o[self.grid].to(torch.float16).numpy(), "pose": pg, "kin3": o["kin3"].numpy().astype(np.float64),
-             "p10f": o["p10"].numpy().astype(np.float32), "a": o["a"].numpy(), "steer": o["steer"].numpy(),
-             "v": o["v"].numpy()}
-        d["base"] = kdx_base(d["kin3"])
+        if self.kin_mode == "yaw":
+            # PI ruling D-PI-YAWRATE-1: kinematics, P10 features and the lateral action channel come from the NATIVE POSE TRACK.
+            # The cache's steer / kin3 / p10 / yaw_rate are NOT READ (kin3 / p10 carry the recorded steer; yaw_rate is a FORWARD
+            # difference that would read the first future pose at the NOW frame).
+            if clip not in self.tracks:
+                raise KeyError(f"{clip}: no native pose track in the sidecar")
+            check_track_matches_grid(self.tracks[clip], pg, clip)
+            kin3, omega = yaw_kin_from_track(self.tracks[clip])
+            p10 = np.full((len(pg), 8), np.nan, np.float32)
+            p10[1:] = _fk().kin_features(kin3[1:]).astype(np.float32)
+            d = {"feats": o[self.grid].to(torch.float16).numpy(), "pose": pg, "kin3": kin3, "p10f": p10, "a": o["a"].numpy(),
+                 "ch1": np.nan_to_num(omega, nan=0.0).astype(np.float32), "v": o["v"].numpy()}   # undefined step -> 0.0 (see ra1_pooled)
+            d["base"] = kdx_base(d["kin3"], KIN_UNITS["yaw"])
+        else:
+            d = {"feats": o[self.grid].to(torch.float16).numpy(), "pose": pg, "kin3": o["kin3"].numpy().astype(np.float64),
+                 "p10f": o["p10"].numpy().astype(np.float32), "a": o["a"].numpy(), "steer": o["steer"].numpy(),
+                 "v": o["v"].numpy()}
+            d["ch1"] = d["steer"]
+            d["base"] = kdx_base(d["kin3"])
         d["gt"], d["gt_ok"] = gt_future(pg)
         d["s_h"] = human_arc(pg)
         T = len(pg)
@@ -371,7 +483,7 @@ class V8FMiniWindows:
         rows = [self.row(ci, t), self.row(ci, t - a_t), self.row(ci, t - a_s)]
         J = self.J
         it = {"feats": d["feats"][idc], "frame_ok": okf, "p10f": p10f,
-              "act": np.stack([np.nan_to_num(d["a"][idc]), d["steer"][idc]], -1).astype(np.float32),
+              "act": np.stack([np.nan_to_num(d["a"][idc]), d["ch1"][idc]], -1).astype(np.float32),
               "nav": J["nav"][[self.row(ci, int(j)) for j in idc]], "pose": d["pose"][idc][:, :3].astype(np.float32),
               "limit": J["limit"][ci], "limit_ok": bool(J["limit_ok"][ci]),
               "gt": d["gt"][t], "gt_ok": bool(d["gt_ok"][t]), "base": d["base"][t], "kin3": d["kin3"][t].astype(np.float32),
@@ -465,20 +577,24 @@ class ChunkedSampler:
         return math.ceil(len(self.windows) / self.batch)
 
 
-def eval_context(grid: dict, kin_npz, J: dict, units: str = "steer") -> dict:
+def eval_context(grid: dict, kin_npz, J: dict, units: str | None = None, kin_mode: str = "steer") -> dict:
     """Everything the evaluator needs per window of the trunk-probe grid, WITHOUT any image feature (so the floors,
     the GT control and the nav-only baseline run before the cache exists). ``J`` is the eval join (cache order must be
     ``grid['order']``). Arrays are aligned window-for-window with ``[(clip, t) for clip in order for t in windows]``."""
     fk = _fk()
+    check_kin_mode(kin_mode)
+    units = KIN_UNITS[kin_mode] if units is None else units
+    if units != KIN_UNITS[kin_mode]:
+        raise ValueError(f"kin_mode {kin_mode!r} integrates in {KIN_UNITS[kin_mode]!r}, not {units!r}")
     z = np.load(kin_npz)
     off = np.concatenate([[0], np.cumsum(z["n"])])
     assert z["clip"].tolist() == list(grid["order"]) == J["clip"].tolist(), "eval clip order mismatch"
     C = {k: [] for k in ("eid", "t", "kin", "gt", "s_h", "lead_gap_h", "jrow")}
     for i, c in enumerate(grid["order"]):
         P = z["poses"][off[i]:off[i + 1]].astype(np.float64)
-        A = z["actions"][off[i]:off[i + 1]].astype(np.float64)
+        A = None if kin_mode == "yaw" else z["actions"][off[i]:off[i + 1]].astype(np.float64)    # yaw mode never opens actions
         ts = np.asarray(grid["windows"][c], np.int64)
-        kin, gt, pg = window_kin(P, A, ts)
+        kin, gt, pg = window_kin(P, A, ts, kin_mode)
         sh = human_arc(pg)
         T = len(pg)
         o = int(J["off"][i])
@@ -522,7 +638,7 @@ def make_synthetic_world(root, n_train=6, n_eval=3, T=70, seed=0, d_feat=D_FEAT)
     root = Path(root)
     fk = _fk()
     names = {"train": [f"syn-train-{i:03d}" for i in range(n_train)], "eval": [f"syn-eval-{i:03d}" for i in range(n_eval)]}
-    joins, windows, kin_eval = {}, {"order": names["eval"], "windows": {}}, []
+    joins, windows, kin_eval, native = {}, {"order": names["eval"], "windows": {}}, [], {}
     GY = {g: i for i, g in enumerate(GOAL22)}
     for split, clips in names.items():
         (root / split / "clips").mkdir(parents=True, exist_ok=True)
@@ -553,10 +669,11 @@ def make_synthetic_world(root, n_train=6, n_eval=3, T=70, seed=0, d_feat=D_FEAT)
                         "p10": torch.as_tensor(p10)}, root / split / "clips" / f"{cid}.pt")
             man.write(json.dumps({"clip": cid, "n_frames": T}) + "\n")
             entries.append((cid, T, v, kap, pose))
-            if split == "eval":                                   # frame-level (10 Hz) poses/actions: odd frames = midpoints
-                fr = np.zeros((2 * T - 1, 4), np.float32)
-                fr[0::2] = pose
-                fr[1::2] = 0.5 * (pose[:-1] + pose[1:])
+            fr = np.zeros((2 * T - 1, 4), np.float32)             # the NATIVE 10 Hz pose track: odd frames = midpoints
+            fr[0::2] = pose
+            fr[1::2] = 0.5 * (pose[:-1] + pose[1:])
+            native[cid] = torch.as_tensor(fr)
+            if split == "eval":                                   # frame-level (10 Hz) poses/actions
                 ac = np.zeros((2 * T - 1, 2), np.float32)
                 ac[0::2, 0] = steer
                 ac[1::2, 0] = 0.5 * (steer[:-1] + steer[1:])
@@ -614,6 +731,7 @@ def make_synthetic_world(root, n_train=6, n_eval=3, T=70, seed=0, d_feat=D_FEAT)
                 fh.write(json.dumps({"sid": stable_episode_id(cid), "clip_id": cid, "v_hi_ms": 13.0, "bin": 1,
                                      "limit_kmh": 50, "one_hot": [0.0, 1.0, 0.0, 0.0], "valid": 1}) + "\n")
     json.dump(windows, open(root / "eval_grid_windows.json", "w"))
+    torch.save({"tracks": native, "meta": {"schema": "native-tracks-v1", "synthetic": True}}, root / "native_tracks.pt")
     np.savez_compressed(root / "eval_kin.npz", clip=np.array([c for c, _, _ in kin_eval]),
                         n=np.array([len(f) for _, f, _ in kin_eval]), poses=np.concatenate([f for _, f, _ in kin_eval]),
                         actions=np.concatenate([a for _, _, a in kin_eval]))

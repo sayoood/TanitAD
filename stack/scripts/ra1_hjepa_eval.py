@@ -44,7 +44,7 @@ from tanitad.data import ra1_pooled as RD  # noqa: E402
 from tanitad.data import v8f_mini_data as D  # noqa: E402
 from tanitad.models import ra1_hjepa as R  # noqa: E402
 from tanitad.models.hjepa import rho_within_episode  # noqa: E402
-from tanitad.models.v8f_mini import load_p10  # noqa: E402
+from tanitad.models.v8f_mini import load_p10, p10_meta  # noqa: E402
 from taniteval import ci  # noqa: E402
 from taniteval import floors_kin as fk  # noqa: E402
 
@@ -110,7 +110,7 @@ def pair(a, b, eid, n_boot, seed):
 
 # ============================================================================================== holdout (the A1 selection set)
 @torch.no_grad()
-def holdout_eval(a, model, cfg, ck, prior, device):
+def holdout_eval(a, model, cfg, ck, prior, device, tracks=None):
     """PREREG Amendment 1: this arm's ADE@6s on the fixed TRAIN holdout -- the quantity the A1 cell is SELECTED on.  Returns
     ``(block, arrays)``; the arrays are ``hold_*`` (kept apart from the eval-141 ``ade6`` so a selection cannot read the wrong one).
     The holdout is RE-DERIVED from the train manifest and checked against the checkpoint's own record (clip list + sha256 + the train
@@ -129,7 +129,7 @@ def holdout_eval(a, model, cfg, ck, prior, device):
         raise AssertionError("TRAIN-SPLIT DRIFT: the train clips the cache gives now are not the ones this checkpoint was trained on")
     if set(tr) & set(hold):
         raise AssertionError("holdout/train overlap")
-    bank = RD.ClipBank(a.train_cache, "train", prior, cfg.grid)
+    bank = RD.ClipBank(a.train_cache, "train", prior, cfg.grid, cfg.kin_mode, tracks)
     bank.load(hold)
     wins = RD.eval_windows(bank, hold, None, a.hold_stride)
     lat = {c: clip_latents(model, bank.clips[c], device)[0] for c in hold}
@@ -155,8 +155,12 @@ def run_eval(a) -> dict:
     t0 = time.time()
     device = torch.device("cpu")
     model, cfg, ck = load_model(a.ckpt, device)
-    prior = load_p10(a.p10_prior)
-    bank = RD.ClipBank(a.eval_cache, "eval", prior, cfg.grid)
+    prior = load_p10(a.p10_prior, cfg.kin_mode)                # REFUSES a prior whose units are not the checkpoint's kin mode's
+    tracks = D.load_native_tracks(a.tracks) if cfg.kin_mode == "yaw" and a.tracks else None
+    if cfg.kin_mode == "yaw" and not tracks:
+        raise SystemExit("REFUSED: this checkpoint was trained with --kin-mode yaw; eval needs --tracks native_tracks.pt")
+    ctl = R.ctl_channel(cfg.kin_mode)
+    bank = RD.ClipBank(a.eval_cache, "eval", prior, cfg.grid, cfg.kin_mode, tracks)
     order = [c for c, _ in RD.list_clips(a.eval_cache, "eval")]
     bank.load(order)
     disj = None
@@ -179,7 +183,8 @@ def run_eval(a) -> dict:
     gt = gather(lambda d, z, t: d["gt"][t]).double().numpy()
     with torch.no_grad():
         pred = model.predict_traj(z1, f8n, torch.from_numpy(p10).float()).double().numpy()
-    res: dict = dict(schema="ra1-eval-v1", arm=cfg.arm, cfg=cfg.to_json(), cfg_sha12=cfg.sha12(), ckpt=os.path.abspath(a.ckpt),
+    res: dict = dict(schema="ra1-eval-v1", arm=cfg.arm, kin_mode=cfg.kin_mode, ctl_channel=ctl, p10_units=p10_meta(a.p10_prior).get("units", "steer"),
+                     cfg=cfg.to_json(), cfg_sha12=cfg.sha12(), ckpt=os.path.abspath(a.ckpt),
                      ckpt_md5=file_md5(a.ckpt), ckpt_step=int(ck["step"]), n_windows=N, n_episodes=len(order),
                      grid_json=a.grid_json, disjointness=disj, n_boot=a.n_boot, estimator="paired_episode_cluster_bootstrap")
     nb, sd = a.n_boot, a.seed
@@ -190,7 +195,8 @@ def run_eval(a) -> dict:
     res["K"] = dict(tier="T1-class open-loop trajectory (readout from the t0 observation + t0 kinematics; no recorded future action)",
                     ade6_arm=stat(ade6, eid, nb, sd), ade6_p10=stat(p6, eid, nb, sd), ade6_arm_minus_p10=pair(ade6, p6, eid, nb, sd),
                     ade2_arm=stat(ade2, eid, nb, sd), ade2_p10=stat(p2, eid, nb, sd), ade2_arm_minus_p10=pair(ade2, p2, eid, nb, sd),
-                    note="negative delta = the arm beats the learned kinematic floor P10 (refit in the STEER unit)")
+                    note="negative delta = the arm beats the learned kinematic floor P10 (%s)" % (
+                        "refit on the MEASURED yaw rate, curvature unit -- PI ruling D-PI-YAWRATE-1" if cfg.kin_mode == "yaw" else "refit in the STEER unit"))
     ctrl = dict(p10_minus_p10=pair(p6, p6, eid, nb, sd), gt_ade_max=float(fk.ade(gt, gt).max()))
     ctrl["p10_minus_p10_ok"] = ctrl["p10_minus_p10"]["delta"] == 0.0 and ctrl["p10_minus_p10"]["lo"] == 0.0 and ctrl["p10_minus_p10"]["hi"] == 0.0
     if a.p10_ref_pred and os.path.exists(a.p10_ref_pred):
@@ -200,7 +206,7 @@ def run_eval(a) -> dict:
     res["controls"] = ctrl
 
     # ------------------------------------------------------------------ the selection holdout (NOT K; see the module docstring)
-    res["holdout"], hold_arrays = holdout_eval(a, model, cfg, ck, prior, device)
+    res["holdout"], hold_arrays = holdout_eval(a, model, cfg, ck, prior, device, tracks)
     if res["holdout"].get("status") == "OK":
         res["holdout"]["disjoint_from_eval141"] = D.assert_disjoint(ck["holdout"]["clips"], order)["overlap"] == 0
 
@@ -242,7 +248,7 @@ def run_eval(a) -> dict:
     if model.stack is None:
         res["SENS"] = res["COST"] = res["rho"] = {"status": "n/a: R0 has no world model"}
     else:
-        fut = torch.stack([bank.clips[c]["act"][t:t + 10] for c, t in wins])
+        fut = torch.stack([bank.clips[c]["act"][t:t + 10] for c, t in wins])   # RAW (a, <ctl>, v) in this checkpoint's own representation
         zs = z1
         etensor = torch.from_numpy(eid)
         selfswap = R.sensitivity_per_window(model, zs, fut, etensor, perm=torch.arange(N))
@@ -251,16 +257,17 @@ def run_eval(a) -> dict:
         blk = dict(tier="T0 (recorded future actions consumed by the rollout)", k_steps_s=0.2, donor="fixed derangement over episodes, seed 0",
                    self_swap_control_max=float(max(abs(v) for v in sw.values())),
                    self_swap_control_ok=bool(all(v == 0.0 for v in sw.values())), channels={})
-        for ch in ("all", "a", "steer", "v"):
+        blk["ctl_channel"] = ctl                     # the lateral-control channel this checkpoint's action vector carries
+        for ch in ("all", "a", ctl, "v"):
             for k in (1, 5, 10):
                 w = sens_main[f"win/{ch}/k{k}"]
                 blk["channels"][f"{ch}/k{k}"] = dict(mean_of_ratios=float(sens_main[f"sens/{ch}/k{k}"]),
                                                       ratio_of_means=float(sens_main[f"sens_rom/{ch}/k{k}"]), ci=stat(w, eid, nb, sd))
                 arrays[f"sens_{ch}_k{k}"] = w
-        s10 = blk["channels"][f"steer/k{SENS_K}"]["mean_of_ratios"]
+        s10 = blk["channels"][f"{ctl}/k{SENS_K}"]["mean_of_ratios"]
         v10 = blk["channels"][f"v/k{SENS_K}"]["mean_of_ratios"]
-        blk["steer_k10"], blk["speed_k10"] = s10, v10
-        blk["speed_over_steer"] = (v10 / s10) if s10 > 0 else None
+        blk[f"{ctl}_k10"], blk["speed_k10"] = s10, v10
+        blk[f"speed_over_{ctl}"] = (v10 / s10) if s10 > 0 else None
         res["SENS"] = blk
         res["rho"] = dict(
             tier="T0", **{f"L{l + 1}": rho_within_episode(torch.cat([lat[c][l] for c in order]),
@@ -319,8 +326,20 @@ def run_verdict(a) -> dict:
     ref = next(iter(runs.values()))["z"]
     for k, r in runs.items():
         assert np.array_equal(r["z"]["eid"], ref["eid"]) and np.array_equal(r["z"]["t"], ref["t"]), f"{k}: eval windows differ"
+    # PI ruling D-PI-YAWRATE-1: a verdict reads ONE representation. Steer-representation runs are NON-DECIDING; mixing them with
+    # yaw runs would compare two different action spaces under one bar. (Legacy dumps carry no kin_mode => steer.)
+    kmodes = {k: r["ev"].get("kin_mode", "steer") for k, r in runs.items()}
+    if len(set(kmodes.values())) != 1:
+        raise SystemExit("REFUSED: runs of different kin_mode in one verdict: %s -- a steer-representation run is a NON-DECIDING "
+                         "representation-equivalence check, never a member of the deciding verdict" % json.dumps({f'{k[0]}:{k[1]}@{k[2]}': v for k, v in kmodes.items()}))
+    kin_mode = next(iter(kmodes.values()))
+    ctl = R.ctl_channel(kin_mode)
     eid, nb, sd = ref["eid"], a.n_boot, 0
-    out: dict = dict(schema="ra1-verdict-v1", runs={f"{k[0]}:{k[1]}@{k[2]}": r["path"] for k, r in runs.items()},
+    out: dict = dict(schema="ra1-verdict-v1", kin_mode=kin_mode, ctl_channel=ctl,
+                     deciding=(kin_mode == "yaw"),
+                     representation_note=("MEASURED YAW RATE (PI ruling D-PI-YAWRATE-1): deciding" if kin_mode == "yaw" else
+                                          "RECORDED STEER representation: NON-DECIDING since the ruling -- a representation-equivalence check only"),
+                     runs={f"{k[0]}:{k[1]}@{k[2]}": r["path"] for k, r in runs.items()},
                      estimator="paired episode-cluster bootstrap (episodes) + the 2-seed floor |A1_s0 - A1_s1| (training seed)",
                      n_windows=int(len(eid)), instrument_ok_all=all(r["ev"]["instrument_ok"] for r in runs.values()))
     ade = lambda k: runs[k]["z"]["ade6"]                                                  # noqa: E731
@@ -395,12 +414,12 @@ def run_verdict(a) -> dict:
         if k1 not in runs or k0 is None or k0 not in runs:
             sens[f"seed{s}"] = "NOT EVALUABLE: missing run"
             continue
-        w1, w0 = runs[k1]["z"][f"sens_steer_k{SENS_K}"], runs[k0]["z"][f"sens_steer_k{SENS_K}"]
+        w1, w0 = runs[k1]["z"][f"sens_{ctl}_k{SENS_K}"], runs[k0]["z"][f"sens_{ctl}_k{SENS_K}"]
         d = pair(w1, w0, eid, nb, sd)
         v1 = float(w1.mean())
-        sens[f"seed{s}"] = dict(A1_steer_k10=v1, A0_steer_k10=float(w0.mean()), A0_cell=k0[1], A1_minus_A0=d, passes_level=v1 >= SENS_BAR,
+        sens[f"seed{s}"] = dict(**{f"A1_{ctl}_k10": v1, f"A0_{ctl}_k10": float(w0.mean())}, A0_cell=k0[1], A1_minus_A0=d, passes_level=v1 >= SENS_BAR,
                                 separated_above_A0=bool(d["separated"] and d["delta"] > 0), speed_k10_A1=float(runs[k1]["z"][f"sens_v_k{SENS_K}"].mean()))
-    out["SENS"] = dict(bar=f"A1 level-1 steer-sensitivity (k={SENS_K}) >= {SENS_BAR} AND separated above A0, at BOTH seeds", per_seed=sens,
+    out["SENS"] = dict(bar=f"A1 level-1 {ctl}-sensitivity (k={SENS_K}) >= {SENS_BAR} AND separated above A0, at BOTH seeds", per_seed=sens, ctl_channel=ctl,
                        PASS=bool(all(isinstance(v, dict) and v["passes_level"] and v["separated_above_A0"] for v in sens.values()) and len(sens) == 2))
     # ---------------- K
     floor = None
@@ -441,10 +460,10 @@ def run_verdict(a) -> dict:
         h = {}
         for k in hk:
             z = runs[k]["z"]
-            h[f"{k[1]}@{k[2]}"] = dict(steer_k10=float(z[f"sens_steer_k{SENS_K}"].mean()), speed_k10=float(z[f"sens_v_k{SENS_K}"].mean()),
-                                       ade6=float(z["ade6"].mean()),
-                                       steer_k10_minus_A1_same_seed=(pair(z[f"sens_steer_k{SENS_K}"], runs[("A1", best, k[2])]["z"][f"sens_steer_k{SENS_K}"],
-                                                                          eid, nb, sd) if ("A1", best, k[2]) in runs else "missing A1"))
+            h[f"{k[1]}@{k[2]}"] = {f"{ctl}_k10": float(z[f"sens_{ctl}_k{SENS_K}"].mean()), "speed_k10": float(z[f"sens_v_k{SENS_K}"].mean()),
+                                   "ade6": float(z["ade6"].mean()),
+                                   f"{ctl}_k10_minus_A1_same_seed": (pair(z[f"sens_{ctl}_k{SENS_K}"], runs[("A1", best, k[2])]["z"][f"sens_{ctl}_k{SENS_K}"],
+                                                                          eid, nb, sd) if ("A1", best, k[2]) in runs else "missing A1")}
         out["A1h_EXPLORATORY"] = dict(note="registered 2026-10-17 before any RA-1 data; copycat remedy (arXiv 2010.14876); does NOT decide H-HJ-SENS-1", runs=h)
     # ---------------- branch (PREREG outcomes, verbatim order)
     sp, kp = out["SENS"]["PASS"], out["K"]["PASS"]
@@ -470,6 +489,7 @@ def main(argv=None) -> int:
     e.add_argument("--ckpt", required=True)
     e.add_argument("--eval-cache", required=True)
     e.add_argument("--p10-prior", required=True)
+    e.add_argument("--tracks", default=None, help="native_tracks.pt (build_native_tracks.py): REQUIRED for a --kin-mode yaw checkpoint")
     e.add_argument("--grid-json", default=None, help="eval_grid_windows.json (141 eps / 2,399 windows); else every valid frame")
     e.add_argument("--eval-stride", type=int, default=1)
     e.add_argument("--train-cache", default=None, help="assert train/eval clip-id disjointness against this cache's train manifest, AND score the "
@@ -490,8 +510,9 @@ def main(argv=None) -> int:
         r = run_eval(a)
         print(json.dumps(jsonable({k: r[k] for k in ("arm", "ckpt_step", "n_windows", "instrument_ok")}), default=str))
         print("K ade6 arm-P10:", json.dumps(jsonable(r["K"]["ade6_arm_minus_p10"])))
-        if isinstance(r.get("SENS"), dict) and "steer_k10" in r["SENS"]:
-            print("SENS steer/k10 %.4f  speed/k10 %.4f  self-swap ok=%s" % (r["SENS"]["steer_k10"], r["SENS"]["speed_k10"], r["SENS"]["self_swap_control_ok"]))
+        if isinstance(r.get("SENS"), dict) and "ctl_channel" in r["SENS"]:
+            c = r["SENS"]["ctl_channel"]
+            print("SENS %s/k10 %.4f  speed/k10 %.4f  self-swap ok=%s" % (c, r["SENS"][f"{c}_k10"], r["SENS"]["speed_k10"], r["SENS"]["self_swap_control_ok"]))
         return 0 if r["instrument_ok"] else 3
     r = run_verdict(a)
     print(json.dumps(jsonable({k: r.get(k) for k in ("A1_best_cell", "A1_best_rule", "status", "A1x_control", "branch")}), indent=1, default=str))

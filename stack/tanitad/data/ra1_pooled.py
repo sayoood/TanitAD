@@ -5,6 +5,11 @@ Cache contract (``Research/2026-10-17-refav1-hj-mini/code/pull_encode_pooled.py`
 (``pool8x20`` fp8 ``[T, 160, 1024]`` optional), ``v / a / steer`` ``[T]``, ``pose_grid`` ``[T, 4]`` = (x, y, yaw, v), ``kin3``
 ``[T, 3]`` = (v0, a0, steer0) and ``p10`` ``[T, 8]`` (row 0 NaN), and ``<cache>/<split>/manifest.jsonl``.
 
+KINEMATIC MODE (PI ruling D-PI-YAWRATE-1, 2026-10-17: *"the model should get the measured yaw rate"*): ``kin_mode="steer"`` is the legacy
+representation above; ``kin_mode="yaw"`` (the trainers' default) builds kin3, the 8 P10 features, the kd_x base (CURVATURE unit) and
+action channel 1 from the NATIVE pose track (``native_tracks.pt``) through ``v8f_mini_data.yaw_kin_from_track`` and never reads the
+cache's ``steer`` / ``kin3`` / ``p10`` / ``yaw_rate``. The action vector is then ``(a, yaw_rate, v)``.
+
 NOTHING is re-implemented: the kd_x base (``action_units="steer"`` -- ``actions[:,0]`` is a road-wheel ANGLE, RETRACTION_LOG R46),
 the GT waypoints, the clip order and the train/eval disjointness check are ``tanitad.data.v8f_mini_data``'s
 (``kdx_base`` / ``gt_future`` / ``sha12`` / ``read_manifest`` / ``assert_disjoint``); the P10 prior is
@@ -82,28 +87,45 @@ def split_train_holdout(clips, n_clips: int, holdout_n: int, pool_n: int = STAGE
     return train, hold
 
 
-def load_clip(path, prior, grid: str = "4x10") -> dict:
+def load_clip(path, prior, grid: str = "4x10", kin_mode: str = "steer", track=None) -> dict:
     """One clip -> tensors. ``prior`` is a frozen ``P10Prior`` (its trajectory and its feature standardiser are precomputed per
-    frame here, so a batch is a gather)."""
+    frame here, so a batch is a gather). ``kin_mode="yaw"`` needs the clip's native pose ``track`` (see the module docstring)."""
+    D.check_kin_mode(kin_mode)
     o = torch.load(path, map_location="cpu", weights_only=True)
     key = grid_key(grid)
     if key not in o:
         raise KeyError(f"{path}: no {key} (has {[k for k in o if k.startswith('pool')]})")
     pg = o["pose_grid"].double().numpy()
-    kin3 = o["kin3"].double().numpy()
     T = len(pg)
     pool = o[key]
     assert pool.shape[0] == T, f"{path}: {pool.shape[0]} frames of tokens vs {T} poses"
-    base = D.kdx_base(kin3)                                    # [T,30,2] float32, steer unit, NaN row -> 0
+    if kin_mode == "yaw":
+        # the cache's kin3 / p10 / steer / yaw_rate are NOT READ (steer-derived, or a forward difference); the native track is
+        # checked against the cache's own pose_grid before one number is taken from it.
+        if track is None:
+            raise ValueError(f"{path}: kin_mode 'yaw' needs this clip's native pose track (native_tracks.pt)")
+        D.check_track_matches_grid(track, pg, Path(path).stem)
+        kin3, omega = D.yaw_kin_from_track(track)
+        p10f = torch.full((T, 8), float("nan"))
+        p10f[1:] = torch.from_numpy(D._fk().kin_features(kin3[1:]).astype(np.float32))
+        # a TRAIN track starts at raw frame 2 (the v2 manifest), so omega is undefined at cache step 1: the ACTION channel is filled with
+        # 0.0 there, exactly as ego_channels_from_poses fills step 0 (a NaN in `act` would NaN the world-model loss of every window that
+        # contains it). kin3 / p10f stay NaN on those rows, so they are never `valid`.
+        ch1 = torch.from_numpy(np.nan_to_num(omega, nan=0.0).astype(np.float32))
+        base = D.kdx_base(kin3, D.KIN_UNITS["yaw"])            # [T,30,2] float32, CURVATURE unit, NaN row -> 0
+    else:
+        kin3 = o["kin3"].double().numpy()
+        base = D.kdx_base(kin3)                                # [T,30,2] float32, steer unit, NaN row -> 0
+        p10f = o["p10"].float()
+        ch1 = o["steer"].float()
     gt, gt_ok = D.gt_future(pg)                                # [T,30,2], t + 30 <= T - 1
-    p10f = o["p10"].float()
     fin = torch.isfinite(p10f).all(1)
     f8 = torch.nan_to_num(p10f)
     with torch.no_grad():
         p10_traj = prior(f8, torch.from_numpy(base))           # [T,30,2]
         f8n = prior.standardise(f8)
     a = torch.nan_to_num(o["a"].float())
-    act = torch.stack([a, o["steer"].float(), o["v"].float()], -1)           # RAW a, steer, v
+    act = torch.stack([a, ch1, o["v"].float()], -1)                          # RAW a, (steer | yaw_rate), v
     valid = torch.from_numpy(gt_ok) & fin & (torch.arange(T) >= T_FIRST) & torch.isfinite(torch.from_numpy(gt)).all(-1).all(-1)
     return dict(pool=pool, act=act, f8n=f8n, p10_traj=p10_traj, gt=torch.from_numpy(gt), valid=valid,
                 pose=torch.from_numpy(pg).float(), kin3=torch.from_numpy(kin3).float(), T=T)
@@ -112,15 +134,21 @@ def load_clip(path, prior, grid: str = "4x10") -> dict:
 class ClipBank:
     """In-RAM clips (tokens stay fp8: 4x10 is ~4 MB/clip). ``load`` is idempotent and ``keep`` evicts everything else."""
 
-    def __init__(self, cache_dir, split, prior, grid: str = "4x10"):
+    def __init__(self, cache_dir, split, prior, grid: str = "4x10", kin_mode: str = "steer", tracks: dict | None = None):
         self.dir = Path(cache_dir) / split / "clips"
         self.split, self.prior, self.grid = split, prior, grid
+        self.kin_mode, self.tracks = D.check_kin_mode(kin_mode), tracks
+        if self.kin_mode == "yaw" and not tracks:
+            raise ValueError("kin_mode 'yaw' needs the native pose tracks (native_tracks.pt: --tracks)")
         self.clips: dict = {}
 
     def load(self, names) -> None:
         for c in names:
             if c not in self.clips:
-                self.clips[c] = load_clip(self.dir / f"{c}.pt", self.prior, self.grid)
+                if self.kin_mode == "yaw" and c not in self.tracks:
+                    raise KeyError(f"{c}: no native pose track in the sidecar")
+                self.clips[c] = load_clip(self.dir / f"{c}.pt", self.prior, self.grid, self.kin_mode,
+                                          self.tracks[c] if self.kin_mode == "yaw" else None)
 
     def keep(self, names) -> None:
         keep = set(names)
