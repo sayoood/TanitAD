@@ -3183,13 +3183,13 @@ paired log-cluster bootstrap, same draws for every term; intervals recomputed fo
 | comfort | −0.01 [−0.03, +0.00] | −0.2 % |
 
 (`RP/raw/2026-10-17-paper-s720-recompute/gap_decomp_ci.json`; registry statement: `REG` §14.2 "Gap
-decomposition", `GAC` D-REFE-GAP-1.) The split is order-dependent — gate first is a choice, not a law — and it is
+decomposition", `GAC` D-REFE-GAP-1b.) The split is order-dependent — gate first is a choice, not a law — and it is
 a decomposition, not a lever claim. Against the published *student* profile (PUBLISHED, Table A13) the picture is
 the same from the other side: NC 98.94 vs 98.80 and TTC 95.63 vs 95.74 already match; **DAC 96.58 vs 99.25 and EP
 81.20 vs 92.72** do not. The published planner reaches 94.55 by being *faster* than the human (EP 92.72 against
 the human's 87.5); the human reaches it by never being zeroed. This corrects an earlier internal reading that "EP
 is the largest gap", which was true of the published profile and not of the bar's decomposition (`GAC`
-D-REFE-GAP-1, second row of that id).
+D-REFE-GAP-1b).
 
 **(c) The zero tail is selection, not proposal.** *(MEASURED; pre-registered before any count; **T1**; estimator
 as above — answers another draw of logs only; both arms are one training seed.)* A zero-PDMS token is **SEL** if
