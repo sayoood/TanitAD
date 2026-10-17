@@ -1,0 +1,27 @@
+PASS F_c tangent exact on an arc, xy bit-identical
+PASS MUTANT forward-chord tangent goes RED
+PASS F_c exact on a right-turn arc
+PASS F_c straight line -> heading 0
+PASS F_c stationary plan unchanged (no tangent defined)
+PASS F_c keeps the original heading branch
+PASS kappa0 exact on a circle
+PASS MUTANT kappa0 = y/r^2 goes RED
+PASS F_b rho=1.0 keeps the pick
+PASS MUTANT F_b ignoring rho goes RED
+PASS F_b no switch below 0.10 m gain
+PASS F_b switches at >= 0.10 m gain inside the tie band
+PASS F_b never leaves the tie band
+PASS delta translation invariant
+PASS decompose: inside shift of a left turn reads cross_inside > 0
+PASS decompose: outside shift reads cross_inside < 0 (sign mutant RED)
+PASS selection_score == rl_val_eval.select
+PASS bootstrap self-pair exactly 0
+PASS zero_tail.py byte-identical to ZT3's
+PASS comp_step: tracked == plan leaves r unchanged
+PASS pipeline: ego_override with no field changed reproduces the base sim bit-for-bit
+PASS MUTANT pipeline: a changed initial speed changes the sim
+PASS pipeline: CF-A (lags removed) changes the sim
+PASS pipeline: base sim DAC = 0 and raw DAC = 1 on a ZT3 tracker-made token
+PASS MUTANT pipeline: no drivable polygons -> DAC 0 on the raw plan
+PASS pipeline: AG1 (navtest ego steering and yaw rate are 0)
+ZZTEST_PASS 26

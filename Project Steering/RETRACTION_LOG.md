@@ -18238,3 +18238,23 @@ largest measured effect*. A lever that the attribution assigns about 0.2 of the 
 - Open: `paths_from_controls` should refuse to run without an explicit `action_units` (BACKLOG HJ-UNITS).
 
 **Class:** *a control inherits the unit of the nearest default*. Same family as `C-REFCV3-ARM-SAME-DEFECT`. It survived because the defective control made every learned arm look strong, so no number looked wrong. It was caught only because S1 rebuilt the floor from source in a second unit, instead of reusing the banked array.
+
+### R47 (2026-10-17) - "execution-side (tracking-made) lever reach 42 % / 1.07 PDMS" (`D-REFE-ZEROTAIL-3`, and the Master Mind's report to the PI the same day)
+
+**Claimed:** an admissible execution-side fix for NAVSIM's tracking-made DAC zeros could reach 1.07 PDMS of the gap to 94.55, the second-largest lever after P6's trunk.
+
+**True:** 1.07 is the GROSS reach, the PDMS carried by the zeros that exist only in simulated tracking. It is not what a fix returns.
+- At the PICK, the tracker also SAVES plans whose own footprint fails DAC and whose simulated execution passes.
+- MEASURED post-hoc (`.../2026-09-20-refe-plan/raw/2026-10-17-tracking-execution/RESULT.json`, `posthoc_tracker_saved`): dev N-s0 saved 27 vs made 20; navtest ~132 ESTIMATED vs 144.
+- MEASURED, pre-registered (`PREREG_ZT5.md`): every admissible execution-side or map-free fix reads about 0 or negative on dev, e.g. F_c dPDMS -0.30 [-0.72, +0.04] (19 rescued, 32 broken).
+- The net reach is therefore about 0.
+
+**Fixed:**
+- `D-REFE-ZEROTAIL-3`'s lever-reach line now carries the correction.
+- New row `D-REFE-ZEROTAIL-4`.
+- ZT4 (P6 trunk) remains the next lever. Its 1.48 is labelled gross until ZT4 nets it on P6's own fan.
+
+**Class:** *a reach computed from one side of a two-sided flow is a ceiling, not a lever.* Counting the failures a mechanism CAUSES without counting the failures it PREVENTS gives gross, not net, and here the two nearly cancel.
+- Same family as an oracle-on-SEL ceiling quoted as a gain.
+- ⇒ Before quoting a lever's reach, count both directions at the decision point.
+- It was caught only because ZT5's fixes kept breaking as many zeros as they rescued, which made the reverse flow visible.
