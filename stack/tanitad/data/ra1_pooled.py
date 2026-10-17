@@ -14,9 +14,16 @@ TRAINING SEGMENTS: a segment is ``T1`` consecutive cache frames ``[s, s+T1)``. T
 trajectory loss is applied at EVERY frame of it whose 6 s future exists (``valid``). A frame is valid iff ``t >= 3`` (the eval grid's
 first window), its P10 features are finite and ``t + 30 <= T - 1``. Sampling is a pure function of ``(seed, step)`` so a resumed run
 draws exactly what an uninterrupted one would have.
+
+HOLDOUT (PREREG_HJ_STAGE0 Amendment 1): the A1 (beta, gamma) cell is selected on windows that do NOT score K. ``holdout_clips`` is a
+fixed, episode-disjoint set of ``holdout_n`` (60) of the 600 stage-A TRAIN clips -- the LAST ``holdout_n`` of the first ``pool_n`` (600) in
+sha12 order -- and ``split_train_holdout`` removes it from the training clips of EVERY arm. The holdout is a function of the manifest
+and ``(holdout_n, pool_n)`` ONLY (never of ``--n-clips``, the arm or the seed), and the 600-clip cache is the nested sha12 prefix of the
+4,572, so the same 60 clips are withheld at 600 and at 4,572.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 
@@ -27,6 +34,8 @@ from tanitad.data import v8f_mini_data as D
 
 HORIZON = D.HORIZON            # 30
 T_FIRST = 3                    # the trunk-probe grid's first window
+STAGE_A_CLIPS = 600            # PREREG Amendment 1: the stage-A train pool = the first 600 clips in sha12 order
+HOLDOUT_CLIPS = 60             # ... of which the last 60 are the selection holdout (the queue passes ``--holdout-n 60``)
 
 
 def grid_key(grid: str) -> str:
@@ -42,6 +51,35 @@ def pick_train_clips(clips, n: int = 0) -> list:
     """The nested train prefix: ordered by sha12 (the S4 / P10-fit order), first ``n`` (0 = all)."""
     order = sorted(clips, key=D.sha12)
     return order[:n] if n else order
+
+
+def clips_sha256(names) -> str:
+    """Order-sensitive digest of a clip-id list: what a run's ``meta.json`` / checkpoint record, and what the evaluator re-derives."""
+    return hashlib.sha256(chr(10).join(names).encode("utf-8")).hexdigest()
+
+
+def holdout_clips(clips, holdout_n: int, pool_n: int = STAGE_A_CLIPS) -> list:
+    """The selection holdout: the LAST ``holdout_n`` of the first ``pool_n`` clips in sha12 order. A function of the clip set and
+    ``(holdout_n, pool_n)`` only. ``holdout_n`` < 1 is refused (a holdout of zero is a selection on the scoring windows)."""
+    if holdout_n < 1:
+        raise ValueError(f"holdout_n must be >= 1 (got {holdout_n}): PREREG Amendment 1 withholds a holdout from EVERY arm")
+    if holdout_n >= pool_n:
+        raise ValueError(f"holdout_n ({holdout_n}) must be smaller than the stage-A pool ({pool_n})")
+    order = sorted(clips, key=D.sha12)
+    if len(order) < pool_n:
+        raise ValueError(f"the train manifest holds {len(order)} clips, fewer than the {pool_n}-clip stage-A pool the holdout is cut from")
+    return order[pool_n - holdout_n:pool_n]
+
+
+def split_train_holdout(clips, n_clips: int, holdout_n: int, pool_n: int = STAGE_A_CLIPS) -> tuple:
+    """``(train, holdout)``. ``train`` = the nested prefix ``pick_train_clips(clips, n_clips)`` MINUS the holdout (for every arm, at
+    every ``n_clips``); ``holdout`` is independent of ``n_clips``. Disjointness is asserted here, where it is made."""
+    hold = holdout_clips(clips, holdout_n, pool_n)
+    hs = set(hold)
+    train = [c for c in pick_train_clips(clips, n_clips) if c not in hs]
+    if hs & set(train):
+        raise AssertionError("holdout/train overlap after the split")
+    return train, hold
 
 
 def load_clip(path, prior, grid: str = "4x10") -> dict:

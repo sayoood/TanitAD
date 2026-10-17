@@ -6,6 +6,11 @@ Code: `stack/tanitad/models/ra1_hjepa.py`, `stack/tanitad/data/ra1_pooled.py`, `
 `stack/tests/test_ra1_hjepa.py`, and ONE changed shared file: `stack/tanitad/models/hjepa.py` (`action_sensitivity(..., per_window=False)` —
 additive, default unchanged, 45 existing tests green). The queue: `code/ra1_box2_queue.cmd`.
 
+**PREREG Amendment 1 (A1-cell SELECTION) is implemented: every trainer call carries `--holdout-n 60` and the trainer REFUSES to run without it.**
+The last 60 of the 600 stage-A TRAIN clips (sha12 order) are withheld from training for EVERY arm; each eval scores them (`--train-cache`, already in
+the queue's eval line) and `verdict` selects the A1 cell on **seed-0 holdout ADE@6 s — never on eval-141**, which scores K once, for the chosen cell.
+Each run's `meta.json` records the holdout clip list and its sha256 (also in `DONE` and every checkpoint).
+
 ## 0. Preflight (no GPU, ~2 min) — do not train until both are green
 ```
 cd /d "D:\tanitad\repo"
@@ -22,11 +27,11 @@ set "CUDA_VISIBLE_DEVICES="
 | stage | command | runs (seeds) |
 |---|---|---|
 | 1 | `ra1_box2_queue.cmd stage1` | R0 (s0,s1) · A0 β 0.04 and 0.08 (s0,s1) · A1 grid β{0.04,0.08}×γ{50,100} (s0) = **10 runs** |
-| — | `ra1_box2_queue.cmd stage1verdict` | prints `A1_best_cell` (lowest seed-0 ADE@6 s; rule recorded in the JSON) |
+| — | `ra1_box2_queue.cmd stage1verdict` | prints `A1_best_cell` (lowest seed-0 **holdout** ADE@6 s; rule recorded in the JSON as `A1_best_rule`; exit 4 and `status` = `A1 SELECTION REFUSED` if a cell has no holdout numbers) |
 | 2 | `ra1_box2_queue.cmd stage2 <BETA> <GAMMA>` | best A1 cell (s1) · A2 (s0,s1) · A1x (s0) · A1h (s0, EXPLORATORY) = **5 runs** |
 | 3 | `ra1_box2_queue.cmd final <BETA> <GAMMA>` | `verdict.json`: SENS / K / COST bars, the A1x gate, the branch the PREREG selects |
 
-Single-arm form (what the queue runs): `python stack\scripts\ra1_hjepa_train.py --arm A1 --beta 0.08 --gamma 100 --seed 0 --grid 4x10 --cache D:\tanitad\cache --p10-prior <p10_prior.pt> --out D:\tanitad\runs\ra1\A1_b0.08g100_s0 --steps 6000 --device cuda`
+Single-arm form (what the queue runs): `python stack\scripts\ra1_hjepa_train.py --arm A1 --beta 0.08 --gamma 100 --seed 0 --grid 4x10 --holdout-n 60 --cache D:\tanitad\cache --p10-prior <p10_prior.pt> --out D:\tanitad\runs\ra1\A1_b0.08g100_s0 --steps 6000 --device cuda`
 (`p10_prior.pt` = `...\2026-10-17-v8f-mini\raw\p10\p10_prior.pt`, the steer-unit refit). The secondary 8×20 grid is `--grid 8x20` (A2 estimate 5.5 GB; use `--batch 32` if it OOMs).
 Launch detached (the dev-box lesson; UNVERIFIED on Box 2): `powershell -NoProfile -Command "([wmiclass]'Win32_Process').Create('cmd /c \"<queue.cmd> stage1 > D:\tanitad\runs\stage1.log 2>&1\"')"`.
 
@@ -47,7 +52,7 @@ Common: frozen pooled DINOv3-L tokens → trainable adapter (LN → per-token Li
 1. The (β, γ) grid is read as **LEVEL 1's** weights; upper levels use the paper's DROID level-2 values (β 0.16, γ 50, act-SIGReg 0.005). A0 sets every γ to 0 and keeps β; A0 is run at **both** β so the SENS comparison is β-matched.
 2. `w_traj = 10` (trajectory loss in metres vs the WM terms; at γ = 100 the IDM term is ≈ 100 at init and dominates the adapter's gradient — this is the paper's regime, but it is a real free constant).
 3. **R0 reads `[z¹, P10]`**; A-arms read `[z¹, z², (z³), P10]` (the extra input is a pointwise MLP of z¹).
-4. **Best-A1-cell selection uses the same eval-141 windows that score K** (ADE@6 s, seed 0): mild selection bias up to the 4-cell spread printed in `stage1_verdict.json`. No held-out split exists inside the 600 clips.
+4. **Best-A1-cell selection is made on the withheld TRAIN holdout, NOT on eval-141** (PREREG Amendment 1; the first build selected on the same eval-141 windows that score K, which is the "tune on the data you score" trap). The last 60 of the 600 stage-A clips (sha12 order) are withheld from training for EVERY arm (`--holdout-n 60`; 540 clips train); the cell = the lowest seed-0 mean ADE@6 s over those 60 clips' valid frames (`A1_cells_seed0_holdout_ade6` in `stage1_verdict.json`). eval-141 scores K once, for the chosen cell; every cell's eval-141 ADE@6 s is still listed (`A1_cells_seed0_eval141_ade6_NON_DECIDING`) and decides nothing. Same 60 clips at 600 and at 4,572 (the 600 is the nested sha12 prefix). **DISCLOSED CAVEAT:** the frozen P10 prior (`v8f_mini_fit_p10.py`) was fit on the first 600 clips by sha12, so the holdout clips are IN P10's fit set (P10 is in-sample there, out-of-sample on eval-141). It is the same P10 for every cell, so the offset is common to all four cells, but the READOUT's residual is smaller on the holdout than it would be out-of-sample, which can bias the cell ranking toward cells that correct P10 less. The cure (refit P10 on the 540 train clips) changes the banked prior and is not done here.
 5. COST: goal frame excluded; L1 on its own 0.2 s clock (primary), L2 on s = 3; the L1-on-L2's-clock variant is reported beside it. L3 is exploratory.
 6. Event strata come from GT ego motion with thresholds fixed in `ra1_pooled.strata_labels` (turn |Δyaw₆ₛ| ≥ 0.35 rad; stop; brake). **Lead braking and distance-keeping are NOT computable from the pooled cache** (no lead track) and are reported as such.
 
@@ -56,4 +61,5 @@ Per run `…\eval\eval.json` (+ `perwindow.npz`): `instrument_ok` (self-swap SEN
 Tiers: SENS and COST = **T0** (recorded future actions / true +6 s latent); K and the four families = **T1-class open-loop trajectory** (the model supplies its own trajectory; it does not drive). STRATEGIC family = **PAUSED** (PI ITEM 25), never a pass.
 Estimator: paired episode-cluster bootstrap, B = 2,000 — it answers *another draw of EPISODES* only; training-seed variance enters `verdict` through the 2-seed floor |A1₍s0₎ − A1₍s1₎|; inference-seed variance is 0 (deterministic readout and rollout).
 `verdict.json` carries the PREREG branch verbatim and the A1x gate first: **A1x not losing to A1, separated ⇒ instrument broken, nothing else is read.** A failed bar is reported FAILED and the named next lever runs (RULE ZERO) — SENS FAIL ⇒ γ 200 → IDM at level 2 only → time-repulsion floor.
-Exit codes: trainer `2` = launch gate refused (no training happened), eval `3` = instrument control failed.
+Exit codes: trainer `2` = launch gate refused (no training happened), eval `3` = instrument control failed. Also: the trainer exits `2` (argparse) when `--holdout-n` is missing, and verdict `4` = no A1 cell could be selected (none supplied, or a cell has no holdout numbers: read `status`).
+Holdout numbers: `eval.json["holdout"]` and the `hold_*` arrays of `perwindow.npz` (per-window ADE@6 s on the withheld clips; kept apart from the eval-141 `ade6`). `eval` re-derives the holdout from the train manifest and refuses a checkpoint whose recorded holdout/train split no longer matches (`HOLDOUT DRIFT` / `TRAIN-SPLIT DRIFT`).

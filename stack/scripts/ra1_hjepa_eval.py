@@ -16,6 +16,12 @@ EPISODES say this?" ONLY.  Training-seed variance is read from the 2-seed floor 
 and the rollout are deterministic; only the donor permutation of SENS is seeded, and it is fixed).
 CONTROLS that must read their known values (recorded, and a failure sets `instrument_ok=false`): SENS self-swap == exactly 0.0;
 P10 - P10 == +0.0000 [0, 0]; ADE(gt, gt) == 0; cache P10 vs the banked refit predictions (when --p10-ref-pred is given).
+
+SELECTION (PREREG_HJ_STAGE0 Amendment 1).  The best A1 (beta, gamma) cell is chosen on the fixed 60-clip TRAIN HOLDOUT that every arm
+was trained WITHOUT (`eval` scores it whenever `--train-cache` is given and the checkpoint carries its holdout record; the arrays
+`hold_*` and the `holdout` block of eval.json), by mean seed-0 ADE@6s there.  `verdict` has NO fallback: an A1 run without holdout
+numbers is REFUSED, never selected on the eval-141 windows that score K.  Every cell's eval-141 numbers are still reported, labelled
+NON_DECIDING; eval-141 scores K once, for the chosen cell.
 """
 from __future__ import annotations
 
@@ -102,6 +108,48 @@ def pair(a, b, eid, n_boot, seed):
     return {k: r[k] for k in ("delta", "lo", "hi", "separated", "n_windows", "n_episodes", "estimator", "degenerate") if k in r}
 
 
+# ============================================================================================== holdout (the A1 selection set)
+@torch.no_grad()
+def holdout_eval(a, model, cfg, ck, prior, device):
+    """PREREG Amendment 1: this arm's ADE@6s on the fixed TRAIN holdout -- the quantity the A1 cell is SELECTED on.  Returns
+    ``(block, arrays)``; the arrays are ``hold_*`` (kept apart from the eval-141 ``ade6`` so a selection cannot read the wrong one).
+    The holdout is RE-DERIVED from the train manifest and checked against the checkpoint's own record (clip list + sha256 + the train
+    split's sha256), and its disjointness from the train split is asserted again here."""
+    if not a.train_cache:
+        return dict(status="NOT COMPUTED: no --train-cache given; `verdict` will REFUSE to select an A1 cell from this run"), {}
+    rec = ck.get("holdout")
+    if not rec:
+        return dict(status="NOT COMPUTED: the checkpoint carries no holdout record (trained before PREREG Amendment 1); "
+                           "`verdict` will REFUSE to select an A1 cell from this run"), {}
+    train_all = [c for c, _ in RD.list_clips(a.train_cache, "train")]
+    tr, hold = RD.split_train_holdout(train_all, rec["n_clips_flag"], rec["n"], rec["pool"])
+    if hold != list(rec["clips"]) or RD.clips_sha256(hold) != rec["sha256"]:
+        raise AssertionError("HOLDOUT DRIFT: the holdout the train cache gives now is not the one this checkpoint was trained without")
+    if RD.clips_sha256(tr) != rec["train_sha256"]:
+        raise AssertionError("TRAIN-SPLIT DRIFT: the train clips the cache gives now are not the ones this checkpoint was trained on")
+    if set(tr) & set(hold):
+        raise AssertionError("holdout/train overlap")
+    bank = RD.ClipBank(a.train_cache, "train", prior, cfg.grid)
+    bank.load(hold)
+    wins = RD.eval_windows(bank, hold, None, a.hold_stride)
+    lat = {c: clip_latents(model, bank.clips[c], device)[0] for c in hold}
+    cidx = {c: i for i, c in enumerate(hold)}
+    eid = np.array([cidx[c] for c, _ in wins])
+    tt = np.array([t for _, t in wins])
+    z1 = torch.stack([lat[c][t] for c, t in wins])
+    f8n = torch.stack([bank.clips[c]["f8n"][t] for c, t in wins])
+    p10 = torch.stack([bank.clips[c]["p10_traj"][t] for c, t in wins]).double().numpy()
+    gt = torch.stack([bank.clips[c]["gt"][t] for c, t in wins]).double().numpy()
+    pred = model.predict_traj(z1, f8n, torch.from_numpy(p10).float()).double().numpy()
+    ade6, p6 = fk.ade(pred, gt), fk.ade(p10, gt)
+    nb, sd = a.n_boot, a.seed
+    blk = dict(status="OK", role="A1 SELECTION BASIS (PREREG_HJ_STAGE0 Amendment 1) -- never K", tier="T1-class open-loop trajectory",
+               n_clips=len(hold), n_windows=len(wins), n_episodes=len(hold), stride=a.hold_stride, n=rec["n"], pool=rec["pool"],
+               clips_sha256=rec["sha256"], train_sha256=rec["train_sha256"], disjoint_from_train=True,
+               ade6_arm=stat(ade6, eid, nb, sd), ade6_p10=stat(p6, eid, nb, sd), ade6_arm_minus_p10=pair(ade6, p6, eid, nb, sd))
+    return blk, dict(hold_eid=eid, hold_t=tt, hold_ade6=ade6, hold_p10_ade6=p6)
+
+
 # ============================================================================================== eval
 def run_eval(a) -> dict:
     t0 = time.time()
@@ -151,6 +199,11 @@ def run_eval(a) -> dict:
                                            max_abs_diff_m=float(np.abs(ref - p10).max()) if ref.shape == p10.shape else None)
     res["controls"] = ctrl
 
+    # ------------------------------------------------------------------ the selection holdout (NOT K; see the module docstring)
+    res["holdout"], hold_arrays = holdout_eval(a, model, cfg, ck, prior, device)
+    if res["holdout"].get("status") == "OK":
+        res["holdout"]["disjoint_from_eval141"] = D.assert_disjoint(ck["holdout"]["clips"], order)["overlap"] == 0
+
     # ------------------------------------------------------------------ four families (T1-class), arm and P10 side by side
     fam = {}
     try:
@@ -183,7 +236,7 @@ def run_eval(a) -> dict:
     strata["lead_braking"] = {"status": "NOT COMPUTABLE: no lead track in the pooled cache"}
     res["strata"] = strata
 
-    arrays = dict(eid=eid, t=tt, ade2=ade2, ade6=ade6, p10_ade2=p2, p10_ade6=p6, clips=np.array(order))
+    arrays = dict(eid=eid, t=tt, ade2=ade2, ade6=ade6, p10_ade2=p2, p10_ade6=p6, clips=np.array(order), **hold_arrays)
 
     # ------------------------------------------------------------------ SENS (T0) + rho + COST (T0): need the world model
     if model.stack is None:
@@ -249,6 +302,13 @@ def _parse_key(k):
     return arm, cell, int(seed)
 
 
+def selection_metric(z):
+    """THE quantity an A1 cell is selected on: the per-window ADE@6s on the withheld TRAIN holdout (PREREG Amendment 1).  There is
+    deliberately NO fallback to ``z['ade6']`` -- the eval-141 windows score K, and a probe that tunes on the windows it scores
+    manufactures a result (TRAPS.md).  A run without ``hold_ade6`` raises here and `run_verdict` refuses before it gets this far."""
+    return z["hold_ade6"]
+
+
 def run_verdict(a) -> dict:
     runs = {}
     for spec in a.run:
@@ -269,15 +329,46 @@ def run_verdict(a) -> dict:
     def cells(arm, seed):
         return sorted(c for (ar, c, s) in runs if ar == arm and s == seed)
 
-    # best A1 cell by seed-0 ADE@6s (documented: selected on the same eval-141 that scores K -- 4 cells' worth of selection bias)
-    a1c = cells("A1", 0)
-    best = min(a1c, key=lambda c: float(ade(("A1", c, 0)).mean())) if a1c else None
-    out["A1_cells_seed0"] = {c: float(ade(("A1", c, 0)).mean()) for c in a1c}
-    out["A1_best_cell"] = best
-    out["A1_best_rule"] = "lowest seed-0 mean ADE@6s on the eval windows (ALSO the K metric: mild selection bias, up to the cell spread above)"
-    if best is None:
-        out["status"] = "NO A1 seed-0 cell supplied"
+    def finish():
+        json.dump(jsonable(out), open(a.out, "w"), indent=1)
         return out
+
+    # ---------------- the A1 cell: selected on the HOLDOUT, never on the eval-141 windows that score K (PREREG Amendment 1)
+    out["selection_basis"] = "the withheld TRAIN holdout (PREREG_HJ_STAGE0 Amendment 1); eval-141 scores K once, for the chosen cell"
+    a1c = cells("A1", 0)
+    out["A1_best_cell"] = None
+    if not a1c:
+        out["status"] = "NO A1 seed-0 cell supplied"
+        return finish()
+    lacking = [c for c in a1c if "hold_ade6" not in runs[("A1", c, 0)]["z"].files]
+    if lacking:
+        out["status"] = ("A1 SELECTION REFUSED: no holdout numbers for A1 cell(s) %s -- the cell is chosen on the withheld TRAIN holdout and "
+                         "NEVER on the eval-141 windows that score K. Re-run `eval` with --train-cache on a checkpoint trained with --holdout-n."
+                         % lacking)
+        out["A1_cells_seed0_eval141_ade6_NON_DECIDING"] = {c: float(ade(("A1", c, 0)).mean()) for c in a1c}
+        return finish()
+    # every run that carries a holdout must have scored the SAME windows of the SAME clips (identical across arms by construction)
+    hr = {k: r for k, r in runs.items() if "hold_ade6" in r["z"].files}
+    h0 = next(iter(hr.values()))
+    for k, r in hr.items():
+        assert np.array_equal(r["z"]["hold_eid"], h0["z"]["hold_eid"]) and np.array_equal(r["z"]["hold_t"], h0["z"]["hold_t"]), \
+            f"{k}: holdout windows differ"
+    shas = {r["ev"].get("holdout", {}).get("clips_sha256") for r in hr.values()}
+    assert len(shas) == 1 and None not in shas, f"runs were trained without the SAME holdout (clip-list sha256s: {sorted(map(str, shas))})"
+    best = min(a1c, key=lambda c: float(selection_metric(runs[("A1", c, 0)]["z"]).mean()))
+    hb = runs[("A1", best, 0)]["ev"].get("holdout", {})
+    out["A1_best_cell"] = best
+    out["A1_cells_seed0_holdout_ade6"] = {c: float(selection_metric(runs[("A1", c, 0)]["z"]).mean()) for c in a1c}
+    out["A1_cells_seed0_eval141_ade6_NON_DECIDING"] = {
+        c: dict(ade6=float(ade(("A1", c, 0)).mean()), arm_minus_p10=float((ade(("A1", c, 0)) - p6).mean())) for c in a1c}
+    out["holdout"] = dict(clips_sha256=next(iter(shas)), n_clips=hb.get("n_clips"), n_windows=int(len(h0["z"]["hold_t"])), pool=hb.get("pool"),
+                          n_runs_scored=len(hr), ade6_mean_by_run={f"{k[0]}:{k[1]}@{k[2]}": float(selection_metric(r["z"]).mean())
+                                                                   for k, r in sorted(hr.items())})
+    out["A1_best_rule"] = ("lowest seed-0 mean ADE@6s on the withheld TRAIN holdout (%s clips = the last %s of the first %s in sha12 order, %d windows, "
+                           "clip-list sha256 %s...), withheld from training for EVERY arm -- PREREG_HJ_STAGE0 Amendment 1. NOT selected on eval-141: "
+                           "eval-141 scores K once, for this cell; every cell's eval-141 ADE@6s is listed under "
+                           "A1_cells_seed0_eval141_ade6_NON_DECIDING and decides nothing."
+                           % (hb.get("n_clips"), hb.get("n"), hb.get("pool"), len(h0["z"]["hold_t"]), next(iter(shas))[:12]))
     seeds = [0, 1]
     # ---------------- A1x: the instrument gate
     kx = ("A1x", best, 0) if ("A1x", best, 0) in runs else (("A1x", "", 0) if ("A1x", "", 0) in runs else None)
@@ -369,8 +460,7 @@ def run_verdict(a) -> dict:
     if gate and cand.get("R0", {}).get("PASS") and not cand.get("A1", {}).get("PASS"):
         branch += " | R0 alone passes K while A1 does not => the WM objective is hurting the readout: report it, move the WM to v8F's chassis question"
     out["branch"] = branch
-    json.dump(jsonable(out), open(a.out, "w"), indent=1)
-    return out
+    return finish()
 
 
 def main(argv=None) -> int:
@@ -382,7 +472,9 @@ def main(argv=None) -> int:
     e.add_argument("--p10-prior", required=True)
     e.add_argument("--grid-json", default=None, help="eval_grid_windows.json (141 eps / 2,399 windows); else every valid frame")
     e.add_argument("--eval-stride", type=int, default=1)
-    e.add_argument("--train-cache", default=None, help="assert train/eval clip-id disjointness against this cache's train manifest")
+    e.add_argument("--train-cache", default=None, help="assert train/eval clip-id disjointness against this cache's train manifest, AND score the "
+                   "withheld TRAIN holdout from it (PREREG Amendment 1: the A1 selection set; REQUIRED for any A1 cell to be selectable)")
+    e.add_argument("--hold-stride", type=int, default=1, help="holdout windows: every valid frame at this stride")
     e.add_argument("--p10-ref-pred", default=None, help="banked p10_eval_pred6.npy [2399,30,2] for a cross-check")
     e.add_argument("--out", required=True)
     e.add_argument("--n-boot", type=int, default=2000)
@@ -402,8 +494,8 @@ def main(argv=None) -> int:
             print("SENS steer/k10 %.4f  speed/k10 %.4f  self-swap ok=%s" % (r["SENS"]["steer_k10"], r["SENS"]["speed_k10"], r["SENS"]["self_swap_control_ok"]))
         return 0 if r["instrument_ok"] else 3
     r = run_verdict(a)
-    print(json.dumps(jsonable({k: r.get(k) for k in ("A1_best_cell", "A1x_control", "branch")}), indent=1, default=str))
-    return 0
+    print(json.dumps(jsonable({k: r.get(k) for k in ("A1_best_cell", "A1_best_rule", "status", "A1x_control", "branch")}), indent=1, default=str))
+    return 0 if r.get("A1_best_cell") else 4                  # 4 = no A1 cell could be selected (no cell / no holdout numbers): read `status`
 
 
 if __name__ == "__main__":

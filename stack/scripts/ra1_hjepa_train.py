@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
 """RA-1 trainer: ONE arm (R0 / A0 / A1 / A2 / A1x / A1h) on the pooled frozen-DINOv3 cache.  Spec: Project Steering/PREREG_HJ_STAGE0.md.
 
-    python stack/scripts/ra1_hjepa_train.py --arm A1 --beta 0.08 --gamma 100 --seed 0 --grid 4x10 \
+    python stack/scripts/ra1_hjepa_train.py --arm A1 --beta 0.08 --gamma 100 --seed 0 --grid 4x10 --holdout-n 60 \
         --cache D:/tanitad/cache --p10-prior <p10_prior.pt> --out D:/tanitad/runs/A1_b0.08_g100_s0 --steps 6000
+
+HOLDOUT (PREREG_HJ_STAGE0 Amendment 1): `--holdout-n` is REQUIRED -- argparse refuses a run without it, because a flag whose default
+would disable the holdout must be NAMED. The last N of the first 600 clips in sha12 order (`ra1_pooled.holdout_clips`) are withheld
+from training for EVERY arm; the evaluator scores them and `verdict` selects the A1 cell on them -- never on the eval-141 windows
+that score K. The clip list and its sha256 go into `<out>/meta.json`, `DONE` and every checkpoint.
 
 LAUNCH-GATE SPIRIT (CLAUDE.md, 2026-09-26): before the first optimiser step the script runs
   G-HYG   `validate_config`: a flag whose default disables its mechanism must be NAMED (A1 without --gamma is refused, A0 with
@@ -57,7 +62,12 @@ def build_parser():
     ap.add_argument("--cache", required=True, help="cache root holding train/ (and eval/) from pull_encode_pooled.py")
     ap.add_argument("--p10-prior", required=True, help="p10_prior.pt (v8f_mini_fit_p10.py, steer unit): the FROZEN residual prior")
     ap.add_argument("--out", required=True)
-    ap.add_argument("--n-clips", type=int, default=0, help="train clips = first N by sha12 (0 = all in the manifest)")
+    ap.add_argument("--n-clips", type=int, default=0, help="train clips = first N by sha12 (0 = all in the manifest), MINUS the holdout")
+    ap.add_argument("--holdout-n", type=int, required=True,
+                    help="REQUIRED (PREREG Amendment 1; the queue passes 60): the last N of the first --holdout-pool clips in sha12 order are "
+                         "withheld from training for EVERY arm and are the A1 selection set")
+    ap.add_argument("--holdout-pool", type=int, default=RD.STAGE_A_CLIPS,
+                    help="the stage-A train pool the holdout is cut from (first N in sha12 order); 600 = PREREG, tests shrink it")
     ap.add_argument("--chunk-clips", type=int, default=0, help="0 = all clips resident; else a seeded subset resident, redrawn every --chunk-steps")
     ap.add_argument("--chunk-steps", type=int, default=500)
     ap.add_argument("--steps", type=int, default=6000)
@@ -135,10 +145,16 @@ def main(argv=None) -> int:
     t_boot = time.time()
     prior = load_p10(a.p10_prior)
     train = RD.list_clips(a.cache, "train")
-    names = RD.pick_train_clips([c for c, _ in train], a.n_clips)
+    try:
+        names, hold = RD.split_train_holdout([c for c, _ in train], a.n_clips, a.holdout_n, a.holdout_pool)
+    except ValueError as e:                                   # G-HYG: holdout < 1 / holdout >= pool / pool larger than the manifest
+        print(f"[G-HYG] REFUSED: {e}", flush=True)
+        return 2
+    holdout_rec = dict(n=a.holdout_n, pool=a.holdout_pool, clips=hold, sha256=RD.clips_sha256(hold), n_clips_flag=a.n_clips,
+                       train_n=len(names), train_sha256=RD.clips_sha256(names))
     if a.eval_cache_disjoint:
         ev = [c for c, _ in RD.list_clips(a.eval_cache_disjoint, "eval")]
-        print("[disjoint]", json.dumps(D.assert_disjoint(names, ev)), flush=True)
+        print("[disjoint]", json.dumps(D.assert_disjoint(names, ev)), json.dumps(D.assert_disjoint(hold, ev)), flush=True)
     ahash = args_hash(a)
     latest = os.path.join(a.out, "latest.pt")
     ck = None
@@ -147,10 +163,23 @@ def main(argv=None) -> int:
         if ck["args_hash"] != ahash:
             raise SystemExit(f"REFUSED: {latest} was written with a different configuration ({ck['args_hash']} != {ahash}). "
                              f"Use a new --out, or --no-resume to overwrite.")
+        if ck.get("holdout") != holdout_rec:
+            raise SystemExit(f"REFUSED: {latest} was trained on a different holdout/train split than the manifest gives now "
+                             f"({(ck.get('holdout') or {}).get('sha256')} != {holdout_rec['sha256']}).")
     start = int(ck["step"]) if ck else 0
     if os.path.exists(os.path.join(a.out, "DONE")) and start >= a.steps:
         print(f"[ra1] {a.out} already DONE at step {start}")
         return 0
+
+    # the run's record of what it withheld (PREREG Amendment 1): written BEFORE the gate, so even a refused launch names its split
+    meta = dict(schema="ra1-run-meta-v1", arm=a.arm, seed=a.seed, args_hash=ahash, cache=str(a.cache),
+                holdout=dict(holdout_rec, disjoint_from_train=not (set(hold) & set(names)),
+                             rule="the last holdout_n of the first holdout_pool clips in sha12 order, withheld from training for EVERY arm "
+                                  "(PREREG_HJ_STAGE0 Amendment 1); the A1 cell is selected on it, never on eval-141"),
+                train=dict(n_clips_flag=a.n_clips, n=len(names), sha256=holdout_rec["train_sha256"]))
+    json.dump(meta, open(os.path.join(a.out, "meta.json"), "w"), indent=1)
+    print(f"[ra1] holdout: {len(hold)} clips withheld from training (sha256 {holdout_rec['sha256'][:12]}); "
+          f"{len(names)} train clips (sha256 {holdout_rec['train_sha256'][:12]})", flush=True)
 
     bank = RD.ClipBank(a.cache, "train", prior, a.grid)
     resident = RD.chunk_clips(names, a.seed, start, a.chunk_clips, a.chunk_steps)
@@ -247,12 +276,13 @@ def main(argv=None) -> int:
             acc, n_acc, t_log = {}, 0, time.time()
         if done % a.ckpt_every == 0 and done < a.steps:
             save_atomic(dict(model=model.state_dict(), opt=opt.state_dict(), step=done, cfg=cfg.to_json(), args_hash=ahash,
-                             args=vars(a), param_names=names_in_order), latest)
+                             args=vars(a), param_names=names_in_order, holdout=holdout_rec), latest)
     final = dict(model=model.state_dict(), opt=opt.state_dict(), step=a.steps, cfg=cfg.to_json(), args_hash=ahash,
-                 args=vars(a), param_names=names_in_order)
+                 args=vars(a), param_names=names_in_order, holdout=holdout_rec)
     save_atomic(final, os.path.join(a.out, "final.pt"))
     save_atomic(final, latest)
     json.dump(dict(step=a.steps, cfg_sha12=cfg.sha12(), args_hash=ahash, seconds=time.time() - t_boot,
+                   holdout_sha256=holdout_rec["sha256"], holdout_n=len(hold), train_sha256=holdout_rec["train_sha256"],
                    hist_drop_fraction=(None if not cfg.spec.hist_drop else
                                        sum(p.n_dropped for p in model.stack.predictors) / max(1, sum(p.n_positions for p in model.stack.predictors)))),
               open(os.path.join(a.out, "DONE"), "w"))

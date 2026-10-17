@@ -17,12 +17,20 @@ What is pinned, and the control that must go red for each:
   * SENS: the self-swap control reads EXACTLY 0.0; a real donor reads > 0; per_window means equal the float and the default call is unchanged.
   * units: the P10 trajectory the trainer uses is the STEER-unit kd_x (it differs from the kappa-unit one).
   * sampling is a pure function of (seed, step); resume after a crash == the uninterrupted run, bit for bit.
+  * HOLDOUT / SELECTION (PREREG_HJ_STAGE0 Amendment 1): the 60-of-600 train holdout is a function of the manifest only, identical for
+    every arm and n_clips, disjoint from what every arm trains on (spied at ClipBank.load / sample_batch -- the REAL caller -- and a
+    split that does not exclude it turns that spy RED); the trainer REFUSES to run without --holdout-n (and with 0); the evaluator
+    re-derives the holdout and refuses a drifted checkpoint; `verdict` selects the A1 cell on the HOLDOUT ADE@6s, REFUSES a cell with
+    no holdout numbers (no fallback to eval-141), and a source-level MUTATION back to eval-141 selection turns the synthetic
+    holdout-winner != eval-winner case RED; the box-2 queue names --holdout-n 60 in every trainer argv.
 """
 from __future__ import annotations
 
+import inspect
 import json
 import os
 import sys
+import types
 from pathlib import Path
 
 import numpy as np
@@ -57,6 +65,9 @@ TINY_FLAGS = ["--d-tok", "4", "--adapter-hidden", "16", "--d1", "16", "--d-up", 
               "--batch", "4", "--warmup", "1", "--log-every", "1", "--ckpt-every", "3"]
 ARM_FLAGS = {"R0": [], "A0": ["--beta", "0.08"], "A1": ["--beta", "0.08", "--gamma", "100"], "A2": ["--beta", "0.08", "--gamma", "100"],
              "A1x": ["--beta", "0.08", "--gamma", "100"], "A1h": ["--beta", "0.08", "--gamma", "100", "--hist-drop", "0.5"]}
+# PREREG Amendment 1: --holdout-n is REQUIRED by the trainer. The synthetic world has 6 train clips, so the pool shrinks to 6 and the
+# holdout to 2 (the real queue passes --holdout-n 60 against the 600-clip pool: pinned by test_queue_*).
+HOLD_FLAGS = ["--holdout-n", "2", "--holdout-pool", "6"]
 TINY_CFG = dict(d_feat=32, n_tok=40, d_tok=4, adapter_hidden=16, d1=16, d_up=16, macro_dim=8, enc_hidden=16, pred_width=16, pred_depth=1,
                 pred_heads=2, readout_hidden=16, sigreg_proj=8)
 
@@ -103,7 +114,7 @@ def a_batch(bank, world, step=0, b=4):
 
 def run_train(world, arm, out, seed=0, steps=3, extra=()):
     argv = ["--arm", arm, "--seed", str(seed), "--cache", world["root"], "--p10-prior", world["prior_path"], "--out", str(out),
-            "--steps", str(steps)] + TINY_FLAGS + ARM_FLAGS[arm] + list(extra)
+            "--steps", str(steps)] + TINY_FLAGS + ARM_FLAGS[arm] + HOLD_FLAGS + list(extra)
     return TR.main(argv)
 
 
@@ -343,9 +354,9 @@ def test_resume_after_a_crash_equals_the_uninterrupted_run(world, tmp_path, monk
     a = torch.load(tmp_path / "full" / "final.pt", weights_only=False)["model"]
     b = torch.load(tmp_path / "crash" / "final.pt", weights_only=False)["model"]
     assert all(torch.equal(a[k], b[k]) for k in a), "resume must reproduce the uninterrupted run exactly"
-    with pytest.raises(SystemExit):                                   # a changed configuration is refused
+    with pytest.raises(SystemExit, match="different configuration"):  # a changed configuration is refused
         TR.main(["--arm", "A1h", "--seed", "5", "--cache", world["root"], "--p10-prior", world["prior_path"], "--out",
-                 str(tmp_path / "crash"), "--steps", "6"] + TINY_FLAGS + ARM_FLAGS["A1h"])
+                 str(tmp_path / "crash"), "--steps", "6"] + TINY_FLAGS + ARM_FLAGS["A1h"] + HOLD_FLAGS)
 
 
 def test_post_training_audit_names_a_parameter_that_never_got_a_gradient(world, tmp_path):
@@ -359,7 +370,7 @@ def test_post_training_audit_names_a_parameter_that_never_got_a_gradient(world, 
 
 def test_launch_gate_refuses_a_silent_a0(world, tmp_path):
     assert TR.main(["--arm", "A1", "--cache", world["root"], "--p10-prior", world["prior_path"], "--out", str(tmp_path / "x"),
-                    "--steps", "2", "--beta", "0.08"] + TINY_FLAGS) == 2      # --gamma unnamed => REFUSED, no training
+                    "--steps", "2", "--beta", "0.08"] + TINY_FLAGS + HOLD_FLAGS) == 2      # --gamma unnamed => REFUSED, no training
     assert not (tmp_path / "x" / "final.pt").exists()
 
 
@@ -379,6 +390,8 @@ def test_eval_and_verdict_end_to_end(world, tmp_path):
         assert r["instrument_ok"] and r["controls"]["p10_minus_p10_ok"] and r["controls"]["gt_ade_max"] == 0.0
         assert r["param_audit"]["untrained"] == [], f"{arm}: parameters that never received a gradient"
         assert r["K"]["ade6_arm_minus_p10"]["estimator"].startswith("paired_")
+        assert r["holdout"]["status"] == "OK" and r["holdout"]["disjoint_from_train"] and r["holdout"]["disjoint_from_eval141"]
+        assert r["holdout"]["n_clips"] == 2 and r["holdout"]["n_windows"] > 0 and r["holdout"]["ade6_arm"]["n_episodes"] == 2
         assert r["families"]["arm"]["strategic"]["status"] == "PAUSED" and "longitudinal" in r["families"]["arm"]
         if arm == "R0":
             assert r["SENS"]["status"].startswith("n/a")
@@ -395,14 +408,297 @@ def test_eval_and_verdict_end_to_end(world, tmp_path):
     assert v["A1_best_cell"] == "b0.08g100" and v["branch"] and "A1x_control" in v and "A1h_EXPLORATORY" in v
     assert set(v["SENS"]["per_seed"]) == {"seed0", "seed1"} and v["K"]["best_arm"] in ("R0", "A1", "A2")
     assert v["training_seed_floor_A1"] is not None and v["COST"]["per_run"]
+    assert v["selection_basis"].startswith("the withheld TRAIN holdout") and "NOT selected on eval-141" in v["A1_best_rule"]
+    assert set(v["A1_cells_seed0_holdout_ade6"]) == set(v["A1_cells_seed0_eval141_ade6_NON_DECIDING"]) == {"b0.08g100"}
+    assert v["holdout"]["n_clips"] == 2 and v["holdout"]["n_windows"] > 0 and len(v["holdout"]["ade6_mean_by_run"]) == len(plan)
 
 
 def test_verdict_degrades_gracefully_on_partial_inputs(world, tmp_path):
     run_train(world, "A1", tmp_path / "A1_0")
     ev = tmp_path / "A1_0" / "eval"
     assert EV.main(["eval", "--ckpt", str(tmp_path / "A1_0" / "final.pt"), "--eval-cache", world["root"], "--p10-prior", world["prior_path"],
-                    "--grid-json", world["grid_json"], "--out", str(ev), "--n-boot", "30", "--fam-boot", "10"]) == 0
+                    "--grid-json", world["grid_json"], "--train-cache", world["root"], "--out", str(ev), "--n-boot", "30",
+                    "--fam-boot", "10"]) == 0
     assert EV.main(["verdict", "--out", str(tmp_path / "v.json"), "--n-boot", "30", "--run", f"A1:b0.08g100@0={ev}"]) == 0
     v = json.load(open(tmp_path / "v.json"))
     assert v["SENS"]["PASS"] is False and v["K"]["PASS"] is False and "NOT RUN" in v["A1x_control"]["verdict"]
     assert v["branch"].startswith("A1x GATE"), "with the instrument gate open no other branch may be selected"
+
+
+# ================================================================================================ HOLDOUT / SELECTION (PREREG Amendment 1)
+def _ids(n):
+    return [f"clip-{i:05d}" for i in range(n)]
+
+
+def test_holdout_is_the_last_60_of_the_600_in_sha12_order_and_independent_of_everything_else():
+    pop = _ids(700)
+    order = sorted(pop, key=D.sha12)
+    h = RD.holdout_clips(pop, 60)
+    assert RD.HOLDOUT_CLIPS == 60 and RD.STAGE_A_CLIPS == 600
+    assert len(h) == 60 and h == order[540:600], "the LAST 60 of the first 600 in sha12 order"
+    # the 600-clip stage-A cache is the nested sha12 prefix of the full corpus: the SAME 60 clips are withheld at 600 and at 4,572
+    assert RD.holdout_clips(order[:600], 60) == h
+    assert RD.holdout_clips(list(reversed(pop)), 60) == h, "a function of the clip SET: manifest order is irrelevant"
+    for n_clips in (0, 100, 540, 560, 600, 650, 700):
+        tr, hold = RD.split_train_holdout(pop, n_clips, 60)
+        assert hold == h, f"the holdout must not depend on --n-clips ({n_clips})"
+        assert not (set(tr) & set(h)), f"n_clips={n_clips}: a training clip is in the holdout"
+        assert tr == [c for c in RD.pick_train_clips(pop, n_clips) if c not in set(h)]
+    assert len(RD.split_train_holdout(pop, 0, 60)[0]) == 640 and len(RD.split_train_holdout(pop, 600, 60)[0]) == 540
+    assert len(RD.split_train_holdout(pop, 540, 60)[0]) == 540, "a prefix that stops before the holdout loses nothing"
+
+
+def test_holdout_refusals():
+    pop = _ids(700)
+    for n, frag in ((0, "holdout_n must be >= 1"), (-3, "holdout_n must be >= 1"), (600, "smaller than the stage-A pool")):
+        with pytest.raises(ValueError, match=frag):
+            RD.holdout_clips(pop, n)
+    with pytest.raises(ValueError, match="fewer than the 600-clip"):
+        RD.holdout_clips(_ids(599), 60)
+    assert RD.clips_sha256(["a", "b"]) != RD.clips_sha256(["b", "a"]) and len(RD.clips_sha256([])) == 64
+
+
+def _train_argv(world, arm, out, extra):
+    return ["--arm", arm, "--seed", "0", "--cache", world["root"], "--p10-prior", world["prior_path"], "--out", str(out),
+            "--steps", "2"] + TINY_FLAGS + ARM_FLAGS[arm] + list(extra)
+
+
+def test_trainer_refuses_to_run_without_holdout_n_and_with_an_unusable_one(world, tmp_path, capsys):
+    out = tmp_path / "nohold"
+    with pytest.raises(SystemExit) as e:
+        TR.main(_train_argv(world, "A1", out, []))
+    assert e.value.code == 2 and "--holdout-n" in capsys.readouterr().err, "argparse must name the missing flag"
+    assert not (out / "final.pt").exists() and not (out / "train_log.jsonl").exists() and not (out / "launch_check.json").exists()
+    for i, bad in enumerate((["--holdout-n", "0", "--holdout-pool", "6"], ["--holdout-n", "-1", "--holdout-pool", "6"],
+                             ["--holdout-n", "6", "--holdout-pool", "6"], ["--holdout-n", "2", "--holdout-pool", "600"])):
+        o = tmp_path / f"bad{i}"
+        assert TR.main(_train_argv(world, "A1", o, bad)) == 2, bad          # G-HYG: named but unusable => REFUSED, no training
+        assert not (o / "final.pt").exists() and not (o / "train_log.jsonl").exists()
+    assert "REFUSED" in capsys.readouterr().out
+
+
+def _spy_training(monkeypatch):
+    """Record every clip the REAL trainer loads into its bank and every clip its sampler may draw from (the caller, not the library)."""
+    seen = {"loaded": set(), "sampled": set()}
+    real_load, real_sample = RD.ClipBank.load, RD.sample_batch
+
+    def load(self, names):
+        names = list(names)
+        seen["loaded"].update(names)
+        return real_load(self, names)
+
+    def sample(bank, names, *a, **k):
+        seen["sampled"].update(names)
+        return real_sample(bank, names, *a, **k)
+
+    monkeypatch.setattr(RD.ClipBank, "load", load)
+    monkeypatch.setattr(RD, "sample_batch", sample)
+    return seen
+
+
+def test_every_arm_withholds_the_same_holdout_and_never_trains_on_it(world, tmp_path, monkeypatch):
+    allc = world["names"]["train"]
+    want = RD.holdout_clips(allc, 2, 6)
+    want_train = [c for c in RD.pick_train_clips(allc, 0) if c not in set(want)]
+    seen = _spy_training(monkeypatch)
+    shas = set()
+    for arm in ("R0", "A0", "A1x"):
+        seen["loaded"].clear()
+        seen["sampled"].clear()
+        out = tmp_path / arm
+        assert run_train(world, arm, out) == 0
+        assert seen["loaded"] and seen["sampled"]
+        assert not (seen["loaded"] & set(want)), f"{arm}: the bank loaded a holdout clip"
+        assert not (seen["sampled"] & set(want)), f"{arm}: the sampler could draw a holdout clip"
+        assert seen["loaded"] == set(want_train), f"{arm}: every non-holdout clip trains"
+        meta = json.load(open(out / "meta.json"))
+        assert meta["holdout"]["clips"] == want and meta["holdout"]["sha256"] == RD.clips_sha256(want)
+        assert meta["holdout"]["disjoint_from_train"] is True and meta["holdout"]["n"] == 2 and meta["holdout"]["pool"] == 6
+        assert meta["train"]["sha256"] == RD.clips_sha256(want_train) and meta["train"]["n"] == len(want_train)
+        ck = torch.load(out / "final.pt", weights_only=False)
+        assert ck["holdout"]["clips"] == want and ck["holdout"]["sha256"] == meta["holdout"]["sha256"]
+        assert json.load(open(out / "DONE"))["holdout_sha256"] == meta["holdout"]["sha256"]
+        shas.add(meta["holdout"]["sha256"])
+    assert len(shas) == 1, "the holdout is IDENTICAL across arms"
+
+
+def test_mutation_a_split_that_does_not_exclude_the_holdout_turns_the_spy_red(world, tmp_path, monkeypatch):
+    want = RD.holdout_clips(world["names"]["train"], 2, 6)
+    seen = _spy_training(monkeypatch)
+    monkeypatch.setattr(RD, "split_train_holdout",
+                        lambda clips, n, hn, pn: (RD.pick_train_clips(clips, n), RD.holdout_clips(clips, hn, pn)))   # the bug: nothing withheld
+    assert run_train(world, "A0", tmp_path / "mut") == 0
+    assert seen["loaded"] & set(want) and seen["sampled"] & set(want), "the control must see the holdout being trained on"
+    assert json.load(open(tmp_path / "mut" / "meta.json"))["holdout"]["disjoint_from_train"] is False, "and the run's own meta must say so"
+
+
+def test_resume_refuses_a_changed_holdout(world, tmp_path):
+    run_train(world, "A1", tmp_path / "r", steps=3)
+    with pytest.raises(SystemExit, match="different configuration"):
+        run_train(world, "A1", tmp_path / "r", steps=3, extra=["--holdout-n", "1"])        # the last --holdout-n wins in argparse
+
+
+def test_eval_rederives_the_holdout_and_refuses_a_drifted_checkpoint(world, tmp_path):
+    run_train(world, "A1", tmp_path / "a")
+    ck = torch.load(tmp_path / "a" / "final.pt", weights_only=False)
+
+    def ev(ckpt, tag, train_cache=True):
+        argv = ["eval", "--ckpt", str(ckpt), "--eval-cache", world["root"], "--p10-prior", world["prior_path"], "--grid-json",
+                world["grid_json"], "--out", str(tmp_path / ("e_" + tag)), "--n-boot", "20", "--fam-boot", "10"]
+        return EV.main(argv + (["--train-cache", world["root"]] if train_cache else []))
+
+    assert ev(tmp_path / "a" / "final.pt", "ok") == 0
+    ok = json.load(open(tmp_path / "e_ok" / "eval.json"))["holdout"]
+    assert ok["status"] == "OK" and ok["clips_sha256"] == ck["holdout"]["sha256"] and ok["n_windows"] > 0
+    z = np.load(tmp_path / "e_ok" / "perwindow.npz", allow_pickle=True)
+    assert set(("hold_eid", "hold_t", "hold_ade6", "hold_p10_ade6")) <= set(z.files) and len(z["hold_ade6"]) == ok["n_windows"]
+    assert not np.array_equal(z["ade6"], z["hold_ade6"]), "the holdout ADE is its own array, never the eval-141 one"
+    # no --train-cache => the holdout is NOT computed, and says so (verdict will refuse)
+    assert ev(tmp_path / "a" / "final.pt", "nocache", train_cache=False) == 0
+    assert json.load(open(tmp_path / "e_nocache" / "eval.json"))["holdout"]["status"].startswith("NOT COMPUTED")
+    # a checkpoint with a record that no longer matches the manifest: refused loudly
+    drift = dict(ck, holdout=dict(ck["holdout"], clips=list(reversed(ck["holdout"]["clips"]))))
+    torch.save(drift, tmp_path / "drift.pt")
+    with pytest.raises(AssertionError, match="HOLDOUT DRIFT"):
+        ev(tmp_path / "drift.pt", "drift")
+    wrong_train = dict(ck, holdout=dict(ck["holdout"], train_sha256="0" * 64))
+    torch.save(wrong_train, tmp_path / "wt.pt")
+    with pytest.raises(AssertionError, match="TRAIN-SPLIT DRIFT"):
+        ev(tmp_path / "wt.pt", "wt")
+    old = {k: v for k, v in ck.items() if k != "holdout"}                      # trained before Amendment 1
+    torch.save(old, tmp_path / "old.pt")
+    assert ev(tmp_path / "old.pt", "old") == 0
+    assert json.load(open(tmp_path / "e_old" / "eval.json"))["holdout"]["status"].startswith("NOT COMPUTED")
+
+
+# ---- verdict: SYNTHETIC per-window numbers where the holdout winner differs from the eval-141 winner
+CELLS = ["b0.04g50", "b0.04g100", "b0.08g50", "b0.08g100"]
+EVAL141 = {"b0.04g50": 2.0, "b0.04g100": 2.4, "b0.08g50": 2.9, "b0.08g100": 2.6}        # eval-141 ADE@6s: b0.04g50 would win
+HOLDOUT = {"b0.04g50": 3.1, "b0.04g100": 2.7, "b0.08g50": 2.2, "b0.08g100": 2.9}        # holdout ADE@6s: b0.08g50 wins
+
+
+def _fake_run(d, eval_ade, hold_ade, *, hold=True, hold_t=(3, 4, 3, 4), sha="a" * 64):
+    d.mkdir(parents=True, exist_ok=True)
+    arr = dict(eid=np.repeat(np.arange(3), 2), t=np.tile([3, 4], 3), ade6=np.full(6, eval_ade), p10_ade6=np.full(6, 3.0))
+    ev = {"instrument_ok": True}
+    if hold:
+        arr.update(hold_eid=np.repeat(np.arange(2), 2), hold_t=np.asarray(hold_t), hold_ade6=np.full(4, hold_ade), hold_p10_ade6=np.full(4, 3.0))
+        ev["holdout"] = {"status": "OK", "clips_sha256": sha, "n_clips": 2, "n": 2, "pool": 6}
+    np.savez_compressed(d / "perwindow.npz", **arr)
+    json.dump(ev, open(d / "eval.json", "w"))
+    return d
+
+
+def _verdict_args(tmp_path, tag, **kw):
+    runs = []
+    for c in CELLS:
+        d = _fake_run(tmp_path / tag / c, EVAL141[c], HOLDOUT[c], **kw)
+        runs += ["--run", f"A1:{c}@0={d}"]
+    return runs, tmp_path / tag / "v.json"
+
+
+def test_verdict_selects_the_A1_cell_on_the_holdout_not_on_eval141(tmp_path):
+    eval_winner, hold_winner = min(EVAL141, key=EVAL141.get), min(HOLDOUT, key=HOLDOUT.get)
+    assert eval_winner != hold_winner, "the synthetic case must discriminate the two rules"
+    runs, vout = _verdict_args(tmp_path, "real")
+    assert EV.main(["verdict", "--out", str(vout), "--n-boot", "20"] + runs) == 0
+    v = json.load(open(vout))
+    assert v["A1_best_cell"] == hold_winner != eval_winner
+    assert v["A1_cells_seed0_holdout_ade6"] == pytest.approx(HOLDOUT)
+    nd = v["A1_cells_seed0_eval141_ade6_NON_DECIDING"]
+    assert {c: nd[c]["ade6"] for c in CELLS} == pytest.approx(EVAL141), "every cell's eval-141 number is still reported ..."
+    assert nd[eval_winner]["arm_minus_p10"] == pytest.approx(EVAL141[eval_winner] - 3.0)
+    rule = v["A1_best_rule"]                                                        # ... and the rule is written truthfully
+    assert "withheld TRAIN holdout" in rule and "NOT selected on eval-141" in rule and "Amendment 1" in rule
+    assert "2 clips" in rule and "sha256 " + "a" * 12 in rule and "4 windows" in rule and "NON_DECIDING" in rule
+    assert v["holdout"]["n_windows"] == 4 and v["holdout"]["clips_sha256"] == "a" * 64 and v["selection_basis"].startswith("the withheld TRAIN")
+
+
+def _mutant_eval_module():
+    """The evaluator's REAL source with ONE line changed: the A1 cell is selected on eval-141 again (the pre-amendment behaviour)."""
+    src = inspect.getsource(EV)
+    line = 'best = min(a1c, key=lambda c: float(selection_metric(runs[("A1", c, 0)]["z"]).mean()))'
+    assert src.count(line) == 1, "the selection line moved: update this mutation"
+    mutant = src.replace(line, 'best = min(a1c, key=lambda c: float(ade(("A1", c, 0)).mean()))')
+    m = types.ModuleType("ra1_hjepa_eval_mutant")
+    m.__file__ = EV.__file__
+    exec(compile(mutant, EV.__file__, "exec"), m.__dict__)
+    return m
+
+
+def test_mutation_selecting_on_eval141_again_turns_the_selection_check_red(tmp_path):
+    eval_winner, hold_winner = min(EVAL141, key=EVAL141.get), min(HOLDOUT, key=HOLDOUT.get)
+    runs, vout = _verdict_args(tmp_path, "mut")
+
+    def selects_on_holdout(module):
+        assert module.main(["verdict", "--out", str(vout), "--n-boot", "20"] + runs) == 0
+        return json.load(open(vout))["A1_best_cell"] == hold_winner
+
+    assert selects_on_holdout(EV), "control: the real evaluator passes the check"
+    assert not selects_on_holdout(_mutant_eval_module()), "the one-line mutation (eval-141 selection) must make the check RED"
+    assert json.load(open(vout))["A1_best_cell"] == eval_winner
+
+
+def test_verdict_refuses_an_A1_cell_without_holdout_numbers_and_has_no_eval141_fallback(tmp_path):
+    runs, vout = _verdict_args(tmp_path, "nohold", hold=False)
+    assert EV.main(["verdict", "--out", str(vout), "--n-boot", "20"] + runs) == 4
+    v = json.load(open(vout))
+    assert v["A1_best_cell"] is None and v["status"].startswith("A1 SELECTION REFUSED") and "branch" not in v
+    assert "A1_best_rule" not in v and set(v["A1_cells_seed0_eval141_ade6_NON_DECIDING"]) == set(CELLS)
+    # a single cell with no holdout is refused too (it is not "trivially the best")
+    d = _fake_run(tmp_path / "one", 2.0, 2.0, hold=False)
+    assert EV.main(["verdict", "--out", str(tmp_path / "one.json"), "--n-boot", "20", "--run", f"A1:b0.08g100@0={d}"]) == 4
+    # ... and a MIX (one cell lacks it) is refused, naming the cell
+    runs2, vout2 = _verdict_args(tmp_path, "mix")
+    _fake_run(tmp_path / "mix" / CELLS[1], EVAL141[CELLS[1]], 0.0, hold=False)
+    assert EV.main(["verdict", "--out", str(vout2), "--n-boot", "20"] + runs2) == 4
+    assert CELLS[1] in json.load(open(vout2))["status"]
+
+
+def test_verdict_asserts_every_run_scored_the_same_holdout(tmp_path):
+    runs, vout = _verdict_args(tmp_path, "same")
+    odd = _fake_run(tmp_path / "same" / "odd", 2.0, 2.0, hold_t=(3, 4, 3, 5))
+    with pytest.raises(AssertionError, match="holdout windows differ"):
+        EV.main(["verdict", "--out", str(vout), "--n-boot", "20"] + runs + ["--run", f"R0@0={odd}"])
+    odd2 = _fake_run(tmp_path / "same" / "odd2", 2.0, 2.0, sha="b" * 64)
+    with pytest.raises(AssertionError, match="SAME holdout"):
+        EV.main(["verdict", "--out", str(vout), "--n-boot", "20"] + runs + ["--run", f"R0@0={odd2}"])
+
+
+# ---- the Box-2 queue (the REAL caller): every trainer argv names --holdout-n 60, every eval gets the train cache
+QUEUE = REPO / "TanitAD Research Lab" / "Architecture & Inference" / "Research" / "2026-10-17-refav1-hj-mini" / "code" / "ra1_box2_queue.cmd"
+needs_queue = pytest.mark.skipif(not QUEUE.exists(), reason="the refav1-hj-mini package is not in this checkout")
+
+
+@needs_queue
+def test_queue_text_names_holdout_n_60_in_every_trainer_invocation():
+    lines = QUEUE.read_text(encoding="utf-8").splitlines()
+    assert 'set "HOLDOUT=--holdout-n 60"' in lines
+    arg_lines = [ln for ln in lines if ln.lstrip().startswith('set "ARGS=--arm')]
+    assert len(arg_lines) == 2 and all("%HOLDOUT%" in ln for ln in arg_lines), "both :run and :chk build ARGS with %HOLDOUT%"
+    train_calls = [ln for ln in lines if '"%TRAIN%"' in ln]
+    assert len(train_calls) >= 3 and all("%ARGS%" in ln for ln in train_calls), "every trainer call goes through ARGS"
+    eval_calls = [ln for ln in lines if '"%EVAL%" eval' in ln]
+    assert len(eval_calls) >= 2 and all('--train-cache "%CACHE%"' in ln for ln in eval_calls), "evals must score the holdout"
+
+
+@needs_queue
+@pytest.mark.skipif(os.name != "nt", reason="the queue is a Windows batch file")
+def test_queue_dry_run_prints_holdout_n_60_in_every_trainer_argv(tmp_path):
+    import subprocess
+    env = dict(os.environ, RA1_DRYRUN="1", REPO=str(REPO), RUNS=str(tmp_path / "runs"))
+
+    def dry(args):
+        # cmd /c with an outer pair of quotes: the package path contains an ampersand
+        r = subprocess.run(f'cmd /c ""{QUEUE}" {args}"', env=env, capture_output=True, text=True, timeout=120)
+        assert r.returncode == 0, r.stdout + r.stderr
+        return r.stdout.splitlines()
+
+    for args, n_train in (("gate", 6), ("stage1", 10), ("stage2 0.08 100", 5)):
+        out = dry(args)
+        tr = [ln for ln in out if "ra1_hjepa_train.py" in ln]
+        assert len(tr) == n_train, (args, len(tr), out)
+        assert all("--holdout-n 60" in ln for ln in tr), (args, [ln for ln in tr if "--holdout-n 60" not in ln])
+        if args != "gate":
+            ev = [ln for ln in out if "ra1_hjepa_eval.py" in ln]
+            assert len(ev) == n_train and all("--train-cache" in ln for ln in ev)

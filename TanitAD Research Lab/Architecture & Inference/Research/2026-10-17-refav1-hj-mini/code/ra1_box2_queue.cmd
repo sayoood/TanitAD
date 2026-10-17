@@ -3,10 +3,13 @@ rem RA-1 job queue for Box 2 (Windows, RTX 4060 8 GB).  See ..\RA1_RUN_ON_BOX2.m
 rem
 rem   ra1_box2_queue.cmd gate                    G-HYG / G-DVB / G-LIVE + VRAM estimate for every arm (no training, ~2 min)
 rem   ra1_box2_queue.cmd stage1                  R0 x2 seeds, A0 (beta 0.04, 0.08) x2 seeds, the A1 2x2 grid at seed 0
-rem   ra1_box2_queue.cmd stage1verdict           prints the best A1 cell (lowest seed-0 ADE@6s) from the stage-1 evals
+rem   ra1_box2_queue.cmd stage1verdict           prints the best A1 cell (lowest seed-0 ADE@6s on the withheld 60-clip TRAIN holdout) from the stage-1 evals
 rem   ra1_box2_queue.cmd stage2 BETA GAMMA       the best cell: A1 seed 1, A2 x2, A1x seed 0, A1h (EXPLORATORY) seed 0
 rem   ra1_box2_queue.cmd final BETA GAMMA        the verdict.json over everything that finished
 rem
+rem HOLDOUT (PREREG_HJ_STAGE0 Amendment 1): every trainer call carries --holdout-n 60 (the trainer REFUSES to run without it): the last 60 of the
+rem 600 stage-A clips in sha12 order are withheld from EVERY arm, the evals score them (--train-cache), and the A1 cell is chosen on them, NEVER on
+rem eval-141, which scores K once for the chosen cell.
 rem Every job is skipped when its eval.json exists, so a killed queue is simply re-run.  RA1_DRYRUN=1 prints instead of running.
 rem The repo path contains an ampersand ("Architecture & Inference"): every path below is set with set "VAR=value" and
 rem expanded only inside double quotes.  Never expand %P10% / %GRID% unquoted.
@@ -20,6 +23,7 @@ set "PKG=%REPO%\TanitAD Research Lab\Architecture & Inference\Research\2026-10-1
 set "P10=%PKG%\p10\p10_prior.pt"
 set "P10REF=%PKG%\p10\p10_eval_pred6.npy"
 set "GRID=%PKG%\eval_grid_windows.json"
+set "HOLDOUT=--holdout-n 60"
 set "TRAIN=%REPO%\stack\scripts\ra1_hjepa_train.py"
 set "EVAL=%REPO%\stack\scripts\ra1_hjepa_eval.py"
 set "PYTHONPATH=%REPO%\stack;%REPO%\taniteval"
@@ -79,7 +83,7 @@ rem :run TAG ARM SEED BETA|- GAMMA|- "EXTRA"      train (resumable) then eval on
 set "TAG=%~1"
 set "OUT=%RUNS%\%~1"
 if exist "%OUT%\eval\eval.json" (echo [skip] %~1 & exit /b 0)
-set "ARGS=--arm %~2 --seed %~3"
+set "ARGS=--arm %~2 --seed %~3 %HOLDOUT%"
 if not "%~4"=="-" set "ARGS=%ARGS% --beta %~4"
 if not "%~5"=="-" set "ARGS=%ARGS% --gamma %~5"
 if not "%~6"=="" set "ARGS=%ARGS% %~6"
@@ -99,7 +103,7 @@ exit /b 0
 
 rem :chk ARM BETA|- GAMMA|- "EXTRA"      the launch gate only
 :chk
-set "ARGS=--arm %~1"
+set "ARGS=--arm %~1 %HOLDOUT%"
 if not "%~2"=="-" set "ARGS=%ARGS% --beta %~2"
 if not "%~3"=="-" set "ARGS=%ARGS% --gamma %~3"
 if not "%~4"=="" set "ARGS=%ARGS% %~4"
