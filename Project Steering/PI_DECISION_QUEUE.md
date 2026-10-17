@@ -2096,3 +2096,5 @@ The A40 readiness gate AR-1..AR-4 is in plan §13.5. In short:
 * the data is staged.
 
 **One interpretation is open for the PI.** The strategic layer is also given the **scene summary**, because checkpoints must sit on the actual road. The nav + distance-only version is kept as the ablation, and it ships if the scene adds nothing.
+
+- **✅ DECIDED (PI, 2026-10-17, plan-selection lever):** *"start working on the plan selection lever now"*; then *"P6 first (Recommended)"*: when the A40 frees after R0d, **P6 gets it BEFORE the SAFEOBJ Stage 2** (R1d + R1o). And *"Auto-launch on PASS (Recommended)"*: P6's training starts automatically when its launch-gate dry run passes; any refusal or ambiguity stops without launching.

@@ -1,0 +1,11 @@
+# determinism / precision flags in the three files the forward runs (M, 2026-10-17); pattern: deterministic|float32_matmul_precision|allow_tf32|cudnn.benchmark|use_deterministic_algorithms
+../navtestE/fp/fp_forward.py: 0
+C:/fp/PK/refe/model.py: 0
+C:/fp/PK/refe/ckpt_io.py: 0
+C:/fp/PK/refe/load_dinov3.py: 0
+fp_forward_irep.py: 0
+# same-breath controls (patterns that MUST hit):
+fp_forward.py no_grad: 1
+fp_forward_irep.py eval_batch: 3
+model.py scaled_dot_product_attention: 1
+model.py register_buffer: 2
