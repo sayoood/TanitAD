@@ -2062,3 +2062,37 @@ refcv7's (EMA-weighted LR mass 1.16e-2 vs 1.19e-2). Readings are committed in
 stays open for the PI.
 **Update 2026-10-16 ~21:47 Berlin -- PI: "dont retrain refcv7".** The true refcv7 EMA option (~2.2 Thor-days from its 30,000
 checkpoint) is CLOSED. The averaging attribution rests only on refcv8's own final EMA-minus-raw pair, as pre-registered.
+
+## DECIDED 2026-10-17 ~15:00 Berlin -- v8F: three layers, DINOv3-L + LoRA, ≤ 800 M; box 2 for experiments; the A40 only after a readiness gate
+
+**PI, in chat:**
+* *"I approve the Dinvo b3 L + Lora direction"*;
+* *"The budget can be extended up to 800 Million parameters if necessary"*;
+* *"Approve the rest of the plan"*.
+
+**The PI's three layers:**
+* **Strategic:** nav command + distance to manoeuvre → a long-term plan as checkpoints; country and traffic rules come later.
+* **Tactical (≤ 6 s):** conditioned on the checkpoints; learns the corpus's tactical goals and constraints.
+* **Operative:** conditioned on the tactical goals and constraints. The tactical and operative layers together output a 6 s trajectory **consistent with them**.
+* **Inputs, not learned labels:** measured ego dynamics, max target speed and nav.
+* **Each layer runs at its own cycle time.**
+
+**Priority:** the fastest route to good driving.
+
+**Compute:**
+* the PI's second computer (8 GB GPU) runs experiments while Thor trains refcv8;
+* an A40 for some days, *"only if we are sure that the model will work and ready to use it"*.
+
+**Recorded consequences:**
+* R6 (strategic OFF) is superseded **for v8F only**. The STRATEGIC family is un-paused for v8F.
+* The 2026-10-11 ruling (no route checkpoint as an INPUT) stands: checkpoints are the strategic layer's own output.
+
+**Where it lives:** `Project Steering/PLAN_V8F_REFAV1_HJEPA_2026-10-17.md` §13 and `Project Steering/PREREG_V8F_MINI.md`.
+
+The A40 readiness gate AR-1..AR-4 is in plan §13.5. In short:
+* the mini beats P10 at 2 seeds;
+* the LoRA smoke runs on box 2;
+* a v8f launch-gate PASS;
+* the data is staged.
+
+**One interpretation is open for the PI.** The strategic layer is also given the **scene summary**, because checkpoints must sit on the actual road. The nav + distance-only version is kept as the ablation, and it ships if the scene adds nothing.

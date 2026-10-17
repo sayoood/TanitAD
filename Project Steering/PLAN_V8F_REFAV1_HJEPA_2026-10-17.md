@@ -290,3 +290,142 @@ v7F (F2) stays shelved; its only research question (does a trained-trunk WM beco
 | pre-registration for rungs 0 / RA-0 / RA-1 | repo: `Project Steering/PREREG_HJ_STAGE0.md` |
 | H-JEPA primary | repo: `TanitAD Research Lab/Library/papers/2610.06805_…pdf` (`lib:2610.06805`) |
 | stream packages | paths in §7 (created by each stream) |
+
+---
+
+## 13. AMENDMENT 1 — PI rulings of 2026-10-17 (afternoon): three layers, DINOv3-L + LoRA, ≤ 800 M, the data question, compute
+
+### 13.1 The rulings (the PI, 2026-10-17; paraphrased; the chat transcript is the record)
+
+1. **"I approve the DINOv3 L + LoRA direction."** ⇒ The v8F trunk is **DINOv3 ViT-L/16, frozen, plus LoRA**, plus a trainable adapter. The trunk ladder of §3 is no longer a decision; T-A (ResNet-101) remains only as the parent baseline that the NR bars read against.
+2. **"The budget can be extended up to 800 million parameters if necessary."** ⇒ The sub-300 M constraint of §3 and §4.1 is lifted to **≤ 800 M** for v8F.
+3. **The three layers** are the PI's definition. It supersedes §4.1 where they differ:
+   * **Strategic.** Takes the nav command and the distance to the manoeuvre, and creates a long-term plan **in the form of checkpoints**. It will later extend to the country and its traffic rules, as strategic commands.
+   * **Tactical.** The checkpoints condition the tactical layer, which works up to 6 s. It learns to generate the **tactical goals and constraints** of the training corpus.
+   * **Operative.** The tactical goals and constraints condition the operative layer.
+   * **Inputs, not learned labels:** measured ego dynamics, max target speed and nav commands.
+   * Together, the tactical and operative layers output the target trajectory to 6 s. That trajectory **must be consistent with the tactical goals and constraints**.
+   * **Each layer runs at its own cycle time.**
+4. **"My priority is to achieve the fastest way to good driving results."**
+5. **Compute.**
+   * Use the PI's **second computer (8 GB GPU)** for experiments; Thor stays busy with refcv8 for the next days.
+   * **An A40 pod for some days, only when we are sure the model works and is ready** (§13.5).
+6. **"Approve the rest of the plan."**
+
+⇒ **Two consequences:**
+* **R6 (strategic OFF) is superseded for v8F.** The strategic layer is ON as a *checkpoint generator*, and the STRATEGIC metric family is **un-paused for v8F**.
+* **The 2026-10-11 ruling stands.** No route checkpoint is ever an INPUT taken from labels. Checkpoints are the strategic layer's own OUTPUT, predicted at inference.
+
+### 13.2 v8F — the three layers, made concrete
+
+**Inputs (never learned):**
+* measured ego dynamics at t0: v, a_long, yaw-rate, plus the 8 t0 kinematic features P10 uses;
+* max target speed: the v8 sidecar, `limit_kmh ∈ {30, 50, 100, 120}`;
+* nav command + distance to manoeuvre: v9 per-frame nav;
+* camera: DINOv3-L/16 + LoRA.
+
+| layer | cycle | conditioned on | learns to output | train-time labels | loss |
+|---|---|---|---|---|---|
+| **Strategic S** | **1 Hz** | scene summary + nav + distance + ego dynamics | **route checkpoints** at 30 / 50 / 80 m of arc ahead: (x, y, heading) in the ego frame | v9 **ROUTE CHECKPOINT** RC-A, already built: the driven path smoothed in arc length (σ 8 m), read at 30 / 50 / 80 m (`build_v9_labels.py` §6) | L1 on position + heading |
+| **Tactical T** | **2 Hz** (0.5 s) | checkpoints + inputs + scene | the **v9 tactical goals and constraints** over [NOW+2 s, NOW+8 s]: goal tokens, lat/lon action tokens, constraint values (distance, time, target speed) | v9 per-frame labels (95.09 % of 746,946 train windows, `H-V9-COV`) | CE + masked regression; IGNORE cells masked |
+| **Operative O** | **10 Hz** (0.1 s) | tactical goals + constraints + checkpoints + inputs + scene | **one 6 s trajectory** (60 × 0.1 s), a residual on the **P10 prior** | logged ego future | ADE / FDE + the **consistency losses** below |
+| **World model (4th brain)** | each layer's own cycle | H-JEPA levels z¹ / z² / z³ aligned with O / T / S | latent prediction (auxiliary first, as in §4.3) | self-supervised | pred + SIGReg (+ IDM, pending the S2 mechanism read) |
+
+**My interpretation, to confirm.** The PI's text gives the strategic layer nav and distance. I also give it the **scene summary**, because placing a checkpoint on the actual road needs the road. The **nav + distance-only S** is kept as the ablation, and it doubles as the strategic family's echo control (§13.4). If vision adds nothing at the strategic level, the simpler one ships.
+
+**Consistency (binding: "must be consistent").**
+* **Training:** differentiable penalties, one per active constraint:
+  * speed ≤ min(max target speed, SPEED_BAND v_hi);
+  * STOP: v → 0 before the stop distance;
+  * TURN: the sign and band of the heading change match the goal;
+  * LEAD: time gap ≥ the constraint.
+* **Inference:** hard projection for the R1 speed cap, plus Kamm μ 0.7.
+* **New metric, `CONSISTENCY`**, reported beside the four families:
+  * (a) the fraction of windows whose plan violates any active **GT** constraint;
+  * (b) the fraction violating the model's **own** predicted tactical goal (self-consistency).
+
+**Cycle-time realism.** Training uses **sample-and-hold**: O sees T's output from its last tick (0–0.5 s old), and T sees S's output from its last tick (0–1 s old). **Scheduled sampling** of GT versus predicted upper-layer outputs (p_GT 1.0 → 0.2) removes the exposure bias between the layers (`1506.03099`, banked).
+
+**Admissibility.** S, T and O are computed from vision + nav + ego dynamics + max speed only. None of them reads the situation classifier's output (binding rule of 2026-08-03).
+
+**Parameters (E).**
+* DINOv3-L 303 M
+* LoRA r 32 on q / v: ≈ 6–25 M
+* S / T / O heads ≈ 40–120 M
+* WM levels ≈ 20–50 M
+
+Total ≈ **370–500 M**, under the 800 M cap.
+
+### 13.3 The data question — "do we have the right data?"
+
+**Facts:**
+
+| fact | class | source |
+|---|---|---|
+| We train on **B1 = 4,719 clips × 20 s = 26.2 h** (4,572 train / 147 eval) | M | `D-CORPUS-B1`; REG §16 |
+| PhysicalAI-AV holds **306,152 clips × 20 s ≈ 1,700 h, 25 countries, 2,500+ cities** ⇒ **we use 1.54 % of it** | I | the NVIDIA card, quoted in `…/Data Engineering/Implementation/incoming/2026-07-26-nc-ingest/NC_INGEST_REPORT.md:155` |
+| **The v9 labels are built from the ego log alone** (egomotion parquet → turn table, per-frame nav, route checkpoint) ⇒ they extend to **any** clip at near-zero cost, with the same quality pins (`H-V9-COV / GEOM / NAV`) | M | `stack/scripts/build_v9_labels.py` header |
+| The colour-carrying traffic-light goals come from the Alpamayo CoT, so they exist only on the B1 records (779 / 4,572). Lead constraints need `obstacle.offline` (97.44 % coverage) | M | CLAUDE.md layer table; `D-TLIGHT-1` |
+| **The mix is wrong for manoeuvres.** Lane-keep dominates: 247 / 282 windows on the refav1 eval grid. Sharp turns are ≈ 8 % of eval139 windows, which is **exactly where refcv8 regresses** | M | `RESULT-refav1-21109-openloop.md`; `H-R8-TURN-UNDERCORRECT-1` |
+| Our runs did ≈ **one pass**: refav1 21,109 steps; refcv8 48,852 steps ≈ 781,635 windows. Windows overlap heavily, so one pass of windows already shows each frame many times | M | REG §2.4, §16 |
+
+**Answer.** The data is the right *type*: front-wide 120°, ego log, nav, obstacles, and labels we can regenerate. It is the wrong *amount* and the wrong *mix*.
+* The strategic layer needs many junction approaches.
+* The tactical layer needs many examples of its rare goals.
+* The H-JEPA world-model objective is self-supervised and benefits from new scenes more than from re-shown ones. DriveVLA-W0 (`lib:2510.12796`, banked, **not re-read here**) reports that world models amplify data scaling.
+
+More epochs mostly re-show the same 26 h. **Recommendation: all three levers, in this order, each decided by measurement:**
+
+1. **D1 — rebalance the existing 26 h (free, now).** Event-stratified sampling (turns, stops, lead braking, traffic lights, junction approaches) so that rare tactical classes are 15–25 % of every batch. Eval untouched.
+2. **D2 — data-vs-epochs probe (`H-DATA-SCALE-1`, box 2, pre-registered).** On frozen pooled features, train v8F-mini on 25 / 50 / 100 % of the clips at matched steps, and for 1 / 2 / 4 epochs at 100 %.
+   * The data curve still steep ⇒ D3.
+   * Flat in data but improving with epochs ⇒ more epochs (cheaper).
+3. **D3 — extend, targeted.** Mine the 306k clips **by egomotion alone**: no video needed to choose.
+   * **Selection:** junction turns, roundabouts, stops, lane changes, low-speed manoeuvres, plus country diversity for the future strategic rule layer.
+   * **Size:** start with **+5k–20k clips (×2–5)**.
+   * **Labels:** run the same v9 builder, with identity checks on the B1 clips.
+   * **Encode:** with DINOv3-L.
+   * **Cost drivers:**
+     * download: the dev box's internet is 1.2 MB/s, too slow; do it on the A40/HF side at ≈ 118 MB/s, or on box 2 if its link is fast;
+     * storage: pooled 4×10 fp8 ≈ 4 MB/clip, so 20k clips ≈ 80 GB.
+   * **Leak guard:** new clips must be disjoint from the eval clips **by clip id and by recording session**.
+   * **Eval:** stays fixed (eval139 and the 141-episode refav1 grid).
+   * **Comparability:** extended-data arms are a new comparability domain (B1 is already non-parity) and are only ever compared on the same eval windows.
+
+### 13.4 Bars added for v8F (pre-registered in `PREREG_V8F_MINI.md`)
+
+The trajectory bars in §8 stand. The new ones are:
+
+* **K-MINI:** beats P10 at 6 s.
+* **CONSISTENCY:** at or below P10's violation rate, separated; self-consistency ≥ 0.90.
+* **STRATEGIC:**
+  * checkpoint error at 30 / 50 / 80 m beats a nav-only kinematic baseline;
+  * a **nav-shuffle control must degrade** (it proves nav is used);
+  * the vision arm beats the nav + distance-only arm.
+* **TACTICAL:** v9 goal macro-F1 beats both the majority-class and the nav-only baselines.
+
+### 13.5 Compute: the fastest path and the A40 readiness gate
+
+* **Thor** (after refcv8, ≈ 10-20): v8F-α on the refcv8 chassis as approved, starting with the prior swap at 2 seeds. It is the largest measured lever on the proven chassis.
+* **Box 2** (the PI's 8 GB machine, over SSH from the dev box): **track M**.
+  * **M0** — the pooled DINOv3-L cache (S4).
+  * **M1** — **v8F-mini**: the three layers + the P10 prior on the **cached frozen** features. No LoRA (impossible on cached features), no WM. Minutes to hours per arm.
+  * **M2** — M1 + the H-JEPA WM, with and without IDM. This executes RA-1.
+  * **M3** — D2, the data-vs-epochs probe.
+  * **M4** — a DINOv3-L + LoRA smoke at batch 1 with gradient checkpointing and bf16. It proves the full model runs and measures step time and memory.
+* **A40 (the PI)** is requested only when **all four** readiness checks pass:
+  * **AR-1:** M1 or M2 beats P10 at 6 s, separated at 2 seeds; no family worse than the floors; CONSISTENCY ≤ P10's rate.
+  * **AR-2:** M4's 200-step real-data smoke: every loss finite, a non-zero gradient on LoRA and on every head, an exact-zero control. The projected A40 hours are stated.
+  * **AR-3:** a `PROFILES["v8f"]` launch-gate PASS on the exact commit and argv.
+  * **AR-4:** the data is on HF private, so the pod trains within 1 h of start. A stop rule is set: abort if the in-run 6 s ADE at 25 % of the budget is not below M1/M2's.
+
+  The A40 days then run the full LoRA training on B1 (on-the-fly encode) **and** the D3 download and encode in parallel.
+
+### 13.6 Rule-Zero branches for track M
+
+| failure | next levers, in order |
+|---|---|
+| M1 misses K-MINI | 8×20 pooling (more spatial detail) → more history frames → D1 rebalancing → LoRA (needs AR-2) |
+| CONSISTENCY misses | raise the penalty weights → inference projection → a goal-anchored operative decoder (anchors per goal class) |
+| STRATEGIC loses to the nav-only baseline | ship the PI's literal nav + distance-only strategic layer |
+| TACTICAL loses to the nav-only baseline | the tactical heads read the z² WM latent (M2) → D1 rebalancing → D3 data |

@@ -154,14 +154,16 @@
     "frozen-encoder",
     "planning",
     "rollout-composition",
-    "world-model"
+    "world-model",
+    "v8f-plan"
    ],
    "note": "DINO-WM: frozen DINOv2 PATCH features + latent L2 + CEM/MPC; CLS/global ablation degrades badly | DINO-WM: one-step teacher-forced predictor (frameskip 1-5), multi-step ONLY by autoregressive composition at plan time (CEM/MPC receding horizon) | RE-READ 2026-09-03: frozen DINOv2 PATCH tokens + trained ViT predictor + CEM; Table 2 Push-T success / Rope chamfer: patch 0.90 / 0.41 vs CLS 0.44 / 0.84, R3M 0.42 / 1.13, ResNet 0.20 / 1.08 - the pooled feature loses what planning needs",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-18-frozen-encoder-literature/FROZEN_ENCODER_LITERATURE.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-29-ema-warmup-rollout-composition/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-t1-floor-action-sensitivity/RESULT.md",
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-decodability/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-decodability/RESULT.md",
+    "Project Steering/PLAN_V8F_REFAV1_HJEPA_2026-10-17.md"
    ]
   },
   "2502.00622": {
@@ -223,7 +225,8 @@
     "ema-teacher",
     "frozen-encoder",
     "planning",
-    "world-model"
+    "world-model",
+    "v8f-plan"
    ],
    "note": "V-JEPA 2 / 2-AC: frozen video ViT + compact action-conditioned predictor on <62h Droid, MPC to a goal image | V-JEPA2-AC: teacher-forcing + rollout loss with T=2 (one recurrent step of gradient); error accumulation over long rollouts acknowledged verbatim | RE-READ section 3.1 2026-09-03: V-JEPA 2-AC = frozen ViT-g (16x16x1408 feature maps) + 300M time-causal predictor; actions = change in end-effector state between adjacent frames (realised motion); L = teacher-forcing L1 + rollout loss with T=2, 'only differentiate the predictor through one recurrent step'; no action-sensitivity metric",
    "cited_by": [
@@ -233,7 +236,8 @@
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-t1-floor-action-sensitivity/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-decodability/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-drift/RESULT.md",
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-encoder/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-encoder/RESULT.md",
+    "Project Steering/PLAN_V8F_REFAV1_HJEPA_2026-10-17.md"
    ]
   },
   "2509.11417": {
@@ -288,13 +292,15 @@
     "e2e-planning",
     "frozen-encoder",
     "sota-2026-09-03",
-    "sota-2026-09-03-encoder"
+    "sota-2026-09-03-encoder",
+    "v8f-plan"
    ],
    "note": "FROST-Drive: frozen 14B VLM 8.17 RFS BEATS the same encoder fine-tuned 8.13; frozen ImageNet ViT is the WORST arm 7.39 | FROST-Drive: E2E driving with a frozen vision encoder; frozen beats fine-tuned 14B VLM (to verify) | RE-READ 2026-09-03: Table 3 rows - ViT (ImageNet) 7.39, ViT fine-tuned 7.79, VLM 14B fine-tuned 8.13 / ADE@3s 1.47, VLM 14B frozen 8.17 / 1.04, VLM 38B 8.17, VLM 78B 8.24; embedding width 256 -> 7.68; fine-tuning HURTS a strong trunk and HELPS a weak one | FROST-Drive: SAME-backbone frozen vs finetuned InternVL3-14B on Waymo Open E2E -- frozen RFS 8.17 / ADE5s 1.88 BEATS finetuned 8.13 / 2.19; frozen vision encoder is 300M; embedding dim 5120 vs 256 is +0.49 RFS. Open-loop only.",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-18-frozen-encoder-literature/FROZEN_ENCODER_LITERATURE.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-encoder/RESULT.md",
-    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-17/RESULT.md"
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-17/RESULT.md",
+    "Project Steering/PLAN_V8F_REFAV1_HJEPA_2026-10-17.md"
    ]
   },
   "2602.04880": {
@@ -459,12 +465,14 @@
    "banked": "2026-08-20",
    "tags": [
     "closed-loop-wm",
-    "ssl"
+    "ssl",
+    "v8f-plan"
    ],
    "note": "LeJEPA (Balestriero & LeCun): SIGReg = sketched isotropic Gaussian regularization; provably prevents collapse without EMA/stop-grad/teacher. THE paper v6's o6_sigreg implements.",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-19-simwam-analysis/LEJEPA_VS_OURS.md",
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-t1-floor-action-sensitivity/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-t1-floor-action-sensitivity/RESULT.md",
+    "Project Steering/PLAN_V8F_REFAV1_HJEPA_2026-10-17.md"
    ]
   },
   "2603.19312": {
@@ -486,14 +494,16 @@
    "sha256": "553a01501ac74ec56721cfdb936d3825ac941734133a1fd761f614c01b6887e9",
    "banked": "2026-08-20",
    "tags": [
-    "world-model"
+    "world-model",
+    "v8f-plan"
    ],
    "note": "LeWorldModel (LeWM): FIRST JEPA trained stably END-TO-END FROM PIXELS with only TWO loss terms - next-embedding prediction + Gaussian latent regularizer. 6 loss hyperparams -> 1. ~15M params, single GPU, hours. Plans up to 48x faster than foundation-model WMs. Latent PROBED for physical quantities; surprise eval detects implausible events. THE paper the TanitAD trained-WM track follows. | RE-READ 2026-09-03: two-term loss (prediction + SIGReg lambda 0.1, M 1024), ViT-tiny 5M encoder + 10M predictor, explicitly NO stop-gradient and NO EMA; ~200x fewer tokens and ~50x faster planning than DINO-WM; Fig 6 vs DINO-WM/PLDM read from bars (INHERITED); VoE surprise; SIGReg weak in low-dim envs",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-19-simwam-analysis/LEWM_VS_OURS.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-decodability/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-drift/RESULT.md",
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-encoder/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-encoder/RESULT.md",
+    "Project Steering/PLAN_V8F_REFAV1_HJEPA_2026-10-17.md"
    ]
   },
   "2411.15139": {
@@ -2207,12 +2217,14 @@
    "banked": "2026-08-27",
    "tags": [
     "A1_world_models",
-    "hierarchy"
+    "hierarchy",
+    "v8f-plan"
    ],
    "note": "Hierarchical Planning with Latent World Models: 2-level latent subgoals, 70% vs 0% flat, 3x less planning compute | READ IN FULL 2026-09-13 (v2 2026-06-16): Table 16 capacity-controlled flat-vs-hierarchy — flat 98M 35%/15% vs hier 94M 78%/61% (Push-T H=10/15); PLDM flat 178k 82/59 vs hier 182k 95/83",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-27-jepa-driving-survey/JEPA_DRIVING_SURVEY.md",
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-13-hwm-capacity-matched-hierarchy/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-13-hwm-capacity-matched-hierarchy/RESULT.md",
+    "Project Steering/PLAN_V8F_REFAV1_HJEPA_2026-10-17.md"
    ]
   },
   "2602.12540": {
@@ -14481,11 +14493,13 @@
    "banked": "2026-09-17",
    "tags": [
     "A2",
-    "recovered-orphan"
+    "recovered-orphan",
+    "v8f-plan"
    ],
    "note": "A2 JEPA rotation 2026-09-17 | index row lost to the pre-2026-08-23 concurrent-write race; bytes verified by sha256, row rebuilt",
    "cited_by": [
-    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-17/RESULT.md"
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-17/RESULT.md",
+    "Project Steering/PLAN_V8F_REFAV1_HJEPA_2026-10-17.md"
    ]
   },
   "2608.07409": {
@@ -17755,6 +17769,277 @@
    "note": "Constraint generalisation: a classifier meeting data-dependent constraints in-sample often violates them on new data; fix = model on train set, Lagrange multipliers/constraints on a separate validation set (O4 lever)",
    "cited_by": [
     "TanitAD Research Lab/2026-10-17-LAB-RUN-018.md"
+   ]
+  },
+  "2610.06805": {
+   "key": "2610.06805",
+   "kind": "arxiv",
+   "title": "H-JEPA: End-to-End Learning of Hierarchical World Models for Visual Planning",
+   "authors": [
+    "Wancong Zhang",
+    "Basile Terver",
+    "Michael Rabbat",
+    "Yann LeCun",
+    "Randall Balestriero"
+   ],
+   "published": "2026-10-05",
+   "abstract": "Long-horizon planning with latent world models requires reasoning across timescales and levels of abstraction. Existing task-agnostic JEPA world models predict and plan at a single timescale or with multiple horizons in one shared latent space. We introduce H-JEPA, an end-to-end recipe for training a hierarchy of action-conditioned JEPAs in which each level predicts farther ahead in its own learned latent space. Planning proceeds top-down: the top level optimizes progress toward the goal, and each level's predictions become subgoals for the planner below it. When factors in the data evolve at separated timescales, higher levels discard fast, unpredictable detail and retain slower task-relevant state. Across four simulated navigation and manipulation environments, hierarchical planning improves over a flat JEPA; on Visual AntMaze, a three-level hierarchy raises success from 18% to 73% usi",
+   "url": "https://arxiv.org/abs/2610.06805",
+   "path": "TanitAD Research Lab/Library/papers/2610.06805_H-JEPA-End-to-End-Learning-of-Hierarchical-World-Models-for.pdf",
+   "bytes": 15237699,
+   "sha256": "4a4a799c50d2d0acc52ba264410d5bbf7c54e1aba99a9a968886e84c0e43e4c2",
+   "banked": "2026-10-17",
+   "tags": [
+    "hierarchical-wm",
+    "v8f-plan"
+   ],
+   "note": "H-JEPA: hierarchy of action-conditioned JEPA WMs, each level predicts further ahead in its own latent; top-down subgoal planning; Visual AntMaze 3-level 18%->73% success with less planner compute",
+   "cited_by": [
+    "Project Steering/PLAN_V8F_REFAV1_HJEPA_2026-10-17.md"
+   ]
+  },
+  "2609.34085": {
+   "key": "2609.34085",
+   "kind": "arxiv",
+   "title": "AD-E2E-JEPA: A Joint-Embedding Predictive Architecture For End-to-End Autonomous Driving",
+   "authors": [
+    "Haoran Zhu",
+    "Wancong Zhang",
+    "Yann LeCun",
+    "Anna Choromanska"
+   ],
+   "published": "2026-09-28",
+   "abstract": "Autonomous driving requires \\textit{world models} that can understand the physical world, reason and plan, and operate safely. In this paper, we first systematically evaluate existing action-conditioned joint-embedding predictive architecture (JEPA) world models, including LeWM, DINO-WM, and JEPA-WM for end-to-end autonomous driving (E2EAD). To isolate world-model quality from policy learning, we employ a goal-conditioned zero-shot planning setting that evaluates these models using ground-truth future observations as goals, without training any driving policy. We find that existing JEPA-based world models are either accurate for driving but computationally expensive, or computationally efficient but insufficient for planning. To address this trade-off, we propose \\textbf{AD-E2E-JEPA}, which introduces a SIGReg-regularized learnable projector applied to projected patch embeddings. The pro",
+   "url": "https://arxiv.org/abs/2609.34085",
+   "path": "TanitAD Research Lab/Library/papers/2609.34085_AD-E2E-JEPA-A-Joint-Embedding-Predictive-Architecture-For-En.pdf",
+   "bytes": 6449619,
+   "sha256": "f925d3b0fa733ff7ad82b45b5a729c7d7d97792a44aac8b63f76af5160f0b1fd",
+   "banked": "2026-10-17",
+   "tags": [
+    "dinov3",
+    "frozen-encoder",
+    "jepa",
+    "navsim-v2",
+    "v8f-plan"
+   ],
+   "note": "AD-E2E-JEPA (Zhu, Zhang, LeCun, Choromanska; NYU/AMI): FROZEN DINOv3 ViT-L + SIGReg-regularised learnable projector (16x fewer patches, 4x smaller dim, ~100x faster) + action-conditioned predictor, FRONT-CAMERA-ONLY; goal-conditioned zero-shot planning over trajectory vocabularies 256/8,192; NAVSIM v2 EPDMS 67.3/72.9 (84.1/86.5 w/o multiplicative safety); projector pretraining lifts downstream IL 80.2 -> 85.4 EPDMS",
+   "cited_by": [
+    "Project Steering/PLAN_V8F_REFAV1_HJEPA_2026-10-17.md"
+   ]
+  },
+  "2609.26299": {
+   "key": "2609.26299",
+   "kind": "arxiv",
+   "title": "ForeDrive: Foresight-Guided End-to-End Autonomous Driving with a Planning-Relevant Latent World Model",
+   "authors": [
+    "Sinuo Wang",
+    "Zichong Gu",
+    "Yuhan Huang",
+    "Wenxin Wen",
+    "Xun Yang",
+    "Yiqing Zhang",
+    "Xingyu Zhang",
+    "Ningyu Che",
+    "Jie Ling",
+    "Qiankun Yu",
+    "Wei Liu",
+    "Jing Xu"
+   ],
+   "published": "2026-09-22",
+   "abstract": "Existing latent world models are typically optimized for future predictability, yet the resulting representations are not necessarily useful for planning in autonomous driving. Predictions are commonly used for pretraining or auxiliary supervision rather than as direct conditioning signals for trajectory generation. We propose ForeDrive, which learns a planning-relevant latent representation and couples it asymmetrically to a Diffusion Transformer (DiT) planner. The planner consumes multi-horizon latent future representations learned with a JEPA-style world model; planning gradients update the shared online encoder, while stop-gradient routing trains the latent predictor with forecasting losses only. Because predicted futures have varying reliability across horizons and BEV trajectories are misaligned with image tokens, we use gated visual fusion, future-status injection, and Trajectory-",
+   "url": "https://arxiv.org/abs/2609.26299",
+   "path": "TanitAD Research Lab/Library/papers/2609.26299_ForeDrive-Foresight-Guided-End-to-End-Autonomous-Driving-wit.pdf",
+   "bytes": 13786285,
+   "sha256": "0beb8b4e9962b25df3d51eafd7908802456eea3b35bf0f27701f5d3155ed66c0",
+   "banked": "2026-10-17",
+   "tags": [
+    "competitor",
+    "jepa",
+    "v8f-plan",
+    "world-model"
+   ],
+   "note": "ForeDrive: JEPA-style latent world model couples ASYMMETRICALLY to a DiT planner -- planner consumes multi-horizon predicted latents, planning gradients update the shared encoder, stop-gradient trains the predictor with forecasting loss only (planning-relevant latent, not just predictable)",
+   "cited_by": [
+    "Project Steering/PLAN_V8F_REFAV1_HJEPA_2026-10-17.md"
+   ]
+  },
+  "2502.14819": {
+   "key": "2502.14819",
+   "kind": "arxiv",
+   "title": "Learning from Reward-Free Offline Data: A Case for Planning with Latent Dynamics Models",
+   "authors": [
+    "Vlad Sobal",
+    "Wancong Zhang",
+    "Kyunghyun Cho",
+    "Randall Balestriero",
+    "Tim G. J. Rudner",
+    "Yann LeCun"
+   ],
+   "published": "2025-02-20",
+   "abstract": "A long-standing goal in AI is to develop agents capable of solving diverse tasks across a range of environments, including those never seen during training. Two dominant paradigms address this challenge: (i) reinforcement learning (RL), which learns policies via trial and error, and (ii) optimal control, which plans actions using a known or learned dynamics model. However, their comparative strengths in the offline setting - where agents must learn from reward-free trajectories - remain underexplored. In this work, we systematically evaluate RL and control-based methods on a suite of navigation tasks, using offline datasets of varying quality. On the RL side, we consider goal-conditioned and zero-shot methods. On the control side, we train a latent dynamics model using the Joint Embedding Predictive Architecture (JEPA) and employ it for planning. We investigate how factors such as data d",
+   "url": "https://arxiv.org/abs/2502.14819",
+   "path": "TanitAD Research Lab/Library/papers/2502.14819_Learning-from-Reward-Free-Offline-Data-A-Case-for-Planning-w.pdf",
+   "bytes": 3846356,
+   "sha256": "5491927bbbc966953cfa17ff24e1208349c8e344921aa0dad2363b16d8456ccf",
+   "banked": "2026-10-17",
+   "tags": [
+    "pldm",
+    "v8f-plan",
+    "world-model"
+   ],
+   "note": "PLDM (Sobal, Zhang, Cho, Balestriero, Rudner, LeCun): JEPA latent dynamics trained jointly from reward-free offline data and used for planning; H-JEPA ref [73] describes it as combining latent prediction with IDM + variance-covariance regularisation, encoder+predictor trained end-to-end from pixels",
+   "cited_by": [
+    "Project Steering/PLAN_V8F_REFAV1_HJEPA_2026-10-17.md"
+   ]
+  },
+  "2211.10831": {
+   "key": "2211.10831",
+   "kind": "arxiv",
+   "title": "Joint Embedding Predictive Architectures Focus on Slow Features",
+   "authors": [
+    "Vlad Sobal",
+    "Jyothir S",
+    "Siddhartha Jalagam",
+    "Nicolas Carion",
+    "Kyunghyun Cho",
+    "Yann LeCun"
+   ],
+   "published": "2022-11-20",
+   "abstract": "Many common methods for learning a world model for pixel-based environments use generative architectures trained with pixel-level reconstruction objectives. Recently proposed Joint Embedding Predictive Architectures (JEPA) offer a reconstruction-free alternative. In this work, we analyze performance of JEPA trained with VICReg and SimCLR objectives in the fully offline setting without access to rewards, and compare the results to the performance of the generative architecture. We test the methods in a simple environment with a moving dot with various background distractors, and probe learned representations for the dot's location. We find that JEPA methods perform on par or better than reconstruction when distractor noise changes every time step, but fail when the noise is fixed. Furthermore, we provide a theoretical explanation for the poor performance of JEPA-based methods with fixed n",
+   "url": "https://arxiv.org/abs/2211.10831",
+   "path": "TanitAD Research Lab/Library/papers/2211.10831_Joint-Embedding-Predictive-Architectures-Focus-on-Slow-Featu.pdf",
+   "bytes": 602355,
+   "sha256": "2c0ba6d60fbcd9651c73114a6f62c6204db5116ca68e83af5160ff73d8dcadfe",
+   "banked": "2026-10-17",
+   "tags": [
+    "jepa",
+    "slow-features",
+    "v8f-plan"
+   ],
+   "note": "Sobal et al. (H-JEPA ref [72]): JEPA (VICReg/SimCLR) on a moving-dot task with distractors works when the noise changes every step but FAILS when noise is fixed per episode (encoder copies episode-constant noise, predictor = identity, zero loss); the degenerate case H-JEPA's IDM term is built against (H-JEPA sec. on temporal-prediction failure mode)",
+   "cited_by": [
+    "Project Steering/PLAN_V8F_REFAV1_HJEPA_2026-10-17.md"
+   ]
+  },
+  "2412.01718": {
+   "key": "2412.01718",
+   "kind": "arxiv",
+   "title": "HUGSIM: A Real-Time, Photo-Realistic and Closed-Loop Simulator for Autonomous Driving",
+   "authors": [
+    "Hongyu Zhou",
+    "Longzhong Lin",
+    "Jiabao Wang",
+    "Yichong Lu",
+    "Dongfeng Bai",
+    "Bingbing Liu",
+    "Yue Wang",
+    "Andreas Geiger",
+    "Yiyi Liao"
+   ],
+   "published": "2024-12-02",
+   "abstract": "In the past few decades, autonomous driving algorithms have made significant progress in perception, planning, and control. However, evaluating individual components does not fully reflect the performance of entire systems, highlighting the need for more holistic assessment methods. This motivates the development of HUGSIM, a closed-loop, photo-realistic, and real-time simulator for evaluating autonomous driving algorithms. We achieve this by lifting captured 2D RGB images into the 3D space via 3D Gaussian Splatting, improving the rendering quality for closed-loop scenarios, and building the closed-loop environment. In terms of rendering, We tackle challenges of novel view synthesis in closed-loop scenarios, including viewpoint extrapolation and 360-degree vehicle rendering. Beyond novel view synthesis, HUGSIM further enables the full closed simulation loop, dynamically updating the ego ",
+   "url": "https://arxiv.org/abs/2412.01718",
+   "path": "TanitAD Research Lab/Library/papers/2412.01718_HUGSIM-A-Real-Time-Photo-Realistic-and-Closed-Loop-Simulator.pdf",
+   "bytes": 50128067,
+   "sha256": "7b8534cb59af740bbe18ba2a56f1007dabb36ef2f06ef40fc8a523edf533d07e",
+   "banked": "2026-10-17",
+   "tags": [
+    "closed-loop",
+    "hugsim",
+    "t2",
+    "v8f-plan"
+   ],
+   "note": "HUGSIM: 3DGS-based closed-loop simulator for AD (cited via WA-JEPA's closed-loop eval); T2 candidate",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-hjepa-literature/T2_FEASIBILITY.md"
+   ]
+  },
+  "alpasim-egodriver-proto": {
+   "key": "alpasim-egodriver-proto",
+   "kind": "local",
+   "title": "AlpaSim egodriver.proto (NVlabs/alpasim main, fetched 2026-10-17)",
+   "authors": [],
+   "published": "",
+   "abstract": "",
+   "url": "https://github.com/NVlabs/alpasim/blob/main/src/grpc/alpasim_grpc/v0/egodriver.proto",
+   "path": "TanitAD Research Lab/Library/papers/alpasim-egodriver-proto_AlpaSim-egodriver-proto-NVlabs-alpasim-main-fetched-2026-10.proto",
+   "bytes": 4403,
+   "sha256": "ce18108119f6e8871a06d2a446c91b3bda051c907d071b3fc1bc7116c5593712",
+   "banked": "2026-10-17",
+   "tags": [
+    "alpasim",
+    "closed-loop",
+    "t2"
+   ],
+   "note": "AlpaSim driver gRPC contract: submit_image_observation / submit_egomotion_observation / submit_route / drive -> DriveResponse.trajectory (local->rig_est transforms); Apache-2.0",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-hjepa-literature/T2_FEASIBILITY.md"
+   ]
+  },
+  "alpasim-readme": {
+   "key": "alpasim-readme",
+   "kind": "local",
+   "title": "AlpaSim README (NVlabs/alpasim main, fetched 2026-10-17)",
+   "authors": [],
+   "published": "",
+   "abstract": "",
+   "url": "https://github.com/NVlabs/alpasim",
+   "path": "TanitAD Research Lab/Library/papers/alpasim-readme_AlpaSim-README-NVlabs-alpasim-main-fetched-2026-10-17.md",
+   "bytes": 7929,
+   "sha256": "1690cde3edfba9b7f726324a3a852e7875166f3bd9330fe771223a052840b606",
+   "banked": "2026-10-17",
+   "tags": [
+    "alpasim",
+    "closed-loop",
+    "t2"
+   ],
+   "note": "AlpaSim: Apache-2.0; pluggable renderer (NuRec default, OmniDreams video-model optional); supported drivers Alpamayo-R1/1.5, VaVAM, Transfuser (provisional)",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-hjepa-literature/T2_FEASIBILITY.md"
+   ]
+  },
+  "alpasim-tutorial": {
+   "key": "alpasim-tutorial",
+   "kind": "local",
+   "title": "AlpaSim docs/TUTORIAL.md (NVlabs/alpasim main, fetched 2026-10-17)",
+   "authors": [],
+   "published": "",
+   "abstract": "",
+   "url": "https://github.com/NVlabs/alpasim/blob/main/docs/TUTORIAL.md",
+   "path": "TanitAD Research Lab/Library/papers/alpasim-tutorial_AlpaSim-docs-TUTORIAL-md-NVlabs-alpasim-main-fetched-2026-10.md",
+   "bytes": 29213,
+   "sha256": "a6f4db8cb0e7150dded15c6490c5e770203b0fcdddffc969b350d75cb5dbef9c",
+   "banked": "2026-10-17",
+   "tags": [
+    "alpasim",
+    "closed-loop",
+    "t2"
+   ],
+   "note": "AlpaSim run recipe: wizard deploy=local topology=1gpu driver=vavam|alpamayo1|transfuser; scene suite public_2601; Alpamayo needs ~40 GB VRAM; scenes = NuRec USDZ from HF 26.01 sample_set",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-hjepa-literature/T2_FEASIBILITY.md"
+   ]
+  },
+  "hugsim-readme": {
+   "key": "hugsim-readme",
+   "kind": "local",
+   "title": "HUGSIM README (hyzhou404/HUGSIM main, fetched 2026-10-17)",
+   "authors": [],
+   "published": "",
+   "abstract": "",
+   "url": "https://github.com/hyzhou404/HUGSIM",
+   "path": "TanitAD Research Lab/Library/papers/hugsim-readme_HUGSIM-README-hyzhou404-HUGSIM-main-fetched-2026-10-17.md",
+   "bytes": 7137,
+   "sha256": "1a489ddbe3973cd4c21b75268133b07d8b5cc1779e7cba53ea7fe9689d1fc36b",
+   "banked": "2026-10-17",
+   "tags": [
+    "closed-loop",
+    "hugsim",
+    "t2"
+   ],
+   "note": "HUGSIM repo: MIT licence (per GitHub page); closed_loop.py with separate AD clients (UniAD_SIM, VAD_SIM, NAVSIM) on a second GPU; scenes/scenarios on HF XDimLab/HUGSIM; some scenarios private (RealADSim ICCV 2025)",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-hjepa-literature/T2_FEASIBILITY.md"
    ]
   }
  }
