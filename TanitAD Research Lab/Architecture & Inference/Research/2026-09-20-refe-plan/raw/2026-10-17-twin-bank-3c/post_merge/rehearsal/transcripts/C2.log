@@ -1,0 +1,17 @@
+ZZPM START 2026-10-17T16:02:05Z from=a to=f dry=0 probe=0 logs=/c/Users/Admin/bank3c/raw/2026-10-17-twin-bank-3c/post_merge/rehearsal/transcripts/C2_run
+ZZPM 0 OK pod reachable; frozen 3-C code == MANIFEST.json; pod paths present
+ZZPM a OK merge rc 0 (judged from artifacts, input+output re-hashed): kept=23 (K1=17 K2=4 K3=2) dropped=51 K1_share_eval=0.3696 all=0.3333 shares[K1=0.3696,K2=0.2857,K3=0.2222] out_sha=fd4ff8ea389f2135
+ZZPM_INFO a expected keep shares K1/K2/K3 = 0.37/0.29/0.22 (mini bank, PREREG_3C); yield guard: K1 < 0.20 STOPs
+ZZPM_INFO b gpu: state=idle n=0 procs=-
+ZZPM_INFO b launched (c'2) detached on the pod: 12 shards, CPU, <=300 twins/rank; polling every 2s
+ZZPM_INFO b (c'2) K1[n=17/17,ratio=1.0,dv=0.0,judged=True,pass=True] K2[n=4/4,ratio=1.0,dv=0.0,judged=False,pass=None] K3[n=2/2,ratio=1.0,dv=0.0,judged=False,pass=None]
+ZZPM b OK (c'2) PASS: per judged rank median path ratio >= 0.95 and median end-speed change >= -0.3 m/s
+ZZPM_INFO c gpu: state=idle n=0 procs=-
+ZZPM_INFO c launched (c'3) detached on the pod: verify for ranks [1 2 3] in parallel (--limit 1000), then the hold check; polling every 2s
+ZZPM_INFO c c3 k=1 state=missing why=no_ZZD7V_SUMMARY_line_in_verify_k1.log
+ZZPM_INFO c c3 k=2 state=missing why=no_ZZD7V_SUMMARY_line_in_verify_k2.log
+ZZPM_INFO c c3 k=3 state=missing why=no_ZZD7V_SUMMARY_line_in_verify_k3.log
+ZZPM_INFO c c3hold state=ok detail=lane_rank_rows=23_route_hold_step0=23
+ZZPM c FAIL (c'3) FAILS: D7 (a) DISTINCT and/or (b) SPEC LANE not satisfied: K1(a=,b=,state=missing) K2(a=,b=,state=missing) K3(a=,b=,state=missing). (c) is reported, not judged. Hand nothing to P6.
+ZZPM P6_NOT_LAUNCHED c: (c'3) FAILS: D7 (a) DISTINCT and/or (b) SPEC LANE not satisfied: K1(a=,b=,state=missing) K2(a=,b=,state=missing) K3(a=,b=,state=missing). (c) is reported, not judged. Hand nothing to P6.
+ZZPM DONE result=FAIL step=c exit=8 last_ok=b dry=0 logs=/c/Users/Admin/bank3c/raw/2026-10-17-twin-bank-3c/post_merge/rehearsal/transcripts/C2_run

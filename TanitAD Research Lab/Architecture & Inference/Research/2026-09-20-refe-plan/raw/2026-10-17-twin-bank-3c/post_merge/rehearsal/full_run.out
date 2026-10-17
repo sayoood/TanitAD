@@ -1,0 +1,69 @@
+SCN H0 PASS  happy path a-f: auto-launch, P6_TRAINING
+SCN H1 PASS  --no-launch stops at the gate PASS, P6 not launched
+SCN H2 PASS  --dry executes no pod write
+SCN H3 PASS  --probe executes no pod write
+SCN H4 PASS  second run while P6 runs: fail, no double launch
+SCN A1 PASS  merge rc 3 (refused) => STOP exit 3
+SCN A2 PASS  merge rc 4 (yield guard) => STOP exit 4
+SCN A3 PASS  merge crashed (no marker)
+SCN A4 PASS  RUN_INCOMPLETE
+SCN A5 PASS  merge.out OK but the bank was tampered
+SCN A6 PASS  merge report not on the frozen PREREG
+SCN A7 PASS  wait timeout
+SCN A8 PASS  yield-guard denominators disagree => Master Mind decides
+SCN A9 PASS  RUN_DONE but the watcher never merged
+SCN A10 PASS  frozen 3-C code changed on the pod
+SCN B1 PASS  (c'2) fails => 3C-SLOW exit 6
+SCN B2 PASS  (c'2) incomplete (re-rolls missing) => exit 7
+SCN B3 PASS  (c'2) passes
+SCN C1 PASS  (c'3) (b) fails at K=2 => exit 8
+SCN C2 PASS  (c'3) verify crashed (no summary) => exit 8
+SCN C3 PASS  (c'3) passes, (c) reported not judged, ZZTWIN_HOLD_OK
+SCN C4 PASS  REAL reroll_twins.py check goes RED on a lane row without route_hold
+SCN D1 PASS  a kept twin's part missing in the source => exit 9, no P6 rebuild
+SCN D2 PASS  conflicting file at the destination => exit 9
+SCN D3 PASS  hard-link placement, idempotent re-run
+SCN D4 PASS  copy placement (no hard link)
+SCN D5 PASS  P6's own D7 acceptance runs on the placed parts
+SCN G1 PASS  GPU busy, frees up: WAIT then proceed and launch
+SCN G2 PASS  GPU busy past the cap => GATE_DEFERRED, exit 10
+SCN G3 PASS  --no-wait: GATE_DEFERRED gpu_busy
+SCN G4 PASS  nvidia-smi cannot answer => busy
+SCN G5 PASS  rls1_pod.sh (R0d) alive, GPU idle => busy
+SCN G6 PASS  another chain's lock => busy
+SCN G7 PASS  P6's own lock held => FAIL not wait
+SCN E1 PASS  no P6_CBANK knob in the shipped tree => FAIL
+SCN E2 PASS  stale ship commit => FAIL
+SCN E3 PASS  P6N_SHIP_COMMIT unset => FAIL
+SCN E4 PASS  gate REFUSED => P6_NOT_LAUNCHED, nothing launched
+SCN E5 PASS  chain took the D7 fallback => FAIL
+SCN E6 PASS  token vouches for the PRE-3C bank => FAIL
+SCN E7 PASS  a part was written during the dry run => FAIL
+SCN E8 PASS  no PASS token => FAIL
+SCN E9 PASS  trainer side ran in the dry run => FAIL
+SCN E10 PASS  cache.ok missing => FAIL
+SCN F1 PASS  real launch REFUSED => NOT_LAUNCHED exit 13
+SCN F2 PASS  preflight OK but no first step => UNCONFIRMED exit 13
+SCN F3 PASS  trainer exited before step 0
+SCN F4 PASS  step line without preflight => AMBIGUOUS
+SCN F5 PASS  chain gone without a marker
+SCN F6 PASS  --from f re-judges the dry run from the pod and launches
+SCN F7 PASS  --from f with no recorded dry run => NOT_LAUNCHED
+SCN F8 PASS  --from f, pod busy past cap
+SCN F9 PASS  busy again after the dry run PASSed: no launch
+SCN X1 PASS  ssh connection dead (255) => exit 2, NOT_LAUNCHED
+SCN X1b PASS  ssh answers nothing sensible (rc 1) => exit 2
+SCN X2 PASS  SSH unset => exit 2
+SCN X3 PASS  SSH without BatchMode => exit 2
+SCN X4 PASS  --from b with no finished merge
+SCN X5 PASS  no pod address/port/key/token in the package
+SCN X6 PASS  malformed numeric knob => exit 2 at once
+SCN X7 PASS  SIGTERM mid-wait => EXIT trap: FAIL + NOT_LAUNCHED, exit 14
+SCN X8 PASS  MUTANT: arithmetic crash in step a still ends FAIL, never result=OK
+SCN X9 PASS  MUTANT: gate judge removed at (e): the wrong-bank gate is launched over
+SCN X9b PASS  MUTANT: judge removed at (e) only: a stand-alone (f) re-judges and refuses
+SCN X9c PASS  MUTANT: judge removed at (e) AND (f): launched
+SCN X10 PASS  MUTANT: busy check not honoured: gate would start on a busy pod
+SCN X11 PASS  MUTANT: REFUSED-count guard removed: later layers still refuse
+SCN X11b PASS  MUTANT: all REFUSED/lanes/launch_gate layers removed: the refused gate is launched over
+SCENARIOS: 68 passed, 0 failed  (details: /c/Users/Admin/bank3c/raw/2026-10-17-twin-bank-3c/post_merge/rehearsal/RESULTS.tsv)

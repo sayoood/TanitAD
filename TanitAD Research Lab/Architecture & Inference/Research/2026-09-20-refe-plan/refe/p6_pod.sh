@@ -28,7 +28,9 @@ P2DIR=$DATA/refe_p2
 P6=$DATA/refe_p6; S=$P6/stage; L=$P6/chain.log
 RUN=$DATA/refe_runs/p6_paper_faithful
 BANK=$DATA/refe_navtrain/train_grow                  # P2's bank, read-only here
-CBANK=$DATA/refe_navtrain/train_grow_cmd             # the same rows + NAVSIM's command on the rank-0 ones (annotate_commands.py writes a NEW directory)
+# P6_CBANK (post-3C knob): the bank the trainer, the cache stages and the launch gate read.  Default = the pre-3C bank, so every existing caller is unchanged.
+# The 3-C commit-filtered twin bank is `train_grow_cmd_3c` (raw/2026-10-17-twin-bank-3c/): pass P6_CBANK=$DATA/refe_navtrain/train_grow_cmd_3c.  The token binds this path via `--targets`.
+CBANK="${P6_CBANK:-$DATA/refe_navtrain/train_grow_cmd}"   # the same rows + NAVSIM's command on the rank-0 ones (annotate_commands.py writes a NEW directory)
 MC=$DATA/refe_navtrain/metric_cache                  # the D9 parts
 DBS=$DATA/navtrain_dbs; PIX=$DATA/navtrain_pixels
 NAVLOGS="${P6_NAVSIM_LOGS:-$DATA/navsim_logs/trainval}"
@@ -282,6 +284,8 @@ log "inputs ok (bank, $EXP_DBS DBs, $EXP_PIX pixel shards, maps: reused in place
 
 # ---- 5. D6 (PI P6-N-SRC): NAVSIM's OWN driving_command on the rank-0 rows, so the student sees at TRAIN time what NAVSIM hands it at TEST time.  Needs the navtrain metadata: REFUSES without it.
 if ! { stage_done commands && ls "$CBANK"/targets_rank*.jsonl > /dev/null 2>&1; }; then
+  # P6_CBANK names a DERIVED bank (the 3-C twin bank).  This stage ends with `rm -rf "$CBANK"` and rebuilds it from P2's bank: with a derived bank that would DESTROY it.
+  [ -z "${P6_CBANK:-}" ] || refuse "P6_CBANK is set ($CBANK) but the commands stage would rebuild (rm -rf) it: the command table belongs to the pre-3C bank. Restore commands.ok and the bank, or unset P6_CBANK"
   have_navlogs || fetch_navlogs || refuse "D6: no NAVSIM metadata (*.pkl) under $NAVLOGS and no download (P6_NAVSIM_LOGS_URL): the command source P6-N-SRC cannot be built"
   nice -n "$(nice_level)" "$PY" p6_prep.py command-table --logs "$NAVLOGS" --bank "$BANK" --out "$P6/commands.json" > "$P6/commands_table.out" 2>&1 200>&-
   grep -q "^ZZCMD_TABLE_OK " "$P6/commands_table.out" || refuse "D6: the command table does not cover the bank: $(tail -n 1 "$P6/commands_table.out" | cut -c1-200)"
