@@ -1,0 +1,1080 @@
+{
+ "tool": "navtest_E/1",
+ "tier": "T1 = NAVSIM v1.1 PDMS, an ego pseudo-simulation of an open-loop plan against logged agents (self-action open loop, not closed loop)",
+ "n_tokens": 12146,
+ "n_logs": 136,
+ "strategic_pause": {
+  "status": "PAUSED",
+  "ruling": "PI 2026-09-19, PI_DECISION_QUEUE item 25 (the strategic layer is switched off temporarily)",
+  "note": "reported as PAUSED: never a pass, never omitted; also UNAVAILABLE in NAVSIM (no strategic decision is scored)"
+ },
+ "estimators": {
+  "pdm_members": "paired log-cluster bootstrap, 10000 resamples, 95 %, seed 20260927 (B - A, x100; stage3_full.read_pair)",
+  "families6_components": "families6's own: episode-cluster bootstrap, 2,000 resamples, PER ARM and UNPAIRED; a component is 'adverse' when B's interval lies entirely on the worse side of A's (proxy_eval.fam_adverse via stage3_full.families_vs).  REPORTED, NOT GATING (bar E clause 4 is about the PDMS sub-scores).",
+  "note": "the families6 components are NOT on the paired estimator: families6 emits per-arm intervals, not per-window values, so a paired B - A interval needs a families6 change (open point)"
+ },
+ "pdm_family_membership": {
+  "LONGITUDINAL": [
+   "EP",
+   "TTC",
+   "C"
+  ],
+  "LATERAL": [
+   "DAC",
+   "DDC"
+  ],
+  "unassigned_in_this_file": [
+   "NC (a PDMS sub-score: bar E clause 4 reads it in navtest_E.json)"
+  ],
+  "source": "PREREG_FREEPOINT.md families rows"
+ },
+ "pairs": {
+  "R0d": {
+   "LONGITUDINAL": {
+    "pdm_members": {
+     "EP": {
+      "mean": 1.1435813543213436,
+      "ci95": [
+       0.6149153274362092,
+       1.6981340717523836
+      ],
+      "adverse": false
+     },
+     "TTC": {
+      "mean": -0.31286020088918165,
+      "ci95": [
+       -0.7960718300105515,
+       0.13537911659040125
+      ],
+      "adverse": false
+     },
+     "C": {
+      "mean": 0.008233163181294254,
+      "ci95": [
+       0.0,
+       0.026059429729750092
+      ],
+      "adverse": false
+     }
+    },
+    "families6": {
+     "status": "OK",
+     "components": {
+      "accel_mae_mps2": {
+       "A": {
+        "mean": 0.5193,
+        "lo": 0.5032,
+        "hi": 0.5386
+       },
+       "B": {
+        "mean": 0.5798,
+        "lo": 0.562,
+        "hi": 0.6002
+       },
+       "delta_B_minus_A": 0.0605,
+       "direction": "lower",
+       "adverse": true
+      },
+      "along_bias_m": {
+       "A": {
+        "mean": -0.3109,
+        "lo": -0.4474,
+        "hi": -0.176
+       },
+       "B": {
+        "mean": -0.4662,
+        "lo": -0.5542,
+        "hi": -0.385
+       },
+       "delta_B_minus_A": -0.1553,
+       "direction": "magnitude",
+       "adverse": false
+      },
+      "along_final_bias_m": {
+       "A": {
+        "mean": -0.8264,
+        "lo": -1.1894,
+        "hi": -0.4782
+       },
+       "B": {
+        "mean": -1.2594,
+        "lo": -1.4947,
+        "hi": -1.0413
+       },
+       "delta_B_minus_A": -0.43300000000000005,
+       "direction": "magnitude",
+       "adverse": false
+      },
+      "along_mae_m": {
+       "A": {
+        "mean": 1.0345,
+        "lo": 0.988,
+        "hi": 1.0826
+       },
+       "B": {
+        "mean": 1.2577,
+        "lo": 1.2088,
+        "hi": 1.3103
+       },
+       "delta_B_minus_A": 0.22320000000000007,
+       "direction": "lower",
+       "adverse": true
+      },
+      "ego_progress.progress_error_mean": {
+       "A": {
+        "mean": 0.1945,
+        "lo": 0.1848,
+        "hi": 0.2045
+       },
+       "B": {
+        "mean": 0.2222,
+        "lo": 0.2119,
+        "hi": 0.2319
+       },
+       "delta_B_minus_A": 0.027700000000000002,
+       "direction": "lower",
+       "adverse": true
+      },
+      "ego_progress.progress_ratio_mean": {
+       "A": {
+        "mean": 1.0025,
+        "lo": 0.9832,
+        "hi": 1.0215
+       },
+       "B": {
+        "mean": 0.9799,
+        "lo": 0.967,
+        "hi": 0.9924
+       },
+       "delta_B_minus_A": -0.022599999999999953,
+       "direction": "closer_to_1",
+       "adverse": false
+      },
+      "ego_progress.progress_ratio_median": {
+       "A": {
+        "mean": 0.9616,
+        "lo": 0.9443,
+        "hi": 0.981
+       },
+       "B": {
+        "mean": 0.9423,
+        "lo": 0.9309,
+        "hi": 0.9549
+       },
+       "delta_B_minus_A": -0.019299999999999984,
+       "direction": "closer_to_1",
+       "adverse": false
+      },
+      "ego_progress.under_progress_rate": {
+       "A": {
+        "mean": 0.5865,
+        "lo": 0.5404,
+        "hi": 0.633
+       },
+       "B": {
+        "mean": 0.596,
+        "lo": 0.578,
+        "hi": 0.6152
+       },
+       "delta_B_minus_A": 0.009499999999999953,
+       "direction": "lower",
+       "adverse": false
+      },
+      "speed_bias_mps": {
+       "A": {
+        "mean": -0.2303,
+        "lo": -0.3258,
+        "hi": -0.137
+       },
+       "B": {
+        "mean": -0.3284,
+        "lo": -0.3911,
+        "hi": -0.2696
+       },
+       "delta_B_minus_A": -0.09810000000000002,
+       "direction": "magnitude",
+       "adverse": false
+      },
+      "speed_mae_mps": {
+       "A": {
+        "mean": 0.7396,
+        "lo": 0.7111,
+        "hi": 0.7713
+       },
+       "B": {
+        "mean": 0.8894,
+        "lo": 0.8592,
+        "hi": 0.9238
+       },
+       "delta_B_minus_A": 0.14979999999999993,
+       "direction": "lower",
+       "adverse": true
+      },
+      "speed_rmse_mps": {
+       "A": {
+        "mean": 1.1051,
+        "lo": 1.0621,
+        "hi": 1.1526
+       },
+       "B": {
+        "mean": 1.3326,
+        "lo": 1.2844,
+        "hi": 1.3861
+       },
+       "delta_B_minus_A": 0.22750000000000004,
+       "direction": "lower",
+       "adverse": true
+      },
+      "target_speed_acc.within_0.5_mps": {
+       "A": {
+        "mean": 0.544,
+        "lo": 0.5308,
+        "hi": 0.5573
+       },
+       "B": {
+        "mean": 0.4978,
+        "lo": 0.4875,
+        "hi": 0.5085
+       },
+       "delta_B_minus_A": -0.04620000000000002,
+       "direction": "higher",
+       "adverse": true
+      },
+      "target_speed_acc.within_1.0_mps": {
+       "A": {
+        "mean": 0.7428,
+        "lo": 0.728,
+        "hi": 0.7567
+       },
+       "B": {
+        "mean": 0.6847,
+        "lo": 0.6731,
+        "hi": 0.6963
+       },
+       "delta_B_minus_A": -0.05810000000000004,
+       "direction": "higher",
+       "adverse": true
+      },
+      "target_speed_acc.within_2.0_mps": {
+       "A": {
+        "mean": 0.9133,
+        "lo": 0.9036,
+        "hi": 0.9226
+       },
+       "B": {
+        "mean": 0.8713,
+        "lo": 0.8604,
+        "hi": 0.8812
+       },
+       "delta_B_minus_A": -0.04200000000000004,
+       "direction": "higher",
+       "adverse": true
+      }
+     },
+     "unavailable_at_navtest": {
+      "A": {
+       "longitudinal": [
+        "distance_keeping.mean_headway_min_m",
+        "distance_keeping.mean_min_ttc_s",
+        "distance_keeping.mean_time_gap_min_s"
+       ],
+       "lateral": []
+      },
+      "B": {
+       "longitudinal": [
+        "distance_keeping.mean_headway_min_m",
+        "distance_keeping.mean_min_ttc_s",
+        "distance_keeping.mean_time_gap_min_s"
+       ],
+       "lateral": []
+      }
+     },
+     "n_components_compared": 21
+    }
+   },
+   "LATERAL": {
+    "pdm_members": {
+     "DAC": {
+      "mean": 0.2963938745265931,
+      "ci95": [
+       -0.22517430166518945,
+       0.8899089305642804
+      ],
+      "adverse": false
+     },
+     "DDC": {
+      "mean": -0.15643010044459082,
+      "ci95": [
+       -0.42621075707508355,
+       0.12830658530557223
+      ],
+      "adverse": false
+     }
+    },
+    "families6": {
+     "status": "OK",
+     "components": {
+      "cross_bias_m": {
+       "A": {
+        "mean": -0.1353,
+        "lo": -0.1632,
+        "hi": -0.1066
+       },
+       "B": {
+        "mean": -0.1378,
+        "lo": -0.1639,
+        "hi": -0.1103
+       },
+       "delta_B_minus_A": -0.0025000000000000022,
+       "direction": "magnitude",
+       "adverse": false
+      },
+      "cross_final_mae_m": {
+       "A": {
+        "mean": 0.865,
+        "lo": 0.7946,
+        "hi": 0.9333
+       },
+       "B": {
+        "mean": 1.0166,
+        "lo": 0.9402,
+        "hi": 1.088
+       },
+       "delta_B_minus_A": 0.15159999999999996,
+       "direction": "lower",
+       "adverse": true
+      },
+      "cross_mae_m": {
+       "A": {
+        "mean": 0.3779,
+        "lo": 0.3513,
+        "hi": 0.4046
+       },
+       "B": {
+        "mean": 0.4263,
+        "lo": 0.3977,
+        "hi": 0.4531
+       },
+       "delta_B_minus_A": 0.0484,
+       "direction": "lower",
+       "adverse": false
+      },
+      "curvature_bias_1pm": {
+       "A": {
+        "mean": 0.000291,
+        "lo": -0.000843,
+        "hi": 0.001395
+       },
+       "B": {
+        "mean": 0.001485,
+        "lo": 0.000701,
+        "hi": 0.002298
+       },
+       "delta_B_minus_A": 0.001194,
+       "direction": "magnitude",
+       "adverse": false
+      },
+      "curvature_mae_1pm": {
+       "A": {
+        "mean": 0.019871,
+        "lo": 0.018344,
+        "hi": 0.021377
+       },
+       "B": {
+        "mean": 0.023669,
+        "lo": 0.021688,
+        "hi": 0.025779
+       },
+       "delta_B_minus_A": 0.0037979999999999993,
+       "direction": "lower",
+       "adverse": true
+      },
+      "heading_mae_deg": {
+       "A": {
+        "mean": 2.5315,
+        "lo": 2.3137,
+        "hi": 2.729
+       },
+       "B": {
+        "mean": 2.7156,
+        "lo": 2.5101,
+        "hi": 2.9113
+       },
+       "delta_B_minus_A": 0.18409999999999993,
+       "direction": "lower",
+       "adverse": false
+      },
+      "yaw_rate_mae_degps": {
+       "A": {
+        "mean": 2.9829,
+        "lo": 2.7996,
+        "hi": 3.1647
+       },
+       "B": {
+        "mean": 3.2317,
+        "lo": 3.0329,
+        "hi": 3.4286
+       },
+       "delta_B_minus_A": 0.24880000000000013,
+       "direction": "lower",
+       "adverse": false
+      }
+     },
+     "unavailable_at_navtest": {
+      "A": {
+       "longitudinal": [
+        "distance_keeping.mean_headway_min_m",
+        "distance_keeping.mean_min_ttc_s",
+        "distance_keeping.mean_time_gap_min_s"
+       ],
+       "lateral": []
+      },
+      "B": {
+       "longitudinal": [
+        "distance_keeping.mean_headway_min_m",
+        "distance_keeping.mean_min_ttc_s",
+        "distance_keeping.mean_time_gap_min_s"
+       ],
+       "lateral": []
+      }
+     },
+     "n_components_compared": 21
+    }
+   },
+   "TACTICAL": {
+    "status": "OK",
+    "estimator": "rows WITHOUT a paired interval (families6 tactical: accuracy / kappa per arm); reported, only the kappa rule below is a rule",
+    "lateral_decision": {
+     "A": {
+      "accuracy": 0.9251,
+      "kappa": 0.8626
+     },
+     "B": {
+      "accuracy": 0.9174,
+      "kappa": 0.8483
+     },
+     "delta_kappa_B_minus_A": -0.01429999999999998,
+     "kappa_fell_by_more_than_0.03": false,
+     "rule": "PREREG_RL_S1 section 4: the lateral-decision kappa may not fall by > 0.03 vs the control"
+    },
+    "longitudinal_decision": {
+     "A": {
+      "accuracy": 0.6791,
+      "kappa": 0.5159
+     },
+     "B": {
+      "accuracy": 0.6417,
+      "kappa": 0.4588
+     },
+     "delta_kappa_B_minus_A": -0.05710000000000004
+    },
+    "maneuver_5way_collapsed": {
+     "A": {
+      "accuracy": 0.7831,
+      "kappa": 0.718
+     },
+     "B": {
+      "accuracy": 0.7697,
+      "kappa": 0.7005
+     },
+     "delta_kappa_B_minus_A": -0.01749999999999996
+    },
+    "goal_setting": {
+     "goal_bearing_mae_deg": {
+      "A": {
+       "mean": 2.3512,
+       "lo": 2.149,
+       "hi": 2.5453
+      },
+      "B": {
+       "mean": 2.5649,
+       "lo": 2.3477,
+       "hi": 2.7763
+      },
+      "delta_B_minus_A": 0.21370000000000022
+     },
+     "goal_lat_bias_m": {
+      "A": {
+       "mean": -0.2647,
+       "lo": -0.3319,
+       "hi": -0.1963
+      },
+      "B": {
+       "mean": -0.2841,
+       "lo": -0.35,
+       "hi": -0.2177
+      },
+      "delta_B_minus_A": -0.01940000000000003
+     },
+     "goal_long_bias_m": {
+      "A": {
+       "mean": -0.8264,
+       "lo": -1.1894,
+       "hi": -0.4782
+      },
+      "B": {
+       "mean": -1.2594,
+       "lo": -1.4947,
+       "hi": -1.0413
+      },
+      "delta_B_minus_A": -0.43300000000000005
+     },
+     "goal_point_error_m": {
+      "A": {
+       "mean": 2.8892,
+       "lo": 2.7806,
+       "hi": 3.0099
+      },
+      "B": {
+       "mean": 3.4972,
+       "lo": 3.3755,
+       "hi": 3.6278
+      },
+      "delta_B_minus_A": 0.6079999999999997
+     }
+    }
+   },
+   "STRATEGIC": {
+    "status": "PAUSED",
+    "ruling": "PI 2026-09-19, PI_DECISION_QUEUE item 25 (the strategic layer is switched off temporarily)",
+    "note": "reported as PAUSED: never a pass, never omitted; also UNAVAILABLE in NAVSIM (no strategic decision is scored)"
+   },
+   "families6_adverse_components": [
+    "lateral.cross_final_mae_m",
+    "lateral.curvature_mae_1pm",
+    "longitudinal.accel_mae_mps2",
+    "longitudinal.along_mae_m",
+    "longitudinal.ego_progress.progress_error_mean",
+    "longitudinal.speed_mae_mps",
+    "longitudinal.speed_rmse_mps",
+    "longitudinal.target_speed_acc.within_0.5_mps",
+    "longitudinal.target_speed_acc.within_1.0_mps",
+    "longitudinal.target_speed_acc.within_2.0_mps"
+   ]
+  },
+  "R1d": {
+   "LONGITUDINAL": {
+    "pdm_members": {
+     "EP": {
+      "mean": 1.7979091087411487,
+      "ci95": [
+       1.3328671937649024,
+       2.41368213493584
+      ],
+      "adverse": false
+     },
+     "TTC": {
+      "mean": -0.4939897908776552,
+      "ci95": [
+       -0.9733500707695575,
+       -0.06961475624772966
+      ],
+      "adverse": true
+     },
+     "C": {
+      "mean": 0.016466326362588508,
+      "ci95": [
+       0.0,
+       0.052118859459500184
+      ],
+      "adverse": false
+     }
+    },
+    "families6": {
+     "status": "OK",
+     "components": {
+      "accel_mae_mps2": {
+       "A": {
+        "mean": 0.5193,
+        "lo": 0.5032,
+        "hi": 0.5386
+       },
+       "B": {
+        "mean": 0.5798,
+        "lo": 0.562,
+        "hi": 0.6002
+       },
+       "delta_B_minus_A": 0.0605,
+       "direction": "lower",
+       "adverse": true
+      },
+      "along_bias_m": {
+       "A": {
+        "mean": -0.3109,
+        "lo": -0.4474,
+        "hi": -0.176
+       },
+       "B": {
+        "mean": -0.4662,
+        "lo": -0.5542,
+        "hi": -0.385
+       },
+       "delta_B_minus_A": -0.1553,
+       "direction": "magnitude",
+       "adverse": false
+      },
+      "along_final_bias_m": {
+       "A": {
+        "mean": -0.8264,
+        "lo": -1.1894,
+        "hi": -0.4782
+       },
+       "B": {
+        "mean": -1.2594,
+        "lo": -1.4947,
+        "hi": -1.0413
+       },
+       "delta_B_minus_A": -0.43300000000000005,
+       "direction": "magnitude",
+       "adverse": false
+      },
+      "along_mae_m": {
+       "A": {
+        "mean": 1.0345,
+        "lo": 0.988,
+        "hi": 1.0826
+       },
+       "B": {
+        "mean": 1.2577,
+        "lo": 1.2088,
+        "hi": 1.3103
+       },
+       "delta_B_minus_A": 0.22320000000000007,
+       "direction": "lower",
+       "adverse": true
+      },
+      "ego_progress.progress_error_mean": {
+       "A": {
+        "mean": 0.1945,
+        "lo": 0.1848,
+        "hi": 0.2045
+       },
+       "B": {
+        "mean": 0.2222,
+        "lo": 0.2119,
+        "hi": 0.2319
+       },
+       "delta_B_minus_A": 0.027700000000000002,
+       "direction": "lower",
+       "adverse": true
+      },
+      "ego_progress.progress_ratio_mean": {
+       "A": {
+        "mean": 1.0025,
+        "lo": 0.9832,
+        "hi": 1.0215
+       },
+       "B": {
+        "mean": 0.9799,
+        "lo": 0.967,
+        "hi": 0.9924
+       },
+       "delta_B_minus_A": -0.022599999999999953,
+       "direction": "closer_to_1",
+       "adverse": false
+      },
+      "ego_progress.progress_ratio_median": {
+       "A": {
+        "mean": 0.9616,
+        "lo": 0.9443,
+        "hi": 0.981
+       },
+       "B": {
+        "mean": 0.9423,
+        "lo": 0.9309,
+        "hi": 0.9549
+       },
+       "delta_B_minus_A": -0.019299999999999984,
+       "direction": "closer_to_1",
+       "adverse": false
+      },
+      "ego_progress.under_progress_rate": {
+       "A": {
+        "mean": 0.5865,
+        "lo": 0.5404,
+        "hi": 0.633
+       },
+       "B": {
+        "mean": 0.596,
+        "lo": 0.578,
+        "hi": 0.6152
+       },
+       "delta_B_minus_A": 0.009499999999999953,
+       "direction": "lower",
+       "adverse": false
+      },
+      "speed_bias_mps": {
+       "A": {
+        "mean": -0.2303,
+        "lo": -0.3258,
+        "hi": -0.137
+       },
+       "B": {
+        "mean": -0.3284,
+        "lo": -0.3911,
+        "hi": -0.2696
+       },
+       "delta_B_minus_A": -0.09810000000000002,
+       "direction": "magnitude",
+       "adverse": false
+      },
+      "speed_mae_mps": {
+       "A": {
+        "mean": 0.7396,
+        "lo": 0.7111,
+        "hi": 0.7713
+       },
+       "B": {
+        "mean": 0.8894,
+        "lo": 0.8592,
+        "hi": 0.9238
+       },
+       "delta_B_minus_A": 0.14979999999999993,
+       "direction": "lower",
+       "adverse": true
+      },
+      "speed_rmse_mps": {
+       "A": {
+        "mean": 1.1051,
+        "lo": 1.0621,
+        "hi": 1.1526
+       },
+       "B": {
+        "mean": 1.3326,
+        "lo": 1.2844,
+        "hi": 1.3861
+       },
+       "delta_B_minus_A": 0.22750000000000004,
+       "direction": "lower",
+       "adverse": true
+      },
+      "target_speed_acc.within_0.5_mps": {
+       "A": {
+        "mean": 0.544,
+        "lo": 0.5308,
+        "hi": 0.5573
+       },
+       "B": {
+        "mean": 0.4978,
+        "lo": 0.4875,
+        "hi": 0.5085
+       },
+       "delta_B_minus_A": -0.04620000000000002,
+       "direction": "higher",
+       "adverse": true
+      },
+      "target_speed_acc.within_1.0_mps": {
+       "A": {
+        "mean": 0.7428,
+        "lo": 0.728,
+        "hi": 0.7567
+       },
+       "B": {
+        "mean": 0.6847,
+        "lo": 0.6731,
+        "hi": 0.6963
+       },
+       "delta_B_minus_A": -0.05810000000000004,
+       "direction": "higher",
+       "adverse": true
+      },
+      "target_speed_acc.within_2.0_mps": {
+       "A": {
+        "mean": 0.9133,
+        "lo": 0.9036,
+        "hi": 0.9226
+       },
+       "B": {
+        "mean": 0.8713,
+        "lo": 0.8604,
+        "hi": 0.8812
+       },
+       "delta_B_minus_A": -0.04200000000000004,
+       "direction": "higher",
+       "adverse": true
+      }
+     },
+     "unavailable_at_navtest": {
+      "A": {
+       "longitudinal": [
+        "distance_keeping.mean_headway_min_m",
+        "distance_keeping.mean_min_ttc_s",
+        "distance_keeping.mean_time_gap_min_s"
+       ],
+       "lateral": []
+      },
+      "B": {
+       "longitudinal": [
+        "distance_keeping.mean_headway_min_m",
+        "distance_keeping.mean_min_ttc_s",
+        "distance_keeping.mean_time_gap_min_s"
+       ],
+       "lateral": []
+      }
+     },
+     "n_components_compared": 21
+    }
+   },
+   "LATERAL": {
+    "pdm_members": {
+     "DAC": {
+      "mean": 0.650419891322246,
+      "ci95": [
+       0.10666760089035582,
+       1.3728330017569503
+      ],
+      "adverse": false
+     },
+     "DDC": {
+      "mean": -0.07409846863164828,
+      "ci95": [
+       -0.3643448345224995,
+       0.2306280777993192
+      ],
+      "adverse": false
+     }
+    },
+    "families6": {
+     "status": "OK",
+     "components": {
+      "cross_bias_m": {
+       "A": {
+        "mean": -0.1353,
+        "lo": -0.1632,
+        "hi": -0.1066
+       },
+       "B": {
+        "mean": -0.1378,
+        "lo": -0.1639,
+        "hi": -0.1103
+       },
+       "delta_B_minus_A": -0.0025000000000000022,
+       "direction": "magnitude",
+       "adverse": false
+      },
+      "cross_final_mae_m": {
+       "A": {
+        "mean": 0.865,
+        "lo": 0.7946,
+        "hi": 0.9333
+       },
+       "B": {
+        "mean": 1.0166,
+        "lo": 0.9402,
+        "hi": 1.088
+       },
+       "delta_B_minus_A": 0.15159999999999996,
+       "direction": "lower",
+       "adverse": true
+      },
+      "cross_mae_m": {
+       "A": {
+        "mean": 0.3779,
+        "lo": 0.3513,
+        "hi": 0.4046
+       },
+       "B": {
+        "mean": 0.4263,
+        "lo": 0.3977,
+        "hi": 0.4531
+       },
+       "delta_B_minus_A": 0.0484,
+       "direction": "lower",
+       "adverse": false
+      },
+      "curvature_bias_1pm": {
+       "A": {
+        "mean": 0.000291,
+        "lo": -0.000843,
+        "hi": 0.001395
+       },
+       "B": {
+        "mean": 0.001485,
+        "lo": 0.000701,
+        "hi": 0.002298
+       },
+       "delta_B_minus_A": 0.001194,
+       "direction": "magnitude",
+       "adverse": false
+      },
+      "curvature_mae_1pm": {
+       "A": {
+        "mean": 0.019871,
+        "lo": 0.018344,
+        "hi": 0.021377
+       },
+       "B": {
+        "mean": 0.023669,
+        "lo": 0.021688,
+        "hi": 0.025779
+       },
+       "delta_B_minus_A": 0.0037979999999999993,
+       "direction": "lower",
+       "adverse": true
+      },
+      "heading_mae_deg": {
+       "A": {
+        "mean": 2.5315,
+        "lo": 2.3137,
+        "hi": 2.729
+       },
+       "B": {
+        "mean": 2.7156,
+        "lo": 2.5101,
+        "hi": 2.9113
+       },
+       "delta_B_minus_A": 0.18409999999999993,
+       "direction": "lower",
+       "adverse": false
+      },
+      "yaw_rate_mae_degps": {
+       "A": {
+        "mean": 2.9829,
+        "lo": 2.7996,
+        "hi": 3.1647
+       },
+       "B": {
+        "mean": 3.2317,
+        "lo": 3.0329,
+        "hi": 3.4286
+       },
+       "delta_B_minus_A": 0.24880000000000013,
+       "direction": "lower",
+       "adverse": false
+      }
+     },
+     "unavailable_at_navtest": {
+      "A": {
+       "longitudinal": [
+        "distance_keeping.mean_headway_min_m",
+        "distance_keeping.mean_min_ttc_s",
+        "distance_keeping.mean_time_gap_min_s"
+       ],
+       "lateral": []
+      },
+      "B": {
+       "longitudinal": [
+        "distance_keeping.mean_headway_min_m",
+        "distance_keeping.mean_min_ttc_s",
+        "distance_keeping.mean_time_gap_min_s"
+       ],
+       "lateral": []
+      }
+     },
+     "n_components_compared": 21
+    }
+   },
+   "TACTICAL": {
+    "status": "OK",
+    "estimator": "rows WITHOUT a paired interval (families6 tactical: accuracy / kappa per arm); reported, only the kappa rule below is a rule",
+    "lateral_decision": {
+     "A": {
+      "accuracy": 0.9251,
+      "kappa": 0.8626
+     },
+     "B": {
+      "accuracy": 0.9174,
+      "kappa": 0.8483
+     },
+     "delta_kappa_B_minus_A": -0.01429999999999998,
+     "kappa_fell_by_more_than_0.03": false,
+     "rule": "PREREG_RL_S1 section 4: the lateral-decision kappa may not fall by > 0.03 vs the control"
+    },
+    "longitudinal_decision": {
+     "A": {
+      "accuracy": 0.6791,
+      "kappa": 0.5159
+     },
+     "B": {
+      "accuracy": 0.6417,
+      "kappa": 0.4588
+     },
+     "delta_kappa_B_minus_A": -0.05710000000000004
+    },
+    "maneuver_5way_collapsed": {
+     "A": {
+      "accuracy": 0.7831,
+      "kappa": 0.718
+     },
+     "B": {
+      "accuracy": 0.7697,
+      "kappa": 0.7005
+     },
+     "delta_kappa_B_minus_A": -0.01749999999999996
+    },
+    "goal_setting": {
+     "goal_bearing_mae_deg": {
+      "A": {
+       "mean": 2.3512,
+       "lo": 2.149,
+       "hi": 2.5453
+      },
+      "B": {
+       "mean": 2.5649,
+       "lo": 2.3477,
+       "hi": 2.7763
+      },
+      "delta_B_minus_A": 0.21370000000000022
+     },
+     "goal_lat_bias_m": {
+      "A": {
+       "mean": -0.2647,
+       "lo": -0.3319,
+       "hi": -0.1963
+      },
+      "B": {
+       "mean": -0.2841,
+       "lo": -0.35,
+       "hi": -0.2177
+      },
+      "delta_B_minus_A": -0.01940000000000003
+     },
+     "goal_long_bias_m": {
+      "A": {
+       "mean": -0.8264,
+       "lo": -1.1894,
+       "hi": -0.4782
+      },
+      "B": {
+       "mean": -1.2594,
+       "lo": -1.4947,
+       "hi": -1.0413
+      },
+      "delta_B_minus_A": -0.43300000000000005
+     },
+     "goal_point_error_m": {
+      "A": {
+       "mean": 2.8892,
+       "lo": 2.7806,
+       "hi": 3.0099
+      },
+      "B": {
+       "mean": 3.4972,
+       "lo": 3.3755,
+       "hi": 3.6278
+      },
+      "delta_B_minus_A": 0.6079999999999997
+     }
+    }
+   },
+   "STRATEGIC": {
+    "status": "PAUSED",
+    "ruling": "PI 2026-09-19, PI_DECISION_QUEUE item 25 (the strategic layer is switched off temporarily)",
+    "note": "reported as PAUSED: never a pass, never omitted; also UNAVAILABLE in NAVSIM (no strategic decision is scored)"
+   },
+   "families6_adverse_components": [
+    "lateral.cross_final_mae_m",
+    "lateral.curvature_mae_1pm",
+    "longitudinal.accel_mae_mps2",
+    "longitudinal.along_mae_m",
+    "longitudinal.ego_progress.progress_error_mean",
+    "longitudinal.speed_mae_mps",
+    "longitudinal.speed_rmse_mps",
+    "longitudinal.target_speed_acc.within_0.5_mps",
+    "longitudinal.target_speed_acc.within_1.0_mps",
+    "longitudinal.target_speed_acc.within_2.0_mps"
+   ]
+  }
+ },
+ "status": "COMPUTED"
+}
