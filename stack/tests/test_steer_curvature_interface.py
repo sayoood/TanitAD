@@ -13,6 +13,13 @@ prove that: every banked refav1 number was produced by it and a silently convert
 eval would make old and new numbers incomparable. The flag is the honest way to
 make the change visible.
 
+⛔ ONE DELIBERATE EXCEPTION (BACKLOG HJ-UNITS, RETRACTION_LOG R46, 2026-10-17):
+`refav1_arm.paths_from_controls` has NO default unit and raises without one (B3a). A
+default there let the refav1 trunk-probe integrate a road-wheel angle as a curvature and
+manufacture a fake -1.90 m lever; `plan()`, `unicycle_paths` and the CLI keep the legacy
+default, but the wrapper that RECORDED actions and PLANNER candidates both pass through
+must be told which one it is holding.
+
 Families: A = the bridge itself; B = OFF is byte-identical; C = ON is exactly the
 conversion; D = the planner→model crossing; E = the deliberate regression (the ON
 path must be WORSE on a corpus whose channel really is a curvature — otherwise
@@ -25,6 +32,7 @@ import json
 import math
 import os
 import sys
+import types
 from pathlib import Path
 
 import numpy as np
@@ -133,12 +141,90 @@ def test_B2_unicycle_paths_default_is_bit_identical_to_the_old_call():
     assert torch.equal(unicycle_paths(c, v0, DT, action_units="kappa"), legacy)
 
 
-def test_B3_arm_paths_from_controls_default_is_bit_identical():
+def _requires_action_units(arm) -> bool:
+    """True iff ``arm.paths_from_controls`` REFUSES a call that omits ``action_units``."""
+    try:
+        arm.paths_from_controls(_ctrl(n=1)[0], 9.0, DT, K)
+    except TypeError as e:
+        return "action_units" in str(e)
+    return False
+
+
+def test_B3a_arm_paths_from_controls_REQUIRES_action_units():
+    """HJ-UNITS (RETRACTION_LOG R46, 2026-10-17). The unit is a property of where the
+    controls came from, so the caller must state it: with the old ``"kappa"`` default a
+    caller holding a RECORDED action (a road-wheel angle) integrated it as a curvature --
+    the echo control read 5.356 m instead of 2.838 m."""
+    import inspect
     arm = _arm()
-    c = _ctrl(n=1)[0]
-    a = arm.paths_from_controls(c, 9.0, DT, K)
-    b = arm.paths_from_controls(c, 9.0, DT, K, action_units="kappa")
-    assert torch.equal(a, b)
+    assert _requires_action_units(arm), "a call without action_units must raise TypeError"
+    prm = inspect.signature(arm.paths_from_controls).parameters["action_units"]
+    assert prm.default is inspect.Parameter.empty, prm.default
+    assert prm.kind is inspect.Parameter.KEYWORD_ONLY, prm.kind
+    # keyword-only: the unit cannot ride in as a bare positional either
+    with pytest.raises(TypeError):
+        arm.paths_from_controls(_ctrl(n=1)[0], 9.0, DT, K, "kappa")
+
+
+#: K=10 HAND-WRITTEN (accel, channel 1) controls -- not drawn from an RNG, so the pinned
+#: output below cannot drift with torch's generator.
+_B3_CONTROLS = [
+    [0.5, 0.0], [0.25, 0.02], [0.0, 0.04], [-0.25, 0.06], [-0.5, 0.08],
+    [0.4, 0.06], [0.2, 0.04], [0.0, 0.02], [-0.2, 0.0], [-0.4, -0.02],
+]
+#: ``paths_from_controls(_B3_CONTROLS, v0=9.0, dt=0.2, k=10)`` as the pre-HJ-UNITS DEFAULT
+#: (``action_units="kappa"``) returned it, float32 -- MEASURED on tip 605711b7 (2026-10-17)
+#: with the old signature, before the default was removed. Every float is the exact float32.
+_B3_EXPECTED_KAPPA = [
+    [1.8000000715255737, 0.0],
+    [3.620000123977661, 0.0],
+    [5.448788166046143, 0.06659729778766632],
+    [7.267807960510254, 0.2667640447616577],
+    [9.04417896270752, 0.6628762483596802],
+    [10.725602149963379, 1.3053849935531616],
+    [12.342215538024902, 2.1326799392700195],
+    [13.901362419128418, 3.079272508621216],
+    [15.424947738647461, 4.0821003913879395],
+    [16.941850662231445, 5.080529689788818],
+]
+
+
+def test_B3b_explicit_kappa_is_bit_identical_to_the_old_default_output():
+    """Removing the default must not move a single bit of what the default used to
+    return: an explicit ``"kappa"`` equals the hard-coded OLD output under ``torch.equal``."""
+    arm = _arm()
+    c = torch.tensor(_B3_CONTROLS, dtype=torch.float32)
+    want = torch.tensor([_B3_EXPECTED_KAPPA], dtype=torch.float32)       # [1, K, 2]
+    got = arm.paths_from_controls(c, 9.0, DT, K, action_units="kappa")
+    assert got.shape == want.shape == (1, K, 2)
+    assert torch.equal(got, want), float((got - want).abs().max())
+    # the control: the pinned array must be able to tell the two units apart, or "equal"
+    # proves nothing (measured: "steer" moves this path by 3.26 m)
+    steer = arm.paths_from_controls(c, 9.0, DT, K, action_units="steer")
+    assert float((steer - want).abs().max()) > 1.0
+
+
+def test_B3c_MUTATION_restoring_the_default_turns_B3a_RED():
+    """The deliberate-regression arm. Re-insert the old ``= "kappa"`` default into the
+    SOURCE and load it as a module: B3a's predicate must now read FALSE (the omitting call
+    is accepted), and the mutant must reproduce the OLD pinned output -- i.e. the mutation
+    really is "the old default", not some other breakage."""
+    src = _ARM_PATH.read_text(encoding="utf-8")
+    needle = "action_units: str):"
+    assert src.count(needle) == 1, "the signature moved: update this mutation"
+    mutated = src.replace(needle, 'action_units: str = "kappa"):')
+    assert mutated != src
+    mod = types.ModuleType("refav1_arm_mutant_default")
+    mod.__file__ = str(_ARM_PATH)
+    sys.modules[mod.__name__] = mod
+    try:
+        exec(compile(mutated, str(_ARM_PATH), "exec"), mod.__dict__)
+        assert not _requires_action_units(mod), "B3a's check did not notice the default"
+        c = torch.tensor(_B3_CONTROLS, dtype=torch.float32)
+        want = torch.tensor([_B3_EXPECTED_KAPPA], dtype=torch.float32)
+        assert torch.equal(mod.paths_from_controls(c, 9.0, DT, K), want)
+    finally:
+        sys.modules.pop(mod.__name__, None)
 
 
 def test_B4_the_arm_CLI_defaults_to_the_legacy_unit():

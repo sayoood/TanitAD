@@ -491,7 +491,9 @@ def derive_ha0(v0: np.ndarray, dt: float, k: int, slots) -> np.ndarray:
     ctrl = ra.hold_v0_controls(k)
     out = np.empty((v0.size, len(slots), 2), dtype=np.float64)
     for i, v in enumerate(v0):
-        p = ra.paths_from_controls(ctrl, float(v), float(dt), int(k))
+        # zero controls: 0 in either unit; "kappa" = no conversion = the pre-HJ-UNITS call
+        p = ra.paths_from_controls(ctrl, float(v), float(dt), int(k),
+                                   action_units="kappa")
         out[i] = np.asarray(p[0].detach().cpu().numpy(), dtype=np.float64)[slots]
     return out
 

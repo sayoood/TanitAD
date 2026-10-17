@@ -301,9 +301,10 @@ def test_A6_adding_ha0_moves_no_existing_arm(rolled):
             v = poses[:, 3]
             a_h = float((v[2 * t] - v[2 * t - 2]) / DT)
             k_h = float(acts[2 * t - 2, 0])
+            # "kappa": the legacy reading the synthetic dump's `ha` was banked under
             ha = ra.paths_from_controls(
                 torch.tensor([[a_h, k_h]] * 10, dtype=torch.float32),
-                v0, DT, 10)[0].numpy()
+                v0, DT, 10, action_units="kappa")[0].numpy()
             assert np.abs(ha - ep["ha"][w]).max() < 1e-4, (nm, w, "ha moved")
             # `g` — the GT waypoints
             g = ra.gt_waypoints(poses, t, 10)[0].numpy()
@@ -328,7 +329,9 @@ def _replay(poses, acts, t, k, *, transform=None):
         kap = transform(kap)
     ctrl = torch.stack([a, kap], dim=-1)
     v0 = float(v[2 * t])
-    return ra.paths_from_controls(ctrl, v0, DT, k)[0].numpy(), v0
+    # "kappa": the `ol` arm's LEGACY reading -- the kinematic-contract tests measure what
+    # that unconverted replay does, and `transform` rewrites the curvature channel itself
+    return ra.paths_from_controls(ctrl, v0, DT, k, action_units="kappa")[0].numpy(), v0
 
 
 def _lat_lon(p, g):
@@ -426,7 +429,9 @@ def test_B5_the_probe_integrator_matches_the_programme_integrator():
     kap = rng.normal(0, 0.05, size=10)
     v0 = 8.0
     mine = kp.integrate(a, kap, v0, DT, "shipped")
+    # the probe's `integrate` takes channel 1 as a curvature, so it is compared in "kappa"
     theirs = ra.paths_from_controls(
-        torch.tensor(np.stack([a, kap], -1), dtype=torch.float32), v0, DT, 10
+        torch.tensor(np.stack([a, kap], -1), dtype=torch.float32), v0, DT, 10,
+        action_units="kappa",
     )[0].numpy()
     assert np.abs(mine - theirs).max() < 1e-4

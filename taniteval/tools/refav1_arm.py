@@ -469,17 +469,26 @@ def hold_v0_controls(k: int):
 
 
 def paths_from_controls(controls, v0: float, dt: float, k: int, *,
-                        action_units: str = "kappa"):
+                        action_units: str):
     """``[K',>=2]`` controls -> ``[1,K,2]`` ego-frame path via the programme's
     ONE unicycle integrator (``refa_v1_plan.unicycle_paths``): position advances
     on the speed at the START of the step, v updates last, clamped at 0.
 
     ⭐ ``action_units`` names the unit channel 1 ARRIVES in (PI ruling
-    2026-09-03; contract on `kinematic.STEER_WHEELBASE_M`). ``"kappa"`` (default)
+    2026-09-03; contract on `kinematic.STEER_WHEELBASE_M`). ``"kappa"``
     integrates as supplied -- byte-identical to every pre-2026-09-03 call, and
     the correct reading for a PLANNER candidate. ``"steer"`` converts with
     ``kappa = tan(steer)/L_enc`` first -- the correct reading for a RECORDED
-    v2ep action, which is a road-wheel angle."""
+    v2ep action, which is a road-wheel angle.
+
+    ⛔ REQUIRED, KEYWORD-ONLY, NO DEFAULT (BACKLOG HJ-UNITS; RETRACTION_LOG R46,
+    2026-10-17). A call that omits it raises ``TypeError``. It used to default to
+    ``"kappa"``, and a caller that took the default on a RECORDED action integrated
+    a road-wheel angle as a curvature (``actions[:, 0] = arctan(2.9*kappa)``): the
+    echo control read 5.356 m instead of 2.838 m and manufactured a fake -1.90 m
+    "lever". The unit is a property of WHERE THE CONTROLS CAME FROM, so the caller
+    must state it. Zero controls (``hold_v0_controls``) are 0 in either unit but
+    still name one."""
     import torch
     from tanitad.refs.refa_v1_plan import unicycle_paths
     c = controls[..., :2]
@@ -1013,7 +1022,10 @@ def run_dump(a) -> dict:
                                          action_units=rec_units)
                 # ⭐ the constant-velocity floor: SAME integrator, SAME v0, zero
                 # controls — so any difference from `ha` is the held action alone.
-                ha0 = paths_from_controls(hold_v0_controls(k).to(dev), v0, DT, k)
+                # Zero is 0 in either unit (test_B5), so the unit is moot; "kappa"
+                # applies no conversion = exactly the pre-HJ-UNITS call.
+                ha0 = paths_from_controls(hold_v0_controls(k).to(dev), v0, DT, k,
+                                          action_units="kappa")
                 # ⭐ the ECHO control (echo_gate.ha0_ext, refav1 form): the
                 # measured t0 state's (a0, kappa0) held — kappa read AT t0.
                 ext = hold_ext_controls(ld, v_ep, kap_ep, t).to(dev)
@@ -1230,7 +1242,13 @@ def run_dump(a) -> dict:
             acc["v0"].append(np.array([v0], dtype=np.float32))
             for arm, res in plans.items():
                 ctrl = res.controls.detach()
-                acc[arm].append(paths_from_controls(ctrl, v0, DT, k)
+                # ⭐ a PLANNER candidate is CURVATURE whatever `rec_units` says about
+                # the RECORDED channel: the search/clip/cost/integrated path all stay
+                # geometry (refa_v1_plan.unicycle_paths default; manifest
+                # `action_units.planner_search == "kappa"`). The crossing to the model
+                # happens inside plan(model_action_units=rec_units), not here.
+                acc[arm].append(paths_from_controls(ctrl, v0, DT, k,
+                                                    action_units="kappa")
                                 .float().cpu().numpy())
                 dec.setdefault(f"{arm}_controls", []).append(
                     ctrl[:, :2].float().cpu().numpy()[None])

@@ -500,7 +500,10 @@ def _banked_gate(dump_dir: str, fi: int, t: int, res, v0: float, dt: float, k: i
     if j.size != 1:
         return None
     banked = d["cl"][int(j[0])]
-    mine = ra.paths_from_controls(res.controls, v0, float(dt), k)
+    # ``res`` is a plan() result: its controls are a PLANNER candidate = curvature, the
+    # unit the banked `cl` was integrated in (refav1_arm planner path, "kappa").
+    mine = ra.paths_from_controls(res.controls, v0, float(dt), k,
+                                  action_units="kappa")
     mine = mine[0].detach().float().cpu().numpy()
     m = float(np.max(np.abs(mine - banked)))
     return {"ep": fi, "t": int(t), "max_abs_m": m, "gate_m": BANKED_GATE_M,

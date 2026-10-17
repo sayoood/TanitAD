@@ -292,8 +292,13 @@ def stage_b(dump_dir: str, episode_dir: str, cache_dir: str, k: int,
             act = ld._kin_actions(v_t, kap_t, t, k).numpy().astype(np.float64)
             a_s, k_s = act[:, 0], act[:, 1]
             # ---- the shipped arm through the REAL integrator, for the harness check
+            # "kappa" is DELIBERATE: this probe measures the LEGACY (unconverted) reading the
+            # banked step-1,000 dumps were produced under -- `act[:, 1]` is the recorded
+            # road-wheel angle fed AS a curvature, which is the very defect under study --
+            # and `integrate(..., "shipped")` below is asserted equal to this.
             ol_real = arm_mod.paths_from_controls(
-                torch.from_numpy(act).float(), v0, dt, k)[0].numpy().astype(np.float64)
+                torch.from_numpy(act).float(), v0, dt, k,
+                action_units="kappa")[0].numpy().astype(np.float64)
             checks["ol_max_abs_diff_m"] = max(
                 checks["ol_max_abs_diff_m"], float(np.abs(ol_real - z["ol"][i]).max()))
             # ---- the numpy integrator must reproduce the real one, or nothing below counts
