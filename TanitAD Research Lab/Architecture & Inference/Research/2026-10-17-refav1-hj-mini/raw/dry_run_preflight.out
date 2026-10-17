@@ -1,0 +1,40 @@
+[run_encode 2026-10-17 15:19:02] DRY_RUN: preflight only (no lock, no model, nothing encoded)
+{
+ "held": true,
+ "info": {
+  "pid": 10620,
+  "owner": "p2full_table",
+  "job": "p2full-main-c05",
+  "host": "FREEDOM2035",
+  "t": 1792241468.0215333,
+  "acquired": "2026-10-17T14:51:08+0200"
+ },
+ "stale": null
+}
+ZZSPLIT-OKZZ split=train pick=600 listing=4713 eval=141 train_all=4572 train==labels=True train&eval=False
+[parity] pull_encode_pooled train: ingest gate — 600 clip(s); 21 in physicalai-train-e438721ae894; 0 of 40 deployed-val episodes. role=train mode=refuse (membership by per-clip sha256, not by provenance).
+[parity] {"role": "train", "mode": "refuse", "n_in": 600, "n_disqualifying": 0, "n_kept": 600}
+ZZSOURCE-FALLBACK-416ZZ the native 256x640 v2ep source is gone from Thor; resampling the 416x1024 cache to the 256x640 cylinder (see validation.json V3b for the measured fidelity)
+[source] kind=thor416-resize dir=/home/nvidia/data/physicalai-b1-w120-416x1024cyl remote=True resample416=True
+[plan] 600 in pick, 0 already done+verified (0s check), 600 to build, grids=['4x10', '8x20'], dtype=float8_e4m3fn, device=cuda, out=C:\Users\Admin\refav1_hj_cache\train
+ZZENC-DONE done=0 skipped=0 0s (dry-run or nothing to do)ZZ
+[parity] ⚠ pull_encode_pooled eval: DROPPED 11 of 141 clip(s) — clips inside physicalai-train-e438721ae894. The corpus is 130 clips; quote THAT number, never 141.
+[parity] {"role": "eval", "mode": "exclude", "n_in": 141, "n_disqualifying": 11, "n_kept": 130}
+[source] kind=local256 dir=C:/Users/Admin/tanitad-data/refav1-eval141/eps remote=False resample416=False
+[plan] 141 in pick, 0 already done+verified (0s check), 141 to build, grids=['4x10', '8x20'], dtype=float8_e4m3fn, device=cuda, out=C:\Users\Admin\refav1_hj_cache\eval
+ZZENC-DONE done=0 skipped=0 0s (dry-run or nothing to do)ZZ
+[source] kind=thor416-resize dir=/home/nvidia/data/physicalai-b1-w120-416x1024cyl remote=True resample416=True
+[plan] 4572 in pick, 0 already done+verified (0s check), 4572 to build, grids=['4x10'], dtype=float8_e4m3fn, device=cuda, out=C:\Users\Admin\refav1_hj_cache\train
+ZZENC-DONE done=0 skipped=0 0s (dry-run or nothing to do)ZZ
+NVIDIA GeForce RTX 4060, 5031 MiB, 8188 MiB
+C:              931G  870G   61G  94% /c
+[run_encode 2026-10-17 15:19:36] ZZDRY-RUN-DONEZZ
+
+### stage D dry-run (matched eval via the 416 route)
+ZZSPLIT-OKZZ split=eval pick=141 listing=4713 eval=141 train_all=4572 train==labels=True train&eval=False
+[parity] pull_encode_pooled eval: ingest gate — 141 clip(s); 11 in physicalai-train-e438721ae894; 0 of 40 deployed-val episodes. role=eval mode=exclude (membership by per-clip sha256, not by provenance).
+[parity] ⚠ pull_encode_pooled eval: DROPPED 11 of 141 clip(s) — clips inside physicalai-train-e438721ae894. The corpus is 130 clips; quote THAT number, never 141.
+[parity] {"role": "eval", "mode": "exclude", "n_in": 141, "n_disqualifying": 11, "n_kept": 130}
+[source] kind=thor416-resize dir=/home/nvidia/data/physicalai-b1-w120-416x1024cyl remote=True resample416=True
+[plan] 141 in pick, 0 already done+verified (0s check), 141 to build, grids=['4x10'], dtype=float8_e4m3fn, device=cuda, out=C:\Users\Admin\refav1_hj_cache\eval_m416
+ZZENC-DONE done=0 skipped=0 0s (dry-run or nothing to do)ZZ
