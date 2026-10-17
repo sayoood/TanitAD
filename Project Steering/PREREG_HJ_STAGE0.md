@@ -67,3 +67,20 @@ and each read names which variance it answered (episodes / training seed / infer
   * SENS FAIL ⇒ raise γ to 200, IDM at level 2 only, then a time-repulsion floor (|λ_sim| ≤ 0.06), in that order.
   * R0 alone passing K while A1 does not ⇒ the WM objective is hurting the readout. Report it, and move the WM to v8F's chassis question.
   * **A1x not losing to A1 ⇒ the instrument is broken; nothing else is read until it is fixed.**
+
+## Amendment 1 (2026-10-17, evening, before any RA-1 data): how the best A1 cell is selected, and the copycat arm
+
+* **Selection is NEVER made on the windows that score K.** The RA-1 build first selected the best (β, γ) cell by seed-0 ADE@6s on eval-141, the same windows that score H-HJ-K-1. That is the "a probe that tunes on the data it scores" trap (`TRAPS.md`).
+* ⇒ **Binding rule:**
+  * a fixed, episode-disjoint holdout of **60 of the 600 stage-A TRAIN clips** (the last 60 in sha12 order) is withheld from training for **every** arm;
+  * the A1 cell is chosen by **mean seed-0 ADE@6s on that holdout**;
+  * eval-141 then scores K **once**, for the chosen cell.
+  * All four cells' eval numbers are reported, but only the chosen one decides.
+* **Disclosed choices the original text left open:**
+  * the (β, γ) grid applies to level 1; upper levels use β 0.16 / γ 50;
+  * `w_traj` = 10;
+  * R0 reads `[z¹, P10]`;
+  * the action channels are (a, steer, v), with steer in the correct unit (`action_units="steer"`, RETRACTION_LOG R46).
+* **`A1h` (EXPLORATORY, does not decide H-HJ-SENS-1):** A1 plus history dropout (`--hist-drop`), the copycat remedy (`2010.14876`).
+  * Why it was added: post-hoc, the RA-0 write-up found that rho does not corroborate an operative-level encoder collapse (H-HJ-COLLAPSE-1, `2e4fe68`).
+  * Its test proves that the history is really dropped.

@@ -997,7 +997,7 @@ class HJEPAStack(nn.Module):
                            ks: Sequence[int] = (1, 5, 10),
                            channels: Optional[Mapping[str, Sequence[int]]] = None,
                            perm: Optional[Tensor] = None, episode_ids: Optional[Tensor] = None,
-                           seed: int = 0, eps: float = 1e-12) -> dict:
+                           seed: int = 0, eps: float = 1e-12, per_window: bool = False) -> dict:
         """Relative rollout change when (a channel of) the actions is swapped for another
         episode's -- ``PREREG_HJ_STAGE0.md`` H-HJ-COLLAPSE-1 / paper Tab. 12.
 
@@ -1013,6 +1013,10 @@ class HJEPAStack(nn.Module):
         Returns ``{"sens/<name>/k<k>": mean-of-ratios, "sens_rom/<name>/k<k>": ratio-of-means}``
         as Python floats. The mean-of-ratios is the PREREG definition; the ratio-of-means is
         reported next to it because the former is dominated by near-stationary windows.
+
+        ``per_window=True`` (RA-1, 2026-10-17; default False = unchanged behaviour) ALSO returns
+        ``"win/<name>/k<k>"`` = the per-window ratios as a numpy array ``(B,)``, so a caller can put
+        an episode-cluster interval on them. Their mean is exactly ``sens/<name>/k<k>``.
         """
         was_training = self.training
         self.eval()
@@ -1036,6 +1040,8 @@ class HJEPAStack(nn.Module):
                     num, den = delta[:, k - 1], disp[:, k - 1]
                     out[f"sens/{name}/k{k}"] = float((num / den.clamp_min(eps)).mean())
                     out[f"sens_rom/{name}/k{k}"] = float(num.mean() / den.mean().clamp_min(eps))
+                    if per_window:
+                        out[f"win/{name}/k{k}"] = (num / den.clamp_min(eps)).cpu().numpy()
             return out
         finally:
             self.train(was_training)
