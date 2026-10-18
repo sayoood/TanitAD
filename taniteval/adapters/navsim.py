@@ -957,8 +957,16 @@ def scenes_to_win(pred_poses, gt_poses=None, *, frame: str,
 
 
 def four_families_block(win: dict, *, tier: str, n_boot: int = 2000,
-                        seed: int = 0) -> dict:
+                        seed: int = 0, per_window: bool = False) -> dict:
     """``all_families`` on a NavSim win, or a full block of honest refusals.
+
+    ``per_window`` (default ``False``) is the OPT-IN per-window export
+    (:mod:`taniteval.per_window`): the arrays every LONGITUDINAL / LATERAL /
+    TACTICAL component is aggregated from, one row per scored window, attached
+    under ``block["_per_window"]`` so a TWO-ARM difference can be PAIRED on a
+    caller's own resamples. ⛔ With the default the block is BYTE-IDENTICAL to what
+    this function always returned: the flag adds one key and changes no value
+    (pinned by ``tests/test_per_window_export.py`` against the pre-flag source).
 
     ⛔ ``tier`` is REQUIRED and has no default — ``all_families`` emits
     ``⛔_tier_missing`` and suppresses the T0 echo warning when it is absent
@@ -984,6 +992,9 @@ def four_families_block(win: dict, *, tier: str, n_boot: int = 2000,
             "Sayed 2026-08-02: LONGITUDINAL + LATERAL + TACTICAL + STRATEGIC in "
             "ADDITION to ADE, per-family, never pooled. A family reported "
             "UNAVAILABLE is a WORK ITEM, not a pass.")
+        if per_window:
+            from taniteval import per_window as _pw
+            block["_per_window"] = _pw.export(win, None)
         return block
 
     from taniteval import four_families as ff
@@ -1006,6 +1017,9 @@ def four_families_block(win: dict, *, tier: str, n_boot: int = 2000,
                      "8 logs the harness's own intervals are not decision-grade (RG-14).")}
     else:
         fam["_navsim_estimator"] = estimator_refusal(n)
+    if per_window:
+        from taniteval import per_window as _pw
+        fam["_per_window"] = _pw.export(win, fam)
     return fam
 
 

@@ -13,7 +13,12 @@ WHAT IS PROVEN:
   I  IC: an arm minus itself reads exactly 0 with CI [0, 0] through the same functions (and a biased interval turns it RED).
   S  scoring (item 5): the offsets are scored by the SAME masked call the training term uses, equal to scoring each slot alone, deterministic, refused on a cache of another trunk.
   F  families (item 6), with the REAL taniteval adapter on synthetic windows: all four families present or stated unavailable with reason and n, STRATEGIC stamped PAUSED, watch-items by the landed fam_adverse rule.
-  C  the CLI: files in, a result json out (the GO scenario), with the pause stamp and the estimator named.
+  C  the CLI: files in, a result json out (the GO scenario), with the pause stamp and the estimator named; and the same with the families' per-set export (published only when paired and IC holds).
+  P  the trajectory-level families, PAIRED (section 10 + amendment B4): on a fixture whose between-log variation swamps the arm difference, a shift the single-arm (unpaired) intervals cannot see is sharp on the paired
+     draws; an arm minus itself reads exactly 0 with CI [0, 0] for every component; the landed direction table is read on the paired interval (bias: |B| - |A|; progress ratio: |B - 1| - |A - 1|); the masked
+     components are ratios of sums, rms and median and the tactical accuracy / kappa are re-taken on each resample (equal to the EXPANDED resample, drawn by hand); kappa undefined is never 1.0; the export is paired by
+     (log, token) and a shuffled export reads identically, a different set / a duplicate / a missing arm is refused loudly; watch-items are reported and never move the outcome row; families are published only when
+     paired and IC holds.  F (items 5-6 file) also covers the REAL adapter's per-set export: 21 components per arm, a lossless npz, blocks identical with the export on and off.
 Every mutation below edits a SOURCE file (each snippet must occur EXACTLY once) and must turn >= 1 expected check RED.
 """
 from __future__ import annotations
@@ -266,6 +271,264 @@ def suite(H, tag, only=None):
     return bad
 
 
+# ================================================================================================ P: the trajectory-level families, PAIRED (section 10 + amendment B4)
+PSEEDS = (0, 1, 2)
+P_SHIFT = 0.15
+
+
+def _fx():
+    """the per-set values of the paired-families fixture, in CANONICAL set order (t0..t399; log = i // 20).  Between-LOG variation is large (sd 3) and the arm-to-arm differences are tiny: the case where the
+    single-arm intervals overlap (an unpaired read sees nothing) while the paired difference is sharp."""
+    rng = np.random.default_rng(7)
+    lo = np.repeat(rng.normal(0, 3, NLOG), PERLOG)
+    base = lo + rng.normal(0, 0.1, N)
+    cnt = rng.integers(0, 20, N).astype(float)
+    cnt[:5] = 0.0                                                        # sets with no valid step in the masked component
+    member = rng.random(N) < 0.8                                         # sets that carry the progress components
+    gtc = rng.integers(0, 3, N)
+    fx = {"lo": lo, "base": base, "cnt": cnt, "member": member, "gt3": gtc, "gt5": rng.integers(0, 5, N), "flipA": rng.random((len(PSEEDS), N)), "flipB": rng.random((len(PSEEDS), N)),
+          "noise": {(a, s): rng.normal(0, 0.02, (4, N)) for a in "AB" for s in PSEEDS}}
+    return fx
+
+
+def _perm_rows(perm):
+    return perm if perm is not None else np.arange(N)
+
+
+def pexport(fx, arm, perm=None, shifts=None, drop_token=None):
+    """the per-set export of one arm (the dict shape `taniteval.per_window.export` returns), rows in the order `perm` (canonical index of each exported row).  shifts: {component: additive B shift}."""
+    a, s = arm[0], int(arm[1:])
+    perm = _perm_rows(perm)
+    sh = {"cross_mae_m": P_SHIFT, "target_speed_acc.within_1.0_mps": -0.1, "along_bias_m": 0.3, "cross_bias_m": -0.3, "ego_progress.progress_ratio_mean": 0.1,
+          "ego_progress.progress_ratio_median": -0.1, "heading_mae_deg": 0.5, "speed_rmse_mps": 0.0, "goal_point_error_m": 0.2}
+    sh.setdefault("curvature_bias_1pm", -0.3)
+    sh.update(shifts or {})
+    isB = a == "B"
+    nz = fx["noise"][(a, s)]
+    b = fx["base"]
+    lo = fx["lo"]
+
+    def vals(name, center, spread):                                      # an arm's per-set values: a centre, a log-level spread, independent per-arm noise, B's shift
+        return center + spread * lo + nz[sum(map(ord, name)) % 4] + (sh[name] if isB else 0.0)
+
+    mean = lambda name, center, spread: {"kind": "mean", "dp": 4, "value": vals(name, center, spread)[perm]}   # noqa: E731
+    ratio_den = np.where(fx["member"], 1.0, 0.0)
+    prog = 1.0 + 0.002 * lo + nz[0] * 0.2
+    comp_lon = {
+        "speed_rmse_mps": {"kind": "rms", "dp": 4, "value": ((b + 6.0 + fx["noise"][("A", s)][1]) ** 2)[perm]},                       # identical for A and B: the no-effect control (lower is better)
+        "target_speed_acc.within_1.0_mps": mean("target_speed_acc.within_1.0_mps", 5.0, 1.0),                           # higher is better; B is 0.1 LOWER -> adverse
+        "along_bias_m": mean("along_bias_m", 0.5, 0.02),                                                                # bias; A is ~0.5, B is ~0.3 further from 0 -> adverse
+        "ego_progress.progress_ratio_mean": {"kind": "ratio", "dp": 4, "scale": 1.0, "den": ratio_den[perm],
+                                             "num": (np.where(fx["member"], prog + (sh["ego_progress.progress_ratio_mean"] if isB else 0.0), 0.0))[perm]},   # closer to 1; A ~1.0, B ~1.1 -> adverse
+        "ego_progress.progress_ratio_median": {"kind": "median", "dp": 4, "rows": np.flatnonzero(fx["member"][perm]),
+                                               "value": (prog + (sh["ego_progress.progress_ratio_median"] if isB else 0.0))[perm][fx["member"][perm]]},          # A ~1.0, B ~0.9 -> adverse
+        "ego_progress.gt_progress_mean_m": {"kind": "ratio", "dp": 4, "scale": 1.0, "human_only": True, "den": ratio_den[perm], "num": (ratio_den * 25.0)[perm]},      # a property of the human: identical, excluded
+    }
+    comp_lat = {
+        "cross_mae_m": mean("cross_mae_m", 4.0, 1.0),                                                                  # lower is better; B is 0.15 HIGHER -> adverse
+        "curvature_bias_1pm": mean("curvature_bias_1pm", -0.5, 0.02),                                              # bias A ~ -0.5, B ~ -0.8: FARTHER from zero though the signed shift is NEGATIVE -> adverse by |B| - |A| only
+        "cross_bias_m": mean("cross_bias_m", 0.5, 0.02),                                                                # bias moving TOWARD zero (0.5 -> 0.2): |B| < |A| -> NOT adverse although the signed shift separates
+        "heading_mae_deg": {"kind": "ratio", "dp": 4, "scale": 1.0, "den": fx["cnt"][perm], "num": (fx["cnt"] * (np.abs(b) + 1.0 + (sh["heading_mae_deg"] if isB else 0.0)))[perm]},
+    }
+    flip = (fx["flipB"] if isB else fx["flipA"])[s]
+    thr = 0.30 if isB else 0.20
+
+    def dec(gt, k, pred=None):
+        p = np.where(flip < thr, (gt + 1) % k, gt) if pred is None else pred
+        return {"classes": [f"c{j}" for j in range(k)], "gt": gt[perm], "pred": p[perm]}
+
+    const = np.ones(N, int)
+    tact = {"status": "OK", "lateral_decision": dec(fx["gt3"], 3), "longitudinal_decision": dec(const, 3, pred=const), "maneuver_5way_collapsed": dec(fx["gt5"], 5),
+            "goal_setting": {"goal_point_error_m": {"kind": "mean", "dp": 4, "value": vals("goal_point_error_m", 2.0, 1.0)[perm]}}}
+    toks = np.array([f"t{i}" for i in range(N)])[perm]
+    logs = np.array([f"log{i // PERLOG}" for i in range(N)])[perm]
+    if drop_token is not None:
+        toks = toks.copy()
+        toks[drop_token] = "t_renamed"
+    return {"schema": "taniteval.per_window/1", "n": N, "status": "OK", "grid": "dense", "dt_s": 0.5, "tokens": [str(t) for t in toks], "eid": [str(x) for x in logs], "longitudinal": comp_lon,
+            "lateral": comp_lat, "tactical": tact, "unavailable": {"longitudinal.distance_keeping.mean_headway_min_m": {"status": "UNAVAILABLE", "reason": "no lead", "n": N}},
+            "strategic": {"status": "PAUSED"}}
+
+
+def pexports(fx, perm=None, **kw):
+    return {f"{a}{s}": pexport(fx, f"{a}{s}", perm, **kw) for s in PSEEDS for a in "AB"}
+
+
+def brute_draw(JB, b, v):
+    """the mean of the EXPANDED resample of draw b (each log drawn counts[b, g] times)"""
+    w = JB.counts[b][JB.li]
+    return float((w * v).sum() / w.sum())
+
+
+def suite_paired(H, tag, only=None):
+    bad: list = []
+    sel = (lambda name: only is None or name in only)
+
+    def check(name, fn):
+        if not sel(name):
+            return
+        try:
+            ok = bool(fn())
+        except Exception as e:                                         # noqa: BLE001
+            ok = False
+            if os.environ.get("HSR_DEBUG"):
+                print("  [check raised]", name, type(e).__name__, str(e)[:300])
+        if not ok:
+            bad.append(name)
+
+    import proxy_eval as PE_
+
+    def safe(fn):                                                      # a mutated module may raise inside the call itself: that is a RED check, not a crashed suite
+        try:
+            return fn()
+        except Exception as e:                                         # noqa: BLE001
+            return e
+
+    fx = _fx()
+    GO_P = zero_picks((40, 40, 40), (0, 0, 0))
+    D = build(H, GO_P)
+    JB = H.JointBoot(D["logs"], NB, 20260927)
+    ex = pexports(fx)
+    FP = safe(lambda: H.families_paired(JB, D, ex, PSEEDS))
+    L, T = (FP.get("LONGITUDINAL", {}), FP.get("LATERAL", {})) if isinstance(FP, dict) else ({}, {})
+
+    def fx_arm_values(fx_, arm, comp):                                                             # the exported value array of an arm's component, canonical order
+        e = ex[arm]
+        return e["lateral"][comp]["value"] if comp in e["lateral"] else e["longitudinal"][comp]["value"]
+
+    # ---- the pairing is REAL: a shift the unpaired single-arm intervals cannot see is sharp on the paired draws
+    def pairing_real():
+        a_mean = np.mean([fx_arm_values(fx, f"A{s}", "cross_mae_m") for s in PSEEDS], axis=0)
+        b_mean = np.mean([fx_arm_values(fx, f"B{s}", "cross_mae_m") for s in PSEEDS], axis=0)
+        ia, ib = JB.mean_interval(a_mean), JB.mean_interval(b_mean)
+        unpaired_sees = ib["ci95"][0] > ia["ci95"][1]                                               # the landed unpaired rule for a lower-is-better component: B's interval entirely above A's
+        r = T["cross_mae_m"]
+        width_u = ia["ci95"][1] - ia["ci95"][0]
+        return (not unpaired_sees) and r["adverse"] and r["ci95"][0] > 0 and (r["ci95"][1] - r["ci95"][0]) < 0.05 * width_u and abs(r["mean"] - P_SHIFT) < 0.01
+
+    check("P_pairing_is_real_a_shift_the_unpaired_intervals_miss_is_sharp_on_the_paired_draws", pairing_real)
+    # ---- identity
+    check("P_family_IC_an_arm_minus_itself_is_exactly_zero_with_CI_0_0_for_every_component", lambda: FP["IC"]["ok"] and FP["IC"]["n_statistics"] >= 12)
+    # ---- directions (the landed proxy_eval.fam_direction table, read on the paired interval)
+    def directions():
+        return (L["target_speed_acc.within_1.0_mps"]["direction"] == "higher" and L["target_speed_acc.within_1.0_mps"]["adverse"] and L["target_speed_acc.within_1.0_mps"]["ci95"][1] < 0
+                and T["cross_mae_m"]["direction"] == "lower" and T["cross_mae_m"]["adverse"]
+                and not L["speed_rmse_mps"]["adverse"] and L["speed_rmse_mps"]["mean"] == 0.0
+                and all(PE_.fam_direction(k) == v["direction"] for d in (L, T) for k, v in d.items()))
+
+    check("P_directions_follow_the_landed_table_higher_UB_below_0_lower_LB_above_0", directions)
+    check("P_bias_is_adverse_only_when_B_is_farther_from_zero_and_progress_ratio_when_farther_from_1",
+          lambda: L["along_bias_m"]["adverse"] and L["along_bias_m"]["adverse_stat"]["mean"] > 0.2 and T["curvature_bias_1pm"]["adverse"] and T["curvature_bias_1pm"]["ci95"][1] < 0 and T["curvature_bias_1pm"]["adverse_stat"]["ci95"][0] > 0 and not T["cross_bias_m"]["adverse"] and T["cross_bias_m"]["ci95"][1] < 0 and T["cross_bias_m"]["adverse_stat"]["ci95"][1] < 0
+          and L["ego_progress.progress_ratio_mean"]["adverse"] and L["ego_progress.progress_ratio_median"]["adverse"])
+    check("P_masked_ratio_components_and_empty_denominator_sets_are_ratios_of_sums", lambda: T["heading_mae_deg"]["adverse"] and abs(T["heading_mae_deg"]["mean"] - 0.5) < 0.02 and (fx["cnt"] == 0).sum() >= 5)
+
+    def ratio_draws():
+        c = ex["A0"]["lateral"]["heading_mae_deg"]
+        pt, dr = H.comp_draws(JB, c)
+        ok = abs(pt - c["num"].sum() / c["den"].sum()) < 1e-12
+        for b in (0, 17, 1999):
+            w = JB.counts[b][JB.li]
+            ok = ok and abs(dr[b] - (w * c["num"]).sum() / (w * c["den"]).sum()) < 1e-12
+        return ok
+
+    check("P_masked_ratio_draws_equal_the_expanded_resample_ratio", ratio_draws)
+
+    def rms_draws():
+        c = ex["A0"]["longitudinal"]["speed_rmse_mps"]
+        pt, dr = H.comp_draws(JB, c)
+        ok = abs(pt - np.sqrt(c["value"].mean())) < 1e-12
+        for b in (0, 5, 1999):
+            ok = ok and abs(dr[b] - np.sqrt(brute_draw(JB, b, c["value"]))) < 1e-12
+        return ok
+
+    check("P_rms_draws_equal_the_root_of_the_expanded_mean_square", rms_draws)
+
+    def median_draws():
+        c = ex["A0"]["longitudinal"]["ego_progress.progress_ratio_median"]
+        pt, dr = H.comp_draws(JB, c)
+        ok = abs(pt - np.median(c["value"])) < 1e-12
+        li_rows = JB.li[c["rows"]]
+        for b in tuple(range(12)) + (500, 1999):
+            exp_ = np.repeat(c["value"], JB.counts[b][li_rows].astype(int))
+            ok = ok and abs(dr[b] - np.median(exp_)) < 1e-12
+        return ok
+
+    check("P_median_draws_equal_the_median_of_the_expanded_resample", median_draws)
+    # ---- tactical: accuracy and kappa from the draw's confusion table
+    def kappa_draws():
+        e = ex["A0"]["tactical"]["lateral_decision"]
+        (a0, ad), (k0, kd) = H.decision_draws(JB, e["gt"], e["pred"], 3)
+
+        def cohen(g, p, k=3):
+            po = float((g == p).mean())
+            pe = float(sum((g == c).mean() * (p == c).mean() for c in range(k)))
+            return po, (po - pe) / (1 - pe)
+
+        po, ka = cohen(e["gt"], e["pred"])
+        ok = abs(a0 - po) < 1e-12 and abs(k0 - ka) < 1e-12
+        for b in (0, 9, 1234):
+            w = JB.counts[b][JB.li].astype(int)
+            g, p = np.repeat(e["gt"], w), np.repeat(e["pred"], w)
+            pb, kb = cohen(g, p)
+            ok = ok and abs(ad[b] - pb) < 1e-12 and abs(kd[b] - kb) < 1e-12
+        return ok
+
+    check("P_tactical_accuracy_and_kappa_draws_equal_the_expanded_resample", kappa_draws)
+    tac = FP.get("TACTICAL", {}) if isinstance(FP, dict) else {}
+    check("P_kappa_undefined_is_not_computable_never_1", lambda: tac["longitudinal_decision"]["kappa"]["status"] == "NOT COMPUTABLE" and tac["longitudinal_decision"]["accuracy"]["mean"] == 0.0
+          and not np.isfinite(H.decision_draws(JB, np.ones(N, int), np.ones(N, int), 3)[1][0]))
+    check("P_tactical_adverse_is_reported_beside_and_is_not_a_watch_item",
+          lambda: "lateral_decision.accuracy" in tac["adverse_reported"] and "goal_setting.goal_point_error_m" in tac["adverse_reported"] and not any("decision" in w for w in FP["watch_items"]))
+    # ---- the watch-items, human-only exclusion, the count
+    exp_watch = ["LATERAL.cross_mae_m", "LATERAL.curvature_bias_1pm", "LATERAL.heading_mae_deg", "LONGITUDINAL.along_bias_m", "LONGITUDINAL.ego_progress.progress_ratio_mean", "LONGITUDINAL.ego_progress.progress_ratio_median",
+                 "LONGITUDINAL.target_speed_acc.within_1.0_mps"]
+    check("P_watch_items_are_the_adverse_longitudinal_and_lateral_components", lambda: FP["watch_items"] == exp_watch and FP["n_components_compared"] == 9)
+    check("P_human_only_components_excluded", lambda: FP["excluded_human_only"] == ["longitudinal.ego_progress.gt_progress_mean_m"] and "ego_progress.gt_progress_mean_m" not in L)
+    check("P_unavailable_components_are_listed_with_reason_and_n", lambda: FP["unavailable"]["longitudinal.distance_keeping.mean_headway_min_m"]["n"] == N and FP["STRATEGIC"]["status"] == "PAUSED")
+    # ---- alignment by (log, token), never by position
+    perm = np.random.default_rng(3).permutation(N)
+    FPs = safe(lambda: H.families_paired(JB, D, pexports(fx, perm=perm), PSEEDS))
+    same = lambda x, y: x["mean"] == y["mean"] and x["ci95"] == y["ci95"]                              # noqa: E731
+    check("P_shuffled_export_pairs_identically", lambda: FPs["status"] == "OK" and all(same(FPs[f][k], FP[f][k]) for f in ("LONGITUDINAL", "LATERAL") for k in FP[f]) and FPs["watch_items"] == FP["watch_items"]
+          and all(same(FPs["TACTICAL"][d][q], tac[d][q]) for d in ("lateral_decision", "maneuver_5way_collapsed") for q in ("accuracy", "kappa")))
+    r_ren = safe(lambda: H.families_paired(JB, D, pexports(fx, drop_token=7), PSEEDS))
+    dup = pexports(fx)
+    dup["A0"]["tokens"], dup["A0"]["eid"] = list(dup["A0"]["tokens"]), list(dup["A0"]["eid"])
+    dup["A0"]["tokens"][-1], dup["A0"]["eid"][-1] = dup["A0"]["tokens"][-2], dup["A0"]["eid"][-2]
+    r_dup = safe(lambda: H.families_paired(JB, D, dup, PSEEDS))
+    short = pexports(fx)
+    r_short = safe(lambda: H.families_paired(JB, D, {k: v for k, v in short.items() if k != "B2"}, PSEEDS))
+    check("P_different_sets_duplicates_and_missing_arms_are_refused_loudly", lambda: r_ren["status"] == "NOT PAIRABLE" and "not the same sets" in r_ren["reason"] and r_dup["status"] == "NOT PAIRABLE"
+          and "duplicate" in r_dup["reason"] and r_short["status"] == "NOT COMPUTABLE" and "B2" in r_short["reason"])
+    # ---- reported, not gating; published only when paired and IC holds
+    def not_gating():
+        r0 = H.read(D, "navsim_v1_lane", GATES_OK, sy=SY_OK, n_boot=NB)
+        r1 = H.read(D, "navsim_v1_lane", GATES_OK, sy=SY_OK, n_boot=NB, per_set=ex)
+        return (r0["outcome"]["row"] == r1["outcome"]["row"] == 3 and r1["outcome"] == r0["outcome"] and r1["watch_items_trajectory"] == exp_watch
+                and set(r1["watch_items"]) == set(r1["watch_items_pdm"]) | set(exp_watch) and r1["families_paired"]["status"] == "OK" and "families_paired" not in r0 and r0["watch_items_trajectory"] is None)
+
+    check("P_watch_items_reported_not_gating_the_outcome_row_is_unchanged", not_gating)
+    def same_draws_as_pdm():
+        r = H.read(D, "navsim_v1_lane", GATES_OK, sy=SY_OK, n_boot=NB, per_set=ex)
+        fam_ = r["families_paired"]["LATERAL"]["cross_mae_m"]
+        JBt = H.JointBoot(D["logs"], NB, 20260927)                                                     # the PDM sub-scores' own draws, built independently of the read
+        want = H.seedmean_diff(JBt, [ex[f"B{s}"]["lateral"]["cross_mae_m"]["value"] for s in PSEEDS], [ex[f"A{s}"]["lateral"]["cross_mae_m"]["value"] for s in PSEEDS], scale=1.0)
+        return (abs(fam_["mean"] - want["mean"]) < 1e-12 and np.allclose(fam_["ci95"], want["ci95"], rtol=0, atol=1e-12) and np.allclose(fam_["per_seed_ci95"], want["per_seed_ci95"], rtol=0, atol=1e-12)
+                and np.allclose(fam_["per_seed_point"], want["per_seed_point"], rtol=0, atol=1e-12) and want["ci95"][0] != want["ci95"][1])
+
+    check("P_family_components_are_read_on_the_SAME_joint_draws_as_the_PDM_sub_scores", same_draws_as_pdm)
+    famjson = {"families_present": {k: {"status": "OK"} for k in ("longitudinal", "lateral", "tactical")} | {"strategic": {"status": "PAUSED"}}}
+
+    def published():
+        ok_ = {"status": "OK", "IC": {"ok": True}}
+        return (H.families_status(famjson, ok_)["published"] is True and H.families_status(famjson, None)["published"] is False and "B4" in H.families_status(famjson, None)["reason"]
+                and H.families_status(famjson, {"status": "OK", "IC": {"ok": False}})["published"] is False and H.families_status(famjson, {"status": "NOT PAIRABLE", "reason": "x"})["published"] is False
+                and H.families_status(None, ok_)["published"] is False)
+
+    check("P_families_published_only_when_paired_and_IC_holds", published)
+    return bad
+
+
 # ================================================================================================ items 5 and 6 (checked on the real modules, not mutated)
 def suite_items56():
     bad = []
@@ -359,6 +622,76 @@ def suite_items56():
           and not HF.build(ad, inputs, {**picks, **{f"B{s}": np.zeros(n, int) for s in (0, 1, 2)}}, n_boot=60)["watch_items"])
     check("F_adapter_is_imported_not_reimplemented", lambda: "def scenes_to_win" not in open(os.path.join(HERE, "hn_screen_families.py"), encoding="utf-8").read() and hasattr(ad, "four_families_block"))
     check("F_block_is_the_seed_mean_of_its_leaves", lambda: abs(HF.seed_mean_block([{"a": {"x": 1.0}, "s": "k"}, {"a": {"x": 3.0}, "s": "k"}])["a"]["x"] - 2.0) < 1e-12)
+
+    # ------------------------------------------------------------------ F: the per-set export (amendment B4), with the real adapter, the real writer / reader and the real paired read
+    import hn_screen_read as HR
+    from taniteval import per_window as PW
+    dump = lambda o: json.dumps(o, sort_keys=True, default=lambda x: x.tolist() if hasattr(x, "tolist") else str(x))   # noqa: E731
+    outp = HF.build(ad, inputs, picks, n_boot=60, per_set=True)
+    exps = outp.pop("_per_set_export")
+    off = HF.build(ad, inputs, picks, n_boot=60, per_set=False)
+    check("F_per_set_blocks_equal_the_default_blocks_and_the_unpaired_reading_is_not_computed_when_paired",
+          lambda: dump(outp["blocks"]) == dump(off["blocks"]) and "watch_items" not in outp and "watch_items" in off and outp["adverse_reading"]["paired"] is True and off["adverse_reading"]["paired"] is False
+          and set(exps) == set(picks) and outp["per_set"]["requested"] is True)
+    n21 = lambda e: (len([c for c in e["longitudinal"].values() if not c.get("human_only")]), len([c for c in e["lateral"].values() if not c.get("extra_to_the_four_family_block")]))   # noqa: E731
+    check("F_per_set_export_carries_the_21_components_of_section_10_for_every_arm_plus_the_declared_extras",
+          lambda: all(e["status"] == "OK" and n21(e) == (14, 7) and "last_pose_heading_err_deg" in e["lateral"] and sum(c.get("human_only", False) for c in e["longitudinal"].values()) == 2 for e in exps.values())
+          and all(sorted(e["unavailable"]) == ["longitudinal.distance_keeping.mean_headway_min_m", "longitudinal.distance_keeping.mean_min_ttc_s", "longitudinal.distance_keeping.mean_time_gap_min_s"] for e in exps.values()))
+    pth = os.path.join(tmp, "fam_per_set.npz")
+    HF.write_per_set(pth, exps)
+    back = HF.read_per_set(pth)
+
+    def same_export(x, y):
+        for f in ("longitudinal", "lateral"):
+            if set(x[f]) != set(y[f]):
+                return False
+            for k, c in x[f].items():
+                for kk, v in c.items():
+                    w = y[f][k][kk]
+                    if isinstance(v, np.ndarray):
+                        if not np.array_equal(v, w):
+                            return False
+                    elif v != w:
+                        return False
+        tx, ty = x["tactical"], y["tactical"]
+        return (x["tokens"] == y["tokens"] and x["eid"] == y["eid"] and all(np.array_equal(tx[d][q], ty[d][q]) and tx[d]["classes"] == ty[d]["classes"] for d in ("lateral_decision", "longitudinal_decision", "maneuver_5way_collapsed")
+                                                                             for q in ("gt", "pred")) and set(tx["goal_setting"]) == set(ty["goal_setting"]) and x["unavailable"] == y["unavailable"])
+
+    check("F_per_set_npz_round_trips_exactly", lambda: set(back) == set(exps) and all(same_export(exps[a], back[a]) for a in exps))
+    keys_n = [(lg, tk, 0, 0) for lg, tk in zip(inputs["logs"], inputs["tokens"])]
+
+    def sc_n(pk):
+        s = np.full((n, M, 7), -10.0)
+        s[np.arange(n), pk, :] = 10.0
+        return s
+
+    Dn = HR.make_data(keys_n, inputs["logs"], np.tile(PROP, (n, 1, 1)), {nm: sc_n(pk) for nm, pk in picks.items()})
+    JBn = HR.JointBoot(Dn["logs"], 400, 20260927)
+    FPn = HR.families_paired(JBn, Dn, back, (0, 1, 2))
+    check("F_paired_read_of_the_real_export_reads_21_components_and_flags_the_laterally_off_arm", lambda: FPn["status"] == "OK" and FPn["n_components_compared_in_the_21"] == 21 and FPn["IC"]["ok"]
+          and "LATERAL.cross_mae_m" in FPn["watch_items"] and FPn["STRATEGIC"]["status"] == "PAUSED" and FPn["excluded_human_only"] == ["longitudinal.ego_progress.gt_progress_mean_m", "longitudinal.ego_progress.t0_axis_gt_self_ratio"])
+    same_picks = {**picks, **{f"B{s}": picks[f"A{s}"] for s in (0, 1, 2)}}
+    o_id = HF.build(ad, inputs, same_picks, n_boot=60, per_set=True)
+    FPi = HR.families_paired(JBn, Dn, o_id.pop("_per_set_export"), (0, 1, 2))
+    comps_i = [r for f in ("LONGITUDINAL", "LATERAL") for r in FPi[f].values()] + [FPi["TACTICAL"][d][q] for d in ("lateral_decision", "longitudinal_decision", "maneuver_5way_collapsed") for q in ("accuracy", "kappa")
+                                                                                       if FPi["TACTICAL"][d][q]["status"] == "OK"]
+    check("F_identical_arms_read_exactly_zero_with_CI_0_0_and_no_watch_item_on_the_real_export", lambda: FPi["watch_items"] == [] and len(comps_i) >= 21 and all(r["mean"] == 0.0 and r["ci95"] == [0.0, 0.0] for r in comps_i))
+    cmp_ok = []
+    for a, e in back.items():
+        for f in ("longitudinal", "lateral"):
+            for k, c in e[f].items():
+                p_reader, p_inst = HR.comp_draws(JBn, c)[0], PW.point(c)
+                cmp_ok.append(abs(p_reader - p_inst) < 1e-12 or (np.isnan(p_reader) and np.isnan(p_inst)))
+    check("F_the_readers_point_equals_the_instruments_own_reduction_for_every_component", lambda: len(cmp_ok) >= 6 * 22 and all(cmp_ok))
+    # the families CLI end to end: json without the arrays, the per-set npz beside it
+    fin, fpk, fout, fps = (os.path.join(tmp, x) for x in ("fam_in.npz", "fam_picks.npz", "fam.json", "fam_ps.npz"))
+    np.savez(fin, tokens=np.asarray(inputs["tokens"]), logs=np.asarray(inputs["logs"]), v0=inputs["v0"], human=inputs["human"], plans8=inputs["plans8"])
+    np.savez(fpk, **picks)
+    rc_f = HF.main(["--inputs", fin, "--picks", fpk, "--out", fout, "--per-set-out", fps, "--taniteval-dir", td, "--n-boot", "40"])
+    fj = json.load(open(fout, encoding="utf-8"))
+    bk2 = HF.read_per_set(fps)
+    check("F_cli_writes_the_families_json_without_the_arrays_and_the_per_set_npz", lambda: rc_f == 0 and fj["per_set"]["file"] == "fam_ps.npz" and "_per_set_export" not in fj and "watch_items" not in fj
+          and fj["adverse_reading"]["paired"] is True and set(bk2) == set(picks) and same_export(exps["B0"], bk2["B0"]))
     return bad
 
 
@@ -388,6 +721,20 @@ def suite_cli(H):
           and res["families"]["published"] is False and res["IC"]["ok"] and res["n_sets"] == N)
     if not ok:
         bad.append("C_cli_files_in_result_json_out")
+    # the same run with the families json and the per-set export (synthetic, canonical order): published, with the paired watch-items, and the outcome unchanged
+    import hn_screen_families as HF
+    fx = _fx()
+    HF.write_per_set(os.path.join(tmp, "fam_per_set.npz"), pexports(fx))
+    json.dump({"families_present": {k: {"status": "OK"} for k in ("longitudinal", "lateral", "tactical")} | {"strategic": {"status": "PAUSED"}}}, open(os.path.join(tmp, "fam.json"), "w"))
+    out2 = os.path.join(tmp, "result2.json")
+    rc2 = H.main(["--scores"] + [f"{n}={os.path.join(tmp, n + '.npz')}" for n in picks] + ["--pdm", os.path.join(tmp, "pdm"), "--rl-val-scenes", os.path.join(tmp, "scenes.tsv"),
+                  "--gates", os.path.join(tmp, "gates.json"), "--sy", os.path.join(tmp, "sy.json"), "--families", os.path.join(tmp, "fam.json"), "--families-per-set", os.path.join(tmp, "fam_per_set.npz"),
+                  "--rule", "navsim_v1_lane", "--n-boot", str(NB), "--out", out2])
+    r2 = json.load(open(out2, encoding="utf-8"))
+    if not (rc2 == 0 and r2["outcome"]["row"] == 3 and r2["families"]["published"] is True and r2["families"]["paired"] is True and r2["families_paired"]["status"] == "OK"
+            and r2["watch_items_trajectory"] == ["LATERAL.cross_mae_m", "LATERAL.curvature_bias_1pm", "LATERAL.heading_mae_deg", "LONGITUDINAL.along_bias_m", "LONGITUDINAL.ego_progress.progress_ratio_mean",
+                                                 "LONGITUDINAL.ego_progress.progress_ratio_median", "LONGITUDINAL.target_speed_acc.within_1.0_mps"] and r2["strategic"]["status"] == "PAUSED"):
+        bad.append("C_cli_families_per_set_published_paired_and_outcome_unchanged")
     return bad
 
 
@@ -417,6 +764,20 @@ MUTATIONS = [
     ("the interval is biased", [('return {"mean": float(v.mean()), "ci95": self._ci(self.means(v))}', 'return {"mean": float(v.mean()) + 1e-9, "ci95": self._ci(self.means(v))}')],
      ["I_arm_minus_itself_reads_exactly_zero", "I_ic_failure_makes_the_screen_invalid"]),
     ("the bootstrap seed", [("N_BOOT, SEED = 10000, 20260927", "N_BOOT, SEED = 10000, 20260928")], ["J_joint_draws_equal_proxy_eval_boot_and_perfectly_correlated_seeds_keep_their_interval"]),
+    ("the paired B draws meet the REVERSED A draws (unpaired)", [("    drs = [b[1] - a[1] for b, a in zip(pb, pa)]\n", "    drs = [b[1] - a[1][::-1] for b, a in zip(pb, pa)]\n")], ["P_pairing_is_real_a_shift_the_unpaired_intervals_miss_is_sharp_on_the_paired_draws", "P_family_IC_an_arm_minus_itself_is_exactly_zero_with_CI_0_0_for_every_component"]),
+    ("higher-is-better read as lower-is-better", [('    out["adverse"] = bool(adv["ci95"][1] < 0) if direction == "higher" else bool(adv["ci95"][0] > 0)\n', '    out["adverse"] = bool(adv["ci95"][0] > 0)\n')],
+     ["P_directions_follow_the_landed_table_higher_UB_below_0_lower_LB_above_0"]),
+    ("bias read as a signed difference", [('ADVERSE_TF = {"magnitude": np.abs, "closer_to_1"', 'ADVERSE_TF = {"closer_to_1"')], ["P_bias_is_adverse_only_when_B_is_farther_from_zero_and_progress_ratio_when_farther_from_1", "P_watch_items_are_the_adverse_longitudinal_and_lateral_components"]),
+    ("the export is aligned by position, not by (log, token)", [("    order = np.asarray([idx[w] for w in want], np.int64)\n", "    order = np.arange(len(want), dtype=np.int64)\n")], ["P_shuffled_export_pairs_identically"]),
+    ("a renamed token is refused only on a count mismatch", [("    if miss or len(idx) != len(want):\n", "    if len(idx) != len(want):\n")], ["P_different_sets_duplicates_and_missing_arms_are_refused_loudly"]),
+    ("an undefined kappa reads 1.0", [("(po - pe) / (1.0 - pe), np.nan)", "(po - pe) / (1.0 - pe), 1.0)")], ["P_kappa_undefined_is_not_computable_never_1"]),
+    ("the resampled median is the lower middle element", [("            i_hi = (cum <= np.floor(tot / 2)[:, None]).sum(1)\n", "            i_hi = i_lo\n")], ["P_median_draws_equal_the_median_of_the_expanded_resample"]),
+    ("a masked component's draws are a mean of ratios", [('else float("nan")), sc * JB.ratios(num, den)', 'else float("nan")), sc * JB.means(np.divide(num, den, out=np.zeros_like(num), where=den > 0))')], ["P_masked_ratio_draws_equal_the_expanded_resample_ratio"]),
+    ("the rms draws are the mean square (no root)", [("math.sqrt(float(v.mean())), np.sqrt(JB.means(v))", "math.sqrt(float(v.mean())), JB.means(v)")], ["P_rms_draws_equal_the_root_of_the_expanded_mean_square"]),
+    ("the family bootstrap uses its own draws (another seed)", [("    fp = families_paired(JB, D, per_set, seeds) if per_set is not None else None\n", '    fp = families_paired(JointBoot(D["logs"], n_boot, seed + 1), D, per_set, seeds) if per_set is not None else None\n')], ["P_family_components_are_read_on_the_SAME_joint_draws_as_the_PDM_sub_scores"]),
+    ("the watch-items gate the outcome", [('"cogate_fails": res["cogate"]["fails"],', '"cogate_fails": res["cogate"]["fails"] or bool(fp and fp.get("watch_items")),')], ["P_watch_items_reported_not_gating_the_outcome_row_is_unchanged"]),
+    ("families are published without the family IC", [('paired.get("status") == "OK" and paired.get("IC", {}).get("ok"))', 'paired.get("status") == "OK")')], ["P_families_published_only_when_paired_and_IC_holds"]),
+    ("the human-only components are compared", [('            if any(e[fam][nm].get("human_only") for e in Bs + As):\n', "            if False:\n")], ["P_human_only_components_excluded"]),
     ("M2 reads A minus B", [('m2 = ratio_diff(JB, [tw[f"B{s}"][1] for s in seeds], [tw[f"A{s}"][1] for s in seeds], den)', 'm2 = ratio_diff(JB, [tw[f"A{s}"][1] for s in seeds], [tw[f"B{s}"][1] for s in seeds], den)')], ["O_row7_HEAD_MOVES_NO_ZEROS"]),
 ]
 
@@ -433,7 +794,7 @@ def apply_edits(src, edits, name):
 def main() -> int:
     src = open(SRC_READ, encoding="utf-8").read()
     Hreal = load_read(src, "real")
-    real = suite(Hreal, "real") + suite_items56() + suite_cli(Hreal)
+    real = suite(Hreal, "real") + suite_items56() + suite_cli(Hreal) + suite_paired(Hreal, "real")
     assert not real, f"the unmutated sources FAIL their own checks: {real}"
     n, problems = 1, []
     print(f"{'mutation':50s} caught-by (failing checks)")
@@ -441,7 +802,8 @@ def main() -> int:
         m_src = apply_edits(src, edits, name)
         try:
             ast.parse(m_src)
-            failing = suite(load_read(m_src, f"m{n}"), f"m{n}", only=set(expect))
+            Hm = load_read(m_src, f"m{n}")
+            failing = suite(Hm, f"m{n}", only=set(expect)) + suite_paired(Hm, f"m{n}", only=set(expect))
         except (Exception, SystemExit) as e:                           # noqa: BLE001 -- a mutated source that breaks the suite's own setup is RED, and said so
             failing = [f"suite setup raised {type(e).__name__}: {str(e)[:80]}"]
         if not failing:
@@ -456,7 +818,7 @@ def main() -> int:
         print("\n".join("PROBLEM " + p for p in problems))
         print(f"ZZTEST_FAIL {len(problems)} problem(s)")
         return 1
-    print(f"ZZTEST_PASS {n}  (1 unmutated suite (incl. items 5, 6, CLI) + {len(MUTATIONS)} RED mutations)")
+    print(f"ZZTEST_PASS {n}  (1 unmutated suite (incl. items 5, 6, CLI, paired families) + {len(MUTATIONS)} RED mutations)")
     return 0
 
 

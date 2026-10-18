@@ -2,7 +2,7 @@
 """P6-HN-S: the SCREEN READ.  (raw/2026-10-18-p6hn-prereg/PREREG_P6HN_SCREEN.md sections 5-11; SCREEN_NOTES.md checklist item 7.)  CPU only, a table lookup: no model runs here.
 
     python eval/hn_screen_read.py --scores base=base.npz A0=... A1=... A2=... B0=... B1=... B2=... [A3= A4= B3= B4=] [C0=c0.npz] --pdm <pdm dir> --rl-val-scenes rl_val_scenes.tsv \\
-        --sets <rl_fan sets dir> --gates gates.json [--scores9 base=... A0=... ...] [--bank9 <rl_val.hnbank>] [--families families.json] --rule navsim_v1_lane --out result.json
+        --sets <rl_fan sets dir> --gates gates.json [--scores9 base=... A0=... ...] [--bank9 <rl_val.hnbank>] [--families families.json --families-per-set families_per_set.npz] --rule navsim_v1_lane --out result.json
 
 It REUSES rl_val_eval's lookup (`load_scores`, `load_pdm`, `read_scenes`, `select`, the reward module's PDMS) for base / A_s / B_s, and `zt4_baseline.twin_pairs` unchanged for M2.
 ESTIMATOR (section 6): paired log-cluster bootstrap over the RL-val logs, 10,000 resamples, seed 20260927, percentile 2.5 / 97.5, ratio-of-sums.  ONE log draw per resample is applied JOINTLY to every
@@ -17,6 +17,12 @@ GUARD: Delta PDMS-bar > 0 (point) is required for GO.  CO-GATE (section 8) FAILS
 MECHANISM (section 9, they choose the next lever, never the GO): M1 zero split; M2 the DAC head on REAL grazes (HEAD-MOVES iff LB(Delta M2-bar) > 0); M3 the head on the BANK's geometry, held out (LEARNS-BANK iff LB(Delta M3-bar) > 0;
   NOT COMPUTABLE below 100 qualifying scenes -> rows 8 and 9 merge as 'HEAD-BLIND OR SYNTHETIC-ONLY, unresolved').
 IC (section 5): every two-arm difference computed as an arm minus itself reads exactly 0 with CI [0, 0] -- through the SAME functions the real differences use.
+FAMILIES (section 10 + amendment B4): the trajectory-level LONGITUDINAL / LATERAL components and the TACTICAL decisions are PAIRED like the PDM sub-scores.  `--families-per-set` is the per-set export of the families instrument
+  (hn_screen_families.py -> taniteval/per_window.py).  It is aligned to the PDM rows by (log, token) -- refused loudly if the two do not cover the same sets -- and every component's seed-mean B_s - A_s difference is read on the
+  SAME joint log draws (`JointBoot`, 10,000, seed 20260927) as the PDM sub-scores: means, rms and the masked components' ratios-of-sums are re-taken on each draw, the TACTICAL kappa from the draw's confusion table.  A component
+  separates ADVERSELY by the landed direction table (`proxy_eval.fam_direction`) read on the paired interval: higher-is-better -> UB < 0; lower-is-better -> LB > 0; bias -> the |.| of B exceeds A's (LB of |B| - |A| > 0);
+  progress ratio -> |ratio - 1| likewise.  REPORTED, NOT GATING: a LONGITUDINAL or LATERAL adverse component is a named WATCH-ITEM for the full arm's amendment; nothing here changes the outcome row.  Properties of the logged human
+  future (`ego_progress.gt_progress_mean_m`, `.t0_axis_gt_self_ratio`) are excluded (identical for every arm).  The families are PUBLISHED only if the export paired AND the family IC (an arm minus itself reads 0, [0, 0]) holds.
 OUTCOME (section 11): the first matching row of the table below.  STRATEGIC is PAUSED (PI 2026-09-19, PI_DECISION_QUEUE.md item 25): stamped, never a pass, never omitted.
 """
 from __future__ import annotations
@@ -84,6 +90,24 @@ class JointBoot:
         """the resampled means of a per-set vector, [n]"""
         S = np.bincount(self.li, np.asarray(v, np.float64), self.G)
         return (self.counts @ S) / (self.counts @ self.size)
+
+    def medians(self, v, rows):
+        """the resampled medians of a per-set vector defined on `rows` only: the median of the EXPANDED resample (each log drawn k times contributes its sets k times), as the single-arm bootstrap takes it.
+        NaN for a draw with no row at all."""
+        v, rows = np.asarray(v, np.float64), np.asarray(rows, np.int64)
+        order = np.argsort(v, kind="stable")
+        vs, li = v[order], self.li[rows][order]
+        out = np.full(self.n, np.nan)
+        if vs.size == 0:
+            return out
+        for a in range(0, self.n, 500):
+            cum = np.cumsum(self.counts[a:a + 500][:, li], axis=1)                  # [chunk, R] cumulative multiplicity in value order
+            tot = cum[:, -1]
+            i_lo = (cum <= np.floor((tot - 1) / 2)[:, None]).sum(1)                 # 0-based rank r sits at the first index whose cumulative count exceeds r
+            i_hi = (cum <= np.floor(tot / 2)[:, None]).sum(1)
+            m = tot > 0
+            out[a:a + 500][m] = 0.5 * (vs[np.minimum(i_lo, vs.size - 1)][m] + vs[np.minimum(i_hi, vs.size - 1)][m])
+        return out
 
     def ratios(self, num, den):
         Sn = np.bincount(self.li, np.asarray(num, np.float64), self.G)
@@ -299,19 +323,214 @@ def classify(inp):
     return 8 if inp["learns_bank"] else 9
 
 
+# ================================================================================================ the trajectory-level family components, PAIRED (section 10 + amendment B4)
+class PerSetError(ValueError):
+    """the per-set export cannot be paired with the PDM rows (different sets, no keys, duplicate keys)"""
+
+
+#: tactical goal-setting has no entry in `proxy_eval.fam_direction` (the landed table names the LONGITUDINAL / LATERAL components); the directions are stated here, once
+GOAL_DIRECTION = {"goal_point_error_m": "lower", "goal_long_bias_m": "magnitude", "goal_lat_bias_m": "magnitude", "goal_bearing_mae_deg": "lower", "goal_range_ratio": "closer_to_1"}
+ADVERSE_TF = {"magnitude": np.abs, "closer_to_1": lambda x: np.abs(np.asarray(x, np.float64) - 1.0)}
+
+
+def comp_draws(JB, c):
+    """-> (point, draws [n_boot]) of one per-set component record on the JOINT log draws.  The reduction is the instrument's own: mean; rms = sqrt(mean of squares); ratio of sums (masked components); median."""
+    k = c["kind"]
+    if k == "mean":
+        v = np.asarray(c["value"], np.float64)
+        return float(v.mean()), JB.means(v)
+    if k == "rms":
+        v = np.asarray(c["value"], np.float64)
+        return math.sqrt(float(v.mean())), np.sqrt(JB.means(v))
+    if k == "ratio":
+        num, den, sc = np.asarray(c["num"], np.float64), np.asarray(c["den"], np.float64), float(c["scale"])
+        return (sc * float(num.sum()) / float(den.sum()) if den.sum() > 0 else float("nan")), sc * JB.ratios(num, den)
+    if k == "median":
+        v = np.asarray(c["value"], np.float64)
+        return (float(np.median(v)) if v.size else float("nan")), JB.medians(v, c["rows"])
+    raise ValueError(f"unknown component kind {k!r}")
+
+
+def paired_from_draws(JB, pb, pa, direction):
+    """pb, pa: per-seed lists of (point, draws) for B_s and A_s.  -> the seed-mean paired difference B - A on the joint draws, and its adverse reading by `direction`
+    (higher -> UB < 0; lower -> LB > 0; magnitude / closer_to_1 -> the same on |B| - |A| / |B - 1| - |A - 1|, the paired form of proxy_eval.fam_adverse's 'farther' rules)."""
+    if any(not (math.isfinite(b[0]) and math.isfinite(a[0])) for b, a in zip(pb, pa)):
+        return {"status": "NOT COMPUTABLE", "reason": "a point estimate is undefined (empty denominator or an undefined kappa) in at least one arm"}
+    pts = [b[0] - a[0] for b, a in zip(pb, pa)]
+    drs = [b[1] - a[1] for b, a in zip(pb, pa)]
+    out = {"status": "OK", "mean": float(np.mean(pts)), "ci95": JB._ci(np.mean(drs, axis=0)), "per_seed_point": [float(x) for x in pts], "per_seed_ci95": [JB._ci(d) for d in drs],
+           "A_mean": float(np.mean([a[0] for a in pa])), "B_mean": float(np.mean([b[0] for b in pb])), "direction": direction}
+    tf = ADVERSE_TF.get(direction)
+    if tf is None:
+        adv = out
+    else:
+        apts = [float(tf(b[0]) - tf(a[0])) for b, a in zip(pb, pa)]
+        adr = [tf(b[1]) - tf(a[1]) for b, a in zip(pb, pa)]
+        adv = out["adverse_stat"] = {"what": "|B| - |A| (bias)" if direction == "magnitude" else "|B - 1| - |A - 1|", "mean": float(np.mean(apts)), "ci95": JB._ci(np.mean(adr, axis=0)),
+                                     "per_seed_point": apts, "per_seed_ci95": [JB._ci(d) for d in adr]}
+    out["adverse"] = bool(adv["ci95"][1] < 0) if direction == "higher" else bool(adv["ci95"][0] > 0)
+    return out
+
+
+def decision_draws(JB, gt, pred, k):
+    """(accuracy, kappa) as ((point, draws), (point, draws)) of one decision's executed class ids on the joint draws: the per-log confusion table, weighted by the draw's log multiplicities.  kappa is NaN where
+    1 - p_e vanishes (both streams constant on one class): never a fake 1.0 (four_families._kappa_k)"""
+    gt, pred = np.asarray(gt, np.int64), np.asarray(pred, np.int64)
+    if gt.size and (gt.min() < 0 or pred.min() < 0 or gt.max() >= k or pred.max() >= k):
+        raise PerSetError(f"a class id outside 0..{k - 1}")
+    S = np.zeros((JB.G, k * k))
+    np.add.at(S, (JB.li, gt * k + pred), 1.0)
+
+    def ak(T):
+        M = np.asarray(T, np.float64).reshape(T.shape[:-1] + (k, k))
+        with np.errstate(invalid="ignore", divide="ignore"):
+            tot = M.sum((-1, -2))
+            po = np.trace(M, axis1=-2, axis2=-1) / tot
+            pe = ((M.sum(-1) / tot[..., None]) * (M.sum(-2) / tot[..., None])).sum(-1)
+            kap = np.where(1.0 - pe > 1e-9, (po - pe) / (1.0 - pe), np.nan)
+        return po, kap
+
+    a0, k0 = ak(S.sum(0))
+    ad, kd = ak(JB.counts @ S)
+    return (float(a0), ad), (float(k0), kd)
+
+
+def _take(c, order, N):
+    """one component record re-indexed to the PDM row order: new[i] = old[order[i]]"""
+    c = dict(c)
+    if c["kind"] in ("mean", "rms"):
+        c["value"] = np.asarray(c["value"])[order]
+    elif c["kind"] == "ratio":
+        c["num"], c["den"] = np.asarray(c["num"])[order], np.asarray(c["den"])[order]
+    elif c["kind"] == "median":
+        full, has = np.full(N, np.nan), np.zeros(N, bool)
+        full[np.asarray(c["rows"], np.int64)], has[np.asarray(c["rows"], np.int64)] = np.asarray(c["value"], np.float64), True
+        c["rows"], c["value"] = np.flatnonzero(has[order]), full[order][has[order]]
+    return c
+
+
+def align_export(D, exp):
+    """one arm's per-set export re-indexed to D's rows by (log, token).  Raises PerSetError unless the two cover EXACTLY the same sets (a positional join on different sets pairs unrelated windows)."""
+    if exp.get("status") != "OK":
+        raise PerSetError(f"the export is {exp.get('status')}: {exp.get('reason')}")
+    toks, logs = exp.get("tokens"), exp.get("eid")
+    if toks is None or logs is None:
+        raise PerSetError("the export carries no (log, token) per row: it cannot be paired to the PDM rows")
+    idx = {}
+    for i, key in enumerate(zip(logs, toks)):
+        if key in idx:
+            raise PerSetError(f"duplicate (log, token) {key} in the export")
+        idx[key] = i
+    want = [(k[0], k[1]) for k in D["keys"]]
+    if len(set(want)) != len(want):
+        raise PerSetError("duplicate (log, token) among the PDM rows: the pairing key is ambiguous")
+    miss = [w for w in want if w not in idx]
+    if miss or len(idx) != len(want):
+        raise PerSetError(f"the export covers {len(idx)} sets and the PDM rows {len(want)}; {len(miss)} PDM sets are absent from the export (first {miss[:2]}): not the same sets, not paired")
+    order = np.asarray([idx[w] for w in want], np.int64)
+    N = len(want)
+    out = dict(exp)
+    for fam in ("longitudinal", "lateral"):
+        out[fam] = {nm: _take(c, order, N) for nm, c in exp[fam].items()}
+    t = exp.get("tactical")
+    if isinstance(t, dict) and t.get("status") == "OK":
+        t = dict(t)
+        for d in ("lateral_decision", "longitudinal_decision", "maneuver_5way_collapsed"):
+            t[d] = {**t[d], "gt": np.asarray(t[d]["gt"])[order], "pred": np.asarray(t[d]["pred"])[order]}
+        t["goal_setting"] = {nm: _take(c, order, N) for nm, c in t["goal_setting"].items()}
+        out["tactical"] = t
+    return out
+
+
+def families_paired(JB, D, per_set, seeds):
+    """the seed-mean PAIRED differences of every trajectory-level component on the joint draws (+ the family IC).  Reported, not gating."""
+    import proxy_eval as PE                                                                        # the landed direction table, imported never copied
+    need = [f"{a}{s}" for s in seeds for a in "AB"]
+    absent = [a for a in need if a not in per_set]
+    if absent:
+        return {"status": "NOT COMPUTABLE", "reason": f"the per-set export lacks {absent}"}
+    try:
+        ex = {a: align_export(D, per_set[a]) for a in need}
+    except PerSetError as e:
+        return {"status": "NOT PAIRABLE", "reason": str(e)}
+    Bs, As = [ex[f"B{s}"] for s in seeds], [ex[f"A{s}"] for s in seeds]
+    res = {"status": "OK", "seeds": list(seeds), "n_sets": len(D["keys"]), "estimator": "seed-mean paired B_s - A_s on the joint log draws of the PDM sub-scores (same JointBoot: draws, seed, percentile)",
+           "gating": "REPORTED, NOT GATING (section 10); a LONGITUDINAL / LATERAL adverse component is a named watch-item", "LONGITUDINAL": {}, "LATERAL": {}, "unavailable": {}, "excluded_human_only": [],
+           "STRATEGIC": PAUSED}
+    ic = []
+    for fam in ("longitudinal", "lateral"):
+        names = set.intersection(*[set(e[fam]) for e in Bs + As])
+        for nm in sorted(set.union(*[set(e[fam]) for e in Bs + As]) - names):
+            res["unavailable"][f"{fam}.{nm}"] = {"status": "NOT COMPUTABLE", "reason": "the component is undefined in at least one arm of the pairing (e.g. every step masked)"}
+        for e in Bs[:1]:
+            for k_, v_ in e.get("unavailable", {}).items():
+                if k_.startswith(fam + "."):
+                    res["unavailable"].setdefault(k_, v_)
+        for nm in sorted(names):
+            if any(e[fam][nm].get("human_only") for e in Bs + As):
+                res["excluded_human_only"].append(f"{fam}.{nm}")
+                continue
+            direction = PE.fam_direction(nm)
+            r = paired_from_draws(JB, [comp_draws(JB, e[fam][nm]) for e in Bs], [comp_draws(JB, e[fam][nm]) for e in As], direction)
+            r["extra_to_the_four_family_block"] = bool(Bs[0][fam][nm].get("extra_to_the_four_family_block", False))
+            res[fam.upper()][nm] = r
+            if r["status"] == "OK":
+                c0 = comp_draws(JB, As[0][fam][nm])
+                ic.append(paired_from_draws(JB, [c0], [c0], direction))
+    comps = [(f, nm, r) for f in ("LONGITUDINAL", "LATERAL") for nm, r in res[f].items()]
+    res["n_components_compared"] = sum(1 for _f, _n, r in comps if r.get("status") == "OK")
+    res["n_components_compared_in_the_21"] = sum(1 for _f, _n, r in comps if r.get("status") == "OK" and not r.get("extra_to_the_four_family_block"))
+    res["watch_items"] = sorted(f"{f}.{nm}" for f, nm, r in comps if r.get("status") == "OK" and r["adverse"])
+    # ---- TACTICAL
+    tac = {"status": "OK"}
+    if all(isinstance(e.get("tactical"), dict) and e["tactical"].get("status") == "OK" for e in Bs + As):
+        tac_adverse = []
+        for d in ("lateral_decision", "longitudinal_decision", "maneuver_5way_collapsed"):
+            kcls = len(Bs[0]["tactical"][d]["classes"])
+            dB = [decision_draws(JB, e["tactical"][d]["gt"], e["tactical"][d]["pred"], kcls) for e in Bs]
+            dA = [decision_draws(JB, e["tactical"][d]["gt"], e["tactical"][d]["pred"], kcls) for e in As]
+            tac[d] = {q: paired_from_draws(JB, [x[j] for x in dB], [x[j] for x in dA], "higher") for j, q in enumerate(("accuracy", "kappa"))}
+            tac[d]["classes"] = list(Bs[0]["tactical"][d]["classes"])
+            tac_adverse += [f"{d}.{q}" for q in ("accuracy", "kappa") if tac[d][q].get("status") == "OK" and tac[d][q]["adverse"]]
+            c0 = decision_draws(JB, As[0]["tactical"][d]["gt"], As[0]["tactical"][d]["pred"], kcls)
+            ic += [paired_from_draws(JB, [c0[j]], [c0[j]], "higher") for j, q in enumerate(("accuracy", "kappa")) if tac[d][q]["status"] == "OK"]
+        goal = {}
+        for nm in sorted(set.intersection(*[set(e["tactical"]["goal_setting"]) for e in Bs + As])):
+            dr = GOAL_DIRECTION[nm]
+            goal[nm] = paired_from_draws(JB, [comp_draws(JB, e["tactical"]["goal_setting"][nm]) for e in Bs], [comp_draws(JB, e["tactical"]["goal_setting"][nm]) for e in As], dr)
+            if goal[nm]["status"] == "OK":
+                c0 = comp_draws(JB, As[0]["tactical"]["goal_setting"][nm])
+                ic.append(paired_from_draws(JB, [c0], [c0], dr))
+        tac["goal_setting"] = goal
+        tac["adverse_reported"] = sorted(tac_adverse + [f"goal_setting.{n}" for n, r in goal.items() if r.get("status") == "OK" and r["adverse"]])
+        tac["selection_quality"] = "random / actual / best-of-64 on the same sets: families_pdm_paired.TACTICAL_selection_quality_pdms_x100 (paired, same draws)"
+    else:
+        tac = {"status": "NOT COMPUTABLE", "reason": "the per-set export carries no tactical decisions for every arm of the pairing"}
+    tac["command_adherence_of_pick"] = {"status": "NOT COMPUTABLE", "reason": "the RL-val lookup carries no navigation command", "n": len(D["keys"])}
+    res["TACTICAL"] = tac
+    res["IC"] = {"ok": bool(ic and all(r.get("status") == "OK" and r["mean"] == 0.0 and r["ci95"] == [0.0, 0.0] and ("adverse_stat" not in r or (r["adverse_stat"]["mean"] == 0.0 and r["adverse_stat"]["ci95"] == [0.0, 0.0])) for r in ic)),
+                 "n_statistics": len(ic), "rule": "an arm minus itself reads exactly 0 with CI [0, 0], through the same functions the real differences use"}
+    return res
+
+
 # ================================================================================================ the read
-def families_status(fam):
-    """the result is not published without all four families, or each stated NOT COMPUTABLE with its reason and n"""
+def families_status(fam, paired=None):
+    """the result is not published without all four families, or each stated NOT COMPUTABLE with its reason and n -- and (amendment B4) not from an UNPAIRED reading: the per-set export must have paired and its IC must hold"""
     need = ("longitudinal", "lateral", "tactical", "strategic")
     if fam is None:
         return {"published": False, "reason": "no families block supplied (hn_screen_families.py)", "missing": list(need)}
     present = fam.get("families_present", {})
     miss = [k for k in need if k not in present]
     st = (present.get("strategic") or {}).get("status")
-    return {"published": bool(not miss and st == "PAUSED"), "missing": miss, "strategic_status": st}
+    paired_ok = bool(paired is not None and paired.get("status") == "OK" and paired.get("IC", {}).get("ok"))
+    out = {"published": bool(not miss and st == "PAUSED" and paired_ok), "missing": miss, "strategic_status": st, "paired": paired_ok}
+    if not paired_ok:
+        out["reason"] = ("no PAIRED trajectory-level reading: " + (paired.get("reason", "the family IC failed") if paired else "no per-set export (--families-per-set) was supplied")
+                         + " (amendment B4: S4 may not read families from the unpaired aggregates)")
+    return out
 
 
-def read(D, rule, gates, sy=None, c0=None, families=None, n_boot=N_BOOT, seed=SEED):
+def read(D, rule, gates, sy=None, c0=None, families=None, n_boot=N_BOOT, seed=SEED, per_set=None):
     JB = JointBoot(D["logs"], n_boot, seed)
     N = len(D["keys"])
     names = [n for n in D["arms"] if n != "C0"]
@@ -381,7 +600,12 @@ def read(D, rule, gates, sy=None, c0=None, families=None, n_boot=N_BOOT, seed=SE
                                   "STRATEGIC": PAUSED}
     res["watch_items_pdm"] = sorted(f"{f}.{q}" for f, qs in (("LONGITUDINAL", ("EP", "TTC")), ("LATERAL", ("DAC",))) for q in qs
                                     if res["families_pdm_paired"][f][q]["ci95"][1] < 0)
-    res["families"] = families_status(families)
+    fp = families_paired(JB, D, per_set, seeds) if per_set is not None else None
+    if fp is not None:
+        res["families_paired"] = fp
+    res["watch_items_trajectory"] = fp["watch_items"] if fp and fp.get("status") == "OK" else None
+    res["watch_items"] = sorted(res["watch_items_pdm"] + (fp["watch_items"] if fp and fp.get("status") == "OK" else []))
+    res["families"] = families_status(families, fp)
     # ---- IC
     a0 = [V[f"A{seeds[0]}"]]
     ic = {"delta_z": seedmean_diff(JB, [a0[0]["zero"]], [a0[0]["zero"]]), "PDMS": seedmean_diff(JB, [a0[0]["PDMS"]], [a0[0]["PDMS"]]),
@@ -467,6 +691,7 @@ def main(argv=None) -> int:
     ap.add_argument("--bank9", default=None, help="npz {dac9 [N9,9], status [N9], log [N9]} of the RL-val bank")
     ap.add_argument("--scores9", nargs="*", default=[], help="name=npz {scores9 [N9,9,C]} from hn_screen_offsets_score.py")
     ap.add_argument("--families", default=None)
+    ap.add_argument("--families-per-set", default=None, help="npz of the per-set trajectory-level component values (hn_screen_families.py --per-set-out); without it the families are NOT published (amendment B4)")
     ap.add_argument("--rule", required=True, choices=RV.RULES)
     ap.add_argument("--n-boot", type=int, default=N_BOOT)
     ap.add_argument("--out", required=True)
@@ -493,7 +718,11 @@ def main(argv=None) -> int:
     gates = {k: bool(v) for k, v in json.load(open(a.gates, encoding="utf-8")).items()}
     sy = json.load(open(a.sy, encoding="utf-8")) if a.sy else None
     fam = json.load(open(a.families, encoding="utf-8")) if a.families else None
-    res = read(D, a.rule, gates, sy=sy, families=fam, n_boot=a.n_boot)
+    per_set = None
+    if a.families_per_set:
+        import hn_screen_families as HF
+        per_set = HF.read_per_set(a.families_per_set)
+    res = read(D, a.rule, gates, sy=sy, families=fam, n_boot=a.n_boot, per_set=per_set)
     with open(a.out, "w", encoding="utf-8", newline="\n") as f:
         json.dump(res, f, indent=1, sort_keys=True, default=lambda o: o.tolist() if hasattr(o, "tolist") else str(o))
     o = res["outcome"]

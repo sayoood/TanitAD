@@ -1,0 +1,2606 @@
+{
+ "summary": {
+  "tip_AB_analysed_against": "363a24ffd753985efd91c857d9453d8d88990cbe",
+  "tip_C_checked_against": "88fed187037d4421214af6944200960ffd8f8ad5",
+  "A": {
+   "APPLIED": 3,
+   "SUPERSEDED": 15,
+   "OBSOLETE": 6,
+   "MISSING": 5
+  },
+  "B": {
+   "N/A": 1,
+   "SUPERSEDED": 18,
+   "MISSING": 23,
+   "REGISTER": 5
+  },
+  "X_mapping_statuses": {
+   "NOT-A-MAPPING": 33,
+   "APPLIED-THEN-SUPERSEDED": 66,
+   "APPLIED-EXACT": 61,
+   "DIFFERS-NOT-IN-HISTORY": 21,
+   "NEW-NOT-ON-TIP": 18
+  },
+  "C_after_cleaning": {
+   "PARSE-ARTIFACT:FILE-ON-TIP": 524,
+   "LANDED-SINCE-AUDIT": 469,
+   "MOVED": 29,
+   "PENDING-LANDING": 10,
+   "OPTIONAL-P3": 20,
+   "ABSENT-EVERYWHERE": 4,
+   "HOLD-SCRUB": 10,
+   "PARSE-ARTIFACT:DIR-ON-TIP": 7
+  },
+  "C_absent_entries_in_audit": 1073
+ },
+ "A": [
+  {
+   "i": 0,
+   "variant": "FlyWheels/TanitAD_DataFlyWheel/incoming/2026-10-04-x10-pose-timing/code/fix/stack/scripts/refc_v3_train.py",
+   "target": "stack/scripts/refc_v3_train.py",
+   "verdict": "APPLIED",
+   "evidence": "7/7 hunks of diff(c39798d -> variant) are on the tip (X10 --pose-sync-sidecar wiring); landed by the WP-B landings L1/L2 (badb582, a5c2a9b).",
+   "variant_blob": "387bd402a22d3918e15386d436f109cb79fe4c44",
+   "tip_blob": "73d4d32122535e2257c19e90d9c77d70a67ef65a",
+   "tip_blob_at": "363a24ff",
+   "closest_history_base": {
+    "commit": "c39798d7",
+    "date": "2026-10-04 18:21",
+    "subj": "+0200 refcv8 WP-B lands in the trainer: tactical-conditioned fan generation + factorised/listwise selection, t",
+    "line_diff_to_variant": 109
+   },
+   "line_diff_tip_to_variant": 919,
+   "hunks": {
+    "APPLIED": 7
+   },
+   "variant_blob_in_any_history": false
+  },
+  {
+   "i": 1,
+   "variant": "FlyWheels/TanitAD_DataFlyWheel/incoming/2026-10-04-x10-pose-timing/code/fix/stack/tests/test_declared_vs_built.py",
+   "target": "stack/tests/test_declared_vs_built.py",
+   "verdict": "SUPERSEDED",
+   "evidence": "only change is the REGISTRY pin 256 -> 257 (+X10 comment); the tip's pin has moved on (a5c2a9b: 264+) and carries the X10 comment lines.",
+   "variant_blob": "fb13f1b37d58ef2e5c6950fd470b7ad4d0f222d3",
+   "tip_blob": "4dc1be8e0ec66ff1efd889497cd2fc1157f77f9a",
+   "tip_blob_at": "363a24ff",
+   "closest_history_base": {
+    "commit": "c39798d7",
+    "date": "2026-10-04 18:21",
+    "subj": "+0200 refcv8 WP-B lands in the trainer: tactical-conditioned fan generation + factorised/listwise selection, t",
+    "line_diff_to_variant": 3
+   },
+   "line_diff_tip_to_variant": 35,
+   "hunks": {
+    "CHANGED": 1
+   },
+   "variant_blob_in_any_history": false
+  },
+  {
+   "i": 2,
+   "variant": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-box-head/code/fix/stack/scripts/refc_v3_train.py",
+   "target": "stack/scripts/refc_v3_train.py",
+   "verdict": "SUPERSEDED",
+   "evidence": "pre-HQS 'MAIN' box-head variant: it LACKS the A14 HQS lines the tip carries (--slot-query-select, its G-DVB entry, REGISTRY pin 221); the tip took the ANCHORED/HQS landing (commit 28d8365 'refcv7 box head lands (A9-A14.1)'). Variant mtime 2026-09-27 12:50 < 15:26.",
+   "variant_blob": "286dbd44fb674b626290a3329bdc00091a4df7ea",
+   "tip_blob": "73d4d32122535e2257c19e90d9c77d70a67ef65a",
+   "tip_blob_at": "363a24ff",
+   "closest_history_base": {
+    "commit": "28d8365f",
+    "date": "2026-09-27 15:26",
+    "subj": "+0200 refcv7 box head lands (A9-A14.1): focal presence, per-layer supervision, VIS-1 with IGNORE semantics, 30",
+    "line_diff_to_variant": 23
+   },
+   "line_diff_tip_to_variant": 1617,
+   "hunks": {
+    "DEL-MISSING": 2,
+    "MISSING": 1
+   },
+   "variant_blob_in_any_history": false
+  },
+  {
+   "i": 3,
+   "variant": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-box-head/code/fix/stack/tanitad/models/refcv6_perception_branch.py",
+   "target": "stack/tanitad/models/refcv6_perception_branch.py",
+   "verdict": "APPLIED",
+   "evidence": "9/9 hunks of diff(cef9709 -> variant) are on the tip (A14.1 box-head perception branch), landed by 28d8365.",
+   "variant_blob": "03d9b9487521c301668e21cf6e195fa48df4e6dc",
+   "tip_blob": "239ea57dfd31e7e912c43587e4eed4df129c709e",
+   "tip_blob_at": "363a24ff",
+   "closest_history_base": {
+    "commit": "cef9709d",
+    "date": "2026-09-27 05:06",
+    "subj": "+0200 refcv7 NEW-2 lands: the semantic map at 10 cm over 100 m x +-30 m (PI option c) -- one stride-8 lift fee",
+    "line_diff_to_variant": 45
+   },
+   "line_diff_tip_to_variant": 64,
+   "hunks": {
+    "APPLIED": 9
+   },
+   "variant_blob_in_any_history": false
+  },
+  {
+   "i": 4,
+   "variant": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-box-head/code/fix/stack/tanitad/train/declared_vs_built.py",
+   "target": "stack/tanitad/train/declared_vs_built.py",
+   "verdict": "SUPERSEDED",
+   "evidence": "pre-HQS 'MAIN' box-head variant: it LACKS the A14 HQS lines the tip carries (--slot-query-select, its G-DVB entry, REGISTRY pin 221); the tip took the ANCHORED/HQS landing (commit 28d8365 'refcv7 box head lands (A9-A14.1)'). Variant mtime 2026-09-27 12:50 < 15:26.",
+   "variant_blob": "0a4913334e590dade4ba34285791ec67ad90a8ff",
+   "tip_blob": "12f264455a2566ad3dbadaeef026455d7cc1b04d",
+   "tip_blob_at": "363a24ff",
+   "closest_history_base": {
+    "commit": "28d8365f",
+    "date": "2026-09-27 15:26",
+    "subj": "+0200 refcv7 box head lands (A9-A14.1): focal presence, per-layer supervision, VIS-1 with IGNORE semantics, 30",
+    "line_diff_to_variant": 16
+   },
+   "line_diff_tip_to_variant": 212,
+   "hunks": {
+    "DEL-MISSING": 1
+   },
+   "variant_blob_in_any_history": false
+  },
+  {
+   "i": 5,
+   "variant": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-box-head/code/fix/stack/tests/test_declared_vs_built.py",
+   "target": "stack/tests/test_declared_vs_built.py",
+   "verdict": "SUPERSEDED",
+   "evidence": "pre-HQS 'MAIN' box-head variant: it LACKS the A14 HQS lines the tip carries (--slot-query-select, its G-DVB entry, REGISTRY pin 221); the tip took the ANCHORED/HQS landing (commit 28d8365 'refcv7 box head lands (A9-A14.1)'). Variant mtime 2026-09-27 12:50 < 15:26.",
+   "variant_blob": "a43afcf7bf731edb3e6f910b1c11953cb3d5b62a",
+   "tip_blob": "4dc1be8e0ec66ff1efd889497cd2fc1157f77f9a",
+   "tip_blob_at": "363a24ff",
+   "closest_history_base": {
+    "commit": "28d8365f",
+    "date": "2026-09-27 15:26",
+    "subj": "+0200 refcv7 box head lands (A9-A14.1): focal presence, per-layer supervision, VIS-1 with IGNORE semantics, 30",
+    "line_diff_to_variant": 3
+   },
+   "line_diff_tip_to_variant": 56,
+   "hunks": {
+    "CHANGED": 1
+   },
+   "variant_blob_in_any_history": false
+  },
+  {
+   "i": 6,
+   "variant": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-box-head/code/fix/stack/tests/test_occ_knob_is_stamped.py",
+   "target": "stack/tests/test_occ_knob_is_stamped.py",
+   "verdict": "SUPERSEDED",
+   "evidence": "pre-HQS 'MAIN' box-head variant: it LACKS the A14 HQS lines the tip carries (--slot-query-select, its G-DVB entry, REGISTRY pin 221); the tip took the ANCHORED/HQS landing (commit 28d8365 'refcv7 box head lands (A9-A14.1)'). Variant mtime 2026-09-27 12:50 < 15:26.",
+   "variant_blob": "fb7fce39e68e5638a3a435022469b017afac02ac",
+   "tip_blob": "37e05faeba138d60e9525c2ac357b12729077d1a",
+   "tip_blob_at": "363a24ff",
+   "closest_history_base": {
+    "commit": "28d8365f",
+    "date": "2026-09-27 15:26",
+    "subj": "+0200 refcv7 box head lands (A9-A14.1): focal presence, per-layer supervision, VIS-1 with IGNORE semantics, 30",
+    "line_diff_to_variant": 1
+   },
+   "line_diff_tip_to_variant": 1,
+   "hunks": {
+    "DEL-MISSING": 1
+   },
+   "variant_blob_in_any_history": false
+  },
+  {
+   "i": 7,
+   "variant": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-box-head/code/fix_r6/stack/scripts/refc_v3_train.py",
+   "target": "stack/scripts/refc_v3_train.py",
+   "verdict": "OBSOLETE",
+   "evidence": "variant HELD BY DECISION: +R6 (A10.1) denoising-query groups behind --slot-dn-groups (default 0). The tip's refcv7-r101-s0.argv.json `why` says \"+R6 ... is NOT adopted\"; BUILD.md (box-head) says R6 was \"deprioritised by A14.1\"; LANDING_READY_R6.txt says \"Use ONLY if a SPEC amendment makes +R6 the launch configuration\". No live chain passes the flag.",
+   "variant_blob": "0a9ccdb40a81f6d6c8d0211ae8f202a4cbc1d4cf",
+   "tip_blob": "73d4d32122535e2257c19e90d9c77d70a67ef65a",
+   "tip_blob_at": "363a24ff",
+   "closest_history_base": {
+    "commit": "28d8365f",
+    "date": "2026-09-27 15:26",
+    "subj": "+0200 refcv7 box head lands (A9-A14.1): focal presence, per-layer supervision, VIS-1 with IGNORE semantics, 30",
+    "line_diff_to_variant": 55
+   },
+   "line_diff_tip_to_variant": 1649,
+   "hunks": {
+    "MISSING": 4
+   },
+   "variant_blob_in_any_history": false
+  },
+  {
+   "i": 8,
+   "variant": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-box-head/code/fix_r6/stack/tanitad/models/refcv6_perception_branch.py",
+   "target": "stack/tanitad/models/refcv6_perception_branch.py",
+   "verdict": "OBSOLETE",
+   "evidence": "6 hunks APPLIED (the A14.1 branch, on the tip); the other 6 hunks are the R6-only DN-embedder lines - HELD BY DECISION, see the fix_r6 rows.",
+   "variant_blob": "1939b432294afbe83c25b29d7e33de42446e7f6c",
+   "tip_blob": "239ea57dfd31e7e912c43587e4eed4df129c709e",
+   "tip_blob_at": "363a24ff",
+   "closest_history_base": {
+    "commit": "cef9709d",
+    "date": "2026-09-27 05:06",
+    "subj": "+0200 refcv7 NEW-2 lands: the semantic map at 10 cm over 100 m x +-30 m (PI option c) -- one stride-8 lift fee",
+    "line_diff_to_variant": 63
+   },
+   "line_diff_tip_to_variant": 82,
+   "hunks": {
+    "APPLIED": 6,
+    "ADD-MISSING": 6
+   },
+   "variant_blob_in_any_history": false
+  },
+  {
+   "i": 9,
+   "variant": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-box-head/code/fix_r6/stack/tanitad/train/declared_vs_built.py",
+   "target": "stack/tanitad/train/declared_vs_built.py",
+   "verdict": "OBSOLETE",
+   "evidence": "variant HELD BY DECISION: +R6 (A10.1) denoising-query groups behind --slot-dn-groups (default 0). The tip's refcv7-r101-s0.argv.json `why` says \"+R6 ... is NOT adopted\"; BUILD.md (box-head) says R6 was \"deprioritised by A14.1\"; LANDING_READY_R6.txt says \"Use ONLY if a SPEC amendment makes +R6 the launch configuration\". No live chain passes the flag.",
+   "variant_blob": "2c87f16240888a8b7429d6f969b01e1d13ed76c0",
+   "tip_blob": "12f264455a2566ad3dbadaeef026455d7cc1b04d",
+   "tip_blob_at": "363a24ff",
+   "closest_history_base": {
+    "commit": "28d8365f",
+    "date": "2026-09-27 15:26",
+    "subj": "+0200 refcv7 box head lands (A9-A14.1): focal presence, per-layer supervision, VIS-1 with IGNORE semantics, 30",
+    "line_diff_to_variant": 16
+   },
+   "line_diff_tip_to_variant": 212,
+   "hunks": {
+    "MISSING": 4
+   },
+   "variant_blob_in_any_history": false
+  },
+  {
+   "i": 10,
+   "variant": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-box-head/code/fix_r6/stack/tests/test_cls_weight_stamp.py",
+   "target": "stack/tests/test_cls_weight_stamp.py",
+   "verdict": "OBSOLETE",
+   "evidence": "variant HELD BY DECISION: +R6 (A10.1) denoising-query groups behind --slot-dn-groups (default 0). The tip's refcv7-r101-s0.argv.json `why` says \"+R6 ... is NOT adopted\"; BUILD.md (box-head) says R6 was \"deprioritised by A14.1\"; LANDING_READY_R6.txt says \"Use ONLY if a SPEC amendment makes +R6 the launch configuration\". No live chain passes the flag.",
+   "variant_blob": "444eb1531ab6893dd012eeaab5b808273e234aea",
+   "tip_blob": "151e609d18216dff94cccca635ada935276056cb",
+   "tip_blob_at": "363a24ff",
+   "closest_history_base": {
+    "commit": "e152e404",
+    "date": "2026-09-23 07:53",
+    "subj": "+0200 refcv6: every launch-blocking review finding FIXED and MUTATION-PROVEN; eval split protected",
+    "line_diff_to_variant": 4
+   },
+   "line_diff_tip_to_variant": 4,
+   "hunks": {
+    "MISSING": 1
+   },
+   "variant_blob_in_any_history": false
+  },
+  {
+   "i": 11,
+   "variant": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-box-head/code/fix_r6/stack/tests/test_declared_vs_built.py",
+   "target": "stack/tests/test_declared_vs_built.py",
+   "verdict": "OBSOLETE",
+   "evidence": "variant HELD BY DECISION: +R6 (A10.1) denoising-query groups behind --slot-dn-groups (default 0). The tip's refcv7-r101-s0.argv.json `why` says \"+R6 ... is NOT adopted\"; BUILD.md (box-head) says R6 was \"deprioritised by A14.1\"; LANDING_READY_R6.txt says \"Use ONLY if a SPEC amendment makes +R6 the launch configuration\". No live chain passes the flag.",
+   "variant_blob": "46a8e19e170a2fe030ebe44d0125ebbd3619def0",
+   "tip_blob": "4dc1be8e0ec66ff1efd889497cd2fc1157f77f9a",
+   "tip_blob_at": "363a24ff",
+   "closest_history_base": {
+    "commit": "28d8365f",
+    "date": "2026-09-27 15:26",
+    "subj": "+0200 refcv7 box head lands (A9-A14.1): focal presence, per-layer supervision, VIS-1 with IGNORE semantics, 30",
+    "line_diff_to_variant": 2
+   },
+   "line_diff_tip_to_variant": 57,
+   "hunks": {
+    "MISSING": 1
+   },
+   "variant_blob_in_any_history": false
+  },
+  {
+   "i": 12,
+   "variant": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-box-head/code/fix_r6/stack/tests/test_occ_knob_is_stamped.py",
+   "target": "stack/tests/test_occ_knob_is_stamped.py",
+   "verdict": "OBSOLETE",
+   "evidence": "variant HELD BY DECISION: +R6 (A10.1) denoising-query groups behind --slot-dn-groups (default 0). The tip's refcv7-r101-s0.argv.json `why` says \"+R6 ... is NOT adopted\"; BUILD.md (box-head) says R6 was \"deprioritised by A14.1\"; LANDING_READY_R6.txt says \"Use ONLY if a SPEC amendment makes +R6 the launch configuration\". No live chain passes the flag.",
+   "variant_blob": "669b03cee242eac522e86fb2859fb13ccddc8512",
+   "tip_blob": "37e05faeba138d60e9525c2ac357b12729077d1a",
+   "tip_blob_at": "363a24ff",
+   "closest_history_base": {
+    "commit": "28d8365f",
+    "date": "2026-09-27 15:26",
+    "subj": "+0200 refcv7 box head lands (A9-A14.1): focal presence, per-layer supervision, VIS-1 with IGNORE semantics, 30",
+    "line_diff_to_variant": 2
+   },
+   "line_diff_tip_to_variant": 2,
+   "hunks": {
+    "MISSING": 1
+   },
+   "variant_blob_in_any_history": false
+  },
+  {
+   "i": 13,
+   "variant": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/code/fix_P7/stack/ops/runs.d/refcv8-wpb-smoke.argv.json",
+   "target": "stack/ops/runs.d/refcv8-wpb-smoke.argv.json",
+   "verdict": "SUPERSEDED",
+   "evidence": "fix_P7 is the P7 stage (E mtime 2026-10-04 22:35-22:39) that preceded the combined WP-B landings L1 badb582 (23:51) and L2 a5c2a9b (2026-10-05); every hunk of diff(L1 -> variant) either DELETES lines the tip still has (v9-cons, enc8, emit_live, pose-sync) or is an older form of a line the tip carries in newer form.",
+   "variant_blob": "28c9a060b1be792b763a076cc0c751bcddb9b772",
+   "tip_blob": "53d5a26e502461a5151f1918cc2b62bd7e5a233d",
+   "tip_blob_at": "363a24ff",
+   "closest_history_base": {
+    "commit": "badb5821",
+    "date": "2026-10-04 23:51",
+    "subj": "+0200 refcv8 WP-B landing L1: past-only speed input N2 (+ 8-step encoding) with the future-max sidecar refused",
+    "line_diff_to_variant": 34
+   },
+   "line_diff_tip_to_variant": 67,
+   "hunks": {
+    "CHANGED": 1,
+    "DEL-APPLIED": 2,
+    "DEL-MISSING": 1,
+    "BOTH-PRESENT": 1
+   },
+   "variant_blob_in_any_history": false
+  },
+  {
+   "i": 14,
+   "variant": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/code/fix_P7/stack/scripts/launch_gate.py",
+   "target": "stack/scripts/launch_gate.py",
+   "verdict": "SUPERSEDED",
+   "evidence": "fix_P7 is the P7 stage (E mtime 2026-10-04 22:35-22:39) that preceded the combined WP-B landings L1 badb582 (23:51) and L2 a5c2a9b (2026-10-05); every hunk of diff(L1 -> variant) either DELETES lines the tip still has (v9-cons, enc8, emit_live, pose-sync) or is an older form of a line the tip carries in newer form.",
+   "variant_blob": "ac3ff3696770d6046e0b8108ae091a64f58b7332",
+   "tip_blob": "7f009efb134c2812db333aed5eb606b9cb5dcb2a",
+   "tip_blob_at": "363a24ff",
+   "closest_history_base": {
+    "commit": "badb5821",
+    "date": "2026-10-04 23:51",
+    "subj": "+0200 refcv8 WP-B landing L1: past-only speed input N2 (+ 8-step encoding) with the future-max sidecar refused",
+    "line_diff_to_variant": 16
+   },
+   "line_diff_tip_to_variant": 1143,
+   "hunks": {
+    "MISSING": 2,
+    "CHANGED": 1,
+    "DEL-MISSING": 2,
+    "DEL-APPLIED": 2
+   },
+   "variant_blob_in_any_history": false
+  },
+  {
+   "i": 15,
+   "variant": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/code/fix_P7/stack/scripts/refc_v3_train.py",
+   "target": "stack/scripts/refc_v3_train.py",
+   "verdict": "SUPERSEDED",
+   "evidence": "fix_P7 is the P7 stage (E mtime 2026-10-04 22:35-22:39) that preceded the combined WP-B landings L1 badb582 (23:51) and L2 a5c2a9b (2026-10-05); every hunk of diff(L1 -> variant) either DELETES lines the tip still has (v9-cons, enc8, emit_live, pose-sync) or is an older form of a line the tip carries in newer form.",
+   "variant_blob": "b9ea5f1d3cd7d00a3046ccd7edbe38cfe4875326",
+   "tip_blob": "73d4d32122535e2257c19e90d9c77d70a67ef65a",
+   "tip_blob_at": "363a24ff",
+   "closest_history_base": {
+    "commit": "badb5821",
+    "date": "2026-10-04 23:51",
+    "subj": "+0200 refcv8 WP-B landing L1: past-only speed input N2 (+ 8-step encoding) with the future-max sidecar refused",
+    "line_diff_to_variant": 176
+   },
+   "line_diff_tip_to_variant": 877,
+   "hunks": {
+    "CHANGED": 2,
+    "DEL-MISSING": 17,
+    "DEL-APPLIED": 1,
+    "MISSING": 3
+   },
+   "variant_blob_in_any_history": false
+  },
+  {
+   "i": 16,
+   "variant": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/code/fix_P7/stack/tanitad/eval/refcv7_loader.py",
+   "target": "stack/tanitad/eval/refcv7_loader.py",
+   "verdict": "SUPERSEDED",
+   "evidence": "fix_P7 is the P7 stage (E mtime 2026-10-04 22:35-22:39) that preceded the combined WP-B landings L1 badb582 (23:51) and L2 a5c2a9b (2026-10-05); every hunk of diff(L1 -> variant) either DELETES lines the tip still has (v9-cons, enc8, emit_live, pose-sync) or is an older form of a line the tip carries in newer form.",
+   "variant_blob": "94387e2dbebe729f3804337abe490c25d7f56ef4",
+   "tip_blob": "86fffc9d0f0743b0c13cb9d248deceb40ab51cdc",
+   "tip_blob_at": "363a24ff",
+   "closest_history_base": {
+    "commit": "badb5821",
+    "date": "2026-10-04 23:51",
+    "subj": "+0200 refcv8 WP-B landing L1: past-only speed input N2 (+ 8-step encoding) with the future-max sidecar refused",
+    "line_diff_to_variant": 6
+   },
+   "line_diff_tip_to_variant": 38,
+   "hunks": {
+    "DEL-MISSING": 2
+   },
+   "variant_blob_in_any_history": false
+  },
+  {
+   "i": 17,
+   "variant": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/code/fix_P7/stack/tanitad/eval/speed_leak.py",
+   "target": "stack/tanitad/eval/speed_leak.py",
+   "verdict": "SUPERSEDED",
+   "evidence": "fix_P7 is the P7 stage (E mtime 2026-10-04 22:35-22:39) that preceded the combined WP-B landings L1 badb582 (23:51) and L2 a5c2a9b (2026-10-05); every hunk of diff(L1 -> variant) either DELETES lines the tip still has (v9-cons, enc8, emit_live, pose-sync) or is an older form of a line the tip carries in newer form.",
+   "variant_blob": "9cb8503d4631fa8e77cfea3fb475344bdc05cfa2",
+   "tip_blob": "d1f5ef8c3f5443530355a8e62d73c73ec66dc19c",
+   "tip_blob_at": "363a24ff",
+   "closest_history_base": {
+    "commit": "badb5821",
+    "date": "2026-10-04 23:51",
+    "subj": "+0200 refcv8 WP-B landing L1: past-only speed input N2 (+ 8-step encoding) with the future-max sidecar refused",
+    "line_diff_to_variant": 16
+   },
+   "line_diff_tip_to_variant": 16,
+   "hunks": {
+    "DEL-MISSING": 2
+   },
+   "variant_blob_in_any_history": false
+  },
+  {
+   "i": 18,
+   "variant": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/code/fix_P7/stack/tanitad/refs/refc.py",
+   "target": "stack/tanitad/refs/refc.py",
+   "verdict": "SUPERSEDED",
+   "evidence": "fix_P7 is the P7 stage (E mtime 2026-10-04 22:35-22:39) that preceded the combined WP-B landings L1 badb582 (23:51) and L2 a5c2a9b (2026-10-05); every hunk of diff(L1 -> variant) either DELETES lines the tip still has (v9-cons, enc8, emit_live, pose-sync) or is an older form of a line the tip carries in newer form.",
+   "variant_blob": "56751ed3255e5b59f2cc5017ad01fcc6da6b4024",
+   "tip_blob": "296ae0f0db8184b7f5c8c0e415edcfec26526932",
+   "tip_blob_at": "363a24ff",
+   "closest_history_base": {
+    "commit": "badb5821",
+    "date": "2026-10-04 23:51",
+    "subj": "+0200 refcv8 WP-B landing L1: past-only speed input N2 (+ 8-step encoding) with the future-max sidecar refused",
+    "line_diff_to_variant": 8
+   },
+   "line_diff_tip_to_variant": 96,
+   "hunks": {
+    "DEL-APPLIED": 1,
+    "MISSING": 2
+   },
+   "variant_blob_in_any_history": false
+  },
+  {
+   "i": 19,
+   "variant": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/code/fix_P7/stack/tanitad/refs/refc_v3.py",
+   "target": "stack/tanitad/refs/refc_v3.py",
+   "verdict": "SUPERSEDED",
+   "evidence": "the X3 past-only ceiling lines are on the tip at refc_v3.py:1930-1943 in a later form (condition widened to 'also a speed-only arm (V0)', enc8 branch added).",
+   "variant_blob": "0eb070ef5e149a44e3cad4e2162e0161f3a20152",
+   "tip_blob": "68ff839c6aa47ec18a65d5da97c03a1659663511",
+   "tip_blob_at": "363a24ff",
+   "closest_history_base": {
+    "commit": "c39798d7",
+    "date": "2026-10-04 18:21",
+    "subj": "+0200 refcv8 WP-B lands in the trainer: tactical-conditioned fan generation + factorised/listwise selection, t",
+    "line_diff_to_variant": 7
+   },
+   "line_diff_tip_to_variant": 55,
+   "hunks": {
+    "ADD-MISSING": 1
+   },
+   "variant_blob_in_any_history": false
+  },
+  {
+   "i": 20,
+   "variant": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/code/fix_P7/stack/tanitad/refs/refcv8_conditioning.py",
+   "target": "stack/tanitad/refs/refcv8_conditioning.py",
+   "verdict": "APPLIED",
+   "evidence": "1/1 hunk of diff(c39798d -> variant) is on the tip.",
+   "variant_blob": "f97c24ab5eb107b0b9507a5d0828bdecce8ede00",
+   "tip_blob": "316b467be36e323b28a6c068e481b2813e17ed17",
+   "tip_blob_at": "363a24ff",
+   "closest_history_base": {
+    "commit": "c39798d7",
+    "date": "2026-10-04 18:21",
+    "subj": "+0200 refcv8 WP-B lands in the trainer: tactical-conditioned fan generation + factorised/listwise selection, t",
+    "line_diff_to_variant": 4
+   },
+   "line_diff_tip_to_variant": 295,
+   "hunks": {
+    "APPLIED": 1
+   },
+   "variant_blob_in_any_history": false
+  },
+  {
+   "i": 21,
+   "variant": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/code/fix_P7/stack/tanitad/train/refcv8_train.py",
+   "target": "stack/tanitad/train/refcv8_train.py",
+   "verdict": "SUPERSEDED",
+   "evidence": "fix_P7 is the P7 stage (E mtime 2026-10-04 22:35-22:39) that preceded the combined WP-B landings L1 badb582 (23:51) and L2 a5c2a9b (2026-10-05); every hunk of diff(L1 -> variant) either DELETES lines the tip still has (v9-cons, enc8, emit_live, pose-sync) or is an older form of a line the tip carries in newer form.",
+   "variant_blob": "b45d2cbaf2e75ccd5457bdffce854fd0ff2085b2",
+   "tip_blob": "a95745a19ffece2aa47050100ea9867f4506e5d0",
+   "tip_blob_at": "363a24ff",
+   "closest_history_base": {
+    "commit": "badb5821",
+    "date": "2026-10-04 23:51",
+    "subj": "+0200 refcv8 WP-B landing L1: past-only speed input N2 (+ 8-step encoding) with the future-max sidecar refused",
+    "line_diff_to_variant": 156
+   },
+   "line_diff_tip_to_variant": 380,
+   "hunks": {
+    "CHANGED": 2,
+    "MISSING": 5,
+    "DEL-APPLIED": 3,
+    "DEL-MISSING": 2
+   },
+   "variant_blob_in_any_history": false
+  },
+  {
+   "i": 22,
+   "variant": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/code/fix_P7/stack/tests/test_declared_vs_built.py",
+   "target": "stack/tests/test_declared_vs_built.py",
+   "verdict": "SUPERSEDED",
+   "evidence": "fix_P7 is the P7 stage (E mtime 2026-10-04 22:35-22:39) that preceded the combined WP-B landings L1 badb582 (23:51) and L2 a5c2a9b (2026-10-05); every hunk of diff(L1 -> variant) either DELETES lines the tip still has (v9-cons, enc8, emit_live, pose-sync) or is an older form of a line the tip carries in newer form.",
+   "variant_blob": "88fbb313757700795e7e6d5bfba3739fad4bc4ff",
+   "tip_blob": "4dc1be8e0ec66ff1efd889497cd2fc1157f77f9a",
+   "tip_blob_at": "363a24ff",
+   "closest_history_base": {
+    "commit": "a5c2a9b3",
+    "date": "2026-10-05 00:18",
+    "subj": "+0200 refcv8 WP-B landing L2: the drivable sub-score critic (opt-in, zero-init, step 0 bit-identical) -- train",
+    "line_diff_to_variant": 12
+   },
+   "line_diff_tip_to_variant": 22,
+   "hunks": {
+    "CHANGED": 1
+   },
+   "variant_blob_in_any_history": false
+  },
+  {
+   "i": 23,
+   "variant": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/code/fix_P7/stack/tests/test_refcv8_speed_input.py",
+   "target": "stack/tests/test_refcv8_speed_input.py",
+   "verdict": "SUPERSEDED",
+   "evidence": "fix_P7 is the P7 stage (E mtime 2026-10-04 22:35-22:39) that preceded the combined WP-B landings L1 badb582 (23:51) and L2 a5c2a9b (2026-10-05); every hunk of diff(L1 -> variant) either DELETES lines the tip still has (v9-cons, enc8, emit_live, pose-sync) or is an older form of a line the tip carries in newer form.",
+   "variant_blob": "dc66a018baacd2e352f57e373b6dad19dddab554",
+   "tip_blob": "ca63993386ae49c88552ca9292ce4d600dbab8bc",
+   "tip_blob_at": "363a24ff",
+   "closest_history_base": {
+    "commit": "badb5821",
+    "date": "2026-10-04 23:51",
+    "subj": "+0200 refcv8 WP-B landing L1: past-only speed input N2 (+ 8-step encoding) with the future-max sidecar refused",
+    "line_diff_to_variant": 4
+   },
+   "line_diff_tip_to_variant": 147,
+   "hunks": {
+    "DEL-MISSING": 1
+   },
+   "variant_blob_in_any_history": false
+  },
+  {
+   "i": 24,
+   "variant": "products/P4-training-pipelines/2026-09-27-v7f-refav1-state/v7f_r1r4/code/fix/stack/scripts/train_v6_staged.py",
+   "target": "stack/scripts/train_v6_staged.py",
+   "verdict": "MISSING",
+   "evidence": "v7F R1/R3/R4 stream copy; SUPERSEDED BY the unlanded v7f_merge change set (itself NOT in stack/). The tip's train_v6_staged.py/v6.py are byte-unchanged since 2026-09-06 (3886f7b / 982476c): every hunk is absent from the tip.",
+   "variant_blob": "79b17cf8996d253f8f7713c85c6d7ada4226f580",
+   "tip_blob": "91b675a7d8ba409c687e9f7dbddd40a2d763813f",
+   "tip_blob_at": "363a24ff",
+   "closest_history_base": {
+    "commit": "3886f7b4",
+    "date": "2026-09-06 20:38",
+    "subj": "+0200 A refusal that cannot be printed has refused nothing, and one false alarm removed",
+    "line_diff_to_variant": 387
+   },
+   "line_diff_tip_to_variant": 387,
+   "hunks": {
+    "ADD-MISSING": 14,
+    "MISSING": 3
+   },
+   "variant_blob_in_any_history": false,
+   "what_it_fixes": "R1 (--max-speed-input-v6 / --plan-vmax-cap) + R4 (--tac-op-cond: the tactical BEHAVIOURS a_lat x a_lon reach the operative plan; MEASURED swap moves plan by exactly 0.0) - package v7f_r1r4/RESULT.md"
+  },
+  {
+   "i": 25,
+   "variant": "products/P4-training-pipelines/2026-09-27-v7f-refav1-state/v7f_r1r4/code/fix/stack/tanitad/models/v6.py",
+   "target": "stack/tanitad/models/v6.py",
+   "verdict": "MISSING",
+   "evidence": "v7F R1/R3/R4 stream copy; SUPERSEDED BY the unlanded v7f_merge change set (itself NOT in stack/). The tip's train_v6_staged.py/v6.py are byte-unchanged since 2026-09-06 (3886f7b / 982476c): every hunk is absent from the tip.",
+   "variant_blob": "5e75f49b3244fbba0ec4075d45d028e3f2877ff6",
+   "tip_blob": "3d6e2235801186e9807cacf812623fb6d21fa516",
+   "tip_blob_at": "363a24ff",
+   "closest_history_base": {
+    "commit": "982476c9",
+    "date": "2026-09-06 14:39",
+    "subj": "+0200 M88: the O5 EMA teacher NEVER TOOK A STEP -- the un-freeze is a BUDGET defect, not an algorithmic one",
+    "line_diff_to_variant": 212
+   },
+   "line_diff_tip_to_variant": 212,
+   "hunks": {
+    "ADD-MISSING": 16,
+    "MISSING": 3
+   },
+   "variant_blob_in_any_history": false,
+   "what_it_fixes": "same stream: v6.py model side of R1/R4"
+  },
+  {
+   "i": 26,
+   "variant": "products/P4-training-pipelines/2026-09-27-v7f-refav1-state/v7f_r1r4/code/fix/stack/tanitad/train/declared_vs_built_v6.py",
+   "target": "stack/tanitad/train/declared_vs_built_v6.py",
+   "verdict": "MISSING",
+   "evidence": "v7F R1/R3/R4 stream copy; SUPERSEDED BY the unlanded v7f_merge change set (itself NOT in stack/). The tip's train_v6_staged.py/v6.py are byte-unchanged since 2026-09-06 (3886f7b / 982476c): every hunk is absent from the tip.",
+   "variant_blob": "a7cb9552d04c5839b542227d8089ea490515e8bd",
+   "tip_blob": null,
+   "tip_blob_at": "363a24ff",
+   "closest_history_base": {
+    "commit": "",
+    "date": "",
+    "subj": "",
+    "line_diff_to_variant": null
+   },
+   "line_diff_tip_to_variant": null,
+   "hunks": {},
+   "variant_blob_in_any_history": false,
+   "what_it_fixes": "same stream: NEW declared-vs-built registry for the v6 trainer (new file; incompatible reader signature with the R3 file of the same name)"
+  },
+  {
+   "i": 27,
+   "variant": "products/P4-training-pipelines/2026-09-27-v7f-refav1-state/v7f_r3/code/fix/stack/scripts/train_v6_staged.py",
+   "target": "stack/scripts/train_v6_staged.py",
+   "verdict": "MISSING",
+   "evidence": "v7F R1/R3/R4 stream copy; SUPERSEDED BY the unlanded v7f_merge change set (itself NOT in stack/). The tip's train_v6_staged.py/v6.py are byte-unchanged since 2026-09-06 (3886f7b / 982476c): every hunk is absent from the tip.",
+   "variant_blob": "2f4c855c7f9fdad2b27154ebd55df02ff336ba53",
+   "tip_blob": "91b675a7d8ba409c687e9f7dbddd40a2d763813f",
+   "tip_blob_at": "363a24ff",
+   "closest_history_base": {
+    "commit": "3886f7b4",
+    "date": "2026-09-06 20:38",
+    "subj": "+0200 A refusal that cannot be printed has refused nothing, and one false alarm removed",
+    "line_diff_to_variant": 718
+   },
+   "line_diff_tip_to_variant": 718,
+   "hunks": {
+    "ADD-MISSING": 23,
+    "MISSING": 7
+   },
+   "variant_blob_in_any_history": false,
+   "what_it_fixes": "R3 (PI binding): all tactical labels reach the tactical loss - at the tip NO tactical label family reaches ANY v7F loss, traffic-light colours included (D-TLIGHT-1 for v7F) - package v7f_r3/RESULT.md"
+  },
+  {
+   "i": 28,
+   "variant": "products/P4-training-pipelines/2026-09-27-v7f-refav1-state/v7f_r3/code/fix/stack/tanitad/train/declared_vs_built_v6.py",
+   "target": "stack/tanitad/train/declared_vs_built_v6.py",
+   "verdict": "MISSING",
+   "evidence": "v7F R1/R3/R4 stream copy; SUPERSEDED BY the unlanded v7f_merge change set (itself NOT in stack/). The tip's train_v6_staged.py/v6.py are byte-unchanged since 2026-09-06 (3886f7b / 982476c): every hunk is absent from the tip.",
+   "variant_blob": "65762332a3f3f2712786eb816b318b945bfe0122",
+   "tip_blob": null,
+   "tip_blob_at": "363a24ff",
+   "closest_history_base": {
+    "commit": "",
+    "date": "",
+    "subj": "",
+    "line_diff_to_variant": null
+   },
+   "line_diff_tip_to_variant": null,
+   "hunks": {},
+   "variant_blob_in_any_history": false,
+   "what_it_fixes": "same stream: NEW declared-vs-built registry (v7f_merge holds the UNION of the two)"
+  }
+ ],
+ "B": [
+  {
+   "i": 0,
+   "path": ".claude/settings.local.json",
+   "audit_verdict": "MACHINE-LOCAL (do not land)",
+   "mtime_hint": "E NEWER than tip last change",
+   "verdict": "N/A",
+   "evidence": "MACHINE-LOCAL permission file (3 lines); never landed.",
+   "e_blob": "be1931f8072fcb9a8dee8d4874bada1ec71804cd",
+   "tip_blob": "5695ecb27bb5520c9682ff189b3ec078ccf44570",
+   "tip_last_commit": "8800d679",
+   "tip_last_date": "2026-08-03 08:05",
+   "e_only_nonblank_lines": 3,
+   "tip_only_lines": 0,
+   "hunks": {
+    "ADD-MISSING": 1
+   },
+   "e_only_lines_found_elsewhere_on_tip": null
+  },
+  {
+   "i": 1,
+   "path": "FlyWheels/TanitAD_DataFlyWheel/incoming/2026-10-04-v9-labels/COMMS.md",
+   "audit_verdict": "LIKELY-STALE (E is a strict line-subset of the tip: tip only",
+   "mtime_hint": "E OLDER than tip last change",
+   "verdict": "SUPERSEDED",
+   "evidence": "E is a strict line-subset of the tip (tip only adds 24 lines).",
+   "e_blob": "8905b4012647c4e4d8e81d5182baa032300d94f7",
+   "tip_blob": "a766c46bd4839415f05dcbb189dc13c06033cf71",
+   "tip_last_commit": "c367e7b3",
+   "tip_last_date": "2026-10-04 16:18",
+   "e_only_nonblank_lines": 0,
+   "tip_only_lines": 24,
+   "hunks": {
+    "DEL-APPLIED": 1
+   },
+   "e_only_lines_found_elsewhere_on_tip": 0
+  },
+  {
+   "i": 2,
+   "path": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navhard-download/raw/navhard_reference_chain.log",
+   "audit_verdict": "NEW-DRAFT-vs-TIP (no E-HEAD base; E has lines the tip lacks)",
+   "mtime_hint": "E OLDER than tip last change",
+   "verdict": "SUPERSEDED",
+   "evidence": "E is an older raw-output draft (E mtime precedes the tip's landing commit); the tip holds the later value.",
+   "e_blob": "424a37867beaad6e1b15a878b9fbb2abc3fb8f5f",
+   "tip_blob": "4858e490c25d152356c894468f0e6d6d95c454e6",
+   "tip_last_commit": "3b02a411",
+   "tip_last_date": "2026-09-20 03:23",
+   "e_only_nonblank_lines": 4,
+   "tip_only_lines": 0,
+   "hunks": {
+    "ADD-MISSING": 1
+   },
+   "e_only_lines_found_elsewhere_on_tip": null
+  },
+  {
+   "i": 3,
+   "path": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-refcv4b-bridge/raw/K7_packer_vs_trainer.json",
+   "audit_verdict": "NEW-DRAFT-vs-TIP (no E-HEAD base; E has lines the tip lacks)",
+   "mtime_hint": "E OLDER than tip last change",
+   "verdict": "SUPERSEDED",
+   "evidence": "E is an older raw-output draft (E mtime precedes the tip's landing commit); the tip holds the later value.",
+   "e_blob": "98578113f586ed0327e98a78085dce61cb1daa83",
+   "tip_blob": "70a24a0c614bb036c5a06dd23d8bf80475d82295",
+   "tip_last_commit": "3b02a411",
+   "tip_last_date": "2026-09-20 03:23",
+   "e_only_nonblank_lines": 6,
+   "tip_only_lines": 6,
+   "hunks": {
+    "MISSING": 6
+   },
+   "e_only_lines_found_elsewhere_on_tip": null
+  },
+  {
+   "i": 4,
+   "path": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-warmup-reference-epdms/raw/navhard/mirror/data_mirror_verify_navhard_logs.json",
+   "audit_verdict": "NEW-DRAFT-vs-TIP (no E-HEAD base; E has lines the tip lacks)",
+   "mtime_hint": "E OLDER than tip last change",
+   "verdict": "SUPERSEDED",
+   "evidence": "E is an older raw-output draft (E mtime precedes the tip's landing commit); the tip holds the later value.",
+   "e_blob": "3831a7931658dac9ec2128ca245ccea3be4ee7cc",
+   "tip_blob": "fe6ca3320fd0d7382ed07267369ea5076b403e9a",
+   "tip_last_commit": "3b02a411",
+   "tip_last_date": "2026-09-20 03:23",
+   "e_only_nonblank_lines": 1,
+   "tip_only_lines": 1,
+   "hunks": {
+    "MISSING": 1
+   },
+   "e_only_lines_found_elsewhere_on_tip": null
+  },
+  {
+   "i": 5,
+   "path": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-20-navhard-stage1-extract/raw/receipts/shard_6.json",
+   "audit_verdict": "NEW-DRAFT-vs-TIP (no E-HEAD base; E has lines the tip lacks)",
+   "mtime_hint": "E OLDER than tip last change",
+   "verdict": "SUPERSEDED",
+   "evidence": "E is an older raw-output draft (E mtime precedes the tip's landing commit); the tip holds the later value.",
+   "e_blob": "622dddb4e72d3aae456ad64b43438768b5fb94f2",
+   "tip_blob": "ae1a631a57f9dd077e3373b58c8ed3edfc95804d",
+   "tip_last_commit": "da27b381",
+   "tip_last_date": "2026-09-26 10:08",
+   "e_only_nonblank_lines": 3,
+   "tip_only_lines": 3,
+   "hunks": {
+    "MISSING": 2
+   },
+   "e_only_lines_found_elsewhere_on_tip": null
+  },
+  {
+   "i": 6,
+   "path": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/battery/SPEC.md",
+   "audit_verdict": "NEW-DRAFT-vs-TIP (no E-HEAD base; E has lines the tip lacks)",
+   "mtime_hint": "E NEWER than tip last change",
+   "verdict": "MISSING",
+   "evidence": "doc: AMENDMENT A6 (pre-registered 2026-09-26 ~14:40, 'written BEFORE any A6 number existed') - tip's last change is 14:17; 29 of 29 long E-only lines absent from the whole tip. Pre-registration chronology risk: land from E with its timestamp.",
+   "e_blob": "33e5056af15d07029875fe86e3120c664b2b618a",
+   "tip_blob": "584ca320f8d3c1a8bb3326660ebb70c927aaea6d",
+   "tip_last_commit": "51a44430",
+   "tip_last_date": "2026-09-26 14:17",
+   "e_only_nonblank_lines": 33,
+   "tip_only_lines": 0,
+   "hunks": {
+    "ADD-MISSING": 1
+   },
+   "e_only_lines_found_elsewhere_on_tip": 0
+  },
+  {
+   "i": 7,
+   "path": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-navtest-single-stage/RESULT.md",
+   "audit_verdict": "NEW-DRAFT-vs-TIP (no E-HEAD base; E has lines the tip lacks)",
+   "mtime_hint": "E NEWER than tip last change",
+   "verdict": "MISSING",
+   "evidence": "doc: 'E1 RESOLVED 2026-09-26' paragraph (+5) absent from the tip.",
+   "e_blob": "df549cb2cd3e818565e1ce3d9b47f935a9beeeae",
+   "tip_blob": "33937220354c08f4696424e0005269ea36d77933",
+   "tip_last_commit": "da8400b7",
+   "tip_last_date": "2026-09-26 21:36",
+   "e_only_nonblank_lines": 5,
+   "tip_only_lines": 0,
+   "hunks": {
+    "ADD-MISSING": 1
+   },
+   "e_only_lines_found_elsewhere_on_tip": 0
+  },
+  {
+   "i": 8,
+   "path": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-suite-runnability-audit/LANDING_READY.txt",
+   "audit_verdict": "NEW-DRAFT-vs-TIP (no E-HEAD base; E has lines the tip lacks)",
+   "mtime_hint": "E NEWER than tip last change",
+   "verdict": "MISSING",
+   "evidence": "manifest additions (+43) describing the leaderboard fix; entries partly pending in the chunked landing.",
+   "e_blob": "0d70311c942da0826cede3347bc8ab4b7141b1db",
+   "tip_blob": "abf3d2cd8ac369d851ec16dbac2b2f0a5cb5a3b9",
+   "tip_last_commit": "da8400b7",
+   "tip_last_date": "2026-09-26 21:36",
+   "e_only_nonblank_lines": 43,
+   "tip_only_lines": 0,
+   "hunks": {
+    "ADD-MISSING": 1
+   },
+   "e_only_lines_found_elsewhere_on_tip": 8
+  },
+  {
+   "i": 9,
+   "path": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-suite-runnability-audit/RESULT.md",
+   "audit_verdict": "NEW-DRAFT-vs-TIP (no E-HEAD base; E has lines the tip lacks)",
+   "mtime_hint": "E NEWER than tip last change",
+   "verdict": "MISSING",
+   "evidence": "doc: RESULT section 25 'the leaderboard READ runs it never SHOWED, would have re-published four withdrawn runs, and could silently undo a retraction' (+98) - the write-up of the leaderboard code fix below.",
+   "e_blob": "2590c267f0765ffcd12938402afc4000419c9177",
+   "tip_blob": "a09ddf2be5a8dc05e4c761a99315b9206b26bd47",
+   "tip_last_commit": "da8400b7",
+   "tip_last_date": "2026-09-26 21:36",
+   "e_only_nonblank_lines": 98,
+   "tip_only_lines": 0,
+   "hunks": {
+    "ADD-MISSING": 1
+   },
+   "e_only_lines_found_elsewhere_on_tip": 0
+  },
+  {
+   "i": 10,
+   "path": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/battery/LANDING_READY.txt",
+   "audit_verdict": "NEW-DRAFT-vs-TIP (no E-HEAD base; E has lines the tip lacks)",
+   "mtime_hint": "E NEWER than tip last change",
+   "verdict": "MISSING",
+   "evidence": "manifest additions (+18).",
+   "e_blob": "97b0a04bc2674bc758b9927b3017479bafcc8175",
+   "tip_blob": "3ea6148c508fdf43bee1212f34b17300dda11bb6",
+   "tip_last_commit": "a9b981dd",
+   "tip_last_date": "2026-10-04 08:34",
+   "e_only_nonblank_lines": 18,
+   "tip_only_lines": 0,
+   "hunks": {
+    "ADD-MISSING": 1
+   },
+   "e_only_lines_found_elsewhere_on_tip": 2
+  },
+  {
+   "i": 11,
+   "path": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/controls/KD_exact_dedup_cuda.json",
+   "audit_verdict": "NEW-DRAFT-vs-TIP (no E-HEAD base; E has lines the tip lacks)",
+   "mtime_hint": "E NEWER than tip last change",
+   "verdict": "MISSING",
+   "evidence": "raw JSON: 2 value lines differ (max_abs_traj_diff_m, ckpt path); E newer by 7 days. UNVERIFIED which run is canonical.",
+   "e_blob": "87cd4d8d3c4e8191b38a12b705fdb24dc7260dc6",
+   "tip_blob": "d89b429bf070b0eb0e643d52447a7422ab1a9b83",
+   "tip_last_commit": "fd73a287",
+   "tip_last_date": "2026-09-28 13:48",
+   "e_only_nonblank_lines": 2,
+   "tip_only_lines": 2,
+   "hunks": {
+    "MISSING": 2
+   },
+   "e_only_lines_found_elsewhere_on_tip": null
+  },
+  {
+   "i": 12,
+   "path": "Project Steering/BACKLOG.md",
+   "audit_verdict": "CONFLICT (tip and E both moved off the E-HEAD base)",
+   "mtime_hint": "E OLDER than tip last change",
+   "verdict": "REGISTER",
+   "evidence": "report only. 2 E-only lines (row E10); lead ID is on the tip.",
+   "e_blob": "49ac5c8a05a559786d94341d963e92b1ef5884d4",
+   "tip_blob": "8406d6b19bc7616a241753cf51897e0ac3266b67",
+   "tip_last_commit": "363a24ff",
+   "tip_last_date": "2026-10-18 12:01",
+   "e_only_nonblank_lines": 2,
+   "tip_only_lines": 199,
+   "hunks": {
+    "ADD-MISSING": 1
+   },
+   "e_only_lines_found_elsewhere_on_tip": null
+  },
+  {
+   "i": 13,
+   "path": "Project Steering/GOALS_AND_CLAIMS.md",
+   "audit_verdict": "CONFLICT (tip and E both moved off the E-HEAD base)",
+   "mtime_hint": "E OLDER than tip last change",
+   "verdict": "REGISTER",
+   "evidence": "report only. 23 E-only lines; all 15 lead-IDs found are on the tip (rows exist; E carries in-row wording).",
+   "e_blob": "d087c921bf4fba61c13202440d142e9145f17dd0",
+   "tip_blob": "a89fc2e5df99e573ffe24444de3e38e16f050117",
+   "tip_last_commit": "090bed67",
+   "tip_last_date": "2026-10-18 11:38",
+   "e_only_nonblank_lines": 23,
+   "tip_only_lines": 4530,
+   "hunks": {
+    "MISSING": 20,
+    "APPLIED": 1,
+    "BOTH-PRESENT": 2,
+    "ADD-MISSING": 1
+   },
+   "e_only_lines_found_elsewhere_on_tip": null
+  },
+  {
+   "i": 14,
+   "path": "Project Steering/MODEL_REGISTRY.md",
+   "audit_verdict": "CONFLICT (tip and E both moved off the E-HEAD base)  [E-only",
+   "mtime_hint": "E OLDER than tip last change",
+   "verdict": "REGISTER",
+   "evidence": "report only. 10 E-only lines (flagged public_ip/port: not exported); lead IDs on the tip.",
+   "e_blob": "f47911d5b3e882dc56380b71bbfd5cf037cd0e43",
+   "tip_blob": "6cf109fba92a2c0b5d34a3d61fc6eae6611eb6fb",
+   "tip_last_commit": "5448a05c",
+   "tip_last_date": "2026-10-18 08:22",
+   "e_only_nonblank_lines": 10,
+   "tip_only_lines": 477,
+   "hunks": {
+    "MISSING": 2,
+    "CHANGED": 1,
+    "DEL-MISSING": 2
+   },
+   "e_only_lines_found_elsewhere_on_tip": null
+  },
+  {
+   "i": 15,
+   "path": "Project Steering/PI_DECISION_QUEUE.md",
+   "audit_verdict": "LIKELY-STALE (E is a strict line-subset of the tip: tip only",
+   "mtime_hint": "E OLDER than tip last change",
+   "verdict": "REGISTER",
+   "evidence": "report only. E is a strict subset of the tip (0 E-only lines).",
+   "e_blob": "18b0224f16f8e471860290526addbebc7dab371f",
+   "tip_blob": "41f7086990cba9fa1d5865282e6437d678a75f71",
+   "tip_last_commit": "090bed67",
+   "tip_last_date": "2026-10-18 11:38",
+   "e_only_nonblank_lines": 0,
+   "tip_only_lines": 579,
+   "hunks": {
+    "ADD-MISSING": 1
+   },
+   "e_only_lines_found_elsewhere_on_tip": null
+  },
+  {
+   "i": 16,
+   "path": "Project Steering/RETRACTION_LOG.md",
+   "audit_verdict": "CONFLICT (tip and E both moved off the E-HEAD base)  [E-only",
+   "mtime_hint": "E OLDER than tip last change",
+   "verdict": "REGISTER",
+   "evidence": "report only. 3 E-only lines (flagged: not exported); lead ID on the tip.",
+   "e_blob": "150f06b348d8e70e3b6af2b7172e7b66f0bdec81",
+   "tip_blob": "949f98ed6fb0f1ff31cd8fe6b45f10f8e78cba11",
+   "tip_last_commit": "d6a4ce9a",
+   "tip_last_date": "2026-10-18 07:55",
+   "e_only_nonblank_lines": 3,
+   "tip_only_lines": 1248,
+   "hunks": {
+    "DEL-APPLIED": 1,
+    "ADD-MISSING": 1
+   },
+   "e_only_lines_found_elsewhere_on_tip": null
+  },
+  {
+   "i": 17,
+   "path": "Project Steering/SPEC_REFCV8_DRAFT.md",
+   "audit_verdict": "NEW-DRAFT-vs-TIP (no E-HEAD base; E has lines the tip lacks)",
+   "mtime_hint": "E OLDER than tip last change",
+   "verdict": "SUPERSEDED",
+   "evidence": "E is the 2026-10-04 draft; the tip rewrote the file through d014ff2 (2026-10-12); 763 tip-only lines.",
+   "e_blob": "265f26b8dfef2195b04aeef982ddb3236f5ee37d",
+   "tip_blob": "e87d041b9fd19bfb857aefdcd7e7bda5b82b4826",
+   "tip_last_commit": "d014ff2f",
+   "tip_last_date": "2026-10-12 01:57",
+   "e_only_nonblank_lines": 196,
+   "tip_only_lines": 763,
+   "hunks": {
+    "ADD-MISSING": 1
+   },
+   "e_only_lines_found_elsewhere_on_tip": 20
+  },
+  {
+   "i": 18,
+   "path": "Project Steering/TANITAD_PROGRAMME.md",
+   "audit_verdict": "REAL-LOCAL-EDIT (tip unchanged since E-HEAD base; E has unco",
+   "mtime_hint": "E NEWER than tip last change",
+   "verdict": "MISSING",
+   "evidence": "constitution file, 9 lines: Colab Pro capacity policy (PI 2026-09-27). Tip unchanged since 2026-08-23. Master-Mind-owned - land only by the Master Mind.",
+   "e_blob": "cd2d038faecd39fd220e06809a2a2ff564ddbb2e",
+   "tip_blob": "93fc153648187ead02bc761a2d6ddd24d9fe2f2e",
+   "tip_last_commit": "0e53d7eb",
+   "tip_last_date": "2026-08-23 14:26",
+   "e_only_nonblank_lines": 9,
+   "tip_only_lines": 0,
+   "hunks": {
+    "ADD-MISSING": 1
+   },
+   "e_only_lines_found_elsewhere_on_tip": 0
+  },
+  {
+   "i": 19,
+   "path": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-19-a7-imagenet-knockout/RESULT.md",
+   "audit_verdict": "NEW-DRAFT-vs-TIP (no E-HEAD base; E has lines the tip lacks)",
+   "mtime_hint": "E NEWER than tip last change",
+   "verdict": "MISSING",
+   "evidence": "doc: status banner 'PAUSED - NO DATA YET' (+9).",
+   "e_blob": "a588c3f9b15f4bedc032e53b45b3377ce9a208d3",
+   "tip_blob": "1ca08fc029c10fc58847543d9f2fb6800444e609",
+   "tip_last_commit": "d5d9bfca",
+   "tip_last_date": "2026-09-19 11:59",
+   "e_only_nonblank_lines": 9,
+   "tip_only_lines": 3,
+   "hunks": {
+    "MISSING": 1
+   },
+   "e_only_lines_found_elsewhere_on_tip": 0
+  },
+  {
+   "i": 20,
+   "path": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-19-s1-collision-gate/RESULT.md",
+   "audit_verdict": "NEW-DRAFT-vs-TIP (no E-HEAD base; E has lines the tip lacks)",
+   "mtime_hint": "E NEWER than tip last change",
+   "verdict": "MISSING",
+   "evidence": "doc: status banner 'DONE - verdict landed 2026-09-20' (+8).",
+   "e_blob": "6e45101a21bf569c5761900a01a3df3c4fc892a2",
+   "tip_blob": "c8cc08a9bd70edd3fb63770dfd221468047e83bb",
+   "tip_last_commit": "1ee1c24d",
+   "tip_last_date": "2026-09-26 11:40",
+   "e_only_nonblank_lines": 8,
+   "tip_only_lines": 3,
+   "hunks": {
+    "MISSING": 1
+   },
+   "e_only_lines_found_elsewhere_on_tip": 0
+  },
+  {
+   "i": 21,
+   "path": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-19-s1-collision-gate/raw/mutation_proof_p_runner.json",
+   "audit_verdict": "NEW-DRAFT-vs-TIP (no E-HEAD base; E has lines the tip lacks)",
+   "mtime_hint": "E NEWER than tip last change",
+   "verdict": "MISSING",
+   "evidence": "raw: a re-run of the P-runner mutation proof written 1h40 after the landing (n_passed 32/25/32/32/30 recorded).",
+   "e_blob": "f9a726d89d014919fcb0419d65e41596f27bceb6",
+   "tip_blob": "17dc396bb3b051ca93e643c3b283049eaab5efc1",
+   "tip_last_commit": "f1bb51f1",
+   "tip_last_date": "2026-09-20 10:45",
+   "e_only_nonblank_lines": 43,
+   "tip_only_lines": 27,
+   "hunks": {
+    "MISSING": 15,
+    "ADD-MISSING": 1
+   },
+   "e_only_lines_found_elsewhere_on_tip": null
+  },
+  {
+   "i": 22,
+   "path": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/PREREG_AUX_DRIVABLE_S1.md",
+   "audit_verdict": "NEW-DRAFT-vs-TIP (no E-HEAD base; E has lines the tip lacks)",
+   "mtime_hint": "E OLDER than tip last change",
+   "verdict": "SUPERSEDED",
+   "evidence": "E (2026-10-15 06:29) predates the tip's rewrite 421ffc3 (10-15 18:12).",
+   "e_blob": "a412ca1acaa27e663dd706d0710777e20ec4c2f6",
+   "tip_blob": "bd8ea26f17aea6d2f956a40f9dd628994e23a273",
+   "tip_last_commit": "421ffc30",
+   "tip_last_date": "2026-10-15 18:12",
+   "e_only_nonblank_lines": 1,
+   "tip_only_lines": 143,
+   "hunks": {
+    "DEL-MISSING": 2,
+    "MISSING": 1
+   },
+   "e_only_lines_found_elsewhere_on_tip": 0
+  },
+  {
+   "i": 23,
+   "path": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/S1_POD_RUNBOOK.md",
+   "audit_verdict": "NEW-DRAFT-vs-TIP (no E-HEAD base; E has lines the tip lacks)",
+   "mtime_hint": "E OLDER than tip last change",
+   "verdict": "SUPERSEDED",
+   "evidence": "1-line difference; tip d257647 is later.",
+   "e_blob": "a4da1304e60ce073dbd72ed1bbb847a814de3cbe",
+   "tip_blob": "afa890e702eae042a7db884cb31975cde0176501",
+   "tip_last_commit": "d257647b",
+   "tip_last_date": "2026-10-15 06:55",
+   "e_only_nonblank_lines": 1,
+   "tip_only_lines": 1,
+   "hunks": {
+    "ADD-MISSING": 1
+   },
+   "e_only_lines_found_elsewhere_on_tip": 0
+  },
+  {
+   "i": 24,
+   "path": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/scorer_finetune.py",
+   "audit_verdict": "NEW-DRAFT-vs-TIP (no E-HEAD base; E has lines the tip lacks)",
+   "mtime_hint": "E OLDER than tip last change",
+   "verdict": "SUPERSEDED",
+   "evidence": "refe/ P6-lineage code: E (2026-10-15 06:xx) predates the tip's later commits (c2d4042 10-18 09:11 / c968f99 / e2d4422); tip-only lines 363/10/7. LIVE file family, but the tip is the newer.",
+   "e_blob": "5b48b88b103c279ea62238be196b8d6122883ba6",
+   "tip_blob": "869b186293150dc6c07253391aeed9f84738225f",
+   "tip_last_commit": "c2d4042a",
+   "tip_last_date": "2026-10-18 09:11",
+   "e_only_nonblank_lines": 11,
+   "tip_only_lines": 363,
+   "hunks": {
+    "MISSING": 4
+   },
+   "e_only_lines_found_elsewhere_on_tip": 6
+  },
+  {
+   "i": 25,
+   "path": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_aux_g12_bf16.py",
+   "audit_verdict": "NEW-DRAFT-vs-TIP (no E-HEAD base; E has lines the tip lacks)",
+   "mtime_hint": "E OLDER than tip last change",
+   "verdict": "SUPERSEDED",
+   "evidence": "refe/ P6-lineage code: E (2026-10-15 06:xx) predates the tip's later commits (c2d4042 10-18 09:11 / c968f99 / e2d4422); tip-only lines 363/10/7. LIVE file family, but the tip is the newer.",
+   "e_blob": "64545d55e8808e42fd14bbfae9d411fd206659df",
+   "tip_blob": "add99277565fc08221c4df5bfda90f786c6a9f42",
+   "tip_last_commit": "c968f99e",
+   "tip_last_date": "2026-10-18 06:20",
+   "e_only_nonblank_lines": 4,
+   "tip_only_lines": 10,
+   "hunks": {
+    "MISSING": 4
+   },
+   "e_only_lines_found_elsewhere_on_tip": 0
+  },
+  {
+   "i": 26,
+   "path": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_aux_s1_wiring.py",
+   "audit_verdict": "NEW-DRAFT-vs-TIP (no E-HEAD base; E has lines the tip lacks)",
+   "mtime_hint": "E OLDER than tip last change",
+   "verdict": "SUPERSEDED",
+   "evidence": "refe/ P6-lineage code: E (2026-10-15 06:xx) predates the tip's later commits (c2d4042 10-18 09:11 / c968f99 / e2d4422); tip-only lines 363/10/7. LIVE file family, but the tip is the newer.",
+   "e_blob": "0f0fa57f8497e523bdf8273f59f356a4a64d652b",
+   "tip_blob": "4a4cbcd91a25aa75347ee92af8338c295d9b5c6d",
+   "tip_last_commit": "e2d44221",
+   "tip_last_date": "2026-10-17 13:51",
+   "e_only_nonblank_lines": 2,
+   "tip_only_lines": 7,
+   "hunks": {
+    "MISSING": 1
+   },
+   "e_only_lines_found_elsewhere_on_tip": 0
+  },
+  {
+   "i": 27,
+   "path": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md",
+   "audit_verdict": "NEW-DRAFT-vs-TIP (no E-HEAD base; E has lines the tip lacks)",
+   "mtime_hint": "E NEWER than tip last change",
+   "verdict": "MISSING",
+   "evidence": "doc: appended execution log / design table written after the tip's landing 49a0655 / 2081f5d (E-only 23 / 137 / 29 lines; <=1 found elsewhere on tip).",
+   "e_blob": "983f4a312ff63d6ac2bc68ea26b68382aefbdd18",
+   "tip_blob": "0eb442943a8acc4dae1823d8047d8e840f06431e",
+   "tip_last_commit": "49a06550",
+   "tip_last_date": "2026-10-04 14:46",
+   "e_only_nonblank_lines": 23,
+   "tip_only_lines": 0,
+   "hunks": {
+    "ADD-MISSING": 1
+   },
+   "e_only_lines_found_elsewhere_on_tip": 0
+  },
+  {
+   "i": 28,
+   "path": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/RESULT.md",
+   "audit_verdict": "NEW-DRAFT-vs-TIP (no E-HEAD base; E has lines the tip lacks)",
+   "mtime_hint": "E NEWER than tip last change",
+   "verdict": "MISSING",
+   "evidence": "doc: appended execution log / design table written after the tip's landing 49a0655 / 2081f5d (E-only 23 / 137 / 29 lines; <=1 found elsewhere on tip).",
+   "e_blob": "5f69c4a220533012e980b44bd08ba4b11ba24d8a",
+   "tip_blob": "7b262dd21dd08420495867cf071d0038f516e81a",
+   "tip_last_commit": "49a06550",
+   "tip_last_date": "2026-10-04 14:46",
+   "e_only_nonblank_lines": 143,
+   "tip_only_lines": 0,
+   "hunks": {
+    "ADD-MISSING": 1
+   },
+   "e_only_lines_found_elsewhere_on_tip": 1
+  },
+  {
+   "i": 29,
+   "path": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/code/pgrad.py",
+   "audit_verdict": "NEW-DRAFT-vs-TIP (no E-HEAD base; E has lines the tip lacks)",
+   "mtime_hint": "E NEWER than tip last change",
+   "verdict": "MISSING",
+   "evidence": "package-local probe pgrad.py: TF32 OFF (the registered linearity control FAILED with TF32 on: 6.2e-4 vs 1e-4) + the --batch-start/--batch-count PARTS; tip's instrument lacks both. No live chain.",
+   "e_blob": "ae485beef0a366c00be29e77990f41b07c4d4db6",
+   "tip_blob": "064897785a0790c567e5215f41363b9154cce4fd",
+   "tip_last_commit": "49a06550",
+   "tip_last_date": "2026-10-04 14:46",
+   "e_only_nonblank_lines": 42,
+   "tip_only_lines": 4,
+   "hunks": {
+    "ADD-MISSING": 6,
+    "MISSING": 3
+   },
+   "e_only_lines_found_elsewhere_on_tip": 9
+  },
+  {
+   "i": 30,
+   "path": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-r1-head-only/DESIGN.md",
+   "audit_verdict": "NEW-DRAFT-vs-TIP (no E-HEAD base; E has lines the tip lacks)",
+   "mtime_hint": "E NEWER than tip last change",
+   "verdict": "MISSING",
+   "evidence": "doc: appended execution log / design table written after the tip's landing 49a0655 / 2081f5d (E-only 23 / 137 / 29 lines; <=1 found elsewhere on tip).",
+   "e_blob": "484c056fc7ce42bd254288eafbe1c5ab70c1c3c7",
+   "tip_blob": "d6dedcbdb91ced2575a1629a53f0348ca24bc6e4",
+   "tip_last_commit": "2081f5db",
+   "tip_last_date": "2026-10-04 13:17",
+   "e_only_nonblank_lines": 29,
+   "tip_only_lines": 6,
+   "hunks": {
+    "MISSING": 3,
+    "ADD-MISSING": 3
+   },
+   "e_only_lines_found_elsewhere_on_tip": 0
+  },
+  {
+   "i": 31,
+   "path": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/LANDING_READY_WPB.txt",
+   "audit_verdict": "NEW-DRAFT-vs-TIP (no E-HEAD base; E has lines the tip lacks)",
+   "mtime_hint": "E NEWER than tip last change",
+   "verdict": "MISSING",
+   "evidence": "manifest (E 125 entries, +120 lines vs tip); 66 of its listed paths are parse artifacts of the audit (section C).",
+   "e_blob": "a0df9e579e641aa32d39914325276b5541394b20",
+   "tip_blob": "0d3cce9277bc2d02f55da0a1478170799adb77e2",
+   "tip_last_commit": "0efda5fb",
+   "tip_last_date": "2026-10-04 23:56",
+   "e_only_nonblank_lines": 120,
+   "tip_only_lines": 19,
+   "hunks": {
+    "MISSING": 4,
+    "ADD-MISSING": 1
+   },
+   "e_only_lines_found_elsewhere_on_tip": 0
+  },
+  {
+   "i": 32,
+   "path": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/raw/d0_dose_response.json",
+   "audit_verdict": "NEW-DRAFT-vs-TIP (no E-HEAD base; E has lines the tip lacks)",
+   "mtime_hint": "E NEWER than tip last change",
+   "verdict": "MISSING",
+   "evidence": "raw: 1 line (wall_s 50.4).",
+   "e_blob": "570593ba664c6abca44b439bbd62dfd587ec70a2",
+   "tip_blob": "b05c0ec77ab22244bc23e5b0181b4679e25423ee",
+   "tip_last_commit": "2b8216ea",
+   "tip_last_date": "2026-10-04 13:38",
+   "e_only_nonblank_lines": 1,
+   "tip_only_lines": 1,
+   "hunks": {
+    "MISSING": 1
+   },
+   "e_only_lines_found_elsewhere_on_tip": null
+  },
+  {
+   "i": 33,
+   "path": "TanitAD Research Lab/Library/LIBRARY.md",
+   "audit_verdict": "CONFLICT (tip and E both moved off the E-HEAD base)",
+   "mtime_hint": "E OLDER than tip last change",
+   "verdict": "SUPERSEDED",
+   "evidence": "registers: E has NO entry key the tip lacks (E 624 keys, tip 639); the 31 changed entries differ only in cited_by/tags/note wording. Report only.",
+   "e_blob": "d92d47d0808ed17274a6eeb686c4c92407de42d9",
+   "tip_blob": "e0cb39e519da9db0cef77d92034637c77fdd668a",
+   "tip_last_commit": "0a5958a8",
+   "tip_last_date": "2026-10-18 07:06",
+   "e_only_nonblank_lines": 114,
+   "tip_only_lines": 272,
+   "hunks": {
+    "CHANGED": 9,
+    "DEL-MISSING": 5,
+    "DEL-APPLIED": 1,
+    "MISSING": 7
+   },
+   "e_only_lines_found_elsewhere_on_tip": null
+  },
+  {
+   "i": 34,
+   "path": "TanitAD Research Lab/Library/library.json",
+   "audit_verdict": "CONFLICT (tip and E both moved off the E-HEAD base)",
+   "mtime_hint": "E OLDER than tip last change",
+   "verdict": "SUPERSEDED",
+   "evidence": "same as LIBRARY.md - generated from library.json by --reindex; never hand-edit.",
+   "e_blob": "e42adf2731ad42663347fc2ece41999fb5e014eb",
+   "tip_blob": "ddbdde5c2de0b41ee2abfe34a787fa940e9c018f",
+   "tip_last_commit": "0a5958a8",
+   "tip_last_date": "2026-10-18 07:06",
+   "e_only_nonblank_lines": 68,
+   "tip_only_lines": 535,
+   "hunks": {
+    "APPLIED": 4,
+    "ADD-MISSING": 7,
+    "BOTH-PRESENT": 4
+   },
+   "e_only_lines_found_elsewhere_on_tip": null
+  },
+  {
+   "i": 35,
+   "path": "colab/MCP_SETUP.md",
+   "audit_verdict": "REAL-LOCAL-EDIT (tip unchanged since E-HEAD base; E has unco",
+   "mtime_hint": "E NEWER than tip last change",
+   "verdict": "MISSING",
+   "evidence": "doc: 'APPLIED 2026-09-27 on the PI's instruction (register mcp server)' note (+5). Tip unchanged since 2026-08-16.",
+   "e_blob": "0978fe3ca0604192ea2580bcb4fd72edd186ff45",
+   "tip_blob": "89700f382ec2fcd3008ef56e7a5c29b02d65095f",
+   "tip_last_commit": "05c37c03",
+   "tip_last_date": "2026-08-16 15:34",
+   "e_only_nonblank_lines": 5,
+   "tip_only_lines": 0,
+   "hunks": {
+    "ADD-MISSING": 1
+   },
+   "e_only_lines_found_elsewhere_on_tip": 0
+  },
+  {
+   "i": 36,
+   "path": "data/nuplan_cam_calib.json",
+   "audit_verdict": "NEW-DRAFT-vs-TIP (no E-HEAD base; E has lines the tip lacks)",
+   "mtime_hint": "E OLDER than tip last change",
+   "verdict": "SUPERSEDED",
+   "evidence": "E (2026-09-21 00:10) predates the tip's 24d5ce2 (09-26).",
+   "e_blob": "2cba682cba1075aae44e2165e9479d64a94cae07",
+   "tip_blob": "90cb8b62593f8b62f85a8ac78c7c4abf47eac2b9",
+   "tip_last_commit": "24d5ce23",
+   "tip_last_date": "2026-09-26 11:32",
+   "e_only_nonblank_lines": 65,
+   "tip_only_lines": 4,
+   "hunks": {
+    "MISSING": 4,
+    "ADD-MISSING": 1
+   },
+   "e_only_lines_found_elsewhere_on_tip": 0
+  },
+  {
+   "i": 37,
+   "path": "stack/tests/test_map_head_hires.py",
+   "audit_verdict": "NEW-DRAFT-vs-TIP (no E-HEAD base; E has lines the tip lacks)",
+   "mtime_hint": "E OLDER than tip last change",
+   "verdict": "SUPERSEDED",
+   "evidence": "E (2026-09-27 02:29) predates the tip's later commits (cef9709 05:06 / 1b8170e 12:42); the tip is the later map_hires version.",
+   "e_blob": "7f2662f0620c67b478a19bc93049559c00e8d570",
+   "tip_blob": "ff4cb74719cd2e13cb19ecc69765d5754722ad84",
+   "tip_last_commit": "1b8170ea",
+   "tip_last_date": "2026-09-27 12:42",
+   "e_only_nonblank_lines": 9,
+   "tip_only_lines": 365,
+   "hunks": {
+    "DEL-MISSING": 1,
+    "MISSING": 3
+   },
+   "e_only_lines_found_elsewhere_on_tip": 3
+  },
+  {
+   "i": 38,
+   "path": "stack/tests/test_semantic_map_gt_fine.py",
+   "audit_verdict": "NEW-DRAFT-vs-TIP (no E-HEAD base; E has lines the tip lacks)",
+   "mtime_hint": "E OLDER than tip last change",
+   "verdict": "SUPERSEDED",
+   "evidence": "E (2026-09-27 02:29) predates the tip's later commits (cef9709 05:06 / 1b8170e 12:42); the tip is the later map_hires version.",
+   "e_blob": "8b42fe94d631c3a0f75f0fe4f103b34360bec06d",
+   "tip_blob": "a603563e54b02405aad134ae091bf72d7a893998",
+   "tip_last_commit": "cef9709d",
+   "tip_last_date": "2026-09-27 05:06",
+   "e_only_nonblank_lines": 2,
+   "tip_only_lines": 3,
+   "hunks": {
+    "MISSING": 1
+   },
+   "e_only_lines_found_elsewhere_on_tip": 0
+  },
+  {
+   "i": 39,
+   "path": "taniteval/taniteval/leaderboard/__main__.py",
+   "audit_verdict": "NEW-DRAFT-vs-TIP (no E-HEAD base; E has lines the tip lacks)",
+   "mtime_hint": "E NEWER than tip last change",
+   "verdict": "MISSING",
+   "evidence": "LEADERBOARD CODE: adds --discard-hand-edits. Patch: patches/leaderboard_hand_edit_guard_and_withdrawn_runs.patch.",
+   "e_blob": "b2dc7851e0965d940061ff0a2e2c124839462edc",
+   "tip_blob": "476d9c7ec3b43e64e1d818f15711da7f1d358df3",
+   "tip_last_commit": "24d5ce23",
+   "tip_last_date": "2026-09-26 11:32",
+   "e_only_nonblank_lines": 3,
+   "tip_only_lines": 1,
+   "hunks": {
+    "ADD-MISSING": 1,
+    "MISSING": 1
+   },
+   "e_only_lines_found_elsewhere_on_tip": 0
+  },
+  {
+   "i": 40,
+   "path": "taniteval/taniteval/leaderboard/build.py",
+   "audit_verdict": "NEW-DRAFT-vs-TIP (no E-HEAD base; E has lines the tip lacks)",
+   "mtime_hint": "E NEWER than tip last change",
+   "verdict": "MISSING",
+   "evidence": "LEADERBOARD CODE: TOMBSTONE (withdrawn-run) handling, hand-edit/fingerprint guard (section_state, dropped_lines), discard_hand_edits.",
+   "e_blob": "e1c00dec16bf464713351b7958eff9a889ad023d",
+   "tip_blob": "d4979679adc65a5c02bfead0121f8cab768bf173",
+   "tip_last_commit": "24d5ce23",
+   "tip_last_date": "2026-09-26 11:32",
+   "e_only_nonblank_lines": 53,
+   "tip_only_lines": 5,
+   "hunks": {
+    "APPLIED": 1,
+    "MISSING": 5,
+    "ADD-MISSING": 2
+   },
+   "e_only_lines_found_elsewhere_on_tip": 2
+  },
+  {
+   "i": 41,
+   "path": "taniteval/taniteval/leaderboard/leaderboard_sources.json",
+   "audit_verdict": "NEW-DRAFT-vs-TIP (no E-HEAD base; E has lines the tip lacks)",
+   "mtime_hint": "E NEWER than tip last change",
+   "verdict": "MISSING",
+   "evidence": "LEADERBOARD CODE: registers the refcv3-40284 yawmask ARM json as a source (file itself is in the pending landing set).",
+   "e_blob": "9ebdaea7084534fdcc825bb6691356629e74d8f5",
+   "tip_blob": "94679df9e0ca251439b9326ebed9c25ab8181b7e",
+   "tip_last_commit": "24d5ce23",
+   "tip_last_date": "2026-09-26 11:32",
+   "e_only_nonblank_lines": 1,
+   "tip_only_lines": 1,
+   "hunks": {
+    "MISSING": 1
+   },
+   "e_only_lines_found_elsewhere_on_tip": 0
+  },
+  {
+   "i": 42,
+   "path": "taniteval/taniteval/leaderboard/render.py",
+   "audit_verdict": "NEW-DRAFT-vs-TIP (no E-HEAD base; E has lines the tip lacks)",
+   "mtime_hint": "E NEWER than tip last change",
+   "verdict": "MISSING",
+   "evidence": "LEADERBOARD CODE: section fingerprint (FP_PREFIX, section_fingerprint), withdrawn-run table, nuScenes runs shown.",
+   "e_blob": "78e1662cf784e0f4c79c103c999369c2b0eef884",
+   "tip_blob": "920b9a64bf6a73f4a21338c2cd10f99f3f688713",
+   "tip_last_commit": "24d5ce23",
+   "tip_last_date": "2026-09-26 11:32",
+   "e_only_nonblank_lines": 108,
+   "tip_only_lines": 14,
+   "hunks": {
+    "APPLIED": 1,
+    "MISSING": 8,
+    "ADD-MISSING": 9
+   },
+   "e_only_lines_found_elsewhere_on_tip": 5
+  },
+  {
+   "i": 43,
+   "path": "taniteval/taniteval/leaderboard/sources.py",
+   "audit_verdict": "NEW-DRAFT-vs-TIP (no E-HEAD base; E has lines the tip lacks)",
+   "mtime_hint": "E NEWER than tip last change",
+   "verdict": "MISSING",
+   "evidence": "LEADERBOARD CODE: load_bench_runs reads the TOMBSTONE marker; legacy-supersession map excludes withdrawn runs.",
+   "e_blob": "7637a9db55248c1f9a7dd21c4c670195049437dd",
+   "tip_blob": "5fdfe6e62b4f878723bb5c164273198c8f5ac147",
+   "tip_last_commit": "24d5ce23",
+   "tip_last_date": "2026-09-26 11:32",
+   "e_only_nonblank_lines": 32,
+   "tip_only_lines": 4,
+   "hunks": {
+    "MISSING": 3,
+    "ADD-MISSING": 4
+   },
+   "e_only_lines_found_elsewhere_on_tip": 1
+  },
+  {
+   "i": 44,
+   "path": "taniteval/taniteval/map_hires_metrics.py",
+   "audit_verdict": "NEW-DRAFT-vs-TIP (no E-HEAD base; E has lines the tip lacks)",
+   "mtime_hint": "E OLDER than tip last change",
+   "verdict": "SUPERSEDED",
+   "evidence": "E (2026-09-27 02:29) predates the tip's later commits (cef9709 05:06 / 1b8170e 12:42); the tip is the later map_hires version.",
+   "e_blob": "e65cc2e4181805a31f78fc79aee7a0424ec6bf4f",
+   "tip_blob": "18f2029018bfdf606ea4f78f64f02c4b62ed1a79",
+   "tip_last_commit": "cef9709d",
+   "tip_last_date": "2026-09-27 05:06",
+   "e_only_nonblank_lines": 12,
+   "tip_only_lines": 36,
+   "hunks": {
+    "MISSING": 4,
+    "ADD-MISSING": 1
+   },
+   "e_only_lines_found_elsewhere_on_tip": 0
+  },
+  {
+   "i": 45,
+   "path": "taniteval/tests/test_leaderboard.py",
+   "audit_verdict": "NEW-DRAFT-vs-TIP (no E-HEAD base; E has lines the tip lacks)",
+   "mtime_hint": "E NEWER than tip last change",
+   "verdict": "MISSING",
+   "evidence": "LEADERBOARD TEST: run_build(..., discard_hand_edits=True) in 6 call sites.",
+   "e_blob": "692c1c64bd530c77b31de8e08e2e45ef405be87a",
+   "tip_blob": "7aa69cf83cd05f5caa433bf849d8b77e0361cf67",
+   "tip_last_commit": "24d5ce23",
+   "tip_last_date": "2026-09-26 11:32",
+   "e_only_nonblank_lines": 6,
+   "tip_only_lines": 6,
+   "hunks": {
+    "MISSING": 6
+   },
+   "e_only_lines_found_elsewhere_on_tip": 0
+  },
+  {
+   "i": 46,
+   "path": "taniteval/tests/test_map_hires_metrics.py",
+   "audit_verdict": "NEW-DRAFT-vs-TIP (no E-HEAD base; E has lines the tip lacks)",
+   "mtime_hint": "E OLDER than tip last change",
+   "verdict": "SUPERSEDED",
+   "evidence": "E (2026-09-27 02:29) predates the tip's later commits (cef9709 05:06 / 1b8170e 12:42); the tip is the later map_hires version.",
+   "e_blob": "de245c9a0a8b08673da4919556a5ab18093597f4",
+   "tip_blob": "763bafa0365eb9866ba6cbfd8905e065f869cdd1",
+   "tip_last_commit": "cef9709d",
+   "tip_last_date": "2026-09-27 05:06",
+   "e_only_nonblank_lines": 2,
+   "tip_only_lines": 46,
+   "hunks": {
+    "MISSING": 1,
+    "DEL-MISSING": 1
+   },
+   "e_only_lines_found_elsewhere_on_tip": 0
+  }
+ ],
+ "X_unapplied_families": {
+  "refcv7 box-head R6 (held)": [
+   {
+    "repo": "stack/scripts/refc_v3_train.py",
+    "status": "DIFFERS-NOT-IN-HISTORY",
+    "tip_equals_declared_base": false,
+    "package_file": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-box-head/code/fix/stack/scripts/refc_v3_train.py"
+   },
+   {
+    "repo": "stack/tanitad/models/refcv6_perception_branch.py",
+    "status": "DIFFERS-NOT-IN-HISTORY",
+    "tip_equals_declared_base": false,
+    "package_file": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-box-head/code/fix/stack/tanitad/models/refcv6_perception_branch.py"
+   },
+   {
+    "repo": "stack/tanitad/train/declared_vs_built.py",
+    "status": "DIFFERS-NOT-IN-HISTORY",
+    "tip_equals_declared_base": false,
+    "package_file": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-box-head/code/fix/stack/tanitad/train/declared_vs_built.py"
+   },
+   {
+    "repo": "stack/tests/test_declared_vs_built.py",
+    "status": "DIFFERS-NOT-IN-HISTORY",
+    "tip_equals_declared_base": false,
+    "package_file": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-box-head/code/fix/stack/tests/test_declared_vs_built.py"
+   },
+   {
+    "repo": "stack/tests/test_occ_knob_is_stamped.py",
+    "status": "DIFFERS-NOT-IN-HISTORY",
+    "tip_equals_declared_base": false,
+    "package_file": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-box-head/code/fix/stack/tests/test_occ_knob_is_stamped.py"
+   },
+   {
+    "repo": "stack/scripts/refc_v3_train.py",
+    "status": "DIFFERS-NOT-IN-HISTORY",
+    "tip_equals_declared_base": false,
+    "package_file": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-box-head/code/fix_r6/stack/scripts/refc_v3_train.py"
+   },
+   {
+    "repo": "stack/tanitad/models/refcv6_perception_branch.py",
+    "status": "DIFFERS-NOT-IN-HISTORY",
+    "tip_equals_declared_base": false,
+    "package_file": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-box-head/code/fix_r6/stack/tanitad/models/refcv6_perception_branch.py"
+   },
+   {
+    "repo": "stack/tanitad/train/declared_vs_built.py",
+    "status": "DIFFERS-NOT-IN-HISTORY",
+    "tip_equals_declared_base": false,
+    "package_file": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-box-head/code/fix_r6/stack/tanitad/train/declared_vs_built.py"
+   },
+   {
+    "repo": "stack/tests/test_cls_weight_stamp.py",
+    "status": "DIFFERS-NOT-IN-HISTORY",
+    "tip_equals_declared_base": true,
+    "package_file": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-box-head/code/fix_r6/stack/tests/test_cls_weight_stamp.py"
+   },
+   {
+    "repo": "stack/tests/test_declared_vs_built.py",
+    "status": "DIFFERS-NOT-IN-HISTORY",
+    "tip_equals_declared_base": false,
+    "package_file": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-box-head/code/fix_r6/stack/tests/test_declared_vs_built.py"
+   },
+   {
+    "repo": "stack/tests/test_occ_knob_is_stamped.py",
+    "status": "DIFFERS-NOT-IN-HISTORY",
+    "tip_equals_declared_base": false,
+    "package_file": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-box-head/code/fix_r6/stack/tests/test_occ_knob_is_stamped.py"
+   },
+   {
+    "repo": "stack/tanitad/models/slot_denoise.py",
+    "status": "NEW-NOT-ON-TIP",
+    "tip_equals_declared_base": null,
+    "package_file": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-box-head/code/r6_banked/new/stack/tanitad/models/slot_denoise.py"
+   },
+   {
+    "repo": "stack/tests/test_refcv7_r6_denoise.py",
+    "status": "NEW-NOT-ON-TIP",
+    "tip_equals_declared_base": null,
+    "package_file": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-box-head/code/r6_banked/new/stack/tests/test_refcv7_r6_denoise.py"
+   }
+  ],
+  "refav1 R1-VMAX": [
+   {
+    "repo": "stack/tanitad/refs/refa_v1_plan.py",
+    "status": "DIFFERS-NOT-IN-HISTORY",
+    "tip_equals_declared_base": false,
+    "package_file": "products/P4-training-pipelines/2026-09-27-v7f-refav1-state/code/fix/stack/tanitad/refs/refa_v1_plan.py"
+   },
+   {
+    "repo": "stack/tests/test_refav1_vmax_cap.py",
+    "status": "NEW-NOT-ON-TIP",
+    "tip_equals_declared_base": null,
+    "package_file": "products/P4-training-pipelines/2026-09-27-v7f-refav1-state/code/fix/stack/tests/test_refav1_vmax_cap.py"
+   },
+   {
+    "repo": "taniteval/tools/refav1_arm.py",
+    "status": "DIFFERS-NOT-IN-HISTORY",
+    "tip_equals_declared_base": false,
+    "package_file": "products/P4-training-pipelines/2026-09-27-v7f-refav1-state/code/fix/taniteval/tools/refav1_arm.py"
+   }
+  ],
+  "refav1 R1/R3/R5/R6 (refav1_r1r6)": [
+   {
+    "repo": "stack/scripts/refa_v1_train.py",
+    "status": "DIFFERS-NOT-IN-HISTORY",
+    "tip_equals_declared_base": true,
+    "package_file": "products/P4-training-pipelines/2026-09-27-v7f-refav1-state/refav1_r1r6/code/fix/stack/scripts/refa_v1_train.py"
+   },
+   {
+    "repo": "stack/tanitad/data/refav1_loader.py",
+    "status": "DIFFERS-NOT-IN-HISTORY",
+    "tip_equals_declared_base": true,
+    "package_file": "products/P4-training-pipelines/2026-09-27-v7f-refav1-state/refav1_r1r6/code/fix/stack/tanitad/data/refav1_loader.py"
+   },
+   {
+    "repo": "stack/tanitad/refs/refa_v1.py",
+    "status": "DIFFERS-NOT-IN-HISTORY",
+    "tip_equals_declared_base": false,
+    "package_file": "products/P4-training-pipelines/2026-09-27-v7f-refav1-state/refav1_r1r6/code/fix/stack/tanitad/refs/refa_v1.py"
+   },
+   {
+    "repo": "stack/tanitad/refs/refav1_traj.py",
+    "status": "NEW-NOT-ON-TIP",
+    "tip_equals_declared_base": null,
+    "package_file": "products/P4-training-pipelines/2026-09-27-v7f-refav1-state/refav1_r1r6/code/fix/stack/tanitad/refs/refav1_traj.py"
+   },
+   {
+    "repo": "stack/tanitad/train/declared_vs_built_refav1.py",
+    "status": "NEW-NOT-ON-TIP",
+    "tip_equals_declared_base": null,
+    "package_file": "products/P4-training-pipelines/2026-09-27-v7f-refav1-state/refav1_r1r6/code/fix/stack/tanitad/train/declared_vs_built_refav1.py"
+   },
+   {
+    "repo": "stack/tests/test_refav1_dvb.py",
+    "status": "NEW-NOT-ON-TIP",
+    "tip_equals_declared_base": null,
+    "package_file": "products/P4-training-pipelines/2026-09-27-v7f-refav1-state/refav1_r1r6/code/fix/stack/tests/test_refav1_dvb.py"
+   },
+   {
+    "repo": "stack/tests/test_refav1_r1_vmax_input.py",
+    "status": "NEW-NOT-ON-TIP",
+    "tip_equals_declared_base": null,
+    "package_file": "products/P4-training-pipelines/2026-09-27-v7f-refav1-state/refav1_r1r6/code/fix/stack/tests/test_refav1_r1_vmax_input.py"
+   },
+   {
+    "repo": "stack/tests/test_refav1_r1r6_off_identity.py",
+    "status": "NEW-NOT-ON-TIP",
+    "tip_equals_declared_base": null,
+    "package_file": "products/P4-training-pipelines/2026-09-27-v7f-refav1-state/refav1_r1r6/code/fix/stack/tests/test_refav1_r1r6_off_identity.py"
+   },
+   {
+    "repo": "stack/tests/test_refav1_r3_goal_head.py",
+    "status": "NEW-NOT-ON-TIP",
+    "tip_equals_declared_base": null,
+    "package_file": "products/P4-training-pipelines/2026-09-27-v7f-refav1-state/refav1_r1r6/code/fix/stack/tests/test_refav1_r3_goal_head.py"
+   },
+   {
+    "repo": "stack/tests/test_refav1_r5_traj_head.py",
+    "status": "NEW-NOT-ON-TIP",
+    "tip_equals_declared_base": null,
+    "package_file": "products/P4-training-pipelines/2026-09-27-v7f-refav1-state/refav1_r1r6/code/fix/stack/tests/test_refav1_r5_traj_head.py"
+   },
+   {
+    "repo": "stack/tests/test_refav1_r6_strategic_off.py",
+    "status": "NEW-NOT-ON-TIP",
+    "tip_equals_declared_base": null,
+    "package_file": "products/P4-training-pipelines/2026-09-27-v7f-refav1-state/refav1_r1r6/code/fix/stack/tests/test_refav1_r6_strategic_off.py"
+   }
+  ],
+  "v7F launch-gate profile (v7f_gate)": [
+   {
+    "repo": "stack/scripts/launch_gate.py",
+    "status": "DIFFERS-NOT-IN-HISTORY",
+    "tip_equals_declared_base": false,
+    "package_file": "products/P4-training-pipelines/2026-09-27-v7f-refav1-state/v7f_gate/code/fix/stack/scripts/launch_gate.py"
+   },
+   {
+    "repo": "stack/tests/test_launch_gate_v7f.py",
+    "status": "NEW-NOT-ON-TIP",
+    "tip_equals_declared_base": null,
+    "package_file": "products/P4-training-pipelines/2026-09-27-v7f-refav1-state/v7f_gate/code/fix/stack/tests/test_launch_gate_v7f.py"
+   }
+  ],
+  "v7F trainer (v7f_merge)": [
+   {
+    "repo": "stack/scripts/train_v6_staged.py",
+    "status": "DIFFERS-NOT-IN-HISTORY",
+    "tip_equals_declared_base": true,
+    "package_file": "products/P4-training-pipelines/2026-09-27-v7f-refav1-state/v7f_merge/code/fix/stack/scripts/train_v6_staged.py"
+   },
+   {
+    "repo": "stack/tanitad/models/plan_speed_cap.py",
+    "status": "NEW-NOT-ON-TIP",
+    "tip_equals_declared_base": null,
+    "package_file": "products/P4-training-pipelines/2026-09-27-v7f-refav1-state/v7f_merge/code/fix/stack/tanitad/models/plan_speed_cap.py"
+   },
+   {
+    "repo": "stack/tanitad/models/v6.py",
+    "status": "DIFFERS-NOT-IN-HISTORY",
+    "tip_equals_declared_base": true,
+    "package_file": "products/P4-training-pipelines/2026-09-27-v7f-refav1-state/v7f_merge/code/fix/stack/tanitad/models/v6.py"
+   },
+   {
+    "repo": "stack/tanitad/train/declared_vs_built_v6.py",
+    "status": "NEW-NOT-ON-TIP",
+    "tip_equals_declared_base": null,
+    "package_file": "products/P4-training-pipelines/2026-09-27-v7f-refav1-state/v7f_merge/code/fix/stack/tanitad/train/declared_vs_built_v6.py"
+   },
+   {
+    "repo": "stack/tests/test_tactical_label_reach_v6.py",
+    "status": "NEW-NOT-ON-TIP",
+    "tip_equals_declared_base": null,
+    "package_file": "products/P4-training-pipelines/2026-09-27-v7f-refav1-state/v7f_merge/code/fix/stack/tests/test_tactical_label_reach_v6.py"
+   },
+   {
+    "repo": "stack/tests/test_v6_effective_weights.py",
+    "status": "DIFFERS-NOT-IN-HISTORY",
+    "tip_equals_declared_base": true,
+    "package_file": "products/P4-training-pipelines/2026-09-27-v7f-refav1-state/v7f_merge/code/fix/stack/tests/test_v6_effective_weights.py"
+   },
+   {
+    "repo": "stack/tests/test_v6_stage_init_introduction.py",
+    "status": "DIFFERS-NOT-IN-HISTORY",
+    "tip_equals_declared_base": true,
+    "package_file": "products/P4-training-pipelines/2026-09-27-v7f-refav1-state/v7f_merge/code/fix/stack/tests/test_v6_stage_init_introduction.py"
+   },
+   {
+    "repo": "stack/tests/test_v7f_r1r4.py",
+    "status": "NEW-NOT-ON-TIP",
+    "tip_equals_declared_base": null,
+    "package_file": "products/P4-training-pipelines/2026-09-27-v7f-refav1-state/v7f_merge/code/fix/stack/tests/test_v7f_r1r4.py"
+   },
+   {
+    "repo": "stack/tests/test_v7f_r2_nav_fixes.py",
+    "status": "NEW-NOT-ON-TIP",
+    "tip_equals_declared_base": null,
+    "package_file": "products/P4-training-pipelines/2026-09-27-v7f-refav1-state/v7f_merge/code/fix/stack/tests/test_v7f_r2_nav_fixes.py"
+   },
+   {
+    "repo": "stack/tests/test_v7f_r6_strategic_off.py",
+    "status": "NEW-NOT-ON-TIP",
+    "tip_equals_declared_base": null,
+    "package_file": "products/P4-training-pipelines/2026-09-27-v7f-refav1-state/v7f_merge/code/fix/stack/tests/test_v7f_r6_strategic_off.py"
+   }
+  ]
+ },
+ "C_per_manifest": [
+  {
+   "manifest": "FlyWheels/TanitAD_DataFlyWheel/incoming/2026-10-04-v9-labels/LANDING_READY_WPA.txt",
+   "absent_at_audit": 15,
+   "classes": {
+    "PARSE-ARTIFACT:FILE-ON-TIP": 15
+   }
+  },
+  {
+   "manifest": "FlyWheels/TanitAD_DataFlyWheel/incoming/2026-10-04-x10-pose-timing/LANDING_READY_X10.txt",
+   "absent_at_audit": 2,
+   "classes": {
+    "LANDED-SINCE-AUDIT": 2
+   }
+  },
+  {
+   "manifest": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/battery/LANDING_READY.txt",
+   "absent_at_audit": 3,
+   "classes": {
+    "MOVED": 3
+   }
+  },
+  {
+   "manifest": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/LANDING_READY.txt",
+   "absent_at_audit": 1,
+   "classes": {
+    "MOVED": 1
+   }
+  },
+  {
+   "manifest": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-suite-runnability-audit/LANDING_READY.txt",
+   "absent_at_audit": 5,
+   "classes": {
+    "PENDING-LANDING": 5
+   }
+  },
+  {
+   "manifest": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/LANDING_READY_NAVSIM50K_LEGAL.txt",
+   "absent_at_audit": 173,
+   "classes": {
+    "MOVED": 10,
+    "LANDED-SINCE-AUDIT": 155,
+    "OPTIONAL-P3": 8
+   }
+  },
+  {
+   "manifest": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-04-navsim-thor-backend/LANDING_READY_NAVSIM_THOR.txt",
+   "absent_at_audit": 317,
+   "classes": {
+    "LANDED-SINCE-AUDIT": 300,
+    "OPTIONAL-P3": 12,
+    "MOVED": 5
+   }
+  },
+  {
+   "manifest": "Media/2026-10-04-refcv7-replay/LANDING_READY.txt",
+   "absent_at_audit": 10,
+   "classes": {
+    "PARSE-ARTIFACT:FILE-ON-TIP": 10
+   }
+  },
+  {
+   "manifest": "Media/refcv7/LANDING_READY.txt",
+   "absent_at_audit": 9,
+   "classes": {
+    "PARSE-ARTIFACT:FILE-ON-TIP": 6,
+    "ABSENT-EVERYWHERE": 3
+   }
+  },
+  {
+   "manifest": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/LANDING_READY.txt",
+   "absent_at_audit": 23,
+   "classes": {
+    "HOLD-SCRUB": 10,
+    "PARSE-ARTIFACT:DIR-ON-TIP": 7,
+    "PARSE-ARTIFACT:FILE-ON-TIP": 6
+   }
+  },
+  {
+   "manifest": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/LANDING_READY.txt",
+   "absent_at_audit": 1,
+   "classes": {
+    "MOVED": 1
+   }
+  },
+  {
+   "manifest": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/LANDING_READY.txt",
+   "absent_at_audit": 14,
+   "classes": {
+    "PARSE-ARTIFACT:FILE-ON-TIP": 14
+   }
+  },
+  {
+   "manifest": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-map-signal-audit/LANDING_READY.txt",
+   "absent_at_audit": 2,
+   "classes": {
+    "MOVED": 2
+   }
+  },
+  {
+   "manifest": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv6-frozen-trunk-audit/LANDING_READY.txt",
+   "absent_at_audit": 6,
+   "classes": {
+    "PARSE-ARTIFACT:FILE-ON-TIP": 6
+   }
+  },
+  {
+   "manifest": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-launch-gate/LANDING_READY.txt",
+   "absent_at_audit": 10,
+   "classes": {
+    "PARSE-ARTIFACT:FILE-ON-TIP": 9,
+    "MOVED": 1
+   }
+  },
+  {
+   "manifest": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/LANDING_READY.txt",
+   "absent_at_audit": 2,
+   "classes": {
+    "PARSE-ARTIFACT:FILE-ON-TIP": 2
+   }
+  },
+  {
+   "manifest": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/LANDING_READY_A19.txt",
+   "absent_at_audit": 2,
+   "classes": {
+    "PARSE-ARTIFACT:FILE-ON-TIP": 2
+   }
+  },
+  {
+   "manifest": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/LANDING_READY_MAPLIFT.txt",
+   "absent_at_audit": 4,
+   "classes": {
+    "PARSE-ARTIFACT:FILE-ON-TIP": 4
+   }
+  },
+  {
+   "manifest": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-residual-prior/LANDING_READY.txt",
+   "absent_at_audit": 10,
+   "classes": {
+    "PARSE-ARTIFACT:FILE-ON-TIP": 10
+   }
+  },
+  {
+   "manifest": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-e4-library-banking/LANDING_READY.txt",
+   "absent_at_audit": 1,
+   "classes": {
+    "PARSE-ARTIFACT:FILE-ON-TIP": 1
+   }
+  },
+  {
+   "manifest": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-loader-stamped-queries/LANDING_READY.txt",
+   "absent_at_audit": 2,
+   "classes": {
+    "PARSE-ARTIFACT:FILE-ON-TIP": 2
+   }
+  },
+  {
+   "manifest": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-box-head/LANDING_READY_A17.txt",
+   "absent_at_audit": 7,
+   "classes": {
+    "PARSE-ARTIFACT:FILE-ON-TIP": 7
+   }
+  },
+  {
+   "manifest": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-box-head/LANDING_READY_A17_TOY.txt",
+   "absent_at_audit": 1,
+   "classes": {
+    "PARSE-ARTIFACT:FILE-ON-TIP": 1
+   }
+  },
+  {
+   "manifest": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-box-head/LANDING_READY_ANCHORED.txt",
+   "absent_at_audit": 29,
+   "classes": {
+    "PARSE-ARTIFACT:FILE-ON-TIP": 29
+   }
+  },
+  {
+   "manifest": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-eval-loader/LANDING_READY.txt",
+   "absent_at_audit": 2,
+   "classes": {
+    "PARSE-ARTIFACT:FILE-ON-TIP": 2
+   }
+  },
+  {
+   "manifest": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-eval-loader/LANDING_READY_GBO_NEAR.txt",
+   "absent_at_audit": 2,
+   "classes": {
+    "PARSE-ARTIFACT:FILE-ON-TIP": 2
+   }
+  },
+  {
+   "manifest": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-launch/LANDING_READY_COMPILE.txt",
+   "absent_at_audit": 2,
+   "classes": {
+    "PARSE-ARTIFACT:FILE-ON-TIP": 2
+   }
+  },
+  {
+   "manifest": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-launch/LANDING_READY_GEVAL.txt",
+   "absent_at_audit": 2,
+   "classes": {
+    "PARSE-ARTIFACT:FILE-ON-TIP": 2
+   }
+  },
+  {
+   "manifest": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-launch/LANDING_READY_GEVAL2.txt",
+   "absent_at_audit": 2,
+   "classes": {
+    "PARSE-ARTIFACT:FILE-ON-TIP": 2
+   }
+  },
+  {
+   "manifest": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-launch/LANDING_READY_GLIVE.txt",
+   "absent_at_audit": 2,
+   "classes": {
+    "PARSE-ARTIFACT:FILE-ON-TIP": 2
+   }
+  },
+  {
+   "manifest": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-launch/LANDING_READY_SCAN.txt",
+   "absent_at_audit": 2,
+   "classes": {
+    "PARSE-ARTIFACT:FILE-ON-TIP": 2
+   }
+  },
+  {
+   "manifest": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-training-watch/LANDING_READY.txt",
+   "absent_at_audit": 2,
+   "classes": {
+    "PARSE-ARTIFACT:FILE-ON-TIP": 2
+   }
+  },
+  {
+   "manifest": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-28-refcv7-restart-options/LANDING_READY.txt",
+   "absent_at_audit": 215,
+   "classes": {
+    "PARSE-ARTIFACT:FILE-ON-TIP": 215
+   }
+  },
+  {
+   "manifest": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-28-refcv7-watch-pace/LANDING_READY.txt",
+   "absent_at_audit": 2,
+   "classes": {
+    "PARSE-ARTIFACT:FILE-ON-TIP": 2
+   }
+  },
+  {
+   "manifest": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv7-ddv2-rl-posttrain/LANDING_READY_WPRL.txt",
+   "absent_at_audit": 2,
+   "classes": {
+    "ABSENT-EVERYWHERE": 1,
+    "PARSE-ARTIFACT:FILE-ON-TIP": 1
+   }
+  },
+  {
+   "manifest": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/LANDING_READY_WPD.txt",
+   "absent_at_audit": 15,
+   "classes": {
+    "PARSE-ARTIFACT:FILE-ON-TIP": 15
+   }
+  },
+  {
+   "manifest": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-fixes/LANDING_READY_WPC.txt",
+   "absent_at_audit": 17,
+   "classes": {
+    "PARSE-ARTIFACT:FILE-ON-TIP": 17
+   }
+  },
+  {
+   "manifest": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/LANDING_READY_WPB.txt",
+   "absent_at_audit": 70,
+   "classes": {
+    "PARSE-ARTIFACT:FILE-ON-TIP": 70
+   }
+  },
+  {
+   "manifest": "TanitAD Research Lab/Data Engineering/Research/2026-10-04-refcv8-data-audit/D6_navsim_failure_anatomy/LANDING_READY_P4.txt",
+   "absent_at_audit": 3,
+   "classes": {
+    "PENDING-LANDING": 3
+   }
+  },
+  {
+   "manifest": "TanitAD Research Lab/Data Engineering/Research/2026-10-04-refcv8-data-audit/LANDING_READY_D2.txt",
+   "absent_at_audit": 24,
+   "classes": {
+    "PARSE-ARTIFACT:FILE-ON-TIP": 24
+   }
+  },
+  {
+   "manifest": "TanitAD Research Lab/Data Engineering/Research/2026-10-04-refcv8-data-audit/LANDING_READY_D4.txt",
+   "absent_at_audit": 15,
+   "classes": {
+    "PARSE-ARTIFACT:FILE-ON-TIP": 14,
+    "PENDING-LANDING": 1
+   }
+  },
+  {
+   "manifest": "products/P4-training-pipelines/2026-09-27-v7f-refav1-state/LANDING_READY.txt",
+   "absent_at_audit": 45,
+   "classes": {
+    "PARSE-ARTIFACT:FILE-ON-TIP": 26,
+    "PENDING-LANDING": 1,
+    "LANDED-SINCE-AUDIT": 12,
+    "MOVED": 6
+   }
+  }
+ ],
+ "patches": [
+  {
+   "name": "v7f_merge_R1R6",
+   "files": [
+    {
+     "path": "stack/scripts/train_v6_staged.py",
+     "tip_blob": "91b675a7d8ba409c687e9f7dbddd40a2d763813f",
+     "new": false,
+     "variant_sha1": "bdc32505ef68d2fd19dba5eb8b2a40710f1b776d"
+    },
+    {
+     "path": "stack/tanitad/models/v6.py",
+     "tip_blob": "3d6e2235801186e9807cacf812623fb6d21fa516",
+     "new": false,
+     "variant_sha1": "e1eff1e6c4fd0a77c88fb1f2221b3cf9e54902ae"
+    },
+    {
+     "path": "stack/tanitad/models/plan_speed_cap.py",
+     "tip_blob": null,
+     "new": true,
+     "variant_sha1": "6dbc72d99324a9ff966cf2c23c961630443f7617"
+    },
+    {
+     "path": "stack/tanitad/train/declared_vs_built_v6.py",
+     "tip_blob": null,
+     "new": true,
+     "variant_sha1": "42e0e3b2dbf7a244b193b3b283615796411bdd8d"
+    },
+    {
+     "path": "stack/tests/test_v7f_r2_nav_fixes.py",
+     "tip_blob": null,
+     "new": true,
+     "variant_sha1": "c8c4df63c22ec3b8bf7248423f5e352c564a6ddd"
+    },
+    {
+     "path": "stack/tests/test_v7f_r6_strategic_off.py",
+     "tip_blob": null,
+     "new": true,
+     "variant_sha1": "61d61c4c90118b16f29107bdb8f109323b61e4e4"
+    },
+    {
+     "path": "stack/tests/test_v7f_r1r4.py",
+     "tip_blob": null,
+     "new": true,
+     "variant_sha1": "dafe7b0e6cae6c4d889236c60e0253dbc1576226"
+    },
+    {
+     "path": "stack/tests/test_v6_stage_init_introduction.py",
+     "tip_blob": "7d34dee74c22a7284fa049494dfd7c5b759d0ec1",
+     "new": false,
+     "variant_sha1": "d07eb8d4478d761aa753b64aed583cb4e56fa58c"
+    },
+    {
+     "path": "stack/tests/test_tactical_label_reach_v6.py",
+     "tip_blob": null,
+     "new": true,
+     "variant_sha1": "f6a4ba5e378bf0afe95574c318be1b9c444e4fb7"
+    },
+    {
+     "path": "stack/tests/test_v6_effective_weights.py",
+     "tip_blob": "2cd9dd15e9e2d47dbe4de85ca26554b30145eb7b",
+     "new": false,
+     "variant_sha1": "ad5e900b511d4e193b4753f7daab74775822063b"
+    }
+   ],
+   "apply_check": true,
+   "byte_identical_after_apply": true
+  },
+  {
+   "name": "refav1_R1R6_plus_R1VMAX",
+   "files": [
+    {
+     "repo": "stack/tanitad/refs/refa_v1_plan.py",
+     "status": "MERGED-CLEAN(3-way base=declared)",
+     "tip_blob": "759395843ff68aa55cf78f798a4199397658b832"
+    },
+    {
+     "repo": "stack/tests/test_refav1_vmax_cap.py",
+     "status": "NEW",
+     "tip_blob": null
+    },
+    {
+     "repo": "taniteval/tools/refav1_arm.py",
+     "status": "MERGED-CLEAN(3-way base=declared)",
+     "tip_blob": "43b38ef6fb743b1deaade43f49ca2e15a6b38bca"
+    },
+    {
+     "repo": "stack/scripts/refa_v1_train.py",
+     "status": "TIP==DECLARED-BASE(direct)",
+     "tip_blob": "9783142c31d44b6cb4a1fb39393e8206e69fc222"
+    },
+    {
+     "repo": "stack/tanitad/data/refav1_loader.py",
+     "status": "TIP==DECLARED-BASE(direct)",
+     "tip_blob": "2c5ac6eb18db02db0e08eccd19a4e4db1e3616d1"
+    },
+    {
+     "repo": "stack/tanitad/refs/refa_v1.py",
+     "status": "CONFLICT(1)",
+     "tip_blob": "8763d85f757dcabdb2536fdb10a8c9a5792ca626"
+    },
+    {
+     "repo": "stack/tanitad/refs/refav1_traj.py",
+     "status": "NEW",
+     "tip_blob": null
+    },
+    {
+     "repo": "stack/tanitad/train/declared_vs_built_refav1.py",
+     "status": "NEW",
+     "tip_blob": null
+    },
+    {
+     "repo": "stack/tests/test_refav1_dvb.py",
+     "status": "NEW",
+     "tip_blob": null
+    },
+    {
+     "repo": "stack/tests/test_refav1_r1_vmax_input.py",
+     "status": "NEW",
+     "tip_blob": null
+    },
+    {
+     "repo": "stack/tests/test_refav1_r1r6_off_identity.py",
+     "status": "NEW",
+     "tip_blob": null
+    },
+    {
+     "repo": "stack/tests/test_refav1_r3_goal_head.py",
+     "status": "NEW",
+     "tip_blob": null
+    },
+    {
+     "repo": "stack/tests/test_refav1_r5_traj_head.py",
+     "status": "NEW",
+     "tip_blob": null
+    },
+    {
+     "repo": "stack/tests/test_refav1_r6_strategic_off.py",
+     "status": "NEW",
+     "tip_blob": null
+    }
+   ],
+   "apply_check": true,
+   "byte_identical_after_apply": true,
+   "patch_bytes": 173796
+  },
+  {
+   "name": "v7f_gate_profile",
+   "files": [
+    {
+     "repo": "stack/scripts/launch_gate.py",
+     "status": "MERGED-CLEAN(3-way base=declared)",
+     "tip_blob": "7f009efb134c2812db333aed5eb606b9cb5dcb2a"
+    },
+    {
+     "repo": "stack/tests/test_launch_gate_v7f.py",
+     "status": "NEW",
+     "tip_blob": null
+    }
+   ],
+   "apply_check": true,
+   "byte_identical_after_apply": true,
+   "patch_bytes": 137107
+  },
+  {
+   "name": "leaderboard_hand_edit_guard_and_withdrawn_runs",
+   "files": [
+    {
+     "path": "taniteval/taniteval/leaderboard/__main__.py",
+     "tip_blob": "476d9c7ec3b43e64e1d818f15711da7f1d358df3",
+     "new": false,
+     "variant_sha1": "10293e07da58ca318152cf692289bfc56ed40e0d"
+    },
+    {
+     "path": "taniteval/taniteval/leaderboard/build.py",
+     "tip_blob": "d4979679adc65a5c02bfead0121f8cab768bf173",
+     "new": false,
+     "variant_sha1": "6fd267f03b7c320298d6ad3dca5e375a3494a223"
+    },
+    {
+     "path": "taniteval/taniteval/leaderboard/render.py",
+     "tip_blob": "920b9a64bf6a73f4a21338c2cd10f99f3f688713",
+     "new": false,
+     "variant_sha1": "eebbbade7d659fdd48a4872d4ca73b7d240d0788"
+    },
+    {
+     "path": "taniteval/taniteval/leaderboard/sources.py",
+     "tip_blob": "5fdfe6e62b4f878723bb5c164273198c8f5ac147",
+     "new": false,
+     "variant_sha1": "7637a9db55248c1f9a7dd21c4c670195049437dd"
+    },
+    {
+     "path": "taniteval/taniteval/leaderboard/leaderboard_sources.json",
+     "tip_blob": "94679df9e0ca251439b9326ebed9c25ab8181b7e",
+     "new": false,
+     "variant_sha1": "9ebdaea7084534fdcc825bb6691356629e74d8f5"
+    },
+    {
+     "path": "taniteval/tests/test_leaderboard.py",
+     "tip_blob": "7aa69cf83cd05f5caa433bf849d8b77e0361cf67",
+     "new": false,
+     "variant_sha1": "3c75c2a070a153533958e66657fd7ed295e581f0"
+    }
+   ],
+   "apply_check": true,
+   "byte_identical_after_apply": true
+  }
+ ],
+ "tests_naming": {
+  "stack/scripts/train_v6_staged.py": [
+   "stack/tests/test_actdiv_anchored.py",
+   "stack/tests/test_amp_and_threads.py",
+   "stack/tests/test_ckpt_trajectory.py",
+   "stack/tests/test_cond_parameterisation.py",
+   "stack/tests/test_declared_freeze_preflight.py",
+   "stack/tests/test_dinov3_seed.py",
+   "stack/tests/test_drift_levers.py",
+   "stack/tests/test_ema_tau_ramp.py",
+   "stack/tests/test_eval_contamination.py",
+   "stack/tests/test_external_targets.py",
+   "stack/tests/test_gc_split.py",
+   "stack/tests/test_grad_budget_honesty.py",
+   "stack/tests/test_grad_reach_census.py",
+   "stack/tests/test_horizon_wiring.py",
+   "stack/tests/test_horizons_refusal_is_wired.py",
+   "stack/tests/test_launch_closure_audit.py",
+   "stack/tests/test_loss_determinism.py",
+   "stack/tests/test_metric_decode_refusal.py",
+   "stack/tests/test_model_vocab_v7.py",
+   "stack/tests/test_nav_v6stack.py",
+   "stack/tests/test_o11_counterfactual.py",
+   "stack/tests/test_o13_ego_dynamics.py",
+   "stack/tests/test_o14_future_obs.py",
+   "stack/tests/test_o1_detach_encoder.py",
+   "stack/tests/test_o1_stopgrad_factual.py",
+   "stack/tests/test_o5_ema_teacher.py",
+   "stack/tests/test_o6_spectrum_power.py",
+   "stack/tests/test_pod_git_drift.py",
+   "stack/tests/test_rank_gate_abort.py",
+   "stack/tests/test_residual_init_scale.py",
+   "stack/tests/test_run_provenance.py",
+   "stack/tests/test_runbook_commands.py",
+   "stack/tests/test_seam_dump_import_guard.py",
+   "stack/tests/test_speed_band_derivation_blocker.py",
+   "stack/tests/test_step_time_guard.py",
+   "stack/tests/test_transition_probe.py",
+   "stack/tests/test_trunk_anchor.py",
+   "stack/tests/test_v5_trainer_v2_val.py",
+   "stack/tests/test_v6_agent_slots.py",
+   "stack/tests/test_v6_anchor_loss.py",
+   "stack/tests/test_v6_chain.py",
+   "stack/tests/test_v6_diffusion_mpc_fallback.py",
+   "stack/tests/test_v6_domain_mix.py",
+   "stack/tests/test_v6_dump_sw_latents.py",
+   "stack/tests/test_v6_effective_weights.py",
+   "stack/tests/test_v6_gstr_port.py",
+   "stack/tests/test_v6_ladder_edges.py",
+   "stack/tests/test_v6_s1_multitick.py",
+   "stack/tests/test_v6_s2_loss.py",
+   "stack/tests/test_v6_selector.py",
+   "stack/tests/test_v6_st_launch_fixes.py",
+   "stack/tests/test_v6_stage_init_introduction.py",
+   "stack/tests/test_v6_stage_revalidation.py",
+   "stack/tests/test_v6_staged.py",
+   "stack/tests/test_v6_t2_contrastive.py",
+   "stack/tests/test_v6_t3_curriculum.py",
+   "stack/tests/test_v6_t5_consistency.py",
+   "stack/tests/test_v7_eval_exclusion.py",
+   "stack/tests/test_v7_vocab_reach_census.py",
+   "stack/tests/test_v7_wiring.py",
+   "stack/tests/test_x4_layer_spectrum.py",
+   "taniteval/tests/test_bench_suite_gpu_gap.py"
+  ],
+  "stack/tanitad/models/v6.py": [
+   "stack/tests/test_actdiv_anchored.py",
+   "stack/tests/test_anchor_goal_labels.py",
+   "stack/tests/test_declared_freeze_preflight.py",
+   "stack/tests/test_drift_levers.py",
+   "stack/tests/test_ema_tau_ramp.py",
+   "stack/tests/test_emission_squash.py",
+   "stack/tests/test_g_tac_geom.py",
+   "stack/tests/test_grad_budget_honesty.py",
+   "stack/tests/test_grad_reach_census.py",
+   "stack/tests/test_hierarchy_rung.py",
+   "stack/tests/test_loss_determinism.py",
+   "stack/tests/test_metric_decode_refusal.py",
+   "stack/tests/test_model_vocab_v7.py",
+   "stack/tests/test_nav_v6stack.py",
+   "stack/tests/test_o6_spectrum_power.py",
+   "stack/tests/test_o6_verdict_rules_on_participation.py",
+   "stack/tests/test_p8_v6.py",
+   "stack/tests/test_p9_saliency.py",
+   "stack/tests/test_participation_floor_provenance.py",
+   "stack/tests/test_ph1_fuse.py",
+   "stack/tests/test_refa_v1.py",
+   "stack/tests/test_refa_v1_goal_kappa.py",
+   "stack/tests/test_refa_v1_goal_kappa_cost.py",
+   "stack/tests/test_refa_v1_kappa_levels.py",
+   "stack/tests/test_refa_v1_lat_bias.py",
+   "stack/tests/test_refa_v1_oracle_seed.py",
+   "stack/tests/test_refa_v1_plan_goal.py",
+   "stack/tests/test_refd.py",
+   "stack/tests/test_seed_goal_agreement.py",
+   "stack/tests/test_speed_band_derivation_blocker.py",
+   "stack/tests/test_steer_conversion_complete.py",
+   "stack/tests/test_subspace_sigreg.py",
+   "stack/tests/test_tac_str_labels.py",
+   "stack/tests/test_tactical_goals.py",
+   "stack/tests/test_tactical_vocab_v61.py",
+   "stack/tests/test_transition_probe.py",
+   "stack/tests/test_trunk_anchor.py",
+   "stack/tests/test_v6_agent_slots.py",
+   "stack/tests/test_v6_anchor_loss.py",
+   "stack/tests/test_v6_diffusion_mpc_fallback.py",
+   "stack/tests/test_v6_domain_mix.py",
+   "stack/tests/test_v6_dump_sw_latents.py",
+   "stack/tests/test_v6_factored_goal.py",
+   "stack/tests/test_v6_frozen_external.py",
+   "stack/tests/test_v6_gstr_port.py",
+   "stack/tests/test_v6_ladder_edges.py",
+   "stack/tests/test_v6_probe_trunk.py",
+   "stack/tests/test_v6_s1_multitick.py",
+   "stack/tests/test_v6_s2_loss.py",
+   "stack/tests/test_v6_seam_dump.py",
+   "stack/tests/test_v6_seam_probe.py",
+   "stack/tests/test_v6_selector.py",
+   "stack/tests/test_v6_selector_capacity_control.py",
+   "stack/tests/test_v6_stage_init_introduction.py",
+   "stack/tests/test_v6_staged.py",
+   "stack/tests/test_v6_t2_contrastive.py",
+   "stack/tests/test_v6_t3_curriculum.py",
+   "stack/tests/test_v6_t5_consistency.py",
+   "stack/tests/test_v7_wiring.py",
+   "stack/tests/test_vocab_v61_turns.py",
+   "stack/tests/test_vocab_v7.py",
+   "stack/tests/test_x4_layer_spectrum.py",
+   "taniteval/tests/test_refav1_units_required.py"
+  ],
+  "stack/tanitad/train/declared_vs_built_v6.py": [],
+  "stack/scripts/launch_gate.py": [
+   "stack/tests/test_config_hygiene.py",
+   "stack/tests/test_g_box_overfit_near_lift.py",
+   "stack/tests/test_grad_unreachable_declared.py",
+   "stack/tests/test_launch_gate.py",
+   "stack/tests/test_launch_gate_refcv8.py",
+   "stack/tests/test_launch_gate_safe_directory.py",
+   "stack/tests/test_launch_gate_v8f.py",
+   "stack/tests/test_map_hires_a18_spec.py",
+   "stack/tests/test_ra1_hjepa.py",
+   "stack/tests/test_refcv7_admitted_freeze.py",
+   "stack/tests/test_refcv7_eval_loader.py",
+   "stack/tests/test_refcv7_infer_fixes_wiring.py",
+   "stack/tests/test_refcv8_drivable_critic.py",
+   "stack/tests/test_refcv8_eval_determinism.py",
+   "stack/tests/test_refcv8_launch_profile.py",
+   "stack/tests/test_refcv8_trainer_pin.py",
+   "stack/tests/test_refcv8_v9_constraints.py",
+   "stack/tests/test_refcv8_wpc_wiring.py",
+   "stack/tests/test_sup_refcv7_zerograd.py",
+   "taniteval/tests/test_build_watch_refcv7.py"
+  ],
+  "stack/tanitad/refs/refa_v1.py": [
+   "stack/tests/test_actdiv_anchored.py",
+   "stack/tests/test_cost_ccos.py",
+   "stack/tests/test_cost_ccosh.py",
+   "stack/tests/test_cost_chord.py",
+   "stack/tests/test_cost_surface_probe.py",
+   "stack/tests/test_refa_v1.py",
+   "stack/tests/test_refa_v1_a_sustain.py",
+   "stack/tests/test_refa_v1_bptt_truncation.py",
+   "stack/tests/test_refa_v1_cf.py",
+   "stack/tests/test_refa_v1_dk_hook.py",
+   "stack/tests/test_refa_v1_ema_resume.py",
+   "stack/tests/test_refa_v1_ema_targets.py",
+   "stack/tests/test_refa_v1_goal_kappa.py",
+   "stack/tests/test_refa_v1_goal_kappa_cost.py",
+   "stack/tests/test_refa_v1_kamm_clip.py",
+   "stack/tests/test_refa_v1_kappa_levels.py",
+   "stack/tests/test_refa_v1_labels.py",
+   "stack/tests/test_refa_v1_ladder_alignment.py",
+   "stack/tests/test_refa_v1_lat_bias.py",
+   "stack/tests/test_refa_v1_lon_end_to_end.py",
+   "stack/tests/test_refa_v1_motion.py",
+   "stack/tests/test_refa_v1_nav.py",
+   "stack/tests/test_refa_v1_oracle_seed.py",
+   "stack/tests/test_refa_v1_plan_goal.py",
+   "stack/tests/test_refa_v1_proposal.py",
+   "stack/tests/test_refa_v1_seed_ladder.py",
+   "stack/tests/test_refa_v1_speed_channel.py",
+   "stack/tests/test_refa_v1_str_ext.py",
+   "stack/tests/test_refa_v1_target_space.py",
+   "stack/tests/test_refa_v1p.py",
+   "stack/tests/test_refav1_arm.py",
+   "stack/tests/test_refav1_kin_contract.py",
+   "stack/tests/test_refav1_loader_labels.py",
+   "stack/tests/test_refc_v3_scale_matrix.py",
+   "stack/tests/test_refd.py",
+   "stack/tests/test_refs_vocab_v7.py",
+   "stack/tests/test_residual_init_scale.py",
+   "stack/tests/test_seed_goal_agreement.py",
+   "stack/tests/test_steer_conversion_complete.py",
+   "stack/tests/test_steer_curvature_interface.py",
+   "stack/tests/test_tac_loss_logging.py",
+   "taniteval/tests/test_refav1_units_required.py"
+  ],
+  "stack/tanitad/refs/refa_v1_plan.py": [
+   "stack/tests/test_cost_ccos.py",
+   "stack/tests/test_cost_ccosh.py",
+   "stack/tests/test_cost_chord.py",
+   "stack/tests/test_cost_surface_probe.py",
+   "stack/tests/test_refa_v1.py",
+   "stack/tests/test_refa_v1_dk_hook.py",
+   "stack/tests/test_refa_v1_goal_kappa.py",
+   "stack/tests/test_refa_v1_goal_kappa_cost.py",
+   "stack/tests/test_refa_v1_kamm_clip.py",
+   "stack/tests/test_refa_v1_kappa_levels.py",
+   "stack/tests/test_refa_v1_lat_bias.py",
+   "stack/tests/test_refa_v1_oracle_seed.py",
+   "stack/tests/test_refa_v1_plan_goal.py",
+   "stack/tests/test_refa_v1_proposal.py",
+   "stack/tests/test_refa_v1_seed_ladder.py",
+   "stack/tests/test_refa_v1_speed_channel.py",
+   "stack/tests/test_refav1_arm.py",
+   "stack/tests/test_refcv3_ha0_ext_shared.py",
+   "stack/tests/test_seed_goal_agreement.py",
+   "stack/tests/test_steer_conversion_complete.py",
+   "stack/tests/test_steer_curvature_interface.py",
+   "taniteval/tests/test_floors_kin.py",
+   "taniteval/tests/test_refav1_units_required.py"
+  ],
+  "stack/scripts/refa_v1_train.py": [
+   "stack/tests/test_refa_v1_ema_resume.py",
+   "stack/tests/test_refa_v1_ema_targets.py",
+   "stack/tests/test_refa_v1_precision.py",
+   "stack/tests/test_refa_v1_skip_nonfinite.py",
+   "stack/tests/test_refa_v1_speed_channel.py",
+   "stack/tests/test_tac_loss_logging.py"
+  ],
+  "stack/tanitad/data/refav1_loader.py": [
+   "stack/tests/test_refa_v1_speed_channel.py",
+   "stack/tests/test_refav1_arm.py",
+   "stack/tests/test_refav1_kin_contract.py",
+   "stack/tests/test_refav1_loader.py",
+   "stack/tests/test_refav1_loader_labels.py",
+   "stack/tests/test_refc_v3_nav_from_v7.py",
+   "stack/tests/test_steer_curvature_interface.py"
+  ],
+  "taniteval/tools/refav1_arm.py": [
+   "stack/tests/test_actdiv_anchored.py",
+   "stack/tests/test_argparse_help_percent.py",
+   "stack/tests/test_b1_agent_join.py",
+   "stack/tests/test_cost_ccos.py",
+   "stack/tests/test_paired_openloop.py",
+   "stack/tests/test_refa_v1_lat_bias.py",
+   "stack/tests/test_refa_v1_oracle_seed.py",
+   "stack/tests/test_refa_v1_plan_goal.py",
+   "stack/tests/test_refav1_arm.py",
+   "stack/tests/test_refav1_kin_contract.py",
+   "stack/tests/test_refav1_lead_block.py",
+   "stack/tests/test_refav1_narrow_console_guard.py",
+   "stack/tests/test_refav1_window_list.py",
+   "stack/tests/test_refcv3_ha0_ext_shared.py",
+   "stack/tests/test_refcv3_route_nav_alignment.py",
+   "stack/tests/test_render_refav1_arms.py",
+   "stack/tests/test_steer_conversion_complete.py",
+   "stack/tests/test_steer_curvature_interface.py",
+   "taniteval/tests/test_refav1_components_yaw_mask.py",
+   "taniteval/tests/test_refav1_units_required.py"
+  ],
+  "taniteval/taniteval/leaderboard/*": [
+   "taniteval/tests/fixtures/leaderboard/bench/navsim_v2/warmup_two_stage/e2_refcv4b_warmup/summary.json",
+   "taniteval/tests/test_leaderboard.py"
+  ]
+ },
+ "register_lead_ids": {
+  "Project Steering/GOALS_AND_CLAIMS.md": {
+   "e_only_lines": 23,
+   "lead_id_on_tip": 15,
+   "lead_id_absent_on_tip": 0,
+   "no_id": 8,
+   "absent_leads": []
+  },
+  "Project Steering/BACKLOG.md": {
+   "e_only_lines": 2,
+   "lead_id_on_tip": 2,
+   "lead_id_absent_on_tip": 0,
+   "no_id": 0,
+   "absent_leads": []
+  },
+  "Project Steering/MODEL_REGISTRY.md": {
+   "e_only_lines": 10,
+   "lead_id_on_tip": 2,
+   "lead_id_absent_on_tip": 0,
+   "no_id": 8,
+   "absent_leads": []
+  },
+  "Project Steering/RETRACTION_LOG.md": {
+   "e_only_lines": 3,
+   "lead_id_on_tip": 1,
+   "lead_id_absent_on_tip": 0,
+   "no_id": 2,
+   "absent_leads": []
+  },
+  "Project Steering/PI_DECISION_QUEUE.md": {
+   "e_only_lines": 0,
+   "lead_id_on_tip": 0,
+   "lead_id_absent_on_tip": 0,
+   "no_id": 0,
+   "absent_leads": []
+  }
+ }
+}

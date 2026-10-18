@@ -22,3 +22,15 @@ Implementation order: checklist items 1, 2, 5, 6, 7 (new files) start now; items
 - **Q-S1: "Decide then".** A SCREEN-GO puts the full P6-HN arm in front of the PI with the screen's evidence; nothing
   launches on the A40 without the PI's yes.
 
+## Implementation part 2 readings, accepted by the MM before any screen data (2026-10-18)
+The families per-set export (`impl2/RESULT.md`) pairs the trajectory-level components on the §6 joint draws, as §10 and
+amendment B4 require. Three readings of §10's reporting rule (non-gating), fixed here before data:
+1. A **bias** component is adverse when the paired seed-mean `|B| - |A|` has its lower bound above 0, so a sign flip to a
+   larger magnitude counts as adverse (the older `fam_adverse` also required both intervals on one side of 0; dropped).
+2. The **progress ratio** is read the same way on `|B - 1| - |A - 1|`.
+3. **Tactical** adverse results are reported beside the watch-items, not in them: §10 names watch-items only for the
+   LONGITUDINAL and LATERAL families.
+Integration still owed (the S4 chain, checklist item 8): the chain argv must name `hn_screen_families.py --per-set-out` and
+`hn_screen_read.py --families-per-set`, and a chain test must assert both; without the second the families are not
+published, with the B4 reason stated.
+
