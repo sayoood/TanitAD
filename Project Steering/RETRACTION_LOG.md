@@ -1109,8 +1109,8 @@ was **idle the entire session** — 0 % GPU, 0 MiB, zero python processes.
 
 **HOW IT HAPPENED.** The AUTONOMOUS DRUMBEAT prompt says, in its own step (1), *"check the fleet
 (**pod2/pod1/pod3/eval**)"*. `LOOP_STATE.md` likewise lists **four** corrected aliases plus the new
-pod: `tanitad-pod` · `tanitad-pod2` · `tanitad-pod3` · **`tanitad-eval` 69.30.85.106:22073** ·
-newpod `69.30.85.48:22192`. **I probed pod / pod2 / pod3 / newpod every iteration and `eval` zero
+pod: `tanitad-pod` · `tanitad-pod2` · `tanitad-pod3` · **`tanitad-eval` <pod address redacted 2026-10-18>** ·
+newpod `<pod address redacted 2026-10-18>`. **I probed pod / pod2 / pod3 / newpod every iteration and `eval` zero
 times** — I had built a mental fleet list from the pods I happened to be working on, and then
 re-probed *that list* while believing I was checking the fleet.
 
@@ -1524,7 +1524,7 @@ gaussian covers. "The obvious missing piece" is not automatically an improvement
 
 **(i) The fleet.** I probed the 4 hosts in `~/.ssh/config`, found 3 refused, and reported *"pod2 is
 the entire GPU fleet"*. The PI corrected me: a second pod was training. It is
-**`69.30.85.48:22192`** (RunPod `interesting_gray_ant` / `v9ni8rpan3qyn3`), an A40 running
+**`<pod address redacted 2026-10-18>`** (RunPod `interesting_gray_ant` / `v9ni8rpan3qyn3`), an A40 running
 `flagship-v1arch-v2bal-30k` — **at step 9750 with `g_op_fwd_ade_m` 0.0898**, started 2026-08-01
 23:34 UTC. It was simply not in my ssh config. Grepping the repo for connection strings found it in
 one command.
@@ -18277,3 +18277,28 @@ largest measured effect*. A lever that the attribution assigns about 0.2 of the 
 - Same family as the `df` / scope traps: a correct estimator applied outside the scope it was built for.
 - ⇒ Before pairing against a banked arm, re-roll a small subset of it through the current instrument and require exact reproduction.
 - It was caught only because a known-value control, registered for a different experiment (the matched-phase turn test), re-rolled the reference and missed by 3.68 m.
+
+### R49 (2026-10-18) - three overstatements in the Master Mind's own landed rows of the same day (free-point, SO-CARVE), caught by the Paper v1.5 number check
+
+**Claimed (landed in 3879001 and 7eb328e):**
+1. Free-point: R0B "removes most of the slow bias", `along_final_bias_m` −0.195 vs BASE −0.826, "intervals disjoint / non-overlapping".
+2. SO-CARVE: the SAFEOBJ constraint's quantity is "1.4 to 4.5 times smaller" than the pick's TTC loss on RL-val.
+3. SO-CARVE: A2 (temperature sweep) "PROVISIONAL" / "A2-ALIGNED(T* = 0.02)", in the register row and in BACKLOG `SO-PICKCON`.
+
+**True:**
+1. The unpaired intervals are [−0.549, +0.153] and [−1.19, −0.478]. They OVERLAP on [−0.549, −0.478]. The shift is a point estimate, not separated.
+2. The dual's quantity has intervals spanning 0 (+0.22 [−0.15, +0.62] at u1000), so any ratio with it as denominator is unbounded. No ratio is quotable.
+3. `tempsweep_a2.json` reads `outcome: INVALID`: pre-registered control 3 failed. "PROVISIONAL" softened a failed control into a qualified pass.
+
+**Fixed:**
+- `D-REFE-FREEPOINT-1`, `D-REFE-SAFEOBJ-CARVE`, BACKLOG `SO-PICKCON`, `free-point-navtest/RESULT.md` §3, and an erratum heading `so-carve/RESULT.md`.
+- No number changed, and no row or verdict moved: FP-NONE, CARVE-TRACKS-TRAIN and the A1 numbers stand.
+- Paper v1.5 §7.21 was written from the JSON and states all three correctly.
+
+**Class:** *a summary written from the endpoints' magnitudes instead of from the arithmetic.*
+- (1) is an overlap judged by eye: −0.549 "looks" far from −0.478 when it is below it.
+- (2) is a ratio quoted without checking that its denominator is bounded away from 0.
+- (3) is a verdict word chosen for the narrative rather than read from the JSON key that holds it.
+- All three are the "a correct number carried into a wrong sentence" family.
+- They were caught only because a second agent re-derived every number from raw JSON with a verifier that fails on a mutated value.
+- ⇒ Before landing a register row, read every interval comparison, ratio and verdict word off the JSON key, never off the prose that summarised it, including one's own.

@@ -56,7 +56,7 @@ ADDENDUM_2 committed both outcomes before running D3 as ADDENDUM_1 defines it. O
 ## 3. Four families (`families6`, episode-cluster intervals, unpaired, conservative non-overlap)
 - **LONGITUDINAL.**
   - R0B has **no adverse component of 21** and removes most of the deployed scorer's slow bias:
-    - `along_final_bias_m` −0.195 [−0.549, +0.153] vs BASE −0.826 [−1.19, −0.478], intervals non-overlapping;
+    - `along_final_bias_m` −0.195 [−0.549, +0.153] vs BASE −0.826 [−1.19, −0.478]. ⚠️ **CORRECTED 2026-10-18 (R49):** these intervals OVERLAP on [−0.549, −0.478], so the shift is a point estimate, NOT separated. This line first read "intervals non-overlapping";
     - `speed_bias_mps` −0.064 vs −0.230.
   - C0A has 5 adverse components: `along_mae_m`, `speed_mae_mps`, `speed_rmse_mps`, `target_speed_acc.within_2.0_mps`, and lateral `curvature_mae_1pm`.
   - M25 has none.

@@ -1,5 +1,8 @@
 # SOCARVE: would a carve-fed dual have SEEN the R0d breach? (O4's 0-A40 first step, banked R0 states, A2 harness)
 
+> ⚠️ **ERRATUM (Master Mind, 2026-10-18, R49) — read before the sections below.** Two statements in this report are corrected; every number is unchanged. (1) **A2's registered outcome is INVALID** (`tempsweep_a2.json` key `outcome` = `INVALID`; control 3 failed). The text below labels it "A2-ALIGNED(T* = 0.02) ... PROVISIONAL", which softens a failed pre-registered control into a qualified pass. T ≈ 0.02 is a HYPOTHESIS, re-tested by `raw/2026-10-18-so-pickcon/`. (2) **The "1.4 to 4.5 times" ratio is withdrawn**: its denominators (the dual's quantity) have intervals spanning 0 at u500 and u1000, so the ratio is unbounded. State the two quantities instead: dual +0.22 [−0.15, +0.62] vs pick +1.00 [+0.30, +1.73] at u1000 on full RL-val.
+
+
 Research Lab agent, 2026-10-18. Package target `TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-18-so-carve/` (dev box `C:/Users/Admin/socarve/`). CPU only; the pod and the GPU lock were not touched; nothing committed or pushed.
 Pre-registrations, each hashed before the numbers it governs: main `PREREG_SOCARVE.md` sha256 `55a5c1759c15ae16...680644b` (frozen 04:47:33Z); A1 `PREREG_SOCARVE_A1_FULLVAL.md` `23e03f76048d780...507c22c22` (04:56:20Z, after the main read); A2 `PREREG_SOCARVE_A2_TEMPSWEEP.md` `de7a130845b6d83...a312ab` (04:58:24Z, after A1). The `.sha256` files hold the full digests; the main hash re-verifies.
 
