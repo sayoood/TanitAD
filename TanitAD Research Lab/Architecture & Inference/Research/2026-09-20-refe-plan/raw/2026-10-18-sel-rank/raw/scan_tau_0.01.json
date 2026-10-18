@@ -1,0 +1,115 @@
+{
+ "_what": "SEL-RANK reach PROXY on the navtrain held-out (dev) table. Grouped-by-log CV, 4 folds. SIBLING scorers, NOT P2. Nothing here touches navtest.",
+ "fixed_in_advance": {
+  "TAU(set by --tau)": 0.01,
+  "L2": 0.001,
+  "lr": 0.02,
+  "steps": 400,
+  "folds": 4,
+  "fold_assignment_seed": 20260927,
+  "families": [
+   "W5",
+   "CAL14"
+  ]
+ },
+ "estimator": "log-cluster bootstrap over the 24 held-out logs of the POOLED out-of-fold gain (the fits are not re-run per resample)",
+ "arms": {
+  "N-s0": {
+   "baseline_pdms_x100": {
+    "point": 90.76327478482624,
+    "lo": 88.1394434314352,
+    "hi": 92.87280644625979,
+    "B": 10000,
+    "n_nan": 0
+   },
+   "pool_x100": {
+    "point": 5.072808096907873,
+    "lo": 4.2039082943585795,
+    "hi": 5.85679425859786,
+    "B": 10000,
+    "n_nan": 0
+   },
+   "families": {
+    "W5": {
+     "identity_control_pick_matches_planner": {
+      "match": 3137,
+      "of": 3137
+     },
+     "out_of_fold_gain_x100": {
+      "point": -0.01367994899585595,
+      "lo": -0.2549212397186664,
+      "hi": 0.17678500708564818,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "out_of_fold_gain_from_nonzero_pick_x100": {
+      "point": -0.06415269365635962,
+      "lo": -0.32007345538916093,
+      "hi": 0.14657778996364765,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "out_of_fold_share_of_pool": {
+      "point": -0.012646386859275015,
+      "lo": -0.06589071098774929,
+      "hi": 0.02866523643917365,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "in_sample_gain_x100_mean_over_folds": 0.08915189131996432,
+     "tokens_improved_worsened": [
+      526,
+      24
+     ],
+     "negative_control_shuffled_labels_oof_gain_x100": {
+      "point": -0.19333630857507172,
+      "lo": -0.3771558860717196,
+      "hi": -0.0089847408865889,
+      "B": 10000,
+      "n_nan": 0
+     }
+    },
+    "CAL14": {
+     "identity_control_pick_matches_planner": {
+      "match": 3137,
+      "of": 3137
+     },
+     "out_of_fold_gain_x100": {
+      "point": 0.0031769206248008068,
+      "lo": -0.25788264045048676,
+      "hi": 0.2284634170637363,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "out_of_fold_gain_from_nonzero_pick_x100": {
+      "point": -0.08292062480076501,
+      "lo": -0.36072225515769496,
+      "hi": 0.1681599141185354,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "out_of_fold_share_of_pool": {
+      "point": -0.016346099284005877,
+      "lo": -0.07528169294646106,
+      "hi": 0.032476217099001774,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "in_sample_gain_x100_mean_over_folds": 0.2024893824013083,
+     "tokens_improved_worsened": [
+      722,
+      39
+     ],
+     "negative_control_shuffled_labels_oof_gain_x100": {
+      "point": -0.2438291361173095,
+      "lo": -0.6816628075037118,
+      "hi": 0.13183851764474105,
+      "B": 10000,
+      "n_nan": 0
+     }
+    }
+   },
+   "cross_scorer_transfer_CAL14_fit_on_this_applied_to": {}
+  }
+ }
+}
