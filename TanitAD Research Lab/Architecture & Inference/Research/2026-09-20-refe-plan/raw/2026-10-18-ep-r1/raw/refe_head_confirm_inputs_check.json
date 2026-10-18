@@ -1,0 +1,58 @@
+{
+ "what": "refe_head_confirm.py / make_navtest_bank_plan.py input phase on the REAL landed navtest artifacts; no outcome array opened; no row applied; no GPU; the S0 bank is not touched",
+ "table": {
+  "path": "D:/Projects/TanitAD-artifacts/p2_full_table/table_p2_full.npz",
+  "sha256": "33441082b7044c951e3cef5fb898cac50797039aed93560b2712e3ff4c34906e",
+  "n_tokens": 12146,
+  "n_logs": 136,
+  "pins_overridden": []
+ },
+ "C0_table_half": {
+  "rule_pick_equals_stored_pick": 12146,
+  "n_tokens": 12146,
+  "pass": true
+ },
+ "banked_p2_seam": {
+  "path": "D:/Projects/TanitAD/data/refe_navtest/seams/stage2_p2_full.npz",
+  "n_seam_tokens": 12146,
+  "all_table_tokens_in_seam": true,
+  "poses_max_abs_m": 0.0,
+  "fingerprints_equal": true,
+  "sampling": [
+   8.0,
+   0.5
+  ],
+  "pass": true
+ },
+ "plan_converter": {
+  "n_chunks": 14,
+  "n_tokens": 12146,
+  "n_logs": 136,
+  "all_nuplan_dbs_exist": true,
+  "chunk_sizes": [
+   990,
+   903,
+   868,
+   591,
+   986,
+   946,
+   916,
+   963,
+   502,
+   918,
+   983,
+   993,
+   958,
+   629
+  ],
+  "pass": true
+ },
+ "bank_size": {
+  "features_fp16_bytes": 398000128,
+  "features_MB": 398.0,
+  "note": "arithmetic from the pinned shape [12146,64,256] fp16; the fan dump beside it is ~0.3 GB (ESTIMATED from the 14 landed dump_main chunks: 98 MB without proposals20)"
+ },
+ "outcomes_opened": false,
+ "elapsed_s": 21.5,
+ "all_pass": true
+}
