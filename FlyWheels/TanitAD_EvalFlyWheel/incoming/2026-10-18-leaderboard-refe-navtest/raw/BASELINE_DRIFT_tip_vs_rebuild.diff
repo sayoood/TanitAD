@@ -1,0 +1,158 @@
+--- /dev/fd/63	2026-10-18 13:52:20.000000000 +0200
++++ /dev/fd/62	2026-10-18 13:52:20.000000000 +0200
+@@ -66,9 +66,9 @@
+ 
+ | claim | tier · loop | grid | our number [CI] | margin vs each floor (model − floor) [paired CI] → verdict | registry · raw artifact |
+ |---|---|---|---|---|---|
+-| refcv4b — the best B1 arm (T1 panel) | T1 · OPEN | B1 v7.2 EVAL · 4,823 windows / 141 episodes | 0.2965 [0.2697, 0.3280] | ha0_ext (echo): +0.0091 [−0.0055, +0.0254] (TIE)<br>ha (hold-action): −0.0032 [−0.0179, +0.0133] (TIE)<br>ha0 (straight line, measured v0): −0.3758 [−0.4336, −0.3233] (model WINS) | §4.6 · `TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-07-refcv5-v2-comparison/raw/refcv5-v2_vs_refcv4b.json` (sha256 8acbcc1700e9…) |
+-| refcv5-v2 — the WP-4 sampler rung (T1 panel) | T1 · OPEN | B1 v7.2 EVAL · 4,823 windows / 141 episodes | 0.3079 [0.2795, 0.3390] | ha0_ext (echo) — the committed bar BAR-REFCV5V2-1: +0.0205 [+0.0043, +0.0390] (⛔ floor WINS · FRAGILE)<br>ha (hold-action): +0.0082 [−0.0082, +0.0267] (TIE)<br>ha0 (straight line, measured v0): −0.3644 [−0.4219, −0.3128] (model WINS) | §4.8 · `TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-07-refcv5-v2-comparison/raw/refcv5-v2_vs_refcv4b.json` (sha256 8acbcc1700e9…) |
+-| refcv3 — final step 40,284 (T1 read) | T1 (stamped; ruling UNRULED) · OPEN | B1 v7.2 EVAL · 4,823 windows / 141 episodes | 0.4419 [0.4098, 0.4743] | ha (hold-action): +0.1423 [+0.1187, +0.1658] (⛔ floor WINS)<br>ha0 (straight line, measured v0): −0.2304 [−0.2881, −0.1781] (model WINS) | §4.5 · `taniteval/results/refcv3-40284-openloop.ARM.json` (sha256 d94e28570613…) |
++| refcv4b — the best B1 arm (T1 panel) | T1 · OPEN | B1 v7.2 EVAL · 4,823 windows / 141 episodes | 0.2965 [0.2697, 0.3280] | ha0_ext (echo): +0.0091 [−0.0055, +0.0254] (TIE)<br>ha (hold-action): −0.0032 [−0.0179, +0.0133] (TIE)<br>ha0 (straight line, measured v0): −0.3758 [−0.4336, −0.3233] (model WINS) | §4.6 · `TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-07-refcv5-v2-comparison/raw/refcv5-v2_vs_refcv4b.json` (sha256 442df08d7c8a…) |
++| refcv5-v2 — the WP-4 sampler rung (T1 panel) | T1 · OPEN | B1 v7.2 EVAL · 4,823 windows / 141 episodes | 0.3079 [0.2795, 0.3390] | ha0_ext (echo) — the committed bar BAR-REFCV5V2-1: +0.0205 [+0.0043, +0.0390] (⛔ floor WINS · FRAGILE)<br>ha (hold-action): +0.0082 [−0.0082, +0.0267] (TIE)<br>ha0 (straight line, measured v0): −0.3644 [−0.4219, −0.3128] (model WINS) | §4.8 · `TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-07-refcv5-v2-comparison/raw/refcv5-v2_vs_refcv4b.json` (sha256 442df08d7c8a…) |
++| refcv3 — final step 40,284 (T1 read) | T1 (stamped; ruling UNRULED) · OPEN | B1 v7.2 EVAL · 4,823 windows / 141 episodes | 0.4419 [0.4098, 0.4743] | ha (hold-action): +0.1423 [+0.1187, +0.1658] (⛔ floor WINS)<br>ha0 (straight line, measured v0): −0.2304 [−0.2881, −0.1781] (model WINS) | §4.5 · `taniteval/results/refcv3-40284-openloop.ARM.yawmask.json` (sha256 d28e32258903…) |
+ | refav1 — final step 21,109 (T1 read) | T1 · OPEN | B1 v7.2 EVAL (stride 40) · 282 windows / 141 episodes | 0.5474 [0.4839, 0.6108] | ha0 (straight line, measured v0): +0.0158 [+0.0007, +0.0315] (⛔ floor WINS)<br>ha (hold-action): +0.0083 [−0.0574, +0.0703] (TIE) | §2.4 · `taniteval/results/refav1-21109-openloop.json` (sha256 4b23ef0d6999…) |
+ | flagship line — stage-A repaired (T1, corpus C3) | T1 · OPEN | C3 w120 val, stride 1 · 6,844 windows / 40 episodes | 9.3697 [6.6822, 12.2576] | ha (hold-action; no ha0 in this dump): +8.9451 [+6.3029, +11.8009] (⛔ floor WINS) | §1.14 · `TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-08-18-v58f-artifact-banking/gates/four_families/ff_stageA_cl.json` (sha256 7f4c93f7eade…) |
+ | refcv3 — CLOSED loop, Thor NuRec-gsplat render | T2 · CLOSED | 1 NuRec scene, empty (road + background layers), 9 starts × 50 ticks · 435 windows / 9 rollout starts | 2.8755 [1.6750, 3.9814] | cl_ha0_ext (constant turn rate): +0.2173 [−1.2725, +1.5321] (TIE)<br>cl_ha0 (straight line, measured v0): +0.1307 [−0.6213, +0.8809] (TIE) | §1.12 banner · `taniteval/results/2026-09-04-closedloop-floor/FLOOR_SUMMARY.json` (sha256 959dcf693774…) |
+@@ -106,11 +106,11 @@
+ | LONGITUDINAL | `LON_speed_mae_mps` | −0.0364 [−0.0636, −0.0079] → model WINS | +0.1976 [+0.1737, +0.2204] → ⛔ floor WINS | 4,823 |
+ | LATERAL | `LAT_cross_mae_m` | −0.2048 [−0.2686, −0.1500] → model WINS | −0.0142 [−0.0288, +0.0004] → TIE | 4,823 |
+ | LATERAL | `LAT_heading_mae_deg` | −1.3741 [−1.7569, −1.0418] → model WINS | −0.1332 [−0.2539, −0.0138] → model WINS | 4,548 |
+-| LATERAL | `LAT_yaw_rate_mae_radps` | **−0.0100 [−0.0168, −0.0037] → model WINS** (masked cell, n 4,524; unmasked it read +0.1700 [+0.1006, +0.2534] → floor WINS, `RETR-2026-09-26-YAWMASK`) | **+0.0064 [+0.0023, +0.0107] → ⛔ floor WINS** (masked, n 4,535; unmasked +0.1849 [+0.1162, +0.2683]) | 4,823 windows; 4,524 / 4,535 with a valid pair |
++| LATERAL | `LAT_yaw_rate_mae_radps` | **−0.0100 [−0.0168, −0.0037] → model WINS** (masked cell, n 4,524; unmasked it read +0.1700 [+0.1006, +0.2534] → ⛔ floor WINS) | **+0.0064 [+0.0023, +0.0107] → ⛔ floor WINS** (masked cell, n 4,535; unmasked it read +0.1849 [+0.1162, +0.2683] → ⛔ floor WINS) | 4,823 windows; 4,524 / 4,535 with a valid pair · `RETR-2026-09-26-YAWMASK` |
+ | TACTICAL | `TAC_traj_lat_correct` | +0.0881 [+0.0580, +0.1233] → model WINS | +0.0158 [+0.0017, +0.0273] → model WINS | 4,823 |
+ | TACTICAL | `TAC_traj_lon_correct` | −0.0100 [−0.0356, +0.0162] → TIE | −0.0966 [−0.1189, −0.0739] → ⛔ floor WINS | 4,823 |
+ 
+-*Source: `taniteval/results/refcv3-40284-openloop.ARM.json`*
++*Source: `taniteval/results/refcv3-40284-openloop.ARM.yawmask.json`*
+ 
+ **STRATEGIC** — route-head probe (reads the observed window; not the trajectory-derived family, which a 2 s path cannot carry): accuracy shuffled 0.7667 (κ +0.4604, n 3622) · true 0.7667 (κ +0.4604, n 3622) · zero 0.7667 (κ +0.4604, n 3622) → identical under every nav conditioning — nav-INSENSITIVE by construction (the shuffle has no power on it). `taniteval/results/refcv3-40284-openloop.json`
+ 
+@@ -274,7 +274,7 @@
+ 
+ *⛔ EVERY NavSim ROW NEEDS ITS **STOP** FLOOR BESIDE CV — on v1 and v2 alike, and both generations have now MEASURED it: **navhard STOP 29.85 vs CV 11.48 (2.6x)**, **navtest STOP 61.82 vs CV 20.65 (3.0x)**. Mechanism, from source and confirmed by the run: the split keeps only scenes the HUMAN passes, so a stopped ego holds NC / DAC / TTC near 1 — **5/12 = 41.67 PDMS points free** — plus comfort at low speed. ⇒ CV is not the floor it looks like, and on v1 it is also the agent the split was FILTERED with, so it cannot be read as a generic floor at all. ⭐ The 20-token smoke that first showed this is SUPERSEDED by the full 12,146-token run; its numbers were never printed here and the full-split values are in the table below.*
+ 
+-⛔ **DOING NOTHING BEATS THE MOVING FLOOR HERE: STOP 29.85 vs CV 11.48 — a factor of 2.60×** (MEASURED, our run `20260920T082848Z-navsim_v2-none-06e257`; paired Δ +18.3716 ×100). The mechanism is in the score's own shape: EPDMS **multiplies** its compliance terms, and a stopped ego keeps DAC 0.9311, DDC 1.0000, NC 0.9967, TLC 0.9978, TTC 0.9978 at stage 1, while only ego progress punishes it (EP 0.3409 against CV's 0.7753). ⇒ **"beats CV" is NOT evidence of driving on this benchmark. The bar for any TanitAD arm is STOP.**
++⛔ **DOING NOTHING BEATS THE MOVING FLOOR HERE: STOP 29.85 vs CV 11.48 — a factor of 2.60×** (MEASURED, our run `20260921T122714Z-navsim_v2-refcv4b_b1_v72_40k-859e25`; paired Δ +18.3716 ×100). The mechanism is in the score's own shape: EPDMS **multiplies** its compliance terms, and a stopped ego keeps DAC 0.9311, DDC 1.0000, NC 0.9967, TLC 0.9978, TTC 0.9978 at stage 1, while only ego progress punishes it (EP 0.3409 against CV's 0.7753). ⇒ **"beats CV" is NOT evidence of driving on this benchmark. The bar for any TanitAD arm is STOP.**
+ 
+ | system | EPDMS | role | source (key · table · p.) | #151 side | modality (authors' claim) | ego status at inference | comparison |
+ |---|---|---|---|---|---|---|---|
+@@ -310,6 +310,23 @@
+ | STOP | 0.9311 | 1.0000 | 0.0889 | 0.3409 | 0.4889 | 0.8911 | 0.9967 | 0.9978 | 0.9978 |
+ | CV | 0.4289 | 0.7067 | 0.6044 | 0.7753 | 0.9711 | 0.7867 | 0.8889 | 0.9933 | 0.8733 |
+ 
++*Run `20260921T122714Z-navsim_v2-refcv4b_b1_v72_40k-859e25` — checkpoint: refcv4b-b1-v72-40k · harness `autonomousvision/navsim@0a380a9063d7162ec93d0f51e9990ebac585f720 + 6 patches` · T1-family · loop stage one OPEN (PI ruling 2026-09-02) · stage two UNRULED (2026-09-02 vocabulary) · background traffic IDM-reactive vehicles in BOTH stages; ego non-reactive. Source `taniteval/results/bench/navsim_v2/navhard_two_stage/20260921T122714Z-navsim_v2-refcv4b_b1_v72_40k-859e25/summary.json`.*
++
++| arm | kind | declared inputs | official two-stage EPDMS ×100 | interval (estimator · clusters) | stage 1 ×100 (n) | stage 2 ×100 (n) | Δ vs STOP | Δ vs CV |
++|---|---|---|---|---|---|---|---|---|
++| STOP | floor |  | 29.85 | [27.37, 32.53] · `navsim_log_cluster_bootstrap` over 76 log_name clusters | 56.32 (450) | 50.68 (5462) | self | +18.37 |
++| ECHO | floor | ego_velocity[t0], ego_acceleration[t0] | 14.29 | [11.68, 16.98] · `navsim_log_cluster_bootstrap` over 76 log_name clusters | 38.66 (450) | 32.53 (5462) | −15.56 | +2.81 |
++| CV | floor | ego_velocity[t0] | 11.48 | [8.25, 14.50] · `navsim_log_cluster_bootstrap` over 76 log_name clusters | 28.96 (450) | 34.25 (5462) | −18.37 | self |
++| A1 | model | cameras: cam_l0+cam_f0+cam_r0 stitched -> 256x640 cylindrical, t0 frame (ST), ego_velocity[t0], ego_acceleration[t0], driving_command[t0] ⚠️ route oracle | ⛔ HYBRID — not this arm's own number | UNAVAILABLE | 28.96 (450) | 37.68 (5462) | — | — |
++
++*Stage-1 sub-metrics of the floors (from the same run) — EPDMS multiplies DAC, DDC, EC, HC, LK, NC, TLC, TTC and weights EP, so a term near 1.0 is a term that does not punish the arm:*
++
++| arm | DAC | DDC | EC | EP | HC | LK | NC | TLC | TTC |
++|---|---|---|---|---|---|---|---|---|---|
++| STOP | 0.9311 | 1.0000 | 0.0889 | 0.3409 | 0.4889 | 0.8911 | 0.9967 | 0.9978 | 0.9978 |
++| ECHO | 0.5156 | 0.7656 | 0.8000 | 0.7866 | 0.9711 | 0.8200 | 0.9000 | 0.9933 | 0.8689 |
++| CV | 0.4289 | 0.7067 | 0.6044 | 0.7753 | 0.9711 | 0.7867 | 0.8889 | 0.9933 | 0.8733 |
++
+ *⚖️ Reference arm — **Human (the logged expert) — navhard STAGE 1 ONLY**: EPDMS ×100 **93.4796** over n = 450 (N2b human_agent, navhard stage 1 (one-stage runner, IDM-reactive, filter ON)). ⛔ STAGE 1 ONLY — NOT comparable with any two-stage EPDMS column. The TWO-STAGE human is UNDEFINED on this benchmark: every synthetic stage-2 scene has num_future_frames = 0, so the official runner exits 1 and writes no CSV. ⇒ reported as undefined, ⛔ never imputed. Source `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-warmup-reference-epdms/raw/navhard/human_stage_one_navhard.json` (sha256 41106e788490…).*
+ 
+ *⭐ Harness validation — **E1 harness validation — our CV arm vs the HF navhard leaderboard and vs [N2] Table 2**. Our CV reads **11.4816** ×100 (stage 1 28.9588 · stage 2 34.2464), worst sub-metric |Δ| 0.09. ⛔ **STATE THE ARTIFACT BEFORE THE CONVENTION — there are TWO external publications here and they print the same underlying value differently:*
+@@ -400,7 +417,7 @@
+ 
+ ⭐ **HUMAN IS DEFINED ON THIS PROTOCOL** — navtest is SINGLE-STAGE, so the logged expert can be scored and the ceiling is a number. ⛔ On the v2 TWO-STAGE splits (navhard, warmup) the suite REFUSES that headline because every synthetic stage-2 scene has `num_future_frames = 0`; there the human is **UNDEFINED, not missing** — read the v2 refusal as an identity of the protocol, never as a gap in our measurement.
+ 
+-*Run — full split, 12,146 tokens per arm · T1-family · loop S1 OPEN · background non-reactive (logged) · source `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-v1-navtest/raw/analysis_navtest.json` (sha256 b44572c6801b…). REGISTERED for PDMS_v1_navtest while this package was running; per-arm intervals and the paired deltas are below. It answers 'would another draw of LOGS say this?' — blind to training and inference variance by construction.*
++*Run — full split, 12,146 tokens per arm · T1-family · loop S1 OPEN · background non-reactive (logged) · source `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-v1-navtest/raw/analysis_navtest.json` (sha256 a49348c9d0cc…). REGISTERED for PDMS_v1_navtest while this package was running; per-arm intervals and the paired deltas are below. It answers 'would another draw of LOGS say this?' — blind to training and inference variance by construction.*
+ 
+ | arm | kind | declared inputs | PDMS x100 | CI95 (estimator · clusters) | n | NC | DAC | DDC | TTC | C | EP | Δ vs CV [paired CI] | vs the published cell |
+ |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+@@ -417,7 +434,7 @@
+ | **this CV cell** (post-measurement, 2026-09-20) | SETTLED for this cell: the paper's 20.6 is a TRUNCATION of 20.65165… (rounding would print 20.7), and the leaderboard's 20.6517 is a ROUNDING of the same number. | W3 MEASURED the CV arm on the full split: PDMS = 20.651651538606658, which equals the INHERITED leaderboard value at its 4 printed decimals. The 'Tab.3 Constant Velocity PDMS' cell above is therefore no longer print-vs-inherited but print-vs-measured. ⚠️ ASSUMPTION, stated and not itself measured: the cell verdict assumes the paper's CV row is the same underlying quantity as W3's measurement; supported (5 sub-scores match Tab. 1 at 1 dp; PDMS matches the LB at 4 dp; the paper states Tab. 3 IS that leaderboard) but not itself measured. |
+ | **the PAPER** (standing verdict, unchanged) | UNSETTLED for [N1]. The one test internal to the paper implies ROUNDING; the 4 informative leaderboard cells split 3 ROUNDING / 1 TRUNCATION, and that source is a moving target two years newer than the paper, so a single disagreeing cell is as likely to be a different run as a different convention. ⛔ No convention may be assumed. | tally over its leaderboard cells: **TRUNCATION 1** · **ROUNDING 3** · **UNINFORMATIVE 3**; the one test internal to the paper implies **ROUNDING** (*the paper's std came from the TRUE seeds, not the printed ones; a true std anywhere in [0.560, 0.570) would also truncate to 0.56*). UNCHANGED — still UNSETTLED. The other three informative cells (TransFuser 83.9, Ego-MLP 66.4, LTF ±0.6) still read as ROUNDING and are unexplained; they may record a different RUN than the 2026-08-23 leaderboard rather than a different rule. One cell demonstrably truncated is not a convention. |
+ 
+-*⚠️ **What changed is the cell's EVIDENCE CLASS, not a new measurement of the paper**: from *print vs an INHERITED leaderboard value* to *print vs a value WE measured*. ⛔ And the counterfactual is the honest scope — had the paper's CV been 20.6499, **both** conventions would print 20.6 and the cell would say nothing. ⭐ What W3's measurement supersedes: W1's 8/8 and E1's 19/19 were both about the PAPER alone; this one separates the two SOURCES. Prior: E1 MEASURED that [N2] arXiv 2506.04218v3 TRUNCATES (8/8 truncating vs 4/8 rounding on its Table 2 CV S1 column, n = 450). Same group, different paper: a prior, never proof for [N1]. ⇒ AMENDMENT A1 stays in force for every cell of this paper. SPEC AMENDMENT A1: the verdict reports BOTH readings of the measured value at the table's printed precision — round-half-up and truncate — and a cell counts as REPRODUCED only if BOTH read the published digits. One-sided agreement is reported as REPRODUCED_UNDER_<convention> with the other reading printed beside it, never as a bare REPRODUCED, and never chosen for being the flattering one. Source `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-v1-navtest/raw/print_convention_probe.json` (sha256 2795d9775590…) — adjudicated by W3 2026-09-20 after the orchestrator relayed 'the paper truncates' and W4 checked that phrasing against THIS file. W4's narrowing was correct.*
++*⚠️ **What changed is the cell's EVIDENCE CLASS, not a new measurement of the paper**: from *print vs an INHERITED leaderboard value* to *print vs a value WE measured*. ⛔ And the counterfactual is the honest scope — had the paper's CV been 20.6499, **both** conventions would print 20.6 and the cell would say nothing. ⭐ What W3's measurement supersedes: W1's 8/8 and E1's 19/19 were both about the PAPER alone; this one separates the two SOURCES. Prior: E1 MEASURED that [N2] arXiv 2506.04218v3 TRUNCATES (8/8 truncating vs 4/8 rounding on its Table 2 CV S1 column, n = 450). Same group, different paper: a prior, never proof for [N1]. ⇒ AMENDMENT A1 stays in force for every cell of this paper. SPEC AMENDMENT A1: the verdict reports BOTH readings of the measured value at the table's printed precision — round-half-up and truncate — and a cell counts as REPRODUCED only if BOTH read the published digits. One-sided agreement is reported as REPRODUCED_UNDER_<convention> with the other reading printed beside it, never as a bare REPRODUCED, and never chosen for being the flattering one. Source `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-v1-navtest/raw/print_convention_probe.json` (sha256 de8f806e649a…) — adjudicated by W3 2026-09-20 after the orchestrator relayed 'the paper truncates' and W4 checked that phrasing against THIS file. W4's narrowing was correct.*
+ 
+ *The published field on this protocol:*
+ 
+@@ -434,6 +451,7 @@
+ | TransFuser | 84.0 | competitor | — | authors' claim: ego_status, camera, lidar | yes — ego_status, camera, lidar | `2406.15349` · Tab. 1 · p.7 |
+ | World4Drive (perception-free) | 85.1 | competitor | 21M · ~20 h | Inputs column (Tab. 2 p.8): 'C & L' — camera AND LiDAR. ⛔ NOT a camera-only row | unverified | `2601.22032` · Tab. 2 (first block = the perception-free setting) · p.8 |
+ | Epona (perception-free) | 86.2 | competitor | 1.1B (ViT/G) · 128 h | Inputs column (Tab. 2 p.8): 'Camera' | unverified | `2601.22032` · Tab. 2 (first block = the perception-free setting) · p.8 · ⚠️ the SAME paper's Tab. 1 p.4 prints 86.1 |
++| DiffusionDrive | 88.1 | competitor | — | authors' claim: camera + LiDAR, ResNet-34 (aligned backbone) | unverified | `2411.15139` · Tab. 1 · p.6 |
+ | Drive-JEPA (perception-free) | 89.0 | competitor | 307M ViT/L · 330 h | Inputs column (Tab. 2 p.8): 'Camera' — front camera only, 2 frames at 512x256 (Tab. 8 p.14 + §4.2 p.7; the 1024x256 front+left+right stack is Transfuser's) | yes — command, speed, acceleration (p.4) ⚠️ route oracle | `2601.22032` · Tab. 2 (first block = the perception-free setting) · p.8 |
+ | Hydra-MDP | 91.3 | competitor | — | authors' claim: ego_status, camera, lidar | yes — ego_status, camera, lidar | `2406.15349` · Tab. 3 · p.9 |
+ | PDM-Closed (privileged) | 89.1 | privileged | — | privileged | yes | `2606.07170` · Tab. 1 · p.5 |
+@@ -474,6 +492,10 @@
+ | Latent-WAM | 89.3 | competitor | UNVERIFIED | `2605.09701` · Tab. 2 (EPDMS column) · p.7 | corrected column |
+ | DiffusionDrive-V2 | 87.5 | competitor | camera + LiDAR | `2605.09701` · Tab. 2 (EPDMS column) · p.7 | corrected column; a third party's re-score (DDv2's own paper prints 85.5 on EPDMS*) |
+ | DiffusionDrive | 84.5 | competitor | camera + LiDAR | `2605.09701` · Tab. 2 (EPDMS column) · p.7 | the corrected-EPDMS column of 2605.09701 Tab.2 |
++| **our floor — CV** | ⛔ UNAVAILABLE — scoring FAILED: ["summary line 'Number of successful scenarios' ABSENT — cannot confirm work", 'failed scenarios = None', 'no result CSV found'] (arm status FAILED) | floor | ego_velocity[t0] | run `20260927T032007Z-navsim_v2-none-54a002` · `taniteval/results/bench/navsim_v2/navtest_single_stage/20260927T032007Z-navsim_v2-none-54a002/summary.json` | interval UNAVAILABLE · #151 side per the artifact: MEASURED: devkit 0a380a9 = post-#151 (E1: README changelog 2025/09/29 + pdm_score.py:194-219) |
++| **our floor — STOP** | ⛔ UNAVAILABLE — scoring FAILED: ["summary line 'Number of successful scenarios' ABSENT — cannot confirm work", 'failed scenarios = None', 'no result CSV found', "a… (arm status FAILED) | floor |  | run `20260927T032007Z-navsim_v2-none-54a002` · `taniteval/results/bench/navsim_v2/navtest_single_stage/20260927T032007Z-navsim_v2-none-54a002/summary.json` | interval UNAVAILABLE · #151 side per the artifact: MEASURED: devkit 0a380a9 = post-#151 (E1: README changelog 2025/09/29 + pdm_score.py:194-219) |
++| **our reference — HUMAN** | ⛔ UNAVAILABLE — scoring FAILED: ["summary line 'Number of successful scenarios' ABSENT — cannot confirm work", 'failed scenarios = None', 'no result CSV found'] (arm status FAILED) | reference | logged future trajectory (PRIVILEGED, label-side only) | run `20260927T032007Z-navsim_v2-none-54a002` · `taniteval/results/bench/navsim_v2/navtest_single_stage/20260927T032007Z-navsim_v2-none-54a002/summary.json` | interval UNAVAILABLE · #151 side per the artifact: MEASURED: devkit 0a380a9 = post-#151 (E1: README changelog 2025/09/29 + pdm_score.py:194-219) |
++| **TanitAD — any arm** | ⛔ NOT TARGETED — kept for orientation only |  |  |  |  |
+ 
+ *implementation NOT STATED by the source — out of comparison:*
+ 
+@@ -485,7 +507,8 @@
+ | Hydra-MDP++ (ViT/L) | 85.6 | competitor | camera | `2601.22032` · Tab. 3 · p.8 | unstated |
+ | Drive-JEPA (ResNet34) | 85.4 | competitor | front camera only, 2 frames 512x256 | `2601.22032` · Tab. 3 · p.8 | unstated (its baselines match the EPDMS* column) |
+ | iPad (ResNet34) | 84.1 | competitor | 4 cameras (2601.22032 App. B) | `2601.22032` · Tab. 3 · p.8 | Drive-JEPA does not state its implementation |
+-| **TanitAD — any arm** | ⛔ NOT TARGETED — kept for orientation only |  |  |  |  |
++
++*Our rows sit in the group their artifact's own `provenance.harness.fix151` names. ⚠️ `FIX151_POST_ONLY_COMPARABLE`: a post-#151 number is comparable ONLY to the post-#151 rows, and even those only if their authors scored non-reactive traffic, which no banked primary states (W8 RESULT §6 E1). A pre-#151 row is never a target for it.*
+ 
+ 
+ ### 0E.5 `nuScenes_OL_L2_stp3` — nuScenes open-loop planning — ST-P3 convention (L2 averaged up to t)
+@@ -610,6 +633,38 @@
+ *Not banked, never compared: ADT (Bench2Drive) — INHERITED — no banked primary; never printed in a comparison cell.*
+ *Not banked, never compared: 'SOTA claim (survey)' 89.3 EPDMS navtest, arXiv 2606.19641 — INHERITED — a survey figure is secondary by construction; not banked, not printed.*
+ 
++### 0E.x Runs read from disk that no table on this page shows *(generated)*
++
++*These W1 runs were read and validated, and no table above renders them (their protocol has no column yet, or its table prints published rows only) — listed rather than dropped, because a result the page silently ignores is worse than one it says it cannot place.*
++
++| protocol | run | arm | kind | checkpoint (artifact's own `registry_key_display`) | headline |
++|---|---|---|---|---|---|
++| `nuScenes_OL_L2_stp3` | `20260926T132840Z-nuscenes_ol-none-fcfc20` | CV | floor | — | 0.8182 *(`L2_m`)* |
++| `nuScenes_OL_L2_stp3` | `20260926T132840Z-nuscenes_ol-none-fcfc20` | GT | reference | — | 0.0000 *(`L2_m`)* |
++| `nuScenes_OL_L2_stp3` | `20260926T132840Z-nuscenes_ol-none-fcfc20` | STOP | floor | — | 6.5910 *(`L2_m`)* |
++| `nuScenes_OL_L2_stp3` | `20260926T133942Z-nuscenes_ol-none-2caba6` | CV | floor | — | 0.8182 *(`L2_m`)* |
++| `nuScenes_OL_L2_stp3` | `20260926T133942Z-nuscenes_ol-none-2caba6` | GT | reference | — | 0.0000 *(`L2_m`)* |
++| `nuScenes_OL_L2_stp3` | `20260926T133942Z-nuscenes_ol-none-2caba6` | STOP | floor | — | 6.5910 *(`L2_m`)* |
++| `nuScenes_OL_L2_stp3` | `20260926T140356Z-nuscenes_ol-none-0660f6` | CV | floor | — | 0.8182 *(`L2_m`)* |
++| `nuScenes_OL_L2_stp3` | `20260926T140356Z-nuscenes_ol-none-0660f6` | GT | reference | — | 0.0000 *(`L2_m`)* |
++| `nuScenes_OL_L2_stp3` | `20260926T140356Z-nuscenes_ol-none-0660f6` | STOP | floor | — | 6.5910 *(`L2_m`)* |
++| `nuScenes_OL_L2_uniad` | `20260926T140150Z-nuscenes_ol-none-e01c44` | CV | floor | — | 1.3645 *(`L2_m`)* |
++| `nuScenes_OL_L2_uniad` | `20260926T140150Z-nuscenes_ol-none-e01c44` | GT | reference | — | 0.0000 *(`L2_m`)* |
++| `nuScenes_OL_L2_uniad` | `20260926T140150Z-nuscenes_ol-none-e01c44` | STOP | floor | — | 9.3486 *(`L2_m`)* |
++
++### 0E.y Withdrawn runs — kept as the record, never a result *(generated)*
++
++*A withdrawn run keeps its `summary.json` (`results/bench/**` is append-only) and gains a `TOMBSTONE.json`; no table above reads it.*
++
++| protocol | withdrawn run | superseded by | why (the tombstone's words) | removed (UTC) |
++|---|---|---|---|---|
++| `EPDMS_v2_navhard_two_stage` | `20260920T144140Z-navsim_v2-refcv4b_b1_v72_40k-b11027` | `20260921T122714Z-navsim_v2-refcv4b_b1_v72_40k-859e25` | every arm E1_RAM_GUARD_ABORT (available 1035 MB vs floor 3000; scorer RSS 768 MB) while other sessions held the box — the run never finished | 2026-09-21T12:28:28Z |
++| `EPDMS_v2_navhard_two_stage` | `20260920T201038Z-navsim_v2-refcv4b_b1_v72_40k-d3c2b2` | `20260921T122714Z-navsim_v2-refcv4b_b1_v72_40k-859e25` | every arm E1_RAM_GUARD_ABORT at the hard floor (948-1,750 MB); W7's retry v1 then MIS-REPORTED it as a success (existence test on summary.json) | 2026-09-21T12:28:29Z |
++| `EPDMS_v2_navhard_two_stage` | `20260921T091732Z-navsim_v2-refcv4b_b1_v72_40k-f99b29` | `20260921T122714Z-navsim_v2-refcv4b_b1_v72_40k-859e25` | COMPLETE and the SCORED source of record, but its ARTIFACTS were built by the pre-fix builder and read 1/1/1/15 criteria violations under registry 2.10.3; the final run re-derives them from THESE s… | 2026-09-21T12:28:29Z |
++| `EPDMS_v2_navhard_two_stage` | `20260921T122531Z-navsim_v2-refcv4b_b1_v72_40k-e6560d` | `20260921T122714Z-navsim_v2-refcv4b_b1_v72_40k-859e25` | re-derivation whose summary.json still carried the WARMUP family-refusal text (204 / 16 scenes) for navhard A1; artifacts were already correct | 2026-09-21T12:28:29Z |
++| `nuScenes_OL_L2_stp3` | `20260926T131946Z-nuscenes_ol-none-0885ff` | `20260926T132840Z-nuscenes_ol-none-fcfc20` | VAD-pipeline collision computed over the WRONG categories: VAD selects colliding agents by raw category.json INDEX ({2..8} ped, {14..23} veh), valid only for the 32-entry lidarseg ordering; the bas… | 2026-09-26T13:30:46Z |
++| `nuScenes_OL_L2_uniad` | `20260926T131756Z-nuscenes_ol-none-21abb2` | `20260926T140150Z-nuscenes_ol-none-e01c44` | UniAD GT-collision floor used a NON-reference denominator (valid timesteps only): 0.3847/0.4244/0.4298 pct, +10/+12/+23 pct above PARA-Drive Tab.8 and growing with horizon. Pre-registered H1 (PRERE… | 2026-09-26T14:05:27Z |
++
+ ## 0F. Currency audit 2026-09-19 *(generated from `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-leaderboard-currency/raw/currency_audit.json`)*
+ 
+ *Page last dated 2026-09-03 (+ two B1 blocks added 2026-09-10/11). Every arm with an eval result in MODEL_REGISTRY.md, every raw eval JSON added to taniteval/results/ since 2026-09-03 (git --diff-filter=A), and every dated eval package since 2026-09-03 (284 package dirs located by git log) was checked against the page. Numbers in the generated rows were re-read from raw JSON by this stream; items marked INHERITED come from the saved sub-agent report raw/audit_eval_packages_since_0903.md and were not all re-verified.*
+@@ -634,7 +689,8 @@
+ | §9.1 inherited external numbers (PDM-Closed 51.3 · DrivoR 56.3 · Drive-JEPA 93.3) and §9.3 TF++ 86.97 | — | banked PDFs (published_results.json) | INHERITED | CORRECTED — 51.3 is the pre-#151 value (post-fix 56.6); 56.3 is DrivoR+134k synthetic+TOAD; 93.3 is the paper's own checklist misquote of 93.7; TF++ 86.97 now banked (2603.25946 Tab.5) | 0E tables; §9 points to 0E |
+ | registry §4.8.4 'there is no B1-scoped obstacle.offline join' | §4.8.4 | …/2026-09-07-join-repro/raw/repro_result_20260907.json — the B1 TRAIN agent join (317 MB) rebuilt BYTE-IDENTICAL | — | REGISTRY STALE (MEASURED contradiction) | registry change proposed in RESULT.md |
+ 
+-*Inputs: 113 published rows · 8 internal rows · 24 NAVSIM run rows · 17 audit rows · data-model digest `33cb7073f51c1b51` (changes only when an input value changes).*
++*Inputs: 114 published rows · 8 internal rows · 43 NAVSIM run rows · 17 audit rows · data-model digest `c70b23099a0763c2` (changes only when an input value changes).*
++<!-- BENCH:SECTION-SHA256 c62d929491969df66e69056c38a712224f9a36c3d0af9a1f0c9ee4fdf2d6737b -->
+ <!-- BENCH:END -->
+ 
+ *Rebuilt **2026-08-23** by the EvalFlyWheel from `Project Steering/MODEL_REGISTRY.md` and the raw

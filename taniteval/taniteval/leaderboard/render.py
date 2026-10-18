@@ -165,7 +165,13 @@ def position_block(model: dict) -> list:
     beats_all = [r["claim"] for r in model["internal"] if r["margins"] and all(m["separated"] and m["delta"] < 0 for m in r["margins"])]
     beats_ha0 = [r for r in model["internal"] if r["loop"] == "OPEN" and (_m(r, "ha0 ") and _m(r, "ha0 ")["separated"] and _m(r, "ha0 ")["delta"] < 0)]
     L = ["## ⭐ 5 October position — what TanitAD can claim today *(generated)*", ""]
-    if not beats_all:
+    refe_pos = refe_headline(model)
+    if not beats_all and refe_pos:
+        # ⛔ "at any tier" was TRUE only while no arm was on a NAVSIM column; this sentence is derived from the INTERNAL table
+        L.append("⛔ **No TanitAD arm in the internal T1 / closed-loop table below beats every trivial floor it is read against, in either loop.** "
+                 "That table is the evidence, one row per arm, each margin paired and on identical windows. "
+                 "⭐ **NAVSIM v1 navtest is a different protocol and a different story: REFe arms are measured there — see the navtest bullet below and §0E.3.**")
+    elif not beats_all:
         L.append("⛔ **No TanitAD arm beats every trivial floor it is read against — at any tier, in either loop.** "
                  "The table below is the evidence, one row per arm, each margin paired and on identical windows.")
     else:
@@ -228,7 +234,9 @@ def position_block(model: dict) -> list:
                      + (f" — within {num(ego['value'] - st['pdms_x100'], 1)} points of the published blind "
                         f"ego-status-MLP baseline ({num(ego['value'], 1)})" if ego else "")
                      + (f"; the human ceiling reads {num(hu['pdms_x100'], 2)}" if hu else "")
-                     + f". ⛔ **No TanitAD arm is on this column either**, and its bar is STOP.")
+                     + (f". ⭐ **TanitAD REFe arms ARE on this column (§0E.3) — {refe_pos}** ⛔ Every row reads ego status and a route-oracle goal "
+                        f"(not a vision-only, not a command-free entry); {_refe_replicate_clause(model)}" if refe_pos else
+                        f". ⛔ **No TanitAD arm is on this column either**, and its bar is STOP."))
     if all(k in P for k in ("navhard.drivefuture", "navhard.drivor_134k_toad", "navhard.pdm_closed", "navhard.cv")):
         L.append(f"* **The official column — the external bar, with no TanitAD arm on it.** Learned "
                  f"{pub_value(P['navhard.drivefuture'], model['published']['protocols'])} (DriveFuture) · with test-time search "
@@ -676,6 +684,140 @@ def w3_navtest_block(model: dict, proto: str) -> list:
     return L
 
 
+# ------------------------------------------------------------------ OUR REFe ARMS on PDMS_v1_navtest (2026-10-18)
+def _refe(model: dict, proto: str) -> dict | None:
+    return _note(model, "refe_navtest", proto)
+
+
+def _floors_of(model: dict, proto: str) -> dict:
+    w3 = _note(model, "w3_navtest", proto)
+    return {a["key"]: a for a in (w3["arms"] if w3 else [])}
+
+
+def _clears_floors(a: dict, floors: dict):
+    """True iff the arm's LEVEL interval lies above BOTH floors' level intervals (unpaired non-overlap -- the conservative
+    reading: it can say 'separated' only when the paired one would too). None when a floor is not on the board."""
+    st, cv = floors.get("STOP"), floors.get("CV")
+    if not (st and cv and st.get("hi") is not None and cv.get("hi") is not None):
+        return None
+    return a["lo"] > max(st["hi"], cv["hi"]) * 100
+
+
+def refe_headline(model: dict, proto: str = "PDMS_v1_navtest") -> str | None:
+    """The one-sentence position of OUR arms on this protocol, DERIVED from the note -- None when none are on the board."""
+    n = _refe(model, proto)
+    if not n:
+        return None
+    arms = n["arms"]
+    fl = _floors_of(model, proto)
+    ok = [_clears_floors(a, fl) for a in arms]
+    best = max(arms, key=lambda a: a["pdms_x100"])
+    tail = ("every one of their level intervals lies above the STOP and CV level intervals" if ok and all(o is True for o in ok)
+            else f"{sum(1 for o in ok if o)} of {len(arms)} level intervals lie above the STOP and CV level intervals")
+    return (f"{len(arms)} REFe states, each scored on the FULL split ({best['n']:,} tokens / {best['n_logs']} logs) — PDMS "
+            f"{num(min(a['pdms_x100'] for a in arms), 2)} to {num(best['pdms_x100'], 2)}; best by point {best['short']} "
+            f"{num(best['pdms_x100'], 2)} {lci(best['lo'], best['hi'], 2)}; {tail} (unpaired non-overlap, a conservative reading). "
+            f"ONE training seed per arm.")
+
+
+def _refe_replicate_clause(model: dict, proto: str = "PDMS_v1_navtest") -> str:
+    """The P2 seed-replicate verdict, in the artifact's own word, for the one-line position bullet."""
+    n = _refe(model, proto)
+    rp = n["replicate"] if n else None
+    if not rp:
+        return "no seed replicate is on the board."
+    p2 = next((a for a in n["arms"] if a["key"] == "REFE_P2_S0"), None)
+    return ((f"P2 seed 0 (the P2 of record) reads {num(p2['pdms_x100'], 2)} {lci(p2['lo'], p2['hi'], 2)}, and its training-seed replicate reads "
+             f"`{rp['outcome']}`." if p2 else f"the P2 seed replicate reads `{rp['outcome']}`."))
+
+
+def refe_navtest_block(model: dict, proto: str) -> list:
+    """OUR REFe arms on the full navtest, beside the floors. Every number is read (sources.refe_navtest_note); the sentences
+    that carry a count or a verdict are templates over that note."""
+    n = _refe(model, proto)
+    if not n:
+        return []
+    fl = _floors_of(model, proto)
+    arms = n["arms"]                     # lineage order: each row is the previous plus one change
+    ngf = sum(1 for a in arms if a["goal_fix"] == "pdm_route")
+    L = [f"⭐ **TanitAD IS ON THIS PROTOCOL — {refe_headline(model, proto)}**", "",
+         f"⛔ **What these rows are NOT.** *Not vision-only:* all {len(arms)}/{len(arms)} rows read ego status (7-D at t0, **beyond** NAVSIM's "
+         f"`ego_status`) and a route goal — `goal_fix=pdm_route` in {ngf}/{len(arms)} rows, the logged-drive route in "
+         f"{len(arms) - ngf}/{len(arms)}; both are ⚠️ route oracles (`{n['spec_doc']}` §1, DEPARTURES 1 and 2). *Not a lever claim:* "
+         f"{n['level_answers']}; a separated interval from a one-seed arm is necessary, not sufficient (`H-ESTIM-SEED-1`). "
+         f"*Not closed loop:* the tier of every row is the artifact's own, in the provenance table. "
+         f"Registry `{n['registry_section']}` · claims {n['claim_ids']}.", ""]
+    L += [f"*Level interval — **LCB** = {n['level_estimator']}. {n['level_answers']}. The column below prints the PDMS to 4 decimals "
+          f"(like the floors) and the interval to 2. P2 seed 1 had NO level interval in any banked artifact; {n['extra_why']}.*", ""]
+    cols = ["arm", "kind", "declared inputs", "PDMS x100", "CI95 (level · estimator · clusters)", "n",
+            "NC", "DAC", "DDC", "TTC", "C", "EP", "Δ vs STOP / CV [paired CI]"]
+    L += header(cols)
+    for a in arms:
+        f = a["vs_floors"]
+        if f:
+            d = " · ".join(f"{k} {sgn(v['delta'], 2)} {ci(v['lo'], v['hi'], 2)}{' -> separated' if v['separated'] else ' -> TIE'}"
+                           for k, v in f.items()) + f" [E{next(iter(f.values()))['est']}]"
+        else:
+            c = _clears_floors(a, fl)
+            d = ("— no paired interval vs the floors in any artifact; " +
+                 ("level interval above both floors' level intervals" if c else "level interval NOT above both floors'" if c is False
+                  else "floors not on the board"))
+        L.append(row([f"**TanitAD — {a['short']}** — {a['what']}", a["kind"], a["declared"], num(a["pdms_x100"], 4),
+                      f"{lci(a['lo'], a['hi'], 2)} · LCB · {a['n_logs']} log_name clusters", f"{a['n']:,}"]
+                     + [num(a["x100"].get(k), 2) for k in ("NC", "DAC", "DDC", "TTC", "C", "EP")] + [d]))
+    L.append("")
+    L += ["*Provenance of each row above — the artifacts' own tier wording, the seam report's own `goal_fix` / `rule`, the checkpoint "
+          "identity where an artifact records one, and the files every number was read from.*", ""]
+    L += header(["arm", "tier (the artifact's words)", "training seeds", "seam report: goal_fix · rule", "checkpoint sha256", "artifacts (sha256 prefix)"])
+    for a in arms:
+        gf = a["goal_fix"] if a["goal_fix"] else "absent (a pre-flag run: route fix OFF)"
+        L.append(row([f"TanitAD — {a['short']}", a["tier"], "ONE", f"`{gf}` · `{a['rule']}`",
+                      (f"`{a['ckpt_sha256']}`" if a["ckpt_sha256"] else "— not recorded in the artifacts read"),
+                      "<br>".join(f"`{x['path']}` ({x['sha12']}…)" for x in a["artifacts"])]))
+    L.append("")
+    L += ["*The REFe lineage, paired on the SAME tokens (each row is the arm minus its stated base; the estimator tag points at the "
+          "artifact's own wording below).*", ""]
+    L += header(["paired read (arm − base)", "Δ PDMS x100 [95 % CI]", "better / tied / worse", "sub-scores separated below 0",
+                 "outcome (the artifact's words)", "estimator", "artifact"])
+    for r in n["reads"]:
+        L.append(row([r["label"], f"{sgn(r['delta'], 2)} {ci(r['lo'], r['hi'], 2)}", f"{r['w']:,} / {r['t']:,} / {r['l']:,}",
+                      ", ".join(r["adverse"]) or "none", r.get("outcome") or "—", f"[E{r['est']}]", f"`{r['source']}`"]))
+    L.append("")
+    for i, e in enumerate(n["estimators"], 1):
+        L.append(f"*[E{i}] {e}*")
+    L.append("")
+    rp, rr1, rr2 = n["replicate"], next((r for r in n["reads"] if r["id"] == "RR1"), None), next((r for r in n["reads"] if r["id"] == "RR2"), None)
+    if rp and rr1 and rr2:
+        L += [f"⛔ **P2's training-seed replicate reads `{rp['outcome']}`** (`{rp['source']['path']}`, sha256 {rp['source']['sha12']}…): "
+              f"seed 1 minus u400 is {sgn(rr1['delta'], 2)} {ci(rr1['lo'], rr1['hi'], 2)}"
+              + (f" but {', '.join(rr1['adverse'])} is separated below 0" if rr1["adverse"] else "")
+              + f"; the seed difference is F = {num(rp['F'], 2)} (ONE draw, never a variance), "
+              f"{'below' if rp['F_lt_min_delta'] else 'NOT below'} the smaller seed gain {num(rp['min_delta'], 2)}. "
+              f"⇒ the higher point ({num(max(a['pdms_x100'] for a in arms), 2)}) belongs to the replicate and does not rescue the lever claim; "
+              f"read these rows as a direction, not an effect.", ""]
+    for a in arms:
+        x = a.get("level_xcheck")
+        if x:
+            L += [f"*Cross-check on {a['short']}: a SECOND estimator — `{x['estimator']}`, "
+                  f"{x['n_boot']:,} resamples, seed {x['seed']} — reads {lci(x['lo'], x['hi'], 2)} against {lci(a['lo'], a['hi'], 2)} above "
+                  f"(endpoints differ by {num(abs(x['lo'] - a['lo']), 2)} and {num(abs(x['hi'] - a['hi']), 2)}); the point is the same. "
+                  f"Neither is changed — they are two resamplers, and this page prints both rather than choose.*", ""]
+    return L
+
+
+def refe_field_rows(model: dict, proto: str, ncols: int) -> list:
+    """OUR rows in the published-field table (same columns), replacing the 'TanitAD — any arm' placeholder once arms exist."""
+    n = _refe(model, proto)
+    if not n:
+        return []
+    fr = n["field_row"]
+    out = []
+    for a in n["arms"]:
+        out.append(row([f"**TanitAD — {a['short']}**", num(a["pdms_x100"], 2), "ours (MEASURED)", fr["encoder_data"], fr["modality"],
+                        fr["ego_status"], f"`{n['registry_section']}` · the REFe tables above · ONE training seed"]))
+    return out
+
+
 def print_convention_block(model: dict, proto: str) -> list:
     """The probe's OWN two verdicts, printed as the file carries them.
 
@@ -717,6 +859,7 @@ def v1_tables(model: dict, proto: str) -> list:
     assert_one_protocol(proto, rows)
     cols = ["system", "PDMS", "role", "encoder · data", "inputs (authors' claim)", "ego status", "source (key · table · p.)"]
     L = w3_navtest_block(model, proto)
+    L += refe_navtest_block(model, proto)
     L += print_convention_block(model, proto)
     L += ["*The published field on this protocol:*", "", f"*{pub['protocols'][proto].get('ladder_note', '')}*", ""]
     L += header(cols)
@@ -724,7 +867,11 @@ def v1_tables(model: dict, proto: str) -> list:
         enc = " · ".join(x for x in (r.get("encoder"), r.get("data")) if x) or "—"
         L.append(row([r["system"], pub_value(r, pub["protocols"]), r["role"], enc, r.get("modality", "—"),
                       cmd_mark(r.get("ego_status", "—")), src_ref(r)]))
-    L.append(_tanitad_row(len(cols), pub["protocols"][proto]["tanitad_pending"]))
+    ours = refe_field_rows(model, proto, len(cols))
+    if ours:                       # OUR measured arms replace the placeholder -- the placeholder is for "nothing measured yet"
+        L += ours
+    else:
+        L.append(_tanitad_row(len(cols), pub["protocols"][proto]["tanitad_pending"]))
     return L
 
 

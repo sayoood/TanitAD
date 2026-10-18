@@ -232,6 +232,313 @@
    "failed_prediction": "⚠️ **W3's pre-registered range was WRONG, and it is recorded as a failed prediction rather than re-fitted** (its own words): SPEC §6 committed **STOP ∈ [38, 60], point ≈ 45**; the measured **61.82 is ABOVE the range**. Both committed *inequalities* still hold — STOP > CV (+41.17) and STOP < the published Ego-Status-MLP (61.82 < 65.6 / 66.4) — but the band did not contain the answer, because the braking progress and the ≤ 5 m regime were both under-estimated."
   },
   {
+   "id": "refe_navtest_arms",
+   "adapter": "refe_navtest_arms",
+   "protocol": "PDMS_v1_navtest",
+   "_why": "MEASURED 2026-10-18: this protocol's TanitAD row read 'NOT MEASURED -- NO TanitAD ARM yet' while FIVE REFe states had been scored on the FULL navtest (12,146 tokens / 136 logs, NAVSIM v1.1). Every value here is a JSON pointer into the raw artifact named beside it: the stage-2 result.json / r2_result.json the scorer wrote, the W3-schema 3_parse.json, and the two marginal_ci files. NOTHING is copied from the register prose (GOALS_AND_CLAIMS D-REFE-NAVTEST-1 / D-REFE-GOAL-2 / D-REFE-SFT-4 / D-REFE-P2-R2) -- the prose is the pointer's reason, not its source. The declared inputs are typed (as W3's are) but each is PINNED against refe/model.py and eval/SPEC_NAVTEST.md by taniteval/tests/test_leaderboard_refe_navtest.py, and the GOAL variant is selected by the arm's OWN seam-report field goal_fix, never assumed.",
+   "registry_anchor": "### 14.2 Full-navtest results",
+   "registry_section": "MODEL_REGISTRY.md section 14.2",
+   "claim_ids": "D-REFE-NAVTEST-1 / D-REFE-GOAL-2 / D-REFE-SFT-4 / D-REFE-P2-R2 / H-REFE-P2-REP-1",
+   "spec_doc": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/SPEC_NAVTEST.md",
+   "model_src": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/model.py",
+   "level_ci": {
+    "path": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-17-paper-s720-recompute/marginal_ci.json",
+    "estimator": "/estimator",
+    "answers": "/answers",
+    "tier": "/tier",
+    "extra": {
+     "path": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-18-leaderboard-refe-navtest/raw/marginal_ci_p2s1.json",
+     "why": "marginal_ci.json has no P2-s1 row (MODEL_REGISTRY 14.2: 'interval NOT COMPUTED'); this sibling adds it with the identical estimator, behind four controls it asserts before writing"
+    }
+   },
+   "declared_parts": {
+    "cameras": "4 cameras (CAM_F0/L0/R0/B0, 512x960)",
+    "ego": "ego status 7-D at t0 (vx, vy, ax, ay, yaw rate, tire steering angle, speed) -- NOT vision-only; yaw rate and steering angle are BEYOND NAVSIM's ego_status",
+    "goal_none": "2 route goal points (ego frame) from the scenario route, derived from the LOGGED drive -- optimistic by construction",
+    "goal_pdm_route": "2 route goal points (ego frame) from NAVSIM's route roadblocks corrected by route_roadblock_correction (goal_fix=pdm_route; the map-derived route NAVSIM's privileged planner uses) -- PI-ruled admissible 2026-10-04",
+    "oracle": "route oracle",
+    "selection": "the scorer picks 1 of 64 proposals"
+   },
+   "field_row": {
+    "encoder_data": "frozen DINOv3 ViT-L/16 + LoRA · NAVSIM navtrain (teacher-labelled)",
+    "modality": "ours, declared: 4 cameras + 7-D ego kinematics + route goal points",
+    "ego_status": "yes — 7-D kinematics incl. yaw rate and steering angle (beyond NAVSIM's ego_status) ⚠️ route oracle"
+   },
+   "arms": [
+    {
+     "key": "REFE_FINAL_OFF",
+     "short": "REFe model_final (route fix OFF)",
+     "what": "md5 b54773f8…; the route taken from the logged drive; superseded as the deployed state (D-REFE-NAVTEST-1)",
+     "kind": "model",
+     "scores": {
+      "path": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-04-navtest-final/routefix_full/3_parse.json",
+      "ptrs": {
+       "PDMS": "/arms/R6_final_off/PDMS",
+       "NC": "/arms/R6_final_off/NC",
+       "DAC": "/arms/R6_final_off/DAC",
+       "DDC": "/arms/R6_final_off/DDC",
+       "TTC": "/arms/R6_final_off/TTC",
+       "C": "/arms/R6_final_off/C",
+       "EP": "/arms/R6_final_off/EP"
+      },
+      "n": "/n_tokens",
+      "n_logs": "/n_logs",
+      "tier_path": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-04-navtest-final/navtest_final_readout.json",
+      "tier": "/tier"
+     },
+     "level_row": "model_final",
+     "seam": {
+      "path": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-04-navtest-final/refe_navtest_final.seam_report.json",
+      "goal_fix": "/goal_fix",
+      "rule": "/rule",
+      "goal_fix_absent_means_off": true
+     },
+     "vs_floors": {
+      "STOP": "R6_final_off__minus__STOP",
+      "CV": "R6_final_off__minus__CV"
+     },
+     "vs_deployed": {
+      "shape": "navsim_ci_pair",
+      "path": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-04-navtest-final/routefix_full/3_parse.json",
+      "key": "R6_final_off__minus__R6_A1"
+     },
+     "artifacts": [
+      "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-04-navtest-final/routefix_full/3_parse.json",
+      "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-04-navtest-final/navtest_final_readout.json"
+     ]
+    },
+    {
+     "key": "REFE_DEPLOYED",
+     "short": "REFe deployed system (model_final + route fix)",
+     "what": "the pre-SFT deployed system, goal_fix=pdm_route (D-REFE-GOAL-2)",
+     "kind": "model",
+     "scores": {
+      "path": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-04-navtest-final/routefix_full/3_parse.json",
+      "ptrs": {
+       "PDMS": "/arms/R6_A1/PDMS",
+       "NC": "/arms/R6_A1/NC",
+       "DAC": "/arms/R6_A1/DAC",
+       "DDC": "/arms/R6_A1/DDC",
+       "TTC": "/arms/R6_A1/TTC",
+       "C": "/arms/R6_A1/C",
+       "EP": "/arms/R6_A1/EP"
+      },
+      "n": "/n_tokens",
+      "n_logs": "/n_logs",
+      "tier_path": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-04-navtest-final/navtest_final_readout.json",
+      "tier": "/tier"
+     },
+     "level_row": "model_final_routefix_A9",
+     "seam": {
+      "path": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-04-navtest-final/routefix_full/refe_navtest_final_routefix.report.json",
+      "goal_fix": "/goal_fix",
+      "rule": "/rule"
+     },
+     "vs_floors": {
+      "STOP": "R6_A1__minus__STOP",
+      "CV": "R6_A1__minus__CV"
+     },
+     "vs_deployed": "self",
+     "level_xcheck": {
+      "path": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-04-navtest-final/routefix_full/3_parse.json",
+      "ptr": "/arms/R6_A1/interval"
+     },
+     "artifacts": [
+      "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-04-navtest-final/routefix_full/3_parse.json",
+      "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-04-navtest-final/routefix_full/refe_navtest_final_routefix.report.json"
+     ]
+    },
+    {
+     "key": "REFE_SFT4_U400",
+     "short": "REFe SFT-4 u400",
+     "what": "arm B, update 400 of 2,335; scorer-only fine-tune; the C1 deployment candidate (D-REFE-SFT-4)",
+     "kind": "model",
+     "scores": {
+      "path": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-05-sft-stage2/sft4_B_u400_navtest_full/result.json",
+      "ptrs": {
+       "PDMS": "/harness_status/summary_x100_4dp/PDMS",
+       "NC": "/harness_status/summary_x100_4dp/NC",
+       "DAC": "/harness_status/summary_x100_4dp/DAC",
+       "DDC": "/harness_status/summary_x100_4dp/DDC",
+       "TTC": "/harness_status/summary_x100_4dp/TTC",
+       "C": "/harness_status/summary_x100_4dp/C",
+       "EP": "/harness_status/summary_x100_4dp/EP"
+      },
+      "n": "/n_tokens",
+      "n_logs": "/primary/n_logs",
+      "tier": "/tier"
+     },
+     "level_row": "sft4_B_u400",
+     "seam": {
+      "path": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-05-sft-stage2/sft4_B_u400_navtest_full/seam_report.json",
+      "goal_fix": "/goal_fix",
+      "rule": "/rule"
+     },
+     "vs_floors": null,
+     "vs_deployed": {
+      "shape": "stage_primary",
+      "path": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-05-sft-stage2/sft4_B_u400_navtest_full/result.json",
+      "ptr": "/primary",
+      "estimator": "/estimator"
+     },
+     "artifacts": [
+      "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-05-sft-stage2/sft4_B_u400_navtest_full/result.json",
+      "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-05-sft-stage2/sft4_B_u400_navtest_full/seam_report.json"
+     ]
+    },
+    {
+     "key": "REFE_P2_S0",
+     "short": "REFe P2 seed 0",
+     "what": "joint PDM fine-tune; the P2 of record (D-REFE-P2-R2)",
+     "kind": "model",
+     "scores": {
+      "path": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-05-sft-stage2/p2_full/result.json",
+      "ptrs": {
+       "PDMS": "/harness_status/summary_x100_4dp/PDMS",
+       "NC": "/harness_status/summary_x100_4dp/NC",
+       "DAC": "/harness_status/summary_x100_4dp/DAC",
+       "DDC": "/harness_status/summary_x100_4dp/DDC",
+       "TTC": "/harness_status/summary_x100_4dp/TTC",
+       "C": "/harness_status/summary_x100_4dp/C",
+       "EP": "/harness_status/summary_x100_4dp/EP"
+      },
+      "n": "/n_tokens",
+      "n_logs": "/primary/n_logs",
+      "tier": "/tier"
+     },
+     "level_row": "p2_s0",
+     "seam": {
+      "path": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/p2_readout/p2_full/r2_result.json",
+      "goal_fix": "/gates/seam_report/goal_fix",
+      "rule": "/gates/seam_report/rule"
+     },
+     "ckpt": {
+      "path": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/p2_readout/p2_full/r2_result.json",
+      "sha256": "/checkpoint/sha256"
+     },
+     "vs_floors": null,
+     "vs_deployed": {
+      "shape": "stage_primary",
+      "path": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-05-sft-stage2/p2_full/result.json",
+      "ptr": "/primary",
+      "estimator": "/estimator"
+     },
+     "artifacts": [
+      "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-05-sft-stage2/p2_full/result.json",
+      "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/p2_readout/p2_full/r2_result.json"
+     ]
+    },
+    {
+     "key": "REFE_P2_S1",
+     "short": "REFe P2 seed 1 (replicate)",
+     "what": "training-seed replicate of P2 (H-REFE-P2-REP-1)",
+     "kind": "model",
+     "scores": {
+      "path": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-05-sft-stage2/p2s1_full/result.json",
+      "ptrs": {
+       "PDMS": "/harness_status/summary_x100_4dp/PDMS",
+       "NC": "/harness_status/summary_x100_4dp/NC",
+       "DAC": "/harness_status/summary_x100_4dp/DAC",
+       "DDC": "/harness_status/summary_x100_4dp/DDC",
+       "TTC": "/harness_status/summary_x100_4dp/TTC",
+       "C": "/harness_status/summary_x100_4dp/C",
+       "EP": "/harness_status/summary_x100_4dp/EP"
+      },
+      "n": "/n_tokens",
+      "n_logs": "/primary/n_logs",
+      "tier": "/tier"
+     },
+     "level_row": "p2_s1",
+     "level_in_extra": true,
+     "seam": {
+      "path": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/p2_readout/p2s1_full/r2_result.json",
+      "goal_fix": "/gates/seam_report/goal_fix",
+      "rule": "/gates/seam_report/rule"
+     },
+     "ckpt": {
+      "path": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/p2_readout/p2s1_full/r2_result.json",
+      "sha256": "/checkpoint/sha256"
+     },
+     "vs_floors": null,
+     "vs_deployed": {
+      "shape": "stage_primary",
+      "path": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-05-sft-stage2/p2s1_full/result.json",
+      "ptr": "/primary",
+      "estimator": "/estimator"
+     },
+     "artifacts": [
+      "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-05-sft-stage2/p2s1_full/result.json",
+      "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/p2_readout/p2s1_full/r2_result.json",
+      "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-18-leaderboard-refe-navtest/raw/marginal_ci_p2s1.json"
+     ]
+    }
+   ],
+   "paired_reads": [
+    {
+     "id": "ROUTEFIX",
+     "label": "deployed system (route fix ON) minus model_final (route fix OFF)",
+     "shape": "navsim_ci_pair",
+     "path": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-04-navtest-final/routefix_full/3_parse.json",
+     "key": "R6_A1__minus__R6_final_off"
+    },
+    {
+     "id": "SFT4",
+     "label": "SFT-4 u400 minus the deployed system",
+     "shape": "stage_primary",
+     "path": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-05-sft-stage2/sft4_B_u400_navtest_full/result.json",
+     "ptr": "/primary",
+     "estimator": "/estimator"
+    },
+    {
+     "id": "P2S0",
+     "label": "P2 seed 0 minus SFT-4 u400 (R2, the P6 GO/NO-GO)",
+     "shape": "stage3",
+     "path": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/p2_readout/p2_full/r2_result.json",
+     "ptr": "/R2",
+     "estimator": "/estimator"
+    },
+    {
+     "id": "RR1",
+     "label": "P2 seed 1 minus SFT-4 u400 (RR1)",
+     "shape": "stage3",
+     "path": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/p2_readout/p2s1_full/r2_result.json",
+     "ptr": "/R2",
+     "estimator": "/estimator"
+    },
+    {
+     "id": "RR2",
+     "label": "P2 seed 1 minus P2 seed 0 (RR2, the seed difference -- ONE draw)",
+     "shape": "stage3",
+     "path": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-16-p2s1-read/out/read/p2rep_result.json",
+     "ptr": "/RR2",
+     "estimator": "/estimator"
+    },
+    {
+     "id": "P2S0_DEP",
+     "label": "P2 seed 0 minus the deployed system (R2b; reported, decides nothing)",
+     "shape": "stage_primary",
+     "path": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-05-sft-stage2/p2_full/result.json",
+     "ptr": "/primary",
+     "estimator": "/estimator"
+    },
+    {
+     "id": "P2S1_DEP",
+     "label": "P2 seed 1 minus the deployed system",
+     "shape": "stage_primary",
+     "path": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-05-sft-stage2/p2s1_full/result.json",
+     "ptr": "/primary",
+     "estimator": "/estimator"
+    }
+   ],
+   "replicate": {
+    "path": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-16-p2s1-read/out/read/p2rep_result.json",
+    "outcome": "/outcome",
+    "F": "/outcome_detail/F",
+    "min_delta": "/outcome_detail/min_delta_vs_u400",
+    "F_lt_min_delta": "/outcome_detail/F_lt_min_delta"
+   }
+  },
+  {
    "id": "w3_print_convention",
    "adapter": "json_pointer",
    "protocol": "PDMS_v1_navtest",

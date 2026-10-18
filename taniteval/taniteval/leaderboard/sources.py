@@ -378,6 +378,142 @@ def load_bench_runs(root: Path, cfg: dict) -> tuple:
     return rows, summaries
 
 
+# ---------------------------------------------------------------- our REFe arms on NAVSIM v1 navtest (read, never retyped)
+_NAVSIM_V1_OPEN_LOOP = re.compile(r"NAVSIM v1\.1 PDMS.*open[- ]loop", re.S)
+
+
+def _jptr_opt(doc, pointer: str):
+    """Like :func:`jptr`, but a missing key reads ``None`` -- for the ONE field whose absence is itself the evidence
+    (a seam report written before ``goal_fix`` existed)."""
+    try:
+        return jptr(doc, pointer)
+    except SourceError:
+        return None
+
+
+def refe_navtest_note(root: Path, spec: dict) -> dict:
+    """OUR REFe arms on ``PDMS_v1_navtest`` -- every value a JSON pointer into the raw artifact the scorer wrote.
+
+    ⛔ WHY (2026-10-18): the protocol's TanitAD row printed "NOT MEASURED -- NO TanitAD ARM yet" while FIVE REFe states
+    had been scored on the full navtest. The register prose (D-REFE-NAVTEST-1 / D-REFE-GOAL-2 / D-REFE-SFT-4 /
+    D-REFE-P2-R2) is the reason for each pointer and NEVER its source.
+
+    Refusals (a page that cannot place a number says so, it does not guess):
+    * a level-interval row whose ``point`` is not the arm's own harness score (4 dp) or whose ``n`` is not its token
+      count -- that interval belongs to a different arm;
+    * a tier string that is not NAVSIM v1.1 PDMS open loop;
+    * two level-interval files that disagree on the estimator, or whose ``answers`` does not state ONE training seed;
+    * a ``goal_fix`` value other than ``pdm_route`` / absent-on-an-OFF-arm: the goal variant is selected by the artifact's
+      own field, so a third value has no declared-input text and must not borrow one.
+    """
+    cache: dict = {}
+
+    def doc(p):
+        if p not in cache:
+            cache[p] = load_json(root / p)
+        return cache[p]
+
+    def art(p):
+        return {"path": rel(root / p, root), "sha12": short_sha(root / p)}
+
+    lc = spec["level_ci"]
+    mci, extra = doc(lc["path"]), doc(lc["extra"]["path"])
+    est, ans = jptr(mci, lc["estimator"]), jptr(mci, lc["answers"])
+    if jptr(extra, lc["estimator"]) != est or jptr(extra, lc["answers"]) != ans:
+        raise SourceError(f"{lc['extra']['path']}: its estimator/answers differ from {lc['path']} -- two intervals on one page must be one estimator")
+    if "one training seed per arm" not in ans:
+        raise SourceError(f"{lc['path']}: `answers` no longer states ONE training seed per arm ({ans!r}) -- the rows' seed label would be unsupported")
+    ctrl = jptr(extra, "/controls/C3_p2_s0_recomputed_equals_banked/equal")
+    if ctrl is not True:
+        raise SourceError(f"{lc['extra']['path']}: its control C3 (P2-s0 recomputed == banked) does not read True -- refusing its interval")
+
+    parts, estimators = spec["declared_parts"], []
+
+    def est_id(text: str) -> int:
+        if text not in estimators:
+            estimators.append(text)
+        return estimators.index(text) + 1
+
+    def pair(shape: str, d: dict) -> dict:
+        """One paired read -> {delta, lo, hi (x100), w, t, l, est}. Signs are the artifact's (arm minus base)."""
+        if shape == "navsim_ci_pair":
+            p = jptr(doc(d["path"]), f"/pairs/{d['key']}")
+            iv = p["interval"]
+            e = f"{iv['estimator']}, {iv['n_boot']:,} resamples, cluster unit {iv.get('cluster_unit', 'log_name')}"
+            return {"delta": p["delta_x100"], "lo": iv["lo"] * 100, "hi": iv["hi"] * 100, "w": p["wins"], "t": p["ties"],
+                    "l": p["losses"], "est": est_id(e), "separated": bool(iv.get("separated")), "adverse": [], "outcome": None}
+        dd = doc(d["path"])
+        if shape == "stage_primary":
+            p, adverse, outcome = jptr(dd, d["ptr"]), [], None
+        elif shape == "stage3":
+            blk = jptr(dd, d["ptr"])
+            p = blk["primary"]
+            adverse = sorted(k for k, v in (blk.get("subscores") or {}).items() if v.get("adverse"))
+            outcome = blk.get("outcome")
+        else:
+            raise SourceError(f"refe_navtest_arms: unknown paired shape {shape!r}")
+        lo, hi = p["ci95"]
+        return {"delta": p["mean"], "lo": lo, "hi": hi, "w": p["better"], "t": p["tied"], "l": p["worse"],
+                "est": est_id(jptr(dd, d["estimator"])), "separated": (lo > 0 or hi < 0), "adverse": adverse,
+                "outcome": outcome, "n_logs": p.get("n_logs"), "zero_base": p.get("zero_base"), "zero_arm": p.get("zero_arm")}
+
+    arms = []
+    for a in spec["arms"]:
+        sc = a["scores"]
+        sdoc = doc(sc["path"])
+        x100 = {k: float(jptr(sdoc, ptr)) for k, ptr in sc["ptrs"].items()}
+        n, n_logs = int(jptr(sdoc, sc["n"])), int(jptr(sdoc, sc["n_logs"]))
+        tier = jptr(doc(sc["tier_path"]) if sc.get("tier_path") else sdoc, sc["tier"])
+        if not _NAVSIM_V1_OPEN_LOOP.search(tier):
+            raise SourceError(f"{a['key']}: tier string {tier!r} is not NAVSIM v1.1 PDMS open loop -- refusing to print it on this protocol")
+        lrow = (extra if a.get("level_in_extra") else mci)["rows"].get(a["level_row"])
+        if not lrow or "lo" not in lrow:
+            raise SourceError(f"{a['key']}: no level-interval row {a['level_row']!r}")
+        if abs(lrow["point"] - x100["PDMS"]) > 1.5e-4 or lrow["n"] != n:
+            raise SourceError(f"{a['key']}: the interval row {a['level_row']!r} (point {lrow['point']}, n {lrow['n']}) is not this arm's score "
+                              f"({x100['PDMS']}, n {n}) -- a different arm's interval")
+        sd = doc(a["seam"]["path"])
+        gf, rule = _jptr_opt(sd, a["seam"]["goal_fix"]), _jptr_opt(sd, a["seam"]["rule"])
+        if gf is None and not a["seam"].get("goal_fix_absent_means_off"):
+            raise SourceError(f"{a['key']}: seam report states no goal_fix and the config does not declare an OFF arm")
+        if gf not in (None, "pdm_route"):
+            raise SourceError(f"{a['key']}: goal_fix {gf!r} has no declared-input text -- add one (and its pin test) before printing it")
+        goal_txt = parts["goal_pdm_route"] if gf == "pdm_route" else parts["goal_none"]
+        declared = (f"{parts['cameras']} + {parts['ego']} + {goal_txt} ⚠️ {parts['oracle']}; {parts['selection']}"
+                    + (f" (rule `{rule}`)" if rule else ""))
+        floors = None
+        if a.get("vs_floors"):
+            floors = {}
+            for f, key in a["vs_floors"].items():
+                floors[f] = pair("navsim_ci_pair", {"path": sc["path"], "key": key})
+        vd = a["vs_deployed"]
+        arms.append({"key": a["key"], "short": a["short"], "what": a["what"], "kind": a["kind"], "declared": declared,
+                     "goal_fix": gf, "rule": rule, "tier": tier, "n": n, "n_logs": n_logs, "x100": x100, "pdms_x100": x100["PDMS"],
+                     "lo": lrow["lo"], "hi": lrow["hi"],
+                     "ckpt_sha256": jptr(doc(a["ckpt"]["path"]), a["ckpt"]["sha256"]) if a.get("ckpt") else None,
+                     "vs_floors": floors, "vs_deployed": ({"self": True} if vd == "self" else pair(vd["shape"], vd)),
+                     "artifacts": [art(p) for p in a["artifacts"]],
+                     "level_xcheck": ({"lo": jptr(doc(a["level_xcheck"]["path"]), a["level_xcheck"]["ptr"] + "/lo") * 100,
+                                       "hi": jptr(doc(a["level_xcheck"]["path"]), a["level_xcheck"]["ptr"] + "/hi") * 100,
+                                       "n_boot": jptr(doc(a["level_xcheck"]["path"]), a["level_xcheck"]["ptr"] + "/n_boot"),
+                                       "seed": jptr(doc(a["level_xcheck"]["path"]), a["level_xcheck"]["ptr"] + "/seed"),
+                                       "estimator": jptr(doc(a["level_xcheck"]["path"]), a["level_xcheck"]["ptr"] + "/estimator")}
+                                      if a.get("level_xcheck") else None)})
+    reads = [{"id": r["id"], "label": r["label"], **pair(r["shape"], r),
+              "source": rel(root / r["path"], root)} for r in spec["paired_reads"]]
+    rp = spec["replicate"]
+    rdoc = doc(rp["path"])
+    rep = {k: jptr(rdoc, rp[k]) for k in ("outcome", "F", "min_delta", "F_lt_min_delta")}
+    rep["source"] = art(rp["path"])
+    return {"id": spec["id"], "render": "refe_navtest", "protocol": spec["protocol"],
+            "source": rel(root / lc["path"], root), "sha12": short_sha(root / lc["path"]),
+            "level_estimator": est, "level_answers": ans, "level_tier": jptr(mci, lc["tier"]),
+            "level_sources": [art(lc["path"]), art(lc["extra"]["path"])], "extra_why": lc["extra"]["why"],
+            "arms": arms, "reads": reads, "estimators": estimators, "replicate": rep,
+            "registry_anchor": spec["registry_anchor"], "registry_section": spec["registry_section"], "field_row": spec["field_row"],
+            "claim_ids": spec["claim_ids"], "spec_doc": spec["spec_doc"], "model_src": spec["model_src"]}
+
+
 def legacy_summaries(root: Path, cfg: dict) -> tuple:
     """Convert pre-contract banked outputs into W1-schema summaries (validated before use)."""
     from .legacy import e2_to_summary
@@ -437,11 +573,13 @@ def legacy_summaries(root: Path, cfg: dict) -> tuple:
                           "decomp": doc.get("STOP_decomposition") or {}, "c6": doc.get("C6_stop_prediction") or {},
                           "failed_prediction": spec.get("failed_prediction"),
                           "result_doc": spec.get("result_doc"), "spec_doc": spec.get("spec_doc")})
+        elif spec["adapter"] == "refe_navtest_arms":
+            notes.append(refe_navtest_note(root, spec))
     out = []
     for spec in cfg.get("legacy_bench", []):
         if spec["adapter"] == "e2_scores_summary":
             out.append((spec, e2_to_summary(root, spec, e1)))
-        elif spec["adapter"] not in ("json_pointer", "devkit_csv", "w3_navtest_analysis"):
+        elif spec["adapter"] not in ("json_pointer", "devkit_csv", "w3_navtest_analysis", "refe_navtest_arms"):
             raise SourceError(f"unknown legacy adapter {spec['adapter']!r}")
     return out, notes
 

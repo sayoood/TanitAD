@@ -773,4 +773,7 @@ def test_the_position_block_carries_the_navtest_floors(section):
     pos = section[section.index("5 October position"):section.index("| claim |")]
     line = next(l for l in pos.splitlines() if "navtest either" in l)
     assert "STOP 61.82" in line and "CV 20.65" in line and "3.0×" in line
-    assert "No TanitAD arm is on this column either" in line
+    # 2026-10-18: five REFe states ARE measured on this column (see test_leaderboard_refe_navtest.py for the full pin); the stale
+    # sentence must not survive, and the sentence that replaced it must come from the loaded artifacts.
+    assert "No TanitAD arm is on this column either" not in line
+    assert "TanitAD REFe arms ARE on this column" in line and "`NOT REPLICATED`" in line
