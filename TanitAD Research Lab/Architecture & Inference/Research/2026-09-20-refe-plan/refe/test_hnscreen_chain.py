@@ -530,16 +530,29 @@ def G_foreign_lock_is_waited_for_never_removed(M, w):
 
 
 def G_control_landed_helper_alone_removes_such_a_lock(M, w):
-    """the fixture can SEE a removal: the landed acquire, called directly on the G2 lock, removes it (a dead holder older than 600 s).  That is why the chain's pre-check exists."""
-    sc = Sc(w, "Gc")
-    open(sc.lock, "w", encoding="utf-8").write(json.dumps({"job": "navsim", "pid": 4000001}))
-    os.utime(sc.lock, (time.time() - 7200, time.time() - 7200))
+    """the fixture can SEE a removal, and the landed helper no longer steals (LOCK-STEAL fix, TRAPS "TWO LOCK SCHEMAS SHARE devbox_gpu.lock", 2026-10-18).
+    (a) the landed acquire, called directly on the G2 lock (a FOREIGN schema, dead pid, 2 h old), raises GpuBusy and leaves the lock byte-for-byte: until 2026-10-18 it removed it,
+    which is what this control used to pin; (b) on a lock carrying the helper's OWN owner marker, dead pid, 2 h old, it removes it and takes the lock, so the fixture still sees a
+    removal.  The chain's pre-check stays as a second guard."""
     sys.path.insert(0, os.path.join(REAL_PKG, "eval"))
     import aux_navtest_forward as ANF
+    sc = Sc(w, "Gc")
+    old = json.dumps({"job": "navsim", "pid": 4000001})
+    open(sc.lock, "w", encoding="utf-8").write(old)
+    os.utime(sc.lock, (time.time() - 7200, time.time() - 7200))
+    try:
+        ANF.acquire_gpu_lock(lock=sc.lock, wait_idle=None, used_fn=lambda: 0, settle_s=0.0)
+        refused = False
+    except ANF.GpuBusy:
+        refused = True
+    kept = refused and open(sc.lock, encoding="utf-8").read() == old
+    os.remove(sc.lock)                                                         # the test plays the foreign job finishing
+    open(sc.lock, "w", encoding="utf-8").write(json.dumps({"pid": 4000001, "owner": ANF.OWNER, "t": time.time() - 7200}))
+    os.utime(sc.lock, (time.time() - 7200, time.time() - 7200))
     body = ANF.acquire_gpu_lock(lock=sc.lock, wait_idle=None, used_fn=lambda: 0, settle_s=0.0)
     mine = json.loads(open(sc.lock, encoding="utf-8").read()).get("pid") == os.getpid()
     ANF.release_gpu_lock(sc.lock, body)
-    return mine and not os.path.exists(sc.lock)
+    return kept and mine and not os.path.exists(sc.lock)
 
 
 def H_families_read_integration_and_rule_e(M, w):

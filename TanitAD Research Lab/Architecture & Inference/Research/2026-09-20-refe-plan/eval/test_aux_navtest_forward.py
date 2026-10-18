@@ -288,14 +288,19 @@ def chk_gpu_lock_protocol(M):
     open(lock, "w", encoding="utf-8").write(json.dumps({"pid": os.getpid() + 7, "owner": "other", "t": 0}))
     M.release_gpu_lock(lock, body)
     assert os.path.exists(lock)
-    # a dead holder: removed only when old (> 600 s); a fresh one is respected
-    open(lock, "w", encoding="utf-8").write(json.dumps({"pid": 4000001, "owner": "dead", "t": 0}))
+    # a lock held by a FOREIGN body that carries our own pid is not ours either (release removes only a lock with our owner marker)
+    open(lock, "w", encoding="utf-8").write(json.dumps({"job": "other-job", "pid": os.getpid(), "acquired": "x"}))
+    M.release_gpu_lock(lock, body)
+    assert os.path.exists(lock), "release removed a foreign lock that merely carries our pid"
+    # OUR OWN dead holder (our owner marker, pid gone): removed only when old (> 600 s); a fresh one is respected
+    open(lock, "w", encoding="utf-8").write(json.dumps({"pid": 4000001, "owner": "aux_navtest_forward", "t": 0}))
     try:
         M.acquire_gpu_lock(lock=lock, wait_idle=None, used_fn=lambda: 1000, settle_s=0.0)
     except M.GpuBusy:
         pass
     else:
         raise AssertionError("removed a FRESH lock of a dead pid")
+    assert os.path.exists(lock)
     old = time.time() - 3600
     os.utime(lock, (old, old))
     b2 = M.acquire_gpu_lock(lock=lock, wait_idle=None, used_fn=lambda: 1000, settle_s=0.0)
@@ -319,8 +324,45 @@ def chk_gpu_lock_protocol(M):
         raise AssertionError("wait_idle exited 3 and the lock was taken anyway")
 
 
+def chk_gpu_lock_never_steals_foreign(M):
+    """The dev-box lock is SHARED with job families that write another schema.  A lock this module did not write (no owner == 'aux_navtest_forward') is NEVER removed, however old, and
+    whatever `tasklist` says about its pid: an MSYS pid (here 861623, not a multiple of 4, so never a Windows pid) is invisible to tasklist, i.e. looks dead although the job is live."""
+    d = tmpdir()
+    lock = os.path.join(d, "devbox_gpu.lock")
+    assert 861623 % 4 != 0 and not M.pid_alive(861623), "fixture pid must read dead to tasklist (the MSYS-pid case)"
+    old = time.time() - 3600
+    foreign = [
+        ("refcv8 schema, MSYS pid", {"job": "refcv8-battery-step30000ema", "pid": 861623, "win_pid_of_locker": 23276, "host": "H", "acquired": "2026-10-18T14:56:21+0200"}, "refcv8-battery-step30000ema"),
+        ("another job's owner marker", {"pid": 861623, "owner": "some_other_job", "t": 0}, "some_other_job"),
+        ("no pid at all", {"job": "pidless-job", "acquired": "x"}, "pidless-job"),
+        ("not a JSON object", ["a", "list"], "?"),
+    ]
+    for label, doc, who in foreign:
+        raw = json.dumps(doc)
+        open(lock, "w", encoding="utf-8").write(raw)
+        os.utime(lock, (old, old))
+        try:
+            M.acquire_gpu_lock(lock=lock, wait_idle=None, used_fn=lambda: 1000, settle_s=0.0)
+        except M.GpuBusy as e:
+            assert "FOREIGN" in str(e) and repr(who) in str(e) and "age 3" in str(e), f"{label}: the refusal does not name the holder's job and age: {e}"
+        else:
+            raise AssertionError(f"{label}: took the GPU although a lock we did not write exists")
+        assert os.path.exists(lock), f"{label}: a FOREIGN lock was REMOVED"
+        assert open(lock, encoding="utf-8").read() == raw, f"{label}: the foreign lock's body was changed"
+        assert abs(os.path.getmtime(lock) - old) < 2, f"{label}: the foreign lock was rewritten"
+        M.release_gpu_lock(lock, json.dumps({"pid": os.getpid(), "owner": "aux_navtest_forward", "t": 0}))
+        assert os.path.exists(lock), f"{label}: release removed a foreign lock"
+    # control: the same 3600 s-old lock WITH our owner marker and a dead pid IS cleared (so the refusals above come from the owner rule, not from the age or the pid)
+    open(lock, "w", encoding="utf-8").write(json.dumps({"pid": 861623, "owner": "aux_navtest_forward", "t": 0}))
+    os.utime(lock, (old, old))
+    b = M.acquire_gpu_lock(lock=lock, wait_idle=None, used_fn=lambda: 1000, settle_s=0.0)
+    assert json.loads(open(lock, encoding="utf-8").read())["pid"] == os.getpid()
+    M.release_gpu_lock(lock, b)
+    assert not os.path.exists(lock)
+
+
 CHECKS = [chk_tap_is_visual_ctx, chk_cached_equals_inline, chk_zeroed_output_is_exact_zero, chk_sdf_in_metres, chk_seeds_differ_and_fixture_is_trainers_head, chk_npz_roundtrip_through_readout,
-          chk_select_tokens, chk_identity_exactness, chk_swap_regression_fails_identity, chk_strict_load_refuses, chk_gpu_lock_protocol]
+          chk_select_tokens, chk_identity_exactness, chk_swap_regression_fails_identity, chk_strict_load_refuses, chk_gpu_lock_protocol, chk_gpu_lock_never_steals_foreign]
 BYNAME = {f.__name__: f for f in CHECKS}
 
 
@@ -380,6 +422,8 @@ MUT = [
     ("tap_reads_queries", "tap", "self.ctx = args[1]", "self.ctx = args[0]", ["chk_tap_is_visual_ctx", "chk_cached_equals_inline"]),
     ("step_not_zero", "contract", "step=np.zeros(n, np.int64)", "step=np.ones(n, np.int64)", ["chk_npz_roundtrip_through_readout"]),
     ("lock_without_excl", "lock", "os.O_CREAT | os.O_EXCL | os.O_WRONLY", "os.O_CREAT | os.O_WRONLY", ["chk_gpu_lock_protocol"]),
+    ("foreign_lock_removed", "lock", "if not isinstance(holder, dict) or holder.get(\"owner\") != OWNER:", "if False:", ["chk_gpu_lock_never_steals_foreign"]),
+    ("release_ignores_owner", "lock", "if cur.get(\"owner\") == mine.get(\"owner\") and cur.get(\"pid\")", "if cur.get(\"pid\")", ["chk_gpu_lock_protocol"]),
     ("wait_idle_ignored", "lock", "if r.returncode != 0:\n            raise GpuBusy(f\"wait_idle.py exited {r.returncode}\")", "if False:\n            raise GpuBusy(\"x\")", ["chk_gpu_lock_protocol"]),
     ("sdf_not_metres", "contract", "return logit.float().cpu().numpy().astype(np.float32), sdf.float().cpu().numpy().astype(np.float32)",
      "return logit.float().cpu().numpy().astype(np.float32), (sdf / 6.0).float().cpu().numpy().astype(np.float32)", ["chk_sdf_in_metres"]),

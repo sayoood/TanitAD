@@ -750,17 +750,23 @@ def test_a2_lease_never_breaks_a_lock_it_waits():
 
 
 @test
-def test_a2_why_the_lease_is_guarded_the_banked_acquire_would_steal_a_stale_looking_lock():
-    """The hazard, shown on the REAL aux_navtest_forward.acquire_gpu_lock (temp lock, no nvidia-smi): a lock with a pid Windows cannot see, older than 10 min, is DELETED and taken."""
+def test_a2_banked_acquire_refuses_a_stale_looking_foreign_lock():
+    """The hazard this file used to PIN is fixed (2026-10-18): the REAL aux_navtest_forward.acquire_gpu_lock (temp lock, no nvidia-smi) used to DELETE and take a lock with a pid Windows cannot see
+    that was older than 10 min.  The lock is shared with other job families' schemas, so it now removes only a lock carrying its own owner marker and raises GpuBusy for any other."""
     import aux_navtest_forward as ANF
     tmp = tempfile.mkdtemp(prefix="stp_a2_steal_")
     try:
         lock = os.path.join(tmp, "devbox_gpu.lock")
-        open(lock, "w").write(json.dumps({"job": "navsim", "pid": 999999}))
+        raw = json.dumps({"job": "navsim", "pid": 999999})
+        open(lock, "w").write(raw)
         os.utime(lock, (1.0e9, 1.0e9))
-        body = ANF.acquire_gpu_lock(lock=lock, wait_idle=None, used_fn=lambda: 0, settle_s=0.0)
-        assert json.loads(body)["owner"] == ANF.OWNER and json.loads(open(lock).read())["owner"] == ANF.OWNER          # the other job's lock is gone: this is what the A2 lease must never reach
-        ANF.release_gpu_lock(lock, body)
+        try:
+            ANF.acquire_gpu_lock(lock=lock, wait_idle=None, used_fn=lambda: 0, settle_s=0.0)
+        except ANF.GpuBusy:
+            pass
+        else:
+            raise AssertionError("the banked acquire took a lock another job holds")
+        assert open(lock).read() == raw, "the other job's lock was touched"
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
 

@@ -568,6 +568,26 @@ Each entry cost hours more than once. CLAUDE.md keeps a one-line index; this fil
     (3) inject the suspected stress into BASE. A timing assertion in a test is a probe of the box as much as the code.
   - ⇒ Cap concurrent test processes at 2 on the dev box, and keep ≥ 5 GB free on C: (it hit 0.17 GB the same morning).
 
+- ⚠️ **TWO LOCK SCHEMAS SHARE `devbox_gpu.lock`, AND A DEAD-PID "STALE" RULE CANNOT SEE AN MSYS PID — IT STEALS
+  LIVE LOCKS.** MEASURED 2026-10-18 (found while building the P6-HN screen chain, confirmed in source):
+  `eval/aux_navtest_forward.acquire_gpu_lock` removed any lock whose `pid` `tasklist` could not find once it was
+  > 600 s old. The refcv8 battery's schema is `{job, pid = an MSYS/Git-bash pid, win_pid_of_locker, host, acquired}`,
+  and its `win_pid_of_locker` is a transient process that exits at once. So a LIVE battery in a CPU-only phase reads
+  as dead, and the helper would delete its lock and start a second GPU job on top of it. A foreign-schema lock (MSYS
+  pid 861623, 3600 s old) was deleted by the old code and is refused with `GpuBusy` by the fixed one.
+  - ⚠️ **`win_pid_of_locker` is not a liveness signal either.** It names the transient process that WROTE the file.
+    MEASURED 17:36 Berlin the same day: `tasklist` finds no such process while the battery's lock is live. A stale
+    rule that tests it instead of `pid` steals the same live lock.
+  - ⇒ **A lock helper may clear ONLY a lock carrying its own owner marker.** Every other schema is a live job's lock
+    and is waited on. "pid not alive" is evidence only inside the pid namespace that wrote it.
+  - ⇒ **Test it with a foreign-schema lock** (MSYS-style pid, old mtime) in a temp dir: require `GpuBusy` and an
+    untouched body. Restoring the removal branch must turn that test RED. A test that PINS the old behaviour
+    (`raw/2026-10-16-scene-tap-a2/test_scene_tap_probe.py:753`) is inverted in the same landing.
+  - Same rule still OPEN in `c3_run.py:114`, `c3_run_p2.py:126`, `p2s1_autoread.py:449`, and worse in refav1's
+    `gpu_lock.py:58-83` (a lock with no `t` field always reads "before the last boot" and is renamed aside). None
+    was running when found; BACKLOG `LOCK-STEAL-2`.
+  Same family as the `pgrep -f` self-match: a liveness probe answers for one namespace only.
+
 ## Git hygiene — the mistake that has now happened twice
 
 **`git commit` and `git commit --amend` both commit the ENTIRE INDEX, not the files you

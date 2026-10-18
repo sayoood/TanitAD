@@ -96,7 +96,7 @@ def pid_alive(pid) -> bool:
 
 def acquire_gpu_lock(lock: str = LOCK, wait_idle: str | None = WAIT_IDLE, wait_timeout_s: float = 240.0, used_fn=gpu_used_mib, settle_s: float = 4.0) -> str:
     """Fail CLOSED: the neighbour's idle waiter must exit 0 within `wait_timeout_s`, the lock must be created with O_EXCL (a lock whose holder pid is alive is never taken; a
-    dead holder's lock is removed only when it is older than 10 min), and memory.used must still read <= GPU_MAX_USED_MIB `settle_s` after taking it.  Returns the lock body."""
+    lock WITHOUT our owner marker is never removed, whatever its pid says; our own dead holder's lock is removed only when it is older than 10 min), and memory.used must still read <= GPU_MAX_USED_MIB `settle_s` after taking it.  Returns the lock body."""
     if wait_idle:
         try:
             r = subprocess.run([sys.executable, wait_idle], timeout=wait_timeout_s)
@@ -116,6 +116,11 @@ def acquire_gpu_lock(lock: str = LOCK, wait_idle: str | None = WAIT_IDLE, wait_t
                 age = time.time() - os.path.getmtime(lock)
             except (OSError, ValueError):
                 raise GpuBusy(f"{lock} exists and is unreadable")
+            # THE LOCK IS SHARED with other job families that write a DIFFERENT schema (e.g. {"job", "pid" = an MSYS pid, "win_pid_of_locker", "host", "acquired"}); an MSYS pid is invisible to
+            # `tasklist`, so a dead-pid test cannot tell such a live job from a dead one.  We may therefore clear ONLY a lock that carries OUR owner marker; anything else is a live job's lock.
+            if not isinstance(holder, dict) or holder.get("owner") != OWNER:
+                who = (holder.get("job") or holder.get("owner") or "?") if isinstance(holder, dict) else "?"
+                raise GpuBusy(f"{lock} is held by a FOREIGN lock (job/owner {who!r}, age {age:.0f} s): not written by {OWNER}, never removed: {holder}")
             if "pid" not in holder or pid_alive(holder["pid"]):
                 raise GpuBusy(f"{lock} is held by {holder}")
             if attempt == 2 or age <= 600:
@@ -135,9 +140,12 @@ def acquire_gpu_lock(lock: str = LOCK, wait_idle: str | None = WAIT_IDLE, wait_t
 
 def release_gpu_lock(lock: str, body: str) -> None:
     try:
-        if json.loads(open(lock, encoding="utf-8").read()).get("pid") == json.loads(body)["pid"]:
+        cur = json.loads(open(lock, encoding="utf-8").read())
+        mine = json.loads(body)
+        if cur.get("owner") == mine.get("owner") and cur.get("pid") == mine["pid"]:                  # only the lock THIS call wrote (its owner + pid, read from the body it wrote, so a
+            # caller that labels the lock with its own OWNER, e.g. refe/hnscreen_devbox.py, still releases it); a foreign body that happens to carry our pid is not ours
             os.remove(lock)
-    except (OSError, ValueError):
+    except (OSError, ValueError, AttributeError):
         pass
 
 
