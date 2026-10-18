@@ -1,0 +1,18 @@
+unmutated suite: 12 checks, 0 failing []  (58 s)
+mutation                                                                 caught-by (failing checks)
+the token check is deleted (verify never refuses)                        E_no_trainer_without_a_token
+the token check before the trainer start is deleted                      E_no_trainer_without_a_token
+the GPU lock acquisition is deleted                                      F_lock_discipline, G_foreign_lock_waited_for_never_removed
+the chain REMOVES a foreign lock while it waits                          G_foreign_lock_waited_for_never_removed
+the chain ignores the chain_active marker                                G_foreign_lock_waited_for_never_removed
+a DONE check is skipped (every stage re-runs)                            C_resume_after_interruption, D_resume_by_content_not_presence
+resume trusts presence, not content                                      D_resume_by_content_not_presence
+the read is not given --families-per-set                                 H_families_read_integration_and_rule_e
+the chain holds the lock around the cache driver                         F_lock_discipline
+SY < 0.10 does not stop the chain                                        I_stop_points
+a failed I6 / G15 does not stop the chain                                I_stop_points
+the argv lever check is skipped                                          J_named_parameters_and_levers
+rule E may fire twice                                                    H_families_read_integration_and_rule_e
+a failed gate before the read does not stop it                           I_stop_points
+the trainer is not released-and-archived on a retry (stale scores stay)  C_resume_after_interruption
+ZZTEST_PASS 16  (1 unmutated suite of 12 checks + 15 RED mutations; the shared dev-box lock files untouched: ((144, 1792328181618639200), (96, 1792328181838367800)))
