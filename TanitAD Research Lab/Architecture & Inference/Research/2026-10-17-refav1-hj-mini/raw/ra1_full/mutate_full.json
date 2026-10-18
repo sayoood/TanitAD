@@ -1,0 +1,61 @@
+{
+ "mutations": [
+  {
+   "mutation": "driver encode loses --only-file",
+   "test": "driver_dry_run",
+   "red": true
+  },
+  {
+   "mutation": "driver writes into the 600-clip root",
+   "test": "driver_dry_run",
+   "red": true
+  },
+  {
+   "mutation": "driver final verify allows partial",
+   "test": "driver_dry_run",
+   "red": true
+  },
+  {
+   "mutation": "driver disk guard off",
+   "test": "driver_dry_run",
+   "red": true
+  },
+  {
+   "mutation": "queue full skips fullenv",
+   "test": "queue_full_stages",
+   "red": true
+  },
+  {
+   "mutation": "queue full cache set at the top (leak)",
+   "test": "queue_full_stages",
+   "red": true
+  },
+  {
+   "mutation": "verdict accepts a 600-clip run",
+   "test": "refuses_a_600",
+   "red": true
+  },
+  {
+   "mutation": "verdict tie goes to A1",
+   "test": "refuses_a_600",
+   "red": true
+  },
+  {
+   "mutation": "verdict no extension rule",
+   "test": "refuses_a_600",
+   "red": true
+  },
+  {
+   "mutation": "verdict reads K without the gate",
+   "test": "behind_the_gate",
+   "red": true
+  },
+  {
+   "mutation": "verdict reads any arm's PASS",
+   "test": "behind_the_gate",
+   "red": true
+  }
+ ],
+ "all_red": true,
+ "unmutated_green": true
+}

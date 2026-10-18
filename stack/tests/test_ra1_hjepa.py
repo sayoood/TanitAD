@@ -939,3 +939,163 @@ def test_queue_es5_stage_carries_wd_on_every_trainer_argv(tmp_path):
     assert len(vd) == 1 and vd[0].count("--run ") == 5 and "es5_verdict.json" in vd[0], vd
     assert f"st1000{os.sep}R0_s0" in vd[0] and f"st1000_wd0.3{os.sep}A1x_b0.08g50_s0" in vd[0], "R0 is the banked unregularised run"
     assert dry("es5 1000 0.08 50")[0] == 2
+
+
+# ------------------------------------------------------------------------------------------- PREREG_RA1_FULL (the full train corpus)
+FULL_VERDICT = QUEUE.parent / "ra1_full_verdict.py"
+FULL_DRIVER = QUEUE.parent / "ra1_full_box2.py"
+
+
+def _dry_queue(env, args):
+    import subprocess
+    r = subprocess.run(f'cmd /c ""{QUEUE}" {args}"', env=env, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=120)
+    return r.returncode, r.stdout.splitlines()
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="the queue is a Windows batch file")
+def test_queue_full_stages_read_their_own_cache_root_and_prior_and_nothing_else_does(tmp_path):
+    """The trainer takes every clip in its cache's manifest minus the holdout, so the cache ROOT sets the corpus. Only `full` / `full2`
+    may point at the full-corpus root and P10-yaw-4512; the 540-clip stages must still read the 600-clip root and P10-yaw-540."""
+    import re
+    cf = str(tmp_path / "cache_full")
+    env = dict(os.environ, RA1_DRYRUN="1", REPO=str(REPO), RUNS=str(tmp_path / "runs"), CACHEFULL=cf)
+    rc, out = _dry_queue(env, 'full "500 1000" 0.08 50')
+    assert rc == 0, out
+    tr = [ln for ln in out if "ra1_hjepa_train.py" in ln]
+    got = [(re.search(r"--arm (\S+) --seed (\S+)", ln).groups(), re.search(r"--steps (\d+)", ln).group(1)) for ln in tr]
+    assert got == [((a, s), S) for S in ("500", "1000") for a in ("R0", "A1") for s in ("0", "1")], got
+    assert all(f'--cache "{cf}"' in ln and f"p10_yaw4512{os.sep}p10_prior.pt" in ln and "--holdout-n 60" in ln and "--kin-mode yaw" in ln
+               and f'--tracks "{cf}{os.sep}native_tracks.pt"' in ln for ln in tr), tr
+    assert all("--beta 0.08 --gamma 50" in ln for ln in tr if "--arm A1 " in ln)
+    assert all(f"runs_full{os.sep}st{S}{os.sep}" in ln for ln, (_, S) in zip(tr, got)), "each budget gets its own run dir"
+    ev = [ln for ln in out if "ra1_hjepa_eval.py" in ln]
+    assert len(ev) == 8 and all(f'--eval-cache "{cf}" --train-cache "{cf}"' in ln and f"p10_yaw4512{os.sep}p10_eval_pred6.npy" in ln
+                                for ln in ev), ev
+    rc, out = _dry_queue(env, "full2 1000 500 0.08 50")
+    assert rc == 0, out
+    tr = [ln for ln in out if "ra1_hjepa_train.py" in ln]
+    assert len(tr) == 1 and "--arm A1x --seed 0" in tr[0] and "--steps 1000" in tr[0] and f'--cache "{cf}"' in tr[0], tr
+    vd = [ln for ln in out if " verdict --out " in ln]
+    assert len(vd) == 1 and vd[0].count("--run ") == 5 and "full2_verdict.json" in vd[0], vd
+    assert f"st500{os.sep}R0_s0" in vd[0] and f"st1000{os.sep}A1_b0.08g50_s1" in vd[0] and f"st1000{os.sep}A1x_b0.08g50_s0" in vd[0], vd
+    for bad in ("full", 'full "500"', "full2 1000 500 0.08"):          # a missing budget list / cell is refused, never defaulted
+        rc, out = _dry_queue(env, bad)
+        assert rc == 2 and not any("ra1_hjepa_train.py" in ln for ln in out), (bad, out)
+    for stage in ('es "250"', "es5 1000 0.08 50 0.3", "stage1"):       # the override never leaks into a 540-clip stage
+        rc, out = _dry_queue(env, stage)
+        assert rc == 0, out
+        lines = [ln for ln in out if "ra1_hjepa_" in ln]
+        assert lines and not any(cf in ln or "p10_yaw4512" in ln for ln in lines), (stage, lines)
+        assert all("p10_yaw540" in ln for ln in lines if "--p10-prior" in ln), stage
+
+
+def _full_mod():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("ra1_full_verdict", FULL_VERDICT)
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    return m
+
+
+def _full_eval(root, arm, seed, step, hold, n_train=4572, sha=None, p10=3.0682):
+    m = _full_mod()
+    p = Path(root) / f"st{step}" / m.ARMS[arm].format(seed=seed) / "eval"
+    p.mkdir(parents=True)
+    dd = lambda x: dict(delta=x, lo=x - 0.05, hi=x + 0.05, separated=abs(x) > 0.05)     # noqa: E731
+    ev = dict(arm=arm, kin_mode="yaw", instrument_ok=True, ckpt_step=step, disjointness=dict(n_train=n_train),
+              holdout=dict(clips_sha256=sha or m.HOLDOUT_SHA, train_sha256="t" * 64, ade6_arm=dict(mean=hold), ade6_p10=dict(mean=p10),
+                           ade6_arm_minus_p10=dd(hold - p10)),
+              K=dict(ade6_arm=dict(mean=hold - 0.5), ade6_arm_minus_p10=dd(hold - p10)))
+    (p / "eval.json").write_text(json.dumps(ev), encoding="utf-8")
+
+
+@pytest.mark.skipif(not FULL_VERDICT.exists(), reason="the refav1-hj-mini package is not in this checkout")
+def test_full_verdict_selects_each_arm_on_the_holdout_and_refuses_a_600_clip_run(tmp_path):
+    m = _full_mod()
+    grid = [500, 1000, 3000, 6000]
+    hold = {"R0": {500: 3.10, 1000: 3.05, 3000: 3.045, 6000: 3.20}, "A1": {500: 3.08, 1000: 3.00, 3000: 2.95, 6000: 3.10}}
+    for arm, by in hold.items():
+        for S, h in by.items():
+            for seed in (0, 1):
+                _full_eval(tmp_path, arm, seed, S, h + 0.002 * seed)
+    a = types.SimpleNamespace(root=str(tmp_path), budgets=[str(S) for S in grid], extended=False)
+    r = m.select(a)
+    assert r["status"] == "OK" and r["S_star"] == {"R0": 1000, "A1": 3000}, r["S_star"]   # R0: 3000 is within 0.01 m -> the shorter
+    assert r["K_arm"] == "A1" and r["next"] == "full2 3000 1000 0.08 50" and r["edge"] == {"R0": None, "A1": None}
+    assert abs(r["memorisation_R0_holdout_minus_p10_by_budget"]["6000"] - (3.201 - 3.0682)) < 1e-9
+    # an S* on the grid edge names its one extension; --extended reads it there and discloses it
+    _full_eval(tmp_path / "e", "R0", 0, 500, 3.0); _full_eval(tmp_path / "e", "R0", 1, 500, 3.0)
+    _full_eval(tmp_path / "e", "R0", 0, 1000, 3.1); _full_eval(tmp_path / "e", "R0", 1, 1000, 3.1)
+    for S, h in ((500, 3.2), (1000, 3.1)):
+        for seed in (0, 1):
+            _full_eval(tmp_path / "e", "A1", seed, S, h)
+    e = m.select(types.SimpleNamespace(root=str(tmp_path / "e"), budgets=["500", "1000"], extended=False))
+    assert e["edge"] == {"R0": "BELOW", "A1": "ABOVE"} and e["extension_budgets"] == {"R0": 250, "A1": 2000} and e["next"].startswith("EXTEND")
+    e2 = m.select(types.SimpleNamespace(root=str(tmp_path / "e"), budgets=["500", "1000"], extended=True))
+    assert e2["next"].startswith("full2") and "DISCLOSED" in e2["reading"]
+    # arms within 0.01 m of each other go to R0, the simpler model: the world model has to earn its place
+    for arm, h in (("R0", 3.000), ("A1", 2.995)):
+        for seed in (0, 1):
+            _full_eval(tmp_path / "tie", arm, seed, 500, h)
+    assert m.select(types.SimpleNamespace(root=str(tmp_path / "tie"), budgets=["500"], extended=False))["K_arm"] == "R0"
+    # a run from the 600-clip cache, a second holdout or a second prior is refused, never averaged in
+    for kw in (dict(n_train=600), dict(sha="x" * 64), dict(p10=3.0529)):
+        d = tmp_path / ("bad_" + next(iter(kw)))
+        for arm in ("R0", "A1"):
+            for seed in (0, 1):
+                _full_eval(d, arm, seed, 500, 3.0, **(kw if (arm, seed) == ("A1", 1) else {}))
+        with pytest.raises(ValueError):
+            m.select(types.SimpleNamespace(root=str(d), budgets=["500"], extended=False))
+
+
+@pytest.mark.skipif(not FULL_VERDICT.exists(), reason="the refav1-hj-mini package is not in this checkout")
+def test_full_verdict_reads_k_only_behind_the_gate_and_for_the_holdout_chosen_arm(tmp_path):
+    m = _full_mod()
+    f1 = dict(status="OK", next="full2 3000 1000 0.08 50", S_star={"R0": 1000, "A1": 3000}, K_arm="A1")
+    (tmp_path / "f1.json").write_text(json.dumps(f1), encoding="utf-8")
+    cands = {"R0": {"PASS": True}, "A1": {"PASS": False}}
+
+    def verdict(gate):
+        v = dict(kin_mode="yaw", deciding=True, A1_best_cell="b0.08g50", A1x_control=dict(verdict=gate), K=dict(candidates=cands))
+        (tmp_path / "v.json").write_text(json.dumps(v), encoding="utf-8")
+        return m.read(types.SimpleNamespace(full1=str(tmp_path / "f1.json"), verdict=str(tmp_path / "v.json")))
+
+    assert verdict("UNRESOLVED: A1x is worse but not separated")["outcome"] == "INSTRUMENT_BROKEN"
+    r = verdict("OK: A1x loses to A1, separated")
+    assert r["outcome"] == "K_FAIL" and r["K_read"]["K_arm"] == "A1", "R0's PASS must not stand in for the holdout-chosen arm"
+    cands["A1"]["PASS"] = True
+    assert verdict("OK: A1x loses to A1, separated")["outcome"] == "K_PASS"
+
+
+@pytest.mark.skipif(not FULL_DRIVER.exists(), reason="the refav1-hj-mini package is not in this checkout")
+def test_full_box2_driver_dry_run_builds_then_encodes_then_verifies_each_chunk_into_the_full_root(tmp_path):
+    """Order is the safety contract: the control first, CPU build and GPU encode never in one step, the encode fed the chunk's own list,
+    every chunk verified before the next, and the final verify over ALL clips into the full root -- never the 600-clip `cache`."""
+    import subprocess
+    st = tmp_path / "data" / "trainall_stage"
+    st.mkdir(parents=True)
+    rest = [f"{i:08d}-0000-0000-0000-000000000000" for i in range(5)]
+    (st / "clips_rest.txt").write_text("\n".join(rest) + "\n", encoding="utf-8")
+    (st / "camera_sha256.json").write_text(json.dumps({c: {"sha256": "0" * 64} for c in rest}), encoding="utf-8")
+    (st / "ctl_expected.json").write_text(json.dumps({"c" * 8 + "-ctl": "1" * 64}), encoding="utf-8")
+    env = dict(os.environ, RA1FULL_ROOT=str(tmp_path), LABELFLAGS="--listing L --train-labels T", RA1FULL_MIN_FREE_GB="0")
+    r = subprocess.run([sys.executable, str(FULL_DRIVER), "--dry-run", "--chunk", "2"], env=env, capture_output=True, text=True, timeout=120)
+    assert r.returncode == 0, r.stdout + r.stderr
+    runs = [ln.split(" RUN ", 1)[1] for ln in r.stdout.splitlines() if " RUN " in ln]
+    kind = ["build" if "pod_build_b1_epcache.py" in x else "encode" if "pull_encode_pooled.py" in x else "verify" if "verify_cache.py" in x
+            else "?" for x in runs]
+    assert kind == ["build"] + ["build", "encode", "verify"] * 3 + ["verify"], kind
+    assert "_ctl256" in runs[0], "the identity control builds first, into its own dir"
+    full = str(tmp_path / "cache_full")
+    for i, x in enumerate(runs[1:-1]):
+        k = i // 3
+        if kind[i + 1] == "encode":
+            assert f"chunk_{k:02d}.txt" in x and "--keep-src" in x and full in x and "--listing L --train-labels T" in x, x
+        if kind[i + 1] == "verify":
+            assert "--allow-partial" in x and full in x, x
+    assert "--allow-partial" not in runs[-1] and "--sample 0" in runs[-1] and full in runs[-1]
+    assert not any(str(tmp_path / "cache") + " " in x + " " for x in runs), "nothing may write into the 600-clip cache root"
+    # the disk guard: a box without the space stops before the first chunk builds, with its own exit code
+    env["RA1FULL_MIN_FREE_GB"] = "1e12"
+    r = subprocess.run([sys.executable, str(FULL_DRIVER), "--dry-run", "--chunk", "2"], env=env, capture_output=True, text=True, timeout=120)
+    assert r.returncode == 11 and "ZZDISK-GUARD" in r.stdout and "pull_encode_pooled.py" not in r.stdout, r.stdout

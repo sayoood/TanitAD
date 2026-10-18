@@ -100,15 +100,22 @@ def main(argv=None):
     ap.add_argument("--kin-mode", choices=D.KIN_MODES, default="steer",
                     help="steer (default, the banked recipe) | yaw (PI ruling D-PI-YAWRATE-1: measured-yaw-rate kappa0, curvature unit)")
     ap.add_argument("--holdout", default="", help="A:B -- also score the fit on clips A..B of the sha12 order (RA-1 holdout: 540:600)")
+    ap.add_argument("--exclude", default="", help="A:B -- DROP clips A..B of the sha12 order from the fit set (RA-1 full corpus: --clips 4572 --exclude 540:600 --holdout 540:600 keeps the holdout out of sample)")
     a = ap.parse_args(argv)
     os.makedirs(a.out_dir, exist_ok=True)
     t0 = time.time()
     m = torch.load(a.manifest, weights_only=False)
     byc = {c: D.full_from_manifest(p.numpy(), ac.numpy()) for c, p, ac in zip(m["clip_id"], m["poses"], m["actions"])}
     clips = sorted(byc, key=D.sha12)[:a.clips]
+    excluded = []
+    if a.exclude:
+        xlo, xhi = (int(x) for x in a.exclude.split(":"))
+        excluded = sorted(byc, key=D.sha12)[xlo:xhi]
+        clips = [c for c in clips if c not in set(excluded)]
     grid = json.load(open(a.eval_grid))
     res = {"manifest": a.manifest, "n_manifest_clips": len(byc), "fit_clips": len(clips), "stride": a.stride,
            "seed": a.seed, "banked_legacy_p10": {"ade2": 0.2229, "ade6": 2.9257, "note": "kd_x integrated in the WRONG unit"}}
+    res["excluded"] = {"range": a.exclude, "n": len(excluded)}
     hold = None
     if a.holdout:
         lo, hi = (int(x) for x in a.holdout.split(":"))

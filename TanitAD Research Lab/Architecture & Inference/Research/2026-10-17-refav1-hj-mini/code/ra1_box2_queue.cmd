@@ -11,6 +11,8 @@ rem   ra1_box2_queue.cmd es2 S BETA GAMMA       PREREG_RA1_ES ES-2: at budget S,
 rem   ra1_box2_queue.cmd es3 S BETA             PREREG_RA1_ES Addendum A: A0 x2 seeds at budget S, + the verdict over R0/A0/A1/A1x at S
 rem   ra1_box2_queue.cmd ridge                  PREREG_RA1_RIDGE: the CPU ridge probe of the pooled features (no training)
 rem   ra1_box2_queue.cmd es5 S BETA GAMMA WD    PREREG_RA1_ES Addendum C: A1 x2 + A1x at budget S with --wd WD, in %RUNS%_es\st<S>_wd<WD>
+rem   ra1_box2_queue.cmd full "S1 S2 ..." BETA GAMMA   PREREG_RA1_FULL phase 1: R0 x2 + A1 x2 per budget on the FULL corpus, in %RUNS%_full\st<S>
+rem   ra1_box2_queue.cmd full2 SA SR BETA GAMMA        PREREG_RA1_FULL phase 2: A1x seed 0 at SA (= S*_A1), + the verdict over R0@SR, A1/A1x@SA
 rem
 rem HOLDOUT (PREREG_HJ_STAGE0 Amendment 1): every trainer call carries --holdout-n 60 (the trainer REFUSES to run without it): the last 60 of the
 rem 600 stage-A clips in sha12 order are withheld from EVERY arm, the evals score them (--train-cache), and the A1 cell is chosen on them, NEVER on
@@ -29,6 +31,9 @@ setlocal EnableExtensions
 if not defined REPO set "REPO=D:\tanitad\repo"
 if not defined PY set "PY=D:\tanitad\venv\Scripts\python.exe"
 if not defined CACHE set "CACHE=D:\tanitad\cache"
+rem PREREG_RA1_FULL: the full-corpus cache is its OWN root (code\ra1_full_box2.py builds it). The trainer takes every clip in its cache's
+rem manifest minus the holdout (no --n-clips below), so the ROOT sets the corpus, and only the full stages may point at this one.
+if not defined CACHEFULL set "CACHEFULL=D:\tanitad\cache_full"
 if not defined RUNS set "RUNS=D:\tanitad\runs\ra1_yaw"
 if not defined STEPS set "STEPS=6000"
 set "PKG=%REPO%\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-v8f-mini\raw"
@@ -58,10 +63,13 @@ if /i "%~1"=="es2" goto :es2
 if /i "%~1"=="es3" goto :es3
 if /i "%~1"=="ridge" goto :ridge
 if /i "%~1"=="es5" goto :es5
+if /i "%~1"=="full" goto :full
+if /i "%~1"=="full2" goto :full2
 echo usage: ra1_box2_queue.cmd gate^|stage1^|stage1verdict^|stage2 BETA GAMMA^|final BETA GAMMA
 echo        ra1_box2_queue.cmd es "S1 S2 ..."^|es2 S BETA GAMMA   (PREREG_RA1_ES)
 echo        ra1_box2_queue.cmd es3 S BETA^|ridge   (PREREG_RA1_ES Addendum A, PREREG_RA1_RIDGE)
 echo        ra1_box2_queue.cmd es5 S BETA GAMMA WD   (PREREG_RA1_ES Addendum C)
+echo        ra1_box2_queue.cmd full "S1 S2 ..." BETA GAMMA^|full2 SA SR BETA GAMMA   (PREREG_RA1_FULL)
 exit /b 2
 
 :gate
@@ -168,6 +176,50 @@ set "VN=es5_verdict.json"
 set "C=b%~3g%~4"
 call :verdict --run "R0@0=%ESBASE%\R0_s0\eval" --run "R0@1=%ESBASE%\R0_s1\eval" --run "A1:%C%@0=%RUNS%\A1_%C%_s0\eval" --run "A1:%C%@1=%RUNS%\A1_%C%_s1\eval" --run "A1x:%C%@0=%RUNS%\A1x_%C%_s0\eval"
 exit /b %errorlevel%
+
+:full
+rem PREREG_RA1_FULL phase 1: the FULL train corpus -- all 4,572 v7.2 TRAIN clips minus the SAME 60-clip Amendment-1 holdout = 4,512 --
+rem read from %CACHEFULL%, with P10-yaw-4512 as the frozen prior and the K comparator. R0 x2 + A1 x2 at every budget (full runs, the cosine
+rem schedule compressed to --steps, as in ES-1). A1x runs only at the holdout-selected budget (full2). Every other constant is :run's.
+if "%~4"=="" (echo full needs a quoted step list and BETA GAMMA, e.g. full "500 1000 3000 6000" 0.08 50 & exit /b 2)
+call :fullenv || exit /b 2
+set "FROOT=%RUNS%_full"
+for %%N in (%~2) do (
+  set "STEPS=%%N"
+  set "RUNS=%FROOT%\st%%N"
+  if not exist "%FROOT%\st%%N" mkdir "%FROOT%\st%%N"
+  for %%S in (0 1) do call :run R0_s%%S R0 %%S - - "" || exit /b 1
+  for %%S in (0 1) do call :run A1_b%~3g%~4_s%%S A1 %%S %~3 %~4 "" || exit /b 1
+)
+exit /b 0
+
+:full2
+rem PREREG_RA1_FULL phase 2: A1x seed 0 at SA = S*_A1 (code\ra1_full_verdict.py select picks SA and SR = S*_R0 on the HOLDOUT), then the
+rem queue's verdict over R0 at SR and A1 + A1x at SA. eval-141 selects nothing; code\ra1_full_verdict.py read applies the readings.
+if "%~5"=="" (echo full2 needs SA SR BETA GAMMA & exit /b 2)
+call :fullenv || exit /b 2
+set "FROOT=%RUNS%_full"
+set "STEPS=%~2"
+set "RUNS=%FROOT%\st%~2"
+if not exist "%RUNS%" mkdir "%RUNS%"
+call :run A1x_b%~4g%~5_s0 A1x 0 %~4 %~5 "" || exit /b 1
+set "VN=full2_verdict.json"
+set "C=b%~4g%~5"
+call :verdict --run "R0@0=%FROOT%\st%~3\R0_s0\eval" --run "R0@1=%FROOT%\st%~3\R0_s1\eval" --run "A1:%C%@0=%RUNS%\A1_%C%_s0\eval" --run "A1:%C%@1=%RUNS%\A1_%C%_s1\eval" --run "A1x:%C%@0=%RUNS%\A1x_%C%_s0\eval"
+exit /b %errorlevel%
+
+:fullenv
+rem The full stages' cache, tracks and prior. Set here, never at the top, so no 540-clip stage can read them.
+set "CACHE=%CACHEFULL%"
+set "TRACKS=%CACHEFULL%\native_tracks.pt"
+set "P10DIR=%REPO%\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\raw\p10_yaw4512"
+set "P10=%P10DIR%\p10_prior.pt"
+set "P10REF=%P10DIR%\p10_eval_pred6.npy"
+if defined RA1_DRYRUN exit /b 0
+if not exist "%CACHEFULL%\train\manifest.jsonl" (echo REFUSED: %CACHEFULL% has no train manifest - run code\ra1_full_box2.py first & exit /b 2)
+if not exist "%TRACKS%" (echo REFUSED: %TRACKS% is missing & exit /b 2)
+if not exist "%P10%" (echo REFUSED: the P10-yaw-4512 prior is missing & exit /b 2)
+exit /b 0
 
 :run
 set "TAG=%~1"

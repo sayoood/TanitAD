@@ -485,6 +485,7 @@ def main(argv=None) -> int:
     ap.add_argument("--split", choices=["train", "eval"], required=True)
     ap.add_argument("--n", type=int, default=600, help="train: first N clips by sha12 order (0 = all 4,572)")
     ap.add_argument("--only", nargs="+", metavar="CLIP", help="build exactly these clips (still asserted in-split)")
+    ap.add_argument("--only-file", default=None, help="like --only, one clip id per line (chunk lists exceed cmd's 8,191-char line)")
     ap.add_argument("--grids", default="4x10,8x20", help="comma list of 4x10,8x20")
     ap.add_argument("--device", choices=["cuda", "cpu"], default="cuda")
     ap.add_argument("--dtype", choices=["bf16", "fp32"], default="bf16", help="encoder dtype (the shipped cache is bf16)")
@@ -526,6 +527,12 @@ def main(argv=None) -> int:
 
     sets = clip_sets(a)
     pick = pick_clips(sets, a.split, a.n)
+    if a.only_file:
+        if a.only:
+            raise SystemExit("--only and --only-file are exclusive")
+        a.only = [l.strip() for l in open(a.only_file, encoding="utf-8") if l.strip()]
+        if not a.only:
+            raise SystemExit(f"--only-file {a.only_file}: no clip ids")
     if a.only:
         missing = sorted(set(a.only) - set(sets[a.split if a.split == "eval" else "train_all"]))
         if missing:
