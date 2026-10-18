@@ -347,12 +347,14 @@ def select_logs(rows: list, pct: int, replacements: dict | None) -> tuple:
 # bank: manifest, integrity, loading
 # ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 def load_manifest(guard: PathGuard, path: str) -> tuple:
-    """-> ({basename: sha256}, sha256 of the manifest file).  A basename listed twice with different sha256 is refused."""
+    """-> ({unit basename: sha256}, sha256 of the manifest file).  Only `*.sets.npz` entries are kept; a unit basename listed twice with different sha256 is refused."""
     raw = _io_read_bytes(guard, path)
     doc = json.loads(raw.decode("utf-8"))
     table: dict = {}
     for rel, ent in doc["files"].items():
         base = os.path.basename(str(ent.get("path", rel)).replace("\\", "/"))
+        if not base.endswith(".sets.npz"):
+            continue    # only bank UNITS are looked up by basename; the real S0 post-step manifest also lists run/batches/<unit>/audit.json etc., one per batch, SAME basename, different content
         if base in table and table[base] != ent["sha256"]:
             raise BankError(f"manifest lists {base} twice with different sha256")
         table[base] = ent["sha256"]

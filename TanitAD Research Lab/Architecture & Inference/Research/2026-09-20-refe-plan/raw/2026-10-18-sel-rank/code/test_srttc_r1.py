@@ -515,6 +515,27 @@ class TestBankIntegrity(Base):
             R.run_r1(opts_for(w, self.out()))
         self.assertIn("sha256", str(cm.exception))
 
+    def test_real_post_manifest_shape_loads(self):
+        # MEASURED 2026-10-18 by the R1 gate build: srttc_s0_post.py lists run/batches/<unit>/audit.json (and batch_tokens.json) for EVERY
+        # batch, so the same basename appears once per batch with different content. The loader must ignore non-unit entries, not crash.
+        w = self._copy_world("w_postshape")
+        doc = _jl(w["manifest"])
+        for i in range(3):
+            for name in ("audit.json", "batch_tokens.json"):
+                doc["files"][f"run/batches/U{i}/{name}"] = {"path": f"C:/x/run/batches/U{i}/{name}", "sha256": f"{i:064x}", "bytes": 1}
+        _jd(doc, w["manifest"])
+        R._setup(opts_for(w, self.out()))   # must not raise
+
+    def test_duplicate_unit_basename_with_other_sha_is_still_refused(self):
+        w = self._copy_world("w_dupunit")
+        doc = _jl(w["manifest"])
+        rel, ent = next((k, v) for k, v in doc["files"].items() if k.endswith(".sets.npz"))
+        doc["files"]["elsewhere/" + os.path.basename(rel)] = dict(ent, sha256="f" * 64)
+        _jd(doc, w["manifest"])
+        with self.assertRaises(R.BankError) as cm:
+            R._setup(opts_for(w, self.out()))
+        self.assertIn("twice", str(cm.exception))
+
     def test_unit_missing_from_manifest_is_refused(self):
         w = self._copy_world("w_nomanifest")
         doc = _jl(w["manifest"])
