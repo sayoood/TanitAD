@@ -14,3 +14,11 @@ landed unchanged, before any screen data exists. The questions are `SCREEN_NOTES
 
 Implementation order: checklist items 1, 2, 5, 6, 7 (new files) start now; items 3, 4 and 8 (`scorer_finetune.py`,
 `gate_checks.py`, `launch_gate.py`, the chain) start after B8's carve-feed lands, because B8 edits the same files.
+
+## PI rulings, 2026-10-18 (later the same day)
+- **Q-S4 (disk): UNBLOCKED.** PI: *"I freed disk on D"*. MEASURED right after: D: 197 GB free, C: 30 GB free. The screen's
+  ~105 GiB (the bf16 context cache, the bank, the staged inputs) goes on D:, the 30 GB on C: is kept for the OS and other
+  streams. D: is the external exFAT drive: S3's read rate on it is UNMEASURED and is measured by S2's first unit.
+- **Q-S1: "Decide then".** A SCREEN-GO puts the full P6-HN arm in front of the PI with the screen's evidence; nothing
+  launches on the A40 without the PI's yes.
+

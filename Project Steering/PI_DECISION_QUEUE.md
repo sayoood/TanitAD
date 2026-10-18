@@ -2123,3 +2123,15 @@ PI: *"screen first (Recommended), and 10% nested start"*.
 * **P6-HN (BACKLOG `P6-HN`).** NOTES.md Q1 option (b): before the 6.8-7.65 A40-day arm, a scorer-only screen under its own
   pre-registration (trunk frozen, with and without the offset bank, seeds 0-2). The full arm is not launched unless the screen's
   pre-registered outcome says so. Q2 (C9, map-derived negatives) stays open; map-derived negatives remain excluded.
+
+## DECIDED 2026-10-18 ~11:45 Berlin -- disk freed on D:; a screen GO does not book the A40; R0e-pick carve m = 13
+
+PI: *"I freed disk on D"*, *"Decide then (Recommended)"*, *"m = 13 (Recommended)"*.
+
+* **P6-HN screen, disk.** D: now has 197 GB free (MEASURED); the screen's ~105 GiB goes there. Stages S0-S3 are unblocked
+  (`raw/2026-10-18-p6hn-prereg/MM_DECISIONS_SCREEN.md`).
+* **P6-HN screen, GO.** A pre-registered GO brings the 6.8-7.65 A40-day arm back to the PI with the screen's evidence; it
+  does not authorise it.
+* **R0e-pick carve feed (B8).** m = 13 carve logs, SO-CARVE's draw rule over the RL-train index (as SO-CARVE's measured
+  train-vs-carve gap), built by `refe/carve_logs.py` before the arm's prereg is frozen.
+
