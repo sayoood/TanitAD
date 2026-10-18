@@ -10,6 +10,7 @@ rem   ra1_box2_queue.cmd es "S1 S2 ..."         PREREG_RA1_ES ES-1: R0 x2 seeds 
 rem   ra1_box2_queue.cmd es2 S BETA GAMMA       PREREG_RA1_ES ES-2: at budget S, A1 x2 seeds + A1x seed 0 at one cell, same root
 rem   ra1_box2_queue.cmd es3 S BETA             PREREG_RA1_ES Addendum A: A0 x2 seeds at budget S, + the verdict over R0/A0/A1/A1x at S
 rem   ra1_box2_queue.cmd ridge                  PREREG_RA1_RIDGE: the CPU ridge probe of the pooled features (no training)
+rem   ra1_box2_queue.cmd es5 S BETA GAMMA WD    PREREG_RA1_ES Addendum C: A1 x2 + A1x at budget S with --wd WD, in %RUNS%_es\st<S>_wd<WD>
 rem
 rem HOLDOUT (PREREG_HJ_STAGE0 Amendment 1): every trainer call carries --holdout-n 60 (the trainer REFUSES to run without it): the last 60 of the
 rem 600 stage-A clips in sha12 order are withheld from EVERY arm, the evals score them (--train-cache), and the A1 cell is chosen on them, NEVER on
@@ -56,9 +57,11 @@ if /i "%~1"=="es" goto :es
 if /i "%~1"=="es2" goto :es2
 if /i "%~1"=="es3" goto :es3
 if /i "%~1"=="ridge" goto :ridge
+if /i "%~1"=="es5" goto :es5
 echo usage: ra1_box2_queue.cmd gate^|stage1^|stage1verdict^|stage2 BETA GAMMA^|final BETA GAMMA
 echo        ra1_box2_queue.cmd es "S1 S2 ..."^|es2 S BETA GAMMA   (PREREG_RA1_ES)
 echo        ra1_box2_queue.cmd es3 S BETA^|ridge   (PREREG_RA1_ES Addendum A, PREREG_RA1_RIDGE)
+echo        ra1_box2_queue.cmd es5 S BETA GAMMA WD   (PREREG_RA1_ES Addendum C)
 exit /b 2
 
 :gate
@@ -149,6 +152,21 @@ rem PREREG_RA1_RIDGE: CPU only (no --device), no training. Output next to the ES
 if not exist "%RUNS%_es" mkdir "%RUNS%_es"
 if defined RA1_DRYRUN (echo "%PY%" "%RIDGE%" --cache "%CACHE%" --tracks "%TRACKS%" --p10-prior "%P10%" --grid-json "%GRID%" %HOLDOUT% --out "%RUNS%_es\ridge_probe.json" & exit /b 0)
 "%PY%" "%RIDGE%" --cache "%CACHE%" --tracks "%TRACKS%" --p10-prior "%P10%" --grid-json "%GRID%" %HOLDOUT% --out "%RUNS%_es\ridge_probe.json" > "%RUNS%_es\ridge_probe.log" 2>&1
+exit /b %errorlevel%
+
+:es5
+rem PREREG_RA1_ES Addendum C: --wd rides the :run block's extra-args slot, so every other constant is the :run block's. The trainer's
+rem G-DVB reads the decay back from the BUILT optimizer (weight_decay row). R0 is the banked unregularised R0 at the same budget.
+if "%~5"=="" (echo es5 needs S BETA GAMMA WD & exit /b 2)
+set "STEPS=%~2"
+set "ESBASE=%RUNS%_es\st%~2"
+set "RUNS=%RUNS%_es\st%~2_wd%~5"
+if not exist "%RUNS%" mkdir "%RUNS%"
+for %%S in (0 1) do call :run A1_b%~3g%~4_s%%S A1 %%S %~3 %~4 "--wd %~5" || exit /b 1
+call :run A1x_b%~3g%~4_s0 A1x 0 %~3 %~4 "--wd %~5" || exit /b 1
+set "VN=es5_verdict.json"
+set "C=b%~3g%~4"
+call :verdict --run "R0@0=%ESBASE%\R0_s0\eval" --run "R0@1=%ESBASE%\R0_s1\eval" --run "A1:%C%@0=%RUNS%\A1_%C%_s0\eval" --run "A1:%C%@1=%RUNS%\A1_%C%_s1\eval" --run "A1x:%C%@0=%RUNS%\A1x_%C%_s0\eval"
 exit /b %errorlevel%
 
 :run

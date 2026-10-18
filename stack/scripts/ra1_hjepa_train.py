@@ -126,6 +126,13 @@ def lr_factor(step: int, steps: int, warmup: int, min_frac: float) -> float:
     return min_frac + (1.0 - min_frac) * 0.5 * (1.0 + math.cos(math.pi * min(p, 1.0)))
 
 
+def wd_read_back(opt, declared: float) -> dict:
+    """G-DVB row for --wd: every param group of the BUILT optimizer must carry exactly the declared decay."""
+    built = sorted({float(g["weight_decay"]) for g in opt.param_groups})
+    return dict(lever="weight_decay", declared=float(declared), built=built,
+                ok=bool(opt.param_groups) and all(float(g["weight_decay"]) == float(declared) for g in opt.param_groups))
+
+
 def save_atomic(obj, path):
     tmp = str(path) + ".tmp"
     torch.save(obj, tmp)
@@ -241,6 +248,8 @@ def main(argv=None) -> int:
     dvb += [dict(lever="kin_mode_bank", declared=a.kin_mode, built=bank.kin_mode, ok=bank.kin_mode == a.kin_mode),
             dict(lever="p10_units", declared=want_units, built=P10_UNITS_OF(a.p10_prior), ok=P10_UNITS_OF(a.p10_prior) == want_units),
             dict(lever="act_ch1_name", declared=D.CH1_NAMES[a.kin_mode], built=model.act_channels[1], ok=model.act_channels[1] == D.CH1_NAMES[a.kin_mode])]
+    # the optimizer side (PREREG_RA1_ES Addendum C makes --wd a lever under test): read the decay back from every BUILT group
+    dvb.append(wd_read_back(opt, a.wd))
     live = R.live_report(model, probe, seed=a.seed)
     model.zero_grad(set_to_none=True)
     est = R.estimate_vram_gb(model, RD.to_device(RD.sample_batch(bank, resident, a.seed, 10 ** 9 + 1, a.batch, a.t1), device))

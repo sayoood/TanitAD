@@ -133,3 +133,40 @@ plus A1x at seed 0, per budget. R0 at those budgets is already banked from ES-1.
 * **Committed:**
   * if A1's holdout keeps improving to 1,000, a 2,000-step arm is next;
   * if it is best at 250, the IDM gain is also a short-training effect, and that is reported as such.
+
+## Addendum C — weight decay at the budget where the gate passes (written 2026-10-18, BEFORE any ES-5 data)
+
+**Why.** ES-4 found the two effects crossing:
+* at 1,000 steps the A1x gate PASSES (A1x − A1 = +0.0461 [+0.0033, +0.0969]), but A1 − P10 is +0.0089 / +0.0172,
+  not separated;
+* at 250 steps A1 beats P10, but the gate fails.
+
+The readout memorises. So the lever is a regulariser applied at 1,000 steps, the budget where the instrument works.
+
+**The lever: AdamW weight decay (`--wd`, an existing trainer flag; default 1e-3).**
+* Decoupled decay shrinks every weight by `lr · wd` per step. At lr 3e-4, the default 1e-3 shrinks by about 3e-4 in total
+  over 1,000 steps, which is negligible. ⇒ Arms **wd 0.3** and **wd 3.0**. After the cosine factor (about 0.55 on
+  average) the cumulative shrink is roughly 5 % and 40 %, a modest and a strong setting.
+* `--wd` is applied to every parameter group (adapter, readout and every stack level). ⚠️ That is ONE lever on all
+  groups, not a readout-only penalty; disclosed.
+* **Launch gate:** a new G-DVB entry, `weight_decay`, reads the decay back from every BUILT optimizer group. It ships
+  with a deliberate-regression test: an optimizer that ignores `--wd` must make the gate FAIL.
+
+**ES-5 design.**
+* `ra1_box2_queue.cmd es5 1000 0.08 50 <wd>` for wd ∈ {0.3, 3.0}: A1 b0.08g50 at seeds 0 and 1, plus A1x at seed 0, at
+  the same wd. Runs go to `ra1_yaw_es\st1000_wd<wd>\`, followed by the queue's verdict.
+* The banked wd 1e-3 runs at 1,000 steps (ES-4) are the third point.
+
+**Selection:** the wd with the lowest seed-mean A1 HOLDOUT ADE@6s among {1e-3, 0.3, 3.0}. Ties within 0.01 m go to the
+SMALLER wd. eval-141 never selects.
+
+**Readings, at the selected wd, in this order:**
+1. **Gate.** A1x − A1 on eval-141 > 0, separated. If not ⇒ K is not read, and the reading is "regularisation trades the
+   instrument away".
+2. **K** (only if 1 passes). PREREG_HJ_STAGE0's bar: A1 − P10 < 0, separated at both seeds, |Δ| > 2× |A1_s0 − A1_s1|.
+   It is read on A1. R0 at this wd is not run; the banked R0 at 1,000 steps is reported beside it.
+   * **PASS** ⇒ the frozen-DINOv3 H-JEPA beats P10 with its instrument intact. Next: A2, then SENS with A0, at the same
+     wd and budget.
+   * **FAIL** ⇒ wd alone does not decouple the two effects. Next: readout dropout, or a smaller readout, with the same
+     gate-then-K order. After that, data scale.
+3. Either way, the four metric families are reported for the selected arm, with STRATEGIC PAUSED.

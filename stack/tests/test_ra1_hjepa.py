@@ -892,3 +892,50 @@ def test_queue_es3_and_ridge_stages_dry_run(tmp_path):
     assert len(rp) == 1 and "--holdout-n 60" in rp[0] and "native_tracks.pt" in rp[0] and "p10_yaw540" in rp[0], rp
     assert "--device" not in rp[0], "the ridge probe is CPU only"
     assert dry("es3 250")[0] == 2
+
+
+# ---- PREREG_RA1_ES Addendum C: --wd is a lever under test, so the gate reads it back from the BUILT optimizer
+def test_gate_reads_weight_decay_back_from_the_built_optimizer(world, tmp_path):
+    out = tmp_path / "wd"
+    assert run_train(world, "A1", out, extra=["--wd", "0.3"]) == 0
+    gate = json.load(open(out / "launch_check.json", encoding="utf-8"))
+    rows = [r for r in gate["G_DVB"] if r["lever"] == "weight_decay"]
+    assert len(rows) == 1 and rows[0]["ok"] and rows[0]["declared"] == 0.3 and rows[0]["built"] == [0.3], rows
+
+
+def test_gate_refuses_an_optimizer_that_ignores_wd(world, tmp_path, monkeypatch):
+    real = TR.R.optimizer_groups
+
+    def ignores_wd(model, lr, upper_lr_mult, weight_decay):          # the deliberate regression: --wd never reaches AdamW
+        return real(model, lr, upper_lr_mult, 1e-3)
+
+    monkeypatch.setattr(TR.R, "optimizer_groups", ignores_wd)
+    out = tmp_path / "wd_bad"
+    assert run_train(world, "A1", out, extra=["--wd", "0.3"]) == 2, "a declared --wd the optimizer does not carry must fail the gate"
+    assert not (out / "final.pt").exists()
+    monkeypatch.setattr(TR.R, "optimizer_groups", real)
+    assert run_train(world, "A1", tmp_path / "wd_ctl", extra=["--wd", "1e-3"]) == 0, "control: a matching wd passes"
+
+
+@needs_queue
+@pytest.mark.skipif(os.name != "nt", reason="the queue is a Windows batch file")
+def test_queue_es5_stage_carries_wd_on_every_trainer_argv(tmp_path):
+    import re
+    import subprocess
+    env = dict(os.environ, RA1_DRYRUN="1", REPO=str(REPO), RUNS=str(tmp_path / "runs"))
+
+    def dry(args):
+        r = subprocess.run(f'cmd /c ""{QUEUE}" {args}"', env=env, capture_output=True, text=True, encoding="utf-8", errors="replace",
+                           timeout=120)
+        return r.returncode, r.stdout.splitlines()
+
+    rc, out = dry("es5 1000 0.08 50 0.3")
+    assert rc == 0, out
+    tr = [ln for ln in out if "ra1_hjepa_train.py" in ln]
+    assert [re.search(r"--arm (\S+) --seed (\S+)", ln).groups() for ln in tr] == [("A1", "0"), ("A1", "1"), ("A1x", "0")]
+    assert all("--wd 0.3" in ln and "--steps 1000" in ln and "--beta 0.08 --gamma 50" in ln and "--holdout-n 60" in ln
+               and "--kin-mode yaw" in ln and f"st1000_wd0.3{os.sep}" in ln for ln in tr), tr
+    vd = [ln for ln in out if " verdict --out " in ln]
+    assert len(vd) == 1 and vd[0].count("--run ") == 5 and "es5_verdict.json" in vd[0], vd
+    assert f"st1000{os.sep}R0_s0" in vd[0] and f"st1000_wd0.3{os.sep}A1x_b0.08g50_s0" in vd[0], "R0 is the banked unregularised run"
+    assert dry("es5 1000 0.08 50")[0] == 2

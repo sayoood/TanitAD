@@ -139,3 +139,53 @@ readout from memorising. Two candidates:
 * data scale (more clips slow memorisation).
 
 Each needs its own pre-registration with the A1x gate read at the same budget.
+
+## ES-5: weight decay at 1,000 steps (Addendum C, pre-registered before its data)
+
+Source: `raw/ra1_es/es5_wd.json`, `code/es5_wd.py`; runs `raw/ra1_es/st1000_wd0.3/`, `st1000_wd3.0/`.
+* The launch gate's new G-DVB row `weight_decay` read back 0.3 and 3.0 from every built optimizer group (G-DVB 22/22).
+* Its deliberate-regression test, an optimizer that ignores `--wd`, makes the gate refuse (`stack/tests/test_ra1_hjepa.py`).
+
+| wd | holdout (seed-mean) | A1x − A1 (seed 0) | gate | eval-141 A1 − P10, seed 0 / seed 1 | seed floor |
+|---|---|---|---|---|---|
+| 1e-3 (ES-4) | 3.0195 | +0.0461 [+0.0033, +0.0969] | OK | +0.0089 [−0.0692, +0.0875] / +0.0172 [−0.0493, +0.0856] | 0.0083 |
+| 0.3 | 3.0139 | +0.0325 [−0.0053, +0.0759] | UNRESOLVED | −0.0007 [−0.0743, +0.0732] / −0.0031 [−0.0644, +0.0601] | 0.0023 |
+| **3.0** | **2.9834** | +0.0109 [−0.0086, +0.0335] | UNRESOLVED | −0.0671 [−0.1188, −0.0149] SEP / −0.0524 [−0.1019, +0.0002] | 0.0147 |
+
+⇒ **The holdout selects wd 3.0. Pre-registered READING 1 FAILS there:** the A1x gate does not pass. ⇒ *"Regularisation
+trades the instrument away."* **K is not read.**
+
+**Four families, wd 3.0, seed 0 (T1-class; point values, CIs in the run's `eval.json` → `families`):**
+
+| family | metric | A1 wd 3.0 | P10 |
+|---|---|---|---|
+| LONGITUDINAL | speed MAE m/s | 0.9518 | 0.9753 |
+| | along-track MAE m | 1.8103 | 1.8681 |
+| | accel MAE m/s² | 0.5274 | 0.5676 |
+| LATERAL | heading MAE ° | 5.798 | 5.7652 |
+| | yaw-rate MAE °/s | 3.6342 | 4.1255 |
+| | curvature MAE 1/m | 0.0167 | 0.0185 |
+| | cross-track MAE m | 1.2137 | 1.2426 |
+| TACTICAL | from the trajectory | see `eval.json` | see `eval.json` |
+| STRATEGIC | — | **PAUSED** (PI 2026-09-19) | PAUSED |
+
+* Distance-keeping / lead-braking: **NOT COMPUTABLE** from the pooled cache, which has no lead-agent track (n = 2,399
+  windows would have been scored).
+
+## What five regimes say together
+
+Across 250 steps, 500, 1,000, 1,000 + wd 0.3 and 1,000 + wd 3.0, **every regime in which A1 beats P10 is one in which
+the time-shuffled control A1x is just as good.** The one regime where A1x clearly loses (1,000 steps, no decay) is one
+where A1 does not beat P10. ES-3 found A1 − A0 separated. ⇒ On frozen pooled DINOv3 at 540 clips:
+* the measurable gain over P10 (about −0.05 to −0.07 m at 6 s) comes from **IDM supervision of the adapter latent**;
+* it does NOT come from temporal world-model content.
+
+The pre-registered A1x gate therefore keeps H-HJ-K-1 unread, as designed. Both remaining levers need a decision:
+
+* **Data scale (all 4,572 clips)**, the plan PREREG_HJ_STAGE0 already states. With 8× the clips, memorisation slows,
+  and it is the only lever not yet tried that could let the gate and the gain co-exist.
+  **Blocked:** the 256-px frames of 3,972 clips are not on box 2. Building them is a multi-hour CPU job (about 11 h at
+  the measured 360 eps/h) plus about 140 GB, on the PI's own machine. The dev box C: has 6 GB free.
+* **A control for the mechanism actually found:** A1 with its actions permuted across windows, which removes the TRUE
+  action information that A1x keeps. It is cheap (minutes) but needs a new arm in code. It would test the IDM-latent
+  claim, NOT reopen K. Reading K under a replacement control is the PI's call.
