@@ -108,6 +108,8 @@ def rule_v1(p):                                   # an INDEPENDENT statement of 
 
 
 def suite_sf(sf_src: str, tag: str, old_src: str) -> list:
+    import carvefeed_layer as CL
+    sf_src = CL.peel(sf_src)                         # B8 (raw/2026-10-18-r0e-carvefeed) sits on top of this layer and has its own suite (test_carve_feed.py): this suite is about the trainer BEFORE it
     import test_rl_epo as TE
     import rl_reward as RW
     import ast as _ast
@@ -570,7 +572,7 @@ MUTATIONS = [
     ("lg_rls1c_profile_without_its_registry", "G", [(LG_PATH, '"epo_registered": RLS1C_EPO_REGISTERED, "must_name": RLS1C_MUST_NAME}', '"must_name": RLS1C_MUST_NAME}')]),
     ("lg_rls1c_arm_is_a_control", "G", [(LG_PATH, 'RLS1C_ARM_CLASS = {"R0c": "R"}', 'RLS1C_ARM_CLASS = {"R0c": "C"}')]),
     ("lg_rls1c_suite_without_r0c", "G", [(LG_PATH, 'RLS1C_SUITE = RLS1B_SUITE + [{"script": "test_rl_r0c.py", "token": "ZZTEST_PASS"}]', "RLS1C_SUITE = RLS1B_SUITE")]),
-    ("lg_aux_forbids_all_epo_flags_but_the_new_one", "G", [(LG_PATH, '"--epo-terms-train", "--epo-terms-heldout", "--epo-ref")', '"--epo-terms-train", "--epo-terms-heldout")')]),
+    ("lg_aux_forbids_all_epo_flags_but_the_new_one", "G", [(LG_PATH, '"--epo-terms-heldout", "--epo-ref"', '"--epo-terms-heldout"')]),          # B8: layout-independent (the G-DVB patch appends the four carve flags AFTER "--epo-ref", so the tuple no longer ends with it)
     ("lg_cli_arm_choices_without_R0c", "G", [(LG_PATH, "| set(RLS1C_ARM_CLASS)) + sorted(AUXS1_ARM_CLASS)", ") + sorted(AUXS1_ARM_CLASS)")]),
     ("gc_dvb_entry_for_epo_ref_removed", "G", [(GC_PATH, '"epo_ref": "built",', "")]),
     ("gc_dvb_does_not_observe_ref", "G", [(GC_PATH, '"l", "lam_l", "ref")', '"l", "lam_l")')]),

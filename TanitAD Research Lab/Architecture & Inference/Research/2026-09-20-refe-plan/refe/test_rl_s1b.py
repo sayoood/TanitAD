@@ -211,7 +211,10 @@ PICKCON_FILE_REVERSALS = (('                  only `--epo-con g5` does).  The pr
 
 
 def pickcon_reverse_file(src: str) -> str:
-    """the PICKCON trainer -> the 0a5958a trainer (every PICKCON edit reversed; each must occur exactly once)"""
+    """the PICKCON trainer -> the 0a5958a trainer (every PICKCON edit reversed; each must occur exactly once).  B8 (raw/2026-10-18-r0e-carvefeed) sits ON TOP of PICKCON: its layer is peeled first
+    (a trainer without it passes through unchanged), so every pin built on this function keeps working."""
+    import carvefeed_layer as CL
+    src = CL.peel(src)
     for new, old in PICKCON_FILE_REVERSALS:
         assert src.count(new) == 1, f"a PICKCON edit occurs {src.count(new)} times in the trainer (must be exactly 1): {new[:70]!r}"
         src = src.replace(new, old)

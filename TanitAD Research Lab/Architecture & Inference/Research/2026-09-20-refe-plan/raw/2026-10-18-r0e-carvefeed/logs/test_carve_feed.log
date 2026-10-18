@@ -1,0 +1,46 @@
+C:\Users\Admin\b8carve\mine_tree\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\scorer_finetune.py:1482: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+  Z = copy.deepcopy(X1)
+HOP TRACE of --epo-con-feed carve (file:line of the patched trainer)
+  1 argparse declares the switch                             refe/scorer_finetune.py:870
+  2a main cuts the carve logs out of tr_idx                  refe/scorer_finetune.py:1016
+  2b main builds the carve loader                            refe/scorer_finetune.py:1019
+  3 the carve stream                                         refe/scorer_finetune.py:1144
+  4a carve_feed_acc: no_grad scope                           refe/scorer_finetune.py:1153
+  4b carve_feed_acc: the loop's fwd                          refe/scorer_finetune.py:1159
+  4c carve_feed_acc: the loop's epo_con_term                 refe/scorer_finetune.py:1161
+  5 the loop scores the carve before o.step()                refe/scorer_finetune.py:1793
+  6 dual.step takes the carve accumulator                    refe/scorer_finetune.py:1807
+  7 EpoDual.step: g -> lambda                                refe/scorer_finetune.py:331
+  8a lambda enters the TRAINING loss                         refe/scorer_finetune.py:1138
+  8b the term joins arm B's loss                             refe/scorer_finetune.py:1139
+  8c the loop backwards it                                   refe/scorer_finetune.py:1779
+  9 G7 re-reads the disjointness + probes the feed           refe/scorer_finetune.py:1568
+carve: 13 of 166 logs, sha256 19c83a53053cb9a058e9328b5e1b9e28f595f3e1d95feb9f892ebe43c64161d7
+REFUSED: 1 pool log(s) are RL-val logs (the pool must exclude RL-val)
+mutation                                                                                             caught-by (failing checks)
+carve: 13 of 166 logs, sha256 baa34851a556f3b5b2efa1596f8e6e2d9f330acd9901f00c1109557548239bfc
+REFUSED: 1 pool log(s) are RL-val logs (the pool must exclude RL-val)
+C-M1 the draw's seed changed                                                                         C_1_the_draw_IS_SO_CARVE_s_first_carve_draw_over_the_sorted_unique_pool_independent_of_the_input_order
+carve: 13 of 166 logs, sha256 fc56285ec4bfe589290be1b829f710619885aad8ca45a2407a44c1e2c1299571
+REFUSED: 1 pool log(s) are RL-val logs (the pool must exclude RL-val)
+C-M2 the pool is not sorted before the draw (input order leaks in)                                   C_1_the_draw_IS_SO_CARVE_s_first_carve_draw_over_the_sorted_unique_pool_independent_of_the_input_order, C_2_build_is_deterministic_sorted_newline_terminated_with_the_sha256_of_its_bytes_and_a_manifest, C_4_a_carve_that_contains_a_navtest_log_is_refused
+carve: 13 of 166 logs, sha256 19c83a53053cb9a058e9328b5e1b9e28f595f3e1d95feb9f892ebe43c64161d7
+carve: 13 of 167 logs, sha256 dc0148988f346d1f79a945db629eb8a0dd4c5d6f6a2eb6dc4106c5c499a1609c
+C-M3 the RL-val pool overlap refusal removed                                                         C_3_a_pool_that_contains_an_RL_val_log_is_refused, C_6_the_cli_writes_the_list_its_sha256_and_a_manifest_and_a_refusal_exits_4_writing_nothing
+carve: 13 of 166 logs, sha256 19c83a53053cb9a058e9328b5e1b9e28f595f3e1d95feb9f892ebe43c64161d7
+REFUSED: 1 pool log(s) are RL-val logs (the pool must exclude RL-val)
+C-M4 the navtest refusal removed                                                                     C_4_a_carve_that_contains_a_navtest_log_is_refused
+M1 the feed is ignored: dual.step(con_acc) again                                                     R_hop_6_dual_step_is_fed_the_carve_accumulator_when_the_switch_is_on_and_con_acc_otherwise, E_id_DEFAULT_vs_the_PRE_B8_trainer_every_logged_row_and_saved_tensor_identical_max_diff_EXACTLY_0.0, E_feed_the_dual_s_accumulator_IS_the_carve_call_n_equals_micro_and_g_exactly_the_no_grad_call_s_g
+M2a the carve loader reads TRAINING sets (the stray-row guard stays in)                              R_hop_2_main_cuts_the_carve_logs_out_of_tr_idx_and_builds_the_carve_loader_from_carve_idx_only_under_the_switch, E_carve_the_real_main_runs_preflight_PASS_then_trains, E_tool_a_carve_list_BUILT_BY_carve_logs_py_(SO_CARVE_s_rule)_is_accepted_by_the_real_main_and_its_sha256_is_the_one_the_trainer_recorded
+M2b the carve loader reads TRAINING sets AND the stray-row guard is removed                          R_hop_2_main_cuts_the_carve_logs_out_of_tr_idx_and_builds_the_carve_loader_from_carve_idx_only_under_the_switch, U_4_a_carve_micro_batch_row_outside_the_carve_logs_raises, E_feed_every_NO_GRAD_call_scores_carve_log_sets_only_and_every_TRAINING_call_scores_non_carve_sets_only
+M3 the carve logs are NOT removed from the training index (G7 must FAIL the preflight)               R_hop_2_main_cuts_the_carve_logs_out_of_tr_idx_and_builds_the_carve_loader_from_carve_idx_only_under_the_switch, E_carve_the_real_main_runs_preflight_PASS_then_trains, E_tool_a_carve_list_BUILT_BY_carve_logs_py_(SO_CARVE_s_rule)_is_accepted_by_the_real_main_and_its_sha256_is_the_one_the_trainer_recorded
+M3b ... AND G7's carve disjointness term removed (the run trains on the carve; the per-call log cens R_hop_2_main_cuts_the_carve_logs_out_of_tr_idx_and_builds_the_carve_loader_from_carve_idx_only_under_the_switch, E_feed_the_data_event_records_the_BUILT_carve_and_the_training_index_lost_exactly_the_carve_sets, E_feed_G7_carries_the_carve_disjointness_and_a_real_probe_of_the_feed
+M4 the carve forward keeps its graph (no torch.no_grad)                                              R_hop_4_carve_feed_acc_scores_fwd_and_epo_con_term_inside_no_grad_with_the_SAME_rule_T_eps_lam_as_the_training_call, U_1_the_carve_accumulator_carries_NO_graph_fwd_runs_with_grad_disabled_no_param_grad_floats_only_and_equals_an_independent_epo_con_term_call, E_feed_every_NO_GRAD_call_scores_carve_log_sets_only_and_every_TRAINING_call_scores_non_carve_sets_only
+M5 the default flipped to carve                                                                      R_hop_1_parser_declares_the_switch_with_choices_train_carve_default_train, U_refusal_the_default_feed_and_a_complete_carve_argv_are_clean, U_refusal_carve_levers_named_while_the_feed_is_train_or_off_are_refused
+M6 the RL-val overlap refusal removed                                                                E_refuse_a_carve_list_that_overlaps_the_RL_val_logs_rc_4_before_any_training
+M7 the frozen-sha256 check removed                                                                   E_refuse_a_carve_list_whose_sha256_is_not_the_frozen_one_rc_4_before_any_training
+M8 --epo-carve-micro ignored (always one micro-batch)                                                U_3_epo_carve_micro_3_scores_three_micro_batches_and_sums_them_in_order
+M9 the carve levers are not wired into epo_con_refusals (the gate and main never see them)           U_refusal_carve_levers_named_while_the_feed_is_train_or_off_are_refused, U_refusal_carve_without_the_dual_or_without_epo_is_refused, U_refusal_carve_without_logs_or_with_a_malformed_sha_or_a_bad_micro_is_refused
+M10 the unknown-log refusal removed (a typo'd carve silently shrinks)                                E_refuse_a_carve_list_naming_logs_that_are_not_RL_train_logs_rc_4
+ZZTEST_PASS 18  (2 unmutated suites + 16 RED mutations)

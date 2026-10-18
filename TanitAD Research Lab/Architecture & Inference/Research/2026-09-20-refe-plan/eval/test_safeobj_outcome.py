@@ -62,6 +62,14 @@ PREREG = PKGROOT / "raw" / "2026-10-17-safety-objective" / "PREREG_SAFEOBJ.md"
 ADD = PKGROOT / "raw" / "2026-10-17-safety-objective" / "PREREG_SAFEOBJ.addendum1.md"
 DOSE = PKGROOT / "raw" / "2026-10-14-rls1b-attribution" / "dose.json"
 SF_PATH = PKGROOT / "refe" / "scorer_finetune.py"
+
+
+def sf_pre_b8() -> str:
+    """the trainer as it stood BEFORE the B8 carve feed (raw/2026-10-18-r0e-carvefeed): the sim_log below copies the pre-B8 loop lines (`dual.step(con_acc)`), which the carve feed changes only when
+    --epo-con-feed carve (the default `train` is bit-identical, proven in test_carve_feed.py); a trainer without the B8 layer is returned unchanged"""
+    import carvefeed_layer as CL
+    return CL.peel(SF_PATH.read_text(encoding="utf-8"))
+
 BANKED_R0D_LOG = PKGROOT / "raw" / "2026-10-18-r0d-outcome" / "raw" / "sft.jsonl"      # the REAL R0d trainer log (a pre-PICKCON trainer: its epo_con block has no `temp` key)
 EPO_TEMP = 0.1                                                                          # --epo-temp's default = the registered constraint T (PREREG section 2); pinned against the prereg text, the trainer and the tool below
 N = TR.N
@@ -1587,7 +1595,7 @@ def _(T, W, A, root, tag):
 
 @check("pin:trainer_log_cadence_columns_and_counter_semantics")
 def _(T, W, A, root, tag):
-    src = SF_PATH.read_text(encoding="utf-8")
+    src = sf_pre_b8()
     assert src.count("if upd % 25 == 0:") == 1 and T.LOG_EVERY == 25
     blk = src[src.index('row.update({"con": cm_("con")'):]
     blk = blk[:blk.index("con_log = {\"n\": 0}")]
@@ -1606,7 +1614,7 @@ def _(T, W, A, root, tag):
 
 @check("pin:the_trainer_loop_lines_sim_log_copies")
 def _(T, W, A, root, tag):
-    src = SF_PATH.read_text(encoding="utf-8")
+    src = sf_pre_b8()
     return all(x in src for x in ("con_acc[k_] = con_acc.get(k_, 0.0) + v_", "dual.step(con_acc)", "con_log[k_] = con_log.get(k_, 0.0) + v_", "cm_ = lambda k_: con_log.get(k_, 0.0) / nc_",
                                   'log({"event": "done", "updates": upd,'))
 

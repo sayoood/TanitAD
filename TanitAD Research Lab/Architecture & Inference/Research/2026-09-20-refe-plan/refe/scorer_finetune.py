@@ -62,6 +62,7 @@ from __future__ import annotations
 import argparse
 import copy
 import glob
+import hashlib
 import json
 import math
 import os
@@ -234,6 +235,13 @@ EPO_CON_DESTS = ("epo_con", "epo_con_eps", "epo_con_lr", "epo_con_max", "epo_con
 EPO_CON_TEMP_DEFAULT = None        # PICKCON: None = the constraint INHERITS --epo-temp (= every arm before PICKCON, bit for bit); an arm that tests another T NAMES --epo-con-temp (a default must not carry the experiment)
 EPO_CON_TERMS = {"g5": ("ttc", "nc")}          # mode -> the PDM sub-scores constrained: g5 = "TTC and NC may not fall by > 0.5 versus control" (rl_val_eval.py g5)
 EPO_CON_MUTATE_ENVS = ("REFE_RL_MUTATE_CON_DETACH", "REFE_RL_MUTATE_CON_ATTACH_A")      # deliberate regressions: each must turn G13 RED
+# B8 (raw/2026-10-18-r0e-carvefeed): the CARVE FEED of the SAFEOBJ dual.  --epo-con-feed train (the default) = the dual's accumulator is summed from the TRAINING micro-batches = every arm before B8, bit for bit.
+# --epo-con-feed carve = the dual is fed from a held-out CARVE of whole RL-train logs: --epo-carve-micro no-grad micro-batches of the carve per optimiser update, and the carve's logs are REMOVED from the training index.
+EPO_CON_FEEDS = ("train", "carve")
+EPO_CON_FEED_DEFAULT = "train"      # = every arm before B8, bit for bit; an arm that tests the carve NAMES --epo-con-feed carve (a default that reproduces R0d must not carry the experiment)
+EPO_CARVE_DESTS = ("epo_carve_logs", "epo_carve_sha256", "epo_carve_micro")          # every carve lever except the switch itself (named while the feed is train = refused)
+EPO_CARVE_MICRO_DEFAULT = 1         # carve micro-batches per optimiser update (the draft prereg R0e-pick 2.3: one)
+EPO_CARVE_SEED_OFFSET = 1           # the carve loader owns a torch.Generator seeded --seed + this: it never draws from the training loader's generator
 
 
 def epo_con_cols(comps):
@@ -378,11 +386,32 @@ def epo_con_ckpt_roundtrip(dual):
     return {"keys": sorted(back), "block_equal": bool(back == d.state_dict()), "restored_equal": bool(e.state_dict() == d.state_dict())}
 
 
+def epo_carve_refusals(a, ap):
+    """B8: every reason the carve-feed levers must not start, as messages ([] = fine).  Called from epo_con_refusals (main(), the launch gate).  Reads through getattr so a namespace that predates B8 is the default feed."""
+    feed = getattr(a, "epo_con_feed", EPO_CON_FEED_DEFAULT)
+    if feed not in EPO_CON_FEEDS:
+        return [f"--epo-con-feed {feed!r} is not one of {EPO_CON_FEEDS}"]
+    named = [d for d in EPO_CARVE_DESTS if getattr(a, d, ap.get_default(d)) != ap.get_default(d)]
+    if feed == "train":
+        return [f"--epo-carve-* levers {named} are set but --epo-con-feed is train: the carve would be silently ignored"] if named else []
+    bad = []
+    if not (getattr(a, "epo", False) and getattr(a, "epo_con", "off") != "off"):
+        bad.append("--epo-con-feed carve needs --epo and --epo-con g5: the carve feeds the dual, and with no dual it would be silently ignored")
+    if not a.epo_carve_logs:
+        bad.append("--epo-con-feed carve needs --epo-carve-logs (the registered carve log list)")
+    if not (isinstance(a.epo_carve_sha256, str) and len(a.epo_carve_sha256) == 64 and all(c_ in "0123456789abcdef" for c_ in a.epo_carve_sha256)):
+        bad.append("--epo-con-feed carve needs --epo-carve-sha256 (64 lowercase hex: the sha256 of the carve list's bytes, frozen before any data)")
+    if not (isinstance(a.epo_carve_micro, int) and a.epo_carve_micro >= 1):
+        bad.append("--epo-carve-micro must be an integer >= 1")
+    if getattr(a, "aux_drv", False):
+        bad.append("--epo-con-feed carve is not wired for --aux-drv (the carve forward would write the head's capture)")
+    return bad
 def epo_con_refusals(a, ap):
     """Every reason the --epo-con levers must not start, as messages ([] = fine).  epo_refusals stays byte-unchanged (pinned): this is its sibling, called beside it (main(), the launch gate).
     `ap` is build_parser() (its defaults say which levers were NAMED)."""
     bad = []
     con_named = [d for d in EPO_CON_DESTS if getattr(a, d) != ap.get_default(d)]
+    bad += epo_carve_refusals(a, ap)                  # B8: the carve feed's own levers (all conditions are inside)
     if not a.epo:
         if con_named:
             bad.append(f"--epo-con levers {con_named} are set but --epo is not: they would be silently ignored")
@@ -837,6 +866,13 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--epo-con-temp", type=float, default=EPO_CON_TEMP_DEFAULT,
                     help="PICKCON: the temperature T of the CONSTRAINT's selection softmax (> 0), separate from --epo-temp.  The default None = the constraint inherits --epo-temp (every arm before PICKCON, "
                          "bit for bit), so an arm that tests another T must NAME this flag")
+    # B8 (raw/2026-10-18-r0e-carvefeed): the dual's FEED.  The switch's default keeps the training batches as the feed (every arm before B8); the three carve levers enable nothing by themselves.
+    ap.add_argument("--epo-con-feed", default=EPO_CON_FEED_DEFAULT, choices=EPO_CON_FEEDS,
+                    help="B8: what the SAFEOBJ dual reads.  train = the violation summed from the training micro-batches (default; every arm before B8), carve = from a held-out carve of whole RL-train logs "
+                         "(--epo-carve-logs), cut out of the training index, scored by a no-grad forward of arms A and B once per optimiser update (needs --epo --epo-con g5)")
+    ap.add_argument("--epo-carve-logs", default="", help="B8: the registered carve LOG LIST (one RL-train log name per token); disjoint from --heldout-logs (REFUSED otherwise); only with --epo-con-feed carve")
+    ap.add_argument("--epo-carve-sha256", default="", help="B8: the sha256 of --epo-carve-logs' bytes, frozen before any data (REFUSED on a mismatch); only with --epo-con-feed carve")
+    ap.add_argument("--epo-carve-micro", type=int, default=EPO_CARVE_MICRO_DEFAULT, help="B8: carve micro-batches (--batch sets each) scored per optimiser update; only with --epo-con-feed carve")
     ap.add_argument("--dump-scores", default="", help="RL-S1: DIR; after every held-out evaluation write the base / A / B scorers' per-proposal logits as "
                     "<DIR>/scores_<tag>_<arm>.npz (eval/rl_val_eval.py's input).  Observational: no weight, loss or logged number changes.  '' = nothing is written")
     # auxiliary drivable-area head (SPEC_AUX_DRIVABLE_HEAD.md; WIRING_PLAN.md): ALL DEFAULT OFF = this trainer exactly.  --aux-drv / --w-aux-drv / --aux-drv-tap /
@@ -953,6 +989,37 @@ def main() -> int:
     dual = EpoDual(EPO_CON_TERMS.get(a.epo_con, ()), a.epo_con_eps, a.epo_con_lr, a.epo_con_max, a.epo_con_lam0,
                    temp=(a.epo_temp if a.epo_con_temp is None else a.epo_con_temp))          # PICKCON: None inherits --epo-temp (the pre-PICKCON T, bit for bit); a NAMED --epo-con-temp wins
     con_last: dict = {}
+    # B8: the carve feed (--epo-con-feed carve; the default feed leaves tr_idx untouched and nothing below runs).  The carve = WHOLE RL-train logs named by a registered, sha256-frozen list, cut out of the
+    # training index HERE, so the policy never trains on them; the dual is fed from them by carve_feed_acc (called once per optimiser update).  Every disjointness below REFUSES; none is a warning.
+    carve_idx: list = []
+    carve_logs: set = set()
+    carve_sha, cdl = "", None
+    if a.epo_con_feed == "carve":
+        carve_raw = open(a.epo_carve_logs, "rb").read()
+        carve_sha = hashlib.sha256(carve_raw).hexdigest()
+        carve_logs = set(carve_raw.decode("utf-8").split())
+        carve_pool = {ds.rows[i].get("log_name") for i in tr_idx}
+        carve_bad = []
+        if carve_sha != a.epo_carve_sha256:
+            carve_bad.append(f"the carve list's sha256 {carve_sha[:16]}.. is not the frozen --epo-carve-sha256 {a.epo_carve_sha256[:16]}..")
+        if not carve_logs:
+            carve_bad.append("the carve list is empty")
+        if carve_logs & ho_logs:
+            carve_bad.append(f"{len(carve_logs & ho_logs)} carve log(s) are RL-val logs (--heldout-logs): the carve must be disjoint from RL-val")
+        if carve_logs - carve_pool - ho_logs:
+            carve_bad.append(f"{len(carve_logs - carve_pool - ho_logs)} carve log(s) are not logs of the RL-train index (a typo, or a log the filters drop)")
+        if carve_bad:
+            for m_ in carve_bad:
+                print("REFUSED: " + m_)
+            return 4
+        carve_idx = [i for i in tr_idx if ds.rows[i].get("log_name") in carve_logs]
+        tr_idx = [i for i in tr_idx if ds.rows[i].get("log_name") not in carve_logs]
+        if len(carve_idx) < a.batch or not tr_idx:
+            print(f"REFUSED: {len(carve_idx)} carve sets and {len(tr_idx)} training sets survive the carve split (the carve needs >= --batch sets, training needs some)"); return 4
+        cdl = DataLoader(make_train_set(ds, carve_idx, a.epo), batch_size=a.batch, shuffle=True, generator=torch.Generator().manual_seed(a.seed + EPO_CARVE_SEED_OFFSET),
+                         num_workers=min(a.workers, 1), drop_last=True, pin_memory=True, persistent_workers=a.workers > 0, prefetch_factor=(2 if a.workers > 0 else None))
+    carve_train_in = sum(1 for i in tr_idx if ds.rows[i].get("log_name") in carve_logs)           # both must be 0 (re-read by G7 from the BUILT indices)
+    carve_in_ho = sum(1 for i in carve_idx if ds.rows[i].get("log_name") in ho_logs)
     lv: dict = {}
     for k_ in (key(ds.rows[i]) for i in tr_idx):
         v = op.by[k_][3][1]
@@ -972,6 +1039,9 @@ def main() -> int:
                        "k": a.epo_k, "lam_k": a.epo_lam_k, "l": a.epo_l, "lam_l": a.epo_lam_l, "eps": EPO_EPS, "ref": epo_reference_built(a.epo_ref),
                        "terms_train": st_tr, "terms_heldout": st_ho, "native7": native7}
         info["epo_con"] = dual.built_facts()                 # SAFEOBJ: BUILT facts of the constraint for G-DVB (every --epo run writes the block, an OFF run included)
+        if cdl is not None:                                  # B8: BUILT facts of the carve feed for G-DVB (absent for the default feed: every pre-B8 data event is byte-identical)
+            info["epo_con_carve"] = {"feed": "carve", "logs": len(carve_logs), "sets": len(carve_idx), "sha256": carve_sha, "micro": a.epo_carve_micro,
+                                     "train_rows_in_carve_logs": carve_train_in, "carve_rows_in_heldout_logs": carve_in_ho}
     if aux is not None:
         # BUILT facts only (G-DVB compares them with the argv): read off the objects the run holds, never echoed from the namespace
         info["aux_drv"] = {**aux.built_facts(), "tap": aux.cfg.tap, "feed": "on" if aux.feed is not None else "off", "lr": optH.param_groups[0]["lr"],
@@ -1069,6 +1139,30 @@ def main() -> int:
                 lB = lB + ct
         return lA, lB, ln, ep
 
+    def carve_stream():
+        while True:
+            for b_ in cdl:
+                yield b_
+    carve_it = carve_stream() if cdl is not None else None
+
+    def carve_feed_acc():
+        """B8: the dual's accumulator from the CARVE: --epo-carve-micro micro-batches of whole carve logs, each scored by a no-grad forward of arms A and B (the loop's own fwd) and passed through the
+        loop's own epo_con_term, so g is the SAME quantity (same T, eps, rule) as the train feed's.  -> {"n": micro-batches, "g_<c>": the SUM of the detached violation, + cA_ / cB_ / hinge_ / p1gap_}, the
+        shape EpoDual.step reads.  NO GRAPH: the carve reaches the scorer only through the VALUE of the duals (Python floats) that train_losses multiplies into the training micro-batches' constraint term."""
+        acc = {"n": 0}
+        with torch.no_grad():
+            for _ in range(a.epo_carve_micro):
+                cb_, crow_ = split_rows(next(carve_it), a.epo)
+                stray = [int(i_) for i_ in crow_ if ds.rows[int(i_)].get("log_name") not in carve_logs]
+                if stray:
+                    raise RuntimeError(f"carve feed: {len(stray)} row(s) of a carve micro-batch are not in the carve logs (first row index {stray[0]})")
+                _c0, cA_, cB_, ct_ = fwd(cb_)
+                cl_: dict = {}
+                epo_con_term(cB_, cA_, ct_, sel_score, dual.temp, a.epo_con_eps, dual.lam, cl_)
+                for k_, v_ in cl_.items():
+                    acc[k_] = acc.get(k_, 0.0) + v_
+                acc["n"] += 1
+        return acc
     def aux_backward(lv, div=1.0, retain=False):
         """THE aux loss assembly of the run: the training loop, the speed probe and the G12 probes all call it.  Backward of  combine(0, L_aux) / div  from the head output of
         the latest fwd() -- SEPARATELY from the scorer's own backward, whose line in the loop stays byte-identical.  combine() always multiplies, so a weight of 0.0
@@ -1470,6 +1564,12 @@ def main() -> int:
                                                        "extra": sorted(tn - want)[:5], "missing": sorted(want - tn)[:5]}
         gates["G7_heldout_disjoint"] = {"ok": info["train_rows_in_heldout_logs"] == 0 and len(ho_idx) > 0,
                                         "heldout_sets": len(ho_idx), "train_rows_in_heldout_logs": info["train_rows_in_heldout_logs"]}
+        if cdl is not None:                                  # B8: the carve's disjointness re-read from the BUILT indices + one REAL no-grad carve forward through the dual's own feed
+            cp_ = carve_feed_acc()
+            gates["G7_heldout_disjoint"].update({"carve_logs": len(carve_logs), "carve_sets": len(carve_idx), "carve_sha256": carve_sha, "train_rows_in_carve_logs": carve_train_in,
+                                                 "carve_rows_in_heldout_logs": carve_in_ho, "carve_probe_n": cp_["n"], "carve_probe_g": {c_: cp_["g_" + c_] for c_ in dual.comps}})
+            gates["G7_heldout_disjoint"]["ok"] = bool(gates["G7_heldout_disjoint"]["ok"] and len(carve_idx) >= a.batch and carve_train_in == 0 and carve_in_ho == 0
+                                                      and cp_["n"] == a.epo_carve_micro and all(math.isfinite(cp_["g_" + c_]) for c_ in dual.comps))
         batch0, aux_lv = split_aux(next(iter(DataLoader(make_train_set(ds, tr_idx[:a.batch], a.epo), batch_size=a.batch))), a.aux_drv)     # aux_lv: the (label, valid) tail or None
         batch, prow = split_rows(batch0, a.epo)
         hk: dict = {}                                        # score-head input/output of each copy (last call = the scored set)
@@ -1668,6 +1768,7 @@ def main() -> int:
     aux_acc = {"bce": 0.0, "huber": 0.0, "n": 0}              # --aux-drv only
     con_acc = {"n": 0}                                        # --epo-con only: the constraint's parts summed over THIS update's micro-batches (EpoDual.step reads it) ...
     con_log = {"n": 0}                                        # ... and over the updates since the last logged row
+    carve_log = {"n": 0}                                      # B8: the carve feed's parts over the updates since the last logged row (--epo-con-feed carve only)
     lr_ratio = (a.aux_drv_lr / a.lr) if aux is not None else 0.0      # the head follows the scorer's warm-up + cosine shape at its own peak
     done = False
     while not done:
@@ -1689,6 +1790,7 @@ def main() -> int:
             micro += 1
             if micro % a.accum:
                 continue
+            carve_acc = carve_feed_acc() if carve_it is not None else None       # B8: the dual's carve accumulator, scored on the SAME weights as this update's training micro-batches (before o.step())
             for o, ps in ((optA, paramsA), (optB, paramsB)):
                 torch.nn.utils.clip_grad_norm_(ps, 1.0)
                 for gr in o.param_groups:
@@ -1702,10 +1804,13 @@ def main() -> int:
                 optH.step()
                 optH.zero_grad(set_to_none=True)
             if dual.active:                                  # SAFEOBJ: ONE projected dual step per optimiser update, after o.step() and before `upd += 1` (SPEC 1.4)
-                dual.step(con_acc)
+                dual.step(con_acc if carve_acc is None else carve_acc)          # B8: the carve feed when --epo-con-feed carve, else the training micro-batches (as before)
                 for k_, v_ in con_acc.items():
                     con_log[k_] = con_log.get(k_, 0.0) + v_
                 con_acc = {"n": 0}
+                if carve_acc is not None:
+                    for k_, v_ in carve_acc.items():
+                        carve_log[k_] = carve_log.get(k_, 0.0) + v_
             upd += 1
             if upd % 25 == 0:
                 n = max(accl["n"], 1)
@@ -1725,6 +1830,10 @@ def main() -> int:
                                 "con_cap_hits": dual.cap_hits, "con_lam_pos_updates": dual.pos_updates,
                                 "con_lam_max_ttc": dual.lam_seen_max["ttc"], "con_lam_max_nc": dual.lam_seen_max["nc"]})
                     con_log = {"n": 0}
+                    if carve_it is not None:                         # B8: the carve feed's window means, beside the in-batch ones above
+                        ncv_ = max(carve_log["n"], 1)
+                        row.update({"carve_n": carve_log["n"], **{"carve_" + k_: carve_log.get(k_, 0.0) / ncv_ for k_ in ("g_ttc", "g_nc", "cA_ttc", "cB_ttc", "cA_nc", "cB_nc", "p1gap_ttc", "p1gap_nc", "hinge_ttc", "hinge_nc")}})
+                        carve_log = {"n": 0}
                 if aux is not None:
                     na = max(aux_acc["n"], 1)
                     row.update({"aux_bce": aux_acc["bce"] / na, "aux_huber": aux_acc["huber"] / na, "w_aux": aux.w_aux, "aux_lr": optH.param_groups[0]["lr"]})       # aux_lr = the head optimiser's lr of the LAST step (read off the optimiser, not recomputed)

@@ -161,6 +161,8 @@ SEG_NEW = S1B.redo_pickcon("main.train_losses", S1B.SAFEOBJ_REVERSALS["main.trai
 
 # ================================================================================================ part SF: the trainer
 def suite_sf(sf_src: str, tag: str, tip_src: str) -> list:
+    import carvefeed_layer as CL
+    sf_src = CL.peel(sf_src)                         # B8 (raw/2026-10-18-r0e-carvefeed) sits on top of this layer and has its own suite (test_carve_feed.py): this suite is about the trainer BEFORE it
     import test_rl_epo as TE
     import rl_reward as RW
     bad: list = []
@@ -1273,6 +1275,8 @@ def build_good(sf_src: str, tip_src: str) -> dict:
 
 def main() -> int:
     srcs = {p: open(p, encoding="utf-8").read() for p in (SF_PATH, LG_PATH, GC_PATH)}
+    import carvefeed_layer as CL
+    srcs[SF_PATH] = CL.peel(srcs[SF_PATH])           # B8 (raw/2026-10-18-r0e-carvefeed): this suite is about the trainer BEFORE the carve feed, and the M3-M15 snippets are written against that text (M4's `dual.step(con_acc)` is no longer a line of the B8 trainer): peel ONCE here, so every mutation edits the pre-B8 text
     tip_src = reverse_edits(srcs[SF_PATH])
     assert S1B.git_blob(tip_src.encode("utf-8")) == R0C_TIP_BLOB, "reversing the patch's edits does not give the R0c-tip trainer: the trainer moved -- regenerate SAFEOBJ_FILE_REVERSALS"
     good = build_good(srcs[SF_PATH], tip_src)

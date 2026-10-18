@@ -259,6 +259,7 @@ def suite(src):
         aux_dests = {"aux_drv", "w_aux_drv", "aux_drv_tap", "aux_drv_depth", "aux_drv_feed", "aux_drv_labels", "aux_drv_shuffle_seed", "aux_drv_lr"}
         # the R0c EPO anchor (a LATER, separately tested edit: test_rl_epo.py / test_rl_r0c.py, f64a952) adds ONE dest; its default "base" is every pre-R0c arm bit for bit (R41)
         epo_dests = {"epo_ref"} | {"epo_con", "epo_con_eps", "epo_con_lr", "epo_con_max", "epo_con_lam0"}          # SAFEOBJ (raw/2026-10-17-safety-objective): five more default-OFF dests, ALL-or-none like the others; "off" is every pre-SAFEOBJ arm bit for bit
+        epo_dests |= {"epo_con_feed", "epo_carve_logs", "epo_carve_sha256", "epo_carve_micro"}          # B8 (raw/2026-10-18-r0e-carvefeed): the dual's FEED (default train = every arm before B8) and its three carve levers, all default-OFF
         epo_dests |= {"epo_con_temp"}          # PICKCON (raw/2026-10-18-so-pickcon): ONE more dest, the constraint's own softmax temperature (EPO_CON_DESTS); default None = it INHERITS --epo-temp, every pre-PICKCON arm bit for bit
         check("parser: exactly ONE new dest from the dump edit (dump_scores); every pre-edit dest is still there",
               dests - set(BASE_DESTS) - aux_dests - epo_dests == {"dump_scores"} and set(BASE_DESTS) <= dests and (dests & aux_dests) in (set(), aux_dests)

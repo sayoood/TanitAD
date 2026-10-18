@@ -1,0 +1,22 @@
+C:\Users\Admin\b8carve\mine_tree\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\scorer_finetune.py:1582: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+  d0A, dBA = float((sx0 - sxA[..., :sx0.shape[-1]]).abs().max()), float((sxB - sxA).abs().max())
+HOP TRACE of --epo-con-temp (file:line of the patched trainer)
+  1 argparse declares the flag                               refe/scorer_finetune.py:837
+  2 namespace -> the dual (main reads a.epo_con_temp)        refe/scorer_finetune.py:954
+  3 EpoDual holds it                                         refe/scorer_finetune.py:303
+  4 train_losses passes dual.temp to the constraint term     refe/scorer_finetune.py:1068
+  5a epo_con_term: policy of arm B at T                      refe/scorer_finetune.py:274
+  5b epo_con_term: policy of arm A at T                      refe/scorer_finetune.py:275
+  6 epo_policy divides by T                                  refe/scorer_finetune.py:201
+  7 the term joins arm B's loss                              refe/scorer_finetune.py:1069
+  8 the loop backwards it                                    refe/scorer_finetune.py:1678
+  9 G13 gets the dual's T                                    refe/scorer_finetune.py:1593
+Traceback (most recent call last):
+  File "C:\Users\Admin\b8carve\mine_tree\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe/test_rl_pickcon.py", line 596, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "C:\Users\Admin\b8carve\mine_tree\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe/test_rl_pickcon.py", line 562, in main
+    assert not real, f"the unmutated sources FAIL their own checks: {real}"
+           ^^^^^^^^
+AssertionError: the unmutated sources FAIL their own checks: ['G_the_aux_and_sft4r_profiles_forbid_the_flag', 'G_dvb_PASS_default_named_0.02_and_explicit_0.1_each_with_the_block_that_matches', 'G_dvb_legacy_block_without_temp_key_PASSES_when_the_flag_is_unnamed_it_ran_at_epo_temp', 'G_dvb_the_regression_arm_leaves_no_residue']

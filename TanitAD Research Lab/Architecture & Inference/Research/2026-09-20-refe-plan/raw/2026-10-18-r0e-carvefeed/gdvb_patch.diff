@@ -1,0 +1,141 @@
+--- a/refe/gate_checks.py
++++ b/refe/gate_checks.py
+@@ -23,7 +23,7 @@
+   G-SUITE the listed test scripts exit 0 and print their PASS token               suite_failing_test
+   G-CLOCK (P6) the realised schedule equals the registered one                    clock_wrong_epochs
+   refe_rls1 (RL-S1) trains with scorer_finetune.py: G-HYG / G-DVB run on ITS parser (`check_dvb_scorer`, table `DVB_KINDS_SCORER`, arms unknown_flag, stale_registry,
+-          dead_lever, unbound_data, lever_ignored, aux_lever_ignored, con_temp_ignored); G-PREFLIGHT = launch_gate.consume_scorer_preflight (its own `--preflight` gates, parsed; fixtures in test_launch_gate)
++          dead_lever, unbound_data, lever_ignored, aux_lever_ignored, con_temp_ignored, carve_feed_ignored); G-PREFLIGHT = launch_gate.consume_scorer_preflight (its own `--preflight` gates, parsed; fixtures in test_launch_gate)
+ 
+ Evidence is written to disk (`evidence_<check>.json`); the token is minted from the files, never from a return value.
+ """
+@@ -647,6 +647,9 @@
+     "epo_ref": "built",                # R0c: the KL anchor's reference policy; observed through the data event's epo.ref = scorer_finetune.epo_reference_built (what the selector RETURNS)
+     # SAFEOBJ (--epo-con g5; SPEC_SAFEOBJ 5.1): all `built` -- observed through the data event's `epo_con` block (SCORER_EPO_CON_KEYS), which EpoDual.built_facts reads off the object the run holds
+     "epo_con": "built", "epo_con_eps": "built", "epo_con_lr": "built", "epo_con_max": "built", "epo_con_lam0": "built",
++    # B8 (raw/2026-10-18-r0e-carvefeed): the dual's FEED.  epo_con_feed / epo_carve_sha256 / epo_carve_micro are `built`: observed through the data event's `epo_con_carve` block, which exists iff the carve loader was BUILT.
++    # epo_carve_logs is `data` (the list's BYTES): launch_gate.RLS1_DATA lists --epo-carve-logs, so the PASS token fingerprints the file, and the BUILT block's sha256 is a second binding.
++    "epo_con_feed": "built", "epo_carve_logs": "data", "epo_carve_sha256": "built", "epo_carve_micro": "built",
+     "epo_con_temp": "built",           # PICKCON: the constraint's own softmax temperature; observed through the data event's epo_con.temp = EpoDual.temp, the object train_losses passes to epo_con_term
+     "backbone": "consumed", "batch": "consumed", "accum": "consumed", "lr": "consumed", "warmup": "consumed", "epochs": "consumed",
+     "lam": "consumed", "tau_t": "consumed", "tau_s": "consumed", "seed": "consumed", "max_updates": "consumed", "require_pdm": "consumed",
+@@ -661,6 +664,7 @@
+ }
+ SCORER_EPO_KEYS = ("temp", "beta", "ramp", "lam", "lam_d", "w_prog", "k", "lam_k", "l", "lam_l", "ref")     # the keys of the data event's `epo` block
+ SCORER_EPO_CON_KEYS = ("mode", "comps", "cols", "eps", "lr", "max", "lam0", "ref", "temp")     # the keys of the data event's `epo_con` block (SAFEOBJ; every --epo run writes it, an OFF run included)
++SCORER_EPO_CARVE_KEYS = ("feed", "logs", "sets", "sha256", "micro", "train_rows_in_carve_logs", "carve_rows_in_heldout_logs")     # B8: the keys of the data event's `epo_con_carve` block (written iff --epo-con-feed carve)
+ SCORER_EPO_CON_COMPS = {"g5": ("ttc", "nc")}          # what each mode is REGISTERED to constrain (PREREG_SAFEOBJ 2): the gate's own statement, independent of the trainer's table
+ SCORER_EPO_CON_DEFAULTS = {"eps": 0.0, "lr": 4.0, "max": 10.0, "lam0": 0.0}          # the registered numbers; a trainer that predates SAFEOBJ cannot have built any other
+ 
+@@ -759,6 +763,33 @@
+         return None, "the parser exited (--help?)"
+     finally:
+         parser.__dict__.pop("error", None)
++
++
++def judge_g7_carve(g7, ns) -> list:
++    """B8: G7 (heldout_disjoint) re-judged from its RAW carve fields against the argv; [] = proved.  With the default feed G7 must carry NO carve field (a carve measurement on a train-fed arm would be another
++    measurement).  With --epo-con-feed carve: the list the trainer READ is the registered one (sha256), no training row sits in a carve log, no carve row in an RL-val log, the carve holds >= one batch, and one REAL
++    carve forward through the dual's own feed returned a finite violation for every constrained component and as many micro-batches as the argv asks."""
++    r = []
++    fin = lambda x: isinstance(x, (int, float)) and not isinstance(x, bool) and math.isfinite(x)          # noqa: E731
++    g7 = g7 if isinstance(g7, dict) else {}
++    carve_keys = sorted(k for k in g7 if k.startswith("carve_") or k == "train_rows_in_carve_logs")
++    if getattr(ns, "epo_con_feed", "train") != "carve":
++        return [f"G7: carve fields {carve_keys} on an argv whose --epo-con-feed is train"] if carve_keys else []
++    if g7.get("carve_sha256") != getattr(ns, "epo_carve_sha256", None):
++        r.append(f"G7: the carve list the trainer read ({str(g7.get('carve_sha256'))[:16]}..) is not the registered --epo-carve-sha256")
++    if g7.get("train_rows_in_carve_logs") != 0:
++        r.append(f"G7: {g7.get('train_rows_in_carve_logs')!r} training row(s) sit in a carve log (must be exactly 0): the carve is not held out")
++    if g7.get("carve_rows_in_heldout_logs") != 0:
++        r.append(f"G7: {g7.get('carve_rows_in_heldout_logs')!r} carve row(s) sit in an RL-val log (must be exactly 0)")
++    if not (fin(g7.get("carve_sets")) and g7["carve_sets"] >= getattr(ns, "batch", 1) and fin(g7.get("carve_logs")) and g7["carve_logs"] > 0):
++        r.append(f"G7: the carve is smaller than one batch or has no log: sets {g7.get('carve_sets')!r}, logs {g7.get('carve_logs')!r}")
++    if g7.get("carve_probe_n") != getattr(ns, "epo_carve_micro", None):
++        r.append(f"G7: the carve probe scored {g7.get('carve_probe_n')!r} micro-batches, not the argv's --epo-carve-micro {getattr(ns, 'epo_carve_micro', None)!r}")
++    want = list(SCORER_EPO_CON_COMPS.get(getattr(ns, "epo_con", "off"), ()))
++    pg = g7.get("carve_probe_g") if isinstance(g7.get("carve_probe_g"), dict) else {}
++    if sorted(pg) != sorted(want) or not all(fin(v) for v in pg.values()):
++        r.append(f"G7: the carve probe's violation is not finite for every constrained component {want}: {pg}")
++    return r
+ 
+ 
+ def judge_g13(g13, ns) -> list:
+@@ -940,6 +971,16 @@
+                     "data event: epo_con.temp (EpoDual.temp: the T train_losses passes to epo_con_term; declared = --epo-con-temp, else --epo-temp)" + ("" if "temp" in blk else " (legacy block: no `temp` key, so the constraint ran at --epo-temp)"))
+             else:
+                 add("epo_con_" + k, getattr(ns, "epo_con_" + k), blk.get(k), f"data event: epo_con.{k}" + why)
++        # B8: the dual's FEED against the BUILT carve block (present iff the carve loader exists; absent = the training micro-batches feed the dual, every trainer before B8)
++        cblk = data.get("epo_con_carve") if isinstance(data.get("epo_con_carve"), dict) else None
++        cb = cblk or {}
++        feed = getattr(ns, "epo_con_feed", "train")
++        add("epo_con_feed", feed, "carve" if cb.get("feed") == "carve" else "train", "data event: epo_con_carve.feed (BUILT: the block exists iff the carve loader was built; absent = the training micro-batches feed the dual)")
++        add("epo_carve_sha256", getattr(ns, "epo_carve_sha256", ""), cb.get("sha256", ""), "data event: epo_con_carve.sha256 (the sha256 of the bytes the trainer READ; empty with no carve)")
++        add("epo_carve_micro", getattr(ns, "epo_carve_micro", 1), cb.get("micro", 1), "data event: epo_con_carve.micro (carve micro-batches per update; 1 with no carve)")
++        if feed == "carve":
++            add("epo_carve_logs", [0, 0, True], [cb.get("train_rows_in_carve_logs"), cb.get("carve_rows_in_heldout_logs"), bool(cb.get("logs", 0) > 0 and cb.get("sets", 0) > 0)],
++                "data event: no training row in a carve log, no carve row in an RL-val log, and the carve is non-empty")
+     add("aux_drv", bool(ns.aux_drv), "aux_drv" in data, "the data event carries an `aux_drv` block iff --aux-drv")
+     if ns.aux_drv:
+         import aux_drivable_head as AUX                  # the pinned constants (store sha256, key count, raster geometry): one source of truth with the trainer
+@@ -1083,6 +1124,9 @@
+             _eff = scorer_effective(ns, "epo_con_temp")
+             _t = _b.get("temp") if _b.get("temp") is not None else _eff
+             data = dict(data, epo_con=dict(_b, temp=(2.0 * _t if _t is not None else 0.1)))
++        if arm_is("carve_feed_ignored", arm) and isinstance(data.get("epo_con"), dict):          # B8: the trainer built the OPPOSITE feed to the argv's (a declared carve with no carve block; a declared train with one)
++            data = ({k: v for k, v in data.items() if k != "epo_con_carve"} if isinstance(data.get("epo_con_carve"), dict)
++                    else dict(data, epo_con_carve={"feed": "carve", "logs": 1, "sets": 1, "sha256": "0" * 64, "micro": 1, "train_rows_in_carve_logs": 0, "carve_rows_in_heldout_logs": 0}))
+         rows = scorer_dvb_rows(ns, data, profile)
+         if profile.get("schedule_reach"):
+             rows = rows + scorer_schedule_rows(ns, data, arm)
+--- a/refe/launch_gate.py
++++ b/refe/launch_gate.py
+@@ -68,7 +68,7 @@
+ RLS1_FORBIDDEN = ("--preflight", "--lane-labels-train", "--lane-labels-heldout", "--b-compw", "--tau-s", "--tau-t") + AUX_HEAD_FLAGS      # RL-S1 is not the head's experiment
+ RLS1_EPO_TERMS = ("epo", "epo_J", "epo_kl", "epo_lam_pg")                              # the trainer's metric rows must emit these on an --epo arm
+ RLS1_DATA = ("--ckpt", "--targets", "--images", "--calib", "--onpolicy", "--heldout", "--heldout-logs", "--lane-labels-train", "--lane-labels-heldout",
+-             "--pdm-labels-train", "--pdm-labels-heldout", "--teacher-lane-train", "--teacher-lane-heldout", "--epo-terms-train", "--epo-terms-heldout", "--aux-drv-labels")
++             "--pdm-labels-train", "--pdm-labels-heldout", "--teacher-lane-train", "--teacher-lane-heldout", "--epo-terms-train", "--epo-terms-heldout", "--aux-drv-labels", "--epo-carve-logs")
+ RLS1_SUITE = [{"script": "test_rl_reward.py", "token": "ZZTEST_PASS"}, {"script": "test_rl_epo.py", "token": "ZZTEST_PASS"},
+               {"script": "test_launch_gate.py", "args": ["--static", "--no-banked"], "token": "ZZLG_STATIC_PASS"}]
+ # RL-S1b (eval/PREREG_RL_S1.md section 10, 2026-10-14; raw/2026-10-14-rls1b-attribution/attribution.json + dose.json).  R0 was KILLED by K3/g5; the attribution found the TTC loss is NOT
+@@ -117,7 +117,8 @@
+ # the optimiser and loss of EVERY arm (N included), inherited from the SFT-4 run that produced u400 (refe/sft4_pod.sh COMMON); --max-updates 400 is the S1 budget
+ AUXS1_RECIPE = {"lr": 1e-4, "warmup": 50, "batch": 8, "accum": 8, "max_updates": 400, "eval_every": 400, "b_mode": "expreward", "lam": 1.0, "tau_s": 0.1, "lane_weight": 1.0}
+ AUXS1_EPO_FLAGS = ("--epo", "--epo-temp", "--epo-beta", "--epo-ramp", "--epo-lam", "--epo-lam-d", "--epo-w-prog", "--epo-k", "--epo-lam-k", "--epo-l", "--epo-lam-l", "--epo-con", "--epo-con-eps", "--epo-con-lr", "--epo-con-max", "--epo-con-lam0", "--epo-con-temp",          # --epo-con-temp: PICKCON (the constraint's own T); a non-EPO arm never carries it
+-                   "--epo-terms-train", "--epo-terms-heldout", "--epo-ref")
++                   "--epo-terms-train", "--epo-terms-heldout", "--epo-ref",
++                   "--epo-con-feed", "--epo-carve-logs", "--epo-carve-sha256", "--epo-carve-micro")          # B8: the carve feed of the dual; a non-EPO arm never carries it
+ # --aux-drv-shuffle-seed is the label-shuffled CONTROL's lever: a non-control arm never carries it (a dated prereg amendment adds the control arm and relaxes this)
+ AUXS1_FORBIDDEN = ("--preflight", "--lane-labels-train", "--b-compw", "--tau-t", "--aux-drv-shuffle-seed") + AUXS1_EPO_FLAGS
+ AUXS1_HEAD_TERMS = ("aux_bce", "aux_huber")                                           # the trainer's metric rows must emit these on a head arm
+@@ -872,6 +873,9 @@
+     g13 = next((v for k, v in gates.items() if prefix[k] == "G13"), None)
+     if g13 is not None:                                      # G13 (--epo-con): re-judged from its raw fields too (SAFEOBJ)
+         reasons += C.judge_g13(g13, ns)
++    g7 = next((v for k, v in gates.items() if prefix[k] == "G7"), None)
++    if g7 is not None:                                       # G7's carve fields (B8) are re-judged from their raw values too
++        reasons += C.judge_g7_carve(g7, ns)
+     g12 = next((v for k, v in gates.items() if prefix[k] == "G12"), None)
+     if g12 is not None:                                      # G12 (--aux-drv) is re-judged from its raw fields too: its own `ok` is a claim, the fields are the evidence
+         reasons += C.judge_g12(g12, ns)
+--- a/refe/test_launch_gate.py
++++ b/refe/test_launch_gate.py
+@@ -916,7 +916,7 @@
+     P0 = {**P, "declared_arm": "R0"}
+     pf_ok = C.load_scorer_preflight(rls1_write(Path(tempfile.mkdtemp()) / "preflight.jsonl", rls1_pf_rows(r0)))
+     ev = C.check_dvb_scorer(r0, pf_ok, P0)
+-    ok(ev["status"] == "PASS" and ev["details"]["observed_rows"] == 24 and ev["details"]["unknown_flags"] == [] and ev["details"]["stale_registry"] == [], ev["reasons"])      # 14 -> 15: R0c's epo.ref row; 15 -> 23: SAFEOBJ's eight epo_con rows; 23 -> 24: PICKCON's epo_con_temp row
++    ok(ev["status"] == "PASS" and ev["details"]["observed_rows"] == 27 and ev["details"]["unknown_flags"] == [] and ev["details"]["stale_registry"] == [], ev["reasons"])      # 14 -> 15: R0c's epo.ref row; 15 -> 23: SAFEOBJ's eight epo_con rows; 23 -> 24: PICKCON's epo_con_temp row; 24 -> 27: B8's epo_con_feed, epo_carve_sha256 and epo_carve_micro rows (the carve-only epo_carve_logs row appears only for --epo-con-feed carve)
+     ok(sum(ev["details"]["kinds"].values()) == len(C.DVB_KINDS_SCORER) == len(sdests))
+     ok(C.check_dvb_scorer(c0, C.load_scorer_preflight(rls1_write(Path(tempfile.mkdtemp()) / "p.jsonl", rls1_pf_rows(c0))), P)["status"] == "PASS")
+     for arm, frag in (("unknown_flag", "NO declared-vs-built entry"), ("stale_registry", "no longer has"), ("dead_lever", "never read by the trainer"),
+@@ -946,7 +946,7 @@
+         red(argv_ + CON, "requires --epo-con off", arm_, {**L.PROFILES[nm_], "declared_arm": arm_})
+         ok(refs(argv_ + ["--epo-con", "off"], arm_, {**L.PROFILES[nm_], "declared_arm": arm_}) == [], nm_)         # ... and still accepts the switch NAMED off
+     ok([e["script"] for e in Pd["suite"]][-1] == "test_rl_safeobj.py" and Pd["suite"][:-1] == L.PROFILES["refe_rls1c"]["suite"])                  # M8: the suite carries the new test
+-    ok(all(C.DVB_KINDS_SCORER.get(k) == "built" for k in ("epo_con", "epo_con_eps", "epo_con_lr", "epo_con_max", "epo_con_lam0", "epo_con_temp")))               # M7: the five flags (+ PICKCON's epo_con_temp) are classified
++    ok(all(C.DVB_KINDS_SCORER.get(k) == "built" for k in ("epo_con", "epo_con_eps", "epo_con_lr", "epo_con_max", "epo_con_lam0", "epo_con_temp", "epo_con_feed", "epo_carve_sha256", "epo_carve_micro")) and C.DVB_KINDS_SCORER.get("epo_carve_logs") == "data")               # M7: the five flags (+ PICKCON's epo_con_temp) are classified
+ 
+     def bp_new():                                                                                           # a REAL new flag on the parser, no arm: the gate itself refuses
+         a_ = orig_bp()

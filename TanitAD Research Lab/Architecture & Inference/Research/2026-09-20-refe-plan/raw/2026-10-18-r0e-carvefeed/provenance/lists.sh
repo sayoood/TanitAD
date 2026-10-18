@@ -1,0 +1,4 @@
+# shared test lists (relative to the plan dir)
+CORE="refe/test_rl_s1b.py refe/test_rl_r0c.py refe/test_rl_pickcon.py refe/test_dump_scores.py refe/test_label_dir_refusal.py refe/test_rl_terms_label.py refe/test_aux_s1_wiring.py refe/test_aux_g12_bf16.py refe/test_s1c.py refe/test_sft4r_gate.py refe/test_s1aux_chain.py refe/test_rls1_chain.py refe/test_rls1_queue.py refe/test_launch_gate.py::--static+--no-banked eval/test_aux_navtest_forward.py eval/test_r0e_diagnostics.py eval/test_safeobj_outcome.py refe/test_rl_epo.py refe/test_rl_safeobj.py"
+GATEX="refe/test_carve_feed_gate.py refe/test_carve_feed.py refe/test_p6_levers.py refe/test_p6_chain.py"
+CONS="refe/test_gate_suite_prerun.py refe/test_suite_nesting.py refe/test_p2rep_chain.py refe/test_p2r_chain.py refe/test_gate_gpu_probes.py refe/test_p6_cpu_probe.py refe/test_p6_overlap.py refe/test_sft4r_chain.py"

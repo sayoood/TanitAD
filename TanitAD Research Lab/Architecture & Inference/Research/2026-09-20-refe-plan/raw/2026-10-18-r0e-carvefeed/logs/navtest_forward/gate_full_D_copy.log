@@ -1,0 +1,15 @@
+module under test: D:\Projects\TanitAD_b8trees\gate_full\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\eval\aux_navtest_forward.py
+head module: D:\Projects\TanitAD_b8trees\gate_full\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\aux_drivable_head.py
+unmutated module: 11 checks GREEN
+GREEN real navtest store: tool npz -> readout perception rc 0
+GREEN real stores: an npz carrying a TRAIN key is REFUSED (rc 3)
+mutation               class       must go RED -> went RED
+strict_false           guard       chk_strict_load_refuses
+identity_tolerance     exactness   chk_identity_exactness
+swap_is_noop           regression  chk_swap_regression_fails_identity
+tap_reads_queries      tap         chk_cached_equals_inline, chk_tap_is_visual_ctx
+step_not_zero          contract    chk_npz_roundtrip_through_readout
+lock_without_excl      lock        chk_gpu_lock_protocol
+wait_idle_ignored      lock        chk_gpu_lock_protocol
+sdf_not_metres         contract    chk_sdf_in_metres
+ZZTEST_PASS 21  (11 checks + 2 real-store + 8 RED mutations)  29 s

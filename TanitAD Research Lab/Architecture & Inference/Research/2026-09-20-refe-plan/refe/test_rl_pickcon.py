@@ -80,6 +80,8 @@ def tensors_equal(a: dict, b: dict) -> float:
 
 # ================================================================================================ part U: pins, hops, the unit proofs on the REAL closures
 def suite_u(sf_src: str, tag: str, trace: bool = False) -> list:
+    import carvefeed_layer as CL
+    sf_src = CL.peel(sf_src)                         # B8 (raw/2026-10-18-r0e-carvefeed) sits on top of PICKCON and has its own suite (test_carve_feed.py): this suite is about the trainer BEFORE it
     import test_rl_epo as TE
     import rl_reward as RW
     bad: list = []

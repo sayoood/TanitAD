@@ -1,0 +1,20 @@
+C:\Users\Admin\b8carve\gate_tree\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\scorer_finetune.py:1582: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+  d0A, dBA = float((sx0 - sxA[..., :sx0.shape[-1]]).abs().max()), float((sxB - sxA).abs().max())
+unmutated: 41 checks green
+mutation                         class    caught-by
+token_column_reversed            keying   7  base: row n is the set at ho_idx[n] (log, token, step, rank) -- across the 16/16
+proposal_axis_flipped            keying   5  base: scores[n, m, c] is THAT set's proposal m, output c, of THIS arm (float64, 
+arms_swapped                     keying   6  base: scores[n, m, c] is THAT set's proposal m, output c, of THIS arm (float64, 
+ckpt_step_zero                   keying   7  base: ckpt_step per row is the held-out bank's own
+row_offset_forgotten             keying   8  base: row n is the set at ho_idx[n] (log, token, step, rank) -- across the 16/16
+last_batch_keys_truncated        keying   11  ON: one score_dump log event naming 3 files and 37 sets
+sigmoid_written_as_logit         format   3  base: scores[n, m, c] is THAT set's proposal m, output c, of THIS arm (float64, 
+space_prob                       format   5  base: space is 'logit' (the evaluator applies the sigmoid)
+float32_scores                   format   5  base: scores[n, m, c] is THAT set's proposal m, output c, of THIS arm (float64, 
+step_column_dropped              format   3  run
+dump_alters_the_scores           off      4  base: scores[n, m, c] is THAT set's proposal m, output c, of THIS arm (float64, 
+dump_always_on                   off      2  run
+flag_default_on                  off      3  parser: --dump-scores exists and DEFAULTS TO OFF ('')
+unguarded_edit_in_evaluate       off      1  OFF: evaluate() minus the dump's statements is AST-IDENTICAL to the pre-edit eva
+ZZTEST_PASS 16  (1 unmutated suite of 41 checks + 14 RED mutations + coverage)
