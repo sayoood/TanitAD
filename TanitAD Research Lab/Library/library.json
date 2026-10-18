@@ -441,10 +441,12 @@
    "sha256": "03ce230505c4fa5e33a6f9fc38c69be4807663b6f639e2ea155e1d86a720253a",
    "banked": "2026-08-19",
    "tags": [
-    "world-action-model"
+    "world-action-model",
+    "zero-tail"
    ],
-   "note": "Isolated attention mask makes future-video prediction a TRAINING-TIME signal only; imagine-then-act gives no measurable benefit (90.3 isolated vs 90.2 bidirectional). 91.5 PDMS NAVSIM, 6B, 32 GPUs. Evaluates on PhysicalAI-AV: ADE@3s 0.40 (vs Alpamayo-1.5 10B 0.80).",
+   "note": "Isolated attention mask makes future-video prediction a TRAINING-TIME signal only; imagine-then-act gives no measurable benefit (90.3 isolated vs 90.2 bidirectional). 91.5 PDMS NAVSIM, 6B, 32 GPUs. Evaluates on PhysicalAI-AV: ADE@3s 0.40 (vs Alpamayo-1.5 10B 0.80). | SimWAM Tab.2: video-generation auxiliary lifts DAC 95.7 to 98.0 and NC 97.6 to 98.7 (single run); RL adds DAC 98.7",
    "cited_by": [
+    "TanitAD Research Lab/2026-10-18-LAB-RUN-019.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-19-simwam-analysis/SIMWAM_VS_TANITAD.md"
    ]
   },
@@ -540,11 +542,13 @@
     "nuscenes-openloop-planning",
     "refcv8-tactical-conditioning",
     "resnet-trunk",
-    "rl-posttrain"
+    "rl-posttrain",
+    "zero-tail"
    ],
-   "note": "DiffusionDrive: truncated diffusion policy over ANCHORED trajectory priors, ResNet/BEV encoder + diffusion planner. THE paper REF-C is derived from (D-030: 'REF-C redesigned to a DiffusionDrive anchored decoder'). Was UNBANKED until 2026-08-21 despite being REF-C's origin. | DiffusionDrive: three cropped forward cams concatenated as a 1024x256 image, ResNet-34, 88.1 PDMS NAVSIM | DDv2 analysis 2026-09-05: v1 counterparts read at 9b52ed0 (norm_odo, 2-layer cascade, forward_train) | REF-C vs DiffusionDrive v1/v2 implementation audit (2026-09-05): decoder is an unrolled residual refiner, not a diffusion model; selection never sees the refined fan | RL post-training design for refcv4b/refcv5 (2026-09-05): DDv2's released RL stage explores a TWO-SCALAR (a_lon,a_lat) scale family, additive DDPM term multiplied by zero, so a deterministic fan needs no sampler to be post-trained faithfully | resnet-trunk review 2026-09-15: DD v1 image trunk = timm ResNet-34 ImageNet-init (supp. A), LiDAR ResNet-34 scratch, E2E 100 ep bs512 lr6e-4, 1024x256 single frame, 60M/45FPS (Tab.2) | resnet-trunk review 2026-09-15 (verified vs released code): image_encoder lr_mult 0.5 -> 3e-4, 3-ep warm-up + cosine (transfuser_config.py:123-127, transfuser_agent.py:170-175); ToTensor [0,1] with NO ImageNet mean/std (transfuser_features.py:73); single frame (cameras[-1], GPT asserts seq_len==1); learned pos_emb in fusion GPT + _keyval_embedding on planner KV; paper 4.2 'from scratch' = single-stage training, image trunk still ImageNet-init (supp. A) | nuScenes open-loop planning row re-read from the banked PDF for the W6 harness (protocol-tagged external comparability only; H-EVAL-6) | refcv6 diffusion review 2026-09-22: F2's t->t-1 reproduces from the RELEASED code (set_timesteps(1000) => prev_t = t-1), residual retained 0.9475 vs 0.2828 MEASURED; focal gamma2.0/alpha0.25 reduction mean ports exactly; DD clamps INSIDE the test loop (:519) and our F8 clamps once outside | DiffusionDrive p5-7: 20 anchors, trunc 50/1000, 2 steps, positive=closest anchor to GT, L1+BCE; 88.1 PDMS; text states no driving-command input",
+   "note": "DiffusionDrive: truncated diffusion policy over ANCHORED trajectory priors, ResNet/BEV encoder + diffusion planner. THE paper REF-C is derived from (D-030: 'REF-C redesigned to a DiffusionDrive anchored decoder'). Was UNBANKED until 2026-08-21 despite being REF-C's origin. | DiffusionDrive: three cropped forward cams concatenated as a 1024x256 image, ResNet-34, 88.1 PDMS NAVSIM | DDv2 analysis 2026-09-05: v1 counterparts read at 9b52ed0 (norm_odo, 2-layer cascade, forward_train) | REF-C vs DiffusionDrive v1/v2 implementation audit (2026-09-05): decoder is an unrolled residual refiner, not a diffusion model; selection never sees the refined fan | RL post-training design for refcv4b/refcv5 (2026-09-05): DDv2's released RL stage explores a TWO-SCALAR (a_lon,a_lat) scale family, additive DDPM term multiplied by zero, so a deterministic fan needs no sampler to be post-trained faithfully | resnet-trunk review 2026-09-15: DD v1 image trunk = timm ResNet-34 ImageNet-init (supp. A), LiDAR ResNet-34 scratch, E2E 100 ep bs512 lr6e-4, 1024x256 single frame, 60M/45FPS (Tab.2) | resnet-trunk review 2026-09-15 (verified vs released code): image_encoder lr_mult 0.5 -> 3e-4, 3-ep warm-up + cosine (transfuser_config.py:123-127, transfuser_agent.py:170-175); ToTensor [0,1] with NO ImageNet mean/std (transfuser_features.py:73); single frame (cameras[-1], GPT asserts seq_len==1); learned pos_emb in fusion GPT + _keyval_embedding on planner KV; paper 4.2 'from scratch' = single-stage training, image trunk still ImageNet-init (supp. A) | nuScenes open-loop planning row re-read from the banked PDF for the W6 harness (protocol-tagged external comparability only; H-EVAL-6) | refcv6 diffusion review 2026-09-22: F2's t->t-1 reproduces from the RELEASED code (set_timesteps(1000) => prev_t = t-1), residual retained 0.9475 vs 0.2828 MEASURED; focal gamma2.0/alpha0.25 reduction mean ports exactly; DD clamps INSIDE the test loop (:519) and our F8 clamps once outside | DiffusionDrive p5-7: 20 anchors, trunc 50/1000, 2 steps, positive=closest anchor to GT, L1+BCE; 88.1 PDMS; text states no driving-command input | DiffusionDrive Tab.2: anchored truncated diffusion DAC 92.8 (Transfuser) to 96.2; Tab.1 NC 98.2 DAC 96.2 PDMS 88.1; no scorer, anchors from k-means",
    "cited_by": [
     "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-nuscenes-planning-harness/RESULT.md",
+    "TanitAD Research Lab/2026-10-18-LAB-RUN-019.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-21-refcv3-review/REFCV3_REVIEW.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-diffusiondrive-v2-analysis/RESULT.md",
@@ -728,10 +732,12 @@
     "data-scaling",
     "input-pipeline",
     "refe-sizing",
-    "resnet-trunk"
+    "resnet-trunk",
+    "zero-tail"
    ],
-   "note": "World-model future-image prediction as aux signal AMPLIFIES the data scaling law for VLA driving (NAVSIM v1/v2, 680x in-house corpus) - dense self-supervision beats action-only supervision at scale | DriveVLA-W0: NAVSIM SOTA 93.0 PDMS from a SINGLE front camera at 256x144 - lowest resolution in the survey | resnet-trunk review 2026-09-15: DriveVLA-W0 Tab.3: TransFuser-50M ResNet-34 vs TransFuser-7B DINOv3 at 70k/700k/70M frames under action-only supervision | resnet-trunk review 2026-09-15: Tab.3 p.9 ADE at 70k/700k/70M frames, action-only: TransFuser-50M (ResNet-34) 2.5893/1.7464/1.2627 vs TransFuser-7B (DINOv3-init ViT-7B) 2.5757/2.1391/1.2244 - a pretrained 7B backbone does not rescue sparse action supervision | DriveVLA-W0: Table 4 -- the action-decoder ranking REVERSES with data scale; query-based is best at NAVSIM 103k frames (88.4 PDMS) and is beaten by autoregressive at 70M frames",
+   "note": "World-model future-image prediction as aux signal AMPLIFIES the data scaling law for VLA driving (NAVSIM v1/v2, 680x in-house corpus) - dense self-supervision beats action-only supervision at scale | DriveVLA-W0: NAVSIM SOTA 93.0 PDMS from a SINGLE front camera at 256x144 - lowest resolution in the survey | resnet-trunk review 2026-09-15: DriveVLA-W0 Tab.3: TransFuser-50M ResNet-34 vs TransFuser-7B DINOv3 at 70k/700k/70M frames under action-only supervision | resnet-trunk review 2026-09-15: Tab.3 p.9 ADE at 70k/700k/70M frames, action-only: TransFuser-50M (ResNet-34) 2.5893/1.7464/1.2627 vs TransFuser-7B (DINOv3-init ViT-7B) 2.5757/2.1391/1.2244 - a pretrained 7B backbone does not rescue sparse action supervision | DriveVLA-W0: Table 4 -- the action-decoder ranking REVERSES with data scale; query-based is best at NAVSIM 103k frames (88.4 PDMS) and is beaten by autoregressive at 70M frames | DriveVLA-W0 Tab.1: same backbone, query-based action expert DAC 96.2 vs anchor+scorer expert DAC 99.1 (PDMS 88.4 vs 90.2)",
    "cited_by": [
+    "TanitAD Research Lab/2026-10-18-LAB-RUN-019.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/MODULE_SIZING_STUDY.md",
     "TanitAD Research Lab/Data Engineering/2026-08-22-lab-run-001/RESULT.md"
@@ -1875,10 +1881,12 @@
    "sha256": "eb18c94e3eaf392b2bf6361b0ca8842e9d8d60785f3f161abbc93402f6f2a418",
    "banked": "2026-08-23",
    "tags": [
-    "rl-ad"
+    "rl-ad",
+    "zero-tail"
    ],
-   "note": "TrajHF: RLHF finetuning of a generative trajectory model for driving",
+   "note": "TrajHF: RLHF finetuning of a generative trajectory model for driving | TrajHF v2 Tab.1: PDMS-selector (oracle over 15 samples) NC 99.2/DAC 99.1/PDMS 94.3 marked upper bound vs deployable EM selector 96.6/96.6/87.6 - selection ceiling",
    "cited_by": [
+    "TanitAD Research Lab/2026-10-18-LAB-RUN-019.md",
     "products/P4-training-pipelines/METHOD_LIBRARY.md"
    ]
   },
@@ -2143,10 +2151,12 @@
    "banked": "2026-08-27",
    "tags": [
     "frozen-encoder",
-    "jepa-driving"
+    "jepa-driving",
+    "zero-tail"
    ],
-   "note": "Drive-JEPA: V-JEPA driving encoder + light planner, NAVSIM v1 93.3 PDMS / v2 87.8 EPDMS / B2D 64.52, ViT-L 307M, 208h video | Drive-JEPA: V-JEPA video pretraining for end-to-end driving + proposal-centric planner distilling simulator+human trajectories, momentum-aware selection; 93.3 PDMS / 87.8 EPDMS SOTA",
+   "note": "Drive-JEPA: V-JEPA driving encoder + light planner, NAVSIM v1 93.3 PDMS / v2 87.8 EPDMS / B2D 64.52, ViT-L 307M, 208h video | Drive-JEPA: V-JEPA video pretraining for end-to-end driving + proposal-centric planner distilling simulator+human trajectories, momentum-aware selection; 93.3 PDMS / 87.8 EPDMS SOTA | Drive-JEPA Tab.1 (navtest): ViT/L NC 99.1 DAC 98.2 PDMS 93.7 vs ViT/L baseline 98.7/96.2/89.0",
    "cited_by": [
+    "TanitAD Research Lab/2026-10-18-LAB-RUN-019.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-27-jepa-driving-survey/JEPA_DRIVING_SURVEY.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-31-refav1-motion-inject/SPEC.md"
    ]
@@ -2318,11 +2328,13 @@
     "navsim",
     "navsim-v1",
     "nuscenes",
-    "resnet-trunk"
+    "resnet-trunk",
+    "zero-tail"
    ],
-   "note": "NAVSIM v1 NeurIPS2024: non-reactive pseudo-simulation, PDMS, navtrain/navtest | NAVSIM: ~75% of nuScenes is trivial straight driving; displacement metrics uncorrelated with closed-loop; PDMS alternative | NAVSIM v1: navtrain 103k / navtest 12k, 450GB standalone; PDMS = aggregated post-simulation subscores, aligns with closed-loop better than traditional open-loop metrics | NAVSIM Table 2 sensor ablation: front-only 60deg FOV vs 3-cam concat 140/160deg vs 5-cam 240deg PDMS | resnet-trunk review 2026-09-15: navtrain 103k samples from OpenScene 120 h @2Hz; LTF camera-only 83.8 vs TransFuser 84.0 (Tab.1); no-BEV-seg 84.0->81.6 (Tab.2 E1) | NAVSIM v1.1 navtest reference table re-read 2026-09-19 for W3: Tab.1 p.7 CV 68.0/57.8/50.0/100/19.4/20.6, Human 100/100/100/99.9/87.5/94.8, EgoStatusMLP 93.0/77.3/83.6/100/62.8/65.6; Tab.3 p.9 (NAVSIM 1.1 leaderboard, 3 seeds) TransFuser 83.9+-0.4, LTF 83.5+-0.6, EgoStatusMLP 66.4+-0.9, Hydra-MDP 91.3, CV 20.6; filtering rule p.5: scenes with CV PDMS>0.8 or human<0.8 were REMOVED (W3 control C5)",
+   "note": "NAVSIM v1 NeurIPS2024: non-reactive pseudo-simulation, PDMS, navtrain/navtest | NAVSIM: ~75% of nuScenes is trivial straight driving; displacement metrics uncorrelated with closed-loop; PDMS alternative | NAVSIM v1: navtrain 103k / navtest 12k, 450GB standalone; PDMS = aggregated post-simulation subscores, aligns with closed-loop better than traditional open-loop metrics | NAVSIM Table 2 sensor ablation: front-only 60deg FOV vs 3-cam concat 140/160deg vs 5-cam 240deg PDMS | resnet-trunk review 2026-09-15: navtrain 103k samples from OpenScene 120 h @2Hz; LTF camera-only 83.8 vs TransFuser 84.0 (Tab.1); no-BEV-seg 84.0->81.6 (Tab.2 E1) | NAVSIM v1.1 navtest reference table re-read 2026-09-19 for W3: Tab.1 p.7 CV 68.0/57.8/50.0/100/19.4/20.6, Human 100/100/100/99.9/87.5/94.8, EgoStatusMLP 93.0/77.3/83.6/100/62.8/65.6; Tab.3 p.9 (NAVSIM 1.1 leaderboard, 3 seeds) TransFuser 83.9+-0.4, LTF 83.5+-0.6, EgoStatusMLP 66.4+-0.9, Hydra-MDP 91.3, CV 20.6; filtering rule p.5: scenes with CV PDMS>0.8 or human<0.8 were REMOVED (W3 control C5) | NAVSIM: NC=0 on at-fault collision, 0.5 on static-object collision; DAC and NC are multiplicative gates in PDMS",
    "cited_by": [
     "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-v1-navtest/RESULT.md",
+    "TanitAD Research Lab/2026-10-18-LAB-RUN-019.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-19-drivor-deep-analysis/RESULT.md",
@@ -2365,11 +2377,13 @@
     "input-pipeline",
     "navsim-scorer-trade",
     "refcv8-tactical-conditioning",
-    "resnet-trunk"
+    "resnet-trunk",
+    "zero-tail"
    ],
-   "note": "Hydra-MDP++: origin of EPDMS sub-metrics TLC and LK adopted by NAVSIM v2 | Hydra-MDP++: default 256x1024; ResNet-34 PDMS 86.6 vs V2-99 91.0 at the SAME resolution - backbone, not resolution, is the lever | resnet-trunk review 2026-09-15: Hydra-MDP++ camera-only, 'classic pretrained vision encoders'; ResNet-34 86.6 -> V2-99 91.0 (Tab.1); 2 frames Temporal SE; no augmentation | Hydra-MDP++ p4-7: same vocab/losses; ego status ADDED to vocab queries (Eq3) and driving command in input (4.2); weighted-confidence inference 85.0->86.5 PDMS (Table 3)",
+   "note": "Hydra-MDP++: origin of EPDMS sub-metrics TLC and LK adopted by NAVSIM v2 | Hydra-MDP++: default 256x1024; ResNet-34 PDMS 86.6 vs V2-99 91.0 at the SAME resolution - backbone, not resolution, is the lever | resnet-trunk review 2026-09-15: Hydra-MDP++ camera-only, 'classic pretrained vision encoders'; ResNet-34 86.6 -> V2-99 91.0 (Tab.1); 2 frames Temporal SE; no augmentation | Hydra-MDP++ p4-7: same vocab/losses; ego status ADDED to vocab queries (Eq3) and driving command in input (4.2); weighted-confidence inference 85.0->86.5 PDMS (Table 3) | Hydra-MDP++ Tab.3: weighted-confidence inference lifts DAC 92.0 to 96.0 (R34, single run); Tab.1 V2-99 NC 98.6 DAC 98.6 PDMS 91.0",
    "cited_by": [
     "TanitAD Research Lab/2026-10-17-LAB-RUN-018.md",
+    "TanitAD Research Lab/2026-10-18-LAB-RUN-019.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/SPEC_AUX_DRIVABLE_HEAD.md",
@@ -2594,11 +2608,13 @@
     "input-pipeline",
     "navsim-scorer-trade",
     "refcv8-tactical-conditioning",
-    "resnet-trunk"
+    "resnet-trunk",
+    "zero-tail"
    ],
-   "note": "Hydra-MDP: 2024 NAVSIM challenge winner; NavFormer planning head | Hydra-MDP: NAVSIM default input 256x1024 (front + cropped front-left/right concatenated); no matched resolution pair - V2-99@512x2048 scores 90.3 vs ViT-L@256x1024 91.0 | resnet-trunk review 2026-09-15: Hydra-MDP ResNet-34 256x1024 -> 86.5; V2-99 (DD3D-init) at 512x2048 -> 90.3; 91.0 is a 3-model ensemble (Tab.2) | Hydra-MDP p3-4: 4096/8192 K-means vocab, imitation softmax-CE + per-candidate BCE sub-score distillation; V8192 83.0 vs VADv2-V8192 80.9; -W-EP 86.5",
+   "note": "Hydra-MDP: 2024 NAVSIM challenge winner; NavFormer planning head | Hydra-MDP: NAVSIM default input 256x1024 (front + cropped front-left/right concatenated); no matched resolution pair - V2-99@512x2048 scores 90.3 vs ViT-L@256x1024 91.0 | resnet-trunk review 2026-09-15: Hydra-MDP ResNet-34 256x1024 -> 86.5; V2-99 (DD3D-init) at 512x2048 -> 90.3; 91.0 is a 3-model ensemble (Tab.2) | Hydra-MDP p3-4: 4096/8192 K-means vocab, imitation softmax-CE + per-candidate BCE sub-score distillation; V8192 83.0 vs VADv2-V8192 80.9; -W-EP 86.5 | Hydra-MDP: per-metric sub-score heads distilled from PDM-Closed + weighted-confidence selection; Tab.1 distilling only the overall PDM score gives DAC 88.9 vs 91.7 multi-target, +W (up-weighted NC/DAC at inference) DAC 96.1",
    "cited_by": [
     "TanitAD Research Lab/2026-10-17-LAB-RUN-018.md",
+    "TanitAD Research Lab/2026-10-18-LAB-RUN-019.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/DESIGN.md",
@@ -2658,11 +2674,13 @@
     "diffusiondrive",
     "ego-input",
     "navsim-scorer-trade",
-    "refcv8-tactical-conditioning"
+    "refcv8-tactical-conditioning",
+    "zero-tail"
    ],
-   "note": "DriveSuprim: navtest PDMS and navtest-EPDMS single-stage tables | DDv2 analysis 2026-09-05: released code read at 1cd12a1 - see the report | DriveSuprim p3-8: coarse-to-fine 8192->256, per-metric BCE (no listwise/pairwise loss), soft-label self-distillation clip 0.15; oracle top-256 98.7 vs top-1 91.9 (Table 1)",
+   "note": "DriveSuprim: navtest PDMS and navtest-EPDMS single-stage tables | DDv2 analysis 2026-09-05: released code read at 1cd12a1 - see the report | DriveSuprim p3-8: coarse-to-fine 8192->256, per-metric BCE (no listwise/pairwise loss), soft-label self-distillation clip 0.15; oracle top-256 98.7 vs top-1 91.9 (Table 1) | DriveSuprim Tab.1: oracle best-of-top-K on predicted ranking, K=1 NC 99.0/DAC 98.7/PDMS 91.9, K=4 99.4/99.6/94.5, K=256 100/100/98.7 (selection ceiling); Tab.2 ViT-L NC 98.6 DAC 98.6 PDMS 93.5",
    "cited_by": [
     "TanitAD Research Lab/2026-10-17-LAB-RUN-018.md",
+    "TanitAD Research Lab/2026-10-18-LAB-RUN-019.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-diffusiondrive-v2-analysis/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/DESIGN.md",
@@ -2693,10 +2711,12 @@
    "tags": [
     "benchmarks",
     "flow-matching",
-    "refcv8-tactical-conditioning"
+    "refcv8-tactical-conditioning",
+    "zero-tail"
    ],
-   "note": "GoalFlow: navtest PDMS; the dagger row uses a GT-endpoint goal (privileged) | GoalFlow: goal-point-conditioned flow matching, PDMS 90.3, single denoising step - the one-step shape our latency budget needs | GoalFlow: goal-point vocabulary + scoring conditions flow matching (verify in PDF) | GoalFlow p4-8: goal vocab = clustered endpoints N=4096/8192; goal scorer dis+DAC; GT-endpoint goal 92.1 vs predicted 90.3 PDMS (Table 1); no-goal M0 85.6 (Table 2)",
+   "note": "GoalFlow: navtest PDMS; the dagger row uses a GT-endpoint goal (privileged) | GoalFlow: goal-point-conditioned flow matching, PDMS 90.3, single denoising step - the one-step shape our latency budget needs | GoalFlow: goal-point vocabulary + scoring conditions flow matching (verify in PDF) | GoalFlow p4-8: goal vocab = clustered endpoints N=4096/8192; goal scorer dis+DAC; GT-endpoint goal 92.1 vs predicted 90.3 PDMS (Table 1); no-goal M0 85.6 (Table 2) | GoalFlow Tab.2: goal-point vocabulary scored by distance + DAC label (map at train only): DAC 94.2 to 96.4 to 97.5 to 98.3 with trajectory scorer; Tab.1 PDMS 90.3",
    "cited_by": [
+    "TanitAD Research Lab/2026-10-18-LAB-RUN-019.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/DESIGN.md",
     "TanitAD Research Lab/Frontier Scan/Daily/2026-08-31/RESULT.md",
     "products/P7-TanitEval/benchmarks/NAVSIM_PROTOCOL.md"
@@ -2725,10 +2745,12 @@
     "aux-drivable-head",
     "benchmarks",
     "ego-input",
-    "resnet-trunk"
+    "resnet-trunk",
+    "zero-tail"
    ],
-   "note": "WoTE: navtest PDMS 88.3; its baseline column misattributes VADv2 | resnet-trunk review 2026-09-15: WoTE ResNet-34 TransFuser trunk, 256x1024 + LiDAR, 30 ep bs128, 88.3 PDMS; 18.7 ms L20 (Tab.6)",
+   "note": "WoTE: navtest PDMS 88.3; its baseline column misattributes VADv2 | resnet-trunk review 2026-09-15: WoTE ResNet-34 TransFuser trunk, 256x1024 + LiDAR, 30 ep bs128, 88.3 PDMS; 18.7 ms L20 (Tab.6) | WoTE Tab.1: BEV world model online trajectory evaluation, NC 98.5 DAC 96.8 PDMS 88.3; Tab.4 simulation rewards raise DAC over imitation reward alone",
    "cited_by": [
+    "TanitAD Research Lab/2026-10-18-LAB-RUN-019.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/SPEC_AUX_DRIVABLE_HEAD.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/PREREG_AUX_DRIVABLE_DRAFT.md",
@@ -3453,10 +3475,12 @@
     "A5",
     "A5_benchmarks",
     "drivor-analysis",
-    "navsim"
+    "navsim",
+    "zero-tail"
    ],
-   "note": "Test-time trajectory optimization: navhard camera-only SOTA context - DrivoR 56.3 EPDMS w/ TTO vs DriveFuture 55.5 learned | TOAD (valeo.ai): CEM test-time search on a FROZEN planner, no retraining; +2.3% (ZTRS) to +43.6% (iPad) EPDMS on NAVSIM-v2. Tables 3/6/7: bare DrivoR (ViT-S) 54.6, DrivoR+TOAD 56.3, DriveFuture 55.5 (strongest LEARNED), PDM-Closed 56.6 (privileged). WARNING for I-1/L-3: 're-ranking the base planner's proposals with the scorer can even hurt performance' - re-ranking is not search, and fan-scoring is re-ranking. | READ 2026-09-13 (v1) Table 2/6: PDM-C navhard-two-stage 56.6 with Stage1 IDENTICAL to 2506.04218 (9/9) and Stage2 NC 90.5 TTC 86.6 LK 74.2 EC 29.7; PDM-C cited to Dauner CoRL'23 which predates navhard | TOAD v1: PDM-C S1+S2 fingerprint = 03/2026 post-fix substrate (positive control 6/7 S1, 7/8 S2)",
+   "note": "Test-time trajectory optimization: navhard camera-only SOTA context - DrivoR 56.3 EPDMS w/ TTO vs DriveFuture 55.5 learned | TOAD (valeo.ai): CEM test-time search on a FROZEN planner, no retraining; +2.3% (ZTRS) to +43.6% (iPad) EPDMS on NAVSIM-v2. Tables 3/6/7: bare DrivoR (ViT-S) 54.6, DrivoR+TOAD 56.3, DriveFuture 55.5 (strongest LEARNED), PDM-Closed 56.6 (privileged). WARNING for I-1/L-3: 're-ranking the base planner's proposals with the scorer can even hurt performance' - re-ranking is not search, and fan-scoring is re-ranking. | READ 2026-09-13 (v1) Table 2/6: PDM-C navhard-two-stage 56.6 with Stage1 IDENTICAL to 2506.04218 (9/9) and Stage2 NC 90.5 TTC 86.6 LK 74.2 EC 29.7; PDM-C cited to Dauner CoRL'23 which predates navhard | TOAD v1: PDM-C S1+S2 fingerprint = 03/2026 post-fix substrate (positive control 6/7 S1, 7/8 S2) | TOAD Tab.5: test-time CEM against the learned scorer, DAC iPad +1.0 but Hydra-MDP -0.7 and GTRS -0.8, DrivoR/RAP +0.1 PDMS - gains vanish on saturated scorers",
    "cited_by": [
+    "TanitAD Research Lab/2026-10-18-LAB-RUN-019.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-19-drivor-deep-analysis/RESULT.md",
     "TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-13-pdmc-stage2-provenance/RESULT.md",
     "TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-15-epdms-stage1-fingerprint/RESULT.md",
@@ -3493,10 +3517,12 @@
     "A5",
     "drivor-analysis",
     "navsim",
-    "refe-sizing"
+    "refe-sizing",
+    "zero-tail"
    ],
-   "note": "DrivoR (CVPR26, Valeo): camera-only, camera-aware register tokens compress multi-cam ViT features; generate+score decoders; the strongest camera-only NavSim family | DrivoR (CVPR26, Valeo) - the id LEADERBOARD.md:1036 mis-attributes to 2606.07170. Base navhard EPDMS 54.6 per two independent primaries. Parameter count (~40M, backlog row 32) UNVERIFIED - unread as of 2026-09-02. | DrivoR v2 full text: navhard 54.6 = +134k SimScale PDM-C-pseudo-labelled data variant; base ViT-S 48.3 post-fix / 45.3 pre-fix; Stage-2 shift = NAVSIM Issue #151 bug fix | DrivoR (DriveZero ref [34]): registers are APPENDED TO THE ViT INPUT and compressed by the trunk's own self-attention -- NOT a cross-attention block, which the paper explicitly rejects and ablates at 89.3 vs 90.0 PDMS; 'The decoders are 4-layer transformers with an inner dimension of 256. The feed-forward network has a dilation factor of 4'; registers init N(0,1e-6); 16/camera at a 16-32 plateau",
+   "note": "DrivoR (CVPR26, Valeo): camera-only, camera-aware register tokens compress multi-cam ViT features; generate+score decoders; the strongest camera-only NavSim family | DrivoR (CVPR26, Valeo) - the id LEADERBOARD.md:1036 mis-attributes to 2606.07170. Base navhard EPDMS 54.6 per two independent primaries. Parameter count (~40M, backlog row 32) UNVERIFIED - unread as of 2026-09-02. | DrivoR v2 full text: navhard 54.6 = +134k SimScale PDM-C-pseudo-labelled data variant; base ViT-S 48.3 post-fix / 45.3 pre-fix; Stage-2 shift = NAVSIM Issue #151 bug fix | DrivoR (DriveZero ref [34]): registers are APPENDED TO THE ViT INPUT and compressed by the trunk's own self-attention -- NOT a cross-attention block, which the paper explicitly rejects and ablates at 89.3 vs 90.0 PDMS; 'The decoders are 4-layer transformers with an inner dimension of 256. The feed-forward network has a dilation factor of 4'; registers init N(0,1e-6); 16/camera at a 16-32 plateau | DrivoR Tab.6: detached scoring branch (+3.2 PDMS) and six PDM sub-score heads vs one composite (+1.8); Tab.1 train-only NC 98.9 DAC 98.3 PDMS 93.1, +134k SimScale 99.1/99.2/94.6",
    "cited_by": [
+    "TanitAD Research Lab/2026-10-18-LAB-RUN-019.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-19-drivor-deep-analysis/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/MODULE_SIZING_STUDY.md",
     "TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-15-epdms-stage1-fingerprint/RESULT.md",
@@ -3890,10 +3916,12 @@
     "diffusiondrive",
     "refc-lineage",
     "resnet-trunk",
-    "rl-posttrain"
+    "rl-posttrain",
+    "zero-tail"
    ],
-   "note": "DiffusionDriveV2: GRPO-RL-constrained truncated diffusion from DD cold start; navtest PDMS 91.2 @R34 (+3.1), P4-EPDMS 85.5; raw-fan floor 75.3->84.4@top10; names selector over-reliance as the hazard | DDv2 analysis 2026-09-05: released code read at 1cd12a1 - see the report | REF-C vs DiffusionDrive v1/v2 implementation audit (2026-09-05): decoder is an unrolled residual refiner, not a diffusion model; selection never sees the refined fan | RL post-training design for refcv4b/refcv5 (2026-09-05): DDv2's released RL stage explores a TWO-SCALAR (a_lon,a_lat) scale family, additive DDPM term multiplied by zero, so a deterministic fan needs no sampler to be post-trained faithfully | resnet-trunk review 2026-09-15: DDv2 keeps DD v1 ResNet-34 (21.8M, §5.3) frozen through RL (10 ep) + selector (20 ep); cold start from DD v1 | resnet-trunk review 2026-09-15 (verified vs released code): the freeze is CODE-ONLY, paper text states none - RL trains only _trajectory_head, rest requires_grad=False + eval() (diffusiondrivev2_rl_agent.py:62-68); selector trains only 13 scorer-head prefixes, whole model eval() (diffusiondrivev2_sel_agent.py:61-82); paper reports no FPS/latency",
+   "note": "DiffusionDriveV2: GRPO-RL-constrained truncated diffusion from DD cold start; navtest PDMS 91.2 @R34 (+3.1), P4-EPDMS 85.5; raw-fan floor 75.3->84.4@top10; names selector over-reliance as the hazard | DDv2 analysis 2026-09-05: released code read at 1cd12a1 - see the report | REF-C vs DiffusionDrive v1/v2 implementation audit (2026-09-05): decoder is an unrolled residual refiner, not a diffusion model; selection never sees the refined fan | RL post-training design for refcv4b/refcv5 (2026-09-05): DDv2's released RL stage explores a TWO-SCALAR (a_lon,a_lat) scale family, additive DDPM term multiplied by zero, so a deterministic fan needs no sampler to be post-trained faithfully | resnet-trunk review 2026-09-15: DDv2 keeps DD v1 ResNet-34 (21.8M, §5.3) frozen through RL (10 ep) + selector (20 ep); cold start from DD v1 | resnet-trunk review 2026-09-15 (verified vs released code): the freeze is CODE-ONLY, paper text states none - RL trains only _trajectory_head, rest requires_grad=False + eval() (diffusiondrivev2_rl_agent.py:62-68); selector trains only 13 scorer-head prefixes, whole model eval() (diffusiondrivev2_sel_agent.py:61-82); paper reports no FPS/latency | DiffusionDriveV2 Tab.1: RL-constrained truncated diffusion NC 98.3 DAC 97.9 PDMS 91.2 (R34); Tab.5/6 GRPO components move DAC only 0.3",
    "cited_by": [
+    "TanitAD Research Lab/2026-10-18-LAB-RUN-019.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-29-refc-origins-successors/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-diffusiondrive-v2-analysis/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-refc-vs-diffusiondrive-audit/RESULT.md",
@@ -6125,10 +6153,12 @@
    "sha256": "9c942d4a7c5ae0d52027acd6cbdd8b7ec65f1c6a224a17aeb5d934d37018c19d",
    "banked": "2026-08-30",
    "tags": [
-    "closed-loop-wm"
+    "closed-loop-wm",
+    "zero-tail"
    ],
-   "note": "",
+   "note": "DA-WAM Tab.3: expert-proximate counterfactual hard negatives in the scorer loss DAC 98.58 to 98.88, NC 98.88 to 99.11, EP -0.5 (single run, matched)",
    "cited_by": [
+    "TanitAD Research Lab/2026-10-18-LAB-RUN-019.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-t1-floor-action-sensitivity/RESULT.md"
    ]
   },
@@ -10701,10 +10731,12 @@
    "sha256": "0ed2da26ea19224aeb487d21c88832b798550bb86a65e32ab51ece7d50e536aa",
    "banked": "2026-09-05",
    "tags": [
-    "ego-input"
+    "ego-input",
+    "zero-tail"
    ],
-   "note": "re-indexed 2026-09-05 after library.json was zeroed by a dying agent; PDF was already on disk",
+   "note": "re-indexed 2026-09-05 after library.json was zeroed by a dying agent; PDF was already on disk | iPad Tab.4: proposal-centric mapping aux (per-proposal on-road/on-route per timestep, HD-map labels at train only, camera-only inference) DAC 96.5 to 97.9; Tab.1 NC 98.6 DAC 98.3 PDMS 91.7",
    "cited_by": [
+    "TanitAD Research Lab/2026-10-18-LAB-RUN-019.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md"
    ]
   },
@@ -10762,11 +10794,13 @@
     "ego-input",
     "navsim-scorer-trade",
     "resnet-trunk",
-    "vocabulary"
+    "vocabulary",
+    "zero-tail"
    ],
-   "note": "GTRS: the 16,384-trajectory vocabulary DiffusionDriveV2's selector mixes in (1 %, precomputed PDM sub-scores) as foreign-candidate augmentation | GTRS (Hydra-MDP family, NVlabs/GTRS@92a740d): fixed super-dense k-means vocabulary (4096-16384 metre trajectories, 40x(x,y,heading)); ego status cmd4+vel2+acc2 ADDED to every vocabulary feature AFTER scene cross-attention (dist_status = tr_out + status_encoding); a VOCABULARY dropout exists (random half at train, default off) and there is NO ego dropout | resnet-trunk review 2026-09-15: GTRS camera-only; V2-99 DD3D-init / EVA-ViT-L StreamPETR-init / ViT-L DepthAnything; rotation sensor augmentation",
+   "note": "GTRS: the 16,384-trajectory vocabulary DiffusionDriveV2's selector mixes in (1 %, precomputed PDM sub-scores) as foreign-candidate augmentation | GTRS (Hydra-MDP family, NVlabs/GTRS@92a740d): fixed super-dense k-means vocabulary (4096-16384 metre trajectories, 40x(x,y,heading)); ego status cmd4+vel2+acc2 ADDED to every vocabulary feature AFTER scene cross-attention (dist_status = tr_out + status_encoding); a VOCABULARY dropout exists (random half at train, default off) and there is NO ego dropout | resnet-trunk review 2026-09-15: GTRS camera-only; V2-99 DD3D-init / EVA-ViT-L StreamPETR-init / ViT-L DepthAnything; rotation sensor augmentation | GTRS: super-dense vocabulary with dropout + sensor aug; navhard (NAVSIM v2) only, no navtest NC/DAC; no oracle-selection study",
    "cited_by": [
     "TanitAD Research Lab/2026-10-17-LAB-RUN-018.md",
+    "TanitAD Research Lab/2026-10-18-LAB-RUN-019.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-diffusiondrive-v2-analysis/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md"
    ]
@@ -14198,11 +14232,13 @@
     "drivor-analysis",
     "navsim-scorer-trade",
     "recovered-orphan",
-    "refe-rl-posttrain"
+    "refe-rl-posttrain",
+    "zero-tail"
    ],
-   "note": "navhard EPDMS source for E-BE-S1S2-1 Stage-1 fingerprint | index row lost to the pre-2026-08-23 concurrent-write race; bytes verified by sha256, row rebuilt | CLOVER: closed-loop value estimation and ranking for E2E planning, NAVSIM",
+   "note": "navhard EPDMS source for E-BE-S1S2-1 Stage-1 fingerprint | index row lost to the pre-2026-08-23 concurrent-write race; bytes verified by sha256, row rebuilt | CLOVER: closed-loop value estimation and ranking for E2E planning, NAVSIM | CLOVER Tab.5: Oracle@64 PDMS 0.9933-0.9976 vs selected 0.9369-0.9448 (gap 0.050-0.056) on 12,146 navtest scenes; Tab.1 NC 99.1 DAC 99.0 PDMS 94.5",
    "cited_by": [
     "TanitAD Research Lab/2026-10-17-LAB-RUN-018.md",
+    "TanitAD Research Lab/2026-10-18-LAB-RUN-019.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-19-drivor-deep-analysis/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-10-11-refe-data-and-rl/RL_POSTTRAIN_REVIEW.md",
     "TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-15-epdms-stage1-fingerprint/RESULT.md"
@@ -14231,10 +14267,12 @@
    "banked": "2026-09-15",
    "tags": [
     "A5",
-    "recovered-orphan"
+    "recovered-orphan",
+    "zero-tail"
    ],
-   "note": "navhard EPDMS source for E-BE-S1S2-1 Stage-1 fingerprint | index row lost to the pre-2026-08-23 concurrent-write race; bytes verified by sha256, row rebuilt",
+   "note": "navhard EPDMS source for E-BE-S1S2-1 Stage-1 fingerprint | index row lost to the pre-2026-08-23 concurrent-write race; bytes verified by sha256, row rebuilt | RAP Tab.1: RAP-DiffusionDrive cam-only DAC 98.5 vs repro 94.6; Tab.6 recovery perturbation has no effect on NAVSIM v1 (92.5 vs 92.5) - gain is data scale, not recovery",
    "cited_by": [
+    "TanitAD Research Lab/2026-10-18-LAB-RUN-019.md",
     "TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-15-epdms-stage1-fingerprint/RESULT.md"
    ]
   },
@@ -14561,11 +14599,13 @@
     "drivor-analysis",
     "navsim-scorer-trade",
     "recovered-orphan",
-    "refe-sizing"
+    "refe-sizing",
+    "zero-tail"
    ],
-   "note": "DriveZero: frozen multi-VFM consolidation +0.53 PDMS over DINOv3-only (ViT-S navtest); 5.7M privileged PPO teacher distilled to vision student; navhard two-stage 57.1 EPDMS (Scale); consumes ego+nav at inference | index row lost to the pre-2026-08-23 concurrent-write race; bytes verified by sha256, row rebuilt | DriveZero (the reproduction target): Table A12 gives 18.58 M trainable / 338.46 M full, 4 cams, 64 proposals, 256-d planning, 4-layer PROPOSAL decoder, 16 registers/camera -- and NO scoring-decoder depth, head count, MLP ratio or 3D-PE form; the 3D PE cites PETR [50] and the registers cite DrivoR [34]",
+   "note": "DriveZero: frozen multi-VFM consolidation +0.53 PDMS over DINOv3-only (ViT-S navtest); 5.7M privileged PPO teacher distilled to vision student; navhard two-stage 57.1 EPDMS (Scale); consumes ego+nav at inference | index row lost to the pre-2026-08-23 concurrent-write race; bytes verified by sha256, row rebuilt | DriveZero (the reproduction target): Table A12 gives 18.58 M trainable / 338.46 M full, 4 cams, 64 proposals, 256-d planning, 4-layer PROPOSAL decoder, 16 registers/camera -- and NO scoring-decoder depth, head count, MLP ratio or 3D-PE form; the 3D PE cites PETR [50] and the registers cite DrivoR [34] | DriveZero Tab.7 (ViT-S navtrain): human-trajectory supervision already DAC 98.95; DriveRL trajectories 98.81; goal aug 99.14 - teacher is not the DAC source; Tab.4 student NC 99.0-99.2 DAC 99.2-99.4",
    "cited_by": [
     "TanitAD Research Lab/2026-10-17-LAB-RUN-018.md",
+    "TanitAD Research Lab/2026-10-18-LAB-RUN-019.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-19-drivor-deep-analysis/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/MODULE_SIZING_STUDY.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/SPEC_AUX_DRIVABLE_HEAD.md",
@@ -14951,11 +14991,13 @@
    "sha256": "373aa17d6f4cb1a411f4b1fc2fc0d2c4d6c9027ba85c915ea632b3ec27893eef",
    "banked": "2026-09-19",
    "tags": [
-    "navsim"
+    "navsim",
+    "zero-tail"
    ],
-   "note": "HAD: NAVSIM v2 navtest single-stage EPDMS row cited (INHERITED 88.6) on LEADERBOARD 9.1 - banked to re-read it and its EPDMS implementation side",
+   "note": "HAD: NAVSIM v2 navtest single-stage EPDMS row cited (INHERITED 88.6) on LEADERBOARD 9.1 - banked to re-read it and its EPDMS implementation side | HAD Tab.7 (EPDMS): metric-decoupled RL rewards DAC 96.7 to 97.3; polar trajectory expansion vs XY DAC 93.8 vs 97.3; Tab.1 v1 NC 98.2 DAC 97.3 PDMS 90.2",
    "cited_by": [
-    "Benchmarks & Eval/LEADERBOARD.md"
+    "Benchmarks & Eval/LEADERBOARD.md",
+    "TanitAD Research Lab/2026-10-18-LAB-RUN-019.md"
    ]
   },
   "2606.08860": {
@@ -15164,11 +15206,13 @@
    "banked": "2026-09-20",
    "tags": [
     "navsim-scorer-trade",
-    "rl-teacher-driving"
+    "rl-teacher-driving",
+    "zero-tail"
    ],
-   "note": "ZTRS: zero-imitation E2E driving with trajectory scoring, RL on REAL images + rule-based rewards, no simulated data; 48.1 EPDMS navhard",
+   "note": "ZTRS: zero-imitation E2E driving with trajectory scoring, RL on REAL images + rule-based rewards, no simulated data; 48.1 EPDMS navhard | ZTRS Tab.4 (EPDMS): RL on enumerated rule rewards vs IL: DAC 98.7 to 99.4, NC 98.5 to 97.8, EP 88.5 to 84.1 - NC/DAC zero proxy unchanged; Tab.8 safety-only reward DAC 99.3 EP 63.3",
    "cited_by": [
     "TanitAD Research Lab/2026-10-17-LAB-RUN-018.md",
+    "TanitAD Research Lab/2026-10-18-LAB-RUN-019.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-drivezero-deep-analysis/RESULT.md"
    ]
   },
@@ -17409,11 +17453,13 @@
    "banked": "2026-10-11",
    "tags": [
     "navsim-scorer-trade",
-    "refe-rl-posttrain"
+    "refe-rl-posttrain",
+    "zero-tail"
    ],
-   "note": "DriveDPO: unified policy distillation + safety DPO on discrete candidates; 90.0 PDMS NAVSIM v1",
+   "note": "DriveDPO: unified policy distillation + safety DPO on discrete candidates; 90.0 PDMS NAVSIM v1 | DriveDPO Tab.3: rule supervision lifts DAC 91.2 (imitation only) to 97.3 but rule-only drops NC 95.3 and TTC 88.7; Tab.1 full NC 98.5 DAC 98.1 PDMS 90.0",
    "cited_by": [
     "TanitAD Research Lab/2026-10-17-LAB-RUN-018.md",
+    "TanitAD Research Lab/2026-10-18-LAB-RUN-019.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-10-11-refe-data-and-rl/RL_POSTTRAIN_REVIEW.md"
    ]
   },
@@ -18040,6 +18086,116 @@
    "note": "HUGSIM repo: MIT licence (per GitHub page); closed_loop.py with separate AD clients (UniAD_SIM, VAD_SIM, NAVSIM) on a second GPU; scenes/scenarios on HF XDimLab/HUGSIM; some scenarios private (RealADSim ICCV 2025)",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-hjepa-literature/T2_FEASIBILITY.md"
+   ]
+  },
+  "2503.11650": {
+   "key": "2503.11650",
+   "kind": "arxiv",
+   "title": "Centaur: Robust End-to-End Autonomous Driving with Test-Time Training",
+   "authors": [
+    "Chonghao Sima",
+    "Kashyap Chitta",
+    "Zhiding Yu",
+    "Shiyi Lan",
+    "Ping Luo",
+    "Andreas Geiger",
+    "Hongyang Li",
+    "Jose M. Alvarez"
+   ],
+   "published": "2025-03-14",
+   "abstract": "How can we rely on an end-to-end autonomous vehicle's complex decision-making system during deployment? One common solution is to have a ``fallback layer'' that checks the planned trajectory for rule violations and replaces it with a pre-defined safe action if necessary. Another approach involves adjusting the planner's decisions to minimize a pre-defined ``cost function'' using additional system predictions such as road layouts and detected obstacles. However, these pre-programmed rules or cost functions cannot learn and improve with new training data, often resulting in overly conservative behaviors. In this work, we propose Centaur (Cluster Entropy for Test-time trAining using Uncertainty) which updates a planner's behavior via test-time training, without relying on hand-engineered rules or cost functions. Instead, we measure and minimize the uncertainty in the planner's decisions. Fo",
+   "url": "https://arxiv.org/abs/2503.11650",
+   "path": "TanitAD Research Lab/Library/papers/2503.11650_Centaur-Robust-End-to-End-Autonomous-Driving-with-Test-Time.pdf",
+   "bytes": 9918217,
+   "sha256": "9cc18d8ae55d2c8c0d634d97b3b9a963b8b604a290fa0354e882a8ff7b313700",
+   "banked": "2026-10-18",
+   "tags": [
+    "zero-tail"
+   ],
+   "note": "Centaur Tab.1 (single seed, NAVSIM v1.0): test-time training on Cluster Entropy takes Hydra-MDP NC 98.4/DAC 97.8/TTC 93.9/PDMS 90.3 to 99.5/98.9/98.0/92.6; the fallback-layer baseline raises NC/DAC but collapses EP to 8-13; Tab.2 (3 seeds, v1.1) NC 99.23 DAC 98.72 PDMS 92.10",
+   "cited_by": [
+    "TanitAD Research Lab/2026-10-18-LAB-RUN-019.md"
+   ]
+  },
+  "2509.20109": {
+   "key": "2509.20109",
+   "kind": "arxiv",
+   "title": "Discrete Diffusion for Reflective Vision-Language-Action Models in Autonomous Driving",
+   "authors": [
+    "Pengxiang Li",
+    "Yinan Zheng",
+    "Yue Wang",
+    "Huimin Wang",
+    "Hang Zhao",
+    "Jingjing Liu",
+    "Xianyuan Zhan",
+    "Kun Zhan",
+    "Xianpeng Lang"
+   ],
+   "published": "2025-09-24",
+   "abstract": "End-to-End (E2E) solutions have emerged as a mainstream approach for autonomous driving systems, with Vision-Language-Action (VLA) models representing a new paradigm that leverages pre-trained multimodal knowledge from Vision-Language Models (VLMs) to interpret and interact with complex real-world environments. However, these methods remain constrained by the limitations of imitation learning, which struggles to inherently encode physical rules during training. Existing approaches often rely on complex rule-based post-refinement, employ reinforcement learning that remains largely limited to simulation, or utilize diffusion guidance that requires computationally expensive gradient calculations. To address these challenges, we introduce ReflectDrive, a novel learning-based framework that integrates a reflection mechanism for safe trajectory generation via discrete diffusion. We first discr",
+   "url": "https://arxiv.org/abs/2509.20109",
+   "path": "TanitAD Research Lab/Library/papers/2509.20109_Discrete-Diffusion-for-Reflective-Vision-Language-Action-Mod.pdf",
+   "bytes": 21013159,
+   "sha256": "3a4bd6b5c2c48c31c180e35fe407b80c8aac921f4e50620f7564c4e36fbf0a19",
+   "banked": "2026-10-18",
+   "tags": [
+    "zero-tail"
+   ],
+   "note": "ReflectDrive Tab.1/2: safety-guided regeneration with a NAVSIM-rule safety scorer lifts DAC 95.4 to 99.3 (PDMS 84.8 to 91.1); GT-agent oracle variant NC 99.7/DAC 99.5/PDMS 94.7; the drivable-area scorer is a map-dependent inference input (source not stated)",
+   "cited_by": [
+    "TanitAD Research Lab/2026-10-18-LAB-RUN-019.md"
+   ]
+  },
+  "2503.10434v1": {
+   "key": "2503.10434v1",
+   "kind": "local",
+   "title": "Finetuning Generative Trajectory Model with Reinforcement Learning from Human Feedback (TrajHF, arXiv v1)",
+   "authors": [],
+   "published": "",
+   "abstract": "",
+   "url": "https://arxiv.org/abs/2503.10434v1",
+   "path": "TanitAD Research Lab/Library/papers/2503.10434v1_Finetuning-Generative-Trajectory-Model-with-Reinforcement-Le.pdf",
+   "bytes": 1551103,
+   "sha256": "62f47455966d00469191d52363772fcc27566ff7daf9c6fbee8faa54bd4f0744",
+   "banked": "2026-10-18",
+   "tags": [
+    "zero-tail"
+   ],
+   "note": "TrajHF v1: headline PDMS 93.95 (Tab. 1 94.0: NC 99.3 DAC 97.5 EP 90.4 TTC 98.0) from rejection sampling over 100 candidates with an undefined rejection score; v2 (banked as 2503.10434) relabels the analogous PDMS-selector row as the upper bound (94.3) and reports 87.6 for the deployable EM selector",
+   "cited_by": [
+    "TanitAD Research Lab/2026-10-18-LAB-RUN-019.md"
+   ]
+  },
+  "2605.19771": {
+   "key": "2605.19771",
+   "kind": "arxiv",
+   "title": "Beyond Imitation: Learning Safe End-to-End Autonomous Driving from Hard Negatives",
+   "authors": [
+    "Junli Wang",
+    "Zhihua Hua",
+    "Xueyi Liu",
+    "Zebin Xing",
+    "Haochen Tian",
+    "Kun Ma",
+    "Hangjun Ye",
+    "Guang Chen",
+    "Long Chen",
+    "Qichao Zhang"
+   ],
+   "published": "2026-05-19",
+   "abstract": "Existing imitation learning methods for end-to-end autonomous driving predominantly learn from successful demonstrations by minimizing geometric deviations from expert trajectories. This paradigm implicitly assumes that spatial proximity implies behavioral safety, leading to a critical objective mismatch: trajectories with nearly identical imitation losses may exhibit drastically different safety outcomes, where one remains recoverable while the other results in collision. To address this limitation, we propose BeyondDrive, a failure-aware imitation learning framework that jointly learns from successful and failed driving behaviors. First, we introduce a flow matching-based negative trajectory generator that synthesizes safety-critical yet expert-proximate trajectories, enabling explicit modeling of safety asymmetry. Second, we develop a diversity-aware sampling strategy that mitigates m",
+   "url": "https://arxiv.org/abs/2605.19771",
+   "path": "TanitAD Research Lab/Library/papers/2605.19771_Beyond-Imitation-Learning-Safe-End-to-End-Autonomous-Driving.pdf",
+   "bytes": 10758772,
+   "sha256": "d6b1442bb6678f0aed986fb525772c4e85d6a9db9061a7bb0190b904300f3c94",
+   "banked": "2026-10-18",
+   "tags": [
+    "zero-tail"
+   ],
+   "note": "BeyondDrive Tab.4: expert-proximate safety-critical hard negatives + Repulsive Distance Loss raise DAC 97.0 to 97.9 on LTF* and 96.2 to 97.4 on DiffusionDrive (PDMS +1.0/+1.1, single runs); LTF recipe tuning alone moved DAC 92.8 to 97.0",
+   "cited_by": [
+    "TanitAD Research Lab/2026-10-18-LAB-RUN-019.md"
    ]
   }
  }

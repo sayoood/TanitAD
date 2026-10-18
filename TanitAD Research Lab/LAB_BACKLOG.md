@@ -776,3 +776,19 @@ parked behind `Project Steering/PLAN_REFCV8.md` §8 decision 9.
 | **proposed** | **7 rows LR18-1 … LR18-7**, none self-ranked; LR18-1/-2/-3/-5/-6/-7 are 0 GPU, LR18-4 is CPU unit proofs |
 | **re-priced, not consumed** | **DZ-3**, **DZ-1**, **P6 3-C twin bank**, **SAFEOBJ** (literature ranking only; prereg untouched) |
 | **debts opened** | none |
+| **LR19-1** | Arch | ⭐⭐ **Zero-token overlap across arms (0 GPU, CSV only):** Jaccard of the zeroed-token sets of u400 (529), P2-s0 (509) and, if its per-token CSV exists (UNVERIFIED), P2-s1. High overlap means a shared blind spot (training-signal problem); low overlap means a seed-variance share that ensembling or checkpoint averaging could take (Hydra-MDP's mixture of encoders; Centaur's 3-seed std gives Z about 0.41 pp). Prices the ensembling option before any GPU | `2503.11650` Tab. 2; `2406.06978` Tab. 2; `D-REFE-ZEROTAIL-1/-2` | 0 GPU |
+| **LR19-2** | DataEng / Arch | ⭐⭐ **Near-twin census and hard-negative bank spec (0 GPU, then CPU label build):** count, on the existing on-policy labelled sets, pairs with lateral gap <= 0.5 m, same manoeuvre, one DAC = 0 and one DAC = 1; then specify a bank of +/-{0.15, 0.30, 0.45, 0.60} m offsets of the teacher or GT path, labelled by `label_version 3`, entering the score loss only. About 0.044 CPU-s per scene (DERIVED), under an hour on 8 workers | `2608.19085` Tab. 3; `2605.19771` Tab. 4; ZT3 (`D-REFE-ZEROTAIL-3`) | CPU |
+| **LR19-3** | Arch | ⭐⭐ **P6-HN pre-registration draft (single-lever A/B against P6, after P6 reads):** ESTIMATED reach 0.55 to 0.94 PDMS gross; both outcomes committed first (clears: stack iPad-style per-timestep targets next; does not clear: the blindness is representational, next arm is the trunk); replicate required (`H-ESTIM-SEED-1`); a G-DVB entry for the new flag so the launch gate cannot miss it | `2608.19085`; `2605.19771`; `2601.05083` Tab. 6 | needs the PI's GPU go |
+| **LR19-4** | B&E | ⭐ **Published-results ledger columns:** NC×DAC zero proxy Z with its control (u400 4.44 vs MEASURED 4.36), Oracle@K or best-of-64 gap where a paper reports one (DriveSuprim Tab. 1, CLOVER Tab. 5, TrajHF v2), tier and version stamp (Centaur Tab. 1 is v1.0; ZTRS is EPDMS); flag TrajHF v1's 93.95 as a selector-oracle-shaped headline (INFERRED), not a deployable number | `2506.06659`; `2605.15120`; `2503.10434v1`; `2503.10434` | 0 GPU |
+| **LR19-5** | Arch | ⭐ **Cheap falsifier for the scorer-in-the-loop lever:** TOAD-style CEM against the u400 scorer on the RL-val selection tier, reading zeros and the four families. Prior near 0 (confident DAC errors; TOAD gains vanish on saturated scorers); ceiling is the PROP share, 0.52 to 0.58 PDMS. Run only if a dev-box GPU-hour is free | `2606.07170` Tab. 5; `D-REFE-SELRULE-FIT` | about 1 dev-box GPU-h |
+| **LR19-6** | PI / B&E | ⭐⭐ **Map-admissibility flags for the PI, compiled, no code:** C9 (A9 reads the roadblock graph at inference while A8 was refused); whether 'no hd map as input' (2026-09-28) covers only inference inputs, leaving map-derived training labels (iPad, GoalFlow, BEV aux, hard negatives, RL rewards, P7.1) allowed; whether test-time training (Centaur) is an admissible deployment category | `2509.20109` App. C; `2503.11650`; `D-REFE-GOAL-1/-2` | 0 |
+
+### Backlog delta — 2026-10-18 (LAB-RUN-019)
+
+| motion | detail |
+|---|---|
+| **injected-served** | none (a targeted brief; the injection-lane guarantee belongs to the daily pass) |
+| **consumed** | none |
+| **proposed** | **6 rows LR19-1 … LR19-6**, none self-ranked; LR19-1/-2/-4/-6 are 0 GPU or CPU, LR19-5 about 1 dev-box GPU-h, LR19-3 needs the PI's GPU go and P6's read |
+| **re-priced, not consumed** | **P5-C margin targets** (iPad's per-timestep targets are the published form; 0.6 to 1.2 gross ESTIMATED), **P6** (literature gap 1.6 to 2.2 vs ZT3 gross 1.48), **P7.1** (label-side map use flagged, LR19-6) |
+| **debts opened** | none |
