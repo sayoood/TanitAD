@@ -629,6 +629,14 @@ class RefCV3Config:
     # carries the stamp with the channel off.
     max_speed_onehot_v6: bool = False
 
+    # --- v7F R1 EQUIVALENT (PI 2026-09-27: the max speed "must not be exceeded"); refcv8 audit 2026-10-18 ---
+    # ⛔ `speed_ceiling_filter` only CHOOSES among the fan: a row with no compliant candidate keeps its whole
+    # fan (`refcv6_selection.SpeedCeilingFilter`, `e9_rank`), so the EMITTED plan can exceed the fed ceiling.
+    # True adds a CLAMP on the emitted plan (`refcv6_selection.cap_plan_to_limit`), INFERENCE ONLY
+    # (`not self.training`: the label is the ego's own realised max, so the training plan must stay uncapped).
+    # Default False = byte-identical to every banked arm. Needs `max_speed_onehot_v6` (the ceiling channel).
+    plan_vmax_clamp: bool = False
+
     # --- refcv6 arm D: `--sampler ddim` with `--w-u0 0` (PI RULING 2026-09-11) -------------
     # ⛔ A DECLARED FIELD since 2026-09-26 (G-HYG). `_pin_refcv5_seams` set it as an AD-HOC
     # attribute, which survived only because nothing rebuilt `RefCV3Config` -- and nothing read
@@ -1121,6 +1129,17 @@ class RefCV3Model(nn.Module):
                 "A flat arm would construct them, never call them, and report "
                 "as refcv6 while running refcv5. Use --arm hier, or turn the "
                 "flags off.")
+        if getattr(cfg, "plan_vmax_clamp", False):
+            # ⛔ a clamp whose limit is +inf on every row is BUILT and INERT -- the false-provenance class
+            if not getattr(cfg, "max_speed_onehot_v6", False):
+                raise ValueError(
+                    "[refcv8] plan_vmax_clamp without max_speed_onehot_v6: the clamp's limit IS the fed 4-way "
+                    "set speed; with no channel every row's limit is +inf and the clamp is built and INERT.")
+            # ⛔ the refcv7 scorer pick REPLACES out["traj"] after E9, so it would emit an unclamped plan
+            if bool(getattr(cfg, "refcv7_select", False)):
+                raise ValueError(
+                    "[refcv8] plan_vmax_clamp with refcv7_select: the scorer's pick replaces the emitted plan "
+                    "after the E9 block where the clamp sits -- the cap would not reach the plan.")
         self.core = refc.RefCModel(cfg.core)
         if not cfg.hier:
             return
@@ -1945,6 +1964,8 @@ class RefCV3Model(nn.Module):
                                       dtype=ref.dtype)
                 v_lim = torch.full((b,), float("inf"), device=dev,
                                    dtype=torch.float32)
+            if bool(getattr(self.cfg, "plan_vmax_clamp", False)):
+                cache["plan_v_lim_ms"] = v_lim.detach()          # the E9 block clamps the EMITTED plan to it
             if ego_state is not None:
                 es = ego_state.to(ref.dtype)
                 keep = es[:, 4:5]
@@ -2632,6 +2653,20 @@ class RefCV3Model(nn.Module):
         out.update(e9_tele)
         idx = rank.argmax(dim=1)
         traj = fan[torch.arange(b, device=fan.device), idx]
+        if bool(getattr(self.cfg, "plan_vmax_clamp", False)) and not self.training:
+            # ⛔ v7F R1 EQUIVALENT. The argmax filter above CHOOSES; this CLAMPS. A row with no compliant
+            # candidate keeps its whole fan (counted in `e9_ceil_dead_frac`), so without this the emitted plan
+            # can exceed the fed ceiling there. Non-binding rows are returned bit-identical.
+            _pl = cache.get("plan_v_lim_ms")
+            if _pl is None:
+                raise ValueError("[refcv8] plan_vmax_clamp is on but the scene hook exported no limit "
+                                 "(`plan_v_lim_ms`): the clamp would silently not run.")
+            _dec = self.core.decoder
+            out["traj_precap"] = traj
+            traj, _cd = v6sel.cap_plan_to_limit(
+                traj, _pl, horizons=_dec.anchor_horizons, tick_s=_dec.anchor_dt, v0=v0,
+                brake_ms2=float(_dec.sel.accel_max))
+            out.update(_cd)
         out.update(cache)
         out.update(tele)
         out["traj_base"], out["sel_idx_base"] = out["traj"], out["sel_idx"]

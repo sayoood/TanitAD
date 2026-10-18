@@ -1340,6 +1340,14 @@ def _pin_refcv6_tactical(cfg, args) -> None:
                 "ceiling IS the fed 4-way set speed; with no channel every row's limit is "
                 "+inf and the argmax filter is built and INERT.")
         cfg.core.speed_ceiling_filter = True
+    # ⭐ v7F R1 EQUIVALENT (audit 2026-10-18; PI 2026-09-27 "must not be exceeded"): the CLAMP on the emitted
+    # plan, beside the argmax filter above. INFERENCE ONLY. Needs the ceiling channel (else every limit is +inf).
+    if bool(getattr(args, "plan_vmax_clamp", False)):
+        if not bool(getattr(args, "max_speed_input_v6", False)):
+            raise SystemExit(
+                "[v3] ⛔ --plan-vmax-clamp without --max-speed-input-v6: the clamp's limit IS the fed 4-way set "
+                "speed; with no channel every row's limit is +inf and the clamp is built and INERT.")
+        cfg.plan_vmax_clamp = True
     # ---- §5: the 4-way one-hot set-speed -------------------------------- #
     if bool(getattr(args, "max_speed_input_v6", False)):
         if args.arm != "hier":
@@ -7073,6 +7081,7 @@ def _seam_stamp(cfg, args) -> dict:
              "tau": float(getattr(core, "nav_compliance_tau_rad", 0.0))}
             if getattr(cfg, "nav_compliance_tau_file", None) else None),
         "speed_ceiling_filter": bool(getattr(core, "speed_ceiling_filter", False)),
+        "plan_vmax_clamp": bool(getattr(cfg, "plan_vmax_clamp", False)),
         # ⭐⭐ E15 (GP-2, 2026-09-06) — THE GOAL-POINT STAMP, INCLUDING THE
         # MACHINE-READABLE ADMISSIBILITY DECLARATION.
         #
@@ -12326,6 +12335,12 @@ def build_parser() -> argparse.ArgumentParser:
                      help="refcv6 §5: the fed 4-way set speed FILTERS THE ARGMAX (the S2 "
                           "pattern; the score stays unmasked). Needs --max-speed-input-v6. "
                           "⚠️ CHANGES THE ARM, and the channel is EGO-FUTURE derived.")
+    g6t.add_argument("--plan-vmax-clamp", action="store_true",
+                     help="v7F R1 equivalent (PI 2026-09-27: the max speed 'must not be exceeded'): CLAMP the "
+                          "EMITTED plan to the fed ceiling at INFERENCE (refcv6_selection.cap_plan_to_limit), "
+                          "beside --speed-ceiling-filter, which only CHOOSES among the fan and leaves a row with "
+                          "no compliant candidate uncapped. Needs --max-speed-input-v6. The TRAINING forward "
+                          "stays uncapped. Default OFF = byte-identical. CHANGES THE ARM.")
     # ---- refcv7 (PI 2026-09-19): DrivoR's proven planning heads ---------- #
     # `Project Steering/SPEC_REFCV7.md`. ⛔ A run that passes none of these is
     # BIT-IDENTICAL to refcv6 (`test_refcv7_model.py`).

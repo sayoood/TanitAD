@@ -287,7 +287,8 @@ def test_GDVB_every_trainer_flag_has_an_entry_and_every_entry_is_well_formed():
     #   (273 -> 276)
     # + v8F rung alpha, arm alpha-1: --p10-prior ("built": core.decoder.p10, the frozen P10) and --p10-prior-sha256
     #   ("elsewhere": checked with it, `_c_p10_prior`) (276 -> 278)
-    assert len(dvb.REGISTRY) == 278
+    # + v7F R1 equivalent (audit 2026-10-18): --plan-vmax-clamp ("built": model.cfg.plan_vmax_clamp) (278 -> 279)
+    assert len(dvb.REGISTRY) == 279
     assert dvb.REGISTRY["r8_speed_enc8"].kind == "built"
     assert dvb.REGISTRY["r8_alloc_emit_start"].kind == "built"
     assert dvb.REGISTRY["w_r8_v9_cons"].kind == "loss"

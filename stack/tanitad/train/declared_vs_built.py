@@ -911,6 +911,11 @@ register("max_speed_mode", "elsewhere", reason=(
     "refused as INERT without --max-speed-input (`_pin_trainer_cfg`); the conditioner carries it"))
 _b("max_speed_input_v6", _c_mod("max_speed_input_v6", "max_speed_1h_v6",
                                 lambda a: bool(_a(a, "max_speed_input_v6", False))))
+# v7F R1 equivalent (audit 2026-10-18): argv --plan-vmax-clamp == the BUILT model's cfg.plan_vmax_clamp
+_b("plan_vmax_clamp", _c_attr("plan_vmax_clamp", "plan_vmax_clamp",
+                              lambda a: bool(_a(a, "plan_vmax_clamp", False)),
+                              owner=lambda m: m.cfg,
+                              where="model.cfg.plan_vmax_clamp (the E9 block clamps the emitted plan)"))
 _b("goal_point_inject", _c_goal_point)
 register("goal_point_geo_prior", "elsewhere", reason="checked with --goal-point-inject (G-DVB)")
 register("goal_point_t", "elsewhere", reason="checked with --goal-point-inject (G-DVB)")
