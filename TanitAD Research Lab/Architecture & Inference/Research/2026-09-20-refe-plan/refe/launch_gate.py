@@ -116,7 +116,7 @@ AUXS1_ARM_SEED = {f"{c}-s{k}": k for c in ("N", "H1", "H2") for k in AUXS1_SEEDS
 AUXS1_HEAD_REGISTERED = {"w_aux_drv": 0.1, "aux_drv_lr": 2e-4, "aux_drv_tap": "visual", "aux_drv_depth": 2}      # effective value (named OR default), head arms
 # the optimiser and loss of EVERY arm (N included), inherited from the SFT-4 run that produced u400 (refe/sft4_pod.sh COMMON); --max-updates 400 is the S1 budget
 AUXS1_RECIPE = {"lr": 1e-4, "warmup": 50, "batch": 8, "accum": 8, "max_updates": 400, "eval_every": 400, "b_mode": "expreward", "lam": 1.0, "tau_s": 0.1, "lane_weight": 1.0}
-AUXS1_EPO_FLAGS = ("--epo", "--epo-temp", "--epo-beta", "--epo-ramp", "--epo-lam", "--epo-lam-d", "--epo-w-prog", "--epo-k", "--epo-lam-k", "--epo-l", "--epo-lam-l", "--epo-con", "--epo-con-eps", "--epo-con-lr", "--epo-con-max", "--epo-con-lam0",
+AUXS1_EPO_FLAGS = ("--epo", "--epo-temp", "--epo-beta", "--epo-ramp", "--epo-lam", "--epo-lam-d", "--epo-w-prog", "--epo-k", "--epo-lam-k", "--epo-l", "--epo-lam-l", "--epo-con", "--epo-con-eps", "--epo-con-lr", "--epo-con-max", "--epo-con-lam0", "--epo-con-temp",          # --epo-con-temp: PICKCON (the constraint's own T); a non-EPO arm never carries it
                    "--epo-terms-train", "--epo-terms-heldout", "--epo-ref")
 # --aux-drv-shuffle-seed is the label-shuffled CONTROL's lever: a non-control arm never carries it (a dated prereg amendment adds the control arm and relaxes this)
 AUXS1_FORBIDDEN = ("--preflight", "--lane-labels-train", "--b-compw", "--tau-t", "--aux-drv-shuffle-seed") + AUXS1_EPO_FLAGS
@@ -485,10 +485,11 @@ def rls1_refusals(prof: dict, argv: list, mod, parser) -> tuple:
         if cls == "R2":
             reg.update(RLS1_R2_REGISTERED)
         reg = {"epo_con": "off", **reg, **prof.get("arm_epo_registered", {}).get(declared, {})}          # SAFEOBJ: every profile registers --epo-con off unless its arm table says otherwise
+        reg = {"epo_con_temp": reg["epo_temp"], **reg}          # PICKCON: ... and a constraint T equal to the registered --epo-temp (= the inherited default) unless the arm table registers another, which that arm must then NAME (arm_must_name)
         for dest, want in reg.items():
             f = "--" + dest.replace("_", "-")
-            if not C._close(getattr(ns, dest), want):
-                out.append(f"{name} requires {f} {want} (PREREG_RL_S1 lever); the argv resolves to {getattr(ns, dest)} ({how(f)})")
+            if not C._close(C.scorer_effective(ns, dest), want):
+                out.append(f"{name} requires {f} {want} (PREREG_RL_S1 lever); the argv resolves to {C.scorer_effective(ns, dest)} ({how(f)})")
     for dest, want in RLS1_RECIPE.items():
         f = "--" + dest.replace("_", "-")
         if not C._close(getattr(ns, dest), want):

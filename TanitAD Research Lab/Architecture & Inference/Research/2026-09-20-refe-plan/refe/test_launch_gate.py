@@ -916,7 +916,7 @@ def rls1_static() -> None:
     P0 = {**P, "declared_arm": "R0"}
     pf_ok = C.load_scorer_preflight(rls1_write(Path(tempfile.mkdtemp()) / "preflight.jsonl", rls1_pf_rows(r0)))
     ev = C.check_dvb_scorer(r0, pf_ok, P0)
-    ok(ev["status"] == "PASS" and ev["details"]["observed_rows"] == 23 and ev["details"]["unknown_flags"] == [] and ev["details"]["stale_registry"] == [], ev["reasons"])      # 14 -> 15: R0c's epo.ref row; 15 -> 23: SAFEOBJ's eight epo_con rows
+    ok(ev["status"] == "PASS" and ev["details"]["observed_rows"] == 24 and ev["details"]["unknown_flags"] == [] and ev["details"]["stale_registry"] == [], ev["reasons"])      # 14 -> 15: R0c's epo.ref row; 15 -> 23: SAFEOBJ's eight epo_con rows; 23 -> 24: PICKCON's epo_con_temp row
     ok(sum(ev["details"]["kinds"].values()) == len(C.DVB_KINDS_SCORER) == len(sdests))
     ok(C.check_dvb_scorer(c0, C.load_scorer_preflight(rls1_write(Path(tempfile.mkdtemp()) / "p.jsonl", rls1_pf_rows(c0))), P)["status"] == "PASS")
     for arm, frag in (("unknown_flag", "NO declared-vs-built entry"), ("stale_registry", "no longer has"), ("dead_lever", "never read by the trainer"),
@@ -946,7 +946,7 @@ def rls1_static() -> None:
         red(argv_ + CON, "requires --epo-con off", arm_, {**L.PROFILES[nm_], "declared_arm": arm_})
         ok(refs(argv_ + ["--epo-con", "off"], arm_, {**L.PROFILES[nm_], "declared_arm": arm_}) == [], nm_)         # ... and still accepts the switch NAMED off
     ok([e["script"] for e in Pd["suite"]][-1] == "test_rl_safeobj.py" and Pd["suite"][:-1] == L.PROFILES["refe_rls1c"]["suite"])                  # M8: the suite carries the new test
-    ok(all(C.DVB_KINDS_SCORER.get(k) == "built" for k in ("epo_con", "epo_con_eps", "epo_con_lr", "epo_con_max", "epo_con_lam0")))               # M7: the five flags are classified
+    ok(all(C.DVB_KINDS_SCORER.get(k) == "built" for k in ("epo_con", "epo_con_eps", "epo_con_lr", "epo_con_max", "epo_con_lam0", "epo_con_temp")))               # M7: the five flags (+ PICKCON's epo_con_temp) are classified
 
     def bp_new():                                                                                           # a REAL new flag on the parser, no arm: the gate itself refuses
         a_ = orig_bp()

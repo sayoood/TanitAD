@@ -1,0 +1,132 @@
+--- a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/scorer_finetune.py
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/scorer_finetune.py
+@@ -39,4 +39,9 @@
+   --epo-con-eps / --epo-con-lr (eta) / --epo-con-max (lambda_max) / --epo-con-lam0 (lambda_0): the slack, the dual step, the cap and the start (registered 0 / 4 / 10 / 0; they enable nothing:
+                   only `--epo-con g5` does).  The profile (refe_rls1d) requires all five NAMED on R0d / R1d and `--epo-con off` NAMED on R1o.  The preflight adds gate G13.
++  --epo-con-temp  PICKCON (raw/2026-10-18-so-pickcon/): the temperature T of the CONSTRAINT's selection softmax, separate from --epo-temp (the EPO reward term's).  The default None = the constraint
++                  INHERITS --epo-temp, so every arm before PICKCON (R0d / R1d / R1o) runs with the same T it always had, bit for bit.  NOTE: that default is a SILENT reproduction of R0d: an arm that tests
++                  another T must NAME `--epo-con-temp <T>` in its argv (the profile's `arm_must_name` + `arm_epo_registered` enforce it).  SO-CARVE A1/A2 measured that E_pi[TTC] at T = 0.1 understates
++                  the PICK's TTC loss 1.4-4.5x on RL-val, while T ~ 0.02 tracks it.  Needs --epo and --epo-con g5, must be a finite number > 0; G-DVB compares it with the data event's epo_con.temp
++                  (= EpoDual.temp, the object train_losses reads) and G13's `temp_reach` proves the loss moves when that object's T moves.
+   --dump-scores DIR  OBSERVATIONAL, default off: after every held-out evaluation write the base / A / B scorers' per-proposal logits of every held-out set as
+                   DIR/scores_<tag>_<arm>.npz -- the input of eval/rl_val_eval.py (log, token, step, rank, ckpt_step, scores [N, M, C], space="logit").
+@@ -226,5 +231,6 @@
+ EPO_CON_MODES = ("off", "g5")
+ EPO_CON_DEFAULT = "off"            # = every arm before SAFEOBJ, bit for bit; R0d / R1d / R1o NAME the flag (a default that reproduces R0 must not carry the experiment)
+-EPO_CON_DESTS = ("epo_con", "epo_con_eps", "epo_con_lr", "epo_con_max", "epo_con_lam0")
++EPO_CON_DESTS = ("epo_con", "epo_con_eps", "epo_con_lr", "epo_con_max", "epo_con_lam0", "epo_con_temp")
++EPO_CON_TEMP_DEFAULT = None        # PICKCON: None = the constraint INHERITS --epo-temp (= every arm before PICKCON, bit for bit); an arm that tests another T NAMES --epo-con-temp (a default must not carry the experiment)
+ EPO_CON_TERMS = {"g5": ("ttc", "nc")}          # mode -> the PDM sub-scores constrained: g5 = "TTC and NC may not fall by > 0.5 versus control" (rl_val_eval.py g5)
+ EPO_CON_MUTATE_ENVS = ("REFE_RL_MUTATE_CON_DETACH", "REFE_RL_MUTATE_CON_ATTACH_A")      # deliberate regressions: each must turn G13 RED
+@@ -256,5 +262,5 @@
+ def epo_con_term(sxB, sxA, tg, rule_fn, T, eps, lam, parts=None):
+     """L_con = sum_k lam[k] * (c^k_A - eps - c^k_B)  (SPEC_SAFEOBJ 1.2), float32.  sxB / sxA [b, M, C] = arm B's / arm A's logits of the SAME micro-batch (sxA is detached HERE, by
+-    epo_con_reference, which is the one guard G13 reads); tg [b, M, >= 6] the PDM labels in rl_reward.COMPONENTS order; rule_fn = the base's selection rule (main's sel_score); T = --epo-temp.
++    epo_con_reference, which is the one guard G13 reads); tg [b, M, >= 6] the PDM labels in rl_reward.COMPONENTS order; rule_fn = the base's selection rule (main's sel_score); T = the CONSTRAINT's temperature (EpoDual.temp = --epo-con-temp, else --epo-temp; PICKCON).
+     c^k_X = mean over sets of sum_i pi^X_i y^k_i with pi^X = epo_policy(sxX) -- the very policy of the EPO term.  lam = {component: float} (constant within one optimiser update).
+     `parts`, if given, receives the batch's detached floats: con (the term), and per component g_ / cA_ / cB_ (the violation and the two outcomes), hinge_ (the share of sets whose own
+@@ -293,6 +299,7 @@
+     u's step; `step` runs once per optimiser update, after o.step() and before `upd += 1`."""
+ 
+-    def __init__(self, comps, eps, lr, lam_max, lam0):
++    def __init__(self, comps, eps, lr, lam_max, lam0, temp=None):
+         self.comps, self.eps, self.lr, self.lam_max, self.lam0 = tuple(comps), float(eps), float(lr), float(lam_max), float(lam0)
++        self.temp = None if temp is None else float(temp)          # PICKCON: the T of the constraint's softmax -- the value train_losses passes to epo_con_term.  None = not set (main always sets it; a None that reaches the loss raises)
+         self.reset()
+ 
+@@ -330,5 +337,5 @@
+         """BUILT facts for G-DVB (the data event's `epo_con` block): read off this object and the selectors that run, never echoed from the namespace."""
+         return {"mode": self.built_mode(), "comps": list(self.comps), "cols": list(epo_con_cols(self.comps)), "eps": self.eps, "lr": self.lr, "max": self.lam_max,
+-                "lam0": self.lam0, "ref": epo_con_reference_built()}
++                "lam0": self.lam0, "ref": epo_con_reference_built(), "temp": self.temp}
+ 
+     def state_dict(self):
+@@ -398,15 +405,19 @@
+     if a.epo_con_lr == 0.0 and a.epo_con_lam0 == 0.0:
+         bad.append("--epo-con g5 with --epo-con-lr 0 AND --epo-con-lam0 0 is INERT by construction (lambda is 0 at every update): a wired mechanism that can never act")
++    if a.epo_con_temp is not None and not (math.isfinite(a.epo_con_temp) and a.epo_con_temp > 0.0):
++        bad.append("--epo-con-temp must be a finite number > 0 (it is the temperature of the constraint's selection softmax)")
+     return bad
+ 
+ 
+-def g13_epo_con_live_and_identity(armA, armB, probe, dual_probe, ckpt_probe, kl_tol, names=SCORER):
++def g13_epo_con_live_and_identity(armA, armB, probe, dual_probe, ckpt_probe, kl_tol, names=SCORER, temp=None):
+     """G13 (SAFEOBJ preflight), one dict of RAW FIELDS that the launch gate re-judges (gate_checks.judge_g13): it never trusts this `ok`.
+     probe(mode) -> (the constraint term ALONE as a DIFFERENCE of two `train_losses` calls on one fresh forward -- the run's own assembly, so deleting `lB = lB + ct` there leaves it
+     identically zero --, arm A's BCE loss of that forward, the constraint's batch parts) for mode 'on' (lambda = (1, 1)), 'lam0' (lambda = (0, 0): graph live, factor 0) and 'off'
+     (the block skipped).  An L_con-ONLY backward must give a finite non-zero gradient on EVERY scorer module of arm B ('on'); the two controls must read EXACTLY 0.0 (a zero from a broken
+-    probe looks the same); arm A must read EXACTLY 0.0 from it while A's own BCE gradient (same probe) reads non-zero; at step 0 the two policies coincide (c_A == c_B, so g = -eps)."""
++    probe looks the same); arm A must read EXACTLY 0.0 from it while A's own BCE gradient (same probe) reads non-zero; at step 0 the two policies coincide (c_A == c_B, so g = -eps).
++    PICKCON `temp_reach`: the mode 'T2' is the 'on' probe with the constraint's T DOUBLED on the object the loss reads (EpoDual.temp): its L_con-only gradient must be finite, non-zero and DIFFER
++    from the 'on' read on some module (a loss that ignored the dual's T -- the hard-coded old T -- reads the SAME gradient), and arm A must still read EXACTLY 0.0.  `temp` = that object's T."""
+     reads, readsA, vals, infos, a_ctrl = {}, {}, {}, {}, None
+-    modes = ("on", "lam0", "off")
++    modes = ("on", "lam0", "off", "T2")
+     for mode in modes:
+         armA.zero_grad(set_to_none=True)
+@@ -438,5 +449,9 @@
+     dual_ok = _g13_dual_ok(dual_reach)
+     ckpt_ok = bool(ckpt.get("block_equal") and ckpt.get("restored_equal"))
+-    return {"ok": bool(all(live.values()) and zero_ok and a_zero and a_ctrl_live and ident_ok and dual_ok and ckpt_ok and not mutate), "per_module_on": reads["on"],
++    t2_on, t2_A = reads["T2"], readsA["T2"]
++    temp_reach = {"temp": temp, "temp2": (None if temp is None else 2.0 * temp), "per_module_on": dict(reads["on"]), "per_module_T2": dict(t2_on), "A_per_module_T2": dict(t2_A), "value_T2": vals["T2"],
++                  "moved": bool(any(t2_on[m] != reads["on"][m] for m in names))}
++    temp_ok = bool(temp is not None and temp > 0.0 and temp_reach["moved"] and all(math.isfinite(t2_on[m]) and t2_on[m] > 0.0 for m in names) and all(v == 0.0 for v in t2_A.values()))
++    return {"ok": bool(all(live.values()) and zero_ok and a_zero and a_ctrl_live and ident_ok and dual_ok and ckpt_ok and temp_ok and not mutate), "temp_reach": temp_reach, "per_module_on": reads["on"],
+             "per_module_lam0": reads["lam0"], "per_module_off": reads["off"], "A_per_module_on": readsA["on"], "A_per_module_lam0": readsA["lam0"], "A_per_module_off": readsA["off"],
+             "A_bce_control": a_ctrl, "live": live, "controls_exactly_zero": bool(zero_ok), "A_untouched": bool(a_zero), "A_control_reads_nonzero": bool(a_ctrl_live),
+@@ -820,4 +835,7 @@
+     ap.add_argument("--epo-con-max", type=float, default=10.0, help="SAFEOBJ: the cap lambda_max of the duals (> 0)")
+     ap.add_argument("--epo-con-lam0", type=float, default=0.0, help="SAFEOBJ: the initial dual lambda_0, the same for both terms (in [0, --epo-con-max])")
++    ap.add_argument("--epo-con-temp", type=float, default=EPO_CON_TEMP_DEFAULT,
++                    help="PICKCON: the temperature T of the CONSTRAINT's selection softmax (> 0), separate from --epo-temp.  The default None = the constraint inherits --epo-temp (every arm before PICKCON, "
++                         "bit for bit), so an arm that tests another T must NAME this flag")
+     ap.add_argument("--dump-scores", default="", help="RL-S1: DIR; after every held-out evaluation write the base / A / B scorers' per-proposal logits as "
+                     "<DIR>/scores_<tag>_<arm>.npz (eval/rl_val_eval.py's input).  Observational: no weight, loss or logged number changes.  '' = nothing is written")
+@@ -933,5 +951,6 @@
+             terms_ho, st_ho = load_rl_terms(a.epo_terms_heldout, ho.by, cfg.n_proposals, a.epo_lam_d != 0.0, a.epo_k, a.epo_l)
+     # SAFEOBJ: the constraint's dual object (--epo-con g5; `comps` () = OFF, and then nothing below it runs).  `con_last` receives the latest epo_con_term call's batch parts (as epo_last does).
+-    dual = EpoDual(EPO_CON_TERMS.get(a.epo_con, ()), a.epo_con_eps, a.epo_con_lr, a.epo_con_max, a.epo_con_lam0)
++    dual = EpoDual(EPO_CON_TERMS.get(a.epo_con, ()), a.epo_con_eps, a.epo_con_lr, a.epo_con_max, a.epo_con_lam0,
++                   temp=(a.epo_temp if a.epo_con_temp is None else a.epo_con_temp))          # PICKCON: None inherits --epo-temp (the pre-PICKCON T, bit for bit); a NAMED --epo-con-temp wins
+     con_last: dict = {}
+     lv: dict = {}
+@@ -1047,5 +1066,5 @@
+             lB = lB + ep
+             if dual.active:                                  # SAFEOBJ: the constraint, arm B ONLY (arm A is its detached reference); the dual weights are Python floats
+-                ct = epo_con_term(sxB, sxA, tg, sel_score, a.epo_temp, a.epo_con_eps, dual.lam, con_last)
++                ct = epo_con_term(sxB, sxA, tg, sel_score, dual.temp, a.epo_con_eps, dual.lam, con_last)
+                 lB = lB + ct
+         return lA, lB, ln, ep
+@@ -1078,18 +1097,20 @@
+     def con_probe(batch, rows, mode):
+         """G13: the constraint term ALONE, as a DIFFERENCE of two train_losses calls on ONE fresh forward (the run's own assembly: deleting `lB = lB + ct` leaves a zero difference).  mode 'on' = the
+-        duals at (1, 1); 'lam0' = at (0, 0) (graph live, factor 0); 'off' = the block skipped.  The EPO term is built with an EXPLICIT weight 0.0 in both calls, so it cancels.
++        duals at (1, 1); 'lam0' = at (0, 0) (graph live, factor 0); 'off' = the block skipped; 'T2' = 'on' with EpoDual.temp doubled (PICKCON temp_reach).  The EPO term is built with an EXPLICIT weight 0.0 in both calls, so it cancels.
+         -> (the B-side term, arm A's BCE loss of the same forward, the constraint's batch parts)"""
+         fw_ = fwd(batch)
+         s0, sA_, sB_, tg_ = fw_
+-        keep_comps, keep_lam = dual.comps, dual.lam
++        keep_comps, keep_lam, keep_temp = dual.comps, dual.lam, dual.temp
+         try:
+             dual.comps = ()
+             ref = train_losses(s0, sA_, sB_, tg_, rows, 0, lam_pg=0.0)
+             if mode != "off":
+-                dual.comps, dual.lam = keep_comps, {c: (1.0 if mode == "on" else 0.0) for c in keep_comps}
++                dual.comps, dual.lam = keep_comps, {c: (1.0 if mode in ("on", "T2") else 0.0) for c in keep_comps}
++            if mode == "T2":                                 # PICKCON temp_reach: the SAME assembly with the constraint's T doubled on the object train_losses reads
++                dual.temp = 2.0 * keep_temp
+             con_last.clear()
+             on = train_losses(s0, sA_, sB_, tg_, rows, 0, lam_pg=0.0)
+         finally:
+-            dual.comps, dual.lam = keep_comps, keep_lam
++            dual.comps, dual.lam, dual.temp = keep_comps, keep_lam, keep_temp
+         return on[1] - ref[1], on[0], dict(con_last)
+ 
+@@ -1570,5 +1591,5 @@
+             gates["G13_epo_con_live_and_identity"] = g13_epo_con_live_and_identity(
+                 model, armB, lambda mode: con_probe(batch, prow, mode), lambda: epo_con_dual_reach(dual), lambda: epo_con_ckpt_roundtrip(dual),
+-                kl_tol=(1e-2 if (a.lane_head and not native7) else 0.0))
++                kl_tol=(1e-2 if (a.lane_head and not native7) else 0.0), temp=dual.temp)
+         if aux is not None:                                  # G12 (aux head): live + exact-zero control + identity + tap storage + Adam state
+             gates["G12_aux_drv_live_and_identity"] = g12_probe(batch, aux_lv)

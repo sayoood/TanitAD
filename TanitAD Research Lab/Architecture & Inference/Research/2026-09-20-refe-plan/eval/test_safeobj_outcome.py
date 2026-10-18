@@ -57,6 +57,8 @@ PREREG = PKGROOT / "raw" / "2026-10-17-safety-objective" / "PREREG_SAFEOBJ.md"
 ADD = PKGROOT / "raw" / "2026-10-17-safety-objective" / "PREREG_SAFEOBJ.addendum1.md"
 DOSE = PKGROOT / "raw" / "2026-10-14-rls1b-attribution" / "dose.json"
 SF_PATH = PKGROOT / "refe" / "scorer_finetune.py"
+BANKED_R0D_LOG = PKGROOT / "raw" / "2026-10-18-r0d-outcome" / "raw" / "sft.jsonl"      # the REAL R0d trainer log (a pre-PICKCON trainer: its epo_con block has no `temp` key)
+EPO_TEMP = 0.1                                                                          # --epo-temp's default = the registered constraint T (PREREG section 2); pinned against the prereg text, the trainer and the tool below
 N = TR.N
 TAGS = TR.TAGS
 TAG_UPD = {"step0": 0, "update250": 250, "update500": 500, "update750": 750, "update1000": 1000}
@@ -114,7 +116,7 @@ class World:
 # ============================================================ the trainer's log: the REAL dual, the trainer's own loop text
 def sim_log(W, total, g_ttc, g_nc=lambda u: 0.0, *, accum=2, ramp=200, last=None, nan_at=None, done=True, ramp_in_data=None):
     """-> {"data", "start", "trains": [row...], "done": row or None}.  The dual is scorer_finetune.EpoDual; the accumulation / row lines are the trainer's (scorer_finetune.main, the loop)."""
-    dual = W.sf.EpoDual(("ttc", "nc"), 0.0, 4.0, 10.0, 0.0)
+    dual = W.sf.EpoDual(("ttc", "nc"), 0.0, 4.0, 10.0, 0.0, temp=EPO_TEMP)          # PICKCON: scorer_finetune.main builds the dual with the constraint's T (--epo-con-temp, else --epo-temp); its built_facts() block carries `temp`
     con_acc, con_log, trains = {"n": 0}, {"n": 0}, []
     upd, end = 0, (total if last is None else last)
     while upd < end:
@@ -142,7 +144,7 @@ def sim_log(W, total, g_ttc, g_nc=lambda u: 0.0, *, accum=2, ramp=200, last=None
                         "con_lam_max_ttc": dual.lam_seen_max["ttc"], "con_lam_max_nc": dual.lam_seen_max["nc"]})
             con_log = {"n": 0}
             trains.append(row)
-    return {"data": {"event": "data", "train_sets": 4000, "epo": {"temp": 0.1, "ramp": ramp if ramp_in_data is None else ramp_in_data, "lam": 1.0}, "epo_con": dual.built_facts()},
+    return {"data": {"event": "data", "train_sets": 4000, "epo": {"temp": EPO_TEMP, "ramp": ramp if ramp_in_data is None else ramp_in_data, "lam": 1.0}, "epo_con": dual.built_facts()},
             "start": {"event": "start", "updates": total, "micro_per_update": accum, "batch": 8, "train_sets": 4000},
             "trains": trains, "done": ({"event": "done", "updates": upd, "hours": 3.4, "epo_con": dual.state_dict()} if done else None), "dual": dual}
 
@@ -545,6 +547,11 @@ def make_mods(W: World, A: dict, root: Path):
     mod("n_log_lam0", lambda d: rewrite_rows(d, lambda r: {**r, "epo_con": {**r["epo_con"], "lam0": 0.5}} if r.get("event") == "data" else r))
     mod("n_log_eta", lambda d: rewrite_rows(d, lambda r: {**r, "epo_con": {**r["epo_con"], "lr": 2.0}} if r.get("event") == "data" else r))
     mod("n_log_ramp", lambda d: rewrite_rows(d, lambda r: {**r, "epo": {**r["epo"], "ramp": 100}} if r.get("event") == "data" else r))
+    # PICKCON: the data event's epo_con block gained `temp` (the constraint's T).  legacy_block = the shape of every pre-PICKCON trainer (the banked R0d log): no `temp` key, still read.
+    # n_log_temp = SO-PICKCON's own T (0.02) in a block that is otherwise the registered one: a second lever, refused.  n_log_temp_none = a dual built without a T (main always sets it).
+    mod("legacy_block", lambda d: rewrite_rows(d, lambda r: {**r, "epo_con": {k: v for k, v in r["epo_con"].items() if k != "temp"}} if r.get("event") == "data" else r))
+    mod("n_log_temp", lambda d: rewrite_rows(d, lambda r: {**r, "epo_con": {**r["epo_con"], "temp": 0.02}} if r.get("event") == "data" else r))
+    mod("n_log_temp_none", lambda d: rewrite_rows(d, lambda r: {**r, "epo_con": {**r["epo_con"], "temp": None}} if r.get("event") == "data" else r))
     mod("n_log_gap", lambda d: _drop_rows(d, lambda r: r.get("event") == "train" and r["update"] == 100))
     mod("n_log_done", lambda d: rewrite_rows(d, lambda r: {**r, "epo_con": {**r["epo_con"], "pos_updates": r["epo_con"]["pos_updates"] + 1}} if r.get("event") == "done" else r))
     mod("n_log_cap_inconsistent", lambda d: rewrite_rows(d, lambda r: {**r, "con_cap_hits": 3} if (r.get("event") == "train" and r["update"] >= 500) else r))
@@ -789,6 +796,8 @@ notread("n_log_cols", "log", "lacks finite")
 notread("n_log_lam0", "log", "not the registered")
 notread("n_log_eta", "log", "not the registered")
 notread("n_log_ramp", "log", "--epo-ramp")
+notread("n_log_temp", "log", "not the registered")
+notread("n_log_temp_none", "log", "not the registered")
 notread("n_log_gap", "log", "contiguous")
 notread("n_log_done", "log", "`done` event")
 notread("n_k4_replay_unfinished", None, "run's end is unknown")                                                       # fail closed: a replay kill beside a log that just stops is not an O7 until the end of the run is known
@@ -822,6 +831,24 @@ def _(T, W, A, root, tag):
 def _(T, W, A, root, tag):
     r = chk_read(T, A["n_log_half_line"])
     return r["outcome"] == "O1" and any("half-written" in n for n in r["log"]["notes"])
+
+
+@check("tolerated:a_legacy_data_block_without_temp_is_read_exactly_as_before_PICKCON")
+def _(T, W, A, root, tag):
+    first = next(json.loads(ln) for ln in (A["legacy_block"] / "sft.jsonl").read_text(encoding="utf-8").splitlines() if '"event": "data"' in ln)
+    assert "temp" not in first["epo_con"] and set(first["epo_con"]) == set(T.REGISTERED_EPO_CON), first["epo_con"]          # the fixture IS the legacy shape
+    r, ref = chk_read(T, A["legacy_block"]), chk_read(T, A["o1"])
+    return r["outcome"] == ref["outcome"] == "O1" and r["log"]["readable"] is True and r["log"]["problems"] == []
+
+
+@check("compat:the_banked_R0d_trainer_log_has_the_legacy_epo_con_block_and_is_read")
+def _(T, W, A, root, tag):
+    if not BANKED_R0D_LOG.exists():                                      # a package shipped without raw/ (a pod): the synthetic legacy arm above still runs
+        return True
+    data = next(json.loads(ln) for ln in BANKED_R0D_LOG.read_text(encoding="utf-8").splitlines() if '"event": "data"' in ln)
+    assert "temp" not in data["epo_con"] and data["epo_con"] == T.REGISTERED_EPO_CON, data["epo_con"]                     # REAL producer: the pre-PICKCON trainer's block IS the registered eight-key block
+    lg = T.read_log(str(BANKED_R0D_LOG), None, T.Ctx())
+    return lg["readable"] is True and lg["problems"] == []
 
 
 @check("pending:an_unfinished_arm_is_PENDING_and_never_an_outcome")
@@ -1320,9 +1347,11 @@ def _(T, W, A, root, tag):
     lam0 = float(_one(r"\| λ0 \| \*\*(\d+\.\d+)\*\*", txt))
     reg = T.REGISTERED_EPO_CON
     assert (reg["eps"], reg["lr"], reg["max"], reg["lam0"]) == (eps, eta, lmax, lam0) and T.LAM_MAX == lmax
-    assert W.sf.EpoDual(("ttc", "nc"), eps, eta, lmax, lam0).built_facts() == reg                                       # the REAL dual's BUILT facts are the registered ones
+    assert W.sf.EpoDual(("ttc", "nc"), eps, eta, lmax, lam0, temp=T.REGISTERED_CON_TEMP).built_facts() == {**reg, "temp": T.REGISTERED_CON_TEMP}      # the REAL dual's BUILT facts are the registered ones (+ PICKCON's `temp`)
     src = SF_PATH.read_text(encoding="utf-8")
     assert int(_one(r'"--epo-ramp", type=int, default=(\d+)', src)) == T.REGISTERED_RAMP
+    t_prereg = float(_one(r"`epo_policy` at T = (\d+\.\d+)", txt))                                                       # PICKCON: the registered constraint T, from the prereg text, the trainer's --epo-temp default and the test
+    assert T.REGISTERED_CON_TEMP == EPO_TEMP == t_prereg == float(_one(r'"--epo-temp", type=float, default=(\d+\.\d+)', src))
     arms = PKGROOT / "eval" / "rls1d_arms.json"
     if arms.exists():
         assert "--epo-ramp" not in arms.read_text(encoding="utf-8")                                                      # the registered argv does not name it: the BUILT ramp is the default
@@ -1430,6 +1459,13 @@ def _(T, W, A, root, tag):
     assert n["lam_seen_max_ttc_last"]["value"] >= 0.5
     assert any("ramp end" in x for x in lg["notes"]) and lg["lam_pos_share_ok"] is None                               # no train row AT update 2: the share is unreadable, said so
     return True
+
+
+@check("real_main:the_real_trainers_epo_con_block_carries_temp_equal_to_the_registered_T_and_to_epo_temp")
+def _(T, W, A, root, tag):
+    res, p = real_run(W, root)
+    d = next(json.loads(ln) for ln in p.read_text(encoding="utf-8").splitlines() if '"event": "data"' in ln)
+    return d["epo_con"].get("temp") == T.REGISTERED_CON_TEMP == d["epo"]["temp"] and {k for k in d["epo_con"] if k != "temp"} == set(T.REGISTERED_EPO_CON)       # --epo-con-temp unset: the constraint inherits --epo-temp
 
 
 @check("real_main:the_real_run_is_refused_under_the_registered_values")
@@ -1601,7 +1637,14 @@ MUTATIONS = [
        {"outcome:o3_last_step_nc->O3"}),
     MU("a MISSING log column is read as zero", "miss = [k for k in CON_COLS if not _num(r.get(k))]", "miss = [r.setdefault(k, 0.0) for k in CON_COLS if k not in r] and []", {"notread:n_log_cols"}),
     MU("the BUILT dual is not compared with the registered one", 'if data.get("epo_con") != registered:', "if False:", {"notread:n_log_lam0", "notread:n_log_eta", "real_main:the_real_run_is_refused_under_the_registered_values"}),
-    MU("the BUILT ramp is not compared with the registered one", "if ramp != registered_ramp or isinstance(ramp, bool):", "if False:", {"notread:n_log_ramp", "real_main:the_real_run_is_refused_under_the_registered_values"}),
+    # PICKCON: the data event's epo_con block carries `temp`; a legacy block (no key) and a block at the registered T read as the registered block, any other T is refused
+    MU("the constraint's registered T is not enforced (any numeric temp passes)", 'if isinstance(t, (int, float)) and not isinstance(t, bool) and t == REGISTERED_CON_TEMP:',
+       'if isinstance(t, (int, float)) and not isinstance(t, bool):', {"notread:n_log_temp"}),
+    MU("a legacy block (no temp) is refused", "    return blk          # PICKCON-LEGACY", "    return None          # PICKCON-LEGACY",
+       {"tolerated:a_legacy_data_block_without_temp_is_read_exactly_as_before_PICKCON", "compat:the_banked_R0d_trainer_log_has_the_legacy_epo_con_block_and_is_read"}),
+    MU("a block at the registered T is not read as the registered block (temp never stripped)", 'return {k: v for k, v in blk.items() if k != "temp"}', "return blk",
+       {"outcome:o1->O1", "real_main:read_log_reads_the_real_trainers_data_train_and_done_rows"}),
+    MU("the BUILT ramp is not compared with the registered one","if ramp != registered_ramp or isinstance(ramp, bool):", "if False:", {"notread:n_log_ramp", "real_main:the_real_run_is_refused_under_the_registered_values"}),
     MU("the train rows need not be contiguous", "if ups != list(range(LOG_EVERY, LOG_EVERY * len(trains) + 1, LOG_EVERY)):", "if False:", {"notread:n_log_gap"}),
     MU("the cumulative columns may decrease", "                if b[k] < a[k]:", "                if False:", {"notread:n_log_decreasing"}),
     MU("cap_hits and lam_seen_max may disagree", 'if (r["con_cap_hits"] > 0) != (r["con_lam_max_ttc"] >= lam_max_cfg or r["con_lam_max_nc"] >= lam_max_cfg):', "if False:", {"notread:n_log_cap_inconsistent"}),

@@ -78,10 +78,144 @@ SAFEOBJ_REVERSALS = {
 
 
 def undo_safeobj(name: str, text: str) -> str:
+    text = undo_pickcon(name, text)                                      # PICKCON is the OUTERMOST layer: its one edit inside a pinned segment goes first
     for new, old in SAFEOBJ_REVERSALS.get(name, ()):
         assert text.count(new) == 1, f"SAFEOBJ edit of {name} not found exactly once"
         text = text.replace(new, old)
     return text
+
+
+# PICKCON (raw/2026-10-18-so-pickcon): the constraint gets its OWN softmax temperature (--epo-con-temp).  The ONE edit inside a pinned segment is the temperature argument of the epo_con_term call
+# in main.train_losses (`a.epo_temp` -> `dual.temp`).  The pins above are STILL R0's bytes: undo_safeobj reverses PICKCON FIRST, then SAFEOBJ's block, and undo_r0c follows.
+# refe/test_rl_pickcon.py proves the edits are the whole diff of the trainer (the reversed FILE is the 0a5958a / e2d4422 blob, E2D4422_TRAINER_BLOB) and that the default is bit-identical.
+PICKCON_REVERSALS = {
+    "main.train_losses": (("ct = epo_con_term(sxB, sxA, tg, sel_score, dual.temp, a.epo_con_eps, dual.lam, con_last)", "ct = epo_con_term(sxB, sxA, tg, sel_score, a.epo_temp, a.epo_con_eps, dual.lam, con_last)"),),
+}
+
+
+def undo_pickcon(name: str, text: str) -> str:
+    for new, old in PICKCON_REVERSALS.get(name, ()):
+        assert text.count(new) == 1, f"PICKCON edit of {name} not found exactly once"
+        text = text.replace(new, old)
+    return text
+
+
+def redo_pickcon(name: str, text: str) -> str:
+    """the forward direction (a registered SAFEOBJ snippet, written against the pre-PICKCON trainer, re-spelled as the PICKCON trainer carries it)"""
+    for new, old in PICKCON_REVERSALS.get(name, ()):
+        text = text.replace(old, new)
+    return text
+
+
+E2D4422_TRAINER_BLOB = "e063928807b7e0df79b1c1ddfe192596ca1ff601"          # refe/scorer_finetune.py at the 0a5958a tip (landed by e2d4422, the SAFEOBJ build) = the trainer BEFORE PICKCON
+# <<<GEN PICKCON_FILE_REVERSALS
+PICKCON_FILE_REVERSALS = (('                  only `--epo-con g5` does).  The profile (refe_rls1d) requires all five NAMED on R0d / R1d and `--epo-con off` NAMED on R1o.  The preflight adds gate G13.\n'
+  "  --epo-con-temp  PICKCON (raw/2026-10-18-so-pickcon/): the temperature T of the CONSTRAINT's selection softmax, separate from --epo-temp (the EPO reward term's).  The default None = "
+  'the constraint\n'
+  '                  INHERITS --epo-temp, so every arm before PICKCON (R0d / R1d / R1o) runs with the same T it always had, bit for bit.  NOTE: that default is a SILENT reproduction of '
+  'R0d: an arm that tests\n'
+  "                  another T must NAME `--epo-con-temp <T>` in its argv (the profile's `arm_must_name` + `arm_epo_registered` enforce it).  SO-CARVE A1/A2 measured that E_pi[TTC] at T = "
+  '0.1 understates\n'
+  "                  the PICK's TTC loss 1.4-4.5x on RL-val, while T ~ 0.02 tracks it.  Needs --epo and --epo-con g5, must be a finite number > 0; G-DVB compares it with the data event's "
+  'epo_con.temp\n'
+  "                  (= EpoDual.temp, the object train_losses reads) and G13's `temp_reach` proves the loss moves when that object's T moves.\n",
+  '                  only `--epo-con g5` does).  The profile (refe_rls1d) requires all five NAMED on R0d / R1d and `--epo-con off` NAMED on R1o.  The preflight adds gate G13.\n'),
+ ('EPO_CON_DEFAULT = "off"            # = every arm before SAFEOBJ, bit for bit; R0d / R1d / R1o NAME the flag (a default that reproduces R0 must not carry the experiment)\n'
+  'EPO_CON_DESTS = ("epo_con", "epo_con_eps", "epo_con_lr", "epo_con_max", "epo_con_lam0", "epo_con_temp")\n'
+  'EPO_CON_TEMP_DEFAULT = None        # PICKCON: None = the constraint INHERITS --epo-temp (= every arm before PICKCON, bit for bit); an arm that tests another T NAMES --epo-con-temp (a '
+  'default must not carry the experiment)\n',
+  'EPO_CON_DEFAULT = "off"            # = every arm before SAFEOBJ, bit for bit; R0d / R1d / R1o NAME the flag (a default that reproduces R0 must not carry the experiment)\n'
+  'EPO_CON_DESTS = ("epo_con", "epo_con_eps", "epo_con_lr", "epo_con_max", "epo_con_lam0")\n'),
+ ('    """L_con = sum_k lam[k] * (c^k_A - eps - c^k_B)  (SPEC_SAFEOBJ 1.2), float32.  sxB / sxA [b, M, C] = arm B\'s / arm A\'s logits of the SAME micro-batch (sxA is detached HERE, by\n'
+  "    epo_con_reference, which is the one guard G13 reads); tg [b, M, >= 6] the PDM labels in rl_reward.COMPONENTS order; rule_fn = the base's selection rule (main's sel_score); T = the "
+  "CONSTRAINT's temperature (EpoDual.temp = --epo-con-temp, else --epo-temp; PICKCON).\n",
+  '    """L_con = sum_k lam[k] * (c^k_A - eps - c^k_B)  (SPEC_SAFEOBJ 1.2), float32.  sxB / sxA [b, M, C] = arm B\'s / arm A\'s logits of the SAME micro-batch (sxA is detached HERE, by\n'
+  "    epo_con_reference, which is the one guard G13 reads); tg [b, M, >= 6] the PDM labels in rl_reward.COMPONENTS order; rule_fn = the base's selection rule (main's sel_score); T = "
+  '--epo-temp.\n'),
+ ('\n    def __init__(self, comps, eps, lr, lam_max, lam0, temp=None):\n', '\n    def __init__(self, comps, eps, lr, lam_max, lam0):\n'),
+ ('        self.comps, self.eps, self.lr, self.lam_max, self.lam0 = tuple(comps), float(eps), float(lr), float(lam_max), float(lam0)\n'
+  "        self.temp = None if temp is None else float(temp)          # PICKCON: the T of the constraint's softmax -- the value train_losses passes to epo_con_term.  None = not set (main "
+  'always sets it; a None that reaches the loss raises)\n',
+  '        self.comps, self.eps, self.lr, self.lam_max, self.lam0 = tuple(comps), float(eps), float(lr), float(lam_max), float(lam0)\n'),
+ ('        return {"mode": self.built_mode(), "comps": list(self.comps), "cols": list(epo_con_cols(self.comps)), "eps": self.eps, "lr": self.lr, "max": self.lam_max,\n'
+  '                "lam0": self.lam0, "ref": epo_con_reference_built(), "temp": self.temp}\n',
+  '        return {"mode": self.built_mode(), "comps": list(self.comps), "cols": list(epo_con_cols(self.comps)), "eps": self.eps, "lr": self.lr, "max": self.lam_max,\n'
+  '                "lam0": self.lam0, "ref": epo_con_reference_built()}\n'),
+ ('        bad.append("--epo-con g5 with --epo-con-lr 0 AND --epo-con-lam0 0 is INERT by construction (lambda is 0 at every update): a wired mechanism that can never act")\n'
+  '    if a.epo_con_temp is not None and not (math.isfinite(a.epo_con_temp) and a.epo_con_temp > 0.0):\n'
+  '        bad.append("--epo-con-temp must be a finite number > 0 (it is the temperature of the constraint\'s selection softmax)")\n',
+  '        bad.append("--epo-con g5 with --epo-con-lr 0 AND --epo-con-lam0 0 is INERT by construction (lambda is 0 at every update): a wired mechanism that can never act")\n'),
+ ('\ndef g13_epo_con_live_and_identity(armA, armB, probe, dual_probe, ckpt_probe, kl_tol, names=SCORER, temp=None):\n',
+  '\ndef g13_epo_con_live_and_identity(armA, armB, probe, dual_probe, ckpt_probe, kl_tol, names=SCORER):\n'),
+ ("    (the block skipped).  An L_con-ONLY backward must give a finite non-zero gradient on EVERY scorer module of arm B ('on'); the two controls must read EXACTLY 0.0 (a zero from a "
+  'broken\n'
+  "    probe looks the same); arm A must read EXACTLY 0.0 from it while A's own BCE gradient (same probe) reads non-zero; at step 0 the two policies coincide (c_A == c_B, so g = -eps).\n"
+  "    PICKCON `temp_reach`: the mode 'T2' is the 'on' probe with the constraint's T DOUBLED on the object the loss reads (EpoDual.temp): its L_con-only gradient must be finite, non-zero "
+  'and DIFFER\n'
+  "    from the 'on' read on some module (a loss that ignored the dual's T -- the hard-coded old T -- reads the SAME gradient), and arm A must still read EXACTLY 0.0.  `temp` = that "
+  'object\'s T."""\n',
+  "    (the block skipped).  An L_con-ONLY backward must give a finite non-zero gradient on EVERY scorer module of arm B ('on'); the two controls must read EXACTLY 0.0 (a zero from a "
+  'broken\n'
+  "    probe looks the same); arm A must read EXACTLY 0.0 from it while A's own BCE gradient (same probe) reads non-zero; at step 0 the two policies coincide (c_A == c_B, so g = "
+  '-eps)."""\n'),
+ ('    reads, readsA, vals, infos, a_ctrl = {}, {}, {}, {}, None\n    modes = ("on", "lam0", "off", "T2")\n',
+  '    reads, readsA, vals, infos, a_ctrl = {}, {}, {}, {}, None\n    modes = ("on", "lam0", "off")\n'),
+ ('    ckpt_ok = bool(ckpt.get("block_equal") and ckpt.get("restored_equal"))\n'
+  '    t2_on, t2_A = reads["T2"], readsA["T2"]\n'
+  '    temp_reach = {"temp": temp, "temp2": (None if temp is None else 2.0 * temp), "per_module_on": dict(reads["on"]), "per_module_T2": dict(t2_on), "A_per_module_T2": dict(t2_A), '
+  '"value_T2": vals["T2"],\n'
+  '                  "moved": bool(any(t2_on[m] != reads["on"][m] for m in names))}\n'
+  '    temp_ok = bool(temp is not None and temp > 0.0 and temp_reach["moved"] and all(math.isfinite(t2_on[m]) and t2_on[m] > 0.0 for m in names) and all(v == 0.0 for v in t2_A.values()))\n'
+  '    return {"ok": bool(all(live.values()) and zero_ok and a_zero and a_ctrl_live and ident_ok and dual_ok and ckpt_ok and temp_ok and not mutate), "temp_reach": temp_reach, '
+  '"per_module_on": reads["on"],\n',
+  '    ckpt_ok = bool(ckpt.get("block_equal") and ckpt.get("restored_equal"))\n'
+  '    return {"ok": bool(all(live.values()) and zero_ok and a_zero and a_ctrl_live and ident_ok and dual_ok and ckpt_ok and not mutate), "per_module_on": reads["on"],\n'),
+ ('    ap.add_argument("--epo-con-lam0", type=float, default=0.0, help="SAFEOBJ: the initial dual lambda_0, the same for both terms (in [0, --epo-con-max])")\n'
+  '    ap.add_argument("--epo-con-temp", type=float, default=EPO_CON_TEMP_DEFAULT,\n'
+  '                    help="PICKCON: the temperature T of the CONSTRAINT\'s selection softmax (> 0), separate from --epo-temp.  The default None = the constraint inherits --epo-temp '
+  '(every arm before PICKCON, "\n'
+  '                         "bit for bit), so an arm that tests another T must NAME this flag")\n',
+  '    ap.add_argument("--epo-con-lam0", type=float, default=0.0, help="SAFEOBJ: the initial dual lambda_0, the same for both terms (in [0, --epo-con-max])")\n'),
+ ("    # SAFEOBJ: the constraint's dual object (--epo-con g5; `comps` () = OFF, and then nothing below it runs).  `con_last` receives the latest epo_con_term call's batch parts (as "
+  'epo_last does).\n'
+  '    dual = EpoDual(EPO_CON_TERMS.get(a.epo_con, ()), a.epo_con_eps, a.epo_con_lr, a.epo_con_max, a.epo_con_lam0,\n'
+  '                   temp=(a.epo_temp if a.epo_con_temp is None else a.epo_con_temp))          # PICKCON: None inherits --epo-temp (the pre-PICKCON T, bit for bit); a NAMED --epo-con-temp '
+  'wins\n',
+  "    # SAFEOBJ: the constraint's dual object (--epo-con g5; `comps` () = OFF, and then nothing below it runs).  `con_last` receives the latest epo_con_term call's batch parts (as "
+  'epo_last does).\n'
+  '    dual = EpoDual(EPO_CON_TERMS.get(a.epo_con, ()), a.epo_con_eps, a.epo_con_lr, a.epo_con_max, a.epo_con_lam0)\n'),
+ ('            if dual.active:                                  # SAFEOBJ: the constraint, arm B ONLY (arm A is its detached reference); the dual weights are Python floats\n'
+  '                ct = epo_con_term(sxB, sxA, tg, sel_score, dual.temp, a.epo_con_eps, dual.lam, con_last)\n',
+  '            if dual.active:                                  # SAFEOBJ: the constraint, arm B ONLY (arm A is its detached reference); the dual weights are Python floats\n'
+  '                ct = epo_con_term(sxB, sxA, tg, sel_score, a.epo_temp, a.epo_con_eps, dual.lam, con_last)\n'),
+ ('        """G13: the constraint term ALONE, as a DIFFERENCE of two train_losses calls on ONE fresh forward (the run\'s own assembly: deleting `lB = lB + ct` leaves a zero difference).  '
+  "mode 'on' = the\n"
+  "        duals at (1, 1); 'lam0' = at (0, 0) (graph live, factor 0); 'off' = the block skipped; 'T2' = 'on' with EpoDual.temp doubled (PICKCON temp_reach).  The EPO term is built with an "
+  'EXPLICIT weight 0.0 in both calls, so it cancels.\n',
+  '        """G13: the constraint term ALONE, as a DIFFERENCE of two train_losses calls on ONE fresh forward (the run\'s own assembly: deleting `lB = lB + ct` leaves a zero difference).  '
+  "mode 'on' = the\n"
+  "        duals at (1, 1); 'lam0' = at (0, 0) (graph live, factor 0); 'off' = the block skipped.  The EPO term is built with an EXPLICIT weight 0.0 in both calls, so it cancels.\n"),
+ ('        s0, sA_, sB_, tg_ = fw_\n        keep_comps, keep_lam, keep_temp = dual.comps, dual.lam, dual.temp\n',
+  '        s0, sA_, sB_, tg_ = fw_\n        keep_comps, keep_lam = dual.comps, dual.lam\n'),
+ ('            if mode != "off":\n'
+  '                dual.comps, dual.lam = keep_comps, {c: (1.0 if mode in ("on", "T2") else 0.0) for c in keep_comps}\n'
+  '            if mode == "T2":                                 # PICKCON temp_reach: the SAME assembly with the constraint\'s T doubled on the object train_losses reads\n'
+  '                dual.temp = 2.0 * keep_temp\n',
+  '            if mode != "off":\n                dual.comps, dual.lam = keep_comps, {c: (1.0 if mode == "on" else 0.0) for c in keep_comps}\n'),
+ ('        finally:\n            dual.comps, dual.lam, dual.temp = keep_comps, keep_lam, keep_temp\n', '        finally:\n            dual.comps, dual.lam = keep_comps, keep_lam\n'),
+ ('                model, armB, lambda mode: con_probe(batch, prow, mode), lambda: epo_con_dual_reach(dual), lambda: epo_con_ckpt_roundtrip(dual),\n'
+  '                kl_tol=(1e-2 if (a.lane_head and not native7) else 0.0), temp=dual.temp)\n',
+  '                model, armB, lambda mode: con_probe(batch, prow, mode), lambda: epo_con_dual_reach(dual), lambda: epo_con_ckpt_roundtrip(dual),\n'
+  '                kl_tol=(1e-2 if (a.lane_head and not native7) else 0.0))\n'))
+# >>>GEN PICKCON_FILE_REVERSALS
+
+
+def pickcon_reverse_file(src: str) -> str:
+    """the PICKCON trainer -> the 0a5958a trainer (every PICKCON edit reversed; each must occur exactly once)"""
+    for new, old in PICKCON_FILE_REVERSALS:
+        assert src.count(new) == 1, f"a PICKCON edit occurs {src.count(new)} times in the trainer (must be exactly 1): {new[:70]!r}"
+        src = src.replace(new, old)
+    return src
 
 
 R0_REWARD_GIT_BLOB = "cd5c51445ad4ce38153d72ceab0aa01226aa7372"          # refe/rl_reward.py at the R0 launch commit (and today)

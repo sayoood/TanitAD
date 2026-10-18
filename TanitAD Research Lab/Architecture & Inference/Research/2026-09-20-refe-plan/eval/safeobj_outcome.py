@@ -77,6 +77,7 @@ O4_LAM_POS_SHARE_MIN = 0.5                                                      
 LOG_EVERY = 25                                                                              # the trainer writes one `train` row per 25 updates (scorer_finetune.py: `if upd % 25 == 0`)
 LAM_MAX = 10.0                                                                              # PREREG section 2: lambda_max
 REGISTERED_EPO_CON = {"mode": "g5", "comps": ["ttc", "nc"], "cols": [3, 0], "eps": 0.0, "lr": 4.0, "max": 10.0, "lam0": 0.0, "ref": "armA_detached"}      # PREREG section 2 (the data event's BUILT facts)
+REGISTERED_CON_TEMP = 0.1                                                                   # PREREG section 2: the constraint's policy is `epo_policy` at T = 0.1 ("a second temperature would be a second lever")
 REGISTERED_RAMP = 200                                                                       # --epo-ramp default; R0's banked argv does not name it (PREREG_RL_S1 section 10: "the ramp (200 of 500 updates)")
 # addendum R2: the fixed precedence.  The stages are evaluated IN THIS ORDER and the first that matches is the outcome.
 PRECEDENCE = ("O6", "O7", "O45", "O123")
@@ -338,6 +339,18 @@ def bar_G(ba, problems, dose, ctx):
 
 
 # ============================================================ the trainer's own log: lambda trajectory, in-sample violation, cap hits
+def _registered_view(blk):
+    """PICKCON (raw/2026-10-18-so-pickcon): `EpoDual.built_facts()` gained a `temp` key -- the T the constraint's softmax RUNS at.  The registered R0d / R1d logs were written by trainers that predate it
+    (the banked R0d `sft.jsonl` carries the eight-key block), so a block WITHOUT the key is the legacy shape and is compared exactly as it always was.  A block WITH the key is compared as the registered
+    block ONLY when temp is exactly the registered T = 0.1 (PREREG section 2: a second temperature would be a second lever); any other value -- another T, None, a bool, a string -- leaves the key in,
+    the block then differs from the registered one, and the arm is refused (`not the registered`)."""
+    if isinstance(blk, dict) and "temp" in blk:
+        t = blk["temp"]
+        if isinstance(t, (int, float)) and not isinstance(t, bool) and t == REGISTERED_CON_TEMP:
+            return {k: v for k, v in blk.items() if k != "temp"}
+    return blk          # PICKCON-LEGACY: the pre-PICKCON shape (no `temp`), or a T that is not the registered one
+
+
 def read_log(path, c, ctx, registered=None, registered_ramp=REGISTERED_RAMP):
     """-> facts dict (never raises).  Facts: lam_zero (O6, through the last logged update), and, only when `c` (the update of the first breached check) is given, lam_pos_share_ok (post-ramp share
     THROUGH c), cap_hit (lambda_max reached through c) and violation_ok (the 100 logged updates ending at c); every one True / False / None (None = unreadable), with the numbers and their source."""
@@ -357,6 +370,7 @@ def read_log(path, c, ctx, registered=None, registered_ramp=REGISTERED_RAMP):
         if data is None:
             pb.append("no `data` event: the BUILT facts of the run are unknown")
             return out
+        data = dict(data, epo_con=_registered_view(data.get("epo_con")))          # PICKCON: a `temp` of exactly the registered T is the same block as the legacy one; anything else stays and is refused below
         if data.get("epo_con") != registered:
             pb.append(f"the data event's BUILT epo_con block {data.get('epo_con')!r} is not the registered {registered!r}")
         ramp = (data.get("epo") or {}).get("ramp")

@@ -23,7 +23,7 @@ argument are observed) and SMOKE (the same levers, `--steps N`: the loss terms a
   G-SUITE the listed test scripts exit 0 and print their PASS token               suite_failing_test
   G-CLOCK (P6) the realised schedule equals the registered one                    clock_wrong_epochs
   refe_rls1 (RL-S1) trains with scorer_finetune.py: G-HYG / G-DVB run on ITS parser (`check_dvb_scorer`, table `DVB_KINDS_SCORER`, arms unknown_flag, stale_registry,
-          dead_lever, unbound_data, lever_ignored); G-PREFLIGHT = launch_gate.consume_scorer_preflight (its own `--preflight` gates, parsed; fixtures in test_launch_gate)
+          dead_lever, unbound_data, lever_ignored, aux_lever_ignored, con_temp_ignored); G-PREFLIGHT = launch_gate.consume_scorer_preflight (its own `--preflight` gates, parsed; fixtures in test_launch_gate)
 
 Evidence is written to disk (`evidence_<check>.json`); the token is minted from the files, never from a return value.
 """
@@ -646,6 +646,7 @@ DVB_KINDS_SCORER = {
     "epo_ref": "built",                # R0c: the KL anchor's reference policy; observed through the data event's epo.ref = scorer_finetune.epo_reference_built (what the selector RETURNS)
     # SAFEOBJ (--epo-con g5; SPEC_SAFEOBJ 5.1): all `built` -- observed through the data event's `epo_con` block (SCORER_EPO_CON_KEYS), which EpoDual.built_facts reads off the object the run holds
     "epo_con": "built", "epo_con_eps": "built", "epo_con_lr": "built", "epo_con_max": "built", "epo_con_lam0": "built",
+    "epo_con_temp": "built",           # PICKCON: the constraint's own softmax temperature; observed through the data event's epo_con.temp = EpoDual.temp, the object train_losses passes to epo_con_term
     "backbone": "consumed", "batch": "consumed", "accum": "consumed", "lr": "consumed", "warmup": "consumed", "epochs": "consumed",
     "lam": "consumed", "tau_t": "consumed", "tau_s": "consumed", "seed": "consumed", "max_updates": "consumed", "require_pdm": "consumed",
     "lane_head": "consumed", "lane_weight": "consumed",
@@ -658,9 +659,20 @@ DVB_KINDS_SCORER = {
     "preflight": "control",
 }
 SCORER_EPO_KEYS = ("temp", "beta", "ramp", "lam", "lam_d", "w_prog", "k", "lam_k", "l", "lam_l", "ref")     # the keys of the data event's `epo` block
-SCORER_EPO_CON_KEYS = ("mode", "comps", "cols", "eps", "lr", "max", "lam0", "ref")     # the keys of the data event's `epo_con` block (SAFEOBJ; every --epo run writes it, an OFF run included)
+SCORER_EPO_CON_KEYS = ("mode", "comps", "cols", "eps", "lr", "max", "lam0", "ref", "temp")     # the keys of the data event's `epo_con` block (SAFEOBJ; every --epo run writes it, an OFF run included)
 SCORER_EPO_CON_COMPS = {"g5": ("ttc", "nc")}          # what each mode is REGISTERED to constrain (PREREG_SAFEOBJ 2): the gate's own statement, independent of the trainer's table
 SCORER_EPO_CON_DEFAULTS = {"eps": 0.0, "lr": 4.0, "max": 10.0, "lam0": 0.0}          # the registered numbers; a trainer that predates SAFEOBJ cannot have built any other
+
+
+def scorer_effective(ns, dest):
+    """The EFFECTIVE value of a scorer lever as the trainer resolves it (named OR default).  `epo_con_temp` is None by default = the constraint INHERITS --epo-temp (PICKCON); every other
+    dest is the namespace value itself.  The gate's OWN statement of the inheritance rule, independent of the trainer's (main() builds EpoDual(temp=...) from the same rule)."""
+    v = getattr(ns, dest, None)
+    if dest == "epo_con_temp" and v is None:
+        return getattr(ns, "epo_temp", None)
+    return v
+
+
 SCORER_NAMESPACE_FUNCS = ("main", "epo_refusals", "_g_probe", "aux_s1_refusals")      # scorer_finetune.py: the functions whose parameter `a` IS the argparse namespace
 SCORER_AUX_DESTS = ("w_aux_drv", "aux_drv_tap", "aux_drv_depth", "aux_drv_feed", "aux_drv_shuffle_seed", "aux_drv_lr")          # the head's levers: observed only when --aux-drv is on
 # the preflight's gates (scorer_finetune.py `gates[...]`).  There is NO G6 -- the trainer numbers 1-5 and 7-11; test_launch_gate pins this table to the source.
@@ -798,6 +810,28 @@ def judge_g13(g13, ns) -> list:
                 r.append(f"G13: a large violation did not cap lambda_{c} at lam_max {dr['lam_max']} EXACTLY: {(dr.get('cap_got') or {}).get(c)!r}")
     else:
         r.append("G13: the dual probe's raw fields are missing or malformed")
+    tr = g13.get("temp_reach")
+    want_t = scorer_effective(ns, "epo_con_temp")
+    if not isinstance(tr, dict):
+        r.append("G13: the temperature-reach probe (temp_reach) is absent: nothing proves the loss reads the T the dual holds")
+    else:
+        t, t2 = tr.get("temp"), tr.get("temp2")
+        t2_on, t2_A, t_on = (tr.get(k) or {} for k in ("per_module_T2", "A_per_module_T2", "per_module_on"))
+        if not (fin(t) and fin(want_t) and _close(t, want_t)):
+            r.append(f"G13: temp_reach probed the constraint at T {t!r}, not the argv's effective constraint temperature {want_t!r} (--epo-con-temp, else --epo-temp)")
+        if not (fin(t) and fin(t2) and t2 == 2.0 * t):
+            r.append(f"G13: temp_reach's second temperature {t2!r} is not exactly twice the first {t!r}")
+        if t_on != on:
+            r.append("G13: temp_reach's reference read is not the 'on' read the rest of G13 judged (the two probes are not the same measurement)")
+        if set(t2_on) != mods or not all(fin(x) and x > 0.0 for x in t2_on.values()):
+            r.append(f"G13: temp_reach: the L_con-only backward at the doubled temperature is not finite and non-zero on every scorer module: {t2_on}")
+        elif set(t_on) == mods and all(t2_on[m] == t_on[m] for m in mods):
+            r.append("G13: temp_reach: DOUBLING the constraint's temperature did not move the L_con gradient on ANY module -- the loss does not read the T the dual holds "
+                     "(a hard-coded or inherited T): the flag cannot reach the loss")
+        if tr.get("moved") is not (set(t2_on) == mods and set(t_on) == mods and any(t2_on[m] != t_on[m] for m in mods)):
+            r.append("G13: temp_reach's `moved` does not follow from its own raw reads")
+        if set(t2_A) != mods or any(x != 0.0 for x in t2_A.values()):
+            r.append(f"G13: temp_reach: arm A received a gradient from L_con at the doubled temperature (it must read EXACTLY 0.0 on every module): {t2_A}")
     ck = g13.get("checkpoint") or {}
     if ck.get("block_equal") is not True or ck.get("restored_equal") is not True or not {"lam", "update", "cap_hits"} <= set(ck.get("keys") or ()):
         r.append(f"G13: the EPO_CON checkpoint block does not round-trip bit-equal with lam/update/cap_hits: {ck}")
@@ -897,6 +931,12 @@ def scorer_dvb_rows(ns, data: dict, profile=None) -> list:
                 add("epo_con", [rl_reward.COMPONENTS.index(c) for c in comps], blk.get("cols"), "data event: epo_con.cols (the label columns, from rl_reward.COMPONENTS)" + why)
             elif k == "ref":
                 add("epo_con", "armA_detached", blk.get("ref"), "data event: epo_con.ref (what epo_con_reference RETURNS: arm A's logits, detached)" + why)
+            elif k == "temp":
+                # PICKCON: the T the constraint's softmax RUNS at = EpoDual.temp.  Declared = the EFFECTIVE value (named, else --epo-temp).  A legacy block (no `temp` key: every trainer before PICKCON) is read
+                # as --epo-temp -- what that trainer's train_losses passed -- but ONLY when the argv does not name the lever (a trainer that never heard of --epo-con-temp cannot have honoured it)
+                built = blk.get("temp") if "temp" in blk else (None if ns.epo_con_temp is not None else getattr(ns, "epo_temp", None))
+                add("epo_con_temp", scorer_effective(ns, "epo_con_temp"), built,
+                    "data event: epo_con.temp (EpoDual.temp: the T train_losses passes to epo_con_term; declared = --epo-con-temp, else --epo-temp)" + ("" if "temp" in blk else " (legacy block: no `temp` key, so the constraint ran at --epo-temp)"))
             else:
                 add("epo_con_" + k, getattr(ns, "epo_con_" + k), blk.get(k), f"data event: epo_con.{k}" + why)
     add("aux_drv", bool(ns.aux_drv), "aux_drv" in data, "the data event carries an `aux_drv` block iff --aux-drv")
@@ -1037,6 +1077,11 @@ def check_dvb_scorer(argv: list, pf, profile: dict, arm=None, rehearsal=False) -
             data = dict(data, b_mode=("compw" if data.get("b_mode") == "listnet" else "listnet"))
         if arm_is("aux_lever_ignored", arm) and isinstance(data.get("aux_drv"), dict):          # the trainer built the head with another weight than the argv's
             data = dict(data, aux_drv=dict(data["aux_drv"], w_aux=float(data["aux_drv"].get("w_aux", 0.0)) + 0.05))
+        if arm_is("con_temp_ignored", arm) and isinstance(data.get("epo_con"), dict):          # PICKCON: the trainer ignored --epo-con-temp (or --epo-temp): the constraint's T is not the argv's
+            _b = data["epo_con"]
+            _eff = scorer_effective(ns, "epo_con_temp")
+            _t = _b.get("temp") if _b.get("temp") is not None else _eff
+            data = dict(data, epo_con=dict(_b, temp=(2.0 * _t if _t is not None else 0.1)))
         rows = scorer_dvb_rows(ns, data, profile)
         if profile.get("schedule_reach"):
             rows = rows + scorer_schedule_rows(ns, data, arm)
