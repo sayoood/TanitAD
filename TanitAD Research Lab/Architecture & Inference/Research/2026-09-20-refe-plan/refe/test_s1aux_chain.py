@@ -792,6 +792,9 @@ def sandbox_runs(text, tmp):
     if os.name == "nt" and subprocess.run([shutil.which("bash"), "-c", "exec 200>/dev/null"], capture_output=True).returncode != 0:
         print("ZZTEST_SKIP sandbox_runs: this bash cannot open fd 200")
         return
+    if not NAVTEST.is_file():           # TEST-RED-1: a tree exported WITHOUT the repo's FlyWheels/ (or a shallow pod tree) has no navtest list; Sandbox() copies it unconditionally -> FileNotFoundError at line 733
+        print("ZZTEST_SKIP sandbox_runs: the repo's navtest list is absent on this machine (this tree has no FlyWheels/TanitAD_EvalFlyWheel/...); the sandbox copies it, so no sandbox case is run")
+        return
     sb = Sandbox(tmp, text)
     have_store = sb.store == REAL_STORE
     if not have_store:

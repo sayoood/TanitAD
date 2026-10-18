@@ -28,9 +28,15 @@ WHAT IS PROVEN HERE (the REAL main() --preflight of scorer_finetune.py, H2 argv,
 """
 from __future__ import annotations
 
+import os
 import sys
 import tempfile
 from pathlib import Path
+
+# TEST-RED-1 (2026-10-17): torch 2.7.1 -- the pod's build and this venv's -- raises its cuBLAS determinism error under STRICT `use_deterministic_algorithms(True)` unless CUBLAS_WORKSPACE_CONFIG is in the
+# environment at PROCESS START (a later in-process setdefault is too late for that build: PREREG_AUX_DRIVABLE_S1.md A6 addendum, MEASURED).  The pod gets it from s1aux_pod.sh (the PREFLIGHT command line); without it here every
+# H1 check fails (the preflight dies, G12 is never written) -- an ENVIRONMENT failure that read like a code defect.  Set BEFORE `import torch`; setdefault keeps an explicit value.
+os.environ.setdefault("CUBLAS_WORKSPACE_CONFIG", ":4096:8")
 
 import torch
 import torch.nn as nn
