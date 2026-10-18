@@ -59,7 +59,7 @@ FLAG_CHECKS = {
     "lead_train": "path", "join_train": "path", "p10": "path", "grid": "cfg:grid",
     "data_frac": "data:n_clips", "steps_mult": "run", "steps": "run", "batch": "data:batch", "seed": "run",
     "lr": "opt:lr", "wd": "opt:wd", "warmup": "opt:warmup", "device": "run", "amp": "run", "lru": "data:lru",
-    "ckpt_every": "run", "log_every": "run", "resume": "run", "no_resume": "run", "max_clips": "data:n_clips",
+    "ckpt_every": "run", "log_every": "run", "resume": "run", "no_resume": "run", "max_clips": "data:n_clips", "exclude": "data:n_excluded",
     "hist": "cfg:hist", "hmax": "cfg:hmax", "d": "cfg:d", "n_q": "cfg:n_q", "nb": "cfg:nb",
     "p_gt_start": "cfg:p_gt_start", "p_gt_end": "cfg:p_gt_end", "w_ckpt": "cfg:w_ckpt", "w_tac": "cfg:w_tac",
     "w_cons": "cfg:w_cons", "w_traj": "cfg:w_traj", "w_pen": "cfg:w_pen", "w_pen_self": "cfg:w_pen_self",
@@ -93,6 +93,9 @@ def build_parser():
     ap.add_argument("--grid", choices=("pool4x10", "pool8x20"), default="pool4x10")
     ap.add_argument("--data-frac", type=float, default=1.0)
     ap.add_argument("--max-clips", type=int, default=0, help="smoke: cap the TRAIN clips (0 = all)")
+    ap.add_argument("--exclude", default="", help="A:B -- DROP clips A..B of the TRAIN manifest's sha12 order before anything "
+                    "else: the run never sees them, and S is counted without them (PREREG_V8F_MINI Amendment 4: 540:600 = the "
+                    "RA-1 60-clip selection holdout, so v8F-mini trains on exactly RA-1 full's 4,512 clips)")
     ap.add_argument("--steps-mult", type=int, default=1)
     ap.add_argument("--steps", type=int, default=0, help="override the step budget (smoke)")
     ap.add_argument("--batch", type=int, default=64)
@@ -203,6 +206,11 @@ def declared_vs_built(a, cfg, model, opt, data_info) -> list:
     if data_info["n_clips"] != data_info["n_clips_expected"]:
         bad.append(f"data: {data_info['n_clips']} clips built, {data_info['n_clips_expected']} declared "
                    f"(data-frac {a.data_frac}, max-clips {a.max_clips})")
+    if data_info.get("n_excluded", 0) != data_info.get("n_excluded_declared", 0):
+        bad.append(f"exclude {a.exclude!r}: {data_info.get('n_excluded', 0)} clips excluded, "
+                   f"{data_info.get('n_excluded_declared', 0)} declared")
+    if data_info.get("excluded_in_train", 0):
+        bad.append(f"exclude {a.exclude!r}: {data_info['excluded_in_train']} excluded clips are still in the TRAIN set")
     if data_info["batch"] != a.batch:
         bad.append("batch size not as declared")
     if data_info.get("v9_md5") and a.v9_train_md5 and data_info["v9_md5"] != a.v9_train_md5 and not data_info.get("md5_overridden"):
@@ -287,6 +295,13 @@ def build_data(a, cfg):
                                    speed=D.load_speed_sidecar(a.speed_train))
             if a.join_train:
                 D.save_join(J, a.join_train)
+    excluded, n_ex_declared = [], 0
+    if a.exclude:
+        xlo, xhi = (int(x) for x in a.exclude.split(":"))
+        n_ex_declared = xhi - xlo
+        excluded = sorted(clips_all, key=D.sha12)[xlo:xhi]
+        ex = set(excluded)
+        clips_all = [c for c in clips_all if c not in ex]
     clips = D.select_train_clips(clips_all, a.data_frac)
     if a.max_clips:
         clips = clips[:a.max_clips]
@@ -294,6 +309,12 @@ def build_data(a, cfg):
     if a.max_clips:
         expected = min(a.max_clips, expected)
     info.update({"n_clips": len(clips), "n_clips_expected": expected, "n_clips_all": len(clips_all)})
+    # the digests are RA-1's (ra1_pooled.clips_sha256: newline-joined, sha12 order), so a v8F-mini run and an RA-1 run can be
+    # shown to hold out the SAME clips and train on the SAME clips
+    info.update({"n_excluded": len(excluded), "n_excluded_declared": n_ex_declared,
+                 "excluded_in_train": len(set(excluded) & set(clips)),
+                 "excluded_sha256": hashlib.sha256(chr(10).join(excluded).encode("utf-8")).hexdigest() if excluded else None,
+                 "train_sha256": hashlib.sha256(chr(10).join(sorted(clips, key=D.sha12)).encode("utf-8")).hexdigest()})
     lru = a.lru or max(8, int(1.5e9 // (J["n"].max() * cfg.n_tok * 1024 * 2)))
     info["lru"] = lru
     tracks = None
@@ -461,6 +482,7 @@ def main(argv=None):
     save(final=True)
     summary = {"done": True, "steps": step, "arm": a.arm, "seed": a.seed, "data_frac": a.data_frac,
                "steps_mult": a.steps_mult, "S": S, "n_clips": info["n_clips"], "n_windows": info["n_windows"],
+               "exclude": a.exclude, "excluded_sha256": info.get("excluded_sha256"), "train_sha256": info.get("train_sha256"),
                "seconds": time.time() - t0, "argv_sha": argv_sha(argv), "levers": model.built_levers(),
                "selfcheck": "selfcheck.json"}
     json.dump(summary, open(os.path.join(a.out, "summary.json"), "w"), indent=1, default=str)      # LAST, atomically meaningful

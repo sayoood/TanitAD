@@ -122,3 +122,77 @@ Source: the M1-build package `TanitAD Research Lab/Architecture & Inference/Rese
   * ⇒ **H-MINI-K-1 is read against 2.5817 m**, not 2.5744. **This bar is 0.0073 m looser than Amendment 2's.** Amendment 1's "stricter, never looser" does not hold here; the loosening is the measured price of complying with the ruling, it is disclosed, and no M-arm exists to have been tuned against it.
 * **No M-arm has been trained** under either representation (INHERITED from Amendment 2, not re-verified here); the steer representation remains selectable with `--kin-mode steer` for reproduction only and decides nothing.
 * **Guards:** `stack/tests/test_yaw_rate_ruling.py` plus the parametrised end-to-end in `test_v8f_mini.py`; the deliberate-regression arms and the source mutations are the ones listed in `PREREG_HJ_STAGE0.md` Amendment 3.
+
+## Amendment 4 (2026-10-18, before any M-arm data): the full corpus, the RA-1 holdout withheld, M1 vs M2b first (PI go)
+
+* **The PI's go (verbatim, 2026-10-18):** *"Yes, queue v8F-mini M1 vs M2b on box 2 after RA-1 full finishes, on cache_full with a PREREG amendment, safe mode, stop on a crash."*
+* **No M-arm has been trained under any amendment** (MEASURED 2026-10-18: no v8F-mini run directory exists on box 2, and none in the repo).
+
+**1. Features.**
+* The pooled cache is `D:\tanitad\cache_full` on box 2: 4,572 TRAIN clips + the same 141 eval clips.
+* It was built by the RA-1 full build (`PREREG_RA1_FULL.md`, `H-RA1-FULL-1`), which passed a byte-IDENTICAL C0 rebuild control.
+* This is the corpus the original handoff sized v8F-mini for (~310,642 windows). The 600-clip S4 cache is NOT used.
+* `cache_full` also holds the 8×20 grid, so the first K-1 fail lever (plan §13.6 row 1) needs no new encode.
+
+**2. TRAIN = 4,512 clips: the 4,572 minus clips 540:600 of the sha12 order.**
+* Mechanism: the new trainer flag `--exclude 540:600`. These 60 clips are the RA-1 selection holdout (sha256 `f6a1dee0…`).
+* Why:
+  * **(a)** The residual base and the reference, P10-yaw-4512, was fit on exactly these 4,512 clips (`…/2026-10-17-refav1-hj-mini/raw/p10_yaw4512/p10_fit.json`, `excluded 540:600, n 60`). Prior and arms see the same data.
+  * **(b)** The TRAIN list then equals RA-1 full's. Each run records RA-1's own digests, `train_sha256` and `excluded_sha256` (`ra1_pooled.clips_sha256`), so v8F-mini and RA-1 differ in model, not in data.
+  * **(c)** The holdout stays unseen for any later selection.
+* Cost: 60 clips (1.3 %).
+* Gate: `--exclude` has a G-DVB entry and two read-backs, "60 excluded as declared" and "0 excluded clips in TRAIN". Five source mutations each turn the tests RED (`…/2026-10-17-v8f-mini/raw/full/mutate_exclude.json`).
+
+**3. The residual base AND the reference every H-MINI bar is read against: P10-yaw-4512.**
+* Same recipe as Amendment 3 (yaw, κ units, stride 8, seed 0); only the fit clips change, 600 → 4,512.
+* MEASURED on eval-141 (2,399 windows, `p10_fit.json`):
+  * 6 s ADE **2.4870 m**;
+  * FDE 7.667 m;
+  * 2 s ADE (first 10 knots) 0.2221 m.
+  * Against **2.5817 m** for P10-yaw-600.
+* ⇒ **The K-1 bar is 0.0947 m STRICTER than Amendment 3's.** Its interval is produced by this run's `floors` step and reported with the result.
+
+**4. Recipe, frozen now** (the original PREREG is silent on the budget; the handoff's choice is adopted unchanged):
+* 4S steps, S = ceil(windows of the 4,512 clips / 64);
+* batch 64, lr 3e-4, wd 1e-2, warmup 200, every other trainer default;
+* `--kin-mode yaw --tracks cache_full\native_tracks.pt` (4,572 / 4,572 clips);
+* grid pool4x10; no `--amp`;
+* M2b's IDM at β 0.08, γ 100, as in the arms table.
+
+**5. Arms in this run, in this order:** M1 s0 → M2b s0 → M1 s1 → M2b s1.
+* The order is seed-major, so a paired one-seed read exists early. That read decides nothing.
+* `M1-navshuf` is evaluated on both M1 seeds (eval-only).
+* **NOT in this run:** M2a, M1-navonly, M1-nocons, H-DATA-SCALE-1. Every bar that needs one of them is reported **NOT READ (arm not run)**, never as passed:
+  * STRAT-1's "M1 beats M1-navonly";
+  * TAC-1's "beats M1-navonly";
+  * CONS-1's `M1-nocons − M1`.
+
+**6. How the bars are read here.**
+* **H-MINI-K-1** is read for BOTH arms, from `v8f_mini_eval.py compare`.
+  * ⛔ No arm is SELECTED on eval-141, the grid that scores K.
+  * The original "best(M1, M2a, M2b)" is read as **PASS iff at least one of the two arms passes**, and the 2-test multiplicity is stated with the result.
+* **H-MINI-WM-1 (NEW, committed now):** M2b − M1, ADE at 6 s, paired per seed (s0 with s0, s1 with s1).
+  * **PASS** iff separated at BOTH seeds, mean < 0, and |Δ| > 2F, where F = max(F_M1, F_M2b).
+  * It reads the H-JEPA WM + IDM auxiliary's effect on v8F-mini. It does NOT split WM from IDM; that needs M2a.
+  * PASS ⇒ M2a ×2 attributes the gain (PI go).
+  * FAIL ⇒ the auxiliary is not a v8F-mini lever at this scale. The WM's remaining route is rung β (the WM as a PLANNER: `HJEPAStack.score_candidates` over the candidate fan).
+* **Rule-Zero branches, unchanged from plan §13.6:**
+  * K-1 FAIL ⇒ the same arms at `--grid pool8x20` (the queue's `train ARM SEED pool8x20`, in its own run directory). Then more history, then D1, then LoRA.
+  * K-1 PASS ⇒ AR-1 (trajectory part) on this rig, and the deferred controls next.
+  * Each costs box-2 time and needs the PI's go; the verdict names it.
+* **Four families + CONSISTENCY + "acts"**, per run, from each `eval_<tag>.json`, with P10's from `floors_report.json`.
+  * STRATEGIC is un-paused for v8F-mini (PI ruling of 2026-10-17), so it is read.
+  * Distance-keeping is read through the CONSISTENCY **LEAD** rule (the planned minimum time gap against the `lead_eval139` constraint), with its n.
+  * The longitudinal family's own headway / TTC metric is **UNAVAILABLE** here: `v8f_mini_eval.families` does not build its lead-track input. That is a named work item, not a silent drop.
+* **Estimator, every interval:** the paired episode-cluster bootstrap over the 141 eval episodes, B = 2,000. It answers **another draw of EPISODES** only. Training-seed variance enters only through F, which with 2 seeds is itself one draw (`H-ESTIM-SEED-1`).
+* **Tier:** T1-class open loop.
+
+**7. Operational rules (not scientific bars; they change no reading):**
+* box 2 SAFE MODE (`%RUNSAFE%`, below-normal priority, affinity FF, 4 threads), one job at a time;
+* the chain starts only after the RA-1 full runs chain prints `ZZRA1FULLRUNS-DONE`, and stops if that chain stopped;
+* stop on a reboot (crash), on unreachability, on any nonzero rc;
+* stop on the USB-HDD temperature rule of the RA-1 build (≥ 4 of 20 samples ≥ 61 °C, or one ≥ 63 °C);
+* stop if a run projects > 10 h after 1,000 steps (the input pipeline would then be the experiment);
+* a stopped run resumes from `ckpt_last.pt` on the same argv.
+* The verdict is `…/2026-10-17-v8f-mini/code/v8f_mini_full_verdict.py`. It REFUSES mixed provenance: another clip list, a missing holdout, an unfinished run, unequal step counts. Seven source mutations turn its tests RED (`raw/full/mutate_verdict.json`).
+* The queue is `code/v8f_mini_box2_queue.cmd`; the chain, guard and job builder are under `code/box2_ops/`.

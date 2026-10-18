@@ -556,6 +556,31 @@ def test_live_check_goes_red_on_a_deliberately_broken_model(world):
         TR.live_check(broken, b, cfg)
 
 
+def test_exclude_drops_the_sha12_slice_counts_S_without_it_and_the_gate_refuses_a_leak(world, tmp_path):
+    """PREREG_V8F_MINI Amendment 4: --exclude A:B removes clips A..B of the sha12 order from TRAIN (and from S), records RA-1's
+    digests, and the gate refuses a declared exclusion that was not applied or that leaks back into the TRAIN set."""
+    import hashlib
+    common = ["--synthetic", "--batch", "8", "--d", "32", "--n-q", "2", "--threads", "1", "--selfcheck-only"]
+    assert TR.main(["--out", str(tmp_path / "base"), *common]) == 0
+    assert TR.main(["--out", str(tmp_path / "ex"), *common, "--exclude", "1:3"]) == 0
+    b, e = (json.load(open(tmp_path / k / "selfcheck.json"))["info"] for k in ("base", "ex"))
+    names = D.make_synthetic_world(str(tmp_path / "ref"), n_train=6, n_eval=2, T=60, seed=0)["names"]["train"]
+    drop = sorted(names, key=D.sha12)[1:3]
+    assert (b["n_clips"], e["n_clips"], e["n_excluded"], e["excluded_in_train"]) == (6, 4, 2, 0)
+    assert b["n_excluded"] == 0 and b["excluded_sha256"] is None
+    assert e["excluded_sha256"] == hashlib.sha256(chr(10).join(drop).encode("utf-8")).hexdigest()
+    keep = sorted([c for c in names if c not in drop], key=D.sha12)
+    assert e["train_sha256"] == hashlib.sha256(chr(10).join(keep).encode("utf-8")).hexdigest()
+    assert 0 < e["n_windows_all_clips"] < b["n_windows_all_clips"]                 # S is counted on the kept clips only
+    J = D.load_join(Path(world["root"]) / "join_train.npz")
+    a = _args(["--exclude", "1:3"])
+    cfg, model, opt, info = _built(a, J)
+    ok = dict(info, n_excluded=2, n_excluded_declared=2, excluded_in_train=0)
+    assert TR.declared_vs_built(a, cfg, model, opt, ok) == []
+    assert any("clips excluded" in m for m in TR.declared_vs_built(a, cfg, model, opt, dict(ok, n_excluded=0)))
+    assert any("still in the TRAIN set" in m for m in TR.declared_vs_built(a, cfg, model, opt, dict(ok, excluded_in_train=2)))
+
+
 # ------------------------------------------------------------------------------------------------ end to end
 @pytest.mark.parametrize("kin_mode", ["yaw", "steer"])      # PI ruling D-PI-YAWRATE-1: the compliant mode AND the legacy one end to end
 def test_end_to_end_train_resume_eval(world, tmp_path, monkeypatch, kin_mode):
