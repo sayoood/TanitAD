@@ -1,0 +1,367 @@
+{
+ "label": "R7_CEILDECL_d_THOR__navhard_two_stage",
+ "script": "pdm_score",
+ "module": "navsim.planning.script.run_pdm_score",
+ "overrides": [
+  "train_test_split=navhard_two_stage",
+  "experiment_name=t50400k3_navhard_two_stage_R7_CEILDECL_d_THOR",
+  "metric_cache_path=/dev/shm/navsim/exp/metric_cache_navhard_two_stage",
+  "synthetic_sensor_path=/dev/shm/navsim/data/openscene/navhard_two_stage/sensor_blobs",
+  "synthetic_scenes_path=/dev/shm/navsim/data/openscene/navhard_two_stage/synthetic_scene_pickles",
+  "worker=sequential",
+  "train_test_split.scene_filter.tokens=['f038fc7ffdab5bad','c33bb70075e7594c','9ef1d618435d5e53','b2abc819ebf45c11','bd2b1a4530a1538b','fa8c164985255698','5feede5c5a3c5116','ef7089ecfb0c5028','d64a3964875f5b41','b6247a5245a5554f','f289e368449b517b','087023402a695ba3','467879c3d37054f5','f76112c834c25beb','580dac44fa305877','d50b69bed8f2570c','e5d2a01ab5b0562a','73b2c72a73b458ca','c28c7b29e80059d2','8f5b6181d28e5d4a','59ea5c8c067e57e7','ecc6da85180a5eee','4dd1ab3a667b5074','a6edd19740415b54','90314b74c92954d6','c6bd79f439c254a0','bf00c76f25185b83','c656016133b05a15','b474c79361415cb0','8846d60884435288','771c4e378bef58e4','9502cdbb06dd516f','c1839a3333695317','f3ca2707d87a586b','06c9339fdc3e5404','834cf95826ec5c73','909655c780e152ac','b5ba1ec901f1522c','5c883441084d58d7','cb02d1e1315a5e67','b9d14f59883a5496','09446e65ee9a55d3','fe8eddd5ec8654cd','75ffe77189e95d43','e2ae05340dba502d','faa12c2adc7c521f','132307b3c1a55f97','8b8ea705c7fd5e8a','f7a9f82f17b256e2','0cd0aaeb35c95094','76a0c83f0b6453a0','889aac2576295c91','de1662269d685ce0','cbc268a868be50c2','70f718ebc8b4505e','bbb5018d017754d0','70d9d518ad0f5382','5593db2f64115fbf','398326681cd7500a','f2117260382b5d83','4fbfc7dc71db50e2','0f422a003dab525e','52b2e626eca85976','afcd7846a4f35622','e74ca27f40755297','493c90dce63d5653','d5b18d6105c25004','d20dc707981f56e7','e8daa33268685b31','9e9e33077f375062','64a7186ab49b5cdc','c7afdb652a9e5e73','ffe92084016a5795','76c31764665151be']",
+  "agent=constant_velocity_agent",
+  "agent._target_=tanitad_seam_agent_ulp.TanitADSeamAgentULP",
+  "+agent.seam_file=/dev/shm/navsim/seams/step50400/seam_R7_CEILDECL_d__navhard.npz",
+  "+agent.call_log=/dev/shm/navsim/thor_scores/navhard/_shards/R7_CEILDECL_d_THOR_k3of6/score_R7_CEILDECL_d_THOR__navhard_two_stage.calls.jsonl",
+  "+agent.ulp_reference=/dev/shm/navsim/subsets/ulp_reference_navhard_devbox.json",
+  "+agent.atol=1e-9",
+  "output_dir=/dev/shm/navsim/exp/t50400k3/navhard_two_stage_R7_CEILDECL_d_THOR"
+ ],
+ "argv": [
+  "/home/nvidia/navsim-thor/code/thor/navsim_thor.py",
+  "--script",
+  "pdm_score",
+  "--label",
+  "R7_CEILDECL_d_THOR__navhard_two_stage",
+  "--out-dir",
+  "/dev/shm/navsim/thor_scores/navhard/_shards/R7_CEILDECL_d_THOR_k3of6/score_R7_CEILDECL_d_THOR__navhard_two_stage_wrapper",
+  "--patch-loader",
+  "--ram-floor-mb",
+  "3000.0",
+  "--dump-final-scores",
+  "/dev/shm/navsim/thor_scores/navhard/_shards/R7_CEILDECL_d_THOR_k3of6/score_R7_CEILDECL_d_THOR__navhard_two_stage_wrapper/R7_CEILDECL_d_THOR__navhard_two_stage_final_scores_frame.csv",
+  "--",
+  "train_test_split=navhard_two_stage",
+  "experiment_name=t50400k3_navhard_two_stage_R7_CEILDECL_d_THOR",
+  "metric_cache_path=/dev/shm/navsim/exp/metric_cache_navhard_two_stage",
+  "synthetic_sensor_path=/dev/shm/navsim/data/openscene/navhard_two_stage/sensor_blobs",
+  "synthetic_scenes_path=/dev/shm/navsim/data/openscene/navhard_two_stage/synthetic_scene_pickles",
+  "worker=sequential",
+  "train_test_split.scene_filter.tokens=['f038fc7ffdab5bad','c33bb70075e7594c','9ef1d618435d5e53','b2abc819ebf45c11','bd2b1a4530a1538b','fa8c164985255698','5feede5c5a3c5116','ef7089ecfb0c5028','d64a3964875f5b41','b6247a5245a5554f','f289e368449b517b','087023402a695ba3','467879c3d37054f5','f76112c834c25beb','580dac44fa305877','d50b69bed8f2570c','e5d2a01ab5b0562a','73b2c72a73b458ca','c28c7b29e80059d2','8f5b6181d28e5d4a','59ea5c8c067e57e7','ecc6da85180a5eee','4dd1ab3a667b5074','a6edd19740415b54','90314b74c92954d6','c6bd79f439c254a0','bf00c76f25185b83','c656016133b05a15','b474c79361415cb0','8846d60884435288','771c4e378bef58e4','9502cdbb06dd516f','c1839a3333695317','f3ca2707d87a586b','06c9339fdc3e5404','834cf95826ec5c73','909655c780e152ac','b5ba1ec901f1522c','5c883441084d58d7','cb02d1e1315a5e67','b9d14f59883a5496','09446e65ee9a55d3','fe8eddd5ec8654cd','75ffe77189e95d43','e2ae05340dba502d','faa12c2adc7c521f','132307b3c1a55f97','8b8ea705c7fd5e8a','f7a9f82f17b256e2','0cd0aaeb35c95094','76a0c83f0b6453a0','889aac2576295c91','de1662269d685ce0','cbc268a868be50c2','70f718ebc8b4505e','bbb5018d017754d0','70d9d518ad0f5382','5593db2f64115fbf','398326681cd7500a','f2117260382b5d83','4fbfc7dc71db50e2','0f422a003dab525e','52b2e626eca85976','afcd7846a4f35622','e74ca27f40755297','493c90dce63d5653','d5b18d6105c25004','d20dc707981f56e7','e8daa33268685b31','9e9e33077f375062','64a7186ab49b5cdc','c7afdb652a9e5e73','ffe92084016a5795','76c31764665151be']",
+  "agent=constant_velocity_agent",
+  "agent._target_=tanitad_seam_agent_ulp.TanitADSeamAgentULP",
+  "+agent.seam_file=/dev/shm/navsim/seams/step50400/seam_R7_CEILDECL_d__navhard.npz",
+  "+agent.call_log=/dev/shm/navsim/thor_scores/navhard/_shards/R7_CEILDECL_d_THOR_k3of6/score_R7_CEILDECL_d_THOR__navhard_two_stage.calls.jsonl",
+  "+agent.ulp_reference=/dev/shm/navsim/subsets/ulp_reference_navhard_devbox.json",
+  "+agent.atol=1e-9",
+  "output_dir=/dev/shm/navsim/exp/t50400k3/navhard_two_stage_R7_CEILDECL_d_THOR"
+ ],
+ "python": "3.9.25 (main, Oct 31 2025, 22:59:33) \n[Clang 21.1.4 ]",
+ "cwd": "/dev/shm/navsim",
+ "PYTHONHASHSEED": "1",
+ "hash_randomization_flag": 1,
+ "env": {
+  "NUPLAN_MAP_VERSION": "nuplan-maps-v1.0",
+  "NUPLAN_MAPS_ROOT": "/dev/shm/navsim/data/maps",
+  "NAVSIM_EXP_ROOT": "/dev/shm/navsim/exp",
+  "NAVSIM_DEVKIT_ROOT": "/home/nvidia/navsim-thor/src/navsim-v2",
+  "OPENSCENE_DATA_ROOT": "/dev/shm/navsim/data/openscene"
+ },
+ "env_defaults_applied_by_wrapper": {},
+ "navsim_devkit_root_used": "/home/nvidia/navsim-thor/src/navsim-v2",
+ "navsim_devkit_sha": null,
+ "nuplan_devkit_sha": null,
+ "imported_from": {
+  "navsim": "/home/nvidia/navsim-thor/src/navsim-v2/navsim/__init__.py",
+  "nuplan": "/home/nvidia/navsim-thor/src/nuplan-devkit/nuplan/__init__.py",
+  "script": "/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py",
+  "fcntl": null
+ },
+ "patches": [
+  {
+   "name": "MetricCacheLoader._load_metric_cache_paths: token = re.split(r'[\\\\/]', p)[-2]",
+   "target": "navsim/common/dataloader.py:306-317",
+   "original_source_sha16": "f064e9ab9dcb841d",
+   "patched_source_sha16": "bd205bd28ea36e70",
+   "why": "save_cache_metadata writes str(WindowsPath) (backslashes); the original split('/')[-2] raises IndexError on Windows"
+  }
+ ],
+ "hooks": [
+  "navsim.planning.script.run_pdm_score.pdm_score (observation only)",
+  "navsim.planning.script.run_pdm_score.create_scene_aggregators (PRE-AGGREGATION dump)",
+  "navsim.planning.script.run_pdm_score.compute_final_scores (dump only)"
+ ],
+ "started_local": "2026-10-05 02:35:55",
+ "thor_compat": {
+  "thor_compat": "installed",
+  "patches": [
+   "pathlib.WindowsPath -> PureWindowsPath subclass (unpickle only)",
+   "nuplan map_factory.get_maps_api/get_maps_db: Windows map_root -> $NUPLAN_MAPS_ROOT"
+  ],
+  "NUPLAN_MAPS_ROOT": "/dev/shm/navsim/data/maps",
+  "remaps_so_far": {
+   "windows_path_unpickled": 0,
+   "windows_map_root": {}
+  }
+ },
+ "status": "OK",
+ "ended_local": "2026-10-05 02:52:13",
+ "resources": {
+  "wall_s": 978.0,
+  "peak_rss_mb": 780.4,
+  "peak_process_tree_rss_mb": 780.4,
+  "min_system_available_mb": 27671.7,
+  "n_samples": 461,
+  "n_samples_below_floor": 0,
+  "sample_interval_s": 2.0,
+  "ram_floor_mb": 3000.0,
+  "abort_policy": "available<3000MB for 60 consecutive samples, or <2000MB once",
+  "trace_every_10th_sample__t_rss_avail": [
+   [
+    0.1,
+    19.2,
+    36629.8
+   ],
+   [
+    30.5,
+    572.0,
+    36296.7
+   ],
+   [
+    60.4,
+    638.3,
+    35953.7
+   ],
+   [
+    91.1,
+    642.9,
+    36082.5
+   ],
+   [
+    113.7,
+    742.3,
+    35447.1
+   ],
+   [
+    134.3,
+    742.3,
+    35494.5
+   ],
+   [
+    154.4,
+    742.3,
+    35320.0
+   ],
+   [
+    174.7,
+    742.3,
+    35329.8
+   ],
+   [
+    194.9,
+    742.3,
+    35317.1
+   ],
+   [
+    215.1,
+    742.3,
+    35256.3
+   ],
+   [
+    235.3,
+    742.3,
+    35250.1
+   ],
+   [
+    255.5,
+    742.3,
+    35249.6
+   ],
+   [
+    276.0,
+    742.3,
+    35248.2
+   ],
+   [
+    296.6,
+    742.3,
+    35246.0
+   ],
+   [
+    316.9,
+    742.3,
+    35238.6
+   ],
+   [
+    337.3,
+    744.6,
+    35234.3
+   ],
+   [
+    357.8,
+    745.1,
+    35154.3
+   ],
+   [
+    378.0,
+    745.2,
+    35163.7
+   ],
+   [
+    398.1,
+    748.3,
+    35118.2
+   ],
+   [
+    418.3,
+    748.4,
+    35112.3
+   ],
+   [
+    439.2,
+    748.2,
+    31385.7
+   ],
+   [
+    459.6,
+    748.9,
+    33650.2
+   ],
+   [
+    480.4,
+    748.9,
+    34221.9
+   ],
+   [
+    501.3,
+    750.0,
+    34568.6
+   ],
+   [
+    522.0,
+    750.0,
+    34604.2
+   ],
+   [
+    542.8,
+    750.0,
+    34591.9
+   ],
+   [
+    563.2,
+    750.1,
+    34597.0
+   ],
+   [
+    584.8,
+    750.1,
+    34572.7
+   ],
+   [
+    605.1,
+    750.1,
+    34572.7
+   ],
+   [
+    625.3,
+    753.9,
+    34564.2
+   ],
+   [
+    646.5,
+    755.0,
+    34579.5
+   ],
+   [
+    667.1,
+    755.9,
+    34547.9
+   ],
+   [
+    688.1,
+    758.2,
+    34563.4
+   ],
+   [
+    708.3,
+    758.2,
+    34545.6
+   ],
+   [
+    728.7,
+    768.1,
+    34551.7
+   ],
+   [
+    749.0,
+    768.1,
+    34550.9
+   ],
+   [
+    769.2,
+    768.1,
+    34530.3
+   ],
+   [
+    789.5,
+    769.0,
+    34552.6
+   ],
+   [
+    810.1,
+    771.3,
+    34542.3
+   ],
+   [
+    830.8,
+    771.6,
+    34533.2
+   ],
+   [
+    851.4,
+    771.6,
+    35131.0
+   ],
+   [
+    871.8,
+    773.2,
+    35710.3
+   ],
+   [
+    892.2,
+    774.9,
+    35713.5
+   ],
+   [
+    913.4,
+    774.9,
+    35718.3
+   ],
+   [
+    933.8,
+    776.3,
+    35709.5
+   ],
+   [
+    954.7,
+    779.7,
+    35689.5
+   ],
+   [
+    975.3,
+    779.9,
+    35687.6
+   ]
+  ]
+ },
+ "thor_compat_final": {
+  "thor_compat": "installed",
+  "patches": [
+   "pathlib.WindowsPath -> PureWindowsPath subclass (unpickle only)",
+   "nuplan map_factory.get_maps_api/get_maps_db: Windows map_root -> $NUPLAN_MAPS_ROOT"
+  ],
+  "NUPLAN_MAPS_ROOT": "/dev/shm/navsim/data/maps",
+  "remaps_so_far": {
+   "windows_path_unpickled": 1104,
+   "windows_map_root": {
+    "C:/Users/Admin/navsim-crun/data/maps": 1178
+   }
+  }
+ },
+ "pre_aggregation_dump": {
+  "path": "/dev/shm/navsim/thor_scores/navhard/_shards/R7_CEILDECL_d_THOR_k3of6/score_R7_CEILDECL_d_THOR__navhard_two_stage_wrapper/R7_CEILDECL_d_THOR__navhard_two_stage_final_scores_frame_PRE_AGGREGATION.csv",
+  "rows": 1104
+ },
+ "final_scores_dump": "/dev/shm/navsim/thor_scores/navhard/_shards/R7_CEILDECL_d_THOR_k3of6/score_R7_CEILDECL_d_THOR__navhard_two_stage_wrapper/R7_CEILDECL_d_THOR__navhard_two_stage_final_scores_frame.csv"
+}

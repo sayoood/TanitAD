@@ -1,0 +1,74 @@
+CMD: C:/Users/Admin/venvs/tanitad/Scripts/python.exe D:\Projects\TanitAD\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-28-refcv7-standard-tests\navsim\code\parse_navtest7.py --arm-csv raw/milestones/step50400\scores_navtest\r7s50400_R7_A1\r7s50400_R7_A1.csv --tokens C:/Users/Admin/ev7nav/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-v1-navtest/raw/A1_sub200_tokens.json --label RESULT -- 200-token DIAGNOSTIC --out raw/milestones/step50400\summary_navtest_sub200.json --bridge raw/milestones/step50400\bridge_navtest_sub200 --census C:/Users/Admin/ev7nav/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/raw/inputs/vmax_oracle_navtest.json --map D:\Projects\TanitAD\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-28-refcv7-standard-tests\navsim\raw\inputs\speed_limits_navtest.json --extra R7_VMAXOFF=raw/milestones/step50400\scores_navtest\r7s50400_R7_VMAXOFF_sub\r7s50400_R7_VMAXOFF_sub.csv R7_FILTOFF=raw/milestones/step50400\scores_navtest\r7s50400_R7_FILTOFF_sub\r7s50400_R7_FILTOFF_sub.csv R7_VMAXORACLE=raw/milestones/step50400\scores_navtest\r7s50400_R7_VMAXORACLE_sub\r7s50400_R7_VMAXORACLE_sub.csv
+R7_A1        PDMS=72.5748 NC=89.75 DAC=89.00 EP=68.98 TTC=81.50 C=100.00 zeroed=39 CI=[0.6734, 0.7769] OK
+R7_VMAXOFF   PDMS=71.6977 NC=89.75 DAC=89.00 EP=68.07 TTC=81.00 C=100.00 zeroed=40 CI=[0.6665, 0.7658] OK
+R7_FILTOFF   PDMS=72.5748 NC=89.75 DAC=89.00 EP=68.98 TTC=81.50 C=100.00 zeroed=39 CI=[0.6734, 0.7769] OK
+R7_VMAXORACLE PDMS=72.4361 NC=89.00 DAC=89.00 EP=68.35 TTC=81.50 C=100.00 zeroed=40 CI=[0.6685, 0.7774] OK
+CV           PDMS=21.8222 NC=68.50 DAC=56.00 EP=19.45 TTC=49.50 C=100.00 zeroed=131 CI=[0.1788, 0.2578] OK
+STOP         PDMS=62.5812 NC=97.00 DAC=99.00 EP=30.59 TTC=96.50 C=66.00 zeroed=8 CI=[0.6006, 0.6526] OK
+HUMAN        PDMS=94.1195 NC=100.00 DAC=100.00 EP=85.89 TTC=100.00 C=100.00 zeroed=0 CI=[0.9276, 0.9545] OK
+refcv4b_A1   PDMS=57.9689 NC=88.75 DAC=74.50 EP=51.20 TTC=81.50 C=100.00 zeroed=67 CI=[0.5211, 0.6386] OK
+R7_A1__minus__STOP           d=+9.9936 W/T/L=145/5/50 CI=[0.0411, 0.1575] OK
+R7_A1__minus__CV             d=+50.7525 W/T/L=153/38/9 CI=[0.4498, 0.5636] OK
+R7_A1__minus__HUMAN          d=-21.5448 W/T/L=70/33/97 CI=[-0.2715, -0.1606] OK
+R7_A1__minus__refcv4b_A1     d=+14.6058 W/T/L=122/41/37 CI=[0.0728, 0.2115] OK
+R7_A1__minus__R7_VMAXOFF     d=+0.8770 W/T/L=5/195/0 CI=[0.0008, 0.0208] OK
+R7_A1__minus__R7_FILTOFF     d=+0.0000 W/T/L=0/200/0 CI=[0.0, 0.0] OK
+R7_A1__minus__R7_VMAXORACLE  d=+0.1387 W/T/L=8/188/4 CI=[-0.0125, 0.0171] OK
+R7_VMAXOFF__minus__STOP      d=+9.1166 W/T/L=142/6/52 CI=[0.0321, 0.1496] OK
+R7_VMAXOFF__minus__CV        d=+49.8755 W/T/L=151/39/10 CI=[0.4405, 0.555] OK
+R7_VMAXOFF__minus__HUMAN     d=-22.4218 W/T/L=68/32/100 CI=[-0.2804, -0.1702] OK
+R7_VMAXOFF__minus__refcv4b_A1 d=+13.7288 W/T/L=118/42/40 CI=[0.063, 0.2054] OK
+R7_VMAXOFF__minus__R7_A1     d=-0.8770 W/T/L=0/195/5 CI=[-0.0208, -0.0008] OK
+R7_VMAXOFF__minus__R7_FILTOFF d=-0.8770 W/T/L=0/195/5 CI=[-0.0208, -0.0008] OK
+R7_VMAXOFF__minus__R7_VMAXORACLE d=-0.7383 W/T/L=5/189/6 CI=[-0.0253, 0.0098] OK
+R7_FILTOFF__minus__STOP      d=+9.9936 W/T/L=145/5/50 CI=[0.0411, 0.1575] OK
+R7_FILTOFF__minus__CV        d=+50.7525 W/T/L=153/38/9 CI=[0.4498, 0.5636] OK
+R7_FILTOFF__minus__HUMAN     d=-21.5448 W/T/L=70/33/97 CI=[-0.2715, -0.1606] OK
+R7_FILTOFF__minus__refcv4b_A1 d=+14.6058 W/T/L=122/41/37 CI=[0.0728, 0.2115] OK
+R7_FILTOFF__minus__R7_A1     d=+0.0000 W/T/L=0/200/0 CI=[0.0, 0.0] OK
+R7_FILTOFF__minus__R7_VMAXOFF d=+0.8770 W/T/L=5/195/0 CI=[0.0008, 0.0208] OK
+R7_FILTOFF__minus__R7_VMAXORACLE d=+0.1387 W/T/L=8/188/4 CI=[-0.0125, 0.0171] OK
+R7_VMAXORACLE__minus__STOP   d=+9.8549 W/T/L=145/6/49 CI=[0.0379, 0.1573] OK
+R7_VMAXORACLE__minus__CV     d=+50.6138 W/T/L=152/38/10 CI=[0.444, 0.5646] OK
+R7_VMAXORACLE__minus__HUMAN  d=-21.6835 W/T/L=69/33/98 CI=[-0.2779, -0.1601] OK
+R7_VMAXORACLE__minus__refcv4b_A1 d=+14.4671 W/T/L=121/40/39 CI=[0.0697, 0.2094] OK
+R7_VMAXORACLE__minus__R7_A1  d=-0.1387 W/T/L=4/188/8 CI=[-0.0171, 0.0125] OK
+R7_VMAXORACLE__minus__R7_VMAXOFF d=+0.7383 W/T/L=6/189/5 CI=[-0.0098, 0.0253] OK
+R7_VMAXORACLE__minus__R7_FILTOFF d=-0.1387 W/T/L=4/188/8 CI=[-0.0171, 0.0125] OK
+CMD: C:/Users/Admin/venvs/tanitad/Scripts/python.exe D:\Projects\TanitAD\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-28-refcv7-standard-tests\navsim\code\parse_navtest7.py --arm-csv D:\Projects\TanitAD\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-28-refcv7-standard-tests\navsim\raw\milestones\step50400\scores_navtest\r7s50400_R7_A1\r7s50400_R7_A1.csv --tokens C:/Users/Admin/ev7nav/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-v1-navtest/raw/A1_sub200_tokens.json --label RESULT -- 200-token DIAGNOSTIC --out D:\Projects\TanitAD\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-28-refcv7-standard-tests\navsim\raw\milestones\step50400\summary_navtest_sub200.json --bridge D:\Projects\TanitAD\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-28-refcv7-standard-tests\navsim\raw\milestones\step50400\bridge_navtest_sub200 --census C:/Users/Admin/ev7nav/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/raw/inputs/vmax_oracle_navtest.json --map D:\Projects\TanitAD\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-28-refcv7-standard-tests\navsim\raw\inputs\speed_limits_navtest.json --extra R7_VMAXOFF=D:\Projects\TanitAD\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-28-refcv7-standard-tests\navsim\raw\milestones\step50400\scores_navtest\r7s50400_R7_VMAXOFF_sub\r7s50400_R7_VMAXOFF_sub.csv R7_FILTOFF=D:\Projects\TanitAD\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-28-refcv7-standard-tests\navsim\raw\milestones\step50400\scores_navtest\r7s50400_R7_FILTOFF_sub\r7s50400_R7_FILTOFF_sub.csv R7_VMAXORACLE=D:\Projects\TanitAD\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-28-refcv7-standard-tests\navsim\raw\milestones\step50400\scores_navtest\r7s50400_R7_VMAXORACLE_sub\r7s50400_R7_VMAXORACLE_sub.csv
+R7_A1        PDMS=72.5748 NC=89.75 DAC=89.00 EP=68.98 TTC=81.50 C=100.00 zeroed=39 CI=[0.6734, 0.7769] OK
+R7_VMAXOFF   PDMS=71.6977 NC=89.75 DAC=89.00 EP=68.07 TTC=81.00 C=100.00 zeroed=40 CI=[0.6665, 0.7658] OK
+R7_FILTOFF   PDMS=72.5748 NC=89.75 DAC=89.00 EP=68.98 TTC=81.50 C=100.00 zeroed=39 CI=[0.6734, 0.7769] OK
+R7_VMAXORACLE PDMS=72.4361 NC=89.00 DAC=89.00 EP=68.35 TTC=81.50 C=100.00 zeroed=40 CI=[0.6685, 0.7774] OK
+CV           PDMS=21.8222 NC=68.50 DAC=56.00 EP=19.45 TTC=49.50 C=100.00 zeroed=131 CI=[0.1788, 0.2578] OK
+STOP         PDMS=62.5812 NC=97.00 DAC=99.00 EP=30.59 TTC=96.50 C=66.00 zeroed=8 CI=[0.6006, 0.6526] OK
+HUMAN        PDMS=94.1195 NC=100.00 DAC=100.00 EP=85.89 TTC=100.00 C=100.00 zeroed=0 CI=[0.9276, 0.9545] OK
+refcv4b_A1   PDMS=57.9689 NC=88.75 DAC=74.50 EP=51.20 TTC=81.50 C=100.00 zeroed=67 CI=[0.5211, 0.6386] OK
+R7_A1__minus__STOP           d=+9.9936 W/T/L=145/5/50 CI=[0.0411, 0.1575] OK
+R7_A1__minus__CV             d=+50.7525 W/T/L=153/38/9 CI=[0.4498, 0.5636] OK
+R7_A1__minus__HUMAN          d=-21.5448 W/T/L=70/33/97 CI=[-0.2715, -0.1606] OK
+R7_A1__minus__refcv4b_A1     d=+14.6058 W/T/L=122/41/37 CI=[0.0728, 0.2115] OK
+R7_A1__minus__R7_VMAXOFF     d=+0.8770 W/T/L=5/195/0 CI=[0.0008, 0.0208] OK
+R7_A1__minus__R7_FILTOFF     d=+0.0000 W/T/L=0/200/0 CI=[0.0, 0.0] OK
+R7_A1__minus__R7_VMAXORACLE  d=+0.1387 W/T/L=8/188/4 CI=[-0.0125, 0.0171] OK
+R7_VMAXOFF__minus__STOP      d=+9.1166 W/T/L=142/6/52 CI=[0.0321, 0.1496] OK
+R7_VMAXOFF__minus__CV        d=+49.8755 W/T/L=151/39/10 CI=[0.4405, 0.555] OK
+R7_VMAXOFF__minus__HUMAN     d=-22.4218 W/T/L=68/32/100 CI=[-0.2804, -0.1702] OK
+R7_VMAXOFF__minus__refcv4b_A1 d=+13.7288 W/T/L=118/42/40 CI=[0.063, 0.2054] OK
+R7_VMAXOFF__minus__R7_A1     d=-0.8770 W/T/L=0/195/5 CI=[-0.0208, -0.0008] OK
+R7_VMAXOFF__minus__R7_FILTOFF d=-0.8770 W/T/L=0/195/5 CI=[-0.0208, -0.0008] OK
+R7_VMAXOFF__minus__R7_VMAXORACLE d=-0.7383 W/T/L=5/189/6 CI=[-0.0253, 0.0098] OK
+R7_FILTOFF__minus__STOP      d=+9.9936 W/T/L=145/5/50 CI=[0.0411, 0.1575] OK
+R7_FILTOFF__minus__CV        d=+50.7525 W/T/L=153/38/9 CI=[0.4498, 0.5636] OK
+R7_FILTOFF__minus__HUMAN     d=-21.5448 W/T/L=70/33/97 CI=[-0.2715, -0.1606] OK
+R7_FILTOFF__minus__refcv4b_A1 d=+14.6058 W/T/L=122/41/37 CI=[0.0728, 0.2115] OK
+R7_FILTOFF__minus__R7_A1     d=+0.0000 W/T/L=0/200/0 CI=[0.0, 0.0] OK
+R7_FILTOFF__minus__R7_VMAXOFF d=+0.8770 W/T/L=5/195/0 CI=[0.0008, 0.0208] OK
+R7_FILTOFF__minus__R7_VMAXORACLE d=+0.1387 W/T/L=8/188/4 CI=[-0.0125, 0.0171] OK
+R7_VMAXORACLE__minus__STOP   d=+9.8549 W/T/L=145/6/49 CI=[0.0379, 0.1573] OK
+R7_VMAXORACLE__minus__CV     d=+50.6138 W/T/L=152/38/10 CI=[0.444, 0.5646] OK
+R7_VMAXORACLE__minus__HUMAN  d=-21.6835 W/T/L=69/33/98 CI=[-0.2779, -0.1601] OK
+R7_VMAXORACLE__minus__refcv4b_A1 d=+14.4671 W/T/L=121/40/39 CI=[0.0697, 0.2094] OK
+R7_VMAXORACLE__minus__R7_A1  d=-0.1387 W/T/L=4/188/8 CI=[-0.0171, 0.0125] OK
+R7_VMAXORACLE__minus__R7_VMAXOFF d=+0.7383 W/T/L=6/189/5 CI=[-0.0098, 0.0253] OK
+R7_VMAXORACLE__minus__R7_FILTOFF d=-0.1387 W/T/L=4/188/8 CI=[-0.0171, 0.0125] OK

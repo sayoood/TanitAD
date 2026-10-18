@@ -1,0 +1,592 @@
+{
+ "label": "step50400_R7_A1_s1",
+ "script": "pdm_score_one_stage",
+ "module": "navsim.planning.script.run_pdm_score_one_stage",
+ "overrides": [
+  "train_test_split=navtest",
+  "experiment_name=tanitad_bench_navtest_single_stage_step50400_R7_A1_s1",
+  "metric_cache_path=C:/Users/Admin/navsim-crun/exp/metric_cache_navtest_v2",
+  "navsim_log_path=D:/Archive/devbox-C/navsim/data/openscene/navsim_logs/test",
+  "traffic_agents=non_reactive",
+  "worker=sequential",
+  "agent=constant_velocity_agent",
+  "agent._target_=tanitad_seam_agent.TanitADSeamAgent",
+  "+agent.seam_file=E:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step50400/bridge_navtest/seam_R7_A1_s1.npz",
+  "+agent.call_log=C:/Users/Admin/navsim-crun/exp/tanitad_bench/runs/epdms7/step50400/R7_A1_s1/raw/step50400_R7_A1_s1.calls.jsonl",
+  "output_dir=C:/Users/Admin/navsim-crun/exp/tanitad_bench/runs/epdms7/step50400/R7_A1_s1/exp/step50400_R7_A1_s1"
+ ],
+ "argv": [
+  "E:\\Projects\\TanitAD\\taniteval\\taniteval\\bench\\navsim\\devkit_side\\navsim_win.py",
+  "--script",
+  "pdm_score_one_stage",
+  "--label",
+  "step50400_R7_A1_s1",
+  "--out-dir",
+  "C:\\Users\\Admin\\navsim-crun\\exp\\tanitad_bench\\runs\\epdms7\\step50400\\R7_A1_s1\\raw",
+  "--patch-loader",
+  "--ram-floor-mb",
+  "4000.0",
+  "--dump-final-scores",
+  "C:\\Users\\Admin\\navsim-crun\\exp\\tanitad_bench\\runs\\epdms7\\step50400\\R7_A1_s1\\raw\\step50400_R7_A1_s1_final_scores_frame.csv",
+  "--dump-preaggregation",
+  "C:\\Users\\Admin\\navsim-crun\\exp\\tanitad_bench\\runs\\epdms7\\step50400\\R7_A1_s1\\raw\\step50400_R7_A1_s1_preaggregation.csv",
+  "--",
+  "train_test_split=navtest",
+  "experiment_name=tanitad_bench_navtest_single_stage_step50400_R7_A1_s1",
+  "metric_cache_path=C:/Users/Admin/navsim-crun/exp/metric_cache_navtest_v2",
+  "navsim_log_path=D:/Archive/devbox-C/navsim/data/openscene/navsim_logs/test",
+  "traffic_agents=non_reactive",
+  "worker=sequential",
+  "agent=constant_velocity_agent",
+  "agent._target_=tanitad_seam_agent.TanitADSeamAgent",
+  "+agent.seam_file=E:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step50400/bridge_navtest/seam_R7_A1_s1.npz",
+  "+agent.call_log=C:/Users/Admin/navsim-crun/exp/tanitad_bench/runs/epdms7/step50400/R7_A1_s1/raw/step50400_R7_A1_s1.calls.jsonl",
+  "output_dir=C:/Users/Admin/navsim-crun/exp/tanitad_bench/runs/epdms7/step50400/R7_A1_s1/exp/step50400_R7_A1_s1"
+ ],
+ "python": "3.9.25 (main, Oct 31 2025, 22:56:13) [MSC v.1929 64 bit (AMD64)]",
+ "cwd": "C:\\Users\\Admin\\navsim-crun\\exp\\tanitad_bench\\runs\\epdms7\\step50400\\R7_A1_s1\\exp",
+ "PYTHONHASHSEED": "1",
+ "hash_randomization_flag": 1,
+ "env": {
+  "NUPLAN_MAP_VERSION": "nuplan-maps-v1.0",
+  "NUPLAN_MAPS_ROOT": "C:/Users/Admin/navsim-crun/data/maps",
+  "NAVSIM_EXP_ROOT": "C:/Users/Admin/navsim-crun/exp/tanitad_bench/runs/epdms7/step50400/R7_A1_s1/exp",
+  "NAVSIM_DEVKIT_ROOT": "C:/Users/Admin/navsim-crun/devkit",
+  "OPENSCENE_DATA_ROOT": "C:/Users/Admin/navsim-crun/data/openscene"
+ },
+ "env_defaults_applied_by_wrapper": {},
+ "navsim_devkit_root_used": "C:/Users/Admin/navsim-crun/devkit",
+ "navsim_devkit_sha": "0a380a9063d7162ec93d0f51e9990ebac585f720",
+ "nuplan_devkit_sha": "ce3c323af01c0d7ec5672f7832ef53f9c679aab0",
+ "imported_from": {
+  "navsim": "C:\\Users\\Admin\\navsim-crun\\devkit\\navsim\\__init__.py",
+  "nuplan": "C:\\Users\\Admin\\navsim-crun\\nuplan-devkit\\nuplan\\__init__.py",
+  "script": "C:\\Users\\Admin\\navsim-crun\\devkit\\navsim\\planning\\script\\run_pdm_score_one_stage.py",
+  "fcntl": "C:\\Users\\Admin\\navsim-crun\\venv\\lib\\site-packages\\fcntl.py"
+ },
+ "patches": [
+  {
+   "name": "MetricCacheLoader._load_metric_cache_paths: token = re.split(r'[\\\\/]', p)[-2]",
+   "target": "navsim/common/dataloader.py:306-317",
+   "original_source_sha16": "f064e9ab9dcb841d",
+   "patched_source_sha16": "e6f60f85ea15ed16",
+   "why": "save_cache_metadata writes str(WindowsPath) (backslashes); the original split('/')[-2] raises IndexError on Windows"
+  }
+ ],
+ "hooks": [
+  "navsim.planning.script.run_pdm_score_one_stage.pdm_score (observation only)",
+  "navsim.planning.script.run_pdm_score_one_stage.create_scene_aggregators (PRE-AGGREGATION dump)",
+  "navsim.planning.script.run_pdm_score_one_stage.compute_final_scores (dump only)",
+  "navsim.planning.script.run_pdm_score_one_stage.worker_map (W1: pre-aggregation dump)"
+ ],
+ "started_local": "2026-10-05 14:49:31",
+ "status": "OK",
+ "ended_local": "2026-10-05 15:22:49",
+ "resources": {
+  "wall_s": 1998.4,
+  "peak_rss_mb": 2803.0,
+  "peak_process_tree_rss_mb": 2803.0,
+  "min_system_available_mb": 10065.2,
+  "n_samples": 914,
+  "n_samples_below_floor": 0,
+  "sample_interval_s": 2.0,
+  "ram_floor_mb": 4000.0,
+  "abort_policy": "available<4000MB for 60 consecutive samples, or <2000MB once",
+  "trace_every_10th_sample__t_rss_avail": [
+   [
+    0.0,
+    20.6,
+    12976.4
+   ],
+   [
+    21.0,
+    2219.4,
+    10761.8
+   ],
+   [
+    42.2,
+    2231.5,
+    10751.1
+   ],
+   [
+    62.8,
+    2240.5,
+    10748.5
+   ],
+   [
+    83.8,
+    2250.9,
+    10740.5
+   ],
+   [
+    105.0,
+    2255.1,
+    10736.4
+   ],
+   [
+    126.6,
+    2266.0,
+    10731.2
+   ],
+   [
+    147.2,
+    2295.6,
+    10666.3
+   ],
+   [
+    168.4,
+    2278.6,
+    10690.8
+   ],
+   [
+    189.5,
+    2280.4,
+    10702.1
+   ],
+   [
+    211.2,
+    2290.5,
+    10716.5
+   ],
+   [
+    231.9,
+    2290.0,
+    10717.5
+   ],
+   [
+    253.5,
+    2298.0,
+    10707.6
+   ],
+   [
+    274.9,
+    2302.1,
+    10689.4
+   ],
+   [
+    296.1,
+    2307.8,
+    10685.0
+   ],
+   [
+    318.2,
+    2312.6,
+    10592.1
+   ],
+   [
+    339.8,
+    2327.6,
+    10562.0
+   ],
+   [
+    361.0,
+    2333.6,
+    10597.1
+   ],
+   [
+    382.0,
+    2345.1,
+    10552.3
+   ],
+   [
+    403.1,
+    2351.7,
+    10539.3
+   ],
+   [
+    424.0,
+    2355.5,
+    10530.9
+   ],
+   [
+    445.5,
+    2364.5,
+    10510.7
+   ],
+   [
+    466.6,
+    2369.1,
+    10484.9
+   ],
+   [
+    487.4,
+    2371.2,
+    10530.0
+   ],
+   [
+    508.1,
+    2383.2,
+    10481.8
+   ],
+   [
+    528.9,
+    2396.2,
+    10479.8
+   ],
+   [
+    549.1,
+    2390.6,
+    10499.6
+   ],
+   [
+    569.8,
+    2395.3,
+    10481.6
+   ],
+   [
+    590.5,
+    2401.3,
+    10472.8
+   ],
+   [
+    610.9,
+    2409.3,
+    10465.2
+   ],
+   [
+    631.8,
+    2408.9,
+    10450.6
+   ],
+   [
+    653.0,
+    2417.2,
+    10456.5
+   ],
+   [
+    673.9,
+    2426.3,
+    10441.5
+   ],
+   [
+    695.1,
+    2431.0,
+    10436.0
+   ],
+   [
+    716.5,
+    2436.6,
+    10445.1
+   ],
+   [
+    737.5,
+    2449.5,
+    10443.0
+   ],
+   [
+    760.3,
+    2451.7,
+    10437.0
+   ],
+   [
+    783.0,
+    2459.2,
+    10434.3
+   ],
+   [
+    805.3,
+    2465.5,
+    10426.1
+   ],
+   [
+    829.5,
+    2465.9,
+    10422.0
+   ],
+   [
+    853.7,
+    2470.7,
+    10440.2
+   ],
+   [
+    877.9,
+    2479.9,
+    10435.8
+   ],
+   [
+    902.3,
+    2489.7,
+    10433.8
+   ],
+   [
+    925.0,
+    2499.8,
+    10392.0
+   ],
+   [
+    950.7,
+    2507.8,
+    10401.7
+   ],
+   [
+    976.1,
+    2514.6,
+    10396.7
+   ],
+   [
+    997.3,
+    2519.0,
+    10375.2
+   ],
+   [
+    1021.2,
+    2527.7,
+    10377.2
+   ],
+   [
+    1046.6,
+    2531.4,
+    10365.0
+   ],
+   [
+    1071.5,
+    2542.0,
+    10352.8
+   ],
+   [
+    1096.0,
+    2545.8,
+    10343.0
+   ],
+   [
+    1119.2,
+    2554.8,
+    10333.0
+   ],
+   [
+    1143.9,
+    2562.0,
+    10342.7
+   ],
+   [
+    1166.0,
+    2568.3,
+    10311.7
+   ],
+   [
+    1188.9,
+    2573.2,
+    10302.3
+   ],
+   [
+    1211.7,
+    2582.1,
+    10290.1
+   ],
+   [
+    1234.5,
+    2590.5,
+    10271.1
+   ],
+   [
+    1256.3,
+    2596.5,
+    10400.6
+   ],
+   [
+    1280.0,
+    2598.7,
+    10397.4
+   ],
+   [
+    1303.4,
+    2612.7,
+    10396.3
+   ],
+   [
+    1324.3,
+    2619.5,
+    10399.7
+   ],
+   [
+    1346.5,
+    2626.5,
+    10411.4
+   ],
+   [
+    1368.0,
+    2630.3,
+    10430.1
+   ],
+   [
+    1390.4,
+    2638.2,
+    10433.7
+   ],
+   [
+    1412.8,
+    2657.1,
+    10391.7
+   ],
+   [
+    1434.8,
+    2657.1,
+    10388.3
+   ],
+   [
+    1456.5,
+    2660.8,
+    10356.1
+   ],
+   [
+    1477.5,
+    2691.0,
+    10346.5
+   ],
+   [
+    1499.2,
+    2676.5,
+    10372.7
+   ],
+   [
+    1520.1,
+    2680.2,
+    10327.2
+   ],
+   [
+    1543.0,
+    2685.2,
+    10333.7
+   ],
+   [
+    1564.3,
+    2692.5,
+    10333.1
+   ],
+   [
+    1585.5,
+    2699.2,
+    10318.8
+   ],
+   [
+    1608.2,
+    2703.7,
+    10318.3
+   ],
+   [
+    1629.3,
+    2705.6,
+    10316.3
+   ],
+   [
+    1651.1,
+    2713.0,
+    10282.0
+   ],
+   [
+    1673.2,
+    2716.0,
+    10306.2
+   ],
+   [
+    1695.9,
+    2718.4,
+    10291.6
+   ],
+   [
+    1718.1,
+    2730.6,
+    10178.5
+   ],
+   [
+    1739.9,
+    2744.8,
+    10163.5
+   ],
+   [
+    1760.9,
+    2743.0,
+    10143.0
+   ],
+   [
+    1782.2,
+    2753.6,
+    10147.3
+   ],
+   [
+    1803.2,
+    2754.3,
+    10146.2
+   ],
+   [
+    1824.5,
+    2757.3,
+    10131.4
+   ],
+   [
+    1844.7,
+    2764.2,
+    10131.6
+   ],
+   [
+    1866.5,
+    2777.8,
+    10126.1
+   ],
+   [
+    1887.2,
+    2784.6,
+    10118.3
+   ],
+   [
+    1908.1,
+    2792.8,
+    10103.8
+   ],
+   [
+    1929.8,
+    2797.9,
+    10109.5
+   ],
+   [
+    1949.9,
+    2802.8,
+    10076.4
+   ],
+   [
+    1970.7,
+    2130.1,
+    10707.8
+   ],
+   [
+    1991.7,
+    2154.6,
+    10661.2
+   ]
+  ]
+ },
+ "preaggregation_dump": {
+  "path": "C:\\Users\\Admin\\navsim-crun\\exp\\tanitad_bench\\runs\\epdms7\\step50400\\R7_A1_s1\\raw\\step50400_R7_A1_s1_preaggregation.csv",
+  "pickle": "C:\\Users\\Admin\\navsim-crun\\exp\\tanitad_bench\\runs\\epdms7\\step50400\\R7_A1_s1\\raw\\step50400_R7_A1_s1_preaggregation.pkl",
+  "n_rows": 12146,
+  "columns": [
+   "no_at_fault_collisions",
+   "drivable_area_compliance",
+   "driving_direction_compliance",
+   "traffic_light_compliance",
+   "ego_progress",
+   "time_to_collision_within_bound",
+   "lane_keeping",
+   "history_comfort",
+   "multiplicative_metrics_prod",
+   "weighted_metrics",
+   "weighted_metrics_array",
+   "pdm_score",
+   "valid",
+   "log_name",
+   "frame_type",
+   "start_time",
+   "endpoint_x",
+   "endpoint_y",
+   "start_point_x",
+   "start_point_y",
+   "ego_simulated_states",
+   "token"
+  ]
+ },
+ "pre_aggregation_dump": {
+  "path": "C:\\Users\\Admin\\navsim-crun\\exp\\tanitad_bench\\runs\\epdms7\\step50400\\R7_A1_s1\\raw\\step50400_R7_A1_s1_final_scores_frame_PRE_AGGREGATION.csv",
+  "rows": 12146
+ },
+ "final_scores_dump": "C:\\Users\\Admin\\navsim-crun\\exp\\tanitad_bench\\runs\\epdms7\\step50400\\R7_A1_s1\\raw\\step50400_R7_A1_s1_final_scores_frame.csv"
+}
