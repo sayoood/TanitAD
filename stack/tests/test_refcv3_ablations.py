@@ -200,7 +200,9 @@ def test_the_prereg_file_when_reachable_names_the_same_twelve():
 @pytest.mark.parametrize("name", sorted(rc.ABLATIONS))
 def test_each_ablation_name_is_accepted_by_the_cli(name):
     with pytest.raises(SystemExit) as ei:
-        rc.main(["--ablate", name])
+        # --action-units has no default (HJ-UNITS-3, R46) and is checked right after parsing; the unit is
+        # irrelevant to what this test pins (the ablation NAME parses), so state one.
+        rc.main(["--ablate", name, "--action-units", "steer"])
     # it got past argparse and died on the NEXT required thing
     assert "--out is required" in str(ei.value), (
         f"--ablate {name} did not parse: {ei.value!r}")
@@ -208,7 +210,7 @@ def test_each_ablation_name_is_accepted_by_the_cli(name):
 
 def test_the_frame_blind_regression_has_its_own_named_flag():
     with pytest.raises(SystemExit) as ei:
-        rc.main(["--ablate-frames"])
+        rc.main(["--ablate-frames", "--action-units", "steer"])        # unit stated: HJ-UNITS-3 (R46), irrelevant here
     assert "--out is required" in str(ei.value)
     a = argparse.Namespace(ablate=[], ablate_frames=True)
     assert rc.resolve_ablations(a) == ["frames_blind"]

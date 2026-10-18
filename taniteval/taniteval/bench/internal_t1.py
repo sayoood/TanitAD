@@ -50,8 +50,12 @@ def build_cmd(a, run_dir: Path, device: str, dump_dir: Path) -> list:
         if a.labels:
             cmd += ["--labels", a.labels]
     else:
+        # --action-units has NO default on refcv3_arm.py (HJ-UNITS-3; R46) and a rollout without it exits 2.
+        # 'steer' because the recorded v2ep channel is a road-wheel angle (physicalai.py:621: steer =
+        # arctan(L*kappa)); it is the reading this suite always ran under (the old default), so a rollout
+        # is byte-identical. --t1-args is appended LAST, so an operator can still pass `--action-units kappa`.
         cmd += ["--ckpt", a.ckpt, "--episodes", a.episodes, "--labels", a.labels, "--dump-dir", str(dump_dir),
-                "--device", device, "--grid", a.grid]
+                "--device", device, "--grid", a.grid, "--action-units", "steer"]
         if a.config:
             cmd += ["--config", a.config]
         if a.episodes_n:

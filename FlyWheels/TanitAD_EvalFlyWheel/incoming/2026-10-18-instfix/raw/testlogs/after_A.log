@@ -1,0 +1,72 @@
+=== stack/tests/test_openloop_suite.py  rc=0  34s
+.......................                                                  [100%]
+23 passed in 33.14s
+=== stack/tests/test_refcv3_arm.py  rc=0  83s
+................................                                         [100%]
+32 passed in 82.17s (0:01:22)
+=== stack/tests/test_refcv3_ablations.py  rc=1  38s
+                   [--labels LABELS] [--nav-source {auto,v72,none}]
+                   [--grid {2s,6s}] [--arm ARM] [--out OUT]
+                   [--dump-dir DUMP_DIR] [--analyze-only DUMP_DIR]
+                   [--dump-only] [--device DEVICE] [--episodes-n EPISODES_N]
+                   [--window-stride WINDOW_STRIDE] [--lru LRU]
+                   [--action-units {kappa,steer}]
+                   [--nav-shuffle-seed NAV_SHUFFLE_SEED] [--no-navshuf]
+                   [--no-navzero] [--with-navzero] [--with-navflip]
+                   [--with-navpred] [--with-oracle-sel] [--ablate [NAME ...]]
+                   [--ablate-frames] [--gstr-bank FULL_DUMP_DIR]
+                   [--gstr-shuffle-seed GSTR_SHUFFLE_SEED] [--allow-nonstrict]
+                   [--n-boot N_BOOT] [--seed SEED] [--infer-seed INFER_SEED]
+                   [--tiers TIERS] [--lead-block LEAD_BLOCK] [--no-lead-block]
+__main__.py: error: --action-units is REQUIRED for a rollout and has no default: pass 'steer' or 'kappa'. The recorded v2ep channel actions[:,0] is a road-wheel STEER angle (physicalai.py: steer = arctan(L*kappa)), so 'steer' is the repaired reading and 'kappa' the legacy one (RETRACTION_LOG R46: a silent 'kappa' integrated it as a curvature).
+=========================== short test summary info ===========================
+FAILED tests/test_refcv3_ablations.py::test_each_ablation_name_is_accepted_by_the_cli[e7_off]
+FAILED tests/test_refcv3_ablations.py::test_each_ablation_name_is_accepted_by_the_cli[e9_off]
+FAILED tests/test_refcv3_ablations.py::test_each_ablation_name_is_accepted_by_the_cli[ego_zero]
+FAILED tests/test_refcv3_ablations.py::test_each_ablation_name_is_accepted_by_the_cli[frames_blind]
+FAILED tests/test_refcv3_ablations.py::test_each_ablation_name_is_accepted_by_the_cli[gstr_shuffle]
+FAILED tests/test_refcv3_ablations.py::test_each_ablation_name_is_accepted_by_the_cli[gstr_zero]
+FAILED tests/test_refcv3_ablations.py::test_each_ablation_name_is_accepted_by_the_cli[h19_off]
+FAILED tests/test_refcv3_ablations.py::test_each_ablation_name_is_accepted_by_the_cli[sel_refined]
+FAILED tests/test_refcv3_ablations.py::test_the_frame_blind_regression_has_its_own_named_flag
+9 failed, 19 passed, 1 skipped in 36.39s
+=== stack/tests/test_actdiv_anchored.py  rc=0  7s
+..........................................                               [100%]
+42 passed in 5.82s
+=== stack/tests/test_hierarchy_panel_defect_gate.py  rc=0  1s
+.....                                                                    [100%]
+5 passed in 0.26s
+=== stack/tests/test_refcv3_ha0_ext_shared.py  rc=0  4s
+............                                                             [100%]
+12 passed in 2.83s
+=== stack/tests/test_refcv3_route_nav_alignment.py  rc=0  3s
+.....                                                                    [100%]
+5 passed in 2.28s
+=== stack/tests/test_navcomp_labels_shape.py  rc=0  1s
+............                                                             [100%]
+12 passed in 0.27s
+=== stack/tests/test_kingate_contract.py  rc=0  1s
+..ss.                                                                    [100%]
+3 passed, 2 skipped in 0.31s
+=== stack/tests/test_loader_stamped_queries.py  rc=0  13s
+...........                                                              [100%]
+11 passed in 11.84s
+=== stack/tests/test_map_hires_wiring.py  rc=0  25s
+..........................................................               [100%]
+58 passed in 23.71s
+=== stack/tests/test_max_speed_wiring.py  rc=0  9s
+.........................                                                [100%]
+25 passed in 8.39s
+=== stack/tests/test_navc_tau_file.py  rc=0  7s
+..............                                                           [100%]
+14 passed in 5.31s
+=== stack/tests/test_paired_openloop.py  rc=0  13s
+.......................                                                  [100%]
+23 passed in 12.20s
+=== stack/tests/test_refc_v3_agent_gt_reaches_forward.py  rc=0  12s
+...........                                                              [100%]
+11 passed in 11.08s
+=== stack/tests/test_refc_v3_rollability.py  rc=0  8s
+...........                                                              [100%]
+11 passed in 7.50s
+=== DONE total 260s

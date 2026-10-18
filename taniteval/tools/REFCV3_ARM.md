@@ -137,9 +137,17 @@ The bridge is `stack/tanitad/models/kinematic.py`: `STEER_WHEELBASE_M = 2.9` (`:
 
 * `steer` — **the correct reading for a RECORDED v2ep action**, and therefore for `ha`. The
   integrator is fed `κ = tan(steer) / L_enc` first.
-* `kappa` — the LEGACY, unconverted reading. Kept as the default **only** so a re-analysis of a
-  banked dump is byte-identical; ⛔ **the value is printed in the manifest**, because after the
-  fact a repaired and an unrepaired dump are otherwise indistinguishable.
+* `kappa` — the LEGACY, unconverted reading. Kept so a banked number can be reproduced;
+  ⛔ **the value is printed in the manifest**, because after the fact a repaired and an
+  unrepaired dump are otherwise indistinguishable.
+
+⛔ **`--action-units` HAS NO DEFAULT (INSTFIX / HJ-UNITS-3, 2026-10-18; RETRACTION_LOG R46).** A
+rollout without it exits 2 naming both values; `--analyze-only` reads the unit from the dump
+manifest and is not asked. Until 2026-10-18 the default was `steer` — the correct reading, so no
+banked dump is mislabelled — but it was a choice the operator never made, on the same flag whose
+silent `kappa` default integrated a steer angle as a curvature. Every rollout in this document
+states it. `openloop_suite.py` (which forwards it to this tool) and `actdiv_anchored.py
+--family refav1` follow the same rule.
 
 ⭐ **This is a call-site decision, not a model property**, because a planner candidate (curvature)
 and a recorded action (steer) reach the same integrator in different units. **refcv3 has no

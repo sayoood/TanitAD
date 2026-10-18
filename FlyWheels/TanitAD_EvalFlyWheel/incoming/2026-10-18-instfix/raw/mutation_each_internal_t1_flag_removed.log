@@ -1,0 +1,53 @@
+### units (-k test_j or test_k or test_l or test_m)
+.......s....s...........F.                                               [100%]
+================================== FAILURES ===================================
+_ test_m5_live_caller_internal_t1_rollout_states_the_unit_and_analyze_only_does_not _
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-5371/test_m5_live_caller_internal_t0')
+
+    def test_m5_live_caller_internal_t1_rollout_states_the_unit_and_analyze_only_does_not(tmp_path):
+        import argparse
+        T = _import_internal_t1()
+        a = argparse.Namespace(ckpt="C:/x/ckpt.pt", episodes="C:/cache", labels="C:/l.jsonl.gz", config=None, grid="2s",
+                               episodes_n=0, window_stride=0, analyze_only=None, n_boot=10, seed=0, t1_args="")
+        cmd = T.build_cmd(a, tmp_path, "cpu", tmp_path / "dump")
+>       assert cmd[cmd.index("--action-units") + 1] == "steer" and cmd.count("--action-units") == 1, cmd
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       ValueError: '--action-units' is not in list
+
+tests\test_refav1_units_required.py:1539: ValueError
+=========================== short test summary info ===========================
+FAILED tests/test_refav1_units_required.py::test_m5_live_caller_internal_t1_rollout_states_the_unit_and_analyze_only_does_not
+1 failed, 23 passed, 2 skipped, 121 deselected in 14.97s
+
+### internal_t1 (full)
+....Fs...                                                                [100%]
+================================== FAILURES ===================================
+_______________________ test_cmd_is_the_tool_unmodified _______________________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-5373/test_cmd_is_the_tool_unmodifie0')
+
+    def test_cmd_is_the_tool_unmodified(tmp_path):
+        import argparse
+        a = argparse.Namespace(ckpt="C:/x/ckpt.pt", episodes="C:/cache", labels="C:/labels.jsonl.gz", config=None,
+                               grid="2s", episodes_n=3, window_stride=40, analyze_only=None, n_boot=2000, seed=0,
+                               t1_args="--no-navshuf")
+        cmd = T.build_cmd(a, tmp_path, "cpu", tmp_path / "dump")
+        assert cmd[1].replace("\\", "/").endswith("taniteval/tools/refcv3_arm.py")
+        for flag in ("--ckpt", "--episodes", "--labels", "--dump-dir", "--device", "--grid", "--out", "--no-navshuf"):
+            assert flag in cmd, flag
+        assert cmd[cmd.index("--device") + 1] == "cpu"
+        # HJ-UNITS-3 (R46): refcv3_arm.py has no --action-units default, so a ROLLOUT command must state it
+>       assert cmd[cmd.index("--action-units") + 1] == "steer"
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       ValueError: '--action-units' is not in list
+
+tests\test_bench_suite_internal_t1.py:101: ValueError
+=========================== short test summary info ===========================
+FAILED tests/test_bench_suite_internal_t1.py::test_cmd_is_the_tool_unmodified
+1 failed, 7 passed, 1 skipped in 0.83s
+
+### chain_controls (full)
+..................................                                       [100%]
+34 passed in 1.45s
+

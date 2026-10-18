@@ -1,0 +1,53 @@
+### units (-k test_j or test_k or test_l or test_m)
+.......s....s.............                                               [100%]
+24 passed, 2 skipped, 121 deselected in 15.11s
+
+### internal_t1 (full)
+.....s...                                                                [100%]
+8 passed, 1 skipped in 0.72s
+
+### chain_controls (full)
+..FF................F.............                                       [100%]
+================================== FAILURES ===================================
+____________ test_a3_a_producer_AFTER_its_consumer_is_no_producer _____________
+
+    def test_a3_a_producer_AFTER_its_consumer_is_no_producer():
+        probs = CC.check_plan(_two(1))
+>       assert _kinds(probs) == ["LATE-PRODUCER"], probs
+E       AssertionError: []
+E       assert [] == ['LATE-PRODUCER']
+E         
+E         Right contains one more item: 'LATE-PRODUCER'
+E         Use -v to get more diff
+
+tests\test_chain_controls.py:84: AssertionError
+_________________ test_a3b_a_stage_cannot_be_its_own_producer _________________
+
+    def test_a3b_a_stage_cannot_be_its_own_producer():
+        plan = ChainPlan(stages=(Stage("checks", gates_on=("D3.json",), produces=("D3.json",)),))
+>       assert _kinds(CC.check_plan(plan)) == ["LATE-PRODUCER"], CC.check_plan(plan)
+E       AssertionError: []
+E       assert [] == ['LATE-PRODUCER']
+E         
+E         Right contains one more item: 'LATE-PRODUCER'
+E         Use -v to get more diff
+
+tests\test_chain_controls.py:90: AssertionError
+____ test_d3_mutation_moving_the_producer_after_its_consumer_turns_it_RED _____
+
+fp_work = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-5396/test_d3_mutation_moving_the_pr0')
+
+    def test_d3_mutation_moving_the_producer_after_its_consumer_turns_it_RED(fp_work):
+        _need_fp()
+        probs = CC.check_plan(_real_plan(fixed=True, d3_after_checks=True), str(fp_work), script_root=str(_FP))
+>       assert [p for p in probs if p.startswith("LATE-PRODUCER") and "'D3.json'" in p], probs
+E       AssertionError: []
+E       assert []
+
+tests\test_chain_controls.py:336: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_chain_controls.py::test_a3_a_producer_AFTER_its_consumer_is_no_producer
+FAILED tests/test_chain_controls.py::test_a3b_a_stage_cannot_be_its_own_producer
+FAILED tests/test_chain_controls.py::test_d3_mutation_moving_the_producer_after_its_consumer_turns_it_RED
+3 failed, 31 passed in 1.66s
+

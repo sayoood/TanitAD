@@ -1,0 +1,81 @@
+### units (-k test_j or test_k or test_l or test_m)
+'--arm', 'a=x.pt', '--out', 'o.json'])
+
+tests\test_refav1_units_required.py:1130: AssertionError
+______________ test_j5_actdiv_declaration_has_no_default_by_ast _______________
+
+actdiv = <module '_instfix_actdiv_live' from 'C:\\Users\\Admin\\instfix\\mutA\\actdiv_default_kappa\\taniteval\\tools\\actdiv_anchored.py'>
+
+    def test_j5_actdiv_declaration_has_no_default_by_ast(actdiv):
+        decl = _declarations(_ACTDIV_PATH.read_text(encoding="utf-8"))
+        assert len(decl) == 1, decl
+>       assert decl[0]["default"] == "<None>" and decl[0]["choices"] == "ACTION_UNITS_CHOICES", decl
+E       AssertionError: [{'line': 1402, 'default': "'kappa'", 'choices': 'ACTION_UNITS_CHOICES'}]
+E       assert ("'kappa'" == '<None>'
+E         
+E         - <None>
+E         + 'kappa')
+
+tests\test_refav1_units_required.py:1160: AssertionError
+_ test_j7_actdiv_mutation_in_process_restoring_the_default_lets_a_forgetful_launch_through _
+
+actdiv = <module '_instfix_actdiv_live' from 'C:\\Users\\Admin\\instfix\\mutA\\actdiv_default_kappa\\taniteval\\tools\\actdiv_anchored.py'>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002A9A394A360>
+
+    def test_j7_actdiv_mutation_in_process_restoring_the_default_lets_a_forgetful_launch_through(actdiv, monkeypatch):
+>       mutant = _load_module(_ACTDIV_PATH, "_instfix_actdiv_mutant", _mutated_tool_source("actdiv"))
+                                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_refav1_units_required.py:1175: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+key = 'actdiv'
+
+    def _mutated_tool_source(key: str) -> str:
+        """The tool's source with its pre-INSTFIX ``--action-units`` default restored (the deliberate regression)."""
+        fname, needle, old_default = _CLI_MUTANTS[key]
+        src = (_TANI / "tools" / fname).read_text(encoding="utf-8")
+>       assert src.count(needle) == 1, f"{fname}: --action-units declaration moved: update this mutation"
+E       AssertionError: actdiv_anchored.py: --action-units declaration moved: update this mutation
+E       assert 0 == 1
+E        +  where 0 = <built-in method count of str object at 0x000002A9A2B19480>('ap.add_argument("--action-units", default=None, choices=ACTION_UNITS_CHOICES,')
+E        +    where <built-in method count of str object at 0x000002A9A2B19480> = '#!/usr/bin/env python3\n"""GS-8 — ANCHORED action-divergence: Delta-JEPA\'s Figure-6 read on the v7 predictor.\n\n⭐ T...       "NEVER cross-apply it to ZOD / l2d / alpasim.")\n\n\nif __name__ == "__main__":\n    raise SystemExit(main())\n'.count
+
+tests\test_refav1_units_required.py:1089: AssertionError
+______ test_l_census_every_live_action_units_declaration_has_no_default _______
+
+    def test_l_census_every_live_action_units_declaration_has_no_default():
+        found, bad = _declaration_census()
+>       assert not bad, "live --action-units declaration(s) with a silent default:\n  " + "\n  ".join(bad)
+E       AssertionError: live --action-units declaration(s) with a silent default:
+E           taniteval/tools/actdiv_anchored.py:1402 --action-units default='kappa'
+E       assert not ["taniteval/tools/actdiv_anchored.py:1402 --action-units default='kappa'"]
+
+tests\test_refav1_units_required.py:1358: AssertionError
+___ test_l3_census_mutation_restoring_a_default_in_each_REAL_file_is_caught ___
+
+    def test_l3_census_mutation_restoring_a_default_in_each_REAL_file_is_caught():
+        for key in _CLI_MUTANTS:
+            rel = "taniteval/tools/" + _CLI_MUTANTS[key][0]
+            found0, bad0 = _declaration_census({rel: (_REPO / rel).read_text(encoding="utf-8")})
+>           assert rel in found0 and not bad0, (rel, found0, bad0)
+E           AssertionError: ('taniteval/tools/actdiv_anchored.py', {'taniteval/tools/actdiv_anchored.py': [{'line': 1402, 'default': "'kappa'", 'choices': 'ACTION_UNITS_CHOICES'}]}, ["taniteval/tools/actdiv_anchored.py:1402 --action-units default='kappa'"])
+E           assert ('taniteval/tools/actdiv_anchored.py' in {'taniteval/tools/actdiv_anchored.py': [{'line': 1402, 'default': "'kappa'", 'choices': 'ACTION_UNITS_CHOICES'}]} and not ["taniteval/tools/actdiv_anchored.py:1402 --action-units default='kappa'"])
+
+tests\test_refav1_units_required.py:1383: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_refav1_units_required.py::test_j_actdiv_refav1_without_units_is_refused_naming_both_legal_values
+FAILED tests/test_refav1_units_required.py::test_j5_actdiv_declaration_has_no_default_by_ast
+FAILED tests/test_refav1_units_required.py::test_j7_actdiv_mutation_in_process_restoring_the_default_lets_a_forgetful_launch_through
+FAILED tests/test_refav1_units_required.py::test_l_census_every_live_action_units_declaration_has_no_default
+FAILED tests/test_refav1_units_required.py::test_l3_census_mutation_restoring_a_default_in_each_REAL_file_is_caught
+5 failed, 19 passed, 2 skipped, 121 deselected in 14.13s
+
+### internal_t1 (full)
+.....s...                                                                [100%]
+8 passed, 1 skipped in 0.70s
+
+### chain_controls (full)
+..................................                                       [100%]
+34 passed in 1.08s
+

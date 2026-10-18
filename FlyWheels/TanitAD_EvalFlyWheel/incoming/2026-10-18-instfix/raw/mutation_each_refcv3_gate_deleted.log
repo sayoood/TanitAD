@@ -1,0 +1,43 @@
+### units (-k test_j or test_k or test_l or test_m)
+.......sF..Fs.............                                               [100%]
+================================== FAILURES ===================================
+___ test_k_refcv3_rollout_without_units_is_refused_naming_both_legal_values ___
+
+refcv3 = <module '_instfix_refcv3_live' from 'C:\\Users\\Admin\\instfix\\mutA\\refcv3_gate_deleted\\taniteval\\tools\\refcv3_arm.py'>
+capsys = <_pytest.capture.CaptureFixture object at 0x000001F561ACF390>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001F561D23550>
+
+    def test_k_refcv3_rollout_without_units_is_refused_naming_both_legal_values(refcv3, capsys, monkeypatch):
+>       assert _gate(refcv3, list(_CV3_ROLLOUT), monkeypatch, _CV3_SENT) == 2
+E       AssertionError: assert 'REACHED' == 2
+E        +  where 'REACHED' = _gate(<module '_instfix_refcv3_live' from 'C:\\Users\\Admin\\instfix\\mutA\\refcv3_gate_deleted\\taniteval\\tools\\refcv3_arm.py'>, ['--ckpt', 'c.pt', '--episodes', 'x', '--labels', 'l', ...], <_pytest.monkeypatch.MonkeyPatch object at 0x000001F561D23550>, {'run_dump': <function _stop at 0x000001F561C5E160>, 'analyze_refcv3': <function _stop at 0x000001F561C5E160>})
+E        +    where ['--ckpt', 'c.pt', '--episodes', 'x', '--labels', 'l', ...] = list(['--ckpt', 'c.pt', '--episodes', 'x', '--labels', 'l', ...])
+
+tests\test_refav1_units_required.py:1216: AssertionError
+_ test_k4_refcv3_mutation_in_process_restoring_the_default_lets_a_forgetful_launch_through _
+
+refcv3 = <module '_instfix_refcv3_live' from 'C:\\Users\\Admin\\instfix\\mutA\\refcv3_gate_deleted\\taniteval\\tools\\refcv3_arm.py'>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001F561B43E30>
+
+    def test_k4_refcv3_mutation_in_process_restoring_the_default_lets_a_forgetful_launch_through(refcv3, monkeypatch):
+        mutant = _load_module(_REFCV3_PATH, "_instfix_refcv3_mutant", _mutated_tool_source("refcv3"))
+        try:
+>           assert _gate(refcv3, list(_CV3_ROLLOUT), monkeypatch, _CV3_SENT) == 2
+E           AssertionError: assert 'REACHED' == 2
+E            +  where 'REACHED' = _gate(<module '_instfix_refcv3_live' from 'C:\\Users\\Admin\\instfix\\mutA\\refcv3_gate_deleted\\taniteval\\tools\\refcv3_arm.py'>, ['--ckpt', 'c.pt', '--episodes', 'x', '--labels', 'l', ...], <_pytest.monkeypatch.MonkeyPatch object at 0x000001F561B43E30>, {'run_dump': <function _stop at 0x000001F561C5E160>, 'analyze_refcv3': <function _stop at 0x000001F561C5E160>})
+E            +    where ['--ckpt', 'c.pt', '--episodes', 'x', '--labels', 'l', ...] = list(['--ckpt', 'c.pt', '--episodes', 'x', '--labels', 'l', ...])
+
+tests\test_refav1_units_required.py:1238: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_refav1_units_required.py::test_k_refcv3_rollout_without_units_is_refused_naming_both_legal_values
+FAILED tests/test_refav1_units_required.py::test_k4_refcv3_mutation_in_process_restoring_the_default_lets_a_forgetful_launch_through
+2 failed, 22 passed, 2 skipped, 121 deselected in 14.77s
+
+### internal_t1 (full)
+.....s...                                                                [100%]
+8 passed, 1 skipped in 1.63s
+
+### chain_controls (full)
+..................................                                       [100%]
+34 passed in 0.96s
+

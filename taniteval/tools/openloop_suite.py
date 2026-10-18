@@ -78,7 +78,7 @@ Usage
     # from a checkpoint (the real read)
     python taniteval/tools/openloop_suite.py --ckpt <ckpt.pt> \
         --episodes <v2 cache dir> --labels <s2_labels_v7.2_eval.jsonl.gz> \
-        --lead-block <b1_eval_lead_block.npz> --window-stride 5 \
+        --lead-block <b1_eval_lead_block.npz> --window-stride 5 --action-units steer \
         --dump-dir <dir> --out-dir <dir> --tag refcv3-40284
 
     # re-analyse a banked dump — ZERO GPU
@@ -2268,7 +2268,14 @@ def main(argv=None) -> int:
     roll.add_argument("--episodes-n", type=int, default=0)
     roll.add_argument("--window-stride", type=int, default=1)
     roll.add_argument("--lru", type=int, default=8)
-    roll.add_argument("--action-units", choices=("kappa", "steer"), default="steer")
+    # REQUIRED with --ckpt (a rollout) and has NO default (HJ-UNITS-3; R46): it is forwarded to
+    # refcv3_arm.run_dump, which integrates the RECORDED channel for the `ha` floors. The check is
+    # after parse_args because argparse cannot make it conditional on --ckpt.
+    roll.add_argument("--action-units", choices=("kappa", "steer"), default=None,
+                      help="REQUIRED with --ckpt (no default; ignored by --analyze-only / "
+                           "--arm-json): unit of the RECORDED actions[:,0] as the rollout READS "
+                           "it. 'steer' = the true unit of the corpus (physicalai.py:621 writes "
+                           "a road-wheel angle); 'kappa' = the LEGACY unconverted reading.")
     roll.add_argument("--nav-shuffle-seed", type=int, default=0)
     roll.add_argument("--no-navshuf", action="store_true")
     roll.add_argument("--no-navzero", action="store_true")
@@ -2319,6 +2326,11 @@ def main(argv=None) -> int:
     n_src = sum(bool(x) for x in (a.ckpt, a.analyze_only, a.arm_json))
     if n_src != 1:
         ap.error("give exactly one of --ckpt / --analyze-only / --arm-json")
+    if a.ckpt and a.action_units is None:
+        ap.error("--action-units is REQUIRED with --ckpt (a rollout) and has no default: pass "
+                 "'steer' or 'kappa'. The recorded v2ep channel actions[:,0] is a road-wheel "
+                 "STEER angle (physicalai.py: steer = arctan(L*kappa)), so 'steer' is the "
+                 "repaired reading and 'kappa' the legacy one (RETRACTION_LOG R46).")
 
     os.makedirs(a.out_dir, exist_ok=True)
 

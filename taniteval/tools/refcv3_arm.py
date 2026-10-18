@@ -107,12 +107,14 @@ and the rescued refcv3 draft inherited that sentence into its
 refav1 0.716 m of curved-window lateral error against a 0.053 m floor).
 ``--action-units`` names the unit channel 1 ARRIVES in and the value is PRINTED
 into the manifest.
-⚠️ THE DEFAULT HERE IS ``steer`` — DELIBERATELY DIFFERENT FROM ``refav1_arm.py``,
-whose ``kappa`` default exists only to keep re-analysis of PRE-2026-09-03 BANKED
-dumps byte-identical. refcv3 has no banked dumps, so shipping the known defect as
-this instrument's default would have no benefit at all. ``os`` never touches the
-channel (the model emits a path, not a control), so this affects ``ha`` only —
-and ``ha0`` is zero in either unit.
+⛔ THERE IS NO DEFAULT (HJ-UNITS-3, 2026-10-18; RETRACTION_LOG R46). A rollout
+without ``--action-units`` exits 2 naming both legal values; ``--analyze-only``
+reads the unit from the dump manifest and is not asked. Until 2026-10-18 the
+default was ``steer`` — the correct reading of the recorded channel, so it never
+mislabelled a run — but a default is a choice the operator did not make, and the
+same defaulted flag on ``refav1_arm.py`` was the one that integrated a steer angle
+as a curvature. ``os`` never touches the channel (the model emits a path, not a
+control), so the unit affects ``ha`` only — and ``ha0`` is zero in either unit.
 
 DUMP SCHEMA — two files per episode, so ``t1_eval.py --analyze-only`` stays valid:
     <dump>/ep{fi:03d}.npz            the t1_eval contract (unchanged):
@@ -3737,10 +3739,15 @@ def main(argv=None):
                     help="first N clips of the cache manifest (0 = all)")
     ap.add_argument("--window-stride", type=int, default=1)
     ap.add_argument("--lru", type=int, default=8)
-    ap.add_argument("--action-units", choices=("kappa", "steer"), default="steer",
-                    help="unit of the RECORDED actions[:,0] as this run READS it. "
-                         "DEFAULT 'steer' = the repaired contract (kappa = "
-                         "tan(steer)/2.9 before integration), because "
+    # REQUIRED for a rollout and has NO default (HJ-UNITS-3; R46). The check is below, after
+    # parse_args, because argparse's `required=True` cannot be conditional on --analyze-only
+    # (which reads the unit from the dump manifest). Pinned by
+    # taniteval/tests/test_refav1_units_required.py family (k).
+    ap.add_argument("--action-units", choices=("kappa", "steer"), default=None,
+                    help="REQUIRED for a rollout (no default; ignored by --analyze-only): "
+                         "unit of the RECORDED actions[:,0] as this run READS it. "
+                         "'steer' = the repaired contract and the true unit of the "
+                         "corpus (kappa = tan(steer)/2.9 before integration), because "
                          "physicalai.py:621 writes a road-wheel angle there. "
                          "'kappa' is the LEGACY unconverted reading and carries "
                          "the C-REFCV3-ARM-SAME-DEFECT over-rotation; it affects "
@@ -3817,6 +3824,12 @@ def main(argv=None):
                     help="analyse WITHOUT a lead block (distance-keeping stays "
                          "REFUSED with its reason — a WORK ITEM, not a pass)")
     a = ap.parse_args(argv)
+    if a.analyze_only is None and a.action_units is None:
+        ap.error("--action-units is REQUIRED for a rollout and has no default: pass "
+                 "'steer' or 'kappa'. The recorded v2ep channel actions[:,0] is a "
+                 "road-wheel STEER angle (physicalai.py: steer = arctan(L*kappa)), so "
+                 "'steer' is the repaired reading and 'kappa' the legacy one "
+                 "(RETRACTION_LOG R46: a silent 'kappa' integrated it as a curvature).")
 
     lead_path = None
     if not a.no_lead_block:

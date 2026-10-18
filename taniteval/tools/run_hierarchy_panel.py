@@ -118,7 +118,10 @@ def roll(name, extra, a, dry: bool) -> bool:
         rc = run(base + ["--analyze-only", dump] + extra, dry)
     else:
         print(f"  [ROLL  ] {name}", flush=True)
-        rc = run(base + extra, dry)
+        # --action-units has NO default on refcv3_arm.py (HJ-UNITS-3; R46): a rollout states it.
+        # 'steer' = the recorded v2ep channel is a road-wheel angle (physicalai.py:621); it is the reading
+        # this panel always ran under (the old default). --analyze-only (above) is not asked for a unit.
+        rc = run(base + ["--action-units", "steer"] + extra, dry)
 
     if dry:
         return True

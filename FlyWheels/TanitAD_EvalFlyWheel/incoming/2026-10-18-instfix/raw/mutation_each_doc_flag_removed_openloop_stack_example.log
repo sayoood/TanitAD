@@ -1,0 +1,51 @@
+### units (-k test_j or test_k or test_l or test_m)
+.......s....s.......F.F...                                               [100%]
+================================== FAILURES ===================================
+_ test_m_cli_census_every_live_invocation_of_the_four_rollout_CLIs_states_the_unit _
+
+    def test_m_cli_census_every_live_invocation_of_the_four_rollout_CLIs_states_the_unit():
+        scanned, bad, seen_files = {s: 0 for s in _CLI_SPECS}, [], 0
+        for pat in _CLI_GLOBS_M:
+            for path in sorted(_REPO.glob(pat)):
+                try:
+                    text = path.read_text(encoding="utf-8")
+                except (UnicodeDecodeError, OSError):
+                    continue
+                seen_files += 1
+                label = str(path.relative_to(_REPO)).replace("\\", "/")
+                for script in _CLI_SPECS:
+                    n, b = _cli_census_script(text, label, script)
+                    scanned[script] += n
+                    bad += [f"{x} ({script})" for x in b]
+        assert seen_files >= 5, f"census is blind: it read {seen_files} files"
+        assert scanned["refav1_arm.py"] >= 2 and scanned["refcv3_arm.py"] >= 2 and scanned["openloop_suite.py"] >= 2, scanned
+>       assert not bad, "live invocation(s) without --action-units:\n  " + "\n  ".join(bad)
+E       AssertionError: live invocation(s) without --action-units:
+E           taniteval/tools/OPENLOOP_SUITE.md:150 (openloop_suite.py)
+E       assert not ['taniteval/tools/OPENLOOP_SUITE.md:150 (openloop_suite.py)']
+
+tests\test_refav1_units_required.py:1482: AssertionError
+___ test_m3_cli_census_mutation_removing_the_flag_from_a_REAL_doc_is_caught ___
+
+    def test_m3_cli_census_mutation_removing_the_flag_from_a_REAL_doc_is_caught():
+        for rel, script in (("taniteval/tools/REFCV3_ARM.md", "refcv3_arm.py"), ("taniteval/tools/OPENLOOP_SUITE.md", "openloop_suite.py")):
+            text = (_REPO / rel).read_text(encoding="utf-8")
+            n0, bad0 = _cli_census_script(text, rel, script)
+>           assert n0 >= 2 and not bad0, (rel, n0, bad0)
+E           AssertionError: ('taniteval/tools/OPENLOOP_SUITE.md', 3, ['taniteval/tools/OPENLOOP_SUITE.md:150'])
+E           assert (3 >= 2 and not ['taniteval/tools/OPENLOOP_SUITE.md:150'])
+
+tests\test_refav1_units_required.py:1511: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_refav1_units_required.py::test_m_cli_census_every_live_invocation_of_the_four_rollout_CLIs_states_the_unit
+FAILED tests/test_refav1_units_required.py::test_m3_cli_census_mutation_removing_the_flag_from_a_REAL_doc_is_caught
+2 failed, 22 passed, 2 skipped, 121 deselected in 14.63s
+
+### internal_t1 (full)
+.....s...                                                                [100%]
+8 passed, 1 skipped in 0.77s
+
+### chain_controls (full)
+..................................                                       [100%]
+34 passed in 1.04s
+

@@ -1,0 +1,32 @@
+### units (-k test_j or test_k or test_l or test_m)
+.......s....s.............                                               [100%]
+24 passed, 2 skipped, 121 deselected in 17.64s
+
+### internal_t1 (full)
+.....s...                                                                [100%]
+8 passed, 1 skipped in 0.66s
+
+### chain_controls (full)
+...........F......................                                       [100%]
+================================== FAILURES ===================================
+_________ test_e1_verify_stage_outputs_missing_empty_present_and_glob _________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-5402/test_e1_verify_stage_outputs_m0')
+
+    def test_e1_verify_stage_outputs_missing_empty_present_and_glob(tmp_path):
+        st = Stage("s", produces=("a.json", "b.json", "seam_*.npz"))
+        assert len(CC.verify_stage_outputs(st, str(tmp_path))) == 3                  # nothing written: all three reported
+        (tmp_path / "a.json").write_text("", encoding="utf-8")                        # empty is NOT a product
+        (tmp_path / "b.json").write_text("{}", encoding="utf-8")
+        (tmp_path / "seam_X.npz").write_bytes(b"z")
+        probs = CC.verify_stage_outputs(st, str(tmp_path))
+>       assert len(probs) == 1 and "EMPTY" in probs[0] and "a.json" in probs[0], probs
+E       AssertionError: []
+E       assert (0 == 1)
+E        +  where 0 = len([])
+
+tests\test_chain_controls.py:169: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_chain_controls.py::test_e1_verify_stage_outputs_missing_empty_present_and_glob
+1 failed, 33 passed in 0.80s
+

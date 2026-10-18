@@ -43,6 +43,21 @@ FAMILIES
   (h) the CLI flag, behaviourally (the real ``main``) and by mutation
   (i) the CLI census over live docs / launchers (an invocation of ``refav1_arm.py`` states the unit)
 
+INSTFIX / HJ-UNITS-3 (2026-10-18) CLOSES THE LAST SILENT UNIT DEFAULTS ON THE ROLLOUT CLIs (families j, k, l, m):
+
+  * ``taniteval/tools/actdiv_anchored.py --action-units``  -- was ``"kappa"`` (the LEGACY direction: the swept level is
+    fed to the model unconverted); now required for ``--family refav1`` (exit 2), not read by ``--family v7`` / ``--selftest``
+  * ``taniteval/tools/refcv3_arm.py --action-units`` and ``taniteval/tools/openloop_suite.py --action-units`` -- were
+    ``"steer"`` (the safe direction, but silent); they integrate the RECORDED channel for the ``ha`` floors, so they are
+    required for a rollout (``--analyze-only`` / ``--arm-json`` are not asked)
+  * the two LIVE callers that relied on that default now state it: ``taniteval/taniteval/bench/internal_t1.py::build_cmd``
+    and ``taniteval/tools/run_hierarchy_panel.py::roll``
+  (j) actdiv CLI, behaviourally (the real ``main``), by AST, and by mutation (in-process and in a temp copy)
+  (k) refcv3_arm + openloop_suite CLI, same three ways
+  (l) the DECLARATION CENSUS: every live ``--action-units`` declaration has ``default=None`` (one dead-flag exception,
+      proved dead), with positive / negative controls and a mutation on every real file
+  (m) the invocation census generalised to all four CLIs, and the two live callers
+
 ASCII-only assertion text: this dev box's console is cp1252.
 """
 from __future__ import annotations
@@ -821,7 +836,8 @@ def _same(a, b) -> bool:
 
 def _run_pytest_in_copy_v2(tmp: Path, mutate: str | None, select: str):
     """Like ``_run_pytest_in_copy`` but also copies ``stack/tanitad`` so the temp tree is SELF-CONTAINED
-    (the mutant ``refa_v1*.py`` must be the ones the nested run imports). ``mutate`` is None | "new" | "cli".
+    (the mutant ``refa_v1*.py`` must be the ones the nested run imports). ``mutate`` is None | "new" | "cli" |
+    a key of ``_CLI_MUTANTS`` ("actdiv" | "refcv3" | "openloop").
     Returns (returncode, combined output)."""
     tag = "clean" if mutate is None else "mutant_" + mutate
     root = tmp / tag
@@ -840,6 +856,8 @@ def _run_pytest_in_copy_v2(tmp: Path, mutate: str | None, select: str):
         (tani / "tools" / "cost_surface_probe.py").write_text(probe_src, encoding="utf-8", newline="\n")
     elif mutate == "cli":
         (tani / "tools" / "refav1_arm.py").write_text(_mutated_cli_source(), encoding="utf-8", newline="\n")
+    elif mutate in _CLI_MUTANTS:
+        (tani / "tools" / _CLI_MUTANTS[mutate][0]).write_text(_mutated_tool_source(mutate), encoding="utf-8", newline="\n")
     env = dict(os.environ)
     env["PYTHONUTF8"] = "1"
     env["HJ_UNITS_NESTED"] = "1"                              # recursion guard
@@ -1038,3 +1056,514 @@ def test_i3_cli_census_mutation_removing_the_flag_from_a_REAL_doc_is_caught():
     assert mutated != text
     n1, bad1 = _cli_census_text(mutated, "REFAV1_ARM.md")
     assert n1 == n0 and len(bad1) == n0, (n1, bad1)
+
+
+# =========================================================================== #
+# INSTFIX / HJ-UNITS-3 -- the last silent unit defaults on the rollout CLIs     #
+# =========================================================================== #
+_ACTDIV_PATH = _TANI / "tools" / "actdiv_anchored.py"
+_REFCV3_PATH = _TANI / "tools" / "refcv3_arm.py"
+_OPENLOOP_PATH = _TANI / "tools" / "openloop_suite.py"
+_RENDER_CV3_PATH = _TANI / "tools" / "render_refcv3_video.py"
+_PANEL_PATH = _TANI / "tools" / "run_hierarchy_panel.py"
+_INTERNAL_T1_PATH = _TANI / "taniteval" / "bench" / "internal_t1.py"
+
+#: key -> (tool file, declaration as it stands, the same declaration with the OLD default restored)
+_CLI_MUTANTS = {
+    "actdiv": ("actdiv_anchored.py",
+               'ap.add_argument("--action-units", default=None, choices=ACTION_UNITS_CHOICES,',
+               'ap.add_argument("--action-units", default="kappa", choices=ACTION_UNITS_CHOICES,'),
+    "refcv3": ("refcv3_arm.py",
+               'ap.add_argument("--action-units", choices=("kappa", "steer"), default=None,',
+               'ap.add_argument("--action-units", choices=("kappa", "steer"), default="steer",'),
+    "openloop": ("openloop_suite.py",
+                 'roll.add_argument("--action-units", choices=("kappa", "steer"), default=None,',
+                 'roll.add_argument("--action-units", choices=("kappa", "steer"), default="steer",'),
+}
+
+
+def _mutated_tool_source(key: str) -> str:
+    """The tool's source with its pre-INSTFIX ``--action-units`` default restored (the deliberate regression)."""
+    fname, needle, old_default = _CLI_MUTANTS[key]
+    src = (_TANI / "tools" / fname).read_text(encoding="utf-8")
+    assert src.count(needle) == 1, f"{fname}: --action-units declaration moved: update this mutation"
+    return src.replace(needle, old_default)
+
+
+class _Stop(Exception):
+    """Raised by the sentinel that replaces the first stage AFTER a unit gate."""
+
+
+def _stop(*_a, **_k):
+    raise _Stop()
+
+
+def _gate(mod, argv, monkeypatch, sentinels):
+    """Run ``mod.main(argv)`` with each named module-level stage after the gate replaced by a sentinel.
+    Returns "REACHED" if the gate let the run through, the SystemExit code if it refused, else ("RETURNED", rv)."""
+    for name, repl in sentinels.items():
+        monkeypatch.setattr(mod, name, repl)
+    try:
+        rv = mod.main(argv)
+    except _Stop:
+        return "REACHED"
+    except SystemExit as e:
+        return e.code
+    return ("RETURNED", rv)
+
+
+# --------------------------------------------------------------------------- #
+# (j) actdiv_anchored.py --action-units                                         #
+# --------------------------------------------------------------------------- #
+_ADIV_REFAV1 = ["--family", "refav1", "--arm", "a=x.pt", "--out", "o.json"]
+_ADIV_SENT = {"refav1_main": _stop, "resolve_stack": _stop}
+
+
+@pytest.fixture(scope="module")
+def actdiv():
+    mod = _load_module(_ACTDIV_PATH, "_instfix_actdiv_live")
+    yield mod
+    sys.modules.pop("_instfix_actdiv_live", None)
+
+
+def test_j_actdiv_refav1_without_units_is_refused_naming_both_legal_values(actdiv, capsys, monkeypatch):
+    assert _gate(actdiv, list(_ADIV_REFAV1), monkeypatch, _ADIV_SENT) == 2
+    err = capsys.readouterr().err
+    assert "--action-units" in err and "kappa" in err and "steer" in err, err
+    assert "REQUIRED" in err and "R46" in err, err
+
+
+def test_j2_actdiv_a_bad_value_is_refused_by_argparse(actdiv, capsys, monkeypatch):
+    assert _gate(actdiv, _ADIV_REFAV1 + ["--action-units", "radians"], monkeypatch, _ADIV_SENT) == 2
+    err = capsys.readouterr().err
+    assert "kappa" in err and "steer" in err, err
+
+
+def test_j3_actdiv_a_stated_unit_passes_the_gate(actdiv, monkeypatch):
+    for units in ("kappa", "steer"):
+        assert _gate(actdiv, _ADIV_REFAV1 + ["--action-units", units], monkeypatch, _ADIV_SENT) == "REACHED", units
+
+
+def test_j4_actdiv_the_v7_family_and_selftest_are_not_asked_for_a_unit(actdiv, monkeypatch):
+    """v7 never reads a unit (``steer`` is refused there: the encoding wheelbase does not travel); --selftest is synthetic."""
+    sent = dict(_ADIV_SENT, selftest=lambda *a, **k: 0)
+    assert _gate(actdiv, ["--family", "v7"], monkeypatch, sent) == "REACHED"                       # absent: fine
+    assert _gate(actdiv, ["--family", "v7", "--action-units", "kappa"], monkeypatch, sent) == "REACHED"   # the old no-op
+    refused = _gate(actdiv, ["--family", "v7", "--action-units", "steer"], monkeypatch, sent)
+    assert isinstance(refused, str) and "refav1-only" in refused, refused
+    assert _gate(actdiv, ["--selftest"], monkeypatch, sent) == ("RETURNED", 0)                     # no unit, no refusal
+
+
+def test_j5_actdiv_declaration_has_no_default_by_ast(actdiv):
+    decl = _declarations(_ACTDIV_PATH.read_text(encoding="utf-8"))
+    assert len(decl) == 1, decl
+    assert decl[0]["default"] == "<None>" and decl[0]["choices"] == "ACTION_UNITS_CHOICES", decl
+    assert tuple(actdiv.ACTION_UNITS_CHOICES) == ("kappa", "steer"), actdiv.ACTION_UNITS_CHOICES    # what the name resolves to
+
+
+def test_j6_actdiv_a_hand_built_namespace_cannot_slip_a_missing_unit_past_the_library(actdiv):
+    """The CLI gate is not the only door: ``apply_action_units`` itself refuses None (naming both values)."""
+    cands = actdiv.candidate_grid_abs((0.02, 0.1), (0.5,), actdiv.REFAV1_CHANNELS)
+    with pytest.raises(ValueError) as ei:
+        actdiv.apply_action_units(cands, None)
+    assert "kappa" in str(ei.value) and "steer" in str(ei.value) and "R46" in str(ei.value), str(ei.value)
+    out, prov = actdiv.apply_action_units(cands, "kappa")                                          # control: stated passes
+    assert out is cands and prov["action_units"] == "kappa"
+
+
+def test_j7_actdiv_mutation_in_process_restoring_the_default_lets_a_forgetful_launch_through(actdiv, monkeypatch):
+    mutant = _load_module(_ACTDIV_PATH, "_instfix_actdiv_mutant", _mutated_tool_source("actdiv"))
+    try:
+        assert _gate(actdiv, list(_ADIV_REFAV1), monkeypatch, _ADIV_SENT) == 2
+        assert _gate(mutant, list(_ADIV_REFAV1), monkeypatch, _ADIV_SENT) == "REACHED"           # RED: the silent default is back
+    finally:
+        sys.modules.pop("_instfix_actdiv_mutant", None)
+
+
+def test_j8_actdiv_mutation_in_a_temp_copy_turns_the_real_check_RED(tmp_path):
+    if os.environ.get("HJ_UNITS_NESTED") == "1":
+        pytest.skip("nested run: this test is not selected inside its own subprocess")
+    sel = "test_j_actdiv_refav1_without_units"
+    rc_clean, out_clean = _run_pytest_in_copy_v2(tmp_path, None, sel)
+    assert rc_clean == 0 and "1 passed" in out_clean, out_clean[-3000:]
+    rc_mut, out_mut = _run_pytest_in_copy_v2(tmp_path, "actdiv", sel)
+    assert rc_mut != 0 and "test_j_actdiv_refav1_without_units_is_refused_naming_both_legal_values" in out_mut, out_mut[-3000:]
+    assert "1 failed" in out_mut, out_mut[-1500:]
+
+
+# --------------------------------------------------------------------------- #
+# (k) refcv3_arm.py and openloop_suite.py --action-units                        #
+# --------------------------------------------------------------------------- #
+_CV3_ROLLOUT = ["--ckpt", "c.pt", "--episodes", "x", "--labels", "l", "--dump-dir", "d", "--out", "o.json", "--no-lead-block"]
+_CV3_SENT = {"run_dump": _stop, "analyze_refcv3": _stop}
+
+
+@pytest.fixture(scope="module")
+def refcv3():
+    mod = _load_module(_REFCV3_PATH, "_instfix_refcv3_live")
+    yield mod
+    sys.modules.pop("_instfix_refcv3_live", None)
+
+
+@pytest.fixture(scope="module")
+def openloop():
+    mod = _load_module(_OPENLOOP_PATH, "_instfix_openloop_live")
+    yield mod
+    sys.modules.pop("_instfix_openloop_live", None)
+
+
+def test_k_refcv3_rollout_without_units_is_refused_naming_both_legal_values(refcv3, capsys, monkeypatch):
+    assert _gate(refcv3, list(_CV3_ROLLOUT), monkeypatch, _CV3_SENT) == 2
+    err = capsys.readouterr().err
+    assert "--action-units" in err and "kappa" in err and "steer" in err and "REQUIRED" in err, err
+
+
+def test_k2_refcv3_a_bad_value_is_refused_a_stated_value_and_analyze_only_pass(refcv3, capsys, monkeypatch):
+    assert _gate(refcv3, _CV3_ROLLOUT + ["--action-units", "radians"], monkeypatch, _CV3_SENT) == 2
+    assert "kappa" in capsys.readouterr().err
+    for units in ("kappa", "steer"):
+        assert _gate(refcv3, _CV3_ROLLOUT + ["--action-units", units], monkeypatch, _CV3_SENT) == "REACHED", units
+    # --analyze-only reads the unit from the dump manifest and is not asked
+    assert _gate(refcv3, ["--analyze-only", "dump", "--out", "o.json", "--no-lead-block"], monkeypatch, _CV3_SENT) == "REACHED"
+
+
+def test_k3_refcv3_declaration_has_no_default_by_ast():
+    decl = _declarations(_REFCV3_PATH.read_text(encoding="utf-8"))
+    assert len(decl) == 1 and decl[0]["default"] == "<None>", decl
+
+
+def test_k4_refcv3_mutation_in_process_restoring_the_default_lets_a_forgetful_launch_through(refcv3, monkeypatch):
+    mutant = _load_module(_REFCV3_PATH, "_instfix_refcv3_mutant", _mutated_tool_source("refcv3"))
+    try:
+        assert _gate(refcv3, list(_CV3_ROLLOUT), monkeypatch, _CV3_SENT) == 2
+        assert _gate(mutant, list(_CV3_ROLLOUT), monkeypatch, _CV3_SENT) == "REACHED"
+    finally:
+        sys.modules.pop("_instfix_refcv3_mutant", None)
+
+
+def test_k5_refcv3_mutation_in_a_temp_copy_turns_the_real_check_RED(tmp_path):
+    if os.environ.get("HJ_UNITS_NESTED") == "1":
+        pytest.skip("nested run: this test is not selected inside its own subprocess")
+    sel = "test_k_refcv3_rollout_without_units"
+    rc_clean, out_clean = _run_pytest_in_copy_v2(tmp_path, None, sel)
+    assert rc_clean == 0 and "1 passed" in out_clean, out_clean[-3000:]
+    rc_mut, out_mut = _run_pytest_in_copy_v2(tmp_path, "refcv3", sel)
+    assert rc_mut != 0 and "test_k_refcv3_rollout_without_units_is_refused_naming_both_legal_values" in out_mut, out_mut[-3000:]
+    assert "1 failed" in out_mut, out_mut[-1500:]
+
+
+def _ol_argv(tmp_path, *extra):
+    return ["--out-dir", str(tmp_path / "out"), "--tag", "t", *extra]
+
+
+def test_k6_openloop_rollout_without_units_is_refused_the_other_sources_are_not_asked(openloop, capsys, monkeypatch, tmp_path):
+    sent = {"acquire_record": _stop}
+    assert _gate(openloop, _ol_argv(tmp_path, "--ckpt", "c.pt", "--episodes", "x"), monkeypatch, sent) == 2
+    err = capsys.readouterr().err
+    assert "--action-units" in err and "kappa" in err and "steer" in err and "REQUIRED" in err, err
+    for units in ("kappa", "steer"):
+        assert _gate(openloop, _ol_argv(tmp_path, "--ckpt", "c.pt", "--episodes", "x", "--action-units", units),
+                     monkeypatch, sent) == "REACHED", units
+    assert _gate(openloop, _ol_argv(tmp_path, "--analyze-only", "dump"), monkeypatch, sent) == "REACHED"      # zero GPU
+    assert _gate(openloop, _ol_argv(tmp_path, "--arm-json", "rec.json"), monkeypatch, sent) == "REACHED"      # no rollout
+    assert _gate(openloop, _ol_argv(tmp_path, "--ckpt", "c.pt", "--episodes", "x", "--action-units", "radians"),
+                 monkeypatch, sent) == 2
+
+
+def test_k7_openloop_declaration_has_no_default_by_ast_and_the_default_is_the_mutation_target():
+    decl = _declarations(_OPENLOOP_PATH.read_text(encoding="utf-8"))
+    assert len(decl) == 1 and decl[0]["default"] == "<None>", decl
+    mutant = _declarations(_mutated_tool_source("openloop"))
+    assert len(mutant) == 1 and mutant[0]["default"] == "'steer'", mutant
+
+
+def test_k8_openloop_mutation_in_process_and_in_a_temp_copy(monkeypatch, tmp_path):
+    mutant = _load_module(_OPENLOOP_PATH, "_instfix_openloop_mutant", _mutated_tool_source("openloop"))
+    try:
+        sent = {"acquire_record": _stop}
+        assert _gate(mutant, _ol_argv(tmp_path, "--ckpt", "c.pt", "--episodes", "x"), monkeypatch, sent) == "REACHED"
+    finally:
+        sys.modules.pop("_instfix_openloop_mutant", None)
+    if os.environ.get("HJ_UNITS_NESTED") == "1":
+        return
+    sel = "test_k6_openloop_rollout_without_units"
+    rc_clean, out_clean = _run_pytest_in_copy_v2(tmp_path / "tc", None, sel)
+    assert rc_clean == 0 and "1 passed" in out_clean, out_clean[-3000:]
+    rc_mut, out_mut = _run_pytest_in_copy_v2(tmp_path / "tc", "openloop", sel)
+    assert rc_mut != 0 and "test_k6_openloop_rollout_without_units_is_refused_the_other_sources_are_not_asked" in out_mut, out_mut[-3000:]
+
+
+# --------------------------------------------------------------------------- #
+# (l) the DECLARATION CENSUS: every live `--action-units` declaration           #
+# --------------------------------------------------------------------------- #
+def _declarations(src: str) -> list[dict]:
+    """Every ``<x>.add_argument("--action-units", ...)`` in the source: {line, default, required, choices}.
+    ``default`` is ``'<None>'`` for ``default=None`` OR no ``default=`` at all with ``required=True``; ``'<implicit None>'`` for
+    no default and not required; else the unparsed default expression."""
+    out = []
+    for node in ast.walk(ast.parse(src)):
+        if (isinstance(node, ast.Call) and _callee_name(node) == "add_argument" and node.args
+                and isinstance(node.args[0], ast.Constant) and node.args[0].value == "--action-units"):
+            kw = {k.arg: k.value for k in node.keywords}
+            if "default" in kw:
+                d = kw["default"]
+                default = "<None>" if (isinstance(d, ast.Constant) and d.value is None) else ast.unparse(d)
+            else:
+                req = kw.get("required")
+                default = "<None>" if (isinstance(req, ast.Constant) and req.value is True) else "<implicit None>"
+            out.append({"line": node.lineno, "default": default,
+                        "choices": ast.unparse(kw["choices"]) if "choices" in kw else None})
+    return out
+
+
+#: Files allowed to declare ``--action-units`` WITH a default, and WHY (checked below, not asserted by the prose).
+_DEAD_FLAG = {"taniteval/tools/render_refcv3_video.py"}
+_DECL_ROOTS = ["stack/tanitad", "stack/scripts", "taniteval/taniteval", "taniteval/tools", "tools"]
+
+
+def _declaration_census(files: dict | None = None):
+    """({label: [declarations]}, [offences]).  ``files`` overrides the live scan (the controls)."""
+    found, bad = {}, []
+    if files is None:
+        files = {}
+        for rel in _DECL_ROOTS:
+            root = _REPO / rel
+            if not root.is_dir():
+                continue
+            for path in sorted(root.rglob("*.py")):
+                if set(path.relative_to(_REPO).parts) & {"tests", "results", "incoming", "__pycache__"}:
+                    continue
+                try:
+                    text = path.read_text(encoding="utf-8")
+                except (UnicodeDecodeError, OSError):
+                    continue
+                if "--action-units" in text:
+                    files[str(path.relative_to(_REPO)).replace("\\", "/")] = text
+    for label, text in sorted(files.items()):
+        try:
+            decl = _declarations(text)
+        except SyntaxError as ex:                                    # unverifiable == flagged, never skipped
+            bad.append(f"{label}: UNPARSEABLE ({ex.msg} line {ex.lineno})")
+            continue
+        if decl:
+            found[label] = decl
+        for d in decl:
+            if d["default"] != "<None>" and label not in _DEAD_FLAG:
+                bad.append(f"{label}:{d['line']} --action-units default={d['default']}")
+    return found, bad
+
+
+def test_l_census_every_live_action_units_declaration_has_no_default():
+    found, bad = _declaration_census()
+    assert not bad, "live --action-units declaration(s) with a silent default:\n  " + "\n  ".join(bad)
+    # the census must SEE the four rollout CLIs it exists for (a census that scans 0 passes vacuously)
+    for must in ("taniteval/tools/refav1_arm.py", "taniteval/tools/actdiv_anchored.py",
+                 "taniteval/tools/refcv3_arm.py", "taniteval/tools/openloop_suite.py"):
+        assert must in found, (must, sorted(found))
+    assert len(found) >= 5, sorted(found)
+
+
+def test_l2_census_positive_and_negative_controls():
+    bad_src = 'ap.add_argument("--action-units", choices=("kappa", "steer"), default="steer")\n'
+    ok_src = 'ap.add_argument("--action-units", choices=("kappa", "steer"), default=None)\n'
+    req_src = 'ap.add_argument("--action-units", choices=("kappa", "steer"), required=True)\n'
+    implicit = 'ap.add_argument("--action-units", choices=("kappa", "steer"))\n'
+    other = 'ap.add_argument("--kin-mode", default="steer")\nap.add_argument("--action-units-note", default="kappa")\n'
+    assert _declaration_census({"ctl/bad.py": bad_src})[1] == ["ctl/bad.py:1 --action-units default='steer'"]
+    assert _declaration_census({"ctl/ok.py": ok_src, "ctl/req.py": req_src})[1] == []
+    assert _declaration_census({"ctl/implicit.py": implicit})[1] == ["ctl/implicit.py:1 --action-units default=<implicit None>"]
+    assert _declaration_census({"ctl/other.py": other}) == ({}, [])                  # selectivity: other flags are not claimed
+    assert len(_declaration_census({"ctl/broken.py": "def (:\n"})[1]) == 1            # unparseable == flagged
+
+
+def test_l3_census_mutation_restoring_a_default_in_each_REAL_file_is_caught():
+    for key in _CLI_MUTANTS:
+        rel = "taniteval/tools/" + _CLI_MUTANTS[key][0]
+        found0, bad0 = _declaration_census({rel: (_REPO / rel).read_text(encoding="utf-8")})
+        assert rel in found0 and not bad0, (rel, found0, bad0)
+        found1, bad1 = _declaration_census({rel: _mutated_tool_source(key)})
+        assert len(bad1) == 1 and bad1[0].startswith(rel), (key, bad1)
+    arm_rel = "taniteval/tools/refav1_arm.py"
+    arm_src = _mutated_cli_source()
+    assert len(_declaration_census({arm_rel: arm_src})[1]) == 1
+
+
+def test_l4_the_one_default_that_remains_is_a_flag_nothing_reads():
+    """``render_refcv3_video.py --action-units`` keeps ``default="steer"`` because the flag is DEAD there: the namespace
+    attribute is never read in the file, and the only function in ``refcv3_arm.py`` that consumes a unit (``run_dump``) is never
+    called from it.  Prove both from the AST, so the exception cannot outlive its reason."""
+    render = ast.parse(_RENDER_CV3_PATH.read_text(encoding="utf-8"))
+    reads = [n.lineno for n in ast.walk(render) if isinstance(n, ast.Attribute) and n.attr == "action_units"]
+    assert reads == [], f"render_refcv3_video.py now READS action_units at {reads}: it must drop the default"
+    strs = [n.value for n in ast.walk(render) if isinstance(n, ast.Constant) and isinstance(n.value, str)]
+    assert strs.count("action_units") == 0
+    arm = ast.parse(_REFCV3_PATH.read_text(encoding="utf-8"))
+    consumers = set()
+    for fn in ast.walk(arm):
+        if isinstance(fn, ast.FunctionDef):
+            if any(isinstance(n, ast.Attribute) and n.attr == "action_units" for n in ast.walk(fn)):
+                consumers.add(fn.name)
+    assert consumers == {"main", "run_dump"}, consumers                  # main = the gate; run_dump = the one integrator
+    called_from_render = {n.func.attr for n in ast.walk(render)
+                          if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)
+                          and isinstance(n.func.value, ast.Name) and n.func.value.id == "arm"}
+    assert "run_dump" not in called_from_render and "main" not in called_from_render, sorted(called_from_render)
+    assert len(called_from_render) >= 3, sorted(called_from_render)       # the scan sees the arm calls (not vacuous)
+    # mutation: make render READ the flag -> the premise breaks
+    mutated = ast.parse(_RENDER_CV3_PATH.read_text(encoding="utf-8") + "\n_x = a.action_units\n")
+    assert [n for n in ast.walk(mutated) if isinstance(n, ast.Attribute) and n.attr == "action_units"]
+
+
+# --------------------------------------------------------------------------- #
+# (m) the invocation census, generalised; and the two live callers              #
+# --------------------------------------------------------------------------- #
+#: script -> (flags that mean "this invocation never reads the unit", scope regex or None)
+_CLI_SPECS = {
+    "refav1_arm.py": (("--analyze-only", "--help"), None),
+    "refcv3_arm.py": (("--analyze-only", "--help"), None),
+    "openloop_suite.py": (("--analyze-only", "--arm-json", "--help"), None),
+    "actdiv_anchored.py": (("--help", "--selftest"), r"--family[ =]refav1"),
+}
+_CLI_GLOBS_M = ["taniteval/tools/*.md", "taniteval/tools/*.sh", "taniteval/tools/*.ps1", "taniteval/tools/*.cmd",
+                "stack/scripts/*.sh", "stack/scripts/*.ps1", "stack/scripts/*.cmd", "tools/*.sh", "tools/*.ps1",
+                "tools/*.md", "tools/*.cmd"]
+
+
+def _cli_census_script(text: str, label: str, script: str) -> tuple[int, list[str]]:
+    """(unit-reading invocations of ``script`` scanned, [those that omit --action-units]).  An invocation is a logical
+    command (``\\`` / backtick / ``^`` continuations joined) that runs the script under a python interpreter."""
+    exempt, scope = _CLI_SPECS[script]
+    run = re.compile(r"(?:^|[\s/\\\"'&])(?:python[0-9.]*(?:\.exe)?|py|\$PY|\"\$PY\"|%PY%|\"%PY%\"|\$py)\s+(?:\S+\s+)*?[\"']?\S*"
+                     + re.escape(script) + r"[\"']?(?:\s|$)")
+    amp = re.compile(r"&\s*\"?[^\"\n]*" + re.escape(script))
+    scanned, bad = 0, []
+    cur, start, cmds = [], 0, []
+    for i, ln in enumerate(text.split("\n"), 1):
+        if not cur:
+            start = i
+        st = ln.rstrip()
+        if st.endswith("\\") or st.endswith("`") or st.endswith("^"):
+            cur.append(st[:-1])
+            continue
+        cur.append(st)
+        cmds.append((start, " ".join(c.strip() for c in cur)))
+        cur = []
+    if cur:
+        cmds.append((start, " ".join(c.strip() for c in cur)))
+    for ln, cmd in cmds:
+        if script not in cmd or not (run.search(cmd) or amp.search(cmd)):
+            continue
+        if scope and not re.search(scope, cmd):
+            continue
+        if any(x in cmd for x in exempt):
+            continue
+        scanned += 1
+        if "--action-units" not in cmd:
+            bad.append(f"{label}:{ln}")
+    return scanned, bad
+
+
+def test_m_cli_census_every_live_invocation_of_the_four_rollout_CLIs_states_the_unit():
+    scanned, bad, seen_files = {s: 0 for s in _CLI_SPECS}, [], 0
+    for pat in _CLI_GLOBS_M:
+        for path in sorted(_REPO.glob(pat)):
+            try:
+                text = path.read_text(encoding="utf-8")
+            except (UnicodeDecodeError, OSError):
+                continue
+            seen_files += 1
+            label = str(path.relative_to(_REPO)).replace("\\", "/")
+            for script in _CLI_SPECS:
+                n, b = _cli_census_script(text, label, script)
+                scanned[script] += n
+                bad += [f"{x} ({script})" for x in b]
+    assert seen_files >= 5, f"census is blind: it read {seen_files} files"
+    assert scanned["refav1_arm.py"] >= 2 and scanned["refcv3_arm.py"] >= 2 and scanned["openloop_suite.py"] >= 2, scanned
+    assert not bad, "live invocation(s) without --action-units:\n  " + "\n  ".join(bad)
+
+
+def test_m2_cli_census_controls_use_the_real_frozen_forms():
+    """Positive / negative controls built from the FORMS the frozen callers use (a .cmd with %PY%, a .ps1 with & and backticks)."""
+    cmd_form = ('"%PY%" taniteval\\tools\\actdiv_anchored.py --family refav1 --arm "a=C:\\x\\ckpt.pt" --n-perm 200 --out "%RAW%\\o.json"\n')
+    ps1_form = ('& $py "$wt\\taniteval\\tools\\actdiv_anchored.py" `\n    --family refav1 `\n    --arm "a=C:\\x" `\n    --out $out\n')
+    ps1_ok = ps1_form.replace("--family refav1 `", "--family refav1 `\n    --action-units steer `")
+    v7 = '"%PY%" taniteval\\tools\\actdiv_anchored.py --assets "%AS%" --arms a,b --out o.json\n'
+    sh_form = "python taniteval/tools/actdiv_anchored.py --family refav1 \\\n  --arm a=b \\\n  --out o.json\n"
+    assert _cli_census_script(cmd_form, "ctl.cmd", "actdiv_anchored.py") == (1, ["ctl.cmd:1"])
+    assert _cli_census_script(ps1_form, "ctl.ps1", "actdiv_anchored.py") == (1, ["ctl.ps1:1"])
+    assert _cli_census_script(ps1_ok, "ctl.ps1", "actdiv_anchored.py") == (1, [])
+    assert _cli_census_script(sh_form, "ctl.sh", "actdiv_anchored.py") == (1, ["ctl.sh:1"])
+    assert _cli_census_script(v7, "ctl.cmd", "actdiv_anchored.py") == (0, [])                      # v7: no unit exists
+    assert _cli_census_script("see actdiv_anchored.py --family refav1 for details\n", "ctl.md", "actdiv_anchored.py") == (0, [])
+    roll = "python taniteval/tools/refcv3_arm.py \\\n  --ckpt a \\\n  --out b\n"
+    assert _cli_census_script(roll, "ctl", "refcv3_arm.py") == (1, ["ctl:1"])
+    assert _cli_census_script(roll.replace("--ckpt a", "--ckpt a --action-units steer"), "ctl", "refcv3_arm.py") == (1, [])
+    assert _cli_census_script("python taniteval/tools/refcv3_arm.py --analyze-only d --out b\n", "ctl", "refcv3_arm.py") == (0, [])
+    suite = "python taniteval/tools/openloop_suite.py --arm-json r.json --out-dir o\n"
+    assert _cli_census_script(suite, "ctl", "openloop_suite.py") == (0, [])                        # no rollout
+    assert _cli_census_script(suite.replace("--arm-json r.json", "--ckpt c --episodes e"), "ctl", "openloop_suite.py") == (1, ["ctl:1"])
+
+
+def test_m3_cli_census_mutation_removing_the_flag_from_a_REAL_doc_is_caught():
+    for rel, script in (("taniteval/tools/REFCV3_ARM.md", "refcv3_arm.py"), ("taniteval/tools/OPENLOOP_SUITE.md", "openloop_suite.py")):
+        text = (_REPO / rel).read_text(encoding="utf-8")
+        n0, bad0 = _cli_census_script(text, rel, script)
+        assert n0 >= 2 and not bad0, (rel, n0, bad0)
+        mutated = re.sub(r"--action-units\s+(?:steer|kappa)\s*", "", text)
+        assert mutated != text
+        n1, bad1 = _cli_census_script(mutated, rel, script)
+        assert n1 == n0 and len(bad1) == n0, (rel, n0, n1, bad1)
+
+
+def test_m4_openloop_suite_docstring_usage_states_the_unit():
+    """The module docstring's `--ckpt` usage example is a live invocation the .md globs do not reach."""
+    doc = ast.get_docstring(ast.parse(_OPENLOOP_PATH.read_text(encoding="utf-8")))
+    n, bad = _cli_census_script(doc, "openloop_suite.py[docstring]", "openloop_suite.py")
+    assert n == 1 and not bad, (n, bad)
+    n2, bad2 = _cli_census_script(doc.replace("--action-units steer", ""), "openloop_suite.py[docstring]", "openloop_suite.py")
+    assert n2 == 1 and len(bad2) == 1, (n2, bad2)
+
+
+def _import_internal_t1():
+    """Import the bench module under its package name (it uses a relative import)."""
+    import importlib
+    return importlib.import_module("taniteval.bench.internal_t1")
+
+
+def test_m5_live_caller_internal_t1_rollout_states_the_unit_and_analyze_only_does_not(tmp_path):
+    import argparse
+    T = _import_internal_t1()
+    a = argparse.Namespace(ckpt="C:/x/ckpt.pt", episodes="C:/cache", labels="C:/l.jsonl.gz", config=None, grid="2s",
+                           episodes_n=0, window_stride=0, analyze_only=None, n_boot=10, seed=0, t1_args="")
+    cmd = T.build_cmd(a, tmp_path, "cpu", tmp_path / "dump")
+    assert cmd[cmd.index("--action-units") + 1] == "steer" and cmd.count("--action-units") == 1, cmd
+    a.t1_args = "--action-units kappa"                                                  # an operator override rides LAST and wins
+    cmd = T.build_cmd(a, tmp_path, "cpu", tmp_path / "dump")
+    assert cmd[-1] == "kappa" and cmd[-2] == "--action-units", cmd
+    a.t1_args, a.analyze_only = "", str(tmp_path / "banked")
+    assert "--action-units" not in T.build_cmd(a, tmp_path, "cpu", tmp_path / "dump")
+    # mutation: strip the literal from the real source and the AST probe (below) sees it gone
+    src = _INTERNAL_T1_PATH.read_text(encoding="utf-8")
+    assert src.count('"--action-units", "steer"') == 1
+    assert '"--action-units"' not in src.replace('"--action-units", "steer"', "")
+
+
+def test_m6_live_caller_run_hierarchy_panel_rollout_states_the_unit_and_the_recover_branch_does_not(tmp_path, monkeypatch):
+    import argparse
+    panel = _load_module(_PANEL_PATH, "_instfix_panel_live")
+    try:
+        cmds = []
+        monkeypatch.setattr(panel, "run", lambda cmd, dry: cmds.append(list(cmd)) or 0)
+        monkeypatch.setattr(panel, "record_ok", lambda path: (False, "absent"))
+        a = argparse.Namespace(workdir=str(tmp_path), ckpt="c.pt", episodes="e", labels="l", episodes_n=0)
+        panel.roll("FULL", ["--with-navflip"], a, dry=False)                           # a ROLLOUT: no dump exists yet
+        assert len(cmds) == 1 and cmds[0][cmds[0].index("--action-units") + 1] == "steer", cmds
+        assert "--analyze-only" not in cmds[0] and "--with-navflip" in cmds[0], cmds[0]
+        dump = tmp_path / "dump_FULL"
+        dump.mkdir()
+        (dump / "ep000.npz").write_bytes(b"x")
+        cmds.clear()
+        panel.roll("FULL", ["--with-navflip"], a, dry=False)                           # the dump exists: RE-ANALYSE, never re-roll
+        assert len(cmds) == 1 and "--analyze-only" in cmds[0] and "--action-units" not in cmds[0], cmds
+    finally:
+        sys.modules.pop("_instfix_panel_live", None)

@@ -147,7 +147,7 @@ built**, and the suite says so as a REFUSAL rather than quietly dropping it.
 ### ⚠️ `--stack` — when the editable install points at a flaky mount
 
 ```bash
-python taniteval/tools/openloop_suite.py … --stack /workspace/TanitAD/stack
+python taniteval/tools/openloop_suite.py … --action-units steer --stack /workspace/TanitAD/stack
 ```
 
 **MEASURED 2026-09-03, and it CORRECTS the remedy `CLAUDE.md` records for this trap.** The
@@ -288,7 +288,7 @@ it directly.
 * ⛔ **The ROLLOUT path against a real checkpoint.** §4.0 consumed a banked record and its
   banked per-window dump; **this box never loaded refcv3's weights.** No host in
   `~/.ssh/config` answers (`tanitad-pod` 38.147.83.15:39198 and `tanitad-pod5`
-  69.30.85.106:22039 both `Connection refused`; `tanitad-refcv3` is not in the config at all),
+  <pod address redacted 2026-10-18> both `Connection refused`; `tanitad-refcv3` is not in the config at all),
   so `--ckpt …` at real scale — model load, `rebuild_config` from a real `config.json` in
   anger, the forward pass, `--expect-step` against a real checkpoint — is exercised **only on
   the fixture**. Step 1 of §2 exists to smoke exactly that in ~2 clips before the expensive run.

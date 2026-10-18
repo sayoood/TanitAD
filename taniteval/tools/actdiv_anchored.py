@@ -829,13 +829,25 @@ def main(argv=None) -> int:
     if a.selftest:
         return selftest()
     if a.family == "refav1":
+        # ⛔ R46 / HJ-UNITS-3: the unit of the swept channel-1 level is a property of WHAT THE
+        # OPERATOR MEANS BY THE GRID, which only the operator knows. There is no default: a silent
+        # "kappa" fed the swept steer-scale numbers to the model unconverted and the run record
+        # looked identical to a deliberate legacy reproduction.
+        if a.action_units is None:
+            ap.error("--action-units is REQUIRED for --family refav1 and has no default: pass "
+                     "'kappa' (LEGACY: the swept level is fed to the model UNCHANGED, as the "
+                     "banked 2026-09-03 reads did) or 'steer' (the swept level is a TRUE "
+                     "CURVATURE in rad/m, fed as arctan(2.9 * level)). The recorded v2ep channel "
+                     "is a road-wheel STEER angle (physicalai.py: steer = arctan(L*kappa)); see "
+                     "RETRACTION_LOG R46. The two readings are NOT comparable.")
         if not a.out:
             raise SystemExit("--out is required")
         return refav1_main(a)
     # ⛔ --action-units is refav1/PhysicalAI-only. STEER_WHEELBASE_M is the ENCODING constant
     # of OUR cache build; cross-applying it to another corpus injects an error the encoding
-    # never had. Refuse loudly rather than silently ignoring the flag.
-    if a.action_units != "kappa":
+    # never had. Refuse loudly rather than silently ignoring the flag. (Absent is fine here: the
+    # v7 family never reads a unit; "kappa" is accepted as the no-op it always was.)
+    if a.action_units not in (None, "kappa"):
         raise SystemExit(f"--action-units {a.action_units!r} is refav1-only "
                          f"(--family v7 got it); the encoding wheelbase does not travel")
 
@@ -1021,6 +1033,9 @@ def apply_action_units(cands, units, wheelbase=None, channels=REFAV1_CHANNELS):
     """
     import torch
     from tanitad.models.kinematic import STEER_WHEELBASE_M, as_command  # noqa: PLC0415
+    if units is None:                           # R46: a hand-built Namespace is not a way round the CLI gate
+        raise ValueError(f"--action-units must be stated, one of {ACTION_UNITS_CHOICES}, got None "
+                         f"(no default: RETRACTION_LOG R46)")
     if units not in ACTION_UNITS_CHOICES:
         raise ValueError(f"--action-units must be one of {ACTION_UNITS_CHOICES}, got {units!r}")
     L = float(STEER_WHEELBASE_M if wheelbase is None else wheelbase)
@@ -1381,11 +1396,19 @@ def _add_refav1_args(ap):
     ap.add_argument("--batch", type=int, default=4)
     ap.add_argument("--kappa-levels", default=",".join(f"{x:g}" for x in REFAV1_KAPPA_LEVELS))
     ap.add_argument("--accel-levels", default=",".join(f"{x:g}" for x in REFAV1_ACCEL_LEVELS))
-    ap.add_argument("--action-units", default="kappa", choices=ACTION_UNITS_CHOICES,
-                    help="refav1 only. 'kappa' (default) feeds the swept level UNCHANGED — the "
-                         "legacy path, byte-identical to the banked run. 'steer' reads the swept "
-                         "level as a TRUE CURVATURE in rad/m and feeds arctan(L_enc * level) at "
-                         "the model boundary via tanitad.models.kinematic.as_command.")
+    # REQUIRED for --family refav1 and has NO default (RETRACTION_LOG R46; HJ-UNITS-3). The check is
+    # in main(), after parse_args, because argparse's `required=True` cannot be conditional on
+    # --family / --selftest. Pinned by taniteval/tests/test_refav1_units_required.py family (j).
+    ap.add_argument("--action-units", default=None, choices=ACTION_UNITS_CHOICES,
+                    help="REQUIRED for --family refav1 (no default; not read by --family v7 or "
+                         "--selftest): how the swept channel-1 level is FED to the model. "
+                         "'kappa' feeds the swept level UNCHANGED — the LEGACY path, "
+                         "byte-identical to the banked 2026-09-03 refav1 reads (the recorded "
+                         "channel is a road-wheel STEER angle, so this treats the swept numbers "
+                         "as steer angles). 'steer' reads the swept level as a TRUE CURVATURE "
+                         "in rad/m and feeds arctan(L_enc * level) at the model boundary via "
+                         "tanitad.models.kinematic.as_command (the repaired contract). The two "
+                         "are NOT comparable: pick one, or run both.")
     ap.add_argument("--steer-wheelbase", type=float, default=None,
                     help="L_enc for --action-units steer. Default: "
                          "tanitad.models.kinematic.STEER_WHEELBASE_M (2.9, the ENCODING constant). "

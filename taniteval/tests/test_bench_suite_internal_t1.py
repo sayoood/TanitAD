@@ -97,9 +97,12 @@ def test_cmd_is_the_tool_unmodified(tmp_path):
     for flag in ("--ckpt", "--episodes", "--labels", "--dump-dir", "--device", "--grid", "--out", "--no-navshuf"):
         assert flag in cmd, flag
     assert cmd[cmd.index("--device") + 1] == "cpu"
+    # HJ-UNITS-3 (R46): refcv3_arm.py has no --action-units default, so a ROLLOUT command must state it
+    assert cmd[cmd.index("--action-units") + 1] == "steer"
     a.analyze_only = str(tmp_path / "banked_dump")
     cmd = T.build_cmd(a, tmp_path, "cpu", tmp_path / "dump")
     assert "--analyze-only" in cmd and "--ckpt" not in cmd        # 0 GPU: re-analyse a banked dump
+    assert "--action-units" not in cmd                             # the unit comes from the dump manifest
 
 
 E9 = Path("C:/Users/Admin/AppData/Local/Temp/claude/D--Projects-TanitAD/"
