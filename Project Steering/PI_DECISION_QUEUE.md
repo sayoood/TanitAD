@@ -2135,3 +2135,26 @@ PI: *"I freed disk on D"*, *"Decide then (Recommended)"*, *"m = 13 (Recommended)
 * **R0e-pick carve feed (B8).** m = 13 carve logs, SO-CARVE's draw rule over the RL-train index (as SO-CARVE's measured
   train-vs-carve gap), built by `refe/carve_logs.py` before the arm's prereg is frozen.
 
+## 🔴 NEW ITEM (2026-10-18 ~13:56 Berlin) — P6 and every REFe arm read the STEERING ANGLE; your yaw-rate ruling says never
+
+**What I found (MEASURED from source, `D-PI-YAWRATE-3`).** REFe's ego input is 7-D: `vx, vy, ax, ay, yaw_rate,
+tire_steering_angle, speed` (`refe/model.py:185`). Slot 5 is nuPlan's `EgoState.tire_steering_angle`, written into every
+bank by `refe/build_targets.py:228`. Your ruling of 2026-10-17 (`D-PI-YAWRATE-1`) says the model gets measured ego motion
+incl. yaw rate, *never* the steering angle, in any form. The audit that followed covered refcv8, alpha1, RA-1 and
+v8F-mini; nobody checked REFe. **P6 launched today at 09:45 UTC with the channel**, after the ruling, through a launch-gate
+PASS: the gate proves the config equals the build, not that an input is admissible.
+
+**Why it is cheap to fix now, and dearer every hour.** Yaw rate is already slot 4, so dropping slot 5 loses no
+measured-motion information. P6 is ~2 A40-hours into a ~6.9-day run (step ~130 of 10,075, MEASURED), so a stop now
+sinks ~2 h; each further hour sinks one more.
+
+**Options.**
+* **A — stop P6 now and relaunch compliant.** Add a declared `ego` lever that drops slot 5 (a G-DVB entry and a regression
+  arm, per the launch-gate rule), re-pass the gate, relaunch. P6's read slips by roughly the implement + gate time,
+  ESTIMATED 0.5-1 day. The comparators (SFT-4, P2) keep the channel; the comparison stays system against system.
+* **B — let P6 finish as-is.** It remains the paper-faithful reproduction, but under the ruling it cannot be the deployed
+  system, and a compliant re-run (another ~7 A40-days) is needed before any REFe number counts toward the goal.
+* **C — exempt REFe** (a NAVSIM-protocol reproduction; nuPlan's steering angle is a measured vehicle state). That would
+  amend a binding ruling, and it is yours alone.
+
+**Recommendation: A.** The rule says "in any form", the stop is cheapest now, and yaw rate already carries the information.
