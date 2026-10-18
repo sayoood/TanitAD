@@ -2110,3 +2110,16 @@ Trigger, all MEASURED (`FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-15-refcv
 * `lat_tac` is a CE of 0.0028 on logits up to ~61.
 
 **Step 20,000 is G0 PASS under A7 + W-R8-1 + W-R8-2.** Step 5,000 stays PROVISIONAL, on its detection term.
+
+## DECIDED 2026-10-18 ~10:25 Berlin -- SR-TTC fits a nested 10 % log subsample first; P6-HN screens cheaply before any full arm
+
+PI: *"screen first (Recommended), and 10% nested start"*.
+
+* **SR-TTC (BACKLOG `SEL-RANK`).** Amendment 2 option (b) is REGISTERED: f₀ = 10 % of the fit logs (117 of 1,167, sha256-ranked,
+  nested), f_max = 100 %, scaled up only while the fit-set learning curve is RISING or INCONCLUSIVE, so the dev gate is read once in
+  every branch. S0 for the start is ESTIMATED 3.57 GPU-h (worst case = the full set's 39.8). Amendment 1 item 3 is settled in the
+  same registration (A2.10): the dev gate is P2's full 24-log held-out table, admissible only if the completion run ends complete
+  with every gate passing; otherwise the gate is not read. `raw/2026-10-18-sel-rank/PREREG_SELRANK_ARM.amendment2.md`.
+* **P6-HN (BACKLOG `P6-HN`).** NOTES.md Q1 option (b): before the 6.8-7.65 A40-day arm, a scorer-only screen under its own
+  pre-registration (trunk frozen, with and without the offset bank, seeds 0-2). The full arm is not launched unless the screen's
+  pre-registered outcome says so. Q2 (C9, map-derived negatives) stays open; map-derived negatives remain excluded.
