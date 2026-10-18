@@ -57,3 +57,16 @@ Amends: `SPEC_REFCV8_DRAFT.md` §5 (BAR-R8-E1 / E3 / NR) and the milestone batte
 * It does not move a registered verdict that is already banked. The 5k–30k verdicts stay as banked, as early reads.
 * It does not decide the NR reference instrument.
 * Single training seed. Tier T1 open loop.
+
+## Addendum 2026-10-18 ~20:40 Berlin: K4's tolerance, fixed BEFORE any K4 number exists
+
+§3 (K4) says the post-hoc clamp "equals" the eval-forward clamp. The two run the same float32 arithmetic on two devices
+(GPU forward vs CPU post-hoc), and 1e-6 m is below float32 spacing for any waypoint beyond ~8 m. "Equals" therefore means:
+
+* every value is finite, AND
+* max |d| ≤ 1e-6 m OR max float32 ULP over all rows ≤ 4.
+
+Four ulp is ≤ 6e-5 m even at 256 m. A wrong clamp moves a waypoint by centimetres: the post-hoc S2 shift was 0.063 m mean.
+Pinned by `code/test_r8_clamp_k2k4.py::test_k4_ulp_band_is_the_registered_criterion` in the milestone-battery package:
+1 ulp PASS, 8 ulp FAIL, 1 cm FAIL, and the mutation ULP_TOL = 2 goes RED.
+K4 has never run (its queue starts 30 min after the refcv8 30k queue ends).
