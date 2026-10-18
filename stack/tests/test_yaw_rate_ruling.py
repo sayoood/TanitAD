@@ -477,7 +477,10 @@ def test_queue_runs_the_compliant_representation_in_its_own_directory():
     t = raw.decode("ascii")
     lines = t.splitlines()
     assert 'set "KIN=--kin-mode yaw"' in lines and any(l.startswith('set "ARGS=--arm') and "%KIN%" in l for l in lines)
-    assert sum('--tracks "%TRACKS%"' in l for l in lines) == 6, "4 trainer + 2 eval call lines carry --tracks"
+    calls = [l for l in lines if '"%TRAIN%"' in l or '"%EVAL%" eval' in l or '"%RIDGE%"' in l]
+    assert len(calls) == 8 and all('--tracks "%TRACKS%"' in l for l in calls), \
+        "4 trainer + 2 eval + 2 ridge-probe (PREREG_RA1_RIDGE) call lines, each with --tracks"
+    assert sum('--tracks "%TRACKS%"' in l for l in lines) == len(calls), "--tracks appears on call lines only"
     assert 'if not defined RUNS set "RUNS=D:\\tanitad\\runs\\ra1_yaw"' in lines, "never the steer runs' directory (a steer eval.json would 'skip' a compliant job)"
     assert "p10_yaw540" in t and "p10_540" not in t.replace("p10_yaw540", "")
     assert "--kin-mode steer" not in t

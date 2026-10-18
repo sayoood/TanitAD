@@ -1,0 +1,303 @@
+{
+ "schema": "ra1-es1-v1",
+ "prereg": "PREREG_RA1_ES.md",
+ "status": "OK",
+ "tier": "T1-class open-loop trajectory",
+ "estimator": "paired episode-cluster bootstrap (EPISODES) per run; training-seed floor = |seed0 - seed1|",
+ "selection_basis": "seed-mean holdout delta R0 - P10-yaw-540 (ADE@6s) on the 60-clip Amendment-1 holdout; eval-141 NEVER selects",
+ "tie_rule": "budgets within 0.01 m of the minimum -> the shorter",
+ "holdout_clips_sha256": "f6a1dee02af0b96f815416bfef9bc11a04554702525135aa75a740942d7750f9",
+ "seed_mean_holdout_delta_by_budget": {
+  "250": -0.0409,
+  "500": 0.06275,
+  "1000": 0.30069999999999997,
+  "2000": 0.38045,
+  "6000": 0.4612
+ },
+ "S_star": 250,
+ "S_star_holdout_delta": -0.0409,
+ "budgets": {
+  "250": {
+   "seed0": {
+    "path": "C:/Users/Admin/box2_ship/logs/es/es\\st250\\R0_s0\\eval\\eval.json",
+    "ckpt_step": 250,
+    "holdout_ade6": 2.9637,
+    "holdout_p10_ade6": 3.0245,
+    "holdout_delta": {
+     "delta": -0.0608,
+     "lo": -0.1448,
+     "hi": 0.0246,
+     "separated": false,
+     "n_windows": 4076,
+     "n_episodes": 60,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "eval141_ade6_NON_DECIDING": 2.5771,
+    "eval141_delta_NON_DECIDING": {
+     "delta": 0.0144,
+     "lo": -0.0361,
+     "hi": 0.0717,
+     "separated": false,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "seed1": {
+    "path": "C:/Users/Admin/box2_ship/logs/es/es\\st250\\R0_s1\\eval\\eval.json",
+    "ckpt_step": 250,
+    "holdout_ade6": 3.0035,
+    "holdout_p10_ade6": 3.0245,
+    "holdout_delta": {
+     "delta": -0.021,
+     "lo": -0.0927,
+     "hi": 0.0551,
+     "separated": false,
+     "n_windows": 4076,
+     "n_episodes": 60,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "eval141_ade6_NON_DECIDING": 2.5648,
+    "eval141_delta_NON_DECIDING": {
+     "delta": 0.002,
+     "lo": -0.0493,
+     "hi": 0.0543,
+     "separated": false,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "seed_mean_holdout_delta": -0.0409,
+   "holdout_below_p10_separated_both_seeds": false,
+   "training_seed_floor_holdout_delta": 0.0398,
+   "training_seed_floor_eval141_ade6_NON_DECIDING": 0.0123000000000002
+  },
+  "500": {
+   "seed0": {
+    "path": "C:/Users/Admin/box2_ship/logs/es/es\\st500\\R0_s0\\eval\\eval.json",
+    "ckpt_step": 500,
+    "holdout_ade6": 3.0659,
+    "holdout_p10_ade6": 3.0245,
+    "holdout_delta": {
+     "delta": 0.0414,
+     "lo": -0.0617,
+     "hi": 0.1605,
+     "separated": false,
+     "n_windows": 4076,
+     "n_episodes": 60,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "eval141_ade6_NON_DECIDING": 2.6454,
+    "eval141_delta_NON_DECIDING": {
+     "delta": 0.0827,
+     "lo": 0.0133,
+     "hi": 0.1504,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "seed1": {
+    "path": "C:/Users/Admin/box2_ship/logs/es/es\\st500\\R0_s1\\eval\\eval.json",
+    "ckpt_step": 500,
+    "holdout_ade6": 3.1086,
+    "holdout_p10_ade6": 3.0245,
+    "holdout_delta": {
+     "delta": 0.0841,
+     "lo": -0.0321,
+     "hi": 0.214,
+     "separated": false,
+     "n_windows": 4076,
+     "n_episodes": 60,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "eval141_ade6_NON_DECIDING": 2.699,
+    "eval141_delta_NON_DECIDING": {
+     "delta": 0.1362,
+     "lo": 0.0539,
+     "hi": 0.2229,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "seed_mean_holdout_delta": 0.06275,
+   "holdout_below_p10_separated_both_seeds": false,
+   "training_seed_floor_holdout_delta": 0.042699999999999995,
+   "training_seed_floor_eval141_ade6_NON_DECIDING": 0.05359999999999987
+  },
+  "1000": {
+   "seed0": {
+    "path": "C:/Users/Admin/box2_ship/logs/es/es\\st1000\\R0_s0\\eval\\eval.json",
+    "ckpt_step": 1000,
+    "holdout_ade6": 3.2472,
+    "holdout_p10_ade6": 3.0245,
+    "holdout_delta": {
+     "delta": 0.2227,
+     "lo": 0.0698,
+     "hi": 0.3877,
+     "separated": true,
+     "n_windows": 4076,
+     "n_episodes": 60,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "eval141_ade6_NON_DECIDING": 2.8826,
+    "eval141_delta_NON_DECIDING": {
+     "delta": 0.3199,
+     "lo": 0.2055,
+     "hi": 0.435,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "seed1": {
+    "path": "C:/Users/Admin/box2_ship/logs/es/es\\st1000\\R0_s1\\eval\\eval.json",
+    "ckpt_step": 1000,
+    "holdout_ade6": 3.4032,
+    "holdout_p10_ade6": 3.0245,
+    "holdout_delta": {
+     "delta": 0.3787,
+     "lo": 0.171,
+     "hi": 0.6141,
+     "separated": true,
+     "n_windows": 4076,
+     "n_episodes": 60,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "eval141_ade6_NON_DECIDING": 2.9414,
+    "eval141_delta_NON_DECIDING": {
+     "delta": 0.3787,
+     "lo": 0.2461,
+     "hi": 0.5181,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "seed_mean_holdout_delta": 0.30069999999999997,
+   "holdout_below_p10_separated_both_seeds": false,
+   "training_seed_floor_holdout_delta": 0.15599999999999997,
+   "training_seed_floor_eval141_ade6_NON_DECIDING": 0.05879999999999974
+  },
+  "2000": {
+   "seed0": {
+    "path": "C:/Users/Admin/box2_ship/logs/es/es\\st2000\\R0_s0\\eval\\eval.json",
+    "ckpt_step": 2000,
+    "holdout_ade6": 3.2982,
+    "holdout_p10_ade6": 3.0245,
+    "holdout_delta": {
+     "delta": 0.2737,
+     "lo": 0.0753,
+     "hi": 0.5099,
+     "separated": true,
+     "n_windows": 4076,
+     "n_episodes": 60,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "eval141_ade6_NON_DECIDING": 2.9564,
+    "eval141_delta_NON_DECIDING": {
+     "delta": 0.3936,
+     "lo": 0.2421,
+     "hi": 0.5413,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "seed1": {
+    "path": "C:/Users/Admin/box2_ship/logs/es/es\\st2000\\R0_s1\\eval\\eval.json",
+    "ckpt_step": 2000,
+    "holdout_ade6": 3.5117,
+    "holdout_p10_ade6": 3.0245,
+    "holdout_delta": {
+     "delta": 0.4872,
+     "lo": 0.273,
+     "hi": 0.7494,
+     "separated": true,
+     "n_windows": 4076,
+     "n_episodes": 60,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "eval141_ade6_NON_DECIDING": 3.0166,
+    "eval141_delta_NON_DECIDING": {
+     "delta": 0.4539,
+     "lo": 0.3102,
+     "hi": 0.6032,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "seed_mean_holdout_delta": 0.38045,
+   "holdout_below_p10_separated_both_seeds": false,
+   "training_seed_floor_holdout_delta": 0.21350000000000002,
+   "training_seed_floor_eval141_ade6_NON_DECIDING": 0.06020000000000003
+  },
+  "6000": {
+   "seed0": {
+    "path": "C:/Users/Admin/box2_ship/logs/es/banked\\R0_s0\\eval\\eval.json",
+    "ckpt_step": 6000,
+    "holdout_ade6": 3.4215,
+    "holdout_p10_ade6": 3.0245,
+    "holdout_delta": {
+     "delta": 0.3971,
+     "lo": 0.1806,
+     "hi": 0.6519,
+     "separated": true,
+     "n_windows": 4076,
+     "n_episodes": 60,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "eval141_ade6_NON_DECIDING": 3.0931,
+    "eval141_delta_NON_DECIDING": {
+     "delta": 0.5303,
+     "lo": 0.3684,
+     "hi": 0.691,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "seed1": {
+    "path": "C:/Users/Admin/box2_ship/logs/es/banked\\R0_s1\\eval\\eval.json",
+    "ckpt_step": 6000,
+    "holdout_ade6": 3.5498,
+    "holdout_p10_ade6": 3.0245,
+    "holdout_delta": {
+     "delta": 0.5253,
+     "lo": 0.3218,
+     "hi": 0.7642,
+     "separated": true,
+     "n_windows": 4076,
+     "n_episodes": 60,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "eval141_ade6_NON_DECIDING": 3.0765,
+    "eval141_delta_NON_DECIDING": {
+     "delta": 0.5137,
+     "lo": 0.3594,
+     "hi": 0.6629,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "seed_mean_holdout_delta": 0.4612,
+   "holdout_below_p10_separated_both_seeds": false,
+   "training_seed_floor_holdout_delta": 0.12819999999999998,
+   "training_seed_floor_eval141_ade6_NON_DECIDING": 0.016600000000000392
+  }
+ },
+ "reading": "ES-1: S* = 250 (seed-mean holdout delta -0.0409). ES-2 runs at S*: A1 b0.08g50 x2 seeds + A1x seed 0.",
+ "next": "es2 250 0.08 50"
+}

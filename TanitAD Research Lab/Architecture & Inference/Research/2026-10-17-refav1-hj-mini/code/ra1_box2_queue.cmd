@@ -6,6 +6,10 @@ rem   ra1_box2_queue.cmd stage1                  R0 x2 seeds, A0 (beta 0.04, 0.0
 rem   ra1_box2_queue.cmd stage1verdict           prints the best A1 cell (lowest seed-0 ADE@6s on the withheld 60-clip TRAIN holdout) from the stage-1 evals
 rem   ra1_box2_queue.cmd stage2 BETA GAMMA       the best cell: A1 seed 1, A2 x2, A1x seed 0, A1h (EXPLORATORY) seed 0
 rem   ra1_box2_queue.cmd final BETA GAMMA        the verdict.json over everything that finished
+rem   ra1_box2_queue.cmd es "S1 S2 ..."         PREREG_RA1_ES ES-1: R0 x2 seeds at each --steps budget, in %RUNS%_es\st<S>
+rem   ra1_box2_queue.cmd es2 S BETA GAMMA       PREREG_RA1_ES ES-2: at budget S, A1 x2 seeds + A1x seed 0 at one cell, same root
+rem   ra1_box2_queue.cmd es3 S BETA             PREREG_RA1_ES Addendum A: A0 x2 seeds at budget S, + the verdict over R0/A0/A1/A1x at S
+rem   ra1_box2_queue.cmd ridge                  PREREG_RA1_RIDGE: the CPU ridge probe of the pooled features (no training)
 rem
 rem HOLDOUT (PREREG_HJ_STAGE0 Amendment 1): every trainer call carries --holdout-n 60 (the trainer REFUSES to run without it): the last 60 of the
 rem 600 stage-A clips in sha12 order are withheld from EVERY arm, the evals score them (--train-cache), and the A1 cell is chosen on them, NEVER on
@@ -38,6 +42,7 @@ set "GRID=%PKG%\eval_grid_windows.json"
 set "HOLDOUT=--holdout-n 60"
 set "TRAIN=%REPO%\stack\scripts\ra1_hjepa_train.py"
 set "EVAL=%REPO%\stack\scripts\ra1_hjepa_eval.py"
+set "RIDGE=%REPO%\stack\scripts\ra1_ridge_probe.py"
 set "PYTHONPATH=%REPO%\stack;%REPO%\taniteval"
 if not exist "%RUNS%" mkdir "%RUNS%"
 if not defined RA1_DRYRUN if not exist "%TRACKS%" (echo REFUSED: %TRACKS% is missing - build it with stack\scripts\build_native_tracks.py and copy it next to the cache & exit /b 2)
@@ -47,7 +52,13 @@ if /i "%~1"=="stage1" goto :stage1
 if /i "%~1"=="stage1verdict" goto :stage1verdict
 if /i "%~1"=="stage2" goto :stage2
 if /i "%~1"=="final" goto :final
+if /i "%~1"=="es" goto :es
+if /i "%~1"=="es2" goto :es2
+if /i "%~1"=="es3" goto :es3
+if /i "%~1"=="ridge" goto :ridge
 echo usage: ra1_box2_queue.cmd gate^|stage1^|stage1verdict^|stage2 BETA GAMMA^|final BETA GAMMA
+echo        ra1_box2_queue.cmd es "S1 S2 ..."^|es2 S BETA GAMMA   (PREREG_RA1_ES)
+echo        ra1_box2_queue.cmd es3 S BETA^|ridge   (PREREG_RA1_ES Addendum A, PREREG_RA1_RIDGE)
 exit /b 2
 
 :gate
@@ -92,6 +103,54 @@ exit /b 0
 
 rem ---------------------------------------------------------------------------------------------------------------
 rem :run TAG ARM SEED BETA|- GAMMA|- "EXTRA"      train (resumable) then eval one arm
+:es
+rem PREREG_RA1_ES ES-1. Each budget is a FULL run (the cosine schedule is compressed to --steps; the trainer keeps only latest.pt,
+rem so intermediate checkpoints of the 6000-step runs do not exist). Every other constant is the :run block's, unchanged.
+if "%~2"=="" (echo es needs a quoted step list, e.g. es "250 500 1000 2000" & exit /b 2)
+set "ESROOT=%RUNS%_es"
+for %%N in (%~2) do (
+  set "STEPS=%%N"
+  set "RUNS=%ESROOT%\st%%N"
+  if not exist "%ESROOT%\st%%N" mkdir "%ESROOT%\st%%N"
+  for %%S in (0 1) do call :run R0_s%%S R0 %%S - - "" || exit /b 1
+)
+exit /b 0
+
+:es2
+rem PREREG_RA1_ES ES-2: the budget S* is R0's (holdout-selected), applied unchanged to A1 and A1x; the cell is stage 1's holdout pick.
+if "%~4"=="" (echo es2 needs S BETA GAMMA & exit /b 2)
+set "STEPS=%~2"
+set "RUNS=%RUNS%_es\st%~2"
+if not exist "%RUNS%" mkdir "%RUNS%"
+for %%S in (0 1) do call :run A1_b%~3g%~4_s%%S A1 %%S %~3 %~4 "" || exit /b 1
+call :run A1x_b%~3g%~4_s0 A1x 0 %~3 %~4 "" || exit /b 1
+rem The queue's own verdict over this budget's runs (R0 from ES-1): A1x gate, then K on {R0, A1}. Its SENS/branch text assumes A0 runs,
+rem which this sweep does not have -- code\ra1_es_verdict.py applies PREREG_RA1_ES's readings instead.
+set "VN=es2_verdict.json"
+set "C=b%~3g%~4"
+call :verdict --run "R0@0=%RUNS%\R0_s0\eval" --run "R0@1=%RUNS%\R0_s1\eval" --run "A1:%C%@0=%RUNS%\A1_%C%_s0\eval" --run "A1:%C%@1=%RUNS%\A1_%C%_s1\eval" --run "A1x:%C%@0=%RUNS%\A1x_%C%_s0\eval"
+exit /b %errorlevel%
+
+:es3
+rem PREREG_RA1_ES Addendum A: A0 (SIGReg + prediction, gamma 0) at the ES-2 budget, then the queue's verdict over every arm at that
+rem budget. A0's cell b<BETA> pairs with A1's b<BETA>g50 (the verdict's a0_for rule); the A1 cell is ES-2's.
+if "%~3"=="" (echo es3 needs S BETA & exit /b 2)
+set "STEPS=%~2"
+set "RUNS=%RUNS%_es\st%~2"
+if not exist "%RUNS%" mkdir "%RUNS%"
+for %%S in (0 1) do call :run A0_b%~3_s%%S A0 %%S %~3 - "" || exit /b 1
+set "VN=es3_verdict.json"
+set "C=b%~3g50"
+call :verdict --run "R0@0=%RUNS%\R0_s0\eval" --run "R0@1=%RUNS%\R0_s1\eval" --run "A0:b%~3@0=%RUNS%\A0_b%~3_s0\eval" --run "A0:b%~3@1=%RUNS%\A0_b%~3_s1\eval" --run "A1:%C%@0=%RUNS%\A1_%C%_s0\eval" --run "A1:%C%@1=%RUNS%\A1_%C%_s1\eval" --run "A1x:%C%@0=%RUNS%\A1x_%C%_s0\eval"
+exit /b %errorlevel%
+
+:ridge
+rem PREREG_RA1_RIDGE: CPU only (no --device), no training. Output next to the ES runs.
+if not exist "%RUNS%_es" mkdir "%RUNS%_es"
+if defined RA1_DRYRUN (echo "%PY%" "%RIDGE%" --cache "%CACHE%" --tracks "%TRACKS%" --p10-prior "%P10%" --grid-json "%GRID%" %HOLDOUT% --out "%RUNS%_es\ridge_probe.json" & exit /b 0)
+"%PY%" "%RIDGE%" --cache "%CACHE%" --tracks "%TRACKS%" --p10-prior "%P10%" --grid-json "%GRID%" %HOLDOUT% --out "%RUNS%_es\ridge_probe.json" > "%RUNS%_es\ridge_probe.log" 2>&1
+exit /b %errorlevel%
+
 :run
 set "TAG=%~1"
 set "OUT=%RUNS%\%~1"

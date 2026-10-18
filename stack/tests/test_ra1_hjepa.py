@@ -704,3 +704,191 @@ def test_queue_dry_run_prints_holdout_n_60_in_every_trainer_argv(tmp_path):
         if args != "gate":
             ev = [ln for ln in out if "ra1_hjepa_eval.py" in ln]
             assert len(ev) == n_train and all("--train-cache" in ln for ln in ev)
+
+
+# ---- PREREG_RA1_ES: the budget-sweep stages reuse the :run block, so every argv keeps --holdout-n 60, --kin-mode yaw and the budget
+@needs_queue
+@pytest.mark.skipif(os.name != "nt", reason="the queue is a Windows batch file")
+def test_queue_es_stages_dry_run_carry_the_budget_holdout_and_yaw(tmp_path):
+    import re
+    import subprocess
+    runs = tmp_path / "runs"
+    env = dict(os.environ, RA1_DRYRUN="1", REPO=str(REPO), RUNS=str(runs))
+
+    def dry(args):
+        r = subprocess.run(f'cmd /c ""{QUEUE}" {args}"', env=env, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=120)
+        return r.returncode, r.stdout.splitlines()
+
+    rc, out = dry('es "250 500"')
+    assert rc == 0, out
+    tr = [ln for ln in out if "ra1_hjepa_train.py" in ln]
+    got = [(re.search(r"--arm (\S+) --seed (\S+)", ln).groups(), re.search(r"--steps (\d+)", ln).group(1)) for ln in tr]
+    assert got == [(("R0", "0"), "250"), (("R0", "1"), "250"), (("R0", "0"), "500"), (("R0", "1"), "500")], got
+    assert all("--holdout-n 60" in ln and "--kin-mode yaw" in ln for ln in tr)
+    assert all(f"runs_es{os.sep}st{s}{os.sep}R0_s" in ln for ln, (_, s) in zip(tr, got)), "each budget gets its own run dir"
+    ev = [ln for ln in out if "ra1_hjepa_eval.py" in ln]
+    assert len(ev) == 4 and all("--train-cache" in ln for ln in ev), "every eval scores the holdout"
+
+    rc, out = dry("es2 500 0.08 50")
+    assert rc == 0, out
+    tr = [ln for ln in out if "ra1_hjepa_train.py" in ln]
+    arms = [re.search(r"--arm (\S+) --seed (\S+)", ln).groups() for ln in tr]
+    assert arms == [("A1", "0"), ("A1", "1"), ("A1x", "0")], arms
+    assert all("--steps 500" in ln and "--beta 0.08 --gamma 50" in ln and "--holdout-n 60" in ln and "--kin-mode yaw" in ln for ln in tr)
+    vd = [ln for ln in out if "ra1_hjepa_eval.py" in ln and " verdict --out " in ln]
+    assert len(vd) == 1 and vd[0].count("--run ") == 5 and "es2_verdict.json" in vd[0], vd
+    assert all(f"{k}=" in vd[0] for k in ("R0@0", "R0@1", "A1:b0.08g50@0", "A1:b0.08g50@1", "A1x:b0.08g50@0")), vd
+
+    for bad in ("es", "es2 500"):                              # a missing budget list / cell is refused, never defaulted
+        rc, out = dry(bad)
+        assert rc == 2, (bad, out)
+        assert not any("ra1_hjepa_train.py" in ln for ln in out)
+
+
+ES_VERDICT = QUEUE.parent / "ra1_es_verdict.py"
+
+
+def _es_mod():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("ra1_es_verdict", ES_VERDICT)
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    return m
+
+
+def _es_eval(d, seed, step, hold_delta, sha="h" * 64, arm="R0", kin="yaw"):
+    p = Path(d) / f"R0_s{seed}" / "eval"
+    p.mkdir(parents=True)
+    dd = lambda x: dict(delta=x, lo=x - 0.05, hi=x + 0.05, separated=abs(x) > 0.05)     # noqa: E731
+    ev = dict(arm=arm, kin_mode=kin, instrument_ok=True, ckpt_step=step,
+              holdout=dict(clips_sha256=sha, ade6_arm=dict(mean=3.0 + hold_delta), ade6_p10=dict(mean=3.0), ade6_arm_minus_p10=dd(hold_delta)),
+              K=dict(ade6_arm=dict(mean=2.6 + hold_delta), ade6_arm_minus_p10=dd(hold_delta)))
+    (p / "eval.json").write_text(json.dumps(ev), encoding="utf-8")
+
+
+@pytest.mark.skipif(not ES_VERDICT.exists(), reason="the refav1-hj-mini package is not in this checkout")
+def test_es_verdict_selects_on_the_holdout_with_the_shorter_tie_and_the_null_stop(tmp_path):
+    m = _es_mod()
+
+    def build(name, deltas):                                   # deltas: {budget: (seed0, seed1)}, 6000 is the banked root
+        root, banked = tmp_path / name / "es", tmp_path / name / "banked"
+        for S, (d0, d1) in deltas.items():
+            base = banked if S == 6000 else root / f"st{S}"
+            _es_eval(base, 0, S, d0)
+            _es_eval(base, 1, S, d1)
+        a = types.SimpleNamespace(root=str(root), banked=str(banked), budgets=[str(S) for S in deltas if S != 6000])
+        return a
+
+    # 500 is the minimum (-0.100); 1000 is within the 0.01 m tie band (-0.095) but LONGER -> 500; 250 is shorter but outside the band
+    r = m.select(build("tie", {250: (-0.05, -0.06), 500: (-0.10, -0.10), 1000: (-0.09, -0.10), 2000: (0.1, 0.1), 6000: (0.40, 0.38)}))
+    assert r["status"] == "OK" and r["S_star"] == 500 and r["next"] == "es2 500 0.08 50", r
+    r = m.select(build("tie2", {250: (-0.095, -0.095), 500: (-0.10, -0.10), 6000: (0.4, 0.4)}))
+    assert r["S_star"] == 250, "a budget within the tie band that is SHORTER wins"
+    # no budget below 0 -> NULL, ES-2 not run
+    r = m.select(build("null", {250: (0.01, 0.0), 500: (0.05, 0.02), 6000: (0.40, 0.38)}))
+    assert r["next"] == "NULL" and "NULL" in r["reading"], r
+    # a run whose checkpoint step is not its budget is refused
+    a = build("step", {250: (-0.1, -0.1), 6000: (0.4, 0.4)})
+    ev = Path(a.root) / "st250" / "R0_s1" / "eval" / "eval.json"
+    j = json.loads(ev.read_text(encoding="utf-8")); j["ckpt_step"] = 6000; ev.write_text(json.dumps(j), encoding="utf-8")
+    with pytest.raises(SystemExit, match="ckpt_step"):
+        m.select(a)
+    # a steer-representation run is refused
+    a = build("steer", {250: (-0.1, -0.1), 6000: (0.4, 0.4)})
+    ev = Path(a.banked) / "R0_s0" / "eval" / "eval.json"
+    j = json.loads(ev.read_text(encoding="utf-8")); j["kin_mode"] = "steer"; ev.write_text(json.dumps(j), encoding="utf-8")
+    with pytest.raises(SystemExit, match="kin_mode"):
+        m.select(a)
+    # a missing run is INCOMPLETE, never a selection over what happens to exist
+    a = build("miss", {250: (-0.1, -0.1), 6000: (0.4, 0.4)})
+    (Path(a.root) / "st250" / "R0_s1" / "eval" / "eval.json").unlink()
+    assert m.select(a)["status"] == "INCOMPLETE"
+
+
+@pytest.mark.skipif(not ES_VERDICT.exists(), reason="the refav1-hj-mini package is not in this checkout")
+def test_es_verdict_read_gates_k_on_the_a1x_instrument(tmp_path):
+    m = _es_mod()
+    es1 = tmp_path / "es1.json"
+    es1.write_text(json.dumps(dict(next="es2 500 0.08 50", S_star=500, reading="r")), encoding="utf-8")
+
+    def verdict(gate_ok, r0_pass, a1_pass):
+        cand = dict(R0=dict(mean_ade6=2.40, PASS=r0_pass), A1=dict(mean_ade6=2.45, PASS=a1_pass), A2=dict(mean_ade6=None, PASS=False))
+        v = dict(kin_mode="yaw", deciding=True, A1_best_cell="b0.08g50", instrument_ok_all=True,
+                 A1x_control=dict(verdict="OK: A1x loses to A1, separated" if gate_ok else "INSTRUMENT BROKEN: A1x does not lose to A1"),
+                 K=dict(candidates=cand), training_seed_floor_A1=0.02)
+        p = tmp_path / f"v_{gate_ok}_{r0_pass}_{a1_pass}.json"
+        p.write_text(json.dumps(v), encoding="utf-8")
+        return types.SimpleNamespace(es1=str(es1), es2_verdict=str(p))
+
+    assert m.read(verdict(False, True, True))["outcome"] == "INSTRUMENT_BROKEN", "a broken gate is never overridden by a K pass"
+    assert m.read(verdict(True, True, False))["outcome"] == "K_PASS"
+    assert m.read(verdict(True, False, True))["outcome"] == "K_FAIL", "K is read on the BEST mean arm (R0 here), not on any passing arm"
+    es1.write_text(json.dumps(dict(next="NULL", S_star=250, reading="r")), encoding="utf-8")
+    with pytest.raises(SystemExit, match="NULL"):
+        m.read(verdict(True, True, True))
+
+
+# ---- PREREG_RA1_RIDGE: the probe's closed-form ridge and its reading order
+def _ridge_mod():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("ra1_ridge_probe", REPO / "stack" / "scripts" / "ra1_ridge_probe.py")
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    return m
+
+
+def test_ridge_probe_recovers_a_planted_map_and_tends_to_the_bias():
+    m = _ridge_mod()
+    rng = np.random.default_rng(0)
+    X = rng.normal(size=(4000, 12)) * rng.uniform(0.5, 3.0, size=12)
+    Wt = rng.normal(size=(12, 6))
+    Y = X @ Wt + 0.7 + 0.05 * rng.normal(size=(4000, 6))
+    rg = m.Ridge(X, Y)
+    pred = rg.predict(X, rg.coef(1e-8))
+    assert np.abs(pred - (X @ Wt + 0.7)).max() < 0.05, "a tiny penalty recovers the planted map"
+    far = rg.predict(X, rg.coef(1e9))
+    assert np.abs(far - Y.mean(0)).max() < 1e-4, "an infinite penalty IS the bias-only control"
+    zero = m.Ridge(rng.normal(size=(4000, 12)), Y)                # features carrying nothing
+    assert np.abs(zero.coef(1e-6)).max() < 0.1 * np.abs(rg.coef(1e-6)).max(), "features carrying nothing get coefficients at the noise level, an order below the planted map's"
+
+
+def test_ridge_probe_reading_order():
+    m = _ridge_mod()
+    sep = lambda d: dict(delta=d, lo=d - 0.01, hi=d + 0.01, separated=abs(d) > 0.01)     # noqa: E731
+    o = dict(controls=dict(ok=True), sets={"mean+f8": dict(eval_minus_p10=sep(-0.10))}, vision_minus_f8_eval=sep(-0.05))
+    assert m.reading(o).startswith("SIGNAL")
+    o["vision_minus_f8_eval"] = sep(0.0)
+    assert m.reading(o).startswith("PRIOR CORRECTION ONLY")
+    o["sets"]["mean+f8"]["eval_minus_p10"] = sep(0.0)
+    assert m.reading(o).startswith("NO LINEAR SIGNAL")
+    o["controls"]["ok"] = False
+    o["sets"]["mean+f8"]["eval_minus_p10"] = sep(-0.5)
+    assert m.reading(o).startswith("INSTRUMENT"), "a failed control is never overridden by a good number"
+
+
+@needs_queue
+@pytest.mark.skipif(os.name != "nt", reason="the queue is a Windows batch file")
+def test_queue_es3_and_ridge_stages_dry_run(tmp_path):
+    import re
+    import subprocess
+    env = dict(os.environ, RA1_DRYRUN="1", REPO=str(REPO), RUNS=str(tmp_path / "runs"))
+
+    def dry(args):
+        r = subprocess.run(f'cmd /c ""{QUEUE}" {args}"', env=env, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=120)
+        return r.returncode, r.stdout.splitlines()
+
+    rc, out = dry("es3 250 0.08")
+    assert rc == 0, out
+    tr = [ln for ln in out if "ra1_hjepa_train.py" in ln]
+    assert [re.search(r"--arm (\S+) --seed (\S+)", ln).groups() for ln in tr] == [("A0", "0"), ("A0", "1")]
+    assert all("--steps 250" in ln and "--beta 0.08" in ln and "--gamma" not in ln and "--holdout-n 60" in ln and "--kin-mode yaw" in ln
+               for ln in tr), tr
+    vd = [ln for ln in out if " verdict --out " in ln]
+    assert len(vd) == 1 and vd[0].count("--run ") == 7 and "es3_verdict.json" in vd[0], vd
+    assert all(f"{k}=" in vd[0] for k in ("R0@0", "R0@1", "A0:b0.08@0", "A0:b0.08@1", "A1:b0.08g50@0", "A1:b0.08g50@1", "A1x:b0.08g50@0"))
+    rc, out = dry("ridge")
+    assert rc == 0, out
+    rp = [ln for ln in out if "ra1_ridge_probe.py" in ln]
+    assert len(rp) == 1 and "--holdout-n 60" in rp[0] and "native_tracks.pt" in rp[0] and "p10_yaw540" in rp[0], rp
+    assert "--device" not in rp[0], "the ridge probe is CPU only"
+    assert dry("es3 250")[0] == 2

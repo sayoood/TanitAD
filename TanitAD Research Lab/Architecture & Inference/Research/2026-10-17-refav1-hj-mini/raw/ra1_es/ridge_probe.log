@@ -1,0 +1,76 @@
+{
+ "controls": {
+  "hold_sha_ok": true,
+  "train_sha_ok": true,
+  "train_hold_overlap": 0,
+  "train_eval": {
+   "n_train": 540,
+   "n_eval": 141,
+   "overlap": 0
+  },
+  "hold_eval": {
+   "n_train": 60,
+   "n_eval": 141,
+   "overlap": 0
+  },
+  "hold_p10_ade6": 3.0244912312132715,
+  "eval_p10_ade6": 2.562742903926379,
+  "p10_reproduces": true,
+  "ok": true
+ },
+ "reading": "NO LINEAR SIGNAL at 540 clips: the holdout-selected ridge readout does not beat P10 (-0.0115 [-0.0282, +0.0043]). Together with the ES sweep (no budget beats P10), the frozen pooled features add nothing a 540-clip readout can use. Next lever: data scale (PREREG_HJ_STAGE0: all 4,572 clips). A linear negative is not a learnability negative (TRAPS.md).",
+ "sets": {
+  "bias": {
+   "lam": "inf",
+   "hold": 3.022124904672467,
+   "eval_minus_p10": {
+    "delta": 0.0005,
+    "lo": -0.0011,
+    "hi": 0.002,
+    "separated": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   }
+  },
+  "f8": {
+   "lam": 0.0001,
+   "hold": 3.0172665962705745,
+   "eval_minus_p10": {
+    "delta": -0.0012,
+    "lo": -0.0059,
+    "hi": 0.004,
+    "separated": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   }
+  },
+  "mean": {
+   "lam": 10.0,
+   "hold": 2.9983697430026854,
+   "eval_minus_p10": {
+    "delta": -0.0113,
+    "lo": -0.0279,
+    "hi": 0.0042,
+    "separated": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   }
+  },
+  "mean+f8": {
+   "lam": 10.0,
+   "hold": 2.997386208611652,
+   "eval_minus_p10": {
+    "delta": -0.0115,
+    "lo": -0.0282,
+    "hi": 0.0043,
+    "separated": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   }
+  }
+ }
+}

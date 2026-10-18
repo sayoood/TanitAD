@@ -1,0 +1,128 @@
+{
+ "schema": "ra1-es3-attribution-v1",
+ "prereg": "PREREG_RA1_ES.md Addendum A",
+ "budget_steps": 250,
+ "n_windows": 2399,
+ "estimator": "paired episode-cluster bootstrap B=2000 seed 0 (EPISODE variance only)",
+ "ade6": {
+  "R0_s0": 2.5771293689356227,
+  "R0_s1": 2.5647697926965334,
+  "A0_b0.08_s0": 2.537836107294721,
+  "A0_b0.08_s1": 2.5380922488953077,
+  "A1_b0.08g50_s0": 2.5110215740627817,
+  "A1_b0.08g50_s1": 2.5147787282773355,
+  "A1x_b0.08g50_s0": 2.509932348958483
+ },
+ "p10_ade6": 2.562742903768671,
+ "per_seed": {
+  "seed0": {
+   "A0_minus_P10": {
+    "delta": -0.0249,
+    "lo": -0.0557,
+    "hi": 0.006,
+    "separated": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "A1_minus_P10": {
+    "delta": -0.0517,
+    "lo": -0.0792,
+    "hi": -0.0234,
+    "separated": true,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "A1_minus_A0": {
+    "delta": -0.0268,
+    "lo": -0.0508,
+    "hi": -0.0044,
+    "separated": true,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "A0_minus_R0": {
+    "delta": -0.0393,
+    "lo": -0.0838,
+    "hi": 0.0023,
+    "separated": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "A1_minus_R0": {
+    "delta": -0.0661,
+    "lo": -0.1186,
+    "hi": -0.0197,
+    "separated": true,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   }
+  },
+  "seed1": {
+   "A0_minus_P10": {
+    "delta": -0.0247,
+    "lo": -0.0573,
+    "hi": 0.0079,
+    "separated": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "A1_minus_P10": {
+    "delta": -0.048,
+    "lo": -0.0764,
+    "hi": -0.0201,
+    "separated": true,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "A1_minus_A0": {
+    "delta": -0.0233,
+    "lo": -0.048,
+    "hi": -0.0004,
+    "separated": true,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "A0_minus_R0": {
+    "delta": -0.0267,
+    "lo": -0.0685,
+    "hi": 0.0116,
+    "separated": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "A1_minus_R0": {
+    "delta": -0.05,
+    "lo": -0.0997,
+    "hi": -0.0029,
+    "separated": true,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   }
+  }
+ },
+ "A1x_minus_A0_seed0": {
+  "delta": -0.0279,
+  "lo": -0.0504,
+  "hi": -0.0063,
+  "separated": true,
+  "n_windows": 2399,
+  "n_episodes": 141,
+  "estimator": "paired_episode_cluster_bootstrap"
+ },
+ "seed_floors": {
+  "R0": 0.012359576239089343,
+  "A0_b0.08": 0.0002561416005866235,
+  "A1_b0.08g50": 0.003757154214553804
+ },
+ "reading": "READING 2: the IDM term carries the gain (A0 ~ P10, A1 < A0 separated at both seeds); A1x keeps it through its gradient into the adapter. Next: an IDM-only arm (no prediction loss)"
+}

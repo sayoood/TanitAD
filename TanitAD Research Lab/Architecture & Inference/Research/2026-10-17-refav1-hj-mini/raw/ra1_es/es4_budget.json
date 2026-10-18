@@ -1,0 +1,159 @@
+{
+ "schema": "ra1-es4-budget-v1",
+ "prereg": "PREREG_RA1_ES.md Addendum B",
+ "cell": "b0.08g50",
+ "estimator": "paired episode-cluster bootstrap B=2000 seed 0 (EPISODE variance only)",
+ "budgets": {
+  "250": {
+   "A1_holdout_ade6": [
+    2.941649842069967,
+    2.9392708160357492
+   ],
+   "A1_holdout_seed_mean": 2.940460329052858,
+   "A1x_holdout_ade6": 2.9492111399740097,
+   "A1_eval_ade6": [
+    2.5110215740627817,
+    2.5147787282773355
+   ],
+   "A1_minus_P10_NOT_K": [
+    {
+     "delta": -0.0517,
+     "lo": -0.0792,
+     "hi": -0.0234,
+     "separated": true
+    },
+    {
+     "delta": -0.048,
+     "lo": -0.0764,
+     "hi": -0.0201,
+     "separated": true
+    }
+   ],
+   "A1_minus_R0": [
+    {
+     "delta": -0.0661,
+     "lo": -0.1186,
+     "hi": -0.0197,
+     "separated": true
+    },
+    {
+     "delta": -0.05,
+     "lo": -0.0997,
+     "hi": -0.0029,
+     "separated": true
+    }
+   ],
+   "A1x_minus_A1_seed0": {
+    "delta": -0.0011,
+    "lo": -0.0046,
+    "hi": 0.0026,
+    "separated": false
+   },
+   "A1_seed_floor": 0.003757154214553804,
+   "gate_verdict": "INSTRUMENT BROKEN: A1x does not lose to A1 -- nothing else is read until this is fixed"
+  },
+  "500": {
+   "A1_holdout_ade6": [
+    2.968487442741513,
+    2.956679493432622
+   ],
+   "A1_holdout_seed_mean": 2.9625834680870673,
+   "A1x_holdout_ade6": 2.9748628793176892,
+   "A1_eval_ade6": [
+    2.477160953062052,
+    2.4866947446059453
+   ],
+   "A1_minus_P10_NOT_K": [
+    {
+     "delta": -0.0856,
+     "lo": -0.129,
+     "hi": -0.0397,
+     "separated": true
+    },
+    {
+     "delta": -0.076,
+     "lo": -0.1174,
+     "hi": -0.0342,
+     "separated": true
+    }
+   ],
+   "A1_minus_R0": [
+    {
+     "delta": -0.1683,
+     "lo": -0.2336,
+     "hi": -0.1059,
+     "separated": true
+    },
+    {
+     "delta": -0.2123,
+     "lo": -0.2906,
+     "hi": -0.141,
+     "separated": true
+    }
+   ],
+   "A1x_minus_A1_seed0": {
+    "delta": 0.0014,
+    "lo": -0.0103,
+    "hi": 0.0132,
+    "separated": false
+   },
+   "A1_seed_floor": 0.009533791543893333,
+   "gate_verdict": "UNRESOLVED: A1x is worse but not separated -- treat as INSTRUMENT BROKEN until it is"
+  },
+  "1000": {
+   "A1_holdout_ade6": [
+    3.0590788733077634,
+    2.979964141939747
+   ],
+   "A1_holdout_seed_mean": 3.019521507623755,
+   "A1x_holdout_ade6": 3.1286328086181414,
+   "A1_eval_ade6": [
+    2.5716361672883474,
+    2.5799726567450407
+   ],
+   "A1_minus_P10_NOT_K": [
+    {
+     "delta": 0.0089,
+     "lo": -0.0692,
+     "hi": 0.0875,
+     "separated": false
+    },
+    {
+     "delta": 0.0172,
+     "lo": -0.0493,
+     "hi": 0.0856,
+     "separated": false
+    }
+   ],
+   "A1_minus_R0": [
+    {
+     "delta": -0.311,
+     "lo": -0.4114,
+     "hi": -0.2176,
+     "separated": true
+    },
+    {
+     "delta": -0.3615,
+     "lo": -0.4822,
+     "hi": -0.2516,
+     "separated": true
+    }
+   ],
+   "A1x_minus_A1_seed0": {
+    "delta": 0.0461,
+    "lo": 0.0033,
+    "hi": 0.0969,
+    "separated": true
+   },
+   "A1_seed_floor": 0.008336489456693297,
+   "gate_verdict": "OK: A1x loses to A1, separated"
+  }
+ },
+ "S_star_A1": 250,
+ "holdout_seed_mean_by_budget": {
+  "250": 2.940460329052858,
+  "500": 2.9625834680870673,
+  "1000": 3.019521507623755
+ },
+ "rule": "lowest seed-mean A1 holdout ADE@6s; ties within 0.01 m -> the shorter budget"
+}
