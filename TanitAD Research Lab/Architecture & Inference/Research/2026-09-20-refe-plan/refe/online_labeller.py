@@ -180,9 +180,17 @@ class _SubprocPool:
 # ------------------------------------------------------------------------------------------------ trainer side
 class OnlineLabeller:
     def __init__(self, backend: str = "pdm", workers: int = 12, metric_cache: str | None = None, timeout_s: float = 900.0, python: str | None = None,
-                 n_prop: int = 64, horizon: int = 20, max_fail_frac: float = 0.02, min_sets_for_fail_check: int = 200):
+                 n_prop: int = 64, horizon: int = 20, max_fail_frac: float = 0.02, min_sets_for_fail_check: int = 200, chunks: int = 1):
         if backend not in BACKENDS:
             raise ValueError(f"backend must be one of {BACKENDS}")
+        # SPEC_P6 3.1 "a set may be split into proposal chunks across workers for latency": `chunks` k > 1 scores each sample's M proposals as k jobs of M/k
+        # CONTIGUOUS proposals and reassembles them in order.  score_plans scores every proposal against PDM-Closed alone (navsim_pdm_targets.score_plans: ep_j =
+        # raw_j / max(raw_0, raw_j)), so a label does not depend on which other proposals share its job; the G-LIVE-LAB identity check (D1a) re-proves it bit for
+        # bit against the OFFLINE labeller at the launch value.  MEASURED 2026-10-18 on the 8.5-CPU P6 pod (p6_cpu_probe pool --mode paced, trainer clock):
+        # 1 job per set reads a 2.3-3.8 % stall at 4-8 workers; 2 jobs per set 1.9 % at 4, 0.41 % at 6, 0.05-0.15 % at 8 (raw/2026-10-18-p6-gate-diagnosis/).
+        if int(chunks) < 1 or int(n_prop) % int(chunks):
+            raise ValueError(f"chunks must be >= 1 and divide n_prop ({n_prop}); got {chunks}")
+        self.chunks = int(chunks)
         if backend == "pdm" and not metric_cache:
             raise ValueError("the pdm backend needs --metric-cache (the D9 parts directory)")
         self.backend, self.workers, self.metric_cache = backend, int(workers), metric_cache
@@ -223,10 +231,16 @@ class OnlineLabeller:
             sent = self._prev_props                             # DELIBERATE REGRESSION (D1c): the previous micro-batch's proposals are labelled instead
         self._prev_props = props.copy()
         ex = self._executor()
-        self.stats["queue_sum"] += sum(1 for h in self._inflight.values() for f in h["futs"] if not f.done())
+        pend = sum(1 for h in self._inflight.values() for fs in h["futs"] for f in fs if not f.done())
+        self.stats["queue_sum"] += pend if self.chunks == 1 else pend / self.chunks           # in SETS (jobs / chunks)
         self.stats["n_submits"] += 1
-        futs = [ex.submit(_job, self.backend, m, sent[i]) for i, m in enumerate(metas)]            # (_SubprocPool ignores _job: its workers call it)
-        h = {"stamp": int(stamp), "step": int(step), "futs": futs, "shas": [sha_of(props[i]) for i in range(len(metas))], "t_submit": time.perf_counter()}
+        if props.shape[1] % self.chunks:
+            raise ValueError(f"{props.shape[1]} proposals per sample do not split into {self.chunks} chunks")
+        m = props.shape[1] // self.chunks
+        cuts = [slice(c * m, (c + 1) * m) for c in range(self.chunks)]                            # contiguous along M; reassembled in this order
+        futs = [[ex.submit(_job, self.backend, meta, sent[i, sl]) for sl in cuts] for i, meta in enumerate(metas)]   # (_SubprocPool ignores _job: its workers call it)
+        h = {"stamp": int(stamp), "step": int(step), "futs": futs, "shas": [sha_of(props[i]) for i in range(len(metas))],
+             "cshas": [[sha_of(props[i, sl]) for sl in cuts] for i in range(len(metas))], "cuts": cuts, "t_submit": time.perf_counter()}
         self._inflight[int(stamp)] = h
         return h
 
@@ -239,26 +253,37 @@ class OnlineLabeller:
         mask = np.zeros(B, np.float32)
         reasons = []
         try:
-            for i, f in enumerate(h["futs"]):
-                rem = self.timeout_s - (time.perf_counter() - t0)
-                try:
-                    r = f.result(timeout=max(rem, 0.001))
-                except cf.TimeoutError:
-                    raise RuntimeError(f"the online labeller did not return micro-batch {h['stamp']} within {self.timeout_s:.0f} s (queue stalled)") from None
-                except Exception as e:                                   # noqa: BLE001 -- a worker error: counted, masked, and the rate is guarded below
+            for i, fs in enumerate(h["futs"]):
+                failed = missing = None
+                for c, f in enumerate(fs):                               # every chunk is awaited and identity-checked, even after a sibling failed
+                    rem = self.timeout_s - (time.perf_counter() - t0)
+                    try:
+                        r = f.result(timeout=max(rem, 0.001))
+                    except cf.TimeoutError:
+                        raise RuntimeError(f"the online labeller did not return micro-batch {h['stamp']} within {self.timeout_s:.0f} s (queue stalled)") from None
+                    except Exception as e:                               # noqa: BLE001 -- a worker error: counted (once per SAMPLE), masked, rate-guarded below
+                        failed = failed or f"{type(e).__name__}: {str(e)[:120]}"
+                        continue
+                    if r["sha"] != h["cshas"][i][c]:
+                        raise RuntimeError(f"LABEL/PROPOSAL IDENTITY VIOLATED on micro-batch {h['stamp']} sample {i}"
+                                           f"{f' chunk {c}/{len(fs)}' if len(fs) > 1 else ''}: the worker scored proposals that are not the ones the "
+                                           f"trainer took its loss on (sha {r['sha'][:12]} != {h['cshas'][i][c][:12]}). A stale or misrouted label is refused.")
+                    self.stats["cpu_s"] += r["cpu_s"]
+                    if r["labels"] is None:
+                        missing = missing or r["reason"]
+                        continue
+                    labels[i, h["cuts"][c]] = r["labels"]
+                if failed is not None:
                     self.stats["n_failed"] += 1
                     self.tot_failed += 1
-                    reasons.append(f"{type(e).__name__}: {str(e)[:120]}")
-                    continue
-                if r["sha"] != h["shas"][i]:
-                    raise RuntimeError(f"LABEL/PROPOSAL IDENTITY VIOLATED on micro-batch {h['stamp']} sample {i}: the worker scored proposals that are not the ones the "
-                                       f"trainer took its loss on (sha {r['sha'][:12]} != {h['shas'][i][:12]}). A stale or misrouted label is refused.")
-                self.stats["cpu_s"] += r["cpu_s"]
-                if r["labels"] is None:
+                    reasons.append(failed)
+                elif missing is not None:
                     self.stats["n_no_parts"] += 1
-                    reasons.append(r["reason"])
-                    continue
-                labels[i], mask[i] = r["labels"], 1.0
+                    reasons.append(missing)
+                else:
+                    mask[i] = 1.0
+                if mask[i] == 0.0:
+                    labels[i] = 0.0                                      # a sample with ANY unlabelled chunk carries no label at all (never a partial set)
         finally:
             self._inflight.pop(h["stamp"], None)
         self.stats["stall_s"] += time.perf_counter() - t0

@@ -197,10 +197,15 @@ export REFE_BACKBONE_ROOT="$DATA/backbones" PYTHONUNBUFFERED=1
 # argv peaks at 41.29 GiB allocated of 44.43, so fragmentation alone can end a 7-day run.  The gate, every instrument and the launch inherit it.
 export PYTORCH_CUDA_ALLOC_CONF="${PYTORCH_CUDA_ALLOC_CONF:-expandable_segments:True}"
 CG="$(cgroup_cores)"; CORES="${CG%%|*}"; CORES_SRC="${CG#*|}"
-# labeller pool: leave 4 vCPU for the trainer, its loaders and IPC (M-LAB sizing); at most 16
-LW="${P6_LABEL_WORKERS:-$(( CORES - 4 < 1 ? 1 : (CORES - 4 > 16 ? 16 : CORES - 4) ))}"
+# labeller pool: leave 2 vCPU for the trainer's main thread and its 2 loaders; at most 16.  Was CORES - 4 (M-LAB sizing), which gave 4 workers on the 8.5-CPU pod.
+# MEASURED 2026-10-18 on that pod at 2 jobs per set (LC below; raw/2026-10-18-p6-gate-diagnosis/), paced stall / pool-alone sets/s / CPU share kept by a 1-core trainer stand-in:
+# 4 workers 1.9 % / 6.80 (1 % over the gate's 6.735 bar) / 99.97 %;  6 workers 0.41 % / 9.65 / 97.0 %;  8 workers 0.05 % / 10.69 / 92.6 %.
+LW="${P6_LABEL_WORKERS:-$(( CORES - 2 < 1 ? 1 : (CORES - 2 > 16 ? 16 : CORES - 2) ))}"
 CW="${P6_CACHE_WORKERS:-$(( CORES < 1 ? 1 : (CORES > 24 ? 24 : CORES) ))}"
-log "cores $CORES ($CORES_SRC): label workers $LW, cache workers $CW"
+# jobs per labelled set (train.py --label-chunks; SPEC_P6 3.1's latency split, labels per proposal).  2 since 2026-10-18: on the 8.5-CPU pod one job per set stalled the GPU
+# 2.3-3.8 % at 4-8 workers in the paced probe (more workers did not help) and 10.3 % in one window of the a5a4ee8 gate dry run (raw/2026-10-18-p6-gate-diagnosis/RESULT.md).
+LC="${P6_LABEL_CHUNKS:-2}"
+log "cores $CORES ($CORES_SRC): label workers $LW, jobs per set $LC, cache workers $CW"
 [ "$LW" -ge 12 ] || log "WARNING: $LW label workers (< 12): G-LIVE-LAB's 6.735 sets/s bar is unlikely to hold; the gate decides"
 cd "$PKG/refe" || refuse "cannot cd $PKG/refe"
 CVD_SAVED="${CUDA_VISIBLE_DEVICES-__unset__}"
@@ -319,7 +324,7 @@ if [ "$OVERLAP" = 1 ] && [ "${P6_EARLY_LAB:-1}" != "0" ] && ! stage_done earlyla
   [ -n "$ETOKS" ] || refuse "no parts to sample for the early labeller instrument"
   ( echo 1000 > /proc/self/oom_score_adj 2> /dev/null
     exec env -u HF_TOKEN -u DRIVERL_EVAL_ROUTE_LANE_RANK "$PY" diag_p6_labeller_identity.py --cache "$MC" --db-root "$DBS" --map-root "${NUPLAN_MAPS_ROOT:-}" --tokens "$ETOKS" \
-      --workers "$LW" --n-sets "${P6_LAB_SETS:-256}" --out "$P6/lab_early.json" ) > "$P6/lab_early.log" 2>&1 200>&-
+      --workers "$LW" --chunks "$LC" --n-sets "${P6_LAB_SETS:-256}" --out "$P6/lab_early.json" ) > "$P6/lab_early.log" 2>&1 200>&-
   grep -q "^ZZLAB_IDENTITY_PASS" "$P6/lab_early.log" || refuse "EARLY G-LIVE-LAB: identity or the stale-proposal refusal failed (lab_early.log)"
   "$PY" p6_overlap.py lab-bar --json "$P6/lab_early.json" > "$P6/lab_early_bar.out" 2>&1 200>&-
   log "ZZP6_EARLY_LAB $(tail -n 1 "$P6/lab_early_bar.out") | $(grep '^ZZLAB_THROUGHPUT' "$P6/lab_early.log" | tail -n 1) sets/s at $LW workers BESIDE the P2 seed replicate (a LOWER bound of the gate's pool-alone number; >= 6.735 = FIT on throughput)"
@@ -389,9 +394,9 @@ log "lanes ok"; stop_after lanes
 # ---- 7b. THE TRAINING ARGUMENTS, defined ONCE and BEFORE every instrument and the launch gate: the token is minted over EXACTLY this string and verified against it
 #          before the preflight and before every train.py launch.  --yaw-wrap is filled from YAW_WRAP (top of this file) and nothing else.
 yaw_check
-ARGS="--backbone vitl16 --targets $CBANK --images $PIX --calib $BANK/calib_table.json --metric-cache $MC --scorer-sees-trunk --yaw-wrap $YAW_WRAP --nav-mode command --labeller online --label-workers $LW --epochs 25 --epoch-unit scenes --batch 4 --accum 64 --lr 2e-4 --weight-decay 0.01 --amp bf16 --score-w 0.1 --tf32 --compile --workers 2 --log-every 1 --ckpt-every-min 20 --out $RUN --resume"
+ARGS="--backbone vitl16 --targets $CBANK --images $PIX --calib $BANK/calib_table.json --metric-cache $MC --scorer-sees-trunk --yaw-wrap $YAW_WRAP --nav-mode command --labeller online --label-workers $LW --label-chunks $LC --epochs 25 --epoch-unit scenes --batch 4 --accum 64 --lr 2e-4 --weight-decay 0.01 --amp bf16 --score-w 0.1 --tf32 --compile --workers 2 --log-every 1 --ckpt-every-min 20 --out $RUN --resume"
 ARGS_SHA="$(printf '%s' "$ARGS" | sha256sum | cut -c1-16)"
-log "ARGS sha $ARGS_SHA (--yaw-wrap $YAW_WRAP, --label-workers $LW)"
+log "ARGS sha $ARGS_SHA (--yaw-wrap $YAW_WRAP, --label-workers $LW, --label-chunks $LC)"
 LG=$P6/lg
 # ⛔ THE LAUNCH-GATE TOKEN (CLAUDE.md, PI 2026-09-26, BINDING): the trainer does not start unless this returns 0.  `launch_gate.py verify` RE-MEASURES the argv, the code tree
 # and the data and checks the HMAC; it is never a grep of a log.   token_ok  -> rc 0 iff ZZGATE-MATCHZZ
@@ -406,17 +411,17 @@ export OMP_NUM_THREADS=4 PYTHONUNBUFFERED=1
 # ---- 8. G-LIVE-LAB's instrument: the ONLINE labeller == the OFFLINE one bit for bit (>= 64 sets), a stale proposal REFUSED, throughput at the LAUNCH worker count
 #         (a function, because it can run twice: beside the P2 seed replicate it reads a LOWER bound of the gate's pool-alone number, and 8c re-measures it when that bound is below the bar)
 lab_stage() {
-  if ! key_done lab "w$LW"; then
+  if ! key_done lab "w$LW-c$LC"; then
     TOKS="$("$PY" p6_prep.py sample-tokens --cache "$MC" --n 128 200>&- | sed -n 's/^ZZTOKENS //p')"
     [ -n "$TOKS" ] || refuse "no parts to sample for the labeller instrument"
     ( echo 1000 > /proc/self/oom_score_adj 2> /dev/null
       exec env -u HF_TOKEN -u DRIVERL_EVAL_ROUTE_LANE_RANK "$PY" diag_p6_labeller_identity.py --cache "$MC" --db-root "$DBS" --map-root "${NUPLAN_MAPS_ROOT:-}" --tokens "$TOKS" \
-        --workers "$LW" --n-sets "${P6_LAB_SETS:-256}" --out "$P6/lab.json" ) > "$P6/lab.log" 2>&1 200>&-
+        --workers "$LW" --chunks "$LC" --n-sets "${P6_LAB_SETS:-256}" --out "$P6/lab.json" ) > "$P6/lab.log" 2>&1 200>&-
     grep -q "^ZZLAB_IDENTITY_PASS" "$P6/lab.log" || refuse "G-LIVE-LAB instrument: identity or the stale-proposal refusal failed (lab.log)"
     if overlap_now; then date -u +%FT%T > "$P6/lab_beside_trainer"; else rm -f "$P6/lab_beside_trainer"; fi
     log "lab: $(grep '^ZZLAB_THROUGHPUT' "$P6/lab.log" | tail -n 1) sets/s at $LW workers$(overlap_now && echo ' BESIDE the P2 seed replicate (a lower bound)') (the gate judges it against 6.735)"
     invalidate launch_gate
-    key_mark lab "w$LW"
+    key_mark lab "w$LW-c$LC"
   fi
   log "lab ok"
 }

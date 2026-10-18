@@ -105,7 +105,7 @@ def check_probe(text):
     if not re.search(r"BUDGET_S=\$\(\( \$\{P6CPU_BUDGET_MIN:-60\} \* 60 \)\)", code):
         v.append("BUDGET_DEFAULT_NOT_60MIN")
     # the same worker formulas and environment as p6_pod.sh (the probe must measure what the chain would run)
-    if "CORES - 4 < 1 ? 1 : (CORES - 4 > 16 ? 16 : CORES - 4)" not in code:
+    if "CORES - 2 < 1 ? 1 : (CORES - 2 > 16 ? 16 : CORES - 2)" not in code:
         v.append("LW_FORMULA")
     if "CORES < 1 ? 1 : (CORES > 24 ? 24 : CORES)" not in code:
         v.append("CW_FORMULA")
@@ -189,7 +189,7 @@ def layer1():
         t(f"probe/mutation_caught: {name}", any(g.startswith(want) for g in got))
     # the chain's formulas, read from p6_pod.sh itself (the probe must not drift from it)
     chain = CHAIN.read_text(encoding="utf-8")
-    t("probe/lw_formula_equals_p6_pod_sh", "CORES - 4 < 1 ? 1 : (CORES - 4 > 16 ? 16 : CORES - 4)" in chain)
+    t("probe/lw_formula_equals_p6_pod_sh", "CORES - 2 < 1 ? 1 : (CORES - 2 > 16 ? 16 : CORES - 2)" in chain)
     t("probe/cw_formula_equals_p6_pod_sh", "CORES < 1 ? 1 : (CORES > 24 ? 24 : CORES)" in chain)
     t("probe/chain_exports_omp4_before_the_lab_stage", re.search(r"export OMP_NUM_THREADS=4[^\n]*\n(?:.*\n)*?.*diag_p6_labeller_identity\.py", chain) is not None)
     t("probe/chain_sets_no_sim_hz_so_neither_does_the_probe_by_default", "REFE_SIM_HZ" not in code_of(chain) and not re.search(r"REFE_SIM_HZ=\d", code_of(text)))
@@ -500,14 +500,14 @@ def layer3():
         rc, out = sb.run()
         vl = verdict_line(out)
         t("sandbox/FIT_path_prints_ZZP6CPU_FIT_and_exits_0", rc == 0 and vl.startswith("ZZP6CPU_FIT "))
-        t("sandbox/the_verdict_line_carries_the_numbers", all(k in vl for k in ("cores=11.05", "lw_default=7", "bar_gate=6.735", "bar_need=4.49", "gate_sets_s=", "paced_stall=", "cpu_s_per_set=",
+        t("sandbox/the_verdict_line_carries_the_numbers", all(k in vl for k in ("cores=11.05", "lw_default=9", "bar_gate=6.735", "bar_need=4.49", "gate_sets_s=", "paced_stall=", "cpu_s_per_set=",
                                                                                  "d9_full_wall_h=", "dd_gb_ok=", "p6_days_if_best_rate=")))
         calls = sb.calls_text()
         t("sandbox/diag_ran_once_per_worker_count_with_256_sets", all(re.search(rf"diag_p6_labeller_identity\.py .*--workers {w} --n-sets 256", calls) for w in (7, 8, 9, 10)))
         t("sandbox/the_diag_ran_under_the_chains_OMP_4_and_the_D9_build_under_1", all("OMP=4" in ln for ln in calls.splitlines() if ln.startswith("diag_p6_labeller_identity.py"))
           and all("OMP=1" in ln for ln in calls.splitlines() if ln.startswith("build_metric_cache.py")))
         t("sandbox/the_AB_arm_ran_with_1_BLAS_thread", any(ln.startswith("p6_cpu_probe.py pool") and "OPENBLAS=1" in ln and "_omp1.json" in ln for ln in calls.splitlines()))
-        t("sandbox/the_chunk_2_arm_ran_at_the_default_W", sum(1 for ln in calls.splitlines() if "--chunks 2" in ln and "--workers 7" in ln) == 2)
+        t("sandbox/the_chunk_2_arm_ran_at_the_default_W", sum(1 for ln in calls.splitlines() if "--chunks 2" in ln and "--workers 9" in ln) == 2)    # the default W = CORES - 2 (p6_pod.sh, 2026-10-18)
         t("sandbox/D9_build_used_the_cgroup_cores_as_workers_and_the_scratch_dir", any(ln.startswith("build_metric_cache.py build") and "--workers 11" in ln and "/scratch/metric_cache" in ln
                                                                                         for ln in calls.splitlines()))
         t("sandbox/no_token_reached_any_child", all(re.search(r"HF=(\S*)", ln).group(1) == "" for ln in calls.splitlines() if ln.strip()))
@@ -527,7 +527,7 @@ def layer3():
         rc, out = sb.run(STUB_THRU="7:5.0,8:6.0,9:6.5,10:6.5")
         t("sandbox/MARGINAL_when_the_default_W_is_under_the_bar", rc == 0 and verdict_line(out).startswith("ZZP6CPU_MARGINAL "))
         # ---- MARGINAL: the gate passes but the trainer's clock stalls over 5 %
-        rc, out = sb.run(STUB_STALL_W="7:0.2")
+        rc, out = sb.run(STUB_STALL_W="9:0.2")                                     # at the default W (CORES - 2 = 9 on 11.05 cores)
         t("sandbox/MARGINAL_when_throughput_passes_but_the_paced_stall_does_not", verdict_line(out).startswith("ZZP6CPU_MARGINAL "))
         # ---- SHORT
         rc, out = sb.run(STUB_THRU="7:3.0,8:3.5,9:3.6,10:3.6")

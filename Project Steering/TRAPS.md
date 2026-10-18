@@ -536,6 +536,38 @@ Each entry cost hours more than once. CLAUDE.md keeps a one-line index; this fil
   Same family as *`supervise_run.sh` sources its manifest once*: a run's configuration lives in
   how it was LAUNCHED, not in the script you are about to re-run.
 
+- ⛔ **A UNIT TEST RUN BY A GATE INHERITS THE CHAIN'S ENVIRONMENT, AND A HAND-KEPT SCRUB LIST
+  GOES STALE THE DAY A NEW KNOB LANDS. The leaked knob here was a path the chain `rm -rf`s.**
+  MEASURED 2026-10-18 (P6 launch-gate dry run, G-SUITE FAIL; diagnosis
+  `…/2026-09-20-refe-plan/raw/2026-10-18-p6-gate-diagnosis/RESULT.md` §2):
+  - `gate_checks.check_suite` gives each suite script `env = dict(os.environ, …)`, so the suite
+    runs with the CHAIN's env. The dry-run exports `P6_CBANK=<the real 3-C bank>`.
+  - `test_p6_chain.Sandbox.run` copied `os.environ` and popped a hand-kept list of 20 names. The
+    list predates the `P6_CBANK` knob, so the knob reached the sandboxed chain.
+  - Only the chain's own guard stopped it (`REFUSED: P6_CBANK is set … would rebuild (rm -rf)
+    it`). ⚠️ **Without that guard the unit test would have deleted the real bank: ~13 h of pod
+    CPU.** Discriminating runs: with `P6_CBANK` set rc 1; without it **ZZP6CHAIN_PASS 341**.
+  - ⇒ **Scrub by NAMESPACE PREFIX, never by list**: the sandbox drops every variable of the
+    chain's prefix, so the next knob is covered without an edit. The fix adds a hermeticity case
+    with a canary bank and a CONTRAST arm that hands the same value to the chain and must be
+    REFUSED (proves the probe can see a leak): **349** under the full dry-run env and clean env.
+  - ⇒ **Any chain knob that names a path the chain deletes or rebuilds needs a refusal guard in
+    the chain itself**, not only in its tests. The guard is what turned a data loss into a FAIL.
+  - Second finding, same battery: on the dev box Git's `bin/bash.exe` launcher prepends
+    `/usr/bin` and hides a test's `nice` stub. Fix: `bash_exe()` picks the MSYS bash. ⚠️ Eleven
+    other `test_*.py` still use `shutil.which("bash")` and are exposed to the same runner choice.
+  Same family as *a derived constant silently changes the experiment when its input changes*:
+  a list derived from the knobs that existed when it was written.
+- ⚠️ **A TEST THAT FAILS ON A STARVED DEV BOX IS NOT A REGRESSION VERDICT — DISCRIMINATE WITH BASE UNDER THE SAME
+  STRESS.** MEASURED 2026-10-18 (P6 gate-fix battery): `test_rls1_queue.py:184` failed on the FIX tree and passed on
+  BASE, which reads as a regression. It was a race in the test's own setup (it started the queue without waiting for its
+  fake S1 to hold the lock), exposed while another stream's sharded `pytest` (9+ processes, 1.5-3.8 GB each) exhausted
+  the memory COMMIT limit (`0xC000012D`) and MSYS `fork` failed. Discriminating runs: the scenario's import closure
+  contains none of the changed files; FIX passes 8/8 idle; BASE fails 3/3 with an injected 2.5 s slow start.
+  - ⇒ Before calling a FIX-only failure a regression: (1) does the failing path reach a changed file? (2) re-run idle;
+    (3) inject the suspected stress into BASE. A timing assertion in a test is a probe of the box as much as the code.
+  - ⇒ Cap concurrent test processes at 2 on the dev box, and keep ≥ 5 GB free on C: (it hit 0.17 GB the same morning).
+
 ## Git hygiene — the mistake that has now happened twice
 
 **`git commit` and `git commit --amend` both commit the ENTIRE INDEX, not the files you

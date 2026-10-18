@@ -37,7 +37,7 @@ CHAIN = HERE / "p6_pod.sh"
 ARGS_RX = re.compile(r'^ARGS="(.*)"$', re.M)
 # the training arguments, pinned. Variables stay symbolic here; the expanded string is checked against the refe_p6 profile in layer 3.
 ARGS_REF = ("--backbone vitl16 --targets $CBANK --images $PIX --calib $BANK/calib_table.json --metric-cache $MC --scorer-sees-trunk --yaw-wrap $YAW_WRAP "
-            "--nav-mode command --labeller online --label-workers $LW --epochs 25 --epoch-unit scenes --batch 4 --accum 64 --lr 2e-4 --weight-decay 0.01 "
+            "--nav-mode command --labeller online --label-workers $LW --label-chunks $LC --epochs 25 --epoch-unit scenes --batch 4 --accum 64 --lr 2e-4 --weight-decay 0.01 "
             "--amp bf16 --score-w 0.1 --tf32 --compile --workers 2 --log-every 1 --ckpt-every-min 20 --out $RUN --resume")
 CHILD_RX = re.compile(r'"\$PY" +(train\.py|p2r_sync\.py|hf_egress\.py|p6_prep\.py|build_metric_cache\.py|annotate_commands\.py|diag_p6_labeller_identity\.py|launch_gate\.py|-c)'
                       r'|"\$PY" +"\$PKG/refe/launch_gate\.py"|bash +"\$PKG/code/|apt-get|uv pip|\bcurl\b|\btar +-x|\bsleep +["\d$]|\bdd +if=|\bfind .* -exec')
@@ -184,6 +184,11 @@ def check_chain(text, ref_args=ARGS_REF):
         v.append("WORKERS_FROM_NPROC")
     if '"^PREFLIGHT_OK"' not in text:
         v.append("NO_PREFLIGHT_CHECK")
+    # ---- the labeller instrument measures the LAUNCH's chunk count (2026-10-18): identity, the stale refusal and throughput are properties of the chunked path
+    if not re.search(r'^LC="\$\{P6_LABEL_CHUNKS:-[0-9]+\}"', text, re.M) or code.count('--chunks "$LC"') != 2:
+        v.append("LAB_NOT_AT_LAUNCH_CHUNKS")
+    if 'key_done lab "w$LW-c$LC"' not in text or 'key_mark lab "w$LW-c$LC"' not in text:
+        v.append("LAB_KEY_IGNORES_CHUNKS")
     # ---- every stage: skippable when done, marked, dry-runnable; a re-measured thing voids what depends on it
     for s in STAGE_DONE:
         if f"stage_done {s}" not in text or f"stage_mark {s}" not in text:
@@ -335,6 +340,9 @@ def mutations(text):
         ("the pause file is not passed to the builder", text.replace(' REFE_PAUSE_FILE="$PAUSE_FILE"', ""), "PAUSE_FILE_NOT_PASSED"),
         ("shipped over P2's tree", text.replace("refe-plan-p6", "refe-plan"), "P6_PKG_IS_P2_DIR"),
         ("workers from nproc", re.sub(r"^LW=.*$", 'LW="$(nproc)"', text, flags=re.M), "WORKERS_NOT_FROM_CGROUP"),
+        ("the lab instrument ignores the chunk count", text.replace('--workers "$LW" --chunks "$LC" --n-sets "${P6_LAB_SETS:-256}" --out "$P6/lab.json"',
+                                                                    '--workers "$LW" --n-sets "${P6_LAB_SETS:-256}" --out "$P6/lab.json"'), "LAB_NOT_AT_LAUNCH_CHUNKS"),
+        ("a lab reading at another chunk count is reused", text.replace('key_done lab "w$LW-c$LC"', 'key_done lab "w$LW"'), "LAB_KEY_IGNORES_CHUNKS"),
         ("D7 never refuses", text.replace('refuse "D7: rank-$k twins are NOT', 'log "D7: rank-$k twins are NOT'), "D6_D7_NOT_ENFORCED"),
         ("D6 never refuses", text.replace('refuse "D6: no NAVSIM metadata', 'log "D6: no NAVSIM metadata'), "D6_D7_NOT_ENFORCED"),
         ("the twin build without the route env", text.replace('DRIVERL_EVAL_ROUTE_LANE_RANK="$k" ', ""), "ROUTE_ENV_NOT_SET_FOR_TWINS_ONLY"),
@@ -442,7 +450,7 @@ elif script == "diag_p6_labeller_identity.py":
     thr = float(os.environ.get("STUB_LAB_THR", "9.9"))
     bad = bool(os.environ.get("STUB_LAB_IDENTITY_FAIL"))
     out.write_text(json.dumps({"identity_ok": not bad, "n_sets": 64, "identity_equal_sets": 63 if bad else 64, "stale_refused": True, "throughput_sets_s": thr,
-                               "workers": int(opt("--workers"))}), encoding="utf-8")
+                               "workers": int(opt("--workers")), "chunks": int(opt("--chunks", "1"))}), encoding="utf-8")
     print("ZZLAB_IDENTITY_FAIL" if bad else "ZZLAB_IDENTITY_PASS"); print("ZZLAB_THROUGHPUT " + str(thr))
 elif script == "hf_egress.py":
     out = Path(opt("--out")); out.mkdir(parents=True, exist_ok=True)
@@ -502,6 +510,35 @@ def posix(p):
     return str(p).replace("\\", "/")
 
 
+# ⛔ G-SUITE runs this file INSIDE the chain's own environment (p6_pod.sh -> launch_gate.py run -> check_suite passes os.environ on), so the sandboxed chain must not
+# inherit the real chain's knobs.  MEASURED 2026-10-18 (the 3-C gate dry run, G-SUITE FAIL): the hand-kept pop list that used to stand in Sandbox.run missed P6_CBANK
+# (added a5a4ee8); the leaked value named the REAL 3-C bank, and the sandboxed chain REFUSED in its commands stage -- the stage whose rebuild ends `rm -rf "$CBANK"` and
+# which only a5a4ee8's guard stopped.  So the chain's whole namespace is dropped by PREFIX (a new knob cannot be missing from it), plus the variables the chain EXPORTS
+# to its children (paths to real data and to the gate key).  Everything else is kept: PATH, the temp dirs, and the gate's own nesting guard (REFE_GATE_NESTED).
+SANDBOX_DROP_PREFIXES = ("P6_", "STUB_", "NUPLAN_", "DRIVERL_", "TANITAD_GATE_")
+SANDBOX_DROP_NAMES = ("REFE_BACKBONE_ROOT", "REFE_NUPLAN_DB_ROOT", "REFE_NAVTRAIN_YAML", "REFE_PAUSE_FILE", "REFE_PAUSE_POLL_S", "CUDA_VISIBLE_DEVICES",
+                      "HF_TOKEN", "HUGGING_FACE_HUB_TOKEN", "HUGGINGFACE_HUB_TOKEN", "HF_HUB_TOKEN")
+
+
+def bash_exe() -> str:
+    """The bash the sandboxed chain runs under.  Git for Windows' LAUNCHER `<Git>/bin/bash.exe` prepends its own /usr/bin to PATH, which shadows the sandbox's stubs
+    (`nice`): MEASURED 2026-10-18, a dev-box runner that put <Git>/bin first on PATH failed 4c's `nice` assertion (`type -p nice` -> /usr/bin/nice) while the same blob
+    passed from an interactive Git bash, whose PATH resolves `bash` to <Git>/usr/bin/bash.exe.  That MSYS bash honours PATH as given, so it is used whenever the
+    launcher is what PATH found.  Anywhere else (the pod: Linux) this is plain shutil.which("bash")."""
+    b = shutil.which("bash")
+    if b and os.name == "nt":
+        p = Path(b)
+        real = p.parent.parent / "usr" / "bin" / "bash.exe"
+        if p.parent.name.lower() == "bin" and p.parent.parent.name.lower() != "usr" and real.is_file():
+            return str(real)
+    return b
+
+
+def sandbox_env(base) -> dict:
+    """The environment the sandboxed chain starts from: `base` minus the chain's namespace (SANDBOX_DROP_PREFIXES / SANDBOX_DROP_NAMES)."""
+    return {k: v for k, v in base.items() if not k.upper().startswith(SANDBOX_DROP_PREFIXES) and k.upper() not in SANDBOX_DROP_NAMES}
+
+
 class Sandbox:
     """A fake /workspace in which the REAL p6_pod.sh runs under bash. Every tool it calls is a stub that records the call; p6_prep.py and annotate_commands.py are the REAL files."""
 
@@ -534,8 +571,8 @@ class Sandbox:
             '  case " $held " in *" $who "*) return 1 ;; esac\n  return 0\n}\n', encoding="utf-8", newline="\n")
         (self.stub / "nice").write_text('#!/bin/bash\necho "NICE $2" >> "$STUB_CALLS.nice"\nshift 2\nexec "$@"\n', encoding="utf-8", newline="\n")
         (self.stub / "nvidia-smi").write_text('#!/bin/bash\n[ -f "$STUB_GPU_BUSY_FILE" ] && echo 4242\nexit 0\n', encoding="utf-8", newline="\n")
-        subprocess.run([shutil.which("bash"), "-c", f"chmod +x '{posix(self.stub / 'nice')}' '{posix(self.stub / 'nvidia-smi')}'"], check=True)
-        subprocess.run([shutil.which("bash"), "-c", f"chmod +x '{posix(self.stub / 'fakepy')}'"], check=True)
+        subprocess.run([bash_exe(), "-c", f"chmod +x '{posix(self.stub / 'nice')}' '{posix(self.stub / 'nvidia-smi')}'"], check=True)
+        subprocess.run([bash_exe(), "-c", f"chmod +x '{posix(self.stub / 'fakepy')}'"], check=True)
         maps = self.data / "nuplan-maps" / "v"
         for c in ("a", "b", "c", "d"):
             (maps / c).mkdir(parents=True)
@@ -568,7 +605,7 @@ class Sandbox:
                 pickle.dump([{"token": t, "log_name": lg, "driving_command": np.array([0, 1, 0, 0])} for t in TOKS2] + [{"token": "other", "driving_command": np.array([1, 0, 0, 0])}], fh)
 
     def run(self, extra_env=None, timeout=300):
-        env = dict(os.environ)
+        env = sandbox_env(os.environ)                       # the chain's namespace is NOT inherited (see SANDBOX_DROP_PREFIXES): G-SUITE runs this inside the real chain
         env.update({"WORK": posix(self.ws), "HF_TOKEN": TOKEN, "P6_DD_GB": "0", "P6_EXPECT_DBS": "3", "P6_EXPECT_PIX_SHARDS": "2", "P6_ATTEMPT_SLEEP": "0",
                     "STUB_CALLS": posix(self.calls), "STUB_REAL_REFE": posix(HERE), "STUB_TRAIN_COUNT": posix(self.root / "train_count"),
                     "STUB_FORCE_TOKEN_FAIL": posix(self.root / "force_token_fail"), "BASH_ENV": posix(self.stub / "bash_env.sh"), "P6_CACHE_WORKERS": "2",
@@ -576,12 +613,9 @@ class Sandbox:
                     "P6_OVERLAP_BASELINE_TRIES": "1", "P6_OVERLAP_BASELINE_SLEEP_S": "0", "P6_OVERLAP_WORKERS": "2", "P6_GUARD_TICK_S": "1", "P6_GUARD_POLL_S": "2",
                     "P6_GUARD_PAUSE_S": "2", "STUB_METRICS": posix(self.data / "refe_runs" / "p2_joint_pdm_s1" / "metrics.jsonl"),
                     "P6_LABEL_WORKERS": "2", "PYTHONIOENCODING": "utf-8"})
-        for k in ("P6_YAW_WRAP", "P6_STOP_AFTER", "P6_D7_FALLBACK", "P6_NAVSIM_LOGS_URL", "STUB_TWIN_SAME", "STUB_PATCH_MISSING", "STUB_TRAIN_CRASH_FIRST", "P6_OVERLAP", "STUB_HELD",
-                  "STUB_HELD_FILE", "P6_OVERLAP_UNGUARDED", "P6_P2REP_ABANDONED", "P6_WAIT_MAX_S", "STUB_SLOW_TRAINER", "STUB_LAB_THR", "STUB_LAB_IDENTITY_FAIL", "P6_EARLY_LAB", "P6_FREE_NAVLOGS", "P6_NAVSIM_LOGS", "CUDA_VISIBLE_DEVICES"):
-            env.pop(k, None)
         env["PATH"] = str(self.stub) + os.pathsep + env.get("PATH", "")
         env.update(extra_env or {})
-        r = subprocess.run([shutil.which("bash"), posix(self.script)], capture_output=True, text=True, env=env, timeout=timeout, encoding="utf-8", errors="replace")
+        r = subprocess.run([bash_exe(), posix(self.script)], capture_output=True, text=True, env=env, timeout=timeout, encoding="utf-8", errors="replace")
         return r.returncode, r.stdout + r.stderr
 
     def calls_list(self):
@@ -652,7 +686,7 @@ def main() -> int:
     # ---- 3a. the expanded ARGS against the refe_p6 profile (the launch gate's own rule), both yaw values; and against the trainer's parser
     import launch_gate as L
     import train as TR
-    env = {"CBANK": "/w/cmd", "PIX": "/w/pix", "BANK": "/w/bank", "MC": "/w/mc", "LW": "16", "RUN": "/w/run"}
+    env = {"CBANK": "/w/cmd", "PIX": "/w/pix", "BANK": "/w/bank", "MC": "/w/mc", "LW": "16", "LC": "2", "RUN": "/w/run"}
     prof = L.PROFILES["refe_p6"]
     assert prof["required_flags"]["--yaw-wrap"] == "off"; n += 1                                                                       # PI ruling P6-Y (2026-10-11): the profile asserts the VALUE
     for yaw in ("on", "off"):
@@ -916,6 +950,37 @@ def main() -> int:
         assert rc == 0 and len(new) == 2 and all("--resume" in x for x in new), (rc, new); n += 2
         assert "attempt 1 exited rc 1" in sb.chain_log() and "attempt 2 exited rc 0" in sb.chain_log(); n += 1
         assert sb.files_containing(TOKEN.encode()) == []; n += 1
+    # ---- 4i'. HERMETIC under the gate (2026-10-18): G-SUITE runs this file INSIDE the real chain's environment.  The chain's namespace is dropped by prefix ...
+    keep = {"PATH": "x", "REFE_GATE_NESTED": "[\"test_p6_chain.py\"]", "TEMP": "t", "HF_HOME": "h"}
+    leak = {"P6_CBANK": "/real/bank", "P6_SOME_FUTURE_KNOB": "1", "STUB_HELD": "refe_p2rep", "TANITAD_GATE_KEY_FILE": "/real/key", "TANITAD_GATE_ARM": "x",
+            "NUPLAN_DATA_ROOT": "/real", "DRIVERL_EVAL_ROUTE_LANE_RANK": "1", "REFE_NUPLAN_DB_ROOT": "/real/dbs", "REFE_PAUSE_FILE": "/real/p", "HF_TOKEN": "real",
+            "CUDA_VISIBLE_DEVICES": "0", "p6_lower_case": "1"}
+    se = sandbox_env({**keep, **leak})
+    assert se == keep, se; n += 1
+    # ... and BEHAVIOURALLY: a P6_CBANK leaked into os.environ (the 3-C gate dry run's exact state) neither redirects the sandboxed chain nor reaches the bank it names
+    with tempfile.TemporaryDirectory() as tmp:
+        canary = Path(tmp) / "real_refe_navtrain" / "train_grow_cmd_3c"
+        canary.mkdir(parents=True)
+        (canary / "targets_rank0.jsonl").write_text('{"canary": 1}\n', encoding="utf-8")
+        saved_cb = os.environ.get("P6_CBANK")
+        os.environ["P6_CBANK"] = posix(canary)
+        try:
+            (Path(tmp) / "sb").mkdir(); (Path(tmp) / "sb2").mkdir()
+            sb = Sandbox(Path(tmp) / "sb")
+            rc, out = sb.run({**py_env, "P6_STOP_AFTER": "lanes"})
+            assert rc == 0 and "lanes ok" in sb.chain_log() and "REFUSED" not in sb.chain_log(), (rc, sb.chain_log()[-500:]); n += 2
+            assert not [x for x in sb.calls_list() if "real_refe_navtrain" in x], [x for x in sb.calls_list() if "real_refe_navtrain" in x][:3]; n += 1
+            # the contrast arm (this probe CAN see a leak): the same value handed to the chain, as the un-scrubbed environment did, is REFUSED by a5a4ee8's
+            # commands-stage guard -- the only thing that stood between the leaked path and the stage's `rm -rf "$CBANK"`
+            sb2 = Sandbox(Path(tmp) / "sb2")
+            rc2, _ = sb2.run({**py_env, "P6_STOP_AFTER": "lanes", "P6_CBANK": posix(canary)})
+            assert rc2 != 0 and "REFUSED: P6_CBANK is set" in sb2.chain_log(), (rc2, sb2.chain_log()[-400:]); n += 2
+        finally:
+            if saved_cb is None:
+                os.environ.pop("P6_CBANK", None)
+            else:
+                os.environ["P6_CBANK"] = saved_cb
+        assert sorted(p.name for p in canary.parent.iterdir()) == ["train_grow_cmd_3c"] and (canary / "targets_rank0.jsonl").read_text(encoding="utf-8") == '{"canary": 1}\n'; n += 2
     # ---- 4j. D7 refuses: the twins came out on the LOGGED route (the patch is not honoured) -> REFUSED; the fallback is explicit and quarantines them
     with tempfile.TemporaryDirectory() as tmp:
         sb = Sandbox(tmp)

@@ -73,7 +73,7 @@ def posix_bash():
 
 
 P6_ARGS = ("--backbone vitl16 --targets /w/train_grow --images /w/pix --calib /w/calib.json --metric-cache /w/mc --scorer-sees-trunk --yaw-wrap off --nav-mode command "
-           "--labeller online --epochs 25 --batch 4 --accum 64 --lr 2e-4 --weight-decay 0.01 --amp bf16 --score-w 0.1 --tf32 --compile --workers 2 "
+           "--labeller online --label-chunks 2 --epochs 25 --batch 4 --accum 64 --lr 2e-4 --weight-decay 0.01 --amp bf16 --score-w 0.1 --tf32 --compile --workers 2 "
            "--log-every 1 --ckpt-every-min 20 --out /w/run --resume")
 
 
@@ -319,7 +319,7 @@ def static() -> None:
     import train as T
     dests = {x.dest for x in T.build_parser()._actions if x.dest != "help"}
     ok(set(C.DVB_KINDS) == dests, (sorted(dests - set(C.DVB_KINDS)), sorted(set(C.DVB_KINDS) - dests)))
-    ok(len(dests) == 60)                                                                                      # 55 + the five L_field levers (--w-field, --field-margin, --field-interp, --field-labels, --field-shuffle-seed)
+    ok(len(dests) == 61)                                                                                      # 55 + the five L_field levers (--w-field, --field-margin, --field-interp, --field-labels, --field-shuffle-seed) + --label-chunks (2026-10-18)
     ok(C.namespace_reads(C._train_run_source()) <= dests)
     ok(C.check_hyg()["status"] == "PASS")
     for arm, frag in (("no_cfg_guard", "ACCEPTED an undeclared attribute"), ("undeclared_namespace_read", "undeclared_lever_g_hyg")):

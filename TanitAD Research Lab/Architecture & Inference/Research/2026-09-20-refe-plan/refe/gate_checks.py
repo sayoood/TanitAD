@@ -402,7 +402,7 @@ DVB_KINDS = {
     "scorer_mode": "built", "onpolicy_targets": "built", "declare_change": "control", "init_from": "built", "pdm_labels": "built",
     "pdm_only": "built", "preflight": "control",
     # P6 (SPEC_P6 section 2): each new lever has its observed row in `dvb_rows`
-    "yaw_wrap": "built", "nav_mode": "built", "labeller": "built", "label_backend": "built", "label_workers": "built", "label_timeout_s": "built",
+    "yaw_wrap": "built", "nav_mode": "built", "labeller": "built", "label_backend": "built", "label_workers": "built", "label_chunks": "built", "label_timeout_s": "built",
     "label_python": "built", "metric_cache": "built",
     # L_field (eval/PREREG_AUX_FIELD_LOSS_DRAFT.md): each has its observed row in `field_dvb_rows` (what the loader / the term actually RECEIVED)
     "w_field": "built", "field_margin": "built", "field_interp": "built", "field_labels": "built", "field_shuffle_seed": "built",
@@ -520,6 +520,7 @@ def dvb_rows(a, b, s, field_min_coverage: float = FIELD_MIN_COVERAGE) -> list:
         lk = lb["kwargs"]
         add("label_backend", a.label_backend, lk.get("backend"), "OnlineLabeller(backend=)")
         add("label_workers", a.label_workers, lk.get("workers"), "OnlineLabeller(workers=)")
+        add("label_chunks", a.label_chunks, lk.get("chunks", 1), "OnlineLabeller(chunks=)")
         add("label_timeout_s", a.label_timeout_s, lk.get("timeout_s"), "OnlineLabeller(timeout_s=)")
         add("label_python", a.label_python or None, lk.get("python"), "OnlineLabeller(python=)")
         add("metric_cache", a.metric_cache or None, lk.get("metric_cache"), "OnlineLabeller(metric_cache=)")
@@ -1554,14 +1555,36 @@ def check_clock(argv: list, b, profile: dict, arm=None, rehearsal=False) -> dict
             reasons.append(f"realised steps {b.steps} != registered {exp['steps']}")
         if b.samplers and b.samplers[0]["n"] != exp["epoch_len"]:
             reasons.append(f"epoch length {b.samplers[0]['n']} != registered {exp['epoch_len']}")
-        if "n_tuples" in exp:                         # P6 / D8: the FULL bank from step 0 (no --grow), not a growing one
+        want, how = clock_bank_tuples(argv, exp)
+        if how is not None:                           # P6 / D8: the FULL bank from step 0 (no --grow), not a growing one
             bl = (b.bank_len or {}).get("TargetBank") or {}
             det["bank"] = bl
-            if bl.get("n_tuples") != exp["n_tuples"]:
-                reasons.append(f"step-0 bank has {bl.get('n_tuples')} tuples != registered {exp['n_tuples']}")
+            det["bank_registration"] = how
+            if want is None:
+                reasons.append(f"step-0 bank: {how}")
+            elif bl.get("n_tuples") != want:
+                reasons.append(f"step-0 bank has {bl.get('n_tuples')} tuples != registered {want} ({how})")
             if bl.get("n_scenes") != exp["epoch_len"]:
                 reasons.append(f"step-0 bank has {bl.get('n_scenes')} scenes != registered {exp['epoch_len']}")
     return verdict("G-CLOCK", reasons, det, arm=arm, rehearsal=rehearsal)
+
+
+def clock_bank_tuples(argv: list, exp: dict):
+    """-> (registered step-0 tuple count or None, how it was resolved) for G-CLOCK; (None, None) when the profile registers no bank size.
+    `n_tuples` is ONE registered count.  `n_tuples_by_bank` registers one count PER BANK, keyed by the directory name of the argv's `--targets`: a bank's size is a
+    DERIVED constant of that bank, so a new bank gets its OWN entry (written into its pre-registration before any training data exists) and the old entry is never
+    edited.  A `--targets` bank with no entry FAILS: an unregistered bank is never vouched for by another bank's number (the 3-C bank, 2026-10-18)."""
+    if "n_tuples_by_bank" in exp:
+        import gate_token as GT_
+        tg = (GT_.flag_values(argv, "--targets") or [None])[0]
+        name = Path(str(tg).rstrip("/\\")).name if tg else None
+        reg = exp["n_tuples_by_bank"]
+        if name not in reg:
+            return None, f"--targets {tg!r} names bank {name!r}, which has no registered tuple count (registered: {sorted(reg)})"
+        return reg[name], f"bank {name!r} per n_tuples_by_bank"
+    if "n_tuples" in exp:
+        return exp["n_tuples"], "n_tuples"
+    return None, None
 
 
 # ============================================================================================ P6: G-LIVE-LAB, G-LIVE-MEM, G-EGR (POD-RUN: they consume their instruments' output)
@@ -1572,7 +1595,7 @@ LAB_NEED_SETS_S, LAB_MARGIN, LAB_STALL_MAX, MEM_MAX_GB, MEM_MIN_MICRO = 4.49, 1.
 LAB_STALL_MIN_WINDOWS = 2           # steady-state windows (after the first, which includes pool start-up) the L1 stall bar is judged on (R42)
 
 
-def judge_lab(lab: dict, smoke_metrics: list, workers_launch: int, arm=None, steady_metrics=None, launch_accum=None) -> list:
+def judge_lab(lab: dict, smoke_metrics: list, workers_launch: int, arm=None, steady_metrics=None, launch_accum=None, chunks_launch: int = 1) -> list:
     """lab = diag_p6_labeller_identity.py's JSON; smoke_metrics = the SMOKE trainer's metrics rows (the labeller RAN, lag 0, coverage);
     steady_metrics = the G-LIVE-MEM run's metrics rows (the launch argv at the launch's --accum): the L1 stall bar (SPEC_P6 3.2) is judged THERE.
     R42 (MEASURED 2026-10-16, P6 pod): train.py drains each accumulation window's LAST micro-batch before the optimizer step (D4), so one label
@@ -1591,6 +1614,8 @@ def judge_lab(lab: dict, smoke_metrics: list, workers_launch: int, arm=None, ste
         r.append(f"throughput {lab.get('throughput_sets_s')} sets/s < {bar:.3f} (1.5 x {LAB_NEED_SETS_S})")
     if lab.get("workers") != workers_launch:
         r.append(f"throughput measured at {lab.get('workers')} workers but the launch argv says --label-workers {workers_launch}")
+    if lab.get("chunks", 1) != chunks_launch:                       # identity AND throughput are properties of the chunked path: measured at the launch value or not at all
+        r.append(f"identity / throughput measured at {lab.get('chunks', 1)} chunk(s) per set but the launch argv says --label-chunks {chunks_launch}")
     ev = [m for m in smoke_metrics if m.get("event") == "labeller"]
     if not ev:
         r.append("the SMOKE run logged no `labeller` event (the online labeller did not run)")
@@ -1663,13 +1688,14 @@ def check_live_lab(lab_json, smoke_cap, argv: list, arm=None, rehearsal=False, m
         return verdict("G-LIVE-LAB", [f"labeller instrument output missing: {lab_json} (run refe/diag_p6_labeller_identity.py on the pod)"], {}, arm=arm,
                        rehearsal=rehearsal)
     w = int((GT_.flag_values(argv, "--label-workers") or ["12"])[0])
+    ch = int((GT_.flag_values(argv, "--label-chunks") or ["1"])[0])
     acc = (GT_.flag_values(argv, "--accum") or [None])[0]
     launch_accum = int(acc) if acc is not None else None
     steady = None
     if mem_metrics and Path(mem_metrics).is_file():
         steady = [json.loads(ln) for ln in Path(mem_metrics).read_text(encoding="utf-8").splitlines() if ln.strip()]
     smoke = smoke_cap.metrics if smoke_cap is not None else []
-    reasons = judge_lab(lab, smoke, w, arm=arm, steady_metrics=steady, launch_accum=launch_accum)
+    reasons = judge_lab(lab, smoke, w, arm=arm, steady_metrics=steady, launch_accum=launch_accum, chunks_launch=ch)
     details = {"lab": lab, "file_sha256": GT_.sha256_file(lab_json),
                "stall_judged_on": {"mem_metrics_sha256": GT_.sha256_file(mem_metrics) if steady is not None else None, "launch_accum": launch_accum,
                                    "stall_frac_by_window": [e.get("stall_frac") for e in (steady or []) if e.get("event") == "labeller"]},

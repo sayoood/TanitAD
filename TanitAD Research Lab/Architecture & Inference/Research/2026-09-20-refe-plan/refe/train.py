@@ -1402,8 +1402,8 @@ def run(a) -> int:
         # --accum stays exactly equivalent to one large batch
         cov_norm = float(cfg.n_proposals)
         lab = OL.OnlineLabeller(backend=a.label_backend, workers=a.label_workers, metric_cache=a.metric_cache or None, timeout_s=a.label_timeout_s,
-                                python=a.label_python or None, n_prop=cfg.n_proposals, horizon=cfg.horizon_steps)
-        print(f"  ONLINE LABELLER: backend {a.label_backend}  workers {a.label_workers}  metric cache {a.metric_cache}  timeout {a.label_timeout_s:g} s")
+                                python=a.label_python or None, n_prop=cfg.n_proposals, horizon=cfg.horizon_steps, chunks=a.label_chunks)
+        print(f"  ONLINE LABELLER: backend {a.label_backend}  workers {a.label_workers}  chunks/set {a.label_chunks}  metric cache {a.metric_cache}  timeout {a.label_timeout_s:g} s")
     print(f"  score-loss normaliser: {cov_norm:.4f} covered candidates/sample x batch "
           f"(CONSTANT, so --accum is exactly equivalent to one large batch)")
     opt.zero_grad(set_to_none=True)          # the window is opened here, then after every step
@@ -2053,6 +2053,9 @@ def build_parser() -> argparse.ArgumentParser:
                     help="--labeller online: pdm = NAVSIM's simulator on the D9 metric cache; synthetic = a deterministic analytic CONTROL (rehearsal/tests; "
                          "the P6 launch profile forbids it)")
     ap.add_argument("--label-workers", type=int, default=12, help="--labeller online: labeller pool size (M-LAB: 12 workers sustain >= 2x the 4.49 sets/s needed)")
+    ap.add_argument("--label-chunks", type=int, default=1,
+                    help="--labeller online: score each sample's proposals as this many jobs of contiguous proposals (SPEC_P6 3.1: a set may be split across workers "
+                         "for LATENCY; labels are per proposal, so unchanged -- G-LIVE-LAB's identity check re-proves it). 1 = one job per set (the default)")
     ap.add_argument("--label-timeout-s", type=float, default=900.0, help="--labeller online: a micro-batch whose labels are not back in this long raises")
     ap.add_argument("--label-python", default="", help="--labeller online: interpreter for the pdm workers if the NAVSIM stack lives in another venv")
     ap.add_argument("--metric-cache", default=None, help="--labeller online: the D9 parts directory (refe/build_metric_cache.py) <log>/<token>[__twin].pkl.xz")

@@ -1,0 +1,23 @@
+  carved the P6 smoke bank: {'rows': {'targets_rank0.jsonl': 64, 'targets_rank1.jsonl': 64}, 'scanned': {'targets_rank0.jsonl': 64, 'targets_rank1.jsonl': 64}, 'no_parts': {'targets_rank0.jsonl': 0, 'targets_rank1.jsonl': 0}}
+  [timing] run: tree_manifest 0.8s, data_manifest 68.6s (--images 68.6s, --metric-cache 26.4s, --targets 0.0s, --calib 0.0s)
+  GPU reserved by the gate process before G-CKPT: 0.00 GiB (CUDA initialised in this process: False)
+  G-HYG     PASS  
+  G-DVB     PASS  
+/workspace/venv-teacher/lib/python3.11/site-packages/torch/_inductor/compile_fx.py:236: UserWarning: TensorFloat32 tensor cores for float32 matrix multiplication available but not enabled. Consider setting `torch.set_float32_matmul_precision('high')` for better performance.
+  warnings.warn(
+  G-LIVE    PASS  
+  G-CLOCK   FAIL  step-0 bank has 167300 tuples != registered 189888
+  G-EVAL    PASS  
+  G-CKPT    PASS  
+  G-SUITE   FAIL  test_p6_chain.py: rc 1, 'ZZP6CHAIN_PASS' NOT seen
+  G-LIVE-LAB FAIL  GPU stall 10.3 % of a window > 5 % (launch accum 64, max over windows after the first)
+  G-LIVE-MEM PASS  
+  G-EGR     PASS  
+  [timing] finalize: tree_manifest 0.8s, data_manifest 73.3s (--images 73.3s, --metric-cache 35.6s, --targets 0.0s, --calib 0.0s)
+  REASON: G-CLOCK FAIL: step-0 bank has 167300 tuples != registered 189888
+  REASON: G-SUITE FAIL: test_p6_chain.py: rc 1, 'ZZP6CHAIN_PASS' NOT seen
+  REASON: G-LIVE-LAB FAIL: GPU stall 10.3 % of a window > 5 % (launch accum 64, max over windows after the first)
+  REASON: checks not PASS: ['G-CLOCK', 'G-SUITE', 'G-LIVE-LAB']
+verdict FAIL -> /workspace/data/refe_p6/lg/FAIL_a5a4ee8b7309.json
+ZZGATE-FAIL-a5a4ee8b7309ZZ
+ZZEXIT 1

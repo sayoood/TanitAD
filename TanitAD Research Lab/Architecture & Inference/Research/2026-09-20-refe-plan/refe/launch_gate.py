@@ -197,6 +197,17 @@ _BASE = dict(trainer="refe/train.py", parser_module="train", trainer_src="train.
              checks=("G-HYG", "G-DVB", "G-LIVE", "G-EVAL", "G-CKPT", "G-SUITE"), na_ok=("G-CLOCK",),
              clock_na="P2 has no label clock: its labels are the PDM relabel of a banked on-policy bank, stamped by the relabeller's ckpt_step")
 
+# G-CLOCK's step-0 bank size for P6, ONE ENTRY PER BANK, keyed by the directory name of `--targets` (the trainer's `bank` event n_tuples = the rows of targets_rank*.jsonl).
+# A bank's tuple count is a DERIVED constant of that bank (TRAPS: a derived constant silently changes the experiment when its input changes): a new bank gets its OWN entry,
+# registered in its pre-registration BEFORE any training data exists, and an existing entry is never edited.  A --targets bank with no entry FAILS G-CLOCK.
+P6_BANK_TUPLES = {
+    # SPEC_P6_PAPER_FAITHFUL.md section 0.2 (l.63) and D8 (l.149): 103,037 rank-0 + 86,851 rank-1 rows, MEASURED (the final run's `bank` events, epochs 4-27)
+    "train_grow_cmd": 189888,
+    # raw/2026-10-17-twin-bank-3c/PREREG_3C.addendum6.md: 103,037 rank-0 rows (byte-identical, sha256 daa23b96...) + 64,263 rank-1 rows (86,851 - 22,588 dropped
+    # lane-rank twins; out sha256 2a63acc2...), = merge_report.json and the trainer's own bank event on the pod (2026-10-18)
+    "train_grow_cmd_3c": 167300,
+}
+
 PROFILES = {
     # PREREG_P2 / eval/PREREG_P2_AMENDMENT_1.md: the joint fine-tune p2r_pod.sh launches.  required_flags are its design, asserted not trusted.
     "refe_p2": {**_BASE, "name": "refe_p2", "data_flags": P2_DATA, "checks": _BASE["checks"] + ("G-P2GATE",),
@@ -219,11 +230,15 @@ PROFILES = {
                 # error of P2 / SFT-4). The gate asserts the ruling, not just the presence: `--yaw-wrap on` is refused as a value mismatch.
                 "required_flags": {"--scorer-sees-trunk": None, "--yaw-wrap": "off", "--nav-mode": "command", "--labeller": "online",
                                    "--epochs": "25", "--batch": "4", "--accum": "64", "--lr": "2e-4", "--weight-decay": "0.01", "--amp": "bf16",
-                                   "--score-w": "0.1"},
+                                   "--score-w": "0.1", "--label-chunks": "2"},
+                # --label-chunks 2 (2026-10-18, raw/2026-10-18-p6-gate-diagnosis/): each 64-proposal set is scored as 2 jobs of 32 (SPEC_P6 3.1's latency split; labels are per
+                # proposal, re-proved bit for bit by G-LIVE-LAB's identity check AT this value).  MEASURED on the 8.5-CPU pod, trainer clock: 1 job per set stalls 2.3-3.8 %
+                # at 4-8 workers (the a5a4ee8 dry run read 10.3 % in one window), 2 jobs 0.41 % at the chain's 6 workers (0.05-0.15 % at 8).  A one-line change here re-registers it.
                 "provisional_flags": (),
                 # SPEC_P6 section 0.2 wrote 10,063 steps (= ceil(25 x 103,037 / 256)); the trainer's own definition (train.py: epochs x ceil(epoch_len / (batch x
                 # accum)), re-derived independently by G-DVB) gives 25 x 403 = 10,075 -- the final run's measured step count. The profile registers the TRAINER's.
-                "expect_schedule": {"epochs": 25, "steps": 10075, "epoch_len": 103037, "n_tuples": 189888}},
+                # The step-0 bank size is registered PER BANK (P6_BANK_TUPLES): epochs / steps / epoch_len are scene counts, which both banks share.
+                "expect_schedule": {"epochs": 25, "steps": 10075, "epoch_len": 103037, "n_tuples_by_bank": P6_BANK_TUPLES}},
     # L_field arm F (w_field > 0) and its control C (--w-field 0.0, same init / bank / steps / seed): P2's recipe plus the term.  Cloned from refe_p2, so every P2 lever is asserted too.
     "refe_field": {**_BASE, "name": "refe_field", "data_flags": P2_DATA + ("--field-labels",), "checks": _BASE["checks"] + ("G-P2GATE",), "field_arm": "F",
                    "suite": SUITE + FIELD_SUITE_EXTRA, "live_terms": ("traj_L1", "score", "field_L"), "field_min_coverage": 0.999,

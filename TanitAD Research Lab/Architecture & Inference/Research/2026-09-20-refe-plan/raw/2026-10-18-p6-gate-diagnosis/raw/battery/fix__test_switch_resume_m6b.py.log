@@ -1,0 +1,79 @@
+  [FAIL] 0 the unpatched side IS the pod's live bytes; the patched side IS the shipped kit (md5)
+  [PASS] A1 pod trainer start halts (rc 7)
+  [PASS] A2 pod on-policy switch replayed (rc 7, scorer_mode onpolicy in the checkpoint)
+  [PASS] A3 KIT preflight OK; ONLY the declared yaw_loss differs (no tan_w line); nothing written
+  [PASS] A4 KIT without --declare-change yaw_loss: REFUSED (rc 4), no new declared change
+  [PASS] A5 KIT switch resumes (rc 7), MEASURE M6 names plain_tangent, the new declared change is ONLY yaw_loss
+  [PASS] A5 the switched checkpoint: meta measures.yaw_loss plain_tangent, identity tan_w 0.1
+  [PASS] A6 MUTATION: an undeclared --tan-w 0.2 is REFUSED (rc 4) and writes nothing
+  [PASS] A7 resume again needs no declare, completes (rc 0), final meta plain_tangent
+  [PASS] B1-B3 pod start, on-policy replay, M6 plain switch (rc 7 each; checkpoint yaw_loss plain)
+  [PASS] B4 KIT from a v3 (plain) checkpoint: rc 7, the new declared change is exactly plain -> plain_tangent
+  [PASS] B5 resume again completes (rc 0), final meta plain_tangent
+  (route A declared changes: [["--scorer-mode: 'fixed' -> 'onpolicy'"], ["--yaw-loss: 'wrapped' -> 'plain_tangent'"]]; route B: [["--scorer-mode: 'fixed' -> 'onpolicy'"], ["--yaw-loss: 'wrapped' -> 'plain'"], ["--yaw-loss: 'plain' -> 'plain_tangent'"]]; rcs {'A1': 7, 'A2': 7, 'A3': 0, 'A4': 4, 'A5': 7, 'A6': 4, 'A7': 0, 'B1': 7, 'B2': 7, 'B3': 7, 'B4': 7, 'B5': 0}; temp C:\Users\Admin\AppData\Local\Temp\switch_resume_m6b_lbonwqkc)
+---- A3 tail ----
+n\AppData\Local\Temp\switch_resume_m6b_lbonwqkc\op   [none yet in this epoch's snapshot: the scorer gets NO loss until the next epoch boundary]
+  targets: 12 rows from ['targets_rank0.jsonl', 'targets_rank1.jsonl']  per rank {0: 8, 1: 4}
+  scenes: 8 over 12 tuples  (rows per scene: 1 x 4, 2 x 4)
+  MEASURE M6: heading L1 WITHOUT the 2*pi wrap (--yaw-loss plain_tangent); max |target heading| 1.800 rad < 3.0
+  *** NO --calib: every tuple is lifted with the ONE baked rig (pre-R22 behaviour). An ABLATION -- PETR, the paper's cited embedding, uses each sample's own. ***
+  bank: 12 tuples in 8 scenes   epoch = one pass over 8 scenes   batch 2   training
+  schedule from EPOCHS: 3 x 4 optimiser steps/epoch = 12 steps  (effective batch 2 = 2 x 1; paper: 25 epochs at batch 256)
+    -> 24 sample-passes = 3.00 epochs of 8 scenes   (must equal --epochs, or the derivation is wrong)  [--grow: sized for --grow-scenes, not the bank now]
+  optimiser: AdamW lr 0.0002 wd 0.01  schedule: cosine -> 0 over 12 steps
+  score-loss normaliser: 0.0010 covered candidates/sample x batch (CONSTANT, so --accum is exactly equivalent to one large batch)
+  RESUMED C:\Users\Admin\AppData\Local\Temp\switch_resume_m6b_lbonwqkc\run_a\ckpt_last.pt: step 2/12  epoch 0  sample 4/12  (saved 2026-10-18T07:50:36Z)
+  DECLARED RECIPE CHANGE at this resume (--declare-change): --yaw-loss: 'wrapped' -> 'plain_tangent'
+  PREFLIGHT: checkpoint loads, identity differs ONLY by the declared change(s), cov_norm 0.0010
+PREFLIGHT_OK
+
+---- A5 tail ----
+ is lifted with the ONE baked rig (pre-R22 behaviour). An ABLATION -- PETR, the paper's cited embedding, uses each sample's own. ***
+  bank: 12 tuples in 8 scenes   epoch = one pass over 8 scenes   batch 2   training
+  schedule from EPOCHS: 3 x 4 optimiser steps/epoch = 12 steps  (effective batch 2 = 2 x 1; paper: 25 epochs at batch 256)
+    -> 24 sample-passes = 3.00 epochs of 8 scenes   (must equal --epochs, or the derivation is wrong)  [--grow: sized for --grow-scenes, not the bank now]
+  optimiser: AdamW lr 0.0002 wd 0.01  schedule: cosine -> 0 over 12 steps
+  score-loss normaliser: 0.0010 covered candidates/sample x batch (CONSTANT, so --accum is exactly equivalent to one large batch)
+  RESUMED C:\Users\Admin\AppData\Local\Temp\switch_resume_m6b_lbonwqkc\run_a\ckpt_last.pt: step 2/12  epoch 0  sample 4/12  (saved 2026-10-18T07:50:36Z)
+  DECLARED RECIPE CHANGE at this resume (--declare-change): --yaw-loss: 'wrapped' -> 'plain_tangent'
+    step     2  traj_L1  39.9930  score  0.0000  winners 1/2  assign_d    nan m  scorer_cov   0.0 %  lr 1.71e-04     0.2s
+      on-policy: sets    0  pick nan  random nan  best nan  skill    nan  drift   nan m  label lag     nan steps
+    step     3  traj_L1  23.3590  score  0.0000  winners 2/2  assign_d    nan m  scorer_cov   0.0 %  lr 1.50e-04     0.2s
+      on-policy: sets    0  pick nan  random nan  best nan  skill    nan  drift   nan m  label lag     nan steps
+  TEST HALT after the checkpoint at step 4 (--halt-after-steps)
+TRAIN_HALTED
+
+---- A6 tail ----
+ fixed candidate set is NOT used
+  GROW: bank snapshot 2 files, 23,417 bytes (the checkpointed epoch snapshot)
+  ON-POLICY scorer bank: 0 complete sets (0 set lines, 0 incomplete, 0 superseded by a newer checkpoint, 0 unparseable lines; NAVSIM drivable area on 0 sets) <- C:\Users\Admin\AppData\Local\Temp\switch_resume_m6b_lbonwqkc\op   [none yet in this epoch's snapshot: the scorer gets NO loss until the next epoch boundary]
+  targets: 12 rows from ['targets_rank0.jsonl', 'targets_rank1.jsonl']  per rank {0: 8, 1: 4}
+  scenes: 8 over 12 tuples  (rows per scene: 1 x 4, 2 x 4)
+  MEASURE M6: heading L1 WITHOUT the 2*pi wrap (--yaw-loss plain_tangent); max |target heading| 1.800 rad < 3.0
+  *** NO --calib: every tuple is lifted with the ONE baked rig (pre-R22 behaviour). An ABLATION -- PETR, the paper's cited embedding, uses each sample's own. ***
+  bank: 12 tuples in 8 scenes   epoch = one pass over 8 scenes   batch 2   training
+  schedule from EPOCHS: 3 x 4 optimiser steps/epoch = 12 steps  (effective batch 2 = 2 x 1; paper: 25 epochs at batch 256)
+    -> 24 sample-passes = 3.00 epochs of 8 scenes   (must equal --epochs, or the derivation is wrong)  [--grow: sized for --grow-scenes, not the bank now]
+  optimiser: AdamW lr 0.0002 wd 0.01  schedule: cosine -> 0 over 12 steps
+  score-loss normaliser: 0.0010 covered candidates/sample x batch (CONSTANT, so --accum is exactly equivalent to one large batch)
+  REFUSING TO RESUME -- the run's identity changed:
+      --tan-w: 0.1 -> 0.2
+
+---- B4 tail ----
+ 1; paper: 25 epochs at batch 256)
+    -> 24 sample-passes = 3.00 epochs of 8 scenes   (must equal --epochs, or the derivation is wrong)  [--grow: sized for --grow-scenes, not the bank now]
+  optimiser: AdamW lr 0.0002 wd 0.01  schedule: cosine -> 0 over 12 steps
+  score-loss normaliser: 0.0010 covered candidates/sample x batch (CONSTANT, so --accum is exactly equivalent to one large batch)
+  RESUMED C:\Users\Admin\AppData\Local\Temp\switch_resume_m6b_lbonwqkc\run_b\ckpt_last.pt: step 3/12  epoch 0  sample 6/12  (saved 2026-10-18T07:51:05Z)
+  DECLARED RECIPE CHANGE at this resume (--declare-change): --yaw-loss: 'plain' -> 'plain_tangent'
+    step     3  traj_L1  23.3595  score  0.0000  winners 2/2  assign_d    nan m  scorer_cov   0.0 %  lr 1.50e-04     0.2s
+      on-policy: sets    0  pick nan  random nan  best nan  skill    nan  drift   nan m  label lag     nan steps
+  targets: 12 rows from ['targets_rank0.jsonl', 'targets_rank1.jsonl']  per rank {0: 8, 1: 4}
+  scenes: 8 over 12 tuples  (rows per scene: 1 x 4, 2 x 4)
+  GROW epoch 1: 12 tuples in 8 scenes, scorer frames 0, cov_norm 64.0000, ON-POLICY sets 12 (0 incomplete, 0 superseded, NAVSIM drivable area on 0)
+    step     4  traj_L1  33.8685  score  0.1242  winners 1/2  assign_d  34.41 m  scorer_cov  20.0 %  lr 1.26e-04     0.2s
+      on-policy: sets    2  pick 0.179  random 0.288  best 0.842  skill -0.198  drift 34.41 m  label lag     4.0 steps
+  TEST HALT after the checkpoint at step 5 (--halt-after-steps)
+TRAIN_HALTED
+
+ZZSWITCH_RESUME_M6B_FAIL

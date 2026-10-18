@@ -47,8 +47,8 @@ def fresh_labels(db_root, map_root, log, token, props) -> np.ndarray:
     return OL.labels_from_targets(PT.score_plans(PT.metric_cache_parts(sc), PT.executed_plans8(props, repair=True)))
 
 
-def run_labeller(cache, workers, python, items, props, stale=False):
-    lab = OL.OnlineLabeller(backend="pdm", workers=workers, metric_cache=cache, python=python, n_prop=props.shape[1], timeout_s=600)
+def run_labeller(cache, workers, python, items, props, stale=False, chunks=1):
+    lab = OL.OnlineLabeller(backend="pdm", workers=workers, metric_cache=cache, python=python, n_prop=props.shape[1], timeout_s=600, chunks=chunks)
     if stale:
         lab.mutate = "stale"
     outs = []
@@ -77,6 +77,7 @@ def main() -> int:
     ap.add_argument("--tokens", required=True)
     ap.add_argument("--python", default=None)
     ap.add_argument("--workers", type=int, default=4)
+    ap.add_argument("--chunks", type=int, default=1, help="jobs per set (the trainer's --label-chunks): identity, the stale refusal and throughput are measured ON that path")
     ap.add_argument("--n-sets", type=int, default=64)
     ap.add_argument("--out", default=None)
     ap.add_argument("--skip-fresh", action="store_true", help="do not build fresh parts (this interpreter has no NAVSIM stack); compare to --compare-labels instead")
@@ -86,8 +87,8 @@ def main() -> int:
     base = [tuple(t.split(":", 1)) for t in a.tokens.split(",")]
     items = [base[i % len(base)] for i in range(a.n_sets)]
     props = proposals(a.n_sets)
-    res = {"n_sets": a.n_sets, "distinct_tokens": len(set(items)), "workers": a.workers, "python": a.python or sys.executable}
-    outs, wall = run_labeller(a.cache, a.workers, a.python, items, props)
+    res = {"n_sets": a.n_sets, "distinct_tokens": len(set(items)), "workers": a.workers, "chunks": a.chunks, "python": a.python or sys.executable}
+    outs, wall = run_labeller(a.cache, a.workers, a.python, items, props, chunks=a.chunks)
     lab_online = np.concatenate([o[0] for o in outs])
     mask = np.concatenate([o[1] for o in outs])
     res["labelled"] = int(mask.sum())
@@ -105,7 +106,7 @@ def main() -> int:
     res["throughput_bar_sets_s"] = round(MARGIN * NEED_SETS_S, 3)
     res["throughput_ok"] = bool(res["throughput_sets_s"] >= res["throughput_bar_sets_s"])
     try:                                                                  # D1 (c): a one-step-stale proposal must be refused
-        run_labeller(a.cache, 2, a.python, items[:8], props[:8], stale=True)
+        run_labeller(a.cache, 2, a.python, items[:8], props[:8], stale=True, chunks=a.chunks)
         res["stale_refused"] = False
     except RuntimeError as e:
         res["stale_refused"] = "IDENTITY VIOLATED" in str(e)

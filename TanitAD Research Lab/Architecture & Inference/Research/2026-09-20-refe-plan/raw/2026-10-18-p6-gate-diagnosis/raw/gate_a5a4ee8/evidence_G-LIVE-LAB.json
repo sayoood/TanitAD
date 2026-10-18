@@ -1,0 +1,101 @@
+{
+ "arm": null,
+ "binding": {
+  "argv_sha256": "e35d2898c9776b86188f3013252c642e9543c576b73a2ae1277e05f5c675bbb9",
+  "commit": "a5a4ee8b7309379c5288be81f3011d36581add9e",
+  "profile": "refe_p6",
+  "tree_sha256": "0f1e7d6b1be3ebf522c7f6221fc82903105cf8845f1de630ab4b4391324dffc1"
+ },
+ "check": "G-LIVE-LAB",
+ "details": {
+  "file_sha256": "d6d61923684b4b408e611073cd601cdee966dff92eba943061fa9c8ba2b71680",
+  "lab": {
+   "distinct_tokens": 128,
+   "identity_equal_sets": 64,
+   "identity_ok": true,
+   "identity_vs": "fresh parts (onpolicy_relabel_pdm.label_log body)",
+   "labelled": 256,
+   "n_sets": 256,
+   "python": "/workspace/venv-teacher/bin/python",
+   "stale_refused": true,
+   "throughput_bar_sets_s": 6.735,
+   "throughput_ok": true,
+   "throughput_sets_s": 7.553,
+   "workers": 4
+  },
+  "smoke_stall_frac_by_window_reported_only": [
+   0.24151126805837475,
+   0.27204726421461023
+  ],
+  "stall_judged_on": {
+   "launch_accum": 64,
+   "mem_metrics_sha256": "77257ec56e4790a077d668145698bcce9c779ee8505ac91f4a18c61e3c3af0ff",
+   "stall_frac_by_window": [
+    0.01216349707549193,
+    0.10329321238950019,
+    0.047906332356016726,
+    0.014773270856429386
+   ]
+  }
+ },
+ "finished_utc": "2026-10-18T06:24:57Z",
+ "inputs_read": {
+  "--calib": {
+   "bytes": 2336659,
+   "kind": "file",
+   "method": "sha256-v1",
+   "path": "/workspace/data/refe_navtrain/train_grow/calib_table.json",
+   "sha256": "772c00abfd5070f7f6ecb648e45e7d422a3aeb3c5112ab12c43bbe5eb4a8ab6f"
+  },
+  "--images": {
+   "bytes": 85872932604,
+   "kind": "dir",
+   "listing_sha256": "95155321fc232cbd371cafc9be0f868654fa6baf90b3cf0fc93989b55a85182b",
+   "method": "dir-listing-v1 (relpath + size of every file; contents NOT hashed; _v2manifest.pt excluded -- a cache rewrites it on first use)",
+   "n_files": 413184,
+   "path": "/workspace/data/navtrain_pixels"
+  },
+  "--metric-cache": {
+   "bytes": 45254695096,
+   "kind": "dir",
+   "listing_sha256": "e700ac63f3aa2cd9db58fbd78af591a9b6ead3f52ca222c3483c664ead30cbd0",
+   "method": "dir-listing-v1 (relpath + size of every file; contents NOT hashed; _v2manifest.pt excluded -- a cache rewrites it on first use)",
+   "n_files": 124858,
+   "path": "/workspace/data/refe_navtrain/metric_cache"
+  },
+  "--targets": {
+   "bytes": 597079091,
+   "kind": "dir",
+   "listing_sha256": "d19d78cf2f3e95c5bb95e1fbc8f06816e50b8a1a310473c3eef8a732c05f071c",
+   "method": "dir-listing-v1 (relpath + size of every file; contents NOT hashed; _v2manifest.pt excluded -- a cache rewrites it on first use)",
+   "n_files": 4,
+   "path": "/workspace/data/refe_navtrain/train_grow_cmd_3c"
+  },
+  "gate:egr_json": {
+   "bytes": 729,
+   "kind": "file",
+   "method": "sha256-v1",
+   "path": "/workspace/data/refe_p6/egr/g_egr_result.json",
+   "sha256": "db9a0d79280550d68a5d1d03f36d08d95b4e3e48e0405c7aab64639458af5a6e"
+  },
+  "gate:lab_json": {
+   "bytes": 354,
+   "kind": "file",
+   "method": "sha256-v1",
+   "path": "/workspace/data/refe_p6/lab.json",
+   "sha256": "d6d61923684b4b408e611073cd601cdee966dff92eba943061fa9c8ba2b71680"
+  },
+  "gate:mem_metrics": {
+   "bytes": 4564,
+   "kind": "file",
+   "method": "sha256-v1",
+   "path": "/workspace/data/refe_p6/mem_metrics.jsonl",
+   "sha256": "77257ec56e4790a077d668145698bcce9c779ee8505ac91f4a18c61e3c3af0ff"
+  }
+ },
+ "reasons": [
+  "GPU stall 10.3 % of a window > 5 % (launch accum 64, max over windows after the first)"
+ ],
+ "rehearsal": false,
+ "status": "FAIL"
+}

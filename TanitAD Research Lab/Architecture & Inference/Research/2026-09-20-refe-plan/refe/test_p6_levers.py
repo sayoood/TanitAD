@@ -223,7 +223,7 @@ def chk_identity_resume():
 def chk_profile_p6():
     import launch_gate as L
     good = ("--backbone vitl16 --targets /w/t --images /w/p --calib /w/c.json --metric-cache /w/mc --scorer-sees-trunk --yaw-wrap off --nav-mode command "
-            "--labeller online --epochs 25 --batch 4 --accum 64 --lr 2e-4 --weight-decay 0.01 --amp bf16 --score-w 0.1 --out /w/run")
+            "--labeller online --label-chunks 2 --epochs 25 --batch 4 --accum 64 --lr 2e-4 --weight-decay 0.01 --amp bf16 --score-w 0.1 --out /w/run")
     prof = L.PROFILES["refe_p6"]
     ok(L.profile_refusals(prof, L.parse_args_string(good)) == [], L.profile_refusals(prof, L.parse_args_string(good)))
     rs_on = L.profile_refusals(prof, L.parse_args_string(good.replace("--yaw-wrap off", "--yaw-wrap on")))
@@ -231,10 +231,21 @@ def chk_profile_p6():
     for bad, frag in ((good.replace("--yaw-wrap off ", ""), "--yaw-wrap"), (good.replace("--labeller online", "--labeller bank"), "--labeller"),
                       (good.replace("--nav-mode command", "--nav-mode goal"), "--nav-mode"), (good + " --grow", "FORBIDS"),
                       (good + " --label-backend synthetic", "FORBIDS"), (good.replace("--epochs 25", "--epochs 24"), "--epochs"),
-                      (good.replace("--scorer-sees-trunk ", ""), "--scorer-sees-trunk")):
+                      (good.replace("--scorer-sees-trunk ", ""), "--scorer-sees-trunk"), (good.replace("--label-chunks 2 ", ""), "--label-chunks"),
+                      (good.replace("--label-chunks 2", "--label-chunks 1"), "--label-chunks")):
         rs = L.profile_refusals(prof, L.parse_args_string(bad))
         ok(rs and any(frag in r for r in rs), (frag, rs))
     ok(prof["expect_schedule"]["steps"] == 25 * math.ceil(103037 / 256), "the registered step count must be the trainer's own definition")
+    # G-CLOCK's step-0 bank size is registered PER BANK (2026-10-18: the 3-C bank failed the gate against the pre-3C bank's 189,888).  Each entry is re-derived HERE from
+    # its own source: SPEC_P6 0.2 (103,037 rank-0 + 86,851 rank-1) and PREREG_3C addendum 6 (the same rank-0 rows + 86,851 - 22,588 dropped lane-rank twins = 64,263).
+    import gate_checks as C
+    nb = prof["expect_schedule"].get("n_tuples_by_bank")
+    ok("n_tuples" not in prof["expect_schedule"] and nb is L.P6_BANK_TUPLES, ("one per-bank registration, no single count that would vouch for every bank", prof["expect_schedule"]))
+    ok(nb == {"train_grow_cmd": 103037 + 86851, "train_grow_cmd_3c": 103037 + (86851 - 22588)}, nb)
+    for tg, want in (("/w/refe_navtrain/train_grow_cmd", 189888), ("/w/refe_navtrain/train_grow_cmd_3c", 167300), ("/w/refe_navtrain/train_grow_cmd_3c/", 167300),
+                     ("/w/refe_navtrain/train_grow", None), ("/w/refe_navtrain/train_grow_cmd_3c.tmp", None)):
+        got, how = C.clock_bank_tuples(good.replace("/w/t", tg).split(), prof["expect_schedule"])
+        ok(got == want and how and (want is not None or "no registered tuple count" in how), (tg, got, how))
 
 
 # ------------------------------------------------------------------------------------------------ trainer-level checks
@@ -421,6 +432,51 @@ def chk_stale_label_refused():
     shutil.rmtree(td, ignore_errors=True)
 
 
+def chk_label_chunks():
+    """--label-chunks (SPEC_P6 3.1, 2026-10-18): k jobs of M/k contiguous proposals per sample give BIT-IDENTICAL labels to one job per sample (labels are per proposal),
+    the stale-proposal arm is still refused on the chunked path, a count that does not divide M is refused, and an unlabelled chunk masks its WHOLE sample, counted once."""
+    import online_labeller as OL
+    rng = np.random.default_rng(11)
+    props = rng.normal(0.0, 3.0, (4, 64, 20, 3))
+    metas = [{"log_name": f"l{i}", "token": f"t{i}", "rank": 0, "aug": None, "step": 0} for i in range(4)]
+    outs = {}
+    for k in (1, 2, 4):
+        lab = OL.OnlineLabeller(backend="synthetic", workers=3, n_prop=64, chunks=k)
+        h = lab.submit(0, 0, metas, props)
+        ok(len(h["futs"]) == 4 and all(len(fs) == k for fs in h["futs"]), [len(fs) for fs in h["futs"]])
+        outs[k] = lab.collect(h, 0)
+        st = lab.take_stats()
+        ok(st["n_sets"] == 4 and st["n_labelled"] == 4 and st["n_no_parts"] == 0, st)
+        lab.close()
+    ok(outs[1][0].shape == (4, 64, 6) and float(outs[1][1].sum()) == 4.0)
+    ok(all(np.array_equal(outs[k][0], outs[1][0]) and np.array_equal(outs[k][1], outs[1][1]) for k in (2, 4)), "chunked labels must be bit-identical to one job per set")
+    ok(np.array_equal(outs[1][0][2], OL.synthetic_labels(props[2])), "and equal to the backend's own labels of the whole set")
+    lab = OL.OnlineLabeller(backend="synthetic", workers=2, n_prop=64, chunks=2)
+    lab.mutate = "stale"
+    lab.collect(lab.submit(0, 0, metas, props), 0)
+    try:
+        lab.collect(lab.submit(1, 0, metas, props + 0.5), 0)
+        ok(False, "a one-step-stale proposal set was NOT refused on the chunked path")
+    except RuntimeError as e:
+        ok("IDENTITY VIOLATED" in str(e) and "chunk" in str(e), str(e))
+    lab.close()
+    for bad in (0, 3):
+        try:
+            OL.OnlineLabeller(backend="synthetic", workers=2, n_prop=64, chunks=bad)
+            ok(False, f"chunks={bad} accepted")
+        except ValueError:
+            ok(True)
+    os.environ[OL.MUTATE_ENV] = "no_labels"
+    try:
+        lab = OL.OnlineLabeller(backend="synthetic", workers=2, n_prop=64, chunks=2)
+        lb, mk, _ = lab.collect(lab.submit(0, 0, metas, props), 0)
+        st = lab.take_stats()
+        ok(float(mk.sum()) == 0.0 and not lb.any() and st["n_no_parts"] == 4 and st["n_sets"] == 4, st)
+        lab.close()
+    finally:
+        os.environ.pop(OL.MUTATE_ENV, None)
+
+
 def chk_online_conflicts():
     import train as T
     td = Path(tempfile.mkdtemp())
@@ -482,6 +538,9 @@ def chk_gate_judges():
     ok(any("lag" in x for x in J(lab, [{**ev[0], "lag_hist": {"0": 4, "3": 4}}, ev[1]])))
     ok(any("no `labeller` event" in x for x in J(lab, [])))
     ok(J(lab, ev, arm="lab_two_workers"), "a 2-worker pool must FAIL the throughput bar")
+    ok(any("--label-chunks 2" in x for x in C.judge_lab(lab, ev, 12, steady_metrics=st, launch_accum=64, chunks_launch=2)), "a reading without `chunks` is a 1-chunk reading")
+    ok(C.judge_lab({**lab, "chunks": 2}, ev, 12, steady_metrics=st, launch_accum=64, chunks_launch=2) == [])
+    ok(any("--label-chunks 1" in x for x in C.judge_lab({**lab, "chunks": 2}, ev, 12, steady_metrics=st, launch_accum=64)))
     # check_live_lab reads the stall run from the G-LIVE-MEM metrics FILE and the accum from the launch ARGV
     import tempfile
     import types
@@ -493,6 +552,10 @@ def chk_gate_judges():
         av = ["--label-workers", "7", "--batch", "4", "--accum", "64"]
         ok(C.check_live_lab(str(lj), cap, av, mem_metrics=str(mj))["status"] == "PASS", C.check_live_lab(str(lj), cap, av, mem_metrics=str(mj)))
         ok(C.check_live_lab(str(lj), cap, av)["status"] == "FAIL", "no mem_metrics -> FAIL")
+        av2 = av + ["--label-chunks", "2"]                                          # the chunk count comes from the launch ARGV
+        ok(C.check_live_lab(str(lj), cap, av2, mem_metrics=str(mj))["status"] == "FAIL")
+        lj.write_text(json.dumps({**lab, "workers": 7, "chunks": 2}), encoding="utf-8")
+        ok(C.check_live_lab(str(lj), cap, av2, mem_metrics=str(mj))["status"] == "PASS", C.check_live_lab(str(lj), cap, av2, mem_metrics=str(mj))["reasons"])
         ok(C.check_live_lab(str(lj), cap, av[:4] + ["--accum", "128"], mem_metrics=str(mj))["status"] == "FAIL", "launch accum != stall-run accum -> FAIL")
     rows = [{"cuda_max_mem_gb": 31.0, "traj_L1": 1.0, "samples": 800, "batch": 4}]
     ok(C.judge_mem(rows) == [] and C.judge_mem(rows, arm="mem_over_budget"))
@@ -508,7 +571,7 @@ def chk_gate_p6_rows():
     import launch_gate as L
     td = Path(tempfile.mkdtemp())
     bank = make_bank(td)
-    base = argv_p6(bank, str(td / "o"), steps=2, accum=1)
+    base = argv_p6(bank, str(td / "o"), steps=2, accum=1, extra=("--label-chunks", "2"))
     b_argv = C._set(C._drop(base, "--steps", 1), "--epochs", "1")
     prof = {**L.PROFILES["refe_p6"], "forbidden_flags": (), "required_flags": {}, "provisional_flags": (),
             "expect_schedule": {"epochs": 1, "steps": 4, "epoch_len": 4, "n_tuples": 6}}
@@ -519,7 +582,8 @@ def chk_gate_p6_rows():
     ev = C.check_dvb(b_argv, b, s, prof)
     ok(ev["status"] == "PASS", ev["reasons"])
     dests = {r["dest"] for r in ev["details"]["rows"]}
-    ok({"labeller", "label_backend", "label_workers", "label_timeout_s", "label_python", "metric_cache", "nav_mode", "yaw_wrap"} <= dests, sorted(dests))
+    ok({"labeller", "label_backend", "label_workers", "label_chunks", "label_timeout_s", "label_python", "metric_cache", "nav_mode", "yaw_wrap"} <= dests, sorted(dests))
+    ok([(r["declared"], r["built"]) for r in ev["details"]["rows"] if r["dest"] == "label_chunks"] == [(2, 2)], [r for r in ev["details"]["rows"] if r["dest"] == "label_chunks"])
     ok(all(r["ok"] for r in ev["details"]["rows"]))
     b2 = C.instrumented_run(b_argv, mode="build", work=td / "wb2", arm="lever_ignored")                # the model quietly ignores --scorer-sees-trunk
     ev2 = C.check_dvb(b_argv, b2, s, prof, arm="lever_ignored")
@@ -527,6 +591,13 @@ def chk_gate_p6_rows():
     ok(C.check_clock(b_argv, b, prof)["status"] == "PASS", C.check_clock(b_argv, b, prof)["reasons"])
     ok(C.check_clock(b_argv, b, {**prof, "expect_schedule": {**prof["expect_schedule"], "n_tuples": 189888}})["status"] == "FAIL")   # a bank of the wrong size
     ok(C.check_clock(b_argv, b, prof, arm="clock_wrong_epochs")["status"] == "FAIL")
+    # the per-bank registration on the REAL built bank (dir `bank`, 6 tuples): its own entry decides; another bank's entry never vouches for it
+    byb = {"epochs": 1, "steps": 4, "epoch_len": 4, "n_tuples_by_bank": {"other": 999, "bank": 6}}
+    ev_b = C.check_clock(b_argv, b, {**prof, "expect_schedule": byb})
+    ok(ev_b["status"] == "PASS" and ev_b["details"]["bank_registration"] == "bank 'bank' per n_tuples_by_bank", (ev_b["reasons"], ev_b["details"]))
+    ok(C.check_clock(b_argv, b, {**prof, "expect_schedule": {**byb, "n_tuples_by_bank": {"other": 999, "bank": 7}}})["status"] == "FAIL")   # its own entry is wrong
+    ev_u = C.check_clock(b_argv, b, {**prof, "expect_schedule": {**byb, "n_tuples_by_bank": {"other": 6}}})                               # unregistered bank, same size
+    ok(ev_u["status"] == "FAIL" and "no registered tuple count" in " ".join(ev_u["reasons"]), ev_u["reasons"])
     live = C.check_live(base, s, prof)
     ok(live["status"] == "PASS", live["reasons"])
     ok("cmd_embed" in live["details"]["groups"] and live["details"]["groups"]["cmd_embed"]["max_abs_sum"] > 0.0)
@@ -542,7 +613,7 @@ CHECKS = {"wta_default_identity": chk_wta_default_identity, "yaw_analytic": chk_
           "command_model_reach": chk_command_model_reach, "ckpt_meta_nav_mode": chk_ckpt_meta_nav_mode, "identity_resume": chk_identity_resume,
           "profile_p6": chk_profile_p6, "online_conflicts": chk_online_conflicts, "default_flags_inert": chk_default_flags_inert,
           "trainer_reach_online": chk_trainer_reach_online, "score_only_grad": chk_score_only_grad, "deferred_bit_identity": chk_deferred_bit_identity,
-          "stale_label_refused": chk_stale_label_refused, "gate_judges": chk_gate_judges, "gate_p6_rows": chk_gate_p6_rows}
+          "stale_label_refused": chk_stale_label_refused, "gate_judges": chk_gate_judges, "gate_p6_rows": chk_gate_p6_rows, "label_chunks": chk_label_chunks}
 
 # (file, old, new, the check that must go RED).  Each deletes/neutralises ONE emitting line.
 MUTATIONS = [
@@ -554,10 +625,19 @@ MUTATIONS = [
     ("train.py", "tot_ = P[\"l_traj\"] + l_score\n", "tot_ = P[\"l_traj\"] + 0.0 * l_score\n", "score_only_grad"),   # anchor moved by 134be4f (field-loss wiring split the backward line); R40
     ("train.py", 'cfg.nav_mode = a.nav_mode', 'pass', "trainer_reach_online"),
     ("train.py", "lab.submit(micro, step, metas, props_np)", "lab.submit(micro, step, metas, props_np + 0.01)", "deferred_bit_identity"),
-    ("online_labeller.py", 'if r["sha"] != h["shas"][i]:', 'if False:', "stale_label_refused"),
+    ("online_labeller.py", 'if r["sha"] != h["cshas"][i][c]:', 'if False:', "stale_label_refused"),        # the per-CHUNK identity check (2026-10-18; was per sample)
     ("ckpt_io.py", '    if nav and nav != c.nav_mode:\n        c.nav_mode = nav\n', '', "ckpt_meta_nav_mode"),
     ("nav_command.py", "    if ang > GOAL_RULE_BEARING_RAD:\n        return LEFT", "    if ang > GOAL_RULE_BEARING_RAD:\n        return RIGHT", "nav_rule"),
     ("launch_gate.py", '"--yaw-wrap": "off", ', '', "profile_p6"),
+    # G-CLOCK per-bank registration (2026-10-18): the 3-C entry carrying the pre-3C number, and a lookup that ignores which bank --targets names, must both go RED
+    ("launch_gate.py", '    "train_grow_cmd_3c": 167300,', '    "train_grow_cmd_3c": 189888,', "profile_p6"),
+    ("gate_checks.py", 'return reg[name], f"bank {name!r} per n_tuples_by_bank"', 'return next(iter(reg.values())), f"bank {name!r} per n_tuples_by_bank"', "gate_p6_rows"),
+    # --label-chunks (2026-10-18): the trainer drops the flag on the floor, the reassembly writes every chunk to the first slice, the G-LIVE-LAB judge forgets the
+    # chunk count, and the P6 profile stops requiring it -- each must go RED
+    ("train.py", "horizon=cfg.horizon_steps, chunks=a.label_chunks)", "horizon=cfg.horizon_steps)", "gate_p6_rows"),
+    ("online_labeller.py", 'labels[i, h["cuts"][c]] = r["labels"]', 'labels[i, h["cuts"][0]] = r["labels"]', "label_chunks"),
+    ("gate_checks.py", 'if lab.get("chunks", 1) != chunks_launch:', 'if False:', "gate_judges"),
+    ("launch_gate.py", '"--score-w": "0.1", "--label-chunks": "2"},', '"--score-w": "0.1"},', "profile_p6"),
 ]
 
 

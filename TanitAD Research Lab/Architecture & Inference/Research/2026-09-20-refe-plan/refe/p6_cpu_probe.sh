@@ -82,7 +82,7 @@ log "ZZP6CPU_START pkg=$PKG budget_min=$((BUDGET_S / 60)) lws='$LWS' sets=$NSETS
 CG="$("$PY" "$HELP" cores --root "$CGROOT" 200>&-)"; CORES_F="$(echo "$CG" | awk '{print $2}')"; CORES_SRC="$(echo "$CG" | cut -d' ' -f3-)"
 CORES="${CORES_F%%.*}"; [ -n "$CORES" ] && [ "$CORES" -ge 1 ] 2> /dev/null || CORES=1
 CW="${P6CPU_CACHE_WORKERS:-$(( CORES < 1 ? 1 : (CORES > 24 ? 24 : CORES) ))}"                  # == p6_pod.sh
-LWD="${P6CPU_LW_DEFAULT:-$(( CORES - 4 < 1 ? 1 : (CORES - 4 > 16 ? 16 : CORES - 4) ))}"       # == p6_pod.sh's LW
+LWD="${P6CPU_LW_DEFAULT:-$(( CORES - 2 < 1 ? 1 : (CORES - 2 > 16 ? 16 : CORES - 2) ))}"       # == p6_pod.sh's LW
 CPUM="$(grep -m1 'model name' /proc/cpuinfo 2> /dev/null | cut -d: -f2- | sed 's/^ *//')"; MHZ="$(grep -m1 'cpu MHz' /proc/cpuinfo 2> /dev/null | cut -d: -f2- | sed 's/^ *//')"
 TPC="$(lscpu 2> /dev/null | grep -m1 'Thread(s) per core' | awk '{print $NF}')"
 log "ZZP6CPU_ENV cores=$CORES_F ($CORES_SRC) cache_workers=$CW lw_default=$LWD nproc=$(nproc) cpu='${CPUM:-unknown}' mhz=${MHZ:-unknown} threads_per_core=${TPC:-unknown}"
