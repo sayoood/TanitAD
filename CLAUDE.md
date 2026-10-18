@@ -357,7 +357,8 @@ LAYER-3 QUESTION.** It is true of the **published PhysicalAI-AV feature set** an
 own **AUGMENTED v7.x label release**. MEASURED 2026-09-06 on
 `…/incoming/2026-09-04-v72-label-release/raw/s2_labels_v7.2_train.jsonl.gz` (schema
 `s2-geom-v7`, vocab `v7`, **4,572 records, one per clip**): **779/4,572 records carry a GT
-traffic-light tactical goal WITH THE COLOUR ATTACHED** — `g_tac.goals.TRAFFIC_LIGHT_REACT_RED`
+traffic-light tactical goal, 761 of them WITH THE COLOUR ATTACHED** (the other 18 are colourless;
+corrected 2026-10-18 on the PI's approval, the earlier text said all 779 carried a colour) — `g_tac.goals.TRAFFIC_LIGHT_REACT_RED`
 **376/4,572**, `_GREEN` **363/4,572**, `_YELLOW` **22/4,572**, colourless `TRAFFIC_LIGHT_REACT`
 **18/4,572** — each carrying `state`, `object_kind: "traffic_light"` and `provenance:
 "vlm-cot"`, extracted from the Alpamayo CoT by `stack/tanitad/data/alpamayo_semantics.py` and

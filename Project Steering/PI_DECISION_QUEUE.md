@@ -2168,3 +2168,24 @@ PI: *"Exempt REFe"* (option C above).
 * P6 continues unchanged and stays deployable. No relaunch, no new lever.
 * Recorded in `D-PI-YAWRATE-3` and in CLAUDE.md's binding section. The leaderboard rows keep declaring the input
   (`be1d0c0`), because the exemption changes admissibility, not what the model reads.
+
+## DECIDED 2026-10-18 ~17:30 Berlin -- R0e-pick's six questions; v7F fixes into refcv8; addresses stay; the 779 wording
+
+PI, verbatim: *"1a yes, 1b 0.01, 1c rub to 1000, 1d no., 1e keep it report only, 1f yes preauthorize / 2: assure that
+refcv8 includes the fixes and inform masdtermind / 3: leave them / 4: follow your recomendation"*.
+
+* **R0e-pick** (`raw/2026-10-18-r0e-pick/NOTES.md` questions 1-6):
+  * 1a A40 spend AUTHORISED for Stage 1; it queues after P6. Stage 2 runs only on outcome O1, as drafted.
+  * 1b **T = 0.01** (the disclosed departure from A2R2's T* = 0.02).
+  * 1c the control R0e-id runs to **u1000**: +2.41 A40-h buys the first training-rerun floor for a constrained arm. Build item B4
+    (supervisor stop-after-u250) is therefore DROPPED.
+  * 1d an O2 outcome (safe, below bar G) does **NOT** earn Stage 2.
+  * 1e the DEPLOYABLE-SAFE vs-BASE line stays **report-only**; no E clause.
+  * 1f **PRE-AUTHORISED:** if DDC separates adverse again, g5 + DDC as a third constrained term is the committed next lever.
+  * ⇒ The draft is registered with these values (registration lands as its own commit). Remaining build blockers: B2 and B5.
+* **v7F stranded patches:** not landed into `stack/` (v7F is superseded by v8F). Instead, verify that **refcv8** carries the
+  equivalent of every v7F fix (R1 speed cap, R2 nav-conditioning start defects, R3 every tactical label reaches the loss, R4
+  tactical behaviours reach the operative plan, R6 strategic-off), fix whatever is missing, and inform the session that runs
+  refcv8 ("TanitAD project kickoff (fork 8)").
+* **Old pod addresses in public files:** LEFT AS THEY ARE (87 occurrences, 35 files, 7 old addresses, none the current pod).
+* **CLAUDE.md "779":** corrected to "779 traffic-light goals, 761 of them with the colour attached (18 colourless)".
