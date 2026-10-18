@@ -10,13 +10,14 @@ B=/c/Users/Admin/box2_ship; L=$B/logs
 SSH="ssh -o BatchMode=yes -o ConnectTimeout=20 tanitad-box2"
 PY=C:/Users/Admin/venvs/tanitad/Scripts/python.exe
 MAXH=${V8F_MAX_RUN_H:-10}
+CHAIN_OUT=${V8F_CHAIN_OUT:-$L/chain_v8f_mini.out}       # chain_beta.sh points this at its own log; the default is the v8F-mini chain's
 kill_ours() {
   $SSH "powershell -NoProfile -Command \"\$p = @(Get-CimInstance Win32_Process -Filter \\\"Name = 'python.exe'\\\"); \$ours = @(\$p | Where-Object { \$_.CommandLine -match 'v8f_mini_train|v8f_mini_eval' }); \$ids = @(\$ours | ForEach-Object { \$_.ProcessId }); \$kids = @(\$p | Where-Object { \$ids -contains \$_.ParentProcessId }); (\$ours + \$kids) | ForEach-Object { Stop-Process -Id \$_.ProcessId -Force -ErrorAction SilentlyContinue; 'stopped ' + \$_.ProcessId }\"" 2>/dev/null | tr -d '\r'
 }
 echo "$(date '+%m-%d %H:%M') v8F guard armed (USB >= 4/20 samples >= 61 C or one >= 63 C; projected run > ${MAXH} h after 1,000 steps)"
 hi=0
 while :; do
-  grep -q -E 'ZZV8FMINI-DONE|ZZV8FMINI-STOP' $L/chain_v8f_mini.out 2>/dev/null && { echo "$(date '+%m-%d %H:%M') chain ended; guard off (max USB ${hi} C)"; exit 0; }
+  grep -q -E 'ZZV8FMINI-DONE|ZZV8FMINI-STOP|ZZBETA-DONE|ZZBETA-STOP' "$CHAIN_OUT" 2>/dev/null && { echo "$(date '+%m-%d %H:%M') chain ended; guard off (max USB ${hi} C)"; exit 0; }
   t=$($SSH "powershell -NoProfile -Command \"Get-Content D:/tanitad/logs/telemetry_full.csv -Tail 20\"" 2>/dev/null | tr -d '\r' | grep -E '^20' | cut -d, -f11 | grep -E '^[0-9]+$')
   if [ -n "$t" ]; then
     n61=$(echo "$t" | awk '$1 >= 61' | wc -l); m=$(echo "$t" | sort -n | tail -1)
@@ -25,7 +26,7 @@ while :; do
       echo "ZZGUARD-STOP TEMP $(date '+%m-%d %H:%M') USB HDD: $n61 of the last 20 samples >= 61 C, max $m C"; kill_ours; exit 0
     fi
   fi
-  run=$(cat $L/v8f_current.txt 2>/dev/null)
+  run=$(cat ${V8F_CURRENT:-$L/v8f_current.txt} 2>/dev/null)
   if [ -n "$run" ]; then
     $SSH "powershell -NoProfile -Command \"if (Test-Path D:/tanitad/runs/v8f_mini_full/$run/train_log.jsonl) { Get-Content D:/tanitad/runs/v8f_mini_full/$run/train_log.jsonl -Tail 21 }\"" 2>/dev/null | tr -d '\r' > $L/v8f_guard_tail.jsonl
     $SSH "powershell -NoProfile -Command \"if (Test-Path D:/tanitad/runs/v8f_mini_full/$run/selfcheck.json) { Get-Content D:/tanitad/runs/v8f_mini_full/$run/selfcheck.json -Raw }\"" 2>/dev/null | tr -d '\r' > $L/v8f_guard_sc.json

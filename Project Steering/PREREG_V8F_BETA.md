@@ -146,3 +146,46 @@ ADE@6 s, ADE@2 s and FDE@6 s are reported **in addition** to the four families b
 ## 11. How to run it (when an M2 checkpoint exists)
 
 See `TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-v8f-beta/HANDOFF.md` for the exact commands. A run needs, per M2 arm, **two trained M2 checkpoints (training seeds 0 and 1)**; the scorer rolls 118 candidates through the WM for each of 2,399 windows (full-scale runtime NOT measured), so run it on the dev box or on box 2 **after** that box's GPU job; it adds no load to a training pod.
+
+## Amendment 1 (2026-10-19, before any data): the run is M2b on the full corpus, eval only, on box 2 (PI go)
+
+* **The PI's go (verbatim, 2026-10-18):** *"Yes, queue rung β's eval-only gate on box 2 after the v8F-mini chain finishes (M2b seeds 0 and 1, plus its shuffled-goal control), same safe mode and stop rules."*
+* **No data exists:** no M2 checkpoint has been trained (MEASURED 2026-10-19: `runs\v8f_mini_full` does not exist on box 2 yet).
+
+**1. The arm.**
+* **M2b only**, training seeds 0 and 1. These are the checkpoints `PREREG_V8F_MINI` **Amendment 4** trains on box 2's full-corpus cache: TRAIN = 4,512 clips, the 60-clip holdout withheld, recorded as `excluded_sha256 f6a1dee0…` in each `summary.json`.
+* **M2a is not trained, so its β read is NOT READ (arm not trained)**, never a pass.
+* §3's per-arm rule stands: an M2b verdict is M2b's only.
+* The shuffled-goal control (`beta_shuf`, §2) and the oracle-goal diagnostic run inside the same `run --plan beta` call, on the same 2,399 windows.
+
+**2. §5's holdout caveat does not apply to this read.** The 60 clips are **OUT of sample** for these M2b checkpoints (`--exclude 540:600`). The chain REFUSES a checkpoint whose `summary.json` does not carry the holdout's sha256, 4,512 clips, and one clip list across both seeds.
+
+**3. The fan is the pinned 13 × 9 grid; no `--fan-artifact`.**
+* The pod that holds `anchors_117_alat_declared.pt` (`tanitad-a40:/workspace`) was **unreachable** on 2026-10-19 (SSH connect timed out). So the grid was checked offline instead, against the bank refcv4b actually trained on.
+* MEASURED (`…/2026-10-18-v8f-beta/raw/fan_check.json`), source `D:\Projects\TanitAD-artifacts\a40-rescue\a40_records.tgz :: experiments/refcv4b-b1-v72-40k/anchors.pt`:
+  * file sha256 `e86cf507…` equals the registry's;
+  * anchors-tensor sha256 `51f930dc…` and controls-tensor sha256 `b072f4c0…` equal the registry's. These are the three hashes `restamp_refcv4b_anchors.py` asserts before it writes the declared file, which holds the SAME tensors.
+  * max |controls − pinned grid| = **2.38 × 10⁻⁷ m/s²**: one float32 rounding step, same row order.
+* ⇒ **The pinned grid IS the trained fan to float32 rounding.**
+* **Correction to §1 and the HANDOFF:** with the declared file, `max_abs_diff_vs_pinned_grid` would read 2.4 × 10⁻⁷, not 0.0. That is rounding (about 4 µm over 6 s), not a different fan.
+
+**4. Inputs:**
+* `cache_full`'s eval split (the same 141 clips);
+* the v9 eval139 labels;
+* `--kin-mode yaw` with `cache_full\native_tracks.pt`;
+* `--ages cycle` (the default, as in the K-1 read);
+* `--families`, B = 2,000.
+* Output goes to `runs\v8f_mini_full\eval_beta`, **never the K-1 eval directory**: the tag `M2b_s<k>` would otherwise overwrite the K-1 read's files.
+
+**5. VOID rule:** if `plan_beta.score_calls.candidates` is 0 at either seed, the read is VOID (the scorer never ran), and is reported that way.
+
+**6. Operational rules (not scientific bars):**
+* box 2 SAFE MODE, one job at a time;
+* starts only after the v8F-mini chain prints `ZZV8FMINI-DONE`, and stops if that chain stopped;
+* stops on a reboot (crash), unreachability, any nonzero rc, or the USB-HDD temperature rule.
+* The scorer's full-scale runtime was never measured, so each seed gets **6 h**. After that, our eval processes are stopped and the chain stops: a named blocker, not a result.
+
+**7. Instruments:**
+* the queue, `…/2026-10-18-v8f-beta/code/v8f_beta_box2_queue.cmd`;
+* the chain, `code/box2_ops/chain_beta.sh`;
+* `stack/tests/test_v8f_beta_box2.py`. The real parser accepts the queue's argv, and 3 queue mutations each turn it RED (`raw/mutate_beta_queue.json`).
