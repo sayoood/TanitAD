@@ -583,9 +583,14 @@ Each entry cost hours more than once. CLAUDE.md keeps a one-line index; this fil
   - ⇒ **Test it with a foreign-schema lock** (MSYS-style pid, old mtime) in a temp dir: require `GpuBusy` and an
     untouched body. Restoring the removal branch must turn that test RED. A test that PINS the old behaviour
     (`raw/2026-10-16-scene-tap-a2/test_scene_tap_probe.py:753`) is inverted in the same landing.
-  - Same rule still OPEN in `c3_run.py:114`, `c3_run_p2.py:126`, `p2s1_autoread.py:449`, and worse in refav1's
-    `gpu_lock.py:58-83` (a lock with no `t` field always reads "before the last boot" and is renamed aside). None
-    was running when found; BACKLOG `LOCK-STEAL-2`.
+  - The same rule was also in `c3_run.py:114`, `c3_run_p2.py:126`, `p2s1_autoread.py:449`, and worse in refav1's
+    `gpu_lock.py:58-83` (a lock with no `t` field always read "before the last boot" and was renamed aside). None
+    was running when found. All four FIXED 2026-10-18 (BACKLOG `LOCK-STEAL-2`).
+  - ⚠️ **`subprocess.run(["tasklist", ...], text=True)` CRASHES on a dead pid on this box.** The German-locale "no
+    tasks" line carries byte 0x81, cp1252 cannot decode it, `stdout` comes back `None`, and `'"pid"' in None` raises
+    `TypeError` (MEASURED 2026-10-18 in `c3_run.py` / `c3_run_p2.py`). The old helpers therefore crashed here instead
+    of stealing, and would steal on an English-locale box. ⇒ Read `capture_output=True` as BYTES and
+    `.decode("utf-8", "replace")`; a probe that only ever ran on live pids never meets the line that breaks it.
   Same family as the `pgrep -f` self-match: a liveness probe answers for one namespace only.
 
 ## Git hygiene — the mistake that has now happened twice

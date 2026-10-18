@@ -41,6 +41,7 @@ BANKED_CSV = (f"{EC.DATA}/score/refe_stage2_sft4_B_u400_navtest_full/"
               "refe_stage2_sft4_B_u400_navtest_full.csv")
 LOCK = "C:/Users/Admin/qland/work/refcv7/devbox_gpu.lock"
 MARK = "C:/Users/Admin/qland/work/refcv7/devbox_gpu.chain_active"
+OWN_JOB_PREFIX = "c3-selection-headroom-"        # the `job` prefix of the lock body stage_dump writes: the ONLY lock this helper may clear
 FIDELITY_TOL_M = 1e-3
 GPU_MAX_USED_MIB = 3500          # wait for nvidia-smi memory.used at or below this before loading (8188 MiB card; desktop baseline ~1-3 GB)
 SUB = ("no_at_fault_collisions", "drivable_area_compliance", "ego_progress",
@@ -84,8 +85,10 @@ class Ctx:
 
 # --------------------------------------------------------------------------------------- GPU lock
 def pid_alive(pid):
-    r = subprocess.run(["tasklist", "/FI", f"PID eq {pid}", "/FO", "CSV", "/NH"], capture_output=True, text=True)
-    return f'"{pid}"' in r.stdout
+    # bytes, not text=True: tasklist's localised "no tasks" line carries 0x81 (cp850 u-umlaut), which cp1252 cannot decode -> r.stdout was None and a DEAD pid raised
+    # TypeError (MEASURED 2026-10-18), so the helper crashed instead of ever judging a lock stale.
+    r = subprocess.run(["tasklist", "/FI", f"PID eq {pid}", "/FO", "CSV", "/NH"], capture_output=True)
+    return f'"{pid}"' in r.stdout.decode("utf-8", "replace")
 
 
 def take_lock(me, ctx):
@@ -109,7 +112,9 @@ def take_lock(me, ctx):
                 try:                       # a lock whose holder process is gone (and which is not fresh) is stale
                     holder = json.loads(open(LOCK, encoding="utf-8").read())
                     age = time.time() - os.path.getmtime(LOCK)
-                    if not pid_alive(holder["pid"]) and age > 600:
+                    # THE LOCK IS SHARED with other job families that write a DIFFERENT schema, e.g. the refcv8 battery's {job, pid = an MSYS pid, win_pid_of_locker, host, acquired}.
+                    # An MSYS pid is invisible to tasklist, so "pid not alive" cannot tell such a live job from a dead one: we clear ONLY a lock carrying OUR job marker.
+                    if isinstance(holder, dict) and str(holder.get("job", "")).startswith(OWN_JOB_PREFIX) and not pid_alive(holder["pid"]) and age > 600:
                         print(f"[{now()}] STALE lock (pid {holder['pid']} gone, age {age:.0f} s) -> removing: {holder}", flush=True)
                         os.remove(LOCK)
                         continue

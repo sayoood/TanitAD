@@ -289,11 +289,17 @@ def main() -> int:
         os.remove(A.MARK)
         real_alive = A.pid_alive
         A.pid_alive = lambda pid: False
-        Path(A.LOCK).write_text(json.dumps({"pid": 99999999, "owner": "dead"}))
+        # LOCK-STEAL-2 (2026-10-18): only a lock carrying OUR marker (stage2_sft.py's job = "refe-stage2-<name>") may be removed.  The two checks below used to pin the old
+        # stealing with a marker-less {"pid", "owner": "dead"} body; the fixture now carries the marker, and the inverse is pinned right after (and in test_p2s1_autoread_foreign_lock.py).
+        Path(A.LOCK).write_text(json.dumps({"job": "refe-stage2-n", "pid": 99999999, "host": "H", "acquired": "now"}))
         check("dead_holder_but_fresh_lock_is_kept", job.lock_state() is not None and Path(A.LOCK).exists())
         old = os.path.getmtime(A.LOCK) - 3600
         os.utime(A.LOCK, (old, old))
         check("dead_holder_and_old_lock_is_removed", job.lock_state() is None and not Path(A.LOCK).exists())
+        Path(A.LOCK).write_text(json.dumps({"pid": 99999999, "owner": "dead"}))
+        os.utime(A.LOCK, (old, old))
+        check("dead_holder_old_FOREIGN_lock_is_NOT_removed", job.lock_state() is not None and Path(A.LOCK).exists())
+        os.remove(A.LOCK)
         A.pid_alive = real_alive
         # gate loop: held for two polls, then free -> returns
         calls = {"n": 0}

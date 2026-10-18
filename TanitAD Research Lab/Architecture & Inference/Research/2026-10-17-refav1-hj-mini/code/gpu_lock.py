@@ -3,10 +3,12 @@
 The RTX 4060 is shared by several sessions through ONE lock file of JSON {pid, owner, job, host, t, acquired}.
 This helper follows the protocol recorded in memory `devbox-drive-letter-and-detached-jobs` (2026-10-17):
   * acquire creates the file EXCLUSIVELY (O_EXCL) -- two waiters cannot both win;
-  * a lock whose pid is dead, or that was taken before the last boot (pid reuse), is STALE: it is RENAMED ASIDE
-    (`devbox_gpu.lock.stale_<utc>_pid<pid>`), never deleted;
+  * a lock that carries OUR owner marker (`owner` == --owner, default "ra1a") AND whose pid is dead, or that was taken before
+    the last boot (pid reuse), is STALE: it is RENAMED ASIDE (`devbox_gpu.lock.stale_<utc>_pid<pid>`), never deleted;
+    any OTHER schema (e.g. the refcv8 battery's {job, pid = an MSYS pid, win_pid_of_locker, host, acquired}) is a LIVE job's lock
+    -- an MSYS pid is invisible to the Windows pid probe and that schema has no `t` -- so it is waited on, never renamed or removed;
   * a lock held by a live pid is waited on (poll --poll-s, give up after --max-wait-s, exit 2);
-  * release removes the file ONLY if it carries our pid (never another session's lock).
+  * release removes the file ONLY if it carries our owner AND our pid (never another session's lock).
 
     python gpu_lock.py acquire --pid <winpid> --owner ra1a --job refav1-hj-pooled-encode [--max-wait-s 28800]
     python gpu_lock.py release --pid <winpid>
@@ -25,6 +27,7 @@ import time
 from pathlib import Path
 
 LOCK = Path("C:/Users/Admin/qland/work/refcv7/devbox_gpu.lock")
+OWNER = "ra1a"                                                       # the owner marker this helper writes by default (--owner)
 STILL_ACTIVE = 259
 
 
@@ -56,8 +59,10 @@ def read(lock: Path):
         return {"pid": -1, "owner": "UNREADABLE", "t": time.time()}
 
 
-def stale_reason(info: dict, now_boot: float):
+def stale_reason(info: dict, now_boot: float, owner: str = OWNER):
     if info is None:
+        return None
+    if not isinstance(info, dict) or info.get("owner") != owner:     # a lock WITHOUT our owner marker is a live job's lock: pid and `t` say nothing about it
         return None
     if float(info.get("t", 0)) < now_boot - 5:
         return "acquired before the last boot (pid may have been reused)"
@@ -71,7 +76,7 @@ def acquire(lock: Path, pid: int, owner: str, job: str, max_wait_s: float, poll_
     lock.parent.mkdir(parents=True, exist_ok=True)
     while True:
         info = read(lock)
-        why = stale_reason(info, boot_time())
+        why = stale_reason(info, boot_time(), owner)
         if info is not None and info.get("owner") == "UNREADABLE":
             why = None                                               # do not guess about a torn file
         if info is not None and why:
@@ -102,13 +107,13 @@ def acquire(lock: Path, pid: int, owner: str, job: str, max_wait_s: float, poll_
         time.sleep(poll_s)
 
 
-def release(lock: Path, pid: int) -> int:
+def release(lock: Path, pid: int, owner: str = OWNER) -> int:
     info = read(lock)
     if info is None:
         print("[gpu_lock] nothing to release", flush=True)
         return 0
-    if int(info.get("pid", -1)) != int(pid):
-        print(f"[gpu_lock] NOT releasing: lock belongs to pid {info.get('pid')} ({info.get('owner')}), not {pid}", flush=True)
+    if info.get("owner") != owner or int(info.get("pid", -1)) != int(pid):
+        print(f"[gpu_lock] NOT releasing: lock belongs to pid {info.get('pid')} ({info.get('owner')}), not {pid} ({owner})", flush=True)
         return 3
     lock.unlink()
     print("[gpu_lock] released", flush=True)
@@ -120,7 +125,7 @@ def main(argv=None) -> int:
     ap.add_argument("cmd", choices=["acquire", "release", "status"])
     ap.add_argument("--lock", default=str(LOCK))
     ap.add_argument("--pid", type=int, default=os.getpid())
-    ap.add_argument("--owner", default="ra1a")
+    ap.add_argument("--owner", default=OWNER)
     ap.add_argument("--job", default="refav1-hj-pooled-encode")
     ap.add_argument("--max-wait-s", type=float, default=28800)
     ap.add_argument("--poll-s", type=float, default=30)
@@ -129,11 +134,11 @@ def main(argv=None) -> int:
     if a.cmd == "status":
         info = read(lock)
         print(json.dumps({"held": info is not None, "info": info,
-                          "stale": stale_reason(info, boot_time()) if info else None}, indent=1))
+                          "stale": stale_reason(info, boot_time(), a.owner) if info else None}, indent=1))
         return 0
     if a.cmd == "acquire":
         return acquire(lock, a.pid, a.owner, a.job, a.max_wait_s, a.poll_s)
-    return release(lock, a.pid)
+    return release(lock, a.pid, a.owner)
 
 
 if __name__ == "__main__":

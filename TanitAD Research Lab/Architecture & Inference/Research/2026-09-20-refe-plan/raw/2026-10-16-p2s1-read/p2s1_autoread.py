@@ -434,7 +434,7 @@ class Job:
             self.sleep(60)
 
     def lock_state(self):
-        """None if free; else a description.  A dead holder's lock is removed only when older than 10 min (aux_navtest_forward's rule)."""
+        """None if free; else a description.  A dead holder's lock is removed only when it carries OUR marker and is older than 10 min (aux_navtest_forward's rule)."""
         if Path(MARK).exists():
             return f"{MARK} present (a chain is active)"
         if not Path(LOCK).exists():
@@ -443,7 +443,10 @@ class Job:
             holder, age = json.loads(Path(LOCK).read_text(encoding="utf-8")), time.time() - os.path.getmtime(LOCK)
         except (OSError, ValueError):
             return "lock unreadable"
-        if "pid" in holder and not pid_alive(holder["pid"]) and age > 600:
+        # THE LOCK IS SHARED with other job families that write a DIFFERENT schema, e.g. the refcv8 battery's {job, pid = an MSYS pid, win_pid_of_locker, host, acquired}; an MSYS pid
+        # is invisible to tasklist, so "pid not alive" cannot tell such a live job from a dead one.  This script never takes the lock itself: the only lock it may clear is the one
+        # the stage 2 it launches writes (stage2_sft.py: job = "refe-stage2-<name>").  Any other lock is a live job's: report it as held, never remove it.
+        if isinstance(holder, dict) and holder.get("job") == f"refe-stage2-{self.c['name']}" and "pid" in holder and not pid_alive(holder["pid"]) and age > 600:
             self.log(f"WARN: removing the stale GPU lock of dead pid {holder['pid']} (age {age:.0f} s)")
             try:
                 Path(LOCK).unlink()
