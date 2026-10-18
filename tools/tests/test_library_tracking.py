@@ -284,14 +284,25 @@ def test_index_and_evidence_agree_in_count():
     yet claimed is a pending `kb_add`, which `--verify` already reports as an orphan.
     An index ENTRY with no file is the dangerous direction — a citation that resolves
     to nothing.
+
+    ⚠️ Like for like (2026-10-18): `_disk_papers()` counts PDFs, and the index also
+    holds declared non-paper SOURCES (`doc_type: "source"` — a README, a `.proto`;
+    never a PDF, see `kb_add.citation_bar`). Counting every entry against PDFs failed
+    on the tip as 650 vs 646 with nothing missing. PDF rows are counted against PDFs;
+    every other row must name a file that is on disk.
     """
     lib = _read_json(LIB / "library.json")
-    n_entries = len(_entries(lib))
+    ents = _entries(lib)
+    is_pdf = [str(e.get("path", "")).lower().endswith(".pdf") for e in ents]
+    n_entries = sum(is_pdf)
     n_disk = len(_disk_papers())
     assert n_entries <= n_disk, (
         f"library.json claims {n_entries} entries but only {n_disk} PDFs are on disk — "
         "at least one citation resolves to a file we do not hold."
     )
+    absent = [e.get("key") for e, pdf in zip(ents, is_pdf)
+              if not pdf and not (REPO / str(e.get("path", ""))).is_file()]
+    assert not absent, f"non-PDF entries whose file is not on disk: {absent}"
 
 
 def test_library_md_is_generated_not_handwritten():

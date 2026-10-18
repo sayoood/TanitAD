@@ -293,11 +293,11 @@
 
 ### `alpasim` (3)
 
-- **[alpasim-egodriver-proto](TanitAD%20Research%20Lab/Library/papers/alpasim-egodriver-proto_AlpaSim-egodriver-proto-NVlabs-alpasim-main-fetched-2026-10.proto)** — AlpaSim egodriver.proto (NVlabs/alpasim main, fetched 2026-10-17)  
+- **[alpasim-egodriver-proto](TanitAD%20Research%20Lab/Library/papers/alpasim-egodriver-proto_AlpaSim-egodriver-proto-NVlabs-alpasim-main-fetched-2026-10.proto)** — *(source)* AlpaSim egodriver.proto (NVlabs/alpasim main, fetched 2026-10-17)  
   *AlpaSim driver gRPC contract: submit_image_observation / submit_egomotion_observation / submit_route / drive -> DriveResponse.trajectory (local->rig_est transforms); Apache-2.0*
-- **[alpasim-readme](TanitAD%20Research%20Lab/Library/papers/alpasim-readme_AlpaSim-README-NVlabs-alpasim-main-fetched-2026-10-17.md)** — AlpaSim README (NVlabs/alpasim main, fetched 2026-10-17)  
+- **[alpasim-readme](TanitAD%20Research%20Lab/Library/papers/alpasim-readme_AlpaSim-README-NVlabs-alpasim-main-fetched-2026-10-17.md)** — *(source)* AlpaSim README (NVlabs/alpasim main, fetched 2026-10-17)  
   *AlpaSim: Apache-2.0; pluggable renderer (NuRec default, OmniDreams video-model optional); supported drivers Alpamayo-R1/1.5, VaVAM, Transfuser (provisional)*
-- **[alpasim-tutorial](TanitAD%20Research%20Lab/Library/papers/alpasim-tutorial_AlpaSim-docs-TUTORIAL-md-NVlabs-alpasim-main-fetched-2026-10.md)** — AlpaSim docs/TUTORIAL.md (NVlabs/alpasim main, fetched 2026-10-17)  
+- **[alpasim-tutorial](TanitAD%20Research%20Lab/Library/papers/alpasim-tutorial_AlpaSim-docs-TUTORIAL-md-NVlabs-alpasim-main-fetched-2026-10.md)** — *(source)* AlpaSim docs/TUTORIAL.md (NVlabs/alpasim main, fetched 2026-10-17)  
   *AlpaSim run recipe: wizard deploy=local topology=1gpu driver=vavam|alpamayo1|transfuser; scene suite public_2601; Alpamayo needs ~40 GB VRAM; scenes = NuRec USDZ from HF 26.01 sample_set*
 
 ### `anti-collapse` (8)
@@ -506,13 +506,13 @@
 
 - **[2412.01718](TanitAD%20Research%20Lab/Library/papers/2412.01718_HUGSIM-A-Real-Time-Photo-Realistic-and-Closed-Loop-Simulator.pdf)** — HUGSIM: A Real-Time, Photo-Realistic and Closed-Loop Simulator for Autonomous Driving  
   *HUGSIM: 3DGS-based closed-loop simulator for AD (cited via WA-JEPA's closed-loop eval); T2 candidate*
-- **[alpasim-egodriver-proto](TanitAD%20Research%20Lab/Library/papers/alpasim-egodriver-proto_AlpaSim-egodriver-proto-NVlabs-alpasim-main-fetched-2026-10.proto)** — AlpaSim egodriver.proto (NVlabs/alpasim main, fetched 2026-10-17)  
+- **[alpasim-egodriver-proto](TanitAD%20Research%20Lab/Library/papers/alpasim-egodriver-proto_AlpaSim-egodriver-proto-NVlabs-alpasim-main-fetched-2026-10.proto)** — *(source)* AlpaSim egodriver.proto (NVlabs/alpasim main, fetched 2026-10-17)  
   *AlpaSim driver gRPC contract: submit_image_observation / submit_egomotion_observation / submit_route / drive -> DriveResponse.trajectory (local->rig_est transforms); Apache-2.0*
-- **[alpasim-readme](TanitAD%20Research%20Lab/Library/papers/alpasim-readme_AlpaSim-README-NVlabs-alpasim-main-fetched-2026-10-17.md)** — AlpaSim README (NVlabs/alpasim main, fetched 2026-10-17)  
+- **[alpasim-readme](TanitAD%20Research%20Lab/Library/papers/alpasim-readme_AlpaSim-README-NVlabs-alpasim-main-fetched-2026-10-17.md)** — *(source)* AlpaSim README (NVlabs/alpasim main, fetched 2026-10-17)  
   *AlpaSim: Apache-2.0; pluggable renderer (NuRec default, OmniDreams video-model optional); supported drivers Alpamayo-R1/1.5, VaVAM, Transfuser (provisional)*
-- **[alpasim-tutorial](TanitAD%20Research%20Lab/Library/papers/alpasim-tutorial_AlpaSim-docs-TUTORIAL-md-NVlabs-alpasim-main-fetched-2026-10.md)** — AlpaSim docs/TUTORIAL.md (NVlabs/alpasim main, fetched 2026-10-17)  
+- **[alpasim-tutorial](TanitAD%20Research%20Lab/Library/papers/alpasim-tutorial_AlpaSim-docs-TUTORIAL-md-NVlabs-alpasim-main-fetched-2026-10.md)** — *(source)* AlpaSim docs/TUTORIAL.md (NVlabs/alpasim main, fetched 2026-10-17)  
   *AlpaSim run recipe: wizard deploy=local topology=1gpu driver=vavam|alpamayo1|transfuser; scene suite public_2601; Alpamayo needs ~40 GB VRAM; scenes = NuRec USDZ from HF 26.01 sample_set*
-- **[hugsim-readme](TanitAD%20Research%20Lab/Library/papers/hugsim-readme_HUGSIM-README-hyzhou404-HUGSIM-main-fetched-2026-10-17.md)** — HUGSIM README (hyzhou404/HUGSIM main, fetched 2026-10-17)  
+- **[hugsim-readme](TanitAD%20Research%20Lab/Library/papers/hugsim-readme_HUGSIM-README-hyzhou404-HUGSIM-main-fetched-2026-10-17.md)** — *(source)* HUGSIM README (hyzhou404/HUGSIM main, fetched 2026-10-17)  
   *HUGSIM repo: MIT licence (per GitHub page); closed_loop.py with separate AD clients (UniAD_SIM, VAD_SIM, NAVSIM) on a second GPU; scenes/scenarios on HF XDimLab/HUGSIM; some scenarios private (RealADSim ICCV 2025)*
 
 ### `closed-loop-wm` (18)
@@ -893,7 +893,7 @@
 
 - **[2412.01718](TanitAD%20Research%20Lab/Library/papers/2412.01718_HUGSIM-A-Real-Time-Photo-Realistic-and-Closed-Loop-Simulator.pdf)** — HUGSIM: A Real-Time, Photo-Realistic and Closed-Loop Simulator for Autonomous Driving  
   *HUGSIM: 3DGS-based closed-loop simulator for AD (cited via WA-JEPA's closed-loop eval); T2 candidate*
-- **[hugsim-readme](TanitAD%20Research%20Lab/Library/papers/hugsim-readme_HUGSIM-README-hyzhou404-HUGSIM-main-fetched-2026-10-17.md)** — HUGSIM README (hyzhou404/HUGSIM main, fetched 2026-10-17)  
+- **[hugsim-readme](TanitAD%20Research%20Lab/Library/papers/hugsim-readme_HUGSIM-README-hyzhou404-HUGSIM-main-fetched-2026-10-17.md)** — *(source)* HUGSIM README (hyzhou404/HUGSIM main, fetched 2026-10-17)  
   *HUGSIM repo: MIT licence (per GitHub page); closed_loop.py with separate AD clients (UniAD_SIM, VAD_SIM, NAVSIM) on a second GPU; scenes/scenarios on HF XDimLab/HUGSIM; some scenarios private (RealADSim ICCV 2025)*
 
 ### `icem` (1)
@@ -2134,13 +2134,13 @@
 
 - **[2412.01718](TanitAD%20Research%20Lab/Library/papers/2412.01718_HUGSIM-A-Real-Time-Photo-Realistic-and-Closed-Loop-Simulator.pdf)** — HUGSIM: A Real-Time, Photo-Realistic and Closed-Loop Simulator for Autonomous Driving  
   *HUGSIM: 3DGS-based closed-loop simulator for AD (cited via WA-JEPA's closed-loop eval); T2 candidate*
-- **[alpasim-egodriver-proto](TanitAD%20Research%20Lab/Library/papers/alpasim-egodriver-proto_AlpaSim-egodriver-proto-NVlabs-alpasim-main-fetched-2026-10.proto)** — AlpaSim egodriver.proto (NVlabs/alpasim main, fetched 2026-10-17)  
+- **[alpasim-egodriver-proto](TanitAD%20Research%20Lab/Library/papers/alpasim-egodriver-proto_AlpaSim-egodriver-proto-NVlabs-alpasim-main-fetched-2026-10.proto)** — *(source)* AlpaSim egodriver.proto (NVlabs/alpasim main, fetched 2026-10-17)  
   *AlpaSim driver gRPC contract: submit_image_observation / submit_egomotion_observation / submit_route / drive -> DriveResponse.trajectory (local->rig_est transforms); Apache-2.0*
-- **[alpasim-readme](TanitAD%20Research%20Lab/Library/papers/alpasim-readme_AlpaSim-README-NVlabs-alpasim-main-fetched-2026-10-17.md)** — AlpaSim README (NVlabs/alpasim main, fetched 2026-10-17)  
+- **[alpasim-readme](TanitAD%20Research%20Lab/Library/papers/alpasim-readme_AlpaSim-README-NVlabs-alpasim-main-fetched-2026-10-17.md)** — *(source)* AlpaSim README (NVlabs/alpasim main, fetched 2026-10-17)  
   *AlpaSim: Apache-2.0; pluggable renderer (NuRec default, OmniDreams video-model optional); supported drivers Alpamayo-R1/1.5, VaVAM, Transfuser (provisional)*
-- **[alpasim-tutorial](TanitAD%20Research%20Lab/Library/papers/alpasim-tutorial_AlpaSim-docs-TUTORIAL-md-NVlabs-alpasim-main-fetched-2026-10.md)** — AlpaSim docs/TUTORIAL.md (NVlabs/alpasim main, fetched 2026-10-17)  
+- **[alpasim-tutorial](TanitAD%20Research%20Lab/Library/papers/alpasim-tutorial_AlpaSim-docs-TUTORIAL-md-NVlabs-alpasim-main-fetched-2026-10.md)** — *(source)* AlpaSim docs/TUTORIAL.md (NVlabs/alpasim main, fetched 2026-10-17)  
   *AlpaSim run recipe: wizard deploy=local topology=1gpu driver=vavam|alpamayo1|transfuser; scene suite public_2601; Alpamayo needs ~40 GB VRAM; scenes = NuRec USDZ from HF 26.01 sample_set*
-- **[hugsim-readme](TanitAD%20Research%20Lab/Library/papers/hugsim-readme_HUGSIM-README-hyzhou404-HUGSIM-main-fetched-2026-10-17.md)** — HUGSIM README (hyzhou404/HUGSIM main, fetched 2026-10-17)  
+- **[hugsim-readme](TanitAD%20Research%20Lab/Library/papers/hugsim-readme_HUGSIM-README-hyzhou404-HUGSIM-main-fetched-2026-10-17.md)** — *(source)* HUGSIM README (hyzhou404/HUGSIM main, fetched 2026-10-17)  
   *HUGSIM repo: MIT licence (per GitHub page); closed_loop.py with separate AD clients (UniAD_SIM, VAD_SIM, NAVSIM) on a second GPU; scenes/scenarios on HF XDimLab/HUGSIM; some scenarios private (RealADSim ICCV 2025)*
 
 ### `target-point-shortcut` (1)
@@ -2713,10 +2713,10 @@
 | [2502.14819](TanitAD%20Research%20Lab/Library/papers/2502.14819_Learning-from-Reward-Free-Offline-Data-A-Case-for-Planning-w.pdf) | Learning from Reward-Free Offline Data: A Case for Planning with Laten | 2026-10-17 | 3756 KB | `5491927bbbc9` | PLAN_V8F_REFAV1_HJEPA_2026-10-17.md |
 | [2211.10831](TanitAD%20Research%20Lab/Library/papers/2211.10831_Joint-Embedding-Predictive-Architectures-Focus-on-Slow-Featu.pdf) | Joint Embedding Predictive Architectures Focus on Slow Features | 2026-10-17 | 588 KB | `2c0ba6d60fbc` | PLAN_V8F_REFAV1_HJEPA_2026-10-17.md |
 | [2412.01718](TanitAD%20Research%20Lab/Library/papers/2412.01718_HUGSIM-A-Real-Time-Photo-Realistic-and-Closed-Loop-Simulator.pdf) | HUGSIM: A Real-Time, Photo-Realistic and Closed-Loop Simulator for Aut | 2026-10-17 | 48953 KB | `7b8534cb59af` | T2_FEASIBILITY.md |
-| [alpasim-egodriver-proto](TanitAD%20Research%20Lab/Library/papers/alpasim-egodriver-proto_AlpaSim-egodriver-proto-NVlabs-alpasim-main-fetched-2026-10.proto) | AlpaSim egodriver.proto (NVlabs/alpasim main, fetched 2026-10-17) | 2026-10-17 | 4 KB | `ce18108119f6` | T2_FEASIBILITY.md |
-| [alpasim-readme](TanitAD%20Research%20Lab/Library/papers/alpasim-readme_AlpaSim-README-NVlabs-alpasim-main-fetched-2026-10-17.md) | AlpaSim README (NVlabs/alpasim main, fetched 2026-10-17) | 2026-10-17 | 7 KB | `1690cde3edfb` | T2_FEASIBILITY.md |
-| [alpasim-tutorial](TanitAD%20Research%20Lab/Library/papers/alpasim-tutorial_AlpaSim-docs-TUTORIAL-md-NVlabs-alpasim-main-fetched-2026-10.md) | AlpaSim docs/TUTORIAL.md (NVlabs/alpasim main, fetched 2026-10-17) | 2026-10-17 | 28 KB | `a6f4db8cb0e7` | T2_FEASIBILITY.md |
-| [hugsim-readme](TanitAD%20Research%20Lab/Library/papers/hugsim-readme_HUGSIM-README-hyzhou404-HUGSIM-main-fetched-2026-10-17.md) | HUGSIM README (hyzhou404/HUGSIM main, fetched 2026-10-17) | 2026-10-17 | 6 KB | `1a489ddbe397` | T2_FEASIBILITY.md |
+| [alpasim-egodriver-proto](TanitAD%20Research%20Lab/Library/papers/alpasim-egodriver-proto_AlpaSim-egodriver-proto-NVlabs-alpasim-main-fetched-2026-10.proto) | *(source)* AlpaSim egodriver.proto (NVlabs/alpasim main, fetched 2026-10-17) | 2026-10-17 | 4 KB | `ce18108119f6` | T2_FEASIBILITY.md |
+| [alpasim-readme](TanitAD%20Research%20Lab/Library/papers/alpasim-readme_AlpaSim-README-NVlabs-alpasim-main-fetched-2026-10-17.md) | *(source)* AlpaSim README (NVlabs/alpasim main, fetched 2026-10-17) | 2026-10-17 | 7 KB | `1690cde3edfb` | T2_FEASIBILITY.md |
+| [alpasim-tutorial](TanitAD%20Research%20Lab/Library/papers/alpasim-tutorial_AlpaSim-docs-TUTORIAL-md-NVlabs-alpasim-main-fetched-2026-10.md) | *(source)* AlpaSim docs/TUTORIAL.md (NVlabs/alpasim main, fetched 2026-10-17) | 2026-10-17 | 28 KB | `a6f4db8cb0e7` | T2_FEASIBILITY.md |
+| [hugsim-readme](TanitAD%20Research%20Lab/Library/papers/hugsim-readme_HUGSIM-README-hyzhou404-HUGSIM-main-fetched-2026-10-17.md) | *(source)* HUGSIM README (hyzhou404/HUGSIM main, fetched 2026-10-17) | 2026-10-17 | 6 KB | `1a489ddbe397` | T2_FEASIBILITY.md |
 | [2509.21961](TanitAD%20Research%20Lab/Library/papers/2509.21961_FlowDrive-moderated-flow-matching-with-data-balancing-for-tr.pdf) | FlowDrive: moderated flow matching with data balancing for trajectory  | 2026-10-11 | 2491 KB | `3c2a42657519` | DATA_SELECTION_REVIEW.md |
 | [2512.19270](TanitAD%20Research%20Lab/Library/papers/2512.19270_Are-All-Data-Necessary-Efficient-Data-Pruning-for-Large-scal.pdf) | Are All Data Necessary? Efficient Data Pruning for Large-scale Autonom | 2026-10-11 | 3229 KB | `0ecad3563d0f` | DATA_SELECTION_REVIEW.md |
 | [2604.00388](TanitAD%20Research%20Lab/Library/papers/2604.00388_Gradient-Based-Data-Valuation-Improves-Curriculum-Learning-f.pdf) | Gradient-Based Data Valuation Improves Curriculum Learning for Game-Th | 2026-10-11 | 4398 KB | `bf9702cdc868` | DATA_SELECTION_REVIEW.md |

@@ -27,6 +27,9 @@ Usage
     python tools/kb_add.py https://arxiv.org/abs/2601.03460 --tag frozen-encoder
     python tools/kb_add.py --local Ressources/paper.pdf --key unece-r157 \
         --title "UNECE R157" --note "regulatory ceiling on ALKS"
+    python tools/kb_add.py --local fetched/README.md --key alpasim-readme \
+        --doc-type source --url https://github.com/NVlabs/alpasim \
+        --title "AlpaSim README"         # a fetched SOURCE file, not a paper
     python tools/kb_add.py --reindex      # rebuild LIBRARY.md from library.json
     python tools/kb_add.py --verify       # sha256 every entry against disk
 """
@@ -70,6 +73,17 @@ INDEX_JSON = LIB / "library.json"
 INDEX_MD = LIB / "LIBRARY.md"
 
 ARXIV_ID = re.compile(r"(\d{4}\.\d{4,5})(v\d+)?")
+
+# ⛔ WHAT THE BYTES ARE is DECLARED on the row, never inferred (2026-10-18). `kind`
+# says where an entry came FROM (`arxiv` | `local`); it says nothing about whether
+# the file is a paper. The size bar is a PAPER's bar: under it, an arXiv download
+# is an error page or a stub. MEASURED 2026-10-18: four primary SOURCES banked
+# 2026-10-17 (AlpaSim README, TUTORIAL.md and egodriver.proto; HUGSIM README;
+# 4.4-29 KB) met that bar, and three of them turned `test_library` red on the tip.
+# Lowering the bar would re-admit the truncated papers it exists to refuse, so a
+# non-paper carries an explicit `doc_type: "source"`; a row without one is a paper.
+MIN_PAPER_BYTES = 20_000
+DOC_TYPES = ("paper", "source")
 
 
 def _slug(s: str, n: int = 60) -> str:
@@ -339,7 +353,7 @@ def add_arxiv(ident: str, *, tags: list[str], note: str,
     with urllib.request.urlopen(req, timeout=180) as r, dest.open("wb") as f:
         shutil.copyfileobj(r, f)
     size = dest.stat().st_size
-    if size < 20_000:
+    if size < MIN_PAPER_BYTES:
         dest.unlink(missing_ok=True)
         raise SystemExit(f"refusing {aid}: got {size} B — not a PDF")
 
@@ -360,16 +374,23 @@ def add_arxiv(ident: str, *, tags: list[str], note: str,
 
 
 def add_local(path: Path, *, key: str, title: str, tags: list[str],
-              note: str, cited_by: list[str], url: str = "") -> str:
+              note: str, cited_by: list[str], url: str = "",
+              doc_type: str = "paper") -> str:
     src = (ROOT / path) if not path.is_absolute() else path
     if not src.exists():
         raise SystemExit(f"no such file: {src}")
     PAPERS.mkdir(parents=True, exist_ok=True)
     dest = PAPERS / f"{key}_{_slug(title or src.stem)}{src.suffix}"
+    # Refuse BEFORE the copy: a refusal after it would have to delete `dest`, which
+    # may be an earlier bank of the same name that another row still cites.
+    why = citation_bar({"kind": "local", "doc_type": doc_type, "url": url,
+                        "path": dest.name, "bytes": src.stat().st_size})
+    if why:
+        raise SystemExit(f"refusing {key}: {why}")
     if src.resolve() != dest.resolve():
         shutil.copy2(src, dest)
     _commit_entry(key, {
-        "key": key, "kind": "local", "title": title or src.stem,
+        "key": key, "kind": "local", "doc_type": doc_type, "title": title or src.stem,
         "authors": [], "published": "", "abstract": "", "url": url,
         "path": str(dest.relative_to(ROOT)).replace("\\", "/"),
         "bytes": dest.stat().st_size, "sha256": _sha256(dest),
@@ -415,7 +436,7 @@ def reindex() -> None:
         for e in tags[t]:
             title = e["title"] or e["key"]
             out.append(f"- **[{e['key']}]({e['path'].replace(' ', '%20')})** — "
-                       f"{title}"
+                       f"{_source_mark(e)}{title}"
                        + (f"  \n  *{e['note']}*" if e.get("note") else ""))
         out.append("")
     out += ["## Full index (newest first)", "",
@@ -424,11 +445,48 @@ def reindex() -> None:
     for e in es:
         cb = ", ".join(Path(c).name for c in e.get("cited_by", [])) or "—"
         out.append(f"| [{e['key']}]({e['path'].replace(' ', '%20')}) | "
-                   f"{(e['title'] or '')[:70]} | {e.get('banked','')} | "
+                   f"{_source_mark(e)}{(e['title'] or '')[:70]} | {e.get('banked','')} | "
                    f"{e['bytes']//1024} KB | `{e['sha256'][:12]}` | {cb} |")
     out.append("")
     INDEX_MD.write_text("\n".join(out), encoding="utf-8")
     print(f"reindexed: {len(es)} entries, {tot/1e6:.1f} MB -> {INDEX_MD}")
+
+
+def _source_mark(e: dict) -> str:
+    """Mark a source where it is listed, so nobody cites a README as a paper."""
+    return "*(source)* " if e.get("doc_type") == "source" else ""
+
+
+def citation_bar(e: dict) -> str:
+    """Return a reason string if the row fails the bar of its DECLARED doc_type, else "".
+
+    A `paper` (the default: a row that declares nothing is a paper) must exceed
+    `MIN_PAPER_BYTES`. A `source` is exempt from that bar only under conditions that
+    keep the exemption from becoming a hiding place for a broken paper:
+
+    * `kind` is `local` — an arXiv download is a paper by construction;
+    * the file is not a `.pdf` — a truncated paper declared a "source" is exactly
+      the failure the bar exists to catch, so every PDF stays on the paper bar;
+    * it carries its `url` — a fetched file that cannot be re-fetched cannot be
+      re-checked against its origin;
+    * it is not empty.
+
+    Pure, so `test_library` runs the SAME predicate over every live row and over the
+    deliberately broken rows of its regression arm.
+    """
+    dt = e.get("doc_type", "paper")
+    if dt not in DOC_TYPES:
+        return f"doc_type {dt!r} is not one of {DOC_TYPES}"
+    size = e.get("bytes") or 0
+    if dt == "paper":
+        return "" if size > MIN_PAPER_BYTES else f"{size} B is not a paper"
+    if e.get("kind") != "local":
+        return f"doc_type 'source' on a kind={e.get('kind')!r} row — an arXiv download is a paper"
+    if str(e.get("path", "")).lower().endswith(".pdf"):
+        return "doc_type 'source' on a .pdf — every PDF stays on the paper bar"
+    if not e.get("url"):
+        return "doc_type 'source' without a url — a fetched source must say where from"
+    return "" if size > 0 else "doc_type 'source' on an empty file"
 
 
 def _pdf_truncated(p: Path) -> str:
@@ -529,6 +587,11 @@ def main(argv=None) -> int:
     ap.add_argument("--key", default="", help="key for --local")
     ap.add_argument("--title", default="", help="title for --local")
     ap.add_argument("--url", default="", help="source URL for --local")
+    ap.add_argument("--doc-type", choices=DOC_TYPES, default="paper",
+                    help="what the --local bytes ARE: a paper (held to the "
+                         f"{MIN_PAPER_BYTES} B bar) or a fetched source file — "
+                         "README, .proto, docs page; a source needs --url and "
+                         "may not be a PDF")
     ap.add_argument("--tag", action="append", default=[])
     ap.add_argument("--note", default="")
     ap.add_argument("--cited-by", action="append", default=[],
@@ -554,8 +617,11 @@ def main(argv=None) -> int:
         if not a.key:
             raise SystemExit("--local needs --key")
         add_local(a.local, key=a.key, title=a.title, tags=a.tag, note=a.note,
-                  cited_by=a.cited_by, url=a.url)
+                  cited_by=a.cited_by, url=a.url, doc_type=a.doc_type)
     elif a.ident:
+        if a.doc_type != "paper":
+            raise SystemExit("--doc-type source applies to --local only — "
+                             "an arXiv download is a paper")
         add_arxiv(a.ident, tags=a.tag, note=a.note, cited_by=a.cited_by)
     else:
         ap.print_help()

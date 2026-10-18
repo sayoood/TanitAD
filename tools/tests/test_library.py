@@ -10,6 +10,7 @@ papers under the query echo.
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -40,7 +41,116 @@ def test_every_entry_has_the_fields_a_citation_needs():
         for f in ("key", "title", "path", "bytes", "sha256", "banked", "tags"):
             assert e.get(f) not in (None, ""), f"{k} missing {f}"
         assert len(e["sha256"]) == 64, k
-        assert e["bytes"] > 20_000, f"{k}: {e['bytes']} B is not a paper"
+        why = kb.citation_bar(e)        # a paper unless the row DECLARES doc_type "source"
+        assert not why, f"{k}: {why}"
+
+
+# ------------------------- a declared source, and the bar it must not open ---
+# MEASURED 2026-10-18: four primary SOURCES banked 2026-10-17 (AlpaSim README,
+# TUTORIAL.md and egodriver.proto; HUGSIM README) hit the paper bar above —
+# `alpasim-egodriver-proto: 4403 B is not a paper` — and this file was red on the
+# tip. The fix is a DECLARED `doc_type: "source"`, never a lower bar. The RED arms
+# are the deliberate regression: if the exemption ever reaches a paper, they fail.
+
+def _row(**over) -> dict:
+    e = {"key": "x", "kind": "arxiv", "title": "t", "path": "papers/x_t.pdf",
+         "url": "https://arxiv.org/abs/2401.00001", "bytes": 4403,
+         "sha256": "0" * 64, "banked": "2026-10-18", "tags": ["t"]}
+    e.update(over)
+    return e
+
+
+_SRC = dict(kind="local", doc_type="source", path="papers/x_t.proto",
+            url="https://github.com/o/r")
+
+
+def test_the_paper_bar_is_not_lowered():
+    """Moving the bar is a decision that needs its own evidence, never a test fix."""
+    assert kb.MIN_PAPER_BYTES == 20_000
+
+
+@pytest.mark.parametrize("label,row", [
+    ("a small paper that declares nothing (the default is paper)", _row()),
+    ("a small paper that declares itself a paper", _row(doc_type="paper")),
+    ("a paper exactly at the bar", _row(bytes=20_000)),
+    ("a small local file with no declaration (the four rows as banked)",
+     _row(kind="local", path="papers/x_t.proto", url="https://github.com/o/r")),
+])
+def test_RED_a_paper_under_the_bar_still_fails(label, row):
+    assert "is not a paper" in kb.citation_bar(row), label
+
+
+@pytest.mark.parametrize("label,row,why", [
+    ("a PDF declared a source", _row(**{**_SRC, "path": "papers/x_t.pdf"}), ".pdf"),
+    ("an arXiv row declared a source", _row(**{**_SRC, "kind": "arxiv"}), "arXiv"),
+    ("a source with no url", _row(**{**_SRC, "url": ""}), "url"),
+    ("an empty source", _row(**{**_SRC, "bytes": 0}), "empty"),
+    ("an undeclared doc_type", _row(doc_type="readme"), "is not one of"),
+])
+def test_RED_the_source_exemption_cannot_hide_a_paper(label, row, why):
+    assert why in kb.citation_bar(row), label
+
+
+def test_the_controls_pass():
+    """Both halves: a bar that refuses everything proves nothing about a pass."""
+    assert kb.citation_bar(_row(bytes=20_001)) == ""
+    assert kb.citation_bar(_row(**_SRC)) == ""
+
+
+def test_RED_the_live_check_fails_a_real_paper_shrunk_under_the_bar(tmp_path, monkeypatch):
+    """The regression run through the LIVE test, not only the predicate: copy the
+    real index, shrink one real arXiv row under the bar, and the test must go red."""
+    db = _db()
+    k = next(k for k in db["entries"] if kb.ARXIV_ID.fullmatch(k))
+    db["entries"][k]["bytes"] = kb.MIN_PAPER_BYTES - 1
+    idx = tmp_path / "library.json"
+    idx.write_text(json.dumps(db), encoding="utf-8")
+    monkeypatch.setattr(kb, "INDEX_JSON", idx)
+    with pytest.raises(AssertionError, match=re.escape(f"{k}: 19999 B is not a paper")):
+        test_every_entry_has_the_fields_a_citation_needs()
+
+
+def test_RED_the_live_check_fails_a_source_whose_declaration_is_dropped(tmp_path, monkeypatch):
+    """A re-bank that drops `doc_type` must turn the live test red again."""
+    db = _db()
+    small = [k for k, e in db["entries"].items()
+             if e.get("doc_type") == "source" and e["bytes"] <= kb.MIN_PAPER_BYTES]
+    if not small:
+        pytest.skip("no declared source under the bar in this library — the arm would be vacuous")
+    k = small[0]
+    del db["entries"][k]["doc_type"]
+    idx = tmp_path / "library.json"
+    idx.write_text(json.dumps(db), encoding="utf-8")
+    monkeypatch.setattr(kb, "INDEX_JSON", idx)
+    with pytest.raises(AssertionError, match=re.escape(f"{k}: {db['entries'][k]['bytes']} B is not a paper")):
+        test_every_entry_has_the_fields_a_citation_needs()
+
+
+def test_add_local_refuses_before_it_copies(tmp_path, monkeypatch):
+    """The CLI refuses what the test would reject, and touches nothing on disk."""
+    lib = tmp_path / "Library"
+    (lib / "papers").mkdir(parents=True)
+    idx = lib / "library.json"
+    idx.write_text('{"schema": 1, "entries": {}}', encoding="utf-8")
+    monkeypatch.setattr(kb, "ROOT", tmp_path)
+    monkeypatch.setattr(kb, "LIB", lib)
+    monkeypatch.setattr(kb, "INDEX_JSON", idx)
+    monkeypatch.setattr(kb, "PAPERS", lib / "papers")
+    stub = tmp_path / "stub.pdf"
+    stub.write_bytes(b"%PDF-1.4 " + b"x" * 4000)
+    for doc_type in ("paper", "source"):
+        with pytest.raises(SystemExit, match="refusing stub"):
+            kb.add_local(stub, key="stub", title="Stub", tags=[], note="",
+                         cited_by=[], url="https://example.org/s", doc_type=doc_type)
+    assert list((lib / "papers").iterdir()) == []
+    assert json.loads(idx.read_text(encoding="utf-8"))["entries"] == {}
+
+    readme = tmp_path / "README.md"
+    readme.write_text("# a fetched source\n", encoding="utf-8")
+    kb.add_local(readme, key="r", title="R", tags=["t"], note="", cited_by=[],
+                 url="https://example.org/r", doc_type="source")
+    e = json.loads(idx.read_text(encoding="utf-8"))["entries"]["r"]
+    assert e["doc_type"] == "source" and kb.citation_bar(e) == ""
 
 
 def test_every_banked_file_is_present_and_hashes_to_its_record():
