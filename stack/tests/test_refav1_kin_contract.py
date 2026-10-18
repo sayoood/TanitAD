@@ -142,7 +142,10 @@ def _args(root: Path, ckpt: Path, cache: Path, eps: Path, dump: str, **over):
                 plan_n_samples=8, plan_n_iters=1, plan_n_elites=2, plan_seed=0,
                 nav_shuffle_seed=0, no_navshuf=False, with_nonav_arm=False,
                 with_oracle_goal_arm=False, allow_nonstrict=False,
-                dump_dir=str(root / dump))
+                dump_dir=str(root / dump),
+                # HJ-UNITS: run_dump has no default unit for a programmatic caller. "kappa" is the
+                # LEGACY reading the banked step-1,000 dumps were produced under; stated, not inherited.
+                action_units="kappa")
     base.update(over)
     return argparse.Namespace(**base)
 

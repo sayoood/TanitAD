@@ -702,12 +702,17 @@ def run_dump(a) -> dict:
     # `kinematic.STEER_WHEELBASE_M`). "kappa" = the LEGACY reading under which
     # every banked refav1 number was produced: recorded v2ep actions integrated
     # as if channel 1 were a curvature, and planner candidates handed to the
-    # model unconverted. "steer" = the repaired contract. DEFAULT IS LEGACY so a
-    # re-analysis of a banked dump is byte-identical.
-    rec_units = getattr(a, "action_units", "kappa")
+    # model unconverted. "steer" = the repaired contract. THE CLI FLAG's DEFAULT IS
+    # LEGACY so a re-run of a banked command line is byte-identical (pinned by B4).
+    # ⛔ A PROGRAMMATIC CALLER GETS NO DEFAULT (BACKLOG HJ-UNITS / RETRACTION_LOG R46):
+    # a hand-built Namespace without `action_units` used to take "kappa" HERE and
+    # integrate the RECORDED road-wheel angle as a curvature -- the R46 defect, one
+    # level out from `paths_from_controls`. It now fails loudly instead.
+    rec_units = getattr(a, "action_units", None)
     if rec_units not in ("kappa", "steer"):
         raise SystemExit(f"[refav1_arm] --action-units must be kappa|steer, "
-                         f"got {rec_units!r}")
+                         f"got {rec_units!r} (a programmatic caller must set "
+                         f"Namespace.action_units explicitly; there is no default)")
     if rec_units != "kappa":
         _p(f"[units] ⚠️ action_units={rec_units}: recorded actions are converted "
            f"kappa = tan(steer)/{STEER_WHEELBASE_M} before integration and "

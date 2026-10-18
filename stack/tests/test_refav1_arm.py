@@ -150,7 +150,10 @@ def _args(root: Path, ckpt: Path, cache: Path, eps: Path, lp: Path | None, **ove
                 wm_k=0, lru=4, plan_n_samples=8, plan_n_iters=1, plan_n_elites=2,
                 plan_seed=0, nav_shuffle_seed=0, no_navshuf=False,
                 with_nonav_arm=False, with_oracle_goal_arm=False,
-                allow_nonstrict=False, dump_dir=str(root / "dump"))
+                allow_nonstrict=False, dump_dir=str(root / "dump"),
+                # HJ-UNITS: run_dump has no default unit for a programmatic caller. "kappa" is the
+                # LEGACY reading these tests were written against; it is stated, not inherited.
+                action_units="kappa")
     base.update(over)
     return argparse.Namespace(**base)
 
@@ -520,3 +523,29 @@ def test_horizon_beyond_the_plan_is_refused(tmp_path):
     a = _args(tmp_path, ck, cache, eps, lp, horizon_k=11)
     with pytest.raises(SystemExit, match="exceeds the plan horizon"):
         ra.run_dump(a)
+
+
+def test_run_dump_has_no_default_action_units_for_a_programmatic_caller(tmp_path):
+    """BACKLOG HJ-UNITS / RETRACTION_LOG R46 (2026-10-18). ``run_dump`` read
+    ``getattr(a, "action_units", "kappa")``: a hand-built Namespace that forgot the unit
+    silently integrated the RECORDED road-wheel angle (``ol`` / ``ha`` / ``ha0_ext``) as a
+    curvature -- the R46 defect one level out from ``paths_from_controls``. The CLI flag keeps
+    its legacy default (pinned by test_steer_curvature_interface B4); a programmatic caller
+    must now STATE the unit, and a missing or unknown one is refused by name.
+
+    MUTATION (recorded in the HJ-UNITS package): restoring ``getattr(a, "action_units",
+    "kappa")`` makes the first ``raises`` below read DID NOT RAISE (the dump then runs to
+    completion on the legacy reading)."""
+    ck = _ckpt(tmp_path)
+    cache, eps, lp = _fixture(tmp_path)
+    a = _args(tmp_path, ck, cache, eps, lp)
+    del a.action_units                       # the Namespace that forgot the unit
+    with pytest.raises(SystemExit) as ei:
+        ra.run_dump(a)
+    msg = str(ei.value)
+    assert "kappa|steer" in msg and "got None" in msg, msg
+    for bad in ("Kappa", "curvature", ""):
+        b = _args(tmp_path, ck, cache, eps, lp, action_units=bad)
+        with pytest.raises(SystemExit) as ei:
+            ra.run_dump(b)
+        assert "kappa|steer" in str(ei.value) and repr(bad) in str(ei.value), str(ei.value)

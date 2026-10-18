@@ -73,12 +73,19 @@ def kin_features(kin) -> np.ndarray:
 # --------------------------------------------------------------------------- #
 # constant-control paths (the model-free floors)                               #
 # --------------------------------------------------------------------------- #
-def const_control_paths(v0, a, k, dt: float, n: int, *, action_units: str = "kappa") -> np.ndarray:
+def const_control_paths(v0, a, k, dt: float, n: int, *, action_units: str) -> np.ndarray:
     """``[n_w, n, 2]`` ego-frame (x forward, y left) paths under CONSTANT (accel ``a``, channel-1 ``k``).
 
     Reproduces ``tanitad.models.kinematic.rollout_unicycle`` in float64.  ``action_units="steer"`` applies
     ``kappa = tan(k)/L`` first (the correct reading of a RECORDED action); ``"kappa"`` integrates ``k`` as
     supplied (the legacy refav1 probe path, kept so the known-value control is the same code path).
+
+    REQUIRED, KEYWORD-ONLY, NO DEFAULT (BACKLOG HJ-UNITS; RETRACTION_LOG R46, 2026-10-17). A call that omits
+    it raises ``TypeError``; an unknown value raises ``ValueError`` naming both legal values.  It used to
+    default to ``"kappa"``, and the module's own main input -- ``kin = (v0, a0, k0)`` with ``k0 = actions[:, 0]``,
+    a road-wheel STEER ANGLE (see the module docstring) -- is exactly what a defaulted call would integrate
+    as a curvature: the over-rotated echo control (5.356 m instead of 2.838 m) that manufactured a fake
+    -1.90 m "lever".  The unit is a property of WHERE THE CONTROLS CAME FROM, so the caller must state it.
     """
     if action_units not in ("kappa", "steer"):
         raise ValueError(f"action_units must be kappa|steer, got {action_units!r}")
@@ -104,11 +111,16 @@ def const_control_paths(v0, a, k, dt: float, n: int, *, action_units: str = "kap
 def ha0_paths(v0, dt: float, n: int) -> np.ndarray:
     """The constant-velocity STRAIGHT line (a = 0, k = 0) -- exactly zero in either action unit."""
     z = np.zeros_like(np.asarray(v0, dtype=np.float64))
-    return const_control_paths(v0, z, z, dt, n)
+    # zero controls are 0 in either unit; "kappa" applies no conversion (= the pre-HJ-UNITS call, bit for bit)
+    return const_control_paths(v0, z, z, dt, n, action_units="kappa")
 
 
-def ha0_ext_paths(kin, dt: float, n: int, *, action_units: str = "kappa") -> np.ndarray:
-    """``ha0_ext``: constant (a0, k0) extrapolation of the MEASURED t0 state. ``kin`` = ``[n_w, 3]``."""
+def ha0_ext_paths(kin, dt: float, n: int, *, action_units: str) -> np.ndarray:
+    """``ha0_ext``: constant (a0, k0) extrapolation of the MEASURED t0 state. ``kin`` = ``[n_w, 3]``.
+
+    ``action_units`` is REQUIRED, keyword-only (BACKLOG HJ-UNITS / R46): ``kin[:, 2]`` is the RECORDED channel-1
+    value, a road-wheel STEER ANGLE, so a recorded-action caller states ``"steer"``; only a caller that holds a
+    true curvature states ``"kappa"``.  See :func:`const_control_paths`."""
     kin = np.asarray(kin, dtype=np.float64)
     return const_control_paths(kin[:, 0], kin[:, 1], kin[:, 2], dt, n, action_units=action_units)
 

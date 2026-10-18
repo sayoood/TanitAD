@@ -1,0 +1,66 @@
+=== tests/test_actdiv_anchored.py
+..........................................                               [100%]
+42 passed in 4.07s
+=== tests/test_argparse_help_percent.py
+...                                                                      [100%]
+3 passed in 0.53s
+=== tests/test_b1_agent_join.py
+...................                                                      [100%]
+19 passed in 1.89s
+=== tests/test_cost_ccos.py
+.............................                                            [100%]
+29 passed in 2.47s
+=== tests/test_p10_pose_prior.py
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\Admin\\hjunits\\tree_base\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-10-20-v8f-rung-alpha\\raw\\p10_pose\\fit_clip_ids.txt'
+
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+=========================== short test summary info ===========================
+FAILED tests/test_p10_pose_prior.py::test_a_the_package_copy_and_the_shipped_copy_are_the_same_bytes_and_the_fit_record_says_what_it_fit
+FAILED tests/test_p10_pose_prior.py::test_a_fit_clips_are_TRAIN_clips_only_and_disjoint_from_eval139_and_eval141
+2 failed, 21 passed in 6.80s
+=== tests/test_p10_prior.py
+.................................                                        [100%]
+33 passed in 5.86s
+=== tests/test_ra1_hjepa.py
+ssssssssssssssssssssssssssssssssssssssssssssssssssss                     [100%]
+52 skipped in 1.95s
+=== tests/test_refa_v1_lat_bias.py
+........                                                                 [100%]
+8 passed in 2.72s
+=== tests/test_refa_v1_oracle_seed.py
+.......                                                                  [100%]
+7 passed in 3.15s
+=== tests/test_refa_v1_plan_goal.py
+.......                                                                  [100%]
+7 passed in 4.06s
+=== tests/test_v8f_mini.py
+>       grid = json.load(open(PKG / "raw" / "eval_grid_windows.json"))
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\Admin\\hjunits\\tree_base\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-10-17-v8f-mini\\raw\\eval_grid_windows.json'
+
+tests\test_v8f_mini.py:437: FileNotFoundError
+============================== warnings summary ===============================
+tests/test_v8f_mini.py::test_penalty_is_differentiable_and_zero_when_consistent
+  C:\Users\Admin\hjunits\tree_base\stack\tests\test_v8f_mini.py:266: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+    assert float(P["pen"]["SPEED"][0]) == pytest.approx(0.5, abs=1e-6)             # 5 - 4 - tol 0.5 = 0.5 over
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_v8f_mini.py::test_five_hand_checked_real_windows - FileNotF...
+1 failed, 27 passed, 1 warning in 21.56s
+=== tests/test_refcv3_arm.py
+................................                                         [100%]
+32 passed in 59.66s
+=== tests/test_refcv3_ablations.py
+.s...........................                                            [100%]
+28 passed, 1 skipped in 25.49s
+=== DONE
