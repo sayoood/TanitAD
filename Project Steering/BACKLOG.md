@@ -87,7 +87,7 @@ mini-pilot+videos · pod5 H-COTRAIN milestones → T1 rows → four-families.
 | E7 | **Alpamayo meta-action → vocabulary mapping table + coverage measurement** | 0-GPU | records.parquet (present on pod4) |
 | E8 | **E-ENC arm prereg** (shared encoder + adapters vs per-layer) incl. B5's frozen V-JEPA-2 control | 0-GPU to write | v6 GO |
 | E9 | **Spectrum finding follow-up**: participation ratio ≈ 4.5 of 2048 dims at 5k (top-8 = 99 % of variance) — is this SIGReg working as designed or an anisotropy finding? | 0-GPU analysis | the full H-COTRAIN curve |
-| E10 | **Registry hygiene**: give the Alpamayo augmentation counts their own registry row (the paper carries them INHERITED) | 0-GPU | nothing |
+| ~~E10~~ | ~~**Registry hygiene**: give the Alpamayo augmentation counts their own registry row (the paper carries them INHERITED)~~ ✅ **DONE 2026-10-18, 0 GPU** — registry **§11.3**: 114 counts re-derived from the bytes by `count_alpamayo.py`, each with artifact sha256 + counting expression + LAYER (`…/incoming/2026-10-18-e10-alpamayo-counts/`). ⚠️ The premise was stale (paper MEASURED + registry-anchored since 2026-08-16); **25 of 26 paper figures reproduce**; the one conflict is the paper's "4.3 % contaminated" (L199/L3073/L3924/L6600) — bytes and §12.4 say **78.21 %** (201/257); paper NOT edited → PI/Master Mind call. Also: CLAUDE.md "779 … with the colour" = 761 coloured + 18 colourless. The paper's 4.3 % contamination rate is corrected to the buildable-set 78.21 % in paper v1.5.1. | 0-GPU | nothing |
 
 ---
 

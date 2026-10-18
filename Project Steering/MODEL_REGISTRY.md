@@ -1062,7 +1062,7 @@ every quoted v5f fact was un-anchored. All fields below are MEASURED off the pod
 
 | Field | Value |
 |---|---|
-| **Status** | 🟢 RUNNING on `tanitad-new` (pod5, `69.30.85.106:22039`), trainer PID **19412**. Migrated from the faulty pod2. Resumed `[resume] step 1001`. |
+| **Status** | 🟢 RUNNING on `tanitad-new` (pod5, `<pod address redacted 2026-10-18>`), trainer PID **19412**. Migrated from the faulty pod2. Resumed `[resume] step 1001`. |
 | **Location** | `tanitad-new:/workspace/experiments/flagship-v5f-w120-30k/` · log `…/train_log.jsonl` (+ `/workspace/v5f_run.log`) |
 | **Corpus** ✅ | **PARITY VERIFIED by the trainer itself**: `physicalai-train-e438721ae894-w120-256x640cyl`, **2400 clips**, clip sha256 `e61a04553df5…` matching the committed manifest; sibling of `physicalai-train-e438721ae894`, skip-hash **`f09e44db`**. Val: `physicalai-val-0c5f7dac3b11-w120-256x640cyl`, 600 clips, sha256 `0b176d2e5cb4…`. |
 | **Geometry** | 256×640, `f_ref` 305.5775, **cylindrical**, HFOV 120°, subframe 176×624, `frame_tag` `256x640f305.5775cyl` |
@@ -4175,7 +4175,7 @@ converged head + the paired same-regime contrast, never an under-converged point
 > registry row"*. Same failure mode as v5f being the headline live run with no row (§1.8).
 > A produced dataset is quotable only from here or from its own parquet.
 >
-> **Rows: §11.1** the A2 augmentation set · **§11.2** the PH1-fused hierarchy layer derived from it.
+> **Rows: §11.1** the A2 augmentation set · **§11.2** the PH1-fused hierarchy layer derived from it · **§11.3** the count ledger that pins the bytes and commands behind every Alpamayo-augmentation count (§11.1, §11.2, §12.4, the paper) and adds the v7.2 label-release layer.
 >
 > ⛔ **The counting rule for this section, learned twice the hard way: COUNT RECORDS, NEVER FILES.**
 > A listing probe sees a **missing** file but never a **short** one — that is how an 8-clip gap was
@@ -4577,6 +4577,254 @@ spread across *every* batch — **14.4× larger**.
 `stack/tests/test_ph1_fuse.py` 14 passed; full suite 2,812 passed / 0 failed / 17 skipped / 2 xfailed.
 
 ---
+
+### 11.3 Alpamayo-augmentation COUNT LEDGER — every count re-derived from the bytes (BACKLOG E10) — MEASURED 2026-10-18
+
+**Why this row exists.** BACKLOG E10 asked for the Alpamayo-augmentation counts to have "their own registry row" because the paper carried them INHERITED. ⚠️ **That premise had already gone stale**: at paper blob `c9c56706` (tip `d6a4ce9`) §7.15 states the A2 counts as *"MEASURED and registry-anchored"* to §11.1, and every A2 / aug120 figure the paper prints reproduces exactly below (the single exception is the denominator of the "4.3 %", see the cross-reference). What §11.1 / §11.2 / §12.4 did **not** give a reader is (a) **the bytes** — §11.1 pins the parquet's sha256, but its counts were produced by two earlier scripts whose outputs name a scratchpad path; (b) **the command** that yields each count, runnable from this repo; and (c) the counts in the **other layers** — the v7.2 label release that actually trains models, and the A2 ∩ parity chain that §12.4 states in prose.
+
+**Evidence class.** Every row is **MEASURED by me, 2026-10-18**, by `count_alpamayo.py` over the artifacts in the table below, unless its class column says otherwise (two `ESTIMATED` hour figures; one row whose denominator is INHERITED card text). Counts are **RECORD counts** (rows, per-clip tallies, per-record key censuses), never file listings — the §11 counting rule. ⛔ **Quote an Alpamayo-augmentation count from here with its LAYER; the layer is part of the number.**
+
+| layer | meaning | ledger groups |
+|---|---|---|
+| **PUBLISHED** | NVIDIA's PhysicalAI-AV corpus as released | `PUB*` |
+| **EPISODE** | our episode build: the parity-train cache, the w120 caches, the S2 clip index | `B*` |
+| **AUGMENTED** | an augmented **label release** we produced: the A2 augmentation set, the PH1-fused aug120 layer, the v7.2 labels | `A*`, `C*`, `D*` |
+
+**Reproduce** (needs `pyarrow`; stdlib otherwise; byte-deterministic — two runs, different cwd, `cmp` identical):
+
+```
+PYTHONUTF8=1 python -I count_alpamayo.py --repo <a checkout holding the K4-K17 paths (tip d6a4ce9 layout)> \
+    --a2-dir <dir holding K1 + K2> --dc <K3> --out counts.json [--skip-paper-pins]
+```
+
+`--skip-paper-pins` lets the counts run on a checkout whose paper blob is not `c9c56706` (the 114 counts are byte-identical on the `D:` checkout, whose paper blob differs; only the curated paper-line pins fail there, loudly).
+
+Package: `FlyWheels/TanitAD_DataFlyWheel/incoming/2026-10-18-e10-alpamayo-counts/` (`count_alpamayo.py`, `counts.json`, `CONFLICTS.md`, `RESULT.md`). The script asserts its closure identities and every cross-artifact set equality (exit 1 otherwise); it writes **counts only — no clip id**. Run on registry blob `8a0ece41` / paper blob `c9c56706`.
+
+**Artifacts counted — which bytes** (the sha256 is of the file as counted; "blob" is the git blob id at `d6a4ce9`):
+
+| key | role | bytes | sha256 | blob @ d6a4ce9 |
+|---|---|---|---|---|
+| K1 | A2 `records.parquet` — HF `Sayood/tanitad-alpamayo2-augmentation` (uncommitted local copy; sha256 = the far-side LFS oid pinned in §11.1) | 25,970,018 | `ecae276db9969de115abb3caa1e87d97eae0535544be8f5edcc33ec45d925ed2` | — |
+| K2 | A2 `selection_manifest.json` — same HF repo (uncommitted local copy) | 340,800 | `7d9f4a7950cfaec1d6600eae0dd61e1f623f38d53352b2e51e2fdc0645cf7bc3` | — |
+| K3 | `metadata/data_collection.parquet` — `nvidia/PhysicalAI-Autonomous-Vehicles` (uncommitted local download) | 11,339,400 | `9624750cadabf8028264cc1404e75e81777654be9def06b00e35c9f834b173d5` | — |
+| K4 | ego-derived road-class labels for A2 clips; `TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-06-alpamayo-augmentation/aug_road_class.json` | 192,521 | `31e3b3c726596814c046c5d6c812cee2662169d1a6c8a23a212a3436a126f278` | `935959c818f8` |
+| K5 | banked list of the A2 clip ids (4,729 lines); `TanitAD Research Lab/Architecture & Inference/Implementation/incoming/2026-08-17-thor-concurrency-pilot/alpamayo_clip_ids.txt` | 174,973 | `5f775c5f9a34c0d2320985214d51767bc7edb883b60d2e123033717a2bc6ea04` | `2258753341a5` |
+| K6 | banked exclusion list: A2 clips inside parity train; `TanitAD Research Lab/Architecture & Inference/Implementation/incoming/2026-08-17-thor-concurrency-pilot/alpamayo_IN_parity_train_EXCLUDE_FROM_EVAL.txt` | 7,437 | `94878eb438a0a05959eeb9058a067f79cb6438da48456f8e5994f320cdeb0c2d` | `dab38341471e` |
+| K7 | listing of the parity-train w120 cache on Thor (2026-08-17); `TanitAD Research Lab/Architecture & Inference/Implementation/incoming/2026-08-17-thor-concurrency-pilot/parity_ls.txt` | 108,061 | `ba3836ab0b9cab1a787f4925ac95ad73a0128d9a8331f67a78e4bcd0afa4816d` | `f9d56a6c1195` |
+| K8 | committed per-clip sha256 membership oracle for the parity-train clip set; `stack/tanitad/data/parity_train_clip_digests.json` | 168,949 | `a26850df7eb47685c18dc770c787872cc0e24bb1bdb8feb543859ff0929a8a89` | `8eac035df3b2` |
+| K9 | S2 clip index = the set of clips with a w120 cache (aug120 + w120val); `TanitAD Research Lab/Data Engineering/Implementation/incoming/2026-08-16-s2-v1-labels/review/labels_v2/clip_index.json` | 281,448 | `7c298893e17846758a76b5b68a7c21224457bba29332558b3a11e14d22d39b99` | `7bce763065c5` |
+| K10 | aug120 fusion coverage lists; `TanitAD Research Lab/Data Engineering/Implementation/incoming/2026-08-15-aug120-fusion/raw/aug120_coverage.json` | 25,780 | `6ee4620dd140ab0f6c8b43dd3b388e186e2eabec1b7d00a3b18ad8216978c630` | `5bdf189c2ece` |
+| K11 | aug120 fusion run summary; `TanitAD Research Lab/Data Engineering/Implementation/incoming/2026-08-15-aug120-fusion/raw/fused_aug120_summary.json` | 181 | `3b1d40843ac694ce6cc2ac9d8918cc2600bd453808bce2f87ead0601826770ae` | `2658597857df` |
+| K12 | aug120 per-batch conservation accounting; `TanitAD Research Lab/Data Engineering/Implementation/incoming/2026-08-15-aug120-fusion/raw/fused_aug120_batch_accounting.json` | 5,200 | `2b200bb9741f4bc0203bd67b87490f81c1bbad9196569a0ee9b6ecba3d088b48` | `6b600bcc3830` |
+| K13 | aug120 per-clip label-source map; `TanitAD Research Lab/Data Engineering/Implementation/incoming/2026-08-15-aug120-fusion/raw/fused_aug120_label_sources.json` | 18,910 | `5d4a3732a2ecfc53bbea3cbaaa278a5016837c7d0065e9a38504b5e77f7b2cd9` | `d457bf03b8b2` |
+| K14 | v7.2 label release, train split; `TanitAD Research Lab/Data Engineering/Implementation/incoming/2026-09-04-v72-label-release/raw/s2_labels_v7.2_train.jsonl.gz` | 1,999,886 | `1f557d1cc4c061ef747cac6171a689447047ec368b52b90af26cb81debdd489e` | `d643acd0329d` |
+| K15 | v7.2 label release, eval split; `TanitAD Research Lab/Data Engineering/Implementation/incoming/2026-09-04-v72-label-release/raw/s2_labels_v7.2_eval.jsonl.gz` | 65,787 | `78d908f0104b1468528bbb4f0b395ded0d3efc6ff6b57883636086abbba4695b` | `f587ec609893` |
+| K16 | canonical val-40 lead index (ids); `TanitAD Research Lab/Architecture & Inference/Implementation/incoming/2026-08-18-thor-stranded-rescue/rescued_beyond_a11/leadwork/val40_lead_index.json` | 16,267 | `09fb8d1c360a61cbdf21152404a93d01df92b453c27aaab09d9c9b558d4f6eb8` | `6cc4b4b3a5ee` |
+| K17 | val-40 lead index, anonymised (sha8 cross-check); `TanitAD Research Lab/Data Engineering/Implementation/incoming/2026-08-04-instrument-durability/raw/val40_lead_index_ANON.json` | 14,680 | `caaf48db379b228181f8221754e782987211e941d9555ceeebae8cd1761bdf45` | `20e069d29151` |
+
+#### PUBLISHED layer — the corpus A2 was drawn from
+
+| ID | what is counted | value | layer | artifacts | counting expression | evidence class |
+|---|---|---|---|---|---|---|
+| `PUB1` | clips in published corpus (data_collection.parquet rows) | **306,152** | PUBLISHED | K3 | `pq.read_table(dc).num_rows` | MEASURED 2026-10-18 |
+| `PUB2` | distinct clip_id in data_collection.parquet | **306,152** | PUBLISHED | K3 | `len(set(clip_id))` | MEASURED 2026-10-18 |
+| `PUB3` | A2 delivered clips found in data_collection.parquet | **4,729** | PUBLISHED | K3,K1 | `len(a2 & dc)` | MEASURED 2026-10-18 |
+| `PUB4` | A2 clips / published clips (%) | **1.5447** | PUBLISHED | K3,K1 | `100*4729/306152` | MEASURED 2026-10-18 |
+| `PUB5` | published clips x 20 s, in hours | **1,700.8** | PUBLISHED | K3 | `306152*20/3600` | ESTIMATED (20 s/clip assumed, not read from the file); 2026-10-18 |
+
+
+#### AUGMENTED layer — the A2 augmentation set (`Sayood/tanitad-alpamayo2-augmentation`; extends §11.1)
+
+| ID | what is counted | value | layer | artifacts | counting expression | evidence class |
+|---|---|---|---|---|---|---|
+| `A01` | A2 rows | **23,644** | AUGMENTED | K1 | `pq.read_table(records).num_rows` | MEASURED 2026-10-18 |
+| `A02` | A2 distinct clip_id | **4,729** | AUGMENTED | K1 | `len(set(clip_id))` | MEASURED 2026-10-18 |
+| `A03` | A2 columns | **12** | AUGMENTED | K1 | `table.num_columns` | MEASURED 2026-10-18 |
+| `A04.auto_labeling` | A2 rows, task=auto_labeling | **4,729** | AUGMENTED | K1 | `sum(task=='auto_labeling')` | MEASURED 2026-10-18 |
+| `A04.grounding_via_vqa` | A2 rows, task=grounding_via_vqa | **4,728** | AUGMENTED | K1 | `sum(task=='grounding_via_vqa')` | MEASURED 2026-10-18 |
+| `A04.meta_action` | A2 rows, task=meta_action | **4,729** | AUGMENTED | K1 | `sum(task=='meta_action')` | MEASURED 2026-10-18 |
+| `A04.trajectory` | A2 rows, task=trajectory | **4,729** | AUGMENTED | K1 | `sum(task=='trajectory')` | MEASURED 2026-10-18 |
+| `A04.vqa` | A2 rows, task=vqa | **4,729** | AUGMENTED | K1 | `sum(task=='vqa')` | MEASURED 2026-10-18 |
+| `A05.4rows` | A2 clips carrying 4 task rows | **1** | AUGMENTED | K1 | `Counter(Counter(clip_id).values())[4]` | MEASURED 2026-10-18 |
+| `A05.5rows` | A2 clips carrying 5 task rows | **4,728** | AUGMENTED | K1 | `Counter(Counter(clip_id).values())[5]` | MEASURED 2026-10-18 |
+| `A05.short_task` | task missing on the short clip(s) | **{grounding_via_vqa: 1}** | AUGMENTED | K1 | `tasks absent for clips with <5 rows` | MEASURED 2026-10-18 |
+| `A06` | A2 rows with non-null error | **0** | AUGMENTED | K1 | `num_rows - column('error').null_count (column is null-typed)` | MEASURED 2026-10-18 |
+| `A07.model_id` | A2 rows per distinct model_id | **{nvidia/Alpamayo2-Super: 23,644}** | AUGMENTED | K1 | `Counter(column('model_id'))` | MEASURED 2026-10-18 |
+| `A07.quantisation` | A2 rows per distinct quantisation | **{NF4-backbone-4bit-UNVALIDATED: 23,644}** | AUGMENTED | K1 | `Counter(column('quantisation'))` | MEASURED 2026-10-18 |
+| `A07.seed` | A2 rows per distinct seed | **{42: 23,644}** | AUGMENTED | K1 | `Counter(column('seed'))` | MEASURED 2026-10-18 |
+| `A07.t0_us` | A2 rows per distinct t0_us | **{5100000: 23,644}** | AUGMENTED | K1 | `Counter(column('t0_us'))` | MEASURED 2026-10-18 |
+| `A08.entries` | selection manifest entries | **4,800** | AUGMENTED | K2 | `len(json list)` | MEASURED 2026-10-18 |
+| `A08.rows` | selected clips x 5 tasks | **24,000** | AUGMENTED | K2 | `5 * len(set(clip_id))` | MEASURED 2026-10-18 |
+| `A08.t0` | manifest distinct t0_us | **[5,100,000]** | AUGMENTED | K2 | `sorted(set(t0_us))` | MEASURED 2026-10-18 |
+| `A08.unique` | selection manifest distinct clip_id | **4,800** | AUGMENTED | K2 | `len(set(clip_id))` | MEASURED 2026-10-18 |
+| `A09.in_manifest` | delivered clips that are in the manifest | **4,719** | AUGMENTED | K1,K2 | `len(a2 & manifest)` | MEASURED 2026-10-18 |
+| `A09.off_manifest` | delivered clips NEVER in the manifest | **10** | AUGMENTED | K1,K2 | `len(a2 - manifest)` | MEASURED 2026-10-18 |
+| `A09.off_manifest_rows` | rows carried by the off-manifest clips | **50** | AUGMENTED | K1,K2 | `sum(rows per clip in a2 - manifest)` | MEASURED 2026-10-18 |
+| `A09.short_deficit` | rows missing from partially-delivered clips | **1** | AUGMENTED | K1 | `sum(5 - rows) over clips with <5 rows` | MEASURED 2026-10-18 |
+| `A09.zero_row` | selected clips that produced ZERO rows | **81** | AUGMENTED | K1,K2 | `len(manifest - a2)` | MEASURED 2026-10-18 |
+| `A09.zero_row_rows` | rows those clips would have carried | **405** | AUGMENTED | K1,K2 | `5 * len(manifest - a2)` | MEASURED 2026-10-18 |
+| `A10.closure` | closure: selected rows - zero-row + off-manifest - short = delivered rows | **23,644** | AUGMENTED | K1,K2 | `24,000 - 405 + 50 - 1` | MEASURED 2026-10-18 |
+| `A11.missing_pct` | missing rows as % of selected rows | **1.4833** | AUGMENTED | K1,K2 | `100*356/24000` | MEASURED 2026-10-18 |
+| `A11.missing_rows` | rows missing vs selected x 5 | **356** | AUGMENTED | K1,K2 | `24,000 - num_rows` | MEASURED 2026-10-18 |
+| `A12.clip_pct` | delivered clips / selected clips (%) | **98.5208** | AUGMENTED | K1,K2 | `100*4729/4800` | MEASURED 2026-10-18 |
+| `A12.row_pct` | delivered rows / selected rows (%) | **98.5167** | AUGMENTED | K1,K2 | `100*23644/24000` | MEASURED 2026-10-18 |
+| `A13.card_understatement` | missing rows (measured) / missing rows the card admits ('one') | **356** | AUGMENTED | K1,K2 | `356 / 1` | MEASURED numerator / INHERITED denominator; 2026-10-18 |
+| `A14.delivered.highway` | delivered clips, road class highway | **384** | AUGMENTED | K4,K1 | `Counter(classes.get(clip,'unlabelled') for clip in delivered)` | MEASURED 2026-10-18 |
+| `A14.delivered.intersection_rich` | delivered clips, road class intersection_rich | **1,241** | AUGMENTED | K4,K1 | `Counter(classes.get(clip,'unlabelled') for clip in delivered)` | MEASURED 2026-10-18 |
+| `A14.delivered.unlabelled` | delivered clips, road class unlabelled | **1,137** | AUGMENTED | K4,K1 | `Counter(classes.get(clip,'unlabelled') for clip in delivered)` | MEASURED 2026-10-18 |
+| `A14.delivered.unstructured` | delivered clips, road class unstructured | **83** | AUGMENTED | K4,K1 | `Counter(classes.get(clip,'unlabelled') for clip in delivered)` | MEASURED 2026-10-18 |
+| `A14.delivered.urban` | delivered clips, road class urban | **1,884** | AUGMENTED | K4,K1 | `Counter(classes.get(clip,'unlabelled') for clip in delivered)` | MEASURED 2026-10-18 |
+| `A14.labelled_complete` | delivered road-class-labelled clips carrying all 5 task rows / delivered labelled clips | **[3,592, 3,592]** | AUGMENTED | K4,K1 | `[count(rows==5), len] over delivered clips present in classes` | MEASURED 2026-10-18 |
+| `A14.labelled_total` | road-class labelled clips (aug_road_class.json) | **3,592** | AUGMENTED | K4 | `len(classes)` | MEASURED 2026-10-18 |
+| `A14.manifest.highway` | manifest clips, road class highway | **384** | AUGMENTED | K4,K2 | `Counter(classes.get(clip,'unlabelled') for clip in manifest)` | MEASURED 2026-10-18 |
+| `A14.manifest.intersection_rich` | manifest clips, road class intersection_rich | **1,241** | AUGMENTED | K4,K2 | `Counter(classes.get(clip,'unlabelled') for clip in manifest)` | MEASURED 2026-10-18 |
+| `A14.manifest.unlabelled` | manifest clips, road class unlabelled | **1,208** | AUGMENTED | K4,K2 | `Counter(classes.get(clip,'unlabelled') for clip in manifest)` | MEASURED 2026-10-18 |
+| `A14.manifest.unstructured` | manifest clips, road class unstructured | **83** | AUGMENTED | K4,K2 | `Counter(classes.get(clip,'unlabelled') for clip in manifest)` | MEASURED 2026-10-18 |
+| `A14.manifest.urban` | manifest clips, road class urban | **1,884** | AUGMENTED | K4,K2 | `Counter(classes.get(clip,'unlabelled') for clip in manifest)` | MEASURED 2026-10-18 |
+| `A14.off_manifest_unlabelled` | off-manifest clips that are unlabelled | **10** | AUGMENTED | K4,K1,K2 | `count((a2 - manifest) not in classes)` | MEASURED 2026-10-18 |
+| `A14.zero_row_unlabelled` | zero-row clips that are unlabelled | **81** | AUGMENTED | K4,K1,K2 | `count((manifest - a2) not in classes)` | MEASURED 2026-10-18 |
+| `A15.s_per_clip` | sum(wall_s) / distinct clips (s) | **59.65** | AUGMENTED | K1 | `sum(wall_s)/4729` | MEASURED 2026-10-18 |
+| `A15.wall_hours` | sum(wall_s) in hours | **78.36** | AUGMENTED | K1 | `sum(wall_s)/3600` | MEASURED 2026-10-18 |
+| `A16.ade_vs_gt_m` | trajectory rows with ade_vs_gt_m | **4,474** | AUGMENTED | K1 | `count(ade_vs_gt_m is not None)` | MEASURED 2026-10-18 |
+| `A16.both_or_neither` | trajectory rows with both / neither variant | **[0, 0]** | AUGMENTED | K1 | `[both, neither]` | MEASURED 2026-10-18 |
+| `A16.min_ade_m` | trajectory rows with min_ade_m | **255** | AUGMENTED | K1 | `count(min_ade_m is not None)` | MEASURED 2026-10-18 |
+| `A16.var_a` | trajectory rows with pred_xyz (variant A) | **4,474** | AUGMENTED | K1 | `'pred_xyz' in json(raw_json) and 'pred_xyz_shape' not in` | MEASURED 2026-10-18 |
+| `A16.var_b` | trajectory rows with pred_xyz_shape (variant B) | **255** | AUGMENTED | K1 | `'pred_xyz_shape' in json(raw_json) and 'pred_xyz' not in` | MEASURED 2026-10-18 |
+| `A17.answer_eq_cot` | meta_action rows where answer[0] == cot[0] | **4,729** | AUGMENTED | K1 | `count(answer[0]==cot[0])` | MEASURED 2026-10-18 |
+| `A17.cot_distinct` | distinct meta_action cot strings | **1,103** | AUGMENTED | K1 | `len(set(cot[0]))` | MEASURED 2026-10-18 |
+| `A17.cot_nonempty` | meta_action rows with non-empty cot[0] | **4,729** | AUGMENTED | K1 | `count(json(raw_json)['cot'][0] != '')` | MEASURED 2026-10-18 |
+| `A18.est_hours` | A2 clips x 20 s, in hours | **26.3** | AUGMENTED | K1 | `4729*20/3600` | ESTIMATED (20 s/clip assumed); 2026-10-18 |
+
+- `A12.clip_pct` — numerator includes the off-manifest clips; in-manifest delivered / selected is 98.3125 %
+- `A13.card_understatement` — card text 'One task row of 24,000 missing (23,999)' is registry §11.1 INHERITED; not re-fetched here
+
+#### EPISODE layer — A2 against the parity-train cache and the w120 caches (extends §12.4)
+
+| ID | what is counted | value | layer | artifacts | counting expression | evidence class |
+|---|---|---|---|---|---|---|
+| `B01.ids_eq_parquet` | alpamayo_clip_ids.txt == parquet clip set | **yes** | EPISODE | K5,K1 | `set(lines) == set(clip_id)` | MEASURED 2026-10-18 |
+| `B01.ids_lines` | alpamayo_clip_ids.txt lines (distinct) | **[4,729, 4,729]** | EPISODE | K5 | `[len(lines), len(set(lines))]` | MEASURED 2026-10-18 |
+| `B02.listing_reproduces_oracle` | sha256(sorted ids joined by LF) == oracle clip_id_sha256_sorted | **yes** | EPISODE | K7,K8 | `sha256('\n'.join(sorted(ids)))` | MEASURED 2026-10-18 |
+| `B02.oracle_n` | oracle n_clips / digests | **[2,400, 2,400]** | EPISODE | K8 | `[n_clips, len(clip_id_digests)]` | MEASURED 2026-10-18 |
+| `B02.parity_clips` | parity-train cache listing: distinct *.v2ep.pt clip ids | **2,400** | EPISODE | K7 | `len({name[:-8] for name in lines if name.endswith('.v2ep.pt')})` | MEASURED 2026-10-18 |
+| `B03.excl_eq_overlap` | exclusion list == derived overlap (set equality) | **yes** | EPISODE | K6,K7,K8,K1 | `set(excl) == listing_overlap == oracle_overlap` | MEASURED 2026-10-18 |
+| `B03.excl_list` | banked exclusion list: lines / distinct | **[201, 201]** | EPISODE | K6 | `[len, len(set)]` | MEASURED 2026-10-18 |
+| `B03.overlap_listing` | A2 clips inside the parity-train clip set (id listing) | **201** | EPISODE | K1,K7 | `len(a2 & parity_listing)` | MEASURED 2026-10-18 |
+| `B03.overlap_oracle` | same, by the committed sha256 oracle | **201** | EPISODE | K1,K8 | `count(sha256(clip) in oracle)` | MEASURED 2026-10-18 |
+| `B04.catalogue_pct` | overlap / ALL A2 clips (%) — the paper's 4.3 % | **4.2504** | EPISODE | K1,K7 | `100*201/4729` | MEASURED 2026-10-18 |
+| `B05.a2_w120_by_split` | …of which per label_split | **{aug120: 201, w120val: 56}** | EPISODE | K1,K9 | `len(a2 & split) per split` | MEASURED 2026-10-18 |
+| `B05.a2_with_w120` | A2 clips that have a w120 cache (A2 ∩ S2 clip index) | **257** | EPISODE | K1,K9 | `len(a2 & set(clip_index.clips))` | MEASURED 2026-10-18 |
+| `B05.no_w120` | A2 clips with NO w120 cache | **4,472** | EPISODE | K1,K9 | `4729 - 257` | MEASURED 2026-10-18 |
+| `B05.no_w120_pct` | …as % of A2 | **94.5654** | EPISODE | K1,K9 | `100*4472/4729` | MEASURED 2026-10-18 |
+| `B05.s2_clips` | S2 clip index: clips / by label_split | **{total: 801, aug120: 201, w120val: 600}** | EPISODE | K9 | `len(clips), Counter(label_split)` | MEASURED 2026-10-18 |
+| `B06.buildable_overlap` | buildable A2 clips inside parity train | **201** | EPISODE | K1,K9,K8 | `count(sha256(clip) in oracle for clip in a2 & s2idx)` | MEASURED 2026-10-18 |
+| `B06.buildable_pct` | buildable contamination (%) — the registry §12.4 'quote 78.21 %' | **78.2101** | EPISODE | K1,K9,K8 | `100*201/257` | MEASURED 2026-10-18 |
+| `B07.aug120_in_parity` | S2 split aug120: clips inside parity train / clips | **[201, 201]** | EPISODE | K9,K8 | `count(sha256(clip) in oracle) / len(split)` | MEASURED 2026-10-18 |
+| `B07.w120val_in_parity` | S2 split w120val: clips inside parity train / clips | **[0, 600]** | EPISODE | K9,K8 | `count(sha256(clip) in oracle) / len(split)` | MEASURED 2026-10-18 |
+| `B08.val40` | canonical val episodes / inside A2 records / sha8 cross-check agreements / in parity train | **[40, 6, 40/40, 0]** | EPISODE | K16,K17,K1,K8 | `[len(val40), len(val40 & a2), sha8 agreements, in-oracle count]` | MEASURED 2026-10-18 |
+
+- `B02.parity_clips` — the committed corpus is 2,376 EPISODES after a 24-clip corrupt skip-set (parity.py:80-81); this listing and the digest oracle both enumerate 2,400 clip ids
+- `B05.a2_with_w120` — 'has w120 video' is read from the S2 clip index (which enumerates the built w120 set), not from the video files, which are pod/Thor-side
+
+#### AUGMENTED layer — the PH1-fused aug120 slice (extends §11.2)
+
+| ID | what is counted | value | layer | artifacts | counting expression | evidence class |
+|---|---|---|---|---|---|---|
+| `C01.cov` | aug120 coverage lists (todo / v2_union / s3_union / no_v2 / no_s3 / no_ego / b184) | **{todo: 201, v2_union_ids: 201, s3_union_ids: 86, no_v2: 0, no_s3: 115, no_ego: 0, b184: 8}** | AUGMENTED | K10 | `len(list) per key` | MEASURED 2026-10-18 |
+| `C02.sets_equal` | aug120 todo == v2_union == S2 aug120 split == banked exclusion list | **yes** | AUGMENTED | K10,K9,K6 | `set equality of four id sets` | MEASURED 2026-10-18 |
+| `C03.sam3` | label_sources.json: clips / with a SAM3 source / without | **[201, 86, 115]** | AUGMENTED | K13 | `[len(sources), count(sam3 truthy), count(sam3 null)]` | MEASURED 2026-10-18 |
+| `C04.acct` | batch accounting summed over 25 batches | **{clips_attributed_here: 201, with_alpamayo: 201, sam3_absent: 115, sam3_attributed_here: 86, corroborated: 88, conflicts: 10}** | AUGMENTED | K12 | `sum(batch[k]) per key` | MEASURED 2026-10-18 |
+| `C05.summary` | fused_aug120_summary.json | **{corroborated: 88, conflicts: 10, with_alpamayo: 201, sam3_missing: 115, n_fused: 201, n_v2: 201, n_sam3: 86} (reason `AUG120_SAM3_STAGE_GAP`)** | AUGMENTED | K11 | `json.load` | MEASURED 2026-10-18 |
+| `C06.sam3_pct` | SAM3 coverage % / gap % | **[42.79, 57.21]** | AUGMENTED | K13 | `100*86/201, 100*115/201` | MEASURED 2026-10-18 |
+| `C07.gap_ratio` | true SAM3 gap / the '8 clips' first recorded (cov['b184']) | **14.375** | AUGMENTED | K13,K10 | `115 / len(b184)` | MEASURED 2026-10-18 |
+| `C08.a2_join_rows` | A2 parquet rows for the 201 aug120 clips / per task | **[1,005, {trajectory: 201, meta_action: 201, auto_labeling: 201, vqa: 201, grounding_via_vqa: 201}]** | AUGMENTED | K10,K1 | `count(rows with clip in aug120) / Counter(task)` | MEASURED 2026-10-18 |
+| `C09.a2_join_clips` | aug120 clips present in the A2 parquet | **201** | AUGMENTED | K10,K1 | `len(aug120 & a2)` | MEASURED 2026-10-18 |
+
+
+#### AUGMENTED layer — the v7.2 label release (`s2-geom-v7` / vocab `v7`): NEW to the registry as a counted release
+
+| ID | what is counted | value | layer | artifacts | counting expression | evidence class |
+|---|---|---|---|---|---|---|
+| `D01.eval` | v7.2 eval: records / distinct clip_id | **[147, 147]** | AUGMENTED | K15 | `[len(records), len(set(clip_id))]` | MEASURED 2026-10-18 |
+| `D01.release` | v7.2 train+eval: distinct release | **{v7.2: 4,719}** | AUGMENTED | K14,K15 | `Counter(record['release'])` | MEASURED 2026-10-18 |
+| `D01.schema_version` | v7.2 train+eval: distinct schema_version | **{s2-geom-v7: 4,719}** | AUGMENTED | K14,K15 | `Counter(record['schema_version'])` | MEASURED 2026-10-18 |
+| `D01.train` | v7.2 train: records / distinct clip_id | **[4,572, 4,572]** | AUGMENTED | K14 | `[len(records), len(set(clip_id))]` | MEASURED 2026-10-18 |
+| `D01.vocab` | v7.2 train+eval: distinct vocab | **{v7: 4,719}** | AUGMENTED | K14,K15 | `Counter(record['vocab'])` | MEASURED 2026-10-18 |
+| `D02.eval_in_a2` | v7.2 eval clips present in A2 parquet | **147** | AUGMENTED | K15,K1 | `len(eval & a2)` | MEASURED 2026-10-18 |
+| `D02.parity_overlap_breakdown` | the 201 A2 clips inside parity train, split by where they sit: [total, in v7.2 train, in v7.2 eval, off-manifest, in none of the three] | **[201, 190, 11, 0, 0]** | AUGMENTED | K14,K15,K7,K1,K2 | `[\|overlap\|, \|overlap&train\|, \|overlap&eval\|, \|overlap&(a2-manifest)\|, remainder]` | MEASURED 2026-10-18 |
+| `D02.train_cap_eval` | v7.2 train ∩ eval | **0** | AUGMENTED | K14,K15 | `len(train & eval)` | MEASURED 2026-10-18 |
+| `D02.train_in_a2` | v7.2 train clips present in A2 parquet | **4,572** | AUGMENTED | K14,K1 | `len(train & a2)` | MEASURED 2026-10-18 |
+| `D02.train_in_parity` | v7.2 train clips inside parity train (oracle) | **190** | AUGMENTED | K14,K8 | `count(sha256(clip) in oracle)` | MEASURED 2026-10-18 |
+| `D02.union_vs_a2_in_manifest` | v7.2 (train ∪ eval) / A2 ∩ manifest / equal? | **[4,719, 4,719, yes]** | AUGMENTED | K14,K15,K1,K2 | `[len(train\|eval), len(a2&manifest), equal]` | MEASURED 2026-10-18 |
+| `D03.eval_TL` | v7.2 eval: traffic-light tactical goals | **RED 8 / GREEN 15 / YELLOW 3 / colourless 0 (sum 26); records with any TL goal 26, with a COLOURED TL goal 26, colourless-only 0, of 147; provenance ['vlm-cot']** | AUGMENTED | K15 | `same expression over the eval file` | MEASURED 2026-10-18 |
+| `D03.train_TL` | v7.2 train: traffic-light tactical goals | **RED 376 / GREEN 363 / YELLOW 22 / colourless 18 (sum 779); records with any TL goal 779, with a COLOURED TL goal 761, colourless-only 18, of 4,572; provenance ['vlm-cot']** | AUGMENTED | K14 | `per record: [k for k in record['g_tac']['goals'] if k.startswith('TRAFFIC_LIGHT_REACT')]` | MEASURED 2026-10-18 |
+| `D04.goal_provenance` | v7.2 train: g_tac.goals entries by provenance | **{vlm-cot: 3,472, geometry: 3,629, null: 5,474, alpamayo-structured: 3}** | AUGMENTED | K14 | `Counter(goal['provenance'] for all goals)` | MEASURED 2026-10-18 |
+| `D04.records_with_vlm_cot_goal` | v7.2 train: records with >=1 provenance=='vlm-cot' goal | **2,708** | AUGMENTED | K14 | `count(any(goal.provenance=='vlm-cot'))` | MEASURED 2026-10-18 |
+| `D05.cot_source.chain_of_causation` | v7.2 train: records with non-empty cot_source.chain_of_causation | **4,572** | AUGMENTED | K14 | `count(bool(record['cot_source']['chain_of_causation']))` | MEASURED 2026-10-18 |
+| `D05.cot_source.cot` | v7.2 train: records with non-empty cot_source.cot | **4,572** | AUGMENTED | K14 | `count(bool(record['cot_source']['cot']))` | MEASURED 2026-10-18 |
+| `D05.cot_source.meta_action` | v7.2 train: records with non-empty cot_source.meta_action | **4,572** | AUGMENTED | K14 | `count(bool(record['cot_source']['meta_action']))` | MEASURED 2026-10-18 |
+| `D05.scene_provenance` | v7.2 train: scene.provenance values | **{alpamayo-grounding-box: 4,572}** | AUGMENTED | K14 | `Counter(record['scene']['provenance'])` | MEASURED 2026-10-18 |
+| `D06.coc_eq_a2.eval` | v7.2 eval: records whose cot_source.chain_of_causation is byte-equal to the A2 auto_labeling chain_of_causation / records | **[147, 147]** | AUGMENTED | K15,K1 | `count(record.cot_source.chain_of_causation == json(A2[clip].auto_labeling.cot[0])['chain_of_causation'])` | MEASURED 2026-10-18 |
+| `D06.coc_eq_a2.train` | v7.2 train: records whose cot_source.chain_of_causation is byte-equal to the A2 auto_labeling chain_of_causation / records | **[4,572, 4,572]** | AUGMENTED | K14,K1 | `count(record.cot_source.chain_of_causation == json(A2[clip].auto_labeling.cot[0])['chain_of_causation'])` | MEASURED 2026-10-18 |
+| `D06.cot_eq_a2.eval` | v7.2 eval: records whose cot_source.cot is byte-equal to the A2 meta_action cot / records | **[147, 147]** | AUGMENTED | K15,K1 | `count(record.cot_source.cot == A2[clip].meta_action.cot[0])` | MEASURED 2026-10-18 |
+| `D06.cot_eq_a2.train` | v7.2 train: records whose cot_source.cot is byte-equal to the A2 meta_action cot / records | **[4,572, 4,572]** | AUGMENTED | K14,K1 | `count(record.cot_source.cot == A2[clip].meta_action.cot[0])` | MEASURED 2026-10-18 |
+
+
+#### Cross-reference — every Alpamayo-augmentation figure `Paper/TANITAD_PAPER.md` prints, against the ledger
+
+Paper line numbers are for blob `c9c56706`; each curated line was machine-checked to contain the quoted form. `derived` is the ledger value (id in the 2nd column).
+
+| claim | ledger id | paper lines | paper says | ledger says | status |
+|---|---|---|---|---|---|
+| PC01 A2 delivered clips | `A02` | 198, 2518, 3068, 3886, 3891, 3894, 6488, 6599 | 4,729 | 4,729 | MATCH |
+| PC02 A2 delivered rows | `A01` | 2518, 6488 | 23,644 | 23,644 | MATCH |
+| PC03 rows per task (x4) | `A04.trajectory` | 2519 | 4,729 | 4,729 | MATCH |
+| PC04 grounding_via_vqa rows | `A04.grounding_via_vqa` | 2520 | 4,728 | 4,728 | MATCH |
+| PC05 missing rows | `A11.missing_rows` | 2526 | 356 | 356 | MATCH |
+| PC06 missing rows % | `A11.missing_pct` | 2526 | 1.48 | 1.4833 | MATCH |
+| PC07 zero-row clips | `A09.zero_row` | 2526 | 81 | 81 | MATCH |
+| PC08 zero-row rows (-405) | `A09.zero_row_rows` | 2526 | 405 | 405 | MATCH |
+| PC09 off-manifest clips | `A09.off_manifest` | 2526 | 10 | 10 | MATCH |
+| PC10 off-manifest rows (+50) | `A09.off_manifest_rows` | 2527 | 50 | 50 | MATCH |
+| PC11 short-clip deficit (-1) | `A09.short_deficit` | 2527 | 1 | 1 | MATCH |
+| PC12 urban | `A14.delivered.urban` | 2528 | 1,884 | 1,884 | MATCH |
+| PC13 intersection_rich | `A14.delivered.intersection_rich` | 2528 | 1,241 | 1,241 | MATCH |
+| PC14 highway | `A14.delivered.highway` | 2528 | 384 | 384 | MATCH |
+| PC15 unstructured | `A14.delivered.unstructured` | 2529 | 83 | 83 | MATCH |
+| PC16 aug120 fused clips | `C04.acct` | 2535 | 201 | 201 | MATCH |
+| PC17 Alpamayo layer on 201/201 | `C04.acct` | 2536 | 201 | 201 | MATCH |
+| PC18 SAM3 covered | `C03.sam3` | 2536 | 86 | 86 | MATCH |
+| PC19 SAM3 coverage % | `C06.sam3_pct` | 2536 | 42.8 | 42.79 | MATCH |
+| PC20 SAM3 gap clips | `C03.sam3` | 2536 | 115 | 115 | MATCH |
+| PC21 gap first recorded as 8 clips | `C01.cov` | 2538 | 8 | 8 | MATCH |
+| PC22 gap ratio 14.4x | `C07.gap_ratio` | 2538 | 14.4 | 14.375 | MATCH |
+| PC23 SAM3 gap % (changelog) | `C06.sam3_pct` | 6489 | 57.2 | 57.21 | MATCH |
+| PC24 A2 clips inside parity train | `B03.overlap_listing` | 198, 3068, 3072, 3894, 3923, 6599 | 201 | 201 | MATCH |
+| PC25 '4.3 % contaminated' (any eval split built on the augmentation) | `B06.buildable_pct` | 199, 3073, 3924, 6600 | 4.3 | 78.2101 | **CONFLICT — denominator** (see below) |
+| PC26 the card's 4,800 / 23,999 (retracted by the paper) | `A08.entries` | 2523, 3887, 3892, 6488 | 4,800 | 4,800 | MATCH |
+
+⇒ **25 of 26 paper figures reproduce exactly.** The other one is PC25, and it is the registry's own §12.4 (C113) correction arriving at the paper: **`201 / 4,729 = 4.2504 %` is arithmetically right, but it divides by the CATALOGUE; a split can only contain clips that exist, and only 257 of the 4,729 have a w120 cache, 201 of which are parity-train: **78.21 %**.** The paper (blob `c9c56706`) still says "4.3 %" at L199, L3073, L3924 and L6600 and contains no "78.21". Logged in this package's `CONFLICTS.md`; the paper was NOT edited.
+
+#### What this ledger adds that §11.1 / §11.2 / §12.4 did not state
+
+1. **The v7.2 label release is built entirely from A2 clips.** All 4,572 train and 147 eval clip ids are A2 clip ids, train ∩ eval = 0, and (train ∪ eval) is **exactly** the 4,719 A2 clips that are in the selection manifest (`D02.union_vs_a2_in_manifest` = yes) — the 10 off-manifest clips are the only A2 clips outside it. Field-level lineage holds too: `cot_source.cot` is byte-equal to A2's `meta_action` cot on 4,572/4,572 train and 147/147 eval records, and `cot_source.chain_of_causation` to A2's `auto_labeling` chain_of_causation on 4,572/4,572 and 147/147. ⇒ the `vlm-cot` goals in `g_tac.goals` are derived from A2 text, by measurement.
+2. **The traffic-light goal count, stated precisely.** In v7.2 train: RED 376 / GREEN 363 / YELLOW 22 / colourless 18; **779 records carry a TL goal, 761 of them with a colour** and 18 colourless (`state: unknown`). The sentence "779 … WITH THE COLOUR ATTACHED" in `CLAUDE.md` rule 2 therefore overstates the coloured set by 18; 779 is the any-TL-goal total. Layer: **AUGMENTED label release** — the PUBLISHED corpus has none (CLAUDE.md rule 2).
+3. **Where the 201 parity-train A2 clips sit:** 190 in v7.2 **train**, 11 in v7.2 **eval**, 0 off-manifest. The 11 is independently corroborated by the 2026-09-18 digest-set artifact `…/2026-09-18-refcv6-eval-parity-clean/raw/oracle_intersections.json` (`v72_eval_INTER_parity_train` = 11) — a different script over different inputs — so the non-parity v7.2 eval set is 11/147 = 7.5 % parity-train-contaminated against any arm trained on the parity corpus. Already known and handled by the `eval128_clean` carve; stated here because it is an A2 count.
+
+#### Limits of this ledger — what it does NOT establish
+
+- **`B05.a2_with_w120` (257) is read from the S2 clip index**, which enumerates the built w120 set; the w120 *video* is Thor/pod-side and was not opened. Same for `B05.no_w120` (4,472).
+- **The dataset card's numbers (4,800 clips / 23,999 rows / "one" missing row) are INHERITED** — the card is not banked in the repo and was not re-fetched. `A13` divides the measured 356 by the card's "one", so its denominator is INHERITED. The 4,800 that the paper correctly calls "the card's" is **also** the manifest size (`A08.entries`, measured) — two facts, one number.
+- **`A10` is a bookkeeping identity** (24,000 − 405 + 50 − 1 = 23,644 holds by algebra for any manifest; a one-entry mutation of the manifest still closes it). Its worth is that the three terms were counted consistently. The *independent* cross-artifact check is `D02.union_vs_a2_in_manifest`, which a one-entry mutation turns `NO`.
+- **`PUB5` / `A18.est_hours` assume 20 s per clip** (ESTIMATED); the files carry no durations. `PUB1` (306,152) is a row count of K3.
+- **`C04` / `C03` come from the producing run's accounting JSON and label-source map**, which agree with each other and with the summary (asserted). The per-record fused files are HF-only: §11.2's vocabulary tallies (`g_str` 151/31/17/2, `g_tac_*`, voter majorities, the 15 `grounded` verdicts) are **not** re-derived here and keep their §11.2 class.
+- **2,400 vs 2,376.** The parity-train membership (K7, K8) enumerates **2,400** clip ids; `CLAUDE.md` / `parity.py` call the corpus 2,376 *episodes* after a 24-clip corrupt skip-set. The 201 is membership in the 2,400; whether any of the 201 is among the 24 skipped cannot be told from these artifacts.
+- **Text-artifact sha256s are of the LF blob bytes.** On a CRLF checkout (`D:` / `E:` with autocrlf) the worktree copies of K5–K13, K16 and K17 hash differently while parsing identically (measured: the `D:` checkout yields 114 counts byte-identical to the tip run, yet 11 of its 17 inputs differ in sha256 and size). Verify those by git blob id (`git hash-object --no-filters`), not by the sha256 of a worktree file. K1–K3, K14 and K15 are binary and checkout-independent.
+- **v7.2 lineage is tested field-for-field only for `cot_source.cot` and `chain_of_causation`.** The `alpamayo.*` and `scene.*` blocks (`D05.scene_provenance` = `alpamayo-grounding-box` on all records) were censused, not re-derived from A2.
+
+---
+
 
 ## 12. FROZEN-TRUNK READOUT LINE — what the v6 latent does and does not carry [TIER T0-DIAGNOSTIC throughout]
 

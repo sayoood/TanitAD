@@ -1,6 +1,6 @@
 # TanitAD: A Data-Efficient, Hierarchically-Imagining, Self-Supervised Driving Stack with Built-In Self-Knowledge
 
-**Status:** living paper, **v1.5 (2026-10-18)**. Maintained per D-020: every gate evaluation appends
+**Status:** living paper, **v1.5.1 (2026-10-18)**. Maintained per D-020: every gate evaluation appends
 results; every accepted decision that changes the method updates §3–§5. Source of truth is this
 Markdown; LaTeX export is a release step. Honesty rule (P8): no number appears here without its
 instrument rows in the referenced experiment record. *(Version note: the status line was left at
@@ -196,8 +196,7 @@ repaired ridge and a degeneracy guard, the frozen-latent readout ladder's **subs
 on both repair routes**, and the mechanism is generalisable: the repair itself **unfroze** the α sweep,
 so a stability claim measured under a defect does not transfer to the repaired instrument (§7.19d).
 **(5)** **201 of the 4,729 Alpamayo augmentation clips are already inside the parity training corpus**,
-making any evaluation split built on it **4.3 % contaminated** — the same class as the ~80 % REF-A
-I-JEPA leak, at smaller scale, and found the same way it should have been prevented: by computing ids
+making any evaluation split buildable on it **78.21 % contaminated** (201 of the 257 clips that have a w120 cache; 4.3 % = 201 / 4,729 is the catalogue rate, which no buildable split sees; registry §12.4, C113; corrected in v1.5.1) — the REF-A I-JEPA leak class (~80 %) at the same scale, and found the same way it should have been prevented: by computing ids
 rather than assuming disjointness from provenance (§7.19e). Two of these corrections reach into our
 **own controls** — a positive control that was inert at the deployed operating point, and a
 trivial-proxy control that silently covered only 80 % of its rows — and they are stated as method in
@@ -2868,7 +2867,7 @@ world model carries the scene (P8 0.932 retention), carries hidden agents (P4), 
 actions correctly after repair (§7.13), and supplies a fan containing 0.127 m answers — and the
 programme still cannot *choose*. Every remaining metre is in selection.
 
-### 7.19 A negative round with strong controls: the pooling bottleneck refuted, the encoder indicted, the planner beaten by constant velocity, and a 4.3 % contamination found (2026-08-18)
+### 7.19 A negative round with strong controls: the pooling bottleneck refuted, the encoder indicted, the planner beaten by constant velocity, and a 4.3 % contamination found (2026-08-18; the buildable-set rate is 78.21 %, corrected in v1.5.1)
 
 Five results, four of them negative, all produced with **zero training** by re-reading banked
 artifacts and frozen checkpoints. Each carries its tier stamp, its estimator and its `n`; the two
@@ -3070,8 +3069,8 @@ scalar matches or beats the 2,048-dimension latent on 120**, and on the signal-b
 `alpamayo_IN_parity_train_EXCLUDE_FROM_EVAL.txt`.)* The overlap was computed from clip ids against the
 live trainer's own `--v2-cache` path — read from `/proc/<pid>/cmdline`, not from a document — and
 mtimes prove the 201 are genuine members of the parity **selection**, not later contamination of the
-directory. ⇒ ⛔ **any evaluation split built on the Alpamayo augmentation is 4.3 % train-contaminated**
-— the REF-A I-JEPA leak class (§7.2) at smaller scale, and disqualifying for the same reason. The
+directory. ⇒ ⛔ **any evaluation split buildable on the Alpamayo augmentation is 78.21 % train-contaminated** (201 of the 257 clips with a w120 cache; the 4.3 % first printed here is the catalogue rate, 201 / 4,729; registry §12.4, C113; corrected in v1.5.1)
+— the REF-A I-JEPA leak class (§7.2) at the same scale, and disqualifying for the same reason. The
 exclusion list must be applied **wherever an Alpamayo eval split is defined**, not once. The root
 cause is the one thing parity exists to prevent: **a non-overlap assumed from provenance ("different
 source ⇒ disjoint") rather than computed from ids.**
@@ -3921,7 +3920,7 @@ the targeted longitudinal fix (§7.5). The v0.6 round re-orders what comes first
    total, and needs curves, not points. S1 runs only after the v5.8f release row exists as the
    fixed yardstick. ⛔ **Constraint added 2026-08-18: any S1/S2 arm that draws on the Alpamayo
    augmentation must apply the 201-clip exclusion list at the point the eval split is DEFINED** —
-   4.3 % of that corpus is already inside the parity training selection (§7.19e). The additive-superset
+   201 of its clips are already inside the parity training selection, i.e. 78.21 % of the 257 buildable clips (4.3 % of the 4,729-record catalogue; §7.19e, corrected in v1.5.1). The additive-superset
    rule protects *training* parity; it does not protect an evaluation split, and this is the one that
    was assumed rather than computed.
 12. **Complete the physics battery.** P8 attempt-2, P4 permanence and I4a **have landed**
@@ -6794,3 +6793,4 @@ library key since v1.4 and which are listed here for the first time.)
   statistic its acceptance test reads. Four metric families reported where the source carries them; STRATEGIC PAUSED
   (PI, 2026-09-19). §7.20(g) gains a dated pointer; the one literature row used (CLOVER, library `2605.15120`) was
   re-read in the banked PDF; the abstract is unchanged. One-seed states throughout: no lever-effect claim.
+- **v1.5.1 (2026-10-18): a two-month-old contamination rate corrected.** The Alpamayo augmentation's overlap with the parity training corpus was printed as **4.3 %** (201 / 4,729) in §1, §7.19e and §10. That is the CATALOGUE rate. A split can only contain clips that exist, and only 257 have a w120 cache, 201 of them parity-train, so the buildable split is **78.21 %** contaminated, REF-A I-JEPA scale, not "smaller scale". The registry corrected this on 2026-08-18 (§12.4, C113). The paper did not, until the E10 recount (`FlyWheels/TanitAD_DataFlyWheel/incoming/2026-10-18-e10-alpamayo-counts/`, 114 counts re-derived from bytes, 25 of 26 paper figures matching) found it. The historical changelog line for v1.x is left as written. Root-cause class (registry): a contamination rate quoted over the catalogue rather than over the buildable set.
