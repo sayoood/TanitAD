@@ -593,6 +593,25 @@ Each entry cost hours more than once. CLAUDE.md keeps a one-line index; this fil
     `.decode("utf-8", "replace")`; a probe that only ever ran on live pids never meets the line that breaks it.
   Same family as the `pgrep -f` self-match: a liveness probe answers for one namespace only.
 
+- ⛔ **A W3 NAVTEST RUN KILLED BY ITS RAM GUARD LEAVES A RECONSTRUCTED PARTIAL CSV THAT LOOKS FINISHED — AND THE
+  HARNESS'S GLOB FALLBACK RE-COPIES IT ON LATER ATTEMPTS.** MEASURED 2026-10-18 (RL-1 V1 navtest).
+  - The W3 RAM guard aborts the devkit when available memory falls under 3,000 MB. Two other sessions' full stack
+    test suites held 7.3 GB. The harness then **reconstructs a CSV from the streamed rows** (4,433 of 12,146).
+  - With `--out` on C: and the package on E:, it crashed at `run_v1.py:459` (`os.path.relpath` across drives)
+    **before its C2/C3 row-count checks ran**. Attempts 2-3 aborted at once on RAM, and the glob fallback re-copied
+    the stale partial, so the run dir held a file that read like a result.
+  - A relaunch lost one more attempt the same way (8,756 rows; a sibling agent's 3 GB stream scan). This time the
+    checks RAN and rejected it. The run-dir guard then moved the partial aside, and attempt 2 scored 12,146/12,146.
+  - ⇒ **Fix pattern** (`raw/2026-10-18-rl-headwise/raw/code/nt_run2.py` + `score_e2.py`):
+    (1) a cross-drive relpath fallback;
+    (2) a memory gate before each attempt: `psutil.virtual_memory().available` >= 6,500 MB for 3 minutes. ⚠️ The
+        `\Memory\Available MBytes` perf counter does NOT EXIST on this German Windows, and a gate built on it reads
+        0 forever;
+    (3) move every `*.csv` in the devkit run dir aside before each attempt;
+    (4) OK requires the full token-row count, not only harness PASS.
+  - ⚠️ **A failed or partial run must not print its average row.** Two partial averages (88.44, 88.47) were read
+    before the full read and had to be disclosed. Keep RAM-heavy sibling jobs off the box while navtest scores.
+
 ## Git hygiene — the mistake that has now happened twice
 
 **`git commit` and `git commit --amend` both commit the ENTIRE INDEX, not the files you

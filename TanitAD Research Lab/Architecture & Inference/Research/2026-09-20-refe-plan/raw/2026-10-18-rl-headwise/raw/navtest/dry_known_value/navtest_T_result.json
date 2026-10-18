@@ -1,0 +1,754 @@
+{
+ "tool": "nt_read/1",
+ "variant": "T",
+ "tier": "T1 = NAVSIM v1.1 PDMS, an ego pseudo-simulation of an open-loop plan against logged agents (self-action open loop, not closed loop)",
+ "estimator": "paired log-cluster bootstrap over the navtest logs (cluster unit log_name), 10,000 resamples, 95 %, seed 20260927 (proxy_eval.boot, the estimator of RESULT_SFT4.md). It answers 'another draw of LOGS' and nothing else; training variance (one seed per arm, H-ESTIM-SEED-1) is unmeasured; inference is deterministic.",
+ "n_tokens": 12146,
+ "gates": {
+  "harness_PASS": true,
+  "rows_12146": true,
+  "identity_a_same_pick_rows_equal": true
+ },
+ "same_pick_identity": {
+  "BASE": {
+   "n_tokens_same_pick": 4532,
+   "max_abs_diff_rows": 0.0
+  },
+  "C0A": {
+   "n_tokens_same_pick": 2663,
+   "max_abs_diff_rows": 0.0
+  },
+  "R0B": {
+   "n_tokens_same_pick": 12146,
+   "max_abs_diff_rows": 0.0
+  }
+ },
+ "pairs_vs_BASE": {
+  "V_vs_BASE": {
+   "primary": {
+    "mean": 0.5467703170851181,
+    "ci95": [
+     0.2426087093153495,
+     0.8351759987714278
+    ],
+    "base_mean_x100": 88.2387626827521,
+    "arm_mean_x100": 88.7855329998372,
+    "better": 4308,
+    "worse": 951,
+    "tied": 6887,
+    "n": 12146,
+    "n_logs": 136,
+    "zero_base": 530,
+    "zero_arm": 566
+   },
+   "subscores": {
+    "NC": {
+     "mean": -0.25111147702947473,
+     "ci95": [
+      -0.4480917625135807,
+      -0.06240517481750784
+     ],
+     "base_mean_x100": 98.94203853120369,
+     "arm_mean_x100": 98.69092705417421,
+     "better": 29,
+     "worse": 60,
+     "tied": 12057,
+     "n": 12146,
+     "n_logs": 136,
+     "adverse": true
+    },
+    "DAC": {
+     "mean": -0.04116581590647127,
+     "ci95": [
+      -0.2552895166245623,
+      0.15128793411980337
+     ],
+     "base_mean_x100": 96.5667709534003,
+     "arm_mean_x100": 96.52560513749383,
+     "better": 65,
+     "worse": 70,
+     "tied": 12011,
+     "n": 12146,
+     "n_logs": 136,
+     "adverse": false
+    },
+    "EP": {
+     "mean": 1.8071325171490566,
+     "ci95": [
+      1.4976915864110059,
+      2.127549017398444
+     ],
+     "base_mean_x100": 81.18786930126466,
+     "arm_mean_x100": 82.99500181841371,
+     "better": 4325,
+     "worse": 870,
+     "tied": 6951,
+     "n": 12146,
+     "n_logs": 136,
+     "adverse": false
+    },
+    "TTC": {
+     "mean": -0.39519183270212416,
+     "ci95": [
+      -0.7061973290961184,
+      -0.08922023459928886
+     ],
+     "base_mean_x100": 95.62819035073275,
+     "arm_mean_x100": 95.23299851803063,
+     "better": 96,
+     "worse": 144,
+     "tied": 11906,
+     "n": 12146,
+     "n_logs": 136,
+     "adverse": true
+    },
+    "C": {
+     "mean": 0.016466326362588508,
+     "ci95": [
+      0.0,
+      0.052118859459500184
+     ],
+     "base_mean_x100": 99.96706734727482,
+     "arm_mean_x100": 99.98353367363741,
+     "better": 2,
+     "worse": 0,
+     "tied": 12144,
+     "n": 12146,
+     "n_logs": 136,
+     "adverse": false
+    },
+    "DDC": {
+     "mean": -0.11526428453811954,
+     "ci95": [
+      -0.21097458851850825,
+      -0.028845081759891485
+     ],
+     "base_mean_x100": 97.66178165651243,
+     "arm_mean_x100": 97.54651737197432,
+     "better": 39,
+     "worse": 66,
+     "tied": 12041,
+     "n": 12146,
+     "n_logs": 136,
+     "adverse": true
+    }
+   },
+   "adverse_subscores": [
+    "NC",
+    "TTC",
+    "DDC"
+   ],
+   "n_rows": 12146
+  },
+  "R0B_vs_BASE": {
+   "primary": {
+    "mean": 0.5467703170851181,
+    "ci95": [
+     0.2426087093153495,
+     0.8351759987714278
+    ],
+    "base_mean_x100": 88.2387626827521,
+    "arm_mean_x100": 88.7855329998372,
+    "better": 4308,
+    "worse": 951,
+    "tied": 6887,
+    "n": 12146,
+    "n_logs": 136,
+    "zero_base": 530,
+    "zero_arm": 566
+   },
+   "subscores": {
+    "NC": {
+     "mean": -0.25111147702947473,
+     "ci95": [
+      -0.4480917625135807,
+      -0.06240517481750784
+     ],
+     "base_mean_x100": 98.94203853120369,
+     "arm_mean_x100": 98.69092705417421,
+     "better": 29,
+     "worse": 60,
+     "tied": 12057,
+     "n": 12146,
+     "n_logs": 136,
+     "adverse": true
+    },
+    "DAC": {
+     "mean": -0.04116581590647127,
+     "ci95": [
+      -0.2552895166245623,
+      0.15128793411980337
+     ],
+     "base_mean_x100": 96.5667709534003,
+     "arm_mean_x100": 96.52560513749383,
+     "better": 65,
+     "worse": 70,
+     "tied": 12011,
+     "n": 12146,
+     "n_logs": 136,
+     "adverse": false
+    },
+    "EP": {
+     "mean": 1.8071325171490566,
+     "ci95": [
+      1.4976915864110059,
+      2.127549017398444
+     ],
+     "base_mean_x100": 81.18786930126466,
+     "arm_mean_x100": 82.99500181841371,
+     "better": 4325,
+     "worse": 870,
+     "tied": 6951,
+     "n": 12146,
+     "n_logs": 136,
+     "adverse": false
+    },
+    "TTC": {
+     "mean": -0.39519183270212416,
+     "ci95": [
+      -0.7061973290961184,
+      -0.08922023459928886
+     ],
+     "base_mean_x100": 95.62819035073275,
+     "arm_mean_x100": 95.23299851803063,
+     "better": 96,
+     "worse": 144,
+     "tied": 11906,
+     "n": 12146,
+     "n_logs": 136,
+     "adverse": true
+    },
+    "C": {
+     "mean": 0.016466326362588508,
+     "ci95": [
+      0.0,
+      0.052118859459500184
+     ],
+     "base_mean_x100": 99.96706734727482,
+     "arm_mean_x100": 99.98353367363741,
+     "better": 2,
+     "worse": 0,
+     "tied": 12144,
+     "n": 12146,
+     "n_logs": 136,
+     "adverse": false
+    },
+    "DDC": {
+     "mean": -0.11526428453811954,
+     "ci95": [
+      -0.21097458851850825,
+      -0.028845081759891485
+     ],
+     "base_mean_x100": 97.66178165651243,
+     "arm_mean_x100": 97.54651737197432,
+     "better": 39,
+     "worse": 66,
+     "tied": 12041,
+     "n": 12146,
+     "n_logs": 136,
+     "adverse": true
+    }
+   },
+   "adverse_subscores": [
+    "NC",
+    "TTC",
+    "DDC"
+   ],
+   "n_rows": 12146
+  },
+  "C0A_vs_BASE": {
+   "primary": {
+    "mean": -0.8783819329292514,
+    "ci95": [
+     -1.4697508990046615,
+     -0.14357102583436387
+    ],
+    "base_mean_x100": 88.2387626827521,
+    "arm_mean_x100": 87.36038074982284,
+    "better": 3626,
+    "worse": 4088,
+    "tied": 4432,
+    "n": 12146,
+    "n_logs": 136,
+    "zero_base": 530,
+    "zero_arm": 549
+   },
+   "subscores": {
+    "NC": {
+     "mean": 0.03704923431582414,
+     "ci95": [
+      -0.17758943187388157,
+      0.24199010797232995
+     ],
+     "base_mean_x100": 98.94203853120369,
+     "arm_mean_x100": 98.97908776551951,
+     "better": 67,
+     "worse": 62,
+     "tied": 12017,
+     "n": 12146,
+     "n_logs": 136,
+     "adverse": false
+    },
+    "DAC": {
+     "mean": -0.2140622427136506,
+     "ci95": [
+      -0.7553707335947059,
+      0.48319617250656355
+     ],
+     "base_mean_x100": 96.5667709534003,
+     "arm_mean_x100": 96.35270871068664,
+     "better": 146,
+     "worse": 172,
+     "tied": 11828,
+     "n": 12146,
+     "n_logs": 136,
+     "adverse": false
+    },
+    "EP": {
+     "mean": -1.837737158084198,
+     "ci95": [
+      -2.5754571630004706,
+      -1.042731313493293
+     ],
+     "base_mean_x100": 81.18786930126466,
+     "arm_mean_x100": 79.35013214318045,
+     "better": 3557,
+     "worse": 4077,
+     "tied": 4512,
+     "n": 12146,
+     "n_logs": 136,
+     "adverse": true
+    },
+    "TTC": {
+     "mean": 0.016466326362588508,
+     "ci95": [
+      -0.4429025084275192,
+      0.45386024398044855
+     ],
+     "base_mean_x100": 95.62819035073275,
+     "arm_mean_x100": 95.64465667709534,
+     "better": 199,
+     "worse": 197,
+     "tied": 11750,
+     "n": 12146,
+     "n_logs": 136,
+     "adverse": false
+    },
+    "C": {
+     "mean": 0.016466326362588508,
+     "ci95": [
+      0.0,
+      0.052118859459500184
+     ],
+     "base_mean_x100": 99.96706734727482,
+     "arm_mean_x100": 99.98353367363741,
+     "better": 2,
+     "worse": 0,
+     "tied": 12144,
+     "n": 12146,
+     "n_logs": 136,
+     "adverse": false
+    },
+    "DDC": {
+     "mean": 1.0291453976617817,
+     "ci95": [
+      0.7197502598236747,
+      1.3703920900558269
+     ],
+     "base_mean_x100": 97.66178165651243,
+     "arm_mean_x100": 98.69092705417421,
+     "better": 229,
+     "worse": 23,
+     "tied": 11894,
+     "n": 12146,
+     "n_logs": 136,
+     "adverse": false
+    }
+   },
+   "adverse_subscores": [
+    "EP"
+   ],
+   "n_rows": 12146
+  }
+ },
+ "lever_view": {
+  "V-R0B": {
+   "primary": {
+    "mean": 0.0,
+    "ci95": [
+     0.0,
+     0.0
+    ],
+    "base_mean_x100": 88.7855329998372,
+    "arm_mean_x100": 88.7855329998372,
+    "better": 0,
+    "worse": 0,
+    "tied": 12146,
+    "n": 12146,
+    "n_logs": 136,
+    "zero_base": 566,
+    "zero_arm": 566
+   },
+   "subscores": {
+    "NC": {
+     "mean": 0.0,
+     "ci95": [
+      0.0,
+      0.0
+     ],
+     "base_mean_x100": 98.69092705417421,
+     "arm_mean_x100": 98.69092705417421,
+     "better": 0,
+     "worse": 0,
+     "tied": 12146,
+     "n": 12146,
+     "n_logs": 136,
+     "adverse": false
+    },
+    "DAC": {
+     "mean": 0.0,
+     "ci95": [
+      0.0,
+      0.0
+     ],
+     "base_mean_x100": 96.52560513749383,
+     "arm_mean_x100": 96.52560513749383,
+     "better": 0,
+     "worse": 0,
+     "tied": 12146,
+     "n": 12146,
+     "n_logs": 136,
+     "adverse": false
+    },
+    "EP": {
+     "mean": 0.0,
+     "ci95": [
+      0.0,
+      0.0
+     ],
+     "base_mean_x100": 82.99500181841371,
+     "arm_mean_x100": 82.99500181841371,
+     "better": 0,
+     "worse": 0,
+     "tied": 12146,
+     "n": 12146,
+     "n_logs": 136,
+     "adverse": false
+    },
+    "TTC": {
+     "mean": 0.0,
+     "ci95": [
+      0.0,
+      0.0
+     ],
+     "base_mean_x100": 95.23299851803063,
+     "arm_mean_x100": 95.23299851803063,
+     "better": 0,
+     "worse": 0,
+     "tied": 12146,
+     "n": 12146,
+     "n_logs": 136,
+     "adverse": false
+    },
+    "C": {
+     "mean": 0.0,
+     "ci95": [
+      0.0,
+      0.0
+     ],
+     "base_mean_x100": 99.98353367363741,
+     "arm_mean_x100": 99.98353367363741,
+     "better": 0,
+     "worse": 0,
+     "tied": 12146,
+     "n": 12146,
+     "n_logs": 136,
+     "adverse": false
+    },
+    "DDC": {
+     "mean": 0.0,
+     "ci95": [
+      0.0,
+      0.0
+     ],
+     "base_mean_x100": 97.54651737197432,
+     "arm_mean_x100": 97.54651737197432,
+     "better": 0,
+     "worse": 0,
+     "tied": 12146,
+     "n": 12146,
+     "n_logs": 136,
+     "adverse": false
+    }
+   },
+   "adverse_subscores": [],
+   "n_rows": 12146
+  },
+  "V-C0A": {
+   "primary": {
+    "mean": 1.4251522500143694,
+    "ci95": [
+     0.625719458044756,
+     2.0477924451293235
+    ],
+    "base_mean_x100": 87.36038074982284,
+    "arm_mean_x100": 88.7855329998372,
+    "better": 5294,
+    "worse": 1942,
+    "tied": 4910,
+    "n": 12146,
+    "n_logs": 136,
+    "zero_base": 549,
+    "zero_arm": 566
+   },
+   "subscores": {
+    "NC": {
+     "mean": -0.28816071134529886,
+     "ci95": [
+      -0.529422717889414,
+      -0.05916072066946723
+     ],
+     "base_mean_x100": 98.97908776551951,
+     "arm_mean_x100": 98.69092705417421,
+     "better": 43,
+     "worse": 79,
+     "tied": 12024,
+     "n": 12146,
+     "n_logs": 136,
+     "adverse": true
+    },
+    "DAC": {
+     "mean": 0.17289642680717932,
+     "ci95": [
+      -0.595441450370609,
+      0.7198571794930534
+     ],
+     "base_mean_x100": 96.35270871068664,
+     "arm_mean_x100": 96.52560513749383,
+     "better": 151,
+     "worse": 130,
+     "tied": 11865,
+     "n": 12146,
+     "n_logs": 136,
+     "adverse": false
+    },
+    "EP": {
+     "mean": 3.6448696752332546,
+     "ci95": [
+      2.808006463822164,
+      4.395797089333133
+     ],
+     "base_mean_x100": 79.35013214318045,
+     "arm_mean_x100": 82.99500181841371,
+     "better": 5338,
+     "worse": 1839,
+     "tied": 4969,
+     "n": 12146,
+     "n_logs": 136,
+     "adverse": false
+    },
+    "TTC": {
+     "mean": -0.41165815906471265,
+     "ci95": [
+      -0.8580636395098721,
+      0.03459889631872168
+     ],
+     "base_mean_x100": 95.64465667709534,
+     "arm_mean_x100": 95.23299851803063,
+     "better": 143,
+     "worse": 193,
+     "tied": 11810,
+     "n": 12146,
+     "n_logs": 136,
+     "adverse": false
+    },
+    "C": {
+     "mean": 0.0,
+     "ci95": [
+      0.0,
+      0.0
+     ],
+     "base_mean_x100": 99.98353367363741,
+     "arm_mean_x100": 99.98353367363741,
+     "better": 0,
+     "worse": 0,
+     "tied": 12146,
+     "n": 12146,
+     "n_logs": 136,
+     "adverse": false
+    },
+    "DDC": {
+     "mean": -1.1444096821999012,
+     "ci95": [
+      -1.4930759620442313,
+      -0.8161360062537272
+     ],
+     "base_mean_x100": 98.69092705417421,
+     "arm_mean_x100": 97.54651737197432,
+     "better": 13,
+     "worse": 247,
+     "tied": 11886,
+     "n": 12146,
+     "n_logs": 136,
+     "adverse": true
+    }
+   },
+   "adverse_subscores": [
+    "NC",
+    "DDC"
+   ],
+   "n_rows": 12146
+  }
+ },
+ "deployable_safe": {
+  "V_vs_BASE": {
+   "safe": false,
+   "conditions": {
+    "PDMS_lo_gt_0": true,
+    "NC_hi_ge_0": false,
+    "DAC_hi_ge_0": true,
+    "TTC_hi_ge_0": false
+   }
+  },
+  "R0B_vs_BASE": {
+   "safe": false,
+   "conditions": {
+    "PDMS_lo_gt_0": true,
+    "NC_hi_ge_0": false,
+    "DAC_hi_ge_0": true,
+    "TTC_hi_ge_0": false
+   }
+  },
+  "C0A_vs_BASE": {
+   "safe": false,
+   "conditions": {
+    "PDMS_lo_gt_0": false,
+    "NC_hi_ge_0": true,
+    "DAC_hi_ge_0": true,
+    "TTC_hi_ge_0": true
+   }
+  }
+ },
+ "adverse_components_V_vs_BASE": [
+  "NC",
+  "TTC"
+ ],
+ "OUTCOME": "N-SAFETY-LOST",
+ "levels_x100": {
+  "BASE": {
+   "PDMS": 88.2387626827521,
+   "NC": 98.94203853120369,
+   "DAC": 96.5667709534003,
+   "EP": 81.18786930126466,
+   "TTC": 95.62819035073275,
+   "C": 99.96706734727482,
+   "DDC": 97.66178165651243
+  },
+  "C0A": {
+   "PDMS": 87.36038074982284,
+   "NC": 98.97908776551951,
+   "DAC": 96.35270871068664,
+   "EP": 79.35013214318045,
+   "TTC": 95.64465667709534,
+   "C": 99.98353367363741,
+   "DDC": 98.69092705417421
+  },
+  "R0B": {
+   "PDMS": 88.7855329998372,
+   "NC": 98.69092705417421,
+   "DAC": 96.52560513749383,
+   "EP": 82.99500181841371,
+   "TTC": 95.23299851803063,
+   "C": 99.98353367363741,
+   "DDC": 97.54651737197432
+  },
+  "T": {
+   "PDMS": 88.7855329998372,
+   "NC": 98.69092705417421,
+   "DAC": 96.52560513749383,
+   "EP": 82.99500181841371,
+   "TTC": 95.23299851803063,
+   "C": 99.98353367363741,
+   "DDC": 97.54651737197432
+  }
+ },
+ "families_adverse_vs_BASE": {
+  "R0B": {
+   "adverse": [],
+   "components_compared": 21,
+   "tactical_no_interval": {
+    "lateral_decision": {
+     "W": {
+      "accuracy": 0.9252,
+      "kappa": 0.8628
+     },
+     "P": {
+      "accuracy": 0.9266,
+      "kappa": 0.8654
+     }
+    },
+    "longitudinal_decision": {
+     "W": {
+      "accuracy": 0.6789,
+      "kappa": 0.5157
+     },
+     "P": {
+      "accuracy": 0.6872,
+      "kappa": 0.5292
+     }
+    },
+    "maneuver_5way_collapsed": {
+     "W": {
+      "accuracy": 0.7831,
+      "kappa": 0.7182
+     },
+     "P": {
+      "accuracy": 0.7877,
+      "kappa": 0.7256
+     }
+    }
+   },
+   "strategic": "UNAVAILABLE in NAVSIM (no strategic decision scored; the arm has no strategic layer)",
+   "note": "REPORTED, NOT GATING (amendment section 5); unpaired interval non-overlap, a conservative reading"
+  },
+  "T": {
+   "adverse": [],
+   "components_compared": 21,
+   "tactical_no_interval": {
+    "lateral_decision": {
+     "W": {
+      "accuracy": 0.9252,
+      "kappa": 0.8628
+     },
+     "P": {
+      "accuracy": 0.9266,
+      "kappa": 0.8654
+     }
+    },
+    "longitudinal_decision": {
+     "W": {
+      "accuracy": 0.6789,
+      "kappa": 0.5157
+     },
+     "P": {
+      "accuracy": 0.6872,
+      "kappa": 0.5292
+     }
+    },
+    "maneuver_5way_collapsed": {
+     "W": {
+      "accuracy": 0.7831,
+      "kappa": 0.7182
+     },
+     "P": {
+      "accuracy": 0.7877,
+      "kappa": 0.7256
+     }
+    }
+   },
+   "strategic": "UNAVAILABLE in NAVSIM (no strategic decision scored; the arm has no strategic layer)",
+   "note": "REPORTED, NOT GATING (amendment section 5); unpaired interval non-overlap, a conservative reading"
+  }
+ },
+ "strategic": "PAUSED (PI 2026-09-19, item 25); UNAVAILABLE in NAVSIM"
+}
