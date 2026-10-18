@@ -1,0 +1,52 @@
+## X10
+# Work item X10 (refcv8): pose-to-image timing. Repo root = D:/Projects/TanitAD. Package prefix: FlyWheels/TanitAD_DataFlyWheel/incoming/2026-10-04-x10-pose-timing/
+# format: <md5>  <repo-relative path>  -- <what>
+# Nothing here is staged or committed (Master Mind is the sole committer). Built on lander tip agent/arch-inf-20260803 @ acc6180;
+# the three base blobs of the MODIFIED files (and the 7 source files DESIGN.md cites) were re-verified UNCHANGED at the tip c51d1cb. Line endings follow each file's TIP BLOB: refc_v3_train.py is CRLF,
+# declared_vs_built.py, test_declared_vs_built.py and the three new files are LF. D:'s working tree is OLDER than the tip for refc_v3_train.py (and v2_dataset.py) -- land onto the tip, not D:.
+
+## A. REPO FILES TO LAND  (source on disk: <package>/code/fix/<same path>)
+dabaedc777cf3c96981d85020f7626da  stack/tanitad/data/pose_sync.py  -- NEW. The correction: grid replica, closed form, fractional-row re-sampling, sidecar reader (8 refusals), window view.
+#   fix blob (git hash-object --no-filters) 04563301523e39dcdca392b9d23653032e94912c ; tip base blob (not at tip: NEW file)
+a07873e89c483f95ddb8998de8791780  stack/scripts/build_pose_sync_sidecar.py  -- NEW. Builds the sidecar from camera timestamps.parquet (K1-K4 controls; refuses a foreign timeline).
+#   fix blob (git hash-object --no-filters) acc810c383ccb83fcc655348fa17c7e19498c7c6 ; tip base blob (not at tip: NEW file)
+17ef6c87d41b7a62a34e8d96f819a384  stack/tests/test_pose_sync.py  -- NEW. 27 tests: literal known values, zero-offset bit-identity, flipped-sign + per-row deliberate regressions, refusals, builder.
+#   fix blob (git hash-object --no-filters) 3b742905b9b15a63a31819331ba0b75ad8849374 ; tip base blob (not at tip: NEW file)
+4f56bbc48427a2eea804a0c8cf0045f0  stack/scripts/refc_v3_train.py  -- MODIFIED (+109/-0, CRLF kept): V3Dataset.enable_pose_sync/_pose_sync_apply, one `if self.pose_sync is not None` hook, --pose-sync-sidecar (default off), train+eval enable, config.json `pose_sync`.
+#   fix blob (git hash-object --no-filters) 387bd402a22d3918e15386d436f109cb79fe4c44 ; tip base blob 042bd5a709c45ac28d749f0f53888a59c7e9811b
+253b978d9dfa7def195e4a9472af1950  stack/tanitad/train/declared_vs_built.py  -- MODIFIED (+1/-0): registers the new dest `pose_sync_sidecar`.
+#   fix blob (git hash-object --no-filters) 5733983f1f7961391453793d5afa5333c18a245b ; tip base blob 73439b37f7c6f34f8be604b208edd7af00d2bc92
+ed73a840e97619b17f760be6f2baacc4  stack/tests/test_declared_vs_built.py  -- MODIFIED (+2/-0): the pinned registry size 256 -> 257 (the only regression the neighbour run found).
+#   fix blob (git hash-object --no-filters) fb13f1b37d58ef2e5c6950fd470b7ad4d0f222d3 ; tip base blob 460ebf1c02b1ae85decdc4489876ccf38bda64bd
+
+## B. ARTIFACT TO SHIP  (regenerable: code/fix/stack/scripts/build_pose_sync_sidecar.py + the dev-box camera timestamps)
+ce00a130525ede5aff6e8b57028c49bd  FlyWheels/TanitAD_DataFlyWheel/incoming/2026-10-04-x10-pose-timing/raw/refcv6_pose_sync_sidecar.jsonl  -- 4,508/4,508 corpus clips (4,369 train + 139 eval), no clip ids, 5.4 MB. Copy to Thor /home/nvidia/data/refcv6_pose_sync_sidecar.jsonl and D:/refcv6_eval_kit/data/ ; launch flag --pose-sync-sidecar <path>.
+823dd7a5e0b119c2aeac4cdec96bfb65  FlyWheels/TanitAD_DataFlyWheel/incoming/2026-10-04-x10-pose-timing/raw/refcv6_pose_sync_sidecar.jsonl.meta.json  -- its provenance (input manifest md5s, K1 self-test, K4 worst |dt| 6.2e-9 s, delta stats).
+
+## C. PACKAGE (research record; lands under the prefix above)
+1c9ca3f66dc45aef7d9259519e109944  FlyWheels/TanitAD_DataFlyWheel/incoming/2026-10-04-x10-pose-timing/DESIGN.md  -- trace from source with file:line, what the correction changes, rejected options, warm-start statement
+1ca5d3b838ab1f5586709a5d8f143e0c  FlyWheels/TanitAD_DataFlyWheel/incoming/2026-10-04-x10-pose-timing/RESULT.md  -- measured offset, target shift, POSE-SYNC row, the decision for the Master Mind
+02e22e9d8138e2f69718bd828a36d79d  FlyWheels/TanitAD_DataFlyWheel/incoming/2026-10-04-x10-pose-timing/code/x10_measure.py  -- the measurement (offset over 4,508 clips; target shift on eval139 + seeded 400-clip train sample; controls K1-K3)
+f63359666b696aea61a8e835bfde0d0e  FlyWheels/TanitAD_DataFlyWheel/incoming/2026-10-04-x10-pose-timing/code/x10_dataset_e2e.py  -- the REAL V3Dataset hook OFF vs ON over all 23,772 eval windows; POSE-SYNC vs the 100 Hz log
+05d0dfd5b86f80c6c815d85d9309967f  FlyWheels/TanitAD_DataFlyWheel/incoming/2026-10-04-x10-pose-timing/code/x10_pixel_check.py  -- pixel-level check of the premise (cached row == camera frame frame_idx[k], not the nearest one) on 4 rows / 2 clips
+444418617a41f182b83c85707d2178bc  FlyWheels/TanitAD_DataFlyWheel/incoming/2026-10-04-x10-pose-timing/code/summarize_suite.py  -- compares the affected-test run on the overlay tree with the pure tip tree
+5e2dfed986630485735cbf3de7aaffe6  FlyWheels/TanitAD_DataFlyWheel/incoming/2026-10-04-x10-pose-timing/raw/x10_pixel_check.json  -- its result: 4/4 rows best-match offset 0
+3a6d55e2d5ff7b3793376fe1cf128a4c  FlyWheels/TanitAD_DataFlyWheel/incoming/2026-10-04-x10-pose-timing/code/make_tables.py  -- renders the two raw JSONs into raw/RESULT_tables_generated.md
+f72fff4d4bed5ed01a7f56485d75e40e  FlyWheels/TanitAD_DataFlyWheel/incoming/2026-10-04-x10-pose-timing/code/mutation_check.py  -- 7 re-introduced defects against test_pose_sync.py
+ce674672b972bd2fc7a48a1cd605eea2  FlyWheels/TanitAD_DataFlyWheel/incoming/2026-10-04-x10-pose-timing/code/make_trainer_patch.py  -- regenerates the three modified files from the tip blobs, byte-identically (provenance of the fix tree)
+32519870eba6ef28ad4f75c598991119  FlyWheels/TanitAD_DataFlyWheel/incoming/2026-10-04-x10-pose-timing/code/overlay_test_tree.sh  -- builds the clean tip+fix test tree (git archive of the tip; never touches D: or G:)
+37417baa856e6497446eb54aee9d7527  FlyWheels/TanitAD_DataFlyWheel/incoming/2026-10-04-x10-pose-timing/code/make_landing.py  -- writes this file
+b51455f093e907b943b9984500d7e9f5  FlyWheels/TanitAD_DataFlyWheel/incoming/2026-10-04-x10-pose-timing/raw/x10_measure.json  -- MEASURED: offset + target-shift statistics, controls, cross-checks (per-clip rows carry sha12 only)
+d8c19e6884da69cda9980212045d22c1  FlyWheels/TanitAD_DataFlyWheel/incoming/2026-10-04-x10-pose-timing/raw/x10_measure.log  -- its log
+171ca115dc37b059877298ec4d912c5b  FlyWheels/TanitAD_DataFlyWheel/incoming/2026-10-04-x10-pose-timing/raw/x10_dataset_e2e.json  -- MEASURED: hook OFF vs ON, POSE-SYNC, label flips, encoder-channel shifts
+86d32c1d9c37e366ff7bebedbb10143c  FlyWheels/TanitAD_DataFlyWheel/incoming/2026-10-04-x10-pose-timing/raw/RESULT_tables_generated.md  -- generated tables (T1-T4)
+860053a009943937c2a73a4217d01922  FlyWheels/TanitAD_DataFlyWheel/incoming/2026-10-04-x10-pose-timing/raw/mutation_check.json  -- 7/7 mutations caught
+fe5c914432750b0aa001758e731fcfd6  FlyWheels/TanitAD_DataFlyWheel/incoming/2026-10-04-x10-pose-timing/raw/suite_regression.json  -- affected-test regression: overlay tree vs pure tip tree (0 regressions; 33 identical pre-existing ids)
+c025b61a10a0dbc4b7220c601ab3f5a7  FlyWheels/TanitAD_DataFlyWheel/incoming/2026-10-04-x10-pose-timing/raw/suite_overlay_final.log  -- pytest log, tip + fix: 14 failed / 1776 passed / 10 skipped / 19 errors
+05481fbd1b1e24114e139edf29a4f729  FlyWheels/TanitAD_DataFlyWheel/incoming/2026-10-04-x10-pose-timing/raw/suite_base.log  -- pytest log, pure tip: the identical counts
+
+## D. NOT FOR GIT / single copies
+# scratchpad test trees under C:/Users/Admin/AppData/Local/Temp/claude/.../scratchpad/x10/{tree,tree2,tree3,tree_base,mutscr}: disposable (rebuild with code/overlay_test_tree.sh).
+# D3's train_v2manifest.pt copy (scratchpad/d3/, 24 MB, regenerable) was READ, not modified.
+# No Thor, no GPU, no G: access. Every python / pytest process started by this stream has exited (checked by command line before this file was written).
+# Other agents' pytest processes were running on the dev box at that moment; they are not this stream's and were not touched.
