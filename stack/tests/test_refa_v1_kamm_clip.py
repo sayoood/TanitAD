@@ -93,9 +93,9 @@ def test_a2_plan_is_bit_identical_when_the_cap_is_off(seed):
     m = _model(seed=seed)
     feats, v0, nav = _window(m.cfg, seed=seed)
     with torch.no_grad():
-        x = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=_pc(m.cfg))
+        x = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=_pc(m.cfg), model_action_units="kappa")
         y = m.plan(feats, v0=v0, nav_cmd=nav,
-                   plan_cfg=_pc(m.cfg, kamm_mu=None))
+                   plan_cfg=_pc(m.cfg, kamm_mu=None), model_action_units="kappa")
     assert torch.equal(x.controls, y.controls)
 
 
@@ -197,8 +197,8 @@ def test_h_end_to_end_a_capped_plan_never_leaves_the_circle():
     v0 = 22.0
     with torch.no_grad():
         capped = m.plan(feats, v0=v0, nav_cmd=nav,
-                        plan_cfg=_pc(m.cfg, kamm_mu=0.7))
-        free = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=_pc(m.cfg))
+                        plan_cfg=_pc(m.cfg, kamm_mu=0.7), model_action_units="kappa")
+        free = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=_pc(m.cfg), model_action_units="kappa")
 
     def worst_g(ctrl):
         a = ctrl[:, 0]

@@ -233,8 +233,8 @@ def test_g_the_default_still_changes_nothing():
     feats, v0, nav = _window(m.cfg, seed=7)
     pc = _pc(m.cfg)
     with torch.no_grad():
-        a = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=pc)
-        b = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=pc, cost_metric="cos")
+        a = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=pc, model_action_units="kappa")
+        b = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=pc, cost_metric="cos", model_action_units="kappa")
     assert a.cost_metric == "cos"
     assert torch.equal(a.controls, b.controls)
 
@@ -247,7 +247,7 @@ def test_h_plan_under_ccosh_runs_and_stamps_its_metric_END_TO_END():
     pc = _pc(m.cfg)
     with torch.no_grad():
         res = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=pc,
-                     cost_metric="ccosh")
+                     cost_metric="ccosh", model_action_units="kappa")
     assert res.cost_metric == "ccosh"
     assert res.controls.shape == (m.cfg.plan_steps, m.cfg.a_dim)
     assert torch.isfinite(res.controls).all()

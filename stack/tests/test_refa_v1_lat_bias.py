@@ -115,9 +115,9 @@ def test_a_imagined_goal_absent_equals_zero_bias():
     """The public `imagined_goal` entry point carries the same guarantee."""
     m = _model()
     feats, v0, nav = _window(m.cfg)
-    _, ga = m.imagined_goal(feats, v0=v0, nav_cmd=nav)
+    _, ga = m.imagined_goal(feats, v0=v0, nav_cmd=nav, model_action_units="kappa")
     _, gb = m.imagined_goal(feats, v0=v0, nav_cmd=nav,
-                            lat_logit_bias=torch.zeros(N_LAT))
+                            lat_logit_bias=torch.zeros(N_LAT), model_action_units="kappa")
     assert ga["lat"] == gb["lat"] and ga["lon"] == gb["lon"]
     assert torch.equal(ga["controls"], gb["controls"])
 

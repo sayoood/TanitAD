@@ -1,0 +1,52 @@
+--- a/stack/tests/test_refa_v1.py (653247fd0d)
++++ b/stack/tests/test_refa_v1.py (2de823d76d)
+@@ -413,19 +413,19 @@
+     res = m.plan(feats, v0=12.0, goal_field=goal, target_speed=10.0,
+                  plan_cfg=PlanConfig(n_samples=16, n_iters=2, n_elites=4,
+                                      horizon=m.cfg.plan_steps, dt=m.cfg.op_dt,
+-                                     seed=0))
++                                     seed=0), model_action_units="kappa")
+     assert res.controls.shape == (m.cfg.plan_steps, 2)
+     assert math.isfinite(res.cost)
+     assert res.cost <= min(res.baseline_costs.values()) + 1e-6
+     with pytest.raises(ValueError, match="single-window"):
+-        m.plan(torch.randn(2, 4, 8, 32), v0=1.0)
++        m.plan(torch.randn(2, 4, 8, 32), v0=1.0, model_action_units="kappa")
+ 
+ 
+ def test_plan_refuses_a_horizon_that_disagrees_with_the_config():
+     m = RefAV1(_tiny())
+     with pytest.raises(ValueError, match="plan horizon"):
+         m.plan(torch.randn(1, 4, 8, 32), v0=1.0,
+-               plan_cfg=PlanConfig(horizon=3))
++               plan_cfg=PlanConfig(horizon=3), model_action_units="kappa")
+ 
+ 
+ def test_the_search_rolls_on_the_TACTICAL_field_by_default():
+@@ -443,7 +443,7 @@
+     with pytest.raises(ValueError, match="plan_level"):
+         m.plan(torch.randn(1, 4, 8, 32), v0=1.0,
+                plan_cfg=PlanConfig(horizon=m.cfg.plan_steps, n_samples=8,
+-                                   n_iters=1, n_elites=2, seed=0))
++                                   n_iters=1, n_elites=2, seed=0), model_action_units="kappa")
+ 
+ 
+ def test_coarse_to_fine_rescores_the_winner_on_the_FULL_field():
+@@ -455,7 +455,7 @@
+                  goal_field=torch.randn(1, 8, 32),
+                  plan_cfg=PlanConfig(horizon=m.cfg.plan_steps, n_samples=16,
+                                      n_iters=2, n_elites=4, dt=m.cfg.op_dt,
+-                                     seed=0))
++                                     seed=0), model_action_units="kappa")
+     assert res.fine_costs and "plan" in res.fine_costs
+     assert res.fine_best in res.fine_costs
+     assert isinstance(res.coarse_fine_agree, bool)
+@@ -467,7 +467,7 @@
+     res = m.plan(torch.randn(1, 4, 8, 32), v0=10.0,
+                  plan_cfg=PlanConfig(horizon=m.cfg.plan_steps, n_samples=8,
+                                      n_iters=1, n_elites=2, dt=m.cfg.op_dt,
+-                                     seed=0))
++                                     seed=0), model_action_units="kappa")
+     assert res.coarse_fine_agree is None     # no coarse stage => no flag
+     assert math.isfinite(res.cost)
+ 

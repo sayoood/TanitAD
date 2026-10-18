@@ -72,7 +72,7 @@ def _plan(m, feats, v0, nav, **kw):
     windows. A curvature test written against `"cos"` would assert that nothing
     happens and pass for the wrong reason (`D-REFAV1-DRIVE-GATE2`)."""
     kw.setdefault("cost_metric", "ccos")
-    return m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=_pc(m.cfg), **kw)
+    return m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=_pc(m.cfg), **kw, model_action_units="kappa")
 
 
 # ------------------------------------------------------------------ #

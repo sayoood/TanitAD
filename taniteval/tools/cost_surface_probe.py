@@ -241,8 +241,12 @@ class WindowContext:
         if goal_field is not None:                                     # :1771
             self.goal_t, self.goal_source = model._tac_field(goal_field), "supplied"
         elif self.brains is not None:
+            # HJ-UNITS-2: `units` has no default any more. "kappa" = convention A, the
+            # shipped pass-through this class mirrors statement for statement; the goal is
+            # imagined ONCE, under A, for both scoring conventions (control C1 gates it
+            # against the shipped `plan(model_action_units="kappa")`).
             self.goal_t, ga = model._imagine_tactical_goal(
-                self.last, self.brains, self.v0_t)                     # :1772
+                self.last, self.brains, self.v0_t, units="kappa")      # :1772
             self.goal_source = "tactical_imagined"
             self.goal_lat, self.goal_lon = ga["lat"][0], ga["lon"][0]
             self.goal_controls = ga["controls"][0]
@@ -251,11 +255,13 @@ class WindowContext:
         gc = self.goal_controls
         self.zero_goal = bool(gc is not None and float(gc.abs().max()) == 0.0)
 
-    def score(self, controls, *, units: str = "kappa", wheelbase: float = 2.9,
+    def score(self, controls, *, units: str, wheelbase: float = 2.9,
               zero_model: bool = False, chunk: int = 64, target_speed=None,
               exact: bool = False):
         """``[n, H, 2]`` controls -> EVERY cost term, separately.
 
+        ``units`` is REQUIRED (HJ-UNITS-2, 2026-10-18; it used to default to
+        ``"kappa"`` -- the unit at the planner->model boundary is stated, never inferred).
         ``units="kappa"`` is convention A (the shipped pass-through);
         ``units="steer"`` is convention B (the one-line boundary conversion).
         ``zero_model=True`` feeds the ZERO action for every candidate (control C3).
@@ -269,6 +275,10 @@ class WindowContext:
         resolution; ``disp`` measures the same response without a cosine at all, so a
         saturating similarity cannot hide it.
         """
+        # HJ-UNITS-2: a unit that is not one of the two legal spellings used to fall through to
+        # convention B ("anything but 'kappa' is steer"), so a typo silently changed the experiment.
+        if units not in ("kappa", "steer"):
+            raise ValueError(f"units must be one of ('kappa', 'steer'), got {units!r}")
         import torch
         import torch.nn.functional as F
         model, pc = self.model, self.pc
@@ -515,7 +525,10 @@ def _c1_gate(ctx, model, feats, v0, nav_t, pc, ra, dev, *, goal_field, label,
     """C1 -- our re-scoring vs the SHIPPED ``_cost_chunk`` via ``baseline_costs``."""
     import torch
     from tanitad.refs.refa_v1_plan import _baseline_controls
-    res = model.plan(feats, v0=v0, nav_cmd=nav_t, plan_cfg=pc, goal_field=goal_field)
+    # "kappa" = convention A (the shipped pass-through), the one `ctx.score(units="kappa")` below
+    # re-implements -- C1 compares the two, so the unit is the thing under test.
+    res = model.plan(feats, v0=v0, nav_cmd=nav_t, plan_cfg=pc, goal_field=goal_field,
+                     model_action_units="kappa")
     bcs = _baseline_controls(pc, v0, dev, ctx.proposal)
     bn = list(bcs)
     mine = ctx.score(torch.stack([bcs[x] for x in bn]), units="kappa",

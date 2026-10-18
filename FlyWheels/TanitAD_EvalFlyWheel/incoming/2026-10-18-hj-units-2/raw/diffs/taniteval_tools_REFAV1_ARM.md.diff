@@ -1,0 +1,21 @@
+--- a/taniteval/tools/REFAV1_ARM.md (07975eca5a)
++++ b/taniteval/tools/REFAV1_ARM.md (cc055dd257)
+@@ -204,8 +204,18 @@
+   --nav    /home/nvidia/data/v72/labels/s2_labels_v7.2_eval.jsonl.gz \
+   --lead-block $R/b1_eval_lead_block.npz \
+   --device cuda --window-stride 40 --episodes-n 0 --no-navshuf \
++  --action-units steer \
+   --dump-dir $R/full_dump --out $R/refav1_t1_full_21109.json --arm refav1-21109-full141
+ ```
++
++⛔ **`--action-units` HAS NO DEFAULT (BACKLOG HJ-UNITS-2, 2026-10-18; RETRACTION_LOG R46).** A rollout
++that omits it exits 2 with a message naming `kappa` and `steer` (`--analyze-only` reads the unit from the
++dump manifest and does not need it). The block above states `steer` because the recorded v2ep channel
++`actions[:, 0]` IS a road-wheel steer angle (`physicalai.py:621`, `steer = arctan(L * curvature)`; the
++contract is `stack/tanitad/models/kinematic.py:20-55`). ⚠️ **The 2026-09-04 Thor run this block records was
++rolled under the then-default `kappa`** (this block carries no flag; the banked 21109 record
++`taniteval/results/refav1-21109-openloop.json` confirms it: `refav1.manifest.action_units.recorded == "kappa"`), so a re-run with `steer` is NOT comparable to it; to
++reproduce those banked bytes pass `--action-units kappa` explicitly.
+ 
+ ⚠️ **The run directory is `refav1-b1-v72-ep3-speed`, NOT `refav1-b1-v72-1ep-21109`** (that older
+ directory holds a different checkpoint). The epoch-end checkpoint is 2,122,997,633 B,

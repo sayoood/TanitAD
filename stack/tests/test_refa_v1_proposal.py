@@ -101,7 +101,7 @@ def test_plan_runs_with_a_multimode_seed_pool():
     feats = torch.randn(1, m.cfg.op_window, m.cfg.n_tokens, m.cfg.d_enc)
     pc = PlanConfig(horizon=m.cfg.plan_steps, dt=m.cfg.op_dt,
                     n_samples=8, n_iters=2, n_elites=3, seed=0)
-    res = m.plan(feats, v0=5.0, plan_cfg=pc)
+    res = m.plan(feats, v0=5.0, plan_cfg=pc, model_action_units="kappa")
     assert res.controls.shape == (m.cfg.plan_steps, m.cfg.a_dim)
     assert torch.isfinite(res.controls).all()
 

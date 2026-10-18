@@ -73,11 +73,11 @@ def test_a_default_is_bit_identical(seed):
     feats, v0, nav = _window(m.cfg, seed=seed)
     pc = _pc(m.cfg)
     with torch.no_grad():
-        a = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=pc)
+        a = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=pc, model_action_units="kappa")
         b = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=pc,
-                   seed_kappa_ladder=None)
+                   seed_kappa_ladder=None, model_action_units="kappa")
         c = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=pc,
-                   seed_kappa_ladder=())
+                   seed_kappa_ladder=(), model_action_units="kappa")
     assert torch.equal(a.controls, b.controls)
     assert torch.equal(a.controls, c.controls)
     assert a.n_evaluated == b.n_evaluated == c.n_evaluated
@@ -96,9 +96,9 @@ def test_b_n_evaluated_grows_by_exactly_two_per_rung(ladder):
     feats, v0, nav = _window(m.cfg, seed=5)
     pc = _pc(m.cfg)
     with torch.no_grad():
-        base = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=pc)
+        base = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=pc, model_action_units="kappa")
         got = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=pc,
-                     seed_kappa_ladder=ladder)
+                     seed_kappa_ladder=ladder, model_action_units="kappa")
     assert got.n_evaluated - base.n_evaluated == 2 * len(ladder)
     assert got.seed_kappa_ladder == tuple(float(k) for k in ladder)
 
@@ -114,7 +114,7 @@ def test_c_the_rungs_are_REACHABLE_by_the_search():
     pc = _pc(m.cfg)
     with torch.no_grad():
         res = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=pc,
-                     seed_kappa_ladder=(0.01, 0.03))
+                     seed_kappa_ladder=(0.01, 0.03), model_action_units="kappa")
     k = res.controls[:, 1]
     assert torch.isfinite(k).all()
     assert float(k.abs().max()) <= pc.kappa_max + 1e-9
@@ -130,7 +130,7 @@ def test_d_non_positive_or_non_finite_is_REFUSED(bad):
     feats, v0, nav = _window(m.cfg, seed=2)
     with pytest.raises(ValueError, match="seed_kappa_ladder"):
         m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=_pc(m.cfg),
-               seed_kappa_ladder=bad)
+               seed_kappa_ladder=bad, model_action_units="kappa")
 
 
 def test_d2_above_kappa_max_is_REFUSED_not_clipped():
@@ -141,7 +141,7 @@ def test_d2_above_kappa_max_is_REFUSED_not_clipped():
     pc = _pc(m.cfg)
     with pytest.raises(ValueError, match="kappa_max"):
         m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=pc,
-               seed_kappa_ladder=(pc.kappa_max * 1.5,))
+               seed_kappa_ladder=(pc.kappa_max * 1.5,), model_action_units="kappa")
     assert GOAL_KAPPA_MAX == pc.kappa_max        # the two names agree
 
 
@@ -151,6 +151,6 @@ def test_e_ladder_is_stamped_on_the_result_for_provenance():
     feats, v0, nav = _window(m.cfg, seed=7)
     with torch.no_grad():
         res = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=_pc(m.cfg),
-                     seed_kappa_ladder=(0.01,))
+                     seed_kappa_ladder=(0.01,), model_action_units="kappa")
     assert res.seed_kappa_ladder == (0.01,)
     assert res.cost_metric == "cos"              # untouched by this lever

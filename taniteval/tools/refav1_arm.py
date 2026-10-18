@@ -702,8 +702,9 @@ def run_dump(a) -> dict:
     # `kinematic.STEER_WHEELBASE_M`). "kappa" = the LEGACY reading under which
     # every banked refav1 number was produced: recorded v2ep actions integrated
     # as if channel 1 were a curvature, and planner candidates handed to the
-    # model unconverted. "steer" = the repaired contract. THE CLI FLAG's DEFAULT IS
-    # LEGACY so a re-run of a banked command line is byte-identical (pinned by B4).
+    # model unconverted. "steer" = the repaired contract. THE CLI FLAG HAS NO DEFAULT
+    # (HJ-UNITS-2, 2026-10-18; pinned by B4): a banked command line that relied on the
+    # old default now fails loudly in `main` and must state "kappa" to reproduce it.
     # ⛔ A PROGRAMMATIC CALLER GETS NO DEFAULT (BACKLOG HJ-UNITS / RETRACTION_LOG R46):
     # a hand-built Namespace without `action_units` used to take "kappa" HERE and
     # integrate the RECORDED road-wheel angle as a curvature -- the R46 defect, one
@@ -2673,13 +2674,23 @@ def main(argv=None):
                          "recall on 11 windows resolves only to 1/11 = 0.0909, "
                          "coarser than the 0.0750 absolute inference-seed floor "
                          "it is compared against.")
-    ap.add_argument("--action-units", choices=("kappa", "steer"), default="kappa",
-                    help="unit of v2ep actions[:,0] as this run READS it. "
-                         "'kappa' (default) = the LEGACY, unconverted reading "
-                         "every banked number was produced under. 'steer' = the "
-                         "repaired contract: kappa = tan(steer)/2.9 before any "
-                         "integration, and arctan(2.9*kappa) at the "
-                         "planner->model boundary. NOT comparable to 'kappa'.")
+    # ⛔ NO DEFAULT (BACKLOG HJ-UNITS-2 / RETRACTION_LOG R46, 2026-10-18). The flag used to
+    # default to "kappa", the LEGACY reading: a launch line that forgot it integrated the
+    # RECORDED road-wheel angle as a curvature (the R46 echo over-rotated ~2.9x). It is now
+    # REQUIRED for every mode that reads the unit -- a rollout; `--analyze-only` reads the
+    # unit from the dump manifest and never integrates a control, so it does not need one.
+    # The check is below, after parse_args, because argparse's `required=True` cannot be
+    # conditional on --analyze-only. Pinned by test B4 and by
+    # taniteval/tests/test_refav1_units_required.py.
+    ap.add_argument("--action-units", choices=("kappa", "steer"), default=None,
+                    help="REQUIRED for a rollout (no default; ignored by --analyze-only): "
+                         "the unit of v2ep actions[:,0] as this run READS it. "
+                         "'steer' = the repaired contract and the true unit of the "
+                         "corpus (a road-wheel angle): kappa = tan(steer)/2.9 before "
+                         "any integration, and arctan(2.9*kappa) at the "
+                         "planner->model boundary. 'kappa' = the LEGACY, unconverted "
+                         "reading every pre-2026-09-03 banked dump was produced under "
+                         "(use it only to reproduce one). NOT comparable to each other.")
     ap.add_argument("--horizon-k", type=int, default=K_TRAJ_DEFAULT,
                     help=f"trajectory horizon in 0.2 s steps (default "
                          f"{K_TRAJ_DEFAULT} = 2.0 s = the plan horizon)")
@@ -2867,6 +2878,12 @@ def main(argv=None):
                     help="analyse WITHOUT a lead block (distance-keeping stays "
                          "UNAVAILABLE with its reason — a WORK ITEM, not a pass)")
     a = ap.parse_args(argv)
+    if a.analyze_only is None and a.action_units is None:
+        ap.error("--action-units is REQUIRED for a rollout and has no default: pass "
+                 "'kappa' or 'steer'. The recorded v2ep channel actions[:,0] is a "
+                 "road-wheel STEER angle (physicalai.py: steer = arctan(L*kappa)), "
+                 "so 'steer' is the repaired reading and 'kappa' the legacy one "
+                 "(RETRACTION_LOG R46: a silent 'kappa' integrated it as a curvature).")
     if _narrow:
         _p(f"[console] stdout encoding is {_narrow!r}, which cannot represent "
            f"this tool's markers; they are backslash-escaped for this run. Set "

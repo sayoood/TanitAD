@@ -21,8 +21,10 @@ checkpoints (``share = +0.0000 [0.0000, 0.0000]``, zero-width paired
 episode-cluster interval). These tests pin a CORRECTNESS property and a DIRECTION.
 No test here claims, or may be quoted as claiming, a driving improvement.
 
-Both repairs are behind call-site flags whose DEFAULTS are the legacy path, and the
-first two tests exist to prove that default is byte-identical.
+Both repairs are behind call-site flags. The TIME flag's default is the legacy path; the UNIT
+flag (``model_action_units`` / ``units``) has NO default since HJ-UNITS-2 (2026-10-18): the legacy
+path is the explicit ``"kappa"``, and the first two tests prove that stated ``"kappa"`` is
+byte-identical to the pre-2026-09-03 expressions, and that omitting the unit is refused.
 """
 from __future__ import annotations
 
@@ -153,16 +155,20 @@ def _spy_rollout_actions(pred):
 # =========================================================================== #
 # A — UNITS (R26)
 # =========================================================================== #
-def test_A1_default_OFF_is_byte_identical_on_a_real_rollout():
-    """The three spellings of "do nothing" must agree bit for bit."""
+def test_A1_legacy_OFF_is_byte_identical_on_a_real_rollout():
+    """HJ-UNITS-2 (2026-10-18): ``model_action_units`` has NO default, so the three spellings
+    of "do nothing" are now TWO -- the legacy ``"kappa"`` stated, and ``"kappa"`` stated with
+    the (still defaulted) time grid spelled out. They must agree bit for bit. The third
+    spelling, OMITTING the unit, is refused (see below)."""
     m, cfg, feats = _tiny_model()
     _force_turn(m, cfg)
+    with pytest.raises(TypeError, match="model_action_units"):
+        m.plan(feats, v0=8.0, plan_cfg=_pc(cfg))
     with torch.no_grad():
-        a = m.plan(feats, v0=8.0, plan_cfg=_pc(cfg))
-        b = m.plan(feats, v0=8.0, plan_cfg=_pc(cfg), model_action_units="kappa")
+        a = m.plan(feats, v0=8.0, plan_cfg=_pc(cfg), model_action_units="kappa")
         c = m.plan(feats, v0=8.0, plan_cfg=_pc(cfg), model_action_units="kappa",
                    cost_time_grid="dense")
-    for other in (b, c):
+    for other in (c,):
         assert torch.equal(a.controls, other.controls)
         assert a.source == other.source
         assert a.cost == other.cost                      # float equality, not approx
@@ -178,8 +184,10 @@ def test_A2_the_default_goal_equals_the_LEGACY_expression_verbatim():
     m, cfg, feats = _tiny_model()
     _force_turn(m, cfg)
     last, brains, v0_t = _brains_at(m, feats, 8.0)
+    with pytest.raises(TypeError, match="units"):          # HJ-UNITS-2: no default
+        m._imagine_tactical_goal(last, brains, v0_t)
     with torch.no_grad():
-        goal_new, ga = m._imagine_tactical_goal(last, brains, v0_t)
+        goal_new, ga = m._imagine_tactical_goal(last, brains, v0_t, units="kappa")
         stride = m._stride(cfg.tac_dt)
         legacy_acts = m.augment_actions(ga["controls"], v0_t)[:, ::stride]
         legacy_acts = legacy_acts[:, :cfg.tac_steps]
@@ -306,8 +314,11 @@ def test_A6_the_units_flag_is_still_refused_loudly_and_reaches_imagined_goal():
         m.plan(feats, v0=8.0, plan_cfg=_pc(cfg), model_action_units="kappa_ish")
     with pytest.raises(ValueError):
         m.imagined_goal(feats, v0=8.0, model_action_units="curvature")
+    # HJ-UNITS-2: omitting the unit is refused, not defaulted
+    with pytest.raises(TypeError, match="model_action_units"):
+        m.imagined_goal(feats, v0=8.0)
     with torch.no_grad():
-        g1, _ = m.imagined_goal(feats, v0=8.0)
+        g1, _ = m.imagined_goal(feats, v0=8.0, model_action_units="kappa")
         g2, _ = m.imagined_goal(feats, v0=8.0, model_action_units="kappa")
     assert torch.equal(g1, g2)
 
@@ -319,13 +330,13 @@ def test_B1_the_time_flag_default_is_byte_identical_and_refused_loudly():
     m, cfg, feats = _tiny_model()
     _force_turn(m, cfg)
     with torch.no_grad():
-        a = m.plan(feats, v0=8.0, plan_cfg=_pc(cfg))
-        b = m.plan(feats, v0=8.0, plan_cfg=_pc(cfg), cost_time_grid="dense")
+        a = m.plan(feats, v0=8.0, plan_cfg=_pc(cfg), model_action_units="kappa")
+        b = m.plan(feats, v0=8.0, plan_cfg=_pc(cfg), cost_time_grid="dense", model_action_units="kappa")
     assert torch.equal(a.controls, b.controls)
     assert a.cost == b.cost and a.baseline_costs == b.baseline_costs
     assert COST_TIME_GRIDS == ("dense", "tactical")
     with pytest.raises(ValueError):
-        m.plan(feats, v0=8.0, plan_cfg=_pc(cfg), cost_time_grid="operative")
+        m.plan(feats, v0=8.0, plan_cfg=_pc(cfg), cost_time_grid="operative", model_action_units="kappa")
 
 
 def test_B2_the_corrected_index_map_is_the_GOALs_map_then_a_hold():
@@ -359,7 +370,7 @@ def test_B3_ON_regrids_the_TACTICAL_rollout_and_holds_the_last_action():
     for grid in ("dense", "tactical"):
         calls, restore = _spy_rollout_actions(m.tactical)
         with torch.no_grad():
-            m.plan(feats, v0=8.0, plan_cfg=_pc(cfg), cost_time_grid=grid)
+            m.plan(feats, v0=8.0, plan_cfg=_pc(cfg), cost_time_grid=grid, model_action_units="kappa")
         restore()
         # call 0 is the GOAL rollout (identical under both grids by construction)
         seen[grid] = calls
@@ -404,7 +415,7 @@ def test_B4_the_time_grid_is_a_NO_OP_where_it_must_be():
     # (b) the fine re-score is on the operative predictor
     calls, restore = _spy_rollout_actions(m.operative)
     with torch.no_grad():
-        m.plan(feats, v0=8.0, plan_cfg=_pc(cfg), cost_time_grid="tactical")
+        m.plan(feats, v0=8.0, plan_cfg=_pc(cfg), cost_time_grid="tactical", model_action_units="kappa")
     restore()
     assert calls, "verify_on_operative must have re-scored"
     for a in calls:
@@ -481,9 +492,9 @@ def test_C2_T4_is_exactly_zero_when_absent_and_hand_computable_when_supplied():
     _force_turn(m, cfg)
     v0 = 8.0
     with torch.no_grad():
-        none = m.plan(feats, v0=v0, plan_cfg=_pc(cfg))
-        same = m.plan(feats, v0=v0, plan_cfg=_pc(cfg), target_speed=v0)
-        off = m.plan(feats, v0=v0, plan_cfg=_pc(cfg), target_speed=v0 - 1.0)
+        none = m.plan(feats, v0=v0, plan_cfg=_pc(cfg), model_action_units="kappa")
+        same = m.plan(feats, v0=v0, plan_cfg=_pc(cfg), target_speed=v0, model_action_units="kappa")
+        off = m.plan(feats, v0=v0, plan_cfg=_pc(cfg), target_speed=v0 - 1.0, model_action_units="kappa")
     for k in ("cv", "hold_v0"):
         assert none.baseline_costs[k] == same.baseline_costs[k], k
         assert (off.baseline_costs[k] - none.baseline_costs[k]

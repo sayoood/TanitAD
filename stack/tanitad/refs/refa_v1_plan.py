@@ -342,20 +342,30 @@ def icem_plan(cost_fn: Callable[[Tensor], Tensor], *, v0: float,
 
 
 def unicycle_paths(controls: Tensor, v0: Tensor, dt: float, *,
-                   action_units: str = "kappa",
+                   action_units: str,
                    wheelbase: float = STEER_WHEELBASE_M) -> Tensor:
     """``[n, H, 2]`` controls -> ``[n, H, 2]`` (x, y) paths in the ego frame.
 
     Thin wrapper over the programme's integrator so every planner cost is
     computed in the SAME metric convention as the eval (x forward, y left).
 
+    ⛔ ``action_units`` IS REQUIRED AND KEYWORD-ONLY -- NO DEFAULT (BACKLOG
+    HJ-UNITS-2, 2026-10-18; RETRACTION_LOG R46). It used to default to
+    ``"kappa"``. The unit is a property of WHERE THE CONTROLS CAME FROM, which
+    this function cannot see, so a defaulted call integrated a RECORDED
+    road-wheel angle as a curvature whenever its caller forgot -- the R46 defect
+    (5.356 m instead of 2.838 m for the echo control, a manufactured -1.90 m
+    lever). Omitting it raises ``TypeError``; a value outside ``ACTION_UNITS``
+    raises ``ValueError`` naming both legal values.
+
     ⭐ ``action_units`` STATES WHICH UNIT CHANNEL 1 ARRIVES IN (PI ruling
     2026-09-03; the contract is documented on `kinematic.STEER_WHEELBASE_M`):
 
-    * ``"kappa"`` (DEFAULT, byte-identical to every pre-2026-09-03 caller) — the
-      controls are already GEOMETRY. This is the right unit for a PLANNER
-      candidate: ``PlanConfig.kappa_max``, ``_clip`` and ``GOAL_KAPPA_*`` are all
-      curvature, so a candidate integrated here needs no conversion.
+    * ``"kappa"`` — the controls are already GEOMETRY (byte-identical to every
+      pre-2026-09-03 caller that took the old default). This is the right unit
+      for a PLANNER candidate: ``PlanConfig.kappa_max``, ``_clip`` and
+      ``GOAL_KAPPA_*`` are all curvature, so a candidate integrated here needs
+      no conversion. A caller holding planner candidates must still SAY so.
     * ``"steer"`` — the controls are COMMAND (a road-wheel angle), which is what
       the v2ep ``actions[:, 0]`` channel and every RECORDED action is. They are
       converted with ``kappa = tan(steer)/L_enc`` BEFORE integration.

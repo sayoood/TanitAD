@@ -1,0 +1,51 @@
+--- a/stack/tests/test_cost_chord.py (3ccdc0d1ba)
++++ b/stack/tests/test_cost_chord.py (57d83e5e2e)
+@@ -237,7 +237,7 @@
+     feats, v0, nav = _window(m.cfg)
+     with pytest.raises(ValueError, match="cost_metric must be one of"):
+         m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=_pc(m.cfg),
+-               cost_metric="euclid")
++               cost_metric="euclid", model_action_units="kappa")
+ 
+ 
+ def test_c_the_default_changes_nothing():
+@@ -248,8 +248,8 @@
+     feats, v0, nav = _window(m.cfg, seed=3)
+     pc = _pc(m.cfg)
+     with torch.no_grad():
+-        a = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=pc)
+-        b = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=pc, cost_metric="cos")
++        a = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=pc, model_action_units="kappa")
++        b = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=pc, cost_metric="cos", model_action_units="kappa")
+     assert torch.equal(a.controls, b.controls)
+     assert float(a.cost) == float(b.cost)
+     assert a.source == b.source
+@@ -272,8 +272,8 @@
+     feats, v0, nav = _window(m.cfg, seed=4)
+     pc = _pc(m.cfg)
+     with torch.no_grad():
+-        a = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=pc, cost_metric="cos")
+-        b = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=pc, cost_metric="chord")
++        a = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=pc, cost_metric="cos", model_action_units="kappa")
++        b = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=pc, cost_metric="chord", model_action_units="kappa")
+     assert a.cost_metric == "cos" and b.cost_metric == "chord"
+     moved = [k for k in a.baseline_costs
+              if float(a.baseline_costs[k]) != float(b.baseline_costs[k])]
+@@ -412,14 +412,14 @@
+     k2 = float(prop[..., 1].pow(2).mean())
+     assert k2 > 0.0, "the proposal is straight — this test needs a curved one"
+     with torch.no_grad():
+-        base = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=pc).baseline_costs
++        base = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=pc, model_action_units="kappa").baseline_costs
+         old = R.W_KAPPA
+         try:
+             R.W_KAPPA = old * 10.0
+-            hi = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=pc).baseline_costs
++            hi = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=pc, model_action_units="kappa").baseline_costs
+         finally:
+             R.W_KAPPA = old
+-        back = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=pc).baseline_costs
++        back = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=pc, model_action_units="kappa").baseline_costs
+     for k in ("cv", "hold_v0", "decel_1.5"):
+         assert float(base[k]) == float(hi[k]), (
+             f"{k} has kappa == 0 yet moved when W_KAPPA changed")

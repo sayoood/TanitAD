@@ -8,17 +8,20 @@ THE CONTRACT UNDER TEST (`kinematic.STEER_WHEELBASE_M` carries it in prose):
             ``PlanConfig.kappa_max``, every metre-valued trajectory.
   BRIDGE    kappa = tan(steer)/L_enc      steer = arctan(L_enc*kappa)   L_enc = 2.9
 
-⛔ THE DEFAULT IS THE LEGACY (UNCONVERTED) PATH, and half of these tests exist to
+⛔ THE LEGACY (UNCONVERTED) PATH IS THE EXPLICIT ``"kappa"``, and half of these tests exist to
 prove that: every banked refav1 number was produced by it and a silently converted
 eval would make old and new numbers incomparable. The flag is the honest way to
 make the change visible.
 
-⛔ ONE DELIBERATE EXCEPTION (BACKLOG HJ-UNITS, RETRACTION_LOG R46, 2026-10-17):
-`refav1_arm.paths_from_controls` has NO default unit and raises without one (B3a). A
-default there let the refav1 trunk-probe integrate a road-wheel angle as a curvature and
-manufacture a fake -1.90 m lever; `plan()`, `unicycle_paths` and the CLI keep the legacy
-default, but the wrapper that RECORDED actions and PLANNER candidates both pass through
-must be told which one it is holding.
+⛔ NO UNIT HAS A DEFAULT ANY MORE (BACKLOG HJ-UNITS 2026-10-17 + HJ-UNITS-2 2026-10-18,
+RETRACTION_LOG R46). `refav1_arm.paths_from_controls` (B3a), `refa_v1_plan.unicycle_paths` (B2),
+`RefAV1.plan(model_action_units=)` (D1), `imagined_goal` / `_imagine_tactical_goal` and the
+`refav1_arm.py --action-units` CLI flag (B4) all RAISE when the caller does not state the unit.
+A silent default let the refav1 trunk-probe integrate a road-wheel angle as a curvature and
+manufacture a fake -1.90 m lever; the unit is a property of where the controls came from (or of
+which checkpoint consumes them), which the callee cannot see, so the caller must say. What is
+pinned here is that the STATED legacy value reproduces the banked path bit for bit.
+`taniteval/tests/test_refav1_units_required.py` carries the mutation and census arms.
 
 Families: A = the bridge itself; B = OFF is byte-identical; C = ON is exactly the
 conversion; D = the planner→model crossing; E = the deliberate regression (the ON
@@ -131,13 +134,19 @@ def test_B1_as_curvature_kappa_returns_the_SAME_OBJECT():
     assert as_command(c, "kappa") is c
 
 
-def test_B2_unicycle_paths_default_is_bit_identical_to_the_old_call():
+def test_B2_unicycle_paths_REQUIRES_action_units_and_stated_kappa_is_bit_identical_to_the_old_call():
+    """HJ-UNITS-2 (2026-10-18): the ``"kappa"`` default is gone. Omitting the unit raises
+    TypeError; the STATED legacy value is still bit-identical to the raw integrator."""
+    import inspect
     c = _ctrl(n=6)
     v0 = torch.tensor([9.0])
     state0 = torch.zeros(6, 4)
     state0[:, 3] = 9.0
     legacy = rollout_unicycle(state0, c, dt=DT)[..., :2]
-    assert torch.equal(unicycle_paths(c, v0, DT), legacy)
+    with pytest.raises(TypeError, match="action_units"):
+        unicycle_paths(c, v0, DT)
+    prm = inspect.signature(unicycle_paths).parameters["action_units"]
+    assert prm.default is inspect.Parameter.empty and prm.kind is inspect.Parameter.KEYWORD_ONLY
     assert torch.equal(unicycle_paths(c, v0, DT, action_units="kappa"), legacy)
 
 
@@ -227,18 +236,54 @@ def test_B3c_MUTATION_restoring_the_default_turns_B3a_RED():
         sys.modules.pop(mod.__name__, None)
 
 
-def test_B4_the_arm_CLI_defaults_to_the_legacy_unit():
-    """A default that silently repaired a live eval would make every banked
-    number incomparable without saying so."""
+def test_B4_the_arm_CLI_has_NO_default_unit_and_a_rollout_without_it_is_refused(capsys, monkeypatch):
+    """HJ-UNITS-2 (2026-10-18). This test used to pin ``default="kappa"`` ("a default that
+    silently repaired a live eval would make every banked number incomparable"). The converse
+    turned out to be the live hazard: a launch line that FORGOT the flag silently integrated the
+    recorded road-wheel angle as a curvature (R46). The banked reading is still reproducible --
+    by STATING ``--action-units kappa`` -- so incomparability is now visible in the command line.
+
+    A rollout without the flag exits 2 BEFORE any heavy import, and the message names BOTH legal
+    values. ``--analyze-only`` never reads the unit (it comes from the dump manifest), so it is
+    not blocked: proved by reaching the analysis stage, replaced here by a sentinel."""
+    arm = _arm()
     src = _ARM_PATH.read_text(encoding="utf-8", errors="replace")
-    assert '"--action-units", choices=("kappa", "steer"), default="kappa"' in src
+    flag_decl = src.split('"--action-units"', 1)[1].split("ap.add_argument", 1)[0]
+    assert 'default="kappa"' not in flag_decl and 'default=None' in flag_decl, flag_decl[:200]
+
+    class _Reached(Exception):
+        pass
+
+    def _sentinel(*_a, **_k):
+        raise _Reached
+
+    monkeypatch.setattr(arm, "preflight_analysis_imports", _sentinel)
+    rollout = ["--ckpt", "c.pt", "--cache", "x", "--episodes", "x", "--dump-dir", "d",
+               "--out", "o.json"]
+    with pytest.raises(SystemExit) as ei:
+        arm.main(rollout)                                     # no --action-units
+    assert ei.value.code == 2
+    err = capsys.readouterr().err
+    assert "--action-units" in err and "kappa" in err and "steer" in err, err
+    # a bad value is refused by argparse (exit 2), also naming the legal choices
+    with pytest.raises(SystemExit) as ei:
+        arm.main(rollout + ["--action-units", "radians"])
+    assert ei.value.code == 2
+    assert "kappa" in capsys.readouterr().err
+    # stated: the unit gate passes (the sentinel at the next stage is reached)
+    for units in ("kappa", "steer"):
+        with pytest.raises(_Reached):
+            arm.main(rollout + ["--action-units", units])
+    # --analyze-only: no unit needed, the gate does not fire
+    with pytest.raises(_Reached):
+        arm.main(["--analyze-only", "dump", "--out", "o.json"])
 
 
 def test_B5_a_zero_control_is_zero_in_BOTH_units():
     """`ha0` (the constant-velocity floor) must be untouched by the flag."""
     z = torch.zeros(1, K, 2)
     v0 = torch.tensor([7.5])
-    assert torch.equal(unicycle_paths(z, v0, DT),
+    assert torch.equal(unicycle_paths(z, v0, DT, action_units="kappa"),
                        unicycle_paths(z, v0, DT, action_units="steer"))
 
 
@@ -251,7 +296,7 @@ def test_C1_on_equals_converting_the_controls_by_hand():
     by_hand = c.clone()
     by_hand[..., 1] = torch.tan(c[..., 1]) / STEER_WHEELBASE_M
     assert torch.equal(unicycle_paths(c, v0, DT, action_units="steer"),
-                       unicycle_paths(by_hand, v0, DT))
+                       unicycle_paths(by_hand, v0, DT, action_units="kappa"))   # by_hand is curvature already
 
 
 def test_C2_the_integrator_itself_is_untouched():
@@ -282,7 +327,7 @@ def test_C4_a_constant_channel_gives_the_right_TURN_RADIUS():
     assert abs(r_as_kappa - 12.5) < 0.01
     assert abs(r_as_steer - 36.16) < 0.05
     assert abs(r_as_steer / r_as_kappa - 2.893) < 0.01      # the whole defect
-    p_k = unicycle_paths(c, torch.tensor([v0]), DT)[0]
+    p_k = unicycle_paths(c, torch.tensor([v0]), DT, action_units="kappa")[0]
     p_s = unicycle_paths(c, torch.tensor([v0]), DT, action_units="steer")[0]
     # over the same arc the kappa reading turns ~2.9x as far, so it departs the
     # start heading ~2.9x more in y at small angles
@@ -319,13 +364,26 @@ def _pc(cfg):
                       n_iters=1, n_elites=2, seed=0)
 
 
-def test_D1_plan_default_is_byte_identical_to_the_legacy_call():
+def test_D1_plan_REQUIRES_model_action_units_and_stated_kappa_is_the_legacy_call():
+    """HJ-UNITS-2 (2026-10-18): ``plan``'s ``"kappa"`` default is gone -- it conditioned a
+    steer-trained predictor on a curvature whenever a caller forgot the flag. Omitting the unit
+    raises TypeError; the STATED legacy value is deterministic and is what it always was."""
+    import inspect
     m, cfg, feats = _tiny_model()
+    with pytest.raises(TypeError, match="model_action_units"):
+        m.plan(feats, v0=8.0, plan_cfg=_pc(cfg))
+    for fn in (RefAV1.plan, RefAV1.imagined_goal):
+        prm = inspect.signature(fn).parameters["model_action_units"]
+        assert prm.default is inspect.Parameter.empty, (fn.__name__, prm.default)
+        assert prm.kind is inspect.Parameter.KEYWORD_ONLY, (fn.__name__, prm.kind)
+    prm = inspect.signature(RefAV1._imagine_tactical_goal).parameters["units"]
+    assert prm.default is inspect.Parameter.empty and prm.kind is inspect.Parameter.KEYWORD_ONLY
     with torch.no_grad():
-        a = m.plan(feats, v0=8.0, plan_cfg=_pc(cfg))
+        a = m.plan(feats, v0=8.0, plan_cfg=_pc(cfg), model_action_units="kappa")
         b = m.plan(feats, v0=8.0, plan_cfg=_pc(cfg), model_action_units="kappa")
     assert torch.equal(a.controls, b.controls)
     assert a.source == b.source and a.cost == b.cost
+    assert a.model_action_units == "kappa"
 
 
 def test_D2_the_flag_actually_REACHES_the_model():

@@ -207,7 +207,7 @@ def _plan_capturing_goal(m: RefAV1, feats, v0, nav, *, goal_time_grid,
     try:
         res = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=_pc(m.cfg),
                      cost_time_grid=cost_time_grid,
-                     goal_time_grid=goal_time_grid)
+                     goal_time_grid=goal_time_grid, model_action_units="kappa")
     finally:
         m.tactical.rollout = orig
     pre = [r for r in seen if r["n"] == 1]
@@ -349,9 +349,9 @@ def test_e_the_default_flag_changes_nothing():
     m = _model(0)
     c = m.cfg
     feats, v0, nav = _window(c)
-    a = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=_pc(c))
+    a = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=_pc(c), model_action_units="kappa")
     b = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=_pc(c),
-               goal_time_grid="full")
+               goal_time_grid="full", model_action_units="kappa")
     assert torch.equal(a.controls, b.controls)
     assert a.cost == b.cost and a.source == b.source
     assert a.baseline_costs == b.baseline_costs
@@ -368,7 +368,7 @@ def test_f_an_unknown_goal_time_grid_is_refused_by_name():
     feats, v0, nav = _window(m.cfg)
     with pytest.raises(ValueError, match="goal_time_grid must be one of"):
         m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=_pc(m.cfg),
-               goal_time_grid="tactical")
+               goal_time_grid="tactical", model_action_units="kappa")
 
 
 # =========================================================================== #
@@ -391,7 +391,7 @@ def test_g_the_repair_holds_when_the_search_rolls_the_operative_predictor():
     m.operative.rollout = spy_op
     try:
         res = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=_pc(c),
-                     goal_time_grid="plan")
+                     goal_time_grid="plan", model_action_units="kappa")
     finally:
         m.operative.rollout = orig_op
         m.tactical.rollout = orig_tac

@@ -1,0 +1,11 @@
+--- a/stack/tests/test_refa_v1_dk_hook.py (465a03f95f)
++++ b/stack/tests/test_refa_v1_dk_hook.py (e7cf643c11)
+@@ -88,7 +88,7 @@
+ 
+ def _plan(m, feats, v0, nav, **kw):
+     kw.setdefault("cost_metric", "ccos")
+-    return m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=_pc(m.cfg), **kw)
++    return m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=_pc(m.cfg), **kw, model_action_units="kappa")
+ 
+ 
+ # ------------------------------------------------------------------ #

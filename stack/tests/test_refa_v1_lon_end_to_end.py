@@ -23,8 +23,8 @@ def test_J1_a_sustain_reaches_the_goal_field_and_is_recorded():
     m, cfg, feats = _tiny_model()
     _force_turn(m, cfg, lat="TURN_R", lon="CRUISE")     # CRUISE = maintain
     with torch.no_grad():
-        off = m.plan(feats, v0=8.0, plan_cfg=_pc(cfg))
-        on = m.plan(feats, v0=8.0, plan_cfg=_pc(cfg), a_sustain=1.3)
+        off = m.plan(feats, v0=8.0, plan_cfg=_pc(cfg), model_action_units="kappa")
+        on = m.plan(feats, v0=8.0, plan_cfg=_pc(cfg), a_sustain=1.3, model_action_units="kappa")
     assert off.a_sustain is None
     assert on.a_sustain == [pytest.approx(1.3)]
     # SAME-BREATH CONTROL: the GOAL the two plans are scored against must differ,
@@ -43,9 +43,9 @@ def test_J2_a_sustain_zero_leaves_the_plan_bit_identical():
     m, cfg, feats = _tiny_model()
     _force_turn(m, cfg, lat="LANE_KEEP", lon="CRUISE")
     with torch.no_grad():
-        off = m.plan(feats, v0=8.0, plan_cfg=_pc(cfg))
-        zero = m.plan(feats, v0=8.0, plan_cfg=_pc(cfg), a_sustain=0.0)
-        moved = m.plan(feats, v0=8.0, plan_cfg=_pc(cfg), a_sustain=1.4)
+        off = m.plan(feats, v0=8.0, plan_cfg=_pc(cfg), model_action_units="kappa")
+        zero = m.plan(feats, v0=8.0, plan_cfg=_pc(cfg), a_sustain=0.0, model_action_units="kappa")
+        moved = m.plan(feats, v0=8.0, plan_cfg=_pc(cfg), a_sustain=1.4, model_action_units="kappa")
     assert torch.equal(off.controls, zero.controls)
     # SAME-BREATH CONTROL that must DIFFER
     assert not torch.equal(off.controls, moved.controls), (
@@ -63,9 +63,9 @@ def test_J3_the_jerk_seam_changes_the_cost_and_only_the_cost():
     m, cfg, feats = _tiny_model()
     _force_turn(m, cfg, lat="LANE_KEEP", lon="CRUISE")
     with torch.no_grad():
-        off = m.plan(feats, v0=8.0, plan_cfg=_pc(cfg))
-        seam0 = m.plan(feats, v0=8.0, plan_cfg=_pc(cfg), jerk_seam_a0=0.0)
-        seam2 = m.plan(feats, v0=8.0, plan_cfg=_pc(cfg), jerk_seam_a0=-2.0)
+        off = m.plan(feats, v0=8.0, plan_cfg=_pc(cfg), model_action_units="kappa")
+        seam0 = m.plan(feats, v0=8.0, plan_cfg=_pc(cfg), jerk_seam_a0=0.0, model_action_units="kappa")
+        seam2 = m.plan(feats, v0=8.0, plan_cfg=_pc(cfg), jerk_seam_a0=-2.0, model_action_units="kappa")
     assert off.jerk_seam_a0 is None
     assert seam2.jerk_seam_a0 == pytest.approx(-2.0)
     # `cv` is the ALL-ZERO control: with a zero seam its jerk is still all-zero,
@@ -84,8 +84,8 @@ def test_J4_w_vend_stays_dead_unless_explicitly_armed():
     m, cfg, feats = _tiny_model()
     _force_turn(m, cfg)
     with torch.no_grad():
-        off = m.plan(feats, v0=8.0, plan_cfg=_pc(cfg))
-        on = m.plan(feats, v0=8.0, plan_cfg=_pc(cfg), target_speed=7.0)
+        off = m.plan(feats, v0=8.0, plan_cfg=_pc(cfg), model_action_units="kappa")
+        on = m.plan(feats, v0=8.0, plan_cfg=_pc(cfg), target_speed=7.0, model_action_units="kappa")
     assert off.w_vend_armed is False and off.target_speed is None
     assert on.w_vend_armed is True and on.target_speed == pytest.approx(7.0)
     assert on.baseline_costs["cv"] > off.baseline_costs["cv"]
