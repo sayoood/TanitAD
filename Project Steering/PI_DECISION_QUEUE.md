@@ -2189,3 +2189,43 @@ refcv8 includes the fixes and inform masdtermind / 3: leave them / 4: follow you
   refcv8 ("TanitAD project kickoff (fork 8)").
 * **Old pod addresses in public files:** LEFT AS THEY ARE (87 occurrences, 35 files, 7 old addresses, none the current pod).
 * **CLAUDE.md "779":** corrected to "779 traffic-light goals, 761 of them with the colour attached (18 colourless)".
+
+## 🔴 NEW ITEM (2026-10-18 ~20:00 Berlin) — refcv8's hard speed cap vs bars scored against the human: the logged driver exceeds the fed ceiling on 12.5 % of eval windows
+
+**Context.** Your decision 2 (17:30) put the v7F fixes into refcv8. The audit (de4e15b) found the R1 hard cap missing and
+landed `plan_vmax_clamp`. Before any capped number existed, I committed that refcv8's bars are read with the cap ON
+(`AMENDMENT_A_R8_CLAMP_1_PLAN_VMAX_CLAMP.md`, cd1bfe2).
+
+**First measurement:** MEASURED, CPU, applied after the fact with the landed function to the banked plans. It is exact from
+source on both surfaces; the two GPU checks K2 and K4 are still owed. T1 open loop, bootstrap over episodes only, refcv8
+EMA step 30,000, seed 0. Source:
+`FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-15-refcv8-milestone-battery/raw/clamp_posthoc/CLAMP_POSTHOC.md`.
+
+* **The R1 gap is real.** Without the cap, refcv8's plan exceeds the fed ceiling on **5.30 % [3.15, 7.67]** of windows
+  (252 / 4,754). Median excess **2.15 m/s**, max 9.88. In 250 of those 252 the ego already starts above the ceiling.
+* ⚠️ **The logged human exceeds the same ceiling on 12.52 % [8.94, 16.26] of windows.** The cap changes ONLY those
+  windows: 1 of 2,283 changed windows has a human within the ceiling.
+  * 30 km/h class: **23.2 %** of windows, 27 of 47 clips; median excess +1.0 m/s, p90 +4.0.
+  * 50 km/h: 8.7 %. 100 km/h: 2.7 %. 120 km/h: 18.1 %, in 2 clips.
+  * The ceiling is the per-clip `limit_kmh` in {30, 50, 100, 120}. It comes from the Alpamayo speed band's upper edge, not
+    from a map speed limit.
+* **So on a bar scored against the human, the cap can only cost.**
+  * **E1** (beat holding the current action, 0–2 s): −0.0008 [−0.0149, +0.0136] → **+0.0621 [+0.0267, +0.1022]**. It is
+    now separated WORSE than the echo.
+  * **E3**: still PASS, −0.815 → −0.687.
+  * **NR**: 15 cells flip PASS → FAIL, all on the EMA trees.
+* **The landed cap is not fully hard.** It brakes at 2.5 m/s² from an ego that is already over the ceiling, as v7F does, so
+  4.69 % of windows stay above the ceiling. A strict cap (brake 0) is fully compliant and costs +0.1145 m on S2 ADE.
+
+**Options.**
+
+| | |
+|---|---|
+| **(a)** | Keep A-R8-CLAMP-1 as committed: bars on capped refcv8, scored against the human. E1 cannot be reached while 12.5 % of the windows have a human above the ceiling. |
+| **(b) ⭐ recommended** | Score E1, E3 and NR on **ceiling-COMPLIANT windows**: the human's 6-s max ≤ the fed ceiling, ~87.5 % of windows. Same rule for every arm, capped refcv8 primary. Add a **COMPLIANCE row** to LONGITUDINAL for every arm (exempt rate, residual-above-ceiling rate, excess m/s). On compliant windows the cap changes nothing (measured above), so the bar keeps its meaning and R1 becomes visible rather than hidden. |
+| **(c)** | Treat the label as wrong where the human exceeds it, and relabel or loosen the 30 km/h class. That means retraining. |
+
+* ⚠️ **Disclosure.** I propose (b) AFTER seeing a capped number at 30k. That is exactly why it is your call and not mine.
+  The final checkpoint (48,852, ~2026-10-21 05:00 Berlin) has no data yet.
+* **Also yours:** keep the 2.5 m/s² braking allowance (v7F semantics, the landed default) or require the strict cap.
+* Until you rule, A-R8-CLAMP-1 stands as committed, and both readings are printed side by side.
