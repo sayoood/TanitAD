@@ -41,15 +41,19 @@ for c in "${CL[@]}"; do
 done
 flush
 echo "$(date +%H:%M:%S) all shipped, checking sizes"
-python - "$(cygpath -m $S)" "${CL[@]}" > $B/trainall_local_sizes.txt <<'EOF'
-import os, sys
+# the clip list is read INSIDE python: 3,974 ids as argv overflow the command line, and an empty local list makes every
+# comparison below read 0 mismatches (MEASURED 2026-10-18: "Argument list too long", then "0 mismatches" against nothing)
+python - "$(cygpath -m $S)" > $B/trainall_local_sizes.txt <<'EOF'
+import json, os, sys
 s = sys.argv[1]
-for c in sys.argv[2:]:
+cl = list(json.load(open(f"{s}/ctl_expected.json"))) + [l.strip() for l in open(f"{s}/clips_rest.txt") if l.strip()]
+for c in cl:
     for e in ("mp4", "timestamps.parquet"):
-        p = f"{s}/r0/camera_front_wide/{c}.{e}"; print(f"{c}.{e} {os.path.getsize(p)}")
+        print(f"{c}.{e} {os.path.getsize(f'{s}/r0/camera_front_wide/{c}.{e}')}")
 EOF
 $SSH "powershell -NoProfile -Command \"Get-ChildItem D:/tanitad/data/trainall_stage/r0/camera_front_wide | ForEach-Object { \$_.Name + ' ' + \$_.Length }\"" 2>/dev/null | tr -d '\r' | grep -E ' [0-9]+$' | sort > $B/trainall_remote_sizes.txt
-sort $B/trainall_local_sizes.txt > $B/trainall_local_sizes.sorted
+tr -d '\r' < $B/trainall_local_sizes.txt | sort > $B/trainall_local_sizes.sorted     # Windows python prints CRLF
+[ "$(wc -l < $B/trainall_local_sizes.sorted)" = $((2 * ${#CL[@]})) ] || { echo "ZZSHIP-FAIL the local size list is incomplete"; exit 1; }
 nd=$(comm -23 $B/trainall_local_sizes.sorted $B/trainall_remote_sizes.txt | wc -l)
 echo "size mismatches or missing: $nd (local $(wc -l < $B/trainall_local_sizes.sorted), remote $(wc -l < $B/trainall_remote_sizes.txt))"
 [ "$nd" = 0 ] || { comm -23 $B/trainall_local_sizes.sorted $B/trainall_remote_sizes.txt | head -5; echo "ZZSHIP-FAIL sizes"; exit 1; }
