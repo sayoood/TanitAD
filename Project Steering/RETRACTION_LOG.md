@@ -18258,3 +18258,22 @@ largest measured effect*. A lever that the attribution assigns about 0.2 of the 
 - Same family as an oracle-on-SEL ceiling quoted as a gain.
 - ⇒ Before quoting a lever's reach, count both directions at the decision point.
 - It was caught only because ZT5's fixes kept breaking as many zeros as they rescued, which made the reverse flow visible.
+
+### R48 (2026-10-18) - "refcv8 regresses LATERAL against refcv7 (BAR-R8-NR FAIL) on the EMA weights at 15k and 20k" (milestone reports to the PI, 2026-10-17)
+
+**Claimed:** BAR-R8-NR reads LATERAL FAIL on the EMA weights at steps 15,000 and 20,000: S2 heading MAE separated worse than refcv7-50,400.
+
+**True:** the paired rows compared two instruments.
+- refcv8's `os` was rolled with the max-speed ceiling acting in E9's final re-rank. The banked refcv7-50,400 `os` was rolled by a since-deleted tree (`C:/Users/Admin/ev7`) whose E9 never applied it: its final selection equals the filter-off one in 4,754 / 4,754 windows.
+- On the matched instrument at inference seed 0 the EMA heading rows are not separated: +0.0385 [−0.0013, +0.0804] deg (15k) and +0.0126 [−0.0229, +0.0500] deg (20k), against +0.0713 [+0.0277, +0.1167] and +0.0424 [+0.0009, +0.0849] as banked (`…/2026-10-15-refcv8-milestone-battery/raw/nr_matched_instrument/NR_MATCHED_INSTRUMENT.md`).
+- Seed 1 cannot be matched from the banked dumps (no filter-off arm), so the both-seed verdict is **OPEN, not PASS**.
+- What stands: the raw-weights LATERAL FAIL (raw-20k heading +0.0719 [+0.0296, +0.1165] matched), every ADE and LONGITUDINAL verdict, and the sharp-turn gap (EMA-20k −0.0402 [−0.0715, −0.0139] matched).
+
+**Fixed:**
+- `GOALS_AND_CLAIMS` row `D-R8-NR-INSTRUMENT`; `AMENDMENT_A_R7M_1_CEILING_INSTRUMENT.md` (0cfa7c6).
+- A ceiling-ON re-roll of refcv7-50,400 at both seeds is queued (`code/chain_r7on_50400.sh`), so the final bar can be read on one instrument at both seeds.
+
+**Class:** *a banked reference arm silently carries the code that rolled it.* A paired comparison against a banked arm is a comparison across code versions until a known-value re-roll proves the instrument unchanged. The bootstrap was correct; it answered a question about two different planners.
+- Same family as the `df` / scope traps: a correct estimator applied outside the scope it was built for.
+- ⇒ Before pairing against a banked arm, re-roll a small subset of it through the current instrument and require exact reproduction.
+- It was caught only because a known-value control, registered for a different experiment (the matched-phase turn test), re-rolled the reference and missed by 3.68 m.
