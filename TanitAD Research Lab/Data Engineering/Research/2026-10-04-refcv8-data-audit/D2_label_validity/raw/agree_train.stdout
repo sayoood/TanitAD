@@ -1,0 +1,363 @@
+[train] LATERAL A: indep over the record's own band [t0+2,t0+6]  n=4369  strict-agree 3149/4369 = 0.721 (95% Wilson [0.7073, 0.7339]); side-agree 745/827
+                         LANE_KEEP    BEND_L    BEND_R   NUDGE_L   NUDGE_R   SHIFT_L   SHIFT_R    TURN_L    TURN_R   | n
+LANE_KEEP                     2447        64        76         4         2        64        58        55        54   | 2824
+NUDGE_L                        331        31         8         2         6        46        17        23         0   | 464
+NUDGE_R                        386        22        32         2         4        23        64         0        31   | 564
+TURN_L                           1        29         0         0         0         4         1       235         0   | 270
+TURN_R                           0         0        32         0         0         3         1         0       211   | 247
+
+[train] LATERAL B(fast-turn 30deg/3s): [t0+2,t0+6]  n=4369  strict-agree 3164/4369 = 0.724 (95% Wilson [0.7107, 0.7372]); side-agree 745/827
+                         LANE_KEEP    BEND_L    BEND_R   NUDGE_L   NUDGE_R   SHIFT_L   SHIFT_R    TURN_L    TURN_R   | n
+LANE_KEEP                     2447        77        85         4         2        63        58        42        46   | 2824
+NUDGE_L                        331        31         8         2         6        47        17        22         0   | 464
+NUDGE_R                        386        22        33         2         4        23        64         0        30   | 564
+TURN_L                           1        29         0         0         0         5         1       234         0   | 270
+TURN_R                           0         0        39         0         0         3         1         0       204   | 247
+
+[train] LATERAL A: indep over [t0,t0+6] (builder's actual plan span)  n=4369  strict-agree 3017/4369 = 0.691 (95% Wilson [0.6767, 0.7041]); side-agree 1021/1189
+                         LANE_KEEP    BEND_L    BEND_R   NUDGE_L   NUDGE_R   SHIFT_L   SHIFT_R    TURN_L    TURN_R   | n
+LANE_KEEP                     2180        42        45        20        18       121        95       149       154   | 2824
+NUDGE_L                        171        83         1         1         9       123        51        25         0   | 464
+NUDGE_R                        185         8       107        11         0        63       160         0        30   | 564
+TURN_L                           0        15         0         0         0         1         4       238        12   | 270
+TURN_R                           0         0        10         0         0         3         0         6       228   | 247
+
+[train] LATERAL A0 FIRST-RUN rule (superseded): [t0+2,t0+6]  n=4369  strict-agree 2748/4369 = 0.629 (95% Wilson [0.6145, 0.6432]); side-agree 979/1254
+                         LANE_KEEP    BEND_L    BEND_R   NUDGE_L   NUDGE_R   SHIFT_L   SHIFT_R    TURN_L    TURN_R   | n
+LANE_KEEP                     1861         0         0         4         2       393       455        55        54   | 2824
+NUDGE_L                        132         0         0         2         6       192       109        23         0   | 464
+NUDGE_R                        157         0         0         2         4       127       243         0        31   | 564
+TURN_L                           1         0         0         0         0        19        15       235         0   | 270
+TURN_R                           1         0         0         0         0        16        19         0       211   | 247
+
+[train] LONGITUDINAL indep over band [t0+2,t0+6]  n=4369  speed-defined classes agree 2744/3419 = 0.803 (excl. FOLLOW 2617/3262)
+                           HOLD  CREEP CRUISE  ACCEL  BRAKE   | n
+HOLD                         99      0      0      0      2   | 101
+CREEP                         0     81     31      2      5   | 119
+CRUISE                        0      0   1172     10     15   | 1197
+ACCELERATE                    0      0    396    574      4   | 974
+BRAKE_TO                      0      0    160     20    691   | 871
+FOLLOW                        0      0    120     30      7   | 157
+ADAPT_SPEED_FOR_CURVE         0      0    360    462    128   | 950
+
+[train] LONGITUDINAL indep over [t0,t0+6] (builder's actual plan span)  n=4369  speed-defined classes agree 3060/3419 = 0.895 (excl. FOLLOW 2903/3262)
+                           HOLD  CREEP CRUISE  ACCEL  BRAKE   | n
+HOLD                         45     37      2      0     17   | 101
+CREEP                         0     28     31      7     53   | 119
+CRUISE                        0      0   1197      0      0   | 1197
+ACCELERATE                    0      0    178    795      1   | 974
+BRAKE_TO                      0      0     33      0    838   | 871
+FOLLOW                        0      0    157      0      0   | 157
+ADAPT_SPEED_FOR_CURVE         0      0    272    486    192   | 950
+
+[train] LATERAL as-trained windows (|NOW-t0|<=2 s, indep A on each window's own [NOW+2,NOW+6]) n=173409
+                         LANE_KEEP    BEND_L    BEND_R   NUDGE_L   NUDGE_R   SHIFT_L   SHIFT_R    TURN_L    TURN_R   | n
+LANE_KEEP                    97136      2913      2905       143       101      1693      1698      2604      2899   | 112092
+NUDGE_L                      13193      1291       383        71        78      1772       716       857        48   | 18409
+NUDGE_R                      15081       509      1667        66        61       916      2556       289      1232   | 22377
+TURN_L                         459      1204        75        10         0       498       297      8053       120   | 10716
+TURN_R                         503        30      1483         0         2       149       364        58      7226   | 9815
+{
+ "n_records": 4572,
+ "n_tracks": 4369,
+ "n_records_without_cache_track": 203,
+ "n_scored": 4369,
+ "n_truncated_by_builder": 0,
+ "nudge_audit": {
+  "n_builder_nudge": 1028,
+  "indep_lane_keep_over_0_6": 356,
+  "indep_nudge_over_0_6": 21,
+  "indep_shift_over_0_6": 397,
+  "indep_turn_over_0_6": 55,
+  "median_abs_netdyaw_deg_0_6": 9.279609825387945,
+  "median_raw_keyframe_lat_peak_m_0_6": 5.9223873094189745,
+  "median_detrended_eps_m_0_6": 1.803850484523728,
+  "median_detrended_eps_m_0_2_operative_band": 0.10835305745327181,
+  "median_detrended_eps_m_2_6_tactical_band": 0.6250602601499804,
+  "frac_eps_2_6_lt_0.3": 0.2850194552529183,
+  "frac_eps_0_2_ge_0.3": 0.19066147859922178,
+  "frac_eps_0_2_gt_eps_2_6": 0.14591439688715954,
+  "frac_detrended_eps_lt_0.3": 0.07879377431906615
+ },
+ "lane_keep_audit": {
+  "n_builder_lane_keep": 2824,
+  "indep_nudge_or_shift_over_0_6": 254,
+  "indep_turn_A_over_2_6": 109,
+  "indep_turn_B_over_2_6": 88
+ },
+ "adapt_audit": {
+  "n": 950,
+  "frac_peak_dyaw_ge_20deg_over_0_6": 0.991578947368421,
+  "frac_peak_dyaw_ge_30deg_over_0_6": 0.8431578947368421,
+  "median_abs_peak_dyaw_deg_0_6": 55.49645207986245,
+  "frac_builder_lat_is_turn": 0.5305263157894737,
+  "frac_lat_lane_keep": 0.3526315789473684,
+  "median_abs_dv_0_6": 2.83816571482524
+ },
+ "recompute_checks": {
+  "lat_peak_m": {
+   "H1_startframe_whole20s": {
+    "corr_signed": 0.99953,
+    "median_abs_err_m": 0.592,
+    "p90_abs_err_m": 3.196,
+    "frac_within_1m": 0.5914,
+    "frac_within_0.5m_or_2pct": 0.566,
+    "frac_sign_equal": 0.9886
+   },
+   "H2_anchorframe_0to6s": {
+    "corr_signed": 0.59003,
+    "median_abs_err_m": 17.292,
+    "p90_abs_err_m": 94.931,
+    "frac_within_1m": 0.1135,
+    "frac_within_0.5m_or_2pct": 0.0639,
+    "frac_sign_equal": 0.7045
+   },
+   "H3_bandstartframe_2to6s": {
+    "corr_signed": 0.43596,
+    "median_abs_err_m": 18.623,
+    "p90_abs_err_m": 105.13,
+    "frac_within_1m": 0.1035,
+    "frac_within_0.5m_or_2pct": 0.054,
+    "frac_sign_equal": 0.6612
+   },
+   "n": 4369,
+   "recorded_abs_quantiles_m": {
+    "10": 1.03,
+    "25": 3.57,
+    "50": 19.56,
+    "75": 62.67,
+    "90": 109.6,
+    "99": 211.36,
+    "100": 305.31
+   },
+   "frac_recorded_gt_5m": 0.7024,
+   "frac_recorded_lt_1m": 0.0977,
+   "median_abs_by_builder_lat": {
+    "NUDGE_L": 42.06,
+    "LANE_KEEP": 7.61,
+    "NUDGE_R": 44.02,
+    "TURN_R": 60.15,
+    "TURN_L": 51.19
+   },
+   "n_by_builder_lat": {
+    "NUDGE_L": 464,
+    "LANE_KEEP": 2824,
+    "NUDGE_R": 564,
+    "TURN_R": 247,
+    "TURN_L": 270
+   },
+   "nudge_frac_below_1m": 0.0029,
+   "lane_keep_frac_over_1m": 0.8499
+  },
+  "within_m": {
+   "n": 4369,
+   "corr": 1.0,
+   "median_abs_err_m": 0.025,
+   "p90_abs_err_m": 0.045,
+   "frac_within_1m": 0.9995
+  },
+  "speed_band_vs_cache": {
+   "n": 4369,
+   "n_window_in_cache": 4369,
+   "v_hi_median_abs_err": 0.005,
+   "v_hi_p95_abs_err": 0.03,
+   "v_hi_frac_within_0.3": 1.0,
+   "v_lo_median_abs_err": 0.004,
+   "corr_hi": 1.0
+  },
+  "v_target_ms": {
+   "n": 4369,
+   "corr_with_window_min": 1.0,
+   "median_abs_err_vs_min": 0.004,
+   "ACCELERATE_n": 974,
+   "ACCELERATE_median_abs_err_vs_min": 0.004,
+   "ACCELERATE_median_abs_err_vs_end": 3.195,
+   "ACCELERATE_median_end_minus_vtarget": 3.195
+  }
+ },
+ "goal_vs_geometry": {
+  "TURN_L_variantA": {
+   "goal_positive_n": 270,
+   "goal_positive_and_indep_turn": 235,
+   "goal_negative_n": 4099,
+   "goal_negative_but_indep_turn": 78
+  },
+  "TURN_L_variantB": {
+   "goal_positive_n": 270,
+   "goal_positive_and_indep_turn": 234,
+   "goal_negative_n": 4099,
+   "goal_negative_but_indep_turn": 64
+  },
+  "TURN_R_variantA": {
+   "goal_positive_n": 247,
+   "goal_positive_and_indep_turn": 211,
+   "goal_negative_n": 4122,
+   "goal_negative_but_indep_turn": 85
+  },
+  "TURN_R_variantB": {
+   "goal_positive_n": 247,
+   "goal_positive_and_indep_turn": 204,
+   "goal_negative_n": 4122,
+   "goal_negative_but_indep_turn": 76
+  }
+ }
+}
+{
+ "n_windows": 173409,
+ "by_offset": [
+  {
+   "now_minus_t0_s": [
+    -2.0,
+    -1.5
+   ],
+   "n": 21658,
+   "lat_strict_acc_A": 0.6899,
+   "lat_strict_acc_B": 0.6947,
+   "lon_acc_speed_defined": 0.8045,
+   "n_lon": 16952
+  },
+  {
+   "now_minus_t0_s": [
+    -1.5,
+    -1.0
+   ],
+   "n": 21681,
+   "lat_strict_acc_A": 0.711,
+   "lat_strict_acc_B": 0.7152,
+   "lon_acc_speed_defined": 0.8217,
+   "n_lon": 16966
+  },
+  {
+   "now_minus_t0_s": [
+    -1.0,
+    -0.5
+   ],
+   "n": 21685,
+   "lat_strict_acc_A": 0.7266,
+   "lat_strict_acc_B": 0.7297,
+   "lon_acc_speed_defined": 0.8215,
+   "n_lon": 16967
+  },
+  {
+   "now_minus_t0_s": [
+    -0.5,
+    0.0
+   ],
+   "n": 21677,
+   "lat_strict_acc_A": 0.7282,
+   "lat_strict_acc_B": 0.7322,
+   "lon_acc_speed_defined": 0.8107,
+   "n_lon": 16961
+  },
+  {
+   "now_minus_t0_s": [
+    0.0,
+    0.5
+   ],
+   "n": 21663,
+   "lat_strict_acc_A": 0.7198,
+   "lat_strict_acc_B": 0.722,
+   "lon_acc_speed_defined": 0.7801,
+   "n_lon": 16944
+  },
+  {
+   "now_minus_t0_s": [
+    0.5,
+    1.0
+   ],
+   "n": 21673,
+   "lat_strict_acc_A": 0.7112,
+   "lat_strict_acc_B": 0.712,
+   "lon_acc_speed_defined": 0.7327,
+   "n_lon": 16960
+  },
+  {
+   "now_minus_t0_s": [
+    1.0,
+    1.5
+   ],
+   "n": 21674,
+   "lat_strict_acc_A": 0.695,
+   "lat_strict_acc_B": 0.6948,
+   "lon_acc_speed_defined": 0.6848,
+   "n_lon": 16960
+  },
+  {
+   "now_minus_t0_s": [
+    1.5,
+    2.001
+   ],
+   "n": 21698,
+   "lat_strict_acc_A": 0.6785,
+   "lat_strict_acc_B": 0.6772,
+   "lon_acc_speed_defined": 0.6379,
+   "n_lon": 16978
+  }
+ ],
+ "lat_matrix_A": [
+  [
+   97136,
+   2913,
+   2905,
+   143,
+   101,
+   1693,
+   1698,
+   2604,
+   2899
+  ],
+  [
+   13193,
+   1291,
+   383,
+   71,
+   78,
+   1772,
+   716,
+   857,
+   48
+  ],
+  [
+   15081,
+   509,
+   1667,
+   66,
+   61,
+   916,
+   2556,
+   289,
+   1232
+  ],
+  [
+   459,
+   1204,
+   75,
+   10,
+   0,
+   498,
+   297,
+   8053,
+   120
+  ],
+  [
+   503,
+   30,
+   1483,
+   0,
+   2,
+   149,
+   364,
+   58,
+   7226
+  ]
+ ],
+ "lat_strict_acc_A": 0.7075,
+ "lat_strict_acc_B": 0.7097,
+ "lon_acc_speed_defined": 0.7617,
+ "n_lon": 135688
+}
+latA_band2_6 {'n': 4369, 'strict_acc': 0.7208, 'strict_ci95': [0.7073, 0.7339], 'coarse_acc': 0.7317, 'side_acc': 0.9008, 'side_n': 827} [(386, 'NUDGE_R', 'LANE_KEEP', np.float64(0.6844)), (331, 'NUDGE_L', 'LANE_KEEP', np.float64(0.7134)), (64, 'LANE_KEEP', 'SHIFT_L', np.float64(0.0227)), (58, 'LANE_KEEP', 'SHIFT_R', np.float64(0.0205))]
+latB_band2_6 {'n': 4369, 'strict_acc': 0.7242, 'strict_ci95': [0.7107, 0.7372], 'coarse_acc': 0.7352, 'side_acc': 0.9008, 'side_n': 827} [(386, 'NUDGE_R', 'LANE_KEEP', np.float64(0.6844)), (331, 'NUDGE_L', 'LANE_KEEP', np.float64(0.7134)), (63, 'LANE_KEEP', 'SHIFT_L', np.float64(0.0223)), (58, 'LANE_KEEP', 'SHIFT_R', np.float64(0.0205))]
+latA_span0_6 {'n': 4369, 'strict_acc': 0.6905, 'strict_ci95': [0.6767, 0.7041], 'coarse_acc': 0.7253, 'side_acc': 0.8587, 'side_n': 1189} [(185, 'NUDGE_R', 'LANE_KEEP', np.float64(0.328)), (171, 'NUDGE_L', 'LANE_KEEP', np.float64(0.3685)), (154, 'LANE_KEEP', 'TURN_R', np.float64(0.0545)), (149, 'LANE_KEEP', 'TURN_L', np.float64(0.0528))]
+lon_band2_6 {'n': 4369, 'n_speed_defined': 3419, 'acc': 0.8026, 'ci95': [0.7889, 0.8156], 'acc_ex_follow': 0.8023} [(396, 'ACCELERATE', 'CRUISE', np.float64(0.4066)), (160, 'BRAKE_TO', 'CRUISE', np.float64(0.1837)), (31, 'CREEP', 'CRUISE', np.float64(0.2605)), (30, 'FOLLOW', 'ACCEL', np.float64(0.1911))]
+lon_span0_6 {'n': 4369, 'n_speed_defined': 3419, 'acc': 0.895, 'ci95': [0.8843, 0.9048], 'acc_ex_follow': 0.8899} [(178, 'ACCELERATE', 'CRUISE', np.float64(0.1828)), (53, 'CREEP', 'BRAKE', np.float64(0.4454)), (37, 'HOLD', 'CREEP', np.float64(0.3663)), (33, 'BRAKE_TO', 'CRUISE', np.float64(0.0379))]

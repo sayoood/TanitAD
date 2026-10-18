@@ -1,0 +1,31 @@
+## D5
+
+LANDING_READY -- refcv8 data audit, stream D5 (refcv7 EFFECTS INVENTORY), Data Engineering, 2026-10-04
+Hand-over: NOTHING staged or committed by this agent (no git add / commit / push). The Master Mind lands these paths, BY PATH.
+Paths are repo-relative to D:/Projects/TanitAD. md5 = md5 of the file bytes as written on D: at hand-over.
+
+md5                                path -- note
+8a37e12ce9ede8c37bce2408c4f838e7   TanitAD Research Lab/Data Engineering/Research/2026-10-04-refcv8-data-audit/D5_effects_inventory/EFFECTS_INVENTORY.md -- the deliverable: 41 effect rows (MAP 4, BOX 4, TAC 5, SEL 6, SPD 5, NAV 3, NS 7, INS 7) + 15 measure gaps + a top-10 ranking + four-family coverage table; each row = effect, size+CI+estimator, n, tier, evidence+path, root-cause class, status, lever, measure, cheapest rung
+868bae56aa639c77d641f839f58da7e9   TanitAD Research Lab/Data Engineering/Research/2026-10-04-refcv8-data-audit/D5_effects_inventory/code/d5_verify.py -- re-derives 109 headline numbers from the raw JSON / scorer files / label file; includes a mutation control (comparison must reject a wrong expectation), label-md5 == launch-config-md5, record count 4,572, unreadable-file count 0
+56d3304d72804c44b89392c783d96158   TanitAD Research Lab/Data Engineering/Research/2026-10-04-refcv8-data-audit/D5_effects_inventory/raw/d5_verify.json -- output of d5_verify.py: 109 checks, 109 ok, 0 fail, 0 unreadable; aggregates only (no clip ids)
+
+Re-run:  PYTHONIOENCODING=utf-8 OMP_NUM_THREADS=2 C:/Users/Admin/venvs/tanitad/Scripts/python.exe "TanitAD Research Lab/Data Engineering/Research/2026-10-04-refcv8-data-audit/D5_effects_inventory/code/d5_verify.py"
+(reads D:/refcv6_eval_kit/data/a6/s2_labels_v8_train.jsonl.gz and D:/refcv7_eval_kit/ckpt/config.json; both must be present)
+
+Not for git
+-----------
+(nothing) -- no binary evidence was produced. The scratch copies of the tip blobs of MODEL_REGISTRY.md, GOALS_AND_CLAIMS.md,
+RETRACTION_LOG.md, SPEC_REFCV7.md (git show 0796180:<path>, read-only) live in the session scratchpad
+C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/7c618562-39eb-4a61-af81-755048086a13/scratchpad/
+(~1.5 MB, disposable; not needed by the deliverable).
+
+Thor-only state
+---------------
+None. Thor was not touched; no process was started there; no Thor job to end.
+
+Notes for the Master Mind (also in EFFECTS_INVENTORY.md section 1)
+------------------------------------------------------------------
+* D:/Projects/TanitAD/Project Steering/MODEL_REGISTRY.md and GOALS_AND_CLAIMS.md are STALE in the working tree (HEAD 37645fc); refcv7 rows exist only at branch tip 0796180. Quotes were taken from the tip blobs.
+* Registry/claims lag the raw artifacts on one point: NavSim 30,000 navhard is complete and navtest R7_A1 is scored (counts.json PDMS 0.71885); both rows still say RUNNING.
+* BAT/RESULT.md says SPEC amendment A6 is a draft; BAT/SPEC.md + raw/SPEC_SHA256_AMENDMENT_A6.txt say REGISTERED 2026-10-04T08:17:13+02:00. The SPEC holds.
+* Pending at hand-over (12:15 Berlin): NavSim 50,400 scoring (no summary/BARS), NavSim 30,000 interval + BARS, battery G0 at 50,400, navtest EPDMS secondary read. Re-run D5's NS rows when they land.

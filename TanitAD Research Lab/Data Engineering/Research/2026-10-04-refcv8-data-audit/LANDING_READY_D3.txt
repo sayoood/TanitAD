@@ -1,0 +1,65 @@
+## D3
+# Stream D3 raw-data plausibility. Repo root = D:/Projects/TanitAD. Prefix of every path below:
+#   TanitAD Research Lab/Data Engineering/Research/2026-10-04-refcv8-data-audit/D3_raw_plausibility/
+# NOTE: RESULT.md and FINDINGS.md were NOT written - the agent harness blocked report-file writes for subagents; the verdict table and
+# findings were returned in the stream's final message instead (the Master Mind can paste them into RESULT.md).
+# format: <md5>  <bytes>  <path relative to the prefix>  -  <note>
+
+## scripts (all re-runnable; thresholds are literals inside each file)
+ea4e01e8f0f3eaa1062a39e568e8c435  13461  scripts/c1_overlap_thor.py  -  same-recording finder (speed+yaw-rate profile vs every clip's 20-140 s egomotion log); this is the run2 variant (writes run2/ + pair list)
+d5139905b231353f4618e289b6c90509  6983   scripts/c1_strata_split.py  -  id-level split integrity + strata chi-square (permutation p, random-split control)
+b2741bbb6b09409121f06d84b4b7dd94  14095  scripts/c1c_verify_thor.py  -  path-shape verification, threshold table, recording components, eval-train leak table
+754a1e94d0cdd09c77bd4a5875c7c4ff  3801   scripts/c1d_image_sweep_thor.py  -  image channel for time-overlapping pairs (sweep all 201 frames)
+9c1c2e61981efea4c3545d0aca31f926  2538   scripts/c1e_adjacent_image_thor.py  -  image continuity for adjacent (tau ~ 20 s) pairs
+ffda6cf5f32e43157e775d59ea2b807b  2039   scripts/c1f_startaligned_image_thor.py  -  start-aligned duplicate pairs
+bc38e475321533f91093f16a93ef653a  16624  scripts/c2_poses.py  -  pose plausibility + window balance (controls first)
+4c45b3a5e4c6e5157c5fcde6bf53dfc5  2713   scripts/c2b_anomaly_detail.py  -  detail of flagged pose clips
+7f39fa5525942437709e547a3b3fcacf  2535   scripts/c2c_action_pose_consistency.py  -  steer-action vs pose curvature
+2154d75df554a8eddcc15f56f98fec6e  18018  scripts/c3_agents_thor.py  -  agent-box plausibility pass over the 3-D join
+e9a9784453391dde7441a0bad4445198  13388  scripts/c3b_agents_detail.py  -  ego-footprint boxes, jump events, base-face by range, record coverage
+892f8a7855363f522494231b1486e8fa  2869   scripts/c3c_registration_control.py  -  box/pose registration control with mutations
+6569045f2c3d1a042ce401d9d0754fb2  14338  scripts/c4_sam3.py  -  SAM3 map GT: ego-path test, coverage, thin classes
+f18e6ca4c0b0ffa632dc2c2051b1eee9  2721   scripts/c4b_thin_by_stratum.py  -  lane-line absence by stratum
+86c77c6e14c8cee2c6febdf7ab6020cd  9603   scripts/c5_frames.py  -  decoded-frame sanity (black/over/frozen/strip)
+f0775769af358d8c9e28178504aa18f5  4142   scripts/c5a_rigs.py  -  rig proportions + calibration sharing
+
+## raw results (MEASURED; ids are sha12 only)
+9cd69288d1948bd96d227e395be957d0  4501    raw/c1_control_shift_noise.json  -  control C2 (shift+noise recovered 40/40)
+225c52edea1c8a0b535de53aadba3cfd  78789   raw/c1_overlap_result.json  -  finder summary (C1 self-match 4126/4126, null floor, first 200 pairs <1)
+73c65f6fa4969b01fa813ea129e50d7e  7301    raw/c1_strata_split_result.json  -  ids + strata
+e8ca000dba31624b79ac533a1a6b072f  5405    raw/c1c_verify_result.json  -  verification at exact-threshold 0.1 (incl. eval-train leak pair table)
+a5197c022f22c9dd089d03d4b05e5d73  4723    raw/c1c_verify_result_thr0.01.json  -  same at 0.01 (image-confirmed tier)
+33ebdc4f260bece58dc1e49bdf6fe1c9  5160    raw/c1c_verify_result_thr0.03.json  -  same at 0.03
+b3971c0ee4a1b641f3e9d97826fed967  3484    raw/c1d_image_sweep.json  -  image sweep, 13 time-overlapping pairs
+d92174322a20952eb9fe0a676aa21a03  2554    raw/c1e_adjacent_image.json  -  13 adjacent pairs, NCC 0.81-1.00 vs null max 0.42
+5c4966040583784abcf16f6b531e7bdb  1601    raw/c1f_startaligned_image.json  -  start-aligned duplicates
+5dba2bb9040c65a8531edd3d5ecad45e  19902   raw/c2_poses_result.json  -  pose checks + balance tables
+2fcbe63e99c5570df7517af05040c1e8  10435   raw/c2b_anomaly_detail.json
+d2cb4641bf2a8311806161cc76f8a704  1074    raw/c2c_action_pose_consistency.json
+8015ebcbe38c25f2ef458edbd6e13247  37699   raw/c3_agents_result.json
+353e934d8450e5d9144a345de58e2694  6221    raw/c3b_agents_detail.json
+452c1800a8afe212514317fe4c03b8fc  238     raw/c3c_registration_control.json
+8f48226223b8e4748517a9165b19edfb  23898   raw/c4_sam3_eval_local.json  -  eval GT on D: (137 files)
+f9d0473f34392ab01c9c7b51fe25223e  634341  raw/c4_sam3_train_thor.json  -  all 4,369 train clips (per-clip rows included)
+29bcdd4fae666d535afb05cf0b378a33  4497    raw/c4b_thin_by_stratum.json
+30c9417c66364d006f46d474505caea3  68766   raw/c5_frames_result.json
+84df4f6643e10e4bb9dd2886e7f53a5f  1640    raw/c5a_rigs_result.json
+a5b57d8ecd18d4307660ae178497e693  1423    raw/c5b_daynight_vs_luma.json
+86708a17daf2a606bb3b9eca55bf43c4  5502568 raw/c1_pairs_lt6.npz  -  every (window, log, tau, score) pair with score < 6 (406,336 pairs), index-keyed; needs c1_series_summary.npz for sha12
+6337043a90f4ac87f14c894da9ef2252  181134  raw/c1_series_summary.npz  -  per-clip sha12/split/span/excitation
+da2b55432e58556650e9c2a62c85a0fb  346     raw/logs/c1_overlap.log
+3c22962da5240678e31107a421fabdc5  368     raw/logs/c1_overlap_v2.log
+ce6e84ac068c64a3290f052c33979b42  4133    raw/logs/c1c_verify.log
+471a0bf376a58bea93a3ffc8485374ba  2975    raw/logs/c1d.log
+4eb61dd213c9cfbfa7c9bf49db36a85b  189     raw/logs/c3_agents.log
+dbe94596bd87c450940be70ac2c7eec3  6609    raw/logs/c3b.log
+fce2af06322e30f80548ebe43b8aa4f2  4116    raw/logs/c4_sam3_train.log
+3cd81106528727b2c29eaa0a1a910224  3133    raw/logs/c5_frames.log
+
+## NOT for git
+24 MB   C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/7c618562-39eb-4a61-af81-755048086a13/scratchpad/d3/train_v2manifest.pt  -  copy of Thor /home/nvidia/data/refcv6-b1-416x1024-train/_v2manifest.pt (regenerable; single copy on the dev box is disposable)
+1.1 MB  C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/7c618562-39eb-4a61-af81-755048086a13/scratchpad/d3/physicalai_front_wide_intrinsics.csv  -  copy of Thor physicalai-b1/calibration CSV (per-clip cy; gated PhysicalAI metadata, do not commit)
+
+## Thor-only state (/home/nvidia/refcv8_audit/D3/, 6.7 MB, all also copied into raw/)
+/home/nvidia/refcv8_audit/D3/*.py *.log *.json and run2/{c1_pairs_lt6.npz,c1_series_summary.npz,c1c_*.json,c1d_*.json,c1e_*.json,c1f_*.json}  -  disposable after landing
+No python process of mine is alive. My last Thor job (c1f_startaligned_image_thor.py) ended 2026-10-04 12:40:17 Europe/Berlin (Thor clock, verified by ps at 12:41: no python process listed); the last heavy job (c5_frames.py) ended 12:35.

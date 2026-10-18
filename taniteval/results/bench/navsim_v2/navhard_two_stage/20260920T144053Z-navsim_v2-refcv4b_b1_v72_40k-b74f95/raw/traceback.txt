@@ -1,0 +1,28 @@
+Traceback (most recent call last):
+  File "D:\Projects\TanitAD\taniteval\taniteval\bench\cli.py", line 170, in run_benchmark_cmd
+    fn(ctx)
+    ~~^^^^^
+  File "D:\Projects\TanitAD\taniteval\taniteval\bench\navsim\__init__.py", line 12, in run_benchmark
+    return _run(ctx)
+  File "D:\Projects\TanitAD\taniteval\taniteval\bench\navsim\benchmark.py", line 284, in run_benchmark
+    seams[name], seam_notes[name] = SM.make_echo_seam(doc, seam_dir / f"{name}.npz", arm=name)
+                                    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Projects\TanitAD\taniteval\taniteval\bench\navsim\seams.py", line 56, in make_echo_seam
+    from tanitad.refs.refc_v3 import kinematic_goal_extrapolation
+  File "D:\Projects\TanitAD\taniteval\taniteval\stack_guard.py", line 338, in find_spec
+    self._violate(fullname, bad)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "D:\Projects\TanitAD\taniteval\taniteval\stack_guard.py", line 364, in _violate
+    raise StackShadowError(msg)
+taniteval.stack_guard.StackShadowError: ⛔ STACK SHADOWING — `tanitad` would be imported from
+    ['D:\\Projects\\TanitAD\\stack\\tanitad\\__init__.py', 'D:\\Projects\\TanitAD\\stack\\tanitad']
+  but the pinned stack root is
+    G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\stack   (intent: installed:find_spec)
+  This is the defect that publishes a PLAUSIBLE WRONG NUMBER rather
+  than an error: 28 taniteval modules used to sys.path.insert(0,
+  '/root/TanitAD/stack'), and on pod2 that tree is pre-v5.
+  ⇒ export TANITEVAL_STACK_OVERRIDE=<the stack you mean> BEFORE python3 starts,
+    and make sure no other stack tree precedes it on sys.path.
+    (sys.path[0:4] = ['D:\\Projects\\TanitAD\\tools', 'D:\\Projects\\TanitAD\\stack\\scripts', 'D:\\Projects\\TanitAD\\stack', 'G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\stack'])
+  To downgrade deliberately: TANITEVAL_STACK_GUARD=warn — it is recorded in the
+  guard's report() so no artifact can hide it.
