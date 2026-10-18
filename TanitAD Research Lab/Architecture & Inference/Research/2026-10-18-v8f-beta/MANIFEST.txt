@@ -1,0 +1,18 @@
+v8F rung-beta deliverable manifest (session busy-mcnulty-236da6, 2026-10-18). Everything below is STAGED (git add), NOT committed, NOT pushed.
+repo = the worktree E:/Projects/TanitAD/.claude/worktrees/busy-mcnulty-236da6 on branch claude/busy-mcnulty-236da6 (based on the tip c58a17e5 of agent/arch-inf-20260803, read from the tanitad-push mirror, equal to the GitHub remote).
+Nothing exists only on a pod. No GPU was used; the gate was NOT run (no trained M2 checkpoint exists).
+
+CODE
+repo:stack/tanitad/models/v8f_beta.py            fan, path->action derivation, predicted goal, WM scorer (HJEPAStack.score_candidates), arms   NEW
+repo:taniteval/taniteval/v8f_beta_eval.py        per-window family components, route adherence, paired rows, the pre-registered decision        NEW
+repo:stack/scripts/v8f_mini_eval.py              `run --plan beta`, `compare-beta`, --fan-artifact, --beta-chunk (default --plan none)           EDIT
+repo:stack/tanitad/models/v8f_mini.py            WMAux.z1 / scale_actions: ONE spelling shared by training and beta (behaviour-preserving)      EDIT
+TESTS
+repo:stack/tests/test_v8f_beta.py                identity, known answer, 5 source mutants, caller mutant, reachability, admissibility, instrument  NEW
+DOCS
+repo:Project Steering/PREREG_V8F_BETA.md         the pre-registration, both outcomes committed                                                    NEW
+repo:Project Steering/GOALS_AND_CLAIMS.md        row H-V8F-BETA-1 after H-DATA-SCALE-1                                                           EDIT
+PACKAGE (TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-v8f-beta/)
+RESULT.md  HANDOFF.md  MANIFEST.txt
+NOT DELIVERED (by design): any M2 number, any checkpoint, any trained goal head.
+OPEN FOR THE PI: (1) M2 with the 60-clip holdout withheld, or accept the in-sample holdout; (2) the pod-side anchors_117_alat_declared.pt for --fan-artifact; (3) a trained goal head only if the gate reads FAIL-GOAL.

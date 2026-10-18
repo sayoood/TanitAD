@@ -6,8 +6,11 @@ Modes
   join     build the eval label join (v9 eval139 release + lead + speed sidecar) for the 141 grid clips
   floors   NO image feature needed: refit-P10 (correct unit), kd_x, the GT-plan CONTROL, the nav-only checkpoint
            baseline and CONSISTENCY of every floor -- the numbers the arms are held against
-  run      evaluate one checkpoint on the eval cache -> eval_<tag>.npz / .json (per-window predictions + metrics)
+  run      evaluate one checkpoint on the eval cache -> eval_<tag>.npz / .json (per-window predictions + metrics);
+           with `--plan beta` ALSO the rung-beta gate (PREREG_V8F_BETA.md): the checkpoint's own world model ranks the 117-candidate
+           fan against a predicted goal latent -> eval_<tag>_beta.npz and the `plan_beta` block of eval_<tag>.json. ZERO TRAINING.
   compare  PREREG bars from several `run` outputs (paired episode-cluster bootstrap, B = 2000; seeds floor F)
+  compare-beta  the rung-beta verdict from two seeds' `run --plan beta` JSONs (PREREG_V8F_BETA.md §3)
 
 Every row names the variance it answers: the bootstrap resamples EPISODES with the models fixed. The training-seed
 variance is answered ONLY by F = |arm_s0 - arm_s1| (two seeds), never by the interval.
@@ -30,6 +33,7 @@ for p in (os.path.join(REPO, "stack"), os.path.join(REPO, "taniteval")):
 from tanitad.data import v8f_mini_data as D  # noqa: E402
 from taniteval import floors_kin as fk  # noqa: E402
 from taniteval import v8f_consistency as C  # noqa: E402
+from taniteval import v8f_beta_eval as BE  # noqa: E402
 from taniteval.ci import episode_cluster_bootstrap, paired_episode_cluster_bootstrap  # noqa: E402
 
 PKG = os.path.join(REPO, "TanitAD Research Lab", "Architecture & Inference", "Research", "2026-10-17-v8f-mini")
@@ -169,7 +173,7 @@ def evaluate(pred, X, extras=None, n_boot=B_BOOT, seed=0, with_families=True):
 
 def jdump(o, path):
     def enc(x):
-        if isinstance(x, (np.floating, np.integer)):
+        if isinstance(x, (np.floating, np.integer, np.bool_)):
             return x.item()
         if isinstance(x, np.ndarray):
             return x.tolist()
@@ -229,6 +233,11 @@ def cmd_run(a):
     from tanitad.models import v8f_mini as M
     ck = torch.load(a.ckpt, map_location="cpu", weights_only=False)
     cfg = M.V8FMiniConfig(**ck["cfg"])                 # a checkpoint written before the ruling has no kin_mode => steer
+    if a.plan == "beta":
+        if cfg.wm == "off":
+            raise SystemExit("REFUSED: --plan beta scores with the checkpoint's OWN world model; this one was trained with wm='off' (arm M1). Use M2a / M2b.")
+        if cfg.kin_mode != "yaw":
+            raise SystemExit("REFUSED: --plan beta runs only on a --kin-mode yaw checkpoint (PI ruling D-PI-YAWRATE-1: no steering angle at inference).")
     grid, J, X = ctx_from_args(a, cfg.kin_mode)       # the scoring context is built in the CHECKPOINT's representation
     tracks = None
     if cfg.kin_mode == "yaw":
@@ -252,6 +261,9 @@ def cmd_run(a):
         perm = donor_indices(N, episode_ids=torch.as_tensor(X["eid"]), seed=0).numpy()
     outs = {"traj30": [], "ckpt": [], "goal_prob": [], "lat_logits": [], "lon_logits": [], "cons_pred": [],
             "traj30_proj": []}
+    beta_rows = []                                     # rung beta: the planner's per-window inputs (only with --plan beta)
+    if a.plan == "beta":
+        from tanitad.models import v8f_beta as BETA
     with torch.no_grad():
         for b0 in range(0, N, a.batch):
             items = []
@@ -270,6 +282,8 @@ def cmd_run(a):
             b = D.collate(items)
             b = {k: ({kk: vv.to(dev) for kk, vv in v.items()} if isinstance(v, dict) else v.to(dev)) for k, v in b.items()}
             o = model.forward_infer(b)
+            if a.plan == "beta":
+                beta_rows.append(BETA.collect_beta_inputs(model, b, o))
             outs["traj30"].append(o["traj30"].float().cpu().numpy())
             outs["ckpt"].append(o["ckpt"].float().cpu().numpy())
             outs["goal_prob"].append(o["goal_prob"].float().cpu().numpy())
@@ -288,9 +302,13 @@ def cmd_run(a):
     extras = {"ckpt": ck_now, "goal_prob": O["goal_prob"], "lat_logits": O["lat_logits"],
               "lon_logits": O["lon_logits"], "cons": cons_dec}
     tag = a.tag
-    res = {"tag": tag, "ckpt": a.ckpt, "ages": a.ages, "nav_shuffle": bool(a.nav_shuffle), "kin_mode": cfg.kin_mode}
+    res = {"tag": tag, "ckpt": a.ckpt, "ages": a.ages, "nav_shuffle": bool(a.nav_shuffle), "kin_mode": cfg.kin_mode, "plan": a.plan}
     r, pw = evaluate(O["traj30"].astype(np.float64), X, extras, a.n_boot, with_families=a.families)
     res["raw"] = r
+    if a.plan == "beta":
+        res["plan_beta"], beta_npz = beta_block(model, beta_rows, X, O["traj30"], pw, extras, a)
+        os.makedirs(a.out_dir, exist_ok=True)
+        np.savez_compressed(os.path.join(a.out_dir, f"eval_{tag}_beta.npz"), **beta_npz)
     if a.project:
         r2, pw2 = evaluate(O["traj30_proj"].astype(np.float64), X, None, a.n_boot, with_families=False)
         res["projected_r1_kamm"] = r2
@@ -301,6 +319,115 @@ def cmd_run(a):
     jdump(res, os.path.join(a.out_dir, f"eval_{tag}.json"))
     print(tag, "ADE6", r["traj"]["ade6_m"]["mean"], "ADE2", r["traj"]["ade2_m"]["mean"],
           "CONS(a)", r["consistency_a"]["any"]["rate_all"])
+    if a.plan == "beta":
+        pb = res["plan_beta"]
+        print(tag, "BETA ADE6", pb["arms"]["beta"]["traj"]["ade6_m"]["mean"], "replaced", round(pb["wm_diag"]["replaced_frac"], 4),
+              "beta-M2 ADE6", pb["paired_vs_m2"]["ade6"].get("mean"), "scorer calls", pb["score_calls"])
+    return 0
+
+
+# ------------------------------------------------------------------------------------------------ rung beta (PREREG_V8F_BETA.md)
+def _ade(pred, gt, k=None):
+    d = np.linalg.norm(np.asarray(pred, np.float64) - np.asarray(gt, np.float64), axis=-1)
+    return d.mean(1) if k is None else d[:, :k].mean(1)
+
+
+def beta_block(model, rows, X, pred_m2, pw_m2, extras, a):
+    """The rung-beta gate for one checkpoint. ``rows`` = the per-batch :func:`v8f_beta.collect_beta_inputs` dicts gathered in the `run`
+    loop (so the planner saw exactly the windows, the held-output ages and the inference keys the M2 evaluation used); ``pred_m2`` /
+    ``pw_m2`` = M2's own 6 s plan and per-window results. Returns ``(json block, npz arrays)``. Reads the ground truth ONLY for the
+    scoring and for the T0 diagnostic arms, never for the result arm ``beta``."""
+    import torch
+    from tanitad.models import v8f_beta as BETA
+    from tanitad.models import v8f_mini as M
+    BETA.reset_counters()
+    if a.fan_artifact:
+        ctrl, fan = BETA.load_fan_controls(a.fan_artifact)
+    else:
+        ctrl, fan = None, {"source": "pinned grid (stack/tests/test_anchor_flyability.py:11-22); NOT checked against the shipped artifact",
+                           "max_abs_diff_vs_pinned_grid": 0.0}
+    inp = BETA.cat_inputs(rows)
+    n, gt, eid, nb = len(inp), np.asarray(X["gt"], np.float64), X["eid"], a.n_boot
+    if n != len(eid):
+        raise AssertionError(f"beta saw {n} windows, the scoring context has {len(eid)}")
+    if not np.array_equal(inp.traj60[:, 1::2].numpy(), np.asarray(pred_m2, np.float32)):
+        raise AssertionError("IDENTITY BROKEN: the incumbent beta carries is not the plan M2 emitted")
+    arms = BETA.run_beta(model.wm, inp, gt=torch.as_tensor(gt), eid=eid, controls=ctrl, chunk=a.beta_chunk, seed=0)
+    R, PW, PRED = {}, {}, {"m2": np.asarray(pred_m2, np.float64)}
+    for name, arm in arms.items():
+        PRED[name] = arm["traj30"].double().numpy()
+        R[name], PW[name] = evaluate(PRED[name], X, extras if name == "beta" else None, nb, with_families=a.families and name == "beta")
+    PW["m2"] = pw_m2
+    # per-window family components (m2 and every arm), on the same windows
+    FW = {}
+    for name, p in PRED.items():
+        fw = BE.family_windows(p, gt, C.DT)
+        ra = BE.route_adherence(p, X["rc"], X["rc_ok"])
+        for m, arc in enumerate(BE.CKPT_ARCS_M):
+            fw[f"strat_route_err_{int(arc)}m"] = ra[:, m]
+        fw["consistency_viol_any"] = np.asarray(PW[name]["viol_any"], np.float64)
+        FW[name] = fw
+    fam = {c: BE.paired_row(FW["beta"][c], FW["m2"][c], eid, nb, lower_is_better=lib) for c, (_, lib) in BE.COMPONENTS.items()}
+    d6 = BE.paired_row(PW["beta"]["ade6"], pw_m2["ade6"], eid, nb)
+    out = {
+        "spec": {"goal": "S's route checkpoints (NOW frame) x the frozen P10 prior's pace -> the WM's level-2 latent at +6 s "
+                         "(v8f_beta.route_goal_xy / goal_latents)", "level": BETA.WM_LEVEL, "last_k": 1, "context": 1, "lam_subgoal": 0.0,
+                 "candidates": "117-fan + M2's own plan as the incumbent (strict improvement replaces it)", "tuned_parameters": 0,
+                 "ages": a.ages, "nav_shuffle": bool(a.nav_shuffle)},
+        "fan": fan, "score_calls": dict(BETA.SCORE_CALLS), "n_windows": n,
+        "arms": R, "tier": "T0/T1 open loop, own held outputs; beta_oracle / fan_oracle read the GROUND TRUTH (T0 diagnostics, never a result)",
+        "paired_vs_m2": {"ade6": d6, "ade2": BE.paired_row(PW["beta"]["ade2"], pw_m2["ade2"], eid, nb),
+                         "fde6": BE.paired_row(PW["beta"]["fde6"], pw_m2["fde6"], eid, nb), "families": fam,
+                         "estimator": "paired episode-cluster bootstrap, B=%d, episodes only" % nb},
+    }
+    shuf = BE.paired_row(PW["beta_shuf"]["ade6"], PW["beta"]["ade6"], eid, nb) if "beta_shuf" in PW else {"status": "UNAVAILABLE"}
+    ade_orc_fan = _ade(arms["beta_oracle"]["traj30_fan"].double().numpy(), gt)
+    rand, ceil = float(PW["fan_random"]["ade6"].mean()), float(PW["fan_oracle"]["ade6"].mean())
+    sig = {"oracle_fanonly_ade6": float(ade_orc_fan.mean()), "random_ade6": rand, "ceiling_ade6": ceil,
+           "recovery": BE.signal_recovery(rand, float(ade_orc_fan.mean()), ceil),
+           "oracle_minus_random": BE.paired_row(ade_orc_fan, PW["fan_random"]["ade6"], eid, nb)}
+    rep = arms["beta"]["replaced"].numpy()
+    out["controls"] = {"ade6_shuf_minus_beta": shuf}
+    out["diagnostics_T0"] = {"signal": sig,
+                             "beta_fanonly_ade6": float(_ade(arms["beta"]["traj30_fan"].double().numpy(), gt).mean())}
+    out["wm_diag"] = {"replaced_frac": float(rep.mean()), "fan_endpoint_spread_ratio": BETA.endpoint_spread_ratio(arms["beta"]),
+                      "oracle_fan_endpoint_spread_ratio": BETA.endpoint_spread_ratio(arms["beta_oracle"])}
+    out["admissibility"] = {"goal_computed_from": ["S checkpoints (ck_now)", "frozen P10 prior (p30)", "the WM's own z1 at NOW"],
+                            "never_read_by_the_goal": ["goal_prob", "lat_logits", "lon_logits", "cons_pred", "any v9 label", "ground truth"],
+                            "inference_keys_allowed": sorted(M.INFERENCE_INPUT_KEYS)}
+    out["decision_inputs"] = {"ade6_beta_minus_m2": d6, "ade6_shuf_minus_beta": shuf, "families": fam,
+                              "replaced_frac": out["wm_diag"]["replaced_frac"], "signal": sig}
+    npz = {"eid": eid, "beta__replaced": rep, "beta__fan_idx": arms["beta"]["fan_idx"].numpy()}
+    for name, p in PRED.items():
+        npz[f"{name}__pred"] = p
+        for k, v in (PW[name] if name != "m2" else {}).items():
+            npz[f"{name}__{k}"] = v
+        for k, v in FW[name].items():
+            npz[f"{name}__fw_{k}"] = v
+    return out, npz
+
+
+def cmd_compare_beta(a):
+    """The PREREG_V8F_BETA.md §3 verdict from the two training seeds' `run --plan beta` JSONs (`--runs s0=eval_X_s0.json s1=eval_X_s1.json`)."""
+    recs, m2, tags = [], [], []
+    for spec in a.runs:
+        tag, path = spec.split("=", 1)
+        with open(path, encoding="utf-8") as fh:
+            j = json.load(fh)
+        if j.get("plan") != "beta" or "plan_beta" not in j:
+            raise SystemExit(f"REFUSED: {path} is not a `run --plan beta` output")
+        recs.append(j["plan_beta"]["decision_inputs"])
+        m2.append(float(j["raw"]["traj"]["ade6_m"]["mean"]))
+        tags.append({"tag": tag, "ckpt": j.get("ckpt"), "n_windows": j["plan_beta"]["n_windows"]})
+    if len({t["ckpt"] for t in tags}) < len(tags):
+        raise SystemExit("REFUSED: two `--runs` name the same checkpoint -- the seed floor needs two TRAINING seeds")
+    out = BE.decide_beta(recs, m2)
+    out.update({"runs": tags, "m2_ade6_means": m2,
+                "estimator": "paired episode-cluster bootstrap per seed (episodes only); training-seed variance enters ONLY through F = |M2_s0 - M2_s1|"})
+    jdump(out, a.out)
+    print(json.dumps({k: out[k] for k in ("verdict", "next", "seed_floor_F_m", "threshold_2F_m", "P1_ade6_beats_m2_separated_beyond_2F",
+                                          "P2_shuffled_goal_control_loses", "P3_no_family_separated_worse", "families_separated_worse",
+                                          "inert", "replaced_frac") if k in out}, indent=1, default=float))
     return 0
 
 
@@ -442,8 +569,18 @@ def main(argv=None):
     p.add_argument("--nav-shuffle", action="store_true"); p.add_argument("--project", action="store_true")
     p.add_argument("--batch", type=int, default=64); p.add_argument("--lru", type=int, default=32)
     p.add_argument("--device", default="auto")
+    p.add_argument("--plan", choices=("none", "beta"), default="none",
+                   help="none (DEFAULT) = M2's own output only. beta = ALSO run the rung-beta gate: the checkpoint's world model ranks the "
+                        "117-candidate fan against a predicted goal latent (PREREG_V8F_BETA.md). A default that disables a mechanism must be "
+                        "NAMED in the arm's argv, or the arm did not test it.")
+    p.add_argument("--fan-artifact", default=None,
+                   help="anchors_117_alat_declared.pt (declared 'alat' controls); default = the pinned 13 x 9 grid, which is then NOT checked against the shipped file")
+    p.add_argument("--beta-chunk", type=int, default=16, help="windows per world-model scoring call (x 118 candidates)")
     p = sub.add_parser("compare"); common(p)
     p.add_argument("--runs", nargs="+", required=True); p.add_argument("--floors-npz", default=os.path.join(RAW, "eval", "floors_perwindow.npz"))
+    p.add_argument("--out", required=True)
+    p = sub.add_parser("compare-beta"); common(p)
+    p.add_argument("--runs", nargs=2, required=True, metavar="TAG=eval_X.json", help="the two training seeds' `run --plan beta` JSONs")
     p.add_argument("--out", required=True)
     a = ap.parse_args(argv)
     sub_p10 = "p10_yaw" if a.kin_mode == "yaw" else "p10"
@@ -455,7 +592,7 @@ def main(argv=None):
         grid, J, X = ctx_from_args(a)
         print(json.dumps(D.join_report(J), indent=1)[:3000])
         return 0
-    return {"floors": cmd_floors, "run": cmd_run, "compare": cmd_compare}[a.mode](a)
+    return {"floors": cmd_floors, "run": cmd_run, "compare": cmd_compare, "compare-beta": cmd_compare_beta}[a.mode](a)
 
 
 if __name__ == "__main__":

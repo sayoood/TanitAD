@@ -53,6 +53,8 @@ LIMITS_MS = (30 / 3.6, 50 / 3.6, 100 / 3.6, 120 / 3.6)
 #: (rad) in the legacy mode, the MEASURED yaw rate (rad/s) in the compliant one. 0.4 keeps the scaled channel's std at 0.255 vs the
 #: steer channel's 0.267 (MEASURED on the first 200 sha12 train clips: std omega 0.1022 rad/s, std steer 0.0802 rad).
 CH1_SCALE = {"steer": 0.3, "yaw": 0.4}
+#: the scale the WM auxiliary divides action channel 0 (longitudinal acceleration, m/s^2) by.
+WM_ACC_SCALE = 2.0
 #: EXACTLY the batch keys the inference path may read. Everything else (``lab*``, ``gt``, ``s_h``, ``lead_gap_h`` ...)
 #: is a label or an evaluator-side quantity and is never touched by ``forward_infer``.
 INFERENCE_INPUT_KEYS = frozenset({"feats", "frame_ok", "p10f", "act", "nav", "pose", "limit", "limit_ok", "base",
@@ -406,10 +408,19 @@ class WMAux(nn.Module):
         self.gamma = gamma
         self.ch1_scale = CH1_SCALE[cfg.kin_mode]
 
+    def z1(self, adapt: Tensor) -> Tensor:
+        """Level-1 latent of every cached frame: the mean-pooled adapter token, projected. ``adapt`` [B, F, n_tok, d] -> [B, F, D].
+        ONE spelling: ``forward`` (training) and rung beta's planner (``tanitad.models.v8f_beta``) both call it."""
+        return self.proj(adapt.mean(2))
+
+    def scale_actions(self, act: Tensor) -> Tensor:
+        """Raw action channels ``act`` [..., 2] = (a [m/s^2], ch1) -> the WM's action units. ch1 = the recorded steer (kin_mode steer) or
+        the MEASURED yaw rate (kin_mode yaw, PI ruling D-PI-YAWRATE-1). ONE spelling for training and for the beta planner."""
+        return torch.stack([act[..., 0] / WM_ACC_SCALE, act[..., 1] / self.ch1_scale], -1)
+
     def forward(self, adapt: Tensor, act: Tensor) -> dict:
-        z1 = self.proj(adapt.mean(2))                                           # [B, F, D]
-        # channel 1 = the recorded steer (kin_mode steer) or the MEASURED yaw rate (kin_mode yaw, PI ruling D-PI-YAWRATE-1)
-        a = torch.stack([act[..., 0] / 2.0, act[..., 1] / self.ch1_scale], -1)[:, :-1]     # action of the transition j -> j+1
+        z1 = self.z1(adapt)                                                     # [B, F, D]
+        a = self.scale_actions(act)[:, :-1]                                     # action of the transition j -> j+1
         return self.stack.loss(z1, a)
 
 
