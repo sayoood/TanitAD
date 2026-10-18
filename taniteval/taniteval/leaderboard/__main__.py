@@ -19,6 +19,8 @@ def main(argv=None) -> int:
     b = sub.add_parser("build", help="regenerate the BENCH section of LEADERBOARD.md and leaderboard.html")
     b.add_argument("--check", action="store_true", help="write nothing; exit 1 if out of date")
     b.add_argument("--no-html", action="store_true")
+    b.add_argument("--discard-hand-edits", action="store_true",
+                   help="replace a generated section that was edited by hand (or predates fingerprints) -- READ the lines it drops first")
     b.add_argument("--root", default=None, help="repo root (default: derived from this package's location)")
     fx = sub.add_parser("fixtures", help="write W1-schema summary.json fixtures converted from the banked legacy outputs")
     fx.add_argument("--out", required=True, help="fixture root; files land at <out>/<benchmark>/<split>/<run_id>/summary.json")
@@ -33,7 +35,7 @@ def main(argv=None) -> int:
             paths = write_fixtures(a.out)
             print(json.dumps({"written": paths}, indent=1))
             return 0
-        out = build(root=a.root, check=a.check, write_html=not a.no_html)
+        out = build(root=a.root, check=a.check, write_html=not a.no_html, discard_hand_edits=a.discard_hand_edits)
     except SourceError as e:
         print(f"REFUSED: {e}", file=sys.stderr)
         return 2

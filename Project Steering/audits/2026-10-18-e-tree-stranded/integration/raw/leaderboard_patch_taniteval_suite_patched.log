@@ -1,0 +1,498 @@
+.............................F.......................................... [  2%]
+........................................................................ [  5%]
+.....s................................F........................F........ [  8%]
+.................................F...F.................................. [ 11%]
+.....................ss...s....ssssss................................... [ 13%]
+........................................................................ [ 16%]
+........................................................................ [ 19%]
+........................................................................ [ 22%]
+........................................................................ [ 24%]
+..................................................s.....sss............. [ 27%]
+..........................................sss.s..sss.................... [ 30%]
+........................................................................ [ 33%]
+............s........................................................... [ 35%]
+.....................................................................F.. [ 38%]
+........................................................................ [ 41%]
+........................................................................ [ 44%]
+..................................ss.................................... [ 46%]
+......................................s................................. [ 49%]
+........................................................................ [ 52%]
+........................................................................ [ 55%]
+........................................................................ [ 57%]
+........................................................................ [ 60%]
+........................................................................ [ 63%]
+........................................................................ [ 66%]
+...................................ss................................... [ 69%]
+........................................................................ [ 71%]
+........................................................................ [ 74%]
+........................................................................ [ 77%]
+........................................................................ [ 80%]
+...................................sFFFFFFFFF...F....................... [ 82%]
+........................................................................ [ 85%]
+.........................ssssss......................................... [ 88%]
+........................................................................ [ 91%]
+.......................F................................................ [ 93%]
+........................................................................ [ 96%]
+........................................................................ [ 99%]
+...............                                                          [100%]
+================================== FAILURES ===================================
+____________ test_export_agent_inputs_is_e2_plus_marked_additions _____________
+
+    def test_export_agent_inputs_is_e2_plus_marked_additions():
+        """The single-stage export lives in MARKED blocks: stripping them (the promotion test's own rule)
+        must reproduce E2's origin BYTE-FOR-BYTE, and the two-stage path is therefore untouched."""
+        from test_bench_suite_promotion import _blob, _strip_w1_additions
+        bench = REPO / "taniteval" / "taniteval" / "bench"
+        prov = json.loads((bench / "navsim/devkit_side/PROVENANCE.json").read_text(encoding="utf-8"))
+        rec = prov["files"]["export_agent_inputs.py"]
+        assert rec.get("w1_additions"), "the addition must be declared in PROVENANCE.json"
+        raw = (bench / "navsim/devkit_side/export_agent_inputs.py").read_bytes()
+        product = raw.decode("utf-8")
+        origin = (REPO / rec["origin"]).read_bytes().decode("utf-8")
+>       assert _blob(raw) == rec["blob"]
+E       AssertionError: assert '79147d95582f...81bd1a00b5f2e' == 'fe88f5e0002c...56a464589a41e'
+E         
+E         - fe88f5e0002cf8efbff5882cd9056a464589a41e
+E         + 79147d95582f84eea6b01b68fef81bd1a00b5f2e
+
+tests\test_bench_navsim_navtest_single_stage.py:270: AssertionError
+_______ test_devkit_side_blobs_are_raw_byte_git_blobs_of_the_whole_tree _______
+
+    def test_devkit_side_blobs_are_raw_byte_git_blobs_of_the_whole_tree():
+        from taniteval.bench.navsim import scoring as SC
+        blobs = SC._devkit_side_blobs()
+        names = sorted(k.split("devkit_side/")[-1] for k in blobs)
+        assert names == ["PROVENANCE.json", "export_agent_inputs.py", "navsim_win.py",
+                         "reaggregate.py", "tanitad_seam_agent.py",
+                         "write_cache_metadata.py"]          # W8 2026-09-26: the single-stage cache finaliser
+        assert all(len(v) == 40 for v in blobs.values())
+        # the RAW-byte basis is load-bearing: it must agree with the promotion record, which is raw bytes
+        import json
+        prov = json.loads((Path(__file__).resolve().parents[1]
+                           / "taniteval/bench/navsim/devkit_side/PROVENANCE.json").read_text(encoding="utf-8"))
+>       assert blobs[NAVSIM_WIN] == prov["files"]["navsim_win.py"]["blob"]
+E       AssertionError: assert '451929ebb0cd...c48098dd916f1' == '935fa44c459a...c5b95394ece54'
+E         
+E         - 935fa44c459a3ee52c5582db288c5b95394ece54
+E         + 451929ebb0cd6a4b9ea935f1cecc48098dd916f1
+
+tests\test_bench_suite_navsim_offline.py:358: AssertionError
+_____________ test_devkit_side_files_are_byte_identical_to_origin _____________
+
+    def test_devkit_side_files_are_byte_identical_to_origin():
+        prov = json.loads((BENCH / "navsim/devkit_side/PROVENANCE.json").read_text(encoding="utf-8"))
+        assert set(prov["files"]) == {"navsim_win.py", "tanitad_seam_agent.py", "export_agent_inputs.py"}
+        for name, rec in prov["files"].items():
+            b = (BENCH / "navsim/devkit_side" / name).read_bytes()
+            ob = (REPO / rec["origin"]).read_bytes()
+>           assert _blob(b) == rec["blob"], f"{name}: PROVENANCE blob is stale"
+E           AssertionError: navsim_win.py: PROVENANCE blob is stale
+E           assert '451929ebb0cd...c48098dd916f1' == '935fa44c459a...c5b95394ece54'
+E             
+E             - 935fa44c459a3ee52c5582db288c5b95394ece54
+E             + 451929ebb0cd6a4b9ea935f1cecc48098dd916f1
+
+tests\test_bench_suite_promotion.py:138: AssertionError
+____________ test_no_approval_exists_in_the_real_committed_records ____________
+
+    def test_no_approval_exists_in_the_real_committed_records():
+        """MEASURED: today no PI record carries a SUBMISSION-APPROVED line, so every submission refuses."""
+        recs = S.read_committed_records()
+>       assert recs, "no PI decision record could be read from HEAD — the gate must then refuse anyway"
+E       AssertionError: no PI decision record could be read from HEAD — the gate must then refuse anyway
+E       assert {}
+
+tests\test_bench_suite_submission.py:40: AssertionError
+__________________ test_worktree_only_marker_does_not_count ___________________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-5548/test_worktree_only_marker_does0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001B805768EC0>
+
+    def test_worktree_only_marker_does_not_count(tmp_path, monkeypatch):
+        """The records are read from HEAD (`git show HEAD:<file>`), so an agent's worktree edit cannot
+        manufacture an approval."""
+        import subprocess
+        out = subprocess.run(["git", "-c", "safe.directory=*", "-C", str(S.REPO), "show",
+                              "HEAD:Project Steering/PI_DECISION_QUEUE.md"], capture_output=True, text=True,
+                             encoding="utf-8", errors="replace")
+>       assert out.returncode == 0 and "SUBMISSION-APPROVED" not in out.stdout
+E       AssertionError: assert (128 == 0)
+E        +  where 128 = CompletedProcess(args=['git', '-c', 'safe.directory=*', '-C', 'C:\\Users\\Admin\\lbfix\\full', 'show', 'HEAD:Project S...QUEUE.md'], returncode=128, stdout='', stderr='fatal: not a git repository (or any of the parent directories): .git\n').returncode
+
+tests\test_bench_suite_submission.py:77: AssertionError
+______________________ test_cli_help_works_without_a_gpu ______________________
+
+    @pytest.mark.skipif(not TOOL.exists(), reason="tool missing")
+    def test_cli_help_works_without_a_gpu():
+        """--help must not import torch.cuda or a checkpoint. A tool whose --help
+        needs a GPU cannot be inspected on the box you are debugging from."""
+        r = subprocess.run([sys.executable, str(TOOL), "--help"],
+                           capture_output=True, text=True, timeout=120)
+>       assert r.returncode == 0, r.stderr[-800:]
+E       AssertionError: y", line 1124, in __call__
+E             parser.print_help()
+E             ~~~~~~~~~~~~~~~~~^^
+E           File "C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\argparse.py", line 2628, in print_help
+E             self._print_message(self.format_help(), file)
+E             ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\argparse.py", line 2634, in _print_message
+E             file.write(message)
+E             ~~~~~~~~~~^^^^^^^^^
+E           File "C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\encodings\cp1252.py", line 19, in encode
+E             return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+E                    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E         UnicodeEncodeError: 'charmap' codec can't encode character '\u26d4' in position 1266: character maps to <undefined>
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['C:\\Users\\Admin\\venvs\\tanitad\\Scripts\\python.exe', 'C:\\Users\\Admin\\lbfix\\full\\tanite...eEncodeError: \'charmap\' codec can\'t encode character \'\\u26d4\' in position 1266: character maps to <undefined>\n').returncode
+
+tests\test_eval_four_families_tool.py:165: AssertionError
+_______________________ test_the_tool_exists_and_parses _______________________
+
+    def test_the_tool_exists_and_parses():
+        assert TOOL.exists()
+>       ast.parse(_src())
+                  ^^^^^^
+
+tests\test_render_openloop_video.py:30: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_render_openloop_video.py:25: in _src
+    return TOOL.read_text()
+           ^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:633: in read_text
+    return f.read()
+           ^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <encodings.cp1252.IncrementalDecoder object at 0x000001B8C4AC8D70>
+input = b'#!/usr/bin/env python3\r\n"""LONG open-loop videos: camera + GT/pred trajectory overlays + a large metric BEV.\r\n\r...dered_m\']:.4f} m")\r\n    _p(f"[video] sidecar {a.out}.json")\r\n\r\n\r\nif __name__ == "__main__":\r\n    main()\r\n'
+final = True
+
+    def decode(self, input, final=False):
+>       return codecs.charmap_decode(input,self.errors,decoding_table)[0]
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       UnicodeDecodeError: 'charmap' codec can't decode byte 0x8f in position 734: character maps to <undefined>
+
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\encodings\cp1252.py:23: UnicodeDecodeError
+_________ test_every_frame_carries_the_fidelity_and_open_loop_labels __________
+
+    def test_every_frame_carries_the_fidelity_and_open_loop_labels():
+        """\u26d4 The banner is drawn per frame, so a clip cut out of the reel keeps the
+        caveat. A README beside the mp4 does not travel with the mp4."""
+>       s = _src()
+            ^^^^^^
+
+tests\test_render_openloop_video.py:36: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_render_openloop_video.py:25: in _src
+    return TOOL.read_text()
+           ^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:633: in read_text
+    return f.read()
+           ^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <encodings.cp1252.IncrementalDecoder object at 0x000001B9002B9400>
+input = b'#!/usr/bin/env python3\r\n"""LONG open-loop videos: camera + GT/pred trajectory overlays + a large metric BEV.\r\n\r...dered_m\']:.4f} m")\r\n    _p(f"[video] sidecar {a.out}.json")\r\n\r\n\r\nif __name__ == "__main__":\r\n    main()\r\n'
+final = True
+
+    def decode(self, input, final=False):
+>       return codecs.charmap_decode(input,self.errors,decoding_table)[0]
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       UnicodeDecodeError: 'charmap' codec can't decode byte 0x8f in position 734: character maps to <undefined>
+
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\encodings\cp1252.py:23: UnicodeDecodeError
+_______ test_the_selection_is_named_in_the_banner_not_only_the_sidecar ________
+
+    def test_the_selection_is_named_in_the_banner_not_only_the_sidecar():
+        """A cherry-picked reel must not be quotable as a representative one."""
+>       s = _src()
+            ^^^^^^
+
+tests\test_render_openloop_video.py:46: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_render_openloop_video.py:25: in _src
+    return TOOL.read_text()
+           ^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:633: in read_text
+    return f.read()
+           ^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <encodings.cp1252.IncrementalDecoder object at 0x000001B9002B97C0>
+input = b'#!/usr/bin/env python3\r\n"""LONG open-loop videos: camera + GT/pred trajectory overlays + a large metric BEV.\r\n\r...dered_m\']:.4f} m")\r\n    _p(f"[video] sidecar {a.out}.json")\r\n\r\n\r\nif __name__ == "__main__":\r\n    main()\r\n'
+final = True
+
+    def decode(self, input, final=False):
+>       return codecs.charmap_decode(input,self.errors,decoding_table)[0]
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       UnicodeDecodeError: 'charmap' codec can't decode byte 0x8f in position 734: character maps to <undefined>
+
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\encodings\cp1252.py:23: UnicodeDecodeError
+_________________ test_there_is_no_silent_selection_fallback __________________
+
+    def test_there_is_no_silent_selection_fallback():
+        """An earlier version offered --select worst/best and silently rendered
+        'spread' for both — a reel labelled 'worst' that was nothing of the kind."""
+>       tree = ast.parse(_src())
+                         ^^^^^^
+
+tests\test_render_openloop_video.py:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_render_openloop_video.py:25: in _src
+    return TOOL.read_text()
+           ^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:633: in read_text
+    return f.read()
+           ^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <encodings.cp1252.IncrementalDecoder object at 0x000001B821081720>
+input = b'#!/usr/bin/env python3\r\n"""LONG open-loop videos: camera + GT/pred trajectory overlays + a large metric BEV.\r\n\r...dered_m\']:.4f} m")\r\n    _p(f"[video] sidecar {a.out}.json")\r\n\r\n\r\nif __name__ == "__main__":\r\n    main()\r\n'
+final = True
+
+    def decode(self, input, final=False):
+>       return codecs.charmap_decode(input,self.errors,decoding_table)[0]
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       UnicodeDecodeError: 'charmap' codec can't decode byte 0x8f in position 734: character maps to <undefined>
+
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\encodings\cp1252.py:23: UnicodeDecodeError
+_________________ test_explicit_episode_list_is_range_checked _________________
+
+    def test_explicit_episode_list_is_range_checked():
+>       s = _src()
+            ^^^^^^
+
+tests\test_render_openloop_video.py:72: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_render_openloop_video.py:25: in _src
+    return TOOL.read_text()
+           ^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:633: in read_text
+    return f.read()
+           ^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <encodings.cp1252.IncrementalDecoder object at 0x000001B8210817C0>
+input = b'#!/usr/bin/env python3\r\n"""LONG open-loop videos: camera + GT/pred trajectory overlays + a large metric BEV.\r\n\r...dered_m\']:.4f} m")\r\n    _p(f"[video] sidecar {a.out}.json")\r\n\r\n\r\nif __name__ == "__main__":\r\n    main()\r\n'
+final = True
+
+    def decode(self, input, final=False):
+>       return codecs.charmap_decode(input,self.errors,decoding_table)[0]
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       UnicodeDecodeError: 'charmap' codec can't decode byte 0x8f in position 734: character maps to <undefined>
+
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\encodings\cp1252.py:23: UnicodeDecodeError
+__________ test_the_encoder_is_resolved_before_any_frame_is_rendered __________
+
+    def test_the_encoder_is_resolved_before_any_frame_is_rendered():
+        """MEASURED on pod4: ffmpeg is absent and apt has no package lists. Finding
+        that at the encode step throws away every rendered frame."""
+>       s = _src()
+            ^^^^^^
+
+tests\test_render_openloop_video.py:80: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_render_openloop_video.py:25: in _src
+    return TOOL.read_text()
+           ^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:633: in read_text
+    return f.read()
+           ^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <encodings.cp1252.IncrementalDecoder object at 0x000001B821083F20>
+input = b'#!/usr/bin/env python3\r\n"""LONG open-loop videos: camera + GT/pred trajectory overlays + a large metric BEV.\r\n\r...dered_m\']:.4f} m")\r\n    _p(f"[video] sidecar {a.out}.json")\r\n\r\n\r\nif __name__ == "__main__":\r\n    main()\r\n'
+final = True
+
+    def decode(self, input, final=False):
+>       return codecs.charmap_decode(input,self.errors,decoding_table)[0]
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       UnicodeDecodeError: 'charmap' codec can't decode byte 0x8f in position 734: character maps to <undefined>
+
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\encodings\cp1252.py:23: UnicodeDecodeError
+______________ test_the_bev_is_declared_calibration_independent _______________
+
+    def test_the_bev_is_declared_calibration_independent():
+        """The camera panel depends on a projection model; the BEV does not. That is
+        why it is a full panel here and not a 152 px inset — if they disagree, the
+        projection is wrong and the BEV is the one to believe."""
+>       s = _src()
+            ^^^^^^
+
+tests\test_render_openloop_video.py:88: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_render_openloop_video.py:25: in _src
+    return TOOL.read_text()
+           ^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:633: in read_text
+    return f.read()
+           ^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <encodings.cp1252.IncrementalDecoder object at 0x000001B9002791D0>
+input = b'#!/usr/bin/env python3\r\n"""LONG open-loop videos: camera + GT/pred trajectory overlays + a large metric BEV.\r\n\r...dered_m\']:.4f} m")\r\n    _p(f"[video] sidecar {a.out}.json")\r\n\r\n\r\nif __name__ == "__main__":\r\n    main()\r\n'
+final = True
+
+    def decode(self, input, final=False):
+>       return codecs.charmap_decode(input,self.errors,decoding_table)[0]
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       UnicodeDecodeError: 'charmap' codec can't decode byte 0x8f in position 734: character maps to <undefined>
+
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\encodings\cp1252.py:23: UnicodeDecodeError
+___________ test_out_refuses_a_directory_before_the_expensive_work ____________
+
+    def test_out_refuses_a_directory_before_the_expensive_work():
+>       s = _src()
+            ^^^^^^
+
+tests\test_render_openloop_video.py:93: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_render_openloop_video.py:25: in _src
+    return TOOL.read_text()
+           ^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:633: in read_text
+    return f.read()
+           ^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <encodings.cp1252.IncrementalDecoder object at 0x000001B9002793B0>
+input = b'#!/usr/bin/env python3\r\n"""LONG open-loop videos: camera + GT/pred trajectory overlays + a large metric BEV.\r\n\r...dered_m\']:.4f} m")\r\n    _p(f"[video] sidecar {a.out}.json")\r\n\r\n\r\nif __name__ == "__main__":\r\n    main()\r\n'
+final = True
+
+    def decode(self, input, final=False):
+>       return codecs.charmap_decode(input,self.errors,decoding_table)[0]
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       UnicodeDecodeError: 'charmap' codec can't decode byte 0x8f in position 734: character maps to <undefined>
+
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\encodings\cp1252.py:23: UnicodeDecodeError
+__________ test_frames_come_from_RawEp_feats_not_a_frames_attribute ___________
+
+    def test_frames_come_from_RawEp_feats_not_a_frames_attribute():
+        """``data.RawEp`` exposes the stack as ``.feats``; ``.frames`` raises. Caught
+        at runtime once — pinned so it is caught at test time next."""
+        from taniteval.data import RawEp
+        assert hasattr(RawEp, "__init__")
+>       assert "ep.feats[t, -3:]" in _src()
+                                     ^^^^^^
+
+tests\test_render_openloop_video.py:102: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_render_openloop_video.py:25: in _src
+    return TOOL.read_text()
+           ^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:633: in read_text
+    return f.read()
+           ^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <encodings.cp1252.IncrementalDecoder object at 0x000001B900278F00>
+input = b'#!/usr/bin/env python3\r\n"""LONG open-loop videos: camera + GT/pred trajectory overlays + a large metric BEV.\r\n\r...dered_m\']:.4f} m")\r\n    _p(f"[video] sidecar {a.out}.json")\r\n\r\n\r\nif __name__ == "__main__":\r\n    main()\r\n'
+final = True
+
+    def decode(self, input, final=False):
+>       return codecs.charmap_decode(input,self.errors,decoding_table)[0]
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       UnicodeDecodeError: 'charmap' codec can't decode byte 0x8f in position 734: character maps to <undefined>
+
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\encodings\cp1252.py:23: UnicodeDecodeError
+______________________ test_cli_help_works_without_a_gpu ______________________
+
+    def test_cli_help_works_without_a_gpu():
+        r = subprocess.run([sys.executable, str(TOOL), "--help"],
+                           capture_output=True, text=True, timeout=120)
+>       assert r.returncode == 0, r.stderr[-800:]
+E       AssertionError: py", line 1124, in __call__
+E             parser.print_help()
+E             ~~~~~~~~~~~~~~~~~^^
+E           File "C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\argparse.py", line 2628, in print_help
+E             self._print_message(self.format_help(), file)
+E             ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\argparse.py", line 2634, in _print_message
+E             file.write(message)
+E             ~~~~~~~~~~^^^^^^^^^
+E           File "C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\encodings\cp1252.py", line 19, in encode
+E             return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+E                    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E         UnicodeEncodeError: 'charmap' codec can't encode character '\u26d4' in position 947: character maps to <undefined>
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['C:\\Users\\Admin\\venvs\\tanitad\\Scripts\\python.exe', 'C:\\Users\\Admin\\lbfix\\full\\tanite...deEncodeError: \'charmap\' codec can\'t encode character \'\\u26d4\' in position 947: character maps to <undefined>\n').returncode
+
+tests\test_render_openloop_video.py:156: AssertionError
+______________________ test_cli_help_works_without_a_gpu ______________________
+
+    def test_cli_help_works_without_a_gpu():
+        r = subprocess.run([sys.executable, str(TOOL), "--help"],
+                           capture_output=True, text=True, timeout=120)
+>       assert r.returncode == 0, r.stderr[-800:]
+E       AssertionError: y", line 1124, in __call__
+E             parser.print_help()
+E             ~~~~~~~~~~~~~~~~~^^
+E           File "C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\argparse.py", line 2628, in print_help
+E             self._print_message(self.format_help(), file)
+E             ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\argparse.py", line 2634, in _print_message
+E             file.write(message)
+E             ~~~~~~~~~~^^^^^^^^^
+E           File "C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\encodings\cp1252.py", line 19, in encode
+E             return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+E                    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E         UnicodeEncodeError: 'charmap' codec can't encode character '\u26d4' in position 4157: character maps to <undefined>
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['C:\\Users\\Admin\\venvs\\tanitad\\Scripts\\python.exe', 'C:\\Users\\Admin\\lbfix\\full\\tanite...eEncodeError: \'charmap\' codec can\'t encode character \'\\u26d4\' in position 4157: character maps to <undefined>\n').returncode
+
+tests\test_t1_eval.py:348: AssertionError
+============================== warnings summary ===============================
+tests/test_clhorizon.py::TestArmAIsNotFaked::test_arm_A_is_NOT_MEASURED_rather_than_zero_filled
+  C:\Users\Admin\lbfix\full\taniteval\taniteval\ci.py:171: RuntimeWarning: Mean of empty slice
+    return float(np.nanmean(v))
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_bench_navsim_navtest_single_stage.py::test_export_agent_inputs_is_e2_plus_marked_additions
+FAILED tests/test_bench_suite_navsim_offline.py::test_devkit_side_blobs_are_raw_byte_git_blobs_of_the_whole_tree
+FAILED tests/test_bench_suite_promotion.py::test_devkit_side_files_are_byte_identical_to_origin
+FAILED tests/test_bench_suite_submission.py::test_no_approval_exists_in_the_real_committed_records
+FAILED tests/test_bench_suite_submission.py::test_worktree_only_marker_does_not_count
+FAILED tests/test_eval_four_families_tool.py::test_cli_help_works_without_a_gpu
+FAILED tests/test_render_openloop_video.py::test_the_tool_exists_and_parses
+FAILED tests/test_render_openloop_video.py::test_every_frame_carries_the_fidelity_and_open_loop_labels
+FAILED tests/test_render_openloop_video.py::test_the_selection_is_named_in_the_banner_not_only_the_sidecar
+FAILED tests/test_render_openloop_video.py::test_there_is_no_silent_selection_fallback
+FAILED tests/test_render_openloop_video.py::test_explicit_episode_list_is_range_checked
+FAILED tests/test_render_openloop_video.py::test_the_encoder_is_resolved_before_any_frame_is_rendered
+FAILED tests/test_render_openloop_video.py::test_the_bev_is_declared_calibration_independent
+FAILED tests/test_render_openloop_video.py::test_out_refuses_a_directory_before_the_expensive_work
+FAILED tests/test_render_openloop_video.py::test_frames_come_from_RawEp_feats_not_a_frames_attribute
+FAILED tests/test_render_openloop_video.py::test_cli_help_works_without_a_gpu
+FAILED tests/test_t1_eval.py::test_cli_help_works_without_a_gpu - AssertionEr...
+17 failed, 2556 passed, 34 skipped, 1 warning in 500.08s (0:08:20)

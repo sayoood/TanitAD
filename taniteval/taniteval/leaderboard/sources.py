@@ -137,8 +137,15 @@ def family_metrics(block: dict, invert: bool = False, flat: bool = False) -> lis
     for fam, name, m in items:
         if "delta" in m and m.get("lo") is not None:
             iv = _interval(m, invert)
-            out.append({"family": fam, "metric": name, **iv, "higher_is_better": _higher_is_better(name, m),
-                        "n": m.get("n") or m.get("n_windows")})
+            e = {"family": fam, "metric": name, **iv, "higher_is_better": _higher_is_better(name, m),
+                 "n": m.get("n") or m.get("n_windows")}
+            if isinstance(m.get("_unmasked"), dict):
+                # a cell CORRECTED in a derived input record (e.g. RETR-2026-09-26-YAWMASK): the page prints the
+                # corrected value WITH what the cell read before, from the record — never from a hand edit
+                e["unmasked"] = _interval(m["_unmasked"], invert)
+                e["masked_by"] = m.get("_masked_by")
+                e["n_total"] = (m.get("n_windows") or 0) + (m.get("n_dropped_nonfinite") or 0)
+            out.append(e)
         elif "reason" in m or m.get("status") == "UNAVAILABLE":
             out.append({"family": fam, "metric": name, "not_measured": m.get("reason", "UNAVAILABLE"), "n": m.get("n", 0)})
     out.sort(key=lambda x: (_FAMILY_ORDER.get(x["family"], 9), x["metric"]))
@@ -253,9 +260,13 @@ def summary_rows(s: dict, where: str, root: Path) -> list:
             ck = "⛔ UNIDENTIFIED — `provenance.ckpt.registry_key_display` is present but NULL in the artifact"
         else:
             ck = ck["registry_key_display"]
+    # ⛔ the #151 side is READ from the producer's structured field, never inferred from the devkit wording:
+    # a table places our row by it (single-stage EPDMS mixes pre-/post-#151 published rows)
+    hz = prov.get("harness") if isinstance(prov.get("harness"), dict) else {}
     meta = {"protocol": s["protocol"], "run_id": s["run_id"], "source": where,
             "source_sha12": (prov.get("source_sha256") or "")[:12],
             "harness": dev or "—", "ckpt": ck or "—",
+            "fix151": hz.get("fix151"), "fix151_basis": hz.get("basis"),
             "tier_loop": prov.get("tier_loop") or _tier_loop(s["stamps"]),
             "converted": bool(prov.get("not_produced_by_bench_cli")), "converted_from": prov.get("source"),
             "headline_name": s["headline_metric"]["name"], "claim_bearing": s["claim_bearing"]}
@@ -285,6 +296,8 @@ def summary_rows(s: dict, where: str, root: Path) -> list:
         reason = h.get("reason") if off is None else None
         rows.append({**meta, "key": name, "label": a.get("label", name), "kind": a.get("role", a["kind"]),
                      "arm_status": a.get("status", "OK"),
+                     # W8 writes caveats as {"id", "one_line"} objects: carry the producer's own ids, never a repr
+                     "caveats": [c.get("id", "?") if isinstance(c, dict) else str(c) for c in (a.get("caveats") or [])],
                      "declared": ", ".join(a["declared_inputs"]), "official_x100": off,
                      # ⚠️ 'hybrid' means ONE specific refusal (a CV stand-in stage 1). Any other missing
                      # headline is printed with the artifact's own reason — never relabelled as HYBRID.
@@ -337,12 +350,30 @@ def bench_tree_state(root: Path, cfg: dict) -> dict:
     return out
 
 
+def tombstone_of(summary_path: Path):
+    """The withdrawal record next to a run, or None. ``taniteval/results/bench/**`` is APPEND-ONLY (W4, 2026-09-20):
+    a withdrawn run keeps its ``summary.json`` as the record and gains a ``TOMBSTONE.json`` beside it.
+
+    ⛔ MEASURED 2026-09-26: this loader never looked for it, so the next build would have printed FOUR withdrawn
+    refcv4b navhard runs as live result blocks beside the run that superseded them. A tombstone that cannot be
+    READ is refused loudly — never treated as "not withdrawn"."""
+    t = Path(summary_path).with_name("TOMBSTONE.json")
+    if not t.exists():
+        return None
+    d = load_json(t)
+    if str(d.get("TOMBSTONE")).lower() != "true":
+        raise SourceError(f"{t}: a TOMBSTONE.json whose TOMBSTONE field is {d.get('TOMBSTONE')!r} — refusing to guess")
+    return {"superseded_by": d.get("superseded_by"), "why": d.get("why"), "removed_utc": d.get("removed_utc")}
+
+
 def load_bench_runs(root: Path, cfg: dict) -> tuple:
-    """Real W1 runs: taniteval/results/bench/<benchmark>/<split>/<run_id>/summary.json."""
+    """Real W1 runs: taniteval/results/bench/<benchmark>/<split>/<run_id>/summary.json. Each row carries the run's
+    ``tombstone`` (None for a live run); ``build.load_model`` keeps withdrawn rows out of every results table."""
     rows, summaries = [], []
     for f in sorted(glob.glob(str(root / cfg["bench_glob"]))):
         s = load_json(Path(f))
-        rows += summary_rows(s, rel(Path(f), root), root)
+        tomb = tombstone_of(Path(f))
+        rows += [{**r, "tombstone": tomb} for r in summary_rows(s, rel(Path(f), root), root)]
         summaries.append(s)
     return rows, summaries
 

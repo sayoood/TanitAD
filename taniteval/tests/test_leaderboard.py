@@ -52,7 +52,7 @@ def _strip_section(text: str, mode: str) -> str:
 def test_delete_the_section_and_build_returns_it_byte_identical(tmp_path, mode):
     host = tmp_path / "LEADERBOARD.md"
     host.write_bytes(PAGE.read_bytes())
-    run_build(md_path=host, write_html=False)                     # insert (the page may have no markers yet)
+    run_build(md_path=host, write_html=False, discard_hand_edits=True)                     # insert (the page may have no markers yet)
     full = host.read_bytes()
     host.write_bytes(_strip_section(full.decode("utf-8"), mode).encode("utf-8"))
     assert host.read_bytes() != full, "the strip helper deleted nothing"
@@ -63,7 +63,7 @@ def test_delete_the_section_and_build_returns_it_byte_identical(tmp_path, mode):
 def test_build_is_idempotent_and_reports_no_change(tmp_path):
     host = tmp_path / "LEADERBOARD.md"
     host.write_bytes(PAGE.read_bytes())
-    run_build(md_path=host, write_html=False)
+    run_build(md_path=host, write_html=False, discard_hand_edits=True)
     first = host.read_bytes()
     out = run_build(md_path=host, write_html=False)
     assert out["md_changed"] is False and host.read_bytes() == first
@@ -73,7 +73,7 @@ def test_hand_written_bytes_outside_the_markers_are_untouched(tmp_path):
     host = tmp_path / 'LEADERBOARD.md'
     original = PAGE.read_bytes().decode('utf-8')
     host.write_bytes(original.encode('utf-8'))
-    run_build(md_path=host, write_html=False)
+    run_build(md_path=host, write_html=False, discard_hand_edits=True)
     new = host.read_bytes().decode('utf-8')
     b, e = CFG['markers']['begin'], CFG['markers']['end']
     nl = '\r\n'
@@ -87,7 +87,7 @@ def test_hand_written_bytes_outside_the_markers_are_untouched(tmp_path):
 def test_crlf_is_preserved(tmp_path):
     host = tmp_path / "LEADERBOARD.md"
     host.write_bytes(PAGE.read_bytes())
-    run_build(md_path=host, write_html=False)
+    run_build(md_path=host, write_html=False, discard_hand_edits=True)
     raw = host.read_bytes()
     assert raw.count(b"\r\n") == raw.count(b"\n"), "a lone LF appeared in a CRLF file"
 
@@ -239,7 +239,7 @@ def test_html_uses_w5_components_when_importable(tmp_path):
     pytest.importorskip("taniteval.benchreport.charts")
     host, html = tmp_path / "x.md", tmp_path / "x.html"
     host.write_bytes(PAGE.read_bytes())
-    run_build(md_path=host, html_path=html, write_html=True)
+    run_build(md_path=host, html_path=html, write_html=True, discard_hand_edits=True)
     text = html.read_text(encoding="utf-8")
     assert "<svg" in text, "W5's chart components produced no figure"
     assert 'id="stamp"' in text, "W5's page shell was not used"
@@ -409,7 +409,7 @@ def test_a_build_refuses_when_the_w1_results_tree_moves_under_it(tmp_path, monke
     generator failed its own acceptance. A page assembled from a moving tree may cite a deleted run."""
     host = tmp_path / "LEADERBOARD.md"
     host.write_bytes(PAGE.read_bytes())
-    run_build(md_path=host, write_html=False)                       # control: a still tree builds
+    run_build(md_path=host, write_html=False, discard_hand_edits=True)                       # control: a still tree builds
     real, calls = S.bench_tree_state, {"n": 0}
 
     def flaky(root, cfg):
