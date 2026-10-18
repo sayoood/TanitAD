@@ -1,0 +1,37 @@
+# E-only lines of taniteval/taniteval/leaderboard/sources.py  (E lines absent from the tip blob; CR-normalised; E line numbers)
+# tip blob last changed in 24d5ce2; E mtime 2026-09-26 22:48; verdict: NEW-DRAFT-vs-TIP (no E-HEAD base; E has lines the tip lacks)
+140:             e = {"family": fam, "metric": name, **iv, "higher_is_better": _higher_is_better(name, m),
+141:                  "n": m.get("n") or m.get("n_windows")}
+142:             if isinstance(m.get("_unmasked"), dict):
+143:                 # a cell CORRECTED in a derived input record (e.g. RETR-2026-09-26-YAWMASK): the page prints the
+144:                 # corrected value WITH what the cell read before, from the record — never from a hand edit
+145:                 e["unmasked"] = _interval(m["_unmasked"], invert)
+146:                 e["masked_by"] = m.get("_masked_by")
+147:                 e["n_total"] = (m.get("n_windows") or 0) + (m.get("n_dropped_nonfinite") or 0)
+148:             out.append(e)
+263:     # ⛔ the #151 side is READ from the producer's structured field, never inferred from the devkit wording:
+264:     # a table places our row by it (single-stage EPDMS mixes pre-/post-#151 published rows)
+265:     hz = prov.get("harness") if isinstance(prov.get("harness"), dict) else {}
+269:             "fix151": hz.get("fix151"), "fix151_basis": hz.get("basis"),
+299:                      # W8 writes caveats as {"id", "one_line"} objects: carry the producer's own ids, never a repr
+300:                      "caveats": [c.get("id", "?") if isinstance(c, dict) else str(c) for c in (a.get("caveats") or [])],
+353: def tombstone_of(summary_path: Path):
+354:     """The withdrawal record next to a run, or None. ``taniteval/results/bench/**`` is APPEND-ONLY (W4, 2026-09-20):
+355:     a withdrawn run keeps its ``summary.json`` as the record and gains a ``TOMBSTONE.json`` beside it.
+356: 
+357:     ⛔ MEASURED 2026-09-26: this loader never looked for it, so the next build would have printed FOUR withdrawn
+358:     refcv4b navhard runs as live result blocks beside the run that superseded them. A tombstone that cannot be
+359:     READ is refused loudly — never treated as "not withdrawn"."""
+360:     t = Path(summary_path).with_name("TOMBSTONE.json")
+361:     if not t.exists():
+362:         return None
+363:     d = load_json(t)
+364:     if str(d.get("TOMBSTONE")).lower() != "true":
+365:         raise SourceError(f"{t}: a TOMBSTONE.json whose TOMBSTONE field is {d.get('TOMBSTONE')!r} — refusing to guess")
+366:     return {"superseded_by": d.get("superseded_by"), "why": d.get("why"), "removed_utc": d.get("removed_utc")}
+367: 
+368: 
+370:     """Real W1 runs: taniteval/results/bench/<benchmark>/<split>/<run_id>/summary.json. Each row carries the run's
+371:     ``tombstone`` (None for a live run); ``build.load_model`` keeps withdrawn rows out of every results table."""
+375:         tomb = tombstone_of(Path(f))
+376:         rows += [{**r, "tombstone": tomb} for r in summary_rows(s, rel(Path(f), root), root)]

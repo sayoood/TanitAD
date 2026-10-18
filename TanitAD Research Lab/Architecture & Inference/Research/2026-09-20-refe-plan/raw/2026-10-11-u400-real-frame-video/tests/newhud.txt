@@ -1,0 +1,55 @@
+def hud(canvas, d):
+    hx, hy, hw, hh = HUD
+    cv2.rectangle(canvas, (hx, hy), (hx + hw, hy + hh), (24, 24, 28), -1)
+    x0, y0 = hx + 18, hy + 26
+    R.text(canvas, "NAV COMMAND (agent input)", (x0, y0), 0.55, (200, 200, 205), 1, False)
+    for j, nm in enumerate(CMDN):
+        on = d["cmd"] == j
+        xx = x0 + j * 150
+        cv2.rectangle(canvas, (xx, y0 + 12), (xx + 140, y0 + 48), GREEN if on else (62, 62, 68), -1 if on else 1)
+        R.text(canvas, nm, (xx + 12, y0 + 38), 0.6, (0, 0, 0) if on else (160, 160, 166), 2 if on else 1, False)
+    R.text(canvas, f"ego speed {d['speed'] * 3.6:5.1f} km/h ({d['speed']:4.1f} m/s)", (x0, y0 + 80), 0.65)
+    R.text(canvas, "speed: DB ego_pose of this very frame", (x0, y0 + 99), 0.4, (150, 150, 156), 1, False)
+    R.text(canvas, f"token {d['token']}", (x0, y0 + 128), 0.62, (230, 230, 235))
+    R.text(canvas, f"t = {d['t']:5.2f} s in clip    plan age {d['age']:.2f} s", (x0, y0 + 154), 0.58, (230, 230, 235))
+    R.text(canvas, f"clip {d['run']}/{d['nruns']}   log {d['log'][:19]}..{d['log'][-11:]}", (x0, y0 + 180), 0.48, (170, 170, 176), 1, False)
+    R.text(canvas, f"camera time {d['f0_ts_s']:.2f} s into the log   F0 jpg {d['f0_name']}", (x0, y0 + 200), 0.42, (140, 140, 146), 1, False)
+    # scorer
+    xm = hx + 530
+    R.text(canvas, "SCORER (u400 head, predicted)", (xm, y0), 0.55, (200, 200, 205), 1, False)
+    R.text(canvas, f"selected #{d['pick']}: predicted PDMS {100 * d['pred_sel']:5.1f}", (xm, y0 + 30), 0.62, GREEN)
+    R.text(canvas, f"range of the 64: {100 * d['pred_min']:4.1f} .. {100 * d['pred_max']:4.1f}", (xm, y0 + 54), 0.5, (200, 200, 205), 1, False)
+    for j in range(64):
+        cv2.rectangle(canvas, (xm + int(j * 5.6), y0 + 64), (xm + int((j + 1) * 5.6), y0 + 78), R.turbo(0.15 + 0.85 * j / 63), -1)
+    R.text(canvas, f"{100 * d['pred_min']:.0f}", (xm, y0 + 94), 0.42, (210, 210, 216), 1, False)
+    R.text(canvas, f"{100 * d['pred_max']:.0f}", (xm + 335, y0 + 94), 0.42, (210, 210, 216), 1, False)
+    R.text(canvas, "64 hypotheses: colour = predicted PDMS (this token)", (xm, y0 + 112), 0.42, (170, 170, 176), 1, False)
+    # truth
+    t = d["true"]
+    R.text(canvas, "NAVSIM HARNESS: true score of this token's plan", (xm, y0 + 146), 0.55, (200, 200, 205), 1, False)
+    if t is None:
+        R.text(canvas, "true per-token score: not banked", (xm, y0 + 178), 0.62, (150, 150, 255))
+    else:
+        bad = t["score"] < 0.5
+        R.text(canvas, f"true PDMS {100 * t['score']:5.1f}" + ("   FAILURE" if bad else ""), (xm, y0 + 180), 0.8, (80, 80, 255) if bad else (230, 230, 235), 2)
+        for j, nm in enumerate(("NC", "DAC", "EP", "TTC", "C", "DDC")):
+            v = t["sub"][j]
+            xx = xm + (j % 3) * 125
+            yy = y0 + 196 + (j // 3) * 34
+            cv2.rectangle(canvas, (xx, yy), (xx + 105, yy + 11), (62, 62, 68), 1)
+            cv2.rectangle(canvas, (xx, yy), (xx + int(105 * v), yy + 11), GREEN if v > 0.99 else (60, 90, 255), -1)
+            R.text(canvas, f"{nm} {v:.2f}", (xx, yy + 26), 0.45, (210, 210, 216), 1, False)
+    # overlay key
+    xk = hx + 930
+    R.text(canvas, "KEY", (xk, y0), 0.55, (200, 200, 205), 1, False)
+    for j, (lab, col) in enumerate((("selected plan", GREEN), ("human future", WHITE), ("64 hypotheses", (60, 160, 255)))):
+        cv2.line(canvas, (xk, y0 + 20 + 22 * j), (xk + 30, y0 + 20 + 22 * j), col, 4, cv2.LINE_AA)
+        R.text(canvas, lab, (xk + 38, y0 + 26 + 22 * j), 0.45, (220, 220, 226), 1, False)
+    cv2.rectangle(canvas, (xk, y0 + 86), (xk + 30, y0 + 98), (205, 190, 40), -1)
+    R.text(canvas, "drivable area", (xk + 38, y0 + 97), 0.45, (220, 220, 226), 1, False)
+    R.text(canvas, "(map: rendering aid,", (xk, y0 + 118), 0.4, (170, 170, 176), 1, False)
+    R.text(canvas, " not a model input)", (xk, y0 + 134), 0.4, (170, 170, 176), 1, False)
+    # clip progress
+    py = hy + hh - 22
+    cv2.rectangle(canvas, (x0, py), (hx + hw - 20, py + 10), (62, 62, 68), 1)
+    cv2.rectangle(canvas, (x0, py), (x0 + int((hx + hw - 20 - x0) * min(1.0, d["clip_prog"])), py + 10), GREEN, -1)

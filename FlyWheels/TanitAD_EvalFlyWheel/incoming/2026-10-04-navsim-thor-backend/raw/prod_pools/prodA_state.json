@@ -1,0 +1,162 @@
+{
+ "t": 1791156096.962352,
+ "pool_pid": 523895,
+ "mem_available_gb": 57.02,
+ "alive": {},
+ "queued": [],
+ "done": {
+  "r7thor_s50400_R7_VMAXOFF_k0of4": {
+   "rc": 1,
+   "wall_s": 415.1,
+   "status": "EXITED"
+  },
+  "r7thor_s50400_R7_VMAXOFF_k1of4": {
+   "rc": 1,
+   "wall_s": 410.1,
+   "status": "EXITED"
+  },
+  "r7thor_s50400_R7_VMAXOFF_k2of4": {
+   "rc": 0,
+   "wall_s": 420.1,
+   "status": "EXITED"
+  },
+  "r7thor_s50400_R7_VMAXOFF_k3of4": {
+   "rc": 0,
+   "wall_s": 410.1,
+   "status": "EXITED"
+  }
+ },
+ "events": [
+  {
+   "t": 1791155546.8847237,
+   "event": "launch",
+   "job": "r7thor_s50400_R7_VMAXOFF_k0of4",
+   "pid": 523897,
+   "avail_gb": 55.93,
+   "cmd": [
+    "nice",
+    "-n",
+    "19",
+    "ionice",
+    "-c3",
+    "setsid",
+    "/home/nvidia/venvs/navsim-cpu/bin/python",
+    "/home/nvidia/navsim-thor/code/thor/score_navtest_thor.py",
+    "--label",
+    "r7thor_s50400_R7_VMAXOFF_k0of4",
+    "--seam",
+    "/dev/shm/navsim/seams/step50400/seam_R7_VMAXOFF__navtest.npz",
+    "--tokens",
+    "/dev/shm/navsim/subsets/navtest_shard_0of4.json",
+    "--out",
+    "/dev/shm/navsim/thor_scores/navtest/_shards"
+   ]
+  },
+  {
+   "t": 1791155591.8896642,
+   "event": "launch",
+   "job": "r7thor_s50400_R7_VMAXOFF_k1of4",
+   "pid": 524331,
+   "avail_gb": 54.52,
+   "cmd": [
+    "nice",
+    "-n",
+    "19",
+    "ionice",
+    "-c3",
+    "setsid",
+    "/home/nvidia/venvs/navsim-cpu/bin/python",
+    "/home/nvidia/navsim-thor/code/thor/score_navtest_thor.py",
+    "--label",
+    "r7thor_s50400_R7_VMAXOFF_k1of4",
+    "--seam",
+    "/dev/shm/navsim/seams/step50400/seam_R7_VMAXOFF__navtest.npz",
+    "--tokens",
+    "/dev/shm/navsim/subsets/navtest_shard_1of4.json",
+    "--out",
+    "/dev/shm/navsim/thor_scores/navtest/_shards"
+   ]
+  },
+  {
+   "t": 1791155636.8963733,
+   "event": "launch",
+   "job": "r7thor_s50400_R7_VMAXOFF_k2of4",
+   "pid": 524728,
+   "avail_gb": 49.54,
+   "cmd": [
+    "nice",
+    "-n",
+    "19",
+    "ionice",
+    "-c3",
+    "setsid",
+    "/home/nvidia/venvs/navsim-cpu/bin/python",
+    "/home/nvidia/navsim-thor/code/thor/score_navtest_thor.py",
+    "--label",
+    "r7thor_s50400_R7_VMAXOFF_k2of4",
+    "--seam",
+    "/dev/shm/navsim/seams/step50400/seam_R7_VMAXOFF__navtest.npz",
+    "--tokens",
+    "/dev/shm/navsim/subsets/navtest_shard_2of4.json",
+    "--out",
+    "/dev/shm/navsim/thor_scores/navtest/_shards"
+   ]
+  },
+  {
+   "t": 1791155681.9027174,
+   "event": "launch",
+   "job": "r7thor_s50400_R7_VMAXOFF_k3of4",
+   "pid": 525099,
+   "avail_gb": 49.27,
+   "cmd": [
+    "nice",
+    "-n",
+    "19",
+    "ionice",
+    "-c3",
+    "setsid",
+    "/home/nvidia/venvs/navsim-cpu/bin/python",
+    "/home/nvidia/navsim-thor/code/thor/score_navtest_thor.py",
+    "--label",
+    "r7thor_s50400_R7_VMAXOFF_k3of4",
+    "--seam",
+    "/dev/shm/navsim/seams/step50400/seam_R7_VMAXOFF__navtest.npz",
+    "--tokens",
+    "/dev/shm/navsim/subsets/navtest_shard_3of4.json",
+    "--out",
+    "/dev/shm/navsim/thor_scores/navtest/_shards"
+   ]
+  },
+  {
+   "t": 1791155961.9453058,
+   "event": "exit",
+   "job": "r7thor_s50400_R7_VMAXOFF_k0of4",
+   "rc": 1
+  },
+  {
+   "t": 1791156001.9506059,
+   "event": "exit",
+   "job": "r7thor_s50400_R7_VMAXOFF_k1of4",
+   "rc": 1
+  },
+  {
+   "t": 1791156056.9577448,
+   "event": "exit",
+   "job": "r7thor_s50400_R7_VMAXOFF_k2of4",
+   "rc": 0
+  },
+  {
+   "t": 1791156091.9618254,
+   "event": "exit",
+   "job": "r7thor_s50400_R7_VMAXOFF_k3of4",
+   "rc": 0
+  }
+ ],
+ "policy": {
+  "max_jobs": 4,
+  "launch_min_gb": 35.0,
+  "kill_below_gb": 20.0,
+  "settle_s": 45.0,
+  "poll_s": 5.0
+ }
+}

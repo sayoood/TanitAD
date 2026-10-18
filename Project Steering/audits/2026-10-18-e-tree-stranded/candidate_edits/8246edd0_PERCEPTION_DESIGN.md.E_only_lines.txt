@@ -1,0 +1,27 @@
+# E-only lines of TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md  (E lines absent from the tip blob; CR-normalised; E line numbers)
+# tip blob last changed in 49a0655; E mtime 2026-10-04 21:00; verdict: NEW-DRAFT-vs-TIP (no E-HEAD base; E has lines the tip lacks)
+158: ### 2.7 What the registered probes have changed (appended as results land; RESULT §7)
+159: 
+160: * **P-GRAD (MEASURED, `raw/pgrad.json`, controls PASS) → a NEW map lever, M6, and a monitoring fix, W7.**
+161:   The 10 cm map owns **~0.5 %** of the trunk gradient norm on the stages it reaches (stem–layer2), a projection of
+162:   **0.0001** on the trunk update, and only **5 %** of the norm in its OWN shared 0.25 m encoder, where box3d holds
+163:   76 % (97 % of the update) at cosine **−0.137** to the map. The map's plateau (RESULT §1.3) is therefore not only
+164:   image-bound: the map has almost no say over the features it decodes. ⇒ **M6 (new, ranked with M1, after P-MAP):**
+165:   give the map its own say — either **(a)** a map-owned copy of the 0.25 m encoder (538,112 params, initialised FROM
+166:   the trained shared encoder so step 0 == refcv7, W3), which removes the box3d interference outright, or **(b)** a
+167:   higher map loss weight, sized from the table: parity with box3d in the shared encoder is a ~15× norm ratio
+168:   (0.7607 / 0.0507), which would also move stem–layer2 from 0.5 % to ~7 % map — a trunk change, so (a) is the
+169:   preferred form. P-MAP cannot test either (frozen trunk, frozen encoder by design); the first test is a v7-tiny
+170:   or warm-start arm with the map families as its bar. ⚠️ **W7 (WP-B owns the trainer):** the planner's agent head is
+171:   the single largest trunk driver (**50 %** of the update) and is in NEITHER side of the in-run conflict detector
+172:   (`CONFLICT_PERCEPTION_TERMS` = box3d, map_hires, tac_v6) — add it, or the detector is blind to the term that moves
+173:   the trunk most. And W5 is now answered: traj moves **0.02 %** of the trunk update and tac_v6 **−0.05 %**.
+174: * **P-BOX control PB0 (MEASURED, descriptive vs step 0) → B1 is a FULL-RUN lever, not a head branch.** B1's own
+175:   falsifier (§2.1: "PB0 staying flat") fired in its strong form: the decoder trained alone on its frozen memory went
+176:   DOWN — AP@2 m NMS 0.338 → 0.308, step 0 − PB0 = +0.030 [+0.019, +0.041] — while its train loss fell. The late gain
+177:   of refcv7 (RESULT §1.2) is a trunk/memory gain; **a head-only continuation would not capture it and can lose AP**.
+178:   B1 stands as written (a warm-start of the WHOLE model), with one sharpened caution for W1: a re-warmed 1e-4 head LR
+179:   is what PB0 used. On the full corpus (4,369 clips, not 600) the overfitting route is far weaker, but **W2's EMA eval
+180:   is the guard that must read the re-warm — if the EMA AP@2 m at step 1k is below refcv7-50,400's, cut the head
+181:   re-warm to the trunk's 5e-5.**
+182: 
