@@ -9,6 +9,8 @@
   read    --full1 full1.json --verdict <st<S*_A1>/full2_verdict.json> --out full_final.json
           Phase 2. Reading 3 (the A1x gate at S*_A1) and, only if it passes, reading 4 (K for the holdout-chosen arm, PREREG_HJ_STAGE0's
           bar with P10 = P10-yaw-4512).
+  read    ... --phase3-root <st<S*_A1>_wd3.0>   reading 3's K-FAIL lever (full3: A1 + A1x with --wd 3.0): the same two readings, with the
+          K arm re-picked on the HOLDOUT between the regularised A1 and the unregularised R0 at S*_R0 (tie -> R0).
 
 Every run must be a compliant (yaw) run that scored ONE holdout, trained on ONE train list, against ONE prior, from a cache of 4,572
 train clips -- a run from the 600-clip cache is refused, not averaged in.
@@ -116,8 +118,20 @@ def read(a) -> dict:
         raise ValueError("the phase-2 verdict is not a deciding yaw-rate verdict")
     if v.get("A1_best_cell") != CELL:
         raise ValueError(f"phase-2 verdict cell {v.get('A1_best_cell')} != {CELL}")
-    k_arm = f1["K_arm"]
-    out = dict(schema="ra1-full-final-v1", prereg="PREREG_RA1_FULL.md", S_star=f1["S_star"], K_arm=k_arm, cell=CELL,
+    k_arm, phase = f1["K_arm"], "phase2"
+    if a.phase3_root:
+        phase, sa = "phase3", f1["S_star"]["A1"]
+        ha = []
+        for seed in (0, 1):
+            ev, p = _run(a.phase3_root, "A1", seed)
+            if ev is None or int(ev.get("ckpt_step", -1)) != sa:
+                raise ValueError(f"phase 3 needs A1 seed {seed} at budget {sa}: {p}")
+            if ev["holdout"].get("clips_sha256") != HOLDOUT_SHA or ev["holdout"].get("train_sha256") != f1["train_clips_sha256"]:
+                raise ValueError(f"{p} was not scored on phase 1's holdout / train list")
+            ha.append(ev["holdout"]["ade6_arm"]["mean"])
+        hr0 = f1["budgets"]["R0"][str(f1["S_star"]["R0"])]["seed_mean_holdout_ade6"]
+        k_arm = "A1" if sum(ha) / 2 < hr0 - TIE_M else "R0"
+    out = dict(schema="ra1-full-final-v1", prereg="PREREG_RA1_FULL.md", phase=phase, S_star=f1["S_star"], K_arm=k_arm, cell=CELL,
                instrument_ok_all=v.get("instrument_ok_all"), A1x_control=v.get("A1x_control"), K=v.get("K"),
                training_seed_floor_A1=v.get("training_seed_floor_A1"),
                not_read=dict(SENS="needs A0: not in this design", COST="not a PREREG_RA1_FULL reading",
@@ -140,10 +154,16 @@ def read(a) -> dict:
         out["outcome"] = "K_PASS"
         out["reading"] = (f"READING 4 PASS: the gate holds at S*_A1 = {f1['S_star']['A1']} and {k_arm} beats P10-yaw-4512 at both seeds. Data scale "
                           "is the lever. Next: A2 and SENS (with A0) at S* on the full corpus, under PREREG_HJ_STAGE0's other bars.")
+    elif phase == "phase3":
+        out["outcome"] = "K_FAIL"
+        out["reading"] = (f"PHASE 3 K FAIL: with --wd 3.0 the gate holds, but {k_arm} still does not clear K against P10-yaw-4512. Every "
+                          "lever this design names is spent. Next: the unfrozen encoder (LoRA r 32, PREREG_HJ_STAGE0 T-B) -- a PI compute "
+                          "decision (box 2's 8 GB cannot hold it).")
     else:
         out["outcome"] = "K_FAIL"
-        out["reading"] = (f"READING 4 FAILS: the gate holds, but {k_arm} does not clear K against P10-yaw-4512. Next lever: ES-5's wd 3.0 on the "
-                          "full corpus (the one regulariser that separated A1 - P10 at 540 clips), then the unfrozen encoder (LoRA r 32).")
+        out["reading"] = (f"READING 4 FAILS: the gate holds, but {k_arm} does not clear K against P10-yaw-4512. Next lever, run "
+                          "automatically: full3 = ES-5's wd 3.0 on the full corpus (the one regulariser that separated A1 - P10 at 540 clips), "
+                          "A1 + A1x at S*_A1, read under the same readings; then the unfrozen encoder (LoRA r 32).")
     return out
 
 
@@ -159,6 +179,7 @@ def main(argv=None) -> int:
     r.add_argument("--full1", required=True)
     r.add_argument("--verdict", required=True)
     r.add_argument("--out", required=True)
+    r.add_argument("--phase3-root", default=None, help="st<S*_A1>_wd<WD>: read full3's verdict, K arm re-picked on the holdout")
     a = ap.parse_args(argv)
     try:
         res = select(a) if a.cmd == "select" else read(a)

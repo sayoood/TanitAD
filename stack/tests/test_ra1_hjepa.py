@@ -1058,7 +1058,7 @@ def test_full_verdict_reads_k_only_behind_the_gate_and_for_the_holdout_chosen_ar
     def verdict(gate):
         v = dict(kin_mode="yaw", deciding=True, A1_best_cell="b0.08g50", A1x_control=dict(verdict=gate), K=dict(candidates=cands))
         (tmp_path / "v.json").write_text(json.dumps(v), encoding="utf-8")
-        return m.read(types.SimpleNamespace(full1=str(tmp_path / "f1.json"), verdict=str(tmp_path / "v.json")))
+        return m.read(types.SimpleNamespace(full1=str(tmp_path / "f1.json"), verdict=str(tmp_path / "v.json"), phase3_root=None))
 
     assert verdict("UNRESOLVED: A1x is worse but not separated")["outcome"] == "INSTRUMENT_BROKEN"
     r = verdict("OK: A1x loses to A1, separated")
@@ -1099,3 +1099,44 @@ def test_full_box2_driver_dry_run_builds_then_encodes_then_verifies_each_chunk_i
     env["RA1FULL_MIN_FREE_GB"] = "1e12"
     r = subprocess.run([sys.executable, str(FULL_DRIVER), "--dry-run", "--chunk", "2"], env=env, capture_output=True, text=True, timeout=120)
     assert r.returncode == 11 and "ZZDISK-GUARD" in r.stdout and "pull_encode_pooled.py" not in r.stdout, r.stdout
+
+
+@pytest.mark.skipif(not FULL_VERDICT.exists(), reason="the refav1-hj-mini package is not in this checkout")
+def test_full_verdict_phase3_repicks_the_k_arm_on_the_holdout_and_names_the_last_lever(tmp_path):
+    """Reading 3's K-FAIL lever (full3, --wd 3.0) is read under the same rules: the K arm is re-picked on the HOLDOUT between the
+    regularised A1 and phase 1's R0 at S*_R0 (tie -> R0), and a phase-3 K FAIL names the PI compute decision, not another sweep."""
+    m = _full_mod()
+    f1 = dict(status="OK", next="full2 3000 1000 0.08 50", S_star={"R0": 1000, "A1": 3000}, K_arm="R0", train_clips_sha256="t" * 64,
+              budgets={"R0": {"1000": {"seed_mean_holdout_ade6": 3.05}}})
+    (tmp_path / "f1.json").write_text(json.dumps(f1), encoding="utf-8")
+    cands = {"R0": {"PASS": False}, "A1": {"PASS": False}}
+    v = dict(kin_mode="yaw", deciding=True, A1_best_cell="b0.08g50", A1x_control=dict(verdict="OK: A1x loses"), K=dict(candidates=cands))
+    (tmp_path / "v.json").write_text(json.dumps(v), encoding="utf-8")
+    p3 = tmp_path / "st3000_wd3.0"
+    for seed in (0, 1):
+        _full_eval(p3.parent, "A1", seed, 3000, 2.98)                 # writes st3000/...: move it under the wd root
+    (tmp_path / "st3000").rename(p3)
+    a = lambda: types.SimpleNamespace(full1=str(tmp_path / "f1.json"), verdict=str(tmp_path / "v.json"), phase3_root=str(p3))  # noqa: E731
+    r = m.read(a())
+    assert r["phase"] == "phase3" and r["K_arm"] == "A1" and r["outcome"] == "K_FAIL" and "PI compute" in r["reading"], r
+    f1["budgets"]["R0"]["1000"]["seed_mean_holdout_ade6"] = 2.985               # within 0.01 m of A1-wd: the tie goes to R0
+    (tmp_path / "f1.json").write_text(json.dumps(f1), encoding="utf-8")
+    assert m.read(a())["K_arm"] == "R0"
+    with pytest.raises(ValueError):                                       # a phase-3 run at the wrong budget is refused
+        m.read(types.SimpleNamespace(full1=str(tmp_path / "f1.json"), verdict=str(tmp_path / "v.json"), phase3_root=str(tmp_path / "nope")))
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="the queue is a Windows batch file")
+def test_queue_full3_stage_carries_wd_and_pairs_with_the_unregularised_r0(tmp_path):
+    import re
+    cf = str(tmp_path / "cache_full")
+    env = dict(os.environ, RA1_DRYRUN="1", REPO=str(REPO), RUNS=str(tmp_path / "runs"), CACHEFULL=cf)
+    rc, out = _dry_queue(env, "full3 3000 1000 0.08 50 3.0")
+    assert rc == 0, out
+    tr = [ln for ln in out if "ra1_hjepa_train.py" in ln]
+    assert [re.search(r"--arm (\S+) --seed (\S+)", ln).groups() for ln in tr] == [("A1", "0"), ("A1", "1"), ("A1x", "0")], tr
+    assert all("--wd 3.0" in ln and "--steps 3000" in ln and f'--cache "{cf}"' in ln and "p10_yaw4512" in ln
+               and f"st3000_wd3.0{os.sep}" in ln for ln in tr), tr
+    vd = [ln for ln in out if " verdict --out " in ln]
+    assert len(vd) == 1 and "full3_verdict.json" in vd[0] and f"runs_full{os.sep}st1000{os.sep}R0_s0" in vd[0], vd
+    assert _dry_queue(env, "full3 3000 1000 0.08 50")[0] == 2

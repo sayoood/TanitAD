@@ -13,6 +13,7 @@ rem   ra1_box2_queue.cmd ridge                  PREREG_RA1_RIDGE: the CPU ridge 
 rem   ra1_box2_queue.cmd es5 S BETA GAMMA WD    PREREG_RA1_ES Addendum C: A1 x2 + A1x at budget S with --wd WD, in %RUNS%_es\st<S>_wd<WD>
 rem   ra1_box2_queue.cmd full "S1 S2 ..." BETA GAMMA   PREREG_RA1_FULL phase 1: R0 x2 + A1 x2 per budget on the FULL corpus, in %RUNS%_full\st<S>
 rem   ra1_box2_queue.cmd full2 SA SR BETA GAMMA        PREREG_RA1_FULL phase 2: A1x seed 0 at SA (= S*_A1), + the verdict over R0@SR, A1/A1x@SA
+rem   ra1_box2_queue.cmd full3 SA SR BETA GAMMA WD     PREREG_RA1_FULL reading 3 K-FAIL lever: A1 x2 + A1x at SA with --wd WD, in st<SA>_wd<WD>
 rem
 rem HOLDOUT (PREREG_HJ_STAGE0 Amendment 1): every trainer call carries --holdout-n 60 (the trainer REFUSES to run without it): the last 60 of the
 rem 600 stage-A clips in sha12 order are withheld from EVERY arm, the evals score them (--train-cache), and the A1 cell is chosen on them, NEVER on
@@ -65,11 +66,13 @@ if /i "%~1"=="ridge" goto :ridge
 if /i "%~1"=="es5" goto :es5
 if /i "%~1"=="full" goto :full
 if /i "%~1"=="full2" goto :full2
+if /i "%~1"=="full3" goto :full3
 echo usage: ra1_box2_queue.cmd gate^|stage1^|stage1verdict^|stage2 BETA GAMMA^|final BETA GAMMA
 echo        ra1_box2_queue.cmd es "S1 S2 ..."^|es2 S BETA GAMMA   (PREREG_RA1_ES)
 echo        ra1_box2_queue.cmd es3 S BETA^|ridge   (PREREG_RA1_ES Addendum A, PREREG_RA1_RIDGE)
 echo        ra1_box2_queue.cmd es5 S BETA GAMMA WD   (PREREG_RA1_ES Addendum C)
 echo        ra1_box2_queue.cmd full "S1 S2 ..." BETA GAMMA^|full2 SA SR BETA GAMMA   (PREREG_RA1_FULL)
+echo        ra1_box2_queue.cmd full3 SA SR BETA GAMMA WD   (PREREG_RA1_FULL, the K-FAIL lever)
 exit /b 2
 
 :gate
@@ -204,6 +207,22 @@ set "RUNS=%FROOT%\st%~2"
 if not exist "%RUNS%" mkdir "%RUNS%"
 call :run A1x_b%~4g%~5_s0 A1x 0 %~4 %~5 "" || exit /b 1
 set "VN=full2_verdict.json"
+set "C=b%~4g%~5"
+call :verdict --run "R0@0=%FROOT%\st%~3\R0_s0\eval" --run "R0@1=%FROOT%\st%~3\R0_s1\eval" --run "A1:%C%@0=%RUNS%\A1_%C%_s0\eval" --run "A1:%C%@1=%RUNS%\A1_%C%_s1\eval" --run "A1x:%C%@0=%RUNS%\A1x_%C%_s0\eval"
+exit /b %errorlevel%
+
+:full3
+rem PREREG_RA1_FULL reading 3, K FAIL => run automatically: A1 x2 + A1x seed 0 at SA with --wd WD (ES-5's regulariser), in st<SA>_wd<WD>.
+rem The verdict pairs them with the UNREGULARISED R0 at SR, as ES-5 did. --wd rides the :run block's extra-args slot.
+if "%~6"=="" (echo full3 needs SA SR BETA GAMMA WD & exit /b 2)
+call :fullenv || exit /b 2
+set "FROOT=%RUNS%_full"
+set "STEPS=%~2"
+set "RUNS=%FROOT%\st%~2_wd%~6"
+if not exist "%RUNS%" mkdir "%RUNS%"
+for %%S in (0 1) do call :run A1_b%~4g%~5_s%%S A1 %%S %~4 %~5 "--wd %~6" || exit /b 1
+call :run A1x_b%~4g%~5_s0 A1x 0 %~4 %~5 "--wd %~6" || exit /b 1
+set "VN=full3_verdict.json"
 set "C=b%~4g%~5"
 call :verdict --run "R0@0=%FROOT%\st%~3\R0_s0\eval" --run "R0@1=%FROOT%\st%~3\R0_s1\eval" --run "A1:%C%@0=%RUNS%\A1_%C%_s0\eval" --run "A1:%C%@1=%RUNS%\A1_%C%_s1\eval" --run "A1x:%C%@0=%RUNS%\A1x_%C%_s0\eval"
 exit /b %errorlevel%

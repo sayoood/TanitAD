@@ -24,6 +24,8 @@ muts = [
      "    if False:\n        out[\"outcome\"] = \"INSTRUMENT_BROKEN\"", "behind_the_gate"),
     ("verdict reads any arm's PASS", C + "ra1_full_verdict.py", "    kpass = bool(cand[k_arm][\"PASS\"])",
      "    kpass = any(bool(c.get(\"PASS\")) for c in cand.values())", "behind_the_gate"),
+    ("queue full3 drops --wd", C + "ra1_box2_queue.cmd", 'call :run A1_b%~4g%~5_s%%S A1 %%S %~4 %~5 "--wd %~6" || exit /b 1', 'call :run A1_b%~4g%~5_s%%S A1 %%S %~4 %~5 "" || exit /b 1', "full3_stage"),
+    ("verdict phase 3 keeps phase 1 K arm", C + "ra1_full_verdict.py", '        k_arm = "A1" if sum(ha) / 2 < hr0 - TIE_M else "R0"', '        pass', "phase3_repicks"),
 ]
 env = dict(os.environ, CUDA_VISIBLE_DEVICES="-1", PYTHONPATH="stack;taniteval")
 res = []

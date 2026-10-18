@@ -179,3 +179,15 @@ Read in this order. A later reading is not made if an earlier one stops.
   * the queue's `full`, `full2` and `:fullenv`;
   * 4 tests in `stack/tests/test_ra1_hjepa.py`.
   * 11 source mutations each turn a test RED (`raw/ra1_full/mutate_full.json`).
+
+## Implementation notes (2026-10-18 ~12:00, still before any full-corpus data)
+
+* **Phase 3 is the K-FAIL lever of reading 3, as queue stage `full3 SA SR 0.08 50 3.0`.** It runs A1 ×2 + A1x at S\*_A1 with
+  `--wd 3.0`, in `st<SA>_wd3.0`, and its verdict pairs them with the unregularised R0 at S\*_R0, as ES-5 did. "Readings 2 and 3
+  unchanged" means the K arm is re-picked **on the holdout** between the regularised A1 and that R0 (a tie goes to R0):
+  `ra1_full_verdict.py read --phase3-root`. A phase-3 K FAIL names the LoRA compute decision, not another sweep.
+* **Every run is attributable to a landed commit.** Before phase 1, `code/box2_ops/chain_ra1_full_runs.sh` refreshes box 2's
+  `stack/`, `taniteval/` and the two packages from the REMOTE tip. It then sha-checks six key files against the tip's blobs (the
+  trainer, the evaluator, the model, the loader, the queue and the prior), and records the tip in `TIP_FULL.txt`. The whole
+  sequence runs as one script with no model turn waiting on it: phase 1, selection, the edge extension, phase 2, and phase 3 if
+  K fails.
