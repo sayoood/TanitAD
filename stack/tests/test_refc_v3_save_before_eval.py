@@ -199,7 +199,8 @@ def test_ckpt_on_disk_before_the_eval_and_an_eval_death_does_not_end_the_run(
                        "milestone_exists": True, "rows": [(1, False, True)]}
     ck = torch.load(out / "ckpt.pt", map_location="cpu", weights_only=False)
     # ⭐ `data_pos` since 2026-09-23: the resume position (ResumableEpochSampler).
-    assert set(ck) == {"model", "opt", "step", "data_pos"} and ck["step"] == 1
+    # ⭐ `param_names` since 2026-10-18: the optimizer-id-ordered names stack/scripts/zerograd_gate.py reads.
+    assert set(ck) == {"model", "opt", "step", "data_pos", "param_names"} and ck["step"] == 1
     assert {k: ck["data_pos"][k] for k in ("scheme", "epoch", "batch", "seed",
                                            "batch_size")} == {
         "scheme": "resumable-epoch-sampler/1", "epoch": 0, "batch": 1,

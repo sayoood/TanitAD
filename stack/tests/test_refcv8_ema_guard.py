@@ -539,7 +539,7 @@ def _ck(out, name="ckpt.pt"):
 def test_ema_on_writes_ckpt_state_model_only_file_eval_keys_and_summary(tmp_path):
     out = _train(tmp_path / "on", ["--ema-decay", "0.5"], steps=3)
     ck = _ck(out)
-    assert set(ck) == {"model", "opt", "step", "data_pos", "ema"}
+    assert set(ck) == {"model", "opt", "step", "data_pos", "param_names", "ema"}      # + param_names 2026-10-18
     assert ck["ema"]["schema"] == "weight_ema/1" and ck["ema"]["decay"] == 0.5 and ck["ema"]["num_updates"] == 3
     assert len(ck["ema"]["shadow"]) == 179                                 # measured on this rig: 179 tensors
     assert sum(v.numel() for v in ck["ema"]["shadow"].values()) == 131899     # and 131,899 values = 527,596 B fp32
@@ -565,7 +565,7 @@ def test_ema_on_writes_ckpt_state_model_only_file_eval_keys_and_summary(tmp_path
 
 def test_ema_off_is_the_tips_checkpoint_rows_and_summary_key_for_key(tmp_path):
     out = _train(tmp_path / "off", [], steps=2)
-    assert set(_ck(out)) == {"model", "opt", "step", "data_pos"}
+    assert set(_ck(out)) == {"model", "opt", "step", "data_pos", "param_names"}      # + param_names 2026-10-18
     assert sorted(p.name for p in Path(out).iterdir()) == ["ckpt.pt", "ckpt_1.pt", "config.json", "metrics.jsonl", "summary.json"]
     assert not any(k.startswith(("ema_", "b1_")) for r in _rows(out) for k in r)
     assert set(json.loads((Path(out) / "summary.json").read_text())) == {"done", "step", "arm", "seed", "wallclock_s"}
@@ -734,7 +734,9 @@ def test_guard_keep_end_to_end_and_a_finished_runs_decision_is_in_its_checkpoint
     # the RE-SAVED checkpoint is the loop's own payload plus the decision: same keys, same data position, same step
     plain = _ck(_train(tmp_path / "plain", ["--ema-decay", "0.5", "--opt", "dd", "--warmup", "1"], steps=2))
     resaved = _ck(out)
-    assert set(resaved) == set(plain) | {"b1_guard"} == {"model", "opt", "step", "data_pos", "ema", "b1_guard"}
+    assert set(resaved) == set(plain) | {"b1_guard"} == {"model", "opt", "step", "data_pos", "param_names", "ema",
+                                                         "b1_guard"}      # + param_names 2026-10-18
+    assert resaved["param_names"] == plain["param_names"]                   # the re-save carries the same names
     assert resaved["data_pos"] == plain["data_pos"] and resaved["step"] == plain["step"] == 2
     assert set(resaved["opt"]["param_groups"][0]) == set(plain["opt"]["param_groups"][0])
     _guard_run(out, [0.1, 0.1], steps=4)                                   # continued: a low value must NOT cut now

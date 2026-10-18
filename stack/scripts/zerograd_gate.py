@@ -110,7 +110,17 @@ _CAP = 1e100                          # saturating alignment counts: only ==0, =
 
 
 class GateError(RuntimeError):
-    """The checkpoint could not be evaluated (exit 2) -- never silently converted into a PASS."""
+    """The checkpoint could not be evaluated (exit 2) -- never silently converted into a PASS.
+
+    ``kind`` classifies WHY, so a caller (``stack/ops/sup_refcv7.sh``) can tell the one benign case -- a checkpoint
+    that carries no optimizer state at all (``no_optimizer_state``: the gate does not apply) -- from every case in
+    which the gate could not look (``unreadable``, ``no_param_state``, ``bad_param_names`` ...).  The kind is written
+    to the ``--json-out`` report as ``error_kind``; the verdict is the JSON, never the exit code.
+    """
+
+    def __init__(self, msg: str, kind: str = "other"):
+        super().__init__(msg)
+        self.kind = kind
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -120,7 +130,7 @@ def load_ckpt(path: str) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """CPU load.  weights_only=True+mmap first, then the probe's weights_only=False.  Returns (ckpt, how)."""
     import torch
     if not os.path.isfile(path):
-        raise GateError("checkpoint not found: %s" % path)
+        raise GateError("checkpoint not found: %s" % path, kind="unreadable")
     errors = []
     for weights_only, mmap in ((True, True), (False, True), (False, False)):
         try:
@@ -129,9 +139,9 @@ def load_ckpt(path: str) -> Tuple[Dict[str, Any], Dict[str, Any]]:
             errors.append("weights_only=%s mmap=%s: %s: %s" % (weights_only, mmap, type(e).__name__, str(e)[:160]))
             continue
         if not isinstance(ck, dict):
-            raise GateError("checkpoint is a %s, not a dict" % type(ck).__name__)
+            raise GateError("checkpoint is a %s, not a dict" % type(ck).__name__, kind="unreadable")
         return ck, {"weights_only": weights_only, "mmap": mmap, "earlier_load_failures": errors}
-    raise GateError("could not load %s: %s" % (path, " | ".join(errors)))
+    raise GateError("could not load %s: %s" % (path, " | ".join(errors)), kind="unreadable")
 
 
 def _pick(ck: Dict[str, Any], keys: Sequence[str]) -> Tuple[Optional[str], Optional[dict]]:
@@ -241,16 +251,17 @@ def resolve_names(ids_by_group: List[List[Any]], id_shape: Dict[Any, Optional[tu
         else:
             if len(param_names) != len(ids):
                 raise GateError("param_names has %d entries but the optimizer registers %d parameters"
-                                % (len(param_names), len(ids)))
+                                % (len(param_names), len(ids)), kind="bad_param_names")
             names = {i: [str(n)] for i, n in zip(ids, param_names)}
         if len(names) != len(ids):
-            raise GateError("param_names does not cover every optimizer id")
+            raise GateError("param_names does not cover every optimizer id", kind="bad_param_names")
         shape_of = dict(entries)
         for i in ids:
             sh, nm = id_shape.get(i), names[i][0]
             if sh is not None and nm in shape_of and tuple(shape_of[nm]) != tuple(sh):
                 raise GateError("param_names INCONSISTENT with the checkpoint: id %s named %r has state shape %s "
-                                "but the model entry is %s" % (i, nm, tuple(sh), tuple(shape_of[nm])))
+                                "but the model entry is %s" % (i, nm, tuple(sh), tuple(shape_of[nm])),
+                                kind="bad_param_names")
         out.update(mode="param_names", unique=True, n_alignments=1.0, names=names)
         return out
     if len(ids) * len(entries) > _DP_CELL_LIMIT:
@@ -313,17 +324,22 @@ def analyze(ck: Dict[str, Any], allow: Sequence[str] = (), controls: Sequence[st
     ok, opt = _pick(ck, _OPT_KEYS)
     if opt is None or "param_groups" not in opt or not isinstance(opt.get("state"), dict):
         raise GateError("the checkpoint carries no optimizer state (keys %s) -- a weights-only file cannot be "
-                        "gated; run the gate on the TRAINER's resume checkpoint" % sorted(map(str, ck.keys())))
+                        "gated; run the gate on the TRAINER's resume checkpoint" % sorted(map(str, ck.keys())),
+                        kind="no_optimizer_state")
+    # Exact names, in order of preference: --param-names FILE (explicit), then the checkpoint's own ``param_names``
+    # (written by refc_v3_train.py since 2026-10-18: optimizer-id order), then the shape alignment below.
+    pn_source = "file" if param_names is not None else None
     if param_names is None and ck.get("param_names") is not None:
-        param_names = ck["param_names"]
+        param_names, pn_source = ck["param_names"], "ckpt"
     state = opt["state"]
     ids_by_group = [list(g["params"]) for g in opt["param_groups"]]
     ids = [i for g in ids_by_group for i in g]
     if not ids:
-        raise GateError("the optimizer registers no parameters")
+        raise GateError("the optimizer registers no parameters", kind="no_params")
     if not any(_float_state_tensors(state.get(i)) for i in ids):
         raise GateError("no registered parameter has a floating-point optimizer state tensor (plain SGD without "
-                        "momentum?) -- the gate cannot tell trained from untrained and refuses to guess")
+                        "momentum?) -- the gate cannot tell trained from untrained and refuses to guess",
+                        kind="no_param_state")
 
     entries: List[Tuple[str, tuple]] = []
     n_excluded = 0
@@ -336,11 +352,22 @@ def analyze(ck: Dict[str, Any], allow: Sequence[str] = (), controls: Sequence[st
                 continue
             entries.append((str(n), tuple(t.shape)))
     elif param_names is None:
-        raise GateError("no model state_dict in the checkpoint and no param_names: nothing to name parameters from")
+        raise GateError("no model state_dict in the checkpoint and no param_names: nothing to name parameters from",
+                        kind="no_names")
 
     kind = {i: classify_state(state.get(i)) for i in ids}
     id_shape = {i: _state_shape(state.get(i)) for i in ids}
-    res = resolve_names(ids_by_group, id_shape, entries, param_names)
+    pn_rejected: Optional[str] = None
+    try:
+        res = resolve_names(ids_by_group, id_shape, entries, param_names)
+    except GateError as e:
+        # An EMBEDDED list that does not fit this optimizer (e.g. a checkpoint rewritten after it was saved) must
+        # not block the gate: the verdict never depends on naming.  Fall back to the shape alignment and SAY SO.
+        # An EXPLICIT --param-names file that does not fit stays an error -- the caller asked for exactness.
+        if pn_source != "ckpt" or e.kind != "bad_param_names":
+            raise
+        pn_rejected, pn_source = str(e), None
+        res = resolve_names(ids_by_group, id_shape, entries, None)
     names: Optional[Dict[Any, List[str]]] = res["names"]
     shape_of = dict(entries)
 
@@ -400,6 +427,7 @@ def analyze(ck: Dict[str, Any], allow: Sequence[str] = (), controls: Sequence[st
                       "n_case_b_zero_state": sum(1 for i in ids if kind[i] == ZERO_STATE),
                       "step_max": step_max, "ckpt_step": ck.get("step") if isinstance(ck.get("step"), int) else None},
         "alignment": {"mode": res["mode"], "unique": res["unique"], "n_alignments": res["n_alignments"],
+                      "param_names_source": pn_source, "param_names_rejected": pn_rejected,
                       "n_model_float_entries": len(entries), "n_entries_excluded": n_excluded,
                       "exclude_entries": list(exclude_entries), "note": res["note"],
                       "n_ids_name_ambiguous": sum(1 for i in ids if len(named.get(i, [])) > 1),
@@ -447,6 +475,9 @@ def render(rep: Dict[str, Any]) -> str:
          "  naming: %s  unique=%s  n_alignments=%s%s" % (
              a["mode"], a["unique"], ("%.0f" % a["n_alignments"]) if a["n_alignments"] < 1e15 else ">1e15",
              ("  [" + a["note"] + "]") if a["note"] else "")]
+    if a.get("param_names_rejected"):
+        L.append("  WARN the checkpoint's embedded param_names were REJECTED (%s); names come from the shape alignment"
+                 % a["param_names_rejected"][:200])
     for r in rep["offenders"]:
         L.append("  UNTRAINED  id %-4s %-12s %-40s %s" % (r["id"], r["case"], _fmt_names(r), _fmt_numel(r)))
     for r in rep["allowed"]:
@@ -495,12 +526,16 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 pn = json.load(f)
         excl = ([] if a.no_default_excludes else list(DEFAULT_EXCLUDE_ENTRIES)) + list(a.exclude_entry)
         rep = analyze(ck, allow=a.allow, controls=a.control, param_names=pn, exclude_entries=excl)
-    except GateError as e:
-        print("zerograd_gate ERROR: %s" % e, file=sys.stderr)
+    except Exception as e:  # noqa: BLE001 -- GateError AND any crash: an uncaught exception exits 1 == FAIL
+        kind = e.kind if isinstance(e, GateError) else "internal_error"
+        if not isinstance(e, GateError):
+            import traceback
+            traceback.print_exc()
+        print("zerograd_gate ERROR (%s): %s" % (kind, e), file=sys.stderr)
         if a.json_out:
             with open(a.json_out, "w", encoding="utf-8") as f:
                 json.dump({"gate": "zerograd_gate", "gate_version": GATE_VERSION, "verdict": "ERROR",
-                           "ckpt": a.ckpt, "error": str(e)}, f, indent=2)
+                           "ckpt": a.ckpt, "error": str(e), "error_kind": kind}, f, indent=2)
         return EXIT_ERROR
     rep["ckpt"] = a.ckpt.replace("\\", "/")
     rep["ckpt_size_bytes"] = os.path.getsize(a.ckpt)

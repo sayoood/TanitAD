@@ -5239,9 +5239,27 @@ def _ema_ckpt_extra(ema, b1) -> dict:
     return out
 
 
+def _opt_param_names(model, opt) -> list:
+    """The names of the optimizer's registered parameters, in OPTIMIZER-ID order -- the ``param_names`` key of
+    ``ckpt.pt`` that ``stack/scripts/zerograd_gate.py`` reads to name an untrained parameter EXACTLY.
+
+    ``Optimizer.state_dict()`` numbers the parameters by walking ``param_groups`` in order, so this walks them the
+    same way and looks each tensor up by identity in ``model.named_parameters()``. That is NOT the same list as
+    ``[n for n, _ in model.named_parameters()]``: ``--opt dd`` puts the encoder group FIRST, and a frozen parameter
+    is registered by the ``adam`` path (``model.parameters()``) but absent from the ``dd`` path. A tensor the
+    optimizer holds that the model does not name gets ``<unnamed:i>`` (the gate then reports it as such rather
+    than guessing). Names only: no tensors, so the cost per save is a list of ~350 short strings."""
+    by_id = {id(p): n for n, p in model.named_parameters()}
+    out = []
+    for g in opt.param_groups:
+        for p in g["params"]:
+            out.append(by_id.get(id(p), "<unnamed:%d>" % len(out)))
+    return out
+
+
 def _ckpt_payload(model, opt, step, dpos, n_windows, args, ema, b1) -> dict:
     """The ``ckpt.pt`` dict for the B1 guard's RE-SAVE -- the same payload as the loop's own save (the tip's four keys
-    ``model``, ``opt``, ``step``, ``data_pos`` plus ``_ema_ckpt_extra``), written a second time once the guard has
+    ``model``, ``opt``, ``step``, ``data_pos`` plus ``param_names`` and ``_ema_ckpt_extra``), written a second time once the guard has
     decided, because the loop saves BEFORE it evals (see ``train``). The loop's own save stays inline, textually, because
     ``tests/test_refc_v3_save_before_eval.py`` pins its position; ``tests/test_refcv8_ema_guard.py`` pins that the two
     payloads have the same keys and ``data_pos``."""
@@ -5252,6 +5270,7 @@ def _ckpt_payload(model, opt, step, dpos, n_windows, args, ema, b1) -> dict:
                          "batch": int(dpos["batch"]),
                          "n": n_windows, "seed": int(args.seed),
                          "batch_size": int(args.batch)},
+            "param_names": _opt_param_names(model, opt),
             **_ema_ckpt_extra(ema, b1), **_p10_ckpt_extra(model)}
 
 
@@ -10906,6 +10925,8 @@ def train(args) -> dict:
                                      "batch": int(_dpos["batch"]),
                                      "n": len(ds), "seed": int(args.seed),
                                      "batch_size": int(args.batch)},
+                        # optimizer-id-ordered names: stack/scripts/zerograd_gate.py (post-training gate)
+                        "param_names": _opt_param_names(model, opt),
                         **_ema_ckpt_extra(_ema, _b1), **_p10_ckpt_extra(model)}, ck)
             # the one line that makes the order VERIFIABLE from train.log
             print(f"[v3:{args.arm}] ckpt step {step} -> {ck.name}",

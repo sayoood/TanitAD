@@ -1021,7 +1021,10 @@ def _sup_rig(tmp_path: Path, *, extra_env: str = "", tamper: str | None = None,
     (runs_d / "arm1.env").write_text(
         f'CODE="{tree.as_posix()}"\nPYTHON="{py}"\nGATE_TOKEN="{tok_path.as_posix()}"\n'
         f'GATE_ARGV_FILE="{argv_file.as_posix()}"\nGATE_KEY_FILE="{key_file.as_posix()}"\n'
-        f'POLL_S=1\nMAX_RELAUNCH=1\n{extra_env}', encoding="utf-8")
+        # ZEROGRAD_GATE=off: this rig's fake trainer writes no ckpt.pt and the mini tree carries no
+        # zerograd_gate.py, so the post-training gate (sup_refcv7.sh G5) cannot look; the gate has its own rig,
+        # tests/test_sup_refcv7_zerograd.py. Without this line the G5 hook would (correctly) fail these runs closed.
+        f'POLL_S=1\nMAX_RELAUNCH=1\nZEROGRAD_GATE=off\n{extra_env}', encoding="utf-8")
     shim = tmp_path / "bin"
     shim.mkdir()
     (shim / "flock").write_text("#!/bin/sh\nexit 0\n", encoding="utf-8", newline="\n")
@@ -1043,7 +1046,9 @@ def _sup_rig(tmp_path: Path, *, extra_env: str = "", tamper: str | None = None,
 def test_supervisor_RUNS_the_trainer_on_a_valid_token_and_writes_its_done_marker(tmp_path):
     rc, out, run = _sup_rig(tmp_path)
     assert rc == 0, out[-3000:]
-    assert json.loads((run / "summary.json").read_text(encoding="utf-8"))["done"] is True
+    done = json.loads((run / "summary.json").read_text(encoding="utf-8"))
+    assert done["done"] is True
+    assert done["zerograd_gate"]["status"] == "DISABLED"      # recorded, not silent (G5; see _sup_rig)
     v = json.loads((run / "gate_verify_1.json").read_text(encoding="utf-8"))
     assert v["verdict"] == "MATCH"
     assert json.loads((run / "gate_exec_1.json").read_text(encoding="utf-8"))["verdict"] == "MATCH"
