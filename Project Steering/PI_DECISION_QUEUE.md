@@ -2226,7 +2226,7 @@ EMA step 30,000, seed 0. Source:
 | **(c)** | Treat the label as wrong where the human exceeds it, and relabel or loosen the 30 km/h class. That means retraining. |
 
 * ⚠️ **Disclosure.** I propose (b) AFTER seeing a capped number at 30k. That is exactly why it is your call and not mine.
-  The final checkpoint (48,852, ~2026-10-21 05:00 Berlin) has no data yet.
+  The final checkpoint (48,852, ~2026-10-20 ~19:00 Berlin — corrected 2026-10-18 22:05: the watcher's measured pace is 9.92 s/step; the earlier "~2026-10-21 05:00" came from 10-min sampling) has no data yet.
 * **Also yours:** keep the 2.5 m/s² braking allowance (v7F semantics, the landed default) or require the strict cap.
 * Until you rule, A-R8-CLAMP-1 stands as committed, and both readings are printed side by side.
 

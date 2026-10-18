@@ -4,7 +4,7 @@
 This answers the `PI_DECISION_QUEUE.md` item of ~20:00 (option b).
 
 **Registered by the Master Mind the same evening.** This comes BEFORE any data from the final checkpoint (step 48,852,
-expected ~2026-10-21 05:00 Berlin).
+expected ~2026-10-20 ~19:00 Berlin at the measured 9.92 s/step — corrected 2026-10-18 22:05 from an earlier "~2026-10-21 05:00" that came from 10-min watcher sampling).
 
 ⚠️ **Disclosure, kept with the rule:** the option was proposed and chosen AFTER the post-hoc capped read at step 30,000
 (`D-R8-CLAMP-INSTRUMENT — first measurement`). It is the PI's decision, not an analyst's; the banked 5k–30k verdicts are
