@@ -2229,3 +2229,17 @@ EMA step 30,000, seed 0. Source:
   The final checkpoint (48,852, ~2026-10-21 05:00 Berlin) has no data yet.
 * **Also yours:** keep the 2.5 m/s² braking allowance (v7F semantics, the landed default) or require the strict cap.
 * Until you rule, A-R8-CLAMP-1 stands as committed, and both readings are printed side by side.
+
+## DECIDED 2026-10-18 ~20:05 Berlin -- refcv8's bars on ceiling-compliant windows + a compliance row; relabelling is refcv9
+
+PI, verbatim: *"(b ) relabling is eventuallysomething for refcv9"*. This answers the item above (~20:00).
+
+* **Option (b).** BAR-R8-E1, E3 and NR are decided on CEILING-COMPLIANT windows: the logged ego's 6-s max speed ≤ the fed
+  ceiling. Capped refcv8 is primary, and the all-window values are printed beside.
+* A **COMPLIANCE row** (plan above the fed ceiling: rate and excess, on all windows and on the compliant set) is added to
+  LONGITUDINAL for every arm.
+* Registered as `AMENDMENT_A_R8_CLAMP_2_COMPLIANT_WINDOWS.md` before any final-checkpoint data. The disclosure that the
+  option followed the post-hoc 30k read is kept in the amendment.
+* **Relabelling** the ceiling (the 30 km/h class the human exceeds in 23 % of its windows) is deferred to **refcv9**.
+* The braking allowance was not ruled on, so it stays as landed: 2.5 m/s², v7F semantics. The strict cap is reported
+  beside as a sensitivity read.
