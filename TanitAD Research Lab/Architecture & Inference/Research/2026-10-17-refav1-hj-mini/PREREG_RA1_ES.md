@@ -170,3 +170,98 @@ SMALLER wd. eval-141 never selects.
    * **FAIL** ⇒ wd alone does not decouple the two effects. Next: readout dropout, or a smaller readout, with the same
      gate-then-K order. After that, data scale.
 3. Either way, the four metric families are reported for the selected arm, with STRATEGIC PAUSED.
+
+## Addendum D — A1a: does A1's gain need the TRUE action information? (written 2026-10-18 11:10, AFTER ES-5, BEFORE any A1a data)
+
+⚠️ **This addendum does NOT reopen H-HJ-K-1.** The pre-registered A1x gate keeps K unread, and nothing below changes that.
+A1a is a control for the MECHANISM ES-3 found, not a replacement for A1x. Whether K may ever be read under a replacement
+control is **the PI's call**, and this addendum does not make it.
+
+**What is measured so far** (`raw/ra1_es/es3_attribution.json`, `es4_budget.json`, `es5_wd.json`; eval-141, paired
+episode-cluster bootstrap B = 2000):
+
+* Every regime in which A1 beats P10 (250 steps; 1,000 steps + wd 3.0) is one in which A1x matches it.
+* A1 − A0 at 250 steps is −0.0268 [−0.0508, −0.0044] / −0.0233 [−0.0480, −0.0004], separated at both seeds: the IDM term
+  carries the gain.
+* A1x keeps it. In the banked train logs its IDM fits almost as well as A1's at 250 steps (unweighted `idm/L1`, last log
+  row: A1 0.5315, A1x 0.6148, A0's untrained head 1.0448).
+
+**Why A1x cannot test this.** A1x permutes the FRAMES of each window in time, but every frame still belongs to the window
+whose actions the IDM is asked for. A window's kinematic level (speed, yaw-rate magnitude) is visible in any of its
+frames, so the IDM can still learn it. ⇒ Two explanations fit every number above:
+
+* **H-RA1-ES-3a (ego-motion supervision):** the IDM makes the adapter latent `z1` encode the window's OWN kinematics. That
+  needs the TRUE pairing of a window's frames with its own actions.
+* **H-RA1-ES-3b (gradient regularisation):** the IDM gradient helps the adapter whatever its target, for example as a
+  regulariser of `z1`. That does not need the true pairing.
+
+**The arm: A1a = A1 with its action sequences PERMUTED ACROSS WINDOWS before the world-model loss.**
+* In `ra1_hjepa.py` `forward_batch`, window i's standardised action sequence `a_seq[i]` (T1 − 1 = 18 steps × 3 channels)
+  is replaced by window σ(i)'s.
+* σ is a derangement of the batch (no window keeps its own actions): one random B-cycle drawn from the step's seeded
+  generator, so it is a pure function of (seed, step), like A1x's permutation. Its non-identity fraction is exactly 1.0.
+* The latents `z1` stay in true time order. The readout path is untouched: the trajectory loss uses no action.
+* Both the predictor (action-conditioned) and the IDM (target) receive the permuted actions, exactly as A1x's shuffle
+  reaches both.
+* What survives: SIGReg, a world-model gradient into the adapter, the batch's action marginal, and the temporal structure
+  of a real action sequence. What is removed: the pairing of a window's frames with its own actions.
+* ⚠️ **Disclosed leak.** `sample_batch` draws clips uniformly with replacement (64 from 540), so σ(i) can come from the
+  same clip as i, and its actions can then overlap i's own. The expected rate is about 1/540 ≈ 0.19 % of windows. The
+  exact rate is recomputed from (seed, step) and reported.
+* Launch gate: `validate_config` requires `--gamma` (> 0) as for every IDM arm. G-DVB gets a `shuffle_act` row read back
+  from the built model. G-LIVE asserts, on a real batch, that the permutation is non-identity in every window, that the
+  actions the world-model loss receives differ from the window's own in more than half of the windows, and that every
+  other arm has no action permutation.
+
+**Settings (fixed now; nothing is selected after the data):**
+
+| setting | flags | paired against (banked) |
+|---|---|---|
+| S1 | `--steps 250`, wd 1e-3 (S\*, ES-2) | `raw/ra1_es/st250/A1_b0.08g50_s0` |
+| S2 | `--steps 1000 --wd 3.0` (ES-5's holdout pick) | `raw/ra1_es/st1000_wd3.0/A1_b0.08g50_s0` |
+
+* Both settings use A1a b0.08g50 at **seed 0**. Every other constant is the queue's `:run` block, unchanged.
+* Runner: `ra1_box2_queue.cmd a1a S BETA GAMMA [WD]` on box 2 (SAFE MODE, one job at a time). The runs go into the SAME
+  root as the A1 they pair with.
+
+**Metric and estimator.** eval-141 ADE@6s (T1-class open-loop trajectory), A1a − A1, with the paired episode-cluster
+bootstrap (B = 2000, seed 0) over the same 2,399 windows (asserted). It answers EPISODE variance only.
+
+**Manipulation check (read FIRST; it must read its known direction).** A1a's unweighted `idm/L1` at the last log row must be
+ABOVE A1's at the same setting: A1 is 0.5315 at S1 and 0.3056 at S2. With the true pairing removed, the IDM can fit
+nothing but the batch marginal (A0's untrained head reads 1.0448 at S1).
+* If A1a's `idm/L1` is ≤ A1's at either setting ⇒ the permutation has NOT removed the information the IDM uses.
+  ⇒ **INSTRUMENT FAIL**, and neither reading below is made.
+
+**Committed readings (binding):**
+
+1. **A1a − A1 > 0, separated, at BOTH S1 and S2** ⇒ **the gain needs the TRUE action information.** That is ego-motion
+   supervision of the visual latent (H-RA1-ES-3a supported).
+   * **Next lever:** make that supervision explicit and cheap, for example an IDM-only arm, or the same IDM term on R0.
+     Each gets its own pre-registration.
+2. **Otherwise** ⇒ **the gain is a gradient-regularisation artifact** (H-RA1-ES-3b). The IDM gradient helps without the
+   true pairing.
+   * **Next lever:** isolate the regulariser, for example weight noise or a random-target auxiliary loss of the same
+     magnitude on R0. That needs its own pre-registration.
+
+**Qualifiers, committed now.** They are reported, and they do not change which reading is made.
+
+* **One seed.** A1a runs at seed 0 only, so a separated CI here answers "would another draw of EPISODES say this?" and
+  NOT "would another training run?" (`H-ESTIM-SEED-1`). Each |Δ| is reported against A1's banked training-seed floor at
+  that setting: |A1_s0 − A1_s1| = 0.0038 at S1 and 0.0147 at S2.
+  * If reading 1 is made but |Δ| ≤ 2× the floor at either setting, it is reported as **"within 2× A1's seed floor at
+    <setting>: needs A1a seed 1 before it is quoted as a lever effect."**
+* **Mixed outcome.** If exactly one setting is separated with A1a − A1 > 0, reading 2 is reported as **"mixed: separated
+  at <setting> only"**, and A1a seed 1 at the other setting is named as the cheapest next experiment.
+* **No inference variance.** The readout is deterministic, so there is no inference floor.
+
+**Reported, NOT read:**
+* A1a − P10 at S1 and S2;
+* A1a − A1x (banked, seed 0);
+* A1a − A0 at S1 (banked A0 b0.08, seed 0);
+* A1a − R0 (banked R0 seed 0: `st250` for S1, the unregularised `st1000` for S2);
+* holdout ADE@6s;
+* the four metric families for A1a at S2, from its `eval.json`, with STRATEGIC PAUSED (PI 2026-09-19).
+
+**Scoring:** `code/a1a_permute.py`, written in the style of `code/es5_wd.py`, reads the banked A1 / A1x / A0 / R0
+`perwindow.npz` from `raw/ra1_es/` and the pulled A1a `perwindow.npz`. Output: `raw/ra1_es/a1a_permute.json`.
