@@ -18302,3 +18302,27 @@ largest measured effect*. A lever that the attribution assigns about 0.2 of the 
 - All three are the "a correct number carried into a wrong sentence" family.
 - They were caught only because a second agent re-derived every number from raw JSON with a verifier that fails on a mutated value.
 - ⇒ Before landing a register row, read every interval comparison, ratio and verdict word off the JSON key, never off the prose that summarised it, including one's own.
+
+### R50 (2026-10-18) - "refcv8 is fed only v0" (Master Mind's report to the PI, ~23:45 Berlin; source: `raw/e1_decomp/VERDICT_ANALYST.md` §1, unlanded)
+
+**Claimed:**
+- E1's reference holds the measured (a0, kappa0); refcv8 is fed only v0.
+- Therefore a refcv8.x fine-tune that adds acceleration and curvature/yaw-rate inputs is "the most direct fix".
+- I asked the PI to rule on admitting them.
+
+**Measured:**
+- refcv8's argv (`E:/refcv8_eval_kit/ckpt/config.json['argv']`) carries `--ego-history`, which feeds the past speed, longitudinal acceleration and yaw rate.
+- It also carries `--residual-prior ha0_ext_pose`. That prior holds a0 and a yaw-rate-derived kappa0 (`stack/tanitad/models/kinematic_prior.py:53-58`).
+- refcv8 already has every quantity the PI then ruled admissible.
+- The real difference from E1's reference is the reference's steer-channel curvature, which the PI ruled inadmissible.
+
+**Fixed:**
+- `D-EGO-STATE-T0` states the measured configuration.
+- The proposed "add a0/yaw-rate inputs" fine-tune is withdrawn.
+- The open question becomes E1's reference (PI queue).
+- The analyst's VERDICT gets a correction note in the battery package.
+- The PI was told in the same reply that carried the ruling's consequences.
+
+**Class:** *an architecture fact quoted from an analyst's prose instead of from the run's argv* (INHERITED, not re-verified). It is the `flagship4b-phase0-30k` family: a model fact taken from a summary, not from the registry or config.
+
+⇒ Before proposing an input or architecture lever, grep the run's `config.json['argv']` for the flag that would provide it.

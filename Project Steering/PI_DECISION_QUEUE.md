@@ -2243,3 +2243,16 @@ PI, verbatim: *"(b ) relabling is eventuallysomething for refcv9"*. This answers
 * **Relabelling** the ceiling (the 30 km/h class the human exceeds in 23 % of its windows) is deferred to **refcv9**.
 * The braking allowance was not ruled on, so it stays as landed: 2.5 m/s², v7F semantics. The strict cap is reported
   beside as a sensitivity read.
+
+## DECIDED 2026-10-18 ~23:58 Berlin -- measured acceleration and yaw rate at t0 are admissible inputs; curvature is not
+
+PI, verbatim: *"measured accelration is ok and yaw rate is ok since they can be measured by imus but not curvature"*.
+Registered as `D-EGO-STATE-T0` in GOALS_AND_CLAIMS.md.
+
+* refcv8 already uses only the admissible set (`--ego-history`; prior `ha0_ext_pose` = a0 + yaw-rate-derived kappa0).
+* **OPEN, follows from it -- BAR-R8-E1's reference.** `ha0_ext` holds kappa0 from the steer channel (inadmissible).
+  Options: (a) keep E1 as registered (reference uses curvature) and report the admissible read beside it; (b) make the
+  admissible reference `ha0_ext_pose` (refcv8's own causal prior) the E1 reference for the final checkpoint, registered
+  before final data, with the disclosure that it followed the 30k read. Master Mind recommendation: (b) as the bar,
+  (a) printed beside -- a bar that requires beating an input the planner may not have measures the input, not the
+  planner. Numbers to decide on: the admissible-reference read, running tonight (`raw/a0k0_headroom/`).
