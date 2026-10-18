@@ -1,4 +1,5 @@
-"""RA-1 (refav1-HJ mini): the arms R0 / A0 / A1 / A2 / A1x (+ exploratory A1h) on POOLED FROZEN DINOv3-L tokens.
+"""RA-1 (refav1-HJ mini): the arms R0 / A0 / A1 / A2 / A1x (+ exploratory A1h, + the mechanism control A1a) on POOLED FROZEN
+DINOv3-L tokens.
 
 Spec: ``Project Steering/PREREG_HJ_STAGE0.md`` (H-HJ-SENS-1 / H-HJ-K-1 / H-HJ-COST-1) -- no bar is changed here. Nothing in this
 file re-implements the H-JEPA objective: SIGReg, the IDM head and loss, the level / macro-action encoders, the AdaLN causal
@@ -19,6 +20,10 @@ ARMS (all share adapter, readout, data, optimiser, seeds; they differ ONLY in wh
     A1h  EXPLORATORY (orchestrator addendum 2026-10-17; never decides H-HJ-SENS-1): A1 + HISTORY DROPOUT in every level's
          predictor (the copycat remedy, arXiv 2010.14876): with probability ``hist_drop`` per (window, position) the position
          is predicted from itself alone (context 1) instead of from its causal history.
+    A1a  MECHANISM CONTROL (PREREG_RA1_ES Addendum D, 2026-10-18; does NOT reopen H-HJ-K-1): A1 with every window's ACTION
+         SEQUENCE replaced by ANOTHER window's (a seeded derangement of the batch, ``window_derangement``) before the WM losses.
+         The frames stay in true order (unlike A1x, which keeps each window's own actions and so cannot remove them); what is
+         removed is the pairing of a window's frames with its own actions -- the TRUE action information.
 
 THE ACTION VECTOR (3 channels, STANDARDISED with train statistics so Prop. 3's unit-variance premise holds):
     ``a`` (m/s^2, the acceleration of the step that OPENS at frame t), channel 1, ``v`` (m/s, the measured speed at frame t:
@@ -52,7 +57,7 @@ from torch import Tensor, nn
 from tanitad.models.hjepa import (HJEPAStack, LevelConfig, dead_parameters, monotonicity,
                                   param_grad_report)
 
-ARMS = ("R0", "A0", "A1", "A2", "A1x", "A1h")
+ARMS = ("R0", "A0", "A1", "A2", "A1x", "A1h", "A1a")
 #: the action vector's channel names per kin mode (PI ruling D-PI-YAWRATE-1); channel 1 is the lateral-control channel
 ACT_CHANNELS_BY_MODE = {"steer": ("a", "steer", "v"), "yaw": ("a", "yaw_rate", "v")}
 ACT_CHANNELS = ACT_CHANNELS_BY_MODE["steer"]            # legacy name (the steer representation)
@@ -76,6 +81,7 @@ class ArmSpec:
     idm: bool           # IDM weights must be > 0
     shuffle_time: bool  # A1x
     hist_drop: bool     # A1h
+    shuffle_act: bool = False   # A1a: action sequences permuted ACROSS windows before the WM losses
 
 
 ARM_SPECS = {
@@ -85,6 +91,7 @@ ARM_SPECS = {
     "A2": ArmSpec("A2", 3, True, True, False, False),
     "A1x": ArmSpec("A1x", 2, True, True, True, False),
     "A1h": ArmSpec("A1h", 2, True, True, False, True),
+    "A1a": ArmSpec("A1a", 2, True, True, False, False, shuffle_act=True),
 }
 
 
@@ -251,6 +258,18 @@ def time_shuffle_perm(b: int, t: int, generator: torch.Generator | None = None) 
     return idx
 
 
+def window_derangement(b: int, generator: torch.Generator | None = None) -> Tensor:
+    """A1a: ``(b,)`` -- window ``i`` receives the action sequence of window ``perm[i]``, and NO window keeps its own (a
+    derangement). Built as ONE random b-cycle (``perm[order[k]] = order[k+1]``), so the non-identity fraction is exactly 1.0:
+    a fixed point would silently be an A1 window, the same rule ``time_shuffle_perm`` enforces for A1x."""
+    if b < 2:
+        raise ValueError(f"A1a permutes actions ACROSS windows: a batch of {b} has no other window to take them from")
+    order = torch.randperm(b, generator=generator)
+    perm = torch.empty(b, dtype=torch.long)
+    perm[order] = torch.roll(order, -1)
+    return perm
+
+
 class RA1Model(nn.Module):
     def __init__(self, cfg: RA1Config, act_mean: Tensor, act_std: Tensor):
         super().__init__()
@@ -258,6 +277,7 @@ class RA1Model(nn.Module):
         self.cfg = cfg
         sp = cfg.spec
         self.act_channels = ACT_CHANNELS_BY_MODE[cfg.kin_mode]
+        self.shuffle_act = bool(sp.shuffle_act)      # A1a; forward_batch reads THIS built flag, and G-DVB reads it back
         self.adapter = PooledAdapter(cfg.d_feat, cfg.n_tok, cfg.d_tok, cfg.adapter_hidden, cfg.d1)
         self.register_buffer("act_mean", torch.as_tensor(act_mean, dtype=torch.float32).clone())
         self.register_buffer("act_std", torch.as_tensor(act_std, dtype=torch.float32).clone())
@@ -315,6 +335,12 @@ class RA1Model(nn.Module):
         total = self.cfg.w_traj * traj_loss
         if self.stack is not None:
             a_seq = self.std_actions(batch["act"][:, :-1])
+            if self.shuffle_act:                                       # A1a: another window's actions, frames untouched
+                aperm = window_derangement(a_seq.shape[0], shuffle_generator).to(a_seq.device)
+                own = a_seq
+                a_seq = a_seq[aperm]
+                out["act_shuffle_nonidentity_frac"] = float((aperm != torch.arange(a_seq.shape[0], device=a_seq.device)).float().mean())
+                out["act_shuffle_changed_frac"] = float((a_seq != own).flatten(1).any(1).float().mean())
             zin = z1
             if self.cfg.spec.shuffle_time:
                 perm = time_shuffle_perm(z1.shape[0], z1.shape[1], shuffle_generator).to(z1.device)
@@ -380,6 +406,7 @@ def declared_vs_built(cfg: RA1Config, model: RA1Model) -> list:
         if cfg.spec.hist_drop:
             add("hist_drop_p", float(cfg.hist_drop), float(wrappers[0].p))
     add("readout_in", cfg.d1 + cfg.n_up() * cfg.d_up, model.readout.net[0].in_features - 8)
+    add("shuffle_act", bool(cfg.spec.shuffle_act), bool(getattr(model, "shuffle_act", False)))   # A1a (Addendum D)
     return rows
 
 
@@ -430,8 +457,16 @@ def live_report(model: RA1Model, batch: dict, *, seed: int = 0) -> dict:
             (idm_grad_adapter == 0.0 and all(v == 0.0 for v in idm_val))
     shuffle_frac = float(out["shuffle_nonidentity_frac"]) if "shuffle_nonidentity_frac" in out else None
     shuffle_ok = (shuffle_frac is not None and shuffle_frac > 0.5) if cfg.spec.shuffle_time else (shuffle_frac is None)
-    ok = not missing and not nonfinite and not unexpected and idm_ok and shuffle_ok
-    return dict(ok=bool(ok), shuffle_nonidentity_frac=shuffle_frac, shuffle_ok=bool(shuffle_ok), missing=missing, nonfinite=nonfinite, unexpected_dead=unexpected,
+    # A1a: the permutation is non-identity in EVERY window (a derangement) AND the actions the WM loss receives really are not the
+    # window's own in more than half of the windows (a computed-but-unapplied permutation reads 0.0 here); every other arm: none
+    act_frac = float(out["act_shuffle_nonidentity_frac"]) if "act_shuffle_nonidentity_frac" in out else None
+    act_changed = float(out["act_shuffle_changed_frac"]) if "act_shuffle_changed_frac" in out else None
+    act_ok = (act_frac == 1.0 and act_changed is not None and act_changed > 0.5) if cfg.spec.shuffle_act else \
+        (act_frac is None and act_changed is None)
+    ok = not missing and not nonfinite and not unexpected and idm_ok and shuffle_ok and act_ok
+    return dict(ok=bool(ok), shuffle_nonidentity_frac=shuffle_frac, shuffle_ok=bool(shuffle_ok),
+                act_shuffle_nonidentity_frac=act_frac, act_shuffle_changed_frac=act_changed, act_shuffle_ok=bool(act_ok),
+                missing=missing, nonfinite=nonfinite, unexpected_dead=unexpected,
                 expected_dead=sorted(n for n in dead if any(n.startswith(p) for p in allowed)),
                 idm_term_grad_into_adapter=idm_grad_adapter, idm_ok=bool(idm_ok),
                 terms={k: float(v.detach()) for k, v in out.items() if isinstance(v, Tensor) and v.numel() == 1})

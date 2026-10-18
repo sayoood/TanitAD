@@ -1140,3 +1140,199 @@ def test_queue_full3_stage_carries_wd_and_pairs_with_the_unregularised_r0(tmp_pa
     vd = [ln for ln in out if " verdict --out " in ln]
     assert len(vd) == 1 and "full3_verdict.json" in vd[0] and f"runs_full{os.sep}st1000{os.sep}R0_s0" in vd[0], vd
     assert _dry_queue(env, "full3 3000 1000 0.08 50")[0] == 2
+
+
+# ================================================================================ PREREG_RA1_ES Addendum D: A1a (actions permuted ACROSS windows)
+# A1a = A1 with every window's action sequence replaced by ANOTHER window's before the WM losses (frames in true order). It removes
+# the TRUE action information that A1x keeps. Pinned: the derangement, what the WM loss receives, the readout path untouched, the
+# G-HYG / G-DVB / G-LIVE rows, two deletion mutations that must turn the checks RED, the queue stage and the scoring rule.
+ARM_FLAGS["A1a"] = ["--beta", "0.08", "--gamma", "100"]      # picked up by test_every_arm_trains_three_steps_on_cpu_and_passes_its_gate
+
+
+def test_a1a_derangement_has_no_fixed_point_and_is_a_pure_function_of_the_generator():
+    for b in (2, 3, 4, 32, 64, 257):
+        for seed in range(5):
+            p = R.window_derangement(b, torch.Generator().manual_seed(seed))
+            assert bool((p.sort().values == torch.arange(b)).all()), "a permutation of the batch"
+            assert bool((p != torch.arange(b)).all()), "no window keeps its own actions (a fixed point would be an A1 window)"
+            assert torch.equal(p, R.window_derangement(b, torch.Generator().manual_seed(seed))), "a pure function of the seed"
+    assert not torch.equal(R.window_derangement(64, torch.Generator().manual_seed(0)), R.window_derangement(64, torch.Generator().manual_seed(1)))
+    with pytest.raises(ValueError, match="no other window"):
+        R.window_derangement(1, torch.Generator().manual_seed(0))
+
+
+def _spy_wm_inputs(m, tag, seen):
+    orig = m.stack.loss
+    m.stack.loss = (lambda z, a, _o=orig, _n=tag, **kw: (seen.__setitem__(_n, (z.detach().clone(), a.detach().clone())), _o(z, a, **kw))[1])
+
+
+def test_a1a_hands_every_window_another_windows_actions_and_leaves_frames_and_readout_untouched(bank, world):
+    batch = a_batch(bank, world, b=8)
+    m1, ma = model_of("A1"), model_of("A1a", gamma=100.0)
+    ma.load_state_dict(m1.state_dict())                      # A1a adds no parameter: A1's state dict loads as it is
+    seen = {}
+    _spy_wm_inputs(m1, "A1", seen)
+    _spy_wm_inputs(ma, "A1a", seen)
+    z1 = m1.adapter(batch["tokens"].float()).detach()
+    own = m1.std_actions(batch["act"][:, :-1]).detach()
+    o1 = m1.forward_batch(batch, generator=torch.Generator().manual_seed(0), shuffle_generator=torch.Generator().manual_seed(0))
+    oa = ma.forward_batch(batch, generator=torch.Generator().manual_seed(0), shuffle_generator=torch.Generator().manual_seed(0))
+    perm = R.window_derangement(8, torch.Generator().manual_seed(0))
+    assert torch.allclose(seen["A1"][0], z1) and torch.allclose(seen["A1a"][0], z1), "A1a's frames stay in TRUE order (unlike A1x)"
+    assert torch.equal(seen["A1"][1], own), "control: A1's WM loss receives each window's own actions"
+    assert torch.equal(seen["A1a"][1], own[perm]), "A1a's WM loss receives window perm[i]'s actions at row i"
+    assert not torch.equal(seen["A1a"][1], own)
+    assert all(not torch.equal(seen["A1a"][1][i], own[i]) for i in range(8)), "no window sees its own action sequence"
+    assert oa["act_shuffle_nonidentity_frac"] == 1.0 and oa["act_shuffle_changed_frac"] > 0.5
+    assert "act_shuffle_nonidentity_frac" not in o1 and "shuffle_nonidentity_frac" not in oa, "A1 permutes nothing; A1a does not time-shuffle"
+    assert torch.equal(o1["traj"], oa["traj"]), "the readout path must be untouched by the permutation"
+    assert not torch.equal(o1["idm/L1"], oa["idm/L1"]) and not torch.equal(o1["pred/L1"], oa["pred/L1"]), "both WM terms see the permuted actions"
+
+
+def test_a1a_gate_rows_g_hyg_g_dvb_g_live(bank, world, tmp_path, capsys):
+    with pytest.raises(ValueError, match="gamma"):
+        R.validate_config(R.RA1Config(**dict(TINY_CFG, arm="A1a", beta=0.08)))      # an unnamed IDM weight would silently be A0
+    batch = a_batch(bank, world)
+    ma, m1 = model_of("A1a", gamma=100.0), model_of("A1")
+    ra, r1 = R.live_report(ma, batch), R.live_report(m1, batch)
+    assert ra["ok"] and ra["act_shuffle_ok"] and ra["act_shuffle_nonidentity_frac"] == 1.0 and ra["act_shuffle_changed_frac"] > 0.5, ra
+    assert ra["idm_term_grad_into_adapter"] > 0.0 and ra["unexpected_dead"] == [], "A1a is an IDM arm: its IDM term is live"
+    assert r1["ok"] and r1["act_shuffle_ok"] and r1["act_shuffle_nonidentity_frac"] is None, "control: no other arm permutes actions"
+    for m, want in ((ma, True), (m1, False), (model_of("A1x"), False), (model_of("R0"), False)):
+        rows = [r for r in R.declared_vs_built(m.cfg, m) if r["lever"] == "shuffle_act"]
+        assert len(rows) == 1 and rows[0]["ok"] and rows[0]["declared"] is want and rows[0]["built"] is want, (m.cfg.arm, rows)
+    # the trainer: A1a without --gamma, and with a batch of 1, is REFUSED before any step
+    out = tmp_path / "nog"
+    argv = ["--arm", "A1a", "--cache", world["root"], "--p10-prior", world["prior_path"], "--out", str(out), "--steps", "2",
+            "--beta", "0.08", "--kin-mode", "steer"] + TINY_FLAGS + HOLD_FLAGS
+    assert TR.main(argv) == 2 and not (out / "final.pt").exists()
+    assert "[G-HYG] REFUSED" in capsys.readouterr().out
+    out = tmp_path / "b1"
+    assert run_train(world, "A1a", out, extra=["--batch", "1"]) == 2 and not (out / "final.pt").exists()
+    assert "needs --batch >= 2" in capsys.readouterr().out
+
+
+def test_a1a_mutation_unsetting_the_built_flag_turns_g_dvb_and_g_live_red(bank, world):
+    batch = a_batch(bank, world)
+    m = model_of("A1a", gamma=100.0)
+    assert R.live_report(m, batch)["ok"] and all(r["ok"] for r in R.declared_vs_built(m.cfg, m))
+    m.shuffle_act = False                                    # the build silently drops the permutation: an A1 run labelled A1a
+    live = R.live_report(m, batch)
+    assert not live["ok"] and not live["act_shuffle_ok"] and live["act_shuffle_nonidentity_frac"] is None
+    assert [r["lever"] for r in R.declared_vs_built(m.cfg, m) if not r["ok"]] == ["shuffle_act"]
+
+
+def _mutant_model_module(line, replacement):
+    """ra1_hjepa's REAL source with ONE line changed, built as a fresh module (the real one is untouched)."""
+    src = inspect.getsource(R)
+    assert src.count(line) == 1, "the line moved: update this mutation"
+    m = types.ModuleType("ra1_hjepa_mutant")
+    m.__file__ = R.__file__
+    sys.modules[m.__name__] = m              # dataclasses resolve string annotations through sys.modules while the class is built
+    try:
+        exec(compile(src.replace(line, replacement), R.__file__, "exec"), m.__dict__)
+    finally:
+        sys.modules.pop(m.__name__, None)
+    return m
+
+
+def test_a1a_mutation_deleting_the_permutation_line_turns_g_live_red(bank, world):
+    """The deletion mutation: the derangement is still DRAWN (so its index fraction still reads 1.0) but never APPLIED. Only a check
+    on the actions the WM loss actually receives can see that, and it must go RED."""
+    batch = a_batch(bank, world)
+    line = "                a_seq = a_seq[aperm]\n"
+    mut = _mutant_model_module(line, "")
+    for mod, want in ((R, True), (mut, False)):
+        torch.manual_seed(0)
+        m = mod.build_model(mod.RA1Config(**dict(TINY_CFG, arm="A1a", beta=0.08, gamma=100.0)), torch.zeros(3), torch.ones(3))
+        rep = mod.live_report(m, batch)
+        assert rep["ok"] is want and rep["act_shuffle_ok"] is want, (mod.__name__, rep["act_shuffle_changed_frac"])
+        if not want:
+            assert rep["act_shuffle_nonidentity_frac"] == 1.0 and rep["act_shuffle_changed_frac"] == 0.0, "drawn but not applied"
+
+
+@needs_queue
+@pytest.mark.skipif(os.name != "nt", reason="the queue is a Windows batch file")
+def test_queue_a1a_stage_runs_seed0_in_the_root_of_the_a1_it_pairs_with(tmp_path):
+    import re
+    import subprocess
+    env = dict(os.environ, RA1_DRYRUN="1", REPO=str(REPO), RUNS=str(tmp_path / "runs"))
+
+    def dry(args):
+        r = subprocess.run(f'cmd /c ""{QUEUE}" {args}"', env=env, capture_output=True, text=True, encoding="utf-8", errors="replace",
+                           timeout=120)
+        return r.returncode, r.stdout.splitlines()
+
+    for args, root, wd in (("a1a 250 0.08 50", f"runs_es{os.sep}st250{os.sep}", None),
+                           ("a1a 1000 0.08 50 3.0", f"runs_es{os.sep}st1000_wd3.0{os.sep}", "3.0")):
+        rc, out = dry(args)
+        assert rc == 0, out
+        tr = [ln for ln in out if "ra1_hjepa_train.py" in ln]
+        assert len(tr) == 1 and re.search(r"--arm (\S+) --seed (\S+)", tr[0]).groups() == ("A1a", "0"), tr
+        s = args.split()[1]
+        assert f"--steps {s}" in tr[0] and "--beta 0.08 --gamma 50" in tr[0] and "--holdout-n 60" in tr[0] and "--kin-mode yaw" in tr[0], tr
+        assert f"{root}A1a_b0.08g50_s0" in tr[0], "the run goes into the root of the banked A1 it is paired with"
+        assert ("--wd" not in tr[0]) if wd is None else (f"--wd {wd}" in tr[0]), tr
+        ev = [ln for ln in out if "ra1_hjepa_eval.py" in ln]
+        assert len(ev) == 1 and " eval " in ev[0] and "--train-cache" in ev[0] and f"{root}A1a_b0.08g50_s0" in ev[0], ev
+    assert dry("a1a 250 0.08")[0] == 2, "a missing cell is refused, never defaulted"
+
+
+A1A_SCORE = QUEUE.parent / "a1a_permute.py"
+
+
+def _a1a_mod():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("a1a_permute", A1A_SCORE)
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    return m
+
+
+@pytest.mark.skipif(not A1A_SCORE.exists(), reason="the refav1-hj-mini package is not in this checkout")
+def test_a1a_scoring_applies_the_committed_readings_in_order():
+    m = _a1a_mod()
+
+    def row(delta, sep, idm_a1a=1.0, idm_a1=0.5, floor=0.004):
+        return dict(d=dict(delta=delta, lo=delta - 0.01, hi=delta + 0.01, separated=sep), idm_a1a=idm_a1a, idm_a1=idm_a1, floor=floor)
+
+    r = m.reading({"S1": row(0.03, True), "S2": row(0.05, True, floor=0.0147)})
+    assert r["outcome"] == "TRUE_ACTION_INFO" and r["qualifiers"] == [], r
+    r = m.reading({"S1": row(0.006, True), "S2": row(0.05, True, floor=0.0147)})
+    assert r["outcome"] == "TRUE_ACTION_INFO" and len(r["qualifiers"]) == 1 and "S1" in r["qualifiers"][0], "within 2x the seed floor is flagged"
+    r = m.reading({"S1": row(0.03, True), "S2": row(0.02, False)})
+    assert r["outcome"] == "GRADIENT_REGULARISATION_ARTIFACT" and "mixed: separated at S1 only" in r["qualifiers"][0], r
+    r = m.reading({"S1": row(-0.03, True), "S2": row(-0.02, True)})
+    assert r["outcome"] == "GRADIENT_REGULARISATION_ARTIFACT" and r["qualifiers"] == [], "a separated NEGATIVE delta is not reading 1"
+    r = m.reading({"S1": row(0.03, True, idm_a1a=0.4), "S2": row(0.05, True)})
+    assert r["outcome"] == "INSTRUMENT_FAIL" and "S1" in r["text"], "a failed manipulation check is never overridden by a good delta"
+
+
+@pytest.mark.skipif(not A1A_SCORE.exists(), reason="the refav1-hj-mini package is not in this checkout")
+def test_a1a_same_clip_leak_mirrors_the_trainers_draws():
+    m = _a1a_mod()
+    leak = m.same_clip_leak(250)
+    assert 0.0 <= leak < 0.01, "about 1/540 of donors share the clip"
+    # the leak is computed from the SAME draws the trainer makes: rebuild step 7 by hand
+    rng = np.random.default_rng((0, 104729, 7))
+    idx = rng.integers(0, 540, size=64)
+    perm = R.window_derangement(64, torch.Generator().manual_seed(7)).numpy()
+    one = m.same_clip_leak(8) * 8 * 64 - m.same_clip_leak(7) * 7 * 64
+    assert round(one) == int((idx == idx[perm]).sum())
+
+
+def test_a1a_trains_and_evals_end_to_end_with_every_control_green(world, tmp_path):
+    out = tmp_path / "A1a_0"
+    assert run_train(world, "A1a", out) == 0
+    gate = json.load(open(out / "launch_check.json", encoding="utf-8"))
+    assert gate["G_LIVE"]["act_shuffle_ok"] and gate["G_LIVE"]["act_shuffle_nonidentity_frac"] == 1.0
+    ev = out / "eval"
+    rc = EV.main(["eval", "--ckpt", str(out / "final.pt"), "--eval-cache", world["root"], "--p10-prior", world["prior_path"],
+                  "--grid-json", world["grid_json"], "--train-cache", world["root"], "--out", str(ev), "--n-boot", "40", "--fam-boot", "20"])
+    assert rc == 0, "an instrument control failed on A1a"
+    r = json.load(open(ev / "eval.json", encoding="utf-8"))
+    assert r["arm"] == "A1a" and r["instrument_ok"] and r["param_audit"]["untrained"] == [], "every A1a parameter received a gradient"
+    assert r["SENS"]["self_swap_control_ok"] and r["SENS"]["self_swap_control_max"] == 0.0, "SENS is scored with the RECORDED actions"
+    assert r["holdout"]["status"] == "OK" and r["families"]["arm"]["strategic"]["status"] == "PAUSED"
+    z = np.load(ev / "perwindow.npz", allow_pickle=True)
+    assert {"eid", "t", "ade6", "p10_ade6", "hold_ade6", "hold_eid"} <= set(z.files), "what code/a1a_permute.py pairs on"

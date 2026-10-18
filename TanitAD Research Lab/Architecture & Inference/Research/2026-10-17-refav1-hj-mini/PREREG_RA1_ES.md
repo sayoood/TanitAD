@@ -265,3 +265,14 @@ nothing but the batch marginal (A0's untrained head reads 1.0448 at S1).
 
 **Scoring:** `code/a1a_permute.py`, written in the style of `code/es5_wd.py`, reads the banked A1 / A1x / A0 / R0
 `perwindow.npz` from `raw/ra1_es/` and the pulled A1a `perwindow.npz`. Output: `raw/ra1_es/a1a_permute.json`.
+
+## Addendum D — result (2026-10-18 11:40; `raw/ra1_es/a1a_permute.json`, `code/a1a_permute.py`)
+
+* **Manipulation check: PASSES.** A1a's `idm/L1` is 1.0543 at S1 and 1.0532 at S2, against A1's 0.5315 and 0.3056.
+* **READING 1.** A1a − A1 = **+0.0360 [+0.0128, +0.0609]** at S1 and **+0.1315 [+0.0668, +0.1955]** at S2, separated at
+  both, at 9.5× and 8.9× A1's seed floor (0.0038, 0.0147). ⇒ The gain needs the TRUE action information: ego-motion
+  supervision of the visual latent.
+* Neither qualifier fires. Same-clip donors are 0.1437 % / 0.1500 %.
+* One seed (seed 0). H-HJ-K-1 is NOT reopened.
+* ⚠️ **Label note.** "H-RA1-ES-3a / 3b" above name the two explanations only. They are not sub-claims of the register's
+  `H-RA1-ES-3` (weight decay). The register files this test as **`H-RA1-ES-4`**.

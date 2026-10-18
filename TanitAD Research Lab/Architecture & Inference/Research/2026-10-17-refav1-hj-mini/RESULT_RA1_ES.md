@@ -189,3 +189,114 @@ The pre-registered A1x gate therefore keeps H-HJ-K-1 unread, as designed. Both r
 * **A control for the mechanism actually found:** A1 with its actions permuted across windows, which removes the TRUE
   action information that A1x keeps. It is cheap (minutes) but needs a new arm in code. It would test the IDM-latent
   claim, NOT reopen K. Reading K under a replacement control is the PI's call.
+
+## Addendum D: A1a, actions permuted ACROSS windows (pre-registered in `bc570e07` before its data)
+
+**2026-10-18 11:22–11:35, MEASURED on box 2 (SAFE MODE, one job at a time; boot time unchanged, 2026-10-17 18:43:26).
+Tier: T1-class open-loop trajectory, eval-141 ADE@6s. Estimator: paired episode-cluster bootstrap, B = 2000, on the same
+2,399 windows (asserted). It answers EPISODE variance only.** ⚠️ **ONE training seed (seed 0):** each delta is read against
+A1's banked training-seed floor, and there is no inference variance.
+* Source: `raw/ra1_es/a1a_permute.json`, `code/a1a_permute.py`.
+* Runs: `raw/ra1_es/st250/A1a_b0.08g50_s0/`, `raw/ra1_es/st1000_wd3.0/A1a_b0.08g50_s0/` (box 2:
+  `D:\tanitad\runs\ra1_yaw_es\…`).
+
+⚠️ **This does NOT reopen H-HJ-K-1.** The A1x gate still binds, and reading K under a replacement control is the PI's call.
+
+**The arm.** A1a is A1 with every window's standardised action sequence replaced by ANOTHER window's: a seeded derangement
+of the batch (`window_derangement`), applied before the world-model loss. The frames stay in true order and the readout
+path is untouched.
+* A1x keeps each window's own actions (it shuffles the frames), so it cannot remove the true action information. A1a
+  removes exactly that pairing.
+* **Disclosed leak:** σ(i) comes from the same clip as i in **0.1437 %** (250 steps) and **0.1500 %** (1,000 steps) of
+  (step, window) pairs. These rates are recomputed exactly from (seed, step) and are an upper bound, since a same clip
+  need not mean overlapping frames.
+
+**Manipulation check (read first): PASSES at both settings.** Unweighted `idm/L1` at the last log row:
+
+| setting | A1a | A1 | A1x | A0 (untrained head) |
+|---|---|---|---|---|
+| S1: 250 steps | **1.0543** | 0.5315 | 0.6148 | 1.0448 |
+| S2: 1,000 steps + wd 3.0 | **1.0532** | 0.3056 | 0.4573 | — |
+
+⇒ With the true pairing removed, A1a's IDM fits nothing beyond the action marginal (≈ A0's untrained head). A1x's IDM
+largely fits: its shuffled frames still carry the window's own kinematics.
+
+**The pre-registered reading: READING 1. The gain needs the TRUE action information.**
+
+| setting | A1a ADE@6s | A1 s0 / s1 | **A1a − A1 [95 % CI]** | A1 seed floor | \|Δ\| / floor |
+|---|---|---|---|---|---|
+| S1: 250 steps, wd 1e-3 | 2.5470 | 2.5110 / 2.5148 | **+0.0360 [+0.0128, +0.0609] SEP** | 0.0038 | 9.5× |
+| S2: 1,000 steps, wd 3.0 | 2.6271 | 2.4956 / 2.5103 | **+0.1315 [+0.0668, +0.1955] SEP** | 0.0147 | 8.9× |
+
+⇒ A1a − A1 > 0 is separated at BOTH settings, so the committed reading 1 applies: **the gain is ego-motion supervision of
+the visual latent, not a gradient-regularisation artifact.**
+* The register files this as `H-RA1-ES-4`. The pre-registration called the two explanations "H-RA1-ES-3a / 3b", but
+  those are NOT sub-claims of the register's `H-RA1-ES-3`, which is the weight-decay row.
+* Neither pre-registered qualifier fires. Both |Δ| exceed 2× the floor (0.0075 and 0.0295), and the outcome is not mixed.
+* ⚠️ One seed: the floor is A1's run-to-run spread, not A1a's own. An A1a seed-1 replicate would measure that directly.
+
+**Reported, NOT read** (eval-141 ADE@6s unless marked):
+
+| delta | S1: 250 steps | S2: 1,000 steps + wd 3.0 |
+|---|---|---|
+| A1a − P10 | −0.0157 [−0.0388, +0.0056] | +0.0644 [−0.0095, +0.1366] |
+| A1 s0 − P10 (banked) | −0.0517 [−0.0792, −0.0234] SEP | −0.0671 [−0.1188, −0.0149] SEP |
+| A1a − A1x | +0.0371 [+0.0156, +0.0611] SEP | +0.1205 [+0.0503, +0.1881] SEP |
+| A1a − A0 (b0.08, s0) | +0.0092 [−0.0105, +0.0276] | A0 not run |
+| A1a − R0 s0 | −0.0301 [−0.0840, +0.0179] | −0.2555 [−0.3596, −0.1558] SEP |
+| holdout ADE@6s: A1a / A1 s0 / P10 | 2.9830 / 2.9416 / 3.0245 | 2.9851 / 2.9961 / 3.0245 |
+| holdout A1a − A1 | +0.0414 [+0.0077, +0.0732] SEP | −0.0110 [−0.0903, +0.0659] |
+
+Notes on that table:
+* **At S1, A1a lands on A0** (+0.0092, not separated). Removing the true pairing takes A1 back to the arm with no IDM at
+  all, which is what reading 1 predicts.
+* ⚠️ The S2 R0 comparison is NOT matched: the banked R0 at 1,000 steps ran at wd 1e-3.
+* ⚠️ At S2 the 60-clip holdout does NOT show the eval-141 difference. That is disclosed, and it changes no reading: the
+  committed metric is eval-141, and nothing here selects.
+
+**Four families, S2 (1,000 steps + wd 3.0), seed 0.** Point values; CIs are in each run's `eval.json` → `families`.
+
+| family | metric | A1a | A1 | P10 |
+|---|---|---|---|---|
+| LONGITUDINAL | speed MAE m/s | 1.0108 | 0.9518 | 0.9753 |
+| | along-track MAE m | 1.9318 | 1.8103 | 1.8681 |
+| | accel MAE m/s² | 0.5400 | 0.5274 | 0.5676 |
+| | target speed within 0.5 m/s | 0.5055 | 0.5347 | 0.5089 |
+| LATERAL | heading MAE ° | 5.9537 | 5.798 | 5.7652 |
+| | yaw-rate MAE °/s | 3.4892 | 3.6342 | 4.1255 |
+| | curvature MAE 1/m | 0.0147 | 0.0167 | 0.0185 |
+| | cross-track MAE m | 1.2380 | 1.2137 | 1.2426 |
+| TACTICAL (from the trajectory) | lateral-decision κ | 0.4574 | 0.4796 | 0.4680 |
+| | longitudinal-decision κ | 0.3079 | 0.3393 | 0.2508 |
+| | 5-way collapsed κ | 0.3414 | 0.3662 | 0.3099 |
+| STRATEGIC | — | **PAUSED** (PI 2026-09-19) | PAUSED | PAUSED |
+
+* Distance-keeping / lead-braking: **NOT COMPUTABLE** from the pooled cache, which has no lead-agent track (n = 2,399
+  windows would have been scored).
+* The deficit is longitudinal and tactical. A1a's yaw-rate and curvature points sit below A1's; they are point values and
+  are not read.
+
+**Launch gate and instrument (both runs).**
+* G-DVB 23/23, including the new `shuffle_act` row (declared True = built True) and `weight_decay` (1e-3 / 3.0).
+* G-LIVE ok: `act_shuffle_nonidentity_frac` 1.0 and `act_shuffle_changed_frac` 1.0 on the real probe batch.
+* Every eval control passes (`instrument_ok`), and the post-training audit finds no untrained parameter.
+* **Deletion-mutation proof** (`raw/ra1_es/a1a_mutation_proof.json`, `code/a1a_mutation_proof.py`): four single-line
+  deletions in `ra1_hjepa.py` each turn the A1a tests RED, and the control is green before and after:
+  * the permutation drawn but never applied;
+  * G-LIVE not gating on the A1a check;
+  * the G-DVB row deleted;
+  * the arm built without its flag.
+* ⚠️ On the proof's first run the second mutation stayed GREEN, but only because `-k "a1a or A1a"` did not select the two
+  mutation tests (their names lacked "a1a"). They were renamed, and all four mutations then read RED.
+
+**What this adds to the five regimes.** The gain over P10 on frozen pooled DINOv3 at 540 clips is:
+* **IDM supervision with the TRUE pairing of frames and actions** (A1a loses it);
+* NOT temporal world-model content (A1x keeps it);
+* NOT a generic regulariser of the adapter (A1a keeps every regulariser and loses the gain).
+
+⇒ **Next lever (pre-registered reading 1):** make that supervision explicit and cheap, as an IDM-only arm (no prediction
+loss; needs code, see Addendum A's result) or as the same IDM term on R0. Each needs its own pre-registration.
+⇒ **PI decision this sets up (NOT taken here):** whether A1a, which DOES lose to A1 at both settings, may stand in for A1x
+as K's instrument gate.
+* ⚠️ The two gates certify different things. A1x asks whether the world model's TEMPORAL content matters. A1a asks
+  whether the true ACTION PAIRING matters. A1a passing would certify an IDM-supervised adapter, not a world model.

@@ -14,6 +14,7 @@ rem   ra1_box2_queue.cmd es5 S BETA GAMMA WD    PREREG_RA1_ES Addendum C: A1 x2 
 rem   ra1_box2_queue.cmd full "S1 S2 ..." BETA GAMMA   PREREG_RA1_FULL phase 1: R0 x2 + A1 x2 per budget on the FULL corpus, in %RUNS%_full\st<S>
 rem   ra1_box2_queue.cmd full2 SA SR BETA GAMMA        PREREG_RA1_FULL phase 2: A1x seed 0 at SA (= S*_A1), + the verdict over R0@SR, A1/A1x@SA
 rem   ra1_box2_queue.cmd full3 SA SR BETA GAMMA WD     PREREG_RA1_FULL reading 3 K-FAIL lever: A1 x2 + A1x at SA with --wd WD, in st<SA>_wd<WD>
+rem   ra1_box2_queue.cmd a1a S BETA GAMMA [WD]  PREREG_RA1_ES Addendum D: A1a seed 0 (actions permuted ACROSS windows) at budget S [--wd WD], in the root of the A1 it pairs with
 rem
 rem HOLDOUT (PREREG_HJ_STAGE0 Amendment 1): every trainer call carries --holdout-n 60 (the trainer REFUSES to run without it): the last 60 of the
 rem 600 stage-A clips in sha12 order are withheld from EVERY arm, the evals score them (--train-cache), and the A1 cell is chosen on them, NEVER on
@@ -67,12 +68,14 @@ if /i "%~1"=="es5" goto :es5
 if /i "%~1"=="full" goto :full
 if /i "%~1"=="full2" goto :full2
 if /i "%~1"=="full3" goto :full3
+if /i "%~1"=="a1a" goto :a1a
 echo usage: ra1_box2_queue.cmd gate^|stage1^|stage1verdict^|stage2 BETA GAMMA^|final BETA GAMMA
 echo        ra1_box2_queue.cmd es "S1 S2 ..."^|es2 S BETA GAMMA   (PREREG_RA1_ES)
 echo        ra1_box2_queue.cmd es3 S BETA^|ridge   (PREREG_RA1_ES Addendum A, PREREG_RA1_RIDGE)
 echo        ra1_box2_queue.cmd es5 S BETA GAMMA WD   (PREREG_RA1_ES Addendum C)
 echo        ra1_box2_queue.cmd full "S1 S2 ..." BETA GAMMA^|full2 SA SR BETA GAMMA   (PREREG_RA1_FULL)
 echo        ra1_box2_queue.cmd full3 SA SR BETA GAMMA WD   (PREREG_RA1_FULL, the K-FAIL lever)
+echo        ra1_box2_queue.cmd a1a S BETA GAMMA [WD]   (PREREG_RA1_ES Addendum D)
 exit /b 2
 
 :gate
@@ -179,6 +182,20 @@ set "VN=es5_verdict.json"
 set "C=b%~3g%~4"
 call :verdict --run "R0@0=%ESBASE%\R0_s0\eval" --run "R0@1=%ESBASE%\R0_s1\eval" --run "A1:%C%@0=%RUNS%\A1_%C%_s0\eval" --run "A1:%C%@1=%RUNS%\A1_%C%_s1\eval" --run "A1x:%C%@0=%RUNS%\A1x_%C%_s0\eval"
 exit /b %errorlevel%
+
+:a1a
+rem PREREG_RA1_ES Addendum D: A1a = A1 with every window's action sequence taken from ANOTHER window before the world-model loss.
+rem Seed 0 only. The run goes into the SAME root as the banked A1 it is paired with: %RUNS%_es\st<S> (no WD) or %RUNS%_es\st<S>_wd<WD>.
+rem --wd rides the :run block's extra-args slot, so every other constant is the :run block's. No verdict: code\a1a_permute.py scores it.
+if "%~4"=="" (echo a1a needs S BETA GAMMA [WD] & exit /b 2)
+set "STEPS=%~2"
+set "RUNS=%RUNS%_es\st%~2"
+if not "%~5"=="" set "RUNS=%RUNS%_wd%~5"
+set "XA="
+if not "%~5"=="" set "XA=--wd %~5"
+if not exist "%RUNS%" mkdir "%RUNS%"
+call :run A1a_b%~3g%~4_s0 A1a 0 %~3 %~4 "%XA%" || exit /b 1
+exit /b 0
 
 :full
 rem PREREG_RA1_FULL phase 1: the FULL train corpus -- all 4,572 v7.2 TRAIN clips minus the SAME 60-clip Amendment-1 holdout = 4,512 --

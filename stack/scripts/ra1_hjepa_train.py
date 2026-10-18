@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""RA-1 trainer: ONE arm (R0 / A0 / A1 / A2 / A1x / A1h) on the pooled frozen-DINOv3 cache.  Spec: Project Steering/PREREG_HJ_STAGE0.md.
+"""RA-1 trainer: ONE arm (R0 / A0 / A1 / A2 / A1x / A1h / A1a) on the pooled frozen-DINOv3 cache.  Spec: Project Steering/PREREG_HJ_STAGE0.md.
 
     python stack/scripts/ra1_hjepa_train.py --arm A1 --beta 0.08 --gamma 100 --seed 0 --grid 4x10 --holdout-n 60 \
         --cache D:/tanitad/cache --p10-prior <p10_prior.pt> --out D:/tanitad/runs/A1_b0.08_g100_s0 --steps 6000
@@ -11,15 +11,17 @@ that score K. The clip list and its sha256 go into `<out>/meta.json`, `DONE` and
 
 LAUNCH-GATE SPIRIT (CLAUDE.md, 2026-09-26): before the first optimiser step the script runs
   G-HYG   `validate_config`: a flag whose default disables its mechanism must be NAMED (A1 without --gamma is refused, A0 with
-          --gamma is refused, R0 with --beta is refused, --hist-drop outside A1h is refused);
+          --gamma is refused, R0 with --beta is refused, --hist-drop outside A1h is refused, A1a without --gamma or with a
+          --batch below 2 is refused);
   G-DVB   every declared lever read BACK from the built modules (`declared_vs_built`);
   G-LIVE  one REAL batch forward/backward: every declared loss term present and finite, the IDM term's gradient into the adapter
-          non-zero in IDM arms and EXACTLY 0.0 in A0, no unexpected dead parameter, A1x really permutes;
+          non-zero in IDM arms and EXACTLY 0.0 in A0, no unexpected dead parameter, A1x really permutes, A1a really hands every
+          window another window's actions (PREREG_RA1_ES Addendum D; G-DVB also reads its `shuffle_act` flag back);
 and writes `launch_check.json`. Any failure => exit 2, no training. `--check-only` stops there.
 After training, `ra1_hjepa_eval.py` re-audits the optimiser state (a parameter with no Adam state never received a gradient).
 
 RESUMABLE: `latest.pt` every --ckpt-every steps (atomic), `final.pt` + `DONE` at the end. Batches, SIGReg directions, the A1x
-permutation and the A1h draws are pure functions of (seed, step), so a resumed run is the uninterrupted run. A resume with a
+permutation, the A1a derangement and the A1h draws are pure functions of (seed, step), so a resumed run is the uninterrupted run. A resume with a
 different configuration is refused. CPU only when CUDA_VISIBLE_DEVICES=-1 (asserted).
 """
 from __future__ import annotations
@@ -53,8 +55,8 @@ NOT_IN_HASH = {"out", "resume", "log_every", "ckpt_every", "device", "check_only
 def build_parser():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--arm", required=True, choices=R.ARMS)
-    ap.add_argument("--beta", type=float, default=None, help="LEVEL-1 SIGReg weight; required for every WM arm (A0/A1/A2/A1x/A1h), forbidden for R0")
-    ap.add_argument("--gamma", type=float, default=None, help="LEVEL-1 IDM weight; required (>0) for A1/A2/A1x/A1h, absent/0 for A0, forbidden for R0")
+    ap.add_argument("--beta", type=float, default=None, help="LEVEL-1 SIGReg weight; required for every WM arm (A0/A1/A2/A1x/A1h/A1a), forbidden for R0")
+    ap.add_argument("--gamma", type=float, default=None, help="LEVEL-1 IDM weight; required (>0) for A1/A2/A1x/A1h/A1a, absent/0 for A0, forbidden for R0")
     ap.add_argument("--beta-up", type=float, default=0.16, help="upper-level SIGReg weight (paper DROID level 2: 0.16)")
     ap.add_argument("--gamma-up", type=float, default=50.0, help="upper-level IDM weight (paper DROID level 2: 50); 0 forced in A0")
     ap.add_argument("--act-sigreg", type=float, default=0.005)
@@ -222,6 +224,8 @@ def main(argv=None) -> int:
     else:
         act_mean, act_std = bank.act_stats(resident)
     try:
+        if cfg.spec.shuffle_act and a.batch < 2:              # G-HYG: A1a takes each window's actions from ANOTHER window
+            raise ValueError(f"A1a permutes actions across windows and needs --batch >= 2, got {a.batch}")
         model = R.build_model(cfg, act_mean, act_std)          # G-HYG happens inside (validate_config)
     except ValueError as e:
         print(f"[G-HYG] REFUSED: {e}", flush=True)
