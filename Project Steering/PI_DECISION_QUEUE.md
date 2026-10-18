@@ -2158,3 +2158,13 @@ sinks ~2 h; each further hour sinks one more.
   amend a binding ruling, and it is yours alone.
 
 **Recommendation: A.** The rule says "in any form", the stop is cheapest now, and yaw rate already carries the information.
+
+## DECIDED 2026-10-18 ~14:00 Berlin -- REFe is exempt from the steering-angle ruling; P6 continues
+
+PI: *"Exempt REFe"* (option C above).
+
+* REFe is the NAVSIM-protocol reproduction. nuPlan's `tire_steering_angle` counts as a measured vehicle state FOR REFe ONLY:
+  P2, SFT-4, P6 and every REFe arm. `D-PI-YAWRATE-1` keeps full force for every other model.
+* P6 continues unchanged and stays deployable. No relaunch, no new lever.
+* Recorded in `D-PI-YAWRATE-3` and in CLAUDE.md's binding section. The leaderboard rows keep declaring the input
+  (`be1d0c0`), because the exemption changes admissibility, not what the model reads.

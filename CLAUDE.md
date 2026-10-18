@@ -781,3 +781,6 @@ The PI stopped it. From now on:
   * v8F-mini (its P10 reads steer).
   * The arm α1s (`v8f_steer`) is REJECTED and never launches.
 * Same family as the vision-only and goal-input rules: **ask what an input at inference really is**, not what it is called.
+* ⚠️ **EXEMPTION — REFe (PI, 2026-10-18: *"Exempt REFe"*).** REFe (P2, SFT-4, P6, every REFe arm) is the NAVSIM-protocol
+  reproduction. Its 7-D ego input includes nuPlan's `tire_steering_angle` (`refe/model.py:185`), which is treated as a measured
+  vehicle state FOR REFe ONLY. This rule keeps full force for every other model. Register: `D-PI-YAWRATE-3`.
