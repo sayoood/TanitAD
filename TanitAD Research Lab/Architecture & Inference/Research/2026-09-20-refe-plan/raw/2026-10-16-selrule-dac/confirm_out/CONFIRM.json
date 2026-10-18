@@ -1,0 +1,495 @@
+{
+ "command_field_status": "ok",
+ "disjointness": {
+  "intersection": 0,
+  "intersection_logs": [],
+  "navtest_logs": 136,
+  "rl_val_logs": 75
+ },
+ "estimator": "paired log-cluster bootstrap over the 136 navtest logs, 10,000 resamples, 95 %, seed 20260927 (proxy_eval.boot's stream). It answers 'another draw of LOGS' only: P2 is ONE training run (H-ESTIM-SEED-1) and the rule is deterministic (no inference variance).",
+ "evidence": "MEASURED (ours); the ONE pre-registered read, rule frozen in FIT.json before this table existed",
+ "families": {
+  "computed": false,
+  "reason": {
+   "export": "D:/Archive/devbox-C/navsim/exp/w3_navtest_v1/inputs/navtest_inputs.json.gz",
+   "families6.py": "D:\\Projects\\TanitAD\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-23-refcv6-standard-tests\\navsim\\code\\families6.py",
+   "fingerprint_available": false,
+   "tanitad_python": true
+  }
+ },
+ "fit_rl_val": {
+  "delta_vs_B": {
+   "better": 1,
+   "ci95": [
+    -0.0009935111025961402,
+    0.0670429908199804
+   ],
+   "mean": 0.021051388888888887,
+   "worse": 2
+  },
+  "note": "u400 scorer, pre-P2 fan: a transfer, not P2 (Amendment 1, A1)"
+ },
+ "fit_sha256": "44d6d2c1ad5dce9388899784e9ba8d8f5bb88b52e348d68341575ded462285a9",
+ "four_families": {
+  "lateral": "DAC (paired) + families6 heading / cross-track via the family leg",
+  "longitudinal": "EP (paired, result.compare.subscores.EP) + families6 speed / along-track via the family leg",
+  "strategic": "PAUSED by the PI (2026-09-19, PI_DECISION_QUEUE item 25) and UNAVAILABLE in NAVSIM (no strategic decision is scored); reported as such, never as a pass",
+  "tactical": "selection quality random / actual / best-of-64 (result.selection_quality)"
+ },
+ "frozen_rule": "V(0.8)",
+ "gates": {
+  "B_equals_table_pick": {
+   "equal": 12146,
+   "n": 12146,
+   "share": 1.0
+  },
+  "every_token_has_a_log": true,
+  "logits_finite": true,
+  "mean_PDMS_x100_at_table_pick": 88.8184088897293,
+  "n_logs_in_table": 136,
+  "n_tokens": 12146,
+  "p2_banked_x100": 88.82,
+  "pdms_finite": true,
+  "pdms_in_0_1": true,
+  "pdms_vs_recomputed_max_abs": 0.0,
+  "pick_in_range": true,
+  "proposals_finite": true,
+  "sub_finite": true,
+  "sub_in_0_1": true,
+  "token_set_equals_expected_12146": true,
+  "tokens_unique": true,
+  "valid_all_true": true
+ },
+ "outcome": {
+  "adopt_if_subscore_leg_only": true,
+  "outcome": "UNRESOLVED (family leg not computed)",
+  "why": "lower bound > 0 and no adverse PDMS sub-score, but the longitudinal/lateral family leg was not computed; never ADOPT"
+ },
+ "provenance": {
+  "confirm_py_sha256": "07d1fff8b2b438b3924ed6876a90e18b29ad2571491fc2c6108176f7e3d16077",
+  "export": {
+   "path": "D:/Archive/devbox-C/navsim/exp/w3_navtest_v1/inputs/navtest_inputs.json.gz",
+   "sha256": "b0dc05f3037d0daf4a3a3844f8f1a4c897aa788176b022eddf31abdf3139a990"
+  },
+  "fit_selrule_py_sha256": "6309222c445cae8559f26ed4b42592da81207955f9d4c7677b81cc947c00b6dc",
+  "seconds": 2.6,
+  "selrule_py_sha256": "6309222c445cae8559f26ed4b42592da81207955f9d4c7677b81cc947c00b6dc",
+  "table": {
+   "proposals.npz": null,
+   "table.npz": "33441082b7044c951e3cef5fb898cac50797039aed93560b2712e3ff4c34906e"
+  },
+  "tokens_md5": "3a8b3653fd70891e50a230a37eb76ae8"
+ },
+ "result": {
+  "B": {
+   "PDMS_x100": 88.8184088897293,
+   "dac0_picks": 380,
+   "n": 12146,
+   "nc0_picks": 133,
+   "subscores_x100": {
+    "C": 99.97530051045612,
+    "DAC": 96.87139799110818,
+    "DDC": 97.50535155606784,
+    "EP": 82.33955161870931,
+    "NC": 98.81442450189363,
+    "TTC": 95.31533014984358
+   },
+   "zero_picks": 509
+  },
+  "B_vs_table_pick": {
+   "equal": 12146,
+   "mean_PDMS_x100_at_table_pick": 88.8184088897293,
+   "n": 12146
+  },
+  "ceilings_x100": {
+   "B": 88.8184088897293,
+   "best_of_64": 98.23109369448531,
+   "headroom_best_of_64_over_B": 9.412684804756012
+  },
+  "chosen": {
+   "PDMS_x100": 88.84189293083969,
+   "dac0_picks": 376,
+   "n": 12146,
+   "nc0_picks": 133,
+   "subscores_x100": {
+    "C": 99.97530051045612,
+    "DAC": 96.90433064383336,
+    "DDC": 97.50946813765849,
+    "EP": 82.34980760355897,
+    "NC": 98.81442450189363,
+    "TTC": 95.31533014984358
+   },
+   "zero_picks": 505
+  },
+  "chosen_spec": [
+   "V",
+   0.8
+  ],
+  "compare": {
+   "PDMS": {
+    "adverse": false,
+    "better": 4,
+    "ci95": [
+     0.00018343423271598283,
+     0.05458437411048565
+    ],
+    "mean": 0.023484041110389365,
+    "n": 12146,
+    "n_dropped_draws": 0,
+    "separated": true,
+    "tied": 12136,
+    "worse": 6
+   },
+   "adverse_subscores": [],
+   "dac0": {
+    "a": 376,
+    "b": 380
+   },
+   "nc0": {
+    "a": 133,
+    "b": 133
+   },
+   "picks_changed": 11,
+   "subscores": {
+    "C": {
+     "adverse": false,
+     "better": 0,
+     "ci95": [
+      0.0,
+      0.0
+     ],
+     "mean": 0.0,
+     "n": 12146,
+     "n_dropped_draws": 0,
+     "separated": false,
+     "tied": 12146,
+     "worse": 0
+    },
+    "DAC": {
+     "adverse": false,
+     "better": 4,
+     "ci95": [
+      0.0075917319311795016,
+      0.06976422743364281
+     ],
+     "mean": 0.032932652725177015,
+     "n": 12146,
+     "n_dropped_draws": 0,
+     "separated": true,
+     "tied": 12142,
+     "worse": 0
+    },
+    "DDC": {
+     "adverse": false,
+     "better": 1,
+     "ci95": [
+      0.0,
+      0.013793135159475623
+     ],
+     "mean": 0.004116581590647127,
+     "n": 12146,
+     "n_dropped_draws": 0,
+     "separated": false,
+     "tied": 12145,
+     "worse": 0
+    },
+    "EP": {
+     "adverse": false,
+     "better": 4,
+     "ci95": [
+      -0.010559804598951646,
+      0.03662924743675391
+     ],
+     "mean": 0.010255984849686666,
+     "n": 12146,
+     "n_dropped_draws": 0,
+     "separated": false,
+     "tied": 12136,
+     "worse": 6
+    },
+    "NC": {
+     "adverse": false,
+     "better": 0,
+     "ci95": [
+      0.0,
+      0.0
+     ],
+     "mean": 0.0,
+     "n": 12146,
+     "n_dropped_draws": 0,
+     "separated": false,
+     "tied": 12146,
+     "worse": 0
+    },
+    "TTC": {
+     "adverse": false,
+     "better": 0,
+     "ci95": [
+      0.0,
+      0.0
+     ],
+     "mean": 0.0,
+     "n": 12146,
+     "n_dropped_draws": 0,
+     "separated": false,
+     "tied": 12146,
+     "worse": 0
+    }
+   },
+   "zero_tokens": {
+    "a_zero": 505,
+    "b_zero": 509,
+    "new_zero_b_nonzero_to_a0": 0,
+    "rescued_b0_to_a_nonzero": 4
+   }
+  },
+  "ep_ttc_cost": {
+   "EP": {
+    "adverse": false,
+    "better": 4,
+    "ci95": [
+     -0.010559804598951646,
+     0.03662924743675391
+    ],
+    "mean": 0.010255984849686666,
+    "n": 12146,
+    "n_dropped_draws": 0,
+    "separated": false,
+    "tied": 12136,
+    "worse": 6
+   },
+   "TTC": {
+    "adverse": false,
+    "better": 0,
+    "ci95": [
+     0.0,
+     0.0
+    ],
+    "mean": 0.0,
+    "n": 12146,
+    "n_dropped_draws": 0,
+    "separated": false,
+    "tied": 12146,
+    "worse": 0
+   },
+   "note": "the expected cost of re-weighting the gates (section 4: reported, never gating)"
+  },
+  "n_logs": 136,
+  "n_tokens": 12146,
+  "oracles": {
+   "O-DAC": {
+    "ceiling_pts": 3.5376954888978354,
+    "delta_vs_B": {
+     "adverse": false,
+     "better": 3330,
+     "ci95": [
+      2.497543040442771,
+      3.954501175699711
+     ],
+     "mean": 3.184432132778482,
+     "n": 12146,
+     "n_dropped_draws": 0,
+     "separated": true,
+     "tied": 8416,
+     "worse": 400
+    },
+    "picks_changed_vs_B": 4852,
+    "share_of_SEL_ceiling_3.54": 0.9001430854554946,
+    "summary": {
+     "PDMS_x100": 92.00284102250777,
+     "dac0_picks": 59,
+     "n": 12146,
+     "nc0_picks": 126,
+     "subscores_x100": {
+      "C": 99.97530051045612,
+      "DAC": 99.51424337230364,
+      "DDC": 97.3448048740326,
+      "EP": 86.25248181277519,
+      "NC": 98.88028980734398,
+      "TTC": 95.66112300345793
+     },
+     "zero_picks": 183
+    }
+   },
+   "O-NC": {
+    "ceiling_pts": 3.5376954888978354,
+    "delta_vs_B": {
+     "adverse": false,
+     "better": 2261,
+     "ci95": [
+      0.7759903694967928,
+      1.202958984559084
+     ],
+     "mean": 0.9892228830848111,
+     "n": 12146,
+     "n_dropped_draws": 0,
+     "separated": true,
+     "tied": 9682,
+     "worse": 203
+    },
+    "picks_changed_vs_B": 3764,
+    "share_of_SEL_ceiling_3.54": 0.27962352502900195,
+    "summary": {
+     "PDMS_x100": 89.8076317728141,
+     "dac0_picks": 375,
+     "n": 12146,
+     "nc0_picks": 0,
+     "subscores_x100": {
+      "C": 99.97530051045612,
+      "DAC": 96.91256380701465,
+      "DDC": 97.42301992425489,
+      "EP": 84.22630046940607,
+      "NC": 99.99176683681871,
+      "TTC": 95.2906306602997
+     },
+     "zero_picks": 375
+    }
+   },
+   "O-both": {
+    "ceiling_pts": 3.5376954888978354,
+    "delta_vs_B": {
+     "adverse": false,
+     "better": 5122,
+     "ci95": [
+      3.3355474941811454,
+      4.811871535363805
+     ],
+     "mean": 4.042586630381569,
+     "n": 12146,
+     "n_dropped_draws": 0,
+     "separated": true,
+     "tied": 6824,
+     "worse": 200
+    },
+    "picks_changed_vs_B": 7253,
+    "share_of_SEL_ceiling_3.54": 1.142717524181549,
+    "summary": {
+     "PDMS_x100": 92.86099552011086,
+     "dac0_picks": 62,
+     "n": 12146,
+     "nc0_picks": 5,
+     "subscores_x100": {
+      "C": 99.97530051045612,
+      "DAC": 99.48954388275976,
+      "DDC": 97.17602502881607,
+      "EP": 88.1770858792067,
+      "NC": 99.93413469454964,
+      "TTC": 95.30709698666227
+     },
+     "zero_picks": 64
+    }
+   }
+  },
+  "per_command": {
+   "available": true,
+   "by_command": {
+    "left": {
+     "B_PDMS_x100": {
+      "ci95": [
+       83.99913277845718,
+       88.96629535275949
+      ],
+      "mean": 86.57385786739525,
+      "n_dropped_draws": 0
+     },
+     "b_zero": 156,
+     "chosen_PDMS_x100": {
+      "ci95": [
+       83.99088795460268,
+       88.96402275058968
+      ],
+      "mean": 86.56878626018765,
+      "n_dropped_draws": 0
+     },
+     "chosen_zero": 156,
+     "delta_PDMS_x100": {
+      "ci95": [
+       -0.017556137337162797,
+       0.0
+      ],
+      "mean": -0.005071607207601148,
+      "n_dropped_draws": 0
+     },
+     "tokens": 2501
+    },
+    "right": {
+     "B_PDMS_x100": {
+      "ci95": [
+       81.91252247517991,
+       87.09735555029633
+      ],
+      "mean": 84.37881497021594,
+      "n_dropped_draws": 0
+     },
+     "b_zero": 123,
+     "chosen_PDMS_x100": {
+      "ci95": [
+       81.99612144191516,
+       87.17894756329055
+      ],
+      "mean": 84.45222912192892,
+      "n_dropped_draws": 0
+     },
+     "chosen_zero": 121,
+     "delta_PDMS_x100": {
+      "ci95": [
+       -0.040769223073552074,
+       0.25408938658051466
+      ],
+      "mean": 0.07341415171296238,
+      "n_dropped_draws": 0
+     },
+     "tokens": 1575
+    },
+    "straight": {
+     "B_PDMS_x100": {
+      "ci95": [
+       89.6734054783851,
+       91.0532287918908
+      ],
+      "mean": 90.38048850931925,
+      "n_dropped_draws": 0
+     },
+     "b_zero": 230,
+     "chosen_PDMS_x100": {
+      "ci95": [
+       89.7028251414996,
+       91.07116917783723
+      ],
+      "mean": 90.40307760027403,
+      "n_dropped_draws": 0
+     },
+     "chosen_zero": 228,
+     "delta_PDMS_x100": {
+      "ci95": [
+       0.0,
+       0.05855075388618576
+      ],
+      "mean": 0.022589090954781163,
+      "n_dropped_draws": 0
+     },
+     "tokens": 8070
+    }
+   },
+   "tokens_covered": 12146
+  },
+  "picks": {
+   "B_sha256": "9a10a876179511b0c33155d9f2587facfa2ad09caf0b8ca073cb7ea634c71eff",
+   "chosen_sha256": "149e777ae7f490e73d1ac2201192fa917e6dde18317987a06cf220411e48ad51"
+  },
+  "selection_quality": {
+   "B": {
+    "actual_x100": 88.8184088897293,
+    "best_of_64_x100": 98.23109369448531,
+    "random_x100": 73.00314921968499
+   },
+   "chosen": {
+    "actual_x100": 88.84189293083969,
+    "best_of_64_x100": 98.23109369448531,
+    "random_x100": 73.00314921968499
+   }
+  }
+ },
+ "tier": "T1 (NAVSIM v1.1 PDMS, ego pseudo-simulation of an open-loop plan, P2's own 64-proposal table, 12,146 tokens / 136 logs)",
+ "tool": "confirm/1"
+}
