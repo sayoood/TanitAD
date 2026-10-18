@@ -19,6 +19,11 @@ WHICH FIXTURE COMES FROM WHICH PRODUCER (the "built, tested, unreachable" rule: 
       (the second is the real K3 KILLED.json with its code rewritten).
     * the L controls' dyadic deltas (rlval_vs_A0.json subset).
 
+  R0e-pick B3 (the constraint's registered T is PER ARM, never read from the log) -- fixtures:
+    REAL: scorer_finetune.main() run twice on CPU (`--epo-con-temp` unnamed -> T 0.1, and `--epo-con-temp 0.01`); the REAL EpoDual built at 0.01 behind full arm directories (o1_t001, r1d_o1_t001);
+          the REAL registered argv of R0d / R1o in eval/rls1d_arms.json; the REAL banked R0d trainer log, read against the banked pre-B3 outcome record.
+    SYNTHETIC: corrupted `temp` values (no trainer writes a bool or a string), the arms files other than rls1d_arms.json.
+
 Then: SCENARIOS per outcome O1-O7 and one per PRECEDENCE rule of addendum R2 (O6 beats O1, O6 beats O7, g3-alone is O7 not O4, O7 beats a g5 breach, the overlap is O4+O5, the gap is O4 flagged SLACK, a K-MON
 kill with the K3 reason is K3), BOUNDARIES, the VERTEX test of addendum R1 (alpha 0.25 reads G FAIL by 0.00125; alpha 0.375 and 0.5 sit on F and read PASS), bars L and E, the joint rule, the CLI end to end,
 the REFUSAL of an addendum that is not the registered bytes, the PINS (every committed threshold against the prereg TEXT, the ADDENDUM text and their sha256, and against the source constants), and MUTATIONS
@@ -114,9 +119,9 @@ class World:
 
 
 # ============================================================ the trainer's log: the REAL dual, the trainer's own loop text
-def sim_log(W, total, g_ttc, g_nc=lambda u: 0.0, *, accum=2, ramp=200, last=None, nan_at=None, done=True, ramp_in_data=None):
+def sim_log(W, total, g_ttc, g_nc=lambda u: 0.0, *, accum=2, ramp=200, last=None, nan_at=None, done=True, ramp_in_data=None, con_temp=None):
     """-> {"data", "start", "trains": [row...], "done": row or None}.  The dual is scorer_finetune.EpoDual; the accumulation / row lines are the trainer's (scorer_finetune.main, the loop)."""
-    dual = W.sf.EpoDual(("ttc", "nc"), 0.0, 4.0, 10.0, 0.0, temp=EPO_TEMP)          # PICKCON: scorer_finetune.main builds the dual with the constraint's T (--epo-con-temp, else --epo-temp); its built_facts() block carries `temp`
+    dual = W.sf.EpoDual(("ttc", "nc"), 0.0, 4.0, 10.0, 0.0, temp=EPO_TEMP if con_temp is None else con_temp)          # B3: con_temp = the arm's --epo-con-temp (None = inherits --epo-temp, the registered 0.1).  PICKCON: scorer_finetune.main builds the dual with the constraint's T (--epo-con-temp, else --epo-temp); its built_facts() block carries `temp`
     con_acc, con_log, trains = {"n": 0}, {"n": 0}, []
     upd, end = 0, (total if last is None else last)
     while upd < end:
@@ -360,6 +365,9 @@ def make_world_arms(W: World, root: Path):
     # ---- second constrained arm (seed 1), for the joint rule
     A["r1d_o1"] = B("r1d_o1", "R1d", ALL4("gain_hi"), L1000(HELD))
     A["r1d_o2"] = B("r1d_o2", "R1d", ALL4("gain_lo"), L1000(HELD))
+    # ---- R0e-pick B3: the same arms as o1 / r1d_o1, but the REAL EpoDual was built at --epo-con-temp 0.01 (the data event's epo_con.temp = 0.01; the EPO reward term's `epo.temp` stays 0.1)
+    A["o1_t001"] = B("o1_t001", "R0d", ALL4("gain_hi"), L1000(HELD, con_temp=0.01))
+    A["r1d_o1_t001"] = B("r1d_o1_t001", "R1d", ALL4("gain_hi"), L1000(HELD, con_temp=0.01))
     # ---- exact-boundary edits of the window violation (SYNTHETIC rows: the sum of 25-update means cannot be made exact by a run)
     for nm, val in (("viol_exact", 0.001), ("viol_over", 0.0010000001)):
         rewrite_rows(A[nm], lambda r, val=val: ({**r, "con_g_ttc": val} if (r.get("event") == "train" and r["update"] in (425, 450, 475, 500)) else r))
@@ -372,11 +380,12 @@ def dose_pts():
     return tuple((float(full[a]["TTC"]["mean"]), float(full[a]["PDMS"]["mean"])) for a in ("0.25", "0.375", "0.5"))
 
 
-def chk_read(T, d, name="R0d", dose=True):
-    """dose = True (the real, sha256-pinned dose.json), False / None (none given), or a path."""
+def chk_read(T, d, name="R0d", dose=True, registered_temp=None):
+    """dose = True (the real, sha256-pinned dose.json), False / None (none given), or a path.  registered_temp = the arm's registered constraint T (None = the tool's default, the PREREG 0.1)."""
     ctx = T.Ctx()
     path = str(DOSE) if dose is True else (None if dose in (False, None) else str(dose))
-    return T.read_constrained(name, str(d), ctx, T.load_dose(path, ctx))
+    kw = {} if registered_temp is None else {"registered_temp": registered_temp, "temp_source": {"kind": "test"}}
+    return T.read_constrained(name, str(d), ctx, T.load_dose(path, ctx), **kw)
 
 
 def RUN(T, dirs, **kw):
@@ -849,6 +858,206 @@ def _(T, W, A, root, tag):
     assert "temp" not in data["epo_con"] and data["epo_con"] == T.REGISTERED_EPO_CON, data["epo_con"]                     # REAL producer: the pre-PICKCON trainer's block IS the registered eight-key block
     lg = T.read_log(str(BANKED_R0D_LOG), None, T.Ctx())
     return lg["readable"] is True and lg["problems"] == []
+
+
+# ============================================================ R0e-pick B3: the constraint's registered T is PER ARM, from the arm's registration, never from the log
+T001 = 0.01
+RLS1D_ARMS = HERE / "rls1d_arms.json"                                                     # the REAL registered argv of R0d / R1d / R1o
+BANKED_R0D_RECORD = PKGROOT / "raw" / "2026-10-18-r0d-outcome" / "raw" / "safeobj_outcome.json"          # the pre-B3 tool's record of the banked R0d arm
+
+
+def real_run_t001(W, root):
+    # a SECOND real scorer_finetune.main() run, identical to real_run's argv plus --epo-con-temp 0.01 (the producer of a nine-key block whose temp is NOT the default)
+    if not hasattr(W, "_real_t001"):
+        import test_rl_epo as TE
+        td = root / "real_main_t001"
+        td.mkdir()
+        W._real_t001 = TE.smoke(SF_PATH.read_text(encoding="utf-8"), str(td), epo=True, epo_lam=1.0, native7=True, terms=True, tag="oc_real_t001",
+                                extra=("--epo-con", "g5", "--epo-con-eps", "0", "--epo-con-lr", "4", "--epo-con-max", "10", "--epo-con-lam0", "0.5", "--epo-con-temp", "0.01"))
+        W._real_t001_path = td / "out" / "sft.jsonl"
+    return W._real_t001, W._real_t001_path
+
+
+def _read_real(T, p, temp=None):
+    kw = {} if temp is None else {"registered_temp": temp}
+    return T.read_log(str(p), 25, T.Ctx(), registered={**T.REGISTERED_EPO_CON, "lam0": 0.5}, registered_ramp=2, **kw)           # the argv of the smoke runs (lam0 0.5, ramp 2)
+
+
+def _says(lg, *needles):
+    return any(all(n in x for n in needles) for x in lg["problems"])
+
+
+def _data_row(p):
+    return next(json.loads(ln) for ln in Path(p).read_text(encoding="utf-8").splitlines() if '"event": "data"' in ln)
+
+
+def _log_with_temp(src, dst, value, drop=False):
+    # SYNTHETIC: src's sft.jsonl with the data event's epo_con.temp replaced by `value` (or the key dropped)
+    rows = [json.loads(ln) for ln in Path(src).read_text(encoding="utf-8").splitlines() if ln.strip()]
+    for r in rows:
+        if r.get("event") == "data":
+            if drop:
+                r["epo_con"].pop("temp", None)
+            else:
+                r["epo_con"]["temp"] = value
+    Path(dst).write_text("".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8")
+    return dst
+
+
+def _arms_file(root, name, arms):
+    f = root / name
+    f.write_text(json.dumps({"schema": "synthetic", "arms": {k: {"argv": v} for k, v in arms.items()}}), encoding="utf-8")
+    return f
+
+
+@check("con_temp:a_REAL_trainer_run_at_epo_con_temp_0.01_is_read_under_a_registered_0.01")
+def _(T, W, A, root, tag):
+    res, p = real_run_t001(W, root)
+    assert res["run"] == 0 and p.exists()
+    d = _data_row(p)
+    assert d["epo_con"]["temp"] == T001 and d["epo"]["temp"] == EPO_TEMP, (d["epo_con"], d["epo"])          # the producer's own block: the constraint at 0.01, the EPO reward term still at 0.1
+    lg = _read_real(T, p, T001)
+    return lg["readable"] is True and lg["problems"] == []
+
+
+@check("con_temp:a_registered_0.1_REFUSES_the_REAL_0.01_run_and_a_registered_0.01_REFUSES_the_REAL_default_run")
+def _(T, W, A, root, tag):
+    _, p1 = real_run_t001(W, root)
+    _, p0 = real_run(W, root)
+    for lg in (_read_real(T, p1), _read_real(T, p1, 0.1)):                                    # the tool's default and an explicit 0.1: the 0.01 run is not that arm
+        assert lg["readable"] is False and _says(lg, "not the registered", "registered constraint T = 0.1"), lg["problems"]
+    lg = _read_real(T, p0, T001)
+    assert lg["readable"] is False and _says(lg, "not the registered", "registered constraint T = 0.01"), lg["problems"]
+    return _read_real(T, p0, 0.1)["readable"] is True and _read_real(T, p0)["readable"] is True          # the reverse still reads: the default run IS the 0.1 arm
+
+
+@check("con_temp:an_arm_whose_REAL_EpoDual_ran_at_0.01_reads_O1_under_a_registered_0.01_and_NOT_READ_under_the_default_or_an_explicit_0.1")
+def _(T, W, A, root, tag):
+    assert _data_row(A["o1_t001"] / "sft.jsonl")["epo_con"]["temp"] == T001                  # the fixture is what it says
+    r = chk_read(T, A["o1_t001"], registered_temp=T001)
+    assert r["outcome"] == "O1" and r["log"]["readable"] is True and r["log"]["problems"] == [], (r["outcome"], r["problems"][:2])
+    assert r["registered_con_temp"]["value"] == T001
+    for kw in ({}, {"registered_temp": 0.1}):
+        r = chk_read(T, A["o1_t001"], **kw)
+        assert r["outcome"] == "NOT_READ" and r["log"]["readable"] is False and _says(r["log"], "not the registered"), (kw, r["outcome"])
+    return True
+
+
+@check("con_temp:an_arm_whose_log_says_0.1_is_NOT_READ_under_a_registered_0.01_and_reads_O1_under_0.1")
+def _(T, W, A, root, tag):
+    r = chk_read(T, A["o1"], registered_temp=T001)
+    assert r["outcome"] == "NOT_READ" and r["log"]["readable"] is False and _says(r["log"], "not the registered", "registered constraint T = 0.01"), r["log"]["problems"]
+    return chk_read(T, A["o1"], registered_temp=0.1)["outcome"] == "O1" and chk_read(T, A["o1"])["outcome"] == "O1"
+
+
+@check("con_temp:a_registered_0.01_REFUSES_a_legacy_block_with_no_temp_(a_trainer_that_predates_the_flag_ran_the_constraint_at_0.1)")
+def _(T, W, A, root, tag):
+    r = chk_read(T, A["legacy_block"], registered_temp=T001)
+    assert r["outcome"] == "NOT_READ" and _says(r["log"], "no `temp` key", "0.01"), r["log"]["problems"]
+    return chk_read(T, A["legacy_block"], registered_temp=0.1)["outcome"] == "O1" and chk_read(T, A["legacy_block"])["outcome"] == "O1"
+
+
+@check("con_temp:a_registered_0.01_REFUSES_every_other_temp_in_the_log_and_a_registered_1.0_REFUSES_a_bool_True")
+def _(T, W, A, root, tag):
+    src = A["o1_t001"] / "sft.jsonl"
+    for nm, v in (("t01", 0.1), ("t02", 0.02), ("off", 0.0100001), ("zero", 0.0), ("neg", -0.01), ("none", None), ("str", "0.01"), ("lst", [0.01]), ("nan", float("nan"))):
+        lg = T.read_log(str(_log_with_temp(src, root / f"ct_{tag}_{nm}.jsonl", v)), None, T.Ctx(), registered_temp=T001)
+        assert lg["readable"] is False and _says(lg, "not the registered"), (nm, lg["problems"])
+    ok = T.read_log(str(_log_with_temp(src, root / f"ct_{tag}_ok.jsonl", 0.01)), None, T.Ctx(), registered_temp=T001)
+    assert ok["readable"] is True and ok["problems"] == [], ok["problems"]                    # the control: the same rewrite with the registered value reads
+    lg = T.read_log(str(_log_with_temp(src, root / f"ct_{tag}_bool.jsonl", True)), None, T.Ctx(), registered_temp=1.0)
+    assert lg["readable"] is False and _says(lg, "not the registered"), lg["problems"]       # True == 1.0 in Python: a bool must not vouch for a registered 1.0
+    ok1 = T.read_log(str(_log_with_temp(src, root / f"ct_{tag}_one.jsonl", 1.0)), None, T.Ctx(), registered_temp=1.0)
+    return ok1["readable"] is True
+
+
+@check("con_temp:each_arm_is_read_against_its_OWN_registered_T_(R0d_0.01_beside_R1d_0.1_and_both_0.01)")
+def _(T, W, A, root, tag):
+    rec = RUN(T, {"R0d": A["o1_t001"], "R1d": A["r1d_o1"]}, con_temps={"R0d": T001})
+    assert rec["arms"]["R0d"]["outcome"] == "O1" and rec["arms"]["R1d"]["outcome"] == "O1" and rec["joint"]["replication"] == "REPLICATED_O1_BOTH", [rec["arms"][n]["outcome"] for n in rec["arms"]]
+    assert rec["arms"]["R0d"]["registered_con_temp"]["value"] == T001 and "registered_con_temp" not in rec["arms"]["R1d"]
+    assert rec["registered"]["epo_con_temp_by_arm"] == {"R0d": {"value": T001, "source": {"kind": "caller"}}} and rec["registered"]["epo_con_temp_default"] == 0.1
+    both = RUN(T, {"R0d": A["o1_t001"], "R1d": A["r1d_o1_t001"]}, con_temps={"R0d": T001, "R1d": T001})
+    assert both["joint"]["replication"] == "REPLICATED_O1_BOTH"
+    wrong = RUN(T, {"R0d": A["o1_t001"], "R1d": A["r1d_o1"]}, con_temps={"R0d": T001, "R1d": T001})          # R1d's log says 0.1: it is not its registered arm
+    return wrong["arms"]["R0d"]["outcome"] == "O1" and wrong["arms"]["R1d"]["outcome"] == "NOT_READ" and wrong["joint"]["replication"] != "REPLICATED_O1_BOTH"
+
+
+@check("con_temp:naming_no_T_writes_the_record_it_always_wrote_and_registering_the_default_changes_nothing_that_is_read")
+def _(T, W, A, root, tag):
+    a, b, c = (RUN(T, {"R0d": A["o1"]}, **kw) for kw in ({}, {"con_temps": {}}, {"con_temps": {"R0d": 0.1}}))
+    assert a["record_sha256"] == b["record_sha256"], "an empty registration must write the same record"
+    assert "epo_con_temp_by_arm" not in a["registered"] and "registered_con_temp" not in a["arms"]["R0d"]
+    ra, rc = a["arms"]["R0d"], c["arms"]["R0d"]
+    return ra["outcome"] == rc["outcome"] == "O1" and ra["log"] == rc["log"] and ra["facts"] == rc["facts"] and ra["table"] == rc["table"]
+
+
+@check("con_temp:a_registration_that_is_not_a_positive_finite_number_for_a_constrained_arm_is_refused_before_anything_is_read")
+def _(T, W, A, root, tag):
+    for bad in ({"R1o": T001}, {"R0": T001}, {"R9": T001}, {"R0d": 0}, {"R0d": -0.1}, {"R0d": None}, {"R0d": True}, {"R0d": "0.01"}, {"R0d": float("nan")}, {"R0d": float("inf")}):
+        try:
+            RUN(T, {"R0d": A["o1"]}, con_temps=bad)
+        except ValueError:
+            continue
+        raise AssertionError(("accepted", bad))
+    for bad_t in (0, -1.0, None, True, "0.1", float("nan"), float("inf")):
+        lg = T.read_log(str(A["o1"] / "sft.jsonl"), None, T.Ctx(), registered_temp=bad_t)
+        assert lg["readable"] is False and _says(lg, "positive finite number"), (bad_t, lg["problems"])
+    return True
+
+
+@check("con_temp:the_banked_R0d_log_reads_exactly_as_its_banked_pre_B3_record_says_and_is_REFUSED_under_a_registered_0.01")
+def _(T, W, A, root, tag):
+    if not (BANKED_R0D_LOG.exists() and BANKED_R0D_RECORD.exists()):                         # a package shipped without raw/: the synthetic legacy arm above still runs
+        return True
+    banked = jload(BANKED_R0D_RECORD)["arms"]["R0d"]
+    c = int(banked["first_breached_check"][len("update"):])
+    lg, lg1, lg01 = (T.read_log(str(BANKED_R0D_LOG), c, T.Ctx(), **kw) for kw in ({}, {"registered_temp": 0.1}, {"registered_temp": T001}))
+    assert lg == lg1 and lg["readable"] is True and lg["problems"] == [], lg["problems"]
+    want = banked["log"]
+    for k in ("readable", "problems", "notes", "lam_zero", "lam_pos_share_ok", "cap_hit", "violation_ok", "window_overlaps_ramp", "columns_read"):
+        assert lg[k] == want[k], (k, lg[k], want[k])
+    assert {k: v["value"] for k, v in lg["numbers"].items()} == {k: v["value"] for k, v in want["numbers"].items()}
+    assert all(v["sha256"] == want["numbers"][k]["sha256"] for k, v in lg["numbers"].items())          # the same bytes the pre-B3 tool read on the pod
+    return lg01["readable"] is False and _says(lg01, "no `temp` key", "0.01")
+
+
+@check("con_temp:the_arms_file_reader_resolves_the_REAL_registered_argv_of_R0d_to_0.1_by_default_and_refuses_R1o_whose_constraint_is_off")
+def _(T, W, A, root, tag):
+    t, src = T.con_temp_from_arms_file(str(RLS1D_ARMS), "R0d")
+    assert t == 0.1 and src["resolved"] == "default" and src["tokens"] == {"--epo-con-temp": None, "--epo-temp": None}, (t, src)
+    assert src["sha256"] == hashlib.sha256(RLS1D_ARMS.read_bytes()).hexdigest() and src["arm"] == "R0d"
+    for arm in ("R1o", "R9"):
+        try:
+            T.con_temp_from_arms_file(str(RLS1D_ARMS), arm)
+        except ValueError:
+            continue
+        raise AssertionError(("accepted", arm))
+    return True
+
+
+@check("con_temp:the_arms_file_reader_resolves_the_T_the_trainer_would_(con_temp_else_epo_temp_else_default)_and_refuses_an_ambiguous_or_constraint_less_registration")
+def _(T, W, A, root, tag):
+    base = ["--epo", "--epo-con", "g5", "--epo-con-eps", "0"]
+    arms = {"named": base + ["--epo-con-temp", "0.01"], "named_eq": base + ["--epo-con-temp=0.02"], "inherit": base + ["--epo-temp", "0.05"], "both": base + ["--epo-temp", "0.05", "--epo-con-temp", "0.01"], "default": base,
+            "twice": base + ["--epo-con-temp", "0.01", "--epo-con-temp", "0.02"], "novalue": base + ["--epo-con-temp"], "nan": base + ["--epo-con-temp", "nan"], "word": base + ["--epo-con-temp", "cold"],
+            "zero": base + ["--epo-con-temp", "0"], "off": ["--epo", "--epo-con", "off"], "noconstraint": ["--epo"]}
+    f = _arms_file(root, f"arms_{tag}.json", arms)
+    for k, v in {"named": 0.01, "named_eq": 0.02, "inherit": 0.05, "both": 0.01, "default": 0.1}.items():
+        got, src = T.con_temp_from_arms_file(str(f), k)
+        assert got == v, (k, got, v)
+    assert T.con_temp_from_arms_file(str(f), "named")[1]["resolved"] == "--epo-con-temp" and T.con_temp_from_arms_file(str(f), "inherit")[1]["resolved"] == "--epo-temp"
+    for k in ("twice", "novalue", "nan", "word", "zero", "off", "noconstraint", "absent_arm"):
+        try:
+            T.con_temp_from_arms_file(str(f), k)
+        except ValueError:
+            continue
+        raise AssertionError(("accepted", k))
+    try:
+        T.con_temp_from_arms_file(str(root / f"no_such_arms_{tag}.json"), "named")
+    except ValueError:
+        return True
+    raise AssertionError("a missing arms file was accepted")
 
 
 @check("pending:an_unfinished_arm_is_PENDING_and_never_an_outcome")
@@ -1528,6 +1737,47 @@ def cli_checks(tpath, A, root, tag):
     r = run("--arm", f"R0d={A['o1']}", "--arm", f"R1d={A['r1d_o1']}", "--arm", f"R0={A['c_k4']}", "--arm", f"R1o={A['c_k4']}", "--navtest-e", ef, "--out", str(out / "f.json"), *extras)
     rec = jload(out / "f.json") if (out / "f.json").exists() else {}
     chk.append(("navtest_e_file_is_read_end_to_end_ADOPT", r.returncode == 0 and "ZZSAFEOBJ_BAR E ADOPT" in r.stdout and rec.get("E", {}).get("verdict") == "ADOPT"))
+    # ---- R0e-pick B3: the arm's registered constraint T on the command line (--con-temp), or from its registered argv (--arms-file / --arm-reg)
+    def rj(name):
+        return jload(out / name) if (out / name).exists() else {}
+    af = out / "arms_con_temp.json"
+    af.write_text(json.dumps({"arms": {"R0e-pick": {"argv": ["--epo-con", "g5", "--epo-con-temp", "0.01"]}, "R0e-id": {"argv": ["--epo-con", "g5", "--epo-con-temp", "0.1"]}, "R1o": {"argv": ["--epo-con", "off"]}}}), encoding="utf-8")
+    af_sha = hashlib.sha256(af.read_bytes()).hexdigest()
+    r = run("--arm", f"R0d={A['o1_t001']}", "--con-temp", "R0d=0.01", "--out", str(out / "t1.json"), *extras)
+    rec = rj("t1.json")
+    chk.append(("con_temp_cli:--con-temp_R0d=0.01_reads_the_0.01_arm_O1_rc0_and_records_the_registration",
+                r.returncode == 0 and "ZZSAFEOBJ_OUTCOME R0d O1" in r.stdout and rec.get("arms", {}).get("R0d", {}).get("registered_con_temp", {}).get("value") == 0.01
+                and rec.get("registered", {}).get("epo_con_temp_by_arm", {}).get("R0d", {}).get("source", {}).get("kind") == "cli"))
+    r = run("--arm", f"R0d={A['o1_t001']}", "--out", str(out / "t2.json"), *extras)
+    chk.append(("con_temp_cli:the_0.01_arm_without_--con-temp_is_NOT_READ_rc2", r.returncode == 2 and "ZZSAFEOBJ_OUTCOME R0d NOT_READ" in r.stdout))
+    r = run("--arm", f"R0d={A['o1']}", "--con-temp", "R0d=0.01", "--out", str(out / "t3.json"), *extras)
+    chk.append(("con_temp_cli:the_0.1_arm_under_--con-temp_R0d=0.01_is_NOT_READ_rc2", r.returncode == 2 and "ZZSAFEOBJ_OUTCOME R0d NOT_READ" in r.stdout))
+    r = run("--arm", f"R0d={A['o1']}", "--con-temp", "R0d=0.1", "--out", str(out / "t4.json"), *extras)
+    chk.append(("con_temp_cli:the_0.1_arm_under_--con-temp_R0d=0.1_reads_O1_rc0", r.returncode == 0 and "ZZSAFEOBJ_OUTCOME R0d O1" in r.stdout))
+    r = run("--arm", f"R0d={A['o1_t001']}", "--arm", f"R1d={A['r1d_o1']}", "--con-temp", "R0d=0.01", "--out", str(out / "t5.json"), *extras)
+    chk.append(("con_temp_cli:R0d_at_0.01_beside_R1d_at_the_default_are_both_read_and_the_joint_replicates",
+                r.returncode == 0 and "ZZSAFEOBJ_OUTCOME R0d O1" in r.stdout and "ZZSAFEOBJ_OUTCOME R1d O1" in r.stdout and "ZZSAFEOBJ_JOINT REPLICATED_O1_BOTH" in r.stdout))
+    r = run("--arm", f"R0d={A['o1_t001']}", "--arms-file", str(af), "--arm-reg", "R0d=R0e-pick", "--out", str(out / "t6.json"), *extras)
+    src = rj("t6.json").get("registered", {}).get("epo_con_temp_by_arm", {}).get("R0d", {}).get("source", {})
+    chk.append(("con_temp_cli:--arms-file_--arm-reg_R0d=R0e-pick_registers_0.01_from_the_registered_argv_and_records_the_file_sha256",
+                r.returncode == 0 and "ZZSAFEOBJ_OUTCOME R0d O1" in r.stdout and src.get("kind") == "arms_file" and src.get("arm") == "R0e-pick" and src.get("sha256") == af_sha and af_sha in rj("t6.json").get("inputs_sha256", {}).values()))
+    r = run("--arm", f"R0d={A['o1_t001']}", "--arms-file", str(af), "--arm-reg", "R0d=R0e-id", "--out", str(out / "t7.json"), *extras)
+    chk.append(("con_temp_cli:R0e-id_is_registered_at_0.1_so_the_0.01_log_is_NOT_READ_rc2", r.returncode == 2 and "ZZSAFEOBJ_OUTCOME R0d NOT_READ" in r.stdout))
+    r = run("--arm", f"R0d={A['o1_t001']}", "--con-temp", "R0d=0.01", "--arms-file", str(af), "--arm-reg", "R0d=R0e-pick", "--out", str(out / "t8.json"), *extras)
+    chk.append(("con_temp_cli:--con-temp_and_the_arms_file_may_agree", r.returncode == 0 and rj("t8.json").get("registered", {}).get("epo_con_temp_by_arm", {}).get("R0d", {}).get("source", {}).get("kind") == "cli+arms_file"))
+    bad_usage = {
+        "a_non_number": ["--arm", f"R0d={A['o1']}", "--con-temp", "R0d=abc"], "zero": ["--arm", f"R0d={A['o1']}", "--con-temp", "R0d=0"], "negative": ["--arm", f"R0d={A['o1']}", "--con-temp", "R0d=-1"],
+        "nan": ["--arm", f"R0d={A['o1']}", "--con-temp", "R0d=nan"], "inf": ["--arm", f"R0d={A['o1']}", "--con-temp", "R0d=inf"], "no_equals": ["--arm", f"R0d={A['o1']}", "--con-temp", "0.01"],
+        "an_unconstrained_slot": ["--arm", f"R0d={A['o1']}", "--arm", f"R1o={A['c_k4']}", "--con-temp", "R1o=0.01"], "an_arm_that_is_not_given": ["--arm", f"R0d={A['o1']}", "--con-temp", "R1d=0.01"],
+        "twice": ["--arm", f"R0d={A['o1']}", "--con-temp", "R0d=0.01", "--con-temp", "R0d=0.01"],
+        "the_constraint_off_arm": ["--arm", f"R0d={A['o1']}", "--arms-file", str(af), "--arm-reg", "R0d=R1o"], "an_absent_arm": ["--arm", f"R0d={A['o1']}", "--arms-file", str(af), "--arm-reg", "R0d=nope"],
+        "an_arms_file_without_--arm-reg": ["--arm", f"R0d={A['o1']}", "--arms-file", str(af)], "an_arm-reg_without_--arms-file": ["--arm", f"R0d={A['o1']}", "--arm-reg", "R0d=R0e-pick"],
+        "disagreeing_registrations": ["--arm", f"R0d={A['o1_t001']}", "--con-temp", "R0d=0.1", "--arms-file", str(af), "--arm-reg", "R0d=R0e-pick"],
+    }
+    for nm, args in bad_usage.items():
+        rr = run(*args, "--out", str(out / "t9.json"), *extras)
+        chk.append((f"con_temp_cli:rc3_usage_error_for_{nm}", rr.returncode == 3 and "usage:" in rr.stdout))
+    chk.append(("con_temp_cli:a_usage_error_writes_no_record", not (out / "t9.json").exists()))
     cp = out / "cp" / "R0d"
     shutil.copytree(A["o1"], cp)
     r = run("--arm", f"R0d={cp}", *extras)
@@ -1620,7 +1870,7 @@ MUTATIONS = [
        "return next((b for a, b in zip(SR.CHECK_TAGS[:-1], SR.CHECK_TAGS[1:]) if a in per_tag and b in per_tag), None)", {"outcome:o4_k3->O4", "outcome:k3_late_pair->O5"}),
     MU("the monitor's rows are not used to find the breach", 'if isinstance(r, dict) and r.get("tag") in SR.CHECK_TAGS and r["tag"] not in per_tag:', "if False:", {"outcome:o4_k3->O4", "outcome:o5_k3->O5"}),
     MU("a breach at the FINAL check is not located", 'first = next((t for t in SR.CHECK_TAGS if t in per_tag), None)', 'first = next((t for t in SR.CHECK_TAGS[:3] if t in per_tag), None)', {"outcome:o4_u1000->O4"}),
-    MU("the log is read without a first breached check", "lg = read_log(sft, c_upd, ctx)", "lg = read_log(sft, None, ctx)", {"outcome:o4->O4", "outcome:o5_k3->O5", "outcome:viol_over->O5"}),
+    MU("the log is read without a first breached check", "lg = read_log(sft, c_upd, ctx, registered_temp=registered_temp)", "lg = read_log(sft, None, ctx, registered_temp=registered_temp)", {"outcome:o4->O4", "outcome:o5_k3->O5", "outcome:viol_over->O5"}),
     MU("the window overlap with the ramp is not disclosed", 'out["window_overlaps_ramp"] = bool(c - O4_WINDOW_UPDATES + 1 <= ramp)', 'out["window_overlaps_ramp"] = False', {"outcome:o4_k3->O4"}),
     MU("lambda share threshold 0.5 -> 0.6", "O4_LAM_POS_SHARE_MIN = 0.5", "O4_LAM_POS_SHARE_MIN = 0.6", {"outcome:o4_share_exact->O4", PIN_O, PIN_R3}),
     MU("lambda share strict (> for >=)", 'out["lam_pos_share_ok"] = bool(k >= O4_LAM_POS_SHARE_MIN * m)', 'out["lam_pos_share_ok"] = bool(k > O4_LAM_POS_SHARE_MIN * m)', {"outcome:o4_share_exact->O4"}),
@@ -1638,12 +1888,51 @@ MUTATIONS = [
     MU("a MISSING log column is read as zero", "miss = [k for k in CON_COLS if not _num(r.get(k))]", "miss = [r.setdefault(k, 0.0) for k in CON_COLS if k not in r] and []", {"notread:n_log_cols"}),
     MU("the BUILT dual is not compared with the registered one", 'if data.get("epo_con") != registered:', "if False:", {"notread:n_log_lam0", "notread:n_log_eta", "real_main:the_real_run_is_refused_under_the_registered_values"}),
     # PICKCON: the data event's epo_con block carries `temp`; a legacy block (no key) and a block at the registered T read as the registered block, any other T is refused
-    MU("the constraint's registered T is not enforced (any numeric temp passes)", 'if isinstance(t, (int, float)) and not isinstance(t, bool) and t == REGISTERED_CON_TEMP:',
-       'if isinstance(t, (int, float)) and not isinstance(t, bool):', {"notread:n_log_temp"}),
+    MU("the constraint's registered T is not enforced (any numeric temp passes)", 'if isinstance(t, (int, float)) and not isinstance(t, bool) and t == registered_temp:',
+       'if isinstance(t, (int, float)) and not isinstance(t, bool):', {"notread:n_log_temp", "con_temp:an_arm_whose_log_says_0.1_is_NOT_READ_under_a_registered_0.01_and_reads_O1_under_0.1"}),
     MU("a legacy block (no temp) is refused", "    return blk          # PICKCON-LEGACY", "    return None          # PICKCON-LEGACY",
        {"tolerated:a_legacy_data_block_without_temp_is_read_exactly_as_before_PICKCON", "compat:the_banked_R0d_trainer_log_has_the_legacy_epo_con_block_and_is_read"}),
     MU("a block at the registered T is not read as the registered block (temp never stripped)", 'return {k: v for k, v in blk.items() if k != "temp"}', "return blk",
        {"outcome:o1->O1", "real_main:read_log_reads_the_real_trainers_data_train_and_done_rows"}),
+    # ---- R0e-pick B3: the constraint's registered T is per arm, from the arm's registration, never from the log
+    MU("the per-arm comparison is deleted: the T compared against is the PREREG 0.1 again", 'if isinstance(t, (int, float)) and not isinstance(t, bool) and t == registered_temp:',
+       'if isinstance(t, (int, float)) and not isinstance(t, bool) and t == REGISTERED_CON_TEMP:',
+       {"con_temp:a_REAL_trainer_run_at_epo_con_temp_0.01_is_read_under_a_registered_0.01", "con_temp:an_arm_whose_REAL_EpoDual_ran_at_0.01_reads_O1_under_a_registered_0.01_and_NOT_READ_under_the_default_or_an_explicit_0.1",
+        "con_temp:a_registered_0.01_REFUSES_every_other_temp_in_the_log_and_a_registered_1.0_REFUSES_a_bool_True"}),
+    MU("a bool is accepted as the registered T (True == 1.0)", 'if isinstance(t, (int, float)) and not isinstance(t, bool) and t == registered_temp:', 'if isinstance(t, (int, float)) and t == registered_temp:',
+       {"con_temp:a_registered_0.01_REFUSES_every_other_temp_in_the_log_and_a_registered_1.0_REFUSES_a_bool_True"}),
+    MU("the registered T is inferred from the log itself", '        blk0 = data.get("epo_con")\n', '        blk0 = data.get("epo_con")\n        registered_temp = blk0.get("temp", registered_temp) if isinstance(blk0, dict) else registered_temp\n',
+       {"con_temp:a_registered_0.1_REFUSES_the_REAL_0.01_run_and_a_registered_0.01_REFUSES_the_REAL_default_run", "con_temp:an_arm_whose_log_says_0.1_is_NOT_READ_under_a_registered_0.01_and_reads_O1_under_0.1",
+        "con_temp:a_registered_0.01_REFUSES_every_other_temp_in_the_log_and_a_registered_1.0_REFUSES_a_bool_True"}),
+    MU("a legacy block (no temp) is accepted under a registered T that is not 0.1", 'if registered_temp != REGISTERED_CON_TEMP and isinstance(blk0, dict) and "temp" not in blk0:', "if False:",
+       {"con_temp:a_registered_0.01_REFUSES_a_legacy_block_with_no_temp_(a_trainer_that_predates_the_flag_ran_the_constraint_at_0.1)",
+        "con_temp:the_banked_R0d_log_reads_exactly_as_its_banked_pre_B3_record_says_and_is_REFUSED_under_a_registered_0.01"}),
+    MU("read_log compares the block against the PREREG 0.1, not the arm's T", 'data = dict(data, epo_con=_registered_view(blk0, registered_temp))', 'data = dict(data, epo_con=_registered_view(blk0))',
+       {"con_temp:a_REAL_trainer_run_at_epo_con_temp_0.01_is_read_under_a_registered_0.01"}),
+    MU("read_constrained does not hand the arm's T to read_log", 'lg = read_log(sft, c_upd, ctx, registered_temp=registered_temp)', "lg = read_log(sft, c_upd, ctx)",
+       {"con_temp:an_arm_whose_REAL_EpoDual_ran_at_0.01_reads_O1_under_a_registered_0.01_and_NOT_READ_under_the_default_or_an_explicit_0.1"}),
+    MU("run() does not hand the arm's registered T to read_constrained", 'registered_temp=con_temps.get(n, REGISTERED_CON_TEMP), temp_source=', 'registered_temp=REGISTERED_CON_TEMP, temp_source=',
+       {"con_temp:each_arm_is_read_against_its_OWN_registered_T_(R0d_0.01_beside_R1d_0.1_and_both_0.01)", "e2e:con_temp_cli:--con-temp_R0d=0.01_reads_the_0.01_arm_O1_rc0_and_records_the_registration"}),
+    MU("one T for every arm (the first registered T is used for each slot)", 'registered_temp=con_temps.get(n, REGISTERED_CON_TEMP), temp_source=', 'registered_temp=next(iter(con_temps.values()), REGISTERED_CON_TEMP), temp_source=',
+       {"con_temp:each_arm_is_read_against_its_OWN_registered_T_(R0d_0.01_beside_R1d_0.1_and_both_0.01)", "e2e:con_temp_cli:R0d_at_0.01_beside_R1d_at_the_default_are_both_read_and_the_joint_replicates"}),
+    MU("the record forgets the registration", '        rec["registered"]["epo_con_temp_by_arm"] = {', '        rec["registered"]["epo_con_temp_by_arm_FORGOTTEN"] = {',
+       {"con_temp:each_arm_is_read_against_its_OWN_registered_T_(R0d_0.01_beside_R1d_0.1_and_both_0.01)", "e2e:con_temp_cli:--con-temp_R0d=0.01_reads_the_0.01_arm_O1_rc0_and_records_the_registration"}),
+    MU("a registration that is not a positive finite number is accepted by run()", '        if not _num(t) or t <= 0:\n            raise ValueError(f"the registered constraint T of {n} must be', '        if False:\n            raise ValueError(f"the registered constraint T of {n} must be',
+       {"con_temp:a_registration_that_is_not_a_positive_finite_number_for_a_constrained_arm_is_refused_before_anything_is_read"}),
+    MU("a registration for an arm that is not constrained is accepted by run()", '        if n not in CONSTRAINED:\n            raise ValueError(f"a registered constraint T was given for', '        if False:\n            raise ValueError(f"a registered constraint T was given for',
+       {"con_temp:a_registration_that_is_not_a_positive_finite_number_for_a_constrained_arm_is_refused_before_anything_is_read"}),
+    MU("read_log accepts a registered T that is not a positive finite number", '    if not _num(registered_temp) or registered_temp <= 0:\n', '    if False:\n',
+       {"con_temp:a_registration_that_is_not_a_positive_finite_number_for_a_constrained_arm_is_refused_before_anything_is_read"}),
+    MU("an arms file arm whose constraint is OFF has a T", '    if econ is None or econ == "off":', "    if False:",
+       {"con_temp:the_arms_file_reader_resolves_the_REAL_registered_argv_of_R0d_to_0.1_by_default_and_refuses_R1o_whose_constraint_is_off",
+        "con_temp:the_arms_file_reader_resolves_the_T_the_trainer_would_(con_temp_else_epo_temp_else_default)_and_refuses_an_ambiguous_or_constraint_less_registration"}),
+    MU("the arms file reader ignores --epo-con-temp", "    raw = named if named is not None else epo", "    raw = epo",
+       {"con_temp:the_arms_file_reader_resolves_the_T_the_trainer_would_(con_temp_else_epo_temp_else_default)_and_refuses_an_ambiguous_or_constraint_less_registration"}),
+    MU("the CLI parses --con-temp and drops it", 'a.addendum or a0, con_temps=temps, con_temp_sources=tsrc)', "a.addendum or a0)",
+       {"e2e:con_temp_cli:--con-temp_R0d=0.01_reads_the_0.01_arm_O1_rc0_and_records_the_registration", "e2e:con_temp_cli:--arms-file_--arm-reg_R0d=R0e-pick_registers_0.01_from_the_registered_argv_and_records_the_file_sha256"}),
+    MU("--con-temp and the arms file may disagree", "        if n in temps and temps[n] != t:", "        if False:", {"e2e:con_temp_cli:rc3_usage_error_for_disagreeing_registrations"}),
+    MU("--con-temp 0 / nan / negative is accepted", "if n not in CONSTRAINED or n not in dirs or n in temps or t is None or not _num(t) or t <= 0:", "if n not in CONSTRAINED or n not in dirs or n in temps or t is None:",
+       {"e2e:con_temp_cli:rc3_usage_error_for_zero", "e2e:con_temp_cli:rc3_usage_error_for_nan"}),
     MU("the BUILT ramp is not compared with the registered one","if ramp != registered_ramp or isinstance(ramp, bool):", "if False:", {"notread:n_log_ramp", "real_main:the_real_run_is_refused_under_the_registered_values"}),
     MU("the train rows need not be contiguous", "if ups != list(range(LOG_EVERY, LOG_EVERY * len(trains) + 1, LOG_EVERY)):", "if False:", {"notread:n_log_gap"}),
     MU("the cumulative columns may decrease", "                if b[k] < a[k]:", "                if False:", {"notread:n_log_decreasing"}),

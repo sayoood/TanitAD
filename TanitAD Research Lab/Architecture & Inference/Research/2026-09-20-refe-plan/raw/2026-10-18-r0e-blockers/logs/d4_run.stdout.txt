@@ -1,0 +1,16 @@
+planted control (A2R2 selftest): {'tau0_is_the_argmax_label': True, 'tau_ge_gap_reads_the_tie_mean_50': True, 'clear_set_same_at_every_tau': True, 'tau_below_gap_is_still_the_argmax': True, 'PASS': True}
+controls_all_pass True {'c2_zero_control_NC_u250': True, 'c3_pick_route_u250': {'picks_equal_AT_picks': True, 'n_exact_top_tie': 0}, 'c2_zero_control_NC_u500': True, 'c3_pick_route_u500': {'picks_equal_AT_picks': True, 'n_exact_top_tie': 0}, 'c2_zero_control_NC_u1000': True, 'c3_pick_route_u1000': {'picks_equal_AT_picks': True, 'n_exact_top_tie': 0}, 'c1_machinery_reuse_TTC_label_through_this_code_path': True}
+u250: L_P1^tau0(NC) +0.1667 | L_T(NC) T=0.1: +0.1197 T=0.05: +0.1209 T=0.02: +0.1076 T=0.01: +0.1268
+   diff_NC = L_T - L_P1^tau0: T=0.1: -0.0469 [-0.278, 0.186] | T=0.05: -0.0458 [-0.238, 0.147] | T=0.02: -0.0591 [-0.187, 0.073] | T=0.01: -0.0399 [-0.129, 0.059]
+u500: L_P1^tau0(NC) +0.1972 | L_T(NC) T=0.1: -0.0135 T=0.05: +0.0544 T=0.02: +0.1214 T=0.01: +0.1628
+   diff_NC = L_T - L_P1^tau0: T=0.1: -0.2107 [-0.428, -0.013] | T=0.05: -0.1428 [-0.323, 0.022] | T=0.02: -0.0758 [-0.206, 0.043] | T=0.01: -0.0345 [-0.129, 0.049]
+u1000: L_P1^tau0(NC) +0.2806 | L_T(NC) T=0.1: +0.0206 T=0.05: +0.1080 T=0.02: +0.1691 T=0.01: +0.2051
+   diff_NC = L_T - L_P1^tau0: T=0.1: -0.2600 [-0.562, 0.038] | T=0.05: -0.1726 [-0.433, 0.098] | T=0.02: -0.1115 [-0.282, 0.054] | T=0.01: -0.0754 [-0.187, 0.022]
+max |E_pi[NC] - pick NC| over states (contrast form, tie-aware tau0) at T=0.1: 0.2600   aligned (<= 0.25): False
+max |E_pi[NC] - pick NC| over states (contrast form, tie-aware tau0) at T=0.02: 0.1115   aligned (<= 0.25): True
+max |E_pi[NC] - pick NC| over states (contrast form, tie-aware tau0) at T=0.01: 0.0754   aligned (<= 0.25): True
+descriptive, level form (per arm, A and B), max |E_pi[NC] - tie-aware pick NC| over states: {'0.1': 0.6418, '0.05': 0.3288, '0.02': 0.1305, '0.01': 0.071}
+V = max |L_P1^tau0(NC)| = 0.2806 | null-predictor |0 - L_P1|: {'u250': 0.1667, 'u500': 0.1972, 'u1000': 0.2806}
+OUTCOME D4-NC-ALIGNED(0.01) NC-A
+ZZR0E_D4
+D4_DONE 

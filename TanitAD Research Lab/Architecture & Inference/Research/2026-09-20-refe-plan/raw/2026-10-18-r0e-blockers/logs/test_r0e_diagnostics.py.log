@@ -1,0 +1,48 @@
+  RED  D1 bar 0.10 -> 0.35  ->  5 check(s): banked:D1_of_the_REAL_R0d_log_reproduces_the_numbers_the_draft_quotes_and_is_NOT_ALIGNED, banked:the_draft_does_not_say_u225_in_or_out_so_the_sensitivity_reads_beside_it_and_the_verdict_is_the_same_on_R0d, D1:the_bar_is_inclusive_and_the_wedge_is_signed_by_its_magnitude ...
+  RED  D1 aligned is strict (< for <=)  ->  1 check(s): D1:the_bar_is_inclusive_and_the_wedge_is_signed_by_its_magnitude
+  RED  D1 reads the wrong sign: g - p1gap instead of g + p1gap  ->  8 check(s): banked:D1_of_the_REAL_R0d_log_matches_an_independent_recomputation, banked:D1_of_the_REAL_R0d_log_reproduces_the_numbers_the_draft_quotes_and_is_NOT_ALIGNED, banked:the_draft_does_not_say_u225_in_or_out_so_the_sensitivity_reads_beside_it_and_the_verdict_is_the_same_on_R0d ...
+  RED  D1 rows from the u225 row (update > ramp) instead of the draft's u226  ->  11 check(s): banked:D1_of_the_REAL_R0d_log_matches_an_independent_recomputation, banked:D1_of_the_REAL_R0d_log_reproduces_the_numbers_the_draft_quotes_and_is_NOT_ALIGNED, D1:a_planted_constant_wedge_reads_exactly_and_the_rows_before_u226_do_not_count ...
+  RED  D1 first row is a constant 250, not ramp-relative  ->  1 check(s): D1:the_first_row_follows_the_BUILT_ramp_of_the_log_not_a_constant
+  RED  D1 reads the whole run, ignoring the through-update  ->  1 check(s): D1:through_the_first_breached_check_stops_there_and_a_check_past_the_log_is_refused
+  RED  D1 accepts a through-update past the log  ->  1 check(s): D1:through_the_first_breached_check_stops_there_and_a_check_past_the_log_is_refused
+  RED  D1 standard error uses ddof 0  ->  3 check(s): banked:D1_of_the_REAL_R0d_log_matches_an_independent_recomputation, banked:D1_of_the_REAL_R0d_log_reproduces_the_numbers_the_draft_quotes_and_is_NOT_ALIGNED, D1:the_standard_error_is_the_sample_one_ddof_1_over_sqrt_n
+  RED  D1 borderline is never flagged  ->  1 check(s): D1:borderline_means_within_one_standard_error_of_the_bar
+  RED  D1 borderline is flagged within 3 standard errors  ->  1 check(s): D1:borderline_means_within_one_standard_error_of_the_bar
+  RED  D1 reads the NC wedge off the TTC columns  ->  1 check(s): D1:the_NC_wedge_is_read_the_same_way_and_does_not_decide
+  RED  D1 sensitivity block is dropped from the verdict flag  ->  1 check(s): D1:the_u225_row_is_excluded_by_the_draft_rule_and_read_in_the_sensitivity
+  RED  D2 late window starts at u726  ->  5 check(s): banked:D2_of_the_REAL_R0d_log_matches_the_draft_0.8171_to_0.8766_rise_0.0595, D2:the_rise_is_the_mean_over_u751_1000_minus_the_u25_row_and_u750_is_not_in_the_window, D2:crowded_is_strictly_less_than_half_the_reference_rise ...
+  RED  D2 compares against the u50 row, not the u25 row  ->  5 check(s): banked:D2_of_the_REAL_R0d_log_matches_the_draft_0.8171_to_0.8766_rise_0.0595, D2:the_rise_is_the_mean_over_u751_1000_minus_the_u25_row_and_u750_is_not_in_the_window, D2:crowded_is_strictly_less_than_half_the_reference_rise ...
+  RED  D2 crowded is <= half  ->  1 check(s): D2:crowded_is_strictly_less_than_half_the_reference_rise
+  RED  D2 fraction 0.5 -> 0.25  ->  2 check(s): D2:crowded_is_strictly_less_than_half_the_reference_rise, pin:the_constants_against_the_drafts_section_8_and_6_text
+  RED  D2 accepts a log that ends before u1000  ->  1 check(s): D2:a_log_that_ends_before_u1000_or_a_missing_reference_is_NOT_READ_never_crowded_by_default
+  RED  D2 treats a missing reference as no crowding  ->  1 check(s): D2:a_log_that_ends_before_u1000_or_a_missing_reference_is_NOT_READ_never_crowded_by_default
+  RED  D2 accepts a non-positive reference rise  ->  1 check(s): D2:a_log_that_ends_before_u1000_or_a_missing_reference_is_NOT_READ_never_crowded_by_default
+  RED  a non-finite log value is accepted  ->  1 check(s): refuse:a_missing_non_finite_or_non_contiguous_log_reads_NOT_READ_and_no_number
+  RED  the contiguous 25-update series is not required  ->  2 check(s): refuse:a_missing_non_finite_or_non_contiguous_log_reads_NOT_READ_and_no_number, refuse:a_half_written_final_line_is_a_note_two_bad_lines_are_a_problem_and_a_missing_window_row_is_never_a_shorter_window
+  RED  a missing built ramp is accepted  ->  1 check(s): refuse:a_missing_non_finite_or_non_contiguous_log_reads_NOT_READ_and_no_number
+  RED  a half-written final line is a problem  ->  1 check(s): refuse:a_half_written_final_line_is_a_note_two_bad_lines_are_a_problem_and_a_missing_window_row_is_never_a_shorter_window
+  RED  per-check window is 50 updates  ->  2 check(s): banked:the_per_check_table_is_the_window_mean_of_the_trainers_own_columns, pin:the_constants_against_the_drafts_section_8_and_6_text
+  RED  per-check pick loss keeps the log's sign  ->  1 check(s): banked:the_per_check_table_is_the_window_mean_of_the_trainers_own_columns
+  RED  per-check window overlap with the ramp is never disclosed  ->  1 check(s): banked:the_per_check_table_is_the_window_mean_of_the_trainers_own_columns
+  RED  the lambda share counts from update 0, not from the ramp end  ->  1 check(s): banked:the_post_ramp_lambda_share_equals_the_counts_another_tool_banked_for_the_same_bytes
+  RED  O4 is not refined on D1  ->  2 check(s): row:O4_splits_on_D1_and_O3_on_the_lambda_share_and_D2_and_nothing_else_is_refined, e2e:outcome_json_sets_through_the_first_breached_check_and_refines_O4
+  RED  O3 SLACK threshold 50 % -> 60 %  ->  2 check(s): row:O4_splits_on_D1_and_O3_on_the_lambda_share_and_D2_and_nothing_else_is_refined, pin:the_constants_against_the_drafts_section_8_and_6_text
+  RED  O3 crowded and not crowded are swapped  ->  1 check(s): row:O4_splits_on_D1_and_O3_on_the_lambda_share_and_D2_and_nothing_else_is_refined
+  RED  validation L_T has the wrong sign  ->  2 check(s): D3:the_validation_side_on_planted_arrays_is_the_hand_computed_one, D3:the_tie_aware_pick_averages_the_labels_within_tau_of_the_top_and_clear_sets_are_unchanged
+  RED  validation L_T ignores T (always 0.1)  ->  1 check(s): D3:the_validation_side_on_planted_arrays_is_the_hand_computed_one
+  RED  validation tie-aware pick uses the argmax  ->  1 check(s): D3:the_tie_aware_pick_averages_the_labels_within_tau_of_the_top_and_clear_sets_are_unchanged
+C:\Users\Admin\AppData\Local\Temp\tmpt5hqfv2u\tool_m33\r0e_diagnostics.py:274: RuntimeWarning: invalid value encountered in divide
+  return (w * y).sum(-1) / w.sum(-1)
+  RED  the tie set is strict (> not >=)  ->  2 check(s): D3:the_tie_aware_pick_averages_the_labels_within_tau_of_the_top_and_clear_sets_are_unchanged, D3:the_validation_functions_equal_the_A2R2_harness_on_random_arrays_when_the_harness_is_importable
+C:\Users\Admin\AppData\Local\Temp\tmpt5hqfv2u\tool_m34\r0e_diagnostics.py:266: RuntimeWarning: invalid value encountered in divide
+  return e / e.sum(-1, keepdims=True)
+  RED  the softmax is not max-shifted  ->  1 check(s): D3:the_softmax_is_stable_and_normalised_and_T_changes_it
+  RED  the pick's A and B are swapped on validation  ->  1 check(s): D3:the_validation_side_on_planted_arrays_is_the_hand_computed_one
+  RED  the tie-aware tau is 1e-3  ->  2 check(s): D3:the_validation_functions_equal_the_A2R2_harness_on_random_arrays_when_the_harness_is_importable, real_states:the_validation_side_reproduces_the_banked_A2R2_numbers_on_the_banked_R0_states
+  RED  the transfer gap of the pick is the wrong way round  ->  1 check(s): D3:the_validation_side_on_planted_arrays_is_the_hand_computed_one
+  RED  D3 accepts a T the log did not run at  ->  1 check(s): e2e:d3_refuses_a_T_the_log_did_not_run_at
+  RED  the CLI exit code is 0 for a NOT_READ diagnostic  ->  4 check(s): e2e:rc2_for_a_killed_log_whose_D2_is_NOT_READ, e2e:rc2_when_the_reference_log_is_missing_D2_NOT_READ, e2e:d3_without_its_registration_and_labels_is_NOT_READ_rc2 ...
+  RED  the CLI ignores --through-update  ->  1 check(s): e2e:through_update_is_honoured
+  RED  the first breached check of the outcome record is ignored  ->  1 check(s): e2e:outcome_json_sets_through_the_first_breached_check_and_refines_O4
+  RED  the record is not written  ->  4 check(s): e2e:writes_a_self_consistent_record, e2e:the_per_check_table_is_in_the_record, e2e:outcome_json_sets_through_the_first_breached_check_and_refines_O4 ...
+ZZTEST_PASS 44  (1 unmutated suite of 28 checks + the CLI end to end, 43 RED mutations)

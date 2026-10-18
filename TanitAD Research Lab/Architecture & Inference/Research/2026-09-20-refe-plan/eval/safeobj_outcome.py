@@ -7,6 +7,13 @@ IMPL_PLAN step 8, second half.  Stdlib + numpy-free (imports eval/safeobj_read.p
 
 It writes ONE file (`--out`, default `<parent of the first constrained arm dir>/safeobj_outcome.json`) and prints `ZZSAFEOBJ_BAR <bar> <verdict> <why>` and `ZZSAFEOBJ_OUTCOME <arm> <outcome> [flags] <why>`.
 
+THE CONSTRAINT'S REGISTERED TEMPERATURE IS PER ARM (R0e-pick, B3).  The dual's BUILT facts carry `temp`, the T the constraint's softmax runs at.  An arm's REGISTERED T is `REGISTERED_CON_TEMP` = 0.1 (PREREG_SAFEOBJ
+section 2) unless the arm's registration names another one, in one of two ways, and NEVER from the log:
+    --con-temp R0d=0.01                          the registered T, typed (the slot is R0d / R1d: the protocol's first / second constrained seed, which is also how bar E's pairs are keyed)
+    --arms-file <arms.json> --arm-reg R0d=<NAME>   the T the registered argv of arms.<NAME> in that file resolves to (`--epo-con-temp V`, else `--epo-temp V`, else 0.1: the trainer's own resolution)
+A log whose `temp` differs from its arm's registered T is REFUSED (NOT_READ), and so is a log with NO `temp` (a trainer that predates the flag ran the constraint at 0.1) when the registered T is not 0.1.
+Naming no T reads every arm exactly as before (the banked R0d log has no `temp` key and is registered at 0.1).  A T given for an arm that is not a constrained slot, twice, or not a positive finite number is a usage error (rc 3).
+
 THE TOOL REFUSES TO RUN (rc 4, `ZZSAFEOBJ_REFUSED`, no record written) when the addendum is missing or its sha256 is not the registered one: it applies the registered rules or none.
 
 WHAT EACH BAR READS (every number in the record names its source file and that file's sha256):
@@ -339,25 +346,83 @@ def bar_G(ba, problems, dose, ctx):
 
 
 # ============================================================ the trainer's own log: lambda trajectory, in-sample violation, cap hits
-def _registered_view(blk):
+def _registered_view(blk, registered_temp=REGISTERED_CON_TEMP):
     """PICKCON (raw/2026-10-18-so-pickcon): `EpoDual.built_facts()` gained a `temp` key -- the T the constraint's softmax RUNS at.  The registered R0d / R1d logs were written by trainers that predate it
     (the banked R0d `sft.jsonl` carries the eight-key block), so a block WITHOUT the key is the legacy shape and is compared exactly as it always was.  A block WITH the key is compared as the registered
-    block ONLY when temp is exactly the registered T = 0.1 (PREREG section 2: a second temperature would be a second lever); any other value -- another T, None, a bool, a string -- leaves the key in,
-    the block then differs from the registered one, and the arm is refused (`not the registered`)."""
+    block ONLY when temp is exactly the ARM'S registered T (R0e-pick, B3: `registered_temp`, the caller's, from the arm's registration -- default PREREG section 2's 0.1, "a second temperature would be a second
+    lever"); any other value -- another T, None, a bool, a string -- leaves the key in, the block then differs from the registered one, and the arm is refused (`not the registered`).  The T compared against
+    is NEVER taken from the block itself."""
     if isinstance(blk, dict) and "temp" in blk:
         t = blk["temp"]
-        if isinstance(t, (int, float)) and not isinstance(t, bool) and t == REGISTERED_CON_TEMP:
+        if isinstance(t, (int, float)) and not isinstance(t, bool) and t == registered_temp:
             return {k: v for k, v in blk.items() if k != "temp"}
     return blk          # PICKCON-LEGACY: the pre-PICKCON shape (no `temp`), or a T that is not the registered one
 
 
-def read_log(path, c, ctx, registered=None, registered_ramp=REGISTERED_RAMP):
+def check_con_temps(con_temps):
+    """-> a clean {slot: T} copy of the per-arm registered constraint temperatures.  Raises ValueError for a slot that is not a constrained arm (R0d / R1d) or a T that is not a positive finite number
+    (a bool, None, a string, NaN, inf, 0 and negatives all fail).  `None` / `{}` = no arm registers another T than PREREG section 2's."""
+    out = {}
+    for n, t in (con_temps or {}).items():
+        if n not in CONSTRAINED:
+            raise ValueError(f"a registered constraint T was given for {n!r}, which is not a constrained arm {CONSTRAINED}")
+        if not _num(t) or t <= 0:
+            raise ValueError(f"the registered constraint T of {n} must be a positive finite number, got {t!r}")
+        out[n] = t
+    return out
+
+
+def con_temp_from_arms_file(path, arm_name):
+    """-> (T, source).  The arm's REGISTERED constraint T from its registered argv in an arms file (schema rls1d_arms/1: `arms.<NAME>.argv` is the token list the launch gate binds): the value of
+    `--epo-con-temp`; if the argv does not name it the constraint INHERITS `--epo-temp` (its value if named, else its default `REGISTERED_CON_TEMP`) -- the trainer's own resolution
+    (scorer_finetune: `temp=(a.epo_temp if a.epo_con_temp is None else a.epo_con_temp)`).  Raises ValueError when the file or the arm cannot be read, the arm's argv does not turn the constraint ON
+    (`--epo-con` absent or `off`), or a flag is named twice or without a value."""
+    try:
+        d = _load(path)
+    except (OSError, ValueError) as e:
+        raise ValueError(f"the arms file {path} could not be read: {type(e).__name__}: {str(e)[:100]}")
+    arm = ((d.get("arms") or {}).get(arm_name)) if isinstance(d, dict) and isinstance(d.get("arms"), dict) else None
+    argv = arm.get("argv") if isinstance(arm, dict) else None
+    if not isinstance(argv, list) or not argv or not all(isinstance(x, str) for x in argv):
+        raise ValueError(f"the arms file {path} has no arms.{arm_name}.argv (a non-empty list of tokens)")
+
+    def flag(name):
+        vals = []
+        for i, tok in enumerate(argv):
+            if tok == name:
+                if i + 1 >= len(argv):
+                    raise ValueError(f"arms.{arm_name}.argv names {name} without a value")
+                vals.append(argv[i + 1])
+            elif tok.startswith(name + "="):
+                vals.append(tok[len(name) + 1:])
+        if len(vals) > 1:
+            raise ValueError(f"arms.{arm_name}.argv names {name} {len(vals)} times: the registration is ambiguous")
+        return vals[0] if vals else None
+    econ = flag("--epo-con")
+    if econ is None or econ == "off":
+        raise ValueError(f"arms.{arm_name}.argv does not turn the constraint on (--epo-con is {econ!r}): the arm has no constraint T")
+    named, epo = flag("--epo-con-temp"), flag("--epo-temp")
+    raw = named if named is not None else epo
+    try:
+        t = REGISTERED_CON_TEMP if raw is None else float(raw)
+    except ValueError:
+        raise ValueError(f"arms.{arm_name}.argv: {'--epo-con-temp' if named is not None else '--epo-temp'} {raw!r} is not a number")
+    if not _num(t) or t <= 0:
+        raise ValueError(f"arms.{arm_name}.argv resolves to a constraint T of {t!r}, not a positive finite number")
+    return t, {"kind": "arms_file", "file": os.path.abspath(path), "sha256": SR.sha256_file(path), "arm": arm_name,
+               "tokens": {"--epo-con-temp": named, "--epo-temp": epo}, "resolved": "--epo-con-temp" if named is not None else ("--epo-temp" if epo is not None else "default")}
+
+
+def read_log(path, c, ctx, registered=None, registered_ramp=REGISTERED_RAMP, registered_temp=REGISTERED_CON_TEMP):
     """-> facts dict (never raises).  Facts: lam_zero (O6, through the last logged update), and, only when `c` (the update of the first breached check) is given, lam_pos_share_ok (post-ramp share
     THROUGH c), cap_hit (lambda_max reached through c) and violation_ok (the 100 logged updates ending at c); every one True / False / None (None = unreadable), with the numbers and their source."""
     registered = REGISTERED_EPO_CON if registered is None else registered
     out = {"readable": False, "problems": [], "notes": [], "lam_zero": None, "lam_pos_share_ok": None, "cap_hit": None, "violation_ok": None, "numbers": {}, "window_overlaps_ramp": None,
            "columns_read": {"ttc": "con_g_ttc", "nc": "con_g_nc"}}
     pb = out["problems"]
+    if not _num(registered_temp) or registered_temp <= 0:
+        pb.append(f"the arm's registered constraint T {registered_temp!r} is not a positive finite number: nothing can be compared with it")
+        return out
     if not os.path.exists(path):
         pb.append("sft.jsonl is missing")
         return out
@@ -370,9 +435,12 @@ def read_log(path, c, ctx, registered=None, registered_ramp=REGISTERED_RAMP):
         if data is None:
             pb.append("no `data` event: the BUILT facts of the run are unknown")
             return out
-        data = dict(data, epo_con=_registered_view(data.get("epo_con")))          # PICKCON: a `temp` of exactly the registered T is the same block as the legacy one; anything else stays and is refused below
+        blk0 = data.get("epo_con")
+        if registered_temp != REGISTERED_CON_TEMP and isinstance(blk0, dict) and "temp" not in blk0:          # R0e-pick B3: a trainer that predates --epo-con-temp ran the constraint at T = 0.1 and cannot evidence another one
+            pb.append(f"the data event's epo_con block has no `temp` key (a trainer that predates --epo-con-temp ran the constraint at T = {REGISTERED_CON_TEMP!r}) but this arm's registered constraint T is {registered_temp!r}")
+        data = dict(data, epo_con=_registered_view(blk0, registered_temp))          # PICKCON: a `temp` of exactly the ARM'S registered T is the same block as the legacy one; anything else stays and is refused below
         if data.get("epo_con") != registered:
-            pb.append(f"the data event's BUILT epo_con block {data.get('epo_con')!r} is not the registered {registered!r}")
+            pb.append(f"the data event's BUILT epo_con block {data.get('epo_con')!r} is not the registered {registered!r} (this arm's registered constraint T = {registered_temp!r})")
         ramp = (data.get("epo") or {}).get("ramp")
         if ramp != registered_ramp or isinstance(ramp, bool):
             pb.append(f"the BUILT --epo-ramp is {ramp!r}, not {registered_ramp}")
@@ -612,18 +680,21 @@ def classify(f):
     return {**base, "decided_at": None, "outcome": "NO_ROW", "flags": [], "shadowed": [], "why": "no stage matched (a TOOL defect)"}
 
 
-def read_constrained(name, arm_dir, ctx, dose):
-    """one constrained arm (R0d / R1d) -> its record.  Never raises.  `dose` = load_dose's dict."""
+def read_constrained(name, arm_dir, ctx, dose, registered_temp=REGISTERED_CON_TEMP, temp_source=None):
+    """one constrained arm (R0d / R1d) -> its record.  Never raises.  `dose` = load_dose's dict.  `registered_temp` = the ARM'S registered constraint T (from its registration, never from the log);
+    `temp_source` = where that registration came from, recorded when the caller named one (None = the PREREG default, nothing added to the record)."""
     rec = {"arm": name, "dir": os.path.abspath(arm_dir), "addendum": ADDENDUM_NAME, "addendum_sha256": ADDENDUM_SHA256, "state": None, "S": None, "G": None, "outcome": None, "problems": [], "notes": []}
+    if temp_source is not None:
+        rec["registered_con_temp"] = {"value": registered_temp, "source": temp_source}
     try:
-        return _read_constrained(rec, name, arm_dir, ctx, dose)
+        return _read_constrained(rec, name, arm_dir, ctx, dose, registered_temp)
     except Exception as e:                                                                                                   # noqa: BLE001
         rec["outcome"] = "NOT_READ"
         rec["problems"].append(f"the tool could not interpret this arm directory: {type(e).__name__}: {str(e)[:160]}")
         return rec
 
 
-def _read_constrained(rec, name, arm_dir, ctx, dose):
+def _read_constrained(rec, name, arm_dir, ctx, dose, registered_temp=REGISTERED_CON_TEMP):
     pb = rec["problems"]
     if not os.path.isdir(arm_dir):
         rec["state"], rec["outcome"] = "missing", "NOT_READ"
@@ -715,7 +786,7 @@ def _read_constrained(rec, name, arm_dir, ctx, dose):
     lb_pos = g.get("lower_bound_gt_0") if g["verdict"] != "NOT_READ" else None
     pt_ok = g.get("point_ge_bar") if g["verdict"] != "NOT_READ" else None
     # ---- the trainer's log
-    lg = read_log(sft, c_upd, ctx)
+    lg = read_log(sft, c_upd, ctx, registered_temp=registered_temp)
     rec["log"] = {k: lg[k] for k in ("readable", "problems", "notes", "numbers", "lam_zero", "lam_pos_share_ok", "cap_hit", "violation_ok", "window_overlaps_ramp", "columns_read")}
     facts = {"s_pass": s_pass, "g_lb_pos": lb_pos, "g_point_ok": pt_ok, "breached": breached, "violation_ok": lg["violation_ok"], "lam_pos_share_ok": lg["lam_pos_share_ok"], "cap_hit": lg["cap_hit"],
              "lam_zero": lg["lam_zero"], "other_kill": other_kill, "g3_alone": g3_alone}
@@ -885,9 +956,13 @@ def bar_E(path, ctx, rlval_floor=None, rlval_floor_why=None):
 
 
 # ============================================================ the whole read
-def run(arm_dirs, navtest_e=None, dose_path=None, prereg_path=None, addendum_path=None):
-    """arm_dirs = {name: dir}.  -> the record.  Raises AddendumRefused (before reading anything) when the addendum is not the registered file."""
+def run(arm_dirs, navtest_e=None, dose_path=None, prereg_path=None, addendum_path=None, con_temps=None, con_temp_sources=None):
+    """arm_dirs = {name: dir}.  -> the record.  Raises AddendumRefused (before reading anything) when the addendum is not the registered file, ValueError when `con_temps` is not a clean {slot: T}.
+    `con_temps` = {R0d / R1d: T}: each constrained arm's REGISTERED constraint T (R0e-pick: 0.01); a slot not named is registered at REGISTERED_CON_TEMP.  It comes from the arm's registration (the CLI's
+    --con-temp / --arms-file) and is never inferred from the log.  `con_temp_sources` = {slot: provenance dict}, recorded beside it."""
     add = check_addendum(addendum_path)
+    con_temps = check_con_temps(con_temps)
+    srcs = con_temp_sources or {}
     ctx = Ctx()
     ctx.sha(add["path"])
     rec = {"tool": TOOL, "addendum": add["name"], "addendum_sha256": add["sha256_checked"], "addendum_file": add,
@@ -897,6 +972,12 @@ def run(arm_dirs, navtest_e=None, dose_path=None, prereg_path=None, addendum_pat
                           "precedence": list(PRECEDENCE), "O4_violation_max": O4_VIOLATION_MAX, "O4_window_updates": O4_WINDOW_UPDATES, "O4_lam_pos_share_min": O4_LAM_POS_SHARE_MIN, "lambda_max": LAM_MAX,
                           "ramp": REGISTERED_RAMP, "L_floor_mult": L_FLOOR_MULT, "E_each_min": E_EACH_MIN, "E_mean_min": E_MEAN_MIN, "E_refuted_upper": E_REFUTED_UPPER, "E_floor_mult": E_FLOOR_MULT,
                           "n_boot": N_BOOT, "seed": SEED}}
+    if con_temps:                                                                      # recorded ONLY when an arm registers its own T: a run that names none writes the record it always wrote
+        rec["registered"]["epo_con_temp_by_arm"] = {n: {"value": t, "source": srcs.get(n) or {"kind": "caller"}} for n, t in sorted(con_temps.items())}
+        rec["registered"]["epo_con_temp_default"] = REGISTERED_CON_TEMP
+        for s_ in srcs.values():
+            if isinstance(s_, dict) and s_.get("file"):
+                ctx.sha(s_["file"])
     if prereg_path and os.path.exists(prereg_path):
         sha = SR.sha256_file(prereg_path)
         rec["prereg_sha256_checked"] = sha
@@ -906,7 +987,7 @@ def run(arm_dirs, navtest_e=None, dose_path=None, prereg_path=None, addendum_pat
     rec["problems"] += [f"dose: {p}" for p in dose["problems"]]
     for n in CONSTRAINED:
         if n in arm_dirs:
-            a = read_constrained(n, arm_dirs[n], ctx, dose)
+            a = read_constrained(n, arm_dirs[n], ctx, dose, registered_temp=con_temps.get(n, REGISTERED_CON_TEMP), temp_source=(srcs.get(n) or {"kind": "caller"}) if n in con_temps else None)
             rec["arms"][n] = a
             rec["problems"] += [f"{n}: {p}" for p in a["problems"]]
     rec["L"] = bar_L(arm_dirs, ctx)
@@ -957,6 +1038,9 @@ def main(argv=None):
     ap.add_argument("--addendum", default=None)
     ap.add_argument("--prereg", default=None)
     ap.add_argument("--out", default=None)
+    ap.add_argument("--con-temp", action="append", default=[], metavar="NAME=T", help="the arm's REGISTERED constraint temperature (NAME = R0d / R1d); default %s, never read from the log" % REGISTERED_CON_TEMP)
+    ap.add_argument("--arms-file", default=None, help="an arms file (arms.<NAME>.argv): the source of --arm-reg")
+    ap.add_argument("--arm-reg", action="append", default=[], metavar="NAME=ARM", help="NAME (R0d / R1d) is registered as arms.ARM of --arms-file: its constraint T is what that argv resolves to")
     a = ap.parse_args(argv)
     dirs = {}
     for spec in a.arm:
@@ -968,9 +1052,39 @@ def main(argv=None):
     if not any(n in dirs for n in CONSTRAINED):
         print("usage: at least one constrained arm (--arm R0d=... or --arm R1d=...) is required", flush=True)
         return 3
+    temps, tsrc = {}, {}
+    for spec in a.con_temp:
+        n, _, v = spec.partition("=")
+        try:
+            t = float(v)
+        except ValueError:
+            t = None
+        if n not in CONSTRAINED or n not in dirs or n in temps or t is None or not _num(t) or t <= 0:
+            print(f"usage: --con-temp NAME=T with NAME a constrained arm that is also given by --arm ({CONSTRAINED}), T a positive finite number, each NAME at most once (got {spec!r})", flush=True)
+            return 3
+        temps[n], tsrc[n] = t, {"kind": "cli", "flag": spec}
+    if bool(a.arm_reg) != bool(a.arms_file):
+        print("usage: --arms-file and --arm-reg NAME=ARM go together", flush=True)
+        return 3
+    seen_reg = set()
+    for spec in a.arm_reg:
+        n, _, arm_name = spec.partition("=")
+        if n not in CONSTRAINED or n not in dirs or n in seen_reg or not arm_name:
+            print(f"usage: --arm-reg NAME=ARM with NAME a constrained arm that is also given by --arm ({CONSTRAINED}), each NAME at most once (got {spec!r})", flush=True)
+            return 3
+        seen_reg.add(n)
+        try:
+            t, src = con_temp_from_arms_file(a.arms_file, arm_name)
+        except ValueError as e:
+            print(f"usage: --arm-reg {spec}: {e}", flush=True)
+            return 3
+        if n in temps and temps[n] != t:
+            print(f"usage: {n} is given a constraint T of {temps[n]!r} by --con-temp and {t!r} by arms.{arm_name} of {a.arms_file}: the registrations disagree", flush=True)
+            return 3
+        temps[n], tsrc[n] = t, ({**src, "kind": "cli+arms_file", "flag": tsrc[n]["flag"]} if n in tsrc else src)
     d0, p0, a0 = default_extras()
     try:
-        rec = run(dirs, a.navtest_e, a.dose or d0, a.prereg or p0, a.addendum or a0)
+        rec = run(dirs, a.navtest_e, a.dose or d0, a.prereg or p0, a.addendum or a0, con_temps=temps, con_temp_sources=tsrc)
     except AddendumRefused as e:
         print(f"ZZSAFEOBJ_REFUSED {e}", flush=True)
         return 4
