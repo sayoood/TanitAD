@@ -234,3 +234,21 @@ Read in this order. A later reading is not made if an earlier one stops.
 * 5 runs at ~47 min each (MEASURED in phase 1: clip loading dominates) ≈ **4 h** on box 2, SAFE MODE, one job at a time.
 * The same crash, unreachability, timeout and USB-HDD temperature stop rules as phases 1–3.
 * ⛔ **Box 2 is queued with v8F-mini (`PREREG_V8F_MINI` Amendment 4), then rung β (`PREREG_V8F_BETA` Amendment 1). This run set takes the slot after β ONLY on the PI's go.** Box 2 is the PI's machine, and no box-2 job runs without a go.
+
+### Amendment 1, clarification (2026-10-19 ~22:40, still before ANY of its runs): the A2 floor, and the instruments
+
+* **The A2 floor: an erratum to my own text, written before the data.**
+  * Reading 3 above says K for A2 is read "under the unchanged bar (2F = 2·|A2_s0 − A2_s1|)". That parenthesis contradicts "unchanged": PREREG_HJ_STAGE0's bar names **A1's** floor.
+  * The rule is now: **2F = 2 · max(|A1_s0 − A1_s1|, |A2_s0 − A2_s1|)**, on eval-141. That is never easier than the stage-0 bar, and it is never easier for an arm with a wide seed spread.
+  * It replaces the parenthesis. No Amendment-1 run exists yet (MEASURED: `runs\ra1_yaw_full\st3000` holds only R0 ×2, A1 ×2 and A1x seed 0).
+* **The instruments. Each is pinned, and each pin goes RED without its change:**
+  * the queue stage `full4 S BETA GAMMA` in `code/ra1_box2_queue.cmd`. Pinned by `stack/tests/test_ra1_hjepa.py::test_queue_full4_stage_runs_a0_a2_and_the_a1x_seed1_replicate_beside_phase_1`: the arm/seed list, no γ on A0, the full cache and P10-yaw-4512, one 9-run verdict, and a refused missing γ. On the pre-amendment queue it FAILS.
+  * the reader `code/ra1_full_amend1.py`. It reads SENS as copied from the queue verdict, the replicate as paired and window-aligned via `ra1_full_report.paired_runs`, and the holdout re-pick and K for A2 as above. Pinned by `stack/tests/test_ra1_full_amend1.py`; its 6 guard deletions each turn it RED (`raw/ra1_full/mutate_amend1.json`).
+  * the chain `code/box2_ops/chain_ra1_full4.sh`:
+    * it waits for rung β's `ZZBETA-DONE`;
+    * it refreshes box 2 from the remote tip and sha-checks 6 key files;
+    * it refuses a tip whose queue has no `full4`;
+    * it reads Amendment 1 with the reader **at that same tip**.
+  * The temperature guard `ra1runs_guard.sh` now takes `RA1_CHAIN_OUT`.
+  * Two job helpers that every RA-1 chain used but that lived only on the dev box are now banked: `code/box2_ops/mk_ra1_job.py` and `code/box2_ops/waitjob.sh`.
+* ⛔ **Not armed.** The chain starts only on the PI's go, for the box-2 slot after rung β.

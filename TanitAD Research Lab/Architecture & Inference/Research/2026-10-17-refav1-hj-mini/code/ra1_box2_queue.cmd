@@ -14,6 +14,7 @@ rem   ra1_box2_queue.cmd es5 S BETA GAMMA WD    PREREG_RA1_ES Addendum C: A1 x2 
 rem   ra1_box2_queue.cmd full "S1 S2 ..." BETA GAMMA   PREREG_RA1_FULL phase 1: R0 x2 + A1 x2 per budget on the FULL corpus, in %RUNS%_full\st<S>
 rem   ra1_box2_queue.cmd full2 SA SR BETA GAMMA        PREREG_RA1_FULL phase 2: A1x seed 0 at SA (= S*_A1), + the verdict over R0@SR, A1/A1x@SA
 rem   ra1_box2_queue.cmd full3 SA SR BETA GAMMA WD     PREREG_RA1_FULL reading 3 K-FAIL lever: A1 x2 + A1x at SA with --wd WD, in st<SA>_wd<WD>
+rem   ra1_box2_queue.cmd full4 S BETA GAMMA            PREREG_RA1_FULL Amendment 1 (K PASS): A0 x2, A2 x2, A1x seed 1 at S, + the verdict at S
 rem   ra1_box2_queue.cmd a1a S BETA GAMMA [WD]  PREREG_RA1_ES Addendum D: A1a seed 0 (actions permuted ACROSS windows) at budget S [--wd WD], in the root of the A1 it pairs with
 rem
 rem HOLDOUT (PREREG_HJ_STAGE0 Amendment 1): every trainer call carries --holdout-n 60 (the trainer REFUSES to run without it): the last 60 of the
@@ -68,6 +69,7 @@ if /i "%~1"=="es5" goto :es5
 if /i "%~1"=="full" goto :full
 if /i "%~1"=="full2" goto :full2
 if /i "%~1"=="full3" goto :full3
+if /i "%~1"=="full4" goto :full4
 if /i "%~1"=="a1a" goto :a1a
 echo usage: ra1_box2_queue.cmd gate^|stage1^|stage1verdict^|stage2 BETA GAMMA^|final BETA GAMMA
 echo        ra1_box2_queue.cmd es "S1 S2 ..."^|es2 S BETA GAMMA   (PREREG_RA1_ES)
@@ -75,6 +77,7 @@ echo        ra1_box2_queue.cmd es3 S BETA^|ridge   (PREREG_RA1_ES Addendum A, PR
 echo        ra1_box2_queue.cmd es5 S BETA GAMMA WD   (PREREG_RA1_ES Addendum C)
 echo        ra1_box2_queue.cmd full "S1 S2 ..." BETA GAMMA^|full2 SA SR BETA GAMMA   (PREREG_RA1_FULL)
 echo        ra1_box2_queue.cmd full3 SA SR BETA GAMMA WD   (PREREG_RA1_FULL, the K-FAIL lever)
+echo        ra1_box2_queue.cmd full4 S BETA GAMMA   (PREREG_RA1_FULL Amendment 1, the K-PASS lever)
 echo        ra1_box2_queue.cmd a1a S BETA GAMMA [WD]   (PREREG_RA1_ES Addendum D)
 exit /b 2
 
@@ -242,6 +245,24 @@ call :run A1x_b%~4g%~5_s0 A1x 0 %~4 %~5 "--wd %~6" || exit /b 1
 set "VN=full3_verdict.json"
 set "C=b%~4g%~5"
 call :verdict --run "R0@0=%FROOT%\st%~3\R0_s0\eval" --run "R0@1=%FROOT%\st%~3\R0_s1\eval" --run "A1:%C%@0=%RUNS%\A1_%C%_s0\eval" --run "A1:%C%@1=%RUNS%\A1_%C%_s1\eval" --run "A1x:%C%@0=%RUNS%\A1x_%C%_s0\eval"
+exit /b %errorlevel%
+
+:full4
+rem PREREG_RA1_FULL Amendment 1 (the K-PASS lever): A0 x2 (BETA, gamma 0), A2 x2 (BETA GAMMA) and A1x SEED 1 at S (= S*_A1 = S*_R0),
+rem written into st<S> beside phase 1/2's R0, A1 and A1x seed 0; then the queue's verdict over R0/A0/A1/A1x/A2 at S (SENS needs A0; K's
+rem best-of includes A2). The A1x seed-1 gate replicate is NOT a verdict input (it reads seed 0): code\ra1_full_amend1.py reads it.
+if "%~4"=="" (echo full4 needs S BETA GAMMA & exit /b 2)
+call :fullenv || exit /b 2
+set "FROOT=%RUNS%_full"
+set "STEPS=%~2"
+set "RUNS=%FROOT%\st%~2"
+if not exist "%RUNS%" mkdir "%RUNS%"
+for %%S in (0 1) do call :run A0_b%~3_s%%S A0 %%S %~3 - "" || exit /b 1
+for %%S in (0 1) do call :run A2_b%~3g%~4_s%%S A2 %%S %~3 %~4 "" || exit /b 1
+call :run A1x_b%~3g%~4_s1 A1x 1 %~3 %~4 "" || exit /b 1
+set "VN=full4_verdict.json"
+set "C=b%~3g%~4"
+call :verdict --run "R0@0=%RUNS%\R0_s0\eval" --run "R0@1=%RUNS%\R0_s1\eval" --run "A0:b%~3@0=%RUNS%\A0_b%~3_s0\eval" --run "A0:b%~3@1=%RUNS%\A0_b%~3_s1\eval" --run "A1:%C%@0=%RUNS%\A1_%C%_s0\eval" --run "A1:%C%@1=%RUNS%\A1_%C%_s1\eval" --run "A1x:%C%@0=%RUNS%\A1x_%C%_s0\eval" --run "A2:%C%@0=%RUNS%\A2_%C%_s0\eval" --run "A2:%C%@1=%RUNS%\A2_%C%_s1\eval"
 exit /b %errorlevel%
 
 :fullenv

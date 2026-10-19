@@ -1336,3 +1336,26 @@ def test_a1a_trains_and_evals_end_to_end_with_every_control_green(world, tmp_pat
     assert r["holdout"]["status"] == "OK" and r["families"]["arm"]["strategic"]["status"] == "PAUSED"
     z = np.load(ev / "perwindow.npz", allow_pickle=True)
     assert {"eid", "t", "ade6", "p10_ade6", "hold_ade6", "hold_eid"} <= set(z.files), "what code/a1a_permute.py pairs on"
+
+
+# ================================================================================ PREREG_RA1_FULL Amendment 1: the K-PASS lever (full4)
+@pytest.mark.skipif(sys.platform != "win32", reason="the queue is a Windows batch file")
+def test_queue_full4_stage_runs_a0_a2_and_the_a1x_seed1_replicate_beside_phase_1(tmp_path):
+    """A0 x2 (BETA, NO gamma), A2 x2 and A1x SEED 1 at S, written into st<S> beside phase 1/2's runs, on the full cache with
+    P10-yaw-4512; then ONE queue verdict over the 9 runs at S (A1x seed 1 is NOT a verdict input: the verdict's gate reads seed 0,
+    code/ra1_full_amend1.py reads the replicate). A missing GAMMA is refused, never defaulted."""
+    import re
+    cf = str(tmp_path / "cache_full")
+    env = dict(os.environ, RA1_DRYRUN="1", REPO=str(REPO), RUNS=str(tmp_path / "runs"), CACHEFULL=cf)
+    rc, out = _dry_queue(env, "full4 3000 0.08 50")
+    assert rc == 0, out
+    tr = [ln for ln in out if "ra1_hjepa_train.py" in ln]
+    assert [re.search(r"--arm (\S+) --seed (\S+)", ln).groups() for ln in tr] == [
+        ("A0", "0"), ("A0", "1"), ("A2", "0"), ("A2", "1"), ("A1x", "1")], tr
+    assert all("--steps 3000" in ln and f'--cache "{cf}"' in ln and "p10_yaw4512" in ln and "--beta 0.08" in ln
+               and f"runs_full{os.sep}st3000{os.sep}" in ln for ln in tr), tr
+    assert all("--gamma" not in ln for ln in tr[:2]) and all("--gamma 50" in ln for ln in tr[2:]), tr
+    vd = [ln for ln in out if " verdict --out " in ln]
+    assert len(vd) == 1 and vd[0].count("--run ") == 9 and "full4_verdict.json" in vd[0], vd
+    assert "A0:b0.08@1=" in vd[0] and "A2:b0.08g50@1=" in vd[0] and "A1x:b0.08g50@1" not in vd[0], vd
+    assert _dry_queue(env, "full4 3000 0.08")[0] == 2
