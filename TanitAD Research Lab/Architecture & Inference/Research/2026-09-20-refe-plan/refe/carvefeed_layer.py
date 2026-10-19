@@ -153,7 +153,10 @@ def has_layer(src: str) -> bool:
 
 
 def peel(src: str) -> str:
-    """undo the B8 edits (each `new` text must occur exactly once); a trainer without the layer is returned unchanged"""
+    """undo the B8 edits (each `new` text must occur exactly once); a trainer without the layer is returned unchanged.  The P6-HN-S layer (refe/hnscreen_layer.py, checklist item 3) sits ON TOP of B8: it is peeled first
+    (a trainer without it passes through unchanged), so every pin that calls this function keeps seeing the pre-HN trainer."""
+    import hnscreen_layer as HL
+    src = HL.peel(src)
     if not has_layer(src):
         return src
     for new, old in CARVEFEED_FILE_REVERSALS:

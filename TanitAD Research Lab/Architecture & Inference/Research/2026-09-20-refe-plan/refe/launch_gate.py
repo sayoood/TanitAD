@@ -65,10 +65,12 @@ RLS1_RECIPE = {"lr": 1e-4, "warmup": 50, "batch": 8, "accum": 8, "max_updates": 
 # named-but-inert levers (a flag whose effect is switched off by another registered value is a declared lever the run does not use): the SFT-2 NAVSIM labels would
 # mix label sources with the PDM labels; --b-compw / --tau-s belong to other b-modes; --tau-t scales a ListNet term that --lam 0 multiplies by zero.
 AUX_HEAD_FLAGS = ("--aux-drv", "--w-aux-drv", "--aux-drv-tap", "--aux-drv-depth", "--aux-drv-feed", "--aux-drv-labels", "--aux-drv-shuffle-seed", "--aux-drv-lr")
-RLS1_FORBIDDEN = ("--preflight", "--lane-labels-train", "--lane-labels-heldout", "--b-compw", "--tau-s", "--tau-t") + AUX_HEAD_FLAGS      # RL-S1 is not the head's experiment
+HNSCREEN_FLAGS = ("--hn-bank", "--ctx-cache")                                           # P6-HN-S (PREREG_P6HN_SCREEN 4.2): the bank and the frozen-trunk context cache; ONLY refe_hnscreen accepts them
+RLS1_FORBIDDEN = ("--preflight", "--lane-labels-train", "--lane-labels-heldout", "--b-compw", "--tau-s", "--tau-t") + AUX_HEAD_FLAGS + HNSCREEN_FLAGS      # RL-S1 is not the head's experiment, nor the hard-negative screen's
 RLS1_EPO_TERMS = ("epo", "epo_J", "epo_kl", "epo_lam_pg")                              # the trainer's metric rows must emit these on an --epo arm
 RLS1_DATA = ("--ckpt", "--targets", "--images", "--calib", "--onpolicy", "--heldout", "--heldout-logs", "--lane-labels-train", "--lane-labels-heldout",
              "--pdm-labels-train", "--pdm-labels-heldout", "--teacher-lane-train", "--teacher-lane-heldout", "--epo-terms-train", "--epo-terms-heldout", "--aux-drv-labels", "--epo-carve-logs")
+RLS1_DATA = RLS1_DATA + ("--hn-bank", "--ctx-cache")                                  # P6-HN-S: the hard-negative bank and the context cache are DATA inputs (G-DVB hashes them)
 RLS1_SUITE = [{"script": "test_rl_reward.py", "token": "ZZTEST_PASS"}, {"script": "test_rl_epo.py", "token": "ZZTEST_PASS"},
               {"script": "test_launch_gate.py", "args": ["--static", "--no-banked"], "token": "ZZLG_STATIC_PASS"}]
 # RL-S1b (eval/PREREG_RL_S1.md section 10, 2026-10-14; raw/2026-10-14-rls1b-attribution/attribution.json + dose.json).  R0 was KILLED by K3/g5; the attribution found the TTC loss is NOT
@@ -120,7 +122,7 @@ AUXS1_EPO_FLAGS = ("--epo", "--epo-temp", "--epo-beta", "--epo-ramp", "--epo-lam
                    "--epo-terms-train", "--epo-terms-heldout", "--epo-ref",
                    "--epo-con-feed", "--epo-carve-logs", "--epo-carve-sha256", "--epo-carve-micro")          # B8: the carve feed of the dual; a non-EPO arm never carries it
 # --aux-drv-shuffle-seed is the label-shuffled CONTROL's lever: a non-control arm never carries it (a dated prereg amendment adds the control arm and relaxes this)
-AUXS1_FORBIDDEN = ("--preflight", "--lane-labels-train", "--b-compw", "--tau-t", "--aux-drv-shuffle-seed") + AUXS1_EPO_FLAGS
+AUXS1_FORBIDDEN = ("--preflight", "--lane-labels-train", "--b-compw", "--tau-t", "--aux-drv-shuffle-seed") + AUXS1_EPO_FLAGS + HNSCREEN_FLAGS
 AUXS1_HEAD_TERMS = ("aux_bce", "aux_huber")                                           # the trainer's metric rows must emit these on a head arm
 AUXS1_SUITE = [{"script": "test_rl_reward.py", "token": "ZZTEST_PASS"}, {"script": "test_rl_epo.py", "token": "ZZTEST_PASS"},
                {"script": "test_aux_drivable_head.py", "token": "ZZTEST_PASS"}, {"script": "test_aux_s1_wiring.py", "token": "ZZTEST_PASS"},
@@ -143,6 +145,24 @@ AUXS1C_SUITE = AUXS1_SUITE + [{"script": "test_s1c.py", "token": "ZZTEST_PASS", 
 # replicate's own run directory and `--seed 1` is added (P2 ran the parser default, seed 0).  `refe_p2` binds NEITHER (its `required_flags` names 8 of its 20 flags; a missing `--seed 1`, P2's
 # own `--out`, or any other lever that moved would still mint), so the replicate has a profile of its own that PINS the whole argv (`pinned_argv`, token for token).
 # P2_ARGV is `ARGS` of refe/p2r_pod.sh as it EXPANDS on the pod (DATA=/workspace/data, RUN=$DATA/refe_runs/p2_joint_pdm); test_p2rep_chain.py diffs the three copies (p2r_pod.sh, p2rep_pod.sh, this).
+# ====================================================================================================================================================================================
+# P6-HN-S (raw/2026-10-18-p6hn-prereg/PREREG_P6HN_SCREEN.md 4.1 / 4.2 / 4.4): the offset hard-negative SCREEN.  refe_hnscreen = refe_rls1 (same runner, checks, required / forbidden flags, recipe, G-DVB,
+# G-PREFLIGHT) with ITS arm table and the base argv PINNED.  A "pass" s trains A_s and B_s in ONE run (scorer_finetune trains both arms in a single process), so the arm is the pass: S0 S1 S2 (seeds 0 1 2);
+# the extension passes S3 S4 are PI/rule-E arms (PREREG 7 rule E), not mintable until it fires.  The base argv is RL-S1's C1 argv token for token (eval/rls1b_arms.json); the ONLY allowed differences are
+# --seed, --out, --dump-scores, the data paths re-rooted to the run box (their CONTENT fingerprints must equal C1's / C0's: `fingerprints_expected`), plus --hn-bank and --ctx-cache each exactly once.
+HNSCREEN_ARM_SEEDS = {"S0": 0, "S1": 1, "S2": 2}
+HNSCREEN_ARM_CLASS = {"S0": "C", "S1": "C", "S2": "C"}                                   # class C = no EPO lever: A_s and B_s differ by the hard-negative term alone
+HNSCREEN_NEEDS_PI = {"S3": "S3 (seed 3) is an extension pass: it runs only under PREREG_P6HN_SCREEN section 7 rule E, which has not fired",
+                     "S4": "S4 (seed 4) is an extension pass: it runs only under PREREG_P6HN_SCREEN section 7 rule E, which has not fired"}
+HNSCREEN_PIN = {"--backbone": ("vitl16",), "--require-pdm": (), "--b-mode": ("listnet",), "--lam": ("0",), "--lr": ("1e-4",), "--max-updates": ("1000",), "--epochs": ("4",), "--workers": ("3",),
+                "--eval-every": ("250",), "--lane-head": ()}      # C1's non-path tokens, value for value
+HNSCREEN_PATHS = ("--ckpt", "--targets", "--images", "--calib", "--onpolicy", "--heldout", "--heldout-logs", "--out", "--pdm-labels-train", "--pdm-labels-heldout", "--dump-scores",
+                  "--teacher-lane-train", "--teacher-lane-heldout") + HNSCREEN_FLAGS      # tokens whose VALUE may move (a re-rooted path) but which must be carried exactly once
+HNSCREEN_TERMS = ("hn_rows", "hn_rows_expected", "hn_loss")                              # the trainer's train rows must emit these (D1: the rows that entered the term vs the rows the bank holds)
+HNSCREEN_SUITE = RLS1_SUITE + [{"script": "test_hn_bank.py", "token": "ZZTEST_PASS"}, {"script": "test_ctx_cache.py", "token": "ZZTEST_PASS"},
+                               {"script": "test_hn_screen_wiring.py", "token": "ZZTEST_PASS"}]
+
+
 P2_RUN_DIR = "/workspace/data/refe_runs/p2_joint_pdm"
 P2REP_RUN_DIR = "/workspace/data/refe_runs/p2_joint_pdm_s1"
 P2REP_SEED = 1
@@ -312,6 +332,10 @@ PROFILES["refe_rls1c"] = {**PROFILES["refe_rls1"], "name": "refe_rls1c", "suite"
 # constrained arm must emit (arm_con_terms).  `epo_con_block`: the data event MUST carry the `epo_con` block (G-DVB cannot read a legacy absence as "off" here: R1o's OFF is itself observed).
 PROFILES["refe_rls1d"] = {**PROFILES["refe_rls1"], "name": "refe_rls1d", "suite": RLS1D_SUITE, "arm_class": RLS1D_ARM_CLASS, "arm_seeds": RLS1D_ARM_SEEDS,
                           "arm_epo_registered": RLS1D_ARM_EPO_REGISTERED, "arm_must_name": RLS1D_ARM_MUST_NAME, "arm_con_terms": RLS1D_ARM_CON_TERMS, "epo_con_block": True}
+# P6-HN-S = refe_rls1 with ITS arm table (S0 S1 S2), the screen's own forbidden flags (the RL-S1 set minus --hn-bank / --ctx-cache, which it REQUIRES), `hn_rules` (hnscreen_refusals: the argv pin, G14 / G15
+# are required by the argv, the trainer's own hn_refusals) and `schedule_reach` (G-DVB re-derives ceil(train_sets / batch x epochs / accum) against --max-updates 1000: PREREG 4.4's G-CLOCK).
+PROFILES["refe_hnscreen"] = {**PROFILES["refe_rls1"], "name": "refe_hnscreen", "suite": HNSCREEN_SUITE, "arm_class": HNSCREEN_ARM_CLASS, "arm_seeds": HNSCREEN_ARM_SEEDS, "arms_need_pi": HNSCREEN_NEEDS_PI,
+                             "forbidden_flags": tuple(f for f in RLS1_FORBIDDEN if f not in HNSCREEN_FLAGS), "hn_rules": True, "schedule_reach": True, "fingerprints_expected": {}}
 # S1c = refe_aux_s1 (same runner, checks, data flags, forbidden flags, head levers, recipe except the budget) with ITS arm table and per-class budget.  `--max-updates` is no longer a pinned value of
 # the PROFILE (400) but of the ARM CLASS (auxs1_refusals reads `arm_recipe`); it must still be NAMED.  `schedule_reach` adds G-DVB rows that re-derive the schedule the trainer will build.
 PROFILES["refe_aux_s1c"] = {**PROFILES["refe_aux_s1"], "name": "refe_aux_s1c", "suite": AUXS1C_SUITE, "arm_class": AUXS1C_ARM_CLASS, "arm_seeds": AUXS1C_ARM_SEED,
@@ -406,7 +430,11 @@ def profile_refusals(prof: dict, argv: list) -> list:
         rs, extra = auxs1_refusals(prof, argv, T, parser)
         out += rs
         terms += extra
-    elif prof.get("recipe_rules") == "sft4r":
+    if prof.get("hn_rules"):                                                # P6-HN-S: the screen's argv pin on top of the RL-S1 rules above
+        rs, extra = hnscreen_refusals(prof, argv, T, parser)
+        out += rs
+        terms += extra
+    if prof.get("recipe_rules") == "sft4r":
         rs, extra = sft4r_refusals(prof, argv, T, parser)
         out += rs
         terms += extra
@@ -518,6 +546,77 @@ def rls1_refusals(prof: dict, argv: list, mod, parser) -> tuple:
         out.append(f"{name}: --teacher-lane-* is named without --lane-head: the labels would be loaded and never trained on")
     con_terms = tuple(prof.get("arm_con_terms", {}).get(declared, ())) if cls != "C" else ()          # SAFEOBJ: a constrained arm's rows must also emit the con* columns
     return out, ((RLS1_EPO_TERMS + con_terms) if cls != "C" else ())
+
+
+# ============================================================================================ P6-HN-S arm rules (refe_hnscreen)
+def _same_vals(a, b) -> bool:
+    """two flag-value tuples are the same value: numerically when both parse as numbers ('1e-4' == '0.0001'), else as text"""
+    if len(a) != len(b):
+        return False
+    for x, y in zip(a, b):
+        try:
+            if float(x) != float(y):
+                return False
+        except ValueError:
+            if x != y:
+                return False
+    return True
+
+
+def hnscreen_refusals(prof: dict, argv: list, mod, parser) -> tuple:
+    """(refusals, extra live terms) of the screen's rules, ON TOP of rls1_refusals (class C, the recipe, the registered seed, the lane-head pairing, scorer_finetune's own epo refusals).  PREREG_P6HN_SCREEN 4.2 / 4.4:
+    the argv is RL-S1's C1 argv plus --hn-bank and --ctx-cache, each exactly once -- ANY moved, added, dropped or doubled token is a refusal; --seed is named (the pass); path values may move (re-rooted) but their
+    CONTENT fingerprints must equal the registered ones when the profile carries `fingerprints_expected`; the trainer's own `hn_refusals` (--hn-bank with --epo / --lam != 0 / --b-mode != listnet / --aux-drv,
+    --ctx-cache with --aux-drv) are surfaced, not re-derived."""
+    import gate_checks as C
+    name, out = prof["name"], []
+    got: dict = {}
+    for f, v in GT.flag_pairs(list(argv)):
+        got.setdefault(f, []).append(tuple(v))
+    if argv and not str(argv[0]).startswith("--"):
+        out.append(f"{name}: the argv starts with {argv[0]!r}, which belongs to no flag")
+    allowed = set(HNSCREEN_PIN) | set(HNSCREEN_PATHS) | {"--seed"}
+    for f in sorted(allowed):
+        n = len(got.get(f, ()))
+        if n == 0:
+            out.append(f"{name}: {f} is DROPPED -- the screen's argv is RL-S1's C1 argv plus --hn-bank and --ctx-cache (PREREG_P6HN_SCREEN 4.2); every token is required")
+        elif n > 1:
+            out.append(f"{name}: {f} is carried {n} times (each token exactly once)")
+    for f, want in HNSCREEN_PIN.items():
+        if len(got.get(f, ())) == 1 and not _same_vals(got[f][0], want):
+            out.append(f"{name}: {f} MOVED to {' '.join(got[f][0]) or '(no value)'}; the screen pins {f} {' '.join(want)} (RL-S1 C1's value)")
+    for f in HNSCREEN_PATHS + ("--seed",):
+        if len(got.get(f, ())) == 1 and len(got[f][0]) != 1:
+            out.append(f"{name}: {f} needs exactly one value, the argv has {len(got[f][0])}")
+    for f in sorted(set(got) - allowed):
+        out.append(f"{name}: the argv ADDS {f} {' '.join(got[f][0])}, which the screen does not allow (allowed differences from C1: --seed, --out, --dump-scores, re-rooted data paths, and --hn-bank / --ctx-cache)")
+    ns, err = C.parse_scorer_argv(parser, argv)
+    if err:
+        return out + [f"{name}: the trainer's parser rejects this argv ({err})"], ()
+    out += [f"scorer_finetune refuses this argv: {m}" for m in mod.hn_refusals(ns, parser)]
+    for f, want in sorted((prof.get("fingerprints_expected") or {}).items()):      # content fingerprints of the re-rooted data (UNVERIFIED offline: the registered values live on the run box)
+        vals = got.get(f)
+        if not vals or len(vals) != 1 or len(vals[0]) != 1:
+            continue
+        try:
+            fk = GT.fp_key(GT.fingerprint(vals[0][0]))
+        except (OSError, ValueError, KeyError) as e:
+            out.append(f"{name}: cannot fingerprint {f} {vals[0][0]} ({e})")
+            continue
+        if fk != want:
+            out.append(f"{name}: the content fingerprint of {f} is not the registered one (RL-S1 C1 / C0's token fingerprint)")
+    return out, HNSCREEN_TERMS
+
+
+def hnscreen_regression_argv(argv: list, arm: str) -> list:
+    """The deliberate-regression arms of refe_hnscreen that act on the ARGV (PREREG_P6HN_SCREEN 4.4): `moved_lever` (a pinned token changed: --lr 2e-4) and `epo_with_hn` (an EPO lever beside the bank).
+    Every other arm acts on the evidence (gate_checks.apply_hn_arm; check_dvb_scorer's arms) and returns the argv unchanged.  Each must be REFUSED by profile_refusals."""
+    argv = list(argv)
+    if arm == "moved_lever":
+        return [("2e-4" if argv[i - 1] == "--lr" else t) for i, t in enumerate(argv)]
+    if arm == "epo_with_hn":
+        return argv + ["--epo", "--epo-terms-train", "/w/terms"]
+    return argv
 
 
 # ============================================================================================ aux S1 arm rules (refe_aux_s1)
@@ -879,6 +978,19 @@ def consume_scorer_preflight(path, argv, prof, arm=None, rehearsal=False) -> dic
     g12 = next((v for k, v in gates.items() if prefix[k] == "G12"), None)
     if g12 is not None:                                      # G12 (--aux-drv) is re-judged from its raw fields too: its own `ok` is a claim, the fields are the evidence
         reasons += C.judge_g12(g12, ns)
+    g14 = next((v for k, v in gates.items() if prefix[k] == "G14"), None)
+    g15 = next((v for k, v in gates.items() if prefix[k] == "G15"), None)
+    if arm in C.HN_ARMS:                                     # P6-HN-S deliberate-regression arms: the same preflight, with the raw fields of the defect (each must turn a judge RED)
+        g14, g15 = C.apply_hn_arm(g14, g15, arm)
+    if g14 is not None:                                      # G14 (--hn-bank): the hard-negative term is live on arm B only, its controls read EXACTLY 0.0, the identities hold -- from the raw fields
+        reasons += C.judge_g14(g14, ns)
+    if g15 is not None:                                      # G15 (--ctx-cache): the cache IS the live trunk forward, bit for bit -- from the raw fields, and bound to the data event's built block
+        reasons += C.judge_g15(g15, ns)
+        ccb = (pf["data"] or {}).get("ctx_cache") if isinstance(pf.get("data"), dict) else None
+        if isinstance(ccb, dict) and ccb.get("trunk_fingerprint") != g15.get("trunk_fingerprint_checkpoint"):
+            reasons.append("G15: the data event's ctx_cache.trunk_fingerprint is not the checkpoint fingerprint G15 measured (the cache the trainer built is not the one the identity was proved on)")
+        if isinstance(ccb, dict) and ccb.get("manifest_sha256") != g15.get("manifest_sha256"):
+            reasons.append("G15: the data event's ctx_cache.manifest_sha256 is not the manifest G15 measured")
     det = {"gates": {k: (v.get("ok") if isinstance(v, dict) else None) for k, v in gates.items()}, "required": req, "verdict": row.get("verdict"),
            "file_sha256": pf["sha256"], "n_preflight_rows": pf["n_preflight"], "has_data_event": pf["data"] is not None,
            "s_per_microbatch": row.get("s_per_microbatch"), "gpu_mem_gb": row.get("gpu_mem_gb")}
@@ -1000,7 +1112,7 @@ def _profile_for(a, minting: bool) -> dict:
     arms = {"rls1": prof.get("arm_class", RLS1_ARM_CLASS), "auxs1": prof.get("arm_class", AUXS1_ARM_CLASS)}.get(prof.get("arm_rules"), {})
     if arm_name:
         if not prof.get("arm_rules"):
-            raise SystemExit(f"--arm-name is only meaningful for a profile with arm rules (refe_rls1, refe_rls1b, refe_rls1c, refe_rls1d, refe_aux_s1, refe_aux_s1c), not {a.profile}")
+            raise SystemExit(f"--arm-name is only meaningful for a profile with arm rules (refe_rls1, refe_rls1b, refe_rls1c, refe_rls1d, refe_aux_s1, refe_aux_s1c, refe_hnscreen), not {a.profile}")
         if arm_name in prof.get("arms_need_pi", {}):
             raise SystemExit(f"REFUSED: {prof['arms_need_pi'][arm_name]}")
         if arm_name not in arms:
@@ -1111,8 +1223,8 @@ def main(argv=None) -> int:
         p.add_argument("--key-file")
         p.add_argument("--pkg", required=(name != "refusals"))
         if name in ("run", "refusals"):
-            p.add_argument("--arm-name", choices=sorted(set(RLS1_ARM_CLASS) | set(RLS1D_ARM_CLASS) | set(RLS1B_ARM_CLASS) | set(RLS1B_NEEDS_PI) | set(RLS1C_ARM_CLASS)) + sorted(AUXS1_ARM_CLASS) + sorted(AUXS1C_ARM_CLASS),
-                           help="refe_rls1: the arm this argv is for (C0 C1 R0 R1 R2); refe_rls1b: C1 R0b R1b (R2b needs a PI decision); refe_rls1c: R0c; refe_rls1d: R0d R1d R1o; refe_aux_s1: N-s0..H2-s2; refe_aux_s1c: H1u10k-s0 | H1u2k-s0; "
+            p.add_argument("--arm-name", choices=sorted(set(RLS1_ARM_CLASS) | set(RLS1D_ARM_CLASS) | set(RLS1B_ARM_CLASS) | set(RLS1B_NEEDS_PI) | set(RLS1C_ARM_CLASS)) + sorted(AUXS1_ARM_CLASS) + sorted(AUXS1C_ARM_CLASS) + sorted(set(HNSCREEN_ARM_CLASS) | set(HNSCREEN_NEEDS_PI)),
+                           help="refe_rls1: the arm this argv is for (C0 C1 R0 R1 R2); refe_rls1b: C1 R0b R1b (R2b needs a PI decision); refe_rls1c: R0c; refe_rls1d: R0d R1d R1o; refe_aux_s1: N-s0..H2-s2; refe_aux_s1c: H1u10k-s0 | H1u2k-s0; refe_hnscreen: S0 S1 S2 (S3 S4 need rule E); "
                                 "REQUIRED to mint, optional for `refusals` (undeclared = read off the argv)")
         if name == "run":
             p.add_argument("--out-dir", required=True)

@@ -40,6 +40,7 @@ import torch
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import carvefeed_layer as CL  # noqa: E402
+import hnscreen_layer as HL  # noqa: E402     # P6-HN-S sits ON TOP of the B8 layer: the B8 pins below compare the B8 trainer (HL.peel) with the pre-B8 tip
 import test_rl_epo as TE  # noqa: E402
 import test_rl_s1b as S1B  # noqa: E402
 import test_rl_safeobj as SO  # noqa: E402
@@ -142,10 +143,11 @@ def suite(sf_src: str, tag: str, refs: dict, trace: bool = False) -> list:
     C = TE.Ctx(sf_src, f"sf_cf_{tag}")
     M = C.mod
     try:
+        sf_b8 = HL.peel(sf_src)                                     # the trainer as B8 left it (a trainer without the HN layer is returned unchanged)
         tip_src = CL.peel(sf_src)
-        seg, seg_tip = S1B.segments(sf_src), S1B.segments(tip_src)
+        seg, seg_tip = S1B.segments(sf_b8), S1B.segments(tip_src)
     except AssertionError:
-        tip_src = seg = seg_tip = None
+        sf_b8 = tip_src = seg = seg_tip = None
     msrc = _ast.unparse(C.main)
 
     # ---------------------------------------------------------------- P: pinned
@@ -153,7 +155,7 @@ def suite(sf_src: str, tag: str, refs: dict, trace: bool = False) -> list:
 
     def only_flags():
         old = TE.load(tip_src, f"sf_cf_old_{tag}")
-        nm = {tuple(x.option_strings): x for x in M.build_parser()._actions}
+        nm = {tuple(x.option_strings): x for x in TE.load(sf_b8, f"sf_cf_b8_{tag}").build_parser()._actions}
         om = {tuple(x.option_strings): x for x in old.build_parser()._actions}
         same = all(k in nm and all(getattr(om[k], at) == getattr(nm[k], at) for at in ("dest", "default", "type", "choices", "required", "nargs", "const", "help")) for k in om)
         return same and {k[0] for k in set(nm) - set(om)} == NEW_FLAGS

@@ -1,0 +1,27 @@
+C:\Users\Admin\hn34\tree\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\scorer_finetune.py:1582: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+  """the stock fwd's four returns.  batch = the stock nine + this run's ScreenItems tail: (cached ctx)? (hn_xy, hn_tg, hn_m, bank row)?  The cached context REPLACES the trunk forward (arm A scores through
+-- checks: ALL GREEN
+-- mutation table (each must be RED on the named checks)
+   M1 RED as required  the hn term is computed but never added to arm B's loss (`lB = lB + hn_out.loss` removed)
+      named: ['ON_bank_moves_arm_B', 'G14_value_on_positive', 'G14_grad_q_mlp_nonzero', 'G14_grad_dec_nonzero', 'G14_grad_head_rows_0_5_nonzero']
+      red:   ['ON_cb_preflight_pass_and_run_complete', 'ON_bank_preflight_pass_and_run_complete', 'ON_bank_moves_arm_B', 'ON_bank_arm_B_eval_moves_after_training', 'G14_value_on_positive', 'G14_grad_q_mlp_nonzero', 'G14_grad_dec_nonzero', 'G14_grad_head_rows_0_5_nonzero', 'G14_two_step_identities', 'ON_bank_only_G14_lane_row_zero_and_pass', 'ON_trainer_ok_agrees_with_the_judges']
+   M2 RED as required  the term is applied to arm A's scorer (`HN.hn_term(armB,` -> `HN.hn_term(model,`)
+      named: ['ON_bank_leaves_arm_A_bit_identical', 'G14_armA_exactly_zero']
+      red:   ['ON_cb_preflight_pass_and_run_complete', 'ON_bank_preflight_pass_and_run_complete', 'ON_bank_leaves_arm_A_bit_identical', 'ON_bank_moves_arm_B', 'ON_bank_arm_A_and_base_eval_numbers_equal_the_cache_only_run', 'ON_bank_arm_B_eval_moves_after_training', 'G14_grad_q_mlp_nonzero', 'G14_grad_dec_nonzero', 'G14_grad_head_rows_0_5_nonzero', 'G14_armA_exactly_zero', 'ON_bank_only_G14_lane_row_zero_and_pass', 'ON_trainer_ok_agrees_with_the_judges']
+   M3 RED as required  pad slots are served as valid (the bank's mask replaced by all-True)
+      named: ['G14_pad_mask_equals_bank', 'G14_d1_rows', 'ON_D1_train_row_counts']
+      red:   ['ON_cb_preflight_pass_and_run_complete', 'ON_bank_preflight_pass_and_run_complete', 'ON_D1_train_row_counts', 'ON_D1_rows_equal_an_independent_replay_of_the_loader', 'G14_pad_mask_equals_bank', 'G14_pad_perturbation_bit_identical', 'G14_d1_rows', 'ON_bank_only_G14_lane_row_zero_and_pass', 'ON_trainer_ok_agrees_with_the_judges']
+   M4 RED as required  the fan rows can see the hn slots (hn_attn_mask no longer blocks fan -> hn)
+      named: ['G14_fan_rows_isolated_from_hn']
+      red:   ['ON_cb_preflight_pass_and_run_complete', 'ON_bank_preflight_pass_and_run_complete', 'G14_fan_rows_isolated_from_hn', 'G14_hn_row_independent_of_other_hn_rows', 'ON_bank_only_G14_lane_row_zero_and_pass', 'ON_trainer_ok_agrees_with_the_judges']
+   M5 RED as required  the hn rows train the LANE output (a loss term on logits[..., 6:])
+      named: ['G14_lane_row_exactly_zero']
+      red:   ['ON_cb_preflight_pass_and_run_complete', 'ON_bank_preflight_pass_and_run_complete', 'G14_lane_row_exactly_zero', 'G14_dup_identity', 'ON_bank_only_G14_lane_row_zero_and_pass', 'ON_trainer_ok_agrees_with_the_judges']
+   M6 RED as required  the bank's partition / label_version / fan-fingerprint identity is not checked (`expect=hn_expect` removed)
+      named: ['REF_bank_other_partition', 'REF_bank_other_label_version', 'REF_bank_other_fan_fingerprint']
+      red:   ['REF_bank_other_partition', 'REF_bank_other_label_version', 'REF_bank_other_fan_fingerprint']
+   M7 RED as required  the cache's trunk fingerprint is not checked against the checkpoint's (`expect_trunk_fingerprint=trunk_fp` removed)
+      named: ['REF_cache_other_trunk']
+      red:   ['REF_cache_other_trunk']
+ZZTEST_PASS 120

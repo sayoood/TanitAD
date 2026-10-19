@@ -1,0 +1,39 @@
+mutation                                           term    caught-by (failing checks)
+gap_min_over_corners                               D       gap_pushed_out_0p3, gap_is_max_over_corners, D_values
+gap_centre_instead_of_corners                      D       D_values, gmax_values, D_zero_iff_inside
+gap_union_replaced_by_first_polygon                D       gap_union_of_polygons, gap_nearest_of_disjoint
+executed_shape_check_dropped                       D       executed_states_required
+executed_steps_40                                  D       suite setup raised ValueError: expected EXECUTED states [M, 40, >=3] (the LQR-tracked 0.1 s
+dac_strict_inequality                              D       dac_from_gap
+no_map_gap_zero                                    D       gap_no_polygons_saturates
+D_is_raw_gap                                       D       suite setup raised TypeError: only size-1 arrays can be converted to Python scalars
+gmax_is_min                                        D       gmax_values
+dac_layers_plus_lane                               D       dac_polygon_set_v11, dac_layers_constant
+dac_layers_plus_roadblock_connector                D       dac_polygon_set_v11, dac_layers_constant
+dac_layers_minus_carpark                           D       dac_polygon_set_v11, dac_layers_constant
+want_ignored_for_D                                 D       want_K_only
+K_intersection_mask_dropped                        K       K_zero_inside_intersection
+K_straddle_not_masked_in_intersection              K       K_zero_inside_intersection
+K_label_suppression_dropped                        K       K_suppressed_when_label_fires, K_suppressed_by_route_label
+K_straddle_label_suppression_dropped               K       K_suppressed_when_label_fires, K_suppressed_by_route_label
+K_offset_of_rear_axle                              K       K_heading_error_20deg, K_offset_is_of_the_centre
+K_heading_wrap_dropped                             K       K_heading_wraps
+K_np_interp_instead_of_interp1d                    K       centreline_duplicate_vertex_first_wins
+K_multiple_lanes_needs_no_single_lane_dropped      K       multiple_lanes_single_containing_lane_wins
+K_multiple_lanes_needs_two                         K       K_heading_error_20deg
+K_signed_lateral_flipped                           K       centreline_signed_lateral_left_positive
+L_offset_threshold_0                               L       lc_executed_cases, lc_threshold_is_2m
+L_start_lane_counts_as_change                      L       lc_same_lane_far_from_baseline_is_not_a_change
+L_offset_read_at_first_pose                        L       lc_executed_cases, L_end_to_end
+L_label_or_became_and                              L       K_suppressed_when_label_fires, K_suppressed_by_route_label, label_fires_human
+L_dither_needs_one_change                          L       dither_cases, L_dither_end_to_end
+L_dither_deadband_0                                L       dither_cases
+L_route_label_ignores_start_lane                   L       route_label_truth_table
+L_no_context_still_changes                         L       L_without_context_is_zero
+W_prefix_not_the_consumers                         writer  side_file_name_matches_consumer_glob
+W_label_fires_not_a_bool                           writer  consumer_accepts_record
+W_key_truncated                                    writer  record_key_and_fields
+W_shard_off_by_one                                 writer  shard_known_value, shard_partition
+W_terms_subset_unchecked                           writer  terms_flag_validated
+W_executed_states_float64                          reach   executed_states_pinned_to_score_plans
+ZZTEST_PASS 39  (1 unmutated suite + 37 RED mutations + coverage)
