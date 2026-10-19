@@ -1,0 +1,866 @@
+{
+ "tool": "code/brake_locus_r8.py",
+ "tier": "T1 self-action OPEN LOOP on logged eval139 frames (not driving performance)",
+ "estimator": "episode-cluster bootstrap (pair_read_r8.paired_cell -> taniteval.ci), B 2000, seed pair_read_r8.SEED: answers 'another draw of EPISODES' only; NOT another training run (single training seed per arm, H-ESTIM-SEED-1), NOT another inference run (seeds 0 and 1 shown separately, never pooled)",
+ "tree": "step30000ema_unc",
+ "r7_reference": "D:/refcv7_eval_kit/battery/step50400_a6text",
+ "prereg_sha256": "157bc6e5da5c6cc71478ffd4be09f97b1373cb76ba7ada734babebb2e19c2e9d",
+ "amendment1_sha256": "876a044eccd0f01dd84d68a5e7559d59ff62ab82f3070714c32ee4886671c698",
+ "amendment2_sha256_POSTHOC": "30dbf8e107a6caf94c10c71e06ca89f8bea6a5afade3a157649fd852378ba6e4",
+ "script_sha256": "65fc6c26c06060927af78059f62e784fcf50710e87c3984e55e8f19900a841f5",
+ "ckpt_scalars": {
+  "tool": "code/brake_locus_r8.py --ckpt-scalars",
+  "ckpt": "E:/refcv8_eval_kit/ckpt/ckpt_ema_30000.pt",
+  "step": 30000,
+  "kind": "ema_model_only",
+  "values": {
+   "r8_sel.beta_lat": -0.038776323199272156,
+   "r8_sel.beta_lon": -0.00679604709148407,
+   "r8_sel.gamma_prog": 0.10099703818559647,
+   "r8_sel.gamma_head": 0.3810942471027374,
+   "r8_rc_gate": 0.0
+  },
+  "meaning": "ranking term r8_sel = beta_lat*log p(lat3 of the candidate) + beta_lon*log p(lon6 of the candidate) + gamma_prog*sat_prog + gamma_head*sat_head (refcv8_conditioning.py:472-499); all four are zero-init and LEARNED.  beta_lon ~ 0 means the head's lon POSTERIOR hardly enters the ranking; gamma_prog is the weight on satisfying the head's lon CONSTRAINT output (progress), which is NOT banked.",
+  "evidence_class": "MEASURED (ours, checkpoint read, mmap, 4 scalars)"
+ },
+ "inputs": {
+  "r8_extras_s0": {
+   "path": "C:/Users/Admin/refcv8_eval_archive/battery/step30000ema_unc/dump_s0/refcv6_extras.npz",
+   "sha256_12": "03bc359d81c9"
+  },
+  "r7_extras_s0": {
+   "path": "D:/refcv7_eval_kit/battery/step50400_a6text/dump_s0/refcv6_extras.npz",
+   "sha256_12": "cf1331174ad7"
+  },
+  "deploy8_npz_s0": {
+   "path": "C:\\Users\\Admin\\qland\\hold_r8batt\\stage\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-10-15-refcv8-milestone-battery\\raw\\retime_deploy\\DEPLOY8_POS_step30000ema_unc_s0.npz",
+   "sha256_12": "b85a7bd25d00"
+  },
+  "r8_extras_s1": {
+   "path": "C:/Users/Admin/refcv8_eval_archive/battery/step30000ema_unc/dump_s1/refcv6_extras.npz",
+   "sha256_12": "e0e6a60aafd2"
+  },
+  "r7_extras_s1": {
+   "path": "D:/refcv7_eval_kit/battery/step50400_a6text/dump_s1/refcv6_extras.npz",
+   "sha256_12": "f1ab8c0ebdb1"
+  },
+  "deploy8_npz_s1": {
+   "path": "C:\\Users\\Admin\\qland\\hold_r8batt\\stage\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-10-15-refcv8-milestone-battery\\raw\\retime_deploy\\DEPLOY8_POS_step30000ema_unc_s1.npz",
+   "sha256_12": "ff7321fbed02"
+  }
+ },
+ "label": {
+  "label": "UNDETERMINED",
+  "T_HEAD": false,
+  "T_SEL": null,
+  "T_CAND": null,
+  "note": "SELECTION vs CANDIDATE not measurable without the refined fan (re-roll design in BRAKE_LOCUS_REROLL_DESIGN.md)"
+ },
+ "head_test": {
+  "clause1_i_ge_0p6": {
+   "0": true,
+   "1": true
+  },
+  "clause2_r8_le_r7_on_head_says_cruise": {
+   "0": false,
+   "1": false
+  },
+  "P1_i_exceeds_permutation_null": {
+   "0": true,
+   "1": true
+  },
+  "HEAD_TEST": "FAIL"
+ },
+ "reading": "Clause 1 holds ((i) = 0.655 / 0.649 at seeds 0 / 1, chance 0.259) but clause 2 does not: where r8's own head says cruise, r8 brakes 0.124 vs refcv7's 0.080 (paired delta +0.044 [+0.019, +0.071], seed 1 +0.043 [+0.018, +0.070]).  The label stays UNDETERMINED: SELECTION vs CANDIDATE needs the refined fan.  What the banked data DO say (association): 81 % / 81 % of the r8-minus-r7 false-brake excess sits in windows where r8's head says decel; r8's plan follows its own decel head 0.67 / 0.64 of the time against refcv7's 0.12 / 0.13, although refcv7's head says decel MORE often on GT-cruise windows (0.36 vs 0.26) -- the difference is the head-to-plan coupling, not the head's decel rate.  The braking is already in the SELECTED UNREFINED anchor in 86 % / 89 % of in-bank false-brake windows (vs 7 % on other GT-cruise windows), so it is decided in WHICH ANCHOR is chosen, not in refinement; the ceiling filter, the speed-label input and the E9 graft are not the locus (S5, S4).  POST-HOC: where the selector did pick the GT-nearest base anchor on a false-brake window, that anchor itself brakes in 63 % / 67 % of cases (base-bank coverage is thin there, for refcv7 too).  NOT separable from banked data: whether the head CAUSES the pick (needs the force_lon F2 / head-neutral-ranking interventions), and whether the refined fan holds a good cruising candidate (needs the fan).",
+ "fan_stage": {
+  "status": "NOT_MEASURABLE",
+  "reason": "the refined fan (out['anchor_traj'] [W,149,8,2]), per-candidate selection scores and candidate tags are not in the banked dumps; only fan_term_heading [W,149] (terminal heading, no longitudinal content) and reach_keep [W,149] are",
+  "X_FDE6_m": 2.91,
+  "X_ADE_m": 1.21,
+  "rule": {
+   "CANDIDATE": "E < 0.3",
+   "SELECTION": "E >= 0.5"
+  }
+ },
+ "along_track_control_ALONG_RAND": {
+  "status": "NOT_MEASURABLE",
+  "reason": "needs a random / median-progress candidate of the REFINED fan; the fan is not banked (AMENDMENT 1 A3).  Statistics, arms, reading rule and controls are pre-registered and implemented (along_stats, along_r_diff_boot, along_verdict, selftest_along = control C7); the re-roll design is raw/refcv9_headroom/BRAKE_LOCUS_REROLL_DESIGN.md",
+  "reading_rule": "dR = r_os - r_RAND, paired episode-cluster bootstrap, per seed: SELECTOR-ADDS-VALUE iff lo > 0 at both seeds; SELECTION-SUPPORTED iff lo <= 0 at both seeds; else SEED-SPLIT",
+  "sibling_values_for_reference_not_ours": {
+   "os_r": 0.402,
+   "orc_r": 0.76,
+   "source": "refcv9/L1_DESIGN_ANNEX.md 1.2 (in-bank compliant S2 windows, EMA-30k)"
+  }
+ },
+ "inventory": {
+  "refined fan (all candidates, full trajectories)": "NO (only terminal heading [W,149] + reach mask)",
+  "per-candidate selection scores": "NO (only the max, sel_score_max)",
+  "candidate tags (lon6 / alloc / kind)": "NO",
+  "selected index, pre-graft index, GT-nearest base anchor": "yes (decisions/sel_idx, sel_idx_base, a_star)",
+  "selected plan, 8 slots": "yes (decisions/plan_full_nav_true)",
+  "tactical lon head logits (tacv6 = planner-feeding; lon_logits_tac = legacy)": "yes (refcv6_extras.npz)",
+  "head constraint outputs (cons_lon8)": "NO",
+  "oracle_sel (refined GT-nearest plan)": "S2 grid only (0-2 s)",
+  "sel_bank_* (selected anchor's UNREFINED 8-slot path)": "yes, for windows with sel_idx < 117 only (rows = those windows in order; AMENDMENT 1 A1 corrects the original prereg's inadmissible); S6 files carry the S2 array unsliced",
+  "ablated arms (filter_off, vmax_zero)": "seed 0 only"
+ },
+ "per_seed": {
+  "0": {
+   "seed": 0,
+   "thr": 1.5,
+   "n_compliant": 3251,
+   "ep_compliant": 138,
+   "n_cruise": 1856,
+   "ep_cruise": 135,
+   "fd_r8": 0.265625,
+   "fd_r7": 0.09105603448275862,
+   "n_fb8": 493,
+   "n_fb7": 169,
+   "i": {
+    "delta": 0.6552,
+    "lo": 0.5132,
+    "hi": 0.7654,
+    "n_windows": 493,
+    "n_episodes": 74,
+    "mean_new": 0.6551724137931034,
+    "mean_ref": 0.0,
+    "n_dropped_nonfinite": 3175,
+    "separated": true
+   },
+   "head_class_counts_on_r8_fb": {
+    "FOLLOW": 81,
+    "CRUISE": 71,
+    "BRAKE_TO": 322,
+    "HOLD": 1,
+    "ACCELERATE": 18
+   },
+   "head_class_counts_on_gt_cruise": {
+    "FOLLOW": 471,
+    "CRUISE": 688,
+    "BRAKE_TO": 456,
+    "CREEP": 2,
+    "HOLD": 24,
+    "ACCELERATE": 215
+   },
+   "r8_head_argmaxes_masked_class_2_or_6": 0,
+   "clause2_paired": {
+    "delta": 0.0437,
+    "lo": 0.019,
+    "hi": 0.0711,
+    "n_windows": 1374,
+    "n_episodes": 116,
+    "mean_new": 0.12372634643377002,
+    "mean_ref": 0.08005822416302766,
+    "n_dropped_nonfinite": 2294,
+    "separated": true
+   },
+   "clause2_literal_point_delta_le_0": false,
+   "clause2_not_separated_worse_lo_le_0": false,
+   "clause2_unpaired_each_arm_own_head": {
+    "r8_rate": 0.12372634643377002,
+    "n8": 1374,
+    "r7_rate": 0.07575757575757576,
+    "n7": 1188
+   },
+   "sens_Dplus_FOLLOW": {
+    "i": 0.8194726166328601,
+    "clause2_n": 903,
+    "r8_rate": 0.09856035437430787,
+    "r7_rate": 0.07308970099667775,
+    "delta": 0.02547065337763012
+   },
+   "sens_head_is_CRUISE_only": {
+    "n": 688,
+    "r8_rate": 0.10319767441860465,
+    "r7_rate": 0.06395348837209303,
+    "delta": 0.03924418604651163
+   },
+   "P1": {
+    "i_observed": 0.6551724137931034,
+    "perm_mean": 0.25930223123732254,
+    "perm_p97_5": 0.2920892494929006,
+    "exceeds_null": true,
+    "n_perm": 1000
+   },
+   "S1_head_decel_share_on_gt_cruise": {
+    "r8": {
+     "delta": 0.2597,
+     "lo": 0.1811,
+     "hi": 0.3416,
+     "n_windows": 1856,
+     "n_episodes": 135,
+     "mean_new": 0.25969827586206895,
+     "mean_ref": 0.0,
+     "n_dropped_nonfinite": 1812,
+     "separated": true
+    },
+    "r7": {
+     "delta": 0.3599,
+     "lo": 0.2837,
+     "hi": 0.4363,
+     "n_windows": 1856,
+     "n_episodes": 135,
+     "mean_new": 0.3599137931034483,
+     "mean_ref": 0.0,
+     "n_dropped_nonfinite": 1812,
+     "separated": true
+    }
+   },
+   "S2_coupling_P_plan_brakes_given_own_head_in_D": {
+    "r8": {
+     "delta": 0.6701,
+     "lo": 0.545,
+     "hi": 0.768,
+     "n_windows": 482,
+     "n_episodes": 54,
+     "mean_new": 0.6701244813278008,
+     "mean_ref": 0.0,
+     "n_dropped_nonfinite": 3186,
+     "separated": true
+    },
+    "r7": {
+     "delta": 0.1183,
+     "lo": 0.075,
+     "hi": 0.1725,
+     "n_windows": 668,
+     "n_episodes": 82,
+     "mean_new": 0.11826347305389222,
+     "mean_ref": 0.0,
+     "n_dropped_nonfinite": 3000,
+     "separated": true
+    },
+    "r8_given_head_not_D": {
+     "delta": 0.1237,
+     "lo": 0.0868,
+     "hi": 0.1656,
+     "n_windows": 1374,
+     "n_episodes": 116,
+     "mean_new": 0.12372634643377002,
+     "mean_ref": 0.0,
+     "n_dropped_nonfinite": 2294,
+     "separated": true
+    },
+    "r7_given_head_not_D": {
+     "delta": 0.0758,
+     "lo": 0.0468,
+     "hi": 0.1135,
+     "n_windows": 1188,
+     "n_episodes": 110,
+     "mean_new": 0.07575757575757576,
+     "mean_ref": 0.0,
+     "n_dropped_nonfinite": 2480,
+     "separated": true
+    }
+   },
+   "S3_excess_decomposition": {
+    "total_excess_r8_minus_r7": 0.17456896551724138,
+    "stratum_r8_head_in_D": {
+     "n": 482,
+     "contribution": 0.14224137931034483,
+     "share": 0.8148148148148149,
+     "r8_rate": 0.6701244813278008,
+     "r7_rate": 0.12240663900414937
+    },
+    "stratum_r8_head_not_D": {
+     "n": 1374,
+     "contribution": 0.032327586206896554,
+     "share": 0.1851851851851852,
+     "r8_rate": 0.12372634643377002,
+     "r7_rate": 0.08005822416302766
+    },
+    "identity_sum_equals_total": true
+   },
+   "S4_selection_provenance": {
+    "r8_false_brake": {
+     "n": 493,
+     "sel_in_allocated_group_ge117": 0.10547667342799188,
+     "sel_eq_a_star": 0.1845841784989858,
+     "sel_ne_sel_idx_base": 0.1440162271805274
+    },
+    "r8_gt_cruise_not_false_brake": {
+     "n": 1363,
+     "sel_in_allocated_group_ge117": 0.06089508437270726,
+     "sel_eq_a_star": 0.6471019809244314,
+     "sel_ne_sel_idx_base": 0.1107850330154072
+    },
+    "r8_false_brake_head_in_D": {
+     "n": 323,
+     "sel_in_allocated_group_ge117": 0.10835913312693499,
+     "sel_eq_a_star": 0.13312693498452013,
+     "sel_ne_sel_idx_base": 0.10835913312693499
+    },
+    "r8_false_brake_head_not_D": {
+     "n": 170,
+     "sel_in_allocated_group_ge117": 0.1,
+     "sel_eq_a_star": 0.2823529411764706,
+     "sel_ne_sel_idx_base": 0.21176470588235294
+    },
+    "r7_sel_eq_a_star_false_brake": 0.28994082840236685,
+    "r7_sel_eq_a_star_gt_cruise_not_false_brake": 0.7059869590989923,
+    "r8_sel_idx_max": 148,
+    "r7_sel_idx_max": 113
+   },
+   "S5_ablation_arms_false_decel": {
+    "native": 0.265625,
+    "filter_off": 0.2634698275862069,
+    "vmax_zero": 0.25700431034482757,
+    "ceiling_filter_changes_selection_on_r8_false_brake": 0.012170385395537525,
+    "head_in_D_share_native_vs_vmax_zero_on_gt_cruise": [
+     0.25969827586206895,
+     0.2661637931034483
+    ]
+   },
+   "S7_unrefined_selected_anchor": {
+    "coverage_in_bank_share_of_r8_false_brake": 0.8945233265720081,
+    "coverage_in_bank_share_of_gt_cruise": 0.9272629310344828,
+    "r8_false_brake_in_bank": {
+     "n": 441,
+     "bank_path_already_decel": 0.8639455782312925,
+     "bank_not_decel_but_refined_decel": 0.13605442176870752
+    },
+    "r8_false_brake_in_bank_head_in_D": {
+     "n": 288,
+     "bank_path_already_decel": 0.8611111111111112
+    },
+    "r8_false_brake_in_bank_head_not_D": {
+     "n": 153,
+     "bank_path_already_decel": 0.869281045751634
+    },
+    "r8_gt_cruise_not_false_brake_in_bank": {
+     "n": 1280,
+     "bank_path_decel": 0.06875
+    },
+    "crosstab_bank_x_refined_r8_gt_cruise_in_bank": {
+     "bank_decel__refined_decel": 381,
+     "bank_decel__refined_cruise": 86,
+     "bank_decel__refined_accel": 2,
+     "bank_cruise__refined_decel": 57,
+     "bank_cruise__refined_cruise": 882,
+     "bank_cruise__refined_accel": 23,
+     "bank_accel__refined_decel": 3,
+     "bank_accel__refined_cruise": 115,
+     "bank_accel__refined_accel": 172
+    },
+    "r7_bank_path_decel_on_gt_cruise_in_bank": 0.1320043103448276,
+    "r7_false_brake_in_bank": {
+     "n": 169,
+     "bank_path_already_decel": 0.8461538461538461
+    },
+    "paired_bank_decel_r8_minus_r7_gt_cruise_both_in_bank": {
+     "delta": 0.1406,
+     "lo": 0.0936,
+     "hi": 0.1938,
+     "n_windows": 1721,
+     "n_episodes": 135,
+     "mean_new": 0.2725159790819291,
+     "mean_ref": 0.13190005810575248,
+     "n_dropped_nonfinite": 1947,
+     "separated": true
+    }
+   },
+   "POSTHOC_P2_gt_nearest_base_anchor_class": {
+    "r8_false_brake_sel_eq_a_star_in_bank": {
+     "n": 91,
+     "n_episodes": 39,
+     "a_star_bank_path_decel": 0.6263736263736264
+    },
+    "r8_gt_cruise_not_false_brake_sel_eq_a_star_in_bank": {
+     "n": 882,
+     "n_episodes": 109,
+     "a_star_bank_path_decel": 0.034013605442176874
+    },
+    "r7_false_brake_sel_eq_a_star_in_bank": {
+     "n": 49,
+     "n_episodes": 29,
+     "a_star_bank_path_decel": 0.7551020408163265
+    },
+    "r7_gt_cruise_not_false_brake_sel_eq_a_star_in_bank": {
+     "n": 1191,
+     "n_episodes": 115,
+     "a_star_bank_path_decel": 0.04785894206549118
+    },
+    "r8_false_brake_sel_eq_a_star_a_star_bank_decel_cell": {
+     "delta": 0.6264,
+     "lo": 0.4944,
+     "hi": 0.75,
+     "n_windows": 91,
+     "n_episodes": 39,
+     "mean_new": 0.6263736263736264,
+     "mean_ref": 0.0,
+     "n_dropped_nonfinite": 3577,
+     "separated": true
+    }
+   },
+   "sens_legacy_head_lon_logits_tac": {
+    "i": 0.7018255578093306,
+    "clause2_n": 1330,
+    "r8_rate": 0.11052631578947368,
+    "r7_rate": 0.06766917293233082,
+    "delta": 0.04285714285714286,
+    "argmax_equals_decisions_lon_pred_nav_true": 1.0,
+    "argmax_disagrees_with_tacv6_frac_all_windows": 0.2262813522355507
+   }
+  },
+  "1": {
+   "seed": 1,
+   "thr": 1.5,
+   "n_compliant": 3251,
+   "ep_compliant": 138,
+   "n_cruise": 1856,
+   "ep_cruise": 135,
+   "fd_r8": 0.25754310344827586,
+   "fd_r7": 0.09375,
+   "n_fb8": 478,
+   "n_fb7": 174,
+   "i": {
+    "delta": 0.6485,
+    "lo": 0.5,
+    "hi": 0.7642,
+    "n_windows": 478,
+    "n_episodes": 76,
+    "mean_new": 0.6485355648535565,
+    "mean_ref": 0.0,
+    "n_dropped_nonfinite": 3190,
+    "separated": true
+   },
+   "head_class_counts_on_r8_fb": {
+    "FOLLOW": 80,
+    "CRUISE": 70,
+    "BRAKE_TO": 309,
+    "HOLD": 1,
+    "ACCELERATE": 18
+   },
+   "head_class_counts_on_gt_cruise": {
+    "FOLLOW": 471,
+    "CRUISE": 688,
+    "BRAKE_TO": 456,
+    "CREEP": 2,
+    "HOLD": 24,
+    "ACCELERATE": 215
+   },
+   "r8_head_argmaxes_masked_class_2_or_6": 0,
+   "clause2_paired": {
+    "delta": 0.0429,
+    "lo": 0.0181,
+    "hi": 0.0699,
+    "n_windows": 1374,
+    "n_episodes": 116,
+    "mean_new": 0.1222707423580786,
+    "mean_ref": 0.07933042212518195,
+    "n_dropped_nonfinite": 2294,
+    "separated": true
+   },
+   "clause2_literal_point_delta_le_0": false,
+   "clause2_not_separated_worse_lo_le_0": false,
+   "clause2_unpaired_each_arm_own_head": {
+    "r8_rate": 0.1222707423580786,
+    "n8": 1374,
+    "r7_rate": 0.0723905723905724,
+    "n7": 1188
+   },
+   "sens_Dplus_FOLLOW": {
+    "i": 0.8158995815899581,
+    "clause2_n": 903,
+    "r8_rate": 0.09745293466223699,
+    "r7_rate": 0.06755260243632337,
+    "delta": 0.029900332225913623
+   },
+   "sens_head_is_CRUISE_only": {
+    "n": 688,
+    "r8_rate": 0.10174418604651163,
+    "r7_rate": 0.05377906976744186,
+    "delta": 0.04796511627906977
+   },
+   "P1": {
+    "i_observed": 0.6485355648535565,
+    "perm_mean": 0.25923012552301256,
+    "perm_p97_5": 0.29497907949790797,
+    "exceeds_null": true,
+    "n_perm": 1000
+   },
+   "S1_head_decel_share_on_gt_cruise": {
+    "r8": {
+     "delta": 0.2597,
+     "lo": 0.1811,
+     "hi": 0.3416,
+     "n_windows": 1856,
+     "n_episodes": 135,
+     "mean_new": 0.25969827586206895,
+     "mean_ref": 0.0,
+     "n_dropped_nonfinite": 1812,
+     "separated": true
+    },
+    "r7": {
+     "delta": 0.3599,
+     "lo": 0.2837,
+     "hi": 0.4363,
+     "n_windows": 1856,
+     "n_episodes": 135,
+     "mean_new": 0.3599137931034483,
+     "mean_ref": 0.0,
+     "n_dropped_nonfinite": 1812,
+     "separated": true
+    }
+   },
+   "S2_coupling_P_plan_brakes_given_own_head_in_D": {
+    "r8": {
+     "delta": 0.6432,
+     "lo": 0.5068,
+     "hi": 0.7487,
+     "n_windows": 482,
+     "n_episodes": 54,
+     "mean_new": 0.6431535269709544,
+     "mean_ref": 0.0,
+     "n_dropped_nonfinite": 3186,
+     "separated": true
+    },
+    "r7": {
+     "delta": 0.1317,
+     "lo": 0.0857,
+     "hi": 0.1926,
+     "n_windows": 668,
+     "n_episodes": 82,
+     "mean_new": 0.1317365269461078,
+     "mean_ref": 0.0,
+     "n_dropped_nonfinite": 3000,
+     "separated": true
+    },
+    "r8_given_head_not_D": {
+     "delta": 0.1223,
+     "lo": 0.0846,
+     "hi": 0.1646,
+     "n_windows": 1374,
+     "n_episodes": 116,
+     "mean_new": 0.1222707423580786,
+     "mean_ref": 0.0,
+     "n_dropped_nonfinite": 2294,
+     "separated": true
+    },
+    "r7_given_head_not_D": {
+     "delta": 0.0724,
+     "lo": 0.0445,
+     "hi": 0.1082,
+     "n_windows": 1188,
+     "n_episodes": 110,
+     "mean_new": 0.0723905723905724,
+     "mean_ref": 0.0,
+     "n_dropped_nonfinite": 2480,
+     "separated": true
+    }
+   },
+   "S3_excess_decomposition": {
+    "total_excess_r8_minus_r7": 0.16379310344827586,
+    "stratum_r8_head_in_D": {
+     "n": 482,
+     "contribution": 0.1320043103448276,
+     "share": 0.8059210526315791,
+     "r8_rate": 0.6431535269709544,
+     "r7_rate": 0.13485477178423236
+    },
+    "stratum_r8_head_not_D": {
+     "n": 1374,
+     "contribution": 0.03178879310344827,
+     "share": 0.19407894736842105,
+     "r8_rate": 0.1222707423580786,
+     "r7_rate": 0.07933042212518195
+    },
+    "identity_sum_equals_total": true
+   },
+   "S4_selection_provenance": {
+    "r8_false_brake": {
+     "n": 478,
+     "sel_in_allocated_group_ge117": 0.0794979079497908,
+     "sel_eq_a_star": 0.1799163179916318,
+     "sel_ne_sel_idx_base": 0.1506276150627615
+    },
+    "r8_gt_cruise_not_false_brake": {
+     "n": 1378,
+     "sel_in_allocated_group_ge117": 0.06748911465892599,
+     "sel_eq_a_star": 0.6567489114658926,
+     "sel_ne_sel_idx_base": 0.10304789550072568
+    },
+    "r8_false_brake_head_in_D": {
+     "n": 310,
+     "sel_in_allocated_group_ge117": 0.0935483870967742,
+     "sel_eq_a_star": 0.13548387096774195,
+     "sel_ne_sel_idx_base": 0.1064516129032258
+    },
+    "r8_false_brake_head_not_D": {
+     "n": 168,
+     "sel_in_allocated_group_ge117": 0.05357142857142857,
+     "sel_eq_a_star": 0.2619047619047619,
+     "sel_ne_sel_idx_base": 0.23214285714285715
+    },
+    "r7_sel_eq_a_star_false_brake": 0.28160919540229884,
+    "r7_sel_eq_a_star_gt_cruise_not_false_brake": 0.7110582639714625,
+    "r8_sel_idx_max": 148,
+    "r7_sel_idx_max": 113
+   },
+   "S7_unrefined_selected_anchor": {
+    "coverage_in_bank_share_of_r8_false_brake": 0.9205020920502092,
+    "coverage_in_bank_share_of_gt_cruise": 0.9294181034482759,
+    "r8_false_brake_in_bank": {
+     "n": 440,
+     "bank_path_already_decel": 0.8886363636363637,
+     "bank_not_decel_but_refined_decel": 0.11136363636363633
+    },
+    "r8_false_brake_in_bank_head_in_D": {
+     "n": 281,
+     "bank_path_already_decel": 0.8683274021352313
+    },
+    "r8_false_brake_in_bank_head_not_D": {
+     "n": 159,
+     "bank_path_already_decel": 0.9245283018867925
+    },
+    "r8_gt_cruise_not_false_brake_in_bank": {
+     "n": 1285,
+     "bank_path_decel": 0.06848249027237355
+    },
+    "crosstab_bank_x_refined_r8_gt_cruise_in_bank": {
+     "bank_decel__refined_decel": 391,
+     "bank_decel__refined_cruise": 86,
+     "bank_decel__refined_accel": 2,
+     "bank_cruise__refined_decel": 45,
+     "bank_cruise__refined_cruise": 892,
+     "bank_cruise__refined_accel": 35,
+     "bank_accel__refined_decel": 4,
+     "bank_accel__refined_cruise": 115,
+     "bank_accel__refined_accel": 155
+    },
+    "r7_bank_path_decel_on_gt_cruise_in_bank": 0.13793103448275862,
+    "r7_false_brake_in_bank": {
+     "n": 174,
+     "bank_path_already_decel": 0.8448275862068966
+    },
+    "paired_bank_decel_r8_minus_r7_gt_cruise_both_in_bank": {
+     "delta": 0.1362,
+     "lo": 0.0863,
+     "hi": 0.1908,
+     "n_windows": 1725,
+     "n_episodes": 135,
+     "mean_new": 0.27768115942028987,
+     "mean_ref": 0.14144927536231883,
+     "n_dropped_nonfinite": 1943,
+     "separated": true
+    }
+   },
+   "POSTHOC_P2_gt_nearest_base_anchor_class": {
+    "r8_false_brake_sel_eq_a_star_in_bank": {
+     "n": 86,
+     "n_episodes": 37,
+     "a_star_bank_path_decel": 0.6744186046511628
+    },
+    "r8_gt_cruise_not_false_brake_sel_eq_a_star_in_bank": {
+     "n": 905,
+     "n_episodes": 112,
+     "a_star_bank_path_decel": 0.039779005524861875
+    },
+    "r7_false_brake_sel_eq_a_star_in_bank": {
+     "n": 49,
+     "n_episodes": 29,
+     "a_star_bank_path_decel": 0.7755102040816326
+    },
+    "r7_gt_cruise_not_false_brake_sel_eq_a_star_in_bank": {
+     "n": 1196,
+     "n_episodes": 117,
+     "a_star_bank_path_decel": 0.04933110367892977
+    },
+    "r8_false_brake_sel_eq_a_star_a_star_bank_decel_cell": {
+     "delta": 0.6744,
+     "lo": 0.5288,
+     "hi": 0.8125,
+     "n_windows": 86,
+     "n_episodes": 37,
+     "mean_new": 0.6744186046511628,
+     "mean_ref": 0.0,
+     "n_dropped_nonfinite": 3582,
+     "separated": true
+    }
+   },
+   "sens_legacy_head_lon_logits_tac": {
+    "i": 0.702928870292887,
+    "clause2_n": 1330,
+    "r8_rate": 0.10676691729323308,
+    "r7_rate": 0.06466165413533835,
+    "delta": 0.042105263157894736,
+    "argmax_equals_decisions_lon_pred_nav_true": 1.0,
+    "argmax_disagrees_with_tacv6_frac_all_windows": 0.2262813522355507
+   }
+  }
+ },
+ "controls": {
+  "C1": {
+   "s0_n_compliant": true,
+   "s0_n_cruise": true,
+   "s0_fd_r8": true,
+   "s0_fd_r7": true,
+   "s1_n_compliant": true,
+   "s1_n_cruise": true,
+   "s1_fd_r8": true,
+   "s1_fd_r7": true
+  },
+  "C2": {
+   "s0_ws_equal_deploy8": true,
+   "s0_os_bit_equal_deploy8": true,
+   "s0_r7_embedded_bit_equal_a6text_s6_os": true,
+   "s0_r8_head_join_traj_bit_equal_os": true,
+   "s0_r7_head_join_traj_bit_equal_embedded": true,
+   "s0_extras_sel_idx_equals_decisions": true,
+   "s0_slots_are_S6_grid": true,
+   "s1_ws_equal_deploy8": true,
+   "s1_os_bit_equal_deploy8": true,
+   "s1_r7_embedded_bit_equal_a6text_s6_os": true,
+   "s1_r8_head_join_traj_bit_equal_os": true,
+   "s1_r7_head_join_traj_bit_equal_embedded": true,
+   "s1_extras_sel_idx_equals_decisions": true,
+   "s1_slots_are_S6_grid": true,
+   "compliant_mask_equal_across_seeds": true,
+   "twin_plan_class_equals_S6": true
+  },
+  "C3": {
+   "s0_legacy_head_argmax_equals_decisions_lon_pred": true,
+   "s0_S3_strata_sum_equals_total": true,
+   "s1_legacy_head_argmax_equals_decisions_lon_pred": true,
+   "s1_S3_strata_sum_equals_total": true,
+   "s0_B8_sel_bank_rows_equal_count_sel_lt_nbase_every_file": true,
+   "s0_B8_s6_sel_idx_equals_s2_every_file": true,
+   "s0_B7_sel_bank_rows_equal_count_sel_lt_nbase_every_file": true,
+   "s0_B7_s6_sel_idx_equals_s2_every_file": true,
+   "s1_B8_sel_bank_rows_equal_count_sel_lt_nbase_every_file": true,
+   "s1_B8_s6_sel_idx_equals_s2_every_file": true,
+   "s1_B7_sel_bank_rows_equal_count_sel_lt_nbase_every_file": true,
+   "s1_B7_s6_sel_idx_equals_s2_every_file": true
+  },
+  "C4": {
+   "oracle_head_i_is_1": true,
+   "never_decel_head_i_is_0": true,
+   "rule_logic_table": true
+  },
+  "C5": {
+   "m1_decel_threshold_1p0": {
+    "went_RED": true,
+    "fd_r8": 0.30529172320217096,
+    "literal": 0.265625
+   },
+   "m2_head_join_shifted_one_window": {
+    "went_RED": true,
+    "detail": "C2 head-join traj equality fails under a one-window shift"
+   },
+   "m3_CRUISE_BRAKE_TO_columns_swapped": {
+    "went_RED": true,
+    "i_mutated": 0.1460446247464503,
+    "i_observed": 0.6551724137931034
+   }
+  },
+  "C6": {
+   "expected_literal": {
+    "E_with_reach_mask": 0.25,
+    "E_without_mask": 0.5,
+    "E_ade": 0.25
+   },
+   "got": {
+    "E_with_reach_mask": 0.25,
+    "E_without_mask": 0.5,
+    "E_ade": 0.25
+   },
+   "pass": true,
+   "mutation_X_negative": {
+    "E": 0.0,
+    "went_RED": true
+   },
+   "mutation_X_huge": {
+    "E": 0.5,
+    "went_RED": true
+   }
+  },
+  "C7": {
+   "K1_d_eq_h": {
+    "want": {
+     "g_star": 1.0,
+     "r": 1.0,
+     "A": 1.0,
+     "rho": 1.0
+    },
+    "got": {
+     "g_star": 1.0,
+     "r": 1.0,
+     "A": 1.0,
+     "rho": 1.0
+    },
+    "pass": true
+   },
+   "K2_d_eq_2h": {
+    "want": {
+     "g_star": 0.5,
+     "r": 1.0,
+     "A": 2.0,
+     "rho": 2.0
+    },
+    "got": {
+     "g_star": 0.5,
+     "r": 1.0,
+     "A": 2.0,
+     "rho": 2.0
+    },
+    "pass": true
+   },
+   "K3_d_eq_h_plus_orthogonal_e": {
+    "want": {
+     "g_star": 0.5,
+     "r": 0.7071067811865476,
+     "A": 1.0,
+     "rho": 1.4142135623730951
+    },
+    "got": {
+     "g_star": 0.5,
+     "r": 0.7071067811865476,
+     "A": 1.0,
+     "rho": 1.4142135623730951
+    },
+    "pass": true
+   },
+   "mutation_gstar_denominator_hh": {
+    "value": 2.0,
+    "went_RED": true
+   },
+   "iid_residual_r_near_0": {
+    "r": -0.0038046906580544394,
+    "pass": true
+   },
+   "human_exact_minus_iid_separated_above": {
+    "delta_r": 1.0038046906580544,
+    "lo": 0.9889464098051589,
+    "pass": true
+   },
+   "same_candidate_minus_itself_is_zero_width": {
+    "delta_r": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "pass": true
+   },
+   "verdict_logic": {
+    "pass": true
+   },
+   "pass": true
+  },
+  "C1_pass": true,
+  "C2_pass": true,
+  "C3_pass": true,
+  "C4_pass": true,
+  "C5_pass": true,
+  "C6_pass": true,
+  "C7_pass": true,
+  "ALL_PASS": true
+ },
+ "caveats": [
+  "single TRAINING seed per arm: the intervals are episode draws only and are blind to training variance (H-ESTIM-SEED-1); the two inference seeds are the replicate for sampler noise and are not pooled.",
+  "T1 open loop on logged eval139 frames: a statement about plans scored against the logged future, not about driving.",
+  "ASSOCIATION, not intervention.  In refcv8 the head reaches the planner through candidate allocation, the ranking score (beta_lon * log p) and the constraint terms, so HEAD and SELECTION are coupled by design; only an intervention (force_lon F2, head-neutral ranking S0) separates them.",
+  "the speed-label input differs between refcv7 (per-clip continuous v_max_ms) and refcv8 (4-class road-type label): every refcv8-vs-refcv7 row crosses that input change.",
+  "the head argmax is a hard decision; head confidence, the constraint outputs and the allocation histogram are not used here.",
+  "the two tactical lon heads (tacv6, legacy lon_logits_tac) disagree on 22.6 % of windows; the primary is tacv6 (the planner-feeding head, the one H-R8-S6-LON-1 used); the legacy head is a sensitivity.",
+  "(ii) / (iii) are degenerate as worded (see prereg section 0); the fan stage is defined and self-tested but cannot run on banked data.",
+  "S7 covers only in-bank selections (sel_idx < 117); the share is reported.  The unrefined bank path of the selected anchor is the residual family rolled from the prior (v0-conditioned); its class uses the same +-1.5 m/s rule on the last chord (5 s -> 6 s)."
+ ],
+ "wall_s": 9.047380924224854
+}
