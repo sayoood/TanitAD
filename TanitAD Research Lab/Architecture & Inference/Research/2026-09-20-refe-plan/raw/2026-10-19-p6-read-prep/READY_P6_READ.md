@@ -143,3 +143,4 @@ Rule Zero applies to every refuse row: the turn does not end at the label. The n
 - The table above and `code/CODE_SHA256.json` describe the PREP build and stay as its record. Nothing verifies against them.
 - Package, simulations and ruling: `raw/2026-10-19-ep-admission-r1/` (`RESULT.md`, `MM_RULING_EPADM_R1.md`).
 - ⚠️ For the day-of read: the A1 bar is Revision 1's (FAIL iff D_M lower CI > 0 or point > +0.05, any seed), NOT the +0.02 quoted above. A2 is FAIL iff any NC / DAC / TTC observed / predicted lower CI > 1.05, pending EP-ADMISSION-R2-CONFIRM (else 1.10). B's slot source is `row`. Name `--rules r1` in the sealed registration.
+- **UPDATE 2026-10-19 (later): A2's margin is SETTLED at 1.05** (EP-ADMISSION-R2-CONFIRM). The day-of read uses the FROZEN rules `raw/2026-10-19-ep-reliab-picks/PREREG_EP_ADMISSION.md` (sha256 `7147e3dfc2984a504b8c42f96e0f2b4ed980bcc668cf879a781bf0f3c02f8367`): append its §6 candidate block BEFORE the candidate bank is read.

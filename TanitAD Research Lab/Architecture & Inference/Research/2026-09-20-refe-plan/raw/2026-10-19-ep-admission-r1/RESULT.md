@@ -164,3 +164,5 @@ A1-r1 seed-level failures by conjunct on the calibrated G78 replicates (2 x 1000
 ## 8. Deliverable manifest
 
 See `MANIFEST.md` (sha256 and location of every file). Everything is **staged under `C:/Users/Admin/par18/epadm1/out/` and mirrored in the work tree `D:/epadm1/w/raw/`**; large run products stay on D: only: `D:/epadm1/run/replicates.npz` (2.2 MB, a copy is staged), `stats.npz` (115 kB, staged). Nothing is single-copy except the D: work tree and the C: staging tree, which hold the same bytes.
+
+**UPDATE 2026-10-19 (Master Mind):** §4b's open choice is settled. EP-ADMISSION-R2-CONFIRM (`raw/2026-10-19-ep-admission-r2-confirm/RESULT.md`) met all three committed bars on FRESH replicates: A2(1.05) false refusal 1.8 % [1.1, 2.8]; DAC power at ×1.25 77.4 %; A1-r1 false refusal 3.3 % [2.4, 4.6]. The rules are FROZEN in `raw/2026-10-19-ep-reliab-picks/PREREG_EP_ADMISSION.md` (sha256 `7147e3dfc2984a504b8c42f96e0f2b4ed980bcc668cf879a781bf0f3c02f8367`).

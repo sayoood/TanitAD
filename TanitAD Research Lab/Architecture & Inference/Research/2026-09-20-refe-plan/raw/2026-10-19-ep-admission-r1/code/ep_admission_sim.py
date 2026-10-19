@@ -5,6 +5,8 @@ Pipeline (each step writes to --workdir on D:; every step is restartable):
     python ep_admission_sim.py cost       --workdir D:/epadm1/run                                                                                  # MEASURE the cost on 3 replicates first
     python ep_admission_sim.py run        --workdir D:/epadm1/run --n-reps 1000 --workers 8                                                         # all conditions + PC1/PC2/PC4/PC6 + flags -> sim_results.json
     python ep_admission_sim.py repro      --workdir D:/epadm1/run                                                                                  # PC5: 20 replicates in a SEPARATE process, bit-identical to run's first 20
+`run` / `repro` take `--rep-offset INT` (default 0, EP-ADMISSION-R2-CONFIRM): replicate `rep` is drawn with `rep + offset` in BOTH generators (`default_rng([OUTER_SALT, rep + offset])`, `default_rng([WILD_SALT, rep + offset])`).
+Offset 0 is the banked run bit for bit; a non-zero offset is a FRESH set of replicates of the same conditions, estimator and registered bootstrap draws (`BOOT_SEED` is NOT offset).
 The decision functions are imported from `ep_admission.py` (rules r1 and the draft, for comparison); the estimator is `fastneg_lib.diff_ci` / `ratio_ci` with the registered draws.
 """
 from __future__ import annotations
@@ -146,20 +148,21 @@ def build_condition(v: dict, kind: str, delta: float = 0.0, head: str | None = N
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # a replicate: ONE draw of logs shared by both seeds and all heads; the REAL estimator on it
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-def outer_idx(rep: int) -> np.ndarray:
-    return np.random.default_rng([OUTER_SALT, rep]).integers(0, N_LOGS, N_LOGS)
+def outer_idx(rep: int, offset: int = 0) -> np.ndarray:
+    return np.random.default_rng([OUTER_SALT, rep + offset]).integers(0, N_LOGS, N_LOGS)
 
 
-def wild_signs(rep: int) -> np.ndarray:
-    return np.random.default_rng([WILD_SALT, rep]).choice(np.array([-1.0, 1.0]), N_LOGS)
+def wild_signs(rep: int, offset: int = 0) -> np.ndarray:
+    return np.random.default_rng([WILD_SALT, rep + offset]).choice(np.array([-1.0, 1.0]), N_LOGS)
 
 
-def replicate(cond: dict, rep: int, draws: np.ndarray) -> dict:
-    """-> {dm [2, 3] (point, lo, hi) per seed, a2 [2, 3, 3] (head, point/lo/hi) per seed, mp [2], me [2]}.  Generator A resamples the logs; generator B flips the sign of each log's calibrated residual."""
+def replicate(cond: dict, rep: int, draws: np.ndarray, offset: int = 0) -> dict:
+    """-> {dm [2, 3] (point, lo, hi) per seed, a2 [2, 3, 3] (head, point/lo/hi) per seed, mp [2], me [2]}.  Generator A resamples the logs; generator B flips the sign of each log's calibrated residual.
+    Replicate `rep` uses the draws of index `rep + offset` (offset 0 = the banked run; the registered bootstrap `draws` are shared by every replicate and are not offset)."""
     _, _, F = libs()
     gen, heads = cond["gen"], cond.get("heads", HEADS)
-    idx = outer_idx(rep) if gen == "A" else None
-    w = wild_signs(rep) if gen == "B" else None
+    idx = outer_idx(rep, offset) if gen == "A" else None
+    w = wild_signs(rep, offset) if gen == "B" else None
     dm = np.full((2, 3), np.nan)
     a2 = np.full((2, 3, 3), np.nan)
     mp, me = np.full(2, np.nan), np.full(2, np.nan)
@@ -185,28 +188,30 @@ def replicate(cond: dict, rep: int, draws: np.ndarray) -> dict:
 
 _CONDS: dict = {}
 _DRAWS = None
+_REP_OFFSET = 0
 
 
-def _init(conds):
-    global _CONDS, _DRAWS
+def _init(conds, rep_offset=0):
+    global _CONDS, _DRAWS, _REP_OFFSET
     _CONDS = conds
+    _REP_OFFSET = int(rep_offset)
     _DRAWS = libs()[2].boot_draws(N_LOGS, BOOT_B, BOOT_SEED)
 
 
 def _chunk(task):
     name, a, b = task
-    recs = [replicate(_CONDS[name], r, _DRAWS) for r in range(a, b)]
+    recs = [replicate(_CONDS[name], r, _DRAWS, _REP_OFFSET) for r in range(a, b)]
     return name, a, {k: np.stack([r[k] for r in recs]) for k in ("dm", "a2", "mp", "me")}
 
 
-def run_condition_set(conds: dict, n_reps: int, workers: int, chunk: int = 25, log=print) -> dict:
-    """All replicates of all conditions, in `workers` spawned processes (each loads the module and the registered draws once)."""
+def run_condition_set(conds: dict, n_reps: int, workers: int, chunk: int = 25, log=print, rep_offset: int = 0) -> dict:
+    """All replicates of all conditions, in `workers` spawned processes (each loads the module and the registered draws once).  Replicate `r` is the draw of index `r + rep_offset`."""
     tasks = [(name, a, min(a + chunk, n_reps)) for name in conds for a in range(0, n_reps, chunk)]
     parts: dict = {name: {} for name in conds}
     t0 = time.time()
     done = {name: 0 for name in conds}
     ctx = mp.get_context("spawn")
-    with ctx.Pool(workers, initializer=_init, initargs=(conds,)) as pool:
+    with ctx.Pool(workers, initializer=_init, initargs=(conds, int(rep_offset))) as pool:
         for name, a, rec in pool.imap_unordered(_chunk, tasks):
             parts[name][a] = rec
             done[name] += len(rec["mp"])
@@ -451,11 +456,11 @@ def cmd_run(a) -> int:
     n_reps = {k: a.n_reps for k in conds}
     n_reps["IDENTITY"] = 50
     t0 = time.time()
-    print(f"run: {len(conds)} conditions x {a.n_reps} replicates (IDENTITY x 50), {a.workers} workers, B = {BOOT_B}, seed {BOOT_SEED}", flush=True)
+    print(f"run: {len(conds)} conditions x {a.n_reps} replicates (IDENTITY x 50), {a.workers} workers, B = {BOOT_B}, seed {BOOT_SEED}, rep_offset {a.rep_offset}", flush=True)
     recs = {}
     for group in (["IDENTITY"], [k for k in conds if k != "IDENTITY"]):
         part = {k: conds[k] for k in group}
-        recs.update(run_condition_set(part, n_reps[group[0]] if len(group) == 1 else a.n_reps, a.workers, log=lambda m: print(m, flush=True)))
+        recs.update(run_condition_set(part, n_reps[group[0]] if len(group) == 1 else a.n_reps, a.workers, log=lambda m: print(m, flush=True), rep_offset=a.rep_offset))
     wall = time.time() - t0
     np.savez_compressed(os.path.join(a.workdir, "replicates.npz"), **{f"{n}|{k}".replace("|", "__"): v for n, r in recs.items() for k, v in r.items()})
     summ = {n: summarize(conds[n], recs[n]) for n in conds}
@@ -486,7 +491,7 @@ def cmd_run(a) -> int:
          "F3_power_0.05_wilson_lower_lt_0.80_G78": bool(summ["G78|A|PLANT_EP_0.05"]["A1"]["r1_any_seed"]["wilson95"][0] < 0.80),
          "F4_generators_A_B_A1_false_refusal_differ_gt_3pp": bool(abs(cal["A1"]["r1_any_seed"]["rate"] - summ["G78|B|CAL"]["A1"]["r1_any_seed"]["rate"]) > 0.03),
          "F5_a_control_failed": bool(not ctrl_ok)}
-    res = {"schema": "ep-admission-r1-sim-v1", "created": datetime.datetime.now().astimezone().isoformat(timespec="seconds"), "design_sha256": dsha, "n_reps": a.n_reps, "boot": {"B": BOOT_B, "seed": BOOT_SEED, "unit": "log"},
+    res = {"schema": "ep-admission-r1-sim-v1", "created": datetime.datetime.now().astimezone().isoformat(timespec="seconds"), "design_sha256": dsha, "n_reps": a.n_reps, "rep_offset": int(a.rep_offset), "boot": {"B": BOOT_B, "seed": BOOT_SEED, "unit": "log"},
            "ep_admission_sha256": sha256_file(os.path.join(ADM_DIR, "ep_admission.py")), "wall_seconds": wall, "workers": a.workers, "controls": pc, "controls_ok_excluding_PC5": ctrl_ok, "flags": f, "conditions": summ,
            "geometry_meta": pre["meta"], "environment": {"python": sys.version.split()[0], "numpy": np.__version__, "arrays_sha256": pre["arrays_sha256"]}}
     json.dump(res, open(os.path.join(a.workdir, "sim_results.json"), "w", encoding="utf-8", newline="\n"), indent=1, sort_keys=True)
@@ -495,25 +500,27 @@ def cmd_run(a) -> int:
 
 
 def cmd_repro(a) -> int:
+    """PC5: the first 20 replicates of 3 conditions, recomputed in this separate process with `--rep-offset`, equal the stored ones bit for bit.
+    `--against <replicates.npz>` compares with another run's file instead of the workdir's (with `--rep-offset 0` and the banked EP-ADMISSION-R1 file: the offset-0 identity proof)."""
     design_guard()
     vec = load_vec(a.workdir)
     conds = make_conditions(vec)
     _, _, F = libs()
     draws = F.boot_draws(N_LOGS, BOOT_B, BOOT_SEED)
-    z = np.load(os.path.join(a.workdir, "replicates.npz"))
+    z = np.load(a.against or os.path.join(a.workdir, "replicates.npz"))
     ok = True
     for name in ("G78|A|CAL", "G78|B|CAL", "G78|A|PLANT_EP_0.135"):
         for r in range(20):
-            rec = replicate(conds[name], r, draws)
+            rec = replicate(conds[name], r, draws, a.rep_offset)
             for k in ("dm", "a2", "mp", "me"):
                 ok &= bool(np.array_equal(rec[k], z[f"{name}|{k}".replace("|", "__")][r], equal_nan=True))
-    out = {"bit_identical_first_20_replicates_of_3_conditions": bool(ok), "pid": os.getpid()}
-    json.dump(out, open(os.path.join(a.workdir, "repro.json"), "w"), indent=1)
+    out = {"bit_identical_first_20_replicates_of_3_conditions": bool(ok), "pid": os.getpid(), "rep_offset": int(a.rep_offset), "against": a.against or "workdir replicates.npz"}
+    json.dump(out, open(os.path.join(a.workdir, a.out or "repro.json"), "w"), indent=1)
     print("REPRO", out)
     return 0 if ok else 3
 
 
-def main(argv=None) -> int:
+def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
     p = sub.add_parser("precompute")
@@ -528,10 +535,19 @@ def main(argv=None) -> int:
     r.add_argument("--workdir", required=True)
     r.add_argument("--n-reps", type=int, default=1000)
     r.add_argument("--workers", type=int, default=8)
+    r.add_argument("--rep-offset", type=int, default=0, help="replicate r uses the draws of index r + offset in both generators; 0 = the banked EP-ADMISSION-R1 draws, 1000000 = the EP-ADMISSION-R2-CONFIRM fresh set")
     r.set_defaults(fn=cmd_run)
     q = sub.add_parser("repro")
     q.add_argument("--workdir", required=True)
+    q.add_argument("--rep-offset", type=int, default=0, help="the offset the compared replicates were run with")
+    q.add_argument("--against", default=None, help="replicates.npz to compare with (default: the workdir's own)")
+    q.add_argument("--out", default=None, help="file name under --workdir for the result JSON (default repro.json)")
     q.set_defaults(fn=cmd_repro)
+    return ap
+
+
+def main(argv=None) -> int:
+    ap = build_parser()
     a = ap.parse_args(argv)
     if os.path.splitdrive(os.path.abspath(a.workdir))[0].upper() == "C:":
         raise SystemExit("--workdir must be on D: (C: is nearly full)")
