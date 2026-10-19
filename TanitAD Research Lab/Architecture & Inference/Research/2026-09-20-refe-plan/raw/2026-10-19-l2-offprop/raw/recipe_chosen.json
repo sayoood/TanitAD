@@ -1,0 +1,80 @@
+{
+ "recipe": {
+  "lr": 0.001,
+  "epochs": 15,
+  "batch": 256,
+  "lam_bce": 10.0,
+  "betas": [
+   0.9,
+   0.999
+  ],
+  "eps": 1e-08,
+  "planted_amp": 10.0,
+  "prox": 0.3
+ },
+ "chosen_by": "C-REACH hard; max semi-synthetic A1-OOF subject to in-fan(H) >= in-fan(H0) - 0.01 in every signal world; ties -> smaller lambda",
+ "clause_may_bind": false,
+ "pick": {
+  "key": "lam10_lr0.001_ep15_prox0.3",
+  "lam": 10.0,
+  "lr": 0.001,
+  "epochs": 15,
+  "prox": 0.3,
+  "reach_s0": 0.9983818770226537,
+  "reach_pass_s0": true,
+  "mean_signal_a1": 0.7849291942078591,
+  "margin": -0.00422489437764062,
+  "r1": true,
+  "steps": 570
+ },
+ "pick_worlds": {
+  "sigA": {
+   "a1": 0.779975777149778,
+   "infan": 0.8856028599285017,
+   "a1_h0": 0.7358094469115866,
+   "infan_h0": 0.8898277543061424,
+   "infan_minus_h0": -0.00422489437764062,
+   "a1_gain_over_p2": 0.044893015744852605,
+   "steps_fold0": 570
+  },
+  "sigB": {
+   "a1": 0.7898826112659404,
+   "infan": 0.8837134596851911,
+   "a1_h0": 0.7852377332995524,
+   "infan_h0": 0.8872470285897848,
+   "infan_minus_h0": -0.0035335689045936647,
+   "a1_gain_over_p2": 0.004644877966388017,
+   "steps_fold0": 540
+  }
+ },
+ "walk_down_for_seed1_reach": [
+  {
+   "key": "lam10_lr0.001_ep15_prox0.3",
+   "reach_s0": 0.9983818770226537,
+   "reach_s1": 0.9991909385113269,
+   "both_seeds_pass": true,
+   "seconds": 4.9
+  }
+ ],
+ "null_world_diagnostics_reported_not_gating": {
+  "a1_p2": 0.690331715210356,
+  "a1_h": 0.7103559870550162,
+  "a1_h_minus_p2": 0.02002427184466027,
+  "infan_h_minus_h0": 0.0006489292667100077,
+  "infan_p2": 0.8890330953926022,
+  "a1_hnull_global_r100_r101": [
+   0.6904328478964401,
+   0.6899271844660194
+  ],
+  "a1_hnull_global_max_minus_p2": 0.00010113268608413772,
+  "note": "REPORTED, not gating (MM rule names only C-REACH, the in-fan clause and the tie rule)"
+ },
+ "n_settings": 74,
+ "n_reach_pass_s0": 52,
+ "n_in_fan_clause_pass": 34,
+ "sweep": "C:/Users/Admin/par18/l2/out/sweep_semi.json",
+ "sweep_sha256": "60ae1332c8f1f6ac2cbf228cbde185cff5f712504e09dbc226f6e1ddc960a691",
+ "world": "semi-synthetic (REAL tokens, SYNTHETIC labels); C-REACH reads the PLANTED arm only",
+ "no_real_unplanted_label_was_read": true,
+ "lambda_convention": "lambda = pairwise / in-fan weight = 1 / lam_bce; ties go to the smaller lambda = the larger lam_bce"
+}

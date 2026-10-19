@@ -1,0 +1,52 @@
+{
+ "world": "shape",
+ "N": 400,
+ "Q": 96,
+ "D": 256,
+ "n_logs": 24,
+ "threads": 1,
+ "recipe": {
+  "lr": 0.001,
+  "epochs": 15,
+  "batch": 256,
+  "lam_bce": 10.0,
+  "betas": [
+   0.9,
+   0.999
+  ],
+  "eps": 1e-08,
+  "planted_amp": 10.0,
+  "prox": 0.3
+ },
+ "data_build_s": 0.9,
+ "rss_mb_after_build": 586.11328125,
+ "P2_cell_incl_eval_s": 0.2,
+ "H_cell_fit_5_folds_s": 11.8,
+ "H_cell_fold_steps": [
+  960,
+  1065,
+  1035,
+  900,
+  1020
+ ],
+ "H_cell_fold_pairs": [
+  16162,
+  18080,
+  17471,
+  15233,
+  17170
+ ],
+ "H0_cell_fit_5_folds_s": 8.8,
+ "evaluate_arm_s": 0.1,
+ "Hnull_cell_fit_5_folds_s": 12.9,
+ "rss_mb_peak_approx": 666.8125,
+ "extrapolated_full_run_s": {
+  "fits_2_H": 23.6,
+  "fits_2_H0": 17.6,
+  "fits_10_Hnull": 129.0,
+  "evals_15": 1.5,
+  "total": 171.7
+ },
+ "extrapolated_full_run_min": 2.9,
+ "note": "measured on a box at ~90 % CPU load from other jobs (the 24-thread i9-12900F); no GPU; times are upper-ish. Cells are independent: they parallelise across processes (run_l2.py --cells)."
+}

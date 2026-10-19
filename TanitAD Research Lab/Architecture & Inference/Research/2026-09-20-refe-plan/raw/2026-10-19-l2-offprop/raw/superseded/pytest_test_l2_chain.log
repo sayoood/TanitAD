@@ -1,0 +1,25 @@
+......................F.                                                 [100%]
+================================== FAILURES ===================================
+_ test_semi_synthetic_hits_its_two_calibration_targets_and_reads_no_real_label _
+
+    def test_semi_synthetic_hits_its_two_calibration_targets_and_reads_no_real_label():
+        base = synthetic.make_data(n_tokens=72, n_logs=24, seed=9, gamma=0.8, rho=0.8)          # stands in for the real tokens: only its features and structure are used
+        S = synthetic.semi_synthetic(base, beta=0.0, alpha=0.4, seed=1)
+        p2 = l2lib.oof_scores(S, l2lib.ArmSpec("P2", "P2"), REC)
+        ev = l2lib.evaluate_arm(S, p2["ep_in"], p2["ep_p"])
+        assert abs(ev["infan_top8_ep_concordance"]["point"] - 0.889) < 0.012, ev["infan_top8_ep_concordance"]["point"]
+        assert abs(ev["all"]["A1"]["point"] - 0.685) < 0.012, ev["all"]["A1"]["point"]
+        assert not np.array_equal(S.t_in, base.t_in) and np.array_equal(S.tok_in, base.tok_in) and np.array_equal(S.tok_p, base.tok_p)     # labels replaced, tokens untouched
+        S2 = synthetic.semi_synthetic(base, beta=3.0, alpha=0.4, seed=1)                          # a planted signal: the retrained head must be able to find it
+        p2b = l2lib.oof_scores(S2, l2lib.ArmSpec("P2", "P2"), REC)
+        h = l2lib.oof_scores(S2, l2lib.ArmSpec("H", "H", seed=0), REC)
+        a2 = l2lib.evaluate_arm(S2, p2b["ep_in"], p2b["ep_p"])["all"]["A1"]["point"]
+        ah = l2lib.evaluate_arm(S2, h["ep_in"], h["ep_p"])["all"]["A1"]["point"]
+>       assert ah > a2 + 0.02, (a2, ah)
+E       AssertionError: (0.87662208025554, 0.8965861449391096)
+E       assert 0.8965861449391096 > (0.87662208025554 + 0.02)
+
+test_l2.py:342: AssertionError
+=========================== short test summary info ===========================
+FAILED test_l2.py::test_semi_synthetic_hits_its_two_calibration_targets_and_reads_no_real_label
+1 failed, 23 passed in 21.05s
