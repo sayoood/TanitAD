@@ -32,6 +32,7 @@ import argparse
 import dataclasses
 import hashlib
 import io
+import itertools
 import json
 import os
 import re
@@ -57,7 +58,11 @@ def _load_landed_gate():
         raise RuntimeError(f"epr1_gate.py in {HERE} has sha256 {sha}, the landed pin is {PARENT_GATE_SHA256}: refusing to import an unverified gate")
     cur = sys.modules.get("epr1_gate")
     if cur is not None:
-        return cur
+        # the sha256 above covers the file at `p`; a module already registered under this name is reused ONLY if it is that file (epr1ub.py's `_load_parent` makes the same check for epr1.py).
+        # Before EPR1UB-GATE-CACHE the registered module was returned whatever file it came from, so a decoy `epr1_gate` (the HMAC primitives!) imported earlier in the process was never looked at.
+        if os.path.normcase(os.path.abspath(getattr(cur, "__file__", "") or "")) == os.path.normcase(os.path.abspath(p)):
+            return cur
+        raise RuntimeError(f"a different 'epr1_gate' module is already imported ({getattr(cur, '__file__', None)!r}), not the verified {p}: refusing to use it")
     mod = types.ModuleType("epr1_gate")
     mod.__file__ = p
     sys.modules["epr1_gate"] = mod
@@ -202,24 +207,34 @@ def check_commit(*, commit: str, git_dir: str, repo_code_path: str, code_dir: st
     return _res("FAIL" if reasons else "PASS", reasons, det)
 
 
-_MODULES: dict = {}
+_LOAD_SEQ = itertools.count(1)                 # every load gets its own module name; nothing is ever looked up by it
 
 
 def load_verified_ub(code_dir: str, expect_sha256: str | None = None):
-    """epr1ub.py executed from bytes that were read once and hashed (no check-then-use gap).  Its own `_load_parent` then verifies epr1.py against the pin."""
+    """epr1ub.py executed from bytes that were read once and hashed (no check-then-use gap).  Its own `_load_parent` then verifies epr1.py against the pin.
+
+    NOT CACHED, ON PURPOSE (BACKLOG EPR1UB-GATE-CACHE; `D-REFE-EPR1UB-1`).  What a call certifies is epr1ub.py AND the epr1.py beside it, but the cache that used to be here was keyed on the sha256 of epr1ub.py alone:
+    after one clean load, a second code_dir holding a byte-identical epr1ub.py and a TAMPERED epr1.py hit the cache, and `_load_parent` (the only place epr1.py is checked) never ran.  The same hole opens when
+    epr1.py is edited in the SAME directory after a clean load.  A cache key has to name every input of the verification (the ub bytes, each parent file `_load_parent` reads, the directory it reads them from), and the
+    next input added to `_load_parent` would be left out of the key again.  A repeat load costs ~12 ms (MEASURED 2026-10-19, median of 20, range 9.9-13.7 ms; the first load of a process is 7.5 s, which is the torch import
+    and is not repeated), so every call re-reads and re-hashes instead: there is no key to get wrong.
+    Each load registers its own module name (dataclasses with `from __future__ import annotations` look the module up in sys.modules while the class bodies run), and a load that raises removes it again."""
     p = os.path.join(code_dir, UB_MODULE_FILE)
     src = Path(p).read_bytes()
     sha = sha256_bytes(src)
     if expect_sha256 is not None and sha != expect_sha256:
         raise GateError(f"{UB_MODULE_FILE} sha256 {sha} != the recorded {expect_sha256}")
-    name = f"epr1ub__gate_{sha[:12]}"
-    if name in _MODULES:
-        return _MODULES[name], sha
+    name = f"epr1ub__gate_{sha[:12]}_{next(_LOAD_SEQ)}"
+    while name in sys.modules:                     # another instance of this gate (a test mutant of it) may already hold the name
+        name = f"epr1ub__gate_{sha[:12]}_{next(_LOAD_SEQ)}"
     mod = types.ModuleType(name)
     mod.__file__ = p
     sys.modules[name] = mod
-    exec(compile(src, p, "exec", dont_inherit=True), mod.__dict__)
-    _MODULES[name] = mod
+    try:
+        exec(compile(src, p, "exec", dont_inherit=True), mod.__dict__)
+    except BaseException:
+        sys.modules.pop(name, None)                # a refused or failed load leaves nothing behind
+        raise
     return mod, sha
 
 

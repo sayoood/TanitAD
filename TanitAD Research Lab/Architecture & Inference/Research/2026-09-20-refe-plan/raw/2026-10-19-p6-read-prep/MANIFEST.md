@@ -38,3 +38,9 @@ Read first: `READY_P6_READ.md` (the day-of commands and what the Master Mind sea
 - `selftest-real`: PASS; EP-RELIAB-PICKS reproduced through this tool with max difference 0.0; EP-R1's composite reads FAIL-A1.
 - `integration_disk_replication.py`: PASS in 93 s at S0 geometry (15,808 sets, 117 logs); a P2-copy bank is refused by `verify`.
 - CPU smoke of P2 on 3 tokens: PASS, max |dlogit| 1.28e-3 against 5e-3, run twice. The SET path was NOT reproduced (traj3 only on the pod). The A40 dump path is UNVERIFIED. No candidate bank was read.
+
+## UPDATE 2026-10-19 (Master Mind): EP-ADMISSION-R1 replaced two files of this package
+- `code/ep_admission.py` is now sha256 `f0193372085022ab7bfc6241f2ca5638fca710cbd4170a19ce0ae95dde6637c4` and `code/test_ep_admission.py` is `f1eed39135f2a4b3f600f7de01607ca93889334da97027ad4efbe445046768c0` (76 tests).
+- `--rules {draft,r1}` defaults to `r1`; the draft rules are reproducible bit-for-bit under `--rules draft`.
+- The table above and `code/CODE_SHA256.json` describe the PREP build and stay as its record. Nothing verifies against them.
+- Package, simulations and ruling: `raw/2026-10-19-ep-admission-r1/` (`RESULT.md`, `MM_RULING_EPADM_R1.md`).

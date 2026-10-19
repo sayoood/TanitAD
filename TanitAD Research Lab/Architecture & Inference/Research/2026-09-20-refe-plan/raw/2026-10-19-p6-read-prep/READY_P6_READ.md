@@ -136,3 +136,10 @@ Rule Zero applies to every refuse row: the turn does not end at the label. The n
 - **UNKNOWN until B2**: that P6's checkpoint has P2's architecture and a 256 to 6 score head.
 - **Dependencies**: `ep_admission.py` imports the landed `epreliab_lib.py` (sha256 `72f493fd150ef5165b5476d270138088046c6172216a207497174969e9f74878`, found through `EPRELIAB_CODE_DIR`, the repo layout, or the dev-box staging copy) and refuses a different copy. All commands above were run on the dev box layout; the repo layout lookup is covered by the path list but was not exercised.
 - **Integration needs the Master Mind's sealing decisions** (Part C); until then every run is `authority: NONE`.
+
+## UPDATE 2026-10-19 (Master Mind): EP-ADMISSION-R1 replaced two files of this package
+- `code/ep_admission.py` is now sha256 `f0193372085022ab7bfc6241f2ca5638fca710cbd4170a19ce0ae95dde6637c4` and `code/test_ep_admission.py` is `f1eed39135f2a4b3f600f7de01607ca93889334da97027ad4efbe445046768c0` (76 tests).
+- `--rules {draft,r1}` defaults to `r1`; the draft rules are reproducible bit-for-bit under `--rules draft`.
+- The table above and `code/CODE_SHA256.json` describe the PREP build and stay as its record. Nothing verifies against them.
+- Package, simulations and ruling: `raw/2026-10-19-ep-admission-r1/` (`RESULT.md`, `MM_RULING_EPADM_R1.md`).
+- ⚠️ For the day-of read: the A1 bar is Revision 1's (FAIL iff D_M lower CI > 0 or point > +0.05, any seed), NOT the +0.02 quoted above. A2 is FAIL iff any NC / DAC / TTC observed / predicted lower CI > 1.05, pending EP-ADMISSION-R2-CONFIRM (else 1.10). B's slot source is `row`. Name `--rules r1` in the sealed registration.

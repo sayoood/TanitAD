@@ -8,6 +8,9 @@ G-COMMIT  passes on the deployed code dir; a tampered landed parent, a bogus com
 G-LIVE    green on a synthetic bank; a u term that is deleted / has an inverted mask / a wrong target / a fit path that drops u or ignores lr each FAIL.
 G-SUITE   a passing suite passes; a failing, a skipped and a too-small suite FAIL.
 TOKEN     mint -> verify round trip; a changed argv, an edited code file, a changed input, an edited token, another key, the wrong profile, a FAILing check each REFUSE; a FAIL demotes a stale PASS.
+LOADER    (EPR1UB-GATE-CACHE) `load_verified_ub` re-verifies the parent on EVERY call: a tampered epr1.py in a second code_dir after a clean load, and in the same dir after a clean load, each REFUSE; the tamper arm is
+          self-contained (it makes its own clean load, so it does not depend on test order) and goes RED when the old sha-only cache is put back; a refused load leaves no module behind; a decoy `epr1_gate`
+          already registered in sys.modules is refused.  pytest is not installed in the gate's interpreter: to run this file under pytest order, append a pytest site dir to sys.path AFTER the venv and call pytest.main.
 """
 from __future__ import annotations
 
@@ -45,6 +48,126 @@ def dvb(c: G.GateConfig, mod=None, strict=True, argv=None):
 
 def load_gate_mut(tmp, name, edits):
     return TU.load_mut(tmp, name, edits)
+
+
+GATE_FILE = os.path.join(HERE, "epr1ub_gate.py")
+LOADER_START = "_LOAD_SEQ = itertools.count(1)"
+LOADER_END = "\n\n\n# ---"                                  # the banner of the G-DVB section that follows the loader
+
+# The loader exactly as it stood at the tip a61c8d1 (blob 3e56fa63): a cache keyed on the sha256 of epr1ub.py alone.  Putting it back is the deliberate regression every loader arm below must catch.
+PRE_FIX_LOADER = '''_MODULES: dict = {}
+
+
+def load_verified_ub(code_dir: str, expect_sha256: str | None = None):
+    """epr1ub.py executed from bytes that were read once and hashed (no check-then-use gap).  Its own `_load_parent` then verifies epr1.py against the pin."""
+    p = os.path.join(code_dir, UB_MODULE_FILE)
+    src = Path(p).read_bytes()
+    sha = sha256_bytes(src)
+    if expect_sha256 is not None and sha != expect_sha256:
+        raise GateError(f"{UB_MODULE_FILE} sha256 {sha} != the recorded {expect_sha256}")
+    name = f"epr1ub__gate_{sha[:12]}"
+    if name in _MODULES:
+        return _MODULES[name], sha
+    mod = types.ModuleType(name)
+    mod.__file__ = p
+    sys.modules[name] = mod
+    exec(compile(src, p, "exec", dont_inherit=True), mod.__dict__)
+    _MODULES[name] = mod
+    return mod, sha
+'''
+# the registered-module reuse in `_load_landed_gate` as it stood at the tip, and as it stands now
+FIXED_DECOY_CHECK = '''        if os.path.normcase(os.path.abspath(getattr(cur, "__file__", "") or "")) == os.path.normcase(os.path.abspath(p)):
+            return cur
+        raise RuntimeError(f"a different 'epr1_gate' module is already imported ({getattr(cur, '__file__', None)!r}), not the verified {p}: refusing to use it")
+'''
+PRE_FIX_DECOY_CHECK = "        return cur\n"
+
+
+def gate_source(loader_src=None, edits=()) -> str:
+    """The gate under test as text, optionally with its loader swapped for `loader_src` and with textual `edits` (each anchor must occur exactly once)."""
+    src = T._rt(GATE_FILE)
+    if loader_src is not None:
+        a = src.index(LOADER_START)
+        b = src.index(LOADER_END, a)
+        src = src[:a] + loader_src.rstrip("\n") + src[b:]
+    for old, new in edits:
+        src = TU.mutate(src, old, new)
+    return src
+
+
+def load_gate_variant(tmp, name, loader_src=None, edits=()):
+    """The gate (or a mutant of it) loaded as a separate module whose HERE is the real code dir; each variant owns its own loader state."""
+    src = TU.mutate(gate_source(loader_src, edits), "HERE = os.path.dirname(os.path.abspath(__file__))", f"HERE = {HERE!r}")
+    return T.load_module_from_source(src, tmp, name)
+
+
+def refuses_a_tampered_parent_after_a_clean_load(Gm):
+    """The arm.  (1) a CLEAN load of HERE through `Gm` (warms whatever cache this loader has: the arm never relies on another test having done it); (2) a load from a SECOND code_dir that holds a byte-identical
+    epr1ub.py and a TAMPERED epr1.py.  The second load must be refused by `_load_parent`'s sha256 check on THAT directory's epr1.py.  AssertionError when it is accepted or refused for another reason."""
+    mod, sha = Gm.load_verified_ub(HERE)
+    assert sha == Gm.sha256_file(os.path.join(HERE, "epr1ub.py")) and hasattr(mod, "SCHEMA"), "the clean load did not return the verified module"
+    tmp = tempfile.mkdtemp(prefix="epr1ub_tamper2_")
+    try:
+        for f in ("epr1ub.py", "epr1_gate.py"):
+            shutil.copy(os.path.join(HERE, f), tmp)
+        T._wb(os.path.join(tmp, "epr1.py"), T._rb(os.path.join(HERE, "epr1.py")) + b"\n#x\n")
+        try:
+            Gm.load_verified_ub(tmp)
+        except RuntimeError as e:
+            if "refusing to import unverified code" in str(e) and os.path.basename(tmp) in str(e):
+                return str(e)
+            raise AssertionError(f"the tampered second dir was refused for the WRONG reason: {type(e).__name__}: {str(e)[:300]}")
+        raise AssertionError("a TAMPERED epr1.py in a second code_dir was ACCEPTED after a clean load: the loader returned a module it did not verify for that directory")
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+# run in a FRESH interpreter, so nothing another test loaded can matter: a clean load, then epr1.py is tampered IN THE SAME DIR, then the same dir is loaded again
+SAME_DIR_SCRIPT = r'''
+import json, os, sys
+gate_dir = sys.argv[1]
+sys.path.insert(0, gate_dir)
+import epr1ub_gate as G
+mod, sha = G.load_verified_ub(gate_dir)
+p = os.path.join(gate_dir, "epr1.py")
+keep = open(p, "rb").read()
+open(p, "wb").write(keep + b"\n#x\n")
+try:
+    G.load_verified_ub(gate_dir)
+    res = "ACCEPTED"
+except RuntimeError as e:
+    res = "REFUSED" if "refusing to import unverified code" in str(e) else "OTHER: " + str(e)[:200]
+finally:
+    open(p, "wb").write(keep)
+print("RESULT " + json.dumps({"clean_load_ok": hasattr(mod, "SCHEMA"), "tampered_same_dir": res}))
+'''
+
+# run in a FRESH interpreter: a tampered copy of epr1_gate.py is registered as sys.modules['epr1_gate'] (as if an earlier import had put it there), then the gate under test is imported from its own dir
+DECOY_SCRIPT = r'''
+import json, os, sys, types
+gate_dir, decoy_dir = sys.argv[1], sys.argv[2]
+p = os.path.join(decoy_dir, "epr1_gate.py")
+decoy = types.ModuleType("epr1_gate")
+decoy.__file__ = p
+sys.modules["epr1_gate"] = decoy
+exec(compile(open(p, "rb").read(), p, "exec", dont_inherit=True), decoy.__dict__)
+sys.path.insert(0, gate_dir)
+try:
+    import epr1ub_gate as G
+    res = "ACCEPTED" if os.path.normcase(os.path.abspath(G.EG.__file__)) == os.path.normcase(os.path.abspath(p)) else "ACCEPTED-OTHER"
+except RuntimeError as e:
+    res = "REFUSED" if "different 'epr1_gate' module" in str(e) else "OTHER: " + str(e)[:200]
+print("RESULT " + json.dumps({"decoy_gate": res}))
+'''
+
+
+def run_fresh(script: str, *args) -> dict:
+    import subprocess
+    r = subprocess.run([sys.executable, "-I", "-c", script, *args], capture_output=True, text=True, timeout=600)
+    line = [x for x in r.stdout.splitlines() if x.startswith("RESULT ")]
+    if not line:
+        raise AssertionError(f"the fresh interpreter printed no RESULT (rc {r.returncode}): {r.stdout[-300:]} / {r.stderr[-600:]}")
+    return json.loads(line[0][len("RESULT "):])
 
 
 class TestDVB(unittest.TestCase):
@@ -135,16 +258,9 @@ class TestCommit(unittest.TestCase):
             shutil.rmtree(tmp, ignore_errors=True)
 
     def test_a_tampered_epr1_is_refused_when_the_ub_module_is_loaded(self):
-        tmp = tempfile.mkdtemp(prefix="epr1ub_tamper2_")
-        try:
-            shutil.copy(os.path.join(HERE, "epr1ub.py"), tmp)
-            shutil.copy(os.path.join(HERE, "epr1_gate.py"), tmp)
-            T._wb(os.path.join(tmp, "epr1.py"), T._rb(os.path.join(HERE, "epr1.py")) + b"\n#x\n")
-            with self.assertRaises(Exception):
-                G.load_verified_ub(tmp)
-        finally:
-            sys.modules.pop("epr1ub__gate_dummy", None)
-            shutil.rmtree(tmp, ignore_errors=True)
+        # ORDER-INDEPENDENT BY CONSTRUCTION (EPR1UB-GATE-CACHE).  Until 2026-10-19 this test passed only when it ran BEFORE any other test had loaded epr1ub.py through `load_verified_ub` (unittest's class order: yes;
+        # pytest's: no), because it never made the clean load the bug needs.  `refuses_a_tampered_parent_after_a_clean_load` makes that clean load itself, so the state the old cache required is present in EVERY order.
+        refuses_a_tampered_parent_after_a_clean_load(G)
 
 
 class TestLive(unittest.TestCase):
@@ -334,6 +450,86 @@ class TestToken(unittest.TestCase):
         body = {"a": 1}
         tok = {**body, "hmac_sha256": G.EG.sign(body, key)}
         self.assertTrue(G.EG.signature_ok(tok, key))
+
+
+class TestLoaderIsNotACache(unittest.TestCase):
+    """EPR1UB-GATE-CACHE.  Every arm that asserts a REFUSAL is paired with the mutant that puts the old sha-only cache (or the old `return cur`) back, and the mutant must be ACCEPTED."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.tmp = tempfile.mkdtemp(prefix="epr1ub_loader_t_")
+
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(cls.tmp, ignore_errors=True)
+
+    def deploy_copy(self, name, gate_text=None) -> str:
+        d = os.path.join(self.tmp, name)
+        os.makedirs(d)
+        for f in os.listdir(HERE):
+            if os.path.isfile(os.path.join(HERE, f)):
+                shutil.copy(os.path.join(HERE, f), d)
+        if gate_text is not None:
+            T._wt(os.path.join(d, "epr1ub_gate.py"), gate_text)
+        return d
+
+    def test_second_dir_arm_passes_on_the_fixed_loader_and_goes_red_on_the_sha_only_cache(self):
+        msg = refuses_a_tampered_parent_after_a_clean_load(G)                                  # the fix
+        self.assertIn("refusing to import unverified code", msg)
+        old = load_gate_variant(self.tmp, "gmut_cache_sha_only", loader_src=PRE_FIX_LOADER)  # the regression
+        mod, sha = old.load_verified_ub(HERE)                                                # control: the mutant is a working loader on the clean dir
+        self.assertTrue(hasattr(mod, "SCHEMA"))
+        with self.assertRaises(AssertionError) as cm:
+            refuses_a_tampered_parent_after_a_clean_load(old)
+        self.assertIn("ACCEPTED", str(cm.exception))
+
+    def test_the_arm_does_not_depend_on_what_ran_before_it(self):
+        # the arm cold (a loader instance that has never loaded anything) and warm (after other loads of HERE): the same verdict either way
+        cold = load_gate_variant(self.tmp, "gcold_fixed")
+        refuses_a_tampered_parent_after_a_clean_load(cold)
+        for _ in range(3):
+            G.load_verified_ub(HERE)
+        refuses_a_tampered_parent_after_a_clean_load(G)
+        cold_old = load_gate_variant(self.tmp, "gcold_old", loader_src=PRE_FIX_LOADER)
+        with self.assertRaises(AssertionError):
+            refuses_a_tampered_parent_after_a_clean_load(cold_old)                             # the old loader is caught even from a cold start, because the arm warms it itself
+
+    def test_every_call_reverifies_and_returns_a_fresh_module(self):
+        m1, s1 = G.load_verified_ub(HERE)
+        m2, s2 = G.load_verified_ub(HERE)
+        self.assertEqual(s1, s2)
+        self.assertIsNot(m1, m2)
+        self.assertIs(sys.modules[m1.__name__], m1)
+        self.assertIs(m1.E, m2.E)                                                           # one verified parent per process
+        with self.assertRaises(G.GateError):
+            G.load_verified_ub(HERE, expect_sha256="0" * 64)
+
+    def test_a_refused_load_leaves_no_module_behind(self):
+        names = lambda: {k for k in sys.modules if k.startswith("epr1ub__gate_")}   # noqa: E731
+        before = names()
+        refuses_a_tampered_parent_after_a_clean_load(G)
+        self.assertEqual(len(names() - before), 1, names() - before)                          # the clean load only; the refused one is gone
+        keep = load_gate_variant(self.tmp, "gmut_no_cleanup", edits=[("        sys.modules.pop(name, None)                # a refused or failed load leaves nothing behind\n", "        pass\n")])
+        before = names()
+        refuses_a_tampered_parent_after_a_clean_load(keep)
+        self.assertEqual(len(names() - before), 2, "the mutant leaves the half-built module registered")      # the clean load + the refused one
+
+    def test_a_parent_tampered_after_a_clean_load_in_the_same_dir_is_refused_in_a_fresh_interpreter(self):
+        fixed = run_fresh(SAME_DIR_SCRIPT, self.deploy_copy("same_fixed"))
+        self.assertEqual(fixed, {"clean_load_ok": True, "tampered_same_dir": "REFUSED"})
+        old = run_fresh(SAME_DIR_SCRIPT, self.deploy_copy("same_old", gate_source(loader_src=PRE_FIX_LOADER)))
+        self.assertEqual(old, {"clean_load_ok": True, "tampered_same_dir": "ACCEPTED"})     # the old loader hands back the stale module
+
+    def test_a_decoy_epr1_gate_already_in_sys_modules_is_refused(self):
+        decoy = os.path.join(self.tmp, "decoy")
+        os.makedirs(decoy)
+        T._wb(os.path.join(decoy, "epr1_gate.py"), T._rb(os.path.join(HERE, "epr1_gate.py")) + b"\n# a tampered copy: its primitives would sign the token\n")
+        fixed = run_fresh(DECOY_SCRIPT, self.deploy_copy("decoy_fixed"), decoy)
+        self.assertEqual(fixed, {"decoy_gate": "REFUSED"})
+        mut = gate_source(edits=[(FIXED_DECOY_CHECK, PRE_FIX_DECOY_CHECK)])
+        self.assertNotIn("a different 'epr1_gate'", mut)
+        old = run_fresh(DECOY_SCRIPT, self.deploy_copy("decoy_old", mut), decoy)
+        self.assertEqual(old, {"decoy_gate": "ACCEPTED"})                                      # the old `return cur` took the decoy
 
 
 if __name__ == "__main__":

@@ -605,5 +605,263 @@ class TestEndToEndCLI(unittest.TestCase):
         self.assertEqual(set(r["verdict"]["A1"]), {"s0", "s1"})
 
 
+
+# =====================================================================================================================================================================================
+# REVISION 1 (DRAFT_PREREG_EP_ADMISSION.md "REVISION 1", Master Mind 2026-10-19).  The 53 tests above are UNCHANGED and cover the DRAFT functions (which are untouched) and, through the new run-level
+# default, the R1 rules end to end.  Everything below is new.
+# =====================================================================================================================================================================================
+def named_mutant(old: str, new: str):
+    return A.mutated_copy(old, new)
+
+
+A1R1_SRC = 'if ci["lo"] <= lo_bar and ci["point"] <= point_bar:\n        return "ADMIT-A1"'
+A2R1_SRC = 'return bool(ci["lo"] <= bar)'
+A2R1_HEADS_SRC = 'if len(heads) > 0 and all((h in cis) and a2_head_ok_r1(cis[h]) for h in heads):'
+ANYSEED_SRC = 'return bool(len(verdicts) > 0 and all(v == admit for v in verdicts))'
+
+
+class TestRevision1Constants(unittest.TestCase):
+    def test_constants_defaults_and_the_draft_is_untouched(self):
+        self.assertEqual((A.A1_R1_LO_BAR, A.A1_R1_POINT_BAR, A.A2_R1_RATIO_BAR), (0.0, 0.05, 1.0))
+        self.assertEqual((A.DEFAULT_RULES, tuple(A.RULES)), ("r1", ("draft", "r1")))
+        self.assertEqual((A.B_SLOT_SOURCE_R1, A.B_SLOT_SOURCE_DRAFT), ("row", "label"))
+        self.assertEqual((A.A1_BAR, A.A2_LO, A.A2_HI, A.B_UNSAFE_UB), (0.02, 0.8, 1.25, 0.001))                  # the draft's constants did not move
+        import inspect
+        self.assertEqual(inspect.signature(A.run_admission).parameters["rules"].default, "r1")
+        self.assertIsNone(inspect.signature(A.run_admission).parameters["slot_source"].default)                 # None = resolved by the rule set
+        self.assertEqual(inspect.signature(A.pessimistic_picks).parameters["slot_source"].default, "label")     # the library-level function keeps the draft's default (reproducibility)
+
+    def test_the_cli_defaults(self):
+        pa = A.build_parser().parse_args(["run", "--p2-bank", "x", "--cand-bank", "y", "--ranked-logs", "z", "--out", "o"])
+        self.assertEqual((pa.rules, pa.slot_source), ("r1", None))
+        pb = A.build_parser().parse_args(["run", "--rules", "draft", "--p2-bank", "x", "--cand-bank", "y", "--ranked-logs", "z", "--out", "o"])
+        self.assertEqual(pb.rules, "draft")
+        pt = A.build_parser().parse_args(["selftest-real", "--p2-bank", "x", "--ranked-logs", "z", "--arrays-npz", "a", "--landed-result", "l", "--out", "o"])
+        self.assertEqual(pt.rules, "r1")
+        with self.assertRaises(SystemExit):
+            A.build_parser().parse_args(["run", "--rules", "bogus", "--p2-bank", "x", "--cand-bank", "y", "--ranked-logs", "z", "--out", "o"])
+
+    def test_the_r1_mutations_are_in_the_registry_and_all_caught(self):
+        r1 = A.DECISION_MUTATIONS[35:]                                                  # the 35 draft mutations come first and are untouched; everything after is REVISION 1
+        self.assertGreaterEqual(len(r1), 38)
+        for old, new in r1:
+            m = A.mutated_copy(old, new)
+            self.assertTrue(len(m.branch_table_failures(m)) > 0, f"R1 mutation not caught: {old!r} -> {new!r}")
+
+    def test_one_mutation_per_r1_conjunct_is_named_and_red(self):
+        """The brief's list, each by name: every conjunct of A1-r1 and A2-r1, the any-seed quantifier, the connective, the NaN handling, the dispatch and both defaults."""
+        named = {
+            "A1 lower-CI conjunct dropped": (A1R1_SRC, 'if ci["point"] <= point_bar:\n        return "ADMIT-A1"'),
+            "A1 point conjunct dropped": (A1R1_SRC, 'if ci["lo"] <= lo_bar:\n        return "ADMIT-A1"'),
+            "A1 and -> or": (A1R1_SRC, 'if ci["lo"] <= lo_bar or ci["point"] <= point_bar:\n        return "ADMIT-A1"'),
+            "A1 NaN fails open": (A1R1_SRC, 'if not (ci["lo"] > lo_bar or ci["point"] > point_bar):\n        return "ADMIT-A1"'),
+            "A1 lower-CI edge opened": (A1R1_SRC, 'if ci["lo"] < lo_bar and ci["point"] <= point_bar:\n        return "ADMIT-A1"'),
+            "A1 point edge opened": (A1R1_SRC, 'if ci["lo"] <= lo_bar and ci["point"] < point_bar:\n        return "ADMIT-A1"'),
+            "A1 upper CI used for the lower": (A1R1_SRC, 'if ci["hi"] <= lo_bar and ci["point"] <= point_bar:\n        return "ADMIT-A1"'),
+            "A2 lower CI replaced by the upper": (A2R1_SRC, 'return bool(ci["hi"] <= bar)'),
+            "A2 lower CI replaced by the point": (A2R1_SRC, 'return bool(ci["point"] <= bar)'),
+            "A2 made two-sided like the draft": (A2R1_SRC, 'return bool(ci["lo"] <= bar and ci["hi"] >= A2_LO)'),
+            "A2 edge opened": (A2R1_SRC, 'return bool(ci["lo"] < bar)'),
+            "A2 any head suffices": (A2R1_HEADS_SRC, 'if len(heads) > 0 and any((h in cis) and a2_head_ok_r1(cis[h]) for h in heads):'),
+            "A2 missing head tolerated": (A2R1_HEADS_SRC, 'if len(heads) > 0 and all(a2_head_ok_r1(cis[h]) for h in heads if h in cis):'),
+            "any-seed -> some seed": (ANYSEED_SRC, 'return bool(len(verdicts) > 0 and any(v == admit for v in verdicts))'),
+            "any-seed empty list admits": (ANYSEED_SRC, 'return bool(all(v == admit for v in verdicts))'),
+            "any-seed looks at the first seed only (A1)": ('any_seed_admits([a1_verdict_r1(c) for c in cis], "ADMIT-A1")', 'any_seed_admits([a1_verdict_r1(c) for c in cis[:1]], "ADMIT-A1")'),
+            "any-seed looks at the last seed only (A2)": ('any_seed_admits([a2_verdict_r1(c) for c in cis_by_seed], "ADMIT-A2")', 'any_seed_admits([a2_verdict_r1(c) for c in cis_by_seed[-1:]], "ADMIT-A2")'),
+            "dispatch: r1 returns the draft functions": ('    if rules == "r1":\n        return a1_verdict_r1, a2_verdict_r1', '    if rules == "r1":\n        return a1_verdict, a2_verdict'),
+            "default rules is the draft": ('DEFAULT_RULES = "r1" ', 'DEFAULT_RULES = "draft" '),
+            "B default slot source under r1 is label": ('B_SLOT_SOURCE_R1 = "row" ', 'B_SLOT_SOURCE_R1 = "label" '),
+        }
+        for name, (old, new) in named.items():
+            m = A.mutated_copy(old, new)
+            self.assertTrue(len(m.branch_table_failures(m)) > 0, f"mutation not caught: {name}")
+
+
+class TestRevision1A1(unittest.TestCase):
+    def d_m(self, **kw):
+        an, S = analyze(make_case(**kw))
+        return an["G"]["D_M"]
+
+    def wide_case_ci(self):
+        case = make_case(over=0.10, n=200, n_logs=4, noise=0.25, seed=12)
+        return A.analyze_candidate(case[0], case[1], case[2], stats_for(case[3], 4, B=500))["G"]["D_M"]
+
+    def test_a_calibrated_candidate_is_admitted_and_an_underpredictor_too(self):
+        self.assertEqual(A.a1_verdict_r1(self.d_m(over=0.0)), "ADMIT-A1")
+        ci = self.d_m(over=-0.20)
+        self.assertEqual(A.a1_verdict_r1(ci), "ADMIT-A1")
+        self.assertLess(ci["point"], 0.0)
+
+    def test_a_significant_overprediction_below_the_point_bar_fails_through_the_lower_ci_alone(self):
+        ci = self.d_m(over=0.04)
+        self.assertGreater(ci["lo"], 0.0)
+        self.assertLess(ci["point"], 0.05)
+        self.assertEqual(A.a1_verdict_r1(ci), "FAIL-A1")
+        self.assertEqual(A.a1_fails_by_r1(ci), ["lower_ci_gt_0"])
+        self.assertEqual(A.a1_verdict(ci), "FAIL-A1")                                                          # (the draft also refuses this one: hi 0.038 > 0.02)
+
+    def test_a_tiny_but_significant_overprediction_is_where_the_two_rule_sets_differ(self):
+        ci = self.d_m(over=0.005)
+        self.assertLessEqual(ci["hi"], 0.02)
+        self.assertEqual(A.a1_verdict(ci), "ADMIT-A1")                                                         # the draft admits it (upper CI under +0.02)
+        self.assertEqual(A.a1_verdict_r1(ci), "FAIL-A1")                                                       # R1 refuses it (lower CI above 0): the price of a zero-tolerance significance rule
+
+    def test_a_material_overprediction_with_a_wide_interval_fails_through_the_point_alone(self):
+        ci = self.wide_case_ci()
+        self.assertLessEqual(ci["lo"], 0.0)
+        self.assertGreater(ci["point"], 0.05)
+        self.assertEqual(A.a1_verdict_r1(ci), "FAIL-A1")
+        self.assertEqual(A.a1_fails_by_r1(ci), ["point_gt_0.05"])
+
+    def test_a_planted_overprediction_the_size_of_ep_r1_fails_with_both_conjuncts(self):
+        ci = self.d_m(over=0.135)
+        self.assertEqual(A.a1_fails_by_r1(ci), ["lower_ci_gt_0", "point_gt_0.05"])
+
+    def test_each_conjunct_mutant_disagrees_on_the_planted_case_that_needs_it(self):
+        ci_lo_only, ci_pt_only = self.d_m(over=0.04), self.wide_case_ci()
+        m_no_lo = named_mutant(A1R1_SRC, 'if ci["point"] <= point_bar:\n        return "ADMIT-A1"')
+        self.assertEqual(m_no_lo.a1_verdict_r1(ci_lo_only), "ADMIT-A1")                                         # without the lower-CI conjunct the significant over-predictor passes
+        self.assertEqual(A.a1_verdict_r1(ci_lo_only), "FAIL-A1")
+        m_no_pt = named_mutant(A1R1_SRC, 'if ci["lo"] <= lo_bar:\n        return "ADMIT-A1"')
+        self.assertEqual(m_no_pt.a1_verdict_r1(ci_pt_only), "ADMIT-A1")                                         # without the point conjunct the material, noisy over-predictor passes
+        self.assertEqual(A.a1_verdict_r1(ci_pt_only), "FAIL-A1")
+        m_or = named_mutant(A1R1_SRC, 'if ci["lo"] <= lo_bar or ci["point"] <= point_bar:\n        return "ADMIT-A1"')
+        self.assertEqual((m_or.a1_verdict_r1(ci_lo_only), m_or.a1_verdict_r1(ci_pt_only)), ("ADMIT-A1", "ADMIT-A1"))
+
+
+class TestRevision1A2(unittest.TestCase):
+    def a2(self, **kw):
+        an, S = analyze(make_case(**kw))
+        return an["A2_reliability"]
+
+    def test_calibrated_safety_rows_are_admitted(self):
+        self.assertEqual(A.a2_verdict_r1(self.a2()), "ADMIT-A2")
+
+    def test_rows_that_under_predict_risk_at_the_picks_fail_on_each_head(self):
+        for kw, head in (({"nc_unsafe": 0.12}, "NC"), ({"dac_unsafe": 0.12}, "DAC"), ({"ttc_unsafe": 0.12}, "TTC")):
+            r = self.a2(**kw)
+            self.assertGreater(r[head]["lo"], 1.0, head)
+            self.assertEqual(A.a2_verdict_r1(r), "FAIL-A2", head)
+
+    def test_ratios_below_one_are_never_refused_where_the_draft_refused_them(self):
+        for kw, head in (({"ttc_unsafe": 0.0}, "TTC"), ({"nc_unsafe": 0.0}, "NC")):
+            r = self.a2(**kw)
+            self.assertLess(r[head]["hi"], 1.0, head)
+            self.assertEqual(A.a2_verdict(r), "FAIL-A2")                                                       # the draft's two-sided band refused it
+            self.assertEqual(A.a2_verdict_r1(r), "ADMIT-A2")                                                   # R1 does not
+
+    def test_mutants_of_a2_r1_are_wrong_on_the_planted_rows(self):
+        r_bad = self.a2(nc_unsafe=0.12)
+        m_any = named_mutant(A2R1_HEADS_SRC, 'if len(heads) > 0 and any((h in cis) and a2_head_ok_r1(cis[h]) for h in heads):')
+        self.assertEqual(m_any.a2_verdict_r1(r_bad), "ADMIT-A2")
+        m_hi = named_mutant(A2R1_SRC, 'return bool(ci["hi"] <= bar)')
+        self.assertEqual(m_hi.a2_verdict_r1(self.a2()), "FAIL-A2")                                              # the upper CI of a calibrated head is above 1: the mutant refuses a calibrated candidate
+        m_two = named_mutant(A2R1_SRC, 'return bool(ci["lo"] <= bar and ci["hi"] >= A2_LO)')
+        self.assertEqual(m_two.a2_verdict_r1(self.a2(ttc_unsafe=0.0)), "FAIL-A2")                              # a two-sided mutant refuses the conservative row again
+
+
+class TestRevision1AnySeed(unittest.TestCase):
+    def test_one_failing_seed_fails_the_rule_in_either_order(self):
+        good, _ = analyze(make_case(over=0.0))
+        bad, _ = analyze(make_case(over=0.30))
+        for order in ((good, bad), (bad, good)):
+            self.assertEqual(A.a1_verdict_r1_seeds([a["G"]["D_M"] for a in order]), "FAIL-A1")
+        self.assertEqual(A.a1_verdict_r1_seeds([good["G"]["D_M"], good["G"]["D_M"]]), "ADMIT-A1")
+        bad2, _ = analyze(make_case(nc_unsafe=0.12))
+        for order in ((good, bad2), (bad2, good)):
+            self.assertEqual(A.a2_verdict_r1_seeds([a["A2_reliability"] for a in order]), "FAIL-A2")
+        self.assertEqual(A.a2_verdict_r1_seeds([good["A2_reliability"], good["A2_reliability"]]), "ADMIT-A2")
+
+    def test_mutated_quantifiers_miss_the_failing_seed(self):
+        good, _ = analyze(make_case(over=0.0))
+        bad, _ = analyze(make_case(over=0.30))
+        cis = [good["G"]["D_M"], bad["G"]["D_M"]]
+        m_any = named_mutant(ANYSEED_SRC, 'return bool(len(verdicts) > 0 and any(v == admit for v in verdicts))')
+        self.assertEqual(m_any.a1_verdict_r1_seeds(cis), "ADMIT-A1")
+        m_first = named_mutant('any_seed_admits([a1_verdict_r1(c) for c in cis], "ADMIT-A1")', 'any_seed_admits([a1_verdict_r1(c) for c in cis[:1]], "ADMIT-A1")')
+        self.assertEqual(m_first.a1_verdict_r1_seeds(cis), "ADMIT-A1")                                          # the failing seed is the second one
+        self.assertEqual(A.a1_verdict_r1_seeds(cis), "FAIL-A1")
+
+    def test_the_seed_functions_agree_with_admission_label(self):
+        """The run aggregates per-bank verdicts with `admission_label`; the simulation with `*_seeds`.  They must be the same quantifier on every combination."""
+        import itertools
+        for a1s in itertools.product(("ADMIT-A1", "FAIL-A1"), repeat=2):
+            for a2s in itertools.product(("ADMIT-A2", "FAIL-A2"), repeat=2):
+                lab = A.admission_label(list(a1s), list(a2s), True, False)
+                self.assertEqual(lab.startswith("ADMIT"), A.any_seed_admits(list(a1s), "ADMIT-A1") and A.any_seed_admits(list(a2s), "ADMIT-A2"))
+
+
+class TestRevision1Run(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.tmp = tempfile.mkdtemp()
+        cls.rk = write_ranked(os.path.join(cls.tmp, "ranked.tsv"))
+        cls.rows, _ = A.read_ranked(cls.rk)
+        good, bad = make_case(over=0.0), make_case(over=0.30)
+        cls.g = A.load_bank_units(write_bank(os.path.join(cls.tmp, "p2g"), good[0], good[2], good[3], ckpt="p2"), cls.rows)
+        cls.b = A.load_bank_units(write_bank(os.path.join(cls.tmp, "p2b"), bad[0], bad[2], bad[3], ckpt="p2"), cls.rows)
+        cls.cg = A.align_candidate(cls.g, A.load_bank_units(write_bank(os.path.join(cls.tmp, "cg"), good[1], good[2], good[3], ckpt="c", shuffle_seed=2), cls.rows))
+        cls.cb = A.align_candidate(cls.b, A.load_bank_units(write_bank(os.path.join(cls.tmp, "cb"), bad[1], bad[2], bad[3], ckpt="c", shuffle_seed=2), cls.rows))
+
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(cls.tmp, ignore_errors=True)
+
+    def run_rules(self, p2, cands, **kw):
+        return A.run_admission(p2, cands, B=500, null_reps_e=0, log=lambda *_: None, **kw)
+
+    def test_the_default_is_r1_with_slot_source_row_and_the_draft_is_label(self):
+        r = self.run_rules(self.g, {"c": self.cg})
+        self.assertEqual((r["rules"], r["B"]["slot_source"]), ("r1", "row"))
+        self.assertIn("lo_bar", r["per_candidate"]["c"]["A1"])
+        self.assertNotIn("bar", r["per_candidate"]["c"]["A1"])
+        d = self.run_rules(self.g, {"c": self.cg}, rules="draft")
+        self.assertEqual((d["rules"], d["B"]["slot_source"]), ("draft", "label"))
+        self.assertEqual(d["per_candidate"]["c"]["A1"]["bar"], 0.02)
+        self.assertIn("band", d["per_candidate"]["c"]["A2"])
+        e = self.run_rules(self.g, {"c": self.cg}, slot_source="label")
+        self.assertEqual((e["rules"], e["B"]["slot_source"]), ("r1", "label"))                                  # an explicit choice wins over the rule set's default
+        f = self.run_rules(self.g, {"c": self.cg}, rules="draft", slot_source="row")
+        self.assertEqual(f["B"]["slot_source"], "row")
+
+    def test_a_calibrated_candidate_is_admitted_and_an_overpredictor_refused_under_both_rule_sets(self):
+        for rules in ("r1", "draft"):
+            g = self.run_rules(self.g, {"c": self.cg}, rules=rules)
+            b = self.run_rules(self.b, {"c": self.cb}, rules=rules)
+            self.assertTrue(g["controls_ok"] and b["controls_ok"], rules)
+            self.assertTrue(g["verdict"]["label"].startswith("ADMIT"), (rules, g["verdict"]))
+            self.assertEqual(b["verdict"]["label"], "REFUSE-A1", rules)
+        b = self.run_rules(self.b, {"c": self.cb})
+        self.assertEqual(b["per_candidate"]["c"]["A1"]["fails_by"], ["lower_ci_gt_0", "point_gt_0.05"])
+
+    def test_one_failing_seed_refuses_the_candidate_in_either_order(self):
+        ident = A.align_candidate(self.b, self.b)                                                                # P2 as the 'good' seed on the over-prediction bank's labels: admits
+        for seeds in ({"s0": ident, "s1": self.cb}, {"s0": self.cb, "s1": ident}):
+            r = self.run_rules(self.b, seeds)
+            self.assertEqual(r["verdict"]["label"], "REFUSE-A1", list(seeds))
+            self.assertEqual(sorted(r["verdict"]["A1"].values()), ["ADMIT-A1", "FAIL-A1"])
+
+    def test_the_draft_run_has_the_drafts_json_keys(self):
+        d = self.run_rules(self.g, {"c": self.cg}, rules="draft")
+        self.assertEqual(set(d), {"schema", "rules", "warnings", "controls", "controls_ok", "per_candidate", "a1_form_mode", "a1_form_used", "scale_on_all_banks", "verdict", "B", "null", "n_logs", "n_sets", "bootstrap"})
+        self.assertEqual(set(d["per_candidate"]["c"]["A1"]), {"form", "statistic", "bar", "verdict", "other_form_statistic"})
+        self.assertEqual(set(d["per_candidate"]["c"]["A2"]), {"verdict", "band", "heads"})
+
+    def test_an_unknown_rule_set_is_refused(self):
+        with self.assertRaises(A.AdmissionError):
+            self.run_rules(self.g, {"c": self.cg}, rules="bogus")
+
+    def test_the_power_control_and_the_null_use_the_rule_sets_a1_function(self):
+        z6_p2, z6_c, lab, li, ch = make_case(frac=0.6)
+        S = stats_for(li)
+        r1 = A.control_power(z6_p2, z6_c, lab, S, a1_fn=A.a1_verdict_r1)
+        self.assertTrue(r1["pass"], r1)
+        self.assertEqual((r1["plus"]["a1"], r1["minus"]["a1"], r1["zero"]["a1"]), ("FAIL-A1", "ADMIT-A1", "ADMIT-A1"))
+        always_fail = lambda ci: "FAIL-A1"                                                                       # noqa: E731
+        self.assertFalse(A.control_power(z6_p2, z6_c, lab, S, a1_fn=always_fail)["pass"])                         # the control really calls the function it is given
+        n = A.run_null(z6_p2, z6_c, lab, S, reps_e=0, a1_fn=always_fail)
+        self.assertTrue(n["void"] and n["c_null"]["fires"] == 5)                                                 # and so does the null
+
+
 if __name__ == "__main__":
     unittest.main()

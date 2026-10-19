@@ -1,0 +1,126 @@
+{
+ "base_path": "D:/epadm1/base/ep_admission.py",
+ "base_sha256": "a338f303359ba7ffe1380d21a1da3158d275a88c503dadac7e7420a99ca6ae79",
+ "edited_path": "D:\\epadm1\\w\\raw\\2026-10-19-p6-read-prep\\code\\ep_admission.py",
+ "edited_sha256": "f0193372085022ab7bfc6241f2ca5638fca710cbd4170a19ce0ae95dde6637c4",
+ "pass": true,
+ "step1_source": {
+  "base_mutations_carried_verbatim": true,
+  "functions_edited_on_purpose": {
+   "cmd_run": true,
+   "cmd_selftest_real": true,
+   "control_id": true,
+   "control_power": true,
+   "main": true,
+   "run_admission": true,
+   "run_null": true
+  },
+  "n_base_mutations": 35,
+  "n_edited_mutations": 76,
+  "unchanged_constants": {
+   "A1_BAR": true,
+   "A2_HEADS": true,
+   "A2_HI": true,
+   "A2_LO": true,
+   "BOOT_B": true,
+   "BOOT_SEED": true,
+   "B_UNSAFE_UB": true,
+   "EPRELIAB_LIB_SHA256": true,
+   "LABEL_ORDER": true,
+   "NULL_C_REPS": true,
+   "NULL_E_REPS": true,
+   "NULL_VOID_FIRES": true,
+   "N_FOLDS": true,
+   "N_LOGS": true,
+   "PLANT": true,
+   "RANKED_LOGS_SHA256": true,
+   "RULE": true,
+   "SCHEMA": true,
+   "SELECT_PCT": true
+  },
+  "unchanged_function_source": {
+   "a1_analytic_oc": true,
+   "a1_form": true,
+   "a1_verdict": true,
+   "a2_head_ok": true,
+   "a2_verdict": true,
+   "admission_label": true,
+   "align_candidate": true,
+   "analyze_candidate": true,
+   "b_recovers": true,
+   "check_prereg": true,
+   "control_reach": true,
+   "load_bank_units": true,
+   "make_stats": true,
+   "next_arm": true,
+   "null_fires_a1": true,
+   "null_void": true,
+   "pessimistic_picks": true,
+   "read_manifest": true,
+   "read_ranked": true
+  }
+ },
+ "step2_synthetic": {
+  "calibrated": {
+   "equal": true,
+   "first_diffs": [],
+   "label": "ADMIT (A1 and A2 pass: the shared navtest look is permitted)",
+   "n_diff": 0
+  },
+  "few_changed": {
+   "equal": true,
+   "first_diffs": [],
+   "label": "VOID (a gating control failed)",
+   "n_diff": 0
+  },
+  "nc_unsafe_0.12": {
+   "equal": true,
+   "first_diffs": [],
+   "label": "REFUSE-A2",
+   "n_diff": 0
+  },
+  "over_0.04": {
+   "equal": true,
+   "first_diffs": [],
+   "label": "REFUSE-A1",
+   "n_diff": 0
+  },
+  "overpredict_0.30": {
+   "equal": true,
+   "first_diffs": [],
+   "label": "REFUSE-A1",
+   "n_diff": 0
+  },
+  "ttc_zero": {
+   "equal": true,
+   "first_diffs": [],
+   "label": "REFUSE-A2",
+   "n_diff": 0
+  },
+  "with_mutation_control": {
+   "C-DECISION_base": {
+    "n_caught": 35,
+    "n_mutations": 35,
+    "pass": true
+   },
+   "C-DECISION_edited": {
+    "n_caught": 76,
+    "n_mutations": 76,
+    "pass": true
+   },
+   "equal_except_C-DECISION": true,
+   "first_diffs": [],
+   "n_diff": 0
+  }
+ },
+ "step3_real_s0": {
+  "base_rerun_vs_banked_first_diffs": [],
+  "base_rerun_vs_banked_n_diff": 0,
+  "base_vs_edited_draft_first_diffs": [],
+  "base_vs_edited_draft_n_diff": 0,
+  "edited_draft_vs_banked_n_diff": 0,
+  "pass_both": true,
+  "rc_base": 0,
+  "rc_edited_draft": 0
+ }
+}

@@ -1,0 +1,77 @@
+{
+ "PASS": true,
+ "admission_A1": {
+  "ep_r1_planted": "FAIL-A1"
+ },
+ "admission_A2": {
+  "ep_r1_planted": "ADMIT-A2"
+ },
+ "admission_D_M": {
+  "hi": 0.16402592117404802,
+  "lo": 0.11144289415372231,
+  "point": 0.13485293083955197
+ },
+ "admission_controls": {
+  "C-DECISION": {
+   "pass": true,
+   "status": null
+  },
+  "C-ID": {
+   "pass": true,
+   "status": null
+  },
+  "C-NULL[ep_r1_planted]": {
+   "pass": true,
+   "status": "RUN"
+  },
+  "C-POWER[ep_r1_planted]": {
+   "pass": true,
+   "status": "RUN"
+  },
+  "C-REACH[ep_r1_planted]": {
+   "pass": true,
+   "status": "RUN"
+  }
+ },
+ "admission_label": "REFUSE-A1",
+ "admission_rc": 0,
+ "admission_warnings": [
+  "the EP row is OFF-SCALE (slope CI outside [0.9, 1.1]): the rank-free mass form carries A1, as EP-RELIAB's rule would for this row too"
+ ],
+ "equals_landed_ep_reliab_D_M": true,
+ "equals_selftest_real_D_M": true,
+ "seconds": 119.6,
+ "verify_ep_r1_bank": {
+  "PASS": true,
+  "alignment": {
+   "ckpt_step_equal": true,
+   "keys_bijection": true,
+   "labels_bit_equal": true,
+   "n_sets": 15808
+  },
+  "bank_ckpt": "D:/Projects/TanitAD/data/refe_runs_eval/p2/model_final.pt",
+  "candidate_ckpt": "D:/Projects/TanitAD/data/refe_runs_eval/p2/model_final.pt",
+  "ckpt_matches": true,
+  "identity_controls": {
+   "fanpath_logit_max": 0.0,
+   "n_sets": 15808,
+   "setpath_logit_differs_from_fan_gt_1e-3": 15808
+  },
+  "manifest_sha256": "a503e9b5005b9b5d277460ea361d385179d9001a8ee53940f876b47b4e60b69c",
+  "n_sets": 15808,
+  "note": "same_logits_as_p2_on_any_set > 0 would mean the candidate's scorer reproduced P2's logits bit for bit on a set: the dump was run on the wrong checkpoint",
+  "same_logits_as_p2_on_any_set": 0
+ },
+ "verify_ep_r1_bank_rc": 0,
+ "verify_p2_copy_bank": {
+  "PASS": false,
+  "note": "same_logits_as_p2_on_any_set > 0 would mean the candidate's scorer reproduced P2's logits bit for bit on a set: the dump was run on the wrong checkpoint",
+  "same_logits_as_p2_on_any_set": 15808
+ },
+ "verify_p2_copy_bank_rc": 2,
+ "what": "disk-path replication of the day-of chain on S0's real geometry; candidate = the EP-RELIAB EP-led composite (EP-R1 c*, OOF seed 0) written as a bank",
+ "written": {
+  "rows": 15808,
+  "units": 23
+ }
+}

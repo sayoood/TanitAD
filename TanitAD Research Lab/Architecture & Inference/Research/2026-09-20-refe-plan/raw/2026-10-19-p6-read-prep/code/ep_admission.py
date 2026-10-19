@@ -1,5 +1,13 @@
 """EP-ADMISSION: the candidate-agnostic EP-reliability admission gate (DRAFT_PREREG_EP_ADMISSION.md, Master Mind 2026-10-19) as code.  CPU only; numpy + the landed EP-RELIAB-PICKS library.
 
+REVISION 1 (DRAFT_PREREG_EP_ADMISSION.md, section "REVISION 1", Master Mind 2026-10-19, pre-seal): `--rules {draft,r1}`, DEFAULT `r1`.  `--rules draft` reproduces the draft below bit for bit (same functions, same
+constants, same default B slot source `label`).  Under `r1`:
+  A1-r1  FAIL-A1 iff, on ANY seed, D_M has a lower CI > 0 (significant over-prediction) OR a point estimate > +0.05 (material over-prediction); otherwise ADMIT-A1.
+  A2-r1  FAIL-A2 iff, for any of NC / DAC / TTC, the observed / predicted unsafe mass at the candidate's picks has a lower CI > 1.0 on ANY seed (the rows significantly UNDER-predict risk at the picks);
+         ratios below 1 are conservative and are never refused.
+  B      default slot source `row` (EP_slot = the EP ROW's own per-slot mean on training folds).
+The false-refusal rate and the power of A1-r1 / A2-r1 are SIMULATED on the real estimator by `raw/2026-10-19-ep-admission-r1/code/ep_admission_sim.py` (design: SIM_DESIGN.md; result: RESULT.md).
+
 STATUS OF THE CONSTANTS: the draft is NOT sealed.  Every bar below is the draft's, copied literally and marked DRAFT; the Master Mind seals them (or amends them) against a NAMED candidate BEFORE that
 candidate's selection-tier bank is read.  A run without `--prereg` is `authority: NONE` (a control or smoke run) and its verdict must not be quoted as a gate result.
 
@@ -20,8 +28,8 @@ functions, the pessimistic rule, the admission-flavoured controls and the CLI.
 Estimator discipline (CLAUDE.md): the interval answers "would another draw of LOGS say this?" and nothing about another training run of the candidate (`H-ESTIM-SEED-1`) or another inference run.
 Tier: SELECTION, SEEN scenes (`D-L1-G0-1`), label-lookup PDMS; not T1.  A PASS is a NECESSARY condition for a navtest look, never evidence of a navtest gain.
 
-    python ep_admission.py run --p2-bank <S0 bank dir> --cand-bank <candidate bank dir> --ranked-logs <ranked_fit_logs.tsv> --prereg <sealed prereg> --candidate-ckpt-sha256 <sha> --out admission.json
-    python ep_admission.py selftest-real --p2-bank <S0 bank dir> --ranked-logs <tsv> --arrays-npz <pickrule arrays.npz> --landed-result <ep-reliab result.json> --out selftest_real.json
+    python ep_admission.py run [--rules {draft,r1}] --p2-bank <S0 bank dir> --cand-bank <candidate bank dir> --ranked-logs <ranked_fit_logs.tsv> --prereg <sealed prereg> --candidate-ckpt-sha256 <sha> --out admission.json
+    python ep_admission.py selftest-real [--rules {draft,r1}] --p2-bank <S0 bank dir> --ranked-logs <tsv> --arrays-npz <pickrule arrays.npz> --landed-result <ep-reliab result.json> --out selftest_real.json
     python ep_admission.py branch-table          # the decision functions' branch table + the RED-mutation report
 """
 from __future__ import annotations
@@ -51,6 +59,13 @@ A1_BAR = 0.02              # DRAFT (A1): ADMIT-A1 iff the upper CI of D_M <= +0.
 A2_LO, A2_HI = 0.8, 1.25   # DRAFT (A2): ADMIT-A2 iff every CI overlaps [0.8, 1.25]
 A2_HEADS = ("NC", "DAC", "TTC")
 B_UNSAFE_UB = 0.001        # DRAFT (B): the NC / DAC unsafe-rate difference upper CI <= +0.001
+RULES = ("draft", "r1")
+DEFAULT_RULES = "r1"       # REVISION 1: the CLI / `run_admission` default; the library-level decision functions above keep the DRAFT behaviour
+A1_R1_LO_BAR = 0.0         # R1 (A1): a seed FAILS A1 if D_M's lower CI > 0 (significant over-prediction)
+A1_R1_POINT_BAR = 0.05     # R1 (A1): a seed FAILS A1 if D_M's point estimate > +0.05 (material over-prediction)
+A2_R1_RATIO_BAR = 1.0      # R1 (A2): a seed FAILS A2 if, for any head, the lower CI of observed / predicted unsafe mass > 1.0 (rows UNDER-predict risk at the picks)
+B_SLOT_SOURCE_R1 = "row"   # R1 (B): default slot source (EP_slot = the EP ROW's own per-slot mean on training folds, so EP_used stays on the row's scale)
+B_SLOT_SOURCE_DRAFT = "label"
 PLANT = 0.10               # C-POWER planted shift (EP-RELIAB Amendment 1)
 NULL_C_REPS, NULL_E_REPS, NULL_VOID_FIRES = 5, 200, 2    # EP-RELIAB prereg section 7
 N_LOGS, BOOT_B, BOOT_SEED = 117, 10000, 20260927
@@ -159,6 +174,69 @@ def a2_verdict(cis: dict, heads: tuple = A2_HEADS) -> str:
     return "FAIL-A2"
 
 
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+# REVISION 1 decision functions.  The DRAFT functions above are untouched (`--rules draft` is the draft, bit for bit); these are the R1 rules, ONE seed / bank per call unless named `_seeds`.
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+def a1_verdict_r1(ci: dict, lo_bar: float = A1_R1_LO_BAR, point_bar: float = A1_R1_POINT_BAR) -> str:
+    """R1 (A1), ONE seed: FAIL-A1 iff D_M's lower CI > lo_bar (significant over-prediction) OR its point estimate > point_bar (material over-prediction).  Both edges are closed on the ADMIT side.
+    Written as ADMIT iff BOTH `lo <= lo_bar` and `point <= point_bar` hold, so a NaN bound compares False and FAILS (fail closed)."""
+    if ci["lo"] <= lo_bar and ci["point"] <= point_bar:
+        return "ADMIT-A1"
+    return "FAIL-A1"
+
+
+def a2_head_ok_r1(ci: dict, bar: float = A2_R1_RATIO_BAR) -> bool:
+    """R1 (A2), one head, ONE seed: the LOWER CI of observed / predicted unsafe mass is <= bar (1.0), i.e. the row does not significantly UNDER-predict risk at the picks.  A ratio below 1 is
+    conservative and is never refused.  A NaN lower bound is not ok."""
+    return bool(ci["lo"] <= bar)
+
+
+def a2_verdict_r1(cis: dict, heads: tuple = A2_HEADS) -> str:
+    """R1 (A2), ONE seed: ADMIT-A2 iff EVERY head (NC, DAC, TTC) is ok; a missing head is not ok."""
+    if len(heads) > 0 and all((h in cis) and a2_head_ok_r1(cis[h]) for h in heads):
+        return "ADMIT-A2"
+    return "FAIL-A2"
+
+
+def any_seed_admits(verdicts: list, admit: str) -> bool:
+    """R1's 'on ANY seed' quantifier: a rule is passed only if EVERY seed's verdict is `admit` (a FAIL on any single seed fails the rule).  An empty list fails closed."""
+    return bool(len(verdicts) > 0 and all(v == admit for v in verdicts))
+
+
+def a1_verdict_r1_seeds(cis: list) -> str:
+    """R1 (A1) over the seeds: FAIL-A1 iff ANY seed fails A1-r1.  `cis` = one D_M CI per seed."""
+    return "ADMIT-A1" if any_seed_admits([a1_verdict_r1(c) for c in cis], "ADMIT-A1") else "FAIL-A1"
+
+
+def a2_verdict_r1_seeds(cis_by_seed: list) -> str:
+    """R1 (A2) over the seeds: FAIL-A2 iff ANY seed fails A2-r1.  `cis_by_seed` = one {head: CI} dict per seed."""
+    return "ADMIT-A2" if any_seed_admits([a2_verdict_r1(c) for c in cis_by_seed], "ADMIT-A2") else "FAIL-A2"
+
+
+def verdict_fns(rules: str) -> tuple:
+    """-> (A1 verdict fn, A2 verdict fn) of the rule set (ONE seed each).  An unknown rule set is refused."""
+    if rules == "draft":
+        return a1_verdict, a2_verdict
+    if rules == "r1":
+        return a1_verdict_r1, a2_verdict_r1
+    raise AdmissionError(f"unknown --rules {rules!r}: choose one of {RULES}")
+
+
+def resolve_slot_source(rules: str, explicit: str | None) -> str:
+    """B's slot source: an explicit choice wins; otherwise `row` under R1 and `label` under the draft."""
+    if explicit is not None:
+        return explicit
+    return B_SLOT_SOURCE_R1 if rules == "r1" else B_SLOT_SOURCE_DRAFT
+
+
+def a1_fails_by_r1(ci: dict, lo_bar: float = A1_R1_LO_BAR, point_bar: float = A1_R1_POINT_BAR) -> list:
+    """Which R1 conjunct(s) refused a seed (reporting only; the decision is `a1_verdict_r1`)."""
+    out = [name for name, hit in (("lower_ci_gt_0", ci["lo"] > lo_bar), ("point_gt_0.05", ci["point"] > point_bar)) if hit]
+    if not out and a1_verdict_r1(ci, lo_bar, point_bar) != "ADMIT-A1":
+        out = ["non_finite_fail_closed"]
+    return out
+
+
 def a1_form(on_scale: bool, mode: str) -> str:
     """Which statistic carries A1: 'mass' (D_M, the draft's literal text) always; 'auto' = the EP-RELIAB rule (ON-SCALE -> Delta, OFF-SCALE -> the rank-free mass form D_M)."""
     if mode == "auto" and on_scale:
@@ -253,6 +331,64 @@ DECISION_MUTATIONS = [
     ('A2_LO, A2_HI = 0.8, 1.25 ', 'A2_LO, A2_HI = 0.7, 1.25 '),
     ('A2_LO, A2_HI = 0.8, 1.25 ', 'A2_LO, A2_HI = 0.8, 1.35 '),
     ('B_UNSAFE_UB = 0.001 ', 'B_UNSAFE_UB = 0.002 '),
+]
+
+# REVISION 1: EVERY conjunct of A1-r1 and A2-r1, the any-seed quantifier, the rules dispatch and the two defaults has a mutation that must break the branch table
+_A1R1 = 'if ci["lo"] <= lo_bar and ci["point"] <= point_bar:\n        return "ADMIT-A1"'
+_A2R1 = 'return bool(ci["lo"] <= bar)'
+_A2V1 = 'if len(heads) > 0 and all((h in cis) and a2_head_ok_r1(cis[h]) for h in heads):'
+_ANYS = 'return bool(len(verdicts) > 0 and all(v == admit for v in verdicts))'
+DECISION_MUTATIONS += [
+    # A1-r1 conjunct 1 (the lower CI) and its edge, operand, direction
+    (_A1R1, 'if ci["lo"] < lo_bar and ci["point"] <= point_bar:\n        return "ADMIT-A1"'),
+    (_A1R1, 'if ci["point"] <= point_bar:\n        return "ADMIT-A1"'),
+    (_A1R1, 'if ci["hi"] <= lo_bar and ci["point"] <= point_bar:\n        return "ADMIT-A1"'),
+    (_A1R1, 'if ci["lo"] >= lo_bar and ci["point"] <= point_bar:\n        return "ADMIT-A1"'),
+    # A1-r1 conjunct 2 (the point estimate) and its edge, operand, direction, sign
+    (_A1R1, 'if ci["lo"] <= lo_bar:\n        return "ADMIT-A1"'),
+    (_A1R1, 'if ci["lo"] <= lo_bar and ci["point"] < point_bar:\n        return "ADMIT-A1"'),
+    (_A1R1, 'if ci["lo"] <= lo_bar and ci["hi"] <= point_bar:\n        return "ADMIT-A1"'),
+    (_A1R1, 'if ci["lo"] <= lo_bar and ci["point"] >= point_bar:\n        return "ADMIT-A1"'),
+    (_A1R1, 'if ci["lo"] <= lo_bar and abs(ci["point"]) <= point_bar:\n        return "ADMIT-A1"'),
+    # A1-r1 connective and NaN handling
+    (_A1R1, 'if ci["lo"] <= lo_bar or ci["point"] <= point_bar:\n        return "ADMIT-A1"'),
+    (_A1R1, 'if not (ci["lo"] > lo_bar or ci["point"] > point_bar):\n        return "ADMIT-A1"'),
+    # A1-r1 constants
+    ('A1_R1_LO_BAR = 0.0 ', 'A1_R1_LO_BAR = 0.01 '),
+    ('A1_R1_POINT_BAR = 0.05 ', 'A1_R1_POINT_BAR = 0.10 '),
+    ('A1_R1_POINT_BAR = 0.05 ', 'A1_R1_POINT_BAR = 0.02 '),
+    # A2-r1 (one head): edge, operand, direction, two-sidedness
+    (_A2R1, 'return bool(ci["lo"] < bar)'),
+    (_A2R1, 'return bool(ci["hi"] <= bar)'),
+    (_A2R1, 'return bool(ci["point"] <= bar)'),
+    (_A2R1, 'return bool(ci["lo"] >= bar)'),
+    (_A2R1, 'return bool(ci["lo"] <= bar and ci["hi"] >= A2_LO)'),
+    (_A2R1, 'return bool(ci["lo"] <= bar or ci["hi"] >= A2_LO)'),
+    ('A2_R1_RATIO_BAR = 1.0 ', 'A2_R1_RATIO_BAR = 1.25 '),
+    ('A2_R1_RATIO_BAR = 1.0 ', 'A2_R1_RATIO_BAR = 0.9 '),
+    # A2-r1 over the heads
+    (_A2V1, 'if len(heads) > 0 and any((h in cis) and a2_head_ok_r1(cis[h]) for h in heads):'),
+    (_A2V1, 'if len(heads) > 0 and all(a2_head_ok_r1(cis[h]) for h in heads if h in cis):'),
+    (_A2V1, 'if len(heads) > 0 and all((h in cis) and a2_head_ok_r1(cis[h]) for h in heads[:2]):'),
+    # the ANY-SEED quantifier (and its empty-list guard) and the per-seed wiring
+    (_ANYS, 'return bool(len(verdicts) > 0 and any(v == admit for v in verdicts))'),
+    (_ANYS, 'return bool(all(v == admit for v in verdicts))'),
+    (_ANYS, 'return bool(len(verdicts) > 1 and all(v == admit for v in verdicts))'),
+    (_ANYS, 'return bool(len(verdicts) > 0 and all(v != admit for v in verdicts))'),
+    ('any_seed_admits([a1_verdict_r1(c) for c in cis], "ADMIT-A1")', 'any_seed_admits([a1_verdict_r1(c) for c in cis[:1]], "ADMIT-A1")'),
+    ('any_seed_admits([a1_verdict_r1(c) for c in cis], "ADMIT-A1")', 'any_seed_admits([a1_verdict_r1(c) for c in cis[-1:]], "ADMIT-A1")'),
+    ('any_seed_admits([a2_verdict_r1(c) for c in cis_by_seed], "ADMIT-A2")', 'any_seed_admits([a2_verdict_r1(c) for c in cis_by_seed[:1]], "ADMIT-A2")'),
+    ('any_seed_admits([a2_verdict_r1(c) for c in cis_by_seed], "ADMIT-A2")', 'any_seed_admits([a2_verdict_r1(c) for c in cis_by_seed[-1:]], "ADMIT-A2")'),
+    # the rules dispatch, the defaults
+    ('    if rules == "r1":\n        return a1_verdict_r1, a2_verdict_r1', '    if rules == "r1":\n        return a1_verdict, a2_verdict'),
+    ('    if rules == "draft":\n        return a1_verdict, a2_verdict', '    if rules == "draft":\n        return a1_verdict_r1, a2_verdict_r1'),
+    ('DEFAULT_RULES = "r1" ', 'DEFAULT_RULES = "draft" '),
+    ('B_SLOT_SOURCE_R1 = "row" ', 'B_SLOT_SOURCE_R1 = "label" '),
+    ('    if explicit is not None:\n        return explicit', '    if explicit is None:\n        return explicit'),
+    ('return B_SLOT_SOURCE_R1 if rules == "r1" else B_SLOT_SOURCE_DRAFT', 'return B_SLOT_SOURCE_DRAFT if rules == "r1" else B_SLOT_SOURCE_R1'),
+    # (anchored on a real newline: a one-line anchor would first match THIS list, which precedes the parser)
+    ('\n    r.add_argument("--rules", choices=RULES, default=DEFAULT_RULES', '\n    r.add_argument("--rules", choices=RULES, default="draft"'),
+    ('\n    r.add_argument("--slot-source", choices=("label", "row"), default=None', '\n    r.add_argument("--slot-source", choices=("label", "row"), default="label"'),
 ]
 
 
@@ -356,6 +492,86 @@ def branch_table_failures(mod) -> list:
     chk("next refuse a2 is the calibration arm", "calibration arm" in mod.next_arm("REFUSE-A2"), True)
     chk("next refuse a1 is not the calibration arm", "calibration arm" in mod.next_arm("REFUSE-A1"), False)
     chk("next void", mod.next_arm("VOID (x)").startswith("no verdict"), True)
+    # --- REVISION 1: A1-r1 (one seed): ADMIT iff lo <= 0 AND point <= +0.05; NaN fails closed
+    chk("r1 a1 zero CI admits", mod.a1_verdict_r1(ci(0.0, 0.0, 0.0)), "ADMIT-A1")
+    chk("r1 a1 lo exactly 0 is closed (admits)", mod.a1_verdict_r1(ci(0.0, 0.03, 0.01)), "ADMIT-A1")
+    chk("r1 a1 lo just above 0 is a significant over-prediction (fails)", mod.a1_verdict_r1(ci(0.001, 0.04, 0.02)), "FAIL-A1")
+    chk("r1 a1 point exactly +0.05 is closed (admits)", mod.a1_verdict_r1(ci(-0.03, 0.12, 0.05)), "ADMIT-A1")
+    chk("r1 a1 point just above +0.05 is material (fails) though lo <= 0", mod.a1_verdict_r1(ci(-0.03, 0.12, 0.0501)), "FAIL-A1")
+    chk("r1 a1 the EP-R1 interval fails", mod.a1_verdict_r1(ci(0.1114, 0.164, 0.1349)), "FAIL-A1")
+    chk("r1 a1 an under-predictor with a large negative point admits (no abs)", mod.a1_verdict_r1(ci(-0.3, -0.1, -0.2)), "ADMIT-A1")
+    chk("r1 a1 lo decides, not hi (wide interval, lo <= 0, point 0)", mod.a1_verdict_r1(ci(-0.5, 0.5, 0.0)), "ADMIT-A1")
+    chk("r1 a1 point decides, not hi (hi above the point bar, point under it)", mod.a1_verdict_r1(ci(-0.1, 0.2, 0.04)), "ADMIT-A1")
+    chk("r1 a1 NaN interval fails closed", mod.a1_verdict_r1(ci(nan, nan, nan)), "FAIL-A1")
+    chk("r1 a1 NaN lower bound only fails closed", mod.a1_verdict_r1({"lo": nan, "hi": 0.1, "point": 0.0}), "FAIL-A1")
+    chk("r1 a1 NaN point only fails closed", mod.a1_verdict_r1({"lo": -0.1, "hi": 0.1, "point": nan}), "FAIL-A1")
+    chk("r1 a1 bars are parameters (point bar)", mod.a1_verdict_r1(ci(-0.1, 0.1, 0.04), 0.0, 0.03), "FAIL-A1")
+    chk("r1 a1 bars are parameters (lo bar)", mod.a1_verdict_r1(ci(0.004, 0.1, 0.02), 0.005, 0.05), "ADMIT-A1")
+    chk("r1 a1 constants are the revision's (0, +0.05)", (mod.A1_R1_LO_BAR, mod.A1_R1_POINT_BAR), (0.0, 0.05))
+    chk("r1 a1 fails_by names the lower-CI conjunct", mod.a1_fails_by_r1(ci(0.01, 0.04, 0.02)), ["lower_ci_gt_0"])
+    chk("r1 a1 fails_by names the point conjunct", mod.a1_fails_by_r1(ci(-0.01, 0.2, 0.06)), ["point_gt_0.05"])
+    chk("r1 a1 fails_by names both", mod.a1_fails_by_r1(ci(0.1, 0.2, 0.15)), ["lower_ci_gt_0", "point_gt_0.05"])
+    chk("r1 a1 fails_by is empty on an admit", mod.a1_fails_by_r1(ci(-0.1, 0.0, -0.05)), [])
+    # --- REVISION 1: A2-r1 (one head): ok iff the LOWER CI <= 1.0; ratios below 1 are never refused
+    chk("r1 a2 head containing 1 is ok", mod.a2_head_ok_r1(ci(0.664, 1.168)), True)
+    chk("r1 a2 lower CI exactly 1.0 is closed (ok)", mod.a2_head_ok_r1(ci(1.0, 1.4)), True)
+    chk("r1 a2 lower CI just above 1.0 is a significant under-prediction of risk (not ok)", mod.a2_head_ok_r1(ci(1.001, 1.4)), False)
+    chk("r1 a2 all above the draft's band is not ok", mod.a2_head_ok_r1(ci(1.3, 1.6)), False)
+    chk("r1 a2 all below 0.8 is conservative (ok)", mod.a2_head_ok_r1(ci(0.4, 0.7)), True)
+    chk("r1 a2 lo decides, not the point or the upper bound", mod.a2_head_ok_r1(ci(0.5, 3.0, 1.2)), True)
+    chk("r1 a2 lower CI under 1 with the upper bound far above is ok", mod.a2_head_ok_r1(ci(0.95, 1.2)), True)
+    chk("r1 a2 NaN is not ok", mod.a2_head_ok_r1(ci(nan, nan)), False)
+    chk("r1 a2 bar is a parameter", (mod.a2_head_ok_r1(ci(1.1, 1.4), 1.2), mod.a2_head_ok_r1(ci(1.1, 1.4), 1.0)), (True, False))
+    chk("r1 a2 bar constant is 1.0", mod.A2_R1_RATIO_BAR, 1.0)
+    chk("r1 a2 verdict all three ok", mod.a2_verdict_r1(good), "ADMIT-A2")
+    chk("r1 a2 NC significantly under-predicted fails", mod.a2_verdict_r1({**good, "NC": ci(1.3, 1.6)}), "FAIL-A2")
+    chk("r1 a2 DAC significantly under-predicted fails", mod.a2_verdict_r1({**good, "DAC": ci(1.3, 1.6)}), "FAIL-A2")
+    chk("r1 a2 TTC significantly under-predicted fails", mod.a2_verdict_r1({**good, "TTC": ci(1.3, 1.6)}), "FAIL-A2")
+    chk("r1 a2 TTC over-conservative admits (the draft refused this)", mod.a2_verdict_r1({**good, "TTC": ci(0.4, 0.7)}), "ADMIT-A2")
+    chk("r1 a2 TTC missing fails", mod.a2_verdict_r1({k: v for k, v in good.items() if k != "TTC"}), "FAIL-A2")
+    chk("r1 a2 NaN head fails", mod.a2_verdict_r1({**good, "DAC": ci(nan, nan)}), "FAIL-A2")
+    chk("r1 a2 empty fails", mod.a2_verdict_r1({}), "FAIL-A2")
+    # --- REVISION 1: the ANY-SEED quantifier
+    chk("any-seed: both admit", mod.any_seed_admits(["ADMIT-A1", "ADMIT-A1"], "ADMIT-A1"), True)
+    chk("any-seed: one fails (first)", mod.any_seed_admits(["FAIL-A1", "ADMIT-A1"], "ADMIT-A1"), False)
+    chk("any-seed: one fails (last)", mod.any_seed_admits(["ADMIT-A1", "FAIL-A1"], "ADMIT-A1"), False)
+    chk("any-seed: both fail", mod.any_seed_admits(["FAIL-A1", "FAIL-A1"], "ADMIT-A1"), False)
+    chk("any-seed: a single admitting seed", mod.any_seed_admits(["ADMIT-A2"], "ADMIT-A2"), True)
+    chk("any-seed: empty fails closed", mod.any_seed_admits([], "ADMIT-A1"), False)
+    ok1, bad1 = ci(-0.05, 0.0, -0.02), ci(0.05, 0.2, 0.12)
+    chk("a1 seeds: both ok", mod.a1_verdict_r1_seeds([ok1, ok1]), "ADMIT-A1")
+    chk("a1 seeds: the second seed fails", mod.a1_verdict_r1_seeds([ok1, bad1]), "FAIL-A1")
+    chk("a1 seeds: the first seed fails", mod.a1_verdict_r1_seeds([bad1, ok1]), "FAIL-A1")
+    chk("a1 seeds: empty fails closed", mod.a1_verdict_r1_seeds([]), "FAIL-A1")
+    bad2 = {**good, "NC": ci(1.3, 1.6)}
+    chk("a2 seeds: both ok", mod.a2_verdict_r1_seeds([good, good]), "ADMIT-A2")
+    chk("a2 seeds: the second seed fails", mod.a2_verdict_r1_seeds([good, bad2]), "FAIL-A2")
+    chk("a2 seeds: the first seed fails", mod.a2_verdict_r1_seeds([bad2, good]), "FAIL-A2")
+    chk("a2 seeds: empty fails closed", mod.a2_verdict_r1_seeds([]), "FAIL-A2")
+    # --- REVISION 1: the rules dispatch and the two defaults
+    d_only = ci(0.005, 0.015, 0.01)                 # draft ADMITs (hi <= 0.02); r1 FAILs (lo > 0)
+    r_only = ci(-0.03, 0.04, 0.0)                   # draft FAILs (hi > 0.02); r1 ADMITs (lo <= 0, point <= 0.05)
+    chk("rules draft: A1 is the draft's", (mod.verdict_fns("draft")[0](d_only), mod.verdict_fns("draft")[0](r_only)), ("ADMIT-A1", "FAIL-A1"))
+    chk("rules r1: A1 is the revision's", (mod.verdict_fns("r1")[0](d_only), mod.verdict_fns("r1")[0](r_only)), ("FAIL-A1", "ADMIT-A1"))
+    chk("rules draft: A2 is the draft's (two-sided)", mod.verdict_fns("draft")[1]({**good, "TTC": ci(0.4, 0.7)}), "FAIL-A2")
+    chk("rules r1: A2 is the revision's (one-sided)", mod.verdict_fns("r1")[1]({**good, "TTC": ci(0.4, 0.7)}), "ADMIT-A2")
+    try:
+        mod.verdict_fns("bogus")
+        raised = False
+    except mod.AdmissionError:
+        raised = True
+    chk("rules: an unknown rule set is refused", raised, True)
+    chk("rules: the default is r1 (library constant)", (mod.DEFAULT_RULES, tuple(mod.RULES)), ("r1", ("draft", "r1")))
+    chk("slot source: r1 default is row", mod.resolve_slot_source("r1", None), "row")
+    chk("slot source: draft default is label", mod.resolve_slot_source("draft", None), "label")
+    chk("slot source: explicit label wins under r1", mod.resolve_slot_source("r1", "label"), "label")
+    chk("slot source: explicit row wins under the draft", mod.resolve_slot_source("draft", "row"), "row")
+    chk("slot source: constants", (mod.B_SLOT_SOURCE_R1, mod.B_SLOT_SOURCE_DRAFT), ("row", "label"))
+    pa = mod.build_parser().parse_args(["run", "--p2-bank", "x", "--cand-bank", "y", "--ranked-logs", "z", "--out", "o"])
+    chk("cli: --rules defaults to r1", pa.rules, "r1")
+    chk("cli: --slot-source defaults to unset (resolved by the rules)", pa.slot_source, None)
+    pb = mod.build_parser().parse_args(["run", "--rules", "draft", "--slot-source", "row", "--p2-bank", "x", "--cand-bank", "y", "--ranked-logs", "z", "--out", "o"])
+    chk("cli: --rules draft and --slot-source row are accepted", (pb.rules, pb.slot_source), ("draft", "row"))
     return bad
 
 
@@ -629,15 +845,16 @@ def _all_zero(ci: dict) -> bool:
     return all(float(ci[k]) == 0.0 for k in ("point", "lo", "hi"))
 
 
-def control_id(z6_p2: np.ndarray, lab: np.ndarray, S) -> dict:
+def control_id(z6_p2: np.ndarray, lab: np.ndarray, S, a1_fn=None) -> dict:
     """C-ID: P2 as the candidate reads EXACTLY zero on every quantity (D_M, Delta, gains, dPDMS, unsafe-rate differences, attribution), n_changed = 0, and A1 ADMITs."""
+    a1_fn = a1_fn or a1_verdict
     an = analyze_candidate(z6_p2, z6_p2, lab, S)
     G, A = an["G"], an["attribution"]
     cis = [G["delta"], G["pred_gain"], G["real_gain"], G["D_M"], an["A3"]["d_pdms_x100"], an["A3"]["d_nc_unsafe_rate"], an["A3"]["d_dac_unsafe_rate"], A["total_x100"]] + list(A["sequential_x100"].values()) \
         + list(A["shapley_x100"].values())
-    ok = an["n_changed"] == 0 and all(_all_zero(c) for c in cis) and float(G["M_e"]["point"]) == float(G["M_p"]["point"]) and a1_verdict(G["D_M"]) == "ADMIT-A1"
+    ok = an["n_changed"] == 0 and all(_all_zero(c) for c in cis) and float(G["M_e"]["point"]) == float(G["M_p"]["point"]) and a1_fn(G["D_M"]) == "ADMIT-A1"
     return {"pass": bool(ok), "n_changed": an["n_changed"], "n_intervals_checked": len(cis), "every_point_lo_hi_equals_0.0": bool(all(_all_zero(c) for c in cis)), "M_e_equals_M_p": bool(G["M_e"]["point"] == G["M_p"]["point"]),
-            "a1_verdict": a1_verdict(G["D_M"]), "p2_own_reliability_at_its_own_picks": {h: an["A2_reliability"][h] for h in A2_HEADS}}
+            "a1_verdict": a1_fn(G["D_M"]), "p2_own_reliability_at_its_own_picks": {h: an["A2_reliability"][h] for h in A2_HEADS}}
 
 
 def control_reach(z6_p2: np.ndarray, z6_c: np.ndarray, lab: np.ndarray, S) -> dict:
@@ -650,11 +867,12 @@ def control_reach(z6_p2: np.ndarray, z6_c: np.ndarray, lab: np.ndarray, S) -> di
     return {"pass": bool(r["pass"]), "status": "RUN", "detail": r}
 
 
-def control_power(z6_p2: np.ndarray, z6_c: np.ndarray, lab: np.ndarray, S, shift: float = PLANT, bar: float = A1_BAR) -> dict:
+def control_power(z6_p2: np.ndarray, z6_c: np.ndarray, lab: np.ndarray, S, shift: float = PLANT, bar: float = A1_BAR, a1_fn=None) -> dict:
     """C-POWER for the admission bar, label-independent (EP-RELIAB Amendment 1): on the NEUTRAL bank (labels = the candidate's sigma at both picks, so D_M = 0 exactly), planting +shift in sigma at the
     candidate's changed picks must FAIL A1, -shift must ADMIT, 0 must ADMIT with an interval exactly [0, 0].  If the candidate changes too few picks for +shift to cross the bar, the read is VOID by resolution:
-    ADMIT would then be the instrument's inability to see a 0.10 over-prediction, not evidence of reliability."""
+    ADMIT would then be the instrument's inability to see a 0.10 over-prediction, not evidence of reliability.  `a1_fn` is the rule's one-seed A1 function (default: the draft's with `bar`)."""
     L, P, F = libs()
+    a1v = a1_fn or (lambda ci: a1_verdict(ci, bar))
     pk_p, pk_c = P.rule_pick(z6_p2), P.rule_pick(z6_c)
     nch = int((pk_p != pk_c).sum())
     if nch == 0:
@@ -663,17 +881,18 @@ def control_power(z6_p2: np.ndarray, z6_c: np.ndarray, lab: np.ndarray, S, shift
     yn = L.neutral_labels(sig, lab[..., EP].astype(np.float64), pk_p, pk_c)
     cs = lambda s: L.core_stats(S, L.pair_terms(L.plant_sigma(sig, pk_p, pk_c, s), yn, pk_p, pk_c))["D_M"]     # noqa: E731
     up, dn, zero = cs(+shift), cs(-shift), cs(0.0)
-    row = {"plus": {"ci": up, "a1": a1_verdict(up, bar)}, "minus": {"ci": dn, "a1": a1_verdict(dn, bar)}, "zero": {"ci": zero, "a1": a1_verdict(zero, bar)}, "n_changed": nch, "shift": shift}
+    row = {"plus": {"ci": up, "a1": a1v(up)}, "minus": {"ci": dn, "a1": a1v(dn)}, "zero": {"ci": zero, "a1": a1v(zero)}, "n_changed": nch, "shift": shift}
     row["zero_is_exactly_0_0"] = bool(float(zero["point"]) == 0.0 and float(zero["lo"]) == 0.0 and float(zero["hi"]) == 0.0)
     row["pass"] = bool(row["plus"]["a1"] == "FAIL-A1" and row["minus"]["a1"] == "ADMIT-A1" and row["zero"]["a1"] == "ADMIT-A1" and row["zero_is_exactly_0_0"])
     row["status"] = "RUN" if row["pass"] else "FAILED (A1 cannot see a planted over-prediction of %.2f at this candidate's n_changed = %d: VOID by resolution)" % (shift, nch)
     return row
 
 
-def run_null(z6_p2: np.ndarray, z6_c: np.ndarray, lab: np.ndarray, S, reps_c: int = NULL_C_REPS, reps_e: int = NULL_E_REPS) -> dict:
+def run_null(z6_p2: np.ndarray, z6_c: np.ndarray, lab: np.ndarray, S, reps_c: int = NULL_C_REPS, reps_e: int = NULL_E_REPS, a1_fn=None) -> dict:
     """C-NULL / E-NULL: picks SHUFFLED WITHIN TOKEN (`epreliab_lib.shuffled_pair`, permutation seeds 20261019 + 7919 * rep); a replicate FIRES iff A1 would FAIL on it.  C-NULL = reps 0..4 (gating, VOID iff >= 2
     fire); E-NULL = the next `reps_e` (descriptive: the empirical false-FAIL rate of A1 on this candidate's pick geometry, the R51 / R52 number the draft asks for)."""
     L, P, F = libs()
+    a1v = a1_fn or a1_verdict
     pk_p, pk_c = P.rule_pick(z6_p2), P.rule_pick(z6_c)
     sig, y = P.sigmoid64(z6_c[..., EP]), lab[..., EP].astype(np.float64)
     if int((pk_p != pk_c).sum()) == 0:
@@ -682,7 +901,7 @@ def run_null(z6_p2: np.ndarray, z6_c: np.ndarray, lab: np.ndarray, S, reps_c: in
     for rep in range(reps_c + reps_e):
         a, b = L.shuffled_pair(pk_p, pk_c, rep)
         cs = L.core_stats(S, L.pair_terms(sig, y, a, b))
-        v = a1_verdict(cs["D_M"])
+        v = a1v(cs["D_M"])
         rows.append({"rep": rep, "role": "C-NULL" if rep < reps_c else "E-NULL", "D_M": cs["D_M"], "a1": v, "fires": null_fires_a1(v)})
     c_rows, e_rows = rows[:reps_c], rows[reps_c:]
     fires_c = [r["fires"] for r in c_rows]
@@ -744,16 +963,19 @@ def check_prereg(path: str, cand_ckpt_sha256: str | None, cand_bank_manifest_sha
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # the run
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-def run_admission(p2: dict, cands: dict, *, a1_form_mode: str = "mass", slot_source: str = "label", null_reps_c: int = NULL_C_REPS, null_reps_e: int = NULL_E_REPS, B: int = BOOT_B,
-                  skip_controls_mutation: bool = False, log=print) -> dict:
-    """The full read: integrity -> controls (C-ID, C-REACH, C-POWER, C-NULL, branch table) -> A1 / A2 / A3 / B per candidate bank -> the final label.  `cands` {id: aligned bank}."""
+def run_admission(p2: dict, cands: dict, *, a1_form_mode: str = "mass", slot_source: str | None = None, null_reps_c: int = NULL_C_REPS, null_reps_e: int = NULL_E_REPS, B: int = BOOT_B,
+                  skip_controls_mutation: bool = False, rules: str = DEFAULT_RULES, log=print) -> dict:
+    """The full read: integrity -> controls (C-ID, C-REACH, C-POWER, C-NULL, branch table) -> A1 / A2 / A3 / B per candidate bank -> the final label.  `cands` {id: aligned bank}.
+    `rules` = 'draft' (the DRAFT rules, reproduced bit for bit) or 'r1' (REVISION 1, the default); `slot_source` None = the rule set's default (r1: 'row', draft: 'label'); an explicit value wins."""
     L, P, F = libs()
+    a1_fn, a2_fn = verdict_fns(rules)
+    slot_source = resolve_slot_source(rules, slot_source)
     S = make_stats(p2["log_idx"], p2["n_logs"], B=B)
     lab = p2["lab"]
     controls: dict = {}
     t0 = datetime.datetime.now()
     log("controls: C-ID (P2 as the candidate)")
-    controls["C-ID"] = control_id(p2["z6"], lab, S)
+    controls["C-ID"] = control_id(p2["z6"], lab, S, a1_fn)
     if not skip_controls_mutation:
         mr = mutation_report()
         controls["C-DECISION"] = {"pass": bool(len(mr["unmutated_failures"]) == 0 and mr["n_caught"] == mr["n_mutations"]), **mr}
@@ -765,21 +987,30 @@ def run_admission(p2: dict, cands: dict, *, a1_form_mode: str = "mass", slot_sou
         scale_on_all.append(bool(L.scale_on(an["scale"]["slope"])))
         per[cid] = an
         controls[f"C-REACH[{cid}]"] = control_reach(p2["z6"], c["z6"], lab, S)
-        controls[f"C-POWER[{cid}]"] = control_power(p2["z6"], c["z6"], lab, S)
+        controls[f"C-POWER[{cid}]"] = control_power(p2["z6"], c["z6"], lab, S, a1_fn=a1_fn)
         log(f"candidate {cid}: C-NULL / E-NULL")
-        nulls[cid] = run_null(p2["z6"], c["z6"], lab, S, null_reps_c, null_reps_e)
+        nulls[cid] = run_null(p2["z6"], c["z6"], lab, S, null_reps_c, null_reps_e, a1_fn=a1_fn)
         controls[f"C-NULL[{cid}]"] = {"pass": bool(not nulls[cid]["void"]), "fires": nulls[cid]["c_null"]["fires"], "of": nulls[cid]["c_null"]["of"], "status": nulls[cid]["status"]}
     on_scale = bool(len(scale_on_all) > 0 and all(scale_on_all))
     form = a1_form(on_scale, a1_form_mode)
     for cid, an in per.items():
         ci1 = a1_statistic(an, form)
-        v1 = a1_verdict(ci1)
-        v2 = a2_verdict(an["A2_reliability"])
-        an["A1"] = {"form": form, "statistic": ci1, "bar": A1_BAR, "verdict": v1, "other_form_statistic": a1_statistic(an, "DELTA" if form == "MASS" else "MASS")}
-        an["A2"] = {"verdict": v2, "band": [A2_LO, A2_HI], "heads": {h: {"ci": an["A2_reliability"][h], "ok": a2_head_ok(an["A2_reliability"][h]),
-                                                                           "side": ("ABOVE (observed unsafe mass exceeds predicted: an over-confident row)" if an["A2_reliability"][h]["lo"] > A2_HI else
-                                                                                   "BELOW (predicted unsafe mass exceeds observed: an over-conservative row)" if an["A2_reliability"][h]["hi"] < A2_LO else "overlaps")}
-                                                                       for h in A2_HEADS}}
+        v1 = a1_fn(ci1)
+        v2 = a2_fn(an["A2_reliability"])
+        other = a1_statistic(an, "DELTA" if form == "MASS" else "MASS")
+        if rules == "draft":
+            an["A1"] = {"form": form, "statistic": ci1, "bar": A1_BAR, "verdict": v1, "other_form_statistic": other}
+            an["A2"] = {"verdict": v2, "band": [A2_LO, A2_HI], "heads": {h: {"ci": an["A2_reliability"][h], "ok": a2_head_ok(an["A2_reliability"][h]),
+                                                                               "side": ("ABOVE (observed unsafe mass exceeds predicted: an over-confident row)" if an["A2_reliability"][h]["lo"] > A2_HI else
+                                                                                       "BELOW (predicted unsafe mass exceeds observed: an over-conservative row)" if an["A2_reliability"][h]["hi"] < A2_LO else "overlaps")}
+                                                                           for h in A2_HEADS}}
+        else:
+            an["A1"] = {"rules": rules, "form": form, "statistic": ci1, "lo_bar": A1_R1_LO_BAR, "point_bar": A1_R1_POINT_BAR, "verdict": v1, "fails_by": (a1_fails_by_r1(ci1) if v1 != "ADMIT-A1" else []),
+                        "other_form_statistic": other}
+            an["A2"] = {"rules": rules, "verdict": v2, "ratio_bar": A2_R1_RATIO_BAR, "heads": {h: {"ci": an["A2_reliability"][h], "ok": a2_head_ok_r1(an["A2_reliability"][h]),
+                                                                                                "side": ("ABOVE 1.0 (observed unsafe mass significantly exceeds predicted: the row UNDER-predicts risk at the picks)" if an["A2_reliability"][h]["lo"] > A2_R1_RATIO_BAR else
+                                                                                                        "BELOW or overlapping 1.0 (consistent or conservative: never refused)")}
+                                                                                            for h in A2_HEADS}}
         a1_list.append(v1)
         a2_list.append(v2)
         log(f"candidate {cid}: B (pessimistic EP)")
@@ -797,7 +1028,7 @@ def run_admission(p2: dict, cands: dict, *, a1_form_mode: str = "mass", slot_sou
     for cid, an in per.items():
         if an["n_changed"] == 0:
             warnings.append(f"{cid}: its picks are IDENTICAL to P2's on every set; A1 / A2 are vacuous and there is no navtest gain to look for")
-        if an["A1_resolution"]["half_width_exceeds_bar"]:
+        if rules == "draft" and an["A1_resolution"]["half_width_exceeds_bar"]:
             warnings.append(f"{cid}: the D_M half-width {an['A1_resolution']['D_M_half_width']:.4f} exceeds the A1 bar {A1_BAR}: the bar sits inside the interval noise, so a calibrated candidate can FAIL A1 by chance (see E-NULL)")
         if an["frac_changed"] < 0.05 and an["n_changed"] > 0:
             warnings.append(f"{cid}: only {an['frac_changed']:.3%} of the picks differ from P2's; D_M is diluted by the unchanged sets (see D_M_changed_only and C-POWER)")
@@ -805,7 +1036,7 @@ def run_admission(p2: dict, cands: dict, *, a1_form_mode: str = "mass", slot_sou
             warnings.append(f"{cid}: a fitted lam is outside [0, 1]; the 'pessimistic' rule is not a shrinkage on this bank")
     if form == "MASS" and not on_scale:
         warnings.append("the EP row is OFF-SCALE (slope CI outside [0.9, 1.1]): the rank-free mass form carries A1, as EP-RELIAB's rule would for this row too")
-    return {"schema": SCHEMA, "warnings": warnings, "controls": controls, "controls_ok": controls_ok, "per_candidate": per, "a1_form_mode": a1_form_mode, "a1_form_used": form, "scale_on_all_banks": on_scale,
+    return {"schema": SCHEMA, "rules": rules, "warnings": warnings, "controls": controls, "controls_ok": controls_ok, "per_candidate": per, "a1_form_mode": a1_form_mode, "a1_form_used": form, "scale_on_all_banks": on_scale,
             "verdict": {"A1": dict(zip(cands, a1_list)), "A2": dict(zip(cands, a2_list)), "label": label, "next_arm": next_arm(label)},
             "B": {"recovers_all_banks": bool(b_recovers(b_lo, b_nc, b_dac)), "slot_source": slot_source, "per_bank_dpdms_x100_lo": b_lo, "per_bank_nc_unsafe_rate_diff_hi": b_nc, "per_bank_dac_unsafe_rate_diff_hi": b_dac},
             "null": {cid: {k: v for k, v in n.items()} for cid, n in nulls.items()}, "n_logs": p2["n_logs"], "n_sets": p2["n_sets"], "bootstrap": {"B": B, "seed": BOOT_SEED, "unit": "log", "percentiles": [2.5, 97.5]}}
@@ -839,7 +1070,7 @@ def cmd_run(a) -> int:
         seal = check_prereg(a.prereg, a.candidate_ckpt_sha256, [c["manifest_sha256"] for c in cands.values()])
     elif not a.allow_unsealed:
         raise AdmissionError("no --prereg: a verdict needs the sealed EP-ADMISSION registration naming this candidate (use --allow-unsealed for a control / smoke run with NO authority)")
-    res = run_admission(p2, cands, a1_form_mode=a.a1_form, slot_source=a.slot_source, null_reps_e=a.enull_reps)
+    res = run_admission(p2, cands, a1_form_mode=a.a1_form, slot_source=a.slot_source, null_reps_e=a.enull_reps, rules=a.rules)
     res.update({"created": datetime.datetime.now().astimezone().isoformat(timespec="seconds"), "authority": ("SEALED REGISTRATION" if seal else "NONE (unsealed run: control / smoke only)"), "seal": seal,
                 "inputs": {"p2_bank": a.p2_bank, "p2_unit_sha256": p2["unit_sha256"], "p2_manifest_sha256": p2["manifest_sha256"], "p2_ckpt": p2["ckpt"], "ranked_logs_sha256": rsha,
                            "candidates": {cid: {"bank": cands[cid]["bank_dir"], "ckpt": cands[cid]["ckpt"], "manifest_sha256": cands[cid]["manifest_sha256"], "unit_sha256": cands[cid]["unit_sha256"],
@@ -848,7 +1079,9 @@ def cmd_run(a) -> int:
                 "limits": ["SELECTION tier, SEEN scenes, label-lookup PDMS: T0-class, NOT a capability claim.",
                            "The interval answers 'another draw of LOGS' only (H-ESTIM-SEED-1): not another training run of the candidate, not another inference run.",
                            "P2 is in-sample on S0 (it biases the realised gain DOWN, toward OVER); whether the candidate is in-sample on S0 is a fact of ITS training set and must be stated in the registration.",
-                           "A PASS is a NECESSARY condition for a navtest look, not evidence of a navtest gain."]})
+                           "A PASS is a NECESSARY condition for a navtest look, not evidence of a navtest gain."] + ([] if a.rules == "draft" else [
+                    "RULES R1 (DRAFT_PREREG_EP_ADMISSION.md REVISION 1): A1 FAILs on ANY seed if D_M's lower CI > 0 or its point > +0.05; A2 FAILs on ANY seed if, for NC / DAC / TTC, the lower CI of observed / predicted unsafe mass > 1.0. "
+                    "Their false-refusal rate and power are SIMULATED (not measured on a candidate): raw/2026-10-19-ep-admission-r1/RESULT.md."])})
     out = a.out
     os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
     with open(out, "w", encoding="utf-8", newline="\n") as f:
@@ -863,6 +1096,7 @@ def cmd_selftest_real(a) -> int:
     (to 1e-9 against the landed result.json) and the gate must read A1 = FAIL (the known-bad candidate).  P2 as the candidate must read exactly 0 (C-ID).  Also proves the loader: the assembled P2 arrays equal
     the pickrule `arrays.npz` bit for bit."""
     L, P, F = libs()
+    a1_fn, a2_fn = verdict_fns(a.rules)
     avail = wait_for_ram()
     rows, rsha = read_ranked(a.ranked_logs, expected_sha256=RANKED_LOGS_SHA256)
     p2 = load_bank_units(a.p2_bank, rows)
@@ -872,7 +1106,7 @@ def cmd_selftest_real(a) -> int:
     loader["pass"] = all(v for k, v in loader.items() if isinstance(v, bool))
     landed = json.load(open(a.landed_result, "r", encoding="utf-8"))
     S = make_stats(p2["log_idx"], p2["n_logs"])
-    res = {"schema": SCHEMA + "-selftest-real", "loader_equals_pickrule_arrays": loader, "composites": {}}
+    res = {"schema": SCHEMA + "-selftest-real", "rules": a.rules, "loader_equals_pickrule_arrays": loader, "composites": {}}
     ok = loader["pass"]
     for s in (0, 1):
         zc = p2["z6"].copy()
@@ -892,19 +1126,19 @@ def cmd_selftest_real(a) -> int:
             cmp(f"reliability_{h}_deficit", an["A2_reliability"][h], ref["reliability"][h]["composite_picks"]["deficit_form_sum_1my_over_sum_1msigma"])
         cmp("attribution_total_x100", an["attribution"]["total_x100"], ref["attribution"]["total_x100"])
         cmpd["n_changed"] = {"mine": an["n_changed"], "landed": ref["n_changed"], "pass": bool(an["n_changed"] == ref["n_changed"])}
-        v1 = a1_verdict(an["G"]["D_M"])
-        v2 = a2_verdict(an["A2_reliability"])
+        v1 = a1_fn(an["G"]["D_M"])
+        v2 = a2_fn(an["A2_reliability"])
         cmpd["gate_reads_the_known_bad_candidate_as_FAIL-A1"] = {"a1": v1, "pass": bool(v1 == "FAIL-A1")}
         ok = ok and all(v["pass"] for v in cmpd.values())
         res["composites"][f"EP-R1_c*_OOF_s{s}"] = {"vs_landed": cmpd, "A1": {"verdict": v1, "D_M": an["G"]["D_M"]}, "A2": {"verdict": v2, "heads": an["A2_reliability"]}, "A3": an["A3"],
                                                     "A1_resolution": an["A1_resolution"], "n_changed": an["n_changed"], "frac_changed": an["frac_changed"]}
-    res["C-ID"] = control_id(p2["z6"], p2["lab"], S)
+    res["C-ID"] = control_id(p2["z6"], p2["lab"], S, a1_fn)
     ok = ok and res["C-ID"]["pass"]
     # the null on the known-bad candidate's pick geometry: how often would A1 FALSELY refuse a candidate whose picks carry no information?  (the R51 / R52 number the draft asks for)
     zc0 = p2["z6"].copy()
     zc0[..., EP] = z["ep_OOF_s0"]
-    res["null_on_EP-R1_geometry_seed0"] = run_null(p2["z6"], zc0, p2["lab"], S)
-    res["power_on_EP-R1_geometry_seed0"] = control_power(p2["z6"], zc0, p2["lab"], S)
+    res["null_on_EP-R1_geometry_seed0"] = run_null(p2["z6"], zc0, p2["lab"], S, a1_fn=a1_fn)
+    res["power_on_EP-R1_geometry_seed0"] = control_power(p2["z6"], zc0, p2["lab"], S, a1_fn=a1_fn)
     res["reach_on_EP-R1_geometry_seed0"] = control_reach(p2["z6"], zc0, p2["lab"], S)
     ok = ok and res["power_on_EP-R1_geometry_seed0"]["pass"] and res["reach_on_EP-R1_geometry_seed0"]["pass"]
     # SMOKE of (B) on the known candidate: the identity lam = 1 reproduces the candidate's own picks exactly; the fitted lam per fold is reported (NO authority; EP-R1 is not the admission candidate)
@@ -943,7 +1177,7 @@ def cmd_branch_table(a) -> int:
     return 0 if (not mr["unmutated_failures"] and mr["n_caught"] == mr["n_mutations"]) else 3
 
 
-def main(argv=None) -> int:
+def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
     r = sub.add_parser("run", help="admission read of a candidate bank (or several seeds) against P2")
@@ -956,7 +1190,8 @@ def main(argv=None) -> int:
     r.add_argument("--candidate-ckpt-sha256", default=None)
     r.add_argument("--allow-unsealed", action="store_true", help="run without a registration: authority NONE")
     r.add_argument("--a1-form", choices=("mass", "auto"), default="mass", help="mass = the draft's literal D_M; auto = EP-RELIAB's rule (ON-SCALE -> Delta, else D_M). The Master Mind seals this.")
-    r.add_argument("--slot-source", choices=("label", "row"), default="label")
+    r.add_argument("--rules", choices=RULES, default=DEFAULT_RULES, help="draft = DRAFT_PREREG_EP_ADMISSION.md as drafted (reproduced bit for bit); r1 = its REVISION 1 (the default)")
+    r.add_argument("--slot-source", choices=("label", "row"), default=None, help="B's slot source; unset = the rule set's default (r1: row, draft: label)")
     r.add_argument("--enull-reps", type=int, default=NULL_E_REPS)
     r.add_argument("--out", required=True)
     r.set_defaults(fn=cmd_run)
@@ -970,11 +1205,16 @@ def main(argv=None) -> int:
     t.add_argument("--ranked-logs", required=True)
     t.add_argument("--arrays-npz", required=True)
     t.add_argument("--landed-result", required=True)
+    t.add_argument("--rules", choices=RULES, default=DEFAULT_RULES)
     t.add_argument("--out", required=True)
     t.set_defaults(fn=cmd_selftest_real)
     b = sub.add_parser("branch-table", help="the decision functions' branch table and RED-mutation report")
     b.set_defaults(fn=cmd_branch_table)
-    a = ap.parse_args(argv)
+    return ap
+
+
+def main(argv=None) -> int:
+    a = build_parser().parse_args(argv)
     return a.fn(a)
 
 

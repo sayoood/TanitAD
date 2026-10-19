@@ -1,0 +1,44 @@
+START 12:59:59,77 
+============================= test session starts =============================
+platform win32 -- Python 3.11.13, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\Admin\venvs\driverl-eval\Scripts\python.exe
+rootdir: D:\eu1\base_ub
+plugins: hydra-core-1.3.2
+collecting ... collected 17 items
+
+test_epr1ub_gate.py::TestDVB::test_dvb_every_lever_changed_fails PASSED  [  5%]
+test_epr1ub_gate.py::TestDVB::test_dvb_flag_hygiene PASSED               [ 11%]
+test_epr1ub_gate.py::TestDVB::test_dvb_mutated_module_fails PASSED       [ 17%]
+test_epr1ub_gate.py::TestDVB::test_dvb_non_strict_allows_synthetic_paths_only_with_an_override PASSED [ 23%]
+test_epr1ub_gate.py::TestDVB::test_dvb_registered_argv_passes_strict PASSED [ 29%]
+test_epr1ub_gate.py::TestCommit::test_commit_passes_on_the_deployed_code_and_reports_staged_files_as_not_landed PASSED [ 35%]
+test_epr1ub_gate.py::TestCommit::test_commit_regressions PASSED          [ 41%]
+test_epr1ub_gate.py::TestLive::test_live_green_on_a_synthetic_bank PASSED [ 47%]
+test_epr1ub_gate.py::TestLive::test_live_regressions_each_fail_the_gate PASSED [ 52%]
+test_epr1ub_gate.py::TestSuite::test_registered_floors PASSED            [ 58%]
+test_epr1ub_gate.py::TestSuite::test_suite_pass_and_the_three_regressions PASSED [ 64%]
+test_epr1ub_gate.py::TestToken::test_a_failing_check_mints_no_token_and_demotes_a_stale_pass PASSED [ 70%]
+test_epr1ub_gate.py::TestToken::test_cli_refuses_a_missing_commit_and_verify_without_a_token_is_refused PASSED [ 76%]
+test_epr1ub_gate.py::TestToken::test_the_landed_parent_gate_and_epr1_are_the_pinned_bytes PASSED [ 82%]
+test_epr1ub_gate.py::TestToken::test_token_refusals PASSED               [ 88%]
+test_epr1ub_gate.py::TestToken::test_token_round_trip_and_the_binding PASSED [ 94%]
+test_epr1ub_gate.py::TestCommit::test_a_tampered_epr1_is_refused_when_the_ub_module_is_loaded FAILED [100%]
+
+================================== FAILURES ===================================
+___ TestCommit.test_a_tampered_epr1_is_refused_when_the_ub_module_is_loaded ___
+
+self = <test_epr1ub_gate.TestCommit testMethod=test_a_tampered_epr1_is_refused_when_the_ub_module_is_loaded>
+
+    def test_a_tampered_epr1_is_refused_when_the_ub_module_is_loaded(self):
+        tmp = tempfile.mkdtemp(prefix="epr1ub_tamper2_")
+        try:
+            shutil.copy(os.path.join(HERE, "epr1ub.py"), tmp)
+            shutil.copy(os.path.join(HERE, "epr1_gate.py"), tmp)
+            T._wb(os.path.join(tmp, "epr1.py"), T._rb(os.path.join(HERE, "epr1.py")) + b"\n#x\n")
+>           with self.assertRaises(Exception):
+E           AssertionError: Exception not raised
+
+test_epr1ub_gate.py:143: AssertionError
+=========================== short test summary info ===========================
+FAILED test_epr1ub_gate.py::TestCommit::test_a_tampered_epr1_is_refused_when_the_ub_module_is_loaded
+=================== 1 failed, 16 passed in 63.45s (0:01:03) ===================
+EXIT=1 13:01:07,01 
