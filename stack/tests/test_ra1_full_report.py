@@ -12,7 +12,11 @@ What is pinned, and the control that must go red for each:
   * final mode copies S* / the outcome from the verdict's JSON and REFUSES a full1.json whose seed means are not the runs' (it would be
     reporting files the verdict did not read), and REFUSES a gate delta the A1x / A1 runs do not reproduce;
   * the R0 -> A1x -> A1 decomposition at S*_A1 is the paired mean difference of each pair; --notes lands under its own labelled
-    heading, before the generated tables.
+    heading, before the generated tables;
+  * PAIRED FAMILY COLUMNS: when the runs' eval.json carries `families.paired_arm_minus_p10` the families table gains an
+    "arm - P10 (PAIRED)" column per seed (the evaluator's own delta [lo, hi] and **sep**, curvature at 6 dp, - for an unpaired component,
+    n/a for a run that predates the block) on EVERY row, the note that no family difference is claimed is replaced, and a failed
+    P10 - P10 control is flagged; when the block is absent the note and the 5-column table are today's, byte for byte.
 """
 from __future__ import annotations
 
@@ -51,7 +55,16 @@ def _fams(v):
     return blk
 
 
-def _run(d, arm, S, s, ade6, hade6, p10=None, hp10=None, kin="yaw", n_train=4572, holdout=HOLDOUT_SHA, t_shift=0):
+def _paired(delta, ok=True):
+    """A `families.paired_arm_minus_p10` block as the evaluator writes it (only the fields the report reads)."""
+    c = lambda d: {"delta": d, "lo": d - 0.05, "hi": d + 0.05, "separated": True, "arm": 1.0, "p10": 1.0 - d}   # noqa: E731
+    return {"status": "OK", "longitudinal": {"speed_mae_mps": c(delta), "along_mae_m": {"status": "UNAVAILABLE"}},
+            "lateral": {"yaw_rate_mae_degps": c(delta - 0.1111),
+                        "curvature_mae_1pm": {"delta": -0.000321, "lo": -0.00045, "hi": -0.00019, "separated": True}},
+            "controls": {"p10_minus_p10_ok": ok}}
+
+
+def _run(d, arm, S, s, ade6, hade6, p10=None, hp10=None, kin="yaw", n_train=4572, holdout=HOLDOUT_SHA, t_shift=0, paired=None):
     rng = np.random.default_rng(100 + s)
     eid = np.repeat(np.arange(20), 10)
     t = np.tile(np.arange(10), 20) + t_shift
@@ -67,7 +80,8 @@ def _run(d, arm, S, s, ade6, hade6, p10=None, hp10=None, kin="yaw", n_train=4572
               holdout={"clips_sha256": holdout, "train_sha256": "t" * 64, "ade6_arm": {"mean": float(hade6.mean())},
                        "ade6_p10": {"mean": float(hp10.mean())}, "ade6_arm_minus_p10": dl},
               K={"ade6_arm": {"mean": float(ade6.mean())}, "ade6_arm_minus_p10": dl},
-              families={"arm": _fams(1.0), "p10": _fams(2.0), "lead_braking_stratum_and_distance_keeping": "NOT COMPUTABLE"},
+              families={"arm": _fams(1.0), "p10": _fams(2.0), "lead_braking_stratum_and_distance_keeping": "NOT COMPUTABLE",
+                        **({"paired_arm_minus_p10": paired} if paired is not None else {})},
               strata={"turn": {"n_windows": 40, "n_episodes": 4, "ade6_arm_minus_p10": dl}, "stop": {"status": "n too small"},
                       "brake": {"status": "n too small"}},
               COST={"L2_minus_L1_native": dl} if arm == "A1" else {"status": "n/a"})
@@ -112,6 +126,50 @@ def test_interim_renders_all_four_families_and_reads_nothing(tmp_path):
                  "no arm − P10 family difference is claimed"):
         assert must in md, must
     assert js["interim"] is True and js["S_star"] == {}
+    # no paired block anywhere -> today's 5-column table, no PAIRED column, and no new JSON keys
+    assert "| family | metric | A1 s0 | A1 s1 | P10-yaw-4512 |\n|---|---|---|---|---|\n" in md
+    assert "(PAIRED) |" not in md.replace("(PAIRED; n ", "") and "family_paired" not in js
+
+
+def test_paired_family_columns_print_when_the_eval_carries_the_paired_block(tmp_path):
+    full, mini = _world(tmp_path, every=dict(paired=_paired(-0.1234)))
+    rc, md, js = _main(full, mini, "--interim")
+    assert rc == 0
+    assert "A1 s0 − P10 (PAIRED) | A1 s1 − P10 (PAIRED) |" in md and "R0 s0 − P10 (PAIRED)" in md
+    assert "no arm − P10 family difference is claimed" not in md and "families.paired_arm_minus_p10" in md
+    assert "TACTICAL decision agreement is not paired" in md, "what is still unpaired must stay visible"
+    # the cells: the evaluator's own delta [lo, hi] and **sep**; curvature in 6 dp; an unpaired component is —, an UNAVAILABLE one says so
+    assert "| LONGITUDINAL | speed_mae_mps |" in md
+    row = next(l for l in md.splitlines() if l.startswith("| LONGITUDINAL | speed_mae_mps |"))
+    assert row.endswith("| -0.1234 [-0.1734, -0.0734] **sep** | -0.1234 [-0.1734, -0.0734] **sep** |"), row
+    assert next(l for l in md.splitlines() if l.startswith("| LATERAL | yaw_rate_mae_degps |")).count("-0.2345 [-0.2845, -0.1845] **sep**") == 2
+    assert next(l for l in md.splitlines() if l.startswith("| LATERAL | curvature_mae_1pm |")).count("-0.000321 [-0.000450, -0.000190] **sep**") == 2
+    assert next(l for l in md.splitlines() if l.startswith("| LONGITUDINAL | speed_bias_mps |")).endswith("| — | — |")
+    assert next(l for l in md.splitlines() if l.startswith("| LONGITUDINAL | along_mae_m |")).endswith("| UNAVAILABLE | UNAVAILABLE |")
+    assert next(l for l in md.splitlines() if l.startswith("| LONGITUDINAL | accel_mae_mps2 |")).endswith("| — | — |")
+    # every table row has the same number of cells (the two new columns on EVERY row, not only the paired ones)
+    tbl = [l for l in md.split("### A1 @ 1000")[1].split("\n\n")[1].splitlines() if l.startswith("|")]
+    assert len({l.count("|") for l in tbl}) == 1 and tbl[0].count("|") == 8, tbl[:2]
+    # the machine-readable copy
+    assert js["family_paired"]["A1@1000/s0"]["longitudinal"]["speed_mae_mps"]["delta"] == -0.1234
+    assert "along_mae_m" not in js["family_paired"]["A1@1000/s0"]["longitudinal"]            # UNAVAILABLE components carry no delta
+    assert js["family_paired_control_failed"] == []
+
+
+def test_a_run_without_the_paired_block_shows_na_beside_one_that_has_it(tmp_path):
+    full, mini = _world(tmp_path, every=dict(paired=_paired(-0.1234)), paired=None)      # R0 seed 1 @ 1000 predates the block
+    rc, md, js = _main(full, mini, "--interim")
+    assert rc == 0
+    row = next(l for l in md.split("### R0 @ 1000")[1].splitlines() if l.startswith("| LONGITUDINAL | speed_mae_mps |"))
+    assert row.endswith("| -0.1234 [-0.1734, -0.0734] **sep** | n/a |"), row
+    assert "R0@1000/s1" not in js["family_paired"] and "R0@1000/s0" in js["family_paired"]
+
+
+def test_a_failed_paired_control_is_flagged_not_silently_rendered(tmp_path):
+    full, mini = _world(tmp_path, every=dict(paired=_paired(-0.1234)), paired=_paired(-0.1234, ok=False))
+    rc, md, js = _main(full, mini, "--interim")
+    assert rc == 0
+    assert "paired-family control FAILED for R0 @ 1000 seed 1" in md and js["family_paired_control_failed"] == ["R0@1000/s1"]
 
 
 def test_data_scale_row_is_the_paired_mean_difference_and_2F_gates_the_flag(tmp_path):

@@ -261,3 +261,15 @@ Read in this order. A later reading is not made if an earlier one stops.
   * As first landed (`dfe2959`), the chain started no telemetry. β's chain STOPS telemetry when it ends, so the guard would have read a stale file and been blind.
   * The chain now does exactly what the v8F-mini and β chains do: restart telemetry, **STOP if no fresh sample arrives**, start `ra1runs_guard.sh` itself (`RA1_CHAIN_OUT` = its log), and stop telemetry at the end.
 * No reading, bar or arm changes.
+
+### Amendment 1, the eval its runs are scored by (2026-10-19, still before ANY of its runs)
+
+* **The PI's go (verbatim):** *"Yes, land the paired four-family change from branch claude/intelligent-hofstadter-222270 via the lander after its tests pass on the tip, so Amendment 1's new runs carry paired family deltas."*
+* `stack/scripts/ra1_hjepa_eval.py` now also publishes `families.paired_arm_minus_p10`:
+  * the seven LONGITUDINAL / LATERAL MAE components, arm − P10;
+  * computed through `ci.paired_episode_cluster_bootstrap` on the same windows;
+  * with a P10 − P10 control that must read exactly 0 [0, 0];
+  * and the per-window components saved into `perwindow.npz` (`fam_arm_*` / `fam_p10_*`).
+* **It is purely additive** (178 lines added, 0 changed). ADE, holdout, K, SENS and COST are computed by unchanged code. So Amendment 1's runs, which the chain scores at the tip, stay comparable with phase 1/2's runs on every reading.
+* Phase 1/2's runs have no paired family block, because they were scored before it existed. The paired deltas are **reported, not read**, like the families themselves.
+* TACTICAL decision agreement is still unpaired (a stated work item in the block).

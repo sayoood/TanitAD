@@ -123,10 +123,27 @@ def paired_runs(a, b, which, key_a, key_b, pairfn):
             if k in r}
 
 
-def fmt_d(d):
+def fmt_d(d, nd=4):
     if not isinstance(d, dict) or "delta" not in d:
         return "n/a"
-    return f"{d['delta']:+.4f} [{d['lo']:+.4f}, {d['hi']:+.4f}]{' **sep**' if d.get('separated') else ''}"
+    return f"{d['delta']:+.{nd}f} [{d['lo']:+.{nd}f}, {d['hi']:+.{nd}f}]{' **sep**' if d.get('separated') else ''}"
+
+
+def paired_block(ev):
+    """``families.paired_arm_minus_p10`` of one run's eval.json, or None when the run predates it / it errored."""
+    p = (ev.get("families") or {}).get("paired_arm_minus_p10")
+    return p if isinstance(p, dict) and p.get("status") == "OK" else None
+
+
+def paired_cell(ev, family, comp):
+    """One arm − P10 PAIRED cell: n/a = the run carries no paired block; — = this component is not paired by design."""
+    pb = paired_block(ev)
+    if pb is None:
+        return "n/a"
+    c = (pb.get(family) or {}).get(comp)
+    if c is None:
+        return "—"
+    return fmt_d(c, 6 if comp == "curvature_mae_1pm" else 4) if "delta" in c else str(c.get("status", "n/a"))
 
 
 def fmt_ci(c, nd=4):
@@ -344,9 +361,23 @@ def render(a, pairfn) -> tuple[str, dict]:
         both = [S for S in sorted(grid) if ("R0", S) in rows and ("A1", S) in rows]
         targets = [("A1", both[-1]), ("R0", both[-1])] if both else []
     w("## The four metric families (reported, NOT read) — T1-class open loop, eval-141\n")
-    w("Arm columns and the P10-yaw-4512 column carry **single-arm** episode-cluster intervals: the eval publishes no paired per-family "
-      "delta (`perwindow.npz` holds ADE only), so **no arm − P10 family difference is claimed here** — pairing them is a WORK ITEM "
-      "(the eval must save per-window family components). The strata rows ARE paired.\n")
+    # the PAIRED columns appear iff some rendered run's eval.json carries `families.paired_arm_minus_p10`; otherwise today's note and
+    # today's 5-column table are emitted unchanged
+    any_paired = any(paired_block(((grid.get(S) or {}).get(arm) or {})[s]["ev"]) is not None
+                     for arm, S in targets for s in SEEDS if s in ((grid.get(S) or {}).get(arm) or {}))
+    if any_paired:
+        out["family_paired"], out["family_paired_control_failed"] = {}, []
+    if not any_paired:
+        w("Arm columns and the P10-yaw-4512 column carry **single-arm** episode-cluster intervals: the eval publishes no paired per-family "
+          "delta (`perwindow.npz` holds ADE only), so **no arm − P10 family difference is claimed here** — pairing them is a WORK ITEM "
+          "(the eval must save per-window family components). The strata rows ARE paired.\n")
+    else:
+        w("Arm columns and the P10-yaw-4512 column carry **single-arm** episode-cluster intervals. The **arm − P10 (PAIRED)** columns are "
+          "each run's `families.paired_arm_minus_p10`: arm − P10 on the SAME windows through `taniteval.ci.paired_episode_cluster_bootstrap` "
+          "(one shared episode resampling per draw — never two single-arm intervals combined in quadrature), and a negative Δ = the arm is "
+          "closer to the human path than the learned kinematic floor. Only the components the eval pairs have a value (— = not paired: "
+          "bias / target-speed bands, ego progress and distance keeping have no paired value; **TACTICAL decision agreement is not paired "
+          "yet**, a WORK ITEM). **n/a** = that run's eval predates the paired block. The strata rows ARE paired.\n")
     for arm, S in targets:
         seeds = (grid.get(S) or {}).get(arm, {})
         if not all(s in seeds for s in SEEDS):
@@ -357,26 +388,41 @@ def render(a, pairfn) -> tuple[str, dict]:
             w(f"### {arm} @ {S} — the families block errored: {f0.get('error') or f1f.get('error')} (a WORK ITEM, not a pass)\n")
             continue
         w(f"### {arm} @ {S} steps{' (the K arm)' if arm == k_arm and star else ''}\n")
-        w(f"| family | metric | {arm} s0 | {arm} s1 | P10-yaw-4512 |\n|---|---|---|---|---|")
+        tail = " — | — |" if any_paired else ""                                   # the two PAIRED columns of a row with no paired value
+        w(f"| family | metric | {arm} s0 | {arm} s1 | P10-yaw-4512 |"
+          + (f" {arm} s0 − P10 (PAIRED) | {arm} s1 − P10 (PAIRED) |" if any_paired else "")
+          + "\n|---|---|---|---|---|" + ("---|---|" if any_paired else ""))
         for fam, comps in (("longitudinal", LON), ("lateral", LAT)):
             for c in comps:
-                w(f"| {fam.upper()} | {c} | {fam_cell(f0['arm'], fam, c)} | {fam_cell(f1f['arm'], fam, c)} | {fam_cell(f0['p10'], fam, c)} |")
+                pc = f" {paired_cell(seeds[0]['ev'], fam, c)} | {paired_cell(seeds[1]['ev'], fam, c)} |" if any_paired else ""
+                w(f"| {fam.upper()} | {c} | {fam_cell(f0['arm'], fam, c)} | {fam_cell(f1f['arm'], fam, c)} | {fam_cell(f0['p10'], fam, c)} |{pc}")
         for c in TAC:
             for m in ("accuracy", "kappa"):
                 cell = lambda f: fmt_ci(((f.get("tactical") or {}).get(c) or {}).get("ci", {}).get(m))
-                w(f"| TACTICAL | {c}.{m} | {cell(f0['arm'])} | {cell(f1f['arm'])} | {cell(f0['p10'])} |")
+                w(f"| TACTICAL | {c}.{m} | {cell(f0['arm'])} | {cell(f1f['arm'])} | {cell(f0['p10'])} |{tail}")
         for c in ("goal_bearing_mae_deg", "goal_range_ratio", "goal_long_bias_m", "goal_lat_bias_m"):
             cell = lambda f: (lambda v: "n/a" if v is None else f"{v:.4f}")(_get(f.get("tactical") or {}, "goal_setting." + c))
-            w(f"| TACTICAL | goal_setting.{c} (point) | {cell(f0['arm'])} | {cell(f1f['arm'])} | {cell(f0['p10'])} |")
+            w(f"| TACTICAL | goal_setting.{c} (point) | {cell(f0['arm'])} | {cell(f1f['arm'])} | {cell(f0['p10'])} |{tail}")
         for st in ("turn", "stop", "brake"):
             b0, b1 = seeds[0]["ev"]["strata"].get(st, {}), seeds[1]["ev"]["strata"].get(st, {})
             w(f"| TACTICAL stratum | {st}: ADE@6s arm − P10 (PAIRED; n {b0.get('n_windows')} win / {b0.get('n_episodes')} ep) | "
               f"{fmt_d(b0.get('ade6_arm_minus_p10')) if 'ade6_arm_minus_p10' in b0 else b0.get('status')} | "
-              f"{fmt_d(b1.get('ade6_arm_minus_p10')) if 'ade6_arm_minus_p10' in b1 else b1.get('status')} | — |")
+              f"{fmt_d(b1.get('ade6_arm_minus_p10')) if 'ade6_arm_minus_p10' in b1 else b1.get('status')} | — |{tail}")
         sp = f0["arm"].get("strategic") or {}
-        w(f"| STRATEGIC | — | **{sp.get('status')}** | **{(f1f['arm'].get('strategic') or {}).get('status')}** | — |")
+        w(f"| STRATEGIC | — | **{sp.get('status')}** | **{(f1f['arm'].get('strategic') or {}).get('status')}** | — |{tail}")
         dk = (f0["arm"].get("longitudinal") or {}).get("distance_keeping") or {}
-        w(f"| LONGITUDINAL | distance_keeping | **{dk.get('status')}** (n {dk.get('n')}) | same | — |\n")
+        w(f"| LONGITUDINAL | distance_keeping | **{dk.get('status')}** (n {dk.get('n')}) | same | — |{tail}\n")
+        for s in SEEDS:
+            pb = paired_block(seeds[s]["ev"])
+            if pb is None:
+                continue
+            out["family_paired"][f"{arm}@{S}/s{s}"] = {
+                fam: {c: {k: v[k] for k in ("delta", "lo", "hi", "separated", "arm", "p10") if k in v} for c, v in (pb.get(fam) or {}).items()
+                      if isinstance(v, dict) and "delta" in v} for fam in ("longitudinal", "lateral")}
+            if not (pb.get("controls") or {}).get("p10_minus_p10_ok"):
+                out["family_paired_control_failed"].append(f"{arm}@{S}/s{s}")
+                w(f"⛔ **The paired-family control FAILED for {arm} @ {S} seed {s}** (P10 − P10 did not read exactly +0 [0, 0]): its paired "
+                  "cells are not admissible.\n")
         w(f"* **STRATEGIC:** {sp.get('status')} — {sp.get('ruling')} Underlying: {(sp.get('underlying') or {}).get('status')} "
           f"({(sp.get('underlying') or {}).get('reason', '')[:160]}…). Never a pass, never omitted.")
         w(f"* **Distance-keeping / lead braking:** {dk.get('status')}, n = {dk.get('n')} — {f0.get('lead_braking_stratum_and_distance_keeping')}")

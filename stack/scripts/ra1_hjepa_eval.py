@@ -22,12 +22,20 @@ was trained WITHOUT (`eval` scores it whenever `--train-cache` is given and the 
 `hold_*` and the `holdout` block of eval.json), by mean seed-0 ADE@6s there.  `verdict` has NO fallback: an A1 run without holdout
 numbers is REFUSED, never selected on the eval-141 windows that score K.  Every cell's eval-141 numbers are still reported, labelled
 NON_DECIDING; eval-141 scores K once, for the chosen cell.
+
+PAIRED FAMILIES (binding four-family rule, CLAUDE.md).  `families.arm` / `families.p10` carry SINGLE-arm episode-cluster intervals; a
+two-arm difference taken from them would be a combination in quadrature, which is invalid (the arms share windows).  So `eval` also
+publishes `families.paired_arm_minus_p10`: for the seven LONGITUDINAL / LATERAL MAE components below, arm - P10 through
+`ci.paired_episode_cluster_bootstrap` on the SAME windows, and saves the per-window components (`fam_arm_*` / `fam_p10_*`) into
+`perwindow.npz` so ANY later pairing (arm vs arm, per stratum) needs no re-run.  TACTICAL decision-agreement is not paired yet: its
+per-window classes are not saved (a stated work item inside the block).  Additive: no pre-existing key changes.
 """
 from __future__ import annotations
 
 import argparse
 import hashlib
 import json
+import math
 import os
 import sys
 import time
@@ -150,6 +158,164 @@ def holdout_eval(a, model, cfg, ck, prior, device, tracks=None):
     return blk, dict(hold_eid=eid, hold_t=tt, hold_ade6=ade6, hold_p10_ade6=p6)
 
 
+# ============================================================================================== paired four-family components
+#: (family, component, kind, raw -> published unit, unit, bootstrap scale).  The component NAMES are taniteval's own
+#: (`four_families.LONGITUDINAL_COMPONENTS` / `LATERAL_COMPONENTS`), so a single-arm interval, a saved per-window array and a paired
+#: delta line up by key.  kind "mean": an UNMASKED error, one per-window mean [N] (every window has the same horizon H, so the mean of
+#: the per-window means IS the flat mean the block prints).  kind "ratio": a MASKED error (the `min_ds` exclusions of `_seq_geometry`) --
+#: the per-window error SUM and valid-step COUNT [N], reduced as sum(err)/sum(count), i.e. the MICRO mean the taniteval block prints,
+#: which is NOT a mean of per-window means.  The bootstrap scale is only the interval's rendering resolution: `ci` rounds a paired delta
+#: to 4 dp, which would flatten curvature (~1e-3 1/m) to 1-2 digits, so curvature is bootstrapped in 1/km and divided back (taniteval
+#: passes dp=6 for the same reason on its single-arm interval).
+FAMILY_COMPONENTS = (
+    ("longitudinal", "speed_mae_mps", "mean", 1.0, "m/s", 1.0),
+    ("longitudinal", "along_mae_m", "mean", 1.0, "m", 1.0),
+    ("longitudinal", "accel_mae_mps2", "mean", 1.0, "m/s^2", 1.0),
+    ("lateral", "heading_mae_deg", "ratio", 180.0 / math.pi, "deg", 1.0),
+    ("lateral", "yaw_rate_mae_degps", "ratio", 180.0 / math.pi, "deg/s", 1.0),
+    ("lateral", "curvature_mae_1pm", "ratio", 1.0, "1/m", 1000.0),
+    ("lateral", "cross_mae_m", "mean", 1.0, "m", 1.0),
+)
+PAIRED_CONTROL_BOOT = 200          # the P10 - P10 control is 0 for any B; it need not cost a full 2,000-draw bootstrap per component
+
+
+def family_per_window(pred, gt, dt) -> dict:
+    """``pred``/``gt`` [N,H,2] ego-frame metres on a ``dt``-second grid -> ``{component: per-window arrays}`` in PUBLISHED units.
+
+    The geometry is ``taniteval.four_families._seq_geometry`` (the function both `longitudinal()` and `lateral()` call), and the error
+    expressions and masks below are the ones those two blocks use verbatim: heading masked by ``valid_pred & valid_gt``, yaw rate and
+    curvature by the PAIR mask, speed / along / accel / cross-track unmasked.  taniteval exposes NO public per-window form of these
+    (its CI helpers build them inline), so this is a thin restatement over the shared geometry, and `test_ra1_family_paired.py` pins
+    it to taniteval's own single-arm interval points -- drift in either direction goes RED there.
+    """
+    from taniteval import four_families as FF
+    P, G = FF._seq_geometry(pred, dt), FF._seq_geometry(gt, dt)
+    both, both_pair = P["valid"] & G["valid"], P["pair_valid"] & G["pair_valid"]
+    dh = P["heading"] - G["heading"]
+    dh = (dh + math.pi) % (2 * math.pi) - math.pi
+    err = {"speed_mae_mps": (P["speed"] - G["speed"]).abs(), "along_mae_m": (P["along"] - G["along"]).abs(),
+           "accel_mae_mps2": (P["accel"] - G["accel"]).abs(), "cross_mae_m": (P["cross"] - G["cross"]).abs(),
+           "heading_mae_deg": dh.abs(), "yaw_rate_mae_degps": (P["yaw_rate"] - G["yaw_rate"]).abs(),
+           "curvature_mae_1pm": (P["curvature"] - G["curvature"]).abs()}
+    mask = {"heading_mae_deg": both, "yaw_rate_mae_degps": both_pair, "curvature_mae_1pm": both_pair}
+    f64 = lambda t: t.numpy().astype(np.float64)                                          # noqa: E731
+    out = {}
+    for _fam, name, kind, scale, _unit, _ics in FAMILY_COMPONENTS:
+        e = err[name]
+        if kind == "mean":
+            if e.shape[1] > 0:                      # a horizon of < 2 steps has no acceleration: left out, reported UNAVAILABLE by the block
+                out[name] = dict(kind="mean", v=f64(e.mean(1)))
+        else:
+            out[name] = dict(kind="ratio", s=f64((e * mask[name]).sum(1)) * scale, c=f64(mask[name].sum(1)))
+    return out
+
+
+def family_array_keys(tag) -> list:
+    """The `perwindow.npz` keys one arm's family components are saved under (``tag`` is ``arm`` or ``p10``)."""
+    return [k for _f, name, kind, *_ in FAMILY_COMPONENTS
+            for k in ([f"fam_{tag}_{name}"] if kind == "mean" else [f"fam_{tag}_{name}__sum", f"fam_{tag}_{name}__cnt"])]
+
+
+def family_arrays(tag, pw) -> dict:
+    """``family_per_window`` output -> the flat ``fam_<tag>_*`` arrays that go into `perwindow.npz`."""
+    out = {}
+    for name, c in pw.items():
+        if c["kind"] == "mean":
+            out[f"fam_{tag}_{name}"] = c["v"]
+        else:
+            out[f"fam_{tag}_{name}__sum"], out[f"fam_{tag}_{name}__cnt"] = c["s"], c["c"]
+    return out
+
+
+def family_pw_from_npz(z, tag) -> dict:
+    """The inverse of `family_arrays`: a loaded `perwindow.npz` -> ``family_per_window`` form, so a pairing can be re-derived after the fact
+    (arm vs arm, per stratum) without re-running the eval.  Components the file does not carry are simply absent."""
+    out = {}
+    for _f, name, kind, *_ in FAMILY_COMPONENTS:
+        if kind == "mean" and f"fam_{tag}_{name}" in z.files:
+            out[name] = dict(kind="mean", v=np.asarray(z[f"fam_{tag}_{name}"], np.float64))
+        elif kind == "ratio" and f"fam_{tag}_{name}__sum" in z.files:
+            out[name] = dict(kind="ratio", s=np.asarray(z[f"fam_{tag}_{name}__sum"], np.float64),
+                             c=np.asarray(z[f"fam_{tag}_{name}__cnt"], np.float64))
+    return out
+
+
+def _paired_component(a, b, eid, n_boot, seed, unit, ics) -> dict:
+    """arm - P10 for ONE component through `ci.paired_episode_cluster_bootstrap` (one shared resampling of episodes per draw)."""
+    from taniteval import four_families as FF
+    n = len(eid)
+    if a["kind"] == "mean":
+        red, va, vb = ci.resolve_reducer("mean"), a["v"], b["v"]
+        how = "mean of per-window means (equals the flat mean: every window has the same horizon)"
+        extra = {}
+    else:
+        ca, cb = int(a["c"].sum()), int(b["c"].sum())
+        if ca <= 0 or cb <= 0:
+            return dict(status="UNAVAILABLE", n=n, n_steps_arm=ca, n_steps_p10=cb,
+                        reason="no step of one arm clears the min-displacement gate, so its masked mean does not exist; refused, "
+                               "never returned as 0 (taniteval's own rule for an undefined lateral term)")
+        # ONE reducer over [arm | P10]: the "values" are window indices (arm) and window indices + N (P10), so the two arms' DIFFERENT
+        # masks (valid steps differ with the arm's own path) are each reduced as sum(err)/sum(valid steps) over the SAME resampled episodes.
+        red = FF._ratio_reducer(np.concatenate([a["s"], b["s"]]), np.concatenate([a["c"], b["c"]]), 1.0, "masked_mean")
+        va, vb = np.arange(n, dtype=np.float64), np.arange(n, 2 * n, dtype=np.float64)
+        how = "MICRO mean = sum(per-window error sums) / sum(per-window valid steps), per arm (the masked mean taniteval prints)"
+        extra = dict(n_steps_arm=ca, n_steps_p10=cb)
+    arm_point, p10_point = red(va), red(vb)
+
+    def scaled(v):
+        return ics * red(v)
+    scaled.__name__ = "paired_" + a["kind"]
+    r = ci.paired_episode_cluster_bootstrap(va, vb, eid, n_boot=n_boot, seed=seed, reduce=scaled)
+    blk = {k: r[k] for k in ("delta", "lo", "hi", "ci95", "p_delta_gt0", "separated", "n_windows", "n_episodes", "n_boot", "estimator",
+                             "degenerate") if k in r}
+    for k in ("delta", "lo", "hi", "ci95"):
+        blk[k] = blk[k] / ics
+    blk.update(arm=arm_point, p10=p10_point, delta_exact=arm_point - p10_point, unit=unit, reduction=how, **extra)
+    if ics != 1.0:
+        blk["ci_internal_scale"] = ics
+    return blk
+
+
+def paired_family_block(arm_pw, p10_pw, eid, n_boot, seed) -> dict:
+    """The seven LONGITUDINAL / LATERAL components, arm - P10, paired over episodes.  ``arm_pw`` / ``p10_pw`` are `family_per_window` forms."""
+    out = dict(status="OK", estimator="paired_episode_cluster_bootstrap", n_windows=len(eid),
+               n_episodes=int(len(ci.episode_index(eid)[0])), n_boot=n_boot, seed=seed, longitudinal={}, lateral={})
+    for fam, name, _kind, _scale, unit, ics in FAMILY_COMPONENTS:
+        if name not in arm_pw or name not in p10_pw:
+            out[fam][name] = dict(status="UNAVAILABLE", n=len(eid),
+                                  reason="the per-window component does not exist for this horizon (accel needs >= 2 steps)")
+        else:
+            out[fam][name] = _paired_component(arm_pw[name], p10_pw[name], eid, n_boot, seed, unit, ics)
+    return out
+
+
+def paired_families(pred, p10, gt, eid, dt, grid, n_boot, seed):
+    """-> ``(families.paired_arm_minus_p10, {fam_<arm|p10>_*: per-window arrays})``.  ``pred``/``p10``/``gt`` are the [N,30,2] numpy paths
+    `run_eval` already holds; they are cast to float32 exactly as the `all_families` call above casts them."""
+    g = torch.from_numpy(np.asarray(gt)).float()
+    pa = family_per_window(torch.from_numpy(np.asarray(pred)).float(), g, dt)
+    pp = family_per_window(torch.from_numpy(np.asarray(p10)).float(), g, dt)
+    blk = paired_family_block(pa, pp, eid, n_boot, seed)
+    ctl = paired_family_block(pp, pp, eid, min(n_boot, PAIRED_CONTROL_BOOT), seed)       # P10 - P10 must read exactly +0 [0, 0]
+    cells = [c for f in ("longitudinal", "lateral") for c in ctl[f].values() if c.get("status") != "UNAVAILABLE"]
+    blk["controls"] = dict(
+        p10_minus_p10_ok=bool(cells and all(c["delta_exact"] == 0.0 and c["lo"] == 0.0 and c["hi"] == 0.0 and not c["separated"] for c in cells)),
+        n_components_checked=len(cells), n_boot=min(n_boot, PAIRED_CONTROL_BOOT))
+    blk.update(
+        tier="T1-class open-loop trajectory, the same windows as families.arm / families.p10",
+        sign="every component is a mean ABSOLUTE error, so a NEGATIVE delta = the arm is closer to the human path than the learned "
+             "kinematic floor P10",
+        dt_s=dt, grid=grid, arrays="perwindow.npz keys fam_arm_* / fam_p10_* (ra1_hjepa_eval.family_array_keys); "
+                                   "family_pw_from_npz reads them back, so any later pairing needs no re-run",
+        tactical=dict(status="NOT PAIRED", n=len(eid),
+                      reason="decision agreement (accuracy / kappa over the lat, lon and collapsed 5-way classes) is single-arm only: the "
+                             "per-window classes are not saved, so no arm - P10 agreement difference exists. A WORK ITEM, not a pass. "
+                             "The turn / stop / brake strata ADE@6s rows under `strata` ARE paired.",
+                      work_item="save per-window gt / arm / P10 manoeuvre classes and pair accuracy + kappa"),
+        strategic=dict(PAUSE, n=len(eid)))
+    return blk, {**family_arrays("arm", pa), **family_arrays("p10", pp)}
+
+
 # ============================================================================================== eval
 def run_eval(a) -> dict:
     t0 = time.time()
@@ -212,6 +378,7 @@ def run_eval(a) -> dict:
 
     # ------------------------------------------------------------------ four families (T1-class), arm and P10 side by side
     fam = {}
+    fam_arrays = {}                                                               # the per-window family components -> perwindow.npz
     try:
         from taniteval import four_families as FF
         for nm, path in (("arm", pred), ("p10", p10)):
@@ -220,6 +387,13 @@ def run_eval(a) -> dict:
             f = FF.all_families(win, tactical_from_traj=True, tier="T1", n_boot=a.fam_boot, seed=sd)
             f["strategic"] = dict(PAUSE, n=N, underlying=f.get("strategic"))
             fam[nm] = f
+        # the PAIRED arm - P10 deltas (same windows, same grid the two blocks above were scored on). Its own guard: a failure here is
+        # recorded in its own block and never costs the single-arm blocks above.
+        try:
+            fam["paired_arm_minus_p10"], fam_arrays = paired_families(pred, p10, gt, eid, *FF.infer_dt(win), a.fam_boot, sd)
+        except Exception as e:                                                    # noqa: BLE001 -- reported, not hidden
+            fam["paired_arm_minus_p10"] = dict(status="ERROR", error=repr(e)[:500], reason="the paired family deltas could not be computed; "
+                                                                                          "this is a WORK ITEM, not a pass")
     except Exception as e:                                                        # noqa: BLE001 -- reported, not hidden
         fam = dict(status="ERROR", error=repr(e)[:500], reason="four_families could not run; this is a WORK ITEM, not a pass")
     fam["lead_braking_stratum_and_distance_keeping"] = ("NOT COMPUTABLE from the pooled cache: it carries no lead-agent track "
@@ -243,6 +417,7 @@ def run_eval(a) -> dict:
     res["strata"] = strata
 
     arrays = dict(eid=eid, t=tt, ade2=ade2, ade6=ade6, p10_ade2=p2, p10_ade6=p6, clips=np.array(order), **hold_arrays)
+    arrays.update(fam_arrays)                       # fam_arm_* / fam_p10_*: what makes ANY later pairing of the families possible
 
     # ------------------------------------------------------------------ SENS (T0) + rho + COST (T0): need the world model
     if model.stack is None:
@@ -510,6 +685,9 @@ def main(argv=None) -> int:
         r = run_eval(a)
         print(json.dumps(jsonable({k: r[k] for k in ("arm", "ckpt_step", "n_windows", "instrument_ok")}), default=str))
         print("K ade6 arm-P10:", json.dumps(jsonable(r["K"]["ade6_arm_minus_p10"])))
+        pf = (r.get("families") or {}).get("paired_arm_minus_p10")
+        if isinstance(pf, dict):
+            print("paired families arm-P10: %s  P10-P10 control ok=%s" % (pf.get("status"), (pf.get("controls") or {}).get("p10_minus_p10_ok")))
         if isinstance(r.get("SENS"), dict) and "ctl_channel" in r["SENS"]:
             c = r["SENS"]["ctl_channel"]
             print("SENS %s/k10 %.4f  speed/k10 %.4f  self-swap ok=%s" % (c, r["SENS"][f"{c}_k10"], r["SENS"]["speed_k10"], r["SENS"]["self_swap_control_ok"]))
