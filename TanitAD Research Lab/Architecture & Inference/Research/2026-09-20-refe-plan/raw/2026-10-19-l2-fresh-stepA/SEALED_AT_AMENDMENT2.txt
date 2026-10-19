@@ -1,0 +1,22 @@
+SEALED_AT 2026-10-19T17:07:27+02:00
+file PREREG_L2_FRESH_AMENDMENT2.md
+sha256 (LF bytes) a46e8e33a7be35b082cedfc373b9c53924cbc78de65dc2387415c16095aa2ab1
+
+state of the pre-launched B chain at the seal (no fresh label or score existed):
+  chain_B.log last line: CHAIN_START 19.10.2026 16:03:40,57 TAG=B N=400 SAMPLE=C:\Users\Admin\par18\l2fresh\raw\fresh_sample_token_disjoint.json W=D:/Projects/TanitAD-artifacts/l2_fresh_stepA/B_token_disjoint
+  B_token_disjoint/ holds: ['step3.log']
+
+the read's seal guard on the PARENT (analyse_fresh.py --seal-check-only; reads no label, no score), before and after this file was written:
+  before: rc=0 ZZSEAL_ACCEPTED {"prereg_sha256": "5006ed844979578f4c42599cd79b09c15bd07862d9c9bda94b21481d5e8d4e54", "code_pins": {"analyse_fresh.py": "10e840bad9ce7cc5ee077330fac1eb4c18da705fc4156a62c8f6c45050d06522", "logoof_companion.py": "fa92f0fa3e7f6ff555ec368cc7b7266793185546469458335972a3d10dfc6240", "score_fresh.py": "11071e95a4e140555ae03072f08390a69c3bccd3ce42df7c3c7aeca2a45bba3a", "l2lib.py": "942033d373868a3028686a564ee99cc476dc8d82b22fc19544afc0052e898b4b", "stepA.py": "05d182c7cf1b9e44665b5f9928a35dfa2dd218e89bf7846bdee8a230456313f8"}, "pins": {"carve token-list sha256": "0629811ff5d0", "final head s0 sha256": "bded124e1322", "final head s1 sha256": "86f0b20f6ab0", "P2 head file sha256 (L2 reference)": "4b64c3feb89c", "P2 head content sha256 (arrays)": "69aae34810e1", "log-OOF fold-heads file sha256": "00ce7e84d0fa", "log-OOF fold-heads manifest sha256": "2a4047fc66f1"}}
+  after:  rc=0 ZZSEAL_ACCEPTED {"prereg_sha256": "5006ed844979578f4c42599cd79b09c15bd07862d9c9bda94b21481d5e8d4e54", "code_pins": {"analyse_fresh.py": "10e840bad9ce7cc5ee077330fac1eb4c18da705fc4156a62c8f6c45050d06522", "logoof_companion.py": "fa92f0fa3e7f6ff555ec368cc7b7266793185546469458335972a3d10dfc6240", "score_fresh.py": "11071e95a4e140555ae03072f08390a69c3bccd3ce42df7c3c7aeca2a45bba3a", "l2lib.py": "942033d373868a3028686a564ee99cc476dc8d82b22fc19544afc0052e898b4b", "stepA.py": "05d182c7cf1b9e44665b5f9928a35dfa2dd218e89bf7846bdee8a230456313f8"}, "pins": {"carve token-list sha256": "0629811ff5d0", "final head s0 sha256": "bded124e1322", "final head s1 sha256": "86f0b20f6ab0", "P2 head file sha256 (L2 reference)": "4b64c3feb89c", "P2 head content sha256 (arrays)": "69aae34810e1", "log-OOF fold-heads file sha256": "00ce7e84d0fa", "log-OOF fold-heads manifest sha256": "2a4047fc66f1"}}
+  identical: True
+
+pins named in the sealed text:
+  parent PREREG_L2_FRESH.md: 5006ed844979578f4c42599cd79b09c15bd07862d9c9bda94b21481d5e8d4e54
+  ruling MM_RULING_L2_FRESH_D.md: 7583dd856354fffac808f3f8e4973c814e1e95a85d9f6fda74aae0c5a4dc98d7
+  design_calc_ball.py: 18e414cae2c1f01aebfda4c302be57c4458ff30a0f79eee50f0e8a10ab36b63e
+  design_calc_ball.json: 42049cf00c54bd605a4b50804b1962c6d1ffcdf1fa9cd3cf577687e95bd8fdff
+  scope_unseen_stratum.py: d3d56c4a9f0551065a0291562c23c1d6c6e7da320a3139bb270c2686c91adb34
+  scope_unseen_stratum.json: 54b92b54003f68933b4c90c9131dfc1f7deb4778b2944a47d0c99861b7e0efac
+
+addendum (check tooling, not part of the sealed text): the staged repo copy of design_calc_ball.json is LF-folded; its LF sha256 is 96c2ac1321bf4db19de563e548c793657080f27c281d0e9b3d8f0ea5c3d260da (the sealed text pins the as-written bytes, 42049cf00c54bd605a4b50804b1962c6d1ffcdf1fa9cd3cf577687e95bd8fdff); amendment2_check.py accepts the as-written bytes, the LF-folded copy or its CRLF expansion.

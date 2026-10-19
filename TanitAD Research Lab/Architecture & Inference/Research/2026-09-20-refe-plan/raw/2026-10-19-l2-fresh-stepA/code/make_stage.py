@@ -15,11 +15,12 @@ REPO = "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-p
 ART = "D:/Projects/TanitAD-artifacts/l2_fresh_stepA"
 
 CODE = ["fit_final_heads.py", "fresh_carve.py", "probe_fresh_universe.py", "probe_logless251.py", "score_fresh.py", "analyse_fresh.py", "logoof_companion.py", "seal_prereg.py", "prove_guard.py", "readtwo_prep.py",
-        "readtwo_geometry.py", "bridge_g2b.py", "bridge_g2b.cmd", "ram_gate.py", "nsplit.py", "fresh_chain.cmd", "test_fresh.py", "test_readtwo.py", "make_stage.py"]
-DOCS = {n: f"{W}/{n}" for n in ("PREREG_L2_FRESH.md", "PREREG_L2_FRESH.sha256", "SEALED_AT.txt", "PREREG_L2_FRESH.src.md", "PREREG_L2_FRESH_DRAFT.md", "PREREG_L2_FRESH_D_DRAFT.md", "MM_RULING_L2_FRESH.md", "READY.md", "HANDOFF.md")}
+        "readtwo_geometry.py", "bridge_g2b.py", "bridge_g2b.cmd", "ram_gate.py", "nsplit.py", "fresh_chain.cmd", "test_fresh.py", "test_readtwo.py", "make_stage.py",
+        "design_calc_ball.py", "scope_unseen_stratum.py", "seal_amendment2.py", "amendment2_check.py", "test_amendment2.py"]
+DOCS = {n: f"{W}/{n}" for n in ("PREREG_L2_FRESH.md", "PREREG_L2_FRESH.sha256", "SEALED_AT.txt", "PREREG_L2_FRESH.src.md", "PREREG_L2_FRESH_DRAFT.md", "PREREG_L2_FRESH_D_DRAFT.md", "MM_RULING_L2_FRESH.md", "MM_RULING_L2_FRESH_D.md", "PREREG_L2_FRESH_AMENDMENT2.md", "PREREG_L2_FRESH_AMENDMENT2.sha256", "PREREG_L2_FRESH_AMENDMENT2.src.md", "SEALED_AT_AMENDMENT2.txt", "READY.md", "HANDOFF.md")}
 RAW = {**{f"raw/{os.path.basename(p)}": p for p in sorted(glob.glob(f"{W}/raw/*.json"))},
        "raw/heads/final_heads.json": f"{ART}/heads/final_heads.json", "raw/heads/final_head_s0.npz": f"{ART}/heads/final_head_s0.npz", "raw/heads/final_head_s1.npz": f"{ART}/heads/final_head_s1.npz",
-       **{f"raw/logs/{os.path.basename(p)}": p for p in sorted(glob.glob(f"{W}/logs/*.log"))}, "raw/pytest_test_fresh.log": f"{W}/logs/pytest_test_fresh.out", "raw/pytest_test_readtwo.log": f"{W}/logs/pytest_test_readtwo.out",
+       **{f"raw/logs/{os.path.basename(p)}": p for p in sorted(glob.glob(f"{W}/logs/*.log"))}, "raw/pytest_test_fresh.log": f"{W}/logs/pytest_test_fresh.out", "raw/pytest_test_readtwo.log": f"{W}/logs/pytest_test_readtwo.out", "raw/pytest_test_amendment2.log": f"{W}/logs/pytest_test_amendment2.out",
        "raw/readtwo_fetch_list.txt": f"{W}/raw/readtwo_fetch_list.txt", "raw/logoof/logoof_heads.npz": f"{W}/raw/logoof/logoof_heads.npz", "raw/logoof/logoof_heads.json": f"{W}/raw/logoof/logoof_heads.json"}
 
 
