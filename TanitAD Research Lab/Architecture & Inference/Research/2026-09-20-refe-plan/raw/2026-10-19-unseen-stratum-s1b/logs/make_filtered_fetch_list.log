@@ -1,0 +1,118 @@
+{
+ "what": "S2/S4 fetch list from the FILTERED candidates (our PDM scorer: CV PDMS <= 0.8, human PDMS >= 0.8); 123 S1-provisional logs x up to 4 tokens x 4 cameras",
+ "evidence": "MEASURED names / dt (DB) and PDMS (ours); size ESTIMATED",
+ "seed": 20261020,
+ "seed_status": "PROVISIONAL (S3's sealed prereg fixes the real one)",
+ "sampler": "per log: S1's seeded permutation (default_rng([seed, sha256(log)[:8]])), first 4 tokens that pass the filter and resolve all 4 cameras; cap on scored tokens per log in the driver",
+ "n_logs": 123,
+ "tokens_per_log": 4,
+ "n_tokens": 486,
+ "n_jpgs": 1944,
+ "n_unique_paths": 1944,
+ "size_MB_ESTIMATED": 399.5,
+ "mb_per_jpg_basis": "S1: mean of 3,000 local navtrain jpgs (raw/jpg_size_sample.json)",
+ "S1_unfiltered_list": {
+  "n_jpgs": 1968,
+  "n_tokens": 492,
+  "size_MB_ESTIMATED": 404
+ },
+ "n_unfilled_logs": 2,
+ "max_dt_ms": 49.31,
+ "list_sha256": "fd538eaaf422442cde5b1cebcc330a81dcbbcacf57bae4b5f8a82223d0665b77",
+ "tokens_scored_total": 3483,
+ "tokens_accepted_total": 486,
+ "scored_per_accepted_overall": 7.166666666666667,
+ "acceptance_rate_across_logs": {
+  "estimator": "per-log inverse-binomial; the sum below is ESTIMATED",
+  "estimated_total_filtered_candidates_ESTIMATED": 11165.604212819022,
+  "total_candidates_in_these_logs": 66402,
+  "median_per_log_rate": 0.15
+ },
+ "U_extrapolation": {
+  "estimator": "ratio over logs of the per-log inverse-binomial filtered-candidate estimates / candidates; log-cluster bootstrap CI (n=4000, seed 20261021)",
+  "filtered_share_of_candidates": 0.16815162514410745,
+  "ci95": [
+   0.14728948215467896,
+   0.19060336716596754
+  ],
+  "S3_123_logs_candidates": 66402,
+  "S3_123_logs_filtered_ESTIMATED": 11165.604212819022,
+  "S3_123_logs_filtered_ESTIMATED_ci95": [
+   9780.316194034993,
+   12656.444786554577
+  ],
+  "U_1129_logs_candidates": 548812,
+  "U_1129_logs_filtered_ESTIMATED": 92283.6296985879,
+  "U_1129_logs_filtered_ESTIMATED_ci95": [
+   80834.23528027367,
+   104605.41514108898
+  ],
+  "caveat": "ESTIMATED from a 123-log seeded sample, not counted; unfilled/capped logs contribute r/n (censored); the navtrain-logs reference share is 0.195 (214 logs, S1)"
+ },
+ "accepted_token_population_shares_design_weighted_equal_log": {
+  "stationary_speed_lt_0.5": {
+   "value": 0.06147540983606557,
+   "ci95_log_bootstrap": [
+    0.0389344262295082,
+    0.08811475409836066
+   ]
+  },
+  "progress_4s_lt_2m": {
+   "value": 0.028688524590163935,
+   "ci95_log_bootstrap": [
+    0.014344262295081968,
+    0.045081967213114756
+   ]
+  },
+  "turning_dyaw_gt_15deg": {
+   "value": 0.32172131147540983,
+   "ci95_log_bootstrap": [
+    0.26639344262295084,
+    0.3790983606557377
+   ]
+  }
+ },
+ "navtrain_reference_shares": {
+  "S1_design_weighted_214_logs": {
+   "stationary": 0.077,
+   "turning": 0.321,
+   "progress<2m": 0.026
+  },
+  "S1_design_weighted_248_logs": {
+   "stationary": 0.096,
+   "turning": 0.298,
+   "progress<2m": 0.034
+  },
+  "S1b_20_identity_logs_navtrain": {
+   "n": 1747,
+   "stationary_speed_lt_0.5": {
+    "pooled": 0.05437893531768746,
+    "design_weighted_equal_log": 0.04892127280755093
+   },
+   "progress_4s_lt_2m": {
+    "pooled": 0.02633085289066972,
+    "design_weighted_equal_log": 0.024351947587285858
+   },
+   "turning_dyaw_gt_15deg": {
+    "pooled": 0.41900400686891814,
+    "design_weighted_equal_log": 0.3792241904670153
+   }
+  },
+  "S1b_20_identity_logs_our_filter": {
+   "n": 1776,
+   "stationary_speed_lt_0.5": {
+    "pooled": 0.05574324324324324,
+    "design_weighted_equal_log": 0.050436949095795845
+   },
+   "progress_4s_lt_2m": {
+    "pooled": 0.0259009009009009,
+    "design_weighted_equal_log": 0.0237811678855192
+   },
+   "turning_dyaw_gt_15deg": {
+    "pooled": 0.41835585585585583,
+    "design_weighted_equal_log": 0.3803254625878516
+   }
+  }
+ }
+}
+ZZFETCH_OK 1944
