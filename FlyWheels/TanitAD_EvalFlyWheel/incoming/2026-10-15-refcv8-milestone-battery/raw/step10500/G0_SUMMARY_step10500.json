@@ -1,0 +1,408 @@
+{
+ "artifact": "E:\\refcv8_eval_kit\\battery\\step10500\\g0.json",
+ "finished": true,
+ "partial_only": false,
+ "tool": "g0_refcv7.py",
+ "ckpt": "E:/refcv8_eval_kit/ckpt/ckpt_10500.pt",
+ "ckpt_md5": "a08a62319b1aa12ecf1b2aee35cd01f2",
+ "config_md5": "4ce2c77230dc4e802e78b39ce05af916",
+ "step": 10500,
+ "n_seeds": 24,
+ "seeds": "0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23",
+ "started": "2026-10-17T03:23:41",
+ "finished_at": "2026-10-17T04:11:27",
+ "wall_s": 2866.7,
+ "gpu": "NVIDIA GeForce RTX 4060",
+ "torch": "2.11.0+cu128",
+ "tanitad_file": "C:\\lgs\\Lfb47a58376\\stack\\tanitad\\__init__.py",
+ "cuda_max_memory_allocated_gib": 5.856,
+ "state_dict": {
+  "strict": true,
+  "missing": 0,
+  "unexpected": 0,
+  "n_keys": 1165,
+  "step": 10500
+ },
+ "param_breakdown_equal": true,
+ "n_eval_windows": 23772,
+ "n_eval_episodes": 139,
+ "perm_sha256": "99adbc7ed285236adc1098cf5eb9dbccfb04a2ce3307fb977a292dc4dfbf6975",
+ "GATE_VERDICT": "FAIL",
+ "gate_amendment": "A7",
+ "gate_registration": {
+  "registered": true,
+  "file_mtime": "2026-10-15T03:05:12",
+  "g0_started": "2026-10-17T03:23:41",
+  "text": "2286d5f42d0858dd98550de79403c3b398114954d06bf3904f076daf80890fe7  SPEC.md after AMENDMENT A7 (2026-10-04T17:11:57+02:00), registered by the Master Mind before any refcv8 G0 number; A7 source sha256 46a82d1e73011fe5732af64d6c0a5aed4ff8fbdfc27fc4b748be5ac8eda5515e\n"
+ },
+ "verdicts_by_rule": {
+  "as_registered": "FAIL",
+  "A2": "FAIL",
+  "A5": "FAIL",
+  "A6": "FAIL",
+  "A7": "FAIL"
+ },
+ "reasons_gate_first40": [
+  "wrapper clause FAIL: ['merge defect: cascade wrapper 9.127e-02 > bar 7.138e-02']"
+ ],
+ "n_reasons_gate": 1,
+ "reasons_as_registered_first10": [
+  "eval_box3d_det_ap2_bus_40_60 [DETECTION] in-run 0.04762 vs seeds mean 0.02222 (sd 0)",
+  "eval_box3d_det_ap4_bus_40_60 [DETECTION] in-run 0.5 vs seeds mean 0.33333 (sd 0)",
+  "eval_box3d_det_ap4_stroller_all [DETECTION] in-run 0.25 vs seeds mean 0.5 (sd 0)",
+  "eval_box3d_det_map4_40_60 [DETECTION] in-run 0.10315 vs seeds mean 0.08163 (sd 0)",
+  "eval_box3d_det_map4_all [DETECTION] in-run 0.12175 vs seeds mean 0.14937 (sd 0)",
+  "wrapper clause FAIL: ['merge defect: cascade wrapper 9.127e-02 > bar 7.138e-02']"
+ ],
+ "n_terms": 1136,
+ "by_class_counts": {
+  "SMOOTH": 192,
+  "DETECTION": 100,
+  "EXCLUDED": 11,
+  "MATCHED": 29,
+  "UNDEFINED": 94,
+  "DERIVED": 2,
+  "DETECTION_LOWSUPPORT": 238,
+  "COUNT": 219,
+  "STOCHASTIC": 10,
+  "MAP10_COUNTS": 160,
+  "MAP10_IOU": 80,
+  "THRESHOLD_TARGET": 1
+ },
+ "medians": {
+  "SMOOTH": 0.0004890538741934949,
+  "MATCHED": 0.0026667938498736348,
+  "MAP10_COUNTS": 4.9671546896149216e-05,
+  "DETECTION_abs01": 0.0009600000000000008,
+  "SMOOTH_phi_rel": 0.0015377933536227166,
+  "SMOOTH_bar": 0.004613380060868149
+ },
+ "mutation_detection": {
+  "m1": {
+   "detected": true,
+   "n_terms_out": 8,
+   "how": null
+  },
+  "m2": {
+   "detected": true,
+   "n_terms_out": 66,
+   "how": null
+  },
+  "m4": {
+   "detected": true,
+   "n_terms_out": 3,
+   "how": null
+  },
+  "m5": {
+   "detected": true,
+   "n_terms_out": 27,
+   "how": "DETECTED"
+  }
+ },
+ "M1_detected": true,
+ "blind_spots_named": [],
+ "wrapper_clause": "FAIL",
+ "requires_grad_control": {
+  "n_terms": 471,
+  "n_differ": 38,
+  "max_rel_all": 2.0446861438225943e-06
+ },
+ "a7_keys": [
+  "gating",
+  "inference_seed_floor",
+  "packs",
+  "seed_draw_correlation",
+  "seed_group"
+ ],
+ "seed_group_report": {
+  "term": "eval_traj",
+  "prereg": "raw/PREREG_SEED_GROUP_CHECK_50400.md",
+  "gating": false,
+  "status": "COMPUTED",
+  "VERDICT": "A",
+  "test_full": {
+   "n_0_7": 8,
+   "n_8_23": 16,
+   "sd_0_7": 0.009075746843117096,
+   "sd_8_23": 0.009072985379307579,
+   "mean_0_7": 0.6207288354635239,
+   "mean_8_23": 0.6164098444860429,
+   "F": 0.9993915555944807,
+   "df": [
+    15,
+    7
+   ],
+   "p_one_sided": 0.5320367354150365,
+   "levene_p": 0.9400366244637379,
+   "levene_center": "median",
+   "verdict": "A"
+  },
+  "test_5dp": {
+   "n_0_7": 8,
+   "n_8_23": 16,
+   "sd_0_7": 0.009075102518114372,
+   "sd_8_23": 0.009072147761142332,
+   "mean_0_7": 0.62073,
+   "mean_8_23": 0.61641125,
+   "F": 0.9993489272551132,
+   "df": [
+    15,
+    7
+   ],
+   "p_one_sided": 0.532062315613019,
+   "levene_p": 0.9401667540327523,
+   "levene_center": "median",
+   "verdict": "A"
+  },
+  "rounding_control_max_abs": 4.882012605622599e-06
+ },
+ "pose_sync_patch": {
+  "enabled": true,
+  "stats": {
+   "sidecar": "E:/refcv8_eval_kit/data/refcv8_pose_sync_sidecar.jsonl",
+   "sidecar_rows": 4711,
+   "sidecar_meta": {
+    "builder": "scripts/build_pose_sync_sidecar.py",
+    "clock_sidecar": "refcv8_clip_clock_sidecar.jsonl",
+    "delta_ms": {
+     "max": 35.426,
+     "mean": 16.500600099077147,
+     "min": 0.0,
+     "p95": 31.388
+    },
+    "inputs_md5": {
+     "eval139_v2manifest.pt": "3443323229279a18253691ff36ebffd3",
+     "train4572_v2manifest.pt": "77dafb50af0aedd1b940cf12c12518ef"
+    },
+    "k1_self_test": {
+     "analytic_maxabs_us": 0.3333333339558542,
+     "delta0_us": 0.0,
+     "delta_max_ms": 33.16582914572954,
+     "dt_s": 0.10050251256281406,
+     "n_target": 200,
+     "ok": true
+    },
+    "k4_checked": 4653,
+    "k4_worst_abs_dt_s": 6.2185311899831675e-09,
+    "n_rows": 4711,
+    "n_rows_written": 4711,
+    "n_total_clips": 4711,
+    "rule": "delta_us[k] = t_image[k] - t_pose[k]; t_pose = linspace(t_first, t_last, int(span*10))[k]; t_image = first camera frame >= t_pose (v2_compressed.py:119-121). Indexed by RAW grid row k (provider row r = k - (n_stack - 1)).",
+    "schema": "tanitad.pose_sync/1",
+    "skipped": {
+     "grid_rows_mismatch": 0,
+     "k4_dt_mismatch": 0,
+     "no_camera_ts": 0,
+     "sid_mismatch": 0
+    }
+   },
+   "sign": 1.0,
+   "n_clips": 139,
+   "n_covered": 139,
+   "n_uncovered_read_unshifted": 0,
+   "rule": "window re-sampled at t_pose + delta[NOW raw row]; rows, label clock and (sid,k) joins unchanged",
+   "fields_shifted": [
+    "pose_last",
+    "future_poses",
+    "future_poses_ext",
+    "pose_hist",
+    "goal_tac",
+    "actions",
+    "future_actions"
+   ]
+  },
+  "remap_overrides": {
+   "--agent-rig-extrinsics": "E:/refcv8_eval_kit/data/refcv8_train4572_eval139_extrinsics.json",
+   "--clip-clock-sidecar": "E:/refcv8_eval_kit/data/refcv8_clip_clock_sidecar_ts33.jsonl",
+   "--vis1-sidecar": "E:/refcv8_eval_kit/data/refcv8/vis1_sidecar_refcv8b1_train4572_eval139.npz",
+   "--nav-compliance-tau-file": "E:/refcv8_eval_kit/data/refcv8/nav_compliance_tau_train4572.json",
+   "--r8-v9-labels-eval": "E:/refcv8_eval_kit/data/refcv8_v9labels/release/v9_labels_eval139.npz",
+   "--pose-sync-sidecar": "E:/refcv8_eval_kit/data/refcv8_pose_sync_sidecar.jsonl",
+   "--join-defect-masks": "C:/lgs/Lfb47a58376/stack/tanitad/configs/refcv8_join_label_defects_train4572.json"
+  },
+  "loader_file": "C:\\lgs\\Lfb47a58376\\stack\\tanitad\\eval\\refcv7_loader.py",
+  "loader_KIT": "E:\\refcv6_eval_kit",
+  "launch_tree": "C:\\lgs\\Lfb47a58376",
+  "wrapper_status": "finished"
+ },
+ "headline_terms": {
+  "eval_loss": {
+   "inrun": 51.56521,
+   "mean": 51.43092958333333,
+   "sd": 0.10401581181971543,
+   "cls": "STOCHASTIC",
+   "class": "SMOOTH_OR_STOCHASTIC",
+   "verdict": "OK",
+   "tol": "99% PI t=2.807 +1% |mean|",
+   "pi_lo": 50.61862722114999,
+   "pi_hi": 52.24323194551667,
+   "dev": null
+  },
+  "eval_traj": {
+   "inrun": 0.61754,
+   "mean": 0.6178508333333333,
+   "sd": 0.009114097020152546,
+   "cls": "STOCHASTIC",
+   "class": "SMOOTH_OR_STOCHASTIC",
+   "verdict": "OK",
+   "tol": "99% PI t=2.807 +1% |mean|",
+   "pi_lo": 0.5855615090525735,
+   "pi_hi": 0.6501401576140932,
+   "dev": null
+  },
+  "eval_tacv6_goal_conf_bce": {
+   "inrun": 0.12761,
+   "mean": 0.12778,
+   "sd": 0.0,
+   "cls": "THRESHOLD_TARGET",
+   "class": "SMOOTH_OR_STOCHASTIC",
+   "verdict": "OK",
+   "tol": "A6 flip interval [0.08840, 0.46641] (k=3.0, +SMOOTH tol)",
+   "pi_lo": null,
+   "pi_hi": null,
+   "dev": 0.00017000000000000348
+  },
+  "eval_r8": {
+   "inrun": 0.77458,
+   "mean": 0.8083866666666667,
+   "sd": 0.029380450120366806,
+   "cls": "STOCHASTIC",
+   "class": "SMOOTH_OR_STOCHASTIC",
+   "verdict": "OK",
+   "tol": "99% PI t=2.807 +1% |mean|",
+   "pi_lo": 0.716131266182753,
+   "pi_hi": 0.9006420671505804,
+   "dev": null
+  },
+  "eval_r8_total": {
+   "inrun": 0.77458,
+   "mean": 0.8083866666666667,
+   "sd": 0.029380450120366806,
+   "cls": "STOCHASTIC",
+   "class": "SMOOTH_OR_STOCHASTIC",
+   "verdict": "OK",
+   "tol": "99% PI t=2.807 +1% |mean|",
+   "pi_lo": 0.716131266182753,
+   "pi_hi": 0.9006420671505804,
+   "dev": null
+  },
+  "eval_r8_cons": {
+   "inrun": 0.02835,
+   "mean": 0.028259999999999997,
+   "sd": 0.0,
+   "cls": "SMOOTH",
+   "class": "SMOOTH_OR_STOCHASTIC",
+   "verdict": "OK",
+   "tol": "abs<=1e-3 (|x|<0.1) else rel<=1%",
+   "pi_lo": null,
+   "pi_hi": null,
+   "dev": 0.00317460317460329
+  },
+  "eval_r8_alloc_l1": {
+   "inrun": 0.57236,
+   "mean": 0.60565125,
+   "sd": 0.029209828201941828,
+   "cls": "STOCHASTIC",
+   "class": "SMOOTH_OR_STOCHASTIC",
+   "verdict": "OK",
+   "tol": "99% PI t=2.807 +1% |mean|",
+   "pi_lo": 0.5159120154102055,
+   "pi_hi": 0.6953904845897945,
+   "dev": null
+  },
+  "eval_r8_sat": {
+   "inrun": 0.27791,
+   "mean": 0.2793316666666667,
+   "sd": 0.003925266722221528,
+   "cls": "STOCHASTIC",
+   "class": "SMOOTH_OR_STOCHASTIC",
+   "verdict": "OK",
+   "tol": "99% PI t=2.807 +1% |mean|",
+   "pi_lo": 0.2652929225372618,
+   "pi_hi": 0.2933704107960716,
+   "dev": null
+  },
+  "eval_r8_subscore": {
+   "inrun": 0.33439,
+   "mean": 0.33513875,
+   "sd": 0.0009666675724633389,
+   "cls": "STOCHASTIC",
+   "class": "SMOOTH_OR_STOCHASTIC",
+   "verdict": "OK",
+   "tol": "99% PI t=2.807 +1% |mean|",
+   "pi_lo": 0.3290179736059466,
+   "pi_hi": 0.3412595263940534,
+   "dev": null
+  },
+  "eval_r8_v9_cons": {
+   "inrun": 0.11633,
+   "mean": 0.11642999999999999,
+   "sd": 0.0,
+   "cls": "SMOOTH",
+   "class": "SMOOTH_OR_STOCHASTIC",
+   "verdict": "OK",
+   "tol": "abs<=1e-3 (|x|<0.1) else rel<=1%",
+   "pi_lo": null,
+   "pi_hi": null,
+   "dev": 0.0008596234849135131
+  },
+  "eval_r8_v9_mae_speed": {
+   "inrun": 0.11116,
+   "mean": 0.11108999999999998,
+   "sd": 0.0,
+   "cls": "SMOOTH",
+   "class": "SMOOTH_OR_STOCHASTIC",
+   "verdict": "OK",
+   "tol": "abs<=1e-3 (|x|<0.1) else rel<=1%",
+   "pi_lo": null,
+   "pi_hi": null,
+   "dev": 0.0006297229219144881
+  },
+  "eval_r8_v9_mae_lat_c": {
+   "inrun": 0.13564,
+   "mean": 0.13569,
+   "sd": 0.0,
+   "cls": "SMOOTH",
+   "class": "SMOOTH_OR_STOCHASTIC",
+   "verdict": "OK",
+   "tol": "abs<=1e-3 (|x|<0.1) else rel<=1%",
+   "pi_lo": null,
+   "pi_hi": null,
+   "dev": 0.00036862282512529115
+  },
+  "eval_r8_v9_mae_lon_c": {
+   "inrun": 0.20424,
+   "mean": 0.20448999999999998,
+   "sd": 0.0,
+   "cls": "SMOOTH",
+   "class": "SMOOTH_OR_STOCHASTIC",
+   "verdict": "OK",
+   "tol": "abs<=1e-3 (|x|<0.1) else rel<=1%",
+   "pi_lo": null,
+   "pi_hi": null,
+   "dev": 0.0012240501370934804
+  }
+ },
+ "terms_not_ok_by_class_first15": {
+  "DETECTION_LOWSUPPORT": [
+   "eval_agent_det_ap0p5_bus_0_20",
+   "eval_agent_det_ap0p5_bus_20_40",
+   "eval_agent_det_ap0p5_bus_40_60",
+   "eval_agent_det_ap0p5_bus_all",
+   "eval_agent_det_ap0p5_heavy_truck_0_20",
+   "eval_agent_det_ap0p5_heavy_truck_20_40",
+   "eval_agent_det_ap0p5_heavy_truck_all",
+   "eval_agent_det_ap0p5_other_vehicle_40_60",
+   "eval_agent_det_ap0p5_other_vehicle_all",
+   "eval_agent_det_ap0p5_person_0_20",
+   "eval_agent_det_ap0p5_person_20_40",
+   "eval_agent_det_ap0p5_person_40_60",
+   "eval_agent_det_ap0p5_protruding_object_0_20",
+   "eval_agent_det_ap0p5_protruding_object_all",
+   "eval_agent_det_ap0p5_rider_0_20"
+  ]
+ },
+ "n_terms_not_ok_by_class": {
+  "DETECTION_LOWSUPPORT": 238
+ }
+}

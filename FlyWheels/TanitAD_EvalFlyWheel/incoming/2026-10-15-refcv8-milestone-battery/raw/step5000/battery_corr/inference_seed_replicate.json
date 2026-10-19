@@ -1,0 +1,173 @@
+{
+ "direction": "os(seed A) - os(seed B)",
+ "max_abs_path_diff_m": 4.792457580566406,
+ "families": {
+  "ADE": {
+   "ade_m": {
+    "delta": -0.0041,
+    "lo": -0.0078,
+    "hi": -0.0007,
+    "ci95": 0.0036,
+    "p_delta_gt0": 0.0085,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 4754,
+    "n_episodes": 139,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "n_dropped_nonfinite": 0
+   },
+   "fde_m": {
+    "delta": -0.0086,
+    "lo": -0.0164,
+    "hi": -0.001,
+    "ci95": 0.0077,
+    "p_delta_gt0": 0.014,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 4754,
+    "n_episodes": 139,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "n_dropped_nonfinite": 0
+   }
+  },
+  "longitudinal": {
+   "LON_speed_mae_mps": {
+    "delta": -0.0036,
+    "lo": -0.0074,
+    "hi": 0.0001,
+    "ci95": 0.0038,
+    "p_delta_gt0": 0.029,
+    "separated": false,
+    "reducer": "mean",
+    "n_windows": 4754,
+    "n_episodes": 139,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "n_dropped_nonfinite": 0
+   },
+   "LON_along_mae_m": {
+    "delta": -0.0036,
+    "lo": -0.0071,
+    "hi": -0.0002,
+    "ci95": 0.0034,
+    "p_delta_gt0": 0.0195,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 4754,
+    "n_episodes": 139,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "n_dropped_nonfinite": 0
+   },
+   "LON_accel_mae_mps2": {
+    "delta": -0.0035,
+    "lo": -0.0078,
+    "hi": 0.0007,
+    "ci95": 0.0042,
+    "p_delta_gt0": 0.057,
+    "separated": false,
+    "reducer": "mean",
+    "n_windows": 4754,
+    "n_episodes": 139,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "n_dropped_nonfinite": 0
+   }
+  },
+  "lateral": {
+   "LAT_cross_mae_m": {
+    "delta": -0.0013,
+    "lo": -0.003,
+    "hi": 0.0004,
+    "ci95": 0.0017,
+    "p_delta_gt0": 0.0725,
+    "separated": false,
+    "reducer": "mean",
+    "n_windows": 4754,
+    "n_episodes": 139,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "n_dropped_nonfinite": 0
+   },
+   "LAT_heading_mae_deg": {
+    "delta": -0.0213,
+    "lo": -0.0397,
+    "hi": -0.0044,
+    "ci95": 0.0177,
+    "p_delta_gt0": 0.005,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 4477,
+    "n_episodes": 139,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "n_dropped_nonfinite": 277
+   },
+   "LAT_yaw_rate_mae_radps": {
+    "delta": -0.00032,
+    "lo": -0.00066,
+    "hi": -2e-05,
+    "ci95": 0.00032,
+    "p_delta_gt0": 0.0185,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 4447,
+    "n_episodes": 139,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "display_dp": 5,
+    "display_note": "rendered at 5 dp, not the usual 4: at 4 dp the printed interval would have contradicted separated=True. The extra digits are a RENDERING fix, not extra precision \u2014 the estimator and the separation test are unchanged.",
+    "n_dropped_nonfinite": 307
+   },
+   "LAT_yaw_rate_mae_radps_valid": {
+    "delta": -0.00032,
+    "lo": -0.00066,
+    "hi": -2e-05,
+    "ci95": 0.00032,
+    "p_delta_gt0": 0.0185,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 4447,
+    "n_episodes": 139,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "display_dp": 5,
+    "display_note": "rendered at 5 dp, not the usual 4: at 4 dp the printed interval would have contradicted separated=True. The extra digits are a RENDERING fix, not extra precision \u2014 the estimator and the separation test are unchanged.",
+    "n_dropped_nonfinite": 307,
+    "amendment": "A3"
+   }
+  },
+  "tactical": {
+   "TAC_traj_lat_correct": {
+    "delta": 0.0011,
+    "lo": -0.0019,
+    "hi": 0.0038,
+    "ci95": 0.0028,
+    "p_delta_gt0": 0.7495,
+    "separated": false,
+    "reducer": "mean",
+    "n_windows": 4754,
+    "n_episodes": 139,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "n_dropped_nonfinite": 0
+   },
+   "TAC_traj_lon_correct": {
+    "delta": 0.0065,
+    "lo": 0.0008,
+    "hi": 0.0122,
+    "ci95": 0.0057,
+    "p_delta_gt0": 0.988,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 4754,
+    "n_episodes": 139,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "n_dropped_nonfinite": 0
+   }
+  }
+ }
+}

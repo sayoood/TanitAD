@@ -1,0 +1,440 @@
+{
+ "tool": "bank_battery_r8.py",
+ "tag": "step10500ema",
+ "written": "2026-10-17T00:55:52+0200",
+ "chain_status": "PROVISIONAL: EMA weights, no G0 for them (reason in NO_G0_REASON_step10500ema.json); pass unc complete",
+ "tier": "T1 self-action OPEN LOOP on logged eval139 frames; EARLY READ at step 10,500 of 48,852, EMA weights",
+ "stamps": [
+  "single training seed; training-seed floor at full scale unmeasured",
+  "no bar verdict: the SPEC bars apply to the final checkpoint; these are early reads (EARLY READ at step 10,500 of 48,852, EMA weights)",
+  "numbers are PROVISIONAL unless G0 is PASS as coded or under the registered amendments (A7 + W-R8-1 [+ W-R8-2]): read passes.<pass>.paired_read.g0.G0_amended (SPEC_REFCV8 section 5)"
+ ],
+ "passes": {
+  "unc": {
+   "status": "COMPLETE",
+   "started": "2026-10-16T21:48:10",
+   "finished": "2026-10-17T00:55:26",
+   "tag": "step10500ema_unc",
+   "ckpt_md5": "8863ae3f7d4ecb2d0660ddc9782b1ef2",
+   "step": 10500,
+   "S2": {
+    "n_clips": 139,
+    "n_windows": 4754,
+    "source": "D:\\Projects\\TanitAD-artifacts\\refcv5cmp\\out\\refcv4b_devbox_dump"
+   },
+   "SMOKE_RESTRICTED_S2": null,
+   "G0_NONBLOCKING": null,
+   "tanitad_file": "C:\\lgs\\Lfb47a58376\\stack\\tanitad\\__init__.py",
+   "r8": {
+    "pose_sync_policy": "OFF (R8_NO_POSE_SYNC): the standalone, refcv7-comparable clock",
+    "g0_nonblocking": false,
+    "no_baselines": false,
+    "smoke_cpu": false,
+    "wall_s": 11246.3
+   },
+   "child_rewrites": [
+    {
+     "from": "C:\\lgs\\Lfb47a58376\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-28-refcv7-standard-tests\\battery\\code\\roll_seed_r7.py",
+     "to": "C:\\Users\\Admin\\qland\\hold_r8batt\\stage\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-10-15-refcv8-milestone-battery\\code\\roll_seed_r8.py",
+     "smoke_cpu": false,
+     "os_only_all": false
+    },
+    {
+     "from": "C:\\lgs\\Lfb47a58376\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-28-refcv7-standard-tests\\battery\\code\\roll_seed_r7.py",
+     "to": "C:\\Users\\Admin\\qland\\hold_r8batt\\stage\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-10-15-refcv8-milestone-battery\\code\\roll_seed_r8.py",
+     "smoke_cpu": false,
+     "os_only_all": false
+    }
+   ],
+   "baselines_dropped": {},
+   "baselines_used": {
+    "b_refcv4b": "D:\\Projects\\TanitAD-artifacts\\refcv5cmp\\out\\refcv4b_devbox_dump",
+    "b_refcv5v2_s0": "D:\\Projects\\TanitAD-artifacts\\refcv5cmp\\out\\refcv5-v2_dump",
+    "b_refcv5v2_s1": "D:\\Projects\\TanitAD-artifacts\\refcv5cmp\\out\\refcv5-v2-seed1_dump",
+    "b_refcv7_50400_s0": "D:/refcv7_eval_kit/battery/step50400_a6text/dump_s0",
+    "b_refcv7_50400_s1": "D:/refcv7_eval_kit/battery/step50400_a6text/dump_s1"
+   },
+   "baselines_missing": [
+    "b_refcv6_38k_s0",
+    "b_refcv6_38k_s1"
+   ],
+   "rolls": {
+    "s0": {
+     "arm_set": "full (SPEC \u00a73.2)",
+     "wall_s": 8894.9,
+     "n_windows": 4754,
+     "n_episodes": 139,
+     "skipped": 0,
+     "cuda_max_memory_allocated_gib": 3.037,
+     "device": "cuda",
+     "frame_memo": {
+      "hits": 355720,
+      "misses": 47540
+     },
+     "window_restriction": {
+      "n_requested": 4754,
+      "n_index_before": 23772,
+      "n_index_after": 4754,
+      "source": "banked baseline grid (clip, ws), kit clips"
+     }
+    },
+    "s1": {
+     "arm_set": "os + model-free controls (SPEC A3)",
+     "wall_s": 1793.6,
+     "n_windows": 4754,
+     "n_episodes": 139,
+     "skipped": 0,
+     "cuda_max_memory_allocated_gib": 1.222,
+     "device": "cuda",
+     "frame_memo": {
+      "hits": 0,
+      "misses": 47540
+     },
+     "window_restriction": {
+      "n_requested": 4754,
+      "n_index_before": 23772,
+      "n_index_after": 4754,
+      "source": "banked baseline grid (clip, ws), kit clips"
+     }
+    }
+   },
+   "pairing": {
+    "s0": {
+     "b_refcv4b": {
+      "clips_missing": 0,
+      "ws_equal_clips": 139,
+      "g_bit_equal_windows": 4754,
+      "g_max_abs_diff": 0.0,
+      "model_free_bit_equal": {
+       "ha": 4754,
+       "ha0": 4754,
+       "ha0_ext": 4754
+      },
+      "model_free_max_abs_diff": {
+       "ha": 0.0,
+       "ha0": 0.0,
+       "ha0_ext": 0.0
+      },
+      "n_windows_paired": 4754
+     },
+     "b_refcv5v2_s0": {
+      "clips_missing": 0,
+      "ws_equal_clips": 139,
+      "g_bit_equal_windows": 4754,
+      "g_max_abs_diff": 0.0,
+      "model_free_bit_equal": {
+       "ha": 4754,
+       "ha0": 4754,
+       "ha0_ext": 4754
+      },
+      "model_free_max_abs_diff": {
+       "ha": 0.0,
+       "ha0": 0.0,
+       "ha0_ext": 0.0
+      },
+      "n_windows_paired": 4754
+     },
+     "b_refcv5v2_s1": {
+      "clips_missing": 0,
+      "ws_equal_clips": 139,
+      "g_bit_equal_windows": 4754,
+      "g_max_abs_diff": 0.0,
+      "model_free_bit_equal": {
+       "ha": 4754,
+       "ha0": 4754,
+       "ha0_ext": 4754
+      },
+      "model_free_max_abs_diff": {
+       "ha": 0.0,
+       "ha0": 0.0,
+       "ha0_ext": 0.0
+      },
+      "n_windows_paired": 4754
+     },
+     "b_refcv7_50400_s0": {
+      "clips_missing": 0,
+      "ws_equal_clips": 139,
+      "g_bit_equal_windows": 4754,
+      "g_max_abs_diff": 0.0,
+      "model_free_bit_equal": {
+       "ha": 4754,
+       "ha0": 4754,
+       "ha0_ext": 4754
+      },
+      "model_free_max_abs_diff": {
+       "ha": 0.0,
+       "ha0": 0.0,
+       "ha0_ext": 0.0
+      },
+      "n_windows_paired": 4754
+     },
+     "b_refcv7_50400_s1": {
+      "clips_missing": 0,
+      "ws_equal_clips": 139,
+      "g_bit_equal_windows": 4754,
+      "g_max_abs_diff": 0.0,
+      "model_free_bit_equal": {
+       "ha": 4754,
+       "ha0": 4754,
+       "ha0_ext": 4754
+      },
+      "model_free_max_abs_diff": {
+       "ha": 0.0,
+       "ha0": 0.0,
+       "ha0_ext": 0.0
+      },
+      "n_windows_paired": 4754
+     }
+    },
+    "s1": {
+     "b_refcv4b": {
+      "clips_missing": 0,
+      "ws_equal_clips": 139,
+      "g_bit_equal_windows": 4754,
+      "g_max_abs_diff": 0.0,
+      "model_free_bit_equal": {
+       "ha": 4754,
+       "ha0": 4754,
+       "ha0_ext": 4754
+      },
+      "model_free_max_abs_diff": {
+       "ha": 0.0,
+       "ha0": 0.0,
+       "ha0_ext": 0.0
+      },
+      "n_windows_paired": 4754
+     },
+     "b_refcv5v2_s0": {
+      "clips_missing": 0,
+      "ws_equal_clips": 139,
+      "g_bit_equal_windows": 4754,
+      "g_max_abs_diff": 0.0,
+      "model_free_bit_equal": {
+       "ha": 4754,
+       "ha0": 4754,
+       "ha0_ext": 4754
+      },
+      "model_free_max_abs_diff": {
+       "ha": 0.0,
+       "ha0": 0.0,
+       "ha0_ext": 0.0
+      },
+      "n_windows_paired": 4754
+     },
+     "b_refcv5v2_s1": {
+      "clips_missing": 0,
+      "ws_equal_clips": 139,
+      "g_bit_equal_windows": 4754,
+      "g_max_abs_diff": 0.0,
+      "model_free_bit_equal": {
+       "ha": 4754,
+       "ha0": 4754,
+       "ha0_ext": 4754
+      },
+      "model_free_max_abs_diff": {
+       "ha": 0.0,
+       "ha0": 0.0,
+       "ha0_ext": 0.0
+      },
+      "n_windows_paired": 4754
+     },
+     "b_refcv7_50400_s0": {
+      "clips_missing": 0,
+      "ws_equal_clips": 139,
+      "g_bit_equal_windows": 4754,
+      "g_max_abs_diff": 0.0,
+      "model_free_bit_equal": {
+       "ha": 4754,
+       "ha0": 4754,
+       "ha0_ext": 4754
+      },
+      "model_free_max_abs_diff": {
+       "ha": 0.0,
+       "ha0": 0.0,
+       "ha0_ext": 0.0
+      },
+      "n_windows_paired": 4754
+     },
+     "b_refcv7_50400_s1": {
+      "clips_missing": 0,
+      "ws_equal_clips": 139,
+      "g_bit_equal_windows": 4754,
+      "g_max_abs_diff": 0.0,
+      "model_free_bit_equal": {
+       "ha": 4754,
+       "ha0": 4754,
+       "ha0_ext": 4754
+      },
+      "model_free_max_abs_diff": {
+       "ha": 0.0,
+       "ha0": 0.0,
+       "ha0_ext": 0.0
+      },
+      "n_windows_paired": 4754
+     }
+    }
+   },
+   "void_gates_3_4": {
+    "s0": {
+     "pass": true,
+     "failures": []
+    },
+    "s1": {
+     "pass": true,
+     "failures": []
+    }
+   },
+   "inference_seed_replicate": {
+    "max_abs_path_diff_m": 4.238026052713394,
+    "floor_m": 0.0013,
+    "ade": {
+     "delta": -0.0013,
+     "lo": -0.0042,
+     "hi": 0.0015,
+     "ci95": 0.0028,
+     "p_delta_gt0": 0.1645,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 4754,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_dropped_nonfinite": 0
+    }
+   },
+   "bars_r7_form_informative": [
+    [
+     "BAR-R7-1",
+     "FAILED"
+    ],
+    [
+     "BAR-R7-2",
+     "PENDING (the refcv6@38k S2 rolls run LAST in the milestone chain; SPEC A4)"
+    ],
+    [
+     "BAR-R7-3",
+     "PASS (single training seed; training-seed floor unmeasured)"
+    ]
+   ],
+   "strategic": {
+    "status": "NOT APPLICABLE",
+    "n": 0,
+    "reason": "the strategic layer is OFF (--no-strategic); its route loss is gated off in training, so the route head is untrained"
+   },
+   "paired_read": {
+    "file": "PAIRED_READ_step10500ema_unc.json",
+    "clock": "standalone",
+    "g0": {
+     "G0": "NOT AVAILABLE",
+     "provisional": true,
+     "why": "no g0.json"
+    },
+    "bars": {
+     "BAR-R8-E1": "FAILED",
+     "BAR-R8-E3": "PASS (single training seed; training-seed floor unmeasured)",
+     "BAR-R8-NR": {
+      "verdict": null,
+      "per_family": {
+       "ADE": "PASS",
+       "LONGITUDINAL": "PASS",
+       "LATERAL": "FAIL: S2:LAT_heading_mae_deg"
+      }
+     }
+    },
+    "inference_floor_ade": {
+     "S2": 0.0013476908206939697,
+     "S6": 0.03044891357421875
+    },
+    "strategic": {
+     "status": "NOT APPLICABLE",
+     "n": 0,
+     "reason": "the strategic layer is OFF (--no-strategic in the run's argv; PI ruling R5): its route loss is gated off in training, the route head is untrained and is not scored. Route-level decisions are measured inside LATERAL / TACTICAL, not relabelled strategic."
+    },
+    "controls_all_bit_identical": {
+     "S2_s0": true,
+     "S2_s1": true
+    },
+    "windows_check": {
+     "S2_s0": true,
+     "S2_s1": true,
+     "S6_s0": true,
+     "S6_s1": true
+    }
+   }
+  }
+ },
+ "banked": {
+  "unc": {
+   "banked": [
+    "acceptance_s0.json",
+    "acceptance_s1.json",
+    "analysis_s0.json",
+    "analysis_s1.json",
+    "analysis_s6_s0.json",
+    "analysis_s6_s1.json",
+    "battery_summary.json",
+    "criteria_s0.json",
+    "criteria_s0.log",
+    "criteria_s1.json",
+    "criteria_s1.log",
+    "cross_paired_s0.json",
+    "cross_paired_s1.json",
+    "cross_paired_s6_s0.json",
+    "cross_paired_s6_s1.json",
+    "gate_roll_s0.json",
+    "gate_roll_s1.json",
+    "inference_seed_replicate.json",
+    "NO_G0_REASON_step10500ema.json",
+    "PAIRED_READ_step10500ema_unc.json",
+    "PAIRED_READ_step10500ema_unc.md",
+    "roll_s0.json",
+    "roll_s0.log",
+    "roll_s1.json",
+    "roll_s1.log",
+    "tactical_v6_s0.json",
+    "tactical_v6_s1.json",
+    "void_gates_s0.json",
+    "void_gates_s1.json"
+   ],
+   "left_on_E": []
+  }
+ },
+ "timings_raw": [
+  "1792140994 2026-10-16T10:56:34 armed",
+  "1792144186 2026-10-16T11:49:46 chain ended",
+  "1792144197 2026-10-16T11:49:57 wrapfix 5000 start",
+  "1792146803 2026-10-16T12:33:23 lock refcv8-wrapfix-step5000",
+  "1792147057 2026-10-16T12:37:38 wrapfix 5000 end",
+  "1792147059 2026-10-16T12:37:39 ema start",
+  "1792148043 2026-10-16T12:54:03 lock refcv8-battery-step5000ema",
+  "1792148043 2026-10-16T12:54:03 ema pass start",
+  "1792157308 2026-10-16T15:28:28 ema pass end",
+  "1792157335 2026-10-16T15:28:55 ema paired read end",
+  "1792157337 2026-10-16T15:28:57 milestone 10500 start",
+  "1792157338 2026-10-16T15:28:58 milestone pull end",
+  "1792157412 2026-10-16T15:30:12 armed",
+  "1792157412 2026-10-16T15:30:12 chain ended",
+  "1792157413 2026-10-16T15:30:13 ema start",
+  "1792176302 2026-10-16T20:45:02 lock refcv8-battery-step10500ema",
+  "1792176303 2026-10-16T20:45:03 ema pass start",
+  "1792180069 2026-10-16T21:47:49 armed",
+  "1792180069 2026-10-16T21:47:49 chain ended",
+  "1792180070 2026-10-16T21:47:50 ema start",
+  "1792191327 2026-10-17T00:55:27 ema pass end",
+  "1792191351 2026-10-17T00:55:51 ema paired read end"
+ ],
+ "chain_log_tail": [
+  "ZZQQUEUESTARTZZ 2026-10-16T15:30:12+0200 pid 251960 stages 'ema' milestone 10500",
+  "ZZQEMASTARTZZ 2026-10-16T15:30:13+0200 step10500ema",
+  "ZZQEMAGATEOKZZ 2026-10-16T15:30:35+0200 strict load clean, weights differ",
+  "ZZQLOCKEDZZ 2026-10-16T20:45:02+0200 refcv8-battery-step10500ema",
+  "ZZQEMARETRYZZ 2026-10-16T21:47:30+0200 pass incomplete, retrying once (resumes from complete seed dumps)",
+  "ZZQEMAPASSDONEZZ 2026-10-17T00:55:27+0200 unc (battery)",
+  "ZZQEMAPAIREDZZ 2026-10-17T00:55:51+0200 unc"
+ ],
+ "restamped": {
+  "at": "2026-10-18T03:07:08",
+  "by": "restamp_banked_r8.py",
+  "what": "tier, stamps and passes.<p>.paired_read.g0 only (the PAIRED_READ files were re-stamped the same way); every number unchanged"
+ }
+}

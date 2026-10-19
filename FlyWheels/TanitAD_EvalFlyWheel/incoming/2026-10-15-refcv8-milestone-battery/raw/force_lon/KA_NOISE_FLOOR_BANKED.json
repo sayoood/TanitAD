@@ -1,0 +1,68 @@
+{
+ "tool": "force_lon_ka_floor_r8.py",
+ "tier": "T1 self-action OPEN LOOP on logged eval139 frames (not driving performance)",
+ "banked_tree": "C:/Users/Admin/refcv8_eval_archive/battery/step30000ema_unc",
+ "what": "GPU inference-seed 1 minus seed 0 of the SAME EMA-30k model on the force_lon window set (banked; no new compute; numpy only). This is the draw-to-draw floor of the KA statistic (mean ADE difference over the window set). ADE = mean over the 6 S6 instants of the L2 distance to GT (numpy; identical to the battery's `ade_m`, which s6_lon_decomp asserts).",
+ "sets": {
+  "FB": {
+   "n_windows": 250,
+   "n_episodes": 50,
+   "mean_ADE_s0": 3.0669812139001618,
+   "mean_ADE_s1": 3.1164628675153803,
+   "mean_diff_s1_minus_s0": {
+    "mean": 0.04948165361521833,
+    "lo": -0.10018803781331546,
+    "hi": 0.21142779636654574,
+    "n_windows": 250,
+    "n_episodes": 50
+   },
+   "abs_mean_diff_exceeds_0p05": false,
+   "per_window_diff_sd": 1.063778563364352,
+   "per_window_diff_rms": 1.0628013768294278,
+   "iid_se_of_mean_diff": 0.06727926372586206,
+   "frac_windows_with_abs_diff_gt_1m (mode flips)": 0.112,
+   "frac_windows_with_abs_diff_gt_0p25m": 0.476,
+   "mean_abs_diff_excluding_flips": 0.241453486728703
+  },
+  "CT": {
+   "n_windows": 250,
+   "n_episodes": 90,
+   "mean_ADE_s0": 1.9511482445044348,
+   "mean_ADE_s1": 1.973211364056448,
+   "mean_diff_s1_minus_s0": {
+    "mean": 0.022063119552012848,
+    "lo": -0.06653504265236815,
+    "hi": 0.11916631416857286,
+    "n_windows": 250,
+    "n_episodes": 90
+   },
+   "abs_mean_diff_exceeds_0p05": false,
+   "per_window_diff_sd": 0.7425466466771917,
+   "per_window_diff_rms": 0.7413884283194218,
+   "iid_se_of_mean_diff": 0.04696277344840452,
+   "frac_windows_with_abs_diff_gt_1m (mode flips)": 0.072,
+   "frac_windows_with_abs_diff_gt_0p25m": 0.324,
+   "mean_abs_diff_excluding_flips": 0.18957567189438954
+  },
+  "ALL": {
+   "n_windows": 500,
+   "n_episodes": 120,
+   "mean_ADE_s0": 2.5090647292022985,
+   "mean_ADE_s1": 2.544837115785914,
+   "mean_diff_s1_minus_s0": {
+    "mean": 0.03577238658361558,
+    "lo": -0.051965823772204024,
+    "hi": 0.13091371243114167,
+    "n_windows": 500,
+    "n_episodes": 120
+   },
+   "abs_mean_diff_exceeds_0p05": false,
+   "per_window_diff_sd": 0.9165162981233878,
+   "per_window_diff_rms": 0.916297868664025,
+   "iid_se_of_mean_diff": 0.040987854901807154,
+   "frac_windows_with_abs_diff_gt_1m (mode flips)": 0.092,
+   "frac_windows_with_abs_diff_gt_0p25m": 0.4,
+   "mean_abs_diff_excluding_flips": 0.21494323773848117
+  }
+ }
+}

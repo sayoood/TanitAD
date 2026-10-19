@@ -1,0 +1,155 @@
+{
+ "tool": "smoke_cpu_r8.py",
+ "started": "2026-10-15T21:42:18",
+ "cuda_used": false,
+ "model": {
+  "step": 5000,
+  "strict": true,
+  "missing": 0,
+  "unexpected": 0,
+  "n_keys": 1165,
+  "param_breakdown_equal": true,
+  "r8_emit": {
+   "r8_step": 5000,
+   "live": true
+  },
+  "anchor_file_vs_ckpt_max_abs_diff": {
+   "core.decoder.anchors": 0.0,
+   "core.decoder.anchor_controls": 0.0
+  },
+  "argv_remap_sources": {
+   "--anchors": "kit default",
+   "--eval-cache": "kit default",
+   "--eval-labels": "kit default",
+   "--speed-max-sidecar-v6-eval": "kit default",
+   "--agent-join": "kit default",
+   "--agent-rig-extrinsics": "recorded override",
+   "--map-gt-root": "kit default",
+   "--join3d": "kit default",
+   "--vis1-sidecar": "recorded override",
+   "--nav-compliance-tau-file": "recorded override",
+   "--map-hires-class-weights": "kit default",
+   "--clip-clock-sidecar": "recorded override",
+   "--r8-v9-labels-eval": "recorded override",
+   "--join-defect-masks": "recorded override",
+   "--pose-sync-sidecar": "recorded override"
+  },
+  "build_s": 20.1
+ },
+ "dataset": {
+  "n_episodes": 139,
+  "n_windows": 23772,
+  "pose_sync": {
+   "sidecar": "E:/refcv8_eval_kit/data/refcv8_pose_sync_sidecar.jsonl",
+   "sidecar_rows": 4711,
+   "sidecar_meta": {
+    "builder": "scripts/build_pose_sync_sidecar.py",
+    "clock_sidecar": "refcv8_clip_clock_sidecar.jsonl",
+    "delta_ms": {
+     "max": 35.426,
+     "mean": 16.500600099077147,
+     "min": 0.0,
+     "p95": 31.388
+    },
+    "inputs_md5": {
+     "eval139_v2manifest.pt": "3443323229279a18253691ff36ebffd3",
+     "train4572_v2manifest.pt": "77dafb50af0aedd1b940cf12c12518ef"
+    },
+    "k1_self_test": {
+     "analytic_maxabs_us": 0.3333333339558542,
+     "delta0_us": 0.0,
+     "delta_max_ms": 33.16582914572954,
+     "dt_s": 0.10050251256281406,
+     "n_target": 200,
+     "ok": true
+    },
+    "k4_checked": 4653,
+    "k4_worst_abs_dt_s": 6.2185311899831675e-09,
+    "n_rows": 4711,
+    "n_rows_written": 4711,
+    "n_total_clips": 4711,
+    "rule": "delta_us[k] = t_image[k] - t_pose[k]; t_pose = linspace(t_first, t_last, int(span*10))[k]; t_image = first camera frame >= t_pose (v2_compressed.py:119-121). Indexed by RAW grid row k (provider row r = k - (n_stack - 1)).",
+    "schema": "tanitad.pose_sync/1",
+    "skipped": {
+     "grid_rows_mismatch": 0,
+     "k4_dt_mismatch": 0,
+     "no_camera_ts": 0,
+     "sid_mismatch": 0
+    }
+   },
+   "sign": 1.0,
+   "n_clips": 139,
+   "n_covered": 139,
+   "n_uncovered_read_unshifted": 0,
+   "rule": "window re-sampled at t_pose + delta[NOW raw row]; rows, label clock and (sid,k) joins unchanged",
+   "fields_shifted": [
+    "pose_last",
+    "future_poses",
+    "future_poses_ext",
+    "pose_hist",
+    "goal_tac",
+    "actions",
+    "future_actions"
+   ]
+  },
+  "keys": [
+   "agent_join",
+   "camera_coverage",
+   "join3d",
+   "label_clock",
+   "labels",
+   "map_fine",
+   "max_speed_v6",
+   "n_episodes",
+   "n_windows",
+   "nav",
+   "pose_sync",
+   "r8_v9",
+   "vis1"
+  ],
+  "label_clock_g3": "PASS",
+  "r8_v9": {
+   "md5": "6b5c7f207cffc3b7eb3cd527fd433599",
+   "n_rows": null,
+   "lat_variant": "a"
+  }
+ },
+ "perm_sha256": "99adbc7ed285236adc1098cf5eb9dbccfb04a2ce3307fb977a292dc4dfbf6975",
+ "n_subset": 128,
+ "pose_sync_item_check": {
+  "window_index": 20658,
+  "moved": {
+   "pose_last": {
+    "max_abs_diff": 0.0316009521484375,
+    "shape": [
+     4
+    ]
+   },
+   "future_poses": {
+    "max_abs_diff": 0.03131103515625,
+    "shape": [
+     20,
+     4
+    ]
+   },
+   "actions": {
+    "max_abs_diff": 0.006266772747039795,
+    "shape": [
+     8,
+     2
+    ]
+   }
+  },
+  "v0_on": 9.493571281433105,
+  "v0_off": 9.49632453918457,
+  "rule": "ON vs OFF on the same window; pose_last/future_poses must differ (the shift is <= 35 ms of motion) and be tiny"
+ },
+ "inrun_row": {
+  "n_rows_at_step": 1,
+  "eval_traj": 0.58254,
+  "eval_loss": 53.86168,
+  "n_eval_keys": 1136
+ },
+ "wall_s": 204.4,
+ "finished": "2026-10-15T21:45:42"
+}

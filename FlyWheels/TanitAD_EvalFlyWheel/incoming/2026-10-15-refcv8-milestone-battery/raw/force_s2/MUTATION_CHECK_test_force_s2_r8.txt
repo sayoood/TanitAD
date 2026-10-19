@@ -1,0 +1,27 @@
+mutation check of test_force_s2_r8.py (2026-10-18 21:36:24+0200); source sha-free copy per mutation, original untouched
+unmutated: 48 passed in 40.19s
+[ 0] RED   (test_decide_is_the_committed_table[f11-fs1-TIMING-CONTROLLABLE]): closure point threshold 0.50 -> 0.49
+[ 1] RED   (test_decide_is_the_committed_table[f111-fs11-INCONCLUSIVE]): decoder bound 0.25 -> 0.30
+[ 2] RED   (test_decide_is_the_committed_table[f14-fs4-INCONCLUSIVE]): F_slow lower bound: lo > 0 -> lo >= 0
+[ 3] RED   (test_decide_is_the_committed_table[f12-fs2-INCONCLUSIVE]): TIMING needs F1 < 0.50: -> <= 0.50
+[ 4] RED   (test_decide_is_the_committed_table[f18-fs8-INCONCLUSIVE]): IDENTITY lower bound: lo > 0 -> lo >= 0
+[ 5] RED   (test_decide_is_the_committed_table[f111-fs11-INCONCLUSIVE]): DECODER: both uppers < 0.25 -> F1 upper <= 0.25
+[ 6] RED   (test_decide_is_the_committed_table[f111-fs11-INCONCLUSIVE]): DECODER: both -> only F_slow
+[ 7] RED   (test_decide_refuses_an_undefined_closure[None-fs0]): undefined closure no longer refuses
+[ 8] RED   (test_slow_classes_are_hold_on_S2A_and_brake_to_on_S2B): slow classes swapped (HOLD <-> BRAKE_TO)
+[ 9] RED   (test_pre_registered_constants_are_literal): S2A loses 'stopping'
+[10] RED   (test_pre_registered_constants_are_literal): S2B gains 'cruising'
+[11] RED   (test_build_plan_is_stratified_proportional_single_set_per_chunk_and_deterministic): chunks no longer single-set
+[12] RED   (test_slow_class_bound_rebinds_and_always_restores): rebinding is a no-op
+[13] RED   (test_roll_driver_spawns_children_of_THIS_file_over_this_scratch_and_resumes): driver not pointed at this file
+[14] RED   (test_timing_controllable_when_F_slow_recovers_the_echo_and_F1_does_nothing): content check expects CRUISE for F_slow
+[15] RED   (test_slow_classes_are_hold_on_S2A_and_brake_to_on_S2B): internals guard needle drifts
+[16] RED   (test_timing_controllable_when_F_slow_recovers_the_echo_and_F1_does_nothing): closure denominator ignores the echo
+[17] RED   (test_ka_kb_and_the_banked_floor_read_their_analytic_values): KB passes in the wrong direction
+[18] RED   (test_e1_arithmetic_shift_form_has_the_hand_computed_value): E1 arithmetic shift sign flipped
+[19] RED   (test_f1_closure_is_computed_on_the_labelled_windows_only_and_the_like_for_like_is_reported): F1 closure on all windows (NaN-fill)
+[20] RED   (test_pre_registered_constants_are_literal): S2 slot count 4 -> 8
+[21] RED   (test_f1_is_excluded_and_counted_for_unlabelled_and_masked_classes_only): F1 class map identity
+[22] RED   (test_build_plan_is_stratified_proportional_single_set_per_chunk_and_deterministic): control subset never gets N2/Fown
+summary: 23 RED, 0 SURVIVED, 0 NOT APPLIED of 23; wall 126s
+done

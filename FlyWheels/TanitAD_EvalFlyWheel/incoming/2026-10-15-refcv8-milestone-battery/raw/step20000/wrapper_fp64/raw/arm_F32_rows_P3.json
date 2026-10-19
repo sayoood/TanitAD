@@ -1,0 +1,248 @@
+{
+ "tool": "wrapper_fp64_probe.py",
+ "arm": "F32",
+ "started": "2026-10-17T21:26:17",
+ "ckpt": "E:/refcv8_eval_kit/ckpt/ckpt_20000.pt",
+ "ok": true,
+ "omp_num_threads": "6",
+ "free_commit_gb_at_start": 18.79,
+ "torch": "2.11.0+cu128",
+ "cuda_available": false,
+ "tanitad_file": "C:\\lgs\\Lfb47a58376\\stack\\tanitad\\__init__.py",
+ "threads": 6,
+ "model": {
+  "step": 20000,
+  "missing": 0,
+  "unexpected": 0
+ },
+ "batch": {
+  "path": "C:/Users/Admin/qland/work/r8_wrapper_diag/cache/batch4.pt",
+  "perm_sha256": "99adbc7ed285236adc1098cf5eb9dbccfb04a2ce3307fb977a292dc4dfbf6975",
+  "rows_window_index": [
+   20658,
+   368,
+   10637,
+   7314
+  ]
+ },
+ "param_dtypes": {
+  "torch.float32": 848
+ },
+ "buffer_dtypes": {
+  "torch.float32": 216,
+  "torch.int64": 105
+ },
+ "default_dtype": "torch.float32",
+ "wall_s": 106.7,
+ "calls": [
+  {
+   "arm": "plain",
+   "wall_s": 40.2,
+   "term_dtypes": {
+    "torch.float32": 66
+   },
+   "lat_tac_dtype": "torch.float32",
+   "lat_tac_value": 0.0027991076931357384,
+   "lat_logits_tac_dtype": "torch.float32",
+   "lat_label_rows": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "rows_in_call": 4,
+   "lat_logits_tac": [
+    [
+     6.162432670593262,
+     -23.883901596069336,
+     -23.87654685974121,
+     -23.60906410217285,
+     -16.46449089050293,
+     -16.608299255371094,
+     -0.9104057550430298,
+     -0.46737128496170044
+    ],
+    [
+     7.091373443603516,
+     -36.697669982910156,
+     -36.019500732421875,
+     -37.04603958129883,
+     -25.39377212524414,
+     -25.481359481811523,
+     1.4886006116867065,
+     0.6252943277359009
+    ],
+    [
+     11.181910514831543,
+     -59.82036590576172,
+     -58.8436279296875,
+     -60.874664306640625,
+     -41.451271057128906,
+     -41.09193801879883,
+     3.2559521198272705,
+     1.88225257396698
+    ],
+    [
+     6.950392246246338,
+     -33.95895767211914,
+     -33.19540023803711,
+     -34.18544006347656,
+     -23.171886444091797,
+     -23.251049041748047,
+     0.7804461121559143,
+     0.27612313628196716
+    ]
+   ]
+  }
+ ],
+ "rows_alone_condition": "P3_fp32_det (fp32 trunk, NCHW, deterministic)",
+ "trunk_levers_at_rows_alone": {
+  "chunk_ckpt": 8,
+  "frozen_bn": true,
+  "bn_pinned": 104,
+  "relu_out_of_place": 100,
+  "bf16": false,
+  "channels_last": false,
+  "bn_folded": 104,
+  "dedup_frames": true
+ },
+ "rows_alone": {
+  "row0": {
+   "lat_tac_single_row_scalar": 0.002165950369089842,
+   "lat_logits_tac_max_absdiff_vs_batch": 3.814697265625e-06,
+   "lat_logits_tac_rel_vs_batch": 1.59718346279437e-07,
+   "out_tensors_n": 137,
+   "out_tensors_top5_rel_vs_batch": [
+    [
+     "out.goal_dist",
+     1.3206825362815077e-06,
+     1.0013580322265625e-05
+    ],
+    [
+     "out.perception.box_slots.aux[1].yaw_vec",
+     1.2815052095272938e-06,
+     1.2814998626708984e-06
+    ],
+    [
+     "out.agent_slots.aux[1].yaw_vec",
+     1.1622907116759672e-06,
+     1.1622905731201172e-06
+    ],
+    [
+     "out.r8_cons_raw",
+     9.32436751882683e-07,
+     7.62939453125e-05
+    ],
+    [
+     "out.agent_slots.aux[0].yaw_vec",
+     8.64267452271873e-07,
+     8.642673492431641e-07
+    ]
+   ],
+   "out_tensors_max_rel_vs_batch": 1.3206825362815077e-06
+  },
+  "row1": {
+   "lat_tac_single_row_scalar": 0.005229247268289328,
+   "lat_logits_tac_max_absdiff_vs_batch": 1.1444091796875e-05,
+   "lat_logits_tac_rel_vs_batch": 3.089153908546834e-07,
+   "out_tensors_n": 137,
+   "out_tensors_top5_rel_vs_batch": [
+    [
+     "out.perception.box_slots.aux[1].yaw_vec",
+     1.2412669494033365e-05,
+     1.2412667274475098e-05
+    ],
+    [
+     "out.perception.box_slots.aux[1].yaw",
+     3.984858751178664e-06,
+     1.2516975402832031e-05
+    ],
+    [
+     "out.goal_dist",
+     2.0732356678082132e-06,
+     1.1444091796875e-05
+    ],
+    [
+     "out.perception.box_slots.aux[0].yaw_vec",
+     1.490117629289609e-06,
+     1.4901161193847656e-06
+    ],
+    [
+     "out.perception.box_slots.yaw_vec",
+     1.3932605646999808e-06,
+     1.3932585716247559e-06
+    ]
+   ],
+   "out_tensors_max_rel_vs_batch": 1.2412669494033365e-05
+  },
+  "row2": {
+   "lat_tac_single_row_scalar": 0.00045253525604493916,
+   "lat_logits_tac_max_absdiff_vs_batch": 1.52587890625e-05,
+   "lat_logits_tac_rel_vs_batch": 2.506591081248142e-07,
+   "out_tensors_n": 137,
+   "out_tensors_top5_rel_vs_batch": [
+    [
+     "out.goal_dist",
+     4.026894910505016e-06,
+     2.2649765014648438e-05
+    ],
+    [
+     "out.perception.box_slots.yaw_vec",
+     2.7418136596679688e-06,
+     2.7418136596679688e-06
+    ],
+    [
+     "out.u0_hat",
+     1.0290150938618355e-06,
+     5.4836273193359375e-06
+    ],
+    [
+     "out.layer_u0_hat[7]",
+     1.0290150938618355e-06,
+     5.4836273193359375e-06
+    ],
+    [
+     "out.agent_slots.aux[0].yaw_vec",
+     1.0132809542579347e-06,
+     1.0132789611816406e-06
+    ]
+   ],
+   "out_tensors_max_rel_vs_batch": 4.026894910505016e-06
+  },
+  "row3": {
+   "lat_tac_single_row_scalar": 0.003348816651850939,
+   "lat_logits_tac_max_absdiff_vs_batch": 7.62939453125e-06,
+   "lat_logits_tac_rel_vs_batch": 2.2317672427453057e-07,
+   "out_tensors_n": 137,
+   "out_tensors_top5_rel_vs_batch": [
+    [
+     "out.agent_slots.aux[0].yaw_vec",
+     4.351139068603516e-06,
+     4.351139068603516e-06
+    ],
+    [
+     "out.agent_slots.yaw_vec",
+     2.8014183044433594e-06,
+     2.8014183044433594e-06
+    ],
+    [
+     "out.r8_cons_raw",
+     1.6162992316480793e-06,
+     0.0001678466796875
+    ],
+    [
+     "out.agent_slots.aux[0].yaw",
+     1.5937736575777298e-06,
+     5.0067901611328125e-06
+    ],
+    [
+     "out.u0_hat",
+     1.2913276041135107e-06,
+     6.9141387939453125e-06
+    ]
+   ],
+   "out_tensors_max_rel_vs_batch": 4.351139068603516e-06
+  }
+ },
+ "free_commit_gb_at_end": 14.15
+}

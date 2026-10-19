@@ -1,0 +1,121 @@
+"""summarize_40k_r8.py -- one page of the bar-deciding cells of a refcv8 milestone, READ from the banked artifacts (never recomputed).  CPU, stdlib only, never raises.
+
+    python -I summarize_40k_r8.py --pkg <PKG> --out-dir <PKG>/raw/step40000 [--step 40000]      -> READ_40K.json + READ_40K.md
+
+Per tree (`step<N>ema_unc` = the EMA weights, `step<N>_unc` = the raw weights) it lists, with the ARTIFACT each value came from:
+  * the compliant re-read (A-R8-CLAMP-2, raw/compliant_reread/trees/<tree>.json): its controls, then for the CAPPED plan on the COMPLIANT windows -- the read the PI ruled decides -- BAR-R8-E1 / E3 verdict
+    (+ per-inference-seed delta [lo, hi]) and the BAR-R8-NR per-family rollup; the all-window and uncapped reads beside;
+  * the three frozen-gain forwards (raw/a0k0_headroom | a0k0_lon | a0k0_retime / FORWARD*_<tree>.json): controls and every FZ* bar verdict;
+  * the heading-drift artifact (raw/heading_drift/HEADING_DRIFT_<tag>.json) if present.
+A missing artifact prints MISSING, never a guess.  TIER T1 self-action OPEN LOOP; single training seed; the estimator answers 'another draw of EPISODES' only (H-ESTIM-SEED-1).
+EARLY READS: the bars are decided at step 48,852.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+from pathlib import Path
+
+
+def jl(p):
+    try:
+        return json.loads(Path(p).read_text(encoding="utf-8"))
+    except Exception:                                        # noqa: BLE001
+        return None
+
+
+def cell(c):
+    if not isinstance(c, dict):
+        return "n/a"
+    s = c.get("delta")
+    return f"{s:+.4f} [{c.get('lo'):+.4f}, {c.get('hi'):+.4f}]" if isinstance(s, (int, float)) and isinstance(c.get("lo"), (int, float)) else "n/a"
+
+
+def bar_line(b):
+    if not isinstance(b, dict):
+        return "MISSING"
+    seeds = b.get("per_inference_seed") or {}
+    per = "; ".join(f"s{k} {cell(v)}" + (" sep" if isinstance(v, dict) and v.get("pass_separated") else "") for k, v in sorted(seeds.items()))
+    return f"{b.get('verdict', '?')}  ({per})"
+
+
+def nr_line(b):
+    pf = (b or {}).get("per_family") if isinstance(b, dict) else None
+    return json.dumps(pf, sort_keys=True)[:600] if pf is not None else "MISSING"
+
+
+def tree_block(pkg: Path, tree: str, heading_tag: str) -> dict:
+    out: dict = {"tree": tree}
+    cr = jl(pkg / "raw/compliant_reread/trees" / f"{tree}.json")
+    if cr is None:
+        out["compliant_reread"] = "MISSING"
+    else:
+        ctl = cr.get("controls", {})
+        out["compliant_reread"] = {"artifact": f"raw/compliant_reread/trees/{tree}.json", "controls_ALL_PASS": ctl.get("ALL_PASS"), "status": (cr.get("bars") or {}).get("status")}
+        for kind in ("compliant", "all_window"):
+            blk = (cr.get("bars") or {}).get(kind)
+            if isinstance(blk, dict):
+                for v in ("capped", "uncapped"):
+                    b = blk.get(v) or {}
+                    out["compliant_reread"][f"{kind}/{v}"] = {"E1": bar_line(b.get("BAR-R8-E1")), "E3": bar_line(b.get("BAR-R8-E3")), "NR_per_family": nr_line(b.get("BAR-R8-NR"))}
+            else:
+                out["compliant_reread"][kind] = blk if blk is not None else "MISSING"
+    fw = {}
+    for d, fn in (("a0k0_headroom", f"FORWARD_{tree}.json"), ("a0k0_lon", f"FORWARD_LON_{tree}.json"), ("a0k0_retime", f"FORWARD_RETIME_{tree}.json")):
+        j = jl(pkg / "raw" / d / fn)
+        if j is None:
+            fw[d] = "MISSING"
+            continue
+        rec = {"artifact": f"raw/{d}/{fn}", "controls_ALL_PASS": (j.get("controls") or {}).get("ALL_PASS"), "bars": {}}
+        for arm, bars in (j.get("bars") or {}).items():
+            rec["bars"][arm] = {k: (bar_line(v) if k != "FZ-NR" and not k.endswith("-NR") else nr_line(v)) for k, v in bars.items() if isinstance(v, dict) and k != "arm_floor"}
+        fw[d] = rec
+    out["frozen_gain_forwards"] = fw
+    hd = pkg / "raw/heading_drift" / f"{heading_tag}.json"
+    out["heading_drift"] = {"artifact": f"raw/heading_drift/{heading_tag}.json", "present": hd.exists()}
+    return out
+
+
+def render(res: dict) -> str:
+    L = [f"# READ_{res['step']} -- bar-deciding cells, READ from banked artifacts (EARLY READ; T1 self-action open loop; single training seed)", ""]
+    for t in res["trees"]:
+        L += [f"## {t['tree']}", ""]
+        cr = t["compliant_reread"]
+        if cr == "MISSING":
+            L += ["* compliant re-read: MISSING", ""]
+        else:
+            L += [f"* compliant re-read `{cr['artifact']}`: controls ALL_PASS = **{cr['controls_ALL_PASS']}**, status {cr['status']}"]
+            for k, v in cr.items():
+                if isinstance(v, dict) and "E1" in v:
+                    L += [f"  * `{k}`  E1 {v['E1']}", f"    E3 {v['E3']}", f"    NR per family {v['NR_per_family']}"]
+            L += [""]
+        for d, rec in t["frozen_gain_forwards"].items():
+            if rec == "MISSING":
+                L += [f"* forward `{d}`: MISSING"]
+                continue
+            L += [f"* forward `{rec['artifact']}`: controls ALL_PASS = **{rec['controls_ALL_PASS']}**"]
+            for arm, bars in rec["bars"].items():
+                for k, v in bars.items():
+                    L += [f"  * `{arm}` {k}: {v}"]
+        L += ["", f"* heading drift: `{t['heading_drift']['artifact']}` present = {t['heading_drift']['present']}", ""]
+    return "\n".join(L) + "\n"
+
+
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--pkg", required=True)
+    ap.add_argument("--out-dir", required=True)
+    ap.add_argument("--step", type=int, default=40000)
+    a = ap.parse_args(argv)
+    pkg = Path(a.pkg)
+    res = {"step": a.step, "trees": [tree_block(pkg, f"step{a.step}ema_unc", f"HEADING_DRIFT_step{a.step}ema"), tree_block(pkg, f"step{a.step}_unc", f"HEADING_DRIFT_step{a.step}raw")]}
+    out = Path(a.out_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "READ_40K.json").write_text(json.dumps(res, indent=1), encoding="utf-8")
+    (out / "READ_40K.md").write_text(render(res), encoding="utf-8")
+    print(f"WROTE {out / 'READ_40K.json'}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

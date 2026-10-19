@@ -1,0 +1,1360 @@
+{
+ "tool": "run_battery_r7.py",
+ "tag": "step5000_corr",
+ "ckpt": "E:/refcv8_eval_kit/ckpt/ckpt_5000.pt",
+ "ckpt_md5": "a32e3b70f46aabbd3ab55f285d03f82d",
+ "step": 5000,
+ "config": "E:/refcv8_eval_kit/ckpt/config.json",
+ "config_md5": "4ce2c77230dc4e802e78b39ce05af916",
+ "spec_sha256": "2286d5f42d0858dd98550de79403c3b398114954d06bf3904f076daf80890fe7",
+ "is_milestone": true,
+ "tanitad_file": "C:\\lgs\\Lfb47a58376\\stack\\tanitad\\__init__.py",
+ "started": "2026-10-16T10:13:35",
+ "stages": {
+  "gpu_lock": {
+   "held_by_caller": {
+    "job": "refcv8-battery-step5000",
+    "pid": 64306,
+    "win_pid_of_locker": 31076,
+    "host": "FREEDOM2035",
+    "acquired": "2026-10-16T06:55:59+0200"
+   }
+  },
+  "g0": {
+   "G0": "FAIL",
+   "amendment": "A7",
+   "G0_as_registered": "FAIL",
+   "G0_A2": "FAIL",
+   "reasons_A2": [
+    "eval_box3d_det_ap2_automobile_0_20 [DETECTION] in-run 0.33835 vs seeds mean 0.31453 (sd 0)",
+    "wrapper clause FAIL: ['merge defect: cascade wrapper 1.235e-01 > bar 8.638e-02', 'merge defect: r8_subscore wrapper 1.642e-02 > bar 1.379e-02']"
+   ],
+   "n_seeds": 24,
+   "reasons_as_registered": [
+    "eval_agent_det_ap1_bus_40_60 [DETECTION] in-run 1.0 vs seeds mean 0.33333 (sd 0)",
+    "eval_agent_det_ap2_bus_40_60 [DETECTION] in-run 1.0 vs seeds mean 0.33333 (sd 0)",
+    "eval_agent_det_ap4_bus_40_60 [DETECTION] in-run 1.0 vs seeds mean 0.33333 (sd 0)",
+    "eval_agent_det_map1_40_60 [DETECTION] in-run 0.14818 vs seeds mean 0.05217 (sd 0)",
+    "eval_agent_det_map2_40_60 [DETECTION] in-run 0.15462 vs seeds mean 0.05943 (sd 0)",
+    "eval_agent_det_map4_40_60 [DETECTION] in-run 0.16119 vs seeds mean 0.0653 (sd 0)",
+    "eval_box3d_det_ap0p5_bus_0_20 [DETECTION] in-run 0.16667 vs seeds mean 0.14286 (sd 0)",
+    "eval_box3d_det_ap1_bus_0_20 [DETECTION] in-run 0.33333 vs seeds mean 0.5 (sd 0)",
+    "eval_box3d_det_ap2_automobile_0_20 [DETECTION] in-run 0.33835 vs seeds mean 0.31453 (sd 0)",
+    "eval_box3d_det_ap2_bus_0_20 [DETECTION] in-run 0.33333 vs seeds mean 0.5 (sd 0)",
+    "eval_box3d_det_ap4_bus_0_20 [DETECTION] in-run 0.33333 vs seeds mean 0.5 (sd 0)",
+    "eval_box3d_det_ap4_rider_0_20 [DETECTION] in-run 0.03571 vs seeds mean 0.01042 (sd 0)",
+    "eval_box3d_det_map1_0_20 [DETECTION] in-run 0.06922 vs seeds mean 0.09004 (sd 0)",
+    "wrapper clause FAIL: ['merge defect: cascade wrapper 1.235e-01 > bar 8.638e-02', 'merge defect: r8_subscore wrapper 1.642e-02 > bar 1.379e-02']"
+   ],
+   "reasons": [
+    "eval_box3d_det_ap2_automobile_0_20 [DETECTION] in-run 0.33835 vs seeds mean 0.31453 (sd 0)",
+    "wrapper clause FAIL: ['merge defect: cascade wrapper 1.235e-01 > bar 8.638e-02', 'merge defect: r8_subscore wrapper 1.642e-02 > bar 1.379e-02']"
+   ],
+   "by_class_counts": {
+    "SMOOTH": 192,
+    "DETECTION": 100,
+    "EXCLUDED": 11,
+    "MATCHED": 29,
+    "UNDEFINED": 94,
+    "DERIVED": 2,
+    "DETECTION_LOWSUPPORT": 238,
+    "COUNT": 219,
+    "STOCHASTIC": 10,
+    "MAP10_COUNTS": 160,
+    "MAP10_IOU": 80,
+    "THRESHOLD_TARGET": 1
+   },
+   "medians": {
+    "SMOOTH": 0.0002968827313211504,
+    "MATCHED": 0.002412847569248687,
+    "MAP10_COUNTS": 6.520160117745398e-05,
+    "DETECTION_abs01": 0.0007600000000000072,
+    "SMOOTH_phi_rel": 0.001542281071321176,
+    "SMOOTH_bar": 0.004626843213963528
+   },
+   "mutation_detection": {
+    "m1": {
+     "detected": true,
+     "n_terms_out": 12,
+     "how": null
+    },
+    "m2": {
+     "detected": true,
+     "n_terms_out": 58,
+     "how": null
+    },
+    "m4": {
+     "detected": true,
+     "n_terms_out": 1,
+     "how": null
+    },
+    "m5": {
+     "detected": true,
+     "n_terms_out": 37,
+     "how": "DETECTED"
+    }
+   },
+   "blind_spots_named": [],
+   "wrapper_clause": "FAIL",
+   "requires_grad_control": {
+    "batch": 2,
+    "ddim_eps": "zeros",
+    "n_terms": 471,
+    "n_differ": 37,
+    "differ_first20": {
+     "loss": [
+      53.4501953125,
+      53.450199127197266
+     ],
+     "traj": [
+      0.41061869263648987,
+      0.41061872243881226
+     ],
+     "cls": [
+      0.0007741365116089582,
+      0.0007741360459476709
+     ],
+     "agent": [
+      19.69560432434082,
+      19.695606231689453
+     ],
+     "agent_cls": [
+      0.10466043651103973,
+      0.10466045141220093
+     ],
+     "agent_centre": [
+      1.3696410655975342,
+      1.3696417808532715
+     ],
+     "agent_size": [
+      0.8594381213188171,
+      0.8594376444816589
+     ],
+     "agent_yaw": [
+      0.40454959869384766,
+      0.40454956889152527
+     ],
+     "agent_layer0": [
+      6.271930694580078,
+      6.2719292640686035
+     ],
+     "agent_presence_layer0": [
+      0.4865832030773163,
+      0.4865831434726715
+     ],
+     "agent_layer1": [
+      6.855661392211914,
+      6.8556623458862305
+     ],
+     "agent_presence_layer1": [
+      0.49093833565711975,
+      0.490938276052475
+     ],
+     "agent_layer2": [
+      6.568012714385986,
+      6.568013668060303
+     ],
+     "r8v9_lon_pl": [
+      1.606281042098999,
+      1.6062812805175781
+     ],
+     "tac_v6": [
+      0.060742996633052826,
+      0.06074300780892372
+     ],
+     "tacv6_goal_bce": [
+      0.48930999636650085,
+      0.48931005597114563
+     ],
+     "tacv6_goal_conf_bce": [
+      0.09681523591279984,
+      0.09681528061628342
+     ],
+     "tacv6_lon_ce": [
+      1.6062809228897095,
+      1.606281042098999
+     ],
+     "tacv6_total_weighted": [
+      0.060742996633052826,
+      0.06074300408363342
+     ],
+     "box3d": [
+      22.822254180908203,
+      22.822256088256836
+     ]
+    },
+    "max_rel_all": 3.907128990969467e-06,
+    "differ_all_rel": {
+     "loss": 7.13691922606106e-08,
+     "traj": 7.257906890780187e-08,
+     "cls": 6.015234785140324e-07,
+     "agent": 9.684133583326014e-08,
+     "agent_cls": 1.423762568797987e-07,
+     "agent_centre": 5.222212996312596e-07,
+     "agent_size": 5.548243048276858e-07,
+     "agent_yaw": 7.366790743067556e-08,
+     "agent_layer0": 2.2808151815924226e-07,
+     "agent_presence_layer0": 1.2249630566454153e-07,
+     "agent_layer1": 1.3910755824224802e-07,
+     "agent_presence_layer1": 1.214096362949737e-07,
+     "agent_layer2": 1.4519982799628376e-07,
+     "r8v9_lon_pl": 1.4842893170799696e-07,
+     "tac_v6": 1.8398616325926336e-07,
+     "tacv6_goal_bce": 1.2181366662851868e-07,
+     "tacv6_goal_conf_bce": 4.6174017095622003e-07,
+     "tacv6_lon_ce": 7.421447136178583e-08,
+     "tacv6_total_weighted": 1.2265744217284223e-07,
+     "box3d": 8.357406843746746e-08,
+     "box3d_presence": 1.2609412661754334e-07,
+     "box3d_cls": 6.625525685771723e-08,
+     "box3d_centre": 4.316810119063379e-07,
+     "box3d_size": 1.1926892187683778e-06,
+     "box3d_rates": 1.1507618906787712e-07,
+     "box3d_z": 6.629333208407232e-07,
+     "box3d_h": 3.907128990969467e-06,
+     "box3d_layer0": 1.3960614454108214e-07,
+     "box3d_presence_layer0": 2.3176628039339545e-07,
+     "box3d_layer1": 3.151856377217197e-07,
+     "box3d_layer2": 1.1317306141619111e-07,
+     "box3d_presence_layer2": 1.2609412661754334e-07,
+     "map_hires": 2.338451033419973e-07,
+     "r8_v9_mae_lat_c": 2.4453623519592914e-07,
+     "r8_v9_mae_lon_c": 6.546591700335788e-08,
+     "r8_sat": 1.04529307143167e-07,
+     "r8_subscore": 7.075029842475876e-08
+    }
+   },
+   "json": "E:\\refcv8_eval_kit\\battery\\step5000\\g0.json",
+   "G0_A5": "FAIL",
+   "reasons_A5": [
+    "eval_box3d_det_ap2_automobile_0_20 [DETECTION] in-run 0.33835 vs seeds mean 0.31453 (sd 0)",
+    "wrapper clause FAIL: ['merge defect: cascade wrapper 1.235e-01 > bar 8.638e-02', 'merge defect: r8_subscore wrapper 1.642e-02 > bar 1.379e-02']"
+   ],
+   "G0_A6": "FAIL",
+   "reasons_A6": [
+    "eval_box3d_det_ap2_automobile_0_20 [DETECTION] in-run 0.33835 vs seeds mean 0.31453 (sd 0)",
+    "wrapper clause FAIL: ['merge defect: cascade wrapper 1.235e-01 > bar 8.638e-02', 'merge defect: r8_subscore wrapper 1.642e-02 > bar 1.379e-02']"
+   ],
+   "a6_registration": {
+    "registered": true,
+    "file_mtime": "2026-10-15T03:05:12",
+    "g0_started": "2026-10-16T00:53:23",
+    "text": "684a3b5c07f90329985099b6eea62a8dacfbacee65931aa168fb855fba3eaf7f  SPEC.md after AMENDMENT A6 (2026-10-04T08:17:13+02:00), registered by the Master Mind before any step-50400 G0/battery number\n"
+   },
+   "a6_rescued": [],
+   "a6_threshold_terms": {
+    "eval_tacv6_goal_conf_bce": {
+     "inrun": 0.1348,
+     "mean": 0.13562,
+     "a6_lo": 0.09436331736214786,
+     "a6_hi": 0.6652750660267797,
+     "a6_t_replay": 0.13562217285966846,
+     "a6_delta_logit_max": 0.3482191562652588,
+     "a6_n_undecidable": 363,
+     "a6_n_flipped_by_arm": 9,
+     "verdict": "OK"
+    }
+   },
+   "a6_medians": {
+    "SMOOTH": 0.0002968827313211504,
+    "MATCHED": 0.002412847569248687,
+    "MAP10_COUNTS": 6.520160117745398e-05,
+    "DETECTION_abs01": 0.0007600000000000072,
+    "SMOOTH_phi_rel": 0.001542281071321176,
+    "SMOOTH_bar": 0.004626843213963528
+   },
+   "G0_A7": "FAIL",
+   "reasons_A7": [
+    "eval_box3d_det_ap2_automobile_0_20 [DETECTION] in-run 0.33835 vs seeds mean 0.31453 (sd 0)",
+    "wrapper clause FAIL: ['merge defect: cascade wrapper 1.235e-01 > bar 8.638e-02', 'merge defect: r8_subscore wrapper 1.642e-02 > bar 1.379e-02']"
+   ],
+   "a7_registration": {
+    "registered": true,
+    "file_mtime": "2026-10-15T03:05:12",
+    "g0_started": "2026-10-16T00:53:23",
+    "text": "2286d5f42d0858dd98550de79403c3b398114954d06bf3904f076daf80890fe7  SPEC.md after AMENDMENT A7 (2026-10-04T17:11:57+02:00), registered by the Master Mind before any refcv8 G0 number; A7 source sha256 46a82d1e73011fe5732af64d6c0a5aed4ff8fbdfc27fc4b748be5ac8eda5515e\n"
+   },
+   "a7_lowsupport": {
+    "status": "PASS",
+    "n_members": 238,
+    "N_in": 12,
+    "N_num": 9,
+    "bound": 23,
+    "why": null
+   },
+   "a7_m5": {
+    "status": "DETECTED",
+    "detected": true,
+    "N_M5": 37,
+    "N_num": 9,
+    "bound": 23,
+    "blind_spot": null,
+    "restoration_bit_exact": true,
+    "n_gating_detection_out": 0
+   },
+   "a7_reports": {
+    "packs": "ALL BANKED",
+    "seed_group": "A",
+    "seed_group_F": 1.9812483664627931,
+    "seed_group_p": 0.1830175541972891,
+    "seed_draw_correlation": [
+     {
+      "earlier_step": 30000,
+      "n_cells": 192,
+      "r_cell": 0.45251990993503
+     },
+     {
+      "earlier_step": 5000,
+      "n_cells": 64,
+      "r_cell": 0.36427716658319964
+     },
+     {
+      "earlier_step": 50400,
+      "n_cells": 192,
+      "r_cell": 0.3289608180398026
+     }
+    ]
+   }
+  },
+  "roll_s0": {
+   "seed": 0,
+   "arm_set": "os + model-free controls (SPEC A3)",
+   "dump_dir": "E:\\refcv8_eval_kit\\battery\\step5000_corr\\dump_s0",
+   "wall_s": 3162.6,
+   "n_windows": 4754,
+   "n_episodes": 139,
+   "skipped": 0,
+   "extras": {
+    "n_windows": 4754,
+    "keys": [
+     "clip_index",
+     "gt_max_speed_6s",
+     "lat_v7",
+     "lon_v7",
+     "nav_true.lat_logits_tac",
+     "nav_true.lon_logits_tac",
+     "nav_true.sel_idx",
+     "nav_true.tacv6_goal_conf",
+     "nav_true.tacv6_goal_logits",
+     "nav_true.tacv6_lat_logits",
+     "nav_true.tacv6_lon_logits",
+     "nav_true.traj",
+     "obey30.n_fan_compliant",
+     "obey30.planned_max_ms",
+     "tac_goal_w",
+     "tac_goal_y",
+     "v0",
+     "v_max_ms",
+     "v_max_valid",
+     "ws"
+    ],
+    "clip_sha12_by_index": {
+     "0": "0dfe63214bc2",
+     "1": "c64f0103aece",
+     "2": "54e3dc4b3ae4",
+     "3": "d0c6db065fa0",
+     "4": "c8831556989f",
+     "5": "bfc3a203bd06",
+     "6": "b435685d40c8",
+     "7": "47f22ccd6fbb",
+     "8": "ea6d261f6c62",
+     "9": "42cc086733d8",
+     "10": "d4c144f52747",
+     "11": "7f6670448ef6",
+     "12": "7e5dc4ad4e52",
+     "13": "d75f38babcda",
+     "14": "bb62d9b15ef0",
+     "15": "37616735658b",
+     "16": "c45d6a86ff06",
+     "17": "5a393f328725",
+     "18": "c167e6ce11a3",
+     "19": "af59c57f6c77",
+     "20": "e01bd05b8e43",
+     "21": "209199ce8280",
+     "22": "f81131bdf928",
+     "23": "ac6745ace7ec",
+     "24": "6ad168dc58db",
+     "25": "418a12591a39",
+     "26": "2ccc9a947611",
+     "27": "09f53befdab2",
+     "28": "34765c024267",
+     "29": "50da1e13e4db",
+     "30": "fcc9209b8e83",
+     "31": "f2c6a9c84795",
+     "32": "9d92cb2360a4",
+     "33": "67e3568c2eda",
+     "34": "53dea87e5f81",
+     "35": "4888dcd27dc8",
+     "36": "e0f97cf3262a",
+     "37": "59d98b34ae8b",
+     "38": "062d0d6e9791",
+     "39": "6adc10f58460",
+     "40": "9546f6d574e2",
+     "41": "6b0744922620",
+     "42": "c8cb0ad57519",
+     "43": "c5bb9c2618da",
+     "44": "98f1cf98cc38",
+     "45": "dd55afb71c3d",
+     "46": "f732a885f432",
+     "47": "76fc5c466b2d",
+     "48": "feccf3ba3479",
+     "49": "2efcfdb9c913",
+     "50": "a4741056ff38",
+     "51": "356568701781",
+     "52": "a699b49d4563",
+     "53": "c0bb04e203cf",
+     "54": "198bb4517e28",
+     "55": "d36583cfa3d6",
+     "56": "c7e31db0a5c5",
+     "57": "49f68312b36e",
+     "58": "22ecc807b84c",
+     "59": "2dc00f2fb95d",
+     "60": "b2ee18d21dff",
+     "61": "439646d62f3a",
+     "62": "a21feba2f8b1",
+     "63": "c448fac4e230",
+     "64": "68b999cbd670",
+     "65": "04ed850dca64",
+     "66": "9f8bedcfb9de",
+     "67": "43ac3253c6a3",
+     "68": "b6ba8d3b06f3",
+     "69": "5c1eb051b96f",
+     "70": "2b568af29b7d",
+     "71": "3c1ab43d104a",
+     "72": "58f07fdb342a",
+     "73": "b9622e49a9ec",
+     "74": "b88f64c81aec",
+     "75": "e1777e69be55",
+     "76": "60f8d13ff2e2",
+     "77": "5b74d23ac873",
+     "78": "e902aba7fb9a",
+     "79": "029d8d52075c",
+     "80": "b5f66e3e7af0",
+     "81": "43e797856f84",
+     "82": "22d47ae7e052",
+     "83": "28b54692a103",
+     "84": "9855363e1ac1",
+     "85": "c16543c621dc",
+     "86": "071957186302",
+     "87": "6d3b8ff6b7b2",
+     "88": "c23873899e31",
+     "89": "3fc7f2025d61",
+     "90": "4de594141ae4",
+     "91": "94aae24f02bf",
+     "92": "081b986f8888",
+     "93": "729b5d29fa89",
+     "94": "39cd356553d5",
+     "95": "6c5a21de8993",
+     "96": "c0d4ac1d8f62",
+     "97": "ff9d2a66d2a2",
+     "98": "83df0bab7763",
+     "99": "252bc8e77e06",
+     "100": "a78bf2711918",
+     "101": "732422c717f1",
+     "102": "77d93cd24266",
+     "103": "28f6781136b1",
+     "104": "f6cfd0a20340",
+     "105": "356cc45b0224",
+     "106": "c4f46701b8ae",
+     "107": "101ef2cf05dc",
+     "108": "03cb55890588",
+     "109": "c8c6aa11d792",
+     "110": "751cdd67811f",
+     "111": "4b5c891e90e6",
+     "112": "00213e99adca",
+     "113": "3db625a5f941",
+     "114": "85ee873a6f81",
+     "115": "7695875eaea9",
+     "116": "0191487845ef",
+     "117": "264a78e8fad1",
+     "118": "d5a67435ec19",
+     "119": "eaf5c5ae236c",
+     "120": "1655838298f8",
+     "121": "bbd162dfe0eb",
+     "122": "d32340bd0ad0",
+     "123": "cd79a917d8c4",
+     "124": "547d1d68c1bd",
+     "125": "e81566637c0e",
+     "126": "1721df8c70b6",
+     "127": "693335b810c3",
+     "128": "cf8839a4e491",
+     "129": "b0d17a91f120",
+     "130": "4a7515667297",
+     "131": "07fac416bccf",
+     "132": "7be92e6870d8",
+     "133": "8323b0dfdd3b",
+     "134": "8d2cdffe0da7",
+     "135": "8bc0a83f65f9",
+     "136": "2aa810802777",
+     "137": "570b47ad7408",
+     "138": "fb5c61fbd0d2"
+    },
+    "proxy_calls": 4754,
+    "filteroff_calls": 0,
+    "filter_modules": [
+     "AnchoredDiffusionDecoder"
+    ]
+   },
+   "cuda_max_memory_allocated_gib": 1.222,
+   "model_record": {
+    "state_dict": {
+     "strict": true,
+     "missing": [],
+     "unexpected": [],
+     "n_keys": 1165,
+     "n_map_hires_keys": 54,
+     "ckpt_keys": [
+      "step"
+     ],
+     "step": 5000
+    },
+    "param_breakdown": {
+     "rebuilt": {
+      "core": 90897767,
+      "phi_tac": 2101504,
+      "str_goal_head": 771,
+      "gstr_cond": 66816,
+      "tac_heads": 14364,
+      "tac_latent_proj": 262656,
+      "scorer": 1145,
+      "nav_inject": 50176,
+      "tac_decoder_v6": 2272802,
+      "tac_behaviour_gate_v6": 2574,
+      "total": 100598182
+     },
+     "config_json": {
+      "core": 90897767,
+      "phi_tac": 2101504,
+      "str_goal_head": 771,
+      "gstr_cond": 66816,
+      "tac_heads": 14364,
+      "tac_latent_proj": 262656,
+      "scorer": 1145,
+      "nav_inject": 50176,
+      "tac_decoder_v6": 2272802,
+      "tac_behaviour_gate_v6": 2574,
+      "total": 100598182
+     },
+     "equal": true
+    },
+    "anchor_file_vs_ckpt_buffers": {
+     "core.decoder.anchors": {
+      "shape": [
+       117,
+       8,
+       2
+      ],
+      "max_abs_diff": 0.0
+     },
+     "core.decoder.anchor_controls": {
+      "shape": [
+       117,
+       2
+      ],
+      "max_abs_diff": 0.0
+     }
+    },
+    "trunk_memory_levers_built": {
+     "chunk_ckpt": 8,
+     "frozen_bn": true,
+     "bn_pinned": 104,
+     "relu_out_of_place": 100,
+     "bf16": true,
+     "channels_last": true,
+     "bn_folded": 104,
+     "dedup_frames": true
+    },
+    "departures": [
+     "argv --trunk-compile REMOVED: no Triton on Windows; torch.compile wraps the backbone CALL only -- module tree and state_dict identical (LAUNCH_READINESS_FIXES.md sec. 10b)",
+     "Thor data paths REMAPPED to the eval kit E:\\refcv6_eval_kit for ['--agent-join', '--agent-rig-extrinsics', '--anchors', '--clip-clock-sidecar', '--eval-cache', '--eval-labels', '--join-defect-masks', '--join3d', '--map-gt-root', '--map-hires-class-weights', '--nav-compliance-tau-file', '--pose-sync-sidecar', '--r8-v9-labels-eval', '--speed-max-sidecar-v6-eval', '--vis1-sidecar'] (per flag, basename-checked; recorded in argv_remap)",
+     "tactical-goal pos_weight / class mask from config.json tac_goal_stats (the TRAIN split's own constants; train():8483-8497 derives them from the loaded split)"
+    ],
+    "declared_vs_built": {
+     "mismatches": [],
+     "registry_entries": 276
+    }
+   },
+   "window_restriction": {
+    "n_requested": 4754,
+    "n_index_before": 23772,
+    "n_index_after": 4754,
+    "source": "banked baseline grid (clip, ws), kit clips"
+   },
+   "label_clock": {
+    "rule": "t_now = grid_start_s + (t + w - 1 + n_stack - 1) * dt_s (tanitad/data/clip_clock.py; A16 2026-09-26)",
+    "sidecar": "E:/refcv8_eval_kit/data/refcv8_clip_clock_sidecar_ts33.jsonl",
+    "sidecar_rows": 4686,
+    "n_clips": 139,
+    "n_from_sidecar": 136,
+    "n_pose_dt_grid_start_0": 0,
+    "n_nominal_dt_grid_start_0": 3,
+    "raw_offsets": [
+     2
+    ],
+    "dt_s_median": 0.10066662995966351,
+    "dt_s_min": 0.1,
+    "dt_s_max": 0.10100496421012953,
+    "g3": {
+     "g3": "PASS",
+     "split": "eval",
+     "tol_s": 0.05,
+     "n_clips": 139,
+     "n_reads_checked": 408,
+     "worst_abs_err_s": 0.0,
+     "n_unverified_clips": 3,
+     "tactical_scored_on_clips": 136,
+     "tactical_excluded_clips": 3,
+     "tactical_excluded_sids": [
+      1131054092343061790,
+      6479814750558219472,
+      8549884407071846968
+     ],
+     "tactical_excluded_reason": "no MEASURED label clock (absent from the clip-clock sidecar): their tactical targets cannot be shown within tol_s of the truth",
+     "families_on_all_clips": [
+      "longitudinal",
+      "lateral",
+      "strategic"
+     ],
+     "mode": "per-family: TACTICAL on verified clips only (E2(b))",
+     "rule": "t_true = grid_start_s + (t + w - 1 + n_stack - 1) * dt_s (sidecar)",
+     "tactical_excluded_sha12": [
+      "081b986f8888",
+      "2aa810802777",
+      "3db625a5f941"
+     ]
+    }
+   },
+   "requires_grad_state": "loader (all False) -- see G0's requires_grad control",
+   "frame_memo": {
+    "hits": 0,
+    "misses": 47540
+   },
+   "device": "cuda"
+  },
+  "roll_s1": {
+   "seed": 1,
+   "arm_set": "os + model-free controls (SPEC A3)",
+   "dump_dir": "E:\\refcv8_eval_kit\\battery\\step5000_corr\\dump_s1",
+   "wall_s": 2081.7,
+   "n_windows": 4754,
+   "n_episodes": 139,
+   "skipped": 0,
+   "extras": {
+    "n_windows": 4754,
+    "keys": [
+     "clip_index",
+     "gt_max_speed_6s",
+     "lat_v7",
+     "lon_v7",
+     "nav_true.lat_logits_tac",
+     "nav_true.lon_logits_tac",
+     "nav_true.sel_idx",
+     "nav_true.tacv6_goal_conf",
+     "nav_true.tacv6_goal_logits",
+     "nav_true.tacv6_lat_logits",
+     "nav_true.tacv6_lon_logits",
+     "nav_true.traj",
+     "obey30.n_fan_compliant",
+     "obey30.planned_max_ms",
+     "tac_goal_w",
+     "tac_goal_y",
+     "v0",
+     "v_max_ms",
+     "v_max_valid",
+     "ws"
+    ],
+    "clip_sha12_by_index": {
+     "0": "0dfe63214bc2",
+     "1": "c64f0103aece",
+     "2": "54e3dc4b3ae4",
+     "3": "d0c6db065fa0",
+     "4": "c8831556989f",
+     "5": "bfc3a203bd06",
+     "6": "b435685d40c8",
+     "7": "47f22ccd6fbb",
+     "8": "ea6d261f6c62",
+     "9": "42cc086733d8",
+     "10": "d4c144f52747",
+     "11": "7f6670448ef6",
+     "12": "7e5dc4ad4e52",
+     "13": "d75f38babcda",
+     "14": "bb62d9b15ef0",
+     "15": "37616735658b",
+     "16": "c45d6a86ff06",
+     "17": "5a393f328725",
+     "18": "c167e6ce11a3",
+     "19": "af59c57f6c77",
+     "20": "e01bd05b8e43",
+     "21": "209199ce8280",
+     "22": "f81131bdf928",
+     "23": "ac6745ace7ec",
+     "24": "6ad168dc58db",
+     "25": "418a12591a39",
+     "26": "2ccc9a947611",
+     "27": "09f53befdab2",
+     "28": "34765c024267",
+     "29": "50da1e13e4db",
+     "30": "fcc9209b8e83",
+     "31": "f2c6a9c84795",
+     "32": "9d92cb2360a4",
+     "33": "67e3568c2eda",
+     "34": "53dea87e5f81",
+     "35": "4888dcd27dc8",
+     "36": "e0f97cf3262a",
+     "37": "59d98b34ae8b",
+     "38": "062d0d6e9791",
+     "39": "6adc10f58460",
+     "40": "9546f6d574e2",
+     "41": "6b0744922620",
+     "42": "c8cb0ad57519",
+     "43": "c5bb9c2618da",
+     "44": "98f1cf98cc38",
+     "45": "dd55afb71c3d",
+     "46": "f732a885f432",
+     "47": "76fc5c466b2d",
+     "48": "feccf3ba3479",
+     "49": "2efcfdb9c913",
+     "50": "a4741056ff38",
+     "51": "356568701781",
+     "52": "a699b49d4563",
+     "53": "c0bb04e203cf",
+     "54": "198bb4517e28",
+     "55": "d36583cfa3d6",
+     "56": "c7e31db0a5c5",
+     "57": "49f68312b36e",
+     "58": "22ecc807b84c",
+     "59": "2dc00f2fb95d",
+     "60": "b2ee18d21dff",
+     "61": "439646d62f3a",
+     "62": "a21feba2f8b1",
+     "63": "c448fac4e230",
+     "64": "68b999cbd670",
+     "65": "04ed850dca64",
+     "66": "9f8bedcfb9de",
+     "67": "43ac3253c6a3",
+     "68": "b6ba8d3b06f3",
+     "69": "5c1eb051b96f",
+     "70": "2b568af29b7d",
+     "71": "3c1ab43d104a",
+     "72": "58f07fdb342a",
+     "73": "b9622e49a9ec",
+     "74": "b88f64c81aec",
+     "75": "e1777e69be55",
+     "76": "60f8d13ff2e2",
+     "77": "5b74d23ac873",
+     "78": "e902aba7fb9a",
+     "79": "029d8d52075c",
+     "80": "b5f66e3e7af0",
+     "81": "43e797856f84",
+     "82": "22d47ae7e052",
+     "83": "28b54692a103",
+     "84": "9855363e1ac1",
+     "85": "c16543c621dc",
+     "86": "071957186302",
+     "87": "6d3b8ff6b7b2",
+     "88": "c23873899e31",
+     "89": "3fc7f2025d61",
+     "90": "4de594141ae4",
+     "91": "94aae24f02bf",
+     "92": "081b986f8888",
+     "93": "729b5d29fa89",
+     "94": "39cd356553d5",
+     "95": "6c5a21de8993",
+     "96": "c0d4ac1d8f62",
+     "97": "ff9d2a66d2a2",
+     "98": "83df0bab7763",
+     "99": "252bc8e77e06",
+     "100": "a78bf2711918",
+     "101": "732422c717f1",
+     "102": "77d93cd24266",
+     "103": "28f6781136b1",
+     "104": "f6cfd0a20340",
+     "105": "356cc45b0224",
+     "106": "c4f46701b8ae",
+     "107": "101ef2cf05dc",
+     "108": "03cb55890588",
+     "109": "c8c6aa11d792",
+     "110": "751cdd67811f",
+     "111": "4b5c891e90e6",
+     "112": "00213e99adca",
+     "113": "3db625a5f941",
+     "114": "85ee873a6f81",
+     "115": "7695875eaea9",
+     "116": "0191487845ef",
+     "117": "264a78e8fad1",
+     "118": "d5a67435ec19",
+     "119": "eaf5c5ae236c",
+     "120": "1655838298f8",
+     "121": "bbd162dfe0eb",
+     "122": "d32340bd0ad0",
+     "123": "cd79a917d8c4",
+     "124": "547d1d68c1bd",
+     "125": "e81566637c0e",
+     "126": "1721df8c70b6",
+     "127": "693335b810c3",
+     "128": "cf8839a4e491",
+     "129": "b0d17a91f120",
+     "130": "4a7515667297",
+     "131": "07fac416bccf",
+     "132": "7be92e6870d8",
+     "133": "8323b0dfdd3b",
+     "134": "8d2cdffe0da7",
+     "135": "8bc0a83f65f9",
+     "136": "2aa810802777",
+     "137": "570b47ad7408",
+     "138": "fb5c61fbd0d2"
+    },
+    "proxy_calls": 4754,
+    "filteroff_calls": 0,
+    "filter_modules": [
+     "AnchoredDiffusionDecoder"
+    ]
+   },
+   "cuda_max_memory_allocated_gib": 1.222,
+   "model_record": {
+    "state_dict": {
+     "strict": true,
+     "missing": [],
+     "unexpected": [],
+     "n_keys": 1165,
+     "n_map_hires_keys": 54,
+     "ckpt_keys": [
+      "step"
+     ],
+     "step": 5000
+    },
+    "param_breakdown": {
+     "rebuilt": {
+      "core": 90897767,
+      "phi_tac": 2101504,
+      "str_goal_head": 771,
+      "gstr_cond": 66816,
+      "tac_heads": 14364,
+      "tac_latent_proj": 262656,
+      "scorer": 1145,
+      "nav_inject": 50176,
+      "tac_decoder_v6": 2272802,
+      "tac_behaviour_gate_v6": 2574,
+      "total": 100598182
+     },
+     "config_json": {
+      "core": 90897767,
+      "phi_tac": 2101504,
+      "str_goal_head": 771,
+      "gstr_cond": 66816,
+      "tac_heads": 14364,
+      "tac_latent_proj": 262656,
+      "scorer": 1145,
+      "nav_inject": 50176,
+      "tac_decoder_v6": 2272802,
+      "tac_behaviour_gate_v6": 2574,
+      "total": 100598182
+     },
+     "equal": true
+    },
+    "anchor_file_vs_ckpt_buffers": {
+     "core.decoder.anchors": {
+      "shape": [
+       117,
+       8,
+       2
+      ],
+      "max_abs_diff": 0.0
+     },
+     "core.decoder.anchor_controls": {
+      "shape": [
+       117,
+       2
+      ],
+      "max_abs_diff": 0.0
+     }
+    },
+    "trunk_memory_levers_built": {
+     "chunk_ckpt": 8,
+     "frozen_bn": true,
+     "bn_pinned": 104,
+     "relu_out_of_place": 100,
+     "bf16": true,
+     "channels_last": true,
+     "bn_folded": 104,
+     "dedup_frames": true
+    },
+    "departures": [
+     "argv --trunk-compile REMOVED: no Triton on Windows; torch.compile wraps the backbone CALL only -- module tree and state_dict identical (LAUNCH_READINESS_FIXES.md sec. 10b)",
+     "Thor data paths REMAPPED to the eval kit E:\\refcv6_eval_kit for ['--agent-join', '--agent-rig-extrinsics', '--anchors', '--clip-clock-sidecar', '--eval-cache', '--eval-labels', '--join-defect-masks', '--join3d', '--map-gt-root', '--map-hires-class-weights', '--nav-compliance-tau-file', '--pose-sync-sidecar', '--r8-v9-labels-eval', '--speed-max-sidecar-v6-eval', '--vis1-sidecar'] (per flag, basename-checked; recorded in argv_remap)",
+     "tactical-goal pos_weight / class mask from config.json tac_goal_stats (the TRAIN split's own constants; train():8483-8497 derives them from the loaded split)"
+    ],
+    "declared_vs_built": {
+     "mismatches": [],
+     "registry_entries": 276
+    }
+   },
+   "window_restriction": {
+    "n_requested": 4754,
+    "n_index_before": 23772,
+    "n_index_after": 4754,
+    "source": "banked baseline grid (clip, ws), kit clips"
+   },
+   "label_clock": {
+    "rule": "t_now = grid_start_s + (t + w - 1 + n_stack - 1) * dt_s (tanitad/data/clip_clock.py; A16 2026-09-26)",
+    "sidecar": "E:/refcv8_eval_kit/data/refcv8_clip_clock_sidecar_ts33.jsonl",
+    "sidecar_rows": 4686,
+    "n_clips": 139,
+    "n_from_sidecar": 136,
+    "n_pose_dt_grid_start_0": 0,
+    "n_nominal_dt_grid_start_0": 3,
+    "raw_offsets": [
+     2
+    ],
+    "dt_s_median": 0.10066662995966351,
+    "dt_s_min": 0.1,
+    "dt_s_max": 0.10100496421012953,
+    "g3": {
+     "g3": "PASS",
+     "split": "eval",
+     "tol_s": 0.05,
+     "n_clips": 139,
+     "n_reads_checked": 408,
+     "worst_abs_err_s": 0.0,
+     "n_unverified_clips": 3,
+     "tactical_scored_on_clips": 136,
+     "tactical_excluded_clips": 3,
+     "tactical_excluded_sids": [
+      1131054092343061790,
+      6479814750558219472,
+      8549884407071846968
+     ],
+     "tactical_excluded_reason": "no MEASURED label clock (absent from the clip-clock sidecar): their tactical targets cannot be shown within tol_s of the truth",
+     "families_on_all_clips": [
+      "longitudinal",
+      "lateral",
+      "strategic"
+     ],
+     "mode": "per-family: TACTICAL on verified clips only (E2(b))",
+     "rule": "t_true = grid_start_s + (t + w - 1 + n_stack - 1) * dt_s (sidecar)",
+     "tactical_excluded_sha12": [
+      "081b986f8888",
+      "2aa810802777",
+      "3db625a5f941"
+     ]
+    }
+   },
+   "requires_grad_state": "loader (all False) -- see G0's requires_grad control",
+   "frame_memo": {
+    "hits": 0,
+    "misses": 47540
+   },
+   "device": "cuda"
+  },
+  "panel_s0": {
+   "pairing": {},
+   "void_gates_3_4": {
+    "pass": true,
+    "failures": []
+   },
+   "arms": [
+    "os",
+    "ha",
+    "ha0",
+    "ha0_ext",
+    "oracle_sel",
+    "stop"
+   ],
+   "n_windows": 4754
+  },
+  "void_gates_s0": {
+   "stop": {
+    "max_abs_displacement_m": 0.0,
+    "ade_stop_minus_mean_gt_distance_max_abs": 0.0,
+    "pass": true
+   },
+   "ha0": {
+    "max_abs_own_curvature_1pm": 0.0,
+    "tactical_lat_kappa": 0.0,
+    "tactical_lon_kappa": 0.0,
+    "pass": true
+   },
+   "profiles": {
+    "selection_degenerate": false,
+    "selection_modal_frac": 0.3862,
+    "n_distinct_selected": 92,
+    "os_trivial_frac": 0.0305
+   },
+   "pass_1_2": true
+  },
+  "analysis_s0": {
+   "s6": {
+    "n_windows": 3668,
+    "n_dropped_6s_future": 1086,
+    "n_episodes": 139,
+    "grid": {
+     "name": "6s",
+     "dt_s": 1.0,
+     "k": 6,
+     "horizons_steps": [
+      10,
+      20,
+      30,
+      40,
+      50,
+      60
+     ],
+     "slots": [
+      1,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "instants_s": [
+      1.0,
+      2.0,
+      3.0,
+      4.0,
+      5.0,
+      6.0
+     ],
+     "dropped_model_slots": [
+      5,
+      15
+     ],
+     "n_frames": 60
+    }
+   },
+   "tflip": "NOT_RUN",
+   "obedience": "UNPOWERED"
+  },
+  "panel_s1": {
+   "pairing": {},
+   "void_gates_3_4": {
+    "pass": true,
+    "failures": []
+   },
+   "arms": [
+    "os",
+    "ha",
+    "ha0",
+    "ha0_ext",
+    "oracle_sel",
+    "stop"
+   ],
+   "n_windows": 4754
+  },
+  "void_gates_s1": {
+   "stop": {
+    "max_abs_displacement_m": 0.0,
+    "ade_stop_minus_mean_gt_distance_max_abs": 0.0,
+    "pass": true
+   },
+   "ha0": {
+    "max_abs_own_curvature_1pm": 0.0,
+    "tactical_lat_kappa": 0.0,
+    "tactical_lon_kappa": 0.0,
+    "pass": true
+   },
+   "profiles": {
+    "selection_degenerate": false,
+    "selection_modal_frac": 0.378,
+    "n_distinct_selected": 93,
+    "os_trivial_frac": 0.0305
+   },
+   "pass_1_2": true
+  },
+  "analysis_s1": {
+   "s6": {
+    "n_windows": 3668,
+    "n_dropped_6s_future": 1086,
+    "n_episodes": 139,
+    "grid": {
+     "name": "6s",
+     "dt_s": 1.0,
+     "k": 6,
+     "horizons_steps": [
+      10,
+      20,
+      30,
+      40,
+      50,
+      60
+     ],
+     "slots": [
+      1,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "instants_s": [
+      1.0,
+      2.0,
+      3.0,
+      4.0,
+      5.0,
+      6.0
+     ],
+     "dropped_model_slots": [
+      5,
+      15
+     ],
+     "n_frames": 60
+    }
+   },
+   "tflip": "NOT_RUN",
+   "obedience": "UNPOWERED"
+  },
+  "criteria_s0": {
+   "registry_version": "2.10.3",
+   "per_artifact": {
+    "analysis_s0.json": {
+     "scope": "IN_SCOPE",
+     "tier": "T1",
+     "n_violations": 0,
+     "n_work_items": 7
+    }
+   }
+  },
+  "criteria_s1": {
+   "registry_version": "2.10.3",
+   "per_artifact": {
+    "analysis_s1.json": {
+     "scope": "IN_SCOPE",
+     "tier": "T1",
+     "n_violations": 0,
+     "n_work_items": 7
+    }
+   }
+  }
+ },
+ "G0_NONBLOCKING": {
+  "G0_as_coded": "FAIL",
+  "reasons": [
+   "eval_box3d_det_ap2_automobile_0_20 [DETECTION] in-run 0.33835 vs seeds mean 0.31453 (sd 0)",
+   "wrapper clause FAIL: ['merge defect: cascade wrapper 1.235e-01 > bar 8.638e-02', 'merge defect: r8_subscore wrapper 1.642e-02 > bar 1.379e-02']"
+  ],
+  "stamp": "G0 did NOT pass as coded; the battery proceeded by explicit request (EARLY READ). SPEC_REFCV8 section 5: no refcv8 battery number counts unless its G0 passes -- every number in this run is PROVISIONAL and is not bar evidence."
+ },
+ "S2": {
+  "n_clips": 139,
+  "n_windows": 4754,
+  "source": "D:\\Projects\\TanitAD-artifacts\\refcv5cmp\\out\\refcv4b_devbox_dump"
+ },
+ "baselines_used": {},
+ "baselines_missing": [
+  "b_refcv6_38k_s0",
+  "b_refcv6_38k_s1"
+ ],
+ "inference_seed_replicate": {
+  "max_abs_path_diff_m": 4.792457580566406,
+  "ade": {
+   "delta": -0.0041,
+   "lo": -0.0078,
+   "hi": -0.0007,
+   "ci95": 0.0036,
+   "p_delta_gt0": 0.0085,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 4754,
+   "n_episodes": 139,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "n_dropped_nonfinite": 0
+  },
+  "floor_m": 0.0041
+ },
+ "bars": [
+  {
+   "id": "BAR-R7-1",
+   "surface": "S2",
+   "a": "ha0_ext",
+   "b": "os",
+   "metric": "ade_m",
+   "statement": "os - echo (ADE 0-2 s) < 0, separated, at both inference seeds",
+   "per_inference_seed": {
+    "0": {
+     "pair": "os_minus_ha0ext",
+     "delta": 0.0622,
+     "lo": 0.0393,
+     "hi": 0.0874,
+     "separated": true,
+     "n_windows": 4754,
+     "n_episodes": 139,
+     "pass_separated": false,
+     "within_2x_inference_seed_floor": false
+    },
+    "1": {
+     "pair": "os_minus_ha0ext",
+     "delta": 0.0664,
+     "lo": 0.0427,
+     "hi": 0.0914,
+     "separated": true,
+     "n_windows": 4754,
+     "n_episodes": 139,
+     "pass_separated": false,
+     "within_2x_inference_seed_floor": false
+    }
+   },
+   "inference_seed_floor_m": 0.0041,
+   "verdict": "FAILED"
+  },
+  {
+   "id": "BAR-R7-2",
+   "surface": "S2",
+   "a": "b_refcv6_38k_s{s}",
+   "b": "os",
+   "metric": "ade_m",
+   "statement": "os - refcv6@38k < 0, separated, on the same windows (same inference seed)",
+   "per_inference_seed": {
+    "0": {
+     "status": "ABSENT",
+     "pair": "os_minus_refcv6_38k_s0"
+    },
+    "1": {
+     "status": "ABSENT",
+     "pair": "os_minus_refcv6_38k_s1"
+    }
+   },
+   "inference_seed_floor_m": 0.0041,
+   "verdict": "PENDING (the refcv6@38k S2 rolls run LAST in the milestone chain; SPEC A4)"
+  },
+  {
+   "id": "BAR-R7-3",
+   "surface": "S6",
+   "a": "ha0_ext",
+   "b": "os",
+   "metric": "ade_m",
+   "statement": "(non-regression) at 6 s, os - echo < 0, separated",
+   "per_inference_seed": {
+    "0": {
+     "pair": "os_minus_ha0ext",
+     "delta": -0.6147,
+     "lo": -0.9085,
+     "hi": -0.3331,
+     "separated": true,
+     "n_windows": 3668,
+     "n_episodes": 139,
+     "pass_separated": true,
+     "within_2x_inference_seed_floor": false
+    },
+    "1": {
+     "pair": "os_minus_ha0ext",
+     "delta": -0.5768,
+     "lo": -0.8747,
+     "hi": -0.2896,
+     "separated": true,
+     "n_windows": 3668,
+     "n_episodes": 139,
+     "pass_separated": true,
+     "within_2x_inference_seed_floor": false
+    }
+   },
+   "inference_seed_floor_m": 0.0041,
+   "verdict": "PASS (single training seed; training-seed floor unmeasured)"
+  }
+ ],
+ "strategic": {
+  "status": "NOT APPLICABLE",
+  "n": 0,
+  "reason": "the strategic layer is OFF (--no-strategic); its route loss is gated off in training, so the route head is untrained"
+ },
+ "parent_cuda_initialized": false,
+ "finished": "2026-10-16T11:48:41",
+ "r8": {
+  "wrapper": "run_battery_r8.py",
+  "argv": [
+   "--ckpt",
+   "E:/refcv8_eval_kit/ckpt/ckpt_5000.pt",
+   "--config",
+   "E:/refcv8_eval_kit/ckpt/config.json",
+   "--g0-json",
+   "E:/refcv8_eval_kit/battery/step5000/g0.json",
+   "--tag",
+   "step5000_corr",
+   "--infer-seeds",
+   "0,1",
+   "--lock-held",
+   "--skip-roll",
+   "--out-root",
+   "E:/refcv8_eval_kit/battery",
+   "--yield-log",
+   "E:/refcv8_eval_kit/chain/gpu_yields.jsonl"
+  ],
+  "smoke_cpu": false,
+  "g0_nonblocking": true,
+  "no_baselines": true,
+  "os_only_all": true,
+  "pose_sync_policy": "ON: the corrected clock the run trained and was evaluated on",
+  "wall_s": 5716.0,
+  "patch": {
+   "baseline_repoint": {
+    "b_refcv4b": {
+     "path": "D:\\Projects\\TanitAD-artifacts\\refcv5cmp\\out\\refcv4b_devbox_dump",
+     "moved": true,
+     "was": "C:/Users/Admin/refcv5cmp/out/refcv4b_devbox_dump"
+    },
+    "b_refcv5v2_s0": {
+     "path": "D:\\Projects\\TanitAD-artifacts\\refcv5cmp\\out\\refcv5-v2_dump",
+     "moved": true,
+     "was": "C:/Users/Admin/refcv5cmp/out/refcv5-v2_dump"
+    },
+    "b_refcv5v2_s1": {
+     "path": "D:\\Projects\\TanitAD-artifacts\\refcv5cmp\\out\\refcv5-v2-seed1_dump",
+     "moved": true,
+     "was": "C:/Users/Admin/refcv5cmp/out/refcv5-v2-seed1_dump"
+    }
+   },
+   "refcv7_baselines": {},
+   "child_rewrites": [
+    {
+     "from": "C:\\lgs\\Lfb47a58376\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-28-refcv7-standard-tests\\battery\\code\\roll_seed_r7.py",
+     "to": "C:\\Users\\Admin\\qland\\hold_r8batt\\stage\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-10-15-refcv8-milestone-battery\\code\\roll_seed_r8.py",
+     "smoke_cpu": false,
+     "os_only_all": true
+    },
+    {
+     "from": "C:\\lgs\\Lfb47a58376\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-28-refcv7-standard-tests\\battery\\code\\roll_seed_r7.py",
+     "to": "C:\\Users\\Admin\\qland\\hold_r8batt\\stage\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-10-15-refcv8-milestone-battery\\code\\roll_seed_r8.py",
+     "smoke_cpu": false,
+     "os_only_all": true
+    }
+   ],
+   "g0_nonblocking": true,
+   "baselines_dropped": {}
+  },
+  "repoint": {
+   "tool": "r8_repoint.py",
+   "launch_tree": "C:\\lgs\\Lfb47a58376",
+   "loader_file": "C:\\lgs\\Lfb47a58376\\stack\\tanitad\\eval\\refcv7_loader.py",
+   "loader_REPO": "C:\\lgs\\Lfb47a58376",
+   "loader_KIT": "E:\\refcv6_eval_kit",
+   "remap_overrides_file": "C:\\Users\\Admin\\qland\\hold_r8batt\\stage\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-10-15-refcv8-milestone-battery\\code\\refcv8_eval_remap_devbox.json",
+   "remap_overrides": {
+    "--agent-rig-extrinsics": "E:/refcv8_eval_kit/data/refcv8_train4572_eval139_extrinsics.json",
+    "--clip-clock-sidecar": "E:/refcv8_eval_kit/data/refcv8_clip_clock_sidecar_ts33.jsonl",
+    "--vis1-sidecar": "E:/refcv8_eval_kit/data/refcv8/vis1_sidecar_refcv8b1_train4572_eval139.npz",
+    "--nav-compliance-tau-file": "E:/refcv8_eval_kit/data/refcv8/nav_compliance_tau_train4572.json",
+    "--r8-v9-labels-eval": "E:/refcv8_eval_kit/data/refcv8_v9labels/release/v9_labels_eval139.npz",
+    "--pose-sync-sidecar": "E:/refcv8_eval_kit/data/refcv8_pose_sync_sidecar.jsonl",
+    "--join-defect-masks": "C:/lgs/Lfb47a58376/stack/tanitad/configs/refcv8_join_label_defects_train4572.json"
+   },
+   "pose_sync_patch_enabled": true,
+   "pose_sync_stats": {},
+   "microbatch_batch_kw_added": [
+    "r8_nav",
+    "r8_rc"
+   ],
+   "seam_guard_eval_off": true,
+   "seam_telemetry": {
+    "forwards": 0,
+    "rows": 0,
+    "rows_above_clamp": 0,
+    "saturated_forwards": 0,
+    "ratio_mean_sum": 0.0,
+    "ratio_max": 0.0,
+    "fail_loud_suppressed": 0
+   },
+   "battery_code": "C:\\lgs\\Lfb47a58376\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-28-refcv7-standard-tests\\battery\\code"
+  }
+ }
+}

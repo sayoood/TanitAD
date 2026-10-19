@@ -1,0 +1,458 @@
+"""Control-flow tests for chain_40k_r8.sh against a FAKE snapshot and STUB heavy steps (no GPU, no Thor, no real lock).  NEW file.
+
+    C:/Users/Admin/venvs/tanitad/Scripts/python.exe -m pytest -q -p no:cacheprovider test_chain_40k_r8.py      (needs Git-for-Windows `sh`; torch for the real-extract arm)
+
+The way test_snap40k_r8.py fakes Thor, this fakes the snapshot: a `snap40k.log` with the real marker shapes, a `ckpt_full_40000.pt` with its `.md5` sidecar and `.provenance.json`.  Every heavy program is a
+STUB in a sandbox `code/` dir that records its argv into calls.log and writes the artifacts the chain asserts on; the stubs enforce the preconditions their real twins have (the stub battery refuses to run unless
+the stub lock is held; the stub compliant read WITHHOLDS when the clamp_posthoc tree is absent -- MEASURED on the real tool at step30000_unc; the stub forward refuses without the compliant tree).
+THE ONE REAL PROGRAM is `extract_ema_r8.py`, in the 39,500 arm: its own `--expect-step` guard (before any model build) is exercised, not a stub of it.
+Every guard has a MUTATION arm that must go RED: a chain copy with the guard deleted behaves differently, and the assertion that catches it is shown to discriminate.
+Assertions are on ARTIFACTS (the marker log, calls.log, files), never on an exit code.
+"""
+from __future__ import annotations
+
+import hashlib
+import json
+import os
+import shutil
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+import pytest
+
+HERE = Path(__file__).resolve().parent
+SH = shutil.which("sh") or "C:/Program Files/Git/bin/sh.exe"
+PYV = "C:/Users/Admin/venvs/tanitad/Scripts/python.exe"
+pytestmark = pytest.mark.skipif(not Path(SH).exists() and not shutil.which("sh"), reason="no sh")
+CHAIN = HERE / "chain_40k_r8.sh"
+STEP = 40000
+
+
+def msys(p) -> str:
+    s = str(p).replace("\\", "/")
+    return "/" + s[0].lower() + s[2:] if len(s) > 1 and s[1] == ":" else s
+
+
+def win(p) -> str:
+    return str(p).replace("\\", "/")
+
+
+STUBS = r'''
+import hashlib, json, os, sys, time
+from pathlib import Path
+CALLS = os.environ["STUB_CALLS"]
+def log(name, argv):
+    with open(CALLS, "a", encoding="utf-8") as f:
+        f.write(name + " " + " ".join(argv) + "\n")
+def opt(argv, k, d=None):
+    return argv[argv.index(k) + 1] if k in argv else d
+def md5(p):
+    h = hashlib.md5(); h.update(Path(p).read_bytes()); return h.hexdigest()
+def put(p, obj):
+    p = Path(p); p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps(obj) if not isinstance(obj, str) else obj, encoding="utf-8")
+PKG = Path(os.environ.get("R8_PKGW", "."))
+BRW = os.environ.get("R8_BATT_ROOT_W", ".")
+KITW = os.environ.get("R8_KITW", ".")
+LOCK = Path(os.environ["STUB_LOCK"])
+STEP = 40000
+def main(name, argv):
+    log(name, argv)
+    if name == "ema_check":
+        raw, ema = opt(argv, "--raw"), opt(argv, "--ema")
+        put(opt(argv, "--out"), {"ok": True, "md5": {"raw": md5(raw), "ema": md5(ema)}, "tensors": {"n_float_differing": int(os.environ.get("STUB_EMA_DIFF", "5"))},
+                                 "strict_load": {"missing": 0, "unexpected": 0}})
+    elif name == "run_battery":
+        tag = opt(argv, "--tag")
+        held = LOCK.exists() and "battery" in LOCK.read_text()
+        log("run_battery_lock_held" if held else "run_battery_LOCK_NOT_HELD", [tag])
+        if held and tag != os.environ.get("STUB_BATTERY_FAIL_TAG"):
+            put(Path(opt(argv, "--out-root")) / tag / "battery_summary.json", {"bars": {"x": 1}, "finished": "t", "r8": {}})
+    elif name == "pair_read":
+        sf = {s: {"seeds": {k: {"rows": []} for k in ("0", "1")}} for s in ("S2", "S6")}
+        put(opt(argv, "--out-json"), {"finished": "t", "bars": {"BAR-R8-E1": {"verdict": "x"}}, "surfaces": sf}); put(opt(argv, "--out-md"), "x")
+    elif name == "bank":
+        raw, tag, st = argv[1], opt(argv, "--tag"), opt(argv, "--status", "")
+        put(Path(raw) / f"BATTERY_SUMMARY_{tag}.json", {"passes": {"unc": {"status": "INCOMPLETE" if st.startswith("FAILED") else "COMPLETE"}}})
+    elif name == "pick_metrics":
+        c = sorted(Path(argv[0]).glob("metrics_*.jsonl")); print(win(c[-1]) if c else "")
+    elif name == "thor_pull":
+        put(Path(os.environ["R8_KITW"]) / "thor_reads" / "metrics_20261019T182500.jsonl", "{}"); print("pull:ok:have")
+    elif name == "g0chain":
+        put(Path(KITW) / "battery" / f"step{STEP}" / "g0.json", {"ckpt_md5": "x", "verdict": {"G0": "FAIL", "mutation_detection": {"m1": {"detected": True}}}})
+    elif name == "battchain":
+        put(Path(BRW) / f"step{STEP}_unc" / "battery_summary.json", {"bars": {"x": 1}, "finished": "t", "r8": {}})
+        sf = {s: {"seeds": {k: {"rows": []} for k in ("0", "1")}} for s in ("S2", "S6")}
+        put(Path(BRW) / f"step{STEP}_unc" / f"PAIRED_READ_step{STEP}_unc.json", {"finished": "t", "bars": {"BAR-R8-E1": {"verdict": "x"}}, "surfaces": sf})
+        put(PKG / "raw" / f"step{STEP}" / f"BATTERY_SUMMARY_step{STEP}.json", {"passes": {"unc": {"status": "COMPLETE"}}})
+    elif name == "wrapfix":
+        put(opt(argv, "--out"), {"ok": True, "CLAUSE": "PASS", "ckpt_md5": md5(opt(argv, "--ckpt"))})
+    elif name == "clamp":
+        put(PKG / "raw/clamp_posthoc/trees" / f"{opt(argv, '--tree')}.json", {"seeds": {}, "controls": {"ALL_PASS": True}})
+    elif name == "compliant":
+        t = opt(argv, "--tree"); ok = (PKG / "raw/clamp_posthoc/trees" / f"{t}.json").exists()
+        put(PKG / "raw/compliant_reread/trees" / f"{t}.json", {"controls": {"ALL_PASS": ok}, "bars": {"status": "WRITTEN (all controls passed)" if ok else "WITHHELD"}})
+    elif name == "forward":
+        t = opt(argv, "--tree"); fn = {"a0k0_headroom_r8.py": ("a0k0_headroom", "FORWARD_"), "a0k0_headroom_lon_r8.py": ("a0k0_lon", "FORWARD_LON_"), "a0k0_headroom_retime_r8.py": ("a0k0_retime", "FORWARD_RETIME_")}[os.environ["STUB_SCRIPT"]]
+        cj = PKG / "raw/compliant_reread/trees" / f"{t}.json"
+        have = cj.exists() and json.loads(cj.read_text())["controls"]["ALL_PASS"] is True
+        put(PKG / "raw" / fn[0] / f"{fn[1]}{t}.json", {"controls": {"ALL_PASS": have}, "bars": {}})
+    elif name == "render":
+        pass
+    elif name == "heading":
+        put(Path(opt(argv, "--out-dir")) / f"{opt(argv, '--tag')}.json", {}); put(Path(opt(argv, "--out-dir")) / f"{opt(argv, '--tag')}.md", "x")
+    elif name == "extract":
+        src = Path(opt(argv, "--src")); internal = int(src.read_text().split("step=")[1].split()[0]); exp = opt(argv, "--expect-step")
+        if exp is not None and int(exp) != internal:
+            print(json.dumps({"ok": False, "reason": f"ValueError: source step is {internal}, expected {exp}"})); return 1
+        out = Path(opt(argv, "--out-dir")); out.mkdir(parents=True, exist_ok=True)
+        (out / f"ckpt_{internal}.pt").write_bytes(b"raw%d" % internal); (out / f"ckpt_ema_{internal}.pt").write_bytes(b"ema%d" % internal)
+        put(out / f"ckpt_{internal}.provenance.extract_ema.json", {"ok": True, "step": internal, "src_md5": md5(src)})
+        print(json.dumps({"ok": True, "step": internal}))
+'''
+
+
+def _sh_stub(body: str) -> str:
+    return "#!/bin/sh\n" + body + "\n"
+
+
+def make_sandbox(tmp: Path, internal_step: int = STEP, with_log: bool = True) -> dict:
+    sb = tmp / "sb"
+    pkg, code, kit, arch, bat = sb / "pkg", sb / "pkg/code", sb / "kit", sb / "arch", sb / "bat"
+    for d in (code, kit / "chain", kit / "ckpt", kit / "thor_reads", kit / "battery", arch, bat, pkg / "raw/heading_drift"):
+        d.mkdir(parents=True, exist_ok=True)
+    (code / "_stubs.py").write_text(STUBS, encoding="utf-8")
+    calls, lock = sb / "calls.log", sb / "lock.cur"
+    calls.write_text("", encoding="utf-8")
+    pys = {"ema_check_r8.py": "ema_check", "run_battery_r8.py": "run_battery", "pair_read_r8.py": "pair_read", "bank_battery_r8.py": "bank", "pick_metrics.py": "pick_metrics",
+           "wrapper_clause_r8fix_gpu.py": "wrapfix", "clamp_posthoc_r8.py": "clamp", "compliant_reread_r8.py": "compliant", "a0k0_headroom_r8.py": "forward",
+           "a0k0_headroom_lon_r8.py": "forward", "a0k0_headroom_retime_r8.py": "forward"}
+    for fn, nm in pys.items():
+        # forward / render stubs: the sub-command is argv[0]
+        body = ("import os, sys\nsys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))\nimport _stubs\n"
+                f"os.environ['STUB_SCRIPT'] = {fn!r}\nnm = {nm!r}\nif nm == 'forward' and sys.argv[1:2] == ['render']: nm = 'render'\nsys.exit(_stubs.main(nm, sys.argv[1:]) or 0)\n")
+        (code / fn).write_text(body, encoding="utf-8")
+    (code / "raw").mkdir(exist_ok=True)
+    (pkg / "raw/heading_drift/heading_drift.py").write_text("import os, sys\nsys.path.insert(0, os.environ['STUB_CODE'])\nimport _stubs\nsys.exit(_stubs.main('heading', sys.argv[1:]) or 0)\n", encoding="utf-8")
+    (code / "extract_stub.py").write_text("import os, sys\nsys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))\nimport _stubs\nsys.exit(_stubs.main('extract', sys.argv[2:]) or 0)\n", encoding="utf-8")
+    (code / "thor_pull_r8.sh").write_text(_sh_stub('exec "$STUBPY" "$(dirname "$0")/stubcall.py" thor_pull "$@"'), encoding="utf-8", newline="\n")
+    (code / "chain_g0_r8.sh").write_text(_sh_stub('exec "$STUBPY" "$(dirname "$0")/stubcall.py" g0chain "$@"'), encoding="utf-8", newline="\n")
+    (code / "chain_battery_r8.sh").write_text(_sh_stub('exec "$STUBPY" "$(dirname "$0")/stubcall.py" battchain "$@"'), encoding="utf-8", newline="\n")
+    (code / "stubcall.py").write_text("import os, sys\nsys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))\nimport _stubs\nsys.exit(_stubs.main(sys.argv[1], sys.argv[2:]) or 0)\n", encoding="utf-8")
+    shutil.copy(HERE / "summarize_40k_r8.py", code / "summarize_40k_r8.py")
+    # the BAT dir: lock / commit / marker / watch stubs
+    (bat / "gpu_lock.py").write_text(
+        "import json, os, sys\nsys.path.insert(0, os.environ['STUB_CODE'])\nimport _stubs\nfrom pathlib import Path\n"
+        "a = sys.argv[1:]; cmd = a[0]; job = a[a.index('--job') + 1]\n_stubs.log('lock_' + cmd, [job])\n"
+        "if cmd == 'acquire':\n    if _stubs.LOCK.exists(): _stubs.put(a[a.index('--out') + 1], {'ok': False})\n    else:\n"
+        "        _stubs.LOCK.write_text(job); _stubs.put(a[a.index('--out') + 1], {'ok': True})\n"
+        "elif cmd == 'release' and _stubs.LOCK.exists() and _stubs.LOCK.read_text() == job: _stubs.LOCK.unlink()\n", encoding="utf-8")
+    (bat / "wait_commit.py").write_text("import sys, json\na = sys.argv[1:]\nopen(a[a.index('--out') + 1], 'w').write(json.dumps({'met': True}))\n", encoding="utf-8")
+    (bat / "chain_marker.py").write_text("pass\n", encoding="utf-8")
+    (bat / "gpu_watch.py").write_text("pass\n", encoding="utf-8")
+    # the fake snapshot
+    ckl = kit / "ckpt"
+    (ckl / "config.json").write_text("{}", encoding="utf-8")
+    full = ckl / f"ckpt_full_{STEP}.pt"
+    full.write_text(f"step={internal_step} payload", encoding="utf-8")
+    md = hashlib.md5(full.read_bytes()).hexdigest()
+    (ckl / f"ckpt_full_{STEP}.pt.md5").write_text(f"{md}  ckpt_full_{STEP}.pt\n", encoding="utf-8")
+    (ckl / f"ckpt_full_{STEP}.pt.provenance.json").write_text(json.dumps({"step": STEP, "md5": md, "size": full.stat().st_size}), encoding="utf-8")
+    slog = kit / "chain/snap40k.log"
+    sb_env = dict(os.environ)
+    sb_env.update({
+        "R8_PKGW": win(pkg), "R8_PKGL": msys(pkg), "R8_KITW": win(kit), "R8_KIT": msys(kit), "R8_BATT_ROOT_W": win(arch), "R8_BATT_ROOT_L": msys(arch), "R8_BAT": win(bat), "R8_PY": PYV,
+        "C40_EXTRACT_PY": win(code / "extract_stub.py"), "C40_SNAP_LOG": msys(slog), "C40_SNAP_DEST": win(full), "C40_SNAP_DEST_L": msys(full),
+        "C40_POLL_S": "1", "C40_LANE_POLL_S": "1", "C40_GATE_GAP_S": "0", "C40_MEM_POLL_S": "1", "C40_FREEGB_CMD": "echo 99", "C40_MIN_FREE_KB": "1", "C40_DEAD_POLLS": "3",
+        "STUB_CALLS": win(calls), "STUB_LOCK": win(lock), "STUB_CODE": win(code), "STUBPY": PYV, "PYTHONDONTWRITEBYTECODE": "1",
+    })
+    for k in ("STUB_EMA_DIFF", "STUB_BATTERY_FAIL_TAG"):
+        sb_env.pop(k, None)
+    return {"sb": sb, "pkg": pkg, "code": code, "kit": kit, "arch": arch, "calls": calls, "lock": lock, "slog": slog, "full": full, "md5": md, "env": sb_env, "log": kit / "chain/chain_40k.log"}
+
+
+def write_snap(S: dict, kind: str = "done", pid: str = "1") -> None:
+    L = [f"ZZS40STARTZZ 2026-10-18T20:29:14+0200 pid {pid} step {STEP} dest {msys(S['full'])}", "ZZS40WAITZZ 2026-10-19T17:00:00+0200 last ckpt step in train.log: 39500"]
+    if kind == "done":
+        L.append(f"ZZS40DONEZZ 2026-10-19T18:21:00+0200 {msys(S['full'])} md5 {S['md5']} size 17 (elapsed_s=30 remote_md5={S['md5']} local_md5={S['md5']})")
+    elif kind:
+        L.append(f"{kind} 2026-10-19T18:21:00+0200 simulated")
+    S["slog"].write_text("\n".join(L) + "\n", encoding="utf-8")
+
+
+def run_chain(S: dict, script: Path | None = None, timeout: int = 150, extra_env: dict | None = None) -> str:
+    env = dict(S["env"])
+    env.update(extra_env or {})
+    subprocess.run([SH, msys(script or CHAIN)], env=env, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=timeout)
+    return S["log"].read_text(encoding="utf-8") if S["log"].exists() else ""
+
+
+def live_msys_pid():
+    """(Popen, MSYS pid) of a process that stays alive: the shell prints its own $$ and execs sleep (same pid)."""
+    p = subprocess.Popen([SH, "-c", "echo $$; exec sleep 120"], stdout=subprocess.PIPE, text=True)
+    pid = p.stdout.readline().strip()
+    assert pid.isdigit()
+    return p, pid
+
+
+def calls(S) -> list[str]:
+    return S["calls"].read_text(encoding="utf-8").splitlines()
+
+
+def has(L, prefix: str) -> bool:
+    return any(x.startswith(prefix) for x in L)
+
+
+def first(txt: str, marker: str) -> int:
+    return txt.find(f"ZZC40{marker}ZZ")
+
+
+@pytest.fixture()
+def S(tmp_path):
+    return make_sandbox(tmp_path)
+
+
+def test_happy_path_order_and_artifacts(S):
+    write_snap(S, "done")
+    txt = run_chain(S)
+    c = calls(S)
+    for m in ("MD5OK", "EXTRACTOK", "EMAGATEOK", "EMADONE", "RAWDONE", "LANEEND", "END", "SUMMARYOK"):
+        assert first(txt, m) >= 0, (m, txt[-1500:])
+    assert "ema=ok raw=ok" in txt
+    names = [x.split()[0] for x in c]
+    # stage order on the GPU lane: extract < ema_check < lock(ema) < battery(ema, under the lock) < pair_read < raw g0 < wrapfix < raw battery chain
+    seq = ["extract", "ema_check", "lock_acquire", "run_battery_lock_held", "pair_read", "g0chain", "wrapfix", "battchain"]
+    idx = [names.index(n) for n in seq]
+    assert idx == sorted(idx), (seq, idx, names)
+    assert not has(c, "run_battery_LOCK_NOT_HELD") and not S["lock"].exists(), "the EMA battery ran without the lock, or the lock leaked"
+    # the EMA battery asked for the EMA weights, both inference seeds, no G0 -- read from the stub's recorded argv
+    rb = [x for x in c if x.startswith("run_battery ")][0]
+    assert "ckpt_ema_40000.pt" in rb and "--no-g0" in rb and "--infer-seeds 0,1" in rb and "--tag step40000ema_unc" in rb and "--lock-held" in rb
+    # the CPU lane per tree: clamp_posthoc BEFORE compliant BEFORE the three forwards BEFORE heading
+    lines = txt.splitlines()
+
+    def idx(marker, needle):
+        return [i for i, l in enumerate(lines) if f"ZZC40{marker}ZZ" in l and needle in l]
+    for tree in ("step40000ema_unc", "step40000_unc"):
+        cl, co, fw = idx("CLAMPOK", tree), idx("COMPLOK", tree), idx("FWDOK", tree + " ->")
+        assert cl and co and len(fw) == 3 and cl[0] < co[0] < min(fw), (tree, cl, co, fw)
+    assert txt.count("ZZC40HEADDONEZZ") == 2 and txt.count("ZZC40FWDOKZZ") == 6 and txt.count("ZZC40COMPLOKZZ") == 2
+    assert (S["pkg"] / "raw/step40000/READ_40K.json").exists()
+    assert (S["kit"] / "ckpt/ckpt_40000.md5").read_text().count("\n") == 3
+    # the chain never wrote to G: and never touched git / ssh directly (Thor is reached only through thor_pull_r8.sh)
+    src = CHAIN.read_text(encoding="utf-8")
+    assert "git " not in src.replace("# ", "") .split("STEP=")[1] and "ssh " not in src.split("STEP=")[1] and "scp " not in src.split("STEP=")[1] and "G:/" not in src and "/g/" not in src
+
+
+def test_resumable_second_run_redoes_nothing(S):
+    write_snap(S, "done")
+    run_chain(S)
+    n1 = len([x for x in calls(S) if x.split()[0] in ("extract", "run_battery", "g0chain", "battchain", "clamp", "compliant", "forward", "heading")])
+    txt = run_chain(S)
+    n2 = len([x for x in calls(S) if x.split()[0] in ("extract", "run_battery", "g0chain", "battchain", "clamp", "compliant", "forward", "heading")])
+    assert n1 == n2, "a second run repeated heavy work"
+    assert "ZZC40EXTRACTHAVEZZ" in txt and "ZZC40EMAHAVEZZ" in txt and "ZZC40RAWHAVEZZ" in txt and "ZZC40COMPLHAVEZZ" in txt and "ZZC40FWDHAVEZZ" in txt and "ZZC40HEADHAVEZZ" in txt
+
+
+@pytest.mark.parametrize("marker", ["ZZS40MD5MISMATCHZZ", "ZZS40TOOLATEZZ", "ZZS40ABORTLATERZZ", "ZZS40SSHDEADZZ", "ZZS40CHANGEDZZ"])
+def test_a_snap_failure_marker_stops_at_a(S, marker):
+    write_snap(S, marker)
+    txt = run_chain(S)
+    assert "ZZC40SNAPFAILZZ" in txt and "ZZC40ABORTZZ" in txt and "stage a" in txt
+    assert not any(x.split()[0] in ("extract", "ema_check", "run_battery", "lock_acquire") for x in calls(S))
+
+
+def test_a_md5_sidecar_disagreement_stops_at_a(S):
+    write_snap(S, "done")
+    (S["kit"] / "ckpt/ckpt_full_40000.pt.md5").write_text("0" * 32 + "  ckpt_full_40000.pt\n", encoding="utf-8")
+    txt = run_chain(S)
+    assert "ZZC40MD5BADZZ" in txt and not has(calls(S), "extract")
+
+
+def test_a_empty_sidecar_is_inconclusive_never_a_match(S):
+    write_snap(S, "done")
+    (S["kit"] / "ckpt/ckpt_full_40000.pt.md5").write_text("", encoding="utf-8")
+    (S["kit"] / "ckpt/ckpt_full_40000.pt.provenance.json").write_text("{}", encoding="utf-8")
+    txt = run_chain(S)
+    assert "ZZC40MD5INCONCLUSIVEZZ" in txt and "ZZC40MD5OKZZ" not in txt and not has(calls(S), "extract")
+
+
+def test_a_dead_snap40k_without_terminal_marker_is_loud(S):
+    write_snap(S, "", pid="99999999")
+    txt = run_chain(S)
+    assert "ZZC40SNAPDEADZZ" in txt and not has(calls(S), "extract")
+
+
+def test_a_waits_then_proceeds_when_done_lands(S):
+    lp, out = live_msys_pid()
+    try:
+        write_snap(S, "", pid=out)
+        p = subprocess.Popen([SH, msys(CHAIN)], env=dict(S["env"]), stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        time.sleep(5)
+        assert not has(calls(S), "extract"), "the chain proceeded before the DONE marker"
+        write_snap(S, "done", pid=out)
+        p.wait(timeout=150)
+    finally:
+        lp.kill()
+    txt = S["log"].read_text(encoding="utf-8")
+    assert "ZZC40SNAPWAITZZ" in txt and "ZZC40EXTRACTOKZZ" in txt and "ZZC40ENDZZ" in txt
+
+
+def test_b_internal_step_39500_stops_at_b_with_the_REAL_extract_guard(S, tmp_path):
+    """The snapshot's md5 is genuine but the step INSIDE the file is 39,500 (snap40k does not look inside).  The real extract_ema_r8.py refuses it before any model build."""
+    torch_py = subprocess.run([PYV, "-c", "import torch"], capture_output=True)
+    if torch_py.returncode != 0:
+        pytest.skip("torch not importable in the venv")
+    S2 = make_sandbox(tmp_path / "b", internal_step=39500)
+    full = S2["full"]
+    subprocess.run([PYV, "-c", "import torch,sys; torch.save({'model': {}, 'step': 39500, 'ema': {}}, sys.argv[1])", win(full)], check=True)
+    md = hashlib.md5(full.read_bytes()).hexdigest()
+    (S2["kit"] / "ckpt/ckpt_full_40000.pt.md5").write_text(f"{md}  ckpt_full_40000.pt\n", encoding="utf-8")
+    (S2["kit"] / "ckpt/ckpt_full_40000.pt.provenance.json").write_text(json.dumps({"step": 40000, "md5": md}), encoding="utf-8")
+    S2["md5"] = md
+    write_snap(S2, "done")
+    txt = run_chain(S2, extra_env={"C40_EXTRACT_PY": win(HERE / "extract_ema_r8.py"), "C40_MIN_COMMIT_GB": "0.1", "PYTHONPATH": "C:/lgs/Lfb47a58376/stack;C:/lgs/Lfb47a58376/taniteval"}, timeout=240)
+    out = (S2["kit"] / "chain/c40_extract.out").read_text(encoding="utf-8", errors="replace")
+    assert "ZZC40MD5OKZZ" in txt, txt                                  # the snapshot itself is intact ...
+    assert "ZZC40EXTRACTFAILZZ" in txt and "ZZC40ABORTZZ" in txt        # ... and the chain still stops at b
+    assert "source step is 39500, expected 40000" in out, out[-800:]   # by the REAL guard, not by some other failure
+    assert not (S2["kit"] / "ckpt/ckpt_ema_40000.pt").exists() and not (S2["kit"] / "ckpt/ckpt_ema_39500.pt").exists()
+    assert not any(x.split()[0] in ("ema_check", "run_battery", "lock_acquire", "g0chain") for x in calls(S2)), "work ran past stage b"
+
+
+def _mutant(S, drop: list[str], name: str) -> Path:
+    s = CHAIN.read_text(encoding="utf-8")
+    for d in drop:
+        assert d in s, d
+        s = s.replace(d, "")
+    p = S["code"] / name
+    p.write_text(s, encoding="utf-8", newline="\n")
+    return p
+
+
+def test_b_mutation_layer1_removed_layer2_still_stops_and_the_paired_control_reaches_the_battery(tmp_path):
+    """Layer 1 = `--expect-step`, layer 2 = the chain's own re-assertion on the provenance ARTIFACT (it also names the file by the step the chain expects).  Delete layer 1 on a 39,500 snapshot ->
+    the stub extractor now accepts it, and layer 2 still stops the chain.  The PAIRED CONTROL (same sandbox, internal step 40,000) reaches the EMA battery: the observable the stop-assertion
+    reads (`run_battery` in calls.log) is therefore demonstrably able to go non-empty -- the assertion discriminates."""
+    A = make_sandbox(tmp_path / "m1", internal_step=39500)
+    write_snap(A, "done")
+    txt = run_chain(A, _mutant(A, ['--expect-step "$STEP" '], "chain_mut1.sh"))
+    assert "ZZC40EXTRACTFAILZZ" in txt and not has(calls(A), "run_battery") and not has(calls(A), "ema_check"), "layer 2 must hold with layer 1 removed"
+    assert (A["kit"] / "ckpt/ckpt_39500.pt").exists(), "the mutant stub did write a 39,500 pair (so the guard, not an absent file, is what stopped it)"
+    B = make_sandbox(tmp_path / "m2", internal_step=STEP)
+    write_snap(B, "done")
+    run_chain(B)
+    assert has(calls(B), "run_battery"), "paired control: a valid 40,000 snapshot must reach the battery"
+
+
+def test_c_ema_gate_identical_weights_blocks_the_battery(S):
+    write_snap(S, "done")
+    txt = run_chain(S, extra_env={"STUB_EMA_DIFF": "0"})
+    assert "ZZC40EMAGATEFAILZZ" in txt and not has(calls(S), "run_battery") and not has(calls(S), "lock_acquire")
+    # regression arm (fresh sandbox): the same chain with the differ-clause deleted would run the battery on identical weights
+    S2 = make_sandbox(S["sb"].parent / "g2")
+    write_snap(S2, "done")
+    run_chain(S2, _mutant(S2, ["and j['tensors']['n_float_differing']>0 "], "chain_mut_gate.sh"), extra_env={"STUB_EMA_DIFF": "0"})
+    assert has(calls(S2), "run_battery"), "mutant without the differ-clause should reach the battery"
+
+
+def test_c_failed_ema_battery_releases_the_lock_and_does_not_block_the_raw_stage(S):
+    write_snap(S, "done")
+    txt = run_chain(S, extra_env={"STUB_BATTERY_FAIL_TAG": "step40000ema_unc"})
+    c = calls(S)
+    assert "ZZC40EMARETRYZZ" in txt and "ZZC40EMAFAILZZ" in txt and "ZZC40STAGEFAILEDZZ" in txt
+    assert "ZZC40RAWDONEZZ" in txt, "each stage is independent: the raw stage must still run"
+    assert "ema=fail raw=ok" in txt and not S["lock"].exists()
+    assert "ZZC40LANESKIPZZ" in txt and "step40000ema_unc" in txt.split("ZZC40LANESKIPZZ")[1].split("\n")[0], "the EMA lane must be SKIPPED, not run on missing inputs"
+    assert [x for x in c if x.startswith("lock_release refcv8-battery-step40000ema")], "the EMA stage's EXIT trap must release the lock"
+    assert not [x for x in c if x.startswith("compliant") and "step40000ema_unc" in x]
+
+
+def test_d_compliant_needs_the_clamp_posthoc_tree_first(S):
+    write_snap(S, "done")
+    txt = run_chain(S)
+    assert txt.count("ZZC40COMPLOKZZ") == 2
+    # mutation: delete the clamp_posthoc call -> the (faithful) stub withholds, the chain says COMPLFAIL and never writes a verdict
+    s = CHAIN.read_text(encoding="utf-8")
+    old = 'cpu_run clamp_posthoc "$PKGW/code" "$LG" "$PY" -X utf8 clamp_posthoc_r8.py read --tree "$T"'
+    assert old in s
+    S2 = make_sandbox(S["sb"].parent / "d2")
+    write_snap(S2, "done")
+    p = S2["code"] / "chain_mut_clamp.sh"
+    p.write_text(s.replace(old, "true"), encoding="utf-8", newline="\n")
+    txt2 = run_chain(S2, p)
+    assert "ZZC40COMPLFAILZZ" in txt2 and "ZZC40COMPLOKZZ" not in txt2
+    assert txt2.count("ZZC40FWDCTRLFAILZZ") >= 1, "a forward without the compliant tree must not read as ALL_PASS"
+
+
+def test_single_instance_guard(S):
+    write_snap(S, "done")
+    lp, live = live_msys_pid()
+    try:
+        (S["kit"] / "chain/chain_40k.pid").write_text(live, encoding="utf-8")
+        txt = run_chain(S, timeout=30)
+    finally:
+        lp.kill()
+    assert "ZZC40DUPZZ" in txt and not has(calls(S), "extract")
+
+
+def test_the_chain_uses_the_standard_lock_and_no_priority_poller():
+    src = CHAIN.read_text(encoding="utf-8")
+    assert '"$BAT/gpu_lock.py" acquire' in src and "gpu_lock_fast" not in src and "FAST_POLL" not in src
+    assert not (HERE / "gpu_lock_fast_r8.py").exists()
+
+
+def test_summarizer_reads_the_real_30k_artifacts(tmp_path):
+    pkg = HERE.parent
+    if not (pkg / "raw/compliant_reread/trees/step30000ema_unc.json").exists():
+        pytest.skip("no banked 30k tree")
+    out = tmp_path / "o"
+    subprocess.run([PYV, "-I", str(HERE / "summarize_40k_r8.py"), "--pkg", str(pkg), "--out-dir", str(out), "--step", "30000"], check=True, capture_output=True)
+    j = json.loads((out / "READ_40K.json").read_text(encoding="utf-8"))
+    e = j["trees"][0]
+    assert e["tree"] == "step30000ema_unc" and e["compliant_reread"]["controls_ALL_PASS"] is True
+    assert "FZ-E1" in json.dumps(e["frozen_gain_forwards"]) and "MISSING" not in json.dumps(e["frozen_gain_forwards"]["a0k0_lon"])
+    # D-R8-E1-REF (PI 2026-10-19): the summary names the bar reference and lists the registered ha0_ext read BESIDE it
+    cr = e["compliant_reread"]
+    assert cr["E1_E3_reference"] == "ha0_ext_pose (D-R8-E1-REF, PI 2026-10-19)", "trees/step30000ema_unc.json has not been re-read under D-R8-E1-REF"
+    assert cr["C4_pose_reference_valid"] is True
+    v = cr["compliant/capped"]
+    assert v["reference"] == "ha0_ext_pose (D-R8-E1-REF, PI 2026-10-19)" and "MISSING" not in (v["E1_ha0_ext"] + v["E3_ha0_ext"] + v["E1"] + v["E3"])
+    md = (out / "READ_40K.md").read_text(encoding="utf-8")
+    assert "BESIDE" in md and "E1 beside (ha0_ext)" in md
+
+
+def _fake_bar(verdict, ref=None):
+    b = {"verdict": verdict, "per_inference_seed": {"0": {"delta": -0.01, "lo": -0.02, "hi": 0.01}, "1": {"delta": -0.02, "lo": -0.03, "hi": -0.01, "pass_separated": True}}}
+    if ref:
+        b["reference"] = ref
+    return b
+
+
+def test_summarizer_prints_the_pose_reference_and_keeps_the_ha0_ext_read_beside_synthetic(tmp_path):
+    """Schema pin for summarize_40k_r8.py on a FAKE pkg (no real artifact needed): new-schema trees show the reference + both rows; a PRE-RULING tree json is labelled as such."""
+    pkg = tmp_path / "pkg"
+    trees = pkg / "raw/compliant_reread/trees"
+    trees.mkdir(parents=True)
+    ref = "ha0_ext_pose (D-R8-E1-REF, PI 2026-10-19)"
+    blk = {"BAR-R8-E1": _fake_bar("FAILED", ref), "BAR-R8-E3": _fake_bar("PASS (x)", ref), "BAR-R8-E1_ha0_ext": _fake_bar("NOT PROVEN (y)", "ha0_ext (PRE-RULING reference)"),
+           "BAR-R8-E3_ha0_ext": _fake_bar("PASS (z)", "ha0_ext (PRE-RULING reference)"), "BAR-R8-NR": {"per_family": {"ADE": "PASS"}}}
+    new = {"controls": {"ALL_PASS": True, "C4_pose_reference_valid": {"PASS": True}},
+           "bars": {"status": "WRITTEN (all controls passed)", "E1_E3_reference": ref, "compliant": {"capped": blk, "uncapped": blk}, "all_window": {"capped": blk, "uncapped": blk}}}
+    old = {"controls": {"ALL_PASS": True}, "bars": {"status": "WRITTEN (all controls passed)",
+                                                    "compliant": {"capped": {"BAR-R8-E1": _fake_bar("FAILED"), "BAR-R8-E3": _fake_bar("PASS"), "BAR-R8-NR": {"per_family": {}}}}}}
+    (trees / "step40000ema_unc.json").write_text(json.dumps(new), encoding="utf-8")
+    (trees / "step40000_unc.json").write_text(json.dumps(old), encoding="utf-8")
+    out = tmp_path / "o"
+    subprocess.run([PYV, "-I", str(HERE / "summarize_40k_r8.py"), "--pkg", str(pkg), "--out-dir", str(out), "--step", "40000"], check=True, capture_output=True)
+    j = json.loads((out / "READ_40K.json").read_text(encoding="utf-8"))
+    e, r = j["trees"][0]["compliant_reread"], j["trees"][1]["compliant_reread"]
+    assert e["E1_E3_reference"] == ref and e["C4_pose_reference_valid"] is True
+    assert e["compliant/capped"]["reference"] == ref and e["compliant/capped"]["E1"].startswith("FAILED") and e["compliant/capped"]["E1_ha0_ext"].startswith("NOT PROVEN")
+    assert e["compliant/capped"]["E3_ha0_ext"].startswith("PASS (z)")
+    assert r["E1_E3_reference"].startswith("ha0_ext (PRE-RULING file") and r["compliant/capped"]["reference"] == "ha0_ext (PRE-RULING file)"
+    assert r["compliant/capped"]["E1_ha0_ext"] == "MISSING"                               # never invents a beside row for a tree that has none
+    md = (out / "READ_40K.md").read_text(encoding="utf-8")
+    assert "ha0_ext_pose (D-R8-E1-REF" in md and "E1 beside (ha0_ext) NOT PROVEN" in md

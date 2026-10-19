@@ -1,0 +1,4757 @@
+{
+ "title": "refcv8 tight-turn under-steering: does the REFINEMENT step shrink the turn? (unrefined selected anchor vs refined emitted plan)",
+ "tier": "T1-style open loop on the S2 panel windows (own action, `os`); the unrefined anchor is the selection surface of the same window",
+ "evidence_class": "MEASURED (ours; per-window dumps listed under `inputs`)",
+ "estimator": "paired episode-cluster bootstrap, ONE shared resample matrix (E=139 episodes, B=2000, rng seed 29); 'another draw of EPISODES, models fixed' only -- NOT another training run (H-ESTIM-SEED-1), NOT another inference run",
+ "generated": "2026-10-17T03:56:37",
+ "n_windows": 4754,
+ "n_episodes": 139,
+ "windows": {
+  "sharp (GT |yaw|>=0.15)": 368,
+  "curved (>=0.02)": 1604
+ },
+ "inputs": {
+  "r8": {
+   "EMA-15k": "E:/refcv8_eval_kit/battery/step15000ema_unc",
+   "EMA-5k": "C:/Users/Admin/refcv8_eval_archive/battery/step5000ema_unc"
+  },
+  "r7": "D:/refcv7_eval_kit/battery/step50400_a6text",
+  "banked_reference": "C:\\Users\\Admin\\qland\\hold_r8batt\\stage\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-10-15-refcv8-milestone-battery\\raw\\heading_drift\\FAN_VS_SELECTOR.json"
+ },
+ "control_rule6_reproduction": {
+  "literal_banked": {
+   "EMA-15k os": -0.14093672306643532,
+   "oracle r8": -0.0826,
+   "oracle r7": -0.0479,
+   "r7 os": -0.0921
+  },
+  "reproduced_vs_FAN_VS_SELECTOR_json": {
+   "EMA-15k": {
+    "slope r8 os": {
+     "est": -0.14093672306643532,
+     "lo": -0.24445423362117089,
+     "hi": -0.06155907359084041,
+     "banked_est": -0.14093672306643532,
+     "max_abs_diff_est_lo_hi": 0.0
+    },
+    "slope r8 oracle_sel": {
+     "est": -0.08261799872736147,
+     "lo": -0.13154657251048926,
+     "hi": -0.03962603503142164,
+     "banked_est": -0.08261799872736147,
+     "max_abs_diff_est_lo_hi": 0.0
+    },
+    "slope r7 os": {
+     "est": -0.09212979250717415,
+     "lo": -0.1765062055093061,
+     "hi": -0.025473736335019967,
+     "banked_est": -0.09212979250717415,
+     "max_abs_diff_est_lo_hi": 0.0
+    },
+    "slope r7 oracle_sel": {
+     "est": -0.04793228971741231,
+     "lo": -0.08991639434810439,
+     "hi": -0.013684127036922868,
+     "banked_est": -0.04793228971741231,
+     "max_abs_diff_est_lo_hi": 0.0
+    },
+    "n_seg": 363,
+    "max_abs_diff_all": 0.0
+   },
+   "EMA-5k": {
+    "slope r8 os": {
+     "est": -0.13032100359932408,
+     "lo": -0.23218642661079952,
+     "hi": -0.053545691674281505,
+     "banked_est": -0.13032100359932408,
+     "max_abs_diff_est_lo_hi": 0.0
+    },
+    "slope r8 oracle_sel": {
+     "est": -0.08636973752035058,
+     "lo": -0.13183657825849512,
+     "hi": -0.048737349582315376,
+     "banked_est": -0.08636973752035058,
+     "max_abs_diff_est_lo_hi": 0.0
+    },
+    "slope r7 os": {
+     "est": -0.09216684237861954,
+     "lo": -0.1765059153023614,
+     "hi": -0.025669850139063113,
+     "banked_est": -0.09216684237861954,
+     "max_abs_diff_est_lo_hi": 0.0
+    },
+    "slope r7 oracle_sel": {
+     "est": -0.04792160110629157,
+     "lo": -0.08991498930276476,
+     "hi": -0.01369503929848752,
+     "banked_est": -0.04792160110629157,
+     "max_abs_diff_est_lo_hi": 0.0
+    },
+    "n_seg": 364,
+    "max_abs_diff_all": 0.0
+   }
+  },
+  "PASS": true
+ },
+ "controls": {
+  "plan_full[:, :4] == os (max abs m), EMA-15k|s0": 0.0,
+  "sel_bank rows finite iff sel_idx<117, EMA-15k|s0": true,
+  "frac in-bank (all windows / sharp), EMA-15k|s0": [
+   0.8756836348338242,
+   0.9320652173913043
+  ],
+  "plan_full[:, :4] == os (max abs m), EMA-15k|s1": 0.0,
+  "sel_bank rows finite iff sel_idx<117, EMA-15k|s1": true,
+  "frac in-bank (all windows / sharp), EMA-15k|s1": [
+   0.8740008413967185,
+   0.9565217391304348
+  ],
+  "plan_full[:, :4] == os (max abs m), EMA-5k|s0": 0.0,
+  "sel_bank rows finite iff sel_idx<117, EMA-5k|s0": true,
+  "frac in-bank (all windows / sharp), EMA-5k|s0": [
+   0.8228859907446361,
+   0.9211956521739131
+  ],
+  "plan_full[:, :4] == os (max abs m), EMA-5k|s1": 0.0,
+  "sel_bank rows finite iff sel_idx<117, EMA-5k|s1": true,
+  "frac in-bank (all windows / sharp), EMA-5k|s1": [
+   0.8108960875052588,
+   0.9456521739130435
+  ],
+  "plan_full[:, :4] == os (max abs m), r7|s0": 0.0,
+  "sel_bank rows finite iff sel_idx<117, r7|s0": true,
+  "frac in-bank (all windows / sharp), r7|s0": [
+   1.0,
+   1.0
+  ],
+  "plan_full[:, :4] == os (max abs m), r7|s1": 0.0,
+  "sel_bank rows finite iff sel_idx<117, r7|s1": true,
+  "frac in-bank (all windows / sharp), r7|s1": [
+   1.0,
+   1.0
+  ],
+  "same selected idx r8/r7 -> sel_bank identical (max abs m; n windows), s0": [
+   0.0,
+   2654
+  ],
+  "same selected idx r8/r7 -> sel_bank identical (max abs m; n windows), s1": [
+   0.0,
+   2638
+  ],
+  "gt_future_ext identical r8 EMA-15k vs r7 (max abs)": 0.0,
+  "GT frame/time control: ego_xy(gt_future_ext[:, i]) vs panel g[:,0] (0.5 s), max abs m for i=3/4/5": {
+   "3": 3.650768238446018,
+   "4": 2.328524139727506e-06,
+   "5": 3.6507684267128866
+  },
+  "known-value control: slope of GT-as-plan": 0.0,
+  "mispaired control (unrefined r8, shifted by 1009 in-bank windows (stride-1 windows: a 1-window shift hits a near-identical neighbour)): slope vs paired slope": [
+   0.017647348737319636,
+   -0.23858466087449123
+  ]
+ },
+ "refinement": {
+  "EMA-15k": {
+   "2-seed mean | sharp (GT |yaw| >= 0.15) | last segment (1.5->2.0 s chord)": {
+    "n_seg": 335,
+    "n_win": 335,
+    "n_ep": 41,
+    "mean_gt_turn_aligned_heading_deg": 25.466053981311113,
+    "terms": {
+     "slope r8 UNREFINED selected anchor": {
+      "est": -0.23858466087449123,
+      "lo": -0.31549569407660305,
+      "hi": -0.164726881714708,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r8 REFINED emitted plan": {
+      "est": -0.10320614638219268,
+      "lo": -0.18347472730586314,
+      "hi": -0.04220688515879445,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r7 UNREFINED selected anchor": {
+      "est": -0.2713665025119566,
+      "lo": -0.34994154440948927,
+      "hi": -0.19981016807189447,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r7 REFINED emitted plan": {
+      "est": -0.07110557243834673,
+      "lo": -0.14577886161741402,
+      "hi": -0.012911516965677326,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "refinement effect r8 (refined - unrefined)": {
+      "est": 0.13537851449229854,
+      "lo": 0.08892951798932262,
+      "hi": 0.18471441890568993,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "refinement effect r7 (refined - unrefined)": {
+      "est": 0.20026093007360987,
+      "lo": 0.14654873562598714,
+      "hi": 0.2651135429934859,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "DIFF_EFFECT (effect r8 - effect r7)": {
+      "est": -0.06488241558131133,
+      "lo": -0.09226923350976818,
+      "hi": -0.039809093270661185,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "GAP_unrefined (r8 - r7, selected anchors)": {
+      "est": 0.032781841637465364,
+      "lo": -0.0010205038450370686,
+      "hi": 0.06297104984294151,
+      "separated": false,
+      "n_boot_finite": 2000
+     },
+     "GAP_refined (r8 - r7, emitted plans)": {
+      "est": -0.03210057394384596,
+      "lo": -0.061495653767683275,
+      "hi": -0.008948379894059203,
+      "separated": true,
+      "n_boot_finite": 2000
+     }
+    },
+    "identity_max_abs_err_point": 0.0,
+    "identity_max_abs_err_all_boot_draws": 4.163336342344337e-17,
+    "recovery": {
+     "recovery fraction r8 (1 - refined/unrefined slope)": {
+      "est": 0.5674233791732117,
+      "lo": 0.37655829158722826,
+      "hi": 0.7831176335481557,
+      "separated": true
+     },
+     "recovery fraction r7 (1 - refined/unrefined slope)": {
+      "est": 0.737972182343273,
+      "lo": 0.5417817282002267,
+      "hi": 0.9452314704781462,
+      "separated": true
+     },
+     "recovery fraction r8 - r7": {
+      "est": -0.17054880317006127,
+      "lo": -0.24803430929514594,
+      "hi": -0.09741584924543462,
+      "separated": true
+     }
+    },
+    "share_DIFF_EFFECT_of_GAP_refined": {
+     "est": 2.021222913173178,
+     "lo": 0.9456904739997293,
+     "hi": 6.154833268218183,
+     "note": "ratio of two correlated bootstrap terms; read only when GAP_refined is separated from 0"
+    },
+    "share_GAP_unrefined_of_GAP_refined": {
+     "est": -1.0212229131731774,
+     "lo": -5.154833268218184,
+     "hi": 0.05430952600027,
+     "note": "ratio of two correlated bootstrap terms; read only when GAP_refined is separated from 0"
+    }
+   },
+   "2-seed mean | sharp (GT |yaw| >= 0.15) | segments 2..K": {
+    "n_seg": 1007,
+    "n_win": 336,
+    "n_ep": 41,
+    "mean_gt_turn_aligned_heading_deg": 18.036437791525966,
+    "terms": {
+     "slope r8 UNREFINED selected anchor": {
+      "est": -0.2576632843160439,
+      "lo": -0.3370040140495927,
+      "hi": -0.1803100412512108,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r8 REFINED emitted plan": {
+      "est": -0.11717356094610173,
+      "lo": -0.19863067165900034,
+      "hi": -0.054313672627980446,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r7 UNREFINED selected anchor": {
+      "est": -0.29323759923786824,
+      "lo": -0.37421874085523826,
+      "hi": -0.21730370413070657,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r7 REFINED emitted plan": {
+      "est": -0.08421850219104324,
+      "lo": -0.16003404373577074,
+      "hi": -0.02335167895652994,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "refinement effect r8 (refined - unrefined)": {
+      "est": 0.1404897233699422,
+      "lo": 0.09034126254337911,
+      "hi": 0.19179257471810512,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "refinement effect r7 (refined - unrefined)": {
+      "est": 0.209019097046825,
+      "lo": 0.15138308009604956,
+      "hi": 0.2759728205357211,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "DIFF_EFFECT (effect r8 - effect r7)": {
+      "est": -0.06852937367688283,
+      "lo": -0.09556695452313944,
+      "hi": -0.04296138944623012,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "GAP_unrefined (r8 - r7, selected anchors)": {
+      "est": 0.03557431492182432,
+      "lo": 0.004309557445924013,
+      "hi": 0.06413284939009144,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "GAP_refined (r8 - r7, emitted plans)": {
+      "est": -0.0329550587550585,
+      "lo": -0.06018123082338752,
+      "hi": -0.01050670832578622,
+      "separated": true,
+      "n_boot_finite": 2000
+     }
+    },
+    "identity_max_abs_err_point": 1.3877787807814457e-17,
+    "identity_max_abs_err_all_boot_draws": 4.163336342344337e-17,
+    "recovery": {
+     "recovery fraction r8 (1 - refined/unrefined slope)": {
+      "est": 0.545245411052126,
+      "lo": 0.3616608610267815,
+      "hi": 0.7417849623409337,
+      "separated": true
+     },
+     "recovery fraction r7 (1 - refined/unrefined slope)": {
+      "est": 0.7127977366820313,
+      "lo": 0.5263933815491842,
+      "hi": 0.9088928169856928,
+      "separated": true
+     },
+     "recovery fraction r8 - r7": {
+      "est": -0.1675523256299053,
+      "lo": -0.23770090481942885,
+      "hi": -0.09921246138443089,
+      "separated": true
+     }
+    },
+    "share_DIFF_EFFECT_of_GAP_refined": {
+     "est": 2.079479638808527,
+     "lo": 1.0698657792221948,
+     "hi": 5.74512218845274,
+     "note": "ratio of two correlated bootstrap terms; read only when GAP_refined is separated from 0"
+    },
+    "share_GAP_unrefined_of_GAP_refined": {
+     "est": -1.0794796388085266,
+     "lo": -4.745122188452746,
+     "hi": -0.06986577922219632,
+     "note": "ratio of two correlated bootstrap terms; read only when GAP_refined is separated from 0"
+    }
+   },
+   "2-seed mean | curved (GT |yaw| >= 0.02) | last segment (1.5->2.0 s chord)": {
+    "n_seg": 1281,
+    "n_win": 1281,
+    "n_ep": 99,
+    "mean_gt_turn_aligned_heading_deg": 11.073661976008502,
+    "terms": {
+     "slope r8 UNREFINED selected anchor": {
+      "est": -0.2110283661920235,
+      "lo": -0.2772434830729429,
+      "hi": -0.14659230275920984,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r8 REFINED emitted plan": {
+      "est": -0.097201852201859,
+      "lo": -0.16557800071547918,
+      "hi": -0.04404405527243587,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r7 UNREFINED selected anchor": {
+      "est": -0.2413567711368255,
+      "lo": -0.30695623053290694,
+      "hi": -0.1772033028014309,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r7 REFINED emitted plan": {
+      "est": -0.06328763665472403,
+      "lo": -0.12729019667901248,
+      "hi": -0.01249292730938869,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "refinement effect r8 (refined - unrefined)": {
+      "est": 0.11382651399016448,
+      "lo": 0.07179601911433747,
+      "hi": 0.1573957553718553,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "refinement effect r7 (refined - unrefined)": {
+      "est": 0.17806913448210152,
+      "lo": 0.1303297961726523,
+      "hi": 0.23306198048716112,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "DIFF_EFFECT (effect r8 - effect r7)": {
+      "est": -0.06424262049193699,
+      "lo": -0.08734893008526234,
+      "hi": -0.04277225343923098,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "GAP_unrefined (r8 - r7, selected anchors)": {
+      "est": 0.030328404944802018,
+      "lo": 0.000238685353198509,
+      "hi": 0.05683826406194342,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "GAP_refined (r8 - r7, emitted plans)": {
+      "est": -0.03391421554713498,
+      "lo": -0.059025856502900945,
+      "hi": -0.013421021261045487,
+      "separated": true,
+      "n_boot_finite": 2000
+     }
+    },
+    "identity_max_abs_err_point": 0.0,
+    "identity_max_abs_err_all_boot_draws": 4.163336342344337e-17,
+    "recovery": {
+     "recovery fraction r8 (1 - refined/unrefined slope)": {
+      "est": 0.5393896377257124,
+      "lo": 0.35039513333310707,
+      "hi": 0.7415901818647888,
+      "separated": true
+     },
+     "recovery fraction r7 (1 - refined/unrefined slope)": {
+      "est": 0.7377838775492809,
+      "lo": 0.5458683130785447,
+      "hi": 0.9331303311685472,
+      "separated": true
+     },
+     "recovery fraction r8 - r7": {
+      "est": -0.19839423982356852,
+      "lo": -0.2742764368144339,
+      "hi": -0.12951648824268946,
+      "separated": true
+     }
+    },
+    "share_DIFF_EFFECT_of_GAP_refined": {
+     "est": 1.8942682133588111,
+     "lo": 1.0041761601092278,
+     "hi": 4.5348214749081714,
+     "note": "ratio of two correlated bootstrap terms; read only when GAP_refined is separated from 0"
+    },
+    "share_GAP_unrefined_of_GAP_refined": {
+     "est": -0.8942682133588112,
+     "lo": -3.534821474908174,
+     "hi": -0.004176160109228045,
+     "note": "ratio of two correlated bootstrap terms; read only when GAP_refined is separated from 0"
+    }
+   },
+   "2-seed mean | curved (GT |yaw| >= 0.02) | segments 2..K": {
+    "n_seg": 3864,
+    "n_win": 1294,
+    "n_ep": 99,
+    "mean_gt_turn_aligned_heading_deg": 7.79240394800109,
+    "terms": {
+     "slope r8 UNREFINED selected anchor": {
+      "est": -0.27995479597387346,
+      "lo": -0.3967638335925833,
+      "hi": -0.18156650242166114,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r8 REFINED emitted plan": {
+      "est": -0.16532914581533245,
+      "lo": -0.29277231369138795,
+      "hi": -0.06658436120012157,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r7 UNREFINED selected anchor": {
+      "est": -0.3114350721674691,
+      "lo": -0.4242235689390776,
+      "hi": -0.21388473271291408,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r7 REFINED emitted plan": {
+      "est": -0.1325986707374454,
+      "lo": -0.2627101964219141,
+      "hi": -0.037080834557327615,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "refinement effect r8 (refined - unrefined)": {
+      "est": 0.11462565015854097,
+      "lo": 0.07149846726969956,
+      "hi": 0.16132719817014066,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "refinement effect r7 (refined - unrefined)": {
+      "est": 0.17883640143002366,
+      "lo": 0.12794576810721836,
+      "hi": 0.23833744642489346,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "DIFF_EFFECT (effect r8 - effect r7)": {
+      "est": -0.06421075127148267,
+      "lo": -0.08841543358223838,
+      "hi": -0.043515468147903975,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "GAP_unrefined (r8 - r7, selected anchors)": {
+      "est": 0.03148027619359567,
+      "lo": 0.005048276889520133,
+      "hi": 0.05632839641860136,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "GAP_refined (r8 - r7, emitted plans)": {
+      "est": -0.03273047507788701,
+      "lo": -0.0550557738311529,
+      "hi": -0.013891069682513668,
+      "separated": true,
+      "n_boot_finite": 2000
+     }
+    },
+    "identity_max_abs_err_point": 1.3877787807814457e-17,
+    "identity_max_abs_err_all_boot_draws": 4.163336342344337e-17,
+    "recovery": {
+     "recovery fraction r8 (1 - refined/unrefined slope)": {
+      "est": 0.40944342374916254,
+      "lo": 0.2334280188151776,
+      "hi": 0.6564914261265065,
+      "separated": true
+     },
+     "recovery fraction r7 (1 - refined/unrefined slope)": {
+      "est": 0.5742333391849244,
+      "lo": 0.3611797758263908,
+      "hi": 0.8483459710010767,
+      "separated": true
+     },
+     "recovery fraction r8 - r7": {
+      "est": -0.16478991543576182,
+      "lo": -0.23960209430321794,
+      "hi": -0.10467652031256057,
+      "separated": true
+     }
+    },
+    "share_DIFF_EFFECT_of_GAP_refined": {
+     "est": 1.9618032160756504,
+     "lo": 1.106233898070933,
+     "hi": 4.185692423667043,
+     "note": "ratio of two correlated bootstrap terms; read only when GAP_refined is separated from 0"
+    },
+    "share_GAP_unrefined_of_GAP_refined": {
+     "est": -0.9618032160756509,
+     "lo": -3.185692423667046,
+     "hi": -0.10623389807093324,
+     "note": "ratio of two correlated bootstrap terms; read only when GAP_refined is separated from 0"
+    }
+   },
+   "seed 0 | sharp (GT |yaw| >= 0.15) | last segment (1.5->2.0 s chord)": {
+    "n_seg": 340,
+    "n_win": 340,
+    "n_ep": 42,
+    "mean_gt_turn_aligned_heading_deg": 25.442404200275007,
+    "terms": {
+     "slope r8 UNREFINED selected anchor": {
+      "est": -0.24152042688680306,
+      "lo": -0.3191703308879194,
+      "hi": -0.16713456165995147,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r8 REFINED emitted plan": {
+      "est": -0.10758789400105774,
+      "lo": -0.18761184079537901,
+      "hi": -0.04564677805327118,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r7 UNREFINED selected anchor": {
+      "est": -0.2791893871255346,
+      "lo": -0.36050753497158405,
+      "hi": -0.2054490264331383,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r7 REFINED emitted plan": {
+      "est": -0.07844152205984578,
+      "lo": -0.1572341154734812,
+      "hi": -0.018020594843058995,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "refinement effect r8 (refined - unrefined)": {
+      "est": 0.1339325328857453,
+      "lo": 0.08668181933128287,
+      "hi": 0.18316535146622934,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "refinement effect r7 (refined - unrefined)": {
+      "est": 0.20074786506568887,
+      "lo": 0.1442769305217169,
+      "hi": 0.2657210008469345,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "DIFF_EFFECT (effect r8 - effect r7)": {
+      "est": -0.06681533217994355,
+      "lo": -0.09618736385730163,
+      "hi": -0.04131241929300077,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "GAP_unrefined (r8 - r7, selected anchors)": {
+      "est": 0.037668960238731564,
+      "lo": 0.0015941073423822194,
+      "hi": 0.06915798910532327,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "GAP_refined (r8 - r7, emitted plans)": {
+      "est": -0.02914637194121199,
+      "lo": -0.0597694792776377,
+      "hi": -0.005555355486743106,
+      "separated": true,
+      "n_boot_finite": 2000
+     }
+    },
+    "identity_max_abs_err_point": 0.0,
+    "identity_max_abs_err_all_boot_draws": 4.163336342344337e-17,
+    "recovery": {
+     "recovery fraction r8 (1 - refined/unrefined slope)": {
+      "est": 0.5545391527008084,
+      "lo": 0.3654880273974018,
+      "hi": 0.7613237219632388,
+      "separated": true
+     },
+     "recovery fraction r7 (1 - refined/unrefined slope)": {
+      "est": 0.7190383099176496,
+      "lo": 0.5217168278039988,
+      "hi": 0.9244518838693356,
+      "separated": true
+     },
+     "recovery fraction r8 - r7": {
+      "est": -0.16449915721684116,
+      "lo": -0.24426573100075186,
+      "hi": -0.09358647462701832,
+      "separated": true
+     }
+    },
+    "share_DIFF_EFFECT_of_GAP_refined": {
+     "est": 2.2924064893808933,
+     "lo": 0.9794187596078109,
+     "hi": 9.531977280534415,
+     "note": "ratio of two correlated bootstrap terms; read only when GAP_refined is separated from 0"
+    },
+    "share_GAP_unrefined_of_GAP_refined": {
+     "est": -1.2924064893808933,
+     "lo": -8.53197728053442,
+     "hi": 0.020581240392189164,
+     "note": "ratio of two correlated bootstrap terms; read only when GAP_refined is separated from 0"
+    }
+   },
+   "seed 1 | sharp (GT |yaw| >= 0.15) | last segment (1.5->2.0 s chord)": {
+    "n_seg": 347,
+    "n_win": 347,
+    "n_ep": 41,
+    "mean_gt_turn_aligned_heading_deg": 25.45768094608069,
+    "terms": {
+     "slope r8 UNREFINED selected anchor": {
+      "est": -0.24452888674869747,
+      "lo": -0.3203380153004951,
+      "hi": -0.1702821480192889,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r8 REFINED emitted plan": {
+      "est": -0.11321878921052296,
+      "lo": -0.19367957248568785,
+      "hi": -0.04732452403790704,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r7 UNREFINED selected anchor": {
+      "est": -0.2698321568395849,
+      "lo": -0.34795763028536436,
+      "hi": -0.20149369937648398,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r7 REFINED emitted plan": {
+      "est": -0.07630607013971374,
+      "lo": -0.1520015469880236,
+      "hi": -0.015689680566368873,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "refinement effect r8 (refined - unrefined)": {
+      "est": 0.13131009753817452,
+      "lo": 0.08720093738093138,
+      "hi": 0.17774501416084607,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "refinement effect r7 (refined - unrefined)": {
+      "est": 0.19352608669987112,
+      "lo": 0.14069647658723303,
+      "hi": 0.2547961214106824,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "DIFF_EFFECT (effect r8 - effect r7)": {
+      "est": -0.062215989161696586,
+      "lo": -0.08974556828497336,
+      "hi": -0.0378883099978006,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "GAP_unrefined (r8 - r7, selected anchors)": {
+      "est": 0.025303270090887384,
+      "lo": -0.006164379212672488,
+      "hi": 0.05398073962794719,
+      "separated": false,
+      "n_boot_finite": 2000
+     },
+     "GAP_refined (r8 - r7, emitted plans)": {
+      "est": -0.0369127190708092,
+      "lo": -0.06703168228733233,
+      "hi": -0.012221760512976496,
+      "separated": true,
+      "n_boot_finite": 2000
+     }
+    },
+    "identity_max_abs_err_point": 0.0,
+    "identity_max_abs_err_all_boot_draws": 4.163336342344337e-17,
+    "recovery": {
+     "recovery fraction r8 (1 - refined/unrefined slope)": {
+      "est": 0.5369921700625988,
+      "lo": 0.35177459630392877,
+      "hi": 0.7540693271496133,
+      "separated": true
+     },
+     "recovery fraction r7 (1 - refined/unrefined slope)": {
+      "est": 0.7172091309151204,
+      "lo": 0.5174092063763019,
+      "hi": 0.9332033366315728,
+      "separated": true
+     },
+     "recovery fraction r8 - r7": {
+      "est": -0.1802169608525216,
+      "lo": -0.26041388126778003,
+      "hi": -0.10296709442749427,
+      "separated": true
+     }
+    },
+    "share_DIFF_EFFECT_of_GAP_refined": {
+     "est": 1.6854891952648745,
+     "lo": 0.8931020238639815,
+     "hi": 4.667240439792907,
+     "note": "ratio of two correlated bootstrap terms; read only when GAP_refined is separated from 0"
+    },
+    "share_GAP_unrefined_of_GAP_refined": {
+     "est": -0.6854891952648744,
+     "lo": -3.667240439792914,
+     "hi": 0.10689797613601734,
+     "note": "ratio of two correlated bootstrap terms; read only when GAP_refined is separated from 0"
+    }
+   }
+  },
+  "EMA-5k": {
+   "2-seed mean | sharp (GT |yaw| >= 0.15) | last segment (1.5->2.0 s chord)": {
+    "n_seg": 321,
+    "n_win": 321,
+    "n_ep": 42,
+    "mean_gt_turn_aligned_heading_deg": 24.971542233759948,
+    "terms": {
+     "slope r8 UNREFINED selected anchor": {
+      "est": -0.20539146963617336,
+      "lo": -0.2911585098649538,
+      "hi": -0.13204392139158905,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r8 REFINED emitted plan": {
+      "est": -0.10408434142406983,
+      "lo": -0.18022628957861703,
+      "hi": -0.046430985567143944,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r7 UNREFINED selected anchor": {
+      "est": -0.266224225730779,
+      "lo": -0.3503928348589186,
+      "hi": -0.19113897744682162,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r7 REFINED emitted plan": {
+      "est": -0.07675348234648789,
+      "lo": -0.15333380370988436,
+      "hi": -0.017919387905531797,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "refinement effect r8 (refined - unrefined)": {
+      "est": 0.10130712821210351,
+      "lo": 0.057018074186548924,
+      "hi": 0.15092145826588788,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "refinement effect r7 (refined - unrefined)": {
+      "est": 0.18947074338429112,
+      "lo": 0.1428644937917169,
+      "hi": 0.24345567376657895,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "DIFF_EFFECT (effect r8 - effect r7)": {
+      "est": -0.08816361517218763,
+      "lo": -0.10720839405522876,
+      "hi": -0.0711477875612576,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "GAP_unrefined (r8 - r7, selected anchors)": {
+      "est": 0.06083275609460569,
+      "lo": 0.04168087375289102,
+      "hi": 0.08159288560659662,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "GAP_refined (r8 - r7, emitted plans)": {
+      "est": -0.02733085907758194,
+      "lo": -0.039439324270278055,
+      "hi": -0.01583376000556933,
+      "separated": true,
+      "n_boot_finite": 2000
+     }
+    },
+    "identity_max_abs_err_point": 0.0,
+    "identity_max_abs_err_all_boot_draws": 4.163336342344337e-17,
+    "recovery": {
+     "recovery fraction r8 (1 - refined/unrefined slope)": {
+      "est": 0.4932392196791673,
+      "lo": 0.2992584012858538,
+      "hi": 0.7091939544397086,
+      "separated": true
+     },
+     "recovery fraction r7 (1 - refined/unrefined slope)": {
+      "est": 0.7116961007744451,
+      "lo": 0.5292817404771081,
+      "hi": 0.9154373384291322,
+      "separated": true
+     },
+     "recovery fraction r8 - r7": {
+      "est": -0.21845688109527783,
+      "lo": -0.3005782256802066,
+      "hi": -0.159436866816873,
+      "separated": true
+     }
+    },
+    "share_DIFF_EFFECT_of_GAP_refined": {
+     "est": 3.2257901195833094,
+     "lo": 2.185216824934556,
+     "hi": 5.468394675642591,
+     "note": "ratio of two correlated bootstrap terms; read only when GAP_refined is separated from 0"
+    },
+    "share_GAP_unrefined_of_GAP_refined": {
+     "est": -2.22579011958331,
+     "lo": -4.4683946756425925,
+     "hi": -1.1852168249345556,
+     "note": "ratio of two correlated bootstrap terms; read only when GAP_refined is separated from 0"
+    }
+   },
+   "seed 0 | sharp (GT |yaw| >= 0.15) | last segment (1.5->2.0 s chord)": {
+    "n_seg": 335,
+    "n_win": 335,
+    "n_ep": 42,
+    "mean_gt_turn_aligned_heading_deg": 25.14515743226115,
+    "terms": {
+     "slope r8 UNREFINED selected anchor": {
+      "est": -0.2157750730043703,
+      "lo": -0.30619044458731454,
+      "hi": -0.13858047547308794,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r8 REFINED emitted plan": {
+      "est": -0.11727072178275698,
+      "lo": -0.20542904858211547,
+      "hi": -0.05187977707439157,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r7 UNREFINED selected anchor": {
+      "est": -0.27835827547486197,
+      "lo": -0.3684280730870114,
+      "hi": -0.19885268385533747,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r7 REFINED emitted plan": {
+      "est": -0.08774019381458335,
+      "lo": -0.17480725287563892,
+      "hi": -0.021856962259547332,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "refinement effect r8 (refined - unrefined)": {
+      "est": 0.0985043512216133,
+      "lo": 0.04984252470603026,
+      "hi": 0.15261269096423663,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "refinement effect r7 (refined - unrefined)": {
+      "est": 0.19061808166027863,
+      "lo": 0.13856319037817652,
+      "hi": 0.25229634741117046,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "DIFF_EFFECT (effect r8 - effect r7)": {
+      "est": -0.09211373043866537,
+      "lo": -0.11446687790156201,
+      "hi": -0.07303470018240386,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "GAP_unrefined (r8 - r7, selected anchors)": {
+      "est": 0.06258320247049173,
+      "lo": 0.0419384346430722,
+      "hi": 0.08481432425191548,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "GAP_refined (r8 - r7, emitted plans)": {
+      "est": -0.02953052796817363,
+      "lo": -0.04118093142121768,
+      "hi": -0.019073900986703373,
+      "separated": true,
+      "n_boot_finite": 2000
+     }
+    },
+    "identity_max_abs_err_point": 1.3877787807814457e-17,
+    "identity_max_abs_err_all_boot_draws": 4.163336342344337e-17,
+    "recovery": {
+     "recovery fraction r8 (1 - refined/unrefined slope)": {
+      "est": 0.4565140442316904,
+      "lo": 0.24429140477915143,
+      "hi": 0.6921078445290527,
+      "separated": true
+     },
+     "recovery fraction r7 (1 - refined/unrefined slope)": {
+      "est": 0.6847940171173139,
+      "lo": 0.4844926220380789,
+      "hi": 0.9065073558184602,
+      "separated": true
+     },
+     "recovery fraction r8 - r7": {
+      "est": -0.22827997288562352,
+      "lo": -0.3208223915044074,
+      "hi": -0.1642777924989727,
+      "separated": true
+     }
+    },
+    "share_DIFF_EFFECT_of_GAP_refined": {
+     "est": 3.119271370222045,
+     "lo": 2.144694896317985,
+     "hi": 4.82012289583432,
+     "note": "ratio of two correlated bootstrap terms; read only when GAP_refined is separated from 0"
+    },
+    "share_GAP_unrefined_of_GAP_refined": {
+     "est": -2.1192713702220445,
+     "lo": -3.820122895834321,
+     "hi": -1.1446948963179846,
+     "note": "ratio of two correlated bootstrap terms; read only when GAP_refined is separated from 0"
+    }
+   },
+   "seed 1 | sharp (GT |yaw| >= 0.15) | last segment (1.5->2.0 s chord)": {
+    "n_seg": 344,
+    "n_win": 344,
+    "n_ep": 42,
+    "mean_gt_turn_aligned_heading_deg": 25.176660430404493,
+    "terms": {
+     "slope r8 UNREFINED selected anchor": {
+      "est": -0.21456700450254204,
+      "lo": -0.297980911985368,
+      "hi": -0.14540479867210487,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r8 REFINED emitted plan": {
+      "est": -0.10893867555202552,
+      "lo": -0.18763951604631218,
+      "hi": -0.048461276623472785,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r7 UNREFINED selected anchor": {
+      "est": -0.2720033965546888,
+      "lo": -0.35090541939768527,
+      "hi": -0.20228895373913794,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r7 REFINED emitted plan": {
+      "est": -0.08374389135917554,
+      "lo": -0.1624977741240405,
+      "hi": -0.02230287993927546,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "refinement effect r8 (refined - unrefined)": {
+      "est": 0.10562832895051653,
+      "lo": 0.06001993740236338,
+      "hi": 0.15836459487252677,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "refinement effect r7 (refined - unrefined)": {
+      "est": 0.18825950519551327,
+      "lo": 0.13921346366424842,
+      "hi": 0.24468987913793916,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "DIFF_EFFECT (effect r8 - effect r7)": {
+      "est": -0.08263117624499672,
+      "lo": -0.09771971701200916,
+      "hi": -0.06857705269199404,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "GAP_unrefined (r8 - r7, selected anchors)": {
+      "est": 0.057436392052146755,
+      "lo": 0.03749780889603642,
+      "hi": 0.0799847318686281,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "GAP_refined (r8 - r7, emitted plans)": {
+      "est": -0.025194784192849973,
+      "lo": -0.04012044046527844,
+      "hi": -0.010882003535397707,
+      "separated": true,
+      "n_boot_finite": 2000
+     }
+    },
+    "identity_max_abs_err_point": 1.3877787807814457e-17,
+    "identity_max_abs_err_all_boot_draws": 4.163336342344337e-17,
+    "recovery": {
+     "recovery fraction r8 (1 - refined/unrefined slope)": {
+      "est": 0.4922859840235366,
+      "lo": 0.28991794825801925,
+      "hi": 0.7162266446371541,
+      "separated": true
+     },
+     "recovery fraction r7 (1 - refined/unrefined slope)": {
+      "est": 0.6921218910502169,
+      "lo": 0.49966222586330644,
+      "hi": 0.9060791805000947,
+      "separated": true
+     },
+     "recovery fraction r8 - r7": {
+      "est": -0.1998359070266803,
+      "lo": -0.26138706643646054,
+      "hi": -0.14763518827230765,
+      "separated": true
+     }
+    },
+    "share_DIFF_EFFECT_of_GAP_refined": {
+     "est": 3.2796937498058276,
+     "lo": 2.0223451743757215,
+     "hi": 8.232863734176336,
+     "note": "ratio of two correlated bootstrap terms; read only when GAP_refined is separated from 0"
+    },
+    "share_GAP_unrefined_of_GAP_refined": {
+     "est": -2.279693749805828,
+     "lo": -7.232863734176341,
+     "hi": -1.0223451743757217,
+     "note": "ratio of two correlated bootstrap terms; read only when GAP_refined is separated from 0"
+    }
+   }
+  }
+ },
+ "refinement_by_anchor_agreement": {
+  "EMA-15k": {
+   "2-seed mean | SAME anchor index in r8 and r7 | sharp | last segment": {
+    "n_seg": 127,
+    "n_win": 127,
+    "n_ep": 37,
+    "mean_gt_turn_aligned_heading_deg": 24.96725948026695,
+    "terms": {
+     "slope r8 UNREFINED selected anchor": {
+      "est": -0.271105128401833,
+      "lo": -0.4063343747003714,
+      "hi": -0.15848884008830114,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r8 REFINED emitted plan": {
+      "est": -0.14320043055869958,
+      "lo": -0.2857046543531559,
+      "hi": -0.038364356753930226,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r7 UNREFINED selected anchor": {
+      "est": -0.271105128401833,
+      "lo": -0.4063343747003714,
+      "hi": -0.15848884008830114,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r7 REFINED emitted plan": {
+      "est": -0.11458675725759501,
+      "lo": -0.25834764548014294,
+      "hi": -0.008608915120352905,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "refinement effect r8 (refined - unrefined)": {
+      "est": 0.1279046978431334,
+      "lo": 0.07101131605121411,
+      "hi": 0.18930112189502632,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "refinement effect r7 (refined - unrefined)": {
+      "est": 0.15651837114423794,
+      "lo": 0.09957449659447797,
+      "hi": 0.2229865220518168,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "DIFF_EFFECT (effect r8 - effect r7)": {
+      "est": -0.02861367330110455,
+      "lo": -0.04859907139442177,
+      "hi": -0.012286478144688213,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "GAP_unrefined (r8 - r7, selected anchors)": {
+      "est": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "n_boot_finite": 2000
+     },
+     "GAP_refined (r8 - r7, emitted plans)": {
+      "est": -0.028613673301104547,
+      "lo": -0.04859907139442175,
+      "hi": -0.012286478144688213,
+      "separated": true,
+      "n_boot_finite": 2000
+     }
+    },
+    "identity_max_abs_err_point": 3.469446951953614e-18,
+    "identity_max_abs_err_all_boot_draws": 2.7755575615628914e-17,
+    "recovery": {
+     "recovery fraction r8 (1 - refined/unrefined slope)": {
+      "est": 0.47179003435727196,
+      "lo": 0.2486087258075942,
+      "hi": 0.7849256729660792,
+      "separated": true
+     },
+     "recovery fraction r7 (1 - refined/unrefined slope)": {
+      "est": 0.5773346010343481,
+      "lo": 0.33757128535714076,
+      "hi": 0.9516469035677784,
+      "separated": true
+     },
+     "recovery fraction r8 - r7": {
+      "est": -0.10554456667707612,
+      "lo": -0.2169278126905837,
+      "hi": -0.04092303843700279,
+      "separated": true
+     }
+    },
+    "share_DIFF_EFFECT_of_GAP_refined": {
+     "est": 1.0000000000000002,
+     "lo": 1.0,
+     "hi": 1.0000000000000004,
+     "note": "ratio of two correlated bootstrap terms; read only when GAP_refined is separated from 0"
+    },
+    "share_GAP_unrefined_of_GAP_refined": {
+     "est": -0.0,
+     "lo": -0.0,
+     "hi": 0.0,
+     "note": "ratio of two correlated bootstrap terms; read only when GAP_refined is separated from 0"
+    }
+   },
+   "2-seed mean | DIFFERENT anchor index | sharp | last segment": {
+    "n_seg": 208,
+    "n_win": 208,
+    "n_ep": 41,
+    "mean_gt_turn_aligned_heading_deg": 25.770606393006343,
+    "terms": {
+     "slope r8 UNREFINED selected anchor": {
+      "est": -0.21960487216832558,
+      "lo": -0.28940904918192417,
+      "hi": -0.14937486755362525,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r8 REFINED emitted plan": {
+      "est": -0.07986444434527573,
+      "lo": -0.14273150306049684,
+      "hi": -0.023084420027853065,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r7 UNREFINED selected anchor": {
+      "est": -0.2715190472248896,
+      "lo": -0.339975115479028,
+      "hi": -0.2024139113220487,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r7 REFINED emitted plan": {
+      "est": -0.04572882470649983,
+      "lo": -0.10142031040326409,
+      "hi": 0.007389175434528305,
+      "separated": false,
+      "n_boot_finite": 2000
+     },
+     "refinement effect r8 (refined - unrefined)": {
+      "est": 0.13974042782304982,
+      "lo": 0.09091615716616777,
+      "hi": 0.19016320317000754,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "refinement effect r7 (refined - unrefined)": {
+      "est": 0.2257902225183898,
+      "lo": 0.1640867903465163,
+      "hi": 0.30148769709520956,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "DIFF_EFFECT (effect r8 - effect r7)": {
+      "est": -0.08604979469533998,
+      "lo": -0.12638694537329004,
+      "hi": -0.0509806070015675,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "GAP_unrefined (r8 - r7, selected anchors)": {
+      "est": 0.0519141750565641,
+      "lo": -0.0016214681441539549,
+      "hi": 0.09815134218119345,
+      "separated": false,
+      "n_boot_finite": 2000
+     },
+     "GAP_refined (r8 - r7, emitted plans)": {
+      "est": -0.03413561963877588,
+      "lo": -0.07524093373959229,
+      "hi": -0.0016612403734847002,
+      "separated": true,
+      "n_boot_finite": 2000
+     }
+    },
+    "identity_max_abs_err_point": 0.0,
+    "identity_max_abs_err_all_boot_draws": 5.551115123125783e-17,
+    "recovery": {
+     "recovery fraction r8 (1 - refined/unrefined slope)": {
+      "est": 0.6363266281084137,
+      "lo": 0.4400525282679929,
+      "hi": 0.8658987834882249,
+      "separated": true
+     },
+     "recovery fraction r7 (1 - refined/unrefined slope)": {
+      "est": 0.8315815219083902,
+      "lo": 0.6524683009522316,
+      "hi": 1.0280888345154975,
+      "separated": true
+     },
+     "recovery fraction r8 - r7": {
+      "est": -0.19525489379997651,
+      "lo": -0.31254157205296096,
+      "hi": -0.0823336853527069,
+      "separated": true
+     }
+    },
+    "share_DIFF_EFFECT_of_GAP_refined": {
+     "est": 2.5208212303137136,
+     "lo": 0.6631684795355869,
+     "hi": 15.636463514042545,
+     "note": "ratio of two correlated bootstrap terms; read only when GAP_refined is separated from 0"
+    },
+    "share_GAP_unrefined_of_GAP_refined": {
+     "est": -1.5208212303137139,
+     "lo": -14.636463514042564,
+     "hi": 0.3368315204644119,
+     "note": "ratio of two correlated bootstrap terms; read only when GAP_refined is separated from 0"
+    }
+   },
+   "seed 0 | SAME anchor index in r8 and r7 | sharp | last segment": {
+    "n_seg": 157,
+    "n_win": 157,
+    "n_ep": 39,
+    "mean_gt_turn_aligned_heading_deg": 25.500380840082528,
+    "terms": {
+     "slope r8 UNREFINED selected anchor": {
+      "est": -0.27632327914444993,
+      "lo": -0.3875070456716762,
+      "hi": -0.17696813257262592,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r8 REFINED emitted plan": {
+      "est": -0.14422580351183795,
+      "lo": -0.26302777674590544,
+      "hi": -0.05234269526800151,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r7 UNREFINED selected anchor": {
+      "est": -0.27632327914444993,
+      "lo": -0.3875070456716762,
+      "hi": -0.17696813257262592,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r7 REFINED emitted plan": {
+      "est": -0.11276983306375996,
+      "lo": -0.23044944474956064,
+      "hi": -0.02131530662976893,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "refinement effect r8 (refined - unrefined)": {
+      "est": 0.1320974756326119,
+      "lo": 0.07900633710585293,
+      "hi": 0.18848351944491856,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "refinement effect r7 (refined - unrefined)": {
+      "est": 0.16355344608068995,
+      "lo": 0.10848811163157912,
+      "hi": 0.22596914792512,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "DIFF_EFFECT (effect r8 - effect r7)": {
+      "est": -0.031455970448078026,
+      "lo": -0.04880699952594569,
+      "hi": -0.01624836252611325,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "GAP_unrefined (r8 - r7, selected anchors)": {
+      "est": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "n_boot_finite": 2000
+     },
+     "GAP_refined (r8 - r7, emitted plans)": {
+      "est": -0.031455970448078026,
+      "lo": -0.04880699952594569,
+      "hi": -0.016248362526113246,
+      "separated": true,
+      "n_boot_finite": 2000
+     }
+    },
+    "identity_max_abs_err_point": 0.0,
+    "identity_max_abs_err_all_boot_draws": 2.0816681711721685e-17,
+    "recovery": {
+     "recovery fraction r8 (1 - refined/unrefined slope)": {
+      "est": 0.4780540967869634,
+      "lo": 0.27289134950127053,
+      "hi": 0.7492105575316017,
+      "separated": true
+     },
+     "recovery fraction r7 (1 - refined/unrefined slope)": {
+      "est": 0.5918916661205054,
+      "lo": 0.3719919271516201,
+      "hi": 0.8942118519011385,
+      "separated": true
+     },
+     "recovery fraction r8 - r7": {
+      "est": -0.11383756933354194,
+      "lo": -0.19071143743139626,
+      "hi": -0.055156774973683605,
+      "separated": true
+     }
+    },
+    "share_DIFF_EFFECT_of_GAP_refined": {
+     "est": 1.0,
+     "lo": 0.9999999999999998,
+     "hi": 1.0000000000000004,
+     "note": "ratio of two correlated bootstrap terms; read only when GAP_refined is separated from 0"
+    },
+    "share_GAP_unrefined_of_GAP_refined": {
+     "est": -0.0,
+     "lo": -0.0,
+     "hi": 0.0,
+     "note": "ratio of two correlated bootstrap terms; read only when GAP_refined is separated from 0"
+    }
+   },
+   "seed 0 | DIFFERENT anchor index | sharp | last segment": {
+    "n_seg": 183,
+    "n_win": 183,
+    "n_ep": 41,
+    "mean_gt_turn_aligned_heading_deg": 25.3926646786915,
+    "terms": {
+     "slope r8 UNREFINED selected anchor": {
+      "est": -0.21093455665948252,
+      "lo": -0.2855230800537227,
+      "hi": -0.14021543937803285,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r8 REFINED emitted plan": {
+      "est": -0.07538931621205433,
+      "lo": -0.1401650459710399,
+      "hi": -0.020796807270147915,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r7 UNREFINED selected anchor": {
+      "est": -0.2817082153559905,
+      "lo": -0.3586363582678588,
+      "hi": -0.20493278232801893,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r7 REFINED emitted plan": {
+      "est": -0.04827269400759549,
+      "lo": -0.10732615911998243,
+      "hi": 0.005045159067643502,
+      "separated": false,
+      "n_boot_finite": 2000
+     },
+     "refinement effect r8 (refined - unrefined)": {
+      "est": 0.13554524044742822,
+      "lo": 0.0821394549466893,
+      "hi": 0.1873465154279103,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "refinement effect r7 (refined - unrefined)": {
+      "est": 0.233435521348395,
+      "lo": 0.16017705604885282,
+      "hi": 0.31408289195207156,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "DIFF_EFFECT (effect r8 - effect r7)": {
+      "est": -0.09789028090096674,
+      "lo": -0.14621900932042714,
+      "hi": -0.05446298007343084,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "GAP_unrefined (r8 - r7, selected anchors)": {
+      "est": 0.07077365869650791,
+      "lo": 0.0030630320218206736,
+      "hi": 0.12859432025996062,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "GAP_refined (r8 - r7, emitted plans)": {
+      "est": -0.02711662220445882,
+      "lo": -0.07729904997618646,
+      "hi": 0.013564039597819178,
+      "separated": false,
+      "n_boot_finite": 2000
+     }
+    },
+    "identity_max_abs_err_point": 1.3877787807814457e-17,
+    "identity_max_abs_err_all_boot_draws": 5.551115123125783e-17,
+    "recovery": {
+     "recovery fraction r8 (1 - refined/unrefined slope)": {
+      "est": 0.6425938101088036,
+      "lo": 0.4424174183123181,
+      "hi": 0.8698310388707299,
+      "separated": true
+     },
+     "recovery fraction r7 (1 - refined/unrefined slope)": {
+      "est": 0.8286429313160285,
+      "lo": 0.640411802766551,
+      "hi": 1.0191788913893212,
+      "separated": true
+     },
+     "recovery fraction r8 - r7": {
+      "est": -0.18604912120722494,
+      "lo": -0.3313079921480097,
+      "hi": -0.05603986770162357,
+      "separated": true
+     }
+    },
+    "share_DIFF_EFFECT_of_GAP_refined": {
+     "est": 3.6099732541492764,
+     "lo": -29.045056562717093,
+     "hi": 45.965743036869625,
+     "note": "ratio of two correlated bootstrap terms; read only when GAP_refined is separated from 0"
+    },
+    "share_GAP_unrefined_of_GAP_refined": {
+     "est": -2.6099732541492764,
+     "lo": -44.96574303686983,
+     "hi": 30.04505656271676,
+     "note": "ratio of two correlated bootstrap terms; read only when GAP_refined is separated from 0"
+    }
+   },
+   "seed 1 | SAME anchor index in r8 and r7 | sharp | last segment": {
+    "n_seg": 160,
+    "n_win": 160,
+    "n_ep": 38,
+    "mean_gt_turn_aligned_heading_deg": 25.45509624988979,
+    "terms": {
+     "slope r8 UNREFINED selected anchor": {
+      "est": -0.25712816456133625,
+      "lo": -0.37936930254805135,
+      "hi": -0.1564020216730691,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r8 REFINED emitted plan": {
+      "est": -0.12996683625921018,
+      "lo": -0.24419215972054348,
+      "hi": -0.040876450976909805,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r7 UNREFINED selected anchor": {
+      "est": -0.25712816456133625,
+      "lo": -0.37936930254805135,
+      "hi": -0.1564020216730691,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r7 REFINED emitted plan": {
+      "est": -0.10013544962584689,
+      "lo": -0.2182424079671763,
+      "hi": -0.013229308681771504,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "refinement effect r8 (refined - unrefined)": {
+      "est": 0.12716132830212612,
+      "lo": 0.0779078862572447,
+      "hi": 0.18183940479177213,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "refinement effect r7 (refined - unrefined)": {
+      "est": 0.15699271493548939,
+      "lo": 0.10669339130464006,
+      "hi": 0.21461488099592158,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "DIFF_EFFECT (effect r8 - effect r7)": {
+      "est": -0.029831386633363287,
+      "lo": -0.050872592653161186,
+      "hi": -0.013222489307403999,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "GAP_unrefined (r8 - r7, selected anchors)": {
+      "est": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "n_boot_finite": 2000
+     },
+     "GAP_refined (r8 - r7, emitted plans)": {
+      "est": -0.029831386633363287,
+      "lo": -0.05087259265316119,
+      "hi": -0.013222489307403999,
+      "separated": true,
+      "n_boot_finite": 2000
+     }
+    },
+    "identity_max_abs_err_point": 0.0,
+    "identity_max_abs_err_all_boot_draws": 2.0816681711721685e-17,
+    "recovery": {
+     "recovery fraction r8 (1 - refined/unrefined slope)": {
+      "est": 0.49454453392558073,
+      "lo": 0.2919081633077482,
+      "hi": 0.7667720627598988,
+      "separated": true
+     },
+     "recovery fraction r7 (1 - refined/unrefined slope)": {
+      "est": 0.6105621109353028,
+      "lo": 0.39314217007337804,
+      "hi": 0.9258805195726343,
+      "separated": true
+     },
+     "recovery fraction r8 - r7": {
+      "est": -0.11601757700972204,
+      "lo": -0.22624258808125056,
+      "hi": -0.04776455442489285,
+      "separated": true
+     }
+    },
+    "share_DIFF_EFFECT_of_GAP_refined": {
+     "est": 1.0,
+     "lo": 0.9999999999999998,
+     "hi": 1.0000000000000004,
+     "note": "ratio of two correlated bootstrap terms; read only when GAP_refined is separated from 0"
+    },
+    "share_GAP_unrefined_of_GAP_refined": {
+     "est": -0.0,
+     "lo": -0.0,
+     "hi": 0.0,
+     "note": "ratio of two correlated bootstrap terms; read only when GAP_refined is separated from 0"
+    }
+   },
+   "seed 1 | DIFFERENT anchor index | sharp | last segment": {
+    "n_seg": 187,
+    "n_win": 187,
+    "n_ep": 41,
+    "mean_gt_turn_aligned_heading_deg": 25.459892450842954,
+    "terms": {
+     "slope r8 UNREFINED selected anchor": {
+      "est": -0.23370835553219624,
+      "lo": -0.31135326880754816,
+      "hi": -0.15705687092314544,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r8 REFINED emitted plan": {
+      "est": -0.09883520559559862,
+      "lo": -0.17457606403224643,
+      "hi": -0.03171396326481865,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r7 UNREFINED selected anchor": {
+      "est": -0.28074261909505493,
+      "lo": -0.34930189003091267,
+      "hi": -0.2117092097335202,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r7 REFINED emitted plan": {
+      "est": -0.055840885671688024,
+      "lo": -0.12576605621362263,
+      "hi": 0.00803097008245507,
+      "separated": false,
+      "n_boot_finite": 2000
+     },
+     "refinement effect r8 (refined - unrefined)": {
+      "est": 0.1348731499365976,
+      "lo": 0.0755388462951056,
+      "hi": 0.19022507445452658,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "refinement effect r7 (refined - unrefined)": {
+      "est": 0.22490173342336692,
+      "lo": 0.1549943567721055,
+      "hi": 0.3047797457943699,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "DIFF_EFFECT (effect r8 - effect r7)": {
+      "est": -0.09002858348676933,
+      "lo": -0.13825704902969452,
+      "hi": -0.04922681527937939,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "GAP_unrefined (r8 - r7, selected anchors)": {
+      "est": 0.04703426356285874,
+      "lo": -0.011547087902821756,
+      "hi": 0.10408728560546301,
+      "separated": false,
+      "n_boot_finite": 2000
+     },
+     "GAP_refined (r8 - r7, emitted plans)": {
+      "est": -0.0429943199239106,
+      "lo": -0.08925131476979904,
+      "hi": -0.004242959319925891,
+      "separated": true,
+      "n_boot_finite": 2000
+     }
+    },
+    "identity_max_abs_err_point": 1.3877787807814457e-17,
+    "identity_max_abs_err_all_boot_draws": 5.551115123125783e-17,
+    "recovery": {
+     "recovery fraction r8 (1 - refined/unrefined slope)": {
+      "est": 0.5771002479969833,
+      "lo": 0.3457652217192931,
+      "hi": 0.8178826806996358,
+      "separated": true
+     },
+     "recovery fraction r7 (1 - refined/unrefined slope)": {
+      "est": 0.8010958013724977,
+      "lo": 0.5837206996652661,
+      "hi": 1.0317431546928588,
+      "separated": true
+     },
+     "recovery fraction r8 - r7": {
+      "est": -0.22399555337551436,
+      "lo": -0.34711203538226226,
+      "hi": -0.10180921916997868,
+      "separated": true
+     }
+    },
+    "share_DIFF_EFFECT_of_GAP_refined": {
+     "est": 2.0939645898829857,
+     "lo": 0.7339049631036597,
+     "hi": 13.775006906955502,
+     "note": "ratio of two correlated bootstrap terms; read only when GAP_refined is separated from 0"
+    },
+    "share_GAP_unrefined_of_GAP_refined": {
+     "est": -1.0939645898829857,
+     "lo": -12.775006906955507,
+     "hi": 0.26609503689634,
+     "note": "ratio of two correlated bootstrap terms; read only when GAP_refined is separated from 0"
+    }
+   }
+  },
+  "EMA-5k": {
+   "2-seed mean | SAME anchor index in r8 and r7 | sharp | last segment": {
+    "n_seg": 166,
+    "n_win": 166,
+    "n_ep": 41,
+    "mean_gt_turn_aligned_heading_deg": 25.323642087871427,
+    "terms": {
+     "slope r8 UNREFINED selected anchor": {
+      "est": -0.24248373469948997,
+      "lo": -0.3579560764913227,
+      "hi": -0.14774322057975084,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r8 REFINED emitted plan": {
+      "est": -0.15032807332547005,
+      "lo": -0.26630359875561177,
+      "hi": -0.06334820241930647,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r7 UNREFINED selected anchor": {
+      "est": -0.24248373469948997,
+      "lo": -0.3579560764913227,
+      "hi": -0.14774322057975084,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r7 REFINED emitted plan": {
+      "est": -0.11315441563835293,
+      "lo": -0.23029970309733575,
+      "hi": -0.027562502424596146,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "refinement effect r8 (refined - unrefined)": {
+      "est": 0.0921556613740199,
+      "lo": 0.04315731305712222,
+      "hi": 0.14638950174071796,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "refinement effect r7 (refined - unrefined)": {
+      "est": 0.129329319061137,
+      "lo": 0.08031967546410967,
+      "hi": 0.18336272017833075,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "DIFF_EFFECT (effect r8 - effect r7)": {
+      "est": -0.03717365768711711,
+      "lo": -0.046682510312035436,
+      "hi": -0.02892517196477459,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "GAP_unrefined (r8 - r7, selected anchors)": {
+      "est": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "n_boot_finite": 2000
+     },
+     "GAP_refined (r8 - r7, emitted plans)": {
+      "est": -0.03717365768711711,
+      "lo": -0.04668251031203542,
+      "hi": -0.02892517196477459,
+      "separated": true,
+      "n_boot_finite": 2000
+     }
+    },
+    "identity_max_abs_err_point": 0.0,
+    "identity_max_abs_err_all_boot_draws": 2.0816681711721685e-17,
+    "recovery": {
+     "recovery fraction r8 (1 - refined/unrefined slope)": {
+      "est": 0.3800488370414965,
+      "lo": 0.1864222405922013,
+      "hi": 0.6296900295605208,
+      "separated": true
+     },
+     "recovery fraction r7 (1 - refined/unrefined slope)": {
+      "est": 0.5333525534049318,
+      "lo": 0.3181771218389866,
+      "hi": 0.8296398293503983,
+      "separated": true
+     },
+     "recovery fraction r8 - r7": {
+      "est": -0.15330371636343532,
+      "lo": -0.26050233608999684,
+      "hi": -0.09224050842378277,
+      "separated": true
+     }
+    },
+    "share_DIFF_EFFECT_of_GAP_refined": {
+     "est": 1.0,
+     "lo": 0.9999999999999998,
+     "hi": 1.0000000000000004,
+     "note": "ratio of two correlated bootstrap terms; read only when GAP_refined is separated from 0"
+    },
+    "share_GAP_unrefined_of_GAP_refined": {
+     "est": -0.0,
+     "lo": -0.0,
+     "hi": 0.0,
+     "note": "ratio of two correlated bootstrap terms; read only when GAP_refined is separated from 0"
+    }
+   },
+   "2-seed mean | DIFFERENT anchor index | sharp | last segment": {
+    "n_seg": 155,
+    "n_win": 155,
+    "n_ep": 42,
+    "mean_gt_turn_aligned_heading_deg": 24.594454648066353,
+    "terms": {
+     "slope r8 UNREFINED selected anchor": {
+      "est": -0.16230081152287593,
+      "lo": -0.2317952758322307,
+      "hi": -0.09215067666293289,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r8 REFINED emitted plan": {
+      "est": -0.05036228271871112,
+      "lo": -0.10338250449646783,
+      "hi": -0.007786461561068157,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r7 UNREFINED selected anchor": {
+      "est": -0.29380392140924,
+      "lo": -0.36703159008433855,
+      "hi": -0.22260296697418216,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r7 REFINED emitted plan": {
+      "est": -0.0344659550464646,
+      "lo": -0.08872667496284647,
+      "hi": 0.011097945370516771,
+      "separated": false,
+      "n_boot_finite": 2000
+     },
+     "refinement effect r8 (refined - unrefined)": {
+      "est": 0.11193852880416481,
+      "lo": 0.05450206269195862,
+      "hi": 0.16857662761644876,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "refinement effect r7 (refined - unrefined)": {
+      "est": 0.2593379663627754,
+      "lo": 0.20375506590957876,
+      "hi": 0.32010992518099557,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "DIFF_EFFECT (effect r8 - effect r7)": {
+      "est": -0.14739943755861057,
+      "lo": -0.1847377707033178,
+      "hi": -0.11680258479530485,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "GAP_unrefined (r8 - r7, selected anchors)": {
+      "est": 0.13150310988636404,
+      "lo": 0.09699749306336472,
+      "hi": 0.17048937931178823,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "GAP_refined (r8 - r7, emitted plans)": {
+      "est": -0.015896327672246514,
+      "lo": -0.036296234424602405,
+      "hi": 0.004335440016192776,
+      "separated": false,
+      "n_boot_finite": 2000
+     }
+    },
+    "identity_max_abs_err_point": 0.0,
+    "identity_max_abs_err_all_boot_draws": 8.326672684688674e-17,
+    "recovery": {
+     "recovery fraction r8 (1 - refined/unrefined slope)": {
+      "est": 0.6896978995597156,
+      "lo": 0.4286021038610672,
+      "hi": 0.932895170115382,
+      "separated": true
+     },
+     "recovery fraction r7 (1 - refined/unrefined slope)": {
+      "est": 0.8826906227760762,
+      "lo": 0.730475122318263,
+      "hi": 1.0443560839810049,
+      "separated": true
+     },
+     "recovery fraction r8 - r7": {
+      "est": -0.19299272321636063,
+      "lo": -0.3397630236191633,
+      "hi": -0.07916431334416707,
+      "separated": true
+     }
+    },
+    "share_DIFF_EFFECT_of_GAP_refined": {
+     "est": 9.27254650241993,
+     "lo": -63.666927766227055,
+     "hi": 72.32069181824613,
+     "note": "ratio of two correlated bootstrap terms; read only when GAP_refined is separated from 0"
+    },
+    "share_GAP_unrefined_of_GAP_refined": {
+     "est": -8.27254650241993,
+     "lo": -71.3206918182462,
+     "hi": 64.66692776622702,
+     "note": "ratio of two correlated bootstrap terms; read only when GAP_refined is separated from 0"
+    }
+   },
+   "seed 0 | SAME anchor index in r8 and r7 | sharp | last segment": {
+    "n_seg": 203,
+    "n_win": 203,
+    "n_ep": 42,
+    "mean_gt_turn_aligned_heading_deg": 25.53855360302196,
+    "terms": {
+     "slope r8 UNREFINED selected anchor": {
+      "est": -0.25045450267286806,
+      "lo": -0.36018867454610964,
+      "hi": -0.15315726205438399,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r8 REFINED emitted plan": {
+      "est": -0.16396882027820442,
+      "lo": -0.282316823043194,
+      "hi": -0.07121294786239066,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r7 UNREFINED selected anchor": {
+      "est": -0.25045450267286806,
+      "lo": -0.36018867454610964,
+      "hi": -0.15315726205438399,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r7 REFINED emitted plan": {
+      "est": -0.12757230984945878,
+      "lo": -0.24837339976906367,
+      "hi": -0.034076416369712405,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "refinement effect r8 (refined - unrefined)": {
+      "est": 0.08648568239466366,
+      "lo": 0.03552262239396813,
+      "hi": 0.14242389982142914,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "refinement effect r7 (refined - unrefined)": {
+      "est": 0.12288219282340931,
+      "lo": 0.07246493894309453,
+      "hi": 0.17913631508414538,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "DIFF_EFFECT (effect r8 - effect r7)": {
+      "est": -0.03639651042874566,
+      "lo": -0.04502975969354724,
+      "hi": -0.02842292192430198,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "GAP_unrefined (r8 - r7, selected anchors)": {
+      "est": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "n_boot_finite": 2000
+     },
+     "GAP_refined (r8 - r7, emitted plans)": {
+      "est": -0.03639651042874566,
+      "lo": -0.04502975969354724,
+      "hi": -0.028422921924301976,
+      "separated": true,
+      "n_boot_finite": 2000
+     }
+    },
+    "identity_max_abs_err_point": 0.0,
+    "identity_max_abs_err_all_boot_draws": 2.0816681711721685e-17,
+    "recovery": {
+     "recovery fraction r8 (1 - refined/unrefined slope)": {
+      "est": 0.3453149433197741,
+      "lo": 0.1341249783078938,
+      "hi": 0.6044211373505535,
+      "separated": true
+     },
+     "recovery fraction r7 (1 - refined/unrefined slope)": {
+      "est": 0.4906367883667567,
+      "lo": 0.26550205201534466,
+      "hi": 0.8008399900437944,
+      "separated": true
+     },
+     "recovery fraction r8 - r7": {
+      "est": -0.14532184504698265,
+      "lo": -0.24990795893562803,
+      "hi": -0.08805836263025466,
+      "separated": true
+     }
+    },
+    "share_DIFF_EFFECT_of_GAP_refined": {
+     "est": 1.0,
+     "lo": 0.9999999999999998,
+     "hi": 1.0000000000000004,
+     "note": "ratio of two correlated bootstrap terms; read only when GAP_refined is separated from 0"
+    },
+    "share_GAP_unrefined_of_GAP_refined": {
+     "est": -0.0,
+     "lo": -0.0,
+     "hi": 0.0,
+     "note": "ratio of two correlated bootstrap terms; read only when GAP_refined is separated from 0"
+    }
+   },
+   "seed 0 | DIFFERENT anchor index | sharp | last segment": {
+    "n_seg": 132,
+    "n_win": 132,
+    "n_ep": 37,
+    "mean_gt_turn_aligned_heading_deg": 24.54016180601536,
+    "terms": {
+     "slope r8 UNREFINED selected anchor": {
+      "est": -0.15690579139965988,
+      "lo": -0.2366101586631059,
+      "hi": -0.08039898530230756,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r8 REFINED emitted plan": {
+      "est": -0.03799942069702377,
+      "lo": -0.09677096320256844,
+      "hi": 0.009777994244496612,
+      "separated": false,
+      "n_boot_finite": 2000
+     },
+     "slope r7 UNREFINED selected anchor": {
+      "est": -0.3257256939882818,
+      "lo": -0.41448583865121336,
+      "hi": -0.24090624325366272,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r7 REFINED emitted plan": {
+      "est": -0.020124085989758386,
+      "lo": -0.07699251875552329,
+      "hi": 0.028783491814651157,
+      "separated": false,
+      "n_boot_finite": 2000
+     },
+     "refinement effect r8 (refined - unrefined)": {
+      "est": 0.1189063707026361,
+      "lo": 0.05087461171333386,
+      "hi": 0.18695944916912297,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "refinement effect r7 (refined - unrefined)": {
+      "est": 0.3056016079985233,
+      "lo": 0.23602999860429597,
+      "hi": 0.38553262894531715,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "DIFF_EFFECT (effect r8 - effect r7)": {
+      "est": -0.18669523729588727,
+      "lo": -0.2381418814042632,
+      "hi": -0.14272726334447508,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "GAP_unrefined (r8 - r7, selected anchors)": {
+      "est": 0.16881990258862187,
+      "lo": 0.12153215933300958,
+      "hi": 0.2191767655234642,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "GAP_refined (r8 - r7, emitted plans)": {
+      "est": -0.01787533470726539,
+      "lo": -0.03981334694372392,
+      "hi": 0.00488332536565623,
+      "separated": false,
+      "n_boot_finite": 2000
+     }
+    },
+    "identity_max_abs_err_point": 2.7755575615628914e-17,
+    "identity_max_abs_err_all_boot_draws": 1.1102230246251565e-16,
+    "recovery": {
+     "recovery fraction r8 (1 - refined/unrefined slope)": {
+      "est": 0.7578201520921927,
+      "lo": 0.43842567110323755,
+      "hi": 1.086460394537634,
+      "separated": true
+     },
+     "recovery fraction r7 (1 - refined/unrefined slope)": {
+      "est": 0.9382176894203429,
+      "lo": 0.7889936758850777,
+      "hi": 1.106512044898998,
+      "separated": true
+     },
+     "recovery fraction r8 - r7": {
+      "est": -0.18039753732815023,
+      "lo": -0.38230679602485057,
+      "hi": 0.010894424129756691,
+      "separated": false
+     }
+    },
+    "share_DIFF_EFFECT_of_GAP_refined": {
+     "est": 10.444293231611793,
+     "lo": -51.62847988970195,
+     "hi": 101.61529509367459,
+     "note": "ratio of two correlated bootstrap terms; read only when GAP_refined is separated from 0"
+    },
+    "share_GAP_unrefined_of_GAP_refined": {
+     "est": -9.444293231611793,
+     "lo": -100.61529509367503,
+     "hi": 52.62847988970174,
+     "note": "ratio of two correlated bootstrap terms; read only when GAP_refined is separated from 0"
+    }
+   },
+   "seed 1 | SAME anchor index in r8 and r7 | sharp | last segment": {
+    "n_seg": 209,
+    "n_win": 209,
+    "n_ep": 41,
+    "mean_gt_turn_aligned_heading_deg": 25.559606214088088,
+    "terms": {
+     "slope r8 UNREFINED selected anchor": {
+      "est": -0.24760221758762757,
+      "lo": -0.35370605687289697,
+      "hi": -0.15980920422658237,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r8 REFINED emitted plan": {
+      "est": -0.140377620922393,
+      "lo": -0.24117236293319522,
+      "hi": -0.06072166572705219,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r7 UNREFINED selected anchor": {
+      "est": -0.24760221758762757,
+      "lo": -0.35370605687289697,
+      "hi": -0.15980920422658237,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r7 REFINED emitted plan": {
+      "est": -0.10376607920494074,
+      "lo": -0.20713744455109023,
+      "hi": -0.024493067168994374,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "refinement effect r8 (refined - unrefined)": {
+      "est": 0.10722459666523455,
+      "lo": 0.056310753155831526,
+      "hi": 0.16328389044953187,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "refinement effect r7 (refined - unrefined)": {
+      "est": 0.14383613838268683,
+      "lo": 0.09209490985886763,
+      "hi": 0.19946728095441674,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "DIFF_EFFECT (effect r8 - effect r7)": {
+      "est": -0.03661154171745228,
+      "lo": -0.04642700688684057,
+      "hi": -0.02773256733913514,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "GAP_unrefined (r8 - r7, selected anchors)": {
+      "est": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "n_boot_finite": 2000
+     },
+     "GAP_refined (r8 - r7, emitted plans)": {
+      "est": -0.036611541717452276,
+      "lo": -0.046427006886840566,
+      "hi": -0.027732567339135133,
+      "separated": true,
+      "n_boot_finite": 2000
+     }
+    },
+    "identity_max_abs_err_point": 6.938893903907228e-18,
+    "identity_max_abs_err_all_boot_draws": 2.0816681711721685e-17,
+    "recovery": {
+     "recovery fraction r8 (1 - refined/unrefined slope)": {
+      "est": 0.4330518430324126,
+      "lo": 0.23075242262071083,
+      "hi": 0.6716677898112573,
+      "separated": true
+     },
+     "recovery fraction r7 (1 - refined/unrefined slope)": {
+      "est": 0.5809161960828665,
+      "lo": 0.3664995147710547,
+      "hi": 0.858582358707455,
+      "separated": true
+     },
+     "recovery fraction r8 - r7": {
+      "est": -0.14786435305045387,
+      "lo": -0.2326154668943677,
+      "hi": -0.09222875115470068,
+      "separated": true
+     }
+    },
+    "share_DIFF_EFFECT_of_GAP_refined": {
+     "est": 1.0000000000000002,
+     "lo": 0.9999999999999998,
+     "hi": 1.0000000000000004,
+     "note": "ratio of two correlated bootstrap terms; read only when GAP_refined is separated from 0"
+    },
+    "share_GAP_unrefined_of_GAP_refined": {
+     "est": -0.0,
+     "lo": -0.0,
+     "hi": 0.0,
+     "note": "ratio of two correlated bootstrap terms; read only when GAP_refined is separated from 0"
+    }
+   },
+   "seed 1 | DIFFERENT anchor index | sharp | last segment": {
+    "n_seg": 135,
+    "n_win": 135,
+    "n_ep": 40,
+    "mean_gt_turn_aligned_heading_deg": 24.583803624553596,
+    "terms": {
+     "slope r8 UNREFINED selected anchor": {
+      "est": -0.1583668754431425,
+      "lo": -0.2261507802341311,
+      "hi": -0.09308284252348588,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r8 REFINED emitted plan": {
+      "est": -0.05545414730771529,
+      "lo": -0.10749553765499831,
+      "hi": -0.012534318020108601,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r7 UNREFINED selected anchor": {
+      "est": -0.3135151435386811,
+      "lo": -0.36896806068857346,
+      "hi": -0.2553498602238243,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "slope r7 REFINED emitted plan": {
+      "est": -0.04968176685931685,
+      "lo": -0.10901865214654971,
+      "hi": 0.008016395185411163,
+      "separated": false,
+      "n_boot_finite": 2000
+     },
+     "refinement effect r8 (refined - unrefined)": {
+      "est": 0.10291272813542722,
+      "lo": 0.04584498108310303,
+      "hi": 0.16477908070143935,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "refinement effect r7 (refined - unrefined)": {
+      "est": 0.26383337667936424,
+      "lo": 0.2094336226650366,
+      "hi": 0.33077206265833786,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "DIFF_EFFECT (effect r8 - effect r7)": {
+      "est": -0.160920648543937,
+      "lo": -0.19329724660729328,
+      "hi": -0.1297392019482526,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "GAP_unrefined (r8 - r7, selected anchors)": {
+      "est": 0.15514826809553856,
+      "lo": 0.10973343145649907,
+      "hi": 0.2013451790949313,
+      "separated": true,
+      "n_boot_finite": 2000
+     },
+     "GAP_refined (r8 - r7, emitted plans)": {
+      "est": -0.00577238044839844,
+      "lo": -0.04053640985146913,
+      "hi": 0.02557514646654173,
+      "separated": false,
+      "n_boot_finite": 2000
+     }
+    },
+    "identity_max_abs_err_point": 0.0,
+    "identity_max_abs_err_all_boot_draws": 8.326672684688674e-17,
+    "recovery": {
+     "recovery fraction r8 (1 - refined/unrefined slope)": {
+      "est": 0.6498374603114232,
+      "lo": 0.3759898817775876,
+      "hi": 0.9031425932568142,
+      "separated": true
+     },
+     "recovery fraction r7 (1 - refined/unrefined slope)": {
+      "est": 0.8415331192664154,
+      "lo": 0.6757390115782699,
+      "hi": 1.0264249639995084,
+      "separated": true
+     },
+     "recovery fraction r8 - r7": {
+      "est": -0.1916956589549922,
+      "lo": -0.3456789157211935,
+      "hi": -0.05417377221318835,
+      "separated": true
+     }
+    },
+    "share_DIFF_EFFECT_of_GAP_refined": {
+     "est": 27.877692744348618,
+     "lo": -118.90081416518073,
+     "hi": 135.99229466232163,
+     "note": "ratio of two correlated bootstrap terms; read only when GAP_refined is separated from 0"
+    },
+    "share_GAP_unrefined_of_GAP_refined": {
+     "est": -26.877692744348618,
+     "lo": -134.99229466232165,
+     "hi": 119.90081416518053,
+     "note": "ratio of two correlated bootstrap terms; read only when GAP_refined is separated from 0"
+    }
+   }
+  }
+ },
+ "refinement_6s_terminal_chord": {
+  "_definition": "heading of the 5.0->6.0 s chord (model slots 6->7) minus GT's 5->6 s chord heading (ego frame at t0), same through-origin turn-aligned slope; needs GT not end-clamped and both chords >= 1 m; SECONDARY (large angles, wrap possible)",
+  "EMA-15k | 2-seed mean | sharp": {
+   "n_seg": 243,
+   "n_win": 243,
+   "n_ep": 32,
+   "mean_gt_turn_aligned_heading_deg": 54.43865731003388,
+   "terms": {
+    "slope r8 UNREFINED selected anchor": {
+     "est": 0.1785580224304496,
+     "lo": 0.07728698909661658,
+     "hi": 0.31579022569163867,
+     "separated": true,
+     "n_boot_finite": 2000
+    },
+    "slope r8 REFINED emitted plan": {
+     "est": -0.05907627474568397,
+     "lo": -0.15154113255983723,
+     "hi": 0.03395141473601991,
+     "separated": false,
+     "n_boot_finite": 2000
+    },
+    "slope r7 UNREFINED selected anchor": {
+     "est": 0.1750470922194825,
+     "lo": 0.10520567536296586,
+     "hi": 0.2849487054003047,
+     "separated": true,
+     "n_boot_finite": 2000
+    },
+    "slope r7 REFINED emitted plan": {
+     "est": -0.07599647769731478,
+     "lo": -0.13627165737084962,
+     "hi": 0.0026708987514126145,
+     "separated": false,
+     "n_boot_finite": 2000
+    },
+    "refinement effect r8 (refined - unrefined)": {
+     "est": -0.23763429717613357,
+     "lo": -0.3333608292127758,
+     "hi": -0.17732618341631987,
+     "separated": true,
+     "n_boot_finite": 2000
+    },
+    "refinement effect r7 (refined - unrefined)": {
+     "est": -0.25104356991679727,
+     "lo": -0.33600757086761557,
+     "hi": -0.19332991052733475,
+     "separated": true,
+     "n_boot_finite": 2000
+    },
+    "DIFF_EFFECT (effect r8 - effect r7)": {
+     "est": 0.013409272740663718,
+     "lo": -0.023341211514796817,
+     "hi": 0.05264338976506355,
+     "separated": false,
+     "n_boot_finite": 2000
+    },
+    "GAP_unrefined (r8 - r7, selected anchors)": {
+     "est": 0.003510930210967086,
+     "lo": -0.08116327797673652,
+     "hi": 0.07375126245974539,
+     "separated": false,
+     "n_boot_finite": 2000
+    },
+    "GAP_refined (r8 - r7, emitted plans)": {
+     "est": 0.01692020295163081,
+     "lo": -0.06263949640738055,
+     "hi": 0.07162748099365154,
+     "separated": false,
+     "n_boot_finite": 2000
+    }
+   },
+   "identity_max_abs_err_point": 6.938893903907228e-18,
+   "identity_max_abs_err_all_boot_draws": 5.551115123125783e-17,
+   "recovery": {
+    "recovery fraction r8 (1 - refined/unrefined slope)": {
+     "est": 1.330851977086019,
+     "lo": 0.8826006065931039,
+     "hi": 2.6782699643788095,
+     "separated": true
+    },
+    "recovery fraction r7 (1 - refined/unrefined slope)": {
+     "est": 1.4341487581069141,
+     "lo": 0.9904938801690432,
+     "hi": 2.145990578049421,
+     "separated": true
+    },
+    "recovery fraction r8 - r7": {
+     "est": -0.10329678102089512,
+     "lo": -0.5489480726165541,
+     "hi": 0.9140134981052396,
+     "separated": false
+    }
+   },
+   "share_DIFF_EFFECT_of_GAP_refined": {
+    "est": 0.7925007033896895,
+    "lo": -7.3355708064388,
+    "hi": 6.959618653753612,
+    "note": "ratio of two correlated bootstrap terms; read only when GAP_refined is separated from 0"
+   },
+   "share_GAP_unrefined_of_GAP_refined": {
+    "est": 0.2074992966103101,
+    "lo": -5.959618653753632,
+    "hi": 8.33557080643879,
+    "note": "ratio of two correlated bootstrap terms; read only when GAP_refined is separated from 0"
+   }
+  },
+  "EMA-5k | 2-seed mean | sharp": {
+   "n_seg": 228,
+   "n_win": 228,
+   "n_ep": 32,
+   "mean_gt_turn_aligned_heading_deg": 53.80067858678483,
+   "terms": {
+    "slope r8 UNREFINED selected anchor": {
+     "est": 0.24274057368845192,
+     "lo": 0.15855958940948736,
+     "hi": 0.38973674892092874,
+     "separated": true,
+     "n_boot_finite": 2000
+    },
+    "slope r8 REFINED emitted plan": {
+     "est": -0.018506288393910005,
+     "lo": -0.08385217122083134,
+     "hi": 0.0711945420121454,
+     "separated": false,
+     "n_boot_finite": 2000
+    },
+    "slope r7 UNREFINED selected anchor": {
+     "est": 0.1780553945371859,
+     "lo": 0.10412363386676413,
+     "hi": 0.29823356553890823,
+     "separated": true,
+     "n_boot_finite": 2000
+    },
+    "slope r7 REFINED emitted plan": {
+     "est": -0.0653566911965021,
+     "lo": -0.1270012693168441,
+     "hi": 0.018872241431122358,
+     "separated": false,
+     "n_boot_finite": 2000
+    },
+    "refinement effect r8 (refined - unrefined)": {
+     "est": -0.2612468620823619,
+     "lo": -0.3589415129199831,
+     "hi": -0.19957240477092755,
+     "separated": true,
+     "n_boot_finite": 2000
+    },
+    "refinement effect r7 (refined - unrefined)": {
+     "est": -0.243412085733688,
+     "lo": -0.3300649989075081,
+     "hi": -0.18852699687229366,
+     "separated": true,
+     "n_boot_finite": 2000
+    },
+    "DIFF_EFFECT (effect r8 - effect r7)": {
+     "est": -0.017834776348673902,
+     "lo": -0.057029367271834816,
+     "hi": 0.012360173922734155,
+     "separated": false,
+     "n_boot_finite": 2000
+    },
+    "GAP_unrefined (r8 - r7, selected anchors)": {
+     "est": 0.064685179151266,
+     "lo": 0.03158031470583084,
+     "hi": 0.11543366033674947,
+     "separated": true,
+     "n_boot_finite": 2000
+    },
+    "GAP_refined (r8 - r7, emitted plans)": {
+     "est": 0.046850402802592096,
+     "lo": 0.029018842466046874,
+     "hi": 0.07330965156648958,
+     "separated": true,
+     "n_boot_finite": 2000
+    }
+   },
+   "identity_max_abs_err_point": 3.469446951953614e-18,
+   "identity_max_abs_err_all_boot_draws": 4.163336342344337e-17,
+   "recovery": {
+    "recovery fraction r8 (1 - refined/unrefined slope)": {
+     "est": 1.0762389579653135,
+     "lo": 0.8002254311339546,
+     "hi": 1.4723730356433289,
+     "separated": true
+    },
+    "recovery fraction r7 (1 - refined/unrefined slope)": {
+     "est": 1.3670581920103113,
+     "lo": 0.9356093120404724,
+     "hi": 2.07993482979703,
+     "separated": true
+    },
+    "recovery fraction r8 - r7": {
+     "est": -0.29081923404499777,
+     "lo": -0.6417536515492752,
+     "hi": -0.11723226498589112,
+     "separated": true
+    }
+   },
+   "share_DIFF_EFFECT_of_GAP_refined": {
+    "est": -0.38067498424340457,
+    "lo": -1.416642253701384,
+    "hi": 0.2389578536057935,
+    "note": "ratio of two correlated bootstrap terms; read only when GAP_refined is separated from 0"
+   },
+   "share_GAP_unrefined_of_GAP_refined": {
+    "est": 1.3806749842434045,
+    "lo": 0.7610421463942064,
+    "hi": 2.416642253701383,
+    "note": "ratio of two correlated bootstrap terms; read only when GAP_refined is separated from 0"
+   }
+  }
+ },
+ "fan_coverage": {
+  "n_sharp_windows": 368,
+  "n_sharp_windows_with_valid_6s_GT_chord": 262,
+  "n_episodes": 32,
+  "_definition": "GT terminal heading = heading of the GT 5.0->6.0 s chord (gt_future_ext idx 49->59, ego frame at t0, convention verified against panel g); candidate terminal heading = fan_term_heading_nav_true (chord of the REFINED candidate's slots 6->7 = 5.0->6.0 s); error = wrap(candidate - GT).  hit@tau = at least one candidate in the subset has |error| <= tau.  subsets: ALL = every emitted candidate (r8 149 = 117 bank + 32 allocator extras; r7 117), BANK117 = first 117 columns, SURV = candidates the S2 reach mask keeps.",
+  "tau_primary_rad": 0.1806411302089691,
+  "tau_second_rad": 0.35,
+  "rows": {
+   "EMA-15k": {
+    "ALL": {
+     "hit@0.1806 rad (10.3 deg)": {
+      "n_win": 262,
+      "r8": {
+       "est": 0.9923664122137404,
+       "lo": 0.9816492622500317,
+       "hi": 1.0,
+       "separated": true,
+       "n_boot_finite": 2000
+      },
+      "r7": {
+       "est": 1.0,
+       "lo": 1.0,
+       "hi": 1.0,
+       "separated": true,
+       "n_boot_finite": 2000
+      },
+      "r8 - r7": {
+       "est": -0.007633587786259555,
+       "lo": -0.018350737749968295,
+       "hi": 0.0,
+       "separated": false
+      },
+      "per_seed": {
+       "s0": {
+        "r8": {
+         "est": 0.9923664122137404,
+         "lo": 0.9816492622500317,
+         "hi": 1.0,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": 1.0,
+         "lo": 1.0,
+         "hi": 1.0,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": -0.007633587786259555,
+         "lo": -0.018350737749968295,
+         "hi": 0.0,
+         "separated": false
+        },
+        "n_win": 262
+       },
+       "s1": {
+        "r8": {
+         "est": 0.9923664122137404,
+         "lo": 0.9816492622500317,
+         "hi": 1.0,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": 1.0,
+         "lo": 1.0,
+         "hi": 1.0,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": -0.007633587786259555,
+         "lo": -0.018350737749968295,
+         "hi": 0.0,
+         "separated": false
+        },
+        "n_win": 262
+       }
+      }
+     },
+     "hit@0.35 rad (20.1 deg)": {
+      "n_win": 262,
+      "r8": {
+       "est": 0.9961832061068703,
+       "lo": 0.9885686813186813,
+       "hi": 1.0,
+       "separated": true,
+       "n_boot_finite": 2000
+      },
+      "r7": {
+       "est": 1.0,
+       "lo": 1.0,
+       "hi": 1.0,
+       "separated": true,
+       "n_boot_finite": 2000
+      },
+      "r8 - r7": {
+       "est": -0.003816793893129722,
+       "lo": -0.011431318681318706,
+       "hi": 0.0,
+       "separated": false
+      },
+      "per_seed": {
+       "s0": {
+        "r8": {
+         "est": 0.9961832061068703,
+         "lo": 0.9885686813186813,
+         "hi": 1.0,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": 1.0,
+         "lo": 1.0,
+         "hi": 1.0,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": -0.003816793893129722,
+         "lo": -0.011431318681318706,
+         "hi": 0.0,
+         "separated": false
+        },
+        "n_win": 262
+       },
+       "s1": {
+        "r8": {
+         "est": 0.9961832061068703,
+         "lo": 0.9885686813186813,
+         "hi": 1.0,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": 1.0,
+         "lo": 1.0,
+         "hi": 1.0,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": -0.003816793893129722,
+         "lo": -0.011431318681318706,
+         "hi": 0.0,
+         "separated": false
+        },
+        "n_win": 262
+       }
+      }
+     },
+     "mean best |err| (deg)": {
+      "n_win": 262,
+      "r8": {
+       "est": 0.7365800030945058,
+       "lo": 0.5128169866050081,
+       "hi": 1.0143100758789603,
+       "separated": true,
+       "n_boot_finite": 2000
+      },
+      "r7": {
+       "est": 0.9563772116804972,
+       "lo": 0.8060881168353801,
+       "hi": 1.1369516071528405,
+       "separated": true,
+       "n_boot_finite": 2000
+      },
+      "r8 - r7": {
+       "est": -0.2197972085859914,
+       "lo": -0.4797802473121141,
+       "hi": 0.04972422716648548,
+       "separated": false
+      },
+      "per_seed": {
+       "s0": {
+        "r8": {
+         "est": 0.7635837690378307,
+         "lo": 0.5258035177900158,
+         "hi": 1.0665140966298423,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": 0.9502662176960323,
+         "lo": 0.7868118745573373,
+         "hi": 1.147699682038765,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": -0.1866824486582016,
+         "lo": -0.47767449878093754,
+         "hi": 0.10767067163869255,
+         "separated": false
+        },
+        "n_win": 262
+       },
+       "s1": {
+        "r8": {
+         "est": 0.7095762371511808,
+         "lo": 0.488266363342767,
+         "hi": 0.9701038910669342,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": 0.9624882056649624,
+         "lo": 0.8153851742561181,
+         "hi": 1.1446992854359368,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": -0.2529119685137816,
+         "lo": -0.5128661255001645,
+         "hi": -0.008480083036483652,
+         "separated": true
+        },
+        "n_win": 262
+       }
+      }
+     },
+     "mean best-candidate signed turn-aligned err (deg; <0 = best candidate still under-rotated)": {
+      "n_win": 262,
+      "r8": {
+       "est": -0.03653082141953214,
+       "lo": -0.3374798189025718,
+       "hi": 0.16566261526823453,
+       "separated": false,
+       "n_boot_finite": 2000
+      },
+      "r7": {
+       "est": -0.026384747710079547,
+       "lo": -0.14255465877002538,
+       "hi": 0.10100927989036783,
+       "separated": false,
+       "n_boot_finite": 2000
+      },
+      "r8 - r7": {
+       "est": -0.010146073709452596,
+       "lo": -0.3815053659204785,
+       "hi": 0.26199814482418093,
+       "separated": false
+      },
+      "per_seed": {
+       "s0": {
+        "r8": {
+         "est": -0.07158259419005876,
+         "lo": -0.3894047733882252,
+         "hi": 0.14963348977971241,
+         "separated": false,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": -0.035183700618881514,
+         "lo": -0.16021176799890816,
+         "hi": 0.10224991190421141,
+         "separated": false,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": -0.036398893571177246,
+         "lo": -0.43119982052019135,
+         "hi": 0.2611361405392422,
+         "separated": false
+        },
+        "n_win": 262
+       },
+       "s1": {
+        "r8": {
+         "est": -0.0014790486490056142,
+         "lo": -0.314561168745968,
+         "hi": 0.22108150610085667,
+         "separated": false,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": -0.017585794801277595,
+         "lo": -0.19013978540686557,
+         "hi": 0.1657850352598987,
+         "separated": false,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": 0.01610674615227198,
+         "lo": -0.3673258606395334,
+         "hi": 0.32144803174194514,
+         "separated": false
+        },
+        "n_win": 262
+       }
+      }
+     },
+     "frac of candidates within 0.1806 rad": {
+      "n_win": 262,
+      "r8": {
+       "est": 0.1462165069931861,
+       "lo": 0.12867972426471092,
+       "hi": 0.16427597945388023,
+       "separated": true,
+       "n_boot_finite": 2000
+      },
+      "r7": {
+       "est": 0.08974358974358974,
+       "lo": 0.07825092298776508,
+       "hi": 0.10124384874384876,
+       "separated": true,
+       "n_boot_finite": 2000
+      },
+      "r8 - r7": {
+       "est": 0.05647291724959637,
+       "lo": 0.047084515691789224,
+       "hi": 0.06700017123306665,
+       "separated": true
+      },
+      "per_seed": {
+       "s0": {
+        "r8": {
+         "est": 0.14583226599723348,
+         "lo": 0.12864033469574332,
+         "hi": 0.16423806013151648,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": 0.08935212370326874,
+         "lo": 0.07764657369920527,
+         "hi": 0.10106793518887015,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": 0.05648014229396474,
+         "lo": 0.04677553475458577,
+         "hi": 0.06715252258610496,
+         "separated": true
+        },
+        "n_win": 262
+       },
+       "s1": {
+        "r8": {
+         "est": 0.14660074798913877,
+         "lo": 0.1290381194313184,
+         "hi": 0.16471226109282633,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": 0.09013505578391073,
+         "lo": 0.07862520387343307,
+         "hi": 0.1016724378052503,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": 0.05646569220522804,
+         "lo": 0.04713880802180769,
+         "hi": 0.0668188455224965,
+         "separated": true
+        },
+        "n_win": 262
+       }
+      }
+     }
+    },
+    "BANK117": {
+     "hit@0.1806 rad (10.3 deg)": {
+      "n_win": 262,
+      "r8": {
+       "est": 0.9923664122137404,
+       "lo": 0.9816492622500317,
+       "hi": 1.0,
+       "separated": true,
+       "n_boot_finite": 2000
+      },
+      "r7": {
+       "est": 1.0,
+       "lo": 1.0,
+       "hi": 1.0,
+       "separated": true,
+       "n_boot_finite": 2000
+      },
+      "r8 - r7": {
+       "est": -0.007633587786259555,
+       "lo": -0.018350737749968295,
+       "hi": 0.0,
+       "separated": false
+      },
+      "per_seed": {
+       "s0": {
+        "r8": {
+         "est": 0.9923664122137404,
+         "lo": 0.9816492622500317,
+         "hi": 1.0,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": 1.0,
+         "lo": 1.0,
+         "hi": 1.0,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": -0.007633587786259555,
+         "lo": -0.018350737749968295,
+         "hi": 0.0,
+         "separated": false
+        },
+        "n_win": 262
+       },
+       "s1": {
+        "r8": {
+         "est": 0.9923664122137404,
+         "lo": 0.9816492622500317,
+         "hi": 1.0,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": 1.0,
+         "lo": 1.0,
+         "hi": 1.0,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": -0.007633587786259555,
+         "lo": -0.018350737749968295,
+         "hi": 0.0,
+         "separated": false
+        },
+        "n_win": 262
+       }
+      }
+     },
+     "hit@0.35 rad (20.1 deg)": {
+      "n_win": 262,
+      "r8": {
+       "est": 0.9961832061068703,
+       "lo": 0.9885686813186813,
+       "hi": 1.0,
+       "separated": true,
+       "n_boot_finite": 2000
+      },
+      "r7": {
+       "est": 1.0,
+       "lo": 1.0,
+       "hi": 1.0,
+       "separated": true,
+       "n_boot_finite": 2000
+      },
+      "r8 - r7": {
+       "est": -0.003816793893129722,
+       "lo": -0.011431318681318706,
+       "hi": 0.0,
+       "separated": false
+      },
+      "per_seed": {
+       "s0": {
+        "r8": {
+         "est": 0.9961832061068703,
+         "lo": 0.9885686813186813,
+         "hi": 1.0,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": 1.0,
+         "lo": 1.0,
+         "hi": 1.0,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": -0.003816793893129722,
+         "lo": -0.011431318681318706,
+         "hi": 0.0,
+         "separated": false
+        },
+        "n_win": 262
+       },
+       "s1": {
+        "r8": {
+         "est": 0.9961832061068703,
+         "lo": 0.9885686813186813,
+         "hi": 1.0,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": 1.0,
+         "lo": 1.0,
+         "hi": 1.0,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": -0.003816793893129722,
+         "lo": -0.011431318681318706,
+         "hi": 0.0,
+         "separated": false
+        },
+        "n_win": 262
+       }
+      }
+     },
+     "mean best |err| (deg)": {
+      "n_win": 262,
+      "r8": {
+       "est": 0.8914434431775974,
+       "lo": 0.6567004389073215,
+       "hi": 1.1771132228539345,
+       "separated": true,
+       "n_boot_finite": 2000
+      },
+      "r7": {
+       "est": 0.9563772116804972,
+       "lo": 0.8060881168353801,
+       "hi": 1.1369516071528405,
+       "separated": true,
+       "n_boot_finite": 2000
+      },
+      "r8 - r7": {
+       "est": -0.06493376850289978,
+       "lo": -0.3097846066194105,
+       "hi": 0.1931374442922583,
+       "separated": false
+      },
+      "per_seed": {
+       "s0": {
+        "r8": {
+         "est": 0.8947050686186305,
+         "lo": 0.6444000895912928,
+         "hi": 1.1936218101924374,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": 0.9502662176960323,
+         "lo": 0.7868118745573373,
+         "hi": 1.147699682038765,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": -0.05556114907740173,
+         "lo": -0.3300865680688033,
+         "hi": 0.23528124306057568,
+         "separated": false
+        },
+        "n_win": 262
+       },
+       "s1": {
+        "r8": {
+         "est": 0.8881818177365642,
+         "lo": 0.6496762159632596,
+         "hi": 1.1772210976746513,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": 0.9624882056649624,
+         "lo": 0.8153851742561181,
+         "hi": 1.1446992854359368,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": -0.07430638792839817,
+         "lo": -0.3206147825559723,
+         "hi": 0.1728692831865845,
+         "separated": false
+        },
+        "n_win": 262
+       }
+      }
+     },
+     "mean best-candidate signed turn-aligned err (deg; <0 = best candidate still under-rotated)": {
+      "n_win": 262,
+      "r8": {
+       "est": -0.03623547052445363,
+       "lo": -0.3369561542967505,
+       "hi": 0.1489900565954346,
+       "separated": false,
+       "n_boot_finite": 2000
+      },
+      "r7": {
+       "est": -0.026384747710079547,
+       "lo": -0.14255465877002538,
+       "hi": 0.10100927989036783,
+       "separated": false,
+       "n_boot_finite": 2000
+      },
+      "r8 - r7": {
+       "est": -0.009850722814374085,
+       "lo": -0.380959179150047,
+       "hi": 0.2534639717462594,
+       "separated": false
+      },
+      "per_seed": {
+       "s0": {
+        "r8": {
+         "est": -0.07111792340240404,
+         "lo": -0.3769044236984162,
+         "hi": 0.14152768837549004,
+         "separated": false,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": -0.035183700618881514,
+         "lo": -0.16021176799890816,
+         "hi": 0.10224991190421141,
+         "separated": false,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": -0.035934222783522526,
+         "lo": -0.4321664485413835,
+         "hi": 0.25946647804139983,
+         "separated": false
+        },
+        "n_win": 262
+       },
+       "s1": {
+        "r8": {
+         "est": -0.0013530176465033174,
+         "lo": -0.30835567015646237,
+         "hi": 0.22414978370531038,
+         "separated": false,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": -0.017585794801277595,
+         "lo": -0.19013978540686557,
+         "hi": 0.1657850352598987,
+         "separated": false,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": 0.016232777154774277,
+         "lo": -0.38123721913035447,
+         "hi": 0.3385113435675322,
+         "separated": false
+        },
+        "n_win": 262
+       }
+      }
+     },
+     "frac of candidates within 0.1806 rad": {
+      "n_win": 262,
+      "r8": {
+       "est": 0.14081359692046713,
+       "lo": 0.11599809730587851,
+       "hi": 0.16577592863980423,
+       "separated": true,
+       "n_boot_finite": 2000
+      },
+      "r7": {
+       "est": 0.08974358974358974,
+       "lo": 0.07825092298776508,
+       "hi": 0.10124384874384876,
+       "separated": true,
+       "n_boot_finite": 2000
+      },
+      "r8 - r7": {
+       "est": 0.05107000717687739,
+       "lo": 0.036114004522466256,
+       "hi": 0.06596844687665,
+       "separated": true
+      },
+      "per_seed": {
+       "s0": {
+        "r8": {
+         "est": 0.1405363084752398,
+         "lo": 0.11555461884729705,
+         "hi": 0.16511356441911998,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": 0.08935212370326874,
+         "lo": 0.07764657369920527,
+         "hi": 0.10106793518887015,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": 0.05118418477197105,
+         "lo": 0.03644362826867473,
+         "hi": 0.0659207713562357,
+         "separated": true
+        },
+        "n_win": 262
+       },
+       "s1": {
+        "r8": {
+         "est": 0.14109088536569453,
+         "lo": 0.11601765474339532,
+         "hi": 0.16650912444463534,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": 0.09013505578391073,
+         "lo": 0.07862520387343307,
+         "hi": 0.1016724378052503,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": 0.050955829581783796,
+         "lo": 0.03580219603604368,
+         "hi": 0.06606104117733412,
+         "separated": true
+        },
+        "n_win": 262
+       }
+      }
+     }
+    },
+    "SURV": {
+     "hit@0.1806 rad (10.3 deg)": {
+      "n_win": 262,
+      "r8": {
+       "est": 0.9923664122137404,
+       "lo": 0.9816492622500317,
+       "hi": 1.0,
+       "separated": true,
+       "n_boot_finite": 2000
+      },
+      "r7": {
+       "est": 1.0,
+       "lo": 1.0,
+       "hi": 1.0,
+       "separated": true,
+       "n_boot_finite": 2000
+      },
+      "r8 - r7": {
+       "est": -0.007633587786259555,
+       "lo": -0.018350737749968295,
+       "hi": 0.0,
+       "separated": false
+      },
+      "per_seed": {
+       "s0": {
+        "r8": {
+         "est": 0.9923664122137404,
+         "lo": 0.9816492622500317,
+         "hi": 1.0,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": 1.0,
+         "lo": 1.0,
+         "hi": 1.0,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": -0.007633587786259555,
+         "lo": -0.018350737749968295,
+         "hi": 0.0,
+         "separated": false
+        },
+        "n_win": 262
+       },
+       "s1": {
+        "r8": {
+         "est": 0.9923664122137404,
+         "lo": 0.9816492622500317,
+         "hi": 1.0,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": 1.0,
+         "lo": 1.0,
+         "hi": 1.0,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": -0.007633587786259555,
+         "lo": -0.018350737749968295,
+         "hi": 0.0,
+         "separated": false
+        },
+        "n_win": 262
+       }
+      }
+     },
+     "hit@0.35 rad (20.1 deg)": {
+      "n_win": 262,
+      "r8": {
+       "est": 0.9961832061068703,
+       "lo": 0.9885686813186813,
+       "hi": 1.0,
+       "separated": true,
+       "n_boot_finite": 2000
+      },
+      "r7": {
+       "est": 1.0,
+       "lo": 1.0,
+       "hi": 1.0,
+       "separated": true,
+       "n_boot_finite": 2000
+      },
+      "r8 - r7": {
+       "est": -0.003816793893129722,
+       "lo": -0.011431318681318706,
+       "hi": 0.0,
+       "separated": false
+      },
+      "per_seed": {
+       "s0": {
+        "r8": {
+         "est": 0.9961832061068703,
+         "lo": 0.9885686813186813,
+         "hi": 1.0,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": 1.0,
+         "lo": 1.0,
+         "hi": 1.0,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": -0.003816793893129722,
+         "lo": -0.011431318681318706,
+         "hi": 0.0,
+         "separated": false
+        },
+        "n_win": 262
+       },
+       "s1": {
+        "r8": {
+         "est": 0.9961832061068703,
+         "lo": 0.9885686813186813,
+         "hi": 1.0,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": 1.0,
+         "lo": 1.0,
+         "hi": 1.0,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": -0.003816793893129722,
+         "lo": -0.011431318681318706,
+         "hi": 0.0,
+         "separated": false
+        },
+        "n_win": 262
+       }
+      }
+     },
+     "mean best |err| (deg)": {
+      "n_win": 262,
+      "r8": {
+       "est": 0.7365800030945058,
+       "lo": 0.5128169866050081,
+       "hi": 1.0143100758789603,
+       "separated": true,
+       "n_boot_finite": 2000
+      },
+      "r7": {
+       "est": 0.9563772116804972,
+       "lo": 0.8060881168353801,
+       "hi": 1.1369516071528405,
+       "separated": true,
+       "n_boot_finite": 2000
+      },
+      "r8 - r7": {
+       "est": -0.2197972085859914,
+       "lo": -0.4797802473121141,
+       "hi": 0.04972422716648548,
+       "separated": false
+      },
+      "per_seed": {
+       "s0": {
+        "r8": {
+         "est": 0.7635837690378307,
+         "lo": 0.5258035177900158,
+         "hi": 1.0665140966298423,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": 0.9502662176960323,
+         "lo": 0.7868118745573373,
+         "hi": 1.147699682038765,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": -0.1866824486582016,
+         "lo": -0.47767449878093754,
+         "hi": 0.10767067163869255,
+         "separated": false
+        },
+        "n_win": 262
+       },
+       "s1": {
+        "r8": {
+         "est": 0.7095762371511808,
+         "lo": 0.488266363342767,
+         "hi": 0.9701038910669342,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": 0.9624882056649624,
+         "lo": 0.8153851742561181,
+         "hi": 1.1446992854359368,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": -0.2529119685137816,
+         "lo": -0.5128661255001645,
+         "hi": -0.008480083036483652,
+         "separated": true
+        },
+        "n_win": 262
+       }
+      }
+     },
+     "mean best-candidate signed turn-aligned err (deg; <0 = best candidate still under-rotated)": {
+      "n_win": 262,
+      "r8": {
+       "est": -0.03653082141953214,
+       "lo": -0.3374798189025718,
+       "hi": 0.16566261526823453,
+       "separated": false,
+       "n_boot_finite": 2000
+      },
+      "r7": {
+       "est": -0.026384747710079547,
+       "lo": -0.14255465877002538,
+       "hi": 0.10100927989036783,
+       "separated": false,
+       "n_boot_finite": 2000
+      },
+      "r8 - r7": {
+       "est": -0.010146073709452596,
+       "lo": -0.3815053659204785,
+       "hi": 0.26199814482418093,
+       "separated": false
+      },
+      "per_seed": {
+       "s0": {
+        "r8": {
+         "est": -0.07158259419005876,
+         "lo": -0.3894047733882252,
+         "hi": 0.14963348977971241,
+         "separated": false,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": -0.035183700618881514,
+         "lo": -0.16021176799890816,
+         "hi": 0.10224991190421141,
+         "separated": false,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": -0.036398893571177246,
+         "lo": -0.43119982052019135,
+         "hi": 0.2611361405392422,
+         "separated": false
+        },
+        "n_win": 262
+       },
+       "s1": {
+        "r8": {
+         "est": -0.0014790486490056142,
+         "lo": -0.314561168745968,
+         "hi": 0.22108150610085667,
+         "separated": false,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": -0.017585794801277595,
+         "lo": -0.19013978540686557,
+         "hi": 0.1657850352598987,
+         "separated": false,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": 0.01610674615227198,
+         "lo": -0.3673258606395334,
+         "hi": 0.32144803174194514,
+         "separated": false
+        },
+        "n_win": 262
+       }
+      }
+     },
+     "frac of candidates within 0.1806 rad": {
+      "n_win": 262,
+      "r8": {
+       "est": 0.1462165069931861,
+       "lo": 0.12867972426471092,
+       "hi": 0.16427597945388023,
+       "separated": true,
+       "n_boot_finite": 2000
+      },
+      "r7": {
+       "est": 0.08974457403320261,
+       "lo": 0.07825548165696761,
+       "hi": 0.10124384874384876,
+       "separated": true,
+       "n_boot_finite": 2000
+      },
+      "r8 - r7": {
+       "est": 0.0564719329599835,
+       "lo": 0.047082459899600304,
+       "hi": 0.0669992732445609,
+       "separated": true
+      },
+      "per_seed": {
+       "s0": {
+        "r8": {
+         "est": 0.14583226599723348,
+         "lo": 0.12864033469574332,
+         "hi": 0.16423806013151648,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": 0.08935212370326874,
+         "lo": 0.07764657369920527,
+         "hi": 0.10106793518887015,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": 0.05648014229396474,
+         "lo": 0.04677553475458577,
+         "hi": 0.06715252258610496,
+         "separated": true
+        },
+        "n_win": 262
+       },
+       "s1": {
+        "r8": {
+         "est": 0.14660074798913877,
+         "lo": 0.1290381194313184,
+         "hi": 0.16471226109282633,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": 0.0901370243631365,
+         "lo": 0.07862739884383475,
+         "hi": 0.10167663273552954,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": 0.05646372362600227,
+         "lo": 0.0471346903813684,
+         "hi": 0.06681879289313353,
+         "separated": true
+        },
+        "n_win": 262
+       }
+      }
+     }
+    }
+   },
+   "EMA-5k": {
+    "ALL": {
+     "hit@0.1806 rad (10.3 deg)": {
+      "n_win": 262,
+      "r8": {
+       "est": 1.0,
+       "lo": 1.0,
+       "hi": 1.0,
+       "separated": true,
+       "n_boot_finite": 2000
+      },
+      "r7": {
+       "est": 1.0,
+       "lo": 1.0,
+       "hi": 1.0,
+       "separated": true,
+       "n_boot_finite": 2000
+      },
+      "r8 - r7": {
+       "est": 0.0,
+       "lo": 0.0,
+       "hi": 0.0,
+       "separated": false
+      },
+      "per_seed": {
+       "s0": {
+        "r8": {
+         "est": 1.0,
+         "lo": 1.0,
+         "hi": 1.0,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": 1.0,
+         "lo": 1.0,
+         "hi": 1.0,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": 0.0,
+         "lo": 0.0,
+         "hi": 0.0,
+         "separated": false
+        },
+        "n_win": 262
+       },
+       "s1": {
+        "r8": {
+         "est": 1.0,
+         "lo": 1.0,
+         "hi": 1.0,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": 1.0,
+         "lo": 1.0,
+         "hi": 1.0,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": 0.0,
+         "lo": 0.0,
+         "hi": 0.0,
+         "separated": false
+        },
+        "n_win": 262
+       }
+      }
+     },
+     "hit@0.35 rad (20.1 deg)": {
+      "n_win": 262,
+      "r8": {
+       "est": 1.0,
+       "lo": 1.0,
+       "hi": 1.0,
+       "separated": true,
+       "n_boot_finite": 2000
+      },
+      "r7": {
+       "est": 1.0,
+       "lo": 1.0,
+       "hi": 1.0,
+       "separated": true,
+       "n_boot_finite": 2000
+      },
+      "r8 - r7": {
+       "est": 0.0,
+       "lo": 0.0,
+       "hi": 0.0,
+       "separated": false
+      },
+      "per_seed": {
+       "s0": {
+        "r8": {
+         "est": 1.0,
+         "lo": 1.0,
+         "hi": 1.0,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": 1.0,
+         "lo": 1.0,
+         "hi": 1.0,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": 0.0,
+         "lo": 0.0,
+         "hi": 0.0,
+         "separated": false
+        },
+        "n_win": 262
+       },
+       "s1": {
+        "r8": {
+         "est": 1.0,
+         "lo": 1.0,
+         "hi": 1.0,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": 1.0,
+         "lo": 1.0,
+         "hi": 1.0,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": 0.0,
+         "lo": 0.0,
+         "hi": 0.0,
+         "separated": false
+        },
+        "n_win": 262
+       }
+      }
+     },
+     "mean best |err| (deg)": {
+      "n_win": 262,
+      "r8": {
+       "est": 0.8141046592286928,
+       "lo": 0.6611277289413103,
+       "hi": 0.9672917338910302,
+       "separated": true,
+       "n_boot_finite": 2000
+      },
+      "r7": {
+       "est": 0.9563772116804972,
+       "lo": 0.8060881168353801,
+       "hi": 1.1369516071528405,
+       "separated": true,
+       "n_boot_finite": 2000
+      },
+      "r8 - r7": {
+       "est": -0.14227255245180437,
+       "lo": -0.30049216470934564,
+       "hi": -0.0010575252059072467,
+       "separated": true
+      },
+      "per_seed": {
+       "s0": {
+        "r8": {
+         "est": 0.8679461931887462,
+         "lo": 0.6920153539873931,
+         "hi": 1.0440396116030006,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": 0.9502662176960323,
+         "lo": 0.7868118745573373,
+         "hi": 1.147699682038765,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": -0.08232002450728604,
+         "lo": -0.2739887651681477,
+         "hi": 0.10500061144332679,
+         "separated": false
+        },
+        "n_win": 262
+       },
+       "s1": {
+        "r8": {
+         "est": 0.7602631252686393,
+         "lo": 0.6216217777537125,
+         "hi": 0.9074648509074291,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": 0.9624882056649624,
+         "lo": 0.8153851742561181,
+         "hi": 1.1446992854359368,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": -0.20222508039632314,
+         "lo": -0.3668800792367482,
+         "hi": -0.06335733246924448,
+         "separated": true
+        },
+        "n_win": 262
+       }
+      }
+     },
+     "mean best-candidate signed turn-aligned err (deg; <0 = best candidate still under-rotated)": {
+      "n_win": 262,
+      "r8": {
+       "est": -0.06757614760679284,
+       "lo": -0.2519966912364568,
+       "hi": 0.08934117796114921,
+       "separated": false,
+       "n_boot_finite": 2000
+      },
+      "r7": {
+       "est": -0.026384747710079547,
+       "lo": -0.14255465877002538,
+       "hi": 0.10100927989036783,
+       "separated": false,
+       "n_boot_finite": 2000
+      },
+      "r8 - r7": {
+       "est": -0.04119139989671329,
+       "lo": -0.27451098869103036,
+       "hi": 0.16310871496609797,
+       "separated": false
+      },
+      "per_seed": {
+       "s0": {
+        "r8": {
+         "est": -0.10707568259906629,
+         "lo": -0.3539477379497245,
+         "hi": 0.09432223977692432,
+         "separated": false,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": -0.035183700618881514,
+         "lo": -0.16021176799890816,
+         "hi": 0.10224991190421141,
+         "separated": false,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": -0.07189198198018477,
+         "lo": -0.359482398246732,
+         "hi": 0.19171515442456216,
+         "separated": false
+        },
+        "n_win": 262
+       },
+       "s1": {
+        "r8": {
+         "est": -0.02807661261451943,
+         "lo": -0.2326578602972998,
+         "hi": 0.1390140823794766,
+         "separated": false,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": -0.017585794801277595,
+         "lo": -0.19013978540686557,
+         "hi": 0.1657850352598987,
+         "separated": false,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": -0.010490817813241834,
+         "lo": -0.28370096999399175,
+         "hi": 0.23378905518924561,
+         "separated": false
+        },
+        "n_win": 262
+       }
+      }
+     },
+     "frac of candidates within 0.1806 rad": {
+      "n_win": 262,
+      "r8": {
+       "est": 0.10870177775500793,
+       "lo": 0.09787397819679698,
+       "hi": 0.11998753110482564,
+       "separated": true,
+       "n_boot_finite": 2000
+      },
+      "r7": {
+       "est": 0.08974358974358974,
+       "lo": 0.07825092298776508,
+       "hi": 0.10124384874384876,
+       "separated": true,
+       "n_boot_finite": 2000
+      },
+      "r8 - r7": {
+       "est": 0.018958188011418187,
+       "lo": 0.014132348764422315,
+       "hi": 0.025078358724243306,
+       "separated": true
+      },
+      "per_seed": {
+       "s0": {
+        "r8": {
+         "est": 0.10953429991290538,
+         "lo": 0.09876297319822783,
+         "hi": 0.12073224842986684,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": 0.08935212370326874,
+         "lo": 0.07764657369920527,
+         "hi": 0.10106793518887015,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": 0.020182176209636637,
+         "lo": 0.01514415839231779,
+         "hi": 0.026769819531284846,
+         "separated": true
+        },
+        "n_win": 262
+       },
+       "s1": {
+        "r8": {
+         "est": 0.10786925559711051,
+         "lo": 0.09683208308554923,
+         "hi": 0.11919867772503227,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": 0.09013505578391073,
+         "lo": 0.07862520387343307,
+         "hi": 0.1016724378052503,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": 0.017734199813199777,
+         "lo": 0.013053262550537032,
+         "hi": 0.023565752002431304,
+         "separated": true
+        },
+        "n_win": 262
+       }
+      }
+     }
+    },
+    "BANK117": {
+     "hit@0.1806 rad (10.3 deg)": {
+      "n_win": 262,
+      "r8": {
+       "est": 1.0,
+       "lo": 1.0,
+       "hi": 1.0,
+       "separated": true,
+       "n_boot_finite": 2000
+      },
+      "r7": {
+       "est": 1.0,
+       "lo": 1.0,
+       "hi": 1.0,
+       "separated": true,
+       "n_boot_finite": 2000
+      },
+      "r8 - r7": {
+       "est": 0.0,
+       "lo": 0.0,
+       "hi": 0.0,
+       "separated": false
+      },
+      "per_seed": {
+       "s0": {
+        "r8": {
+         "est": 1.0,
+         "lo": 1.0,
+         "hi": 1.0,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": 1.0,
+         "lo": 1.0,
+         "hi": 1.0,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": 0.0,
+         "lo": 0.0,
+         "hi": 0.0,
+         "separated": false
+        },
+        "n_win": 262
+       },
+       "s1": {
+        "r8": {
+         "est": 1.0,
+         "lo": 1.0,
+         "hi": 1.0,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": 1.0,
+         "lo": 1.0,
+         "hi": 1.0,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": 0.0,
+         "lo": 0.0,
+         "hi": 0.0,
+         "separated": false
+        },
+        "n_win": 262
+       }
+      }
+     },
+     "hit@0.35 rad (20.1 deg)": {
+      "n_win": 262,
+      "r8": {
+       "est": 1.0,
+       "lo": 1.0,
+       "hi": 1.0,
+       "separated": true,
+       "n_boot_finite": 2000
+      },
+      "r7": {
+       "est": 1.0,
+       "lo": 1.0,
+       "hi": 1.0,
+       "separated": true,
+       "n_boot_finite": 2000
+      },
+      "r8 - r7": {
+       "est": 0.0,
+       "lo": 0.0,
+       "hi": 0.0,
+       "separated": false
+      },
+      "per_seed": {
+       "s0": {
+        "r8": {
+         "est": 1.0,
+         "lo": 1.0,
+         "hi": 1.0,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": 1.0,
+         "lo": 1.0,
+         "hi": 1.0,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": 0.0,
+         "lo": 0.0,
+         "hi": 0.0,
+         "separated": false
+        },
+        "n_win": 262
+       },
+       "s1": {
+        "r8": {
+         "est": 1.0,
+         "lo": 1.0,
+         "hi": 1.0,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": 1.0,
+         "lo": 1.0,
+         "hi": 1.0,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": 0.0,
+         "lo": 0.0,
+         "hi": 0.0,
+         "separated": false
+        },
+        "n_win": 262
+       }
+      }
+     },
+     "mean best |err| (deg)": {
+      "n_win": 262,
+      "r8": {
+       "est": 0.9665106163667005,
+       "lo": 0.7842678048042705,
+       "hi": 1.1616927893492608,
+       "separated": true,
+       "n_boot_finite": 2000
+      },
+      "r7": {
+       "est": 0.9563772116804972,
+       "lo": 0.8060881168353801,
+       "hi": 1.1369516071528405,
+       "separated": true,
+       "n_boot_finite": 2000
+      },
+      "r8 - r7": {
+       "est": 0.010133404686203384,
+       "lo": -0.1570764571697673,
+       "hi": 0.18301178441663016,
+       "separated": false
+      },
+      "per_seed": {
+       "s0": {
+        "r8": {
+         "est": 0.9770683723800953,
+         "lo": 0.7728883536853206,
+         "hi": 1.1819095333752896,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": 0.9502662176960323,
+         "lo": 0.7868118745573373,
+         "hi": 1.147699682038765,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": 0.026802154684062995,
+         "lo": -0.1626564875405632,
+         "hi": 0.24108492772228035,
+         "separated": false
+        },
+        "n_win": 262
+       },
+       "s1": {
+        "r8": {
+         "est": 0.9559528603533058,
+         "lo": 0.7827528908111216,
+         "hi": 1.1488063264949862,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": 0.9624882056649624,
+         "lo": 0.8153851742561181,
+         "hi": 1.1446992854359368,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": -0.00653534531165656,
+         "lo": -0.17012445962033412,
+         "hi": 0.16181453797833448,
+         "separated": false
+        },
+        "n_win": 262
+       }
+      }
+     },
+     "mean best-candidate signed turn-aligned err (deg; <0 = best candidate still under-rotated)": {
+      "n_win": 262,
+      "r8": {
+       "est": -0.06671303866262866,
+       "lo": -0.25278345383297673,
+       "hi": 0.0915945082349692,
+       "separated": false,
+       "n_boot_finite": 2000
+      },
+      "r7": {
+       "est": -0.026384747710079547,
+       "lo": -0.14255465877002538,
+       "hi": 0.10100927989036783,
+       "separated": false,
+       "n_boot_finite": 2000
+      },
+      "r8 - r7": {
+       "est": -0.04032829095254911,
+       "lo": -0.26901039860081893,
+       "hi": 0.1673629145209215,
+       "separated": false
+      },
+      "per_seed": {
+       "s0": {
+        "r8": {
+         "est": -0.046489006066937365,
+         "lo": -0.29114811765279436,
+         "hi": 0.14545472618257158,
+         "separated": false,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": -0.035183700618881514,
+         "lo": -0.16021176799890816,
+         "hi": 0.10224991190421141,
+         "separated": false,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": -0.011305305448055851,
+         "lo": -0.2758389605228625,
+         "hi": 0.22378943946017435,
+         "separated": false
+        },
+        "n_win": 262
+       },
+       "s1": {
+        "r8": {
+         "est": -0.08693707125831995,
+         "lo": -0.30074822420112923,
+         "hi": 0.10046475763940149,
+         "separated": false,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": -0.017585794801277595,
+         "lo": -0.19013978540686557,
+         "hi": 0.1657850352598987,
+         "separated": false,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": -0.06935127645704237,
+         "lo": -0.3545155332281949,
+         "hi": 0.1974791733616856,
+         "separated": false
+        },
+        "n_win": 262
+       }
+      }
+     },
+     "frac of candidates within 0.1806 rad": {
+      "n_win": 262,
+      "r8": {
+       "est": 0.10685391792262022,
+       "lo": 0.08868212410815683,
+       "hi": 0.1248846449249675,
+       "separated": true,
+       "n_boot_finite": 2000
+      },
+      "r7": {
+       "est": 0.08974358974358974,
+       "lo": 0.07825092298776508,
+       "hi": 0.10124384874384876,
+       "separated": true,
+       "n_boot_finite": 2000
+      },
+      "r8 - r7": {
+       "est": 0.01711032817903048,
+       "lo": 0.009847175771088805,
+       "hi": 0.024427584284370134,
+       "separated": true
+      },
+      "per_seed": {
+       "s0": {
+        "r8": {
+         "est": 0.10729431721798136,
+         "lo": 0.08955363306899142,
+         "hi": 0.1252301397354873,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": 0.08935212370326874,
+         "lo": 0.07764657369920527,
+         "hi": 0.10106793518887015,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": 0.017942193514712615,
+         "lo": 0.01104346565042442,
+         "hi": 0.024864753302253313,
+         "separated": true
+        },
+        "n_win": 262
+       },
+       "s1": {
+        "r8": {
+         "est": 0.10641351862725909,
+         "lo": 0.08787598372682406,
+         "hi": 0.12447915883399753,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": 0.09013505578391073,
+         "lo": 0.07862520387343307,
+         "hi": 0.1016724378052503,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": 0.016278462843348357,
+         "lo": 0.008477341499872412,
+         "hi": 0.02402288844876056,
+         "separated": true
+        },
+        "n_win": 262
+       }
+      }
+     }
+    },
+    "SURV": {
+     "hit@0.1806 rad (10.3 deg)": {
+      "n_win": 262,
+      "r8": {
+       "est": 1.0,
+       "lo": 1.0,
+       "hi": 1.0,
+       "separated": true,
+       "n_boot_finite": 2000
+      },
+      "r7": {
+       "est": 1.0,
+       "lo": 1.0,
+       "hi": 1.0,
+       "separated": true,
+       "n_boot_finite": 2000
+      },
+      "r8 - r7": {
+       "est": 0.0,
+       "lo": 0.0,
+       "hi": 0.0,
+       "separated": false
+      },
+      "per_seed": {
+       "s0": {
+        "r8": {
+         "est": 1.0,
+         "lo": 1.0,
+         "hi": 1.0,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": 1.0,
+         "lo": 1.0,
+         "hi": 1.0,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": 0.0,
+         "lo": 0.0,
+         "hi": 0.0,
+         "separated": false
+        },
+        "n_win": 262
+       },
+       "s1": {
+        "r8": {
+         "est": 1.0,
+         "lo": 1.0,
+         "hi": 1.0,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": 1.0,
+         "lo": 1.0,
+         "hi": 1.0,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": 0.0,
+         "lo": 0.0,
+         "hi": 0.0,
+         "separated": false
+        },
+        "n_win": 262
+       }
+      }
+     },
+     "hit@0.35 rad (20.1 deg)": {
+      "n_win": 262,
+      "r8": {
+       "est": 1.0,
+       "lo": 1.0,
+       "hi": 1.0,
+       "separated": true,
+       "n_boot_finite": 2000
+      },
+      "r7": {
+       "est": 1.0,
+       "lo": 1.0,
+       "hi": 1.0,
+       "separated": true,
+       "n_boot_finite": 2000
+      },
+      "r8 - r7": {
+       "est": 0.0,
+       "lo": 0.0,
+       "hi": 0.0,
+       "separated": false
+      },
+      "per_seed": {
+       "s0": {
+        "r8": {
+         "est": 1.0,
+         "lo": 1.0,
+         "hi": 1.0,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": 1.0,
+         "lo": 1.0,
+         "hi": 1.0,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": 0.0,
+         "lo": 0.0,
+         "hi": 0.0,
+         "separated": false
+        },
+        "n_win": 262
+       },
+       "s1": {
+        "r8": {
+         "est": 1.0,
+         "lo": 1.0,
+         "hi": 1.0,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": 1.0,
+         "lo": 1.0,
+         "hi": 1.0,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": 0.0,
+         "lo": 0.0,
+         "hi": 0.0,
+         "separated": false
+        },
+        "n_win": 262
+       }
+      }
+     },
+     "mean best |err| (deg)": {
+      "n_win": 262,
+      "r8": {
+       "est": 0.8141046592286928,
+       "lo": 0.6611277289413103,
+       "hi": 0.9672917338910302,
+       "separated": true,
+       "n_boot_finite": 2000
+      },
+      "r7": {
+       "est": 0.9563772116804972,
+       "lo": 0.8060881168353801,
+       "hi": 1.1369516071528405,
+       "separated": true,
+       "n_boot_finite": 2000
+      },
+      "r8 - r7": {
+       "est": -0.14227255245180437,
+       "lo": -0.30049216470934564,
+       "hi": -0.0010575252059072467,
+       "separated": true
+      },
+      "per_seed": {
+       "s0": {
+        "r8": {
+         "est": 0.8679461931887462,
+         "lo": 0.6920153539873931,
+         "hi": 1.0440396116030006,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": 0.9502662176960323,
+         "lo": 0.7868118745573373,
+         "hi": 1.147699682038765,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": -0.08232002450728604,
+         "lo": -0.2739887651681477,
+         "hi": 0.10500061144332679,
+         "separated": false
+        },
+        "n_win": 262
+       },
+       "s1": {
+        "r8": {
+         "est": 0.7602631252686393,
+         "lo": 0.6216217777537125,
+         "hi": 0.9074648509074291,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": 0.9624882056649624,
+         "lo": 0.8153851742561181,
+         "hi": 1.1446992854359368,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": -0.20222508039632314,
+         "lo": -0.3668800792367482,
+         "hi": -0.06335733246924448,
+         "separated": true
+        },
+        "n_win": 262
+       }
+      }
+     },
+     "mean best-candidate signed turn-aligned err (deg; <0 = best candidate still under-rotated)": {
+      "n_win": 262,
+      "r8": {
+       "est": -0.06757614760679284,
+       "lo": -0.2519966912364568,
+       "hi": 0.08934117796114921,
+       "separated": false,
+       "n_boot_finite": 2000
+      },
+      "r7": {
+       "est": -0.026384747710079547,
+       "lo": -0.14255465877002538,
+       "hi": 0.10100927989036783,
+       "separated": false,
+       "n_boot_finite": 2000
+      },
+      "r8 - r7": {
+       "est": -0.04119139989671329,
+       "lo": -0.27451098869103036,
+       "hi": 0.16310871496609797,
+       "separated": false
+      },
+      "per_seed": {
+       "s0": {
+        "r8": {
+         "est": -0.10707568259906629,
+         "lo": -0.3539477379497245,
+         "hi": 0.09432223977692432,
+         "separated": false,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": -0.035183700618881514,
+         "lo": -0.16021176799890816,
+         "hi": 0.10224991190421141,
+         "separated": false,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": -0.07189198198018477,
+         "lo": -0.359482398246732,
+         "hi": 0.19171515442456216,
+         "separated": false
+        },
+        "n_win": 262
+       },
+       "s1": {
+        "r8": {
+         "est": -0.02807661261451943,
+         "lo": -0.2326578602972998,
+         "hi": 0.1390140823794766,
+         "separated": false,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": -0.017585794801277595,
+         "lo": -0.19013978540686557,
+         "hi": 0.1657850352598987,
+         "separated": false,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": -0.010490817813241834,
+         "lo": -0.28370096999399175,
+         "hi": 0.23378905518924561,
+         "separated": false
+        },
+        "n_win": 262
+       }
+      }
+     },
+     "frac of candidates within 0.1806 rad": {
+      "n_win": 262,
+      "r8": {
+       "est": 0.10870350857030503,
+       "lo": 0.097875806727149,
+       "hi": 0.1199893723500002,
+       "separated": true,
+       "n_boot_finite": 2000
+      },
+      "r7": {
+       "est": 0.08974457403320261,
+       "lo": 0.07825548165696761,
+       "hi": 0.10124384874384876,
+       "separated": true,
+       "n_boot_finite": 2000
+      },
+      "r8 - r7": {
+       "est": 0.018958934537102415,
+       "lo": 0.014133103192102623,
+       "hi": 0.025079302108708904,
+       "separated": true
+      },
+      "per_seed": {
+       "s0": {
+        "r8": {
+         "est": 0.10953585764667274,
+         "lo": 0.09876492380161446,
+         "hi": 0.12073375825700029,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": 0.08935212370326874,
+         "lo": 0.07764657369920527,
+         "hi": 0.10106793518887015,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": 0.020183733943404003,
+         "lo": 0.01514667384347693,
+         "hi": 0.026772861583404074,
+         "separated": true
+        },
+        "n_win": 262
+       },
+       "s1": {
+        "r8": {
+         "est": 0.1078711594939373,
+         "lo": 0.09683406795101109,
+         "hi": 0.11920069805979042,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r7": {
+         "est": 0.0901370243631365,
+         "lo": 0.07862739884383475,
+         "hi": 0.10167663273552954,
+         "separated": true,
+         "n_boot_finite": 2000
+        },
+        "r8 - r7": {
+         "est": 0.0177341351308008,
+         "lo": 0.013053180794982562,
+         "hi": 0.0235655847055244,
+         "separated": true
+        },
+        "n_win": 262
+       }
+      }
+     }
+    }
+   }
+  }
+ },
+ "n_alloc_feasibility": {
+  "status": "FROM SOURCE ONLY; nothing executed (no GPU, no model build)",
+  "flag_or_override_exists_today": false,
+  "route_A_emit_off": "set model.core.decoder.r8_emit_live=False after build+load (attr at refc.py:2482; mask at refc.py:2578-2581; applied at refc_v3.py:1047-1052; schedule via refcv8_train.py:426-434 from refcv7_loader.py:517-519); record in eval_time_cfg_overrides (refcv3_arm.py:1238-1262). Strict load unaffected (attribute, not in state_dict). Base pass separate (refc.py:2719-2724).",
+  "route_B_n_alloc_0": "no parameter sized by n_alloc (read at refc.py:2509, refc_v3.py:2092); strict load expected but UNVERIFIED; train() replay refuses --w-r8-sat>0 with n_alloc<=0 (refc_v3_train.py:1011-1013) so needs --w-r8-sat 0; changes the forward set",
+  "tree": "C:/lgs/Lfb47a58376/stack (refcv8 launch-gate tree)"
+ },
+ "free_commit_gb_start_end": [
+  6.890949249267578,
+  5.903923034667969
+ ],
+ "runtime_s": 3.7197258472442627,
+ "verdict": {
+  "hypothesis_refinement_shrinks": "REFUTED as stated (refinement adds +0.135 rotation in r8, +0.200 in r7)",
+  "measured_true_form": "r8 refinement under-corrects the shared bank under-rotation: DIFF_EFFECT -0.0649 [-0.0923,-0.0398] (n=335 win/41 ep, 2-seed, EMA-15k vs refcv7); same-anchor subset -0.0286 [-0.0486,-0.0123] (n=127/37)",
+  "fan_coverage": "saturated (hit@10.3deg 0.992 vs 1.000, n=262/32); not the problem",
+  "design_lever_hypothesis": "near-horizon heading/curvature term on refined candidates weighted by GT |yaw|; bank tight-turn coverage is a PI-level second lever"
+ }
+}

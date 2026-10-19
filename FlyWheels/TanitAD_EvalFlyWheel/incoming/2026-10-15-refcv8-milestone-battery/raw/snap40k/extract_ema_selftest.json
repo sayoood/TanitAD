@@ -1,0 +1,20 @@
+{
+ "checks": {
+  "extract_ok_no_problems": true,
+  "ema_file_equals_the_training_EMA_on_every_key": true,
+  "shadowed_keys_equal_the_shadow": true,
+  "non_shadowed_keys_equal_the_live_value": true,
+  "frozen_and_int_keys_are_among_them": true,
+  "tied_alias_equals_its_twin": true,
+  "ema_differs_from_live_on_shadowed_floats": true,
+  "meta_keys_are_the_trainers": true,
+  "raw_file_is_the_milestone_layout": true,
+  "refuses_to_overwrite": true,
+  "REGRESSION_without_requires_grad_restore_is_refused": true,
+  "REGRESSION_wrong_decay_is_refused": true,
+  "REGRESSION_ema_not_at_step_is_refused": true,
+  "REGRESSION_corrupt_shadow_reads_RED_against_the_training_EMA": true
+ },
+ "save_ema_source": "the trainer's own _save_ema_model",
+ "ok": true
+}
